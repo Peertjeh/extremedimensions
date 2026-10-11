@@ -16,8 +16,17 @@ public final class Config {
 	/** Hoeveel penalty-kaarten je te zien krijgt na een Collapse. */
 	public static final int OFFER_COUNT = 3;
 
-	/** Aantal geslaagde expedities waarna een stack van een penalty verdwijnt. */
-	public static final int PENALTY_RUNS = 3;
+	/**
+	 * Zoveel seconden duurt een stack van een penalty (10 minuten). De klok loopt alleen als je
+	 * actief op expeditie bent in de Nether of End: niet in de Overworld en niet als je AFK staat.
+	 */
+	public static final int PENALTY_SECONDS = 600;
+
+	/** Na zoveel ticks zonder rondkijken of zonder Config.ACTIVE_MOVE blokken lopen telt een speler als AFK (15 seconden). */
+	public static final int IDLE_TICKS = 300;
+
+	/** Zoveel blokken moet je (horizontaal) verplaatsen om als actief te tellen. */
+	public static final double ACTIVE_MOVE = 2.0;
 
 	// --- Penalty-sterktes (per stack) ---
 

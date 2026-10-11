@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Penalty's die je kiest na een Dimensional Collapse of een dood in Nether/End.
  * Alles stackt: kies je dezelfde penalty nog een keer, dan telt hij dubbel.
- * "timed" penalty's: elke stack blijft Config.PENALTY_RUNS geslaagde expedities actief.
+ * "timed" penalty's: elke stack duurt Config.PENALTY_SECONDS actieve speeltijd in de Nether of End.
  * Niet-timed penalty's werken een keer.
  */
 public enum Penalty {
@@ -33,7 +33,7 @@ public enum Penalty {
 		this.id = id;
 		this.title = title;
 		this.timed = timed;
-		this.lines = new String[] {l1, l2, timed ? Config.PENALTY_RUNS + " runs, stacks" : "Once, stacks"};
+		this.lines = new String[] {l1, l2, timed ? (Config.PENALTY_SECONDS / 60) + " min in Nether/End" : "One time"};
 	}
 
 	public static Penalty byId(String id) {

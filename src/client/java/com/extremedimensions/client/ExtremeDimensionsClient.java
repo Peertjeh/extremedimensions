@@ -49,6 +49,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 					ClientState.longestRun = payload.longestRun();
 					ClientState.runSecs = payload.runSecs();
 					ClientState.penalties = payload.penalties();
+					ClientState.penaltyClock = payload.penaltyClock();
 					ClientState.syncMs = System.currentTimeMillis();
 				}));
 

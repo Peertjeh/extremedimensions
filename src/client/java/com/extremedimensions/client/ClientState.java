@@ -23,6 +23,8 @@ public final class ClientState {
 	public static int longestRun = 0;
 	public static int runSecs = 0;
 	public static String penalties = "";
+	/** 0 = penalty's lopen niet af, 1 = lopen af, 2 = gepauzeerd (AFK) */
+	public static int penaltyClock = 0;
 	public static long syncMs = 0;
 
 	public static String noticeText = "";
@@ -124,6 +126,7 @@ public final class ClientState {
 		longestRun = 0;
 		runSecs = 0;
 		penalties = "";
+		penaltyClock = 0;
 		noticeUntil = 0;
 		shownNether = 0;
 		shownEnd = 0;
@@ -154,7 +157,7 @@ public final class ClientState {
 		return 0;
 	}
 
-	/** Actieve penalty's als leesbare regels, bijv. "Scar x2 (1 run)". */
+	/** Actieve penalty's als leesbare regels, bijv. "Scar x2 (7:30)". */
 	public static List<String> penaltyLines() {
 		List<String> out = new ArrayList<>();
 		if (penalties == null || penalties.isEmpty()) {
@@ -165,8 +168,14 @@ public final class ClientState {
 			Penalty p = Penalty.byId(kv[0]);
 			String name = p != null ? p.title : kv[0];
 			String stacks = kv.length > 1 ? kv[1] : "1";
-			String runs = kv.length > 2 ? kv[2] : "?";
-			String when = "-1".equals(runs) ? "next run" : runs + ("1".equals(runs) ? " run" : " runs");
+			String secs = kv.length > 2 ? kv[2] : "0";
+			String when;
+			try {
+				int s = Integer.parseInt(secs);
+				when = s < 0 ? "next run" : time(s);
+			} catch (NumberFormatException e) {
+				when = "?";
+			}
 			out.add(name + ("1".equals(stacks) ? "" : " x" + stacks) + " (" + when + ")");
 		}
 		return out;

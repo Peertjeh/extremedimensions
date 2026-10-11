@@ -389,16 +389,17 @@ public final class ServerLogic {
 	static void sendState(ServerPlayer p, PlayerData d) {
 		int dimCode = NETHER.equals(d.dim) ? 1 : END.equals(d.dim) ? 2 : 0;
 		boolean overworld = OVERWORLD.equals(d.dim);
-		// id:stacks:runs (runs = runs tot de eerstvolgende stack verloopt, -1 = volgende expeditie)
+		// id:stacks:seconden (seconden tot de eerstvolgende stack verloopt, -1 = volgende expeditie)
 		StringBuilder pen = new StringBuilder();
-		for (Map.Entry<String, List<Integer>> e : d.penaltyStacks.entrySet()) {
+		for (Map.Entry<String, List<Double>> e : d.penaltyTime.entrySet()) {
 			if (e.getValue().isEmpty()) {
 				continue;
 			}
-			int min = Integer.MAX_VALUE;
-			for (int r : e.getValue()) {
-				min = Math.min(min, r);
+			double minSecs = Double.MAX_VALUE;
+			for (double r : e.getValue()) {
+				minSecs = Math.min(minSecs, r);
 			}
+			int min = (int) Math.ceil(minSecs);
 			if (pen.length() > 0) {
 				pen.append(';');
 			}
@@ -414,7 +415,7 @@ public final class ServerLogic {
 				overworld ? nearCharge(p, NETHER) : -1, overworld ? nearCharge(p, END) : -1,
 				d.inRun ? (int) Math.ceil(linkedCharge(d)) : 0, (int) Math.ceil(d.runMax), dimCode,
 				(int) Math.round(d.drainMultiplier() * 100), d.expeditions, d.collapses,
-				(int) d.longestRun, (int) d.runTime, pen.toString()));
+				(int) d.longestRun, (int) d.runTime, pen.toString(), d.penaltyClock));
 	}
 
 	static void sendOffer(ServerPlayer p, PlayerData d) {
@@ -499,12 +500,18 @@ public final class ServerLogic {
 				}
 			}
 
-			// 4) blijvende penalty-effecten bijhouden
+			// 4) penalty-klok: loopt alleen tijdens een expeditie in Nether/End en als je niet AFK bent
+			trackActivity(p, d);
+			if (tickPenalties(p, d, isCharged(dim) && d.inRun && !d.collapsing)) {
+				forceSync = true;
+			}
+
+			// 5) blijvende penalty-effecten bijhouden
 			if (refreshEffects) {
 				refreshEffects(p, d);
 			}
 
-			// 5) status naar de client
+			// 6) status naar de client
 			if (forceSync || ++d.tickCounter % Config.SYNC_INTERVAL_TICKS == 0) {
 				sendState(p, d);
 			}
@@ -514,6 +521,79 @@ public final class ServerLogic {
 			altarTick = 0;
 			tickAltars(s);
 		}
+	}
+
+	/** Houdt bij wanneer de speler voor het laatst rondkeek en een stukje liep. */
+	private static void trackActivity(ServerPlayer p, PlayerData d) {
+		d.ticksSinceLook++;
+		d.ticksSinceMove++;
+		float yaw = p.getYRot();
+		float pitch = p.getXRot();
+		if (Math.abs(yaw - d.lastYaw) > 2.0f || Math.abs(pitch - d.lastPitch) > 2.0f) {
+			d.ticksSinceLook = 0;
+			d.lastYaw = yaw;
+			d.lastPitch = pitch;
+		}
+		double dx = p.getX() - d.anchorX;
+		double dz = p.getZ() - d.anchorZ;
+		if (dx * dx + dz * dz >= Config.ACTIVE_MOVE * Config.ACTIVE_MOVE) {
+			d.ticksSinceMove = 0;
+			d.anchorX = p.getX();
+			d.anchorZ = p.getZ();
+		}
+	}
+
+	/**
+	 * Laat de penalty-stacks aftellen als de speler actief op expeditie is.
+	 * Rondkijken alleen (muis-macro) of alleen bewegen (waterstroom) is niet genoeg: het moet allebei.
+	 * Geeft true terug als er iets veranderde dat de client meteen moet weten.
+	 */
+	private static boolean tickPenalties(ServerPlayer p, PlayerData d, boolean onExpedition) {
+		int before = d.penaltyClock;
+		if (d.penaltyTime.isEmpty() || !onExpedition) {
+			d.penaltyClock = 0;
+			return before != d.penaltyClock;
+		}
+		boolean active = d.ticksSinceLook < Config.IDLE_TICKS && d.ticksSinceMove < Config.IDLE_TICKS;
+		d.penaltyClock = active ? 1 : 2;
+		if (!active) {
+			if (before == 1) {
+				notice(p, "Penalties paused: you are idle.", ORANGE);
+			}
+			return before != d.penaltyClock;
+		}
+
+		List<String> worn = new ArrayList<>();
+		Iterator<Map.Entry<String, List<Double>>> it = d.penaltyTime.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry<String, List<Double>> e = it.next();
+			List<Double> left = new ArrayList<>();
+			for (double secs : e.getValue()) {
+				double rest = secs - 1.0 / 20.0;
+				if (rest > 0) {
+					left.add(rest);
+				} else {
+					worn.add(e.getKey());
+				}
+			}
+			e.setValue(left);
+			if (left.isEmpty()) {
+				it.remove();
+			}
+		}
+		if (worn.isEmpty()) {
+			return before != d.penaltyClock;
+		}
+		applyPenaltyEffects(p, d);
+		for (String id : worn) {
+			Penalty pen = Penalty.byId(id);
+			String name = pen != null ? pen.title : id;
+			int still = pen != null ? d.stacks(pen) : 0;
+			notice(p, still > 0 ? name + " weakened (x" + still + " left)" : name + " wore off!", GREEN);
+		}
+		sound(p, "minecraft:block.amethyst_block.chime", 1.0f, 1.2f);
+		particles(p, "minecraft:happy_villager", 1.0, 0.5, 0.1, 15);
+		return true;
 	}
 
 	private static void startRun(ServerPlayer p, PlayerData d, String dim) {
@@ -609,7 +689,20 @@ public final class ServerLogic {
 				continue;
 			}
 			// Weggeblazen of anders verdwenen? Dan is het altaar weg.
-			if (!isAltarBlock(ow.getBlockState(pos))) {
+			BlockState state = ow.getBlockState(pos);
+			if (!isAltarBlock(state)) {
+				it.remove();
+				continue;
+			}
+			// Leeg: weer een gewone Lodestone, klaar om opnieuw aan een dimensie gebonden te worden.
+			if (a.charge <= 0) {
+				if (!state.is(Blocks.LODESTONE)) {
+					ow.setBlock(pos, Blocks.LODESTONE.defaultBlockState(), 3, 512);
+				}
+				particleAt("minecraft:large_smoke", a.x + 0.5, a.y + 1.0, a.z + 0.5, 0.3, 0.2, 0.3, 0.02, 12);
+				particleAt("minecraft:ash", a.x + 0.5, a.y + 1.0, a.z + 0.5, 0.4, 0.4, 0.4, 0.0, 20);
+				run(String.format(Locale.ROOT, "execute in minecraft:overworld run playsound minecraft:block.respawn_anchor.deplete block @a %d %d %d 1 0.8",
+						a.x, a.y, a.z));
 				it.remove();
 				continue;
 			}
@@ -752,35 +845,10 @@ public final class ServerLogic {
 		d.longestRun = Math.max(d.longestRun, d.runTime);
 		d.runTime = 0;
 
-		// Elke stack telt een geslaagde run af
-		int expired = 0;
-		Iterator<Map.Entry<String, List<Integer>>> it = d.penaltyStacks.entrySet().iterator();
-		while (it.hasNext()) {
-			List<Integer> runs = it.next().getValue();
-			List<Integer> left = new ArrayList<>();
-			for (int r : runs) {
-				if (r - 1 > 0) {
-					left.add(r - 1);
-				} else {
-					expired++;
-				}
-			}
-			runs.clear();
-			runs.addAll(left);
-			if (runs.isEmpty()) {
-				it.remove();
-			}
-		}
-		applyPenaltyEffects(p, d);
-
-		fx(p, Fx.SAFE, expired);
+		fx(p, Fx.SAFE, 0);
 		particles(p, "minecraft:totem_of_undying", 1.0, 0.5, 0.35, 40);
 		sound(p, "minecraft:entity.player.levelup", 0.9f, 0.9f);
-		if (expired == 0) {
-			notice(p, "Safely back in the Overworld!", GREEN);
-		} else {
-			notice(p, "Safely back! " + expired + (expired == 1 ? " penalty expired." : " penalties expired."), GREEN);
-		}
+		notice(p, "Safely back in the Overworld!", GREEN);
 		DataStore.save();
 	}
 

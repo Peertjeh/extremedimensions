@@ -15,8 +15,8 @@ public class PlayerData {
 	public int expeditions = 0;
 	public int collapses = 0;
 	public double longestRun = 0;
-	/** penalty-id -> per stack de resterende geslaagde runs */
-	public Map<String, List<Integer>> penaltyStacks = new HashMap<>();
+	/** penalty-id -> per stack de resterende actieve seconden */
+	public Map<String, List<Double>> penaltyTime = new HashMap<>();
 	/** penalty-id's die nu op het keuzescherm liggen (leeg = niets te kiezen) */
 	public List<String> pendingOffer = new ArrayList<>();
 	/** Hoeveel penalty's de speler nog moet kiezen (na meerdere doden achter elkaar). */
@@ -44,13 +44,21 @@ public class PlayerData {
 	/** Gewoon doodgegaan in Nether/End (niet door de tijd): grote melding bij respawn. */
 	public transient String endedIn = null;
 
+	// AFK-detectie: penalty's lopen alleen af als je rondkijkt en rondloopt
+	public transient float lastYaw, lastPitch;
+	public transient double anchorX, anchorZ;
+	public transient int ticksSinceLook = Integer.MAX_VALUE / 2;
+	public transient int ticksSinceMove = Integer.MAX_VALUE / 2;
+	/** 0 = geen penalty-klok, 1 = penalty's lopen af, 2 = gepauzeerd (AFK) */
+	public transient int penaltyClock = 0;
+
 	public int stacks(Penalty p) {
-		List<Integer> l = penaltyStacks.get(p.id);
+		List<Double> l = penaltyTime.get(p.id);
 		return l == null ? 0 : l.size();
 	}
 
 	public void addStack(Penalty p) {
-		penaltyStacks.computeIfAbsent(p.id, k -> new ArrayList<>()).add(Config.PENALTY_RUNS);
+		penaltyTime.computeIfAbsent(p.id, k -> new ArrayList<>()).add((double) Config.PENALTY_SECONDS);
 	}
 
 	public double drainMultiplier() {

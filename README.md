@@ -38,6 +38,8 @@ Vervangen? Overschrijf `src/client/resources/assets/extremedimensions/textures/g
 - **Een altaar is een tank voor een dimensie.** De eerste lading bepaalt het type: de Lodestone verandert in een
   **Ember Lodestone** (Nether) of **Void Lodestone** (End) en accepteert daarna alleen nog die brandstof.
   Kapotmaken geeft een gewone Lodestone terug; de charge is dan weg.
+- **Leeg altaar**: is de charge op, dan wordt het weer een gewone Lodestone (met rook en geluid) en kun je het
+  opnieuw aan de Nether of de End binden.
 - **Meerdere altaren** bij hetzelfde portaal tellen bij elkaar op. Max 30 minuten per altaar.
 - **HUD linksboven**: alleen zichtbaar binnen 10 blokken van een geladen altaar (som van alle altaren in de buurt).
 - **Deeltjes**: geladen altaren gloeien (vuur of portaaldeeltjes), hoe voller hoe meer. Een stroom deeltjes zoekt
@@ -53,7 +55,7 @@ Vervangen? Overschrijf `src/client/resources/assets/extremedimensions/textures/g
 - Gewoon doodgaan in Nether/End: grote melding **EXPEDITION ENDED**, de altaren van je expeditie lopen leeg en je
   kiest een penalty. Doodgaan in de Overworld geeft (nog) geen straf.
 - In singleplayer staat de timer stil als je het spel pauzeert.
-- Veilig terug in de Overworld = expeditie geslaagd (penalty's tellen af).
+- Veilig terug in de Overworld = expeditie geslaagd.
 - **Elke wereld heeft zijn eigen voortgang** (opgeslagen in `extremedimensions.json` in de wereldmap).
 - Alle teksten in het spel zijn Engels.
 - Alles aanpasbaar in `ChargeItems.java` en `Config.java`.
@@ -86,7 +88,9 @@ Rechtermuisklik op het altaar met een Tether in je hand: +10 minuten Charge in e
 ## Penalty's (kies 1 uit 3 willekeurige)
 
 Na een Collapse of een dood in Nether/End. **Alles stackt**: kies je dezelfde penalty opnieuw, dan telt hij dubbel.
-Penalty's met een duur blijven per stack 3 geslaagde expedities actief.
+Penalty's met een duur blijven per stack **10 minuten actieve speeltijd in de Nether of End**. De klok loopt alleen
+tijdens een expeditie en alleen als je echt speelt: wie 15 seconden niet rondkijkt of geen 2 blokken loopt, telt als
+AFK en de klok pauzeert ("Penalties paused: you are idle!" linksboven). In de Overworld loopt de klok niet.
 
 | Penalty | Effect (per stack) |
 |---|---|

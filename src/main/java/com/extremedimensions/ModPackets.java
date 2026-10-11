@@ -12,9 +12,11 @@ public final class ModPackets {
 	 * Server -> client: de volledige status van de speler (voor HUD en statusscherm).
 	 * nearNether/nearEnd: charge van geladen altaren in de buurt, -1 = geen altaar in de buurt.
 	 * runCharge/runMax: charge van de lopende expeditie en de charge waarmee hij begon.
+	 * penaltyClock: 0 = penalty's lopen niet af, 1 = lopen af, 2 = gepauzeerd (AFK).
 	 */
 	public record StatePayload(int nearNether, int nearEnd, int runCharge, int runMax, int dimCode, int drainX100,
-							int expeditions, int collapses, int longestRun, int runSecs, String penalties) implements CustomPacketPayload {
+							int expeditions, int collapses, int longestRun, int runSecs, String penalties,
+							int penaltyClock) implements CustomPacketPayload {
 		public static final Type<StatePayload> TYPE = new Type<>(ExtremeDimensions.id("state"));
 		public static final StreamCodec<FriendlyByteBuf, StatePayload> CODEC = StreamCodec.ofMember(StatePayload::write, StatePayload::read);
 
@@ -30,11 +32,13 @@ public final class ModPackets {
 			buf.writeVarInt(longestRun);
 			buf.writeVarInt(runSecs);
 			buf.writeUtf(penalties);
+			buf.writeVarInt(penaltyClock);
 		}
 
 		private static StatePayload read(FriendlyByteBuf buf) {
 			return new StatePayload(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
-					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf());
+					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(),
+					buf.readVarInt());
 		}
 
 		@Override

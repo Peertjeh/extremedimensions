@@ -54,8 +54,16 @@ public class ChargeHud implements HudElement {
 			drawMini(g, font, 6, my, "End", ClientState.shownEnd, END_COLOR, ClientState.endFlashAt, ClientState.endGain, ClientState.endGainAt, now);
 			my += 16;
 		}
-		if (my > 6) {
+		boolean beyond = ClientState.dimCode != 0;
+		if (my > 6 || beyond) {
 			int py = my + 2;
+			if (beyond && ClientState.penaltyClock != 0) {
+				boolean paused = ClientState.penaltyClock == 2;
+				boolean blink = paused && (now / 500) % 2 == 0;
+				g.text(font, paused ? "Penalties paused: you are idle!" : "Penalties wearing off...", 6, py,
+						ClientState.argb(255, paused ? (blink ? 0xFF5555 : 0xFFAA00) : 0x88DD88));
+				py += 12;
+			}
 			for (String line : ClientState.penaltyLines()) {
 				double pulse = ClientState.penaltyAt > 0 ? ClientState.clamp01(1 - (now - ClientState.penaltyAt) / 1200.0) : 0;
 				g.text(font, line, 6, py, ClientState.argb(255, pulse > 0 ? 0xFFDD66 : 0xFFAA00));
