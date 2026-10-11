@@ -71,5 +71,42 @@ public final class TitleArt {
 		// Lichte verduistering zodat knoppen leesbaar blijven
 		g.fill(0, 0, sw, sh, ClientState.argb(56, 0x000000));
 		g.fill(0, sh - sh / 3, sw, sh, ClientState.argb(48, 0x000000));
+
+		drawQuote(g, sw, sh);
+	}
+
+	/** Wisselende cryptische citaten onder het logo. Niemand weet wie ze schreef. */
+	private static final String[] QUOTES = {
+			"The Tether knows.",
+			"Every portal is a wound. Every wound remembers.",
+			"They did not die. They were woven.",
+			"Feed the anchor, or they will feed on you.",
+			"Your warmth is borrowed.",
+			"Gold does not buy mercy. Only time.",
+			"Do not linger where the dead are hungry.",
+			"Something guards the silence of the Weavers.",
+			"Hold fast. Let go, and you are theirs.",
+			"The tall ones were travelers once.",
+			"Count the seconds. They are counting too.",
+			"It does not speak. It does not need to.",
+			"Older than the mountains. Hungrier than the void.",
+			"An anchor too far from the wound is only a stone.",
+	};
+	private static final double QUOTE_SECONDS = 9.0;
+
+	private static void drawQuote(GuiGraphicsExtractor g, int sw, int sh) {
+		net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft.getInstance().font;
+		double t = System.currentTimeMillis() / 1000.0;
+		int idx = (int) (t / QUOTE_SECONDS) % QUOTES.length;
+		double phase = (t % QUOTE_SECONDS) / QUOTE_SECONDS;
+		// in- en uitfaden, met een korte flikkering bij het verschijnen
+		double alpha = Math.min(1.0, Math.min(phase / 0.12, (1 - phase) / 0.12));
+		if (phase < 0.15 && ClientState.hash((long) (t * 20)) < 0.25) {
+			alpha *= 0.4;
+		}
+		String q = "\"" + QUOTES[idx] + "\"";
+		int y = Math.min(sh / 4 + 34, 96);
+		g.centeredText(font, q, sw / 2 + 1, y + 1, ClientState.argb((int) (160 * alpha), 0x000000));
+		g.centeredText(font, q, sw / 2, y, ClientState.argb((int) (230 * alpha), 0x9FE8F2));
 	}
 }

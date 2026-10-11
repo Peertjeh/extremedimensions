@@ -2,8 +2,10 @@ package com.extremedimensions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Alle gegevens van een speler. Velden zonder "transient" worden opgeslagen in JSON.
@@ -25,6 +27,10 @@ public class PlayerData {
 	public List<String> linked = new ArrayList<>();
 	/** Charge bij de start van de expeditie (voor de vulling van de timerbalk). */
 	public double runMax = 0;
+	/** Ontgrendelde pagina's van het Tether Journal. */
+	public Set<String> journal = new LinkedHashSet<>();
+	/** Of de speler zijn eerste Tether Journal al kreeg. */
+	public boolean journalGiven = false;
 
 	// --- alleen tijdens het spelen ---
 	public transient String dim = "overworld";

@@ -16,7 +16,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 /** Na een Collapse: kies 1 uit 3 penalty's. Kaarten schuiven in, lichten op bij hover, de keuze flitst. */
 public class PenaltyChoiceScreen extends Screen {
 	private static final int CARD_W = 130;
-	private static final int CARD_H = 120;
+	private static final int CARD_H = 150;
 	private static final int GAP = 14;
 
 	private final List<Penalty> options = new ArrayList<>();
@@ -147,6 +147,11 @@ public class PenaltyChoiceScreen extends Screen {
 			int active = ClientState.stacksOf(pen.id);
 			if (active > 0) {
 				g.centeredText(this.font, "Active: x" + active + " -> x" + (active + 1), x + CARD_W / 2, ly + 2, ClientState.argb((int) (255 * fade), 0xFF5555));
+			}
+			int loreY = top + 86;
+			for (String line : JournalScreen.wrap(this.font, pen.lore, CARD_W - 14)) {
+				g.centeredText(this.font, line, x + CARD_W / 2, loreY, ClientState.argb((int) (200 * fade), 0x8FA8C8));
+				loreY += 10;
 			}
 		}
 	}

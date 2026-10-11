@@ -1,8 +1,10 @@
 {
   "item.extremedimensions.ember_tether": "Ember Tether",
   "item.extremedimensions.void_tether": "Void Tether",
-  "block.extremedimensions.ember_lodestone": "Ember Lodestone",
-  "block.extremedimensions.void_lodestone": "Void Lodestone",
+  "block.extremedimensions.ember_lodestone": "Ember Anchor",
+  "block.extremedimensions.void_lodestone": "Void Anchor",
   "subtitles.extremedimensions.penalty": "Penalty sealed",
-  "subtitles.extremedimensions.expedition_ended": "Expedition ended"
+  "subtitles.extremedimensions.expedition_ended": "Expedition ended",
+  "item.extremedimensions.tether_journal": "Tether Journal",
+  "item.extremedimensions.tether_fragment": "Tether Fragment"
 }

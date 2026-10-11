@@ -14,11 +14,19 @@ public final class ModItems {
 	private ModItems() {}
 
 	public static final Item EMBER_TETHER = register("ember_tether");
-	public static final Item VOID_TETHER = register("void_tether");
+	public static final Item VOID_TETHER = register("void_tether", 64);
+	/** Het dagboek van een Wanderer; vult zich naarmate je verder komt. */
+	public static final Item TETHER_JOURNAL = register("tether_journal", 1);
+	/** Een losgerafeld stukje van de Tether zelf. Aan een altaar geofferd haalt het een penalty-stack weg. */
+	public static final Item TETHER_FRAGMENT = register("tether_fragment", 16);
 
 	private static Item register(String id) {
+		return register(id, 64);
+	}
+
+	private static Item register(String id, int maxStack) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, ExtremeDimensions.id(id));
-		return Registry.register(BuiltInRegistries.ITEM, key, new Item(new Item.Properties().setId(key)));
+		return Registry.register(BuiltInRegistries.ITEM, key, new Item(new Item.Properties().stacksTo(maxStack).setId(key)));
 	}
 
 	/** Alleen aanroepen om de klasse (en dus de registratie) te laden. */

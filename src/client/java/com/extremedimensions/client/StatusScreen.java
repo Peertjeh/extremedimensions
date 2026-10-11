@@ -14,7 +14,7 @@ public class StatusScreen extends Screen {
 	private final long openAt = System.currentTimeMillis();
 
 	public StatusScreen() {
-		super(Component.literal("Altar"));
+		super(Component.literal("Anchor"));
 	}
 
 	@Override
@@ -41,10 +41,10 @@ public class StatusScreen extends Screen {
 		double pulse = 0.5 + 0.5 * Math.sin(now / 600.0);
 		g.fill(x - 1, y - 1, x + PANEL_W + 1, y + PANEL_H + 1, ClientState.argb(pa, pulse > 0.5 ? 0x6A4FB0 : 0x4A3A7A));
 		g.fill(x, y, x + PANEL_W, y + PANEL_H, ClientState.argb((int) (240 * pe), 0x121218));
-		g.centeredText(this.font, "DIMENSION ALTAR", cx, y + 8, ClientState.argb(pa, 0xFFFFFF));
+		g.centeredText(this.font, "DIMENSION ANCHOR", cx, y + 8, ClientState.argb(pa, 0xFFFFFF));
 
-		bar(g, x + 14, y + 28, "Nether altars nearby", ClientState.nearNether, e, 0xFF7A1A, pa);
-		bar(g, x + 14, y + 58, "End altars nearby", ClientState.nearEnd, e, 0xB66BFF, pa);
+		bar(g, x + 14, y + 28, "Nether anchors nearby", ClientState.nearNether, e, 0xFF7A1A, pa);
+		bar(g, x + 14, y + 58, "End anchors nearby", ClientState.nearEnd, e, 0xB66BFF, pa);
 
 		int ty = y + 92;
 		int c = ClientState.argb(pa, 0xCCCCCC);

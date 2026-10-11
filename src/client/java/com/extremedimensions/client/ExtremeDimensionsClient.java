@@ -68,6 +68,11 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 					mc.gui.setScreen(new PenaltyChoiceScreen(Arrays.asList(payload.ids().split(","))));
 				}));
 
+		// Tether Journal
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenJournalPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(new JournalScreen(
+						new java.util.HashSet<>(Arrays.asList(payload.ids().split(",")))))));
+
 		// Statusscherm (altaar)
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenStatusPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(new StatusScreen())));

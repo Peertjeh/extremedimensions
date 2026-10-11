@@ -17,8 +17,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -28,6 +31,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
@@ -81,6 +85,9 @@ public final class ServerLogic {
 
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if (!(entity instanceof ServerPlayer p)) {
+				if (source.getEntity() instanceof ServerPlayer killer) {
+					onMobKilled(killer, entity);
+				}
 				return;
 			}
 			PlayerData d = DataStore.get(p.getUUID());
@@ -92,12 +99,13 @@ public final class ServerLogic {
 					for (Altar a : linkedAltars(d)) {
 						a.charge = 0;
 					}
-					d.respawnNotice = "The altars feeding your expedition ran dry.";
+					d.respawnNotice = "The anchors feeding your expedition ran dry.";
 				}
 				d.inRun = false;
 				d.linked.clear();
 				d.endedIn = dimName(dim);
 				owePenalty(d);
+				unlock(p, d, JournalEntry.ENDED);
 				DataStore.save();
 			}
 		});
@@ -117,6 +125,16 @@ public final class ServerLogic {
 				return status || isFuel(held.getItem()) ? InteractionResult.SUCCESS : InteractionResult.PASS;
 			}
 			return useAltar(sp, pos);
+		});
+
+		UseItemCallback.EVENT.register((player, level, hand) -> {
+			if (player instanceof ServerPlayer sp && player.getItemInHand(hand).is(ModItems.TETHER_JOURNAL)) {
+				PlayerData d = DataStore.get(sp.getUUID());
+				ServerPlayNetworking.send(sp, new ModPackets.OpenJournalPayload(String.join(",", d.journal)));
+				soundSelf(sp, "minecraft:item.book.page_turn", 1.0f, 0.9f);
+				return InteractionResult.SUCCESS;
+			}
+			return InteractionResult.PASS;
 		});
 
 		PlayerBlockBreakEvents.AFTER.register((level, player, pos, state, blockEntity) -> {
@@ -145,7 +163,7 @@ public final class ServerLogic {
 	}
 
 	static boolean isFuel(Item item) {
-		return item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER
+		return item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER || item == ModItems.TETHER_FRAGMENT
 				|| ChargeItems.NETHER.containsKey(item) || ChargeItems.END.containsKey(item);
 	}
 
@@ -424,6 +442,54 @@ public final class ServerLogic {
 		}
 	}
 
+	/** Ontgrendelt een pagina in het Tether Journal (een keer per speler). */
+	static void unlock(ServerPlayer p, PlayerData d, JournalEntry e) {
+		if (!d.journal.add(e.id)) {
+			return;
+		}
+		run("title " + p.getStringUUID() + " actionbar {\"text\":\"New journal page: " + e.title + "\",\"color\":\"light_purple\",\"italic\":true}");
+		soundSelf(p, "minecraft:item.book.page_turn", 1.0f, 0.7f);
+		soundSelf(p, "minecraft:block.sculk_shrieker.shriek", 0.15f, 1.6f);
+	}
+
+	/** Een speler doodde een mob: kans op een Tether Fragment in Nether/End, en lore voor Endermen. */
+	private static void onMobKilled(ServerPlayer killer, net.minecraft.world.entity.LivingEntity mob) {
+		PlayerData d = DataStore.get(killer.getUUID());
+		if (mob.getType() == EntityType.ENDERMAN) {
+			unlock(killer, d, JournalEntry.UNANCHORED);
+		}
+		String dim = mob.level().dimension().identifier().getPath();
+		if (!isCharged(dim) || !(mob instanceof Enemy)) {
+			return;
+		}
+		EntityType<?> t = mob.getType();
+		boolean elite = t == EntityType.WITHER_SKELETON || t == EntityType.ENDERMAN || t == EntityType.BLAZE
+				|| t == EntityType.GHAST || t == EntityType.SHULKER;
+		double chance = elite ? Config.FRAGMENT_CHANCE_ELITE : Config.FRAGMENT_CHANCE;
+		if (ThreadLocalRandom.current().nextDouble() >= chance) {
+			return;
+		}
+		String where = mob.level().dimension().identifier().toString();
+		String pos = String.format(Locale.ROOT, "%.2f %.2f %.2f", mob.getX(), mob.getY() + 0.5, mob.getZ());
+		run("execute in " + where + " run summon minecraft:item " + pos + " {Item:{id:\"extremedimensions:tether_fragment\",count:1}}");
+		run("execute in " + where + " run particle minecraft:soul " + pos + " 0.3 0.4 0.3 0.04 25 normal");
+		run("execute in " + where + " run playsound minecraft:particle.soul_escape master @a " + pos + " 1.5 0.7");
+		unlock(killer, d, JournalEntry.FRAGMENT);
+	}
+
+	/** De Leeching: onder Config.LEECH_SECONDS zuigen de Starved zichtbaar zielen uit je. */
+	private static void leech(ServerPlayer p, double secsLeft) {
+		double k = 1.0 - secsLeft / Config.LEECH_SECONDS; // 0 -> 1
+		int n = 2 + (int) Math.round(k * 10);
+		particles(p, "minecraft:sculk_soul", 1.0, 0.5, 0.03, n);
+		if (k > 0.5) {
+			particles(p, "minecraft:soul", 0.8, 0.8, 0.02, n / 2);
+		}
+		if (ThreadLocalRandom.current().nextDouble() < 0.15 + k * 0.35) {
+			soundSelf(p, "minecraft:particle.soul_escape", 0.6f + (float) k * 0.6f, 0.6f + (float) k * 0.3f);
+		}
+	}
+
 	/** De speler moet (nog) een penalty kiezen. */
 	static void owePenalty(PlayerData d) {
 		d.pendingPenalties++;
@@ -488,6 +554,9 @@ public final class ServerLogic {
 				} else {
 					int secsLeft = (int) Math.ceil(cur);
 					warn(p, d, secsLeft);
+					if (cur < Config.LEECH_SECONDS && d.tickCounter % 10 == 0) {
+						leech(p, cur);
+					}
 					if (secsLeft <= 10 && secsLeft != d.lastBeat) {
 						d.lastBeat = secsLeft;
 						sound(p, "minecraft:entity.warden.heartbeat", 1.3f, 1.0f + (10 - secsLeft) * 0.04f);
@@ -506,9 +575,12 @@ public final class ServerLogic {
 				forceSync = true;
 			}
 
-			// 5) blijvende penalty-effecten bijhouden
+			// 5) blijvende penalty-effecten bijhouden (en af en toe kijken of je in de Deep Dark staat)
 			if (refreshEffects) {
 				refreshEffects(p, d);
+				if (p.level().getBiome(p.blockPosition()).is(Biomes.DEEP_DARK)) {
+					unlock(p, d, JournalEntry.WEAVERS);
+				}
 			}
 
 			// 6) status naar de client
@@ -619,7 +691,7 @@ public final class ServerLogic {
 				a.charge *= keep;
 			}
 			total = linkedCharge(d);
-			notice(p, "Leaky Tank: your altars lost " + Math.round((1 - keep) * 100) + "% of their charge.", ORANGE);
+			notice(p, "Leaky Tank: your anchors lost " + Math.round((1 - keep) * 100) + "% of their charge.", ORANGE);
 			d.leakStacks = 0;
 		}
 		d.inRun = true;
@@ -628,6 +700,7 @@ public final class ServerLogic {
 		d.lastWarn = Integer.MAX_VALUE;
 		d.lastBeat = Integer.MAX_VALUE;
 		fx(p, NETHER.equals(dim) ? Fx.START_NETHER : Fx.START_END, 0);
+		unlock(p, d, NETHER.equals(dim) ? JournalEntry.EMBER_DEEP : JournalEntry.PALE_VOID);
 		if (NETHER.equals(dim)) {
 			particles(p, "minecraft:flame", 1.0, 0.6, 0.06, 60);
 			sound(p, "minecraft:block.respawn_anchor.charge", 1.0f, 0.8f);
@@ -724,7 +797,7 @@ public final class ServerLogic {
 		double r2 = (Config.HUD_RANGE * 2) * (Config.HUD_RANGE * 2);
 		for (ServerPlayer p : players) {
 			if (a.distSq(p.getX(), p.getY(), p.getZ()) <= r2) {
-				notice(p, "A " + dimName(a.type) + " altar lost its path to the portal. It is leaking charge!", RED);
+				notice(p, "A " + dimName(a.type) + " anchor lost its path to the portal. It is leaking charge!", RED);
 			}
 		}
 	}
@@ -815,7 +888,7 @@ public final class ServerLogic {
 		d.inRun = false;
 		d.grace = Config.BOUNCE_GRACE_TICKS;
 		String portal = NETHER.equals(dim) ? "Nether Portal" : "End Portal";
-		notice(p, "The portal is dormant. Charge a " + dimName(dim) + " altar next to this " + portal + ".", ORANGE);
+		notice(p, "The portal is dormant. Charge a " + dimName(dim) + " anchor next to this " + portal + ".", ORANGE);
 		fx(p, Fx.BOUNCE, 0);
 		particles(p, "minecraft:poof", 1.0, 0.4, 0.05, 30);
 		sound(p, "minecraft:entity.villager.no", 1.0f, 0.7f);
@@ -849,6 +922,10 @@ public final class ServerLogic {
 		particles(p, "minecraft:totem_of_undying", 1.0, 0.5, 0.35, 40);
 		sound(p, "minecraft:entity.player.levelup", 0.9f, 0.9f);
 		notice(p, "Safely back in the Overworld!", GREEN);
+		unlock(p, d, JournalEntry.WOUND);
+		if (d.expeditions >= 5) {
+			unlock(p, d, JournalEntry.HABIT);
+		}
 		DataStore.save();
 	}
 
@@ -857,6 +934,7 @@ public final class ServerLogic {
 		d.collapseRetry = 0;
 		d.collapses++;
 		owePenalty(d);
+		unlock(p, d, JournalEntry.STARVED);
 		notice(p, "DIMENSIONAL COLLAPSE", RED);
 		fx(p, Fx.COLLAPSE, 0);
 		particles(p, "minecraft:explosion", 1.0, 0.8, 0.0, 6);
@@ -913,6 +991,11 @@ public final class ServerLogic {
 			d.offerDelay = 40;
 		}
 		applyPenaltyEffects(p, d);
+		if (!d.journalGiven) {
+			d.journalGiven = true;
+			run("give " + p.getStringUUID() + " extremedimensions:tether_journal");
+			d.journal.add(JournalEntry.TETHERED.id);
+		}
 		sendState(p, d);
 	}
 
@@ -938,6 +1021,9 @@ public final class ServerLogic {
 		}
 
 		Item item = stack.getItem();
+		if (item == ModItems.TETHER_FRAGMENT) {
+			return mend(p, d, pos, stack);
+		}
 		boolean tether = item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER;
 		String type;
 		if (item == ModItems.EMBER_TETHER || ChargeItems.NETHER.containsKey(item)) {
@@ -950,7 +1036,7 @@ public final class ServerLogic {
 		String name = dimName(type);
 
 		if (!OVERWORLD.equals(dimOf(p))) {
-			notice(p, "Altars only work in the Overworld.", ORANGE);
+			notice(p, "Anchors only work in the Overworld.", ORANGE);
 			return InteractionResult.SUCCESS;
 		}
 		ServerLevel level = (ServerLevel) p.level();
@@ -958,19 +1044,19 @@ public final class ServerLogic {
 		String key = Altar.key(pos.getX(), pos.getY(), pos.getZ());
 		Altar altar = DataStore.altars().get(key);
 		if (altar != null && !type.equals(altar.type)) {
-			notice(p, "This altar is bound to the " + dimName(altar.type) + ". It only accepts " + dimName(altar.type) + " fuel.", ORANGE);
+			notice(p, "This anchor is bound to the " + dimName(altar.type) + ". It only accepts " + dimName(altar.type) + " fuel.", ORANGE);
 			return InteractionResult.SUCCESS;
 		}
 		if (findPortal(level, pos, type) == null) {
 			String portal = NETHER.equals(type) ? "a Nether Portal" : "an End Portal";
-			notice(p, "An altar must be within " + Config.PORTAL_RANGE + " blocks of " + portal + ".", ORANGE);
+			notice(p, "An anchor must be within " + Config.PORTAL_RANGE + " blocks of " + portal + ".", ORANGE);
 			return InteractionResult.SUCCESS;
 		}
 
 		double current = altar != null ? altar.charge : 0;
 		double space = Config.MAX_CHARGE - current;
 		if (space < 1) {
-			notice(p, "This " + name + " altar is full.", ORANGE);
+			notice(p, "This " + name + " anchor is full.", ORANGE);
 			return InteractionResult.SUCCESS;
 		}
 
@@ -993,11 +1079,15 @@ public final class ServerLogic {
 			level.setBlock(pos, (nether ? ModBlocks.EMBER_LODESTONE : ModBlocks.VOID_LODESTONE).defaultBlockState(), 3, 512);
 			sound(p, "minecraft:item.lodestone_compass.lock", 1.0f, 0.8f);
 			sound(p, "minecraft:block.beacon.activate", 0.8f, nether ? 0.8f : 1.2f);
+			unlock(p, d, JournalEntry.ANCHOR);
 		}
 		altar.charge += added;
+		if (Config.MAX_CHARGE - altar.charge < 1) {
+			unlock(p, d, JournalEntry.SILENCE);
+		}
 		altar.portalCheck = 0;
 
-		notice(p, "+" + fmt(added) + " " + name + " Charge  (altar: " + fmt(altar.charge) + ")", AQUA);
+		notice(p, "+" + fmt(added) + " " + name + " Charge  (anchor: " + fmt(altar.charge) + ")", AQUA);
 		fx(p, nether ? Fx.DEPOSIT_NETHER : Fx.DEPOSIT_END, (int) Math.round(added));
 		double ax = pos.getX() + 0.5;
 		double ay = pos.getY() + 1.0;
@@ -1006,6 +1096,53 @@ public final class ServerLogic {
 		particleAt("minecraft:enchant", ax, ay + 0.5, az, 0.6, 0.6, 0.6, 0.4, tether ? 50 : 25);
 		sound(p, nether ? "minecraft:block.respawn_anchor.charge" : "minecraft:block.end_portal_frame.fill", 0.8f, tether ? 1.0f : 1.2f);
 		sendState(p, d);
+		return InteractionResult.SUCCESS;
+	}
+
+	/** Een Tether Fragment offeren aan een anker: de langst lopende penalty-stack verdwijnt. */
+	private static InteractionResult mend(ServerPlayer p, PlayerData d, BlockPos pos, ItemStack stack) {
+		String bestId = null;
+		int bestIdx = -1;
+		double bestSecs = -1;
+		for (Map.Entry<String, List<Double>> e : d.penaltyTime.entrySet()) {
+			for (int i = 0; i < e.getValue().size(); i++) {
+				if (e.getValue().get(i) > bestSecs) {
+					bestSecs = e.getValue().get(i);
+					bestId = e.getKey();
+					bestIdx = i;
+				}
+			}
+		}
+		String mended;
+		if (bestId != null) {
+			List<Double> l = d.penaltyTime.get(bestId);
+			l.remove(bestIdx);
+			if (l.isEmpty()) {
+				d.penaltyTime.remove(bestId);
+			}
+			Penalty pen = Penalty.byId(bestId);
+			mended = pen != null ? pen.title : bestId;
+			applyPenaltyEffects(p, d);
+		} else if (d.leakStacks > 0) {
+			d.leakStacks--;
+			mended = Penalty.LEAKY_TANK.title;
+		} else {
+			notice(p, "The Tether has nothing to mend in you.", ORANGE);
+			return InteractionResult.SUCCESS;
+		}
+		stack.shrink(1);
+		notice(p, "The fragment mends you: " + mended + " fades.", AQUA);
+		double ax = pos.getX() + 0.5;
+		double ay = pos.getY() + 1.0;
+		double az = pos.getZ() + 0.5;
+		particleAt("minecraft:soul_fire_flame", ax, ay, az, 0.3, 0.5, 0.3, 0.03, 30);
+		particleAt("minecraft:sculk_soul", ax, ay + 0.5, az, 0.5, 0.5, 0.5, 0.05, 20);
+		particles(p, "minecraft:soul", 1.0, 0.4, 0.05, 20);
+		sound(p, "minecraft:block.sculk_catalyst.bloom", 1.0f, 0.8f);
+		sound(p, "minecraft:block.beacon.power_select", 0.7f, 1.4f);
+		unlock(p, d, JournalEntry.MENDING);
+		sendState(p, d);
+		DataStore.save();
 		return InteractionResult.SUCCESS;
 	}
 
@@ -1052,6 +1189,7 @@ public final class ServerLogic {
 		particles(p, "minecraft:soul", 1.0, 0.5, 0.05, 25);
 		particles(p, "minecraft:sculk_soul", 1.2, 0.6, 0.03, 12);
 		soundSelf(p, "extremedimensions:penalty", 1.0f, 1.0f);
+		unlock(p, d, JournalEntry.SCARS);
 
 		// Nog meer penalty's tegoed (meerdere keren dood)? Dan volgt het volgende scherm.
 		if (d.pendingPenalties > 0) {

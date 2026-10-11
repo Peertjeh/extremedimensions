@@ -124,6 +124,25 @@ public final class ModPackets {
 		}
 	}
 
+	/** Server -> client: open het Tether Journal met deze ontgrendelde pagina's (komma-gescheiden). */
+	public record OpenJournalPayload(String ids) implements CustomPacketPayload {
+		public static final Type<OpenJournalPayload> TYPE = new Type<>(ExtremeDimensions.id("open_journal"));
+		public static final StreamCodec<FriendlyByteBuf, OpenJournalPayload> CODEC = StreamCodec.ofMember(OpenJournalPayload::write, OpenJournalPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(ids);
+		}
+
+		private static OpenJournalPayload read(FriendlyByteBuf buf) {
+			return new OpenJournalPayload(buf.readUtf());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
 	/** Client -> server: de gekozen penalty. */
 	public record ChoosePayload(String id) implements CustomPacketPayload {
 		public static final Type<ChoosePayload> TYPE = new Type<>(ExtremeDimensions.id("choose"));

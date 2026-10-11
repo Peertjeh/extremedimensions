@@ -28,6 +28,7 @@ public class ExtremeDimensions implements ModInitializer {
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.OfferPayload.TYPE, ModPackets.OfferPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.OpenStatusPayload.TYPE, ModPackets.OpenStatusPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.FxPayload.TYPE, ModPackets.FxPayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.OpenJournalPayload.TYPE, ModPackets.OpenJournalPayload.CODEC);
 		// Pakketten registreren (client -> server)
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.ChoosePayload.TYPE, ModPackets.ChoosePayload.CODEC);
 

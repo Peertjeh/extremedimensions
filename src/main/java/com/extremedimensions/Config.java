@@ -78,6 +78,15 @@ public final class Config {
 	/** Ticks na het respawnen voordat het penalty-scherm opent (zodat je de melding ziet). */
 	public static final int OFFER_DELAY_TICKS = 70;
 
+	/** Kans dat een vijandige mob in Nether/End een Tether Fragment laat vallen (gedood door een speler). */
+	public static final double FRAGMENT_CHANCE = 0.04;
+
+	/** Kans voor Wither Skeletons, Endermen, Blazes, Ghasts en Shulkers. */
+	public static final double FRAGMENT_CHANCE_ELITE = 0.12;
+
+	/** Onder zoveel seconden charge begint de Leeching: zielen zuigen zichtbaar aan je. */
+	public static final double LEECH_SECONDS = 60.0;
+
 	/** Ticks wachten voor een nieuwe poort-check na een bounce. */
 	public static final int BOUNCE_GRACE_TICKS = 40;
 }

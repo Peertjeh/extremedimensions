@@ -30,6 +30,23 @@ De afbeelding `The_Tether.png` staat als achtergrond van het Minecraft-titelsche
 Vervangen? Overschrijf `src/client/resources/assets/extremedimensions/textures/gui/title.png` en pas
 `IMG_W` en `IMG_H` in `TitleArt.java` aan op de nieuwe afmetingen.
 
+## Lore
+
+> *The Tether knows.*
+
+De Tether is een eeuwenoude binding, geweven uit zielen, die alles wat leeft aan de Overworld vasthoudt.
+Buiten de Overworld zwerven de **Starved**: zielen die levenswarmte leegzuigen. Portals zijn **Wounds**, lodestones
+worden **Anchors** (Ember Anchor / Void Anchor) die je via de wond voeden. De rest vertelt het spel niet: dat ontdek je.
+
+- **Tether Journal**: krijg je bij je eerste keer inloggen (kwijt? Book + Amethyst Shard). Bevat 14 pagina's van een
+  naamloze Wanderer die je ontgrendelt door te spelen: je eerste anchor, de Nether, de End, een Collapse, de Deep Dark,
+  een Enderman doden, een volle anchor, en meer. Rechtermuisklik om te lezen.
+- **Tether Fragment**: vijandige mobs in Nether/End laten soms een fragment vallen (4%, sterke mobs 12%).
+  Rechtermuisklik ermee op een anchor: je langst lopende penalty-stack verdwijnt.
+- **De Leeching**: onder 60 seconden charge zie en hoor je de zielen aan je trekken, steeds heftiger.
+- **Titelscherm**: wisselende cryptische citaten onder het logo.
+- **Strafkaarten**: elke straf heeft een eigen regel lore.
+
 ## Hoe het werkt
 
 - **Altaar** = een **Lodestone in de Overworld, binnen 5 blokken van een portaal**
