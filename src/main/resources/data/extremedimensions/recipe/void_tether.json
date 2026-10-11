@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "minecraft:ender_pearl",
+    "E": "minecraft:ender_eye",
+    "L": "minecraft:lodestone"
+  },
+  "pattern": [
+    "PEP",
+    "ELE",
+    "PEP"
+  ],
+  "result": {
+    "id": "extremedimensions:void_tether",
+    "count": 1
+  }
+}

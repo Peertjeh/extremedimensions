@@ -1,0 +1,27 @@
+{
+	"schemaVersion": 1,
+	"id": "extremedimensions",
+	"version": "${version}",
+	"name": "Extreme Dimensions",
+	"description": "Nether Charge & End Charge: dimensies zijn expedities met een tijdlimiet. Tijd op = Dimensional Collapse, je respawnt in de Overworld en kiest een penalty. Nooit uit het spel gegooid.",
+	"authors": [
+		"Jij & vrienden"
+	],
+	"license": "CC0-1.0",
+	"icon": "assets/extremedimensions/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.extremedimensions.ExtremeDimensions"
+		],
+		"client": [
+			"com.extremedimensions.client.ExtremeDimensionsClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
