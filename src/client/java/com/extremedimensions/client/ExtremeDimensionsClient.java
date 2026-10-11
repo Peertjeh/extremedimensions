@@ -44,7 +44,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 
 		// Animaties van de server
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.FxPayload.TYPE, (payload, context) ->
-				context.client().execute(() -> ClientState.onFx(payload.type(), payload.value())));
+				context.client().execute(() -> ClientState.onFx(payload.kind(), payload.value())));
 
 		// Meldingen
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.NoticePayload.TYPE, (payload, context) ->
