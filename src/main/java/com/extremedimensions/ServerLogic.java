@@ -89,15 +89,18 @@ public final class ServerLogic {
 		});
 
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
-			if (!(player instanceof ServerPlayer sp)) {
-				return InteractionResult.PASS;
-			}
 			if (hand != InteractionHand.MAIN_HAND) {
 				return InteractionResult.PASS;
 			}
 			BlockPos pos = hit.getBlockPos();
 			if (!isAltarBlock(level.getBlockState(pos))) {
 				return InteractionResult.PASS;
+			}
+			if (!(player instanceof ServerPlayer sp)) {
+				// Client: niet het blok in je hand tegen het altaar plaatsen, de server handelt het af.
+				ItemStack held = player.getMainHandItem();
+				boolean status = held.isEmpty() && player.isShiftKeyDown();
+				return status || isFuel(held.getItem()) ? InteractionResult.SUCCESS : InteractionResult.PASS;
 			}
 			return useAltar(sp, pos);
 		});
@@ -125,6 +128,11 @@ public final class ServerLogic {
 
 	static boolean isAltarBlock(BlockState s) {
 		return s.is(Blocks.LODESTONE) || s.is(ModBlocks.EMBER_LODESTONE) || s.is(ModBlocks.VOID_LODESTONE);
+	}
+
+	static boolean isFuel(Item item) {
+		return item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER
+				|| ChargeItems.NETHER.containsKey(item) || ChargeItems.END.containsKey(item);
 	}
 
 	static boolean isPortalFor(BlockState s, String type) {
@@ -420,6 +428,9 @@ public final class ServerLogic {
 				continue;
 			}
 			BlockPos pos = new BlockPos(a.x, a.y, a.z);
+			if (!ow.isLoaded(pos)) {
+				continue;
+			}
 			// Weggeblazen of anders verdwenen? Dan is het altaar weg.
 			if (!isAltarBlock(ow.getBlockState(pos))) {
 				it.remove();
