@@ -2,5 +2,7 @@
   "item.extremedimensions.ember_tether": "Ember Tether",
   "item.extremedimensions.void_tether": "Void Tether",
   "block.extremedimensions.ember_lodestone": "Ember Lodestone",
-  "block.extremedimensions.void_lodestone": "Void Lodestone"
+  "block.extremedimensions.void_lodestone": "Void Lodestone",
+  "subtitles.extremedimensions.penalty": "Penalty sealed",
+  "subtitles.extremedimensions.expedition_ended": "Expedition ended"
 }

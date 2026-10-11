@@ -1,10 +1,14 @@
 package com.extremedimensions;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 import net.minecraft.core.BlockPos;
@@ -34,7 +38,8 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
  * Een altaar is een Lodestone in de Overworld binnen Config.PORTAL_RANGE blokken van een portaal.
  * De eerste lading bepaalt het type (Nether of End) en verandert het blok in een
  * Ember Lodestone of Void Lodestone. Ga je door het portaal, dan voeden de altaren
- * rond dat portaal je expeditie.
+ * rond dat portaal je expeditie. Een altaar heeft een vrije weg door de lucht naar het
+ * portaal nodig; is die geblokkeerd, dan lekt het charge.
  */
 public final class ServerLogic {
 	private ServerLogic() {}
@@ -49,9 +54,12 @@ public final class ServerLogic {
 	private static final int GREEN = 0xFF55FF55;
 	private static final int AQUA = 0xFF55FFFF;
 
+	private static final int[][] DIRS = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
+
 	private static MinecraftServer server;
 	private static int saveCounter = 0;
 	private static int altarTick = 0;
+	private static int effectTick = 0;
 
 	// ------------------------------------------------------------------ registratie
 
@@ -77,14 +85,20 @@ public final class ServerLogic {
 			}
 			PlayerData d = DataStore.get(p.getUUID());
 			String dim = entity.level().dimension().identifier().getPath();
-			// Normaal doodgaan in Nether/End (geen Collapse): de altaren van je expeditie lopen leeg.
-			if (isCharged(dim) && d.inRun && !d.collapsing) {
-				for (Altar a : linkedAltars(d)) {
-					a.charge = 0;
+			// Gewoon doodgaan in Nether/End (geen Collapse): expeditie voorbij, altaren leeg en een penalty.
+			// In de Overworld (nog) geen straf.
+			if (isCharged(dim) && !d.collapsing) {
+				if (d.inRun) {
+					for (Altar a : linkedAltars(d)) {
+						a.charge = 0;
+					}
+					d.respawnNotice = "The altars feeding your expedition ran dry.";
 				}
 				d.inRun = false;
 				d.linked.clear();
-				d.respawnNotice = "You died in the " + dimName(dim) + ": the altars feeding your expedition ran dry.";
+				d.endedIn = dimName(dim);
+				owePenalty(d);
+				DataStore.save();
 			}
 		});
 
@@ -163,6 +177,111 @@ public final class ServerLogic {
 			}
 		}
 		return best;
+	}
+
+	/** Kunnen deeltjes door dit blok heen? Lucht en blokken zonder botsvorm (fakkels, gras), geen vloeistof. */
+	static boolean passable(ServerLevel level, BlockPos pos) {
+		BlockState s = level.getBlockState(pos);
+		if (s.isAir()) {
+			return true;
+		}
+		return !s.liquid() && s.getCollisionShape(level, pos).isEmpty();
+	}
+
+	/**
+	 * Zoekt een vrije weg door de lucht van het altaar naar het midden van zijn portaal.
+	 * Geeft de punten van de weg terug, of een lege lijst als er geen portaal of geen vrije weg is.
+	 */
+	static List<double[]> findPath(ServerLevel level, Altar a) {
+		List<double[]> out = new ArrayList<>();
+		BlockPos start = new BlockPos(a.x, a.y, a.z);
+		BlockPos portal = findPortal(level, start, a.type);
+		if (portal == null) {
+			return out;
+		}
+
+		// Alle portaalblokken die bij dit portaal horen (ook schuin, voor de ring van End Portal Frames)
+		Set<Long> portalSet = new HashSet<>();
+		ArrayDeque<BlockPos> queue = new ArrayDeque<>();
+		portalSet.add(portal.asLong());
+		queue.add(portal);
+		double sx = 0, sy = 0, sz = 0;
+		int count = 0;
+		while (!queue.isEmpty() && count < 160) {
+			BlockPos c = queue.poll();
+			sx += c.getX();
+			sy += c.getY();
+			sz += c.getZ();
+			count++;
+			for (int dx = -1; dx <= 1; dx++) {
+				for (int dy = -1; dy <= 1; dy++) {
+					for (int dz = -1; dz <= 1; dz++) {
+						BlockPos n = c.offset(dx, dy, dz);
+						if (!portalSet.contains(n.asLong()) && isPortalFor(level.getBlockState(n), a.type)) {
+							portalSet.add(n.asLong());
+							queue.add(n);
+						}
+					}
+				}
+			}
+		}
+		double cx = sx / count + 0.5;
+		double cy = sy / count + 0.5;
+		double cz = sz / count + 0.5;
+
+		// Breadth-first search door vrije blokken, tot naast (of in) het portaal
+		int limit = Config.PORTAL_RANGE + 3;
+		Map<Long, Long> parent = new HashMap<>();
+		ArrayDeque<BlockPos> open = new ArrayDeque<>();
+		parent.put(start.asLong(), Long.MIN_VALUE);
+		open.add(start);
+		BlockPos goal = null;
+		while (!open.isEmpty() && goal == null) {
+			BlockPos c = open.poll();
+			for (int[] dir : DIRS) {
+				BlockPos n = c.offset(dir[0], dir[1], dir[2]);
+				long key = n.asLong();
+				if (parent.containsKey(key)
+						|| Math.abs(n.getX() - a.x) > limit || Math.abs(n.getY() - a.y) > limit || Math.abs(n.getZ() - a.z) > limit) {
+					continue;
+				}
+				boolean inPortal = portalSet.contains(key);
+				if (!inPortal && !passable(level, n)) {
+					continue;
+				}
+				parent.put(key, c.asLong());
+				if (inPortal || touchesPortal(n, portalSet)) {
+					goal = n;
+					break;
+				}
+				open.add(n);
+			}
+		}
+		if (goal == null) {
+			return out;
+		}
+
+		List<double[]> rev = new ArrayList<>();
+		long k = goal.asLong();
+		while (k != Long.MIN_VALUE) {
+			BlockPos b = BlockPos.of(k);
+			rev.add(new double[] {b.getX() + 0.5, b.getY() + 0.5, b.getZ() + 0.5});
+			k = parent.get(k);
+		}
+		for (int i = rev.size() - 1; i >= 0; i--) {
+			out.add(rev.get(i));
+		}
+		out.add(new double[] {cx, cy, cz});
+		return out;
+	}
+
+	private static boolean touchesPortal(BlockPos p, Set<Long> portalSet) {
+		for (int[] dir : DIRS) {
+			if (portalSet.contains(p.offset(dir[0], dir[1], dir[2]).asLong())) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	static List<Altar> linkedAltars(PlayerData d) {
@@ -250,19 +369,46 @@ public final class ServerLogic {
 		at(p, String.format(Locale.ROOT, "playsound %s master @a ~ ~ ~ %.2f %.2f", id, vol, pitch));
 	}
 
+	/** Alleen voor deze speler hoorbaar. */
+	static void soundSelf(ServerPlayer p, String id, float vol, float pitch) {
+		at(p, String.format(Locale.ROOT, "playsound %s master %s ~ ~ ~ %.2f %.2f", id, p.getStringUUID(), vol, pitch));
+	}
+
 	static void notice(ServerPlayer p, String text, int color) {
 		ServerPlayNetworking.send(p, new ModPackets.NoticePayload(text, color));
+	}
+
+	/** Grote tekst midden in beeld (vanilla /title). */
+	static void title(ServerPlayer p, String title, String color, String subtitle) {
+		String u = p.getStringUUID();
+		run("title " + u + " times 10 70 25");
+		run("title " + u + " subtitle {\"text\":\"" + subtitle + "\",\"color\":\"gray\"}");
+		run("title " + u + " title {\"text\":\"" + title + "\",\"color\":\"" + color + "\",\"bold\":true}");
 	}
 
 	static void sendState(ServerPlayer p, PlayerData d) {
 		int dimCode = NETHER.equals(d.dim) ? 1 : END.equals(d.dim) ? 2 : 0;
 		boolean overworld = OVERWORLD.equals(d.dim);
+		// id:stacks:runs (runs = runs tot de eerstvolgende stack verloopt, -1 = volgende expeditie)
 		StringBuilder pen = new StringBuilder();
-		for (Map.Entry<String, Integer> e : d.penalties.entrySet()) {
+		for (Map.Entry<String, List<Integer>> e : d.penaltyStacks.entrySet()) {
+			if (e.getValue().isEmpty()) {
+				continue;
+			}
+			int min = Integer.MAX_VALUE;
+			for (int r : e.getValue()) {
+				min = Math.min(min, r);
+			}
 			if (pen.length() > 0) {
 				pen.append(';');
 			}
-			pen.append(e.getKey()).append(':').append(e.getValue());
+			pen.append(e.getKey()).append(':').append(e.getValue().size()).append(':').append(min);
+		}
+		if (d.leakStacks > 0) {
+			if (pen.length() > 0) {
+				pen.append(';');
+			}
+			pen.append(Penalty.LEAKY_TANK.id).append(':').append(d.leakStacks).append(":-1");
 		}
 		ServerPlayNetworking.send(p, new ModPackets.StatePayload(
 				overworld ? nearCharge(p, NETHER) : -1, overworld ? nearCharge(p, END) : -1,
@@ -277,12 +423,24 @@ public final class ServerLogic {
 		}
 	}
 
+	/** De speler moet (nog) een penalty kiezen. */
+	static void owePenalty(PlayerData d) {
+		d.pendingPenalties++;
+		if (d.pendingOffer.isEmpty()) {
+			d.pendingOffer = Penalty.rollOffer();
+		}
+	}
+
 	// ------------------------------------------------------------------ tick
 
 	private static void tick(MinecraftServer s) {
 		if (++saveCounter >= 6000) { // elke 5 minuten
 			saveCounter = 0;
 			DataStore.save();
+		}
+		boolean refreshEffects = ++effectTick >= 100; // elke 5 seconden
+		if (refreshEffects) {
+			effectTick = 0;
 		}
 
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
@@ -292,6 +450,10 @@ public final class ServerLogic {
 
 			if (d.grace > 0) {
 				d.grace--;
+			}
+			if (d.offerDelay > 0 && --d.offerDelay == 0) {
+				d.offerDelay = -1;
+				sendOffer(p, d);
 			}
 
 			// 1) dimensiewissel afhandelen
@@ -304,6 +466,7 @@ public final class ServerLogic {
 				} else if (OVERWORLD.equals(dim) && isCharged(from) && d.inRun && !d.collapsing) {
 					completeRun(p, d);
 				}
+				refreshEffects(p, d);
 			}
 
 			// 2) laatste Overworld-positie onthouden (poort-blokkade en welke altaren meedoen)
@@ -336,7 +499,12 @@ public final class ServerLogic {
 				}
 			}
 
-			// 4) status naar de client
+			// 4) blijvende penalty-effecten bijhouden
+			if (refreshEffects) {
+				refreshEffects(p, d);
+			}
+
+			// 5) status naar de client
 			if (forceSync || ++d.tickCounter % Config.SYNC_INTERVAL_TICKS == 0) {
 				sendState(p, d);
 			}
@@ -349,12 +517,12 @@ public final class ServerLogic {
 	}
 
 	private static void startRun(ServerPlayer p, PlayerData d, String dim) {
-		// Altaren van dit type rond het portaal waar je doorheen ging
+		// Werkende altaren van dit type rond het portaal waar je doorheen ging
 		d.linked.clear();
 		if (d.hasLast) {
 			double r2 = Config.LINK_RANGE * Config.LINK_RANGE;
 			for (Altar a : DataStore.altars().values()) {
-				if (dim.equals(a.type) && a.charge > 0 && a.distSq(d.lastX, d.lastY, d.lastZ) <= r2) {
+				if (dim.equals(a.type) && a.charge > 0 && !a.blocked && a.distSq(d.lastX, d.lastY, d.lastZ) <= r2) {
 					d.linked.add(a.key());
 				}
 			}
@@ -365,13 +533,14 @@ public final class ServerLogic {
 			bounce(p, d, dim);
 			return;
 		}
-		if (d.leakPending) {
-			d.leakPending = false;
+		if (d.leakStacks > 0) {
+			double keep = Math.pow(1.0 - Config.LEAK_FRACTION, d.leakStacks);
 			for (Altar a : linkedAltars(d)) {
-				a.charge *= (1.0 - Config.LEAK_FRACTION);
+				a.charge *= keep;
 			}
 			total = linkedCharge(d);
-			notice(p, "Leaky Tank: your altars lost " + Math.round(Config.LEAK_FRACTION * 100) + "% of their charge.", ORANGE);
+			notice(p, "Leaky Tank: your altars lost " + Math.round((1 - keep) * 100) + "% of their charge.", ORANGE);
+			d.leakStacks = 0;
 		}
 		d.inRun = true;
 		d.runTime = 0;
@@ -400,9 +569,17 @@ public final class ServerLogic {
 		}
 	}
 
-	// ------------------------------------------------------------------ altaren: onderhoud en deeltjes
+	// ------------------------------------------------------------------ altaren: onderhoud, lekken en deeltjes
 
 	private static void tickAltars(MinecraftServer s) {
+		// Geblokkeerde altaren lekken charge, ook als er niemand in de buurt is
+		double leak = Config.BLOCKED_LEAK_PER_SECOND * 0.5; // elke 10 ticks
+		for (Altar a : DataStore.altars().values()) {
+			if (a.blocked && a.charge > 0) {
+				a.charge = Math.max(0, a.charge - leak);
+			}
+		}
+
 		ServerLevel ow = s.overworld();
 		List<ServerPlayer> watchers = new ArrayList<>();
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
@@ -438,15 +615,24 @@ public final class ServerLogic {
 			}
 			if (--a.portalCheck <= 0) {
 				a.portalCheck = 4; // elke 2 seconden
-				BlockPos portal = findPortal(ow, pos, a.type);
-				a.hasPortal = portal != null;
-				if (portal != null) {
-					a.px = portal.getX();
-					a.py = portal.getY();
-					a.pz = portal.getZ();
+				a.path = findPath(ow, a);
+				boolean nowBlocked = a.path.isEmpty();
+				if (nowBlocked && !a.blocked && a.checked && a.charge > 0) {
+					warnBlocked(watchers, a);
 				}
+				a.blocked = nowBlocked;
+				a.checked = true;
 			}
 			altarParticles(a);
+		}
+	}
+
+	private static void warnBlocked(List<ServerPlayer> players, Altar a) {
+		double r2 = (Config.HUD_RANGE * 2) * (Config.HUD_RANGE * 2);
+		for (ServerPlayer p : players) {
+			if (a.distSq(p.getX(), p.getY(), p.getZ()) <= r2) {
+				notice(p, "A " + dimName(a.type) + " altar lost its path to the portal. It is leaking charge!", RED);
+			}
 		}
 	}
 
@@ -492,32 +678,46 @@ public final class ServerLogic {
 			}
 		}
 
-		// Lek naar het portaal toe
-		if (a.hasPortal) {
-			double tx = a.px + 0.5 - cx;
-			double ty = a.py + 0.5 - cy;
-			double tz = a.pz + 0.5 - cz;
-			int streams = 1 + (int) Math.round(fill * 3);
-			for (int i = 0; i < streams; i++) {
-				double ox = (rnd.nextDouble() - 0.5) * 0.4;
-				double oz = (rnd.nextDouble() - 0.5) * 0.4;
-				if (nether) {
-					// count 0: (tx, ty, tz) is de richting, speed bepaalt hoe ver het deeltje vliegt
-					particleAt("minecraft:flame", cx + ox, cy + 0.5, cz + oz, tx, ty, tz, 0.11, 0);
-				} else {
-					particleAt("minecraft:end_rod", cx + ox, cy + 0.5, cz + oz, tx, ty, tz, 0.08, 0);
-				}
-				// stilstaand spoor langs de lijn
+		if (a.blocked) {
+			// Geen weg naar het portaal: geen stroom, wel rook omdat het altaar leegloopt
+			particleAt("minecraft:large_smoke", cx, cy + 0.7, cz, 0.15, 0.1, 0.15, 0.01, 1 + (int) Math.round(fill * 2));
+			return;
+		}
+
+		// Stroom langs de vrije weg naar het midden van het portaal
+		List<double[]> path = a.path;
+		if (path.size() < 2) {
+			return;
+		}
+		int streams = 2 + (int) Math.round(fill * 6);
+		for (int i = 0; i < streams; i++) {
+			int seg = rnd.nextInt(path.size() - 1);
+			double[] p0 = path.get(seg);
+			double[] p1 = path.get(seg + 1);
+			double dx = p1[0] - p0[0];
+			double dy = p1[1] - p0[1];
+			double dz = p1[2] - p0[2];
+			double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+			if (len < 1e-6) {
+				continue;
+			}
+			double jx = (rnd.nextDouble() - 0.5) * 0.2;
+			double jy = (rnd.nextDouble() - 0.5) * 0.2;
+			double jz = (rnd.nextDouble() - 0.5) * 0.2;
+			// count 0: (dx, dy, dz) is de richting; de snelheid is zo gekozen dat een deeltje ongeveer een blok vliegt
+			particleAt(nether ? "minecraft:flame" : "minecraft:end_rod", p0[0] + jx, p0[1] + jy, p0[2] + jz,
+					dx / len, dy / len, dz / len, nether ? 0.06 : 0.08, 0);
+			if (rnd.nextInt(2) == 0) {
 				double t = rnd.nextDouble();
 				particleAt(nether ? "minecraft:small_flame" : "minecraft:reverse_portal",
-						cx + tx * t, cy + 0.3 + ty * t, cz + tz * t, 0.05, 0.05, 0.05, 0.0, 1);
+						p0[0] + dx * t, p0[1] + dy * t, p0[2] + dz * t, 0.04, 0.04, 0.04, 0.0, 1);
 			}
 		}
 	}
 
 	// ------------------------------------------------------------------ poort-blokkade
 
-	/** Je ging een dimensie in zonder geladen altaar bij het portaal: de poort is slapend, we sturen je terug. */
+	/** Je ging een dimensie in zonder werkend altaar bij het portaal: de poort is slapend, we sturen je terug. */
 	private static void bounce(ServerPlayer p, PlayerData d, String dim) {
 		d.inRun = false;
 		d.grace = Config.BOUNCE_GRACE_TICKS;
@@ -543,7 +743,7 @@ public final class ServerLogic {
 				sp.getX(), sp.getZ(), p.getStringUUID()));
 	}
 
-	// ------------------------------------------------------------------ expeditie klaar / Collapse
+	// ------------------------------------------------------------------ expeditie klaar / Collapse / dood
 
 	private static void completeRun(ServerPlayer p, PlayerData d) {
 		d.inRun = false;
@@ -552,28 +752,34 @@ public final class ServerLogic {
 		d.longestRun = Math.max(d.longestRun, d.runTime);
 		d.runTime = 0;
 
-		List<String> expired = new ArrayList<>();
-		for (Map.Entry<String, Integer> e : new ArrayList<>(d.penalties.entrySet())) {
-			int left = e.getValue() - 1;
-			if (left <= 0) {
-				expired.add(e.getKey());
-			} else {
-				d.penalties.put(e.getKey(), left);
+		// Elke stack telt een geslaagde run af
+		int expired = 0;
+		Iterator<Map.Entry<String, List<Integer>>> it = d.penaltyStacks.entrySet().iterator();
+		while (it.hasNext()) {
+			List<Integer> runs = it.next().getValue();
+			List<Integer> left = new ArrayList<>();
+			for (int r : runs) {
+				if (r - 1 > 0) {
+					left.add(r - 1);
+				} else {
+					expired++;
+				}
+			}
+			runs.clear();
+			runs.addAll(left);
+			if (runs.isEmpty()) {
+				it.remove();
 			}
 		}
-		for (String id : expired) {
-			d.penalties.remove(id);
-			if (Penalty.SCAR.id.equals(id)) {
-				removeScar(p);
-			}
-		}
-		fx(p, Fx.SAFE, expired.size());
+		applyPenaltyEffects(p, d);
+
+		fx(p, Fx.SAFE, expired);
 		particles(p, "minecraft:totem_of_undying", 1.0, 0.5, 0.35, 40);
 		sound(p, "minecraft:entity.player.levelup", 0.9f, 0.9f);
-		if (expired.isEmpty()) {
+		if (expired == 0) {
 			notice(p, "Safely back in the Overworld!", GREEN);
 		} else {
-			notice(p, "Safely back! " + expired.size() + (expired.size() == 1 ? " penalty expired." : " penalties expired."), GREEN);
+			notice(p, "Safely back! " + expired + (expired == 1 ? " penalty expired." : " penalties expired."), GREEN);
 		}
 		DataStore.save();
 	}
@@ -582,7 +788,7 @@ public final class ServerLogic {
 		d.collapsing = true;
 		d.collapseRetry = 0;
 		d.collapses++;
-		d.pendingOffer = Penalty.rollOffer();
+		owePenalty(d);
 		notice(p, "DIMENSIONAL COLLAPSE", RED);
 		fx(p, Fx.COLLAPSE, 0);
 		particles(p, "minecraft:explosion", 1.0, 0.8, 0.0, 6);
@@ -606,16 +812,23 @@ public final class ServerLogic {
 			d.inRun = false;
 			d.linked.clear();
 			d.runTime = 0;
-			if (d.has(Penalty.SCAR)) {
-				applyScar(newPlayer);
+			applyPenaltyEffects(newPlayer, d);
+			if (d.endedIn != null) {
+				title(newPlayer, "EXPEDITION ENDED", "dark_red", "You died in the " + d.endedIn);
+				fx(newPlayer, Fx.ENDED, 0);
+				soundSelf(newPlayer, "extremedimensions:expedition_ended", 1.0f, 1.0f);
+				d.endedIn = null;
+			} else {
+				sound(newPlayer, "minecraft:block.beacon.deactivate", 1.0f, 0.8f);
 			}
 			if (d.respawnNotice != null) {
 				notice(newPlayer, d.respawnNotice, ORANGE);
 				d.respawnNotice = null;
 			}
-			sendOffer(newPlayer, d);
+			if (!d.pendingOffer.isEmpty()) {
+				d.offerDelay = Config.OFFER_DELAY_TICKS;
+			}
 			particles(newPlayer, "minecraft:reverse_portal", 1.0, 0.6, 0.15, 60);
-			sound(newPlayer, "minecraft:block.beacon.deactivate", 1.0f, 0.8f);
 		}
 		sendState(newPlayer, d);
 	}
@@ -627,11 +840,12 @@ public final class ServerLogic {
 		d.collapseRetry = 0;
 		d.inRun = isCharged(d.dim) && !d.linked.isEmpty();
 		d.lastWarn = Integer.MAX_VALUE;
-		if (d.has(Penalty.SCAR)) {
-			applyScar(p);
+		if (!d.pendingOffer.isEmpty()) {
+			d.pendingPenalties = Math.max(1, d.pendingPenalties);
+			d.offerDelay = 40;
 		}
+		applyPenaltyEffects(p, d);
 		sendState(p, d);
-		sendOffer(p, d);
 	}
 
 	// ------------------------------------------------------------------ altaar
@@ -694,13 +908,10 @@ public final class ServerLogic {
 
 		double added;
 		if (tether) {
-			added = Math.min(space, Config.TETHER_ITEM_CHARGE * (d.has(Penalty.DEBT) ? Config.DEBT_FACTOR : 1.0));
+			added = Math.min(space, Config.TETHER_ITEM_CHARGE * d.debtFactor());
 			stack.shrink(1);
 		} else {
-			double per = (NETHER.equals(type) ? ChargeItems.NETHER : ChargeItems.END).get(item);
-			if (d.has(Penalty.DEBT)) {
-				per *= Config.DEBT_FACTOR;
-			}
+			double per = (NETHER.equals(type) ? ChargeItems.NETHER : ChargeItems.END).get(item) * d.debtFactor();
 			int n = (int) Math.min(stack.getCount(), Math.ceil(space / per));
 			added = Math.min(space, n * per);
 			stack.shrink(n);
@@ -742,35 +953,86 @@ public final class ServerLogic {
 			return;
 		}
 		d.pendingOffer.clear();
+		d.pendingPenalties = Math.max(0, d.pendingPenalties - 1);
 
-		switch (pen) {
-			case ACCELERATED_DRAIN, DEBT -> d.penalties.put(pen.id, Config.PENALTY_RUNS);
-			case SCAR -> {
-				d.penalties.put(pen.id, Config.PENALTY_RUNS);
-				applyScar(p);
-			}
-			case LEAKY_TANK -> d.leakPending = true;
-			case MOURNING -> {
-				String u = p.getStringUUID();
-				run("effect give " + u + " minecraft:weakness 300 0 true");
-				run("effect give " + u + " minecraft:hunger 300 1 true");
+		String u = p.getStringUUID();
+		if (pen.timed) {
+			d.addStack(pen);
+			applyPenaltyEffects(p, d);
+		} else {
+			switch (pen) {
+				case LEAKY_TANK -> d.leakStacks++;
+				case MOURNING -> {
+					int secs = Config.MOURNING_SECONDS;
+					run("effect give " + u + " minecraft:weakness " + secs + " 1 true");
+					run("effect give " + u + " minecraft:hunger " + secs + " 1 true");
+					run("effect give " + u + " minecraft:mining_fatigue " + secs + " 0 true");
+				}
+				case TOLL -> {
+					int lose = (p.experienceLevel + 1) / 2;
+					if (lose > 0) {
+						p.giveExperienceLevels(-lose);
+					}
+				}
+				default -> { }
 			}
 		}
-		notice(p, "Penalty chosen: " + pen.title, ORANGE);
+
+		int stacks = pen.timed ? d.stacks(pen) : pen == Penalty.LEAKY_TANK ? d.leakStacks : 1;
+		notice(p, "Penalty: " + pen.title + (stacks > 1 ? " x" + stacks : ""), ORANGE);
 		fx(p, Fx.PENALTY, 0);
 		particles(p, "minecraft:soul", 1.0, 0.5, 0.05, 25);
-		sound(p, "minecraft:block.anvil.use", 0.8f, 0.7f);
+		particles(p, "minecraft:sculk_soul", 1.2, 0.6, 0.03, 12);
+		soundSelf(p, "extremedimensions:penalty", 1.0f, 1.0f);
+
+		// Nog meer penalty's tegoed (meerdere keren dood)? Dan volgt het volgende scherm.
+		if (d.pendingPenalties > 0) {
+			d.pendingOffer = Penalty.rollOffer();
+			d.offerDelay = 40;
+		}
 		sendState(p, d);
 		DataStore.save();
 	}
 
-	private static void applyScar(ServerPlayer p) {
-		String u = p.getStringUUID();
-		run("attribute " + u + " minecraft:max_health modifier remove extremedimensions:scar");
-		run("attribute " + u + " minecraft:max_health modifier add extremedimensions:scar -" + Config.SCAR_HEALTH + " add_value");
+	// ------------------------------------------------------------------ penalty-effecten
+
+	/** Zet alle attribuut-penalty's volgens het aantal stacks en ververst de effecten. */
+	static void applyPenaltyEffects(ServerPlayer p, PlayerData d) {
+		int scar = d.stacks(Penalty.SCAR);
+		setModifier(p, "minecraft:max_health", "scar", -Math.min(16.0, Config.SCAR_HEALTH * scar), "add_value");
+		setModifier(p, "minecraft:armor", "cracked_armor", -Config.CRACKED_ARMOR * d.stacks(Penalty.CRACKED_ARMOR), "add_value");
+		setModifier(p, "minecraft:movement_speed", "heavy_legs",
+				-(1 - Math.pow(1 - Config.HEAVY_LEGS, d.stacks(Penalty.HEAVY_LEGS))), "add_multiplied_total");
+		setModifier(p, "minecraft:block_break_speed", "clumsy_hands",
+				-(1 - Math.pow(1 - Config.CLUMSY_HANDS, d.stacks(Penalty.CLUMSY_HANDS))), "add_multiplied_total");
+		refreshEffects(p, d);
 	}
 
-	private static void removeScar(ServerPlayer p) {
-		run("attribute " + p.getStringUUID() + " minecraft:max_health modifier remove extremedimensions:scar");
+	private static void setModifier(ServerPlayer p, String attribute, String name, double value, String operation) {
+		String u = p.getStringUUID();
+		run("attribute " + u + " " + attribute + " modifier remove extremedimensions:" + name);
+		if (value != 0) {
+			run(String.format(Locale.ROOT, "attribute %s %s modifier add extremedimensions:%s %.4f %s", u, attribute, name, value, operation));
+		}
+	}
+
+	/** Blijvende effecten (Frailty, Famine, Shadowed): steeds kort opnieuw geven, zodat ze vanzelf stoppen als de penalty verloopt. */
+	static void refreshEffects(ServerPlayer p, PlayerData d) {
+		String u = p.getStringUUID();
+		int frailty = d.stacks(Penalty.FRAILTY);
+		if (frailty > 0) {
+			run("effect give " + u + " minecraft:weakness 8 " + (frailty - 1) + " true");
+		}
+		int famine = d.stacks(Penalty.FAMINE);
+		if (famine > 0) {
+			run("effect give " + u + " minecraft:hunger 8 " + (famine - 1) + " true");
+		}
+		int shadowed = d.stacks(Penalty.SHADOWED);
+		if (shadowed > 0 && isCharged(dimOf(p))) {
+			run("effect give " + u + " minecraft:darkness 8 0 true");
+			if (shadowed >= 2) {
+				run("effect give " + u + " minecraft:slowness 8 " + (shadowed - 2) + " true");
+			}
+		}
 	}
 }

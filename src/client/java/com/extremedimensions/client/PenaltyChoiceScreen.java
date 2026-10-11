@@ -144,6 +144,10 @@ public class PenaltyChoiceScreen extends Screen {
 					ly += 12;
 				}
 			}
+			int active = ClientState.stacksOf(pen.id);
+			if (active > 0) {
+				g.centeredText(this.font, "Active: x" + active + " -> x" + (active + 1), x + CARD_W / 2, ly + 2, ClientState.argb((int) (255 * fade), 0xFF5555));
+			}
 		}
 	}
 

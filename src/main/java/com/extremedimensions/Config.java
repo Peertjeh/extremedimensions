@@ -16,20 +16,34 @@ public final class Config {
 	/** Hoeveel penalty-kaarten je te zien krijgt na een Collapse. */
 	public static final int OFFER_COUNT = 3;
 
-	/** Aantal geslaagde expedities waarna een penalty verdwijnt. */
-	public static final int PENALTY_RUNS = 2;
+	/** Aantal geslaagde expedities waarna een stack van een penalty verdwijnt. */
+	public static final int PENALTY_RUNS = 3;
 
-	/** Versnelde drain-penalty: x keer zo snel. */
-	public static final double ACCELERATED_DRAIN_FACTOR = 1.5;
+	// --- Penalty-sterktes (per stack) ---
 
-	/** Schuld-penalty: je krijgt maar dit deel van de charge uit items. */
-	public static final double DEBT_FACTOR = 0.75;
+	/** Versnelde drain: +75% drain per stack. */
+	public static final double ACCELERATED_DRAIN_PER_STACK = 0.75;
 
-	/** Lekkende tank: je verliest dit deel van je charge. */
-	public static final double LEAK_FRACTION = 0.30;
+	/** Schuld: altaar-brandstof levert per stack maar dit deel op (0.6 = 40% minder). */
+	public static final double DEBT_FACTOR = 0.60;
 
-	/** Litteken: aantal HP weg (4 = 2 hartjes). */
-	public static final double SCAR_HEALTH = 4.0;
+	/** Lekkende tank: per stack verliezen de altaren van je volgende expeditie dit deel. */
+	public static final double LEAK_FRACTION = 0.50;
+
+	/** Litteken: HP weg per stack (6 = 3 hartjes). Je houdt altijd minstens 2 hartjes. */
+	public static final double SCAR_HEALTH = 6.0;
+
+	/** Gebarsten pantser: armor-punten weg per stack. */
+	public static final double CRACKED_ARMOR = 4.0;
+
+	/** Zware benen: zoveel langzamer per stack. */
+	public static final double HEAVY_LEGS = 0.15;
+
+	/** Onhandige handen: zoveel langzamer minen per stack. */
+	public static final double CLUMSY_HANDS = 0.35;
+
+	/** Rouw: duur in seconden per stack. */
+	public static final int MOURNING_SECONDS = 600;
 
 	/** Elke zoveel ticks sturen we de status naar de speler (10 = 2x per seconde). */
 	public static final int SYNC_INTERVAL_TICKS = 10;
@@ -48,6 +62,12 @@ public final class Config {
 
 	/** Spelers binnen zoveel blokken zien de deeltjes van een altaar. */
 	public static final double PARTICLE_RANGE = 48.0;
+
+	/** Een altaar zonder vrije weg naar zijn portaal verliest zoveel charge per seconde. */
+	public static final double BLOCKED_LEAK_PER_SECOND = 1.0;
+
+	/** Ticks na het respawnen voordat het penalty-scherm opent (zodat je de melding ziet). */
+	public static final int OFFER_DELAY_TICKS = 70;
 
 	/** Ticks wachten voor een nieuwe poort-check na een bounce. */
 	public static final int BOUNCE_GRACE_TICKS = 40;

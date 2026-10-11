@@ -10,15 +10,17 @@ import java.util.Map;
  */
 public class PlayerData {
 	// --- opgeslagen ---
-	/** Lekkende Tank: de volgende expeditie begint met minder charge. */
-	public boolean leakPending = false;
+	/** Lekkende Tank: aantal stacks dat op de volgende expeditie wacht. */
+	public int leakStacks = 0;
 	public int expeditions = 0;
 	public int collapses = 0;
 	public double longestRun = 0;
-	/** penalty-id -> resterende geslaagde runs */
-	public Map<String, Integer> penalties = new HashMap<>();
-	/** penalty-id's die de speler nog moet kiezen (leeg = niets te kiezen) */
+	/** penalty-id -> per stack de resterende geslaagde runs */
+	public Map<String, List<Integer>> penaltyStacks = new HashMap<>();
+	/** penalty-id's die nu op het keuzescherm liggen (leeg = niets te kiezen) */
 	public List<String> pendingOffer = new ArrayList<>();
+	/** Hoeveel penalty's de speler nog moet kiezen (na meerdere doden achter elkaar). */
+	public int pendingPenalties = 0;
 	/** De altaren (sleutels) die de lopende expeditie van brandstof voorzien. Opgeslagen voor als je uitlogt. */
 	public List<String> linked = new ArrayList<>();
 	/** Charge bij de start van de expeditie (voor de vulling van de timerbalk). */
@@ -37,16 +39,25 @@ public class PlayerData {
 	public transient String respawnNotice = null;
 	public transient int collapseRetry = 0;
 	public transient int lastBeat = Integer.MAX_VALUE;
+	/** Ticks tot het penalty-scherm opent; -1 = niets gepland. */
+	public transient int offerDelay = -1;
+	/** Gewoon doodgegaan in Nether/End (niet door de tijd): grote melding bij respawn. */
+	public transient String endedIn = null;
 
-	public boolean has(Penalty p) {
-		return penalties.containsKey(p.id);
+	public int stacks(Penalty p) {
+		List<Integer> l = penaltyStacks.get(p.id);
+		return l == null ? 0 : l.size();
+	}
+
+	public void addStack(Penalty p) {
+		penaltyStacks.computeIfAbsent(p.id, k -> new ArrayList<>()).add(Config.PENALTY_RUNS);
 	}
 
 	public double drainMultiplier() {
-		double m = Config.BASE_DRAIN;
-		if (has(Penalty.ACCELERATED_DRAIN)) {
-			m *= Config.ACCELERATED_DRAIN_FACTOR;
-		}
-		return m;
+		return Config.BASE_DRAIN * (1.0 + Config.ACCELERATED_DRAIN_PER_STACK * stacks(Penalty.ACCELERATED_DRAIN));
+	}
+
+	public double debtFactor() {
+		return Math.pow(Config.DEBT_FACTOR, stacks(Penalty.DEBT));
 	}
 }

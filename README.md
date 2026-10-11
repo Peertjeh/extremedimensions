@@ -40,14 +40,19 @@ Vervangen? Overschrijf `src/client/resources/assets/extremedimensions/textures/g
   Kapotmaken geeft een gewone Lodestone terug; de charge is dan weg.
 - **Meerdere altaren** bij hetzelfde portaal tellen bij elkaar op. Max 30 minuten per altaar.
 - **HUD linksboven**: alleen zichtbaar binnen 10 blokken van een geladen altaar (som van alle altaren in de buurt).
-- **Deeltjes**: geladen altaren gloeien (vuur of portaaldeeltjes), hoe voller hoe meer, en lekken deeltjes naar het portaal.
+- **Deeltjes**: geladen altaren gloeien (vuur of portaaldeeltjes), hoe voller hoe meer. Een stroom deeltjes zoekt
+  een vrije weg door de lucht naar het midden van het portaal (nooit door blokken heen).
+- **Geblokkeerd**: is er geen vrije weg naar het portaal, dan stopt de stroom, rookt het altaar en verliest het
+  1 seconde charge per seconde. Zo'n altaar voedt ook geen expedities.
 - **Statusscherm**: sneak + lege hand op het altaar.
 - **Nether Charge**: steenkool (2s), houtskool (2s), steenkoolblok (18s), magmablok (6s), fire charge (12s), blaze powder (15s), blaze rod (30s).
 - **End Charge**: amethist shard (3s), chorus fruit (6s), ender pearl (20s), eye of ender (45s), shulker shell (90s), echo shard (120s).
 - Ga je door een portaal, dan voeden de altaren van dat type rond dat portaal (binnen 8 blokken) je expeditie.
   Geen geladen altaar? Dan is de poort slapend en word je teruggestuurd.
 - In de dimensie lopen die altaren leeg (1 seconde per seconde). Bij 0 = Collapse.
-- Normaal doodgaan in Nether/End: de altaren van je expeditie lopen leeg (geen penalty-keuze).
+- Gewoon doodgaan in Nether/End: grote melding **EXPEDITION ENDED**, de altaren van je expeditie lopen leeg en je
+  kiest een penalty. Doodgaan in de Overworld geeft (nog) geen straf.
+- In singleplayer staat de timer stil als je het spel pauzeert.
 - Veilig terug in de Overworld = expeditie geslaagd (penalty's tellen af).
 - **Elke wereld heeft zijn eigen voortgang** (opgeslagen in `extremedimensions.json` in de wereldmap).
 - Alle teksten in het spel zijn Engels.
@@ -80,13 +85,29 @@ Rechtermuisklik op het altaar met een Tether in je hand: +10 minuten Charge in e
 
 ## Penalty's (kies 1 uit 3 willekeurige)
 
-| Penalty | Effect |
+Na een Collapse of een dood in Nether/End. **Alles stackt**: kies je dezelfde penalty opnieuw, dan telt hij dubbel.
+Penalty's met een duur blijven per stack 3 geslaagde expedities actief.
+
+| Penalty | Effect (per stack) |
 |---|---|
-| Accelerated Drain | Charge loopt 1,5x sneller, 2 geslaagde runs lang |
-| Debt | Items leveren 25% minder charge op, 2 runs lang |
-| Scar | -2 hartjes, 2 runs lang |
-| Leaky Tank | Je volgende expeditie: de altaren verliezen 30% van hun charge |
-| Mourning | Weakness en Hunger, 5 minuten |
+| Accelerated Drain | Charge loopt 75% sneller leeg |
+| Debt | Brandstof geeft 40% minder charge |
+| Scar | -3 hartjes (je houdt er altijd minstens 2) |
+| Cracked Armor | -4 armor |
+| Heavy Legs | 15% langzamer lopen |
+| Clumsy Hands | 35% langzamer minen |
+| Frailty | Constant Weakness |
+| Famine | Constant Hunger |
+| Shadowed | Darkness in Nether en End (vanaf 2 stacks ook Slowness) |
+| Leaky Tank | Eenmalig: de altaren van je volgende expeditie verliezen 50% |
+| Mourning | Eenmalig: Weakness II, Hunger II en Mining Fatigue, 10 minuten |
+| Toll | Eenmalig: je verliest de helft van je XP-levels |
+
+## Muziek en geluid
+
+- Eigen menumuziek: `music/menu_1.ogg` en `music/menu_2.ogg` in
+  `src/client/resources/assets/extremedimensions/sounds/` spelen om en om tot de wereld geladen is en faden dan uit.
+- Eigen geluiden voor het kiezen van een penalty en voor "Expedition Ended".
 
 ## Bekende beperkingen (versie 0.1)
 

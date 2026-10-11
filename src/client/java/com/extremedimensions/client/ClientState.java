@@ -40,6 +40,7 @@ public final class ClientState {
 	public static long collapseAt = 0;
 	public static long bounceAt = 0;
 	public static long penaltyAt = 0;
+	public static long endedAt = 0;
 	public static long netherFlashAt = 0;
 	public static long endFlashAt = 0;
 	public static long netherGainAt = 0;
@@ -96,13 +97,17 @@ public final class ClientState {
 			case 6 -> collapseAt = now;
 			case 7 -> bounceAt = now;
 			case 8 -> penaltyAt = now;
+			case 9 -> endedAt = now;
 			default -> { }
 		}
 	}
 
-	/** Resterende charge van de lopende expeditie, soepel doorgeteld tussen server-updates. */
+	/**
+	 * Resterende charge van de lopende expeditie, soepel doorgeteld tussen server-updates.
+	 * Hooguit 0,6 seconde vooruit: staat de server stil (pauze in singleplayer), dan staat de timer ook stil.
+	 */
 	public static double liveRun() {
-		double elapsed = (System.currentTimeMillis() - syncMs) / 1000.0;
+		double elapsed = Math.min(0.6, (System.currentTimeMillis() - syncMs) / 1000.0);
 		return Math.max(0, runCharge - elapsed * drainX100 / 100.0);
 	}
 
@@ -122,7 +127,7 @@ public final class ClientState {
 		noticeUntil = 0;
 		shownNether = 0;
 		shownEnd = 0;
-		startAt = safeAt = collapseAt = bounceAt = penaltyAt = 0;
+		startAt = safeAt = collapseAt = bounceAt = penaltyAt = endedAt = 0;
 		netherFlashAt = endFlashAt = netherGainAt = endGainAt = 0;
 	}
 
@@ -131,7 +136,25 @@ public final class ClientState {
 		return String.format("%d:%02d", s / 60, s % 60);
 	}
 
-	/** Actieve penalty's als leesbare regels, bijv. "Debt (2 runs)". */
+	/** Aantal actieve stacks van een penalty (uit de laatste status). */
+	public static int stacksOf(String id) {
+		if (penalties == null || penalties.isEmpty()) {
+			return 0;
+		}
+		for (String part : penalties.split(";")) {
+			String[] kv = part.split(":");
+			if (kv[0].equals(id) && kv.length > 1) {
+				try {
+					return Integer.parseInt(kv[1]);
+				} catch (NumberFormatException e) {
+					return 0;
+				}
+			}
+		}
+		return 0;
+	}
+
+	/** Actieve penalty's als leesbare regels, bijv. "Scar x2 (1 run)". */
 	public static List<String> penaltyLines() {
 		List<String> out = new ArrayList<>();
 		if (penalties == null || penalties.isEmpty()) {
@@ -140,8 +163,11 @@ public final class ClientState {
 		for (String part : penalties.split(";")) {
 			String[] kv = part.split(":");
 			Penalty p = Penalty.byId(kv[0]);
-			String runs = kv.length > 1 ? kv[1] : "?";
-			out.add((p != null ? p.title : kv[0]) + " (" + runs + ("1".equals(runs) ? " run)" : " runs)"));
+			String name = p != null ? p.title : kv[0];
+			String stacks = kv.length > 1 ? kv[1] : "1";
+			String runs = kv.length > 2 ? kv[2] : "?";
+			String when = "-1".equals(runs) ? "next run" : runs + ("1".equals(runs) ? " run" : " runs");
+			out.add(name + ("1".equals(stacks) ? "" : " x" + stacks) + " (" + when + ")");
 		}
 		return out;
 	}

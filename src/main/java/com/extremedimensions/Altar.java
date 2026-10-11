@@ -1,5 +1,8 @@
 package com.extremedimensions;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /** Een geladen Lodestone in de Overworld: een tank voor precies een dimensie. */
 public class Altar {
 	public int x, y, z;
@@ -8,9 +11,12 @@ public class Altar {
 	public double charge = 0;
 
 	// --- alleen tijdens het spelen ---
-	/** Dichtstbijzijnde portaalblok (voor de lek-deeltjes); hasPortal = false als er geen binnen bereik is. */
-	public transient boolean hasPortal = false;
-	public transient int px, py, pz;
+	/** Vrije weg door de lucht van het altaar naar het midden van het portaal (punten x, y, z). Leeg = geen weg. */
+	public transient List<double[]> path = new ArrayList<>();
+	/** Geen vrije weg naar een portaal: het altaar lekt charge. */
+	public transient boolean blocked = false;
+	/** Of de weg al eens is gecontroleerd sinds het laden. */
+	public transient boolean checked = false;
 	public transient int portalCheck = 0;
 
 	public Altar() {}

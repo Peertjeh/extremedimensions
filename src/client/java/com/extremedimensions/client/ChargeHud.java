@@ -159,7 +159,25 @@ public class ChargeHud implements HudElement {
 			}
 		}
 
-		// 6) Poort slapend (bounce)
+		// 6) Expedition Ended: donkerrode waas die langzaam wegtrekt (de grote tekst is een vanilla title)
+		long et = now - ClientState.endedAt;
+		if (ClientState.endedAt > 0 && et < 3500) {
+			double t = et / 3500.0;
+			double in = ClientState.ease(et / 400.0);
+			int a = (int) (150 * in * (1 - t));
+			g.fill(0, 0, w, h, ClientState.argb(a / 2, 0x200000));
+			for (int k = 1; k <= 10; k++) {
+				int tx = w * k / 40;
+				int ty = h * k / 28;
+				int col = ClientState.argb(a / 6, 0x600000);
+				g.fill(0, 0, w, ty, col);
+				g.fill(0, h - ty, w, h, col);
+				g.fill(0, ty, tx, h - ty, col);
+				g.fill(w - tx, ty, w, h - ty, col);
+			}
+		}
+
+		// 7) Poort slapend (bounce)
 		long bt = now - ClientState.bounceAt;
 		if (ClientState.bounceAt > 0 && bt < 700) {
 			int a = (int) (130 * (1 - bt / 700.0));
@@ -170,7 +188,7 @@ public class ChargeHud implements HudElement {
 			g.fill(w - th, th, w, h - th, ClientState.argb(a, 0xFFAA00));
 		}
 
-		// 7) Meldingen: schuiven in, vervagen uit
+		// 8) Meldingen: schuiven in, vervagen uit
 		if (now < ClientState.noticeUntil) {
 			String t = ClientState.noticeText;
 			long age = now - ClientState.noticeAt;

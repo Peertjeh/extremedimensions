@@ -1,0 +1,30 @@
+{
+  "penalty": {
+    "subtitle": "subtitles.extremedimensions.penalty",
+    "sounds": [
+      "extremedimensions:penalty"
+    ]
+  },
+  "expedition_ended": {
+    "subtitle": "subtitles.extremedimensions.expedition_ended",
+    "sounds": [
+      "extremedimensions:expedition_ended"
+    ]
+  },
+  "music.menu_1": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/menu_1",
+        "stream": true
+      }
+    ]
+  },
+  "music.menu_2": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/menu_2",
+        "stream": true
+      }
+    ]
+  }
+}

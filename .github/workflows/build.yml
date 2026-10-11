@@ -23,22 +23,3 @@ jobs:
         with:
           name: Artifacts
           path: build/libs/
-      - name: debug minecraft api
-        if: always()
-        run: |
-          CP=$(find ~/.gradle/caches/fabric-loom -name 'minecraft-*.jar' -path '*26.3*' | grep -v sources | tr '\n' ':')
-          p() { echo "=== $1"; javap -cp "$CP" -protected "$1" 2>&1 | grep -i -E "$2" | head -50; }
-          p net.minecraft.client.resources.sounds.AbstractTickableSoundInstance '.'
-          p net.minecraft.client.resources.sounds.AbstractSoundInstance '.'
-          p net.minecraft.client.resources.sounds.SoundInstance 'Attenuation|relative|static'
-          p net.minecraft.client.sounds.SoundManager 'play|stop|isActive'
-          p net.minecraft.client.sounds.MusicManager '.'
-          p net.minecraft.sounds.SoundEvent 'static'
-          p net.minecraft.sounds.SoundSource 'MUSIC|MASTER'
-          p net.minecraft.util.RandomSource 'static'
-          p net.minecraft.client.Minecraft 'level|isPaused|SoundManager|MusicManager|singleplayer|LocalServer'
-          p 'net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase' 'isAir|CollisionShape|isSolid|blocksMotion|canBeReplaced|liquid'
-          p net.minecraft.world.phys.shapes.VoxelShape 'isEmpty'
-          p net.minecraft.world.entity.player.Player 'experienceLevel|giveExperienceLevels'
-          F=$(find ~/.gradle/caches -name 'fabric-lifecycle-events*.jar' | grep -v sources | head -1)
-          unzip -l "$F" | grep -i 'client.*Tick' | head -5
