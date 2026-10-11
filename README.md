@@ -105,7 +105,7 @@ Penalty's met een duur blijven per stack 3 geslaagde expedities actief.
 
 ## Muziek en geluid
 
-- Eigen menumuziek: `music/menu_1.ogg` en `music/menu_2.ogg` in
+- Eigen menumuziek: "The Tether Knows" (`music/menu_1.ogg`) en "The Tether" (`music/menu_2.ogg`) in
   `src/client/resources/assets/extremedimensions/sounds/` spelen om en om tot de wereld geladen is en faden dan uit.
 - Eigen geluiden voor het kiezen van een penalty en voor "Expedition Ended".
 
