@@ -108,8 +108,8 @@ Rechtermuisklik op het altaar met een Tether in je hand: +10 minuten Charge in e
 ## Animaties
 
 - **Titelscherm:** eigen logo, langzame zoom, parallax met de muis, pulserende portaalgloed en zwevende vonken.
-- **Anker vullen:** geen melding meer: vonken spiralen naar het midden van je beeld en slaan uit in twee ringen, de meter licht op, deeltjes en geluid.
-- **Door de wond (Nether, End en terug):** geen melding maar een filmische overgang: flits, filmbalken, een wond die in het midden van je beeld openscheurt en weer dichtgaat, een draaiende ring van tekens, een schokgolf en deeltjes per dimensie (sintels, wegzuigende sterren, opstijgende zielen), met eigen geluiden.
+- **Anker vullen en Tether binden:** geen melding: vonken spiralen naar het midden van je beeld en slaan uit in twee ringen, de meter licht op, deeltjes en geluid.
+- **Door de wond:** geen melding en geen schermanimatie; deeltjes en een eigen geluid (terug naar huis: een zachte, subtiele klank).
 - **Weinig tijd:** rode rand, trillende balk, klok- en hartslaggeluid.
 - **Collapse:** witte flits, rode gloed, glitchbalken, de balk knapt in tweeen, explosie en bliksemgeluid.
 - **Penalty-keuze:** kaarten schuiven in, lichten op bij hover, gekozen kaart flitst.
@@ -163,3 +163,8 @@ Deze penalty's werken **alleen in de Overworld** en tellen ook alleen daar af (1
 
 - Uitloggen in een dimensie pauzeert de timer (exploit). Kan in een volgende versie bestraft worden.
 - Geluids- en deeltjesnamen in de animaties kunnen in 26.3 anders heten; een verkeerde naam geeft alleen geen effect.
+
+## Geen tekstmeldingen
+
+De mod toont geen tekstmeldingen meer in beeld. Alles gaat via de HUD (meters, timer, penalty's), animaties,
+deeltjes en geluid. Alleen de grote titels EXPEDITION ENDED en THE TETHER TIGHTENS zijn gebleven.

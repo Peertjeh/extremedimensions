@@ -1291,7 +1291,7 @@ public final class ServerLogic {
 
 	/**
 	 * Hoe de ketting eruitziet: een ijzeren ketting in de Overworld en de Nether,
-	 * een dun gloeiend paars koord in de End. {blockstate (26.3: als tekst, bijv. "minecraft:iron_chain[axis=y]"), dikte}
+	 * een dun gloeiend paars koord in de End. {blok-id als tekst (26.3 accepteert hier alleen een id), dikte}
 	 */
 	private static String[] ropeLook(String dim) {
 		if ("minecraft:the_end".equals(dim)) {
