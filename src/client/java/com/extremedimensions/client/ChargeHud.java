@@ -13,6 +13,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 public class ChargeHud implements HudElement {
 	private static final int NETHER_COLOR = 0xFF7A1A;
 	private static final int END_COLOR = 0xB66BFF;
+	private static final int TETHER_COLOR = 0x5FE3D0;
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, DeltaTracker deltaTracker) {
@@ -162,16 +163,10 @@ public class ChargeHud implements HudElement {
 			}
 		}
 
-		// 5) Door de wond: overgang naar de Nether, de End of terug naar huis
-		long tt = now - ClientState.transAt;
-		if (ClientState.transAt > 0 && tt < TRANS_MS) {
-			drawTransition(g, w, h, tt, ClientState.transKind);
-		}
-
-		// 5b) Anker gevuld: vonken worden het midden in gezogen en slaan uit
+		// 5) Anker gevuld of tether vastgemaakt: vonken worden het midden in gezogen en slaan uit
 		long dt = now - ClientState.depositAt;
 		if (ClientState.depositAt > 0 && dt < 1300) {
-			drawDeposit(g, w, h, dt, ClientState.depositKind == 1 ? NETHER_COLOR : END_COLOR);
+			drawDeposit(g, w, h, dt, ClientState.depositKind == 1 ? NETHER_COLOR : ClientState.depositKind == 2 ? END_COLOR : TETHER_COLOR);
 		}
 
 		// 6) Expedition Ended: donkerrode waas die langzaam wegtrekt (de grote tekst is een vanilla title)
@@ -201,186 +196,6 @@ public class ChargeHud implements HudElement {
 			g.fill(0, h - th, w, h, ClientState.argb(a, 0xFFAA00));
 			g.fill(0, th, th, h - th, ClientState.argb(a, 0xFFAA00));
 			g.fill(w - th, th, w, h - th, ClientState.argb(a, 0xFFAA00));
-		}
-
-		// 8) Meldingen: schuiven in, vervagen uit
-		if (now < ClientState.noticeUntil) {
-			String t = ClientState.noticeText;
-			long age = now - ClientState.noticeAt;
-			long left = ClientState.noticeUntil - now;
-			double in = ClientState.ease(age / 260.0);
-			double out = left < 600 ? left / 600.0 : 1.0;
-			double k = in * out;
-			int tw = font.width(t);
-			int ny = h / 4 - (int) ((1 - in) * 20);
-			g.fill(w / 2 - tw / 2 - 8, ny - 5, w / 2 + tw / 2 + 8, ny + font.lineHeight + 5, ClientState.argb((int) (176 * k), 0x000000));
-			g.fill(w / 2 - tw / 2 - 8, ny + font.lineHeight + 4, w / 2 - tw / 2 - 8 + (int) ((tw + 16) * in), ny + font.lineHeight + 5, ClientState.argb((int) (255 * k), ClientState.noticeColor));
-			g.centeredText(font, t, w / 2, ny, ClientState.argb((int) (255 * k), ClientState.noticeColor));
-		}
-	}
-
-	private static final long TRANS_MS = 2800;
-
-	/** {flits/gloed, diepe kleur, tint} per overgang. */
-	private static int[] transColors(int kind) {
-		return switch (kind) {
-			case 1 -> new int[] {0xFFC060, 0x1E0400, 0xFF5A1A};
-			case 2 -> new int[] {0xF0DDFF, 0x07000F, 0xB66BFF};
-			default -> new int[] {0xEFFFFA, 0x02120E, 0x5FE3D0};
-		};
-	}
-
-	/**
-	 * Een wond scheurt open in het midden van je beeld, met een draaiende ring van tekens,
-	 * zwarte filmbalken en deeltjes die bij de dimensie passen. Daarna sluit de wond zich weer.
-	 */
-	private static void drawTransition(GuiGraphicsExtractor g, int w, int h, long ms, int kind) {
-		int[] c = transColors(kind);
-		int glow = c[0], deep = c[1], tint = c[2];
-		double t = ms / (double) TRANS_MS;
-		double fadeOut = 1 - ClientState.clamp01((ms - 1900) / 900.0);
-		double env = ClientState.ease(ms / 250.0) * fadeOut;
-		int cx = w / 2;
-		int cy = h / 2;
-
-		// witte/gekleurde flits op het moment van doorgaan
-		if (ms < 320) {
-			g.fill(0, 0, w, h, ClientState.argb((int) (210 * (1 - ms / 320.0)), glow));
-		}
-		// diepe sluier over de wereld, met een getinte rand
-		g.fill(0, 0, w, h, ClientState.argb((int) (150 * env), deep));
-		for (int k = 1; k <= 8; k++) {
-			int tx = w * k / 44;
-			int ty = h * k / 30;
-			int col = ClientState.argb((int) (22 * env), tint);
-			g.fill(0, 0, w, ty, col);
-			g.fill(0, h - ty, w, h, col);
-			g.fill(0, ty, tx, h - ty, col);
-			g.fill(w - tx, ty, w, h - ty, col);
-		}
-
-		// de wond: een oog-vorm die opengaat, even ademt en weer dichtgaat
-		double open = ClientState.ease((ms - 120) / 650.0) * (1 - ClientState.ease((ms - 1500) / 700.0));
-		open *= 1 + 0.05 * Math.sin(ms / 90.0);
-		int halfW = (int) (w * 0.42 * (0.25 + 0.75 * ClientState.ease(ms / 520.0)) * (0.6 + 0.4 * fadeOut));
-		int halfH = (int) (h * 0.17 * open);
-		if (halfW > 2) {
-			for (int x = -halfW; x < halfW; x += 2) {
-				double f = 1 - Math.pow(x / (double) halfW, 2);
-				int hh = (int) (halfH * f);
-				int edge = Math.max(1, (int) (3 * f * env));
-				// gloeiende rand
-				g.fill(cx + x, cy - hh - edge, cx + x + 2, cy + hh + edge, ClientState.argb((int) (230 * env), tint));
-				if (hh > 0) {
-					g.fill(cx + x, cy - hh, cx + x + 2, cy + hh, ClientState.argb((int) (245 * env), deep));
-					// licht dat vanuit het midden de wond in valt
-					int core = (int) (hh * 0.35);
-					g.fill(cx + x, cy - core, cx + x + 2, cy + core, ClientState.argb((int) (60 * env * f), glow));
-				}
-			}
-			// de felle naad door het midden
-			int seam = Math.max(1, (int) (2 * env));
-			g.fill(cx - halfW, cy - seam / 2, cx + halfW, cy - seam / 2 + seam, ClientState.argb((int) (255 * env), glow));
-			// wat er achter de wond zit
-			for (int i = 0; i < 40 && halfH > 2; i++) {
-				double sx = (ClientState.hash(i * 13L + kind) * 2 - 1);
-				double phase = (ms / (kind == 1 ? 900.0 : 2200.0) + ClientState.hash(i * 7L + 5)) % 1.0;
-				int px;
-				int py;
-				int col;
-				if (kind == 1) { // sintels die omhoog dwarrelen
-					px = cx + (int) (sx * halfW * 0.85);
-					py = cy + halfH - (int) (phase * halfH * 2);
-					col = i % 3 == 0 ? 0xFFE08A : 0xFF7A1A;
-				} else if (kind == 2) { // sterren die het niets in worden getrokken
-					double r = (1 - phase);
-					px = cx + (int) (sx * halfW * 0.85 * r);
-					py = cy + (int) ((ClientState.hash(i * 3L + 9) * 2 - 1) * halfH * 0.8 * r);
-					col = i % 3 == 0 ? 0xFFFFFF : 0xD9A8FF;
-				} else { // zielen die opstijgen naar het licht
-					px = cx + (int) (sx * halfW * 0.85);
-					py = cy + (int) ((0.5 - phase) * halfH * 1.6);
-					col = i % 2 == 0 ? 0xCFFFF4 : 0x5FE3D0;
-				}
-				double fx = 1 - Math.pow((px - cx) / (double) halfW, 2);
-				if (Math.abs(py - cy) < halfH * fx) {
-					int a = (int) (220 * env * Math.sin(phase * Math.PI));
-					g.fill(px, py, px + 2, py + 2, ClientState.argb(a, col));
-				}
-			}
-		}
-
-		// draaiende ring van tekens om de wond
-		int ringR = (int) (Math.min(w, h) * (0.30 + 0.04 * ClientState.ease(ms / 900.0)));
-		double spin = ms / 1400.0 * (kind == 0 ? -1 : 1);
-		for (int i = 0; i < 24; i++) {
-			double ang = spin + i * Math.PI * 2 / 24;
-			int rx = cx + (int) (Math.cos(ang) * ringR);
-			int ry = cy + (int) (Math.sin(ang) * ringR * 0.55);
-			int a = (int) (200 * env * (0.6 + 0.4 * Math.sin(ms / 160.0 + i)));
-			if (i % 3 == 0) {
-				g.fill(rx - 2, ry - 2, rx + 3, ry + 3, ClientState.argb(a, tint));
-				g.fill(rx - 1, ry - 1, rx + 2, ry + 2, ClientState.argb(a, glow));
-			} else {
-				g.fill(rx, ry, rx + 2, ry + 2, ClientState.argb(a / 2 + 30, tint));
-			}
-		}
-
-		// schokgolf op het moment dat de wond helemaal open is
-		long sw = ms - 650;
-		if (sw > 0 && sw < 900) {
-			double st = sw / 900.0;
-			int r = (int) (20 + ClientState.ease(st) * Math.max(w, h) * 0.7);
-			int a = (int) (170 * (1 - st));
-			for (int i = 0; i < 72; i++) {
-				double ang = i * Math.PI * 2 / 72;
-				int rx = cx + (int) (Math.cos(ang) * r);
-				int ry = cy + (int) (Math.sin(ang) * r * 0.55);
-				g.fill(rx - 1, ry - 1, rx + 2, ry + 2, ClientState.argb(a, glow));
-			}
-		}
-
-		// deeltjes over het hele scherm
-		for (int i = 0; i < 46; i++) {
-			double seed = ClientState.hash(i * 31L + 11 + kind * 1000L);
-			double seed2 = ClientState.hash(i * 17L + 3 + kind * 1000L);
-			int px;
-			int py;
-			int col;
-			double life;
-			if (kind == 1) { // sintels stijgen op van onderen
-				life = ((t * 1.6 + seed) % 1.0);
-				px = (int) (seed2 * w + Math.sin(ms / 300.0 + i) * 6);
-				py = (int) (h - life * h * 1.1);
-				col = i % 4 == 0 ? 0xFFE08A : i % 2 == 0 ? 0xFF7A1A : 0xC0300A;
-			} else if (kind == 2) { // alles wordt naar het midden gezogen
-				life = ((t * 1.3 + seed) % 1.0);
-				double ang = seed2 * Math.PI * 2 + life * 1.2;
-				double r = (1 - ClientState.ease(life)) * Math.max(w, h) * 0.6;
-				px = cx + (int) (Math.cos(ang) * r);
-				py = cy + (int) (Math.sin(ang) * r * 0.6);
-				col = i % 3 == 0 ? 0xFFFFFF : 0xB66BFF;
-			} else { // zielvonkjes waaieren uit vanuit het licht en stijgen op
-				life = ((t * 1.2 + seed) % 1.0);
-				double ang = seed2 * Math.PI * 2;
-				double r = ClientState.ease(life) * Math.max(w, h) * 0.5;
-				px = cx + (int) (Math.cos(ang) * r);
-				py = cy + (int) (Math.sin(ang) * r * 0.55 - life * 40);
-				col = i % 2 == 0 ? 0xCFFFF4 : 0x5FE3D0;
-			}
-			int a = (int) (230 * env * Math.sin(life * Math.PI));
-			int size = i % 5 == 0 ? 3 : 2;
-			g.fill(px, py, px + size, py + size, ClientState.argb(a, col));
-		}
-
-		// filmbalken
-		double bars = ClientState.ease(ms / 400.0) * (1 - ClientState.ease((ms - 2100) / 600.0));
-		int bh = (int) (h / 9.0 * bars);
-		if (bh > 0) {
-			g.fill(0, 0, w, bh, 0xFF000000);
-			g.fill(0, h - bh, w, h, 0xFF000000);
-			g.fill(0, bh, w, bh + 1, ClientState.argb((int) (160 * bars), tint));
-			g.fill(0, h - bh - 1, w, h - bh, ClientState.argb((int) (160 * bars), tint));
 		}
 	}
 

@@ -49,26 +49,6 @@ public final class ModPackets {
 		}
 	}
 
-	/** Server -> client: korte melding in beeld. */
-	public record NoticePayload(String text, int color) implements CustomPacketPayload {
-		public static final Type<NoticePayload> TYPE = new Type<>(ExtremeDimensions.id("notice"));
-		public static final StreamCodec<FriendlyByteBuf, NoticePayload> CODEC = StreamCodec.ofMember(NoticePayload::write, NoticePayload::read);
-
-		private void write(FriendlyByteBuf buf) {
-			buf.writeUtf(text);
-			buf.writeInt(color);
-		}
-
-		private static NoticePayload read(FriendlyByteBuf buf) {
-			return new NoticePayload(buf.readUtf(), buf.readInt());
-		}
-
-		@Override
-		public Type<? extends CustomPacketPayload> type() {
-			return TYPE;
-		}
-	}
-
 	/** Server -> client: open het penalty-keuzescherm met deze penalty-id's (komma-gescheiden). */
 	public record OfferPayload(String ids) implements CustomPacketPayload {
 		public static final Type<OfferPayload> TYPE = new Type<>(ExtremeDimensions.id("offer"));

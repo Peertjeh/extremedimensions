@@ -29,12 +29,6 @@ public final class ClientState {
 	public static int tetherDist = -1;
 	public static long syncMs = 0;
 
-	public static String noticeText = "";
-	public static int noticeColor = 0xFFFFFFFF;
-	public static long noticeUntil = 0;
-
-	public static long noticeAt = 0;
-
 	// --- animatie-status ---
 	public static double shownNether = 0;
 	public static double shownEnd = 0;
@@ -51,19 +45,9 @@ public final class ClientState {
 	public static long endGainAt = 0;
 	public static int netherGain = 0;
 	public static int endGain = 0;
-	/** Overgang tussen dimensies: 1 = Nether, 2 = End, 0 = terug in de Overworld. */
-	public static long transAt = 0;
-	public static int transKind = 0;
-	/** Anker gevuld: 1 = Nether, 2 = End. */
+	/** Anker gevuld (1 = Nether, 2 = End) of tether vastgemaakt (3). */
 	public static long depositAt = 0;
 	public static int depositKind = 1;
-
-	public static void notice(String text, int color) {
-		noticeText = text;
-		noticeColor = color;
-		noticeAt = System.currentTimeMillis();
-		noticeUntil = noticeAt + 4500;
-	}
 
 	public static double clamp01(double v) {
 		return v < 0 ? 0 : v > 1 ? 1 : v;
@@ -102,12 +86,13 @@ public final class ClientState {
 		switch (type) {
 			case 1 -> { netherFlashAt = now; netherGainAt = now; netherGain = value; depositAt = now; depositKind = 1; }
 			case 2 -> { endFlashAt = now; endGainAt = now; endGain = value; depositAt = now; depositKind = 2; }
-			case 3, 4 -> { startAt = now; transAt = now; transKind = type - 2; }
-			case 5 -> { safeAt = now; transAt = now; transKind = 0; }
+			case 3, 4 -> startAt = now;
+			case 5 -> safeAt = now;
 			case 6 -> collapseAt = now;
 			case 7 -> bounceAt = now;
 			case 8 -> penaltyAt = now;
 			case 9 -> endedAt = now;
+			case 10 -> { depositAt = now; depositKind = 3; }
 			default -> { }
 		}
 	}
@@ -136,12 +121,11 @@ public final class ClientState {
 		penalties = "";
 		penaltyClock = 0;
 		tetherDist = -1;
-		noticeUntil = 0;
 		shownNether = 0;
 		shownEnd = 0;
 		startAt = safeAt = collapseAt = bounceAt = penaltyAt = endedAt = 0;
 		netherFlashAt = endFlashAt = netherGainAt = endGainAt = 0;
-		transAt = depositAt = 0;
+		depositAt = 0;
 	}
 
 	public static String time(double seconds) {

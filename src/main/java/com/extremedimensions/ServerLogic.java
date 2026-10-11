@@ -57,12 +57,6 @@ public final class ServerLogic {
 	public static final String NETHER = "the_nether";
 	public static final String END = "the_end";
 
-	// ARGB-kleuren voor meldingen
-	private static final int RED = 0xFFFF5555;
-	private static final int ORANGE = 0xFFFFAA00;
-	private static final int GREEN = 0xFF55FF55;
-	private static final int AQUA = 0xFF55FFFF;
-
 	private static final int[][] DIRS = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
 
 	private static MinecraftServer server;
@@ -119,7 +113,6 @@ public final class ServerLogic {
 					for (Altar a : linkedAltars(d)) {
 						a.charge = 0;
 					}
-					d.respawnNotice = "The anchors feeding your expedition ran dry.";
 				}
 				d.inRun = false;
 				d.linked.clear();
@@ -440,10 +433,6 @@ public final class ServerLogic {
 		at(p, String.format(Locale.ROOT, "playsound %s master %s ~ ~ ~ %.2f %.2f", id, p.getStringUUID(), vol, pitch));
 	}
 
-	static void notice(ServerPlayer p, String text, int color) {
-		ServerPlayNetworking.send(p, new ModPackets.NoticePayload(text, color));
-	}
-
 	/** Grote tekst midden in beeld (vanilla /title). */
 	static void title(ServerPlayer p, String title, String color, String subtitle) {
 		String u = p.getStringUUID();
@@ -501,7 +490,6 @@ public final class ServerLogic {
 		if (!d.journal.add(e.id)) {
 			return;
 		}
-		run("title " + p.getStringUUID() + " actionbar {\"text\":\"New journal page: " + e.title + "\",\"color\":\"light_purple\",\"italic\":true}");
 		soundSelf(p, "minecraft:item.book.page_turn", 1.0f, 0.7f);
 		soundSelf(p, "minecraft:block.sculk_shrieker.shriek", 0.15f, 1.6f);
 	}
@@ -581,8 +569,6 @@ public final class ServerLogic {
 				int take = Math.min(d.xpDebt, p.experienceLevel);
 				p.giveExperienceLevels(-take);
 				d.xpDebt -= take;
-				notice(p, "The Tether takes " + take + (take == 1 ? " level" : " levels")
-						+ (d.xpDebt > 0 ? " (" + d.xpDebt + " still owed)" : ". Your debt is paid."), 0xFFAA88FF);
 				particles(p, "minecraft:sculk_soul", 1.0, 0.4, 0.03, 8);
 				soundSelf(p, "minecraft:particle.soul_escape", 1.0f, 0.8f);
 				forceSync = true;
@@ -650,8 +636,6 @@ public final class ServerLogic {
 					// De tether breekt: de ketting verdwijnt, de Tether valt terug in je handen
 					particles(p, "minecraft:crit", 0.6, 0.3, 0.3, 14);
 					clearRope(p, d, true);
-					notice(p, anchor == null ? "Your anchor is gone. The tether falls slack in your hands."
-							: "Your tether snapped. Stay close to the anchor until you step into the wound.", ORANGE);
 					sound(p, "minecraft:entity.leash_knot.break", 1.0f, 0.9f);
 					sound(p, "minecraft:block.chain.break", 1.0f, 0.7f);
 					forceSync = true;
@@ -678,7 +662,6 @@ public final class ServerLogic {
 					ServerLevel lvl = (ServerLevel) p.level();
 					if (findPortal(lvl, p.blockPosition(), NETHER) != null || findPortal(lvl, p.blockPosition(), END) != null) {
 						unlock(p, d, JournalEntry.ANCHOR);
-						notice(p, "The wound is hungry. It wants an anchor.", 0xFFAA88FF);
 					}
 				}
 			}
@@ -743,9 +726,6 @@ public final class ServerLogic {
 		boolean active = d.ticksSinceLook < Config.IDLE_TICKS && d.ticksSinceMove < Config.IDLE_TICKS;
 		d.penaltyClock = active ? 1 : 2;
 		if (!active) {
-			if (before == 1) {
-				notice(p, "Penalties paused: you are idle.", ORANGE);
-			}
 			return before != d.penaltyClock;
 		}
 
@@ -776,12 +756,6 @@ public final class ServerLogic {
 			return before != d.penaltyClock;
 		}
 		applyPenaltyEffects(p, d);
-		for (String id : worn) {
-			Penalty pen = Penalty.byId(id);
-			String name = pen != null ? pen.title : id;
-			int still = pen != null ? d.stacks(pen) : 0;
-			notice(p, still > 0 ? name + " weakened (x" + still + " left)" : name + " wore off!", GREEN);
-		}
 		sound(p, "minecraft:block.amethyst_block.chime", 1.0f, 1.2f);
 		particles(p, "minecraft:happy_villager", 1.0, 0.5, 0.1, 15);
 		return true;
@@ -808,7 +782,6 @@ public final class ServerLogic {
 			d.linked.clear();
 			d.inRun = false;
 			d.grace = Config.BOUNCE_GRACE_TICKS;
-			notice(p, "You are not tethered. Bind a Tether (iron chain + 2 string) to an anchor at this wound.", ORANGE);
 			unlock(p, d, JournalEntry.CORD);
 			fx(p, Fx.BOUNCE, 0);
 			sound(p, "minecraft:entity.villager.no", 1.0f, 0.7f);
@@ -826,7 +799,6 @@ public final class ServerLogic {
 				a.charge *= keep;
 			}
 			total = linkedCharge(d);
-			notice(p, "Leaky Tank: your anchors lost " + Math.round((1 - keep) * 100) + "% of their charge.", ORANGE);
 			d.leakStacks = 0;
 		}
 		d.inRun = true;
@@ -849,7 +821,6 @@ public final class ServerLogic {
 	private static void warn(ServerPlayer p, PlayerData d, int secs) {
 		for (int t : new int[] {60, 30, 10}) {
 			if (secs <= t && d.lastWarn > t) {
-				notice(p, t + " seconds of charge left!", RED);
 				sound(p, "minecraft:block.bell.use", 0.7f, 0.6f);
 				particles(p, "minecraft:smoke", 1.0, 0.5, 0.02, 25);
 				d.lastWarn = secs;
@@ -933,7 +904,7 @@ public final class ServerLogic {
 		double r2 = (Config.HUD_RANGE * 2) * (Config.HUD_RANGE * 2);
 		for (ServerPlayer p : players) {
 			if (a.distSq(p.getX(), p.getY(), p.getZ()) <= r2) {
-				notice(p, "A " + dimName(a.type) + " anchor lost its path to the portal. It is leaking charge!", RED);
+				soundSelf(p, "minecraft:block.respawn_anchor.deplete", 0.8f, 0.6f);
 			}
 		}
 	}
@@ -1023,8 +994,6 @@ public final class ServerLogic {
 	private static void bounce(ServerPlayer p, PlayerData d, String dim) {
 		d.inRun = false;
 		d.grace = Config.BOUNCE_GRACE_TICKS;
-		String portal = NETHER.equals(dim) ? "Nether Portal" : "End Portal";
-		notice(p, "The portal is dormant. Charge a " + dimName(dim) + " anchor next to this " + portal + ".", ORANGE);
 		fx(p, Fx.BOUNCE, 0);
 		particles(p, "minecraft:poof", 1.0, 0.4, 0.05, 30);
 		sound(p, "minecraft:entity.villager.no", 1.0f, 0.7f);
@@ -1058,7 +1027,7 @@ public final class ServerLogic {
 		fx(p, Fx.SAFE, 0);
 		particles(p, "minecraft:totem_of_undying", 1.0, 0.5, 0.35, 40);
 		particles(p, "minecraft:soul", 1.0, 0.8, 0.03, 20);
-		sound(p, "extremedimensions:portal_home", 1.0f, 1.0f);
+		soundSelf(p, "extremedimensions:portal_home", 0.6f, 1.0f);
 		unlock(p, d, JournalEntry.WOUND);
 		if (d.expeditions >= 5) {
 			unlock(p, d, JournalEntry.HABIT);
@@ -1073,7 +1042,6 @@ public final class ServerLogic {
 		d.collapses++;
 		owePenalty(d, false);
 		unlock(p, d, JournalEntry.STARVED);
-		notice(p, "DIMENSIONAL COLLAPSE", RED);
 		fx(p, Fx.COLLAPSE, 0);
 		particles(p, "minecraft:explosion", 1.0, 0.8, 0.0, 6);
 		particles(p, "minecraft:lava", 1.0, 0.8, 0.1, 40);
@@ -1109,10 +1077,6 @@ public final class ServerLogic {
 				d.endedIn = null;
 			} else {
 				sound(newPlayer, "minecraft:block.beacon.deactivate", 1.0f, 0.8f);
-			}
-			if (d.respawnNotice != null) {
-				notice(newPlayer, d.respawnNotice, ORANGE);
-				d.respawnNotice = null;
 			}
 			if (!d.pendingOffer.isEmpty()) {
 				d.offerDelay = Config.OFFER_DELAY_TICKS;
@@ -1158,7 +1122,6 @@ public final class ServerLogic {
 				run("give " + u + " extremedimensions:tether_journal");
 			}
 			d.journal.add(JournalEntry.TETHERED.id);
-			run("title " + u + " actionbar {\"text\":\"Something old is holding you. Read the journal.\",\"color\":\"light_purple\",\"italic\":true}");
 			soundSelf(p, "minecraft:item.book.page_turn", 1.0f, 0.7f);
 			DataStore.save();
 		}
@@ -1184,7 +1147,6 @@ public final class ServerLogic {
 			}
 			if (Altar.key(pos.getX(), pos.getY(), pos.getZ()).equals(d.tetherAnchor) && !d.inRun) {
 				clearRope(p, d, true);
-				notice(p, "You untie your tether and coil it up.", ORANGE);
 				sound(p, "minecraft:entity.leash_knot.break", 1.0f, 0.8f);
 				sendState(p, d);
 				return InteractionResult.SUCCESS;
@@ -1208,10 +1170,8 @@ public final class ServerLogic {
 		} else {
 			return InteractionResult.PASS; // gewone Lodestone (kompas e.d.)
 		}
-		String name = dimName(type);
 
 		if (!OVERWORLD.equals(dimOf(p))) {
-			notice(p, "Anchors only work in the Overworld.", ORANGE);
 			return InteractionResult.SUCCESS;
 		}
 		ServerLevel level = (ServerLevel) p.level();
@@ -1219,19 +1179,15 @@ public final class ServerLogic {
 		String key = Altar.key(pos.getX(), pos.getY(), pos.getZ());
 		Altar altar = DataStore.altars().get(key);
 		if (altar != null && !type.equals(altar.type)) {
-			notice(p, "This anchor is bound to the " + dimName(altar.type) + ". It only accepts " + dimName(altar.type) + " fuel.", ORANGE);
 			return InteractionResult.SUCCESS;
 		}
 		if (findPortal(level, pos, type) == null) {
-			String portal = NETHER.equals(type) ? "a Nether Portal" : "an End Portal";
-			notice(p, "An anchor must be within " + Config.PORTAL_RANGE + " blocks of " + portal + ".", ORANGE);
 			return InteractionResult.SUCCESS;
 		}
 
 		double current = altar != null ? altar.charge : 0;
 		double space = Config.MAX_CHARGE - current;
 		if (space < 1) {
-			notice(p, "This " + name + " anchor is full.", ORANGE);
 			return InteractionResult.SUCCESS;
 		}
 
@@ -1280,14 +1236,12 @@ public final class ServerLogic {
 		String key = Altar.key(pos.getX(), pos.getY(), pos.getZ());
 		Altar altar = DataStore.altars().get(key);
 		if (altar == null || !OVERWORLD.equals(dimOf(p))) {
-			notice(p, "This stone is not an anchor yet. Feed it first.", ORANGE);
 			return InteractionResult.SUCCESS;
 		}
 		if (d.inRun) {
 			return InteractionResult.SUCCESS;
 		}
 		if (key.equals(d.tetherAnchor)) {
-			notice(p, "You are already bound to this anchor. Empty hand to untie.", ORANGE);
 			return InteractionResult.SUCCESS;
 		}
 		// Al ergens anders vast? Die tether krijg je terug.
@@ -1299,9 +1253,11 @@ public final class ServerLogic {
 		d.ropeX = pos.getX() + 0.5;
 		d.ropeY = pos.getY() + 1.02;
 		d.ropeZ = pos.getZ() + 0.5;
-		notice(p, "Your tether is bound to this " + dimName(altar.type) + " anchor.", AQUA);
 		unlock(p, d, JournalEntry.CORD);
+		fx(p, Fx.TIE, 0);
 		sound(p, "minecraft:entity.leash_knot.place", 1.0f, 0.7f);
+		sound(p, "minecraft:block.chain.place", 1.0f, 0.8f);
+		particleAt("minecraft:sculk_soul", pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, 0.2, 0.3, 0.2, 0.03, 10);
 		particleAt("minecraft:soul", pos.getX() + 0.5, pos.getY() + 1.1, pos.getZ() + 0.5, 0.3, 0.2, 0.3, 0.02, 12);
 		sendState(p, d);
 		return InteractionResult.SUCCESS;
@@ -1499,28 +1455,21 @@ public final class ServerLogic {
 				}
 			}
 		}
-		String mended;
 		if (bestId != null) {
 			List<Double> l = d.penaltyTime.get(bestId);
 			l.remove(bestIdx);
 			if (l.isEmpty()) {
 				d.penaltyTime.remove(bestId);
 			}
-			Penalty pen = Penalty.byId(bestId);
-			mended = pen != null ? pen.title : bestId;
 			applyPenaltyEffects(p, d);
 		} else if (d.leakStacks > 0) {
 			d.leakStacks--;
-			mended = Penalty.LEAKY_TANK.title;
 		} else if (d.xpDebt > 0) {
 			d.xpDebt = 0;
-			mended = "Your XP debt";
 		} else {
-			notice(p, "The Tether has nothing to mend in you.", ORANGE);
 			return InteractionResult.SUCCESS;
 		}
 		stack.shrink(1);
-		notice(p, "The fragment mends you: " + mended + " fades.", AQUA);
 		double ax = pos.getX() + 0.5;
 		double ay = pos.getY() + 1.0;
 		double az = pos.getZ() + 0.5;
@@ -1572,7 +1521,6 @@ public final class ServerLogic {
 		}
 
 		int stacks = pen.timed ? d.stacks(pen) : pen == Penalty.LEAKY_TANK ? d.leakStacks : 1;
-		notice(p, "Penalty: " + pen.title + (stacks > 1 ? " x" + stacks : ""), ORANGE);
 		fx(p, Fx.PENALTY, 0);
 		particles(p, "minecraft:soul", 1.0, 0.5, 0.05, 25);
 		particles(p, "minecraft:sculk_soul", 1.2, 0.6, 0.03, 12);

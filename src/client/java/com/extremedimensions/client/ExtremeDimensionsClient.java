@@ -58,10 +58,6 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.FxPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> ClientState.onFx(payload.kind(), payload.value())));
 
-		// Meldingen
-		ClientPlayNetworking.registerGlobalReceiver(ModPackets.NoticePayload.TYPE, (payload, context) ->
-				context.client().execute(() -> ClientState.notice(payload.text(), payload.color())));
-
 		// Penalty-keuzescherm
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OfferPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> {

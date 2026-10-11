@@ -50,7 +50,6 @@ public class PlayerData {
 	public transient int lastWarn = Integer.MAX_VALUE;
 	public transient boolean hasLast = false;
 	public transient double lastX, lastY, lastZ;
-	public transient String respawnNotice = null;
 	public transient int collapseRetry = 0;
 	public transient int lastBeat = Integer.MAX_VALUE;
 	/** Ticks tot het penalty-scherm opent; -1 = niets gepland. */

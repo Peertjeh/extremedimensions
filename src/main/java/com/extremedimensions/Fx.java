@@ -13,4 +13,5 @@ public final class Fx {
 	public static final int BOUNCE = 7;
 	public static final int PENALTY = 8;
 	public static final int ENDED = 9;
+	public static final int TIE = 10;
 }
