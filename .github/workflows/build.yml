@@ -23,3 +23,26 @@ jobs:
         with:
           name: Artifacts
           path: build/libs/
+      - name: debug minecraft api
+        if: always()
+        run: |
+          CP=$(find ~/.gradle/caches/fabric-loom -name 'minecraft-*.jar' -path '*26.3*' | grep -v sources | tr '\n' ':')
+          echo "$CP"
+          p() { echo "=== $1"; javap -cp "$CP" -public "$1" 2>&1 | grep -i -E "$2" | head -60; }
+          p net.minecraft.commands.CommandSourceStack 'suppress|withPermission|CommandSourceStack\('
+          p 'net.minecraft.world.level.block.state.BlockBehaviour$Properties' '.'
+          p net.minecraft.world.level.block.Block 'Block\(|defaultBlockState'
+          p net.minecraft.server.MinecraftServer 'Path|overworld|getLevel'
+          p net.minecraft.world.level.storage.LevelResource '.'
+          p net.minecraft.world.level.Level 'setBlock|getBlockState|isLoaded|hasChunk'
+          p net.minecraft.core.BlockPos 'betweenClosed|distSqr|distManhattan|containing|BlockPos\(|asLong|of\('
+          p net.minecraft.world.entity.Entity 'blockPosition|position\(|getX\(|distanceToSqr'
+          p net.minecraft.server.players.PlayerList 'getPlayers'
+          p net.minecraft.world.level.block.Blocks 'LODESTONE|NETHER_PORTAL|END_PORTAL'
+          F=$(find ~/.gradle/caches -name 'fabric-events-interaction*.jar' | grep -v sources | head -1)
+          echo "=== $F"; javap -cp "$F" -public net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents 'net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents$After' 2>&1 | head
+          F2=$(find ~/.gradle/caches -name 'fabric-networking-api*.jar' | grep -v sources | head -1)
+          echo "=== $F2"; unzip -l "$F2" | grep -i 'client.*Connection' | head
+          echo "=== textures"; J=$(find ~/.gradle/caches/fabric-loom -name '*.jar' -path '*26.3*' | xargs -I{} sh -c 'unzip -l {} 2>/dev/null | grep -q "block/lodestone_side.png" && echo {}' | head -1); echo "$J"
+          unzip -p "$J" assets/minecraft/models/block/lodestone.json; unzip -p "$J" assets/minecraft/blockstates/lodestone.json
+          for t in lodestone_side lodestone_top; do echo "$t"; unzip -p "$J" assets/minecraft/textures/block/$t.png | base64 -w0; echo; done
