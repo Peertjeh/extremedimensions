@@ -62,22 +62,7 @@ public class ChargeHud implements HudElement {
 			g.text(font, "Tethered  " + dist + "/" + max + "m", 6, my, ClientState.argb(255, tc));
 			my += 12;
 		}
-		boolean beyond = ClientState.dimCode != 0;
-		if (my > 6 || beyond || ClientState.penaltyClock != 0) {
-			int py = my + 2;
-			if (ClientState.penaltyClock != 0) {
-				boolean paused = ClientState.penaltyClock == 2;
-				boolean blink = paused && (now / 500) % 2 == 0;
-				g.text(font, paused ? "Penalties paused: you are idle!" : "Penalties wearing off...", 6, py,
-						ClientState.argb(255, paused ? (blink ? 0xFF5555 : 0xFFAA00) : 0x88DD88));
-				py += 12;
-			}
-			for (String line : ClientState.penaltyLines()) {
-				double pulse = ClientState.penaltyAt > 0 ? ClientState.clamp01(1 - (now - ClientState.penaltyAt) / 1200.0) : 0;
-				g.text(font, line, 6, py, ClientState.argb(255, pulse > 0 ? 0xFFDD66 : 0xFFAA00));
-				py += 10;
-			}
-		}
+		// (penalty's staan niet meer in beeld maar als Tether Marks naast je inventory)
 
 		// 3) Grote timer in Nether/End
 		if (ClientState.dimCode != 0) {

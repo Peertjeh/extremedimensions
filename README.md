@@ -105,6 +105,14 @@ Rechtermuisklik op het altaar met een Tether in je hand: +10 minuten Charge in e
 (`TETHER_ITEM_CHARGE` in `Config.java`). Items staan nog niet in de creatieve tab: gebruik
 `/give @s extremedimensions:ember_tether` en `/give @s extremedimensions:void_tether`.
 
+## Tether Marks (penalty's in je inventory)
+
+Je penalty's staan niet meer als tekst in beeld. Open je inventory: rechts staat een kolom **Tether Marks**,
+met per penalty een kaartje (eigen rune, naam met stacks als Romeins cijfer, resterende tijd). Bovenaan zie je of
+ze aflopen (fading), stilstaan omdat je idle bent (paused: idle) of hier niet aflopen (dormant).
+Muis erop = uitleg en lore. De vanilla effecten van penalty's (Weakness, Hunger, ...) hebben geen icoon en
+geen deeltjes meer, zodat ze niet dubbel in beeld staan.
+
 ## Ieder zijn eigen tijd (multiplayer)
 
 Wat je zelf in een anker stopt, is jouw tijd. Elke speler heeft dus zijn eigen timer, ook als jullie dezelfde

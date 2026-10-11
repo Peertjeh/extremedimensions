@@ -16,6 +16,8 @@ public class PlayerData {
 	public int leakStacks = 0;
 	/** Toll/Tithe: zoveel levels neemt de Tether van je af zodra je ze verdient. */
 	public int xpDebt = 0;
+	/** Seconden Mourning die nog over zijn (alleen voor de weergave). */
+	public double mourningSecs = 0;
 	public int expeditions = 0;
 	public int collapses = 0;
 	public double longestRun = 0;

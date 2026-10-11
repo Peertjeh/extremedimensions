@@ -7,6 +7,7 @@ import com.extremedimensions.ModPackets;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -23,6 +24,11 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 			if (screen instanceof TitleScreen) {
 				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
 						TitleArt.draw(graphics, s.width, s.height, mouseX, mouseY));
+			}
+			// Inventory: je penalty's als Tether Marks naast het scherm
+			if (screen instanceof InventoryScreen inv) {
+				ScreenEvents.afterRender(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
+						TetherMarks.draw(inv, graphics, mouseX, mouseY));
 			}
 		});
 

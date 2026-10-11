@@ -18,6 +18,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -465,6 +466,12 @@ public final class ServerLogic {
 			}
 			pen.append(e.getKey()).append(':').append(e.getValue().size()).append(':').append(min);
 		}
+		if (d.mourningSecs > 0) {
+			if (pen.length() > 0) {
+				pen.append(';');
+			}
+			pen.append(Penalty.MOURNING.id).append(":1:").append((int) Math.ceil(d.mourningSecs));
+		}
 		if (d.xpDebt > 0) {
 			if (pen.length() > 0) {
 				pen.append(';');
@@ -570,6 +577,12 @@ public final class ServerLogic {
 				joinActions(p, d);
 			}
 			// XP-schuld (Toll/Tithe): elk level dat je haalt neemt de Tether, tot de schuld betaald is
+			if (d.mourningSecs > 0 && d.tickCounter % 20 == 0) {
+				d.mourningSecs = Math.max(0, d.mourningSecs - 1);
+				if (d.mourningSecs == 0) {
+					forceSync = true;
+				}
+			}
 			if (d.xpDebt > 0 && p.experienceLevel > 0 && d.tickCounter % 20 == 0) {
 				int take = Math.min(d.xpDebt, p.experienceLevel);
 				p.giveExperienceLevels(-take);
@@ -1502,7 +1515,6 @@ public final class ServerLogic {
 			d.owed.remove(0);
 		}
 
-		String u = p.getStringUUID();
 		if (pen.timed) {
 			d.addStack(pen);
 			applyPenaltyEffects(p, d);
@@ -1511,9 +1523,10 @@ public final class ServerLogic {
 				case LEAKY_TANK -> d.leakStacks++;
 				case MOURNING -> {
 					int secs = Config.MOURNING_SECONDS;
-					run("effect give " + u + " minecraft:weakness " + secs + " 1 true");
-					run("effect give " + u + " minecraft:hunger " + secs + " 1 true");
-					run("effect give " + u + " minecraft:mining_fatigue " + secs + " 0 true");
+					d.mourningSecs = Math.max(d.mourningSecs, secs);
+					effect(p, "weakness", secs, 1);
+					effect(p, "hunger", secs, 1);
+					effect(p, "mining_fatigue", secs, 0);
 				}
 				case TOLL -> d.xpDebt += Config.TOLL_LEVELS;
 				case TITHE -> d.xpDebt += Config.TITHE_LEVELS;
@@ -1570,35 +1583,43 @@ public final class ServerLogic {
 		}
 	}
 
+	/**
+	 * Geeft een vanilla effect zonder icoon en zonder deeltjes: de penalty's staan in het eigen
+	 * Tether Marks-paneel naast je inventory, niet tussen de gewone effecten.
+	 */
+	static void effect(ServerPlayer p, String id, int secs, int amp) {
+		BuiltInRegistries.MOB_EFFECT.get(net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", id)).ifPresent(h ->
+				p.addEffect(new MobEffectInstance(h, secs * 20, Math.max(0, amp), true, false, false)));
+	}
+
 	/** Blijvende effecten (Frailty, Famine, Shadowed): steeds kort opnieuw geven, zodat ze vanzelf stoppen als de penalty verloopt. */
 	static void refreshEffects(ServerPlayer p, PlayerData d) {
-		String u = p.getStringUUID();
 		int frailty = d.stacks(Penalty.FRAILTY);
 		if (frailty > 0) {
-			run("effect give " + u + " minecraft:weakness 8 " + (frailty - 1) + " true");
+			effect(p, "weakness", 8, frailty - 1);
 		}
 		int famine = d.stacks(Penalty.FAMINE);
 		if (famine > 0) {
-			run("effect give " + u + " minecraft:hunger 8 " + (famine - 1) + " true");
+			effect(p, "hunger", 8, famine - 1);
 		}
 		if (OVERWORLD.equals(dimOf(p))) {
 			int gnawing = d.stacks(Penalty.GNAWING);
 			if (gnawing > 0) {
-				run("effect give " + u + " minecraft:hunger 8 " + (gnawing - 1) + " true");
+				effect(p, "hunger", 8, gnawing - 1);
 			}
 			int luck = d.stacks(Penalty.ILL_LUCK);
 			if (luck > 0) {
-				run("effect give " + u + " minecraft:unluck 8 " + (luck - 1) + " true");
+				effect(p, "unluck", 8, luck - 1);
 			}
 			if (d.stacks(Penalty.NIGHT_TERROR) > 0 && p.getY() < 62) {
-				run("effect give " + u + " minecraft:darkness 8 0 true");
+				effect(p, "darkness", 8, 0);
 			}
 		}
 		int shadowed = d.stacks(Penalty.SHADOWED);
 		if (shadowed > 0 && isCharged(dimOf(p))) {
-			run("effect give " + u + " minecraft:darkness 8 0 true");
+			effect(p, "darkness", 8, 0);
 			if (shadowed >= 2) {
-				run("effect give " + u + " minecraft:slowness 8 " + (shadowed - 2) + " true");
+				effect(p, "slowness", 8, shadowed - 2);
 			}
 		}
 	}
