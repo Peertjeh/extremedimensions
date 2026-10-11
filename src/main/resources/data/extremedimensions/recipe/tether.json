@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:iron_chain",
+    "minecraft:string",
+    "minecraft:string"
+  ],
+  "result": {
+    "id": "extremedimensions:tether",
+    "count": 1
+  }
+}

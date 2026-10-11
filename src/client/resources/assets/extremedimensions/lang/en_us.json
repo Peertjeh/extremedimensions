@@ -6,5 +6,6 @@
   "subtitles.extremedimensions.penalty": "Penalty sealed",
   "subtitles.extremedimensions.expedition_ended": "Expedition ended",
   "item.extremedimensions.tether_journal": "Tether Journal",
-  "item.extremedimensions.tether_fragment": "Tether Fragment"
+  "item.extremedimensions.tether_fragment": "Tether Fragment",
+  "item.extremedimensions.tether": "Tether"
 }

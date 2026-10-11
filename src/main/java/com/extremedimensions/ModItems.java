@@ -15,6 +15,8 @@ public final class ModItems {
 
 	public static final Item EMBER_TETHER = register("ember_tether");
 	public static final Item VOID_TETHER = register("void_tether", 64);
+	/** De fysieke tether: maak hem vast aan een anker voor je door een portaal gaat. */
+	public static final Item TETHER = register("tether", 16);
 	/** Het dagboek van een Wanderer; vult zich naarmate je verder komt. */
 	public static final Item TETHER_JOURNAL = register("tether_journal", 1);
 	/** Een losgerafeld stukje van de Tether zelf. Aan een altaar geofferd haalt het een penalty-stack weg. */

@@ -68,10 +68,13 @@ worden **Anchors** (Ember Anchor / Void Anchor) die je via de wond voeden. De re
 - **Statusscherm**: sneak + lege hand op het altaar.
 - **Nether Charge**: steenkool (2s), houtskool (2s), steenkoolblok (18s), magmablok (6s), fire charge (12s), blaze powder (15s), blaze rod (30s).
 - **End Charge**: amethist shard (3s), chorus fruit (6s), ender pearl (20s), eye of ender (45s), shulker shell (90s), echo shard (120s).
-- **De fysieke tether**: rechtsklik met een **Chain** (of Lead) op een geladen anker om jezelf vast te maken
-  (nog een keer = losmaken; de ketting wordt niet verbruikt). Zonder tether is de portal slapend.
-  Er ligt echt een ketting achter je op de grond: van het anker naar de portal, en in de Nether/End vanaf je
-  aankomstportaal achter je aan (in de End een gloeiende draad van End Rods). Volg hem terug naar huis.
+- **De fysieke tether**: craft een **Tether** (Iron Chain + 2 String, shapeless). Rechtsklik ermee op een geladen
+  anker om je vast te maken; het item wordt de ketting op de grond. Lege hand op je anker = losmaken (je krijgt hem
+  terug). Zonder tether is de portal slapend.
+  De ketting blijft liggen van het anker naar de portal zolang je vastzit, ook na terugkomst. In de Nether/End ligt
+  hij vanaf je aankomstportaal achter je aan (in de End een gloeiende draad van End Rods); die verdwijnt als je terug
+  bent. Loop je in de Overworld verder dan 32 blokken van je anker, dan glijdt de tether terug in je handen.
+  Ga je dood of krijg je een Collapse aan de overkant, dan knapt hij en ben je hem kwijt.
 - **Afstand**: per 100 blokken van je aankomstportaal gaat de drain +100% (200 blokken = 3x zo snel).
   Bouw dus meer portals in de Overworld, dichter bij waar je heen moet.
 - Ga je door een portaal, dan voeden de altaren van dat type rond dat portaal (binnen 8 blokken) je expeditie.

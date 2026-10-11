@@ -19,7 +19,7 @@ public enum JournalEntry {
 			+ "and stones do not keep anyone alive."),
 	CORD("cord", "III. The Cord",
 			"Feeding the anchor is not enough. You must bind yourself to it. "
-			+ "Chain works. Rope, if you are desperate. Wrap it around the anchor and carry the other end through the wound. "
+			+ "A length of iron chain, bound with two cords of string. Wrap it around the anchor and carry the other end through the wound. "
 			+ "Down there the cord follows you over the ground, and every step away from the wound pulls it tighter. "
 			+ "Walk far and they drink faster. Tear a new wound closer to where you must go."),
 	WOUND("wound", "IV. Wounds",

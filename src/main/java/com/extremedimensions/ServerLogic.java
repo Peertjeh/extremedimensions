@@ -123,7 +123,7 @@ public final class ServerLogic {
 				}
 				d.inRun = false;
 				d.linked.clear();
-				clearRope(p, d);
+				clearRope(p, d, false);
 				d.endedIn = dimName(dim);
 				owePenalty(d, false);
 				unlock(p, d, JournalEntry.ENDED);
@@ -205,10 +205,9 @@ public final class ServerLogic {
 		return s.is(Blocks.LODESTONE) || s.is(ModBlocks.EMBER_LODESTONE) || s.is(ModBlocks.VOID_LODESTONE);
 	}
 
-	/** Ketting of lead: daarmee maak je je fysieke tether vast aan een anker. */
+	/** Het Tether-item (Iron Chain + 2 String): daarmee maak je je fysieke tether vast aan een anker. */
 	static boolean isTetherItem(Item item) {
-		String id = BuiltInRegistries.ITEM.getKey(item).getPath();
-		return "iron_chain".equals(id) || "chain".equals(id) || "lead".equals(id);
+		return item == ModItems.TETHER;
 	}
 
 	static boolean isFuel(Item item) {
@@ -645,6 +644,17 @@ public final class ServerLogic {
 			}
 
 			// 3b) de fysieke tether volgt je over de grond
+			if (d.tetherAnchor != null && !d.collapsing && OVERWORLD.equals(dim) && !d.inRun) {
+				Altar anchor = DataStore.altars().get(d.tetherAnchor);
+				double max = Config.TETHER_RETRACT_RANGE;
+				if (anchor == null || anchor.distSq(p.getX(), p.getY(), p.getZ()) > max * max) {
+					clearRope(p, d, true);
+					notice(p, anchor == null ? "Your anchor is gone. The tether falls slack in your hands."
+							: "Your tether reached its end and slipped back into your hands.", ORANGE);
+					sound(p, "minecraft:entity.leash_knot.break", 1.0f, 1.1f);
+					forceSync = true;
+				}
+			}
 			if (d.tetherAnchor != null && !d.collapsing && (d.inRun || OVERWORLD.equals(dim))) {
 				layRope(p, d);
 			}
@@ -796,7 +806,7 @@ public final class ServerLogic {
 			d.linked.clear();
 			d.inRun = false;
 			d.grace = Config.BOUNCE_GRACE_TICKS;
-			notice(p, "You are not tethered. Bind yourself to an anchor at this wound with a chain or lead.", ORANGE);
+			notice(p, "You are not tethered. Bind a Tether (iron chain + 2 string) to an anchor at this wound.", ORANGE);
 			unlock(p, d, JournalEntry.CORD);
 			fx(p, Fx.BOUNCE, 0);
 			sound(p, "minecraft:entity.villager.no", 1.0f, 0.7f);
@@ -1035,7 +1045,7 @@ public final class ServerLogic {
 	// ------------------------------------------------------------------ expeditie klaar / Collapse / dood
 
 	private static void completeRun(ServerPlayer p, PlayerData d) {
-		clearRope(p, d);
+		clearBeyondRope(p, d);
 		d.inRun = false;
 		d.linked.clear();
 		d.expeditions++;
@@ -1054,7 +1064,7 @@ public final class ServerLogic {
 	}
 
 	private static void collapse(ServerPlayer p, PlayerData d) {
-		clearRope(p, d);
+		clearRope(p, d, false);
 		d.collapsing = true;
 		d.collapseRetry = 0;
 		d.collapses++;
@@ -1135,6 +1145,7 @@ public final class ServerLogic {
 		applyPenaltyEffects(p, d);
 		run("recipe give " + u + " minecraft:lodestone");
 		run("recipe give " + u + " extremedimensions:tether_journal");
+		run("recipe give " + u + " extremedimensions:tether");
 		run("recipe give " + u + " extremedimensions:ember_tether");
 		run("recipe give " + u + " extremedimensions:void_tether");
 		if (!d.journalDelivered) {
@@ -1168,6 +1179,13 @@ public final class ServerLogic {
 				}
 				return InteractionResult.SUCCESS;
 			}
+			if (Altar.key(pos.getX(), pos.getY(), pos.getZ()).equals(d.tetherAnchor) && !d.inRun) {
+				clearRope(p, d, true);
+				notice(p, "You untie your tether and coil it up.", ORANGE);
+				sound(p, "minecraft:entity.leash_knot.break", 1.0f, 0.8f);
+				sendState(p, d);
+				return InteractionResult.SUCCESS;
+			}
 			return InteractionResult.PASS;
 		}
 
@@ -1176,7 +1194,7 @@ public final class ServerLogic {
 			return mend(p, d, pos, stack);
 		}
 		if (isTetherItem(item)) {
-			return tie(p, d, pos);
+			return tie(p, d, pos, stack);
 		}
 		boolean tether = item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER;
 		String type;
@@ -1256,7 +1274,7 @@ public final class ServerLogic {
 	// ------------------------------------------------------------------ de fysieke tether
 
 	/** Rechtsklik met een ketting of lead op een anker: vastmaken (of weer losmaken). */
-	private static InteractionResult tie(ServerPlayer p, PlayerData d, BlockPos pos) {
+	private static InteractionResult tie(ServerPlayer p, PlayerData d, BlockPos pos, ItemStack stack) {
 		String key = Altar.key(pos.getX(), pos.getY(), pos.getZ());
 		Altar altar = DataStore.altars().get(key);
 		if (altar == null || !OVERWORLD.equals(dimOf(p))) {
@@ -1267,12 +1285,12 @@ public final class ServerLogic {
 			return InteractionResult.SUCCESS;
 		}
 		if (key.equals(d.tetherAnchor)) {
-			clearRope(p, d);
-			notice(p, "You untie yourself from the anchor.", ORANGE);
-			sound(p, "minecraft:entity.leash_knot.break", 1.0f, 0.8f);
+			notice(p, "You are already bound to this anchor. Empty hand to untie.", ORANGE);
 			return InteractionResult.SUCCESS;
 		}
-		clearRope(p, d);
+		// Al ergens anders vast? Die tether krijg je terug.
+		clearRope(p, d, d.tetherAnchor != null);
+		stack.shrink(1);
 		d.tetherAnchor = key;
 		d.hasRopeEnd = true;
 		d.ropeDim = "minecraft:overworld";
@@ -1350,10 +1368,11 @@ public final class ServerLogic {
 		// Het midden van de onderkant van het blok (0.5, 0, 0.5) moet op het beginpunt liggen
 		double[] c = rotate(qx, qy, qz, qw, 0.5, 0, 0.5);
 		String nbt = String.format(Locale.ROOT,
-				"{Tags:[\"ed_tether\",\"%s\"],block_state:%s,brightness:{sky:15,block:15},"
+				"{Tags:[\"ed_tether\",\"%s\",\"%s\"],block_state:%s,brightness:{sky:15,block:15},"
 				+ "transformation:{left_rotation:[%.5ff,%.5ff,%.5ff,%.5ff],right_rotation:[0f,0f,0f,1f],"
 				+ "translation:[%.5ff,%.5ff,%.5ff],scale:[1f,%.5ff,1f]}}",
-				ropeTag(p), ropeBlock(d), qx, qy, qz, qw, -c[0], -c[1], -c[2], len);
+				ropeTag(p), ropeTag(p) + ("minecraft:overworld".equals(dim) ? "_o" : "_b"), ropeBlock(d),
+				qx, qy, qz, qw, -c[0], -c[1], -c[2], len);
 		run(String.format(Locale.ROOT, "execute in %s run summon minecraft:block_display %.3f %.3f %.3f %s",
 				dim, d.ropeX, d.ropeY, d.ropeZ, nbt));
 		d.ropeSegments++;
@@ -1374,11 +1393,23 @@ public final class ServerLogic {
 	}
 
 	/** Haalt de ketting van deze speler weg en maakt hem los. */
-	static void clearRope(ServerPlayer p, PlayerData d) {
+	static void clearRope(ServerPlayer p, PlayerData d, boolean returnItem) {
 		run("kill @e[type=minecraft:block_display,tag=" + ropeTag(p) + "]");
+		if (returnItem && d.tetherAnchor != null) {
+			ItemStack back = new ItemStack(ModItems.TETHER);
+			if (!p.getInventory().add(back)) {
+				run("give " + p.getStringUUID() + " extremedimensions:tether");
+			}
+		}
 		d.tetherAnchor = null;
 		d.hasRopeEnd = false;
 		d.ropeSegments = 0;
+	}
+
+	/** Na een geslaagde terugkeer: de ketting aan de overkant verdwijnt, het stuk in de Overworld blijft liggen. */
+	static void clearBeyondRope(ServerPlayer p, PlayerData d) {
+		run("kill @e[type=minecraft:block_display,tag=" + ropeTag(p) + "_b]");
+		d.hasRopeEnd = false;
 	}
 
 	/** Ruimt kettingstukken op van spelers die niet (meer) vastzitten, ook achtergebleven stukken. */

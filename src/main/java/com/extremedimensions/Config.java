@@ -102,6 +102,9 @@ public final class Config {
 	/** Maximaal aantal kettingstukken per speler (daarna stopt de ketting met groeien). */
 	public static final int ROPE_MAX_SEGMENTS = 300;
 
+	/** Loop je in de Overworld verder dan dit van je anker, dan glijdt de tether terug in je handen. */
+	public static final double TETHER_RETRACT_RANGE = 32.0;
+
 	/** Ticks na het inloggen voordat de mod spullen geeft en effecten zet (de speler moet eerst echt in de wereld staan). */
 	public static final int JOIN_DELAY_TICKS = 40;
 

@@ -23,3 +23,8 @@ jobs:
         with:
           name: Artifacts
           path: build/libs/
+      - name: debug minecraft api
+        if: always()
+        run: |
+          CP=$(find ~/.gradle/caches/fabric-loom -name 'minecraft-*.jar' -path '*26.3*' | grep -v sources | tr '\n' ':')
+          javap -cp "$CP" -public net.minecraft.world.item.Items | grep -i chain
