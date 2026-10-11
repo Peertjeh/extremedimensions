@@ -17,7 +17,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -455,16 +455,15 @@ public final class ServerLogic {
 	/** Een speler doodde een mob: kans op een Tether Fragment in Nether/End, en lore voor Endermen. */
 	private static void onMobKilled(ServerPlayer killer, net.minecraft.world.entity.LivingEntity mob) {
 		PlayerData d = DataStore.get(killer.getUUID());
-		if (mob.getType() == EntityType.ENDERMAN) {
+		String type = BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).getPath();
+		if ("enderman".equals(type)) {
 			unlock(killer, d, JournalEntry.UNANCHORED);
 		}
 		String dim = mob.level().dimension().identifier().getPath();
 		if (!isCharged(dim) || !(mob instanceof Enemy)) {
 			return;
 		}
-		EntityType<?> t = mob.getType();
-		boolean elite = t == EntityType.WITHER_SKELETON || t == EntityType.ENDERMAN || t == EntityType.BLAZE
-				|| t == EntityType.GHAST || t == EntityType.SHULKER;
+		boolean elite = Set.of("wither_skeleton", "enderman", "blaze", "ghast", "shulker").contains(type);
 		double chance = elite ? Config.FRAGMENT_CHANCE_ELITE : Config.FRAGMENT_CHANCE;
 		if (ThreadLocalRandom.current().nextDouble() >= chance) {
 			return;
