@@ -27,7 +27,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 			}
 			// Inventory: je penalty's als Tether Marks naast het scherm
 			if (screen instanceof InventoryScreen inv) {
-				ScreenEvents.afterRender(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
+				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
 						TetherMarks.draw(inv, graphics, mouseX, mouseY));
 			}
 		});
