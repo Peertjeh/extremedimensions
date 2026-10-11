@@ -59,9 +59,9 @@ public class ChargeHud implements HudElement {
 			my += 12;
 		}
 		boolean beyond = ClientState.dimCode != 0;
-		if (my > 6 || beyond) {
+		if (my > 6 || beyond || ClientState.penaltyClock != 0) {
 			int py = my + 2;
-			if (beyond && ClientState.penaltyClock != 0) {
+			if (ClientState.penaltyClock != 0) {
 				boolean paused = ClientState.penaltyClock == 2;
 				boolean blink = paused && (now / 500) % 2 == 0;
 				g.text(font, paused ? "Penalties paused: you are idle!" : "Penalties wearing off...", 6, py,

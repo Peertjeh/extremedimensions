@@ -99,6 +99,11 @@ public final class Config {
 	/** Ticks na het inloggen voordat de mod spullen geeft en effecten zet (de speler moet eerst echt in de wereld staan). */
 	public static final int JOIN_DELAY_TICKS = 40;
 
+	// --- Overworld-penalty's (per stack, alleen in de Overworld) ---
+	public static final double HOLLOW_HEART = 4.0;
+	public static final double LEADEN_STEPS = 0.10;
+	public static final double DULL_PICK = 0.25;
+
 	/** Ticks wachten voor een nieuwe poort-check na een bounce. */
 	public static final int BOUNCE_GRACE_TICKS = 40;
 }

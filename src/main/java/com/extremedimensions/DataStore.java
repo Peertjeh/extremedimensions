@@ -27,6 +27,8 @@ public final class DataStore {
 	private static class WorldData {
 		Map<String, PlayerData> players = new HashMap<>();
 		Map<String, Altar> altars = new HashMap<>();
+		/** Wereldinstelling: penalty's bij een dood in de Overworld. */
+		boolean overworldPenalties = false;
 	}
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -47,6 +49,7 @@ public final class DataStore {
 					if (loaded.altars != null) {
 						data.altars = loaded.altars;
 					}
+					data.overworldPenalties = loaded.overworldPenalties;
 				}
 			}
 		} catch (Exception e) {
@@ -76,6 +79,15 @@ public final class DataStore {
 
 	public static PlayerData get(UUID id) {
 		return data.players.computeIfAbsent(id.toString(), k -> new PlayerData());
+	}
+
+	public static boolean overworldPenalties() {
+		return data.overworldPenalties;
+	}
+
+	public static void setOverworldPenalties(boolean on) {
+		data.overworldPenalties = on;
+		save();
 	}
 
 	public static Map<String, Altar> altars() {

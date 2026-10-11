@@ -23,14 +23,3 @@ jobs:
         with:
           name: Artifacts
           path: build/libs/
-      - name: debug minecraft api
-        if: always()
-        run: |
-          CP=$(find ~/.gradle/caches/fabric-loom -name 'minecraft-*.jar' -path '*26.3*' | grep -v sources | tr '\n' ':')
-          p() { echo "=== $1"; javap -cp "$CP" -public "$1" 2>&1 | grep -i -E "$2" | head -40; }
-          p net.minecraft.commands.CommandSourceStack 'perm|getPlayer|sendSuccess|sendFailure|getServer'
-          p net.minecraft.commands.Commands 'literal|argument|hasPermission|LEVEL|static'
-          J=$(echo "$CP" | tr ':' '\n' | grep common-deobf | head -1); unzip -l "$J" | grep 'server/permissions/' | awk '{print $4}'
-          for c in Permission PermissionSet Permissions PermissionLevel PermissionCheck LevelBasedPermissionSet; do p net.minecraft.server.permissions.$c '.'; done
-          F=$(find ~/.gradle/caches -name 'fabric-command-api-v2*.jar' | grep -v sources | head -1)
-          javap -cp "$F:$CP" -public 'net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback' 2>&1 | head

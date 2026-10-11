@@ -132,6 +132,22 @@ AFK en de klok pauzeert ("Penalties paused: you are idle!" linksboven). In de Ov
 | Mourning | Eenmalig: Weakness II, Hunger II en Mining Fatigue, 10 minuten |
 | Toll | Eenmalig: je verliest de helft van je XP-levels |
 
+## Overworld-penalty's (optioneel, per wereld)
+
+Standaard uit. Aanzetten (met cheats/op): `/tether overworld_penalties on` (uit: `off`, status: zonder argument).
+Staat het aan, dan kost een dood in de Overworld een penalty uit een eigen set ("THE TETHER TIGHTENS").
+Deze penalty's werken **alleen in de Overworld** en tellen ook alleen daar af (10 minuten actief spelen, AFK telt niet).
+
+| Penalty | Effect (per stack, alleen in de Overworld) |
+|---|---|
+| Hollow Heart | -2 hartjes |
+| Leaden Steps | 10% langzamer lopen |
+| Gnawing | Constant Hunger |
+| Dull Pick | 25% langzamer minen |
+| Deep Dread | Darkness onder zeeniveau (grotten) |
+| Ill Luck | Unluck: slechtere loot en vissen |
+| Tithe | Eenmalig: je verliest een derde van je XP-levels |
+
 ## Muziek en geluid
 
 - Eigen menumuziek: "The Tether Knows" (`music/menu_1.ogg`) en "The Tether" (`music/menu_2.ogg`) in

@@ -23,6 +23,8 @@ public class PlayerData {
 	public List<String> pendingOffer = new ArrayList<>();
 	/** Hoeveel penalty's de speler nog moet kiezen (na meerdere doden achter elkaar). */
 	public int pendingPenalties = 0;
+	/** Per tegoed-penalty uit welke set: "beyond" (Nether/End) of "overworld". Eerste = nu op het scherm. */
+	public List<String> owed = new ArrayList<>();
 	/** De altaren (sleutels) die de lopende expeditie van brandstof voorzien. Opgeslagen voor als je uitlogt. */
 	public List<String> linked = new ArrayList<>();
 	/** Charge bij de start van de expeditie (voor de vulling van de timerbalk). */

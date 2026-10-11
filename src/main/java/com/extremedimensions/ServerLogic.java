@@ -25,6 +25,11 @@ import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
+
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -79,6 +84,15 @@ public final class ServerLogic {
 		});
 		ServerTickEvents.END_SERVER_TICK.register(ServerLogic::tick);
 
+		// /tether overworld_penalties [on|off]  (alleen ops / cheats aan)
+		CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> dispatcher.register(
+				Commands.literal("tether")
+						.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.then(Commands.literal("overworld_penalties")
+								.executes(c -> showOverworldPenalties(c.getSource()))
+								.then(Commands.literal("on").executes(c -> setOverworldPenalties(c.getSource(), true)))
+								.then(Commands.literal("off").executes(c -> setOverworldPenalties(c.getSource(), false))))));
+
 		ServerPlayerEvents.JOIN.register(ServerLogic::onJoin);
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> DataStore.save());
 		ServerPlayerEvents.AFTER_RESPAWN.register(ServerLogic::onRespawn);
@@ -94,6 +108,12 @@ public final class ServerLogic {
 			String dim = entity.level().dimension().identifier().getPath();
 			// Gewoon doodgaan in Nether/End (geen Collapse): expeditie voorbij, altaren leeg en een penalty.
 			// In de Overworld (nog) geen straf.
+			if (OVERWORLD.equals(dim) && DataStore.overworldPenalties() && !d.collapsing) {
+				d.endedIn = "Overworld";
+				owePenalty(d, true);
+				DataStore.save();
+				return;
+			}
 			if (isCharged(dim) && !d.collapsing) {
 				if (d.inRun) {
 					for (Altar a : linkedAltars(d)) {
@@ -105,7 +125,7 @@ public final class ServerLogic {
 				d.linked.clear();
 				clearRope(p, d);
 				d.endedIn = dimName(dim);
-				owePenalty(d);
+				owePenalty(d, false);
 				unlock(p, d, JournalEntry.ENDED);
 				DataStore.save();
 			}
@@ -143,6 +163,28 @@ public final class ServerLogic {
 				DataStore.altars().remove(Altar.key(pos.getX(), pos.getY(), pos.getZ()));
 			}
 		});
+	}
+
+	// ------------------------------------------------------------------ commando
+
+	private static int showOverworldPenalties(CommandSourceStack src) {
+		boolean on = DataStore.overworldPenalties();
+		src.sendSuccess(() -> Component.literal("Overworld penalties are " + (on ? "ON" : "OFF")
+				+ " in this world. Use /tether overworld_penalties on|off to change."), false);
+		return on ? 1 : 0;
+	}
+
+	private static int setOverworldPenalties(CommandSourceStack src, boolean on) {
+		DataStore.setOverworldPenalties(on);
+		src.sendSuccess(() -> Component.literal(on
+				? "Overworld penalties ON: dying in the Overworld now costs an Overworld penalty."
+				: "Overworld penalties OFF: dying in the Overworld is free again."), true);
+		if (server != null) {
+			for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+				applyPenaltyEffects(p, DataStore.get(p.getUUID()));
+			}
+		}
+		return 1;
 	}
 
 	// ------------------------------------------------------------------ helpers
@@ -497,10 +539,11 @@ public final class ServerLogic {
 	}
 
 	/** De speler moet (nog) een penalty kiezen. */
-	static void owePenalty(PlayerData d) {
+	static void owePenalty(PlayerData d, boolean overworld) {
 		d.pendingPenalties++;
+		d.owed.add(overworld ? "overworld" : "beyond");
 		if (d.pendingOffer.isEmpty()) {
-			d.pendingOffer = Penalty.rollOffer();
+			d.pendingOffer = Penalty.rollOffer("overworld".equals(d.owed.get(0)));
 		}
 	}
 
@@ -543,7 +586,7 @@ public final class ServerLogic {
 				} else if (OVERWORLD.equals(dim) && isCharged(from) && d.inRun && !d.collapsing) {
 					completeRun(p, d);
 				}
-				refreshEffects(p, d);
+				applyPenaltyEffects(p, d);
 			}
 
 			// 2) laatste Overworld-positie onthouden (poort-blokkade en welke altaren meedoen)
@@ -591,7 +634,7 @@ public final class ServerLogic {
 
 			// 4) penalty-klok: loopt alleen tijdens een expeditie in Nether/End en als je niet AFK bent
 			trackActivity(p, d);
-			if (tickPenalties(p, d, isCharged(dim) && d.inRun && !d.collapsing)) {
+			if (tickPenalties(p, d, isCharged(dim) && d.inRun && !d.collapsing, OVERWORLD.equals(dim) && !d.collapsing)) {
 				forceSync = true;
 			}
 
@@ -652,9 +695,19 @@ public final class ServerLogic {
 	 * Rondkijken alleen (muis-macro) of alleen bewegen (waterstroom) is niet genoeg: het moet allebei.
 	 * Geeft true terug als er iets veranderde dat de client meteen moet weten.
 	 */
-	private static boolean tickPenalties(ServerPlayer p, PlayerData d, boolean onExpedition) {
+	private static boolean tickPenalties(ServerPlayer p, PlayerData d, boolean onExpedition, boolean inOverworld) {
 		int before = d.penaltyClock;
-		if (d.penaltyTime.isEmpty() || !onExpedition) {
+		// Welke set telt hier af? Nether/End-penalty's op expeditie, Overworld-penalty's in de Overworld.
+		boolean any = false;
+		for (String id : d.penaltyTime.keySet()) {
+			Penalty pen = Penalty.byId(id);
+			boolean ow = pen != null && pen.overworld;
+			if ((ow && inOverworld) || (!ow && onExpedition)) {
+				any = true;
+				break;
+			}
+		}
+		if (!any) {
 			d.penaltyClock = 0;
 			return before != d.penaltyClock;
 		}
@@ -671,6 +724,11 @@ public final class ServerLogic {
 		Iterator<Map.Entry<String, List<Double>>> it = d.penaltyTime.entrySet().iterator();
 		while (it.hasNext()) {
 			Map.Entry<String, List<Double>> e = it.next();
+			Penalty kind = Penalty.byId(e.getKey());
+			boolean owKind = kind != null && kind.overworld;
+			if (owKind ? !inOverworld : !onExpedition) {
+				continue;
+			}
 			List<Double> left = new ArrayList<>();
 			for (double secs : e.getValue()) {
 				double rest = secs - 1.0 / 20.0;
@@ -983,7 +1041,7 @@ public final class ServerLogic {
 		d.collapsing = true;
 		d.collapseRetry = 0;
 		d.collapses++;
-		owePenalty(d);
+		owePenalty(d, false);
 		unlock(p, d, JournalEntry.STARVED);
 		notice(p, "DIMENSIONAL COLLAPSE", RED);
 		fx(p, Fx.COLLAPSE, 0);
@@ -1009,7 +1067,12 @@ public final class ServerLogic {
 			d.linked.clear();
 			d.runTime = 0;
 			applyPenaltyEffects(newPlayer, d);
-			if (d.endedIn != null) {
+			if ("Overworld".equals(d.endedIn)) {
+				title(newPlayer, "THE TETHER TIGHTENS", "dark_purple", "You died in the Overworld");
+				fx(newPlayer, Fx.ENDED, 0);
+				soundSelf(newPlayer, "extremedimensions:expedition_ended", 1.0f, 0.8f);
+				d.endedIn = null;
+			} else if (d.endedIn != null) {
 				title(newPlayer, "EXPEDITION ENDED", "dark_red", "You died in the " + d.endedIn);
 				fx(newPlayer, Fx.ENDED, 0);
 				soundSelf(newPlayer, "extremedimensions:expedition_ended", 1.0f, 1.0f);
@@ -1038,6 +1101,9 @@ public final class ServerLogic {
 		d.lastWarn = Integer.MAX_VALUE;
 		if (!d.pendingOffer.isEmpty()) {
 			d.pendingPenalties = Math.max(1, d.pendingPenalties);
+			while (d.owed.size() < d.pendingPenalties) {
+				d.owed.add("beyond");
+			}
 			d.offerDelay = 40;
 		}
 		d.joinDelay = Config.JOIN_DELAY_TICKS;
@@ -1385,6 +1451,9 @@ public final class ServerLogic {
 		}
 		d.pendingOffer.clear();
 		d.pendingPenalties = Math.max(0, d.pendingPenalties - 1);
+		if (!d.owed.isEmpty()) {
+			d.owed.remove(0);
+		}
 
 		String u = p.getStringUUID();
 		if (pen.timed) {
@@ -1405,6 +1474,12 @@ public final class ServerLogic {
 						p.giveExperienceLevels(-lose);
 					}
 				}
+				case TITHE -> {
+					int lose = (p.experienceLevel + 2) / 3;
+					if (lose > 0) {
+						p.giveExperienceLevels(-lose);
+					}
+				}
 				default -> { }
 			}
 		}
@@ -1419,7 +1494,10 @@ public final class ServerLogic {
 
 		// Nog meer penalty's tegoed (meerdere keren dood)? Dan volgt het volgende scherm.
 		if (d.pendingPenalties > 0) {
-			d.pendingOffer = Penalty.rollOffer();
+			if (d.owed.isEmpty()) {
+				d.owed.add("beyond");
+			}
+			d.pendingOffer = Penalty.rollOffer("overworld".equals(d.owed.get(0)));
 			d.offerDelay = 40;
 		}
 		sendState(p, d);
@@ -1430,8 +1508,16 @@ public final class ServerLogic {
 
 	/** Zet alle attribuut-penalty's volgens het aantal stacks en ververst de effecten. */
 	static void applyPenaltyEffects(ServerPlayer p, PlayerData d) {
+		boolean ow = OVERWORLD.equals(dimOf(p));
 		int scar = d.stacks(Penalty.SCAR);
-		setModifier(p, "minecraft:max_health", "scar", -Math.min(16.0, Config.SCAR_HEALTH * scar), "add_value");
+		double scarHp = Math.min(16.0, Config.SCAR_HEALTH * scar);
+		setModifier(p, "minecraft:max_health", "scar", -scarHp, "add_value");
+		double hollowHp = ow ? Math.min(16.0 - scarHp, Config.HOLLOW_HEART * d.stacks(Penalty.HOLLOW_HEART)) : 0;
+		setModifier(p, "minecraft:max_health", "hollow_heart", -hollowHp, "add_value");
+		setModifier(p, "minecraft:movement_speed", "leaden_steps",
+				ow ? -(1 - Math.pow(1 - Config.LEADEN_STEPS, d.stacks(Penalty.LEADEN_STEPS))) : 0, "add_multiplied_total");
+		setModifier(p, "minecraft:block_break_speed", "dull_pick",
+				ow ? -(1 - Math.pow(1 - Config.DULL_PICK, d.stacks(Penalty.DULL_PICK))) : 0, "add_multiplied_total");
 		setModifier(p, "minecraft:armor", "cracked_armor", -Config.CRACKED_ARMOR * d.stacks(Penalty.CRACKED_ARMOR), "add_value");
 		setModifier(p, "minecraft:movement_speed", "heavy_legs",
 				-(1 - Math.pow(1 - Config.HEAVY_LEGS, d.stacks(Penalty.HEAVY_LEGS))), "add_multiplied_total");
@@ -1458,6 +1544,19 @@ public final class ServerLogic {
 		int famine = d.stacks(Penalty.FAMINE);
 		if (famine > 0) {
 			run("effect give " + u + " minecraft:hunger 8 " + (famine - 1) + " true");
+		}
+		if (OVERWORLD.equals(dimOf(p))) {
+			int gnawing = d.stacks(Penalty.GNAWING);
+			if (gnawing > 0) {
+				run("effect give " + u + " minecraft:hunger 8 " + (gnawing - 1) + " true");
+			}
+			int luck = d.stacks(Penalty.ILL_LUCK);
+			if (luck > 0) {
+				run("effect give " + u + " minecraft:unluck 8 " + (luck - 1) + " true");
+			}
+			if (d.stacks(Penalty.NIGHT_TERROR) > 0 && p.getY() < 62) {
+				run("effect give " + u + " minecraft:darkness 8 0 true");
+			}
 		}
 		int shadowed = d.stacks(Penalty.SHADOWED);
 		if (shadowed > 0 && isCharged(dimOf(p))) {
