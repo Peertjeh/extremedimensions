@@ -472,6 +472,12 @@ public final class ServerLogic {
 			}
 			pen.append(e.getKey()).append(':').append(e.getValue().size()).append(':').append(min);
 		}
+		if (d.xpDebt > 0) {
+			if (pen.length() > 0) {
+				pen.append(';');
+			}
+			pen.append(Penalty.TOLL.id).append(':').append(d.xpDebt).append(":-2");
+		}
 		if (d.leakStacks > 0) {
 			if (pen.length() > 0) {
 				pen.append(';');
@@ -567,9 +573,20 @@ public final class ServerLogic {
 			if (d.grace > 0) {
 				d.grace--;
 			}
-			if (d.joinDelay > 0 && --d.joinDelay == 0) {
-				d.joinDelay = -1;
+			if (!d.joinDone && ++d.ticksOnline >= Config.JOIN_DELAY_TICKS) {
+				d.joinDone = true;
 				joinActions(p, d);
+			}
+			// XP-schuld (Toll/Tithe): elk level dat je haalt neemt de Tether, tot de schuld betaald is
+			if (d.xpDebt > 0 && p.experienceLevel > 0 && d.tickCounter % 20 == 0) {
+				int take = Math.min(d.xpDebt, p.experienceLevel);
+				p.giveExperienceLevels(-take);
+				d.xpDebt -= take;
+				notice(p, "The Tether takes " + take + (take == 1 ? " level" : " levels")
+						+ (d.xpDebt > 0 ? " (" + d.xpDebt + " still owed)" : ". Your debt is paid."), 0xFFAA88FF);
+				particles(p, "minecraft:sculk_soul", 1.0, 0.4, 0.03, 8);
+				soundSelf(p, "minecraft:particle.soul_escape", 1.0f, 0.8f);
+				forceSync = true;
 			}
 			if (d.offerDelay > 0 && --d.offerDelay == 0) {
 				d.offerDelay = -1;
@@ -1106,7 +1123,8 @@ public final class ServerLogic {
 			}
 			d.offerDelay = 40;
 		}
-		d.joinDelay = Config.JOIN_DELAY_TICKS;
+		d.joinDone = false;
+		d.ticksOnline = 0;
 		d.hasRopeEnd = false;
 		sendState(p, d);
 	}
@@ -1121,7 +1139,10 @@ public final class ServerLogic {
 		run("recipe give " + u + " extremedimensions:void_tether");
 		if (!d.journalDelivered) {
 			d.journalDelivered = true;
-			run("give " + u + " extremedimensions:tether_journal");
+			ItemStack book = new ItemStack(ModItems.TETHER_JOURNAL);
+			if (!p.getInventory().add(book)) {
+				p.drop(book, false);
+			}
 			d.journal.add(JournalEntry.TETHERED.id);
 			run("title " + u + " actionbar {\"text\":\"Something old is holding you. Read the journal.\",\"color\":\"light_purple\",\"italic\":true}");
 			soundSelf(p, "minecraft:item.book.page_turn", 1.0f, 0.7f);
@@ -1418,6 +1439,9 @@ public final class ServerLogic {
 		} else if (d.leakStacks > 0) {
 			d.leakStacks--;
 			mended = Penalty.LEAKY_TANK.title;
+		} else if (d.xpDebt > 0) {
+			d.xpDebt = 0;
+			mended = "Your XP debt";
 		} else {
 			notice(p, "The Tether has nothing to mend in you.", ORANGE);
 			return InteractionResult.SUCCESS;
@@ -1468,18 +1492,8 @@ public final class ServerLogic {
 					run("effect give " + u + " minecraft:hunger " + secs + " 1 true");
 					run("effect give " + u + " minecraft:mining_fatigue " + secs + " 0 true");
 				}
-				case TOLL -> {
-					int lose = (p.experienceLevel + 1) / 2;
-					if (lose > 0) {
-						p.giveExperienceLevels(-lose);
-					}
-				}
-				case TITHE -> {
-					int lose = (p.experienceLevel + 2) / 3;
-					if (lose > 0) {
-						p.giveExperienceLevels(-lose);
-					}
-				}
+				case TOLL -> d.xpDebt += Config.TOLL_LEVELS;
+				case TITHE -> d.xpDebt += Config.TITHE_LEVELS;
 				default -> { }
 			}
 		}

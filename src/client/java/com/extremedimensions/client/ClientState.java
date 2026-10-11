@@ -175,9 +175,13 @@ public final class ClientState {
 			String when;
 			try {
 				int s = Integer.parseInt(secs);
-				when = s < 0 ? "next run" : time(s);
+				when = s == -2 ? "levels owed" : s < 0 ? "next run" : time(s);
 			} catch (NumberFormatException e) {
 				when = "?";
+			}
+			if ("levels owed".equals(when)) {
+				out.add("XP Debt: " + stacks + " " + when);
+				continue;
 			}
 			out.add(name + ("1".equals(stacks) ? "" : " x" + stacks) + " (" + when + ")");
 		}

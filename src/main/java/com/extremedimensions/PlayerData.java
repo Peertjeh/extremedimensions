@@ -14,6 +14,8 @@ public class PlayerData {
 	// --- opgeslagen ---
 	/** Lekkende Tank: aantal stacks dat op de volgende expeditie wacht. */
 	public int leakStacks = 0;
+	/** Toll/Tithe: zoveel levels neemt de Tether van je af zodra je ze verdient. */
+	public int xpDebt = 0;
 	public int expeditions = 0;
 	public int collapses = 0;
 	public double longestRun = 0;
@@ -63,8 +65,9 @@ public class PlayerData {
 	public transient int ticksSinceMove = Integer.MAX_VALUE / 2;
 	/** 0 = geen penalty-klok, 1 = penalty's lopen af, 2 = gepauzeerd (AFK) */
 	public transient int penaltyClock = 0;
-	/** Ticks tot de join-acties (journal, recepten, effecten); -1 = klaar. */
-	public transient int joinDelay = -1;
+	/** Join-acties (journal, recepten, effecten) gedaan sinds deze speler online kwam. */
+	public transient boolean joinDone = false;
+	public transient int ticksOnline = 0;
 	/** De huidige drain inclusief afstandstoeslag (voor de HUD). */
 	public transient double currentDrain = 1.0;
 	/** Waar het laatste kettingstuk eindigde. */

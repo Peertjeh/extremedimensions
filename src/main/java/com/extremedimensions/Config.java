@@ -51,6 +51,12 @@ public final class Config {
 	/** Onhandige handen: zoveel langzamer minen per stack. */
 	public static final double CLUMSY_HANDS = 0.35;
 
+	/** Toll (Nether/End): zoveel levels XP-schuld. De Tether neemt elk level dat je haalt tot het betaald is. */
+	public static final int TOLL_LEVELS = 10;
+
+	/** Tithe (Overworld): zoveel levels XP-schuld. */
+	public static final int TITHE_LEVELS = 5;
+
 	/** Rouw: duur in seconden per stack. */
 	public static final int MOURNING_SECONDS = 600;
 

@@ -36,7 +36,7 @@ public enum Penalty {
 			"The wound weeps where you tore it."),
 	MOURNING("mourning", "Mourning", false, "Weakness, Hunger", "and Fatigue 10m.",
 			"You grieve for something you lost there."),
-	TOLL("toll", "Toll", false, "Lose half of", "your XP levels.",
+	TOLL("toll", "Toll", false, "Your next 10 XP", "levels are taken.",
 			"Memories are the oldest currency."),
 
 	// --- Overworld ---
@@ -52,7 +52,7 @@ public enum Penalty {
 			"The dark below knows your name.", true),
 	ILL_LUCK("ill_luck", "Ill Luck", true, "Worse loot and", "fishing (Unluck).",
 			"Fortune turns its face away.", true),
-	TITHE("tithe", "Tithe", false, "Lose a third of", "your XP levels.",
+	TITHE("tithe", "Tithe", false, "Your next 5 XP", "levels are taken.",
 			"The Tether takes its share.", true);
 
 	public final String id;

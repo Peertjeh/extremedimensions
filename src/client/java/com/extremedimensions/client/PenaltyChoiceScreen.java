@@ -145,7 +145,7 @@ public class PenaltyChoiceScreen extends Screen {
 				}
 			}
 			int active = ClientState.stacksOf(pen.id);
-			if (active > 0) {
+			if (active > 0 && !"toll".equals(pen.id) && !"tithe".equals(pen.id)) {
 				g.centeredText(this.font, "Active: x" + active + " -> x" + (active + 1), x + CARD_W / 2, ly + 2, ClientState.argb((int) (255 * fade), 0xFF5555));
 			}
 			int loreY = top + 86;

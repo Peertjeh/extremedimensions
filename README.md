@@ -130,7 +130,7 @@ AFK en de klok pauzeert ("Penalties paused: you are idle!" linksboven). In de Ov
 | Shadowed | Darkness in Nether en End (vanaf 2 stacks ook Slowness) |
 | Leaky Tank | Eenmalig: de altaren van je volgende expeditie verliezen 50% |
 | Mourning | Eenmalig: Weakness II, Hunger II en Mining Fatigue, 10 minuten |
-| Toll | Eenmalig: je verliest de helft van je XP-levels |
+| Toll | XP-schuld: de eerstvolgende 10 levels die je haalt neemt de Tether |
 
 ## Overworld-penalty's (optioneel, per wereld)
 
@@ -146,7 +146,7 @@ Deze penalty's werken **alleen in de Overworld** en tellen ook alleen daar af (1
 | Dull Pick | 25% langzamer minen |
 | Deep Dread | Darkness onder zeeniveau (grotten) |
 | Ill Luck | Unluck: slechtere loot en vissen |
-| Tithe | Eenmalig: je verliest een derde van je XP-levels |
+| Tithe | XP-schuld: de eerstvolgende 5 levels die je haalt neemt de Tether |
 
 ## Muziek en geluid
 
