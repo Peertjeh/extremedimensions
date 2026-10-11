@@ -23,3 +23,5 @@ jobs:
         with:
           name: Artifacts
           path: build/libs/
+      - name: TEMP probe tether commands
+        run: bash .github/probe/run.sh
