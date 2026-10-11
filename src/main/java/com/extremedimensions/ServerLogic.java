@@ -1141,7 +1141,7 @@ public final class ServerLogic {
 			d.journalDelivered = true;
 			ItemStack book = new ItemStack(ModItems.TETHER_JOURNAL);
 			if (!p.getInventory().add(book)) {
-				p.drop(book, false);
+				run("give " + u + " extremedimensions:tether_journal");
 			}
 			d.journal.add(JournalEntry.TETHERED.id);
 			run("title " + u + " actionbar {\"text\":\"Something old is holding you. Read the journal.\",\"color\":\"light_purple\",\"italic\":true}");
