@@ -26,7 +26,7 @@ public class PenaltyChoiceScreen extends Screen {
 	private long chosenAt = 0;
 
 	public PenaltyChoiceScreen(List<String> ids) {
-		super(Component.literal("Kies je penalty"));
+		super(Component.literal("Choose your penalty"));
 		for (String id : ids) {
 			Penalty p = Penalty.byId(id);
 			if (p != null) {
@@ -53,7 +53,7 @@ public class PenaltyChoiceScreen extends Screen {
 			final int idx = i;
 			final Penalty pen = options.get(i);
 			int x = x0 + i * (CARD_W + GAP);
-			Button b = Button.builder(Component.literal("Kies"), btn -> choose(idx, pen))
+			Button b = Button.builder(Component.literal("Choose"), btn -> choose(idx, pen))
 					.pos(x + 15, y + CARD_H - 28)
 					.size(CARD_W - 30, 20)
 					.build();
@@ -104,7 +104,7 @@ public class PenaltyChoiceScreen extends Screen {
 			g.centeredText(this.font, "DIMENSIONAL COLLAPSE", cx + 2 + jit, y - 38, ClientState.argb((int) (170 * ha), 0x30E0FF));
 		}
 		g.centeredText(this.font, "DIMENSIONAL COLLAPSE", cx - jit / 2, y - 38, ClientState.argb((int) (255 * ha), 0xFF5555));
-		g.centeredText(this.font, "Je tijd was op. Kies je penalty:", cx, y - 24, ClientState.argb((int) (255 * ha), 0xCCCCCC));
+		g.centeredText(this.font, "Your time ran out. Choose a penalty:", cx, y - 24, ClientState.argb((int) (255 * ha), 0xCCCCCC));
 
 		int x0 = startX();
 		for (int i = 0; i < options.size(); i++) {

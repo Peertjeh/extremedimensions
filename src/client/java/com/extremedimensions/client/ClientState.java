@@ -9,8 +9,12 @@ import com.extremedimensions.Penalty;
 public final class ClientState {
 	private ClientState() {}
 
-	public static int nether = 0;
-	public static int end = 0;
+	/** Charge van geladen altaren in de buurt; -1 = geen altaar in de buurt. */
+	public static int nearNether = -1;
+	public static int nearEnd = -1;
+	/** Charge van de lopende expeditie en waarmee hij begon. */
+	public static int runCharge = 0;
+	public static int runMax = 0;
 	/** 0 = Overworld/overig, 1 = Nether, 2 = End */
 	public static int dimCode = 0;
 	public static int drainX100 = 100;
@@ -77,8 +81,8 @@ public final class ClientState {
 		double dt = lastFrame == 0 ? 0.016 : Math.min(0.25, (now - lastFrame) / 1000.0);
 		lastFrame = now;
 		double k = 1 - Math.exp(-dt * 7.0);
-		shownNether += (live(1) - shownNether) * k;
-		shownEnd += (live(2) - shownEnd) * k;
+		shownNether += (Math.max(0, nearNether) - shownNether) * k;
+		shownEnd += (Math.max(0, nearEnd) - shownEnd) * k;
 	}
 
 	/** Verwerkt een animatie-opdracht van de server (zie Fx). */
@@ -96,14 +100,30 @@ public final class ClientState {
 		}
 	}
 
-	/** Charge van een dimensie (1 = Nether, 2 = End), soepel doorgeteld tussen server-updates. */
-	public static double live(int code) {
-		double base = code == 1 ? nether : end;
-		if (dimCode == code) {
-			double elapsed = (System.currentTimeMillis() - syncMs) / 1000.0;
-			base = Math.max(0, base - elapsed * drainX100 / 100.0);
-		}
-		return base;
+	/** Resterende charge van de lopende expeditie, soepel doorgeteld tussen server-updates. */
+	public static double liveRun() {
+		double elapsed = (System.currentTimeMillis() - syncMs) / 1000.0;
+		return Math.max(0, runCharge - elapsed * drainX100 / 100.0);
+	}
+
+	/** Alles terug naar begin (bij het verlaten van een wereld). */
+	public static void reset() {
+		nearNether = -1;
+		nearEnd = -1;
+		runCharge = 0;
+		runMax = 0;
+		dimCode = 0;
+		drainX100 = 100;
+		expeditions = 0;
+		collapses = 0;
+		longestRun = 0;
+		runSecs = 0;
+		penalties = "";
+		noticeUntil = 0;
+		shownNether = 0;
+		shownEnd = 0;
+		startAt = safeAt = collapseAt = bounceAt = penaltyAt = 0;
+		netherFlashAt = endFlashAt = netherGainAt = endGainAt = 0;
 	}
 
 	public static String time(double seconds) {
@@ -111,7 +131,7 @@ public final class ClientState {
 		return String.format("%d:%02d", s / 60, s % 60);
 	}
 
-	/** Actieve penalty's als leesbare regels, bijv. "Schuld (2 runs)". */
+	/** Actieve penalty's als leesbare regels, bijv. "Debt (2 runs)". */
 	public static List<String> penaltyLines() {
 		List<String> out = new ArrayList<>();
 		if (penalties == null || penalties.isEmpty()) {
@@ -121,7 +141,7 @@ public final class ClientState {
 			String[] kv = part.split(":");
 			Penalty p = Penalty.byId(kv[0]);
 			String runs = kv.length > 1 ? kv[1] : "?";
-			out.add((p != null ? p.title : kv[0]) + " (" + runs + " runs)");
+			out.add((p != null ? p.title : kv[0]) + " (" + runs + ("1".equals(runs) ? " run)" : " runs)"));
 		}
 		return out;
 	}

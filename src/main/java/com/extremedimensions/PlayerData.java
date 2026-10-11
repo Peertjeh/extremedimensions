@@ -10,8 +10,8 @@ import java.util.Map;
  */
 public class PlayerData {
 	// --- opgeslagen ---
-	public double nether = 0;
-	public double end = 0;
+	/** Lekkende Tank: de volgende expeditie begint met minder charge. */
+	public boolean leakPending = false;
 	public int expeditions = 0;
 	public int collapses = 0;
 	public double longestRun = 0;
@@ -19,6 +19,10 @@ public class PlayerData {
 	public Map<String, Integer> penalties = new HashMap<>();
 	/** penalty-id's die de speler nog moet kiezen (leeg = niets te kiezen) */
 	public List<String> pendingOffer = new ArrayList<>();
+	/** De altaren (sleutels) die de lopende expeditie van brandstof voorzien. Opgeslagen voor als je uitlogt. */
+	public List<String> linked = new ArrayList<>();
+	/** Charge bij de start van de expeditie (voor de vulling van de timerbalk). */
+	public double runMax = 0;
 
 	// --- alleen tijdens het spelen ---
 	public transient String dim = "overworld";

@@ -25,7 +25,7 @@ public class ChargeHud implements HudElement {
 
 		// 1) Rode rand bij weinig tijd
 		if (ClientState.dimCode != 0) {
-			double remaining = ClientState.live(ClientState.dimCode);
+			double remaining = ClientState.liveRun();
 			if (remaining <= 60) {
 				double intensity = (60 - remaining) / 60.0;
 				double pulse = 0.65 + 0.35 * Math.sin(now / (220.0 - 120.0 * intensity));
@@ -44,19 +44,28 @@ public class ChargeHud implements HudElement {
 			}
 		}
 
-		// 2) Kleine meters linksboven
-		drawMini(g, font, 6, 6, "Nether", ClientState.shownNether, NETHER_COLOR, ClientState.netherFlashAt, ClientState.netherGain, ClientState.netherGainAt, now);
-		drawMini(g, font, 6, 22, "End", ClientState.shownEnd, END_COLOR, ClientState.endFlashAt, ClientState.endGain, ClientState.endGainAt, now);
-		int py = 40;
-		for (String line : ClientState.penaltyLines()) {
-			double pulse = ClientState.penaltyAt > 0 ? ClientState.clamp01(1 - (now - ClientState.penaltyAt) / 1200.0) : 0;
-			g.text(font, line, 6, py, ClientState.argb(255, pulse > 0 ? 0xFFDD66 : 0xFFAA00));
-			py += 10;
+		// 2) Kleine meters linksboven: alleen in de buurt van geladen altaren
+		int my = 6;
+		if (ClientState.nearNether >= 0) {
+			drawMini(g, font, 6, my, "Nether", ClientState.shownNether, NETHER_COLOR, ClientState.netherFlashAt, ClientState.netherGain, ClientState.netherGainAt, now);
+			my += 16;
+		}
+		if (ClientState.nearEnd >= 0) {
+			drawMini(g, font, 6, my, "End", ClientState.shownEnd, END_COLOR, ClientState.endFlashAt, ClientState.endGain, ClientState.endGainAt, now);
+			my += 16;
+		}
+		if (my > 6) {
+			int py = my + 2;
+			for (String line : ClientState.penaltyLines()) {
+				double pulse = ClientState.penaltyAt > 0 ? ClientState.clamp01(1 - (now - ClientState.penaltyAt) / 1200.0) : 0;
+				g.text(font, line, 6, py, ClientState.argb(255, pulse > 0 ? 0xFFDD66 : 0xFFAA00));
+				py += 10;
+			}
 		}
 
 		// 3) Grote timer in Nether/End
 		if (ClientState.dimCode != 0) {
-			double remaining = ClientState.live(ClientState.dimCode);
+			double remaining = ClientState.liveRun();
 			boolean nether = ClientState.dimCode == 1;
 			int base = nether ? NETHER_COLOR : END_COLOR;
 			double slide = ClientState.startAt > 0 ? ClientState.ease((now - ClientState.startAt) / 550.0) : 1.0;
@@ -68,7 +77,7 @@ public class ChargeHud implements HudElement {
 			int barW = 180;
 			int bx = (w - barW) / 2 + xs;
 			int by = 20 + yOff + ys;
-			int fill = (int) (barW * Math.min(1.0, remaining / Config.MAX_CHARGE));
+			int fill = (int) (barW * Math.min(1.0, remaining / Math.max(1, ClientState.runMax)));
 			int barColor = remaining <= 60 ? 0xFF3030 : remaining <= 120 ? 0xFFAA00 : base;
 			boolean collapsing = ClientState.collapseAt > 0 && now - ClientState.collapseAt < 2000;
 			if (!collapsing) {
@@ -140,7 +149,7 @@ public class ChargeHud implements HudElement {
 			for (int k = 0; k < 6; k++) {
 				g.fill(lx - 2 - k * 6, 0, lx + 2 - k * 6, h, ClientState.argb((int) ((120 - k * 18) * (1 - t)), 0x55FF55));
 			}
-			g.centeredText(font, "VEILIG TERUG", w / 2, h / 3, ClientState.argb((int) (255 * (1 - t * t)), 0x88FF88));
+			g.centeredText(font, "SAFELY BACK", w / 2, h / 3, ClientState.argb((int) (255 * (1 - t * t)), 0x88FF88));
 			for (int i = 0; i < 16; i++) {
 				double ang = i * 0.39 + t * 2;
 				int r = (int) (30 + ClientState.ease(st / 900.0) * 80);
@@ -183,7 +192,7 @@ public class ChargeHud implements HudElement {
 		int textColor = flash > 0 ? mix(color, 0xFFFFFF, flash) : color;
 		g.text(font, name + "  " + ClientState.time(seconds), x, y, ClientState.argb(255, textColor));
 		int bw = 70;
-		int fill = (int) (bw * Math.min(1.0, seconds / Config.MAX_CHARGE));
+		int fill = (int) (bw * Math.min(1.0, seconds / Math.max(Config.MAX_CHARGE, seconds)));
 		g.fill(x, y + 10, x + bw, y + 13, ClientState.argb(144, 0x000000));
 		if (fill > 0) {
 			g.fill(x, y + 10, x + fill, y + 13, ClientState.argb(255, color));

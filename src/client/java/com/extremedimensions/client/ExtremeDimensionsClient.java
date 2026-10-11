@@ -9,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.TitleScreen;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
@@ -24,14 +25,19 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 			}
 		});
 
+		// Elke wereld begint schoon
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ClientState::reset));
+
 		// HUD
 		HudElementRegistry.addLast(ExtremeDimensions.id("charge_hud"), new ChargeHud());
 
 		// Status van de server
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.StatePayload.TYPE, (payload, context) ->
 				context.client().execute(() -> {
-					ClientState.nether = payload.nether();
-					ClientState.end = payload.end();
+					ClientState.nearNether = payload.nearNether();
+					ClientState.nearEnd = payload.nearEnd();
+					ClientState.runCharge = payload.runCharge();
+					ClientState.runMax = payload.runMax();
 					ClientState.dimCode = payload.dimCode();
 					ClientState.drainX100 = payload.drainX100();
 					ClientState.expeditions = payload.expeditions();

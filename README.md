@@ -32,15 +32,26 @@ Vervangen? Overschrijf `src/client/resources/assets/extremedimensions/textures/g
 
 ## Hoe het werkt
 
-- **Altaar** = een **Lodestone**. Rechtermuisklik met een laad-item of Tether in je hand om Charge te storten. (Een kompas gebruiken op de Lodestone werkt nog gewoon.)
+- **Altaar** = een **Lodestone in de Overworld, binnen 5 blokken van een portaal**
+  (Nether Portal voor de Nether, End Portal of End Portal Frame voor de End).
+  Rechtermuisklik met een laad-item of Tether in je hand om Charge te storten.
+- **Een altaar is een tank voor een dimensie.** De eerste lading bepaalt het type: de Lodestone verandert in een
+  **Ember Lodestone** (Nether) of **Void Lodestone** (End) en accepteert daarna alleen nog die brandstof.
+  Kapotmaken geeft een gewone Lodestone terug; de charge is dan weg.
+- **Meerdere altaren** bij hetzelfde portaal tellen bij elkaar op. Max 30 minuten per altaar.
+- **HUD linksboven**: alleen zichtbaar binnen 10 blokken van een geladen altaar (som van alle altaren in de buurt).
+- **Deeltjes**: geladen altaren gloeien (vuur of portaaldeeltjes), hoe voller hoe meer, en lekken deeltjes naar het portaal.
 - **Statusscherm**: sneak + lege hand op het altaar.
 - **Nether Charge**: steenkool (2s), houtskool (2s), steenkoolblok (18s), magmablok (6s), fire charge (12s), blaze powder (15s), blaze rod (30s).
 - **End Charge**: amethist shard (3s), chorus fruit (6s), ender pearl (20s), eye of ender (45s), shulker shell (90s), echo shard (120s).
-- Max 30 minuten per dimensie. Alles aanpasbaar in `ChargeItems.java` en `Config.java`.
-- Een dimensie in zonder charge: de poort is slapend en je wordt teruggestuurd.
-- In de dimensie loopt je charge leeg (1 seconde per seconde). Bij 0 = Collapse.
-- Normaal doodgaan in Nether/End: je tank van die dimensie loopt leeg (geen penalty-keuze).
+- Ga je door een portaal, dan voeden de altaren van dat type rond dat portaal (binnen 8 blokken) je expeditie.
+  Geen geladen altaar? Dan is de poort slapend en word je teruggestuurd.
+- In de dimensie lopen die altaren leeg (1 seconde per seconde). Bij 0 = Collapse.
+- Normaal doodgaan in Nether/End: de altaren van je expeditie lopen leeg (geen penalty-keuze).
 - Veilig terug in de Overworld = expeditie geslaagd (penalty's tellen af).
+- **Elke wereld heeft zijn eigen voortgang** (opgeslagen in `extremedimensions.json` in de wereldmap).
+- Alle teksten in het spel zijn Engels.
+- Alles aanpasbaar in `ChargeItems.java` en `Config.java`.
 
 ## Lodestone en de twee Tether-items
 
@@ -52,7 +63,7 @@ De Lodestone is aangepast: zonder Netherite te maken, zodat je vóór de Nether 
 | **Ember Tether** (Nether) | 8 Coal Blocks rondom 1 Lodestone |
 | **Void Tether** (End) | 4 Ender Pearls (hoeken) + 4 Eyes of Ender (zijkanten) rondom 1 Lodestone |
 
-Rechtermuisklik op het altaar (Lodestone) met een Tether in je hand: +10 minuten Charge in een keer
+Rechtermuisklik op het altaar met een Tether in je hand: +10 minuten Charge in een keer
 (`TETHER_ITEM_CHARGE` in `Config.java`). Items staan nog niet in de creatieve tab: gebruik
 `/give @s extremedimensions:ember_tether` en `/give @s extremedimensions:void_tether`.
 
@@ -60,10 +71,10 @@ Rechtermuisklik op het altaar (Lodestone) met een Tether in je hand: +10 minuten
 
 - **Titelscherm:** eigen logo, langzame zoom, parallax met de muis, pulserende portaalgloed en zwevende vonken.
 - **Storten en Tether binden:** vlam- of portaaldeeltjes, enchant-glyphs, geluid, balk die oplicht en een zwevende "+tijd".
-- **Expeditie start:** timerbalk schuift van boven in, deeltjes en geluid.
+- **Expeditie start:** timerbalk schuift van boven in, deeltjes en geluid (geen melding).
 - **Weinig tijd:** rode rand, trillende balk, klok- en hartslaggeluid.
 - **Collapse:** witte flits, rode gloed, glitchbalken, de balk knapt in tweeen, explosie en bliksemgeluid.
-- **Veilig terug:** groene lichtveeg, "VEILIG TERUG" en vonkjes, totem-deeltjes.
+- **Veilig terug:** groene lichtveeg, "SAFELY BACK" en vonkjes, totem-deeltjes.
 - **Penalty-keuze:** kaarten schuiven in, lichten op bij hover, gekozen kaart flitst.
 - **Statusscherm:** balken vullen zich en getallen tellen op.
 
@@ -71,16 +82,13 @@ Rechtermuisklik op het altaar (Lodestone) met een Tether in je hand: +10 minuten
 
 | Penalty | Effect |
 |---|---|
-| Versnelde Drain | Charge loopt 1,5x sneller, 2 geslaagde runs lang |
-| Schuld | Items leveren 25% minder charge op, 2 runs lang |
-| Litteken | -2 hartjes, 2 runs lang |
-| Lekkende Tank | Meteen 30% van je charge weg |
-| Rouw | Weakness en Hunger, 5 minuten |
+| Accelerated Drain | Charge loopt 1,5x sneller, 2 geslaagde runs lang |
+| Debt | Items leveren 25% minder charge op, 2 runs lang |
+| Scar | -2 hartjes, 2 runs lang |
+| Leaky Tank | Je volgende expeditie: de altaren verliezen 30% van hun charge |
+| Mourning | Weakness en Hunger, 5 minuten |
 
 ## Bekende beperkingen (versie 0.1)
 
 - Uitloggen in een dimensie pauzeert de timer (exploit). Kan in een volgende versie bestraft worden.
-- Spelerdata staat in `config/extremedimensions-data.json` (bij de server dus in de serverconfig), niet in de wereldmap.
-- Het altaar is een bestaand blok (Lodestone), geen eigen blok.
-- Commando's die de mod intern gebruikt (kill, tp, effect, attribute, particle, playsound) kunnen feedback in de serverconsole en bij ops geven.
 - Geluids- en deeltjesnamen in de animaties kunnen in 26.3 anders heten; een verkeerde naam geeft alleen geen effect.

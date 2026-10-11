@@ -7,28 +7,28 @@ import java.util.List;
 /**
  * Penalty's die je kunt kiezen na een Dimensional Collapse.
  * "timed" penalty's blijven actief tot je Config.PENALTY_RUNS expedities veilig afrondt.
- * Niet-timed penalty's werken meteen en zijn dan klaar.
+ * Niet-timed penalty's werken een keer en zijn dan klaar.
  */
 public enum Penalty {
-	ACCELERATED_DRAIN("accelerated_drain", "Versnelde Drain", true,
-			"Je charge loopt 1,5x sneller",
-			"leeg in Nether en End.",
-			"Duurt 2 geslaagde runs."),
-	DEBT("debt", "Schuld", true,
-			"Items in het altaar leveren",
-			"25% minder charge op.",
-			"Duurt 2 geslaagde runs."),
-	SCAR("scar", "Litteken", true,
-			"Je verliest 2 hartjes",
-			"max health.",
-			"Duurt 2 geslaagde runs."),
-	LEAKY_TANK("leaky_tank", "Lekkende Tank", false,
-			"Je verliest meteen 30%",
-			"van je resterende charge",
-			"(Nether en End)."),
-	MOURNING("mourning", "Rouw", false,
-			"Weakness en Hunger",
-			"gedurende 5 minuten.",
+	ACCELERATED_DRAIN("accelerated_drain", "Accelerated Drain", true,
+			"Your charge drains 1.5x",
+			"faster in Nether and End.",
+			"Lasts 2 successful runs."),
+	DEBT("debt", "Debt", true,
+			"Items put in an altar",
+			"give 25% less charge.",
+			"Lasts 2 successful runs."),
+	SCAR("scar", "Scar", true,
+			"You lose 2 hearts",
+			"of max health.",
+			"Lasts 2 successful runs."),
+	LEAKY_TANK("leaky_tank", "Leaky Tank", false,
+			"Your next expedition",
+			"loses 30% of the charge",
+			"in its altars."),
+	MOURNING("mourning", "Mourning", false,
+			"Weakness and Hunger",
+			"for 5 minutes.",
 			"");
 
 	public final String id;

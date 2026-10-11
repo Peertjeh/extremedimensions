@@ -19,7 +19,7 @@ public class ExtremeDimensions implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		DataStore.load();
+		ModBlocks.init();
 		ModItems.init();
 
 		// Pakketten registreren (server -> client)
@@ -35,6 +35,6 @@ public class ExtremeDimensions implements ModInitializer {
 				(payload, context) -> ServerLogic.onChoose(context.player(), payload.id()));
 
 		ServerLogic.register();
-		LOGGER.info("Extreme Dimensions geladen: Nether Charge en End Charge actief.");
+		LOGGER.info("Extreme Dimensions loaded: Nether and End altars active.");
 	}
 }

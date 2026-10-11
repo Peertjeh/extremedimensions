@@ -8,15 +8,21 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 public final class ModPackets {
 	private ModPackets() {}
 
-	/** Server -> client: de volledige status van de speler (voor HUD en statusscherm). */
-	public record StatePayload(int nether, int end, int dimCode, int drainX100, int expeditions,
-							int collapses, int longestRun, int runSecs, String penalties) implements CustomPacketPayload {
+	/**
+	 * Server -> client: de volledige status van de speler (voor HUD en statusscherm).
+	 * nearNether/nearEnd: charge van geladen altaren in de buurt, -1 = geen altaar in de buurt.
+	 * runCharge/runMax: charge van de lopende expeditie en de charge waarmee hij begon.
+	 */
+	public record StatePayload(int nearNether, int nearEnd, int runCharge, int runMax, int dimCode, int drainX100,
+							int expeditions, int collapses, int longestRun, int runSecs, String penalties) implements CustomPacketPayload {
 		public static final Type<StatePayload> TYPE = new Type<>(ExtremeDimensions.id("state"));
 		public static final StreamCodec<FriendlyByteBuf, StatePayload> CODEC = StreamCodec.ofMember(StatePayload::write, StatePayload::read);
 
 		private void write(FriendlyByteBuf buf) {
-			buf.writeVarInt(nether);
-			buf.writeVarInt(end);
+			buf.writeVarInt(nearNether);
+			buf.writeVarInt(nearEnd);
+			buf.writeVarInt(runCharge);
+			buf.writeVarInt(runMax);
 			buf.writeVarInt(dimCode);
 			buf.writeVarInt(drainX100);
 			buf.writeVarInt(expeditions);
@@ -27,8 +33,8 @@ public final class ModPackets {
 		}
 
 		private static StatePayload read(FriendlyByteBuf buf) {
-			return new StatePayload(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
-					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf());
+			return new StatePayload(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
+					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf());
 		}
 
 		@Override

@@ -14,12 +14,12 @@ public class StatusScreen extends Screen {
 	private final long openAt = System.currentTimeMillis();
 
 	public StatusScreen() {
-		super(Component.literal("Altaar"));
+		super(Component.literal("Altar"));
 	}
 
 	@Override
 	protected void init() {
-		this.addRenderableWidget(Button.builder(Component.literal("Sluiten"), b -> this.onClose())
+		this.addRenderableWidget(Button.builder(Component.literal("Close"), b -> this.onClose())
 				.pos(this.width / 2 - 50, this.height / 2 + PANEL_H / 2 - 28)
 				.size(100, 20)
 				.build());
@@ -41,21 +41,21 @@ public class StatusScreen extends Screen {
 		double pulse = 0.5 + 0.5 * Math.sin(now / 600.0);
 		g.fill(x - 1, y - 1, x + PANEL_W + 1, y + PANEL_H + 1, ClientState.argb(pa, pulse > 0.5 ? 0x6A4FB0 : 0x4A3A7A));
 		g.fill(x, y, x + PANEL_W, y + PANEL_H, ClientState.argb((int) (240 * pe), 0x121218));
-		g.centeredText(this.font, "DIMENSIE-ALTAAR", cx, y + 8, ClientState.argb(pa, 0xFFFFFF));
+		g.centeredText(this.font, "DIMENSION ALTAR", cx, y + 8, ClientState.argb(pa, 0xFFFFFF));
 
-		bar(g, x + 14, y + 28, "Nether Charge", ClientState.live(1) * e, 0xFF7A1A, pa);
-		bar(g, x + 14, y + 58, "End Charge", ClientState.live(2) * e, 0xB66BFF, pa);
+		bar(g, x + 14, y + 28, "Nether altars nearby", ClientState.nearNether, e, 0xFF7A1A, pa);
+		bar(g, x + 14, y + 58, "End altars nearby", ClientState.nearEnd, e, 0xB66BFF, pa);
 
 		int ty = y + 92;
 		int c = ClientState.argb(pa, 0xCCCCCC);
-		g.text(this.font, "Expedities: " + (int) (ClientState.expeditions * e) + "    Collapses: " + (int) (ClientState.collapses * e), x + 14, ty, c);
-		g.text(this.font, "Langste run: " + ClientState.time(ClientState.longestRun * e), x + 14, ty + 12, c);
+		g.text(this.font, "Expeditions: " + (int) (ClientState.expeditions * e) + "    Collapses: " + (int) (ClientState.collapses * e), x + 14, ty, c);
+		g.text(this.font, "Longest run: " + ClientState.time(ClientState.longestRun * e), x + 14, ty + 12, c);
 		g.text(this.font, "Drain: x" + String.format("%.1f", ClientState.drainX100 / 100.0), x + 14, ty + 24, c);
 
-		g.text(this.font, "Actieve penalty's:", x + 14, ty + 42, ClientState.argb(pa, 0xFFAA00));
+		g.text(this.font, "Active penalties:", x + 14, ty + 42, ClientState.argb(pa, 0xFFAA00));
 		var lines = ClientState.penaltyLines();
 		if (lines.isEmpty()) {
-			g.text(this.font, "Geen. Je bent schoon.", x + 22, ty + 54, ClientState.argb(pa, 0x88DD88));
+			g.text(this.font, "None. You're clean.", x + 22, ty + 54, ClientState.argb(pa, 0x88DD88));
 		} else {
 			int ly = ty + 54;
 			for (String line : lines) {
@@ -65,10 +65,17 @@ public class StatusScreen extends Screen {
 		}
 	}
 
-	private void bar(GuiGraphicsExtractor g, int x, int y, String name, double seconds, int color, int pa) {
-		g.text(this.font, name + ": " + ClientState.time(seconds) + " / " + ClientState.time(Config.MAX_CHARGE), x, y, ClientState.argb(pa, color));
+	private void bar(GuiGraphicsExtractor g, int x, int y, String name, int value, double e, int color, int pa) {
+		if (value < 0) {
+			g.text(this.font, name + ": none", x, y, ClientState.argb(pa, 0x888888));
+			g.fill(x, y + 12, x + PANEL_W - 28, y + 20, ClientState.argb(pa, 0x2A2A2A));
+			return;
+		}
+		double seconds = value * e;
+		double max = Math.max(Config.MAX_CHARGE, value);
+		g.text(this.font, name + ": " + ClientState.time(seconds), x, y, ClientState.argb(pa, color));
 		int bw = PANEL_W - 28;
-		int fill = (int) (bw * Math.min(1.0, seconds / Config.MAX_CHARGE));
+		int fill = (int) (bw * Math.min(1.0, seconds / max));
 		g.fill(x, y + 12, x + bw, y + 20, ClientState.argb(pa, 0x2A2A2A));
 		if (fill > 0) {
 			g.fill(x, y + 12, x + fill, y + 20, ClientState.argb(pa, color));

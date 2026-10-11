@@ -8,7 +8,7 @@ import net.minecraft.world.item.Items;
 
 /**
  * Welke items hoeveel charge (in seconden) opleveren als je ze in het altaar stopt.
- * Het altaar is een Enchanting Table: rechtermuisklik met het item in je hand.
+ * Het altaar is een Lodestone in de Overworld: rechtermuisklik met het item in je hand.
  * Pas de waardes aan om de grind zwaarder of lichter te maken.
  */
 public final class ChargeItems {
