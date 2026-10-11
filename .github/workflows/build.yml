@@ -23,17 +23,3 @@ jobs:
         with:
           name: Artifacts
           path: build/libs/
-      - name: debug minecraft api
-        if: always()
-        run: |
-          J=$(find ~/.gradle/caches -name '*.jar' -path '*minecraft*' | grep -i -E 'client|merged' | grep -v sources | head -5)
-          echo "$J"
-          for j in $J; do
-            javap -cp "$j" -public net.minecraft.client.Minecraft 2>/dev/null | grep -i -E 'screen|gui' && break
-          done
-          for j in $J; do
-            javap -cp "$j" -public net.minecraft.client.gui.Gui 2>/dev/null | grep -i screen && break
-          done
-          for j in $J; do
-            javap -cp "$j" -public net.minecraft.client.gui.screens.Screen 2>/dev/null | grep -i -E 'close|screen' && break
-          done

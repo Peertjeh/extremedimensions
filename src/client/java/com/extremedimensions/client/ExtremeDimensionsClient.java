@@ -54,11 +54,11 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OfferPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> {
 					Minecraft mc = Minecraft.getInstance();
-					mc.setScreen(new PenaltyChoiceScreen(Arrays.asList(payload.ids().split(","))));
+					mc.gui.setScreen(new PenaltyChoiceScreen(Arrays.asList(payload.ids().split(","))));
 				}));
 
 		// Statusscherm (altaar)
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenStatusPayload.TYPE, (payload, context) ->
-				context.client().execute(() -> Minecraft.getInstance().setScreen(new StatusScreen())));
+				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(new StatusScreen())));
 	}
 }
