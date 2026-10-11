@@ -87,6 +87,18 @@ public final class Config {
 	/** Onder zoveel seconden charge begint de Leeching: zielen zuigen zichtbaar aan je. */
 	public static final double LEECH_SECONDS = 60.0;
 
+	/** Per zoveel blokken (horizontaal) van je aankomstportaal gaat de drain +100% (100 blokken = 2x zo snel). */
+	public static final double TETHER_DISTANCE_STEP = 100.0;
+
+	/** Elke zoveel blokken legt de fysieke tether een nieuw stuk ketting neer. */
+	public static final double ROPE_SEGMENT = 1.5;
+
+	/** Maximaal aantal kettingstukken per speler (daarna stopt de ketting met groeien). */
+	public static final int ROPE_MAX_SEGMENTS = 300;
+
+	/** Ticks na het inloggen voordat de mod spullen geeft en effecten zet (de speler moet eerst echt in de wereld staan). */
+	public static final int JOIN_DELAY_TICKS = 40;
+
 	/** Ticks wachten voor een nieuwe poort-check na een bounce. */
 	public static final int BOUNCE_GRACE_TICKS = 40;
 }

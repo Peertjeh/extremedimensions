@@ -54,6 +54,10 @@ public class ChargeHud implements HudElement {
 			drawMini(g, font, 6, my, "End", ClientState.shownEnd, END_COLOR, ClientState.endFlashAt, ClientState.endGain, ClientState.endGainAt, now);
 			my += 16;
 		}
+		if (ClientState.dimCode == 0 && ClientState.tetherDist >= 0) {
+			g.text(font, "Tethered", 6, my, ClientState.argb(255, 0x9FE8F2));
+			my += 12;
+		}
 		boolean beyond = ClientState.dimCode != 0;
 		if (my > 6 || beyond) {
 			int py = my + 2;
@@ -101,8 +105,14 @@ public class ChargeHud implements HudElement {
 				if (sx1 > sx0) {
 					g.fill(sx0, by, sx1, by + 8, ClientState.argb(70, 0xFFFFFF));
 				}
+				// Tether-afstand en drain: hoe verder van het portaal, hoe sneller het gaat
+				String info = ClientState.tetherDist >= 0 ? "Tether " + ClientState.tetherDist + "m" : "";
 				if (ClientState.drainX100 > 100) {
-					g.centeredText(font, "Drain x" + String.format("%.1f", ClientState.drainX100 / 100.0), w / 2 + xs, by + 14, ClientState.argb(255, 0xFFAA00));
+					info += (info.isEmpty() ? "" : "   ") + "Drain x" + String.format("%.1f", ClientState.drainX100 / 100.0);
+				}
+				if (!info.isEmpty()) {
+					int dc = ClientState.drainX100 >= 300 ? 0xFF5555 : ClientState.drainX100 >= 180 ? 0xFFAA00 : 0x9FE8F2;
+					g.centeredText(font, info, w / 2 + xs, by + 14, ClientState.argb(255, dc));
 				}
 			}
 		}

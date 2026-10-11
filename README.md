@@ -38,7 +38,9 @@ De Tether is een eeuwenoude binding, geweven uit zielen, die alles wat leeft aan
 Buiten de Overworld zwerven de **Starved**: zielen die levenswarmte leegzuigen. Portals zijn **Wounds**, lodestones
 worden **Anchors** (Ember Anchor / Void Anchor) die je via de wond voeden. De rest vertelt het spel niet: dat ontdek je.
 
-- **Tether Journal**: krijg je bij je eerste keer inloggen (kwijt? Book + Amethyst Shard). Bevat 14 pagina's van een
+- **Tether Journal**: krijg je 2 seconden na je eerste keer inloggen (kwijt? Book + Amethyst Shard).
+  Het Lodestone-recept staat meteen in je receptenboek; sta je bij een portal zonder anker, dan vertelt het
+  journal je wat je nodig hebt. Bevat 15 pagina's van een
   naamloze Wanderer die je ontgrendelt door te spelen: je eerste anchor, de Nether, de End, een Collapse, de Deep Dark,
   een Enderman doden, een volle anchor, en meer. Rechtermuisklik om te lezen.
 - **Tether Fragment**: vijandige mobs in Nether/End laten soms een fragment vallen (4%, sterke mobs 12%).
@@ -66,6 +68,12 @@ worden **Anchors** (Ember Anchor / Void Anchor) die je via de wond voeden. De re
 - **Statusscherm**: sneak + lege hand op het altaar.
 - **Nether Charge**: steenkool (2s), houtskool (2s), steenkoolblok (18s), magmablok (6s), fire charge (12s), blaze powder (15s), blaze rod (30s).
 - **End Charge**: amethist shard (3s), chorus fruit (6s), ender pearl (20s), eye of ender (45s), shulker shell (90s), echo shard (120s).
+- **De fysieke tether**: rechtsklik met een **Chain** (of Lead) op een geladen anker om jezelf vast te maken
+  (nog een keer = losmaken; de ketting wordt niet verbruikt). Zonder tether is de portal slapend.
+  Er ligt echt een ketting achter je op de grond: van het anker naar de portal, en in de Nether/End vanaf je
+  aankomstportaal achter je aan (in de End een gloeiende draad van End Rods). Volg hem terug naar huis.
+- **Afstand**: per 100 blokken van je aankomstportaal gaat de drain +100% (200 blokken = 3x zo snel).
+  Bouw dus meer portals in de Overworld, dichter bij waar je heen moet.
 - Ga je door een portaal, dan voeden de altaren van dat type rond dat portaal (binnen 8 blokken) je expeditie.
   Geen geladen altaar? Dan is de poort slapend en word je teruggestuurd.
 - In de dimensie lopen die altaren leeg (1 seconde per seconde). Bij 0 = Collapse.

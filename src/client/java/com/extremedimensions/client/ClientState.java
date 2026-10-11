@@ -25,6 +25,8 @@ public final class ClientState {
 	public static String penalties = "";
 	/** 0 = penalty's lopen niet af, 1 = lopen af, 2 = gepauzeerd (AFK) */
 	public static int penaltyClock = 0;
+	/** -1 = niet vastgemaakt, anders afstand tot je aankomstportaal in blokken. */
+	public static int tetherDist = -1;
 	public static long syncMs = 0;
 
 	public static String noticeText = "";
@@ -127,6 +129,7 @@ public final class ClientState {
 		runSecs = 0;
 		penalties = "";
 		penaltyClock = 0;
+		tetherDist = -1;
 		noticeUntil = 0;
 		shownNether = 0;
 		shownEnd = 0;

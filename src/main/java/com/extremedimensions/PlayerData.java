@@ -30,7 +30,11 @@ public class PlayerData {
 	/** Ontgrendelde pagina's van het Tether Journal. */
 	public Set<String> journal = new LinkedHashSet<>();
 	/** Of de speler zijn eerste Tether Journal al kreeg. */
-	public boolean journalGiven = false;
+	public boolean journalDelivered = false;
+	/** Het anker (sleutel) waar de speler zijn fysieke tether aan vastmaakte; null = niet vastgemaakt. */
+	public String tetherAnchor = null;
+	/** Waar de speler aankwam in Nether/End (voor de afstand tot het portaal). */
+	public double arrivalX, arrivalZ;
 
 	// --- alleen tijdens het spelen ---
 	public transient String dim = "overworld";
@@ -57,6 +61,15 @@ public class PlayerData {
 	public transient int ticksSinceMove = Integer.MAX_VALUE / 2;
 	/** 0 = geen penalty-klok, 1 = penalty's lopen af, 2 = gepauzeerd (AFK) */
 	public transient int penaltyClock = 0;
+	/** Ticks tot de join-acties (journal, recepten, effecten); -1 = klaar. */
+	public transient int joinDelay = -1;
+	/** De huidige drain inclusief afstandstoeslag (voor de HUD). */
+	public transient double currentDrain = 1.0;
+	/** Waar het laatste kettingstuk eindigde. */
+	public transient boolean hasRopeEnd = false;
+	public transient double ropeX, ropeY, ropeZ;
+	public transient String ropeDim = null;
+	public transient int ropeSegments = 0;
 
 	public int stacks(Penalty p) {
 		List<Double> l = penaltyTime.get(p.id);

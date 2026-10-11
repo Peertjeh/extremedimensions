@@ -103,6 +103,7 @@ public final class ServerLogic {
 				}
 				d.inRun = false;
 				d.linked.clear();
+				clearRope(p, d);
 				d.endedIn = dimName(dim);
 				owePenalty(d);
 				unlock(p, d, JournalEntry.ENDED);
@@ -162,8 +163,14 @@ public final class ServerLogic {
 		return s.is(Blocks.LODESTONE) || s.is(ModBlocks.EMBER_LODESTONE) || s.is(ModBlocks.VOID_LODESTONE);
 	}
 
+	/** Ketting of lead: daarmee maak je je fysieke tether vast aan een anker. */
+	static boolean isTetherItem(Item item) {
+		String id = BuiltInRegistries.ITEM.getKey(item).getPath();
+		return "iron_chain".equals(id) || "chain".equals(id) || "lead".equals(id);
+	}
+
 	static boolean isFuel(Item item) {
-		return item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER || item == ModItems.TETHER_FRAGMENT
+		return isTetherItem(item) || item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER || item == ModItems.TETHER_FRAGMENT
 				|| ChargeItems.NETHER.containsKey(item) || ChargeItems.END.containsKey(item);
 	}
 
@@ -432,8 +439,8 @@ public final class ServerLogic {
 		ServerPlayNetworking.send(p, new ModPackets.StatePayload(
 				overworld ? nearCharge(p, NETHER) : -1, overworld ? nearCharge(p, END) : -1,
 				d.inRun ? (int) Math.ceil(linkedCharge(d)) : 0, (int) Math.ceil(d.runMax), dimCode,
-				(int) Math.round(d.drainMultiplier() * 100), d.expeditions, d.collapses,
-				(int) d.longestRun, (int) d.runTime, pen.toString(), d.penaltyClock));
+				(int) Math.round(d.currentDrain * 100), d.expeditions, d.collapses,
+				(int) d.longestRun, (int) d.runTime, pen.toString(), d.penaltyClock, tetherDistance(p, d)));
 	}
 
 	static void sendOffer(ServerPlayer p, PlayerData d) {
@@ -517,6 +524,10 @@ public final class ServerLogic {
 			if (d.grace > 0) {
 				d.grace--;
 			}
+			if (d.joinDelay > 0 && --d.joinDelay == 0) {
+				d.joinDelay = -1;
+				joinActions(p, d);
+			}
 			if (d.offerDelay > 0 && --d.offerDelay == 0) {
 				d.offerDelay = -1;
 				sendOffer(p, d);
@@ -545,7 +556,8 @@ public final class ServerLogic {
 
 			// 3) charge laten leeglopen in Nether/End
 			if (isCharged(dim) && d.inRun && !d.collapsing) {
-				double cur = drainLinked(d, d.drainMultiplier() / 20.0);
+				d.currentDrain = d.drainMultiplier() * distanceFactor(p, d);
+				double cur = drainLinked(d, d.currentDrain / 20.0);
 				d.runTime += 1.0 / 20.0;
 				if (cur <= 0) {
 					collapse(p, d);
@@ -568,6 +580,15 @@ public final class ServerLogic {
 				}
 			}
 
+			if (!(isCharged(dim) && d.inRun)) {
+				d.currentDrain = d.drainMultiplier();
+			}
+
+			// 3b) de fysieke tether volgt je over de grond
+			if (d.tetherAnchor != null && !d.collapsing && (d.inRun || OVERWORLD.equals(dim))) {
+				layRope(p, d);
+			}
+
 			// 4) penalty-klok: loopt alleen tijdens een expeditie in Nether/End en als je niet AFK bent
 			trackActivity(p, d);
 			if (tickPenalties(p, d, isCharged(dim) && d.inRun && !d.collapsing)) {
@@ -580,12 +601,24 @@ public final class ServerLogic {
 				if (p.level().getBiome(p.blockPosition()).is(Biomes.DEEP_DARK)) {
 					unlock(p, d, JournalEntry.WEAVERS);
 				}
+				// Bij een portaal in de Overworld zonder anker? Dan leert het journal je over ankers.
+				if (OVERWORLD.equals(dim) && !d.journal.contains(JournalEntry.ANCHOR.id)) {
+					ServerLevel lvl = (ServerLevel) p.level();
+					if (findPortal(lvl, p.blockPosition(), NETHER) != null || findPortal(lvl, p.blockPosition(), END) != null) {
+						unlock(p, d, JournalEntry.ANCHOR);
+						notice(p, "The wound is hungry. It wants an anchor.", 0xFFAA88FF);
+					}
+				}
 			}
 
 			// 6) status naar de client
 			if (forceSync || ++d.tickCounter % Config.SYNC_INTERVAL_TICKS == 0) {
 				sendState(p, d);
 			}
+		}
+
+		if (s.getTickCount() % 200 == 0) {
+			sweepRopes(s);
 		}
 
 		if (++altarTick >= 10) {
@@ -684,6 +717,22 @@ public final class ServerLogic {
 			bounce(p, d, dim);
 			return;
 		}
+		if (d.tetherAnchor == null || !d.linked.contains(d.tetherAnchor)) {
+			d.linked.clear();
+			d.inRun = false;
+			d.grace = Config.BOUNCE_GRACE_TICKS;
+			notice(p, "You are not tethered. Bind yourself to an anchor at this wound with a chain or lead.", ORANGE);
+			unlock(p, d, JournalEntry.CORD);
+			fx(p, Fx.BOUNCE, 0);
+			sound(p, "minecraft:entity.villager.no", 1.0f, 0.7f);
+			if (d.hasLast) {
+				run(String.format(Locale.ROOT, "execute in minecraft:overworld run tp %s %.2f %.2f %.2f", p.getStringUUID(), d.lastX, d.lastY, d.lastZ));
+			}
+			return;
+		}
+		d.arrivalX = p.getX();
+		d.arrivalZ = p.getZ();
+		d.hasRopeEnd = false;
 		if (d.leakStacks > 0) {
 			double keep = Math.pow(1.0 - Config.LEAK_FRACTION, d.leakStacks);
 			for (Altar a : linkedAltars(d)) {
@@ -911,6 +960,7 @@ public final class ServerLogic {
 	// ------------------------------------------------------------------ expeditie klaar / Collapse / dood
 
 	private static void completeRun(ServerPlayer p, PlayerData d) {
+		clearRope(p, d);
 		d.inRun = false;
 		d.linked.clear();
 		d.expeditions++;
@@ -929,6 +979,7 @@ public final class ServerLogic {
 	}
 
 	private static void collapse(ServerPlayer p, PlayerData d) {
+		clearRope(p, d);
 		d.collapsing = true;
 		d.collapseRetry = 0;
 		d.collapses++;
@@ -989,13 +1040,27 @@ public final class ServerLogic {
 			d.pendingPenalties = Math.max(1, d.pendingPenalties);
 			d.offerDelay = 40;
 		}
-		applyPenaltyEffects(p, d);
-		if (!d.journalGiven) {
-			d.journalGiven = true;
-			run("give " + p.getStringUUID() + " extremedimensions:tether_journal");
-			d.journal.add(JournalEntry.TETHERED.id);
-		}
+		d.joinDelay = Config.JOIN_DELAY_TICKS;
+		d.hasRopeEnd = false;
 		sendState(p, d);
+	}
+
+	/** Even na het inloggen: nu staat de speler echt in de wereld en werken commando's op hem. */
+	private static void joinActions(ServerPlayer p, PlayerData d) {
+		String u = p.getStringUUID();
+		applyPenaltyEffects(p, d);
+		run("recipe give " + u + " minecraft:lodestone");
+		run("recipe give " + u + " extremedimensions:tether_journal");
+		run("recipe give " + u + " extremedimensions:ember_tether");
+		run("recipe give " + u + " extremedimensions:void_tether");
+		if (!d.journalDelivered) {
+			d.journalDelivered = true;
+			run("give " + u + " extremedimensions:tether_journal");
+			d.journal.add(JournalEntry.TETHERED.id);
+			run("title " + u + " actionbar {\"text\":\"Something old is holding you. Read the journal.\",\"color\":\"light_purple\",\"italic\":true}");
+			soundSelf(p, "minecraft:item.book.page_turn", 1.0f, 0.7f);
+			DataStore.save();
+		}
 	}
 
 	// ------------------------------------------------------------------ altaar
@@ -1022,6 +1087,9 @@ public final class ServerLogic {
 		Item item = stack.getItem();
 		if (item == ModItems.TETHER_FRAGMENT) {
 			return mend(p, d, pos, stack);
+		}
+		if (isTetherItem(item)) {
+			return tie(p, d, pos);
 		}
 		boolean tether = item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER;
 		String type;
@@ -1096,6 +1164,165 @@ public final class ServerLogic {
 		sound(p, nether ? "minecraft:block.respawn_anchor.charge" : "minecraft:block.end_portal_frame.fill", 0.8f, tether ? 1.0f : 1.2f);
 		sendState(p, d);
 		return InteractionResult.SUCCESS;
+	}
+
+	// ------------------------------------------------------------------ de fysieke tether
+
+	/** Rechtsklik met een ketting of lead op een anker: vastmaken (of weer losmaken). */
+	private static InteractionResult tie(ServerPlayer p, PlayerData d, BlockPos pos) {
+		String key = Altar.key(pos.getX(), pos.getY(), pos.getZ());
+		Altar altar = DataStore.altars().get(key);
+		if (altar == null || !OVERWORLD.equals(dimOf(p))) {
+			notice(p, "This stone is not an anchor yet. Feed it first.", ORANGE);
+			return InteractionResult.SUCCESS;
+		}
+		if (d.inRun) {
+			return InteractionResult.SUCCESS;
+		}
+		if (key.equals(d.tetherAnchor)) {
+			clearRope(p, d);
+			notice(p, "You untie yourself from the anchor.", ORANGE);
+			sound(p, "minecraft:entity.leash_knot.break", 1.0f, 0.8f);
+			return InteractionResult.SUCCESS;
+		}
+		clearRope(p, d);
+		d.tetherAnchor = key;
+		d.hasRopeEnd = true;
+		d.ropeDim = "minecraft:overworld";
+		d.ropeX = pos.getX() + 0.5;
+		d.ropeY = pos.getY() + 1.02;
+		d.ropeZ = pos.getZ() + 0.5;
+		notice(p, "Your tether is bound to this " + dimName(altar.type) + " anchor.", AQUA);
+		unlock(p, d, JournalEntry.CORD);
+		sound(p, "minecraft:entity.leash_knot.place", 1.0f, 0.7f);
+		particleAt("minecraft:soul", pos.getX() + 0.5, pos.getY() + 1.1, pos.getZ() + 0.5, 0.3, 0.2, 0.3, 0.02, 12);
+		sendState(p, d);
+		return InteractionResult.SUCCESS;
+	}
+
+	/** Korte tag per speler voor zijn kettingstukken. */
+	private static String ropeTag(ServerPlayer p) {
+		return "edt_" + p.getStringUUID().replace("-", "").substring(0, 12);
+	}
+
+	/** Blokken voor de ketting: ijzeren ketting voor de Nether, End Rods (een gloeiende draad) voor de End. */
+	private static String ropeBlock(PlayerData d) {
+		Altar a = d.tetherAnchor != null ? DataStore.altars().get(d.tetherAnchor) : null;
+		if (a != null && !a.isNether()) {
+			return "{Name:\"minecraft:end_rod\",Properties:{facing:\"up\"}}";
+		}
+		String chain = BuiltInRegistries.BLOCK.containsKey(net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", "iron_chain"))
+				? "minecraft:iron_chain" : "minecraft:chain";
+		return "{Name:\"" + chain + "\",Properties:{axis:\"y\"}}";
+	}
+
+	/** Legt een nieuw kettingstuk als de speler ver genoeg is gelopen sinds het vorige. */
+	private static void layRope(ServerPlayer p, PlayerData d) {
+		String dim = p.level().dimension().identifier().toString();
+		double x = p.getX();
+		double y = p.getY() + 0.05;
+		double z = p.getZ();
+		if (!d.hasRopeEnd || !dim.equals(d.ropeDim)) {
+			// Net door een portaal: de ketting begint opnieuw bij je aankomstpunt
+			d.hasRopeEnd = true;
+			d.ropeDim = dim;
+			d.ropeX = x;
+			d.ropeY = y;
+			d.ropeZ = z;
+			return;
+		}
+		double dx = x - d.ropeX;
+		double dy = y - d.ropeY;
+		double dz = z - d.ropeZ;
+		double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		if (len < Config.ROPE_SEGMENT) {
+			return;
+		}
+		if (len > 8 || d.ropeSegments >= Config.ROPE_MAX_SEGMENTS) {
+			// Teleport of te lang: niet over de hele wereld spannen, gewoon verder vanaf hier
+			d.ropeX = x;
+			d.ropeY = y;
+			d.ropeZ = z;
+			return;
+		}
+		// Rotatie (quaternion) die de y-as van het blok langs de richting van het stuk legt
+		double ux = dx / len, uy = dy / len, uz = dz / len;
+		double qx = uz, qy = 0, qz = -ux, qw = 1 + uy;
+		double n = Math.sqrt(qx * qx + qy * qy + qz * qz + qw * qw);
+		if (n < 1e-6) {
+			qx = 1;
+			qy = 0;
+			qz = 0;
+			qw = 0;
+		} else {
+			qx /= n;
+			qy /= n;
+			qz /= n;
+			qw /= n;
+		}
+		// Het midden van de onderkant van het blok (0.5, 0, 0.5) moet op het beginpunt liggen
+		double[] c = rotate(qx, qy, qz, qw, 0.5, 0, 0.5);
+		String nbt = String.format(Locale.ROOT,
+				"{Tags:[\"ed_tether\",\"%s\"],block_state:%s,brightness:{sky:15,block:15},"
+				+ "transformation:{left_rotation:[%.5ff,%.5ff,%.5ff,%.5ff],right_rotation:[0f,0f,0f,1f],"
+				+ "translation:[%.5ff,%.5ff,%.5ff],scale:[1f,%.5ff,1f]}}",
+				ropeTag(p), ropeBlock(d), qx, qy, qz, qw, -c[0], -c[1], -c[2], len);
+		run(String.format(Locale.ROOT, "execute in %s run summon minecraft:block_display %.3f %.3f %.3f %s",
+				dim, d.ropeX, d.ropeY, d.ropeZ, nbt));
+		d.ropeSegments++;
+		d.ropeX = x;
+		d.ropeY = y;
+		d.ropeZ = z;
+	}
+
+	/** Draait vector v met quaternion q. */
+	private static double[] rotate(double qx, double qy, double qz, double qw, double vx, double vy, double vz) {
+		double tx = 2 * (qy * vz - qz * vy);
+		double ty = 2 * (qz * vx - qx * vz);
+		double tz = 2 * (qx * vy - qy * vx);
+		return new double[] {
+				vx + qw * tx + (qy * tz - qz * ty),
+				vy + qw * ty + (qz * tx - qx * tz),
+				vz + qw * tz + (qx * ty - qy * tx)};
+	}
+
+	/** Haalt de ketting van deze speler weg en maakt hem los. */
+	static void clearRope(ServerPlayer p, PlayerData d) {
+		run("kill @e[type=minecraft:block_display,tag=" + ropeTag(p) + "]");
+		d.tetherAnchor = null;
+		d.hasRopeEnd = false;
+		d.ropeSegments = 0;
+	}
+
+	/** Ruimt kettingstukken op van spelers die niet (meer) vastzitten, ook achtergebleven stukken. */
+	private static void sweepRopes(MinecraftServer s) {
+		StringBuilder sel = new StringBuilder("kill @e[type=minecraft:block_display,tag=ed_tether");
+		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
+			if (DataStore.get(p.getUUID()).tetherAnchor != null) {
+				sel.append(",tag=!").append(ropeTag(p));
+			}
+		}
+		run(sel.append("]").toString());
+	}
+
+	/** Horizontale afstand tot je aankomstportaal; -1 als je niet vastzit, 0 in de Overworld. */
+	static int tetherDistance(ServerPlayer p, PlayerData d) {
+		if (d.tetherAnchor == null) {
+			return -1;
+		}
+		if (!d.inRun) {
+			return 0;
+		}
+		double dx = p.getX() - d.arrivalX;
+		double dz = p.getZ() - d.arrivalZ;
+		return (int) Math.sqrt(dx * dx + dz * dz);
+	}
+
+	/** Hoe verder van het portaal, hoe sneller de Starved drinken. */
+	static double distanceFactor(ServerPlayer p, PlayerData d) {
+		double dx = p.getX() - d.arrivalX;
+		double dz = p.getZ() - d.arrivalZ;
+		return 1.0 + Math.sqrt(dx * dx + dz * dz) / Config.TETHER_DISTANCE_STEP;
 	}
 
 	/** Een Tether Fragment offeren aan een anker: de langst lopende penalty-stack verdwijnt. */
