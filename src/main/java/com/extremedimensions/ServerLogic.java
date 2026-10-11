@@ -1291,15 +1291,15 @@ public final class ServerLogic {
 
 	/**
 	 * Hoe de ketting eruitziet: een ijzeren ketting in de Overworld en de Nether,
-	 * een dun gloeiend paars koord in de End. {blockstate, dikte}
+	 * een dun gloeiend paars koord in de End. {blockstate (26.3: als tekst, bijv. "minecraft:iron_chain[axis=y]"), dikte}
 	 */
 	private static String[] ropeLook(String dim) {
 		if ("minecraft:the_end".equals(dim)) {
-			return new String[] {"{Name:\"minecraft:amethyst_block\"}", "0.09"};
+			return new String[] {"\"minecraft:amethyst_block\"", "0.09"};
 		}
 		String chain = BuiltInRegistries.BLOCK.containsKey(net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", "iron_chain"))
 				? "minecraft:iron_chain" : "minecraft:chain";
-		return new String[] {"{Name:\"" + chain + "\",Properties:{axis:\"y\"}}", "1"};
+		return new String[] {"\"" + chain + "[axis=y]\"", "1"};
 	}
 
 	/**
