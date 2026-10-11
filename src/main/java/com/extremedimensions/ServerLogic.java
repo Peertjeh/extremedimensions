@@ -1299,7 +1299,7 @@ public final class ServerLogic {
 		}
 		String chain = BuiltInRegistries.BLOCK.containsKey(net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", "iron_chain"))
 				? "minecraft:iron_chain" : "minecraft:chain";
-		return new String[] {"\"" + chain + "[axis=y]\"", "1"};
+		return new String[] {"\"" + chain + "\"", "1"}; // standaard staat de ketting rechtop (axis=y)
 	}
 
 	/**
