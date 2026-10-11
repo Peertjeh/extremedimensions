@@ -20,7 +20,8 @@ public enum JournalEntry {
 	CORD("cord", "III. The Cord",
 			"Feeding the anchor is not enough. You must bind yourself to it. "
 			+ "A length of iron chain, bound with two cords of string. Wrap it around the anchor and carry the other end through the wound. "
-			+ "Down there the cord follows you over the ground, and every step away from the wound pulls it tighter. "
+			+ "On this side the cord is short: five strides from the anchor and it snaps. Walk straight into the wound. "
+			+ "Down there it trails behind you over the ground, and every step away from the wound pulls it tighter. "
 			+ "Walk far and they drink faster. Tear a new wound closer to where you must go."),
 	WOUND("wound", "IV. Wounds",
 			"A portal is not a door. Doors are built. Portals are torn. "

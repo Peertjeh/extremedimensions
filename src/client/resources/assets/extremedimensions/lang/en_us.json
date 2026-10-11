@@ -5,6 +5,8 @@
   "block.extremedimensions.void_lodestone": "Void Anchor",
   "subtitles.extremedimensions.penalty": "Penalty sealed",
   "subtitles.extremedimensions.expedition_ended": "Expedition ended",
+  "subtitles.extremedimensions.portal_beyond": "The wound swallows you",
+  "subtitles.extremedimensions.portal_home": "The Tether pulls you home",
   "item.extremedimensions.tether_journal": "Tether Journal",
   "item.extremedimensions.tether_fragment": "Tether Fragment",
   "item.extremedimensions.tether": "Tether"

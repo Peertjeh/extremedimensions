@@ -646,12 +646,14 @@ public final class ServerLogic {
 			// 3b) de fysieke tether volgt je over de grond
 			if (d.tetherAnchor != null && !d.collapsing && OVERWORLD.equals(dim) && !d.inRun) {
 				Altar anchor = DataStore.altars().get(d.tetherAnchor);
-				double max = Config.TETHER_RETRACT_RANGE;
-				if (anchor == null || anchor.distSq(p.getX(), p.getY(), p.getZ()) > max * max) {
+				if (anchor == null || tetherTooFar(p, anchor)) {
+					// De tether breekt: de ketting verdwijnt, de Tether valt terug in je handen
+					particles(p, "minecraft:crit", 0.6, 0.3, 0.3, 14);
 					clearRope(p, d, true);
 					notice(p, anchor == null ? "Your anchor is gone. The tether falls slack in your hands."
-							: "Your tether reached its end and slipped back into your hands.", ORANGE);
-					sound(p, "minecraft:entity.leash_knot.break", 1.0f, 1.1f);
+							: "Your tether snapped. Stay close to the anchor until you step into the wound.", ORANGE);
+					sound(p, "minecraft:entity.leash_knot.break", 1.0f, 0.9f);
+					sound(p, "minecraft:block.chain.break", 1.0f, 0.7f);
 					forceSync = true;
 				}
 			}
@@ -834,12 +836,13 @@ public final class ServerLogic {
 		d.lastBeat = Integer.MAX_VALUE;
 		fx(p, NETHER.equals(dim) ? Fx.START_NETHER : Fx.START_END, 0);
 		unlock(p, d, NETHER.equals(dim) ? JournalEntry.EMBER_DEEP : JournalEntry.PALE_VOID);
+		sound(p, "extremedimensions:portal_beyond", 1.0f, NETHER.equals(dim) ? 0.9f : 1.1f);
 		if (NETHER.equals(dim)) {
 			particles(p, "minecraft:flame", 1.0, 0.6, 0.06, 60);
-			sound(p, "minecraft:block.respawn_anchor.charge", 1.0f, 0.8f);
+			particles(p, "minecraft:soul_fire_flame", 1.0, 1.2, 0.02, 30);
 		} else {
 			particles(p, "minecraft:reverse_portal", 1.0, 0.6, 0.2, 80);
-			sound(p, "minecraft:block.end_portal_frame.fill", 1.0f, 0.7f);
+			particles(p, "minecraft:end_rod", 1.0, 1.2, 0.03, 20);
 		}
 	}
 
@@ -1054,8 +1057,8 @@ public final class ServerLogic {
 
 		fx(p, Fx.SAFE, 0);
 		particles(p, "minecraft:totem_of_undying", 1.0, 0.5, 0.35, 40);
-		sound(p, "minecraft:entity.player.levelup", 0.9f, 0.9f);
-		notice(p, "Safely back in the Overworld!", GREEN);
+		particles(p, "minecraft:soul", 1.0, 0.8, 0.03, 20);
+		sound(p, "extremedimensions:portal_home", 1.0f, 1.0f);
 		unlock(p, d, JournalEntry.WOUND);
 		if (d.expeditions >= 5) {
 			unlock(p, d, JournalEntry.HABIT);
@@ -1259,7 +1262,6 @@ public final class ServerLogic {
 		}
 		altar.portalCheck = 0;
 
-		notice(p, "+" + fmt(added) + " " + name + " Charge  (anchor: " + fmt(altar.charge) + ")", AQUA);
 		fx(p, nether ? Fx.DEPOSIT_NETHER : Fx.DEPOSIT_END, (int) Math.round(added));
 		double ax = pos.getX() + 0.5;
 		double ay = pos.getY() + 1.0;
@@ -1310,22 +1312,48 @@ public final class ServerLogic {
 		return "edt_" + p.getStringUUID().replace("-", "").substring(0, 12);
 	}
 
-	/** Blokken voor de ketting: ijzeren ketting voor de Nether, End Rods (een gloeiende draad) voor de End. */
-	private static String ropeBlock(PlayerData d) {
-		Altar a = d.tetherAnchor != null ? DataStore.altars().get(d.tetherAnchor) : null;
-		if (a != null && !a.isNether()) {
-			return "{Name:\"minecraft:end_rod\",Properties:{facing:\"up\"}}";
+	/** Is de speler te ver van zijn anker? Bij het portaal van het anker staan mag altijd. */
+	private static boolean tetherTooFar(ServerPlayer p, Altar anchor) {
+		double max = Config.TETHER_BREAK_RANGE + 0.5;
+		double dx = anchor.x + 0.5 - p.getX();
+		double dz = anchor.z + 0.5 - p.getZ();
+		if (dx * dx + dz * dz <= max * max && Math.abs(anchor.y - p.getY()) <= max) {
+			return false;
+		}
+		if (!anchor.path.isEmpty()) {
+			double[] portal = anchor.path.get(anchor.path.size() - 1);
+			double px = portal[0] - p.getX();
+			double py = portal[1] - p.getY() - 1.0;
+			double pz = portal[2] - p.getZ();
+			double slack = Config.TETHER_PORTAL_SLACK;
+			if (px * px + py * py + pz * pz <= slack * slack) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Hoe de ketting eruitziet: een ijzeren ketting in de Overworld en de Nether,
+	 * een dun gloeiend paars koord in de End. {blockstate, dikte}
+	 */
+	private static String[] ropeLook(String dim) {
+		if ("minecraft:the_end".equals(dim)) {
+			return new String[] {"{Name:\"minecraft:amethyst_block\"}", "0.09"};
 		}
 		String chain = BuiltInRegistries.BLOCK.containsKey(net.minecraft.resources.Identifier.fromNamespaceAndPath("minecraft", "iron_chain"))
 				? "minecraft:iron_chain" : "minecraft:chain";
-		return "{Name:\"" + chain + "\",Properties:{axis:\"y\"}}";
+		return new String[] {"{Name:\"" + chain + "\",Properties:{axis:\"y\"}}", "1"};
 	}
 
-	/** Legt een nieuw kettingstuk als de speler ver genoeg is gelopen sinds het vorige. */
+	/**
+	 * Legt een nieuw kettingstuk op de grond als de speler ver genoeg is gelopen sinds het vorige.
+	 * Zo ligt er een spoor precies waar je gelopen hebt.
+	 */
 	private static void layRope(ServerPlayer p, PlayerData d) {
 		String dim = p.level().dimension().identifier().toString();
 		double x = p.getX();
-		double y = p.getY() + 0.05;
+		double y = p.getY() + 0.1;
 		double z = p.getZ();
 		if (!d.hasRopeEnd || !dim.equals(d.ropeDim)) {
 			// Net door een portaal: de ketting begint opnieuw bij je aankomstpunt
@@ -1340,14 +1368,15 @@ public final class ServerLogic {
 		double dy = y - d.ropeY;
 		double dz = z - d.ropeZ;
 		double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-		if (len < Config.ROPE_SEGMENT) {
-			return;
-		}
-		if (len > 8 || d.ropeSegments >= Config.ROPE_MAX_SEGMENTS) {
-			// Teleport of te lang: niet over de hele wereld spannen, gewoon verder vanaf hier
+		if (len > 8) {
+			// Teleport of een lange val: niet door de lucht spannen, gewoon verder vanaf hier
 			d.ropeX = x;
 			d.ropeY = y;
 			d.ropeZ = z;
+			return;
+		}
+		// Alleen op de grond (of zwemmend) neerleggen: springen laat geen ketting in de lucht hangen
+		if (len < Config.ROPE_SEGMENT || !(p.onGround() || p.isInWater())) {
 			return;
 		}
 		// Rotatie (quaternion) die de y-as van het blok langs de richting van het stuk legt
@@ -1365,17 +1394,24 @@ public final class ServerLogic {
 			qz /= n;
 			qw /= n;
 		}
-		// Het midden van de onderkant van het blok (0.5, 0, 0.5) moet op het beginpunt liggen
-		double[] c = rotate(qx, qy, qz, qw, 0.5, 0, 0.5);
+		String[] look = ropeLook(dim);
+		double thick = Double.parseDouble(look[1]);
+		// Het midden van de onderkant van het (geschaalde) blok moet op het beginpunt liggen
+		double[] c = rotate(qx, qy, qz, qw, 0.5 * thick, 0, 0.5 * thick);
+		int index = d.ropeIndex++;
 		String nbt = String.format(Locale.ROOT,
-				"{Tags:[\"ed_tether\",\"%s\",\"%s\"],block_state:%s,brightness:{sky:15,block:15},"
+				"{Tags:[\"ed_tether\",\"%s\",\"%s\",\"%s_s%d\"],block_state:%s,brightness:{sky:15,block:15},"
 				+ "transformation:{left_rotation:[%.5ff,%.5ff,%.5ff,%.5ff],right_rotation:[0f,0f,0f,1f],"
-				+ "translation:[%.5ff,%.5ff,%.5ff],scale:[1f,%.5ff,1f]}}",
-				ropeTag(p), ropeTag(p) + ("minecraft:overworld".equals(dim) ? "_o" : "_b"), ropeBlock(d),
-				qx, qy, qz, qw, -c[0], -c[1], -c[2], len);
+				+ "translation:[%.5ff,%.5ff,%.5ff],scale:[%.3ff,%.5ff,%.3ff]}}",
+				ropeTag(p), ropeTag(p) + ("minecraft:overworld".equals(dim) ? "_o" : "_b"), ropeTag(p), index, look[0],
+				qx, qy, qz, qw, -c[0], -c[1], -c[2], thick, len, thick);
 		run(String.format(Locale.ROOT, "execute in %s run summon minecraft:block_display %.3f %.3f %.3f %s",
 				dim, d.ropeX, d.ropeY, d.ropeZ, nbt));
-		d.ropeSegments++;
+		// Te lang spoor: het oudste stuk verdwijnt
+		int old = index - Config.ROPE_MAX_SEGMENTS;
+		if (old >= 0) {
+			run("kill @e[type=minecraft:block_display,tag=" + ropeTag(p) + "_s" + old + "]");
+		}
 		d.ropeX = x;
 		d.ropeY = y;
 		d.ropeZ = z;
@@ -1403,7 +1439,6 @@ public final class ServerLogic {
 		}
 		d.tetherAnchor = null;
 		d.hasRopeEnd = false;
-		d.ropeSegments = 0;
 	}
 
 	/** Na een geslaagde terugkeer: de ketting aan de overkant verdwijnt, het stuk in de Overworld blijft liggen. */
@@ -1423,13 +1458,20 @@ public final class ServerLogic {
 		run(sel.append("]").toString());
 	}
 
-	/** Horizontale afstand tot je aankomstportaal; -1 als je niet vastzit, 0 in de Overworld. */
+	/** Horizontale afstand tot je aankomstportaal (of in de Overworld tot je anker); -1 als je niet vastzit. */
 	static int tetherDistance(ServerPlayer p, PlayerData d) {
 		if (d.tetherAnchor == null) {
 			return -1;
 		}
 		if (!d.inRun) {
-			return 0;
+			// In de Overworld: afstand tot je anker (de tether breekt na Config.TETHER_BREAK_RANGE)
+			Altar anchor = DataStore.altars().get(d.tetherAnchor);
+			if (anchor == null) {
+				return 0;
+			}
+			double ax = p.getX() - anchor.x - 0.5;
+			double az = p.getZ() - anchor.z - 0.5;
+			return (int) Math.sqrt(ax * ax + az * az);
 		}
 		double dx = p.getX() - d.arrivalX;
 		double dz = p.getZ() - d.arrivalZ;

@@ -26,5 +26,17 @@
         "stream": true
       }
     ]
+  },
+  "portal_beyond": {
+    "subtitle": "subtitles.extremedimensions.portal_beyond",
+    "sounds": [
+      "extremedimensions:portal_beyond"
+    ]
+  },
+  "portal_home": {
+    "subtitle": "subtitles.extremedimensions.portal_home",
+    "sounds": [
+      "extremedimensions:portal_home"
+    ]
   }
 }

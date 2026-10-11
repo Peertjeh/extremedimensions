@@ -74,7 +74,8 @@ public class PlayerData {
 	public transient boolean hasRopeEnd = false;
 	public transient double ropeX, ropeY, ropeZ;
 	public transient String ropeDim = null;
-	public transient int ropeSegments = 0;
+	/** Volgnummer van het volgende kettingstuk (voor het opruimen van de oudste stukken). */
+	public transient int ropeIndex = 0;
 
 	public int stacks(Penalty p) {
 		List<Double> l = penaltyTime.get(p.id);

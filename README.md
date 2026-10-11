@@ -71,9 +71,12 @@ worden **Anchors** (Ember Anchor / Void Anchor) die je via de wond voeden. De re
 - **De fysieke tether**: craft een **Tether** (Iron Chain + 2 String, shapeless). Rechtsklik ermee op een geladen
   anker om je vast te maken; het item wordt de ketting op de grond. Lege hand op je anker = losmaken (je krijgt hem
   terug). Zonder tether is de portal slapend.
-  De ketting blijft liggen van het anker naar de portal zolang je vastzit, ook na terugkomst. In de Nether/End ligt
-  hij vanaf je aankomstportaal achter je aan (in de End een gloeiende draad van End Rods); die verdwijnt als je terug
-  bent. Loop je in de Overworld verder dan 32 blokken van je anker, dan glijdt de tether terug in je handen.
+  Vanaf het moment dat je vastzit ligt de ketting als spoor op de grond, precies waar je loopt.
+  In de Overworld is hij kort: loop je verder dan **5 blokken** van je anker (en sta je niet bij de portal), dan
+  breekt hij en valt de Tether terug in je handen. Linksboven zie je "Tethered 3/5m".
+  In de Nether/End volgt hij je vanaf je aankomstportaal als spoor over de grond (Nether: ijzeren ketting,
+  End: dun gloeiend paars koord). Na 400 stukken verdwijnt telkens het oudste stuk. Het spoor aan de overkant
+  verdwijnt als je veilig terug bent.
   Ga je dood of krijg je een Collapse aan de overkant, dan knapt hij en ben je hem kwijt.
 - **Afstand**: per 100 blokken van je aankomstportaal gaat de drain +100% (200 blokken = 3x zo snel).
   Bouw dus meer portals in de Overworld, dichter bij waar je heen moet.
@@ -105,11 +108,10 @@ Rechtermuisklik op het altaar met een Tether in je hand: +10 minuten Charge in e
 ## Animaties
 
 - **Titelscherm:** eigen logo, langzame zoom, parallax met de muis, pulserende portaalgloed en zwevende vonken.
-- **Storten en Tether binden:** vlam- of portaaldeeltjes, enchant-glyphs, geluid, balk die oplicht en een zwevende "+tijd".
-- **Expeditie start:** timerbalk schuift van boven in, deeltjes en geluid (geen melding).
+- **Anker vullen:** geen melding meer: vonken spiralen naar het midden van je beeld en slaan uit in twee ringen, de meter licht op, deeltjes en geluid.
+- **Door de wond (Nether, End en terug):** geen melding maar een filmische overgang: flits, filmbalken, een wond die in het midden van je beeld openscheurt en weer dichtgaat, een draaiende ring van tekens, een schokgolf en deeltjes per dimensie (sintels, wegzuigende sterren, opstijgende zielen), met eigen geluiden.
 - **Weinig tijd:** rode rand, trillende balk, klok- en hartslaggeluid.
 - **Collapse:** witte flits, rode gloed, glitchbalken, de balk knapt in tweeen, explosie en bliksemgeluid.
-- **Veilig terug:** groene lichtveeg, "SAFELY BACK" en vonkjes, totem-deeltjes.
 - **Penalty-keuze:** kaarten schuiven in, lichten op bij hover, gekozen kaart flitst.
 - **Statusscherm:** balken vullen zich en getallen tellen op.
 

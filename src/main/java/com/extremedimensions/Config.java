@@ -97,13 +97,16 @@ public final class Config {
 	public static final double TETHER_DISTANCE_STEP = 100.0;
 
 	/** Elke zoveel blokken legt de fysieke tether een nieuw stuk ketting neer. */
-	public static final double ROPE_SEGMENT = 1.5;
+	public static final double ROPE_SEGMENT = 1.0;
 
-	/** Maximaal aantal kettingstukken per speler (daarna stopt de ketting met groeien). */
-	public static final int ROPE_MAX_SEGMENTS = 300;
+	/** Maximaal aantal kettingstukken per speler; daarna verdwijnt telkens het oudste stuk. */
+	public static final int ROPE_MAX_SEGMENTS = 400;
 
-	/** Loop je in de Overworld verder dan dit van je anker, dan glijdt de tether terug in je handen. */
-	public static final double TETHER_RETRACT_RANGE = 32.0;
+	/** Loop je in de Overworld verder dan dit van je anker (en sta je niet bij het portaal), dan breekt de tether. */
+	public static final double TETHER_BREAK_RANGE = 5.0;
+
+	/** Zo dicht bij het portaal van je anker mag je altijd staan, ook als dat iets verder dan TETHER_BREAK_RANGE is. */
+	public static final double TETHER_PORTAL_SLACK = 3.0;
 
 	/** Ticks na het inloggen voordat de mod spullen geeft en effecten zet (de speler moet eerst echt in de wereld staan). */
 	public static final int JOIN_DELAY_TICKS = 40;
