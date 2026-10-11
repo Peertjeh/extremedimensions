@@ -75,9 +75,9 @@ worden **Anchors** (Ember Anchor / Void Anchor) die je via de wond voeden. De re
   In de Overworld is hij kort: loop je verder dan **5 blokken** van je anker (en sta je niet bij de portal), dan
   breekt hij en valt de Tether terug in je handen. Linksboven zie je "Tethered 3/5m".
   In de Nether/End volgt hij je vanaf je aankomstportaal als spoor over de grond (Nether: ijzeren ketting,
-  End: dun gloeiend paars koord). Na 400 stukken verdwijnt telkens het oudste stuk. Het spoor aan de overkant
-  verdwijnt als je veilig terug bent.
-  Ga je dood of krijg je een Collapse aan de overkant, dan knapt hij en ben je hem kwijt.
+  End: dun gloeiend paars koord). Na 400 stukken verdwijnt telkens het oudste stuk.
+  Kom je veilig terug in de Overworld, dan verdwijnt de hele ketting en krijg je de Tether terug.
+  Ga je dood (waar dan ook) of krijg je een Collapse, dan is de ketting weg en ben je de Tether kwijt.
 - **Afstand**: per 100 blokken van je aankomstportaal gaat de drain +100% (200 blokken = 3x zo snel).
   Bouw dus meer portals in de Overworld, dichter bij waar je heen moet.
 - Ga je door een portaal, dan voeden de altaren van dat type rond dat portaal (binnen 8 blokken) je expeditie.
@@ -104,6 +104,15 @@ De Lodestone is aangepast: zonder Netherite te maken, zodat je vóór de Nether 
 Rechtermuisklik op het altaar met een Tether in je hand: +10 minuten Charge in een keer
 (`TETHER_ITEM_CHARGE` in `Config.java`). Items staan nog niet in de creatieve tab: gebruik
 `/give @s extremedimensions:ember_tether` en `/give @s extremedimensions:void_tether`.
+
+## Ieder zijn eigen tijd (multiplayer)
+
+Wat je zelf in een anker stopt, is jouw tijd. Elke speler heeft dus zijn eigen timer, ook als jullie dezelfde
+ankers bij dezelfde portal gebruiken (elk met een eigen maximum van 30 minuten per anker).
+Linksboven bij een anker zie je alleen je eigen tijd.
+Gaat iemand dood in de Nether of End, dan gaat alleen zijn eigen tijd naar 0 en krijgt alleen hij een penalty.
+De anderen spelen gewoon door. Een geblokkeerd anker lekt voor iedereen naar verhouding.
+Charge uit een oudere versie van de mod (van voor deze wijziging) blijft gedeeld: die mag iedereen gebruiken.
 
 ## Animaties
 

@@ -100,6 +100,10 @@ public final class ServerLogic {
 			}
 			PlayerData d = DataStore.get(p.getUUID());
 			String dim = entity.level().dimension().identifier().getPath();
+			// Dood = de ketting is weg (en de Tether ook)
+			if (d.tetherAnchor != null) {
+				clearRope(p, d, false);
+			}
 			// Gewoon doodgaan in Nether/End (geen Collapse): expeditie voorbij, altaren leeg en een penalty.
 			// In de Overworld (nog) geen straf.
 			if (OVERWORLD.equals(dim) && DataStore.overworldPenalties() && !d.collapsing) {
@@ -109,9 +113,10 @@ public final class ServerLogic {
 				return;
 			}
 			if (isCharged(dim) && !d.collapsing) {
+				// Alleen de tijd van deze speler gaat naar 0; de anderen kunnen gewoon door.
 				if (d.inRun) {
 					for (Altar a : linkedAltars(d)) {
-						a.charge = 0;
+						a.clear(p.getStringUUID());
 					}
 				}
 				d.inRun = false;
@@ -354,35 +359,35 @@ public final class ServerLogic {
 		return out;
 	}
 
-	static double linkedCharge(PlayerData d) {
+	/** De eigen charge van deze speler in de altaren van zijn expeditie. */
+	static double linkedCharge(ServerPlayer p, PlayerData d) {
 		double sum = 0;
 		for (Altar a : linkedAltars(d)) {
-			sum += a.charge;
+			sum += a.of(p.getStringUUID());
 		}
 		return sum;
 	}
 
-	/** Haalt amount charge uit de altaren van de expeditie; geeft de rest terug. */
-	static double drainLinked(PlayerData d, double amount) {
+	/** Haalt amount van de eigen charge van deze speler uit de altaren van de expeditie; geeft zijn rest terug. */
+	static double drainLinked(ServerPlayer p, PlayerData d, double amount) {
+		String uid = p.getStringUUID();
 		double left = 0;
 		for (Altar a : linkedAltars(d)) {
-			if (amount > 0 && a.charge > 0) {
-				double take = Math.min(a.charge, amount);
-				a.charge -= take;
-				amount -= take;
+			if (amount > 0) {
+				amount -= a.take(uid, amount);
 			}
-			left += a.charge;
+			left += a.of(uid);
 		}
 		return left;
 	}
 
-	/** Totale charge van geladen altaren van dit type rond de speler; -1 als er geen in de buurt is. */
+	/** Eigen charge van deze speler in geladen altaren van dit type in de buurt; -1 als er geen in de buurt is. */
 	static int nearCharge(ServerPlayer p, String type) {
 		double r2 = Config.HUD_RANGE * Config.HUD_RANGE;
 		double sum = -1;
 		for (Altar a : DataStore.altars().values()) {
 			if (type.equals(a.type) && a.distSq(p.getX(), p.getY(), p.getZ()) <= r2) {
-				sum = Math.max(0, sum) + a.charge;
+				sum = Math.max(0, sum) + a.of(p.getStringUUID());
 			}
 		}
 		return sum < 0 ? -1 : (int) Math.ceil(sum);
@@ -474,7 +479,7 @@ public final class ServerLogic {
 		}
 		ServerPlayNetworking.send(p, new ModPackets.StatePayload(
 				overworld ? nearCharge(p, NETHER) : -1, overworld ? nearCharge(p, END) : -1,
-				d.inRun ? (int) Math.ceil(linkedCharge(d)) : 0, (int) Math.ceil(d.runMax), dimCode,
+				d.inRun ? (int) Math.ceil(linkedCharge(p, d)) : 0, (int) Math.ceil(d.runMax), dimCode,
 				(int) Math.round(d.currentDrain * 100), d.expeditions, d.collapses,
 				(int) d.longestRun, (int) d.runTime, pen.toString(), d.penaltyClock, tetherDistance(p, d)));
 	}
@@ -602,7 +607,7 @@ public final class ServerLogic {
 			// 3) charge laten leeglopen in Nether/End
 			if (isCharged(dim) && d.inRun && !d.collapsing) {
 				d.currentDrain = d.drainMultiplier() * distanceFactor(p, d);
-				double cur = drainLinked(d, d.currentDrain / 20.0);
+				double cur = drainLinked(p, d, d.currentDrain / 20.0);
 				d.runTime += 1.0 / 20.0;
 				if (cur <= 0) {
 					collapse(p, d);
@@ -767,12 +772,12 @@ public final class ServerLogic {
 		if (d.hasLast) {
 			double r2 = Config.LINK_RANGE * Config.LINK_RANGE;
 			for (Altar a : DataStore.altars().values()) {
-				if (dim.equals(a.type) && a.charge > 0 && !a.blocked && a.distSq(d.lastX, d.lastY, d.lastZ) <= r2) {
+				if (dim.equals(a.type) && a.of(p.getStringUUID()) > 0 && !a.blocked && a.distSq(d.lastX, d.lastY, d.lastZ) <= r2) {
 					d.linked.add(a.key());
 				}
 			}
 		}
-		double total = linkedCharge(d);
+		double total = linkedCharge(p, d);
 		if (total <= 0) {
 			d.linked.clear();
 			bounce(p, d, dim);
@@ -796,9 +801,9 @@ public final class ServerLogic {
 		if (d.leakStacks > 0) {
 			double keep = Math.pow(1.0 - Config.LEAK_FRACTION, d.leakStacks);
 			for (Altar a : linkedAltars(d)) {
-				a.charge *= keep;
+				a.scale(p.getStringUUID(), keep);
 			}
-			total = linkedCharge(d);
+			total = linkedCharge(p, d);
 			d.leakStacks = 0;
 		}
 		d.inRun = true;
@@ -836,7 +841,7 @@ public final class ServerLogic {
 		double leak = Config.BLOCKED_LEAK_PER_SECOND * 0.5; // elke 10 ticks
 		for (Altar a : DataStore.altars().values()) {
 			if (a.blocked && a.charge > 0) {
-				a.charge = Math.max(0, a.charge - leak);
+				a.leak(leak);
 			}
 		}
 
@@ -1017,7 +1022,8 @@ public final class ServerLogic {
 	// ------------------------------------------------------------------ expeditie klaar / Collapse / dood
 
 	private static void completeRun(ServerPlayer p, PlayerData d) {
-		clearBeyondRope(p, d);
+		// Veilig terug: de ketting verdwijnt helemaal en de Tether komt terug in je handen
+		clearRope(p, d, true);
 		d.inRun = false;
 		d.linked.clear();
 		d.expeditions++;
@@ -1185,7 +1191,8 @@ public final class ServerLogic {
 			return InteractionResult.SUCCESS;
 		}
 
-		double current = altar != null ? altar.charge : 0;
+		// Elke speler heeft zijn eigen tijd in een anker, met elk een eigen maximum
+		double current = altar != null ? altar.of(p.getStringUUID()) : 0;
 		double space = Config.MAX_CHARGE - current;
 		if (space < 1) {
 			return InteractionResult.SUCCESS;
@@ -1212,8 +1219,8 @@ public final class ServerLogic {
 			sound(p, "minecraft:block.beacon.activate", 0.8f, nether ? 0.8f : 1.2f);
 			unlock(p, d, JournalEntry.ANCHOR);
 		}
-		altar.charge += added;
-		if (Config.MAX_CHARGE - altar.charge < 1) {
+		altar.add(p.getStringUUID(), added);
+		if (Config.MAX_CHARGE - altar.of(p.getStringUUID()) < 1) {
 			unlock(p, d, JournalEntry.SILENCE);
 		}
 		altar.portalCheck = 0;
@@ -1394,12 +1401,6 @@ public final class ServerLogic {
 			}
 		}
 		d.tetherAnchor = null;
-		d.hasRopeEnd = false;
-	}
-
-	/** Na een geslaagde terugkeer: de ketting aan de overkant verdwijnt, het stuk in de Overworld blijft liggen. */
-	static void clearBeyondRope(ServerPlayer p, PlayerData d) {
-		run("kill @e[type=minecraft:block_display,tag=" + ropeTag(p) + "_b]");
 		d.hasRopeEnd = false;
 	}
 
