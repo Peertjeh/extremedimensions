@@ -2,6 +2,7 @@ package com.extremedimensions.lurker;
 
 import com.extremedimensions.registry.ModSounds;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -14,6 +15,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * The Lurker: a member of an ancient tribe bound to the shadows between dimensions.
@@ -85,11 +87,28 @@ public class Lurker extends Monster {
 
 	@Override
 	protected SoundEvent getAmbientSound() {
-		return ModSounds.LURKER_WHISPER;
+		return ModSounds.LURKER_AMBIENT;
+	}
+
+	@Override
+	protected SoundEvent getHurtSound(DamageSource source) {
+		return ModSounds.LURKER_HURT;
+	}
+
+	@Override
+	protected SoundEvent getDeathSound() {
+		return ModSounds.LURKER_DEATH;
+	}
+
+	@Override
+	protected void playStepSound(BlockPos pos, BlockState state) {
+		// Softer while stalking: it does not want to be heard
+		float vol = getLurkerPose() == POSE_STALK ? 0.35F : 0.8F;
+		this.playSound(ModSounds.LURKER_STEP, vol, 0.85F + this.random.nextFloat() * 0.2F);
 	}
 
 	@Override
 	public int getAmbientSoundInterval() {
-		return 400;
+		return 320;
 	}
 }

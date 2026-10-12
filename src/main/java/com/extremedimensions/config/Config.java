@@ -107,12 +107,14 @@ public final class Config {
 
 	/** 1 = Lurkers appear, 0 = never. */
 	public static int LURKER_ENABLED = 1;
-	/** Chance per player every 20 seconds that a Lurker appears (Overworld and Nether). */
-	public static double LURKER_SPAWN_CHANCE = 0.03;
+	/** Chance per player every 20 seconds that a Lurker appears (Overworld and Nether), outside the cooldown. */
+	public static double LURKER_SPAWN_CHANCE = 0.012;
+	/** Minimum seconds between two encounters for the same player. */
+	public static int LURKER_COOLDOWN_SECONDS = 900;
 	/** Chance that an appearance in the Overworld is a Lurker draining a nearby charged anchor. */
-	public static double LURKER_DRAIN_CHANCE = 0.35;
+	public static double LURKER_DRAIN_CHANCE = 0.15;
 	/** Chance that a watching Lurker comes closer to take something instead of leaving. */
-	public static double LURKER_STALK_CHANCE = 0.3;
+	public static double LURKER_STALK_CHANCE = 0.15;
 	public static int LURKER_WATCH_MIN = 30;
 	public static int LURKER_WATCH_MAX = 90;
 	/** Charge drained per second while a Lurker drinks an anchor, and for how long at most. */

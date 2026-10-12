@@ -6,7 +6,7 @@
 
 ### Added
 - **The Lurker**, a new mob: a member of an ancient tribe that watches you from the treetops, the ridges and the far
-  bank of the lava. Appears rarely, day or night, in the Overworld and the Nether.
+  bank of the lava. Appears rarely (with a cooldown per player), day or night, in the Overworld and the Nether, 36-60 blocks away on high ground and preferably half hidden behind leaves or a ridge. Stalkers and drainers are rarer still.
   - **Watching:** stands on high ground 24-40 blocks away and stares. Come too close or stare back too long and it is gone.
   - **Stalking:** sometimes it comes closer, but only while you are not looking.
   - **Taking:** it steals an item, part of your experience or a piece of armour, or lays a **curse** (one random
@@ -17,7 +17,7 @@
   strands dripping from its mask, violet eyes and glowing cracks. Fully procedural animation: breathing, head tracking
   with a curious tilt, swaying strands and cloth, a knuckle walk, an unfolding reach when it takes, and raised,
   trembling arms while a thin, flowing beam pours from the anchor into its hands.
-- Four new sounds, a new journal page (*XVI. The Tribe*) and three
+- A full sound set: heavy dragging footsteps (softer while it stalks), slow rattling breaths and whispers, a hiss when hurt, a death that frays into whispers, plus take, drain and vanish sounds, a new journal page (*XVI. The Tribe*) and three
   advancements (*It Sees*, *It Takes*, *Take It Back*).
 - `/tether lurker <watch|stalk|drain>` for operators.
 - Lurker settings in `config/extremedimensions.json`.
@@ -50,6 +50,7 @@
 - The full-screen portal transition.
 
 ### Fixed
+- "Format error" on penalty cards with a percentage.
 - Penalties no longer use vanilla effects (except Darkness), so they never show twice beside the inventory.
 - Tether Marks no longer overlap vanilla status effects beside the inventory.
 - Tether chain segments were invisible on 26.3 (block displays take the block as a plain id there).

@@ -76,6 +76,8 @@ public final class LurkerService {
 
 	private static final Map<UUID, State> STATES = new HashMap<>();
 	private static final Map<UUID, ServerLevel> LEVELS = new HashMap<>();
+	/** Server tick of each player's last encounter (cooldown). */
+	private static final Map<UUID, Long> LAST_SEEN = new HashMap<>();
 
 	public static boolean isDriven(Entity e) {
 		return STATES.containsKey(e.getUUID());
@@ -84,6 +86,7 @@ public final class LurkerService {
 	public static void clear() {
 		STATES.clear();
 		LEVELS.clear();
+		LAST_SEEN.clear();
 	}
 
 	// ------------------------------------------------------------------ spawning
@@ -99,9 +102,15 @@ public final class LurkerService {
 			if (p.isSpectator() || p.isCreative() || !(Dims.OVERWORLD.equals(dim) || Dims.NETHER.equals(dim)) || hunting(p)) {
 				continue;
 			}
+			// Rare by design: a base chance, and never again soon after the last encounter
+			Long last = LAST_SEEN.get(p.getUUID());
+			if (last != null && s.getTickCount() - last < Config.LURKER_COOLDOWN_SECONDS * 20L) {
+				continue;
+			}
 			if (rnd.nextDouble() >= Config.LURKER_SPAWN_CHANCE) {
 				continue;
 			}
+			LAST_SEEN.put(p.getUUID(), (long) s.getTickCount());
 			if (Dims.OVERWORLD.equals(dim) && rnd.nextDouble() < Config.LURKER_DRAIN_CHANCE && spawnDrain(p)) {
 				continue;
 			}
@@ -121,7 +130,7 @@ public final class LurkerService {
 	/** A Lurker appears on high ground at a distance, watching this player. */
 	public static boolean spawnWatch(ServerPlayer p) {
 		ServerLevel level = (ServerLevel) p.level();
-		BlockPos pos = vantage(level, p, 24, 40);
+		BlockPos pos = vantage(level, p, 36, 60);
 		if (pos == null) {
 			return false;
 		}
@@ -183,12 +192,18 @@ public final class LurkerService {
 		return l;
 	}
 
-	/** The highest standable spot among a few random points at the given distance (treetops and hills first). */
+	/**
+	 * Picks where a Lurker shows itself: among a number of random standable spots at the given distance, the best
+	 * score wins. High ground scores, and so does partial cover: something between it and the player (leaves, a
+	 * trunk, a ridge) that hides the body but not the head.
+	 */
 	private static BlockPos vantage(ServerLevel level, ServerPlayer p, int min, int max) {
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		boolean nether = Dims.NETHER.equals(Dims.of(p));
+		Vec3 eye = p.getEyePosition();
 		BlockPos best = null;
-		for (int i = 0; i < 10; i++) {
+		double bestScore = -1e9;
+		for (int i = 0; i < 16; i++) {
 			double ang = rnd.nextDouble() * Math.PI * 2;
 			double dist = min + rnd.nextDouble() * (max - min);
 			int x = (int) Math.floor(p.getX() + Math.cos(ang) * dist);
@@ -198,7 +213,7 @@ public final class LurkerService {
 			}
 			BlockPos c;
 			if (nether) {
-				c = standable(level, x, (int) p.getY() + 12, z, 28);
+				c = standable(level, x, (int) p.getY() + 16, z, 36);
 			} else {
 				int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
 				c = new BlockPos(x, y, z);
@@ -206,11 +221,40 @@ public final class LurkerService {
 					c = null;
 				}
 			}
-			if (c != null && (best == null || c.getY() > best.getY())) {
+			if (c == null) {
+				continue;
+			}
+			// Cover: rays from the player's eyes to its feet, body and head
+			boolean feet = blocked(level, eye, Vec3.atBottomCenterOf(c).add(0, 0.5, 0));
+			boolean body = blocked(level, eye, Vec3.atBottomCenterOf(c).add(0, 1.8, 0));
+			boolean head = blocked(level, eye, Vec3.atBottomCenterOf(c).add(0, 3.2, 0));
+			double score = (c.getY() - p.getY()) * 1.5;
+			if (!head && (feet || body)) {
+				score += 14; // half hidden, watching over the edge
+			} else if (head && feet && body) {
+				score -= 6; // fully hidden: nobody would ever see it
+			}
+			score += rnd.nextDouble() * 4;
+			if (score > bestScore) {
+				bestScore = score;
 				best = c;
 			}
 		}
 		return best;
+	}
+
+	/** Is there something solid (or leaves) on the line between two points? */
+	private static boolean blocked(ServerLevel level, Vec3 from, Vec3 to) {
+		Vec3 d = to.subtract(from);
+		double len = d.length();
+		int steps = (int) Math.ceil(len);
+		for (int i = 2; i < steps - 1; i++) {
+			Vec3 pt = from.add(d.scale(i / len));
+			if (!level.getBlockState(BlockPos.containing(pt.x, pt.y, pt.z)).isAir()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Scans down from {@code top} for a solid block with three blocks of air above it. */

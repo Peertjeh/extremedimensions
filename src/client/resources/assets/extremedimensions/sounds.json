@@ -68,5 +68,37 @@
     "sounds": [
       "extremedimensions:lurker_vanish"
     ]
+  },
+  "lurker_ambient": {
+    "subtitle": "subtitles.extremedimensions.lurker_ambient",
+    "sounds": [
+      "extremedimensions:lurker_breath1",
+      "extremedimensions:lurker_breath2",
+      {
+        "name": "extremedimensions:lurker_whisper",
+        "weight": 2
+      }
+    ]
+  },
+  "lurker_step": {
+    "subtitle": "subtitles.extremedimensions.lurker_step",
+    "sounds": [
+      "extremedimensions:lurker_step1",
+      "extremedimensions:lurker_step2",
+      "extremedimensions:lurker_step3"
+    ]
+  },
+  "lurker_hurt": {
+    "subtitle": "subtitles.extremedimensions.lurker_hurt",
+    "sounds": [
+      "extremedimensions:lurker_hurt1",
+      "extremedimensions:lurker_hurt2"
+    ]
+  },
+  "lurker_death": {
+    "subtitle": "subtitles.extremedimensions.lurker_death",
+    "sounds": [
+      "extremedimensions:lurker_death"
+    ]
   }
 }
