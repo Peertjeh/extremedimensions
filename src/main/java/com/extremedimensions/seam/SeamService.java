@@ -356,7 +356,7 @@ public final class SeamService {
 		int top = 76 + (int) ((h >> 16) % 30);
 		int v = (int) ((h >> 24) % 5);
 		int r = switch (kind(type)) {
-			case SPIRE -> 19 + v;
+			case SPIRE -> 24 + v;
 			case VILLAGE -> 16 + v;
 			case LOOM -> 15 + v;
 			case HANGING -> 10 + v;
@@ -465,7 +465,7 @@ public final class SeamService {
 			DataStore.seamCells().add("c@" + cx + "," + cz);
 			Random rnd = new Random(hash(cx, cz, 99));
 			int x = cx * CELL + CELL / 2, z = cz * CELL + CELL / 2, top = 90;
-			int r = switch (kinds[i]) { case SPIRE -> 21; case VILLAGE -> 18; case LOOM -> 17; case HANGING -> 12; case HALO -> 13; default -> 12; };
+			int r = switch (kinds[i]) { case SPIRE -> 25; case VILLAGE -> 18; case LOOM -> 17; case HANGING -> 12; case HALO -> 13; default -> 12; };
 			SeamArchitect.Plan plan = new SeamArchitect.Plan();
 			int depth = SeamArchitect.island(plan, rnd, x, top, z, r, true);
 			switch (kinds[i]) {

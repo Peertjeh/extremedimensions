@@ -433,10 +433,10 @@ public final class SeamArchitect {
 	 */
 	public static void spire(Plan p, Random rnd, int cx, int top, int cz, int r) {
 		Frame base = new Frame(p, cx, top + 1, cz, rnd.nextInt(4));
-		int b0 = Math.max(7, Math.min(9, r / 2 - 1));
+		int b0 = Math.max(9, Math.min(12, r / 2 - 1));
 		int b = b0;
 		int tiers = 3 + rnd.nextInt(2);
-		int[] heights = {20 + rnd.nextInt(8), 15 + rnd.nextInt(6), 12 + rnd.nextInt(5), 10 + rnd.nextInt(4)};
+		int[] heights = {24 + rnd.nextInt(8), 18 + rnd.nextInt(6), 14 + rnd.nextInt(5), 11 + rnd.nextInt(4)};
 		BlockState vines = mc("cave_vines");
 		int y = 0;
 		int firstH = heights[0];
@@ -476,6 +476,10 @@ public final class SeamArchitect {
 						}
 						if (t == 0 && front && Math.abs(u) <= 1 && ly <= (u == 0 ? 6 : 5)) {
 							f.clear(lx, ly, lz); // the door
+							continue;
+						}
+						if (t > 0 && u == 0 && ly <= 2) {
+							f.clear(lx, ly, lz); // out onto the terrace
 							continue;
 						}
 						if (window) {
@@ -608,37 +612,132 @@ public final class SeamArchitect {
 		// The reliquary at the top floor
 		int bl = b + 2;
 		base.then(-bl + 1, lastFloor + 1, -bl + 3, loot(base.pos(-bl + 1, lastFloor + 1, -bl + 3), 3));
-		// Banners on the front, either side of the door
-		int bTop = firstH - 1;
+		nave(base, rnd, b0);
+		// Three satellite towers, left, right and behind, joined to the first terrace by sky bridges
+		int terrace = firstH + 1;
+		for (int side = 1; side < 4; side++) {
+			Frame g = new Frame(p, cx, top + 1, cz, base.rot + side);
+			satellite(g, rnd, b0, b0 + 9, terrace + 8 + rnd.nextInt(10), terrace);
+		}
+	}
+
+	/** The nave in front of a spire: a long hall with a steep roof, a great door, banners and lamps. */
+	private static void nave(Frame f, Random rnd, int b0) {
+		int z0 = b0 + 1, z1 = b0 + 10, w = 4, h = 13;
+		for (int lz = z0; lz <= z1; lz++) {
+			for (int lx = -w; lx <= w; lx++) {
+				f.set(lx, 0, lz, (lx + lz & 1) == 0 ? bsBrick() : dsPol());
+				boolean wall = Math.abs(lx) == w || lz == z1;
+				for (int ly = 1; ly <= h; ly++) {
+					if (!wall) {
+						f.clear(lx, ly, lz);
+						continue;
+					}
+					boolean sideWindow = Math.abs(lx) == w && (lz - z0) % 3 == 1 && ly >= 3 && ly <= ((lz - z0) % 3 == 1 ? 9 : 8);
+					boolean door = lz == z1 && Math.abs(lx) <= 1 && ly <= (lx == 0 ? 6 : 5);
+					if (door) {
+						f.clear(lx, ly, lz);
+					} else if (sideWindow) {
+						f.set(lx, ly, lz, ly == 9 ? vein() : glass());
+					} else {
+						f.set(lx, ly, lz, ly == 1 || ly == h ? bsBrick() : rnd.nextInt(10) == 0 ? dsCrack() : dsBrick());
+					}
+				}
+			}
+			// Steep roof
+			for (int k = 0; k <= w + 1; k++) {
+				int half = w + 1 - k;
+				f.set(half, h + 1 + k, lz, dsTile());
+				f.set(-half, h + 1 + k, lz, dsTile());
+				if (lz == z1) {
+					for (int lx = -half + 1; lx <= half - 1; lx++) {
+						f.set(lx, h + 1 + k, lz, Math.abs(lx) + Math.abs(h + 3 - (h + 1 + k)) <= 1 ? vein() : dsBrick());
+					}
+				}
+			}
+			// Lanterns inside on chains
+			if ((lz - z0) % 3 == 2) {
+				f.set(0, h, lz, chain());
+				f.set(0, h - 1, lz, chain());
+				f.set(0, h - 2, lz, hanging(lantern()));
+			}
+		}
+		f.set(0, h + w + 3, z1, dsWall());
+		f.set(0, h + w + 4, z1, endRod());
+		// Banners either side of the great door
 		for (int side = -1; side <= 1; side += 2) {
-			int uc = side * 4;
+			int uc = side * 3;
 			for (int k = 0; k < 10; k++) {
 				for (int du = -1; du <= 1; du++) {
 					if (k == 9 && du != 0) {
-						continue; // a pointed hem
+						continue;
 					}
 					int m = Math.abs(du) + Math.abs(k - 4);
 					BlockState cl = k == 0 ? woolDark() : (m == 1 ? wool2() : m == 0 ? vein() : wool());
-					base.set(uc + du, bTop - k, b0 + 1, cl);
+					f.set(uc + du, 11 - k, z1 + 1, cl);
 				}
 			}
 		}
-		// Lamps either side of the steps
-		lamp(p, rnd, base.wx(-3, b0 + 3), top + 1, base.wz(-3, b0 + 3));
-		lamp(p, rnd, base.wx(3, b0 + 3), top + 1, base.wz(3, b0 + 3));
-		// Flying buttresses down to the island from the sides and back
-		for (int side = 1; side < 4; side++) {
-			Frame g = new Frame(p, cx, top + 1, cz, base.rot + side);
-			for (double t = 0; t <= 1.0; t += 0.03) {
-				int lz = b0 + 2 + (int) Math.round(t * 7);
-				int ly = (int) Math.round((firstH - 4) * (1 - t * t));
-				g.set(0, ly, lz, dsBrick());
-				g.set(0, ly - 1, lz, dsBrick());
-				if (t > 0.95) {
-					for (int k = ly - 2; k >= 0; k--) {
-						g.set(0, k, lz, dsPol());
+		// Steps and lamps before the door
+		for (int lx = -2; lx <= 2; lx++) {
+			f.set(lx, 0, z1 + 1, dsPol());
+		}
+		lamp(f.p, rnd, f.wx(-4, z1 + 2), f.oy, f.wz(-4, z1 + 2));
+		lamp(f.p, rnd, f.wx(4, z1 + 2), f.oy, f.wz(4, z1 + 2));
+	}
+
+	/**
+	 * A satellite tower at local (0, d), with a pointed roof, and a sky bridge back to the main spire at the height of
+	 * its first terrace.
+	 */
+	private static void satellite(Frame f, Random rnd, int b0, int d, int h, int bridgeY) {
+		int w = 2;
+		for (int ly = 0; ly <= h; ly++) {
+			for (int lx = -w; lx <= w; lx++) {
+				for (int lz = d - w; lz <= d + w; lz++) {
+					boolean edgeX = Math.abs(lx) == w, edgeZ = Math.abs(lz - d) == w;
+					if (ly == 0 || ly == bridgeY) {
+						f.set(lx, ly, lz, dsPol());
+					} else if (edgeX || edgeZ) {
+						boolean window = !(edgeX && edgeZ) && (lx == 0 || lz == d) && ly % 7 >= 3 && ly % 7 <= 5;
+						f.set(lx, ly, lz, edgeX && edgeZ ? dsPol() : window ? glass() : ly % 7 == 0 ? dsTile() : dsBrick());
+					} else {
+						f.clear(lx, ly, lz);
 					}
 				}
+			}
+		}
+		for (int k = 0; k <= 9; k++) {
+			int half = (int) Math.round((w + 1) * (1 - k / 9.0));
+			for (int u = -half; u <= half; u++) {
+				f.set(u, h + 1 + k, d + half, dsTile());
+				f.set(u, h + 1 + k, d - half, dsTile());
+				f.set(half, h + 1 + k, d + u, dsTile());
+				f.set(-half, h + 1 + k, d + u, dsTile());
+			}
+		}
+		f.set(0, h + 11, d, endRod());
+		f.set(0, bridgeY + 3, d, hanging(soulLantern()));
+		// The sky bridge from the terrace's edge, through a gap in its parapet, to a doorway in the tower
+		for (int lx = -1; lx <= 1; lx++) {
+			f.clear(lx, bridgeY + 1, b0);
+		}
+		for (int lz = b0 + 1; lz < d - w; lz++) {
+			for (int lx = -1; lx <= 1; lx++) {
+				f.soft(lx, bridgeY, lz, lx == 0 ? planks() : dsTile());
+			}
+			if (lz % 2 == 0) {
+				f.soft(-2, bridgeY + 1, lz, dsWall());
+				f.soft(2, bridgeY + 1, lz, dsWall());
+			}
+			if (lz % 6 == 3) {
+				f.soft(0, bridgeY - 1, lz, chain());
+				f.soft(0, bridgeY - 2, lz, hanging(lantern()));
+			}
+		}
+		for (int lx = -1; lx <= 1; lx++) {
+			for (int ly = 1; ly <= 3; ly++) {
+				f.clear(lx, bridgeY + ly, d - w);
 			}
 		}
 	}

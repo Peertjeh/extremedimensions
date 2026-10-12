@@ -18,8 +18,9 @@ public class SeamShots implements FabricClientGameTest {
 			sp.getServer().runCommand("gamemode spectator @a");
 			sp.getServer().runCommand("tether seam_showcase");
 			ctx.waitTicks(40);
-			shot(ctx, sp, "02_spire_far", 2916, 118, 2840, 0, -12);
-			shot(ctx, sp, "03_spire_near", 2930, 100, 2880, 20, -35);
+			shot(ctx, sp, "02_spire_far", 2916, 125, 2826, 0, -14);
+			shot(ctx, sp, "03_spire_diag", 2850, 120, 2850, -45, -14);
+			shot(ctx, sp, "03b_spire_inside", 2916, 93, 2916, 30, -10);
 			shot(ctx, sp, "04_loom", 2988, 104, 2880, 0, -18);
 			shot(ctx, sp, "05_village", 3060, 125, 2892, 0, 35);
 			shot(ctx, sp, "06_hanging", 3132, 70, 2880, 0, -5);
