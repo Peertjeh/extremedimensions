@@ -328,5 +328,8 @@
   "advancements.extremedimensions.ending_mended.title": "Mended",
   "advancements.extremedimensions.ending_mended.description": "Mend the first wound",
   "advancements.extremedimensions.ending_severed.title": "Severed",
-  "advancements.extremedimensions.ending_severed.description": "Sever the Tether from the world"
+  "advancements.extremedimensions.ending_severed.description": "Sever the Tether from the world",
+  "entity.extremedimensions.veil_ray": "Veil Ray",
+  "entity.extremedimensions.thinned": "Thinned",
+  "subtitles.extremedimensions.veil_ray_song": "Veil Ray sings"
 }

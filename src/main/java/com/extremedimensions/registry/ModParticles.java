@@ -20,6 +20,10 @@ public final class ModParticles {
 	public static final SimpleParticleType VOID_MOTE = register("void_mote");
 	/** Curling black ink: the Lurker's trail and its vanishing. */
 	public static final SimpleParticleType LURKER_WISP = register("lurker_wisp");
+	/** Fireflies of the Seam: violet, rose, gold and pale points that wander and pulse. */
+	public static final SimpleParticleType SEAM_FIREFLY = register("seam_firefly");
+	/** Dust of light sifting slowly down through the Seam. */
+	public static final SimpleParticleType SEAM_DUST = register("seam_dust");
 
 	private static SimpleParticleType register(String id) {
 		return Registry.register(BuiltInRegistries.PARTICLE_TYPE, ExtremeDimensions.id(id), FabricParticleTypes.simple());

@@ -5,6 +5,8 @@ import com.extremedimensions.hollow.Hollowling;
 import com.extremedimensions.hollow.Keeper;
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.mending.StarvedOne;
+import com.extremedimensions.seam.Thinned;
+import com.extremedimensions.seam.VeilRay;
 
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -57,7 +59,28 @@ public final class ModEntities {
 					.clientTrackingRange(12)
 					.build(STARVED_KEY));
 
+	private static final ResourceKey<EntityType<?>> VEIL_RAY_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("veil_ray"));
+	private static final ResourceKey<EntityType<?>> THINNED_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("thinned"));
+
+	/** A great glowing manta circling the islands of the Seam; spawned only by {@code SeamFauna}. */
+	public static final EntityType<VeilRay> VEIL_RAY = Registry.register(BuiltInRegistries.ENTITY_TYPE, VEIL_RAY_KEY,
+			EntityType.Builder.<VeilRay>of(VeilRay::new, MobCategory.AMBIENT)
+					.sized(3.2f, 0.9f)
+					.eyeHeight(0.5f)
+					.clientTrackingRange(16)
+					.build(VEIL_RAY_KEY));
+
+	/** The worn-thin people of the Seam's villages; spawned only by {@code SeamFauna}. */
+	public static final EntityType<Thinned> THINNED = Registry.register(BuiltInRegistries.ENTITY_TYPE, THINNED_KEY,
+			EntityType.Builder.<Thinned>of(Thinned::new, MobCategory.MONSTER)
+					.sized(0.9f, 2.6f)
+					.eyeHeight(2.3f)
+					.clientTrackingRange(10)
+					.build(THINNED_KEY));
+
 	public static void init() {
+		FabricDefaultAttributeRegistry.register(VEIL_RAY, VeilRay.createAttributes());
+		FabricDefaultAttributeRegistry.register(THINNED, Thinned.createAttributes());
 		FabricDefaultAttributeRegistry.register(LURKER, Lurker.createAttributes());
 		FabricDefaultAttributeRegistry.register(HOLLOWLING, Hollowling.createAttributes());
 		FabricDefaultAttributeRegistry.register(KEEPER, Keeper.createAttributes());

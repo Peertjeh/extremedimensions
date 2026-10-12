@@ -68,6 +68,7 @@ public final class ServerEvents {
 			LurkerService.clear();
 			HollowService.clear();
 			SeamService.clear();
+			com.extremedimensions.seam.SeamFauna.clear();
 			WorldService.clear();
 			MendingService.clear();
 			DataStore.unload();
@@ -105,6 +106,8 @@ public final class ServerEvents {
 				HollowService.onHollowlingDeath(h);
 			} else if (entity instanceof Lurker l) {
 				LurkerService.onDeath(l, source.getEntity());
+			} else if (entity instanceof com.extremedimensions.seam.VeilRay || entity instanceof com.extremedimensions.seam.Thinned) {
+				com.extremedimensions.seam.SeamFauna.onDeath(entity);
 			} else if (source.getEntity() instanceof ServerPlayer killer) {
 				ExpeditionService.onMobKilled(killer, entity);
 			}
@@ -262,6 +265,7 @@ public final class ServerEvents {
 		LurkerService.tick(s);
 		HollowService.tick(s);
 		SeamService.tick(s);
+		com.extremedimensions.seam.SeamFauna.tick(s);
 		WorldService.tick(s);
 		MendingService.tick(s);
 	}

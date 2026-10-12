@@ -170,5 +170,14 @@
     "sounds": [
       "extremedimensions:seam_ambient"
     ]
+  },
+  "veil_ray_song": {
+    "subtitle": "subtitles.extremedimensions.veil_ray_song",
+    "sounds": [
+      {
+        "name": "extremedimensions:veil_ray_song",
+        "attenuation_distance": 48
+      }
+    ]
   }
 }

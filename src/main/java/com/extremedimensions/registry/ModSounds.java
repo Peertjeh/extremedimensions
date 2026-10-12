@@ -29,6 +29,7 @@ public final class ModSounds {
 	public static final SoundEvent HOLLOWLING_HURT = register("hollowling_hurt");
 	public static final SoundEvent HOLLOWLING_DEATH = register("hollowling_death");
 	public static final SoundEvent KEEPER_ROAR = register("keeper_roar");
+	public static final SoundEvent VEIL_RAY_SONG = register("veil_ray_song");
 	public static final SoundEvent MUSIC_MENU_1 = register("music.menu_1");
 	public static final SoundEvent MUSIC_MENU_2 = register("music.menu_2");
 

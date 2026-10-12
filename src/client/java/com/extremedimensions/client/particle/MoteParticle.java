@@ -18,7 +18,7 @@ import net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry;
  * of ink that swell and thin out. Each animates through its own sprite frames over its life.
  */
 public class MoteParticle extends SingleQuadParticle {
-	enum Kind { SOUL, EMBER, VOID, WISP }
+	enum Kind { SOUL, EMBER, VOID, WISP, FIREFLY, DUST }
 
 	private final SpriteSet sprites;
 	private final Kind kind;
@@ -52,6 +52,22 @@ public class MoteParticle extends SingleQuadParticle {
 				this.lifetime = 25 + this.random.nextInt(25);
 				this.baseSize = 0.06F + this.random.nextFloat() * 0.05F;
 			}
+			case FIREFLY -> {
+				this.xd = (this.random.nextFloat() - 0.5F) * 0.02;
+				this.yd = (this.random.nextFloat() - 0.5F) * 0.01;
+				this.zd = (this.random.nextFloat() - 0.5F) * 0.02;
+				this.friction = 0.98F;
+				this.lifetime = 120 + this.random.nextInt(120);
+				this.baseSize = 0.05F + this.random.nextFloat() * 0.05F;
+			}
+			case DUST -> {
+				this.xd = (this.random.nextFloat() - 0.5F) * 0.006;
+				this.yd = -0.01 - this.random.nextFloat() * 0.012;
+				this.zd = (this.random.nextFloat() - 0.5F) * 0.006;
+				this.friction = 1.0F;
+				this.lifetime = 160 + this.random.nextInt(120);
+				this.baseSize = 0.025F + this.random.nextFloat() * 0.025F;
+			}
 			default -> {
 				this.yd = 0.015 + this.random.nextFloat() * 0.015 + yd * 0.2;
 				this.lifetime = 24 + this.random.nextInt(16);
@@ -59,7 +75,13 @@ public class MoteParticle extends SingleQuadParticle {
 			}
 		}
 		this.quadSize = this.baseSize;
-		this.setSpriteFromAge(sprites);
+		if (kind == Kind.FIREFLY || kind == Kind.DUST) {
+			// one colour for life, picked from the sprite set
+			this.setSprite(sprites.get(this.random.nextInt(4), 3));
+			this.setAlpha(0);
+		} else {
+			this.setSpriteFromAge(sprites);
+		}
 	}
 
 	@Override
@@ -87,6 +109,21 @@ public class MoteParticle extends SingleQuadParticle {
 				// Hangs nearly still and twinkles
 				this.setAlpha((1.0F - t) * (0.55F + 0.45F * Mth.sin(a * 3.1F)));
 			}
+			case FIREFLY -> {
+				// Wanders on lazy curves and pulses, fading in and out over its life
+				this.xd += Mth.cos(a * 0.21F) * 0.0012;
+				this.zd += Mth.sin(a * 0.17F) * 0.0012;
+				this.yd += Mth.sin(a * 0.11F) * 0.0006;
+				float fade = Math.min(1.0F, Math.min(t * 6.0F, (1.0F - t) * 6.0F));
+				this.setAlpha(fade * (0.55F + 0.45F * Mth.sin(a * 0.9F)));
+				this.quadSize = this.baseSize * (0.85F + 0.25F * Mth.sin(a * 0.9F));
+			}
+			case DUST -> {
+				// Sifts down, swaying, glinting
+				this.xd += Mth.sin(a * 0.08F) * 0.0004;
+				float fade = Math.min(1.0F, Math.min(t * 5.0F, (1.0F - t) * 5.0F));
+				this.setAlpha(fade * (0.6F + 0.4F * Mth.sin(a * 1.7F)));
+			}
 			default -> {
 				// Ink curls and swells as it thins out
 				this.xd += Mth.cos(a * 0.7F) * 0.002;
@@ -95,7 +132,9 @@ public class MoteParticle extends SingleQuadParticle {
 				this.setAlpha(0.85F * (1.0F - t));
 			}
 		}
-		this.setSpriteFromAge(this.sprites);
+		if (this.kind != Kind.FIREFLY && this.kind != Kind.DUST) {
+			this.setSpriteFromAge(this.sprites);
+		}
 	}
 
 	@Override
@@ -122,5 +161,7 @@ public class MoteParticle extends SingleQuadParticle {
 		r.register(ModParticles.EMBER_MOTE, sprites -> new Provider(sprites, Kind.EMBER));
 		r.register(ModParticles.VOID_MOTE, sprites -> new Provider(sprites, Kind.VOID));
 		r.register(ModParticles.LURKER_WISP, sprites -> new Provider(sprites, Kind.WISP));
+		r.register(ModParticles.SEAM_FIREFLY, sprites -> new Provider(sprites, Kind.FIREFLY));
+		r.register(ModParticles.SEAM_DUST, sprites -> new Provider(sprites, Kind.DUST));
 	}
 }

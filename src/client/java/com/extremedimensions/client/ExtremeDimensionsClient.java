@@ -8,10 +8,13 @@ import com.extremedimensions.client.audio.MenuMusic;
 import com.extremedimensions.client.particle.MoteParticle;
 import com.extremedimensions.client.entity.LurkerModel;
 import com.extremedimensions.client.entity.LurkerRenderer;
+import com.extremedimensions.client.entity.VeilRayModel;
+import com.extremedimensions.client.entity.VeilRayRenderer;
 import com.extremedimensions.client.hud.ChargeHud;
 import com.extremedimensions.client.inventory.JournalButton;
 import com.extremedimensions.client.inventory.TetherMarks;
 import com.extremedimensions.client.screen.JournalScreen;
+import com.extremedimensions.client.sky.SeamAmbience;
 import com.extremedimensions.client.sky.SeamSky;
 import com.extremedimensions.client.screen.PenaltyChoiceScreen;
 import com.extremedimensions.client.screen.StatusScreen;
@@ -59,6 +62,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 
 		ClientTickEvents.END_CLIENT_TICK.register(MenuMusic::tick);
 		ClientTickEvents.END_CLIENT_TICK.register(SeamSky::prepare);
+		ClientTickEvents.END_CLIENT_TICK.register(SeamAmbience::tick);
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ClientState::reset));
 		HudElementRegistry.addLast(ExtremeDimensions.id("charge_hud"), new ChargeHud());
 		Tooltips.register();
@@ -68,6 +72,9 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.HOLLOWLING, ctx -> new LurkerRenderer<>(ctx, "hollowling", 0.42F, 0.4F, true));
 		EntityRendererRegistry.register(ModEntities.KEEPER, ctx -> new LurkerRenderer<>(ctx, "keeper", 1.75F, 1.4F, false));
 		EntityRendererRegistry.register(ModEntities.STARVED_ONE, ctx -> new LurkerRenderer<>(ctx, "starved_one", 2.35F, 1.8F, false));
+		ModelLayerRegistry.registerModelLayer(VeilRayModel.LAYER, VeilRayModel::createBodyLayer);
+		EntityRendererRegistry.register(ModEntities.VEIL_RAY, VeilRayRenderer::new);
+		EntityRendererRegistry.register(ModEntities.THINNED, ctx -> new LurkerRenderer<>(ctx, "thinned", 1.05F, 0.7F, false));
 
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.StatePayload.TYPE, (payload, context) ->
 				context.client().execute(() -> ClientState.apply(payload)));
