@@ -70,8 +70,9 @@ in soul light and it may become your friend.
 
 ## The Seam
 
-Use a **Seam Needle** on crying obsidian and the air tears open into **the Seam**: floating islands of hush stone
-between the dimensions, Weaver looms strung with silk, and the silent villages of the Thinned. You have five minutes.
+Use a **Seam Needle** on crying obsidian and the air tears open into **the Seam**: floating islands under a sky of
+nebulae and a turning vortex, colossal gothic spires, giant Weaver looms strung with silk, towers hanging upside down
+into the void, chain bridges and the tall, silent villages of the Thinned. You have five minutes.
 Your return rift drifts, and only the thread of silk you leave behind leads back to it.
 
 ## Weaver's Craft, the Dragon and the Mending
@@ -122,17 +123,18 @@ Each player can store up to 30 minutes per anchor. Fuel values show in item tool
 | Bind / untie the Tether | Right click with a Tether / with an empty hand |
 | Anchor status | Sneak + right click with an empty hand |
 | Mend a mark | Right click an anchor with a Tether Fragment |
-| Read the journal | Use the Tether Journal |
+| Read the journal | Use the Tether Journal, or the journal button beside the recipe book |
 | Summon a Lurker (operators) | `/tether lurker <watch|stalk|drain>` |
 | Build a hoard (operators) | `/tether hoard` |
 | Enter the Seam (operators) | `/tether seam` |
+| Build every Seam structure in a row (operators) | `/tether seam_showcase` |
 | Break the seal / start a storm (operators) | `/tether break_seal`, `/tether storm` |
 | Open a rift | Use a Seam Needle on crying obsidian |
 
 ## Installation
 
 1. Install **Fabric Loader 0.19.5+** for **Minecraft 26.3** (Java 25).
-2. Add **Fabric API 0.162.0+** and `extremedimensions-2.0.0.jar` to your `mods` folder.
+2. Add **Fabric API 0.162.0+** and `extremedimensions-2.1.0.jar` to your `mods` folder.
 3. Install it on the server **and** every client.
 
 Play a normal Survival world. Vanilla Hardcore turns you into a spectator on death, which this mod is designed to avoid.

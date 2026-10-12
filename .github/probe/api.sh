@@ -1,12 +1,10 @@
 #!/bin/bash
 set +e
-J=$(find ~/.gradle -name "minecraft-clientonly-deobf-26.3.jar" | head -1)
-C=$(find ~/.gradle -name "*.jar" | grep -E "minecraft-common-7e|blaze3d|renderpearl" | tr '\n' ':')
-echo "JAR $J"
-javap -c -p -cp "$J:$C" net.minecraft.client.renderer.SkyRenderer > /tmp/sky.txt 2>&1
-for m in "SkyRenderer(net" "private void renderEndSky" "private static com.mojang.renderpearl.api.buffers.GpuBuffer buildEndSky" "public void render(" "private net.minecraft.client.renderer.texture.AbstractTexture getTexture"; do
-  echo "######## $m"
-  awk -v m="$m" 'index($0,m){p=1} p{print} p&&/^$/{exit}' /tmp/sky.txt | head -150
+JARS=$(find ~/.gradle -name "*.jar" 2>/dev/null | grep -E "fabric-client-gametest|fabric-gametest" | grep -v sources | sort -u)
+echo "$JARS"
+for j in $JARS; do
+  for c in $(unzip -l "$j" | grep -oE "net/fabricmc/fabric/api/client/gametest/v1/[A-Za-z/$]*\.class" | sed 's/\.class$//' | tr / .); do
+    echo "=== $c"; javap -cp "$j" "$c" 2>/dev/null | grep -v "^Compiled" | head -60
+  done
 done
-javap -p -cp "$J:$C" net.minecraft.client.renderer.state.level.SkyRenderState
-find ~/.gradle -name "*.jar" | grep -iE "mixin" | head
+find ~/.gradle -path "*fabric-loom*" -name "*.jar" | head -3

@@ -1,5 +1,39 @@
 # Changelog
 
+## 2.1.0: The Seam, Rewoven
+
+*The Seam is not a place. It is a breath, and now it has a sky to breathe.*
+
+### Added
+- **A sky of its own**: the Seam now has a hand-built, high-resolution sky (six 1024 px faces): violet nebulae, a
+  galaxy band, a vortex turning at the zenith, a red glow where the Nether bleeds through, pillars of light rising from
+  a sea of clouds and the silhouettes of far islands on the horizon.
+- **Colossal architecture**, built over a few seconds as you approach so the server never stalls:
+  - **Great Spires**: three or four tiers of deepslate stepping inward, tall pointed windows of violet glass, a diamond
+    rose window over the door, buttresses crowned with pinnacles, banners, chains and lanterns on every ledge, flying
+    buttresses, a glowing core of silk and a spiral stair inside, up to a reliquary at the top.
+  - **Giant Looms**: two pillars forty blocks high, a beam across the top, hundreds of threads of chain and silk and a
+    half-woven tapestry of the Weaver's sign.
+  - **Villages of the Thinned**: tall, narrow houses with steep roofs and warm windows around a plaza with a bell spire.
+  - **Hanging Towers** that grow upside down beneath their islands, and **Halos**: tilted rings of stone turning
+    around floating crystals.
+  - **Chain bridges** between the islands: dark plank decks, lantern posts, sagging chain rails and soul lanterns
+    swinging below. Some have fallen through.
+- **Islands** are bigger and deeper: mossy tops with grass and flowers, vines, pale moss and roots hanging from their
+  undersides, long stone fangs, soul lanterns on chains, and **light pouring off their edges**, visible from far away.
+- **The Heart's crown**: four obelisks on floating plinths and a great halo high above the arena, and a beam of light
+  rising from the Heart that can be seen from across the Seam.
+- **Journal button** in the inventory, right of the recipe book: read the journal without carrying it.
+- `/tether seam_showcase` (operators): builds one of every Seam structure in a row around x = 2880..3300, z = 2916.
+
+### Changed
+- The hoard's whispers are much quieter, never overlap themselves and play once per hoard however many players are
+  near.
+- The Seam's light and fog are violet instead of teal.
+- Seam cells are now 72 blocks instead of 34, so structures have room. Parts of the Seam that were already explored
+  in an older version stay as they were; for the full effect, try a world that has not visited the Seam yet.
+
+
 ## 2.0.0: The Mending
 
 *Mend it, and the world forgets the wound. Sever it, and the world forgets the Tether.*
