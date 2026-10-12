@@ -139,12 +139,8 @@ public final class TetherMarks {
 		if (player == null) {
 			return 0;
 		}
-		int count = 0;
-		for (var effect : player.getActiveEffects()) {
-			if (effect.showIcon()) {
-				count++;
-			}
-		}
+		// The inventory lists every active effect, including ones hidden from the HUD
+		int count = player.getActiveEffects().size();
 		if (count == 0) {
 			return 0;
 		}

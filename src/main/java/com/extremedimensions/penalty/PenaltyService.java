@@ -96,9 +96,7 @@ public final class PenaltyService {
 				case MOURNING -> {
 					int secs = Config.MOURNING_SECONDS;
 					d.mourningSecs = Math.max(d.mourningSecs, secs);
-					effect(p, "weakness", secs, 1);
-					effect(p, "hunger", secs, 1);
-					effect(p, "mining_fatigue", secs, 0);
+					applyEffects(p, d);
 				}
 				case TOLL -> d.xpDebt += Config.TOLL_LEVELS;
 				case TITHE -> d.xpDebt += Config.TITHE_LEVELS;
@@ -163,7 +161,10 @@ public final class PenaltyService {
 		if (d.tickCounter % 20 == 0) {
 			if (d.mourningSecs > 0) {
 				d.mourningSecs = Math.max(0, d.mourningSecs - 1);
-				changed |= d.mourningSecs == 0;
+				if (d.mourningSecs == 0) {
+					applyEffects(p, d);
+					changed = true;
+				}
 			}
 			// XP debt: every level the player earns goes to the Tether until the debt is paid
 			if (d.xpDebt > 0 && p.experienceLevel > 0) {
@@ -175,6 +176,7 @@ public final class PenaltyService {
 				changed = true;
 			}
 		}
+		hunger(p, d);
 		trackActivity(p, d);
 		return countDown(p, d, onExpedition, inOverworld) || changed;
 	}
@@ -267,6 +269,15 @@ public final class PenaltyService {
 		modifier(p, "minecraft:armor", "cracked_armor", -Config.CRACKED_ARMOR * d.stacks(Penalty.CRACKED_ARMOR), "add_value");
 		modifier(p, "minecraft:movement_speed", "heavy_legs", -compound(Config.HEAVY_LEGS, d.stacks(Penalty.HEAVY_LEGS)), "add_multiplied_total");
 		modifier(p, "minecraft:block_break_speed", "clumsy_hands", -compound(Config.CLUMSY_HANDS, d.stacks(Penalty.CLUMSY_HANDS)), "add_multiplied_total");
+		// Former vanilla effects, now attributes: they show only as Tether Marks, never twice
+		boolean mourning = d.mourningSecs > 0;
+		boolean beyond = Dims.isBeyond(Dims.of(p));
+		modifier(p, "minecraft:attack_damage", "frailty", -4.0 * d.stacks(Penalty.FRAILTY), "add_value");
+		modifier(p, "minecraft:attack_damage", "mourning", mourning ? -8.0 : 0, "add_value");
+		modifier(p, "minecraft:block_break_speed", "mourning", mourning ? -0.7 : 0, "add_multiplied_total");
+		modifier(p, "minecraft:luck", "ill_luck", ow ? -1.0 * d.stacks(Penalty.ILL_LUCK) : 0, "add_value");
+		int shadowed = d.stacks(Penalty.SHADOWED);
+		modifier(p, "minecraft:movement_speed", "shadowed", beyond && shadowed >= 2 ? -compound(0.15, shadowed - 1) : 0, "add_multiplied_total");
 		refreshEffects(p, d);
 	}
 
@@ -289,36 +300,25 @@ public final class PenaltyService {
 				p.addEffect(new MobEffectInstance(h, secs * 20, Math.max(0, amp), true, false, false)));
 	}
 
-	/** Lasting effects are re-applied briefly every few seconds, so they stop by themselves when a penalty ends. */
+	/** Darkness (Shadowed, Deep Dread) is the only vanilla effect left: re-applied briefly so it stops by itself. */
 	public static void refreshEffects(ServerPlayer p, PlayerData d) {
 		String dim = Dims.of(p);
-		int frailty = d.stacks(Penalty.FRAILTY);
-		if (frailty > 0) {
-			effect(p, "weakness", 8, frailty - 1);
-		}
-		int famine = d.stacks(Penalty.FAMINE);
-		if (famine > 0) {
-			effect(p, "hunger", 8, famine - 1);
-		}
-		if (Dims.OVERWORLD.equals(dim)) {
-			int gnawing = d.stacks(Penalty.GNAWING);
-			if (gnawing > 0) {
-				effect(p, "hunger", 8, gnawing - 1);
-			}
-			int luck = d.stacks(Penalty.ILL_LUCK);
-			if (luck > 0) {
-				effect(p, "unluck", 8, luck - 1);
-			}
-			if (d.stacks(Penalty.DEEP_DREAD) > 0 && p.getY() < 62) {
-				effect(p, "darkness", 8, 0);
-			}
-		}
-		int shadowed = d.stacks(Penalty.SHADOWED);
-		if (shadowed > 0 && Dims.isBeyond(dim)) {
+		boolean dark = (Dims.isBeyond(dim) && d.stacks(Penalty.SHADOWED) > 0)
+				|| (Dims.OVERWORLD.equals(dim) && d.stacks(Penalty.DEEP_DREAD) > 0 && p.getY() < 62);
+		if (dark) {
 			effect(p, "darkness", 8, 0);
-			if (shadowed >= 2) {
-				effect(p, "slowness", 8, shadowed - 2);
-			}
 		}
 	}
+
+	/** Hunger without the vanilla effect: the same exhaustion per tick as Hunger I per stack. */
+	private static void hunger(ServerPlayer p, PlayerData d) {
+		int levels = d.stacks(Penalty.FAMINE) + (d.mourningSecs > 0 ? 2 : 0);
+		if (Dims.OVERWORLD.equals(Dims.of(p))) {
+			levels += d.stacks(Penalty.GNAWING);
+		}
+		if (levels > 0) {
+			p.causeFoodExhaustion(0.005f * levels);
+		}
+	}
+
 }
