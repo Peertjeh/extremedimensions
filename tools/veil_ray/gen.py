@@ -49,8 +49,8 @@ uv = {(it[0]["name"], it[1]): (it[5], it[4]) for it in items}
 base = Image.new("RGBA", (TW, TH), (0, 0, 0, 0)); bp = base.load()
 glow = Image.new("RGBA", (TW, TH), (0, 0, 0, 0)); gp = glow.load()
 # Dark indigo backs fading to pale violet bellies; the wings carry rows of light
-TOP = {"back": (34, 26, 58), "wing": (40, 30, 70), "horn": (70, 60, 96)}
-BELLY = {"back": (120, 100, 168), "wing": (104, 86, 150), "horn": (150, 134, 180)}
+TOP = {"back": (58, 44, 96), "wing": (66, 50, 112), "horn": (96, 84, 130)}
+BELLY = {"back": (150, 130, 200), "wing": (136, 116, 186), "horn": (175, 160, 205)}
 def shade(c, k):
     return tuple(max(0, min(255, int(v * k + random.randint(-4, 4)))) for v in c) + (255,)
 
@@ -77,8 +77,8 @@ for p in P:
             tx, ty = u + D, v
             for yy in range(D):
                 for xx in range(W):
-                    stripe = (xx + yy * 0.5) % 5 < 0.8 if mat == "wing" else (xx == W // 2 and yy % 3 != 0)
-                    spot = random.random() < 0.025
+                    stripe = (xx + yy * 0.5) % 4 < 0.9 if mat == "wing" else (xx == W // 2 and yy % 3 != 0)
+                    spot = random.random() < 0.05
                     if stripe or spot:
                         a = 255 if spot else 210
                         gp[tx + xx, ty + yy] = (200, 150, 255, a)
@@ -99,9 +99,11 @@ for p in P:
                 gp[fx + ex, fy + 1] = (255, 230, 255, 255)
                 bp[fx + ex, fy + 1] = (230, 200, 255, 255)
 
-base.save("veil_ray.png"); glow.save("veil_ray_glow.png")
+import sys, os
+out = sys.argv[1] if len(sys.argv) > 1 else "."
+base.save(os.path.join(out, "veil_ray.png")); glow.save(os.path.join(out, "veil_ray_glow.png"))
 prev = Image.new("RGBA", (TW, TH), (60, 60, 60, 255)); prev.alpha_composite(base); prev.alpha_composite(glow)
-prev.resize((TW * 4, TH * 4), Image.NEAREST).save("prev.png")
+
 
 def f(v):
     s = ("%.3f" % v).rstrip("0").rstrip(".")
@@ -123,5 +125,5 @@ for p in P:
     pose = f"PartPose.offsetAndRotation({f(px)}, {f(py)}, {f(pz)}, {f(rx)}, {f(ry)}, {f(rz)})"
     lines.append(f"\t\tPartDefinition {vname} = {var[p['parent']]}.addOrReplaceChild(\"{p['name']}\", {cube}, {pose});")
 lines.append(f"\t\treturn LayerDefinition.create(mesh, {TW}, {TH});")
-open("geometry.java.txt", "w").write("\n".join(lines) + "\n")
+open(os.path.join(out, "geometry.java.txt"), "w").write("\n".join(lines) + "\n")
 print(len(P), "parts; texture rows used:", cy + rowh)

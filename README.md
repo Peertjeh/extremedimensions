@@ -70,9 +70,10 @@ in soul light and it may become your friend.
 
 ## The Seam
 
-Use a **Seam Needle** on crying obsidian and the air tears open into **the Seam**: floating islands under a sky of
-nebulae and a turning vortex, colossal gothic spires, giant Weaver looms strung with silk, towers hanging upside down
-into the void, chain bridges and the tall, silent villages of the Thinned. You have five minutes.
+Use a **Seam Needle** on crying obsidian and the air tears open into **the Seam**: floating islands in rolling fog under
+a sky of nebulae and a turning vortex, colossal gothic spires, giant Weaver looms strung with silk, towers hanging upside
+down into the void, stone bridges, broken obelisks, fireflies of light, Veil Rays circling overhead and the villages of
+the Thinned, who only move while you are not looking. You have five minutes.
 Your return rift drifts, and only the thread of silk you leave behind leads back to it.
 
 ## Weaver's Craft, the Dragon and the Mending
@@ -134,7 +135,7 @@ Each player can store up to 30 minutes per anchor. Fuel values show in item tool
 ## Installation
 
 1. Install **Fabric Loader 0.19.5+** for **Minecraft 26.3** (Java 25).
-2. Add **Fabric API 0.162.0+** and `extremedimensions-2.1.0.jar` to your `mods` folder.
+2. Add **Fabric API 0.162.0+** and `extremedimensions-2.2.0.jar` to your `mods` folder.
 3. Install it on the server **and** every client.
 
 Play a normal Survival world. Vanilla Hardcore turns you into a spectator on death, which this mod is designed to avoid.

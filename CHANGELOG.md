@@ -1,5 +1,39 @@
 # Changelog
 
+## 2.2.0: The Living Seam
+
+*Fog rolls between the islands, fireflies drift in it, and something sings out there.*
+
+### Added
+- **Rolling fog**: banks of mist drift through the Seam, so how far you can see wanders between about 50 and 100
+  blocks. Thick banks close in; thin ones leave the near air clear.
+- **Light in the air**: fireflies of violet, rose, gold and pale white drift everywhere, motes of light sift down and
+  twinkles rise from the void. All full-bright, so shader packs make them glow.
+- **Veil Rays**: great glowing mantas, wings six blocks wide, circle the islands and sing low. Harmless; struck, they
+  climb away into the fog. They drop Seam Silk and glow ink.
+- **The Thinned** walk their villages, pale and worn to threads. They only watch, until your thread runs thin (under a
+  third of your time left): then they come for you, and they only move while nobody is looking at them.
+- **Broken obelisks** around the Heart: over a hundred blocks tall, split into floating pieces that weep crying
+  obsidian at every break, with runes of silk spiralling up their faces, halos turning about them and crystals over
+  their points, on stepped plinths.
+- More life on the islands: firefly bushes, eyeblossoms, pale moss patches, standing stones around soul fires, glow
+  lichen and glow berries.
+
+### Changed
+- **Every building rebuilt for depth and gradients**:
+  - Masonry runs from blackstone at the foot through deepslate to pale tuff at the crown, dithered and weathered.
+  - Spires get pilasters, recessed stained-glass windows with arched heads and sills, corbels under the ledges, water
+    tables, stepped buttresses with crocketed pinnacles, a stair roof with dormers, a crowned needle, and a portal of
+    three receding arches.
+  - Village houses are now jettied timber-framed houses with violet plaster over stone ground floors, steep slate
+    roofs with eaves, doors, window sills and smoking chimneys.
+  - Island undersides darken with depth and their fangs end in amethyst.
+- **Bridges** are rebuilt: they start a couple of blocks inside each island's actual rim, run straight, turn on a
+  landing halfway, climb with slab ramps or real stairs, and have kerbs with connected wall railings, lantern posts, a
+  corbelled edge and a pier under the landing. No more diagonal staircases, floating chains or gaps at the ends.
+- Island heights vary less, so more islands are joined by bridges.
+
+
 ## 2.1.0: The Seam, Rewoven
 
 *The Seam is not a place. It is a breath, and now it has a sky to breathe.*
