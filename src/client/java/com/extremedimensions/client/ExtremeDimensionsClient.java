@@ -77,7 +77,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenJournalPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(
 						new JournalScreen(new HashSet<>(Arrays.asList(payload.ids().split(","))),
-								Minecraft.getInstance().screen instanceof InventoryScreen inv ? inv : null))));
+								JournalButton.takeReturn()))));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenStatusPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(new StatusScreen())));
 	}

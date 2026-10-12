@@ -5,6 +5,7 @@ import com.extremedimensions.registry.ModItems;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -12,6 +13,7 @@ import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.network.chat.Component;
@@ -44,9 +46,21 @@ public final class JournalButton extends AbstractButton {
 		}
 	}
 
+	/** Set when the journal was asked for from the inventory, so closing it goes back there. */
+	private static long requestedAt;
+
 	@Override
 	public void onPress(InputWithModifiers input) {
+		requestedAt = System.currentTimeMillis();
 		ClientPlayNetworking.send(new ModPackets.RequestJournalPayload());
+	}
+
+	/** The screen to return to when the journal that is about to open closes. */
+	public static Screen takeReturn() {
+		Minecraft mc = Minecraft.getInstance();
+		boolean fromButton = System.currentTimeMillis() - requestedAt < 3000;
+		requestedAt = 0;
+		return fromButton && mc.player != null ? new InventoryScreen(mc.player) : null;
 	}
 
 	@Override
