@@ -2,7 +2,7 @@
 from PIL import Image
 import random, math
 random.seed(26)
-TW, TH = 128, 128
+TW, TH = 128, 256
 
 # part: (name, parent, pivot, rot, material, boxes[(x,y,z,w,h,d)])
 P = []
@@ -14,11 +14,14 @@ part("leg_l", "root", (5, -13, 3), (0, 0, 0), "limb", [(-3, 0, -3, 6, 13, 6)])
 part("leg_r", "root", (-5, -13, 3), (0, 0, 0), "limb", [(-3, 0, -3, 6, 13, 6)])
 part("hips", "root", (0, -13, 3), (0.62, 0, 0), "cloak", [(-9, -20, -6, 18, 20, 12)])
 part("hump", "hips", (0, -14, 4), (-0.25, 0, 0), "cloak", [(-10, -12, -2, 20, 14, 8)])
-skirt = [(-7, -6, 1, 12), (-2.5, -6.5, 1, 15), (3, -6, 1, 13), (7.5, -3, 1, 11),
-         (-7, 5.5, 1, 14), (-2, 6.5, 1, 16), (3.5, 6, 1, 13), (-8, 0, 1, 10), (8, 1, 1, 12)]
+skirt = [(-7, -6, 1, 9), (-2.5, -6.5, 1, 11), (3, -6, 1, 10), (7.5, -3, 1, 8),
+         (-7, 5.5, 1, 11), (-2, 6.5, 1, 12), (3.5, 6, 1, 10), (-8, 0, 1, 8), (8, 1, 1, 9)]
 for i, (x, z, w, l) in enumerate(skirt):
     ww = 4 if i % 3 != 1 else 5
     part(f"skirt{i}", "hips", (x, -1, z), (0, 0, 0), "cloak", [(-ww / 2, 0, -0.5, ww, l, 1)])
+part("cape", "hips", (0, -19, 6), (0, 0, 0), "cloak", [(-10, 0, 0, 20, 24, 2)])
+part("mantle_l", "hips", (8, -20, -1), (0, 0, 0.35), "cloak", [(-3, -2, -5, 8, 5, 11)])
+part("mantle_r", "hips", (-8, -20, -1), (0, 0, -0.35), "cloak", [(-5, -2, -5, 8, 5, 11)])
 part("neck", "hips", (0, -19, -3), (0.35, 0, 0), "cloak", [(-3.5, -7, -3.5, 7, 8, 7)])
 part("head", "neck", (0, -6, -1), (-0.77, 0, 0), "mask", [(-6, -11, -10, 12, 12, 13)])
 part("hood", "head", (0, 0, 0), (0, 0, 0), "cloak", [(-7, -12.5, -8, 14, 7, 14)])
@@ -28,10 +31,10 @@ for i, (x, z, w, l) in enumerate(tend):
     part(f"tendril{i}", "head", (x, 1, z), (0, 0, 0), "tendril", [(-w / 2, 0, -w / 2, w, l, w)])
     part(f"drip{i}", f"tendril{i}", (0, l, 0), (0, 0, 0), "tendril", [(-1, 0, -1, 2, 2, 2)])
 for side, sx in (("l", 1), ("r", -1)):
-    part(f"arm_{side}", "hips", (10 * sx, -18, -2), (0, 0, 0), "cloak", [(-3, -2, -3, 6, 18, 6)])
+    part(f"arm_{side}", "hips", (10 * sx, -18, -2), (0, 0, 0), "cloak", [(-3, -2, -3, 6, 14, 6)])
     part(f"rag_{side}", f"arm_{side}", (3 * sx, 3, 0), (0, 0, 0), "cloak", [(-0.5, 0, -1.5, 1, 13, 3)])
-    part(f"forearm_{side}", f"arm_{side}", (0, 16, 0), (0, 0, 0), "limb", [(-2.5, 0, -2.5, 5, 19, 5)])
-    part(f"hand_{side}", f"forearm_{side}", (0, 18, 0), (0, 0, 0), "limb",
+    part(f"forearm_{side}", f"arm_{side}", (0, 11, 0), (0, 0, 0), "limb", [(-2.5, 0, -2.5, 5, 13, 5)])
+    part(f"hand_{side}", f"forearm_{side}", (0, 12, 0), (0, 0, 0), "limb",
          [(-3, 0, -4.5, 6, 5, 7), (-2.5, 4.5, -4.5, 1, 3, 1), (-0.5, 4.5, -5, 1, 4, 1), (1.5, 4.5, -4.5, 1, 3, 1)])
 
 # --- UV packing (shelf packer) ---
