@@ -6,8 +6,10 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
+import net.minecraft.world.level.block.Block;
 
 public final class ModItems {
 	private ModItems() {}
@@ -25,6 +27,21 @@ public final class ModItems {
 
 	/** A torn journal page found in ruins and strongholds; using it unlocks a page of the Tether Journal. */
 	public static final Item WANDERERS_PAGE = register("wanderers_page", 16, Rarity.UNCOMMON);
+
+	/** Thread spun from the Seam itself, mined from seam veins. */
+	public static final Item SEAM_SILK = register("seam_silk", 64, Rarity.UNCOMMON);
+	/** Used on crying obsidian, it tears a rift into the Seam. */
+	public static final Item SEAM_NEEDLE = register("seam_needle", 16, Rarity.RARE);
+
+	public static final Item HUSH_STONE = block(ModBlocks.HUSH_STONE);
+	public static final Item HUSH_BRICKS = block(ModBlocks.HUSH_BRICKS);
+	public static final Item SEAM_VEIN = block(ModBlocks.SEAM_VEIN);
+
+	private static Item block(Block block) {
+		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, BuiltInRegistries.BLOCK.getKey(block));
+		Item.Properties props = new Item.Properties().useBlockDescriptionPrefix().setId(key);
+		return Registry.register(BuiltInRegistries.ITEM, key, new BlockItem(block, props));
+	}
 
 	private static Item register(String id, int maxStack, Rarity rarity) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, ExtremeDimensions.id(id));

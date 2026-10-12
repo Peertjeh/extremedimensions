@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:seam_entered",
+  "display": {
+    "icon": {
+      "id": "minecraft:skeleton_skull"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.thinned_found.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.thinned_found.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -165,6 +165,11 @@ public final class Config {
 	/** 1 = hoards are guarded by a Keeper, 0 = never. */
 	public static int KEEPER_ENABLED = 1;
 
+	// --- The Seam --------------------------------------------------------------------------------
+
+	/** Seconds a Seam Needle gives you in the Seam before it spits you out. */
+	public static int SEAM_SECONDS = 300;
+
 	// --- Technical -------------------------------------------------------------------------------
 
 	/** Ticks between state updates sent to each player. */

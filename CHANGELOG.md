@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.4.0: The Seams
+
+*Between the wounds there is a place that is not a place.*
+
+### Added
+- **The Seam**, a new dimension: islands of quiet hush stone hanging in a teal-black nothing, lit from everywhere and
+  nowhere. Every island is built as you explore it:
+  - **plain islands** with soul lanterns on crooked posts and old cobwebs;
+  - **Weaver looms**: tall pillars of hush brick strung together with sagging strands of silk, rich in seam veins;
+  - rare **villages of the Thinned**: low huts, cold soul lanterns, a field of graves, and a barrel of Seam Silk and
+    lore.
+  Narrow causeways of hush brick link many islands, and the Thinned (Lurkers that only watch) stand on the edges.
+- **Seam Needle**: use it on crying obsidian (a ruined portal, say) to tear a rift into the Seam for fifteen
+  seconds. Anyone who steps in goes through. Crafted from 2 Tether Fragments, a Wanderer's Page and an Echo Shard,
+  or from 3 Seam Silk and a Tether Fragment.
+- **The thread home**: you arrive beside a return rift with five minutes on the clock. The rift drifts a block at a
+  time, and a thread of silk is laid behind you wherever you walk. Step back into the rift to return to where you
+  came from. Run out of time, or fall into the nothing, and the Seam drags you out, cursed.
+- **New blocks and items**: Hush Stone, Hush Bricks, Seam Vein (drops Seam Silk) and Seam Silk.
+- The expedition HUD shows *The Seam* in soul teal, with the distance to your rift.
+- Three journal pages (*XXIII. The Seam*, *XXIV. The Loom*, *XXV. The Thinned*), three advancements
+  (*Between the Wounds*, *The Thread Holds*, *Too Late a Guest*) and two new sounds (the rift tearing open and the
+  hum of the Seam).
+- `/tether seam` sends you straight in; `seam_seconds` in the config.
+
+
 ## 1.3.0: What Was Taken
 
 *It does not want your things. It wants to remember what having things was like.*

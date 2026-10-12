@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "extremedimensions:tether_fragment",
+    "extremedimensions:tether_fragment",
+    "extremedimensions:wanderers_page",
+    "minecraft:echo_shard"
+  ],
+  "result": {
+    "id": "extremedimensions:seam_needle",
+    "count": 1
+  }
+}

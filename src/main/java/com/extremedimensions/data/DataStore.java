@@ -7,8 +7,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import com.google.gson.Gson;
@@ -30,6 +32,8 @@ public final class DataStore {
 		Map<String, Anchor> altars = new HashMap<>();
 		boolean overworldPenalties = false;
 		List<Hoard> hoards = new ArrayList<>();
+		/** Seam cells (island grid) that were already built. */
+		Set<String> seamCells = new HashSet<>();
 	}
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -53,6 +57,9 @@ public final class DataStore {
 					data.overworldPenalties = loaded.overworldPenalties;
 					if (loaded.hoards != null) {
 						data.hoards = loaded.hoards;
+					}
+					if (loaded.seamCells != null) {
+						data.seamCells = loaded.seamCells;
 					}
 				}
 			}
@@ -79,6 +86,10 @@ public final class DataStore {
 		save();
 		data = new WorldData();
 		file = null;
+	}
+
+	public static Set<String> seamCells() {
+		return data.seamCells;
 	}
 
 	public static List<Hoard> hoards() {

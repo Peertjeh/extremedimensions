@@ -37,6 +37,13 @@ public class PlayerData {
 	/** Unlocked Tether Journal pages. */
 	public Set<String> journal = new LinkedHashSet<>();
 	public boolean journalDelivered = false;
+	/** In the Seam: time left, the rift home (in the Seam) and where the player came from. */
+	public boolean inSeam = false;
+	public double seamLeft = 0, seamMax = 0;
+	public double riftX, riftY, riftZ;
+	public String homeDim = "overworld";
+	public double homeX, homeY, homeZ;
+	public transient int seamPull = 0;
 	/** A Hollowling follows this player. */
 	public boolean companion = false;
 	/** Online seconds until the companion brings its next find. */

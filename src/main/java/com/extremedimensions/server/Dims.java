@@ -10,6 +10,8 @@ public final class Dims {
 	public static final String OVERWORLD = "overworld";
 	public static final String NETHER = "the_nether";
 	public static final String END = "the_end";
+	/** Short id of the Seam ({@code extremedimensions:the_seam}). */
+	public static final String SEAM = "the_seam";
 
 	public static String of(Level level) {
 		return level.dimension().identifier().getPath();
@@ -26,6 +28,9 @@ public final class Dims {
 
 	/** Full id for a short vanilla dimension id ({@code the_nether} to {@code minecraft:the_nether}). */
 	public static String fullIdOf(String dim) {
+		if (SEAM.equals(dim)) {
+			return "extremedimensions:" + SEAM;
+		}
 		return dim.contains(":") ? dim : "minecraft:" + dim;
 	}
 
@@ -39,6 +44,7 @@ public final class Dims {
 		return switch (dim) {
 			case NETHER -> "dimension.extremedimensions.nether";
 			case END -> "dimension.extremedimensions.end";
+			case SEAM -> "dimension.extremedimensions.seam";
 			default -> "dimension.extremedimensions.overworld";
 		};
 	}

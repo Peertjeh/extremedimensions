@@ -178,6 +178,9 @@ public final class TetherService {
 	 * Returns {block id as SNBT string, thickness}; 26.3 block displays only accept a plain id here.
 	 */
 	private static String[] look(String dim) {
+		if ("extremedimensions:the_seam".equals(dim)) {
+			return new String[] {"\"minecraft:white_wool\"", "0.06"}; // a thread of silk
+		}
 		if ("minecraft:the_end".equals(dim)) {
 			return new String[] {"\"minecraft:amethyst_block\"", "0.09"};
 		}
@@ -187,7 +190,7 @@ public final class TetherService {
 	}
 
 	/** Lays a segment on the ground once the player walked far enough since the previous one. */
-	private static void lay(ServerPlayer p, PlayerData d) {
+	public static void lay(ServerPlayer p, PlayerData d) {
 		String dim = Dims.fullId(p);
 		double x = p.getX();
 		double y = p.getY() + 0.1;

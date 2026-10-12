@@ -6,6 +6,7 @@ import java.util.Map;
 import com.extremedimensions.anchor.AnchorService;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.penalty.Penalty;
+import com.extremedimensions.seam.SeamService;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.tether.TetherService;
 
@@ -18,14 +19,17 @@ public final class Sync {
 	private Sync() {}
 
 	public static void state(ServerPlayer p, PlayerData d) {
-		int dimCode = Dims.NETHER.equals(d.dim) ? 1 : Dims.END.equals(d.dim) ? 2 : 0;
+		boolean seam = d.inSeam && Dims.SEAM.equals(d.dim);
+		int dimCode = seam ? 3 : Dims.NETHER.equals(d.dim) ? 1 : Dims.END.equals(d.dim) ? 2 : 0;
 		boolean overworld = Dims.OVERWORLD.equals(d.dim);
 		ServerPlayNetworking.send(p, new ModPackets.StatePayload(
 				overworld ? AnchorService.nearCharge(p, Dims.NETHER) : -1,
 				overworld ? AnchorService.nearCharge(p, Dims.END) : -1,
-				d.inRun ? (int) Math.ceil(AnchorService.linkedCharge(p, d)) : 0, (int) Math.ceil(d.runMax), dimCode,
-				(int) Math.round(d.currentDrain * 100), d.expeditions, d.collapses,
-				(int) d.longestRun, (int) d.runTime, penalties(d), d.penaltyClock, TetherService.distance(p, d)));
+				seam ? (int) Math.ceil(d.seamLeft) : d.inRun ? (int) Math.ceil(AnchorService.linkedCharge(p, d)) : 0,
+				(int) Math.ceil(seam ? d.seamMax : d.runMax), dimCode,
+				seam ? 100 : (int) Math.round(d.currentDrain * 100), d.expeditions, d.collapses,
+				(int) d.longestRun, (int) d.runTime, penalties(d), d.penaltyClock,
+				seam ? SeamService.riftDistance(p, d) : TetherService.distance(p, d)));
 	}
 
 	public static void offer(ServerPlayer p, PlayerData d) {

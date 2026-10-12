@@ -27,7 +27,10 @@ public enum JournalEntry {
 	FIRST_WOUND("first_wound"),
 	HOLLOWS("hollows"),
 	LITTLE_THIEVES("little_thieves"),
-	KEEPER("keeper");
+	KEEPER("keeper"),
+	SEAM("seam"),
+	LOOM("loom"),
+	THINNED("thinned");
 
 	public final String id;
 

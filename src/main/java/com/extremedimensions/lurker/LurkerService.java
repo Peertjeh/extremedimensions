@@ -231,7 +231,8 @@ public final class LurkerService {
 			} else {
 				int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
 				c = new BlockPos(x, y, z);
-				if (!level.getBlockState(c).isAir() || !level.getBlockState(c.above()).isAir() || !level.getBlockState(c.above(2)).isAir()) {
+				if (!level.getBlockState(c).isAir() || !level.getBlockState(c.above()).isAir() || !level.getBlockState(c.above(2)).isAir()
+						|| level.getBlockState(c.below()).isAir()) {
 					c = null;
 				}
 			}
@@ -346,7 +347,7 @@ public final class LurkerService {
 		if (dist < 14 || st.stared > 50) {
 			later.add(() -> vanish(l));
 		} else if (st.ticks > st.limit) {
-			if (ThreadLocalRandom.current().nextDouble() < Config.LURKER_STALK_CHANCE) {
+			if (!Dims.SEAM.equals(Dims.of(p)) && ThreadLocalRandom.current().nextDouble() < Config.LURKER_STALK_CHANCE) {
 				st.mode = Mode.STALK;
 				l.setLurkerPose(Lurker.POSE_STALK);
 				st.ticks = 0;

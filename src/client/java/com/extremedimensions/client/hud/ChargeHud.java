@@ -96,7 +96,8 @@ public class ChargeHud implements HudElement {
 		}
 		double remaining = ClientState.liveRun();
 		boolean nether = ClientState.dimCode == 1;
-		int accent = nether ? Ui.EMBER : Ui.VOID;
+		boolean seam = ClientState.dimCode == 3;
+		int accent = seam ? Ui.SOUL : nether ? Ui.EMBER : Ui.VOID;
 		double slide = ClientState.startAt > 0 ? Ui.ease((now - ClientState.startAt) / 550.0) : 1.0;
 		double amp = remaining <= 10 ? (10 - remaining) / 10.0 * 3.0 : 0;
 		int xs = (int) (Math.sin(now / 35.0) * amp);
@@ -109,7 +110,7 @@ public class ChargeHud implements HudElement {
 		boolean flash = remaining <= 30 && (now / 250) % 2 == 0;
 
 		Ui.panel(g, px, py, pw, ph, barColor, 0.95);
-		String name = Ui.tr(nether ? "dimension.extremedimensions.nether" : "dimension.extremedimensions.end").toUpperCase();
+		String name = Ui.tr(seam ? "dimension.extremedimensions.seam" : nether ? "dimension.extremedimensions.nether" : "dimension.extremedimensions.end").toUpperCase();
 		g.text(font, name, px + 7, py + 6, Ui.argb(255, accent));
 		String t = Ui.time(remaining);
 		g.text(font, t, px + pw - 7 - font.width(t), py + 6, Ui.argb(255, flash ? Ui.DANGER : Ui.PARCHMENT));
@@ -117,7 +118,7 @@ public class ChargeHud implements HudElement {
 
 		StringBuilder info = new StringBuilder();
 		if (ClientState.tetherDist >= 0) {
-			info.append(Ui.tr("hud.extremedimensions.tether_distance", ClientState.tetherDist));
+			info.append(Ui.tr(seam ? "hud.extremedimensions.rift_distance" : "hud.extremedimensions.tether_distance", ClientState.tetherDist));
 		}
 		if (ClientState.drainX100 > 100) {
 			if (info.length() > 0) {
@@ -183,7 +184,7 @@ public class ChargeHud implements HudElement {
 		double p = ct / (double) PULL_MS;
 		int cx = w / 2;
 		int cy = h / 2;
-		int tint = ClientState.collapseDim == 2 ? Ui.VOID : Ui.EMBER_DEEP;
+		int tint = ClientState.collapseDim == 3 ? Ui.SOUL_DIM : ClientState.collapseDim == 2 ? Ui.VOID : Ui.EMBER_DEEP;
 
 		// The snap: a hard jolt of light
 		if (ct < 260) {

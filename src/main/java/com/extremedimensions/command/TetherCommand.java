@@ -6,6 +6,7 @@ import com.extremedimensions.data.DataStore;
 import com.extremedimensions.hollow.HollowService;
 import com.extremedimensions.lurker.LurkerService;
 import com.extremedimensions.penalty.PenaltyService;
+import com.extremedimensions.seam.SeamService;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.commands.CommandSourceStack;
@@ -29,7 +30,8 @@ public final class TetherCommand {
 						.then(Commands.literal("watch").executes(c -> lurker(c.getSource(), "watch")))
 						.then(Commands.literal("stalk").executes(c -> lurker(c.getSource(), "stalk")))
 						.then(Commands.literal("drain").executes(c -> lurker(c.getSource(), "drain"))))
-				.then(Commands.literal("hoard").executes(c -> hoard(c.getSource()))));
+				.then(Commands.literal("hoard").executes(c -> hoard(c.getSource())))
+				.then(Commands.literal("seam").executes(c -> seam(c.getSource()))));
 	}
 
 	/** Summons a Lurker in the given mode near the executing player (for testing and showcases). */
@@ -45,6 +47,14 @@ public final class TetherCommand {
 		ServerPlayer p = src.getPlayerOrException();
 		boolean ok = HollowService.summonHoard(p);
 		src.sendSuccess(() -> Component.translatable(ok ? "commands.extremedimensions.hoard.summoned" : "commands.extremedimensions.hoard.failed"), false);
+		return ok ? 1 : 0;
+	}
+
+	/** Sends the executing player into the Seam, as if through a rift at their feet. */
+	private static int seam(CommandSourceStack src) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+		ServerPlayer p = src.getPlayerOrException();
+		boolean ok = SeamService.summon(p);
+		src.sendSuccess(() -> Component.translatable(ok ? "commands.extremedimensions.seam.entered" : "commands.extremedimensions.seam.failed"), false);
 		return ok ? 1 : 0;
 	}
 

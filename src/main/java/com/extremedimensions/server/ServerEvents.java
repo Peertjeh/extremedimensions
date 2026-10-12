@@ -18,7 +18,9 @@ import com.extremedimensions.lurker.LurkerService;
 import com.extremedimensions.network.Sync;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
+import com.extremedimensions.registry.ModBlocks;
 import com.extremedimensions.registry.ModItems;
+import com.extremedimensions.seam.SeamService;
 import com.extremedimensions.tether.TetherService;
 
 import net.minecraft.server.MinecraftServer;
@@ -61,6 +63,7 @@ public final class ServerEvents {
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
 			LurkerService.clear();
 			HollowService.clear();
+			SeamService.clear();
 			DataStore.unload();
 			WorldFx.bind(null);
 		});
@@ -92,6 +95,11 @@ public final class ServerEvents {
 		});
 
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+			if (player.getItemInHand(hand).is(ModItems.SEAM_NEEDLE) && level.getBlockState(hit.getBlockPos()).is(Blocks.CRYING_OBSIDIAN)) {
+				return player instanceof ServerPlayer sp
+						? SeamService.openRift(sp, hit.getBlockPos(), hit.getDirection(), player.getItemInHand(hand))
+						: InteractionResult.SUCCESS;
+			}
 			if (player instanceof ServerPlayer sp && hand == InteractionHand.MAIN_HAND && level.getBlockState(hit.getBlockPos()).is(Blocks.BARREL)) {
 				Hoard h = HollowService.hoardAt(Dims.of(level), hit.getBlockPos());
 				if (h != null) {
@@ -127,6 +135,9 @@ public final class ServerEvents {
 
 		PlayerBlockBreakEvents.AFTER.register((level, player, pos, state, blockEntity) -> {
 			AnchorService.onBroken(Dims.of(level), pos);
+			if (state.is(ModBlocks.SEAM_VEIN) && player instanceof ServerPlayer sp) {
+				Journal.unlock(sp, DataStore.get(sp.getUUID()), JournalEntry.LOOM);
+			}
 			if (state.is(Blocks.BARREL)) {
 				HollowService.onBroken(level, pos, player instanceof ServerPlayer sp ? sp : null);
 			}
@@ -224,6 +235,7 @@ public final class ServerEvents {
 		AnchorService.tick(s);
 		LurkerService.tick(s);
 		HollowService.tick(s);
+		SeamService.tick(s);
 	}
 
 	/** Journal pages found by exploring. */

@@ -30,6 +30,9 @@ public final class Advancements {
 	public static final String HOARD_FOUND = "hoard_found";
 	public static final String KEEPER_SLAIN = "keeper_slain";
 	public static final String HOLLOW_BOUND = "hollow_bound";
+	public static final String SEAM_ENTERED = "seam_entered";
+	public static final String SEAM_RETURNED = "seam_returned";
+	public static final String THINNED_FOUND = "thinned_found";
 
 	/** Expeditions needed for {@link #VETERAN}. */
 	public static final int VETERAN_EXPEDITIONS = 10;

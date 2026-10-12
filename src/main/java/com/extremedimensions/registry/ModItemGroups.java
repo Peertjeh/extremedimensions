@@ -28,6 +28,11 @@ public final class ModItemGroups {
 					out.accept(ModItems.VOID_TETHER);
 					out.accept(ModItems.TETHER_FRAGMENT);
 					out.accept(ModItems.WANDERERS_PAGE);
+					out.accept(ModItems.SEAM_NEEDLE);
+					out.accept(ModItems.SEAM_SILK);
+					out.accept(ModItems.HUSH_STONE);
+					out.accept(ModItems.HUSH_BRICKS);
+					out.accept(ModItems.SEAM_VEIN);
 					out.accept(Items.LODESTONE);
 				})
 				.build());

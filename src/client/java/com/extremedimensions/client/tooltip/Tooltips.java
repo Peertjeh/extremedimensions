@@ -39,6 +39,10 @@ public final class Tooltips {
 			key = "tether_fragment";
 		} else if (item == ModItems.WANDERERS_PAGE) {
 			key = "wanderers_page";
+		} else if (item == ModItems.SEAM_NEEDLE) {
+			key = "seam_needle";
+		} else if (item == ModItems.SEAM_SILK) {
+			key = "seam_silk";
 		}
 		if (key != null) {
 			lines.add(Component.translatable("tooltip.extremedimensions." + key + ".1").withStyle(ChatFormatting.GRAY));

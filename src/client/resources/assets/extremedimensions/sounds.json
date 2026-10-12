@@ -158,5 +158,17 @@
     "sounds": [
       "extremedimensions:hoard_ambient"
     ]
+  },
+  "rift_open": {
+    "subtitle": "subtitles.extremedimensions.rift_open",
+    "sounds": [
+      "extremedimensions:rift_open"
+    ]
+  },
+  "seam_ambient": {
+    "subtitle": "subtitles.extremedimensions.seam_ambient",
+    "sounds": [
+      "extremedimensions:seam_ambient"
+    ]
   }
 }
