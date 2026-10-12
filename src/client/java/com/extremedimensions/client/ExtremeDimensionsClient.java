@@ -5,6 +5,7 @@ import java.util.HashSet;
 
 import com.extremedimensions.ExtremeDimensions;
 import com.extremedimensions.client.audio.MenuMusic;
+import com.extremedimensions.client.entity.LurkerModel;
 import com.extremedimensions.client.entity.LurkerRenderer;
 import com.extremedimensions.client.hud.ChargeHud;
 import com.extremedimensions.client.inventory.TetherMarks;
@@ -27,6 +28,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.ModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 
@@ -55,6 +57,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ClientState::reset));
 		HudElementRegistry.addLast(ExtremeDimensions.id("charge_hud"), new ChargeHud());
 		Tooltips.register();
+		ModelLayerRegistry.registerModelLayer(LurkerModel.LAYER, LurkerModel::createBodyLayer);
 		EntityRendererRegistry.register(ModEntities.LURKER, LurkerRenderer::new);
 
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.StatePayload.TYPE, (payload, context) ->

@@ -18,7 +18,6 @@ import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.network.Fx;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
-import com.extremedimensions.registry.ModBlocks;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
@@ -50,7 +49,11 @@ import net.minecraft.world.phys.Vec3;
 public final class LurkerService {
 	private LurkerService() {}
 
-	enum Mode { WATCH, STALK, FLEE, DRAIN }
+	enum Mode { WATCH, STALK, TAKE, FLEE, DRAIN }
+
+	/** Ticks of the take animation, and the tick in it when the theft happens. */
+	private static final int TAKE_TICKS = 26;
+	private static final int TAKE_AT = 13;
 
 	/** What a Lurker took and is carrying away. */
 	static final class Loot {
@@ -66,6 +69,8 @@ public final class LurkerService {
 		int limit;
 		int stared;
 		String anchor;
+		/** Set when the pose must switch to stalking on the next drive (command summons). */
+		boolean stalkPose;
 		final Loot loot = new Loot();
 	}
 
@@ -162,7 +167,7 @@ public final class LurkerService {
 		if (l == null) {
 			return false;
 		}
-		l.setCarriedBlock((best.isNether() ? ModBlocks.EMBER_ANCHOR : ModBlocks.VOID_ANCHOR).defaultBlockState());
+		l.setLurkerPose(Lurker.POSE_DRAIN);
 		WorldFx.particleIn(Dims.fullId(p), "minecraft:reverse_portal", spot.getX() + 0.5, spot.getY() + 1.5, spot.getZ() + 0.5, 0.5, 1.0, 0.5, 0.2, 60);
 		return true;
 	}
@@ -236,6 +241,10 @@ public final class LurkerService {
 			}
 			State st = e.getValue();
 			st.ticks++;
+			if (st.stalkPose) {
+				st.stalkPose = false;
+				l.setLurkerPose(Lurker.POSE_STALK);
+			}
 			ServerPlayer p = WorldFx.server().getPlayerList().getPlayer(st.target);
 			if (p == null || p.level() != l.level() || p.distanceToSqr(l) > 112 * 112) {
 				later.add(() -> vanish(l));
@@ -244,6 +253,7 @@ public final class LurkerService {
 			switch (st.mode) {
 				case WATCH -> watch(l, st, p, later);
 				case STALK -> stalk(l, st, p, later);
+				case TAKE -> take(l, st, p);
 				case FLEE -> flee(l, st, p, later);
 				case DRAIN -> drain(l, st, p, later);
 			}
@@ -277,6 +287,7 @@ public final class LurkerService {
 		} else if (st.ticks > st.limit) {
 			if (ThreadLocalRandom.current().nextDouble() < Config.LURKER_STALK_CHANCE) {
 				st.mode = Mode.STALK;
+				l.setLurkerPose(Lurker.POSE_STALK);
 				st.ticks = 0;
 				st.limit = 20 * 90;
 				whisper(l, p, 0.7f);
@@ -294,27 +305,49 @@ public final class LurkerService {
 		} else if (st.ticks % 10 == 0) {
 			l.getNavigation().moveTo(p, 1.15);
 		}
-		if (p.distanceToSqr(l) < 2.6 * 2.6) {
-			take(l, st, p);
+		if (p.distanceToSqr(l) < 3.2 * 3.2) {
+			l.getNavigation().stop();
+			l.setLurkerPose(Lurker.POSE_TAKE);
+			st.mode = Mode.TAKE;
+			st.ticks = 0;
 		} else if (st.ticks > st.limit) {
 			later.add(() -> vanish(l));
 		}
 	}
 
-	/** It takes one thing: an item, experience, a piece of armour, or it lays a curse. */
+	/**
+	 * The take, as a short sequence: it unfolds its arm towards the player, snatches one thing (an item, experience,
+	 * a piece of armour, or a curse) and then withdraws with the loot.
+	 */
 	private static void take(Lurker l, State st, ServerPlayer p) {
-		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		l.setTarget(p); // jaw open, shaking
+		l.getNavigation().stop();
 		l.getLookControl().setLookAt(p, 90, 90);
 		String dim = Dims.fullId(p);
-		WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:lurker_take hostile @a %.2f %.2f %.2f 1.4 1",
-				dim, l.getX(), l.getY() + 2, l.getZ()));
+		if (st.ticks == 1) {
+			WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:lurker_take hostile @a %.2f %.2f %.2f 1.4 1",
+					dim, l.getX(), l.getY() + 2, l.getZ()));
+		}
+		if (st.ticks == TAKE_AT) {
+			snatch(l, st, p);
+		}
+		if (st.ticks >= TAKE_TICKS) {
+			BlockPos away = vantage((ServerLevel) l.level(), p, 14, 22);
+			if (away != null) {
+				blink(l, Vec3.atBottomCenterOf(away));
+			}
+			l.setLurkerPose(Lurker.POSE_WATCH);
+			st.mode = Mode.FLEE;
+			st.ticks = 0;
+			st.limit = Config.LURKER_FLEE_SECONDS * 20;
+		}
+	}
+
+	private static void snatch(Lurker l, State st, ServerPlayer p) {
 		WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.5, 0.08, 25);
 		WorldFx.particles(p, "minecraft:reverse_portal", 1.0, 0.8, 0.3, 40);
 		WorldFx.fx(p, Fx.TAKEN, 0);
 		Advancements.grant(p, Advancements.ROBBED);
-
-		double roll = rnd.nextDouble();
+		double roll = ThreadLocalRandom.current().nextDouble();
 		boolean took = false;
 		st.loot.from = p.getUUID();
 		if (roll < 0.35) {
@@ -327,15 +360,6 @@ public final class LurkerService {
 		if (!took) {
 			PenaltyService.curse(p, Dims.OVERWORLD.equals(Dims.of(p)));
 		}
-		// Withdraw with the loot, then linger: there is a moment to take it back
-		BlockPos away = vantage((ServerLevel) l.level(), p, 14, 22);
-		if (away != null) {
-			blink(l, Vec3.atBottomCenterOf(away));
-		}
-		l.setTarget(null);
-		st.mode = Mode.FLEE;
-		st.ticks = 0;
-		st.limit = Config.LURKER_FLEE_SECONDS * 20;
 	}
 
 	private static boolean stealItem(ServerPlayer p, Loot loot) {
@@ -405,30 +429,37 @@ public final class LurkerService {
 		}
 		l.getNavigation().stop();
 		l.getLookControl().setLookAt(a.x + 0.5, a.y + 0.5, a.z + 0.5);
-		if (st.ticks == 10) {
-			l.setTarget(p); // jaw open, trembling while it drinks
-		}
 		a.leak(Config.LURKER_DRAIN_PER_SECOND / 20.0);
 
+		beam(l, a, st.ticks);
+	}
+
+	/**
+	 * The drain beam: a thin stream of coloured motes flowing from the anchor up into the Lurker's raised hands,
+	 * with a faint glow where it leaves the stone.
+	 */
+	private static void beam(Lurker l, Anchor a, int tick) {
 		boolean nether = a.isNether();
-		double sx = a.x + 0.5, sy = a.y + 0.9, sz = a.z + 0.5;
-		double tx = l.getX(), ty = l.getY() + 2.0, tz = l.getZ();
+		String dust = nether ? "minecraft:dust{color:[1.0,0.55,0.18],scale:0.55}" : "minecraft:dust{color:[0.74,0.38,1.0],scale:0.55}";
+		String core = nether ? "minecraft:dust{color:[1.0,0.9,0.6],scale:0.35}" : "minecraft:dust{color:[0.95,0.85,1.0],scale:0.35}";
+		double sx = a.x + 0.5, sy = a.y + 0.95, sz = a.z + 0.5;
+		double yaw = Math.toRadians(l.getYRot());
+		// Between the raised hands, in front of the chest
+		double tx = l.getX() - Math.sin(yaw) * 1.3, ty = l.getY() + 3.1, tz = l.getZ() + Math.cos(yaw) * 1.3;
 		double dx = tx - sx, dy = ty - sy, dz = tz - sz;
-		double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-		if (st.ticks % 2 == 0 && len > 0.1) {
-			ThreadLocalRandom rnd = ThreadLocalRandom.current();
-			for (int i = 0; i < 3; i++) {
-				double t = rnd.nextDouble();
-				WorldFx.particleAt(nether ? "minecraft:soul_fire_flame" : "minecraft:dragon_breath",
-						sx + dx * t, sy + dy * t, sz + dz * t, dx / len, dy / len, dz / len, 0.25, 0);
-			}
-			WorldFx.particleAt("minecraft:reverse_portal", sx, sy, sz, 0.3, 0.2, 0.3, 0.05, 4);
-			WorldFx.particleAt(nether ? "minecraft:flame" : "minecraft:portal", tx, ty, tz, 0.3, 0.4, 0.3, 0.02, 3);
+		int n = 10;
+		double phase = (tick % 10) / 10.0;
+		for (int i = 0; i < n; i++) {
+			double t = (i + phase) / n;
+			// a slight arc, as if the light were pulled upward
+			double lift = Math.sin(t * Math.PI) * 0.35;
+			WorldFx.particleAt(i % 3 == 0 ? core : dust, sx + dx * t, sy + dy * t + lift, sz + dz * t, 0.02, 0.02, 0.02, 0.0, 1);
 		}
-		if (st.ticks % 10 == 0) {
-			WorldFx.particleAt("minecraft:smoke", sx, sy + 0.2, sz, 0.2, 0.1, 0.2, 0.01, 4);
+		if (tick % 4 == 0) {
+			WorldFx.particleAt(nether ? "minecraft:small_flame" : "minecraft:reverse_portal", sx, sy, sz, 0.18, 0.05, 0.18, 0.01, 2);
+			WorldFx.particleAt("minecraft:end_rod", tx, ty, tz, 0.15, 0.15, 0.15, 0.005, 1);
 		}
-		if (st.ticks % 40 == 1) {
+		if (tick % 40 == 1) {
 			WorldFx.soundAt("extremedimensions:lurker_drain", a.x, a.y, a.z, 1.2f, nether ? 0.9f : 1.1f);
 		}
 	}
@@ -499,6 +530,8 @@ public final class LurkerService {
 				for (State st : STATES.values()) {
 					if (p.getUUID().equals(st.target) && st.mode == Mode.WATCH) {
 						st.mode = Mode.STALK;
+						st.ticks = 0;
+						st.stalkPose = true;
 						st.limit = 20 * 90;
 					}
 				}

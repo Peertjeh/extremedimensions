@@ -2,24 +2,58 @@ package com.extremedimensions.lurker;
 
 import com.extremedimensions.registry.ModSounds;
 
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
-import net.minecraft.world.entity.monster.Enderman;
+import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
 
 /**
  * The Lurker: a member of an ancient tribe bound to the shadows between dimensions.
  *
- * <p>It shares the Enderman's long frame (and its animations: the opening jaw, the trembling, carrying a block in
- * its arms) but none of its instincts: no block stealing, no rage at a stare, no fear of water. Everything it does is
- * decided by {@link LurkerService}.
+ * <p>Its body only carries a pose (watching, stalking, taking, draining) that the client animates; everything it
+ * decides is done by {@link LurkerService}.
  */
-public class Lurker extends Enderman {
-	public Lurker(EntityType<? extends Enderman> type, Level level) {
+public class Lurker extends Monster {
+	public static final int POSE_WATCH = 0;
+	public static final int POSE_STALK = 1;
+	public static final int POSE_TAKE = 2;
+	public static final int POSE_DRAIN = 3;
+
+	private static final EntityDataAccessor<Integer> POSE = SynchedEntityData.defineId(Lurker.class, EntityDataSerializers.INT);
+
+	public Lurker(EntityType<? extends Monster> type, Level level) {
 		super(type, level);
+	}
+
+	public static AttributeSupplier.Builder createAttributes() {
+		return Monster.createMonsterAttributes()
+				.add(Attributes.MAX_HEALTH, 60.0)
+				.add(Attributes.MOVEMENT_SPEED, 0.3)
+				.add(Attributes.FOLLOW_RANGE, 64.0)
+				.add(Attributes.KNOCKBACK_RESISTANCE, 0.8)
+				.add(Attributes.ATTACK_DAMAGE, 6.0);
+	}
+
+	@Override
+	protected void defineSynchedData(SynchedEntityData.Builder builder) {
+		super.defineSynchedData(builder);
+		builder.define(POSE, POSE_WATCH);
+	}
+
+	public int getLurkerPose() {
+		return this.entityData.get(POSE);
+	}
+
+	public void setLurkerPose(int pose) {
+		this.entityData.set(POSE, pose);
 	}
 
 	@Override
@@ -29,15 +63,15 @@ public class Lurker extends Enderman {
 
 	@Override
 	protected void customServerAiStep(ServerLevel level) {
-		// None of the Enderman's own behaviour (daylight teleports, water). Lurkers not driven by the
-		// service (left over after a restart) dissolve.
+		super.customServerAiStep(level);
+		// Lurkers not driven by the service (left over after a restart) dissolve
 		if (this.tickCount > 40 && !LurkerService.isDriven(this)) {
 			LurkerService.vanish(this);
 		}
 	}
 
 	@Override
-	public boolean isSensitiveToWater() {
+	public boolean removeWhenFarAway(double distance) {
 		return false;
 	}
 
@@ -47,11 +81,6 @@ public class Lurker extends Enderman {
 			return false;
 		}
 		return super.hurtServer(level, source, amount);
-	}
-
-	@Override
-	protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean recentlyHit) {
-		// Never drop the anchor light it may be holding; stolen loot is returned by the service
 	}
 
 	@Override

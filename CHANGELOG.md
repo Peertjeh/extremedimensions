@@ -13,7 +13,11 @@
     penalty, forced). Then it waits at a distance: kill it in time to get your loot back.
   - **Draining:** it appears beside a charged anchor, holds the anchor's light in its arms with its jaw open and
     trembling, and drinks the anchor dry while the light streams into it. Come close to interrupt it.
-- Own texture (cloak and mask, violet eyes), four new sounds, a new journal page (*XVI. The Tribe*) and three
+- **Its own body**: a hunched, cloaked giant (about 3.5 blocks) on long knuckle-walking arms, with ragged cloak strips,
+  strands dripping from its mask, violet eyes and glowing cracks. Fully procedural animation: breathing, head tracking
+  with a curious tilt, swaying strands and cloth, a knuckle walk, an unfolding reach when it takes, and raised,
+  trembling arms while a thin, flowing beam pours from the anchor into its hands.
+- Four new sounds, a new journal page (*XVI. The Tribe*) and three
   advancements (*It Sees*, *It Takes*, *Take It Back*).
 - `/tether lurker <watch|stalk|drain>` for operators.
 - Lurker settings in `config/extremedimensions.json`.
@@ -46,5 +50,6 @@
 - The full-screen portal transition.
 
 ### Fixed
+- Penalties no longer use vanilla effects (except Darkness), so they never show twice beside the inventory.
 - Tether Marks no longer overlap vanilla status effects beside the inventory.
 - Tether chain segments were invisible on 26.3 (block displays take the block as a plain id there).
