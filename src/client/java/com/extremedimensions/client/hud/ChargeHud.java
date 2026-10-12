@@ -30,13 +30,13 @@ public class ChargeHud implements HudElement {
 		lowTime(g, w, h, now);
 		chips(g, font, now);
 		timer(g, font, w, now);
-		collapse(g, font, w, h, now);
 		ended(g, w, h, now);
 		bounce(g, w, h, now);
 		long dt = now - ClientState.depositAt;
 		if (ClientState.depositAt > 0 && dt < 1300) {
 			deposit(g, w, h, dt, ClientState.depositKind == 1 ? Ui.EMBER : ClientState.depositKind == 2 ? Ui.VOID : Ui.SOUL);
 		}
+		collapse(g, font, w, h, now);
 	}
 
 	// ------------------------------------------------------------------ top left
@@ -90,7 +90,7 @@ public class ChargeHud implements HudElement {
 	// ------------------------------------------------------------------ expedition timer
 
 	private static void timer(GuiGraphicsExtractor g, Font font, int w, long now) {
-		if (ClientState.dimCode == 0 || (ClientState.collapseAt > 0 && now - ClientState.collapseAt < 2000)) {
+		if (ClientState.dimCode == 0 || (ClientState.collapseAt > 0 && now - ClientState.collapseAt < HOLD_MAX_MS)) {
 			return;
 		}
 		double remaining = ClientState.liveRun();
@@ -149,49 +149,130 @@ public class ChargeHud implements HudElement {
 		}
 	}
 
+	/** Length of the client pull sequence; matches the server's pull (60 ticks). */
+	public static final long PULL_MS = 3000;
+	/** Longest the screen stays black while waiting for the respawn. */
+	private static final long HOLD_MAX_MS = 12000;
+	private static final long FADE_IN_MS = 2200;
+
+	/**
+	 * The Collapse: the charge snaps, the timer bar breaks, souls rush past as the Tether yanks the player backwards,
+	 * the view tunnels into black, the screen stays black through the (skipped) death and respawn, and the Overworld
+	 * fades back in.
+	 */
 	private static void collapse(GuiGraphicsExtractor g, Font font, int w, int h, long now) {
-		long ct = now - ClientState.collapseAt;
-		if (ClientState.collapseAt <= 0 || ct >= 2000) {
+		if (ClientState.collapseAt <= 0) {
 			return;
 		}
-		double t = ct / 2000.0;
+		long ct = now - ClientState.collapseAt;
+		boolean home = ClientState.homeAt > ClientState.collapseAt;
+		if (ct < PULL_MS) {
+			pull(g, font, w, h, now, ct);
+		} else if (!home && ct < HOLD_MAX_MS) {
+			g.fill(0, 0, w, h, 0xFF000000);
+		} else {
+			long ft = home ? now - ClientState.homeAt : ct - HOLD_MAX_MS;
+			if (ft < FADE_IN_MS) {
+				fadeIn(g, w, h, ft);
+			}
+		}
+	}
+
+	private static void pull(GuiGraphicsExtractor g, Font font, int w, int h, long now, long ct) {
+		double p = ct / (double) PULL_MS;
+		int cx = w / 2;
+		int cy = h / 2;
+		int tint = ClientState.collapseDim == 2 ? Ui.VOID : Ui.EMBER_DEEP;
+
+		// The snap: a hard jolt of light
 		if (ct < 260) {
-			g.fill(0, 0, w, h, Ui.argb((int) (230 * (1 - ct / 260.0)), 0xFFFFFF));
+			g.fill(0, 0, w, h, Ui.argb((int) (200 * (1 - ct / 260.0)), 0xFFFFFF));
 		}
-		g.fill(0, 0, w, h, Ui.argb((int) (95 * (1 - t)), 0x990000));
-		long bucket = now / 70;
-		for (int i = 0; i < 14; i++) {
-			int by = (int) (Ui.hash(bucket * 31 + i) * h);
-			int bh = 3 + (int) (Ui.hash(bucket * 17 + i * 3) * 16);
-			int shift = (int) ((Ui.hash(bucket * 7 + i) - .5) * 70 * (1 - t));
-			int col = (i % 2 == 0) ? 0xFF2030 : 0x30E0FF;
-			g.fill(Math.max(0, shift), by, Math.min(w, w + shift), by + bh, Ui.argb((int) (75 * (1 - t)), col));
+		// Tinted haze that deepens
+		g.fill(0, 0, w, h, Ui.argb((int) (70 * Math.min(1, p * 2)), tint));
+
+		// Signal glitches while the tether strains
+		if (ct < 1100) {
+			double gt = 1 - ct / 1100.0;
+			long bucket = now / 70;
+			for (int i = 0; i < 12; i++) {
+				int by = (int) (Ui.hash(bucket * 31 + i) * h);
+				int bh = 2 + (int) (Ui.hash(bucket * 17 + i * 3) * 12);
+				int shift = (int) ((Ui.hash(bucket * 7 + i) - .5) * 60 * gt);
+				g.fill(Math.max(0, shift), by, Math.min(w, w + shift), by + bh, Ui.argb((int) (60 * gt), i % 2 == 0 ? 0xFF2030 : 0x30E0FF));
+			}
 		}
-		// the timer bar snaps in two and falls away
-		int barW = 182;
-		int bx = (w - barW) / 2;
-		int half = barW / 2;
-		int dx = (int) (t * 240);
-		int dy = (int) (t * t * 320);
-		int a = (int) (255 * (1 - t));
-		g.fill(bx - dx, 22 + dy, bx + half - dx, 28 + dy, Ui.argb(a, Ui.DANGER));
-		g.fill(bx + half + dx, 22 + dy + dy / 6, bx + barW + dx, 28 + dy + dy / 6, Ui.argb(a, Ui.DANGER));
-		for (int i = 0; i < 18; i++) {
-			double rx = Ui.hash(i * 5L + 1) - .5;
-			double ry = Ui.hash(i * 11L + 2);
-			int spx = w / 2 + (int) (rx * 360 * t);
-			int spy = 24 + (int) (ry * 90 * t + t * t * 160);
-			g.fill(spx, spy, spx + 3, spy + 3, Ui.argb((int) (255 * (1 - t)), i % 2 == 0 ? 0xFFAA33 : 0xFFEE99));
+
+		// The timer bar snaps in two and falls away
+		if (ct < 1300) {
+			double t = ct / 1300.0;
+			int barW = 182;
+			int bx = (w - barW) / 2;
+			int half = barW / 2;
+			int dx = (int) (t * 200);
+			int dy = (int) (t * t * 260);
+			int a = (int) (255 * (1 - t));
+			g.fill(bx - dx, 22 + dy, bx + half - dx, 28 + dy, Ui.argb(a, Ui.DANGER));
+			g.fill(bx + half + dx, 22 + dy + dy / 6, bx + barW + dx, 28 + dy + dy / 6, Ui.argb(a, Ui.DANGER));
 		}
-		if (ct < 1500) {
-			double ta = ct < 1100 ? 1.0 : 1 - (ct - 1100) / 400.0;
-			int ty = h / 2 - 20;
-			int jit = (int) (Ui.hash(bucket) * 6 - 3);
+
+		// Warp: souls streak outward past the player, faster and brighter as the pull peaks
+		double reach = Math.hypot(w, h) * 0.6;
+		double speed = 0.9 + p * 2.6;
+		for (int i = 0; i < 90; i++) {
+			double seed = Ui.hash(i * 13L + 5);
+			double ang = Ui.hash(i * 29L + 1) * Math.PI * 2;
+			double life = (ct / 1000.0 * speed + seed) % 1.0;
+			double r = 8 + life * life * reach;
+			double len = 3 + life * 14 * (0.4 + p);
+			int a = (int) (Math.min(1, life * 3) * (60 + 170 * p));
+			int col = i % 4 == 0 ? 0xFFFFFF : Ui.SOUL;
+			for (int k = 0; k < 3; k++) {
+				double rr = r - k * len / 3;
+				int sx = cx + (int) (Math.cos(ang) * rr);
+				int sy = cy + (int) (Math.sin(ang) * rr * 0.75);
+				g.fill(sx, sy, sx + 2, sy + 2, Ui.argb(a * (3 - k) / 3, col));
+			}
+		}
+
+		// Tunnel vision closing in
+		Ui.vignette(g, w, h, 0x000000, (int) (20 + 120 * p * p), 10);
+
+		// Title, glitching
+		if (ct > 150 && ct < 2000) {
+			double ta = Math.min(1, (ct - 150) / 200.0) * (ct < 1600 ? 1.0 : 1 - (ct - 1600) / 400.0);
+			int ty = h / 2 - 24;
+			int jit = (int) (Ui.hash(now / 70) * 6 - 3);
 			String s = Ui.tr("hud.extremedimensions.collapse").toUpperCase();
 			int sw = font.width(s) / 2;
-			g.text(font, s, w / 2 - sw + 2 + jit, ty, Ui.argb((int) (200 * ta), 0xFF2030));
-			g.text(font, s, w / 2 - sw - 2 - jit, ty, Ui.argb((int) (200 * ta), 0x30E0FF));
-			g.text(font, s, w / 2 - sw, ty, Ui.argb((int) (255 * ta), 0xFFFFFF));
+			g.text(font, s, cx - sw + 2 + jit, ty, Ui.argb((int) (170 * ta), 0xFF2030));
+			g.text(font, s, cx - sw - 2 - jit, ty, Ui.argb((int) (170 * ta), 0x30E0FF));
+			g.text(font, s, cx - sw, ty, Ui.argb((int) (255 * ta), 0xFFFFFF));
+		}
+
+		// The last moment: a soul-white flash collapsing into black
+		if (ct > 2350) {
+			double e = Ui.clamp01((ct - 2350) / 650.0);
+			g.fill(0, 0, w, h, Ui.argb((int) (255 * e), 0x000000));
+			if (ct < 2650) {
+				double f = 1 - Math.abs(ct - 2500) / 150.0;
+				int bw = (int) (w * 0.5 * (1 - e));
+				g.fill(cx - bw, cy - 1, cx + bw, cy + 1, Ui.argb((int) (255 * f), 0xE8FFFA));
+			}
+		}
+	}
+
+	/** Back home: the black lifts, a soft soul-light breathes in and motes rise. */
+	private static void fadeIn(GuiGraphicsExtractor g, int w, int h, long ft) {
+		double e = Ui.ease(ft / (double) FADE_IN_MS);
+		g.fill(0, 0, w, h, Ui.argb((int) (255 * (1 - e)), 0x000000));
+		Ui.vignette(g, w, h, Ui.SOUL_DIM, (int) (40 * (1 - e)), 8);
+		for (int i = 0; i < 40; i++) {
+			double seed = Ui.hash(i * 17L + 3);
+			double life = (ft / 1800.0 + seed) % 1.0;
+			int sx = (int) (Ui.hash(i * 31L + 9) * w);
+			int sy = (int) (h - life * h * 0.8);
+			g.fill(sx, sy, sx + 2, sy + 2, Ui.argb((int) (Math.sin(life * Math.PI) * 160 * (1 - e)), i % 3 == 0 ? 0xFFFFFF : Ui.SOUL));
 		}
 	}
 

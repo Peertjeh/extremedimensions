@@ -180,11 +180,8 @@ public final class ExpeditionService {
 					WorldFx.sound(p, "minecraft:entity.warden.heartbeat", 1.3f, 1.0f + (10 - secs) * 0.04f);
 				}
 			}
-		} else if (d.collapsing && Dims.isBeyond(dim)) {
-			// Safety net: retry the kill every second if it did not go through
-			if (++d.collapseRetry % 20 == 0) {
-				WorldFx.run("kill " + p.getStringUUID());
-			}
+		} else if (d.collapsing) {
+			pull(p, d);
 		}
 		if (!(Dims.isBeyond(dim) && d.inRun)) {
 			d.currentDrain = d.drainMultiplier();
@@ -216,22 +213,45 @@ public final class ExpeditionService {
 		}
 	}
 
+	/**
+	 * The charge ran out: the Tether drags the player out of the dimension. For {@link Config#COLLAPSE_PULL_TICKS}
+	 * the player is held and lifted while souls stream past; then the death follows (and the client skips the
+	 * death screen, see the client's collapse sequence).
+	 */
 	private static void collapse(ServerPlayer p, PlayerData d) {
 		TetherService.clear(p, d, false);
 		d.collapsing = true;
-		d.collapseRetry = 0;
+		d.collapseRetry = -Config.COLLAPSE_PULL_TICKS;
 		d.collapses++;
 		PenaltyService.owe(d, false);
 		Journal.unlock(p, d, JournalEntry.STARVED);
 		Advancements.grant(p, Advancements.COLLAPSE);
 		WorldFx.fx(p, Fx.COLLAPSE, 0);
-		WorldFx.particles(p, "minecraft:explosion", 1.0, 0.8, 0.0, 6);
-		WorldFx.particles(p, "minecraft:lava", 1.0, 0.8, 0.1, 40);
-		WorldFx.particles(p, "minecraft:electric_spark", 1.0, 1.0, 0.4, 60);
-		WorldFx.sound(p, "minecraft:entity.lightning_bolt.thunder", 1.2f, 0.7f);
-		WorldFx.sound(p, "minecraft:entity.generic.explode", 0.8f, 0.6f);
+		int secs = Config.COLLAPSE_PULL_TICKS / 20 + 1;
+		PenaltyService.effect(p, "slowness", secs, 6);
+		PenaltyService.effect(p, "levitation", secs, 0);
+		PenaltyService.effect(p, "resistance", secs, 4);
+		WorldFx.sound(p, "extremedimensions:collapse", 1.2f, 1.0f);
+		WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.6, 0.05, 30);
 		DataStore.save();
-		WorldFx.run("kill " + p.getStringUUID());
+	}
+
+	/** Runs every tick while collapsing: the pull, then the death (retried every second as a safety net). */
+	private static void pull(ServerPlayer p, PlayerData d) {
+		int t = ++d.collapseRetry;
+		if (t < 0) {
+			if (t % 2 == 0) {
+				// Souls rush past towards the player, faster as the pull peaks
+				double k = 1.0 + t / (double) Config.COLLAPSE_PULL_TICKS;
+				WorldFx.particles(p, "minecraft:reverse_portal", 1.0, 2.5, 0.6 + k, 12 + (int) (k * 20));
+				WorldFx.particles(p, "minecraft:soul", 1.0, 1.5, 0.02, 2 + (int) (k * 4));
+			}
+			return;
+		}
+		if (t % 20 == 0) {
+			WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.4, 0.1, 40);
+			WorldFx.run("kill " + p.getStringUUID());
+		}
 	}
 
 	// ------------------------------------------------------------------ death and respawn

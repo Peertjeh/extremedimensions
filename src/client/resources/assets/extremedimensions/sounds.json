@@ -38,5 +38,11 @@
     "sounds": [
       "extremedimensions:portal_home"
     ]
+  },
+  "collapse": {
+    "subtitle": "subtitles.extremedimensions.collapse",
+    "sounds": [
+      "extremedimensions:collapse"
+    ]
   }
 }

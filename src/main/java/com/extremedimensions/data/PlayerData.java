@@ -54,6 +54,7 @@ public class PlayerData {
 	public transient int lastWarn = Integer.MAX_VALUE;
 	public transient boolean hasLast = false;
 	public transient double lastX, lastY, lastZ;
+	/** Collapse timer: negative while the pull runs, then counts up to retry the death. */
 	public transient int collapseRetry = 0;
 	public transient int lastBeat = Integer.MAX_VALUE;
 	/** Ticks until the penalty screen opens; -1 = nothing scheduled. */

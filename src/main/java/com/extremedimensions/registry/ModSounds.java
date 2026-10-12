@@ -14,6 +14,7 @@ public final class ModSounds {
 	public static final SoundEvent EXPEDITION_ENDED = register("expedition_ended");
 	public static final SoundEvent PORTAL_BEYOND = register("portal_beyond");
 	public static final SoundEvent PORTAL_HOME = register("portal_home");
+	public static final SoundEvent COLLAPSE = register("collapse");
 	public static final SoundEvent MUSIC_MENU_1 = register("music.menu_1");
 	public static final SoundEvent MUSIC_MENU_2 = register("music.menu_2");
 

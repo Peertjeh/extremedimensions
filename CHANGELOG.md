@@ -3,6 +3,7 @@
 ## 1.0.0: The Professional Pass
 
 ### Added
+- **Collapse sequence**: when the charge runs out the Tether drags you out over three seconds (souls streaking past, tunnel vision, a fade to black), skips the death screen and fades you back in at home. New *collapse* sound instead of the explosion.
 - **Advancements**: a tree of 12 milestones, from *The Tether Knows* to *The Wanderer's Account*.
 - **Creative tab** "Extreme Dimensions" with every item.
 - **Item tooltips** for all mod items, and fuel values on every anchor fuel.
@@ -27,4 +28,5 @@
 - The full-screen portal transition.
 
 ### Fixed
+- Tether Marks no longer overlap vanilla status effects beside the inventory.
 - Tether chain segments were invisible on 26.3 (block displays take the block as a plain id there).

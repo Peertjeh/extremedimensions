@@ -16,6 +16,7 @@ import com.extremedimensions.client.tooltip.Tooltips;
 import com.extremedimensions.network.ModPackets;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.DeathScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 
@@ -34,6 +35,12 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 			if (screen instanceof TitleScreen) {
 				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
 						TitleArt.draw(graphics, s.width, s.height, mouseX, mouseY));
+			}
+			if (screen instanceof DeathScreen && ClientState.inCollapse() && client.player != null) {
+				// The Collapse sequence carries the player home: no death screen in between
+				client.player.respawn();
+				client.gui.setScreen(null);
+				return;
 			}
 			if (screen instanceof InventoryScreen inv) {
 				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->

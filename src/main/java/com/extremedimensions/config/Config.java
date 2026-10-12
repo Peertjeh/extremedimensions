@@ -51,6 +51,8 @@ public final class Config {
 	public static double TETHER_DISTANCE_STEP = 100.0;
 	/** Below this much charge the Leeching starts: souls are visibly pulled out of you. */
 	public static double LEECH_SECONDS = 60.0;
+	/** Length of the Collapse pull (the player is dragged out of the dimension) before the death, in ticks. */
+	public static int COLLAPSE_PULL_TICKS = 60;
 	/** Ticks before a dormant portal is checked again after a bounce. */
 	public static int BOUNCE_GRACE_TICKS = 40;
 

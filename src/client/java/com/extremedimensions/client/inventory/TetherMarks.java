@@ -42,7 +42,7 @@ public final class TetherMarks {
 		if (x + BOX_W > screen.width - 2) {
 			x = screen.width - BOX_W - 2;
 		}
-		int y = pos[1];
+		int y = pos[1] + vanillaEffectsHeight();
 		long now = System.currentTimeMillis();
 
 		// Header with the clock state
@@ -128,6 +128,28 @@ public final class TetherMarks {
 			colors.add(Ui.SOUL);
 		}
 		Ui.tooltip(g, font, lines, colors, mx, my, sw, sh, accent(m));
+	}
+
+	/**
+	 * Height of the vanilla effect list beside the inventory, so the marks start below it.
+	 * Mirrors vanilla's layout: 33 px per effect, squeezed into 132 px when there are more than five.
+	 */
+	private static int vanillaEffectsHeight() {
+		var player = Minecraft.getInstance().player;
+		if (player == null) {
+			return 0;
+		}
+		int count = 0;
+		for (var effect : player.getActiveEffects()) {
+			if (effect.showIcon()) {
+				count++;
+			}
+		}
+		if (count == 0) {
+			return 0;
+		}
+		int spacing = count > 5 ? 132 / (count - 1) : 33;
+		return spacing * (count - 1) + 32 + 4;
 	}
 
 	/** leftPos, topPos and imageWidth of the inventory screen (these fields are not public). */

@@ -39,6 +39,9 @@ public final class ClientState {
 	public static long startAt = 0;
 	public static long safeAt = 0;
 	public static long collapseAt = 0;
+	/** Dimension the Collapse happened in (1 = Nether, 2 = End) and when the player arrived home after it. */
+	public static int collapseDim = 1;
+	public static long homeAt = 0;
 	public static long bounceAt = 0;
 	public static long penaltyAt = 0;
 	public static long endedAt = 0;
@@ -67,6 +70,15 @@ public final class ClientState {
 		penaltyClock = s.penaltyClock();
 		tetherDist = s.tetherDist();
 		syncMs = System.currentTimeMillis();
+		// First update from the Overworld after a Collapse: start the fade-in
+		if (collapseAt > 0 && homeAt <= collapseAt && dimCode == 0 && syncMs - collapseAt > 2000) {
+			homeAt = syncMs;
+		}
+	}
+
+	/** Whether a Collapse sequence is still running (the death screen is skipped during it). */
+	public static boolean inCollapse() {
+		return collapseAt > 0 && homeAt <= collapseAt && System.currentTimeMillis() - collapseAt < 15000;
 	}
 
 	private static List<Mark> parse(String all) {
@@ -115,7 +127,7 @@ public final class ClientState {
 			case 2 -> { endFlashAt = now; endGainAt = now; endGain = value; depositAt = now; depositKind = 2; }
 			case 3, 4 -> startAt = now;
 			case 5 -> safeAt = now;
-			case 6 -> collapseAt = now;
+			case 6 -> { collapseAt = now; collapseDim = dimCode; }
 			case 7 -> bounceAt = now;
 			case 8 -> penaltyAt = now;
 			case 9 -> endedAt = now;
@@ -150,7 +162,7 @@ public final class ClientState {
 		tetherDist = -1;
 		shownNether = 0;
 		shownEnd = 0;
-		startAt = safeAt = collapseAt = bounceAt = penaltyAt = endedAt = 0;
+		startAt = safeAt = collapseAt = bounceAt = penaltyAt = endedAt = homeAt = 0;
 		netherFlashAt = endFlashAt = netherGainAt = endGainAt = depositAt = 0;
 	}
 }
