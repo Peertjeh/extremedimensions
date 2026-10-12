@@ -9,6 +9,7 @@ import com.extremedimensions.client.particle.MoteParticle;
 import com.extremedimensions.client.entity.LurkerModel;
 import com.extremedimensions.client.entity.LurkerRenderer;
 import com.extremedimensions.client.hud.ChargeHud;
+import com.extremedimensions.client.inventory.JournalButton;
 import com.extremedimensions.client.inventory.TetherMarks;
 import com.extremedimensions.client.screen.JournalScreen;
 import com.extremedimensions.client.screen.PenaltyChoiceScreen;
@@ -49,6 +50,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				return;
 			}
 			if (screen instanceof InventoryScreen inv) {
+				JournalButton.attach(inv);
 				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
 						TetherMarks.draw(inv, graphics, mouseX, mouseY));
 			}
@@ -74,7 +76,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 						new PenaltyChoiceScreen(Arrays.asList(payload.ids().split(","))))));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenJournalPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(
-						new JournalScreen(new HashSet<>(Arrays.asList(payload.ids().split(",")))))));
+						new JournalScreen(new HashSet<>(Arrays.asList(payload.ids().split(","))),
+								Minecraft.getInstance().screen instanceof InventoryScreen inv ? inv : null))));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenStatusPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(new StatusScreen())));
 	}

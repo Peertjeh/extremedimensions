@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.extremedimensions.config.Config;
+import com.extremedimensions.data.DataStore;
+import com.extremedimensions.journal.Journal;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.lore.WorldLoot;
@@ -50,6 +52,10 @@ public class ExtremeDimensions implements ModInitializer {
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.ChoosePayload.TYPE, ModPackets.ChoosePayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.ChoosePayload.TYPE,
 				(payload, context) -> PenaltyService.choose(context.player(), payload.id()));
+
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestJournalPayload.TYPE, ModPackets.RequestJournalPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestJournalPayload.TYPE,
+				(payload, context) -> Journal.open(context.player(), DataStore.get(context.player().getUUID())));
 
 		ServerEvents.register();
 		LOGGER.info("Extreme Dimensions initialised");

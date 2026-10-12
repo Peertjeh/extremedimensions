@@ -128,6 +128,24 @@ public final class ModPackets {
 		}
 	}
 
+	/** Client -> server: the player opened the journal from the inventory. */
+	public record RequestJournalPayload() implements CustomPacketPayload {
+		public static final Type<RequestJournalPayload> TYPE = new Type<>(ExtremeDimensions.id("request_journal"));
+		public static final StreamCodec<FriendlyByteBuf, RequestJournalPayload> CODEC = StreamCodec.ofMember(RequestJournalPayload::write, RequestJournalPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+		}
+
+		private static RequestJournalPayload read(FriendlyByteBuf buf) {
+			return new RequestJournalPayload();
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
 	/** Client -> server: the chosen penalty. */
 	public record ChoosePayload(String id) implements CustomPacketPayload {
 		public static final Type<ChoosePayload> TYPE = new Type<>(ExtremeDimensions.id("choose"));

@@ -47,6 +47,7 @@
   "gui.extremedimensions.choice.accept": "Accept",
   "gui.extremedimensions.choice.stacks": "Stacks: %s → %s",
   "gui.extremedimensions.marks.title": "Tether Marks",
+  "gui.extremedimensions.journal_button": "Tether Journal\nThe Wanderer's pages you have found",
   "gui.extremedimensions.marks.fading": "fading",
   "gui.extremedimensions.marks.idle": "paused: idle",
   "gui.extremedimensions.marks.dormant": "dormant",

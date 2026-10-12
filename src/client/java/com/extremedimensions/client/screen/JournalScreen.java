@@ -32,9 +32,22 @@ public class JournalScreen extends Screen {
 	private Button prev;
 	private Button next;
 
-	public JournalScreen(Set<String> unlocked) {
+	/** The inventory, when the journal was opened from its button: closing goes back there. */
+	private final Screen parent;
+
+	public JournalScreen(Set<String> unlocked, Screen parent) {
 		super(Component.translatable("item.extremedimensions.tether_journal"));
 		this.unlocked = unlocked;
+		this.parent = parent;
+	}
+
+	@Override
+	public void onClose() {
+		if (parent != null) {
+			net.minecraft.client.Minecraft.getInstance().gui.setScreen(parent);
+		} else {
+			super.onClose();
+		}
 	}
 
 	private int bookX() {
