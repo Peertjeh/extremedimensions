@@ -298,10 +298,19 @@ public final class MendingService {
 		for (ServerPlayer p : arena) {
 			Vec3 to = so.position().subtract(p.position());
 			double dist = to.length();
-			if (dist < 26 && dist > 2) {
-				Vec3 v = to.normalize().scale(Math.min(1.6, dist * 0.12));
-				p.setDeltaMovement(v.x, 0.35, v.z);
-				p.hurtMarked = true;
+			if (dist < 26 && dist > 3) {
+				// A short, hard yank towards it, never into a wall
+				Vec3 step = to.normalize().scale(Math.min(6.0, dist * 0.4));
+				BlockPos dest = BlockPos.containing(p.getX() + step.x, p.getY(), p.getZ() + step.z);
+				ServerLevel seam = (ServerLevel) so.level();
+				for (int dy = 2; dy >= -2; dy--) {
+					BlockPos q = dest.above(dy);
+					if (seam.getBlockState(q).isAir() && seam.getBlockState(q.above()).isAir() && !seam.getBlockState(q.below()).isAir()) {
+						WorldFx.particles(p, "extremedimensions:lurker_wisp", 1.0, 0.5, 0, 10);
+						WorldFx.run(String.format(Locale.ROOT, "tp %s %.2f %d %.2f", p.getStringUUID(), p.getX() + step.x, q.getY(), p.getZ() + step.z));
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -452,7 +461,7 @@ public final class MendingService {
 			WorldFx.soundSelf(q, mend ? "extremedimensions:portal_home" : "extremedimensions:collapse", 1.0f, mend ? 0.8f : 0.6f);
 			Journal.unlock(q, DataStore.get(q.getUUID()), JournalEntry.ENDING);
 		}
-		Advancements.grant(p, mend ? Advancements.MENDED : Advancements.SEVERED);
+		Advancements.grant(p, mend ? Advancements.ENDING_MENDED : Advancements.ENDING_SEVERED);
 		return InteractionResult.SUCCESS;
 	}
 
