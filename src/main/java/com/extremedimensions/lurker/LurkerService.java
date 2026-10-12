@@ -363,7 +363,8 @@ public final class LurkerService {
 			double speed = Config.LURKER_STALK_SPEED_MIN + (Config.LURKER_STALK_SPEED_MAX - Config.LURKER_STALK_SPEED_MIN) * close * close;
 			l.getNavigation().moveTo(p, speed);
 		}
-		if (p.distanceToSqr(l) < 3.2 * 3.2) {
+		double reach = takeReach();
+		if (reach > 0 && p.distanceToSqr(l) < reach * reach) {
 			l.getNavigation().stop();
 			l.setLurkerPose(Lurker.POSE_TAKE);
 			st.mode = Mode.TAKE;
@@ -394,23 +395,84 @@ public final class LurkerService {
 	}
 
 	private static void snatch(Lurker l, State st, ServerPlayer p) {
-		WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.5, 0.08, 25);
-		WorldFx.particles(p, "minecraft:reverse_portal", 1.0, 0.8, 0.3, 40);
-		WorldFx.fx(p, Fx.TAKEN, 0);
-		Advancements.grant(p, Advancements.ROBBED);
-		double roll = ThreadLocalRandom.current().nextDouble();
-		boolean took = false;
 		st.loot.from = p.getUUID();
-		if (roll < 0.35) {
-			took = stealItem(p, st.loot);
-		} else if (roll < 0.55) {
-			took = stealXp(p, st.loot);
-		} else if (roll < 0.70) {
-			took = stealArmor(p, st.loot);
+		double d = Math.sqrt(p.distanceToSqr(l));
+		// Only what reaches the player right now (and is possible) can be picked, by weight
+		List<Integer> kinds = new ArrayList<>();
+		for (int k = 0; k < 4; k++) {
+			kinds.add(k);
 		}
-		if (!took) {
-			PenaltyService.curse(p, Dims.OVERWORLD.equals(Dims.of(p)));
+		while (!kinds.isEmpty()) {
+			double total = 0;
+			for (int k : kinds) {
+				total += inReach(k, d) ? Math.max(0, weight(k)) : 0;
+			}
+			if (total <= 0) {
+				return;
+			}
+			double roll = ThreadLocalRandom.current().nextDouble() * total;
+			int pick = kinds.get(0);
+			for (int k : kinds) {
+				double w = inReach(k, d) ? Math.max(0, weight(k)) : 0;
+				if (w > 0 && roll < w) {
+					pick = k;
+					break;
+				}
+				roll -= w;
+			}
+			boolean took = switch (pick) {
+				case 0 -> stealItem(p, st.loot);
+				case 1 -> stealXp(p, st.loot);
+				case 2 -> stealArmor(p, st.loot);
+				default -> {
+					PenaltyService.curse(p, Dims.OVERWORLD.equals(Dims.of(p)));
+					yield true;
+				}
+			};
+			if (took) {
+				WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.5, 0.08, 25);
+				WorldFx.particles(p, "minecraft:reverse_portal", 1.0, 0.8, 0.3, 40);
+				WorldFx.fx(p, Fx.TAKEN, 0);
+				Advancements.grant(p, Advancements.ROBBED);
+				return;
+			}
+			kinds.remove(Integer.valueOf(pick));
 		}
+	}
+
+	/** 0 = item, 1 = experience, 2 = armour, 3 = curse. */
+	private static double range(int kind) {
+		return switch (kind) {
+			case 0 -> Config.LURKER_ITEM_RANGE;
+			case 1 -> Config.LURKER_XP_RANGE;
+			case 2 -> Config.LURKER_ARMOR_RANGE;
+			default -> Config.LURKER_CURSE_RANGE;
+		};
+	}
+
+	private static double weight(int kind) {
+		return switch (kind) {
+			case 0 -> Config.LURKER_ITEM_WEIGHT;
+			case 1 -> Config.LURKER_XP_WEIGHT;
+			case 2 -> Config.LURKER_ARMOR_WEIGHT;
+			default -> Config.LURKER_CURSE_WEIGHT;
+		};
+	}
+
+	/** A little slack, since the player can step back during the reach. */
+	private static boolean inReach(int kind, double dist) {
+		return range(kind) > 0 && dist <= range(kind) + 1.5;
+	}
+
+	/** Distance at which a stalking Lurker strikes: the longest reach of anything it can do. */
+	private static double takeReach() {
+		double r = 0;
+		for (int k = 0; k < 4; k++) {
+			if (weight(k) > 0) {
+				r = Math.max(r, range(k));
+			}
+		}
+		return r;
 	}
 
 	private static boolean stealItem(ServerPlayer p, Loot loot) {

@@ -122,6 +122,19 @@ public final class Config {
 	public static int LURKER_DRAIN_SECONDS = 20;
 	/** Share of the player's levels a Lurker takes. */
 	public static double LURKER_XP_FRACTION = 0.3;
+	/**
+	 * From how many blocks away a stalking Lurker can do each thing to you. It strikes as soon as you are within
+	 * the largest of these, and only picks what reaches you at that moment. 0 = it never does that.
+	 */
+	public static double LURKER_ITEM_RANGE = 3.2;
+	public static double LURKER_XP_RANGE = 3.2;
+	public static double LURKER_ARMOR_RANGE = 3.2;
+	public static double LURKER_CURSE_RANGE = 3.2;
+	/** How likely each is, relative to the others (only those in range and possible count). */
+	public static double LURKER_ITEM_WEIGHT = 35;
+	public static double LURKER_XP_WEIGHT = 20;
+	public static double LURKER_ARMOR_WEIGHT = 15;
+	public static double LURKER_CURSE_WEIGHT = 30;
 	/** Seconds a Lurker runs off with its loot before it vanishes; kill it in time to get the loot back. */
 	public static int LURKER_RUN_SECONDS = 9;
 	/** Closest and furthest distance at which a watching Lurker shows itself. */

@@ -23,7 +23,8 @@
 - A full sound set: heavy dragging footsteps (softer while it stalks), slow rattling breaths and whispers, a guttural snarl when hit, a shriek when startled, a hissing laugh as it runs off, a death that frays into whispers, plus take, drain and vanish sounds, a new journal page (*XVI. The Tribe*) and three
   advancements (*It Sees*, *It Takes*, *Take It Back*).
 - `/tether lurker <watch|stalk|drain>` for operators.
-- Lurker settings in `config/extremedimensions.json`.
+- Lurker settings in `config/extremedimensions.json`, including from how far it can take an item, experience or
+  armour or lay a curse (`lurker_*_range`, 0 = never) and how likely each is (`lurker_*_weight`).
 
 ## 1.0.0: The Professional Pass
 
