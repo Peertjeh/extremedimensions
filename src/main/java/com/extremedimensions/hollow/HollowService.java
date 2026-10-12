@@ -440,12 +440,18 @@ public final class HollowService {
 		cull(s);
 	}
 
+	private static final Map<String, Long> WHISPERED = new HashMap<>();
+
 	/** Ink rising from the hoard, visible from afar, and whispers up close. */
 	private static void ambience(Hoard h, double d2) {
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		WorldFx.particleIn(Dims.fullIdOf(h.dim), "extremedimensions:lurker_wisp", h.x + 0.5, h.y + 1.6, h.z + 0.5, 0.25, 1.2, 0.25, 0.0, 3);
-		if (d2 < 20 * 20 && rnd.nextInt(5) == 0) {
-			WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:hoard_ambient ambient @a %d %d %d 0.8 1",
+		// A faint whisper now and then, never overlapping itself, and once per hoard however many players are near
+		long now = System.currentTimeMillis();
+		Long last = WHISPERED.get(h.key());
+		if (d2 < 12 * 12 && (last == null || now - last > 20_000) && rnd.nextInt(4) == 0) {
+			WHISPERED.put(h.key(), now);
+			WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:hoard_ambient ambient @a %d %d %d 0.3 1",
 					Dims.fullIdOf(h.dim), h.x, h.y, h.z));
 		}
 	}
