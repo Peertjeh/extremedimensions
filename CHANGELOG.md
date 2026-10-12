@@ -9,9 +9,10 @@
   galaxy band, a vortex turning at the zenith, a red glow where the Nether bleeds through, pillars of light rising from
   a sea of clouds and the silhouettes of far islands on the horizon.
 - **Colossal architecture**, built over a few seconds as you approach so the server never stalls:
-  - **Great Spires**: three or four tiers of deepslate stepping inward, tall pointed windows of violet glass, a diamond
-    rose window over the door, buttresses crowned with pinnacles, banners, chains and lanterns on every ledge, flying
-    buttresses, a glowing core of silk and a spiral stair inside, up to a reliquary at the top.
+  - **Great Spires**: up to 120 blocks tall. Three or four tiers of deepslate stepping inward, tall pointed windows of
+    violet glass, diamond rose windows, buttresses crowned with pinnacles, chains, lanterns and vines on every ledge, a
+    glowing core of silk and a spiral stair inside up to a reliquary at the top. A long **nave** with banners and a
+    great door in front, and three **satellite towers** joined to the first terrace by sky bridges.
   - **Giant Looms**: two pillars forty blocks high, a beam across the top, hundreds of threads of chain and silk and a
     half-woven tapestry of the Weaver's sign.
   - **Villages of the Thinned**: tall, narrow houses with steep roofs and warm windows around a plaza with a bell spire.
@@ -29,9 +30,10 @@
 ### Changed
 - The hoard's whispers are much quieter, never overlap themselves and play once per hoard however many players are
   near.
-- The Seam's light and fog are violet instead of teal.
+- The Seam's light, fog and silk veins are violet instead of teal.
 - Seam cells are now 72 blocks instead of 34, so structures have room. Parts of the Seam that were already explored
-  in an older version stay as they were; for the full effect, try a world that has not visited the Seam yet.
+  in an older version stay as they were. For a clean Seam in an existing world, stop the server and delete the
+  world's `dimensions/extremedimensions/the_seam` folder: islands, structures and the Heart rebuild themselves.
 
 
 ## 2.0.0: The Mending

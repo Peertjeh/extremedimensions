@@ -402,6 +402,11 @@ public final class SeamService {
 					int cx = pcx + dx, cz = pcz + dz;
 					String key = "c@" + cx + "," + cz;
 					if (DataStore.seamCells().contains(key)) {
+						if (ring <= 1 && SeamArchitect.pending() == 0 && missing(p, cx, cz)) {
+							// The Seam was regenerated (its folder deleted): design the cell again
+							design(cx, cz);
+							return;
+						}
 						continue;
 					}
 					DataStore.seamCells().add(key);
@@ -410,6 +415,17 @@ public final class SeamService {
 				}
 			}
 		}
+	}
+
+	/** True when a cell is marked as built but its island is not there (the chunk is loaded and the centre is air). */
+	private static boolean missing(ServerPlayer p, int cx, int cz) {
+		int[] c = center(cx, cz);
+		if (nearHeart(c)) {
+			return false;
+		}
+		BlockPos pos = new BlockPos(c[0], c[1] - 1, c[2]);
+		ServerLevel level = (ServerLevel) p.level();
+		return level.isLoaded(pos) && level.getBlockState(pos).isAir();
 	}
 
 	private static void design(int cx, int cz) {

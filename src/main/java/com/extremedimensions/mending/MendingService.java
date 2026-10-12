@@ -117,10 +117,14 @@ public final class MendingService {
 		if (seam == null) {
 			return;
 		}
-		if (open() && !DataStore.heartBuilt()) {
+		if (open() && (!DataStore.heartBuilt() || s.getTickCount() % 100 == 0)) {
 			for (ServerPlayer p : seam.players()) {
 				if (p.distanceToSqr(HX, HY, HZ) < 120 * 120) {
-					buildHeart(seam);
+					// Build it the first time, and again if the Seam was regenerated and the altar is gone
+					BlockPos altar = new BlockPos(HX, HY, HZ);
+					if (!DataStore.heartBuilt() || (seam.isLoaded(altar) && seam.getBlockState(altar).isAir())) {
+						buildHeart(seam);
+					}
 					break;
 				}
 			}
