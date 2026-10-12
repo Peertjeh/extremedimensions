@@ -1,187 +1,134 @@
-# Extreme Dimensions (Minecraft 26.3, Fabric)
+![Extreme Dimensions](docs/banner.jpg)
 
-Nether Charge en End Charge: dimensies zijn expedities met een tijdlimiet.
-Tijd op = **Dimensional Collapse**: je gaat dood, respawnt in de Overworld en kiest 1 van 3 penalty's.
-Je wordt nooit uit het spel gegooid.
+# Extreme Dimensions
 
-## Zo krijg je het .jar-bestand (zonder zelf te compileren)
+*Every portal is a wound. Every wound remembers.*
 
-1. Maak een gratis account op https://github.com en klik rechtsboven op **+ > New repository**. Naam: `extremedimensions`, zet hem op **Private**, klik **Create repository**.
-2. Klik op **uploading an existing file** en sleep ALLE bestanden en mappen uit deze map erin
-   (let op dat de map `.github` ook meegaat, daar zit de automatische build in). Klik **Commit changes**.
-3. Ga naar het tabblad **Actions**. De build start vanzelf (duurt ca. 3 tot 6 minuten). Zie je niets? Klik links op **build** en dan **Run workflow**.
-4. Als er een groen vinkje staat: klik op de run, scroll naar **Artifacts** en download **Artifacts**.
-   Pak de zip uit. Je hebt nu `extremedimensions-0.3.0.jar` (de `-sources.jar` mag je negeren).
+A survival-horror overhaul of how you travel beyond the Overworld, for **Minecraft 26.3** on **Fabric**.
+The Nether and the End become timed expeditions: you fuel anchors, bind yourself with a physical tether and
+race the clock. Let your anchors run dry and the Starved take something of you.
 
-**Staat er een rood kruis?** Klik op de run, open de mislukte stap en kopieer de foutmelding naar Claude. Dan los ik het op.
+---
 
-## Installeren (iedereen, ook de server)
+## The loop
 
-1. Installeer **Java 25** en de **Fabric Loader 0.19.5** voor **Minecraft 26.3** (via https://fabricmc.net/use/installer).
-2. Download **Fabric API 0.162.0+26.3** (Modrinth of CurseForge).
-3. Zet `fabric-api-....jar` en `extremedimensions-0.3.0.jar` in de map `mods`.
-4. Alle spelers moeten de mod hebben (de UI draait op de client).
+1. **Charge an anchor.** Place a lodestone within 5 blocks of a portal and feed it fuel. Its first fuel binds it to
+   that dimension: it becomes an **Ember Anchor** (Nether) or a **Void Anchor** (End).
+2. **Bind your Tether.** Craft a *Tether* (iron chain + 2 string) and use it on your charged anchor. From then on a
+   real chain lies on the ground wherever you walk. In the Overworld it snaps beyond 5 blocks, so walk straight
+   into the wound.
+3. **Step through.** Your timer is the charge *you* stored in the anchors around that portal. It drains every
+   second, and faster the further you wander from your arrival portal (+100% per 100 blocks).
+4. **Come home.** Step back through the portal before it runs out. The chain vanishes and your Tether returns.
+5. **Or don't.** At zero charge you suffer a **Dimensional Collapse**: you die, respawn in the Overworld and choose
+   one of three penalties. Dying beyond the wound by other means ends the expedition the same way.
 
-Maak de wereld als gewone **Survival** (niet de ingebouwde Hardcore-modus, want daarin word je bij dood toeschouwer).
+## Penalties: Tether Marks
 
-## Titelscherm
+Penalties stack and wear off only through **active play** where they count. Nether/End marks count down on
+expeditions, Overworld marks in the Overworld. Idling pauses the clock: it takes both looking around and moving.
+Open your inventory to see your **Tether Marks** beside it, each with its own rune, its stacks and the time left.
 
-De afbeelding `The_Tether.png` staat als achtergrond van het Minecraft-titelscherm (alleen bij spelers met de mod).
-Vervangen? Overschrijf `src/client/resources/assets/extremedimensions/textures/gui/title.png` en pas
-`IMG_W` en `IMG_H` in `TitleArt.java` aan op de nieuwe afmetingen.
+| Beyond the wound | Effect per stack |
+| --- | --- |
+| Accelerated Drain | Charge drains 75% faster |
+| Debt | Anchor fuel gives 40% less charge |
+| Scar | −3 hearts |
+| Cracked Armor | −4 armor |
+| Heavy Legs | 15% slower |
+| Clumsy Hands | 35% slower mining |
+| Frailty / Famine | Constant Weakness / Hunger |
+| Shadowed | Darkness follows you beyond |
+| Leaky Tank | Next expedition: your anchors lose 50% |
+| Mourning | Weakness, Hunger and Mining Fatigue for 10 minutes |
+| Toll | Your next 10 XP levels go to the Tether |
 
-## Lore
+Optional **Overworld penalties** (`/tether overworld_penalties on`) add a separate set for deaths in the Overworld:
+Hollow Heart, Leaden Steps, Gnawing, Dull Pick, Deep Dread, Ill Luck and Tithe.
 
-> *The Tether knows.*
+**Tether Fragments** occasionally drop from hostile mobs beyond the wound (4%, elites 12%). Offer one to an anchor to
+mend your longest-running mark.
 
-De Tether is een eeuwenoude binding, geweven uit zielen, die alles wat leeft aan de Overworld vasthoudt.
-Buiten de Overworld zwerven de **Starved**: zielen die levenswarmte leegzuigen. Portals zijn **Wounds**, lodestones
-worden **Anchors** (Ember Anchor / Void Anchor) die je via de wond voeden. De rest vertelt het spel niet: dat ontdek je.
+## Multiplayer
 
-- **Tether Journal**: krijg je 2 seconden na je eerste keer inloggen (kwijt? Book + Amethyst Shard).
-  Het Lodestone-recept staat meteen in je receptenboek; sta je bij een portal zonder anker, dan vertelt het
-  journal je wat je nodig hebt. Bevat 15 pagina's van een
-  naamloze Wanderer die je ontgrendelt door te spelen: je eerste anchor, de Nether, de End, een Collapse, de Deep Dark,
-  een Enderman doden, een volle anchor, en meer. Rechtermuisklik om te lezen.
-- **Tether Fragment**: vijandige mobs in Nether/End laten soms een fragment vallen (4%, sterke mobs 12%).
-  Rechtermuisklik ermee op een anchor: je langst lopende penalty-stack verdwijnt.
-- **De Leeching**: onder 60 seconden charge zie en hoor je de zielen aan je trekken, steeds heftiger.
-- **Titelscherm**: wisselende cryptische citaten onder het logo.
-- **Strafkaarten**: elke straf heeft een eigen regel lore.
+Every player has their **own time**. What you put into an anchor is yours, even when you share anchors with friends.
+If one player dies beyond the wound, only *their* time is lost; everyone else carries on.
 
-## Hoe het werkt
+## Lore and discovery
 
-- **Altaar** = een **Lodestone in de Overworld, binnen 5 blokken van een portaal**
-  (Nether Portal voor de Nether, End Portal of End Portal Frame voor de End).
-  Rechtermuisklik met een laad-item of Tether in je hand om Charge te storten.
-- **Een altaar is een tank voor een dimensie.** De eerste lading bepaalt het type: de Lodestone verandert in een
-  **Ember Lodestone** (Nether) of **Void Lodestone** (End) en accepteert daarna alleen nog die brandstof.
-  Kapotmaken geeft een gewone Lodestone terug; de charge is dan weg.
-- **Leeg altaar**: is de charge op, dan wordt het weer een gewone Lodestone (met rook en geluid) en kun je het
-  opnieuw aan de Nether of de End binden.
-- **Meerdere altaren** bij hetzelfde portaal tellen bij elkaar op. Max 30 minuten per altaar.
-- **HUD linksboven**: alleen zichtbaar binnen 10 blokken van een geladen altaar (som van alle altaren in de buurt).
-- **Deeltjes**: geladen altaren gloeien (vuur of portaaldeeltjes), hoe voller hoe meer. Een stroom deeltjes zoekt
-  een vrije weg door de lucht naar het midden van het portaal (nooit door blokken heen).
-- **Geblokkeerd**: is er geen vrije weg naar het portaal, dan stopt de stroom, rookt het altaar en verliest het
-  1 seconde charge per seconde. Zo'n altaar voedt ook geen expedities.
-- **Statusscherm**: sneak + lege hand op het altaar.
-- **Nether Charge**: steenkool (2s), houtskool (2s), steenkoolblok (18s), magmablok (6s), fire charge (12s), blaze powder (15s), blaze rod (30s).
-- **End Charge**: amethist shard (3s), chorus fruit (6s), ender pearl (20s), eye of ender (45s), shulker shell (90s), echo shard (120s).
-- **De fysieke tether**: craft een **Tether** (Iron Chain + 2 String, shapeless). Rechtsklik ermee op een geladen
-  anker om je vast te maken; het item wordt de ketting op de grond. Lege hand op je anker = losmaken (je krijgt hem
-  terug). Zonder tether is de portal slapend.
-  Vanaf het moment dat je vastzit ligt de ketting als spoor op de grond, precies waar je loopt.
-  In de Overworld is hij kort: loop je verder dan **5 blokken** van je anker (en sta je niet bij de portal), dan
-  breekt hij en valt de Tether terug in je handen. Linksboven zie je "Tethered 3/5m".
-  In de Nether/End volgt hij je vanaf je aankomstportaal als spoor over de grond (Nether: ijzeren ketting,
-  End: dun gloeiend paars koord). Na 400 stukken verdwijnt telkens het oudste stuk.
-  Kom je veilig terug in de Overworld, dan verdwijnt de hele ketting en krijg je de Tether terug.
-  Ga je dood (waar dan ook) of krijg je een Collapse, dan is de ketting weg en ben je de Tether kwijt.
-- **Afstand**: per 100 blokken van je aankomstportaal gaat de drain +100% (200 blokken = 3x zo snel).
-  Bouw dus meer portals in de Overworld, dichter bij waar je heen moet.
-- Ga je door een portaal, dan voeden de altaren van dat type rond dat portaal (binnen 8 blokken) je expeditie.
-  Geen geladen altaar? Dan is de poort slapend en word je teruggestuurd.
-- In de dimensie lopen die altaren leeg (1 seconde per seconde). Bij 0 = Collapse.
-- Gewoon doodgaan in Nether/End: grote melding **EXPEDITION ENDED**, de altaren van je expeditie lopen leeg en je
-  kiest een penalty. Doodgaan in de Overworld geeft (nog) geen straf.
-- In singleplayer staat de timer stil als je het spel pauzeert.
-- Veilig terug in de Overworld = expeditie geslaagd.
-- **Elke wereld heeft zijn eigen voortgang** (opgeslagen in `extremedimensions.json` in de wereldmap).
-- Alle teksten in het spel zijn Engels.
-- Alles aanpasbaar in `ChargeItems.java` en `Config.java`.
+The mod tells you very little up front. You start with the **Tether Journal**, the account of a nameless Wanderer.
+Fifteen pages surface as you play: your first anchor, the Ember Deep, the Pale Void, the Starved, the Weavers and more.
+A tree of **12 advancements** charts your progress, and the title screen whispers things nobody remembers writing.
 
-## Lodestone en de twee Tether-items
+## Fuel
 
-De Lodestone is aangepast: zonder Netherite te maken, zodat je vóór de Nether al kunt beginnen.
+| Nether anchor | Charge | End anchor | Charge |
+| --- | --- | --- | --- |
+| Coal / Charcoal | 0:02 | Amethyst Shard | 0:03 |
+| Magma Block | 0:06 | Chorus Fruit | 0:06 |
+| Fire Charge | 0:12 | Ender Pearl | 0:20 |
+| Blaze Powder | 0:15 | Eye of Ender | 0:45 |
+| Coal Block | 0:18 | Shulker Shell | 1:30 |
+| Blaze Rod | 0:30 | Echo Shard | 2:00 |
+| **Ember Tether** | 10:00 | **Void Tether** | 10:00 |
 
-| Item | Recept (3x3) |
-|---|---|
-| **Lodestone** (aangepast) | 8 Chiseled Stone Bricks rondom 1 **Diamond** |
-| **Ember Tether** (Nether) | 8 Coal Blocks rondom 1 Lodestone |
-| **Void Tether** (End) | 4 Ender Pearls (hoeken) + 4 Eyes of Ender (zijkanten) rondom 1 Lodestone |
+Each player can store up to 30 minutes per anchor. Fuel values show in item tooltips.
 
-Rechtermuisklik op het altaar met een Tether in je hand: +10 minuten Charge in een keer
-(`TETHER_ITEM_CHARGE` in `Config.java`). Items staan nog niet in de creatieve tab: gebruik
-`/give @s extremedimensions:ember_tether` en `/give @s extremedimensions:void_tether`.
+## Controls
 
-## Tether Marks (penalty's in je inventory)
+| Action | How |
+| --- | --- |
+| Charge an anchor | Right click it with fuel |
+| Bind / untie the Tether | Right click with a Tether / with an empty hand |
+| Anchor status | Sneak + right click with an empty hand |
+| Mend a mark | Right click an anchor with a Tether Fragment |
+| Read the journal | Use the Tether Journal |
 
-Je penalty's staan niet meer als tekst in beeld. Open je inventory: rechts staat een kolom **Tether Marks**,
-met per penalty een kaartje (eigen rune, naam met stacks als Romeins cijfer, resterende tijd). Bovenaan zie je of
-ze aflopen (fading), stilstaan omdat je idle bent (paused: idle) of hier niet aflopen (dormant).
-Muis erop = uitleg en lore. De vanilla effecten van penalty's (Weakness, Hunger, ...) hebben geen icoon en
-geen deeltjes meer, zodat ze niet dubbel in beeld staan.
+## Installation
 
-## Ieder zijn eigen tijd (multiplayer)
+1. Install **Fabric Loader 0.19.5+** for **Minecraft 26.3** (Java 25).
+2. Add **Fabric API 0.162.0+** and `extremedimensions-1.0.0.jar` to your `mods` folder.
+3. Install it on the server **and** every client.
 
-Wat je zelf in een anker stopt, is jouw tijd. Elke speler heeft dus zijn eigen timer, ook als jullie dezelfde
-ankers bij dezelfde portal gebruiken (elk met een eigen maximum van 30 minuten per anker).
-Linksboven bij een anker zie je alleen je eigen tijd.
-Gaat iemand dood in de Nether of End, dan gaat alleen zijn eigen tijd naar 0 en krijgt alleen hij een penalty.
-De anderen spelen gewoon door. Een geblokkeerd anker lekt voor iedereen naar verhouding.
-Charge uit een oudere versie van de mod (van voor deze wijziging) blijft gedeeld: die mag iedereen gebruiken.
+Play a normal Survival world. Vanilla Hardcore turns you into a spectator on death, which this mod is designed to avoid.
 
-## Animaties
+## Configuration
 
-- **Titelscherm:** eigen logo, langzame zoom, parallax met de muis, pulserende portaalgloed en zwevende vonken.
-- **Anker vullen en Tether binden:** geen melding: vonken spiralen naar het midden van je beeld en slaan uit in twee ringen, de meter licht op, deeltjes en geluid.
-- **Door de wond:** geen melding en geen schermanimatie; deeltjes en een eigen geluid (terug naar huis: een zachte, subtiele klank).
-- **Weinig tijd:** rode rand, trillende balk, klok- en hartslaggeluid.
-- **Collapse:** witte flits, rode gloed, glitchbalken, de balk knapt in tweeen, explosie en bliksemgeluid.
-- **Penalty-keuze:** kaarten schuiven in, lichten op bij hover, gekozen kaart flitst.
-- **Statusscherm:** balken vullen zich en getallen tellen op.
+All balance values live in `config/extremedimensions.json` (created on first launch): anchor size and range, drain,
+tether length, penalty strength and duration, fragment chances and more.
 
-## Penalty's (kies 1 uit 3 willekeurige)
+## Building
 
-Na een Collapse of een dood in Nether/End. **Alles stackt**: kies je dezelfde penalty opnieuw, dan telt hij dubbel.
-Penalty's met een duur blijven per stack **10 minuten actieve speeltijd in de Nether of End**. De klok loopt alleen
-tijdens een expeditie en alleen als je echt speelt: wie 15 seconden niet rondkijkt of geen 2 blokken loopt, telt als
-AFK en de klok pauzeert ("Penalties paused: you are idle!" linksboven). In de Overworld loopt de klok niet.
+```
+./gradlew build
+```
 
-| Penalty | Effect (per stack) |
-|---|---|
-| Accelerated Drain | Charge loopt 75% sneller leeg |
-| Debt | Brandstof geeft 40% minder charge |
-| Scar | -3 hartjes (je houdt er altijd minstens 2) |
-| Cracked Armor | -4 armor |
-| Heavy Legs | 15% langzamer lopen |
-| Clumsy Hands | 35% langzamer minen |
-| Frailty | Constant Weakness |
-| Famine | Constant Hunger |
-| Shadowed | Darkness in Nether en End (vanaf 2 stacks ook Slowness) |
-| Leaky Tank | Eenmalig: de altaren van je volgende expeditie verliezen 50% |
-| Mourning | Eenmalig: Weakness II, Hunger II en Mining Fatigue, 10 minuten |
-| Toll | XP-schuld: de eerstvolgende 10 levels die je haalt neemt de Tether |
+The jar ends up in `build/libs/`. CI builds every push; download the jar from the run's **Artifacts**.
 
-## Overworld-penalty's (optioneel, per wereld)
+## Project layout
 
-Standaard uit. Aanzetten (met cheats/op): `/tether overworld_penalties on` (uit: `off`, status: zonder argument).
-Staat het aan, dan kost een dood in de Overworld een penalty uit een eigen set ("THE TETHER TIGHTENS").
-Deze penalty's werken **alleen in de Overworld** en tellen ook alleen daar af (10 minuten actief spelen, AFK telt niet).
+| Package | Responsibility |
+| --- | --- |
+| `anchor` | Anchors, fuel, the free path to the portal, leaking and particles |
+| `expedition` | Entering, draining, the Leeching, Collapse, deaths and respawns |
+| `tether` | The physical chain on the ground |
+| `penalty` | Penalty definitions, choosing, effects, wearing off, mending |
+| `journal` | Journal pages |
+| `progression` | Advancements |
+| `network` | Payloads and state sync |
+| `data` | Per-world persistence |
+| `config` | The config file |
+| `client` | HUD, screens, Tether Marks, tooltips, title screen, menu music and the shared UI style (`client.ui.Ui`) |
 
-| Penalty | Effect (per stack, alleen in de Overworld) |
-|---|---|
-| Hollow Heart | -2 hartjes |
-| Leaden Steps | 10% langzamer lopen |
-| Gnawing | Constant Hunger |
-| Dull Pick | 25% langzamer minen |
-| Deep Dread | Darkness onder zeeniveau (grotten) |
-| Ill Luck | Unluck: slechtere loot en vissen |
-| Tithe | XP-schuld: de eerstvolgende 5 levels die je haalt neemt de Tether |
+All text is translatable through `assets/extremedimensions/lang/en_us.json`.
 
-## Muziek en geluid
+---
 
-- Eigen menumuziek: "The Tether Knows" (`music/menu_1.ogg`) en "The Tether" (`music/menu_2.ogg`) in
-  `src/client/resources/assets/extremedimensions/sounds/` spelen om en om tot de wereld geladen is en faden dan uit.
-- Eigen geluiden voor het kiezen van een penalty en voor "Expedition Ended".
+### Nederlands, kort
 
-## Bekende beperkingen (versie 0.1)
+Download de jar uit de nieuwste groene build: **Actions** → run → **Artifacts**. Zet hem samen met Fabric API in je
+`mods`-map, op de server én bij iedere speler. Instellingen staan in `config/extremedimensions.json`.
 
-- Uitloggen in een dimensie pauzeert de timer (exploit). Kan in een volgende versie bestraft worden.
-- Geluids- en deeltjesnamen in de animaties kunnen in 26.3 anders heten; een verkeerde naam geeft alleen geen effect.
+## License
 
-## Geen tekstmeldingen
-
-De mod toont geen tekstmeldingen meer in beeld. Alles gaat via de HUD (meters, timer, penalty's), animaties,
-deeltjes en geluid. Alleen de grote titels EXPEDITION ENDED en THE TETHER TIGHTENS zijn gebleven.
+CC0-1.0
