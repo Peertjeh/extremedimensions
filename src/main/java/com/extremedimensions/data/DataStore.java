@@ -34,6 +34,11 @@ public final class DataStore {
 		List<Hoard> hoards = new ArrayList<>();
 		/** Seam cells (island grid) that were already built. */
 		Set<String> seamCells = new HashSet<>();
+		/** The Ender Dragon was the seal on the first wound; once slain, the world changes. */
+		boolean sealBroken = false;
+		/** "" until the Starved One falls; then "mended" or "severed". */
+		String ending = "";
+		boolean heartBuilt = false;
 	}
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -58,6 +63,9 @@ public final class DataStore {
 					if (loaded.hoards != null) {
 						data.hoards = loaded.hoards;
 					}
+					data.sealBroken = loaded.sealBroken;
+					data.ending = loaded.ending == null ? "" : loaded.ending;
+					data.heartBuilt = loaded.heartBuilt;
 					if (loaded.seamCells != null) {
 						data.seamCells = loaded.seamCells;
 					}
@@ -86,6 +94,33 @@ public final class DataStore {
 		save();
 		data = new WorldData();
 		file = null;
+	}
+
+	public static boolean sealBroken() {
+		return data.sealBroken;
+	}
+
+	public static void setSealBroken(boolean broken) {
+		data.sealBroken = broken;
+		save();
+	}
+
+	public static String ending() {
+		return data.ending;
+	}
+
+	public static void setEnding(String ending) {
+		data.ending = ending;
+		save();
+	}
+
+	public static boolean heartBuilt() {
+		return data.heartBuilt;
+	}
+
+	public static void setHeartBuilt(boolean built) {
+		data.heartBuilt = built;
+		save();
 	}
 
 	public static Set<String> seamCells() {

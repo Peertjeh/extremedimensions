@@ -39,6 +39,14 @@ public final class Tooltips {
 			key = "tether_fragment";
 		} else if (item == ModItems.WANDERERS_PAGE) {
 			key = "wanderers_page";
+		} else if (item == ModItems.SOUL_WOVEN_TETHER) {
+			key = "soul_woven_tether";
+		} else if (item == ModItems.SEAM_WOVEN_TETHER) {
+			key = "seam_woven_tether";
+		} else if (item == ModItems.MENDING_THREAD) {
+			key = "mending_thread";
+		} else if (item == ModItems.SEVERING_SHEARS) {
+			key = "severing_shears";
 		} else if (item == ModItems.SEAM_NEEDLE) {
 			key = "seam_needle";
 		} else if (item == ModItems.SEAM_SILK) {

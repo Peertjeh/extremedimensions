@@ -24,6 +24,7 @@ import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
+import com.extremedimensions.world.WorldService;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -347,7 +348,7 @@ public final class LurkerService {
 		if (dist < 14 || st.stared > 50) {
 			later.add(() -> vanish(l));
 		} else if (st.ticks > st.limit) {
-			if (!Dims.SEAM.equals(Dims.of(p)) && ThreadLocalRandom.current().nextDouble() < Config.LURKER_STALK_CHANCE) {
+			if (!Dims.SEAM.equals(Dims.of(p)) && WorldService.tribeSteals() && ThreadLocalRandom.current().nextDouble() < Config.LURKER_STALK_CHANCE) {
 				st.mode = Mode.STALK;
 				l.setLurkerPose(Lurker.POSE_STALK);
 				st.ticks = 0;
@@ -355,7 +356,10 @@ public final class LurkerService {
 				st.startDist = dist;
 				whisper(l, p, 0.7f);
 			} else {
-				later.add(() -> vanish(l));
+				later.add(() -> {
+					WorldService.offering((ServerLevel) l.level(), l.getX(), l.getY(), l.getZ());
+					vanish(l);
+				});
 			}
 		}
 	}

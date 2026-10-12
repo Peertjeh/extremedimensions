@@ -33,6 +33,10 @@ public final class Advancements {
 	public static final String SEAM_ENTERED = "seam_entered";
 	public static final String SEAM_RETURNED = "seam_returned";
 	public static final String THINNED_FOUND = "thinned_found";
+	public static final String SEAL_BROKEN = "seal_broken";
+	public static final String STARVED_SLAIN = "starved_slain";
+	public static final String MENDED = "ending_mended";
+	public static final String SEVERED = "ending_severed";
 
 	/** Expeditions needed for {@link #VETERAN}. */
 	public static final int VETERAN_EXPEDITIONS = 10;

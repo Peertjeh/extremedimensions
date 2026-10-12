@@ -74,6 +74,14 @@ Use a **Seam Needle** on crying obsidian and the air tears open into **the Seam*
 between the dimensions, Weaver looms strung with silk, and the silent villages of the Thinned. You have five minutes.
 Your return rift drifts, and only the thread of silk you leave behind leads back to it.
 
+## Weaver's Craft, the Dragon and the Mending
+
+Weave Seam Silk into your Tether for a slower drain, more reach and (with the Weavers' own weave) one escape from a
+Collapse. Endured penalties leave **scars** that make you harder to drain. Slay the Ender Dragon and you break the
+seal on the first wound: Wound Storms tear the Overworld sky, the tribe turns from thieves into frightened
+supplicants, and every rift now opens near the **Heart of the Seam**, where the **Starved One** waits. Defeat it,
+and choose: **mend** the world or **sever** the Tether.
+
 ## In the world
 
 Torn **Wanderer's Pages** turn up in ruined portals, nether fortresses, bastions, stronghold libraries, ancient cities
@@ -89,7 +97,7 @@ If one player dies beyond the wound, only *their* time is lost; everyone else ca
 ## Lore and discovery
 
 The mod tells you very little up front. You start with the **Tether Journal**, the account of a nameless Wanderer.
-Twenty-five pages surface as you play: your first anchor, the Ember Deep, the Pale Void, the Starved, the Weavers and more.
+Thirty-one pages surface as you play: your first anchor, the Ember Deep, the Pale Void, the Starved, the Weavers and more.
 A tree of **15 advancements** charts your progress, and the title screen whispers things nobody remembers writing.
 
 ## Fuel
@@ -118,12 +126,13 @@ Each player can store up to 30 minutes per anchor. Fuel values show in item tool
 | Summon a Lurker (operators) | `/tether lurker <watch|stalk|drain>` |
 | Build a hoard (operators) | `/tether hoard` |
 | Enter the Seam (operators) | `/tether seam` |
+| Break the seal / start a storm (operators) | `/tether break_seal`, `/tether storm` |
 | Open a rift | Use a Seam Needle on crying obsidian |
 
 ## Installation
 
 1. Install **Fabric Loader 0.19.5+** for **Minecraft 26.3** (Java 25).
-2. Add **Fabric API 0.162.0+** and `extremedimensions-1.4.0.jar` to your `mods` folder.
+2. Add **Fabric API 0.162.0+** and `extremedimensions-2.0.0.jar` to your `mods` folder.
 3. Install it on the server **and** every client.
 
 Play a normal Survival world. Vanilla Hardcore turns you into a spectator on death, which this mod is designed to avoid.

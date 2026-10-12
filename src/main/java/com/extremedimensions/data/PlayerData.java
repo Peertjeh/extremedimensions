@@ -44,6 +44,10 @@ public class PlayerData {
 	public String homeDim = "overworld";
 	public double homeX, homeY, homeZ;
 	public transient int seamPull = 0;
+	/** Tier of the bound Tether: 0 iron chain, 1 soul-woven, 2 seam-woven. */
+	public int tetherTier = 0;
+	/** Scars: penalty stacks endured to the end. Each one makes the drain a little weaker (up to five). */
+	public int scars = 0;
 	/** A Hollowling follows this player. */
 	public boolean companion = false;
 	/** Online seconds until the companion brings its next find. */
@@ -101,7 +105,9 @@ public class PlayerData {
 	}
 
 	public double drainMultiplier() {
-		return Config.BASE_DRAIN * (1.0 + Config.ACCELERATED_DRAIN_PER_STACK * stacks(Penalty.ACCELERATED_DRAIN));
+		double tier = tetherTier == 2 ? Config.SEAM_WOVEN_DRAIN : tetherTier == 1 ? Config.SOUL_WOVEN_DRAIN : 1.0;
+		double scar = 1.0 - Config.SCAR_DRAIN_REDUCTION * Math.min(5, scars);
+		return Config.BASE_DRAIN * tier * scar * (1.0 + Config.ACCELERATED_DRAIN_PER_STACK * stacks(Penalty.ACCELERATED_DRAIN));
 	}
 
 	public double debtFactor() {

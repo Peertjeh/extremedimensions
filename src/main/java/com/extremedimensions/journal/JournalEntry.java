@@ -30,7 +30,13 @@ public enum JournalEntry {
 	KEEPER("keeper"),
 	SEAM("seam"),
 	LOOM("loom"),
-	THINNED("thinned");
+	THINNED("thinned"),
+	WOVEN("woven"),
+	SEAL("seal"),
+	STORMS("storms"),
+	HEART("heart"),
+	WANDERER("wanderer"),
+	ENDING("ending");
 
 	public final String id;
 

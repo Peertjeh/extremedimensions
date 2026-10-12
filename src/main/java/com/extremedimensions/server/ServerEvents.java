@@ -21,6 +21,10 @@ import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModBlocks;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.seam.SeamService;
+import com.extremedimensions.mending.MendingService;
+import com.extremedimensions.mending.StarvedOne;
+import com.extremedimensions.world.WorldService;
+import net.minecraft.core.registries.BuiltInRegistries;
 import com.extremedimensions.tether.TetherService;
 
 import net.minecraft.server.MinecraftServer;
@@ -64,6 +68,8 @@ public final class ServerEvents {
 			LurkerService.clear();
 			HollowService.clear();
 			SeamService.clear();
+			WorldService.clear();
+			MendingService.clear();
 			DataStore.unload();
 			WorldFx.bind(null);
 		});
@@ -81,8 +87,18 @@ public final class ServerEvents {
 		});
 
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
+			if ("minecraft:ender_dragon".equals(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString()) && WorldFx.server() != null) {
+				WorldService.onDragonDeath(WorldFx.server());
+			}
 			if (entity instanceof ServerPlayer p) {
+				if ("severed".equals(DataStore.ending()) && Dims.isBeyond(Dims.of(p))) {
+					// A severed world keeps nothing of those who fall beyond the wound
+					WorldFx.run(String.format(java.util.Locale.ROOT, "execute in %s run kill @e[type=minecraft:item,x=%.1f,y=%.1f,z=%.1f,distance=..8]",
+							Dims.fullId(p), p.getX(), p.getY(), p.getZ()));
+				}
 				ExpeditionService.onDeath(p);
+			} else if (entity instanceof StarvedOne so) {
+				MendingService.onDefeat(so);
 			} else if (entity instanceof Keeper k) {
 				HollowService.onKeeperDeath(k, source.getEntity());
 			} else if (entity instanceof Hollowling h) {
@@ -95,6 +111,13 @@ public final class ServerEvents {
 		});
 
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+			if (player instanceof ServerPlayer sp && hand == InteractionHand.MAIN_HAND && MendingService.isPedestal(hit.getBlockPos())
+					&& SeamService.inSeam(sp)) {
+				InteractionResult r = MendingService.onPedestal(sp, hit.getBlockPos(), player.getItemInHand(hand));
+				if (r != InteractionResult.PASS) {
+					return r;
+				}
+			}
 			if (player.getItemInHand(hand).is(ModItems.SEAM_NEEDLE) && level.getBlockState(hit.getBlockPos()).is(Blocks.CRYING_OBSIDIAN)) {
 				return player instanceof ServerPlayer sp
 						? SeamService.openRift(sp, hit.getBlockPos(), hit.getDirection(), player.getItemInHand(hand))
@@ -122,6 +145,9 @@ public final class ServerEvents {
 			if (player instanceof ServerPlayer sp && player.getItemInHand(hand).is(ModItems.TETHER_JOURNAL)) {
 				Journal.open(sp, DataStore.get(sp.getUUID()));
 				return InteractionResult.SUCCESS;
+			}
+			if (player instanceof ServerPlayer sp && (player.getItemInHand(hand).is(ModItems.MENDING_THREAD) || player.getItemInHand(hand).is(ModItems.SEVERING_SHEARS))) {
+				return MendingService.useEnding(sp, player.getItemInHand(hand));
 			}
 			if (player instanceof ServerPlayer sp && player.getItemInHand(hand).is(ModItems.WANDERERS_PAGE)) {
 				if (!sp.isCreative()) {
@@ -236,6 +262,8 @@ public final class ServerEvents {
 		LurkerService.tick(s);
 		HollowService.tick(s);
 		SeamService.tick(s);
+		WorldService.tick(s);
+		MendingService.tick(s);
 	}
 
 	/** Journal pages found by exploring. */

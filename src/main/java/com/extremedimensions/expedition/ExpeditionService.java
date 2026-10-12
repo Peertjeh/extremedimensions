@@ -17,6 +17,7 @@ import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 import com.extremedimensions.tether.TetherService;
+import com.extremedimensions.world.WorldService;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -119,6 +120,23 @@ public final class ExpeditionService {
 		DataStore.save();
 	}
 
+	/**
+	 * A Seam-Woven Tether unravels instead of letting the player collapse: the silk comes apart thread by thread and
+	 * pulls them home, whole. The Tether is spent.
+	 */
+	private static void unravel(ServerPlayer p, PlayerData d) {
+		TetherService.clear(p, d, false);
+		d.tetherTier = 0;
+		WorldFx.particles(p, "extremedimensions:soul_mote", 1.0, 1.0, 0.0, 40);
+		WorldFx.sound(p, "extremedimensions:rift_open", 1.0f, 1.3f);
+		Journal.unlock(p, d, JournalEntry.WOVEN);
+		if (d.hasLast) {
+			WorldFx.tp(p, "minecraft:overworld", d.lastX, d.lastY, d.lastZ);
+		} else {
+			sendToSpawn(p);
+		}
+	}
+
 	/** Entered without a working anchor: the portal is dormant and sends the player back. */
 	private static void bounce(ServerPlayer p, PlayerData d) {
 		d.inRun = false;
@@ -156,7 +174,7 @@ public final class ExpeditionService {
 
 		boolean changed = false;
 		if (Dims.isBeyond(dim) && d.inRun && !d.collapsing) {
-			d.currentDrain = d.drainMultiplier() * TetherService.distanceFactor(p, d);
+			d.currentDrain = d.drainMultiplier() * TetherService.distanceFactor(p, d) * WorldService.drainFactor(dim);
 			double left = AnchorService.drainLinked(p, d, d.currentDrain / 20.0);
 			d.runTime += 1.0 / 20.0;
 			double far = TetherService.arrivalDistance(p, d);
@@ -166,7 +184,10 @@ public final class ExpeditionService {
 					Advancements.grant(p, Advancements.LONG_TETHER);
 				}
 			}
-			if (left <= 0) {
+			if (left <= 0 && d.tetherTier == 2 && d.tetherAnchor != null) {
+				unravel(p, d);
+				changed = true;
+			} else if (left <= 0) {
 				collapse(p, d);
 				changed = true;
 			} else {

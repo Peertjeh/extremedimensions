@@ -7,6 +7,8 @@ import com.extremedimensions.hollow.HollowService;
 import com.extremedimensions.lurker.LurkerService;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.seam.SeamService;
+import com.extremedimensions.mending.MendingService;
+import com.extremedimensions.world.WorldService;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.commands.CommandSourceStack;
@@ -31,7 +33,15 @@ public final class TetherCommand {
 						.then(Commands.literal("stalk").executes(c -> lurker(c.getSource(), "stalk")))
 						.then(Commands.literal("drain").executes(c -> lurker(c.getSource(), "drain"))))
 				.then(Commands.literal("hoard").executes(c -> hoard(c.getSource())))
-				.then(Commands.literal("seam").executes(c -> seam(c.getSource()))));
+				.then(Commands.literal("seam").executes(c -> seam(c.getSource())))
+				.then(Commands.literal("break_seal").executes(c -> {
+					MendingService.breakSeal(c.getSource().getServer());
+					return 1;
+				}))
+				.then(Commands.literal("storm").executes(c -> {
+					WorldService.begin(c.getSource().getPlayerOrException(), c.getSource().getServer().getTickCount());
+					return 1;
+				})));
 	}
 
 	/** Summons a Lurker in the given mode near the executing player (for testing and showcases). */

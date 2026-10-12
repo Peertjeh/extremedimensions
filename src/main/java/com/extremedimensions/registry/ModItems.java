@@ -33,6 +33,16 @@ public final class ModItems {
 	/** Used on crying obsidian, it tears a rift into the Seam. */
 	public static final Item SEAM_NEEDLE = register("seam_needle", 16, Rarity.RARE);
 
+	/** A Tether woven with Seam Silk and soul light: slower drain, a longer reach. */
+	public static final Item SOUL_WOVEN_TETHER = register("soul_woven_tether", 16, Rarity.UNCOMMON);
+	/** The Weavers' own work: slowest drain, and once per expedition it unravels you home instead of collapsing. */
+	public static final Item SEAM_WOVEN_TETHER = register("seam_woven_tether", 16, Rarity.EPIC);
+
+	/** Dropped by the Starved One: use it to mend the first wound. */
+	public static final Item MENDING_THREAD = register("mending_thread", 1, Rarity.EPIC);
+	/** Dropped by the Starved One: use them to sever the Tether from the world for good. */
+	public static final Item SEVERING_SHEARS = register("severing_shears", 1, Rarity.EPIC);
+
 	public static final Item HUSH_STONE = block(ModBlocks.HUSH_STONE);
 	public static final Item HUSH_BRICKS = block(ModBlocks.HUSH_BRICKS);
 	public static final Item SEAM_VEIN = block(ModBlocks.SEAM_VEIN);

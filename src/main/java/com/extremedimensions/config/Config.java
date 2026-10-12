@@ -165,10 +165,36 @@ public final class Config {
 	/** 1 = hoards are guarded by a Keeper, 0 = never. */
 	public static int KEEPER_ENABLED = 1;
 
+	// --- Weaver's craft ---------------------------------------------------------------------------
+
+	/** Drain multiplier with a Soul-Woven and a Seam-Woven Tether. */
+	public static double SOUL_WOVEN_DRAIN = 0.85;
+	public static double SEAM_WOVEN_DRAIN = 0.75;
+	/** Extra Overworld reach (blocks) of a woven Tether before it snaps. */
+	public static double WOVEN_REACH = 3.0;
+	/** Extra Seam seconds per woven tier. */
+	public static int WOVEN_SEAM_SECONDS = 60;
+	/** Drain reduction per scar (up to five scars). */
+	public static double SCAR_DRAIN_REDUCTION = 0.03;
+
 	// --- The Seam --------------------------------------------------------------------------------
 
 	/** Seconds a Seam Needle gives you in the Seam before it spits you out. */
 	public static int SEAM_SECONDS = 300;
+
+	// --- After the Dragon and the Mending --------------------------------------------------------
+
+	/** Chance per Overworld player every minute (after the seal broke) that a Wound Storm breaks out nearby. */
+	public static double STORM_CHANCE = 0.04;
+	/** Minimum minutes between two storms for the same player. */
+	public static int STORM_COOLDOWN_MINUTES = 30;
+	public static int STORM_SECONDS = 60;
+	/** End drain multiplier while the seal is broken: the Pale Void starves. */
+	public static double STARVING_END_DRAIN = 1.25;
+	/** Chance that a watching Lurker leaves an offering when it goes, once the seal is broken. */
+	public static double LURKER_OFFERING_CHANCE = 0.3;
+	/** Drain multiplier for everyone in a mended world. */
+	public static double MENDED_DRAIN = 0.8;
 
 	// --- Technical -------------------------------------------------------------------------------
 

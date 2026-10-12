@@ -12,6 +12,7 @@ import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.lurker.LurkerService;
+import com.extremedimensions.mending.MendingService;
 import com.extremedimensions.network.Fx;
 import com.extremedimensions.network.Sync;
 import com.extremedimensions.penalty.PenaltyService;
@@ -156,6 +157,12 @@ public final class SeamService {
 		d.homeZ = from.z;
 		int x = (int) Math.floor(from.x);
 		int z = (int) Math.floor(from.z);
+		if (MendingService.opensNearHeart()) {
+			// The seal is broken: every rift opens near the Heart, where all the threads meet
+			int[] a = MendingService.arrival();
+			x = a[0];
+			z = a[1];
+		}
 		int top = 96;
 		island(seam, x, top, z, 11, 0, true);
 		DataStore.seamCells().add("a@" + x + "," + z);
@@ -163,7 +170,7 @@ public final class SeamService {
 		d.riftY = top + 1;
 		d.riftZ = z + 0.5;
 		d.inSeam = true;
-		d.seamMax = Math.max(30, Config.SEAM_SECONDS);
+		d.seamMax = Math.max(30, Config.SEAM_SECONDS) + Config.WOVEN_SEAM_SECONDS * d.tetherTier;
 		d.seamLeft = d.seamMax;
 		d.seamPull = 0;
 		d.hasRopeEnd = false;
@@ -204,7 +211,7 @@ public final class SeamService {
 			pull(p, d);
 			return;
 		}
-		if (!p.isCreative()) {
+		if (!p.isCreative() && !(MendingService.active() && MendingService.inArena(p))) {
 			d.seamLeft -= 1.0 / 20.0;
 		}
 		TetherService.lay(p, d);

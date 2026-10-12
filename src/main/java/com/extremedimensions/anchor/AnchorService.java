@@ -51,7 +51,7 @@ public final class AnchorService {
 
 	/** Items the client should hand to the server instead of placing them against an anchor. */
 	public static boolean isUsableOnAnchor(Item item) {
-		return item == ModItems.TETHER || item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER
+		return TetherService.isTether(item) || item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER
 				|| item == ModItems.TETHER_FRAGMENT || FuelValues.NETHER.containsKey(item) || FuelValues.END.containsKey(item);
 	}
 
@@ -131,7 +131,7 @@ public final class AnchorService {
 		if (item == ModItems.TETHER_FRAGMENT) {
 			return PenaltyService.mend(p, d, pos, stack);
 		}
-		if (item == ModItems.TETHER) {
+		if (TetherService.isTether(item)) {
 			return TetherService.tie(p, d, pos, stack);
 		}
 		String type;

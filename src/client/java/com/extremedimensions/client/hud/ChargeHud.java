@@ -37,6 +37,8 @@ public class ChargeHud implements HudElement {
 			deposit(g, w, h, dt, ClientState.depositKind == 1 ? Ui.EMBER : ClientState.depositKind == 2 ? Ui.VOID : Ui.SOUL);
 		}
 		taken(g, w, h, now);
+		seal(g, w, h, now);
+		storm(g, w, h, now);
 		collapse(g, font, w, h, now);
 	}
 
@@ -279,6 +281,60 @@ public class ChargeHud implements HudElement {
 	}
 
 	/** A Lurker took something: the edges of vision blacken like spilled ink and violet static shivers through. */
+	/**
+	 * The seal breaks: a white flash, then dark cracks that branch across the screen from the centre and fade.
+	 */
+	private static void seal(GuiGraphicsExtractor g, int w, int h, long now) {
+		long st = now - ClientState.sealAt;
+		if (ClientState.sealAt <= 0 || st >= 5000) {
+			return;
+		}
+		double t = st / 5000.0;
+		int flash = (int) (255 * Math.max(0, 1 - st / 700.0));
+		if (flash > 0) {
+			g.fill(0, 0, w, h, Ui.argb(flash, 0xFFFFFF));
+		}
+		double grow = Ui.ease(st / 1600.0);
+		int alpha = (int) (220 * (1 - t));
+		int cx = w / 2, cy = h / 2;
+		for (int i = 0; i < 9; i++) {
+			double ang = Ui.hash(i * 31L) * Math.PI * 2;
+			double x = cx, y = cy;
+			int segs = 14;
+			for (int k = 0; k < segs * grow; k++) {
+				ang += (Ui.hash(i * 97L + k) - 0.5) * 0.9;
+				double len = 6 + Ui.hash(i * 13L + k * 7L) * 14;
+				double nx = x + Math.cos(ang) * len, ny = y + Math.sin(ang) * len;
+				int steps = (int) len;
+				for (int s = 0; s < steps; s++) {
+					int px = (int) (x + (nx - x) * s / steps), py = (int) (y + (ny - y) * s / steps);
+					g.fill(px, py, px + 2, py + 2, Ui.argb(alpha, 0x0A0612));
+					g.fill(px + 1, py, px + 2, py + 1, Ui.argb(alpha / 2, Ui.SOUL));
+				}
+				x = nx;
+				y = ny;
+			}
+		}
+		Ui.vignette(g, w, h, 0x000000, (int) (40 * (1 - t)), 8);
+	}
+
+	/** A Wound Storm begins: the edges of the screen tear with violet light for a moment. */
+	private static void storm(GuiGraphicsExtractor g, int w, int h, long now) {
+		long st = now - ClientState.stormAt;
+		if (ClientState.stormAt <= 0 || st >= 2500) {
+			return;
+		}
+		double t = st / 2500.0;
+		int a = (int) (120 * Math.sin(Math.min(1, st / 300.0) * Math.PI / 2) * (1 - t));
+		Ui.vignette(g, w, h, Ui.VOID, a / 6, 8);
+		long bucket = now / 70;
+		for (int i = 0; i < 6; i++) {
+			int bx = (int) (Ui.hash(bucket * 5 + i) * w);
+			int bh = (int) (Ui.hash(bucket * 9 + i * 3) * h * 0.5);
+			g.fill(bx, 0, bx + 1, bh, Ui.argb(a, 0xE8D8FF));
+		}
+	}
+
 	private static void taken(GuiGraphicsExtractor g, int w, int h, long now) {
 		long tt = now - ClientState.takenAt;
 		if (ClientState.takenAt <= 0 || tt >= 1800) {

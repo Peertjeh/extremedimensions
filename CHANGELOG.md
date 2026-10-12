@@ -1,5 +1,54 @@
 # Changelog
 
+## 2.0.0: The Mending
+
+*Mend it, and the world forgets the wound. Sever it, and the world forgets the Tether.*
+
+### Added
+- **The Heart of the Seam**: once the seal is broken, every rift into the Seam opens near its centre, where a great
+  island of hush brick waits around an altar of silk, ringed by four pedestals and pillars of soul light.
+- **The Starved One**, the final boss: step onto the altar and it rises, tall, white as bone and thin as hunger.
+  - It hunts with blinks through the shadows; wounded, it **bites through your thread** (every rift near the Heart is
+    flung to the edge of the island); near death, it **drags everyone towards it**.
+  - Feed **Seam Silk** to two of the four pedestals and the light pins it down: for eight seconds it is stunned and
+    takes double damage.
+  - **The Thinned fight beside you** if anyone in the fight has befriended a Hollowling.
+  - Time in the Seam stands still near the Heart while it lives. Leave, and it sinks back, whole.
+- **The choice**: it drops a **Mending Thread** and the **Severing Shears**. The first one used, by anyone, decides the
+  world forever:
+  - **Mended**: no more Wound Storms, the tribe brings offerings instead of stealing, and every expedition drains 20%
+    slower.
+  - **Severed**: no more timer beyond the wound at all, but whoever dies in the Nether or the End loses everything they
+    carried, and the tribe goes back to stealing.
+- **The Wanderer** is revealed in the journal's last pages (*XXIX. The Heart*, *XXX. The Wanderer*, *XXXI. The Ending*),
+  and four new advancements (*The Lock Was a Dragon*, *The Hunger Ends*, *Mended*, *Severed*).
+
+## 1.6.0: After the Dragon
+
+### Added
+- **The seal**: the Ender Dragon was the lock on the first wound. When it dies, every player sees the world flash white
+  and crack, and the journal tells what was done (*XXVII. The Seal*).
+- **The tribe turns**: Lurkers no longer steal. A watching Lurker that goes quietly may leave an offering behind: a
+  Tether Fragment, a Wanderer's Page, Seam Silk or an Echo Shard.
+- **The Pale Void starves**: End expeditions drain 25% faster while the seal is broken.
+- **Wound Storms** in the Overworld (*XXVIII. Wound Storms*): the edges of your sight tear with violet light, the sky
+  rips open in seams, darkness pulses, anchors gutter, and creatures from the Nether and the End leak through around
+  you for a minute.
+- `/tether break_seal` and `/tether storm` for testing; storm chance, cooldown and length in the config.
+
+## 1.5.0: Weaver's Craft
+
+### Added
+- **Soul-Woven Tether** (Tether, 2 Seam Silk, a soul lantern): 15% slower drain, 3 more blocks of reach in the
+  Overworld, one more minute in the Seam.
+- **Seam-Woven Tether** (Soul-Woven Tether, 4 Seam Silk, an Echo Shard, a Breeze Rod): 25% slower drain, more reach, two
+  more minutes in the Seam, and once per expedition it **unravels you home** instead of letting you collapse (the
+  Tether is spent).
+- **Scars**: every penalty stack you endure to the end leaves a scar; each scar makes you 3% harder to drain (up to
+  five).
+- Journal page *XXVI. Woven*.
+
+
 ## 1.4.0: The Seams
 
 *Between the wounds there is a place that is not a place.*

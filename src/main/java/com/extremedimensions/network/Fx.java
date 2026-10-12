@@ -15,4 +15,8 @@ public final class Fx {
 	public static final int ENDED = 9;
 	public static final int TIE = 10;
 	public static final int TAKEN = 11;
+	/** The seal broke (the Ender Dragon died): a white flash and the world cracking. */
+	public static final int SEAL = 12;
+	/** A Wound Storm begins nearby. */
+	public static final int STORM = 13;
 }

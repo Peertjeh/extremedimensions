@@ -4,6 +4,7 @@ import com.extremedimensions.ExtremeDimensions;
 import com.extremedimensions.hollow.Hollowling;
 import com.extremedimensions.hollow.Keeper;
 import com.extremedimensions.lurker.Lurker;
+import com.extremedimensions.mending.StarvedOne;
 
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -46,9 +47,20 @@ public final class ModEntities {
 					.clientTrackingRange(10)
 					.build(KEEPER_KEY));
 
+	private static final ResourceKey<EntityType<?>> STARVED_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("starved_one"));
+
+	/** The last boss, at the Heart of the Seam; spawned only by {@code MendingService}. */
+	public static final EntityType<StarvedOne> STARVED_ONE = Registry.register(BuiltInRegistries.ENTITY_TYPE, STARVED_KEY,
+			EntityType.Builder.<StarvedOne>of(StarvedOne::new, MobCategory.MONSTER)
+					.sized(2.0f, 5.6f)
+					.eyeHeight(5.0f)
+					.clientTrackingRange(12)
+					.build(STARVED_KEY));
+
 	public static void init() {
 		FabricDefaultAttributeRegistry.register(LURKER, Lurker.createAttributes());
 		FabricDefaultAttributeRegistry.register(HOLLOWLING, Hollowling.createAttributes());
 		FabricDefaultAttributeRegistry.register(KEEPER, Keeper.createAttributes());
+		FabricDefaultAttributeRegistry.register(STARVED_ONE, StarvedOne.createAttributes());
 	}
 }

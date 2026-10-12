@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:starved_slain",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:severing_shears"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.ending_severed.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.ending_severed.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

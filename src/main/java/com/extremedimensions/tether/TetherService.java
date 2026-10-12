@@ -22,6 +22,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -49,6 +50,7 @@ public final class TetherService {
 		}
 		// Already bound elsewhere? That tether comes back.
 		clear(p, d, d.tetherAnchor != null);
+		d.tetherTier = stack.is(ModItems.SEAM_WOVEN_TETHER) ? 2 : stack.is(ModItems.SOUL_WOVEN_TETHER) ? 1 : 0;
 		stack.shrink(1);
 		d.tetherAnchor = key;
 		d.hasRopeEnd = true;
@@ -128,8 +130,9 @@ public final class TetherService {
 	public static void clear(ServerPlayer p, PlayerData d, boolean returnItem) {
 		WorldFx.run("kill @e[type=minecraft:block_display,tag=" + tag(p) + "]");
 		if (returnItem && d.tetherAnchor != null) {
-			if (!p.getInventory().add(new ItemStack(ModItems.TETHER))) {
-				WorldFx.run("give " + p.getStringUUID() + " extremedimensions:tether");
+			Item back = tierItem(d.tetherTier);
+			if (!p.getInventory().add(new ItemStack(back))) {
+				WorldFx.run("give " + p.getStringUUID() + " " + BuiltInRegistries.ITEM.getKey(back));
 			}
 		}
 		d.tetherAnchor = null;
@@ -155,8 +158,18 @@ public final class TetherService {
 	}
 
 	/** Standing near the anchor, or near its portal, keeps the tether whole. */
+	/** The Tether item for a tier. */
+	public static Item tierItem(int tier) {
+		return tier == 2 ? ModItems.SEAM_WOVEN_TETHER : tier == 1 ? ModItems.SOUL_WOVEN_TETHER : ModItems.TETHER;
+	}
+
+	public static boolean isTether(Item item) {
+		return item == ModItems.TETHER || item == ModItems.SOUL_WOVEN_TETHER || item == ModItems.SEAM_WOVEN_TETHER;
+	}
+
 	private static boolean tooFar(ServerPlayer p, Anchor anchor) {
-		double max = Config.TETHER_BREAK_RANGE + 0.5;
+		PlayerData d = DataStore.get(p.getUUID());
+		double max = Config.TETHER_BREAK_RANGE + 0.5 + (d.tetherTier > 0 ? Config.WOVEN_REACH : 0);
 		double dx = anchor.x + 0.5 - p.getX();
 		double dz = anchor.z + 0.5 - p.getZ();
 		if (dx * dx + dz * dz <= max * max && Math.abs(anchor.y - p.getY()) <= max) {

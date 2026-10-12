@@ -24,12 +24,16 @@ public final class ModItemGroups {
 				.displayItems((params, out) -> {
 					out.accept(ModItems.TETHER_JOURNAL);
 					out.accept(ModItems.TETHER);
+					out.accept(ModItems.SOUL_WOVEN_TETHER);
+					out.accept(ModItems.SEAM_WOVEN_TETHER);
 					out.accept(ModItems.EMBER_TETHER);
 					out.accept(ModItems.VOID_TETHER);
 					out.accept(ModItems.TETHER_FRAGMENT);
 					out.accept(ModItems.WANDERERS_PAGE);
 					out.accept(ModItems.SEAM_NEEDLE);
 					out.accept(ModItems.SEAM_SILK);
+					out.accept(ModItems.MENDING_THREAD);
+					out.accept(ModItems.SEVERING_SHEARS);
 					out.accept(ModItems.HUSH_STONE);
 					out.accept(ModItems.HUSH_BRICKS);
 					out.accept(ModItems.SEAM_VEIN);

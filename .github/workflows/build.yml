@@ -23,3 +23,5 @@ jobs:
         with:
           name: Artifacts
           path: build/libs/
+      - name: TEMP boot a server with the mod
+        run: bash .github/probe/server.sh

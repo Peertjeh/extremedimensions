@@ -239,6 +239,11 @@ public final class PenaltyService {
 					left.add(rest);
 				} else {
 					worn = true;
+					if (d.scars < 5) {
+						// Endured to the end: it leaves a scar, and scars make you harder to drain
+						d.scars++;
+						Journal.unlock(p, d, JournalEntry.WOVEN);
+					}
 				}
 			}
 			e.setValue(left);
