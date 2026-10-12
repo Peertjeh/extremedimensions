@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:hoard_found",
+  "display": {
+    "icon": {
+      "id": "minecraft:soul_lantern"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.hollow_bound.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.hollow_bound.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

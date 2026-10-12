@@ -24,6 +24,11 @@ public final class Dims {
 		return p.level().dimension().identifier().toString();
 	}
 
+	/** Full id for a short vanilla dimension id ({@code the_nether} to {@code minecraft:the_nether}). */
+	public static String fullIdOf(String dim) {
+		return dim.contains(":") ? dim : "minecraft:" + dim;
+	}
+
 	/** Dimensions where expeditions drain charge. */
 	public static boolean isBeyond(String dim) {
 		return NETHER.equals(dim) || END.equals(dim);

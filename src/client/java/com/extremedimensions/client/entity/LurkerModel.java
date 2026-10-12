@@ -222,5 +222,15 @@ public class LurkerModel extends EntityModel<LurkerRenderState> {
 		cape.zRot = Mth.sin(t * 0.04F + 0.5F) * 0.03F;
 		ragL.xRot = -armL.xRot - hips.xRot + Mth.sin(t * 0.07F) * 0.08F;
 		ragR.xRot = -armR.xRot - hips.xRot + Mth.sin(t * 0.07F + 1F) * 0.08F;
+
+		// The young: a big head on a small body, and a quicker, bouncier step
+		float hs = s.young ? 1.55F : 1.0F;
+		head.xScale = hs;
+		head.yScale = hs;
+		head.zScale = hs;
+		if (s.young) {
+			hips.y -= Math.abs(Mth.sin(wp * 1.3F)) * 1.2F * ws;
+			head.zRot += 0.18F * Mth.sin(t * 0.09F);
+		}
 	}
 }

@@ -3,6 +3,7 @@ package com.extremedimensions.command;
 import com.mojang.brigadier.CommandDispatcher;
 
 import com.extremedimensions.data.DataStore;
+import com.extremedimensions.hollow.HollowService;
 import com.extremedimensions.lurker.LurkerService;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.server.WorldFx;
@@ -12,7 +13,8 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
-/** Operator commands: {@code /tether overworld_penalties [on|off]} and {@code /tether lurker <watch|stalk|drain>}. */
+/** Operator commands: {@code /tether overworld_penalties [on|off]} and {@code /tether lurker <watch|stalk|drain>}
+ * and {@code /tether hoard}. */
 public final class TetherCommand {
 	private TetherCommand() {}
 
@@ -26,7 +28,8 @@ public final class TetherCommand {
 				.then(Commands.literal("lurker")
 						.then(Commands.literal("watch").executes(c -> lurker(c.getSource(), "watch")))
 						.then(Commands.literal("stalk").executes(c -> lurker(c.getSource(), "stalk")))
-						.then(Commands.literal("drain").executes(c -> lurker(c.getSource(), "drain")))));
+						.then(Commands.literal("drain").executes(c -> lurker(c.getSource(), "drain"))))
+				.then(Commands.literal("hoard").executes(c -> hoard(c.getSource()))));
 	}
 
 	/** Summons a Lurker in the given mode near the executing player (for testing and showcases). */
@@ -34,6 +37,14 @@ public final class TetherCommand {
 		ServerPlayer p = src.getPlayerOrException();
 		boolean ok = LurkerService.summon(p, mode);
 		src.sendSuccess(() -> Component.translatable(ok ? "commands.extremedimensions.lurker.summoned" : "commands.extremedimensions.lurker.failed"), false);
+		return ok ? 1 : 0;
+	}
+
+	/** Builds an old hoard in front of the executing player, with its Hollowlings and its Keeper. */
+	private static int hoard(CommandSourceStack src) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+		ServerPlayer p = src.getPlayerOrException();
+		boolean ok = HollowService.summonHoard(p);
+		src.sendSuccess(() -> Component.translatable(ok ? "commands.extremedimensions.hoard.summoned" : "commands.extremedimensions.hoard.failed"), false);
 		return ok ? 1 : 0;
 	}
 

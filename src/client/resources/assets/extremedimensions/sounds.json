@@ -113,5 +113,50 @@
     "sounds": [
       "extremedimensions:lurker_flee"
     ]
+  },
+  "hollowling_ambient": {
+    "subtitle": "subtitles.extremedimensions.hollowling_ambient",
+    "sounds": [
+      "extremedimensions:hollowling_chitter1",
+      "extremedimensions:hollowling_chitter2",
+      "extremedimensions:hollowling_chitter3"
+    ]
+  },
+  "hollowling_giggle": {
+    "subtitle": "subtitles.extremedimensions.hollowling_giggle",
+    "sounds": [
+      "extremedimensions:hollowling_giggle"
+    ]
+  },
+  "hollowling_hurt": {
+    "subtitle": "subtitles.extremedimensions.hollowling_hurt",
+    "sounds": [
+      "extremedimensions:hollowling_hurt1",
+      "extremedimensions:hollowling_hurt2"
+    ]
+  },
+  "hollowling_death": {
+    "subtitle": "subtitles.extremedimensions.hollowling_death",
+    "sounds": [
+      "extremedimensions:hollowling_death"
+    ]
+  },
+  "hollowling_bond": {
+    "subtitle": "subtitles.extremedimensions.hollowling_bond",
+    "sounds": [
+      "extremedimensions:hollowling_bond"
+    ]
+  },
+  "keeper_roar": {
+    "subtitle": "subtitles.extremedimensions.keeper_roar",
+    "sounds": [
+      "extremedimensions:keeper_roar"
+    ]
+  },
+  "hoard_ambient": {
+    "subtitle": "subtitles.extremedimensions.hoard_ambient",
+    "sounds": [
+      "extremedimensions:hoard_ambient"
+    ]
   }
 }

@@ -37,6 +37,10 @@ public class PlayerData {
 	/** Unlocked Tether Journal pages. */
 	public Set<String> journal = new LinkedHashSet<>();
 	public boolean journalDelivered = false;
+	/** A Hollowling follows this player. */
+	public boolean companion = false;
+	/** Online seconds until the companion brings its next find. */
+	public int companionGiftIn = 0;
 	/** Anchor key the physical tether is bound to; null = not bound. */
 	public String tetherAnchor = null;
 	/** Arrival point beyond the wound (distance to the portal). */

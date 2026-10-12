@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.3.0: What Was Taken
+
+*It does not want your things. It wants to remember what having things was like.*
+
+### Added
+- **Lurker hoards**: a Lurker that escapes with your loot now runs it home, and you can follow it. Your hoard is a
+  hidden nest 40-70 blocks away: trampled mud (or soul soil in the Nether), crooked posts, cobwebs, bones, a skull,
+  black candles nobody lights, and a barrel with everything it took. Experience comes back as bottles. A column of
+  ink rises from every hoard and it whispers when you are close. Old hoards full of trinkets (and sometimes a
+  Wanderer's Page or a Tether Fragment) lie in dark forests, pale gardens and soul sand valleys.
+- **Hollowlings**, the tribe's young: knee-high, ash-grey, big-headed and quick. They play around a hoard, freeze
+  like statues when you look at them, giggle and run if you stare, and when you look away they sneak up and steal
+  small things (never tools, weapons or armour) to carry back to the hoard. Kill one to get it back.
+- **The Keeper**, the first boss: a huge old Lurker with a bone-white mask. Open or break a hoard, or hurt its young,
+  and it comes roaring through the trees, with a boss bar, darkness, a hushing screech and blinks behind you. Leave
+  what it keeps and it lets you go; slay it and the hoard is yours, plus two Tether Fragments and a Wanderer's Page.
+- **A Hollowling friend**: offer a Hollowling a Tether Fragment in soul light (a soul lantern, torch, campfire or
+  fire within 4 blocks) and it may come to trust you. It follows you everywhere, chitters towards monsters you have
+  not seen, leaps in when a Lurker reaches for your things, and every 20 minutes brings you something it found.
+- Three journal pages (*XX. The Hollows*, *XXI. Little Thieves*, *XXII. The Keeper*) and three advancements
+  (*Finders Keepers*, *Losers Weepers*, *Bound in Soul Light*).
+- New sounds: Hollowling chitters, giggles, squeals and a trill, the Keeper's roar and the hoard's whispers.
+- `/tether hoard` builds an old hoard in front of you; new config options for hoards, Hollowlings and the Keeper.
+
+
 ## 1.2.0: Woven In
 
 *The world was here before the wound. It remembers too.*

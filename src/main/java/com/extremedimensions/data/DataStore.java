@@ -5,7 +5,9 @@ import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -27,6 +29,7 @@ public final class DataStore {
 		/** Field keeps its historic name so older saves still load. */
 		Map<String, Anchor> altars = new HashMap<>();
 		boolean overworldPenalties = false;
+		List<Hoard> hoards = new ArrayList<>();
 	}
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -48,6 +51,9 @@ public final class DataStore {
 						data.altars = loaded.altars;
 					}
 					data.overworldPenalties = loaded.overworldPenalties;
+					if (loaded.hoards != null) {
+						data.hoards = loaded.hoards;
+					}
 				}
 			}
 		} catch (Exception e) {
@@ -73,6 +79,10 @@ public final class DataStore {
 		save();
 		data = new WorldData();
 		file = null;
+	}
+
+	public static List<Hoard> hoards() {
+		return data.hoards;
 	}
 
 	public static PlayerData get(UUID id) {

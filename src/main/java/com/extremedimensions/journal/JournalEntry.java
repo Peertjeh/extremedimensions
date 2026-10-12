@@ -24,7 +24,10 @@ public enum JournalEntry {
 	SOUL_LIGHT("soul_light"),
 	/** Only found on Wanderer's Pages in the world. */
 	RUINED_GATE("ruined_gate"),
-	FIRST_WOUND("first_wound");
+	FIRST_WOUND("first_wound"),
+	HOLLOWS("hollows"),
+	LITTLE_THIEVES("little_thieves"),
+	KEEPER("keeper");
 
 	public final String id;
 

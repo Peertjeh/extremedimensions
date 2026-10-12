@@ -61,6 +61,13 @@ Lurkers also drain charged anchors: catch one holding your anchor's light and ch
 within 4 blocks of an anchor keeps it safe. Listen to your animals, too: wolves growl and cats hiss when something is
 watching.
 
+## What Was Taken
+
+A Lurker that escapes with your loot runs it home to its **hoard**: follow it, or follow the column of ink in the
+air. Hoards are guarded by **the Keeper**, a bone-masked giant that comes for anyone who opens one, and they are full
+of **Hollowlings**, the tribe's young: little thieves that freeze when you look at them. Offer one a Tether Fragment
+in soul light and it may become your friend.
+
 ## In the world
 
 Torn **Wanderer's Pages** turn up in ruined portals, nether fortresses, bastions, stronghold libraries, ancient cities
@@ -76,7 +83,7 @@ If one player dies beyond the wound, only *their* time is lost; everyone else ca
 ## Lore and discovery
 
 The mod tells you very little up front. You start with the **Tether Journal**, the account of a nameless Wanderer.
-Nineteen pages surface as you play: your first anchor, the Ember Deep, the Pale Void, the Starved, the Weavers and more.
+Twenty-two pages surface as you play: your first anchor, the Ember Deep, the Pale Void, the Starved, the Weavers and more.
 A tree of **15 advancements** charts your progress, and the title screen whispers things nobody remembers writing.
 
 ## Fuel
@@ -103,11 +110,12 @@ Each player can store up to 30 minutes per anchor. Fuel values show in item tool
 | Mend a mark | Right click an anchor with a Tether Fragment |
 | Read the journal | Use the Tether Journal |
 | Summon a Lurker (operators) | `/tether lurker <watch|stalk|drain>` |
+| Build a hoard (operators) | `/tether hoard` |
 
 ## Installation
 
 1. Install **Fabric Loader 0.19.5+** for **Minecraft 26.3** (Java 25).
-2. Add **Fabric API 0.162.0+** and `extremedimensions-1.2.0.jar` to your `mods` folder.
+2. Add **Fabric API 0.162.0+** and `extremedimensions-1.3.0.jar` to your `mods` folder.
 3. Install it on the server **and** every client.
 
 Play a normal Survival world. Vanilla Hardcore turns you into a spectator on death, which this mod is designed to avoid.

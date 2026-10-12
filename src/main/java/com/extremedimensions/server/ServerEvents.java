@@ -5,8 +5,12 @@ import com.extremedimensions.anchor.AnchorService;
 import com.extremedimensions.command.TetherCommand;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
+import com.extremedimensions.data.Hoard;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.expedition.ExpeditionService;
+import com.extremedimensions.hollow.HollowService;
+import com.extremedimensions.hollow.Hollowling;
+import com.extremedimensions.hollow.Keeper;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.lurker.Lurker;
@@ -24,6 +28,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.block.Blocks;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -32,6 +37,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 
@@ -54,6 +60,7 @@ public final class ServerEvents {
 		ServerLifecycleEvents.SERVER_STOPPING.register(s -> DataStore.save());
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
 			LurkerService.clear();
+			HollowService.clear();
 			DataStore.unload();
 			WorldFx.bind(null);
 		});
@@ -73,6 +80,10 @@ public final class ServerEvents {
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if (entity instanceof ServerPlayer p) {
 				ExpeditionService.onDeath(p);
+			} else if (entity instanceof Keeper k) {
+				HollowService.onKeeperDeath(k, source.getEntity());
+			} else if (entity instanceof Hollowling h) {
+				HollowService.onHollowlingDeath(h);
 			} else if (entity instanceof Lurker l) {
 				LurkerService.onDeath(l, source.getEntity());
 			} else if (source.getEntity() instanceof ServerPlayer killer) {
@@ -81,6 +92,12 @@ public final class ServerEvents {
 		});
 
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+			if (player instanceof ServerPlayer sp && hand == InteractionHand.MAIN_HAND && level.getBlockState(hit.getBlockPos()).is(Blocks.BARREL)) {
+				Hoard h = HollowService.hoardAt(Dims.of(level), hit.getBlockPos());
+				if (h != null) {
+					HollowService.onHoardOpened(sp, h);
+				}
+			}
 			if (hand != InteractionHand.MAIN_HAND || !AnchorService.isAnchorBlock(level.getBlockState(hit.getBlockPos()))) {
 				return InteractionResult.PASS;
 			}
@@ -108,7 +125,19 @@ public final class ServerEvents {
 			return InteractionResult.PASS;
 		});
 
-		PlayerBlockBreakEvents.AFTER.register((level, player, pos, state, blockEntity) -> AnchorService.onBroken(Dims.of(level), pos));
+		PlayerBlockBreakEvents.AFTER.register((level, player, pos, state, blockEntity) -> {
+			AnchorService.onBroken(Dims.of(level), pos);
+			if (state.is(Blocks.BARREL)) {
+				HollowService.onBroken(level, pos, player instanceof ServerPlayer sp ? sp : null);
+			}
+		});
+
+		UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
+			if (hand == InteractionHand.MAIN_HAND && player instanceof ServerPlayer sp && entity instanceof Hollowling h) {
+				return HollowService.onInteract(sp, h, player.getItemInHand(hand));
+			}
+			return InteractionResult.PASS;
+		});
 	}
 
 	private static void onJoin(ServerPlayer p) {
@@ -194,6 +223,7 @@ public final class ServerEvents {
 		TetherService.sweep(s);
 		AnchorService.tick(s);
 		LurkerService.tick(s);
+		HollowService.tick(s);
 	}
 
 	/** Journal pages found by exploring. */

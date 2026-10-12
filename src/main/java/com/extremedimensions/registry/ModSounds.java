@@ -25,6 +25,10 @@ public final class ModSounds {
 	public static final SoundEvent LURKER_DEATH = register("lurker_death");
 	public static final SoundEvent LURKER_SHRIEK = register("lurker_shriek");
 	public static final SoundEvent LURKER_FLEE = register("lurker_flee");
+	public static final SoundEvent HOLLOWLING_AMBIENT = register("hollowling_ambient");
+	public static final SoundEvent HOLLOWLING_HURT = register("hollowling_hurt");
+	public static final SoundEvent HOLLOWLING_DEATH = register("hollowling_death");
+	public static final SoundEvent KEEPER_ROAR = register("keeper_roar");
 	public static final SoundEvent MUSIC_MENU_1 = register("music.menu_1");
 	public static final SoundEvent MUSIC_MENU_2 = register("music.menu_2");
 

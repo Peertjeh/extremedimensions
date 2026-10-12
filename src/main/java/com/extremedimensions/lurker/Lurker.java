@@ -23,7 +23,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * <p>Its body only carries a pose (watching, stalking, taking, draining) that the client animates; everything it
  * decides is done by {@link LurkerService}.
  */
-public class Lurker extends Monster {
+public class Lurker extends Monster implements LurkerBody {
 	public static final int POSE_WATCH = 0;
 	public static final int POSE_STALK = 1;
 	public static final int POSE_TAKE = 2;
@@ -51,6 +51,7 @@ public class Lurker extends Monster {
 		builder.define(POSE, POSE_WATCH);
 	}
 
+	@Override
 	public int getLurkerPose() {
 		return this.entityData.get(POSE);
 	}

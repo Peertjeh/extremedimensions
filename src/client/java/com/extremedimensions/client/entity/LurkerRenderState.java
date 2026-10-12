@@ -8,4 +8,6 @@ public class LurkerRenderState extends LivingEntityRenderState {
 	public float take;
 	public float drain;
 	public float run;
+	/** A Hollowling: big head, stubby limbs. */
+	public boolean young;
 }

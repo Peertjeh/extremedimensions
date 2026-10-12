@@ -150,6 +150,21 @@ public final class Config {
 	/** Speed multiplier at full run, reached after a short burst of acceleration. */
 	public static double LURKER_RUN_SPEED = 1.4;
 
+	// --- Hoards, Hollowlings and the Keeper ------------------------------------------------------
+
+	/** Chance every 30 seconds, in a dark forest, pale garden or soul sand valley, that an old hoard lies nearby. */
+	public static double HOARD_WILD_CHANCE = 0.08;
+	/** Hollowlings that play around a hoard someone is near. */
+	public static int HOLLOWLINGS_PER_HOARD = 3;
+	/** Chance that a Tether Fragment, offered in soul light, earns a Hollowling's trust. */
+	public static double HOLLOWLING_BOND_CHANCE = 0.4;
+	/** Minutes of play between the things a companion Hollowling brings you. */
+	public static int COMPANION_GIFT_MINUTES = 20;
+	/** Chance that a companion Hollowling chases off a Lurker about to take something from you. */
+	public static double COMPANION_GUARD_CHANCE = 0.6;
+	/** 1 = hoards are guarded by a Keeper, 0 = never. */
+	public static int KEEPER_ENABLED = 1;
+
 	// --- Technical -------------------------------------------------------------------------------
 
 	/** Ticks between state updates sent to each player. */

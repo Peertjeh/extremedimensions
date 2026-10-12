@@ -27,6 +27,9 @@ public final class Advancements {
 	public static final String WATCHED = "watched";
 	public static final String ROBBED = "robbed";
 	public static final String HUNTED = "hunted";
+	public static final String HOARD_FOUND = "hoard_found";
+	public static final String KEEPER_SLAIN = "keeper_slain";
+	public static final String HOLLOW_BOUND = "hollow_bound";
 
 	/** Expeditions needed for {@link #VETERAN}. */
 	public static final int VETERAN_EXPEDITIONS = 10;

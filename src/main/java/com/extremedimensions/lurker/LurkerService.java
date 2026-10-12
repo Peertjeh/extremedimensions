@@ -13,7 +13,9 @@ import com.extremedimensions.anchor.SoulWards;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.Anchor;
 import com.extremedimensions.data.DataStore;
+import com.extremedimensions.data.Hoard;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.hollow.HollowService;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.network.Fx;
@@ -80,6 +82,8 @@ public final class LurkerService {
 		/** Set when the pose must switch to stalking on the next drive (command summons). */
 		boolean stalkPose;
 		final Loot loot = new Loot();
+		/** Where it carries the loot. */
+		Hoard hoard;
 	}
 
 	private static final Map<UUID, State> STATES = new HashMap<>();
@@ -399,6 +403,11 @@ public final class LurkerService {
 					dim, l.getX(), l.getY() + 2, l.getZ()));
 		}
 		if (st.ticks == TAKE_AT) {
+			if (HollowService.guarded(p)) {
+				// A Hollowling friend leaps in: it flinches and runs empty-handed
+				run(l, st, p, true);
+				return;
+			}
 			snatch(l, st, p);
 		}
 		if (st.ticks >= TAKE_TICKS) {
@@ -541,6 +550,13 @@ public final class LurkerService {
 		String sound = struck ? "extremedimensions:lurker_shriek" : "extremedimensions:lurker_flee";
 		WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound %s hostile @a %.2f %.2f %.2f 1.6 1",
 				dim, sound, l.getX(), l.getY() + 2.5, l.getZ()));
+		if (!struck && (!st.loot.stack.isEmpty() || st.loot.levels > 0)) {
+			// It runs home to its hoard: follow it, and you find where your things went
+			st.hoard = HollowService.hoardFor(p, l.position());
+			if (st.hoard != null) {
+				st.limit = 20 * 25;
+			}
+		}
 		flee(l, st, p, new ArrayList<>());
 	}
 
@@ -549,6 +565,30 @@ public final class LurkerService {
 	 * strides, leaving a faint trail of ink. After a good stretch it folds into the air.
 	 */
 	private static void flee(Lurker l, State st, ServerPlayer p, List<Runnable> later) {
+		if (st.hoard != null) {
+			Vec3 home = new Vec3(st.hoard.x + 0.5, st.hoard.y, st.hoard.z + 0.5);
+			if (st.ticks % 8 == 0 || l.getNavigation().isDone()) {
+				double speed = Config.LURKER_RUN_SPEED * (0.6 + 0.4 * Math.min(1.0, st.ticks / 40.0));
+				l.getNavigation().moveTo(home.x, home.y, home.z, speed);
+			}
+			if (st.ticks % 3 == 0) {
+				WorldFx.particleIn(l.level().dimension().identifier().toString(), "extremedimensions:lurker_wisp",
+						l.getX(), l.getY() + 1.4, l.getZ(), 0.35, 0.5, 0.35, 0.0, 2);
+			}
+			if (l.position().distanceToSqr(home) < 3.5 * 3.5 || st.ticks > st.limit) {
+				Hoard h = st.hoard;
+				ItemStack stack = st.loot.stack;
+				int levels = st.loot.levels;
+				st.loot.stack = ItemStack.EMPTY;
+				st.loot.levels = 0;
+				st.hoard = null;
+				later.add(() -> {
+					HollowService.stash(h, stack, levels);
+					vanish(l);
+				});
+			}
+			return;
+		}
 		if (st.ticks % 8 == 0 || l.getNavigation().isDone()) {
 			double ramp = Math.min(1.0, st.ticks / 40.0);
 			double speed = Config.LURKER_RUN_SPEED * (0.6 + 0.4 * ramp);
