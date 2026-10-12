@@ -19,7 +19,8 @@ public enum JournalEntry {
 	WEAVERS("weavers"),
 	UNANCHORED("unanchored"),
 	HABIT("habit"),
-	SILENCE("silence");
+	SILENCE("silence"),
+	TRIBE("tribe");
 
 	public final String id;
 

@@ -7,6 +7,7 @@ import com.extremedimensions.config.Config;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.registry.ModBlocks;
+import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.registry.ModItemGroups;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.registry.ModSounds;
@@ -34,6 +35,7 @@ public class ExtremeDimensions implements ModInitializer {
 		ModBlocks.init();
 		ModItems.init();
 		ModSounds.init();
+		ModEntities.init();
 		ModItemGroups.init();
 
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.StatePayload.TYPE, ModPackets.StatePayload.CODEC);

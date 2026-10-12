@@ -211,5 +211,20 @@
   "menu.extremedimensions.quote.11": "It does not speak. It does not need to.",
   "menu.extremedimensions.quote.12": "Older than the mountains. Hungrier than the void.",
   "menu.extremedimensions.quote.13": "An anchor too far from the wound is only a stone.",
-  "subtitles.extremedimensions.collapse": "The Tether pulls you back"
+  "subtitles.extremedimensions.collapse": "The Tether pulls you back",
+  "entity.extremedimensions.lurker": "The Lurker",
+  "subtitles.extremedimensions.lurker_whisper": "Something whispers",
+  "subtitles.extremedimensions.lurker_take": "Something takes",
+  "subtitles.extremedimensions.lurker_drain": "An anchor is drained",
+  "subtitles.extremedimensions.lurker_vanish": "The Lurker vanishes",
+  "commands.extremedimensions.lurker.summoned": "A Lurker is watching.",
+  "commands.extremedimensions.lurker.failed": "No place for a Lurker here (drain needs a charged anchor 14-48 blocks away).",
+  "journal.extremedimensions.tribe.title": "XVI. The Tribe",
+  "journal.extremedimensions.tribe.text": "I am not the first to walk between the wounds. There was a tribe before us, long forgotten, that learned to live in the seams. They did not die. They thinned. Now they stand at the edge of the trees, on the ridge, on the far bank of the lava, and watch. It sees. It waits. It takes. Never meet its eyes for long. Never let it near your anchors. And if it comes closer while you are not looking, know that it does not hate you. It only wants what is yours.",
+  "advancements.extremedimensions.watched.title": "It Sees",
+  "advancements.extremedimensions.watched.description": "Meet the gaze of a Lurker",
+  "advancements.extremedimensions.robbed.title": "It Takes",
+  "advancements.extremedimensions.robbed.description": "Let a Lurker take something from you",
+  "advancements.extremedimensions.hunted.title": "Take It Back",
+  "advancements.extremedimensions.hunted.description": "Slay a Lurker before it vanishes with what it took"
 }

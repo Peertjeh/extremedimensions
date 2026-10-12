@@ -9,6 +9,8 @@ import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.expedition.ExpeditionService;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
+import com.extremedimensions.lurker.Lurker;
+import com.extremedimensions.lurker.LurkerService;
 import com.extremedimensions.network.Sync;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
@@ -51,6 +53,7 @@ public final class ServerEvents {
 		});
 		ServerLifecycleEvents.SERVER_STOPPING.register(s -> DataStore.save());
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
+			LurkerService.clear();
 			DataStore.unload();
 			WorldFx.bind(null);
 		});
@@ -70,6 +73,8 @@ public final class ServerEvents {
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if (entity instanceof ServerPlayer p) {
 				ExpeditionService.onDeath(p);
+			} else if (entity instanceof Lurker l) {
+				LurkerService.onDeath(l, source.getEntity());
 			} else if (source.getEntity() instanceof ServerPlayer killer) {
 				ExpeditionService.onMobKilled(killer, entity);
 			}
@@ -181,6 +186,7 @@ public final class ServerEvents {
 
 		TetherService.sweep(s);
 		AnchorService.tick(s);
+		LurkerService.tick(s);
 	}
 
 	/** Journal pages found by exploring. */

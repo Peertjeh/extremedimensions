@@ -44,5 +44,29 @@
     "sounds": [
       "extremedimensions:collapse"
     ]
+  },
+  "lurker_whisper": {
+    "subtitle": "subtitles.extremedimensions.lurker_whisper",
+    "sounds": [
+      "extremedimensions:lurker_whisper"
+    ]
+  },
+  "lurker_take": {
+    "subtitle": "subtitles.extremedimensions.lurker_take",
+    "sounds": [
+      "extremedimensions:lurker_take"
+    ]
+  },
+  "lurker_drain": {
+    "subtitle": "subtitles.extremedimensions.lurker_drain",
+    "sounds": [
+      "extremedimensions:lurker_drain"
+    ]
+  },
+  "lurker_vanish": {
+    "subtitle": "subtitles.extremedimensions.lurker_vanish",
+    "sounds": [
+      "extremedimensions:lurker_vanish"
+    ]
   }
 }

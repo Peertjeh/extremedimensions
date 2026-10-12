@@ -24,6 +24,9 @@ public final class Advancements {
 	public static final String MARKED = "marked";
 	public static final String MENDED = "mended";
 	public static final String JOURNAL_COMPLETE = "journal_complete";
+	public static final String WATCHED = "watched";
+	public static final String ROBBED = "robbed";
+	public static final String HUNTED = "hunted";
 
 	/** Expeditions needed for {@link #VETERAN}. */
 	public static final int VETERAN_EXPEDITIONS = 10;

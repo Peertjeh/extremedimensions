@@ -103,6 +103,26 @@ public final class Config {
 	/** Fragment chance for Wither Skeletons, Endermen, Blazes, Ghasts and Shulkers. */
 	public static double FRAGMENT_CHANCE_ELITE = 0.12;
 
+	// --- The Lurker ------------------------------------------------------------------------------
+
+	/** 1 = Lurkers appear, 0 = never. */
+	public static int LURKER_ENABLED = 1;
+	/** Chance per player every 20 seconds that a Lurker appears (Overworld and Nether). */
+	public static double LURKER_SPAWN_CHANCE = 0.03;
+	/** Chance that an appearance in the Overworld is a Lurker draining a nearby charged anchor. */
+	public static double LURKER_DRAIN_CHANCE = 0.35;
+	/** Chance that a watching Lurker comes closer to take something instead of leaving. */
+	public static double LURKER_STALK_CHANCE = 0.3;
+	public static int LURKER_WATCH_MIN = 30;
+	public static int LURKER_WATCH_MAX = 90;
+	/** Charge drained per second while a Lurker drinks an anchor, and for how long at most. */
+	public static double LURKER_DRAIN_PER_SECOND = 20.0;
+	public static int LURKER_DRAIN_SECONDS = 20;
+	/** Share of the player's levels a Lurker takes. */
+	public static double LURKER_XP_FRACTION = 0.3;
+	/** Seconds a Lurker lingers with its loot; kill it in time to get the loot back. */
+	public static int LURKER_FLEE_SECONDS = 25;
+
 	// --- Technical -------------------------------------------------------------------------------
 
 	/** Ticks between state updates sent to each player. */

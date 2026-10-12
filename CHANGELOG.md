@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.1.0: The Lurker
+
+*It sees. It waits. It takes.*
+
+### Added
+- **The Lurker**, a new mob: a member of an ancient tribe that watches you from the treetops, the ridges and the far
+  bank of the lava. Appears rarely, day or night, in the Overworld and the Nether.
+  - **Watching:** stands on high ground 24-40 blocks away and stares. Come too close or stare back too long and it is gone.
+  - **Stalking:** sometimes it comes closer, but only while you are not looking.
+  - **Taking:** it steals an item, part of your experience or a piece of armour, or lays a **curse** (one random
+    penalty, forced). Then it waits at a distance: kill it in time to get your loot back.
+  - **Draining:** it appears beside a charged anchor, holds the anchor's light in its arms with its jaw open and
+    trembling, and drinks the anchor dry while the light streams into it. Come close to interrupt it.
+- Own texture (cloak and mask, violet eyes), four new sounds, a new journal page (*XVI. The Tribe*) and three
+  advancements (*It Sees*, *It Takes*, *Take It Back*).
+- `/tether lurker <watch|stalk|drain>` for operators.
+- Lurker settings in `config/extremedimensions.json`.
+
 ## 1.0.0: The Professional Pass
 
 ### Added

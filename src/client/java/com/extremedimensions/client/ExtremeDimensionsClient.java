@@ -5,6 +5,7 @@ import java.util.HashSet;
 
 import com.extremedimensions.ExtremeDimensions;
 import com.extremedimensions.client.audio.MenuMusic;
+import com.extremedimensions.client.entity.LurkerRenderer;
 import com.extremedimensions.client.hud.ChargeHud;
 import com.extremedimensions.client.inventory.TetherMarks;
 import com.extremedimensions.client.screen.JournalScreen;
@@ -14,6 +15,7 @@ import com.extremedimensions.client.state.ClientState;
 import com.extremedimensions.client.title.TitleArt;
 import com.extremedimensions.client.tooltip.Tooltips;
 import com.extremedimensions.network.ModPackets;
+import com.extremedimensions.registry.ModEntities;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.DeathScreen;
@@ -24,6 +26,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 
@@ -52,6 +55,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ClientState::reset));
 		HudElementRegistry.addLast(ExtremeDimensions.id("charge_hud"), new ChargeHud());
 		Tooltips.register();
+		EntityRendererRegistry.register(ModEntities.LURKER, LurkerRenderer::new);
 
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.StatePayload.TYPE, (payload, context) ->
 				context.client().execute(() -> ClientState.apply(payload)));

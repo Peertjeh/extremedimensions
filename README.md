@@ -49,6 +49,14 @@ Hollow Heart, Leaden Steps, Gnawing, Dull Pick, Deep Dread, Ill Luck and Tithe.
 **Tether Fragments** occasionally drop from hostile mobs beyond the wound (4%, elites 12%). Offer one to an anchor to
 mend your longest-running mark.
 
+## The Lurker
+
+*It sees. It waits. It takes.* An ancient tribe, bound to the shadows between dimensions, keeps watch over you.
+A Lurker appears rarely, day or night, in the Overworld and the Nether, always at a distance and on high ground.
+Usually it only watches. Sometimes it creeps closer while you are not looking and takes something: an item,
+experience, a piece of armour, or it lays a curse (a random penalty). Kill it before it vanishes to get your loot back.
+Lurkers also drain charged anchors: catch one holding your anchor's light and chase it off.
+
 ## Multiplayer
 
 Every player has their **own time**. What you put into an anchor is yours, even when you share anchors with friends.
@@ -57,8 +65,8 @@ If one player dies beyond the wound, only *their* time is lost; everyone else ca
 ## Lore and discovery
 
 The mod tells you very little up front. You start with the **Tether Journal**, the account of a nameless Wanderer.
-Fifteen pages surface as you play: your first anchor, the Ember Deep, the Pale Void, the Starved, the Weavers and more.
-A tree of **12 advancements** charts your progress, and the title screen whispers things nobody remembers writing.
+Sixteen pages surface as you play: your first anchor, the Ember Deep, the Pale Void, the Starved, the Weavers and more.
+A tree of **15 advancements** charts your progress, and the title screen whispers things nobody remembers writing.
 
 ## Fuel
 
@@ -83,11 +91,12 @@ Each player can store up to 30 minutes per anchor. Fuel values show in item tool
 | Anchor status | Sneak + right click with an empty hand |
 | Mend a mark | Right click an anchor with a Tether Fragment |
 | Read the journal | Use the Tether Journal |
+| Summon a Lurker (operators) | `/tether lurker <watch|stalk|drain>` |
 
 ## Installation
 
 1. Install **Fabric Loader 0.19.5+** for **Minecraft 26.3** (Java 25).
-2. Add **Fabric API 0.162.0+** and `extremedimensions-1.0.0.jar` to your `mods` folder.
+2. Add **Fabric API 0.162.0+** and `extremedimensions-1.1.0.jar` to your `mods` folder.
 3. Install it on the server **and** every client.
 
 Play a normal Survival world. Vanilla Hardcore turns you into a spectator on death, which this mod is designed to avoid.
@@ -114,6 +123,7 @@ The jar ends up in `build/libs/`. CI builds every push; download the jar from th
 | `tether` | The physical chain on the ground |
 | `penalty` | Penalty definitions, choosing, effects, wearing off, mending |
 | `journal` | Journal pages |
+| `lurker` | The Lurker: entity and behaviour |
 | `progression` | Advancements |
 | `network` | Payloads and state sync |
 | `data` | Per-world persistence |

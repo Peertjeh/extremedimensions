@@ -36,6 +36,7 @@ public class ChargeHud implements HudElement {
 		if (ClientState.depositAt > 0 && dt < 1300) {
 			deposit(g, w, h, dt, ClientState.depositKind == 1 ? Ui.EMBER : ClientState.depositKind == 2 ? Ui.VOID : Ui.SOUL);
 		}
+		taken(g, w, h, now);
 		collapse(g, font, w, h, now);
 	}
 
@@ -273,6 +274,27 @@ public class ChargeHud implements HudElement {
 			int sx = (int) (Ui.hash(i * 31L + 9) * w);
 			int sy = (int) (h - life * h * 0.8);
 			g.fill(sx, sy, sx + 2, sy + 2, Ui.argb((int) (Math.sin(life * Math.PI) * 160 * (1 - e)), i % 3 == 0 ? 0xFFFFFF : Ui.SOUL));
+		}
+	}
+
+	/** A Lurker took something: the edges of vision blacken like spilled ink and violet static shivers through. */
+	private static void taken(GuiGraphicsExtractor g, int w, int h, long now) {
+		long tt = now - ClientState.takenAt;
+		if (ClientState.takenAt <= 0 || tt >= 1800) {
+			return;
+		}
+		double t = tt / 1800.0;
+		double in = Ui.ease(tt / 180.0);
+		int a = (int) (190 * in * (1 - t));
+		Ui.vignette(g, w, h, 0x07000C, a / 4, 10);
+		Ui.vignette(g, w, h, Ui.VOID, a / 10, 5);
+		long bucket = now / 50;
+		for (int i = 0; i < 10; i++) {
+			int by = (int) (Ui.hash(bucket * 13 + i) * h);
+			int bh = 1 + (int) (Ui.hash(bucket * 7 + i * 5) * 3);
+			int bw = (int) (Ui.hash(bucket * 3 + i) * w * 0.6);
+			int bx = (int) (Ui.hash(bucket * 11 + i * 2) * (w - bw));
+			g.fill(bx, by, bx + bw, by + bh, Ui.argb((int) (90 * (1 - t)), i % 2 == 0 ? Ui.VOID : 0x000000));
 		}
 	}
 

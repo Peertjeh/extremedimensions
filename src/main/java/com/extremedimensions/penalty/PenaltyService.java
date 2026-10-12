@@ -54,6 +54,39 @@ public final class PenaltyService {
 			d.owed.remove(0);
 		}
 
+		inflict(p, d, pen);
+		WorldFx.fx(p, Fx.PENALTY, 0);
+		WorldFx.particles(p, "minecraft:soul", 1.0, 0.5, 0.05, 25);
+		WorldFx.particles(p, "minecraft:sculk_soul", 1.2, 0.6, 0.03, 12);
+		WorldFx.soundSelf(p, "extremedimensions:penalty", 1.0f, 1.0f);
+		Journal.unlock(p, d, JournalEntry.SCARS);
+		Advancements.grant(p, Advancements.MARKED);
+
+		// More owed (several deaths in a row)? The next screen follows.
+		if (d.pendingPenalties > 0) {
+			if (d.owed.isEmpty()) {
+				d.owed.add(BEYOND);
+			}
+			d.pendingOffer = Penalty.rollOffer(OVERWORLD.equals(d.owed.get(0)));
+			d.offerDelay = 40;
+		}
+		Sync.state(p, d);
+		DataStore.save();
+	}
+
+	/** A curse: one random penalty from the given set, forced on the player without a choice. Returns it. */
+	public static Penalty curse(ServerPlayer p, boolean overworld) {
+		PlayerData d = DataStore.get(p.getUUID());
+		Penalty pen = Penalty.byId(Penalty.rollOffer(overworld).get(0));
+		inflict(p, d, pen);
+		WorldFx.fx(p, Fx.PENALTY, 0);
+		Sync.state(p, d);
+		DataStore.save();
+		return pen;
+	}
+
+	/** Applies a penalty's effect (one stack). */
+	private static void inflict(ServerPlayer p, PlayerData d, Penalty pen) {
 		if (pen.timed) {
 			d.addStack(pen);
 			applyEffects(p, d);
@@ -72,24 +105,6 @@ public final class PenaltyService {
 				default -> { }
 			}
 		}
-
-		WorldFx.fx(p, Fx.PENALTY, 0);
-		WorldFx.particles(p, "minecraft:soul", 1.0, 0.5, 0.05, 25);
-		WorldFx.particles(p, "minecraft:sculk_soul", 1.2, 0.6, 0.03, 12);
-		WorldFx.soundSelf(p, "extremedimensions:penalty", 1.0f, 1.0f);
-		Journal.unlock(p, d, JournalEntry.SCARS);
-		Advancements.grant(p, Advancements.MARKED);
-
-		// More owed (several deaths in a row)? The next screen follows.
-		if (d.pendingPenalties > 0) {
-			if (d.owed.isEmpty()) {
-				d.owed.add(BEYOND);
-			}
-			d.pendingOffer = Penalty.rollOffer(OVERWORLD.equals(d.owed.get(0)));
-			d.offerDelay = 40;
-		}
-		Sync.state(p, d);
-		DataStore.save();
 	}
 
 	/** A Tether Fragment offered to an anchor removes the longest-running stack (or a Leaky Tank, or XP debt). */

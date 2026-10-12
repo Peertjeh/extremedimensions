@@ -42,6 +42,8 @@ public final class ClientState {
 	/** Dimension the Collapse happened in (1 = Nether, 2 = End) and when the player arrived home after it. */
 	public static int collapseDim = 1;
 	public static long homeAt = 0;
+	/** A Lurker took something. */
+	public static long takenAt = 0;
 	public static long bounceAt = 0;
 	public static long penaltyAt = 0;
 	public static long endedAt = 0;
@@ -132,6 +134,7 @@ public final class ClientState {
 			case 8 -> penaltyAt = now;
 			case 9 -> endedAt = now;
 			case 10 -> { depositAt = now; depositKind = 3; }
+			case 11 -> takenAt = now;
 			default -> { }
 		}
 	}
@@ -162,7 +165,7 @@ public final class ClientState {
 		tetherDist = -1;
 		shownNether = 0;
 		shownEnd = 0;
-		startAt = safeAt = collapseAt = bounceAt = penaltyAt = endedAt = homeAt = 0;
+		startAt = safeAt = collapseAt = bounceAt = penaltyAt = endedAt = homeAt = takenAt = 0;
 		netherFlashAt = endFlashAt = netherGainAt = endGainAt = depositAt = 0;
 	}
 }

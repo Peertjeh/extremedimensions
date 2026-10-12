@@ -15,6 +15,10 @@ public final class ModSounds {
 	public static final SoundEvent PORTAL_BEYOND = register("portal_beyond");
 	public static final SoundEvent PORTAL_HOME = register("portal_home");
 	public static final SoundEvent COLLAPSE = register("collapse");
+	public static final SoundEvent LURKER_WHISPER = register("lurker_whisper");
+	public static final SoundEvent LURKER_TAKE = register("lurker_take");
+	public static final SoundEvent LURKER_DRAIN = register("lurker_drain");
+	public static final SoundEvent LURKER_VANISH = register("lurker_vanish");
 	public static final SoundEvent MUSIC_MENU_1 = register("music.menu_1");
 	public static final SoundEvent MUSIC_MENU_2 = register("music.menu_2");
 

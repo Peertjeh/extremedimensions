@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:robbed",
+  "display": {
+    "icon": {
+      "id": "minecraft:netherite_sword"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.hunted.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.hunted.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
