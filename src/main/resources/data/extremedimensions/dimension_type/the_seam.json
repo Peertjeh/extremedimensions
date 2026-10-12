@@ -20,10 +20,10 @@
       "can_sleep": "never",
       "destroy_on_use": true
     },
-    "minecraft:visual/ambient_light_color": "#2c4a47",
-    "minecraft:visual/fog_color": "#0f2224",
-    "minecraft:visual/sky_color": "#05100f",
-    "minecraft:visual/sky_light_color": "#6fe3d0",
+    "minecraft:visual/ambient_light_color": "#3b2d63",
+    "minecraft:visual/fog_color": "#2a1c4a",
+    "minecraft:visual/sky_color": "#0d0922",
+    "minecraft:visual/sky_light_color": "#b9a0ff",
     "minecraft:visual/sky_light_factor": 0.0
   },
   "coordinate_scale": 1.0,

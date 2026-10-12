@@ -16,12 +16,12 @@
       },
       "modifier": "overlay"
     },
-    "minecraft:visual/sky_color": "#05100f"
+    "minecraft:visual/sky_color": "#0d0922"
   },
   "carvers": [],
   "downfall": 0.0,
   "effects": {
-    "water_color": "#4fb8a8"
+    "water_color": "#8a6cff"
   },
   "features": [],
   "has_precipitation": false,

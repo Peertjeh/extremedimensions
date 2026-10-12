@@ -1,0 +1,12 @@
+{
+	"required": false,
+	"minVersion": "0.8",
+	"package": "com.extremedimensions.client.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"SkyRendererMixin"
+	],
+	"injectors": {
+		"defaultRequire": 0
+	}
+}

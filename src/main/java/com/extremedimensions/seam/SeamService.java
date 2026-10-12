@@ -3,9 +3,11 @@ package com.extremedimensions.seam;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.extremedimensions.ExtremeDimensions;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
@@ -60,7 +62,7 @@ public final class SeamService {
 
 	public static final ResourceKey<Level> SEAM = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("extremedimensions", "the_seam"));
 	private static final String SEAM_ID = "extremedimensions:the_seam";
-	private static final int CELL = 34;
+	private static final int CELL = 72;
 	private static final int PULL_TICKS = 60;
 
 	/** A rift torn open in the world, waiting for someone to step in. */
@@ -74,6 +76,8 @@ public final class SeamService {
 
 	public static void clear() {
 		RIFTS.clear();
+		SeamArchitect.clear();
+		falls = null;
 	}
 
 	public static boolean inSeam(ServerPlayer p) {
@@ -164,7 +168,18 @@ public final class SeamService {
 			z = a[1];
 		}
 		int top = 96;
-		island(seam, x, top, z, 11, 0, true);
+		SeamArchitect.Plan arrival = new SeamArchitect.Plan();
+		Random rnd = new Random(x * 31L + z);
+		SeamArchitect.island(arrival, rnd, x, top, z, 11, true);
+		SeamArchitect.lamp(arrival, rnd, x - 3, top + 1, z - 3);
+		arrival.placeNow(seam);
+		for (int dx = -1; dx <= 5; dx++) {
+			for (int dz = -1; dz <= 1; dz++) {
+				// the landing and the rift stand clear
+				seam.setBlock(new BlockPos(x + dx, top + 1, z + dz), Blocks.AIR.defaultBlockState(), 2);
+			}
+		}
+		addFalls(arrival.falls);
 		DataStore.seamCells().add("a@" + x + "," + z);
 		d.riftX = x + 3.5;
 		d.riftY = top + 1;
@@ -186,6 +201,13 @@ public final class SeamService {
 
 	public static void tick(MinecraftServer s) {
 		tickRifts();
+		ServerLevel level = s.getLevel(SEAM);
+		if (level != null) {
+			if (SeamArchitect.pending() > 0) {
+				SeamArchitect.tick(level, 4000);
+			}
+			lights(level, s.getTickCount());
+		}
 		boolean slow = s.getTickCount() % 20 == 0;
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
 			PlayerData d = DataStore.get(p.getUUID());
@@ -319,222 +341,232 @@ public final class SeamService {
 		return seam().getSeed();
 	}
 
+	private static final int PLAIN = 0, LOOM = 1, VILLAGE = 2, SPIRE = 3, HANGING = 4, HALO = 5;
+
+	private static int kind(int type) {
+		return type < 7 ? PLAIN : type < 10 ? LOOM : type < 13 ? VILLAGE : type < 16 ? SPIRE : type < 18 ? HANGING : HALO;
+	}
+
+	/** The island of a cell: x, top, z, radius, type. */
 	private static int[] center(int cx, int cz) {
 		long h = hash(cx, cz, seed());
-		int x = cx * CELL + CELL / 2 + (int) (h % 9) - 4;
-		int z = cz * CELL + CELL / 2 + (int) ((h >> 8) % 9) - 4;
-		int top = 90 + (int) ((h >> 16) % 13);
-		int r = 7 + (int) ((h >> 24) % 8);
-		int type = (int) ((h >> 32) % 10);
+		int type = (int) ((h >> 32) % 20);
+		int x = cx * CELL + CELL / 2 + (int) (h % 13) - 6;
+		int z = cz * CELL + CELL / 2 + (int) ((h >> 8) % 13) - 6;
+		int top = 76 + (int) ((h >> 16) % 30);
+		int v = (int) ((h >> 24) % 5);
+		int r = switch (kind(type)) {
+			case SPIRE -> 19 + v;
+			case VILLAGE -> 16 + v;
+			case LOOM -> 15 + v;
+			case HANGING -> 10 + v;
+			case HALO -> 11 + v;
+			default -> 8 + (int) ((h >> 24) % 8);
+		};
 		return new int[] {x, top, z, r, type};
 	}
 
-	/** Builds the islands of the cells around the player, a couple at a time. */
-	private static void build(ServerPlayer p) {
-		ServerLevel seam = (ServerLevel) p.level();
-		int pcx = Math.floorDiv(p.getBlockX(), CELL);
-		int pcz = Math.floorDiv(p.getBlockZ(), CELL);
-		int built = 0;
-		for (int dx = -2; dx <= 2 && built < 2; dx++) {
-			for (int dz = -2; dz <= 2 && built < 2; dz++) {
-				int cx = pcx + dx, cz = pcz + dz;
-				String key = cx + "," + cz;
-				if (DataStore.seamCells().contains(key)) {
-					continue;
+	/** Cells around the Heart are left to its crown. */
+	private static boolean nearHeart(int[] c) {
+		double dx = c[0] - MendingService.HX, dz = c[2] - MendingService.HZ;
+		return dx * dx + dz * dz < 84 * 84;
+	}
+
+	/** True when a rift's arrival island lies within {@code dist} of this point. */
+	private static boolean nearArrival(int x, int z, int dist) {
+		for (String key : DataStore.seamCells()) {
+			if (key.startsWith("a@")) {
+				String[] xz = key.substring(2).split(",");
+				double dx = Integer.parseInt(xz[0]) - x, dz = Integer.parseInt(xz[1]) - z;
+				if (dx * dx + dz * dz < (double) dist * dist) {
+					return true;
 				}
-				DataStore.seamCells().add(key);
-				int[] c = center(cx, cz);
-				island(seam, c[0], c[1], c[2], c[3], c[4], false);
-				bridge(seam, c, center(cx + 1, cz));
-				bridge(seam, c, center(cx, cz + 1));
-				built++;
 			}
 		}
+		return false;
+	}
+
+	/** Designs the cells around the player, nearest first, one per call; the architect builds them over time. */
+	private static void build(ServerPlayer p) {
+		if (SeamArchitect.pending() > 150_000) {
+			return;
+		}
+		int pcx = Math.floorDiv(p.getBlockX(), CELL);
+		int pcz = Math.floorDiv(p.getBlockZ(), CELL);
+		for (int ring = 0; ring <= 2; ring++) {
+			for (int dx = -ring; dx <= ring; dx++) {
+				for (int dz = -ring; dz <= ring; dz++) {
+					if (Math.max(Math.abs(dx), Math.abs(dz)) != ring) {
+						continue;
+					}
+					int cx = pcx + dx, cz = pcz + dz;
+					String key = "c@" + cx + "," + cz;
+					if (DataStore.seamCells().contains(key)) {
+						continue;
+					}
+					DataStore.seamCells().add(key);
+					design(cx, cz);
+					return;
+				}
+			}
+		}
+	}
+
+	private static void design(int cx, int cz) {
+		int[] c = center(cx, cz);
+		if (nearHeart(c)) {
+			return;
+		}
+		Random rnd = new Random(hash(cx, cz, seed() + 7));
+		SeamArchitect.Plan plan = new SeamArchitect.Plan();
+		int x = c[0], top = c[1], z = c[2], r = c[3];
+		if (nearArrival(x, z, r + 12)) {
+			r = Math.min(r, 9);
+		}
+		int kind = nearArrival(x, z, r + 30) ? PLAIN : kind(c[4]);
+		int depth = SeamArchitect.island(plan, rnd, x, top, z, r, true);
+		switch (kind) {
+			case SPIRE -> SeamArchitect.spire(plan, rnd, x, top, z, r);
+			case LOOM -> SeamArchitect.loom(plan, rnd, x, top, z, r);
+			case VILLAGE -> {
+				SeamArchitect.village(plan, rnd, x, top, z, r);
+				DataStore.seamCells().add("v@" + x + "," + top + "," + z);
+			}
+			case HANGING -> {
+				SeamArchitect.hangingTower(plan, rnd, x, top - depth, z);
+				SeamArchitect.plain(plan, rnd, x, top, z, r);
+			}
+			case HALO -> SeamArchitect.halo(plan, rnd, x, top, z, r);
+			default -> SeamArchitect.plain(plan, rnd, x, top, z, r);
+		}
+		int[] east = center(cx + 1, cz), south = center(cx, cz + 1);
+		if ((hash(cx, cz, seed() + 11) & 3) != 0 && !nearHeart(east)) {
+			SeamArchitect.bridge(plan, rnd, c, east);
+		}
+		if ((hash(cx, cz, seed() + 13) & 3) != 0 && !nearHeart(south)) {
+			SeamArchitect.bridge(plan, rnd, c, south);
+		}
+		plan.queue();
+		addFalls(plan.falls);
 	}
 
 	/**
-	 * One floating island: a wobbly disc of hush stone with a hanging, tapering underside threaded with silk veins.
-	 * Type 0-5 plain, 6-7 a Weaver loom, 8-9 a village of the Thinned (on big islands).
+	 * Operator showcase: designs one of every kind of structure in a row of cells far from everything (x = 40..45
+	 * cells), so they can be visited with a teleport. Returns how many were designed.
 	 */
-	private static void island(ServerLevel level, int cx, int top, int cz, int r, int type, boolean arrival) {
-		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		BlockState stone = ModBlocks.HUSH_STONE.defaultBlockState();
-		BlockState vein = ModBlocks.SEAM_VEIN.defaultBlockState();
-		double p1 = rnd.nextDouble() * 6.28, p2 = rnd.nextDouble() * 6.28;
-		for (int dx = -r - 3; dx <= r + 3; dx++) {
-			for (int dz = -r - 3; dz <= r + 3; dz++) {
-				double ang = Math.atan2(dz, dx);
-				double edge = r * (0.85 + 0.12 * Math.sin(ang * 3 + p1) + 0.08 * Math.sin(ang * 5 + p2));
-				double dist = Math.sqrt(dx * dx + dz * dz);
-				if (dist > edge) {
-					continue;
-				}
-				double f = 1 - dist / edge;
-				int depth = 2 + (int) Math.round(Math.pow(f, 0.7) * r * 0.9) + rnd.nextInt(2);
-				int bump = f > 0.5 && rnd.nextInt(9) == 0 ? 1 : 0;
-				for (int y = top - depth; y <= top + bump; y++) {
-					boolean inner = y < top - 1;
-					level.setBlock(new BlockPos(cx + dx, y, cz + dz), inner && rnd.nextInt(type == 6 || type == 7 ? 9 : 22) == 0 ? vein : stone, 2);
+	public static int showcase(MinecraftServer s) {
+		if (s.getLevel(SEAM) == null) {
+			return 0;
+		}
+		int n = 0;
+		int[] kinds = {SPIRE, LOOM, VILLAGE, HANGING, HALO, PLAIN};
+		for (int i = 0; i < kinds.length; i++) {
+			int cx = 40 + i, cz = 40;
+			DataStore.seamCells().add("c@" + cx + "," + cz);
+			Random rnd = new Random(hash(cx, cz, 99));
+			int x = cx * CELL + CELL / 2, z = cz * CELL + CELL / 2, top = 90;
+			int r = switch (kinds[i]) { case SPIRE -> 21; case VILLAGE -> 18; case LOOM -> 17; case HANGING -> 12; case HALO -> 13; default -> 12; };
+			SeamArchitect.Plan plan = new SeamArchitect.Plan();
+			int depth = SeamArchitect.island(plan, rnd, x, top, z, r, true);
+			switch (kinds[i]) {
+				case SPIRE -> SeamArchitect.spire(plan, rnd, x, top, z, r);
+				case LOOM -> SeamArchitect.loom(plan, rnd, x, top, z, r);
+				case VILLAGE -> SeamArchitect.village(plan, rnd, x, top, z, r);
+				case HANGING -> SeamArchitect.hangingTower(plan, rnd, x, top - depth, z);
+				case HALO -> SeamArchitect.halo(plan, rnd, x, top, z, r);
+				default -> SeamArchitect.plain(plan, rnd, x, top, z, r);
+			}
+			if (i > 0) {
+				SeamArchitect.bridge(plan, rnd, new int[] {x - CELL, top, z, 18}, new int[] {x, top, z, r});
+			}
+			plan.queue();
+			addFalls(plan.falls);
+			n++;
+		}
+		ExtremeDimensions.LOGGER.info("Seam showcase: {} structures, {} blocks queued at x={}..{} z={}", n, SeamArchitect.pending(),
+				40 * CELL, 46 * CELL, 40 * CELL + CELL / 2);
+		return n;
+	}
+
+	// ------------------------------------------------------------------ light falls, the heart beam
+
+	private static List<int[]> falls;
+
+	private static List<int[]> falls() {
+		if (falls == null) {
+			falls = new ArrayList<>();
+			for (String key : DataStore.seamCells()) {
+				if (key.startsWith("f@")) {
+					String[] v = key.substring(2).split(",");
+					falls.add(new int[] {Integer.parseInt(v[0]), Integer.parseInt(v[1]), Integer.parseInt(v[2]), Integer.parseInt(v[3])});
 				}
 			}
 		}
-		if (arrival) {
-			lantern(level, cx + 2, top + 1, cz - 2);
+		return falls;
+	}
+
+	public static void addFalls(List<int[]> list) {
+		for (int[] f : list) {
+			DataStore.seamCells().add("f@" + f[0] + "," + f[1] + "," + f[2] + "," + f[3]);
+			falls().add(f);
+		}
+	}
+
+	/** Light pouring off island edges, and the beam over the Heart, seen from far away. */
+	private static void lights(ServerLevel level, int tick) {
+		List<ServerPlayer> players = level.players();
+		if (players.isEmpty()) {
 			return;
 		}
-		if (type >= 8 && r >= 10) {
-			village(level, cx, top, cz, r);
-		} else if (type >= 6) {
-			loom(level, cx, top, cz, r);
-		} else {
-			for (int i = 0; i < 1 + rnd.nextInt(3); i++) {
-				int dx = rnd.nextInt(-r / 2, r / 2 + 1), dz = rnd.nextInt(-r / 2, r / 2 + 1);
-				if (rnd.nextBoolean()) {
-					lantern(level, cx + dx, surface(level, cx + dx, top, cz + dz), cz + dz);
-				} else {
-					place(level, new BlockPos(cx + dx, surface(level, cx + dx, top, cz + dz), cz + dz), Blocks.COBWEB.defaultBlockState());
-				}
-			}
-		}
-	}
-
-	private static int surface(ServerLevel level, int x, int top, int z) {
-		for (int y = top + 3; y > top - 4; y--) {
-			if (!level.getBlockState(new BlockPos(x, y - 1, z)).isAir()) {
-				return y;
-			}
-		}
-		return top + 1;
-	}
-
-	private static void place(ServerLevel level, BlockPos p, BlockState s) {
-		if (level.getBlockState(p).isAir() && !level.getBlockState(p.below()).isAir()) {
-			level.setBlock(p, s, 2);
-		}
-	}
-
-	/** A soul lantern on a crooked post. */
-	private static void lantern(ServerLevel level, int x, int y, int z) {
-		int h = 1 + ThreadLocalRandom.current().nextInt(2);
-		for (int k = 0; k < h; k++) {
-			level.setBlock(new BlockPos(x, y + k, z), Blocks.DARK_OAK_FENCE.defaultBlockState(), 3);
-		}
-		level.setBlock(new BlockPos(x, y + h, z), Blocks.SOUL_LANTERN.defaultBlockState(), 3);
-	}
-
-	/** A Weaver loom: tall pillars of hush brick, strung together with strands of silk. */
-	private static void loom(ServerLevel level, int cx, int top, int cz, int r) {
-		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		int n = 2 + rnd.nextInt(3);
-		List<int[]> tops = new ArrayList<>();
-		double a0 = rnd.nextDouble() * 6.28;
-		for (int i = 0; i < n; i++) {
-			double a = a0 + i * 6.28 / n;
-			int x = cx + (int) Math.round(Math.cos(a) * r * 0.55);
-			int z = cz + (int) Math.round(Math.sin(a) * r * 0.55);
-			int y0 = surface(level, x, top, z);
-			int h = 7 + rnd.nextInt(7);
-			for (int k = 0; k < h; k++) {
-				level.setBlock(new BlockPos(x, y0 + k, z), (k % 4 == 3 ? ModBlocks.SEAM_VEIN : ModBlocks.HUSH_BRICKS).defaultBlockState(), 2);
-			}
-			tops.add(new int[] {x, y0 + h - 1, z});
-		}
-		for (int i = 0; i < tops.size(); i++) {
-			int[] a = tops.get(i), b = tops.get((i + 1) % tops.size());
-			strand(level, a, b);
-		}
-	}
-
-	/** A sagging strand of silk (cobweb and glowing seam vein) between two points. */
-	private static void strand(ServerLevel level, int[] a, int[] b) {
-		int steps = (int) Math.ceil(Math.sqrt(Math.pow(b[0] - a[0], 2) + Math.pow(b[2] - a[2], 2))) + 1;
-		for (int i = 1; i < steps; i++) {
-			double t = (double) i / steps;
-			double sag = Math.sin(t * Math.PI) * steps * 0.15;
-			BlockPos p = BlockPos.containing(a[0] + (b[0] - a[0]) * t + 0.5, a[1] + (b[1] - a[1]) * t - sag, a[2] + (b[2] - a[2]) * t + 0.5);
-			if (level.getBlockState(p).isAir()) {
-				level.setBlock(p, (i % 3 == 0 ? ModBlocks.SEAM_VEIN : Blocks.COBWEB).defaultBlockState(), 2);
-			}
-		}
-	}
-
-	/** A village of the Thinned: low huts of hush brick and a field of graves. */
-	private static void village(ServerLevel level, int cx, int top, int cz, int r) {
-		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		int huts = 2 + rnd.nextInt(2);
-		double a0 = rnd.nextDouble() * 6.28;
-		for (int i = 0; i < huts; i++) {
-			double a = a0 + i * 6.28 / huts;
-			hut(level, cx + (int) Math.round(Math.cos(a) * r * 0.45), top + 1, cz + (int) Math.round(Math.sin(a) * r * 0.45), i == 0);
-		}
-		for (int i = 0; i < 4 + rnd.nextInt(3); i++) {
-			int x = cx + rnd.nextInt(-2, 3), z = cz + rnd.nextInt(-2, 3);
-			int y = surface(level, x, top, z);
-			if (!level.getBlockState(new BlockPos(x, y, z)).isAir()) {
-				continue;
-			}
-			level.setBlock(new BlockPos(x, y, z), ModBlocks.HUSH_STONE.defaultBlockState(), 2);
-			level.setBlock(new BlockPos(x, y + 1, z), Blocks.SKELETON_SKULL.defaultBlockState(), 2);
-			BuiltInRegistries.BLOCK.get(Identifier.fromNamespaceAndPath("minecraft", "candle")).ifPresent(c ->
-					place(level, new BlockPos(x + 1, y, z), c.value().defaultBlockState()));
-		}
-		DataStore.seamCells().add("v@" + cx + "," + top + "," + cz);
-	}
-
-	private static void hut(ServerLevel level, int x0, int y0, int z0, boolean withLore) {
-		BlockState wall = ModBlocks.HUSH_BRICKS.defaultBlockState();
-		for (int dx = -2; dx <= 2; dx++) {
-			for (int dz = -2; dz <= 2; dz++) {
-				boolean edge = Math.abs(dx) == 2 || Math.abs(dz) == 2;
-				for (int dy = 0; dy < 4; dy++) {
-					BlockPos p = new BlockPos(x0 + dx, y0 + dy, z0 + dz);
-					boolean door = dz == 2 && dx == 0 && dy < 2;
-					boolean window = edge && dy == 1 && (dx == 0 || dz == 0) && !door;
-					if (dy == 3) {
-						level.setBlock(p, wall, 2);
-					} else if (edge && !door && !window) {
-						level.setBlock(p, wall, 2);
-					} else {
-						level.setBlock(p, Blocks.AIR.defaultBlockState(), 2);
+		if (tick % 8 == 0) {
+			for (int[] f : falls()) {
+				for (ServerPlayer p : players) {
+					double dx = p.getX() - f[0], dz = p.getZ() - f[2];
+					if (dx * dx + dz * dz < 110 * 110) {
+						double half = f[3] / 2.0;
+						WorldFx.run(String.format(Locale.ROOT,
+								"execute in %s positioned %d %.1f %d run particle minecraft:end_rod ~0.5 ~ ~0.5 0.2 %.1f 0.2 0.0 5 force @a[distance=..130]",
+								SEAM_ID, f[0], f[1] - half, f[2], half * 0.6));
+						break;
 					}
 				}
-				level.setBlock(new BlockPos(x0 + dx, y0 - 1, z0 + dz), ModBlocks.HUSH_STONE.defaultBlockState(), 2);
 			}
 		}
-		if (withLore) {
-			BlockPos b = new BlockPos(x0 - 1, y0, z0 - 1);
-			level.setBlock(b, Blocks.BARREL.defaultBlockState().setValue(BarrelBlock.FACING, Direction.UP), 3);
-			if (level.getBlockEntity(b) instanceof Container c) {
-				ThreadLocalRandom rnd = ThreadLocalRandom.current();
-				int slot = 0;
-				c.setItem(slot++, new ItemStack(ModItems.SEAM_SILK, 2 + rnd.nextInt(5)));
-				if (rnd.nextDouble() < 0.6) {
-					c.setItem(slot++, new ItemStack(ModItems.WANDERERS_PAGE));
+		if (DataStore.heartBuilt() && tick % 4 == 0) {
+			for (ServerPlayer p : players) {
+				if (p.distanceToSqr(MendingService.HX, MendingService.HY, MendingService.HZ) < 200 * 200) {
+					WorldFx.run(String.format(Locale.ROOT,
+							"execute in %s positioned %d %d %d run particle minecraft:end_rod ~0.5 ~ ~0.5 0.3 18 0.3 0.0 14 force @a[distance=..220]",
+							SEAM_ID, MendingService.HX, MendingService.HY + 30, MendingService.HZ));
+					WorldFx.run(String.format(Locale.ROOT,
+							"execute in %s positioned %d %d %d run particle minecraft:reverse_portal ~0.5 ~ ~0.5 1.2 18 1.2 0.05 18 force @a[distance=..220]",
+							SEAM_ID, MendingService.HX, MendingService.HY + 30, MendingService.HZ));
+					break;
 				}
-				if (rnd.nextDouble() < 0.35) {
-					c.setItem(slot++, new ItemStack(ModItems.TETHER_FRAGMENT));
-				}
-				Item[] old = {Items.ECHO_SHARD, Items.AMETHYST_SHARD, Items.BONE, Items.STRING, Items.SOUL_TORCH};
-				c.setItem(slot, new ItemStack(old[rnd.nextInt(old.length)], 1 + rnd.nextInt(3)));
-				c.setChanged();
 			}
 		}
-		level.setBlock(new BlockPos(x0 + 1, y0 + 2, z0 + 1), Blocks.SOUL_LANTERN.defaultBlockState(), 3);
 	}
 
-	/** A narrow causeway of hush brick between two islands, about half of the time. */
-	private static void bridge(ServerLevel level, int[] a, int[] b) {
-		if ((hash(a[0], b[2], seed()) & 1) == 0) {
+	/** Barrels of the Thinned: silk, pages, fragments and old things; richer the harder they are to reach. */
+	public static void fillLoot(ServerLevel level, BlockPos b, int richness) {
+		if (!(level.getBlockEntity(b) instanceof Container c)) {
 			return;
 		}
-		int steps = (int) Math.ceil(Math.sqrt(Math.pow(b[0] - a[0], 2) + Math.pow(b[2] - a[2], 2)));
-		for (int i = 0; i <= steps; i++) {
-			double t = (double) i / Math.max(1, steps);
-			BlockPos p = BlockPos.containing(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t);
-			if (level.getBlockState(p).isAir() && i % 7 != 4) {
-				level.setBlock(p, ModBlocks.HUSH_BRICKS.defaultBlockState(), 2);
-			}
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		int slot = 0;
+		c.setItem(slot++, new ItemStack(ModItems.SEAM_SILK, 2 + rnd.nextInt(3 + 2 * richness)));
+		if (rnd.nextDouble() < 0.35 + 0.2 * richness) {
+			c.setItem(slot++, new ItemStack(ModItems.WANDERERS_PAGE));
 		}
+		if (rnd.nextDouble() < 0.15 + 0.15 * richness) {
+			c.setItem(slot++, new ItemStack(ModItems.TETHER_FRAGMENT));
+		}
+		if (richness >= 3) {
+			c.setItem(slot++, new ItemStack(Items.ECHO_SHARD, 1 + rnd.nextInt(3)));
+		}
+		Item[] old = {Items.ECHO_SHARD, Items.AMETHYST_SHARD, Items.BONE, Items.STRING, Items.SOUL_TORCH, Items.CANDLE};
+		c.setItem(slot, new ItemStack(old[rnd.nextInt(old.length)], 1 + rnd.nextInt(3)));
+		c.setChanged();
 	}
 
 	/** Operator command: straight into the Seam, as if through a rift at the player's feet. */

@@ -5,6 +5,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.hollow.HollowService;
 import com.extremedimensions.lurker.LurkerService;
+import com.extremedimensions.seam.SeamArchitect;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.seam.SeamService;
 import com.extremedimensions.mending.MendingService;
@@ -37,6 +38,11 @@ public final class TetherCommand {
 				.then(Commands.literal("break_seal").executes(c -> {
 					MendingService.breakSeal(c.getSource().getServer());
 					return 1;
+				}))
+				.then(Commands.literal("seam_showcase").executes(c -> {
+					int n = SeamService.showcase(c.getSource().getServer());
+					c.getSource().sendSuccess(() -> Component.literal("Designed " + n + " Seam structures; building " + SeamArchitect.pending() + " blocks"), false);
+					return n;
 				}))
 				.then(Commands.literal("storm").executes(c -> {
 					WorldService.begin(c.getSource().getPlayerOrException(), c.getSource().getServer().getTickCount());

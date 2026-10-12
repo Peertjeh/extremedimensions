@@ -416,6 +416,11 @@ public final class MendingService {
 			}
 			seam.setBlock(new BlockPos(x, HY + h + 1, z), Blocks.SOUL_LANTERN.defaultBlockState(), 3);
 		}
+		// The crown: obelisks on floating plinths and a halo turning high above, built over the next seconds
+		com.extremedimensions.seam.SeamArchitect.Plan crown = new com.extremedimensions.seam.SeamArchitect.Plan();
+		com.extremedimensions.seam.SeamArchitect.crown(crown, new java.util.Random(seam.getSeed() ^ 0x4EA27L), HX, HY, HZ);
+		crown.queue();
+		SeamService.addFalls(crown.falls);
 		DataStore.setHeartBuilt(true);
 	}
 
