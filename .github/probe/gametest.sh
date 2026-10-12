@@ -26,6 +26,7 @@ timeout 1500 xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClientGameTest 
 echo "exit $?"
 grep -iE "error|exception|mixin|seam|screenshot|extremedimensions|OpenGL|GL_|vulkan|renderer" gt.log | grep -v "^\s*at " | head -120
 tail -40 gt.log
+python3 -m pip install -q --break-system-packages pillow >/dev/null 2>&1 || pip install -q pillow
 python3 - <<'P'
 import glob, base64, io, os
 from PIL import Image
