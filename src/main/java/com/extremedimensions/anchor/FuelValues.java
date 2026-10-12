@@ -27,7 +27,7 @@ public final class FuelValues {
 		NETHER.put(Items.MAGMA_BLOCK, 6.0);
 		NETHER.put(Items.FIRE_CHARGE, 12.0);
 		NETHER.put(Items.BLAZE_POWDER, 15.0);
-		NETHER.put(Items.BLAZE_ROD, 30.0);
+		NETHER.put(Items.BREEZE_ROD, 30.0);
 
 		// End: ender and echo matter.
 		END.put(Items.AMETHYST_SHARD, 3.0);

@@ -88,7 +88,7 @@ A tree of **15 advancements** charts your progress, and the title screen whisper
 | Fire Charge | 0:12 | Ender Pearl | 0:20 |
 | Blaze Powder | 0:15 | Eye of Ender | 0:45 |
 | Coal Block | 0:18 | Shulker Shell | 1:30 |
-| Blaze Rod | 0:30 | Echo Shard | 2:00 |
+| Breeze Rod | 0:30 | Echo Shard | 2:00 |
 | **Ember Tether** | 10:00 | **Void Tether** | 10:00 |
 
 Each player can store up to 30 minutes per anchor. Fuel values show in item tooltips.

@@ -18,6 +18,8 @@
 - **The world notices the Lurker first**: wolves growl, cats and ocelots hiss, foxes screech, horses shy, parrots
   mimic something they should not know, and grazing animals stop and stare in its direction.
 - **Anchors hum**: charged anchors give off a low respawn-anchor drone (Nether) or a soft amethyst chime (End).
+- **Breeze Rods** now fuel Nether anchors (0:30) in place of Blaze Rods, so blaze rods stay free for brewing and
+  Eyes of Ender.
 - **The chain clinks** quietly as it is laid (amethyst in the End), and beyond the wound a faint soul light clings to it.
 
 
