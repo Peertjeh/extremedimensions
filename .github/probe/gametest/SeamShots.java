@@ -15,7 +15,7 @@ public class SeamShots implements FabricClientGameTest {
 			ctx.waitTicks(10);
 			ctx.takeScreenshot("01_inventory");
 			ctx.setScreen(() -> null);
-			ctx.runOnClient(mc -> mc.options.renderDistance().set(12));
+			ctx.runOnClient(mc -> mc.options.renderDistance().set(9));
 			sp.getServer().runCommand("gamemode spectator @a");
 			ctx.getInput().pressKey(290);
 			sp.getServer().runCommand("tether seam_showcase");
@@ -38,7 +38,7 @@ public class SeamShots implements FabricClientGameTest {
 	private static void shot(ClientGameTestContext ctx, TestSingleplayerContext sp, String name, int x, int y, int z, float yaw, float pitch) {
 		sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute in extremedimensions:the_seam run tp @a %d %d %d %.1f %.1f", x, y, z, yaw, pitch));
 		ctx.waitTicks(30);
-		sp.getConnection().waitForChunksRender();
+		sp.getConnection().waitForChunksRender(6000);
 		ctx.waitTicks(10);
 		ctx.takeScreenshot(name);
 	}
