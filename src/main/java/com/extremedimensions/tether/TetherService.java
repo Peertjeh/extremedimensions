@@ -179,7 +179,7 @@ public final class TetherService {
 	 */
 	private static String[] look(String dim) {
 		if ("extremedimensions:the_seam".equals(dim)) {
-			return new String[] {"\"minecraft:white_wool\"", "0.06"}; // a thread of silk
+			return new String[] {"\"extremedimensions:seam_vein\"", "0.06"}; // a thread of silk
 		}
 		if ("minecraft:the_end".equals(dim)) {
 			return new String[] {"\"minecraft:amethyst_block\"", "0.09"};

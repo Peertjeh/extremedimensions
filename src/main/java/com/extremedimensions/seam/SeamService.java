@@ -438,7 +438,7 @@ public final class SeamService {
 		}
 	}
 
-	/** A sagging strand of silk (cobweb and white wool) between two points. */
+	/** A sagging strand of silk (cobweb and glowing seam vein) between two points. */
 	private static void strand(ServerLevel level, int[] a, int[] b) {
 		int steps = (int) Math.ceil(Math.sqrt(Math.pow(b[0] - a[0], 2) + Math.pow(b[2] - a[2], 2))) + 1;
 		for (int i = 1; i < steps; i++) {
@@ -446,7 +446,7 @@ public final class SeamService {
 			double sag = Math.sin(t * Math.PI) * steps * 0.15;
 			BlockPos p = BlockPos.containing(a[0] + (b[0] - a[0]) * t + 0.5, a[1] + (b[1] - a[1]) * t - sag, a[2] + (b[2] - a[2]) * t + 0.5);
 			if (level.getBlockState(p).isAir()) {
-				level.setBlock(p, (i % 3 == 0 ? Blocks.WHITE_WOOL : Blocks.COBWEB).defaultBlockState(), 2);
+				level.setBlock(p, (i % 3 == 0 ? ModBlocks.SEAM_VEIN : Blocks.COBWEB).defaultBlockState(), 2);
 			}
 		}
 	}
