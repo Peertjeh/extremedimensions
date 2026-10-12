@@ -3,10 +3,14 @@
 	"id": "extremedimensions",
 	"version": "${version}",
 	"name": "Extreme Dimensions",
-	"description": "Nether Charge & End Charge: dimensies zijn expedities met een tijdlimiet. Tijd op = Dimensional Collapse, je respawnt in de Overworld en kiest een penalty. Nooit uit het spel gegooid.",
+	"description": "Every portal is a wound. Charge anchors, bind your Tether and race the clock through the Nether and the End. Let the anchors run dry and the Starved take something of you: stacking penalties you have to play off. With lore, a journal, advancements and full multiplayer support.",
 	"authors": [
-		"Jij & vrienden"
+		"Peertjeh"
 	],
+	"contact": {
+		"sources": "https://github.com/Peertjeh/extremedimensions",
+		"issues": "https://github.com/Peertjeh/extremedimensions/issues"
+	},
 	"license": "CC0-1.0",
 	"icon": "assets/extremedimensions/icon.png",
 	"environment": "*",
@@ -22,6 +26,6 @@
 		"fabricloader": ">=0.19.5",
 		"minecraft": "~26.3",
 		"java": ">=25",
-		"fabric-api": "*"
+		"fabric-api": ">=0.162.0"
 	}
 }

@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:collapse",
+  "display": {
+    "icon": {
+      "id": "minecraft:redstone"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.marked.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.marked.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

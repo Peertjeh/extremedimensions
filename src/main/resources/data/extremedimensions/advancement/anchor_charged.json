@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:root",
+  "display": {
+    "icon": {
+      "id": "minecraft:lodestone"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.anchor_charged.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.anchor_charged.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

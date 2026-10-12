@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:bound",
+  "display": {
+    "icon": {
+      "id": "minecraft:wither_rose"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.collapse.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.collapse.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

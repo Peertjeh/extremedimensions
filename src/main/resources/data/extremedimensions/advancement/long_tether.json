@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:first_expedition",
+  "display": {
+    "icon": {
+      "id": "minecraft:iron_chain"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.long_tether.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.long_tether.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

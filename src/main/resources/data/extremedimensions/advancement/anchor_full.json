@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:anchor_charged",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:ember_tether"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.anchor_full.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.anchor_full.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}
