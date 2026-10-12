@@ -25,7 +25,9 @@ import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
@@ -269,7 +271,13 @@ public final class HollowService {
 		decorate(level, c, Blocks.COBWEB.defaultBlockState(), 2 + rnd.nextInt(2));
 		decorate(level, c, Blocks.BONE_BLOCK.defaultBlockState(), 1 + rnd.nextInt(2));
 		decorate(level, c, (nether ? Blocks.WITHER_SKELETON_SKULL : Blocks.SKELETON_SKULL).defaultBlockState(), 1);
-		decorate(level, c, Blocks.BLACK_CANDLE.defaultBlockState().setValue(CandleBlock.CANDLES, 1 + rnd.nextInt(3)), 2);
+		BuiltInRegistries.BLOCK.get(Identifier.fromNamespaceAndPath("minecraft", "black_candle")).ifPresent(candle -> {
+			BlockState cs = candle.value().defaultBlockState();
+			if (cs.hasProperty(CandleBlock.CANDLES)) {
+				cs = cs.setValue(CandleBlock.CANDLES, 1 + rnd.nextInt(3));
+			}
+			decorate(level, c, cs, 2);
+		});
 	}
 
 	private static BlockPos groundAt(ServerLevel level, BlockPos p) {
@@ -354,7 +362,7 @@ public final class HollowService {
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		List<ItemStack> out = new ArrayList<>();
 		Item[] small = {Items.IRON_NUGGET, Items.GOLD_NUGGET, Items.STRING, Items.BONE, Items.FEATHER, Items.AMETHYST_SHARD,
-				Items.TORCH, Items.SOUL_TORCH, Items.CANDLE, Items.FLINT, Items.LEATHER, Items.COPPER_INGOT};
+				Items.TORCH, Items.SOUL_TORCH, Items.FLINT, Items.LEATHER, Items.COPPER_INGOT};
 		for (int i = 0; i < 4 + rnd.nextInt(4); i++) {
 			out.add(new ItemStack(small[rnd.nextInt(small.length)], 1 + rnd.nextInt(6)));
 		}
