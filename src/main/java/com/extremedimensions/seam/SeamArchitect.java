@@ -444,9 +444,10 @@ public final class SeamArchitect {
 		for (int t = 0; t < tiers && b >= 5; t++) {
 			int h = heights[t];
 			Frame f = new Frame(p, cx, top + 1 + y, cz, base.rot);
-			// Floor (a ring once off the ground: the stair well stays open)
-			for (int lx = -b; lx <= b; lx++) {
-				for (int lz = -b; lz <= b; lz++) {
+			// Floor (a ring once off the ground: the stair well stays open), reaching out over the terrace below
+			int fl = t == 0 ? b : b + 2;
+			for (int lx = -fl; lx <= fl; lx++) {
+				for (int lz = -fl; lz <= fl; lz++) {
 					if (t == 0 || lx * lx + lz * lz > 20) {
 						f.set(lx, 0, lz, t == 0 && (lx + lz & 1) == 0 ? bsBrick() : dsPol());
 					}

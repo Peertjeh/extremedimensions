@@ -12,6 +12,7 @@ import com.extremedimensions.client.hud.ChargeHud;
 import com.extremedimensions.client.inventory.JournalButton;
 import com.extremedimensions.client.inventory.TetherMarks;
 import com.extremedimensions.client.screen.JournalScreen;
+import com.extremedimensions.client.sky.SeamSky;
 import com.extremedimensions.client.screen.PenaltyChoiceScreen;
 import com.extremedimensions.client.screen.StatusScreen;
 import com.extremedimensions.client.state.ClientState;
@@ -57,6 +58,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		});
 
 		ClientTickEvents.END_CLIENT_TICK.register(MenuMusic::tick);
+		ClientTickEvents.END_CLIENT_TICK.register(SeamSky::prepare);
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ClientState::reset));
 		HudElementRegistry.addLast(ExtremeDimensions.id("charge_hud"), new ChargeHud());
 		Tooltips.register();

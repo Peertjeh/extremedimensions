@@ -26,6 +26,7 @@ public final class SeamSky {
 	private static final Identifier SEAM = Identifier.fromNamespaceAndPath("extremedimensions", "the_seam");
 	private static final Identifier TEXTURE = ExtremeDimensions.id("textures/environment/seam_sky.png");
 	private static GpuBuffer buffer;
+	private static AbstractTexture texture;
 	private static boolean failed;
 
 	/** Faces in atlas order: forward, right, up (the right vector is forward x up, so each quad faces inward). */
@@ -38,27 +39,40 @@ public final class SeamSky {
 			{{0, 0, -1}, {1, 0, 0}, {0, 1, 0}},    // north
 	};
 
+	private static boolean inSeam(Minecraft mc) {
+		return mc.level != null && SEAM.equals(mc.level.dimension().identifier());
+	}
+
+	/** True while the Seam sky should replace the End sky (and everything for it is ready). */
 	public static boolean active() {
-		Minecraft mc = Minecraft.getInstance();
-		return !failed && mc.level != null && SEAM.equals(mc.level.dimension().identifier());
+		return !failed && buffer != null && texture != null && inSeam(Minecraft.getInstance());
+	}
+
+	/**
+	 * Loads the texture and builds the geometry on the client tick, outside any render pass: uploads are not allowed
+	 * while the sky pass is open.
+	 */
+	public static void prepare(Minecraft mc) {
+		if (failed || !inSeam(mc) || (buffer != null && texture != null)) {
+			return;
+		}
+		try {
+			texture = mc.getTextureManager().getTexture(TEXTURE);
+			if (buffer == null) {
+				buffer = build();
+			}
+		} catch (RuntimeException e) {
+			failed = true;
+			ExtremeDimensions.LOGGER.warn("Could not prepare the Seam sky, falling back to the End sky", e);
+		}
 	}
 
 	public static AbstractTexture texture() {
-		return Minecraft.getInstance().getTextureManager().getTexture(TEXTURE);
+		return texture;
 	}
 
-	public static GpuBuffer buffer(GpuBuffer fallback) {
-		if (buffer != null) {
-			return buffer;
-		}
-		try {
-			buffer = build();
-			return buffer;
-		} catch (RuntimeException e) {
-			failed = true;
-			ExtremeDimensions.LOGGER.warn("Could not build the Seam sky, falling back to the End sky", e);
-			return fallback;
-		}
+	public static GpuBuffer buffer() {
+		return buffer;
 	}
 
 	private static GpuBuffer build() {

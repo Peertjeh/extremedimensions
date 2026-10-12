@@ -33,6 +33,6 @@ public abstract class SkyRendererMixin {
 	@Redirect(method = "renderEndSky", at = @At(value = "FIELD", opcode = Opcodes.GETFIELD,
 			target = "Lnet/minecraft/client/renderer/SkyRenderer;endSkyBuffer:Lcom/mojang/renderpearl/api/buffers/GpuBuffer;"))
 	private GpuBuffer extremedimensions$seamBuffer(SkyRenderer self) {
-		return SeamSky.active() ? SeamSky.buffer(this.endSkyBuffer) : this.endSkyBuffer;
+		return SeamSky.active() ? SeamSky.buffer() : this.endSkyBuffer;
 	}
 }
