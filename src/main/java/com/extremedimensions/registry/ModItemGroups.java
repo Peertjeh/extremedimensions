@@ -11,8 +11,6 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
-
 /** The "Extreme Dimensions" creative tab: everything the mod adds, plus the vanilla items it builds on. */
 public final class ModItemGroups {
 	private ModItemGroups() {}
@@ -20,7 +18,7 @@ public final class ModItemGroups {
 	public static final ResourceKey<CreativeModeTab> MAIN = ResourceKey.create(Registries.CREATIVE_MODE_TAB, ExtremeDimensions.id("main"));
 
 	public static void init() {
-		Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, MAIN, FabricItemGroup.builder()
+		Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, MAIN, CreativeModeTab.builder(CreativeModeTab.Row.TOP, 7)
 				.title(Component.translatable("itemGroup.extremedimensions.main"))
 				.icon(() -> new ItemStack(ModItems.TETHER))
 				.displayItems((params, out) -> {
