@@ -6,18 +6,21 @@
 
 ### Added
 - **The Lurker**, a new mob: a member of an ancient tribe that watches you from the treetops, the ridges and the far
-  bank of the lava. Appears rarely (with a cooldown per player), day or night, in the Overworld and the Nether, 36-60 blocks away on high ground and preferably half hidden behind leaves or a ridge. Stalkers and drainers are rarer still.
-  - **Watching:** stands on high ground 24-40 blocks away and stares. Come too close or stare back too long and it is gone.
-  - **Stalking:** sometimes it comes closer, but only while you are not looking.
+  bank of the lava. Appears rarely (with a cooldown per player), day or night, in the Overworld and the Nether, 50-72 blocks away on high ground and preferably half hidden behind leaves or a ridge. Stalkers and drainers are rarer still.
+  - **Watching:** stands on high ground and stares. Come too close or stare back too long and it is gone.
+  - **Stalking:** sometimes it comes closer, but only while you are not looking, slow at first and faster as it
+    closes in.
   - **Taking:** it steals an item, part of your experience or a piece of armour, or lays a **curse** (one random
-    penalty, forced). Then it waits at a distance: kill it in time to get your loot back.
+    penalty, forced). Then it **runs**: off on three limbs with the loot clutched to its chest, laughing, a trail of ink
+    behind it, and only after a good stretch does it fold into the air. Kill it in time to get your loot back.
+  - **Struck:** hit it and it shrieks and runs the same way.
   - **Draining:** it appears beside a charged anchor, holds the anchor's light in its arms with its jaw open and
     trembling, and drinks the anchor dry while the light streams into it. Come close to interrupt it.
 - **Its own body**: a hunched, cloaked giant (about 3.5 blocks) on long knuckle-walking arms, with ragged cloak strips,
   strands dripping from its mask, violet eyes and glowing cracks. Fully procedural animation: breathing, head tracking
-  with a curious tilt, swaying strands and cloth, a knuckle walk, an unfolding reach when it takes, and raised,
+  with a curious tilt, swaying strands and cloth, a knuckle walk, a bounding three-limbed run with glances over its shoulder, an unfolding reach when it takes, and raised,
   trembling arms while a thin, flowing beam pours from the anchor into its hands.
-- A full sound set: heavy dragging footsteps (softer while it stalks), slow rattling breaths and whispers, a hiss when hurt, a death that frays into whispers, plus take, drain and vanish sounds, a new journal page (*XVI. The Tribe*) and three
+- A full sound set: heavy dragging footsteps (softer while it stalks), slow rattling breaths and whispers, a guttural snarl when hit, a shriek when startled, a hissing laugh as it runs off, a death that frays into whispers, plus take, drain and vanish sounds, a new journal page (*XVI. The Tribe*) and three
   advancements (*It Sees*, *It Takes*, *Take It Back*).
 - `/tether lurker <watch|stalk|drain>` for operators.
 - Lurker settings in `config/extremedimensions.json`.

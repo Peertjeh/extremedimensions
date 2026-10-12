@@ -28,6 +28,7 @@ public class LurkerRenderer extends MobRenderer<Lurker, LurkerRenderState, Lurke
 		float stalk;
 		float take;
 		float drain;
+		float run;
 		long last;
 	}
 
@@ -62,7 +63,9 @@ public class LurkerRenderer extends MobRenderer<Lurker, LurkerRenderState, Lurke
 		b.drain += ((pose == Lurker.POSE_DRAIN ? 1 : 0) - b.drain) * k;
 		state.stalk = b.stalk;
 		state.take = b.take;
+		b.run += ((pose == Lurker.POSE_RUN ? 1 : 0) - b.run) * Math.min(1, k * 1.4F);
 		state.drain = b.drain;
+		state.run = b.run;
 	}
 
 	@Override

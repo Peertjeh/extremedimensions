@@ -37,10 +37,12 @@ import net.minecraft.world.phys.Vec3;
  * The Lurker's mind. Every Lurker is driven from here through a small state machine:
  *
  * <ul>
- *   <li><b>WATCH</b>: stands on high ground 24-40 blocks away and stares. Too close, or stared back at too long,
- *       and it is gone.</li>
- *   <li><b>STALK</b> (rare): creeps closer, but only while the player is not looking.</li>
- *   <li><b>FLEE</b>: after taking something it waits at a distance with the loot. Kill it in time to get it back.</li>
+ *   <li><b>WATCH</b>: stands on high ground 50-72 blocks away, half in cover, and stares. Too close, or stared
+ *       back at too long, and it is gone.</li>
+ *   <li><b>STALK</b> (rare): creeps closer, but only while the player is not looking, and faster the closer it
+ *       gets.</li>
+ *   <li><b>FLEE</b>: after taking something (or after being struck) it runs off on three limbs, clutching the
+ *       loot, and vanishes after a while. Kill it in time to get the loot back.</li>
  *   <li><b>DRAIN</b>: holds a charged anchor's light in its arms and drinks the anchor dry.</li>
  * </ul>
  *
@@ -68,6 +70,8 @@ public final class LurkerService {
 		int ticks;
 		int limit;
 		int stared;
+		/** Distance to the player when stalking began, for the speed ramp. */
+		double startDist;
 		String anchor;
 		/** Set when the pose must switch to stalking on the next drive (command summons). */
 		boolean stalkPose;
@@ -130,7 +134,7 @@ public final class LurkerService {
 	/** A Lurker appears on high ground at a distance, watching this player. */
 	public static boolean spawnWatch(ServerPlayer p) {
 		ServerLevel level = (ServerLevel) p.level();
-		BlockPos pos = vantage(level, p, 36, 60);
+		BlockPos pos = vantage(level, p, Config.LURKER_WATCH_DISTANCE_MIN, Math.max(Config.LURKER_WATCH_DISTANCE_MIN + 1, Config.LURKER_WATCH_DISTANCE_MAX));
 		if (pos == null) {
 			return false;
 		}
@@ -326,7 +330,7 @@ public final class LurkerService {
 		if (st.ticks % 160 == 0 && ThreadLocalRandom.current().nextInt(3) == 0) {
 			whisper(l, p, 0.35f);
 		}
-		if (dist < 10 || st.stared > 50) {
+		if (dist < 14 || st.stared > 50) {
 			later.add(() -> vanish(l));
 		} else if (st.ticks > st.limit) {
 			if (ThreadLocalRandom.current().nextDouble() < Config.LURKER_STALK_CHANCE) {
@@ -334,6 +338,7 @@ public final class LurkerService {
 				l.setLurkerPose(Lurker.POSE_STALK);
 				st.ticks = 0;
 				st.limit = 20 * 90;
+				st.startDist = dist;
 				whisper(l, p, 0.7f);
 			} else {
 				later.add(() -> vanish(l));
@@ -341,13 +346,22 @@ public final class LurkerService {
 		}
 	}
 
-	/** Creeps in only while unobserved, like something at the edge of your vision. */
+	/**
+	 * Creeps in only while unobserved, like something at the edge of your vision. It starts slow and gathers
+	 * speed as the distance closes, so the last stretch comes faster than you expect.
+	 */
 	private static void stalk(Lurker l, State st, ServerPlayer p, List<Runnable> later) {
+		double dist = Math.sqrt(p.distanceToSqr(l));
+		if (st.startDist <= 0) {
+			st.startDist = dist;
+		}
 		if (seen(p, l, 0.9)) {
 			l.getNavigation().stop();
 			l.getLookControl().setLookAt(p, 30, 30);
-		} else if (st.ticks % 10 == 0) {
-			l.getNavigation().moveTo(p, 1.15);
+		} else if (st.ticks % 5 == 0) {
+			double close = 1.0 - Math.max(0.0, Math.min(1.0, (dist - 3.0) / Math.max(1.0, st.startDist - 3.0)));
+			double speed = Config.LURKER_STALK_SPEED_MIN + (Config.LURKER_STALK_SPEED_MAX - Config.LURKER_STALK_SPEED_MIN) * close * close;
+			l.getNavigation().moveTo(p, speed);
 		}
 		if (p.distanceToSqr(l) < 3.2 * 3.2) {
 			l.getNavigation().stop();
@@ -375,14 +389,7 @@ public final class LurkerService {
 			snatch(l, st, p);
 		}
 		if (st.ticks >= TAKE_TICKS) {
-			BlockPos away = vantage((ServerLevel) l.level(), p, 14, 22);
-			if (away != null) {
-				blink(l, Vec3.atBottomCenterOf(away));
-			}
-			l.setLurkerPose(Lurker.POSE_WATCH);
-			st.mode = Mode.FLEE;
-			st.ticks = 0;
-			st.limit = Config.LURKER_FLEE_SECONDS * 20;
+			run(l, st, p, false);
 		}
 	}
 
@@ -449,10 +456,48 @@ public final class LurkerService {
 		return true;
 	}
 
+	/** Breaks into a run, away from the player. */
+	private static void run(Lurker l, State st, ServerPlayer p, boolean struck) {
+		st.mode = Mode.FLEE;
+		st.ticks = 0;
+		st.limit = Math.max(3, Config.LURKER_RUN_SECONDS) * 20;
+		l.setLurkerPose(Lurker.POSE_RUN);
+		String dim = l.level().dimension().identifier().toString();
+		String sound = struck ? "extremedimensions:lurker_shriek" : "extremedimensions:lurker_flee";
+		WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound %s hostile @a %.2f %.2f %.2f 1.6 1",
+				dim, sound, l.getX(), l.getY() + 2.5, l.getZ()));
+		flee(l, st, p, new ArrayList<>());
+	}
+
+	/**
+	 * Runs on three limbs, the loot clutched to its chest: away from the player, accelerating out of the first
+	 * strides, leaving a faint trail of ink. After a good stretch it folds into the air.
+	 */
 	private static void flee(Lurker l, State st, ServerPlayer p, List<Runnable> later) {
-		l.getNavigation().stop();
-		l.getLookControl().setLookAt(p, 30, 30);
-		if (st.ticks > st.limit || p.distanceToSqr(l) < 3 * 3 && st.ticks > 40) {
+		if (st.ticks % 8 == 0 || l.getNavigation().isDone()) {
+			double ramp = Math.min(1.0, st.ticks / 40.0);
+			double speed = Config.LURKER_RUN_SPEED * (0.6 + 0.4 * ramp);
+			Vec3 away = new Vec3(l.getX() - p.getX(), 0, l.getZ() - p.getZ());
+			if (away.lengthSqr() < 0.01) {
+				away = new Vec3(1, 0, 0);
+			}
+			// Mostly straight away, with a slight weave so it does not run like a machine
+			double ang = Math.atan2(away.z, away.x) + Math.sin(st.ticks * 0.05 + l.getId()) * 0.5;
+			int tx = (int) Math.floor(l.getX() + Math.cos(ang) * 20);
+			int tz = (int) Math.floor(l.getZ() + Math.sin(ang) * 20);
+			ServerLevel level = (ServerLevel) l.level();
+			BlockPos goal = Dims.NETHER.equals(Dims.of(level))
+					? standable(level, tx, (int) l.getY() + 8, tz, 20)
+					: new BlockPos(tx, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, tx, tz), tz);
+			if (goal != null) {
+				l.getNavigation().moveTo(goal.getX() + 0.5, goal.getY(), goal.getZ() + 0.5, speed);
+			}
+		}
+		if (st.ticks % 3 == 0) {
+			String dim = l.level().dimension().identifier().toString();
+			WorldFx.particleIn(dim, "minecraft:squid_ink", l.getX(), l.getY() + 1.2, l.getZ(), 0.3, 0.4, 0.3, 0.01, 1);
+		}
+		if (st.ticks > st.limit) {
 			later.add(() -> vanish(l));
 		}
 	}
@@ -526,21 +571,18 @@ public final class LurkerService {
 		l.discard();
 	}
 
-	private static void blink(Lurker l, Vec3 to) {
-		String dim = l.level().dimension().identifier().toString();
-		WorldFx.particleIn(dim, "minecraft:portal", l.getX(), l.getY() + 1.4, l.getZ(), 0.4, 1.2, 0.4, 0.6, 40);
-		l.teleportTo(to.x, to.y, to.z);
-		WorldFx.particleIn(dim, "minecraft:reverse_portal", to.x, to.y + 1.4, to.z, 0.4, 1.2, 0.4, 0.2, 40);
-	}
-
-	/** Hit while not carrying loot: it simply is not there any more. Returns true if the hit should be ignored. */
-	public static boolean onHurt(Lurker l) {
+	/** Struck: it shrieks and runs. Already running, it just keeps going. */
+	public static void onHurt(Lurker l) {
 		State st = STATES.get(l.getUUID());
 		if (st == null || st.mode == Mode.FLEE) {
-			return false;
+			return;
 		}
-		vanish(l);
-		return true;
+		ServerPlayer p = WorldFx.server().getPlayerList().getPlayer(st.target);
+		if (p == null) {
+			vanish(l);
+			return;
+		}
+		run(l, st, p, true);
 	}
 
 	/** Slain while fleeing: what it took falls back into the world. */

@@ -133,15 +133,21 @@ public class LurkerModel extends EntityModel<LurkerRenderState> {
 		float stalk = s.stalk;
 		float take = s.take;
 		float drain = s.drain;
+		float run = s.run;
+		// The run is a bounding gallop: both legs and the free arm move together, in a faster cycle
+		float gp = s.walkAnimationPos * 0.42F;
+		float bound = Mth.sin(gp);
 
 		// Body: a slow, heavy breath; hunches lower while stalking, rears up while draining
-		hips.xRot = HIPS_LEAN + 0.035F * breathe + 0.18F * stalk - 0.22F * drain;
-		hips.y += breathe * 0.35F + 1.5F * stalk;
+		hips.xRot = HIPS_LEAN + 0.035F * breathe + 0.18F * stalk - 0.22F * drain + run * (0.32F + 0.1F * bound * ws);
+		hips.y += breathe * 0.35F + 1.5F * stalk + run * (1.8F - 1.6F * Math.abs(bound) * ws);
 		hump.xRot += 0.03F * Mth.sin(t * 0.06F + 0.6F);
 
 		// Legs: short, heavy steps
 		legL.xRot = Mth.cos(wp) * 0.55F * ws;
 		legR.xRot = -Mth.cos(wp) * 0.55F * ws;
+		legL.xRot = Mth.lerp(run, legL.xRot, -Mth.cos(gp) * 0.9F * ws - 0.15F);
+		legR.xRot = Mth.lerp(run, legR.xRot, -Mth.cos(gp + 0.45F) * 0.9F * ws - 0.15F);
 
 		// Arms: hang to the ground, knuckle-walk in counter-phase to the legs
 		float hang = -hips.xRot - 0.15F;
@@ -163,6 +169,15 @@ public class LurkerModel extends EntityModel<LurkerRenderState> {
 		fLx = Mth.lerp(drain, fLx, -0.55F + tremble);
 		fRx = Mth.lerp(drain, fRx, -0.55F - tremble);
 
+		// Run: the left arm clutches the loot to its chest, the right claws the ground in long bounds
+		float runHang = -hips.xRot - 0.1F;
+		aLx = Mth.lerp(run, aLx, -hips.xRot - 0.95F);
+		aLz = Mth.lerp(run, aLz, 0.38F);
+		fLx = Mth.lerp(run, fLx, -1.7F);
+		aRx = Mth.lerp(run, aRx, runHang + Mth.cos(gp + Mth.PI) * 1.05F * ws);
+		aRz = Mth.lerp(run, aRz, 0.18F);
+		fRx = Mth.lerp(run, fRx, -0.45F - 0.5F * ws * Math.max(0, Mth.sin(gp + Mth.PI)));
+
 		// Take: the right arm unfolds and reaches out
 		aRx = Mth.lerp(take, aRx, -hips.xRot - 1.75F);
 		aRz = Mth.lerp(take, aRz, 0.05F);
@@ -174,21 +189,25 @@ public class LurkerModel extends EntityModel<LurkerRenderState> {
 		armR.zRot = aRz;
 		forearmL.xRot = fLx;
 		forearmR.xRot = fRx;
-		handL.xRot = 0.35F * (1 - drain) + 0.1F * ws;
+		handL.xRot = Mth.lerp(run, 0.35F * (1 - drain) + 0.1F * ws, 0.9F);
 		handR.xRot = Mth.lerp(take, 0.35F * (1 - drain) + 0.1F * ws, -0.6F);
 
 		// Head: follows its prey, with a slow, curious tilt; thrown back while draining
-		neck.xRot = NECK_BEND + 0.1F * stalk;
+		neck.xRot = NECK_BEND + 0.1F * stalk + 0.15F * run;
 		float level = -(hips.xRot + neck.xRot) + 0.2F;
 		head.yRot = s.yRot * Mth.DEG_TO_RAD * 0.85F;
 		head.xRot = level + s.xRot * Mth.DEG_TO_RAD * 0.6F + 0.04F * Mth.sin(t * 0.05F) - 0.45F * drain + 0.15F * take;
-		head.zRot = 0.1F * Mth.sin(t * 0.031F) * (1 - drain);
+		head.zRot = 0.1F * Mth.sin(t * 0.031F) * (1 - drain) + 0.08F * run * Mth.sin(gp * 0.5F);
+		// Running, it glances back over its shoulder now and then
+		float glance = run * Math.max(0, Mth.sin(t * 0.045F)) * 0.9F;
+		head.yRot = Mth.lerp(run, head.yRot, glance);
+		head.xRot -= 0.1F * run * bound * ws;
 
 		// Strands hang from the mask and sway; they flare out when it takes
 		float down = -(hips.xRot + neck.xRot + head.xRot);
 		for (int i = 0; i < TENDRILS; i++) {
 			float ph = i * 1.37F;
-			tendrils[i].xRot = down + Mth.sin(t * 0.08F + ph) * 0.12F + ws * 0.25F * Mth.sin(wp + ph) - 0.5F * take;
+			tendrils[i].xRot = down + Mth.sin(t * 0.08F + ph) * 0.12F + ws * 0.25F * Mth.sin(wp + ph) - 0.5F * take - 0.75F * run * ws;
 			tendrils[i].zRot = Mth.sin(t * 0.063F + ph * 0.7F) * 0.11F + (i - 3.5F) * 0.05F * take;
 			drips[i].xRot = Mth.sin(t * 0.11F + ph) * 0.18F;
 		}
@@ -196,10 +215,10 @@ public class LurkerModel extends EntityModel<LurkerRenderState> {
 		// Cloak strips hang straight down from the leaning hips and drag behind the stride
 		for (int i = 0; i < SKIRT; i++) {
 			float ph = i * 0.9F;
-			skirt[i].xRot = -hips.xRot + Mth.sin(t * 0.07F + ph) * 0.06F + ws * 0.35F * Mth.sin(wp + ph) + 0.15F * ws;
+			skirt[i].xRot = -hips.xRot + Mth.sin(t * 0.07F + ph) * 0.06F + ws * 0.35F * Mth.sin(wp + ph) + 0.15F * ws + run * (0.55F + 0.2F * Mth.sin(gp * 2 + ph));
 			skirt[i].zRot = Mth.sin(t * 0.05F + ph) * 0.04F;
 		}
-		cape.xRot = -hips.xRot + 0.12F + Mth.sin(t * 0.05F) * 0.04F + ws * 0.3F;
+		cape.xRot = -hips.xRot + 0.12F + Mth.sin(t * 0.05F) * 0.04F + ws * 0.3F + run * (0.75F + 0.15F * Mth.sin(gp * 2));
 		cape.zRot = Mth.sin(t * 0.04F + 0.5F) * 0.03F;
 		ragL.xRot = -armL.xRot - hips.xRot + Mth.sin(t * 0.07F) * 0.08F;
 		ragR.xRot = -armR.xRot - hips.xRot + Mth.sin(t * 0.07F + 1F) * 0.08F;

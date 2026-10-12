@@ -92,13 +92,26 @@
     "subtitle": "subtitles.extremedimensions.lurker_hurt",
     "sounds": [
       "extremedimensions:lurker_hurt1",
-      "extremedimensions:lurker_hurt2"
+      "extremedimensions:lurker_hurt2",
+      "extremedimensions:lurker_hurt3"
     ]
   },
   "lurker_death": {
     "subtitle": "subtitles.extremedimensions.lurker_death",
     "sounds": [
       "extremedimensions:lurker_death"
+    ]
+  },
+  "lurker_shriek": {
+    "subtitle": "subtitles.extremedimensions.lurker_shriek",
+    "sounds": [
+      "extremedimensions:lurker_shriek"
+    ]
+  },
+  "lurker_flee": {
+    "subtitle": "subtitles.extremedimensions.lurker_flee",
+    "sounds": [
+      "extremedimensions:lurker_flee"
     ]
   }
 }

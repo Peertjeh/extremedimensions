@@ -122,8 +122,16 @@ public final class Config {
 	public static int LURKER_DRAIN_SECONDS = 20;
 	/** Share of the player's levels a Lurker takes. */
 	public static double LURKER_XP_FRACTION = 0.3;
-	/** Seconds a Lurker lingers with its loot; kill it in time to get the loot back. */
-	public static int LURKER_FLEE_SECONDS = 25;
+	/** Seconds a Lurker runs off with its loot before it vanishes; kill it in time to get the loot back. */
+	public static int LURKER_RUN_SECONDS = 9;
+	/** Closest and furthest distance at which a watching Lurker shows itself. */
+	public static int LURKER_WATCH_DISTANCE_MIN = 50;
+	public static int LURKER_WATCH_DISTANCE_MAX = 72;
+	/** Speed multiplier while stalking: it starts slow and speeds up as it closes in. */
+	public static double LURKER_STALK_SPEED_MIN = 0.7;
+	public static double LURKER_STALK_SPEED_MAX = 1.45;
+	/** Speed multiplier at full run, reached after a short burst of acceleration. */
+	public static double LURKER_RUN_SPEED = 1.4;
 
 	// --- Technical -------------------------------------------------------------------------------
 

@@ -7,4 +7,5 @@ public class LurkerRenderState extends LivingEntityRenderState {
 	public float stalk;
 	public float take;
 	public float drain;
+	public float run;
 }

@@ -28,6 +28,7 @@ public class Lurker extends Monster {
 	public static final int POSE_STALK = 1;
 	public static final int POSE_TAKE = 2;
 	public static final int POSE_DRAIN = 3;
+	public static final int POSE_RUN = 4;
 
 	private static final EntityDataAccessor<Integer> POSE = SynchedEntityData.defineId(Lurker.class, EntityDataSerializers.INT);
 
@@ -79,10 +80,11 @@ public class Lurker extends Monster {
 
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-		if (LurkerService.onHurt(this)) {
-			return false;
+		boolean hurt = super.hurtServer(level, source, amount);
+		if (hurt && this.isAlive()) {
+			LurkerService.onHurt(this);
 		}
-		return super.hurtServer(level, source, amount);
+		return hurt;
 	}
 
 	@Override
@@ -102,9 +104,19 @@ public class Lurker extends Monster {
 
 	@Override
 	protected void playStepSound(BlockPos pos, BlockState state) {
-		// Softer while stalking: it does not want to be heard
-		float vol = getLurkerPose() == POSE_STALK ? 0.35F : 0.8F;
-		this.playSound(ModSounds.LURKER_STEP, vol, 0.85F + this.random.nextFloat() * 0.2F);
+		int pose = getLurkerPose();
+		float vol = 0.8F;
+		float pitch = 0.85F + this.random.nextFloat() * 0.2F;
+		if (pose == POSE_STALK) {
+			// Soft while it creeps in, heavier the closer it gets
+			var near = this.level().getNearestPlayer(this, 64.0);
+			double d = near == null ? 64.0 : Math.sqrt(near.distanceToSqr(this));
+			vol = 0.3F + 0.5F * (float) Math.max(0.0, 1.0 - d / 40.0);
+		} else if (pose == POSE_RUN) {
+			vol = 1.0F;
+			pitch += 0.12F;
+		}
+		this.playSound(ModSounds.LURKER_STEP, vol, pitch);
 	}
 
 	@Override

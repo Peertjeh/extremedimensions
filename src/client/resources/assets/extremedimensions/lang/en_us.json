@@ -230,5 +230,7 @@
   "subtitles.extremedimensions.lurker_ambient": "Something breathes nearby",
   "subtitles.extremedimensions.lurker_step": "Heavy footsteps",
   "subtitles.extremedimensions.lurker_hurt": "The Lurker hisses",
-  "subtitles.extremedimensions.lurker_death": "The Lurker unravels"
+  "subtitles.extremedimensions.lurker_death": "The Lurker unravels",
+  "subtitles.extremedimensions.lurker_shriek": "The Lurker shrieks",
+  "subtitles.extremedimensions.lurker_flee": "Something laughs as it runs"
 }
