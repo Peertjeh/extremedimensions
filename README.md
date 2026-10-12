@@ -57,6 +57,17 @@ Usually it only watches. Sometimes it creeps closer while you are not looking an
 experience, a piece of armour, or it lays a curse (a random penalty). Kill it before it vanishes to get your loot back.
 Lurkers also drain charged anchors: catch one holding your anchor's light and chase it off.
 
+**Soul wards:** the tribe will not drink where souls burn. A soul lantern, soul torch, soul campfire or soul fire
+within 4 blocks of an anchor keeps it safe. Listen to your animals, too: wolves growl and cats hiss when something is
+watching.
+
+## In the world
+
+Torn **Wanderer's Pages** turn up in ruined portals, nether fortresses, bastions, stronghold libraries, ancient cities
+and end cities. Use one to add it to your journal; two pages can only be found this way. Ruined portals, bastions and
+other structures can also hold **Tether Fragments**. Charged anchors hum, the chain clinks as you walk, and the mod's
+own particles (soul, ember and void motes, Lurker wisps) tie it all together.
+
 ## Multiplayer
 
 Every player has their **own time**. What you put into an anchor is yours, even when you share anchors with friends.
@@ -65,7 +76,7 @@ If one player dies beyond the wound, only *their* time is lost; everyone else ca
 ## Lore and discovery
 
 The mod tells you very little up front. You start with the **Tether Journal**, the account of a nameless Wanderer.
-Sixteen pages surface as you play: your first anchor, the Ember Deep, the Pale Void, the Starved, the Weavers and more.
+Nineteen pages surface as you play: your first anchor, the Ember Deep, the Pale Void, the Starved, the Weavers and more.
 A tree of **15 advancements** charts your progress, and the title screen whispers things nobody remembers writing.
 
 ## Fuel
@@ -96,7 +107,7 @@ Each player can store up to 30 minutes per anchor. Fuel values show in item tool
 ## Installation
 
 1. Install **Fabric Loader 0.19.5+** for **Minecraft 26.3** (Java 25).
-2. Add **Fabric API 0.162.0+** and `extremedimensions-1.1.0.jar` to your `mods` folder.
+2. Add **Fabric API 0.162.0+** and `extremedimensions-1.2.0.jar` to your `mods` folder.
 3. Install it on the server **and** every client.
 
 Play a normal Survival world. Vanilla Hardcore turns you into a spectator on death, which this mod is designed to avoid.

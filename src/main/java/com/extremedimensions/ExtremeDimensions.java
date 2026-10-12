@@ -6,10 +6,12 @@ import org.slf4j.LoggerFactory;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.penalty.PenaltyService;
+import com.extremedimensions.lore.WorldLoot;
 import com.extremedimensions.registry.ModBlocks;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.registry.ModItemGroups;
 import com.extremedimensions.registry.ModItems;
+import com.extremedimensions.registry.ModParticles;
 import com.extremedimensions.registry.ModSounds;
 import com.extremedimensions.server.ServerEvents;
 
@@ -35,6 +37,8 @@ public class ExtremeDimensions implements ModInitializer {
 		ModBlocks.init();
 		ModItems.init();
 		ModSounds.init();
+		ModParticles.init();
+		WorldLoot.register();
 		ModEntities.init();
 		ModItemGroups.init();
 

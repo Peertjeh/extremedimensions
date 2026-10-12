@@ -135,6 +135,10 @@ public final class Config {
 	public static double LURKER_XP_WEIGHT = 20;
 	public static double LURKER_ARMOR_WEIGHT = 15;
 	public static double LURKER_CURSE_WEIGHT = 30;
+	/** Soul light (lanterns, torches, campfires, fire) within this many blocks wards an anchor against draining. 0 = off. */
+	public static double LURKER_WARD_RANGE = 4.0;
+	/** Chance per watching Lurker every 5 seconds that wolves and cats near its target growl or hiss towards it. */
+	public static double LURKER_ANIMAL_WARNING = 0.6;
 	/** Seconds a Lurker runs off with its loot before it vanishes; kill it in time to get the loot back. */
 	public static int LURKER_RUN_SECONDS = 9;
 	/** Closest and furthest distance at which a watching Lurker shows itself. */

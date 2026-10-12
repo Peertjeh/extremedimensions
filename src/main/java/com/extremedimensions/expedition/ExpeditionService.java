@@ -205,6 +205,7 @@ public final class ExpeditionService {
 		double k = 1.0 - left / Config.LEECH_SECONDS;
 		int n = 2 + (int) Math.round(k * 10);
 		WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.5, 0.03, n);
+		WorldFx.particles(p, "extremedimensions:soul_mote", 1.0, 0.6, 0.0, Math.max(1, n / 2));
 		if (k > 0.5) {
 			WorldFx.particles(p, "minecraft:soul", 0.8, 0.8, 0.02, n / 2);
 		}

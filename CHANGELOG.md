@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.2.0: Woven In
+
+*The world was here before the wound. It remembers too.*
+
+### Added
+- **Four new particles of our own**: soul motes (teal light that spirals up from the Tether, journal pages and soul
+  wards), ember motes (sparks rising from Nether anchors), void motes (violet twinkles above End anchors) and Lurker
+  wisps (curls of ink in its trail and where it vanishes).
+- **Soul wards**: a soul lantern, soul torch, soul campfire or soul fire within 4 blocks of an anchor keeps Lurkers
+  from draining it. A warded anchor is circled by soul light, and a Lurker caught drinking when you light one shrieks
+  and is gone. The tooltips of soul light items say so.
+- **Wanderer's Pages** in the world: ruined portals, nether fortresses, bastions, stronghold libraries, ancient cities
+  and end cities can hold a torn journal page (and sometimes a Tether Fragment). Using a page adds it to your journal.
+- **Three new journal pages**: *XVII. Soul Light* (when you first see a Lurker drink), and *XVIII. The Ruined Gates*
+  and *XIX. The First Wound*, which can only be found.
+- **The world notices the Lurker first**: wolves growl, cats and ocelots hiss, foxes screech, horses shy, parrots
+  mimic something they should not know, and grazing animals stop and stare in its direction.
+- **Anchors hum**: charged anchors give off a low respawn-anchor drone (Nether) or a soft amethyst chime (End).
+- **The chain clinks** quietly as it is laid (amethyst in the End), and beyond the wound a faint soul light clings to it.
+
+
 ## 1.1.0: The Lurker
 
 *It sees. It waits. It takes.*

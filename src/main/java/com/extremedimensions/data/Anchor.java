@@ -33,6 +33,8 @@ public class Anchor {
 	/** Whether the path was checked at least once since loading. */
 	public transient boolean checked = false;
 	public transient int portalCheck = 0;
+	/** Soul light nearby keeps Lurkers away (refreshed with the path check). */
+	public transient boolean warded = false;
 
 	public Anchor() {}
 

@@ -20,7 +20,11 @@ public enum JournalEntry {
 	UNANCHORED("unanchored"),
 	HABIT("habit"),
 	SILENCE("silence"),
-	TRIBE("tribe");
+	TRIBE("tribe"),
+	SOUL_LIGHT("soul_light"),
+	/** Only found on Wanderer's Pages in the world. */
+	RUINED_GATE("ruined_gate"),
+	FIRST_WOUND("first_wound");
 
 	public final String id;
 

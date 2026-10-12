@@ -98,6 +98,13 @@ public final class ServerEvents {
 				Journal.open(sp, DataStore.get(sp.getUUID()));
 				return InteractionResult.SUCCESS;
 			}
+			if (player instanceof ServerPlayer sp && player.getItemInHand(hand).is(ModItems.WANDERERS_PAGE)) {
+				if (!sp.isCreative()) {
+					player.getItemInHand(hand).shrink(1);
+				}
+				Journal.readPage(sp, DataStore.get(sp.getUUID()));
+				return InteractionResult.SUCCESS;
+			}
 			return InteractionResult.PASS;
 		});
 

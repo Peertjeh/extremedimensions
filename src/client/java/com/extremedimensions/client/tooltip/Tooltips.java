@@ -3,6 +3,7 @@ package com.extremedimensions.client.tooltip;
 import java.util.List;
 
 import com.extremedimensions.anchor.FuelValues;
+import com.extremedimensions.config.Config;
 import com.extremedimensions.client.ui.Ui;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.server.Dims;
@@ -11,6 +12,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 
@@ -35,11 +37,16 @@ public final class Tooltips {
 			key = "tether_journal";
 		} else if (item == ModItems.TETHER_FRAGMENT) {
 			key = "tether_fragment";
+		} else if (item == ModItems.WANDERERS_PAGE) {
+			key = "wanderers_page";
 		}
 		if (key != null) {
 			lines.add(Component.translatable("tooltip.extremedimensions." + key + ".1").withStyle(ChatFormatting.GRAY));
 			lines.add(Component.translatable("tooltip.extremedimensions." + key + ".2").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
 			return;
+		}
+		if (stack.is(Items.SOUL_LANTERN) || stack.is(Items.SOUL_TORCH) || stack.is(Items.SOUL_CAMPFIRE)) {
+			lines.add(Component.translatable("tooltip.extremedimensions.soul_ward", (int) Config.LURKER_WARD_RANGE).withStyle(ChatFormatting.DARK_AQUA));
 		}
 		double nether = FuelValues.of(Dims.NETHER, item);
 		double end = FuelValues.of(Dims.END, item);

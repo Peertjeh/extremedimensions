@@ -23,9 +23,40 @@ public final class Journal {
 		}
 		WorldFx.soundSelf(p, "minecraft:item.book.page_turn", 1.0f, 0.7f);
 		WorldFx.soundSelf(p, "minecraft:block.sculk_shrieker.shriek", 0.15f, 1.6f);
+		WorldFx.particles(p, "extremedimensions:soul_mote", 1.2, 0.4, 0.0, 10);
 		if (d.journal.size() >= JournalEntry.values().length) {
 			Advancements.grant(p, Advancements.JOURNAL_COMPLETE);
 		}
+	}
+
+	/**
+	 * Reads a Wanderer's Page found in the world: the pages that can only be found come first, then any page the
+	 * player has not reached yet. A page they already know crumbles into a little experience.
+	 */
+	public static void readPage(ServerPlayer p, PlayerData d) {
+		JournalEntry next = null;
+		for (JournalEntry e : new JournalEntry[] {JournalEntry.RUINED_GATE, JournalEntry.FIRST_WOUND}) {
+			if (!d.journal.contains(e.id)) {
+				next = e;
+				break;
+			}
+		}
+		if (next == null) {
+			for (JournalEntry e : JournalEntry.values()) {
+				if (!d.journal.contains(e.id)) {
+					next = e;
+					break;
+				}
+			}
+		}
+		WorldFx.particles(p, "extremedimensions:soul_mote", 1.0, 0.5, 0.02, 14);
+		if (next == null) {
+			p.giveExperiencePoints(20);
+			WorldFx.soundSelf(p, "minecraft:item.book.page_turn", 1.0f, 1.2f);
+			return;
+		}
+		unlock(p, d, next);
+		DataStore.save();
 	}
 
 	public static void open(ServerPlayer p, PlayerData d) {

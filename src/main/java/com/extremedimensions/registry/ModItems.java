@@ -23,6 +23,9 @@ public final class ModItems {
 	/** A frayed piece of the Tether. Offered to an anchor it removes one penalty stack. */
 	public static final Item TETHER_FRAGMENT = register("tether_fragment", 16, Rarity.RARE);
 
+	/** A torn journal page found in ruins and strongholds; using it unlocks a page of the Tether Journal. */
+	public static final Item WANDERERS_PAGE = register("wanderers_page", 16, Rarity.UNCOMMON);
+
 	private static Item register(String id, int maxStack, Rarity rarity) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, ExtremeDimensions.id(id));
 		Item.Properties props = new Item.Properties().stacksTo(maxStack).rarity(rarity).setId(key);

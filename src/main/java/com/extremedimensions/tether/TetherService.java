@@ -1,6 +1,7 @@
 package com.extremedimensions.tether;
 
 import java.util.Locale;
+import java.util.concurrent.ThreadLocalRandom;
 
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.Anchor;
@@ -60,7 +61,7 @@ public final class TetherService {
 		WorldFx.fx(p, Fx.TIE, 0);
 		WorldFx.sound(p, "minecraft:entity.leash_knot.place", 1.0f, 0.7f);
 		WorldFx.sound(p, "minecraft:block.chain.place", 1.0f, 0.8f);
-		WorldFx.particleAt("minecraft:sculk_soul", pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, 0.2, 0.3, 0.2, 0.03, 10);
+		WorldFx.particleAt("extremedimensions:soul_mote", pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, 0.3, 0.3, 0.3, 0.0, 16);
 		WorldFx.particleAt("minecraft:soul", pos.getX() + 0.5, pos.getY() + 1.1, pos.getZ() + 0.5, 0.3, 0.2, 0.3, 0.02, 12);
 		Sync.state(p, d);
 		return InteractionResult.SUCCESS;
@@ -243,6 +244,16 @@ public final class TetherService {
 				TAG, tag, tag, index, look[0], qx, qy, qz, qw, -c[0], -c[1], -c[2], thick, len, thick);
 		WorldFx.run(String.format(Locale.ROOT, "execute in %s run summon minecraft:block_display %.3f %.3f %.3f %s",
 				dim, d.ropeX, d.ropeY, d.ropeZ, nbt));
+		// The chain clinks softly as it is laid, and beyond the wound a little soul light clings to it
+		boolean end = Dims.END.equals(Dims.of(p));
+		if (index % 2 == 0) {
+			WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound %s player @a %.2f %.2f %.2f 0.3 %.2f",
+					dim, end ? "minecraft:block.amethyst_cluster.step" : "minecraft:block.chain.step", x, y, z,
+					0.8 + ThreadLocalRandom.current().nextDouble() * 0.3));
+		}
+		if (index % 3 == 0 && Dims.isBeyond(Dims.of(p))) {
+			WorldFx.particleIn(dim, "extremedimensions:soul_mote", d.ropeX, d.ropeY + 0.15, d.ropeZ, 0.2, 0.05, 0.2, 0.0, 1);
+		}
 		int old = index - Config.ROPE_MAX_SEGMENTS;
 		if (old >= 0) {
 			WorldFx.run("kill @e[type=minecraft:block_display,tag=" + tag + "_s" + old + "]");

@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.extremedimensions.anchor.SoulWards;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.Anchor;
 import com.extremedimensions.data.DataStore;
@@ -23,14 +24,17 @@ import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -151,7 +155,7 @@ public final class LurkerService {
 		Anchor best = null;
 		for (Anchor a : DataStore.anchors().values()) {
 			double d = a.distSq(p.getX(), p.getY(), p.getZ());
-			if (a.charge > 30 && d <= 48 * 48 && d > 14 * 14 && (best == null || d < best.distSq(p.getX(), p.getY(), p.getZ()))) {
+			if (a.charge > 30 && d <= 48 * 48 && d > 14 * 14 && (best == null || d < best.distSq(p.getX(), p.getY(), p.getZ())) && !SoulWards.warded(level, a.x, a.y, a.z)) {
 				best = a;
 			}
 		}
@@ -181,6 +185,8 @@ public final class LurkerService {
 			return false;
 		}
 		l.setLurkerPose(Lurker.POSE_DRAIN);
+		// The page that tells how to keep them thirsty
+		Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.SOUL_LIGHT);
 		WorldFx.particleIn(Dims.fullId(p), "minecraft:reverse_portal", spot.getX() + 0.5, spot.getY() + 1.5, spot.getZ() + 0.5, 0.5, 1.0, 0.5, 0.2, 60);
 		return true;
 	}
@@ -330,6 +336,9 @@ public final class LurkerService {
 		if (st.ticks % 160 == 0 && ThreadLocalRandom.current().nextInt(3) == 0) {
 			whisper(l, p, 0.35f);
 		}
+		if (st.ticks % 100 == 50) {
+			animals(l, p);
+		}
 		if (dist < 14 || st.stared > 50) {
 			later.add(() -> vanish(l));
 		} else if (st.ticks > st.limit) {
@@ -352,6 +361,9 @@ public final class LurkerService {
 	 */
 	private static void stalk(Lurker l, State st, ServerPlayer p, List<Runnable> later) {
 		double dist = Math.sqrt(p.distanceToSqr(l));
+		if (st.ticks % 100 == 50) {
+			animals(l, p);
+		}
 		if (st.startDist <= 0) {
 			st.startDist = dist;
 		}
@@ -431,6 +443,7 @@ public final class LurkerService {
 			};
 			if (took) {
 				WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.5, 0.08, 25);
+				WorldFx.particles(p, "extremedimensions:lurker_wisp", 1.0, 0.5, 0.0, 12);
 				WorldFx.particles(p, "minecraft:reverse_portal", 1.0, 0.8, 0.3, 40);
 				WorldFx.fx(p, Fx.TAKEN, 0);
 				Advancements.grant(p, Advancements.ROBBED);
@@ -557,7 +570,7 @@ public final class LurkerService {
 		}
 		if (st.ticks % 3 == 0) {
 			String dim = l.level().dimension().identifier().toString();
-			WorldFx.particleIn(dim, "minecraft:squid_ink", l.getX(), l.getY() + 1.2, l.getZ(), 0.3, 0.4, 0.3, 0.01, 1);
+			WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", l.getX(), l.getY() + 1.4, l.getZ(), 0.35, 0.5, 0.35, 0.0, 2);
 		}
 		if (st.ticks > st.limit) {
 			later.add(() -> vanish(l));
@@ -577,6 +590,15 @@ public final class LurkerService {
 				later.add(() -> vanish(l));
 				return;
 			}
+		}
+		// Someone lit soul light nearby: it flinches and is gone
+		if (st.ticks % 20 == 0 && SoulWards.warded(l.level(), a.x, a.y, a.z)) {
+			String dim = l.level().dimension().identifier().toString();
+			WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:lurker_shriek hostile @a %.2f %.2f %.2f 1.2 1.3",
+					dim, l.getX(), l.getY() + 2.5, l.getZ()));
+			WorldFx.particleIn(dim, "extremedimensions:soul_mote", a.x + 0.5, a.y + 1.0, a.z + 0.5, 0.6, 0.6, 0.6, 0.0, 20);
+			later.add(() -> vanish(l));
+			return;
 		}
 		l.getNavigation().stop();
 		l.getLookControl().setLookAt(a.x + 0.5, a.y + 0.5, a.z + 0.5);
@@ -615,6 +637,39 @@ public final class LurkerService {
 		}
 	}
 
+	/**
+	 * The world notices before you do: wolves and cats near the player turn towards the Lurker and growl or hiss,
+	 * parrots mimic something they should not know, and grazing animals stop to stare.
+	 */
+	private static void animals(Lurker l, ServerPlayer p) {
+		if (ThreadLocalRandom.current().nextDouble() >= Config.LURKER_ANIMAL_WARNING) {
+			return;
+		}
+		String dim = l.level().dimension().identifier().toString();
+		AABB box = p.getBoundingBox().inflate(20, 8, 20);
+		for (Mob m : l.level().getEntitiesOfClass(Mob.class, box, e -> e.isAlive() && !(e instanceof Lurker))) {
+			String id = BuiltInRegistries.ENTITY_TYPE.getKey(m.getType()).toString();
+			String sound = switch (id) {
+				case "minecraft:wolf" -> "minecraft:entity.wolf.growl";
+				case "minecraft:cat", "minecraft:ocelot" -> "minecraft:entity.cat.hiss";
+				case "minecraft:parrot" -> "minecraft:entity.parrot.imitate.warden";
+				case "minecraft:fox" -> "minecraft:entity.fox.screech";
+				case "minecraft:horse", "minecraft:donkey", "minecraft:mule" -> "minecraft:entity.horse.angry";
+				case "minecraft:cow", "minecraft:sheep", "minecraft:pig", "minecraft:goat", "minecraft:llama", "minecraft:chicken" -> "";
+				default -> null;
+			};
+			if (sound == null) {
+				continue;
+			}
+			m.getNavigation().stop();
+			m.getLookControl().setLookAt(l, 30, 30);
+			if (!sound.isEmpty()) {
+				WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound %s neutral @a %.2f %.2f %.2f 0.9 %.2f",
+						dim, sound, m.getX(), m.getY() + 0.5, m.getZ(), 0.85 + ThreadLocalRandom.current().nextDouble() * 0.2));
+			}
+		}
+	}
+
 	private static void whisper(Lurker l, ServerPlayer p, float vol) {
 		WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:lurker_whisper hostile %s %.2f %.2f %.2f %.2f 1",
 				Dims.fullId(p), p.getStringUUID(), l.getX(), l.getY() + 2, l.getZ(), vol));
@@ -625,7 +680,7 @@ public final class LurkerService {
 		String dim = l.level().dimension().identifier().toString();
 		WorldFx.particleIn(dim, "minecraft:portal", l.getX(), l.getY() + 1.4, l.getZ(), 0.4, 1.2, 0.4, 0.6, 60);
 		WorldFx.particleIn(dim, "minecraft:reverse_portal", l.getX(), l.getY() + 1.4, l.getZ(), 0.3, 1.0, 0.3, 0.1, 30);
-		WorldFx.particleIn(dim, "minecraft:large_smoke", l.getX(), l.getY() + 1.0, l.getZ(), 0.3, 0.8, 0.3, 0.01, 12);
+		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", l.getX(), l.getY() + 1.6, l.getZ(), 0.5, 1.2, 0.5, 0.0, 30);
 		WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:lurker_vanish hostile @a %.2f %.2f %.2f 1 1",
 				dim, l.getX(), l.getY() + 1.5, l.getZ()));
 		STATES.remove(l.getUUID());

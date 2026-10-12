@@ -232,5 +232,15 @@
   "subtitles.extremedimensions.lurker_hurt": "The Lurker hisses",
   "subtitles.extremedimensions.lurker_death": "The Lurker unravels",
   "subtitles.extremedimensions.lurker_shriek": "The Lurker shrieks",
-  "subtitles.extremedimensions.lurker_flee": "Something laughs as it runs"
+  "subtitles.extremedimensions.lurker_flee": "Something laughs as it runs",
+  "item.extremedimensions.wanderers_page": "Wanderer's Page",
+  "journal.extremedimensions.soul_light.title": "XVII. Soul Light",
+  "journal.extremedimensions.soul_light.text": "I watched one drink. It held the light of my anchor like water in cupped hands, and I could do nothing. Then the wind turned, and the soul lantern by the gate flared blue, and it flinched. They will not drink where souls burn. Hang a soul lantern near your anchors. Light a soul campfire. It does not keep them away. It only keeps them thirsty.",
+  "journal.extremedimensions.ruined_gate.title": "XVIII. The Ruined Gates",
+  "journal.extremedimensions.ruined_gate.text": "The broken portals in the wilds are not ruins. They are graves. Each was a wound someone opened without an anchor, and each one closed on them. I found a chain in the obsidian of one, still warm. I did not follow where it led.",
+  "journal.extremedimensions.first_wound.title": "XIX. The First Wound",
+  "journal.extremedimensions.first_wound.text": "The tribe did not find the seams. They made them. The first wound was a door, cut so they could walk where nothing could follow. But a door works both ways, and something hungry came through, and they ran into the seams to hide. They have been hiding ever since. Watching. Waiting for it to forget them.",
+  "tooltip.extremedimensions.wanderers_page.1": "Use it to add it to your Tether Journal.",
+  "tooltip.extremedimensions.wanderers_page.2": "A torn page in a familiar hand.",
+  "tooltip.extremedimensions.soul_ward": "Wards anchors within %s blocks: Lurkers will not drink there."
 }

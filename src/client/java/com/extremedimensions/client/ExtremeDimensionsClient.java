@@ -5,6 +5,7 @@ import java.util.HashSet;
 
 import com.extremedimensions.ExtremeDimensions;
 import com.extremedimensions.client.audio.MenuMusic;
+import com.extremedimensions.client.particle.MoteParticle;
 import com.extremedimensions.client.entity.LurkerModel;
 import com.extremedimensions.client.entity.LurkerRenderer;
 import com.extremedimensions.client.hud.ChargeHud;
@@ -57,6 +58,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ClientState::reset));
 		HudElementRegistry.addLast(ExtremeDimensions.id("charge_hud"), new ChargeHud());
 		Tooltips.register();
+		MoteParticle.register();
 		ModelLayerRegistry.registerModelLayer(LurkerModel.LAYER, LurkerModel::createBodyLayer);
 		EntityRendererRegistry.register(ModEntities.LURKER, LurkerRenderer::new);
 

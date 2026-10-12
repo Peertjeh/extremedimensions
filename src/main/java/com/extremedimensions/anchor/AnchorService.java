@@ -284,8 +284,10 @@ public final class AnchorService {
 				}
 				a.blocked = nowBlocked;
 				a.checked = true;
+				a.warded = SoulWards.warded(ow, a.x, a.y, a.z);
 			}
 			particles(a);
+			hum(a, watchers);
 		}
 	}
 
@@ -294,6 +296,26 @@ public final class AnchorService {
 		for (ServerPlayer p : players) {
 			if (a.distSq(p.getX(), p.getY(), p.getZ()) <= r2) {
 				WorldFx.soundSelf(p, "minecraft:block.respawn_anchor.deplete", 0.8f, 0.6f);
+			}
+		}
+	}
+
+	/** A charged anchor hums now and then, low and quiet, louder the fuller it is. */
+	private static void hum(Anchor a, List<ServerPlayer> watchers) {
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		if (rnd.nextInt(10) != 0) {
+			return;
+		}
+		double fill = Math.min(1.0, a.charge / Config.MAX_CHARGE);
+		float vol = 0.25f + 0.35f * (float) fill;
+		for (ServerPlayer p : watchers) {
+			if (a.distSq(p.getX(), p.getY(), p.getZ()) <= 16 * 16) {
+				if (a.isNether()) {
+					WorldFx.soundAt("minecraft:block.respawn_anchor.ambient", a.x, a.y, a.z, vol, 0.7f + 0.2f * (float) fill);
+				} else {
+					WorldFx.soundAt("minecraft:block.amethyst_block.chime", a.x, a.y, a.z, vol, 0.6f + 0.2f * (float) fill);
+				}
+				return;
 			}
 		}
 	}
@@ -308,6 +330,13 @@ public final class AnchorService {
 
 		// Glow around the block: the fuller, the more
 		int n = 1 + (int) Math.round(fill * 9);
+		// Motes of its own light drift up from the stone
+		WorldFx.particleAt(nether ? "extremedimensions:ember_mote" : "extremedimensions:void_mote", cx, cy + 0.4, cz, 0.35, 0.3, 0.35, 0.0, 1 + n / 3);
+		if (a.warded && rnd.nextInt(2) == 0) {
+			// Warded: a faint ring of soul light circles the anchor
+			double ang = rnd.nextDouble() * Math.PI * 2;
+			WorldFx.particleAt("extremedimensions:soul_mote", cx + Math.cos(ang) * 0.9, cy + 0.1, cz + Math.sin(ang) * 0.9, 0.0, 0.0, 0.0, 0.0, 1);
+		}
 		if (nether) {
 			WorldFx.particleAt("minecraft:flame", cx, cy + 0.2, cz, 0.45, 0.45, 0.45, 0.01, n);
 			if (fill > 0.25) {

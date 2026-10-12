@@ -27,6 +27,7 @@ public final class ModItemGroups {
 					out.accept(ModItems.EMBER_TETHER);
 					out.accept(ModItems.VOID_TETHER);
 					out.accept(ModItems.TETHER_FRAGMENT);
+					out.accept(ModItems.WANDERERS_PAGE);
 					out.accept(Items.LODESTONE);
 				})
 				.build());
