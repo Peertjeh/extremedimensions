@@ -23,7 +23,7 @@ final class TestConnection extends Connection {
 				promise.setSuccess();
 			}
 		});
-		((ConnectionAccessor) this).battlehub$setChannel(channel);
+		((ConnectionAccessor) (Object) this).battlehub$setChannel(channel);
 	}
 
 	@Override

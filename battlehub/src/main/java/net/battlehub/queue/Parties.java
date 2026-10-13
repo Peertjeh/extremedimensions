@@ -34,6 +34,10 @@ public final class Parties {
 		Msg.send(p, "general.coming_soon");
 	}
 
+	static void invite(ServerPlayer from, ServerPlayer to, GameMode mode) {
+		Msg.send(from, "general.coming_soon");
+	}
+
 	static void clear() {
 	}
 }

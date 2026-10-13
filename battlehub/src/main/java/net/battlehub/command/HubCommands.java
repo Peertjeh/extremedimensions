@@ -2,6 +2,7 @@ package net.battlehub.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 
 import net.battlehub.BattleHub;
 import net.battlehub.config.ConfigManager;
@@ -18,6 +19,11 @@ import net.battlehub.session.Sessions;
 import net.battlehub.util.Msg;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.battlehub.core.GameMode;
+import net.battlehub.gui.DuelModeMenu;
+import net.battlehub.queue.Challenges;
 import net.minecraft.server.level.ServerPlayer;
 
 /** Player commands (/hub, /battlehub menu) and admin commands (/battlehub setlobby, reload, ...). */
@@ -27,6 +33,35 @@ public final class HubCommands {
 	public static void register(CommandDispatcher<CommandSourceStack> d) {
 		d.register(Commands.literal("hub").executes(c -> hub(c.getSource().getPlayerOrException())));
 		d.register(Commands.literal("lobby").executes(c -> hub(c.getSource().getPlayerOrException())));
+
+		d.register(Commands.literal("duel")
+				.then(Commands.literal("accept").then(Commands.argument("player", EntityArgument.player())
+						.executes(c -> Challenges.accept(c.getSource().getPlayerOrException(), EntityArgument.getPlayer(c, "player")) ? 1 : 0)))
+				.then(Commands.literal("deny").then(Commands.argument("player", EntityArgument.player())
+						.executes(c -> Challenges.deny(c.getSource().getPlayerOrException(), EntityArgument.getPlayer(c, "player")) ? 1 : 0)))
+				.then(Commands.argument("target", EntityArgument.player())
+						.executes(c -> {
+							ServerPlayer p = c.getSource().getPlayerOrException();
+							ServerPlayer target = EntityArgument.getPlayer(c, "target");
+							if (target == p) {
+								Msg.send(p, "challenge.self");
+								return 0;
+							}
+							new DuelModeMenu(p, target).open();
+							return 1;
+						})
+						.then(Commands.argument("mode", StringArgumentType.word())
+								.suggests((c, b) -> SharedSuggestionProvider.suggest(duelModeIds(), b))
+								.executes(c -> {
+									ServerPlayer p = c.getSource().getPlayerOrException();
+									GameMode mode = GameMode.byId(StringArgumentType.getString(c, "mode"));
+									if (mode == null || !mode.isDuel()) {
+										Msg.send(p, "challenge.unknown_mode");
+										return 0;
+									}
+									Challenges.send(p, EntityArgument.getPlayer(c, "target"), mode);
+									return 1;
+								}))));
 
 		d.register(Commands.literal("battlehub")
 				.executes(c -> {
@@ -52,6 +87,14 @@ public final class HubCommands {
 						return 1;
 					})));
 		}
+	}
+
+	private static java.util.List<String> duelModeIds() {
+		java.util.List<String> out = new java.util.ArrayList<>();
+		for (GameMode m : GameMode.duels()) {
+			out.add(m.id());
+		}
+		return out;
 	}
 
 	/** Leave whatever you are doing and go back to the lobby. */

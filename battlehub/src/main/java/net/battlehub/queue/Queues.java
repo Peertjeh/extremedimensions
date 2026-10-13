@@ -107,6 +107,7 @@ public final class Queues {
 		}
 		was |= Parties.leave(id);
 		SINCE.remove(id);
+		Challenges.forget(id);
 		if (Sessions.state(id) == Sessions.State.QUEUED) {
 			Sessions.toLobby(id);
 		}
@@ -122,6 +123,7 @@ public final class Queues {
 		if (tick % 20 != 0) {
 			return;
 		}
+		Challenges.tick(server);
 		HubConfig.Elo e = ConfigManager.config().elo;
 		Matchmaker.Window window = new Matchmaker.Window(e.windowBase, e.windowPerSecond, e.windowMax);
 		for (GameMode mode : GameMode.duels()) {
@@ -220,5 +222,6 @@ public final class Queues {
 		QUEUES.clear();
 		SINCE.clear();
 		Parties.clear();
+		Challenges.clear();
 	}
 }
