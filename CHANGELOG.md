@@ -1,5 +1,35 @@
 # Changelog
 
+## 2.2.1: Room to Breathe
+
+*The islands grew, the streets found the bridges, and the rays learned to fly.*
+
+### Changed
+- **Veil Rays fly like they mean it**: they soar high over the islands (thirty to sixty blocks above you), glide from
+  waypoint to waypoint in open sky and turn no faster than a glider can. They look ahead along their whole
+  ten-block wingspan and swerve around spires, islands and hanging chains, preferring to climb over rather than dive
+  under. They drift along with you as you explore, and climb away hard when struck.
+- **Much bigger islands** for the buildings: villages, spires, looms and crystal halos stand on islands about half
+  as wide again, with calmer rims so nothing hangs over the edge. Islands sit further apart on the grid, so bridges
+  are longer and climb gently on slab ramps.
+- **Villages are laid out like real ones**: a larger paved plaza around the bell spire, houses in the four quarters
+  between the streets with a path from every door, and a walled graveyard with a gate, candles and a dead tree.
+- **Streets lead to the bridges**: every island paves a street along each side that has a bridge, from its centre
+  (or plaza) straight to where the bridge lands, with lamps along the way and a pair where it meets the bridge.
+  Quieter islands get worn trails instead.
+- Spires get a paved forecourt before the portal; looms a weaving floor and more height; open ground on every island
+  is dressed with arches, dead trees, lamps and standing stones (never on a street or a building).
+- **Bridges grew arches**: under every long run the deck rests on a row of shallow pointed arches springing from
+  pendants that end in soul lanterns, and the kerbs now sit level with the walking surface on slab ramps.
+
+### Added
+- **Amethyst clusters**: shards of amethyst and violet glass breaking out of the ground, the tallest weeping light at
+  its heart, with buds around their feet. Floating crystals now hover higher.
+
+### Note
+- The island grid changed. Start a new world or delete `dimensions/extremedimensions/the_seam` (with the server
+  stopped) so new islands are not built through old ones.
+
 ## 2.2.0: The Living Seam
 
 *Fog rolls between the islands, fireflies drift in it, and something sings out there.*

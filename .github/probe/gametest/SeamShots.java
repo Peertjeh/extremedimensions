@@ -56,7 +56,8 @@ public class SeamShots implements FabricClientGameTest {
 			});
 			for (int t = 0; t <= 1200; t += 40) {
 				final int tick = t;
-				System.out.print(sp.getServer().computeOnServer(s -> rays(s, tick)));
+				String log = sp.getServer().computeOnServer(s -> rays(s, tick));
+				System.out.print(log);
 				if (t == 640) {
 					sp.getServer().runCommand(IN + "tp @a 4070 86 4068 facing entity @e[type=extremedimensions:veil_ray,x=4070,y=86,z=4068,sort=nearest,limit=1]");
 					ctx.waitTicks(3);
