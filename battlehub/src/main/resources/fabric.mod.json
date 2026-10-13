@@ -1,0 +1,28 @@
+{
+	"schemaVersion": 1,
+	"id": "battlehub",
+	"version": "${version}",
+	"name": "BattleHub",
+	"description": "A server-side PvP and minigame hub. One compass opens everything: duels, ranked ELO, seven party games, spectating and stats. Vanilla clients can join.",
+	"authors": [
+		"Peertjeh"
+	],
+	"contact": {
+		"sources": "https://github.com/Peertjeh/extremedimensions",
+		"issues": "https://github.com/Peertjeh/extremedimensions/issues"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/battlehub/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.battlehub.BattleHub"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
