@@ -94,6 +94,17 @@ class GameRulesTest {
 	}
 
 	@Test
+	void ctfReturnHomeClearsTheCarrier() {
+		CtfGame g = new CtfGame(3);
+		g.assign(List.of(id(1), id(2)));
+		g.touchFlag(id(1), CtfGame.Team.BLUE);
+		g.returnHome(CtfGame.Team.BLUE);
+		assertEquals(CtfGame.FlagState.HOME, g.state(CtfGame.Team.BLUE));
+		assertNull(g.carriedBy(id(1)));
+		assertEquals(CtfGame.EventType.NONE, g.touchBase(id(1)).type());
+	}
+
+	@Test
 	void ctfLeavingCarrierSendsFlagHome() {
 		CtfGame g = new CtfGame(3);
 		g.assign(List.of(id(1), id(2)));

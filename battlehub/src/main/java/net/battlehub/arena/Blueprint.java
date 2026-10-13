@@ -81,6 +81,17 @@ public final class Blueprint {
 		spawns.add(new Spawn(x, y, z, yaw, 0));
 	}
 
+	/** {@code count} spawns on a circle around the origin, everybody facing the middle. */
+	public void spawnRing(int count, double radius, double y) {
+		for (int i = 0; i < count; i++) {
+			double a = i * Math.PI * 2 / count;
+			double x = Math.round(Math.cos(a) * radius) + 0.5;
+			double z = Math.round(Math.sin(a) * radius) + 0.5;
+			float yaw = (float) Math.toDegrees(Math.atan2(x - 0.5, -(z - 0.5)));
+			spawns.add(new Spawn(x, y, z, yaw, 0));
+		}
+	}
+
 	public List<Spawn> spawns() {
 		return spawns;
 	}

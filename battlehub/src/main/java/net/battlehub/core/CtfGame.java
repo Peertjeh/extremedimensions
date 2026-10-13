@@ -161,6 +161,13 @@ public final class CtfGame {
 		return new Event(EventType.DROPPED, carried, player);
 	}
 
+	/** Sends a flag straight home (it fell into the void with its carrier). */
+	public void returnHome(Team flag) {
+		Flag f = flags.get(flag);
+		f.state = FlagState.HOME;
+		f.carrier = null;
+	}
+
 	/** Dropped flags go home on their own after {@code returnTicks}. */
 	public List<Event> tick(long now, int returnTicks) {
 		List<Event> out = new ArrayList<>();

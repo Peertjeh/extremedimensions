@@ -39,7 +39,7 @@ public final class SelfTest {
 
 	private static Script script;
 	private static final Map<String, TestPlayer> PLAYERS = new HashMap<>();
-	private static final Map<String, Object> VARS = new HashMap<>();
+	static final Map<String, Object> VARS = new HashMap<>();
 
 	public static void tick() {
 		if (script != null) {
@@ -71,12 +71,25 @@ public final class SelfTest {
 		duel(server, s, GameMode.BOW, "challenge", "kill");
 		duel(server, s, GameMode.CROSSBOW, "queue", "kill");
 		spectating(server, s);
+		s.run("speed up party timers for the test", () -> {
+			var c = ConfigManager.config();
+			c.timings.partyCountdownSeconds = 3;
+			c.timings.partyFullCountdownSeconds = 2;
+			c.timings.matchStartCountdownSeconds = 2;
+			c.timings.respawnDelaySeconds = 1;
+			c.game(GameMode.KOTH).settings.put("targetPoints", 4.0);
+			c.game(GameMode.CTF).settings.put("capturesToWin", 1.0);
+			c.game(GameMode.LMS).settings.put("borderDelaySeconds", 1.0);
+			c.game(GameMode.LMS).settings.put("borderShrinkSeconds", 20.0);
+		});
+		PartyTests.all(server, s);
 		script = s;
 	}
 
 	/** C watches a duel between A and B: menu entry, spectator mode, bounds, /hub, auto-return at the end. */
 	private static void spectating(MinecraftServer server, Script s) {
 		String tag = "spectate";
+		reset(s, tag);
 		s.run(tag + ": join players", () -> {
 			join(server, "BHTestA");
 			join(server, "BHTestB");
@@ -156,16 +169,35 @@ public final class SelfTest {
 		return Items.AIR;
 	}
 
-	static TestPlayer p(String name) {
+	public static TestPlayer p(String name) {
 		return PLAYERS.get(name);
 	}
 
-	static void join(MinecraftServer server, String name) {
+	public static void join(MinecraftServer server, String name) {
 		TestPlayer old = PLAYERS.get(name);
 		if (old != null && !old.hasDisconnected()) {
 			return;
 		}
 		PLAYERS.put(name, TestPlayer.join(server, name));
+	}
+
+	/** Puts every test player back in the lobby, so a failed scenario cannot break the next one. */
+	static void reset(Script s, String tag) {
+		s.run(tag + ": reset leftovers", () -> {
+			for (TestPlayer pl : PLAYERS.values()) {
+				if (pl.hasDisconnected()) continue;
+				Match m = Matches.of(pl.getUUID());
+				if (m != null) {
+					BattleHub.LOGGER.warn("SELFTEST leftover match #{} ended", m.id);
+					Matches.end(m.id);
+				}
+				if (Sessions.state(pl.getUUID()) == Sessions.State.SPECTATING) {
+					net.battlehub.spectate.Spectators.leave(pl, true);
+				}
+				Queues.leaveAll(pl);
+			}
+		});
+		s.waitFor(tag + ": arena slots free before the start", 600, () -> ArenaSlots.busy() == 0);
 	}
 
 	private static void lobbyAndMenus(MinecraftServer server, Script s) {
@@ -227,6 +259,7 @@ public final class SelfTest {
 	/** A duel between BHTestA and BHTestB, started by queue, ranked queue or challenge, ended by a kill, a disconnect or /hub. */
 	private static void duel(MinecraftServer server, Script s, GameMode mode, String start, String ending) {
 		String tag = mode.id() + "/" + start + "/" + ending;
+		reset(s, tag);
 		s.run(tag + ": join (again)", () -> {
 			join(server, "BHTestA");
 			join(server, "BHTestB");

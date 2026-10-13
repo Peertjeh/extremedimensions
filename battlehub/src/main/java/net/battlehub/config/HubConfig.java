@@ -181,10 +181,10 @@ public final class HubConfig {
 		m.put("mace", new Game(2, 2, 600, "mace"));
 		m.put("bow", new Game(2, 2, 600, "bow"));
 		m.put("crossbow", new Game(2, 2, 600, "crossbow"));
-		m.put("bow_spleef", new Game(2, 16, 300, "bow_spleef"));
+		m.put("bow_spleef", new Game(2, 12, 300, "bow_spleef"));
 		m.put("tnt_run", new Game(2, 16, 300, "tnt_run").with("decayTicks", 8).with("layers", 3));
-		m.put("sumo", new Game(2, 16, 240, "sumo"));
-		m.put("koth", new Game(2, 16, 300, "koth").with("targetPoints", 90).with("pointsPerSecond", 1));
+		m.put("sumo", new Game(2, 10, 240, "sumo"));
+		m.put("koth", new Game(2, 12, 300, "koth").with("targetPoints", 90).with("pointsPerSecond", 1));
 		m.put("ctf", new Game(2, 16, 600, "ctf").with("capturesToWin", 3).with("flagReturnSeconds", 30));
 		m.put("parkour", new Game(2, 16, 420, "parkour").with("jumps", 36).with("checkpointEvery", 9));
 		m.put("lms", new Game(2, 16, 420, "lms").with("borderStart", 80).with("borderEnd", 8)

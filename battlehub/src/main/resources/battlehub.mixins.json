@@ -6,7 +6,8 @@
 	"mixins": [
 		"AbstractContainerMenuMixin",
 		"ServerPlayerMixin",
-		"ConnectionAccessor"
+		"ConnectionAccessor",
+		"ArrowAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

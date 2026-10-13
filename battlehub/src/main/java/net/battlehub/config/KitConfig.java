@@ -72,13 +72,14 @@ public final class KitConfig {
 				.add(i("arrow", 32, "8")), "chainmail"));
 		m.put("crossbow", armor(new Kit().add(i("crossbow", 1, "0").ench("minecraft:quick_charge", 1)).add(i("iron_sword", 1, "1"))
 				.add(i("arrow", 32, "8")), "iron"));
-		m.put("bow_spleef", new Kit().add(i("bow", 1, "0").ench("minecraft:infinity", 1).ench("minecraft:punch", 1)).add(i("arrow", 1, "9")));
-		m.put("tnt_run", new Kit().effect("minecraft:speed", 0));
-		m.put("sumo", new Kit().effect("minecraft:resistance", 4));
-		m.put("koth", armor(new Kit().add(i("stone_sword", 1, "0")), "chainmail"));
+		m.put("bow_spleef", new Kit().add(i("bow", 1, "0").ench("minecraft:infinity", 1).ench("minecraft:punch", 1)).add(i("arrow", 1, "9"))
+				.effect("minecraft:resistance", 4).effect("minecraft:saturation", 0));
+		m.put("tnt_run", new Kit().effect("minecraft:speed", 0).effect("minecraft:saturation", 0));
+		m.put("sumo", new Kit().effect("minecraft:resistance", 4).effect("minecraft:saturation", 0));
+		m.put("koth", armor(new Kit().add(i("stone_sword", 1, "0")), "chainmail").effect("minecraft:saturation", 0));
 		m.put("ctf", armor(new Kit().add(i("iron_sword", 1, "0")).add(i("bow", 1, "1")).add(i("arrow", 16, "8"))
-				.add(i("golden_apple", 1, "2")), "leather"));
-		m.put("parkour", new Kit());
+				.add(i("golden_apple", 1, "2")), "leather").effect("minecraft:saturation", 0));
+		m.put("parkour", new Kit().effect("minecraft:saturation", 0));
 		m.put("lms", armor(new Kit().add(i("iron_sword", 1, "0")).add(i("bow", 1, "1")).add(i("arrow", 16, "8"))
 				.add(i("golden_apple", 2, "2")).add(i("cooked_beef", 8, "3")), "iron"));
 		return m;

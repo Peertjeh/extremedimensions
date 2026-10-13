@@ -42,6 +42,11 @@ public final class TestPlayer extends ServerPlayer {
 		if (!connection.hasClientLoaded()) {
 			connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
 		}
+		// A real client also acknowledges a teleport into another dimension; until then the player is
+		// "changing dimension" and immune to damage.
+		if (isChangingDimension()) {
+			hasChangedDimension();
+		}
 		super.tick();
 		try {
 			doTick();
