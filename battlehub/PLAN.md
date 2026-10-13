@@ -91,3 +91,15 @@ Elke fase: compileert, unit tests groen, server start in CI zonder fouten, zelft
 * `src/test/java`: JUnit-tests voor alles in `net.battlehub.core`.
 * CI: `./gradlew build` en een echte server-start met de release-jar plus `/battlehub selftest`
   (alleen actief met `-Dbattlehub.selftest=true`), die met nep-spelers elke modus in elke passende arena speelt.
+
+## Extra keuzes tijdens het bouwen
+
+* **Vertrekken van de server** loopt via een mixin op `PlayerList.remove` in plaats van het netwerk-event
+  `DISCONNECT`. Die draait vóórdat vanilla het spelersbestand opslaat, dus wie midden in een match uitlogt,
+  krijgt zijn eigen inventaris opgeslagen en niet de kit.
+* **Nep-spelers in de zelftest** doen wat een echte client automatisch doet: ze bevestigen dat de wereld
+  geladen is en dat ze in een andere dimensie zijn aangekomen. Zonder die bevestiging blijft de server ze
+  onkwetsbaar houden.
+* **Arena's**: elke modus gebruikt standaard alle vijf de thema's (Mace alleen Sky); de zelftest bouwt elke
+  layout in elk thema en controleert dat spawns op vaste grond staan, er hoofdruimte is en de nodige
+  markeringen (KOTH-zone, CTF-vlaggen en teamspawns) bestaan.
