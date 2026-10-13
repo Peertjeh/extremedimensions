@@ -62,6 +62,7 @@ public final class SelfTest {
 			PLAYERS.clear();
 		});
 		lobbyAndMenus(server, s);
+		LayoutTests.all(s);
 		duel(server, s, GameMode.SWORD, "queue", "kill");
 		duel(server, s, GameMode.SWORD, "queue", "disconnect");
 		duel(server, s, GameMode.SWORD, "queue", "forfeit");

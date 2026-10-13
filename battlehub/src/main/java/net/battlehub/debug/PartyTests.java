@@ -242,6 +242,8 @@ final class PartyTests {
 				if (i < m.course().size()) {
 					Vec3 top = m.platformTop(i);
 					tp(p("BHTestA"), top.x, top.y + 0.05, top.z);
+					// Simulated players have no client to report that they landed
+					p("BHTestA").setOnGround(true);
 					VARS.put("pk", i + 1);
 				}
 			}
