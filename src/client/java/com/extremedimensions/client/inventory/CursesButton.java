@@ -24,6 +24,16 @@ import net.minecraft.network.chat.Component;
  * count of the stacks carried. It follows the recipe book button when the book opens or closes.
  */
 public final class CursesButton extends AbstractButton {
+	/** The ward on the button: a cracked diamond, two pixels per cell. */
+	private static final String[] SIGIL = {
+		"...#...",
+		"..#.#..",
+		".#.#.#.",
+		"#.###.#",
+		".#.#.#.",
+		"..#.#..",
+		"...#...",
+	};
 	private final AbstractWidget anchor;
 
 	private CursesButton(AbstractWidget anchor) {
@@ -80,12 +90,22 @@ public final class CursesButton extends AbstractButton {
 		g.fill(x + 1, y + 1, x + w - 1, y + h - 1, Ui.argb(255, hot ? Ui.mix(rim, 0xFFFFFF, 0.3) : rim));
 		g.fill(x + 2, y + 2, x + w - 2, y + h - 2, Ui.argb(255, Ui.mix(Ui.INK, rim, hot ? 0.3 : 0.16)));
 		g.fill(x + 2, y + 2, x + w - 2, y + 3, Ui.argb(0.18, 0xFFFFFF));
-		Ui.rune(g, "curses", x + 3, y + 2, Ui.mix(rim, 0xFFFFFF, hot ? 0.55 : 0.35), 1.0);
+		int ink = Ui.argb(255, Ui.mix(rim, 0xFFFFFF, hot ? 0.55 : 0.3));
+		for (int row = 0; row < SIGIL.length; row++) {
+			for (int col = 0; col < SIGIL[row].length(); col++) {
+				if (SIGIL[row].charAt(col) == '#') {
+					g.fill(x + 3 + col * 2, y + 2 + row * 2, x + 5 + col * 2, y + 4 + row * 2, ink);
+				}
+			}
+		}
 		if (total > 0) {
+			// The count sits on its own dark plate in the corner, clear of the sigil
 			Minecraft mc = Minecraft.getInstance();
 			String n = total > 99 ? "99" : String.valueOf(total);
-			int tx = this.getX() + this.getWidth() - mc.font.width(n);
-			g.text(mc.font, n, tx, this.getY() + this.getHeight() - 8, Ui.argb(255, Ui.PARCHMENT), true);
+			int tw = mc.font.width(n);
+			int tx = x + w - tw, ty = y + h - 7;
+			g.fill(tx - 1, ty - 1, x + w + 1, y + h + 1, Ui.argb(220, Ui.SHADOW));
+			g.text(mc.font, n, tx, ty, Ui.argb(255, Ui.PARCHMENT), false);
 		}
 	}
 
