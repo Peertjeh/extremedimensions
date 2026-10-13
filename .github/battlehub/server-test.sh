@@ -12,7 +12,13 @@ curl -s -o server.jar "https://meta.fabricmc.net/v2/versions/loader/$MC/$LOADER/
 curl -s -o mods/fabric-api.jar "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/${FAPI/+/%2B}/fabric-api-${FAPI/+/%2B}.jar"
 cp "$JAR" mods/
 echo "eula=true" > eula.txt
-printf 'online-mode=false\nspawn-protection=0\nlevel-type=minecraft\\:flat\nsync-chunk-writes=false\n' > server.properties
+cat > server.properties <<'PROPS'
+online-mode=false
+spawn-protection=0
+level-type=minecraft\:flat
+generator-settings={"layers"\:[{"block"\:"minecraft\:bedrock","height"\:1},{"block"\:"minecraft\:dirt","height"\:2},{"block"\:"minecraft\:grass_block","height"\:1}],"biome"\:"minecraft\:plains"}
+sync-chunk-writes=false
+PROPS
 mkfifo in
 (java -Xmx3G -Dbattlehub.selftest=true -jar server.jar nogui < in > out.log 2>&1 &)
 exec 3>in
