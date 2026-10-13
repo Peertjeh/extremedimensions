@@ -11,6 +11,7 @@ import com.extremedimensions.client.entity.LurkerRenderer;
 import com.extremedimensions.client.entity.VeilRayModel;
 import com.extremedimensions.client.entity.VeilRayRenderer;
 import com.extremedimensions.client.hud.ChargeHud;
+import com.extremedimensions.client.hud.StomachHud;
 import com.extremedimensions.client.inventory.JournalButton;
 import com.extremedimensions.client.inventory.CursesButton;
 import com.extremedimensions.client.screen.JournalScreen;
@@ -65,6 +66,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(SeamAmbience::tick);
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ClientState::reset));
 		HudElementRegistry.addLast(ExtremeDimensions.id("charge_hud"), new ChargeHud());
+		HudElementRegistry.addLast(ExtremeDimensions.id("stomach_hud"), new StomachHud());
 		Tooltips.register();
 		MoteParticle.register();
 		ModelLayerRegistry.registerModelLayer(LurkerModel.LAYER, LurkerModel::createBodyLayer);

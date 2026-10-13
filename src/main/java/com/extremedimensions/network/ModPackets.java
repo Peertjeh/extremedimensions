@@ -164,16 +164,17 @@ public final class ModPackets {
 			return TYPE;
 		}
 	}
-	/** Client -> server: the Curses button in the inventory was pressed. */
-	public record RequestCursesPayload() implements CustomPacketPayload {
+	/** Client -> server: the Curses button was pressed (open), or the open Curses screen wants fresh numbers. */
+	public record RequestCursesPayload(boolean open) implements CustomPacketPayload {
 		public static final Type<RequestCursesPayload> TYPE = new Type<>(ExtremeDimensions.id("request_curses"));
 		public static final StreamCodec<FriendlyByteBuf, RequestCursesPayload> CODEC = StreamCodec.ofMember(RequestCursesPayload::write, RequestCursesPayload::read);
 
 		private void write(FriendlyByteBuf buf) {
+			buf.writeBoolean(open);
 		}
 
 		private static RequestCursesPayload read(FriendlyByteBuf buf) {
-			return new RequestCursesPayload();
+			return new RequestCursesPayload(buf.readBoolean());
 		}
 
 		@Override
@@ -183,8 +184,9 @@ public final class ModPackets {
 	}
 
 	/**
-	 * Server -> client: every curse for the Curses screen. data = "scars|atoning|overworldOn|entries", entries
-	 * "id:stacks:max:atonement:cost:valuePerStack" separated by ';'. open = open the screen (else only refresh it).
+	 * Server -> client: every curse for the Curses screen. data = "scars|atoning|overworldOn|entries|nearby", entries
+	 * "id:stacks:max:atonement:cost:valuePerStack" separated by ';', nearby players "uuid,name,beyond,overworld,everywhere"
+	 * separated by ';'. open = open the screen (else only refresh it).
 	 */
 	public record CursesPayload(String data, boolean open) implements CustomPacketPayload {
 		public static final Type<CursesPayload> TYPE = new Type<>(ExtremeDimensions.id("curses"));

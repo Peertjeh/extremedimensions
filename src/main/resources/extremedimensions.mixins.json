@@ -4,6 +4,7 @@
 	"package": "com.extremedimensions.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
+		"CursedPlayerMixin",
 		"VillagerPricesMixin"
 	],
 	"injectors": {

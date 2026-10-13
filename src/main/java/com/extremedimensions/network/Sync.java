@@ -9,6 +9,11 @@ import com.extremedimensions.seam.SeamService;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.tether.TetherService;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -53,6 +58,11 @@ public final class Sync {
 
 	/** Every curse, for the Curses screen (see {@link ModPackets.CursesPayload}). */
 	public static void curses(ServerPlayer p, PlayerData d, boolean open) {
+		ServerPlayNetworking.send(p, new ModPackets.CursesPayload(cursesData(p, d), open));
+	}
+
+	/** The Curses screen's data: scars, the curse atoned for, Overworld curses on or off, every curse, players nearby. */
+	public static String cursesData(ServerPlayer p, PlayerData d) {
 		StringBuilder out = new StringBuilder();
 		out.append(d.scars).append('|').append(d.atoning == null ? "" : d.atoning).append('|').append(DataStore.overworldPenalties() ? 1 : 0).append('|');
 		boolean first = true;
@@ -64,10 +74,45 @@ public final class Sync {
 			out.append(pen.id).append(':').append(d.stacks(pen)).append(':').append(pen.max).append(':')
 					.append(d.atonement.getOrDefault(pen.id, 0)).append(':').append(PenaltyService.cost(d, pen)).append(':').append(pen.display());
 		}
-		ServerPlayNetworking.send(p, new ModPackets.CursesPayload(out.toString(), open));
+		out.append('|').append(nearby(p));
+		return out.toString();
 	}
 
-	/** "id:stacks:max;..." for every curse the player carries. */
+	/** How close another player must stand to show on the Curses screen. */
+	private static final double NEARBY = 7.0;
+
+	/**
+	 * Players within {@link #NEARBY} blocks, nearest first: "uuid,name,beyond,overworld,everywhere" separated by ';'.
+	 * Only how many stacks each set holds, never which curses.
+	 */
+	private static String nearby(ServerPlayer p) {
+		if (!(p.level() instanceof ServerLevel level)) {
+			return "";
+		}
+		List<ServerPlayer> near = new ArrayList<>();
+		for (ServerPlayer q : level.players()) {
+			if (q != p && !q.isSpectator() && q.distanceToSqr(p) <= NEARBY * NEARBY) {
+				near.add(q);
+			}
+		}
+		near.sort(Comparator.comparingDouble(q -> q.distanceToSqr(p)));
+		StringBuilder out = new StringBuilder();
+		for (ServerPlayer q : near) {
+			PlayerData d = DataStore.get(q.getUUID());
+			int[] sets = new int[3];
+			for (Penalty pen : Penalty.values()) {
+				sets[pen.group.ordinal()] += d.stacks(pen);
+			}
+			if (out.length() > 0) {
+				out.append(';');
+			}
+			out.append(q.getUUID()).append(',').append(q.getName().getString()).append(',')
+					.append(sets[0]).append(',').append(sets[1]).append(',').append(sets[2]);
+		}
+		return out.toString();
+	}
+
+	/** "id:stacks:max:valuePerStack;..." for every curse the player carries. */
 	private static String penalties(PlayerData d) {
 		StringBuilder out = new StringBuilder();
 		for (Penalty pen : Penalty.values()) {
@@ -78,7 +123,7 @@ public final class Sync {
 			if (out.length() > 0) {
 				out.append(';');
 			}
-			out.append(pen.id).append(':').append(n).append(':').append(pen.max);
+			out.append(pen.id).append(':').append(n).append(':').append(pen.max).append(':').append(pen.display());
 		}
 		return out.toString();
 	}

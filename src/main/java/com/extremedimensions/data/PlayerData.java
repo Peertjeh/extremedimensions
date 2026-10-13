@@ -98,6 +98,11 @@ public class PlayerData {
 	public transient int vertigoIn = 60, huntIn = 120;
 	/** Whether it was dark outside last time we looked (dawn = a night survived). */
 	public transient int wasDark = -1;
+	/** Short Breath and Frostbitten: last air and frozen ticks seen, and the fraction still owed. */
+	public transient int lastAir = -1, lastFrozen = -1;
+	public transient double airCarry, frozenCarry;
+	/** Lead Pockets: the slowdown currently applied. */
+	public transient double leadValue = Double.NaN;
 	public transient boolean joinDone = false;
 	public transient int ticksOnline = 0;
 	/** Current drain including the distance factor (HUD). */
@@ -138,9 +143,9 @@ public class PlayerData {
 		return true;
 	}
 
-	/** Stacks of a curse, but only where it acts (beyond curses beyond the wound, Overworld curses at home). */
+	/** Stacks of a curse, but only where it acts (beyond curses beyond the wound, Overworld curses at home, the rest everywhere). */
 	public int active(Penalty p, boolean beyond, boolean overworld) {
-		return (p.overworld ? overworld : beyond) ? stacks(p) : 0;
+		return (p.everywhere || (p.overworld ? overworld : beyond)) ? stacks(p) : 0;
 	}
 
 	/** Turns the stacks of the old, timed penalties into permanent curses (capped at their maximum), once. */

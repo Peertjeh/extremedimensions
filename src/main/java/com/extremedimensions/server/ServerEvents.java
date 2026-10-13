@@ -88,6 +88,7 @@ public final class ServerEvents {
 			Sync.state(newPlayer, d);
 		});
 
+		ServerLivingEntityEvents.AFTER_DAMAGE.register(PenaltyService::afterDamage);
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if ("minecraft:ender_dragon".equals(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString()) && WorldFx.server() != null) {
 				WorldService.onDragonDeath(WorldFx.server());

@@ -11,7 +11,7 @@ public final class ClientState {
 	private ClientState() {}
 
 	/** One curse the player carries, as sent by the server. */
-	public record Mark(String id, Penalty penalty, int stacks, int max) {}
+	public record Mark(String id, Penalty penalty, int stacks, int max, double value) {}
 
 	/** Own charge in charged anchors nearby; -1 = none nearby. */
 	public static int nearNether = -1;
@@ -96,12 +96,24 @@ public final class ClientState {
 			try {
 				int stacks = kv.length > 1 ? Integer.parseInt(kv[1]) : 1;
 				int max = kv.length > 2 ? Integer.parseInt(kv[2]) : stacks;
-				out.add(new Mark(kv[0], Penalty.byId(kv[0]), stacks, max));
+				Penalty pen = Penalty.byId(kv[0]);
+				double value = kv.length > 3 ? Double.parseDouble(kv[3]) : pen != null ? pen.value : 0;
+				out.add(new Mark(kv[0], pen, stacks, max, value));
 			} catch (NumberFormatException e) {
 				// skip malformed entry
 			}
 		}
 		return out;
+	}
+
+	/** Value per stack of a curse the player carries (as the server's config has it), 0 if not carried. */
+	public static double valueOf(String id) {
+		for (Mark m : marks) {
+			if (m.id().equals(id)) {
+				return m.value();
+			}
+		}
+		return 0;
 	}
 
 	/** Active stacks of a penalty. */

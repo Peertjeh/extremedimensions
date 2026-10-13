@@ -57,7 +57,7 @@ public class ExtremeDimensions implements ModInitializer {
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.CursesPayload.TYPE, ModPackets.CursesPayload.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestCursesPayload.TYPE, ModPackets.RequestCursesPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestCursesPayload.TYPE,
-				(payload, context) -> Sync.curses(context.player(), DataStore.get(context.player().getUUID()), true));
+				(payload, context) -> Sync.curses(context.player(), DataStore.get(context.player().getUUID()), payload.open()));
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.AtonePayload.TYPE, ModPackets.AtonePayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.AtonePayload.TYPE,
 				(payload, context) -> PenaltyService.setAtoning(context.player(), payload.id()));

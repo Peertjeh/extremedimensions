@@ -48,7 +48,18 @@ public class PenaltyChoiceScreen extends Screen {
 				options.add(new Option(p, 1, 0, p.max, p.display()));
 			}
 		}
-		overworld = !options.isEmpty() && options.get(0).pen().overworld;
+		overworld = setIsOverworld();
+	}
+
+	/** Which world's set this offer comes from: from its cards, or (all Everywhere cards) from where the player is. */
+	private boolean setIsOverworld() {
+		for (Option o : options) {
+			if (o.pen().group != Penalty.Group.EVERYWHERE) {
+				return o.pen().overworld;
+			}
+		}
+		net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+		return mc.level != null && mc.level.dimension() == net.minecraft.world.level.Level.OVERWORLD;
 	}
 
 	/** True when the offer is multiplied (every card then carries a seal). */
@@ -152,6 +163,9 @@ public class PenaltyChoiceScreen extends Screen {
 			fade *= (i == chosen) ? 1.0 : 1 - Ui.clamp01((now - chosenAt) / 450.0);
 		}
 		int top = y + (int) ((1 - e) * 70) - (hover ? 6 : 0);
+		if (pen.everywhere) {
+			accent = Ui.mix(Ui.VOID, accent, 0.25);
+		}
 		int border = hover ? Ui.WARN : accent;
 		if (i == chosen) {
 			border = ((now / 70) % 2 == 0) ? 0xFFE066 : 0xFF8800;
@@ -171,9 +185,14 @@ public class PenaltyChoiceScreen extends Screen {
 		Ui.divider(g, x + 14, top + 45, CARD_W - 28, border, fade);
 
 		int ly = top + 52;
-		String[] lines = {Ui.tr(pen.lineKey(1), opt.value()), Ui.tr(pen.lineKey(2), opt.value()), Ui.tr("gui.extremedimensions.choice.permanent", opt.max())};
+		// Stacks past the maximum spill over onto other curses; the third line says how many
+		int spill = Math.max(0, opt.stacks() + opt.mult() - opt.max());
+		String third = spill > 0 ? Ui.tr("gui.extremedimensions.choice.spill", spill)
+				: Ui.tr(pen.everywhere ? "gui.extremedimensions.choice.everywhere" : "gui.extremedimensions.choice.permanent", opt.max());
+		String[] lines = {Ui.tr(pen.lineKey(1), opt.value()), Ui.tr(pen.lineKey(2), opt.value()), third};
 		for (int k = 0; k < lines.length; k++) {
-			g.text(this.font, lines[k], mid - this.font.width(lines[k]) / 2, ly, Ui.argb(fade, k == 2 ? Ui.MUTED : Ui.TEXT));
+			int col = k < 2 ? Ui.TEXT : spill > 0 ? Ui.WARN : pen.everywhere ? Ui.mix(Ui.VOID, Ui.MUTED, 0.4) : Ui.MUTED;
+			g.text(this.font, lines[k], mid - this.font.width(lines[k]) / 2, ly, Ui.argb(fade, col));
 			ly += 11;
 		}
 		// Stacks now, and after this card (capped at the maximum)

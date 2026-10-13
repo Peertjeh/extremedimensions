@@ -1,8 +1,10 @@
 package com.extremedimensions.penalty;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import com.extremedimensions.config.Config;
@@ -20,12 +22,21 @@ import com.extremedimensions.server.WorldFx;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.food.FoodData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.levelgen.Heightmap;
 
@@ -96,7 +107,8 @@ public final class PenaltyService {
 			d.owed.remove(0);
 		}
 
-		d.addStacks(pen, mult);
+		int added = d.addStacks(pen, mult);
+		Map<Penalty, Integer> spilled = spill(d, mult - added);
 		applyEffects(p, d);
 		WorldFx.fx(p, Fx.PENALTY, 0);
 		WorldFx.particles(p, "minecraft:soul", 1.0, 0.5, 0.05, 25 * mult);
@@ -104,6 +116,18 @@ public final class PenaltyService {
 		WorldFx.soundSelf(p, "extremedimensions:penalty", 1.0f, mult > 1 ? 0.8f : 1.0f);
 		Journal.unlock(p, d, JournalEntry.SCARS);
 		Advancements.grant(p, Advancements.MARKED);
+		if (!spilled.isEmpty()) {
+			MutableComponent names = Component.empty();
+			boolean first = true;
+			for (Map.Entry<Penalty, Integer> e : spilled.entrySet()) {
+				if (!first) {
+					names.append(", ");
+				}
+				first = false;
+				names.append(Component.translatable(e.getKey().nameKey())).append(" +" + e.getValue());
+			}
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.choice.spilled", names), true);
+		}
 
 		// More owed (several deaths in a row)? The next screen follows.
 		nextOffer(d);
@@ -112,6 +136,26 @@ public final class PenaltyService {
 		}
 		Sync.state(p, d);
 		DataStore.save();
+	}
+
+	/**
+	 * Stacks a multiplied card could not add (its curse reached the maximum) are not lost: each lands on a random curse
+	 * that still has room, in any set (Overworld curses only while they are switched on).
+	 */
+	private static Map<Penalty, Integer> spill(PlayerData d, int n) {
+		Map<Penalty, Integer> out = new LinkedHashMap<>();
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		for (int i = 0; i < n; i++) {
+			List<Penalty> room = Penalty.withRoom(d, DataStore.overworldPenalties());
+			if (room.isEmpty()) {
+				break;
+			}
+			Penalty t = room.get(rnd.nextInt(room.size()));
+			if (d.addStacks(t, 1) > 0) {
+				out.merge(t, 1, Integer::sum);
+			}
+		}
+		return out;
 	}
 
 	/** A curse laid without a choice (a Lurker, a Collapse in the Seam): one stack of a random curse. Null if none fits. */
@@ -132,19 +176,26 @@ public final class PenaltyService {
 
 	// ------------------------------------------------------------------ taking curses off
 
-	/** The curse that mending works on: the one being atoned for, else the heaviest (of a set, or of both when null). */
+	/**
+	 * The curse that mending works on: the one being atoned for, else the heaviest. With a world given, only curses that
+	 * can be atoned for there: that world's set and the Everywhere set. Null = any curse.
+	 */
 	public static Penalty target(PlayerData d, Boolean overworld) {
 		Penalty chosen = d.atoning == null ? null : Penalty.byId(d.atoning);
-		if (chosen != null && d.stacks(chosen) > 0 && (overworld == null || chosen.overworld == overworld)) {
+		if (chosen != null && d.stacks(chosen) > 0 && fits(chosen, overworld)) {
 			return chosen;
 		}
 		Penalty best = null;
 		for (Penalty p : Penalty.values()) {
-			if ((overworld == null || p.overworld == overworld) && d.stacks(p) > 0 && (best == null || d.stacks(p) > d.stacks(best))) {
+			if (fits(p, overworld) && d.stacks(p) > 0 && (best == null || d.stacks(p) > d.stacks(best))) {
 				best = p;
 			}
 		}
 		return best;
+	}
+
+	private static boolean fits(Penalty p, Boolean overworld) {
+		return overworld == null || p.everywhere || (overworld ? p.overworld : p.group == Penalty.Group.BEYOND);
 	}
 
 	/** Atonement points needed to take the next stack of a curse off: more for every stack above the last. */
@@ -284,7 +335,14 @@ public final class PenaltyService {
 		hunger(p, d, beyond, ow);
 		skimXp(p, d, beyond, ow);
 		skimFood(p, d, ow);
+		shrunkenStomach(p, d);
+		shortBreath(p, d);
+		frostbitten(p, d);
+		if (d.tickCounter % 10 == 0) {
+			sealPockets(p, d);
+		}
 		if (d.tickCounter % 20 == 0) {
+			leadPockets(p, d);
 			if (d.xpForfeit) {
 				d.xpForfeit = false;
 				if (p.experienceLevel > 0) {
@@ -492,6 +550,11 @@ public final class PenaltyService {
 		modifier(p, "minecraft:entity_interaction_range", "short_reach", reach, "add_value");
 		modifier(p, "minecraft:jump_strength", "weak_knees", -compound(Penalty.WEAK_KNEES, d.active(Penalty.WEAK_KNEES, b, o)), "add_multiplied_total");
 		modifier(p, "minecraft:gravity", "heavy_soul", Penalty.HEAVY_SOUL.frac() * d.active(Penalty.HEAVY_SOUL, b, o), "add_multiplied_base");
+		// Everywhere
+		modifier(p, "minecraft:max_health", "withering", -Math.min(8.0, 2 * Penalty.WITHERING.value * d.stacks(Penalty.WITHERING)), "add_value");
+		modifier(p, "minecraft:jump_strength", "grounded", -compound(Penalty.GROUNDED, d.stacks(Penalty.GROUNDED)), "add_multiplied_total");
+		modifier(p, "minecraft:safe_fall_distance", "fragile_footing", -Penalty.FRAGILE_FOOTING.value * d.stacks(Penalty.FRAGILE_FOOTING), "add_value");
+		d.leadValue = Double.NaN;
 		refreshEffects(p, d);
 	}
 
@@ -524,6 +587,203 @@ public final class PenaltyService {
 		if (dark) {
 			effect(p, "darkness", 8, 0);
 		}
+	}
+
+	// ------------------------------------------------------------------ everywhere
+
+	/** Sealed Pockets: how many slots of the main inventory are sealed (from the last slot backwards; the hotbar never). */
+	public static int sealedSlots(PlayerData d) {
+		return Math.min(27, d.stacks(Penalty.SEALED_POCKETS) * (int) Math.round(Penalty.SEALED_POCKETS.value));
+	}
+
+	/** Sealed Pockets: whatever lies in a sealed slot is moved to a free slot, or falls out. */
+	private static void sealPockets(ServerPlayer p, PlayerData d) {
+		int n = sealedSlots(d);
+		if (n <= 0 || p.isCreative() || p.isSpectator()) {
+			return;
+		}
+		var inv = p.getInventory();
+		for (int i = 35; i > 35 - n; i--) {
+			ItemStack s = inv.getItem(i);
+			if (s.isEmpty()) {
+				continue;
+			}
+			inv.setItem(i, ItemStack.EMPTY);
+			int free = -1;
+			for (int j = 0; j <= 35 - n && free < 0; j++) {
+				if (inv.getItem(j).isEmpty()) {
+					free = j;
+				}
+			}
+			if (free >= 0) {
+				inv.setItem(free, s);
+			} else {
+				throwAway(p, s, 20);
+			}
+		}
+	}
+
+	/** Shrunken Stomach: the most food the player can hold. */
+	public static int stomachCap(PlayerData d) {
+		return Math.max(2, 20 - 2 * (int) Math.round(Penalty.SHRUNKEN_STOMACH.value) * d.stacks(Penalty.SHRUNKEN_STOMACH));
+	}
+
+	/**
+	 * Shrunken Stomach: food (and saturation) never rise above the cap. Below the 18 food natural healing needs, a full
+	 * shrunken stomach still heals slowly, at the vanilla pace and cost, so the curse never stops healing outright.
+	 */
+	private static void shrunkenStomach(ServerPlayer p, PlayerData d) {
+		if (d.stacks(Penalty.SHRUNKEN_STOMACH) <= 0 || p.isCreative() || p.isSpectator()) {
+			return;
+		}
+		int cap = stomachCap(d);
+		FoodData food = p.getFoodData();
+		if (food.getFoodLevel() > cap) {
+			food.setFoodLevel(cap);
+			d.lastFood = cap;
+		}
+		if (food.getSaturationLevel() > cap) {
+			food.setSaturation(cap);
+		}
+		if (cap < 18 && food.getFoodLevel() >= cap && p.getHealth() < p.getMaxHealth() && d.tickCounter % 80 == 0) {
+			p.heal(1.0f);
+			p.causeFoodExhaustion(6.0f);
+		}
+	}
+
+	/** Short Breath: under water the air runs out faster. */
+	private static void shortBreath(ServerPlayer p, PlayerData d) {
+		int air = p.getAirSupply();
+		int stacks = d.stacks(Penalty.SHORT_BREATH);
+		if (stacks > 0 && d.lastAir >= 0 && air < d.lastAir && air > 0 && !p.isCreative()) {
+			d.airCarry += (d.lastAir - air) * Penalty.SHORT_BREATH.frac() * stacks;
+			int take = (int) d.airCarry;
+			if (take > 0) {
+				d.airCarry -= take;
+				air = Math.max(0, air - take);
+				p.setAirSupply(air);
+			}
+		}
+		d.lastAir = air;
+	}
+
+	/** Frostbitten: powder snow freezes faster (its damage is raised in {@link #damageTaken}). */
+	private static void frostbitten(ServerPlayer p, PlayerData d) {
+		int frozen = p.getTicksFrozen();
+		int stacks = d.stacks(Penalty.FROSTBITTEN);
+		if (stacks > 0 && d.lastFrozen >= 0 && frozen > d.lastFrozen && !p.isCreative()) {
+			d.frozenCarry += (frozen - d.lastFrozen) * Penalty.FROSTBITTEN.frac() * stacks;
+			int add = (int) d.frozenCarry;
+			if (add > 0) {
+				d.frozenCarry -= add;
+				frozen += add;
+				p.setTicksFrozen(frozen);
+			}
+		}
+		d.lastFrozen = frozen;
+	}
+
+	/** Lead Pockets: slower while more than half of the main inventory is full. */
+	private static void leadPockets(ServerPlayer p, PlayerData d) {
+		int stacks = d.stacks(Penalty.LEAD_POCKETS);
+		double want = 0;
+		if (stacks > 0) {
+			var inv = p.getInventory();
+			int used = 0;
+			for (int i = 0; i < 36; i++) {
+				if (!inv.getItem(i).isEmpty()) {
+					used++;
+				}
+			}
+			if (used > 18) {
+				want = -compound(Penalty.LEAD_POCKETS, stacks);
+			}
+		}
+		if (Double.isNaN(d.leadValue) || want != d.leadValue) {
+			d.leadValue = want;
+			modifier(p, "minecraft:movement_speed", "lead_pockets", want, "add_multiplied_total");
+		}
+	}
+
+	/** Kindling, Frostbitten, Volatile and Glass Jaw: more damage from fire, cold, explosions and mobs. */
+	public static float damageTaken(ServerPlayer p, DamageSource source, float amount) {
+		if (amount <= 0) {
+			return amount;
+		}
+		PlayerData d = DataStore.get(p.getUUID());
+		double m = 1.0;
+		if (source.is(DamageTypeTags.IS_FIRE)) {
+			m *= 1 + Penalty.KINDLING.frac() * d.stacks(Penalty.KINDLING);
+		}
+		if (source.is(DamageTypeTags.IS_FREEZING)) {
+			m *= 1 + Penalty.FROSTBITTEN.frac() * d.stacks(Penalty.FROSTBITTEN);
+		}
+		if (source.is(DamageTypeTags.IS_EXPLOSION)) {
+			m *= 1 + Penalty.VOLATILE.frac() * d.stacks(Penalty.VOLATILE);
+		}
+		if (source.getEntity() instanceof Mob) {
+			m *= 1 + Penalty.GLASS_JAW.frac() * d.stacks(Penalty.GLASS_JAW);
+		}
+		return (float) (amount * m);
+	}
+
+	/** Fading Brews and Lingering Ills: good effects run out sooner, bad ones linger (beacons and curse effects excepted). */
+	public static MobEffectInstance scaleEffect(ServerPlayer p, MobEffectInstance e) {
+		if (e == null || e.isAmbient() || e.isInfiniteDuration()) {
+			return e;
+		}
+		PlayerData d = DataStore.get(p.getUUID());
+		MobEffectCategory category = e.getEffect().value().getCategory();
+		if (category == MobEffectCategory.BENEFICIAL && d.stacks(Penalty.FADING_BREWS) > 0) {
+			return e.withScaledDuration((float) (1 - compound(Penalty.FADING_BREWS, d.stacks(Penalty.FADING_BREWS))));
+		}
+		if (category == MobEffectCategory.HARMFUL && d.stacks(Penalty.LINGERING_ILLS) > 0) {
+			return e.withScaledDuration((float) (1 + Penalty.LINGERING_ILLS.frac() * d.stacks(Penalty.LINGERING_ILLS)));
+		}
+		return e;
+	}
+
+	/** After a hit lands: Hungry Wounds, Brittle Gear and Fumbling. */
+	public static void afterDamage(LivingEntity entity, DamageSource source, float baseTaken, float taken, boolean blocked) {
+		if (!(entity instanceof ServerPlayer p) || taken <= 0 || p.isCreative() || p.isSpectator()) {
+			return;
+		}
+		PlayerData d = DataStore.get(p.getUUID());
+		int hungry = d.stacks(Penalty.HUNGRY_WOUNDS);
+		if (hungry > 0) {
+			p.causeFoodExhaustion((float) (Penalty.HUNGRY_WOUNDS.value * hungry));
+		}
+		int brittle = d.stacks(Penalty.BRITTLE_GEAR) * (int) Math.round(Penalty.BRITTLE_GEAR.value);
+		if (brittle > 0 && !source.is(DamageTypeTags.BYPASSES_ARMOR)) {
+			for (EquipmentSlot slot : new EquipmentSlot[] {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+				ItemStack armor = p.getItemBySlot(slot);
+				if (armor.isDamageableItem()) {
+					armor.hurtAndBreak(brittle, p, slot);
+				}
+			}
+		}
+		int fumbling = d.stacks(Penalty.FUMBLING);
+		if (fumbling > 0 && source.getEntity() != null && source.getEntity() != p
+				&& ThreadLocalRandom.current().nextDouble() < Math.min(0.9, Penalty.FUMBLING.frac() * fumbling)) {
+			ItemStack held = p.getMainHandItem();
+			if (!held.isEmpty()) {
+				p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+				throwAway(p, held, 40);
+				WorldFx.soundSelf(p, "minecraft:entity.item.break", 0.6f, 1.6f);
+				p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.fumbled"), true);
+			}
+		}
+	}
+
+	/** Drops a stack a little way from the player, out of reach for a moment. */
+	private static void throwAway(ServerPlayer p, ItemStack stack, int pickupDelay) {
+		ServerLevel level = (ServerLevel) p.level();
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		ItemEntity item = new ItemEntity(level, p.getX(), p.getEyeY() - 0.3, p.getZ(), stack);
+		double a = rnd.nextDouble() * Math.PI * 2;
+		item.setDeltaMovement(Math.cos(a) * 0.25, 0.25, Math.sin(a) * 0.25);
+		item.setPickUpDelay(pickupDelay);
+		level.addFreshEntity(item);
 	}
 
 	/** Hunger without the vanilla effect: the same exhaustion per tick as Hunger I per stack. */
