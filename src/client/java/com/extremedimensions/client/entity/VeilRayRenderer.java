@@ -44,10 +44,13 @@ public class VeilRayRenderer extends MobRenderer<VeilRay, VeilRayRenderState, Ve
 	@Override
 	public void extractRenderState(VeilRay ray, VeilRayRenderState state, float partialTick) {
 		super.extractRenderState(ray, state, partialTick);
-		float[] t = turn.computeIfAbsent(ray, k -> new float[] {ray.getYRot(), 0});
-		float delta = Mth.wrapDegrees(ray.getYRot() - t[0]);
-		t[0] = ray.getYRot();
-		t[1] += (Mth.clamp(delta * 0.6F, -1, 1) - t[1]) * 0.08F;
+		// Bank by how fast it turns per tick (not per frame, so it banks the same at any frame rate)
+		float[] t = turn.computeIfAbsent(ray, k -> new float[] {0, 0});
+		float rate = Mth.clamp(Mth.wrapDegrees(ray.getYRot() - ray.yRotO) * 0.3F, -1, 1);
+		float now = ray.tickCount + partialTick;
+		float dt = Mth.clamp(now - t[0], 0, 4);
+		t[0] = now;
+		t[1] += (rate - t[1]) * (1 - (float) Math.pow(0.88, dt));
 		state.bank = t[1];
 	}
 

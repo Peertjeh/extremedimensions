@@ -62,7 +62,7 @@ public final class SeamService {
 
 	public static final ResourceKey<Level> SEAM = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("extremedimensions", "the_seam"));
 	private static final String SEAM_ID = "extremedimensions:the_seam";
-	private static final int CELL = 72;
+	private static final int CELL = 100;
 	private static final int PULL_TICKS = 60;
 
 	/** A rift torn open in the world, waiting for someone to step in. */
@@ -170,7 +170,7 @@ public final class SeamService {
 		int top = 96;
 		SeamArchitect.Plan arrival = new SeamArchitect.Plan();
 		Random rnd = new Random(x * 31L + z);
-		SeamArchitect.island(arrival, rnd, SeamArchitect.Shape.of(rnd, x, top, z, 11), true);
+		SeamArchitect.island(arrival, rnd, SeamArchitect.Shape.of(rnd, x, top, z, 12), true);
 		SeamArchitect.lamp(arrival, rnd, x - 3, top + 1, z - 3);
 		arrival.placeNow(seam);
 		for (int dx = -1; dx <= 5; dx++) {
@@ -356,20 +356,21 @@ public final class SeamService {
 		int top = 80 + (int) ((h >> 16) % 20);
 		int v = (int) ((h >> 24) % 5);
 		int r = switch (kind(type)) {
-			case SPIRE -> 24 + v;
-			case VILLAGE -> 16 + v;
-			case LOOM -> 15 + v;
-			case HANGING -> 10 + v;
-			case HALO -> 11 + v;
-			default -> 8 + (int) ((h >> 24) % 8);
+			case SPIRE -> 34 + v;
+			case VILLAGE -> 26 + v;
+			case LOOM -> 22 + v;
+			case HANGING -> 14 + v;
+			case HALO -> 16 + v;
+			default -> 11 + (int) ((h >> 24) % 9);
 		};
 		return new int[] {x, top, z, r, type};
 	}
 
-	/** Cells around the Heart are left to its crown. */
+	/** Cells around the Heart are left to its crown (and no island may reach into it). */
 	private static boolean nearHeart(int[] c) {
 		double dx = c[0] - MendingService.HX, dz = c[2] - MendingService.HZ;
-		return dx * dx + dz * dz < 84 * 84;
+		double reach = 84 + c[3];
+		return dx * dx + dz * dz < reach * reach;
 	}
 
 	/** True when a rift's arrival island lies within {@code dist} of this point. */
@@ -432,8 +433,8 @@ public final class SeamService {
 	private static SeamArchitect.Shape shapeOf(int cx, int cz, Random rnd) {
 		int[] c = center(cx, cz);
 		int r = c[3];
-		if (nearArrival(c[0], c[2], r + 12)) {
-			r = Math.min(r, 9);
+		if (nearArrival(c[0], c[2], r + 18)) {
+			r = Math.min(r, 10);
 		}
 		return SeamArchitect.Shape.of(rnd, c[0], c[1], c[2], r);
 	}
@@ -448,33 +449,67 @@ public final class SeamService {
 		SeamArchitect.Plan plan = new SeamArchitect.Plan();
 		int x = shape.x(), top = shape.top(), z = shape.z(), r = shape.r();
 		int kind = nearArrival(x, z, r + 30) ? PLAIN : kind(c[4]);
+		// Which sides get a bridge: this cell strings them east and south, its neighbours west and north
+		SeamArchitect.Shape east = neighbour(cx + 1, cz), west = neighbour(cx - 1, cz), south = neighbour(cx, cz + 1), north = neighbour(cx, cz - 1);
+		boolean toEast = east != null && (hash(cx, cz, seed() + 11) & 3) != 0 && SeamArchitect.canBridge(shape, east, true);
+		boolean toSouth = south != null && (hash(cx, cz, seed() + 13) & 3) != 0 && SeamArchitect.canBridge(shape, south, false);
+		boolean fromWest = west != null && (hash(cx - 1, cz, seed() + 11) & 3) != 0 && SeamArchitect.canBridge(west, shape, true);
+		boolean fromNorth = north != null && (hash(cx, cz - 1, seed() + 13) & 3) != 0 && SeamArchitect.canBridge(north, shape, false);
+		int mask = (toEast ? 1 : 0) | (fromWest ? 2 : 0) | (toSouth ? 4 : 0) | (fromNorth ? 8 : 0);
 		int depth = SeamArchitect.island(plan, rnd, shape, true);
-		build(plan, rnd, kind, x, top, z, r, depth);
-		int[] east = center(cx + 1, cz), south = center(cx, cz + 1);
-		if ((hash(cx, cz, seed() + 11) & 3) != 0 && !nearHeart(east)) {
-			SeamArchitect.bridge(plan, rnd, shape, shapeOf(cx + 1, cz, new Random(hash(cx + 1, cz, seed() + 7))), true);
+		build(plan, rnd, kind, shape, depth, mask);
+		if (toEast) {
+			SeamArchitect.bridge(plan, rnd, shape, east, true);
 		}
-		if ((hash(cx, cz, seed() + 13) & 3) != 0 && !nearHeart(south)) {
-			SeamArchitect.bridge(plan, rnd, shape, shapeOf(cx, cz + 1, new Random(hash(cx, cz + 1, seed() + 7))), false);
+		if (toSouth) {
+			SeamArchitect.bridge(plan, rnd, shape, south, false);
 		}
 		plan.queue();
 		addFalls(plan.falls);
 	}
 
-	private static void build(SeamArchitect.Plan plan, Random rnd, int kind, int x, int top, int z, int r, int depth) {
+	/** The island of a neighbouring cell as it is (or will be) built, or null if the Heart's crown has that cell. */
+	private static SeamArchitect.Shape neighbour(int cx, int cz) {
+		return nearHeart(center(cx, cz)) ? null : shapeOf(cx, cz, new Random(hash(cx, cz, seed() + 7)));
+	}
+
+	/**
+	 * Builds what stands on an island, then lays its streets out to the bridges ({@code mask}: bit 0 east, 1 west,
+	 * 2 south, 3 north) and dresses the open ground that is left.
+	 */
+	private static void build(SeamArchitect.Plan plan, Random rnd, int kind, SeamArchitect.Shape s, int depth, int mask) {
+		int x = s.x(), top = s.top(), z = s.z(), r = s.r();
 		switch (kind) {
-			case SPIRE -> SeamArchitect.spire(plan, rnd, x, top, z, r);
-			case LOOM -> SeamArchitect.loom(plan, rnd, x, top, z, r);
+			case SPIRE -> {
+				SeamArchitect.spire(plan, rnd, x, top, z, r);
+				SeamArchitect.streets(plan, rnd, s, mask, 0, false);
+				SeamArchitect.grounds(plan, rnd, s, 6, SeamArchitect.ARCH, SeamArchitect.TREE, SeamArchitect.LAMP, SeamArchitect.STONES, SeamArchitect.CLUSTER);
+			}
+			case LOOM -> {
+				SeamArchitect.loom(plan, rnd, x, top, z, r);
+				SeamArchitect.streets(plan, rnd, s, mask, 0, false);
+				SeamArchitect.grounds(plan, rnd, s, 5, SeamArchitect.ARCH, SeamArchitect.TREE, SeamArchitect.LAMP, SeamArchitect.STONES);
+			}
 			case VILLAGE -> {
 				SeamArchitect.village(plan, rnd, x, top, z, r);
+				SeamArchitect.streets(plan, rnd, s, mask, r >= 24 ? 9 : 7, false);
+				SeamArchitect.grounds(plan, rnd, s, 3, SeamArchitect.TREE, SeamArchitect.LAMP);
 				DataStore.seamCells().add("v@" + x + "," + top + "," + z);
 			}
 			case HANGING -> {
 				SeamArchitect.hangingTower(plan, rnd, x, top - depth, z);
-				SeamArchitect.plain(plan, rnd, x, top, z, r);
+				SeamArchitect.streets(plan, rnd, s, mask, 0, true);
+				SeamArchitect.plain(plan, rnd, s);
 			}
-			case HALO -> SeamArchitect.halo(plan, rnd, x, top, z, r);
-			default -> SeamArchitect.plain(plan, rnd, x, top, z, r);
+			case HALO -> {
+				SeamArchitect.halo(plan, rnd, x, top, z, r);
+				SeamArchitect.streets(plan, rnd, s, mask, 6, true);
+				SeamArchitect.grounds(plan, rnd, s, 3 + rnd.nextInt(2), SeamArchitect.CLUSTER, SeamArchitect.CLUSTER, SeamArchitect.LAMP);
+			}
+			default -> {
+				SeamArchitect.streets(plan, rnd, s, mask, 0, true);
+				SeamArchitect.plain(plan, rnd, s);
+			}
 		}
 	}
 
@@ -486,26 +521,29 @@ public final class SeamService {
 		if (s.getLevel(SEAM) == null) {
 			return 0;
 		}
-		int n = 0;
 		int[] kinds = {SPIRE, LOOM, VILLAGE, HANGING, HALO, PLAIN};
-		SeamArchitect.Shape prev = null;
-		for (int i = 0; i < kinds.length; i++) {
+		int n = kinds.length;
+		Random[] rnds = new Random[n];
+		SeamArchitect.Shape[] shapes = new SeamArchitect.Shape[n];
+		for (int i = 0; i < n; i++) {
 			int cx = 40 + i, cz = 40;
-			DataStore.seamCells().add("c@" + cx + "," + cz);
-			Random rnd = new Random(hash(cx, cz, 99));
+			rnds[i] = new Random(hash(cx, cz, 99));
 			int x = cx * CELL + CELL / 2, z = cz * CELL + CELL / 2, top = 90 + (i % 3) * 6 - 6;
-			int r = switch (kinds[i]) { case SPIRE -> 25; case VILLAGE -> 18; case LOOM -> 17; case HANGING -> 12; case HALO -> 13; default -> 12; };
-			SeamArchitect.Shape shape = SeamArchitect.Shape.of(rnd, x, top, z, r);
+			int r = switch (kinds[i]) { case SPIRE -> 36; case VILLAGE -> 28; case LOOM -> 24; case HANGING -> 16; case HALO -> 18; default -> 16; };
+			shapes[i] = SeamArchitect.Shape.of(rnds[i], x, top, z, r);
+		}
+		for (int i = 0; i < n; i++) {
+			DataStore.seamCells().add("c@" + (40 + i) + ",40");
+			boolean east = i < n - 1 && SeamArchitect.canBridge(shapes[i], shapes[i + 1], true);
+			boolean west = i > 0 && SeamArchitect.canBridge(shapes[i - 1], shapes[i], true);
 			SeamArchitect.Plan plan = new SeamArchitect.Plan();
-			int depth = SeamArchitect.island(plan, rnd, shape, true);
-			build(plan, rnd, kinds[i], x, top, z, r, depth);
-			if (prev != null) {
-				SeamArchitect.bridge(plan, rnd, prev, shape, true);
+			int depth = SeamArchitect.island(plan, rnds[i], shapes[i], true);
+			build(plan, rnds[i], kinds[i], shapes[i], depth, (east ? 1 : 0) | (west ? 2 : 0));
+			if (east) {
+				SeamArchitect.bridge(plan, rnds[i], shapes[i], shapes[i + 1], true);
 			}
 			plan.queue();
 			addFalls(plan.falls);
-			prev = shape;
-			n++;
 		}
 		ExtremeDimensions.LOGGER.info("Seam showcase: {} structures, {} blocks queued at x={}..{} z={}", n, SeamArchitect.pending(),
 				40 * CELL, 46 * CELL, 40 * CELL + CELL / 2);

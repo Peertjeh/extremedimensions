@@ -23,3 +23,6 @@ jobs:
         with:
           name: Artifacts
           path: build/libs/
+      - name: TEMP client screenshots
+        run: bash .github/probe/gametest.sh
+        timeout-minutes: 30

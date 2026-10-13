@@ -465,8 +465,10 @@ public final class SeamArchitect {
 			return new Shape(x, top, z, r, rnd.nextDouble() * 6.28, rnd.nextDouble() * 6.28, rnd.nextDouble() * 6.28);
 		}
 
+		/** The rim's distance from the centre at an angle; big islands wobble less, so what is built on them fits. */
 		public double edge(double ang) {
-			return r * (0.84 + 0.10 * Math.sin(ang * 3 + p1) + 0.06 * Math.sin(ang * 5 + p2) + 0.03 * Math.sin(ang * 11 + p3));
+			double w = r >= 20 ? 0.55 : 1.0;
+			return r * (0.92 + w * (0.07 * Math.sin(ang * 3 + p1) + 0.045 * Math.sin(ang * 5 + p2) + 0.02 * Math.sin(ang * 11 + p3)));
 		}
 
 		public boolean inside(int px, int pz, double margin) {
@@ -491,6 +493,8 @@ public final class SeamArchitect {
 		BlockState firefly = mc("firefly_bush"), eye = mc("open_eyeblossom"), paleMoss = mc("pale_moss_block", moss());
 		BlockState vines = mc("cave_vines"), pale = mc("pale_hanging_moss"), roots = mc("hanging_roots");
 		BlockState[] rock = rockGrad();
+		// deep under small islands, relatively shallower under the great ones (still thirty blocks of rock)
+		double deep = r <= 16 ? r * 1.15 : 18.4 + (r - 16) * 0.65;
 		for (int dx = -span; dx <= span; dx++) {
 			for (int dz = -span; dz <= span; dz++) {
 				double ang = Math.atan2(dz, dx);
@@ -500,7 +504,7 @@ public final class SeamArchitect {
 					continue;
 				}
 				double f = 1 - dist / edge;
-				int d = 2 + (int) Math.round(Math.pow(f, 0.62) * r * 1.15) + rnd.nextInt(2);
+				int d = 2 + (int) Math.round(Math.pow(f, 0.62) * deep) + rnd.nextInt(2);
 				depth[dx + span][dz + span] = d;
 				int x = cx + dx, z = cz + dz;
 				double patch = noise(seed, x / 7.0, z / 7.0) * 0.7 + noise(seed + 1, x / 3.0, z / 3.0) * 0.3;
@@ -555,7 +559,7 @@ public final class SeamArchitect {
 			if (base == 0) {
 				continue;
 			}
-			int len = 6 + rnd.nextInt(Math.max(2, r));
+			int len = 6 + rnd.nextInt(Math.max(2, Math.min(r, 26)));
 			double rad = 1.5 + rnd.nextDouble() * 2.0;
 			for (int k = 0; k < len; k++) {
 				double rr = rad * (1 - (double) k / len);
@@ -585,7 +589,7 @@ public final class SeamArchitect {
 			p.soft(cx + hx, top - base - len - 1, cz + hz, hanging(soulLantern()));
 		}
 		// Light pouring off the edges
-		for (int i = 0; i < 1 + rnd.nextInt(2); i++) {
+		for (int i = 0; i < 1 + r / 14 + rnd.nextInt(2); i++) {
 			double a = rnd.nextDouble() * Math.PI * 2;
 			int ex = cx + (int) Math.round(Math.cos(a) * r * 0.8), ez = cz + (int) Math.round(Math.sin(a) * r * 0.8);
 			p.falls.add(new int[] {ex, top, ez, 18 + rnd.nextInt(30)});
@@ -950,6 +954,16 @@ public final class SeamArchitect {
 		int bl = b + 2;
 		base.then(-bl + 1, lastFloor + 1, -bl + 3, loot(base.pos(-bl + 1, lastFloor + 1, -bl + 3), 3));
 		nave(base, rnd, b0);
+		// The parvis: a paved forecourt before the portal, narrowing as it runs out toward the street
+		BlockState[] path = pathGrad();
+		int z1 = b0 + 10;
+		for (int lz = z1 + 2; lz <= z1 + 12; lz++) {
+			int hw = lz <= z1 + 7 ? 8 : 8 - (lz - z1 - 7) * 2;
+			for (int lx = -hw; lx <= hw; lx++) {
+				double t = Math.min(1, (Math.abs(lx) / 9.0 + (lz - z1 - 2) / 12.0) / 1.4);
+				pave(p, base.wx(lx, lz), top, base.wz(lx, lz), weather(grad(path, t, rnd), rnd, 0.1));
+			}
+		}
 		int terrace = firstH + 1;
 		for (int side = 1; side < 4; side++) {
 			Frame g = new Frame(p, cx, top + 1, cz, base.rot + side);
@@ -1216,8 +1230,18 @@ public final class SeamArchitect {
 	 */
 	public static void loom(Plan p, Random rnd, int cx, int top, int cz, int r) {
 		Frame f = new Frame(p, cx, top + 1, cz, rnd.nextInt(4));
-		int sx = Math.max(7, Math.min(12, r - 5));
-		int h = 26 + rnd.nextInt(14);
+		int sx = Math.max(8, Math.min(14, r - 9));
+		int h = 30 + rnd.nextInt(14);
+		// The weaving floor: paving under and around the loom, ragged where the moss takes it back
+		for (int lx = -sx - 3; lx <= sx + 3; lx++) {
+			for (int lz = -4; lz <= 9; lz++) {
+				double t = Math.max(Math.abs(lx) / (double) (sx + 3), Math.abs(lz - 2) / 7.0);
+				if (t > 0.8 && rnd.nextInt(3) == 0) {
+					continue;
+				}
+				pave(p, f.wx(lx, lz), top, f.wz(lx, lz), weather(grad(pathGrad(), t, rnd), rnd, 0.1));
+			}
+		}
 		for (int side = -1; side <= 1; side += 2) {
 			for (int ly = 0; ly <= h + 4; ly++) {
 				double t = ly / (double) (h + 8);
@@ -1303,32 +1327,53 @@ public final class SeamArchitect {
 	// ------------------------------------------------------------------ villages
 
 	/**
-	 * A village of the Thinned: jettied timber houses with violet plaster, stone ground floors, steep slate roofs and
-	 * smoking chimneys around a paved plaza with a bell spire, lamps and a field of graves.
+	 * A village of the Thinned laid out the way villages grow: a paved plaza with a bell spire at the heart, streets
+	 * leaving it along the axes to the bridges, and in the four quarters between them jettied timber houses facing the
+	 * plaza, each with a path from its door, and a walled graveyard in one quarter.
 	 */
 	public static void village(Plan p, Random rnd, int cx, int top, int cz, int r) {
-		int houses = 5 + rnd.nextInt(3);
-		double a0 = rnd.nextDouble() * Math.PI * 2;
-		for (int i = 0; i < houses; i++) {
-			double a = a0 + i * Math.PI * 2 / houses;
-			int hx = cx + (int) Math.round(Math.cos(a) * r * 0.6), hz = cz + (int) Math.round(Math.sin(a) * r * 0.6);
-			double back = Math.atan2(cz - hz, cx - hx);
-			int rot = Math.floorMod((int) Math.round((back - Math.PI / 2) / (Math.PI / 2)), 4);
-			house(p, rnd, hx, top + 1, hz, rot, i == 0);
-			if (i % 2 == 1) {
-				double la = a + Math.PI / houses;
-				lamp(p, rnd, cx + (int) Math.round(Math.cos(la) * r * 0.42), top + 1, cz + (int) Math.round(Math.sin(la) * r * 0.42));
+		int plaza = r >= 24 ? 8 : 6;
+		int ring = (int) Math.round(r * 0.6);
+		int graves = rnd.nextInt(10) < 7 ? rnd.nextInt(4) : -1;
+		boolean lore = true;
+		for (int q = 0; q < 4; q++) {
+			double qa = Math.PI / 4 + q * Math.PI / 2;
+			if (q == graves) {
+				graveyard(p, rnd, cx + (int) Math.round(Math.cos(qa) * r * 0.55), top, cz + (int) Math.round(Math.sin(qa) * r * 0.55), cx, cz);
+				continue;
+			}
+			for (int k = -1; k <= 1; k += 2) {
+				double a = qa + k * 0.42;
+				int hx = cx + (int) Math.round(Math.cos(a) * ring), hz = cz + (int) Math.round(Math.sin(a) * ring);
+				double back = Math.atan2(cz - hz, cx - hx);
+				int rot = Math.floorMod((int) Math.round((back - Math.PI / 2) / (Math.PI / 2)), 4);
+				house(p, rnd, hx, top + 1, hz, rot, lore);
+				lore = false;
+				// A path from the door step to the plaza
+				Frame f = new Frame(p, hx, top + 1, hz, rot);
+				for (int lz = 5; lz <= 14; lz++) {
+					int x = f.wx(0, lz), z = f.wz(0, lz);
+					if ((x - cx) * (x - cx) + (z - cz) * (z - cz) <= plaza * plaza) {
+						break;
+					}
+					pave(p, x, top, z, rnd.nextInt(4) == 0 ? mc("cobbled_deepslate", stone()) : mc("tuff_bricks", dsTile()));
+				}
 			}
 		}
-		// Plaza: a ring of paving, darker at the rim
-		for (int dx = -6; dx <= 6; dx++) {
-			for (int dz = -6; dz <= 6; dz++) {
+		// Plaza: dressed tuff at the heart, darkening to the rim
+		BlockState[] paving = {mc("polished_tuff", dsPol()), mc("tuff_bricks", dsTile()), dsTile(), bsBrick(), mc("cobbled_deepslate", stone())};
+		for (int dx = -plaza; dx <= plaza; dx++) {
+			for (int dz = -plaza; dz <= plaza; dz++) {
 				double dd = Math.sqrt(dx * dx + dz * dz);
-				if (dd <= 6.2) {
-					p.set(cx + dx, top, cz + dz, grad(new BlockState[] {mc("polished_tuff", dsPol()), dsTile(), bsBrick(), mc("cobbled_deepslate", stone())}, dd / 6.5, rnd));
+				if (dd <= plaza + 0.2) {
+					p.set(cx + dx, top, cz + dz, weather(grad(paving, dd / (plaza + 0.5), rnd), rnd, 0.08));
 					p.clear(cx + dx, top + 1, cz + dz);
 				}
 			}
+		}
+		for (int q = 0; q < 4; q++) {
+			double qa = Math.PI / 4 + q * Math.PI / 2;
+			lamp(p, rnd, cx + (int) Math.round(Math.cos(qa) * (plaza - 1)), top + 1, cz + (int) Math.round(Math.sin(qa) * (plaza - 1)));
 		}
 		// The bell spire: a stepped base, an open belfry with stair arches, a slate cap and a needle
 		int h = 16 + rnd.nextInt(10);
@@ -1343,14 +1388,12 @@ public final class SeamArchitect {
 					p.set(cx + ax, top + ly, cz + az, ly % 5 == 0 ? dsChis() : wall(t, rnd));
 				}
 			}
-			if (ly <= 3) {
+			if (ly == 1) {
 				for (int k = -2; k <= 2; k++) {
-					if (ly == 1) {
-						p.set(cx + k, top + 1, cz - 2, stairs(bsStairs(), Direction.SOUTH, false));
-						p.set(cx + k, top + 1, cz + 2, stairs(bsStairs(), Direction.NORTH, false));
-						p.set(cx - 2, top + 1, cz + k, stairs(bsStairs(), Direction.EAST, false));
-						p.set(cx + 2, top + 1, cz + k, stairs(bsStairs(), Direction.WEST, false));
-					}
+					p.set(cx + k, top + 1, cz - 2, stairs(bsStairs(), Direction.SOUTH, false));
+					p.set(cx + k, top + 1, cz + 2, stairs(bsStairs(), Direction.NORTH, false));
+					p.set(cx - 2, top + 1, cz + k, stairs(bsStairs(), Direction.EAST, false));
+					p.set(cx + 2, top + 1, cz + k, stairs(bsStairs(), Direction.WEST, false));
 				}
 			}
 		}
@@ -1368,15 +1411,60 @@ public final class SeamArchitect {
 				}
 			}
 		}
-		// Graves
-		BlockState candle = mc("candle");
-		for (int i = 0; i < 5 + rnd.nextInt(4); i++) {
-			double a = rnd.nextDouble() * Math.PI * 2;
-			int x = cx + (int) Math.round(Math.cos(a) * 4.5), z = cz + (int) Math.round(Math.sin(a) * 4.5);
-			p.set(x, top + 1, z, mc("tuff", stone()));
-			p.set(x, top + 2, z, Blocks.SKELETON_SKULL.defaultBlockState());
-			p.soft(x + 1, top + 1, z, candle);
+		if (graves < 0) {
+			// No graveyard: the dead lie around the bell spire
+			for (int i = 0; i < 5 + rnd.nextInt(4); i++) {
+				double a = rnd.nextDouble() * Math.PI * 2;
+				grave(p, rnd, cx + (int) Math.round(Math.cos(a) * 4.5), top + 1, cz + (int) Math.round(Math.sin(a) * 4.5));
+			}
 		}
+	}
+
+	/** A headstone of tuff, sometimes with a skull on it, and candles at its foot. */
+	private static void grave(Plan p, Random rnd, int x, int y, int z) {
+		p.set(x, y, z, rnd.nextInt(3) == 0 ? mc("chiseled_tuff", mc("tuff", stone())) : mc("tuff", stone()));
+		if (rnd.nextInt(3) == 0) {
+			p.set(x, y + 1, z, Blocks.SKELETON_SKULL.defaultBlockState());
+		}
+		BlockState candle = mc("candle");
+		if (candle != null && candle.hasProperty(BlockStateProperties.CANDLES)) {
+			candle = candle.setValue(BlockStateProperties.CANDLES, 1 + rnd.nextInt(3)).setValue(BlockStateProperties.LIT, rnd.nextBoolean());
+		}
+		p.soft(x + 1, y, z, candle);
+	}
+
+	/** A graveyard: a low wall with a gate toward the plaza, mossy ground and soul soil, rows of graves, a dead tree. */
+	private static void graveyard(Plan p, Random rnd, int gx, int top, int gz, int cx, int cz) {
+		int half = 4;
+		// the gate faces the plaza: on the side of the wall nearest to it
+		int gateX = Integer.signum(cx - gx), gateZ = Integer.signum(cz - gz);
+		boolean gateOnX = Math.abs(cx - gx) >= Math.abs(cz - gz);
+		for (int dx = -half; dx <= half; dx++) {
+			for (int dz = -half; dz <= half; dz++) {
+				boolean rim = Math.abs(dx) == half || Math.abs(dz) == half;
+				int x = gx + dx, z = gz + dz;
+				p.set(x, top, z, rim ? bsBrick() : rnd.nextInt(4) == 0 ? mc("soul_soil", stone()) : rnd.nextBoolean() ? moss() : mc("pale_moss_block", moss()));
+				p.clear(x, top + 1, z);
+				if (rim) {
+					boolean gate = gateOnX ? dx == gateX * half && Math.abs(dz) <= 1 : dz == gateZ * half && Math.abs(dx) <= 1;
+					if (!gate) {
+						p.set(x, top + 1, z, Math.abs(dx) == half && Math.abs(dz) == half ? bsBrick() : dsWall());
+					}
+				}
+			}
+		}
+		for (int s = -1; s <= 1; s += 2) {
+			int x = gateOnX ? gx + gateX * half : gx + s * 2, z = gateOnX ? gz + s * 2 : gz + gateZ * half;
+			p.set(x, top + 2, z, rnd.nextBoolean() ? soulLantern() : lantern());
+		}
+		for (int dx = -2; dx <= 2; dx += 2) {
+			for (int dz = -2; dz <= 2; dz += 2) {
+				if (rnd.nextInt(5) > 0 && !(dx == 0 && dz == 0)) {
+					grave(p, rnd, gx + dx, top + 1, gz + dz);
+				}
+			}
+		}
+		deadTree(p, rnd, gx, top + 1, gz);
 	}
 
 	/**
@@ -1557,7 +1645,7 @@ public final class SeamArchitect {
 		int cy = top + radius + 6;
 		double tilt = 0.35 + rnd.nextDouble() * 0.5, yaw = rnd.nextDouble() * Math.PI;
 		ring(p, rnd, cx, cy, cz, radius, tilt, yaw, 2);
-		crystal(p, rnd, cx, cy, cz, 3);
+		crystal(p, rnd, cx, cy, cz, radius >= 14 ? 4 : 3);
 		for (int i = 0; i < 6; i++) {
 			double a = rnd.nextDouble() * Math.PI * 2;
 			int rx = cx + (int) Math.round(Math.cos(a) * (radius + 6)), rz = cz + (int) Math.round(Math.sin(a) * (radius + 6));
@@ -1596,46 +1684,232 @@ public final class SeamArchitect {
 		}
 	}
 
-	/** An ordinary island: ruins, dead trees, lamps, standing stones, crystals. */
-	public static void plain(Plan p, Random rnd, int cx, int top, int cz, int r) {
-		int n = 1 + rnd.nextInt(3);
-		for (int i = 0; i < n; i++) {
-			int x = cx + rnd.nextInt(-r / 2, r / 2 + 1), z = cz + rnd.nextInt(-r / 2, r / 2 + 1);
-			switch (rnd.nextInt(6)) {
-				case 0, 1 -> arch(p, rnd, x, top + 1, z);
-				case 2 -> deadTree(p, rnd, x, top + 1, z);
-				case 3 -> lamp(p, rnd, x, top + 1, z);
-				case 4 -> stones(p, rnd, x, top + 1, z);
-				default -> crystal(p, rnd, x, top + 8 + rnd.nextInt(6), z, 2);
+	/** An ordinary island: ruins, dead trees, lamps, standing stones, crystals, spread over its open ground. */
+	public static void plain(Plan p, Random rnd, Shape s) {
+		grounds(p, rnd, s, 1 + s.r / 6 + rnd.nextInt(2), ARCH, ARCH, TREE, LAMP, STONES, CLUSTER, FLOATING);
+	}
+
+	static final int ARCH = 0, TREE = 1, LAMP = 2, STONES = 3, CLUSTER = 4, FLOATING = 5;
+
+	/**
+	 * Dresses the open ground of an island with the given kinds of things: never on a building, a floor, a street
+	 * (the island's axes are kept clear for them) or each other, and always with ground under them.
+	 */
+	public static void grounds(Plan p, Random rnd, Shape s, int count, int... kinds) {
+		for (int placed = 0, tries = 0; placed < count && tries < count * 10; tries++) {
+			double a = rnd.nextDouble() * Math.PI * 2;
+			double d = 4 + rnd.nextDouble() * Math.max(1, s.edge(a) - 10);
+			int x = s.x + (int) Math.round(Math.cos(a) * d), z = s.z + (int) Math.round(Math.sin(a) * d);
+			if (Math.abs(x - s.x) <= 3 || Math.abs(z - s.z) <= 3) {
+				continue;
+			}
+			int kind = kinds[rnd.nextInt(kinds.length)];
+			int room = switch (kind) { case ARCH -> 6; case STONES -> 5; case CLUSTER -> 4; case TREE -> 3; default -> 2; };
+			if (!free(p, x, s.top, z, room)) {
+				continue;
+			}
+			int y = s.top + 1;
+			switch (kind) {
+				case ARCH -> arch(p, rnd, x, y, z);
+				case TREE -> deadTree(p, rnd, x, y, z);
+				case LAMP -> lamp(p, rnd, x, y, z);
+				case STONES -> stones(p, rnd, x, y, z);
+				case CLUSTER -> cluster(p, rnd, x, y, z, 9 + rnd.nextInt(8));
+				default -> crystal(p, rnd, x, s.top + 13 + rnd.nextInt(7), z, 2 + rnd.nextInt(2));
+			}
+			placed++;
+		}
+	}
+
+	/** True when a patch of the island's turf is open: ground under all of it, nothing built on it or over it. */
+	static boolean free(Plan p, int x, int top, int z, int rad) {
+		for (int dx = -rad; dx <= rad; dx++) {
+			for (int dz = -rad; dz <= rad; dz++) {
+				BlockState g = p.get(x + dx, top, z + dz);
+				if (g == null || !turf(g)) {
+					return false;
+				}
+				BlockState on = p.get(x + dx, top + 1, z + dz);
+				if (on != null && !growth(on)) {
+					return false;
+				}
+				for (int y = top + 2; y <= top + 6; y++) {
+					if (p.has(x + dx, y, z + dz)) {
+						return false;
+					}
+				}
+			}
+		}
+		for (int y = top + 7; y <= top + 30; y++) {
+			if (p.has(x, y, z)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** The surface of an island as {@link #island} lays it. */
+	static boolean turf(BlockState s) {
+		return s == moss() || s == mc("pale_moss_block", moss()) || s == stone() || s == brick() || s == mc("cobbled_deepslate", stone());
+	}
+
+	/** Grass, ferns and flowers: what a path or a building may simply replace. */
+	static boolean growth(BlockState s) {
+		return s == mc("short_grass") || s == mc("fern") || s == mc("allium") || s == mc("azure_bluet") || s == mc("firefly_bush")
+				|| s == mc("open_eyeblossom");
+	}
+
+	/** Re-surfaces turf (and only turf) with paving, clearing the growth on it. */
+	static void pave(Plan p, int x, int top, int z, BlockState s) {
+		BlockState g = p.get(x, top, z);
+		if (g == null || !turf(g)) {
+			return;
+		}
+		p.set(x, top, z, s);
+		BlockState on = p.get(x, top + 1, z);
+		if (on != null && growth(on)) {
+			p.clear(x, top + 1, z);
+		}
+	}
+
+	/** Paving from the centre of a building out to its rim: light dressed tuff, darkening to rough deepslate. */
+	static BlockState[] pathGrad() {
+		return new BlockState[] {mc("polished_tuff", dsPol()), mc("tuff_bricks", dsTile()), dsTile(), bsBrick(), mc("cobbled_deepslate", stone())};
+	}
+
+	/**
+	 * Streets along the island's axes, from {@code inner} out to the rim, on the sides that have a bridge (bit 0 east,
+	 * 1 west, 2 south, 3 north): bridges always land on an island's axis, so every street meets one. Built streets are
+	 * paved in a gradient with moss creeping in at the edges and lamps along the way; a {@code trail} is worn and
+	 * patchy instead.
+	 */
+	public static void streets(Plan p, Random rnd, Shape s, int mask, int inner, boolean trail) {
+		int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+		BlockState[] path = pathGrad();
+		BlockState[] worn = {mc("cobbled_deepslate", stone()), mc("tuff", stone()), mc("deepslate", stone()), stone()};
+		for (int i = 0; i < 4; i++) {
+			if ((mask & (1 << i)) == 0) {
+				continue;
+			}
+			int sx = dirs[i][0], sz = dirs[i][1];
+			int len = (int) Math.floor(s.edge(Math.atan2(sz, sx))) - 1;
+			for (int k = inner; k <= len; k++) {
+				double t = (double) (k - inner) / Math.max(1, len - inner);
+				for (int w = -1; w <= 1; w++) {
+					int x = s.x + sx * k + sz * w, z = s.z + sz * k + sx * w;
+					BlockState pave;
+					if (trail) {
+						if (rnd.nextDouble() < (w == 0 ? 0.2 : 0.55)) {
+							continue;
+						}
+						pave = worn[rnd.nextInt(worn.length)];
+					} else {
+						pave = w != 0 && rnd.nextDouble() < 0.12 + 0.3 * t ? moss() : weather(grad(path, t, rnd), rnd, 0.1);
+					}
+					pave(p, x, s.top, z, pave);
+				}
+				if (!trail && (k - inner) % 9 == 5 && k < len - 3) {
+					int side = ((k - inner) / 9 & 1) == 0 ? 2 : -2;
+					int x = s.x + sx * k + sz * side, z = s.z + sz * k + sx * side;
+					if (free(p, x, s.top, z, 1)) {
+						lamp(p, rnd, x, s.top + 1, z);
+					}
+				}
+			}
+			// A pair of lamps where the street meets the bridge
+			if (!trail) {
+				for (int side = -2; side <= 2; side += 4) {
+					int x = s.x + sx * (len - 2) + sz * side, z = s.z + sz * (len - 2) + sx * side;
+					if (free(p, x, s.top, z, 1)) {
+						lamp(p, rnd, x, s.top + 1, z);
+					}
+				}
+			}
+		}
+	}
+
+	/** A cluster of amethyst shards breaking out of the ground, the tallest nearly upright and weeping light at its heart. */
+	static void cluster(Plan p, Random rnd, int cx, int y, int cz, int scale) {
+		BlockState[] g = {amethyst(), amethyst(), glass(), glass2()};
+		int shards = 3 + rnd.nextInt(3);
+		for (int i = 0; i < shards; i++) {
+			double a = rnd.nextDouble() * Math.PI * 2;
+			double tilt = i == 0 ? rnd.nextDouble() * 0.15 : 0.32 + rnd.nextDouble() * 0.45;
+			double len = (i == 0 ? 1.0 : 0.4 + rnd.nextDouble() * 0.4) * scale;
+			double rad = 0.8 + len * 0.13;
+			double bx = cx + (i == 0 ? 0 : Math.cos(a) * 1.8), bz = cz + (i == 0 ? 0 : Math.sin(a) * 1.8);
+			double dx = Math.sin(tilt) * Math.cos(a), dy = Math.cos(tilt), dz = Math.sin(tilt) * Math.sin(a);
+			for (double t = -1.5; t <= len; t += 0.5) {
+				double f = Math.max(0, t) / len;
+				double rr = rad * Math.pow(1 - f, 0.75) + 0.3;
+				int px = (int) Math.round(bx + dx * t), py = (int) Math.round(y + dy * t), pz = (int) Math.round(bz + dz * t);
+				int ir = (int) Math.ceil(rr);
+				for (int ax = -ir; ax <= ir; ax++) {
+					for (int ay = -ir; ay <= ir; ay++) {
+						for (int az = -ir; az <= ir; az++) {
+							double q = ax * ax + ay * ay + az * az;
+							if (q <= rr * rr) {
+								boolean heart = i == 0 && rr > 1.6 && q < (rr - 1.2) * (rr - 1.2);
+								p.set(px + ax, py + ay, pz + az, heart ? crying() : grad(g, f, rnd));
+							}
+						}
+					}
+				}
+			}
+		}
+		// Buds and small clusters about its foot
+		BlockState bud = mc("amethyst_cluster"), large = mc("large_amethyst_bud", bud);
+		for (int k = 0; k < 6 + rnd.nextInt(6); k++) {
+			int bx = cx + rnd.nextInt(-4, 5), bz = cz + rnd.nextInt(-4, 5);
+			BlockState on = p.get(bx, y, bz);
+			if (p.has(bx, y - 1, bz) && (on == null || growth(on))) {
+				p.set(bx, y, bz, rnd.nextBoolean() ? bud : large);
 			}
 		}
 	}
 
 	// ------------------------------------------------------------------ bridges
 
-	/**
-	 * A stone bridge from one island to the next along an axis: it starts and ends a couple of blocks inside each
-	 * island's predicted rim, runs straight, turns on a landing halfway to line up with the other island, and climbs
-	 * with slab ramps or real stairs. Kerbs with connected wall railings and posts with lanterns line it, the deck
-	 * has a corbelled edge, soul lanterns hang underneath and the landing rests on a tapering pier.
-	 *
-	 * @return false when the islands are too close or too steep apart for a bridge
-	 */
-	public static boolean bridge(Plan p, Random rnd, Shape a, Shape b, boolean alongX) {
-		int am = alongX ? a.x : a.z, ap = alongX ? a.z : a.x;
-		int bm = alongX ? b.x : b.z, bp = alongX ? b.z : b.x;
+	/** Where a bridge between two islands runs: start, end, landing (along the axis) and landing height; null if none fits. */
+	private static int[] span(Shape a, Shape b, boolean alongX) {
+		int am = alongX ? a.x : a.z, bm = alongX ? b.x : b.z;
 		double angA = alongX ? 0 : Math.PI / 2, angB = angA + Math.PI;
 		int start = am + (int) Math.floor(a.edge(angA)) - 2;
 		int end = bm - (int) Math.floor(b.edge(angB)) + 2;
 		if (end - start < 10) {
-			return false;
+			return null;
 		}
 		int mid = (start + end) / 2;
-		int ya = a.top, yb = b.top, ym = Math.floorDiv(ya + yb, 2);
+		int ym = Math.floorDiv(a.top + b.top, 2);
 		int l1 = (mid - 3) - start, l2 = end - (mid + 3);
-		if (Math.abs(ym - ya) > l1 - 2 || Math.abs(yb - ym) > l2 - 2) {
+		if (Math.abs(ym - a.top) > l1 - 2 || Math.abs(b.top - ym) > l2 - 2) {
+			return null;
+		}
+		return new int[] {start, end, mid, ym};
+	}
+
+	/** True when a bridge can be strung between two islands (so their streets can be laid out to meet it). */
+	public static boolean canBridge(Shape a, Shape b, boolean alongX) {
+		return span(a, b, alongX) != null;
+	}
+
+	/**
+	 * A stone bridge from one island to the next along an axis: it starts and ends a couple of blocks inside each
+	 * island's predicted rim (where the island's street meets it), runs straight, turns on a landing halfway to line up
+	 * with the other island, and climbs with slab ramps or real stairs. Kerbs with connected wall railings and posts
+	 * with lanterns line it; underneath, every span is a shallow pointed arch of masonry springing from pendants that
+	 * end in soul lanterns, and the landing rests on a tapering pier.
+	 *
+	 * @return false when the islands are too close or too steep apart for a bridge
+	 */
+	public static boolean bridge(Plan p, Random rnd, Shape a, Shape b, boolean alongX) {
+		int[] sp = span(a, b, alongX);
+		if (sp == null) {
 			return false;
 		}
+		int start = sp[0], end = sp[1], mid = sp[2], ym = sp[3];
+		int ap = alongX ? a.z : a.x, bp = alongX ? b.z : b.x;
+		int ya = a.top, yb = b.top;
 		// deck cells: (m, p) -> {fullY, slab, stairFacing(+1 = +m, -1 = -m, 0 none)}
 		Map<Long, int[]> deck = new LinkedHashMap<>();
 		ramp(deck, start, mid - 3, ap, ya, ym);
@@ -1680,7 +1954,10 @@ public final class SeamArchitect {
 				}
 			}
 		}
-		// Kerbs and railings around the deck, corbels under the kerbs
+		// Arches under both runs
+		arcade(p, rnd, deck, start, mid - 3, ap, alongX, a, b);
+		arcade(p, rnd, deck, mid + 3, end, bp, alongX, a, b);
+		// Kerbs and railings around the deck (as high as the deck's walking surface), corbels under the kerbs
 		Map<Long, Integer> rails = new LinkedHashMap<>();
 		Map<Long, Direction> railOut = new HashMap<>();
 		for (Map.Entry<Long, int[]> e : deck.entrySet()) {
@@ -1696,7 +1973,7 @@ public final class SeamArchitect {
 				if (a.inside(x, z, -0.5) || b.inside(x, z, -0.5)) {
 					continue;
 				}
-				rails.merge(k, c[0], Integer::max);
+				rails.merge(k, c[0] + c[1], Integer::max);
 				int dm = n[0] - m, dp = n[1] - pp;
 				int ox = alongX ? dm : dp, oz = alongX ? dp : dm;
 				railOut.put(k, ox > 0 ? Direction.EAST : ox < 0 ? Direction.WEST : oz > 0 ? Direction.SOUTH : Direction.NORTH);
@@ -1719,23 +1996,7 @@ public final class SeamArchitect {
 			}
 			count++;
 		}
-		// Soul lanterns hanging underneath, and a pier under the landing
-		for (int m = start + 4; m < end - 4; m += 7) {
-			long k = key(m, m < mid ? ap : bp);
-			int[] c = deck.get(k);
-			if (c == null) {
-				continue;
-			}
-			int x = alongX ? m : (m < mid ? ap : bp), z = alongX ? (m < mid ? ap : bp) : m;
-			if (a.inside(x, z, -1) || b.inside(x, z, -1)) {
-				continue;
-			}
-			int len = 1 + rnd.nextInt(3);
-			for (int i = 1; i <= len; i++) {
-				p.soft(x, c[0] - i, z, chain());
-			}
-			p.soft(x, c[0] - len - 1, z, hanging(soulLantern()));
-		}
+		// The pier under the landing
 		int pierP = (p0 + p1) / 2, pierHalf = Math.max(2, (p1 - p0) / 2);
 		for (int k = 1; k <= 9; k++) {
 			int hm = Math.max(0, 3 - k / 3), hp = Math.max(0, pierHalf - k / 3);
@@ -1749,6 +2010,67 @@ public final class SeamArchitect {
 		int lx = alongX ? mid : pierP, lz = alongX ? pierP : mid;
 		p.falls.add(new int[] {lx, ym - 10, lz, 20});
 		return count > 0;
+	}
+
+	/**
+	 * The underside of one run of deck: spans of about eleven blocks, each a shallow pointed arch, thick at the
+	 * pendants between them and thin at the crown, curved with upside-down stairs; each pendant ends in a carved boss,
+	 * a short chain and a soul lantern.
+	 */
+	private static void arcade(Plan p, Random rnd, Map<Long, int[]> deck, int m0, int m1, int pp, boolean alongX, Shape a, Shape b) {
+		int len = m1 - m0;
+		if (len < 6) {
+			return;
+		}
+		int spans = Math.max(1, (int) Math.round(len / 11.0));
+		double per = len / (double) spans;
+		int[] depth = new int[len + 1];
+		for (int i = 0; i <= len; i++) {
+			double u = (i / per) % 1.0;
+			depth[i] = 1 + (int) Math.round(3.4 * (1 - Math.sin(Math.PI * u)));
+		}
+		BlockState[] under = {dsTile(), dsBrick(), bsBrick()};
+		for (int i = 0; i <= len; i++) {
+			int m = m0 + i;
+			for (int w = -1; w <= 1; w++) {
+				int[] c = deck.get(key(m, pp + w));
+				if (c == null) {
+					continue;
+				}
+				int x = alongX ? m : pp + w, z = alongX ? pp + w : m;
+				if (a.inside(x, z, -1) || b.inside(x, z, -1)) {
+					continue;
+				}
+				int d = depth[i];
+				for (int k = 1; k <= d; k++) {
+					BlockState s = grad(under, (double) k / 5, rnd);
+					if (k == d && d > 1) {
+						// the bottom course curves toward the deeper side of the arch
+						int prev = i > 0 ? depth[i - 1] : d, next = i < len ? depth[i + 1] : d;
+						if (prev > d || next > d) {
+							boolean towardPlus = next > prev;
+							Direction f = alongX ? (towardPlus ? Direction.EAST : Direction.WEST) : (towardPlus ? Direction.SOUTH : Direction.NORTH);
+							s = stairs(dsBrickStairs(), f, true);
+						}
+					}
+					p.soft(x, c[0] - k, z, s);
+				}
+			}
+			// The pendants between the spans
+			boolean pendant = Math.abs(i - Math.round(i / per) * per) < 0.5 && i > 0 && i < len;
+			int[] c = deck.get(key(m, pp));
+			int x = alongX ? m : pp, z = alongX ? pp : m;
+			if (pendant && c != null && !a.inside(x, z, -1) && !b.inside(x, z, -1)) {
+				int y = c[0] - depth[i] - 1;
+				p.soft(x, y, z, dsChis());
+				p.soft(x, y - 1, z, bsWall());
+				int links = 1 + rnd.nextInt(3);
+				for (int k = 1; k <= links; k++) {
+					p.soft(x, y - 1 - k, z, chain());
+				}
+				p.soft(x, y - 2 - links, z, hanging(soulLantern()));
+			}
+		}
 	}
 
 	private static long key(int m, int pp) {
@@ -1783,7 +2105,7 @@ public final class SeamArchitect {
 			double a = i * Math.PI / 2 + Math.PI / 4;
 			int ox = hx + (int) Math.round(Math.cos(a) * 64), oz = hz + (int) Math.round(Math.sin(a) * 64);
 			int oy = hy - 6 + rnd.nextInt(10);
-			island(p, rnd, Shape.of(rnd, ox, oy, oz, 12), true);
+			island(p, rnd, Shape.of(rnd, ox, oy, oz, 14), true);
 			obelisk(p, rnd, ox, oy + 1, oz);
 		}
 		// The great halo over the arena

@@ -97,8 +97,12 @@ public final class SeamFauna {
 				it.remove();
 				continue;
 			}
-			if (nearest(players, m.position(), 128) == null) {
+			ServerPlayer near = nearest(players, m.position(), 128);
+			if (near == null) {
 				far.add(m);
+			} else if (m instanceof VeilRay ray && ray.farFromHome(near.getX(), near.getZ())) {
+				// The rays drift along with the visitor, over whatever islands they walk to
+				ray.anchor(near.getX(), cruise(near, ThreadLocalRandom.current()), near.getZ(), ray.roam());
 			}
 		}
 		far.forEach(SeamFauna::fade);
@@ -113,15 +117,21 @@ public final class SeamFauna {
 				}
 			}
 			if (rays < RAYS_PER_PLAYER && rnd.nextInt(3) == 0) {
-				double a = rnd.nextDouble() * Math.PI * 2, d = 40 + rnd.nextDouble() * 24;
-				BlockPos at = BlockPos.containing(p.getX() + Math.cos(a) * d, Math.min(220, p.getY() + rnd.nextInt(-6, 26)), p.getZ() + Math.sin(a) * d);
-				if (seam.isLoaded(at) && seam.getBlockState(at).isAir()) {
-					VeilRay ray = ModEntities.VEIL_RAY.spawn(seam, at, EntitySpawnReason.EVENT);
+				// They come out of the fog high overhead, in open sky with room for their wings
+				double cruise = cruise(p, rnd);
+				for (int tries = 0; tries < 4; tries++) {
+					double a = rnd.nextDouble() * Math.PI * 2, d = 44 + rnd.nextDouble() * 30;
+					Vec3 at = new Vec3(p.getX() + Math.cos(a) * d, Math.min(230, cruise + tries * 10), p.getZ() + Math.sin(a) * d);
+					if (!VeilRay.open(seam, at, 7)) {
+						continue;
+					}
+					VeilRay ray = ModEntities.VEIL_RAY.spawn(seam, BlockPos.containing(at), EntitySpawnReason.EVENT);
 					if (ray != null) {
-						double r = 18 + rnd.nextDouble() * 22;
-						ray.anchor(p.getX() + rnd.nextDouble(-20, 20), at.getY(), p.getZ() + rnd.nextDouble(-20, 20), r);
+						ray.setYRot((float) Math.toDegrees(a) + 90 + rnd.nextFloat() * 60 - 30);
+						ray.anchor(p.getX() + rnd.nextDouble(-16, 16), cruise, p.getZ() + rnd.nextDouble(-16, 16), 48 + rnd.nextDouble() * 26);
 						DRIVEN.put(ray.getUUID(), new Driven(RAY));
 					}
+					break;
 				}
 			}
 			// The Thinned in villages near this visitor
@@ -196,6 +206,11 @@ public final class SeamFauna {
 						SeamService.SEAM.identifier().toString(), t.getX(), t.getY(), t.getZ()));
 			}
 		}
+	}
+
+	/** The height the rays soar at around a visitor: well over the island they stand on and most of what is built on it. */
+	private static double cruise(ServerPlayer p, ThreadLocalRandom rnd) {
+		return Math.min(212, Math.max(p.getY(), 96) + 32 + rnd.nextDouble() * 26);
 	}
 
 	/** A visitor's thread runs thin: under a third of their time, or already being pulled out. */
