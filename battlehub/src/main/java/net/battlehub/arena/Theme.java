@@ -24,7 +24,7 @@ public enum Theme {
 			"netherrack", "nether_bricks", "red_nether_bricks", "nether_brick_slab", "basalt", "shroomlight", "polished_blackstone_bricks",
 			"magma_block", "red_nether_bricks"),
 	ICE(
-			new String[] {"snow_block", "snow_block", "packed_ice", "snow_block", "packed_ice", "powder_snow_never"},
+			new String[] {"snow_block", "snow_block", "packed_ice", "snow_block", "packed_ice", "snow_block"},
 			"packed_ice", "packed_ice", "blue_ice", "snow_block", "ice", "sea_lantern", "blue_ice",
 			"ice", "light_blue_wool"),
 	SKY(
@@ -70,13 +70,9 @@ public enum Theme {
 		return null;
 	}
 
-	/** A random floor block from the theme mix (powder snow is replaced: nobody should sink into the arena). */
+	/** A random floor block from the theme mix. */
 	public BlockState floor(RandomSource rnd) {
-		String id = floor[rnd.nextInt(floor.length)];
-		if (id.equals("powder_snow_never")) {
-			id = "snow_block";
-		}
-		return Ids.state(id);
+		return Ids.state(floor[rnd.nextInt(floor.length)]);
 	}
 
 	public BlockState under() { return Ids.state(under); }

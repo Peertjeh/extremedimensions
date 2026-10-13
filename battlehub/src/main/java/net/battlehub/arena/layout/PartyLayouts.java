@@ -85,7 +85,6 @@ public final class PartyLayouts {
 				bp.set(x, 3, z, t.marker());
 			}
 		}
-		bp.set(0, 3, 0, t.light());
 		bp.mark("zone", 0, 4, 0);
 		// Cover around the hill
 		for (int i = 0; i < 6; i++) {
