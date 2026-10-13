@@ -123,9 +123,10 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   count, enchantments, unbreakable, leather colour, plus potion effects
 * **`titles.json`**: titles with display text (`&` colour codes) and requirement:
   `default`, `level`, `wins`, `duel_wins`, `mode_wins`, `streak`, `mode_streak`, `kills`, `elo` or `coins` (price)
-* **`lang/`**: every text players see. `en_us.json` is written there as a template. Add e.g.
-  `nl_nl.json` with the same keys and players with a Dutch client see Dutch. Set `language` in
-  `config.json` for the default.
+* **`lang/`**: every text players see. **English and Dutch are built in**: players see BattleHub in
+  their own client language when there is a file for it, otherwise in the server default (`language` in
+  `config.json`). `en_us.json` is written here as a template. Copy it to e.g. `de_de.json` to add a
+  language, or put changed lines in `en_us.json` / `nl_nl.json` to reword them.
 
 Player data is stored per world in `world/battlehub/players/<uuid>.json`.
 
@@ -133,7 +134,8 @@ Player data is stored per world in `world/battlehub/players/<uuid>.json`.
 
 ## FAQ
 
-**Do players need the mod?** No. All menus are vanilla chest menus, and all text is translated on the server.
+**Do players need the mod?** No. All menus are vanilla chest menus, and all text is translated on the
+server, in each player's own language (English and Dutch built in).
 
 **Where are the arenas?** In the `battlehub:arenas` dimension, which the mod adds itself. Arenas are
 built per match and removed afterwards.

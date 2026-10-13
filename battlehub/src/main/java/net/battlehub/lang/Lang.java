@@ -36,6 +36,8 @@ public final class Lang {
 	private Lang() {}
 
 	private static final String BUILTIN = "en_us";
+	/** Translations shipped in the jar besides English; files in config/battlehub/lang/ override them. */
+	private static final List<String> SHIPPED = List.of("nl_nl");
 	private static final Map<String, Map<String, String>> LANGS = new HashMap<>();
 
 	public static void load() {
@@ -51,6 +53,15 @@ public final class Lang {
 			BattleHub.LOGGER.error("Could not read the built-in language file", e);
 		}
 		LANGS.put(BUILTIN, builtin);
+		for (String code : SHIPPED) {
+			try (InputStream in = Lang.class.getResourceAsStream("/assets/battlehub/lang/" + code + ".json")) {
+				if (in != null) {
+					read(new InputStreamReader(in, StandardCharsets.UTF_8), LANGS.computeIfAbsent(code, k -> new LinkedHashMap<>()));
+				}
+			} catch (Exception e) {
+				BattleHub.LOGGER.error("Could not read the built-in language file {}", code, e);
+			}
+		}
 		Path dir = ConfigManager.dir().resolve("lang");
 		try {
 			Files.createDirectories(dir);
@@ -98,6 +109,14 @@ public final class Lang {
 			String code = p.clientInformation().language().toLowerCase(Locale.ROOT);
 			if (LANGS.containsKey(code)) {
 				return code;
+			}
+			// Same language, other region (nl_be uses nl_nl)
+			int cut = code.indexOf('_');
+			String prefix = (cut < 0 ? code : code.substring(0, cut)) + "_";
+			for (String known : new java.util.TreeSet<>(LANGS.keySet())) {
+				if (known.startsWith(prefix)) {
+					return known;
+				}
 			}
 		}
 		return ConfigManager.config().language.toLowerCase(Locale.ROOT);

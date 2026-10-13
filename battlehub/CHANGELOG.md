@@ -26,6 +26,8 @@ For Minecraft 26.3, Fabric Loader 0.19.5+, Fabric API. Server-side only; vanilla
   * A disconnect counts as a forfeit.
   * Every match ends cleanly when the server stops.
   * The lobby is protected from block breaking and placing.
+* **Languages:** English and Dutch built in, chosen per player from their client language. Add more
+  languages or reword lines in `config/battlehub/lang/`.
 * **Configuration** in `config/battlehub/`: `config.json`, `kits.json`, `titles.json` and `lang/`
   for translations. `/battlehub reload` applies changes.
 * **Admin commands:** `/battlehub setlobby | reload | matches | endmatch <id> | arena list`.

@@ -164,6 +164,12 @@ public final class SelfTest {
 		s.waitFor(tag + ": arena released", 400, () -> ArenaSlots.busy() == 0);
 	}
 
+	private static void setLanguage(ServerPlayer p, String code) {
+		net.minecraft.server.level.ClientInformation d = p.clientInformation();
+		p.updateOptions(new net.minecraft.server.level.ClientInformation(code, d.viewDistance(), d.chatVisibility(), d.chatColors(),
+				d.modelCustomisation(), d.mainHand(), d.textFilteringEnabled(), d.allowsListing(), d.particleStatus()));
+	}
+
 	/** The item in slot 0 of the mode's kit. */
 	static net.minecraft.world.item.Item kitWeapon(GameMode mode) {
 		var kit = ConfigManager.kits().kits.get(ConfigManager.config().game(mode).kit);
@@ -271,6 +277,17 @@ public final class SelfTest {
 			a.getInventory().setSelectedSlot(ConfigManager.config().compass.slot);
 			a.drop(true);
 			return HubItems.COMPASS.equals(Icon.tagOf(a.getInventory().getItem(ConfigManager.config().compass.slot)));
+		});
+		s.run("A's client switches to Belgian Dutch", () -> setLanguage(p("BHTestA"), "nl_be"));
+		s.check("Dutch players get the Dutch menu", () -> {
+			new MainMenu(p("BHTestA")).open();
+			return net.battlehub.lang.Lang.languageOf(p("BHTestA")).equals("nl_nl")
+					&& p("BHTestA").containerMenu instanceof HubMenu m && m.getSlot(15).getItem().getHoverName().getString().contains("Toekijken")
+					&& net.battlehub.lang.Lang.languageOf(p("BHTestB")).equals("en_us");
+		});
+		s.run("A back to English", () -> {
+			setLanguage(p("BHTestA"), "en_us");
+			p("BHTestA").closeContainer();
 		});
 		s.check("no damage in the lobby", () -> {
 			ServerPlayer a = p("BHTestA");
