@@ -20,7 +20,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * A Veil Ray: a great manta of the Seam, wings ten blocks wide and seamed with light, soaring high over the islands
+ * A Veil Ray: a great manta of the Seam, wings ten blocks wide and seamed with light, soaring over the islands
  * and singing low. It means no harm; struck, it climbs away into the fog.
  *
  * <p>Its flight is its own (no pathfinding in the void). It glides from waypoint to waypoint in open sky above the
@@ -119,7 +119,7 @@ public class VeilRay extends PathfinderMob {
 		double lift = Math.sin(this.tickCount * 0.021 + this.getId()) * 0.16;
 		if (pos.y < hy - 14) {
 			lift += 0.45;
-		} else if (pos.y > hy + 34) {
+		} else if (pos.y > hy + 26) {
 			lift -= 0.35;
 		}
 		Vec3 goal = new Vec3(to.x, 0, to.z).normalize().add(0, Mth.clamp(to.y / Math.max(8, to.horizontalDistance()), -0.4, 0.5) + lift, 0).normalize();
@@ -241,7 +241,7 @@ public class VeilRay extends PathfinderMob {
 		RandomSource r = this.getRandom();
 		for (int i = 0; i < 16; i++) {
 			double a = r.nextDouble() * Math.PI * 2, d = roam * (0.35 + 0.65 * r.nextDouble());
-			double y = Math.min(232, hy - 6 + r.nextDouble() * 20 + (i / 4) * 10);
+			double y = Math.min(232, hy - 6 + r.nextDouble() * 16 + (i / 4) * 10);
 			Vec3 w = new Vec3(hx + Math.cos(a) * d, y, hz + Math.sin(a) * d);
 			if (w.distanceToSqr(pos) > 26 * 26 && open(level, w, 6)) {
 				return w;

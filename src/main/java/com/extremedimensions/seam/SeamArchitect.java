@@ -1333,7 +1333,8 @@ public final class SeamArchitect {
 	 */
 	public static void village(Plan p, Random rnd, int cx, int top, int cz, int r) {
 		int plaza = r >= 24 ? 8 : 6;
-		int ring = (int) Math.round(r * 0.6);
+		// houses stand about 22 degrees off the streets: room to the street, to each other and to the rim
+		int ring = (int) Math.round(r * 0.68);
 		int graves = rnd.nextInt(10) < 7 ? rnd.nextInt(4) : -1;
 		boolean lore = true;
 		for (int q = 0; q < 4; q++) {
@@ -1343,7 +1344,7 @@ public final class SeamArchitect {
 				continue;
 			}
 			for (int k = -1; k <= 1; k += 2) {
-				double a = qa + k * 0.42;
+				double a = qa + k * 0.40;
 				int hx = cx + (int) Math.round(Math.cos(a) * ring), hz = cz + (int) Math.round(Math.sin(a) * ring);
 				double back = Math.atan2(cz - hz, cx - hx);
 				int rot = Math.floorMod((int) Math.round((back - Math.PI / 2) / (Math.PI / 2)), 4);

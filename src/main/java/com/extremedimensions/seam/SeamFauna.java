@@ -210,7 +210,7 @@ public final class SeamFauna {
 
 	/** The height the rays soar at around a visitor: well over the island they stand on and most of what is built on it. */
 	private static double cruise(ServerPlayer p, ThreadLocalRandom rnd) {
-		return Math.min(212, Math.max(p.getY(), 96) + 32 + rnd.nextDouble() * 26);
+		return Math.min(212, Math.max(p.getY(), 88) + 24 + rnd.nextDouble() * 18);
 	}
 
 	/** A visitor's thread runs thin: under a third of their time, or already being pulled out. */

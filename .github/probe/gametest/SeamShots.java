@@ -36,14 +36,14 @@ public class SeamShots implements FabricClientGameTest {
 				}
 				ctx.waitTicks(20);
 			}
-			shot(ctx, sp, "01_spire_island", 4010, 134, 4010, -45, 42);
-			shot(ctx, sp, "02_village_aerial", 4220, 150, 4020, -45, 52);
-			shot(ctx, sp, "03_village_street", 4262, 99, 4050, -90, 4);
-			shot(ctx, sp, "04_bridge_side", 4300, 86, 4022, 0, -8);
-			shot(ctx, sp, "05_loom", 4122, 128, 4020, -42, 42);
-			shot(ctx, sp, "06_halo_crystals", 4422, 122, 4020, -42, 35);
-			shot(ctx, sp, "07_plain", 4528, 124, 4028, -45, 45);
-			shot(ctx, sp, "08_bridge_deck", 4175, 96, 4050, -90, 8);
+			shot(ctx, sp, "01_spire_island", 4006, 102, 4006, -45, 14);
+			shot(ctx, sp, "02_village_aerial", 4226, 124, 4026, -45, 40);
+			shot(ctx, sp, "03_village_street", 4258, 98, 4050, -90, 4);
+			shot(ctx, sp, "04_village_plaza", 4263, 104, 4063, 135, 16);
+			shot(ctx, sp, "05_loom", 4126, 114, 4026, -45, 30);
+			shot(ctx, sp, "06_halo_crystals", 4428, 110, 4028, -45, 24);
+			shot(ctx, sp, "07_plain", 4532, 112, 4032, -45, 30);
+			shot(ctx, sp, "08_bridge_arches", 4318, 80, 4034, -30, -6);
 
 			// The rays: a visitor standing by the spire, flying, for a minute
 			sp.getServer().runCommand("gamemode creative @a");

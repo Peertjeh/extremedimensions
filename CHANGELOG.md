@@ -5,7 +5,7 @@
 *The islands grew, the streets found the bridges, and the rays learned to fly.*
 
 ### Changed
-- **Veil Rays fly like they mean it**: they soar high over the islands (thirty to sixty blocks above you), glide from
+- **Veil Rays fly like they mean it**: they soar over the islands (twenty-five to forty-five blocks above you), glide from
   waypoint to waypoint in open sky and turn no faster than a glider can. They look ahead along their whole
   ten-block wingspan and swerve around spires, islands and hanging chains, preferring to climb over rather than dive
   under. They drift along with you as you explore, and climb away hard when struck.
