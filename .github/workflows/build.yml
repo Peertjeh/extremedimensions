@@ -23,3 +23,5 @@ jobs:
         with:
           name: Artifacts
           path: build/libs/
+      - name: TEMP api probe
+        run: bash .github/probe/api.sh
