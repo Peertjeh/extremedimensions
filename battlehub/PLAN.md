@@ -103,3 +103,5 @@ Elke fase: compileert, unit tests groen, server start in CI zonder fouten, zelft
 * **Arena's**: elke modus gebruikt standaard alle vijf de thema's (Mace alleen Sky); de zelftest bouwt elke
   layout in elk thema en controleert dat spawns op vaste grond staan, er hoofdruimte is en de nodige
   markeringen (KOTH-zone, CTF-vlaggen en teamspawns) bestaan.
+* **Talen**: naast Engels (standaard) zit er een Nederlandse vertaling in de jar. Elke speler krijgt de taal
+  van zijn eigen client als die er is (`nl_be` valt terug op `nl_nl`), anders de standaardtaal van de server.
