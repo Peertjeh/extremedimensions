@@ -40,6 +40,7 @@ public final class SelfTest {
 	private static Script script;
 	private static final Map<String, TestPlayer> PLAYERS = new HashMap<>();
 	static final Map<String, Object> VARS = new HashMap<>();
+	private static final java.util.Set<String> KEEP_ONLINE = new java.util.HashSet<>();
 
 	public static void tick() {
 		if (script != null) {
@@ -56,10 +57,10 @@ public final class SelfTest {
 		}
 		BattleHub.LOGGER.info("SELFTEST starting");
 		Script s = new Script(() -> {
-			for (TestPlayer p : PLAYERS.values()) {
-				if (!p.hasDisconnected()) p.leave();
+			for (Map.Entry<String, TestPlayer> e : PLAYERS.entrySet()) {
+				// Players in the last match stay online: the server stop has to end that match and restore them.
+				if (!e.getValue().hasDisconnected() && !KEEP_ONLINE.contains(e.getKey())) e.getValue().leave();
 			}
-			PLAYERS.clear();
 		});
 		lobbyAndMenus(server, s);
 		LayoutTests.all(s);
@@ -84,6 +85,8 @@ public final class SelfTest {
 			c.game(GameMode.LMS).settings.put("borderShrinkSeconds", 20.0);
 		});
 		PartyTests.all(server, s);
+		ProgressionTests.all(server, s);
+		runningAtStop(server, s);
 		script = s;
 	}
 
@@ -180,6 +183,26 @@ public final class SelfTest {
 			return;
 		}
 		PLAYERS.put(name, TestPlayer.join(server, name));
+	}
+
+	/** Leaves a duel running; the CI script then stops the server and checks everybody was restored. */
+	private static void runningAtStop(MinecraftServer server, Script s) {
+		String tag = "server stop";
+		reset(s, tag);
+		s.run(tag + ": A and B start a duel", () -> {
+			join(server, "BHTestA");
+			join(server, "BHTestB");
+			Queues.join(p("BHTestA"), GameMode.SWORD, false);
+			Queues.join(p("BHTestB"), GameMode.SWORD, false);
+		});
+		s.waitFor(tag + ": duel running when the server stops", 400, () -> {
+			Match m = Matches.of(p("BHTestA").getUUID());
+			return m != null && m.phase() == Match.Phase.RUNNING && Snapshots.has(p("BHTestA").getUUID());
+		});
+		s.run(tag + ": keep A and B online", () -> {
+			KEEP_ONLINE.add("BHTestA");
+			KEEP_ONLINE.add("BHTestB");
+		});
 	}
 
 	/** Puts every test player back in the lobby, so a failed scenario cannot break the next one. */

@@ -95,6 +95,9 @@ public final class Matches {
 
 	/** Server stop or reload: end everything without results and give everybody their things back. */
 	public static void shutdown(MinecraftServer server) {
+		if (!MATCHES.isEmpty()) {
+			BattleHub.LOGGER.info("Server stopping: ending {} running match(es) and restoring their players", MATCHES.size());
+		}
 		for (Match m : new ArrayList<>(MATCHES.values())) {
 			try {
 				m.abort("match.cancelled_shutdown");

@@ -38,10 +38,15 @@ sed -n '/Loading Minecraft\|Starting minecraft server/,$p' out.log | grep -iE "b
 echo "===== tail ====="
 tail -25 out.log
 echo "===== files ====="
-ls -la config/battlehub world/battlehub world/battlehub/players 2>/dev/null
+ls -la config/battlehub world/battlehub world/battlehub/players world/battlehub/restore 2>/dev/null
 FAIL=0
 grep -q "Done (" out.log || { echo "::error::server did not start"; FAIL=1; }
 if grep -nE "\[[^]]*(ERROR|FATAL)\]" out.log | grep -iv "Couldn't load chunk"; then echo "::error::errors in server log"; FAIL=1; fi
 grep -n "SELFTEST FAIL" out.log && FAIL=1
-if [ -n "${SELFTEST:-}" ]; then grep -q "SELFTEST FINISHED" out.log || { echo "::error::selftest did not finish"; FAIL=1; }; fi
+if [ -n "${SELFTEST:-}" ]; then
+  grep -q "SELFTEST FINISHED" out.log || { echo "::error::selftest did not finish"; FAIL=1; }
+  # The self-test leaves one duel running: stopping the server must end it and restore both players.
+  grep -q "Server stopping: ending 1 running match" out.log || { echo "::error::running match not ended on stop"; FAIL=1; }
+  if [ -n "$(ls -A world/battlehub/restore 2>/dev/null)" ]; then echo "::error::players not restored on stop"; ls -la world/battlehub/restore; FAIL=1; fi
+fi
 exit $FAIL
