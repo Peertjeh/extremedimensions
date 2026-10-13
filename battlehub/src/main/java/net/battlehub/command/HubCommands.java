@@ -1,6 +1,7 @@
 package net.battlehub.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 
 import net.battlehub.BattleHub;
 import net.battlehub.config.ConfigManager;
@@ -9,6 +10,8 @@ import net.battlehub.gui.MainMenu;
 import net.battlehub.lang.Lang;
 import net.battlehub.lobby.HubItems;
 import net.battlehub.lobby.Lobby;
+import net.battlehub.match.Match;
+import net.battlehub.match.Matches;
 import net.battlehub.progression.Ranks;
 import net.battlehub.queue.Queues;
 import net.battlehub.session.Sessions;
@@ -33,11 +36,32 @@ public final class HubCommands {
 				.then(Commands.literal("setlobby").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(c -> setLobby(c.getSource())))
 				.then(Commands.literal("reload").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
-						.executes(c -> reload(c.getSource()))));
+						.executes(c -> reload(c.getSource())))
+				.then(Commands.literal("matches").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.executes(c -> AdminCommands.matches(c.getSource())))
+				.then(Commands.literal("endmatch").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.then(Commands.argument("id", IntegerArgumentType.integer(1))
+								.executes(c -> AdminCommands.endMatch(c.getSource(), IntegerArgumentType.getInteger(c, "id")))))
+				.then(Commands.literal("arena").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.then(Commands.literal("list").executes(c -> AdminCommands.arenaList(c.getSource())))));
+		if (net.battlehub.debug.SelfTest.enabled()) {
+			d.register(Commands.literal("battlehub").then(Commands.literal("selftest")
+					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+					.executes(c -> {
+						net.battlehub.debug.SelfTest.start(c.getSource().getServer());
+						return 1;
+					})));
+		}
 	}
 
 	/** Leave whatever you are doing and go back to the lobby. */
 	public static int hub(ServerPlayer p) {
+		Match m = Matches.of(p.getUUID());
+		if (m != null) {
+			m.forfeit(p);
+			Msg.send(p, "hub.left_match");
+			return 1;
+		}
 		Queues.leaveAll(p);
 		Sessions.toLobby(p.getUUID());
 		Lobby.teleport(p);

@@ -19,6 +19,15 @@ public final class SlotAllocator {
 		return -1;
 	}
 
+	/** Marks a specific slot busy (e.g. one that still has to be cleaned after a crash). */
+	public boolean reserve(int slot) {
+		if (slot < 0 || slot >= used.length || used[slot]) {
+			return false;
+		}
+		used[slot] = true;
+		return true;
+	}
+
 	public void release(int slot) {
 		if (slot >= 0 && slot < used.length) {
 			used[slot] = false;

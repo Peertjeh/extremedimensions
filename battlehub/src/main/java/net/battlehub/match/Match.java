@@ -1,0 +1,654 @@
+package net.battlehub.match;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import net.battlehub.BattleHub;
+import net.battlehub.arena.Arena;
+import net.battlehub.arena.ArenaBuilder;
+import net.battlehub.arena.ArenaSlots;
+import net.battlehub.arena.ArenaWorld;
+import net.battlehub.arena.Blueprint;
+import net.battlehub.arena.Theme;
+import net.battlehub.config.ConfigManager;
+import net.battlehub.config.HubConfig;
+import net.battlehub.core.GameMode;
+import net.battlehub.core.Outcome;
+import net.battlehub.data.Snapshots;
+import net.battlehub.gui.Icons;
+import net.battlehub.gui.Menus;
+import net.battlehub.lang.Lang;
+import net.battlehub.lobby.HubItems;
+import net.battlehub.session.Sessions;
+import net.battlehub.util.Msg;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Relative;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.phys.Vec3;
+
+/**
+ * One running game in its own arena slot. Lifecycle: BUILDING (arena is placed, players wait in the lobby) →
+ * COUNTDOWN (players frozen on their spawns with their kit) → RUNNING → ENDING (results shown, a short pause) →
+ * CLOSED (everyone restored and back in the lobby, arena cleared). Subclasses supply the arena design and rules.
+ */
+public abstract class Match {
+	public enum Phase { BUILDING, COUNTDOWN, RUNNING, ENDING, CLOSED }
+
+	public final int id;
+	public final GameMode mode;
+	public final boolean ranked;
+	protected final MinecraftServer server;
+	protected final List<UUID> participants;
+	protected final Map<UUID, String> names = new HashMap<>();
+	protected final Set<UUID> alive = new LinkedHashSet<>();
+	protected final Set<UUID> watchers = new LinkedHashSet<>();
+	protected final Set<UUID> left = new HashSet<>();
+	protected final Map<UUID, Integer> kills = new HashMap<>();
+	protected final Map<UUID, Integer> deaths = new HashMap<>();
+	protected final Map<UUID, Arena.Point> spawnOf = new HashMap<>();
+	protected final Map<UUID, Outcome> outcomes = new HashMap<>();
+	protected final RandomSource random = RandomSource.create();
+	protected Arena arena;
+	protected Phase phase = Phase.BUILDING;
+	protected int phaseTicks;
+	protected int runTicks;
+	private boolean teleported;
+
+	protected Match(int id, GameMode mode, boolean ranked, MinecraftServer server, List<ServerPlayer> players) {
+		this.id = id;
+		this.mode = mode;
+		this.ranked = ranked;
+		this.server = server;
+		this.participants = new ArrayList<>();
+		for (ServerPlayer p : players) {
+			participants.add(p.getUUID());
+			names.put(p.getUUID(), p.getGameProfile().name());
+		}
+	}
+
+	// ------------------------------------------------------------------ hooks
+
+	/** The arena for this match in the given theme. */
+	protected abstract Blueprint design(Theme theme);
+
+	/** Big line in the Spectate menu, e.g. "Stijn vs Tim" or "Bow Spleef (8 players)". */
+	public abstract Component describe(ServerPlayer viewer);
+
+	protected HubConfig.Game game() {
+		return ConfigManager.config().game(mode);
+	}
+
+	protected String kit() {
+		return game().kit;
+	}
+
+	/** Leather armour colour per player (-1: kit default). */
+	protected int leatherColor(UUID id) {
+		return -1;
+	}
+
+	protected int countdownSeconds() {
+		HubConfig.Timings t = ConfigManager.config().timings;
+		return mode.isDuel() ? t.duelCountdownSeconds : t.matchStartCountdownSeconds;
+	}
+
+	protected int timeLimitTicks() {
+		return Math.max(0, game().timeLimitSeconds) * 20;
+	}
+
+	/** Minimum players who must actually arrive for the match to start. */
+	protected int minimumToStart() {
+		return 2;
+	}
+
+	/** Called for each player after they were teleported and got their kit. */
+	protected void onArrived(ServerPlayer p, int index) {}
+
+	/** Called when the countdown is over. */
+	protected void onGo() {}
+
+	/** Game rules, every tick while RUNNING. */
+	protected void tickGame() {}
+
+	/** Extra damage rules on top of "only while running, only between players of this match". */
+	protected boolean damageAllowed(ServerPlayer victim, DamageSource source, ServerPlayer attacker) {
+		return true;
+	}
+
+	/** A player died (or fell out of the arena). Default: eliminated. */
+	protected void onKilled(ServerPlayer victim, ServerPlayer killer) {
+		eliminate(victim);
+	}
+
+	/** A participant disconnected or used /hub. */
+	protected void onLeft(UUID id) {}
+
+	/** Decide whether the match is over; default: last one alive wins. */
+	protected void checkEnd() {
+		if (alive.size() <= 1) {
+			finish(new ArrayList<>(alive));
+		}
+	}
+
+	/** Time limit reached; default: draw. */
+	protected void onTimeUp() {
+		finish(List.of());
+	}
+
+	/** Lang key of a short status line for the Spectate menu. */
+	public Component status(ServerPlayer viewer) {
+		return Lang.tr(viewer, Icons.modeKey(mode));
+	}
+
+	// ------------------------------------------------------------------ lifecycle
+
+	/** Reserves a slot and starts building. False if every arena slot is busy. */
+	boolean begin() {
+		ServerLevel level = ArenaWorld.level(server);
+		if (level == null) {
+			return false;
+		}
+		int slot = ArenaSlots.acquire();
+		if (slot < 0) {
+			return false;
+		}
+		Theme theme = pickTheme();
+		Blueprint bp = design(theme);
+		arena = new Arena(level, slot, theme, ArenaWorld.origin(slot), bp);
+		ArenaSlots.markBuilt(slot, arena.bounds());
+		for (UUID id : participants) {
+			Sessions.toMatch(id, this.id);
+			ServerPlayer p = player(id);
+			if (p != null) {
+				p.closeContainer();
+				Msg.send(p, "match.preparing", Lang.tr(p, Icons.modeKey(mode)), Lang.tr(p, "theme." + theme.id()));
+				Msg.sound(p, SoundEvents.NOTE_BLOCK_PLING, 0.8f, 1.6f);
+			}
+		}
+		ArenaBuilder.build(arena, this::onBuilt);
+		return true;
+	}
+
+	protected Theme pickTheme() {
+		List<String> ids = ConfigManager.config().arenas.themes.get(mode.id());
+		List<Theme> options = new ArrayList<>();
+		if (ids != null) {
+			for (String s : ids) {
+				Theme t = Theme.byId(s);
+				if (t != null) {
+					options.add(t);
+				}
+			}
+		}
+		if (options.isEmpty()) {
+			options.add(Theme.CASTLE);
+		}
+		return options.get(random.nextInt(options.size()));
+	}
+
+	private void onBuilt() {
+		if (phase != Phase.BUILDING) {
+			return;
+		}
+		int index = 0;
+		for (UUID id : participants) {
+			ServerPlayer p = player(id);
+			if (p == null || left.contains(id)) {
+				left.add(id);
+				continue;
+			}
+			alive.add(id);
+			prepare(p, index++);
+		}
+		teleported = true;
+		if (alive.size() < minimumToStart()) {
+			abort("match.cancelled_players");
+			return;
+		}
+		setPhase(Phase.COUNTDOWN);
+		Menus.refreshAll(server);
+	}
+
+	private void prepare(ServerPlayer p, int index) {
+		p.closeContainer();
+		Snapshots.take(p);
+		p.stopRiding();
+		p.removeAllEffects();
+		p.setGameMode(GameType.ADVENTURE);
+		p.setHealth(p.getMaxHealth());
+		p.getFoodData().setFoodLevel(20);
+		p.getFoodData().setSaturation(5f);
+		p.clearFire();
+		p.setArrowCount(0);
+		p.resetFallDistance();
+		Arena.Point sp = arena.spawn(index);
+		spawnOf.put(p.getUUID(), sp);
+		teleport(p, sp);
+		Kits.give(p, kit(), leatherColor(p.getUUID()));
+		onArrived(p, index);
+	}
+
+	protected void teleport(ServerPlayer p, Arena.Point pt) {
+		p.teleportTo(arena.level(), pt.pos().x, pt.pos().y, pt.pos().z, Set.of(), pt.yaw(), pt.pitch(), true);
+		p.setDeltaMovement(Vec3.ZERO);
+		p.resetFallDistance();
+	}
+
+	protected void setPhase(Phase next) {
+		phase = next;
+		phaseTicks = 0;
+	}
+
+	void tick() {
+		phaseTicks++;
+		switch (phase) {
+			case BUILDING -> {
+				if (phaseTicks > ConfigManager.config().timings.arenaBuildTimeoutSeconds * 20) {
+					abort("match.cancelled_arena");
+				}
+			}
+			case COUNTDOWN -> tickCountdown();
+			case RUNNING -> {
+				runTicks++;
+				voidCheck();
+				if (phase == Phase.RUNNING) {
+					tickGame();
+				}
+				int limit = timeLimitTicks();
+				if (phase == Phase.RUNNING && limit > 0) {
+					int remaining = limit - runTicks;
+					if (remaining == 60 * 20 || remaining == 30 * 20 || remaining == 10 * 20) {
+						forEveryone(p -> Msg.send(p, "match.time_left", remaining / 20));
+					}
+					if (runTicks >= limit) {
+						forEveryone(p -> Msg.send(p, "match.time_up"));
+						onTimeUp();
+					}
+				}
+				tickWatchers();
+			}
+			case ENDING -> {
+				tickWatchers();
+				if (phaseTicks >= ConfigManager.config().timings.endDelaySeconds * 20) {
+					close();
+				}
+			}
+			default -> { }
+		}
+	}
+
+	private void tickCountdown() {
+		int total = Math.max(1, countdownSeconds()) * 20;
+		for (UUID id : alive) {
+			ServerPlayer p = player(id);
+			Arena.Point sp = spawnOf.get(id);
+			if (p == null || sp == null) continue;
+			double dx = p.getX() - sp.pos().x;
+			double dz = p.getZ() - sp.pos().z;
+			if (dx * dx + dz * dz > 0.09 || p.getY() < sp.pos().y - 2) {
+				p.teleportTo(arena.level(), sp.pos().x, sp.pos().y, sp.pos().z, Relative.ROTATION, 0, 0, false);
+				p.setDeltaMovement(Vec3.ZERO);
+			}
+		}
+		if ((phaseTicks - 1) % 20 == 0) {
+			int secs = (total - phaseTicks + 1 + 19) / 20;
+			if (secs > 0) {
+				for (UUID id : alive) {
+					ServerPlayer p = player(id);
+					if (p == null) continue;
+					String color = secs <= 3 ? "&c" : "&e";
+					Msg.title(p, Lang.format(color + "&l" + secs), Lang.tr(p, "match.get_ready", Lang.tr(p, Icons.modeKey(mode))), 0, 25, 5);
+					Msg.sound(p, SoundEvents.NOTE_BLOCK_HAT, 1f, secs <= 3 ? 1.4f : 1.0f);
+				}
+			}
+		}
+		if (phaseTicks >= total) {
+			setPhase(Phase.RUNNING);
+			for (UUID id : alive) {
+				ServerPlayer p = player(id);
+				if (p == null) continue;
+				Msg.title(p, Lang.tr(p, "match.go"), Component.empty(), 0, 20, 10);
+				Msg.sound(p, SoundEvents.NOTE_BLOCK_PLING, 1f, 2.0f);
+			}
+			onGo();
+		}
+	}
+
+	private void voidCheck() {
+		for (UUID id : new ArrayList<>(alive)) {
+			ServerPlayer p = player(id);
+			if (p != null && p.getY() < arena.voidY()) {
+				killed(p, lastAttacker(p), true);
+				if (phase != Phase.RUNNING) {
+					return;
+				}
+			}
+		}
+	}
+
+	private void tickWatchers() {
+		if (runTicks % 10 != 0 && phase == Phase.RUNNING) {
+			return;
+		}
+		for (UUID id : participants) {
+			if (alive.contains(id) || left.contains(id)) continue;
+			ServerPlayer p = player(id);
+			if (p != null && p.isSpectator() && !arena.inSpectatorBounds(p.position())) {
+				teleport(p, arena.spectator());
+			}
+		}
+		for (UUID id : watchers) {
+			ServerPlayer p = player(id);
+			if (p != null && (!ArenaWorld.is(p.level()) || !arena.inSpectatorBounds(p.position()))) {
+				teleport(p, arena.spectator());
+			}
+		}
+	}
+
+	// ------------------------------------------------------------------ combat events
+
+	/** From ALLOW_DAMAGE. */
+	public boolean allowDamage(ServerPlayer victim, DamageSource source) {
+		if (phase != Phase.RUNNING || !alive.contains(victim.getUUID())) {
+			return false;
+		}
+		ServerPlayer attacker = attackerOf(source);
+		if (attacker != null && attacker != victim && !alive.contains(attacker.getUUID())) {
+			return false;
+		}
+		return damageAllowed(victim, source, attacker);
+	}
+
+	/** From ALLOW_DEATH: the death is always cancelled; the match decides what happens instead. */
+	public void handleDeath(ServerPlayer victim, DamageSource source) {
+		victim.setHealth(victim.getMaxHealth());
+		victim.clearFire();
+		victim.removeAllEffects();
+		if (phase != Phase.RUNNING || !alive.contains(victim.getUUID())) {
+			return;
+		}
+		ServerPlayer killer = attackerOf(source);
+		if (killer == null || killer == victim) {
+			killer = lastAttacker(victim);
+		}
+		killed(victim, killer, false);
+	}
+
+	protected void killed(ServerPlayer victim, ServerPlayer killer, boolean fell) {
+		UUID v = victim.getUUID();
+		deaths.merge(v, 1, Integer::sum);
+		boolean credited = killer != null && killer != victim && participants.contains(killer.getUUID());
+		if (credited) {
+			kills.merge(killer.getUUID(), 1, Integer::sum);
+			Msg.sound(killer, SoundEvents.EXPERIENCE_ORB_PICKUP, 1f, 1.2f);
+		}
+		final ServerPlayer k = credited ? killer : null;
+		forEveryone(p -> {
+			if (k != null) {
+				Msg.send(p, fell ? "match.knocked_off" : "match.killed", name(v), name(k.getUUID()));
+			} else {
+				Msg.send(p, fell ? "match.fell" : "match.died", name(v));
+			}
+		});
+		victim.setHealth(victim.getMaxHealth());
+		victim.setDeltaMovement(Vec3.ZERO);
+		victim.resetFallDistance();
+		onKilled(victim, k);
+		if (phase == Phase.RUNNING) {
+			checkEnd();
+		}
+	}
+
+	/** Out of the game: watch the rest as a spectator inside the arena. */
+	protected void eliminate(ServerPlayer p) {
+		alive.remove(p.getUUID());
+		p.getInventory().clearContent();
+		p.removeAllEffects();
+		p.setGameMode(GameType.SPECTATOR);
+		teleport(p, arena.spectator());
+		Msg.titleKey(p, "match.eliminated", "match.eliminated_sub");
+		Msg.sound(p, SoundEvents.PLAYER_HURT, 1f, 0.8f);
+	}
+
+	protected ServerPlayer attackerOf(DamageSource source) {
+		if (source == null) return null;
+		Entity e = source.getEntity();
+		return e instanceof ServerPlayer sp ? sp : null;
+	}
+
+	protected ServerPlayer lastAttacker(ServerPlayer victim) {
+		Player p = victim.getLastHurtByPlayer();
+		if (p instanceof ServerPlayer sp && participants.contains(sp.getUUID()) && sp != victim) {
+			return sp;
+		}
+		return null;
+	}
+
+	// ------------------------------------------------------------------ leaving
+
+	/** The player disconnected: counts as giving up. Items are restored right away, the position on next join. */
+	public void quit(ServerPlayer p) {
+		leave(p, false);
+	}
+
+	/** The player used /hub (or the leave option): gives up and goes back to the lobby now. */
+	public void forfeit(ServerPlayer p) {
+		leave(p, true);
+		Sessions.toLobby(p.getUUID());
+		HubItems.ensure(p, false);
+	}
+
+	private void leave(ServerPlayer p, boolean teleport) {
+		UUID id = p.getUUID();
+		if (!participants.contains(id) || left.contains(id) || phase == Phase.CLOSED) {
+			if (watchers.remove(id)) {
+				Snapshots.restore(p, teleport);
+			}
+			return;
+		}
+		left.add(id);
+		boolean wasAlive = alive.remove(id);
+		if (phase == Phase.BUILDING) {
+			abort("match.cancelled_left");
+			return;
+		}
+		if (teleported) {
+			Snapshots.restore(p, teleport);
+		}
+		forEveryone(o -> Msg.send(o, "match.left", name(id)));
+		onLeft(id);
+		if (wasAlive && (phase == Phase.RUNNING || phase == Phase.COUNTDOWN)) {
+			checkEnd();
+		}
+	}
+
+	// ------------------------------------------------------------------ ending
+
+	/** Ends the match with these winners (empty: draw). Results are applied immediately. */
+	protected void finish(List<UUID> winners) {
+		if (phase == Phase.ENDING || phase == Phase.CLOSED) {
+			return;
+		}
+		setPhase(Phase.ENDING);
+		boolean draw = winners.isEmpty();
+		for (UUID id : participants) {
+			Outcome o;
+			if (left.contains(id)) {
+				o = Outcome.LOSS;
+			} else if (draw) {
+				o = Outcome.DRAW;
+			} else {
+				o = winners.contains(id) ? Outcome.WIN : Outcome.LOSS;
+			}
+			outcomes.put(id, o);
+		}
+		Component winnerNames = joinNames(winners);
+		for (UUID id : participants) {
+			ServerPlayer p = player(id);
+			if (p == null || left.contains(id)) continue;
+			Outcome o = outcomes.get(id);
+			switch (o) {
+				case WIN -> {
+					Msg.title(p, Lang.tr(p, "match.victory"), Lang.tr(p, "match.victory_sub"), 5, 60, 15);
+					Msg.sound(p, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1f);
+				}
+				case LOSS -> {
+					Msg.title(p, Lang.tr(p, "match.defeat"), draw ? Component.empty() : Lang.tr(p, "match.defeat_sub", winnerNames), 5, 60, 15);
+					Msg.sound(p, SoundEvents.VILLAGER_NO, 0.8f, 0.8f);
+				}
+				case DRAW -> {
+					Msg.title(p, Lang.tr(p, "match.draw"), Component.empty(), 5, 60, 15);
+					Msg.sound(p, SoundEvents.NOTE_BLOCK_PLING, 0.8f, 1f);
+				}
+			}
+			p.setHealth(p.getMaxHealth());
+			p.clearFire();
+		}
+		forWatchers(p -> Msg.send(p, draw ? "match.ended_draw" : "match.ended_winner", winnerNames));
+		try {
+			Results.apply(this);
+		} catch (Exception e) {
+			BattleHub.LOGGER.error("Could not apply results of match {}", id, e);
+		}
+		Menus.refreshAll(server);
+	}
+
+	/** Everyone back to the lobby, arena cleared, slot released. */
+	void close() {
+		if (phase == Phase.CLOSED) {
+			return;
+		}
+		setPhase(Phase.CLOSED);
+		sendHome();
+		clearArena();
+		Menus.refreshAll(server);
+	}
+
+	/** Stops the match without results (admin, server stop, arena failure). */
+	public void abort(String reasonKey) {
+		if (phase == Phase.CLOSED) {
+			return;
+		}
+		setPhase(Phase.CLOSED);
+		for (UUID id : participants) {
+			ServerPlayer p = player(id);
+			if (p != null && !left.contains(id)) {
+				Msg.send(p, reasonKey);
+			}
+		}
+		forWatchers(p -> Msg.send(p, reasonKey));
+		sendHome();
+		clearArena();
+		Menus.refreshAll(server);
+	}
+
+	private void sendHome() {
+		for (UUID id : participants) {
+			ServerPlayer p = player(id);
+			if (p == null || left.contains(id)) continue;
+			if (teleported) {
+				Snapshots.restore(p, true);
+			}
+			Sessions.toLobby(id);
+			HubItems.ensure(p, false);
+		}
+		for (UUID id : new ArrayList<>(watchers)) {
+			ServerPlayer p = player(id);
+			if (p == null) continue;
+			Snapshots.restore(p, true);
+			Sessions.toLobby(id);
+			HubItems.ensure(p, false);
+			Msg.send(p, "spectate.match_over");
+		}
+		watchers.clear();
+	}
+
+	private void clearArena() {
+		if (arena != null) {
+			int slot = arena.slot();
+			ArenaBuilder.clear(arena, () -> ArenaSlots.release(slot));
+		}
+	}
+
+	// ------------------------------------------------------------------ spectators
+
+	public boolean canWatch() {
+		return phase == Phase.COUNTDOWN || phase == Phase.RUNNING;
+	}
+
+	public void addWatcher(ServerPlayer p) {
+		watchers.add(p.getUUID());
+		teleport(p, arena.spectator());
+	}
+
+	public void removeWatcher(UUID id) {
+		watchers.remove(id);
+	}
+
+	public Set<UUID> watchers() {
+		return watchers;
+	}
+
+	// ------------------------------------------------------------------ helpers and queries
+
+	public ServerPlayer player(UUID id) {
+		return server.getPlayerList().getPlayer(id);
+	}
+
+	public String name(UUID id) {
+		return names.getOrDefault(id, "?");
+	}
+
+	protected Component joinNames(List<UUID> ids) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < ids.size(); i++) {
+			if (i > 0) sb.append(i == ids.size() - 1 ? " & " : ", ");
+			sb.append(name(ids.get(i)));
+		}
+		return Component.literal(sb.toString());
+	}
+
+	/** Runs for every participant still here and every watcher. */
+	protected void forEveryone(java.util.function.Consumer<ServerPlayer> action) {
+		for (UUID id : participants) {
+			ServerPlayer p = player(id);
+			if (p != null && !left.contains(id)) action.accept(p);
+		}
+		forWatchers(action);
+	}
+
+	protected void forWatchers(java.util.function.Consumer<ServerPlayer> action) {
+		for (UUID id : watchers) {
+			ServerPlayer p = player(id);
+			if (p != null) action.accept(p);
+		}
+	}
+
+	public List<UUID> participants() { return participants; }
+	public Set<UUID> alive() { return alive; }
+	public Set<UUID> leftPlayers() { return left; }
+	public Phase phase() { return phase; }
+	public Arena arena() { return arena; }
+	public int kills(UUID id) { return kills.getOrDefault(id, 0); }
+	public int deaths(UUID id) { return deaths.getOrDefault(id, 0); }
+	public Outcome outcome(UUID id) { return outcomes.getOrDefault(id, Outcome.LOSS); }
+	public int runSeconds() { return runTicks / 20; }
+
+	public boolean involves(UUID id) {
+		return participants.contains(id) || watchers.contains(id);
+	}
+}

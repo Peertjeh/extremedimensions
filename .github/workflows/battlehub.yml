@@ -42,6 +42,8 @@ jobs:
         with:
           name: BattleHub
           path: battlehub/build/libs/
-      - name: boot a server with the mod
+      - name: boot a server with the mod and run the self-test
         run: bash ../.github/battlehub/server-test.sh
-        timeout-minutes: 20
+        timeout-minutes: 25
+        env:
+          SELFTEST: '1'

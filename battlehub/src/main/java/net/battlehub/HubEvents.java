@@ -1,6 +1,12 @@
 package net.battlehub;
 
+import net.battlehub.arena.ArenaBuilder;
+import net.battlehub.arena.ArenaSlots;
+import net.battlehub.arena.ArenaWorld;
 import net.battlehub.command.HubCommands;
+import net.battlehub.data.Snapshots;
+import net.battlehub.match.Match;
+import net.battlehub.match.Matches;
 import net.battlehub.config.ConfigManager;
 import net.battlehub.data.PlayerStore;
 import net.battlehub.gui.MainMenu;
@@ -42,6 +48,7 @@ public final class HubEvents {
 		ServerLifecycleEvents.SERVER_STARTED.register(HubEvents::started);
 		ServerLifecycleEvents.SERVER_STOPPING.register(HubEvents::stopping);
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
+			Queues.clear();
 			Sessions.clear();
 			Tasks.clear();
 			PlayerStore.unload();
@@ -54,9 +61,9 @@ public final class HubEvents {
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> leave(handler.getPlayer()));
 
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) ->
-				!(entity instanceof ServerPlayer p) || allowDamage(p));
+				!(entity instanceof ServerPlayer p) || allowDamage(p, source));
 		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) ->
-				!(entity instanceof ServerPlayer p) || allowDeath(p));
+				!(entity instanceof ServerPlayer p) || allowDeath(p, source));
 
 		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, be) ->
 				!(player instanceof ServerPlayer sp) || Protection.mayBreak(sp));
@@ -92,9 +99,12 @@ public final class HubEvents {
 		BattleHub.setServer(server);
 		Ranks.reload();
 		PlayerStore.load(server);
+		Snapshots.init(server);
+		ArenaSlots.init(server);
 	}
 
 	private static void stopping(MinecraftServer server) {
+		Matches.shutdown(server);
 		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
 			Queues.leaveAll(p);
 		}
@@ -104,7 +114,13 @@ public final class HubEvents {
 	private static void tick(MinecraftServer server) {
 		tick++;
 		Tasks.tick();
+		ArenaBuilder.tick();
+		Matches.tick();
+		Queues.tick(server);
 		Menus.tick(server);
+		if (net.battlehub.debug.SelfTest.enabled()) {
+			net.battlehub.debug.SelfTest.tick();
+		}
 		if (tick % 10 == 0) {
 			for (ServerPlayer p : server.getPlayerList().getPlayers()) {
 				lobbyTick(p);
@@ -133,7 +149,13 @@ public final class HubEvents {
 	private static void join(ServerPlayer p) {
 		PlayerStore.get(p);
 		Sessions.toLobby(p.getUUID());
-		if (ConfigManager.config().lobby.teleportOnJoin) {
+		if (Snapshots.has(p.getUUID())) {
+			// Left during a match or the server crashed: give everything back first.
+			Snapshots.restore(p, true);
+			if (ConfigManager.config().lobby.teleportOnJoin) {
+				Lobby.teleport(p);
+			}
+		} else if (ConfigManager.config().lobby.teleportOnJoin || ArenaWorld.is(p.level())) {
 			Lobby.teleport(p);
 		}
 		HubItems.ensure(p, false);
@@ -144,22 +166,34 @@ public final class HubEvents {
 		if (p == null) {
 			return;
 		}
+		Match m = Matches.of(p.getUUID());
+		if (m != null) {
+			m.quit(p);
+		}
 		Queues.leaveAll(p);
 		TitleService.remove(p);
 		PlayerStore.save(p.getUUID());
 		Sessions.remove(p.getUUID());
 	}
 
-	private static boolean allowDamage(ServerPlayer p) {
+	private static boolean allowDamage(ServerPlayer p, net.minecraft.world.damagesource.DamageSource source) {
 		if (Sessions.state(p.getUUID()) == Sessions.State.MATCH) {
-			return true;
+			Match m = Matches.of(p.getUUID());
+			return m != null && m.allowDamage(p, source);
+		}
+		if (Sessions.state(p.getUUID()) == Sessions.State.SPECTATING) {
+			return false;
 		}
 		return !ConfigManager.config().protection.noDamageOutsideMatches;
 	}
 
-	private static boolean allowDeath(ServerPlayer p) {
+	private static boolean allowDeath(ServerPlayer p, net.minecraft.world.damagesource.DamageSource source) {
 		if (Sessions.state(p.getUUID()) == Sessions.State.MATCH) {
-			return true;
+			Match m = Matches.of(p.getUUID());
+			if (m != null) {
+				m.handleDeath(p, source);
+				return false;
+			}
 		}
 		if (!ConfigManager.config().protection.preventDeathOutsideMatches) {
 			return true;

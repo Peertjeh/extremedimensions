@@ -1,0 +1,97 @@
+package net.battlehub.match;
+
+import java.util.Map;
+
+import net.battlehub.BattleHub;
+import net.battlehub.config.ConfigManager;
+import net.battlehub.config.KitConfig;
+import net.battlehub.util.Ids;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Unit;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.DyedItemColor;
+
+/** Hands out the kit of a mode from kits.json. */
+public final class Kits {
+	private Kits() {}
+
+	/**
+	 * Clears the player and gives the kit.
+	 *
+	 * @param leatherColor colour for leather armour (-1 keeps the kit's own colour), used for CTF teams
+	 */
+	public static void give(ServerPlayer p, String kitName, int leatherColor) {
+		Inventory inv = p.getInventory();
+		inv.clearContent();
+		p.removeAllEffects();
+		KitConfig.Kit kit = ConfigManager.kits().kits.get(kitName);
+		if (kit == null) {
+			BattleHub.LOGGER.warn("Kit '{}' does not exist in kits.json", kitName);
+			p.inventoryMenu.sendAllDataToRemote();
+			return;
+		}
+		for (KitConfig.KitItem ki : kit.items) {
+			ItemStack stack = stack(p, ki, leatherColor);
+			if (stack.isEmpty()) {
+				continue;
+			}
+			String slot = ki.slot == null ? "0" : ki.slot.trim().toLowerCase(java.util.Locale.ROOT);
+			switch (slot) {
+				case "head", "helmet" -> p.setItemSlot(EquipmentSlot.HEAD, stack);
+				case "chest", "chestplate" -> p.setItemSlot(EquipmentSlot.CHEST, stack);
+				case "legs", "leggings" -> p.setItemSlot(EquipmentSlot.LEGS, stack);
+				case "feet", "boots" -> p.setItemSlot(EquipmentSlot.FEET, stack);
+				case "offhand" -> p.setItemSlot(EquipmentSlot.OFFHAND, stack);
+				default -> {
+					int i;
+					try {
+						i = Integer.parseInt(slot);
+					} catch (NumberFormatException e) {
+						i = -1;
+					}
+					if (i >= 0 && i < 36 && inv.getItem(i).isEmpty()) {
+						inv.setItem(i, stack);
+					} else {
+						inv.add(stack);
+					}
+				}
+			}
+		}
+		for (Map.Entry<String, Integer> e : kit.effects.entrySet()) {
+			Ids.effect(e.getKey()).ifPresent(h -> p.addEffect(new MobEffectInstance(h, MobEffectInstance.INFINITE_DURATION,
+					Math.max(0, e.getValue()), false, false, true)));
+		}
+		inv.setSelectedSlot(0);
+		p.inventoryMenu.sendAllDataToRemote();
+	}
+
+	public static ItemStack stack(ServerPlayer p, KitConfig.KitItem ki, int leatherColor) {
+		Item item = Ids.item(ki.item);
+		if (item == Items.AIR) {
+			BattleHub.LOGGER.warn("Unknown kit item '{}'", ki.item);
+			return ItemStack.EMPTY;
+		}
+		ItemStack stack = new ItemStack(item, Math.max(1, Math.min(item.getDefaultMaxStackSize(), ki.count)));
+		if (ki.enchantments != null) {
+			for (Map.Entry<String, Integer> e : ki.enchantments.entrySet()) {
+				Ids.enchantment(p.level().getServer(), e.getKey()).ifPresentOrElse(
+						h -> stack.enchant(h, Math.max(1, e.getValue())),
+						() -> BattleHub.LOGGER.warn("Unknown enchantment '{}' in kit item {}", e.getKey(), ki.item));
+			}
+		}
+		if (ki.unbreakable && stack.isDamageableItem()) {
+			stack.set(DataComponents.UNBREAKABLE, Unit.INSTANCE);
+		}
+		int color = leatherColor >= 0 ? leatherColor : ki.color;
+		if (color >= 0 && Ids.key(item).startsWith("minecraft:leather_")) {
+			stack.set(DataComponents.DYED_COLOR, new DyedItemColor(color));
+		}
+		return stack;
+	}
+}

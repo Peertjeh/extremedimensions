@@ -25,6 +25,11 @@ class GameRulesTest {
 		s.release(0);
 		assertEquals(0, s.acquire());
 		assertEquals(2, s.busy());
+		SlotAllocator r = new SlotAllocator(3);
+		assertTrue(r.reserve(0));
+		assertFalse(r.reserve(0));
+		assertFalse(r.reserve(7));
+		assertEquals(1, r.acquire());
 	}
 
 	@Test
