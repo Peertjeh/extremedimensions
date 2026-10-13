@@ -31,7 +31,6 @@ import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -58,7 +57,7 @@ public final class HubEvents {
 		CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> HubCommands.register(dispatcher));
 
 		ServerPlayerEvents.JOIN.register(HubEvents::join);
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> leave(handler.getPlayer()));
+		// Leaving is handled by PlayerListMixin, before vanilla saves the player file.
 
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) ->
 				!(entity instanceof ServerPlayer p) || allowDamage(p, source));
@@ -163,8 +162,9 @@ public final class HubEvents {
 		TitleService.apply(p);
 	}
 
-	private static void leave(ServerPlayer p) {
-		if (p == null) {
+	/** The player is leaving the server: counts as giving up a match, ends spectating and queues, saves stats. */
+	public static void leaving(ServerPlayer p) {
+		if (p == null || BattleHub.server() == null) {
 			return;
 		}
 		if (Sessions.state(p.getUUID()) == Sessions.State.SPECTATING) {

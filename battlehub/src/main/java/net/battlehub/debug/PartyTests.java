@@ -100,8 +100,12 @@ final class PartyTests {
 			for (String n : NAMES) {
 				ServerPlayer pl = p(n);
 				if (pl.hasDisconnected()) continue;
-				if (pl.gameMode() == GameType.SPECTATOR || pl.gameMode() == GameType.ADVENTURE && false) return false;
-				if (!HubItems.COMPASS.equals(Icon.tagOf(pl.getInventory().getItem(ConfigManager.config().compass.slot)))) return false;
+				String slot = Icon.tagOf(pl.getInventory().getItem(ConfigManager.config().compass.slot));
+				if (pl.gameMode() == GameType.SPECTATOR || !HubItems.COMPASS.equals(slot)) {
+					net.battlehub.BattleHub.LOGGER.warn("SELFTEST {} not restored: mode {}, compass slot '{}', state {}, in {}",
+							n, pl.gameMode().getName(), slot, Sessions.state(pl.getUUID()), pl.level().dimension().identifier());
+					return false;
+				}
 			}
 			return true;
 		});
