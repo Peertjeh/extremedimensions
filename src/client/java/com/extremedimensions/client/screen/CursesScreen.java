@@ -45,6 +45,9 @@ public class CursesScreen extends Screen {
 	private Penalty selected;
 	private Button atone;
 
+	/** The Curses screen on display, if any, so a fresh payload can refresh it in place. */
+	private static CursesScreen shown;
+
 	public CursesScreen(String data, Screen parent) {
 		super(Component.translatable("gui.extremedimensions.curses.title"));
 		this.parent = parent;
@@ -59,8 +62,8 @@ public class CursesScreen extends Screen {
 		Minecraft mc = Minecraft.getInstance();
 		if (open) {
 			mc.gui.setScreen(new CursesScreen(data, CursesButton.takeReturn()));
-		} else if (mc.screen instanceof CursesScreen cs) {
-			cs.update(data);
+		} else if (shown != null) {
+			shown.update(data);
 		}
 	}
 
@@ -136,6 +139,7 @@ public class CursesScreen extends Screen {
 
 	@Override
 	protected void init() {
+		shown = this;
 		sockets.clear();
 		int x0 = x0(), y0 = y0();
 		this.addRenderableWidget(new Tab(x0 + 12, y0 + 22, false));
@@ -180,6 +184,9 @@ public class CursesScreen extends Screen {
 
 	@Override
 	public void onClose() {
+		if (shown == this) {
+			shown = null;
+		}
 		if (parent != null) {
 			Minecraft.getInstance().gui.setScreen(parent);
 		} else {

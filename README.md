@@ -21,40 +21,89 @@ race the clock. Let your anchors run dry and the Starved take something of you.
    second, and faster the further you wander from your arrival portal (+100% per 100 blocks).
 4. **Come home.** Step back through the portal before it runs out. The chain vanishes and your Tether returns.
 5. **Or don't.** At zero charge you suffer a **Dimensional Collapse**: you die, respawn in the Overworld and choose
-   one of three penalties. Dying beyond the wound by other means ends the expedition the same way.
+   one of three curses. Dying beyond the wound by other means ends the expedition the same way.
 
-## Penalties: Tether Marks
+## Curses
 
-Penalties stack and wear off only through **active play** where they count. Nether/End marks count down on
-expeditions, Overworld marks in the Overworld. Idling pauses the clock: it takes both looking around and moving.
-Open your inventory to see your **Tether Marks** beside it, each with its own rune, its stacks and the time left.
+A Collapse or a death beyond the wound costs you a **curse**: pick one of three cards. Curses are **permanent** and
+stack up to their own maximum. Sometimes the Starved are hungrier: the whole offer is multiplied and every card carries
+its own seal (**2x, 3x or 4x**), adding that many stacks at once. Open the **Curses** screen with the button beside the
+journal button in your inventory: every curse as a rune with its stacks, effect, lore and atonement.
 
-| Beyond the wound | Effect per stack |
-| --- | --- |
-| Accelerated Drain | Charge drains 75% faster |
-| Debt | Anchor fuel gives 40% less charge |
-| Scar | −3 hearts |
-| Cracked Armor | −4 armor |
-| Heavy Legs | 15% slower |
-| Clumsy Hands | 35% slower mining |
-| Frailty / Famine | Constant Weakness / Hunger |
-| Shadowed | Darkness follows you beyond |
-| Leaky Tank | Next expedition: your anchors lose 50% |
-| Mourning | Weakness, Hunger and Mining Fatigue for 10 minutes |
-| Toll | Your next 10 XP levels go to the Tether |
+Beyond curses act only in the Nether, the End and the Seam; Overworld curses (`/tether overworld_penalties on`) only
+at home.
 
-Optional **Overworld penalties** (`/tether overworld_penalties on`) add a separate set for deaths in the Overworld:
-Hollow Heart, Leaden Steps, Gnawing, Dull Pick, Deep Dread, Ill Luck and Tithe.
+| Beyond the wound | Per stack | Max |
+| --- | --- | --- |
+| Accelerated Drain | Charge drains 25% faster | 4 |
+| Debt | Anchor fuel gives 15% less charge | 4 |
+| Scar | Max health −2♥ | 3 |
+| Cracked Armor | −2 armor | 4 |
+| Heavy Legs | 8% slower | 3 |
+| Clumsy Hands | 15% slower mining | 3 |
+| Frailty | −1 attack damage | 4 |
+| Famine | Constant hunger | 2 |
+| Shadowed | Darkness follows you; slower from 2 stacks | 2 |
+| Leaky Tank | Every expedition, your anchors lose 10% | 3 |
+| Toll | 15% less experience | 3 |
+| Brittle Bones | 15% more fall damage | 3 |
+| Burning Blood | You burn 40% longer | 3 |
+| Thin Skin | −1 armor toughness | 3 |
+| Slow Hands | 10% slower attacks | 3 |
+| Short Reach | −0.5 block reach | 2 |
+| Weak Knees | 10% lower jumps | 2 |
+| Heavy Soul | 10% more gravity | 2 |
+| Short Chain | Distance drain starts 15 blocks sooner | 3 |
+| Dim Anchors | Each anchor holds 3 minutes less of your time | 4 |
+| Marked by the Tribe | Lurkers find you 50% more often in the Nether | 3 |
+| Empty Pockets | 1% fewer Tether Fragments (elites 3%) | 3 |
+| Worn Edges | Tools lose 1 extra durability per use | 3 |
+| Ferryman's Fee | Every safe return costs 2 levels | 3 |
+| Vertigo | Spells of nausea, more often per stack | 2 |
+| Cursed Coin | −1 luck: worse loot in fortresses, bastions and end cities | 3 |
 
-**Tether Fragments** occasionally drop from hostile mobs beyond the wound (4%, elites 12%). Offer one to an anchor to
-mend your longest-running mark.
+| Overworld | Per stack | Max |
+| --- | --- | --- |
+| Hollow Heart | Max health −1♥ | 4 |
+| Leaden Steps | 5% slower | 3 |
+| Gnawing | Constant hunger | 2 |
+| Dull Pick | 10% slower mining | 3 |
+| Deep Dread | Darkness below sea level | 1 |
+| Ill Luck | −1 luck | 3 |
+| Tithe | 15% less experience | 3 |
+| Restless Sleep | 25% chance a nightmare wakes you | 3 |
+| Bitter Tongue | Food fills 15% less | 3 |
+| Rusted Tools | Tools lose 1 extra durability per use | 3 |
+| Ill Repute | Villagers ask 10% more | 3 |
+| Hunted Nights | Something rises near you at night | 3 |
+| Weak Arm | −1 attack damage | 3 |
+| Short Tether | Your Tether snaps 1 block sooner | 2 |
+| Watched | Lurkers find you 50% more often | 3 |
+| Old Bones | 15% more fall damage | 3 |
+| Dusk Blindness | Darkness under the night sky | 1 |
+
+Every maximum and every value per stack can be changed in the config's `penalties` section. When a set has nothing
+left to give, the Starved take all your levels instead.
+
+### Lifting curses
+
+- **Atonement:** pick the curse to atone for in the Curses screen and play it off. Beyond: 1 point per active minute
+  on an expedition, 3 per elite slain, 5 per safe return. At home: 10 per night survived without dying, 1 per monster
+  slain after dark. The last stack takes 100 points, every stack above it 50 more.
+- **Tether Fragments:** offer them to an anchor, one fragment per stack the curse has.
+- **Mending Cloth:** 4 Seam Silk, a Tether Fragment and a **Veil Wing** (dropped by Veil Rays). Use it to take one stack
+  off.
+
+Every stack you lift leaves a **scar** (up to five): each one makes the drain 3% weaker.
+
+**Tether Fragments** occasionally drop from hostile mobs beyond the wound (4%, elites 12%).
 
 ## The Lurker
 
 *It sees. It waits. It takes.* An ancient tribe, bound to the shadows between dimensions, keeps watch over you.
 A Lurker appears rarely, day or night, in the Overworld and the Nether, always at a distance and on high ground.
 Usually it only watches. Sometimes it creeps closer while you are not looking and takes something: an item,
-experience, a piece of armour, or it lays a curse (a random penalty). Kill it before it vanishes to get your loot back.
+experience, a piece of armour, or it lays a curse. Kill it before it vanishes to get your loot back.
 Lurkers also drain charged anchors: catch one holding your anchor's light and chase it off.
 
 **Soul wards:** the tribe will not drink where souls burn. A soul lantern, soul torch, soul campfire or soul fire
@@ -79,7 +128,7 @@ Your return rift drifts, and only the thread of silk you leave behind leads back
 ## Weaver's Craft, the Dragon and the Mending
 
 Weave Seam Silk into your Tether for a slower drain, more reach and (with the Weavers' own weave) one escape from a
-Collapse. Endured penalties leave **scars** that make you harder to drain. Slay the Ender Dragon and you break the
+Collapse. Lifted curses leave **scars** that make you harder to drain. Slay the Ender Dragon and you break the
 seal on the first wound: Wound Storms tear the Overworld sky, the tribe turns from thieves into frightened
 supplicants, and every rift now opens near the **Heart of the Seam**, where the **Starved One** waits. Defeat it,
 and choose: **mend** the world or **sever** the Tether.
@@ -123,19 +172,21 @@ Each player can store up to 30 minutes per anchor. Fuel values show in item tool
 | Charge an anchor | Right click it with fuel |
 | Bind / untie the Tether | Right click with a Tether / with an empty hand |
 | Anchor status | Sneak + right click with an empty hand |
-| Mend a mark | Right click an anchor with a Tether Fragment |
+| Mend a curse | Right click an anchor with Tether Fragments, or use a Mending Cloth |
+| See your curses | The Curses button beside the journal button in your inventory |
 | Read the journal | Use the Tether Journal, or the journal button beside the recipe book |
 | Summon a Lurker (operators) | `/tether lurker <watch|stalk|drain>` |
 | Build a hoard (operators) | `/tether hoard` |
 | Enter the Seam (operators) | `/tether seam` |
 | Build every Seam structure in a row (operators) | `/tether seam_showcase` |
 | Break the seal / start a storm (operators) | `/tether break_seal`, `/tether storm` |
+| Set or lift curses (operators) | `/tether curse <id> <stacks>`, `/tether curse clear` |
 | Open a rift | Use a Seam Needle on crying obsidian |
 
 ## Installation
 
 1. Install **Fabric Loader 0.19.5+** for **Minecraft 26.3** (Java 25).
-2. Add **Fabric API 0.162.0+** and `extremedimensions-2.2.1.jar` to your `mods` folder.
+2. Add **Fabric API 0.162.0+** and `extremedimensions-2.3.0.jar` to your `mods` folder.
 3. Install it on the server **and** every client.
 
 Play a normal Survival world. Vanilla Hardcore turns you into a spectator on death, which this mod is designed to avoid.
@@ -143,7 +194,7 @@ Play a normal Survival world. Vanilla Hardcore turns you into a spectator on dea
 ## Configuration
 
 All balance values live in `config/extremedimensions.json` (created on first launch): anchor size and range, drain,
-tether length, penalty strength and duration, fragment chances and more.
+tether length, every curse's maximum and strength, the multiplier chance, atonement, fragment chances and more.
 
 ## Building
 
@@ -160,14 +211,14 @@ The jar ends up in `build/libs/`. CI builds every push; download the jar from th
 | `anchor` | Anchors, fuel, the free path to the portal, leaking and particles |
 | `expedition` | Entering, draining, the Leeching, Collapse, deaths and respawns |
 | `tether` | The physical chain on the ground |
-| `penalty` | Penalty definitions, choosing, effects, wearing off, mending |
+| `penalty` | Curse definitions, offers and multipliers, effects, atonement, mending |
 | `journal` | Journal pages |
 | `lurker` | The Lurker: entity and behaviour |
 | `progression` | Advancements |
 | `network` | Payloads and state sync |
 | `data` | Per-world persistence |
 | `config` | The config file |
-| `client` | HUD, screens, Tether Marks, tooltips, title screen, menu music and the shared UI style (`client.ui.Ui`) |
+| `client` | HUD, screens (Curses, cards, journal), tooltips, title screen, menu music and the shared UI style (`client.ui.Ui`) |
 
 All text is translatable through `assets/extremedimensions/lang/en_us.json`.
 
