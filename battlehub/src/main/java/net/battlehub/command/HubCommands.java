@@ -124,7 +124,12 @@ public final class HubCommands {
 			d.register(Commands.literal("battlehub").then(Commands.literal("selftest")
 					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 					.executes(c -> {
-						net.battlehub.debug.SelfTest.start(c.getSource().getServer());
+						try {
+							net.battlehub.debug.SelfTest.start(c.getSource().getServer());
+						} catch (RuntimeException e) {
+							net.battlehub.BattleHub.LOGGER.error("SELFTEST could not start", e);
+							throw e;
+						}
 						return 1;
 					})));
 		}

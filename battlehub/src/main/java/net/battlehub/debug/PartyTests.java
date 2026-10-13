@@ -108,8 +108,8 @@ final class PartyTests {
 		s.waitFor(tag + ": arena released", 600, () -> ArenaSlots.busy() == 0);
 	}
 
-	private static void expectWinner(Script s, String name) {
-		s.check(match().mode.id() + ": " + name + " won, stats updated", () -> {
+	private static void expectWinner(Script s, GameMode mode, String name) {
+		s.check(mode.id() + ": " + name + " won, stats updated", () -> {
 			UUID w = p(name).getUUID();
 			PlayerProfile prof = PlayerStore.get(w);
 			return match().outcome(w) == Outcome.WIN && prof.peek(match().mode).wins >= 1;
@@ -172,7 +172,7 @@ final class PartyTests {
 				&& !p("BHTestB").getInventory().getItem(0).isEmpty());
 		s.waitFor("koth: A scores and wins", 300, () -> match().phase() != Match.Phase.RUNNING);
 		s.check("koth: A has the points", () -> ((KothMatch) match()).score().points(p("BHTestA").getUUID()) >= 4);
-		expectWinner(s, "BHTestA");
+		expectWinner(s, GameMode.KOTH, "BHTestA");
 	}
 
 	private static void ctf(Script s) {
@@ -254,7 +254,7 @@ final class PartyTests {
 			for (String n : new String[] {"BHTestB", "BHTestC", "BHTestD"}) net.battlehub.command.HubCommands.hub(p(n));
 		});
 		s.waitFor("parkour: race over", 40, () -> match().phase() != Match.Phase.RUNNING);
-		expectWinner(s, "BHTestA");
+		expectWinner(s, GameMode.PARKOUR, "BHTestA");
 	}
 
 	private static void lms(Script s) {
@@ -268,6 +268,6 @@ final class PartyTests {
 		});
 		s.waitFor("lms: last man standing", 20, () -> match().phase() != Match.Phase.RUNNING);
 		s.check("lms: A has three kills", () -> match().kills(p("BHTestA").getUUID()) == 3);
-		expectWinner(s, "BHTestA");
+		expectWinner(s, GameMode.LMS, "BHTestA");
 	}
 }
