@@ -1705,8 +1705,10 @@ public final class SeamArchitect {
 				continue;
 			}
 			int kind = kinds[rnd.nextInt(kinds.length)];
+			int scale = 9 + rnd.nextInt(8);
 			int room = switch (kind) { case ARCH -> 6; case STONES -> 5; case CLUSTER -> 4; case TREE -> 3; default -> 2; };
-			if (!free(p, x, s.top, z, room)) {
+			int tall = switch (kind) { case ARCH -> 14; case TREE -> 11; case CLUSTER -> scale + 2; case FLOATING -> 30; default -> 6; };
+			if (!free(p, x, s.top, z, room, tall)) {
 				continue;
 			}
 			int y = s.top + 1;
@@ -1715,7 +1717,7 @@ public final class SeamArchitect {
 				case TREE -> deadTree(p, rnd, x, y, z);
 				case LAMP -> lamp(p, rnd, x, y, z);
 				case STONES -> stones(p, rnd, x, y, z);
-				case CLUSTER -> cluster(p, rnd, x, y, z, 9 + rnd.nextInt(8));
+				case CLUSTER -> cluster(p, rnd, x, y, z, scale);
 				default -> crystal(p, rnd, x, s.top + 13 + rnd.nextInt(7), z, 2 + rnd.nextInt(2));
 			}
 			placed++;
@@ -1724,6 +1726,11 @@ public final class SeamArchitect {
 
 	/** True when a patch of the island's turf is open: ground under all of it, nothing built on it or over it. */
 	static boolean free(Plan p, int x, int top, int z, int rad) {
+		return free(p, x, top, z, rad, 30);
+	}
+
+	/** As {@link #free(Plan, int, int, int, int)}, with the open air above the middle only checked {@code tall} high. */
+	static boolean free(Plan p, int x, int top, int z, int rad, int tall) {
 		for (int dx = -rad; dx <= rad; dx++) {
 			for (int dz = -rad; dz <= rad; dz++) {
 				BlockState g = p.get(x + dx, top, z + dz);
@@ -1734,14 +1741,14 @@ public final class SeamArchitect {
 				if (on != null && !growth(on)) {
 					return false;
 				}
-				for (int y = top + 2; y <= top + 6; y++) {
+				for (int y = top + 2; y <= top + Math.min(6, tall); y++) {
 					if (p.has(x + dx, y, z + dz)) {
 						return false;
 					}
 				}
 			}
 		}
-		for (int y = top + 7; y <= top + 30; y++) {
+		for (int y = top + 7; y <= top + tall; y++) {
 			if (p.has(x, y, z)) {
 				return false;
 			}
@@ -1829,30 +1836,49 @@ public final class SeamArchitect {
 		}
 	}
 
-	/** A cluster of amethyst shards breaking out of the ground, the tallest nearly upright and weeping light at its heart. */
+	/**
+	 * A cluster of amethyst shards breaking out of the ground: straight faceted prisms (an octagonal section) that run
+	 * to a point, the tallest nearly upright with a heart of crying obsidian, the others leaning out around it; the
+	 * stone clouds into violet glass toward the tips.
+	 */
 	static void cluster(Plan p, Random rnd, int cx, int y, int cz, int scale) {
-		BlockState[] g = {amethyst(), amethyst(), glass(), glass2()};
 		int shards = 3 + rnd.nextInt(3);
 		for (int i = 0; i < shards; i++) {
 			double a = rnd.nextDouble() * Math.PI * 2;
-			double tilt = i == 0 ? rnd.nextDouble() * 0.15 : 0.32 + rnd.nextDouble() * 0.45;
+			double tilt = i == 0 ? rnd.nextDouble() * 0.12 : 0.35 + rnd.nextDouble() * 0.4;
 			double len = (i == 0 ? 1.0 : 0.4 + rnd.nextDouble() * 0.4) * scale;
-			double rad = 0.8 + len * 0.13;
-			double bx = cx + (i == 0 ? 0 : Math.cos(a) * 1.8), bz = cz + (i == 0 ? 0 : Math.sin(a) * 1.8);
+			double rad = 0.9 + len * 0.11;
+			double bx = cx + 0.5 + (i == 0 ? 0 : Math.cos(a) * 1.6), by = y - 1.0, bz = cz + 0.5 + (i == 0 ? 0 : Math.sin(a) * 1.6);
 			double dx = Math.sin(tilt) * Math.cos(a), dy = Math.cos(tilt), dz = Math.sin(tilt) * Math.sin(a);
-			for (double t = -1.5; t <= len; t += 0.5) {
-				double f = Math.max(0, t) / len;
-				double rr = rad * Math.pow(1 - f, 0.75) + 0.3;
-				int px = (int) Math.round(bx + dx * t), py = (int) Math.round(y + dy * t), pz = (int) Math.round(bz + dz * t);
-				int ir = (int) Math.ceil(rr);
-				for (int ax = -ir; ax <= ir; ax++) {
-					for (int ay = -ir; ay <= ir; ay++) {
-						for (int az = -ir; az <= ir; az++) {
-							double q = ax * ax + ay * ay + az * az;
-							if (q <= rr * rr) {
-								boolean heart = i == 0 && rr > 1.6 && q < (rr - 1.2) * (rr - 1.2);
-								p.set(px + ax, py + ay, pz + az, heart ? crying() : grad(g, f, rnd));
-							}
+			// two directions across the shard, for its facets
+			double e1x = -dz, e1z = dx, el = Math.sqrt(e1x * e1x + e1z * e1z);
+			if (el < 1e-6) {
+				e1x = 1;
+				e1z = 0;
+				el = 1;
+			}
+			e1x /= el;
+			e1z /= el;
+			double e2x = dy * e1z, e2y = dz * e1x - dx * e1z, e2z = -dy * e1x;
+			int reach = (int) Math.ceil(len + rad + 2);
+			for (int vx = -reach; vx <= reach; vx++) {
+				for (int vy = -2; vy <= reach; vy++) {
+					for (int vz = -reach; vz <= reach; vz++) {
+						double px = Math.floor(bx) + vx + 0.5 - bx, py = Math.floor(by) + vy + 0.5 - by, pz = Math.floor(bz) + vz + 0.5 - bz;
+						double t = px * dx + py * dy + pz * dz;
+						if (t < -1.0 || t > len) {
+							continue;
+						}
+						double qx = px - dx * t, qy = py - dy * t, qz = pz - dz * t;
+						double u = Math.abs(qx * e1x + qz * e1z), w = Math.abs(qx * e2x + qy * e2y + qz * e2z);
+						double facet = Math.max(Math.max(u, w), (u + w) * 0.7071);
+						double f = Math.max(0, t) / len;
+						// straight body, then a point over the last third
+						double rr = f < 0.66 ? rad * (1 - f * 0.25) : rad * 0.835 * (1 - (f - 0.66) / 0.34);
+						if (facet <= rr + 0.15) {
+							boolean heart = i == 0 && facet < rr - 1.1 && f < 0.7;
+							BlockState b = heart ? crying() : f > 0.72 || facet > rr - 0.7 && f > 0.45 ? (rnd.nextInt(3) == 0 ? glass2() : glass()) : amethyst();
+							p.set((int) Math.floor(bx) + vx, (int) Math.floor(by) + vy, (int) Math.floor(bz) + vz, b);
 						}
 					}
 				}

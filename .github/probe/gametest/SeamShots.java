@@ -36,42 +36,11 @@ public class SeamShots implements FabricClientGameTest {
 				}
 				ctx.waitTicks(20);
 			}
-			shot(ctx, sp, "01_spire_island", 4006, 102, 4006, -45, 14);
-			shot(ctx, sp, "02_village_aerial", 4226, 124, 4026, -45, 40);
-			shot(ctx, sp, "03_village_street", 4258, 98, 4050, -90, 4);
-			shot(ctx, sp, "04_village_plaza", 4263, 104, 4063, 135, 16);
-			shot(ctx, sp, "05_loom", 4126, 114, 4026, -45, 30);
-			shot(ctx, sp, "06_halo_crystals", 4428, 110, 4028, -45, 24);
-			shot(ctx, sp, "07_plain", 4532, 112, 4032, -45, 30);
-			shot(ctx, sp, "08_bridge_arches", 4318, 80, 4034, -30, -6);
-
-			// The rays: a visitor standing by the spire, flying, for a minute
-			sp.getServer().runCommand("gamemode creative @a");
-			sp.getServer().runCommand(IN + "tp @a 4070 86 4068 -135 -20");
-			sp.getServer().runOnServer(s -> {
-				for (ServerPlayer p : s.getPlayerList().getPlayers()) {
-					p.getAbilities().flying = true;
-					p.onUpdateAbilities();
-				}
-			});
-			for (int t = 0; t <= 1200; t += 40) {
-				final int tick = t;
-				String log = sp.getServer().computeOnServer(s -> rays(s, tick));
-				System.out.print(log);
-				if (t == 640) {
-					sp.getServer().runCommand(IN + "tp @a 4070 86 4068 facing entity @e[type=extremedimensions:veil_ray,x=4070,y=86,z=4068,sort=nearest,limit=1]");
-					ctx.waitTicks(3);
-					ctx.takeScreenshot("09_rays_overhead");
-				}
-				ctx.waitTicks(40);
-			}
-			// Up close to one in flight
-			String cam = sp.getServer().computeOnServer(SeamShots::chase);
-			if (cam != null) {
-				sp.getServer().runCommand(IN + cam);
-				ctx.waitTicks(2);
-				ctx.takeScreenshot("10_ray_close");
-			}
+			shot(ctx, sp, "01_halo_crystals", 4430, 104, 4030, -45, 20);
+			shot(ctx, sp, "02_plain", 4536, 106, 4036, -45, 22);
+			shot(ctx, sp, "03_plain_low", 4562, 99, 4062, 135, 0);
+			shot(ctx, sp, "04_halo_low", 4462, 93, 4062, 135, -6);
+			shot(ctx, sp, "05_spire_grounds", 4084, 92, 4084, 135, 8);
 		}
 	}
 
