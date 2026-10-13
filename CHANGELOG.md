@@ -1,5 +1,39 @@
 # Changelog
 
+## 2.3.0: What the Starved Keep
+
+*Curses no longer fade. They stay, they stack, and they have to be paid off.*
+
+### Changed
+- **Curses are permanent.** A Collapse or a death beyond the wound still offers three cards, but the curse you pick
+  stays until you lift it. Every curse stacks up to its own maximum, and a card shows how many stacks you carry now and
+  how many you will carry after picking it.
+- **43 curses** instead of a handful: 26 beyond the wound (the Nether, the End and the Seam) and 17 at home, kept
+  strictly apart. New ones include Cracked Armor, Brittle Bones, Burning Blood, Short Reach, Heavy Soul, Short Chain,
+  Dim Anchors, Marked by the Tribe, Worn Edges, Ferryman's Fee, Vertigo and Cursed Coin beyond, and Restless Sleep,
+  Bitter Tongue, Rusted Tools, Ill Repute, Hunted Nights, Watched and Dusk Blindness at home.
+- Old timed curses carry over as permanent stacks (never past the new maximum).
+
+### Added
+- **Hungry offers**: now and then the whole offer is multiplied. Every card then carries its own seal (2x, 3x or 4x,
+  rolled per card) and adds that many stacks at once. Some days all three roll high.
+- **The Curses screen**: a button beside the journal button in your inventory opens it. Every curse is a rune socket
+  with pips for its stacks; pick one for its effect, lore and atonement meter. Tabs for beyond and home. It replaces the
+  marks along the sides of the inventory.
+- **Lifting curses**, one stack at a time:
+  - **Atonement**: choose a curse in the Curses screen and play it off: active minutes, elites and safe returns beyond;
+    nights survived and monsters slain after dark at home.
+  - **Tether Fragments**: offer them to an anchor, one per stack the curse has.
+  - **Mending Cloth** (4 Seam Silk, a Tether Fragment and a Veil Wing): use it to take a stack off.
+  - Every stack lifted leaves a **scar** (up to five) that weakens the drain a little.
+- **Veil Wing**: Veil Rays now drop a wing when slain (sometimes two).
+- `/tether curse <id> <stacks>` and `/tether curse clear` for operators.
+- Config: a `penalties` section with the maximum and value per stack of every curse, plus the multiplier chance and
+  range and every atonement number.
+
+### Removed
+- Curse timers, the Mourning curse and the side marks in the inventory.
+
 ## 2.2.1: Room to Breathe
 
 *The islands grew, the streets found the bridges, and the rays learned to fly.*

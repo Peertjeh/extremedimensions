@@ -67,14 +67,20 @@ public final class CursesButton extends AbstractButton {
 		// Stay beside the journal button wherever the recipe book moves it
 		this.setX(anchor.getX() + anchor.getWidth() + 24);
 		this.setY(anchor.getY());
-		this.extractDefaultSprite(g);
 		int total = 0;
 		for (ClientState.Mark m : ClientState.marks) {
 			total += m.stacks();
 		}
+		// A dark socket with an ember rim: the rune breathes red while curses are carried
 		double breath = 0.5 + 0.5 * Math.sin(System.currentTimeMillis() / 600.0);
-		int color = total > 0 ? Ui.mix(Ui.EMBER_DEEP, Ui.DANGER, 0.3 + 0.4 * breath) : Ui.MUTED;
-		Ui.rune(g, "curses", this.getX() + 3, this.getY() + 2, color, this.isHovered() ? 1.0 : 0.85);
+		boolean hot = this.isHovered();
+		int rim = total > 0 ? Ui.mix(Ui.EMBER_DEEP, Ui.DANGER, 0.3 + 0.4 * breath) : Ui.mix(Ui.MUTED, Ui.EMBER_DEEP, 0.35);
+		int x = this.getX(), y = this.getY(), w = this.getWidth(), h = this.getHeight();
+		g.fill(x, y, x + w, y + h, Ui.argb(255, Ui.SHADOW));
+		g.fill(x + 1, y + 1, x + w - 1, y + h - 1, Ui.argb(255, hot ? Ui.mix(rim, 0xFFFFFF, 0.3) : rim));
+		g.fill(x + 2, y + 2, x + w - 2, y + h - 2, Ui.argb(255, Ui.mix(Ui.INK, rim, hot ? 0.3 : 0.16)));
+		g.fill(x + 2, y + 2, x + w - 2, y + 3, Ui.argb(0.18, 0xFFFFFF));
+		Ui.rune(g, "curses", x + 3, y + 2, Ui.mix(rim, 0xFFFFFF, hot ? 0.55 : 0.35), 1.0);
 		if (total > 0) {
 			Minecraft mc = Minecraft.getInstance();
 			String n = total > 99 ? "99" : String.valueOf(total);

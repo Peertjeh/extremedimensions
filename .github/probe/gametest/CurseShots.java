@@ -24,7 +24,7 @@ public class CurseShots implements FabricClientGameTest {
 			sp.getServer().runCommand("tether overworld_penalties on");
 			for (String c : new String[] {"scar 2", "accelerated_drain 4", "heavy_soul 1", "brittle_bones 3", "vertigo 1", "short_chain 2",
 					"watched 2", "ill_repute 1", "hunted_nights 3"}) {
-				sp.getServer().runCommand("tether curse " + c);
+				sp.getServer().runCommand("execute as @a run tether curse " + c);
 			}
 			sp.getServer().runOnServer(s -> {
 				for (ServerPlayer p : s.getPlayerList().getPlayers()) {
@@ -43,9 +43,9 @@ public class CurseShots implements FabricClientGameTest {
 			ctx.takeScreenshot("02_curses_beyond");
 
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
-			sp.getServer().runCommand("tether curse clear");
+			sp.getServer().runCommand("execute as @a run tether curse clear");
 			for (String c : new String[] {"hollow_heart 3", "restless_sleep 1", "bitter_tongue 2", "dusk_blindness 1", "short_tether 2"}) {
-				sp.getServer().runCommand("tether curse " + c);
+				sp.getServer().runCommand("execute as @a run tether curse " + c);
 			}
 			ctx.waitTicks(5);
 			ctx.runOnClient(mc -> ClientPlayNetworking.send(new ModPackets.RequestCursesPayload()));
