@@ -30,6 +30,8 @@ jobs:
           distribution: 'microsoft'
       - name: setup gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: false
       - name: build and test
         run: chmod +x ./gradlew && ./gradlew build --stacktrace
       - name: capture build artifacts
@@ -41,7 +43,7 @@ jobs:
         if: always()
         run: |
           bash ../.github/battlehub/probe.sh probe.txt
-          mkdir -p probe && split -l 900 -d -a 2 probe.txt probe/part-
+          mkdir -p probe && split -l 1500 -d -a 2 probe.txt probe/part-
           ls probe
       - name: TEMP upload probe
         if: always()
@@ -56,7 +58,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        part: ['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19']
+        part: ['00','01','02','03']
     steps:
       - uses: actions/download-artifact@v7
         with:

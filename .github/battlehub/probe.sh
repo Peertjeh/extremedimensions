@@ -1,5 +1,5 @@
 #!/bin/bash
-# TEMP: dump the Minecraft 26.3 / Fabric API signatures BattleHub needs (javap only, no decompiled code).
+# TEMP: second, targeted signature probe (javap only).
 set +e
 OUT=${1:-probe.txt}
 JARS=$(find ~/.gradle/caches -name "*.jar" 2>/dev/null | grep -v -- "-sources" | grep -E "fabric-loom|net.fabricmc|com.mojang|minecraft" | sort -u)
@@ -9,80 +9,55 @@ for j in $JARS; do
 done
 CP=$(echo $JARS | tr ' ' ':')
 {
-echo "##### MC jars: $MC"
-echo "##### fabric api modules:"; echo "$JARS" | grep -oE "fabric-[a-z0-9-]+-v[0-9]+|fabric-[a-z0-9-]+-api" | sort -u | tr '\n' ' '; echo
 short() { sed -E 's/java\.lang\.//g; s/java\.util\.function\.//g; s/java\.util\.//g; s/net\.minecraft\.//g; s/com\.mojang\.//g; s/net\.fabricmc\.fabric\.api\.//g'; }
 full() { for c in "$@"; do echo "=== $c"; javap -cp "$CP" -protected "$c" 2>&1 | grep -v 'lambda\$' | grep -vE '^Compiled from' | short; done; }
-pat() { local c="$1"; shift; echo "=== $c [filtered]"; javap -cp "$CP" -protected "$c" 2>&1 | grep -v 'lambda\$' | grep -E "$*" | short; }
-names() { for c in "$@"; do echo "=== $c [static field names]"; javap -cp "$CP" -public "$c" 2>&1 | grep "static final" | sed -E 's/.* ([A-Za-z0-9_$]+);$/\1/' | tr '\n' ' ' | fold -w 220; echo; done; }
-typed() { for c in "$@"; do echo "=== $c [static fields typed]"; javap -cp "$CP" -public "$c" 2>&1 | grep "static" | grep -v "(" | sed -E 's/public static final //' | short | tr '\n' ';' | fold -w 220; echo; done; }
-findc() { echo "=== find $1"; for j in $MC $JARS; do unzip -Z1 "$j" 2>/dev/null | grep -E "$1" ; done | grep -v '\$[0-9]' | sort -u | head -${2:-40}; }
-
-echo "##### LOCATE"
-findc "/(TeleportTransition|Relative|ClickType|ContainerInput|ResolvableProfile|ItemLore|CustomData|TooltipDisplay|DyedItemColor|Unbreakable|ChargedProjectiles|ValueOutput|ValueInput|TagValueOutput|TagValueInput|ProblemReporter|GameRules|PermissionSet|Permissions|PermissionLevel|LevelBasedPermissionSet|AbstractArrow|Projectile|WindCharge|PrimedTnt|ItemEntity|FireworkRocketEntity|ClientInformation|TicketType|WorldBorder|ServerScoreboard|PlayerTeam|ServerboundContainerClickPacket|HashedStack|RespawnData|LevelData)\.class$" 80
-findc "net/minecraft/server/permissions/.*\.class$" 40
-findc "net/fabricmc/fabric/api/(entity|event|networking|command|message|gametest)/.*\.class$" 120
-
-echo "##### PLAYER"
-full net.minecraft.server.level.ServerPlayer net.minecraft.world.entity.player.Player net.minecraft.world.entity.player.Inventory net.minecraft.world.entity.player.Abilities net.minecraft.world.food.FoodData net.minecraft.server.level.ServerPlayerGameMode net.minecraft.world.level.GameType net.minecraft.world.entity.EquipmentSlot net.minecraft.server.level.ClientInformation com.mojang.authlib.GameProfile
-echo "##### ENTITY"
-full net.minecraft.world.entity.LivingEntity net.minecraft.world.entity.Entity net.minecraft.world.entity.Relative net.minecraft.world.level.portal.TeleportTransition net.minecraft.world.effect.MobEffectInstance
-typed net.minecraft.world.effect.MobEffects
-echo "##### SERVER"
-full net.minecraft.server.MinecraftServer net.minecraft.server.players.PlayerList net.minecraft.server.level.ServerLevel net.minecraft.world.level.Level net.minecraft.world.level.storage.LevelResource net.minecraft.world.level.border.WorldBorder net.minecraft.server.level.ServerChunkCache net.minecraft.server.level.TicketType net.minecraft.world.level.ChunkPos
-echo "##### ITEMS"
-full net.minecraft.world.item.ItemStack net.minecraft.world.item.component.ItemLore net.minecraft.world.item.component.CustomData net.minecraft.world.item.component.ResolvableProfile net.minecraft.world.item.component.TooltipDisplay net.minecraft.world.item.component.DyedItemColor net.minecraft.world.item.component.ChargedProjectiles net.minecraft.world.item.enchantment.ItemEnchantments net.minecraft.world.item.enchantment.EnchantmentHelper
-typed net.minecraft.core.component.DataComponents net.minecraft.world.item.enchantment.Enchantments
-pat net.minecraft.world.item.Item "getDefaultInstance|getName|getDescriptionId|builtInRegistryHolder|components\(|getDefaultMaxStackSize"
-echo "##### TEXT"
-full net.minecraft.network.chat.Component net.minecraft.network.chat.MutableComponent net.minecraft.network.chat.Style net.minecraft.network.chat.TextColor net.minecraft.network.chat.ClickEvent 'net.minecraft.network.chat.ClickEvent$RunCommand' 'net.minecraft.network.chat.ClickEvent$SuggestCommand' net.minecraft.network.chat.HoverEvent 'net.minecraft.network.chat.HoverEvent$ShowText' net.minecraft.ChatFormatting
-echo "##### PACKETS"
-full net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket net.minecraft.network.protocol.game.ClientboundInitializeBorderPacket net.minecraft.network.protocol.game.ClientboundSetBorderSizePacket net.minecraft.network.protocol.game.ClientboundSetBorderLerpSizePacket net.minecraft.network.protocol.game.ClientboundSetBorderCenterPacket net.minecraft.network.protocol.game.ClientboundSoundPacket net.minecraft.network.protocol.game.ClientboundClearTitlesPacket net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket
-pat net.minecraft.server.network.ServerGamePacketListenerImpl "public|protected"
-pat net.minecraft.server.network.ServerCommonPacketListenerImpl "public|protected"
-echo "##### MENUS"
-full net.minecraft.world.inventory.AbstractContainerMenu net.minecraft.world.inventory.ChestMenu net.minecraft.world.inventory.ClickType net.minecraft.world.inventory.ContainerInput net.minecraft.world.inventory.Slot net.minecraft.world.SimpleMenuProvider net.minecraft.world.MenuProvider net.minecraft.world.SimpleContainer net.minecraft.world.Container
-names net.minecraft.world.inventory.MenuType
-echo "##### SCOREBOARD"
-full net.minecraft.world.scores.Scoreboard net.minecraft.world.scores.PlayerTeam net.minecraft.world.scores.Team 'net.minecraft.world.scores.Team$CollisionRule' 'net.minecraft.world.scores.Team$Visibility' net.minecraft.server.ServerScoreboard
-echo "##### COMMANDS"
-full net.minecraft.commands.Commands net.minecraft.commands.CommandSourceStack net.minecraft.commands.arguments.EntityArgument
-for c in $(for j in $MC; do unzip -Z1 "$j" | grep -E "^net/minecraft/server/permissions/[A-Za-z]+\.class$"; done | sort -u | sed 's/\.class$//; s#/#.#g'); do full $c; done
-echo "##### DAMAGE"
-full net.minecraft.world.damagesource.DamageSource net.minecraft.world.damagesource.DamageSources
-names net.minecraft.world.damagesource.DamageTypes net.minecraft.tags.DamageTypeTags
-echo "##### REGISTRIES"
-full net.minecraft.resources.Identifier net.minecraft.resources.ResourceKey net.minecraft.resources.RegistryOps net.minecraft.core.Registry net.minecraft.core.DefaultedRegistry 'net.minecraft.core.HolderLookup$Provider' 'net.minecraft.core.HolderGetter' net.minecraft.core.Holder
-names net.minecraft.core.registries.BuiltInRegistries net.minecraft.core.registries.Registries
-echo "##### NBT"
-full net.minecraft.nbt.NbtIo net.minecraft.nbt.NbtOps net.minecraft.nbt.CompoundTag net.minecraft.nbt.NbtAccounter net.minecraft.world.level.storage.TagValueOutput net.minecraft.world.level.storage.TagValueInput net.minecraft.world.level.storage.ValueOutput net.minecraft.world.level.storage.ValueInput net.minecraft.util.ProblemReporter
-echo "##### WORLD"
-full net.minecraft.core.BlockPos net.minecraft.core.Vec3i net.minecraft.world.phys.Vec3 net.minecraft.world.phys.AABB net.minecraft.core.Direction
-pat net.minecraft.world.level.block.state.BlockBehaviour\$BlockStateBase "public.*(is\(|getBlock|isAir|blocksMotion|isSolid|getValue|hasProperty|canSurvive|isFaceSturdy)"
-pat net.minecraft.world.level.block.state.StateHolder "public.*(setValue|getValue|trySetValue)"
-typed net.minecraft.world.level.block.state.properties.BlockStateProperties
-full net.minecraft.world.level.block.state.properties.SlabType net.minecraft.world.level.block.state.properties.Half net.minecraft.world.level.block.state.properties.WallSide net.minecraft.world.level.block.state.properties.DoubleBlockHalf
-names net.minecraft.world.level.block.Blocks net.minecraft.world.item.Items
-echo "##### ENTITIES"
-full net.minecraft.world.entity.projectile.Projectile net.minecraft.world.entity.projectile.arrow.AbstractArrow net.minecraft.world.entity.projectile.AbstractArrow net.minecraft.world.entity.item.ItemEntity net.minecraft.world.entity.item.PrimedTnt net.minecraft.world.entity.projectile.FireworkRocketEntity
-names net.minecraft.world.entity.EntityType
-echo "##### SOUNDS/PARTICLES"
-typed net.minecraft.sounds.SoundEvents
-names net.minecraft.core.particles.ParticleTypes
-full net.minecraft.sounds.SoundSource
-echo "##### GAMERULES"
-pat net.minecraft.world.level.gamerules.GameRules "public"
-echo "##### FABRIC"
-for c in net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents net.fabricmc.fabric.api.event.player.UseItemCallback net.fabricmc.fabric.api.event.player.UseBlockCallback net.fabricmc.fabric.api.event.player.AttackBlockCallback net.fabricmc.fabric.api.event.player.AttackEntityCallback net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback net.fabricmc.fabric.api.entity.FakePlayer net.fabricmc.fabric.api.message.v1.ServerMessageDecoratorEvent net.fabricmc.fabric.api.message.v1.ServerMessageEvents; do
-  full $c
-  for n in $(for j in $JARS; do unzip -Z1 "$j" 2>/dev/null | grep -E "^${c//.//}\\\$[A-Za-z]+\.class$"; done | sort -u | sed 's/\.class$//; s#/#.#g'); do full "$n"; done
-done
+pat() { local c="$1"; shift; echo "=== $c [filtered]"; javap -cp "$CP" -p "$c" 2>&1 | grep -v 'lambda\$' | grep -E "$*" | short; }
+echo "##### COLOURED"
+pat net.minecraft.world.level.block.Blocks " (WOOL|BANNER|WALL_BANNER|STAINED_GLASS_PANE|STAINED_GLASS|CONCRETE|CARPET|TERRACOTTA|DYED_TERRACOTTA|GLAZED_TERRACOTTA|BED|CANDLE|SHULKER_BOX|CONCRETE_POWDER|WOOL_SLAB|WOOL_STAIRS);"
+pat net.minecraft.world.item.Items " (DYE|WOOL|BANNER|STAINED_GLASS_PANE|STAINED_GLASS|CONCRETE|BED|CARPET|TERRACOTTA|DYED_TERRACOTTA|CANDLE|SHULKER_BOX);"
+T=$(javap -cp "$CP" -public net.minecraft.world.level.block.Blocks 2>/dev/null | grep " WOOL;" | sed -E 's/.*public static final ([a-zA-Z0-9_.$]+).*/\1/')
+echo "collection type: $T"
+[ -n "$T" ] && full "$T"
+for c in $(for j in $MC; do unzip -Z1 "$j" | grep -iE "^net/minecraft/.*(Colou?r(ed)?(Set|Map|Collection|Blocks|Items|Variants)|DyedBlock|ByColor)[A-Za-z$]*\.class$"; done | sort -u | sed 's/\.class$//; s#/#.#g' | head -12); do full "$c"; done
+full net.minecraft.world.item.DyeColor
+echo "##### RESPAWN"
+full 'net.minecraft.world.level.storage.LevelData$RespawnData' net.minecraft.core.GlobalPos
+echo "##### BLOCKSTATE"
+pat 'net.minecraft.world.level.block.state.BlockBehaviour$BlockStateBase' "public.* is\(|public.*Block getBlock"
+full net.minecraft.world.item.ItemInstance
+pat net.minecraft.world.level.EntityGetter "getEntitiesOfClass|getNearestPlayer|players\(|getPlayerByUUID"
+full net.minecraft.world.level.LevelWriter
+pat net.minecraft.core.registries.BuiltInRegistries "static final"
+pat net.minecraft.world.level.block.state.properties.BlockStateProperties " (FACING|HORIZONTAL_FACING|HALF|SLAB_TYPE|ROTATION_16|AXIS|HORIZONTAL_AXIS|LIT|WATERLOGGED|SNOWY|LAYERS|STAIRS_SHAPE|OPEN|DOUBLE_BLOCK_HALF|LOWER|UP|ATTACHED|HANGING|PERSISTENT|DISTANCE|NORTH_WALL|EAST_WALL|SOUTH_WALL|WEST_WALL|NORTH|EAST|SOUTH|WEST);"
+pat net.minecraft.world.level.block.StairBlock "static"
+pat net.minecraft.world.level.block.SlabBlock "static"
+pat net.minecraft.world.level.block.BannerBlock "static"
+pat net.minecraft.world.level.block.LeavesBlock "static"
+pat net.minecraft.world.level.block.LanternBlock "static"
+pat net.minecraft.world.level.block.RotatedPillarBlock "static"
+pat net.minecraft.world.level.block.FenceBlock "static|CrossCollisionBlock"
+pat net.minecraft.world.level.block.CrossCollisionBlock "static"
+pat net.minecraft.world.level.block.SnowLayerBlock "static"
+pat net.minecraft.world.entity.projectile.arrow.AbstractArrow "inGround|InGround|isInGround"
+pat net.minecraft.world.entity.player.Player "drop\("
+pat net.minecraft.world.inventory.InventoryMenu "public"
+pat net.minecraft.world.level.block.Block "public static .*(byItem|getId|stateById)|defaultBlockState|asItem"
+pat net.minecraft.world.item.BlockItem "getBlock"
+echo "##### GAMETEST"
+for j in $JARS; do unzip -Z1 "$j" 2>/dev/null | grep -E "^net/fabricmc/fabric/api/gametest/v1/[A-Za-z]+\.class$"; done | sort -u
+for c in $(for j in $JARS; do unzip -Z1 "$j" 2>/dev/null | grep -E "^net/fabricmc/fabric/api/gametest/v1/[A-Za-z]+\.class$"; done | sort -u | sed 's/\.class$//; s#/#.#g'); do full $c; done
+pat net.minecraft.gametest.framework.GameTestHelper "public.*(makeMockPlayer|makeMockServerPlayer|succeed|fail\(|getLevel|absolutePos|runAfterDelay|startSequence|onEachTick|succeedWhen)"
 echo "##### DATA"
 for j in $MC; do
   if unzip -Z1 "$j" | grep -q "data/minecraft/dimension_type/overworld.json"; then
-    for f in dimension_type/overworld.json worldgen/biome/the_void.json worldgen/biome/plains.json worldgen/biome/snowy_plains.json worldgen/biome/nether_wastes.json; do echo "=== $f"; unzip -p "$j" "data/minecraft/$f" | tr -s ' \n' ' ' | head -c 4000; echo; done
+    for f in dimension_type/the_nether.json dimension_type/the_end.json dimension_type/overworld_caves.json; do echo "=== $f"; unzip -p "$j" "data/minecraft/$f" | tr -s ' \n' ' ' | head -c 3000; echo; done
+    unzip -Z1 "$j" | grep -E "data/minecraft/(timeline|world_clock|clock)" | head -40
+    for f in $(unzip -Z1 "$j" | grep -E "data/minecraft/(timeline|world_clock|clock)/[a-z_]+\.json$" | head -8); do echo "=== $f"; unzip -p "$j" "$f" | tr -s ' \n' ' ' | head -c 2500; echo; done
+    unzip -Z1 "$j" | grep -E "data/minecraft/(loot_table/blocks|recipe)/(red_wool|red_banner|white_wool)" | head
+    unzip -Z1 "$j" | grep -E "data/minecraft/tags/.*wool" | head -5
     break
   fi
 done
+for j in $MC; do unzip -Z1 "$j" | grep -E "assets/minecraft/(blockstates|items)/(red_wool|red_banner|white_wool|red_dye)\.json" | head -5; done
 } > "$OUT" 2>&1
 wc -l "$OUT"
