@@ -36,21 +36,19 @@ public final class Sync {
 				seam ? SeamService.riftDistance(p, d) : TetherService.distance(p, d)));
 	}
 
-	/** The cards on offer: "id:multiplier:stacks:max:valuePerStack", comma separated. */
+	/** The cards on offer: "@set" (beyond or overworld), then "id:multiplier:stacks:max:valuePerStack", comma separated. */
 	public static void offer(ServerPlayer p, PlayerData d) {
 		if (d.pendingOffer.isEmpty()) {
 			return;
 		}
-		StringBuilder out = new StringBuilder();
+		StringBuilder out = new StringBuilder("@").append(d.owed.isEmpty() ? "beyond" : d.owed.get(0));
 		for (int i = 0; i < d.pendingOffer.size(); i++) {
 			Penalty pen = Penalty.byId(d.pendingOffer.get(i));
 			if (pen == null) {
 				continue;
 			}
 			int mult = i < d.pendingMult.size() ? d.pendingMult.get(i) : 1;
-			if (out.length() > 0) {
-				out.append(',');
-			}
+			out.append(',');
 			out.append(pen.id).append(':').append(mult).append(':').append(d.stacks(pen)).append(':').append(pen.max).append(':').append(pen.display());
 		}
 		ServerPlayNetworking.send(p, new ModPackets.OfferPayload(out.toString()));

@@ -525,5 +525,6 @@
   "gui.extremedimensions.curses.fumbled": "Your grip fails.",
   "gui.extremedimensions.choice.spill": "+%s spill over",
   "gui.extremedimensions.choice.everywhere": "Every world · max %s",
-  "gui.extremedimensions.choice.spilled": "The hunger spills over: %s"
+  "gui.extremedimensions.choice.spilled": "The hunger spills over: %s",
+  "gui.extremedimensions.curses.nearby_none": "No one within 7 blocks"
 }

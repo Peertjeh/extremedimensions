@@ -127,6 +127,10 @@ public class CurseShots implements FabricClientGameTest {
 				ctx.takeScreenshot("04_curses_" + tab.toLowerCase());
 			}
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			ctx.runOnClient(mc -> mc.gui.setScreen(new CursesScreen(data, null)));
+			ctx.waitTicks(8);
+			ctx.takeScreenshot("04_curses_nobody_near");
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);

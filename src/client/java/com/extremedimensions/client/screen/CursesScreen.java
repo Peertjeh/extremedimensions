@@ -42,8 +42,8 @@ public class CursesScreen extends Screen {
 	private static final int PW = 352, PH = 212;
 	private static final int COLS = 6, CELL = 22;
 	private static final int TAB_W = 104, TAB_GAP = 6;
-	/** The nearby players panel: width, gap to the Curses panel, row height. */
-	private static final int LW = 110, LGAP = 6, ROW = 20;
+	/** The nearby players panel: wide and narrow widths, gap to the Curses panel, row height (wide), cell height (narrow). */
+	private static final int LW = 110, NW = 36, LGAP = 6, ROW = 20, CELL_N = 50;
 
 	/** One curse as the server sent it. */
 	private record Entry(Penalty pen, int stacks, int max, int progress, int cost, String value) {}
@@ -198,8 +198,18 @@ public class CursesScreen extends Screen {
 		return "gui.extremedimensions.curses.tab_" + group.id();
 	}
 
+	/** Width of the nearby players panel: wide when there is room, a narrow column on small screens, none if even that does not fit. */
+	private int sideW() {
+		if (this.width >= PW + LGAP + LW + 8) {
+			return LW;
+		}
+		return this.width >= PW + LGAP + NW + 4 ? NW : 0;
+	}
+
+	/** The Curses panel and the nearby players panel are centred together. */
 	private int x0() {
-		return (this.width - PW) / 2;
+		int side = sideW();
+		return Math.max(2, (this.width - PW - (side > 0 ? LGAP + side : 0)) / 2);
 	}
 
 	private int y0() {
@@ -285,7 +295,7 @@ public class CursesScreen extends Screen {
 		double fade = Ui.ease((now - openAt) / 260.0);
 		int accent = accent();
 		int x0 = x0(), y0 = y0();
-		int cx = this.width / 2;
+		int cx = x0 + PW / 2;
 		int tint = switch (tab) {
 			case OVERWORLD -> 0x001818;
 			case EVERYWHERE -> 0x120020;
@@ -355,40 +365,62 @@ public class CursesScreen extends Screen {
 		String drain = Ui.tr("gui.extremedimensions.curses.scar_drain", Math.min(5, scars) * 3);
 		g.text(this.font, drain, px + 40, y + 6, Ui.argb(fade, Ui.MUTED));
 		String hint = Ui.tr("gui.extremedimensions.curses.hint_" + tab.id());
-		Ui.centered(g, this.font, hint, this.width / 2, y + 18, Ui.MUTED, fade);
-		Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.curses.hint_mend"), this.width / 2, y + 29, Ui.MUTED, fade * 0.8);
+		Ui.centered(g, this.font, hint, x0 + PW / 2, y + 18, Ui.MUTED, fade);
+		Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.curses.hint_mend"), x0 + PW / 2, y + 29, Ui.MUTED, fade * 0.8);
 	}
 
 	/**
 	 * Who stands within seven blocks: a head each and one sigil per set with the stacks carried there, nearest first,
-	 * never taller than the Curses panel. Hover a head for the name, a sigil for its set.
+	 * never taller than the Curses panel. Hover a head for the name, a sigil for its set. On small screens the panel is a
+	 * narrow column: the head with its three sigils under it.
 	 */
 	private void nearbyPanel(GuiGraphicsExtractor g, int x0, int y0, int mouseX, int mouseY, double fade) {
-		if (nearby.isEmpty()) {
+		int side = sideW();
+		if (side == 0) {
 			return;
 		}
-		int lx = Math.min(x0 + PW + LGAP, this.width - LW - 2);
-		int rows = Math.min(nearby.size(), (PH - 32) / ROW);
+		int lx = x0 + PW + LGAP;
+		boolean wide = side == LW;
+		int perCell = wide ? ROW : CELL_N;
+		int top = wide ? 30 : 8;
+		int rows = Math.min(nearby.size(), (PH - top - 4) / perCell);
 		boolean more = nearby.size() > rows;
 		if (more) {
 			rows = Math.max(0, rows - 1);
 		}
-		int lh = Math.min(PH, 30 + (rows + (more ? 1 : 0)) * ROW + 4);
-		Ui.panel(g, lx, y0, LW, lh, Ui.MUTED, fade);
-		Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.curses.nearby").toUpperCase(), lx + LW / 2, y0 + 9, Ui.PARCHMENT, fade);
-		Ui.divider(g, lx + 10, y0 + 22, LW - 20, Ui.MUTED, fade);
+		int lh = nearby.isEmpty() ? (wide ? 56 : 30) : Math.min(PH, top + (rows + (more ? 1 : 0)) * perCell + 4);
+		Ui.panel(g, lx, y0, side, lh, Ui.MUTED, fade);
+		if (wide) {
+			Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.curses.nearby").toUpperCase(), lx + side / 2, y0 + 9, Ui.PARCHMENT, fade);
+			Ui.divider(g, lx + 10, y0 + 22, side - 20, Ui.MUTED, fade);
+		}
+		if (nearby.isEmpty()) {
+			if (wide) {
+				int ly = y0 + 30;
+				for (String line : Ui.wrap(this.font, Ui.tr("gui.extremedimensions.curses.nearby_none"), side - 16)) {
+					Ui.centered(g, this.font, line, lx + side / 2, ly, Ui.MUTED, fade);
+					ly += 10;
+				}
+			} else {
+				Ui.centered(g, this.font, "-", lx + side / 2, y0 + 11, Ui.MUTED, fade);
+				if (mouseX >= lx && mouseX < lx + side && mouseY >= y0 && mouseY < y0 + lh) {
+					g.setTooltipForNextFrame(this.font, Component.translatable("gui.extremedimensions.curses.nearby_none"), mouseX, mouseY);
+				}
+			}
+			return;
+		}
 		Component tip = null;
+		Group[] groups = Group.values();
 		for (int r = 0; r < rows; r++) {
 			Nearby n = nearby.get(r);
-			int ry = y0 + 30 + r * ROW;
-			int fx = lx + 8;
+			int ry = y0 + top + r * perCell;
+			int fx = wide ? lx + 8 : lx + (side - 16) / 2;
 			face(g, n, fx, ry, fade);
 			if (mouseX >= fx && mouseX < fx + 16 && mouseY >= ry && mouseY < ry + 16) {
 				tip = Component.literal(n.name());
 			}
-			Group[] groups = Group.values();
 			for (int k = 0; k < groups.length; k++) {
-				int sx = lx + 32 + k * 25, sy = ry + 4;
+				int sx = wide ? lx + 32 + k * 25 : lx + 6, sy = wide ? ry + 4 : ry + 20 + k * 9;
 				int count = n.sets()[k];
 				sigil(g, groups[k], sx, sy, count > 0 ? color(groups[k]) : Ui.MUTED, fade * (count > 0 ? 1.0 : 0.6));
 				String c = String.valueOf(count);
@@ -399,8 +431,9 @@ public class CursesScreen extends Screen {
 			}
 		}
 		if (more) {
-			int ry = y0 + 30 + rows * ROW;
-			Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.status.more", nearby.size() - rows), lx + LW / 2, ry + 4, Ui.MUTED, fade);
+			int ry = y0 + top + rows * perCell;
+			String rest = wide ? Ui.tr("gui.extremedimensions.status.more", nearby.size() - rows) : "+" + (nearby.size() - rows);
+			Ui.centered(g, this.font, rest, lx + side / 2, ry + 4, Ui.MUTED, fade);
 		}
 		if (tip != null) {
 			g.setTooltipForNextFrame(this.font, tip, mouseX, mouseY);

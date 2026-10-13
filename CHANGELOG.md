@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.4.0: The Hunger Spills Over
+
+*Nothing the Starved take is wasted any more, and they follow you into every world.*
+
+### Added
+- **Everywhere curses**: a third set of 16 curses that act in every world, offered after any death that costs a curse
+  (mixed in with the cards of that world's set): Kindling, Frostbitten, Sealed Pockets, Shrunken Stomach, Fading Brews,
+  Lingering Ills, Grounded, Glass Jaw, Volatile, Short Breath, Fragile Footing, Fumbling, Brittle Gear, Hungry Wounds,
+  Withering and Lead Pockets. Sealed slots are crossed out in the inventory, lost drumsticks on the hunger bar.
+- **Spill-over**: stacks a multiplied card cannot add because its curse reaches the maximum are no longer lost. Each
+  lands on a random curse that still has room, in any set, and the card says how many will spill.
+- **Who stands near you**: the Curses screen lists every player within seven blocks, with their head (name on hover)
+  and one sigil per set showing how many stacks they carry there. Never which curses. On small screens the list is a
+  narrow column.
+
+### Changed
+- The Curses screen has three tabs (Beyond, Overworld, Everywhere), each with its sigil. A breathing mark shows which
+  sets act where you stand.
+- Everywhere curses can be atoned for anywhere: points earned beyond the wound and at home both count.
+- The curse cards show Everywhere curses in violet ("Every world").
+
 ## 2.3.0: What the Starved Keep
 
 *Curses no longer fade. They stay, they stack, and they have to be paid off.*

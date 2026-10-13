@@ -30,12 +30,18 @@ public class PenaltyChoiceScreen extends Screen {
 	private final List<Button> buttons = new ArrayList<>();
 	private final long openAt = System.currentTimeMillis();
 	private final boolean overworld;
+	/** The set the offer comes from, as the server named it ("beyond" or "overworld"); null from an older server. */
+	private String set;
 	private int chosen = -1;
 	private long chosenAt = 0;
 
 	public PenaltyChoiceScreen(List<String> cards) {
 		super(Component.translatable("gui.extremedimensions.choice.title"));
 		for (String card : cards) {
+			if (card.startsWith("@")) {
+				set = card.substring(1);
+				continue;
+			}
 			String[] kv = card.split(":");
 			Penalty p = Penalty.byId(kv[0]);
 			if (p == null) {
@@ -53,6 +59,9 @@ public class PenaltyChoiceScreen extends Screen {
 
 	/** Which world's set this offer comes from: from its cards, or (all Everywhere cards) from where the player is. */
 	private boolean setIsOverworld() {
+		if (set != null) {
+			return "overworld".equals(set);
+		}
 		for (Option o : options) {
 			if (o.pen().group != Penalty.Group.EVERYWHERE) {
 				return o.pen().overworld;

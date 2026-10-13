@@ -27,11 +27,17 @@ race the clock. Let your anchors run dry and the Starved take something of you.
 
 A Collapse or a death beyond the wound costs you a **curse**: pick one of three cards. Curses are **permanent** and
 stack up to their own maximum. Sometimes the Starved are hungrier: the whole offer is multiplied and every card carries
-its own seal (**2x, 3x or 4x**), adding that many stacks at once. Open the **Curses** screen with the button beside the
-journal button in your inventory: every curse as a rune with its stacks, effect, lore and atonement.
+its own seal (**2x, 3x or 4x**), adding that many stacks at once. Stacks a card cannot add because its curse hits the
+maximum **spill over**: each lands on a random curse that still has room, in any set.
 
-Beyond curses act only in the Nether, the End and the Seam; Overworld curses (`/tether overworld_penalties on`) only
-at home.
+Three sets. Beyond curses act only in the Nether, the End and the Seam; Overworld curses (`/tether overworld_penalties
+on`) only at home; **Everywhere** curses in every world. A death offers cards from its world's set and the Everywhere
+set.
+
+The **Curses** screen (the button beside the journal button in your inventory) shows every curse as a rune with its
+stacks, effect, lore and atonement, in three tabs; a breathing mark shows which sets act where you stand. Players
+within seven blocks are listed beside it: their head (name on hover) and one sigil per set with how many stacks they
+carry there, never which curses.
 
 | Beyond the wound | Per stack | Max |
 | --- | --- | --- |
@@ -82,14 +88,35 @@ at home.
 | Old Bones | 15% more fall damage | 3 |
 | Dusk Blindness | Darkness under the night sky | 1 |
 
-Every maximum and every value per stack can be changed in the config's `penalties` section. When a set has nothing
-left to give, the Starved take all your levels instead.
+| Everywhere | Per stack | Max |
+| --- | --- | --- |
+| Kindling | 20% more fire and lava damage | 3 |
+| Frostbitten | 25% more freeze damage, and you freeze 25% faster | 3 |
+| Sealed Pockets | 3 inventory slots sealed (the hotbar never) | 3 |
+| Shrunken Stomach | Hunger bar holds 1 drumstick less | 3 |
+| Fading Brews | Good effects end 15% sooner | 3 |
+| Lingering Ills | Bad effects last 20% longer | 3 |
+| Grounded | 8% lower jumps | 2 |
+| Glass Jaw | 8% more damage from mobs | 3 |
+| Volatile | 15% more explosion damage | 3 |
+| Short Breath | Air runs out 20% faster | 3 |
+| Fragile Footing | Fall damage starts 1 block sooner | 2 |
+| Fumbling | 5% chance to drop your held item when hit | 3 |
+| Brittle Gear | Armor loses 1 extra durability per hit | 3 |
+| Hungry Wounds | Every hit you take drains extra hunger | 3 |
+| Withering | Max health −1♥ | 2 |
+| Lead Pockets | 5% slower while your inventory is over half full | 3 |
+
+Every maximum and every value per stack can be changed in the config's `penalties` section. When a death has nothing
+left to give, the Starved take all your levels instead. A Shrunken Stomach never stops healing outright: when full it
+still heals slowly, at the vanilla pace and cost.
 
 ### Lifting curses
 
 - **Atonement:** pick the curse to atone for in the Curses screen and play it off. Beyond: 1 point per active minute
   on an expedition, 3 per elite slain, 5 per safe return. At home: 10 per night survived without dying, 1 per monster
-  slain after dark. The last stack takes 100 points, every stack above it 50 more.
+  slain after dark. Everywhere curses take points from both. The last stack takes 100 points, every stack above it 50
+  more.
 - **Tether Fragments:** offer them to an anchor, one fragment per stack the curse has.
 - **Mending Cloth:** 4 Seam Silk, a Tether Fragment and a **Veil Wing** (dropped by Veil Rays). Use it to take one stack
   off.
@@ -186,7 +213,7 @@ Each player can store up to 30 minutes per anchor. Fuel values show in item tool
 ## Installation
 
 1. Install **Fabric Loader 0.19.5+** for **Minecraft 26.3** (Java 25).
-2. Add **Fabric API 0.162.0+** and `extremedimensions-2.3.0.jar` to your `mods` folder.
+2. Add **Fabric API 0.162.0+** and `extremedimensions-2.4.0.jar` to your `mods` folder.
 3. Install it on the server **and** every client.
 
 Play a normal Survival world. Vanilla Hardcore turns you into a spectator on death, which this mod is designed to avoid.
