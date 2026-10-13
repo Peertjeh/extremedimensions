@@ -68,8 +68,7 @@ public class StatusScreen extends Screen {
 				g.text(this.font, Ui.tr("gui.extremedimensions.status.more", ClientState.marks.size() - 3), x + 20, ly, Ui.argb(pe, Ui.MUTED));
 				break;
 			}
-			String name = m.secs() == -2 ? Ui.tr("gui.extremedimensions.marks.xp_debt")
-					: (m.penalty() != null ? Ui.tr(m.penalty().nameKey()) : m.id()) + (m.stacks() > 1 ? " " + Ui.roman(m.stacks()) : "");
+			String name = (m.penalty() != null ? Ui.tr(m.penalty().nameKey()) : m.id()) + " " + m.stacks() + "/" + m.max();
 			g.text(this.font, "◆ " + name, x + 20, ly, Ui.argb(pe, Ui.WARN));
 			ly += 11;
 			shown++;

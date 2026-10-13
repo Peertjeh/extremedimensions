@@ -12,6 +12,7 @@ import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.network.Fx;
+import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.server.Dims;
@@ -70,13 +71,14 @@ public final class ExpeditionService {
 		d.arrivalX = p.getX();
 		d.arrivalZ = p.getZ();
 		d.hasRopeEnd = false;
-		if (d.leakStacks > 0) {
-			double keep = Math.pow(1.0 - Config.LEAK_FRACTION, d.leakStacks);
+		int leaky = d.stacks(Penalty.LEAKY_TANK);
+		if (leaky > 0) {
+			// Leaky Tank: every expedition starts with a share of the stored charge gone
+			double keep = Math.pow(Math.max(0, 1.0 - Penalty.LEAKY_TANK.frac()), leaky);
 			for (Anchor a : AnchorService.linked(d)) {
 				a.scale(uid, keep);
 			}
 			total = AnchorService.linkedCharge(p, d);
-			d.leakStacks = 0;
 		}
 		d.inRun = true;
 		d.runTime = 0;
@@ -105,6 +107,12 @@ public final class ExpeditionService {
 		d.longestRun = Math.max(d.longestRun, d.runTime);
 		d.runTime = 0;
 
+		// Ferryman's Fee: every crossing home is paid for in levels
+		int fee = (int) Math.round(Penalty.FERRYMANS_FEE.value) * d.stacks(Penalty.FERRYMANS_FEE);
+		if (fee > 0 && p.experienceLevel > 0) {
+			p.giveExperienceLevels(-Math.min(fee, p.experienceLevel));
+		}
+		PenaltyService.atone(p, d, false, Config.ATONE_PER_RETURN);
 		WorldFx.fx(p, Fx.SAFE, 0);
 		WorldFx.particles(p, "minecraft:totem_of_undying", 1.0, 0.5, 0.35, 40);
 		WorldFx.particles(p, "minecraft:soul", 1.0, 0.8, 0.03, 20);
@@ -281,6 +289,7 @@ public final class ExpeditionService {
 	public static void onDeath(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
 		String dim = Dims.of(p);
+		d.diedToday = true;
 		// Death always costs the chain (and the Tether item)
 		if (d.tetherAnchor != null) {
 			TetherService.clear(p, d, false);
@@ -344,10 +353,13 @@ public final class ExpeditionService {
 		if ("enderman".equals(type)) {
 			Journal.unlock(killer, d, JournalEntry.UNANCHORED);
 		}
+		PenaltyService.onKill(killer, ELITES.contains(type), mob instanceof Enemy);
 		if (!Dims.isBeyond(Dims.of(mob.level())) || !(mob instanceof Enemy)) {
 			return;
 		}
-		double chance = ELITES.contains(type) ? Config.FRAGMENT_CHANCE_ELITE : Config.FRAGMENT_CHANCE;
+		// Empty Pockets: fewer fragments find their way to the player
+		double less = Penalty.EMPTY_POCKETS.value / 100.0 * d.stacks(Penalty.EMPTY_POCKETS);
+		double chance = ELITES.contains(type) ? Config.FRAGMENT_CHANCE_ELITE - 3 * less : Config.FRAGMENT_CHANCE - less;
 		if (ThreadLocalRandom.current().nextDouble() >= chance) {
 			return;
 		}

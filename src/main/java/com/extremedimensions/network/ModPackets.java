@@ -14,13 +14,13 @@ public final class ModPackets {
 	 * Server -> client: the full player state for the HUD and screens.
 	 * nearNether/nearEnd: own charge in charged anchors nearby, -1 = no anchor nearby.
 	 * runCharge/runMax: charge left on the current expedition and what it started with.
-	 * penalties: "id:stacks:seconds;..." (seconds -1 = next expedition, -2 = XP debt).
-	 * penaltyClock: 0 = not counting here, 1 = wearing off, 2 = paused (idle).
+	 * penalties: "id:stacks:max;..." for every curse the player carries.
+	 * scars: curse stacks taken off (each one lightens the drain).
 	 * tetherDist: -1 = not bound, else blocks to the arrival portal (beyond) or to the anchor (Overworld).
 	 */
 	public record StatePayload(int nearNether, int nearEnd, int runCharge, int runMax, int dimCode, int drainX100,
 							int expeditions, int collapses, int longestRun, int runSecs, String penalties,
-							int penaltyClock, int tetherDist) implements CustomPacketPayload {
+							int scars, int tetherDist) implements CustomPacketPayload {
 		public static final Type<StatePayload> TYPE = new Type<>(ExtremeDimensions.id("state"));
 		public static final StreamCodec<FriendlyByteBuf, StatePayload> CODEC = StreamCodec.ofMember(StatePayload::write, StatePayload::read);
 
@@ -36,7 +36,7 @@ public final class ModPackets {
 			buf.writeVarInt(longestRun);
 			buf.writeVarInt(runSecs);
 			buf.writeUtf(penalties);
-			buf.writeVarInt(penaltyClock);
+			buf.writeVarInt(scars);
 			buf.writeVarInt(tetherDist);
 		}
 
@@ -52,7 +52,7 @@ public final class ModPackets {
 		}
 	}
 
-	/** Server -> client: open the penalty choice screen with these ids (comma separated). */
+	/** Server -> client: open the curse choice screen; cards "id:multiplier:stacks:max:valuePerStack", comma separated. */
 	public record OfferPayload(String ids) implements CustomPacketPayload {
 		public static final Type<OfferPayload> TYPE = new Type<>(ExtremeDimensions.id("offer"));
 		public static final StreamCodec<FriendlyByteBuf, OfferPayload> CODEC = StreamCodec.ofMember(OfferPayload::write, OfferPayload::read);
@@ -157,6 +157,65 @@ public final class ModPackets {
 
 		private static ChoosePayload read(FriendlyByteBuf buf) {
 			return new ChoosePayload(buf.readUtf());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+	/** Client -> server: the Curses button in the inventory was pressed. */
+	public record RequestCursesPayload() implements CustomPacketPayload {
+		public static final Type<RequestCursesPayload> TYPE = new Type<>(ExtremeDimensions.id("request_curses"));
+		public static final StreamCodec<FriendlyByteBuf, RequestCursesPayload> CODEC = StreamCodec.ofMember(RequestCursesPayload::write, RequestCursesPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+		}
+
+		private static RequestCursesPayload read(FriendlyByteBuf buf) {
+			return new RequestCursesPayload();
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
+	 * Server -> client: every curse for the Curses screen. data = "scars|atoning|overworldOn|entries", entries
+	 * "id:stacks:max:atonement:cost:valuePerStack" separated by ';'. open = open the screen (else only refresh it).
+	 */
+	public record CursesPayload(String data, boolean open) implements CustomPacketPayload {
+		public static final Type<CursesPayload> TYPE = new Type<>(ExtremeDimensions.id("curses"));
+		public static final StreamCodec<FriendlyByteBuf, CursesPayload> CODEC = StreamCodec.ofMember(CursesPayload::write, CursesPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(data);
+			buf.writeBoolean(open);
+		}
+
+		private static CursesPayload read(FriendlyByteBuf buf) {
+			return new CursesPayload(buf.readUtf(), buf.readBoolean());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: atone for this curse (and mend it first). */
+	public record AtonePayload(String id) implements CustomPacketPayload {
+		public static final Type<AtonePayload> TYPE = new Type<>(ExtremeDimensions.id("atone"));
+		public static final StreamCodec<FriendlyByteBuf, AtonePayload> CODEC = StreamCodec.ofMember(AtonePayload::write, AtonePayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(id);
+		}
+
+		private static AtonePayload read(FriendlyByteBuf buf) {
+			return new AtonePayload(buf.readUtf());
 		}
 
 		@Override

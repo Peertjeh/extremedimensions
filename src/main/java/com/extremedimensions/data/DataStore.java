@@ -132,7 +132,20 @@ public final class DataStore {
 	}
 
 	public static PlayerData get(UUID id) {
-		return data.players.computeIfAbsent(id.toString(), k -> new PlayerData());
+		PlayerData d = data.players.computeIfAbsent(id.toString(), k -> new PlayerData());
+		if (d.penaltyTime != null && !d.penaltyTime.isEmpty()) {
+			d.migrate();
+		}
+		if (d.curses == null) {
+			d.curses = new java.util.HashMap<>();
+		}
+		if (d.atonement == null) {
+			d.atonement = new java.util.HashMap<>();
+		}
+		if (d.pendingMult == null) {
+			d.pendingMult = new java.util.ArrayList<>();
+		}
+		return d;
 	}
 
 	public static Map<String, Anchor> anchors() {

@@ -14,6 +14,7 @@ import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.network.Fx;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.network.Sync;
+import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModBlocks;
@@ -162,7 +163,9 @@ public final class AnchorService {
 		}
 
 		String uid = p.getStringUUID();
-		double space = Config.MAX_CHARGE - (anchor != null ? anchor.of(uid) : 0);
+		// Dim Anchors: each anchor holds less of this player's time
+		double cap = Math.max(60, Config.MAX_CHARGE - 60 * Penalty.DIM_ANCHORS.value * d.stacks(Penalty.DIM_ANCHORS));
+		double space = cap - (anchor != null ? anchor.of(uid) : 0);
 		if (space < 1) {
 			return InteractionResult.SUCCESS;
 		}
@@ -192,7 +195,7 @@ public final class AnchorService {
 		}
 		anchor.add(uid, added);
 		Advancements.grant(p, Advancements.ANCHOR_CHARGED);
-		if (Config.MAX_CHARGE - anchor.of(uid) < 1) {
+		if (cap - anchor.of(uid) < 1) {
 			Journal.unlock(p, d, JournalEntry.SILENCE);
 			Advancements.grant(p, Advancements.ANCHOR_FULL);
 		}

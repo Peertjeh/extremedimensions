@@ -1,8 +1,13 @@
 package com.extremedimensions.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 
 import com.extremedimensions.data.DataStore;
+import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.network.Sync;
+import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.hollow.HollowService;
 import com.extremedimensions.lurker.LurkerService;
 import com.extremedimensions.seam.SeamArchitect;
@@ -14,11 +19,11 @@ import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
-/** Operator commands: {@code /tether overworld_penalties [on|off]} and {@code /tether lurker <watch|stalk|drain>}
- * and {@code /tether hoard}. */
+/** Operator commands under {@code /tether}: Overworld curses on or off, curses set or cleared, Lurkers, hoards, the Seam. */
 public final class TetherCommand {
 	private TetherCommand() {}
 
@@ -47,7 +52,45 @@ public final class TetherCommand {
 				.then(Commands.literal("storm").executes(c -> {
 					WorldService.begin(c.getSource().getPlayerOrException(), c.getSource().getServer().getTickCount());
 					return 1;
-				})));
+				}))
+				.then(Commands.literal("curse")
+						.then(Commands.literal("clear").executes(c -> clearCurses(c.getSource())))
+						.then(Commands.argument("id", StringArgumentType.word())
+								.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.Arrays.stream(Penalty.values()).map(p -> p.id), b))
+								.then(Commands.argument("stacks", IntegerArgumentType.integer(0, 99))
+										.executes(c -> setCurse(c.getSource(), StringArgumentType.getString(c, "id"), IntegerArgumentType.getInteger(c, "stacks")))))));
+	}
+
+	/** Sets a curse's stacks on the executing player (0 takes it off, never past its maximum). */
+	private static int setCurse(CommandSourceStack src, String id, int stacks) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+		ServerPlayer p = src.getPlayerOrException();
+		Penalty pen = Penalty.byId(id);
+		if (pen == null) {
+			src.sendFailure(Component.translatable("commands.extremedimensions.curse.unknown", id));
+			return 0;
+		}
+		PlayerData d = DataStore.get(p.getUUID());
+		d.curses.remove(pen.id);
+		d.atonement.remove(pen.id);
+		int set = d.addStacks(pen, stacks);
+		PenaltyService.applyEffects(p, d);
+		Sync.state(p, d);
+		DataStore.save();
+		src.sendSuccess(() -> Component.translatable("commands.extremedimensions.curse.set", Component.translatable(pen.nameKey()), set, pen.max), false);
+		return 1;
+	}
+
+	/** Takes every curse off the executing player. */
+	private static int clearCurses(CommandSourceStack src) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+		ServerPlayer p = src.getPlayerOrException();
+		PlayerData d = DataStore.get(p.getUUID());
+		d.curses.clear();
+		d.atonement.clear();
+		PenaltyService.applyEffects(p, d);
+		Sync.state(p, d);
+		DataStore.save();
+		src.sendSuccess(() -> Component.translatable("commands.extremedimensions.curse.cleared"), false);
+		return 1;
 	}
 
 	/** Summons a Lurker in the given mode near the executing player (for testing and showcases). */

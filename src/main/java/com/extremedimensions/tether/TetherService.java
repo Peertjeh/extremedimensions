@@ -7,6 +7,8 @@ import com.extremedimensions.config.Config;
 import com.extremedimensions.data.Anchor;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.penalty.Penalty;
+import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.network.Fx;
@@ -123,7 +125,9 @@ public final class TetherService {
 
 	/** The further from the portal, the faster the Starved drink. */
 	public static double distanceFactor(ServerPlayer p, PlayerData d) {
-		return 1.0 + arrivalDistance(p, d) / Config.TETHER_DISTANCE_STEP;
+		// Short Chain: the distance starts to bite sooner
+		double step = Math.max(25, Config.TETHER_DISTANCE_STEP - Penalty.SHORT_CHAIN.value * d.stacks(Penalty.SHORT_CHAIN));
+		return 1.0 + arrivalDistance(p, d) / step;
 	}
 
 	/** Removes this player's chain and unbinds them, optionally returning the Tether item. */
@@ -169,7 +173,9 @@ public final class TetherService {
 
 	private static boolean tooFar(ServerPlayer p, Anchor anchor) {
 		PlayerData d = DataStore.get(p.getUUID());
-		double max = Config.TETHER_BREAK_RANGE + 0.5 + (d.tetherTier > 0 ? Config.WOVEN_REACH : 0);
+		// Short Tether (an Overworld curse) snaps it sooner
+		int shorter = PenaltyService.owHere(Dims.of(p)) ? d.stacks(Penalty.SHORT_TETHER) : 0;
+		double max = Math.max(2, Config.TETHER_BREAK_RANGE - Penalty.SHORT_TETHER.value * shorter) + 0.5 + (d.tetherTier > 0 ? Config.WOVEN_REACH : 0);
 		double dx = anchor.x + 0.5 - p.getX();
 		double dz = anchor.z + 0.5 - p.getZ();
 		if (dx * dx + dz * dz <= max * max && Math.abs(anchor.y - p.getY()) <= max) {

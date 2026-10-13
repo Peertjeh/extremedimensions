@@ -10,8 +10,8 @@ import com.extremedimensions.penalty.Penalty;
 public final class ClientState {
 	private ClientState() {}
 
-	/** One active penalty as sent by the server. secs: -1 = next expedition, -2 = XP debt (stacks = levels). */
-	public record Mark(String id, Penalty penalty, int stacks, int secs) {}
+	/** One curse the player carries, as sent by the server. */
+	public record Mark(String id, Penalty penalty, int stacks, int max) {}
 
 	/** Own charge in charged anchors nearby; -1 = none nearby. */
 	public static int nearNether = -1;
@@ -26,8 +26,8 @@ public final class ClientState {
 	public static int longestRun = 0;
 	public static int runSecs = 0;
 	public static List<Mark> marks = new ArrayList<>();
-	/** 0 = not counting here, 1 = wearing off, 2 = paused (idle). */
-	public static int penaltyClock = 0;
+	/** Curse stacks taken off (each one lightens the drain). */
+	public static int scars = 0;
 	/** -1 = not bound, else blocks to the arrival portal (beyond) or the anchor (Overworld). */
 	public static int tetherDist = -1;
 	public static long syncMs = 0;
@@ -72,7 +72,7 @@ public final class ClientState {
 		longestRun = s.longestRun();
 		runSecs = s.runSecs();
 		marks = parse(s.penalties());
-		penaltyClock = s.penaltyClock();
+		scars = s.scars();
 		tetherDist = s.tetherDist();
 		syncMs = System.currentTimeMillis();
 		// First update from the Overworld after a Collapse: start the fade-in
@@ -95,8 +95,8 @@ public final class ClientState {
 			String[] kv = part.split(":");
 			try {
 				int stacks = kv.length > 1 ? Integer.parseInt(kv[1]) : 1;
-				int secs = kv.length > 2 ? Integer.parseInt(kv[2]) : 0;
-				out.add(new Mark(kv[0], Penalty.byId(kv[0]), stacks, secs));
+				int max = kv.length > 2 ? Integer.parseInt(kv[2]) : stacks;
+				out.add(new Mark(kv[0], Penalty.byId(kv[0]), stacks, max));
 			} catch (NumberFormatException e) {
 				// skip malformed entry
 			}
@@ -166,7 +166,7 @@ public final class ClientState {
 		longestRun = 0;
 		runSecs = 0;
 		marks = new ArrayList<>();
-		penaltyClock = 0;
+		scars = 0;
 		tetherDist = -1;
 		shownNether = 0;
 		shownEnd = 0;

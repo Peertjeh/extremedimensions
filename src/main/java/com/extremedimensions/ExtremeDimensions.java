@@ -7,6 +7,7 @@ import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.network.ModPackets;
+import com.extremedimensions.network.Sync;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.lore.WorldLoot;
 import com.extremedimensions.registry.ModBlocks;
@@ -52,6 +53,14 @@ public class ExtremeDimensions implements ModInitializer {
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.ChoosePayload.TYPE, ModPackets.ChoosePayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.ChoosePayload.TYPE,
 				(payload, context) -> PenaltyService.choose(context.player(), payload.id()));
+
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.CursesPayload.TYPE, ModPackets.CursesPayload.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestCursesPayload.TYPE, ModPackets.RequestCursesPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestCursesPayload.TYPE,
+				(payload, context) -> Sync.curses(context.player(), DataStore.get(context.player().getUUID()), true));
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.AtonePayload.TYPE, ModPackets.AtonePayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.AtonePayload.TYPE,
+				(payload, context) -> PenaltyService.setAtoning(context.player(), payload.id()));
 
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestJournalPayload.TYPE, ModPackets.RequestJournalPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestJournalPayload.TYPE,

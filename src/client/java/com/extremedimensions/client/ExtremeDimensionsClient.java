@@ -12,10 +12,11 @@ import com.extremedimensions.client.entity.VeilRayModel;
 import com.extremedimensions.client.entity.VeilRayRenderer;
 import com.extremedimensions.client.hud.ChargeHud;
 import com.extremedimensions.client.inventory.JournalButton;
-import com.extremedimensions.client.inventory.TetherMarks;
+import com.extremedimensions.client.inventory.CursesButton;
 import com.extremedimensions.client.screen.JournalScreen;
 import com.extremedimensions.client.sky.SeamAmbience;
 import com.extremedimensions.client.sky.SeamSky;
+import com.extremedimensions.client.screen.CursesScreen;
 import com.extremedimensions.client.screen.PenaltyChoiceScreen;
 import com.extremedimensions.client.screen.StatusScreen;
 import com.extremedimensions.client.state.ClientState;
@@ -55,8 +56,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 			}
 			if (screen instanceof InventoryScreen inv) {
 				JournalButton.attach(inv);
-				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
-						TetherMarks.draw(inv, graphics, mouseX, mouseY));
+				CursesButton.attach(inv);
 			}
 		});
 
@@ -83,6 +83,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OfferPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(
 						new PenaltyChoiceScreen(Arrays.asList(payload.ids().split(","))))));
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.CursesPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> CursesScreen.receive(payload.data(), payload.open())));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenJournalPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(
 						new JournalScreen(new HashSet<>(Arrays.asList(payload.ids().split(","))),

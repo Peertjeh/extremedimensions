@@ -3,7 +3,6 @@ package com.extremedimensions.client.screen;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.extremedimensions.client.state.ClientState;
 import com.extremedimensions.client.ui.Ui;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.penalty.Penalty;
@@ -15,28 +14,51 @@ import net.minecraft.network.chat.Component;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
-/** After a Collapse or a death beyond the wound: pick one of three penalty cards. */
+/**
+ * After a Collapse or a death beyond the wound: pick one of three curse cards. Sometimes the whole offer is multiplied;
+ * then each card carries its own seal (2x, 3x, 4x) and adds that many stacks, never past the curse's maximum.
+ */
 public class PenaltyChoiceScreen extends Screen {
 	private static final int CARD_W = 132;
 	private static final int CARD_H = 164;
 	private static final int GAP = 14;
 
-	private final List<Penalty> options = new ArrayList<>();
+	/** One card: the curse, its multiplier, the player's stacks now, the maximum and the value per stack. */
+	private record Option(Penalty pen, int mult, int stacks, int max, String value) {}
+
+	private final List<Option> options = new ArrayList<>();
 	private final List<Button> buttons = new ArrayList<>();
 	private final long openAt = System.currentTimeMillis();
 	private final boolean overworld;
 	private int chosen = -1;
 	private long chosenAt = 0;
 
-	public PenaltyChoiceScreen(List<String> ids) {
+	public PenaltyChoiceScreen(List<String> cards) {
 		super(Component.translatable("gui.extremedimensions.choice.title"));
-		for (String id : ids) {
-			Penalty p = Penalty.byId(id);
-			if (p != null) {
-				options.add(p);
+		for (String card : cards) {
+			String[] kv = card.split(":");
+			Penalty p = Penalty.byId(kv[0]);
+			if (p == null) {
+				continue;
+			}
+			try {
+				options.add(new Option(p, kv.length > 1 ? Integer.parseInt(kv[1]) : 1, kv.length > 2 ? Integer.parseInt(kv[2]) : 0,
+						kv.length > 3 ? Integer.parseInt(kv[3]) : p.max, kv.length > 4 ? kv[4] : p.display()));
+			} catch (NumberFormatException e) {
+				options.add(new Option(p, 1, 0, p.max, p.display()));
 			}
 		}
-		overworld = !options.isEmpty() && options.get(0).overworld;
+		overworld = !options.isEmpty() && options.get(0).pen().overworld;
+	}
+
+	/** True when the offer is multiplied (every card then carries a seal). */
+	private boolean multiplied() {
+		for (Option o : options) {
+			if (o.mult() > 1) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private int startX() {
@@ -55,7 +77,7 @@ public class PenaltyChoiceScreen extends Screen {
 		int y = cardY();
 		for (int i = 0; i < options.size(); i++) {
 			final int idx = i;
-			final Penalty pen = options.get(i);
+			final Penalty pen = options.get(i).pen();
 			int x = x0 + i * (CARD_W + GAP);
 			Button b = Button.builder(Component.translatable("gui.extremedimensions.choice.accept"), btn -> choose(idx, pen))
 					.pos(x + 14, y + CARD_H - 28)
@@ -111,15 +133,18 @@ public class PenaltyChoiceScreen extends Screen {
 			Ui.centered(g, this.font, head, cx + 2 + jit, y - 42, 0x30E0FF, ha * 0.65);
 		}
 		Ui.heading(g, this.font, head, cx - jit / 2, y - 42, accent, ha);
-		Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.choice.subtitle"), cx, y - 26, Ui.TEXT, ha);
+		boolean hungry = multiplied();
+		Ui.centered(g, this.font, Ui.tr(hungry ? "gui.extremedimensions.choice.hungry" : "gui.extremedimensions.choice.subtitle"), cx, y - 26,
+				hungry ? ((now / 300) % 2 == 0 ? Ui.DANGER : Ui.WARN) : Ui.TEXT, ha);
 
 		int x0 = startX();
 		for (int i = 0; i < options.size(); i++) {
-			card(g, options.get(i), i, x0 + i * (CARD_W + GAP), y, mouseX, mouseY, now, accent);
+			card(g, options.get(i), i, x0 + i * (CARD_W + GAP), y, mouseX, mouseY, now, hungry ? Ui.DANGER : accent);
 		}
 	}
 
-	private void card(GuiGraphicsExtractor g, Penalty pen, int i, int x, int y, int mouseX, int mouseY, long now, int accent) {
+	private void card(GuiGraphicsExtractor g, Option opt, int i, int x, int y, int mouseX, int mouseY, long now, int accent) {
+		Penalty pen = opt.pen();
 		double e = progress(i, now);
 		double fade = e;
 		boolean hover = e >= 1.0 && chosen < 0 && mouseX >= x && mouseX <= x + CARD_W && mouseY >= y - 6 && mouseY <= y + CARD_H;
@@ -146,21 +171,38 @@ public class PenaltyChoiceScreen extends Screen {
 		Ui.divider(g, x + 14, top + 45, CARD_W - 28, border, fade);
 
 		int ly = top + 52;
-		String[] lines = {Ui.tr(pen.lineKey(1)), Ui.tr(pen.lineKey(2)), Ui.tr(pen.durationKey(), Penalty.minutesPerStack())};
+		String[] lines = {Ui.tr(pen.lineKey(1), opt.value()), Ui.tr(pen.lineKey(2), opt.value()), Ui.tr("gui.extremedimensions.choice.permanent", opt.max())};
 		for (int k = 0; k < lines.length; k++) {
 			g.text(this.font, lines[k], mid - this.font.width(lines[k]) / 2, ly, Ui.argb(fade, k == 2 ? Ui.MUTED : Ui.TEXT));
 			ly += 11;
 		}
-		int active = ClientState.stacksOf(pen.id);
-		if (active > 0 && pen != Penalty.TOLL && pen != Penalty.TITHE) {
-			String s = Ui.tr("gui.extremedimensions.choice.stacks", Ui.roman(active), Ui.roman(active + 1));
-			g.text(this.font, s, mid - this.font.width(s) / 2, ly + 1, Ui.argb(fade, Ui.DANGER));
+		// Stacks now, and after this card (capped at the maximum)
+		int after = Math.min(opt.max(), opt.stacks() + opt.mult());
+		String s = after >= opt.max()
+				? Ui.tr("gui.extremedimensions.choice.stacks", opt.stacks(), after, opt.max()) + " " + Ui.tr("gui.extremedimensions.choice.capped")
+				: Ui.tr("gui.extremedimensions.choice.stacks", opt.stacks(), after, opt.max());
+		g.text(this.font, s, mid - this.font.width(s) / 2, ly + 1, Ui.argb(fade, opt.stacks() > 0 || opt.mult() > 1 ? Ui.DANGER : Ui.WARN));
+		if (opt.mult() > 1) {
+			seal(g, opt.mult(), x + CARD_W - 18, top - 7, now, fade);
 		}
 		int loreY = top + 100;
 		for (String line : Ui.wrap(this.font, "“" + Ui.tr(pen.loreKey()) + "”", CARD_W - 16)) {
 			g.text(this.font, line, mid - this.font.width(line) / 2, loreY, Ui.argb(fade * 0.85, Ui.mix(Ui.SOUL, Ui.TEXT, 0.4)));
 			loreY += 10;
 		}
+	}
+
+	/** The multiplier seal on a card's corner: "3x" in a red-gold diamond that breathes. */
+	private void seal(GuiGraphicsExtractor g, int mult, int x, int y, long now, double fade) {
+		double beat = 0.5 + 0.5 * Math.sin(now / 160.0 + mult);
+		int hot = Ui.mix(Ui.DANGER, 0xFFE066, mult >= 4 ? 0.2 + 0.5 * beat : mult == 3 ? 0.35 * beat : 0.15 * beat);
+		int w = 26, h = 16;
+		g.fill(x - 1, y - 1, x + w + 1, y + h + 1, Ui.argb(fade, Ui.SHADOW));
+		g.fill(x, y, x + w, y + h, Ui.argb(fade, hot));
+		g.fill(x + 1, y + 1, x + w - 1, y + h - 1, Ui.argb(fade, Ui.mix(Ui.INK, hot, 0.35)));
+		g.fill(x + 2, y + 1, x + w - 2, y + 2, Ui.argb(fade * 0.5, 0xFFFFFF));
+		String t = mult + "x";
+		g.text(this.font, t, x + w / 2 - this.font.width(t) / 2, y + 4, Ui.argb(fade, 0xFFF4D0), true);
 	}
 
 	public boolean shouldCloseOnEsc() {

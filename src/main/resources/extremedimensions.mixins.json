@@ -1,0 +1,12 @@
+{
+	"required": false,
+	"minVersion": "0.8",
+	"package": "com.extremedimensions.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"VillagerPricesMixin"
+	],
+	"injectors": {
+		"defaultRequire": 0
+	}
+}

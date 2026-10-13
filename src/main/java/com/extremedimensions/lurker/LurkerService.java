@@ -19,6 +19,7 @@ import com.extremedimensions.hollow.HollowService;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.network.Fx;
+import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEntities;
@@ -120,7 +121,12 @@ public final class LurkerService {
 			if (last != null && s.getTickCount() - last < Config.LURKER_COOLDOWN_SECONDS * 20L) {
 				continue;
 			}
-			if (rnd.nextDouble() >= Config.LURKER_SPAWN_CHANCE) {
+			// Marked by the Tribe (Nether) and Watched (Overworld): they find this player more often
+			PlayerData pd = DataStore.get(p.getUUID());
+			double often = Dims.NETHER.equals(dim)
+					? 1 + Penalty.MARKED_BY_THE_TRIBE.frac() * pd.stacks(Penalty.MARKED_BY_THE_TRIBE)
+					: 1 + Penalty.WATCHED.frac() * (PenaltyService.owHere(dim) ? pd.stacks(Penalty.WATCHED) : 0);
+			if (rnd.nextDouble() >= Config.LURKER_SPAWN_CHANCE * often) {
 				continue;
 			}
 			LAST_SEEN.put(p.getUUID(), (long) s.getTickCount());
@@ -450,10 +456,7 @@ public final class LurkerService {
 				case 0 -> stealItem(p, st.loot);
 				case 1 -> stealXp(p, st.loot);
 				case 2 -> stealArmor(p, st.loot);
-				default -> {
-					PenaltyService.curse(p, Dims.OVERWORLD.equals(Dims.of(p)));
-					yield true;
-				}
+				default -> PenaltyService.curse(p, Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties()) != null;
 			};
 			if (took) {
 				WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.5, 0.08, 25);

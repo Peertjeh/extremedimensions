@@ -23,6 +23,7 @@
 		]
 	},
 	"mixins": [
+		"extremedimensions.mixins.json",
 		{
 			"config": "extremedimensions.client.mixins.json",
 			"environment": "client"

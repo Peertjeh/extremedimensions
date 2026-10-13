@@ -22,7 +22,7 @@ public final class ModItems {
 	public static final Item TETHER = register("tether", 16, Rarity.COMMON);
 	/** A Wanderer's journal that fills as the player discovers the mod. */
 	public static final Item TETHER_JOURNAL = register("tether_journal", 1, Rarity.UNCOMMON);
-	/** A frayed piece of the Tether. Offered to an anchor it removes one penalty stack. */
+	/** A frayed piece of the Tether. Offered to an anchor it takes a curse stack off (one fragment per stack it has). */
 	public static final Item TETHER_FRAGMENT = register("tether_fragment", 16, Rarity.RARE);
 
 	/** A torn journal page found in ruins and strongholds; using it unlocks a page of the Tether Journal. */
@@ -37,6 +37,11 @@ public final class ModItems {
 	public static final Item SOUL_WOVEN_TETHER = register("soul_woven_tether", 16, Rarity.UNCOMMON);
 	/** The Weavers' own work: slowest drain, and once per expedition it unravels you home instead of collapsing. */
 	public static final Item SEAM_WOVEN_TETHER = register("seam_woven_tether", 16, Rarity.EPIC);
+
+	/** A wing of a Veil Ray, still glowing along its seams. */
+	public static final Item VEIL_WING = register("veil_wing", 16, Rarity.UNCOMMON);
+	/** Silk woven around a Veil Wing and a fragment: pressed to the skin, it takes one curse stack off. */
+	public static final Item MENDING_CLOTH = register("mending_cloth", 16, Rarity.RARE);
 
 	/** Dropped by the Starved One: use it to mend the first wound. */
 	public static final Item MENDING_THREAD = register("mending_thread", 1, Rarity.EPIC);

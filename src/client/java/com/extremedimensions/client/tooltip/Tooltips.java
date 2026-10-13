@@ -49,6 +49,10 @@ public final class Tooltips {
 			key = "severing_shears";
 		} else if (item == ModItems.SEAM_NEEDLE) {
 			key = "seam_needle";
+		} else if (item == ModItems.VEIL_WING) {
+			key = "veil_wing";
+		} else if (item == ModItems.MENDING_CLOTH) {
+			key = "mending_cloth";
 		} else if (item == ModItems.SEAM_SILK) {
 			key = "seam_silk";
 		}

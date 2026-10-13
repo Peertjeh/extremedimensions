@@ -1,11 +1,10 @@
 package com.extremedimensions.network;
 
-import java.util.List;
-import java.util.Map;
-
 import com.extremedimensions.anchor.AnchorService;
+import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.penalty.Penalty;
+import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.seam.SeamService;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.tether.TetherService;
@@ -14,7 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
-/** Sends player state and penalty offers to the client. */
+/** Sends player state, curse offers and the Curses screen to the client. */
 public final class Sync {
 	private Sync() {}
 
@@ -28,45 +27,59 @@ public final class Sync {
 				seam ? (int) Math.ceil(d.seamLeft) : d.inRun ? (int) Math.ceil(AnchorService.linkedCharge(p, d)) : 0,
 				(int) Math.ceil(seam ? d.seamMax : d.runMax), dimCode,
 				seam ? 100 : (int) Math.round(d.currentDrain * 100), d.expeditions, d.collapses,
-				(int) d.longestRun, (int) d.runTime, penalties(d), d.penaltyClock,
+				(int) d.longestRun, (int) d.runTime, penalties(d), d.scars,
 				seam ? SeamService.riftDistance(p, d) : TetherService.distance(p, d)));
 	}
 
+	/** The cards on offer: "id:multiplier:stacks:max:valuePerStack", comma separated. */
 	public static void offer(ServerPlayer p, PlayerData d) {
-		if (!d.pendingOffer.isEmpty()) {
-			ServerPlayNetworking.send(p, new ModPackets.OfferPayload(String.join(",", d.pendingOffer)));
+		if (d.pendingOffer.isEmpty()) {
+			return;
 		}
-	}
-
-	/** "id:stacks:seconds;..." where seconds is the time until the next stack wears off (-1 next run, -2 XP debt). */
-	private static String penalties(PlayerData d) {
 		StringBuilder out = new StringBuilder();
-		for (Map.Entry<String, List<Double>> e : d.penaltyTime.entrySet()) {
-			if (e.getValue().isEmpty()) {
+		for (int i = 0; i < d.pendingOffer.size(); i++) {
+			Penalty pen = Penalty.byId(d.pendingOffer.get(i));
+			if (pen == null) {
 				continue;
 			}
-			double min = Double.MAX_VALUE;
-			for (double r : e.getValue()) {
-				min = Math.min(min, r);
+			int mult = i < d.pendingMult.size() ? d.pendingMult.get(i) : 1;
+			if (out.length() > 0) {
+				out.append(',');
 			}
-			append(out, e.getKey(), e.getValue().size(), (int) Math.ceil(min));
+			out.append(pen.id).append(':').append(mult).append(':').append(d.stacks(pen)).append(':').append(pen.max).append(':').append(pen.display());
 		}
-		if (d.mourningSecs > 0) {
-			append(out, Penalty.MOURNING.id, 1, (int) Math.ceil(d.mourningSecs));
-		}
-		if (d.xpDebt > 0) {
-			append(out, Penalty.TOLL.id, d.xpDebt, -2);
-		}
-		if (d.leakStacks > 0) {
-			append(out, Penalty.LEAKY_TANK.id, d.leakStacks, -1);
-		}
-		return out.toString();
+		ServerPlayNetworking.send(p, new ModPackets.OfferPayload(out.toString()));
 	}
 
-	private static void append(StringBuilder out, String id, int stacks, int secs) {
-		if (out.length() > 0) {
-			out.append(';');
+	/** Every curse, for the Curses screen (see {@link ModPackets.CursesPayload}). */
+	public static void curses(ServerPlayer p, PlayerData d, boolean open) {
+		StringBuilder out = new StringBuilder();
+		out.append(d.scars).append('|').append(d.atoning == null ? "" : d.atoning).append('|').append(DataStore.overworldPenalties() ? 1 : 0).append('|');
+		boolean first = true;
+		for (Penalty pen : Penalty.values()) {
+			if (!first) {
+				out.append(';');
+			}
+			first = false;
+			out.append(pen.id).append(':').append(d.stacks(pen)).append(':').append(pen.max).append(':')
+					.append(d.atonement.getOrDefault(pen.id, 0)).append(':').append(PenaltyService.cost(d, pen)).append(':').append(pen.display());
 		}
-		out.append(id).append(':').append(stacks).append(':').append(secs);
+		ServerPlayNetworking.send(p, new ModPackets.CursesPayload(out.toString(), open));
+	}
+
+	/** "id:stacks:max;..." for every curse the player carries. */
+	private static String penalties(PlayerData d) {
+		StringBuilder out = new StringBuilder();
+		for (Penalty pen : Penalty.values()) {
+			int n = d.stacks(pen);
+			if (n <= 0) {
+				continue;
+			}
+			if (out.length() > 0) {
+				out.append(';');
+			}
+			out.append(pen.id).append(':').append(n).append(':').append(pen.max);
+		}
+		return out.toString();
 	}
 }

@@ -14,6 +14,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import com.extremedimensions.ExtremeDimensions;
+import com.extremedimensions.penalty.Penalty;
 
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -67,34 +68,37 @@ public final class Config {
 	/** Standing this close to the anchor's portal never snaps the tether. */
 	public static double TETHER_PORTAL_SLACK = 3.0;
 
-	// --- Penalties -------------------------------------------------------------------------------
+	// --- Curses (penalties) ----------------------------------------------------------------------
+	// Each curse's maximum stacks and value per stack live in the "penalties" section of the file (max 0 = never offered).
 
 	/** Cards offered after a Collapse or a death beyond the wound. */
 	public static int OFFER_COUNT = 3;
-	/** Active play time one penalty stack lasts (10 minutes). */
-	public static int PENALTY_SECONDS = 600;
-	/** Ticks without looking around or without moving before a player counts as idle (15 s). */
+	/** Ticks after respawning before the curse screen opens. */
+	public static int OFFER_DELAY_TICKS = 70;
+	/** Chance that an offer is multiplied: then every card carries its own multiplier between the two values below. */
+	public static double MULTIPLIER_CHANCE = 0.15;
+	public static int MULTIPLIER_MIN = 2;
+	public static int MULTIPLIER_MAX = 4;
+	/** Ticks without looking around or without moving before a player counts as idle (no atonement) (15 s). */
 	public static int IDLE_TICKS = 300;
 	/** Horizontal blocks a player must move to count as active. */
 	public static double ACTIVE_MOVE = 2.0;
-	/** Ticks after respawning before the penalty screen opens. */
-	public static int OFFER_DELAY_TICKS = 70;
 
-	public static double ACCELERATED_DRAIN_PER_STACK = 0.75;
-	public static double DEBT_FACTOR = 0.60;
-	public static double LEAK_FRACTION = 0.50;
-	public static double SCAR_HEALTH = 6.0;
-	public static double CRACKED_ARMOR = 4.0;
-	public static double HEAVY_LEGS = 0.15;
-	public static double CLUMSY_HANDS = 0.35;
-	public static int TOLL_LEVELS = 10;
-	public static int MOURNING_SECONDS = 600;
-
-	// Overworld penalties (only active, and only counting down, in the Overworld)
-	public static double HOLLOW_HEART = 4.0;
-	public static double LEADEN_STEPS = 0.10;
-	public static double DULL_PICK = 0.25;
-	public static int TITHE_LEVELS = 5;
+	// Atonement: points towards taking the next stack of a curse off
+	/** Points per minute of active play on an expedition, per elite slain beyond, per safe return. */
+	public static int ATONE_PER_MINUTE = 1;
+	public static int ATONE_PER_ELITE = 3;
+	public static int ATONE_PER_RETURN = 5;
+	/** Points per Overworld day survived without dying, and per hostile mob slain at night in the Overworld. */
+	public static int ATONE_PER_DAY = 10;
+	public static int ATONE_PER_NIGHT_KILL = 1;
+	/** Points needed for a curse's last stack, and how many more for every stack above it. */
+	public static int ATONE_BASE = 100;
+	public static int ATONE_PER_STACK = 50;
+	/** Tether Fragments a mending at an anchor costs per stack the curse has (3 stacks = 3 fragments). */
+	public static int FRAGMENT_COST_PER_STACK = 1;
+	/** Chance that a Veil Ray drops a second Veil Wing. */
+	public static double VEIL_WING_EXTRA_CHANCE = 0.35;
 
 	// --- Lore ------------------------------------------------------------------------------------
 
@@ -174,7 +178,7 @@ public final class Config {
 	public static double WOVEN_REACH = 3.0;
 	/** Extra Seam seconds per woven tier. */
 	public static int WOVEN_SEAM_SECONDS = 60;
-	/** Drain reduction per scar (up to five scars). */
+	/** Drain reduction per scar (up to five scars; a scar is earned for every curse stack taken off). */
 	public static double SCAR_DRAIN_REDUCTION = 0.03;
 
 	// --- The Seam --------------------------------------------------------------------------------
@@ -245,6 +249,32 @@ public final class Config {
 				ExtremeDimensions.LOGGER.warn("Invalid config value for {}, keeping default", key);
 			}
 		}
+
+		// Curses: { "scar": { "max": 3, "per_stack": 2.0 }, ... }
+		JsonObject pens = json.has("penalties") && json.get("penalties").isJsonObject() ? json.getAsJsonObject("penalties") : new JsonObject();
+		JsonObject penOut = new JsonObject();
+		for (Penalty pen : Penalty.values()) {
+			pen.max = pen.defaultMax;
+			pen.value = pen.defaultValue;
+			try {
+				if (pens.has(pen.id) && pens.get(pen.id).isJsonObject()) {
+					JsonObject o = pens.getAsJsonObject(pen.id);
+					if (o.has("max")) {
+						pen.max = Math.max(0, o.get("max").getAsInt());
+					}
+					if (o.has("per_stack")) {
+						pen.value = o.get("per_stack").getAsDouble();
+					}
+				}
+			} catch (Exception e) {
+				ExtremeDimensions.LOGGER.warn("Invalid config value for penalty {}, keeping default", pen.id);
+			}
+			JsonObject o = new JsonObject();
+			o.addProperty("max", pen.max);
+			o.addProperty("per_stack", pen.value);
+			penOut.add(pen.id, o);
+		}
+		out.add("penalties", penOut);
 
 		try {
 			Files.createDirectories(file.getParent());

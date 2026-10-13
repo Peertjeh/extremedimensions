@@ -32,6 +32,8 @@ public final class ModItemGroups {
 					out.accept(ModItems.WANDERERS_PAGE);
 					out.accept(ModItems.SEAM_NEEDLE);
 					out.accept(ModItems.SEAM_SILK);
+					out.accept(ModItems.VEIL_WING);
+					out.accept(ModItems.MENDING_CLOTH);
 					out.accept(ModItems.MENDING_THREAD);
 					out.accept(ModItems.SEVERING_SHEARS);
 					out.accept(ModItems.HUSH_STONE);

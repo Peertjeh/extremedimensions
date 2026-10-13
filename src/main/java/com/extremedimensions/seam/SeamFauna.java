@@ -256,6 +256,7 @@ public final class SeamFauna {
 		if (e instanceof VeilRay) {
 			Block.popResource(level, at, new ItemStack(ModItems.SEAM_SILK, 1 + rnd.nextInt(2)));
 			Block.popResource(level, at, new ItemStack(Items.GLOW_INK_SAC, 1 + rnd.nextInt(2)));
+			Block.popResource(level, at, new ItemStack(ModItems.VEIL_WING, rnd.nextDouble() < com.extremedimensions.config.Config.VEIL_WING_EXTRA_CHANCE ? 2 : 1));
 		} else if (e instanceof Thinned) {
 			if (rnd.nextInt(3) > 0) {
 				Block.popResource(level, at, new ItemStack(ModItems.SEAM_SILK, 1 + rnd.nextInt(2)));

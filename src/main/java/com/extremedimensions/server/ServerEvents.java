@@ -43,6 +43,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -53,7 +54,7 @@ public final class ServerEvents {
 
 	private static final String[] RECIPES = {
 			"minecraft:lodestone", "extremedimensions:tether_journal", "extremedimensions:tether",
-			"extremedimensions:ember_tether", "extremedimensions:void_tether"};
+			"extremedimensions:ember_tether", "extremedimensions:void_tether", "extremedimensions:mending_cloth"};
 
 	private static int saveTimer = 0;
 	private static int effectTimer = 0;
@@ -149,6 +150,9 @@ public final class ServerEvents {
 				Journal.open(sp, DataStore.get(sp.getUUID()));
 				return InteractionResult.SUCCESS;
 			}
+			if (player instanceof ServerPlayer sp && player.getItemInHand(hand).is(ModItems.MENDING_CLOTH)) {
+				return PenaltyService.cloth(sp, player.getItemInHand(hand));
+			}
 			if (player instanceof ServerPlayer sp && (player.getItemInHand(hand).is(ModItems.MENDING_THREAD) || player.getItemInHand(hand).is(ModItems.SEVERING_SHEARS))) {
 				return MendingService.useEnding(sp, player.getItemInHand(hand));
 			}
@@ -164,12 +168,22 @@ public final class ServerEvents {
 
 		PlayerBlockBreakEvents.AFTER.register((level, player, pos, state, blockEntity) -> {
 			AnchorService.onBroken(Dims.of(level), pos);
+			if (player instanceof ServerPlayer sp) {
+				PenaltyService.wear(sp);
+			}
 			if (state.is(ModBlocks.SEAM_VEIN) && player instanceof ServerPlayer sp) {
 				Journal.unlock(sp, DataStore.get(sp.getUUID()), JournalEntry.LOOM);
 			}
 			if (state.is(Blocks.BARREL)) {
 				HollowService.onBroken(level, pos, player instanceof ServerPlayer sp ? sp : null);
 			}
+		});
+
+		AttackEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
+			if (player instanceof ServerPlayer sp && entity instanceof net.minecraft.world.entity.LivingEntity) {
+				PenaltyService.wear(sp);
+			}
+			return InteractionResult.PASS;
 		});
 
 		UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {

@@ -13,19 +13,24 @@ import com.extremedimensions.penalty.Penalty;
 /** Everything the mod knows about one player. Non-transient fields are saved to the world's JSON file. */
 public class PlayerData {
 	// --- saved ---
-	/** Leaky Tank stacks waiting for the next expedition. */
-	public int leakStacks = 0;
-	/** Toll/Tithe: levels the Tether takes as soon as they are earned. */
-	public int xpDebt = 0;
-	/** Remaining Mourning seconds (display only; the effects are vanilla). */
-	public double mourningSecs = 0;
 	public int expeditions = 0;
 	public int collapses = 0;
 	public double longestRun = 0;
-	/** Penalty id -> remaining active seconds per stack. */
+	/** Curse id -> stacks. Curses are permanent: only atonement, fragments or a Mending Cloth take stacks off. */
+	public Map<String, Integer> curses = new HashMap<>();
+	/** Curse id -> atonement points gathered towards taking its next stack off. */
+	public Map<String, Integer> atonement = new HashMap<>();
+	/** The curse the player chose to atone for (and to mend first); null = the heaviest one. */
+	public String atoning = null;
+	/** Before 2.3 curses wore off: id -> remaining seconds per stack. Read once and turned into permanent stacks. */
 	public Map<String, List<Double>> penaltyTime = new HashMap<>();
-	/** Penalty ids currently on the choice screen (empty = nothing to choose). */
+	/** Curse ids currently on the choice screen (empty = nothing to choose), and each card's multiplier. */
 	public List<String> pendingOffer = new ArrayList<>();
+	public List<Integer> pendingMult = new ArrayList<>();
+	/** Died since the last dawn (no atonement for that night). */
+	public boolean diedToday = false;
+	/** Every curse stack mended in the Overworld set is gone, but the Starved took the levels instead (all at max). */
+	public boolean xpForfeit = false;
 	/** Penalties still to be chosen (after several deaths in a row). */
 	public int pendingPenalties = 0;
 	/** Per owed penalty its set: "beyond" or "overworld". The first one is on screen now. */
@@ -46,7 +51,7 @@ public class PlayerData {
 	public transient int seamPull = 0;
 	/** Tier of the bound Tether: 0 iron chain, 1 soul-woven, 2 seam-woven. */
 	public int tetherTier = 0;
-	/** Scars: penalty stacks endured to the end. Each one makes the drain a little weaker (up to five). */
+	/** Scars: curse stacks taken off again. Each one makes the drain a little weaker (up to five). */
 	public int scars = 0;
 	/** A Hollowling follows this player. */
 	public boolean companion = false;
@@ -77,13 +82,22 @@ public class PlayerData {
 	/** Died beyond the wound (not from the timer): shows the "Expedition Ended" title on respawn. */
 	public transient String endedIn = null;
 
-	// Idle detection: penalties only wear off while the player looks around and moves
+	// Idle detection: atonement only grows while the player looks around and moves
 	public transient float lastYaw, lastPitch;
 	public transient double anchorX, anchorZ;
 	public transient int ticksSinceLook = Integer.MAX_VALUE / 2;
 	public transient int ticksSinceMove = Integer.MAX_VALUE / 2;
-	/** 0 = no penalty clock here, 1 = wearing off, 2 = paused (idle). */
-	public transient int penaltyClock = 0;
+	/** Active seconds on the current expedition not yet turned into atonement. */
+	public transient double activeSecs = 0;
+	// Curse upkeep: what the player had last tick (XP and food skims), sleep, spells and risings
+	public transient int lastXp = -1;
+	public transient double xpCarry = 0;
+	public transient int lastFood = -1;
+	public transient double foodCarry = 0;
+	public transient boolean sleepRolled = false, sleepFails = false;
+	public transient int vertigoIn = 60, huntIn = 120;
+	/** Whether it was dark outside last time we looked (dawn = a night survived). */
+	public transient int wasDark = -1;
 	public transient boolean joinDone = false;
 	public transient int ticksOnline = 0;
 	/** Current drain including the distance factor (HUD). */
@@ -96,21 +110,60 @@ public class PlayerData {
 	public transient int ropeIndex = 0;
 
 	public int stacks(Penalty p) {
-		List<Double> l = penaltyTime.get(p.id);
-		return l == null ? 0 : l.size();
+		return curses.getOrDefault(p.id, 0);
 	}
 
-	public void addStack(Penalty p) {
-		penaltyTime.computeIfAbsent(p.id, k -> new ArrayList<>()).add((double) Config.PENALTY_SECONDS);
+	/** Adds up to {@code n} stacks, never past the curse's maximum; returns how many were added. */
+	public int addStacks(Penalty p, int n) {
+		int have = stacks(p);
+		int add = Math.max(0, Math.min(n, p.max - have));
+		if (add > 0) {
+			curses.put(p.id, have + add);
+		}
+		return add;
+	}
+
+	/** Takes one stack off; the curse's atonement starts over. Returns false if it had none. */
+	public boolean removeStack(Penalty p) {
+		int have = stacks(p);
+		if (have <= 0) {
+			return false;
+		}
+		if (have == 1) {
+			curses.remove(p.id);
+		} else {
+			curses.put(p.id, have - 1);
+		}
+		atonement.remove(p.id);
+		return true;
+	}
+
+	/** Stacks of a curse, but only where it acts (beyond curses beyond the wound, Overworld curses at home). */
+	public int active(Penalty p, boolean beyond, boolean overworld) {
+		return (p.overworld ? overworld : beyond) ? stacks(p) : 0;
+	}
+
+	/** Turns the stacks of the old, timed penalties into permanent curses (capped at their maximum), once. */
+	public void migrate() {
+		if (penaltyTime == null || penaltyTime.isEmpty()) {
+			return;
+		}
+		for (Map.Entry<String, List<Double>> e : penaltyTime.entrySet()) {
+			Penalty p = Penalty.byId(e.getKey());
+			if (p != null && e.getValue() != null && !e.getValue().isEmpty()) {
+				curses.merge(p.id, Math.min(p.max, e.getValue().size()), Integer::max);
+			}
+		}
+		penaltyTime.clear();
 	}
 
 	public double drainMultiplier() {
 		double tier = tetherTier == 2 ? Config.SEAM_WOVEN_DRAIN : tetherTier == 1 ? Config.SOUL_WOVEN_DRAIN : 1.0;
 		double scar = 1.0 - Config.SCAR_DRAIN_REDUCTION * Math.min(5, scars);
-		return Config.BASE_DRAIN * tier * scar * (1.0 + Config.ACCELERATED_DRAIN_PER_STACK * stacks(Penalty.ACCELERATED_DRAIN));
+		return Config.BASE_DRAIN * tier * scar * (1.0 + Penalty.ACCELERATED_DRAIN.frac() * stacks(Penalty.ACCELERATED_DRAIN));
 	}
 
 	public double debtFactor() {
-		return Math.pow(Config.DEBT_FACTOR, stacks(Penalty.DEBT));
+		return Math.pow(Math.max(0, 1.0 - Penalty.DEBT.frac()), stacks(Penalty.DEBT));
 	}
 }
