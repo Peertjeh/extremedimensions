@@ -34,6 +34,43 @@ public final class HubCommands {
 		d.register(Commands.literal("hub").executes(c -> hub(c.getSource().getPlayerOrException())));
 		d.register(Commands.literal("lobby").executes(c -> hub(c.getSource().getPlayerOrException())));
 
+		d.register(Commands.literal("spectate")
+				.executes(c -> {
+					new net.battlehub.gui.SpectateMenu(c.getSource().getPlayerOrException()).open();
+					return 1;
+				})
+				.then(Commands.literal("leave").executes(c -> hub(c.getSource().getPlayerOrException())))
+				.then(Commands.argument("player", EntityArgument.player()).executes(c -> {
+					ServerPlayer p = c.getSource().getPlayerOrException();
+					ServerPlayer target = EntityArgument.getPlayer(c, "player");
+					Match m = Matches.of(target.getUUID());
+					if (m == null || !m.participants().contains(target.getUUID())) {
+						Msg.send(p, "spectate.not_playing", target.getGameProfile().name());
+						return 0;
+					}
+					return net.battlehub.spectate.Spectators.join(p, m) ? 1 : 0;
+				})));
+
+		d.register(Commands.literal("stats")
+				.executes(c -> {
+					ServerPlayer p = c.getSource().getPlayerOrException();
+					new net.battlehub.gui.StatsMenu(p, p.getUUID()).open();
+					return 1;
+				})
+				.then(Commands.argument("player", StringArgumentType.word())
+						.suggests((c, b) -> SharedSuggestionProvider.suggest(net.battlehub.data.PlayerStore.names(), b))
+						.executes(c -> {
+							ServerPlayer p = c.getSource().getPlayerOrException();
+							String name = StringArgumentType.getString(c, "player");
+							net.battlehub.core.PlayerProfile prof = net.battlehub.data.PlayerStore.find(name);
+							if (prof == null || prof.uuid.isEmpty()) {
+								Msg.send(p, "stats.unknown", name);
+								return 0;
+							}
+							new net.battlehub.gui.StatsMenu(p, java.util.UUID.fromString(prof.uuid)).open();
+							return 1;
+						})));
+
 		d.register(Commands.literal("duel")
 				.then(Commands.literal("accept").then(Commands.argument("player", EntityArgument.player())
 						.executes(c -> Challenges.accept(c.getSource().getPlayerOrException(), EntityArgument.getPlayer(c, "player")) ? 1 : 0)))
@@ -68,6 +105,10 @@ public final class HubCommands {
 					new MainMenu(c.getSource().getPlayerOrException()).open();
 					return 1;
 				})
+				.then(Commands.literal("join").then(Commands.argument("mode", StringArgumentType.word())
+						.suggests((c, b) -> SharedSuggestionProvider.suggest(allModeIds(), b))
+						.executes(c -> joinMode(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode")))))
+				.then(Commands.literal("leave").executes(c -> hub(c.getSource().getPlayerOrException())))
 				.then(Commands.literal("setlobby").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(c -> setLobby(c.getSource())))
 				.then(Commands.literal("reload").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
@@ -89,6 +130,25 @@ public final class HubCommands {
 		}
 	}
 
+	private static java.util.List<String> allModeIds() {
+		java.util.List<String> out = new java.util.ArrayList<>();
+		for (GameMode m : GameMode.values()) {
+			out.add(m.id());
+		}
+		return out;
+	}
+
+	/** "/battlehub join <mode>": party lobby or casual duel queue (used by clickable invites). */
+	private static int joinMode(ServerPlayer p, String id) {
+		GameMode mode = GameMode.byId(id);
+		if (mode == null) {
+			Msg.send(p, "challenge.unknown_mode");
+			return 0;
+		}
+		boolean ok = mode.isParty() ? net.battlehub.queue.Parties.join(p, mode) : Queues.join(p, mode, false);
+		return ok ? 1 : 0;
+	}
+
 	private static java.util.List<String> duelModeIds() {
 		java.util.List<String> out = new java.util.ArrayList<>();
 		for (GameMode m : GameMode.duels()) {
@@ -99,6 +159,10 @@ public final class HubCommands {
 
 	/** Leave whatever you are doing and go back to the lobby. */
 	public static int hub(ServerPlayer p) {
+		if (Sessions.state(p.getUUID()) == Sessions.State.SPECTATING) {
+			net.battlehub.spectate.Spectators.leave(p, true);
+			return 1;
+		}
 		Match m = Matches.of(p.getUUID());
 		if (m != null) {
 			m.forfeit(p);

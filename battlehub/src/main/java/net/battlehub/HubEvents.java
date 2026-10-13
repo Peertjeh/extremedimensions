@@ -117,6 +117,7 @@ public final class HubEvents {
 		ArenaBuilder.tick();
 		Matches.tick();
 		Queues.tick(server);
+		net.battlehub.spectate.Spectators.tick(server);
 		Menus.tick(server);
 		if (net.battlehub.debug.SelfTest.enabled()) {
 			net.battlehub.debug.SelfTest.tick();
@@ -166,9 +167,13 @@ public final class HubEvents {
 		if (p == null) {
 			return;
 		}
-		Match m = Matches.of(p.getUUID());
-		if (m != null) {
-			m.quit(p);
+		if (Sessions.state(p.getUUID()) == Sessions.State.SPECTATING) {
+			net.battlehub.spectate.Spectators.leave(p, false);
+		} else {
+			Match m = Matches.of(p.getUUID());
+			if (m != null) {
+				m.quit(p);
+			}
 		}
 		Queues.leaveAll(p);
 		TitleService.remove(p);

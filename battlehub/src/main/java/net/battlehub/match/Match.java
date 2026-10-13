@@ -118,6 +118,27 @@ public abstract class Match {
 	/** Called for each player after they were teleported and got their kit. */
 	protected void onArrived(ServerPlayer p, int index) {}
 
+	/** Where a player starts (teams can override this). */
+	protected Arena.Point spawnPoint(UUID id, int index) {
+		return arena.spawn(index);
+	}
+
+	/** False while a player is out of play for a moment (waiting to respawn). */
+	protected boolean active(UUID id) {
+		return alive.contains(id);
+	}
+
+	/** A player fell below the arena. Default: counts as a death. */
+	protected void fellOut(ServerPlayer p) {
+		killed(p, lastAttacker(p), true);
+	}
+
+	/** After a player got their own things back (end of match, leaving). */
+	protected void onRestored(ServerPlayer p) {}
+
+	/** After a spectator arrived. */
+	protected void onWatcherAdded(ServerPlayer p) {}
+
 	/** Called when the countdown is over. */
 	protected void onGo() {}
 
@@ -235,7 +256,7 @@ public abstract class Match {
 		p.clearFire();
 		p.setArrowCount(0);
 		p.resetFallDistance();
-		Arena.Point sp = arena.spawn(index);
+		Arena.Point sp = spawnPoint(p.getUUID(), index);
 		spawnOf.put(p.getUUID(), sp);
 		teleport(p, sp);
 		Kits.give(p, kit(), leatherColor(p.getUUID()));
@@ -331,8 +352,8 @@ public abstract class Match {
 	private void voidCheck() {
 		for (UUID id : new ArrayList<>(alive)) {
 			ServerPlayer p = player(id);
-			if (p != null && p.getY() < arena.voidY()) {
-				killed(p, lastAttacker(p), true);
+			if (p != null && active(id) && p.getY() < arena.voidY()) {
+				fellOut(p);
 				if (phase != Phase.RUNNING) {
 					return;
 				}
@@ -363,11 +384,11 @@ public abstract class Match {
 
 	/** From ALLOW_DAMAGE. */
 	public boolean allowDamage(ServerPlayer victim, DamageSource source) {
-		if (phase != Phase.RUNNING || !alive.contains(victim.getUUID())) {
+		if (phase != Phase.RUNNING || !active(victim.getUUID())) {
 			return false;
 		}
 		ServerPlayer attacker = attackerOf(source);
-		if (attacker != null && attacker != victim && !alive.contains(attacker.getUUID())) {
+		if (attacker != null && attacker != victim && !active(attacker.getUUID())) {
 			return false;
 		}
 		return damageAllowed(victim, source, attacker);
@@ -377,8 +398,7 @@ public abstract class Match {
 	public void handleDeath(ServerPlayer victim, DamageSource source) {
 		victim.setHealth(victim.getMaxHealth());
 		victim.clearFire();
-		victim.removeAllEffects();
-		if (phase != Phase.RUNNING || !alive.contains(victim.getUUID())) {
+		if (phase != Phase.RUNNING || !active(victim.getUUID())) {
 			return;
 		}
 		ServerPlayer killer = attackerOf(source);
@@ -468,6 +488,7 @@ public abstract class Match {
 		}
 		if (teleported) {
 			Snapshots.restore(p, teleport);
+			onRestored(p);
 		}
 		forEveryone(o -> Msg.send(o, "match.left", name(id)));
 		onLeft(id);
@@ -562,6 +583,7 @@ public abstract class Match {
 			if (p == null || left.contains(id)) continue;
 			if (teleported) {
 				Snapshots.restore(p, true);
+				onRestored(p);
 			}
 			Sessions.toLobby(id);
 			HubItems.ensure(p, false);
@@ -570,6 +592,7 @@ public abstract class Match {
 			ServerPlayer p = player(id);
 			if (p == null) continue;
 			Snapshots.restore(p, true);
+			onRestored(p);
 			Sessions.toLobby(id);
 			HubItems.ensure(p, false);
 			Msg.send(p, "spectate.match_over");
@@ -593,10 +616,15 @@ public abstract class Match {
 	public void addWatcher(ServerPlayer p) {
 		watchers.add(p.getUUID());
 		teleport(p, arena.spectator());
+		onWatcherAdded(p);
 	}
 
 	public void removeWatcher(UUID id) {
 		watchers.remove(id);
+		ServerPlayer p = player(id);
+		if (p != null) {
+			onRestored(p);
+		}
 	}
 
 	public Set<UUID> watchers() {

@@ -7,6 +7,7 @@ import com.mojang.authlib.GameProfile;
 
 import net.minecraft.network.DisconnectionDetails;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
 import net.minecraft.server.level.ServerLevel;
@@ -36,6 +37,11 @@ public final class TestPlayer extends ServerPlayer {
 
 	@Override
 	public void tick() {
+		// A real client confirms it finished loading the world after joining or changing dimension; until
+		// then the server keeps the player invulnerable.
+		if (!connection.hasClientLoaded()) {
+			connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
+		}
 		super.tick();
 		try {
 			doTick();

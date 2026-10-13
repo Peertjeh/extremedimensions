@@ -62,10 +62,98 @@ public final class SelfTest {
 			PLAYERS.clear();
 		});
 		lobbyAndMenus(server, s);
-		duel(server, s, GameMode.SWORD, "kill");
-		duel(server, s, GameMode.SWORD, "disconnect");
-		duel(server, s, GameMode.SWORD, "forfeit");
+		duel(server, s, GameMode.SWORD, "queue", "kill");
+		duel(server, s, GameMode.SWORD, "queue", "disconnect");
+		duel(server, s, GameMode.SWORD, "queue", "forfeit");
+		duel(server, s, GameMode.SWORD, "ranked", "kill");
+		duel(server, s, GameMode.AXE, "challenge", "kill");
+		duel(server, s, GameMode.MACE, "challenge", "kill");
+		duel(server, s, GameMode.BOW, "challenge", "kill");
+		duel(server, s, GameMode.CROSSBOW, "queue", "kill");
+		spectating(server, s);
 		script = s;
+	}
+
+	/** C watches a duel between A and B: menu entry, spectator mode, bounds, /hub, auto-return at the end. */
+	private static void spectating(MinecraftServer server, Script s) {
+		String tag = "spectate";
+		s.run(tag + ": join players", () -> {
+			join(server, "BHTestA");
+			join(server, "BHTestB");
+			join(server, "BHTestC");
+		});
+		s.pause(10);
+		s.run(tag + ": empty spectate menu", () -> new net.battlehub.gui.SpectateMenu(p("BHTestC")).open());
+		s.check(tag + ": 'No active matches' is shown", () -> p("BHTestC").containerMenu instanceof HubMenu m
+				&& m.getSlot(22).getItem().is(Items.BARRIER));
+		s.run(tag + ": start a duel", () -> {
+			p("BHTestC").closeContainer();
+			net.battlehub.queue.Challenges.send(p("BHTestA"), p("BHTestB"), GameMode.SWORD);
+			net.battlehub.queue.Challenges.accept(p("BHTestB"), p("BHTestA"));
+		});
+		s.waitFor(tag + ": duel running", 600, () -> {
+			Match m = Matches.of(p("BHTestA").getUUID());
+			return m != null && m.phase() == Match.Phase.RUNNING;
+		});
+		s.run(tag + ": open spectate menu", () -> {
+			VARS.put("match", Matches.of(p("BHTestA").getUUID()));
+			new net.battlehub.gui.SpectateMenu(p("BHTestC")).open();
+		});
+		s.check(tag + ": the duel is listed with the player names", () -> p("BHTestC").containerMenu instanceof HubMenu m
+				&& m.getSlot(10).getItem().is(Items.DIAMOND_SWORD)
+				&& m.getSlot(10).getItem().getHoverName().getString().contains("BHTestA"));
+		s.run(tag + ": click Join Spectator", () -> ((HubMenu) p("BHTestC").containerMenu).clicked(10, 0, ContainerInput.PICKUP, p("BHTestC")));
+		s.waitFor(tag + ": C is a spectator in the arena", 10, () -> {
+			ServerPlayer c = p("BHTestC");
+			return c.gameMode() == GameType.SPECTATOR && ArenaWorld.is(c.level())
+					&& Sessions.state(c.getUUID()) == Sessions.State.SPECTATING;
+		});
+		s.check(tag + ": spectator is not a player of the match", () -> {
+			Match m = (Match) VARS.get("match");
+			return !m.participants().contains(p("BHTestC").getUUID()) && m.watchers().contains(p("BHTestC").getUUID());
+		});
+		s.run(tag + ": C flies far away", () -> {
+			ServerPlayer c = p("BHTestC");
+			c.teleportTo(c.level(), c.getX() + 300, c.getY(), c.getZ(), java.util.Set.of(), 0, 0, false);
+		});
+		s.waitFor(tag + ": C is brought back inside the arena", 40, () -> {
+			Match m = (Match) VARS.get("match");
+			return m.arena().inSpectatorBounds(p("BHTestC").position());
+		});
+		s.run(tag + ": C leaves with /hub", () -> net.battlehub.command.HubCommands.hub(p("BHTestC")));
+		s.check(tag + ": C back in the lobby with the compass", () -> {
+			ServerPlayer c = p("BHTestC");
+			return !ArenaWorld.is(c.level()) && Sessions.isFree(c.getUUID()) && c.gameMode() != GameType.SPECTATOR
+					&& HubItems.COMPASS.equals(Icon.tagOf(c.getInventory().getItem(ConfigManager.config().compass.slot)));
+		});
+		s.run(tag + ": C watches again via /spectate <player>", () -> net.battlehub.spectate.Spectators.join(p("BHTestC"), (Match) VARS.get("match")));
+		s.check(tag + ": spectators take no damage", () -> {
+			ServerPlayer c = p("BHTestC");
+			float before = c.getHealth();
+			c.hurtServer(c.level(), c.damageSources().generic(), 5f);
+			return c.getHealth() == before;
+		});
+		s.pause(5);
+		s.run(tag + ": A kills B", () -> {
+			ServerPlayer b = p("BHTestB");
+			b.hurtServer(b.level(), b.damageSources().playerAttack(p("BHTestA")), 1000f);
+		});
+		s.waitFor(tag + ": match over, C sent back to the lobby", 300, () -> {
+			ServerPlayer c = p("BHTestC");
+			Match m = (Match) VARS.get("match");
+			return m.phase() == Match.Phase.CLOSED && !ArenaWorld.is(c.level()) && Sessions.isFree(c.getUUID())
+					&& c.gameMode() != GameType.SPECTATOR && !Snapshots.has(c.getUUID());
+		});
+		s.waitFor(tag + ": arena released", 400, () -> ArenaSlots.busy() == 0);
+	}
+
+	/** The item in slot 0 of the mode's kit. */
+	static net.minecraft.world.item.Item kitWeapon(GameMode mode) {
+		var kit = ConfigManager.kits().kits.get(ConfigManager.config().game(mode).kit);
+		for (var it : kit.items) {
+			if ("0".equals(it.slot)) return net.battlehub.util.Ids.item(it.item);
+		}
+		return Items.AIR;
 	}
 
 	static TestPlayer p(String name) {
@@ -110,8 +198,10 @@ public final class SelfTest {
 		});
 		s.run("items cannot be taken from the menu", () -> {
 			HubMenu m = (HubMenu) p("BHTestA").containerMenu;
-			m.clicked(10, 0, ContainerInput.QUICK_MOVE, p("BHTestA"));
-			m.clicked(12, 0, ContainerInput.THROW, p("BHTestA"));
+			m.clicked(0, 0, ContainerInput.QUICK_MOVE, p("BHTestA"));
+			m.clicked(10, 0, ContainerInput.THROW, p("BHTestA"));
+			m.clicked(12, 1, ContainerInput.SWAP, p("BHTestA"));
+			m.clicked(11, 0, ContainerInput.CLONE, p("BHTestA"));
 		});
 		s.check("menu item still there and nothing in the inventory", () ->
 				p("BHTestA").containerMenu instanceof HubMenu m && m.getSlot(10).getItem().is(Items.DIAMOND_SWORD)
@@ -134,9 +224,9 @@ public final class SelfTest {
 		});
 	}
 
-	/** A Sword PvP duel between BHTestA and BHTestB, ended by a kill, a disconnect or /hub. */
-	private static void duel(MinecraftServer server, Script s, GameMode mode, String ending) {
-		String tag = mode.id() + "/" + ending;
+	/** A duel between BHTestA and BHTestB, started by queue, ranked queue or challenge, ended by a kill, a disconnect or /hub. */
+	private static void duel(MinecraftServer server, Script s, GameMode mode, String start, String ending) {
+		String tag = mode.id() + "/" + start + "/" + ending;
 		s.run(tag + ": join (again)", () -> {
 			join(server, "BHTestA");
 			join(server, "BHTestB");
@@ -146,13 +236,22 @@ public final class SelfTest {
 			VARS.put("winsA", PlayerStore.get(p("BHTestA").getUUID()).overall.wins);
 			VARS.put("lossB", PlayerStore.get(p("BHTestB").getUUID()).overall.losses);
 			VARS.put("coinsA", PlayerStore.get(p("BHTestA").getUUID()).coins);
+			VARS.put("eloA", PlayerStore.get(p("BHTestA").getUUID()).elo(mode, ConfigManager.config().elo.start));
+			VARS.put("eloB", PlayerStore.get(p("BHTestB").getUUID()).elo(mode, ConfigManager.config().elo.start));
 		});
-		s.run(tag + ": both queue", () -> {
-			Queues.join(p("BHTestA"), mode, false);
-			Queues.join(p("BHTestB"), mode, false);
-		});
-		s.check(tag + ": queued state", () -> Sessions.state(p("BHTestA").getUUID()) == Sessions.State.QUEUED
-				|| Sessions.state(p("BHTestA").getUUID()) == Sessions.State.MATCH);
+		if (start.equals("challenge")) {
+			s.run(tag + ": A challenges B", () -> net.battlehub.queue.Challenges.send(p("BHTestA"), p("BHTestB"), mode));
+			s.check(tag + ": challenge is pending", () -> net.battlehub.queue.Challenges.hasPending(p("BHTestA").getUUID(), p("BHTestB").getUUID()));
+			s.run(tag + ": B accepts", () -> net.battlehub.queue.Challenges.accept(p("BHTestB"), p("BHTestA")));
+		} else {
+			boolean ranked = start.equals("ranked");
+			s.run(tag + ": both queue", () -> {
+				Queues.join(p("BHTestA"), mode, ranked);
+				Queues.join(p("BHTestB"), mode, ranked);
+			});
+			s.check(tag + ": queued state", () -> Sessions.state(p("BHTestA").getUUID()) == Sessions.State.QUEUED
+					|| Sessions.state(p("BHTestA").getUUID()) == Sessions.State.MATCH);
+		}
 		s.waitFor(tag + ": match created", 60, () -> Matches.of(p("BHTestA").getUUID()) != null);
 		s.waitFor(tag + ": arena built, players in countdown", 400, () -> {
 			Match m = Matches.of(p("BHTestA").getUUID());
@@ -162,10 +261,16 @@ public final class SelfTest {
 			ServerPlayer a = p("BHTestA");
 			ServerPlayer b = p("BHTestB");
 			return ArenaWorld.is(a.level()) && ArenaWorld.is(b.level()) && a.gameMode() == GameType.ADVENTURE
-					&& a.getInventory().getItem(0).is(Items.DIAMOND_SWORD)
-					&& b.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).is(Items.IRON_CHESTPLATE)
+					&& a.getInventory().getItem(0).is(kitWeapon(mode))
+					&& !b.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).isEmpty()
 					&& Snapshots.has(a.getUUID());
 		});
+		s.check(tag + ": match is " + (start.equals("ranked") ? "ranked" : "casual"), () ->
+				Matches.of(p("BHTestA").getUUID()).ranked == start.equals("ranked"));
+		if (mode == GameMode.MACE) {
+			s.check(tag + ": mace is played in the Sky Arena", () ->
+					Matches.of(p("BHTestA").getUUID()).arena().theme() == net.battlehub.arena.Theme.SKY);
+		}
 		s.check(tag + ": no damage during the countdown", () -> {
 			ServerPlayer b = p("BHTestB");
 			float before = b.getHealth();
@@ -207,6 +312,18 @@ public final class SelfTest {
 			return a.overall.wins == (int) VARS.get("winsA") + 1 && b.overall.losses == (int) VARS.get("lossB") + 1
 					&& a.coins > (long) VARS.get("coinsA") && a.peek(mode).wins >= 1;
 		});
+		if (start.equals("ranked")) {
+			s.check(tag + ": ELO moved by the K-factor", () -> {
+				int a = PlayerStore.get(p("BHTestA").getUUID()).elo(mode, 1000);
+				int b = PlayerStore.get(TestPlayer.uuid("BHTestB")).elo(mode, 1000);
+				int ea = (int) VARS.get("eloA");
+				int eb = (int) VARS.get("eloB");
+				return a > ea && b < eb && (a - ea) == (eb - b) && PlayerStore.get(p("BHTestA").getUUID()).rankedStats(mode).wins >= 1;
+			});
+		} else {
+			s.check(tag + ": casual match leaves ELO alone", () ->
+					PlayerStore.get(p("BHTestA").getUUID()).elo(mode, 1000) == (int) VARS.get("eloA"));
+		}
 		s.waitFor(tag + ": match closed and A back in the lobby", 200, () -> {
 			Match m = (Match) VARS.get("match");
 			ServerPlayer a = p("BHTestA");
