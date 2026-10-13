@@ -39,30 +39,6 @@ jobs:
         with:
           name: BattleHub
           path: battlehub/build/libs/
-      - name: TEMP probe APIs
-        if: always()
-        run: |
-          bash ../.github/battlehub/probe.sh probe.txt
-          mkdir -p probe && split -l 1500 -d -a 2 probe.txt probe/part-
-          ls probe
-      - name: TEMP upload probe
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: probe
-          path: battlehub/probe/
-
-  show:
-    needs: build
-    if: always()
-    runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        part: ['00','01','02','03']
-    steps:
-      - uses: actions/download-artifact@v7
-        with:
-          name: probe
-          path: probe
-      - name: print part
-        run: cat probe/part-${{ matrix.part }} 2>/dev/null || echo "no part"
+      - name: boot a server with the mod
+        run: bash ../.github/battlehub/server-test.sh
+        timeout-minutes: 20

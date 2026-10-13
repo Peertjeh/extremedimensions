@@ -1,0 +1,13 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "net.battlehub.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"AbstractContainerMenuMixin",
+		"ServerPlayerMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
