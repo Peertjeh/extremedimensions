@@ -46,13 +46,14 @@ public class CurseTests {
 		check(helper, Math.abs(actual - expected) < 0.01, "%s: expected %s, got %s", what, expected, actual);
 	}
 
+	/** The damage a hit is raised to (the hook on every hit is proven by {@link WorldTests#everyMixinIsApplied}). */
 	@GameTest
-	public void kindlingRaisesFireDamage(GameTestHelper helper) {
-		ServerPlayer p = cursed(helper, Penalty.KINDLING, 3);
-		TestPlayers.vulnerable(p);
-		float before = p.getHealth();
-		p.hurtServer(helper.getLevel(), helper.getLevel().damageSources().inFire(), 4.0f);
-		near(helper, before - p.getHealth(), 4.0 * (1 + 3 * Penalty.KINDLING.frac()), "fire damage with Kindling 3");
+	public void cursesRaiseDamageTaken(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.KINDLING, 3, Penalty.VOLATILE, 2);
+		var sources = helper.getLevel().damageSources();
+		near(helper, CurseEffects.damageTaken(p, sources.inFire(), 4.0f), 4.0 * (1 + 3 * Penalty.KINDLING.frac()), "fire damage with Kindling 3");
+		near(helper, CurseEffects.damageTaken(p, sources.explosion(null, null), 4.0f), 4.0 * (1 + 2 * Penalty.VOLATILE.frac()), "explosion damage with Volatile 2");
+		near(helper, CurseEffects.damageTaken(p, sources.fall(), 4.0f), 4.0, "fall damage, untouched by both");
 		helper.succeed();
 	}
 

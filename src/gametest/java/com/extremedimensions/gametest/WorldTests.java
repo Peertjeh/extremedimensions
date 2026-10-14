@@ -42,6 +42,32 @@ public class WorldTests {
 		helper.succeed();
 	}
 
+	/**
+	 * Every mixin landed in its target. Mixins here are optional (a missing target is skipped, not fatal), so after a
+	 * Minecraft update a renamed method would silently switch a curse off; this test catches that.
+	 */
+	@GameTest
+	public void everyMixinIsApplied(GameTestHelper helper) {
+		Object[][] expected = {
+			{net.minecraft.world.entity.LivingEntity.class, "rememberSource", "cursedDamage", "cursedEffect"},
+			{net.minecraft.world.entity.player.Inventory.class, "freeSlot", "roomInSlot"},
+			{net.minecraft.world.inventory.Slot.class, "sealed"},
+			{net.minecraft.world.entity.npc.villager.Villager.class, "illRepute"},
+		};
+		for (Object[] row : expected) {
+			Class<?> target = (Class<?>) row[0];
+			for (int i = 1; i < row.length; i++) {
+				String handler = "extremedimensions$" + row[i];
+				boolean found = false;
+				for (java.lang.reflect.Method m : target.getDeclaredMethods()) {
+					found |= m.getName().contains(handler);
+				}
+				CurseTests.check(helper, found, "mixin %s did not apply to %s", handler, target.getSimpleName());
+			}
+		}
+		helper.succeed();
+	}
+
 	@GameTest(maxTicks = 40)
 	public void everyCreatureSpawnsAndTicks(GameTestHelper helper) {
 		EntityType<?>[] types = {ModEntities.LURKER, ModEntities.HOLLOWLING, ModEntities.KEEPER, ModEntities.STARVED_ONE,

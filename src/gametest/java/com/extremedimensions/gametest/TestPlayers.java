@@ -1,7 +1,5 @@
 package com.extremedimensions.gametest;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.UUID;
 
 import com.mojang.authlib.GameProfile;
@@ -43,45 +41,5 @@ final class TestPlayers {
 		level.getServer().getPlayerList().placeNewPlayer(connection, p, cookie);
 		p.setGameMode(GameType.SURVIVAL);
 		return p;
-	}
-
-	/** Ends the grace a freshly joined player has (spawn protection and waiting for the client to load). */
-	static void vulnerable(ServerPlayer p) {
-		try {
-			Method loaded = findMethod(p.getClass(), "setClientLoaded", boolean.class);
-			if (loaded != null) {
-				loaded.setAccessible(true);
-				loaded.invoke(p, true);
-			}
-			Field spawn = findField(p.getClass(), "spawnInvulnerableTime");
-			if (spawn != null) {
-				spawn.setAccessible(true);
-				spawn.setInt(p, 0);
-			}
-		} catch (ReflectiveOperationException e) {
-			throw new IllegalStateException("could not end the spawn grace of a test player", e);
-		}
-	}
-
-	private static Method findMethod(Class<?> c, String name, Class<?>... args) {
-		for (; c != null; c = c.getSuperclass()) {
-			try {
-				return c.getDeclaredMethod(name, args);
-			} catch (NoSuchMethodException e) {
-				// keep looking up
-			}
-		}
-		return null;
-	}
-
-	private static Field findField(Class<?> c, String name) {
-		for (; c != null; c = c.getSuperclass()) {
-			try {
-				return c.getDeclaredField(name);
-			} catch (NoSuchFieldException e) {
-				// keep looking up
-			}
-		}
-		return null;
 	}
 }
