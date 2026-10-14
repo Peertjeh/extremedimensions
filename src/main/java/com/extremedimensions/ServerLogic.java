@@ -57,6 +57,9 @@ public final class ServerLogic {
 			if (!(entity instanceof ServerPlayer p)) {
 				return;
 			}
+			if (isPaused(p)) {
+				return;
+			}
 			PlayerData d = DataStore.get(p.getUUID());
 			String dim = entity.level().dimension().identifier().getPath();
 			// Normaal doodgaan in Nether/End (geen Collapse): je tank loopt leeg.
@@ -71,7 +74,7 @@ public final class ServerLogic {
 			if (!(player instanceof ServerPlayer sp)) {
 				return InteractionResult.PASS;
 			}
-			if (hand != InteractionHand.MAIN_HAND) {
+			if (hand != InteractionHand.MAIN_HAND || isPaused(sp)) {
 				return InteractionResult.PASS;
 			}
 			BlockPos pos = hit.getBlockPos();
@@ -83,6 +86,33 @@ public final class ServerLogic {
 	}
 
 	// ------------------------------------------------------------------ helpers
+
+	/** In een wereld van BattleHub (of een andere mod uit Config.PAUSED_NAMESPACES)? */
+	static boolean isPaused(ServerPlayer p) {
+		return Config.PAUSED_NAMESPACES.contains(p.level().dimension().identifier().getNamespace());
+	}
+
+	/**
+	 * Pauze aan of uit bij het wisselen van wereld. In de pauze telt de laatste echte dimensie gewoon door
+	 * (d.dim verandert niet), dus terug in de Nether loopt dezelfde expeditie verder.
+	 */
+	private static boolean handlePause(ServerPlayer p, PlayerData d) {
+		boolean paused = isPaused(p);
+		if (paused && !d.paused) {
+			d.paused = true;
+			if (d.has(Penalty.SCAR)) {
+				removeScar(p);
+			}
+		} else if (!paused && d.paused) {
+			d.paused = false;
+			if (d.has(Penalty.SCAR)) {
+				applyScar(p);
+			}
+			sendState(p, d);
+			sendOffer(p, d);
+		}
+		return paused;
+	}
 
 	static String dimOf(ServerPlayer p) {
 		return p.level().dimension().identifier().getPath();
@@ -177,6 +207,9 @@ public final class ServerLogic {
 
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
 			PlayerData d = DataStore.get(p.getUUID());
+			if (handlePause(p, d)) {
+				continue;
+			}
 			String dim = dimOf(p);
 			boolean forceSync = false;
 
@@ -341,6 +374,9 @@ public final class ServerLogic {
 
 	private static void onRespawn(ServerPlayer oldPlayer, ServerPlayer newPlayer, boolean alive) {
 		PlayerData d = DataStore.get(newPlayer.getUUID());
+		if (isPaused(newPlayer)) {
+			return;
+		}
 		if (!alive) {
 			// Altijd terug naar de Overworld, ook met een bed/anchor in de Nether of End.
 			if (!OVERWORLD.equals(dimOf(newPlayer))) {
@@ -366,6 +402,17 @@ public final class ServerLogic {
 
 	private static void onJoin(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
+		d.collapsing = false;
+		d.collapseRetry = 0;
+		if (isPaused(p)) {
+			// Binnenkomen in BattleHub: niets van Extreme Dimensions tot je eruit gaat
+			d.paused = true;
+			if (d.has(Penalty.SCAR)) {
+				removeScar(p);
+			}
+			return;
+		}
+		d.paused = false;
 		d.dim = dimOf(p);
 		d.collapsing = false;
 		d.collapseRetry = 0;
@@ -467,7 +514,8 @@ public final class ServerLogic {
 
 	public static void onChoose(ServerPlayer p, String id) {
 		PlayerData d = DataStore.get(p.getUUID());
-		if (!d.pendingOffer.contains(id)) {
+		// In BattleHub geen penalty's; de keuze komt terug als je eruit gaat
+		if (isPaused(p) || !d.pendingOffer.contains(id)) {
 			return;
 		}
 		Penalty pen = Penalty.byId(id);

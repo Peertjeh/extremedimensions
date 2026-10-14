@@ -2,6 +2,7 @@ package com.extremedimensions.client;
 
 import java.util.Arrays;
 
+import com.extremedimensions.Config;
 import com.extremedimensions.ExtremeDimensions;
 import com.extremedimensions.ModPackets;
 
@@ -44,7 +45,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 
 		// Animaties van de server
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.FxPayload.TYPE, (payload, context) ->
-				context.client().execute(() -> ClientState.onFx(payload.type(), payload.value())));
+				context.client().execute(() -> ClientState.onFx(payload.kind(), payload.value())));
 
 		// Meldingen
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.NoticePayload.TYPE, (payload, context) ->
@@ -54,6 +55,9 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OfferPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> {
 					Minecraft mc = Minecraft.getInstance();
+					if (mc.level != null && Config.PAUSED_NAMESPACES.contains(mc.level.dimension().identifier().getNamespace())) {
+						return; // in BattleHub: de server stuurt de keuze opnieuw als je eruit gaat
+					}
 					mc.setScreen(new PenaltyChoiceScreen(Arrays.asList(payload.ids().split(","))));
 				}));
 

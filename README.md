@@ -84,3 +84,17 @@ Rechtermuisklik op het altaar (Lodestone) met een Tether in je hand: +10 minuten
 - Het altaar is een bestaand blok (Lodestone), geen eigen blok.
 - Commando's die de mod intern gebruikt (kill, tp, effect, attribute, particle, playsound) kunnen feedback in de serverconsole en bij ops geven.
 - Geluids- en deeltjesnamen in de animaties kunnen in 26.3 anders heten; een verkeerde naam geeft alleen geen effect.
+
+## Samen met BattleHub
+
+Draait BattleHub (map `battlehub/`) op dezelfde server, dan staat Extreme Dimensions stil zolang je in
+de werelden van BattleHub bent (de hub en de arena's):
+
+- je charge loopt niet leeg en een dimensiewissel telt niet: ga je vanuit de Nether naar BattleHub en
+  weer terug, dan loopt dezelfde expeditie gewoon verder;
+- penalty's werken daar niet (het Litteken geeft je je hartjes terug zolang je in BattleHub bent) en het
+  penalty-keuzescherm verschijnt pas als je BattleHub verlaat;
+- de HUD met de tankmeters is verborgen;
+- het altaar doet niets.
+
+Welke werelden dit zijn staat in `Config.PAUSED_NAMESPACES`.

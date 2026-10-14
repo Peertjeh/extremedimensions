@@ -18,6 +18,10 @@ public class ChargeHud implements HudElement {
 	public void extractRenderState(GuiGraphicsExtractor g, DeltaTracker deltaTracker) {
 		ClientState.tickSmooth();
 		Minecraft mc = Minecraft.getInstance();
+		// In de werelden van BattleHub staat Extreme Dimensions stil: geen HUD
+		if (mc.level != null && Config.PAUSED_NAMESPACES.contains(mc.level.dimension().identifier().getNamespace())) {
+			return;
+		}
 		Font font = mc.font;
 		int w = g.guiWidth();
 		int h = g.guiHeight();

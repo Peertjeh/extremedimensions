@@ -33,6 +33,8 @@ public class PlayerData {
 	public transient String respawnNotice = null;
 	public transient int collapseRetry = 0;
 	public transient int lastBeat = Integer.MAX_VALUE;
+	/** In een wereld uit Config.PAUSED_NAMESPACES (BattleHub): alles staat stil. */
+	public transient boolean paused = false;
 
 	public boolean has(Penalty p) {
 		return penalties.containsKey(p.id);

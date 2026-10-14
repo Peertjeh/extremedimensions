@@ -39,4 +39,11 @@ public final class Config {
 
 	/** Ticks wachten voor een nieuwe poort-check na een bounce. */
 	public static final int BOUNCE_GRACE_TICKS = 40;
+
+	/**
+	 * Werelden van andere mods waar Extreme Dimensions helemaal stilstaat (BattleHub: hub en arena's).
+	 * Daar loopt geen charge leeg, telt geen dimensiewissel, werkt geen penalty en is de HUD verborgen;
+	 * bij terugkomst gaat alles verder waar het was.
+	 */
+	public static final java.util.Set<String> PAUSED_NAMESPACES = java.util.Set.of("battlehub");
 }

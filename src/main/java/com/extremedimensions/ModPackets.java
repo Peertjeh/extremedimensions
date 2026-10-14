@@ -95,12 +95,12 @@ public final class ModPackets {
 	}
 
 	/** Server -> client: start een animatie (zie Fx). */
-	public record FxPayload(int type, int value) implements CustomPacketPayload {
+	public record FxPayload(int kind, int value) implements CustomPacketPayload {
 		public static final Type<FxPayload> TYPE = new Type<>(ExtremeDimensions.id("fx"));
 		public static final StreamCodec<FriendlyByteBuf, FxPayload> CODEC = StreamCodec.ofMember(FxPayload::write, FxPayload::read);
 
 		private void write(FriendlyByteBuf buf) {
-			buf.writeVarInt(type);
+			buf.writeVarInt(kind);
 			buf.writeVarInt(value);
 		}
 
