@@ -27,6 +27,15 @@ jobs:
           jar=$(ls build/libs/*.jar | grep -v sources | head -1)
           if unzip -l "$jar" | grep -q "com/terraformersmc/"; then echo "Mod Menu stand-ins in $jar"; exit 1; fi
           unzip -l "$jar" | grep -q "assets/extremedimensions/lang/nl_nl.json" || { echo "nl_nl.json missing from $jar"; exit 1; }
+      # Development aid: a commit message with [probe] prints the signatures of the classes in tools/probe.txt (and
+      # finds classes by the patterns after a # in that file) from the game jar the build used
+      - name: api probe
+        if: always() && contains(github.event.head_commit.message, '[probe]')
+        run: |
+          jar=$(find ~/.gradle/caches .gradle -name "*.jar" 2>/dev/null | grep -i minecraft | grep -iv -e sources -e intermediary -e fabric-api -e loader | xargs ls -S 2>/dev/null | head -1)
+          echo "API|jar $jar"
+          grep -v '^#' tools/probe.txt | while read -r c; do [ -n "$c" ] && javap -cp "$jar" -p "$c" 2>&1 | sed "s/^/API|/"; done
+          unzip -l "$jar" | awk '{print $4}' | grep -E "$(grep '^#' tools/probe.txt | sed 's/^#//' | paste -sd'|')" | sed "s/^/APICLASS|/" | head -200
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
