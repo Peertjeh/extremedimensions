@@ -95,6 +95,8 @@ public final class HollowService {
 		ServerBossEvent bar;
 		int ticks;
 		int nextTrick = 120;
+		/** The Matriarch: how many times she has called her brood (at 70% and 35% health). */
+		int brood;
 	}
 
 	private static final Map<UUID, Little> LITTLES = new HashMap<>();
@@ -926,6 +928,24 @@ public final class HollowService {
 
 	/** Wakes the Keeper of a hoard and sets it on this player, unless it is already hunting or was slain. */
 	public static void wake(Hoard h, ServerPlayer p) {
+		wake(h, p, false);
+	}
+
+	/** Whether the next hoard this player wakes is guarded by the Matriarch: after enough Keepers, until she falls. */
+	public static boolean matriarchFor(PlayerData d) {
+		return Config.MATRIARCH_AFTER_KEEPERS > 0 && !d.matriarchSlain && d.keepersSlain >= Config.MATRIARCH_AFTER_KEEPERS;
+	}
+
+	/** Operator command: a hoard ahead of the player, guarded by the Matriarch, woken at once. */
+	public static boolean summonMatriarch(ServerPlayer p) {
+		if (!summonHoard(p)) {
+			return false;
+		}
+		wake(DataStore.hoards().get(DataStore.hoards().size() - 1), p, true);
+		return true;
+	}
+
+	private static void wake(Hoard h, ServerPlayer p, boolean forceMatriarch) {
 		if (h.keeperSlain || Config.KEEPER_ENABLED == 0 || p.isCreative() || p.isSpectator()) {
 			return;
 		}
@@ -948,7 +968,8 @@ public final class HollowService {
 		if (spot == null) {
 			spot = p.blockPosition().offset(6, 0, 6);
 		}
-		Keeper k = ModEntities.KEEPER.spawn(level, spot, EntitySpawnReason.EVENT);
+		boolean matriarch = forceMatriarch || matriarchFor(DataStore.get(p.getUUID()));
+		Keeper k = matriarch ? ModEntities.MATRIARCH.spawn(level, spot, EntitySpawnReason.EVENT) : ModEntities.KEEPER.spawn(level, spot, EntitySpawnReason.EVENT);
 		if (k == null) {
 			return;
 		}
@@ -957,8 +978,15 @@ public final class HollowService {
 		Guard g = new Guard();
 		g.hoard = h.key();
 		g.target = p.getUUID();
-		g.bar = new ServerBossEvent(UUID.randomUUID(), Component.translatable("boss.extremedimensions.keeper"),
-				BossEvent.BossBarColor.WHITE, BossEvent.BossBarOverlay.NOTCHED_10);
+		g.bar = matriarch
+				? new ServerBossEvent(UUID.randomUUID(), Component.translatable("boss.extremedimensions.matriarch"), BossEvent.BossBarColor.RED,
+						BossEvent.BossBarOverlay.NOTCHED_12)
+				: new ServerBossEvent(UUID.randomUUID(), Component.translatable("boss.extremedimensions.keeper"), BossEvent.BossBarColor.WHITE,
+						BossEvent.BossBarOverlay.NOTCHED_10);
+		if (matriarch) {
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.matriarch_comes"));
+			Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.MATRIARCH);
+		}
 		g.bar.addPlayer(p);
 		KEEPERS.put(k.getUUID(), g);
 		LEVELS.put(k.getUUID(), level);
@@ -1011,6 +1039,21 @@ public final class HollowService {
 				k.setTarget(p);
 			}
 			g.bar.setProgress(k.getHealth() / k.getMaxHealth());
+			if (k instanceof Matriarch m) {
+				// Whoever stands with her prey sees her bar too; her brood comes at 70% and again at 35%
+				if (g.ticks % 20 == 0) {
+					for (ServerPlayer q : level.players()) {
+						if (q.distanceToSqr(m) < 40 * 40) {
+							g.bar.addPlayer(q);
+						}
+					}
+				}
+				float f = m.getHealth() / m.getMaxHealth();
+				if ((g.brood == 0 && f <= 0.7f) || (g.brood == 1 && f <= 0.35f)) {
+					g.brood++;
+					later.add(() -> brood(m, g));
+				}
+			}
 			double d2 = k.distanceToSqr(p);
 			if (d2 < 4.5 * 4.5) {
 				k.setLurkerPose(Lurker.POSE_TAKE);
@@ -1024,6 +1067,8 @@ public final class HollowService {
 				g.nextTrick = 140 + rnd.nextInt(100);
 				if (d2 > 10 * 10) {
 					blinkBehind(k, p);
+				} else if (k instanceof Matriarch m) {
+					wail(m);
 				} else {
 					roar(k);
 					hush(k, 3);
@@ -1049,6 +1094,41 @@ public final class HollowService {
 		WorldFx.soundIn(dim, "extremedimensions:lurker_vanish", "hostile", g.getX() + 0.5, g.getY() + 2.0, g.getZ() + 0.5, 1.4f, 0.7f);
 	}
 
+	/** The Matriarch calls her brood: Hollowlings of her hoard, who steal while their mother fights. */
+	private static void brood(Matriarch m, Guard g) {
+		ServerLevel level = (ServerLevel) m.level();
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		String dim = level.dimension().identifier().toString();
+		WorldFx.soundIn(dim, "extremedimensions:keeper_roar", "hostile", m.getX(), m.getY() + 3, m.getZ(), 3f, 0.6f);
+		for (int i = 0; i < Math.max(0, Config.MATRIARCH_BROOD); i++) {
+			BlockPos spot = groundAt(level, m.blockPosition().offset(rnd.nextInt(-4, 5), 0, rnd.nextInt(-4, 5)));
+			if (spot != null) {
+				Little st = new Little();
+				st.hoard = g.hoard;
+				spawnLittle(level, spot, st);
+				WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", spot.getX() + 0.5, spot.getY() + 0.5, spot.getZ() + 0.5, 0.3, 0.4, 0.3, 0.0, 12);
+			}
+		}
+		ServerPlayer p = WorldFx.server().getPlayerList().getPlayer(g.target);
+		if (p != null) {
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.matriarch_brood"), true);
+		}
+	}
+
+	/** The Matriarch's wail: darkness, weakness and a heavy step for everyone close. */
+	private static void wail(Matriarch m) {
+		String dim = m.level().dimension().identifier().toString();
+		WorldFx.soundIn(dim, "extremedimensions:lurker_shriek", "hostile", m.getX(), m.getY() + 3, m.getZ(), 3f, 0.5f);
+		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", m.getX(), m.getY() + 3, m.getZ(), 2.0, 1.5, 2.0, 0.0, 50);
+		for (ServerPlayer q : ((ServerLevel) m.level()).players()) {
+			if (q.distanceToSqr(m) < 16 * 16) {
+				WorldFx.effect(q, MobEffects.DARKNESS, 4, 0);
+				WorldFx.effect(q, MobEffects.WEAKNESS, 4, 0);
+				WorldFx.effect(q, MobEffects.SLOWNESS, 3, 1);
+			}
+		}
+	}
+
 	/** Slain: the hoard is free to take, and the Keeper leaves something of its own. */
 	public static void onKeeperDeath(Keeper k, Entity killer) {
 		Guard g = KEEPERS.remove(k.getUUID());
@@ -1069,12 +1149,30 @@ public final class HollowService {
 			// What the Keeper guarded most of all
 			k.spawnAtLocation(level, com.extremedimensions.relic.RelicService.random());
 		}
-		for (ServerPlayer p : level.players()) {
-			if (p.distanceToSqr(k) < 48 * 48) {
-				Advancements.grant(p, Advancements.KEEPER_SLAIN);
-				Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.KEEPER);
+		boolean matriarch = k instanceof Matriarch;
+		if (matriarch) {
+			// The eldest leaves what she kept longest
+			k.spawnAtLocation(level, new ItemStack(ModItems.TETHER_FRAGMENT, 2));
+			k.spawnAtLocation(level, new ItemStack(ModItems.WANDERERS_PAGE));
+			for (int i = 0; i < Math.max(0, Config.MATRIARCH_RELICS); i++) {
+				k.spawnAtLocation(level, com.extremedimensions.relic.RelicService.random());
 			}
 		}
+		for (ServerPlayer p : level.players()) {
+			if (p.distanceToSqr(k) < 48 * 48) {
+				PlayerData d = DataStore.get(p.getUUID());
+				d.keepersSlain++;
+				Advancements.grant(p, Advancements.KEEPER_SLAIN);
+				Journal.unlock(p, d, JournalEntry.KEEPER);
+				if (matriarch) {
+					d.matriarchSlain = true;
+					Advancements.grant(p, Advancements.MATRIARCH_SLAIN);
+					Journal.unlock(p, d, JournalEntry.MATRIARCH);
+					p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.matriarch_falls"));
+				}
+			}
+		}
+		DataStore.markDirty();
 	}
 
 	/** Gone: a curl of ink and a breath. */

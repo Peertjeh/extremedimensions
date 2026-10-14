@@ -42,6 +42,10 @@ public final class TetherCommand {
 						.then(Commands.literal("stalk").executes(c -> lurker(c.getSource(), "stalk")))
 						.then(Commands.literal("drain").executes(c -> lurker(c.getSource(), "drain"))))
 				.then(Commands.literal("hoard").executes(c -> hoard(c.getSource())))
+				.then(Commands.literal("boss")
+						.then(Commands.literal("matriarch").executes(c -> boss(c.getSource(), "matriarch")))
+						.then(Commands.literal("ferryman").executes(c -> boss(c.getSource(), "ferryman")))
+						.then(Commands.literal("weaver").executes(c -> boss(c.getSource(), "weaver"))))
 				.then(Commands.literal("seam").executes(c -> seam(c.getSource())))
 				.then(Commands.literal("break_seal").executes(c -> {
 					MendingService.breakSeal(c.getSource().getServer());
@@ -63,6 +67,22 @@ public final class TetherCommand {
 								.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.Arrays.stream(Penalty.values()).map(p -> p.id), b))
 								.then(Commands.argument("stacks", IntegerArgumentType.integer(0, 99))
 										.executes(c -> setCurse(c.getSource(), StringArgumentType.getString(c, "id"), IntegerArgumentType.getInteger(c, "stacks")))))));
+	}
+
+	/** {@code /tether boss <name>}: one of the Elders comes for the player at once, whatever the world's rules. */
+	private static int boss(CommandSourceStack src, String which) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+		net.minecraft.server.level.ServerPlayer p = src.getPlayerOrException();
+		boolean ok = switch (which) {
+			case "matriarch" -> com.extremedimensions.hollow.HollowService.summonMatriarch(p);
+			case "ferryman" -> com.extremedimensions.elder.FerrymanService.summon(p);
+			default -> com.extremedimensions.elder.WeaverService.summon(p, p.blockPosition().offset(6, 0, 0));
+		};
+		if (ok) {
+			src.sendSuccess(() -> Component.translatable("commands.extremedimensions.boss", Component.translatable("entity.extremedimensions." + which)), true);
+		} else {
+			src.sendFailure(Component.translatable("commands.extremedimensions.boss_failed"));
+		}
+		return ok ? 1 : 0;
 	}
 
 	/** {@code /tether preset <name>}: a difficulty for the whole world at once (also from the server console). */

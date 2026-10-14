@@ -310,6 +310,45 @@ public final class Config {
 	public static int TRIAL_GOLD_ATONE = 90;
 	public static int TRIAL_GOLD_RELICS = 1;
 
+	// --- The Elders: the Matriarch, the Ferryman, the Last Weaver, and a hungrier Starved One ----
+
+	/** Keepers a player must have slain before the next hoard they wake is guarded by the Matriarch (0 = never). */
+	public static int MATRIARCH_AFTER_KEEPERS = 3;
+	/** Hollowlings the Matriarch calls when her health falls below 70% and again below 35%. */
+	public static int MATRIARCH_BROOD = 3;
+	/** Relics the Matriarch always leaves. */
+	public static int MATRIARCH_RELICS = 1;
+	/** When the Ferryman comes: 0 = from the start, 1 = after the Ender Dragon falls, 2 = after the Starved One falls. */
+	public static int FERRYMAN_UNLOCK = 1;
+	/** Active seconds on a Nether expedition before the Ferryman may come (once per expedition). */
+	public static int FERRYMAN_AFTER_SECONDS = 300;
+	/** Chance he comes once that time has passed; each stack of Ferryman's Fee adds the same again. */
+	public static double FERRYMAN_CHANCE = 0.2;
+	/** While he lives, the Tether drains this many times faster (half again more once he is wounded below half). */
+	public static double FERRYMAN_DRAIN = 2.0;
+	/** Levels each of his blows takes. */
+	public static int FERRYMAN_TOLL_LEVELS = 1;
+	/** Levels he collects from someone who goes home while he still lives. */
+	public static int FERRYMAN_ESCAPE_LEVELS = 5;
+	/** Chance he leaves a relic. */
+	public static double FERRYMAN_RELIC_CHANCE = 0.5;
+	/** When the Last Weaver wakes: 0 = from the start, 1 = after the Ender Dragon falls, 2 = after the Starved One falls. */
+	public static int WEAVER_UNLOCK = 2;
+	/** Chance the Last Weaver wakes at a village of the Thinned on its first visit (each village rolls once). */
+	public static double WEAVER_CHANCE = 0.4;
+	/** Seconds of Seam time each of the Weaver's blows unpicks. */
+	public static int WEAVER_TIME_THEFT = 10;
+	/** Seconds of Seam time given back to everyone near when it falls. */
+	public static int WEAVER_TIME_GIFT = 60;
+	/** Relics the Last Weaver always leaves. */
+	public static int WEAVER_RELICS = 1;
+	/** The Starved One's health grows by this share for every player at the Heart beyond the first. */
+	public static double STARVED_HEALTH_PER_PLAYER = 0.5;
+	/** Below this share of its health the Starved One turns ravenous: faster, quicker tricks, and famine. */
+	public static double STARVED_ENRAGE_AT = 0.3;
+	/** Its speed once ravenous, as a multiple. */
+	public static double STARVED_ENRAGE_SPEED = 1.3;
+
 	// --- Technical -------------------------------------------------------------------------------
 
 	/** Milliseconds per tick the Seam may spend building islands (blocks in chunks nobody has loaded wait). */
@@ -344,7 +383,7 @@ public final class Config {
 			Map.entry("offer_count", "curses"), Map.entry("fragment_chance", "lore"), Map.entry("lurker_enabled", "lurker"),
 			Map.entry("hoard_wild_chance", "hollow"), Map.entry("soul_woven_drain", "weaving"), Map.entry("seam_seconds", "seam"),
 			Map.entry("storm_chance", "dragon"), Map.entry("relic_ember_heart_nether", "relics"), Map.entry("pact_unlock", "pacts"),
-			Map.entry("trial_unlock", "trials"),
+			Map.entry("trial_unlock", "trials"), Map.entry("matriarch_after_keepers", "elders"),
 			Map.entry("seam_build_budget_ms", "technical"));
 
 	/** One setting: its key in the file, its section, the field behind it and its default (as text). */

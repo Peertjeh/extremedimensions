@@ -89,6 +89,7 @@ public final class ExpeditionService {
 		}
 		d.inRun = true;
 		d.runActive = 0;
+		d.ferrymanRolled = false;
 		com.extremedimensions.pact.PactService.begin(p, d);
 		d.runTime = 0;
 		d.runMax = total;
@@ -200,7 +201,7 @@ public final class ExpeditionService {
 		boolean changed = false;
 		if (Dims.isBeyond(dim) && d.inRun && !d.collapsing) {
 			d.currentDrain = d.drainMultiplier() * TetherService.distanceFactor(p, d) * WorldService.drainFactor(dim)
-					* com.extremedimensions.relic.RelicService.drainFactor(d, dim);
+					* com.extremedimensions.relic.RelicService.drainFactor(d, dim) * com.extremedimensions.elder.FerrymanService.drainFactor(p);
 			double left = AnchorService.drainLinked(p, d, d.currentDrain / 20.0);
 			d.runTime += 1.0 / 20.0;
 			double far = TetherService.arrivalDistance(p, d);

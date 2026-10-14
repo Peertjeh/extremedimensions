@@ -36,7 +36,10 @@ public enum JournalEntry {
 	STORMS("storms"),
 	HEART("heart"),
 	WANDERER("wanderer"),
-	ENDING("ending");
+	ENDING("ending"),
+	MATRIARCH("matriarch"),
+	FERRYMAN("ferryman"),
+	LAST_WEAVER("last_weaver");
 
 	public final String id;
 

@@ -216,7 +216,7 @@ public final class SeamFauna {
 	private static boolean thin(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
 		return d.inSeam && !p.isCreative() && (d.seamPull > 0 || (d.seamMax > 0 && d.seamLeft < d.seamMax / 3)
-				|| com.extremedimensions.trial.TrialService.hunted(d));
+				|| com.extremedimensions.trial.TrialService.hunted(d) || com.extremedimensions.elder.WeaverService.hunting(p));
 	}
 
 	/** True when any player close by is looking at it. */
@@ -243,6 +243,14 @@ public final class SeamFauna {
 			}
 		}
 		return best;
+	}
+
+	/** A Thinned called to a fight (the Last Weaver's kin), driven like those of the villages. */
+	public static void summonThinned(ServerLevel level, BlockPos at) {
+		Thinned t = ModEntities.THINNED.spawn(level, at, EntitySpawnReason.EVENT);
+		if (t != null) {
+			DRIVEN.put(t.getUUID(), new Driven(THINNED));
+		}
 	}
 
 	/** What the fauna leave behind. */

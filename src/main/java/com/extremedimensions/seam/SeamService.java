@@ -338,6 +338,8 @@ public final class SeamService {
 			if (dx * dx + dz * dz < 16 * 16) {
 				Advancements.grant(p, Advancements.THINNED_FOUND);
 				Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.THINNED);
+				// The first visit to a village may wake its Weaver
+				com.extremedimensions.elder.WeaverService.nearVillage(p, Integer.parseInt(xyz[0]), Integer.parseInt(xyz[1]), Integer.parseInt(xyz[2]));
 				return;
 			}
 		}

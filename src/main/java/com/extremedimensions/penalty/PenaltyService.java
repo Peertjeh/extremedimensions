@@ -343,7 +343,7 @@ public final class PenaltyService {
 	}
 
 	/** One stack comes off a curse, and leaves a scar (up to five). */
-	private static void lift(ServerPlayer p, PlayerData d, Penalty t, String messageKey) {
+	public static void lift(ServerPlayer p, PlayerData d, Penalty t, String messageKey) {
 		if (!d.removeStack(t)) {
 			return;
 		}

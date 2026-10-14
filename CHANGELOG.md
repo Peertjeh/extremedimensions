@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.11.0: The Elders
+
+*Older than the Keepers. Older than the hunger. Some of them were people once.*
+
+### Added
+- **The Matriarch** (Overworld and Nether): once you have slain three Keepers, the next hoard you wake is guarded by
+  their mother. Taller than any Keeper, with a red boss bar everyone near can see. Below 70% and again below 35% of
+  her health she calls her brood (Hollowlings that steal while she fights), and up close she wails: darkness,
+  weakness and slowness for everyone within 16 blocks. She always leaves a relic, four Tether Fragments and two
+  Wanderer's Pages. After she falls, hoards are guarded by Keepers again.
+- **The Ferryman** (Nether, after the Ender Dragon falls): after five active minutes on a Nether expedition he may
+  come to collect (one chance in five, more for every stack of Ferryman's Fee you carry). While he walks your Tether
+  drains twice as fast (three times once he is below half health), each of his blows takes a level, and he pulls you
+  back to him or rings a knell that weakens you. Go home with him still walking and he takes five levels anyway. Slay
+  him for three Tether Fragments, an even chance at a relic, and one stack of Ferryman's Fee waived.
+- **The Last Weaver** (the Seam, after the Starved One falls): the first visit to each village of the Thinned may wake
+  its Weaver (two chances in five). Every blow it lands unpicks ten seconds of your Seam time, it draws you in on a
+  thread, and below 60% and 30% of its health it calls its Thinned kin, who hunt everyone near it. Slain, it gives its
+  thread back: a minute more in the Seam for everyone near, eight Seam Silk, three Tether Fragments and a relic.
+- **A hungrier Starved One**: it gains half its health again for every player at the Heart beyond the first, and below
+  30% of its health it turns ravenous: 30% faster, its tricks come sooner, and each one brings famine.
+- Three journal pages (XXXII to XXXIV), three advancements (Mother of Masks, Fare Dodger, Unravelled) and
+  `/tether boss matriarch|ferryman|weaver` for operators.
+- Every number of the Elders is a world rule (Settings → World rules → The Elders), as is when the Ferryman and the
+  Last Weaver first appear.
+
 ## 2.10.0: Rift Trials
 
 *The Seam keeps score.*

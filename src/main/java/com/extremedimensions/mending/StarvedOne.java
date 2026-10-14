@@ -15,6 +15,9 @@ import net.minecraft.world.level.Level;
  * towering thing in the Lurker's shape, driven by {@link MendingService}.
  */
 public class StarvedOne extends Keeper {
+	/** Its health with one player at the Heart (more come, more it has: see MendingService.healthFor). */
+	public static final double BASE_HEALTH = 500.0;
+
 	public StarvedOne(EntityType<? extends Monster> type, Level level) {
 		super(type, level);
 		this.xpReward = 300;
@@ -22,7 +25,7 @@ public class StarvedOne extends Keeper {
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return Monster.createMonsterAttributes()
-				.add(Attributes.MAX_HEALTH, 500.0)
+				.add(Attributes.MAX_HEALTH, BASE_HEALTH)
 				.add(Attributes.MOVEMENT_SPEED, 0.3)
 				.add(Attributes.FOLLOW_RANGE, 64.0)
 				.add(Attributes.KNOCKBACK_RESISTANCE, 1.0)

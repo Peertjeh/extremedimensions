@@ -85,6 +85,8 @@ public final class ServerEvents {
 			com.extremedimensions.seam.SeamFauna.clear();
 			WorldService.clear();
 			MendingService.clear();
+			com.extremedimensions.elder.FerrymanService.clear();
+			com.extremedimensions.elder.WeaverService.clear();
 			AtonementGuard.clear();
 			DataStore.unload();
 			WorldFx.bind(null);
@@ -108,6 +110,16 @@ public final class ServerEvents {
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(CurseEffects::afterDamage);
 		ServerLivingEntityEvents.ALLOW_DEATH.register(ExtremeCurses::oath);
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(AtonementGuard::damaged);
+		// The Elders' blows: the Ferryman takes levels, the Weaver unpicks Seam time
+		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseTaken, taken, blocked) -> {
+			if (entity instanceof ServerPlayer p && !blocked && taken > 0) {
+				if (source.getEntity() instanceof com.extremedimensions.elder.Ferryman) {
+					com.extremedimensions.elder.FerrymanService.toll(p);
+				} else if (source.getEntity() instanceof com.extremedimensions.elder.Weaver) {
+					com.extremedimensions.elder.WeaverService.unweave(p);
+				}
+			}
+		});
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if ("minecraft:ender_dragon".equals(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString()) && WorldFx.server() != null) {
 				WorldService.onDragonDeath(WorldFx.server());
@@ -122,6 +134,10 @@ public final class ServerEvents {
 				ExpeditionService.onDeath(p);
 			} else if (entity instanceof StarvedOne so) {
 				MendingService.onDefeat(so);
+			} else if (entity instanceof com.extremedimensions.elder.Ferryman f) {
+				com.extremedimensions.elder.FerrymanService.onDefeat(f, source.getEntity());
+			} else if (entity instanceof com.extremedimensions.elder.Weaver w) {
+				com.extremedimensions.elder.WeaverService.onDefeat(w, source.getEntity());
 			} else if (entity instanceof Keeper k) {
 				HollowService.onKeeperDeath(k, source.getEntity());
 			} else if (entity instanceof Hollowling h) {
@@ -322,6 +338,8 @@ public final class ServerEvents {
 		com.extremedimensions.seam.SeamFauna.tick(s);
 		WorldService.tick(s);
 		MendingService.tick(s);
+		com.extremedimensions.elder.FerrymanService.tick(s);
+		com.extremedimensions.elder.WeaverService.tick(s);
 	}
 
 	/** Journal pages found by exploring. */

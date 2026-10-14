@@ -37,6 +37,9 @@ public final class Advancements {
 	public static final String STARVED_SLAIN = "starved_slain";
 	public static final String ENDING_MENDED = "ending_mended";
 	public static final String ENDING_SEVERED = "ending_severed";
+	public static final String MATRIARCH_SLAIN = "matriarch_slain";
+	public static final String FERRYMAN_SLAIN = "ferryman_slain";
+	public static final String WEAVER_SLAIN = "weaver_slain";
 
 	/** Expeditions needed for {@link #VETERAN}. */
 	public static final int VETERAN_EXPEDITIONS = 10;

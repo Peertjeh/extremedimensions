@@ -279,6 +279,21 @@ public class ClientShots implements FabricClientGameTest {
 				ctx.takeScreenshot("06_tribe_" + i);
 			}
 
+			// The Elders, by daylight: the Matriarch between the Ferryman and the Last Weaver
+			sp.getServer().runCommand("kill @e[type=extremedimensions:lurker]");
+			sp.getServer().runCommand("kill @e[type=extremedimensions:hollowling]");
+			sp.getServer().runCommand("kill @e[type=extremedimensions:keeper]");
+			sp.getServer().runCommand("time set noon");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:matriarch ^ ^ ^9 {NoAI:1b,Rotation:[180f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:ferryman ^4.5 ^ ^7 {NoAI:1b,Rotation:[200f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:weaver ^-4.5 ^ ^7 {NoAI:1b,Rotation:[160f,0f]}");
+			ctx.waitTicks(15);
+			ctx.takeScreenshot("10_elders");
+			sp.getServer().runCommand("kill @e[type=extremedimensions:matriarch]");
+			sp.getServer().runCommand("kill @e[type=extremedimensions:ferryman]");
+			sp.getServer().runCommand("kill @e[type=extremedimensions:weaver]");
+			ctx.waitTicks(3);
+
 			// Rift Trials: the screen (asked for as the button does) with a board, then taken up
 			sp.getServer().runOnServer(s -> {
 				com.extremedimensions.trial.TrialService.roll();

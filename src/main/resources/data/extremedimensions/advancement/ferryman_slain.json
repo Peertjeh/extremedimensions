@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:seal_broken",
+  "display": {
+    "icon": {
+      "id": "minecraft:bell"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.ferryman_slain.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.ferryman_slain.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -24,6 +24,11 @@ public class PlayerData {
 	public Map<String, Integer> curses = new HashMap<>();
 	/** The sworn pact: extra stacks of curses taken on willingly, acting on expeditions (see PactService). */
 	public Map<String, Integer> pact = new HashMap<>();
+	/** The Elders: Keepers slain (the Matriarch comes after enough of them), and whether she has fallen to this player. */
+	public int keepersSlain = 0;
+	public boolean matriarchSlain = false;
+	/** Whether the Ferryman has had his chance on this expedition. */
+	public transient boolean ferrymanRolled = false;
 	/** Rift Trials: taken up for the next visit to the Seam, the one under way, and the medals already paid this week. */
 	public boolean trialArmed = false;
 	public com.extremedimensions.trial.TrialRun trial = null;

@@ -126,6 +126,9 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ModelLayerRegistry.registerModelLayer(VeilRayModel.LAYER, VeilRayModel::createBodyLayer);
 		EntityRendererRegistry.register(ModEntities.VEIL_RAY, VeilRayRenderer::new);
 		EntityRendererRegistry.register(ModEntities.THINNED, ctx -> new LurkerRenderer<>(ctx, "thinned", 1.05F, 0.7F, false));
+		EntityRendererRegistry.register(ModEntities.MATRIARCH, ctx -> new LurkerRenderer<>(ctx, "matriarch", 2.05F, 1.6F, false));
+		EntityRendererRegistry.register(ModEntities.FERRYMAN, ctx -> new LurkerRenderer<>(ctx, "ferryman", 1.85F, 1.4F, false));
+		EntityRendererRegistry.register(ModEntities.WEAVER, ctx -> new LurkerRenderer<>(ctx, "weaver", 1.85F, 1.0F, false));
 
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.StatePayload.TYPE, (payload, context) ->
 				context.client().execute(() -> ClientState.apply(payload)));

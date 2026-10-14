@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.journal.Journal;
@@ -35,6 +36,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 
 /**
  * The Mending, the end of the story.
@@ -85,6 +87,7 @@ public final class MendingService {
 		bar = null;
 		boss = null;
 		stun = 0;
+		ravenous = false;
 		java.util.Arrays.fill(LIT, false);
 	}
 
@@ -144,6 +147,14 @@ public final class MendingService {
 		drive(seam);
 	}
 
+	/** Ravenous: below {@code starved_enrage_at} of its health it is faster, its tricks come sooner and bring famine. */
+	private static boolean ravenous = false;
+
+	/** The Starved One's health for this many players at the Heart: more for every one beyond the first. */
+	public static double healthFor(int players) {
+		return StarvedOne.BASE_HEALTH * (1 + Math.max(0, players - 1) * Math.max(0, Config.STARVED_HEALTH_PER_PLAYER));
+	}
+
 	private static void start(ServerLevel seam, ServerPlayer p) {
 		StarvedOne so = ModEntities.STARVED_ONE.spawn(seam, new BlockPos(HX, HY + 1, HZ - 8), EntitySpawnReason.EVENT);
 		if (so == null) {
@@ -151,6 +162,19 @@ public final class MendingService {
 		}
 		so.setPersistenceRequired();
 		so.setTarget(p);
+		// The more who come to end it, the more it has drunk
+		int players = 0;
+		for (ServerPlayer q : seam.players()) {
+			if (inArena(q) && !q.isSpectator()) {
+				players++;
+			}
+		}
+		var health = so.getAttribute(Attributes.MAX_HEALTH);
+		if (health != null) {
+			health.setBaseValue(healthFor(Math.max(1, players)));
+			so.setHealth(so.getMaxHealth());
+		}
+		ravenous = false;
 		boss = so.getUUID();
 		ticks = 0;
 		stun = 0;
@@ -222,6 +246,19 @@ public final class MendingService {
 			WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 2.5, so.getZ(), 0.8, 1.5, 0.8, 0, 2);
 		}
 		float f = so.getHealth() / so.getMaxHealth();
+		if (!ravenous && f <= Config.STARVED_ENRAGE_AT) {
+			// Ravenous: it moves faster and its tricks come sooner
+			ravenous = true;
+			var speed = so.getAttribute(Attributes.MOVEMENT_SPEED);
+			if (speed != null) {
+				speed.setBaseValue(speed.getBaseValue() * Math.max(1, Config.STARVED_ENRAGE_SPEED));
+			}
+			roar(so, 5f);
+			for (ServerPlayer p : arena) {
+				p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.starved_ravenous"), true);
+			}
+			nextTrick = Math.min(nextTrick, 40);
+		}
 		if (--nextTrick <= 0) {
 			ThreadLocalRandom rnd = ThreadLocalRandom.current();
 			if (f <= 0.25f) {
@@ -233,6 +270,13 @@ public final class MendingService {
 			} else {
 				nextTrick = 150 + rnd.nextInt(60);
 				blink(so, target);
+			}
+			if (ravenous) {
+				nextTrick = nextTrick * 3 / 5;
+				// Famine: everyone at the Heart starves a little with every trick
+				for (ServerPlayer p : arena) {
+					WorldFx.effect(p, MobEffects.HUNGER, 5, 1);
+				}
 			}
 		}
 		// The Thinned fight beside those who befriended one of their young
