@@ -23,6 +23,9 @@
 ### Changed
 - **No big title on respawn.** Dying no longer shows "The Tether Tightens" or "Expedition Ended" across the screen;
   the dark haze and the sound remain. Servers that want the title back set `respawn_title` to 1.
+- **Curses take longer to atone for**: 120 points for a curse's last stack (was 100) and 60 more for every stack above
+  it (was 50), from a balance model of points earned per hour against deaths. A config that still holds the old
+  defaults takes the new ones; values someone chose stay.
 - **Tether Fragments only drop from wild kills**, by the same rules as atonement from kills: a blaze spawner no longer
   yields fragments that lift curses.
 - **Reduce flashing** removes the strobes, shakes and glitches (the Collapse, the broken seal, Lurker thefts, Wound

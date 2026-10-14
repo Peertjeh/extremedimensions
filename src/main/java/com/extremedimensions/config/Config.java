@@ -101,8 +101,8 @@ public final class Config {
 	/** Share of every curse's atonement a death takes away (0.5 = half, 0 = none, 1 = all). */
 	public static double ATONE_DEATH_LOSS = 0.5;
 	/** Points needed for a curse's last stack, and how many more for every stack above it. */
-	public static int ATONE_BASE = 100;
-	public static int ATONE_PER_STACK = 50;
+	public static int ATONE_BASE = 120;
+	public static int ATONE_PER_STACK = 60;
 	/** Chance that one card of an offer is an Extreme curse (never multiplied). */
 	public static double EXTREME_CARD_CHANCE = 0.025;
 	/** How likely a spilled stack lands on an Extreme curse compared to any other curse (1 = as likely, 0 = never). */
@@ -237,6 +237,20 @@ public final class Config {
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
+	/** Layout version of the config file; files from before a version are brought up to date on loading. */
+	private static final int VERSION = 2;
+
+	/**
+	 * Defaults that changed, by the version that changed them: {key, old default, new default}. A file still holding
+	 * the old default gets the new one; a value someone chose stays.
+	 */
+	private static final String[][][] MIGRATIONS = {
+		{},
+		{},
+		// 2.7.0: curses take longer to atone for (balance model, option C)
+		{{"atone_base", "100", "120"}, {"atone_per_stack", "50", "60"}},
+	};
+
 	/**
 	 * Where each section of the settings starts (its first setting), in the order above; the in-game settings screen
 	 * groups the settings by these. A setting belongs to the last section that started before it.
@@ -317,8 +331,25 @@ public final class Config {
 			pen.max = pen.defaultMax;
 			pen.value = pen.defaultValue;
 		}
+		migrate(json);
 		apply(json);
 		save();
+	}
+
+	/** Brings an older file up to the current defaults where it still held the old ones (see MIGRATIONS). */
+	public static void migrate(JsonObject json) {
+		int from = json.has("config_version") ? json.get("config_version").getAsInt() : 1;
+		if (json.size() == 0) {
+			return;
+		}
+		for (int v = from + 1; v <= VERSION && v < MIGRATIONS.length; v++) {
+			for (String[] m : MIGRATIONS[v]) {
+				if (json.has(m[0]) && json.get(m[0]).getAsString().equals(m[1])) {
+					json.addProperty(m[0], Integer.parseInt(m[2]));
+					ExtremeDimensions.LOGGER.info("Config: {} follows its new default {} (was the old default {})", m[0], m[2], m[1]);
+				}
+			}
+		}
 	}
 
 	/** Takes over every value the json holds (the file's layout); a value that does not fit keeps the current one. */
@@ -389,7 +420,9 @@ public final class Config {
 	public static void save() {
 		Path file = file();
 		try {
-			com.extremedimensions.data.DataStore.writeAtomically(file, toJson());
+			JsonObject out = snapshot();
+			out.addProperty("config_version", VERSION);
+			com.extremedimensions.data.DataStore.writeAtomically(file, GSON.toJson(out));
 		} catch (IOException e) {
 			ExtremeDimensions.LOGGER.warn("Could not write {}", file, e);
 		}
