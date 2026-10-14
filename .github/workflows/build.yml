@@ -32,10 +32,10 @@ jobs:
       - name: api probe
         if: always() && contains(github.event.head_commit.message, '[probe]')
         run: |
-          jar=$(find ~/.gradle/caches .gradle -name "*.jar" 2>/dev/null | grep -i minecraft | grep -iv -e sources -e intermediary -e fabric-api -e loader | xargs ls -S 2>/dev/null | head -1)
-          echo "API|jar $jar"
-          grep -v '^#' tools/probe.txt | while read -r c; do [ -n "$c" ] && javap -cp "$jar" -p "$c" 2>&1 | sed "s/^/API|/"; done
-          unzip -l "$jar" | awk '{print $4}' | grep -E "$(grep '^#' tools/probe.txt | sed 's/^#//' | paste -sd'|')" | sed "s/^/APICLASS|/" | head -200
+          find ~/.gradle/caches/fabric-loom .gradle/loom-cache -name "*.jar" 2>/dev/null | grep -i minecraft | grep -v sources | xargs ls -la 2>/dev/null | sed "s/^/APIJAR|/"
+          cp=$(find ~/.gradle/caches/fabric-loom .gradle/loom-cache -name "*.jar" 2>/dev/null | grep -i minecraft | grep -v -e sources -e "minecraft-server.jar" -e "minecraft-client.jar" | paste -sd:)
+          grep -v '^#' tools/probe.txt | while read -r c; do [ -n "$c" ] && javap -cp "$cp" -p "$c" 2>&1 | sed "s/^/API|/"; done
+          for j in $(echo "$cp" | tr ':' ' '); do unzip -l "$j" | awk '{print $4}'; done | sort -u | grep -E "$(grep '^#' tools/probe.txt | sed 's/^#//' | paste -sd'|')" | sed "s/^/APICLASS|/" | head -300
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:

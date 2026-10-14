@@ -161,7 +161,13 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 						new JournalScreen(new HashSet<>(Arrays.asList(payload.ids().split(","))),
 								JournalButton.takeReturn()))));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BossMusicPayload.TYPE, (payload, context) ->
-				context.client().execute(() -> com.extremedimensions.client.audio.BossMusic.request(payload.track())));
+				context.client().execute(() -> {
+					if (payload.stop()) {
+						com.extremedimensions.client.audio.BossMusic.stop(payload.track());
+					} else {
+						com.extremedimensions.client.audio.BossMusic.request(payload.track());
+					}
+				}));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.TrialsPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.screen.TrialsScreen.receive(payload.data())));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.SettingsPayload.TYPE, (payload, context) ->
