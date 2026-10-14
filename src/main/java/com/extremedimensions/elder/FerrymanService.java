@@ -400,7 +400,7 @@ public final class FerrymanService {
 			f.motion.turn(f, (float) (Math.atan2(fare.dirZ, fare.dirX) * 180 / Math.PI) - 90f, 8f);
 			ElderFx.look(f, p);
 			double fx = f.getX() + fare.dirX * 7, fz = f.getZ() + fare.dirZ * 7;
-			ElderTerrain.furrow(level, fx, f.getY(), fz, 2.2, 1, 3, 4);
+			ElderTerrain.furrow(level, fx, f.getY(), fz, 2.2, 1, 3, 7);
 			if (fare.ticks % 2 == 0) {
 				ElderTerrain.mark(level, f.getX() - fare.dirX * 6, f.getY(), f.getZ() - fare.dirZ * 6, 2, 0.5, ElderTerrain.Mark.SOUL);
 			}

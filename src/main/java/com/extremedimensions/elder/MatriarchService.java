@@ -189,7 +189,7 @@ public final class MatriarchService {
 			double ground = m.getY() + f.sunk - f.ticks * f.sunk / RISE_TICKS;
 			WorldFx.particleIn(m.level(), "minecraft:large_smoke", m.getX(), ground, m.getZ(), 3, 0.4, 3, 0.02, 6);
 			if (f.ticks % 6 == 0) {
-				ElderTerrain.furrow(f.level, m.getX(), ground + 1, m.getZ(), 2.5, 0, 2, 3);
+				ElderTerrain.furrow(f.level, m.getX(), ground + 1, m.getZ(), 2.5, 0, 2, 4);
 			}
 			if (f.ticks >= RISE_TICKS) {
 				f.end(m, 40);
@@ -298,7 +298,7 @@ public final class MatriarchService {
 			double a = -1.1 + 2.2 * i / 8;
 			double cx = fx * Math.cos(a) - fz * Math.sin(a), cz = fz * Math.cos(a) + fx * Math.sin(a);
 			WorldFx.particleIn(level, "minecraft:sweep_attack", m.getX() + cx * 8, m.getY() + 3, m.getZ() + cz * 8, 0, 0, 0, 0, 1);
-			ElderTerrain.furrow(level, m.getX() + cx * 9, m.getY(), m.getZ() + cz * 9, 1.4, 0, 2, 3);
+			ElderTerrain.furrow(level, m.getX() + cx * 9, m.getY(), m.getZ() + cz * 9, 1.4, 0, 2, 7);
 		}
 		WorldFx.soundIn(dim, "minecraft:entity.player.attack.sweep", "hostile", m.getX(), m.getY() + 4, m.getZ(), 4f, 0.4f);
 		ElderFx.shake(m, m.getX(), m.getZ(), 24, 0.5f, 10);
@@ -377,7 +377,7 @@ public final class MatriarchService {
 			m.motion.drive(m, f.dirX * sp, f.dirZ * sp, 0.22, 0);
 			m.motion.turn(m, (float) (Math.atan2(f.dirZ, f.dirX) * 180 / Math.PI) - 90f, 8f);
 			double fx = m.getX() + f.dirX * 3, fz = m.getZ() + f.dirZ * 3;
-			ElderTerrain.furrow(level, fx, m.getY(), fz, 2.6, 1, 4, 3);
+			ElderTerrain.furrow(level, fx, m.getY(), fz, 2.6, 1, 4, 6);
 			WorldFx.particleIn(level, "minecraft:campfire_cosy_smoke", fx, m.getY() + 1, fz, 1.5, 0.5, 1.5, 0.03, 4);
 			WorldFx.particleIn(level, "minecraft:crit", fx, m.getY() + 2, fz, 2, 1, 2, 0.3, 8);
 			if (f.ticks % 3 == 0) {

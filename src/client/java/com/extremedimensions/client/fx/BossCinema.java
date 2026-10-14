@@ -43,6 +43,10 @@ public class BossCinema implements HudElement {
 			}
 			case ModPackets.BossFxPayload.SHAKE -> CameraShake.add(fx.strength(), fx.value());
 			case ModPackets.BossFxPayload.MOVE -> {
+				// A blow called while the title card still shows: the card makes way
+				if (introAt >= 0 && now - introAt < 4100) {
+					introAt = now - 4100;
+				}
 				moveAt = now;
 				moveKey = fx.key();
 				moveBoss = boss;
@@ -177,7 +181,7 @@ public class BossCinema implements HudElement {
 		// The edges darken in its colour, pulsing faster as it builds
 		if (!calm) {
 			double pulse = 0.5 + 0.5 * Math.sin((now - ultAt) / 1000.0 * (2 + run * 8));
-			Ui.vignette(g, w, h, Ui.mix(Ui.SHADOW, colour, 0.35), (int) (24 * k * (0.6 + 0.4 * pulse)), 10);
+			Ui.vignette(g, w, h, Ui.mix(Ui.SHADOW, colour, 0.35), (int) (9 * k * (0.6 + 0.4 * pulse)), 26);
 		}
 		int bar = (int) (h * 0.12 * k);
 		g.fill(0, 0, w, bar, Ui.argb(0.96 * k, 0x000000));

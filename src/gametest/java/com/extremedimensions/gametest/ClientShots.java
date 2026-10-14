@@ -40,7 +40,9 @@ public class ClientShots implements FabricClientGameTest {
 	private static void liveFight(ClientGameTestContext ctx, TestSingleplayerContext sp, String name, int settle,
 			java.util.function.Consumer<MinecraftServer> summon, java.util.function.BiPredicate<net.minecraft.world.entity.Entity, Integer> force,
 			int[] blows, String[] blowNames) {
-		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
+		// Each fight on untouched ground, away from the last one's craters and fires
+		sp.getServer().runCommand("execute as @a at @s run tp @s ~120 ~ ~ 0 0");
+		ctx.waitTicks(20);
 		sp.getServer().runOnServer(summon::accept);
 		ctx.waitTicks(settle);
 		face(sp, name);
@@ -350,7 +352,7 @@ public class ClientShots implements FabricClientGameTest {
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~" + (up - 6) + " ~" + (dist - 10) + " 0 -4");
 				ctx.waitTicks(12);
 				ctx.takeScreenshot("10_elder_" + elder[0] + "_close");
-				sp.getServer().runCommand("kill @e[type=extremedimensions:" + elder[0] + "]");
+				sp.getServer().runOnServer(s -> elders(s).forEach(net.minecraft.world.entity.Entity::discard));
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~" + (-up) + " ~" + (10 - dist) + " 0 0");
 				ctx.waitTicks(20);
 			}
@@ -362,9 +364,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~5 ~ 0 -6");
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("10_elders_night");
-			sp.getServer().runCommand("kill @e[type=extremedimensions:matriarch]");
-			sp.getServer().runCommand("kill @e[type=extremedimensions:ferryman]");
-			sp.getServer().runCommand("kill @e[type=extremedimensions:weaver]");
+			sp.getServer().runOnServer(s -> elders(s).forEach(net.minecraft.world.entity.Entity::discard));
 			sp.getServer().runCommand("time set noon");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-5 ~ 0 0");
 			ctx.waitTicks(10);
@@ -385,7 +385,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~6 ~ 0 -3");
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("11_intro_weaver");
-			sp.getServer().runCommand("kill @e[type=extremedimensions:weaver]");
+			sp.getServer().runOnServer(s -> elders(s).forEach(net.minecraft.world.entity.Entity::discard));
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-6 ~ 0 0");
 			ctx.waitTicks(20);
 			String[][] ultimates = {{"matriarch", "22", "180", "0"}, {"ferryman", "24", "220", "1"}, {"weaver", "23", "180", "2"}};
@@ -410,7 +410,7 @@ public class ClientShots implements FabricClientGameTest {
 				ctx.waitTicks(20);
 				ctx.takeScreenshot("11_ultimate_" + elder[0]);
 				ctx.runOnClient(mc -> com.extremedimensions.client.fx.BossCinema.reset());
-				sp.getServer().runCommand("kill @e[type=extremedimensions:" + elder[0] + "]");
+				sp.getServer().runOnServer(s -> elders(s).forEach(net.minecraft.world.entity.Entity::discard));
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-6 ~ 0 0");
 				ctx.waitTicks(20);
 			}
@@ -422,6 +422,7 @@ public class ClientShots implements FabricClientGameTest {
 			com.extremedimensions.config.Config.ELDER_ULTIMATE_CURSES = 0;
 			sp.getServer().runCommand("effect give @a minecraft:resistance infinite 255 true");
 			sp.getServer().runCommand("effect give @a minecraft:saturation infinite 10 true");
+			sp.getServer().runCommand("effect give @a minecraft:fire_resistance infinite 0 true");
 			ctx.waitTicks(10);
 			liveFight(ctx, sp, "matriarch", 75, s -> com.extremedimensions.elder.MatriarchService.summon(player(s), "shots", player(s).blockPosition()),
 					com.extremedimensions.elder.MatriarchService::force, new int[] {com.extremedimensions.elder.Matriarch.RUSH,

@@ -207,8 +207,8 @@ public final class ElderTerrain {
 	private static BlockState cover(Mark mark, ThreadLocalRandom rnd) {
 		return switch (mark) {
 			case ROOT -> rnd.nextInt(5) == 0 ? Blocks.HANGING_ROOTS.defaultBlockState() : rnd.nextInt(4) == 0 ? Blocks.DEAD_BUSH.defaultBlockState() : null;
-			case SOUL -> rnd.nextInt(3) == 0 ? Blocks.SOUL_FIRE.defaultBlockState() : null;
-			default -> rnd.nextInt(4) == 0 ? Blocks.FIRE.defaultBlockState() : null;
+			case SOUL -> rnd.nextInt(5) == 0 ? Blocks.SOUL_FIRE.defaultBlockState() : null;
+			default -> rnd.nextInt(12) == 0 ? Blocks.FIRE.defaultBlockState() : null;
 		};
 	}
 
