@@ -60,6 +60,9 @@ public class ChargeHud implements HudElement {
 		int count = (ClientState.nearNether >= 0 ? 1 : 0) + (ClientState.nearEnd >= 0 ? 1 : 0) + (tether ? 1 : 0);
 		List<String> guide = guideLines(font);
 		int guideH = guide.isEmpty() ? 0 : guide.size() * 9 + 17;
+		if (guide.isEmpty()) {
+			guideClose = null;
+		}
 		if (count == 0 && guide.isEmpty()) {
 			return;
 		}
@@ -139,12 +142,26 @@ public class ChargeHud implements HudElement {
 		return Ui.wrap(font, Ui.tr("gui.extremedimensions.guide." + (done + 1)), GUIDE_W - 10);
 	}
 
+	/**
+	 * Where the guide card's close cross is on the screen (x, y, size in GUI pixels), or null while no card is shown.
+	 * The HUD cannot be clicked during play; with the chat open the cross can (see GuideCloseButton).
+	 */
+	public static volatile int[] guideClose = null;
+
 	private static void guideCard(GuiGraphicsExtractor g, Font font, int x, int y, List<String> lines, int h) {
 		Ui.chip(g, x, y, GUIDE_W, h, Ui.SOUL, 0.95);
 		String head = Ui.tr("gui.extremedimensions.guide.title").toUpperCase();
 		g.text(font, head, x + 5, y + 4, Ui.argb(255, Ui.SOUL));
 		String step = (ClientState.guide + 1) + "/" + Guide.STEPS;
-		g.text(font, step, x + GUIDE_W - 5 - font.width(step), y + 4, Ui.argb(255, Ui.MUTED));
+		g.text(font, step, x + GUIDE_W - 16 - font.width(step), y + 4, Ui.argb(255, Ui.MUTED));
+		// The close cross, top right
+		int cx = x + GUIDE_W - 11, cy = y + 4;
+		for (int i = 0; i < 7; i++) {
+			g.fill(cx + i, cy + i, cx + i + 1, cy + i + 1, Ui.argb(220, Ui.MUTED));
+			g.fill(cx + 6 - i, cy + i, cx + 7 - i, cy + i + 1, Ui.argb(220, Ui.MUTED));
+		}
+		float scale = ClientOptions.hudScale() / 100f;
+		guideClose = new int[] {Math.round((cx - 2) * scale), Math.round((cy - 2) * scale), Math.round(11 * scale)};
 		int ly = y + 15;
 		for (String line : lines) {
 			g.text(font, line, x + 5, ly, Ui.argb(255, Ui.TEXT));

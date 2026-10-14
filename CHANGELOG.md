@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.7.1: Difficulty
+
+### Added
+- **Five difficulties** for the world's rules, applied by an operator in one go (Settings → World rules → Difficulty,
+  with a confirming second click) or from the console with `/tether preset <name>`:
+  - **Pilgrim**: a gentle story (long expeditions, cheap atonement, deaths undo no penance, no multiplied offers or
+    Extreme cards, rare Lurkers and storms).
+  - **Seeker**: forgiving.
+  - **Tethered**: the standard.
+  - **Starved**: hard.
+  - **Severed**: merciless (short expeditions, two cards per offer, a death undoes most penance).
+
+  A difficulty sets fifteen values (atonement, death loss, charge, drain, multiplied offers, cards per offer, Extreme
+  cards, Lurkers, Wound Storms, fragments); every other setting stays. The screen shows which difficulty the rules
+  match, or "Custom".
+- **The first-expedition guide closes with a cross**: open the chat (T) and click the × on its card. It can be turned
+  on again under Settings → Display.
+
+### Notes
+- Only operators (and the owner of a singleplayer world that is not open to LAN) can change the world's rules or its
+  difficulty; the server checks every request, whatever the client sends.
+
 ## 2.7.0: Settled In
 
 *Your game, your way: settings in the game, a guide for the first expedition, calmer screens on request, and Dutch.*

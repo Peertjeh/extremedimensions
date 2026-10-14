@@ -6,6 +6,7 @@ import static com.extremedimensions.gametest.CurseTests.cursed;
 import com.google.gson.JsonObject;
 
 import com.extremedimensions.config.Config;
+import com.extremedimensions.config.Preset;
 import com.extremedimensions.config.SettingsService;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
@@ -77,6 +78,39 @@ public class SettingsTests {
 		check(helper, !SettingsService.canEdit(p), "a player without operator rights may change the world's rules");
 		SettingsService.change(p, "{\"atone_base\":\"999\"}");
 		check(helper, Config.ATONE_BASE == base, "a player without operator rights changed atone_base to %s", Config.ATONE_BASE);
+		SettingsService.change(p, "{\"preset\":\"pilgrim\"}");
+		check(helper, Config.ATONE_BASE == base, "a player without operator rights applied a difficulty (atone_base %s)", Config.ATONE_BASE);
+		helper.succeed();
+	}
+
+	@GameTest
+	public void difficultyPresetsAreSound(GameTestHelper helper) {
+		// The standard preset is exactly the mod's defaults
+		java.util.Map<String, String> defaults = new java.util.LinkedHashMap<>();
+		for (Config.Setting st : Config.settings()) {
+			defaults.put(st.key(), st.fallback());
+		}
+		check(helper, Preset.TETHERED.matches(defaults), "the standard difficulty differs from the defaults");
+		check(helper, Preset.matching(defaults) == Preset.TETHERED, "the defaults are not recognised as the standard difficulty");
+		// From gentle to merciless: atonement costs more and a death undoes more at every step
+		Preset[] all = Preset.values();
+		for (int i = 1; i < all.length; i++) {
+			double a = Double.parseDouble(all[i - 1].values.get("atone_base")), b = Double.parseDouble(all[i].values.get("atone_base"));
+			double la = Double.parseDouble(all[i - 1].values.get("atone_death_loss")), lb = Double.parseDouble(all[i].values.get("atone_death_loss"));
+			check(helper, b > a && lb >= la, "%s is not harder than %s", all[i].id, all[i - 1].id);
+		}
+		// Every preset value is a real setting the world takes
+		JsonObject before = Config.snapshot();
+		try {
+			for (Preset p : all) {
+				for (var e : p.values.entrySet()) {
+					check(helper, Config.set(e.getKey(), e.getValue()), "preset %s has a value the world refuses: %s = %s", p.id, e.getKey(), e.getValue());
+				}
+				check(helper, Preset.matching(Preset.current()) == p, "after applying %s the world's rules are not recognised as it", p.id);
+			}
+		} finally {
+			Config.apply(before);
+		}
 		helper.succeed();
 	}
 

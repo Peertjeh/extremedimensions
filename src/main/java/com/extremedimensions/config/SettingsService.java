@@ -64,31 +64,55 @@ public final class SettingsService {
 		} catch (Exception e) {
 			json = new JsonObject();
 		}
-		int taken = 0;
-		List<String> refused = new ArrayList<>();
-		for (Map.Entry<String, JsonElement> e : json.entrySet()) {
-			String value = e.getValue().isJsonPrimitive() ? e.getValue().getAsString() : "";
-			if (Config.set(e.getKey(), value)) {
-				taken++;
-			} else {
-				refused.add(e.getKey());
-			}
-		}
 		MinecraftServer s = p.level().getServer();
+		// A difficulty preset arrives by name: its values are the server's own, never the client's
+		Preset preset = json.has("preset") && json.get("preset").isJsonPrimitive() ? Preset.byId(json.get("preset").getAsString()) : null;
+		if (preset != null) {
+			applyPreset(s, preset, p.getName().getString());
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.preset.applied", Component.translatable(preset.nameKey())));
+			return;
+		}
+		Map<String, String> changes = new java.util.LinkedHashMap<>();
+		for (Map.Entry<String, JsonElement> e : json.entrySet()) {
+			changes.put(e.getKey(), e.getValue().isJsonPrimitive() ? e.getValue().getAsString() : "");
+		}
+		List<String> refused = new ArrayList<>();
+		int taken = apply(s, changes, refused, p.getName().getString());
 		if (taken > 0) {
-			Config.save();
-			ExtremeDimensions.LOGGER.info("{} changed {} world setting(s)", p.getName().getString(), taken);
-			// Curses' strength may have changed: every player's attribute curses and HUD follow at once
-			for (ServerPlayer q : s.getPlayerList().getPlayers()) {
-				var d = DataStore.get(q.getUUID());
-				CurseEffects.applyEffects(q, d);
-				Sync.state(q, d);
-			}
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.settings.saved", taken));
 		}
 		for (String key : refused) {
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.settings.refused", key));
 		}
 		sendAll(s);
+	}
+
+	/** Applies a difficulty preset (by an operator, the console or a command block) and tells every player. */
+	public static void applyPreset(MinecraftServer s, Preset preset, String by) {
+		apply(s, preset.values, new ArrayList<>(), by);
+		sendAll(s);
+	}
+
+	/** Takes every value that fits, saves them together and lets everyone play by them at once. Returns how many. */
+	private static int apply(MinecraftServer s, Map<String, String> changes, List<String> refused, String by) {
+		int taken = 0;
+		for (Map.Entry<String, String> e : changes.entrySet()) {
+			if (Config.set(e.getKey(), e.getValue())) {
+				taken++;
+			} else {
+				refused.add(e.getKey());
+			}
+		}
+		if (taken > 0) {
+			Config.save();
+			ExtremeDimensions.LOGGER.info("{} changed {} world setting(s)", by, taken);
+			// Curses' strength may have changed: every player's attribute curses and HUD follow at once
+			for (ServerPlayer q : s.getPlayerList().getPlayers()) {
+				var d = DataStore.get(q.getUUID());
+				CurseEffects.applyEffects(q, d);
+				Sync.state(q, d);
+			}
+		}
+		return taken;
 	}
 }

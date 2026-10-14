@@ -47,7 +47,7 @@ import net.minecraft.network.chat.Component;
  * </ul>
  */
 public class SettingsScreen extends Screen {
-	private static final int PW = 372, PH = 228;
+	private static final int PW = 372, PH = 246;
 	private static final int ROW = 22, LIST_ROW = 16;
 	private static final Gson GSON = new Gson();
 
@@ -70,6 +70,11 @@ public class SettingsScreen extends Screen {
 	private EditBox search;
 	private Button apply;
 	private Button reset;
+	/** The difficulty preset to apply (cycled through), and when the apply button was first pressed (to confirm). */
+	private com.extremedimensions.config.Preset target = com.extremedimensions.config.Preset.TETHERED;
+	private Choice presetChoice;
+	private Button presetApply;
+	private long presetArmedAt;
 	private int scroll;
 	private boolean editable;
 
@@ -102,7 +107,7 @@ public class SettingsScreen extends Screen {
 	}
 
 	private int listTop() {
-		return y0() + 68;
+		return y0() + 88;
 	}
 
 	private int listBottom() {
@@ -140,8 +145,19 @@ public class SettingsScreen extends Screen {
 		}, "hud_scale");
 		addChoice(cx, y + ROW * 5, () -> onOff(ClientOptions.guidance()), () -> ClientOptions.setGuidance(!ClientOptions.guidance()), "guidance");
 
-		// World rules
-		search = new EditBox(this.font, x0 + 16, y0 + 46, 150, 14, Component.translatable("gui.extremedimensions.settings.search"));
+		// World rules: a difficulty preset at once, then every value
+		presetChoice = new Choice(x0 + 108, y0 + 44, 124, 16, () -> Ui.tr(target.nameKey()), () -> {
+			var all = com.extremedimensions.config.Preset.values();
+			target = all[(target.ordinal() + 1) % all.length];
+			presetArmedAt = 0;
+			presetChoice.setTooltip(Tooltip.create(Component.translatable(target.descKey())));
+			refreshButtons();
+		}, "difficulty");
+		presetChoice.setTooltip(Tooltip.create(Component.translatable(target.descKey())));
+		this.addRenderableWidget(presetChoice);
+		presetApply = this.addRenderableWidget(Button.builder(Component.translatable("gui.extremedimensions.preset.apply"), b -> applyPreset())
+				.pos(x0 + 238, y0 + 43).size(PW - 238 - 16, 18).build());
+		search = new EditBox(this.font, x0 + 16, y0 + 66, 150, 14, Component.translatable("gui.extremedimensions.settings.search"));
 		search.setHint(Component.translatable("gui.extremedimensions.settings.search"));
 		search.setMaxLength(40);
 		search.setResponder(text -> {
@@ -363,6 +379,35 @@ public class SettingsScreen extends Screen {
 		}
 	}
 
+	/** Applies the chosen difficulty: the first press arms the button, a second one within four seconds applies. */
+	private void applyPreset() {
+		if (!editable) {
+			return;
+		}
+		long now = System.currentTimeMillis();
+		if (now - presetArmedAt > 4000) {
+			presetArmedAt = now;
+			refreshButtons();
+			return;
+		}
+		presetArmedAt = 0;
+		if (online()) {
+			JsonObject json = new JsonObject();
+			json.addProperty("preset", target.id);
+			ClientPlayNetworking.send(new ModPackets.ChangeSettingsPayload(GSON.toJson(json)));
+		} else {
+			target.values.forEach(Config::set);
+			Config.save();
+			takeValues(false);
+		}
+		refreshButtons();
+	}
+
+	/** The preset the world's rules match now, or null for custom rules. */
+	private com.extremedimensions.config.Preset currentPreset() {
+		return com.extremedimensions.config.Preset.matching(current);
+	}
+
 	private void fillDefaults() {
 		if (!editable) {
 			return;
@@ -386,6 +431,11 @@ public class SettingsScreen extends Screen {
 		reset.visible = world;
 		apply.active = editable && n > 0;
 		reset.active = editable;
+		presetChoice.visible = world && editable;
+		presetApply.visible = world && editable;
+		boolean armed = System.currentTimeMillis() - presetArmedAt <= 4000;
+		presetApply.active = editable && target != currentPreset();
+		presetApply.setMessage(Component.translatable(armed ? "gui.extremedimensions.preset.confirm" : "gui.extremedimensions.preset.apply"));
 		apply.setMessage(n > 0 ? Component.translatable("gui.extremedimensions.settings.apply_n", n)
 				: Component.translatable("gui.extremedimensions.settings.apply"));
 	}
@@ -516,10 +566,23 @@ public class SettingsScreen extends Screen {
 	}
 
 	private void world(GuiGraphicsExtractor g, int x0, int y0, int mouseX, int mouseY, double fade, int accent) {
+		// Difficulty: the preset the rules match now (or custom); operators pick and apply another beside it
+		var now = currentPreset();
+		String label = Ui.tr("gui.extremedimensions.settings.difficulty");
+		g.text(this.font, label, x0 + 16, y0 + 48, Ui.argb(fade, Ui.PARCHMENT));
+		String state = now == null ? Ui.tr("gui.extremedimensions.preset.custom") : Ui.tr(now.nameKey());
+		if (editable) {
+			g.text(this.font, state, x0 + 16, y0 + 57, Ui.argb(fade * 0.8, Ui.MUTED));
+		} else {
+			g.text(this.font, state, x0 + 108, y0 + 48, Ui.argb(fade, accent));
+		}
+		if (System.currentTimeMillis() - presetArmedAt > 4000 && presetApply.getMessage().getString().equals(Ui.tr("gui.extremedimensions.preset.confirm"))) {
+			refreshButtons();
+		}
 		String note = Ui.tr(editable ? (online() ? "gui.extremedimensions.settings.world_note_edit" : "gui.extremedimensions.settings.world_note_local")
 				: "gui.extremedimensions.settings.world_note_read");
 		int nx = x0 + 176;
-		int ny = y0 + 44;
+		int ny = y0 + 64;
 		for (String line : Ui.wrap(this.font, note, PW - 176 - 16)) {
 			g.text(this.font, line, nx, ny, Ui.argb(fade, editable ? Ui.MUTED : Ui.WARN));
 			ny += 9;

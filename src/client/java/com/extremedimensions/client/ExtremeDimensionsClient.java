@@ -11,6 +11,7 @@ import com.extremedimensions.client.entity.LurkerRenderer;
 import com.extremedimensions.client.entity.VeilRayModel;
 import com.extremedimensions.client.entity.VeilRayRenderer;
 import com.extremedimensions.client.hud.ChargeHud;
+import com.extremedimensions.client.hud.GuideCloseButton;
 import com.extremedimensions.client.hud.StomachHud;
 import com.extremedimensions.client.inventory.JournalButton;
 import com.extremedimensions.client.inventory.CursesButton;
@@ -33,6 +34,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.DeathScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -95,6 +97,9 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 			}
 			if (screen instanceof AbstractContainerScreen<?> menu) {
 				SealedSlots.attach(menu);
+			}
+			if (screen instanceof ChatScreen chat) {
+				GuideCloseButton.attach(chat);
 			}
 		});
 

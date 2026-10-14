@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.extremedimensions.client.hud.ChargeHud;
+import com.extremedimensions.client.hud.GuideCloseButton;
 import com.extremedimensions.client.options.ClientOptions;
 import com.extremedimensions.client.screen.CursesScreen;
 import com.extremedimensions.client.screen.SettingsScreen;
@@ -155,6 +157,17 @@ public class ClientShots implements FabricClientGameTest {
 			});
 			ctx.waitTicks(4);
 			ctx.takeScreenshot("01_hud_moved");
+			// The guide card has its close cross; closing switches the guide off until it is switched on again
+			ctx.runOnClient(mc -> {
+				check(ChargeHud.guideClose != null, "the guide card has no close cross");
+				GuideCloseButton.closeGuide();
+				check(!ClientOptions.guidance(), "the cross did not close the guide");
+			});
+			ctx.waitTicks(3);
+			ctx.runOnClient(mc -> {
+				check(ChargeHud.guideClose == null, "the guide card is still shown after closing it");
+				ClientOptions.setGuidance(true);
+			});
 			ctx.runOnClient(mc -> {
 				ClientOptions.setMeters(ClientOptions.Corner.TOP_LEFT);
 				ClientOptions.setTimer(ClientOptions.TimerPlace.TOP);

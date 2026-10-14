@@ -4,6 +4,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 
+import com.extremedimensions.config.Preset;
+import com.extremedimensions.config.SettingsService;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.network.Sync;
@@ -54,12 +56,31 @@ public final class TetherCommand {
 					WorldService.begin(c.getSource().getPlayerOrException(), c.getSource().getServer().getTickCount());
 					return 1;
 				}))
+				.then(preset())
 				.then(Commands.literal("curse")
 						.then(Commands.literal("clear").executes(c -> clearCurses(c.getSource())))
 						.then(Commands.argument("id", StringArgumentType.word())
 								.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.Arrays.stream(Penalty.values()).map(p -> p.id), b))
 								.then(Commands.argument("stacks", IntegerArgumentType.integer(0, 99))
 										.executes(c -> setCurse(c.getSource(), StringArgumentType.getString(c, "id"), IntegerArgumentType.getInteger(c, "stacks")))))));
+	}
+
+	/** {@code /tether preset <name>}: a difficulty for the whole world at once (also from the server console). */
+	private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> preset() {
+		var node = Commands.literal("preset").executes(c -> {
+			Preset now = Preset.matching(Preset.current());
+			c.getSource().sendSuccess(() -> Component.translatable("commands.extremedimensions.preset.current",
+					now == null ? Component.translatable("gui.extremedimensions.preset.custom") : Component.translatable(now.nameKey())), false);
+			return 1;
+		});
+		for (Preset p : Preset.values()) {
+			node.then(Commands.literal(p.id).executes(c -> {
+				SettingsService.applyPreset(c.getSource().getServer(), p, c.getSource().getTextName());
+				c.getSource().sendSuccess(() -> Component.translatable("gui.extremedimensions.preset.applied", Component.translatable(p.nameKey())), true);
+				return 1;
+			}));
+		}
+		return node;
 	}
 
 	/** Sets a curse's stacks on the executing player (0 takes it off, never past its maximum). */
