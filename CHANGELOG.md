@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.5.0: Foundations
+
+*Nothing new to find in the world this time. Everything under it got sturdier, faster and tested.*
+
+### Changed
+- **The Seam never stalls the server.** Islands are designed on their own thread and built within a few milliseconds
+  per tick (`seam_build_budget_ms`, default 5), only in chunks someone has loaded. Unfinished islands far from everyone
+  are put off and built again, the same way, when someone returns.
+- **Sounds, particles, titles, effects and attribute curses** are sent directly instead of through server commands:
+  lighter on the server, nothing in the server log, no clash with plugins that restrict commands.
+- **World data is saved with the world** (autosave, `/save-all`, stopping the server, a player leaving) instead of on
+  every change, so it never runs ahead of the inventories it belongs with.
+
+### Fixed
+- A crash while saving could leave a damaged `extremedimensions.json`, and the next start then reset all progress in
+  that world. Saving is now crash-safe: the new file replaces the old one in a single step, the previous version stays
+  as `extremedimensions.json.bak` and takes over if the main file is damaged, and an unreadable file is set aside,
+  never overwritten.
+
+### Under the hood
+- Automated tests on every push: server tests on a headless dedicated server (curses, sealed slots, spill-over,
+  atonement, recovery of damaged world data, every creature, every mixin, performance) and a client test in a real
+  window with screenshots.
+- Curse effects live in their own class (`CurseEffects`), apart from owing and lifting curses.
+- Measured: curse upkeep for 20 players carrying every curse at its maximum costs about 0.1 ms per server tick.
+
 ## 2.4.1: A Heartbeat in the Dark
 
 *The tribe has a pulse now, and death costs your penance.*
