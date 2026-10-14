@@ -11,8 +11,8 @@ import net.minecraft.world.entity.LivingEntity;
 
 /**
  * Arm swings of players, also at thin air (Prop Hunt hunters pay for missing). Matched by name only: in
- * Minecraft 26.3 the method also takes the swing animation and returns a value. The game decides what a swing means (a hit or a
- * block in reach is not a miss).
+ * Minecraft 26.3 the method also takes the swing animation and returns a value. The game decides what a
+ * swing means (a hit or a block in reach is not a miss).
  */
 @Mixin(LivingEntity.class)
 public abstract class LivingEntitySwingMixin {

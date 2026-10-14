@@ -172,6 +172,6 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Winkelier | Een villager zonder AI die niet gewond kan raken en terugkeert als hij wordt geduwd; klikken op hem of op de ton ernaast opent de winkel. |
 | Verbinding weg | Wie de verbinding verliest of /hub doet, ligt eruit (zoals in de andere modi) en krijgt zijn eigen spullen terug; een team zonder spelers ligt eruit. Opnieuw meedoen in een lopende match kan niet. |
 | Prop-vermomming | De speler zelf wordt voor anderen niet meer verstuurd (mixin op `Entity.broadcastToPlayer`); anderen zien een block display met een onzichtbare 1×1-hitbox. Stilstaan maakt de prop "vast": een nepblok op het raster dat alleen de anderen krijgen. De zelftest controleert dat het verbergen werkt. |
-| Missen | Een armzwaai zonder raak (mixin op het zwaai-pakket) die niets binnen bereik raakt, of een klik op een echt object uit de lijst, kost de hunter levens en punten (hoogstens twee keer per seconde). Gewone vloer en muren tellen niet als fout object. |
+| Missen | Een armzwaai zonder raak (mixin op `LivingEntity.swing`; het aparte zwaai-pakket bestaat niet meer in 26.3) die niets binnen bereik raakt, of een klik op een echt object uit de lijst, kost de hunter levens en punten (hoogstens twee keer per seconde). Gewone vloer en muren tellen niet als fout object. |
 | Prop Hunt-fases | WAITING → HIDING → HUNTING → ROUND_END, per ronde opnieuw; wie het minst gezocht heeft, wordt eerst hunter. Gevonden props worden hunter (instelbaar). Na de laatste ronde winnen de meeste punten. |
 
