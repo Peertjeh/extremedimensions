@@ -400,12 +400,16 @@ public final class SeamArchitect {
 				}
 			}
 		}
+		// The clock is read every few blocks, and right after every action (a chest, a creature): those cost more
 		int n = 0;
+		boolean heavy = false;
 		while (!READY.isEmpty() || !QUEUE.isEmpty()) {
-			if ((++n & 31) == 0 && System.nanoTime() > deadline) {
+			if ((heavy || (++n & 7) == 0) && System.nanoTime() > deadline) {
 				break;
 			}
-			run(level, READY.isEmpty() ? QUEUE.poll() : READY.poll());
+			Job j = READY.isEmpty() ? QUEUE.poll() : READY.poll();
+			heavy = j.action() != null;
+			run(level, j);
 		}
 		if (had && pending() == 0) {
 			com.extremedimensions.ExtremeDimensions.LOGGER.info("Seam architect: done, {} blocks built so far", built);
