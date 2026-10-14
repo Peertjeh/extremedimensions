@@ -18,6 +18,9 @@ jobs:
         run: chmod +x ./gradlew
       - name: build
         run: ./gradlew build
+      - name: TEMP probe
+        if: always() && hashFiles('.github/ed-probe.sh') != ''
+        run: bash .github/ed-probe.sh
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
