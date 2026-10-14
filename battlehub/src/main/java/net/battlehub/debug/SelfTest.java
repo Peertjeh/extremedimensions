@@ -92,6 +92,7 @@ public final class SelfTest {
 			c.game(GameMode.TOURNAMENT).settings.put("breakSeconds", 2.0);
 		});
 		PartyTests.all(server, s);
+		ArcadeTests.all(server, s);
 		TournamentTests.all(server, s);
 		ProgressionTests.all(server, s);
 		runningAtStop(server, s);

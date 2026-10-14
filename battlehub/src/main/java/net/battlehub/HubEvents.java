@@ -51,6 +51,7 @@ public final class HubEvents {
 		ServerLifecycleEvents.SERVER_STOPPING.register(HubEvents::stopping);
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
 			Queues.clear();
+			net.battlehub.games.Visibility.clear();
 			Sessions.clear();
 			Tasks.clear();
 			PlayerStore.unload();
@@ -62,8 +63,13 @@ public final class HubEvents {
 		ServerPlayerEvents.JOIN.register(HubEvents::join);
 		// Leaving is handled by PlayerListMixin, before vanilla saves the player file.
 
-		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) ->
-				!(entity instanceof ServerPlayer p) || allowDamage(p, source));
+		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+			if (entity instanceof ServerPlayer p) {
+				return allowDamage(p, source);
+			}
+			// Shopkeepers and other game NPCs cannot be hurt
+			return !net.battlehub.games.Visibility.isProtectedNpc(entity);
+		});
 		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) ->
 				!(entity instanceof ServerPlayer p) || allowDeath(p, source));
 
@@ -276,6 +282,14 @@ public final class HubEvents {
 		p.resetFallDistance();
 		Tasks.next(() -> Lobby.teleport(p));
 		return false;
+	}
+
+	/** An arm swing (from the network, on the server thread). */
+	public static void swung(ServerPlayer p) {
+		Match m = matchOf(p);
+		if (m != null && !p.hasDisconnected()) {
+			m.onSwing(p);
+		}
 	}
 
 	/** The match this player takes part in (not watches), or null. */

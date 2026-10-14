@@ -35,6 +35,8 @@ public final class PartyGames {
 			case FFA -> new FfaMatch(id, server, players, votes.getOrDefault("kit", ""));
 			// Started by Tournaments, which runs several matches
 			case TOURNAMENT -> null;
+			case BED_WARS -> new net.battlehub.games.bedwars.BedWarsMatch(id, server, players);
+			case PROP_HUNT -> new net.battlehub.games.prophunt.PropHuntMatch(id, server, players);
 			default -> null;
 		};
 	}

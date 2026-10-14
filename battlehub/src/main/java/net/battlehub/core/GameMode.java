@@ -19,6 +19,10 @@ public enum GameMode {
 	FFA(Category.PARTY, false, 2, 16),
 	/** Teams of 1, 2, 4 or 8 in a single-elimination bracket; every match best of 3. */
 	TOURNAMENT(Category.PARTY, false, 2, 16),
+	/** Teams with beds and resource generators; no bed, no respawn. */
+	BED_WARS(Category.PARTY, false, 2, 16),
+	/** Hunters look for props hidden as blocks. */
+	PROP_HUNT(Category.PARTY, false, 2, 16),
 	/** One player against a team of two, with a sword, axe or mace kit. */
 	ONE_V_TWO("1v2", Category.TEAM, false, 3, 3),
 	/** One player against a team of three. */
@@ -102,12 +106,12 @@ public enum GameMode {
 	}
 
 	public static GameMode[] parties() {
-		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, FFA, TOURNAMENT};
+		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, FFA, TOURNAMENT, BED_WARS, PROP_HUNT};
 	}
 
 	/** The Party Games menu (Free for All is under PvP). */
 	public static GameMode[] partyMenu() {
-		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, TOURNAMENT};
+		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, TOURNAMENT, BED_WARS, PROP_HUNT};
 	}
 
 	public static GameMode[] teamFights() {

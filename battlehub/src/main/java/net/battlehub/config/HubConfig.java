@@ -217,6 +217,9 @@ public final class HubConfig {
 		m.put("1v3", new Game(4, 4, 300, "").with("roundsToWin", 1));
 		m.put("tournament", new Game(4, 16, 180, "").with("winnerCoins", 500).with("finalistCoins", 150)
 				.with("breakSeconds", 10));
+		// Bed Wars and Prop Hunt keep their own settings in bedwars.json and prophunt.json
+		m.put("bed_wars", new Game(2, 16, 1800, "bedwars"));
+		m.put("prop_hunt", new Game(3, 16, 0, "prophunt_hunter"));
 		return m;
 	}
 

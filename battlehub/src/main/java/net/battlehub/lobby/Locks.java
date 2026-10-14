@@ -25,6 +25,15 @@ public final class Locks {
 		return s == Sessions.State.MATCH || s == Sessions.State.SPECTATING || Lobby.inArea(p);
 	}
 
+	/** This item may not be dropped right now (a match can decide per item). */
+	public static boolean dropLocked(ServerPlayer p, ItemStack stack) {
+		net.battlehub.match.Match m = net.battlehub.HubEvents.matchOf(p);
+		if (m != null) {
+			return !m.allowsDrop(p, stack);
+		}
+		return dropsLocked(p);
+	}
+
 	public static boolean blocksClick(AbstractContainerMenu menu, int slot, int button, ContainerInput input, ServerPlayer p) {
 		ItemStack carried = menu.getCarried();
 		if (Icon.isHubItem(carried)) {
@@ -42,18 +51,20 @@ public final class Locks {
 				return true;
 			}
 		}
-		if (dropsLocked(p)) {
-			if (input == ContainerInput.THROW) {
+		if (input == ContainerInput.THROW) {
+			ItemStack thrown = slot >= 0 && slot < menu.slots.size() ? menu.getSlot(slot).getItem() : carried;
+			if (dropLocked(p, thrown)) {
 				return true;
 			}
-			if (slot == AbstractContainerMenu.SLOT_CLICKED_OUTSIDE && !carried.isEmpty()) {
-				return true;
-			}
+		}
+		if (slot == AbstractContainerMenu.SLOT_CLICKED_OUTSIDE && !carried.isEmpty() && dropLocked(p, carried)) {
+			return true;
 		}
 		return false;
 	}
 
 	public static boolean blocksDrop(ServerPlayer p) {
-		return Icon.isHubItem(p.getInventory().getSelectedItem()) || dropsLocked(p);
+		ItemStack held = p.getInventory().getSelectedItem();
+		return Icon.isHubItem(held) || dropLocked(p, held);
 	}
 }

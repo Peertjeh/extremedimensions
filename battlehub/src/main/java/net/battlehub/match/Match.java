@@ -221,6 +221,11 @@ public abstract class Match {
 		return false;
 	}
 
+	/** May the player drop this item (Bed Wars: resources and blocks yes, swords and tools no)? */
+	public boolean allowsDrop(ServerPlayer p, ItemStack stack) {
+		return allowsDrops(p);
+	}
+
 	/** How long the end of the match is shown before everyone goes back. */
 	protected int endDelayTicks() {
 		return ConfigManager.config().timings.endDelaySeconds * 20;

@@ -55,7 +55,7 @@ final class PartyTests {
 		party(server, s, GameMode.FFA, PartyTests::ffa, new String[] {"kit:axe", "kit:axe", "kit:mace", ""});
 	}
 
-	private static void hit(String victim, String attacker, float amount) {
+	static void hit(String victim, String attacker, float amount) {
 		ServerPlayer v = p(victim);
 		v.hurtServer(v.level(), v.damageSources().playerAttack(p(attacker)), amount);
 	}
@@ -86,18 +86,18 @@ final class PartyTests {
 		expectWinner(s, GameMode.FFA, "BHTestA");
 	}
 
-	private static void tp(ServerPlayer p, double x, double y, double z) {
+	static void tp(ServerPlayer p, double x, double y, double z) {
 		p.teleportTo(p.level(), x, y, z, java.util.Set.of(), p.getYRot(), p.getXRot(), false);
 		p.setDeltaMovement(Vec3.ZERO);
 	}
 
 	/** Lobby, countdown, match start; the scenario plays; then results, restore and arena release are checked. */
-	private static void party(MinecraftServer server, Script s, GameMode mode, Consumer<Script> scenario) {
+	static void party(MinecraftServer server, Script s, GameMode mode, Consumer<Script> scenario) {
 		party(server, s, mode, scenario, new String[] {"", "", "", ""});
 	}
 
 	/** {@code votes}: what each of the four players votes for when joining (the parkour difficulty). */
-	private static void party(MinecraftServer server, Script s, GameMode mode, Consumer<Script> scenario, String[] votes) {
+	static void party(MinecraftServer server, Script s, GameMode mode, Consumer<Script> scenario, String[] votes) {
 		String tag = mode.id();
 		SelfTest.reset(s, tag);
 		s.run(tag + ": four players join", () -> {
@@ -154,7 +154,7 @@ final class PartyTests {
 		s.waitFor(tag + ": arena released", 600, () -> ArenaSlots.busy() == 0);
 	}
 
-	private static void expectWinner(Script s, GameMode mode, String name) {
+	static void expectWinner(Script s, GameMode mode, String name) {
 		s.check(mode.id() + ": " + name + " won, stats updated", () -> {
 			UUID w = p(name).getUUID();
 			PlayerProfile prof = PlayerStore.get(w);

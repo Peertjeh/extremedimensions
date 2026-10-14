@@ -13,7 +13,9 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 /**
  * Bed Wars: one floating island per team around a centre island, a diamond island between every two teams and
  * emerald generators in the middle. Marks per team i: spawn_i, bed_i (the foot), gen_i (iron and gold), shop_i;
- * plus gen_diamond and gen_emerald. Island floors are at y = 0; bridges have to be built.
+ * plus gen_diamond and gen_emerald. Island floors are at y = 0; bridges have to be built. The arena box reaches
+ * {@code buildHeight} above and {@code buildDepth} below the floors and past the islands, so everything players
+ * build is inside it (and cleared afterwards).
  */
 public final class BedWarsLayout {
 	private BedWarsLayout() {}
@@ -37,7 +39,14 @@ public final class BedWarsLayout {
 		return teams <= 2 ? 36 : 40;
 	}
 
+	/** Players may build this far past the team islands. */
+	public static final int BUILD_MARGIN = 12;
+
 	public static Blueprint design(Theme t, RandomSource rnd, int teams) {
+		return design(t, rnd, teams, 24, 10);
+	}
+
+	public static Blueprint design(Theme t, RandomSource rnd, int teams, int buildHeight, int buildDepth) {
 		Blueprint bp = new Blueprint();
 		int n = Math.max(2, Math.min(4, teams));
 		int r = teamRadius(n);
@@ -49,9 +58,17 @@ public final class BedWarsLayout {
 			diamondIsland(bp, t, rnd, (int) Math.round(Math.cos(between) * r * 0.62), (int) Math.round(Math.sin(between) * r * 0.62));
 		}
 		centre(bp, t, rnd);
-		Decor.ring(bp, t, rnd, r + 14, r + 24, -18);
-		bp.spectator(0.5, 30, 0.5, 0, 89);
-		bp.voidY(-22);
+		Decor.ring(bp, t, rnd, r + 14, r + 24, Math.min(-18, -buildDepth - 8));
+		int edge = r + BUILD_MARGIN;
+		bp.include(-edge, -buildDepth, -edge);
+		bp.include(edge, buildHeight, edge);
+		bp.mark("build_min", -edge, -buildDepth, -edge);
+		bp.mark("build_max", edge, buildHeight, edge);
+		// The winners' podium is built above the centre when the game is over
+		bp.mark("podium", 0, Math.min(buildHeight, 14), 0);
+		bp.spectator(0.5, Math.max(30, buildHeight + 8), 0.5, 0, 89);
+		// Below the lowest place one can build: the decoration far below is out of play
+		bp.voidY(-buildDepth - 3);
 		bp.radius(r + 26);
 		return bp;
 	}

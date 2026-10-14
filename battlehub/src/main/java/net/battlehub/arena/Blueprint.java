@@ -42,6 +42,19 @@ public final class Blueprint {
 		maxZ = Math.max(maxZ, z);
 	}
 
+	/**
+	 * Grows the arena box to include this point without placing anything (room for what players build; the box
+	 * is cleared when the match is over).
+	 */
+	public void include(int x, int y, int z) {
+		minX = Math.min(minX, x);
+		minY = Math.min(minY, y);
+		minZ = Math.min(minZ, z);
+		maxX = Math.max(maxX, x);
+		maxY = Math.max(maxY, y);
+		maxZ = Math.max(maxZ, z);
+	}
+
 	/** Only sets the block if nothing is there yet. */
 	public void setIfEmpty(int x, int y, int z, BlockState state) {
 		if (!blocks.containsKey(BlockPos.asLong(x, y, z))) {

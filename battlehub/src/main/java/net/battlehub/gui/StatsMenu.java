@@ -72,10 +72,16 @@ public final class StatsMenu extends Screen {
 		for (int i = 0; i < fights.size(); i++) {
 			c.set(fightStart + i, modeIcon(p, fights.get(i)).build());
 		}
+		// Nine party games on the fifth row, the others next to the buttons on the last row
 		GameMode[] parties = GameMode.parties();
-		int start = 40 - parties.length / 2;
+		int[] extra = {46, 52, 45, 53};
+		int row = Math.min(9, parties.length);
+		int start = 40 - row / 2;
 		for (int i = 0; i < parties.length; i++) {
-			c.set(start + i, modeIcon(p, parties[i]).build());
+			int slot = i < row ? start + i : (i - row < extra.length ? extra[i - row] : -1);
+			if (slot >= 0) {
+				c.set(slot, modeIcon(p, parties[i]).build());
+			}
 		}
 
 		if (self) {

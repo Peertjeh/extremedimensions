@@ -37,6 +37,12 @@ final class LayoutTests {
 		});
 		m.put("lms", t -> PartyLayouts.lms(t, rnd));
 		m.put("ffa", t -> PartyLayouts.ffa(t, rnd));
+		for (int teams = 2; teams <= 4; teams++) {
+			int n = teams;
+			m.put("bedwars" + n, t -> net.battlehub.arena.layout.BedWarsLayout.design(t, rnd, n));
+		}
+		m.put("prophunt", t -> net.battlehub.arena.layout.PropHuntLayout.design(t, rnd,
+				net.battlehub.config.ConfigManager.prophunt().disguises));
 		return m;
 	}
 
@@ -44,7 +50,15 @@ final class LayoutTests {
 		return switch (layout) {
 			case "koth" -> List.of("zone");
 			case "ctf" -> List.of("flag_red", "flag_blue", "spawn_red", "spawn_blue");
-			default -> List.of();
+			case "prophunt" -> List.of("hunter_cage", "hunter_release");
+			default -> {
+				if (!layout.startsWith("bedwars")) yield List.of();
+				List<String> marks = new ArrayList<>(List.of("gen_diamond", "gen_emerald", "build_min", "build_max", "podium"));
+				for (int i = 0; i < Integer.parseInt(layout.substring(7)); i++) {
+					marks.addAll(List.of("spawn_" + i, "bed_" + i, "gen_" + i, "shop_" + i, "shopblock_" + i));
+				}
+				yield marks;
+			}
 		};
 	}
 
@@ -106,6 +120,28 @@ final class LayoutTests {
 		for (String mark : required(layout)) {
 			if (bp.marks(mark).isEmpty()) {
 				problems.add(where + ": mark " + mark + " missing");
+			}
+		}
+		if (layout.startsWith("bedwars")) {
+			int teams = Integer.parseInt(layout.substring(7));
+			if (bp.spawns().size() != teams) {
+				problems.add(where + ": " + bp.spawns().size() + " team spawns, expected " + teams);
+			}
+			for (int i = 0; i < teams; i++) {
+				net.minecraft.core.BlockPos bed = bp.markOne("bed_" + i);
+				if (!(bp.get(bed.getX(), bed.getY(), bed.getZ()).getBlock() instanceof net.minecraft.world.level.block.BedBlock)) {
+					problems.add(where + ": no bed at bed_" + i);
+				}
+				net.minecraft.core.BlockPos shop = bp.markOne("shopblock_" + i);
+				if (!bp.has(shop.getX(), shop.getY(), shop.getZ())) {
+					problems.add(where + ": no shop block for team " + i);
+				}
+			}
+		}
+		if (layout.equals("prophunt")) {
+			net.minecraft.core.BlockPos cage = bp.markOne("hunter_cage");
+			if (solid(bp, cage.getX(), cage.getY(), cage.getZ()) || !solid(bp, cage.getX(), cage.getY() - 1, cage.getZ())) {
+				problems.add(where + ": the hunter cage has no room");
 			}
 		}
 		Blueprint.Spawn spec = bp.spectator();

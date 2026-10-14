@@ -9,7 +9,11 @@
 		"ConnectionAccessor",
 		"ArrowAccessor",
 		"PlayerListMixin",
-		"ServerGamePacketListenerImplMixin"
+		"ServerGamePacketListenerImplMixin",
+		"DisplayAccessor",
+		"BlockDisplayAccessor",
+		"EntityMixin",
+		"SwingPacketMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
