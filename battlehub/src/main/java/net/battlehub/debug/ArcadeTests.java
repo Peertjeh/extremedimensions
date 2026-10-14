@@ -240,6 +240,48 @@ final class ArcadeTests {
 
 	// ------------------------------------------------------------------ Prop Hunt
 
+	/**
+	 * Swings the arm the way the server does for a client's swing packet. LivingEntity.swing takes the hand, the
+	 * swing animation and a flag; the animation's default is looked up by reflection to stay independent of it.
+	 */
+	private static void clientSwing(ServerPlayer p) {
+		for (java.lang.reflect.Method m : net.minecraft.world.entity.LivingEntity.class.getDeclaredMethods()) {
+			if (!m.getName().equals("swing")) continue;
+			Class<?>[] types = m.getParameterTypes();
+			Object[] args = new Object[types.length];
+			for (int i = 0; i < types.length; i++) {
+				if (types[i] == net.minecraft.world.InteractionHand.class) {
+					args[i] = net.minecraft.world.InteractionHand.MAIN_HAND;
+				} else if (types[i] == boolean.class) {
+					args[i] = false;
+				} else {
+					args[i] = defaultOf(types[i]);
+				}
+			}
+			try {
+				m.setAccessible(true);
+				m.invoke(p, args);
+			} catch (ReflectiveOperationException | RuntimeException e) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST swing call ended with {}", e.toString());
+			}
+			return;
+		}
+	}
+
+	private static Object defaultOf(Class<?> type) {
+		for (java.lang.reflect.Field f : type.getDeclaredFields()) {
+			if (java.lang.reflect.Modifier.isStatic(f.getModifiers()) && f.getType() == type) {
+				try {
+					f.setAccessible(true);
+					return f.get(null);
+				} catch (ReflectiveOperationException e) {
+					return null;
+				}
+			}
+		}
+		return type.isEnum() && type.getEnumConstants().length > 0 ? type.getEnumConstants()[0] : null;
+	}
+
 	private static PropHuntMatch ph() {
 		return (PropHuntMatch) match();
 	}
@@ -312,7 +354,7 @@ final class ArcadeTests {
 			VARS.put("hpH", h.getHealth());
 			VARS.put("ptsH", ph().points(h.getUUID()));
 			// The same call the server makes for a swing packet from the client
-			h.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+			clientSwing(h);
 		});
 		s.check("prophunt: a swing at thin air costs too", () -> pv("H").getHealth() < (float) VARS.get("hpH")
 				&& ph().points(pv("H").getUUID()) < (int) VARS.get("ptsH"));
