@@ -11,6 +11,7 @@ import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.hollow.HollowService;
 import com.extremedimensions.lurker.LurkerService;
 import com.extremedimensions.seam.SeamArchitect;
+import com.extremedimensions.penalty.CurseEffects;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.seam.SeamService;
 import com.extremedimensions.mending.MendingService;
@@ -73,7 +74,7 @@ public final class TetherCommand {
 		d.curses.remove(pen.id);
 		d.atonement.remove(pen.id);
 		int set = d.addStacks(pen, stacks);
-		PenaltyService.applyEffects(p, d);
+		CurseEffects.applyEffects(p, d);
 		Sync.state(p, d);
 		DataStore.markDirty();
 		src.sendSuccess(() -> Component.translatable("commands.extremedimensions.curse.set", Component.translatable(pen.nameKey()), set, pen.max), false);
@@ -86,7 +87,7 @@ public final class TetherCommand {
 		PlayerData d = DataStore.get(p.getUUID());
 		d.curses.clear();
 		d.atonement.clear();
-		PenaltyService.applyEffects(p, d);
+		CurseEffects.applyEffects(p, d);
 		Sync.state(p, d);
 		DataStore.markDirty();
 		src.sendSuccess(() -> Component.translatable("commands.extremedimensions.curse.cleared"), false);
@@ -132,7 +133,7 @@ public final class TetherCommand {
 				: "commands.extremedimensions.overworld_penalties.disabled"), true);
 		if (WorldFx.server() != null) {
 			for (ServerPlayer p : WorldFx.server().getPlayerList().getPlayers()) {
-				PenaltyService.applyEffects(p, DataStore.get(p.getUUID()));
+				CurseEffects.applyEffects(p, DataStore.get(p.getUUID()));
 			}
 		}
 		return 1;

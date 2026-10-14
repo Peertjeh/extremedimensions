@@ -13,6 +13,7 @@ import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.network.Fx;
 import com.extremedimensions.penalty.Penalty;
+import com.extremedimensions.penalty.CurseEffects;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.server.Dims;
@@ -48,7 +49,7 @@ public final class ExpeditionService {
 		} else if (Dims.OVERWORLD.equals(to) && Dims.isBeyond(from) && d.inRun && !d.collapsing) {
 			complete(p, d);
 		}
-		PenaltyService.applyEffects(p, d);
+		CurseEffects.applyEffects(p, d);
 	}
 
 	private static void start(ServerPlayer p, PlayerData d, String dim) {
@@ -263,9 +264,9 @@ public final class ExpeditionService {
 		Advancements.grant(p, Advancements.COLLAPSE);
 		WorldFx.fx(p, Fx.COLLAPSE, 0);
 		int secs = Config.COLLAPSE_PULL_TICKS / 20 + 1;
-		PenaltyService.effect(p, "slowness", secs, 6);
-		PenaltyService.effect(p, "levitation", secs, 0);
-		PenaltyService.effect(p, "resistance", secs, 4);
+		CurseEffects.effect(p, "slowness", secs, 6);
+		CurseEffects.effect(p, "levitation", secs, 0);
+		CurseEffects.effect(p, "resistance", secs, 4);
 		WorldFx.sound(p, "extremedimensions:collapse", 1.2f, 1.0f);
 		WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.6, 0.05, 30);
 		DataStore.markDirty();
@@ -334,7 +335,7 @@ public final class ExpeditionService {
 		d.inRun = false;
 		d.linked.clear();
 		d.runTime = 0;
-		PenaltyService.applyEffects(p, d);
+		CurseEffects.applyEffects(p, d);
 		if (Dims.OVERWORLD.equals(d.endedIn)) {
 			WorldFx.title(p, "title.extremedimensions.tether_tightens", "dark_purple", "title.extremedimensions.died_in", Dims.nameKey(Dims.OVERWORLD));
 			WorldFx.fx(p, Fx.ENDED, 0);

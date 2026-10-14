@@ -16,6 +16,7 @@ import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.lurker.LurkerService;
 import com.extremedimensions.network.Sync;
+import com.extremedimensions.penalty.CurseEffects;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModBlocks;
@@ -99,7 +100,7 @@ public final class ServerEvents {
 			Sync.state(newPlayer, d);
 		});
 
-		ServerLivingEntityEvents.AFTER_DAMAGE.register(PenaltyService::afterDamage);
+		ServerLivingEntityEvents.AFTER_DAMAGE.register(CurseEffects::afterDamage);
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if ("minecraft:ender_dragon".equals(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString()) && WorldFx.server() != null) {
 				WorldService.onDragonDeath(WorldFx.server());
@@ -182,7 +183,7 @@ public final class ServerEvents {
 		PlayerBlockBreakEvents.AFTER.register((level, player, pos, state, blockEntity) -> {
 			AnchorService.onBroken(Dims.of(level), pos);
 			if (player instanceof ServerPlayer sp) {
-				PenaltyService.wear(sp);
+				CurseEffects.wear(sp);
 			}
 			if (state.is(ModBlocks.SEAM_VEIN) && player instanceof ServerPlayer sp) {
 				Journal.unlock(sp, DataStore.get(sp.getUUID()), JournalEntry.LOOM);
@@ -194,7 +195,7 @@ public final class ServerEvents {
 
 		AttackEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
 			if (player instanceof ServerPlayer sp && entity instanceof net.minecraft.world.entity.LivingEntity) {
-				PenaltyService.wear(sp);
+				CurseEffects.wear(sp);
 			}
 			return InteractionResult.PASS;
 		});
@@ -229,7 +230,7 @@ public final class ServerEvents {
 
 	/** Shortly after joining, once the player really stands in the world and commands can target them. */
 	private static void afterJoin(ServerPlayer p, PlayerData d) {
-		PenaltyService.applyEffects(p, d);
+		CurseEffects.applyEffects(p, d);
 		List<RecipeHolder<?>> recipes = new ArrayList<>();
 		for (String recipe : RECIPES) {
 			p.level().getServer().getRecipeManager().byKey(ResourceKey.create(Registries.RECIPE, WorldFx.id(recipe))).ifPresent(recipes::add);
@@ -275,7 +276,7 @@ public final class ServerEvents {
 			sync |= PenaltyService.tick(p, d, onExpedition, Dims.OVERWORLD.equals(dim) && !d.collapsing);
 
 			if (slowTick) {
-				PenaltyService.refreshEffects(p, d);
+				CurseEffects.refreshEffects(p, d);
 				discover(p, d, dim);
 			}
 

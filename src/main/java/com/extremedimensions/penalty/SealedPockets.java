@@ -25,7 +25,7 @@ public final class SealedPockets {
 		}
 		if (player instanceof ServerPlayer) {
 			PlayerData d = DataStore.peek(player.getUUID());
-			return d == null ? 0 : PenaltyService.sealedSlots(d);
+			return d == null ? 0 : CurseEffects.sealedSlots(d);
 		}
 		return client;
 	}

@@ -7,6 +7,7 @@ import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.expedition.ExpeditionService;
 import com.extremedimensions.penalty.Penalty;
+import com.extremedimensions.penalty.CurseEffects;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.penalty.SealedPockets;
 
@@ -31,7 +32,7 @@ public class CurseTests {
 		for (int i = 0; i + 1 < curseAndStacks.length; i += 2) {
 			d.addStacks((Penalty) curseAndStacks[i], (Integer) curseAndStacks[i + 1]);
 		}
-		PenaltyService.applyEffects(p, d);
+		CurseEffects.applyEffects(p, d);
 		return p;
 	}
 

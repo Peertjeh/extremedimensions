@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.extremedimensions.penalty.CurseEffects;
 import com.extremedimensions.penalty.PenaltyService;
 
 import net.minecraft.server.level.ServerLevel;
@@ -35,13 +36,13 @@ public abstract class CursedPlayerMixin {
 		DamageSource source = extremedimensions$source;
 		extremedimensions$source = null;
 		if (source != null && (Object) this instanceof ServerPlayer player) {
-			return PenaltyService.damageTaken(player, source, amount);
+			return CurseEffects.damageTaken(player, source, amount);
 		}
 		return amount;
 	}
 
 	@ModifyVariable(method = "addEffect(Lnet/minecraft/world/effect/MobEffectInstance;Lnet/minecraft/world/entity/Entity;)Z", at = @At("HEAD"), argsOnly = true)
 	private MobEffectInstance extremedimensions$cursedEffect(MobEffectInstance effect) {
-		return (Object) this instanceof ServerPlayer player ? PenaltyService.scaleEffect(player, effect) : effect;
+		return (Object) this instanceof ServerPlayer player ? CurseEffects.scaleEffect(player, effect) : effect;
 	}
 }
