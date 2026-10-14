@@ -66,6 +66,23 @@ public final class MatriarchService {
 		return FIGHTS.containsKey(e.getUUID());
 	}
 
+	/** Starts one of its blows (or its ultimate) at once; for tests and operators. False if it is not fighting. */
+	public static boolean force(Entity e, int action) {
+		Fight fight = FIGHTS.get(e.getUUID());
+		if (fight == null || !(e instanceof Matriarch m)) {
+			return false;
+		}
+		if (fight.action == Matriarch.RISE) {
+			return false;
+		}
+		if (action == ElderBoss.ULTIMATE) {
+			fight.beginUltimate(m, ULT);
+		} else {
+			fight.start(m, action);
+		}
+		return true;
+	}
+
 	public static void clear() {
 		for (Fight f : FIGHTS.values()) {
 			f.bar.removeAllPlayers();

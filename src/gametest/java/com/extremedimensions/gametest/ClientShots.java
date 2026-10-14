@@ -36,6 +36,53 @@ import net.minecraft.world.item.Items;
  * that can be automated fail the run.
  */
 public class ClientShots implements FabricClientGameTest {
+	/** A live fight with one Elder, with a shot as it comes, at each blow, twice in its ultimate and as it dies. */
+	private static void liveFight(ClientGameTestContext ctx, TestSingleplayerContext sp, String name, int settle,
+			java.util.function.Consumer<MinecraftServer> summon, java.util.function.BiPredicate<net.minecraft.world.entity.Entity, Integer> force,
+			int[] blows, String[] blowNames) {
+		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
+		sp.getServer().runOnServer(summon::accept);
+		ctx.waitTicks(settle);
+		face(sp, name);
+		ctx.waitTicks(2);
+		ctx.takeScreenshot("12_fight_" + name + "_arrives");
+		for (int i = 0; i < blows.length; i++) {
+			int blow = blows[i];
+			sp.getServer().runOnServer(s -> elders(s).forEach(e -> force.test(e, blow)));
+			ctx.waitTicks(28);
+			face(sp, name);
+			ctx.waitTicks(2);
+			ctx.takeScreenshot("12_fight_" + name + "_" + blowNames[i]);
+			ctx.waitTicks(45);
+		}
+		sp.getServer().runOnServer(s -> elders(s).forEach(e -> force.test(e, com.extremedimensions.elder.ElderBoss.ULTIMATE)));
+		ctx.waitTicks(38);
+		face(sp, name);
+		ctx.waitTicks(2);
+		ctx.takeScreenshot("12_fight_" + name + "_ultimate_a");
+		ctx.waitTicks(108);
+		face(sp, name);
+		ctx.waitTicks(2);
+		ctx.takeScreenshot("12_fight_" + name + "_ultimate_b");
+		ctx.waitTicks(75);
+		face(sp, name);
+		sp.getServer().runCommand("kill @e[type=extremedimensions:" + name + "]");
+		ctx.waitTicks(35);
+		ctx.takeScreenshot("12_fight_" + name + "_death");
+		ctx.waitTicks(50);
+	}
+
+	private static java.util.List<com.extremedimensions.elder.ElderBoss> elders(MinecraftServer s) {
+		ServerPlayer p = player(s);
+		return p.level().getEntitiesOfClass(com.extremedimensions.elder.ElderBoss.class, p.getBoundingBox().inflate(96));
+	}
+
+	/** The player turns to the Elder, looking a little up at it. */
+	private static void face(TestSingleplayerContext sp, String name) {
+		sp.getServer().runCommand("execute as @a at @s facing entity @e[type=extremedimensions:" + name + ",limit=1,sort=nearest] feet run tp @s ~ ~ ~ ~ ~");
+		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ ~ -16");
+	}
+
 	private static ServerPlayer player(MinecraftServer s) {
 		return s.getPlayerList().getPlayers().get(0);
 	}
@@ -368,6 +415,30 @@ public class ClientShots implements FabricClientGameTest {
 				ctx.waitTicks(20);
 			}
 			sp.getServer().runCommand("execute as @a run gamemode survival @s");
+
+			// A live fight with each Elder: it comes, its three new blows one after another, its ultimate, its death. The
+			// player cannot be hurt, and the ultimate's curse is switched off so the shots after are unchanged.
+			int ultimateCurses = com.extremedimensions.config.Config.ELDER_ULTIMATE_CURSES;
+			com.extremedimensions.config.Config.ELDER_ULTIMATE_CURSES = 0;
+			sp.getServer().runCommand("effect give @a minecraft:resistance infinite 255 true");
+			sp.getServer().runCommand("effect give @a minecraft:saturation infinite 10 true");
+			ctx.waitTicks(10);
+			liveFight(ctx, sp, "matriarch", 75, s -> com.extremedimensions.elder.MatriarchService.summon(player(s), "shots", player(s).blockPosition()),
+					com.extremedimensions.elder.MatriarchService::force, new int[] {com.extremedimensions.elder.Matriarch.RUSH,
+							com.extremedimensions.elder.Matriarch.CATHEDRAL, com.extremedimensions.elder.Matriarch.BARRAGE},
+					new String[] {"rush", "cathedral", "barrage"});
+			liveFight(ctx, sp, "ferryman", 40, s -> com.extremedimensions.elder.FerrymanService.summonAt(player(s), player(s).blockPosition().offset(0, 0, 20)),
+					com.extremedimensions.elder.FerrymanService::force, new int[] {com.extremedimensions.elder.Ferryman.CROSSING,
+							com.extremedimensions.elder.Ferryman.GAOL, com.extremedimensions.elder.Ferryman.TIDE},
+					new String[] {"crossing", "gaol", "tide"});
+			liveFight(ctx, sp, "weaver", 40, s -> com.extremedimensions.elder.WeaverService.summon(player(s), player(s).blockPosition().offset(0, 0, 20)),
+					com.extremedimensions.elder.WeaverService::force, new int[] {com.extremedimensions.elder.Weaver.LANCE,
+							com.extremedimensions.elder.Weaver.CRADLE, com.extremedimensions.elder.Weaver.THOUSAND},
+					new String[] {"lance", "cradle", "thousand"});
+			com.extremedimensions.config.Config.ELDER_ULTIMATE_CURSES = ultimateCurses;
+			sp.getServer().runCommand("effect clear @a");
+			sp.getServer().runCommand("kill @e[type=minecraft:item]");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
 			ctx.runOnClient(mc -> ClientOptions.setGuidance(true));
 			ctx.waitTicks(25);
 

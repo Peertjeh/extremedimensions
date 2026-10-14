@@ -63,6 +63,23 @@ public final class WeaverService {
 		return WEAVERS.containsKey(e.getUUID());
 	}
 
+	/** Starts one of its blows (or its ultimate) at once; for tests and operators. False if it is not fighting. */
+	public static boolean force(Entity e, int action) {
+		Unweaving fight = WEAVERS.get(e.getUUID());
+		if (fight == null || !(e instanceof Weaver w)) {
+			return false;
+		}
+		if (action == ElderBoss.ULTIMATE) {
+			fight.rise = 0;
+		}
+		if (action == ElderBoss.ULTIMATE) {
+			fight.beginUltimate(w, ULT);
+		} else {
+			fight.start(w, action);
+		}
+		return true;
+	}
+
 	public static void clear() {
 		for (Unweaving u : WEAVERS.values()) {
 			u.bar.removeAllPlayers();

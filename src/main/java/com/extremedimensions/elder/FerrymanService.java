@@ -67,6 +67,23 @@ public final class FerrymanService {
 		return FARES.containsKey(e.getUUID());
 	}
 
+	/** Starts one of its blows (or its ultimate) at once; for tests and operators. False if it is not fighting. */
+	public static boolean force(Entity e, int action) {
+		Fare fight = FARES.get(e.getUUID());
+		if (fight == null || !(e instanceof Ferryman f)) {
+			return false;
+		}
+		if (action == ElderBoss.ULTIMATE) {
+			fight.lift = 0;
+		}
+		if (action == ElderBoss.ULTIMATE) {
+			fight.beginUltimate(f, ULT);
+		} else {
+			fight.start(f, action);
+		}
+		return true;
+	}
+
 	public static void clear() {
 		for (Fare f : FARES.values()) {
 			f.bar.removeAllPlayers();
