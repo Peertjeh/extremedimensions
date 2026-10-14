@@ -310,7 +310,7 @@ public final class MatriarchService {
 	public static void onDefeat(Matriarch m, Entity killer) {
 		Fight f = FIGHTS.remove(m.getUUID());
 		ElderStrikes.forget(m);
-		ElderFx.silence(m);
+		ElderFx.silence(m, ElderFx.MUSIC_MATRIARCH);
 		if (f == null) {
 			return;
 		}
@@ -343,7 +343,7 @@ public final class MatriarchService {
 			f.bar.removeAllPlayers();
 		}
 		ElderStrikes.forget(m);
-		ElderFx.silence(m);
+		ElderFx.silence(m, ElderFx.MUSIC_MATRIARCH);
 		ElderFx.burst(m, "minecraft:large_smoke", 120);
 		m.discard();
 	}

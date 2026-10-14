@@ -330,7 +330,7 @@ public final class FerrymanService {
 	public static void onDefeat(Ferryman f, Entity killer) {
 		Fare fare = FARES.remove(f.getUUID());
 		ElderStrikes.forget(f);
-		ElderFx.silence(f);
+		ElderFx.silence(f, ElderFx.MUSIC_FERRYMAN);
 		if (fare == null) {
 			return;
 		}
@@ -363,7 +363,7 @@ public final class FerrymanService {
 			fare.bar.removeAllPlayers();
 		}
 		ElderStrikes.forget(f);
-		ElderFx.silence(f);
+		ElderFx.silence(f, ElderFx.MUSIC_FERRYMAN);
 		ElderFx.burst(f, "minecraft:soul", 100);
 		f.discard();
 	}

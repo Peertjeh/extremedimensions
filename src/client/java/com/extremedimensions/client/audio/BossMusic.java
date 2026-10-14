@@ -29,6 +29,8 @@ public final class BossMusic {
 	private static final int OVERLAP = 140;
 	/** A fight that has not asked for its track for this long is over (it asks every 40 ticks). */
 	private static final int TIMEOUT = 140;
+	/** Ticks a stopped track waits for another fight to ask for it before it ends. */
+	private static final int GRACE = 50;
 	private static final int FADE_IN_LOOP = 90;
 	private static final int FADE_IN_NEW = 40;
 	private static final int FADE_OUT = 60;
@@ -46,11 +48,16 @@ public final class BossMusic {
 		}
 	}
 
-	/** A fight ended: its track is no longer asked for (-1: every track). */
+	/**
+	 * A fight ended: its track ends soon, unless another fight near asks for the same track within a couple of seconds
+	 * (two Matriarchs, one slain). -1: every track at once.
+	 */
 	public static void stop(int track) {
 		for (int t = 0; t < heard.length; t++) {
-			if (track < 0 || t == track) {
+			if (track < 0) {
 				heard[t] = -1;
+			} else if (t == track && heard[t] >= 0) {
+				heard[t] = Math.min(heard[t], now - TIMEOUT + GRACE);
 			}
 		}
 	}

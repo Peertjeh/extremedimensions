@@ -308,7 +308,7 @@ public final class WeaverService {
 	public static void onDefeat(Weaver w, Entity killer) {
 		Unweaving u = WEAVERS.remove(w.getUUID());
 		ElderStrikes.forget(w);
-		ElderFx.silence(w);
+		ElderFx.silence(w, ElderFx.MUSIC_WEAVER);
 		if (u == null) {
 			return;
 		}
@@ -345,7 +345,7 @@ public final class WeaverService {
 			u.bar.removeAllPlayers();
 		}
 		ElderStrikes.forget(w);
-		ElderFx.silence(w);
+		ElderFx.silence(w, ElderFx.MUSIC_WEAVER);
 		ElderFx.burst(w, "extremedimensions:soul_mote", 120);
 		w.discard();
 	}

@@ -342,6 +342,26 @@ public final class Config {
 	public static int WEAVER_TIME_GIFT = 60;
 	/** Relics the Last Weaver always leaves. */
 	public static int WEAVER_RELICS = 1;
+	/** How fast the Elders move, as a multiple of their own pace. */
+	public static double ELDER_SPEED = 1.5;
+	/** How often the Elders strike: the pause between their blows is divided by this. */
+	public static double ELDER_ATTACK_SPEED = 1.5;
+	/** How quickly a blow comes once an Elder starts it (its wind-up and the warning before it lands), as a multiple. */
+	public static double ELDER_WINDUP_SPEED = 1.25;
+	/** Whether the Elders' blows tear up the world (craters, torn-up ground, scorched and changed blocks): 1 = on, 0 = off. The mobGriefing rule must allow it too. */
+	public static int ELDER_GRIEFING = 1;
+	/** Share of its health at which an Elder unleashes its ultimate, once per fight (0 = never). */
+	public static double ELDER_ULTIMATE_AT = 0.5;
+	/** Seconds an Elder's ultimate lasts. */
+	public static int ELDER_ULTIMATE_SECONDS = 10;
+	/** Blocks from the Elder within which its ultimate's curse reaches everyone. */
+	public static int ELDER_ULTIMATE_RADIUS = 150;
+	/** Extreme curses an ultimate lays on everyone it reaches (random, among those with room). */
+	public static int ELDER_ULTIMATE_CURSES = 2;
+	/** Whether someone with no room for those curses has everything they carry flung around them instead: 1 = on, 0 = off. */
+	public static int ELDER_ULTIMATE_SCATTER = 1;
+	/** Share of the damage an Elder shrugs off while its ultimate builds. */
+	public static double ELDER_ULTIMATE_GUARD = 0.6;
 	/** The Starved One's health grows by this share for every player at the Heart beyond the first. */
 	public static double STARVED_HEALTH_PER_PLAYER = 0.5;
 	/** Below this share of its health the Starved One turns ravenous: faster, quicker tricks, and famine. */

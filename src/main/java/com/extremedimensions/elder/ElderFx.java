@@ -161,16 +161,16 @@ final class ElderFx {
 	static void music(ElderBoss b, int track) {
 		for (ServerPlayer p : ((ServerLevel) b.level()).players()) {
 			if (p.distanceToSqr(b) < 96 * 96) {
-				ServerPlayNetworking.send(p, new ModPackets.BossMusicPayload(track));
+				ServerPlayNetworking.send(p, new ModPackets.BossMusicPayload(track, false));
 			}
 		}
 	}
 
-	/** The music ends at once for everyone who could hear it. */
-	static void silence(ElderBoss b) {
+	/** This fight's music ends for everyone who could hear it (another fight's music near plays on). */
+	static void silence(ElderBoss b, int track) {
 		for (ServerPlayer p : ((ServerLevel) b.level()).players()) {
 			if (p.distanceToSqr(b) < 160 * 160) {
-				ServerPlayNetworking.send(p, new ModPackets.BossMusicPayload(-1));
+				ServerPlayNetworking.send(p, new ModPackets.BossMusicPayload(track, true));
 			}
 		}
 	}
