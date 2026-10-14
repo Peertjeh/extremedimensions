@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.UUID;
 
 import net.battlehub.config.ConfigManager;
+import net.battlehub.core.DuelFormat;
 import net.battlehub.core.GameMode;
-import net.battlehub.gui.Icons;
 import net.battlehub.gui.PlayerPickerMenu;
 import net.battlehub.lang.Lang;
 import net.battlehub.session.Sessions;
@@ -25,7 +25,7 @@ import net.minecraft.sounds.SoundEvents;
 public final class Challenges {
 	private Challenges() {}
 
-	public record Challenge(UUID from, UUID to, String fromName, GameMode mode, long expires) {}
+	public record Challenge(UUID from, UUID to, String fromName, GameMode mode, DuelFormat format, long expires) {}
 
 	private static final List<Challenge> PENDING = new ArrayList<>();
 
@@ -34,7 +34,12 @@ public final class Challenges {
 	}
 
 	/** Sends a challenge (duel modes) or an invite (party games). */
+	/** Sends a challenge in the sender's chosen format (duel modes) or an invite (party games). */
 	public static void send(ServerPlayer from, ServerPlayer to, GameMode mode) {
+		send(from, to, mode, Queues.formatOf(from));
+	}
+
+	public static void send(ServerPlayer from, ServerPlayer to, GameMode mode, DuelFormat format) {
 		if (from == to) {
 			Msg.send(from, "challenge.self");
 			return;
@@ -52,8 +57,9 @@ public final class Challenges {
 		}
 		PENDING.removeIf(c -> c.from().equals(from.getUUID()) && c.to().equals(to.getUUID()));
 		long expires = Tasks.now() + ConfigManager.config().timings.challengeExpireSeconds * 20L;
-		PENDING.add(new Challenge(from.getUUID(), to.getUUID(), from.getGameProfile().name(), mode, expires));
-		Msg.send(from, "challenge.sent", to.getGameProfile().name(), Lang.tr(from, Icons.modeKey(mode)));
+		PENDING.add(new Challenge(from.getUUID(), to.getUUID(), from.getGameProfile().name(), mode, format, expires));
+		PlayAgain.forget(from.getUUID());
+		Msg.send(from, "challenge.sent", to.getGameProfile().name(), Queues.modeLabel(from, mode, format));
 		String name = from.getGameProfile().name();
 		MutableComponent accept = Lang.tr(to, "challenge.accept_button").withStyle(s -> s
 				.withClickEvent(new ClickEvent.RunCommand("/duel accept " + name))
@@ -61,7 +67,7 @@ public final class Challenges {
 		MutableComponent deny = Lang.tr(to, "challenge.deny_button").withStyle(s -> s
 				.withClickEvent(new ClickEvent.RunCommand("/duel deny " + name))
 				.withHoverEvent(new HoverEvent.ShowText(Lang.tr(to, "challenge.deny_hover"))));
-		Msg.send(to, "challenge.received", name, Lang.tr(to, Icons.modeKey(mode)));
+		Msg.send(to, "challenge.received", name, Queues.modeLabel(to, mode, format));
 		Msg.raw(to, Component.empty().append(Component.literal("  ")).append(accept).append(Component.literal("  ")).append(deny));
 		Msg.sound(to, SoundEvents.NOTE_BLOCK_BELL, 1f, 1.2f);
 	}
@@ -84,7 +90,7 @@ public final class Challenges {
 		Queues.leaveAll(from);
 		PENDING.removeIf(x -> x.to().equals(to.getUUID()) || x.to().equals(from.getUUID()));
 		MinecraftServer server = to.level().getServer();
-		if (!Queues.startDuel(server, c.mode(), false, from, to)) {
+		if (!Queues.startDuel(server, c.mode(), false, c.format(), true, from, to)) {
 			Msg.send(to, "queue.arenas_full_challenge");
 			Msg.send(from, "queue.arenas_full_challenge");
 			return false;

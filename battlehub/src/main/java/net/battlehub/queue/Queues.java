@@ -8,6 +8,7 @@ import java.util.UUID;
 import net.battlehub.BattleHub;
 import net.battlehub.config.ConfigManager;
 import net.battlehub.config.HubConfig;
+import net.battlehub.core.DuelFormat;
 import net.battlehub.core.GameMode;
 import net.battlehub.core.Matchmaker;
 import net.battlehub.data.PlayerStore;
@@ -21,6 +22,7 @@ import net.battlehub.progression.Ranks;
 import net.battlehub.session.Sessions;
 import net.battlehub.util.Msg;
 import net.battlehub.util.Tasks;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -36,22 +38,50 @@ public final class Queues {
 	private static final Map<UUID, Long> SINCE = new HashMap<>();
 	private static int tick;
 
-	static String key(GameMode mode, boolean ranked) {
-		return (ranked ? "ranked:" : "") + mode.id();
+	/** Queue key, e.g. "sword", "ranked:bow", "axe:bo3", "ranked:mace:bo3". */
+	static String key(GameMode mode, boolean ranked, DuelFormat format) {
+		return (ranked ? "ranked:" : "") + mode.id() + (format == DuelFormat.BO3 ? ":bo3" : "");
 	}
 
-	private static Matchmaker queue(GameMode mode, boolean ranked) {
-		return QUEUES.computeIfAbsent(key(mode, ranked), k -> new Matchmaker());
+	/** What a queue key stands for: mode, ranked, format. Null for keys that are not duel queues. */
+	record QueueKey(GameMode mode, boolean ranked, DuelFormat format) {}
+
+	static QueueKey parse(String key) {
+		if (key == null || key.startsWith("party:")) {
+			return null;
+		}
+		boolean ranked = key.startsWith("ranked:");
+		String rest = ranked ? key.substring(7) : key;
+		DuelFormat format = rest.endsWith(":bo3") ? DuelFormat.BO3 : DuelFormat.BO1;
+		if (format == DuelFormat.BO3) {
+			rest = rest.substring(0, rest.length() - 4);
+		}
+		GameMode mode = GameMode.byId(rest);
+		return mode == null ? null : new QueueKey(mode, ranked, format);
 	}
 
-	public static int waiting(GameMode mode, boolean ranked) {
-		Matchmaker q = QUEUES.get(key(mode, ranked));
+	private static Matchmaker queue(GameMode mode, boolean ranked, DuelFormat format) {
+		return QUEUES.computeIfAbsent(key(mode, ranked, format), k -> new Matchmaker());
+	}
+
+	public static DuelFormat formatOf(ServerPlayer p) {
+		return PlayerStore.get(p).format();
+	}
+
+	public static int waiting(GameMode mode, boolean ranked, DuelFormat format) {
+		Matchmaker q = QUEUES.get(key(mode, ranked, format));
 		return q == null ? 0 : q.size();
 	}
 
+	/** Waiting in this mode's queue (either format). */
 	public static boolean isQueued(UUID id, GameMode mode, boolean ranked) {
-		Matchmaker q = QUEUES.get(key(mode, ranked));
-		return q != null && q.contains(id);
+		for (DuelFormat f : DuelFormat.values()) {
+			Matchmaker q = QUEUES.get(key(mode, ranked, f));
+			if (q != null && q.contains(id)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static void toggle(ServerPlayer p, GameMode mode, boolean ranked) {
@@ -63,17 +93,23 @@ public final class Queues {
 		}
 	}
 
+	/** Joins the queue in the player's chosen format (best of 1 or 3). */
 	public static boolean join(ServerPlayer p, GameMode mode, boolean ranked) {
+		return join(p, mode, ranked, formatOf(p));
+	}
+
+	public static boolean join(ServerPlayer p, GameMode mode, boolean ranked, DuelFormat format) {
 		if (!canQueue(p, mode)) {
 			return false;
 		}
 		leaveAll(p);
+		PlayAgain.forget(p.getUUID());
 		int rating = ranked ? PlayerStore.get(p).elo(mode, Ranks.startElo()) : 0;
-		queue(mode, ranked).add(p.getUUID(), rating, Tasks.now());
+		queue(mode, ranked, format).add(p.getUUID(), rating, Tasks.now());
 		SINCE.put(p.getUUID(), Tasks.now());
-		Sessions.toQueue(p.getUUID(), key(mode, ranked));
+		Sessions.toQueue(p.getUUID(), key(mode, ranked, format));
 		HubItems.ensure(p, true);
-		Msg.send(p, ranked ? "queue.joined_ranked" : "queue.joined", Lang.tr(p, Icons.modeKey(mode)), waiting(mode, ranked));
+		Msg.send(p, ranked ? "queue.joined_ranked" : "queue.joined", modeLabel(p, mode, format), waiting(mode, ranked, format));
 		Msg.sound(p, SoundEvents.NOTE_BLOCK_PLING, 0.6f, 1.2f);
 		Menus.refreshAll(p.level().getServer());
 		return true;
@@ -125,11 +161,13 @@ public final class Queues {
 			return;
 		}
 		Challenges.tick(server);
+		PlayAgain.tick(server);
 		HubConfig.Elo e = ConfigManager.config().elo;
 		Matchmaker.Window window = new Matchmaker.Window(e.windowBase, e.windowPerSecond, e.windowMax);
 		for (GameMode mode : GameMode.duels()) {
 			for (boolean ranked : new boolean[] {false, true}) {
-				Matchmaker q = QUEUES.get(key(mode, ranked));
+			for (DuelFormat format : DuelFormat.values()) {
+				Matchmaker q = QUEUES.get(key(mode, ranked, format));
 				if (q == null || q.size() == 0) {
 					continue;
 				}
@@ -149,13 +187,14 @@ public final class Queues {
 						if (b != null) q.add(b.getUUID(), rating(b, mode, ranked), SINCE.getOrDefault(b.getUUID(), Tasks.now()));
 						continue;
 					}
-					if (!startDuel(server, mode, ranked, a, b)) {
+					if (!startDuel(server, mode, ranked, format, false, a, b)) {
 						q.add(a.getUUID(), rating(a, mode, ranked), SINCE.getOrDefault(a.getUUID(), Tasks.now()));
 						q.add(b.getUUID(), rating(b, mode, ranked), SINCE.getOrDefault(b.getUUID(), Tasks.now()));
 						Msg.send(a, "queue.arenas_full");
 						Msg.send(b, "queue.arenas_full");
 					}
 				}
+			}
 			}
 		}
 		// Action bar for everyone still waiting
@@ -164,12 +203,11 @@ public final class Queues {
 			if (s.state() != Sessions.State.QUEUED || !SINCE.containsKey(p.getUUID())) {
 				continue;
 			}
-			boolean ranked = s.queue.startsWith("ranked:");
-			GameMode mode = GameMode.byId(ranked ? s.queue.substring(7) : s.queue);
-			if (mode == null) continue;
+			QueueKey k = parse(s.queue);
+			if (k == null) continue;
 			long secs = (Tasks.now() - SINCE.get(p.getUUID())) / 20;
-			Msg.actionBar(p, ranked ? "queue.actionbar_ranked" : "queue.actionbar", Lang.tr(p, Icons.modeKey(mode)), waiting(mode, ranked),
-					String.format(java.util.Locale.ROOT, "%d:%02d", secs / 60, secs % 60));
+			Msg.actionBar(p, k.ranked() ? "queue.actionbar_ranked" : "queue.actionbar", modeLabel(p, k.mode(), k.format()),
+					waiting(k.mode(), k.ranked(), k.format()), String.format(java.util.Locale.ROOT, "%d:%02d", secs / 60, secs % 60));
 		}
 	}
 
@@ -177,11 +215,20 @@ public final class Queues {
 		return ranked ? PlayerStore.get(p).elo(mode, Ranks.startElo()) : 0;
 	}
 
+	/** "Sword PvP" or "Sword PvP (Best of 3)". */
+	public static Component modeLabel(ServerPlayer p, GameMode mode, DuelFormat format) {
+		Component name = Lang.tr(p, Icons.modeKey(mode));
+		return format == DuelFormat.BO3 ? Lang.tr(p, "format.with_bo3", name) : name;
+	}
+
 	/** Creates and starts a duel between two players. False when every arena is busy. */
-	public static boolean startDuel(MinecraftServer server, GameMode mode, boolean ranked, ServerPlayer a, ServerPlayer b) {
+	public static boolean startDuel(MinecraftServer server, GameMode mode, boolean ranked, DuelFormat format, boolean challenge,
+			ServerPlayer a, ServerPlayer b) {
 		SINCE.remove(a.getUUID());
 		SINCE.remove(b.getUUID());
-		DuelMatch m = new DuelMatch(Matches.newId(), mode, ranked, server, a, b);
+		PlayAgain.forget(a.getUUID());
+		PlayAgain.forget(b.getUUID());
+		DuelMatch m = new DuelMatch(Matches.newId(), mode, ranked, format, challenge, server, a, b);
 		if (!Matches.start(m)) {
 			Sessions.toLobby(a.getUUID());
 			Sessions.toLobby(b.getUUID());
@@ -190,7 +237,7 @@ public final class Queues {
 		}
 		for (ServerPlayer p : List.of(a, b)) {
 			ServerPlayer other = p == a ? b : a;
-			Msg.send(p, ranked ? "queue.found_ranked" : "queue.found", other.getGameProfile().name(), Lang.tr(p, Icons.modeKey(mode)));
+			Msg.send(p, ranked ? "queue.found_ranked" : "queue.found", other.getGameProfile().name(), modeLabel(p, mode, format));
 			HubItems.strip(p);
 			HubItems.ensure(p, false);
 		}
@@ -224,5 +271,6 @@ public final class Queues {
 		SINCE.clear();
 		Parties.clear();
 		Challenges.clear();
+		PlayAgain.clear();
 	}
 }

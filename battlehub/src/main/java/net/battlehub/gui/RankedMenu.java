@@ -44,7 +44,7 @@ public final class RankedMenu extends Screen {
 			Icon icon = Icon.of(Icons.mode(m)).name(Lang.item(viewer, "menu.ranked.mode", Lang.tr(viewer, Icons.modeKey(m))))
 					.lore(Lang.lore(viewer, "menu.ranked.elo", elo, Ranks.tierName(viewer, elo)))
 					.lore(Lang.lore(viewer, "menu.ranked.record", prof.rankedStats(m).wins, prof.rankedStats(m).losses))
-					.lore(Lang.lore(viewer, "menu.mode.queued", Queues.waiting(m, true)))
+					.lore(Lang.lore(viewer, "menu.mode.queued", Queues.waiting(m, true, Queues.formatOf(viewer))))
 					.lore(Component.empty())
 					.lore(Lang.lore(viewer, queued ? "menu.ranked.click_leave" : "menu.ranked.click_join"))
 					.glint(queued).clean();
@@ -57,7 +57,8 @@ public final class RankedMenu extends Screen {
 				}
 			});
 		}
-		c.set(31, Icon.of(Items.GOLD_INGOT).name(Lang.item(viewer, "menu.leaderboards"))
+		c.set(21, FormatButton.icon(viewer), click -> FormatButton.toggle(viewer, () -> new RankedMenu(viewer).open()));
+		c.set(23, Icon.of(Items.GOLD_INGOT).name(Lang.item(viewer, "menu.leaderboards"))
 				.lore(Lang.loreLines(viewer, "menu.leaderboards.lore")).build(),
 				click -> new LeaderboardMenu(viewer, () -> new RankedMenu(viewer).open()).open());
 		c.back(() -> new MainMenu(viewer).open());

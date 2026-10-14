@@ -2,6 +2,7 @@ package net.battlehub.queue;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -10,6 +11,7 @@ import net.battlehub.BattleHub;
 import net.battlehub.config.ConfigManager;
 import net.battlehub.config.HubConfig;
 import net.battlehub.core.GameMode;
+import net.battlehub.core.Votes;
 import net.battlehub.core.PartyLobby;
 import net.battlehub.games.PartyGames;
 import net.battlehub.gui.Icons;
@@ -35,6 +37,11 @@ public final class Parties {
 	private Parties() {}
 
 	private static final Map<GameMode, PartyLobby> LOBBIES = new EnumMap<>(GameMode.class);
+	/** Votes of the players waiting in each lobby (the parkour difficulty). */
+	private static final Map<GameMode, Map<UUID, String>> VOTES = new EnumMap<>(GameMode.class);
+	/** Each player's last vote per game, for "play again". */
+	private static final Map<UUID, Map<GameMode, String>> LAST_VOTE = new HashMap<>();
+	private static final java.util.Random RANDOM = new java.util.Random();
 
 	private static PartyLobby lobby(GameMode mode) {
 		HubConfig c = ConfigManager.config();
@@ -75,12 +82,22 @@ public final class Parties {
 	}
 
 	public static boolean join(ServerPlayer p, GameMode mode) {
+		return join(p, mode, "");
+	}
+
+	/** Joins the lobby; {@code vote} is the player's choice for this game (parkour difficulty) or "". */
+	public static boolean join(ServerPlayer p, GameMode mode, String vote) {
 		if (!mode.isParty() || !Queues.canQueue(p, mode)) {
 			return false;
+		}
+		if (vote != null && !vote.isBlank()) {
+			VOTES.computeIfAbsent(mode, m -> new HashMap<>()).put(p.getUUID(), vote);
+			LAST_VOTE.computeIfAbsent(p.getUUID(), u -> new EnumMap<>(GameMode.class)).put(mode, vote);
 		}
 		if (in(p.getUUID(), mode)) {
 			return true;
 		}
+		PlayAgain.forget(p.getUUID());
 		Queues.leaveAll(p);
 		PartyLobby l = lobby(mode);
 		PartyLobby.JoinResult r = l.join(p.getUUID());
@@ -108,7 +125,28 @@ public final class Parties {
 		for (PartyLobby l : LOBBIES.values()) {
 			was |= l.leave(id);
 		}
+		for (Map<UUID, String> v : VOTES.values()) {
+			v.remove(id);
+		}
 		return was;
+	}
+
+	/** This player's vote in the lobby they are waiting in, or "". */
+	public static String vote(UUID id, GameMode mode) {
+		Map<UUID, String> v = VOTES.get(mode);
+		return v == null ? "" : v.getOrDefault(id, "");
+	}
+
+	/** The player's last vote for this game, or "". */
+	public static String lastVote(UUID id, GameMode mode) {
+		Map<GameMode, String> m = LAST_VOTE.get(id);
+		return m == null ? "" : m.getOrDefault(mode, "");
+	}
+
+	/** Votes of everyone waiting in the lobby. */
+	public static java.util.Collection<String> votes(GameMode mode) {
+		Map<UUID, String> v = VOTES.get(mode);
+		return v == null ? List.of() : List.copyOf(v.values());
 	}
 
 	static void invite(ServerPlayer from, ServerPlayer to, GameMode mode) {
@@ -190,7 +228,16 @@ public final class Parties {
 			for (ServerPlayer p : players) l.join(p.getUUID());
 			return;
 		}
-		Match m = PartyGames.create(mode, server, players);
+		List<String> votes = new ArrayList<>();
+		Map<UUID, String> lobbyVotes = VOTES.computeIfAbsent(mode, k -> new HashMap<>());
+		for (ServerPlayer p : players) {
+			votes.add(lobbyVotes.getOrDefault(p.getUUID(), ""));
+		}
+		String option = Votes.tally(votes, RANDOM);
+		for (ServerPlayer p : players) {
+			lobbyVotes.remove(p.getUUID());
+		}
+		Match m = PartyGames.create(mode, server, players, option);
 		if (m == null || !Matches.start(m)) {
 			BattleHub.LOGGER.warn("Could not start a {} match (no free arena?)", mode.id());
 			for (ServerPlayer p : players) {
@@ -206,5 +253,7 @@ public final class Parties {
 
 	static void clear() {
 		LOBBIES.clear();
+		VOTES.clear();
+		LAST_VOTE.clear();
 	}
 }

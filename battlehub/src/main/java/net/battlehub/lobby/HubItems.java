@@ -16,6 +16,9 @@ public final class HubItems {
 	public static final String COMPASS = "compass";
 	public static final String LEAVE_QUEUE = "leave_queue";
 	public static final String EXIT = "exit";
+	public static final String AGAIN = "again";
+	/** Hotbar slot of the "play again" item after a match. */
+	public static final int AGAIN_SLOT = 0;
 	/** Hotbar slot of the door back to the normal world, or the "leave queue" item while queued. */
 	public static final int LEAVE_SLOT = 8;
 
@@ -28,6 +31,12 @@ public final class HubItems {
 	public static ItemStack leaveQueue(ServerPlayer p) {
 		return Icon.of("minecraft:red_dye").name(Lang.item(p, "item.leave_queue.name"))
 				.lore(Lang.loreLines(p, "item.leave_queue.lore")).tag(LEAVE_QUEUE).build();
+	}
+
+	public static ItemStack again(ServerPlayer p) {
+		net.battlehub.queue.PlayAgain.Offer o = net.battlehub.queue.PlayAgain.get(p.getUUID());
+		return Icon.of("minecraft:lime_dye").name(Lang.item(p, "item.again.name"))
+				.lore(Lang.loreLines(p, "item.again.lore", net.battlehub.queue.PlayAgain.label(p, o))).glint(true).tag(AGAIN).build();
 	}
 
 	public static ItemStack exit(ServerPlayer p) {
@@ -44,6 +53,7 @@ public final class HubItems {
 		int compassSlot = ConfigManager.config().compass.slot;
 		String lastItem = queued ? LEAVE_QUEUE : (ConfigManager.config().hub.exitItem ? EXIT : "");
 		int leaveSlot = !lastItem.isEmpty() && compassSlot != LEAVE_SLOT ? LEAVE_SLOT : -1;
+		boolean again = !queued && compassSlot != AGAIN_SLOT && net.battlehub.queue.PlayAgain.active(p.getUUID());
 		if (Icon.isHubItem(p.containerMenu.getCarried())) {
 			p.containerMenu.setCarried(ItemStack.EMPTY);
 		}
@@ -52,7 +62,8 @@ public final class HubItems {
 			if (tag.isEmpty()) {
 				continue;
 			}
-			boolean keep = (i == compassSlot && tag.equals(COMPASS)) || (i == leaveSlot && tag.equals(lastItem));
+			boolean keep = (i == compassSlot && tag.equals(COMPASS)) || (i == leaveSlot && tag.equals(lastItem))
+					|| (again && i == AGAIN_SLOT && tag.equals(AGAIN));
 			if (!keep) {
 				inv.setItem(i, ItemStack.EMPTY);
 			}
@@ -60,6 +71,9 @@ public final class HubItems {
 		place(p, compassSlot, COMPASS);
 		if (leaveSlot >= 0) {
 			place(p, leaveSlot, lastItem);
+		}
+		if (again) {
+			place(p, AGAIN_SLOT, AGAIN);
 		}
 	}
 
@@ -82,6 +96,7 @@ public final class HubItems {
 		inv.setItem(slot, switch (tag) {
 			case COMPASS -> compass(p);
 			case LEAVE_QUEUE -> leaveQueue(p);
+			case AGAIN -> again(p);
 			default -> exit(p);
 		});
 	}

@@ -99,7 +99,20 @@ public final class HubCommands {
 									}
 									Challenges.send(p, EntityArgument.getPlayer(c, "target"), mode);
 									return 1;
-								}))));
+								})
+								.then(Commands.argument("format", StringArgumentType.word())
+										.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.List.of("bo1", "bo3"), b))
+										.executes(c -> {
+											ServerPlayer p = c.getSource().getPlayerOrException();
+											GameMode mode = GameMode.byId(StringArgumentType.getString(c, "mode"));
+											if (mode == null || !mode.isDuel()) {
+												Msg.send(p, "challenge.unknown_mode");
+												return 0;
+											}
+											Challenges.send(p, EntityArgument.getPlayer(c, "target"), mode,
+													net.battlehub.core.DuelFormat.byId(StringArgumentType.getString(c, "format")));
+											return 1;
+										})))));
 
 		d.register(Commands.literal("battlehub")
 				.executes(c -> {
@@ -111,6 +124,7 @@ public final class HubCommands {
 						.executes(c -> joinMode(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode")))))
 				.then(Commands.literal("leave").executes(c -> hub(c.getSource().getPlayerOrException())))
 				.then(Commands.literal("exit").executes(c -> net.battlehub.hub.Travel.leave(c.getSource().getPlayerOrException()) ? 1 : 0))
+				.then(Commands.literal("again").executes(c -> net.battlehub.queue.PlayAgain.accept(c.getSource().getPlayerOrException()) ? 1 : 0))
 				.then(Commands.literal("setlobby").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(c -> setLobby(c.getSource())))
 				.then(Commands.literal("lobby").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))

@@ -96,6 +96,10 @@ public final class HubConfig {
 		public int menuRefreshTicks = 20;
 		/** Respawn delay in Capture The Flag and King of the Hill. */
 		public int respawnDelaySeconds = 4;
+		/** Countdown before round 2 and 3 of a best-of-3 duel. */
+		public int roundCountdownSeconds = 3;
+		/** How long the "play again" button and item stay after a match. */
+		public int playAgainSeconds = 30;
 		/** Wait for an arena build at most this long before giving up. */
 		public int arenaBuildTimeoutSeconds = 30;
 	}

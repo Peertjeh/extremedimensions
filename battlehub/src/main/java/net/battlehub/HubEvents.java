@@ -244,6 +244,7 @@ public final class HubEvents {
 					Msg.send(sp, "queue.left_all");
 				}
 				case HubItems.EXIT -> net.battlehub.hub.Travel.leave(sp);
+				case HubItems.AGAIN -> net.battlehub.queue.PlayAgain.accept(sp);
 				default -> { }
 			}
 		}

@@ -49,7 +49,7 @@ public final class ModeListMenu extends Screen {
 			Icon icon = Icon.of(Icons.mode(m)).name(Lang.item(viewer, Icons.modeKey(m)))
 					.lore(Lang.loreLines(viewer, "mode." + m.id() + ".desc"))
 					.lore(Component.empty())
-					.lore(Lang.lore(viewer, "menu.mode.queued", Queues.waiting(m, false)))
+					.lore(Lang.lore(viewer, "menu.mode.queued", Queues.waiting(m, false, Queues.formatOf(viewer))))
 					.lore(Lang.lore(viewer, "menu.mode.playing", Matches.playing(m)))
 					.lore(Component.empty())
 					.lore(Lang.lore(viewer, "menu.click_to_open"))

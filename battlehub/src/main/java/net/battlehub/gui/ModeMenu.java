@@ -38,10 +38,11 @@ public final class ModeMenu extends Screen {
 	@Override
 	public void draw(Canvas c) {
 		boolean queued = Queues.isQueued(viewer.getUUID(), mode, false);
+		net.battlehub.core.DuelFormat format = Queues.formatOf(viewer);
 		c.set(4, Icon.of(Icons.mode(mode)).name(Lang.item(viewer, Icons.modeKey(mode)))
 				.lore(Lang.loreLines(viewer, "mode." + mode.id() + ".desc"))
 				.lore(Component.empty())
-				.lore(Lang.lore(viewer, "menu.mode.queued", Queues.waiting(mode, false)))
+				.lore(Lang.lore(viewer, "menu.mode.queued", Queues.waiting(mode, false, format)))
 				.lore(Lang.lore(viewer, "menu.mode.playing", Matches.playing(mode))).clean().build());
 		if (queued) {
 			c.set(11, Icon.of(Items.BARRIER).name(Lang.item(viewer, "menu.mode.leave_queue"))
@@ -58,6 +59,7 @@ public final class ModeMenu extends Screen {
 						viewer.closeContainer();
 					});
 		}
+		c.set(13, FormatButton.icon(viewer), click -> FormatButton.toggle(viewer, () -> new ModeMenu(viewer, mode, parent).open()));
 		c.set(15, Icon.of(Items.NAME_TAG).name(Lang.item(viewer, "menu.mode.challenge"))
 				.lore(Lang.loreLines(viewer, "menu.mode.challenge.lore")).build(),
 				click -> Queues.challengeMenu(viewer, mode));

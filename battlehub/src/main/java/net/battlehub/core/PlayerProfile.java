@@ -30,12 +30,21 @@ public final class PlayerProfile {
 	public Map<String, Long> bestTimes = new LinkedHashMap<>();
 	public long firstSeen;
 	public long lastSeen;
+	/** Preferred duel format: "bo1" or "bo3". */
+	public String duelFormat = "bo1";
+	/** Cosmetics bought with coins (ids from cosmetics.json). */
+	public Set<String> ownedCosmetics = new LinkedHashSet<>();
+	/** Selected cosmetic per category ("trail", "kill", ...). */
+	public Map<String, String> cosmetics = new LinkedHashMap<>();
 
 	public PlayerProfile normalize() {
 		if (uuid == null) uuid = "";
 		if (name == null) name = "";
 		if (title == null) title = "";
 		if (ownedTitles == null) ownedTitles = new LinkedHashSet<>();
+		if (duelFormat == null) duelFormat = "bo1";
+		if (ownedCosmetics == null) ownedCosmetics = new LinkedHashSet<>();
+		if (cosmetics == null) cosmetics = new LinkedHashMap<>();
 		if (knownTitles == null) knownTitles = new LinkedHashSet<>();
 		if (overall == null) overall = new ModeStats();
 		if (modes == null) modes = new LinkedHashMap<>();
@@ -84,6 +93,10 @@ public final class PlayerProfile {
 	}
 
 	/** Wins over all duel modes together. */
+	public DuelFormat format() {
+		return DuelFormat.byId(duelFormat);
+	}
+
 	public int duelWins() {
 		int sum = 0;
 		for (GameMode m : GameMode.duels()) {

@@ -56,7 +56,9 @@ final class HubWorldTests {
 			pl.getInventory().clearContent();
 			pl.getInventory().setItem(3, new ItemStack(Items.DIAMOND, 5));
 			pl.setExperienceLevels(7);
-			pl.teleportTo(server.overworld(), 12.5, pl.getY(), -7.5, Set.of(), 90, 0, false);
+			// On the ground: simulated players fall like real ones
+			int y = server.overworld().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, 12, -8);
+			pl.teleportTo(server.overworld(), 12.5, y, -7.5, Set.of(), 90, 0, false);
 			VARS.put("sPos", pl.position());
 		});
 		s.pause(25);

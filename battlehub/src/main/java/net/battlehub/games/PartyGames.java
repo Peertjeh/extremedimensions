@@ -13,6 +13,11 @@ public final class PartyGames {
 	private PartyGames() {}
 
 	public static Match create(GameMode mode, MinecraftServer server, List<ServerPlayer> players) {
+		return create(mode, server, players, "");
+	}
+
+	/** {@code option}: what the lobby voted for (the parkour difficulty), "" when nothing. */
+	public static Match create(GameMode mode, MinecraftServer server, List<ServerPlayer> players, String option) {
 		int id = Matches.newId();
 		return switch (mode) {
 			case BOW_SPLEEF -> new BowSpleefMatch(id, server, players);

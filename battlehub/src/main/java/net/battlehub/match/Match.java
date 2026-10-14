@@ -248,6 +248,16 @@ public abstract class Match {
 		p.closeContainer();
 		Snapshots.take(p);
 		p.stopRiding();
+		resetForPlay(p);
+		Arena.Point sp = spawnPoint(p.getUUID(), index);
+		spawnOf.put(p.getUUID(), sp);
+		teleport(p, sp);
+		Kits.give(p, kit(), leatherColor(p.getUUID()));
+		onArrived(p, index);
+	}
+
+	/** Full health and hunger, no effects, fire or arrows, adventure mode. */
+	protected void resetForPlay(ServerPlayer p) {
 		p.removeAllEffects();
 		p.setGameMode(GameType.ADVENTURE);
 		p.setHealth(p.getMaxHealth());
@@ -256,11 +266,37 @@ public abstract class Match {
 		p.clearFire();
 		p.setArrowCount(0);
 		p.resetFallDistance();
-		Arena.Point sp = spawnPoint(p.getUUID(), index);
-		spawnOf.put(p.getUUID(), sp);
-		teleport(p, sp);
-		Kits.give(p, kit(), leatherColor(p.getUUID()));
-		onArrived(p, index);
+	}
+
+	/**
+	 * Next round in the same arena: arrows and dropped items are removed, everybody still in the match goes back
+	 * to their spawn, healed and with a fresh kit, and the countdown starts again.
+	 */
+	protected void restartRound() {
+		clearLooseEntities();
+		for (UUID id : alive) {
+			ServerPlayer p = player(id);
+			Arena.Point sp = spawnOf.get(id);
+			if (p == null || sp == null) continue;
+			p.closeContainer();
+			resetForPlay(p);
+			teleport(p, sp);
+			Kits.give(p, kit(), leatherColor(id));
+		}
+		runTicks = 0;
+		setPhase(Phase.COUNTDOWN);
+	}
+
+	/** Removes projectiles, dropped items and other loose entities from the arena. */
+	protected void clearLooseEntities() {
+		for (Entity e : arena.level().getEntitiesOfClass(Entity.class, arena.bounds(), e -> !(e instanceof Player))) {
+			e.discard();
+		}
+	}
+
+	/** Small line under the countdown numbers. */
+	protected Component countdownSubtitle(ServerPlayer p) {
+		return Lang.tr(p, "match.get_ready", Lang.tr(p, Icons.modeKey(mode)));
 	}
 
 	protected void teleport(ServerPlayer p, Arena.Point pt) {
@@ -332,7 +368,7 @@ public abstract class Match {
 					ServerPlayer p = player(id);
 					if (p == null) continue;
 					String color = secs <= 3 ? "&c" : "&e";
-					Msg.title(p, Lang.format(color + "&l" + secs), Lang.tr(p, "match.get_ready", Lang.tr(p, Icons.modeKey(mode))), 0, 25, 5);
+					Msg.title(p, Lang.format(color + "&l" + secs), countdownSubtitle(p), 0, 25, 5);
 					Msg.sound(p, SoundEvents.NOTE_BLOCK_HAT, 1f, secs <= 3 ? 1.4f : 1.0f);
 				}
 			}
@@ -554,7 +590,7 @@ public abstract class Match {
 			return;
 		}
 		setPhase(Phase.CLOSED);
-		sendHome();
+		sendHome(true);
 		clearArena();
 		Menus.refreshAll(server);
 	}
@@ -572,12 +608,13 @@ public abstract class Match {
 			}
 		}
 		forWatchers(p -> Msg.send(p, reasonKey));
-		sendHome();
+		sendHome(false);
 		clearArena();
 		Menus.refreshAll(server);
 	}
 
-	private void sendHome() {
+	/** Everybody back to where they came from; {@code offerAgain}: after a normal end, offer to play again. */
+	private void sendHome(boolean offerAgain) {
 		for (UUID id : participants) {
 			ServerPlayer p = player(id);
 			if (p == null || left.contains(id)) continue;
@@ -587,6 +624,9 @@ public abstract class Match {
 			}
 			Sessions.toLobby(id);
 			HubItems.ensure(p, false);
+			if (offerAgain && teleported) {
+				net.battlehub.queue.PlayAgain.offer(p, this);
+			}
 		}
 		for (UUID id : new ArrayList<>(watchers)) {
 			ServerPlayer p = player(id);

@@ -75,6 +75,7 @@ public final class SelfTest {
 		duel(server, s, GameMode.BOW, "challenge", "kill");
 		duel(server, s, GameMode.CROSSBOW, "queue", "kill");
 		spectating(server, s);
+		FormatTests.all(server, s);
 		s.run("speed up party timers for the test", () -> {
 			var c = ConfigManager.config();
 			c.timings.partyCountdownSeconds = 3;
