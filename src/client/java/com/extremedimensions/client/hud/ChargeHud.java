@@ -67,7 +67,18 @@ public class ChargeHud implements HudElement {
 		boolean right = corner.right();
 		int x = right ? w - 6 - CHIP_W : 6;
 		int stack = count * 26 + (guide.isEmpty() ? 0 : guideH + 5) - 5;
-		int y = corner.bottom() ? h - 6 - stack : 6;
+		int bottomGap = 6;
+		if (corner.bottom()) {
+			// On a narrow screen a bottom corner reaches the hotbar, hearts and hunger: then the stack sits above them
+			float scale = ClientOptions.hudScale() / 100f;
+			int widest = guide.isEmpty() ? CHIP_W : GUIDE_W;
+			int left = right ? w - 6 - widest : 6, rightEdge = left + widest;
+			int bar = Math.round(121 / scale);
+			if (rightEdge > w / 2 - bar && left < w / 2 + bar) {
+				bottomGap = Math.round(64 / scale);
+			}
+		}
+		int y = corner.bottom() ? h - bottomGap - stack : 6;
 		if (!guide.isEmpty()) {
 			// The guide sits on the far side of the meters from the screen's edge (above them at the bottom)
 			int gy = corner.bottom() ? y : y + count * 26;
