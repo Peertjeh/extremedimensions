@@ -69,14 +69,16 @@ public class PerfTests {
 		}
 	}
 
-	/** The Seam: designing one of every structure, and building the queued blocks at the rate the game does. */
+	/**
+	 * The Seam: designing one of every structure, and building the queued blocks at the rate the game does. The test
+	 * server only loads the vanilla worlds, so the blocks are laid in the test level (same cost per block).
+	 */
 	@GameTest(maxTicks = 400)
 	public void seamStructures(GameTestHelper helper) {
-		ServerLevel seam = helper.getLevel().getServer().getLevel(SeamService.SEAM);
-		CurseTests.check(helper, seam != null, "the Seam dimension is not loaded");
+		ServerLevel seam = helper.getLevel();
 		SeamArchitect.clear();
 		long t0 = System.nanoTime();
-		int kinds = SeamService.showcase(helper.getLevel().getServer());
+		int kinds = SeamService.designShowcase();
 		double designMs = (System.nanoTime() - t0) / 1e6;
 		int queued = SeamArchitect.pending();
 		// Build at the game's own rate (4000 blocks a tick) for a few ticks; the first chunks load on the way

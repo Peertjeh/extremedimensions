@@ -518,9 +518,11 @@ public final class SeamService {
 	 * cells), at different heights and joined by bridges, so they can be visited with a teleport.
 	 */
 	public static int showcase(MinecraftServer s) {
-		if (s.getLevel(SEAM) == null) {
-			return 0;
-		}
+		return s.getLevel(SEAM) == null ? 0 : designShowcase();
+	}
+
+	/** Designs the showcase row and queues its blocks (see {@link #showcase}); returns how many structures. */
+	public static int designShowcase() {
 		int[] kinds = {SPIRE, LOOM, VILLAGE, HANGING, HALO, PLAIN};
 		int n = kinds.length;
 		Random[] rnds = new Random[n];
