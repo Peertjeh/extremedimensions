@@ -36,6 +36,7 @@ final class LayoutTests {
 			return PartyLayouts.parkour(t, rnd, ParkourCourse.generate(rnd.nextLong(), d, d.defaultJumps, d.checkpointEvery, 14));
 		});
 		m.put("lms", t -> PartyLayouts.lms(t, rnd));
+		m.put("ffa", t -> PartyLayouts.ffa(t, rnd));
 		return m;
 	}
 

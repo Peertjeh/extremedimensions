@@ -69,10 +69,10 @@ public final class StatsMenu extends Screen {
 		for (int i = 0; i < duels.length; i++) {
 			c.set(duelSlots[i], modeIcon(p, duels[i]).build());
 		}
-		int[] partySlots = {37, 38, 39, 40, 41, 42, 43};
 		GameMode[] parties = GameMode.parties();
+		int start = 40 - parties.length / 2;
 		for (int i = 0; i < parties.length; i++) {
-			c.set(partySlots[i], modeIcon(p, parties[i]).build());
+			c.set(start + i, modeIcon(p, parties[i]).build());
 		}
 
 		if (self) {

@@ -23,6 +23,7 @@ public final class Icons {
 			case CTF -> Ids.item("minecraft:red_banner");
 			case PARKOUR -> Items.FEATHER;
 			case LMS -> Items.TOTEM_OF_UNDYING;
+			case FFA -> Items.IRON_SWORD;
 		};
 	}
 

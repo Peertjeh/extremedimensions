@@ -27,6 +27,7 @@ public final class PartyGames {
 			case CTF -> new CtfMatch(id, server, players);
 			case PARKOUR -> new ParkourMatch(id, server, players, option);
 			case LMS -> new LmsMatch(id, server, players);
+			case FFA -> new FfaMatch(id, server, players);
 			default -> null;
 		};
 	}

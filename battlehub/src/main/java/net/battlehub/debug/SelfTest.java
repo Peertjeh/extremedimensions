@@ -87,6 +87,7 @@ public final class SelfTest {
 			c.game(GameMode.CTF).settings.put("capturesToWin", 1.0);
 			c.game(GameMode.LMS).settings.put("borderDelaySeconds", 1.0);
 			c.game(GameMode.LMS).settings.put("borderShrinkSeconds", 20.0);
+			c.game(GameMode.FFA).settings.put("killsToWin", 3.0);
 		});
 		PartyTests.all(server, s);
 		ProgressionTests.all(server, s);

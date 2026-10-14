@@ -395,5 +395,15 @@
 	"cosmetics.deselected": "&7Je hebt {0} &7uitgezet.",
 	"cosmetics.cleared": "&7Niets actief voor {0}&7.",
 	"cosmetics.too_expensive": "&cDat kost {0} coins; je hebt er {1}.",
-	"parkour.no_coins": "&8Easy en medium geven wel XP maar geen coins; probeer hard of extreme."
+	"parkour.no_coins": "&8Easy en medium geven wel XP maar geen coins; probeer hard of extreme.",
+	"mode.ffa": "&c&lFree for All",
+	"mode.ffa.desc": "&7Iedereen tegen iedereen, met\n&7respawns. Wie als eerste het aantal\n&7kills haalt wint, anders de meeste.",
+	"ffa.start": "&eFree for All: wie als eerste &c{0} kills &eheeft, wint!",
+	"ffa.one_more": "&c{0} &eheeft nog maar één kill nodig!",
+	"ffa.new_leader": "&6{0} &eneemt de leiding met &c{1} kills&e.",
+	"ffa.actionbar": "&cKills: &f{0}/{1} &8| &7Leider: &f{2} &7({3})",
+	"ffa.nobody": "nog niemand",
+	"ffa.protected": "&aSpawnbescherming",
+	"ffa.status": "&7Leider: &f{0} &7({1}/{2} kills)",
+	"ffa.status_none": "&c{0} spelers &8| &7nog geen kills"
 }

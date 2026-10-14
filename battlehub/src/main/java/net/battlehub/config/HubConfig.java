@@ -210,6 +210,7 @@ public final class HubConfig {
 				.with("coinsEasy", 0).with("coinsMedium", 0).with("coinsHard", 1).with("coinsExtreme", 1));
 		m.put("lms", new Game(2, 16, 420, "lms").with("borderStart", 80).with("borderEnd", 8)
 				.with("borderDelaySeconds", 45).with("borderShrinkSeconds", 180).with("borderDamagePerSecond", 2));
+		m.put("ffa", new Game(2, 16, 300, "ffa").with("killsToWin", 15).with("spawnProtectionSeconds", 3));
 		return m;
 	}
 

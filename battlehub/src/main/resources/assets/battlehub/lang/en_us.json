@@ -395,5 +395,15 @@
 	"cosmetics.deselected": "&7You turned off {0}&7.",
 	"cosmetics.cleared": "&7Nothing active for {0}&7.",
 	"cosmetics.too_expensive": "&cThat costs {0} coins; you have {1}.",
-	"parkour.no_coins": "&8Easy and medium courses give XP but no coins; try hard or extreme."
+	"parkour.no_coins": "&8Easy and medium courses give XP but no coins; try hard or extreme.",
+	"mode.ffa": "&c&lFree for All",
+	"mode.ffa.desc": "&7Everyone against everyone, with\n&7respawns. First to the kill target\n&7wins, or the most kills at the end.",
+	"ffa.start": "&eFree for All: the first to &c{0} kills &ewins!",
+	"ffa.one_more": "&c{0} &eneeds just one more kill!",
+	"ffa.new_leader": "&6{0} &etakes the lead with &c{1} kills&e.",
+	"ffa.actionbar": "&cKills: &f{0}/{1} &8| &7Leader: &f{2} &7({3})",
+	"ffa.nobody": "nobody yet",
+	"ffa.protected": "&aSpawn protection",
+	"ffa.status": "&7Leader: &f{0} &7({1}/{2} kills)",
+	"ffa.status_none": "&c{0} players &8| &7no kills yet"
 }

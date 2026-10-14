@@ -82,6 +82,8 @@ public final class KitConfig {
 		m.put("parkour", new Kit().effect("minecraft:saturation", 0));
 		m.put("lms", armor(new Kit().add(i("iron_sword", 1, "0")).add(i("bow", 1, "1")).add(i("arrow", 16, "8"))
 				.add(i("golden_apple", 2, "2")).add(i("cooked_beef", 8, "3")), "iron"));
+		m.put("ffa", armor(new Kit().add(i("diamond_sword", 1, "0")).add(i("bow", 1, "1").ench("minecraft:power", 1))
+				.add(i("arrow", 16, "8")).add(i("golden_apple", 1, "2")), "iron").effect("minecraft:saturation", 0));
 		return m;
 	}
 

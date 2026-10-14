@@ -160,7 +160,7 @@ class GameRulesTest {
 		}
 		assertNull(GameMode.byId("nope"));
 		assertEquals(5, GameMode.duels().length);
-		assertEquals(7, GameMode.parties().length);
+		assertEquals(8, GameMode.parties().length);
 		assertTrue(GameMode.BOW.isRanged());
 		assertFalse(GameMode.MACE.isRanged());
 	}

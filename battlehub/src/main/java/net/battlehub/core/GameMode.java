@@ -15,7 +15,8 @@ public enum GameMode {
 	KOTH(Category.PARTY, false, 2, 16),
 	CTF(Category.PARTY, false, 2, 16),
 	PARKOUR(Category.PARTY, false, 2, 16),
-	LMS(Category.PARTY, false, 2, 16);
+	LMS(Category.PARTY, false, 2, 16),
+	FFA(Category.PARTY, false, 2, 16);
 
 	public enum Category { DUEL, PARTY }
 
@@ -78,6 +79,6 @@ public enum GameMode {
 	}
 
 	public static GameMode[] parties() {
-		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS};
+		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, FFA};
 	}
 }

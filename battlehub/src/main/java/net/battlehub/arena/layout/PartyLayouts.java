@@ -330,6 +330,25 @@ public final class PartyLayouts {
 	}
 
 	/** Last Man Standing: a generated walled field with hills and plenty of cover; the border shrinks around it. */
+	/** Free for All: a wide field with plenty of cover and raised platforms; sixteen spawns on a ring. */
+	public static Blueprint ffa(Theme t, RandomSource rnd) {
+		Blueprint bp = new Blueprint();
+		int r = 28 + rnd.nextInt(6);
+		Field f = new Field(r, Shape.roundish(rnd), Symmetry.POINT);
+		double ring = Math.round(r * 0.72);
+		f.keepBandClear(ring - 1.6, ring + 1.6);
+		f.hills(rnd, 6 + rnd.nextInt(4), 2);
+		Features.scatter(bp, f, t, rnd, 12 + rnd.nextInt(6), Features.kinds(t, true));
+		f.build(bp, t, rnd, 5);
+		f.walls(bp, t, rnd, 4);
+		Features.plants(bp, f, t, rnd, 8);
+		bp.spawnRing(16, ring, 1);
+		bp.spectator(0.5, 30, -(r + 8) + 0.5, 0, 45);
+		bp.voidY(-10);
+		bp.radius(r + 20);
+		return bp;
+	}
+
 	public static Blueprint lms(Theme t, RandomSource rnd) {
 		Blueprint bp = new Blueprint();
 		int r = 26 + rnd.nextInt(5);

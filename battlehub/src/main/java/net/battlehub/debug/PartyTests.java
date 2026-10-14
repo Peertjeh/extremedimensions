@@ -16,6 +16,7 @@ import net.battlehub.core.Outcome;
 import net.battlehub.core.PlayerProfile;
 import net.battlehub.data.PlayerStore;
 import net.battlehub.games.CtfMatch;
+import net.battlehub.games.FfaMatch;
 import net.battlehub.games.KothMatch;
 import net.battlehub.games.LmsMatch;
 import net.battlehub.games.ParkourMatch;
@@ -51,6 +52,38 @@ final class PartyTests {
 		party(server, s, GameMode.PARKOUR, PartyTests::parkour, new String[] {"hard", "hard", "easy", ""});
 		soloParkour(server, s);
 		party(server, s, GameMode.LMS, PartyTests::lms);
+		party(server, s, GameMode.FFA, PartyTests::ffa);
+	}
+
+	private static void hit(String victim, String attacker, float amount) {
+		ServerPlayer v = p(victim);
+		v.hurtServer(v.level(), v.damageSources().playerAttack(p(attacker)), amount);
+	}
+
+	/** Free for All (kill target 3 for the test): kills, respawn at a free spot with protection, first to 3 wins. */
+	private static void ffa(Script s) {
+		s.check("ffa: everyone has the kit", () -> {
+			for (String n : NAMES) {
+				if (!p(n).getInventory().getItem(0).is(net.minecraft.world.item.Items.DIAMOND_SWORD)) return false;
+			}
+			return ((FfaMatch) match()).target() == 3;
+		});
+		s.run("ffa: A kills B", () -> hit("BHTestB", "BHTestA", 1000f));
+		s.check("ffa: one kill for A, B waits to respawn", () -> match().kills(p("BHTestA").getUUID()) == 1
+				&& p("BHTestB").gameMode() == GameType.SPECTATOR && match().alive().contains(p("BHTestB").getUUID()));
+		s.waitFor("ffa: B is back with the kit", 60, () -> p("BHTestB").gameMode() == GameType.ADVENTURE
+				&& p("BHTestB").getInventory().getItem(0).is(net.minecraft.world.item.Items.DIAMOND_SWORD) && ArenaWorld.is(p("BHTestB").level()));
+		s.check("ffa: B is protected right after spawning", () -> {
+			float before = p("BHTestB").getHealth();
+			hit("BHTestB", "BHTestC", 6f);
+			return ((FfaMatch) match()).isProtected(p("BHTestB").getUUID()) && p("BHTestB").getHealth() == before;
+		});
+		s.run("ffa: A kills C", () -> hit("BHTestC", "BHTestA", 1000f));
+		s.check("ffa: A leads with 2", () -> match().kills(p("BHTestA").getUUID()) == 2
+				&& p("BHTestA").getUUID().equals(((FfaMatch) match()).leader()) && match().phase() == Match.Phase.RUNNING);
+		s.run("ffa: A kills D, the third kill", () -> hit("BHTestD", "BHTestA", 1000f));
+		s.waitFor("ffa: the kill target ends the match", 5, () -> match().phase() != Match.Phase.RUNNING);
+		expectWinner(s, GameMode.FFA, "BHTestA");
 	}
 
 	private static void tp(ServerPlayer p, double x, double y, double z) {

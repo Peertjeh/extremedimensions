@@ -10,7 +10,7 @@ import net.battlehub.util.Icon;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
-/** The seven party games with their lobby status. */
+/** The party games with their lobby status. */
 public final class PartyGamesMenu extends Screen {
 	public PartyGamesMenu(ServerPlayer viewer) {
 		super(viewer);
@@ -33,11 +33,13 @@ public final class PartyGamesMenu extends Screen {
 
 	@Override
 	public void draw(Canvas c) {
-		int[] slots = {10, 11, 12, 13, 14, 15, 16};
 		GameMode[] games = GameMode.parties();
+		// Seven on the first row, the rest centred on the row below
+		int below = Math.max(0, games.length - 7);
 		for (int i = 0; i < games.length; i++) {
 			GameMode m = games[i];
-			c.set(slots[i], icon(viewer, m).build(), click -> new PartyGameMenu(viewer, m).open());
+			int slot = i < 7 ? 10 + i : 22 - (below - 1) + 2 * (i - 7);
+			c.set(slot, icon(viewer, m).build(), click -> new PartyGameMenu(viewer, m).open());
 		}
 		c.back(() -> new MainMenu(viewer).open());
 		c.fill();
