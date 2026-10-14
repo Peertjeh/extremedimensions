@@ -194,7 +194,7 @@ public final class SeamService {
 		WorldFx.fx(p, Fx.START_END, 0);
 		Advancements.grant(p, Advancements.SEAM_ENTERED);
 		Journal.unlock(p, d, JournalEntry.SEAM);
-		DataStore.save();
+		DataStore.markDirty();
 	}
 
 	// ------------------------------------------------------------------ ticking
@@ -281,7 +281,7 @@ public final class SeamService {
 		WorldFx.fx(p, Fx.SAFE, 0);
 		WorldFx.soundSelf(p, "extremedimensions:portal_home", 0.6f, 1.1f);
 		Advancements.grant(p, Advancements.SEAM_RETURNED);
-		DataStore.save();
+		DataStore.markDirty();
 	}
 
 	/** Out of time, or fallen: the Seam drags the player back out over three seconds. */
@@ -304,7 +304,7 @@ public final class SeamService {
 		WorldFx.run("effect clear " + p.getStringUUID() + " minecraft:levitation");
 		WorldFx.tp(p, Dims.fullIdOf(d.homeDim), d.homeX, d.homeY, d.homeZ);
 		PenaltyService.curse(p, Dims.OVERWORLD.equals(d.homeDim));
-		DataStore.save();
+		DataStore.markDirty();
 	}
 
 	/** Seam Silk and lore are found in villages; the first visit to one is remembered. */

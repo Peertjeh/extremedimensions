@@ -126,7 +126,7 @@ public final class ExpeditionService {
 		if (d.expeditions >= Advancements.VETERAN_EXPEDITIONS) {
 			Advancements.grant(p, Advancements.VETERAN);
 		}
-		DataStore.save();
+		DataStore.markDirty();
 	}
 
 	/**
@@ -264,7 +264,7 @@ public final class ExpeditionService {
 		PenaltyService.effect(p, "resistance", secs, 4);
 		WorldFx.sound(p, "extremedimensions:collapse", 1.2f, 1.0f);
 		WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.6, 0.05, 30);
-		DataStore.save();
+		DataStore.markDirty();
 	}
 
 	/** Runs every tick while collapsing: the pull, then the death (retried every second as a safety net). */
@@ -300,7 +300,7 @@ public final class ExpeditionService {
 		if (Dims.OVERWORLD.equals(dim) && DataStore.overworldPenalties() && !d.collapsing) {
 			d.endedIn = Dims.OVERWORLD;
 			PenaltyService.owe(d, true);
-			DataStore.save();
+			DataStore.markDirty();
 			return;
 		}
 		if (Dims.isBeyond(dim) && !d.collapsing) {
@@ -316,7 +316,7 @@ public final class ExpeditionService {
 			PenaltyService.owe(d, false);
 			Journal.unlock(p, d, JournalEntry.ENDED);
 			Advancements.grant(p, Advancements.ENDED);
-			DataStore.save();
+			DataStore.markDirty();
 		}
 	}
 

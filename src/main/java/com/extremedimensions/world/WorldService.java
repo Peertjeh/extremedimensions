@@ -81,7 +81,7 @@ public final class WorldService {
 			Advancements.grant(p, Advancements.SEAL_BROKEN);
 		}
 		if (first) {
-			DataStore.save();
+			DataStore.markDirty();
 		}
 	}
 

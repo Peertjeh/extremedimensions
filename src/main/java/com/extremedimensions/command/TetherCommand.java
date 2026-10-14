@@ -75,7 +75,7 @@ public final class TetherCommand {
 		int set = d.addStacks(pen, stacks);
 		PenaltyService.applyEffects(p, d);
 		Sync.state(p, d);
-		DataStore.save();
+		DataStore.markDirty();
 		src.sendSuccess(() -> Component.translatable("commands.extremedimensions.curse.set", Component.translatable(pen.nameKey()), set, pen.max), false);
 		return 1;
 	}
@@ -88,7 +88,7 @@ public final class TetherCommand {
 		d.atonement.clear();
 		PenaltyService.applyEffects(p, d);
 		Sync.state(p, d);
-		DataStore.save();
+		DataStore.markDirty();
 		src.sendSuccess(() -> Component.translatable("commands.extremedimensions.curse.cleared"), false);
 		return 1;
 	}

@@ -56,7 +56,7 @@ public final class Journal {
 			return;
 		}
 		unlock(p, d, next);
-		DataStore.save();
+		DataStore.markDirty();
 	}
 
 	public static void open(ServerPlayer p, PlayerData d) {
@@ -76,6 +76,6 @@ public final class Journal {
 		d.journal.add(JournalEntry.TETHERED.id);
 		WorldFx.soundSelf(p, "minecraft:item.book.page_turn", 1.0f, 0.7f);
 		Advancements.grant(p, Advancements.ROOT);
-		DataStore.save();
+		DataStore.markDirty();
 	}
 }

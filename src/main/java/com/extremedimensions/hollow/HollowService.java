@@ -187,7 +187,7 @@ public final class HollowService {
 			Hoard h = new Hoard(Dims.of(level), spot.getX(), spot.getY(), spot.getZ(), owner);
 			build(level, spot, nether);
 			DataStore.hoards().add(h);
-			DataStore.save();
+			DataStore.markDirty();
 			return h;
 		}
 		return null;
@@ -394,7 +394,7 @@ public final class HollowService {
 			return;
 		}
 		DataStore.hoards().remove(h);
-		DataStore.save();
+		DataStore.markDirty();
 		if (p != null) {
 			Advancements.grant(p, Advancements.HOARD_FOUND);
 			Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.HOLLOWS);
@@ -753,7 +753,7 @@ public final class HollowService {
 		if (st.mode == Mode.COMPANION && st.owner != null) {
 			COMPANIONS.remove(st.owner);
 			DataStore.get(st.owner).companion = false;
-			DataStore.save();
+			DataStore.markDirty();
 		}
 	}
 
@@ -808,7 +808,7 @@ public final class HollowService {
 				h.level().dimension().identifier().toString(), h.getX(), h.getY() + 0.8, h.getZ()));
 		Advancements.grant(p, Advancements.HOLLOW_BOUND);
 		Journal.unlock(p, d, JournalEntry.LITTLE_THIEVES);
-		DataStore.save();
+		DataStore.markDirty();
 	}
 
 	private static void toughen(Hollowling h) {
@@ -1066,7 +1066,7 @@ public final class HollowService {
 		Hoard home = byKey(g.hoard);
 		if (home != null) {
 			home.keeperSlain = true;
-			DataStore.save();
+			DataStore.markDirty();
 		}
 		ServerLevel level = (ServerLevel) k.level();
 		k.spawnAtLocation(level, new ItemStack(ModItems.TETHER_FRAGMENT, 2));
@@ -1109,7 +1109,7 @@ public final class HollowService {
 		build(level, spot, nether);
 		DataStore.hoards().add(h);
 		deposit(h, trinkets());
-		DataStore.save();
+		DataStore.markDirty();
 		return true;
 	}
 }

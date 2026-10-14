@@ -3,8 +3,10 @@ package com.extremedimensions.data;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,7 +24,11 @@ import com.extremedimensions.ExtremeDimensions;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
 
-/** Per-world persistence in {@code <world>/extremedimensions.json}. Every world has its own progress. */
+/**
+ * Per-world persistence in {@code <world>/extremedimensions.json}. Every world has its own progress. Changes are marked
+ * dirty and written together with the world's own saves, so the mod's data never runs ahead of (or behind) the
+ * inventories and blocks it belongs with.
+ */
 public final class DataStore {
 	private DataStore() {}
 
@@ -45,45 +51,95 @@ public final class DataStore {
 	private static final Type TYPE = new TypeToken<WorldData>() {}.getType();
 	private static WorldData data = new WorldData();
 	private static Path file = null;
+	/** Changed since the last write. */
+	private static boolean dirty = false;
 
 	public static void load(MinecraftServer server) {
 		data = new WorldData();
+		dirty = false;
 		file = server.getWorldPath(LevelResource.ROOT).resolve(ExtremeDimensions.MOD_ID + ".json");
-		try {
+		WorldData loaded = read(file);
+		if (loaded == null && Files.exists(backup())) {
+			// The main file is missing or damaged (a crash while writing): the last good copy takes over
+			ExtremeDimensions.LOGGER.warn("World data unreadable, restoring {}", backup().getFileName());
+			loaded = read(backup());
+		}
+		if (loaded == null) {
 			if (Files.exists(file)) {
-				WorldData loaded = GSON.fromJson(Files.readString(file, StandardCharsets.UTF_8), TYPE);
-				if (loaded != null) {
-					if (loaded.players != null) {
-						data.players = loaded.players;
-					}
-					if (loaded.altars != null) {
-						data.altars = loaded.altars;
-					}
-					data.overworldPenalties = loaded.overworldPenalties;
-					if (loaded.hoards != null) {
-						data.hoards = loaded.hoards;
-					}
-					data.sealBroken = loaded.sealBroken;
-					data.ending = loaded.ending == null ? "" : loaded.ending;
-					data.heartBuilt = loaded.heartBuilt;
-					if (loaded.seamCells != null) {
-						data.seamCells = loaded.seamCells;
-					}
+				// Never overwrite what could not be read: keep it aside for the admin, start fresh
+				Path aside = file.resolveSibling(file.getFileName() + ".unreadable-" + System.currentTimeMillis());
+				try {
+					Files.move(file, aside);
+					ExtremeDimensions.LOGGER.error("World data could not be read; kept it as {} and started fresh", aside.getFileName());
+				} catch (IOException e) {
+					ExtremeDimensions.LOGGER.error("World data could not be read or moved aside", e);
 				}
 			}
-		} catch (Exception e) {
-			ExtremeDimensions.LOGGER.error("Could not load world data, starting fresh", e);
-			data = new WorldData();
+			return;
+		}
+		if (loaded.players != null) {
+			data.players = loaded.players;
+		}
+		if (loaded.altars != null) {
+			data.altars = loaded.altars;
+		}
+		data.overworldPenalties = loaded.overworldPenalties;
+		if (loaded.hoards != null) {
+			data.hoards = loaded.hoards;
+		}
+		data.sealBroken = loaded.sealBroken;
+		data.ending = loaded.ending == null ? "" : loaded.ending;
+		data.heartBuilt = loaded.heartBuilt;
+		if (loaded.seamCells != null) {
+			data.seamCells = loaded.seamCells;
 		}
 	}
 
-	public static void save() {
-		if (file == null) {
-			return;
+	/** The file's contents, or null if it is missing or cannot be read. */
+	private static WorldData read(Path path) {
+		if (!Files.exists(path)) {
+			return null;
 		}
 		try {
+			return GSON.fromJson(Files.readString(path, StandardCharsets.UTF_8), TYPE);
+		} catch (Exception e) {
+			ExtremeDimensions.LOGGER.error("Could not read {}", path.getFileName(), e);
+			return null;
+		}
+	}
+
+	private static Path backup() {
+		return file.resolveSibling(file.getFileName() + ".bak");
+	}
+
+	/** Something changed: it is written with the next world save (or when the server stops). */
+	public static void markDirty() {
+		dirty = true;
+	}
+
+	/**
+	 * Writes the data if anything changed, crash-safe: the new contents go to a temporary file that then replaces the
+	 * old one in a single step, and the previous version stays behind as {@code .bak}. A crash at any moment leaves
+	 * either the old or the new file intact.
+	 */
+	public static void flush() {
+		if (file == null || !dirty) {
+			return;
+		}
+		String json = GSON.toJson(data, TYPE);
+		Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
+		try {
 			Files.createDirectories(file.getParent());
-			Files.writeString(file, GSON.toJson(data, TYPE), StandardCharsets.UTF_8);
+			Files.writeString(tmp, json, StandardCharsets.UTF_8);
+			if (Files.exists(file)) {
+				Files.copy(file, backup(), StandardCopyOption.REPLACE_EXISTING);
+			}
+			try {
+				Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+			} catch (AtomicMoveNotSupportedException e) {
+				Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
+			}
+			dirty = false;
 		} catch (IOException e) {
 			ExtremeDimensions.LOGGER.error("Could not save world data", e);
 		}
@@ -91,8 +147,9 @@ public final class DataStore {
 
 	/** After a world closes nothing may leak into the next one. */
 	public static void unload() {
-		save();
+		flush();
 		data = new WorldData();
+		dirty = false;
 		file = null;
 	}
 
@@ -102,7 +159,7 @@ public final class DataStore {
 
 	public static void setSealBroken(boolean broken) {
 		data.sealBroken = broken;
-		save();
+		markDirty();
 	}
 
 	public static String ending() {
@@ -111,7 +168,7 @@ public final class DataStore {
 
 	public static void setEnding(String ending) {
 		data.ending = ending;
-		save();
+		markDirty();
 	}
 
 	public static boolean heartBuilt() {
@@ -120,7 +177,7 @@ public final class DataStore {
 
 	public static void setHeartBuilt(boolean built) {
 		data.heartBuilt = built;
-		save();
+		markDirty();
 	}
 
 	public static Set<String> seamCells() {
@@ -163,6 +220,6 @@ public final class DataStore {
 
 	public static void setOverworldPenalties(boolean on) {
 		data.overworldPenalties = on;
-		save();
+		markDirty();
 	}
 }

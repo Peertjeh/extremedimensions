@@ -135,7 +135,7 @@ public final class PenaltyService {
 			d.offerDelay = 40;
 		}
 		Sync.state(p, d);
-		DataStore.save();
+		DataStore.markDirty();
 	}
 
 	/**
@@ -170,7 +170,7 @@ public final class PenaltyService {
 		applyEffects(p, d);
 		WorldFx.fx(p, Fx.PENALTY, 0);
 		Sync.state(p, d);
-		DataStore.save();
+		DataStore.markDirty();
 		return pen;
 	}
 
@@ -332,7 +332,7 @@ public final class PenaltyService {
 		Advancements.grant(p, Advancements.MENDED);
 		Sync.state(p, d);
 		Sync.curses(p, d, false);
-		DataStore.save();
+		DataStore.markDirty();
 	}
 
 	/** The player picked a curse to atone for in the Curses screen. */
@@ -341,7 +341,7 @@ public final class PenaltyService {
 		Penalty pen = Penalty.byId(id);
 		d.atoning = pen == null ? null : pen.id;
 		Sync.curses(p, d, false);
-		DataStore.save();
+		DataStore.markDirty();
 	}
 
 	// ------------------------------------------------------------------ per tick

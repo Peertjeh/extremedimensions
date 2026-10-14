@@ -64,7 +64,10 @@ public final class ServerEvents {
 			WorldFx.bind(s);
 			DataStore.load(s);
 		});
-		ServerLifecycleEvents.SERVER_STOPPING.register(s -> DataStore.save());
+		ServerLifecycleEvents.SERVER_STOPPING.register(s -> {
+			DataStore.markDirty();
+			DataStore.flush();
+		});
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
 			LurkerService.clear();
 			HollowService.clear();
@@ -79,7 +82,8 @@ public final class ServerEvents {
 		CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> TetherCommand.register(dispatcher));
 
 		ServerPlayerEvents.JOIN.register(ServerEvents::onJoin);
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> DataStore.save());
+		// A leaving player's inventory is saved now; their curses and progress go with it
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> DataStore.flush());
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
 			PlayerData d = DataStore.get(newPlayer.getUUID());
 			if (!alive) {
@@ -228,7 +232,7 @@ public final class ServerEvents {
 	private static void tick(MinecraftServer s) {
 		if (++saveTimer >= 6000) {
 			saveTimer = 0;
-			DataStore.save();
+			DataStore.flush();
 		}
 		boolean slowTick = ++effectTimer >= 100;
 		if (slowTick) {
