@@ -14,6 +14,7 @@ import com.extremedimensions.client.hud.ChargeHud;
 import com.extremedimensions.client.hud.StomachHud;
 import com.extremedimensions.client.inventory.JournalButton;
 import com.extremedimensions.client.inventory.CursesButton;
+import com.extremedimensions.client.inventory.SealedSlots;
 import com.extremedimensions.client.screen.JournalScreen;
 import com.extremedimensions.client.sky.SeamAmbience;
 import com.extremedimensions.client.sky.SeamSky;
@@ -29,6 +30,7 @@ import com.extremedimensions.registry.ModEntities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.DeathScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 
 import net.fabricmc.api.ClientModInitializer;
@@ -58,6 +60,9 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 			if (screen instanceof InventoryScreen inv) {
 				JournalButton.attach(inv);
 				CursesButton.attach(inv);
+			}
+			if (screen instanceof AbstractContainerScreen<?> menu) {
+				SealedSlots.attach(menu);
 			}
 		});
 

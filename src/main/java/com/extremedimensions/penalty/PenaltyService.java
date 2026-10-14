@@ -222,6 +222,27 @@ public final class PenaltyService {
 		}
 	}
 
+	/**
+	 * A death undoes part of the penance: every curse's atonement loses {@code atone_death_loss} (half by default),
+	 * rounded against the player. Returns the points lost.
+	 */
+	public static int deathToll(PlayerData d) {
+		double keep = 1 - Math.max(0, Math.min(1, Config.ATONE_DEATH_LOSS));
+		int lost = 0;
+		for (var it = d.atonement.entrySet().iterator(); it.hasNext();) {
+			var e = it.next();
+			int have = e.getValue();
+			int kept = (int) Math.floor(have * keep);
+			lost += have - kept;
+			if (kept <= 0) {
+				it.remove();
+			} else {
+				e.setValue(kept);
+			}
+		}
+		return lost;
+	}
+
 	/** A Tether Fragment offered to an anchor: takes a stack off, at one fragment per stack the curse has. */
 	public static InteractionResult mend(ServerPlayer p, PlayerData d, BlockPos pos, ItemStack stack) {
 		Penalty t = target(d, null);

@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.penalty.Penalty;
+import com.extremedimensions.penalty.SealedPockets;
 
 /** The latest state received from the server, plus animation timestamps for the HUD. */
 public final class ClientState {
@@ -72,6 +73,7 @@ public final class ClientState {
 		longestRun = s.longestRun();
 		runSecs = s.runSecs();
 		marks = parse(s.penalties());
+		SealedPockets.client = Math.min(27, stacksOf("sealed_pockets") * (int) Math.round(valueOf("sealed_pockets")));
 		scars = s.scars();
 		tetherDist = s.tetherDist();
 		syncMs = System.currentTimeMillis();
@@ -178,6 +180,7 @@ public final class ClientState {
 		longestRun = 0;
 		runSecs = 0;
 		marks = new ArrayList<>();
+		SealedPockets.client = 0;
 		scars = 0;
 		tetherDist = -1;
 		shownNether = 0;

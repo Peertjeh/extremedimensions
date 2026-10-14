@@ -22,6 +22,7 @@ import com.extremedimensions.world.WorldService;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Enemy;
@@ -290,6 +291,8 @@ public final class ExpeditionService {
 		PlayerData d = DataStore.get(p.getUUID());
 		String dim = Dims.of(p);
 		d.diedToday = true;
+		// Every death undoes part of the penance, wherever it happens
+		d.atonementLost += PenaltyService.deathToll(d);
 		// Death always costs the chain (and the Tether item)
 		if (d.tetherAnchor != null) {
 			TetherService.clear(p, d, false);
@@ -340,6 +343,11 @@ public final class ExpeditionService {
 			WorldFx.sound(p, "minecraft:block.beacon.deactivate", 1.0f, 0.8f);
 		}
 		d.endedIn = null;
+		if (d.atonementLost > 0) {
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.atonement_lost",
+					Penalty.display(Math.round(Math.max(0, Math.min(1, Config.ATONE_DEATH_LOSS)) * 100)), d.atonementLost));
+			d.atonementLost = 0;
+		}
 		if (!d.pendingOffer.isEmpty()) {
 			d.offerDelay = Config.OFFER_DELAY_TICKS;
 		}

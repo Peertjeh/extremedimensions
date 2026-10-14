@@ -81,7 +81,6 @@ public final class CursesButton extends AbstractButton {
 		for (ClientState.Mark m : ClientState.marks) {
 			total += m.stacks();
 		}
-		sealedSlots(g);
 		// A dark socket with an ember rim: the rune breathes red while curses are carried
 		double breath = 0.5 + 0.5 * Math.sin(System.currentTimeMillis() / 600.0);
 		boolean hot = this.isHovered();
@@ -107,28 +106,6 @@ public final class CursesButton extends AbstractButton {
 			int tx = x + w - tw, ty = y + h - 7;
 			g.fill(tx - 1, ty - 1, x + w + 1, y + h + 1, Ui.argb(220, Ui.SHADOW));
 			g.text(mc.font, n, tx, ty, Ui.argb(255, Ui.PARCHMENT), false);
-		}
-	}
-
-	/**
-	 * Sealed Pockets: the sealed slots of the main inventory, from the last one backwards, darkened and crossed. The
-	 * inventory sits at a fixed offset from the recipe book button (left + 104, top + 61 above it).
-	 */
-	private void sealedSlots(GuiGraphicsExtractor g) {
-		int sealed = Math.min(27, ClientState.stacksOf("sealed_pockets") * (int) Math.round(ClientState.valueOf("sealed_pockets")));
-		if (sealed <= 0) {
-			return;
-		}
-		int left = anchor.getX() - 104, top = anchor.getY() - 61;
-		int edge = Ui.argb(255, Ui.mix(Ui.EMBER_DEEP, Ui.SHADOW, 0.35));
-		for (int i = 35; i > 35 - sealed; i--) {
-			int x = left + 8 + (i % 9) * 18, y = top + 84 + (i / 9 - 1) * 18;
-			g.fill(x, y, x + 16, y + 16, Ui.argb(200, Ui.INK));
-			g.outline(x, y, 16, 16, edge);
-			for (int k = 3; k < 13; k++) {
-				g.fill(x + k, y + k, x + k + 1, y + k + 1, edge);
-				g.fill(x + 15 - k, y + k, x + 16 - k, y + k + 1, edge);
-			}
 		}
 	}
 

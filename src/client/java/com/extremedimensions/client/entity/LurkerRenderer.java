@@ -2,6 +2,7 @@ package com.extremedimensions.client.entity;
 
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
@@ -11,15 +12,19 @@ import com.extremedimensions.lurker.LurkerBody;
 
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
-import net.minecraft.client.renderer.entity.layers.EyesLayer;
-import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.entity.layers.LivingEntityEmissiveLayer;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Mob;
 
 /**
  * Renders the tribe with the Lurker's body: its own texture, a full-bright layer for the eyes and cracks, and a
- * scale. Lurkers, Hollowlings (small, with a big head) and Keepers (huge, bone-masked) all share it.
+ * scale. Lurkers, Hollowlings (small, with a big head), Keepers (huge, bone-masked), the Starved One and the Thinned
+ * all share it.
+ *
+ * <p>The glow beats like the Warden's heart: a flash that fades over half a second, then a dim ember until the next
+ * beat. Calm, it beats every two seconds; stalking, running or drinking an anchor, twice as fast; reaching for you,
+ * faster still. Each body keeps its own rhythm.
  */
 public class LurkerRenderer<T extends Mob & LurkerBody> extends MobRenderer<T, LurkerRenderState, LurkerModel> {
 	private final Identifier texture;
@@ -29,12 +34,22 @@ public class LurkerRenderer<T extends Mob & LurkerBody> extends MobRenderer<T, L
 	/** Per-entity smoothed pose weights, so poses blend instead of snapping. */
 	private final Map<T, Blend> blend = new WeakHashMap<>();
 
+	/** The glow between beats, and how long a beat takes to fade (ticks), as the Warden's heart. */
+	private static final float GLOW_REST = 0.22F;
+	private static final float BEAT_FADE = 10.0F;
+	/** Ticks between beats: calm, hunting (stalk, run, drain) and reaching (take). */
+	private static final float BEAT_CALM = 40.0F;
+	private static final float BEAT_HUNT = 20.0F;
+	private static final float BEAT_TAKE = 12.0F;
+
 	private static final class Blend {
 		float stalk;
 		float take;
 		float drain;
 		float run;
 		long last;
+		/** Ticks since the last heartbeat (starts anywhere, so a pack never beats in step). */
+		float sinceBeat = ThreadLocalRandom.current().nextFloat() * BEAT_CALM;
 	}
 
 	public LurkerRenderer(EntityRendererProvider.Context context, String name, float scale, float shadow, boolean young) {
@@ -43,14 +58,8 @@ public class LurkerRenderer<T extends Mob & LurkerBody> extends MobRenderer<T, L
 		this.scale = scale;
 		this.young = young;
 		Identifier glowTex = ExtremeDimensions.id("textures/entity/" + name + "_glow.png");
-		this.addLayer(new EyesLayer<>(this) {
-			private final RenderType glow = RenderTypes.eyes(glowTex);
-
-			@Override
-			public RenderType renderType() {
-				return glow;
-			}
-		});
+		this.addLayer(new LivingEntityEmissiveLayer<>(this, state -> glowTex, (state, age) -> state.glow,
+				new LurkerModel(context.bakeLayer(LurkerModel.LAYER)), RenderTypes::entityTranslucentEmissive, false));
 	}
 
 	@Override
@@ -76,6 +85,17 @@ public class LurkerRenderer<T extends Mob & LurkerBody> extends MobRenderer<T, L
 		state.drain = b.drain;
 		state.young = this.young;
 		state.run = b.run;
+
+		// The heartbeat: faster the hungrier the body is
+		float hunt = Math.max(b.stalk, Math.max(b.run, b.drain));
+		float delay = BEAT_CALM + (BEAT_HUNT - BEAT_CALM) * hunt;
+		delay += (BEAT_TAKE - delay) * b.take;
+		b.sinceBeat += dt * 20.0F;
+		if (b.sinceBeat >= delay) {
+			b.sinceBeat %= delay;
+		}
+		float beat = Math.max(0.0F, 1.0F - b.sinceBeat / BEAT_FADE);
+		state.glow = GLOW_REST + (1.0F - GLOW_REST) * beat;
 	}
 
 	@Override

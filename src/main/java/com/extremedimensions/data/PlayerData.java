@@ -81,6 +81,8 @@ public class PlayerData {
 	public transient int offerDelay = -1;
 	/** Died beyond the wound (not from the timer): shows the "Expedition Ended" title on respawn. */
 	public transient String endedIn = null;
+	/** Atonement points the last death took away (told on respawn). */
+	public transient int atonementLost = 0;
 
 	// Idle detection: atonement only grows while the player looks around and moves
 	public transient float lastYaw, lastPitch;

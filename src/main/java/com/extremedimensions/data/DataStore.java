@@ -131,6 +131,11 @@ public final class DataStore {
 		return data.hoards;
 	}
 
+	/** A player's data if there is any (never creates it: for hot paths that also see fake players). */
+	public static PlayerData peek(UUID id) {
+		return data.players.containsKey(id.toString()) ? get(id) : null;
+	}
+
 	public static PlayerData get(UUID id) {
 		PlayerData d = data.players.computeIfAbsent(id.toString(), k -> new PlayerData());
 		if (d.penaltyTime != null && !d.penaltyTime.isEmpty()) {

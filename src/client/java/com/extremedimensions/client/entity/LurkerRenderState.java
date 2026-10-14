@@ -10,4 +10,6 @@ public class LurkerRenderState extends LivingEntityRenderState {
 	public float run;
 	/** A Hollowling: big head, stubby limbs. */
 	public boolean young;
+	/** Brightness of the eyes and cracks (0..1): it beats like the Warden's heart. */
+	public float glow = 1.0F;
 }

@@ -92,6 +92,8 @@ public final class Config {
 	/** Points per Overworld day survived without dying, and per hostile mob slain at night in the Overworld. */
 	public static int ATONE_PER_DAY = 10;
 	public static int ATONE_PER_NIGHT_KILL = 1;
+	/** Share of every curse's atonement a death takes away (0.5 = half, 0 = none, 1 = all). */
+	public static double ATONE_DEATH_LOSS = 0.5;
 	/** Points needed for a curse's last stack, and how many more for every stack above it. */
 	public static int ATONE_BASE = 100;
 	public static int ATONE_PER_STACK = 50;
