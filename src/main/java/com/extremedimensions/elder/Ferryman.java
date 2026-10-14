@@ -14,6 +14,12 @@ public class Ferryman extends ElderBoss {
 	public static final int CHAIN = 2;
 	public static final int LANTERN = 3;
 	public static final int KNELL = 4;
+	/** Crossing of the Dead: the boat backs off, then charges straight through its passenger, splitting the ground. */
+	public static final int CROSSING = 5;
+	/** Gaol of Chains: chains burst out of the ground in a cage round each passenger, then crush inwards. */
+	public static final int GAOL = 6;
+	/** Tide of the Styx: the pole planted, a wave of soul fire rolls out over the ground. */
+	public static final int TIDE = 7;
 
 	public Ferryman(EntityType<? extends Monster> type, Level level) {
 		super(type, level);

@@ -1,6 +1,7 @@
 package com.extremedimensions.client.entity.elder;
 
 import com.extremedimensions.ExtremeDimensions;
+import com.extremedimensions.elder.ElderBoss;
 import com.extremedimensions.elder.Ferryman;
 
 import net.minecraft.client.model.EntityModel;
@@ -9,14 +10,18 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.util.Mth;
 
 /**
- * The Ferryman moving: the boat rocks and rides the swell, he turns in it to face his passenger, his robe and the
- * tatters of his sleeves stir, lanterns swing and the vortex before his raised palm turns. He raises the pole high and brings it
- * down, thrusts his chained hand out, lifts the vortex to loose his soul lanterns, and strikes the boat for the knell.
+ * The Ferryman moving: the boat rocks and rides the swell (harder the faster it sails), he turns in it to face his
+ * passenger, his robe and the tatters of his sleeves stir, lanterns swing and the vortex before his raised palm turns.
+ * He raises the pole high and brings it down, thrusts his chained hand out, lifts the vortex to loose his soul lanterns,
+ * strikes the boat for the knell; for the crossing he couches the pole like a lance and leans into the charge, for the
+ * gaol he closes his raised fist and crushes, for the tide he plants the pole. In his ultimate the pole goes up and
+ * stays up, the vortex swells and spins until it roars, and at the end he brings everything down. Dying, he sinks into
+ * the boat.
  */
 public class FerrymanModel extends EntityModel<ElderRenderState> {
 	public static final ModelLayerLocation LAYER = new ModelLayerLocation(ExtremeDimensions.id("ferryman"), "main");
 
-	private final ModelPart root, boat, figure, torso, hood, armL, armR, foreL, vortex, vortexB, vortexC;
+	private final ModelPart root, boat, figure, torso, hood, armL, armR, foreL, foreR, vortex, vortexB, vortexC;
 	private final ModelPart[] robe, mantle, strands, lanterns;
 
 	public FerrymanModel(ModelPart model) {
@@ -29,6 +34,7 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 		this.armL = FerrymanGeometry.find(model, "arm_l");
 		this.armR = FerrymanGeometry.find(model, "arm_r");
 		this.foreL = FerrymanGeometry.find(model, "forearm_l");
+		this.foreR = FerrymanGeometry.find(model, "forearm_r");
 		this.vortex = FerrymanGeometry.find(model, "vortex");
 		this.vortexB = FerrymanGeometry.find(model, "vortex_b");
 		this.vortexC = FerrymanGeometry.find(model, "vortex_c");
@@ -43,32 +49,40 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 		super.setupAnim(s);
 		float t = s.ageInTicks;
 		float at = s.actionTime;
+		float sail = Mth.clamp(s.walkAnimationSpeed * 1.2F, 0, 1);
 		root.y += Mth.sin(t * 0.06F) * 0.8F;
-		boat.zRot += Mth.sin(t * 0.05F) * 0.035F;
-		boat.xRot += Mth.sin(t * 0.037F) * 0.02F;
+		boat.zRot += Mth.sin(t * 0.05F) * (0.035F + 0.03F * sail);
+		boat.xRot += Mth.sin(t * 0.037F) * (0.02F + 0.02F * sail) - 0.03F * sail;
 		figure.yRot += Mth.clamp(s.yRot, -100, 100) * Mth.DEG_TO_RAD;
 		torso.xRot += Mth.sin(t * 0.04F) * 0.02F;
 		hood.xRot += Mth.clamp(s.xRot, -30, 30) * Mth.DEG_TO_RAD * 0.4F;
 		for (int i = 0; i < robe.length; i++) {
-			robe[i].xRot += Mth.sin(t * 0.06F + i * 0.8F) * 0.03F;
+			robe[i].xRot += Mth.sin(t * 0.06F + i * 0.8F) * 0.03F + 0.08F * sail;
 			robe[i].zRot += Mth.cos(t * 0.05F + i * 1.2F) * 0.02F;
 		}
 		for (int i = 0; i < mantle.length; i++) {
-			mantle[i].xRot += Mth.sin(t * 0.07F + i * 1.1F) * 0.05F;
+			mantle[i].xRot += Mth.sin(t * 0.07F + i * 1.1F) * 0.05F + 0.1F * sail;
 		}
 		for (int i = 0; i < strands.length; i++) {
 			strands[i].zRot += Mth.sin(t * 0.08F + i * 1.6F) * 0.12F;
-			strands[i].xRot += Mth.cos(t * 0.06F + i) * 0.08F;
+			strands[i].xRot += Mth.cos(t * 0.06F + i) * 0.08F + 0.15F * sail;
 		}
+		boolean ultimate = s.action == ElderBoss.ULTIMATE;
 		float lift = s.action == Ferryman.LANTERN ? ElderAnim.env(at, 10, 14, 10) : 0;
+		float storm = ultimate ? ElderAnim.env(at, 30, 150, 20) : 0;
 		for (int i = 0; i < lanterns.length; i++) {
-			lanterns[i].zRot += Mth.sin(t * 0.055F + i * 2.1F) * (0.1F + 0.2F * lift);
-			lanterns[i].xRot += Mth.cos(t * 0.045F + i * 1.3F) * 0.07F;
+			lanterns[i].zRot += Mth.sin(t * 0.055F + i * 2.1F) * (0.1F + 0.2F * lift + 0.35F * storm);
+			lanterns[i].xRot += Mth.cos(t * 0.045F + i * 1.3F) * (0.07F + 0.25F * storm) + 0.2F * sail;
 		}
-		float spin = 1 + 3 * lift;
+		float spin = 1 + 3 * lift + 7 * storm;
 		vortex.zRot += t * 0.12F * spin;
 		vortexB.yRot += t * 0.09F * spin;
 		vortexC.xRot -= t * 0.15F * spin;
+		// The vortex swells in his ultimate
+		float swell = 1 + 1.3F * ElderAnim.env(at, 60, 120, 15) * (ultimate ? 1 : 0) + 0.25F * lift;
+		vortex.xScale = swell;
+		vortex.yScale = swell;
+		vortex.zScale = swell;
 		armL.zRot += Mth.sin(t * 0.04F) * 0.03F;
 		armR.xRot += Mth.sin(t * 0.035F + 1F) * 0.02F;
 
@@ -82,8 +96,8 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 				torso.xRot += (-0.1F * wind + 0.18F * down) * (1 - back);
 			}
 			case Ferryman.CHAIN -> {
-				float e = ElderAnim.env(at, 8, 6, 10);
 				// the raised arm straightens and thrusts forward
+				float e = ElderAnim.env(at, 8, 6, 10);
 				armL.zRot += 0.3F * e;
 				armL.xRot -= 0.9F * e;
 				foreL.zRot += 1.5F * e;
@@ -98,8 +112,68 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 				armR.xRot += 0.35F * e;
 				torso.xRot += 0.08F * e;
 			}
+			case Ferryman.CROSSING -> {
+				// The pole couched like a lance, he leans into the charge
+				float ready = ElderAnim.env(at, 16, 30, 14);
+				float charge = ElderAnim.env(at - 20, 4, 22, 12);
+				armR.xRot -= 0.9F * ready;
+				foreR.xRot -= 0.5F * ready;
+				torso.xRot -= 0.12F * ready;
+				torso.xRot += 0.3F * charge;
+				hood.xRot -= 0.2F * charge;
+				boat.xRot += 0.06F * charge + Mth.sin(t * 0.9F) * 0.02F * charge;
+				armL.zRot += 0.4F * charge;
+			}
+			case Ferryman.GAOL -> {
+				// The raised fist closes, pulls, and crushes
+				float raise = ElderAnim.env(at, 10, 26, 10);
+				float crush = ElderAnim.env(at - 34, 3, 4, 8);
+				armL.zRot -= 0.35F * raise;
+				foreL.zRot -= 0.3F * raise;
+				hood.xRot -= 0.15F * raise;
+				if (at > 12 && at < 36) {
+					armL.xRot += Mth.sin(at * 0.8F) * 0.12F;
+				}
+				armL.xRot += 0.6F * crush;
+				foreL.zRot += 0.8F * crush;
+				torso.xRot += 0.15F * crush;
+			}
+			case Ferryman.TIDE -> {
+				// Pole up over his head, then planted in the boat
+				float up = ElderAnim.smooth(at / 16F) * (1 - ElderAnim.smooth((at - 17) / 3F));
+				float plant = ElderAnim.smooth((at - 17) / 3F) * (1 - ElderAnim.smooth((at - 32) / 12F));
+				armR.xRot -= 1.6F * up;
+				armR.zRot += 0.3F * up;
+				torso.xRot -= 0.12F * up;
+				armR.xRot += 0.5F * plant;
+				torso.xRot += 0.22F * plant;
+				hood.xRot += 0.15F * plant;
+			}
+			case ElderBoss.ULTIMATE -> {
+				// The pole raised high and held, the vortex lifted, and at the end everything comes down
+				float hold = ElderAnim.env(at, 30, 150, 4);
+				float strike = ElderAnim.env(at - 188, 3, 4, 8);
+				armR.xRot -= 1.75F * hold;
+				armR.zRot += 0.25F * hold;
+				armL.zRot -= 0.45F * hold;
+				hood.xRot -= 0.35F * hold;
+				torso.xRot -= 0.15F * hold;
+				torso.xRot += Mth.sin(t * 2.4F) * 0.015F * storm;
+				armR.xRot += 2.2F * strike;
+				torso.xRot += 0.4F * strike;
+				hood.xRot += 0.3F * strike;
+			}
 			default -> {
 			}
+		}
+		if (s.deathTime > 0) {
+			float k = Math.min(1, s.deathTime / 70F);
+			torso.xRot += 0.5F * k + Mth.sin(t * 2.1F) * 0.03F * k;
+			hood.xRot += 0.5F * k;
+			armL.zRot += 0.9F * k;
+			armR.xRot += 0.6F * k;
+			figure.y += 10F * k * k;
+			boat.zRot += 0.12F * k;
 		}
 	}
 }

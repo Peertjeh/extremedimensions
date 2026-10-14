@@ -15,6 +15,12 @@ public class Matriarch extends ElderBoss {
 	public static final int ROOTS = 3;
 	public static final int WAIL = 4;
 	public static final int RISE = 5;
+	/** Thornbound Charge: she rears back and hurls herself at her prey, ploughing through the ground. */
+	public static final int RUSH = 6;
+	/** Cathedral of Thorns: both hands into the ground, and rings of thorns burst out of it, one after another. */
+	public static final int CATHEDRAL = 7;
+	/** A Hundred Lanterns: her branches thrown wide, her lanterns hurled as burning bombs. */
+	public static final int BARRAGE = 8;
 
 	public Matriarch(EntityType<? extends Monster> type, Level level) {
 		super(type, level);

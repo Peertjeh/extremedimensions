@@ -320,6 +320,53 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("kill @e[type=extremedimensions:weaver]");
 			sp.getServer().runCommand("time set noon");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-5 ~ 0 0");
+			ctx.waitTicks(10);
+
+			// The camera shake hooks into the camera (its handler is merged into Camera when the mixin applies)
+			ctx.runOnClient(mc -> {
+				boolean found = false;
+				for (java.lang.reflect.Method m : net.minecraft.client.Camera.class.getDeclaredMethods()) {
+					found |= m.getName().contains("extremedimensions$shake");
+				}
+				check(found, "the camera shake mixin did not apply to Camera");
+			});
+
+			// The cinema: an Elder's title card as it arrives, then each Elder deep in its ultimate under the black bars
+			ctx.runOnClient(mc -> com.extremedimensions.client.fx.BossCinema.handle(
+					new com.extremedimensions.network.ModPackets.BossFxPayload(com.extremedimensions.network.ModPackets.BossFxPayload.INTRO, 2, 0, 0, "")));
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:weaver ^ ^ ^23 {NoAI:1b,Rotation:[180f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~6 ~ 0 -3");
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("11_intro_weaver");
+			sp.getServer().runCommand("kill @e[type=extremedimensions:weaver]");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-6 ~ 0 0");
+			ctx.waitTicks(20);
+			String[][] ultimates = {{"matriarch", "22", "180", "0"}, {"ferryman", "24", "220", "1"}, {"weaver", "23", "180", "2"}};
+			for (String[] elder : ultimates) {
+				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
+				sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:" + elder[0] + " ^ ^ ^" + elder[1]
+						+ " {NoAI:1b,Rotation:[" + elder[2] + "f,0f]}");
+				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~6 ~ 0 -3");
+				ctx.waitTicks(2);
+				sp.getServer().runOnServer(s -> {
+					ServerPlayer p = player(s);
+					for (com.extremedimensions.elder.ElderBoss b : p.level().getEntitiesOfClass(com.extremedimensions.elder.ElderBoss.class,
+							p.getBoundingBox().inflate(48))) {
+						// Played eight times over, so the shot lands deep in the ultimate
+						b.setAction(com.extremedimensions.elder.ElderBoss.ULTIMATE);
+						b.setTempo(8.0F);
+					}
+				});
+				int index = Integer.parseInt(elder[3]);
+				ctx.runOnClient(mc -> com.extremedimensions.client.fx.BossCinema.handle(new com.extremedimensions.network.ModPackets.BossFxPayload(
+						com.extremedimensions.network.ModPackets.BossFxPayload.ULTIMATE, index, 200, 1, "gui.extremedimensions.elder.ultimate." + elder[0])));
+				ctx.waitTicks(20);
+				ctx.takeScreenshot("11_ultimate_" + elder[0]);
+				ctx.runOnClient(mc -> com.extremedimensions.client.fx.BossCinema.reset());
+				sp.getServer().runCommand("kill @e[type=extremedimensions:" + elder[0] + "]");
+				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-6 ~ 0 0");
+				ctx.waitTicks(20);
+			}
 			sp.getServer().runCommand("execute as @a run gamemode survival @s");
 			ctx.runOnClient(mc -> ClientOptions.setGuidance(true));
 			ctx.waitTicks(25);

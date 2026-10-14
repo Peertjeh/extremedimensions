@@ -1,5 +1,55 @@
 # Changelog
 
+## 2.13.0: Wrath of the Elders
+
+*They were vast. Now they fight like it.*
+
+### Added
+- **Three new blows for every Elder**, each called out on screen as it comes:
+  - The Matriarch: **Thornbound Charge** (she rears back and hurls herself at you, ploughing a furrow through the
+    ground and throwing the earth into the air), **Cathedral of Thorns** (both hands into the ground, and three rings of
+    thorns burst out of it one after another) and **A Hundred Lanterns** (her branches thrown wide, her lanterns hurled
+    as burning bombs).
+  - The Ferryman: **Crossing of the Dead** (the boat backs off, then charges straight through you, splitting the
+    ground and leaving soul fire in its wake), **Gaol of Chains** (a cage of chains bursts out of the ground round you
+    and crushes inwards: break out) and **Tide of the Styx** (two tides of soul fire roll out over the ground: jump them).
+  - The Last Weaver: **Seraphic Lance** (its halo spins up and fires a beam that sweeps across the ground and carves a
+    burning trench), **Cat's Cradle** (a web of threads strung across the ground round you, pulled taut until it cuts)
+    and **A Thousand Needles** (rings of needles spiral down onto you, and a great needle last of all).
+- **An ultimate for every Elder** at half its health, ten seconds long: black bars close in, its name is slashed
+  across the screen, the world fog rolls in and the Elder shrugs off most harm while it builds.
+  - The Matriarch's **Verdant Requiem**: hands into the ground, roots bursting from it in a spiral, light gathering over
+    everyone she marks, her chest opening, and the bloom.
+  - The Ferryman's **The Final Toll**: the boat rises into the air, soul fire rains while the bell tolls three times,
+    and the boat comes down.
+  - The Last Weaver's **The Last Tapestry**: it rises with its arms spread, threads run to everyone near while time
+    slows for them and a dome of threads closes over the ground, and everything snaps.
+  - When it breaks, **everyone within 150 blocks takes 2 random extreme curses**. Someone who has no room left for
+    them has **everything they carry flung out around them** instead.
+- **The world feels their blows**: great blows are real explosions; charges and beams tear furrows through the ground
+  and throw the torn blocks into the air; the ground they strike turns to root and moss (the Matriarch), soul soil
+  burning with soul fire (the Ferryman) or scorched earth and fused glass (the Weaver). Thorns and chains they raise
+  sink back after a while. Containers and blocks a Wither cannot break are never touched; switched off with
+  `elder_griefing` or the mobGriefing rule.
+- **A real boss fight**: each Elder arrives with its name struck across the screen; the sky darkens under its health
+  bar; the ground shakes under its steps and blows (the camera shakes, never your aim); shockwaves you can jump; the
+  air fills with its leaves, ash or motes; it dies slowly, breaking apart in light.
+
+### Changed
+- **Faster**: the Elders move 1.5 times as fast and strike more often and more quickly (`elder_speed`,
+  `elder_attack_speed`, `elder_windup_speed`).
+- **Smoother**: they move with weight (speeding up, slowing down and turning with momentum, riding the ground with an
+  eased height) and are sent to clients every tick, so they glide instead of jerking. Knockback is real now.
+- **The Last Weaver is dressed far richer**: layered robes with glowing stitched runes, a sash with charms, spools and
+  needles at its hips, a ring of floating needles, a veil and more ornament on its crown and halo.
+- **The music never stops at the end of a track**: a few seconds before a track ends the next pass fades in under its
+  last bars. With several Elders near, the track already playing keeps playing instead of restarting over and over.
+
+### Settings
+- New: `elder_speed`, `elder_attack_speed`, `elder_windup_speed`, `elder_griefing`, `elder_ultimate_at`,
+  `elder_ultimate_seconds`, `elder_ultimate_radius`, `elder_ultimate_curses`, `elder_ultimate_scatter`,
+  `elder_ultimate_guard`.
+
 ## 2.12.0: The Elders, Reborn
 
 *They were never Keepers in other cloaks. Now they have their own shapes, and they are vast.*

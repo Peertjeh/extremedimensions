@@ -523,6 +523,229 @@ MATS = {
     "skull": m_skull,
 }
 
+# ----------------------------------------------------------------------------- the Last Weaver's finery
+
+GILT, GILT_HI = (184, 142, 80), (236, 200, 132)
+
+
+def _gilt(ctx):
+    return mix(GILT, GILT_HI, noise(ctx["gx"], ctx["gy"], ctx["seed"] + 1, 1.5))
+
+
+RUNES = (
+    # 3 x 5 glyphs, top row first: algiz, tiwaz, thurisaz, othala, ingwaz, gebo, berkano, sowilo
+    ("x.x", ".x.", ".x.", ".x.", ".x."),
+    (".x.", "x.x", ".x.", ".x.", ".x."),
+    ("x..", "xx.", "x.x", "xx.", "x.."),
+    (".x.", "x.x", ".x.", "x.x", "x.x"),
+    (".x.", "x.x", "x.x", "x.x", ".x."),
+    ("x.x", "x.x", ".x.", "x.x", "x.x"),
+    ("xx.", "x.x", "xx.", "x.x", "xx."),
+    ("..x", ".x.", "x..", ".x.", "x.."),
+)
+
+
+def _rune(px, py, fw, s, step=8):
+    """Whether (px, py) is stitched in the column of runes down the middle of a face: 3 x 5 glyphs, `step` px
+    apart, chosen by the seed."""
+    if fw < 3 or py < 1:
+        return False
+    q = px - (fw - 3) // 2
+    cell, r = divmod(py - 1, step)
+    if not (0 <= q <= 2 and r <= 4):
+        return False
+    glyph = RUNES[int(_h(cell, 7, s) * len(RUNES)) % len(RUNES)]
+    return glyph[r][q] == "x"
+
+
+def m_weave(ctx, tone="over", ragged=False, veins=0.0):
+    """The Last Weaver's own cloth, finer than its rags: a twill of violet and black with a sheen on the folds, the
+    hem eaten into tatters, a few threads of light running through it."""
+    gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
+    px, py, fw, fh = ctx["px"], ctx["py"], ctx["fw"], ctx["fh"]
+    lo, hi = ((8, 5, 14), (42, 25, 58)) if tone == "under" else ((26, 13, 40), (100, 60, 136))
+    fold = 0.5 + 0.5 * math.sin(px * 1.2 + noise(gx, gy * 0.08, s, 5) * 4)
+    base = mix(lo, hi, fold * 0.6 + noise(gx, gy, s + 3, 2) * 0.4)
+    if (gx + gy) % 3 == 0:
+        base = shade(base, 0.8)
+    if noise(gx * 2, gy * 0.3, s + 4, 3) > 0.8:
+        base = mix(base, (150, 110, 200), 0.3)
+    if ctx["face"] in ("top", "bottom"):
+        base = shade(base, 0.8)
+    k = py / max(1, fh - 1)
+    a = 255
+    if ragged and ctx["face"] not in ("top", "bottom"):
+        jag = 2 + int(7 * _h(px, 11, s + fw))
+        if py > fh - 1 - jag or (k > 0.75 and _h(gx, gy, s + 13) < (k - 0.75) * 0.7):
+            a = 0
+    glow = None
+    if a and veins and noise(gx, gy * 0.12, s + 17, 3) > 1 - veins and abs(noise(gx * 0.5, gy * 0.05, s + 19, 2) - 0.5) < 0.04:
+        base, glow = (130, 74, 190), (185, 110, 255, 200)
+    return base + (a,), glow
+
+
+def m_trim(ctx):
+    """An embroidered band: gilt edges and a chain of gilt lozenges on plum, a bead of violet light in each."""
+    px, py, fh = ctx["px"], ctx["py"], ctx["fh"]
+    base = mix((50, 18, 60), (86, 36, 98), noise(ctx["gx"], ctx["gy"], ctx["seed"], 2))
+    glow = None
+    if ctx["face"] in ("top", "bottom"):
+        base = shade(_gilt(ctx), 0.72)
+    elif py == 0 or py == fh - 1:
+        base = _gilt(ctx)
+    else:
+        mid = (fh - 1) / 2
+        d = abs(px % 6 - 2.5) / 3.0 + abs(py - mid) / max(1.0, mid)
+        if d < 0.3:
+            base, glow = (200, 130, 255), (228, 170, 255, 235)
+        elif d < 0.95:
+            base = _gilt(ctx)
+    return base + (255,), glow
+
+
+def m_runes(ctx, ragged=False):
+    """An embroidered panel: violet-black cloth, a gilt border on the broad ones, and a column of runes stitched down
+    the middle in light."""
+    (r, g, b, a), _ = m_weave(ctx, "under", ragged)
+    base = mix((r, g, b), (64, 26, 84), 0.35)
+    glow = None
+    px, py, fw = ctx["px"], ctx["py"], ctx["fw"]
+    if a and ctx["face"] in ("north", "south"):
+        if fw >= 7 and px in (0, fw - 1):
+            base = _gilt(ctx)
+        elif _rune(px, py, fw, ctx["seed"]):
+            base, glow = (196, 124, 250), (232, 176, 255, 255)
+    return base + (a,), glow
+
+
+def m_lacquer(ctx):
+    """Stiffened, lacquered cloth for the shoulder plates and the hood's rim: plum-black, gilt at the edges."""
+    gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
+    base = mix((30, 14, 42), (88, 46, 114), noise(gx, gy, s, 2.5) * 0.7 + noise(gx * 2, gy * 2, s + 3, 1.5) * 0.3)
+    if (gx + 2 * gy) % 5 == 0:
+        base = shade(base, 0.85)
+    if ctx["face"] in ("top", "bottom"):
+        base = shade(base, 0.85)
+    e = _edge(ctx)
+    if e == 0:
+        base = _gilt(ctx)
+    elif e == 1:
+        base = shade(base, 0.75)
+    return base + (255,), None
+
+
+def m_scale(ctx):
+    """Lacquered plates scaled like a moth's wing: rows of plum-black scales, each with a sheen and a dark lip."""
+    gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
+    px, py = ctx["px"], ctx["py"]
+    row, yy = divmod(py, 3)
+    cx = (px + (row % 2) * 2) % 4
+    base = mix((34, 16, 48), (98, 54, 128), noise(gx, gy, s, 2.5) * 0.8 + 0.2)
+    if yy == 2 or (yy == 1 and cx == 0):
+        base = shade(base, 0.55)
+    elif yy == 0 and cx in (1, 2):
+        base = mix(base, (160, 118, 210), 0.35)
+    if ctx["face"] in ("top", "bottom"):
+        base = shade(base, 0.85)
+    if _edge(ctx) == 0:
+        base = shade(base, 0.7)
+    return base + (255,), None
+
+
+def m_silver(ctx):
+    """Needle steel: pale and cold, bright along the edges."""
+    k = ctx["py"] / max(1, ctx["fh"] - 1)
+    base = mix((214, 212, 234), (112, 108, 136), k * 0.5 + noise(ctx["gx"], ctx["gy"], ctx["seed"], 2.0) * 0.5)
+    if _edge(ctx) == 0:
+        base = shade(base, 1.12)
+    if ctx["face"] == "bottom":
+        base = shade(base, 0.7)
+    return base + (255,), None
+
+
+def m_gild(ctx):
+    """Tarnished gilt for crowns, rings and clasps."""
+    gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
+    base = mix((96, 62, 28), (214, 170, 92), noise(gx, gy, s, 2.0))
+    if _h(gx, gy, s + 3) > 0.9:
+        base = (244, 220, 160)
+    if _edge(ctx) == 0:
+        base = shade(base, 0.72)
+    return base + (255,), None
+
+
+def m_wound(ctx):
+    """Thread wound on a spool or a spindle: bright turns of light with darker gaps between."""
+    if ctx["face"] in ("top", "bottom"):
+        return (96, 50, 150, 255), (150, 80, 230, 150)
+    turn = (ctx["py"] + int(2 * noise(ctx["gx"], 0, ctx["seed"], 3.0))) % 2 == 0
+    if turn:
+        return (176, 112, 236, 255), (226, 172, 255, 225)
+    return (70, 34, 110, 255), None
+
+
+def m_veil(ctx):
+    """A gauze veil: dark violet, frayed into holes towards its end, a glint of thread here and there."""
+    gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
+    base = mix((30, 18, 44), (98, 70, 134), noise(gx, gy * 0.3, s, 2.0))
+    a = 255
+    glow = None
+    if ctx["face"] not in ("top", "bottom"):
+        k = ctx["py"] / max(1, ctx["fh"] - 1)
+        if _h(gx, gy, s + 5) < 0.1 + k * 0.3:
+            a = 0
+        elif _h(gx, gy, s + 8) > 0.95:
+            base, glow = (170, 110, 230), (205, 150, 255, 200)
+    return base + (a,), glow
+
+
+def m_porcelain(ctx):
+    """A porcelain mask: pale lilac-white, crazed with hairline cracks, a few still lit from within."""
+    gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
+    base = mix((200, 194, 214), (246, 243, 252), noise(gx, gy, s, 3.0) * 0.7 + noise(gx, gy, s + 1, 1.5) * 0.3)
+    glow = None
+    if abs(noise(gx, gy, s + 21, 4.5) - 0.5) < 0.018:
+        base = (150, 136, 166)
+        if noise(gx, gy, s + 23, 6.0) > 0.7:
+            base, glow = (176, 120, 222), (205, 130, 255, 210)
+    e = _edge(ctx)
+    if e == 0:
+        base = shade(base, 0.8)
+    elif e == 1:
+        base = shade(base, 0.93)
+    return base + (255,), glow
+
+
+def m_rune_plate(ctx):
+    """A small plate of violet stone with one rune burning on its face."""
+    gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
+    base = mix((40, 20, 60), (82, 46, 112), noise(gx, gy, s, 2.0))
+    glow = None
+    if ctx["face"] in ("north", "south") and _rune(ctx["px"], ctx["py"], ctx["fw"], s):
+        base, glow = (220, 160, 255), (245, 214, 255, 255)
+    elif _edge(ctx) == 0:
+        base = shade(base, 0.7)
+    return base + (255,), glow
+
+
+MATS.update({
+    "weave": lambda c: m_weave(c, "over"),
+    "weave_ragged": lambda c: m_weave(c, "over", ragged=True, veins=0.2),
+    "weave_under": lambda c: m_weave(c, "under"),
+    "weave_under_ragged": lambda c: m_weave(c, "under", ragged=True),
+    "weave_trim": m_trim,
+    "weave_runes": lambda c: m_runes(c),
+    "weave_runes_ragged": lambda c: m_runes(c, ragged=True),
+    "weave_lacquer": m_lacquer,
+    "weave_scale": m_scale,
+    "silver": m_silver,
+    "gild": m_gild,
+    "wound_thread": m_wound,
+    "veil": m_veil,
+    "porcelain": m_porcelain,
+    "rune_plate": m_rune_plate,
+})
+
 # ----------------------------------------------------------------------------- packing, painting, writing
 
 

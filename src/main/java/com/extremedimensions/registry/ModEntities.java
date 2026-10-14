@@ -88,6 +88,7 @@ public final class ModEntities {
 					.sized(5.0f, 14.0f)
 					.eyeHeight(12.5f)
 					.clientTrackingRange(16)
+					.updateInterval(1)
 					.build(MATRIARCH_KEY));
 
 	/** The one the Nether pays; spawned only by {@code FerrymanService}. */
@@ -96,6 +97,7 @@ public final class ModEntities {
 					.sized(5.0f, 12.0f)
 					.eyeHeight(10.5f)
 					.clientTrackingRange(16)
+					.updateInterval(1)
 					.build(FERRYMAN_KEY));
 
 	/** The Last Weaver, in the villages of the Thinned; spawned only by {@code WeaverService}. */
@@ -104,6 +106,7 @@ public final class ModEntities {
 					.sized(4.0f, 15.0f)
 					.eyeHeight(13.5f)
 					.clientTrackingRange(16)
+					.updateInterval(1)
 					.build(WEAVER_KEY));
 
 	public static void init() {

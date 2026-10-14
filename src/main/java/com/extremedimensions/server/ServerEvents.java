@@ -75,6 +75,8 @@ public final class ServerEvents {
 		// The mod's data is written with the world's own saves (autosave, /save-all, stop), never ahead of them
 		ServerLifecycleEvents.AFTER_SAVE.register((s, flush, force) -> DataStore.flush());
 		ServerLifecycleEvents.SERVER_STOPPING.register(s -> {
+			// Thorns and chains an Elder raised sink back before the world is saved
+			com.extremedimensions.elder.ElderTerrain.clear();
 			DataStore.markDirty();
 			DataStore.flush();
 		});
@@ -345,6 +347,7 @@ public final class ServerEvents {
 		com.extremedimensions.elder.FerrymanService.tick(s);
 		com.extremedimensions.elder.MatriarchService.tick(s);
 		com.extremedimensions.elder.ElderStrikes.tick(s);
+		com.extremedimensions.elder.ElderTerrain.tick(s);
 		com.extremedimensions.elder.WeaverService.tick(s);
 	}
 

@@ -14,6 +14,12 @@ public class Weaver extends ElderBoss {
 	public static final int THREAD = 1;
 	public static final int NEEDLES = 2;
 	public static final int UNRAVEL = 3;
+	/** Seraphic Lance: the halo spins up and fires a beam that sweeps across the ground and carves it. */
+	public static final int LANCE = 4;
+	/** Cat's Cradle: threads strung across the ground between its prey, pulled taut until they cut. */
+	public static final int CRADLE = 5;
+	/** A Thousand Needles: rings of needles fall in spirals onto its prey, and a great needle last of all. */
+	public static final int THOUSAND = 6;
 
 	public Weaver(EntityType<? extends Monster> type, Level level) {
 		super(type, level);

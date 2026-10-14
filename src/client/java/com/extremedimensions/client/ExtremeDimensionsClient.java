@@ -112,11 +112,14 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 
 		ClientTickEvents.END_CLIENT_TICK.register(MenuMusic::tick);
 		ClientTickEvents.END_CLIENT_TICK.register(com.extremedimensions.client.audio.BossMusic::tick);
+		ClientTickEvents.END_CLIENT_TICK.register(mc -> com.extremedimensions.client.fx.CameraShake.tick());
 		ClientTickEvents.END_CLIENT_TICK.register(SeamSky::prepare);
 		ClientTickEvents.END_CLIENT_TICK.register(SeamAmbience::tick);
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ClientState::reset));
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.fx.BossCinema::reset));
 		HudElementRegistry.addLast(ExtremeDimensions.id("charge_hud"), new ChargeHud());
 		HudElementRegistry.addLast(ExtremeDimensions.id("stomach_hud"), new StomachHud());
+		HudElementRegistry.addLast(ExtremeDimensions.id("boss_cinema"), new com.extremedimensions.client.fx.BossCinema());
 		Tooltips.register();
 		MoteParticle.register();
 		ModelLayerRegistry.registerModelLayer(LurkerModel.LAYER, LurkerModel::createBodyLayer);
@@ -160,6 +163,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(
 						new JournalScreen(new HashSet<>(Arrays.asList(payload.ids().split(","))),
 								JournalButton.takeReturn()))));
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BossFxPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> com.extremedimensions.client.fx.BossCinema.handle(payload)));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BossMusicPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> {
 					if (payload.stop()) {

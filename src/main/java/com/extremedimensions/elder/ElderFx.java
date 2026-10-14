@@ -1,5 +1,7 @@
 package com.extremedimensions.elder;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import com.extremedimensions.network.ModPackets;
@@ -11,10 +13,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
 
 /** What the Elders share: ground under a giant, gliding and turning, a roar, a pull, and their music. */
 final class ElderFx {
@@ -73,34 +74,6 @@ final class ElderFx {
 		return p.blockPosition().offset(6, 0, 6);
 	}
 
-	/**
-	 * Moves a giant towards (tx, tz) by at most {@code speed} blocks, riding the surface below at {@code hover}
-	 * blocks (its height eases rather than jumps); over the void it keeps its height.
-	 */
-	static void glide(ElderBoss b, double tx, double tz, double speed, double hover) {
-		double dx = tx - b.getX(), dz = tz - b.getZ();
-		double dist = Math.sqrt(dx * dx + dz * dz);
-		double step = Math.min(speed, dist);
-		double nx = b.getX() + (dist > 1e-4 ? dx / dist * step : 0);
-		double nz = b.getZ() + (dist > 1e-4 ? dz / dist * step : 0);
-		double ground = surface((ServerLevel) b.level(), nx, b.getY() - hover, nz, 8, 24);
-		double ny = b.getY();
-		if (!Double.isNaN(ground)) {
-			ny += Mth.clamp(ground + hover - b.getY(), -0.4, 0.4);
-		}
-		b.setPos(nx, ny, nz);
-		b.setDeltaMovement(Vec3.ZERO);
-	}
-
-	/** Turns a giant (body and head) towards a yaw, at most {@code max} degrees a tick. */
-	static void turn(ElderBoss b, float yaw, float max) {
-		float now = b.getYRot();
-		float next = now + Mth.clamp(Mth.wrapDegrees(yaw - now), -max, max);
-		b.setYRot(next);
-		b.setYBodyRot(next);
-		b.setYHeadRot(next);
-	}
-
 	/** The yaw that faces from one point towards another. */
 	static float yawTo(Entity from, double x, double z) {
 		return (float) (Mth.atan2(z - from.getZ(), x - from.getX()) * Mth.RAD_TO_DEG) - 90.0F;
@@ -116,36 +89,114 @@ final class ElderFx {
 		WorldFx.particleIn(dim(e), "extremedimensions:lurker_wisp", e.getX(), e.getY() + 7, e.getZ(), 2.5, 4.0, 2.5, 0.0, 80);
 	}
 
-	/** Drags a player part of the way towards a point (at most {@code max} blocks), onto somewhere safe to stand. */
+	/** Everyone an Elder can hit within {@code radius} blocks (not spectators or creative players). */
+	static List<ServerPlayer> targets(ElderBoss b, double radius) {
+		List<ServerPlayer> out = new ArrayList<>();
+		for (ServerPlayer p : ((ServerLevel) b.level()).players()) {
+			if (p.isAlive() && !p.isSpectator() && !p.isCreative() && p.distanceToSqr(b) <= radius * radius) {
+				out.add(p);
+			}
+		}
+		return out;
+	}
+
+	/** Throws a player away from a point ({@code horiz} blocks a tick outwards, {@code up} upwards); negative pulls. */
+	static void knock(ServerPlayer p, double fromX, double fromZ, double horiz, double up) {
+		double dx = p.getX() - fromX, dz = p.getZ() - fromZ;
+		double d = Math.max(0.3, Math.sqrt(dx * dx + dz * dz));
+		p.setDeltaMovement(dx / d * horiz, up, dz / d * horiz);
+		p.needsSync = true;
+	}
+
+	/** Drags a player towards an Elder: a hard yank that carries them part of the way (at most about {@code max} blocks). */
 	static void pull(Entity towards, ServerPlayer p, double max) {
 		double dx = towards.getX() - p.getX(), dz = towards.getZ() - p.getZ();
 		double dist = Math.sqrt(dx * dx + dz * dz);
 		if (dist < 3) {
 			return;
 		}
-		double step = Math.min(max, dist * 0.4);
-		BlockPos to = ground((ServerLevel) p.level(), (int) Math.floor(p.getX() + dx / dist * step), (int) p.getY() + 3,
-				(int) Math.floor(p.getZ() + dz / dist * step), 7);
-		if (to == null) {
-			return;
-		}
-		WorldFx.particleIn(dim(p), "extremedimensions:soul_mote", p.getX(), p.getY() + 1, p.getZ(), 0.4, 0.8, 0.4, 0.0, 12);
-		p.teleportTo(to.getX() + 0.5, to.getY(), to.getZ() + 0.5);
+		double h = Math.min(Math.min(max, dist * 0.6) * 0.32, 2.4);
+		WorldFx.particleIn(p.level(), "extremedimensions:soul_mote", p.getX(), p.getY() + 1, p.getZ(), 0.4, 0.8, 0.4, 0.0, 12);
+		knock(p, towards.getX(), towards.getZ(), -h, 0.45);
 	}
 
-	/** Throws a player away from a point (about four blocks per unit of strength), with a brief float if lifted. */
+	/** Throws a player away from an Elder; {@code lift} sends them up as well. */
 	static void shove(Entity from, ServerPlayer p, double strength, double lift) {
-		double dx = p.getX() - from.getX(), dz = p.getZ() - from.getZ();
-		double d = Math.max(0.5, Math.sqrt(dx * dx + dz * dz));
-		double step = strength * 4;
-		BlockPos to = ground((ServerLevel) p.level(), (int) Math.floor(p.getX() + dx / d * step), (int) p.getY() + 3,
-				(int) Math.floor(p.getZ() + dz / d * step), 7);
-		if (to != null) {
-			WorldFx.particleIn(dim(p), "minecraft:cloud", p.getX(), p.getY() + 0.5, p.getZ(), 0.4, 0.3, 0.4, 0.05, 10);
-			p.teleportTo(to.getX() + 0.5, to.getY(), to.getZ() + 0.5);
+		WorldFx.particleIn(p.level(), "minecraft:cloud", p.getX(), p.getY() + 0.5, p.getZ(), 0.4, 0.3, 0.4, 0.05, 10);
+		knock(p, from.getX(), from.getZ(), 0.55 + strength * 0.75, 0.3 + lift * 0.9);
+	}
+
+	/** Which Elder this is, for the client's cinema and music: 0 the Matriarch, 1 the Ferryman, 2 the Last Weaver. */
+	static int index(ElderBoss b) {
+		return b instanceof Matriarch ? 0 : b instanceof Ferryman ? 1 : 2;
+	}
+
+	/** Sends a piece of the fight's cinema to everyone within {@code radius} blocks (see BossFxPayload). */
+	static void cinema(ElderBoss b, double radius, int kind, int value, float strength, String key) {
+		ModPackets.BossFxPayload fx = new ModPackets.BossFxPayload(kind, index(b), value, strength, key);
+		for (ServerPlayer p : ((ServerLevel) b.level()).players()) {
+			if (p.distanceToSqr(b) <= radius * radius) {
+				ServerPlayNetworking.send(p, fx);
+			}
 		}
-		if (lift > 0) {
-			WorldFx.effect(p, MobEffects.LEVITATION, 1, (int) Math.round(lift * 6));
+	}
+
+	/** The ground shakes around a point: the screen of everyone near shakes, less the further away they are. */
+	static void shake(ElderBoss b, double x, double z, double radius, float strength, int ticks) {
+		for (ServerPlayer p : ((ServerLevel) b.level()).players()) {
+			double dx = p.getX() - x, dz = p.getZ() - z;
+			double d = Math.sqrt(dx * dx + dz * dz);
+			if (d < radius) {
+				float s = (float) (strength * (1 - d / radius * 0.75));
+				ServerPlayNetworking.send(p, new ModPackets.BossFxPayload(ModPackets.BossFxPayload.SHAKE, index(b), ticks, s, ""));
+			}
+		}
+	}
+
+	/** The name of a great blow, called out on the screens of everyone near. */
+	static void call(ElderBoss b, String move) {
+		cinema(b, 64, ModPackets.BossFxPayload.MOVE, 0, 0, "gui.extremedimensions.elder.move." + move);
+	}
+
+	/** A ring of particles on the ground. */
+	static void ring(Level level, String particle, double x, double y, double z, double r, int n, double phase) {
+		for (int i = 0; i < n; i++) {
+			double a = 2 * Math.PI * i / n + phase;
+			WorldFx.particleIn(level, particle, x + Math.cos(a) * r, y, z + Math.sin(a) * r, 0, 0.02, 0, 0, 1);
+		}
+	}
+
+	/** A heavy step: the ground thuds and dusts up under a walking giant, and shakes a little for those close. */
+	static void step(ElderBoss b, float volume) {
+		Level level = b.level();
+		WorldFx.soundIn(dim(b), "minecraft:entity.ravager.step", "hostile", b.getX(), b.getY(), b.getZ(), volume, 0.45f);
+		WorldFx.soundIn(dim(b), "minecraft:block.rooted_dirt.break", "hostile", b.getX(), b.getY(), b.getZ(), volume * 0.6f, 0.5f);
+		WorldFx.particleIn(level, "minecraft:campfire_cosy_smoke", b.getX(), b.getY() + 0.3, b.getZ(), b.getBbWidth() * 0.5, 0.1, b.getBbWidth() * 0.5, 0.01, 4);
+		WorldFx.particleIn(level, "minecraft:poof", b.getX(), b.getY() + 0.2, b.getZ(), b.getBbWidth() * 0.6, 0.1, b.getBbWidth() * 0.6, 0.03, 12);
+		shake(b, b.getX(), b.getZ(), 26, 0.22f, 6);
+	}
+
+	/**
+	 * The air of the fight around everyone near it: the Matriarch's falling leaves and spores, the Ferryman's ash and
+	 * drifting souls, the Weaver's motes and threads of light.
+	 */
+	static void ambience(ElderBoss b) {
+		Level level = b.level();
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		int which = index(b);
+		for (ServerPlayer p : ((ServerLevel) level).players()) {
+			if (p.distanceToSqr(b) > 64 * 64) {
+				continue;
+			}
+			for (int i = 0; i < 3; i++) {
+				double x = p.getX() + rnd.nextDouble(-14, 14), y = p.getY() + rnd.nextDouble(2, 12), z = p.getZ() + rnd.nextDouble(-14, 14);
+				switch (which) {
+					case 0 -> WorldFx.particleIn(level, i == 0 ? "minecraft:spore_blossom_air" : i == 1 ? "minecraft:falling_spore_blossom" : "minecraft:ash",
+							x, y, z, 0.5, 0.5, 0.5, 0, 1);
+					case 1 -> WorldFx.particleIn(level, i == 0 ? "minecraft:soul" : "minecraft:white_ash", x, y, z, 0.5, 0.5, 0.5, 0.01, i == 0 ? 1 : 3);
+					default -> WorldFx.particleIn(level, i == 0 ? "minecraft:end_rod" : "extremedimensions:soul_mote", x, y, z, 0.5, 0.5, 0.5, 0.005, 1);
+				}
+			}
 		}
 	}
 

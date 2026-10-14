@@ -6,7 +6,8 @@
 	"client": [
 		"SkyRendererMixin",
 		"AtmosphericFogMixin",
-		"ContainerScreenAccess"
+		"ContainerScreenAccess",
+		"CameraShakeMixin"
 	],
 	"injectors": {
 		"defaultRequire": 0

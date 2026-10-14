@@ -53,11 +53,31 @@ public class ElderRenderer<T extends ElderBoss> extends MobRenderer<T, ElderRend
 			a[1] = now;
 		}
 		state.action = action;
-		state.actionTime = now - a[1];
+		// The action plays at the tempo the server runs it at
+		state.actionTime = (now - a[1]) * Math.max(0.1F, boss.getTempo());
 		float breathe = 0.82F + 0.18F * Mth.sin(now * 0.08F);
 		float flare = action == ElderBoss.IDLE ? 0 : Math.min(1.0F, state.actionTime / 10.0F) * 0.25F;
+		if (action == ElderBoss.ULTIMATE) {
+			flare = 0.3F + 0.15F * Mth.sin(now * 0.6F);
+		}
 		boolean calm = com.extremedimensions.client.ui.Ui.calm();
 		state.glow = Math.min(1.0F, calm ? 0.9F : breathe + flare);
+		if (state.deathTime > 0) {
+			// Dying, it burns brighter and brighter until it breaks apart
+			state.glow = 1.0F;
+		}
+	}
+
+	/** Drawn whenever any of the model is in view, not only its body. */
+	@Override
+	protected AABB getBoundingBoxForCulling(T boss, float partialTick) {
+		return boss.getBoundingBox().inflate(boss.modelReach());
+	}
+
+	/** It does not topple over when it dies (it breaks apart where it stands). */
+	@Override
+	protected float getFlipDegrees() {
+		return 0.0F;
 	}
 
 	@Override
@@ -65,13 +85,15 @@ public class ElderRenderer<T extends ElderBoss> extends MobRenderer<T, ElderRend
 		return this.texture;
 	}
 
-	/** Drawn whenever any of the model is in view, not only its body. */
-	public AABB getBoundingBoxForCulling(T boss) {
-		return boss.getBoundingBox().inflate(boss.modelReach());
-	}
-
 	@Override
 	protected void scale(ElderRenderState state, PoseStack pose) {
-		pose.scale(this.scale, this.scale, this.scale);
+		float s = this.scale;
+		if (state.action == ElderBoss.ULTIMATE) {
+			// It swells as its ultimate builds, and snaps back as it breaks
+			float t = state.actionTime;
+			float grow = ElderAnim.smooth(t / 40F) * (1 - ElderAnim.smooth((t - 190F) / 10F));
+			s *= 1.0F + 0.14F * grow;
+		}
+		pose.scale(s, s, s);
 	}
 }
