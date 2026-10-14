@@ -92,7 +92,7 @@ carry there, never which curses.
 | --- | --- | --- |
 | Kindling | 20% more fire and lava damage | 3 |
 | Frostbitten | 25% more freeze damage, and you freeze 25% faster | 3 |
-| Sealed Pockets | 3 inventory slots sealed (the hotbar never) | 3 |
+| Sealed Pockets | 3 inventory slots sealed (the hotbar never; nothing goes in, not even a pickup) | 3 |
 | Shrunken Stomach | Hunger bar holds 1 drumstick less | 3 |
 | Fading Brews | Good effects end 15% sooner | 3 |
 | Lingering Ills | Bad effects last 20% longer | 3 |
@@ -116,7 +116,7 @@ still heals slowly, at the vanilla pace and cost.
 - **Atonement:** pick the curse to atone for in the Curses screen and play it off. Beyond: 1 point per active minute
   on an expedition, 3 per elite slain, 5 per safe return. At home: 10 per night survived without dying, 1 per monster
   slain after dark. Everywhere curses take points from both. The last stack takes 100 points, every stack above it 50
-  more.
+  more. **Every death undoes half** of the atonement gathered on every curse (`atone_death_loss`).
 - **Tether Fragments:** offer them to an anchor, one fragment per stack the curse has.
 - **Mending Cloth:** 4 Seam Silk, a Tether Fragment and a **Veil Wing** (dropped by Veil Rays). Use it to take one stack
   off.
@@ -129,6 +129,7 @@ Every stack you lift leaves a **scar** (up to five): each one makes the drain 3%
 
 *It sees. It waits. It takes.* An ancient tribe, bound to the shadows between dimensions, keeps watch over you.
 A Lurker appears rarely, day or night, in the Overworld and the Nether, always at a distance and on high ground.
+Its eyes and cracks beat like a Warden's heart, faster when it hunts.
 Usually it only watches. Sometimes it creeps closer while you are not looking and takes something: an item,
 experience, a piece of armour, or it lays a curse. Kill it before it vanishes to get your loot back.
 Lurkers also drain charged anchors: catch one holding your anchor's light and chase it off.
@@ -213,7 +214,7 @@ Each player can store up to 30 minutes per anchor. Fuel values show in item tool
 ## Installation
 
 1. Install **Fabric Loader 0.19.5+** for **Minecraft 26.3** (Java 25).
-2. Add **Fabric API 0.162.0+** and `extremedimensions-2.4.0.jar` to your `mods` folder.
+2. Add **Fabric API 0.162.0+** and `extremedimensions-2.4.1.jar` to your `mods` folder.
 3. Install it on the server **and** every client.
 
 Play a normal Survival world. Vanilla Hardcore turns you into a spectator on death, which this mod is designed to avoid.

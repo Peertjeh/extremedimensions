@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.4.1: A Heartbeat in the Dark
+
+*The tribe has a pulse now, and death costs your penance.*
+
+### Changed
+- **The tribe's glow beats** like the Warden's heart: Lurkers, Hollowlings, Keepers, the Starved One and the Thinned
+  flash and fade, every two seconds when calm, faster while they stalk, run or drink an anchor, fastest as they reach
+  for you. Each body keeps its own rhythm.
+- **Death undoes atonement**: every death takes half of the atonement gathered on every curse (rounded against you).
+  The chat tells you how much on respawn. The share is set with `atone_death_loss` in the config.
+
+### Fixed
+- Sealed slots are crossed out in **every menu** that shows your inventory (villagers, chests, furnaces, crafting
+  tables...), not only in the inventory itself.
+- With only sealed slots free, items **stay on the ground**: no more pickup sound and animation for an item that then
+  fell out again. Menus (clicks, shift-clicks, drags, number keys) and `/give` no longer put anything in a sealed slot.
+
 ## 2.4.0: The Hunger Spills Over
 
 *Nothing the Starved take is wasted any more, and they follow you into every world.*
