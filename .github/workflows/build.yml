@@ -21,6 +21,9 @@ jobs:
       - name: build and server game tests
         run: ./gradlew build
         timeout-minutes: 20
+      - name: TEMP api probe
+        if: always()
+        run: bash .github/probe/api.sh
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
