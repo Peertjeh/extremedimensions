@@ -18,16 +18,27 @@ public enum GameMode {
 	LMS(Category.PARTY, false, 2, 16),
 	FFA(Category.PARTY, false, 2, 16),
 	/** Teams of 1, 2, 4 or 8 in a single-elimination bracket; every match best of 3. */
-	TOURNAMENT(Category.PARTY, false, 2, 16);
+	TOURNAMENT(Category.PARTY, false, 2, 16),
+	/** One player against a team of two, with a sword, axe or mace kit. */
+	ONE_V_TWO("1v2", Category.TEAM, false, 3, 3),
+	/** One player against a team of three. */
+	ONE_V_THREE("1v3", Category.TEAM, false, 4, 4);
 
-	public enum Category { DUEL, PARTY }
+	/** DUEL: 1v1 with matchmaking; PARTY: a lobby that starts with enough players; TEAM: one against a team. */
+	public enum Category { DUEL, PARTY, TEAM }
 
+	private final String id;
 	private final Category category;
 	private final boolean ranged;
 	private final int defaultMin;
 	private final int defaultMax;
 
 	GameMode(Category category, boolean ranged, int defaultMin, int defaultMax) {
+		this(null, category, ranged, defaultMin, defaultMax);
+	}
+
+	GameMode(String id, Category category, boolean ranged, int defaultMin, int defaultMax) {
+		this.id = id == null ? name().toLowerCase(Locale.ROOT) : id;
 		this.category = category;
 		this.ranged = ranged;
 		this.defaultMin = defaultMin;
@@ -46,6 +57,16 @@ public enum GameMode {
 		return category == Category.PARTY;
 	}
 
+	/** 1v2 or 1v3. */
+	public boolean isTeamFight() {
+		return category == Category.TEAM;
+	}
+
+	/** Players against the one: 2 for 1v2, 3 for 1v3 (1 otherwise). */
+	public int opponents() {
+		return this == ONE_V_TWO ? 2 : this == ONE_V_THREE ? 3 : 1;
+	}
+
 	/** Bow and Crossbow live in the Ranged menu, the others in Duels. */
 	public boolean isRanged() {
 		return ranged;
@@ -59,9 +80,9 @@ public enum GameMode {
 		return defaultMax;
 	}
 
-	/** Stable id used in config files, player data and commands, e.g. {@code bow_spleef}. */
+	/** Stable id used in config files, player data and commands, e.g. {@code bow_spleef} or {@code 1v2}. */
 	public String id() {
-		return name().toLowerCase(Locale.ROOT);
+		return id;
 	}
 
 	public static GameMode byId(String id) {
@@ -82,5 +103,19 @@ public enum GameMode {
 
 	public static GameMode[] parties() {
 		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, FFA, TOURNAMENT};
+	}
+
+	/** The Party Games menu (Free for All is under PvP). */
+	public static GameMode[] partyMenu() {
+		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, TOURNAMENT};
+	}
+
+	public static GameMode[] teamFights() {
+		return new GameMode[] {ONE_V_TWO, ONE_V_THREE};
+	}
+
+	/** Kits for PvP (FFA, 1v1, 1v2, 1v3). */
+	public static GameMode[] meleeKits() {
+		return new GameMode[] {SWORD, AXE, MACE};
 	}
 }

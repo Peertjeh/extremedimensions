@@ -25,6 +25,8 @@ public final class Icons {
 			case LMS -> Items.TOTEM_OF_UNDYING;
 			case FFA -> Items.IRON_SWORD;
 			case TOURNAMENT -> Items.GOLDEN_SWORD;
+			case ONE_V_TWO -> Items.SHIELD;
+			case ONE_V_THREE -> Items.NETHERITE_SWORD;
 		};
 	}
 

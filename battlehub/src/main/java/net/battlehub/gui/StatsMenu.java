@@ -1,5 +1,6 @@
 package net.battlehub.gui;
 
+import java.util.List;
 import java.util.UUID;
 
 import net.battlehub.core.GameMode;
@@ -64,10 +65,12 @@ public final class StatsMenu extends Screen {
 				.lore(Lang.lore(viewer, "menu.stats.streak_best", o.bestStreak));
 		c.set(24, streak.build());
 
-		int[] duelSlots = {29, 30, 31, 32, 33};
-		GameMode[] duels = GameMode.duels();
-		for (int i = 0; i < duels.length; i++) {
-			c.set(duelSlots[i], modeIcon(p, duels[i]).build());
+		// Duels, then 1v2 and 1v3
+		List<GameMode> fights = new java.util.ArrayList<>(List.of(GameMode.duels()));
+		fights.addAll(List.of(GameMode.teamFights()));
+		int fightStart = 31 - fights.size() / 2;
+		for (int i = 0; i < fights.size(); i++) {
+			c.set(fightStart + i, modeIcon(p, fights.get(i)).build());
 		}
 		GameMode[] parties = GameMode.parties();
 		int start = 40 - parties.length / 2;

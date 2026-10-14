@@ -57,7 +57,13 @@ public final class ModeListMenu extends Screen {
 					.clean();
 			c.set(slots[i], icon.build(), click -> new ModeMenu(viewer, m, this).open());
 		}
-		c.back(() -> new MainMenu(viewer).open());
+		c.back(() -> {
+			if (kind == Kind.MELEE) {
+				new PvpMenu(viewer).open();
+			} else {
+				new MainMenu(viewer).open();
+			}
+		});
 		c.fill();
 	}
 }

@@ -16,8 +16,13 @@ public final class PartyGames {
 		return create(mode, server, players, "");
 	}
 
-	/** {@code option}: what the lobby voted for (the parkour difficulty), "" when nothing. */
 	public static Match create(GameMode mode, MinecraftServer server, List<ServerPlayer> players, String option) {
+		return create(mode, server, players, java.util.Map.of("", option == null ? "" : option));
+	}
+
+	/** {@code votes}: what the lobby voted for per question ("" the parkour difficulty, "kit" the FFA kit). */
+	public static Match create(GameMode mode, MinecraftServer server, List<ServerPlayer> players, java.util.Map<String, String> votes) {
+		String option = votes.getOrDefault("", "");
 		int id = Matches.newId();
 		return switch (mode) {
 			case BOW_SPLEEF -> new BowSpleefMatch(id, server, players);
@@ -27,7 +32,7 @@ public final class PartyGames {
 			case CTF -> new CtfMatch(id, server, players);
 			case PARKOUR -> new ParkourMatch(id, server, players, option);
 			case LMS -> new LmsMatch(id, server, players);
-			case FFA -> new FfaMatch(id, server, players);
+			case FFA -> new FfaMatch(id, server, players, votes.getOrDefault("kit", ""));
 			// Started by Tournaments, which runs several matches
 			case TOURNAMENT -> null;
 			default -> null;

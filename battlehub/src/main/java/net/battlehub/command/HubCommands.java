@@ -146,7 +146,8 @@ public final class HubCommands {
 						.then(Commands.argument("id", IntegerArgumentType.integer(1))
 								.executes(c -> AdminCommands.endMatch(c.getSource(), IntegerArgumentType.getInteger(c, "id")))))
 				.then(Commands.literal("arena").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
-						.then(Commands.literal("list").executes(c -> AdminCommands.arenaList(c.getSource())))));
+						.then(Commands.literal("list").executes(c -> AdminCommands.arenaList(c.getSource()))))
+				.then(coinsCommand()));
 		if (net.battlehub.debug.SelfTest.enabled()) {
 			d.register(Commands.literal("battlehub").then(Commands.literal("selftest")
 					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
@@ -160,6 +161,24 @@ public final class HubCommands {
 						return 1;
 					})));
 		}
+	}
+
+	/** /battlehub coins <player> | give|take|set <player> <amount> (admins). */
+	private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> coinsCommand() {
+		var root = Commands.literal("coins").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+				.then(playerArg().executes(c -> AdminCommands.coinsShow(c.getSource(), StringArgumentType.getString(c, "player"))));
+		for (AdminCommands.CoinChange change : AdminCommands.CoinChange.values()) {
+			root.then(Commands.literal(change.name().toLowerCase(java.util.Locale.ROOT))
+					.then(playerArg().then(Commands.argument("amount", IntegerArgumentType.integer(change == AdminCommands.CoinChange.SET ? 0 : 1))
+							.executes(c -> AdminCommands.coins(c.getSource(), StringArgumentType.getString(c, "player"), change,
+									IntegerArgumentType.getInteger(c, "amount"))))));
+		}
+		return root;
+	}
+
+	private static com.mojang.brigadier.builder.RequiredArgumentBuilder<CommandSourceStack, String> playerArg() {
+		return Commands.argument("player", StringArgumentType.word())
+				.suggests((c, b) -> SharedSuggestionProvider.suggest(net.battlehub.data.PlayerStore.names(), b));
 	}
 
 	private static java.util.List<String> allModeIds() {
@@ -177,7 +196,9 @@ public final class HubCommands {
 			Msg.send(p, "challenge.unknown_mode");
 			return 0;
 		}
-		boolean ok = mode.isParty() ? net.battlehub.queue.Parties.join(p, mode) : Queues.join(p, mode, false);
+		boolean ok = mode.isParty() ? net.battlehub.queue.Parties.join(p, mode)
+				: mode.isTeamFight() ? net.battlehub.queue.TeamFights.join(p, mode, GameMode.SWORD, net.battlehub.core.SideQueue.Side.ANY)
+				: Queues.join(p, mode, false);
 		return ok ? 1 : 0;
 	}
 

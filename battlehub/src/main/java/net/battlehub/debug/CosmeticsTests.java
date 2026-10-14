@@ -45,7 +45,31 @@ final class CosmeticsTests {
 		throw new IllegalStateException(itemName + " is not in the menu");
 	}
 
+	private static void command(MinecraftServer server, String cmd) {
+		server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), cmd);
+	}
+
 	static void all(MinecraftServer server, Script s) {
+		coinsCommand(server, s);
+		shop(server, s);
+	}
+
+	/** /battlehub coins as an admin (the server console): give, take (never below zero), set, also offline. */
+	private static void coinsCommand(MinecraftServer server, Script s) {
+		String tag = "coins command";
+		s.run(tag + ": set A to 1000, give 250", () -> {
+			SelfTest.join(server, "BHTestA");
+			command(server, "battlehub coins set BHTestA 1000");
+			command(server, "battlehub coins give BHTestA 250");
+		});
+		s.check(tag + ": A has 1250", () -> prof("BHTestA").coins == 1250);
+		s.run(tag + ": take more than A has", () -> command(server, "battlehub coins take BHTestA 99999"));
+		s.check(tag + ": A has 0, not less", () -> prof("BHTestA").coins == 0);
+		s.run(tag + ": a name BattleHub does not know changes nothing", () -> command(server, "battlehub coins give NoSuchPlayer 5"));
+		s.check(tag + ": still 0", () -> prof("BHTestA").coins == 0 && net.battlehub.data.PlayerStore.find("NoSuchPlayer") == null);
+	}
+
+	private static void shop(MinecraftServer server, Script s) {
 		String tag = "cosmetics";
 		SelfTest.reset(s, tag);
 		s.run(tag + ": A has 5000 coins, B none", () -> {

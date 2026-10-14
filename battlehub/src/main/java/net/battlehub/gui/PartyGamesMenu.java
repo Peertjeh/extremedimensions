@@ -33,7 +33,7 @@ public final class PartyGamesMenu extends Screen {
 
 	@Override
 	public void draw(Canvas c) {
-		GameMode[] games = GameMode.parties();
+		GameMode[] games = GameMode.partyMenu();
 		// Seven on the first row, the rest centred on the row below
 		int below = Math.max(0, games.length - 7);
 		for (int i = 0; i < games.length; i++) {

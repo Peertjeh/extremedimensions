@@ -50,6 +50,9 @@ public final class PlayAgain {
 			o = d.challenge && opponent != null
 					? new Offer(Kind.REMATCH, m.mode, false, d.format, opponent, m.name(opponent), "", expires)
 					: new Offer(Kind.QUEUE, m.mode, m.ranked, d.format, null, "", "", expires);
+		} else if (m instanceof net.battlehub.match.TeamFightMatch t) {
+			// The same 1v2 / 1v3 queue: same kit, same side as last time
+			o = new Offer(Kind.QUEUE, m.mode, false, DuelFormat.BO1, null, "", t.kitMode().id(), expires);
 		} else {
 			o = new Offer(Kind.PARTY, m.mode, false, DuelFormat.BO1, null, "", Parties.lastVote(p.getUUID(), m.mode), expires);
 		}
@@ -87,7 +90,8 @@ public final class PlayAgain {
 			return Component.empty();
 		}
 		return switch (o.kind()) {
-			case QUEUE -> o.ranked() ? Lang.tr(p, "again.ranked_label", Queues.modeLabel(p, o.mode(), o.format()))
+			case QUEUE -> o.mode().isTeamFight() ? TeamFights.label(p, o.mode(), GameMode.byId(o.vote()))
+					: o.ranked() ? Lang.tr(p, "again.ranked_label", Queues.modeLabel(p, o.mode(), o.format()))
 					: Queues.modeLabel(p, o.mode(), o.format());
 			case REMATCH -> Lang.tr(p, "again.rematch_label", Queues.modeLabel(p, o.mode(), o.format()), o.opponentName());
 			case PARTY -> Lang.tr(p, Icons.modeKey(o.mode()));
@@ -107,7 +111,9 @@ public final class PlayAgain {
 		}
 		OFFERS.remove(p.getUUID());
 		boolean ok = switch (o.kind()) {
-			case QUEUE -> Queues.join(p, o.mode(), o.ranked(), o.format());
+			case QUEUE -> o.mode().isTeamFight()
+					? TeamFights.join(p, o.mode(), GameMode.byId(o.vote()), TeamFights.lastSide(p.getUUID()))
+					: Queues.join(p, o.mode(), o.ranked(), o.format());
 			case PARTY -> Parties.join(p, o.mode(), o.vote());
 			case REMATCH -> rematch(p, o);
 		};

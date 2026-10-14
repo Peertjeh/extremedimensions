@@ -28,9 +28,26 @@ public final class FfaMatch extends PartyMatch {
 	/** Run tick until which a player cannot be hurt (after spawning). */
 	private final Map<UUID, Integer> protectedUntil = new HashMap<>();
 	private UUID leader;
+	/** The voted kit (sword, axe or mace), or null for the Free for All kit. */
+	public final GameMode kitMode;
 
 	public FfaMatch(int id, MinecraftServer server, List<ServerPlayer> players) {
+		this(id, server, players, "");
+	}
+
+	public FfaMatch(int id, MinecraftServer server, List<ServerPlayer> players, String kitVote) {
 		super(id, GameMode.FFA, server, players);
+		GameMode k = GameMode.byId(kitVote);
+		this.kitMode = k != null && k.isDuel() ? k : null;
+	}
+
+	@Override
+	protected String kit() {
+		return kitMode == null ? super.kit() : net.battlehub.config.ConfigManager.config().game(kitMode).kit;
+	}
+
+	private Component kitName(ServerPlayer p) {
+		return Lang.tr(p, kitMode == null ? "ffa.kit_default" : net.battlehub.gui.Icons.modeKey(kitMode));
 	}
 
 	public int target() {
@@ -55,7 +72,7 @@ public final class FfaMatch extends PartyMatch {
 
 	@Override
 	protected void onGo() {
-		forEveryone(p -> Msg.send(p, "ffa.start", target()));
+		forEveryone(p -> Msg.send(p, "ffa.start", target(), kitName(p)));
 	}
 
 	public boolean isProtected(UUID id) {

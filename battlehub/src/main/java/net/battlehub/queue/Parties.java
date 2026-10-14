@@ -282,7 +282,7 @@ public final class Parties {
 			}
 			return;
 		}
-		Match m = PartyGames.create(mode, server, players, options.getOrDefault("", ""));
+		Match m = PartyGames.create(mode, server, players, options);
 		if (m == null || !Matches.start(m)) {
 			BattleHub.LOGGER.warn("Could not start a {} match (no free arena?)", mode.id());
 			for (ServerPlayer p : players) {

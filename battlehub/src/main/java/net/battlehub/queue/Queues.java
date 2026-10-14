@@ -147,6 +147,7 @@ public final class Queues {
 			was |= q.remove(id);
 		}
 		was |= Parties.leave(id);
+		was |= TeamFights.leave(id);
 		if (net.battlehub.tournament.Tournaments.isIn(id)) {
 			net.battlehub.tournament.Tournaments.leave(id);
 			was = true;
@@ -171,6 +172,7 @@ public final class Queues {
 		}
 		Challenges.tick(server);
 		PlayAgain.tick(server);
+		TeamFights.tick(server);
 		HubConfig.Elo e = ConfigManager.config().elo;
 		Matchmaker.Window window = new Matchmaker.Window(e.windowBase, e.windowPerSecond, e.windowMax);
 		for (GameMode mode : GameMode.duels()) {
@@ -281,6 +283,7 @@ public final class Queues {
 		Parties.clear();
 		Challenges.clear();
 		PlayAgain.clear();
+		TeamFights.clear();
 		net.battlehub.tournament.Tournaments.clear();
 	}
 }

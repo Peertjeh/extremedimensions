@@ -161,6 +161,9 @@ class GameRulesTest {
 		assertNull(GameMode.byId("nope"));
 		assertEquals(5, GameMode.duels().length);
 		assertEquals(9, GameMode.parties().length);
+		assertEquals("1v2", GameMode.ONE_V_TWO.id());
+		assertEquals(GameMode.ONE_V_THREE, GameMode.byId("1v3"));
+		assertEquals(3, GameMode.ONE_V_THREE.opponents());
 		assertTrue(GameMode.BOW.isRanged());
 		assertFalse(GameMode.MACE.isRanged());
 	}

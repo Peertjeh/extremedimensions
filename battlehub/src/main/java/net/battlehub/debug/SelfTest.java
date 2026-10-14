@@ -77,6 +77,7 @@ public final class SelfTest {
 		duel(server, s, GameMode.CROSSBOW, "queue", "kill");
 		spectating(server, s);
 		FormatTests.all(server, s);
+		TeamFightTests.all(server, s);
 		s.run("speed up party timers for the test", () -> {
 			var c = ConfigManager.config();
 			c.timings.partyCountdownSeconds = 3;
@@ -286,8 +287,11 @@ public final class SelfTest {
 		s.check("menu item still there and nothing in the inventory", () ->
 				p("BHTestA").containerMenu instanceof HubMenu m && m.getSlot(10).getItem().is(Items.DIAMOND_SWORD)
 						&& m.getCarried().isEmpty() && !p("BHTestA").getInventory().contains(st -> st.is(Items.DIAMOND_SWORD)));
-		s.run("click Duels", () -> ((HubMenu) p("BHTestA").containerMenu).clicked(10, 0, ContainerInput.PICKUP, p("BHTestA")));
-		s.waitFor("Duels submenu opened", 10, () -> p("BHTestA").containerMenu instanceof HubMenu m
+		s.run("click PvP", () -> ((HubMenu) p("BHTestA").containerMenu).clicked(10, 0, ContainerInput.PICKUP, p("BHTestA")));
+		s.waitFor("PvP menu opened", 10, () -> p("BHTestA").containerMenu instanceof HubMenu m
+				&& m.getSlot(10).getItem().is(Items.IRON_SWORD) && m.getSlot(12).getItem().is(Items.DIAMOND_SWORD));
+		s.run("click 1v1", () -> ((HubMenu) p("BHTestA").containerMenu).clicked(12, 0, ContainerInput.PICKUP, p("BHTestA")));
+		s.waitFor("1v1 kits: sword, axe, mace", 10, () -> p("BHTestA").containerMenu instanceof HubMenu m
 				&& m.getSlot(11).getItem().is(Items.DIAMOND_SWORD) && m.getSlot(15).getItem().is(Items.MACE));
 		s.run("close menu", () -> p("BHTestA").closeContainer());
 		s.check("compass cannot be thrown", () -> {

@@ -52,7 +52,7 @@ final class PartyTests {
 		party(server, s, GameMode.PARKOUR, PartyTests::parkour, new String[] {"hard", "hard", "easy", ""});
 		soloParkour(server, s);
 		party(server, s, GameMode.LMS, PartyTests::lms);
-		party(server, s, GameMode.FFA, PartyTests::ffa);
+		party(server, s, GameMode.FFA, PartyTests::ffa, new String[] {"kit:axe", "kit:axe", "kit:mace", ""});
 	}
 
 	private static void hit(String victim, String attacker, float amount) {
@@ -60,19 +60,19 @@ final class PartyTests {
 		v.hurtServer(v.level(), v.damageSources().playerAttack(p(attacker)), amount);
 	}
 
-	/** Free for All (kill target 3 for the test): kills, respawn at a free spot with protection, first to 3 wins. */
+	/** Free for All (kill target 3 for the test, the axe voted): kills, respawn with protection, first to 3 wins. */
 	private static void ffa(Script s) {
-		s.check("ffa: everyone has the kit", () -> {
+		s.check("ffa: the vote picked the axe kit and everyone has it", () -> {
 			for (String n : NAMES) {
-				if (!p(n).getInventory().getItem(0).is(net.minecraft.world.item.Items.DIAMOND_SWORD)) return false;
+				if (!p(n).getInventory().getItem(0).is(net.minecraft.world.item.Items.DIAMOND_AXE)) return false;
 			}
-			return ((FfaMatch) match()).target() == 3;
+			return ((FfaMatch) match()).target() == 3 && ((FfaMatch) match()).kitMode == GameMode.AXE;
 		});
 		s.run("ffa: A kills B", () -> hit("BHTestB", "BHTestA", 1000f));
 		s.check("ffa: one kill for A, B waits to respawn", () -> match().kills(p("BHTestA").getUUID()) == 1
 				&& p("BHTestB").gameMode() == GameType.SPECTATOR && match().alive().contains(p("BHTestB").getUUID()));
 		s.waitFor("ffa: B is back with the kit", 60, () -> p("BHTestB").gameMode() == GameType.ADVENTURE
-				&& p("BHTestB").getInventory().getItem(0).is(net.minecraft.world.item.Items.DIAMOND_SWORD) && ArenaWorld.is(p("BHTestB").level()));
+				&& p("BHTestB").getInventory().getItem(0).is(net.minecraft.world.item.Items.DIAMOND_AXE) && ArenaWorld.is(p("BHTestB").level()));
 		s.check("ffa: B is protected right after spawning", () -> {
 			float before = p("BHTestB").getHealth();
 			hit("BHTestB", "BHTestC", 6f);
