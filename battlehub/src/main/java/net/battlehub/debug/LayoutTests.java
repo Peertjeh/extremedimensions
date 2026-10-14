@@ -37,8 +37,7 @@ final class LayoutTests {
 		});
 		m.put("lms", t -> PartyLayouts.lms(t, rnd));
 		m.put("ffa", t -> PartyLayouts.ffa(t, rnd));
-		for (int teams = 2; teams <= 4; teams++) {
-			int n = teams;
+		for (int n : new int[] {2, 3, 4, 6, 8}) {
 			m.put("bedwars" + n, t -> net.battlehub.arena.layout.BedWarsLayout.design(t, rnd, n));
 		}
 		m.put("prophunt", t -> net.battlehub.arena.layout.PropHuntLayout.design(t, rnd,

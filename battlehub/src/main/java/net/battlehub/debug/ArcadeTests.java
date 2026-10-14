@@ -56,6 +56,7 @@ final class ArcadeTests {
 			ph.hunterRespawnSeconds = 1;
 		});
 		PartyTests.party(server, s, GameMode.BED_WARS, ArcadeTests::bedWars);
+		PartyTests.party(server, s, GameMode.BED_WARS, ArcadeTests::bedWarsSolo, new String[] {"format:solo", "format:solo", "format:duo", ""});
 		PartyTests.party(server, s, GameMode.PROP_HUNT, ArcadeTests::propHunt);
 	}
 
@@ -89,6 +90,7 @@ final class ArcadeTests {
 		});
 		s.check("bedwars: two teams of two, in survival with the start kit and locked team armour", () -> {
 			BedWarsMatch m = bw();
+			if (!"duo".equals(m.format)) return false;
 			ServerPlayer a = p("BHTestA");
 			ItemStack legs = a.getItemBySlot(EquipmentSlot.LEGS);
 			return m.teams().size() == 2 && m.teams().get(0).members().size() == 2 && VARS.get("T") != null && VARS.get("E2") != null
@@ -238,6 +240,26 @@ final class ArcadeTests {
 		s.check("bedwars: the teammate wins too", () -> bw().outcome(pv("T").getUUID()) == net.battlehub.core.Outcome.WIN);
 	}
 
+	/** Solo (the vote won 2 to 1): an island and a bed each; the last player in wins. */
+	private static void bedWarsSolo(Script s) {
+		s.check("bedwars solo: four islands with a bed and one player each", () -> {
+			BedWarsMatch m = bw();
+			if (!"solo".equals(m.format) || m.teams().size() != 4) return false;
+			java.util.Set<Integer> teams = new java.util.HashSet<>();
+			for (int t = 0; t < 4; t++) {
+				if (m.teams().get(t).members().size() != 1) return false;
+				if (!(m.arena().level().getBlockState(m.bed(t)).getBlock() instanceof net.minecraft.world.level.block.BedBlock)) return false;
+			}
+			for (String n : NAMES) teams.add(m.teamOf(p(n).getUUID()));
+			return teams.size() == 4;
+		});
+		s.run("bedwars solo: B, C and D give up", () -> {
+			for (String n : new String[] {"BHTestB", "BHTestC", "BHTestD"}) bw().forfeit(p(n));
+		});
+		s.check("bedwars solo: the last one in wins", () -> bw().phase() == Match.Phase.ENDING && bw().stage() == BedWarsMatch.Stage.PODIUM);
+		PartyTests.expectWinner(s, GameMode.BED_WARS, "BHTestA");
+	}
+
 	// ------------------------------------------------------------------ Prop Hunt
 
 	/**
@@ -298,6 +320,12 @@ final class ArcadeTests {
 		s.check("prophunt: one hunter, three props, hiding has started", () -> ph().hunters().size() == 1 && ph().props().size() == 3
 				&& ph().stage() == PropHuntMatch.Stage.HIDING && VARS.get("H") != null);
 		s.check("prophunt: the hiding mixin is active", Visibility::active);
+		s.check("prophunt: props are weaker and slower than normal", () -> {
+			ServerPlayer p1 = pv("P1");
+			var speed = net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED;
+			return p1.getMaxHealth() == ConfigManager.prophunt().propHealth && p1.getMaxHealth() < 20
+					&& p1.getAttributeValue(speed) < p1.getAttributeBaseValue(speed);
+		});
 		s.check("prophunt: the hunter waits blind in survival, the props are hidden blocks", () -> {
 			ServerPlayer h = pv("H");
 			ServerPlayer p1 = pv("P1");
@@ -356,7 +384,7 @@ final class ArcadeTests {
 			// The same call the server makes for a swing packet from the client
 			clientSwing(h);
 		});
-		s.check("prophunt: a swing at thin air costs too", () -> pv("H").getHealth() < (float) VARS.get("hpH")
+		s.check("prophunt: a swing at thin air costs points but no health", () -> pv("H").getHealth() == (float) VARS.get("hpH")
 				&& ph().points(pv("H").getUUID()) < (int) VARS.get("ptsH"));
 		s.run("prophunt: P2 leaves a decoy", () -> {
 			VARS.put("ptsP2", ph().points(pv("P2").getUUID()));
@@ -386,6 +414,10 @@ final class ArcadeTests {
 				&& pv("H").getInventory().countItem(Items.ARROW) > (int) VARS.get("arrows"));
 		s.waitFor("prophunt: P1 comes back as a hunter", 60, () -> ph().role(pv("P1").getUUID()) == PropHuntMatch.Role.HUNTER
 				&& pv("P1").gameMode() == GameType.SURVIVAL);
+		s.check("prophunt: as a hunter P1 has normal health and speed again", () -> {
+			var speed = net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED;
+			return pv("P1").getMaxHealth() == 20 && pv("P1").getAttributeValue(speed) == pv("P1").getAttributeBaseValue(speed);
+		});
 		s.run("prophunt: P3 disconnects", () -> p(var("P3")).leave());
 		s.check("prophunt: P3's disguise is cleaned up", () -> {
 			UUID id = net.battlehub.debug.TestPlayer.uuid(var("P3"));

@@ -61,7 +61,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Bed Wars: two to four teams on floating islands. Generators drop iron, gold, diamonds and emeralds; the shop
+ * Bed Wars: solo (everyone for themselves) or duos, up to eight islands. Generators drop iron, gold, diamonds and emeralds; the shop
  * turns them into blocks, weapons, armour and tools. A team's bed brings its players back after a death; once the
  * bed is broken, a death is final. The last team with players left wins.
  *
@@ -74,8 +74,8 @@ public final class BedWarsMatch extends PartyMatch implements BedWarsShop.Teams 
 	public enum Stage { COUNTDOWN, ACTIVE, SUDDEN_DEATH, PODIUM }
 
 	/** Leather colours per team, matching {@link BedWarsLayout#COLORS}. */
-	private static final int[] LEATHER = {0xB02E26, 0x3C44AA, 0x80C71F, 0xFED83D};
-	private static final String[] CODES = {"&c", "&9", "&a", "&e"};
+	private static final int[] LEATHER = {0xB02E26, 0x3C44AA, 0x80C71F, 0xFED83D, 0x3AB3DA, 0xF9FFFE, 0xF38BAA, 0x474F52};
+	private static final String[] CODES = {"&c", "&9", "&a", "&e", "&b", "&f", "&d", "&8"};
 	private static final int FLAGS = 2 | 16 | 32;
 
 	private final BedWarsConfig cfg;
@@ -103,10 +103,19 @@ public final class BedWarsMatch extends PartyMatch implements BedWarsShop.Teams 
 
 	private record Tnt(PrimedTnt entity, int explodeAt) {}
 
+	/** "solo" or "duo", as voted in the lobby. */
+	public final String format;
+
 	public BedWarsMatch(int id, MinecraftServer server, List<ServerPlayer> players) {
+		this(id, server, players, "");
+	}
+
+	public BedWarsMatch(int id, MinecraftServer server, List<ServerPlayer> players, String formatVote) {
 		super(id, GameMode.BED_WARS, server, players);
 		this.cfg = ConfigManager.bedwars();
-		int count = BedWarsRules.teamCount(participants.size(), cfg.teams, cfg.maxTeamSize);
+		this.format = BedWarsRules.SOLO.equals(formatVote) || BedWarsRules.DUO.equals(formatVote) ? formatVote : cfg.defaultFormat;
+		int count = BedWarsRules.teamCount(participants.size(), BedWarsRules.teamSize(format, cfg.duoTeamSize),
+				Math.min(cfg.maxTeams, BedWarsLayout.COLORS.length));
 		List<UUID> shuffled = new ArrayList<>(participants);
 		Collections.shuffle(shuffled, new java.util.Random(random.nextLong()));
 		List<List<UUID>> members = new ArrayList<>();
@@ -305,7 +314,10 @@ public final class BedWarsMatch extends PartyMatch implements BedWarsShop.Teams 
 			TeamState t = team(id);
 			if (t != null) t.left(id);
 		}
-		forEveryone(p -> Msg.send(p, "bedwars.start"));
+		forEveryone(p -> {
+			Msg.send(p, "bedwars.format", Lang.tr(p, "bedwars.format." + format), teams.size());
+			Msg.send(p, "bedwars.start");
+		});
 		updateUi();
 		checkEnd();
 	}

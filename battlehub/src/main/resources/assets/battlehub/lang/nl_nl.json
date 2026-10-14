@@ -580,8 +580,7 @@
 	"bedwars.sb.out": "&c✘",
 	"bedwars.sb.players": "&e{0}",
 	"bedwars.sb.you": " &7(jij)",
-	"bedwars.sb.kills": "&fKills: &a{0}",
-	"bedwars.sb.finals": "&fFinal kills: &a{0}",
+	"bedwars.sb.kills": "&fKills: &a{0} &7| &fFinals: &a{1}",
 	"bedwars.sb.beds": "&fBedden gesloopt: &a{0}",
 	"bedwars.bar.next": "&fVolgende: {0} &7over &e{1}",
 	"bedwars.bar.end": "&fEinde over &e{0}",
@@ -649,5 +648,14 @@
 	"prophunt.bar.ready": "&aklaar",
 	"prophunt.bar.locked": "&eVast",
 	"prophunt.bar.free": "&7Vrij",
-	"prophunt.status": "&7Ronde {0}/{1}, nog {2} props"
+	"prophunt.status": "&7Ronde {0}/{1}, nog {2} props",
+	"bedwars.team.light_blue": "&bAqua",
+	"bedwars.team.white": "&fWit",
+	"bedwars.team.pink": "&dRoze",
+	"bedwars.team.gray": "&8Grijs",
+	"bedwars.format.solo": "&eSolo &7(iedereen voor zich)",
+	"bedwars.format.solo.lore": "&7Iedereen op een eigen eiland,\n&7tot 8 eilanden.",
+	"bedwars.format.duo": "&eDuo's &7(teams van 2)",
+	"bedwars.format.duo.lore": "&7Teams van hoogstens twee spelers,\n&7tot 8 teams.",
+	"bedwars.format": "&7Modus: {0}&7, {1} eilanden."
 }

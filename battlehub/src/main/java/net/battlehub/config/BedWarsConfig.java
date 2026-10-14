@@ -10,9 +10,12 @@ import java.util.Map;
  * Times are in seconds unless the name says ticks; {team} in an item id becomes the team colour (red_wool).
  */
 public final class BedWarsConfig {
-	/** Number of teams (2 to 4); 0 picks it from the number of players. */
-	public int teams = 0;
-	public int maxTeamSize = 4;
+	/** The format when nobody votes in the lobby: "solo" (everyone for themselves) or "duo" (teams of two). */
+	public String defaultFormat = "duo";
+	/** Players per team in duo. */
+	public int duoTeamSize = 2;
+	/** Most islands (teams) in one arena, 2 to 8; with more players than fit, teams grow. */
+	public int maxTeams = 8;
 	public int respawnSeconds = 5;
 	/** How long the winners stand on the podium before everyone goes back. */
 	public int podiumSeconds = 8;
@@ -185,8 +188,9 @@ public final class BedWarsConfig {
 	}
 
 	public BedWarsConfig normalize() {
-		teams = teams == 0 ? 0 : Math.max(2, Math.min(4, teams));
-		maxTeamSize = Math.max(1, Math.min(8, maxTeamSize));
+		if (!"solo".equals(defaultFormat) && !"duo".equals(defaultFormat)) defaultFormat = "duo";
+		duoTeamSize = Math.max(1, Math.min(4, duoTeamSize));
+		maxTeams = Math.max(2, Math.min(8, maxTeams));
 		respawnSeconds = Math.max(0, respawnSeconds);
 		podiumSeconds = Math.max(1, podiumSeconds);
 		buildHeight = Math.max(4, buildHeight);

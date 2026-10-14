@@ -20,7 +20,10 @@ public final class PartyGames {
 		return create(mode, server, players, java.util.Map.of("", option == null ? "" : option));
 	}
 
-	/** {@code votes}: what the lobby voted for per question ("" the parkour difficulty, "kit" the FFA kit). */
+	/**
+	 * {@code votes}: what the lobby voted for per question ("" the parkour difficulty, "kit" the FFA kit, "format"
+	 * solo or duo in Bed Wars).
+	 */
 	public static Match create(GameMode mode, MinecraftServer server, List<ServerPlayer> players, java.util.Map<String, String> votes) {
 		String option = votes.getOrDefault("", "");
 		int id = Matches.newId();
@@ -35,7 +38,7 @@ public final class PartyGames {
 			case FFA -> new FfaMatch(id, server, players, votes.getOrDefault("kit", ""));
 			// Started by Tournaments, which runs several matches
 			case TOURNAMENT -> null;
-			case BED_WARS -> new net.battlehub.games.bedwars.BedWarsMatch(id, server, players);
+			case BED_WARS -> new net.battlehub.games.bedwars.BedWarsMatch(id, server, players, votes.getOrDefault("format", ""));
 			case PROP_HUNT -> new net.battlehub.games.prophunt.PropHuntMatch(id, server, players);
 			default -> null;
 		};

@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
- * Bed Wars: one floating island per team around a centre island, a diamond island between every two teams and
+ * Bed Wars: one floating island per team (2 to 8) around a centre island, diamond islands between the teams and
  * emerald generators in the middle. Marks per team i: spawn_i, bed_i (the foot), gen_i (iron and gold), shop_i;
  * plus gen_diamond and gen_emerald. Island floors are at y = 0; bridges have to be built. The arena box reaches
  * {@code buildHeight} above and {@code buildDepth} below the floors and past the islands, so everything players
@@ -21,7 +21,7 @@ public final class BedWarsLayout {
 	private BedWarsLayout() {}
 
 	/** Team colours in team order. */
-	public static final String[] COLORS = {"red", "blue", "lime", "yellow"};
+	public static final String[] COLORS = {"red", "blue", "lime", "yellow", "light_blue", "white", "pink", "gray"};
 
 	public static BlockState bed(String color, Direction facing, BedPart part) {
 		BlockState st = Ids.state("minecraft:" + color + "_bed");
@@ -34,9 +34,9 @@ public final class BedWarsLayout {
 		return st;
 	}
 
-	/** Distance from the centre to the team islands. */
+	/** Distance from the centre to the team islands (more islands, a wider circle). */
 	public static int teamRadius(int teams) {
-		return teams <= 2 ? 36 : 40;
+		return teams <= 2 ? 36 : teams <= 4 ? 40 : teams <= 6 ? 48 : 56;
 	}
 
 	/** Players may build this far past the team islands. */
@@ -48,14 +48,18 @@ public final class BedWarsLayout {
 
 	public static Blueprint design(Theme t, RandomSource rnd, int teams, int buildHeight, int buildDepth) {
 		Blueprint bp = new Blueprint();
-		int n = Math.max(2, Math.min(4, teams));
+		int n = Math.max(2, Math.min(COLORS.length, teams));
 		int r = teamRadius(n);
 		double start = n == 2 ? Math.PI : Math.PI / 2;
 		for (int i = 0; i < n; i++) {
-			double a = start + i * 2 * Math.PI / n;
-			teamIsland(bp, t, rnd, i, a, r);
-			double between = a + Math.PI / n;
-			diamondIsland(bp, t, rnd, (int) Math.round(Math.cos(between) * r * 0.62), (int) Math.round(Math.sin(between) * r * 0.62));
+			teamIsland(bp, t, rnd, i, start + i * 2 * Math.PI / n, r);
+		}
+		// A diamond island between every two teams; with more than four teams, four of them
+		int diamonds = Math.min(n, 4);
+		double ring = n <= 4 ? r * 0.62 : r * 0.55;
+		for (int k = 0; k < diamonds; k++) {
+			double a = start + (k + 0.5) * 2 * Math.PI / diamonds;
+			diamondIsland(bp, t, rnd, (int) Math.round(Math.cos(a) * ring), (int) Math.round(Math.sin(a) * ring));
 		}
 		centre(bp, t, rnd);
 		Decor.ring(bp, t, rnd, r + 14, r + 24, Math.min(-18, -buildDepth - 8));

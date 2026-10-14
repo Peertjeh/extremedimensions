@@ -24,7 +24,7 @@ public final class PartyGameMenu extends Screen {
 
 	@Override
 	public int rows() {
-		return mode == GameMode.TOURNAMENT ? 5 : mode == GameMode.PARKOUR ? 4 : 3;
+		return mode == GameMode.TOURNAMENT ? 5 : mode == GameMode.PARKOUR || mode == GameMode.BED_WARS ? 4 : 3;
 	}
 
 	private static final String[] DIFFICULTIES = {"easy", "medium", "hard", "extreme", "random"};
@@ -105,6 +105,24 @@ public final class PartyGameMenu extends Screen {
 		}
 	}
 
+	/** Bed Wars: solo (everyone for themselves) or duos; a click joins the lobby with that vote. */
+	private void bedWarsFormat(Canvas c) {
+		String mine = net.battlehub.queue.Parties.vote(viewer.getUUID(), mode, "format");
+		java.util.Map<String, Integer> counts = count(net.battlehub.queue.Parties.votes(mode, "format"));
+		String[] formats = {"solo", "duo"};
+		int[] slots = {21, 23};
+		for (int i = 0; i < formats.length; i++) {
+			String f = formats[i];
+			Icon icon = (f.equals("solo") ? Icon.of(Items.IRON_SWORD) : Icon.of(Items.PLAYER_HEAD).count(2))
+					.name(Lang.item(viewer, "bedwars.format." + f))
+					.lore(Lang.loreLines(viewer, "bedwars.format." + f + ".lore"));
+			c.set(slots[i], voteLore(icon, counts, f, f.equals(mine)).clean().build(), click -> {
+				net.battlehub.queue.Parties.join(viewer, mode, "format:" + f);
+				new PartyGameMenu(viewer, mode).open();
+			});
+		}
+	}
+
 	@Override
 	public int refreshTicks() {
 		return 20;
@@ -133,6 +151,8 @@ public final class PartyGameMenu extends Screen {
 			difficulties(c);
 		} else if (mode == GameMode.TOURNAMENT) {
 			tournamentVotes(c);
+		} else if (mode == GameMode.BED_WARS) {
+			bedWarsFormat(c);
 		}
 		c.set(15, Icon.of(Items.NAME_TAG).name(Lang.item(viewer, "menu.party.invite"))
 				.lore(Lang.loreLines(viewer, "menu.party.invite.lore")).build(),

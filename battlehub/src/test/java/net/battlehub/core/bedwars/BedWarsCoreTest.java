@@ -84,13 +84,20 @@ class BedWarsCoreTest {
 
 	@Test
 	void teamCounts() {
-		assertEquals(2, BedWarsRules.teamCount(2, 0, 4));
-		assertEquals(2, BedWarsRules.teamCount(4, 0, 4));
-		assertEquals(3, BedWarsRules.teamCount(6, 0, 4));
-		assertEquals(4, BedWarsRules.teamCount(16, 0, 4));
-		assertEquals(4, BedWarsRules.teamCount(9, 0, 2), "at most 4 teams");
-		assertEquals(3, BedWarsRules.teamCount(3, 4, 4), "never more teams than players");
-		assertEquals(2, BedWarsRules.teamCount(8, 2, 4));
+		// Solo: an island each, up to the most islands
+		assertEquals(2, BedWarsRules.teamCount(2, 1, 8));
+		assertEquals(5, BedWarsRules.teamCount(5, 1, 8));
+		assertEquals(8, BedWarsRules.teamCount(8, 1, 8));
+		assertEquals(8, BedWarsRules.teamCount(12, 1, 8), "more players than islands: some share");
+		// Duo: teams of at most two, but always two teams
+		assertEquals(2, BedWarsRules.teamCount(2, 2, 8), "two players are never one team");
+		assertEquals(2, BedWarsRules.teamCount(3, 2, 8));
+		assertEquals(2, BedWarsRules.teamCount(4, 2, 8));
+		assertEquals(3, BedWarsRules.teamCount(5, 2, 8));
+		assertEquals(8, BedWarsRules.teamCount(16, 2, 8));
+		assertEquals(1, BedWarsRules.teamSize("solo", 2));
+		assertEquals(2, BedWarsRules.teamSize("duo", 2));
+		assertEquals(2, BedWarsRules.teamSize("", 2), "no vote: the duo size");
 	}
 
 	/** A wallet with a resource count per currency and a fixed number of free slots. */

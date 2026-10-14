@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.5.0
+
+### Added
+* **Bed Wars solo and duos**: vote in the lobby for everyone for themselves or teams of two. Up to eight
+  islands, with four new team colours (aqua, white, pink, gray).
+
+### Changed
+* **Prop Hunt**: props walk a quarter slower and have 10 health instead of 20 (two sword hits), so they are
+  found and taken out faster (`propSpeed`, `propHealth`).
+* **Prop Hunt**: swinging at thin air no longer costs hunters health, only points (`airMissDamage` 0);
+  hitting the wrong object still costs both. Existing `prophunt.json` files are updated.
+* The Bed Wars sidebar shows kills and final kills on one line, so eight teams fit.
+
 ## 1.4.0
 
 ### Added

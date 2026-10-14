@@ -82,8 +82,9 @@ Each game has a lobby with a minimum and maximum player count. A countdown start
 is reached, and gets shorter when the lobby is full.
 
 ### Bed Wars (2–16 players)
-Two to four teams (picked from the number of players, at most four per team) each start on their own
-floating island with a **bed**, a **generator** and a **shopkeeper**. The island generator drops iron
+In the lobby you vote for **solo** (everyone for themselves) or **duos** (teams of two). Every player or
+team starts on their own floating island (up to eight) with a **bed**, a **generator** and a
+**shopkeeper**. The island generator drops iron
 and gold; diamond islands between the teams and emerald generators in the middle get faster on a
 schedule (diamond II at 6:00, emerald II at 12:00, and so on). Spend it in the **shop**: wool, glass,
 end stone and more to build bridges, swords and bows, armour that stays on, pickaxes and axes in tiers,
@@ -96,11 +97,12 @@ A sidebar shows the teams and beds, a boss bar the next event.
 
 ### Prop Hunt (3–16 players)
 Each round some players are **hunters** and the rest are **props**. Props get 30 seconds to hide while
-the hunters wait blind in a glass cage: right-click any everyday block in the market square (or use the
+the hunters wait blind in a glass cage. Props are a quarter slower and have half the health of a hunter.
+Right-click any everyday block in the market square (or use the
 disguise list) to *become* it. Stand still for a moment and the prop turns **solid**: a real-looking
 block on the grid. Props can **lock their rotation**, **taunt** (a sound, for points) and drop a
 **decoy** copy of their block, each on a cooldown. Then the hunt is on: hunters hit props with their
-sword or shoot them, but **swinging at thin air or hitting the wrong object costs health and points**;
+sword or shoot them, but **hitting the wrong object costs health and points, and swinging at thin air costs points**;
 finding a prop heals them and earns points and arrows. Found props join the hunters. The round ends when
 time is up or every prop is found; after all rounds (2 by default, everyone hunts in turn) the most
 points win.
@@ -236,14 +238,15 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
     per difficulty and countdown, LMS border, FFA `killsToWin` and spawn protection, tournament
     `winnerCoins`, `finalistCoins` and `breakSeconds`; the tournament time limit is per round; 1v2 and 1v3
     `roundsToWin`)
-* **`bedwars.json`**: number of teams (0 = automatic) and team size, respawn time, podium time, build
+* **`bedwars.json`**: the format when nobody votes (`solo` or `duo`), the duo team size, the most islands
+  (2–8), respawn time, podium time, build
   height and depth, the protected radius around spawns, shops and generators, dropping, the killer taking
   resources, TNT fuse and power; per generator kind the ticks between drops per tier, items per drop and
   the most lying around; the event schedule (`diamond`, `emerald`, `sudden_death`, `glow` at a second); the
   shop offers (category, item with `{team}` for the team colour, count, currency, price, upgrade group and
   tier, enchantments); team upgrades and their prices. The start kit is `bedwars` in `kits.json`
 * **`prophunt.json`**: rounds, hide, hunt and round-end seconds, the share of hunters, whether found props
-  join the hunters, hunter respawn time, prop health, the penalties for missing (air, wrong object) and the
+  join the hunters, hunter respawn time, prop health and walking speed, the penalties for missing (air, wrong object) and the
   heal for a hit, how long a prop must stand still to turn solid, taunt and decoy cooldowns and decoy time,
   arrows at the start and per find, the points for everything, and the blocks props can become. Kits:
   `prophunt_hunter` and `prophunt_prop`

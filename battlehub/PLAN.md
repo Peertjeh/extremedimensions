@@ -175,3 +175,12 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Missen | Een armzwaai zonder raak (mixin op `LivingEntity.swing`; het aparte zwaai-pakket bestaat niet meer in 26.3) die niets binnen bereik raakt, of een klik op een echt object uit de lijst, kost de hunter levens en punten (hoogstens twee keer per seconde). Gewone vloer en muren tellen niet als fout object. |
 | Prop Hunt-fases | WAITING → HIDING → HUNTING → ROUND_END, per ronde opnieuw; wie het minst gezocht heeft, wordt eerst hunter. Gevonden props worden hunter (instelbaar). Na de laatste ronde winnen de meeste punten. |
 
+## Versie 1.5
+
+| Onderwerp | Keuze |
+|---|---|
+| Bed Wars solo / duo | In de lobby stem je op solo (iedereen voor zich) of duo's (teams van twee, `duoTeamSize`); zonder stemmen geldt `defaultFormat` (duo). Hoogstens 8 eilanden (`maxTeams`), altijd minstens twee teams. Zijn er in solo meer dan 8 spelers, dan delen sommigen een eiland (8 kleuren is het maximum dat mooi past). De vroegere automatische 2–4 teams van hoogstens 4 zijn vervallen. |
+| Arena | Meer eilanden geeft een grotere cirkel (straal 36 tot 56); bij meer dan vier teams vier diamanteilanden in plaats van één tussen elk paar. |
+| Props | Een kwart trager (`propSpeed` 0,75) en 10 levens in plaats van 20 (`propHealth`), via tijdelijke attribuutwijzigingen die verdwijnen zodra de speler geen prop meer is. Bestaande `prophunt.json`-bestanden met de oude standaardwaarden worden bijgewerkt. |
+| Misslaan | In de lucht slaan kost geen levens meer (`airMissDamage` 0), alleen punten; een verkeerd object raken kost nog steeds allebei. |
+

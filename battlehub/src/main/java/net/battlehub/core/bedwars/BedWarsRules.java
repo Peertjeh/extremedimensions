@@ -8,18 +8,27 @@ import java.util.List;
 public final class BedWarsRules {
 	private BedWarsRules() {}
 
-	/** Teams for this many players: 2 to 4 teams of at most {@code maxTeamSize}; {@code wanted} > 0 forces a number. */
-	public static int teamCount(int players, int wanted, int maxTeamSize) {
+	/** Everyone for themselves. */
+	public static final String SOLO = "solo";
+	/** Teams of (at most) two. */
+	public static final String DUO = "duo";
+
+	/** Players per team for a format: 1 for solo, {@code duoSize} for duo. */
+	public static int teamSize(String format, int duoSize) {
+		return SOLO.equals(format) ? 1 : Math.max(1, duoSize);
+	}
+
+	/**
+	 * Teams for this many players with at most {@code teamSize} each: at least 2, at most {@code maxTeams} and never
+	 * more than there are players. When there are more players than fit, teams grow beyond {@code teamSize}.
+	 */
+	public static int teamCount(int players, int teamSize, int maxTeams) {
 		if (players < 2) {
 			return players;
 		}
-		if (wanted >= 2) {
-			return Math.min(Math.min(4, wanted), players);
-		}
-		int size = Math.max(1, maxTeamSize);
+		int size = Math.max(1, teamSize);
 		int needed = (players + size - 1) / size;
-		int preferred = players >= 9 ? 4 : players >= 6 ? 3 : 2;
-		return Math.min(players, Math.max(2, Math.min(4, Math.max(needed, preferred))));
+		return Math.min(players, Math.max(2, Math.min(Math.max(2, maxTeams), needed)));
 	}
 
 	public static List<TeamState> stillIn(List<TeamState> teams) {

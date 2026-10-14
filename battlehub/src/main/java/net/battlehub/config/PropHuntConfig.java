@@ -8,6 +8,8 @@ import java.util.List;
  * props may turn into. Times are in seconds.
  */
 public final class PropHuntConfig {
+	/** Files from before 1.5 have none (0): they get the new prop balance. */
+	public int configVersion = 0;
 	public int rounds = 2;
 	public int hideSeconds = 30;
 	public int huntSeconds = 180;
@@ -17,10 +19,13 @@ public final class PropHuntConfig {
 	/** A found prop joins the hunters for the rest of the round. */
 	public boolean propsJoinHunters = true;
 	public int hunterRespawnSeconds = 4;
-	/** Health of props (20 = ten hearts). */
-	public int propHealth = 20;
-	/** Hunters lose this much health for hitting thin air or a block that is not a prop. */
-	public double airMissDamage = 1;
+	/** Health of props (20 = ten hearts): two hits with the hunter's sword at 10. */
+	public int propHealth = 10;
+	/** Walking speed of props compared to normal (1 = normal, 0.75 = a quarter slower). */
+	public double propSpeed = 0.75;
+	/** Health hunters lose for swinging at thin air (they always lose the miss points). */
+	public double airMissDamage = 0;
+	/** Health hunters lose for hitting a block that is not a prop. */
 	public double wrongBlockDamage = 2;
 	/** Health a hunter gets back for hitting a prop. */
 	public double hitHeal = 3;
@@ -60,6 +65,15 @@ public final class PropHuntConfig {
 	}
 
 	public PropHuntConfig normalize() {
+		if (configVersion < 2) {
+			// 1.5: props were too fast and too tough, and swinging at air hurt the hunters
+			if (propHealth == 20) propHealth = 10;
+			if (airMissDamage == 1) airMissDamage = 0;
+			configVersion = 2;
+		}
+		propSpeed = Math.max(0.3, Math.min(1.5, propSpeed));
+		airMissDamage = Math.max(0, airMissDamage);
+		wrongBlockDamage = Math.max(0, wrongBlockDamage);
 		rounds = Math.max(1, Math.min(10, rounds));
 		hideSeconds = Math.max(5, hideSeconds);
 		huntSeconds = Math.max(20, huntSeconds);

@@ -77,8 +77,8 @@ public final class BedWarsUi {
 		}
 		if (mine >= 0) {
 			lines.add(Component.literal("   "));
-			lines.add(Lang.tr(p, "bedwars.sb.kills", match.kills(p.getUUID())));
-			lines.add(Lang.tr(p, "bedwars.sb.finals", match.finalKills(p.getUUID())));
+			// Kills and final kills share a line, so eight teams still fit in 15 lines
+			lines.add(Lang.tr(p, "bedwars.sb.kills", match.kills(p.getUUID()), match.finalKills(p.getUUID())));
 			lines.add(Lang.tr(p, "bedwars.sb.beds", match.bedsBroken(p.getUUID())));
 		}
 		sidebar.show(p, Lang.tr(p, "bedwars.sb.title"), lines);

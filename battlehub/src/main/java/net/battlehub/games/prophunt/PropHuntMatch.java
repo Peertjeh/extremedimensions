@@ -77,6 +77,7 @@ public final class PropHuntMatch extends PartyMatch {
 	public static final String ITEM_TAUNT = "game.ph.taunt";
 	public static final String ITEM_DECOY = "game.ph.decoy";
 	private static final net.minecraft.resources.Identifier HEALTH_ID = Ids.id("battlehub:prop_health");
+	private static final net.minecraft.resources.Identifier SPEED_ID = Ids.id("battlehub:prop_speed");
 	private static final int MISS_COOLDOWN = 10;
 
 	private final PropHuntConfig cfg;
@@ -265,7 +266,7 @@ public final class PropHuntMatch extends PartyMatch {
 		if (p != null) {
 			Visibility.show(p);
 			p.removeEffect(MobEffects.INVISIBILITY);
-			setPropHealth(p, false);
+			propBody(p, false);
 		} else {
 			Visibility.forget(id);
 		}
@@ -277,7 +278,7 @@ public final class PropHuntMatch extends PartyMatch {
 		benched.remove(id);
 		hunters.add(id);
 		Visibility.show(p);
-		setPropHealth(p, false);
+		propBody(p, false);
 		p.removeAllEffects();
 		p.setGameMode(GameType.SURVIVAL);
 		p.setHealth(p.getMaxHealth());
@@ -304,7 +305,7 @@ public final class PropHuntMatch extends PartyMatch {
 		p.setGameMode(GameType.ADVENTURE);
 		Kits.give(p, "prophunt_prop", -1);
 		givePropItems(p);
-		setPropHealth(p, true);
+		propBody(p, true);
 		p.setHealth(p.getMaxHealth());
 		teleport(p, arena.spawn(spawnIndex));
 		TitleService.setOverride(p, Lang.tr(p, "prophunt.prefix_prop"));
@@ -328,15 +329,28 @@ public final class PropHuntMatch extends PartyMatch {
 		p.inventoryMenu.sendAllDataToRemote();
 	}
 
-	/** Props can have more or less health than the usual 20 (prophunt.json). */
-	private void setPropHealth(ServerPlayer p, boolean prop) {
-		AttributeInstance a = p.getAttribute(Attributes.MAX_HEALTH);
-		if (a == null) return;
-		if (prop && cfg.propHealth != 20) {
-			a.addOrUpdateTransientModifier(new AttributeModifier(HEALTH_ID, cfg.propHealth - 20, AttributeModifier.Operation.ADD_VALUE));
-		} else if (a.hasModifier(HEALTH_ID)) {
-			a.removeModifier(HEALTH_ID);
-			p.setHealth(p.getMaxHealth());
+	/**
+	 * Props are weaker and slower than hunters (prophunt.json: health and walking speed); the changes are
+	 * temporary and removed when the player stops being a prop.
+	 */
+	private void propBody(ServerPlayer p, boolean prop) {
+		AttributeInstance health = p.getAttribute(Attributes.MAX_HEALTH);
+		if (health != null) {
+			if (prop && cfg.propHealth != 20) {
+				health.addOrUpdateTransientModifier(new AttributeModifier(HEALTH_ID, cfg.propHealth - 20, AttributeModifier.Operation.ADD_VALUE));
+				p.setHealth(Math.min(p.getHealth(), p.getMaxHealth()));
+			} else if (health.hasModifier(HEALTH_ID)) {
+				health.removeModifier(HEALTH_ID);
+				p.setHealth(p.getMaxHealth());
+			}
+		}
+		AttributeInstance speed = p.getAttribute(Attributes.MOVEMENT_SPEED);
+		if (speed != null) {
+			if (prop && cfg.propSpeed != 1) {
+				speed.addOrUpdateTransientModifier(new AttributeModifier(SPEED_ID, cfg.propSpeed - 1, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+			} else if (speed.hasModifier(SPEED_ID)) {
+				speed.removeModifier(SPEED_ID);
+			}
 		}
 	}
 
@@ -832,7 +846,7 @@ public final class PropHuntMatch extends PartyMatch {
 	protected void onRestored(ServerPlayer p) {
 		TitleService.clearOverride(p);
 		Visibility.show(p);
-		setPropHealth(p, false);
+		propBody(p, false);
 		sidebar.hide(p);
 		bossBar.hide(p);
 	}

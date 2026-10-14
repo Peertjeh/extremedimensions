@@ -580,8 +580,7 @@
 	"bedwars.sb.out": "&c✘",
 	"bedwars.sb.players": "&e{0}",
 	"bedwars.sb.you": " &7(you)",
-	"bedwars.sb.kills": "&fKills: &a{0}",
-	"bedwars.sb.finals": "&fFinal kills: &a{0}",
+	"bedwars.sb.kills": "&fKills: &a{0} &7| &fFinals: &a{1}",
 	"bedwars.sb.beds": "&fBeds broken: &a{0}",
 	"bedwars.bar.next": "&fNext: {0} &7in &e{1}",
 	"bedwars.bar.end": "&fGame ends in &e{0}",
@@ -649,5 +648,14 @@
 	"prophunt.bar.ready": "&aready",
 	"prophunt.bar.locked": "&eLocked",
 	"prophunt.bar.free": "&7Free",
-	"prophunt.status": "&7Round {0}/{1}, {2} props left"
+	"prophunt.status": "&7Round {0}/{1}, {2} props left",
+	"bedwars.team.light_blue": "&bAqua",
+	"bedwars.team.white": "&fWhite",
+	"bedwars.team.pink": "&dPink",
+	"bedwars.team.gray": "&8Gray",
+	"bedwars.format.solo": "&eSolo &7(free for all)",
+	"bedwars.format.solo.lore": "&7Everyone on their own island,\n&7up to 8 islands.",
+	"bedwars.format.duo": "&eDuos &7(teams of 2)",
+	"bedwars.format.duo.lore": "&7Teams of at most two players,\n&7up to 8 teams.",
+	"bedwars.format": "&7Mode: {0}&7, {1} islands."
 }
