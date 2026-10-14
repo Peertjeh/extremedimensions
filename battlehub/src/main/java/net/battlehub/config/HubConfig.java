@@ -213,14 +213,20 @@ public final class HubConfig {
 
 	static Map<String, List<String>> defaultThemes() {
 		Map<String, List<String>> m = new LinkedHashMap<>();
-		List<String> all = List.of("forest", "castle", "nether", "ice", "sky");
+		List<String> all = new ArrayList<>();
+		for (net.battlehub.arena.Theme t : net.battlehub.arena.Theme.values()) {
+			all.add(t.id());
+		}
 		for (GameMode mode : GameMode.values()) {
 			m.put(mode.id(), new ArrayList<>(all));
 		}
-		// Mace needs height: the Sky Arena (floating islands) suits it best.
-		m.put("mace", new ArrayList<>(List.of("sky")));
+		// Mace needs height: the open themes (floating islands) suit it best.
+		m.put("mace", new ArrayList<>(List.of("sky", "end")));
 		return m;
 	}
+
+	/** The theme lists 1.0 wrote by default; such a list is replaced by the new default on upgrade. */
+	private static final List<String> OLD_DEFAULT_THEMES = List.of("forest", "castle", "nether", "ice", "sky");
 
 	/** Repairs nulls and nonsense after loading user edits. */
 	public HubConfig normalize() {
@@ -231,6 +237,16 @@ public final class HubConfig {
 			lobby.set = false;
 			lobby.dimension = "battlehub:hub";
 			lobby.voidY = 60;
+			// Unchanged 1.0 theme lists get the new themes
+			if (arenas != null && arenas.themes != null) {
+				Map<String, List<String>> defs = defaultThemes();
+				for (Map.Entry<String, List<String>> e : arenas.themes.entrySet()) {
+					List<String> v = e.getValue();
+					if (v != null && (v.equals(OLD_DEFAULT_THEMES) || v.equals(List.of("sky"))) && defs.containsKey(e.getKey())) {
+						e.setValue(defs.get(e.getKey()));
+					}
+				}
+			}
 		}
 		configVersion = CURRENT_VERSION;
 		if (compass == null) compass = new Compass();

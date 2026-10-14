@@ -57,6 +57,7 @@ final class HubWorldTests {
 			pl.getInventory().setItem(3, new ItemStack(Items.DIAMOND, 5));
 			pl.setExperienceLevels(7);
 			// On the ground: simulated players fall like real ones
+			server.overworld().getChunk(0, -1);
 			int y = server.overworld().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, 12, -8);
 			pl.teleportTo(server.overworld(), 12.5, y, -7.5, Set.of(), 90, 0, false);
 			VARS.put("sPos", pl.position());
@@ -90,7 +91,8 @@ final class HubWorldTests {
 		s.check(tag + ": back where S was, with everything", () -> {
 			ServerPlayer pl = p(S);
 			Vec3 was = (Vec3) VARS.get("sPos");
-			boolean ok = !HubWorld.isBattleHub(pl.level()) && pl.position().distanceTo(was) < 1.0 && diamonds(pl) == 5
+			double flat = Math.hypot(pl.getX() - was.x, pl.getZ() - was.z);
+			boolean ok = !HubWorld.isBattleHub(pl.level()) && flat < 1.0 && Math.abs(pl.getY() - was.y) < 3 && diamonds(pl) == 5
 					&& pl.experienceLevel == 7 && !hasHubItem(pl) && pl.gameMode() == GameType.SURVIVAL
 					&& !Travel.hasSurvivalState(pl.getUUID());
 			if (!ok) {

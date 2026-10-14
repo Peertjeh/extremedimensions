@@ -117,5 +117,6 @@ final class FormatTests {
 			return m instanceof DuelMatch d && d != match() && d.mode == GameMode.AXE && m.participants().contains(p("BHTestB").getUUID());
 		});
 		s.run(tag + ": B gives up", () -> net.battlehub.command.HubCommands.hub(p("BHTestB")));
+		s.waitFor(tag + ": the rematch is over", 200, () -> Matches.of(p("BHTestA").getUUID()) == null);
 	}
 }

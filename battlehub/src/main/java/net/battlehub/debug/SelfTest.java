@@ -356,8 +356,8 @@ public final class SelfTest {
 		s.check(tag + ": match is " + (start.equals("ranked") ? "ranked" : "casual"), () ->
 				Matches.of(p("BHTestA").getUUID()).ranked == start.equals("ranked"));
 		if (mode == GameMode.MACE) {
-			s.check(tag + ": mace is played in the Sky Arena", () ->
-					Matches.of(p("BHTestA").getUUID()).arena().theme() == net.battlehub.arena.Theme.SKY);
+			s.check(tag + ": mace is played on floating islands", () ->
+					Matches.of(p("BHTestA").getUUID()).arena().theme().open());
 		}
 		s.check(tag + ": no damage during the countdown", () -> {
 			ServerPlayer b = p("BHTestB");

@@ -338,5 +338,13 @@
 	"again.none": "&cEr is nu niets om opnieuw te spelen.",
 	"again.opponent_gone": "&c{0} &cis niet meer online.",
 	"item.again.name": "&a&lOpnieuw spelen &7(Rechtsklik)",
-	"item.again.lore": "&f{0}\n&7Verdwijnt na een tijdje."
+	"item.again.lore": "&f{0}\n&7Verdwijnt na een tijdje.",
+	"theme.desert": "&eWoestijn-arena",
+	"theme.jungle": "&aJungle-arena",
+	"theme.cherry": "&dKersenbloesem-arena",
+	"theme.end": "&5End-arena",
+	"theme.mushroom": "&cPaddenstoelen-arena",
+	"theme.badlands": "&6Badlands-arena",
+	"theme.deep_dark": "&3Deep Dark-arena",
+	"theme.ocean": "&bOceaan-arena"
 }

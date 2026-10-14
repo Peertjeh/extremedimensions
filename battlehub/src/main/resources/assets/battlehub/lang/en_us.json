@@ -338,5 +338,13 @@
 	"again.none": "&cThere is nothing to play again right now.",
 	"again.opponent_gone": "&c{0} &cis not online anymore.",
 	"item.again.name": "&a&lPlay again &7(Right-click)",
-	"item.again.lore": "&f{0}\n&7Disappears after a while."
+	"item.again.lore": "&f{0}\n&7Disappears after a while.",
+	"theme.desert": "&eDesert Arena",
+	"theme.jungle": "&aJungle Arena",
+	"theme.cherry": "&dCherry Grove Arena",
+	"theme.end": "&5End Arena",
+	"theme.mushroom": "&cMushroom Arena",
+	"theme.badlands": "&6Badlands Arena",
+	"theme.deep_dark": "&3Deep Dark Arena",
+	"theme.ocean": "&bOcean Arena"
 }

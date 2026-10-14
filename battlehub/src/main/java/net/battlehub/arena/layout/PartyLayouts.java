@@ -5,6 +5,10 @@ import java.util.List;
 import net.battlehub.arena.Blueprint;
 import net.battlehub.arena.Build;
 import net.battlehub.arena.Theme;
+import net.battlehub.arena.gen.Features;
+import net.battlehub.arena.gen.Field;
+import net.battlehub.arena.gen.Shape;
+import net.battlehub.arena.gen.Symmetry;
 import net.battlehub.core.ParkourCourse;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
@@ -13,89 +17,121 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class PartyLayouts {
 	private PartyLayouts() {}
 
-	/** Bow Spleef: one round floor over the void; arrows break it. Floor is y=0. */
-	public static Blueprint spleef(Theme t, RandomSource rnd) {
-		Blueprint bp = new Blueprint();
-		int r = 15;
-		Build.disc(bp, 0, 0, 0, r, () -> Decor.breakable(t, rnd));
-		for (int x = -r; x <= r; x++) {
-			for (int z = -r; z <= r; z++) {
-				if (bp.has(x, 0, z)) bp.mark("floor", x, 0, z);
+	/** One floor layer of breakable blocks in the shape, at height y. */
+	private static void floorLayer(Blueprint bp, Theme t, RandomSource rnd, Shape shape, int r, int y, boolean mark) {
+		for (int x = -r - 1; x <= r + 1; x++) {
+			for (int z = -r - 1; z <= r + 1; z++) {
+				if (shape.inside(x, z, r)) {
+					bp.set(x, y, z, Decor.breakable(t, rnd));
+					if (mark) bp.mark("floor", x, y, z);
+				}
 			}
 		}
+	}
+
+	/** Bow Spleef: one floor over the void, in a random shape and size; arrows break it. Floor is y=0. */
+	public static Blueprint spleef(Theme t, RandomSource rnd) {
+		Blueprint bp = new Blueprint();
+		Shape shape = Shape.roundish(rnd);
+		int r = 12 + rnd.nextInt(6);
+		floorLayer(bp, t, rnd, shape, r, 0, true);
 		Decor.ring(bp, t, rnd, r + 6, r + 13, -3);
-		bp.spawnRing(16, 10, 1);
+		bp.spawnRing(16, Math.max(5, Math.round(r * 0.6)), 1);
 		bp.spectator(0.5, 18, -(r + 6) + 0.5, 0, 40);
 		bp.voidY(-6);
 		bp.radius(r + 18);
 		return bp;
 	}
 
-	/** TNT Run: {@code layers} floors 7 blocks apart, a breakable top block on TNT. Top floor is y=0. */
+	/** TNT Run: {@code layers} floors 7 blocks apart, a breakable top block on TNT, random shape. Top floor is y=0. */
 	public static Blueprint tntRun(Theme t, RandomSource rnd, int layers) {
 		Blueprint bp = new Blueprint();
-		int r = 13;
+		Shape shape = Shape.roundish(rnd);
+		int r = 11 + rnd.nextInt(5);
 		BlockState tnt = Build.s("tnt");
 		for (int l = 0; l < layers; l++) {
 			int y = -7 * l;
-			Build.disc(bp, 0, y, 0, r, () -> Decor.breakable(t, rnd));
-			Build.disc(bp, 0, y - 1, 0, r, () -> tnt);
+			floorLayer(bp, t, rnd, shape, r, y, false);
+			for (int x = -r - 1; x <= r + 1; x++) {
+				for (int z = -r - 1; z <= r + 1; z++) {
+					if (shape.inside(x, z, r)) bp.set(x, y - 1, z, tnt);
+				}
+			}
 			bp.mark("layer", 0, y, 0);
 		}
 		Decor.ring(bp, t, rnd, r + 6, r + 13, -3);
-		bp.spawnRing(16, 8, 1);
+		bp.spawnRing(16, Math.max(4, Math.round(r * 0.55)), 1);
 		bp.spectator(0.5, 14, -(r + 7) + 0.5, 0, 35);
 		bp.voidY(-7 * (layers - 1) - 7);
 		bp.radius(r + 18);
 		return bp;
 	}
 
-	/** Sumo: a small round platform; knock everyone off. Platform top is y=0. */
+	/** Sumo: a small platform in a random shape; knock everyone off. Platform top is y=0. */
 	public static Blueprint sumo(Theme t, RandomSource rnd) {
 		Blueprint bp = new Blueprint();
-		int r = 7;
-		Build.island(bp, 0, 0, 0, r, 6, () -> t.floor(rnd), t.under(), t.rough(), rnd);
-		Build.ring(bp, 0, 0, 0, r - 1, r, t::trim);
+		int r = 6 + rnd.nextInt(4);
+		Field f = new Field(r, Shape.roundish(rnd), Symmetry.POINT);
+		f.build(bp, t, rnd, 6);
+		for (int x = -r - 1; x <= r + 1; x++) {
+			for (int z = -r - 1; z <= r + 1; z++) {
+				boolean edge = f.inside(x, z) && (!f.inside(x + 1, z) || !f.inside(x - 1, z) || !f.inside(x, z + 1) || !f.inside(x, z - 1));
+				if (edge) bp.set(x, 0, z, t.trim());
+			}
+		}
 		Build.disc(bp, 0, 0, 0, 1.2, t::accent);
 		Decor.ring(bp, t, rnd, r + 7, r + 14, -8);
-		bp.spawnRing(16, 4.5, 1);
+		bp.spawnRing(16, Math.max(3, Math.round(r * 0.55)), 1);
 		bp.spectator(0.5, 9, -(r + 8) + 0.5, 0, 30);
 		bp.voidY(-4);
 		bp.radius(r + 18);
 		return bp;
 	}
 
-	/** King of the Hill: walled round arena with a stepped hill; the zone is the 5x5 top (y=3). */
+	/**
+	 * King of the Hill: a walled arena with a hill in the middle (stepped, pyramid or plateau with ramps) and
+	 * random cover; the zone is the 5x5 top at y=3.
+	 */
 	public static Blueprint koth(Theme t, RandomSource rnd) {
 		Blueprint bp = new Blueprint();
-		int r = 23;
-		Build.island(bp, 0, 0, 0, r + 2, 5, () -> t.floor(rnd), t.under(), t.rough(), rnd);
-		for (int y = 1; y <= 4; y++) {
-			Build.ring(bp, 0, y, 0, r, r + 2, t::wall);
+		int r = 22 + rnd.nextInt(4);
+		Field f = new Field(r, Shape.roundish(rnd), Symmetry.POINT);
+		double ring = Math.round(r * 0.8);
+		f.keepBandClear(ring - 1.6, ring + 1.6);
+		f.hills(rnd, 3 + rnd.nextInt(3), 1);
+		int style = rnd.nextInt(3);
+		for (int x = -7; x <= 7; x++) {
+			for (int z = -7; z <= 7; z++) {
+				int m = Math.max(Math.abs(x), Math.abs(z));
+				double d = Math.sqrt(x * x + z * z);
+				int hgt = switch (style) {
+					case 0 -> m <= 2 || d <= 3 ? 3 : (d <= 5.5 ? 2 : (d <= 8 ? 1 : 0));
+					case 1 -> m <= 2 ? 3 : (m <= 4 ? 2 : (m <= 6 ? 1 : 0));
+					default -> {
+						// Plateau reached by four ramps
+						if (m <= 2) yield 3;
+						int along = Math.abs(z) <= 1 ? Math.abs(x) : (Math.abs(x) <= 1 ? Math.abs(z) : 99);
+						yield along <= 5 ? Math.max(0, 6 - along) : 0;
+					}
+				};
+				if (hgt > 0 || d <= 8) {
+					f.setHeight(x, z, hgt);
+				}
+			}
 		}
-		for (int i = 0; i < 8; i++) {
-			double a = i * Math.PI / 4;
-			bp.set((int) Math.round(Math.cos(a) * (r + 1)), 5, (int) Math.round(Math.sin(a) * (r + 1)), t.light());
-		}
-		Build.disc(bp, 0, 1, 0, 8, t::wall);
-		Build.disc(bp, 0, 2, 0, 5.5, t::rough);
-		Build.disc(bp, 0, 3, 0, 3, t::marker);
+		f.use(0, 0, 8);
+		Features.scatter(bp, f, t, rnd, 4 + rnd.nextInt(4), Features.kinds(t, false));
+		f.build(bp, t, rnd, 5);
 		for (int x = -2; x <= 2; x++) {
 			for (int z = -2; z <= 2; z++) {
 				bp.set(x, 3, z, t.marker());
 			}
 		}
 		bp.mark("zone", 0, 4, 0);
-		// Cover around the hill
-		for (int i = 0; i < 6; i++) {
-			double a = i * Math.PI / 3 + Math.PI / 6;
-			int x = (int) Math.round(Math.cos(a) * 14);
-			int z = (int) Math.round(Math.sin(a) * 14);
-			Build.pillar(bp, x, 1, z, 3, t.pillar());
-			bp.set(x, 4, z, t.light());
-		}
-		bp.spawnRing(16, 19, 1);
-		bp.spectator(0.5, 16, -(r + 6) + 0.5, 0, 35);
+		f.walls(bp, t, rnd, 4);
+		Features.plants(bp, f, t, rnd, 9);
+		bp.spawnRing(16, ring, 1);
+		bp.spectator(0.5, 18, -(r + 6) + 0.5, 0, 35);
 		bp.voidY(-10);
 		bp.radius(r + 18);
 		return bp;
@@ -134,13 +170,22 @@ public final class PartyLayouts {
 			bp.set(0, 1, z, t.wall());
 			bp.set(0, 2, z, t.wall());
 		}
-		int[][] cover = {{-12, 7}, {-12, -7}, {12, 7}, {12, -7}, {-6, 0}, {6, 0}};
-		for (int[] c : cover) {
-			for (int dx = -1; dx <= 1; dx++) {
-				bp.set(c[0] + dx, 1, c[1], t.pillar());
-				bp.set(c[0] + dx, 2, c[1], t.pillar());
+		// Random cover on the red half, mirrored to the blue half
+		java.util.List<int[]> placed = new java.util.ArrayList<>();
+		java.util.List<Features.Kind> kinds = Features.kinds(t, false);
+		int want = 5 + rnd.nextInt(4);
+		for (int attempt = 0; attempt < 80 && placed.size() < want; attempt++) {
+			int x = -(4 + rnd.nextInt(16));
+			int z = rnd.nextInt(23) - 11;
+			boolean clear = true;
+			for (int[] o : placed) {
+				if (Math.abs(o[0] - x) < 6 && Math.abs(o[1] - z) < 6) clear = false;
 			}
-			bp.set(c[0], 3, c[1], t.light());
+			if (!clear || (Math.abs(x) <= 3 && Math.abs(z) <= 4)) continue;
+			placed.add(new int[] {x, z});
+			Blueprint fb = new Blueprint();
+			Features.build(fb, t, rnd, kinds.get(rnd.nextInt(kinds.size())));
+			Features.stamp(bp, fb, Symmetry.MIRROR_X, x, 1, z);
 		}
 		for (int i = 0; i < 8; i++) {
 			bp.mark("spawn_red", -24 + (i % 2) * 2, 1, -6 + (i / 2) * 4);
@@ -222,52 +267,23 @@ public final class PartyLayouts {
 		return bp;
 	}
 
-	/** Last Man Standing: a square field with scattered cover; the border shrinks around it. */
+	/** Last Man Standing: a generated walled field with hills and plenty of cover; the border shrinks around it. */
 	public static Blueprint lms(Theme t, RandomSource rnd) {
 		Blueprint bp = new Blueprint();
-		int h = 32;
-		for (int x = -h; x <= h; x++) {
-			for (int z = -h; z <= h; z++) {
-				bp.set(x, 0, z, t.floor(rnd));
-				bp.set(x, -1, z, t.under());
-				if (Math.abs(x) < h - 3 && Math.abs(z) < h - 3) bp.set(x, -2, z, t.rough());
-			}
-		}
-		for (int i = 0; i < 26; i++) {
-			int x = rnd.nextInt(2 * h - 6) - (h - 3);
-			int z = rnd.nextInt(2 * h - 6) - (h - 3);
-			double d = Build.dist(x, z);
-			if (d < 5 || Math.abs(d - 24) < 2.5) {
-				continue;
-			}
-			switch (t) {
-				case FOREST -> Build.tree(bp, x, 1, z, 4 + rnd.nextInt(3), Build.s("oak_log"), Build.leaves("oak_leaves"), rnd);
-				case CASTLE -> {
-					boolean alongX = rnd.nextBoolean();
-					int len = 3 + rnd.nextInt(4);
-					for (int k = 0; k < len; k++) {
-						int wx = alongX ? x + k : x;
-						int wz = alongX ? z : z + k;
-						int wh = 1 + rnd.nextInt(3);
-						Build.pillar(bp, wx, 1, wz, wh, rnd.nextInt(3) == 0 ? Build.s("mossy_stone_bricks") : t.wall());
-					}
-				}
-				case NETHER -> {
-					int ph = 2 + rnd.nextInt(4);
-					Build.pillar(bp, x, 1, z, ph, Build.s(rnd.nextBoolean() ? "basalt" : "blackstone"));
-					bp.set(x, 1 + ph, z, Build.s("shroomlight"));
-				}
-				case ICE -> Build.spike(bp, x, 1, z, 3 + rnd.nextInt(5), Build.s("packed_ice"));
-				case SKY -> {
-					Build.disc(bp, x, 3 + rnd.nextInt(3), z, 2, () -> t.floor(rnd));
-					Build.pillar(bp, x, 1, z, 3, t.pillar());
-				}
-			}
-		}
-		bp.spawnRing(16, 24, 1);
-		bp.spectator(0.5, 26, -(h + 8) + 0.5, 0, 45);
+		int r = 26 + rnd.nextInt(5);
+		Field f = new Field(r, Shape.roundish(rnd), Symmetry.POINT);
+		double ring = Math.round(r * 0.75);
+		f.keepBandClear(ring - 1.6, ring + 1.6);
+		f.keepClear(0, 0, 3);
+		f.hills(rnd, 5 + rnd.nextInt(4), 2);
+		Features.scatter(bp, f, t, rnd, 9 + rnd.nextInt(5), Features.kinds(t, true));
+		f.build(bp, t, rnd, 5);
+		f.walls(bp, t, rnd, 4);
+		Features.plants(bp, f, t, rnd, 8);
+		bp.spawnRing(16, ring, 1);
+		bp.spectator(0.5, 28, -(r + 8) + 0.5, 0, 45);
 		bp.voidY(-10);
-		bp.radius(h + 20);
+		bp.radius(r + 20);
 		return bp;
 	}
 }

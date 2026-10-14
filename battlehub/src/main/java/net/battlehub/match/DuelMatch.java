@@ -40,7 +40,7 @@ public final class DuelMatch extends Match {
 
 	@Override
 	protected Blueprint design(Theme theme) {
-		return DuelLayout.design(theme, random);
+		return DuelLayout.design(theme, random, mode.isRanged());
 	}
 
 	public int round() {

@@ -20,7 +20,8 @@ final class LayoutTests {
 
 	private static Map<String, Function<Theme, Blueprint>> layouts(RandomSource rnd) {
 		Map<String, Function<Theme, Blueprint>> m = new LinkedHashMap<>();
-		m.put("duel", t -> DuelLayout.design(t, rnd));
+		m.put("duel", t -> DuelLayout.design(t, rnd, false));
+		m.put("duel_ranged", t -> DuelLayout.design(t, rnd, true));
 		m.put("bow_spleef", t -> PartyLayouts.spleef(t, rnd));
 		m.put("tnt_run", t -> PartyLayouts.tntRun(t, rnd, 3));
 		m.put("sumo", t -> PartyLayouts.sumo(t, rnd));
@@ -43,7 +44,7 @@ final class LayoutTests {
 		s.check("layouts: every layout in every theme is sound", () -> {
 			List<String> problems = new ArrayList<>();
 			RandomSource rnd = RandomSource.create(1234);
-			for (int round = 0; round < 3; round++) {
+			for (int round = 0; round < 6; round++) {
 				for (Map.Entry<String, Function<Theme, Blueprint>> e : layouts(rnd).entrySet()) {
 					for (Theme theme : Theme.values()) {
 						String where = e.getKey() + "/" + theme.id();
