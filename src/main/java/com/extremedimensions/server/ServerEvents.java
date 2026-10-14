@@ -86,6 +86,8 @@ public final class ServerEvents {
 			WorldService.clear();
 			MendingService.clear();
 			com.extremedimensions.elder.FerrymanService.clear();
+			com.extremedimensions.elder.MatriarchService.clear();
+			com.extremedimensions.elder.ElderStrikes.clear();
 			com.extremedimensions.elder.WeaverService.clear();
 			AtonementGuard.clear();
 			DataStore.unload();
@@ -134,6 +136,8 @@ public final class ServerEvents {
 				ExpeditionService.onDeath(p);
 			} else if (entity instanceof StarvedOne so) {
 				MendingService.onDefeat(so);
+			} else if (entity instanceof com.extremedimensions.elder.Matriarch m) {
+				com.extremedimensions.elder.MatriarchService.onDefeat(m, source.getEntity());
 			} else if (entity instanceof com.extremedimensions.elder.Ferryman f) {
 				com.extremedimensions.elder.FerrymanService.onDefeat(f, source.getEntity());
 			} else if (entity instanceof com.extremedimensions.elder.Weaver w) {
@@ -339,6 +343,8 @@ public final class ServerEvents {
 		WorldService.tick(s);
 		MendingService.tick(s);
 		com.extremedimensions.elder.FerrymanService.tick(s);
+		com.extremedimensions.elder.MatriarchService.tick(s);
+		com.extremedimensions.elder.ElderStrikes.tick(s);
 		com.extremedimensions.elder.WeaverService.tick(s);
 	}
 

@@ -1,5 +1,38 @@
 # Changelog
 
+## 2.12.0: The Elders, Reborn
+
+*They were never Keepers in other cloaks. Now they have their own shapes, and they are vast.*
+
+### Changed
+- **The Elders are colossal**, each with a model of its own (hundreds of parts, a texture and a layer of light that
+  burns in the dark), built after the concept art:
+  - **The Matriarch** stands seventeen blocks tall and nineteen wide: a trunk of bark in a double robe, rooted to the
+    ground; a chest split by violet light; a great carved mask with slanted eyes under a crown of thorns; six
+    branches arching from her back like antlers, hung with moss and lanterns; arms raised to reach, ending in hooked
+    talons.
+  - **The Ferryman** stands in a black boat nineteen blocks long, with a curling prow and a carved skull: hooded,
+    eyes burning in the dark of the hood, chains across his robe and arms, a pole taller than he is with two lanterns
+    on its crossbar, a vortex of violet light turning in his raised palm and a great lantern hanging from his wrist.
+  - **The Last Weaver** floats eighteen blocks tall, arms spread twenty blocks wide: a robe rotting into tatters, a
+    mask with a cross of light under a crown of thorns, a great halo turning behind its head, and glowing threads
+    running from its long fingers in loops and down to hanging lanterns.
+- **New fights to match**: nothing that size walks a path, so each moves its own way and every blow is foretold by a
+  ring of light on the ground (step out of it).
+  - The Matriarch rises out of the ground by her hoard and drags herself after her prey. Close, she sweeps her talons
+    across everything in front of her or wails; far, she shakes her lanterns down in fire onto everyone she hunts, and
+    roots burst from the ground under them. Her brood still comes at 70% and 35%; below 35% she is faster.
+  - The Ferryman sails over lava and stone alike, closing in and then circling his passenger with his head turned to
+    them. He brings his pole down in a line of fire, drags his passenger back on a chain, looses soul lanterns that
+    drift after them, and rings a knell that throws back anyone close. His toll, his drain and his fare still stand.
+  - The Last Weaver floats above the ground and keeps its distance. Its threads hold players to the spot they stood
+    on (and drain the Seam faster while they hold), it rains needles of light, and it flings back anyone who comes too
+    close. Every hurt it does still unpicks Seam time, and its kin still come.
+- **Each Elder has its own music** for the fight: "Cavernous Echoes" for the Matriarch, "Subterranean Pressure" for
+  the Ferryman and "Final Collapse" for the Last Weaver. It plays for everyone near, holds vanilla music back, follows
+  the Music slider and fades out when the fight ends or you leave it.
+- The models and their textures come from `tools/elders` (run `python3 tools/elders/build.py`).
+
 ## 2.11.0: The Elders
 
 *Older than the Keepers. Older than the hunger. Some of them were people once.*

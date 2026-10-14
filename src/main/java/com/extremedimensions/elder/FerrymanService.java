@@ -13,7 +13,6 @@ import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
-import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
@@ -36,9 +35,11 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * The Ferryman: on a long Nether expedition he may come to collect. While he walks the Tether drains faster (faster
- * still once he is wounded below half), each of his blows takes levels, and he pulls his passenger back to him. Slain,
- * he leaves fragments and perhaps a relic, and waives a stack of the Ferryman's Fee; outrun home, he collects his fare.
+ * The Ferryman: on a long Nether expedition he may come to collect. His boat sails over lava and stone alike,
+ * closing in and then circling his passenger. While he sails the Tether drains faster (faster still once he is
+ * wounded below half), each of his blows takes levels, he brings his pole down in a line of fire, drags his
+ * passenger back with a chain, sends soul lanterns drifting after them and rings a knell. Slain, he leaves fragments
+ * and perhaps a relic and waives a stack of the Ferryman's Fee; outrun home, he collects his fare.
  */
 public final class FerrymanService {
 	private FerrymanService() {}
@@ -47,8 +48,8 @@ public final class FerrymanService {
 		UUID target;
 		ServerBossEvent bar;
 		ServerLevel level;
-		int ticks;
-		int nextTrick = 160;
+		int ticks, nextMove = 80, action, actionAt;
+		int circle = 1;
 		boolean doubled;
 	}
 
@@ -83,7 +84,7 @@ public final class FerrymanService {
 		return false;
 	}
 
-	/** The Tether's drain for this player while the Ferryman walks (1 without him). */
+	/** The Tether's drain for this player while the Ferryman sails (1 without him). */
 	public static double drainFactor(ServerPlayer p) {
 		for (Fare f : FARES.values()) {
 			if (p.getUUID().equals(f.target)) {
@@ -113,12 +114,12 @@ public final class FerrymanService {
 		}
 	}
 
-	/** He comes for this player (also the operator command); false if he is already after them or cannot stand. */
+	/** He comes for this player (also the operator command); false if he is already after them or cannot sail in. */
 	public static boolean summon(ServerPlayer p) {
-		return !hunting(p) && summonAt(p, ElderFx.near((ServerLevel) p.level(), p, 12, 18)) != null;
+		return !hunting(p) && summonAt(p, ElderFx.near((ServerLevel) p.level(), p, 20, 28)) != null;
 	}
 
-	/** He comes for this player, standing at this spot; the Ferryman, or null if he is already after them. */
+	/** He comes for this player, his boat at this spot; the Ferryman, or null if he is already after them. */
 	public static Ferryman summonAt(ServerPlayer p, BlockPos spot) {
 		if (hunting(p)) {
 			return null;
@@ -130,17 +131,20 @@ public final class FerrymanService {
 		}
 		f.setPersistenceRequired();
 		f.setTarget(p);
+		f.setYRot(ElderFx.yawTo(f, p.getX(), p.getZ()));
 		Fare fare = new Fare();
 		fare.target = p.getUUID();
 		fare.level = level;
+		fare.circle = ThreadLocalRandom.current().nextBoolean() ? 1 : -1;
 		fare.bar = new ServerBossEvent(UUID.randomUUID(), Component.translatable("boss.extremedimensions.ferryman"), BossEvent.BossBarColor.YELLOW,
 				BossEvent.BossBarOverlay.NOTCHED_10);
 		fare.bar.addPlayer(p);
 		FARES.put(f.getUUID(), fare);
-		ElderFx.roar(f, 3f, 0.8f);
-		WorldFx.soundIn(ElderFx.dim(f), "minecraft:block.bell.use", "hostile", f.getX(), f.getY() + 3, f.getZ(), 3f, 0.5f);
+		ElderFx.roar(f, 4f, 0.7f);
+		WorldFx.soundIn(ElderFx.dim(f), "minecraft:block.bell.use", "hostile", f.getX(), f.getY() + 8, f.getZ(), 5f, 0.45f);
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.ferryman_comes"));
 		Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.FERRYMAN);
+		ElderFx.music(f, ElderFx.MUSIC_FERRYMAN);
 		return f;
 	}
 
@@ -161,44 +165,145 @@ public final class FerrymanService {
 			}
 			fare.ticks++;
 			ServerPlayer p = s.getPlayerList().getPlayer(fare.target);
-			if (p == null || !p.isAlive() || p.level() != f.level() || f.distanceToSqr(p) > 64 * 64) {
-				// Gone home with him still walking: he collects his fare on the way out
+			if (p == null || !p.isAlive() || p.level() != f.level() || f.distanceToSqr(p) > 80 * 80) {
+				// Gone home with him still sailing: he collects his fare on the way out
 				if (p != null && p.isAlive() && p.level() != f.level() && !DataStore.get(p.getUUID()).inRun) {
 					later.add(() -> collect(p));
 				}
 				later.add(() -> fade(f));
 				continue;
 			}
-			if (fare.ticks % 20 == 0) {
-				f.setTarget(p);
+			sail(f, fare, p);
+		}
+		later.forEach(Runnable::run);
+	}
+
+	private static void sail(Ferryman f, Fare fare, ServerPlayer p) {
+		String dim = ElderFx.dim(f);
+		if (fare.ticks % 20 == 0) {
+			f.setTarget(p);
+		}
+		if (fare.ticks % 40 == 1) {
+			ElderFx.music(f, ElderFx.MUSIC_FERRYMAN);
+		}
+		fare.bar.setProgress(f.getHealth() / f.getMaxHealth());
+		if (fare.ticks % 3 == 0) {
+			WorldFx.particleIn(dim, "minecraft:soul_fire_flame", f.getX(), f.getY() + 0.3, f.getZ(), 2.5, 0.1, 6, 0.01, 2);
+		}
+		if (!fare.doubled && f.getHealth() <= f.getMaxHealth() / 2) {
+			fare.doubled = true;
+			ElderFx.roar(f, 4f, 0.6f);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.ferryman_doubles"), true);
+		}
+		double dx = p.getX() - f.getX(), dz = p.getZ() - f.getZ();
+		double dist = Math.sqrt(dx * dx + dz * dz);
+		if (fare.action == ElderBoss.IDLE) {
+			// Closing in, then circling: the boat points where it sails, the hooded head turns to its passenger
+			double tx, tz;
+			double speed;
+			if (dist > 15) {
+				tx = p.getX();
+				tz = p.getZ();
+				speed = 0.26;
+			} else {
+				double a = Math.atan2(f.getZ() - p.getZ(), f.getX() - p.getX()) + fare.circle * 0.35;
+				tx = p.getX() + Math.cos(a) * 12;
+				tz = p.getZ() + Math.sin(a) * 12;
+				speed = 0.17;
 			}
-			fare.bar.setProgress(f.getHealth() / f.getMaxHealth());
-			double d2 = f.distanceToSqr(p);
-			f.setLurkerPose(d2 < 4.5 * 4.5 ? Lurker.POSE_TAKE : f.getDeltaMovement().horizontalDistanceSqr() > 0.002 ? Lurker.POSE_RUN : Lurker.POSE_WATCH);
-			if (fare.ticks % 4 == 0) {
-				WorldFx.particleIn(ElderFx.dim(f), "minecraft:soul_fire_flame", f.getX(), f.getY() + 3.2, f.getZ(), 0.3, 0.3, 0.3, 0.0, 1);
+			ElderFx.turn(f, ElderFx.yawTo(f, tx, tz), 3f);
+			ElderFx.glide(f, tx, tz, speed, 0.1);
+			ElderFx.look(f, p);
+			if (--fare.nextMove <= 0) {
+				int roll = ThreadLocalRandom.current().nextInt(6);
+				fare.action = dist <= 7 ? Ferryman.KNELL : dist <= 14 && roll < 3 ? Ferryman.SLAM : roll < 4 ? Ferryman.LANTERN : Ferryman.CHAIN;
+				fare.actionAt = fare.ticks;
+				f.setAction(fare.action);
 			}
-			if (!fare.doubled && f.getHealth() <= f.getMaxHealth() / 2) {
-				fare.doubled = true;
-				ElderFx.roar(f, 3f, 0.7f);
-				p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.ferryman_doubles"), true);
+			return;
+		}
+		// Mid-blow the boat drifts to a stop, turned to its passenger
+		ElderFx.turn(f, ElderFx.yawTo(f, p.getX(), p.getZ()), 4f);
+		ElderFx.glide(f, f.getX(), f.getZ(), 0, 0.1);
+		ElderFx.look(f, p);
+		int t = fare.ticks - fare.actionAt;
+		switch (fare.action) {
+			case Ferryman.SLAM -> {
+				if (t == 24) {
+					slam(f, p);
+				}
+				if (t >= 42) {
+					end(f, fare);
+				}
 			}
-			if (--fare.nextTrick <= 0) {
-				ThreadLocalRandom rnd = ThreadLocalRandom.current();
-				fare.nextTrick = 160 + rnd.nextInt(80);
-				if (d2 > 6 * 6) {
-					// The river's pull: back to the boat
-					ElderFx.pull(f, p, 6);
+			case Ferryman.CHAIN -> {
+				if (t == 10) {
+					ElderFx.line(dim, "minecraft:soul_fire_flame", f.getX(), f.getY() + 9, f.getZ(), p.getX(), p.getY() + 1, p.getZ(), 24);
+					WorldFx.soundIn(dim, "minecraft:block.chain.break", "hostile", p.getX(), p.getY(), p.getZ(), 3f, 0.5f);
+					ElderFx.pull(f, p, 7);
 					WorldFx.effect(p, MobEffects.SLOWNESS, 2, 1);
-					WorldFx.soundIn(ElderFx.dim(f), "minecraft:entity.fishing_bobber.retrieve", "hostile", p.getX(), p.getY(), p.getZ(), 2f, 0.5f);
-				} else {
-					// The knell: the toll is due
-					WorldFx.soundIn(ElderFx.dim(f), "minecraft:block.bell.use", "hostile", f.getX(), f.getY() + 3, f.getZ(), 3f, 0.6f);
-					WorldFx.effect(p, MobEffects.WEAKNESS, 4, 1);
+				}
+				if (t >= 24) {
+					end(f, fare);
+				}
+			}
+			case Ferryman.LANTERN -> {
+				if (t == 16) {
+					double yaw = Math.toRadians(f.getYRot());
+					int n = 0;
+					for (ServerPlayer q : fare.level.players()) {
+						if (!q.isSpectator() && q.distanceToSqr(f) < 48 * 48 && n < 4) {
+							for (int i = 0; i < (q == p ? 3 : 1); i++) {
+								double side = (i - 1) * 3.0;
+								ElderStrikes.wisp(f, f.getX() - Math.cos(yaw) * side, f.getY() + 15, f.getZ() - Math.sin(yaw) * side, q, 6f);
+							}
+							n++;
+						}
+					}
+					WorldFx.soundIn(dim, "minecraft:entity.vex.charge", "hostile", f.getX(), f.getY() + 14, f.getZ(), 3f, 0.5f);
+				}
+				if (t >= 34) {
+					end(f, fare);
+				}
+			}
+			default -> {
+				if (t == 8) {
+					WorldFx.soundIn(dim, "minecraft:block.bell.use", "hostile", f.getX(), f.getY() + 8, f.getZ(), 5f, 0.55f);
+					for (ServerPlayer q : fare.level.players()) {
+						if (q.distanceToSqr(f) < 14 * 14) {
+							WorldFx.effect(q, MobEffects.WEAKNESS, 4, 1);
+							ElderFx.shove(f, q, 1.2, 0.35);
+						}
+					}
+				}
+				if (t >= 22) {
+					end(f, fare);
 				}
 			}
 		}
-		later.forEach(Runnable::run);
+	}
+
+	private static void end(Ferryman f, Fare fare) {
+		fare.action = ElderBoss.IDLE;
+		f.setAction(ElderBoss.IDLE);
+		fare.nextMove = (fare.doubled ? 45 : 70) + ThreadLocalRandom.current().nextInt(40);
+		if (ThreadLocalRandom.current().nextInt(3) == 0) {
+			fare.circle = -fare.circle;
+		}
+	}
+
+	/** The pole comes down: a line of fire runs out from the boat towards its passenger. */
+	private static void slam(Ferryman f, ServerPlayer p) {
+		double dx = p.getX() - f.getX(), dz = p.getZ() - f.getZ();
+		double d = Math.max(0.1, Math.sqrt(dx * dx + dz * dz));
+		ServerLevel level = (ServerLevel) f.level();
+		for (int i = 0; i < 6; i++) {
+			double k = 3 + i * 3;
+			double x = f.getX() + dx / d * k, z = f.getZ() + dz / d * k;
+			double y = ElderFx.surface(level, x, p.getY() + 4, z, 4, 12);
+			ElderStrikes.strike(f, x, Double.isNaN(y) ? p.getY() : y, z, 2.6, 10f, 6 + i * 3, ElderStrikes.SLAM);
+		}
+		WorldFx.soundIn(ElderFx.dim(f), "minecraft:entity.iron_golem.attack", "hostile", f.getX(), f.getY() + 4, f.getZ(), 4f, 0.4f);
 	}
 
 	/** One of his blows landed: it takes its toll in levels. */
@@ -224,17 +329,21 @@ public final class FerrymanService {
 	/** Slain: fragments, perhaps a relic, and the Fee he was owed waived for his passenger and his slayer. */
 	public static void onDefeat(Ferryman f, Entity killer) {
 		Fare fare = FARES.remove(f.getUUID());
+		ElderStrikes.forget(f);
+		ElderFx.silence(f);
 		if (fare == null) {
 			return;
 		}
 		fare.bar.removeAllPlayers();
 		ServerLevel level = (ServerLevel) f.level();
+		ElderFx.burst(f, "minecraft:soul_fire_flame", 200);
+		ElderFx.burst(f, "minecraft:soul", 80);
 		f.spawnAtLocation(level, new ItemStack(ModItems.TETHER_FRAGMENT, 3));
 		if (ThreadLocalRandom.current().nextDouble() < Config.FERRYMAN_RELIC_CHANCE) {
 			f.spawnAtLocation(level, RelicService.random());
 		}
 		for (ServerPlayer p : level.players()) {
-			if (p.distanceToSqr(f) >= 48 * 48) {
+			if (p.distanceToSqr(f) >= 64 * 64) {
 				continue;
 			}
 			PlayerData d = DataStore.get(p.getUUID());
@@ -253,7 +362,9 @@ public final class FerrymanService {
 		if (fare != null) {
 			fare.bar.removeAllPlayers();
 		}
-		WorldFx.particleIn(ElderFx.dim(f), "extremedimensions:lurker_wisp", f.getX(), f.getY() + 2, f.getZ(), 0.6, 1.4, 0.6, 0.0, 30);
+		ElderStrikes.forget(f);
+		ElderFx.silence(f);
+		ElderFx.burst(f, "minecraft:soul", 100);
 		f.discard();
 	}
 }

@@ -111,6 +111,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		});
 
 		ClientTickEvents.END_CLIENT_TICK.register(MenuMusic::tick);
+		ClientTickEvents.END_CLIENT_TICK.register(com.extremedimensions.client.audio.BossMusic::tick);
 		ClientTickEvents.END_CLIENT_TICK.register(SeamSky::prepare);
 		ClientTickEvents.END_CLIENT_TICK.register(SeamAmbience::tick);
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ClientState::reset));
@@ -126,9 +127,25 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ModelLayerRegistry.registerModelLayer(VeilRayModel.LAYER, VeilRayModel::createBodyLayer);
 		EntityRendererRegistry.register(ModEntities.VEIL_RAY, VeilRayRenderer::new);
 		EntityRendererRegistry.register(ModEntities.THINNED, ctx -> new LurkerRenderer<>(ctx, "thinned", 1.05F, 0.7F, false));
-		EntityRendererRegistry.register(ModEntities.MATRIARCH, ctx -> new LurkerRenderer<>(ctx, "matriarch", 2.05F, 1.6F, false));
-		EntityRendererRegistry.register(ModEntities.FERRYMAN, ctx -> new LurkerRenderer<>(ctx, "ferryman", 1.85F, 1.4F, false));
-		EntityRendererRegistry.register(ModEntities.WEAVER, ctx -> new LurkerRenderer<>(ctx, "weaver", 1.85F, 1.0F, false));
+		// The Elders: colossal, each with a model of its own (see tools/elders)
+		ModelLayerRegistry.registerModelLayer(com.extremedimensions.client.entity.elder.MatriarchModel.LAYER,
+				com.extremedimensions.client.entity.elder.MatriarchGeometry::create);
+		ModelLayerRegistry.registerModelLayer(com.extremedimensions.client.entity.elder.FerrymanModel.LAYER,
+				com.extremedimensions.client.entity.elder.FerrymanGeometry::create);
+		ModelLayerRegistry.registerModelLayer(com.extremedimensions.client.entity.elder.WeaverModel.LAYER,
+				com.extremedimensions.client.entity.elder.WeaverGeometry::create);
+		EntityRendererRegistry.register(ModEntities.MATRIARCH, ctx -> new com.extremedimensions.client.entity.elder.ElderRenderer<>(ctx,
+				new com.extremedimensions.client.entity.elder.MatriarchModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.MatriarchModel.LAYER)),
+				new com.extremedimensions.client.entity.elder.MatriarchModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.MatriarchModel.LAYER)),
+				"matriarch", 1.5F, 4.5F));
+		EntityRendererRegistry.register(ModEntities.FERRYMAN, ctx -> new com.extremedimensions.client.entity.elder.ElderRenderer<>(ctx,
+				new com.extremedimensions.client.entity.elder.FerrymanModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.FerrymanModel.LAYER)),
+				new com.extremedimensions.client.entity.elder.FerrymanModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.FerrymanModel.LAYER)),
+				"ferryman", 1.5F, 5.0F));
+		EntityRendererRegistry.register(ModEntities.WEAVER, ctx -> new com.extremedimensions.client.entity.elder.ElderRenderer<>(ctx,
+				new com.extremedimensions.client.entity.elder.WeaverModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.WeaverModel.LAYER)),
+				new com.extremedimensions.client.entity.elder.WeaverModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.WeaverModel.LAYER)),
+				"weaver", 1.5F, 3.0F));
 
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.StatePayload.TYPE, (payload, context) ->
 				context.client().execute(() -> ClientState.apply(payload)));
@@ -143,6 +160,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(
 						new JournalScreen(new HashSet<>(Arrays.asList(payload.ids().split(","))),
 								JournalButton.takeReturn()))));
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BossMusicPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> com.extremedimensions.client.audio.BossMusic.request(payload.track())));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.TrialsPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.screen.TrialsScreen.receive(payload.data())));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.SettingsPayload.TYPE, (payload, context) ->

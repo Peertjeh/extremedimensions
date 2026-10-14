@@ -179,5 +179,29 @@
         "attenuation_distance": 48
       }
     ]
+  },
+  "music.boss_matriarch": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/boss_matriarch",
+        "stream": true
+      }
+    ]
+  },
+  "music.boss_ferryman": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/boss_ferryman",
+        "stream": true
+      }
+    ]
+  },
+  "music.boss_weaver": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/boss_weaver",
+        "stream": true
+      }
+    ]
   }
 }

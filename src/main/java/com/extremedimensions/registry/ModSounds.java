@@ -32,6 +32,10 @@ public final class ModSounds {
 	public static final SoundEvent VEIL_RAY_SONG = register("veil_ray_song");
 	public static final SoundEvent MUSIC_MENU_1 = register("music.menu_1");
 	public static final SoundEvent MUSIC_MENU_2 = register("music.menu_2");
+	/** The Elders' fight music: "Cavernous Echoes", "Subterranean Pressure", "Final Collapse". */
+	public static final SoundEvent MUSIC_BOSS_MATRIARCH = register("music.boss_matriarch");
+	public static final SoundEvent MUSIC_BOSS_FERRYMAN = register("music.boss_ferryman");
+	public static final SoundEvent MUSIC_BOSS_WEAVER = register("music.boss_weaver");
 
 	private static SoundEvent register(String path) {
 		var id = ExtremeDimensions.id(path);

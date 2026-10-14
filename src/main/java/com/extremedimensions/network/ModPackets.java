@@ -383,4 +383,23 @@ public final class ModPackets {
 			return TYPE;
 		}
 	}
+
+	/** Server -> client: an Elder's fight music (0 the Matriarch, 1 the Ferryman, 2 the Last Weaver; -1 = stop). */
+	public record BossMusicPayload(int track) implements CustomPacketPayload {
+		public static final Type<BossMusicPayload> TYPE = new Type<>(ExtremeDimensions.id("boss_music"));
+		public static final StreamCodec<FriendlyByteBuf, BossMusicPayload> CODEC = StreamCodec.ofMember(BossMusicPayload::write, BossMusicPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeVarInt(track + 1);
+		}
+
+		private static BossMusicPayload read(FriendlyByteBuf buf) {
+			return new BossMusicPayload(buf.readVarInt() - 1);
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
 }

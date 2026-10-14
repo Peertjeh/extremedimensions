@@ -279,20 +279,36 @@ public class ClientShots implements FabricClientGameTest {
 				ctx.takeScreenshot("06_tribe_" + i);
 			}
 
-			// The Elders, by daylight: the Matriarch between the Ferryman and the Last Weaver
+			// The Elders: each alone by day, then all three at night, their lanterns, eyes and threads burning
 			sp.getServer().runCommand("kill @e[type=extremedimensions:lurker]");
 			sp.getServer().runCommand("kill @e[type=extremedimensions:hollowling]");
 			sp.getServer().runCommand("kill @e[type=extremedimensions:keeper]");
 			sp.getServer().runCommand("time set noon");
-			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:matriarch ^ ^ ^13 {NoAI:1b,Rotation:[180f,0f]}");
-			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:ferryman ^5.5 ^ ^11 {NoAI:1b,Rotation:[200f,0f]}");
-			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:weaver ^-5.5 ^ ^11 {NoAI:1b,Rotation:[160f,0f]}");
-			ctx.waitTicks(15);
-			ctx.takeScreenshot("10_elders");
+			ctx.waitTicks(30);
+			for (String[] elder : new String[][] {{"matriarch", "30"}, {"ferryman", "32"}, {"weaver", "32"}}) {
+				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
+				sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:" + elder[0] + " ^ ^ ^" + elder[1]
+						+ " {NoAI:1b,Rotation:[" + (elder[0].equals("ferryman") ? "140" : "180") + "f,0f]}");
+				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 -14");
+				ctx.waitTicks(20);
+				ctx.takeScreenshot("10_elder_" + elder[0]);
+				sp.getServer().runCommand("kill @e[type=extremedimensions:" + elder[0] + "]");
+				ctx.waitTicks(25);
+			}
+			sp.getServer().runCommand("time set midnight");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:matriarch ^ ^ ^44 {NoAI:1b,Rotation:[180f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:ferryman ^24 ^ ^36 {NoAI:1b,Rotation:[135f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:weaver ^-24 ^ ^36 {NoAI:1b,Rotation:[220f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 -12");
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("10_elders_night");
 			sp.getServer().runCommand("kill @e[type=extremedimensions:matriarch]");
 			sp.getServer().runCommand("kill @e[type=extremedimensions:ferryman]");
 			sp.getServer().runCommand("kill @e[type=extremedimensions:weaver]");
-			ctx.waitTicks(3);
+			sp.getServer().runCommand("time set noon");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
+			ctx.waitTicks(25);
 
 			// Rift Trials: the screen (asked for as the button does) with a board, then taken up
 			sp.getServer().runOnServer(s -> {

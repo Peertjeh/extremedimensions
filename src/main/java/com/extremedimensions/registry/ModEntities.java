@@ -83,31 +83,31 @@ public final class ModEntities {
 	private static final ResourceKey<EntityType<?>> WEAVER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("weaver"));
 
 	/** The oldest Keeper, for those who slew enough of them; spawned only by {@code HollowService}. */
-	public static final EntityType<com.extremedimensions.hollow.Matriarch> MATRIARCH = Registry.register(BuiltInRegistries.ENTITY_TYPE, MATRIARCH_KEY,
-			EntityType.Builder.<com.extremedimensions.hollow.Matriarch>of(com.extremedimensions.hollow.Matriarch::new, MobCategory.MONSTER)
-					.sized(1.9f, 5.0f)
-					.eyeHeight(4.4f)
-					.clientTrackingRange(10)
+	public static final EntityType<com.extremedimensions.elder.Matriarch> MATRIARCH = Registry.register(BuiltInRegistries.ENTITY_TYPE, MATRIARCH_KEY,
+			EntityType.Builder.<com.extremedimensions.elder.Matriarch>of(com.extremedimensions.elder.Matriarch::new, MobCategory.MONSTER)
+					.sized(5.0f, 14.0f)
+					.eyeHeight(12.5f)
+					.clientTrackingRange(16)
 					.build(MATRIARCH_KEY));
 
 	/** The one the Nether pays; spawned only by {@code FerrymanService}. */
 	public static final EntityType<com.extremedimensions.elder.Ferryman> FERRYMAN = Registry.register(BuiltInRegistries.ENTITY_TYPE, FERRYMAN_KEY,
 			EntityType.Builder.<com.extremedimensions.elder.Ferryman>of(com.extremedimensions.elder.Ferryman::new, MobCategory.MONSTER)
-					.sized(1.6f, 4.4f)
-					.eyeHeight(3.9f)
-					.clientTrackingRange(10)
+					.sized(5.0f, 12.0f)
+					.eyeHeight(10.5f)
+					.clientTrackingRange(16)
 					.build(FERRYMAN_KEY));
 
 	/** The Last Weaver, in the villages of the Thinned; spawned only by {@code WeaverService}. */
 	public static final EntityType<com.extremedimensions.elder.Weaver> WEAVER = Registry.register(BuiltInRegistries.ENTITY_TYPE, WEAVER_KEY,
 			EntityType.Builder.<com.extremedimensions.elder.Weaver>of(com.extremedimensions.elder.Weaver::new, MobCategory.MONSTER)
-					.sized(1.2f, 4.4f)
-					.eyeHeight(4.0f)
-					.clientTrackingRange(10)
+					.sized(4.0f, 15.0f)
+					.eyeHeight(13.5f)
+					.clientTrackingRange(16)
 					.build(WEAVER_KEY));
 
 	public static void init() {
-		FabricDefaultAttributeRegistry.register(MATRIARCH, com.extremedimensions.hollow.Matriarch.createAttributes());
+		FabricDefaultAttributeRegistry.register(MATRIARCH, com.extremedimensions.elder.Matriarch.createAttributes());
 		FabricDefaultAttributeRegistry.register(FERRYMAN, com.extremedimensions.elder.Ferryman.createAttributes());
 		FabricDefaultAttributeRegistry.register(WEAVER, com.extremedimensions.elder.Weaver.createAttributes());
 		FabricDefaultAttributeRegistry.register(VEIL_RAY, VeilRay.createAttributes());
