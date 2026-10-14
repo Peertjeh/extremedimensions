@@ -28,9 +28,9 @@ no protection, no changed damage rules there.
 ### One compass, seven menus
 | | |
 |---|---|
-| ⚔ **Duels** | Sword PvP, Axe PvP, Mace PvP |
+| ⚔ **PvP** | Free for All, 1v1, 1v2 and 1v3, each with the sword, axe or mace kit |
 | 🏹 **Ranged** | Bow PvP, Crossbow PvP |
-| 🎮 **Party Games** | Bow Spleef, TNT Run, Sumo, King of the Hill, Capture The Flag, Parkour Race, Last Man Standing, Free for All, **Tournament** |
+| 🎮 **Party Games** | Bow Spleef, TNT Run, Sumo, King of the Hill, Capture The Flag, Parkour Race, Last Man Standing, **Tournament** |
 | ✨ **Cosmetics** | Trails, kill effects, arrow trails, win effects and name colours, bought with coins |
 | 🏆 **Ranked** | Duels that change your ELO, from Bronze to Netherite |
 | 👁 **Spectate** | Every running match, live, with a **Join Spectator** button |
@@ -38,6 +38,15 @@ no protection, no changed damage rules there.
 
 The compass always sits in the same hotbar slot and cannot be dropped or moved. Every submenu has a back
 button. In a mode menu you choose **Queue** (random opponent) or **Challenge** (pick a player).
+
+### PvP: Free for All, 1v1, 1v2, 1v3
+The **PvP** button opens four choices, and after that the kit (sword, axe or mace):
+* **Free for All**: picking a kit joins the Free for All lobby with a vote for that kit; the most votes
+  decide.
+* **1v1**: the duels below.
+* **1v2** and **1v3**: one player against a team of two or three. Every kit has its own queue, where you
+  choose to play **alone**, **in the team**, or **either** (whatever starts a match sooner). The team has no
+  friendly fire and loses when everyone in it is down; the arena grows with the number of players.
 
 ### Duels: best of 1 or best of 3
 1v1 with fixed kits (editable): sword with golden apples, axe and shield, mace with wind charges
@@ -64,8 +73,8 @@ for 30 seconds. It queues you for the same mode, format and ranked setting, asks
 * **Capture The Flag**: red against blue, three captures to win, respawns after a short delay.
 * **Parkour Race**: a new course every race, with checkpoints and a timer; ranked by finish time.
 * **Last Man Standing**: free-for-all inside a shrinking border.
-* **Free for All**: everyone against everyone with respawns and spawn protection; the first to the kill
-  target (15) wins, or the most kills when time runs out.
+* **Free for All** (in the PvP menu): everyone against everyone with respawns and spawn protection; the
+  first to the kill target (15) wins, or the most kills when time runs out.
 
 Each game has a lobby with a minimum and maximum player count. A countdown starts once the minimum
 is reached, and gets shorter when the lobby is full.
@@ -171,9 +180,11 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/battlehub matches` | admin | List running matches |
 | `/battlehub endmatch <id>` | admin | Stop a match without results and restore its players |
 | `/battlehub arena list` | admin | Arena themes, which modes use them, slots in use |
+| `/battlehub coins <player>` | admin | Show a player's coins |
+| `/battlehub coins give\|take\|set <player> <amount>` | admin | Change a player's coins (also offline; never below zero) |
 
 Mode ids: `sword`, `axe`, `mace`, `bow`, `crossbow`, `bow_spleef`, `tnt_run`, `sumo`, `koth`, `ctf`,
-`parkour`, `lms`, `ffa`, `tournament`.
+`parkour`, `lms`, `ffa`, `tournament`, `1v2`, `1v3`.
 
 ---
 
@@ -197,7 +208,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   * `games`: per mode: on/off, min/max players, time limit, kit, and game settings
     (duel `arenaScale` (mace 1.8), TNT Run decay and floors, KOTH target, CTF captures, parkour jumps and coins
     per difficulty and countdown, LMS border, FFA `killsToWin` and spawn protection, tournament
-    `winnerCoins`, `finalistCoins` and `breakSeconds`; the tournament time limit is per round)
+    `winnerCoins`, `finalistCoins` and `breakSeconds`; the tournament time limit is per round; 1v2 and 1v3
+    `roundsToWin`)
 * **`kits.json`**: items per kit with slot (`0`–`35`, `head`, `chest`, `legs`, `feet`, `offhand`),
   count, enchantments, unbreakable, leather colour, plus potion effects
 * **`titles.json`**: titles with display text (`&` colour codes) and requirement:
@@ -229,6 +241,10 @@ normal rules, and your survival inventory is kept separately while you play Batt
 generated per match and removed afterwards.
 
 **Can I change the kits?** Yes, in `kits.json`; then run `/battlehub reload`.
+
+**Does it work together with Extreme Dimensions?** Yes. Extreme Dimensions (in the same repository) stands
+still while you are in BattleHub's worlds: no charge drain, no penalties, no HUD. Everything carries on
+when you leave.
 
 **Does it work with other plugins that use scoreboard teams?** Titles use one scoreboard team per
 player (also for name colours). If a player is already in a team from somewhere else, BattleHub leaves

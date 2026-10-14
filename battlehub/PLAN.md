@@ -147,3 +147,13 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Parkour-coins | Een aandeel van de coin-beloning per moeilijkheid; easy en medium 0. XP blijft. |
 | Free for All | Party game met respawns op het spawnpunt het verst van de anderen, 3 seconden spawnbescherming (aanvallen beëindigt die), winst bij het killdoel of de meeste kills. |
 | Toernooi | Party game tot 16 spelers. In de lobby stemmen op teamgrootte (1, 2, 4, 8) en kit (een duel-kit of willekeurig). Willekeurige teams met hoogstens één speler verschil; minder spelers geeft kleinere teams. Knock-out met byes in de eerste ronde, elke wedstrijd best of 3 in de duel-arena van de kit (groter voor grotere teams), wedstrijden van een ronde tegelijk. Tussen de wedstrijden wacht je in de hub en kun je toekijken; /hub of het verlaat-item verlaat het toernooi; een team zonder spelers verliest walkover. Winnaars krijgen coins en een toernooiwinst in hun stats. |
+
+## Versie 1.3
+
+| Onderwerp | Keuze |
+|---|---|
+| Coins geven | `/battlehub coins <speler>` toont het saldo; `give`, `take` en `set` passen het aan (admins, ook offline spelers, nooit onder nul). |
+| PvP-tab | De knop Duels in het kompasmenu is PvP geworden: Free for All, 1v1, 1v2 en 1v3, daarna de kit (zwaard, bijl of mace). 1v1 zijn de bestaande duels. Free for All staat niet meer bij de party games. |
+| Free for All-kit | Een kit kiezen is meedoen met een stem op die kit; de meeste stemmen beslissen, zonder stemmen de eigen FFA-kit. |
+| 1v2 / 1v3 | Per kit een eigen wachtrij waarin je kiest: alleen, in het team of maakt niet uit. Groepen vormen in volgorde van binnenkomst; wie alleen wil, krijgt de plek alleen vóór wie het niet uitmaakt, net zo voor het team. Eén ronde (instelbaar met `roundsToWin`), geen friendly fire, arena groeit met het aantal spelers. Geen extra levens voor de solospeler (niet gevraagd). |
+| Extreme Dimensions | In de werelden van BattleHub (namespace `battlehub`) staat Extreme Dimensions stil: geen drain, dimensiewissels tellen niet, geen penalty's (het Litteken wordt tijdelijk opgeheven), het keuzescherm wacht, geen HUD, het altaar doet niets. Bij het verlaten loopt alles verder. Daarbij twee bestaande compileerfouten in Extreme Dimensions opgelost. |

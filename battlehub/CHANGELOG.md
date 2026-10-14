@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.3.0
+
+### Added
+* **PvP tab** in the compass menu (instead of Duels): Free for All, 1v1, 1v2 and 1v3, then the kit
+  (sword, axe or mace).
+* **1v2 and 1v3**: one player against a team of two or three. A queue per kit where you choose to play
+  alone, in the team, or either; no friendly fire in the team; play again re-queues with the same kit and
+  side; stats per mode.
+* **Free for All with a kit vote**: pick sword, axe or mace when you join; the most votes decide.
+* **`/battlehub coins`** for admins: show, give, take and set coins, also for offline players.
+
+### Changed
+* Free for All moved from Party Games to the PvP tab.
+* Extreme Dimensions (same repository) pauses inside BattleHub's worlds.
+
 ## 1.2.0
 
 ### Added
