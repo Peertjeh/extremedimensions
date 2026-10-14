@@ -35,7 +35,7 @@ public class Matriarch extends ElderBoss {
 	}
 
 	@Override
-	protected double modelReach() {
+	public double modelReach() {
 		return 9.0;
 	}
 

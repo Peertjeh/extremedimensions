@@ -13,7 +13,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
 
 /**
  * An Elder: a colossal boss moved and directed entirely by its service. It has no goals and no physics of its own
@@ -76,12 +75,7 @@ public abstract class ElderBoss extends Monster {
 	protected abstract void fadeOut();
 
 	/** How far the model reaches past the hitbox, so it is drawn whenever any of it is in view. */
-	protected abstract double modelReach();
-
-	@Override
-	public AABB getBoundingBoxForCulling() {
-		return this.getBoundingBox().inflate(modelReach());
-	}
+	public abstract double modelReach();
 
 	@Override
 	public boolean removeWhenFarAway(double distance) {

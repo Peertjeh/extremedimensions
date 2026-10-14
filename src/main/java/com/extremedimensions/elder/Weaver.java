@@ -34,7 +34,7 @@ public class Weaver extends ElderBoss {
 	}
 
 	@Override
-	protected double modelReach() {
+	public double modelReach() {
 		return 12.0;
 	}
 

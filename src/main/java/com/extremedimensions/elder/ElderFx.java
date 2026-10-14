@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -132,12 +133,20 @@ final class ElderFx {
 		p.teleportTo(to.getX() + 0.5, to.getY(), to.getZ() + 0.5);
 	}
 
-	/** Pushes a player away from (or, negative, towards) a point. */
+	/** Throws a player away from a point (about four blocks per unit of strength), with a brief float if lifted. */
 	static void shove(Entity from, ServerPlayer p, double strength, double lift) {
 		double dx = p.getX() - from.getX(), dz = p.getZ() - from.getZ();
 		double d = Math.max(0.5, Math.sqrt(dx * dx + dz * dz));
-		p.setDeltaMovement(dx / d * strength, lift, dz / d * strength);
-		p.hurtMarked = true;
+		double step = strength * 4;
+		BlockPos to = ground((ServerLevel) p.level(), (int) Math.floor(p.getX() + dx / d * step), (int) p.getY() + 3,
+				(int) Math.floor(p.getZ() + dz / d * step), 7);
+		if (to != null) {
+			WorldFx.particleIn(dim(p), "minecraft:cloud", p.getX(), p.getY() + 0.5, p.getZ(), 0.4, 0.3, 0.4, 0.05, 10);
+			p.teleportTo(to.getX() + 0.5, to.getY(), to.getZ() + 0.5);
+		}
+		if (lift > 0) {
+			WorldFx.effect(p, MobEffects.LEVITATION, 1, (int) Math.round(lift * 6));
+		}
 	}
 
 	/** A line of particles between two points (a chain, a thread). */

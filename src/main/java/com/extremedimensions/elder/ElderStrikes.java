@@ -204,10 +204,7 @@ public final class ElderStrikes {
 			switch (s.kind) {
 				case LANTERN -> p.setRemainingFireTicks(80);
 				case ROOTS -> WorldFx.effect(p, MobEffects.SLOWNESS, 3, 3);
-				case SLAM -> {
-					p.setDeltaMovement(p.getDeltaMovement().x, 0.9, p.getDeltaMovement().z);
-					p.hurtMarked = true;
-				}
+				case SLAM -> WorldFx.effect(p, MobEffects.LEVITATION, 1, 6);
 				default -> {
 				}
 			}
@@ -276,8 +273,7 @@ public final class ElderStrikes {
 			double dx = t.ax - p.getX(), dz = t.az - p.getZ();
 			double d = Math.sqrt(dx * dx + dz * dz);
 			if (d > 4.5) {
-				p.setDeltaMovement(dx / d * 0.45, Math.max(p.getDeltaMovement().y, 0.05), dz / d * 0.45);
-				p.hurtMarked = true;
+				p.teleportTo(t.ax - dx / d * 4.0, p.getY(), t.az - dz / d * 4.0);
 			}
 			// And the Seam takes its time faster while it holds
 			PlayerData data = DataStore.get(p.getUUID());

@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.entity.layers.LivingEntityEmissiveLayer;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.AABB;
 
 /**
  * Renders an Elder at its colossal scale, with a second, full-bright pass for everything that burns: lanterns, eyes,
@@ -62,6 +63,11 @@ public class ElderRenderer<T extends ElderBoss> extends MobRenderer<T, ElderRend
 	@Override
 	public Identifier getTextureLocation(ElderRenderState state) {
 		return this.texture;
+	}
+
+	/** Drawn whenever any of the model is in view, not only its body. */
+	public AABB getBoundingBoxForCulling(T boss) {
+		return boss.getBoundingBox().inflate(boss.modelReach());
 	}
 
 	@Override

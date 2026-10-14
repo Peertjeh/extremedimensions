@@ -34,7 +34,7 @@ public class Ferryman extends ElderBoss {
 	}
 
 	@Override
-	protected double modelReach() {
+	public double modelReach() {
 		return 11.0;
 	}
 
