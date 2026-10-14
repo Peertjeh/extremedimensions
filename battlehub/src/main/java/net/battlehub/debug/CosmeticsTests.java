@@ -12,13 +12,13 @@ import net.battlehub.gui.CosmeticsMenu;
 import net.battlehub.gui.HubMenu;
 import net.battlehub.gui.MainMenu;
 import net.battlehub.progression.Cosmetics;
-import net.minecraft.ChatFormatting;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.TeamColor;
 
 /**
  * The cosmetics shop: buying through the menu, wearing and taking off, too expensive, the name colour on the
@@ -87,7 +87,7 @@ final class CosmeticsTests {
 		s.check(tag + ": all paid (5000 - 3500)", () -> prof("BHTestA").coins == 1500 && prof("BHTestA").cosmetics.size() == 5);
 		s.check(tag + ": A's name is red on the nametag, in chat and in the tab list", () -> {
 			PlayerTeam team = server.getScoreboard().getPlayersTeam(p("BHTestA").getScoreboardName());
-			return team != null && team.getColor().isPresent() && team.getColor().equals(Cosmetics.teamColor(ChatFormatting.RED));
+			return team != null && team.getColor().equals(java.util.Optional.of(TeamColor.RED));
 		});
 		s.run(tag + ": B earns coins and buys a few", () -> {
 			prof("BHTestB").coins = 3000;
@@ -108,12 +108,12 @@ final class CosmeticsTests {
 				}
 			}
 		});
-		s.check(tag + ": every effect and trail uses a particle that exists", () -> {
-			List<String> unknown = Cosmetics.unknownParticles();
-			if (!unknown.isEmpty()) {
-				BattleHub.LOGGER.warn("SELFTEST unknown particles: {}", unknown);
+		s.check(tag + ": every particle, effect, colour and icon exists", () -> {
+			List<String> problems = Cosmetics.problems();
+			if (!problems.isEmpty()) {
+				BattleHub.LOGGER.warn("SELFTEST cosmetics problems: {}", problems);
 			}
-			return unknown.isEmpty();
+			return problems.isEmpty();
 		});
 		s.run(tag + ": A walks with a trail", () -> {
 			ServerPlayer a = p("BHTestA");

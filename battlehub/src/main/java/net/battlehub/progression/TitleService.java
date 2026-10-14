@@ -11,13 +11,13 @@ import net.battlehub.core.TitleDef;
 import net.battlehub.core.TitleRules;
 import net.battlehub.data.PlayerStore;
 import net.battlehub.lang.Lang;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerScoreboard;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.TeamColor;
 
 /**
  * Shows the selected title in front of the name and the bought name colour in chat, above the head and in the tab
@@ -70,7 +70,7 @@ public final class TitleService {
 		PlayerProfile prof = PlayerStore.get(p);
 		Component title = display(prof);
 		// Team colours (CTF) win over the bought name colour
-		ChatFormatting color = override == null ? Cosmetics.nameColor(prof) : null;
+		TeamColor color = override == null ? Cosmetics.nameColor(prof) : null;
 		boolean wanted = override != null || ((title != null || color != null) && ConfigManager.config().titles.useScoreboardTeams);
 		PlayerTeam team = board.getPlayerTeam(teamName);
 		if (!wanted) {
@@ -96,7 +96,7 @@ public final class TitleService {
 					.append(Component.literal("] ").withStyle(s -> s.withColor(0x555555)));
 		}
 		team.setPlayerPrefix(prefix);
-		team.setColor(color == null ? Optional.empty() : Cosmetics.teamColor(color));
+		team.setColor(Optional.ofNullable(color));
 		if (current == null || !current.getName().equals(teamName)) {
 			board.addPlayerToTeam(name, team);
 		}

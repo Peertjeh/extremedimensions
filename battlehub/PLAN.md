@@ -125,3 +125,15 @@ Elke fase: compileert, unit tests groen, server start in CI zonder fouten, zelft
   **D** – parkour v2 · **E** – cosmetics · daarna README, CHANGELOG en versie 1.1.0.
 
 Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groen.
+
+### Extra keuzes tijdens het bouwen van 1.1
+
+* **Kill-effect "Lightning"** is een kolom van vonken met het geluid van de donder, geen echte bliksem-entity:
+  zo ontstaat er geen vuur of schade en blijft de arena schoon.
+* **Naamkleur** loopt via hetzelfde scoreboard-team als de titel. In Capture The Flag gaat de teamkleur voor.
+* **Effecten alleen in BattleHub**: trails, kill- en wineffecten spelen alleen in de hub- en arenadimensie,
+  nooit in de normale wereld. Trails in matches kunnen uit met `trailsInMatches`.
+* **Parkour** gaat nooit naar het westen, zodat een parcours zichzelf niet kan kruisen; de generator
+  rekent per sprong met halve blokken hoogteverschil en zoekt terug uit doodlopende stukken.
+* **Duel-arena's** zijn puntsymmetrisch (gespiegeld door het midden), zodat elke speler vanuit de eigen spawn
+  precies hetzelfde terrein ziet.

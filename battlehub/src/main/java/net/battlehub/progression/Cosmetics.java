@@ -1,10 +1,6 @@
 package net.battlehub.progression;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -24,8 +20,8 @@ import net.battlehub.lang.Lang;
 import net.battlehub.match.Match;
 import net.battlehub.match.Matches;
 import net.battlehub.mixin.ArrowAccessor;
+import net.battlehub.util.Ids;
 import net.battlehub.util.Msg;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
@@ -56,7 +52,6 @@ public final class Cosmetics {
 
 	private static final Map<UUID, Vec3> LAST_POS = new HashMap<>();
 	private static final Map<String, Optional<ParticleOptions>> PARTICLES = new HashMap<>();
-	private static final Map<ChatFormatting, Optional<TeamColor>> TEAM_COLORS = new EnumMap<>(ChatFormatting.class);
 	/** Particle ids the built-in kill and win effects use (checked by the self-test). */
 	private static final Set<String> USED = new HashSet<>();
 	private static boolean failed;
@@ -146,39 +141,22 @@ public final class Cosmetics {
 	// ------------------------------------------------------------------ name colour
 
 	/** The chosen name colour, or null. */
-	public static ChatFormatting nameColor(PlayerProfile prof) {
+	public static TeamColor nameColor(PlayerProfile prof) {
 		CosmeticDef c = CosmeticRules.active(prof, "color", all());
-		if (c == null) {
+		return c == null ? null : teamColor(c.effect);
+	}
+
+	/** A team colour by name (red, gold, dark_aqua, light_purple, ...), or null. */
+	public static TeamColor teamColor(String name) {
+		if (name == null) {
 			return null;
 		}
-		ChatFormatting f = ChatFormatting.getByName(c.effect);
-		return f != null && f.isColor() ? f : null;
-	}
-
-	public static Optional<TeamColor> teamColor(ChatFormatting f) {
-		return TEAM_COLORS.computeIfAbsent(f, Cosmetics::findTeamColor);
-	}
-
-	/** The team colour for a chat colour: a constant with the same name, or a factory taking the chat colour. */
-	private static Optional<TeamColor> findTeamColor(ChatFormatting f) {
-		try {
-			for (Method m : TeamColor.class.getMethods()) {
-				if (Modifier.isStatic(m.getModifiers()) && m.getParameterCount() == 1 && m.getParameterTypes()[0] == ChatFormatting.class) {
-					Object out = m.invoke(null, f);
-					if (out instanceof TeamColor tc) return Optional.of(tc);
-					if (out instanceof Optional<?> o && o.isPresent() && o.get() instanceof TeamColor tc) return Optional.of(tc);
-				}
+		for (TeamColor t : TeamColor.values()) {
+			if (t.getSerializedName().equalsIgnoreCase(name.trim()) || t.name().equalsIgnoreCase(name.trim())) {
+				return t;
 			}
-			for (Field fl : TeamColor.class.getFields()) {
-				if (Modifier.isStatic(fl.getModifiers()) && TeamColor.class.isAssignableFrom(fl.getType()) && fl.getName().equalsIgnoreCase(f.name())) {
-					return Optional.of((TeamColor) fl.get(null));
-				}
-			}
-		} catch (ReflectiveOperationException | RuntimeException e) {
-			BattleHub.LOGGER.warn("No team colour for {}", f, e);
 		}
-		BattleHub.LOGGER.warn("No team colour for {}", f);
-		return Optional.empty();
+		return null;
 	}
 
 	// ------------------------------------------------------------------ effects
@@ -221,14 +199,22 @@ public final class Cosmetics {
 		level.playSound(null, at.x, at.y, at.z, s, SoundSource.PLAYERS, volume, pitch);
 	}
 
-	/** Particle ids used by kill and win effects that do not exist (should be empty). */
-	public static List<String> unknownParticles() {
+	/** Unknown particles, effects, colours or icons in the effects and the cosmetics list (should be empty). */
+	public static List<String> problems() {
 		List<String> out = new ArrayList<>();
 		for (String id : USED) {
-			if (particle(id) == null) out.add(id);
+			if (particle(id) == null) out.add("particle " + id);
 		}
 		for (CosmeticDef c : all()) {
-			if ((c.category().equals("trail") || c.category().equals("arrow")) && particle(c.effect) == null) out.add(c.id + "=" + c.effect);
+			boolean ok = switch (c.category()) {
+				case "trail", "arrow" -> particle(c.effect) != null;
+				case "kill" -> KILL_EFFECTS.contains(c.effect);
+				case "win" -> WIN_EFFECTS.contains(c.effect);
+				case "color" -> teamColor(c.effect) != null;
+				default -> false;
+			};
+			if (!ok) out.add(c.id + " effect " + c.effect);
+			if (!Ids.isItem(c.icon)) out.add(c.id + " icon " + c.icon);
 		}
 		return out;
 	}

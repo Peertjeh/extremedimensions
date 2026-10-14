@@ -9,6 +9,7 @@ import net.battlehub.data.PlayerStore;
 import net.battlehub.lang.Lang;
 import net.battlehub.progression.Cosmetics;
 import net.battlehub.util.Icon;
+import net.battlehub.util.Ids;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
@@ -36,7 +37,7 @@ public final class CosmeticsMenu extends Screen {
 			case "kill" -> Items.DIAMOND_SWORD;
 			case "arrow" -> Items.SPECTRAL_ARROW;
 			case "win" -> Items.FIREWORK_ROCKET;
-			default -> Items.MAGENTA_DYE;
+			default -> Ids.item("minecraft:magenta_dye");
 		};
 	}
 

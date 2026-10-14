@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.1.0
+
+### Added
+* **BattleHub's own world.** A hub dimension (`battlehub:hub`) with a plaza and four themed islands,
+  built by the mod. `/hub` takes you there and saves your survival state (inventory, XP, health, hunger,
+  effects, game mode, position); `/survival`, the door item or the menu button bring you back with
+  everything restored. The normal world keeps its normal rules: no compass, no protection, no changed
+  damage. Players moved in or out some other way are checked in or out automatically. In the hub the
+  XP bar shows your BattleHub level. `hub.sendToHubOnJoin` for BattleHub-only servers.
+* **Best of 1 / best of 3** duels, chosen per player (remembered) in the duel, ranked and challenge menus
+  or with `/duel <player> <mode> bo1|bo3`. Rounds in the same arena with a fresh kit and a short
+  countdown; when a round's time runs out, more health wins it. A series counts as one match for stats,
+  coins and ELO. Separate queues per format.
+* **Play again** after every match: a chat button and an item in the first hotbar slot (30 seconds)
+  queue the same mode, format and ranked setting, ask for a rematch after a challenge, or rejoin the
+  same party game lobby. Also `/battlehub again`.
+* **Cosmetics shop** (compass menu, `/cosmetics`): trails, kill effects, arrow trails, win effects and name
+  colours, bought with coins. 44 cosmetics built in; the list and prices are in `cosmetics.json`.
+* **Random arenas.** Every match gets a newly generated arena: random shape, size, hills, obstacles,
+  cover and scenery. Duel arenas are point-symmetric so both players get the same ground. **Eight new
+  themes**: Desert, Jungle, Cherry Grove, End, Mushroom, Badlands, Deep Dark, Ocean (13 in total). Party
+  game arenas get random shapes, hills and cover too.
+* **Parkour v2.** A new course every race, much longer: 30/50/70/90 jumps for easy/medium/hard/extreme,
+  with ladders, slab steps, fence posts, ice, 1×1 landings, diagonal jumps and turns. Players vote for
+  the difficulty (or random) when they join. Every jump is checked against what a player can reach, and
+  there are no shortcuts. Parkour can be played alone; best times are kept per difficulty and shown in
+  the stats menu.
+* Commands: `/survival`, `/cosmetics`, `/battlehub exit`, `/battlehub again`, `/battlehub lobby rebuild`.
+
+### Changed
+* The lobby is now the hub world. Lobby rules (protection, keep fed, no damage) only apply there.
+  Config version 2: old lobby settings are reset to the hub, unchanged theme lists are upgraded to all
+  themes, and parkour gets its new defaults (min 1 player, longer time limit).
+* Mace duels are played on floating islands (Sky or End).
+
 ## 1.0.1
 
 ### Fixed
