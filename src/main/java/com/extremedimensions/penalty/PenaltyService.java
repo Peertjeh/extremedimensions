@@ -453,10 +453,20 @@ public final class PenaltyService {
 		PlayerData d = DataStore.get(p.getUUID());
 		String dim = Dims.of(p);
 		if (elite && beyondHere(dim)) {
-			atone(p, d, false, Config.ATONE_PER_ELITE);
+			atone(p, d, false, killPoints(d, Config.ATONE_PER_ELITE));
 		} else if (hostile && Dims.OVERWORLD.equals(dim) && p.level().isDarkOutside()) {
-			atone(p, d, true, Config.ATONE_PER_NIGHT_KILL);
+			atone(p, d, true, killPoints(d, Config.ATONE_PER_NIGHT_KILL));
 		}
+	}
+
+	/** Points for a kill; the Keeper's Eye takes a share (a fraction left over is a chance at one more point). */
+	public static int killPoints(PlayerData d, int points) {
+		if (!com.extremedimensions.relic.RelicService.has(d, com.extremedimensions.relic.Relic.KEEPERS_EYE)) {
+			return points;
+		}
+		double v = points * Math.max(0, Config.RELIC_KEEPERS_EYE_ATONEMENT);
+		int whole = (int) v;
+		return whole + (ThreadLocalRandom.current().nextDouble() < v - whole ? 1 : 0);
 	}
 
 }

@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.8.0: Relics
+
+*Things the wounds left behind. Each gives, each takes.*
+
+### Added
+- **Eight relics**, bound to your Tether one at a time (use one to bind it; the one bound before comes back). A bound
+  relic cannot be lost to a death, a Lurker or a full bag. The Curses screen shows it; click it to take it off.
+  | Relic | Gift | Price |
+  | --- | --- | --- |
+  | Ember Heart | 20% less drain in the Nether | 20% more in the End |
+  | Pale Shard | 20% less drain in the End | 20% more in the Nether |
+  | Hungering Hand | +2 blocks of reach | one heart less |
+  | Featherbone | falls 8 blocks further without harm | 2 armour less |
+  | Keeper's Eye | twice the fragments from wild kills | half the atonement from kills |
+  | Tithe Bell | half again the experience | a level on every safe return |
+  | Lurker's Tooth | Lurkers cannot take items or armour | they come twice as often |
+  | Seam Lantern | a minute more in the Seam | at night, monsters notice you a quarter farther |
+- **Where they are found**: a slain Keeper leaves one about one time in three; the Starved One leaves one for every
+  player who fought it; Seam chests sometimes hold one (more often the richer the chest).
+- Every number of every relic is a world rule (Settings → World rules → Relics).
+
+### Fixed
+- The settings screen did not compile against a variable name clash (2.7.1 never reached a build).
+
 ## 2.7.1: Difficulty
 
 ### Added

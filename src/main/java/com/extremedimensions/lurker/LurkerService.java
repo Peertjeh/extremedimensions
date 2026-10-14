@@ -126,6 +126,10 @@ public final class LurkerService {
 			double often = Dims.NETHER.equals(dim)
 					? 1 + Penalty.MARKED_BY_THE_TRIBE.frac() * pd.stacks(Penalty.MARKED_BY_THE_TRIBE)
 					: 1 + Penalty.WATCHED.frac() * (PenaltyService.owHere(dim) ? pd.stacks(Penalty.WATCHED) : 0);
+			if (com.extremedimensions.relic.RelicService.has(pd, com.extremedimensions.relic.Relic.LURKERS_TOOTH)) {
+				// Lurker's Tooth: the tribe smells its own on you
+				often *= Math.max(0, Config.RELIC_LURKERS_TOOTH_OFTEN);
+			}
 			if (rnd.nextDouble() >= Config.LURKER_SPAWN_CHANCE * often) {
 				continue;
 			}
@@ -430,8 +434,12 @@ public final class LurkerService {
 		double d = Math.sqrt(p.distanceToSqr(l));
 		// Only what reaches the player right now (and is possible) can be picked, by weight
 		List<Integer> kinds = new ArrayList<>();
+		boolean tooth = com.extremedimensions.relic.RelicService.has(p, com.extremedimensions.relic.Relic.LURKERS_TOOTH);
 		for (int k = 0; k < 4; k++) {
-			kinds.add(k);
+			// Lurker's Tooth: no item and no armour can be taken from its bearer
+			if (!(tooth && (k == 0 || k == 2))) {
+				kinds.add(k);
+			}
 		}
 		while (!kinds.isEmpty()) {
 			double total = 0;

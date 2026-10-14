@@ -10,6 +10,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.relic.Relic;
+import com.extremedimensions.relic.RelicService;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.network.Fx;
@@ -62,6 +64,10 @@ public final class CurseEffects {
 			sealPockets(p, d);
 		}
 		if (d.tickCounter % 20 == 0) {
+			// Seam Lantern: at night in the Overworld, monsters notice its light from farther
+			if (ow && p.level().isDarkOutside() && RelicService.has(d, Relic.SEAM_LANTERN)) {
+				ExtremeCurses.echo(p, Math.max(0, Config.RELIC_SEAM_LANTERN_NOTICE));
+			}
 			leadPockets(p, d);
 			vertigo(p, d, beyond);
 			huntedNights(p, d, ow);
@@ -75,6 +81,15 @@ public final class CurseEffects {
 	/** Toll and Tithe: a share of every bit of experience earned goes to the Tether. */
 	private static void skimXp(ServerPlayer p, PlayerData d, boolean beyond, boolean ow) {
 		int now = p.totalExperience;
+		if (d.lastXp >= 0 && now > d.lastXp && RelicService.has(d, Relic.TITHE_BELL)) {
+			// Tithe Bell: half again of every bit of experience earned
+			d.xpBonusCarry += (now - d.lastXp) * Math.max(0, Config.RELIC_TITHE_BELL_XP);
+			int give = (int) d.xpBonusCarry;
+			if (give > 0) {
+				d.xpBonusCarry -= give;
+				p.giveExperiencePoints(give);
+			}
+		}
 		if (d.lastXp >= 0 && now > d.lastXp) {
 			double share = Math.min(0.9, Penalty.TOLL.frac() * d.active(Penalty.TOLL, beyond, ow) + Penalty.TITHE.frac() * d.active(Penalty.TITHE, beyond, ow));
 			if (share > 0) {
@@ -208,6 +223,13 @@ public final class CurseEffects {
 		modifier(p, "minecraft:safe_fall_distance", "fragile_footing", -Penalty.FRAGILE_FOOTING.value * d.stacks(Penalty.FRAGILE_FOOTING), "add_value");
 		// Extreme
 		modifier(p, "minecraft:block_interaction_range", "withered_grasp", -Penalty.WITHERED_GRASP.value * d.stacks(Penalty.WITHERED_GRASP), "add_value");
+		// The relic bound to the Tether
+		boolean hand = RelicService.has(d, Relic.HUNGERING_HAND), feather = RelicService.has(d, Relic.FEATHERBONE);
+		modifier(p, "minecraft:block_interaction_range", "relic_reach", hand ? Config.RELIC_HUNGERING_HAND_REACH : 0, "add_value");
+		modifier(p, "minecraft:entity_interaction_range", "relic_reach", hand ? Config.RELIC_HUNGERING_HAND_REACH : 0, "add_value");
+		modifier(p, "minecraft:max_health", "relic_hunger", hand ? -Config.RELIC_HUNGERING_HAND_HEALTH : 0, "add_value");
+		modifier(p, "minecraft:safe_fall_distance", "relic_feather", feather ? Config.RELIC_FEATHERBONE_FALL : 0, "add_value");
+		modifier(p, "minecraft:armor", "relic_feather", feather ? -Config.RELIC_FEATHERBONE_ARMOR : 0, "add_value");
 		d.leadValue = Double.NaN;
 		refreshEffects(p, d);
 	}

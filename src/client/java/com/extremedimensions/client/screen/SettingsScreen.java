@@ -568,8 +568,8 @@ public class SettingsScreen extends Screen {
 	private void world(GuiGraphicsExtractor g, int x0, int y0, int mouseX, int mouseY, double fade, int accent) {
 		// Difficulty: the preset the rules match now (or custom); operators pick and apply another beside it
 		var now = currentPreset();
-		String label = Ui.tr("gui.extremedimensions.settings.difficulty");
-		g.text(this.font, label, x0 + 16, y0 + 48, Ui.argb(fade, Ui.PARCHMENT));
+		String difficulty = Ui.tr("gui.extremedimensions.settings.difficulty");
+		g.text(this.font, difficulty, x0 + 16, y0 + 48, Ui.argb(fade, Ui.PARCHMENT));
 		String state = now == null ? Ui.tr("gui.extremedimensions.preset.custom") : Ui.tr(now.nameKey());
 		if (editable) {
 			g.text(this.font, state, x0 + 16, y0 + 57, Ui.argb(fade * 0.8, Ui.MUTED));

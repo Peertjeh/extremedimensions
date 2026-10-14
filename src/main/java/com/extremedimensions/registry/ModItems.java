@@ -48,6 +48,9 @@ public final class ModItems {
 	/** Dropped by the Starved One: use them to sever the Tether from the world for good. */
 	public static final Item SEVERING_SHEARS = register("severing_shears", 1, Rarity.EPIC);
 
+	/** The relics: bound to the Tether one at a time, each with a gift and a price (see Relic). */
+	public static final java.util.Map<com.extremedimensions.relic.Relic, Item> RELICS = relics();
+
 	public static final Item HUSH_STONE = block(ModBlocks.HUSH_STONE);
 	public static final Item HUSH_BRICKS = block(ModBlocks.HUSH_BRICKS);
 	public static final Item SEAM_VEIN = block(ModBlocks.SEAM_VEIN);
@@ -62,6 +65,14 @@ public final class ModItems {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, ExtremeDimensions.id(id));
 		Item.Properties props = new Item.Properties().stacksTo(maxStack).rarity(rarity).setId(key);
 		return Registry.register(BuiltInRegistries.ITEM, key, new Item(props));
+	}
+
+	private static java.util.Map<com.extremedimensions.relic.Relic, Item> relics() {
+		java.util.Map<com.extremedimensions.relic.Relic, Item> out = new java.util.EnumMap<>(com.extremedimensions.relic.Relic.class);
+		for (com.extremedimensions.relic.Relic r : com.extremedimensions.relic.Relic.values()) {
+			out.put(r, register(r.id, 1, Rarity.EPIC));
+		}
+		return java.util.Collections.unmodifiableMap(out);
 	}
 
 	/** Forces class loading, and with it registration. */

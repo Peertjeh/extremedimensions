@@ -1065,6 +1065,10 @@ public final class HollowService {
 		ServerLevel level = (ServerLevel) k.level();
 		k.spawnAtLocation(level, new ItemStack(ModItems.TETHER_FRAGMENT, 2));
 		k.spawnAtLocation(level, new ItemStack(ModItems.WANDERERS_PAGE));
+		if (ThreadLocalRandom.current().nextDouble() < Config.RELIC_KEEPER_CHANCE) {
+			// What the Keeper guarded most of all
+			k.spawnAtLocation(level, com.extremedimensions.relic.RelicService.random());
+		}
 		for (ServerPlayer p : level.players()) {
 			if (p.distanceToSqr(k) < 48 * 48) {
 				Advancements.grant(p, Advancements.KEEPER_SLAIN);

@@ -117,6 +117,10 @@ public final class ExpeditionService {
 
 		// Ferryman's Fee: every crossing home is paid for in levels
 		int fee = (int) Math.round(Penalty.FERRYMANS_FEE.value) * d.stacks(Penalty.FERRYMANS_FEE);
+		// Tithe Bell: the bell takes its due for every crossing home
+		if (com.extremedimensions.relic.RelicService.has(d, com.extremedimensions.relic.Relic.TITHE_BELL)) {
+			fee += Math.max(0, Config.RELIC_TITHE_BELL_LEVELS);
+		}
 		if (fee > 0 && p.experienceLevel > 0) {
 			p.giveExperienceLevels(-Math.min(fee, p.experienceLevel));
 		}
@@ -191,7 +195,8 @@ public final class ExpeditionService {
 
 		boolean changed = false;
 		if (Dims.isBeyond(dim) && d.inRun && !d.collapsing) {
-			d.currentDrain = d.drainMultiplier() * TetherService.distanceFactor(p, d) * WorldService.drainFactor(dim);
+			d.currentDrain = d.drainMultiplier() * TetherService.distanceFactor(p, d) * WorldService.drainFactor(dim)
+					* com.extremedimensions.relic.RelicService.drainFactor(d, dim);
 			double left = AnchorService.drainLinked(p, d, d.currentDrain / 20.0);
 			d.runTime += 1.0 / 20.0;
 			double far = TetherService.arrivalDistance(p, d);
@@ -388,6 +393,9 @@ public final class ExpeditionService {
 		// Empty Pockets: fewer fragments find their way to the player
 		double less = Penalty.EMPTY_POCKETS.value / 100.0 * d.stacks(Penalty.EMPTY_POCKETS);
 		double chance = ELITES.contains(type) ? Config.FRAGMENT_CHANCE_ELITE - 3 * less : Config.FRAGMENT_CHANCE - less;
+		if (com.extremedimensions.relic.RelicService.has(d, com.extremedimensions.relic.Relic.KEEPERS_EYE)) {
+			chance *= Math.max(0, Config.RELIC_KEEPERS_EYE_FRAGMENTS);
+		}
 		if (ThreadLocalRandom.current().nextDouble() >= chance) {
 			return;
 		}

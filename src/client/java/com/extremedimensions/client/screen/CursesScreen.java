@@ -63,6 +63,8 @@ public class CursesScreen extends Screen {
 	private final List<Tab> tabs = new ArrayList<>();
 	private int scars;
 	private String atoning = "";
+	/** The relic bound to the Tether, or null. */
+	private com.extremedimensions.relic.Relic relic;
 	private boolean overworldOn = true;
 	private Group tab = Group.BEYOND;
 	private Penalty selected;
@@ -127,9 +129,10 @@ public class CursesScreen extends Screen {
 				// skip malformed entry
 			}
 		}
+		relic = parts.length > 4 ? com.extremedimensions.relic.Relic.byId(parts[4]) : null;
 		nearby.clear();
-		if (parts.length > 4 && !parts[4].isEmpty()) {
-			for (String part : parts[4].split(";")) {
+		if (parts.length > 5 && !parts[5].isEmpty()) {
+			for (String part : parts[5].split(";")) {
 				String[] kv = part.split(",");
 				if (kv.length < 3) {
 					continue;
@@ -242,6 +245,7 @@ public class CursesScreen extends Screen {
 			sockets.add(this.addRenderableWidget(s));
 		}
 		this.addRenderableWidget(new com.extremedimensions.client.ui.GearButton(x0 + PW - 20, y0 + 5, this, Ui.EMBER));
+		this.addRenderableWidget(new RelicChip(x0 + PW - 14 - 132, y0 + 176, 132));
 		atone = this.addRenderableWidget(Button.builder(Component.translatable("gui.extremedimensions.curses.atone"), b -> {
 			if (selected != null) {
 				ClientPlayNetworking.send(new ModPackets.AtonePayload(selected.id));
@@ -508,6 +512,50 @@ public class CursesScreen extends Screen {
 		int col = stacks >= max && stacks > 0 ? Ui.DANGER : Ui.mix(accent, 0xFFFFFF, 0.25);
 		for (int i = 0; i < max; i++) {
 			g.fill(x + i * 4, y, x + i * 4 + 3, y + 3, Ui.argb(fade, i < stacks ? col : Ui.TRACK));
+		}
+	}
+
+	/** The relic bound to the Tether: its name, its gift and price on hover, and a click takes it off again. */
+	private final class RelicChip extends AbstractButton {
+		/** The relic the tooltip was made for (rebuilt only when the relic changes). */
+		private Object shownFor = this;
+
+		RelicChip(int x, int y, int w) {
+			super(x, y, w, 12, Component.translatable("gui.extremedimensions.relic.title"));
+		}
+
+		@Override
+		public void onPress(InputWithModifiers input) {
+			if (relic != null) {
+				ClientPlayNetworking.send(new ModPackets.UnbindRelicPayload());
+			}
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+			var font = Minecraft.getInstance().font;
+			int x = this.getX(), y = this.getY(), w = this.getWidth();
+			boolean has = relic != null;
+			if (shownFor != relic) {
+				shownFor = relic;
+				this.setTooltip(Tooltip.create(has
+						? Component.empty().append(Component.translatable(relic.nameKey())).append("\n")
+								.append(Component.literal("+ ").append(Component.translatable(relic.giftKey(), relic.giftArgs())).withStyle(net.minecraft.ChatFormatting.GREEN)).append("\n")
+								.append(Component.literal("- ").append(Component.translatable(relic.priceKey(), relic.priceArgs())).withStyle(net.minecraft.ChatFormatting.RED)).append("\n")
+								.append(Component.translatable("gui.extremedimensions.relic.unbind").withStyle(net.minecraft.ChatFormatting.GRAY))
+						: Component.translatable("gui.extremedimensions.relic.none_tip")));
+			}
+			Ui.chip(g, x, y, w, this.getHeight(), has ? (this.isHovered() ? Ui.WARN : Ui.VOID) : Ui.MUTED, has ? 1.0 : 0.5);
+			String label = has ? Ui.tr(relic.nameKey()) : Ui.tr("gui.extremedimensions.relic.none");
+			g.text(font, label, x + 4, y + 2, Ui.argb(has ? 1.0 : 0.7, has ? Ui.PARCHMENT : Ui.MUTED));
+			if (has) {
+				g.text(font, "×", x + w - 8, y + 2, Ui.argb(this.isHovered() ? 1.0 : 0.6, this.isHovered() ? Ui.WARN : Ui.MUTED));
+			}
+		}
+
+		@Override
+		protected void updateWidgetNarration(NarrationElementOutput out) {
+			out.add(NarratedElementType.TITLE, this.getMessage());
 		}
 	}
 

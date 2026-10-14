@@ -226,6 +226,36 @@ public final class Config {
 	/** Drain multiplier for everyone in a mended world. */
 	public static double MENDED_DRAIN = 0.8;
 
+	// --- Relics: one bound to the Tether, each with a gift and a price -------------------------
+
+	/** Ember Heart: drain multiplier in the Nether (the gift) and in the End (the price). */
+	public static double RELIC_EMBER_HEART_NETHER = 0.8;
+	public static double RELIC_EMBER_HEART_END = 1.2;
+	/** Pale Shard: drain multiplier in the End (the gift) and in the Nether (the price). */
+	public static double RELIC_PALE_SHARD_END = 0.8;
+	public static double RELIC_PALE_SHARD_NETHER = 1.2;
+	/** Hungering Hand: extra reach for blocks and creatures (blocks); maximum health it takes (2 = one heart). */
+	public static double RELIC_HUNGERING_HAND_REACH = 2.0;
+	public static double RELIC_HUNGERING_HAND_HEALTH = 2.0;
+	/** Featherbone: extra fall before it hurts (blocks); armour it takes. */
+	public static double RELIC_FEATHERBONE_FALL = 8.0;
+	public static double RELIC_FEATHERBONE_ARMOR = 2.0;
+	/** Keeper's Eye: fragment chance multiplier for wild kills; atonement multiplier for kills. */
+	public static double RELIC_KEEPERS_EYE_FRAGMENTS = 2.0;
+	public static double RELIC_KEEPERS_EYE_ATONEMENT = 0.5;
+	/** Tithe Bell: extra share of the experience you gain (0.5 = half again); levels it takes on every safe return. */
+	public static double RELIC_TITHE_BELL_XP = 0.5;
+	public static int RELIC_TITHE_BELL_LEVELS = 1;
+	/** Lurker's Tooth: Lurkers cannot take your items or armour; how many times as often they come for you. */
+	public static double RELIC_LURKERS_TOOTH_OFTEN = 2.0;
+	/** Seam Lantern: extra seconds in the Seam; how much farther monsters notice you at night in the Overworld (0.25 = a quarter). */
+	public static int RELIC_SEAM_LANTERN_SECONDS = 60;
+	public static double RELIC_SEAM_LANTERN_NOTICE = 0.25;
+	/** Chance a slain Keeper leaves a relic; relics the Starved One leaves every player who fought it; chance a Seam chest holds one. */
+	public static double RELIC_KEEPER_CHANCE = 0.35;
+	public static int RELIC_STARVED_ONE = 1;
+	public static double RELIC_SEAM_CHEST_CHANCE = 0.05;
+
 	// --- Technical -------------------------------------------------------------------------------
 
 	/** Milliseconds per tick the Seam may spend building islands (blocks in chunks nobody has loaded wait). */
@@ -259,7 +289,8 @@ public final class Config {
 			Map.entry("max_charge", "anchors"), Map.entry("base_drain", "expeditions"), Map.entry("rope_segment", "tether"),
 			Map.entry("offer_count", "curses"), Map.entry("fragment_chance", "lore"), Map.entry("lurker_enabled", "lurker"),
 			Map.entry("hoard_wild_chance", "hollow"), Map.entry("soul_woven_drain", "weaving"), Map.entry("seam_seconds", "seam"),
-			Map.entry("storm_chance", "dragon"), Map.entry("seam_build_budget_ms", "technical"));
+			Map.entry("storm_chance", "dragon"), Map.entry("relic_ember_heart_nether", "relics"),
+			Map.entry("seam_build_budget_ms", "technical"));
 
 	/** One setting: its key in the file, its section, the field behind it and its default (as text). */
 	public record Setting(String key, String section, Field field, String fallback) {

@@ -94,6 +94,18 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("02_inventory");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
+			// Relics: all eight in the hotbar, and the Ember Heart bound to the Tether (shown in the Curses screen)
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				int i = 0;
+				for (com.extremedimensions.relic.Relic r : com.extremedimensions.relic.Relic.values()) {
+					p.getInventory().setItem(i++, new ItemStack(com.extremedimensions.relic.RelicService.item(r)));
+				}
+				DataStore.get(p.getUUID()).relic = com.extremedimensions.relic.Relic.EMBER_HEART.id;
+			});
+			ctx.waitTicks(5);
+			ctx.takeScreenshot("02_relics_hotbar");
+
 			// The Curses screen: all four tabs, with players nearby
 			String data = sp.getServer().computeOnServer(s -> Sync.cursesData(player(s), DataStore.get(player(s).getUUID())));
 			AtomicReference<CursesScreen> screen = new AtomicReference<>();

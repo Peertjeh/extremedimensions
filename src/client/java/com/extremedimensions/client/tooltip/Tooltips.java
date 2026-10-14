@@ -56,6 +56,14 @@ public final class Tooltips {
 		} else if (item == ModItems.SEAM_SILK) {
 			key = "seam_silk";
 		}
+		com.extremedimensions.relic.Relic relic = com.extremedimensions.relic.RelicService.of(stack);
+		if (relic != null) {
+			// A relic: its gift, its price (both with the server's numbers) and how to bind it
+			lines.add(Component.literal("+ ").append(Component.translatable(relic.giftKey(), relic.giftArgs())).withStyle(ChatFormatting.GREEN));
+			lines.add(Component.literal("- ").append(Component.translatable(relic.priceKey(), relic.priceArgs())).withStyle(ChatFormatting.RED));
+			lines.add(Component.translatable("tooltip.extremedimensions.relic.bind").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+			return;
+		}
 		if (key != null) {
 			lines.add(Component.translatable("tooltip.extremedimensions." + key + ".1").withStyle(ChatFormatting.GRAY));
 			lines.add(Component.translatable("tooltip.extremedimensions." + key + ".2").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));

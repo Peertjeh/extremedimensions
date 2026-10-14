@@ -75,6 +75,10 @@ public class ExtremeDimensions implements ModInitializer {
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.ChangeSettingsPayload.TYPE,
 				(payload, context) -> SettingsService.change(context.player(), payload.changes()));
 
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.UnbindRelicPayload.TYPE, ModPackets.UnbindRelicPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.UnbindRelicPayload.TYPE,
+				(payload, context) -> com.extremedimensions.relic.RelicService.unbind(context.player()));
+
 		ServerEvents.register();
 		LOGGER.info("Extreme Dimensions initialised");
 	}

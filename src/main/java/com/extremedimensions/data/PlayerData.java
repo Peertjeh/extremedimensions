@@ -16,6 +16,8 @@ public class PlayerData {
 	public int expeditions = 0;
 	/** Steps of the first-expedition guide done (see Guide). */
 	public int guide = 0;
+	/** The relic bound to the Tether (its id), or null. */
+	public String relic = null;
 	public int collapses = 0;
 	public double longestRun = 0;
 	/** Curse id -> stacks. Curses are permanent: only atonement, fragments or a Mending Cloth take stacks off. */
@@ -102,6 +104,8 @@ public class PlayerData {
 	public transient int vertigoIn = 60, huntIn = 120;
 	/** Stormcalled: seconds under an open, thundering sky until the next bolt; -1 = not counting yet. */
 	public transient int stormIn = -1;
+	/** Tithe Bell: experience owed but not yet whole. */
+	public transient double xpBonusCarry = 0;
 	/** Recent kills that could earn atonement: x, z, game time (see AtonementGuard). */
 	public transient java.util.ArrayDeque<long[]> recentKills = new java.util.ArrayDeque<>();
 	/** Whether it was dark outside last time we looked (dawn = a night survived). */

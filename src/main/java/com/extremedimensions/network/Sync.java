@@ -72,6 +72,7 @@ public final class Sync {
 			out.append(pen.id).append(':').append(d.stacks(pen)).append(':').append(pen.max).append(':')
 					.append(d.atonement.getOrDefault(pen.id, 0)).append(':').append(PenaltyService.cost(d, pen)).append(':').append(pen.display());
 		}
+		out.append('|').append(d.relic == null ? "" : d.relic);
 		out.append('|').append(nearby(p));
 		return out.toString();
 	}

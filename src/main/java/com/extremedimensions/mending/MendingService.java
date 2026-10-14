@@ -443,6 +443,10 @@ public final class MendingService {
 		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 3, so.getZ(), 2, 3, 2, 0, 120);
 		for (ServerPlayer p : seam.players()) {
 			if (inArena(p)) {
+				// Each who fought it takes something from its hoard of everything it ever ate
+				for (int i = 0; i < Math.max(0, com.extremedimensions.config.Config.RELIC_STARVED_ONE); i++) {
+					WorldFx.give(p, com.extremedimensions.relic.RelicService.random());
+				}
 				Advancements.grant(p, Advancements.STARVED_SLAIN);
 				Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.WANDERER);
 				WorldFx.soundSelf(p, "extremedimensions:lurker_death", 1.0f, 0.5f);

@@ -4,7 +4,6 @@ import com.extremedimensions.client.options.ClientOptions;
 import com.extremedimensions.client.ui.Ui;
 
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.Tooltip;
@@ -41,10 +40,6 @@ public final class GuideCloseButton extends AbstractButton {
 	public static void closeGuide() {
 		ClientOptions.setGuidance(false);
 		ChargeHud.guideClose = null;
-		Minecraft mc = Minecraft.getInstance();
-		if (mc.player != null) {
-			mc.player.displayClientMessage(Component.translatable("gui.extremedimensions.guide.hidden"), false);
-		}
 	}
 
 	@Override

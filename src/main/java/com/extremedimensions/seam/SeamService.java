@@ -190,7 +190,8 @@ public final class SeamService {
 		d.riftY = top + 1;
 		d.riftZ = z + 0.5;
 		d.inSeam = true;
-		d.seamMax = Math.max(30, Config.SEAM_SECONDS) + Config.WOVEN_SEAM_SECONDS * d.tetherTier;
+		d.seamMax = Math.max(30, Config.SEAM_SECONDS) + Config.WOVEN_SEAM_SECONDS * d.tetherTier
+				+ (com.extremedimensions.relic.RelicService.has(d, com.extremedimensions.relic.Relic.SEAM_LANTERN) ? Math.max(0, Config.RELIC_SEAM_LANTERN_SECONDS) : 0);
 		d.seamLeft = d.seamMax;
 		d.seamPull = 0;
 		d.hasRopeEnd = false;
@@ -722,6 +723,10 @@ public final class SeamService {
 		}
 		if (rnd.nextDouble() < 0.15 + 0.15 * richness) {
 			c.setItem(slot++, new ItemStack(ModItems.TETHER_FRAGMENT));
+		}
+		if (rnd.nextDouble() < Config.RELIC_SEAM_CHEST_CHANCE * (1 + richness)) {
+			// Sometimes a relic lies among the Weavers' leavings
+			c.setItem(slot++, com.extremedimensions.relic.RelicService.random());
 		}
 		if (richness >= 3) {
 			c.setItem(slot++, new ItemStack(Items.ECHO_SHARD, 1 + rnd.nextInt(3)));

@@ -177,6 +177,9 @@ public final class ServerEvents {
 			if (player instanceof ServerPlayer sp && player.getItemInHand(hand).is(ModItems.MENDING_CLOTH)) {
 				return PenaltyService.cloth(sp, player.getItemInHand(hand));
 			}
+			if (player instanceof ServerPlayer sp && com.extremedimensions.relic.RelicService.of(player.getItemInHand(hand)) != null) {
+				return com.extremedimensions.relic.RelicService.bind(sp, player.getItemInHand(hand));
+			}
 			if (player instanceof ServerPlayer sp && (player.getItemInHand(hand).is(ModItems.MENDING_THREAD) || player.getItemInHand(hand).is(ModItems.SEVERING_SHEARS))) {
 				return MendingService.useEnding(sp, player.getItemInHand(hand));
 			}

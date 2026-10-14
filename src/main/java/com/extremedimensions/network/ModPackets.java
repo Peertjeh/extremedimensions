@@ -287,4 +287,22 @@ public final class ModPackets {
 			return TYPE;
 		}
 	}
+
+	/** Client -> server: take the relic off the Tether. */
+	public record UnbindRelicPayload() implements CustomPacketPayload {
+		public static final Type<UnbindRelicPayload> TYPE = new Type<>(ExtremeDimensions.id("unbind_relic"));
+		public static final StreamCodec<FriendlyByteBuf, UnbindRelicPayload> CODEC = StreamCodec.ofMember(UnbindRelicPayload::write, UnbindRelicPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+		}
+
+		private static UnbindRelicPayload read(FriendlyByteBuf buf) {
+			return new UnbindRelicPayload();
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
 }
