@@ -12,6 +12,7 @@ import net.battlehub.lobby.Lobby;
 import net.battlehub.match.Match;
 import net.battlehub.match.Matches;
 import net.battlehub.progression.Ranks;
+import net.battlehub.progression.TitleService;
 import net.battlehub.queue.Queues;
 import net.battlehub.session.Sessions;
 import net.battlehub.spectate.Spectators;
@@ -69,6 +70,7 @@ public final class Travel {
 		Sessions.toLobby(p.getUUID());
 		HubItems.ensure(p, false);
 		showLevel(p);
+		TitleService.apply(p);
 		Msg.send(p, "hub.welcome");
 		Msg.sound(p, net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP, 0.5f, 1.4f);
 		return true;
@@ -92,6 +94,7 @@ public final class Travel {
 		}
 		HubItems.strip(p);
 		Sessions.toLobby(p.getUUID());
+		TitleService.apply(p);
 		Msg.send(p, "hub.left");
 		return true;
 	}
@@ -123,11 +126,13 @@ public final class Travel {
 			}
 			resetForHub(p);
 			HubItems.ensure(p, false);
+			TitleService.apply(p);
 		} else if (!inside && saved) {
 			leaveGames(p, false);
 			SURVIVAL.restore(p, StateStore.Restore.KEEP_POSITION, Travel::toWorldSpawn, level -> true);
 			HubItems.strip(p);
 			Sessions.toLobby(p.getUUID());
+			TitleService.apply(p);
 		}
 	}
 

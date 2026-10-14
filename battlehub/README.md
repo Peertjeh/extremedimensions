@@ -92,7 +92,7 @@ Spend your coins in the **Cosmetics** shop (compass menu or `/cosmetics`):
 * **Kill effects**: lightning, explosion, blood, souls, firework, totem, … where you defeat someone
 * **Arrow trails**: particles behind your arrows
 * **Win effects**: fireworks, totem rain, a ring of fire, … around you while the match ends
-* **Name colours**: on your nametag, in chat and in the tab list
+* **Name colours**: on your nametag, in chat and in the tab list while you're in BattleHub
 
 One cosmetic per category is active; click to buy, use or turn it off. Everything is vanilla particles
 and sounds, purely visual, and only in BattleHub's worlds. Prices and the list are in `cosmetics.json`.
@@ -101,7 +101,7 @@ and sounds, purely visual, and only in BattleHub's worlds. Prices and the list a
 * **Coins** for winning, playing and kills.
 * **XP and levels**, with a configurable curve and a coin bonus every few levels.
 * **Titles** unlocked through levels, wins, win streaks, ELO or bought with coins. The selected title
-  shows in chat, above your head and in the tab list.
+  shows in chat, above your head and in the tab list while you're in BattleHub.
 * **Cosmetics** bought with coins (see above).
 * **Win streaks**, overall and per mode. Milestones (5, 10, 25, …) are announced to everyone.
 * **ELO** per ranked mode (start 1000, K-factor 32), with tiers and a top 10 per mode.

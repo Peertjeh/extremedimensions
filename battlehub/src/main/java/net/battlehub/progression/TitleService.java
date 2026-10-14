@@ -10,6 +10,7 @@ import net.battlehub.core.PlayerProfile;
 import net.battlehub.core.TitleDef;
 import net.battlehub.core.TitleRules;
 import net.battlehub.data.PlayerStore;
+import net.battlehub.hub.HubWorld;
 import net.battlehub.lang.Lang;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -21,8 +22,8 @@ import net.minecraft.world.scores.TeamColor;
 
 /**
  * Shows the selected title in front of the name and the bought name colour in chat, above the head and in the tab
- * list, using one scoreboard team per player ("bh." + uuid). Matches can temporarily override the prefix (CTF team
- * colours).
+ * list while the player is in BattleHub, using one scoreboard team per player ("bh." + uuid). Matches can
+ * temporarily override the prefix (CTF team colours).
  */
 public final class TitleService {
 	private TitleService() {}
@@ -68,9 +69,11 @@ public final class TitleService {
 		String teamName = teamName(p.getUUID());
 		Component override = OVERRIDES.get(p.getUUID());
 		PlayerProfile prof = PlayerStore.get(p);
-		Component title = display(prof);
+		// Titles and name colours belong to BattleHub: in the normal world the name is left alone
+		boolean inBattleHub = HubWorld.isBattleHub(p.level());
+		Component title = inBattleHub ? display(prof) : null;
 		// Team colours (CTF) win over the bought name colour
-		TeamColor color = override == null ? Cosmetics.nameColor(prof) : null;
+		TeamColor color = override == null && inBattleHub ? Cosmetics.nameColor(prof) : null;
 		boolean wanted = override != null || ((title != null || color != null) && ConfigManager.config().titles.useScoreboardTeams);
 		PlayerTeam team = board.getPlayerTeam(teamName);
 		if (!wanted) {

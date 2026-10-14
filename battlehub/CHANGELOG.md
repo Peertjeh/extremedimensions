@@ -34,6 +34,7 @@
   Config version 2: old lobby settings are reset to the hub, unchanged theme lists are upgraded to all
   themes, and parkour gets its new defaults (min 1 player, longer time limit).
 * Mace duels are played on floating islands (Sky or End).
+* Titles show only while the player is in BattleHub, not in the normal world.
 
 ## 1.0.1
 

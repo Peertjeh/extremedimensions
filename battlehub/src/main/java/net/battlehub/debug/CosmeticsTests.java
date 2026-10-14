@@ -132,5 +132,15 @@ final class CosmeticsTests {
 			Cosmetics.click(p("BHTestA"), Cosmetics.byId("color_red"));
 			p("BHTestA").closeContainer();
 		});
+		s.run(tag + ": A goes back to survival", () -> net.battlehub.hub.Travel.leave(p("BHTestA")));
+		s.check(tag + ": no BattleHub colour in the normal world", () -> {
+			PlayerTeam team = server.getScoreboard().getPlayersTeam(p("BHTestA").getScoreboardName());
+			return team == null || team.getColor().isEmpty();
+		});
+		s.run(tag + ": A comes back with /hub", () -> net.battlehub.hub.Travel.enter(p("BHTestA")));
+		s.check(tag + ": red again in BattleHub", () -> {
+			PlayerTeam team = server.getScoreboard().getPlayersTeam(p("BHTestA").getScoreboardName());
+			return team != null && team.getColor().equals(java.util.Optional.of(TeamColor.RED));
+		});
 	}
 }
