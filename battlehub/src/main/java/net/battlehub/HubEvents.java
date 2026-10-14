@@ -11,6 +11,7 @@ import net.battlehub.config.ConfigManager;
 import net.battlehub.data.PlayerStore;
 import net.battlehub.gui.MainMenu;
 import net.battlehub.gui.Menus;
+import net.battlehub.lang.Lang;
 import net.battlehub.lobby.HubItems;
 import net.battlehub.lobby.Lobby;
 import net.battlehub.lobby.Protection;
@@ -99,7 +100,9 @@ public final class HubEvents {
 		Ranks.reload();
 		PlayerStore.load(server);
 		Snapshots.init(server);
+		net.battlehub.hub.Travel.init(server);
 		ArenaSlots.init(server);
+		net.battlehub.hub.HubWorld.ensureBuilt(server);
 	}
 
 	private static void stopping(MinecraftServer server) {
@@ -123,17 +126,20 @@ public final class HubEvents {
 		}
 		if (tick % 10 == 0) {
 			for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+				net.battlehub.hub.Travel.guard(p);
 				lobbyTick(p);
 			}
 		}
 	}
 
+	/** Players in the hub world: lobby items, full health and hunger, back up when falling off. */
 	private static void lobbyTick(ServerPlayer p) {
-		if (!Sessions.inLobby(p.getUUID()) || p.isSpectator()) {
+		if (!net.battlehub.hub.HubWorld.is(p.level()) || !Sessions.inLobby(p.getUUID()) || p.isSpectator()) {
 			return;
 		}
 		Lobby.refresh(p);
-		if (ConfigManager.config().lobby.keepFed && Lobby.inArea(p)) {
+		net.battlehub.hub.Travel.showLevel(p);
+		if (ConfigManager.config().lobby.keepFed) {
 			if (p.getFoodData().getFoodLevel() < 20) {
 				p.getFoodData().setFoodLevel(20);
 			}
@@ -141,7 +147,7 @@ public final class HubEvents {
 				p.setHealth(p.getMaxHealth());
 			}
 		}
-		if (Lobby.isLobbyDimension(p.level()) && p.getY() < ConfigManager.config().lobby.voidY) {
+		if (p.getY() < ConfigManager.config().lobby.voidY) {
 			Lobby.teleport(p);
 		}
 	}
@@ -152,13 +158,22 @@ public final class HubEvents {
 		if (Snapshots.has(p.getUUID())) {
 			// Left during a match or the server crashed: give everything back first.
 			Snapshots.restore(p, true);
+		}
+		if (ArenaWorld.is(p.level())) {
+			Lobby.teleport(p);
+		}
+		if (net.battlehub.hub.HubWorld.is(p.level())) {
 			if (ConfigManager.config().lobby.teleportOnJoin) {
 				Lobby.teleport(p);
 			}
-		} else if (ConfigManager.config().lobby.teleportOnJoin || ArenaWorld.is(p.level())) {
-			Lobby.teleport(p);
+			net.battlehub.hub.Travel.guard(p);
+			HubItems.ensure(p, false);
+			net.battlehub.hub.Travel.showLevel(p);
+		} else if (ConfigManager.config().hub.sendToHubOnJoin) {
+			net.battlehub.hub.Travel.enter(p);
+		} else if (ConfigManager.config().hub.joinHint) {
+			Msg.raw(p, Lang.tr(p, "hub.hint").append(" ").append(Msg.button(p, "hub.hint_button", "hub.hint_hover", "/hub")));
 		}
-		HubItems.ensure(p, false);
 		TitleService.apply(p);
 	}
 
@@ -182,6 +197,9 @@ public final class HubEvents {
 	}
 
 	private static boolean allowDamage(ServerPlayer p, net.minecraft.world.damagesource.DamageSource source) {
+		if (!net.battlehub.hub.HubWorld.isBattleHub(p.level())) {
+			return true;
+		}
 		if (Sessions.state(p.getUUID()) == Sessions.State.MATCH) {
 			Match m = Matches.of(p.getUUID());
 			return m != null && m.allowDamage(p, source);
@@ -193,6 +211,9 @@ public final class HubEvents {
 	}
 
 	private static boolean allowDeath(ServerPlayer p, net.minecraft.world.damagesource.DamageSource source) {
+		if (!net.battlehub.hub.HubWorld.isBattleHub(p.level())) {
+			return true;
+		}
 		if (Sessions.state(p.getUUID()) == Sessions.State.MATCH) {
 			Match m = Matches.of(p.getUUID());
 			if (m != null) {
@@ -222,6 +243,7 @@ public final class HubEvents {
 					Queues.leaveAll(sp);
 					Msg.send(sp, "queue.left_all");
 				}
+				case HubItems.EXIT -> net.battlehub.hub.Travel.leave(sp);
 				default -> { }
 			}
 		}

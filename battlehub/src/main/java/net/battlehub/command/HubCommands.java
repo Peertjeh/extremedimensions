@@ -33,6 +33,7 @@ public final class HubCommands {
 	public static void register(CommandDispatcher<CommandSourceStack> d) {
 		d.register(Commands.literal("hub").executes(c -> hub(c.getSource().getPlayerOrException())));
 		d.register(Commands.literal("lobby").executes(c -> hub(c.getSource().getPlayerOrException())));
+		d.register(Commands.literal("survival").executes(c -> net.battlehub.hub.Travel.leave(c.getSource().getPlayerOrException()) ? 1 : 0));
 
 		d.register(Commands.literal("spectate")
 				.executes(c -> {
@@ -109,8 +110,16 @@ public final class HubCommands {
 						.suggests((c, b) -> SharedSuggestionProvider.suggest(allModeIds(), b))
 						.executes(c -> joinMode(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode")))))
 				.then(Commands.literal("leave").executes(c -> hub(c.getSource().getPlayerOrException())))
+				.then(Commands.literal("exit").executes(c -> net.battlehub.hub.Travel.leave(c.getSource().getPlayerOrException()) ? 1 : 0))
 				.then(Commands.literal("setlobby").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(c -> setLobby(c.getSource())))
+				.then(Commands.literal("lobby").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.then(Commands.literal("rebuild").executes(c -> {
+							net.battlehub.hub.HubWorld.rebuild(c.getSource().getServer());
+							ServerPlayer p = c.getSource().getPlayer();
+							c.getSource().sendSuccess(() -> Lang.tr(p, "admin.lobby_rebuilt"), true);
+							return 1;
+						})))
 				.then(Commands.literal("reload").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(c -> reload(c.getSource())))
 				.then(Commands.literal("matches").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
@@ -162,8 +171,11 @@ public final class HubCommands {
 		return out;
 	}
 
-	/** Leave whatever you are doing and go back to the lobby. */
+	/** From the normal world: into BattleHub. In BattleHub: leave whatever you are doing and go back to the lobby. */
 	public static int hub(ServerPlayer p) {
+		if (!net.battlehub.hub.Travel.inBattleHub(p)) {
+			return net.battlehub.hub.Travel.enter(p) ? 1 : 0;
+		}
 		if (Sessions.state(p.getUUID()) == Sessions.State.SPECTATING) {
 			net.battlehub.spectate.Spectators.leave(p, true);
 			return 1;
@@ -184,6 +196,10 @@ public final class HubCommands {
 
 	private static int setLobby(CommandSourceStack src) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
 		ServerPlayer p = src.getPlayerOrException();
+		if (!net.battlehub.hub.HubWorld.is(p.level())) {
+			src.sendFailure(Lang.tr(p, "admin.lobby_not_hub"));
+			return 0;
+		}
 		HubConfig.Lobby l = ConfigManager.config().lobby;
 		l.set = true;
 		l.dimension = p.level().dimension().identifier().toString();

@@ -95,7 +95,8 @@ public final class Queues {
 			Msg.send(p, "queue.disabled", Lang.tr(p, Icons.modeKey(mode)));
 			return false;
 		}
-		return true;
+		// Starting something from the normal world takes the player into BattleHub first.
+		return net.battlehub.hub.Travel.ensureInHub(p);
 	}
 
 	/** Leaves every queue, party lobby and outgoing challenge. */

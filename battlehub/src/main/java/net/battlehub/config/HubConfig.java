@@ -11,13 +11,16 @@ import net.battlehub.core.RewardSettings;
 
 /** {@code config/battlehub/config.json}. Every field has a default; missing keys are filled in on load. */
 public final class HubConfig {
-	public int configVersion = 1;
+	public static final int CURRENT_VERSION = 2;
+
+	public int configVersion = CURRENT_VERSION;
 
 	/** Fallback language file (config/battlehub/lang/<code>.json or the built-in en_us). */
 	public String language = "en_us";
 	/** Use the language of each player's client when a matching file exists. */
 	public boolean perPlayerLanguage = true;
 
+	public Hub hub = new Hub();
 	public Lobby lobby = new Lobby();
 	public Compass compass = new Compass();
 	public Protection protection = new Protection();
@@ -30,23 +33,35 @@ public final class HubConfig {
 	public Arenas arenas = new Arenas();
 	public Map<String, Game> games = defaultGames();
 
+	/** BattleHub's own world. Every other dimension is normal gameplay that BattleHub leaves alone. */
+	public static final class Hub {
+		/** Put players in BattleHub when they join the server (for servers that are only BattleHub). */
+		public boolean sendToHubOnJoin = false;
+		/** Tell players in the normal world how to get to BattleHub when they join. */
+		public boolean joinHint = true;
+		/** Game mode in the hub: adventure (default) or survival. */
+		public String gameMode = "adventure";
+		/** Show the BattleHub level and progress on the XP bar while in BattleHub. */
+		public boolean levelOnXpBar = true;
+		/** The door in the last hotbar slot that takes you back to the normal world. */
+		public boolean exitItem = true;
+	}
+
 	public static final class Lobby {
-		/** Set by /battlehub setlobby. When not set, the world spawn is used. */
+		/** Set by /battlehub setlobby (in the hub world). When not set, the spawn of the built lobby is used. */
 		public boolean set = false;
-		public String dimension = "minecraft:overworld";
+		public String dimension = "battlehub:hub";
 		public double x;
-		public double y = 100;
+		public double y = 101;
 		public double z;
 		public float yaw;
 		public float pitch;
-		/** Send players to the lobby when they join the server. */
+		/** Put players at the lobby spawn when they join the server while in the hub world. */
 		public boolean teleportOnJoin = true;
-		/** Blocks around the lobby point that are protected; -1 protects the whole lobby dimension. */
-		public int protectionRadius = 128;
 		/** Keep health and hunger full while in the lobby. */
 		public boolean keepFed = true;
-		/** Falling below this Y in the lobby dimension sends you back to the lobby point. */
-		public int voidY = -80;
+		/** Falling below this Y in the hub world sends you back to the lobby spawn. */
+		public int voidY = 60;
 	}
 
 	public static final class Compass {
@@ -205,7 +220,15 @@ public final class HubConfig {
 
 	/** Repairs nulls and nonsense after loading user edits. */
 	public HubConfig normalize() {
+		if (hub == null) hub = new Hub();
 		if (lobby == null) lobby = new Lobby();
+		if (configVersion < 2) {
+			// 1.0 used a lobby in the normal world; 1.1 has its own world, so the old position no longer applies.
+			lobby.set = false;
+			lobby.dimension = "battlehub:hub";
+			lobby.voidY = 60;
+		}
+		configVersion = CURRENT_VERSION;
 		if (compass == null) compass = new Compass();
 		if (protection == null) protection = new Protection();
 		if (timings == null) timings = new Timings();

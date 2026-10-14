@@ -62,6 +62,7 @@ public final class SelfTest {
 				if (!e.getValue().hasDisconnected() && !KEEP_ONLINE.contains(e.getKey())) e.getValue().leave();
 			}
 		});
+		HubWorldTests.all(server, s);
 		lobbyAndMenus(server, s);
 		LayoutTests.all(s);
 		MenuSecurityTests.all(server, s);
@@ -184,12 +185,23 @@ public final class SelfTest {
 		return PLAYERS.get(name);
 	}
 
+	/** A test player online and in the BattleHub lobby (players join in the normal world and use /hub). */
 	public static void join(MinecraftServer server, String name) {
+		TestPlayer p = joinOutside(server, name);
+		if (!net.battlehub.hub.Travel.inBattleHub(p)) {
+			net.battlehub.hub.Travel.enter(p);
+		}
+	}
+
+	/** A test player online, wherever they are (new players: the normal world). */
+	public static TestPlayer joinOutside(MinecraftServer server, String name) {
 		TestPlayer old = PLAYERS.get(name);
 		if (old != null && !old.hasDisconnected()) {
-			return;
+			return old;
 		}
-		PLAYERS.put(name, TestPlayer.join(server, name));
+		TestPlayer p = TestPlayer.join(server, name);
+		PLAYERS.put(name, p);
+		return p;
 	}
 
 	/** Leaves a duel running; the CI script then stops the server and checks everybody was restored. */

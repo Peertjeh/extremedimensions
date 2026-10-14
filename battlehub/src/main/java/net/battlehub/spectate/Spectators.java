@@ -36,6 +36,9 @@ public final class Spectators {
 			Msg.send(p, "spectate.unavailable");
 			return false;
 		}
+		if (!net.battlehub.hub.Travel.ensureInHub(p)) {
+			return false;
+		}
 		if (st == Sessions.State.SPECTATING) {
 			Match current = Matches.of(p.getUUID());
 			if (current == m) {

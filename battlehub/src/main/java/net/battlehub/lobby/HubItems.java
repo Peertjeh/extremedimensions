@@ -15,7 +15,8 @@ public final class HubItems {
 
 	public static final String COMPASS = "compass";
 	public static final String LEAVE_QUEUE = "leave_queue";
-	/** Hotbar slot of the "leave queue" item. */
+	public static final String EXIT = "exit";
+	/** Hotbar slot of the door back to the normal world, or the "leave queue" item while queued. */
 	public static final int LEAVE_SLOT = 8;
 
 	public static ItemStack compass(ServerPlayer p) {
@@ -29,14 +30,20 @@ public final class HubItems {
 				.lore(Lang.loreLines(p, "item.leave_queue.lore")).tag(LEAVE_QUEUE).build();
 	}
 
+	public static ItemStack exit(ServerPlayer p) {
+		return Icon.of("minecraft:oak_door").name(Lang.item(p, "item.exit.name"))
+				.lore(Lang.loreLines(p, "item.exit.lore")).tag(EXIT).build();
+	}
+
 	/**
-	 * Puts the compass (and, while queued, the leave item) in their fixed slots and removes stray copies anywhere
+	 * Puts the compass and the item in the last slot (the door back, or the leave item while queued) in place and removes stray copies anywhere
 	 * else, including the cursor. Items in the target slot are moved out of the way, never deleted.
 	 */
 	public static void ensure(ServerPlayer p, boolean queued) {
 		Inventory inv = p.getInventory();
 		int compassSlot = ConfigManager.config().compass.slot;
-		int leaveSlot = queued && compassSlot != LEAVE_SLOT ? LEAVE_SLOT : -1;
+		String lastItem = queued ? LEAVE_QUEUE : (ConfigManager.config().hub.exitItem ? EXIT : "");
+		int leaveSlot = !lastItem.isEmpty() && compassSlot != LEAVE_SLOT ? LEAVE_SLOT : -1;
 		if (Icon.isHubItem(p.containerMenu.getCarried())) {
 			p.containerMenu.setCarried(ItemStack.EMPTY);
 		}
@@ -45,14 +52,14 @@ public final class HubItems {
 			if (tag.isEmpty()) {
 				continue;
 			}
-			boolean keep = (i == compassSlot && tag.equals(COMPASS)) || (i == leaveSlot && tag.equals(LEAVE_QUEUE));
+			boolean keep = (i == compassSlot && tag.equals(COMPASS)) || (i == leaveSlot && tag.equals(lastItem));
 			if (!keep) {
 				inv.setItem(i, ItemStack.EMPTY);
 			}
 		}
 		place(p, compassSlot, COMPASS);
 		if (leaveSlot >= 0) {
-			place(p, leaveSlot, LEAVE_QUEUE);
+			place(p, leaveSlot, lastItem);
 		}
 	}
 
@@ -72,7 +79,11 @@ public final class HubItems {
 				return;
 			}
 		}
-		inv.setItem(slot, tag.equals(COMPASS) ? compass(p) : leaveQueue(p));
+		inv.setItem(slot, switch (tag) {
+			case COMPASS -> compass(p);
+			case LEAVE_QUEUE -> leaveQueue(p);
+			default -> exit(p);
+		});
 	}
 
 	/** Removes every BattleHub item (before a kit is given). */

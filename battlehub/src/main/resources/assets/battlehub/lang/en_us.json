@@ -303,5 +303,20 @@
 	"parkour.status": "&a{0}/{1} finished",
 	"lms.shrinking": "&cThe border is closing in!",
 	"lms.outside": "&c&lOUTSIDE THE BORDER! &7Get back in.",
-	"lms.status": "&4{0} alive &8| &7border {1}"
+	"lms.status": "&4{0} alive &8| &7border {1}",
+	"item.exit.name": "&e&lBack to survival &7(Right-click)",
+	"item.exit.lore": "&7Leave BattleHub and go back to\n&7where you were, with all your things.",
+	"hub.missing": "&cThe BattleHub world is missing on this server; ask an admin.",
+	"hub.welcome": "&aWelcome to BattleHub! &7Right-click the compass to play. &e/survival &7takes you back.",
+	"hub.not_inside": "&cYou are not in BattleHub.",
+	"hub.left": "&7Back in the normal world, with all your things.",
+	"hub.hint": "&7Fancy a fight? BattleHub has duels, ranked and party games.",
+	"hub.hint_button": "&a&l[Play BattleHub]",
+	"hub.hint_hover": "&7Go to BattleHub (/hub). Your things stay safe.",
+	"admin.lobby_rebuilt": "&aThe BattleHub lobby is being rebuilt.",
+	"admin.lobby_not_hub": "&cStand in the BattleHub world to set the lobby (/hub).",
+	"menu.main.exit": "&e&lBack to survival",
+	"menu.main.exit.lore": "&7Leave BattleHub and get back\n&7everything you had.\n\n&eClick to leave",
+	"menu.main.enter": "&a&lGo to BattleHub",
+	"menu.main.enter.lore": "&7Your things stay safe and come\n&7back when you leave.\n\n&eClick to go"
 }

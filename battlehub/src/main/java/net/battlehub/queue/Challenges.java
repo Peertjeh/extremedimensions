@@ -73,7 +73,7 @@ public final class Challenges {
 			return false;
 		}
 		PENDING.remove(c);
-		if (!Sessions.inLobby(from.getUUID())) {
+		if (!Sessions.inLobby(from.getUUID()) || !net.battlehub.hub.Travel.inBattleHub(from)) {
 			Msg.send(to, "challenge.busy", from.getGameProfile().name());
 			return false;
 		}

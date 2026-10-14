@@ -43,6 +43,21 @@ public final class MainMenu extends Screen {
 		c.set(16, Icon.of(Items.WRITABLE_BOOK).name(Lang.item(viewer, "menu.main.stats"))
 				.lore(Lang.loreLines(viewer, "menu.main.stats.lore")).clean().build(),
 				click -> new StatsMenu(viewer, viewer.getUUID()).open());
+		if (net.battlehub.hub.Travel.inBattleHub(viewer)) {
+			c.set(22, Icon.of(Items.OAK_DOOR).name(Lang.item(viewer, "menu.main.exit"))
+					.lore(Lang.loreLines(viewer, "menu.main.exit.lore")).build(),
+					click -> {
+						viewer.closeContainer();
+						net.battlehub.hub.Travel.leave(viewer);
+					});
+		} else {
+			c.set(22, Icon.of(Items.ENDER_PEARL).name(Lang.item(viewer, "menu.main.enter"))
+					.lore(Lang.loreLines(viewer, "menu.main.enter.lore")).build(),
+					click -> {
+						viewer.closeContainer();
+						net.battlehub.hub.Travel.enter(viewer);
+					});
+		}
 		c.fill();
 	}
 

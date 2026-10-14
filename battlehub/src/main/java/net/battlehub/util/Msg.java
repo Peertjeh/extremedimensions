@@ -26,6 +26,13 @@ public final class Msg {
 	}
 
 	/** Without the "BattleHub »" prefix. */
+	/** A clickable chat button that runs a command, with a hover text. */
+	public static net.minecraft.network.chat.MutableComponent button(ServerPlayer p, String labelKey, String hoverKey, String command, Object... args) {
+		return Lang.tr(p, labelKey, args).withStyle(s -> s
+				.withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand(command))
+				.withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Lang.tr(p, hoverKey, args))));
+	}
+
 	public static void raw(ServerPlayer p, Component c) {
 		p.sendSystemMessage(c);
 	}

@@ -105,3 +105,23 @@ Elke fase: compileert, unit tests groen, server start in CI zonder fouten, zelft
   markeringen (KOTH-zone, CTF-vlaggen en teamspawns) bestaan.
 * **Talen**: naast Engels (standaard) zit er een Nederlandse vertaling in de jar. Elke speler krijgt de taal
   van zijn eigen client als die er is (`nl_be` valt terug op `nl_nl`), anders de standaardtaal van de server.
+
+## Versie 1.1
+
+### Keuzes
+
+| Onderwerp | Keuze |
+|---|---|
+| Eigen wereld | Een eigen dimensie `battlehub:hub` (leeg, met een lobby die de mod zelf bouwt). `/hub` brengt je erheen; je survival-toestand (inventaris, XP, levens, honger, effecten, spelmodus en positie) wordt bewaard in `<wereld>/battlehub/survival/` en teruggezet met `/survival`, het deur-item of de knop in het menu. De overworld wordt nergens meer aangeraakt: geen kompas, geen bescherming, geen schadeblokkering. Wie buiten de mod om de hub in- of uitgaat (admin-`/tp`), wordt automatisch in- of uitgecheckt. In de hub toont de XP-balk je BattleHub-level. |
+| Best of 1 / Best of 3 | Keuze per speler (onthouden), met een knop in het modus- en ranked-menu en `/duel <speler> <modus> [bo1\|bo3]`. Aparte wachtrijen per formaat. Rondes in dezelfde arena: na elke ronde iedereen genezen, opnieuw de kit, terug naar de spawn en een korte countdown. Een serie telt als één match voor statistieken, coins en ELO. |
+| Opnieuw spelen | Na elke match een klikbare knop in de chat en een item in de hotbar (30 seconden): dezelfde modus, hetzelfde formaat en ranked of niet; na een uitdaging een rematch; na een party game dezelfde lobby. |
+| Cosmetics | Trails, kill-effecten, pijl-trails, overwinningseffecten en naamkleuren, te koop met coins via een nieuwe knop in het hoofdmenu en in te stellen in `cosmetics.json`. Alles met vanilla-deeltjes en -geluiden, dus zonder client-mod. |
+| Arena's | Een generator bouwt voor elke match een nieuwe arena: vorm, reliëf, obstakels, dekking en decor zijn willekeurig, in 13 thema's. Duel-arena's zijn puntsymmetrisch, zodat beide spelers precies hetzelfde terrein hebben. Ook de party-arena's krijgen willekeurige vormen. |
+| Parkour | Elke race een nieuw parcours: veel langer, met ladders, halve blokken, hekken, ijs, 1×1-blokken, diagonale sprongen en bochten. Moeilijkheid easy, medium, hard, extreme of random: spelers stemmen bij het joinen, de meeste stemmen winnen. Solo kan ook (oefenen tegen je eigen record, per moeilijkheid). Elke sprong wordt bij het genereren getoetst aan wat een speler kan halen; unit tests controleren dat voor duizenden parcoursen. |
+
+### Fases
+
+* **A** – eigen hub-wereld · **B** – Bo1/Bo3 en opnieuw spelen · **C** – willekeurige arena's ·
+  **D** – parkour v2 · **E** – cosmetics · daarna README, CHANGELOG en versie 1.1.0.
+
+Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groen.
