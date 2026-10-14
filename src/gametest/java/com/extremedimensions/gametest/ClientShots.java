@@ -79,8 +79,9 @@ public class ClientShots implements FabricClientGameTest {
 		return p.level().getEntitiesOfClass(com.extremedimensions.elder.ElderBoss.class, p.getBoundingBox().inflate(96));
 	}
 
-	/** The player turns to the Elder, looking a little up at it. */
+	/** The player turns to the Elder, looking a little up at it (and no longer burning, so the shot is clear). */
 	private static void face(TestSingleplayerContext sp, String name) {
+		sp.getServer().runOnServer(s -> player(s).setRemainingFireTicks(0));
 		sp.getServer().runCommand("execute as @a at @s facing entity @e[type=extremedimensions:" + name + ",limit=1,sort=nearest] feet run tp @s ~ ~ ~ ~ ~");
 		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ ~ -16");
 	}

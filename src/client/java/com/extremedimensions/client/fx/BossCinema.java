@@ -52,6 +52,9 @@ public class BossCinema implements HudElement {
 				moveBoss = boss;
 			}
 			case ModPackets.BossFxPayload.ULTIMATE -> {
+				// The ultimate takes the whole screen: a title card or a called blow still showing makes way
+				introAt = -1;
+				moveAt = -1;
 				ultAt = now;
 				ultEnd = -1;
 				ultLength = Math.max(1, fx.value()) * 50L;
