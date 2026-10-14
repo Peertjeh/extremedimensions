@@ -32,6 +32,7 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.client.resources.language.I18n;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -153,7 +154,7 @@ public class SettingsScreen extends Screen {
 		}
 		for (Penalty pen : Penalty.values()) {
 			defaults.put("penalty." + pen.id + ".max", String.valueOf(pen.defaultMax));
-			defaults.put("penalty." + pen.id + ".per_stack", Penalty.display(pen.defaultValue));
+			defaults.put("penalty." + pen.id + ".per_stack", Config.format(pen.defaultValue));
 		}
 		String section = null;
 		for (Config.Setting st : Config.settings()) {
@@ -214,7 +215,7 @@ public class SettingsScreen extends Screen {
 	/** A setting's name: from the language file, or made readable from its key. */
 	private static String label(String key) {
 		String k = "config.extremedimensions." + key;
-		if (I18n.exists(k)) {
+		if (Language.getInstance().has(k)) {
 			return I18n.get(k);
 		}
 		String words = key.replace('_', ' ');
@@ -223,12 +224,12 @@ public class SettingsScreen extends Screen {
 
 	private static String tip(String key) {
 		String k = "config.extremedimensions." + key + ".desc";
-		return I18n.exists(k) ? I18n.get(k) : null;
+		return Language.getInstance().has(k) ? I18n.get(k) : null;
 	}
 
 	private static String sectionName(String section) {
 		String k = "gui.extremedimensions.settings.section." + section;
-		return I18n.exists(k) ? I18n.get(k) : section;
+		return Language.getInstance().has(k) ? I18n.get(k) : section;
 	}
 
 	/** Takes the world's values; with keepEdits, fields the player changed keep what they typed. */
@@ -250,7 +251,7 @@ public class SettingsScreen extends Screen {
 		}
 		for (Config.Setting st : Config.settings()) {
 			if (json.has(st.key())) {
-				current.put(st.key(), st.whole() ? String.valueOf(json.get(st.key()).getAsInt()) : Penalty.display(json.get(st.key()).getAsDouble()));
+				current.put(st.key(), st.whole() ? String.valueOf(json.get(st.key()).getAsInt()) : Config.format(json.get(st.key()).getAsDouble()));
 			}
 		}
 		JsonObject pens = json.has("penalties") ? json.getAsJsonObject("penalties") : new JsonObject();
@@ -258,7 +259,7 @@ public class SettingsScreen extends Screen {
 			if (pens.has(pen.id)) {
 				JsonObject o = pens.getAsJsonObject(pen.id);
 				current.put("penalty." + pen.id + ".max", String.valueOf(o.get("max").getAsInt()));
-				current.put("penalty." + pen.id + ".per_stack", Penalty.display(o.get("per_stack").getAsDouble()));
+				current.put("penalty." + pen.id + ".per_stack", Config.format(o.get("per_stack").getAsDouble()));
 			}
 		}
 		for (Row r : rows) {

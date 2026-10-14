@@ -40,6 +40,11 @@ public class SettingsTests {
 					"the snapshot does not hold the values just set");
 			check(helper, Config.settings().size() > 80, "only %s settings listed", Config.settings().size());
 			check(helper, Config.settings().stream().allMatch(st -> !st.fallback().isEmpty()), "a setting has no default");
+			// Settings are shown and filled in exactly: a small chance never turns into 0 on its way through the screen
+			check(helper, Config.format(0.012).equals("0.012") && Config.format(2.0).equals("2") && Config.format(0.15).equals("0.15"),
+					"values lose precision as text: %s, %s, %s", Config.format(0.012), Config.format(2.0), Config.format(0.15));
+			check(helper, Config.settings().stream().filter(st -> st.key().equals("lurker_spawn_chance")).allMatch(st -> st.fallback().equals("0.012")),
+					"the default of lurker_spawn_chance is not kept exactly");
 		} finally {
 			Config.ATONE_BASE = base;
 			Config.EXTREME_CARD_CHANCE = chance;

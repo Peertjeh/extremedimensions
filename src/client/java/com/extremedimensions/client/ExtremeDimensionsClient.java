@@ -62,19 +62,18 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		KeyMappingHelper.registerKeyMapping(OPEN_CURSES);
 		KeyMappingHelper.registerKeyMapping(OPEN_JOURNAL);
 		KeyMappingHelper.registerKeyMapping(OPEN_SETTINGS);
+		// Key mappings only register presses while no screen is open, so these never open over another screen
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			while (OPEN_SETTINGS.consumeClick()) {
-				if (client.screen == null) {
-					client.gui.setScreen(new SettingsScreen(null));
-				}
+				client.gui.setScreen(new SettingsScreen(null));
 			}
 			while (OPEN_CURSES.consumeClick()) {
-				if (client.screen == null && client.getConnection() != null) {
+				if (client.getConnection() != null) {
 					ClientPlayNetworking.send(new ModPackets.RequestCursesPayload(true));
 				}
 			}
 			while (OPEN_JOURNAL.consumeClick()) {
-				if (client.screen == null && client.getConnection() != null) {
+				if (client.getConnection() != null) {
 					ClientPlayNetworking.send(new ModPackets.RequestJournalPayload());
 				}
 			}

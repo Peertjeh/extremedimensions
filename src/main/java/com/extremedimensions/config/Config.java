@@ -255,7 +255,7 @@ public final class Config {
 
 		public String value() {
 			try {
-				return whole() ? String.valueOf(field.getInt(null)) : Penalty.display(field.getDouble(null));
+				return whole() ? String.valueOf(field.getInt(null)) : format(field.getDouble(null));
 			} catch (IllegalAccessException e) {
 				return "";
 			}
@@ -263,6 +263,15 @@ public final class Config {
 	}
 
 	private static List<Setting> settings;
+
+	/** A value as text without losing precision: 0.012 stays "0.012", 2.0 becomes "2" (cards round, settings never). */
+	public static String format(double v) {
+		if (!Double.isFinite(v)) {
+			return "0";
+		}
+		return v == Math.rint(v) && Math.abs(v) < 1e15 ? String.valueOf((long) v)
+				: java.math.BigDecimal.valueOf(v).stripTrailingZeros().toPlainString();
+	}
 
 	/** Every setting, in the order of this class (curses' maximum and strength are separate, see {@link #snapshot()}). */
 	public static List<Setting> settings() {
