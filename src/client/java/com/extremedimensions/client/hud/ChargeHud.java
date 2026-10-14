@@ -89,7 +89,7 @@ public class ChargeHud implements HudElement {
 			// On a narrow screen the card would reach under the expedition timer: then it waits below it
 			boolean timerTop = ClientState.dimCode != 0 && ClientOptions.timer() == ClientOptions.TimerPlace.TOP;
 			if (timerTop && !corner.bottom() && (right ? gx < (w + TIMER_W) / 2 : gx + GUIDE_W > (w - TIMER_W) / 2)) {
-				gy = Math.max(gy, 5 + TIMER_H + 4);
+				gy = Math.max(gy, 5 + TIMER_H + (ClientState.dimCode == 3 && !ClientState.trial.isEmpty() ? TRIAL_H : 0) + 4);
 			}
 			guideCard(g, font, gx, gy, guide, guideH);
 			if (corner.bottom()) {
@@ -204,10 +204,15 @@ public class ChargeHud implements HudElement {
 		int xs = (int) (Math.sin(now / 35.0) * amp);
 		int ys = (int) (Math.cos(now / 41.0) * amp);
 		int pw = TIMER_W;
-		int ph = TIMER_H;
+		String[] trial = seam && !ClientState.trial.isEmpty() ? ClientState.trial.split(";") : null;
+		if (trial != null && trial.length < 6) {
+			trial = null;
+		}
+		int ph = TIMER_H + (trial != null ? TRIAL_H : 0);
 		int px = (w - pw) / 2 + xs;
 		boolean top = ClientOptions.timer() == ClientOptions.TimerPlace.TOP;
-		int py = timerTop(h) + (int) ((1 - slide) * 48) * (top ? -1 : 1) + ys;
+		// above the hotbar, a taller panel grows upwards
+		int py = timerTop(h) - (top ? 0 : ph - TIMER_H) + (int) ((1 - slide) * 48) * (top ? -1 : 1) + ys;
 		int barColor = remaining <= 60 ? Ui.DANGER : remaining <= 120 ? Ui.WARN : accent;
 		boolean flash = remaining <= 30 && (Ui.calm() || (now / 250) % 2 == 0);
 
@@ -232,6 +237,44 @@ public class ChargeHud implements HudElement {
 			int dc = ClientState.drainX100 >= 300 ? Ui.DANGER : ClientState.drainX100 >= 180 ? Ui.WARN : Ui.MUTED;
 			String s = info.toString();
 			g.text(font, s, px + pw / 2 - font.width(s) / 2, py + 26, Ui.argb(255, dc));
+		}
+		if (trial != null) {
+			trialLine(g, font, trial, px, py + TIMER_H - 2, pw);
+		}
+	}
+
+	/** The trial line's height, and the bronze, silver and gold of its medal pips. */
+	private static final int TRIAL_H = 11;
+	private static final int[] MEDALS = {0xC9814B, 0xC8D0DA, 0xFFC94A};
+
+	/** The Rift Trial under the timer: its name, the score against the next medal, and three medal pips. */
+	private static void trialLine(GuiGraphicsExtractor g, Font font, String[] t, int px, int y, int pw) {
+		int score, b, sv, gd;
+		try {
+			score = Integer.parseInt(t[2]);
+			b = Integer.parseInt(t[3]);
+			sv = Integer.parseInt(t[4]);
+			gd = Integer.parseInt(t[5]);
+		} catch (NumberFormatException e) {
+			return;
+		}
+		int[] need = {b, sv, gd};
+		int medal = 0;
+		for (int i = 0; i < 3; i++) {
+			if (score >= Math.max(1, need[i])) {
+				medal = i + 1;
+			}
+		}
+		g.fill(px + 7, y, px + pw - 7, y + 1, Ui.argb(90, 0xFFC060));
+		String name = Ui.tr("gui.extremedimensions.trial.kind." + t[0]);
+		String count = medal >= 3 ? String.valueOf(score) : score + " / " + need[medal];
+		g.text(font, name, px + 7, y + 3, Ui.argb(255, 0xFFC060));
+		int pipX = px + pw - 7 - 3 * 7 + 1;
+		g.text(font, count, pipX - 5 - font.width(count), y + 3, Ui.argb(255, medal > 0 ? MEDALS[medal - 1] : Ui.PARCHMENT));
+		for (int i = 0; i < 3; i++) {
+			int c = i < medal ? MEDALS[i] : Ui.TRACK;
+			g.fill(pipX + i * 7, y + 4, pipX + i * 7 + 5, y + 9, Ui.argb(255, i < medal ? Ui.mix(c, 0x000000, 0.45) : Ui.SHADOW));
+			g.fill(pipX + i * 7 + 1, y + 5, pipX + i * 7 + 4, y + 8, Ui.argb(255, c));
 		}
 	}
 

@@ -98,6 +98,19 @@ public class ExtremeDimensions implements ModInitializer {
 			}
 		});
 
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.TrialsPayload.TYPE, ModPackets.TrialsPayload.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestTrialsPayload.TYPE, ModPackets.RequestTrialsPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestTrialsPayload.TYPE, (payload, context) ->
+				ServerPlayNetworking.send(context.player(), new ModPackets.TrialsPayload(com.extremedimensions.trial.TrialService.data(context.player()))));
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.ArmTrialPayload.TYPE, ModPackets.ArmTrialPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.ArmTrialPayload.TYPE, (payload, context) -> {
+			String refused = com.extremedimensions.trial.TrialService.arm(context.player(), payload.arm());
+			if (refused != null) {
+				context.player().sendSystemMessage(net.minecraft.network.chat.Component.translatable(refused));
+			}
+			ServerPlayNetworking.send(context.player(), new ModPackets.TrialsPayload(com.extremedimensions.trial.TrialService.data(context.player())));
+		});
+
 		ServerEvents.register();
 		LOGGER.info("Extreme Dimensions initialised");
 	}

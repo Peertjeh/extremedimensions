@@ -273,6 +273,43 @@ public final class Config {
 	/** Active seconds beyond the wound before a kept pact pays in full; a shorter expedition pays its share (0 = always in full). */
 	public static int PACT_FULL_SECONDS = 600;
 
+	// --- Rift Trials: the week's goal in the Seam, a world scoreboard and medals ---------------
+
+	/** When Rift Trials open: 0 = from the start, 1 = after the Ender Dragon falls, 2 = after the Starved One falls. */
+	public static int TRIAL_UNLOCK = 0;
+	/** Days each trial lasts before the next one (7 = a new trial every Monday, UTC). */
+	public static int TRIAL_ROTATION_DAYS = 7;
+	/** Vein-cutter: Seam Veins broken for bronze, silver and gold. */
+	public static int TRIAL_VEINS_BRONZE = 5;
+	public static int TRIAL_VEINS_SILVER = 12;
+	public static int TRIAL_VEINS_GOLD = 20;
+	/** Hunter: Veil Rays and Thinned slain. */
+	public static int TRIAL_HUNT_BRONZE = 2;
+	public static int TRIAL_HUNT_SILVER = 5;
+	public static int TRIAL_HUNT_GOLD = 9;
+	/** Wanderer: islands (100-block cells) set foot on, the arrival one included. */
+	public static int TRIAL_WANDER_BRONZE = 3;
+	public static int TRIAL_WANDER_SILVER = 6;
+	public static int TRIAL_WANDER_GOLD = 9;
+	/** Far-walker: blocks from the arrival point at the farthest. */
+	public static int TRIAL_FAR_BRONZE = 120;
+	public static int TRIAL_FAR_SILVER = 240;
+	public static int TRIAL_FAR_GOLD = 400;
+	/** Plunderer: fresh Seam barrels opened (each barrel counts once, ever). */
+	public static int TRIAL_PLUNDER_BRONZE = 1;
+	public static int TRIAL_PLUNDER_SILVER = 2;
+	public static int TRIAL_PLUNDER_GOLD = 4;
+	/** Short Thread twist: the visit's time is multiplied by this. */
+	public static double TRIAL_SHORT_FACTOR = 0.75;
+	/** What each medal pays, the first time it is reached in a week. */
+	public static int TRIAL_BRONZE_FRAGMENTS = 2;
+	public static int TRIAL_BRONZE_ATONE = 30;
+	public static int TRIAL_SILVER_FRAGMENTS = 3;
+	public static int TRIAL_SILVER_ATONE = 60;
+	public static int TRIAL_GOLD_FRAGMENTS = 4;
+	public static int TRIAL_GOLD_ATONE = 90;
+	public static int TRIAL_GOLD_RELICS = 1;
+
 	// --- Technical -------------------------------------------------------------------------------
 
 	/** Milliseconds per tick the Seam may spend building islands (blocks in chunks nobody has loaded wait). */
@@ -307,6 +344,7 @@ public final class Config {
 			Map.entry("offer_count", "curses"), Map.entry("fragment_chance", "lore"), Map.entry("lurker_enabled", "lurker"),
 			Map.entry("hoard_wild_chance", "hollow"), Map.entry("soul_woven_drain", "weaving"), Map.entry("seam_seconds", "seam"),
 			Map.entry("storm_chance", "dragon"), Map.entry("relic_ember_heart_nether", "relics"), Map.entry("pact_unlock", "pacts"),
+			Map.entry("trial_unlock", "trials"),
 			Map.entry("seam_build_budget_ms", "technical"));
 
 	/** One setting: its key in the file, its section, the field behind it and its default (as text). */

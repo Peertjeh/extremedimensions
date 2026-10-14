@@ -250,6 +250,7 @@ public class CursesScreen extends Screen {
 		this.addRenderableWidget(new com.extremedimensions.client.ui.GearButton(x0 + PW - 20, y0 + 5, this, Ui.EMBER));
 		this.addRenderableWidget(new RelicChip(x0 + PW - 14 - 132, y0 + 176, 132));
 		this.addRenderableWidget(new PactButton(x0 + 7, y0 + 5));
+		this.addRenderableWidget(new TrialsButton(x0 + 22, y0 + 5));
 		atone = this.addRenderableWidget(Button.builder(Component.translatable("gui.extremedimensions.curses.atone"), b -> {
 			if (selected != null) {
 				ClientPlayNetworking.send(new ModPackets.AtonePayload(selected.id));
@@ -585,6 +586,47 @@ public class CursesScreen extends Screen {
 			for (int r = 0; r < BRAND.length; r++) {
 				for (int k = 0; k < BRAND[r].length(); k++) {
 					if (BRAND[r].charAt(k) == '#') {
+						g.fill(x + 3 + k, y + 3 + r, x + 4 + k, y + 4 + r, Ui.argb(255, col));
+					}
+				}
+			}
+		}
+
+		@Override
+		protected void updateWidgetNarration(NarrationElementOutput out) {
+			out.add(NarratedElementType.TITLE, this.getMessage());
+		}
+	}
+
+	/** The Rift Trials: a rift's slit beside the pact brand; opens this week's trial and the world's scoreboard. */
+	private final class TrialsButton extends AbstractButton {
+		private static final String[] SLIT = {
+			"...#...",
+			"..#.#..",
+			"..#.#..",
+			".#...#.",
+			"..#.#..",
+			"..#.#..",
+			"...#...",
+		};
+
+		TrialsButton(int x, int y) {
+			super(x, y, 13, 13, Component.translatable("gui.extremedimensions.trial.screen"));
+			this.setTooltip(Tooltip.create(Component.translatable("gui.extremedimensions.trial.button")));
+		}
+
+		@Override
+		public void onPress(InputWithModifiers input) {
+			TrialsScreen.request(CursesScreen.this);
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+			int x = this.getX(), y = this.getY();
+			int col = this.isHovered() ? Ui.WARN : Ui.mix(Ui.SOUL, Ui.MUTED, 0.35);
+			for (int r = 0; r < SLIT.length; r++) {
+				for (int k = 0; k < SLIT[r].length(); k++) {
+					if (SLIT[r].charAt(k) == '#') {
 						g.fill(x + 3 + k, y + 3 + r, x + 4 + k, y + 4 + r, Ui.argb(255, col));
 					}
 				}

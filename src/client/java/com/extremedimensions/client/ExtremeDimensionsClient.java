@@ -57,6 +57,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 	private static final KeyMapping OPEN_CURSES = new KeyMapping("key.extremedimensions.curses", InputConstants.UNKNOWN.getValue(), KEYS);
 	private static final KeyMapping OPEN_JOURNAL = new KeyMapping("key.extremedimensions.journal", InputConstants.UNKNOWN.getValue(), KEYS);
 	private static final KeyMapping OPEN_SETTINGS = new KeyMapping("key.extremedimensions.settings", InputConstants.UNKNOWN.getValue(), KEYS);
+	private static final KeyMapping OPEN_TRIALS = new KeyMapping("key.extremedimensions.trials", InputConstants.UNKNOWN.getValue(), KEYS);
 
 	@Override
 	public void onInitializeClient() {
@@ -64,6 +65,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		KeyMappingHelper.registerKeyMapping(OPEN_CURSES);
 		KeyMappingHelper.registerKeyMapping(OPEN_JOURNAL);
 		KeyMappingHelper.registerKeyMapping(OPEN_SETTINGS);
+		KeyMappingHelper.registerKeyMapping(OPEN_TRIALS);
 		// Key mappings only register presses while no screen is open, so these never open over another screen
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			while (OPEN_SETTINGS.consumeClick()) {
@@ -72,6 +74,11 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 			while (OPEN_CURSES.consumeClick()) {
 				if (client.getConnection() != null) {
 					ClientPlayNetworking.send(new ModPackets.RequestCursesPayload(true));
+				}
+			}
+			while (OPEN_TRIALS.consumeClick()) {
+				if (client.getConnection() != null) {
+					com.extremedimensions.client.screen.TrialsScreen.request(null);
 				}
 			}
 			while (OPEN_JOURNAL.consumeClick()) {
@@ -133,6 +140,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(
 						new JournalScreen(new HashSet<>(Arrays.asList(payload.ids().split(","))),
 								JournalButton.takeReturn()))));
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.TrialsPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> com.extremedimensions.client.screen.TrialsScreen.receive(payload.data())));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.SettingsPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> ClientState.applySettings(payload)));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenStatusPayload.TYPE, (payload, context) ->

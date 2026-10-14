@@ -65,7 +65,8 @@ public final class SeamService {
 
 	public static final ResourceKey<Level> SEAM = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("extremedimensions", "the_seam"));
 	private static final String SEAM_ID = "extremedimensions:the_seam";
-	private static final int CELL = 100;
+	/** The island grid: one island (or none) per cell of this many blocks. */
+	public static final int CELL = 100;
 	private static final int PULL_TICKS = 60;
 
 	/** A rift torn open in the world, waiting for someone to step in. */
@@ -194,6 +195,8 @@ public final class SeamService {
 				+ (com.extremedimensions.relic.RelicService.has(d, com.extremedimensions.relic.Relic.SEAM_LANTERN) ? Math.max(0, Config.RELIC_SEAM_LANTERN_SECONDS) : 0);
 		d.seamLeft = d.seamMax;
 		d.seamPull = 0;
+		// A Rift Trial taken up at home begins with this visit
+		com.extremedimensions.trial.TrialService.begin(p, d, x, z);
 		d.hasRopeEnd = false;
 		WorldFx.tp(p, SEAM_ID, x + 0.5, top + 1, z + 0.5);
 		WorldFx.sound(p, "extremedimensions:rift_open", 1.0f, 0.8f);
@@ -226,12 +229,14 @@ public final class SeamService {
 			if (!inSeam(p)) {
 				// Left the Seam some other way (a command, a death): the thread is cut
 				d.inSeam = false;
+				com.extremedimensions.trial.TrialService.fail(p, d);
 				TetherService.clear(p, d, false);
 				continue;
 			}
 			tickPlayer(p, d, s.getTickCount());
 			if (slow) {
 				build(p);
+				com.extremedimensions.trial.TrialService.tick(p, d);
 				Sync.state(p, d);
 			}
 		}
@@ -254,7 +259,7 @@ public final class SeamService {
 					d.riftZ + Math.sin(a) * 0.5, 0, 0, 0, 0, 1);
 			WorldFx.particleIn(dim, "minecraft:reverse_portal", d.riftX, d.riftY + 1, d.riftZ, 0.15, 0.5, 0.15, 0.04, 2);
 		}
-		if (tick % 200 == 0) {
+		if (tick % (com.extremedimensions.trial.TrialService.restless(d) ? 100 : 200) == 0) {
 			drift(d);
 		}
 		if (tick % 160 == 0) {
@@ -285,6 +290,7 @@ public final class SeamService {
 
 	private static void exit(ServerPlayer p, PlayerData d) {
 		d.inSeam = false;
+		com.extremedimensions.trial.TrialService.finish(p, d);
 		TetherService.clear(p, d, false);
 		WorldFx.tp(p, Dims.fullIdOf(d.homeDim), d.homeX, d.homeY, d.homeZ);
 		WorldFx.fx(p, Fx.SAFE, 0);
@@ -309,6 +315,7 @@ public final class SeamService {
 		}
 		d.inSeam = false;
 		d.collapses++;
+		com.extremedimensions.trial.TrialService.fail(p, d);
 		TetherService.clear(p, d, false);
 		p.removeEffect(MobEffects.LEVITATION);
 		WorldFx.tp(p, Dims.fullIdOf(d.homeDim), d.homeX, d.homeY, d.homeZ);
@@ -734,6 +741,8 @@ public final class SeamService {
 		Item[] old = {Items.ECHO_SHARD, Items.AMETHYST_SHARD, Items.BONE, Items.STRING, Items.SOUL_TORCH, Items.CANDLE};
 		c.setItem(slot, new ItemStack(old[rnd.nextInt(old.length)], 1 + rnd.nextInt(3)));
 		c.setChanged();
+		// a fresh barrel: the plundering trial counts it once, whoever opens it first
+		com.extremedimensions.trial.TrialService.stocked(b);
 	}
 
 	/** Operator command: straight into the Seam, as if through a rift at the player's feet. */

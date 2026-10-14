@@ -215,7 +215,8 @@ public final class SeamFauna {
 	/** A visitor's thread runs thin: under a third of their time, or already being pulled out. */
 	private static boolean thin(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
-		return d.inSeam && !p.isCreative() && (d.seamPull > 0 || (d.seamMax > 0 && d.seamLeft < d.seamMax / 3));
+		return d.inSeam && !p.isCreative() && (d.seamPull > 0 || (d.seamMax > 0 && d.seamLeft < d.seamMax / 3)
+				|| com.extremedimensions.trial.TrialService.hunted(d));
 	}
 
 	/** True when any player close by is looking at it. */

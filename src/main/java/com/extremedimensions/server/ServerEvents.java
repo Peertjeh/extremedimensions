@@ -130,6 +130,9 @@ public final class ServerEvents {
 				LurkerService.onDeath(l, source.getEntity());
 			} else if (entity instanceof com.extremedimensions.seam.VeilRay || entity instanceof com.extremedimensions.seam.Thinned) {
 				com.extremedimensions.seam.SeamFauna.onDeath(entity);
+				if (source.getEntity() instanceof ServerPlayer killer) {
+					com.extremedimensions.trial.TrialService.progress(killer, com.extremedimensions.trial.Trial.Kind.HUNT, 1);
+				}
 			} else if (source.getEntity() instanceof ServerPlayer killer) {
 				ExpeditionService.onMobKilled(killer, entity);
 			}
@@ -156,6 +159,7 @@ public final class ServerEvents {
 				if (h != null) {
 					HollowService.onHoardOpened(sp, h);
 				}
+				com.extremedimensions.trial.TrialService.plundered(sp, level, hit.getBlockPos());
 			}
 			if (hand != InteractionHand.MAIN_HAND || !AnchorService.isAnchorBlock(level.getBlockState(hit.getBlockPos()))) {
 				return InteractionResult.PASS;
@@ -200,9 +204,13 @@ public final class ServerEvents {
 			}
 			if (state.is(ModBlocks.SEAM_VEIN) && player instanceof ServerPlayer sp) {
 				Journal.unlock(sp, DataStore.get(sp.getUUID()), JournalEntry.LOOM);
+				com.extremedimensions.trial.TrialService.progress(sp, com.extremedimensions.trial.Trial.Kind.VEINS, 1);
 			}
 			if (state.is(Blocks.BARREL)) {
 				HollowService.onBroken(level, pos, player instanceof ServerPlayer sp ? sp : null);
+				if (player instanceof ServerPlayer sp) {
+					com.extremedimensions.trial.TrialService.plundered(sp, level, pos);
+				}
 			}
 		});
 

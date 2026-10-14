@@ -32,6 +32,8 @@ public final class ClientState {
 	public static int scars = 0;
 	/** -1 = not bound, else blocks to the arrival portal (beyond) or the anchor (Overworld). */
 	public static int tetherDist = -1;
+	/** The Rift Trial under way: "kind;twist;score;bronze;silver;gold", or "" without one. */
+	public static String trial = "";
 	public static long syncMs = 0;
 
 	// --- animation state ---
@@ -108,6 +110,7 @@ public final class ClientState {
 		scars = s.scars();
 		tetherDist = s.tetherDist();
 		guide = s.guide();
+		trial = s.trial();
 		syncMs = System.currentTimeMillis();
 		// First update from the Overworld after a Collapse: start the fade-in
 		if (collapseAt > 0 && homeAt <= collapseAt && dimCode == 0 && syncMs - collapseAt > 2000) {
@@ -225,6 +228,7 @@ public final class ClientState {
 		}
 		scars = 0;
 		tetherDist = -1;
+		trial = "";
 		shownNether = 0;
 		shownEnd = 0;
 		startAt = safeAt = collapseAt = bounceAt = penaltyAt = endedAt = homeAt = takenAt = sealAt = stormAt = 0;

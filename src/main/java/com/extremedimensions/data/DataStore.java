@@ -45,6 +45,8 @@ public final class DataStore {
 		/** "" until the Starved One falls; then "mended" or "severed". */
 		String ending = "";
 		boolean heartBuilt = false;
+		/** The Rift Trials scoreboard. */
+		com.extremedimensions.trial.TrialBoard trials = new com.extremedimensions.trial.TrialBoard();
 	}
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -77,6 +79,15 @@ public final class DataStore {
 		data.heartBuilt = loaded.heartBuilt;
 		if (loaded.seamCells != null) {
 			data.seamCells = loaded.seamCells;
+		}
+		if (loaded.trials != null) {
+			data.trials = loaded.trials;
+			if (data.trials.scores == null) {
+				data.trials.scores = new HashMap<>();
+			}
+			if (data.trials.lastTop == null) {
+				data.trials.lastTop = new ArrayList<>();
+			}
 		}
 	}
 
@@ -175,6 +186,10 @@ public final class DataStore {
 	public static void setSealBroken(boolean broken) {
 		data.sealBroken = broken;
 		markDirty();
+	}
+
+	public static com.extremedimensions.trial.TrialBoard trials() {
+		return data.trials;
 	}
 
 	public static String ending() {

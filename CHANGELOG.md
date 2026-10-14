@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.10.0: Rift Trials
+
+*The Seam keeps score.*
+
+### Added
+- **Rift Trials**: every week the Seam asks one thing of a visit, with a twist that makes it harder. Take the trial
+  up in the Trials screen (the rift beside the pact brand in the Curses screen, or a key you bind), then step through
+  a rift with a Seam Needle. Only a safe return through the rift counts; a Collapse or a death loses the run.
+  - Five trials, one a week in turn: **Vein-cutter** (break Seam Veins), **Hunter** (slay Veil Rays and Thinned),
+    **Wanderer** (set foot on islands), **Far-walker** (get as far from your arrival as you can) and **Plunderer**
+    (open Seam barrels nobody has opened before; each barrel counts once, ever).
+  - Five twists: Still Seam (none), Short Thread (a quarter less time), Thin Hours (the Thinned hunt you from the
+    start), Restless Rift (the way home drifts twice as often) and Heavy Silk (slowness for the whole visit).
+  - **Medals**: bronze, silver and gold, each paying once a week: atonement and Tether Fragments, and a relic for gold.
+    A trial can be run again as often as you like to climb the board, but a medal never pays twice in a week.
+  - **The world's scoreboard**: every player's best run this week (ties go to whoever came back with more time to
+    spare), and the best three of the last trial.
+  - The trial under way shows under the Seam timer: its name, the score against the next medal and three medal pips.
+- The trial changes every Monday (UTC), the same for every world. Every threshold, reward and the length of a trial
+  are world rules (Settings → World rules → Rift Trials), as is when trials open (from the start by default).
+
 ## 2.9.0: Pacts
 
 *Ask the wounds for more, and they will give it. For a price you name yourself.*

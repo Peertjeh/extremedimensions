@@ -24,6 +24,11 @@ public class PlayerData {
 	public Map<String, Integer> curses = new HashMap<>();
 	/** The sworn pact: extra stacks of curses taken on willingly, acting on expeditions (see PactService). */
 	public Map<String, Integer> pact = new HashMap<>();
+	/** Rift Trials: taken up for the next visit to the Seam, the one under way, and the medals already paid this week. */
+	public boolean trialArmed = false;
+	public com.extremedimensions.trial.TrialRun trial = null;
+	public int trialClaimWeek = Integer.MIN_VALUE;
+	public int trialClaimMedal = 0;
 	/** Curse id -> atonement points gathered towards taking its next stack off. */
 	public Map<String, Integer> atonement = new HashMap<>();
 	/** The curse the player chose to atone for (and to mend first); null = the heaviest one. */

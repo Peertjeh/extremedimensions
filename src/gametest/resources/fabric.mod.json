@@ -11,6 +11,7 @@
 			"com.extremedimensions.gametest.SettingsTests",
 			"com.extremedimensions.gametest.RelicTests",
 			"com.extremedimensions.gametest.PactTests",
+			"com.extremedimensions.gametest.TrialTests",
 			"com.extremedimensions.gametest.WorldTests",
 			"com.extremedimensions.gametest.PerfTests"
 		],

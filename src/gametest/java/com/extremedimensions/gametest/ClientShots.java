@@ -278,6 +278,42 @@ public class ClientShots implements FabricClientGameTest {
 				ctx.waitTicks(5);
 				ctx.takeScreenshot("06_tribe_" + i);
 			}
+
+			// Rift Trials: the screen (asked for as the button does) with a board, then taken up
+			sp.getServer().runOnServer(s -> {
+				com.extremedimensions.trial.TrialService.roll();
+				com.extremedimensions.trial.TrialBoard board = DataStore.trials();
+				int[] need = com.extremedimensions.trial.TrialService.kind(com.extremedimensions.trial.TrialService.week()).thresholds();
+				board.scores.put(UUID.randomUUID().toString(), new com.extremedimensions.trial.TrialBoard.Entry("Steve", need[2] + 2, 41, 3));
+				board.scores.put(UUID.randomUUID().toString(), new com.extremedimensions.trial.TrialBoard.Entry("Alex", need[1], 12, 2));
+				board.scores.put(UUID.randomUUID().toString(), new com.extremedimensions.trial.TrialBoard.Entry("Noor", need[0], 88, 1));
+				board.lastKind = "hunt";
+				board.lastTop = new ArrayList<>(List.of(new com.extremedimensions.trial.TrialBoard.Entry("Alex", 11, 30, 3),
+						new com.extremedimensions.trial.TrialBoard.Entry("Steve", 6, 2, 2)));
+			});
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			ctx.runOnClient(mc -> com.extremedimensions.client.screen.TrialsScreen.request(null));
+			ctx.waitTicks(10);
+			ctx.runOnClient(mc -> {
+				check(com.extremedimensions.client.screen.TrialsScreen.shown() != null, "the Trials screen did not open");
+				press(com.extremedimensions.client.screen.TrialsScreen.shown(), net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.trial.take_up"));
+			});
+			ctx.waitTicks(10);
+			check(sp.getServer().computeOnServer(s -> DataStore.get(player(s).getUUID()).trialArmed), "taking the trial up did not reach the server");
+			ctx.takeScreenshot("09_trials");
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+
+			// Into the Seam with the trial taken up: it begins, and the timer carries its line
+			sp.getServer().runCommand("execute as @a run tether seam");
+			ctx.waitTicks(20);
+			sp.getServer().runOnServer(s -> {
+				PlayerData d = DataStore.get(player(s).getUUID());
+				check(d.inSeam && d.trial != null, "the trial did not begin with the visit to the Seam");
+				d.trial.score = com.extremedimensions.trial.Trial.Kind.byId(d.trial.kind).thresholds()[0];
+			});
+			sp.getConnection().waitForChunksRender();
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("09_trial_hud");
 		}
 	}
 }

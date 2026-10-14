@@ -18,10 +18,11 @@ public final class ModPackets {
 	 * scars: curse stacks taken off (each one lightens the drain).
 	 * tetherDist: -1 = not bound, else blocks to the arrival portal (beyond) or to the anchor (Overworld).
 	 * guide: steps of the first-expedition guide done (Guide.STEPS = finished).
+	 * trial: the Rift Trial under way in the Seam, "kind;twist;score;bronze;silver;gold" (empty without one).
 	 */
 	public record StatePayload(int nearNether, int nearEnd, int runCharge, int runMax, int dimCode, int drainX100,
 							int expeditions, int collapses, int longestRun, int runSecs, String penalties,
-							int scars, int tetherDist, int guide) implements CustomPacketPayload {
+							int scars, int tetherDist, int guide, String trial) implements CustomPacketPayload {
 		public static final Type<StatePayload> TYPE = new Type<>(ExtremeDimensions.id("state"));
 		public static final StreamCodec<FriendlyByteBuf, StatePayload> CODEC = StreamCodec.ofMember(StatePayload::write, StatePayload::read);
 
@@ -40,12 +41,13 @@ public final class ModPackets {
 			buf.writeVarInt(scars);
 			buf.writeVarInt(tetherDist);
 			buf.writeVarInt(guide);
+			buf.writeUtf(trial);
 		}
 
 		private static StatePayload read(FriendlyByteBuf buf) {
 			return new StatePayload(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
 					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(),
-					buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf());
 		}
 
 		@Override
@@ -317,6 +319,63 @@ public final class ModPackets {
 
 		private static SwearPactPayload read(FriendlyByteBuf buf) {
 			return new SwearPactPayload(buf.readUtf());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Server -> client: the Trials screen's data (see TrialService.data); opens the screen or refreshes it. */
+	public record TrialsPayload(String data) implements CustomPacketPayload {
+		public static final Type<TrialsPayload> TYPE = new Type<>(ExtremeDimensions.id("trials"));
+		public static final StreamCodec<FriendlyByteBuf, TrialsPayload> CODEC = StreamCodec.ofMember(TrialsPayload::write, TrialsPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(data);
+		}
+
+		private static TrialsPayload read(FriendlyByteBuf buf) {
+			return new TrialsPayload(buf.readUtf());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: send the Trials screen's data. */
+	public record RequestTrialsPayload(boolean open) implements CustomPacketPayload {
+		public static final Type<RequestTrialsPayload> TYPE = new Type<>(ExtremeDimensions.id("request_trials"));
+		public static final StreamCodec<FriendlyByteBuf, RequestTrialsPayload> CODEC = StreamCodec.ofMember(RequestTrialsPayload::write, RequestTrialsPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeBoolean(open);
+		}
+
+		private static RequestTrialsPayload read(FriendlyByteBuf buf) {
+			return new RequestTrialsPayload(buf.readBoolean());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: take up the week's trial for the next visit to the Seam (or let it go). */
+	public record ArmTrialPayload(boolean arm) implements CustomPacketPayload {
+		public static final Type<ArmTrialPayload> TYPE = new Type<>(ExtremeDimensions.id("arm_trial"));
+		public static final StreamCodec<FriendlyByteBuf, ArmTrialPayload> CODEC = StreamCodec.ofMember(ArmTrialPayload::write, ArmTrialPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeBoolean(arm);
+		}
+
+		private static ArmTrialPayload read(FriendlyByteBuf buf) {
+			return new ArmTrialPayload(buf.readBoolean());
 		}
 
 		@Override
