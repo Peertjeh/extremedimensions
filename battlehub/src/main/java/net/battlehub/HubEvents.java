@@ -219,6 +219,10 @@ public final class HubEvents {
 		if (Sessions.state(p.getUUID()) == Sessions.State.MATCH) {
 			Match m = Matches.of(p.getUUID());
 			if (m != null) {
+				if (m.totemSaves(p, source)) {
+					// Vanilla uses the totem of undying (it comes after this event)
+					return true;
+				}
 				m.handleDeath(p, source);
 				return false;
 			}

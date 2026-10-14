@@ -71,7 +71,10 @@ final class PartyTests {
 			for (String n : NAMES) SelfTest.join(server, n);
 		});
 		s.pause(10);
-		s.run(tag + ": remember wins", () -> VARS.put("winsA", PlayerStore.get(p("BHTestA").getUUID()).peek(mode).wins));
+		s.run(tag + ": remember wins", () -> {
+			VARS.put("winsA", PlayerStore.get(p("BHTestA").getUUID()).peek(mode).wins);
+			VARS.put("coinsA", PlayerStore.get(p("BHTestA").getUUID()).coins);
+		});
 		s.run(tag + ": everyone joins the lobby", () -> {
 			for (int i = 0; i < NAMES.length; i++) Parties.join(p(NAMES[i]), mode, votes[i]);
 		});
@@ -273,6 +276,7 @@ final class PartyTests {
 		});
 		s.waitFor("parkour: race over", 40, () -> match().phase() != Match.Phase.RUNNING);
 		expectWinner(s, GameMode.PARKOUR, "BHTestA");
+		s.check("parkour: a hard course pays coins", () -> PlayerStore.get(p("BHTestA").getUUID()).coins > (long) VARS.get("coinsA"));
 	}
 
 	/** Parkour alone: the race starts with one player, finishing counts as a win and a record on that difficulty. */
@@ -281,6 +285,8 @@ final class PartyTests {
 		SelfTest.reset(s, tag);
 		s.run(tag + ": A joins alone, voting easy", () -> {
 			SelfTest.join(server, "BHTestA");
+			VARS.put("coinsA", PlayerStore.get(p("BHTestA").getUUID()).coins);
+			VARS.put("xpA", PlayerStore.get(p("BHTestA").getUUID()).xp);
 			Parties.join(p("BHTestA"), GameMode.PARKOUR, "easy");
 		});
 		s.waitFor(tag + ": the race starts with one player", 300, () -> {
@@ -297,6 +303,18 @@ final class PartyTests {
 		s.waitFor(tag + ": finished, counted as a win", 100, () -> match().phase() != Match.Phase.RUNNING
 				&& match().outcome(p("BHTestA").getUUID()) == Outcome.WIN
 				&& PlayerStore.get(p("BHTestA").getUUID()).bestTimes.containsKey("parkour_easy"));
+		s.check(tag + ": XP but no coins for an easy course", () -> {
+			net.battlehub.core.PlayerProfile prof = PlayerStore.get(p("BHTestA").getUUID());
+			// Only a level-up bonus may add coins
+			var lv = ConfigManager.config().levels;
+			int before = net.battlehub.progression.Ranks.curve().levelFor((long) VARS.get("xpA"));
+			int after = net.battlehub.progression.Ranks.curve().levelFor(prof.xp);
+			long bonus = 0;
+			for (int l = before + 1; l <= after; l++) {
+				if (lv.bonusEvery > 0 && l % lv.bonusEvery == 0) bonus += lv.bonusCoins;
+			}
+			return prof.xp > (long) VARS.get("xpA") && prof.coins == (long) VARS.get("coinsA") + bonus;
+		});
 		s.waitFor(tag + ": back in the lobby", 200, () -> match().phase() == Match.Phase.CLOSED);
 	}
 

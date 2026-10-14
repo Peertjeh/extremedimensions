@@ -65,6 +65,18 @@ public final class ParkourMatch extends PartyMatch {
 		return 1;
 	}
 
+	/** Coins only for the harder courses (settings coinsEasy, coinsMedium, ...: share of the reward, 0 = none). */
+	@Override
+	public double coinFactor() {
+		double fallback = difficulty == Difficulty.EASY || difficulty == Difficulty.MEDIUM ? 0 : 1;
+		return Math.max(0, game().setting("coins" + cap(difficulty), fallback));
+	}
+
+	@Override
+	public String noCoinsKey() {
+		return "parkour.no_coins";
+	}
+
 	/** Longer courses get more time: easy x0.75, medium x1, hard x1.4, extreme x1.8 of the configured limit. */
 	@Override
 	protected int timeLimitTicks() {

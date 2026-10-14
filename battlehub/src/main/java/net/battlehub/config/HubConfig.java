@@ -197,7 +197,7 @@ public final class HubConfig {
 		Map<String, Game> m = new LinkedHashMap<>();
 		m.put("sword", new Game(2, 2, 600, "sword"));
 		m.put("axe", new Game(2, 2, 600, "axe"));
-		m.put("mace", new Game(2, 2, 600, "mace"));
+		m.put("mace", new Game(2, 2, 600, "mace").with("arenaScale", 1.8));
 		m.put("bow", new Game(2, 2, 600, "bow"));
 		m.put("crossbow", new Game(2, 2, 600, "crossbow"));
 		m.put("bow_spleef", new Game(2, 12, 300, "bow_spleef"));
@@ -206,7 +206,8 @@ public final class HubConfig {
 		m.put("koth", new Game(2, 12, 300, "koth").with("targetPoints", 90).with("pointsPerSecond", 1));
 		m.put("ctf", new Game(2, 16, 600, "ctf").with("capturesToWin", 3).with("flagReturnSeconds", 30));
 		m.put("parkour", new Game(1, 16, 480, "parkour").with("jumpsEasy", 30).with("jumpsMedium", 50).with("jumpsHard", 70)
-				.with("jumpsExtreme", 90).with("countdownSeconds", 15));
+				.with("jumpsExtreme", 90).with("countdownSeconds", 15)
+				.with("coinsEasy", 0).with("coinsMedium", 0).with("coinsHard", 1).with("coinsExtreme", 1));
 		m.put("lms", new Game(2, 16, 420, "lms").with("borderStart", 80).with("borderEnd", 8)
 				.with("borderDelaySeconds", 45).with("borderShrinkSeconds", 180).with("borderDamagePerSecond", 2));
 		return m;

@@ -14,7 +14,17 @@ public final class ArenaGen {
 	private ArenaGen() {}
 
 	public static Blueprint duel(Theme t, RandomSource rnd, boolean ranged) {
-		return t.open() ? islands(t, rnd, ranged) : walled(t, rnd, ranged);
+		return duel(t, rnd, ranged, 1.0, 1);
+	}
+
+	/**
+	 * {@code scale}: size factor (mace and team fights get more room); {@code perSide}: players per side, who
+	 * start next to each other in rows of up to four.
+	 */
+	public static Blueprint duel(Theme t, RandomSource rnd, boolean ranged, double scale, int perSide) {
+		double s = Math.max(0.5, Math.min(3.0, scale));
+		int n = Math.max(1, Math.min(8, perSide));
+		return t.open() ? islands(t, rnd, ranged, s, n) : walled(t, rnd, ranged, s, n);
 	}
 
 	/** Spawn column on the west side; the other spawn is its mirror image. */
@@ -22,53 +32,80 @@ public final class ArenaGen {
 		return -(f.r - 4);
 	}
 
-	private static void spawns(Blueprint bp, Field f) {
-		int sx = spawnX(f);
-		bp.spawn(sx + 0.5, f.height(sx, 0) + 1, 0.5, -90);
-		bp.spawn(-sx + 0.5, f.height(-sx, 0) + 1, 0.5, 90);
+	private static int rows(int perSide) {
+		return (perSide + 3) / 4;
 	}
 
-	private static Blueprint walled(Theme t, RandomSource rnd, boolean ranged) {
+	/** Keeps the ground around the spawns flat and free. */
+	private static void clearSpawns(Field f, int perSide) {
+		int rows = rows(perSide);
+		f.keepClear(spawnX(f) + (rows - 1), 0, 2 + rows + (perSide > 1 ? 1 : 0));
+	}
+
+	/** West side first (spawns 0 .. n-1), then the east side in the same order (mirrored through the centre). */
+	private static void spawns(Blueprint bp, Field f, int perSide) {
+		int sx = spawnX(f);
+		int[][] west = new int[perSide][];
+		for (int i = 0; i < perSide; i++) {
+			int row = i / 4;
+			int inRow = Math.min(4, perSide - row * 4);
+			west[i] = new int[] {sx + 2 * row, perSide == 1 ? 0 : -(inRow - 1) + 2 * (i % 4)};
+		}
+		for (int[] w : west) {
+			bp.spawn(w[0] + 0.5, f.height(w[0], w[1]) + 1, w[1] + 0.5, -90);
+		}
+		for (int[] w : west) {
+			bp.spawn(-w[0] + 0.5, f.height(-w[0], -w[1]) + 1, -w[1] + 0.5, 90);
+		}
+	}
+
+	private static int scaled(int value, double factor) {
+		return Math.max(1, (int) Math.round(value * factor));
+	}
+
+	private static Blueprint walled(Theme t, RandomSource rnd, boolean ranged, double s, int perSide) {
 		Blueprint bp = new Blueprint();
 		Shape shape = Shape.random(rnd);
-		int r = 15 + rnd.nextInt(7);
+		int r = scaled(15 + rnd.nextInt(7), s);
 		Field f = new Field(r, shape, Symmetry.POINT);
-		f.keepClear(spawnX(f), 0, 3);
+		clearSpawns(f, perSide);
 		center(bp, f, t, rnd);
-		f.hills(rnd, 2 + rnd.nextInt(4), rnd.nextInt(3) == 0 ? 1 : 2);
-		Features.scatter(bp, f, t, rnd, ranged ? 5 + rnd.nextInt(4) : 3 + rnd.nextInt(3), Features.kinds(t, ranged));
+		f.hills(rnd, scaled(2 + rnd.nextInt(4), s), rnd.nextInt(3) == 0 ? 1 : 2);
+		int features = ranged ? 5 + rnd.nextInt(4) : 3 + rnd.nextInt(3);
+		Features.scatter(bp, f, t, rnd, scaled(features, s * s), Features.kinds(t, ranged));
 		f.build(bp, t, rnd, 6);
 		f.walls(bp, t, rnd, 4);
 		Features.plants(bp, f, t, rnd, 7);
 		Scenery.around(bp, t, rnd, r + 4, r + 12, 0);
-		spawns(bp, f);
-		bp.spectator(0.5, f.maxHeight() + 15, -(r + 8) + 0.5, 0, 35);
+		spawns(bp, f, perSide);
+		bp.spectator(0.5, f.maxHeight() + scaled(15, s), -(r + 8) + 0.5, 0, 35);
 		bp.voidY(-12);
 		bp.radius(r + 24);
 		return bp;
 	}
 
 	/** Open themes: a main island and smaller islands at different heights (room for mace and wind charges). */
-	private static Blueprint islands(Theme t, RandomSource rnd, boolean ranged) {
+	private static Blueprint islands(Theme t, RandomSource rnd, boolean ranged, double s, int perSide) {
 		Blueprint bp = new Blueprint();
 		Shape shape = Shape.roundish(rnd);
-		int r = 13 + rnd.nextInt(5);
+		int r = scaled(13 + rnd.nextInt(5), s);
 		Field f = new Field(r, shape, Symmetry.POINT);
-		f.keepClear(spawnX(f), 0, 3);
+		clearSpawns(f, perSide);
 		center(bp, f, t, rnd);
-		f.hills(rnd, 2 + rnd.nextInt(3), 1);
-		Features.scatter(bp, f, t, rnd, ranged ? 4 + rnd.nextInt(3) : 2 + rnd.nextInt(3), Features.kinds(t, ranged));
+		f.hills(rnd, scaled(2 + rnd.nextInt(3), s), 1);
+		int features = ranged ? 4 + rnd.nextInt(3) : 2 + rnd.nextInt(3);
+		Features.scatter(bp, f, t, rnd, scaled(features, s * s), Features.kinds(t, ranged));
 		f.build(bp, t, rnd, 8);
 		Features.plants(bp, f, t, rnd, 8);
 		// Satellite islands on one side and their mirror images
-		int count = 2 + rnd.nextInt(3);
+		int count = scaled(2 + rnd.nextInt(3), s);
 		for (int i = 0; i < count; i++) {
 			double a = Math.PI / 2 + rnd.nextDouble() * Math.PI;
-			double dist = r + 6 + rnd.nextInt(6);
+			double dist = r + scaled(6, s) + rnd.nextInt(scaled(6, s));
 			int x = (int) Math.round(Math.cos(a) * dist);
 			int z = (int) Math.round(Math.sin(a) * dist);
-			int y = 4 + rnd.nextInt(12);
-			double ir = 3 + rnd.nextDouble() * 2.5;
+			int y = 4 + rnd.nextInt(scaled(12, s));
+			double ir = (3 + rnd.nextDouble() * 2.5) * Math.sqrt(s);
 			Blueprint isl = new Blueprint();
 			Build.island(isl, 0, 0, 0, ir, 4, () -> t.floor(rnd), t.under(), t.rough(), rnd);
 			if (t.hasTrees() && rnd.nextBoolean()) {
@@ -78,11 +115,12 @@ public final class ArenaGen {
 			}
 			Features.stamp(bp, isl, Symmetry.POINT, x, y, z);
 		}
-		Scenery.around(bp, t, rnd, r + 14, r + 22, -10);
-		spawns(bp, f);
-		bp.spectator(0.5, 24, -(r + 14) + 0.5, 0, 35);
+		int far = scaled(14, s);
+		Scenery.around(bp, t, rnd, r + far, r + far + 8, -10);
+		spawns(bp, f, perSide);
+		bp.spectator(0.5, scaled(24, s), -(r + far) + 0.5, 0, 35);
 		bp.voidY(-14);
-		bp.radius(r + 30);
+		bp.radius(r + far + scaled(16, s));
 		return bp;
 	}
 

@@ -28,11 +28,13 @@ import net.battlehub.lobby.HubItems;
 import net.battlehub.progression.Cosmetics;
 import net.battlehub.session.Sessions;
 import net.battlehub.util.Msg;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -169,6 +171,16 @@ public abstract class Match {
 	/** Time limit reached; default: draw. */
 	protected void onTimeUp() {
 		finish(List.of());
+	}
+
+	/** Share of the coin reward paid out (1 = all); XP is not affected. */
+	public double coinFactor() {
+		return 1.0;
+	}
+
+	/** Lang key of the line that explains why no coins were paid, or null. */
+	public String noCoinsKey() {
+		return null;
 	}
 
 	/** Lang key of a short status line for the Spectate menu. */
@@ -434,7 +446,18 @@ public abstract class Match {
 		return damageAllowed(victim, source, attacker);
 	}
 
-	/** From ALLOW_DEATH: the death is always cancelled; the match decides what happens instead. */
+	/**
+	 * A totem of undying (or any item that protects from death) in a hand saves a player who is in play, as in
+	 * vanilla; not against damage that ignores invulnerability (the void).
+	 */
+	public boolean totemSaves(ServerPlayer victim, DamageSource source) {
+		if (phase != Phase.RUNNING || !active(victim.getUUID()) || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+			return false;
+		}
+		return victim.getMainHandItem().has(DataComponents.DEATH_PROTECTION) || victim.getOffhandItem().has(DataComponents.DEATH_PROTECTION);
+	}
+
+	/** From ALLOW_DEATH: the death is cancelled (unless a totem saves the player); the match decides what happens instead. */
 	public void handleDeath(ServerPlayer victim, DamageSource source) {
 		victim.setHealth(victim.getMaxHealth());
 		victim.clearFire();

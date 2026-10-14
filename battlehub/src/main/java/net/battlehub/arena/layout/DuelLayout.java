@@ -20,4 +20,9 @@ public final class DuelLayout {
 	public static Blueprint design(Theme theme, RandomSource rnd, boolean ranged) {
 		return ArenaGen.duel(theme, rnd, ranged);
 	}
+
+	/** {@code scale}: size factor (mace arenas are bigger); {@code perSide}: players per team. */
+	public static Blueprint design(Theme theme, RandomSource rnd, boolean ranged, double scale, int perSide) {
+		return ArenaGen.duel(theme, rnd, ranged, scale, perSide);
+	}
 }

@@ -40,7 +40,8 @@ public final class DuelMatch extends Match {
 
 	@Override
 	protected Blueprint design(Theme theme) {
-		return DuelLayout.design(theme, random, mode.isRanged());
+		// Mace (and any duel with an arenaScale setting) gets a bigger arena
+		return DuelLayout.design(theme, random, mode.isRanged(), game().setting("arenaScale", 1.0), 1);
 	}
 
 	public int round() {

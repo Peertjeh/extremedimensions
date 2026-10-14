@@ -22,6 +22,10 @@ final class LayoutTests {
 		Map<String, Function<Theme, Blueprint>> m = new LinkedHashMap<>();
 		m.put("duel", t -> DuelLayout.design(t, rnd, false));
 		m.put("duel_ranged", t -> DuelLayout.design(t, rnd, true));
+		m.put("duel_big", t -> DuelLayout.design(t, rnd, false, 1.8, 1));
+		m.put("team2", t -> DuelLayout.design(t, rnd, false, 1.2, 2));
+		m.put("team4", t -> DuelLayout.design(t, rnd, true, 1.45, 4));
+		m.put("team8", t -> DuelLayout.design(t, rnd, false, 1.8, 8));
 		m.put("bow_spleef", t -> PartyLayouts.spleef(t, rnd));
 		m.put("tnt_run", t -> PartyLayouts.tntRun(t, rnd, 3));
 		m.put("sumo", t -> PartyLayouts.sumo(t, rnd));
@@ -73,6 +77,16 @@ final class LayoutTests {
 		}
 		if (bp.spawns().isEmpty()) {
 			problems.add(where + ": no spawns");
+		}
+		if (layout.startsWith("team")) {
+			int perSide = Integer.parseInt(layout.substring(4));
+			java.util.Set<String> distinct = new java.util.HashSet<>();
+			for (Blueprint.Spawn sp : bp.spawns()) {
+				distinct.add(Mth.floor(sp.x()) + "," + Mth.floor(sp.z()));
+			}
+			if (bp.spawns().size() != 2 * perSide || distinct.size() != 2 * perSide) {
+				problems.add(where + ": " + bp.spawns().size() + " spawns (" + distinct.size() + " different), expected " + 2 * perSide);
+			}
 		}
 		for (Blueprint.Spawn sp : bp.spawns()) {
 			int x = Mth.floor(sp.x());

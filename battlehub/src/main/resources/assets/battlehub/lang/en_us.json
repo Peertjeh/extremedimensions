@@ -352,8 +352,8 @@
 	"parkour.difficulty.hard": "&6&lHard",
 	"parkour.difficulty.extreme": "&c&lExtreme",
 	"parkour.difficulty.random": "&f&lRandom",
-	"parkour.difficulty.easy.lore": "&7A short course on wide platforms:\n&7small gaps and a few ladders.",
-	"parkour.difficulty.medium.lore": "&7Longer, with half blocks,\n&7ladders and wider gaps.",
+	"parkour.difficulty.easy.lore": "&7A short course on wide platforms:\n&7small gaps and a few ladders.\n&8XP only, no coins",
+	"parkour.difficulty.medium.lore": "&7Longer, with half blocks,\n&7ladders and wider gaps.\n&8XP only, no coins",
 	"parkour.difficulty.hard.lore": "&7Long, with tiny platforms,\n&7fence posts, ice and diagonals.",
 	"parkour.difficulty.extreme.lore": "&7The longest course: nearly all\n&7tiny platforms, the widest gaps.",
 	"parkour.difficulty.random.lore": "&7One of the four, picked\n&7when the race starts.",
@@ -394,5 +394,6 @@
 	"cosmetics.selected": "&aYou are now using {0}&a.",
 	"cosmetics.deselected": "&7You turned off {0}&7.",
 	"cosmetics.cleared": "&7Nothing active for {0}&7.",
-	"cosmetics.too_expensive": "&cThat costs {0} coins; you have {1}."
+	"cosmetics.too_expensive": "&cThat costs {0} coins; you have {1}.",
+	"parkour.no_coins": "&8Easy and medium courses give XP but no coins; try hard or extreme."
 }

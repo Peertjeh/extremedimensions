@@ -42,7 +42,8 @@ public final class Results {
 			Outcome o = m.outcome(id);
 			int kills = m.kills(id);
 			StatsRecorder.Result streak = StatsRecorder.record(prof, m.mode, m.ranked, o, kills, m.deaths(id));
-			Rewards.Reward reward = Rewards.compute(settings, o, kills, 1.0);
+			Rewards.Reward full = Rewards.compute(settings, o, kills, 1.0);
+			Rewards.Reward reward = new Rewards.Reward((int) Math.round(full.coins() * Math.max(0, m.coinFactor())), full.xp());
 			Progression.addCoins(prof, reward.coins());
 			Progression.LevelChange lvl = Progression.addXp(prof, reward.xp(), Ranks.curve(), cfg.levels.bonusEvery, cfg.levels.bonusCoins);
 			int[] e = elo.get(id);
@@ -63,6 +64,9 @@ public final class Results {
 			Msg.raw(p, Lang.tr(p, "result.header", Lang.tr(p, Icons.modeKey(m.mode))));
 			Msg.raw(p, Lang.tr(p, "result." + o.name().toLowerCase(java.util.Locale.ROOT)));
 			Msg.raw(p, Lang.tr(p, "result.rewards", reward.coins(), reward.xp(), kills));
+			if (reward.coins() < full.coins() && m.noCoinsKey() != null) {
+				Msg.raw(p, Lang.tr(p, m.noCoinsKey()));
+			}
 			if (e != null) {
 				int diff = e[1] - e[0];
 				Component change = Lang.format((diff >= 0 ? "&a+" : "&c") + diff);

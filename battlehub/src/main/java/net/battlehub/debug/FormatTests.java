@@ -18,6 +18,9 @@ import net.battlehub.session.Sessions;
 import net.battlehub.util.Icon;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 /** Best of 3 duels (rounds, score, one result for the series) and the "play again" offer (queue and rematch). */
 final class FormatTests {
@@ -67,6 +70,13 @@ final class FormatTests {
 				&& match().round() == 2 && match().phase() == Match.Phase.COUNTDOWN && match().alive().size() == 2
 				&& !p("BHTestB").getInventory().getItem(0).isEmpty() && p("BHTestB").getHealth() == p("BHTestB").getMaxHealth());
 		waitRunning(s, tag, 2);
+		s.run(tag + ": A holds a totem of undying and takes a fatal hit", () -> {
+			p("BHTestA").setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.TOTEM_OF_UNDYING));
+			kill("BHTestA", "BHTestB");
+		});
+		s.check(tag + ": the totem saves A, the round goes on", () -> match().round() == 2 && match().phase() == Match.Phase.RUNNING
+				&& match().roundWins(p("BHTestB").getUUID()) == 0 && match().alive().contains(p("BHTestA").getUUID())
+				&& p("BHTestA").getHealth() > 0 && p("BHTestA").getOffhandItem().isEmpty());
 		s.run(tag + ": B wins round 2", () -> kill("BHTestA", "BHTestB"));
 		s.check(tag + ": 1-1, round 3", () -> match().roundWins(p("BHTestB").getUUID()) == 1 && match().round() == 3);
 		waitRunning(s, tag, 3);

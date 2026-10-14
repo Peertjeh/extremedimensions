@@ -352,8 +352,8 @@
 	"parkour.difficulty.hard": "&6&lMoeilijk",
 	"parkour.difficulty.extreme": "&c&lExtreem",
 	"parkour.difficulty.random": "&f&lWillekeurig",
-	"parkour.difficulty.easy.lore": "&7Een kort parcours op brede platforms:\n&7kleine gaten en een paar ladders.",
-	"parkour.difficulty.medium.lore": "&7Langer, met halve blokken,\n&7ladders en grotere gaten.",
+	"parkour.difficulty.easy.lore": "&7Een kort parcours op brede platforms:\n&7kleine gaten en een paar ladders.\n&8Alleen XP, geen coins",
+	"parkour.difficulty.medium.lore": "&7Langer, met halve blokken,\n&7ladders en grotere gaten.\n&8Alleen XP, geen coins",
 	"parkour.difficulty.hard.lore": "&7Lang, met piepkleine platforms,\n&7hekpalen, ijs en schuine sprongen.",
 	"parkour.difficulty.extreme.lore": "&7Het langste parcours: bijna alleen\n&7piepkleine platforms, de grootste gaten.",
 	"parkour.difficulty.random.lore": "&7Een van de vier, gekozen\n&7als de race begint.",
@@ -394,5 +394,6 @@
 	"cosmetics.selected": "&aJe gebruikt nu {0}&a.",
 	"cosmetics.deselected": "&7Je hebt {0} &7uitgezet.",
 	"cosmetics.cleared": "&7Niets actief voor {0}&7.",
-	"cosmetics.too_expensive": "&cDat kost {0} coins; je hebt er {1}."
+	"cosmetics.too_expensive": "&cDat kost {0} coins; je hebt er {1}.",
+	"parkour.no_coins": "&8Easy en medium geven wel XP maar geen coins; probeer hard of extreme."
 }
