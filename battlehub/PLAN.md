@@ -137,3 +137,13 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
   rekent per sprong met halve blokken hoogteverschil en zoekt terug uit doodlopende stukken.
 * **Duel-arena's** zijn puntsymmetrisch (gespiegeld door het midden), zodat elke speler vanuit de eigen spawn
   precies hetzelfde terrein ziet.
+
+## Versie 1.2
+
+| Onderwerp | Keuze |
+|---|---|
+| Totem | De death-event van Fabric komt vóór de totem-check van vanilla; BattleHub annuleerde de dood altijd, dus een totem deed niets. Nu laat de match vanilla zijn gang gaan als de speler een item met doodsbescherming vasthoudt (niet tegen de void). |
+| Mace-arena | Duel-arena's hebben een schaal per modus (`arenaScale`); mace standaard 1,8: groter hoofdeiland, meer en verder weg gelegen eilanden. |
+| Parkour-coins | Een aandeel van de coin-beloning per moeilijkheid; easy en medium 0. XP blijft. |
+| Free for All | Party game met respawns op het spawnpunt het verst van de anderen, 3 seconden spawnbescherming (aanvallen beëindigt die), winst bij het killdoel of de meeste kills. |
+| Toernooi | Party game tot 16 spelers. In de lobby stemmen op teamgrootte (1, 2, 4, 8) en kit (een duel-kit of willekeurig). Willekeurige teams met hoogstens één speler verschil; minder spelers geeft kleinere teams. Knock-out met byes in de eerste ronde, elke wedstrijd best of 3 in de duel-arena van de kit (groter voor grotere teams), wedstrijden van een ronde tegelijk. Tussen de wedstrijden wacht je in de hub en kun je toekijken; /hub of het verlaat-item verlaat het toernooi; een team zonder spelers verliest walkover. Winnaars krijgen coins en een toernooiwinst in hun stats. |

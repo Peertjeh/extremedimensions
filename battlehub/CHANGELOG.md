@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.2.0
+
+### Added
+* **Tournament** (up to 16 players): vote for teams of 1, 2, 4 or 8 and a duel kit (or random); random
+  teams play a knock-out bracket (byes when needed), every match best of 3 rounds, matches of a round side
+  by side. No friendly fire, team names on the nametag, a walkover when a team has nobody left. Champions
+  get 500 coins each, runners-up 150, and a tournament win in their stats.
+* **Free for All**: everyone against everyone with respawns at the spawn farthest from the others and
+  3 seconds of spawn protection; first to 15 kills, or the most kills when time runs out. Its own arena
+  and kit.
+* Duel arenas can be scaled per mode (`arenaScale`).
+
+### Changed
+* Mace arenas are 1.8 times bigger, with more and farther floating islands.
+* Parkour on easy and medium gives XP but no coins (`coinsEasy`, `coinsMedium`, `coinsHard`,
+  `coinsExtreme`: the share of the coin reward).
+
+### Fixed
+* A totem of undying in a kit did nothing in matches: BattleHub cancelled the death before vanilla
+  checked for a totem. It now saves the player as in vanilla (not against the void).
+
 ## 1.1.0
 
 ### Added

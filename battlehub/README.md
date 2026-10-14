@@ -30,7 +30,7 @@ no protection, no changed damage rules there.
 |---|---|
 | ⚔ **Duels** | Sword PvP, Axe PvP, Mace PvP |
 | 🏹 **Ranged** | Bow PvP, Crossbow PvP |
-| 🎮 **Party Games** | Bow Spleef, TNT Run, Sumo, King of the Hill, Capture The Flag, Parkour Race, Last Man Standing |
+| 🎮 **Party Games** | Bow Spleef, TNT Run, Sumo, King of the Hill, Capture The Flag, Parkour Race, Last Man Standing, Free for All, **Tournament** |
 | ✨ **Cosmetics** | Trails, kill effects, arrow trails, win effects and name colours, bought with coins |
 | 🏆 **Ranked** | Duels that change your ELO, from Bronze to Netherite |
 | 👁 **Spectate** | Every running match, live, with a **Join Spectator** button |
@@ -41,7 +41,8 @@ button. In a mode menu you choose **Queue** (random opponent) or **Challenge** (
 
 ### Duels: best of 1 or best of 3
 1v1 with fixed kits (editable): sword with golden apples, axe and shield, mace with wind charges
-(on floating islands), bow with a back-up sword, and crossbow. Five-second countdown, then fight.
+(on extra large floating islands), bow with a back-up sword, and crossbow. Five-second countdown, then
+fight. A totem of undying in a kit works as in vanilla.
 Dying doesn't show a death screen: you're out, and afterwards everyone gets their own inventory,
 health, hunger, game mode and position back.
 
@@ -63,9 +64,21 @@ for 30 seconds. It queues you for the same mode, format and ranked setting, asks
 * **Capture The Flag**: red against blue, three captures to win, respawns after a short delay.
 * **Parkour Race**: a new course every race, with checkpoints and a timer; ranked by finish time.
 * **Last Man Standing**: free-for-all inside a shrinking border.
+* **Free for All**: everyone against everyone with respawns and spawn protection; the first to the kill
+  target (15) wins, or the most kills when time runs out.
 
 Each game has a lobby with a minimum and maximum player count. A countdown starts once the minimum
 is reached, and gets shorter when the lobby is full.
+
+### Tournament (up to 16 players)
+In the tournament lobby you vote for the **team size (1, 2, 4 or 8)** and the **kit** (one of the duel
+kits, or random). When it starts, the players are split into random teams (smaller ones when there are
+fewer players) and play a **knock-out bracket**: semi-finals, final, and so on, with a bye in the first
+round when the number of teams is not a power of two. **Every match is best of 3 rounds** in the kit's
+duel arena, made bigger for bigger teams; a round is won when nobody of the other team is standing. No
+friendly fire. Matches of a round are played side by side; while you wait you can watch the others.
+`/hub` or the leave item leaves the tournament; a team with nobody left loses by walkover. The
+champions get 500 coins each (runners-up 150) and a tournament win in their stats.
 
 ### Parkour: always unique
 Every race is a newly generated course: **30, 50, 70 or 90 jumps** for **easy, medium, hard or
@@ -74,7 +87,7 @@ diagonal jumps and turns. When you join you vote for a difficulty (or random); t
 Every jump is checked while generating against what a player can reach at that difficulty, and parts
 of the course are kept out of each other's reach, so there are no shortcuts. Gold platforms are
 checkpoints. You can also run a course **alone**: finishing counts as a win, and your best time is
-kept per difficulty.
+kept per difficulty. Easy and medium courses give XP but no coins.
 
 ### A new arena for every match
 Arenas are generated per match, in **13 themes**: Forest, Castle, Nether, Ice, Sky, Desert, Jungle,
@@ -160,7 +173,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/battlehub arena list` | admin | Arena themes, which modes use them, slots in use |
 
 Mode ids: `sword`, `axe`, `mace`, `bow`, `crossbow`, `bow_spleef`, `tnt_run`, `sumo`, `koth`, `ctf`,
-`parkour`, `lms`.
+`parkour`, `lms`, `ffa`, `tournament`.
 
 ---
 
@@ -182,7 +195,9 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   * `streaks.milestones`: which win streaks are announced
   * `arenas`: number of slots, slot spacing, floor height, blocks built per tick, **themes per mode**
   * `games`: per mode: on/off, min/max players, time limit, kit, and game settings
-    (TNT Run decay and floors, KOTH target, CTF captures, parkour jumps per difficulty and countdown, LMS border)
+    (duel `arenaScale` (mace 1.8), TNT Run decay and floors, KOTH target, CTF captures, parkour jumps and coins
+    per difficulty and countdown, LMS border, FFA `killsToWin` and spawn protection, tournament
+    `winnerCoins`, `finalistCoins` and `breakSeconds`; the tournament time limit is per round)
 * **`kits.json`**: items per kit with slot (`0`–`35`, `head`, `chest`, `legs`, `feet`, `offhand`),
   count, enchantments, unbreakable, leather colour, plus potion effects
 * **`titles.json`**: titles with display text (`&` colour codes) and requirement:
