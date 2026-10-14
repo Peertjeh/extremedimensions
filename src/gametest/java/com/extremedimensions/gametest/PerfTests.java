@@ -114,7 +114,7 @@ public class PerfTests {
 			}
 			SeamArchitect.clear();
 			report("seam", String.format(java.util.Locale.ROOT,
-					"designed %d structures (%d blocks) in %.1f ms off the server thread; a tick with nothing loaded %.2f ms; "
+					"designed %d structures (%d blocks) in %.1f ms (in the game on its own thread); a tick with nothing loaded %.2f ms; "
 							+ "with chunks loaded %d blocks in %d ticks, %.2f ms a tick on average, worst %.2f ms (budget %d ms)",
 					kinds, queued, designMs, idleMs, built, ticks, total / ticks, worst, budget / 1_000_000));
 			CurseTests.check(helper, idleMs < 50, "building with nothing loaded took %s ms", idleMs);

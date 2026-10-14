@@ -345,85 +345,100 @@ public final class SeamArchitect {
 	/** What is remembered of a queued plan: its cell, light falls and marks (to forget them if the work is dropped). */
 	public record Meta(String cell, List<int[]> falls, List<String> marks) {}
 
+	/** Fresh work, bottom to top. */
 	private static final ArrayDeque<Job> QUEUE = new ArrayDeque<>();
-	/** Jobs whose chunk is not loaded: nobody can see them yet, so they wait instead of loading the chunk. */
-	private static final ArrayDeque<Job> WAITING = new ArrayDeque<>();
+	/** Work in chunks nobody has loaded, by chunk: it is invisible anyway, so it waits instead of loading the chunk. */
+	private static final Map<Long, ArrayDeque<Job>> WAITING = new HashMap<>();
+	/** Work whose chunk has just loaded: done before fresh work. */
+	private static final ArrayDeque<Job> READY = new ArrayDeque<>();
+	/** Actions waiting for the last blocks of their plan. */
+	private static final Map<Integer, List<Job>> HELD = new HashMap<>();
 	private static final Map<Integer, Integer> UNBUILT = new HashMap<>();
 	private static final Map<Integer, Meta> PLANS = new HashMap<>();
 	private static int nextPlan;
+	private static int waiting;
+	private static int held;
 	private static int calls;
 
 	public static void clear() {
 		QUEUE.clear();
 		WAITING.clear();
+		READY.clear();
+		HELD.clear();
 		UNBUILT.clear();
 		PLANS.clear();
+		waiting = 0;
+		held = 0;
 	}
 
 	/** Blocks and actions still to do, waiting ones included. */
 	public static int pending() {
-		return QUEUE.size() + WAITING.size();
-	}
-
-	/** Blocks and actions queued and not yet tried (waiting ones excluded). */
-	public static int queued() {
-		return QUEUE.size();
+		return QUEUE.size() + READY.size() + waiting + held;
 	}
 
 	private static long built;
 
+	private static long chunkOf(long pos) {
+		return ((long) (BlockPos.getX(pos) >> 4) << 32) | ((BlockPos.getZ(pos) >> 4) & 0xFFFFFFFFL);
+	}
+
 	/**
-	 * Builds queued blocks for at most {@code budgetNanos}, bottom to top. A block in a chunk nobody has loaded waits
-	 * (it is invisible anyway) instead of loading the chunk; waiting work is retried now and then.
+	 * Builds for at most {@code budgetNanos}: work in chunks that have just loaded first, then fresh work bottom to
+	 * top. Work in a chunk nobody has loaded waits for it instead of loading it.
 	 */
 	public static void tick(ServerLevel level, long budgetNanos) {
 		long deadline = System.nanoTime() + budgetNanos;
 		boolean had = pending() > 0;
-		int n = 0;
-		if (!WAITING.isEmpty() && ++calls % 20 == 0) {
-			for (int i = WAITING.size(); i > 0; i--) {
-				if ((++n & 31) == 0 && System.nanoTime() > deadline) {
-					break;
-				}
-				Job j = WAITING.poll();
-				if (!run(level, j)) {
-					WAITING.add(j);
+		if (!WAITING.isEmpty() && ++calls % 10 == 0) {
+			for (var it = WAITING.entrySet().iterator(); it.hasNext();) {
+				var e = it.next();
+				long key = e.getKey();
+				if (level.hasChunk((int) (key >> 32), (int) key)) {
+					READY.addAll(e.getValue());
+					waiting -= e.getValue().size();
+					it.remove();
 				}
 			}
 		}
-		while (!QUEUE.isEmpty()) {
+		int n = 0;
+		while (!READY.isEmpty() || !QUEUE.isEmpty()) {
 			if ((++n & 31) == 0 && System.nanoTime() > deadline) {
 				break;
 			}
-			Job j = QUEUE.poll();
-			if (!run(level, j)) {
-				WAITING.add(j);
-			}
+			run(level, READY.isEmpty() ? QUEUE.poll() : READY.poll());
 		}
 		if (had && pending() == 0) {
 			com.extremedimensions.ExtremeDimensions.LOGGER.info("Seam architect: done, {} blocks built so far", built);
 		}
 	}
 
-	/** Does a job if its chunk is loaded (and, for an action, once its plan's blocks all stand). */
-	private static boolean run(ServerLevel level, Job j) {
+	/** Does a job, or parks it: in its chunk's waiting list, or (an action) until its plan's blocks all stand. */
+	private static void run(ServerLevel level, Job j) {
 		BlockPos pos = BlockPos.of(j.pos());
 		if (!level.isLoaded(pos)) {
-			return false;
+			WAITING.computeIfAbsent(chunkOf(j.pos()), k -> new ArrayDeque<>()).add(j);
+			waiting++;
+			return;
 		}
 		if (j.action() != null) {
 			if (UNBUILT.getOrDefault(j.plan(), 0) > 0) {
-				return false;
+				HELD.computeIfAbsent(j.plan(), k -> new ArrayList<>()).add(j);
+				held++;
+			} else {
+				j.action().accept(level);
 			}
-			j.action().accept(level);
-			return true;
+			return;
 		}
 		level.setBlock(pos, j.state(), 2);
 		built++;
 		if (UNBUILT.merge(j.plan(), -1, Integer::sum) <= 0) {
 			UNBUILT.remove(j.plan());
+			List<Job> actions = HELD.remove(j.plan());
+			if (actions != null) {
+				READY.addAll(actions);
+				held -= actions.size();
+			}
 		}
-		return true;
 	}
 
 	/**
@@ -432,28 +447,40 @@ public final class SeamArchitect {
 	 */
 	public static List<Meta> dropFar(List<double[]> near, double range) {
 		java.util.Set<Integer> far = new java.util.HashSet<>();
-		for (Job j : WAITING) {
-			if (far.contains(j.plan())) {
-				continue;
-			}
-			int x = BlockPos.getX(j.pos()), z = BlockPos.getZ(j.pos());
+		for (var e : WAITING.entrySet()) {
+			double x = ((int) (e.getKey() >> 32) << 4) + 8, z = ((int) (long) e.getKey() << 4) + 8;
 			boolean close = false;
 			for (double[] p : near) {
 				double dx = p[0] - x, dz = p[1] - z;
 				close |= dx * dx + dz * dz < range * range;
 			}
 			if (!close) {
-				far.add(j.plan());
+				for (Job j : e.getValue()) {
+					far.add(j.plan());
+				}
 			}
 		}
 		if (far.isEmpty()) {
 			return List.of();
 		}
-		WAITING.removeIf(j -> far.contains(j.plan()));
+		for (var it = WAITING.values().iterator(); it.hasNext();) {
+			ArrayDeque<Job> jobs = it.next();
+			int before = jobs.size();
+			jobs.removeIf(j -> far.contains(j.plan()));
+			waiting -= before - jobs.size();
+			if (jobs.isEmpty()) {
+				it.remove();
+			}
+		}
 		QUEUE.removeIf(j -> far.contains(j.plan()));
+		READY.removeIf(j -> far.contains(j.plan()));
 		List<Meta> dropped = new ArrayList<>();
 		for (int id : far) {
 			UNBUILT.remove(id);
+			List<Job> actions = HELD.remove(id);
+			if (actions != null) {
+				held -= actions.size();
+			}
 			Meta m = PLANS.remove(id);
 			if (m != null) {
 				dropped.add(m);
