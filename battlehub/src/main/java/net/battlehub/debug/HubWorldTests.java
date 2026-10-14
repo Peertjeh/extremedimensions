@@ -88,9 +88,15 @@ final class HubWorldTests {
 		s.check(tag + ": back where S was, with everything", () -> {
 			ServerPlayer pl = p(S);
 			Vec3 was = (Vec3) VARS.get("sPos");
-			return !HubWorld.isBattleHub(pl.level()) && pl.position().distanceTo(was) < 1.0 && diamonds(pl) == 5
+			boolean ok = !HubWorld.isBattleHub(pl.level()) && pl.position().distanceTo(was) < 1.0 && diamonds(pl) == 5
 					&& pl.experienceLevel == 7 && !hasHubItem(pl) && pl.gameMode() == GameType.SURVIVAL
 					&& !Travel.hasSurvivalState(pl.getUUID());
+			if (!ok) {
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST S after /survival: level {} pos {} (was {}) diamonds {} xp {} hubItem {} mode {} saved {}",
+						pl.level().dimension().identifier(), pl.position(), was, diamonds(pl), pl.experienceLevel, hasHubItem(pl),
+						pl.gameMode().getName(), Travel.hasSurvivalState(pl.getUUID()));
+			}
+			return ok;
 		});
 		s.run(tag + ": an admin teleports S into the hub world", () -> {
 			ServerPlayer pl = p(S);
