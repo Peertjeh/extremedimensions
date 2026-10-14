@@ -284,30 +284,43 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("kill @e[type=extremedimensions:hollowling]");
 			sp.getServer().runCommand("kill @e[type=extremedimensions:keeper]");
 			sp.getServer().runCommand("time set noon");
+			// A spectator's free camera (no hand, no hotbar), the guide card put away
+			sp.getServer().runCommand("gamemode spectator @a");
+			ctx.runOnClient(mc -> ClientOptions.setGuidance(false));
 			ctx.waitTicks(30);
-			for (String[] elder : new String[][] {{"matriarch", "30"}, {"ferryman", "32"}, {"weaver", "32"}}) {
+			// name, distance, yaw (the Ferryman a little turned, to show the boat), camera height for the face
+			for (String[] elder : new String[][] {{"matriarch", "22", "180", "9"}, {"ferryman", "24", "220", "8.5"}, {"weaver", "23", "180", "12.5"}}) {
+				int dist = Integer.parseInt(elder[1]);
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
-				sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:" + elder[0] + " ^ ^ ^" + elder[1]
-						+ " {NoAI:1b,Rotation:[" + (elder[0].equals("ferryman") ? "140" : "180") + "f,0f]}");
-				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 -14");
-				ctx.waitTicks(20);
+				sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:" + elder[0] + " ^ ^ ^" + dist
+						+ " {NoAI:1b,Rotation:[" + elder[2] + "f,0f]}");
+				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~6 ~ 0 -3");
+				ctx.waitTicks(15);
 				ctx.takeScreenshot("10_elder_" + elder[0]);
+				// Up close, eye to eye
+				double up = Double.parseDouble(elder[3]);
+				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~" + (up - 6) + " ~" + (dist - 10) + " 0 -4");
+				ctx.waitTicks(12);
+				ctx.takeScreenshot("10_elder_" + elder[0] + "_close");
 				sp.getServer().runCommand("kill @e[type=extremedimensions:" + elder[0] + "]");
-				ctx.waitTicks(25);
+				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~" + (-up) + " ~" + (10 - dist) + " 0 0");
+				ctx.waitTicks(20);
 			}
 			sp.getServer().runCommand("time set midnight");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
 			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:matriarch ^ ^ ^44 {NoAI:1b,Rotation:[180f,0f]}");
 			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:ferryman ^24 ^ ^36 {NoAI:1b,Rotation:[135f,0f]}");
 			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:weaver ^-24 ^ ^36 {NoAI:1b,Rotation:[220f,0f]}");
-			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 -12");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~5 ~ 0 -6");
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("10_elders_night");
 			sp.getServer().runCommand("kill @e[type=extremedimensions:matriarch]");
 			sp.getServer().runCommand("kill @e[type=extremedimensions:ferryman]");
 			sp.getServer().runCommand("kill @e[type=extremedimensions:weaver]");
 			sp.getServer().runCommand("time set noon");
-			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-5 ~ 0 0");
+			sp.getServer().runCommand("gamemode survival @a");
+			ctx.runOnClient(mc -> ClientOptions.setGuidance(true));
 			ctx.waitTicks(25);
 
 			// Rift Trials: the screen (asked for as the button does) with a board, then taken up
