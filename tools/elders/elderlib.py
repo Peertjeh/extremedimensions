@@ -332,16 +332,35 @@ def m_bone(ctx, dark=False):
 
 
 def m_mask(ctx):
+    """Carved, weathered wood: a vertical grain, dark patina in the hollows, splits running with the grain (one in
+    three still lit from inside), and a darker rim where the carving turns the edge."""
     gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
-    base = mix((150, 104, 66), (212, 168, 118), noise(gx * 0.5, gy * 2, s, 3.0))
-    if noise(gx * 0.4, gy * 3, s + 2, 2.0) < 0.18:
-        base = shade(base, 0.72)
+    px, py, fw, fh = ctx["px"], ctx["py"], ctx["fw"], ctx["fh"]
+    grain = noise(gx * 2.6, gy * 0.28, s, 3.0)
+    base = mix((122, 82, 54), (214, 172, 122), grain * 0.8 + noise(gx, gy, s + 3, 1.5) * 0.3)
+    if abs(noise(gx * 1.3, gy * 0.12, s + 9, 2.0) - 0.5) < 0.045:
+        base = shade(base, 0.62)
+    if noise(gx * 0.5, gy * 0.5, s + 2, 4.0) < 0.22:
+        base = mix(base, (74, 46, 34), 0.45)
+    if _h(gx, gy, s + 4) > 0.94:
+        base = shade(base, 1.12)
+    glow = None
+    if ctx["face"] in ("north", "south", "east", "west") and fw >= 6 and fh >= 8:
+        for k in range(2):
+            x = fw * (0.22 + 0.56 * _h(k * 7 + 1, 3, s + 31)) + math.sin(py * 0.7 + k * 3 + s) * 1.3
+            top = int(fh * 0.1 * _h(k, 5, s + 33))
+            bottom = top + int(fh * (0.35 + 0.4 * _h(k, 9, s + 35)))
+            if top <= py <= bottom and abs(px - x) < 0.55:
+                base = (46, 24, 22)
+                if (s + k) % 3 == 0 and 0.2 < (py - top) / max(1, bottom - top) < 0.8:
+                    glow = (200, 100, 255, 190)
+                    base = (96, 40, 128)
     e = _edge(ctx)
     if e == 0:
-        base = shade(base, 0.6)
+        base = shade(base, 0.58)
     elif e == 1:
-        base = shade(base, 0.85)
-    return base + (255,), None
+        base = shade(base, 0.84)
+    return base + (255,), glow
 
 
 def m_ash_mask(ctx):

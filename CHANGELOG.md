@@ -13,7 +13,8 @@
     talons.
   - **The Ferryman** stands in a black boat nineteen blocks long, with a curling prow and a carved skull: hooded,
     eyes burning in the dark of the hood, chains across his robe and arms, a pole taller than he is with two lanterns
-    on its crossbar, a vortex of violet light turning in his raised palm and a great lantern hanging from his wrist.
+    on its crossbar, his other hand raised beside his hood with a vortex of violet light turning before the palm, and
+    a great lantern hanging from his wrist.
   - **The Last Weaver** floats eighteen blocks tall, arms spread twenty blocks wide: a robe rotting into tatters, a
     mask with a cross of light under a crown of thorns, a great halo turning behind its head, and glowing threads
     running from its long fingers in loops and down to hanging lanterns.

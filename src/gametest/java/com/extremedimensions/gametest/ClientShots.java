@@ -285,9 +285,10 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("kill @e[type=extremedimensions:keeper]");
 			sp.getServer().runCommand("time set noon");
 			// A spectator's free camera (no hand, no hotbar), the guide card put away
-			sp.getServer().runCommand("gamemode spectator @a");
+			sp.getServer().runCommand("execute as @a run gamemode spectator @s");
 			ctx.runOnClient(mc -> ClientOptions.setGuidance(false));
-			ctx.waitTicks(30);
+			// (long enough for any line in the chat to fade)
+			ctx.waitTicks(210);
 			// name, distance, yaw (the Ferryman a little turned, to show the boat), camera height for the face
 			for (String[] elder : new String[][] {{"matriarch", "22", "180", "9"}, {"ferryman", "24", "220", "8.5"}, {"weaver", "23", "180", "12.5"}}) {
 				int dist = Integer.parseInt(elder[1]);
@@ -319,7 +320,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("kill @e[type=extremedimensions:weaver]");
 			sp.getServer().runCommand("time set noon");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-5 ~ 0 0");
-			sp.getServer().runCommand("gamemode survival @a");
+			sp.getServer().runCommand("execute as @a run gamemode survival @s");
 			ctx.runOnClient(mc -> ClientOptions.setGuidance(true));
 			ctx.waitTicks(25);
 

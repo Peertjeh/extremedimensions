@@ -1,6 +1,6 @@
 """The Ferryman: a hooded giant in a long black boat. Chains hang across his robe and from his arms; his right hand
-holds a pole taller than he is, two lanterns swinging from its crossbar; his left is raised, a violet vortex turning
-in the palm and a great lantern hanging from the wrist. A skull is carved at the prow."""
+holds a pole taller than he is, two lanterns swinging from its crossbar; his left is raised beside his hood, a violet vortex
+turning before the palm and a great lantern hanging from the wrist. A skull is carved at the prow."""
 import math
 
 from elderlib import Model, catenary
@@ -134,14 +134,14 @@ def build():
     m.rope("polechain_", pole, helix, 0.8, "rust", links=True)
 
     # ---- the left arm, raised, the vortex in its palm
-    arm_l = m.part("arm_l", torso, (13, -23, 0), (-0.55, 0, -1.45), anim=True)
+    arm_l = m.part("arm_l", torso, (13, -23, 0), (-0.3, 0, -1.35), anim=True)
     m.box(arm_l, -4.5, -2, -4.5, 9, 24, 9, "robe")
     for j in range(4):
         m.strand(f"sleeve_l{j}", arm_l, (-4 + j * 2.7, 18, 2), 12 + j * 4, 2.2, "robe_ragged")
-    fo_l = m.part("forearm_l", arm_l, (0, 21, 0), (-0.9, 0, 0.55), anim=True)
+    fo_l = m.part("forearm_l", arm_l, (0, 21, 0), (-0.3, 0, -1.7), anim=True)
     m.box(fo_l, -3.8, 0, -3.8, 7.6, 18, 7.6, "robe")
     m.rope("armchain_l_", fo_l, [[4.2 * math.cos(t * 0.9), 1 + t * 1.3, 4.2 * math.sin(t * 0.9)] for t in range(12)], 0.8, "rust", links=True)
-    ha_l = m.part("hand_l", fo_l, (0, 18, 0), (-0.3, 0, 0), anim=True)
+    ha_l = m.part("hand_l", fo_l, (0, 18, 0), (-0.15, 0, 0), anim=True)
     m.box(ha_l, -4.5, 0, -2, 9, 8, 4, "iron")
     for f in range(4):
         fr = m.part(f"lfing{f}", ha_l, (-3.4 + f * 2.3, 7.5, 0), (0.15, 0, 0.35 - 0.23 * f))

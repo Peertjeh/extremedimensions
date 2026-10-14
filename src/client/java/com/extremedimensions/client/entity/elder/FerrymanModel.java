@@ -10,7 +10,7 @@ import net.minecraft.util.Mth;
 
 /**
  * The Ferryman moving: the boat rocks and rides the swell, he turns in it to face his passenger, his robe and the
- * tatters of his sleeves stir, lanterns swing and the vortex in his palm turns. He raises the pole high and brings it
+ * tatters of his sleeves stir, lanterns swing and the vortex before his raised palm turns. He raises the pole high and brings it
  * down, thrusts his chained hand out, lifts the vortex to loose his soul lanterns, and strikes the boat for the knell.
  */
 public class FerrymanModel extends EntityModel<ElderRenderState> {
@@ -83,9 +83,10 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 			}
 			case Ferryman.CHAIN -> {
 				float e = ElderAnim.env(at, 8, 6, 10);
-				armL.zRot += 0.9F * e;
-				armL.xRot -= 0.7F * e;
-				foreL.xRot += 0.4F * e;
+				// the raised arm straightens and thrusts forward
+				armL.zRot += 0.3F * e;
+				armL.xRot -= 0.9F * e;
+				foreL.zRot += 1.5F * e;
 			}
 			case Ferryman.LANTERN -> {
 				armL.zRot -= 0.35F * lift;
