@@ -3,6 +3,7 @@ on: [pull_request, push, workflow_dispatch]
 
 jobs:
   build:
+    name: build and server tests
     runs-on: ubuntu-24.04
     steps:
       - name: checkout repository
@@ -23,5 +24,34 @@ jobs:
         with:
           name: Artifacts
           path: build/libs/
-      - name: TEMP api probe
-        run: bash .github/probe/api.sh
+      - name: server game tests (headless dedicated server)
+        run: ./gradlew runGameTest --no-configuration-cache
+        timeout-minutes: 15
+
+  client:
+    name: client test and screenshots
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: virtual display
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri mesa-vulkan-drivers libegl1
+      - name: client game test
+        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClientGameTest --no-configuration-cache
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        timeout-minutes: 25
+      - name: capture screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Screenshots
+          path: build/run/clientGameTest/screenshots/
+          if-no-files-found: warn

@@ -56,7 +56,6 @@ public final class ServerEvents {
 			"minecraft:lodestone", "extremedimensions:tether_journal", "extremedimensions:tether",
 			"extremedimensions:ember_tether", "extremedimensions:void_tether", "extremedimensions:mending_cloth"};
 
-	private static int saveTimer = 0;
 	private static int effectTimer = 0;
 
 	public static void register() {
@@ -64,6 +63,8 @@ public final class ServerEvents {
 			WorldFx.bind(s);
 			DataStore.load(s);
 		});
+		// The mod's data is written with the world's own saves (autosave, /save-all, stop), never ahead of them
+		ServerLifecycleEvents.AFTER_SAVE.register((s, flush, force) -> DataStore.flush());
 		ServerLifecycleEvents.SERVER_STOPPING.register(s -> {
 			DataStore.markDirty();
 			DataStore.flush();
@@ -230,10 +231,6 @@ public final class ServerEvents {
 	}
 
 	private static void tick(MinecraftServer s) {
-		if (++saveTimer >= 6000) {
-			saveTimer = 0;
-			DataStore.flush();
-		}
 		boolean slowTick = ++effectTimer >= 100;
 		if (slowTick) {
 			effectTimer = 0;

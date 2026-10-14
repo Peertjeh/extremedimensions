@@ -79,3 +79,15 @@ publishing {
 		// retrieving dependencies.
 	}
 }
+
+// Game tests: server tests on a headless dedicated server (./gradlew runGameTest) and a client test in a real
+// window (./gradlew runClientGameTest). Both run in CI on every push; sources live in src/gametest.
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "extremedimensions-gametest"
+		enableGameTests = true
+		enableClientGameTests = true
+		eula = true
+	}
+}

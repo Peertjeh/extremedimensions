@@ -1,0 +1,19 @@
+{
+	"schemaVersion": 1,
+	"id": "extremedimensions-gametest",
+	"version": "1",
+	"name": "Extreme Dimensions tests",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-gametest": [
+			"com.extremedimensions.gametest.CurseTests",
+			"com.extremedimensions.gametest.WorldTests"
+		],
+		"fabric-client-gametest": [
+			"com.extremedimensions.gametest.ClientShots"
+		]
+	},
+	"depends": {
+		"extremedimensions": "*"
+	}
+}

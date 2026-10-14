@@ -58,23 +58,8 @@ public final class DataStore {
 		data = new WorldData();
 		dirty = false;
 		file = server.getWorldPath(LevelResource.ROOT).resolve(ExtremeDimensions.MOD_ID + ".json");
-		WorldData loaded = read(file);
-		if (loaded == null && Files.exists(backup())) {
-			// The main file is missing or damaged (a crash while writing): the last good copy takes over
-			ExtremeDimensions.LOGGER.warn("World data unreadable, restoring {}", backup().getFileName());
-			loaded = read(backup());
-		}
+		WorldData loaded = readWithFallback(file, TYPE);
 		if (loaded == null) {
-			if (Files.exists(file)) {
-				// Never overwrite what could not be read: keep it aside for the admin, start fresh
-				Path aside = file.resolveSibling(file.getFileName() + ".unreadable-" + System.currentTimeMillis());
-				try {
-					Files.move(file, aside);
-					ExtremeDimensions.LOGGER.error("World data could not be read; kept it as {} and started fresh", aside.getFileName());
-				} catch (IOException e) {
-					ExtremeDimensions.LOGGER.error("World data could not be read or moved aside", e);
-				}
-			}
 			return;
 		}
 		if (loaded.players != null) {
@@ -95,21 +80,66 @@ public final class DataStore {
 		}
 	}
 
+	/**
+	 * Reads a data file. If it is missing or damaged (a crash while writing), the last good copy ({@code .bak}) takes
+	 * over. A file that cannot be read is never overwritten: it is moved aside ({@code .unreadable-<time>}) for the
+	 * admin. Null = nothing readable, start fresh.
+	 */
+	public static <T> T readWithFallback(Path path, Type type) {
+		T loaded = read(path, type);
+		if (loaded != null) {
+			return loaded;
+		}
+		if (Files.exists(path)) {
+			Path aside = path.resolveSibling(path.getFileName() + ".unreadable-" + System.currentTimeMillis());
+			try {
+				Files.move(path, aside);
+				ExtremeDimensions.LOGGER.error("World data could not be read; kept it as {}", aside.getFileName());
+			} catch (IOException e) {
+				ExtremeDimensions.LOGGER.error("World data could not be read or moved aside", e);
+			}
+		}
+		T restored = read(backupOf(path), type);
+		if (restored != null) {
+			ExtremeDimensions.LOGGER.warn("World data restored from {}", backupOf(path).getFileName());
+		}
+		return restored;
+	}
+
 	/** The file's contents, or null if it is missing or cannot be read. */
-	private static WorldData read(Path path) {
+	private static <T> T read(Path path, Type type) {
 		if (!Files.exists(path)) {
 			return null;
 		}
 		try {
-			return GSON.fromJson(Files.readString(path, StandardCharsets.UTF_8), TYPE);
+			return GSON.fromJson(Files.readString(path, StandardCharsets.UTF_8), type);
 		} catch (Exception e) {
 			ExtremeDimensions.LOGGER.error("Could not read {}", path.getFileName(), e);
 			return null;
 		}
 	}
 
-	private static Path backup() {
-		return file.resolveSibling(file.getFileName() + ".bak");
+	public static Path backupOf(Path path) {
+		return path.resolveSibling(path.getFileName() + ".bak");
+	}
+
+	/**
+	 * Writes a file crash-safe: the new contents go to a temporary file that then replaces the old one in a single
+	 * step, and the previous version stays behind as {@code .bak}. A crash at any moment leaves the old or the new
+	 * file intact, never half of one.
+	 */
+	public static void writeAtomically(Path path, String json) throws IOException {
+		Path tmp = path.resolveSibling(path.getFileName() + ".tmp");
+		Files.createDirectories(path.toAbsolutePath().getParent());
+		Files.writeString(tmp, json, StandardCharsets.UTF_8);
+		if (Files.exists(path)) {
+			Files.copy(path, backupOf(path), StandardCopyOption.REPLACE_EXISTING);
+		}
+		try {
+			Files.move(tmp, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+		} catch (AtomicMoveNotSupportedException e) {
+			Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING);
+		}
 	}
 
 	/** Something changed: it is written with the next world save (or when the server stops). */
@@ -117,28 +147,13 @@ public final class DataStore {
 		dirty = true;
 	}
 
-	/**
-	 * Writes the data if anything changed, crash-safe: the new contents go to a temporary file that then replaces the
-	 * old one in a single step, and the previous version stays behind as {@code .bak}. A crash at any moment leaves
-	 * either the old or the new file intact.
-	 */
+	/** Writes the data if anything changed (see {@link #writeAtomically}). */
 	public static void flush() {
 		if (file == null || !dirty) {
 			return;
 		}
-		String json = GSON.toJson(data, TYPE);
-		Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
 		try {
-			Files.createDirectories(file.getParent());
-			Files.writeString(tmp, json, StandardCharsets.UTF_8);
-			if (Files.exists(file)) {
-				Files.copy(file, backup(), StandardCopyOption.REPLACE_EXISTING);
-			}
-			try {
-				Files.move(tmp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-			} catch (AtomicMoveNotSupportedException e) {
-				Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
-			}
+			writeAtomically(file, GSON.toJson(data, TYPE));
 			dirty = false;
 		} catch (IOException e) {
 			ExtremeDimensions.LOGGER.error("Could not save world data", e);
