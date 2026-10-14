@@ -222,6 +222,9 @@ public final class DataStore {
 		if (d.pendingMult == null) {
 			d.pendingMult = new java.util.ArrayList<>();
 		}
+		if (d.pact == null) {
+			d.pact = new java.util.HashMap<>();
+		}
 		return d;
 	}
 

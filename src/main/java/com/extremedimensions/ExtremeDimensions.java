@@ -79,6 +79,25 @@ public class ExtremeDimensions implements ModInitializer {
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.UnbindRelicPayload.TYPE,
 				(payload, context) -> com.extremedimensions.relic.RelicService.unbind(context.player()));
 
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.SwearPactPayload.TYPE, ModPackets.SwearPactPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.SwearPactPayload.TYPE, (payload, context) -> {
+			java.util.Map<String, Integer> wanted = new java.util.HashMap<>();
+			for (String part : payload.pact().split(",")) {
+				String[] kv = part.split(":");
+				if (kv.length == 2) {
+					try {
+						wanted.put(kv[0], Integer.parseInt(kv[1]));
+					} catch (NumberFormatException e) {
+						// skip a malformed entry
+					}
+				}
+			}
+			String refused = com.extremedimensions.pact.PactService.swear(context.player(), wanted);
+			if (refused != null) {
+				context.player().sendSystemMessage(net.minecraft.network.chat.Component.translatable(refused));
+			}
+		});
+
 		ServerEvents.register();
 		LOGGER.info("Extreme Dimensions initialised");
 	}

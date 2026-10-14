@@ -65,6 +65,8 @@ public class CursesScreen extends Screen {
 	private String atoning = "";
 	/** The relic bound to the Tether, or null. */
 	private com.extremedimensions.relic.Relic relic;
+	/** The pact as the server sent it: "unlocked;away;id:n,id:n". */
+	private String pactData = "";
 	private boolean overworldOn = true;
 	private Group tab = Group.BEYOND;
 	private Penalty selected;
@@ -129,10 +131,11 @@ public class CursesScreen extends Screen {
 				// skip malformed entry
 			}
 		}
-		relic = parts.length > 4 ? com.extremedimensions.relic.Relic.byId(parts[4]) : null;
+		pactData = parts.length > 4 ? parts[4] : "";
+		relic = parts.length > 5 ? com.extremedimensions.relic.Relic.byId(parts[5]) : null;
 		nearby.clear();
-		if (parts.length > 5 && !parts[5].isEmpty()) {
-			for (String part : parts[5].split(";")) {
+		if (parts.length > 6 && !parts[6].isEmpty()) {
+			for (String part : parts[6].split(";")) {
 				String[] kv = part.split(",");
 				if (kv.length < 3) {
 					continue;
@@ -246,6 +249,7 @@ public class CursesScreen extends Screen {
 		}
 		this.addRenderableWidget(new com.extremedimensions.client.ui.GearButton(x0 + PW - 20, y0 + 5, this, Ui.EMBER));
 		this.addRenderableWidget(new RelicChip(x0 + PW - 14 - 132, y0 + 176, 132));
+		this.addRenderableWidget(new PactButton(x0 + 7, y0 + 5));
 		atone = this.addRenderableWidget(Button.builder(Component.translatable("gui.extremedimensions.curses.atone"), b -> {
 			if (selected != null) {
 				ClientPlayNetworking.send(new ModPackets.AtonePayload(selected.id));
@@ -512,6 +516,84 @@ public class CursesScreen extends Screen {
 		int col = stacks >= max && stacks > 0 ? Ui.DANGER : Ui.mix(accent, 0xFFFFFF, 0.25);
 		for (int i = 0; i < max; i++) {
 			g.fill(x + i * 4, y, x + i * 4 + 3, y + 3, Ui.argb(fade, i < stacks ? col : Ui.TRACK));
+		}
+	}
+
+	/** The pact: a small brand in the panel's corner, gold while a pact is sworn; opens the Pact screen. */
+	private final class PactButton extends AbstractButton {
+		private static final String[] BRAND = {
+			"...#...",
+			"..###..",
+			".#.#.#.",
+			"#..#..#",
+			".#.#.#.",
+			"..###..",
+			"...#...",
+		};
+		private String shownFor = null;
+
+		PactButton(int x, int y) {
+			super(x, y, 13, 13, Component.translatable("gui.extremedimensions.pact.title"));
+		}
+
+		private boolean unlocked() {
+			return pactData.startsWith("1");
+		}
+
+		private int heat() {
+			int heat = 0;
+			String[] parts = pactData.split(";", -1);
+			if (parts.length > 2 && !parts[2].isEmpty()) {
+				for (String e : parts[2].split(",")) {
+					String[] kv = e.split(":");
+					Penalty p = kv.length == 2 ? Penalty.byId(kv[0]) : null;
+					if (p != null) {
+						try {
+							heat += Integer.parseInt(kv[1]) * (p.extreme ? 2 : 1);
+						} catch (NumberFormatException ex) {
+							// skip
+						}
+					}
+				}
+			}
+			return heat;
+		}
+
+		@Override
+		public void onPress(InputWithModifiers input) {
+			if (!unlocked()) {
+				return;
+			}
+			Map<Penalty, int[]> carried = new HashMap<>();
+			for (Penalty p : Penalty.values()) {
+				Entry e = entry(p);
+				carried.put(p, new int[] {e.stacks(), e.max()});
+			}
+			Minecraft.getInstance().gui.setScreen(new PactScreen(CursesScreen.this, pactData, carried));
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+			int x = this.getX(), y = this.getY();
+			int heat = heat();
+			if (!pactData.equals(shownFor)) {
+				shownFor = pactData;
+				this.setTooltip(Tooltip.create(Component.translatable(!unlocked() ? "gui.extremedimensions.pact.locked"
+						: heat > 0 ? "gui.extremedimensions.pact.button_heat" : "gui.extremedimensions.pact.button", heat)));
+			}
+			int col = !unlocked() ? Ui.TRACK : this.isHovered() ? Ui.WARN : heat > 0 ? 0xFFC060 : Ui.mix(0xE0A040, Ui.MUTED, 0.5);
+			for (int r = 0; r < BRAND.length; r++) {
+				for (int k = 0; k < BRAND[r].length(); k++) {
+					if (BRAND[r].charAt(k) == '#') {
+						g.fill(x + 3 + k, y + 3 + r, x + 4 + k, y + 4 + r, Ui.argb(255, col));
+					}
+				}
+			}
+		}
+
+		@Override
+		protected void updateWidgetNarration(NarrationElementOutput out) {
+			out.add(NarratedElementType.TITLE, this.getMessage());
 		}
 	}
 

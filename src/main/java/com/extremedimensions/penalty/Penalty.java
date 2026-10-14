@@ -184,7 +184,7 @@ public enum Penalty {
 	public static List<Penalty> available(PlayerData d, Group group) {
 		List<Penalty> pool = new ArrayList<>();
 		for (Penalty p : values()) {
-			if (p.group == group && p.max > 0 && d.stacks(p) < p.max) {
+			if (p.group == group && p.max > 0 && d.owned(p) < p.max) {
 				pool.add(p);
 			}
 		}
@@ -202,7 +202,7 @@ public enum Penalty {
 	public static List<Penalty> withRoom(PlayerData d, boolean overworldOn) {
 		List<Penalty> pool = new ArrayList<>();
 		for (Penalty p : values()) {
-			if ((overworldOn || !p.overworld) && p.max > 0 && d.stacks(p) < p.max) {
+			if ((overworldOn || !p.overworld) && p.max > 0 && d.owned(p) < p.max) {
 				pool.add(p);
 			}
 		}

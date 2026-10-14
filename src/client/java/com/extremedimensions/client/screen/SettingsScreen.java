@@ -569,11 +569,13 @@ public class SettingsScreen extends Screen {
 		// Difficulty: the preset the rules match now (or custom); operators pick and apply another beside it
 		var now = currentPreset();
 		String difficulty = Ui.tr("gui.extremedimensions.settings.difficulty");
-		g.text(this.font, difficulty, x0 + 16, y0 + 48, Ui.argb(fade, Ui.PARCHMENT));
 		String state = now == null ? Ui.tr("gui.extremedimensions.preset.custom") : Ui.tr(now.nameKey());
 		if (editable) {
-			g.text(this.font, state, x0 + 16, y0 + 57, Ui.argb(fade * 0.8, Ui.MUTED));
+			// two short lines beside the picker, clear of the search box below
+			g.text(this.font, difficulty, x0 + 16, y0 + 43, Ui.argb(fade, Ui.PARCHMENT));
+			g.text(this.font, Ui.ellipsize(this.font, state, 88), x0 + 16, y0 + 53, Ui.argb(fade * 0.8, Ui.MUTED));
 		} else {
+			g.text(this.font, difficulty, x0 + 16, y0 + 48, Ui.argb(fade, Ui.PARCHMENT));
 			g.text(this.font, state, x0 + 108, y0 + 48, Ui.argb(fade, accent));
 		}
 		if (System.currentTimeMillis() - presetArmedAt > 4000 && presetApply.getMessage().getString().equals(Ui.tr("gui.extremedimensions.preset.confirm"))) {

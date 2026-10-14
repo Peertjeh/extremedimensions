@@ -22,6 +22,8 @@ public class PlayerData {
 	public double longestRun = 0;
 	/** Curse id -> stacks. Curses are permanent: only atonement, fragments or a Mending Cloth take stacks off. */
 	public Map<String, Integer> curses = new HashMap<>();
+	/** The sworn pact: extra stacks of curses taken on willingly, acting on expeditions (see PactService). */
+	public Map<String, Integer> pact = new HashMap<>();
 	/** Curse id -> atonement points gathered towards taking its next stack off. */
 	public Map<String, Integer> atonement = new HashMap<>();
 	/** The curse the player chose to atone for (and to mend first); null = the heaviest one. */
@@ -95,6 +97,8 @@ public class PlayerData {
 	public transient int ticksSinceMove = Integer.MAX_VALUE / 2;
 	/** Active seconds on the current expedition not yet turned into atonement. */
 	public transient double activeSecs = 0;
+	/** Active seconds on the current expedition (a kept pact pays by them). */
+	public transient int runActive = 0;
 	// Curse upkeep: what the player had last tick (XP and food skims), sleep, spells and risings
 	public transient int lastXp = -1;
 	public transient double xpCarry = 0;
@@ -126,13 +130,28 @@ public class PlayerData {
 	public transient String ropeDim = null;
 	public transient int ropeIndex = 0;
 
-	public int stacks(Penalty p) {
+	/** Stacks of a curse the player carries (what owing, offers, atonement and mending count). */
+	public int owned(Penalty p) {
 		return curses.getOrDefault(p.id, 0);
+	}
+
+	/** Stacks sworn in the pact for a curse (0 without a pact). */
+	public int sworn(Penalty p) {
+		return pact == null ? 0 : pact.getOrDefault(p.id, 0);
+	}
+
+	/**
+	 * Stacks of a curse as they act now: the ones carried, and on an expedition the pact's on top (never past the
+	 * curse's maximum). Every effect reads this; bookkeeping reads {@link #owned}.
+	 */
+	public int stacks(Penalty p) {
+		int own = owned(p);
+		return inRun ? Math.min(Math.max(own, p.max), own + sworn(p)) : own;
 	}
 
 	/** Adds up to {@code n} stacks, never past the curse's maximum; returns how many were added. */
 	public int addStacks(Penalty p, int n) {
-		int have = stacks(p);
+		int have = owned(p);
 		int add = Math.max(0, Math.min(n, p.max - have));
 		if (add > 0) {
 			curses.put(p.id, have + add);
@@ -142,7 +161,7 @@ public class PlayerData {
 
 	/** Takes one stack off; the curse's atonement starts over. Returns false if it had none. */
 	public boolean removeStack(Penalty p) {
-		int have = stacks(p);
+		int have = owned(p);
 		if (have <= 0) {
 			return false;
 		}

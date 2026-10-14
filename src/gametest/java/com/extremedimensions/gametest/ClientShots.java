@@ -134,6 +134,35 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.runOnClient(mc -> ClientOptions.setColourBlind(false));
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
+			// Pacts: open them early, swear three curses and open the Pact screen through its brand in the Curses screen
+			int unlock = com.extremedimensions.config.Config.PACT_UNLOCK;
+			String pacted = sp.getServer().computeOnServer(s -> {
+				com.extremedimensions.config.Config.PACT_UNLOCK = 0;
+				ServerPlayer p = player(s);
+				String refused = com.extremedimensions.pact.PactService.swear(p, java.util.Map.of("debt", 2, "cracked_armor", 1, "glass_jaw", 1, "dwindling", 1));
+				check(refused == null, "a fair pact was refused: " + refused);
+				return Sync.cursesData(p, DataStore.get(p.getUUID()));
+			});
+			ctx.runOnClient(mc -> {
+				CursesScreen cs = new CursesScreen(pacted, null);
+				mc.gui.setScreen(cs);
+				boolean opened = false;
+				for (GuiEventListener w : cs.children()) {
+					if (w instanceof AbstractButton b && b.getMessage().getString().equals(net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.pact.title"))) {
+						b.onPress(null);
+						opened = true;
+					}
+				}
+				check(opened, "the Curses screen has no way into the pact");
+			});
+			ctx.waitTicks(8);
+			ctx.takeScreenshot("08_pact");
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			sp.getServer().runOnServer(s -> {
+				com.extremedimensions.pact.PactService.swear(player(s), java.util.Map.of());
+				com.extremedimensions.config.Config.PACT_UNLOCK = unlock;
+			});
+
 			// Settings: the world's rules arrived on joining, and the owner of a singleplayer world may change them
 			ctx.runOnClient(mc -> {
 				check(ClientState.settingsJson != null, "the world's settings never reached the client");

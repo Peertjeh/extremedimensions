@@ -305,4 +305,23 @@ public final class ModPackets {
 			return TYPE;
 		}
 	}
+
+	/** Client -> server: swear a pact; pact = "id:n,id:n" (empty renounces it). */
+	public record SwearPactPayload(String pact) implements CustomPacketPayload {
+		public static final Type<SwearPactPayload> TYPE = new Type<>(ExtremeDimensions.id("swear_pact"));
+		public static final StreamCodec<FriendlyByteBuf, SwearPactPayload> CODEC = StreamCodec.ofMember(SwearPactPayload::write, SwearPactPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(pact);
+		}
+
+		private static SwearPactPayload read(FriendlyByteBuf buf) {
+			return new SwearPactPayload(buf.readUtf());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
 }

@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.9.0: Pacts
+
+*Ask the wounds for more, and they will give it. For a price you name yourself.*
+
+### Added
+- **Pacts**: swear extra stacks of your curses before an expedition, for what a safe return brings. Open the Pact
+  screen through the brand in the top-left corner of the Curses screen (gold while a pact is sworn).
+  - Beyond, Everywhere and Extreme curses can be sworn (the Overworld set cannot), up to each curse's maximum.
+  - Sworn stacks act only on expeditions. At home they do nothing, and they never count as curses you carry: they do
+    not make atonement dearer and cannot be atoned, mended or lifted.
+  - **Heat** is the pact's weight: one per sworn stack, two for an Extreme stack, up to 30 by default.
+  - **A safe return** keeps the pact: 6 atonement per heat, a Tether Fragment for every 3 heat, and from heat 4 a
+    chance at a relic (5% per heat, at most 80%). The full reward takes 10 active minutes beyond the wound; a shorter
+    expedition pays its share, so stepping through the portal and straight back (or standing idle) earns nothing.
+  - **A death or a Collapse** breaks it: that expedition brings nothing, but the pact stays sworn for the next.
+  - A pact is sworn or renounced at home only, never on an expedition or in the Seam.
+- **When pacts open** is a world rule: after the Starved One falls (default), after the Ender Dragon falls, or from
+  the start. Every number of a pact is a world rule (Settings → World rules → Pacts).
+
+### Fixed
+- The current difficulty under "Difficulty" in the world rules overlapped the search box.
+
 ## 2.8.0: Relics
 
 *Things the wounds left behind. Each gives, each takes.*

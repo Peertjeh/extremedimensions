@@ -208,12 +208,12 @@ public final class PenaltyService {
 	 */
 	public static Penalty target(PlayerData d, Boolean overworld) {
 		Penalty chosen = d.atoning == null ? null : Penalty.byId(d.atoning);
-		if (chosen != null && d.stacks(chosen) > 0 && fits(chosen, overworld)) {
+		if (chosen != null && d.owned(chosen) > 0 && fits(chosen, overworld)) {
 			return chosen;
 		}
 		Penalty best = null;
 		for (Penalty p : Penalty.values()) {
-			if (fits(p, overworld) && d.stacks(p) > 0 && (best == null || d.stacks(p) > d.stacks(best))) {
+			if (fits(p, overworld) && d.owned(p) > 0 && (best == null || d.owned(p) > d.owned(best))) {
 				best = p;
 			}
 		}
@@ -226,7 +226,7 @@ public final class PenaltyService {
 
 	/** Atonement points needed to take the next stack of a curse off: more for every stack above the last. */
 	public static int cost(PlayerData d, Penalty p) {
-		int base = Math.max(1, Config.ATONE_BASE + Config.ATONE_PER_STACK * Math.max(0, d.stacks(p) - 1));
+		int base = Math.max(1, Config.ATONE_BASE + Config.ATONE_PER_STACK * Math.max(0, d.owned(p) - 1));
 		return p.extreme ? (int) Math.ceil(base * Math.max(1, Config.EXTREME_ATONE_FACTOR)) : base;
 	}
 
@@ -277,7 +277,7 @@ public final class PenaltyService {
 			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
 			return InteractionResult.SUCCESS;
 		}
-		int cost = Math.max(1, Config.FRAGMENT_COST_PER_STACK * d.stacks(t));
+		int cost = Math.max(1, Config.FRAGMENT_COST_PER_STACK * d.owned(t));
 		if (t.extreme) {
 			cost = (int) Math.ceil(cost * Math.max(1, Config.EXTREME_ATONE_FACTOR));
 		}
@@ -356,7 +356,7 @@ public final class PenaltyService {
 		WorldFx.particles(p, "extremedimensions:soul_mote", 1.0, 0.8, 0.0, 14);
 		WorldFx.sound(p, "minecraft:block.beacon.power_select", 0.7f, 1.4f);
 		WorldFx.soundSelf(p, "minecraft:block.amethyst_block.chime", 1.0f, 1.2f);
-		int left = d.stacks(t);
+		int left = d.owned(t);
 		p.sendSystemMessage(Component.translatable(messageKey, Component.translatable(t.nameKey()), left, t.max), true);
 		Journal.unlock(p, d, JournalEntry.MENDING);
 		Advancements.grant(p, Advancements.MENDED);
@@ -395,6 +395,9 @@ public final class PenaltyService {
 				changed = true;
 			}
 			boolean active = d.ticksSinceLook < Config.IDLE_TICKS && d.ticksSinceMove < Config.IDLE_TICKS;
+			if (onExpedition && active) {
+				d.runActive++;
+			}
 			if (onExpedition && active && ++d.activeSecs >= 60) {
 				d.activeSecs -= 60;
 				atone(p, d, false, Config.ATONE_PER_MINUTE);

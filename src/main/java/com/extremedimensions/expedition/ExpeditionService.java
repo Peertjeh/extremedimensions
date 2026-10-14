@@ -88,6 +88,8 @@ public final class ExpeditionService {
 			total = AnchorService.linkedCharge(p, d);
 		}
 		d.inRun = true;
+		d.runActive = 0;
+		com.extremedimensions.pact.PactService.begin(p, d);
 		d.runTime = 0;
 		d.runMax = total;
 		d.lastWarn = Integer.MAX_VALUE;
@@ -125,6 +127,8 @@ public final class ExpeditionService {
 			p.giveExperienceLevels(-Math.min(fee, p.experienceLevel));
 		}
 		PenaltyService.atone(p, d, false, Config.ATONE_PER_RETURN);
+		// A pact kept to the end pays out
+		com.extremedimensions.pact.PactService.kept(p, d);
 		WorldFx.fx(p, Fx.SAFE, 0);
 		WorldFx.particles(p, "minecraft:totem_of_undying", 1.0, 0.5, 0.35, 40);
 		WorldFx.particles(p, "minecraft:soul", 1.0, 0.8, 0.03, 20);
@@ -264,6 +268,7 @@ public final class ExpeditionService {
 	 */
 	private static void collapse(ServerPlayer p, PlayerData d) {
 		TetherService.clear(p, d, false);
+		com.extremedimensions.pact.PactService.broken(p, d);
 		d.collapsing = true;
 		d.collapseRetry = -Config.COLLAPSE_PULL_TICKS;
 		d.collapses++;
@@ -315,6 +320,9 @@ public final class ExpeditionService {
 			PenaltyService.owe(d, true);
 			DataStore.markDirty();
 			return;
+		}
+		if (Dims.isBeyond(dim) && !d.collapsing && d.inRun) {
+			com.extremedimensions.pact.PactService.broken(p, d);
 		}
 		if (Dims.isBeyond(dim) && !d.collapsing) {
 			// Only this player's time goes to zero; everyone else carries on

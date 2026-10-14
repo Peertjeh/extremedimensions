@@ -49,7 +49,7 @@ public final class Sync {
 			}
 			int mult = i < d.pendingMult.size() ? d.pendingMult.get(i) : 1;
 			out.append(',');
-			out.append(pen.id).append(':').append(mult).append(':').append(d.stacks(pen)).append(':').append(pen.max).append(':').append(pen.display());
+			out.append(pen.id).append(':').append(mult).append(':').append(d.owned(pen)).append(':').append(pen.max).append(':').append(pen.display());
 		}
 		ServerPlayNetworking.send(p, new ModPackets.OfferPayload(out.toString()));
 	}
@@ -69,9 +69,10 @@ public final class Sync {
 				out.append(';');
 			}
 			first = false;
-			out.append(pen.id).append(':').append(d.stacks(pen)).append(':').append(pen.max).append(':')
+			out.append(pen.id).append(':').append(d.owned(pen)).append(':').append(pen.max).append(':')
 					.append(d.atonement.getOrDefault(pen.id, 0)).append(':').append(PenaltyService.cost(d, pen)).append(':').append(pen.display());
 		}
+		out.append('|').append(com.extremedimensions.pact.PactService.data(p, d));
 		out.append('|').append(d.relic == null ? "" : d.relic);
 		out.append('|').append(nearby(p));
 		return out.toString();
@@ -100,7 +101,7 @@ public final class Sync {
 			PlayerData d = DataStore.get(q.getUUID());
 			int[] sets = new int[Penalty.Group.values().length];
 			for (Penalty pen : Penalty.values()) {
-				sets[pen.group.ordinal()] += d.stacks(pen);
+				sets[pen.group.ordinal()] += d.owned(pen);
 			}
 			if (out.length() > 0) {
 				out.append(';');

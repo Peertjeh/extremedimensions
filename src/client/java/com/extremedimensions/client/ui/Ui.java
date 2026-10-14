@@ -136,6 +136,18 @@ public final class Ui {
 		return out;
 	}
 
+	/** Cuts text to a pixel width, ending in an ellipsis when it had to cut. */
+	public static String ellipsize(Font font, String text, int width) {
+		if (font.width(text) <= width) {
+			return text;
+		}
+		String cut = text;
+		while (!cut.isEmpty() && font.width(cut + "...") > width) {
+			cut = cut.substring(0, cut.length() - 1);
+		}
+		return cut.stripTrailing() + "...";
+	}
+
 	/** Text with the vanilla drop shadow and an alpha. */
 	public static void text(GuiGraphicsExtractor g, Font font, String s, int x, int y, int rgb, double alpha) {
 		g.text(font, s, x, y, argb(alpha, rgb));

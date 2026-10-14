@@ -256,6 +256,23 @@ public final class Config {
 	public static int RELIC_STARVED_ONE = 1;
 	public static double RELIC_SEAM_CHEST_CHANCE = 0.05;
 
+	// --- Pacts: curses taken on willingly for an expedition, for what a safe return brings -------
+
+	/** When pacts open: 0 = from the start, 1 = after the Ender Dragon falls, 2 = after the Starved One falls. */
+	public static int PACT_UNLOCK = 2;
+	/** Highest heat a pact may reach (a sworn stack is 1 heat, an Extreme one 2). */
+	public static int PACT_MAX_HEAT = 30;
+	/** On a safe return with a pact: atonement points per heat. */
+	public static int PACT_ATONE_PER_HEAT = 6;
+	/** Heat per Tether Fragment a safe return brings (a remainder is a chance at one more). */
+	public static double PACT_HEAT_PER_FRAGMENT = 3.0;
+	/** A relic is possible from this heat on, with this chance per heat, up to the cap. */
+	public static int PACT_RELIC_MIN_HEAT = 4;
+	public static double PACT_RELIC_CHANCE_PER_HEAT = 0.05;
+	public static double PACT_RELIC_MAX_CHANCE = 0.8;
+	/** Active seconds beyond the wound before a kept pact pays in full; a shorter expedition pays its share (0 = always in full). */
+	public static int PACT_FULL_SECONDS = 600;
+
 	// --- Technical -------------------------------------------------------------------------------
 
 	/** Milliseconds per tick the Seam may spend building islands (blocks in chunks nobody has loaded wait). */
@@ -289,7 +306,7 @@ public final class Config {
 			Map.entry("max_charge", "anchors"), Map.entry("base_drain", "expeditions"), Map.entry("rope_segment", "tether"),
 			Map.entry("offer_count", "curses"), Map.entry("fragment_chance", "lore"), Map.entry("lurker_enabled", "lurker"),
 			Map.entry("hoard_wild_chance", "hollow"), Map.entry("soul_woven_drain", "weaving"), Map.entry("seam_seconds", "seam"),
-			Map.entry("storm_chance", "dragon"), Map.entry("relic_ember_heart_nether", "relics"),
+			Map.entry("storm_chance", "dragon"), Map.entry("relic_ember_heart_nether", "relics"), Map.entry("pact_unlock", "pacts"),
 			Map.entry("seam_build_budget_ms", "technical"));
 
 	/** One setting: its key in the file, its section, the field behind it and its default (as text). */
