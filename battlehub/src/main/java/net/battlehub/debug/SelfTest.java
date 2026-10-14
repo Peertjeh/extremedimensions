@@ -319,6 +319,8 @@ public final class SelfTest {
 		s.run(tag + ": join (again)", () -> {
 			join(server, "BHTestA");
 			join(server, "BHTestB");
+			// The hub can run in survival; matches use adventure, so the check at the end sees it given back
+			p("BHTestA").setGameMode(GameType.SURVIVAL);
 		});
 		s.pause(10);
 		s.run(tag + ": remember stats", () -> {
@@ -421,7 +423,7 @@ public final class SelfTest {
 		s.check(tag + ": A got the old inventory and game mode back", () -> {
 			ServerPlayer a = p("BHTestA");
 			return HubItems.COMPASS.equals(Icon.tagOf(a.getInventory().getItem(ConfigManager.config().compass.slot)))
-					&& !a.getInventory().contains(st -> st.is(Items.DIAMOND_SWORD)) && a.gameMode() != GameType.ADVENTURE
+					&& !a.getInventory().contains(st -> st.is(Items.DIAMOND_SWORD)) && a.gameMode() == GameType.SURVIVAL
 					&& !Snapshots.has(a.getUUID());
 		});
 		if (ending.equals("disconnect")) {
