@@ -14,6 +14,10 @@ public final class Locks {
 
 	/** Players who may not drop anything right now. */
 	public static boolean dropsLocked(ServerPlayer p) {
+		net.battlehub.match.Match m = net.battlehub.HubEvents.matchOf(p);
+		if (m != null) {
+			return !m.allowsDrops(p);
+		}
 		if (!ConfigManager.config().protection.noItemDrops || p.isCreative()) {
 			return Sessions.state(p.getUUID()) == Sessions.State.MATCH;
 		}

@@ -28,10 +28,12 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
+import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
@@ -65,13 +67,34 @@ public final class HubEvents {
 		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) ->
 				!(entity instanceof ServerPlayer p) || allowDeath(p, source));
 
-		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, be) ->
-				!(player instanceof ServerPlayer sp) || Protection.mayBreak(sp));
+		// In a match the game decides about blocks, clicks and attacks; elsewhere the lobby protection does
+		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, be) -> {
+			if (!(player instanceof ServerPlayer sp)) {
+				return true;
+			}
+			Match m = matchOf(sp);
+			return m != null ? m.onBreakBlock(sp, pos, state) : Protection.mayBreak(sp);
+		});
 		UseItemCallback.EVENT.register((player, level, hand) -> useItem(player, player.getItemInHand(hand)));
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
 			ItemStack held = player.getItemInHand(hand);
+			Match m = player instanceof ServerPlayer sp ? matchOf(sp) : null;
+			if (m != null) {
+				InteractionResult r = m.onUseBlock((ServerPlayer) player, hit, held);
+				if (r != InteractionResult.PASS) {
+					return r;
+				}
+			}
 			if (Icon.isHubItem(held)) {
 				return useItem(player, held);
+			}
+			if (m != null) {
+				if (!(held.getItem() instanceof net.minecraft.world.item.BlockItem) && !(held.getItem() instanceof net.minecraft.world.item.BucketItem)) {
+					return InteractionResult.PASS;
+				}
+				BlockPos clicked = hit.getBlockPos();
+				BlockPos target = level.getBlockState(clicked).canBeReplaced() ? clicked : clicked.relative(hit.getDirection());
+				return m.onPlaceBlock((ServerPlayer) player, target, held) ? InteractionResult.PASS : InteractionResult.FAIL;
 			}
 			if (player instanceof ServerPlayer sp && !Protection.mayPlace(sp, held)) {
 				return InteractionResult.FAIL;
@@ -79,13 +102,31 @@ public final class HubEvents {
 			return InteractionResult.PASS;
 		});
 		UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
+			Match m = player instanceof ServerPlayer sp ? matchOf(sp) : null;
+			if (m != null) {
+				InteractionResult r = m.onUseEntity((ServerPlayer) player, entity);
+				if (r != InteractionResult.PASS) {
+					return r;
+				}
+			}
 			ItemStack held = player.getItemInHand(hand);
 			if (Icon.isHubItem(held)) {
 				return useItem(player, held);
 			}
 			return InteractionResult.PASS;
 		});
+		AttackBlockCallback.EVENT.register((player, level, hand, pos, direction) -> {
+			Match m = player instanceof ServerPlayer sp ? matchOf(sp) : null;
+			return m == null ? InteractionResult.PASS : m.onAttackBlock((ServerPlayer) player, pos);
+		});
 		AttackEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
+			Match m = player instanceof ServerPlayer sp ? matchOf(sp) : null;
+			if (m != null) {
+				InteractionResult r = m.onAttackEntity((ServerPlayer) player, entity);
+				if (r != InteractionResult.PASS) {
+					return r;
+				}
+			}
 			if (player instanceof ServerPlayer sp && !(entity instanceof Player) && !Protection.mayBreak(sp)
 					&& Sessions.state(sp.getUUID()) != Sessions.State.MATCH) {
 				// Item frames, armour stands and paintings in the lobby stay where they are.
@@ -237,10 +278,22 @@ public final class HubEvents {
 		return false;
 	}
 
+	/** The match this player takes part in (not watches), or null. */
+	public static Match matchOf(ServerPlayer p) {
+		return Sessions.state(p.getUUID()) == Sessions.State.MATCH ? Matches.of(p.getUUID()) : null;
+	}
+
 	private static InteractionResult useItem(Player player, ItemStack held) {
 		String tag = Icon.tagOf(held);
 		if (tag.isEmpty()) {
 			return InteractionResult.PASS;
+		}
+		if (player instanceof ServerPlayer sp && tag.startsWith("game.")) {
+			Match m = matchOf(sp);
+			if (m != null) {
+				m.onUseGameItem(sp, tag);
+			}
+			return InteractionResult.SUCCESS;
 		}
 		if (player instanceof ServerPlayer sp) {
 			switch (tag) {

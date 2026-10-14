@@ -28,6 +28,7 @@ import net.battlehub.lobby.HubItems;
 import net.battlehub.progression.Cosmetics;
 import net.battlehub.session.Sessions;
 import net.battlehub.util.Msg;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -40,6 +41,10 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Relative;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 
@@ -172,6 +177,57 @@ public abstract class Match {
 	protected void onTimeUp() {
 		finish(List.of());
 	}
+
+	// ------------------------------------------------------------------ world interaction (games that build or use items)
+
+	/** A participant breaks a block; true lets it break. Default: never (games remove blocks themselves). */
+	public boolean onBreakBlock(ServerPlayer p, BlockPos pos, BlockState state) {
+		return false;
+	}
+
+	/** A participant places a block (or empties a bucket) at {@code target}; true allows it. Default: never. */
+	public boolean onPlaceBlock(ServerPlayer p, BlockPos target, ItemStack held) {
+		return false;
+	}
+
+	/** Right-click on a block, before anything else; PASS lets the normal handling go on. */
+	public InteractionResult onUseBlock(ServerPlayer p, BlockHitResult hit, ItemStack held) {
+		return InteractionResult.PASS;
+	}
+
+	/** Right-click on an entity (a shopkeeper, for example). */
+	public InteractionResult onUseEntity(ServerPlayer p, Entity target) {
+		return InteractionResult.PASS;
+	}
+
+	/** Left-click on an entity, before damage; PASS lets the attack go on. */
+	public InteractionResult onAttackEntity(ServerPlayer p, Entity target) {
+		return InteractionResult.PASS;
+	}
+
+	/** Left-click on a block. */
+	public InteractionResult onAttackBlock(ServerPlayer p, BlockPos pos) {
+		return InteractionResult.PASS;
+	}
+
+	/** Right-click with a game item (an item tagged "game.something"). */
+	public void onUseGameItem(ServerPlayer p, String tag) {}
+
+	/** The player swung their arm (also when hitting nothing at all). */
+	public void onSwing(ServerPlayer p) {}
+
+	/** May participants drop items with Q? Default: no. */
+	public boolean allowsDrops(ServerPlayer p) {
+		return false;
+	}
+
+	/** How long the end of the match is shown before everyone goes back. */
+	protected int endDelayTicks() {
+		return ConfigManager.config().timings.endDelaySeconds * 20;
+	}
+
+	/** After everyone went home: remove what the game left behind (displays, shopkeepers, scoreboards). */
+	protected void onClosed() {}
 
 	/** Share of the coin reward paid out (1 = all); XP is not affected. */
 	public double coinFactor() {
@@ -366,7 +422,7 @@ public abstract class Match {
 				if (phaseTicks % 10 == 0) {
 					celebrate();
 				}
-				if (phaseTicks >= ConfigManager.config().timings.endDelaySeconds * 20) {
+				if (phaseTicks >= endDelayTicks()) {
 					close();
 				}
 			}
@@ -639,8 +695,21 @@ public abstract class Match {
 		}
 		setPhase(Phase.CLOSED);
 		sendHome(offersPlayAgain());
+		cleanUp();
 		clearArena();
 		Menus.refreshAll(server);
+	}
+
+	/** Game leftovers and loose entities go before the arena is cleared; a failing game hook never blocks cleanup. */
+	private void cleanUp() {
+		try {
+			onClosed();
+		} catch (RuntimeException e) {
+			BattleHub.LOGGER.error("Match #{}: cleanup failed", id, e);
+		}
+		if (arena != null) {
+			clearLooseEntities();
+		}
 	}
 
 	/** Stops the match without results (admin, server stop, arena failure). */
@@ -657,6 +726,7 @@ public abstract class Match {
 		}
 		forWatchers(p -> Msg.send(p, reasonKey));
 		sendHome(false);
+		cleanUp();
 		clearArena();
 		Menus.refreshAll(server);
 	}

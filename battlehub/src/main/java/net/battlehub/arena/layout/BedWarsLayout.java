@@ -1,0 +1,134 @@
+package net.battlehub.arena.layout;
+
+import net.battlehub.arena.Blueprint;
+import net.battlehub.arena.Build;
+import net.battlehub.arena.Theme;
+import net.battlehub.util.Ids;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BedPart;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+
+/**
+ * Bed Wars: one floating island per team around a centre island, a diamond island between every two teams and
+ * emerald generators in the middle. Marks per team i: spawn_i, bed_i (the foot), gen_i (iron and gold), shop_i;
+ * plus gen_diamond and gen_emerald. Island floors are at y = 0; bridges have to be built.
+ */
+public final class BedWarsLayout {
+	private BedWarsLayout() {}
+
+	/** Team colours in team order. */
+	public static final String[] COLORS = {"red", "blue", "lime", "yellow"};
+
+	public static BlockState bed(String color, Direction facing, BedPart part) {
+		BlockState st = Ids.state("minecraft:" + color + "_bed");
+		if (st.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+			st = st.setValue(BlockStateProperties.HORIZONTAL_FACING, facing);
+		}
+		if (st.hasProperty(BlockStateProperties.BED_PART)) {
+			st = st.setValue(BlockStateProperties.BED_PART, part);
+		}
+		return st;
+	}
+
+	/** Distance from the centre to the team islands. */
+	public static int teamRadius(int teams) {
+		return teams <= 2 ? 36 : 40;
+	}
+
+	public static Blueprint design(Theme t, RandomSource rnd, int teams) {
+		Blueprint bp = new Blueprint();
+		int n = Math.max(2, Math.min(4, teams));
+		int r = teamRadius(n);
+		double start = n == 2 ? Math.PI : Math.PI / 2;
+		for (int i = 0; i < n; i++) {
+			double a = start + i * 2 * Math.PI / n;
+			teamIsland(bp, t, rnd, i, a, r);
+			double between = a + Math.PI / n;
+			diamondIsland(bp, t, rnd, (int) Math.round(Math.cos(between) * r * 0.62), (int) Math.round(Math.sin(between) * r * 0.62));
+		}
+		centre(bp, t, rnd);
+		Decor.ring(bp, t, rnd, r + 14, r + 24, -18);
+		bp.spectator(0.5, 30, 0.5, 0, 89);
+		bp.voidY(-22);
+		bp.radius(r + 26);
+		return bp;
+	}
+
+	private static Direction nearest(double dx, double dz) {
+		if (Math.abs(dx) >= Math.abs(dz)) {
+			return dx >= 0 ? Direction.EAST : Direction.WEST;
+		}
+		return dz >= 0 ? Direction.SOUTH : Direction.NORTH;
+	}
+
+	private static void teamIsland(Blueprint bp, Theme t, RandomSource rnd, int team, double angle, int r) {
+		String color = COLORS[team];
+		double ox = Math.cos(angle);
+		double oz = Math.sin(angle);
+		int cx = (int) Math.round(ox * r);
+		int cz = (int) Math.round(oz * r);
+		// Outward along the island's axis (away from the centre) and sideways
+		Direction out = nearest(ox, oz);
+		Direction side = out.getClockWise();
+		Build.island(bp, cx, 0, cz, 8.5, 6, () -> t.floor(rnd), t.under(), t.rough(), rnd);
+		BlockState teamBlock = Ids.state("minecraft:" + color + "_concrete");
+		BlockState teamWool = Ids.state("minecraft:" + color + "_wool");
+		// A coloured border so everyone knows whose island it is
+		Build.ring(bp, cx, 0, cz, 7.6, 8.6, () -> teamBlock);
+		// Spawn in the middle, facing the centre
+		float yaw = (float) Math.toDegrees(Math.atan2(-ox, oz)) + 180f;
+		bp.spawn(cx + 0.5, 1, cz + 0.5, yaw);
+		bp.mark("spawn_" + team, cx, 1, cz);
+		// Bed at the back: foot nearer the middle, head further out, on a wool plinth
+		int bx = cx + out.getStepX() * 5;
+		int bz = cz + out.getStepZ() * 5;
+		for (int dx = -1; dx <= 1; dx++) {
+			for (int dz = -1; dz <= 2; dz++) {
+				int px = bx + side.getStepX() * dx + out.getStepX() * dz;
+				int pz = bz + side.getStepZ() * dx + out.getStepZ() * dz;
+				bp.set(px, 0, pz, teamWool);
+			}
+		}
+		bp.set(bx, 1, bz, bed(color, out, BedPart.FOOT));
+		bp.set(bx + out.getStepX(), 1, bz + out.getStepZ(), bed(color, out, BedPart.HEAD));
+		bp.mark("bed_" + team, bx, 1, bz);
+		// Generator at the front, towards the centre
+		int gx = cx - out.getStepX() * 5;
+		int gz = cz - out.getStepZ() * 5;
+		for (int dx = -1; dx <= 1; dx++) {
+			for (int dz = -1; dz <= 1; dz++) {
+				bp.set(gx + dx, 0, gz + dz, Ids.state("minecraft:iron_block"));
+			}
+		}
+		bp.set(gx, 0, gz, Ids.state("minecraft:gold_block"));
+		bp.mark("gen_" + team, gx, 1, gz);
+		// Shop on the side: a barrel to click, and the shopkeeper next to it
+		int sx = cx + side.getStepX() * 5;
+		int sz = cz + side.getStepZ() * 5;
+		bp.set(sx, 0, sz, t.trim());
+		bp.set(sx + side.getStepX(), 1, sz + side.getStepZ(), Build.facing("minecraft:barrel", side.getOpposite()));
+		bp.set(sx + side.getStepX(), 2, sz + side.getStepZ(), t.light());
+		bp.mark("shop_" + team, sx, 1, sz);
+		bp.mark("shopblock_" + team, sx + side.getStepX(), 1, sz + side.getStepZ());
+	}
+
+	private static void diamondIsland(Blueprint bp, Theme t, RandomSource rnd, int x, int z) {
+		Build.island(bp, x, 0, z, 3.6, 4, () -> t.floor(rnd), t.under(), t.rough(), rnd);
+		bp.set(x, 0, z, Ids.state("minecraft:diamond_block"));
+		bp.mark("gen_diamond", x, 1, z);
+	}
+
+	private static void centre(Blueprint bp, Theme t, RandomSource rnd) {
+		Build.island(bp, 0, 0, 0, 7.5, 7, () -> t.floor(rnd), t.under(), t.rough(), rnd);
+		for (int sx : new int[] {-2, 2}) {
+			bp.set(sx, 0, 0, Ids.state("minecraft:emerald_block"));
+			bp.mark("gen_emerald", sx, 1, 0);
+		}
+		for (int[] c : new int[][] {{-4, -4}, {4, 4}, {-4, 4}, {4, -4}}) {
+			Build.pillar(bp, c[0], 1, c[1], 3, t.pillar());
+			bp.set(c[0], 4, c[1], t.light());
+		}
+	}
+}

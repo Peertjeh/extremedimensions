@@ -25,6 +25,8 @@ public final class ConfigManager {
 	private static KitConfig kits = new KitConfig().normalize();
 	private static TitleConfig titles = new TitleConfig().normalize();
 	private static CosmeticConfig cosmetics = new CosmeticConfig().normalize();
+	private static BedWarsConfig bedwars = new BedWarsConfig().normalize();
+	private static PropHuntConfig prophunt = new PropHuntConfig().normalize();
 
 	public static Path dir() {
 		return FabricLoader.getInstance().getConfigDir().resolve(BattleHub.MOD_ID);
@@ -44,6 +46,14 @@ public final class ConfigManager {
 
 	public static CosmeticConfig cosmetics() {
 		return cosmetics;
+	}
+
+	public static BedWarsConfig bedwars() {
+		return bedwars;
+	}
+
+	public static PropHuntConfig prophunt() {
+		return prophunt;
 	}
 
 	/** (Re)loads every file. A broken file keeps the previous values and is reported in the log. */
@@ -79,6 +89,20 @@ public final class ConfigManager {
 		if (cos != null) {
 			cosmetics = cos.normalize();
 			write("cosmetics.json", cosmetics);
+		} else {
+			ok = false;
+		}
+		BedWarsConfig bw = read("bedwars.json", BedWarsConfig.class, BedWarsConfig::new);
+		if (bw != null) {
+			bedwars = bw.normalize();
+			write("bedwars.json", bedwars);
+		} else {
+			ok = false;
+		}
+		PropHuntConfig ph = read("prophunt.json", PropHuntConfig.class, PropHuntConfig::new);
+		if (ph != null) {
+			prophunt = ph.normalize();
+			write("prophunt.json", prophunt);
 		} else {
 			ok = false;
 		}
