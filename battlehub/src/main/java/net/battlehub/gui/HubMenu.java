@@ -2,6 +2,7 @@ package net.battlehub.gui;
 
 import java.util.function.Consumer;
 
+import net.battlehub.util.Icon;
 import net.battlehub.util.Msg;
 import net.battlehub.util.Tasks;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,6 +23,7 @@ public final class HubMenu extends ChestMenu {
 	private final Screen screen;
 	private final SimpleContainer box;
 	private Canvas canvas;
+	private boolean resyncQueued;
 
 	private HubMenu(int id, Inventory inv, Screen screen, SimpleContainer box) {
 		super(type(screen.rows()), id, inv, box, screen.rows());
@@ -59,7 +61,13 @@ public final class HubMenu extends ChestMenu {
 		}
 		canvas = c;
 		for (int i = 0; i < box.getContainerSize(); i++) {
-			box.setItem(i, c.item(i));
+			ItemStack item = c.item(i);
+			if (!item.isEmpty() && !Icon.isHubItem(item)) {
+				// Recognisable anywhere: if it ever leaves the menu, MenuGuard removes it.
+				item = item.copy();
+				Icon.mark(item, Icon.MENU);
+			}
+			box.setItem(i, item);
 		}
 		// The player's tick broadcasts the changed slots to the client.
 	}
@@ -69,6 +77,9 @@ public final class HubMenu extends ChestMenu {
 		if (!(player instanceof ServerPlayer sp) || canvas == null) {
 			return;
 		}
+		// Nothing below moves an item. The client may have predicted a move (sorting mods send many clicks at
+		// once), so the real contents are sent back right after this tick's packets.
+		resyncSoon(sp);
 		if (slot < 0 || slot >= box.getContainerSize()) {
 			return;
 		}
@@ -87,6 +98,28 @@ public final class HubMenu extends ChestMenu {
 				action.accept(click);
 			}
 		});
+	}
+
+	private void resyncSoon(ServerPlayer sp) {
+		if (resyncQueued) {
+			return;
+		}
+		resyncQueued = true;
+		Tasks.next(() -> {
+			resyncQueued = false;
+			MenuGuard.sweep(sp);
+			if (sp.containerMenu == this) {
+				sendAllDataToRemote();
+			}
+		});
+	}
+
+	@Override
+	public void removed(Player player) {
+		super.removed(player);
+		if (player instanceof ServerPlayer sp) {
+			MenuGuard.sweep(sp);
+		}
 	}
 
 	@Override

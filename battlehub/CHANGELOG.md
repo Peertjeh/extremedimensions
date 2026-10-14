@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.1
+
+### Fixed
+* Items could be taken out of BattleHub menus in creative mode, for example with the buttons of
+  inventory-sorting mods. Creative clients set their own inventory slots directly, which skipped the click
+  protection. Now:
+  * the server refuses creative inventory changes while a BattleHub menu is open;
+  * it refuses any BattleHub item, and anything that would overwrite or clear the compass;
+  * every menu item is marked and removed from an inventory if it ever ends up there by any route;
+  * after a refused click the client gets the real contents back at once, so no ghost items remain.
+
 ## 1.0.0 – first release
 
 For Minecraft 26.3, Fabric Loader 0.19.5+, Fabric API. Server-side only; vanilla clients can join.

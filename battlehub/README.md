@@ -65,6 +65,8 @@ Watch any running match in spectator mode, kept inside the arena. Leave with `/h
 * Inventory snapshots are also saved to disk. If the server crashes in the middle of a match, the
   player gets everything back on the next join.
 * When the server stops, every match ends cleanly and every player is restored.
+* Nothing can be taken out of a BattleHub menu: not by clicking, not with inventory-sorting mods, not
+  in creative mode.
 * No item drops from kits, no block breaking in matches or the lobby, no damage outside matches.
 * A player is never in two matches or queues at once.
 

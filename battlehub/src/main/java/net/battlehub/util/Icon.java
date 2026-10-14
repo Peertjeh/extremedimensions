@@ -83,12 +83,20 @@ public final class Icon {
 		return this;
 	}
 
+	/** Tag of every item shown in a BattleHub menu; such items may never leave the menu. */
+	public static final String MENU = "menu";
+
 	/** Marks the stack as a BattleHub item (compass, leave-queue item, ...). */
 	public Icon tag(String value) {
+		mark(stack, value);
+		return this;
+	}
+
+	/** Marks an existing stack as a BattleHub item. */
+	public static void mark(ItemStack stack, String value) {
 		CompoundTag t = new CompoundTag();
 		t.putString(TAG, value);
 		stack.set(DataComponents.CUSTOM_DATA, CustomData.of(t));
-		return this;
 	}
 
 	/** Hides attribute, enchantment and other noise lines in the tooltip. */

@@ -18,6 +18,7 @@ public final class Menus {
 		tick++;
 		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
 			if (p.containerMenu instanceof HubMenu m) {
+				MenuGuard.sweep(p);
 				int every = m.screen().refreshTicks();
 				if (every > 0 && tick % every == 0) {
 					m.redraw();
