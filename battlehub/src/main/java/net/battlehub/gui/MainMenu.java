@@ -7,7 +7,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Items;
 
-/** The BattleHub Compass menu: Duels, Ranged, Party Games, Ranked, Spectate, Stats. */
+/** The BattleHub Compass menu: Duels, Ranged, Party Games, Cosmetics, Ranked, Spectate, Stats. */
 public final class MainMenu extends Screen {
 	public MainMenu(ServerPlayer viewer) {
 		super(viewer);
@@ -34,6 +34,9 @@ public final class MainMenu extends Screen {
 		c.set(12, Icon.of(Items.CAKE).name(Lang.item(viewer, "menu.main.party"))
 				.lore(Lang.loreLines(viewer, "menu.main.party.lore")).clean().build(),
 				click -> new PartyGamesMenu(viewer).open());
+		c.set(13, Icon.of(Items.FIREWORK_ROCKET).name(Lang.item(viewer, "menu.main.cosmetics"))
+				.lore(Lang.loreLines(viewer, "menu.main.cosmetics.lore")).clean().build(),
+				click -> new CosmeticsMenu(viewer).open());
 		c.set(14, Icon.of(Items.NETHER_STAR).name(Lang.item(viewer, "menu.main.ranked"))
 				.lore(Lang.loreLines(viewer, "menu.main.ranked.lore")).clean().build(),
 				click -> new RankedMenu(viewer).open());

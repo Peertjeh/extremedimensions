@@ -2,6 +2,7 @@ package net.battlehub.progression;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import net.battlehub.config.ConfigManager;
@@ -10,6 +11,7 @@ import net.battlehub.core.TitleDef;
 import net.battlehub.core.TitleRules;
 import net.battlehub.data.PlayerStore;
 import net.battlehub.lang.Lang;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
@@ -18,8 +20,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.scores.PlayerTeam;
 
 /**
- * Shows the selected title in front of the name in chat, above the head and in the tab list, using one scoreboard
- * team per player ("bh." + uuid). Matches can temporarily override the prefix (CTF team colours).
+ * Shows the selected title in front of the name and the bought name colour in chat, above the head and in the tab
+ * list, using one scoreboard team per player ("bh." + uuid). Matches can temporarily override the prefix (CTF team
+ * colours).
  */
 public final class TitleService {
 	private TitleService() {}
@@ -64,8 +67,11 @@ public final class TitleService {
 		String name = p.getScoreboardName();
 		String teamName = teamName(p.getUUID());
 		Component override = OVERRIDES.get(p.getUUID());
-		Component title = display(PlayerStore.get(p));
-		boolean wanted = override != null || (title != null && ConfigManager.config().titles.useScoreboardTeams);
+		PlayerProfile prof = PlayerStore.get(p);
+		Component title = display(prof);
+		// Team colours (CTF) win over the bought name colour
+		ChatFormatting color = override == null ? Cosmetics.nameColor(prof) : null;
+		boolean wanted = override != null || ((title != null || color != null) && ConfigManager.config().titles.useScoreboardTeams);
 		PlayerTeam team = board.getPlayerTeam(teamName);
 		if (!wanted) {
 			if (team != null) {
@@ -84,12 +90,13 @@ public final class TitleService {
 		MutableComponent prefix = Component.empty();
 		if (override != null) {
 			prefix.append(override);
-		} else {
+		} else if (title != null) {
 			prefix.append(Component.literal("[").withStyle(s -> s.withColor(0x555555)))
 					.append(title)
 					.append(Component.literal("] ").withStyle(s -> s.withColor(0x555555)));
 		}
 		team.setPlayerPrefix(prefix);
+		team.setColor(color == null ? Optional.empty() : Cosmetics.teamColor(color));
 		if (current == null || !current.getName().equals(teamName)) {
 			board.addPlayerToTeam(name, team);
 		}

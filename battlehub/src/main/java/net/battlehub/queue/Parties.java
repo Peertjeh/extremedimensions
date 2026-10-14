@@ -92,11 +92,9 @@ public final class Parties {
 		if (!mode.isParty() || !Queues.canQueue(p, mode)) {
 			return false;
 		}
-		if (vote != null && !vote.isBlank()) {
-			VOTES.computeIfAbsent(mode, m -> new HashMap<>()).put(p.getUUID(), vote);
-			LAST_VOTE.computeIfAbsent(p.getUUID(), u -> new EnumMap<>(GameMode.class)).put(mode, vote);
-		}
 		if (in(p.getUUID(), mode)) {
+			// Already waiting: only the vote changes
+			recordVote(p, mode, vote);
 			return true;
 		}
 		PlayAgain.forget(p.getUUID());
@@ -107,6 +105,8 @@ public final class Parties {
 			Msg.send(p, "party.full", Lang.tr(p, Icons.modeKey(mode)));
 			return false;
 		}
+		// After leaving the other queues, which clears the old votes
+		recordVote(p, mode, vote);
 		Sessions.toQueue(p.getUUID(), "party:" + mode.id());
 		HubItems.ensure(p, true);
 		MinecraftServer server = p.level().getServer();
@@ -119,6 +119,13 @@ public final class Parties {
 		Msg.sound(p, SoundEvents.NOTE_BLOCK_PLING, 0.6f, 1.2f);
 		Menus.refreshAll(server);
 		return true;
+	}
+
+	private static void recordVote(ServerPlayer p, GameMode mode, String vote) {
+		if (vote != null && !vote.isBlank()) {
+			VOTES.computeIfAbsent(mode, m -> new HashMap<>()).put(p.getUUID(), vote);
+			LAST_VOTE.computeIfAbsent(p.getUUID(), u -> new EnumMap<>(GameMode.class)).put(mode, vote);
+		}
 	}
 
 	/** Removes the player from every lobby; true if they were in one. */

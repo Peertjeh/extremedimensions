@@ -121,6 +121,7 @@ public final class HubEvents {
 		Queues.tick(server);
 		net.battlehub.spectate.Spectators.tick(server);
 		Menus.tick(server);
+		net.battlehub.progression.Cosmetics.tick(server, tick);
 		if (net.battlehub.debug.SelfTest.enabled()) {
 			net.battlehub.debug.SelfTest.tick();
 		}
@@ -192,6 +193,7 @@ public final class HubEvents {
 		}
 		Queues.leaveAll(p);
 		TitleService.remove(p);
+		net.battlehub.progression.Cosmetics.forget(p.getUUID());
 		PlayerStore.save(p.getUUID());
 		Sessions.remove(p.getUUID());
 	}

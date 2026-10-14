@@ -25,6 +25,7 @@ import net.battlehub.gui.Icons;
 import net.battlehub.gui.Menus;
 import net.battlehub.lang.Lang;
 import net.battlehub.lobby.HubItems;
+import net.battlehub.progression.Cosmetics;
 import net.battlehub.session.Sessions;
 import net.battlehub.util.Msg;
 import net.minecraft.network.chat.Component;
@@ -340,6 +341,9 @@ public abstract class Match {
 			}
 			case ENDING -> {
 				tickWatchers();
+				if (phaseTicks % 10 == 0) {
+					celebrate();
+				}
 				if (phaseTicks >= ConfigManager.config().timings.endDelaySeconds * 20) {
 					close();
 				}
@@ -451,6 +455,7 @@ public abstract class Match {
 		if (credited) {
 			kills.merge(killer.getUUID(), 1, Integer::sum);
 			Msg.sound(killer, SoundEvents.EXPERIENCE_ORB_PICKUP, 1f, 1.2f);
+			Cosmetics.onKill(killer, victim, victim.position());
 		}
 		final ServerPlayer k = credited ? killer : null;
 		forEveryone(p -> {
@@ -582,6 +587,16 @@ public abstract class Match {
 			BattleHub.LOGGER.error("Could not apply results of match {}", id, e);
 		}
 		Menus.refreshAll(server);
+	}
+
+	/** Winners still in the arena show their win effect. */
+	private void celebrate() {
+		for (UUID id : participants) {
+			ServerPlayer p = player(id);
+			if (p != null && !left.contains(id) && outcomes.get(id) == Outcome.WIN) {
+				Cosmetics.celebrate(p, phaseTicks);
+			}
+		}
 	}
 
 	/** Everyone back to the lobby, arena cleared, slot released. */

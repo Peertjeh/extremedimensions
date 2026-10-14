@@ -52,6 +52,10 @@ public final class HubCommands {
 					return net.battlehub.spectate.Spectators.join(p, m) ? 1 : 0;
 				})));
 
+		d.register(Commands.literal("cosmetics").executes(c -> {
+			new net.battlehub.gui.CosmeticsMenu(c.getSource().getPlayerOrException()).open();
+			return 1;
+		}));
 		d.register(Commands.literal("stats")
 				.executes(c -> {
 					ServerPlayer p = c.getSource().getPlayerOrException();

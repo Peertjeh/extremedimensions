@@ -66,6 +66,7 @@ public final class SelfTest {
 		lobbyAndMenus(server, s);
 		LayoutTests.all(s);
 		MenuSecurityTests.all(server, s);
+		CosmeticsTests.all(server, s);
 		duel(server, s, GameMode.SWORD, "queue", "kill");
 		duel(server, s, GameMode.SWORD, "queue", "disconnect");
 		duel(server, s, GameMode.SWORD, "queue", "forfeit");

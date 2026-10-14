@@ -24,6 +24,7 @@ public final class ConfigManager {
 	private static HubConfig config = new HubConfig().normalize();
 	private static KitConfig kits = new KitConfig().normalize();
 	private static TitleConfig titles = new TitleConfig().normalize();
+	private static CosmeticConfig cosmetics = new CosmeticConfig().normalize();
 
 	public static Path dir() {
 		return FabricLoader.getInstance().getConfigDir().resolve(BattleHub.MOD_ID);
@@ -39,6 +40,10 @@ public final class ConfigManager {
 
 	public static TitleConfig titles() {
 		return titles;
+	}
+
+	public static CosmeticConfig cosmetics() {
+		return cosmetics;
 	}
 
 	/** (Re)loads every file. A broken file keeps the previous values and is reported in the log. */
@@ -67,6 +72,13 @@ public final class ConfigManager {
 		if (t != null) {
 			titles = t.normalize();
 			write("titles.json", titles);
+		} else {
+			ok = false;
+		}
+		CosmeticConfig cos = read("cosmetics.json", CosmeticConfig.class, CosmeticConfig::new);
+		if (cos != null) {
+			cosmetics = cos.normalize();
+			write("cosmetics.json", cosmetics);
 		} else {
 			ok = false;
 		}
