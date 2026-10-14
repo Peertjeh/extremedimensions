@@ -730,7 +730,7 @@ def m_rune_plate(ctx):
 
 MATS.update({
     "weave": lambda c: m_weave(c, "over"),
-    "weave_ragged": lambda c: m_weave(c, "over", ragged=True, veins=0.2),
+    "weave_ragged": lambda c: m_weave(c, "over", ragged=True, veins=0.28),
     "weave_under": lambda c: m_weave(c, "under"),
     "weave_under_ragged": lambda c: m_weave(c, "under", ragged=True),
     "weave_trim": m_trim,

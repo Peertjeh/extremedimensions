@@ -230,6 +230,12 @@ def _head(m, head):
         length = (14 + (i * 7) % 7) if back else (13 + (i * 5) % 7)
         glow = i % 3 == 1
         m.strand(f"veil_{i}", head, (x, -20.9, z), length, 0.5 if glow else 1.0, "thread" if glow else "veil", group="veil")
+    # in front, the veil parts round the mask and falls to the collar
+    for j in range(10):
+        sx, r = (1, -1)[j % 2], j // 2
+        glow = r % 2 == 1
+        m.strand(f"veilf_{j}", head, (sx * (7.3 + 0.7 * r), -20.6, -7.5 - 0.15 * r), 15 + 1.6 * r, 0.5 if glow else 0.9,
+                 "thread" if glow else "veil", group="veil")
     for j, sx in enumerate((1, -1)):
         c = m.strand(f"crowncharm_{j}", head, (9.9 * sx, -21.4, -5.4), 6, 0.5, "thread")
         m.box(c, -0.8, 6, -0.8, 1.6, 2.2, 1.6, "glass")
@@ -271,6 +277,7 @@ def _arm(m, torso, side, sx):
     arm = m.part(f"arm_{side}", torso, (12 * sx, -25, 0), (0, 0, -1.72 * sx), anim=True)
     m.box(arm, -4.5, -1, -4.5, 9, 36, 9, "weave")
     m.box(arm, -5.5, 16, -5.5, 11, 13, 11, "weave")
+    m.box(arm, -5.8, 15.6, -5.8, 11.6, 2.4, 11.6, "weave_trim")
     m.box(arm, -6.6, 26, -6.6, 13.2, 8, 13.2, "weave")
     m.box(arm, -7.1, 32, -7.1, 14.2, 5, 14.2, "weave_trim")
 
@@ -302,7 +309,7 @@ def _arm(m, torso, side, sx):
         m.box(sp, -0.9, -6, -0.9, 1.8, 6, 1.8, "bone")
         m.box(sp, -0.45, -10, -0.45, 0.9, 4, 0.9, "bone_dark")
     # drapes hanging plumb from under the sleeve, longest at the cuff (group robe), and thin tatters (group strand)
-    for j, (ya, length) in enumerate([(6, 18), (12, 26), (18, 30), (27, 48), (33, 62)]):
+    for j, (ya, length) in enumerate([(6, 18), (12, 22), (18, 30), (27, 48), (33, 62)]):
         zo = (-1.0, 0.8, -0.6, 1.0, -0.4)[j]
         dp = m.part(f"drape_{side}{j}", arm, (-sx * 4.4, ya, zo), orient(m, arm, (0, 0.14 * (1 if j % 2 else -1), 0)), group="robe")
         m.box(dp, -3, 0, -0.6, 6, length, 1.2, "weave_ragged")
@@ -356,9 +363,9 @@ def _arm(m, torso, side, sx):
     # a cat's cradle between the fingers, beaded with light
     for k, (a, b, sag) in enumerate([(1, 3, 16), (0, 2, 8), (2, 4, 9), (0, 4, 26)]):
         thread(f"thl_{side}{k}_", catenary(tips[a], tips[b], sag, 8), bead=True)
-    # threads back to the spindle at its heart and to the sash
-    thread(f"thc_{side}_", catenary(tips[1], [sx * 3.2, -114, -8.6], 34, 16))
-    thread(f"thd_{side}_", catenary(tips[3], [sx * 10.5, -97.5, -9.8], 44, 16))
+    # threads back to the spindle at its heart, and down to wind onto the spool at its hip
+    thread(f"thc_{side}_", catenary(tips[1], [sx * 3.2, -114, -8.6], 26, 16))
+    thread(f"thd_{side}_", catenary(tips[3], [sx * 22, -87, -7.0], 26, 16))
 
 
 # ----------------------------------------------------------------------------- the needles
