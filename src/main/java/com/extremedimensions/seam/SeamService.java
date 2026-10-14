@@ -5,6 +5,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 
 import com.extremedimensions.ExtremeDimensions;
@@ -79,6 +81,9 @@ public final class SeamService {
 		RIFTS.clear();
 		SeamArchitect.clear();
 		falls = null;
+		generation++;
+		designing = false;
+		seedKnown = false;
 	}
 
 	public static boolean inSeam(ServerPlayer p) {
@@ -204,7 +209,10 @@ public final class SeamService {
 		ServerLevel level = s.getLevel(SEAM);
 		if (level != null) {
 			if (SeamArchitect.pending() > 0) {
-				SeamArchitect.tick(level, 4000);
+				SeamArchitect.tick(level, Math.max(1, Config.SEAM_BUILD_BUDGET_MS) * 1_000_000L);
+			}
+			if (s.getTickCount() % 200 == 0 && SeamArchitect.pending() > 100_000) {
+				forgetFar(level);
 			}
 			lights(level, s.getTickCount());
 		}
@@ -337,8 +345,17 @@ public final class SeamService {
 		return h & Long.MAX_VALUE;
 	}
 
+	private static volatile long seedCache;
+	private static volatile boolean seedKnown;
+
+	/** The world seed, read once on the server thread (designs run on their own thread and only use the copy). */
 	private static long seed() {
-		return seam().getSeed();
+		if (!seedKnown) {
+			ServerLevel level = seam();
+			seedCache = level == null ? 0 : level.getSeed();
+			seedKnown = level != null;
+		}
+		return seedCache;
 	}
 
 	private static final int PLAIN = 0, LOOM = 1, VILLAGE = 2, SPIRE = 3, HANGING = 4, HALO = 5;
@@ -374,22 +391,31 @@ public final class SeamService {
 	}
 
 	/** True when a rift's arrival island lies within {@code dist} of this point. */
-	private static boolean nearArrival(int x, int z, int dist) {
-		for (String key : DataStore.seamCells()) {
-			if (key.startsWith("a@")) {
-				String[] xz = key.substring(2).split(",");
-				double dx = Integer.parseInt(xz[0]) - x, dz = Integer.parseInt(xz[1]) - z;
-				if (dx * dx + dz * dz < (double) dist * dist) {
-					return true;
-				}
+	private static boolean nearArrival(int x, int z, int dist, List<int[]> arrivals) {
+		for (int[] a : arrivals) {
+			double dx = a[0] - x, dz = a[1] - z;
+			if (dx * dx + dz * dz < (double) dist * dist) {
+				return true;
 			}
 		}
 		return false;
 	}
 
+	/** Every rift's arrival island (x, z), copied on the server thread so a design can read it on its own. */
+	private static List<int[]> arrivals() {
+		List<int[]> out = new ArrayList<>();
+		for (String key : DataStore.seamCells()) {
+			if (key.startsWith("a@")) {
+				String[] xz = key.substring(2).split(",");
+				out.add(new int[] {Integer.parseInt(xz[0]), Integer.parseInt(xz[1])});
+			}
+		}
+		return out;
+	}
+
 	/** Designs the cells around the player, nearest first, one per call; the architect builds them over time. */
 	private static void build(ServerPlayer p) {
-		if (SeamArchitect.pending() > 150_000) {
+		if (designing || SeamArchitect.pending() > 150_000) {
 			return;
 		}
 		int pcx = Math.floorDiv(p.getBlockX(), CELL);
@@ -411,7 +437,7 @@ public final class SeamService {
 						continue;
 					}
 					DataStore.seamCells().add(key);
-					design(cx, cz);
+					designLater(p.level().getServer(), cx, cz);
 					return;
 				}
 			}
@@ -430,27 +456,103 @@ public final class SeamService {
 	}
 
 	/** The island of a cell as it is (or will be) built: the same random source, so the rim is predicted exactly. */
-	private static SeamArchitect.Shape shapeOf(int cx, int cz, Random rnd) {
+	private static SeamArchitect.Shape shapeOf(int cx, int cz, Random rnd, List<int[]> arrivals) {
 		int[] c = center(cx, cz);
 		int r = c[3];
-		if (nearArrival(c[0], c[2], r + 18)) {
+		if (nearArrival(c[0], c[2], r + 18, arrivals)) {
 			r = Math.min(r, 10);
 		}
 		return SeamArchitect.Shape.of(rnd, c[0], c[1], c[2], r);
 	}
 
+	// ------------------------------------------------------------------ designing (off the server thread)
+
+	/** One thread designs islands so the server never stalls on it; the plans are queued back on the server thread. */
+	private static final ExecutorService DESIGNER = Executors.newSingleThreadExecutor(r -> {
+		Thread t = new Thread(r, "Extreme Dimensions Seam architect");
+		t.setDaemon(true);
+		return t;
+	});
+	/** Bumped when the world closes, so a design finished for the old world is thrown away. */
+	private static volatile int generation;
+	private static boolean designing;
+
+	private static void designLater(MinecraftServer s, int cx, int cz) {
+		long seed = seed();
+		List<int[]> arrivals = arrivals();
+		int gen = generation;
+		designing = true;
+		DESIGNER.execute(() -> {
+			SeamArchitect.Plan plan = null;
+			try {
+				plan = plan(cx, cz, arrivals);
+			} catch (RuntimeException e) {
+				ExtremeDimensions.LOGGER.error("Could not design Seam cell {},{} (seed {})", cx, cz, seed, e);
+			}
+			SeamArchitect.Plan done = plan;
+			s.execute(() -> {
+				if (gen != generation) {
+					return;
+				}
+				designing = false;
+				if (done != null) {
+					commit(done);
+				}
+			});
+		});
+	}
+
+	/** Unfinished islands far from everyone in the Seam are forgotten (they wait in memory); they are designed again on return. */
+	private static void forgetFar(ServerLevel level) {
+		List<double[]> near = new ArrayList<>();
+		for (ServerPlayer p : level.players()) {
+			near.add(new double[] {p.getX(), p.getZ()});
+		}
+		List<SeamArchitect.Meta> dropped = SeamArchitect.dropFar(near, 3.5 * CELL);
+		for (SeamArchitect.Meta m : dropped) {
+			DataStore.seamCells().remove(m.cell());
+			for (int[] f : m.falls()) {
+				DataStore.seamCells().remove("f@" + f[0] + "," + f[1] + "," + f[2] + "," + f[3]);
+			}
+			m.marks().forEach(DataStore.seamCells()::remove);
+		}
+		if (!dropped.isEmpty()) {
+			falls = null;
+			DataStore.markDirty();
+			ExtremeDimensions.LOGGER.info("Seam architect: put off {} unfinished islands far from everyone", dropped.size());
+		}
+	}
+
+	/** Designs a cell right away and queues it (the operator showcase and a regenerated Seam). */
 	private static void design(int cx, int cz) {
+		SeamArchitect.Plan plan = plan(cx, cz, arrivals());
+		if (plan != null) {
+			commit(plan);
+		}
+	}
+
+	/** On the server thread: the plan goes into the build queue and its marks and light falls into the world data. */
+	private static void commit(SeamArchitect.Plan plan) {
+		plan.queue();
+		DataStore.seamCells().addAll(plan.marks);
+		addFalls(plan.falls);
+		DataStore.markDirty();
+	}
+
+	/** The plan of a cell, ready to queue, or null where the Heart's crown stands. Touches no world. */
+	private static SeamArchitect.Plan plan(int cx, int cz, List<int[]> arrivals) {
 		int[] c = center(cx, cz);
 		if (nearHeart(c)) {
-			return;
+			return null;
 		}
 		Random rnd = new Random(hash(cx, cz, seed() + 7));
-		SeamArchitect.Shape shape = shapeOf(cx, cz, rnd);
+		SeamArchitect.Shape shape = shapeOf(cx, cz, rnd, arrivals);
 		SeamArchitect.Plan plan = new SeamArchitect.Plan();
 		int x = shape.x(), top = shape.top(), z = shape.z(), r = shape.r();
-		int kind = nearArrival(x, z, r + 30) ? PLAIN : kind(c[4]);
+		int kind = nearArrival(x, z, r + 30, arrivals) ? PLAIN : kind(c[4]);
 		// Which sides get a bridge: this cell strings them east and south, its neighbours west and north
-		SeamArchitect.Shape east = neighbour(cx + 1, cz), west = neighbour(cx - 1, cz), south = neighbour(cx, cz + 1), north = neighbour(cx, cz - 1);
+		SeamArchitect.Shape east = neighbour(cx + 1, cz, arrivals), west = neighbour(cx - 1, cz, arrivals);
+		SeamArchitect.Shape south = neighbour(cx, cz + 1, arrivals), north = neighbour(cx, cz - 1, arrivals);
 		boolean toEast = east != null && (hash(cx, cz, seed() + 11) & 3) != 0 && SeamArchitect.canBridge(shape, east, true);
 		boolean toSouth = south != null && (hash(cx, cz, seed() + 13) & 3) != 0 && SeamArchitect.canBridge(shape, south, false);
 		boolean fromWest = west != null && (hash(cx - 1, cz, seed() + 11) & 3) != 0 && SeamArchitect.canBridge(west, shape, true);
@@ -464,13 +566,14 @@ public final class SeamService {
 		if (toSouth) {
 			SeamArchitect.bridge(plan, rnd, shape, south, false);
 		}
-		plan.queue();
-		addFalls(plan.falls);
+		plan.cell = "c@" + cx + "," + cz;
+		plan.prepare();
+		return plan;
 	}
 
 	/** The island of a neighbouring cell as it is (or will be) built, or null if the Heart's crown has that cell. */
-	private static SeamArchitect.Shape neighbour(int cx, int cz) {
-		return nearHeart(center(cx, cz)) ? null : shapeOf(cx, cz, new Random(hash(cx, cz, seed() + 7)));
+	private static SeamArchitect.Shape neighbour(int cx, int cz, List<int[]> arrivals) {
+		return nearHeart(center(cx, cz)) ? null : shapeOf(cx, cz, new Random(hash(cx, cz, seed() + 7)), arrivals);
 	}
 
 	/**
@@ -494,7 +597,7 @@ public final class SeamService {
 				SeamArchitect.village(plan, rnd, x, top, z, r);
 				SeamArchitect.streets(plan, rnd, s, mask, r >= 24 ? 9 : 7, false);
 				SeamArchitect.grounds(plan, rnd, s, 3, SeamArchitect.TREE, SeamArchitect.LAMP);
-				DataStore.seamCells().add("v@" + x + "," + top + "," + z);
+				plan.marks.add("v@" + x + "," + top + "," + z);
 			}
 			case HANGING -> {
 				SeamArchitect.hangingTower(plan, rnd, x, top - depth, z);
@@ -539,13 +642,13 @@ public final class SeamService {
 			boolean east = i < n - 1 && SeamArchitect.canBridge(shapes[i], shapes[i + 1], true);
 			boolean west = i > 0 && SeamArchitect.canBridge(shapes[i - 1], shapes[i], true);
 			SeamArchitect.Plan plan = new SeamArchitect.Plan();
+			plan.cell = "c@" + (40 + i) + ",40";
 			int depth = SeamArchitect.island(plan, rnds[i], shapes[i], true);
 			build(plan, rnds[i], kinds[i], shapes[i], depth, (east ? 1 : 0) | (west ? 2 : 0));
 			if (east) {
 				SeamArchitect.bridge(plan, rnds[i], shapes[i], shapes[i + 1], true);
 			}
-			plan.queue();
-			addFalls(plan.falls);
+			commit(plan);
 		}
 		ExtremeDimensions.LOGGER.info("Seam showcase: {} structures, {} blocks queued at x={}..{} z={}", n, SeamArchitect.pending(),
 				40 * CELL, 46 * CELL, 40 * CELL + CELL / 2);

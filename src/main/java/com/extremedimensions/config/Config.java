@@ -204,6 +204,8 @@ public final class Config {
 
 	// --- Technical -------------------------------------------------------------------------------
 
+	/** Milliseconds per tick the Seam may spend building islands (blocks in chunks nobody has loaded wait). */
+	public static int SEAM_BUILD_BUDGET_MS = 5;
 	/** Ticks between state updates sent to each player. */
 	public static int SYNC_INTERVAL_TICKS = 10;
 	/** Ticks after joining before items, recipes and effects are handed out. */

@@ -70,29 +70,57 @@ public class PerfTests {
 	}
 
 	/**
-	 * The Seam: designing one of every structure, and building the queued blocks at the rate the game does. The test
-	 * server only loads the vanilla worlds, so the blocks are laid in the test level (same cost per block).
+	 * The Seam: designing one of every structure, then building at the game's pace. Blocks in chunks nobody has loaded
+	 * must wait without costing anything; once the chunks are loaded the architect builds within its time budget.
+	 * The test server only loads the vanilla worlds, so the blocks are laid in the test level (same cost per block).
 	 */
-	@GameTest(maxTicks = 400)
+	@GameTest(maxTicks = 600)
 	public void seamStructures(GameTestHelper helper) {
-		ServerLevel seam = helper.getLevel();
+		ServerLevel level = helper.getLevel();
 		SeamArchitect.clear();
 		long t0 = System.nanoTime();
 		int kinds = SeamService.designShowcase();
 		double designMs = (System.nanoTime() - t0) / 1e6;
 		int queued = SeamArchitect.pending();
-		// Build at the game's own rate (4000 blocks a tick) for a few ticks; the first chunks load on the way
-		int budget = 4000, rounds = 5;
-		long t1 = System.nanoTime();
-		for (int i = 0; i < rounds && SeamArchitect.pending() > 0; i++) {
-			SeamArchitect.tick(seam, budget);
-		}
-		double buildMs = (System.nanoTime() - t1) / 1e6 / rounds;
-		SeamArchitect.clear();
-		report("seam", String.format(java.util.Locale.ROOT, "designed %d structures (%d blocks) in %.1f ms; building %d blocks a tick costs %.1f ms",
-				kinds, queued, designMs, budget, buildMs));
 		CurseTests.check(helper, kinds == 6 && queued > 1000, "the showcase designed %s structures with %s blocks", kinds, queued);
-		CurseTests.check(helper, designMs < 5000, "designing the six structures took %s ms", designMs);
-		helper.succeed();
+		long budget = com.extremedimensions.config.Config.SEAM_BUILD_BUDGET_MS * 1_000_000L;
+		// Nothing is loaded out there yet: a tick of building must cost about nothing and load no chunk
+		long t1 = System.nanoTime();
+		SeamArchitect.tick(level, budget);
+		double idleMs = (System.nanoTime() - t1) / 1e6;
+		// Load the first two islands' chunks, as players walking there would
+		int x0 = 3940 >> 4, x1 = 4160 >> 4, z0 = 3940 >> 4, z1 = 4160 >> 4;
+		for (int cx = x0; cx <= x1; cx++) {
+			for (int cz = z0; cz <= z1; cz++) {
+				level.setChunkForced(cx, cz, true);
+			}
+		}
+		helper.runAfterDelay(80, () -> {
+			int before = SeamArchitect.pending();
+			double worst = 0, total = 0;
+			int ticks = 60;
+			for (int i = 0; i < ticks; i++) {
+				long t = System.nanoTime();
+				SeamArchitect.tick(level, budget);
+				double ms = (System.nanoTime() - t) / 1e6;
+				worst = Math.max(worst, ms);
+				total += ms;
+			}
+			int built = before - SeamArchitect.pending();
+			for (int cx = x0; cx <= x1; cx++) {
+				for (int cz = z0; cz <= z1; cz++) {
+					level.setChunkForced(cx, cz, false);
+				}
+			}
+			SeamArchitect.clear();
+			report("seam", String.format(java.util.Locale.ROOT,
+					"designed %d structures (%d blocks) in %.1f ms off the server thread; a tick with nothing loaded %.2f ms; "
+							+ "with chunks loaded %d blocks in %d ticks, %.2f ms a tick on average, worst %.2f ms (budget %d ms)",
+					kinds, queued, designMs, idleMs, built, ticks, total / ticks, worst, budget / 1_000_000));
+			CurseTests.check(helper, idleMs < 50, "building with nothing loaded took %s ms", idleMs);
+			CurseTests.check(helper, built > 0, "nothing was built in loaded chunks");
+			CurseTests.check(helper, worst < budget / 1e6 + 20, "a tick of building took %s ms (budget %s ms)", worst, budget / 1e6);
+			helper.succeed();
+		});
 	}
 }

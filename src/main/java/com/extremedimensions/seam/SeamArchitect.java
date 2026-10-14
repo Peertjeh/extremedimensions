@@ -45,7 +45,8 @@ public final class SeamArchitect {
 
 	// ------------------------------------------------------------------ blocks
 
-	private static final Map<String, BlockState> LOOKUP = new HashMap<>();
+	/** Shared with the designing thread, so concurrent. */
+	private static final Map<String, BlockState> LOOKUP = new java.util.concurrent.ConcurrentHashMap<>();
 
 	/** A vanilla block by id, looked up at runtime (block constants come and go between versions). */
 	static BlockState mc(String id, BlockState fallback) {
@@ -228,6 +229,10 @@ public final class SeamArchitect {
 		final List<Object[]> after = new ArrayList<>();
 		/** Light columns falling from island edges: x, y, z, length. */
 		public final List<int[]> falls = new ArrayList<>();
+		/** The cell this plan builds ("c@x,z"), so unfinished work far from everyone can be forgotten and redone. */
+		public String cell;
+		/** Keys for the world data (villages...), written when the plan is queued on the server thread. */
+		public final List<String> marks = new ArrayList<>();
 
 		public void set(int x, int y, int z, BlockState s) {
 			if (s != null && y > 1 && y < 250) {
@@ -306,48 +311,155 @@ public final class SeamArchitect {
 			}
 		}
 
+		private List<Map.Entry<Long, BlockState>> sorted;
+
+		/** Joins its walls and fences and orders it bottom to top; safe off the server thread (it touches no world). */
+		public void prepare() {
+			if (sorted == null) {
+				connect();
+				sorted = new ArrayList<>(blocks.entrySet());
+				sorted.sort((a, b) -> Integer.compare(BlockPos.getY(a.getKey()), BlockPos.getY(b.getKey())));
+			}
+		}
+
 		/** Queues it, bottom to top, so a structure rises from its island. */
 		public void queue() {
-			connect();
-			List<Map.Entry<Long, BlockState>> list = new ArrayList<>(blocks.entrySet());
-			list.sort((a, b) -> Integer.compare(BlockPos.getY(a.getKey()), BlockPos.getY(b.getKey())));
+			prepare();
+			int id = ++nextPlan;
+			List<Map.Entry<Long, BlockState>> list = sorted;
 			for (Map.Entry<Long, BlockState> e : list) {
-				QUEUE.add(new Object[] {e.getKey(), e.getValue()});
+				QUEUE.add(new Job(e.getKey(), e.getValue(), null, id));
 			}
 			for (Object[] a : after) {
-				QUEUE.add(new Object[] {null, a[1]});
+				@SuppressWarnings("unchecked") Consumer<ServerLevel> c = (Consumer<ServerLevel>) a[1];
+				QUEUE.add(new Job(((BlockPos) a[0]).asLong(), null, c, id));
 			}
+			UNBUILT.put(id, list.size());
+			PLANS.put(id, new Meta(cell == null ? "" : cell, List.copyOf(falls), List.copyOf(marks)));
 		}
 	}
 
-	private static final ArrayDeque<Object[]> QUEUE = new ArrayDeque<>();
+	/** A queued block to set, or an action to run once every block of its plan stands. */
+	private record Job(long pos, BlockState state, Consumer<ServerLevel> action, int plan) {}
+
+	/** What is remembered of a queued plan: its cell, light falls and marks (to forget them if the work is dropped). */
+	public record Meta(String cell, List<int[]> falls, List<String> marks) {}
+
+	private static final ArrayDeque<Job> QUEUE = new ArrayDeque<>();
+	/** Jobs whose chunk is not loaded: nobody can see them yet, so they wait instead of loading the chunk. */
+	private static final ArrayDeque<Job> WAITING = new ArrayDeque<>();
+	private static final Map<Integer, Integer> UNBUILT = new HashMap<>();
+	private static final Map<Integer, Meta> PLANS = new HashMap<>();
+	private static int nextPlan;
+	private static int calls;
 
 	public static void clear() {
 		QUEUE.clear();
+		WAITING.clear();
+		UNBUILT.clear();
+		PLANS.clear();
 	}
 
+	/** Blocks and actions still to do, waiting ones included. */
 	public static int pending() {
+		return QUEUE.size() + WAITING.size();
+	}
+
+	/** Blocks and actions queued and not yet tried (waiting ones excluded). */
+	public static int queued() {
 		return QUEUE.size();
 	}
 
 	private static long built;
 
-	/** Builds up to {@code budget} queued blocks. */
-	public static void tick(ServerLevel level, int budget) {
-		boolean had = !QUEUE.isEmpty();
-		for (int i = 0; i < budget && !QUEUE.isEmpty(); i++) {
-			built++;
-			Object[] q = QUEUE.poll();
-			if (q[0] == null) {
-				@SuppressWarnings("unchecked") Consumer<ServerLevel> c = (Consumer<ServerLevel>) q[1];
-				c.accept(level);
-			} else {
-				level.setBlock(BlockPos.of((Long) q[0]), (BlockState) q[1], 2);
+	/**
+	 * Builds queued blocks for at most {@code budgetNanos}, bottom to top. A block in a chunk nobody has loaded waits
+	 * (it is invisible anyway) instead of loading the chunk; waiting work is retried now and then.
+	 */
+	public static void tick(ServerLevel level, long budgetNanos) {
+		long deadline = System.nanoTime() + budgetNanos;
+		boolean had = pending() > 0;
+		int n = 0;
+		if (!WAITING.isEmpty() && ++calls % 20 == 0) {
+			for (int i = WAITING.size(); i > 0; i--) {
+				if ((++n & 31) == 0 && System.nanoTime() > deadline) {
+					break;
+				}
+				Job j = WAITING.poll();
+				if (!run(level, j)) {
+					WAITING.add(j);
+				}
 			}
 		}
-		if (had && QUEUE.isEmpty()) {
+		while (!QUEUE.isEmpty()) {
+			if ((++n & 31) == 0 && System.nanoTime() > deadline) {
+				break;
+			}
+			Job j = QUEUE.poll();
+			if (!run(level, j)) {
+				WAITING.add(j);
+			}
+		}
+		if (had && pending() == 0) {
 			com.extremedimensions.ExtremeDimensions.LOGGER.info("Seam architect: done, {} blocks built so far", built);
 		}
+	}
+
+	/** Does a job if its chunk is loaded (and, for an action, once its plan's blocks all stand). */
+	private static boolean run(ServerLevel level, Job j) {
+		BlockPos pos = BlockPos.of(j.pos());
+		if (!level.isLoaded(pos)) {
+			return false;
+		}
+		if (j.action() != null) {
+			if (UNBUILT.getOrDefault(j.plan(), 0) > 0) {
+				return false;
+			}
+			j.action().accept(level);
+			return true;
+		}
+		level.setBlock(pos, j.state(), 2);
+		built++;
+		if (UNBUILT.merge(j.plan(), -1, Integer::sum) <= 0) {
+			UNBUILT.remove(j.plan());
+		}
+		return true;
+	}
+
+	/**
+	 * Drops every plan with work waiting farther than {@code range} blocks from all the given positions, and returns
+	 * what they were, so their cells can be designed again when someone comes back.
+	 */
+	public static List<Meta> dropFar(List<double[]> near, double range) {
+		java.util.Set<Integer> far = new java.util.HashSet<>();
+		for (Job j : WAITING) {
+			if (far.contains(j.plan())) {
+				continue;
+			}
+			int x = BlockPos.getX(j.pos()), z = BlockPos.getZ(j.pos());
+			boolean close = false;
+			for (double[] p : near) {
+				double dx = p[0] - x, dz = p[1] - z;
+				close |= dx * dx + dz * dz < range * range;
+			}
+			if (!close) {
+				far.add(j.plan());
+			}
+		}
+		if (far.isEmpty()) {
+			return List.of();
+		}
+		WAITING.removeIf(j -> far.contains(j.plan()));
+		QUEUE.removeIf(j -> far.contains(j.plan()));
+		List<Meta> dropped = new ArrayList<>();
+		for (int id : far) {
+			UNBUILT.remove(id);
+			Meta m = PLANS.remove(id);
+			if (m != null) {
+				dropped.add(m);
+			}
+		}
+		return dropped;
 	}
 
 	/** A rotated local frame on a plan: local +z is the "front" and is turned by rot quarter turns (clockwise). */
