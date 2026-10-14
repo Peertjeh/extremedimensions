@@ -56,6 +56,8 @@ public final class Config {
 	public static int COLLAPSE_PULL_TICKS = 60;
 	/** Ticks before a dormant portal is checked again after a bounce. */
 	public static int BOUNCE_GRACE_TICKS = 40;
+	/** 1 = a big title ("The Tether Tightens", "Expedition Ended") on respawn after a death that costs a curse; 0 = none. */
+	public static int RESPAWN_TITLE = 0;
 
 	// --- Physical tether -------------------------------------------------------------------------
 

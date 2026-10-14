@@ -337,12 +337,18 @@ public final class ExpeditionService {
 		d.linked.clear();
 		d.runTime = 0;
 		CurseEffects.applyEffects(p, d);
+		// The death itself is message enough: the haze and the sound stay, the big title only if the config asks for it
+		boolean title = Config.RESPAWN_TITLE == 1;
 		if (Dims.OVERWORLD.equals(d.endedIn)) {
-			WorldFx.title(p, "title.extremedimensions.tether_tightens", "dark_purple", "title.extremedimensions.died_in", Dims.nameKey(Dims.OVERWORLD));
+			if (title) {
+				WorldFx.title(p, "title.extremedimensions.tether_tightens", "dark_purple", "title.extremedimensions.died_in", Dims.nameKey(Dims.OVERWORLD));
+			}
 			WorldFx.fx(p, Fx.ENDED, 0);
 			WorldFx.soundSelf(p, "extremedimensions:expedition_ended", 1.0f, 0.8f);
 		} else if (d.endedIn != null) {
-			WorldFx.title(p, "title.extremedimensions.expedition_ended", "dark_red", "title.extremedimensions.died_in", Dims.nameKey(d.endedIn));
+			if (title) {
+				WorldFx.title(p, "title.extremedimensions.expedition_ended", "dark_red", "title.extremedimensions.died_in", Dims.nameKey(d.endedIn));
+			}
 			WorldFx.fx(p, Fx.ENDED, 0);
 			WorldFx.soundSelf(p, "extremedimensions:expedition_ended", 1.0f, 1.0f);
 		} else {
@@ -367,12 +373,14 @@ public final class ExpeditionService {
 		if ("enderman".equals(type)) {
 			Journal.unlock(killer, d, JournalEntry.UNANCHORED);
 		}
-		// Only a monster of the wild, mostly felled by the killer's own hand, and not too many at one spot, is atonement
+		// Only a monster of the wild, mostly felled by the killer's own hand, and not too many at one spot, is atonement,
+		// and only such a monster may leave a Tether Fragment (fragments lift curses too: no farm may yield them)
 		boolean elite = ELITES.contains(type);
-		if ((elite || mob instanceof Enemy) && AtonementGuard.counts(killer, mob)) {
+		boolean wild = (elite || mob instanceof Enemy) && AtonementGuard.counts(killer, mob);
+		if (wild) {
 			PenaltyService.onKill(killer, elite, mob instanceof Enemy);
 		}
-		if (!Dims.isBeyond(Dims.of(mob.level())) || !(mob instanceof Enemy)) {
+		if (!wild || !Dims.isBeyond(Dims.of(mob.level())) || !(mob instanceof Enemy)) {
 			return;
 		}
 		// Empty Pockets: fewer fragments find their way to the player
