@@ -70,7 +70,7 @@ def _robe(m, body):
     m.box(tab, -5.3, hem, -0.9, 10.6, 5, 1.8, "weave_trim")
     # the cape: falls plumb past the halo, then flares over the over-robe
     for k in range(12):
-        a = -1.05 + 2.1 * k / 11
+        a = -0.9 + 1.8 * k / 11
         top = m.part(f"cape_{k}", body, (14.5 * math.sin(a), -146, 10.5 * math.cos(a)), (0.03, a, 0), group="robe")
         m.box(top, -4, 0, -1, 8, 33, 2, "weave")
         lo = m.part(f"capelo_{k}", top, (0, 32, 0), (0.2 + 0.02 * (k % 3), 0, 0))
@@ -148,13 +148,15 @@ def _torso(m, t):
     n = 18
     for i in range(n):
         a = math.pi + 0.95 + (TAU - 1.9) * i / (n - 1)
-        length = 23 + (i * 5) % 8
+        if abs(math.sin(a)) > 0.88:
+            continue  # the pauldrons cover the shoulders
+        length = 23 + (i * 5) % 8 if math.cos(a) < 0.3 else 15 + (i * 3) % 4
         sm = m.part(f"wmantle_{i}", t, (13 * math.sin(a), -27.5, 8 * math.cos(a)), (0.8, a, 0), group="mantle")
         m.box(sm, -4, 0, -0.8, 8, length, 1.6, "weave_ragged")
         m.box(sm, -4.3, length - 11, -1.1, 8.6, 5, 2.2, "weave_trim")
     # a high collar of lacquered points round the back of the head
     for i in range(9):
-        a = -1.7 + 3.4 * i / 8
+        a = -1.55 + 3.1 * i / 8
         h = 15 + 7 * min(1.0, abs(a) / 1.2)
         c = m.part(f"collar_{i}", t, (10 * math.sin(a), -27.8, 1.5 + 8 * math.cos(a)), (-0.32, a, 0))
         m.box(c, -2.6, -h, -0.6, 5.2, h, 1.2, "weave_runes")
@@ -224,7 +226,7 @@ def _head(m, head):
             th = m.part(f"wthorn{k}_{j}", seg, (0, -lens[j] * 0.55, 0), (0.2, 0, 1.0 * sgn))
             m.box(th, -0.45, -3.4, -0.45, 0.9, 3.4, 0.9, "bone_dark")
     # the veil: gauze and glowing thread from the band round the sides and back (group veil)
-    pts = [(9.0 * sx, -4.2 + 12.2 * j / 7) for sx in (1, -1) for j in range(8)] + [(-7.6 + 15.2 * j / 9, 8.6) for j in range(10)]
+    pts = [(9.0 * sx, -4.2 + 10.2 * j / 7) for sx in (1, -1) for j in range(8)] + [(-7.6 + 15.2 * j / 9, 8.6) for j in range(10)]
     for i, (x, z) in enumerate(pts):
         back = z > 8
         length = (14 + (i * 7) % 7) if back else (13 + (i * 5) % 7)
@@ -234,7 +236,7 @@ def _head(m, head):
     for j in range(10):
         sx, r = (1, -1)[j % 2], j // 2
         glow = r % 2 == 1
-        m.strand(f"veilf_{j}", head, (sx * (7.3 + 0.7 * r), -20.6, -7.5 - 0.15 * r), 15 + 1.6 * r, 0.5 if glow else 0.9,
+        m.strand(f"veilf_{j}", head, (sx * (7.3 + 0.7 * r), -20.6, -7.5 - 0.15 * r), 15 + 1.0 * r, 0.5 if glow else 0.9,
                  "thread" if glow else "veil", group="veil")
     for j, sx in enumerate((1, -1)):
         c = m.strand(f"crowncharm_{j}", head, (9.9 * sx, -21.4, -5.4), 6, 0.5, "thread")
@@ -244,7 +246,7 @@ def _head(m, head):
 def _halo(m, head):
     """The halo: four rings, spokes, needles pointing in to the head, rune plates and crosses of light. One subtree
     under `halo`, which the animation turns and swells."""
-    halo = m.part("halo", head, (0, -14, 18), anim=True)
+    halo = m.part("halo", head, (0, -14, 24), anim=True)
     m.ring("halo_a", halo, (0, 0, 0), 46, 40, 7.6, 3.0, "halo")
     m.ring("halo_b", halo, (0, 0, 0), 38, 36, 6.8, 1.4, "halo")
     m.ring("halo_c", halo, (0, 0, 0), 55, 36, 9.9, 1.5, "halo", phase=0.08)
@@ -287,7 +289,7 @@ def _arm(m, torso, side, sx):
 
     # pauldrons: four lacquered lames, each tucked under the one before, and bone spikes
     for k in range(4):
-        y0, top, zz = -1 + 4.4 * k, 7.6 - 0.8 * k, 8.6 - 0.7 * k
+        y0, top, zz = 0.5 + 4.4 * k, 7.6 - 0.8 * k, 8.6 - 0.7 * k
         x0, w = up(top - 2.4, top)
         m.box(arm, x0, y0, -zz, w, 7, 2 * zz, "weave_scale")
         x1, w1 = up(-1.5 - 0.5 * k, top - 2.4)
@@ -297,14 +299,14 @@ def _arm(m, torso, side, sx):
         x2, w2 = up(-1.7 - 0.5 * k, top + 0.2)
         m.box(arm, x2, y0 + 6.0, -zz - 0.2, w2, 1.2, 2 * zz + 0.4, "gild")
     for k in range(3):
-        y0, zz = -1 + 4.4 * k, 8.6 - 0.7 * k
+        y0, zz = 0.5 + 4.4 * k, 8.6 - 0.7 * k
         c = m.strand(f"ptassel_{side}{k}", arm, (sx * (-1.2 - 0.5 * k), y0 + 3.5, -zz + 0.8), 5 + 2 * k, 0.5, "thread")
         m.box(c, -0.8, 5 + 2 * k, -0.8, 1.6, 1.6, 1.6, "glass")
     loop = catenary(m.xf(arm).apply([-sx * 4.8, 4, -7.4]), m.xf(arm).apply([-sx * 6.8, 33, -7.4]), 16, 10)
     names = m.rope(f"thu_{side}_", arm, [m.to_local(arm, p) for p in loop], 0.8, "thread")
     m.box(names[5], -0.9, 0, -0.9, 1.8, 1.8, 1.8, "glowcore")
     for j in range(3):
-        sp = m.part(f"pspike_{side}{j}", arm, (sx * (7.3 - 0.8 * (j > 0)), 1.5 + 3.5 * j, -3 + 3 * j),
+        sp = m.part(f"pspike_{side}{j}", arm, (sx * (7.3 - 0.8 * (j > 0)), 3 + 3.5 * j, -3 + 3 * j),
                     orient(m, arm, (-0.35 + 0.35 * j, 0, 0.45 * sx)))
         m.box(sp, -0.9, -6, -0.9, 1.8, 6, 1.8, "bone")
         m.box(sp, -0.45, -10, -0.45, 0.9, 4, 0.9, "bone_dark")
