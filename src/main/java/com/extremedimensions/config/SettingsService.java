@@ -72,12 +72,12 @@ public final class SettingsService {
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.preset.applied", Component.translatable(preset.nameKey())));
 			return;
 		}
-		Map<String, String> changes = new java.util.LinkedHashMap<>();
+		Map<String, String> values = new java.util.LinkedHashMap<>();
 		for (Map.Entry<String, JsonElement> e : json.entrySet()) {
-			changes.put(e.getKey(), e.getValue().isJsonPrimitive() ? e.getValue().getAsString() : "");
+			values.put(e.getKey(), e.getValue().isJsonPrimitive() ? e.getValue().getAsString() : "");
 		}
 		List<String> refused = new ArrayList<>();
-		int taken = apply(s, changes, refused, p.getName().getString());
+		int taken = apply(s, values, refused, p.getName().getString());
 		if (taken > 0) {
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.settings.saved", taken));
 		}
