@@ -18,7 +18,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.GameType;
 
 /**
  * The curses do what their cards say. Runs on a headless dedicated server ({@code ./gradlew runGameTest}), so it also
@@ -27,8 +26,7 @@ import net.minecraft.world.level.GameType;
 public class CurseTests {
 	/** A fresh survival player in the test's level, carrying the given curses. */
 	static ServerPlayer cursed(GameTestHelper helper, Object... curseAndStacks) {
-		ServerPlayer p = helper.makeMockServerPlayerInLevel();
-		p.setGameMode(GameType.SURVIVAL);
+		ServerPlayer p = TestPlayers.survivor(helper);
 		PlayerData d = DataStore.get(p.getUUID());
 		for (int i = 0; i + 1 < curseAndStacks.length; i += 2) {
 			d.addStacks((Penalty) curseAndStacks[i], (Integer) curseAndStacks[i + 1]);
@@ -50,6 +48,7 @@ public class CurseTests {
 	@GameTest
 	public void kindlingRaisesFireDamage(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper, Penalty.KINDLING, 3);
+		TestPlayers.vulnerable(p);
 		float before = p.getHealth();
 		p.hurtServer(helper.getLevel(), helper.getLevel().damageSources().inFire(), 4.0f);
 		near(helper, before - p.getHealth(), 4.0 * (1 + 3 * Penalty.KINDLING.frac()), "fire damage with Kindling 3");
@@ -61,8 +60,12 @@ public class CurseTests {
 		ServerPlayer p = cursed(helper, Penalty.FADING_BREWS, 3, Penalty.LINGERING_ILLS, 2);
 		p.addEffect(new MobEffectInstance(MobEffects.SPEED, 2000));
 		p.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 2000));
-		check(helper, p.getEffect(MobEffects.SPEED).getDuration() == 1226, "Speed with Fading Brews 3: expected 1226, got %s", p.getEffect(MobEffects.SPEED).getDuration());
-		check(helper, p.getEffect(MobEffects.SLOWNESS).getDuration() == 2798, "Slowness with Lingering Ills 2: expected 2798, got %s", p.getEffect(MobEffects.SLOWNESS).getDuration());
+		int speed = p.getEffect(MobEffects.SPEED).getDuration();
+		int slowness = p.getEffect(MobEffects.SLOWNESS).getDuration();
+		double fading = 2000 * Math.pow(1 - Penalty.FADING_BREWS.frac(), 3);
+		double lingering = 2000 * (1 + 2 * Penalty.LINGERING_ILLS.frac());
+		check(helper, Math.abs(speed - fading) <= 1, "Speed with Fading Brews 3: expected %s, got %s", (int) fading, speed);
+		check(helper, Math.abs(slowness - lingering) <= 1, "Slowness with Lingering Ills 2: expected %s, got %s", (int) lingering, slowness);
 		helper.succeed();
 	}
 

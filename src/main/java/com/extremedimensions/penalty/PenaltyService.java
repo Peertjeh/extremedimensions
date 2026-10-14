@@ -35,6 +35,8 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.item.ItemStack;
@@ -502,8 +504,8 @@ public final class PenaltyService {
 		String[] risen = {"minecraft:zombie", "minecraft:skeleton", "minecraft:spider", "minecraft:husk", "minecraft:stray"};
 		WorldFx.particleAt("minecraft:soul", x + 0.5, y + 0.5, z + 0.5, 0.4, 0.4, 0.4, 0.02, 20);
 		WorldFx.particleAt("minecraft:large_smoke", x + 0.5, y + 0.3, z + 0.5, 0.3, 0.2, 0.3, 0.01, 10);
-		WorldFx.run(String.format(Locale.ROOT, "execute in minecraft:overworld run summon %s %d %d %d", risen[rnd.nextInt(risen.length)], x, y, z));
-		WorldFx.run(String.format(Locale.ROOT, "execute in minecraft:overworld run playsound minecraft:block.rooted_dirt.break hostile @a %d %d %d 1.2 0.5", x, y, z));
+		WorldFx.summon(level, risen[rnd.nextInt(risen.length)], x, y, z);
+		WorldFx.soundIn("minecraft:overworld", "minecraft:block.rooted_dirt.break", "hostile", x + 0.5, y, z + 0.5, 1.2f, 0.5f);
 	}
 
 	/** Restless Sleep: a nightmare may wake the player before the night passes. */
@@ -585,11 +587,17 @@ public final class PenaltyService {
 	}
 
 	private static void modifier(ServerPlayer p, String attribute, String name, double value, String operation) {
-		String u = p.getStringUUID();
-		WorldFx.run("attribute " + u + " " + attribute + " modifier remove extremedimensions:" + name);
-		if (value != 0) {
-			WorldFx.run(String.format(Locale.ROOT, "attribute %s %s modifier add extremedimensions:%s %.4f %s", u, attribute, name, value, operation));
-		}
+		BuiltInRegistries.ATTRIBUTE.get(WorldFx.id(attribute)).ifPresent(holder -> {
+			AttributeInstance instance = p.getAttribute(holder);
+			if (instance == null) {
+				return;
+			}
+			Identifier id = Identifier.fromNamespaceAndPath("extremedimensions", name);
+			instance.removeModifier(id);
+			if (value != 0) {
+				instance.addPermanentModifier(new AttributeModifier(id, value, AttributeModifier.Operation.valueOf(operation.toUpperCase(Locale.ROOT))));
+			}
+		});
 	}
 
 	/** A vanilla effect without icon or particles: curses are shown in the Curses screen instead. */

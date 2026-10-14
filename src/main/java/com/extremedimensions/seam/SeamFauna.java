@@ -202,8 +202,7 @@ public final class SeamFauna {
 			if (t.distanceToSqr(prey) < 2.4 * 2.4 && d.cooldown == 0) {
 				d.cooldown = 24;
 				prey.hurtServer(seam, t.damageSources().mobAttack(t), 5.0F);
-				WorldFx.run(String.format(java.util.Locale.ROOT, "execute in %s run playsound extremedimensions:lurker_whisper hostile @a %.1f %.1f %.1f 1 1.6",
-						SeamService.SEAM.identifier().toString(), t.getX(), t.getY(), t.getZ()));
+				WorldFx.soundIn(SeamService.SEAM.identifier().toString(), "extremedimensions:lurker_whisper", "hostile", t.getX(), t.getY(), t.getZ(), 1f, 1.6f);
 			}
 		}
 	}

@@ -56,6 +56,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.effect.MobEffects;
 
 /**
  * Everything that lives around a Lurker hoard:
@@ -451,8 +452,7 @@ public final class HollowService {
 		Long last = WHISPERED.get(h.key());
 		if (d2 < 12 * 12 && (last == null || now - last > 20_000) && rnd.nextInt(4) == 0) {
 			WHISPERED.put(h.key(), now);
-			WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:hoard_ambient ambient @a %d %d %d 0.3 1",
-					Dims.fullIdOf(h.dim), h.x, h.y, h.z));
+			WorldFx.soundIn(Dims.fullIdOf(h.dim), "extremedimensions:hoard_ambient", "ambient", h.x + 0.5, h.y, h.z + 0.5, 0.3f, 1f);
 		}
 	}
 
@@ -572,9 +572,8 @@ public final class HollowService {
 	}
 
 	private static void giggle(Entity e) {
-		WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:hollowling_giggle neutral @a %.2f %.2f %.2f 0.9 %.2f",
-				e.level().dimension().identifier().toString(), e.getX(), e.getY() + 0.8, e.getZ(),
-				0.9 + ThreadLocalRandom.current().nextDouble() * 0.3));
+		WorldFx.soundIn(e.level().dimension().identifier().toString(), "extremedimensions:hollowling_giggle", "neutral", e.getX(), e.getY() + 0.8, e.getZ(),
+				0.9f, (float) (0.9 + ThreadLocalRandom.current().nextDouble() * 0.3));
 	}
 
 	/** A wild Hollowling: plays near the hoard, freezes when watched, sneaks up and steals when you look away. */
@@ -804,8 +803,7 @@ public final class HollowService {
 		d.companionGiftIn = Config.COMPANION_GIFT_MINUTES * 60;
 		COMPANIONS.put(p.getUUID(), h.getUUID());
 		toughen(h);
-		WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:hollowling_bond neutral @a %.2f %.2f %.2f 1 1",
-				h.level().dimension().identifier().toString(), h.getX(), h.getY() + 0.8, h.getZ()));
+		WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_bond", "neutral", h.getX(), h.getY() + 0.8, h.getZ(), 1f, 1f);
 		Advancements.grant(p, Advancements.HOLLOW_BOUND);
 		Journal.unlock(p, d, JournalEntry.LITTLE_THIEVES);
 		DataStore.markDirty();
@@ -867,8 +865,7 @@ public final class HollowService {
 			s = new ItemStack(finds[rnd.nextInt(finds.length)], 1 + rnd.nextInt(3));
 		}
 		h.spawnAtLocation((ServerLevel) h.level(), s);
-		WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:hollowling_bond neutral @a %.2f %.2f %.2f 0.7 1.3",
-				h.level().dimension().identifier().toString(), h.getX(), h.getY() + 0.8, h.getZ()));
+		WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_bond", "neutral", h.getX(), h.getY() + 0.8, h.getZ(), 0.7f, 1.3f);
 	}
 
 	/** Follows its friend, and chitters towards danger they have not seen. */
@@ -901,8 +898,7 @@ public final class HollowService {
 			for (Monster m : h.level().getEntitiesOfClass(Monster.class, box, m -> m.isAlive() && !(m instanceof Lurker))) {
 				if (!seen(owner, m, 0.6)) {
 					h.getLookControl().setLookAt(m, 30, 30);
-					WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:hollowling_ambient neutral @a %.2f %.2f %.2f 1 1.4",
-							h.level().dimension().identifier().toString(), h.getX(), h.getY() + 0.8, h.getZ()));
+					WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_ambient", "neutral", h.getX(), h.getY() + 0.8, h.getZ(), 1f, 1.4f);
 					WorldFx.particleIn(h.level().dimension().identifier().toString(), "extremedimensions:soul_mote",
 							m.getX(), m.getY() + m.getBbHeight() + 0.3, m.getZ(), 0.1, 0.1, 0.1, 0.0, 3);
 					break;
@@ -973,8 +969,7 @@ public final class HollowService {
 
 	private static void roar(Keeper k) {
 		String dim = k.level().dimension().identifier().toString();
-		WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:keeper_roar hostile @a %.2f %.2f %.2f 3 1",
-				dim, k.getX(), k.getY() + 3, k.getZ()));
+		WorldFx.soundIn(dim, "extremedimensions:keeper_roar", "hostile", k.getX(), k.getY() + 3, k.getZ(), 3f, 1f);
 		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", k.getX(), k.getY() + 2.5, k.getZ(), 0.8, 1.5, 0.8, 0.0, 40);
 	}
 
@@ -982,7 +977,7 @@ public final class HollowService {
 	private static void hush(Keeper k, int secs) {
 		for (ServerPlayer p : WorldFx.server().getPlayerList().getPlayers()) {
 			if (p.level() == k.level() && p.distanceToSqr(k) < 32 * 32) {
-				WorldFx.run("effect give " + p.getStringUUID() + " minecraft:darkness " + (secs + 1) + " 0 true");
+				WorldFx.effect(p, MobEffects.DARKNESS, secs + 1, 0);
 			}
 		}
 	}
@@ -1032,7 +1027,7 @@ public final class HollowService {
 				} else {
 					roar(k);
 					hush(k, 3);
-					WorldFx.run("effect give " + p.getStringUUID() + " minecraft:slowness 2 1 true");
+					WorldFx.effect(p, MobEffects.SLOWNESS, 2, 1);
 				}
 			}
 		}
@@ -1051,8 +1046,7 @@ public final class HollowService {
 		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", k.getX(), k.getY() + 2, k.getZ(), 0.6, 1.4, 0.6, 0.0, 30);
 		k.teleportTo(g.getX() + 0.5, g.getY(), g.getZ() + 0.5);
 		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", g.getX() + 0.5, g.getY() + 2, g.getZ() + 0.5, 0.6, 1.4, 0.6, 0.0, 30);
-		WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:lurker_vanish hostile @a %.2f %.2f %.2f 1.4 0.7",
-				dim, g.getX() + 0.5, g.getY() + 2.0, g.getZ() + 0.5));
+		WorldFx.soundIn(dim, "extremedimensions:lurker_vanish", "hostile", g.getX() + 0.5, g.getY() + 2.0, g.getZ() + 0.5, 1.4f, 0.7f);
 	}
 
 	/** Slain: the hoard is free to take, and the Keeper leaves something of its own. */

@@ -70,9 +70,7 @@ public final class Journal {
 			return;
 		}
 		d.journalDelivered = true;
-		if (!p.getInventory().add(new ItemStack(ModItems.TETHER_JOURNAL))) {
-			WorldFx.run("give " + p.getStringUUID() + " extremedimensions:tether_journal");
-		}
+		WorldFx.give(p, new ItemStack(ModItems.TETHER_JOURNAL));
 		d.journal.add(JournalEntry.TETHERED.id);
 		WorldFx.soundSelf(p, "minecraft:item.book.page_turn", 1.0f, 0.7f);
 		Advancements.grant(p, Advancements.ROOT);

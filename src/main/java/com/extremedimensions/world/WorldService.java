@@ -23,6 +23,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.effect.MobEffects;
 
 /**
  * The world after the Dragon. The Ender Dragon was no enemy but a seal on the first wound; when it dies the seal
@@ -150,7 +151,7 @@ public final class WorldService {
 			WorldFx.particleAt("extremedimensions:lurker_wisp", x, y, z, 0.4, 1.2, 0.4, 0.0, 4);
 		}
 		if (left % 140 == 0) {
-			WorldFx.run("effect give " + p.getStringUUID() + " minecraft:darkness 3 0 true");
+			WorldFx.effect(p, MobEffects.DARKNESS, 3, 0);
 			WorldFx.sound(p, "minecraft:entity.lightning_bolt.thunder", 0.8f, 0.5f + rnd.nextFloat() * 0.3f);
 		}
 		if (left % 300 == 150) {
@@ -185,7 +186,7 @@ public final class WorldService {
 				y += 12;
 			}
 			WorldFx.particleAt("minecraft:reverse_portal", x + 0.5, y + 1, z + 0.5, 0.4, 1.0, 0.4, 0.2, 40);
-			WorldFx.run(String.format(Locale.ROOT, "execute in minecraft:overworld run summon %s %d %d %d", type, x, y, z));
+			WorldFx.summon(level, type, x, y, z);
 		}
 	}
 }

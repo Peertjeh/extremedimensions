@@ -410,8 +410,7 @@ public final class LurkerService {
 		l.getLookControl().setLookAt(p, 90, 90);
 		String dim = Dims.fullId(p);
 		if (st.ticks == 1) {
-			WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:lurker_take hostile @a %.2f %.2f %.2f 1.4 1",
-					dim, l.getX(), l.getY() + 2, l.getZ()));
+			WorldFx.soundIn(dim, "extremedimensions:lurker_take", "hostile", l.getX(), l.getY() + 2, l.getZ(), 1.4f, 1f);
 		}
 		if (st.ticks == TAKE_AT) {
 			if (HollowService.guarded(p)) {
@@ -556,8 +555,7 @@ public final class LurkerService {
 		l.setLurkerPose(Lurker.POSE_RUN);
 		String dim = l.level().dimension().identifier().toString();
 		String sound = struck ? "extremedimensions:lurker_shriek" : "extremedimensions:lurker_flee";
-		WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound %s hostile @a %.2f %.2f %.2f 1.6 1",
-				dim, sound, l.getX(), l.getY() + 2.5, l.getZ()));
+		WorldFx.soundIn(dim, sound, "hostile", l.getX(), l.getY() + 2.5, l.getZ(), 1.6f, 1f);
 		if (!struck && (!st.loot.stack.isEmpty() || st.loot.levels > 0)) {
 			// It runs home to its hoard: follow it, and you find where your things went
 			st.hoard = HollowService.hoardFor(p, l.position());
@@ -642,8 +640,7 @@ public final class LurkerService {
 		// Someone lit soul light nearby: it flinches and is gone
 		if (st.ticks % 20 == 0 && SoulWards.warded(l.level(), a.x, a.y, a.z)) {
 			String dim = l.level().dimension().identifier().toString();
-			WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:lurker_shriek hostile @a %.2f %.2f %.2f 1.2 1.3",
-					dim, l.getX(), l.getY() + 2.5, l.getZ()));
+			WorldFx.soundIn(dim, "extremedimensions:lurker_shriek", "hostile", l.getX(), l.getY() + 2.5, l.getZ(), 1.2f, 1.3f);
 			WorldFx.particleIn(dim, "extremedimensions:soul_mote", a.x + 0.5, a.y + 1.0, a.z + 0.5, 0.6, 0.6, 0.6, 0.0, 20);
 			later.add(() -> vanish(l));
 			return;
@@ -712,15 +709,13 @@ public final class LurkerService {
 			m.getNavigation().stop();
 			m.getLookControl().setLookAt(l, 30, 30);
 			if (!sound.isEmpty()) {
-				WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound %s neutral @a %.2f %.2f %.2f 0.9 %.2f",
-						dim, sound, m.getX(), m.getY() + 0.5, m.getZ(), 0.85 + ThreadLocalRandom.current().nextDouble() * 0.2));
+				WorldFx.soundIn(dim, sound, "neutral", m.getX(), m.getY() + 0.5, m.getZ(), 0.9f, (float) (0.85 + ThreadLocalRandom.current().nextDouble() * 0.2));
 			}
 		}
 	}
 
 	private static void whisper(Lurker l, ServerPlayer p, float vol) {
-		WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:lurker_whisper hostile %s %.2f %.2f %.2f %.2f 1",
-				Dims.fullId(p), p.getStringUUID(), l.getX(), l.getY() + 2, l.getZ(), vol));
+		WorldFx.soundFor(p, "extremedimensions:lurker_whisper", "hostile", l.getX(), l.getY() + 2, l.getZ(), vol, 1f);
 	}
 
 	/** Gone: a fold in the air, a reversed breath, nothing. */
@@ -729,8 +724,7 @@ public final class LurkerService {
 		WorldFx.particleIn(dim, "minecraft:portal", l.getX(), l.getY() + 1.4, l.getZ(), 0.4, 1.2, 0.4, 0.6, 60);
 		WorldFx.particleIn(dim, "minecraft:reverse_portal", l.getX(), l.getY() + 1.4, l.getZ(), 0.3, 1.0, 0.3, 0.1, 30);
 		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", l.getX(), l.getY() + 1.6, l.getZ(), 0.5, 1.2, 0.5, 0.0, 30);
-		WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:lurker_vanish hostile @a %.2f %.2f %.2f 1 1",
-				dim, l.getX(), l.getY() + 1.5, l.getZ()));
+		WorldFx.soundIn(dim, "extremedimensions:lurker_vanish", "hostile", l.getX(), l.getY() + 1.5, l.getZ(), 1f, 1f);
 		STATES.remove(l.getUUID());
 		LEVELS.remove(l.getUUID());
 		l.discard();

@@ -19,6 +19,7 @@ import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 import com.extremedimensions.tether.TetherService;
 import com.extremedimensions.world.WorldService;
+import com.extremedimensions.registry.ModItems;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -26,6 +27,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * Expeditions beyond the wound: linking anchors on entry, draining charge, the Leeching, the Collapse when the
@@ -281,7 +285,7 @@ public final class ExpeditionService {
 		}
 		if (t % 20 == 0) {
 			WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.4, 0.1, 40);
-			WorldFx.run("kill " + p.getStringUUID());
+			p.kill((ServerLevel) p.level());
 		}
 	}
 
@@ -372,10 +376,10 @@ public final class ExpeditionService {
 			return;
 		}
 		String where = mob.level().dimension().identifier().toString();
-		String pos = String.format(Locale.ROOT, "%.2f %.2f %.2f", mob.getX(), mob.getY() + 0.5, mob.getZ());
-		WorldFx.run("execute in " + where + " run summon minecraft:item " + pos + " {Item:{id:\"extremedimensions:tether_fragment\",count:1}}");
-		WorldFx.run("execute in " + where + " run particle minecraft:soul " + pos + " 0.3 0.4 0.3 0.04 25 normal");
-		WorldFx.run("execute in " + where + " run playsound minecraft:particle.soul_escape master @a " + pos + " 1.5 0.7");
+		double x = mob.getX(), y = mob.getY() + 0.5, z = mob.getZ();
+		mob.level().addFreshEntity(new ItemEntity(mob.level(), x, y, z, new ItemStack(ModItems.TETHER_FRAGMENT), 0, 0, 0));
+		WorldFx.particleIn(where, "minecraft:soul", x, y, z, 0.3, 0.4, 0.3, 0.04, 25);
+		WorldFx.soundIn(where, "minecraft:particle.soul_escape", "master", x, y, z, 1.5f, 0.7f);
 		Journal.unlock(killer, d, JournalEntry.FRAGMENT);
 	}
 }

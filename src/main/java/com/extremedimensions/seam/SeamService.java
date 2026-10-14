@@ -43,6 +43,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BarrelBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.effect.MobEffects;
 
 /**
  * The Seam: the place between the wounds.
@@ -111,8 +112,7 @@ public final class SeamService {
 		r.z = at.getZ() + 0.5;
 		RIFTS.add(r);
 		String dim = level.dimension().identifier().toString();
-		WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:rift_open player @a %.2f %.2f %.2f 1.5 1",
-				dim, r.x, r.y + 1, r.z));
+		WorldFx.soundIn(dim, "extremedimensions:rift_open", "player", r.x, r.y + 1, r.z, 1.5f, 1f);
 		return InteractionResult.SUCCESS;
 	}
 
@@ -289,8 +289,8 @@ public final class SeamService {
 		d.seamPull = PULL_TICKS;
 		WorldFx.fx(p, Fx.COLLAPSE, 0);
 		WorldFx.sound(p, "extremedimensions:collapse", 1.2f, 1.1f);
-		WorldFx.run("effect give " + p.getStringUUID() + " minecraft:levitation 3 0 true");
-		WorldFx.run("effect give " + p.getStringUUID() + " minecraft:resistance 5 4 true");
+		WorldFx.effect(p, MobEffects.LEVITATION, 3, 0);
+		WorldFx.effect(p, MobEffects.RESISTANCE, 5, 4);
 	}
 
 	private static void pull(ServerPlayer p, PlayerData d) {
@@ -301,7 +301,7 @@ public final class SeamService {
 		d.inSeam = false;
 		d.collapses++;
 		TetherService.clear(p, d, false);
-		WorldFx.run("effect clear " + p.getStringUUID() + " minecraft:levitation");
+		p.removeEffect(MobEffects.LEVITATION);
 		WorldFx.tp(p, Dims.fullIdOf(d.homeDim), d.homeX, d.homeY, d.homeZ);
 		PenaltyService.curse(p, Dims.OVERWORLD.equals(d.homeDim));
 		DataStore.markDirty();
@@ -586,9 +586,7 @@ public final class SeamService {
 					double dx = p.getX() - f[0], dz = p.getZ() - f[2];
 					if (dx * dx + dz * dz < 110 * 110) {
 						double half = f[3] / 2.0;
-						WorldFx.run(String.format(Locale.ROOT,
-								"execute in %s positioned %d %.1f %d run particle minecraft:end_rod ~0.5 ~ ~0.5 0.2 %.1f 0.2 0.0 5 force @a[distance=..130]",
-								SEAM_ID, f[0], f[1] - half, f[2], half * 0.6));
+						WorldFx.particleFar(SEAM_ID, "minecraft:end_rod", f[0] + 0.5, f[1] - half, f[2] + 0.5, 0.2, half * 0.6, 0.2, 0.0, 5, 130);
 						break;
 					}
 				}
@@ -597,12 +595,9 @@ public final class SeamService {
 		if (DataStore.heartBuilt() && tick % 4 == 0) {
 			for (ServerPlayer p : players) {
 				if (p.distanceToSqr(MendingService.HX, MendingService.HY, MendingService.HZ) < 200 * 200) {
-					WorldFx.run(String.format(Locale.ROOT,
-							"execute in %s positioned %d %d %d run particle minecraft:end_rod ~0.5 ~ ~0.5 0.3 18 0.3 0.0 14 force @a[distance=..220]",
-							SEAM_ID, MendingService.HX, MendingService.HY + 30, MendingService.HZ));
-					WorldFx.run(String.format(Locale.ROOT,
-							"execute in %s positioned %d %d %d run particle minecraft:reverse_portal ~0.5 ~ ~0.5 1.2 18 1.2 0.05 18 force @a[distance=..220]",
-							SEAM_ID, MendingService.HX, MendingService.HY + 30, MendingService.HZ));
+					double hx = MendingService.HX + 0.5, hy = MendingService.HY + 30, hz = MendingService.HZ + 0.5;
+					WorldFx.particleFar(SEAM_ID, "minecraft:end_rod", hx, hy, hz, 0.3, 18, 0.3, 0.0, 14, 220);
+					WorldFx.particleFar(SEAM_ID, "minecraft:reverse_portal", hx, hy, hz, 1.2, 18, 1.2, 0.05, 18, 220);
 					break;
 				}
 			}

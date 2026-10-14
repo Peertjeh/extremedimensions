@@ -17,16 +17,18 @@ jobs:
           distribution: 'microsoft'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: build
+      # Building also runs the server game tests on a headless dedicated server; a failing test fails the build
+      - name: build and server game tests
         run: ./gradlew build
+        timeout-minutes: 20
+      - name: TEMP api probe
+        if: always()
+        run: bash .github/probe/api.sh
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
           name: Artifacts
           path: build/libs/
-      - name: server game tests (headless dedicated server)
-        run: ./gradlew runGameTest --no-configuration-cache
-        timeout-minutes: 15
 
   client:
     name: client test and screenshots
@@ -55,3 +57,20 @@ jobs:
           name: Screenshots
           path: build/run/clientGameTest/screenshots/
           if-no-files-found: warn
+      # For reviewing from where artifacts cannot be downloaded: a commit message with [shots] prints the screenshots
+      # into the log as small JPEGs (base64, one IMG| line per chunk)
+      - name: screenshots in the log
+        if: always() && contains(github.event.head_commit.message, '[shots]')
+        run: |
+          python3 -m pip install -q --break-system-packages pillow >/dev/null 2>&1 || pip install -q pillow
+          python3 - <<'PY'
+          import glob, base64, io, os
+          from PIL import Image
+          for f in sorted(glob.glob("build/run/clientGameTest/screenshots/*.png")):
+              im = Image.open(f).convert("RGB")
+              im.thumbnail((800, 450))
+              b = io.BytesIO(); im.save(b, "JPEG", quality=72)
+              s = base64.b64encode(b.getvalue()).decode()
+              for i in range(0, len(s), 3000):
+                  print(f"IMG|{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
+          PY

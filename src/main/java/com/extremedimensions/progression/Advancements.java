@@ -44,6 +44,6 @@ public final class Advancements {
 	public static final double LONG_TETHER_BLOCKS = 300;
 
 	public static void grant(ServerPlayer p, String id) {
-		WorldFx.run("advancement grant " + p.getStringUUID() + " only " + ExtremeDimensions.MOD_ID + ":" + id);
+		WorldFx.grantAdvancement(p, id);
 	}
 }

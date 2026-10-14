@@ -35,6 +35,10 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.crafting.RecipeHolder;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -47,6 +51,8 @@ import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Wires every subsystem to Fabric events and runs the per-player tick in a fixed order. */
 public final class ServerEvents {
@@ -101,8 +107,9 @@ public final class ServerEvents {
 			if (entity instanceof ServerPlayer p) {
 				if ("severed".equals(DataStore.ending()) && Dims.isBeyond(Dims.of(p))) {
 					// A severed world keeps nothing of those who fall beyond the wound
-					WorldFx.run(String.format(java.util.Locale.ROOT, "execute in %s run kill @e[type=minecraft:item,x=%.1f,y=%.1f,z=%.1f,distance=..8]",
-							Dims.fullId(p), p.getX(), p.getY(), p.getZ()));
+					for (ItemEntity item : p.level().getEntitiesOfClass(ItemEntity.class, p.getBoundingBox().inflate(8), i -> i.distanceToSqr(p) <= 64)) {
+						item.discard();
+					}
 				}
 				ExpeditionService.onDeath(p);
 			} else if (entity instanceof StarvedOne so) {
@@ -223,9 +230,11 @@ public final class ServerEvents {
 	/** Shortly after joining, once the player really stands in the world and commands can target them. */
 	private static void afterJoin(ServerPlayer p, PlayerData d) {
 		PenaltyService.applyEffects(p, d);
+		List<RecipeHolder<?>> recipes = new ArrayList<>();
 		for (String recipe : RECIPES) {
-			WorldFx.run("recipe give " + p.getStringUUID() + " " + recipe);
+			p.level().getServer().getRecipeManager().byKey(ResourceKey.create(Registries.RECIPE, WorldFx.id(recipe))).ifPresent(recipes::add);
 		}
+		p.awardRecipes(recipes);
 		Journal.deliverFirst(p, d);
 		Advancements.grant(p, Advancements.ROOT);
 	}

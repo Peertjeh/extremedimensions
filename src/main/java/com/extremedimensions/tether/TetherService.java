@@ -135,9 +135,7 @@ public final class TetherService {
 		WorldFx.run("kill @e[type=minecraft:block_display,tag=" + tag(p) + "]");
 		if (returnItem && d.tetherAnchor != null) {
 			Item back = tierItem(d.tetherTier);
-			if (!p.getInventory().add(new ItemStack(back))) {
-				WorldFx.run("give " + p.getStringUUID() + " " + BuiltInRegistries.ITEM.getKey(back));
-			}
+			WorldFx.give(p, new ItemStack(back));
 		}
 		d.tetherAnchor = null;
 		d.hasRopeEnd = false;
@@ -269,9 +267,8 @@ public final class TetherService {
 		// The chain clinks softly as it is laid, and beyond the wound a little soul light clings to it
 		boolean end = Dims.END.equals(Dims.of(p));
 		if (index % 2 == 0) {
-			WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound %s player @a %.2f %.2f %.2f 0.3 %.2f",
-					dim, end ? "minecraft:block.amethyst_cluster.step" : "minecraft:block.chain.step", x, y, z,
-					0.8 + ThreadLocalRandom.current().nextDouble() * 0.3));
+			WorldFx.soundIn(dim, end ? "minecraft:block.amethyst_cluster.step" : "minecraft:block.chain.step", "player", x, y, z, 0.3f,
+					(float) (0.8 + ThreadLocalRandom.current().nextDouble() * 0.3));
 		}
 		if (index % 3 == 0 && Dims.isBeyond(Dims.of(p))) {
 			WorldFx.particleIn(dim, "extremedimensions:soul_mote", d.ropeX, d.ropeY + 0.15, d.ropeZ, 0.2, 0.05, 0.2, 0.0, 1);

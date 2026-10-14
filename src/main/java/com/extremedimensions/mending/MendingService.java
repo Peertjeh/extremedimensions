@@ -34,6 +34,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.effect.MobEffects;
 
 /**
  * The Mending, the end of the story.
@@ -162,14 +163,13 @@ public final class MendingService {
 		for (ServerPlayer q : seam.players()) {
 			if (inArena(q)) {
 				Journal.unlock(q, DataStore.get(q.getUUID()), JournalEntry.HEART);
-				WorldFx.run("effect give " + q.getStringUUID() + " minecraft:darkness 5 0 true");
+				WorldFx.effect(q, MobEffects.DARKNESS, 5, 0);
 			}
 		}
 	}
 
 	private static void roar(Entity e, float vol) {
-		WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:keeper_roar hostile @a %.2f %.2f %.2f %.1f 0.55",
-				SeamService.SEAM.identifier().toString(), e.getX(), e.getY() + 4, e.getZ(), vol));
+		WorldFx.soundIn(SeamService.SEAM.identifier().toString(), "extremedimensions:keeper_roar", "hostile", e.getX(), e.getY() + 4, e.getZ(), vol, 0.55f);
 	}
 
 	private static void drive(ServerLevel seam) {
@@ -240,8 +240,7 @@ public final class MendingService {
 			for (ServerPlayer p : arena) {
 				if (DataStore.get(p.getUUID()).companion) {
 					WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 3, so.getZ(), 1.5, 2, 1.5, 0, 40);
-					WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:lurker_shriek hostile @a %.2f %.2f %.2f 2 0.8",
-							dim, so.getX(), so.getY() + 3, so.getZ()));
+					WorldFx.soundIn(dim, "extremedimensions:lurker_shriek", "hostile", so.getX(), so.getY() + 3, so.getZ(), 2f, 0.8f);
 					so.hurtServer(seam, seam.damageSources().magic(), 12.0F);
 					break;
 				}
@@ -271,8 +270,7 @@ public final class MendingService {
 				WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 3, so.getZ(), 1, 2, 1, 0, 40);
 				so.teleportTo(q.getX() + 0.5, q.getY(), q.getZ() + 0.5);
 				WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", q.getX() + 0.5, q.getY() + 3, q.getZ() + 0.5, 1, 2, 1, 0, 40);
-				WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:lurker_vanish hostile @a %d %d %d 2 0.5",
-						dim, q.getX(), q.getY() + 2, q.getZ()));
+				WorldFx.soundIn(dim, "extremedimensions:lurker_vanish", "hostile", q.getX() + 0.5, q.getY() + 2, q.getZ() + 0.5, 2f, 0.5f);
 				return;
 			}
 		}
@@ -291,7 +289,7 @@ public final class MendingService {
 			d.riftX = HX + Math.cos(a) * (HR - 3) + 0.5;
 			d.riftZ = HZ + Math.sin(a) * (HR - 3) + 0.5;
 			d.riftY = HY + 1;
-			WorldFx.run("effect give " + p.getStringUUID() + " minecraft:darkness 3 0 true");
+			WorldFx.effect(p, MobEffects.DARKNESS, 3, 0);
 			WorldFx.soundSelf(p, "minecraft:entity.leash_knot.break", 1.0f, 0.5f);
 		}
 	}
@@ -311,7 +309,7 @@ public final class MendingService {
 					BlockPos q = dest.above(dy);
 					if (seam.getBlockState(q).isAir() && seam.getBlockState(q.above()).isAir() && !seam.getBlockState(q.below()).isAir()) {
 						WorldFx.particles(p, "extremedimensions:lurker_wisp", 1.0, 0.5, 0, 10);
-						WorldFx.run(String.format(Locale.ROOT, "tp %s %.2f %d %.2f", p.getStringUUID(), p.getX() + step.x, q.getY(), p.getZ() + step.z));
+						p.teleportTo(p.getX() + step.x, q.getY(), p.getZ() + step.z);
 						break;
 					}
 				}
@@ -345,8 +343,7 @@ public final class MendingService {
 				seam.setBlock(pos.above(), Blocks.SOUL_LANTERN.defaultBlockState(), 3);
 				String dim = SeamService.SEAM.identifier().toString();
 				WorldFx.particleIn(dim, "extremedimensions:soul_mote", pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 0.5, 0.3, 1.5, 0.3, 0, 30);
-				WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound minecraft:block.beacon.activate block @a %d %d %d 2 1.4",
-						dim, pos.getX(), pos.getY(), pos.getZ()));
+				WorldFx.soundIn(dim, "minecraft:block.beacon.activate", "block", pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 2f, 1.4f);
 				int lit = 0;
 				for (boolean b : LIT) {
 					lit += b ? 1 : 0;
@@ -355,8 +352,7 @@ public final class MendingService {
 					stun = 160;
 					Entity e = seam.getEntity(boss);
 					if (e != null) {
-						WorldFx.run(String.format(Locale.ROOT, "execute in %s run playsound extremedimensions:lurker_shriek hostile @a %.2f %.2f %.2f 4 0.5",
-								dim, e.getX(), e.getY() + 4, e.getZ()));
+						WorldFx.soundIn(dim, "extremedimensions:lurker_shriek", "hostile", e.getX(), e.getY() + 4, e.getZ(), 4f, 0.5f);
 					}
 				}
 				return InteractionResult.SUCCESS;
