@@ -217,8 +217,18 @@ public abstract class Match {
 		return true;
 	}
 
+	/** Whose theme list to use (a tournament uses its kit's mode). */
+	protected String themeMode() {
+		return mode.id();
+	}
+
+	/** After a normal end: offer "play again" (not between the rounds of a tournament). */
+	protected boolean offersPlayAgain() {
+		return true;
+	}
+
 	protected Theme pickTheme() {
-		List<String> ids = ConfigManager.config().arenas.themes.get(mode.id());
+		List<String> ids = ConfigManager.config().arenas.themes.get(themeMode());
 		List<Theme> options = new ArrayList<>();
 		if (ids != null) {
 			for (String s : ids) {
@@ -628,7 +638,7 @@ public abstract class Match {
 			return;
 		}
 		setPhase(Phase.CLOSED);
-		sendHome(true);
+		sendHome(offersPlayAgain());
 		clearArena();
 		Menus.refreshAll(server);
 	}

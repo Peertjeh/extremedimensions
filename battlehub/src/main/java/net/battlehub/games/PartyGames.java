@@ -28,6 +28,8 @@ public final class PartyGames {
 			case PARKOUR -> new ParkourMatch(id, server, players, option);
 			case LMS -> new LmsMatch(id, server, players);
 			case FFA -> new FfaMatch(id, server, players);
+			// Started by Tournaments, which runs several matches
+			case TOURNAMENT -> null;
 			default -> null;
 		};
 	}

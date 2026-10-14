@@ -16,7 +16,9 @@ public enum GameMode {
 	CTF(Category.PARTY, false, 2, 16),
 	PARKOUR(Category.PARTY, false, 2, 16),
 	LMS(Category.PARTY, false, 2, 16),
-	FFA(Category.PARTY, false, 2, 16);
+	FFA(Category.PARTY, false, 2, 16),
+	/** Teams of 1, 2, 4 or 8 in a single-elimination bracket; every match best of 3. */
+	TOURNAMENT(Category.PARTY, false, 2, 16);
 
 	public enum Category { DUEL, PARTY }
 
@@ -79,6 +81,6 @@ public enum GameMode {
 	}
 
 	public static GameMode[] parties() {
-		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, FFA};
+		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, FFA, TOURNAMENT};
 	}
 }

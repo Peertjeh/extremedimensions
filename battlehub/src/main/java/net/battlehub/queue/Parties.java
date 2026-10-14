@@ -37,10 +37,14 @@ public final class Parties {
 	private Parties() {}
 
 	private static final Map<GameMode, PartyLobby> LOBBIES = new EnumMap<>(GameMode.class);
-	/** Votes of the players waiting in each lobby (the parkour difficulty). */
-	private static final Map<GameMode, Map<UUID, String>> VOTES = new EnumMap<>(GameMode.class);
-	/** Each player's last vote per game, for "play again". */
-	private static final Map<UUID, Map<GameMode, String>> LAST_VOTE = new HashMap<>();
+	/**
+	 * Votes of the players waiting in each lobby, per question: "" is the game's main choice (the parkour
+	 * difficulty); tournaments ask "teams" and "kit". A vote is written "value" or "question:value", several joined
+	 * with ";".
+	 */
+	private static final Map<GameMode, Map<String, Map<UUID, String>>> VOTES = new EnumMap<>(GameMode.class);
+	/** Each player's last votes per game, for "play again". */
+	private static final Map<UUID, Map<GameMode, Map<String, String>>> LAST_VOTE = new HashMap<>();
 	private static final java.util.Random RANDOM = new java.util.Random();
 
 	private static PartyLobby lobby(GameMode mode) {
@@ -122,9 +126,18 @@ public final class Parties {
 	}
 
 	private static void recordVote(ServerPlayer p, GameMode mode, String vote) {
-		if (vote != null && !vote.isBlank()) {
-			VOTES.computeIfAbsent(mode, m -> new HashMap<>()).put(p.getUUID(), vote);
-			LAST_VOTE.computeIfAbsent(p.getUUID(), u -> new EnumMap<>(GameMode.class)).put(mode, vote);
+		if (vote == null || vote.isBlank()) {
+			return;
+		}
+		for (String part : vote.split(";")) {
+			part = part.trim();
+			if (part.isEmpty()) continue;
+			int colon = part.indexOf(':');
+			String question = colon < 0 ? "" : part.substring(0, colon);
+			String value = colon < 0 ? part : part.substring(colon + 1);
+			VOTES.computeIfAbsent(mode, m -> new HashMap<>()).computeIfAbsent(question, q -> new HashMap<>()).put(p.getUUID(), value);
+			LAST_VOTE.computeIfAbsent(p.getUUID(), u -> new EnumMap<>(GameMode.class))
+					.computeIfAbsent(mode, m -> new java.util.LinkedHashMap<>()).put(question, value);
 		}
 	}
 
@@ -134,27 +147,43 @@ public final class Parties {
 		for (PartyLobby l : LOBBIES.values()) {
 			was |= l.leave(id);
 		}
-		for (Map<UUID, String> v : VOTES.values()) {
-			v.remove(id);
+		for (Map<String, Map<UUID, String>> questions : VOTES.values()) {
+			for (Map<UUID, String> v : questions.values()) {
+				v.remove(id);
+			}
 		}
 		return was;
 	}
 
 	/** This player's vote in the lobby they are waiting in, or "". */
 	public static String vote(UUID id, GameMode mode) {
-		Map<UUID, String> v = VOTES.get(mode);
+		return vote(id, mode, "");
+	}
+
+	public static String vote(UUID id, GameMode mode, String question) {
+		Map<UUID, String> v = VOTES.getOrDefault(mode, Map.of()).get(question);
 		return v == null ? "" : v.getOrDefault(id, "");
 	}
 
 	/** The player's last vote for this game, or "". */
 	public static String lastVote(UUID id, GameMode mode) {
-		Map<GameMode, String> m = LAST_VOTE.get(id);
-		return m == null ? "" : m.getOrDefault(mode, "");
+		Map<GameMode, Map<String, String>> m = LAST_VOTE.get(id);
+		Map<String, String> votes = m == null ? null : m.get(mode);
+		if (votes == null) {
+			return "";
+		}
+		List<String> parts = new ArrayList<>();
+		votes.forEach((k, v) -> parts.add(k.isEmpty() ? v : k + ":" + v));
+		return String.join(";", parts);
 	}
 
-	/** Votes of everyone waiting in the lobby. */
+	/** Votes of everyone waiting in the lobby (the main question). */
 	public static java.util.Collection<String> votes(GameMode mode) {
-		Map<UUID, String> v = VOTES.get(mode);
+		return votes(mode, "");
+	}
+
+	public static java.util.Collection<String> votes(GameMode mode, String question) {
+		Map<UUID, String> v = VOTES.getOrDefault(mode, Map.of()).get(question);
 		return v == null ? List.of() : List.copyOf(v.values());
 	}
 
@@ -237,16 +266,23 @@ public final class Parties {
 			for (ServerPlayer p : players) l.join(p.getUUID());
 			return;
 		}
-		List<String> votes = new ArrayList<>();
-		Map<UUID, String> lobbyVotes = VOTES.computeIfAbsent(mode, k -> new HashMap<>());
-		for (ServerPlayer p : players) {
-			votes.add(lobbyVotes.getOrDefault(p.getUUID(), ""));
+		// One result per question; players who did not vote have no preference
+		Map<String, String> options = new HashMap<>();
+		for (Map.Entry<String, Map<UUID, String>> q : VOTES.computeIfAbsent(mode, k -> new HashMap<>()).entrySet()) {
+			List<String> votes = new ArrayList<>();
+			for (ServerPlayer p : players) {
+				votes.add(q.getValue().getOrDefault(p.getUUID(), ""));
+				q.getValue().remove(p.getUUID());
+			}
+			options.put(q.getKey(), Votes.tally(votes, RANDOM));
 		}
-		String option = Votes.tally(votes, RANDOM);
-		for (ServerPlayer p : players) {
-			lobbyVotes.remove(p.getUUID());
+		if (mode == GameMode.TOURNAMENT) {
+			if (!net.battlehub.tournament.Tournaments.start(server, players, options)) {
+				for (ServerPlayer p : players) l.join(p.getUUID());
+			}
+			return;
 		}
-		Match m = PartyGames.create(mode, server, players, option);
+		Match m = PartyGames.create(mode, server, players, options.getOrDefault("", ""));
 		if (m == null || !Matches.start(m)) {
 			BattleHub.LOGGER.warn("Could not start a {} match (no free arena?)", mode.id());
 			for (ServerPlayer p : players) {

@@ -24,6 +24,7 @@ public final class Icons {
 			case PARKOUR -> Items.FEATHER;
 			case LMS -> Items.TOTEM_OF_UNDYING;
 			case FFA -> Items.IRON_SWORD;
+			case TOURNAMENT -> Items.GOLDEN_SWORD;
 		};
 	}
 

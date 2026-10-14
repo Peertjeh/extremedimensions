@@ -24,7 +24,7 @@ public final class PartyGameMenu extends Screen {
 
 	@Override
 	public int rows() {
-		return mode == GameMode.PARKOUR ? 4 : 3;
+		return mode == GameMode.TOURNAMENT ? 5 : mode == GameMode.PARKOUR ? 4 : 3;
 	}
 
 	private static final String[] DIFFICULTIES = {"easy", "medium", "hard", "extreme", "random"};
@@ -49,6 +49,57 @@ public final class PartyGameMenu extends Screen {
 					.glint(chosen);
 			c.set(20 + i, icon.build(), click -> {
 				net.battlehub.queue.Parties.join(viewer, mode, d);
+				new PartyGameMenu(viewer, mode).open();
+			});
+		}
+	}
+
+	private static java.util.Map<String, Integer> count(java.util.Collection<String> votes) {
+		java.util.Map<String, Integer> counts = new java.util.HashMap<>();
+		for (String v : votes) {
+			counts.merge(v, 1, Integer::sum);
+		}
+		return counts;
+	}
+
+	private Icon voteLore(Icon icon, java.util.Map<String, Integer> counts, String option, boolean chosen) {
+		return icon.lore(Component.empty())
+				.lore(Lang.lore(viewer, "menu.parkour.votes", counts.getOrDefault(option, 0)))
+				.lore(Lang.lore(viewer, chosen ? "menu.parkour.voted" : "menu.parkour.click_vote"))
+				.glint(chosen);
+	}
+
+	/** Tournament: team size (row 3) and kit (row 4); a click joins the lobby with that vote. */
+	private void tournamentVotes(Canvas c) {
+		String myTeams = net.battlehub.queue.Parties.vote(viewer.getUUID(), mode, "teams");
+		java.util.Map<String, Integer> teamVotes = count(net.battlehub.queue.Parties.votes(mode, "teams"));
+		c.set(22, Icon.of(Items.PLAYER_HEAD).name(Lang.item(viewer, "menu.tournament.teams"))
+				.lore(Lang.loreLines(viewer, "menu.tournament.teams.lore")).build());
+		int[] teamSlots = {20, 21, 23, 24};
+		java.util.List<String> sizes = net.battlehub.tournament.Tournaments.TEAM_SIZES;
+		for (int i = 0; i < sizes.size(); i++) {
+			String size = sizes.get(i);
+			int n = Integer.parseInt(size);
+			Icon icon = Icon.of(n == 1 ? Items.IRON_SWORD : Items.PLAYER_HEAD).count(n)
+					.name(Lang.item(viewer, n == 1 ? "menu.tournament.solo" : "menu.tournament.team_size", n));
+			c.set(teamSlots[i], voteLore(icon, teamVotes, size, size.equals(myTeams)).clean().build(), click -> {
+				net.battlehub.queue.Parties.join(viewer, mode, "teams:" + size);
+				new PartyGameMenu(viewer, mode).open();
+			});
+		}
+		String myKit = net.battlehub.queue.Parties.vote(viewer.getUUID(), mode, "kit");
+		java.util.Map<String, Integer> kitVotes = count(net.battlehub.queue.Parties.votes(mode, "kit"));
+		c.set(31, Icon.of(Items.IRON_CHESTPLATE).name(Lang.item(viewer, "menu.tournament.kit"))
+				.lore(Lang.loreLines(viewer, "menu.tournament.kit.lore")).clean().build());
+		int[] kitSlots = {28, 29, 30, 32, 33, 34};
+		java.util.List<String> kits = net.battlehub.tournament.Tournaments.KITS;
+		for (int i = 0; i < kits.size(); i++) {
+			String kit = kits.get(i);
+			GameMode km = GameMode.byId(kit);
+			Icon icon = km == null ? Icon.of("minecraft:white_concrete").name(Lang.item(viewer, "menu.tournament.kit_random"))
+					: Icon.of(Icons.mode(km)).name(Lang.item(viewer, Icons.modeKey(km)));
+			c.set(kitSlots[i], voteLore(icon, kitVotes, kit, kit.equals(myKit)).clean().build(), click -> {
+				net.battlehub.queue.Parties.join(viewer, mode, "kit:" + kit);
 				new PartyGameMenu(viewer, mode).open();
 			});
 		}
@@ -80,6 +131,8 @@ public final class PartyGameMenu extends Screen {
 		}
 		if (mode == GameMode.PARKOUR) {
 			difficulties(c);
+		} else if (mode == GameMode.TOURNAMENT) {
+			tournamentVotes(c);
 		}
 		c.set(15, Icon.of(Items.NAME_TAG).name(Lang.item(viewer, "menu.party.invite"))
 				.lore(Lang.loreLines(viewer, "menu.party.invite.lore")).build(),

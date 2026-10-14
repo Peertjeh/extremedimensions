@@ -126,6 +126,10 @@ public final class Queues {
 			Msg.send(p, "queue.spectating");
 			return false;
 		}
+		if (net.battlehub.tournament.Tournaments.isIn(p.getUUID())) {
+			Msg.send(p, "tournament.busy");
+			return false;
+		}
 		HubConfig.Game g = ConfigManager.config().game(mode);
 		if (!g.enabled) {
 			Msg.send(p, "queue.disabled", Lang.tr(p, Icons.modeKey(mode)));
@@ -143,6 +147,10 @@ public final class Queues {
 			was |= q.remove(id);
 		}
 		was |= Parties.leave(id);
+		if (net.battlehub.tournament.Tournaments.isIn(id)) {
+			net.battlehub.tournament.Tournaments.leave(id);
+			was = true;
+		}
 		SINCE.remove(id);
 		Challenges.forget(id);
 		if (Sessions.state(id) == Sessions.State.QUEUED) {
@@ -157,6 +165,7 @@ public final class Queues {
 	public static void tick(MinecraftServer server) {
 		tick++;
 		Parties.tick(server);
+		net.battlehub.tournament.Tournaments.tick(server);
 		if (tick % 20 != 0) {
 			return;
 		}
@@ -272,5 +281,6 @@ public final class Queues {
 		Parties.clear();
 		Challenges.clear();
 		PlayAgain.clear();
+		net.battlehub.tournament.Tournaments.clear();
 	}
 }

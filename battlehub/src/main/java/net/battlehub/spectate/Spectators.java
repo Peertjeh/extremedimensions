@@ -48,7 +48,10 @@ public final class Spectators {
 				current.removeWatcher(p.getUUID());
 			}
 		} else {
-			Queues.leaveAll(p);
+			// Waiting in a tournament you may watch the other matches (your own pulls you out)
+			if (!net.battlehub.tournament.Tournaments.isIn(p.getUUID())) {
+				Queues.leaveAll(p);
+			}
 			p.closeContainer();
 			Snapshots.take(p);
 		}

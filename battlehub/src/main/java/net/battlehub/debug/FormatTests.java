@@ -77,6 +77,8 @@ final class FormatTests {
 		s.check(tag + ": the totem saves A, the round goes on", () -> match().round() == 2 && match().phase() == Match.Phase.RUNNING
 				&& match().roundWins(p("BHTestB").getUUID()) == 0 && match().alive().contains(p("BHTestA").getUUID())
 				&& p("BHTestA").getHealth() > 0 && p("BHTestA").getOffhandItem().isEmpty());
+		// Vanilla ignores a second hit that is not stronger during the half second after a hit
+		s.pause(12);
 		s.run(tag + ": B wins round 2", () -> kill("BHTestA", "BHTestB"));
 		s.check(tag + ": 1-1, round 3", () -> match().roundWins(p("BHTestB").getUUID()) == 1 && match().round() == 3);
 		waitRunning(s, tag, 3);

@@ -102,6 +102,9 @@ public final class StatsMenu extends Screen {
 	private Icon modeIcon(PlayerProfile p, GameMode m) {
 		ModeStats s = p.peek(m);
 		Icon icon = Icon.of(Icons.mode(m)).name(Lang.item(viewer, Icons.modeKey(m))).lore(lines(s));
+		if (m == GameMode.TOURNAMENT) {
+			icon.lore(Component.empty()).lore(Lang.lore(viewer, "menu.stats.tournaments_won", p.tournamentsWon));
+		}
 		if (m.isDuel()) {
 			int elo = p.elo(m, Ranks.startElo());
 			ModeStats r = p.ranked.get(m.id());
