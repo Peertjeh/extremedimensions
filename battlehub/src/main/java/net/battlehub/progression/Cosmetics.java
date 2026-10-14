@@ -271,7 +271,7 @@ public final class Cosmetics {
 			}
 			case "firework" -> {
 				burst(level, "minecraft:firework", x, y + 1.5, z, 60, 0.2, 0.2, 0.2, 0.25);
-				burst(level, "minecraft:flash", x, y + 1.5, z, 1, 0, 0, 0, 0);
+				burst(level, "minecraft:end_rod", x, y + 1.5, z, 12, 0.1, 0.1, 0.1, 0.15);
 				sound(level, at, SoundEvents.FIREWORK_ROCKET_BLAST, 1.0f, 1.0f);
 				sound(level, at, SoundEvents.FIREWORK_ROCKET_TWINKLE, 0.8f, 1.0f);
 			}
