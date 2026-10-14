@@ -309,7 +309,7 @@ public final class ExpeditionService {
 	public static void onDeath(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
 		String dim = Dims.of(p);
-		if (!Dims.ours(p)) {
+		if (d.away || !Dims.ours(p)) {
 			// A death in another mod's world costs nothing of the mod's: no penance, no chain, no curse
 			d.diedAway = true;
 			return;

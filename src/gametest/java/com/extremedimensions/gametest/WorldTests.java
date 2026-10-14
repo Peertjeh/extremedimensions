@@ -14,16 +14,14 @@ import com.extremedimensions.expedition.ExpeditionService;
 import com.extremedimensions.penalty.CurseEffects;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.registry.ModEntities;
+import com.extremedimensions.config.Config;
 import com.extremedimensions.server.Dims;
-import com.extremedimensions.server.WorldFx;
+import com.extremedimensions.server.ServerEvents;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -33,45 +31,47 @@ public class WorldTests {
 	private static final Type MAP = new TypeToken<Map<String, Integer>>() {}.getType();
 
 	/**
-	 * Another mod's world (the tests ship one, {@code edtest:elsewhere}) lies outside the wound's reach: there the curses
-	 * sleep and a death costs nothing of the mod's; back in one of its own worlds everything wakes again.
+	 * Another mod's world lies outside the wound's reach: there the curses sleep and a death costs nothing of the mod's;
+	 * back in one of its own worlds everything wakes again. (The test server loads no worlds from data packs, so the
+	 * player is sent away the way the server tick does it on entering one.)
 	 */
-	@GameTest(maxTicks = 60)
+	@GameTest
 	public void theModSleepsInAnotherModsWorld(GameTestHelper helper) {
-		ServerLevel elsewhere = helper.getLevel().getServer().getLevel(
-				ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("edtest", "elsewhere")));
-		CurseTests.check(helper, elsewhere != null, "the test world edtest:elsewhere was not loaded");
-		CurseTests.check(helper, Dims.ours(helper.getLevel()) && !Dims.ours(elsewhere), "the Overworld should be the mod's and edtest:elsewhere not");
-		CurseTests.check(helper, "edtest:elsewhere".equals(Dims.of(elsewhere)), "another mod's world should keep its full id, got %s", Dims.of(elsewhere));
+		CurseTests.check(helper, Dims.ours(helper.getLevel()), "the Overworld should be the mod's");
 		CurseTests.check(helper, Dims.ours(Identifier.fromNamespaceAndPath("extremedimensions", "the_seam"))
 				&& Dims.ours(Identifier.fromNamespaceAndPath("minecraft", "the_nether"))
-				&& !Dims.ours(Identifier.fromNamespaceAndPath("othermod", "the_nether")), "the Seam and the Nether are the mod's, a borrowed name is not");
+				&& Dims.ours(Identifier.fromNamespaceAndPath("minecraft", "the_end")), "the Seam, the Nether and the End are the mod's");
+		CurseTests.check(helper, !Dims.ours(Identifier.fromNamespaceAndPath("othermod", "the_nether"))
+				&& !Dims.ours(Identifier.fromNamespaceAndPath("othermod", "skylands"))
+				&& !Dims.ours(Identifier.fromNamespaceAndPath("minecraft", "skylands")), "another mod's world, even under a borrowed name, is not the mod's");
+		int gate = Config.OWN_WORLDS_ONLY;
+		try {
+			Config.OWN_WORLDS_ONLY = 0;
+			CurseTests.check(helper, Dims.ours(Identifier.fromNamespaceAndPath("othermod", "skylands")), "with own_worlds_only off every world is the mod's");
+		} finally {
+			Config.OWN_WORLDS_ONLY = gate;
+		}
 		ServerPlayer p = CurseTests.cursed(helper, Penalty.WITHERING, 1, Penalty.KINDLING, 2);
 		PlayerData d = DataStore.get(p.getUUID());
 		float cursed = p.getMaxHealth();
 		CurseTests.check(helper, cursed < 20, "Withering should lower the maximum health first, got %s", cursed);
-		BlockPos home = helper.absolutePos(new BlockPos(1, 2, 1));
-		WorldFx.run("execute in edtest:elsewhere run tp " + p.getStringUUID() + " 0.5 1 0.5");
-		helper.runAfterDelay(6, () -> {
-			CurseTests.check(helper, p.level() == elsewhere, "the player should stand in edtest:elsewhere");
-			CurseTests.check(helper, d.away, "the player should count as away from the mod's worlds");
+		var fire = helper.getLevel().damageSources().inFire();
+		ServerEvents.setAway(p, d, true);
+		try {
 			CurseTests.near(helper, p.getMaxHealth(), 20, "maximum health with Withering asleep");
-			CurseTests.near(helper, CurseEffects.damageTaken(p, helper.getLevel().damageSources().inFire(), 4.0f), 4.0, "fire damage with Kindling asleep");
+			CurseTests.near(helper, CurseEffects.damageTaken(p, fire, 4.0f), 4.0, "fire damage with Kindling asleep");
 			CurseTests.check(helper, d.owned(Penalty.WITHERING) == 1, "a sleeping curse is still carried");
 			// A death there costs nothing of the mod's
 			d.atonement.put(Penalty.KINDLING.id, 40);
 			ExpeditionService.onDeath(p);
 			CurseTests.check(helper, d.atonement.getOrDefault(Penalty.KINDLING.id, 0) == 40, "a death in another mod's world should leave the atonement alone");
+		} finally {
 			d.diedAway = false;
-			WorldFx.run(String.format(java.util.Locale.ROOT, "execute in minecraft:overworld run tp %s %d %d %d",
-					p.getStringUUID(), home.getX(), home.getY(), home.getZ()));
-		});
-		helper.runAfterDelay(14, () -> {
-			CurseTests.check(helper, !d.away, "back in the Overworld the player should no longer be away");
-			CurseTests.near(helper, p.getMaxHealth(), cursed, "maximum health with Withering awake again");
-			CurseTests.near(helper, CurseEffects.damageTaken(p, helper.getLevel().damageSources().inFire(), 4.0f), 4.0 * (1 + 2 * Penalty.KINDLING.frac()), "fire damage with Kindling awake again");
-			helper.succeed();
-		});
+			ServerEvents.setAway(p, d, false);
+		}
+		CurseTests.near(helper, p.getMaxHealth(), cursed, "maximum health with Withering awake again");
+		CurseTests.near(helper, CurseEffects.damageTaken(p, fire, 4.0f), 4.0 * (1 + 2 * Penalty.KINDLING.frac()), "fire damage with Kindling awake again");
+		helper.succeed();
 	}
 
 	@GameTest

@@ -292,6 +292,17 @@ public final class ServerEvents {
 		Sync.state(p, d);
 	}
 
+	/** Into another mod's world the curses fall asleep (and their attribute curses come off); back out, they stir again. */
+	public static void setAway(ServerPlayer p, PlayerData d, boolean away) {
+		if (away == d.away) {
+			return;
+		}
+		d.away = away;
+		CurseEffects.applyEffects(p, d);
+		p.sendSystemMessage(net.minecraft.network.chat.Component.translatable(away
+				? "gui.extremedimensions.foreign.enter" : "gui.extremedimensions.foreign.leave"), true);
+	}
+
 	/** The mod's things that act (cloth, relics, endings) and so wait in another mod's world; the journal and pages are only read. */
 	private static boolean foreignRefuses(ItemStack held) {
 		return held.is(ModItems.MENDING_CLOTH) || held.is(ModItems.MENDING_THREAD) || held.is(ModItems.SEVERING_SHEARS)
@@ -337,10 +348,7 @@ public final class ServerEvents {
 			// player's return, and nothing else of the mod acts on them there
 			boolean away = !Dims.ours(p);
 			if (away != d.away) {
-				d.away = away;
-				CurseEffects.applyEffects(p, d);
-				p.sendSystemMessage(net.minecraft.network.chat.Component.translatable(away
-						? "gui.extremedimensions.foreign.enter" : "gui.extremedimensions.foreign.leave"), true);
+				setAway(p, d, away);
 				sync = true;
 			}
 			if (away) {
