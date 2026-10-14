@@ -58,11 +58,11 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 					if (mc.level != null && Config.PAUSED_NAMESPACES.contains(mc.level.dimension().identifier().getNamespace())) {
 						return; // in BattleHub: de server stuurt de keuze opnieuw als je eruit gaat
 					}
-					mc.setScreen(new PenaltyChoiceScreen(Arrays.asList(payload.ids().split(","))));
+					mc.setScreenAndShow(new PenaltyChoiceScreen(Arrays.asList(payload.ids().split(","))));
 				}));
 
 		// Statusscherm (altaar)
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenStatusPayload.TYPE, (payload, context) ->
-				context.client().execute(() -> Minecraft.getInstance().setScreen(new StatusScreen())));
+				context.client().execute(() -> Minecraft.getInstance().setScreenAndShow(new StatusScreen())));
 	}
 }
