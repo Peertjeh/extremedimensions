@@ -178,7 +178,12 @@ public final class TrialService {
 
 	/** A barrel in the Seam is opened or broken: if it was never touched, it is plunder. */
 	public static void plundered(ServerPlayer p, Level level, BlockPos pos) {
-		if (!Dims.SEAM.equals(Dims.of(level)) || p.isCreative()) {
+		plundered(p, Dims.of(level), pos);
+	}
+
+	/** As above, by the name of the dimension the barrel stands in. */
+	public static void plundered(ServerPlayer p, String dim, BlockPos pos) {
+		if (!Dims.SEAM.equals(dim) || p.isCreative()) {
 			return;
 		}
 		if (DataStore.seamCells().remove(barrelKey(pos))) {

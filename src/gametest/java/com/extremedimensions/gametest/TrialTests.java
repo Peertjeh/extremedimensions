@@ -11,7 +11,7 @@ import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.registry.ModItems;
-import com.extremedimensions.seam.SeamService;
+import com.extremedimensions.server.Dims;
 import com.extremedimensions.trial.Trial;
 import com.extremedimensions.trial.TrialBoard;
 import com.extremedimensions.trial.TrialRun;
@@ -20,7 +20,6 @@ import com.extremedimensions.trial.TrialService;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 /** Rift Trials: the week picks the trial, it is taken up at home, only a safe return counts, and medals pay once a week. */
@@ -156,8 +155,6 @@ public class TrialTests {
 	public void freshBarrelsCountOnce(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		PlayerData d = DataStore.get(p.getUUID());
-		ServerLevel seam = helper.getLevel().getServer().getLevel(SeamService.SEAM);
-		check(helper, seam != null, "no Seam dimension");
 		BlockPos at = new BlockPos(987_654, 120, -987_654);
 		try {
 			TrialRun run = new TrialRun();
@@ -166,11 +163,13 @@ public class TrialTests {
 			run.twist = Trial.Twist.CALM.id;
 			d.trial = run;
 			d.inSeam = true;
-			TrialService.plundered(p, seam, at);
+			TrialService.plundered(p, Dims.SEAM, at);
 			check(helper, run.score == 0, "a barrel nobody stocked counted");
 			TrialService.stocked(at);
-			TrialService.plundered(p, seam, at);
-			TrialService.plundered(p, seam, at);
+			TrialService.plundered(p, Dims.OVERWORLD, at);
+			check(helper, run.score == 0, "a barrel outside the Seam counted");
+			TrialService.plundered(p, Dims.SEAM, at);
+			TrialService.plundered(p, Dims.SEAM, at);
 			check(helper, run.score == 1, "a fresh barrel counted %s times", run.score);
 		} finally {
 			d.inSeam = false;
