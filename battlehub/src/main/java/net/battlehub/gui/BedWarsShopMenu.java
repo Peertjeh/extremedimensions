@@ -53,7 +53,7 @@ public final class BedWarsShopMenu extends Screen {
 
 	private static Item categoryIcon(String c) {
 		return switch (c) {
-			case "blocks" -> Items.WHITE_WOOL;
+			case "blocks" -> Ids.item("minecraft:white_wool");
 			case "weapons" -> Items.GOLDEN_SWORD;
 			case "armor" -> Items.CHAINMAIL_CHESTPLATE;
 			case "tools" -> Items.STONE_PICKAXE;

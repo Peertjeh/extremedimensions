@@ -8,7 +8,6 @@ import static net.battlehub.debug.SelfTest.p;
 
 import java.util.UUID;
 
-import net.battlehub.HubEvents;
 import net.battlehub.config.BedWarsConfig;
 import net.battlehub.config.ConfigManager;
 import net.battlehub.config.PropHuntConfig;
@@ -22,6 +21,7 @@ import net.battlehub.games.prophunt.Disguise;
 import net.battlehub.games.prophunt.PropHuntMatch;
 import net.battlehub.match.Match;
 import net.battlehub.util.Icon;
+import net.battlehub.util.Ids;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -155,16 +155,16 @@ final class ArcadeTests {
 			BedWarsMatch m = bw();
 			ServerPlayer a = p("BHTestA");
 			BlockPos o = m.arena().origin();
-			ItemStack wool = new ItemStack(Items.RED_WOOL, 4);
+			ItemStack wool = new ItemStack(Ids.item("minecraft:red_wool"), 4);
 			return !m.onPlaceBlock(a, m.arena().mark("spawn_0").above(), wool)
 					&& !m.onPlaceBlock(a, o.offset(0, m.settings().buildHeight + 4, 0), wool)
 					&& !m.onPlaceBlock(a, o.offset(0, 6, 0), new ItemStack(Items.CRAFTING_TABLE));
 		});
 		s.run("bedwars: A places wool in the open (the world places it right after the check)", () -> {
 			BlockPos at = bw().arena().origin().offset(0, 6, 0);
-			boolean ok = bw().onPlaceBlock(p("BHTestA"), at, new ItemStack(Items.RED_WOOL, 4));
+			boolean ok = bw().onPlaceBlock(p("BHTestA"), at, new ItemStack(Ids.item("minecraft:red_wool"), 4));
 			VARS.put("placeOk", ok);
-			if (ok) bw().arena().level().setBlock(at, Blocks.RED_WOOL.defaultBlockState(), 3);
+			if (ok) bw().arena().level().setBlock(at, Ids.state("minecraft:red_wool"), 3);
 		});
 		s.pause(2);
 		s.check("bedwars: placed blocks break, the map does not", () -> {
@@ -179,7 +179,7 @@ final class ArcadeTests {
 			BedWarsMatch m = bw();
 			ServerLevel level = m.arena().level();
 			BlockPos wool = m.arena().origin().offset(3, 1, 3);
-			level.setBlock(wool, Blocks.WHITE_WOOL.defaultBlockState(), 3);
+			level.setBlock(wool, Ids.state("minecraft:white_wool"), 3);
 			m.buildRules().markPlaced(wool);
 			VARS.put("tntOk", !m.onPlaceBlock(p("BHTestA"), wool.above(), new ItemStack(Items.TNT, 2)));
 		});
@@ -311,7 +311,8 @@ final class ArcadeTests {
 			h.setXRot(-90f);
 			VARS.put("hpH", h.getHealth());
 			VARS.put("ptsH", ph().points(h.getUUID()));
-			HubEvents.swung(h);
+			// The same call the server makes for a swing packet from the client
+			h.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
 		});
 		s.check("prophunt: a swing at thin air costs too", () -> pv("H").getHealth() < (float) VARS.get("hpH")
 				&& ph().points(pv("H").getUUID()) < (int) VARS.get("ptsH"));

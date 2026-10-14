@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.4.0
+
+### Added
+* **Bed Wars** (party game, 2–16 players): two to four teams on floating islands with beds as respawn
+  anchors, island generators (iron, gold) and diamond and emerald generators that speed up on a schedule,
+  a shopkeeper with blocks, weapons, armour that stays on, tool tiers, utility and team upgrades
+  (sharpness, protection, forge). Final kills once the bed is gone; the killer takes the victim's
+  resources; only player-placed blocks break (TNT included); sudden death destroys every bed, then
+  everyone glows; the winners stand on a podium. Sidebar with teams and beds, boss bar with the next
+  event. Everything is configurable in `bedwars.json`.
+* **Prop Hunt** (party game, 3–16 players): hunters against props disguised as blocks. A hide phase with
+  the hunters blinded in a cage, then the hunt. Props become any block from the list, turn solid when
+  standing still, lock their rotation, taunt and place decoys on cooldowns. Hunters lose health and
+  points for swinging at air or hitting the wrong object, and heal and earn points and arrows for every
+  find. Found props join the hunters; rounds rotate who hunts; the most points win. Configurable in
+  `prophunt.json`.
+* A sidebar and boss bar per match, sent only to its players.
+
+### Changed
+* Matches can decide per item what may be dropped.
+* The stats menu shows the new modes.
+
 ## 1.3.0
 
 ### Added

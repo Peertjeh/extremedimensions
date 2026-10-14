@@ -157,3 +157,21 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Free for All-kit | Een kit kiezen is meedoen met een stem op die kit; de meeste stemmen beslissen, zonder stemmen de eigen FFA-kit. |
 | 1v2 / 1v3 | Per kit een eigen wachtrij waarin je kiest: alleen, in het team of maakt niet uit. Groepen vormen in volgorde van binnenkomst; wie alleen wil, krijgt de plek alleen vóór wie het niet uitmaakt, net zo voor het team. Eén ronde (instelbaar met `roundsToWin`), geen friendly fire, arena groeit met het aantal spelers. Geen extra levens voor de solospeler (niet gevraagd). |
 | Extreme Dimensions | In de werelden van BattleHub (namespace `battlehub`) staat Extreme Dimensions stil: geen drain, dimensiewissels tellen niet, geen penalty's (het Litteken wordt tijdelijk opgeheven), het keuzescherm wacht, geen HUD, het altaar doet niets. Bij het verlaten loopt alles verder. Daarbij twee bestaande compileerfouten in Extreme Dimensions opgelost. |
+
+## Versie 1.4
+
+| Onderwerp | Keuze |
+|---|---|
+| Opbouw | Regels zonder Minecraft-code in `core.bedwars` en `core.prophunt` (getest met JUnit), een algemene `StateMachine` voor de fases binnen een spel, instellingen in `bedwars.json` en `prophunt.json`, schermen apart (`BedWarsUi`, `PropHuntUi`, menu's) en per spel losse onderdelen (generators, bouwregels, winkel, vermomming). |
+| Fases Bed Wars | Lobby en aftellen zijn de bestaande party-lobby en de start-countdown; daarna ACTIVE → SUDDEN_DEATH → PODIUM. Overtime is het moment dat iedereen gaat gloeien; bij het einde van de tijd wint het team met de meeste spelers, dan met bed, dan met de meeste final kills. |
+| Teams | 2 tot 4 teams, afhankelijk van het aantal spelers (max. 4 per team), of vast via `teams`. |
+| Bedden | Een bed is een gewoon blok in de arena; slopen gebeurt door de match (beide helften tegelijk), het eigen bed kan niet. Op een bed klikken doet niets (in de arenawereld zou een bed ontploffen); sluipen met een blok bouwt ertegenaan. |
+| Bouwen | Alleen blokken die de winkel als blok verkoopt (dus geen werkbank waarmee je goedkoop zwaarden kunt maken), binnen het bouwgebied, niet vlak bij spawns, winkels en generators. Alleen door spelers geplaatste blokken kunnen kapot. Het arenavak is groot genoeg voor alles wat gebouwd kan worden en wordt na afloop helemaal leeggemaakt. |
+| TNT | Gaat bij het plaatsen meteen aan. De match laat hem zelf ontploffen zonder blokschade en breekt daarna alleen geplaatste blokken (glas en obsidiaan niet), zodat de map heel blijft. |
+| Winkel / dupes | Kopen is alles of niets: eerst prijs, niveau en ruimte controleren, dan precies betalen, dan pas uitdelen. Menu-items kunnen het menu nooit uit (zoals alle BattleHub-menu's). Harnas zit vast (niet uit te doen of te laten vallen), zwaarden en gereedschap kunnen niet gedropt worden, grondstoffen en blokken wel (om te delen). Na een dood gaan pikhouweel en bijl één niveau omlaag, de rest van de inventaris is weg. |
+| Winkelier | Een villager zonder AI die niet gewond kan raken en terugkeert als hij wordt geduwd; klikken op hem of op de ton ernaast opent de winkel. |
+| Verbinding weg | Wie de verbinding verliest of /hub doet, ligt eruit (zoals in de andere modi) en krijgt zijn eigen spullen terug; een team zonder spelers ligt eruit. Opnieuw meedoen in een lopende match kan niet. |
+| Prop-vermomming | De speler zelf wordt voor anderen niet meer verstuurd (mixin op `Entity.broadcastToPlayer`); anderen zien een block display met een onzichtbare 1×1-hitbox. Stilstaan maakt de prop "vast": een nepblok op het raster dat alleen de anderen krijgen. De zelftest controleert dat het verbergen werkt. |
+| Missen | Een armzwaai zonder raak (mixin op het zwaai-pakket) die niets binnen bereik raakt, of een klik op een echt object uit de lijst, kost de hunter levens en punten (hoogstens twee keer per seconde). Gewone vloer en muren tellen niet als fout object. |
+| Prop Hunt-fases | WAITING → HIDING → HUNTING → ROUND_END, per ronde opnieuw; wie het minst gezocht heeft, wordt eerst hunter. Gevonden props worden hunter (instelbaar). Na de laatste ronde winnen de meeste punten. |
+

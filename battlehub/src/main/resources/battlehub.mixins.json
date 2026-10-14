@@ -13,7 +13,7 @@
 		"DisplayAccessor",
 		"BlockDisplayAccessor",
 		"EntityMixin",
-		"SwingPacketMixin"
+		"LivingEntitySwingMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
