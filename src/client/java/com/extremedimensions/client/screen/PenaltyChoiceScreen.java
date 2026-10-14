@@ -179,7 +179,8 @@ public class PenaltyChoiceScreen extends Screen {
 		} else if (pen.everywhere) {
 			accent = Ui.mix(Ui.VOID, accent, 0.25);
 		}
-		int border = hover ? Ui.WARN : accent;
+		// Hovered cards light up gold; an Extreme card only warms, it never loses its blood-red
+		int border = hover ? (pen.extreme ? Ui.mix(Ui.BLOOD, Ui.WARN, 0.45) : Ui.WARN) : accent;
 		if (i == chosen) {
 			border = ((now / 70) % 2 == 0) ? 0xFFE066 : 0xFF8800;
 		}
@@ -192,7 +193,7 @@ public class PenaltyChoiceScreen extends Screen {
 			g.fill(mx + 1, top - 5, mx + mw - 1, top + 4, Ui.argb(fade, Ui.mix(Ui.INK, Ui.BLOOD, 0.6)));
 			g.text(this.font, mark, mx + 4, top - 4, Ui.argb(fade, 0xFFE0E0));
 		}
-		if (hover) {
+		if (hover && !pen.extreme) {
 			g.fill(x + 1, top + 1, x + CARD_W - 1, top + CARD_H - 1, Ui.argb(0.08, Ui.WARN));
 		}
 		if (i == chosen) {

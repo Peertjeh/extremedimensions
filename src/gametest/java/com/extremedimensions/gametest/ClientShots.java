@@ -120,7 +120,8 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
 				PlayerData d = DataStore.get(p.getUUID());
-				d.pendingOffer = new ArrayList<>(List.of("grounded", "echoing_steps", "short_breath"));
+				// Off-centre, so it is seen at rest (the pointer sits on the middle card)
+				d.pendingOffer = new ArrayList<>(List.of("echoing_steps", "grounded", "short_breath"));
 				d.pendingMult = new ArrayList<>(List.of(1, 1, 1));
 				Sync.offer(p, d);
 			});
