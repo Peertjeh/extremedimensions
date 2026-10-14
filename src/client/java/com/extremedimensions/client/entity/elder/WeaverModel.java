@@ -22,7 +22,7 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 	public static final ModelLayerLocation LAYER = new ModelLayerLocation(ExtremeDimensions.id("weaver"), "main");
 
 	private final ModelPart root, body, head, halo, armL, armR, handL, handR, needles, spoolL, spoolR;
-	private final ModelPart[] robe, mantle, strands, lanterns;
+	private final ModelPart[] robe, mantle, strands, lanterns, veil;
 
 	public WeaverModel(ModelPart model) {
 		super(model);
@@ -41,6 +41,7 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 		this.mantle = ElderAnim.parts(model, WeaverGeometry.MANTLE, WeaverGeometry::find);
 		this.strands = ElderAnim.parts(model, WeaverGeometry.STRAND, WeaverGeometry::find);
 		this.lanterns = ElderAnim.parts(model, WeaverGeometry.LANTERN, WeaverGeometry::find);
+		this.veil = ElderAnim.parts(model, WeaverGeometry.VEIL, WeaverGeometry::find);
 	}
 
 	@Override
@@ -80,6 +81,10 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 		for (int i = 0; i < strands.length; i++) {
 			strands[i].zRot += Mth.sin(t * 0.07F + i * 1.5F) * (0.12F + 0.2F * storm);
 			strands[i].xRot += Mth.cos(t * 0.05F + i) * 0.08F + 0.15F * drift;
+		}
+		for (int i = 0; i < veil.length; i++) {
+			veil[i].xRot += Mth.sin(t * 0.06F + i * 0.7F) * 0.04F + 0.08F * drift + 0.15F * storm * Mth.sin(t * 0.4F + i);
+			veil[i].zRot += Mth.cos(t * 0.05F + i * 1.3F) * 0.03F;
 		}
 		for (int i = 0; i < lanterns.length; i++) {
 			lanterns[i].zRot += Mth.sin(t * 0.06F + i * 1.9F) * (0.08F + 0.3F * storm);

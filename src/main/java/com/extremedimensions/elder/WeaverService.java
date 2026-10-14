@@ -314,7 +314,7 @@ public final class WeaverService {
 	/** Where its halo is (a beam's source). */
 	private static double[] halo(Weaver w) {
 		double yaw = Math.toRadians(w.getYRot());
-		return new double[] {w.getX() + Math.sin(yaw) * 1.3, w.getY() + 16.5, w.getZ() - Math.cos(yaw) * 1.3};
+		return new double[] {w.getX() + Math.sin(yaw) * 2.25, w.getY() + 16.5, w.getZ() - Math.cos(yaw) * 2.25};
 	}
 
 	/** Seraphic Lance: the halo spins up and fires a beam that sweeps across the ground through its prey. */
