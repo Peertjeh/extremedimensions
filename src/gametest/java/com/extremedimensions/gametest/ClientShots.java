@@ -284,9 +284,9 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("kill @e[type=extremedimensions:hollowling]");
 			sp.getServer().runCommand("kill @e[type=extremedimensions:keeper]");
 			sp.getServer().runCommand("time set noon");
-			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:matriarch ^ ^ ^9 {NoAI:1b,Rotation:[180f,0f]}");
-			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:ferryman ^4.5 ^ ^7 {NoAI:1b,Rotation:[200f,0f]}");
-			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:weaver ^-4.5 ^ ^7 {NoAI:1b,Rotation:[160f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:matriarch ^ ^ ^13 {NoAI:1b,Rotation:[180f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:ferryman ^5.5 ^ ^11 {NoAI:1b,Rotation:[200f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:weaver ^-5.5 ^ ^11 {NoAI:1b,Rotation:[160f,0f]}");
 			ctx.waitTicks(15);
 			ctx.takeScreenshot("10_elders");
 			sp.getServer().runCommand("kill @e[type=extremedimensions:matriarch]");

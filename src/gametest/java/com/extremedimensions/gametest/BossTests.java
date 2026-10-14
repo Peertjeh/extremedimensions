@@ -3,8 +3,6 @@ package com.extremedimensions.gametest;
 import static com.extremedimensions.gametest.CurseTests.check;
 import static com.extremedimensions.gametest.CurseTests.cursed;
 
-import java.util.List;
-
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
@@ -17,6 +15,7 @@ import com.extremedimensions.mending.StarvedOne;
 import com.extremedimensions.penalty.Penalty;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -65,17 +64,18 @@ public class BossTests {
 	public void theFerrymanTakesHisTollAndWaivesTheFee(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper, Penalty.FERRYMANS_FEE, 2);
 		PlayerData d = DataStore.get(p.getUUID());
+		// Test players join at the world's origin; he must find ground where the test's chunks are loaded
+		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
 		p.giveExperienceLevels(10);
 		check(helper, FerrymanService.drainFactor(p) == 1.0, "the Tether drained faster before he came");
-		check(helper, FerrymanService.summon(p), "the Ferryman could not come");
+		Ferryman f = FerrymanService.summonAt(p, helper.absolutePos(new BlockPos(5, 2, 5)));
+		check(helper, f != null, "the Ferryman could not come");
 		check(helper, !FerrymanService.summon(p), "the Ferryman came twice for one passenger");
 		check(helper, FerrymanService.drainFactor(p) == Math.max(0.1, Config.FERRYMAN_DRAIN), "while he walks the drain is %s", FerrymanService.drainFactor(p));
 		int levels = p.experienceLevel;
 		FerrymanService.toll(p);
 		check(helper, p.experienceLevel == levels - Math.min(levels, Config.FERRYMAN_TOLL_LEVELS), "his blow took %s levels", levels - p.experienceLevel);
-		List<Ferryman> found = helper.getLevel().getEntitiesOfClass(Ferryman.class, p.getBoundingBox().inflate(48));
-		check(helper, !found.isEmpty(), "the Ferryman is nowhere near");
-		Ferryman f = found.get(0);
 		FerrymanService.onDefeat(f, p);
 		f.discard();
 		check(helper, d.owned(Penalty.FERRYMANS_FEE) == 1, "slaying him left %s stacks of the Fee", d.owned(Penalty.FERRYMANS_FEE));

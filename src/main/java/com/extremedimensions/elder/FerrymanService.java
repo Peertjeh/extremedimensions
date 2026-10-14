@@ -23,6 +23,7 @@ import com.extremedimensions.relic.RelicService;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerBossEvent;
@@ -114,13 +115,18 @@ public final class FerrymanService {
 
 	/** He comes for this player (also the operator command); false if he is already after them or cannot stand. */
 	public static boolean summon(ServerPlayer p) {
+		return !hunting(p) && summonAt(p, ElderFx.near((ServerLevel) p.level(), p, 12, 18)) != null;
+	}
+
+	/** He comes for this player, standing at this spot; the Ferryman, or null if he is already after them. */
+	public static Ferryman summonAt(ServerPlayer p, BlockPos spot) {
 		if (hunting(p)) {
-			return false;
+			return null;
 		}
 		ServerLevel level = (ServerLevel) p.level();
-		Ferryman f = ModEntities.FERRYMAN.spawn(level, ElderFx.near(level, p, 12, 18), EntitySpawnReason.EVENT);
+		Ferryman f = ModEntities.FERRYMAN.spawn(level, spot, EntitySpawnReason.EVENT);
 		if (f == null) {
-			return false;
+			return null;
 		}
 		f.setPersistenceRequired();
 		f.setTarget(p);
@@ -135,7 +141,7 @@ public final class FerrymanService {
 		WorldFx.soundIn(ElderFx.dim(f), "minecraft:block.bell.use", "hostile", f.getX(), f.getY() + 3, f.getZ(), 3f, 0.5f);
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.ferryman_comes"));
 		Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.FERRYMAN);
-		return true;
+		return f;
 	}
 
 	private static void drive(MinecraftServer s) {
