@@ -125,6 +125,10 @@ public final class WeaverService {
 
 	/** The Weaver rises near a place and turns on this player (also the operator command). */
 	public static boolean summon(ServerPlayer p, BlockPos near) {
+		// Never in another mod's world
+		if (!Dims.ours(p)) {
+			return false;
+		}
 		for (Unweaving u : WEAVERS.values()) {
 			if (p.getUUID().equals(u.target)) {
 				return false;

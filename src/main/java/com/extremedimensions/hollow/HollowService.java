@@ -418,7 +418,8 @@ public final class HollowService {
 		boolean wildCheck = s.getTickCount() % 600 < 20;
 		List<Hoard> wrecked = new ArrayList<>();
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
-			if (p.isSpectator()) {
+			// No nests in another mod's world, and a companion waits for its player to come back
+			if (p.isSpectator() || !Dims.ours(p)) {
 				continue;
 			}
 			PlayerData d = DataStore.get(p.getUUID());

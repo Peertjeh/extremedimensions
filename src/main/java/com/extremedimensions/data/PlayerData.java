@@ -82,6 +82,10 @@ public class PlayerData {
 
 	// --- runtime only ---
 	public transient String dim = "overworld";
+	/** In another mod's world: nothing of the mod acts on this player there (see {@code Dims.ours}). */
+	public transient boolean away = false;
+	/** Died in another mod's world: the death costs nothing of the mod's. */
+	public transient boolean diedAway = false;
 	public transient boolean inRun = false;
 	public transient boolean collapsing = false;
 	public transient double runTime = 0;
@@ -152,9 +156,15 @@ public class PlayerData {
 
 	/**
 	 * Stacks of a curse as they act now: the ones carried, and on an expedition the pact's on top (never past the
-	 * curse's maximum). Every effect reads this; bookkeeping reads {@link #owned}.
+	 * curse's maximum); none at all in another mod's world, where the curses sleep. Every effect reads this;
+	 * bookkeeping reads {@link #owned}.
 	 */
 	public int stacks(Penalty p) {
+		return away ? 0 : carried(p);
+	}
+
+	/** Stacks of a curse carried right now, pact included, whether or not they act in this world (for the HUD). */
+	public int carried(Penalty p) {
 		int own = owned(p);
 		return inRun ? Math.min(Math.max(own, p.max), own + sworn(p)) : own;
 	}

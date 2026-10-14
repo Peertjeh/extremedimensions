@@ -62,6 +62,11 @@ public final class Config {
 	public static int BOUNCE_GRACE_TICKS = 40;
 	/** 1 = a big title ("The Tether Tightens", "Expedition Ended") on respawn after a death that costs a curse; 0 = none. */
 	public static int RESPAWN_TITLE = 0;
+	/**
+	 * 1 = the mod acts only in its own worlds: the Overworld, the Nether, the End and the Seam. In another mod's world its
+	 * curses sleep, an expedition waits, and nothing of it spawns or strikes. 0 = it acts in every world.
+	 */
+	public static int OWN_WORLDS_ONLY = 1;
 
 	// --- Physical tether -------------------------------------------------------------------------
 

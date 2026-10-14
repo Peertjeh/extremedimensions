@@ -309,6 +309,11 @@ public final class ExpeditionService {
 	public static void onDeath(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
 		String dim = Dims.of(p);
+		if (!Dims.ours(p)) {
+			// A death in another mod's world costs nothing of the mod's: no penance, no chain, no curse
+			d.diedAway = true;
+			return;
+		}
 		d.diedToday = true;
 		// Every death undoes part of the penance, wherever it happens
 		d.atonementLost += PenaltyService.deathToll(d);
@@ -343,8 +348,21 @@ public final class ExpeditionService {
 	}
 
 	public static void onRespawn(ServerPlayer p, PlayerData d) {
-		// Always back to the Overworld, even with a bed or respawn anchor beyond the wound
-		if (!Dims.OVERWORLD.equals(Dims.of(p))) {
+		if (d.diedAway) {
+			// Died outside the wound's reach: an expedition left waiting there ends quietly, without reward or curse
+			d.diedAway = false;
+			d.collapsing = false;
+			d.collapseRetry = 0;
+			d.inRun = false;
+			d.linked.clear();
+			d.runTime = 0;
+			d.away = !Dims.ours(p);
+			d.dim = d.away ? Dims.OVERWORLD : Dims.of(p);
+			CurseEffects.applyEffects(p, d);
+			return;
+		}
+		// Always back to the Overworld, even with a bed or respawn anchor beyond the wound (one in another mod's world is its own business)
+		if (Dims.ours(p) && !Dims.OVERWORLD.equals(Dims.of(p))) {
 			sendToSpawn(p);
 		}
 		d.collapsing = false;

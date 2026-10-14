@@ -146,7 +146,8 @@ public final class FerrymanService {
 
 	/** He comes for this player, his boat at this spot; the Ferryman, or null if he is already after them. */
 	public static Ferryman summonAt(ServerPlayer p, BlockPos spot) {
-		if (hunting(p)) {
+		// Never in another mod's world
+		if (hunting(p) || !Dims.ours(p)) {
 			return null;
 		}
 		ServerLevel level = (ServerLevel) p.level();

@@ -15,7 +15,7 @@ public class StomachHud implements HudElement {
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, DeltaTracker deltaTracker) {
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.player == null || mc.player.isCreative() || mc.player.isSpectator()
+		if (mc.player == null || ClientState.away() || mc.player.isCreative() || mc.player.isSpectator()
 				|| mc.player.getVehicle() instanceof LivingEntity) {
 			return;
 		}

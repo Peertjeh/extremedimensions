@@ -774,6 +774,10 @@ public final class LurkerService {
 
 	/** Operator command: summon a Lurker in a given mode near the player. */
 	public static boolean summon(ServerPlayer p, String mode) {
+		// Never in another mod's world
+		if (!Dims.ours(p)) {
+			return false;
+		}
 		return switch (mode) {
 			case "drain" -> spawnDrain(p);
 			case "stalk" -> {

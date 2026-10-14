@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.extremedimensions.server.Dims;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
@@ -101,7 +102,8 @@ public final class MatriarchService {
 
 	/** She rises near the hoard and turns on the player who woke it. */
 	public static boolean summon(ServerPlayer p, String hoard, BlockPos home) {
-		if (hunting(p)) {
+		// Never in another mod's world
+		if (hunting(p) || !Dims.ours(p)) {
 			return false;
 		}
 		ServerLevel level = (ServerLevel) p.level();

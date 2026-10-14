@@ -187,7 +187,7 @@ public class CursesScreen extends Screen {
 	/** The world set that acts where the player stands: beyond the wound, the Overworld (if switched on), or none. */
 	private Group here() {
 		Minecraft mc = Minecraft.getInstance();
-		if (mc.level == null) {
+		if (mc.level == null || com.extremedimensions.client.state.ClientState.away()) {
 			return null;
 		}
 		if (mc.level.dimension() == Level.OVERWORLD) {
@@ -196,8 +196,11 @@ public class CursesScreen extends Screen {
 		return Group.BEYOND;
 	}
 
-	/** True when a set's curses act where the player stands. Everywhere and Extreme curses always do. */
+	/** True when a set's curses act where the player stands. Everywhere and Extreme curses always do, but in another mod's world none does. */
 	private boolean activeHere(Group group) {
+		if (com.extremedimensions.client.state.ClientState.away()) {
+			return false;
+		}
 		return group == Group.EVERYWHERE || group == Group.EXTREME || group == here();
 	}
 
@@ -766,8 +769,8 @@ public class CursesScreen extends Screen {
 				g.fill(mx, y + 5, mx + 3, y + 8, Ui.argb(0.45 + 0.55 * beat, Ui.mix(col, 0xFFFFFF, 0.35)));
 			}
 			if (this.isHovered()) {
-				Component where = Component.translatable(activeHere(group)
-						? "gui.extremedimensions.curses.active_here" : "gui.extremedimensions.curses.inactive_here");
+				Component where = Component.translatable(com.extremedimensions.client.state.ClientState.away() ? "gui.extremedimensions.curses.asleep_here"
+						: activeHere(group) ? "gui.extremedimensions.curses.active_here" : "gui.extremedimensions.curses.inactive_here");
 				g.setTooltipForNextFrame(font, on ? where : Component.empty().append(this.getMessage()).append(" · ").append(where), mouseX, mouseY);
 			}
 		}

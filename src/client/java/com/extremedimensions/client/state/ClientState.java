@@ -20,7 +20,7 @@ public final class ClientState {
 	public static int nearEnd = -1;
 	public static int runCharge = 0;
 	public static int runMax = 0;
-	/** 0 = Overworld, 1 = Nether, 2 = End. */
+	/** 0 = Overworld, 1 = Nether, 2 = End, 3 = the Seam, 4 = another mod's world (nothing of the mod shows there). */
 	public static int dimCode = 0;
 	public static int drainX100 = 100;
 	public static int expeditions = 0;
@@ -104,8 +104,9 @@ public final class ClientState {
 		longestRun = s.longestRun();
 		runSecs = s.runSecs();
 		marks = parse(s.penalties());
-		SealedPockets.client = Math.min(27, stacksOf("sealed_pockets") * (int) Math.round(valueOf("sealed_pockets")));
-		Dwindling.client = stacksOf("dwindling");
+		// In another mod's world the curses sleep: no pocket is sealed and every stack holds its full count
+		SealedPockets.client = away() ? 0 : Math.min(27, stacksOf("sealed_pockets") * (int) Math.round(valueOf("sealed_pockets")));
+		Dwindling.client = away() ? 0 : stacksOf("dwindling");
 		Dwindling.clientValue = valueOf("dwindling");
 		scars = s.scars();
 		tetherDist = s.tetherDist();
@@ -116,6 +117,11 @@ public final class ClientState {
 		if (collapseAt > 0 && homeAt <= collapseAt && dimCode == 0 && syncMs - collapseAt > 2000) {
 			homeAt = syncMs;
 		}
+	}
+
+	/** In another mod's world: the mod sleeps there, and its HUD with it. */
+	public static boolean away() {
+		return dimCode == 4;
 	}
 
 	/** Whether a Collapse sequence is still running (the death screen is skipped during it). */

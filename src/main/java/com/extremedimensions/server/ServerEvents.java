@@ -125,7 +125,8 @@ public final class ServerEvents {
 			}
 		});
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
-			if ("minecraft:ender_dragon".equals(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString()) && WorldFx.server() != null) {
+			if ("minecraft:ender_dragon".equals(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString()) && WorldFx.server() != null
+					&& Dims.ours(entity.level())) {
 				WorldService.onDragonDeath(WorldFx.server());
 			}
 			if (entity instanceof ServerPlayer p) {
@@ -155,7 +156,7 @@ public final class ServerEvents {
 				if (source.getEntity() instanceof ServerPlayer killer) {
 					com.extremedimensions.trial.TrialService.progress(killer, com.extremedimensions.trial.Trial.Kind.HUNT, 1);
 				}
-			} else if (source.getEntity() instanceof ServerPlayer killer) {
+			} else if (source.getEntity() instanceof ServerPlayer killer && Dims.ours(entity.level())) {
 				ExpeditionService.onMobKilled(killer, entity);
 			}
 			if (!(entity instanceof ServerPlayer)) {
@@ -164,6 +165,9 @@ public final class ServerEvents {
 		});
 
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+			if (!Dims.ours(level)) {
+				return InteractionResult.PASS;
+			}
 			if (player instanceof ServerPlayer sp && hand == InteractionHand.MAIN_HAND && MendingService.isPedestal(hit.getBlockPos())
 					&& SeamService.inSeam(sp)) {
 				InteractionResult r = MendingService.onPedestal(sp, hit.getBlockPos(), player.getItemInHand(hand));
@@ -200,6 +204,11 @@ public final class ServerEvents {
 				Journal.open(sp, DataStore.get(sp.getUUID()));
 				return InteractionResult.SUCCESS;
 			}
+			if (player instanceof ServerPlayer sp && !Dims.ours(level) && foreignRefuses(player.getItemInHand(hand))) {
+				// In another mod's world the mod's things wait until the player is back (the journal can still be read)
+				sp.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.foreign.refused"), true);
+				return InteractionResult.FAIL;
+			}
 			if (player instanceof ServerPlayer sp && player.getItemInHand(hand).is(ModItems.MENDING_CLOTH)) {
 				return PenaltyService.cloth(sp, player.getItemInHand(hand));
 			}
@@ -220,6 +229,9 @@ public final class ServerEvents {
 		});
 
 		PlayerBlockBreakEvents.AFTER.register((level, player, pos, state, blockEntity) -> {
+			if (!Dims.ours(level)) {
+				return;
+			}
 			AnchorService.onBroken(Dims.of(level), pos);
 			if (player instanceof ServerPlayer sp) {
 				CurseEffects.wear(sp);
@@ -244,6 +256,9 @@ public final class ServerEvents {
 		});
 
 		UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
+			if (!Dims.ours(level)) {
+				return InteractionResult.PASS;
+			}
 			InteractionResult feral = ExtremeCurses.refuseTaming(player, entity);
 			if (feral != InteractionResult.PASS) {
 				return feral;
@@ -257,7 +272,9 @@ public final class ServerEvents {
 
 	private static void onJoin(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
-		d.dim = Dims.of(p);
+		// Joining in another mod's world: the mod picks the player up again where they come back to one of its own
+		d.away = !Dims.ours(p);
+		d.dim = d.away ? Dims.OVERWORLD : Dims.of(p);
 		d.collapsing = false;
 		d.collapseRetry = 0;
 		d.inRun = Dims.isBeyond(d.dim) && !d.linked.isEmpty();
@@ -273,6 +290,12 @@ public final class ServerEvents {
 		d.ticksOnline = 0;
 		d.hasRopeEnd = false;
 		Sync.state(p, d);
+	}
+
+	/** The mod's things that act (cloth, relics, endings) and so wait in another mod's world; the journal and pages are only read. */
+	private static boolean foreignRefuses(ItemStack held) {
+		return held.is(ModItems.MENDING_CLOTH) || held.is(ModItems.MENDING_THREAD) || held.is(ModItems.SEVERING_SHEARS)
+				|| com.extremedimensions.relic.RelicService.of(held) != null;
 	}
 
 	/** Shortly after joining, once the player really stands in the world and commands can target them. */
@@ -308,6 +331,24 @@ public final class ServerEvents {
 			if (d.offerDelay > 0 && --d.offerDelay == 0) {
 				d.offerDelay = -1;
 				Sync.offer(p, d);
+			}
+
+			// Another mod's world lies outside the wound's reach: the curses sleep, an expedition waits for the
+			// player's return, and nothing else of the mod acts on them there
+			boolean away = !Dims.ours(p);
+			if (away != d.away) {
+				d.away = away;
+				CurseEffects.applyEffects(p, d);
+				p.sendSystemMessage(net.minecraft.network.chat.Component.translatable(away
+						? "gui.extremedimensions.foreign.enter" : "gui.extremedimensions.foreign.leave"), true);
+				sync = true;
+			}
+			if (away) {
+				d.tickCounter++;
+				if (sync || d.tickCounter % Config.SYNC_INTERVAL_TICKS == 0) {
+					Sync.state(p, d);
+				}
+				continue;
 			}
 
 			if (!dim.equals(d.dim)) {

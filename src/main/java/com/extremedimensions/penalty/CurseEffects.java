@@ -230,6 +230,10 @@ public final class CurseEffects {
 		modifier(p, "minecraft:max_health", "relic_hunger", hand ? -Config.RELIC_HUNGERING_HAND_HEALTH : 0, "add_value");
 		modifier(p, "minecraft:safe_fall_distance", "relic_feather", feather ? Config.RELIC_FEATHERBONE_FALL : 0, "add_value");
 		modifier(p, "minecraft:armor", "relic_feather", feather ? -Config.RELIC_FEATHERBONE_ARMOR : 0, "add_value");
+		// Lead Pockets is only reset by its own tick, which does not run in another mod's world
+		if (d.away) {
+			modifier(p, "minecraft:movement_speed", "lead_pockets", 0, "add_multiplied_total");
+		}
 		d.leadValue = Double.NaN;
 		refreshEffects(p, d);
 	}

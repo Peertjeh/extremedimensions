@@ -26,6 +26,9 @@ public class ChargeHud implements HudElement {
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, DeltaTracker deltaTracker) {
 		ClientState.tickSmooth();
+		if (ClientState.away()) {
+			return;
+		}
 		Minecraft mc = Minecraft.getInstance();
 		Font font = mc.font;
 		int w = g.guiWidth();

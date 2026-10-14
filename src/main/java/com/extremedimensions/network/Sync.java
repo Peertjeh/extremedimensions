@@ -24,8 +24,9 @@ public final class Sync {
 
 	public static void state(ServerPlayer p, PlayerData d) {
 		boolean seam = d.inSeam && Dims.SEAM.equals(d.dim);
-		int dimCode = seam ? 3 : Dims.NETHER.equals(d.dim) ? 1 : Dims.END.equals(d.dim) ? 2 : 0;
-		boolean overworld = Dims.OVERWORLD.equals(d.dim);
+		// 4: another mod's world, where nothing of the mod shows
+		int dimCode = d.away ? 4 : seam ? 3 : Dims.NETHER.equals(d.dim) ? 1 : Dims.END.equals(d.dim) ? 2 : 0;
+		boolean overworld = !d.away && Dims.OVERWORLD.equals(d.dim);
 		ServerPlayNetworking.send(p, new ModPackets.StatePayload(
 				overworld ? AnchorService.nearCharge(p, Dims.NETHER) : -1,
 				overworld ? AnchorService.nearCharge(p, Dims.END) : -1,
@@ -119,7 +120,7 @@ public final class Sync {
 	private static String penalties(PlayerData d) {
 		StringBuilder out = new StringBuilder();
 		for (Penalty pen : Penalty.values()) {
-			int n = d.stacks(pen);
+			int n = d.carried(pen);
 			if (n <= 0) {
 				continue;
 			}

@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.13.2: Within the Wound's Reach
+
+### Changed
+- **The mod keeps to its own worlds**: it acts only in the Overworld, the Nether, the End and the Seam. In a world
+  added by another mod it sleeps:
+  - your curses (and the relic bound to your Tether) have no effect there; they are still yours and wake the moment
+    you are back. A line above the hotbar tells you when they fall asleep and when they stir;
+  - an expedition waits: no charge drains while you are away, and it carries on (or ends safely in the Overworld) when
+    you come back through one of the mod's own worlds;
+  - nothing of the mod spawns or strikes there: no Lurkers, no Hollow nests, no Elders, no wound storms;
+  - a death there costs nothing of the mod's (no curse, no lost atonement, no broken chain); an expedition left waiting
+    ends quietly, without reward or curse, and a bed there is left alone;
+  - its HUD stays out of sight, and anchors, rifts, the Mending Cloth, relics and the endings wait until you are back
+    (the journal can still be read). The Curses screen marks every set as asleep.
+- The setting **Only in its own worlds** (`own_worlds_only`, default on) lets the mod act in every world again.
+
+### Fixed
+- A world of another mod that borrowed a vanilla name (`othermod:the_nether`) could pass for the real one.
+
 ## 2.13.1: Their Last Moment
 
 ### Changed

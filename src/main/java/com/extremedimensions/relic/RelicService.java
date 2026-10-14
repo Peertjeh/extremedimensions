@@ -43,8 +43,9 @@ public final class RelicService {
 		return Relic.byId(d.relic);
 	}
 
+	/** Whether the relic bound to the Tether acts: it sleeps with the curses in another mod's world. */
 	public static boolean has(PlayerData d, Relic r) {
-		return d != null && r.id.equals(d.relic);
+		return d != null && !d.away && r.id.equals(d.relic);
 	}
 
 	/** For hot paths that also see players without data (never creates it). */
