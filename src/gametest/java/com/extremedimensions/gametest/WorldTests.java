@@ -51,7 +51,9 @@ public class WorldTests {
 		Object[][] expected = {
 			{net.minecraft.world.entity.LivingEntity.class, "rememberSource", "cursedDamage", "cursedEffect"},
 			{net.minecraft.world.entity.player.Inventory.class, "freeSlot", "roomInSlot"},
-			{net.minecraft.world.inventory.Slot.class, "sealed"},
+			{net.minecraft.world.inventory.Slot.class, "sealed", "dwindling"},
+			{net.minecraft.world.food.FoodData.class, "unhealing"},
+			{net.minecraft.world.entity.Mob.class, "wild"},
 			{net.minecraft.world.entity.npc.villager.Villager.class, "illRepute"},
 		};
 		for (Object[] row : expected) {

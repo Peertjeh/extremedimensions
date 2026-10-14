@@ -1,5 +1,36 @@
 # Changelog
 
+## 2.6.0: Extreme
+
+*Some curses do not say what they do. You will find out.*
+
+### Added
+- **Extreme curses**, a fourth set of nine: Dwindling, Withered Grasp, Restless Gaze, The Grudge, Stormcalled,
+  Feral Scent, Broken Oath, Unhealing and Echoing Steps. Their cards only hint at what they take; the rest is for you
+  to discover. They act in every world.
+  - Rare: now and then one card of an offer is an Extreme curse instead (`extreme_card_chance`, default 2.5%).
+  - Never multiplied. Stacks that spill over from a multiplied card can land on them, though less often than on other
+    curses (`extreme_spill_weight`, default 0.2).
+  - Twice as hard to lift: atonement points and Tether Fragments both cost double (`extreme_atone_factor`). A Mending
+    Cloth still lifts one stack.
+  - Their own tab in the Curses screen, blood-red. The open tab now carries its name; the others show their sigil and
+    stacks, with the name on hover. Players nearby show their Extreme stacks as well.
+  - Every Extreme curse's maximum and strength are set in the config like any other curse's; the thunder of one of them
+    with `storm_strike_min_seconds` and `storm_strike_max_seconds`.
+
+### Changed
+- **Atonement from kills is earned in the wild, not in a farm.** A kill only counts when the monster spawned naturally
+  (in the dark, in a cave, outside, in a structure; not from a spawner, an egg or a command), when you dealt at least
+  half of its health yourself (`atone_kill_min_share`; a farm's fall does not count), and while you have not already
+  slain 5 monsters within 24 blocks of that spot in the last 10 minutes (`atone_kill_area_limit`,
+  `atone_kill_area_radius`, `atone_kill_area_minutes`). Creatures a wound storm or a hunted night sends after you count
+  as wild.
+
+### Under the hood
+- New automated tests for every Extreme curse, for rare single Extreme cards and their doubled cost, and for atonement
+  from kills (spawner, too little damage, one spot saturated). The client test checks the client's stack limits and
+  photographs the Extreme tab and an Extreme card.
+
 ## 2.5.0: Foundations
 
 *Nothing new to find in the world this time. Everything under it got sturdier, faster and tested.*

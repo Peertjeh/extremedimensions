@@ -13,7 +13,11 @@ import com.extremedimensions.data.PlayerData;
  * the Overworld). They are permanent: every pick adds stacks, up to the curse's own maximum, and only atonement, Tether
  * Fragments or a Mending Cloth take a stack off again.
  *
- * <p>Three sets. Beyond curses only act beyond the wound (the Nether, the End and the Seam); Overworld curses only act
+ * <p>Extreme curses are the fourth set: now and then one of the cards is one of them (never multiplied), and spilled
+ * stacks can land on them too, more rarely than on others. Their cards and the Curses screen only ever hint at what
+ * they do, and lifting a stack takes twice the atonement and fragments.
+ *
+ * <p>Three world sets. Beyond curses only act beyond the wound (the Nether, the End and the Seam); Overworld curses only act
  * in the Overworld; Everywhere curses act in every world and can be offered after any death that costs a curse. Each curse has a maximum and a value per stack (a percentage, hearts, blocks...), both
  * read from the config's {@code penalties} section; the card text is formatted with that value.
  *
@@ -83,11 +87,22 @@ public enum Penalty {
 	BRITTLE_GEAR("brittle_gear", Group.EVERYWHERE, 3, 1),
 	HUNGRY_WOUNDS("hungry_wounds", Group.EVERYWHERE, 3, 2),
 	WITHERING("withering", Group.EVERYWHERE, 2, 1),
-	LEAD_POCKETS("lead_pockets", Group.EVERYWHERE, 3, 5);
+	LEAD_POCKETS("lead_pockets", Group.EVERYWHERE, 3, 5),
 
-	/** Where a curse acts: beyond the wound, in the Overworld, or in every world. */
+	// --- extreme: rare, never multiplied, cryptic, twice as hard to lift --------------------------
+	DWINDLING("dwindling", Group.EXTREME, 3, 2),
+	WITHERED_GRASP("withered_grasp", Group.EXTREME, 3, 1),
+	RESTLESS_GAZE("restless_gaze", Group.EXTREME, 3, 15),
+	THE_GRUDGE("the_grudge", Group.EXTREME, 1, 0),
+	STORMCALLED("stormcalled", Group.EXTREME, 1, 0),
+	FERAL_SCENT("feral_scent", Group.EXTREME, 1, 0),
+	BROKEN_OATH("broken_oath", Group.EXTREME, 1, 25),
+	UNHEALING("unhealing", Group.EXTREME, 1, 0),
+	ECHOING_STEPS("echoing_steps", Group.EXTREME, 1, 50);
+
+	/** Where a curse acts: beyond the wound, in the Overworld, in every world; Extreme curses act in every world too. */
 	public enum Group {
-		BEYOND, OVERWORLD, EVERYWHERE;
+		BEYOND, OVERWORLD, EVERYWHERE, EXTREME;
 
 		public String id() {
 			return name().toLowerCase(Locale.ROOT);
@@ -107,8 +122,10 @@ public enum Penalty {
 	public final Group group;
 	/** Overworld curse: only active in the Overworld. */
 	public final boolean overworld;
-	/** Everywhere curse: active in every world. */
+	/** Acts in every world (the Everywhere and the Extreme set). */
 	public final boolean everywhere;
+	/** Extreme curse: rare, never multiplied, its effect never spelled out, and twice as hard to lift. */
+	public final boolean extreme;
 	public final int defaultMax;
 	public final double defaultValue;
 	/** Current maximum stacks and value per stack (from the config). */
@@ -119,7 +136,8 @@ public enum Penalty {
 		this.id = id;
 		this.group = group;
 		this.overworld = group == Group.OVERWORLD;
-		this.everywhere = group == Group.EVERYWHERE;
+		this.everywhere = group == Group.EVERYWHERE || group == Group.EXTREME;
+		this.extreme = group == Group.EXTREME;
 		this.defaultMax = max;
 		this.defaultValue = value;
 		this.max = max;
@@ -191,13 +209,26 @@ public enum Penalty {
 		return pool;
 	}
 
-	/** Up to {@code count} different curses this player can still receive, from the world's set and the Everywhere set. */
-	public static List<String> rollOffer(PlayerData d, boolean overworld, int count) {
+	/**
+	 * Up to {@code count} different curses this player can still receive, from the world's set and the Everywhere set.
+	 * With {@code extremeChance}, one of the cards is an Extreme curse instead.
+	 */
+	public static List<String> rollOffer(PlayerData d, boolean overworld, int count, double extremeChance) {
 		List<Penalty> pool = pool(d, overworld);
-		Collections.shuffle(pool, new java.util.Random(ThreadLocalRandom.current().nextLong()));
+		java.util.Random rnd = new java.util.Random(ThreadLocalRandom.current().nextLong());
+		Collections.shuffle(pool, rnd);
 		List<String> out = new ArrayList<>();
 		for (int i = 0; i < count && i < pool.size(); i++) {
 			out.add(pool.get(i).id);
+		}
+		List<Penalty> extreme = available(d, Group.EXTREME);
+		if (count > 0 && !extreme.isEmpty() && rnd.nextDouble() < extremeChance) {
+			String pick = extreme.get(rnd.nextInt(extreme.size())).id;
+			if (out.size() >= count) {
+				out.set(rnd.nextInt(out.size()), pick);
+			} else {
+				out.add(pick);
+			}
 		}
 		return out;
 	}

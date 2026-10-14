@@ -13,6 +13,7 @@ import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.network.Fx;
 import com.extremedimensions.penalty.Penalty;
+import com.extremedimensions.penalty.AtonementGuard;
 import com.extremedimensions.penalty.CurseEffects;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
@@ -366,7 +367,11 @@ public final class ExpeditionService {
 		if ("enderman".equals(type)) {
 			Journal.unlock(killer, d, JournalEntry.UNANCHORED);
 		}
-		PenaltyService.onKill(killer, ELITES.contains(type), mob instanceof Enemy);
+		// Only a monster of the wild, mostly felled by the killer's own hand, and not too many at one spot, is atonement
+		boolean elite = ELITES.contains(type);
+		if ((elite || mob instanceof Enemy) && AtonementGuard.counts(killer, mob)) {
+			PenaltyService.onKill(killer, elite, mob instanceof Enemy);
+		}
 		if (!Dims.isBeyond(Dims.of(mob.level())) || !(mob instanceof Enemy)) {
 			return;
 		}

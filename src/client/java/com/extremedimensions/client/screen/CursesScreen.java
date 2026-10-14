@@ -30,7 +30,8 @@ import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.level.Level;
 
 /**
- * The Curses: everything the Starved took, in three tabs (beyond the wound, the Overworld, everywhere). Each curse is a
+ * The Curses: everything the Starved took, in four tabs (beyond the wound, the Overworld, everywhere, extreme). The
+ * open tab is wide and named, the others narrow (sigil and stacks, the name on hover). Each curse is a
  * rune in a grid with its stacks as pips under it; the selected one shows its effect, its lore and its atonement, and
  * can be chosen as the curse to atone for (and to mend first). The tab whose curses act where the player stands is
  * marked. Scars and how to atone sit at the foot.
@@ -41,14 +42,17 @@ import net.minecraft.world.level.Level;
 public class CursesScreen extends Screen {
 	private static final int PW = 352, PH = 212;
 	private static final int COLS = 6, CELL = 22;
-	private static final int TAB_W = 104, TAB_GAP = 6;
+	/** Tabs: the narrow ones and the gap between; the open tab takes the rest of the row. */
+	private static final int TAB_N = 62, TAB_GAP = 6;
 	/** The nearby players panel: wide and narrow widths, gap to the Curses panel, row height (wide), cell height (narrow). */
-	private static final int LW = 110, NW = 36, LGAP = 6, ROW = 20, CELL_N = 50;
+	private static final int LW = 120, NW = 36, LGAP = 6, ROW = 20, CELL_N = 60;
+	/** Distance between the set sigils of one nearby player (wide panel). */
+	private static final int SET_STEP = 21;
 
 	/** One curse as the server sent it. */
 	private record Entry(Penalty pen, int stacks, int max, int progress, int cost, String value) {}
 
-	/** A player standing close by: stacks per set (beyond, Overworld, everywhere). */
+	/** A player standing close by: stacks per set (beyond, Overworld, everywhere, extreme). */
 	private record Nearby(UUID id, String name, int[] sets) {}
 
 	private final Screen parent;
@@ -56,6 +60,7 @@ public class CursesScreen extends Screen {
 	private final Map<Penalty, Entry> entries = new HashMap<>();
 	private final List<Nearby> nearby = new ArrayList<>();
 	private final List<Socket> sockets = new ArrayList<>();
+	private final List<Tab> tabs = new ArrayList<>();
 	private int scars;
 	private String atoning = "";
 	private boolean overworldOn = true;
@@ -126,12 +131,16 @@ public class CursesScreen extends Screen {
 		if (parts.length > 4 && !parts[4].isEmpty()) {
 			for (String part : parts[4].split(";")) {
 				String[] kv = part.split(",");
-				if (kv.length < 5) {
+				if (kv.length < 3) {
 					continue;
 				}
 				try {
-					nearby.add(new Nearby(UUID.fromString(kv[0]), kv[1],
-							new int[] {Integer.parseInt(kv[2]), Integer.parseInt(kv[3]), Integer.parseInt(kv[4])}));
+					// One count per set; a set the server did not send (an older server) reads as none
+					int[] sets = new int[Group.values().length];
+					for (int k = 0; k < sets.length && k + 2 < kv.length; k++) {
+						sets[k] = Integer.parseInt(kv[k + 2]);
+					}
+					nearby.add(new Nearby(UUID.fromString(kv[0]), kv[1], sets));
 				} catch (IllegalArgumentException e) {
 					// skip malformed entry
 				}
@@ -181,15 +190,16 @@ public class CursesScreen extends Screen {
 		return Group.BEYOND;
 	}
 
-	/** True when a set's curses act where the player stands. Everywhere curses always do. */
+	/** True when a set's curses act where the player stands. Everywhere and Extreme curses always do. */
 	private boolean activeHere(Group group) {
-		return group == Group.EVERYWHERE || group == here();
+		return group == Group.EVERYWHERE || group == Group.EXTREME || group == here();
 	}
 
 	public static int color(Group group) {
 		return switch (group) {
 			case OVERWORLD -> Ui.SOUL;
 			case EVERYWHERE -> Ui.VOID;
+			case EXTREME -> Ui.BLOOD;
 			default -> Ui.EMBER_DEEP;
 		};
 	}
@@ -224,10 +234,11 @@ public class CursesScreen extends Screen {
 	protected void init() {
 		shown = this;
 		sockets.clear();
+		tabs.clear();
 		int x0 = x0(), y0 = y0();
 		Group[] groups = Group.values();
-		for (int i = 0; i < groups.length; i++) {
-			this.addRenderableWidget(new Tab(x0 + 12 + i * (TAB_W + TAB_GAP), y0 + 22, groups[i]));
+		for (Group group : groups) {
+			tabs.add(this.addRenderableWidget(new Tab(x0 + 12, y0 + 22, group)));
 		}
 		int[] index = new int[groups.length];
 		for (Penalty p : Penalty.values()) {
@@ -248,7 +259,19 @@ public class CursesScreen extends Screen {
 		for (Socket s : sockets) {
 			s.visible = s.pen.group == tab;
 		}
+		layoutTabs();
 		refreshButton();
+	}
+
+	/** The open tab is wide enough for its name; the others shrink to sigil and stacks. */
+	private void layoutTabs() {
+		int row = PW - 24, wide = row - (tabs.size() - 1) * (TAB_N + TAB_GAP);
+		int x = x0() + 12;
+		for (Tab t : tabs) {
+			t.setX(x);
+			t.setWidth(t.group == tab ? wide : TAB_N);
+			x += t.getWidth() + TAB_GAP;
+		}
 	}
 
 	private void refreshButton() {
@@ -299,6 +322,7 @@ public class CursesScreen extends Screen {
 		int tint = switch (tab) {
 			case OVERWORLD -> 0x001818;
 			case EVERYWHERE -> 0x120020;
+			case EXTREME -> 0x24000A;
 			default -> 0x200000;
 		};
 		g.fill(0, 0, this.width, this.height, Ui.argb((int) (70 * fade), tint));
@@ -372,7 +396,7 @@ public class CursesScreen extends Screen {
 	/**
 	 * Who stands within seven blocks: a head each and one sigil per set with the stacks carried there, nearest first,
 	 * never taller than the Curses panel. Hover a head for the name, a sigil for its set. On small screens the panel is a
-	 * narrow column: the head with its three sigils under it.
+	 * narrow column: the head with its sigils under it.
 	 */
 	private void nearbyPanel(GuiGraphicsExtractor g, int x0, int y0, int mouseX, int mouseY, double fade) {
 		int side = sideW();
@@ -420,7 +444,7 @@ public class CursesScreen extends Screen {
 				tip = Component.literal(n.name());
 			}
 			for (int k = 0; k < groups.length; k++) {
-				int sx = wide ? lx + 32 + k * 25 : lx + 6, sy = wide ? ry + 4 : ry + 20 + k * 9;
+				int sx = wide ? lx + 30 + k * SET_STEP : lx + 6, sy = wide ? ry + 4 : ry + 20 + k * 9;
 				int count = n.sets()[k];
 				sigil(g, groups[k], sx, sy, count > 0 ? color(groups[k]) : Ui.MUTED, fade * (count > 0 ? 1.0 : 0.6));
 				String c = String.valueOf(count);
@@ -463,11 +487,12 @@ public class CursesScreen extends Screen {
 		}
 	}
 
-	/** Each set's sigil, 7x7: a flame beyond the wound, a tree for the Overworld, an eye for everywhere. */
+	/** Each set's sigil, 7x7: a flame beyond the wound, a tree for the Overworld, an eye for everywhere, a skull for extreme. */
 	private static final String[][] SIGILS = {
 		{"...#...", "...##..", "..###..", ".##.##.", ".#...#.", ".#...#.", "..###.."},
 		{"..###..", ".#####.", "#######", ".#####.", "...#...", "...#...", ".#####."},
 		{"..###..", ".#...#.", "#..#..#", "#.###.#", "#..#..#", ".#...#.", "..###.."},
+		{".#####.", "#######", "#..#..#", "#######", ".##.##.", "..###..", "..#.#.."},
 	};
 
 	public static void sigil(GuiGraphicsExtractor g, Group group, int x, int y, int rgb, double alpha) {
@@ -530,12 +555,15 @@ public class CursesScreen extends Screen {
 		}
 	}
 
-	/** One of the three tabs: the set's sigil, name and stacks, and a pulse when its curses act where the player stands. */
+	/**
+	 * One of the four tabs: the set's sigil and stacks (and its name when open), and a pulse when its curses act where
+	 * the player stands.
+	 */
 	private final class Tab extends AbstractButton {
 		final Group group;
 
 		Tab(int x, int y, Group group) {
-			super(x, y, TAB_W, 14, Component.translatable(tabKey(group)));
+			super(x, y, TAB_N, 14, Component.translatable(tabKey(group)));
 			this.group = group;
 		}
 
@@ -556,8 +584,9 @@ public class CursesScreen extends Screen {
 			Ui.chip(g, x, y, this.getWidth(), this.getHeight(), on ? col : Ui.MUTED, on ? 1.0 : this.isHovered() ? 0.8 : 0.55);
 			var font = Minecraft.getInstance().font;
 			sigil(g, group, x + 5, y + 4, on ? col : Ui.MUTED, on ? 1.0 : 0.7);
-			String label = this.getMessage().getString().toUpperCase();
-			g.text(font, label, x + 16, y + 3, Ui.argb(on ? 1.0 : 0.7, on ? Ui.PARCHMENT : Ui.TEXT));
+			if (on) {
+				g.text(font, this.getMessage().getString().toUpperCase(), x + 16, y + 3, Ui.argb(1.0, Ui.PARCHMENT));
+			}
 			int n = carried(group);
 			String count = String.valueOf(n);
 			int cxr = x + this.getWidth() - 5 - font.width(count);
@@ -569,8 +598,9 @@ public class CursesScreen extends Screen {
 				g.fill(mx, y + 5, mx + 3, y + 8, Ui.argb(0.45 + 0.55 * beat, Ui.mix(col, 0xFFFFFF, 0.35)));
 			}
 			if (this.isHovered()) {
-				g.setTooltipForNextFrame(font, Component.translatable(activeHere(group)
-						? "gui.extremedimensions.curses.active_here" : "gui.extremedimensions.curses.inactive_here"), mouseX, mouseY);
+				Component where = Component.translatable(activeHere(group)
+						? "gui.extremedimensions.curses.active_here" : "gui.extremedimensions.curses.inactive_here");
+				g.setTooltipForNextFrame(font, on ? where : Component.empty().append(this.getMessage()).append(" · ").append(where), mouseX, mouseY);
 			}
 		}
 

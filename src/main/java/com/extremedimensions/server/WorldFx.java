@@ -236,9 +236,10 @@ public final class WorldFx {
 	}
 
 	/** Spawns a creature by id at a block position, prepared as a natural one would be. */
-	public static void summon(ServerLevel level, String type, int x, int y, int z) {
+	/** Spawns a creature on a block; null if it could not be placed. */
+	public static net.minecraft.world.entity.Entity summon(ServerLevel level, String type, int x, int y, int z) {
 		EntityType<?> t = BuiltInRegistries.ENTITY_TYPE.getValue(id(type));
-		t.spawn(level, new BlockPos(x, y, z), EntitySpawnReason.COMMAND);
+		return t.spawn(level, new BlockPos(x, y, z), EntitySpawnReason.COMMAND);
 	}
 
 	/** Every criterion of one of this mod's advancements. */

@@ -63,7 +63,7 @@ public class PenaltyChoiceScreen extends Screen {
 			return "overworld".equals(set);
 		}
 		for (Option o : options) {
-			if (o.pen().group != Penalty.Group.EVERYWHERE) {
+			if (!o.pen().everywhere) {
 				return o.pen().overworld;
 			}
 		}
@@ -172,7 +172,11 @@ public class PenaltyChoiceScreen extends Screen {
 			fade *= (i == chosen) ? 1.0 : 1 - Ui.clamp01((now - chosenAt) / 450.0);
 		}
 		int top = y + (int) ((1 - e) * 70) - (hover ? 6 : 0);
-		if (pen.everywhere) {
+		if (pen.extreme) {
+			// A rare Extreme card: blood-red and restless
+			double beat = 0.5 + 0.5 * Math.sin(now / 220.0 + i);
+			accent = Ui.mix(Ui.BLOOD, 0xFF6070, 0.25 * beat);
+		} else if (pen.everywhere) {
 			accent = Ui.mix(Ui.VOID, accent, 0.25);
 		}
 		int border = hover ? Ui.WARN : accent;
@@ -180,6 +184,14 @@ public class PenaltyChoiceScreen extends Screen {
 			border = ((now / 70) % 2 == 0) ? 0xFFE066 : 0xFF8800;
 		}
 		Ui.panel(g, x, top, CARD_W, CARD_H, border, fade);
+		if (pen.extreme) {
+			g.fill(x + 1, top + 1, x + CARD_W - 1, top + CARD_H - 1, Ui.argb(fade * 0.12, Ui.BLOOD));
+			String mark = Ui.tr("gui.extremedimensions.choice.extreme_mark");
+			int mw = this.font.width(mark) + 8, mx = x + CARD_W / 2 - mw / 2;
+			g.fill(mx, top - 6, mx + mw, top + 5, Ui.argb(fade, Ui.SHADOW));
+			g.fill(mx + 1, top - 5, mx + mw - 1, top + 4, Ui.argb(fade, Ui.mix(Ui.INK, Ui.BLOOD, 0.6)));
+			g.text(this.font, mark, mx + 4, top - 4, Ui.argb(fade, 0xFFE0E0));
+		}
 		if (hover) {
 			g.fill(x + 1, top + 1, x + CARD_W - 1, top + CARD_H - 1, Ui.argb(0.08, Ui.WARN));
 		}
@@ -197,10 +209,12 @@ public class PenaltyChoiceScreen extends Screen {
 		// Stacks past the maximum spill over onto other curses; the third line says how many
 		int spill = Math.max(0, opt.stacks() + opt.mult() - opt.max());
 		String third = spill > 0 ? Ui.tr("gui.extremedimensions.choice.spill", spill)
-				: Ui.tr(pen.everywhere ? "gui.extremedimensions.choice.everywhere" : "gui.extremedimensions.choice.permanent", opt.max());
+				: Ui.tr(pen.extreme ? "gui.extremedimensions.choice.extreme"
+						: pen.everywhere ? "gui.extremedimensions.choice.everywhere" : "gui.extremedimensions.choice.permanent", opt.max());
 		String[] lines = {Ui.tr(pen.lineKey(1), opt.value()), Ui.tr(pen.lineKey(2), opt.value()), third};
 		for (int k = 0; k < lines.length; k++) {
-			int col = k < 2 ? Ui.TEXT : spill > 0 ? Ui.WARN : pen.everywhere ? Ui.mix(Ui.VOID, Ui.MUTED, 0.4) : Ui.MUTED;
+			int col = k < 2 ? Ui.TEXT : spill > 0 ? Ui.WARN : pen.extreme ? Ui.mix(Ui.BLOOD, 0xFFFFFF, 0.3)
+					: pen.everywhere ? Ui.mix(Ui.VOID, Ui.MUTED, 0.4) : Ui.MUTED;
 			g.text(this.font, lines[k], mid - this.font.width(lines[k]) / 2, ly, Ui.argb(fade, col));
 			ly += 11;
 		}

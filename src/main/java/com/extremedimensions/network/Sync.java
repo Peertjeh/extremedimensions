@@ -97,15 +97,17 @@ public final class Sync {
 		StringBuilder out = new StringBuilder();
 		for (ServerPlayer q : near) {
 			PlayerData d = DataStore.get(q.getUUID());
-			int[] sets = new int[3];
+			int[] sets = new int[Penalty.Group.values().length];
 			for (Penalty pen : Penalty.values()) {
 				sets[pen.group.ordinal()] += d.stacks(pen);
 			}
 			if (out.length() > 0) {
 				out.append(';');
 			}
-			out.append(q.getUUID()).append(',').append(q.getName().getString()).append(',')
-					.append(sets[0]).append(',').append(sets[1]).append(',').append(sets[2]);
+			out.append(q.getUUID()).append(',').append(q.getName().getString());
+			for (int n : sets) {
+				out.append(',').append(n);
+			}
 		}
 		return out.toString();
 	}

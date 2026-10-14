@@ -48,7 +48,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("gamemode survival @a");
 			sp.getServer().runCommand("time set noon");
 			for (String c : new String[] {"scar 2", "accelerated_drain 4", "watched 2", "kindling 3", "sealed_pockets 3",
-					"shrunken_stomach 2", "glass_jaw 2", "withering 1"}) {
+					"shrunken_stomach 2", "glass_jaw 2", "withering 1", "dwindling 1", "unhealing 1", "restless_gaze 2"}) {
 				sp.getServer().runCommand("execute as @a run tether curse " + c);
 			}
 			sp.getServer().runOnServer(s -> {
@@ -69,6 +69,8 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.runOnClient(mc -> {
 				check(SealedPockets.count(mc.player) == 9, "client sees " + SealedPockets.count(mc.player) + " sealed slots, expected 9");
 				check(!mc.player.inventoryMenu.getSlot(35).mayPlace(new ItemStack(Items.STONE)), "client lets an item into sealed slot 35");
+				int dwindled = mc.player.inventoryMenu.getSlot(9).getMaxStackSize(new ItemStack(Items.COBBLESTONE));
+				check(dwindled == 32, "client stack limit with Dwindling 1 is " + dwindled + ", expected 32");
 			});
 
 			ctx.takeScreenshot("01_hud");
@@ -77,17 +79,17 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("02_inventory");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
-			// The Curses screen: all three tabs, with players nearby
+			// The Curses screen: all four tabs, with players nearby
 			String data = sp.getServer().computeOnServer(s -> Sync.cursesData(player(s), DataStore.get(player(s).getUUID())));
 			AtomicReference<CursesScreen> screen = new AtomicReference<>();
 			ctx.runOnClient(mc -> {
-				String nearby = mc.player.getUUID() + ",Player0,7,2,3;" + UUID.randomUUID() + ",Steve,0,4,1;" + UUID.randomUUID() + ",Alex,12,0,0";
+				String nearby = mc.player.getUUID() + ",Player0,7,2,3,4;" + UUID.randomUUID() + ",Steve,0,4,1,0;" + UUID.randomUUID() + ",Alex,12,0,0,2";
 				CursesScreen cs = new CursesScreen(data + nearby, null);
 				screen.set(cs);
 				mc.gui.setScreen(cs);
 			});
 			ctx.waitTicks(8);
-			for (String tab : new String[] {"Beyond", "Overworld", "Everywhere"}) {
+			for (String tab : new String[] {"Beyond", "Overworld", "Everywhere", "Extreme"}) {
 				ctx.runOnClient(mc -> {
 					for (GuiEventListener w : screen.get().children()) {
 						if (w instanceof AbstractButton b && b.getMessage().getString().equals(tab)) {
@@ -113,6 +115,17 @@ public class ClientShots implements FabricClientGameTest {
 			});
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("04_cards");
+			// A rare Extreme card among the others
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				PlayerData d = DataStore.get(p.getUUID());
+				d.pendingOffer = new ArrayList<>(List.of("grounded", "echoing_steps", "short_breath"));
+				d.pendingMult = new ArrayList<>(List.of(1, 1, 1));
+				Sync.offer(p, d);
+			});
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("04_cards_extreme");
 			sp.getServer().runOnServer(s -> {
 				PlayerData d = DataStore.get(player(s).getUUID());
 				d.pendingOffer.clear();

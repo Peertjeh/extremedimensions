@@ -16,7 +16,9 @@ import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.lurker.LurkerService;
 import com.extremedimensions.network.Sync;
+import com.extremedimensions.penalty.AtonementGuard;
 import com.extremedimensions.penalty.CurseEffects;
+import com.extremedimensions.penalty.ExtremeCurses;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModBlocks;
@@ -83,6 +85,7 @@ public final class ServerEvents {
 			com.extremedimensions.seam.SeamFauna.clear();
 			WorldService.clear();
 			MendingService.clear();
+			AtonementGuard.clear();
 			DataStore.unload();
 			WorldFx.bind(null);
 		});
@@ -101,6 +104,8 @@ public final class ServerEvents {
 		});
 
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(CurseEffects::afterDamage);
+		ServerLivingEntityEvents.ALLOW_DEATH.register(ExtremeCurses::oath);
+		ServerLivingEntityEvents.AFTER_DAMAGE.register(AtonementGuard::damaged);
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if ("minecraft:ender_dragon".equals(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString()) && WorldFx.server() != null) {
 				WorldService.onDragonDeath(WorldFx.server());
@@ -125,6 +130,9 @@ public final class ServerEvents {
 				com.extremedimensions.seam.SeamFauna.onDeath(entity);
 			} else if (source.getEntity() instanceof ServerPlayer killer) {
 				ExpeditionService.onMobKilled(killer, entity);
+			}
+			if (!(entity instanceof ServerPlayer)) {
+				AtonementGuard.forget(entity);
 			}
 		});
 
@@ -201,6 +209,10 @@ public final class ServerEvents {
 		});
 
 		UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
+			InteractionResult feral = ExtremeCurses.refuseTaming(player, entity);
+			if (feral != InteractionResult.PASS) {
+				return feral;
+			}
 			if (hand == InteractionHand.MAIN_HAND && player instanceof ServerPlayer sp && entity instanceof Hollowling h) {
 				return HollowService.onInteract(sp, h, player.getItemInHand(hand));
 			}
@@ -287,6 +299,9 @@ public final class ServerEvents {
 		}
 
 		TetherService.sweep(s);
+		if (s.getTickCount() % 1200 == 0) {
+			AtonementGuard.sweep(s);
+		}
 		AnchorService.tick(s);
 		LurkerService.tick(s);
 		HollowService.tick(s);

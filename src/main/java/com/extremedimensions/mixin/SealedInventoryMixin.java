@@ -5,6 +5,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.extremedimensions.penalty.Dwindling;
 import com.extremedimensions.penalty.SealedPockets;
 
 import net.minecraft.world.entity.player.Inventory;
@@ -31,6 +32,15 @@ public abstract class SealedInventoryMixin {
 			}
 		}
 		cir.setReturnValue(-1);
+	}
+
+	/**
+	 * Dwindling: the most a stack of the player's own inventory may hold. Added to the inventory (it only inherits the
+	 * container default), so picking up, merging and every menu respect it.
+	 */
+	public int getMaxStackSize(ItemStack stack) {
+		Inventory inv = (Inventory) (Object) this;
+		return Dwindling.limit(inv.player, Math.min(inv.getMaxStackSize(), stack.getMaxStackSize()));
 	}
 
 	/** Slots are searched in order and the sealed ones come last: a sealed match means there is no unsealed one. */

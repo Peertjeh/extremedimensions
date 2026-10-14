@@ -7,6 +7,7 @@
 	"entrypoints": {
 		"fabric-gametest": [
 			"com.extremedimensions.gametest.CurseTests",
+			"com.extremedimensions.gametest.ExtremeTests",
 			"com.extremedimensions.gametest.WorldTests",
 			"com.extremedimensions.gametest.PerfTests"
 		],

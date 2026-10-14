@@ -97,6 +97,24 @@ public final class Config {
 	/** Points needed for a curse's last stack, and how many more for every stack above it. */
 	public static int ATONE_BASE = 100;
 	public static int ATONE_PER_STACK = 50;
+	/** Chance that one card of an offer is an Extreme curse (never multiplied). */
+	public static double EXTREME_CARD_CHANCE = 0.025;
+	/** How likely a spilled stack lands on an Extreme curse compared to any other curse (1 = as likely, 0 = never). */
+	public static double EXTREME_SPILL_WEIGHT = 0.2;
+	/** Extreme curses take this many times the atonement points and Tether Fragments to lift. */
+	public static double EXTREME_ATONE_FACTOR = 2.0;
+	/** Stormcalled: seconds between strikes while a storm finds the player under open sky (random in between). */
+	public static int STORM_STRIKE_MIN_SECONDS = 30;
+	public static int STORM_STRIKE_MAX_SECONDS = 90;
+	/**
+	 * Atonement from kills only counts monsters that spawned naturally, that the player dealt at least this share of the
+	 * damage to (a farm's fall does not count), and at most a few at one place: after {@code atone_kill_area_limit}
+	 * kills within {@code atone_kill_area_radius} blocks in {@code atone_kill_area_minutes}, that place gives nothing.
+	 */
+	public static double ATONE_KILL_MIN_SHARE = 0.5;
+	public static double ATONE_KILL_AREA_RADIUS = 24.0;
+	public static int ATONE_KILL_AREA_LIMIT = 5;
+	public static int ATONE_KILL_AREA_MINUTES = 10;
 	/** Tether Fragments a mending at an anchor costs per stack the curse has (3 stacks = 3 fragments). */
 	public static int FRAGMENT_COST_PER_STACK = 1;
 	/** Chance that a Veil Ray drops a second Veil Wing. */

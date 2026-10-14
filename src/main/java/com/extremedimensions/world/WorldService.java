@@ -186,7 +186,7 @@ public final class WorldService {
 				y += 12;
 			}
 			WorldFx.particleAt("minecraft:reverse_portal", x + 0.5, y + 1, z + 0.5, 0.4, 1.0, 0.4, 0.2, 40);
-			WorldFx.summon(level, type, x, y, z);
+			com.extremedimensions.penalty.AtonementGuard.markWild(WorldFx.summon(level, type, x, y, z));
 		}
 	}
 }

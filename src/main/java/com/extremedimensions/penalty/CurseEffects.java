@@ -67,6 +67,9 @@ public final class CurseEffects {
 			huntedNights(p, d, ow);
 			restlessSleep(p, d, ow);
 		}
+		if (ExtremeCurses.any(d)) {
+			ExtremeCurses.tick(p, d);
+		}
 	}
 
 	/** Toll and Tithe: a share of every bit of experience earned goes to the Tether. */
@@ -130,7 +133,7 @@ public final class CurseEffects {
 		String[] risen = {"minecraft:zombie", "minecraft:skeleton", "minecraft:spider", "minecraft:husk", "minecraft:stray"};
 		WorldFx.particleAt("minecraft:soul", x + 0.5, y + 0.5, z + 0.5, 0.4, 0.4, 0.4, 0.02, 20);
 		WorldFx.particleAt("minecraft:large_smoke", x + 0.5, y + 0.3, z + 0.5, 0.3, 0.2, 0.3, 0.01, 10);
-		WorldFx.summon(level, risen[rnd.nextInt(risen.length)], x, y, z);
+		AtonementGuard.markWild(WorldFx.summon(level, risen[rnd.nextInt(risen.length)], x, y, z));
 		WorldFx.soundIn("minecraft:overworld", "minecraft:block.rooted_dirt.break", "hostile", x + 0.5, y, z + 0.5, 1.2f, 0.5f);
 	}
 
@@ -203,6 +206,8 @@ public final class CurseEffects {
 		modifier(p, "minecraft:max_health", "withering", -Math.min(8.0, 2 * Penalty.WITHERING.value * d.stacks(Penalty.WITHERING)), "add_value");
 		modifier(p, "minecraft:jump_strength", "grounded", -compound(Penalty.GROUNDED, d.stacks(Penalty.GROUNDED)), "add_multiplied_total");
 		modifier(p, "minecraft:safe_fall_distance", "fragile_footing", -Penalty.FRAGILE_FOOTING.value * d.stacks(Penalty.FRAGILE_FOOTING), "add_value");
+		// Extreme
+		modifier(p, "minecraft:block_interaction_range", "withered_grasp", -Penalty.WITHERED_GRASP.value * d.stacks(Penalty.WITHERED_GRASP), "add_value");
 		d.leadValue = Double.NaN;
 		refreshEffects(p, d);
 	}
@@ -300,7 +305,8 @@ public final class CurseEffects {
 		if (food.getSaturationLevel() > cap) {
 			food.setSaturation(cap);
 		}
-		if (cap < 18 && food.getFoodLevel() >= cap && p.getHealth() < p.getMaxHealth() && d.tickCounter % 80 == 0) {
+		if (cap < 18 && food.getFoodLevel() >= cap && p.getHealth() < p.getMaxHealth() && d.tickCounter % 80 == 0
+				&& ExtremeCurses.mayRegenerate(p)) {
 			p.heal(1.0f);
 			p.causeFoodExhaustion(6.0f);
 		}

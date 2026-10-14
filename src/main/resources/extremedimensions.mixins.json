@@ -5,8 +5,10 @@
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"CursedPlayerMixin",
+		"NaturalSpawnMixin",
 		"SealedInventoryMixin",
 		"SealedSlotMixin",
+		"UnhealingMixin",
 		"VillagerPricesMixin"
 	],
 	"injectors": {

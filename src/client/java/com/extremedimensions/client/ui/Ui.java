@@ -28,6 +28,8 @@ public final class Ui {
 	public static final int EMBER = 0xFF7A1A;
 	public static final int EMBER_DEEP = 0xC0462E;
 	public static final int VOID = 0xB66BFF;
+	/** The Extreme curses. */
+	public static final int BLOOD = 0xD0203A;
 
 	public static final int PARCHMENT = 0xEADFC6;
 	public static final int TEXT = 0xCFC3AE;

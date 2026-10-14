@@ -70,7 +70,7 @@ public final class PenaltyService {
 	private static void nextOffer(PlayerData d) {
 		while (!d.owed.isEmpty() && d.pendingOffer.isEmpty()) {
 			boolean ow = OVERWORLD.equals(d.owed.get(0));
-			List<String> ids = Penalty.rollOffer(d, ow, Config.OFFER_COUNT);
+			List<String> ids = Penalty.rollOffer(d, ow, Config.OFFER_COUNT, Config.EXTREME_CARD_CHANCE);
 			if (ids.isEmpty()) {
 				d.owed.remove(0);
 				d.pendingPenalties = Math.max(0, d.pendingPenalties - 1);
@@ -79,6 +79,13 @@ public final class PenaltyService {
 			}
 			d.pendingOffer = ids;
 			d.pendingMult = multipliers(ids.size());
+			// Extreme cards never carry a multiplier
+			for (int i = 0; i < ids.size(); i++) {
+				Penalty pen = Penalty.byId(ids.get(i));
+				if (pen != null && pen.extreme) {
+					d.pendingMult.set(i, 1);
+				}
+			}
 		}
 	}
 
@@ -142,17 +149,34 @@ public final class PenaltyService {
 
 	/**
 	 * Stacks a multiplied card could not add (its curse reached the maximum) are not lost: each lands on a random curse
-	 * that still has room, in any set (Overworld curses only while they are switched on).
+	 * that still has room, in any set (Overworld curses only while they are switched on). Extreme curses take part with
+	 * a smaller weight ({@code extreme_spill_weight}).
 	 */
 	private static Map<Penalty, Integer> spill(PlayerData d, int n) {
 		Map<Penalty, Integer> out = new LinkedHashMap<>();
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		double extremeWeight = Math.max(0, Config.EXTREME_SPILL_WEIGHT);
 		for (int i = 0; i < n; i++) {
 			List<Penalty> room = Penalty.withRoom(d, DataStore.overworldPenalties());
-			if (room.isEmpty()) {
+			double total = 0;
+			for (Penalty pen : room) {
+				total += pen.extreme ? extremeWeight : 1;
+			}
+			if (total <= 0) {
 				break;
 			}
-			Penalty t = room.get(rnd.nextInt(room.size()));
+			double roll = rnd.nextDouble() * total;
+			Penalty t = null;
+			for (Penalty pen : room) {
+				roll -= pen.extreme ? extremeWeight : 1;
+				if (roll < 0) {
+					t = pen;
+					break;
+				}
+			}
+			if (t == null) {
+				t = room.get(room.size() - 1);
+			}
 			if (d.addStacks(t, 1) > 0) {
 				out.merge(t, 1, Integer::sum);
 			}
@@ -163,7 +187,7 @@ public final class PenaltyService {
 	/** A curse laid without a choice (a Lurker, a Collapse in the Seam): one stack of a random curse. Null if none fits. */
 	public static Penalty curse(ServerPlayer p, boolean overworld) {
 		PlayerData d = DataStore.get(p.getUUID());
-		List<String> ids = Penalty.rollOffer(d, overworld, 1);
+		List<String> ids = Penalty.rollOffer(d, overworld, 1, 0);
 		if (ids.isEmpty()) {
 			return null;
 		}
@@ -202,7 +226,8 @@ public final class PenaltyService {
 
 	/** Atonement points needed to take the next stack of a curse off: more for every stack above the last. */
 	public static int cost(PlayerData d, Penalty p) {
-		return Math.max(1, Config.ATONE_BASE + Config.ATONE_PER_STACK * Math.max(0, d.stacks(p) - 1));
+		int base = Math.max(1, Config.ATONE_BASE + Config.ATONE_PER_STACK * Math.max(0, d.stacks(p) - 1));
+		return p.extreme ? (int) Math.ceil(base * Math.max(1, Config.EXTREME_ATONE_FACTOR)) : base;
 	}
 
 	/** Atonement earned in one world goes to the curse being atoned for in that set (or the heaviest one there). */
@@ -253,6 +278,9 @@ public final class PenaltyService {
 			return InteractionResult.SUCCESS;
 		}
 		int cost = Math.max(1, Config.FRAGMENT_COST_PER_STACK * d.stacks(t));
+		if (t.extreme) {
+			cost = (int) Math.ceil(cost * Math.max(1, Config.EXTREME_ATONE_FACTOR));
+		}
 		if (!p.isCreative()) {
 			if (count(p, stack) < cost) {
 				WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);

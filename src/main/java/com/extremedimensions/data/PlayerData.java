@@ -98,6 +98,10 @@ public class PlayerData {
 	public transient double foodCarry = 0;
 	public transient boolean sleepRolled = false, sleepFails = false;
 	public transient int vertigoIn = 60, huntIn = 120;
+	/** Stormcalled: seconds under an open, thundering sky until the next bolt; -1 = not counting yet. */
+	public transient int stormIn = -1;
+	/** Recent kills that could earn atonement: x, z, game time (see AtonementGuard). */
+	public transient java.util.ArrayDeque<long[]> recentKills = new java.util.ArrayDeque<>();
 	/** Whether it was dark outside last time we looked (dawn = a night survived). */
 	public transient int wasDark = -1;
 	/** Short Breath and Frostbitten: last air and frozen ticks seen, and the fraction still owed. */
