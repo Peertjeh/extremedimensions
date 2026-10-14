@@ -110,7 +110,7 @@ public class JournalScreen extends Screen {
 		int bw = PAGE_W * 2 + SPINE;
 
 		// Leather cover, breathing soul-light edge, two parchment pages and a spine
-		double breath = 0.5 + 0.5 * Math.sin(now / 900.0);
+		double breath = Ui.pulse(now, 5655, 0);
 		Ui.panel(g, bx - 8, by - 8, bw + 16, PAGE_H + 16, Ui.mix(Ui.SOUL_DIM, Ui.SOUL, breath * 0.5), pe);
 		g.fill(bx - 6, by - 6, bx + bw + 6, by + PAGE_H + 6, Ui.argb(pe, 0x2A1C14));
 		page(g, bx, by, pe);

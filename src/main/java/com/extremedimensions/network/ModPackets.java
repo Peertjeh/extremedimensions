@@ -17,10 +17,11 @@ public final class ModPackets {
 	 * penalties: "id:stacks:max;..." for every curse the player carries.
 	 * scars: curse stacks taken off (each one lightens the drain).
 	 * tetherDist: -1 = not bound, else blocks to the arrival portal (beyond) or to the anchor (Overworld).
+	 * guide: steps of the first-expedition guide done (Guide.STEPS = finished).
 	 */
 	public record StatePayload(int nearNether, int nearEnd, int runCharge, int runMax, int dimCode, int drainX100,
 							int expeditions, int collapses, int longestRun, int runSecs, String penalties,
-							int scars, int tetherDist) implements CustomPacketPayload {
+							int scars, int tetherDist, int guide) implements CustomPacketPayload {
 		public static final Type<StatePayload> TYPE = new Type<>(ExtremeDimensions.id("state"));
 		public static final StreamCodec<FriendlyByteBuf, StatePayload> CODEC = StreamCodec.ofMember(StatePayload::write, StatePayload::read);
 
@@ -38,12 +39,13 @@ public final class ModPackets {
 			buf.writeUtf(penalties);
 			buf.writeVarInt(scars);
 			buf.writeVarInt(tetherDist);
+			buf.writeVarInt(guide);
 		}
 
 		private static StatePayload read(FriendlyByteBuf buf) {
 			return new StatePayload(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
 					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(),
-					buf.readVarInt(), buf.readVarInt());
+					buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
 		}
 
 		@Override
@@ -218,6 +220,66 @@ public final class ModPackets {
 
 		private static AtonePayload read(FriendlyByteBuf buf) {
 			return new AtonePayload(buf.readUtf());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
+	 * Server -> client: the world's settings (the config file's layout, as JSON) and whether this player may change
+	 * them (an operator, or the owner of a world that is not open to LAN).
+	 */
+	public record SettingsPayload(String json, boolean canEdit) implements CustomPacketPayload {
+		public static final Type<SettingsPayload> TYPE = new Type<>(ExtremeDimensions.id("settings"));
+		public static final StreamCodec<FriendlyByteBuf, SettingsPayload> CODEC = StreamCodec.ofMember(SettingsPayload::write, SettingsPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(json, 262144);
+			buf.writeBoolean(canEdit);
+		}
+
+		private static SettingsPayload read(FriendlyByteBuf buf) {
+			return new SettingsPayload(buf.readUtf(262144), buf.readBoolean());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: send the world's settings (the settings screen opened). */
+	public record RequestSettingsPayload() implements CustomPacketPayload {
+		public static final Type<RequestSettingsPayload> TYPE = new Type<>(ExtremeDimensions.id("request_settings"));
+		public static final StreamCodec<FriendlyByteBuf, RequestSettingsPayload> CODEC = StreamCodec.ofMember(RequestSettingsPayload::write, RequestSettingsPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+		}
+
+		private static RequestSettingsPayload read(FriendlyByteBuf buf) {
+			return new RequestSettingsPayload();
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: change world settings; changes = JSON object of key -> new value as text (see Config.set). */
+	public record ChangeSettingsPayload(String changes) implements CustomPacketPayload {
+		public static final Type<ChangeSettingsPayload> TYPE = new Type<>(ExtremeDimensions.id("change_settings"));
+		public static final StreamCodec<FriendlyByteBuf, ChangeSettingsPayload> CODEC = StreamCodec.ofMember(ChangeSettingsPayload::write, ChangeSettingsPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(changes, 262144);
+		}
+
+		private static ChangeSettingsPayload read(FriendlyByteBuf buf) {
+			return new ChangeSettingsPayload(buf.readUtf(262144));
 		}
 
 		@Override

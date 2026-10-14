@@ -1,5 +1,41 @@
 # Changelog
 
+## 2.7.0: Settled In
+
+*Your game, your way: settings in the game, a guide for the first expedition, calmer screens on request, and Dutch.*
+
+### Added
+- **Settings in the game**, from the gear in the Curses screen, a key of your choice (Controls) or Mod Menu's
+  "Configure" button.
+  - **Display** (kept on your computer): reduce flashing, colour-blind colours, where the anchor meters sit (any
+    corner), the expedition timer at the top or above the hotbar, HUD size (75 to 150%), and the first-expedition
+    guide.
+  - **World rules**: every value of the world's config and every curse's maximum and strength, with a search field.
+    Everyone can read them; operators (and the owner of a world that is not open to LAN) can change them, which saves
+    the server's config at once, with no restart. "Defaults" fills in the original values. Outside a world it edits
+    this computer's own config.
+  - Every player now plays by the server's numbers: the HUD and screens use the server's values, not your own file's.
+- **First-expedition guide**: a small card names the next step (set a lodestone by a portal and feed it, bind a
+  Tether, step through, come back in time) until you are home. Players with an expedition behind them never see it.
+- **Dutch** (Nederlands): the whole mod, journal included.
+- **Key mappings** (unbound by default) for the Curses, the Tether Journal and the settings.
+
+### Changed
+- **No big title on respawn.** Dying no longer shows "The Tether Tightens" or "Expedition Ended" across the screen;
+  the dark haze and the sound remain. Servers that want the title back set `respawn_title` to 1.
+- **Tether Fragments only drop from wild kills**, by the same rules as atonement from kills: a blaze spawner no longer
+  yields fragments that lift curses.
+- **Reduce flashing** removes the strobes, shakes and glitches (the Collapse, the broken seal, Lurker thefts, Wound
+  Storms, the last seconds of an expedition, the curse cards) and turns the Lurkers' glow into a soft swell.
+- **Colour-blind colours** keep the four curse sets apart for every kind of colour blindness (the Beyond and Extreme
+  colours were hard to tell apart with deuteranopia).
+
+### Under the hood
+- The build checks every language file against the English one (unknown keys, placeholders; shipped languages must
+  be complete), so community translations can be added safely.
+- New tests for the world rules (checked values, operators only) and the guide; the client test photographs the
+  settings, the colour-blind colours and a moved HUD.
+
 ## 2.6.0: Extreme
 
 *Some curses do not say what they do. You will find out.*

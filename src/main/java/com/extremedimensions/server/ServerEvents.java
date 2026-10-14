@@ -95,6 +95,8 @@ public final class ServerEvents {
 		ServerPlayerEvents.JOIN.register(ServerEvents::onJoin);
 		// A leaving player's inventory is saved now; their curses and progress go with it
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> DataStore.flush());
+		// Every player plays by the server's numbers: the HUD and screens get the world's settings on joining
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> com.extremedimensions.config.SettingsService.send(handler.getPlayer()));
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
 			PlayerData d = DataStore.get(newPlayer.getUUID());
 			if (!alive) {

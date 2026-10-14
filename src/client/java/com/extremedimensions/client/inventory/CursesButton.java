@@ -82,7 +82,7 @@ public final class CursesButton extends AbstractButton {
 			total += m.stacks();
 		}
 		// A dark socket with an ember rim: the rune breathes red while curses are carried
-		double breath = 0.5 + 0.5 * Math.sin(System.currentTimeMillis() / 600.0);
+		double breath = Ui.pulse(System.currentTimeMillis(), 3770, 0);
 		boolean hot = this.isHovered();
 		int rim = total > 0 ? Ui.mix(Ui.EMBER_DEEP, Ui.DANGER, 0.3 + 0.4 * breath) : Ui.mix(Ui.MUTED, Ui.EMBER_DEEP, 0.35);
 		int x = this.getX(), y = this.getY(), w = this.getWidth(), h = this.getHeight();

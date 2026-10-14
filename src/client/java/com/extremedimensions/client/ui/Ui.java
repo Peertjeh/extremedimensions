@@ -38,6 +38,33 @@ public final class Ui {
 	public static final int WARN = 0xFFB347;
 	public static final int OK = 0x8FDB8A;
 
+	// --- Accessibility ---------------------------------------------------------------------------
+
+	/** True when the player asked for fewer flashes: strobes, shakes and glitches are left out, pulses hold still. */
+	public static boolean calm() {
+		return com.extremedimensions.client.options.ClientOptions.reduceFlashing();
+	}
+
+	/** A pulse between 0 and 1 with the given period in milliseconds; holds at its middle when {@link #calm()}. */
+	public static double pulse(long now, double periodMs, double phase) {
+		return calm() ? 0.5 : 0.5 + 0.5 * Math.sin(now / periodMs * Math.PI * 2 + phase);
+	}
+
+	/**
+	 * The colour of a curse set. With the colour-blind option the four sets take colours that stay apart for every
+	 * kind of colour blindness (Okabe-Ito: orange, sky blue, reddish purple, vermillion); they also always differ in
+	 * their sigils.
+	 */
+	public static int setColour(com.extremedimensions.penalty.Penalty.Group group) {
+		boolean cb = com.extremedimensions.client.options.ClientOptions.colourBlind();
+		return switch (group) {
+			case OVERWORLD -> cb ? 0x56B4E9 : SOUL;
+			case EVERYWHERE -> cb ? 0xCC79A7 : VOID;
+			case EXTREME -> cb ? 0xD55E00 : BLOOD;
+			default -> cb ? 0xE69F00 : EMBER_DEEP;
+		};
+	}
+
 	// --- Colour math -----------------------------------------------------------------------------
 
 	public static int argb(int alpha, int rgb) {

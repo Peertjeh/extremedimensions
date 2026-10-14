@@ -196,12 +196,7 @@ public class CursesScreen extends Screen {
 	}
 
 	public static int color(Group group) {
-		return switch (group) {
-			case OVERWORLD -> Ui.SOUL;
-			case EVERYWHERE -> Ui.VOID;
-			case EXTREME -> Ui.BLOOD;
-			default -> Ui.EMBER_DEEP;
-		};
+		return Ui.setColour(group);
 	}
 
 	private static String tabKey(Group group) {
@@ -246,6 +241,7 @@ public class CursesScreen extends Screen {
 			Socket s = new Socket(p, x0 + 16 + (i % COLS) * CELL, y0 + 44 + (i / COLS) * CELL);
 			sockets.add(this.addRenderableWidget(s));
 		}
+		this.addRenderableWidget(new com.extremedimensions.client.ui.GearButton(x0 + PW - 20, y0 + 5, this, Ui.EMBER));
 		atone = this.addRenderableWidget(Button.builder(Component.translatable("gui.extremedimensions.curses.atone"), b -> {
 			if (selected != null) {
 				ClientPlayNetworking.send(new ModPackets.AtonePayload(selected.id));
@@ -593,7 +589,7 @@ public class CursesScreen extends Screen {
 			g.text(font, count, cxr, y + 3, Ui.argb(on ? 1.0 : 0.7, n > 0 ? Ui.DANGER : Ui.MUTED));
 			if (activeHere(group)) {
 				// A breathing mark: these curses act where the player stands
-				double beat = 0.5 + 0.5 * Math.sin(System.currentTimeMillis() / 300.0);
+				double beat = Ui.pulse(System.currentTimeMillis(), 1885, 0);
 				int mx = cxr - 6;
 				g.fill(mx, y + 5, mx + 3, y + 8, Ui.argb(0.45 + 0.55 * beat, Ui.mix(col, 0xFFFFFF, 0.35)));
 			}

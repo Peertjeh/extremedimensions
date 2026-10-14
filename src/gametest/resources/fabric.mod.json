@@ -8,6 +8,7 @@
 		"fabric-gametest": [
 			"com.extremedimensions.gametest.CurseTests",
 			"com.extremedimensions.gametest.ExtremeTests",
+			"com.extremedimensions.gametest.SettingsTests",
 			"com.extremedimensions.gametest.WorldTests",
 			"com.extremedimensions.gametest.PerfTests"
 		],

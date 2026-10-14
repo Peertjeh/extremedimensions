@@ -6,6 +6,10 @@ import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -233,9 +237,62 @@ public final class Config {
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
+	/**
+	 * Where each section of the settings starts (its first setting), in the order above; the in-game settings screen
+	 * groups the settings by these. A setting belongs to the last section that started before it.
+	 */
+	private static final Map<String, String> SECTION_STARTS = Map.ofEntries(
+			Map.entry("max_charge", "anchors"), Map.entry("base_drain", "expeditions"), Map.entry("rope_segment", "tether"),
+			Map.entry("offer_count", "curses"), Map.entry("fragment_chance", "lore"), Map.entry("lurker_enabled", "lurker"),
+			Map.entry("hoard_wild_chance", "hollow"), Map.entry("soul_woven_drain", "weaving"), Map.entry("seam_seconds", "seam"),
+			Map.entry("storm_chance", "dragon"), Map.entry("seam_build_budget_ms", "technical"));
+
+	/** One setting: its key in the file, its section, the field behind it and its default (as text). */
+	public record Setting(String key, String section, Field field, String fallback) {
+		public boolean whole() {
+			return field.getType() == int.class;
+		}
+
+		public String value() {
+			try {
+				return whole() ? String.valueOf(field.getInt(null)) : Penalty.display(field.getDouble(null));
+			} catch (IllegalAccessException e) {
+				return "";
+			}
+		}
+	}
+
+	private static List<Setting> settings;
+
+	/** Every setting, in the order of this class (curses' maximum and strength are separate, see {@link #snapshot()}). */
+	public static List<Setting> settings() {
+		if (settings == null) {
+			List<Setting> out = new ArrayList<>();
+			String section = "anchors";
+			for (Field f : Config.class.getDeclaredFields()) {
+				int mod = f.getModifiers();
+				if (!Modifier.isStatic(mod) || Modifier.isFinal(mod) || !Modifier.isPublic(mod)
+						|| (f.getType() != int.class && f.getType() != double.class)) {
+					continue;
+				}
+				String key = f.getName().toLowerCase(Locale.ROOT);
+				section = SECTION_STARTS.getOrDefault(key, section);
+				// First built before the file is read (see load), so the field still holds its default here
+				Setting st = new Setting(key, section, f, "");
+				out.add(new Setting(key, section, f, st.value()));
+			}
+			settings = List.copyOf(out);
+		}
+		return settings;
+	}
+
+	private static Path file() {
+		return FabricLoader.getInstance().getConfigDir().resolve(ExtremeDimensions.MOD_ID + ".json");
+	}
+
 	/** Loads {@code config/extremedimensions.json} over the defaults and writes back any missing keys. */
 	public static void load() {
-		Path file = FabricLoader.getInstance().getConfigDir().resolve(ExtremeDimensions.MOD_ID + ".json");
+		Path file = file();
 		JsonObject json = new JsonObject();
 		try {
 			if (Files.exists(file)) {
@@ -247,39 +304,33 @@ public final class Config {
 		} catch (Exception e) {
 			ExtremeDimensions.LOGGER.error("Could not read {}, using defaults", file, e);
 		}
-
-		JsonObject out = new JsonObject();
-		for (Field f : Config.class.getDeclaredFields()) {
-			int mod = f.getModifiers();
-			if (!Modifier.isStatic(mod) || Modifier.isFinal(mod) || !Modifier.isPublic(mod)) {
-				continue;
-			}
-			String key = f.getName().toLowerCase();
-			try {
-				if (json.has(key)) {
-					JsonElement v = json.get(key);
-					if (f.getType() == int.class) {
-						f.setInt(null, v.getAsInt());
-					} else if (f.getType() == double.class) {
-						f.setDouble(null, v.getAsDouble());
-					}
-				}
-				if (f.getType() == int.class) {
-					out.addProperty(key, f.getInt(null));
-				} else if (f.getType() == double.class) {
-					out.addProperty(key, f.getDouble(null));
-				}
-			} catch (Exception e) {
-				ExtremeDimensions.LOGGER.warn("Invalid config value for {}, keeping default", key);
-			}
-		}
-
-		// Curses: { "scar": { "max": 3, "per_stack": 2.0 }, ... }
-		JsonObject pens = json.has("penalties") && json.get("penalties").isJsonObject() ? json.getAsJsonObject("penalties") : new JsonObject();
-		JsonObject penOut = new JsonObject();
 		for (Penalty pen : Penalty.values()) {
 			pen.max = pen.defaultMax;
 			pen.value = pen.defaultValue;
+		}
+		apply(json);
+		save();
+	}
+
+	/** Takes over every value the json holds (the file's layout); a value that does not fit keeps the current one. */
+	public static void apply(JsonObject json) {
+		for (Setting st : settings()) {
+			if (json.has(st.key())) {
+				try {
+					JsonElement v = json.get(st.key());
+					if (st.whole()) {
+						st.field().setInt(null, v.getAsInt());
+					} else {
+						st.field().setDouble(null, v.getAsDouble());
+					}
+				} catch (Exception e) {
+					ExtremeDimensions.LOGGER.warn("Invalid config value for {}, keeping {}", st.key(), st.value());
+				}
+			}
+		}
+		// Curses: { "scar": { "max": 3, "per_stack": 2.0 }, ... }
+		JsonObject pens = json.has("penalties") && json.get("penalties").isJsonObject() ? json.getAsJsonObject("penalties") : new JsonObject();
+		for (Penalty pen : Penalty.values()) {
 			try {
 				if (pens.has(pen.id) && pens.get(pen.id).isJsonObject()) {
 					JsonObject o = pens.getAsJsonObject(pen.id);
@@ -293,18 +344,100 @@ public final class Config {
 			} catch (Exception e) {
 				ExtremeDimensions.LOGGER.warn("Invalid config value for penalty {}, keeping default", pen.id);
 			}
+		}
+	}
+
+	/** Every value as the file holds it. */
+	public static JsonObject snapshot() {
+		JsonObject out = new JsonObject();
+		for (Setting st : settings()) {
+			try {
+				if (st.whole()) {
+					out.addProperty(st.key(), st.field().getInt(null));
+				} else {
+					out.addProperty(st.key(), st.field().getDouble(null));
+				}
+			} catch (IllegalAccessException e) {
+				// unreachable: the fields are public
+			}
+		}
+		JsonObject penOut = new JsonObject();
+		for (Penalty pen : Penalty.values()) {
 			JsonObject o = new JsonObject();
 			o.addProperty("max", pen.max);
 			o.addProperty("per_stack", pen.value);
 			penOut.add(pen.id, o);
 		}
 		out.add("penalties", penOut);
+		return out;
+	}
 
+	public static String toJson() {
+		return GSON.toJson(snapshot());
+	}
+
+	/** Writes the current values to the file, crash-safe. */
+	public static void save() {
+		Path file = file();
 		try {
-			Files.createDirectories(file.getParent());
-			Files.writeString(file, GSON.toJson(out), StandardCharsets.UTF_8);
+			com.extremedimensions.data.DataStore.writeAtomically(file, toJson());
 		} catch (IOException e) {
 			ExtremeDimensions.LOGGER.warn("Could not write {}", file, e);
 		}
+	}
+
+	/**
+	 * Changes one value from text: a setting by its key, or a curse as {@code penalty.<id>.max} /
+	 * {@code penalty.<id>.per_stack}. Values may not be negative. Returns true if the value was taken.
+	 */
+	public static boolean set(String key, String raw) {
+		String text = raw == null ? "" : raw.trim().replace(',', '.');
+		try {
+			if (key.startsWith("penalty.")) {
+				String[] parts = key.split("\\.");
+				Penalty pen = parts.length == 3 ? Penalty.byId(parts[1]) : null;
+				if (pen == null) {
+					return false;
+				}
+				if ("max".equals(parts[2])) {
+					int v = Integer.parseInt(text);
+					if (v < 0 || v > 99) {
+						return false;
+					}
+					pen.max = v;
+					return true;
+				}
+				if ("per_stack".equals(parts[2])) {
+					double v = Double.parseDouble(text);
+					if (!Double.isFinite(v) || v < 0) {
+						return false;
+					}
+					pen.value = v;
+					return true;
+				}
+				return false;
+			}
+			for (Setting st : settings()) {
+				if (st.key().equals(key)) {
+					if (st.whole()) {
+						int v = Integer.parseInt(text);
+						if (v < 0) {
+							return false;
+						}
+						st.field().setInt(null, v);
+					} else {
+						double v = Double.parseDouble(text);
+						if (!Double.isFinite(v) || v < 0) {
+							return false;
+						}
+						st.field().setDouble(null, v);
+					}
+					return true;
+				}
+			}
+		} catch (NumberFormatException | IllegalAccessException e) {
+			return false;
+		}
+		return false;
 	}
 }

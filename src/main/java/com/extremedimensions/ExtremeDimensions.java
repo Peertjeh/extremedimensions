@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.extremedimensions.config.Config;
+import com.extremedimensions.config.SettingsService;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.network.ModPackets;
@@ -65,6 +66,14 @@ public class ExtremeDimensions implements ModInitializer {
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestJournalPayload.TYPE, ModPackets.RequestJournalPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestJournalPayload.TYPE,
 				(payload, context) -> Journal.open(context.player(), DataStore.get(context.player().getUUID())));
+
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.SettingsPayload.TYPE, ModPackets.SettingsPayload.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestSettingsPayload.TYPE, ModPackets.RequestSettingsPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestSettingsPayload.TYPE,
+				(payload, context) -> SettingsService.send(context.player()));
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.ChangeSettingsPayload.TYPE, ModPackets.ChangeSettingsPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.ChangeSettingsPayload.TYPE,
+				(payload, context) -> SettingsService.change(context.player(), payload.changes()));
 
 		ServerEvents.register();
 		LOGGER.info("Extreme Dimensions initialised");

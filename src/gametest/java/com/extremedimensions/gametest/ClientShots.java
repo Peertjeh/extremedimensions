@@ -5,7 +5,10 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.extremedimensions.client.options.ClientOptions;
 import com.extremedimensions.client.screen.CursesScreen;
+import com.extremedimensions.client.screen.SettingsScreen;
+import com.extremedimensions.client.state.ClientState;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.network.Sync;
@@ -16,6 +19,7 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
 
 import net.minecraft.client.gui.components.AbstractButton;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.server.MinecraftServer;
@@ -32,6 +36,15 @@ import net.minecraft.world.item.Items;
 public class ClientShots implements FabricClientGameTest {
 	private static ServerPlayer player(MinecraftServer s) {
 		return s.getPlayerList().getPlayers().get(0);
+	}
+
+	/** Presses the button with this label on a screen. */
+	private static void press(net.minecraft.client.gui.screens.Screen screen, String label) {
+		for (GuiEventListener w : screen.children()) {
+			if (w instanceof AbstractButton b && b.getMessage().getString().equals(label)) {
+				b.onPress(null);
+			}
+		}
 	}
 
 	private static void check(boolean ok, String message) {
@@ -100,7 +113,53 @@ public class ClientShots implements FabricClientGameTest {
 				ctx.waitTicks(4);
 				ctx.takeScreenshot("03_curses_" + tab.toLowerCase());
 			}
+			// Colour-blind colours: the four sets stay apart (the Extreme tab is still open)
+			ctx.runOnClient(mc -> ClientOptions.setColourBlind(true));
+			ctx.waitTicks(4);
+			ctx.takeScreenshot("03_curses_colour_blind");
+			ctx.runOnClient(mc -> ClientOptions.setColourBlind(false));
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+
+			// Settings: the world's rules arrived on joining, and the owner of a singleplayer world may change them
+			ctx.runOnClient(mc -> {
+				check(ClientState.settingsJson != null, "the world's settings never reached the client");
+				check(ClientState.settingsEditable, "the owner of a singleplayer world may not change its rules");
+			});
+			AtomicReference<SettingsScreen> settings = new AtomicReference<>();
+			ctx.runOnClient(mc -> {
+				SettingsScreen ss = new SettingsScreen(null);
+				settings.set(ss);
+				mc.gui.setScreen(ss);
+			});
+			ctx.waitTicks(8);
+			ctx.takeScreenshot("07_settings_display");
+			ctx.runOnClient(mc -> press(settings.get(), "World rules"));
+			ctx.waitTicks(6);
+			ctx.takeScreenshot("07_settings_world");
+			ctx.runOnClient(mc -> {
+				for (GuiEventListener w : settings.get().children()) {
+					if (w instanceof EditBox box && box.getWidth() == 150) {
+						box.setValue("lurker");
+					}
+				}
+			});
+			ctx.waitTicks(4);
+			ctx.takeScreenshot("07_settings_search");
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+
+			// The HUD where the player wants it: meters and guide bottom right, timer above the hotbar, a size larger
+			ctx.runOnClient(mc -> {
+				ClientOptions.setMeters(ClientOptions.Corner.BOTTOM_RIGHT);
+				ClientOptions.setTimer(ClientOptions.TimerPlace.ABOVE_HOTBAR);
+				ClientOptions.setHudScale(125);
+			});
+			ctx.waitTicks(4);
+			ctx.takeScreenshot("01_hud_moved");
+			ctx.runOnClient(mc -> {
+				ClientOptions.setMeters(ClientOptions.Corner.TOP_LEFT);
+				ClientOptions.setTimer(ClientOptions.TimerPlace.TOP);
+				ClientOptions.setHudScale(100);
+			});
 
 			// The curse cards, multiplied so that one spills over
 			sp.getServer().runOnServer(s -> {

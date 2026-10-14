@@ -21,9 +21,12 @@ jobs:
       - name: build and server game tests
         run: ./gradlew build
         timeout-minutes: 20
-      - name: TEMP api probe
-        if: always()
-        run: bash .github/probe/api.sh
+      # The Mod Menu stand-ins are only for compiling: the jar must not ship them
+      - name: check the mod jar
+        run: |
+          jar=$(ls build/libs/*.jar | grep -v sources | head -1)
+          if unzip -l "$jar" | grep -q "com/terraformersmc/"; then echo "Mod Menu stand-ins in $jar"; exit 1; fi
+          unzip -l "$jar" | grep -q "assets/extremedimensions/lang/nl_nl.json" || { echo "nl_nl.json missing from $jar"; exit 1; }
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:

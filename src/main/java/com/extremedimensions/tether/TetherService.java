@@ -63,6 +63,7 @@ public final class TetherService {
 		Journal.unlock(p, d, JournalEntry.CORD);
 		Advancements.grant(p, Advancements.BOUND);
 		WorldFx.fx(p, Fx.TIE, 0);
+		com.extremedimensions.guide.Guide.done(p, d, com.extremedimensions.guide.Guide.TETHER);
 		WorldFx.sound(p, "minecraft:entity.leash_knot.place", 1.0f, 0.7f);
 		WorldFx.sound(p, "minecraft:block.chain.place", 1.0f, 0.8f);
 		WorldFx.particleAt("extremedimensions:soul_mote", pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, 0.3, 0.3, 0.3, 0.0, 16);

@@ -195,6 +195,7 @@ public final class AnchorService {
 		}
 		anchor.add(uid, added);
 		Advancements.grant(p, Advancements.ANCHOR_CHARGED);
+		com.extremedimensions.guide.Guide.done(p, d, com.extremedimensions.guide.Guide.ANCHOR);
 		if (cap - anchor.of(uid) < 1) {
 			Journal.unlock(p, d, JournalEntry.SILENCE);
 			Advancements.grant(p, Advancements.ANCHOR_FULL);

@@ -62,6 +62,34 @@ public final class ClientState {
 	public static long depositAt = 0;
 	public static int depositKind = 1;
 
+	/** Steps of the first-expedition guide done; finished at Guide.STEPS (unknown until the first update). */
+	public static int guide = com.extremedimensions.guide.Guide.STEPS;
+
+	/** The world's settings as the server sent them (JSON), and whether this player may change them. */
+	public static String settingsJson = null;
+	public static boolean settingsEditable = false;
+	/** The server's values were laid over this computer's config (a remote server): undone on leaving. */
+	private static boolean remoteSettings = false;
+
+	/** The server's settings arrived: the HUD and screens use its numbers from now on. */
+	public static void applySettings(ModPackets.SettingsPayload s) {
+		settingsJson = s.json();
+		settingsEditable = s.canEdit();
+		// In singleplayer the client shares the server's values already; only a remote server's are laid over ours
+		if (!net.minecraft.client.Minecraft.getInstance().hasSingleplayerServer()) {
+			try {
+				com.google.gson.JsonElement json = com.google.gson.JsonParser.parseString(s.json());
+				if (json.isJsonObject()) {
+					com.extremedimensions.config.Config.apply(json.getAsJsonObject());
+					remoteSettings = true;
+				}
+			} catch (Exception e) {
+				// keep this computer's values
+			}
+		}
+		com.extremedimensions.client.screen.SettingsScreen.refresh();
+	}
+
 	public static void apply(ModPackets.StatePayload s) {
 		nearNether = s.nearNether();
 		nearEnd = s.nearEnd();
@@ -79,6 +107,7 @@ public final class ClientState {
 		Dwindling.clientValue = valueOf("dwindling");
 		scars = s.scars();
 		tetherDist = s.tetherDist();
+		guide = s.guide();
 		syncMs = System.currentTimeMillis();
 		// First update from the Overworld after a Collapse: start the fade-in
 		if (collapseAt > 0 && homeAt <= collapseAt && dimCode == 0 && syncMs - collapseAt > 2000) {
@@ -186,6 +215,14 @@ public final class ClientState {
 		SealedPockets.client = 0;
 		Dwindling.client = 0;
 		Dwindling.clientValue = 0;
+		settingsJson = null;
+		settingsEditable = false;
+		guide = com.extremedimensions.guide.Guide.STEPS;
+		if (remoteSettings) {
+			// Back to this computer's own config after a server's
+			remoteSettings = false;
+			com.extremedimensions.config.Config.load();
+		}
 		scars = 0;
 		tetherDist = -1;
 		shownNether = 0;

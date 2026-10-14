@@ -20,6 +20,9 @@
 		],
 		"client": [
 			"com.extremedimensions.client.ExtremeDimensionsClient"
+		],
+		"modmenu": [
+			"com.extremedimensions.client.compat.ModMenuEntry"
 		]
 	},
 	"mixins": [

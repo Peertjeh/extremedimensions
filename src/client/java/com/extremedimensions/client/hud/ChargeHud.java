@@ -1,8 +1,12 @@
 package com.extremedimensions.client.hud;
 
+import com.extremedimensions.client.options.ClientOptions;
 import com.extremedimensions.client.state.ClientState;
 import com.extremedimensions.client.ui.Ui;
 import com.extremedimensions.config.Config;
+import com.extremedimensions.guide.Guide;
+
+import java.util.List;
 
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -12,8 +16,9 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 
 /**
- * The in-world HUD: anchor meters and the tether chip (top left), the expedition timer (top centre), and the
- * full-screen moments (low time, Collapse, Expedition Ended, dormant portal, anchor charged).
+ * The in-world HUD: anchor meters and the tether chip (a corner of the player's choice), the expedition timer (top
+ * centre or above the hotbar), both at the player's HUD size, and the full-screen moments (low time, Collapse,
+ * Expedition Ended, dormant portal, anchor charged). With reduced flashing, strobes, shakes and glitches are left out.
  */
 public class ChargeHud implements HudElement {
 	private static final int CHIP_W = 104;
@@ -28,8 +33,14 @@ public class ChargeHud implements HudElement {
 		long now = System.currentTimeMillis();
 
 		lowTime(g, w, h, now);
-		chips(g, font, now);
-		timer(g, font, w, now);
+		// Meters and timer at the player's HUD size; the full-screen moments always fill the screen
+		float scale = ClientOptions.hudScale() / 100f;
+		int sw = Math.round(w / scale), sh = Math.round(h / scale);
+		g.pose().pushMatrix();
+		g.pose().scale(scale, scale);
+		chips(g, font, sw, sh, now);
+		timer(g, font, sw, sh, now);
+		g.pose().popMatrix();
 		ended(g, w, h, now);
 		bounce(g, w, h, now);
 		long dt = now - ClientState.depositAt;
@@ -44,24 +55,49 @@ public class ChargeHud implements HudElement {
 
 	// ------------------------------------------------------------------ top left
 
-	private static void chips(GuiGraphicsExtractor g, Font font, long now) {
-		int y = 6;
+	private static void chips(GuiGraphicsExtractor g, Font font, int w, int h, long now) {
+		boolean tether = ClientState.dimCode == 0 && ClientState.tetherDist >= 0;
+		int count = (ClientState.nearNether >= 0 ? 1 : 0) + (ClientState.nearEnd >= 0 ? 1 : 0) + (tether ? 1 : 0);
+		List<String> guide = guideLines(font);
+		int guideH = guide.isEmpty() ? 0 : guide.size() * 9 + 17;
+		if (count == 0 && guide.isEmpty()) {
+			return;
+		}
+		ClientOptions.Corner corner = ClientOptions.meters();
+		boolean right = corner.right();
+		int x = right ? w - 6 - CHIP_W : 6;
+		int stack = count * 26 + (guide.isEmpty() ? 0 : guideH + 5) - 5;
+		int y = corner.bottom() ? h - 6 - stack : 6;
+		if (!guide.isEmpty()) {
+			// The guide sits on the far side of the meters from the screen's edge (above them at the bottom)
+			int gy = corner.bottom() ? y : y + count * 26;
+			int gx = right ? w - 6 - GUIDE_W : 6;
+			// On a narrow screen the card would reach under the expedition timer: then it waits below it
+			boolean timerTop = ClientState.dimCode != 0 && ClientOptions.timer() == ClientOptions.TimerPlace.TOP;
+			if (timerTop && !corner.bottom() && (right ? gx < (w + TIMER_W) / 2 : gx + GUIDE_W > (w - TIMER_W) / 2)) {
+				gy = Math.max(gy, 5 + TIMER_H + 4);
+			}
+			guideCard(g, font, gx, gy, guide, guideH);
+			if (corner.bottom()) {
+				y += guideH + 5;
+			}
+		}
 		if (ClientState.nearNether >= 0) {
-			anchorChip(g, font, 6, y, Ui.tr("hud.extremedimensions.nether_anchor"), ClientState.shownNether, Ui.EMBER,
+			anchorChip(g, font, x, y, right, Ui.tr("hud.extremedimensions.nether_anchor"), ClientState.shownNether, Ui.EMBER,
 					ClientState.netherFlashAt, ClientState.netherGain, ClientState.netherGainAt, now);
 			y += 26;
 		}
 		if (ClientState.nearEnd >= 0) {
-			anchorChip(g, font, 6, y, Ui.tr("hud.extremedimensions.end_anchor"), ClientState.shownEnd, Ui.VOID,
+			anchorChip(g, font, x, y, right, Ui.tr("hud.extremedimensions.end_anchor"), ClientState.shownEnd, Ui.VOID,
 					ClientState.endFlashAt, ClientState.endGain, ClientState.endGainAt, now);
 			y += 26;
 		}
-		if (ClientState.dimCode == 0 && ClientState.tetherDist >= 0) {
-			tetherChip(g, font, 6, y);
+		if (tether) {
+			tetherChip(g, font, x, y);
 		}
 	}
 
-	private static void anchorChip(GuiGraphicsExtractor g, Font font, int x, int y, String name, double seconds, int color,
+	private static void anchorChip(GuiGraphicsExtractor g, Font font, int x, int y, boolean right, String name, double seconds, int color,
 			long flashAt, int gain, long gainAt, long now) {
 		double flash = flashAt > 0 ? Ui.clamp01(1 - (now - flashAt) / 900.0) : 0;
 		Ui.chip(g, x, y, CHIP_W, 21, color, 1.0);
@@ -74,7 +110,34 @@ public class ChargeHud implements HudElement {
 		Ui.meter(g, x + 5, y + 14, CHIP_W - 10, 3, seconds / Math.max(Config.MAX_CHARGE, seconds), color, 1.0, false);
 		double age = gainAt > 0 ? (now - gainAt) / 1700.0 : 2;
 		if (age < 1) {
-			Ui.text(g, font, "+" + Ui.time(gain), x + CHIP_W + 6, y + 3 - (int) (Ui.ease(age) * 10), Ui.PARCHMENT, 1 - age);
+			// The gain floats up beside the chip, on the side facing the middle of the screen
+			String plus = "+" + Ui.time(gain);
+			int gx = right ? x - 6 - font.width(plus) : x + CHIP_W + 6;
+			Ui.text(g, font, plus, gx, y + 3 - (int) (Ui.ease(age) * 10), Ui.PARCHMENT, 1 - age);
+		}
+	}
+
+	private static final int GUIDE_W = 150;
+
+	/** The next step of the first-expedition guide, wrapped to the card; empty when the guide is finished or off. */
+	private static List<String> guideLines(Font font) {
+		int done = ClientState.guide;
+		if (!ClientOptions.guidance() || done >= Guide.STEPS || done < 0) {
+			return List.of();
+		}
+		return Ui.wrap(font, Ui.tr("gui.extremedimensions.guide." + (done + 1)), GUIDE_W - 10);
+	}
+
+	private static void guideCard(GuiGraphicsExtractor g, Font font, int x, int y, List<String> lines, int h) {
+		Ui.chip(g, x, y, GUIDE_W, h, Ui.SOUL, 0.95);
+		String head = Ui.tr("gui.extremedimensions.guide.title").toUpperCase();
+		g.text(font, head, x + 5, y + 4, Ui.argb(255, Ui.SOUL));
+		String step = (ClientState.guide + 1) + "/" + Guide.STEPS;
+		g.text(font, step, x + GUIDE_W - 5 - font.width(step), y + 4, Ui.argb(255, Ui.MUTED));
+		int ly = y + 15;
+		for (String line : lines) {
+			g.text(font, line, x + 5, ly, Ui.argb(255, Ui.TEXT));
+			ly += 9;
 		}
 	}
 
@@ -92,7 +155,14 @@ public class ChargeHud implements HudElement {
 
 	// ------------------------------------------------------------------ expedition timer
 
-	private static void timer(GuiGraphicsExtractor g, Font font, int w, long now) {
+	/** The expedition timer panel's size and top edge (in HUD-scaled pixels). */
+	private static final int TIMER_W = 196, TIMER_H = 36;
+
+	private static int timerTop(int h) {
+		return ClientOptions.timer() == ClientOptions.TimerPlace.TOP ? 5 : h - 64 - TIMER_H;
+	}
+
+	private static void timer(GuiGraphicsExtractor g, Font font, int w, int h, long now) {
 		if (ClientState.dimCode == 0 || (ClientState.collapseAt > 0 && now - ClientState.collapseAt < HOLD_MAX_MS)) {
 			return;
 		}
@@ -101,15 +171,17 @@ public class ChargeHud implements HudElement {
 		boolean seam = ClientState.dimCode == 3;
 		int accent = seam ? Ui.SOUL : nether ? Ui.EMBER : Ui.VOID;
 		double slide = ClientState.startAt > 0 ? Ui.ease((now - ClientState.startAt) / 550.0) : 1.0;
-		double amp = remaining <= 10 ? (10 - remaining) / 10.0 * 3.0 : 0;
+		// The last ten seconds shake the panel, the last thirty flash the time (neither with reduced flashing)
+		double amp = remaining <= 10 && !Ui.calm() ? (10 - remaining) / 10.0 * 3.0 : 0;
 		int xs = (int) (Math.sin(now / 35.0) * amp);
 		int ys = (int) (Math.cos(now / 41.0) * amp);
-		int pw = 196;
-		int ph = 36;
+		int pw = TIMER_W;
+		int ph = TIMER_H;
 		int px = (w - pw) / 2 + xs;
-		int py = 5 - (int) ((1 - slide) * 48) + ys;
+		boolean top = ClientOptions.timer() == ClientOptions.TimerPlace.TOP;
+		int py = timerTop(h) + (int) ((1 - slide) * 48) * (top ? -1 : 1) + ys;
 		int barColor = remaining <= 60 ? Ui.DANGER : remaining <= 120 ? Ui.WARN : accent;
-		boolean flash = remaining <= 30 && (now / 250) % 2 == 0;
+		boolean flash = remaining <= 30 && (Ui.calm() || (now / 250) % 2 == 0);
 
 		Ui.panel(g, px, py, pw, ph, barColor, 0.95);
 		String name = Ui.tr(seam ? "dimension.extremedimensions.seam" : nether ? "dimension.extremedimensions.nether" : "dimension.extremedimensions.end").toUpperCase();
@@ -146,7 +218,7 @@ public class ChargeHud implements HudElement {
 			return;
 		}
 		double intensity = (60 - remaining) / 60.0;
-		double pulse = 0.65 + 0.35 * Math.sin(now / (220.0 - 120.0 * intensity));
+		double pulse = Ui.calm() ? 0.8 : 0.65 + 0.35 * Math.sin(now / (220.0 - 120.0 * intensity));
 		int alpha = (int) (0x1C * intensity * pulse);
 		if (alpha > 0) {
 			Ui.vignette(g, w, h, 0xCC0000, alpha, 8);
@@ -188,15 +260,16 @@ public class ChargeHud implements HudElement {
 		int cy = h / 2;
 		int tint = ClientState.collapseDim == 3 ? Ui.SOUL_DIM : ClientState.collapseDim == 2 ? Ui.VOID : Ui.EMBER_DEEP;
 
-		// The snap: a hard jolt of light
+		boolean calm = Ui.calm();
+		// The snap: a hard jolt of light (a soft one with reduced flashing)
 		if (ct < 260) {
-			g.fill(0, 0, w, h, Ui.argb((int) (200 * (1 - ct / 260.0)), 0xFFFFFF));
+			g.fill(0, 0, w, h, Ui.argb((int) ((calm ? 40 : 200) * (1 - ct / 260.0)), 0xFFFFFF));
 		}
 		// Tinted haze that deepens
 		g.fill(0, 0, w, h, Ui.argb((int) (70 * Math.min(1, p * 2)), tint));
 
 		// Signal glitches while the tether strains
-		if (ct < 1100) {
+		if (ct < 1100 && !calm) {
 			double gt = 1 - ct / 1100.0;
 			long bucket = now / 70;
 			for (int i = 0; i < 12; i++) {
@@ -207,17 +280,20 @@ public class ChargeHud implements HudElement {
 			}
 		}
 
-		// The timer bar snaps in two and falls away
+		// The timer bar snaps in two and falls away, where the player keeps their timer
 		if (ct < 1300) {
 			double t = ct / 1300.0;
-			int barW = 182;
+			float scale = ClientOptions.hudScale() / 100f;
+			int barW = (int) (182 * scale);
+			int barH = Math.max(2, (int) (6 * scale));
+			int barY = (int) ((timerTop(Math.round(h / scale)) + 17) * scale);
 			int bx = (w - barW) / 2;
 			int half = barW / 2;
 			int dx = (int) (t * 200);
 			int dy = (int) (t * t * 260);
 			int a = (int) (255 * (1 - t));
-			g.fill(bx - dx, 22 + dy, bx + half - dx, 28 + dy, Ui.argb(a, Ui.DANGER));
-			g.fill(bx + half + dx, 22 + dy + dy / 6, bx + barW + dx, 28 + dy + dy / 6, Ui.argb(a, Ui.DANGER));
+			g.fill(bx - dx, barY + dy, bx + half - dx, barY + barH + dy, Ui.argb(a, Ui.DANGER));
+			g.fill(bx + half + dx, barY + dy + dy / 6, bx + barW + dx, barY + barH + dy + dy / 6, Ui.argb(a, Ui.DANGER));
 		}
 
 		// Warp: souls streak outward past the player, faster and brighter as the pull peaks
@@ -249,8 +325,10 @@ public class ChargeHud implements HudElement {
 			int jit = (int) (Ui.hash(now / 70) * 6 - 3);
 			String s = Ui.tr("hud.extremedimensions.collapse").toUpperCase();
 			int sw = font.width(s) / 2;
-			g.text(font, s, cx - sw + 2 + jit, ty, Ui.argb((int) (170 * ta), 0xFF2030));
-			g.text(font, s, cx - sw - 2 - jit, ty, Ui.argb((int) (170 * ta), 0x30E0FF));
+			if (!calm) {
+				g.text(font, s, cx - sw + 2 + jit, ty, Ui.argb((int) (170 * ta), 0xFF2030));
+				g.text(font, s, cx - sw - 2 - jit, ty, Ui.argb((int) (170 * ta), 0x30E0FF));
+			}
 			g.text(font, s, cx - sw, ty, Ui.argb((int) (255 * ta), 0xFFFFFF));
 		}
 
@@ -258,7 +336,7 @@ public class ChargeHud implements HudElement {
 		if (ct > 2350) {
 			double e = Ui.clamp01((ct - 2350) / 650.0);
 			g.fill(0, 0, w, h, Ui.argb((int) (255 * e), 0x000000));
-			if (ct < 2650) {
+			if (ct < 2650 && !calm) {
 				double f = 1 - Math.abs(ct - 2500) / 150.0;
 				int bw = (int) (w * 0.5 * (1 - e));
 				g.fill(cx - bw, cy - 1, cx + bw, cy + 1, Ui.argb((int) (255 * f), 0xE8FFFA));
@@ -290,7 +368,7 @@ public class ChargeHud implements HudElement {
 			return;
 		}
 		double t = st / 5000.0;
-		int flash = (int) (255 * Math.max(0, 1 - st / 700.0));
+		int flash = (int) ((Ui.calm() ? 50 : 255) * Math.max(0, 1 - st / 700.0));
 		if (flash > 0) {
 			g.fill(0, 0, w, h, Ui.argb(flash, 0xFFFFFF));
 		}
@@ -327,6 +405,9 @@ public class ChargeHud implements HudElement {
 		double t = st / 2500.0;
 		int a = (int) (120 * Math.sin(Math.min(1, st / 300.0) * Math.PI / 2) * (1 - t));
 		Ui.vignette(g, w, h, Ui.VOID, a / 6, 8);
+		if (Ui.calm()) {
+			return;
+		}
 		long bucket = now / 70;
 		for (int i = 0; i < 6; i++) {
 			int bx = (int) (Ui.hash(bucket * 5 + i) * w);
@@ -345,6 +426,9 @@ public class ChargeHud implements HudElement {
 		int a = (int) (190 * in * (1 - t));
 		Ui.vignette(g, w, h, 0x07000C, a / 4, 10);
 		Ui.vignette(g, w, h, Ui.VOID, a / 10, 5);
+		if (Ui.calm()) {
+			return;
+		}
 		long bucket = now / 50;
 		for (int i = 0; i < 10; i++) {
 			int by = (int) (Ui.hash(bucket * 13 + i) * h);
@@ -355,7 +439,7 @@ public class ChargeHud implements HudElement {
 		}
 	}
 
-	/** Dark red haze that slowly lifts (the big text is a vanilla title). */
+	/** Dark red haze that slowly lifts (with a vanilla title over it only if the server's config asks for one). */
 	private static void ended(GuiGraphicsExtractor g, int w, int h, long now) {
 		long et = now - ClientState.endedAt;
 		if (ClientState.endedAt <= 0 || et >= 3500) {

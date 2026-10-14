@@ -20,13 +20,18 @@ import com.extremedimensions.client.sky.SeamAmbience;
 import com.extremedimensions.client.sky.SeamSky;
 import com.extremedimensions.client.screen.CursesScreen;
 import com.extremedimensions.client.screen.PenaltyChoiceScreen;
+import com.extremedimensions.client.screen.SettingsScreen;
 import com.extremedimensions.client.screen.StatusScreen;
+import com.extremedimensions.client.options.ClientOptions;
 import com.extremedimensions.client.state.ClientState;
 import com.extremedimensions.client.title.TitleArt;
 import com.extremedimensions.client.tooltip.Tooltips;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.registry.ModEntities;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.DeathScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -35,6 +40,7 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
@@ -42,10 +48,37 @@ import net.fabricmc.fabric.api.client.rendering.v1.ModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 
-/** Client entrypoint: HUD, screens, title art, menu music, tooltips and packet receivers. */
+/** Client entrypoint: HUD, screens, title art, menu music, tooltips, key mappings and packet receivers. */
 public class ExtremeDimensionsClient implements ClientModInitializer {
+	private static final KeyMapping.Category KEYS = KeyMapping.Category.register(ExtremeDimensions.id("main"));
+	/** Unbound until the player picks keys (Controls): the inventory buttons and the settings gear are always there. */
+	private static final KeyMapping OPEN_CURSES = new KeyMapping("key.extremedimensions.curses", InputConstants.UNKNOWN.getValue(), KEYS);
+	private static final KeyMapping OPEN_JOURNAL = new KeyMapping("key.extremedimensions.journal", InputConstants.UNKNOWN.getValue(), KEYS);
+	private static final KeyMapping OPEN_SETTINGS = new KeyMapping("key.extremedimensions.settings", InputConstants.UNKNOWN.getValue(), KEYS);
+
 	@Override
 	public void onInitializeClient() {
+		ClientOptions.load();
+		KeyMappingHelper.registerKeyMapping(OPEN_CURSES);
+		KeyMappingHelper.registerKeyMapping(OPEN_JOURNAL);
+		KeyMappingHelper.registerKeyMapping(OPEN_SETTINGS);
+		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			while (OPEN_SETTINGS.consumeClick()) {
+				if (client.screen == null) {
+					client.gui.setScreen(new SettingsScreen(null));
+				}
+			}
+			while (OPEN_CURSES.consumeClick()) {
+				if (client.screen == null && client.getConnection() != null) {
+					ClientPlayNetworking.send(new ModPackets.RequestCursesPayload(true));
+				}
+			}
+			while (OPEN_JOURNAL.consumeClick()) {
+				if (client.screen == null && client.getConnection() != null) {
+					ClientPlayNetworking.send(new ModPackets.RequestJournalPayload());
+				}
+			}
+		});
 		ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
 			if (screen instanceof TitleScreen) {
 				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
@@ -96,6 +129,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(
 						new JournalScreen(new HashSet<>(Arrays.asList(payload.ids().split(","))),
 								JournalButton.takeReturn()))));
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.SettingsPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> ClientState.applySettings(payload)));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenStatusPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(new StatusScreen())));
 	}

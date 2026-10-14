@@ -95,7 +95,9 @@ public class LurkerRenderer<T extends Mob & LurkerBody> extends MobRenderer<T, L
 			b.sinceBeat %= delay;
 		}
 		float beat = Math.max(0.0F, 1.0F - b.sinceBeat / BEAT_FADE);
-		state.glow = GLOW_REST + (1.0F - GLOW_REST) * beat;
+		// With reduced flashing the heart still beats, as a soft swell instead of a flash
+		float depth = com.extremedimensions.client.ui.Ui.calm() ? 0.3F : 1.0F;
+		state.glow = GLOW_REST + (1.0F - GLOW_REST) * beat * depth;
 	}
 
 	@Override

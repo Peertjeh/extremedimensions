@@ -14,6 +14,8 @@ import com.extremedimensions.penalty.Penalty;
 public class PlayerData {
 	// --- saved ---
 	public int expeditions = 0;
+	/** Steps of the first-expedition guide done (see Guide). */
+	public int guide = 0;
 	public int collapses = 0;
 	public double longestRun = 0;
 	/** Curse id -> stacks. Curses are permanent: only atonement, fragments or a Mending Cloth take stacks off. */

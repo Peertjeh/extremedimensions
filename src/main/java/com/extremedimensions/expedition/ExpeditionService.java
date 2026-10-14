@@ -95,6 +95,7 @@ public final class ExpeditionService {
 		boolean nether = Dims.NETHER.equals(dim);
 		WorldFx.fx(p, nether ? Fx.START_NETHER : Fx.START_END, 0);
 		Journal.unlock(p, d, nether ? JournalEntry.EMBER_DEEP : JournalEntry.PALE_VOID);
+		com.extremedimensions.guide.Guide.done(p, d, com.extremedimensions.guide.Guide.THROUGH);
 		WorldFx.sound(p, "extremedimensions:portal_beyond", 1.0f, nether ? 0.9f : 1.1f);
 		if (nether) {
 			WorldFx.particles(p, "minecraft:flame", 1.0, 0.6, 0.06, 60);
@@ -126,6 +127,7 @@ public final class ExpeditionService {
 		WorldFx.soundSelf(p, "extremedimensions:portal_home", 0.6f, 1.0f);
 		Journal.unlock(p, d, JournalEntry.WOUND);
 		Advancements.grant(p, Advancements.FIRST_EXPEDITION);
+		com.extremedimensions.guide.Guide.done(p, d, com.extremedimensions.guide.Guide.HOME);
 		if (d.expeditions >= 5) {
 			Journal.unlock(p, d, JournalEntry.HABIT);
 		}
