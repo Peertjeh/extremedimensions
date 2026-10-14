@@ -219,20 +219,84 @@ public final class PartyLayouts {
 		bp.set(cx + 4, 1, -4, t.light());
 	}
 
-	/** Parkour Race: the generated course, centred on the origin along the X axis. */
+	/** Slab used for half-block parkour steps in each theme. */
+	private static BlockState slab(Theme t) {
+		String id = switch (t) {
+			case FOREST, MUSHROOM -> "oak_slab";
+			case CASTLE -> "stone_brick_slab";
+			case NETHER -> "nether_brick_slab";
+			case ICE, SKY -> "smooth_quartz_slab";
+			case DESERT -> "sandstone_slab";
+			case JUNGLE -> "jungle_slab";
+			case CHERRY -> "cherry_slab";
+			case END -> "end_stone_brick_slab";
+			case BADLANDS -> "red_sandstone_slab";
+			case DEEP_DARK -> "polished_deepslate_slab";
+			case OCEAN -> "prismarine_slab";
+		};
+		return Build.slab(id, false);
+	}
+
+	/** Fence post for the tiny parkour landings in each theme. */
+	private static BlockState fence(Theme t) {
+		return Build.s(switch (t) {
+			case NETHER -> "nether_brick_fence";
+			case JUNGLE -> "jungle_fence";
+			case CHERRY -> "cherry_fence";
+			case DESERT, BADLANDS -> "acacia_fence";
+			case DEEP_DARK, END -> "dark_oak_fence";
+			case ICE, SKY -> "birch_fence";
+			case MUSHROOM -> "mangrove_fence";
+			default -> "oak_fence";
+		});
+	}
+
+	/**
+	 * Parkour Race: the generated course, centred on the origin along the X axis. Platforms can be full blocks,
+	 * slabs, fence posts, ice or a column with a ladder on the side the course comes from.
+	 */
 	public static Blueprint parkour(Theme t, RandomSource rnd, List<ParkourCourse.Platform> course) {
 		Blueprint bp = new Blueprint();
 		int shift = -(course.get(course.size() - 1).x() / 2);
 		int minY = 0;
+		int maxZ = 0;
 		for (ParkourCourse.Platform p : course) {
 			int px = p.x() + shift;
+			int h = p.half();
+			maxZ = Math.max(maxZ, Math.abs(p.z()) + h);
+			minY = Math.min(minY, p.y() - (p.style() == ParkourCourse.Style.LADDER ? p.climb() : 0));
+			if (p.style() == ParkourCourse.Style.LADDER) {
+				int bottom = p.y() - p.climb() + 1;
+				for (int y = bottom; y <= p.y(); y++) {
+					bp.set(px, y, p.z(), y == p.y() ? t.floor(rnd) : t.pillar());
+				}
+				// The ladder hangs on the side facing back along the course, so it faces the player
+				int lx = px - ParkourCourse.dx(p.dir());
+				int lz = p.z() - ParkourCourse.dz(p.dir());
+				net.minecraft.core.Direction facing = switch (p.dir()) {
+					case ParkourCourse.SOUTH -> net.minecraft.core.Direction.NORTH;
+					case ParkourCourse.NORTH -> net.minecraft.core.Direction.SOUTH;
+					default -> net.minecraft.core.Direction.WEST;
+				};
+				for (int y = bottom; y <= p.y(); y++) {
+					bp.set(lx, y, lz, Build.facing("ladder", facing));
+				}
+				continue;
+			}
+			if (p.style() == ParkourCourse.Style.FENCE) {
+				bp.set(px, p.y(), p.z(), fence(t));
+				continue;
+			}
 			BlockState top = switch (p.kind()) {
 				case START -> t.trim();
 				case CHECKPOINT -> Build.s("gold_block");
 				case FINISH -> Build.s("emerald_block");
-				default -> rnd.nextInt(4) == 0 ? t.accent() : t.floor(rnd);
+				default -> switch (p.style()) {
+					case SLAB -> slab(t);
+					case ICE -> Build.s(rnd.nextBoolean() ? "blue_ice" : "packed_ice");
+					default -> rnd.nextInt(4) == 0 ? t.accent() : t.floor(rnd);
+				};
 			};
-			int h = p.half();
 			for (int dx = -h; dx <= h; dx++) {
 				for (int dz = -h; dz <= h; dz++) {
 					bp.set(px + dx, p.y(), p.z() + dz, top);
@@ -243,7 +307,6 @@ public final class PartyLayouts {
 				bp.set(px + h, p.y() + 1, p.z() + h, t.light());
 				bp.set(px - h, p.y() + 1, p.z() - h, t.light());
 			}
-			minY = Math.min(minY, p.y());
 		}
 		// Start platform spawns (everyone starts together)
 		ParkourCourse.Platform start = course.get(0);
@@ -257,13 +320,12 @@ public final class PartyLayouts {
 		int len = course.get(course.size() - 1).x();
 		for (int i = 0; i < len / 12 + 2; i++) {
 			int x = shift + rnd.nextInt(len + 1);
-			int z = rnd.nextInt(30) - 15;
-			if (Math.abs(z) < 6) z += z < 0 ? -8 : 8;
-			Build.island(bp, x, minY - 12 - rnd.nextInt(6), z, 2 + rnd.nextDouble() * 2.5, 4, () -> t.floor(rnd), t.under(), t.rough(), rnd);
+			int z = rnd.nextInt(2 * maxZ + 31) - (maxZ + 15);
+			Build.island(bp, x, minY - 14 - rnd.nextInt(6), z, 2 + rnd.nextDouble() * 2.5, 4, () -> t.floor(rnd), t.under(), t.rough(), rnd);
 		}
 		bp.spectator(sx + 0.5, start.y() + 12, start.z() - 12 + 0.5, -45, 25);
 		bp.voidY(minY - 6);
-		bp.radius(len / 2 + 30);
+		bp.radius(Math.max(len / 2, maxZ) + 30);
 		return bp;
 	}
 

@@ -109,8 +109,16 @@ public final class StatsMenu extends Screen {
 					.lore(Lang.lore(viewer, "menu.stats.elo", elo, Ranks.tierName(viewer, elo)))
 					.lore(Lang.lore(viewer, "menu.ranked.record", r == null ? 0 : r.wins, r == null ? 0 : r.losses));
 		}
-		if (m == GameMode.PARKOUR && p.bestTimes.containsKey("parkour")) {
-			icon.lore(Lang.lore(viewer, "menu.stats.best_time", time(p.bestTimes.get("parkour"))));
+		if (m == GameMode.PARKOUR) {
+			for (net.battlehub.core.ParkourCourse.Difficulty d : net.battlehub.core.ParkourCourse.Difficulty.values()) {
+				Long best = p.bestTimes.get("parkour_" + d.id());
+				if (best != null) {
+					icon.lore(Lang.lore(viewer, "menu.stats.best_time_difficulty", Lang.tr(viewer, "parkour.difficulty." + d.id()), time(best)));
+				}
+			}
+			if (p.bestTimes.containsKey("parkour")) {
+				icon.lore(Lang.lore(viewer, "menu.stats.best_time", time(p.bestTimes.get("parkour"))));
+			}
 		}
 		return icon.clean();
 	}

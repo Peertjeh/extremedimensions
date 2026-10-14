@@ -27,7 +27,10 @@ final class LayoutTests {
 		m.put("sumo", t -> PartyLayouts.sumo(t, rnd));
 		m.put("koth", t -> PartyLayouts.koth(t, rnd));
 		m.put("ctf", t -> PartyLayouts.ctf(t, rnd));
-		m.put("parkour", t -> PartyLayouts.parkour(t, rnd, ParkourCourse.generate(rnd.nextLong(), 36, 9, 12)));
+		m.put("parkour", t -> {
+			ParkourCourse.Difficulty d = ParkourCourse.Difficulty.values()[rnd.nextInt(4)];
+			return PartyLayouts.parkour(t, rnd, ParkourCourse.generate(rnd.nextLong(), d, d.defaultJumps, d.checkpointEvery, 14));
+		});
 		m.put("lms", t -> PartyLayouts.lms(t, rnd));
 		return m;
 	}

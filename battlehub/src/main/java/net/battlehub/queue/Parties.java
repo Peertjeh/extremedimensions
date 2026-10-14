@@ -46,9 +46,11 @@ public final class Parties {
 	private static PartyLobby lobby(GameMode mode) {
 		HubConfig c = ConfigManager.config();
 		HubConfig.Game g = c.game(mode);
-		PartyLobby l = LOBBIES.computeIfAbsent(mode, m -> new PartyLobby(g.minPlayers, g.maxPlayers,
-				c.timings.partyCountdownSeconds, c.timings.partyFullCountdownSeconds));
-		l.configure(g.minPlayers, g.maxPlayers, c.timings.partyCountdownSeconds, c.timings.partyFullCountdownSeconds);
+		// A game may have its own countdown (parkour starts sooner, also when you are alone)
+		int countdown = (int) Math.min(c.timings.partyCountdownSeconds, g.setting("countdownSeconds", c.timings.partyCountdownSeconds));
+		int full = Math.min(countdown, c.timings.partyFullCountdownSeconds);
+		PartyLobby l = LOBBIES.computeIfAbsent(mode, m -> new PartyLobby(g.minPlayers, g.maxPlayers, countdown, full));
+		l.configure(g.minPlayers, g.maxPlayers, countdown, full);
 		return l;
 	}
 

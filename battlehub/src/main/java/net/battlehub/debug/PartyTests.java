@@ -48,7 +48,8 @@ final class PartyTests {
 		party(server, s, GameMode.BOW_SPLEEF, PartyTests::fallOff);
 		party(server, s, GameMode.KOTH, PartyTests::koth);
 		party(server, s, GameMode.CTF, PartyTests::ctf);
-		party(server, s, GameMode.PARKOUR, PartyTests::parkour);
+		party(server, s, GameMode.PARKOUR, PartyTests::parkour, new String[] {"hard", "hard", "easy", ""});
+		soloParkour(server, s);
 		party(server, s, GameMode.LMS, PartyTests::lms);
 	}
 
@@ -59,6 +60,11 @@ final class PartyTests {
 
 	/** Lobby, countdown, match start; the scenario plays; then results, restore and arena release are checked. */
 	private static void party(MinecraftServer server, Script s, GameMode mode, Consumer<Script> scenario) {
+		party(server, s, mode, scenario, new String[] {"", "", "", ""});
+	}
+
+	/** {@code votes}: what each of the four players votes for when joining (the parkour difficulty). */
+	private static void party(MinecraftServer server, Script s, GameMode mode, Consumer<Script> scenario, String[] votes) {
 		String tag = mode.id();
 		SelfTest.reset(s, tag);
 		s.run(tag + ": four players join", () -> {
@@ -67,7 +73,7 @@ final class PartyTests {
 		s.pause(10);
 		s.run(tag + ": remember wins", () -> VARS.put("winsA", PlayerStore.get(p("BHTestA").getUUID()).peek(mode).wins));
 		s.run(tag + ": everyone joins the lobby", () -> {
-			for (String n : NAMES) Parties.join(p(n), mode);
+			for (int i = 0; i < NAMES.length; i++) Parties.join(p(NAMES[i]), mode, votes[i]);
 		});
 		s.check(tag + ": lobby has four players", () -> Parties.members(mode).size() == 4
 				&& Sessions.state(p("BHTestD").getUUID()) == Sessions.State.QUEUED);
@@ -227,38 +233,71 @@ final class PartyTests {
 		});
 	}
 
+	/** Runs {@code name} over every checkpoint to the finish of the current parkour match. */
+	private static void runCourse(Script s, String tag, String name) {
+		s.run(tag + ": " + name + " runs to every checkpoint", () -> VARS.put("pk", 0));
+		s.waitFor(tag + ": " + name + " reaches the finish", 900, () -> {
+			ParkourMatch m = (ParkourMatch) match();
+			if (m.race().hasFinished(p(name).getUUID())) return true;
+			int step = (int) VARS.get("pk");
+			// Visit the next checkpoint or finish platform every 5 ticks
+			if (m.player(p(name).getUUID()).level().getServer().getTickCount() % 5 == 0) {
+				int i = step;
+				while (i < m.course().size() && m.course().get(i).checkpoint() == 0) i++;
+				if (i < m.course().size()) {
+					Vec3 top = m.platformTop(i);
+					tp(p(name), top.x, top.y + 0.05, top.z);
+					// Simulated players have no client to report that they landed
+					p(name).setOnGround(true);
+					VARS.put("pk", i + 1);
+				}
+			}
+			return false;
+		});
+	}
+
 	private static void parkour(Script s) {
+		s.check("parkour: the vote picked hard (2 hard, 1 easy, 1 no preference)", () ->
+				((ParkourMatch) match()).difficulty == net.battlehub.core.ParkourCourse.Difficulty.HARD
+						&& ((ParkourMatch) match()).course().size() - 1 == net.battlehub.core.ParkourCourse.Difficulty.HARD.defaultJumps);
 		s.run("parkour: C falls off the start", () -> {
 			ServerPlayer c = p("BHTestC");
 			tp(c, c.getX(), match().arena().voidY() - 3, c.getZ());
 		});
 		s.waitFor("parkour: C is put back, not eliminated", 30, () -> p("BHTestC").getY() > match().arena().voidY()
 				&& match().alive().contains(p("BHTestC").getUUID()) && p("BHTestC").gameMode() == GameType.ADVENTURE);
-		s.run("parkour: A runs to every checkpoint", () -> VARS.put("pk", 0));
-		s.waitFor("parkour: A reaches the finish", 600, () -> {
-			ParkourMatch m = (ParkourMatch) match();
-			if (m.race().hasFinished(p("BHTestA").getUUID())) return true;
-			int step = (int) VARS.get("pk");
-			// Visit the next checkpoint or finish platform every 5 ticks
-			if (m.player(p("BHTestA").getUUID()).level().getServer().getTickCount() % 5 == 0) {
-				int i = step;
-				while (i < m.course().size() && m.course().get(i).checkpoint() == 0) i++;
-				if (i < m.course().size()) {
-					Vec3 top = m.platformTop(i);
-					tp(p("BHTestA"), top.x, top.y + 0.05, top.z);
-					// Simulated players have no client to report that they landed
-					p("BHTestA").setOnGround(true);
-					VARS.put("pk", i + 1);
-				}
-			}
-			return false;
-		});
-		s.check("parkour: best time stored", () -> PlayerStore.get(p("BHTestA").getUUID()).bestTimes.containsKey("parkour"));
+		runCourse(s, "parkour", "BHTestA");
+		s.check("parkour: best time stored for hard", () -> PlayerStore.get(p("BHTestA").getUUID()).bestTimes.containsKey("parkour_hard"));
 		s.run("parkour: the others give up", () -> {
 			for (String n : new String[] {"BHTestB", "BHTestC", "BHTestD"}) net.battlehub.command.HubCommands.hub(p(n));
 		});
 		s.waitFor("parkour: race over", 40, () -> match().phase() != Match.Phase.RUNNING);
 		expectWinner(s, GameMode.PARKOUR, "BHTestA");
+	}
+
+	/** Parkour alone: the race starts with one player, finishing counts as a win and a record on that difficulty. */
+	private static void soloParkour(MinecraftServer server, Script s) {
+		String tag = "solo parkour";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": A joins alone, voting easy", () -> {
+			SelfTest.join(server, "BHTestA");
+			Parties.join(p("BHTestA"), GameMode.PARKOUR, "easy");
+		});
+		s.waitFor(tag + ": the race starts with one player", 300, () -> {
+			Match m = Matches.of(p("BHTestA").getUUID());
+			if (m instanceof ParkourMatch pm && m.phase() == Match.Phase.RUNNING) {
+				VARS.put("match", pm);
+				return true;
+			}
+			return false;
+		});
+		s.check(tag + ": easy course", () -> ((ParkourMatch) match()).difficulty == net.battlehub.core.ParkourCourse.Difficulty.EASY
+				&& match().participants().size() == 1);
+		runCourse(s, tag, "BHTestA");
+		s.waitFor(tag + ": finished, counted as a win", 100, () -> match().phase() != Match.Phase.RUNNING
+				&& match().outcome(p("BHTestA").getUUID()) == Outcome.WIN
+				&& PlayerStore.get(p("BHTestA").getUUID()).bestTimes.containsKey("parkour_easy"));
+		s.waitFor(tag + ": back in the lobby", 200, () -> match().phase() == Match.Phase.CLOSED);
 	}
 
 	private static void lms(Script s) {

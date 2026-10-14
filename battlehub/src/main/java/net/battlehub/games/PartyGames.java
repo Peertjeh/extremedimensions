@@ -25,7 +25,7 @@ public final class PartyGames {
 			case SUMO -> new SumoMatch(id, server, players);
 			case KOTH -> new KothMatch(id, server, players);
 			case CTF -> new CtfMatch(id, server, players);
-			case PARKOUR -> new ParkourMatch(id, server, players);
+			case PARKOUR -> new ParkourMatch(id, server, players, option);
 			case LMS -> new LmsMatch(id, server, players);
 			default -> null;
 		};

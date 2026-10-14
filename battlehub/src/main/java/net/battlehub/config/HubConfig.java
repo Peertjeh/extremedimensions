@@ -205,7 +205,8 @@ public final class HubConfig {
 		m.put("sumo", new Game(2, 10, 240, "sumo"));
 		m.put("koth", new Game(2, 12, 300, "koth").with("targetPoints", 90).with("pointsPerSecond", 1));
 		m.put("ctf", new Game(2, 16, 600, "ctf").with("capturesToWin", 3).with("flagReturnSeconds", 30));
-		m.put("parkour", new Game(2, 16, 420, "parkour").with("jumps", 36).with("checkpointEvery", 9));
+		m.put("parkour", new Game(1, 16, 480, "parkour").with("jumpsEasy", 30).with("jumpsMedium", 50).with("jumpsHard", 70)
+				.with("jumpsExtreme", 90).with("countdownSeconds", 15));
 		m.put("lms", new Game(2, 16, 420, "lms").with("borderStart", 80).with("borderEnd", 8)
 				.with("borderDelaySeconds", 45).with("borderShrinkSeconds", 180).with("borderDamagePerSecond", 2));
 		return m;
@@ -237,6 +238,12 @@ public final class HubConfig {
 			lobby.set = false;
 			lobby.dimension = "battlehub:hub";
 			lobby.voidY = 60;
+			// 1.1: parkour can be played alone, and races are longer
+			if (games != null && games.get("parkour") != null) {
+				Game pk = games.get("parkour");
+				if (pk.minPlayers == 2) pk.minPlayers = 1;
+				if (pk.timeLimitSeconds == 420) pk.timeLimitSeconds = 480;
+			}
 			// Unchanged 1.0 theme lists get the new themes
 			if (arenas != null && arenas.themes != null) {
 				Map<String, List<String>> defs = defaultThemes();
@@ -289,7 +296,8 @@ public final class HubConfig {
 				g.minPlayers = 2;
 				g.maxPlayers = 2;
 			} else {
-				g.minPlayers = Math.max(2, Math.min(16, g.minPlayers));
+				// Parkour can be played alone (practice against your own record)
+				g.minPlayers = Math.max(mode == GameMode.PARKOUR ? 1 : 2, Math.min(16, g.minPlayers));
 				g.maxPlayers = Math.max(g.minPlayers, Math.min(16, g.maxPlayers));
 			}
 		}

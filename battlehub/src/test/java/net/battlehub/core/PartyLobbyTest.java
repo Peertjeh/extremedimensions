@@ -23,6 +23,15 @@ class PartyLobbyTest {
 	}
 
 	@Test
+	void aSoloLobbyStartsWithOnePlayer() {
+		PartyLobby l = new PartyLobby(1, 16, 15, 10);
+		l.join(id(1));
+		PartyLobby.Tick go = runUntil(l, PartyLobby.Event.START, 15 * 20 + 5);
+		assertTrue(go != null);
+		assertEquals(1, go.players().size());
+	}
+
+	@Test
 	void startsAfterCountdownOnceMinimumIsReached() {
 		PartyLobby l = new PartyLobby(2, 4, 10, 3);
 		assertEquals(PartyLobby.JoinResult.JOINED, l.join(id(1)));

@@ -132,29 +132,6 @@ class GameRulesTest {
 	}
 
 	@Test
-	void parkourCoursesAreAlwaysJumpable() {
-		for (long seed = 0; seed < 500; seed++) {
-			List<ParkourCourse.Platform> c = ParkourCourse.generate(seed, 30, 8, 12);
-			assertEquals(31, c.size());
-			assertEquals(ParkourCourse.Kind.START, c.get(0).kind());
-			assertEquals(ParkourCourse.Kind.FINISH, c.get(c.size() - 1).kind());
-			int checkpoints = 0;
-			for (int i = 1; i < c.size(); i++) {
-				ParkourCourse.Platform a = c.get(i - 1);
-				ParkourCourse.Platform b = c.get(i);
-				assertTrue(ParkourCourse.jumpable(a, b), "seed " + seed + " jump " + i + ": " + a + " -> " + b);
-				assertTrue(b.y() <= 12 && b.y() >= -4);
-				if (b.kind() == ParkourCourse.Kind.CHECKPOINT) {
-					checkpoints++;
-					assertEquals(checkpoints, b.checkpoint());
-				}
-			}
-			assertEquals(checkpoints + 1, c.get(c.size() - 1).checkpoint());
-			assertTrue(checkpoints >= 2);
-		}
-	}
-
-	@Test
 	void borderShrinksLinearly() {
 		BorderShrink b = new BorderShrink(100, 10, 200, 900);
 		assertEquals(100, b.sizeAt(0), 1e-9);

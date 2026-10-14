@@ -24,7 +24,34 @@ public final class PartyGameMenu extends Screen {
 
 	@Override
 	public int rows() {
-		return 3;
+		return mode == GameMode.PARKOUR ? 4 : 3;
+	}
+
+	private static final String[] DIFFICULTIES = {"easy", "medium", "hard", "extreme", "random"};
+	private static final String[] DIFFICULTY_ICONS = {"minecraft:lime_concrete", "minecraft:yellow_concrete", "minecraft:orange_concrete",
+			"minecraft:red_concrete", "minecraft:white_concrete"};
+
+	/** Parkour: one button per difficulty; clicking joins the lobby with that vote (or changes the vote). */
+	private void difficulties(Canvas c) {
+		String mine = net.battlehub.queue.Parties.vote(viewer.getUUID(), mode);
+		java.util.Map<String, Integer> counts = new java.util.HashMap<>();
+		for (String v : net.battlehub.queue.Parties.votes(mode)) {
+			counts.merge(v, 1, Integer::sum);
+		}
+		for (int i = 0; i < DIFFICULTIES.length; i++) {
+			String d = DIFFICULTIES[i];
+			boolean chosen = d.equals(mine);
+			Icon icon = Icon.of(DIFFICULTY_ICONS[i]).name(Lang.item(viewer, "parkour.difficulty." + d))
+					.lore(Lang.loreLines(viewer, "parkour.difficulty." + d + ".lore"))
+					.lore(Component.empty())
+					.lore(Lang.lore(viewer, "menu.parkour.votes", counts.getOrDefault(d, 0)))
+					.lore(Lang.lore(viewer, chosen ? "menu.parkour.voted" : "menu.parkour.click_vote"))
+					.glint(chosen);
+			c.set(20 + i, icon.build(), click -> {
+				net.battlehub.queue.Parties.join(viewer, mode, d);
+				new PartyGameMenu(viewer, mode).open();
+			});
+		}
 	}
 
 	@Override
@@ -50,6 +77,9 @@ public final class PartyGameMenu extends Screen {
 						Queues.toggleParty(viewer, mode);
 						new PartyGameMenu(viewer, mode).open();
 					});
+		}
+		if (mode == GameMode.PARKOUR) {
+			difficulties(c);
 		}
 		c.set(15, Icon.of(Items.NAME_TAG).name(Lang.item(viewer, "menu.party.invite"))
 				.lore(Lang.loreLines(viewer, "menu.party.invite.lore")).build(),

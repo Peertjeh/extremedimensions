@@ -12,6 +12,7 @@ import net.battlehub.arena.Theme;
 import net.battlehub.arena.layout.PartyLayouts;
 import net.battlehub.core.GameMode;
 import net.battlehub.core.ParkourCourse;
+import net.battlehub.core.ParkourCourse.Difficulty;
 import net.battlehub.core.ParkourRace;
 import net.battlehub.core.PlayerProfile;
 import net.battlehub.data.PlayerStore;
@@ -25,26 +26,55 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Parkour Race: everyone runs the same generated course. Gold platforms are checkpoints; falling puts you back on
- * your last one. Ranked by finish time; the first to finish wins.
+ * Parkour Race: everyone runs the same course, generated new for every race, in the difficulty the lobby voted for
+ * (easy, medium, hard, extreme or random). Gold platforms are checkpoints; falling puts you back on your last one.
+ * Ranked by finish time; the first to finish wins. Alone it is practice against your own record.
  */
 public final class ParkourMatch extends PartyMatch {
+	public final Difficulty difficulty;
 	private List<ParkourCourse.Platform> course;
 	private ParkourRace race;
 	private int shift;
+	private int raceStart;
 	private final Map<UUID, Integer> lastPlatform = new HashMap<>();
 
-	public ParkourMatch(int id, MinecraftServer server, List<ServerPlayer> players) {
+	public ParkourMatch(int id, MinecraftServer server, List<ServerPlayer> players, String vote) {
 		super(id, GameMode.PARKOUR, server, players);
+		this.difficulty = Difficulty.parse(vote, new java.util.Random(random.nextLong()));
+	}
+
+	public ParkourMatch(int id, MinecraftServer server, List<ServerPlayer> players) {
+		this(id, server, players, "");
+	}
+
+	private static String cap(Difficulty d) {
+		String id = d.id();
+		return Character.toUpperCase(id.charAt(0)) + id.substring(1);
 	}
 
 	@Override
 	protected Blueprint design(Theme theme) {
-		int jumps = (int) Math.max(8, Math.min(120, game().setting("jumps", 36)));
-		int every = (int) Math.max(3, game().setting("checkpointEvery", 9));
-		course = ParkourCourse.generate(random.nextLong(), jumps, every, 12);
+		int jumps = (int) Math.max(8, Math.min(200, game().setting("jumps" + cap(difficulty), difficulty.defaultJumps)));
+		course = ParkourCourse.generate(random.nextLong(), difficulty, jumps, difficulty.checkpointEvery, 14);
 		shift = -(course.get(course.size() - 1).x() / 2);
 		return PartyLayouts.parkour(theme, random, course);
+	}
+
+	@Override
+	protected int minimumToStart() {
+		return 1;
+	}
+
+	/** Longer courses get more time: easy x0.75, medium x1, hard x1.4, extreme x1.8 of the configured limit. */
+	@Override
+	protected int timeLimitTicks() {
+		double factor = switch (difficulty) {
+			case EASY -> 0.75;
+			case MEDIUM -> 1.0;
+			case HARD -> 1.4;
+			case EXTREME -> 1.8;
+		};
+		return (int) (super.timeLimitTicks() * factor);
 	}
 
 	@Override
@@ -56,6 +86,8 @@ public final class ParkourMatch extends PartyMatch {
 	protected void onGo() {
 		raceStart = runTicks;
 		race = new ParkourRace(course.get(course.size() - 1).checkpoint(), runTicks);
+		int jumps = course.size() - 1;
+		forEveryone(p -> Msg.send(p, "parkour.start", Lang.tr(p, "parkour.difficulty." + difficulty.id()), jumps, race.finishIndex() - 1));
 	}
 
 	/** Index in {@link #course} of the platform the player stands on, or -1. */
@@ -71,7 +103,7 @@ public final class ParkourMatch extends PartyMatch {
 			double cx = ox + pl.x() + shift + 0.5;
 			double cz = oz + pl.z() + 0.5;
 			double h = pl.half() + 0.8;
-			if (Math.abs(p.getX() - cx) <= h && Math.abs(p.getZ() - cz) <= h && Math.abs(p.getY() - (oy + pl.y() + 1)) < 0.6) {
+			if (Math.abs(p.getX() - cx) <= h && Math.abs(p.getZ() - cz) <= h && Math.abs(p.getY() - (oy + pl.standY())) < 0.6) {
 				return i;
 			}
 		}
@@ -93,7 +125,7 @@ public final class ParkourMatch extends PartyMatch {
 				ParkourRace.Reach r = race.reach(id, pl.checkpoint(), runTicks);
 				if (r == ParkourRace.Reach.CHECKPOINT) {
 					lastPlatform.put(id, idx);
-					Msg.send(p, "parkour.checkpoint", pl.checkpoint(), race.finishIndex() - 1, time(runTicks - startTick()));
+					Msg.send(p, "parkour.checkpoint", pl.checkpoint(), race.finishIndex() - 1, time(runTicks - raceStart));
 					Msg.sound(p, SoundEvents.EXPERIENCE_ORB_PICKUP, 0.8f, 1.4f);
 				} else if (r == ParkourRace.Reach.FINISH) {
 					lastPlatform.put(id, idx);
@@ -108,7 +140,7 @@ public final class ParkourMatch extends PartyMatch {
 				if (race.hasFinished(id)) {
 					Msg.actionBar(p, "parkour.actionbar_done", time(race.time(id)));
 				} else {
-					Msg.actionBar(p, "parkour.actionbar", time(runTicks - startTick()), race.checkpoint(id), race.finishIndex() - 1);
+					Msg.actionBar(p, "parkour.actionbar", time(runTicks - raceStart), race.checkpoint(id), race.finishIndex() - 1);
 				}
 			}
 		}
@@ -121,11 +153,9 @@ public final class ParkourMatch extends PartyMatch {
 		}
 	}
 
-	private long startTick() {
-		return raceStart;
+	public String bestTimeKey() {
+		return "parkour_" + difficulty.id();
 	}
-
-	private int raceStart;
 
 	private void onFinish(ServerPlayer p) {
 		long ticks = race.time(p.getUUID());
@@ -135,10 +165,10 @@ public final class ParkourMatch extends PartyMatch {
 		Msg.sound(p, SoundEvents.PLAYER_LEVELUP, 1f, 1.2f);
 		PlayerProfile prof = PlayerStore.get(p.getUUID());
 		long ms = ticks * 50;
-		Long best = prof.bestTimes.get("parkour");
+		Long best = prof.bestTimes.get(bestTimeKey());
 		if (best == null || ms < best) {
-			prof.bestTimes.put("parkour", ms);
-			Msg.send(p, "parkour.best", time(ticks));
+			prof.bestTimes.put(bestTimeKey(), ms);
+			Msg.send(p, "parkour.best", time(ticks), Lang.tr(p, "parkour.difficulty." + difficulty.id()));
 		}
 	}
 
@@ -149,9 +179,8 @@ public final class ParkourMatch extends PartyMatch {
 		if (idx == null) {
 			pt = spawnOf.getOrDefault(p.getUUID(), arena.spawn(0));
 		} else {
-			ParkourCourse.Platform pl = course.get(idx);
-			pt = new Arena.Point(new Vec3(arena.origin().getX() + pl.x() + shift + 0.5, arena.origin().getY() + pl.y() + 1,
-					arena.origin().getZ() + pl.z() + 0.5), -90, 0);
+			Vec3 top = platformTop(idx);
+			pt = new Arena.Point(top, -90, 0);
 		}
 		teleport(p, pt);
 		Msg.sound(p, SoundEvents.ENDERMAN_TELEPORT, 0.5f, 1.5f);
@@ -168,14 +197,16 @@ public final class ParkourMatch extends PartyMatch {
 	private void finishRace() {
 		List<UUID> ranking = race.ranking(new ArrayList<>(participants));
 		UUID first = ranking.isEmpty() ? null : ranking.get(0);
-		boolean anyProgress = first != null && (race.hasFinished(first) || race.checkpoint(first) > 0);
+		// Alone, only finishing counts as a win; in a race the furthest player wins if nobody finished
+		boolean solo = participants.size() == 1;
+		boolean won = first != null && (race.hasFinished(first) || (!solo && race.checkpoint(first) > 0));
 		for (int i = 0; i < ranking.size(); i++) {
 			UUID id = ranking.get(i);
 			int place = i + 1;
 			String t = race.hasFinished(id) ? time(race.time(id)) : "-";
 			forEveryone(o -> Msg.send(o, "parkour.rank", place, name(id), t, race.checkpoint(id)));
 		}
-		finish(anyProgress ? List.of(first) : List.of());
+		finish(won ? List.of(first) : List.of());
 	}
 
 	@Override
@@ -197,10 +228,15 @@ public final class ParkourMatch extends PartyMatch {
 		return course;
 	}
 
-	/** World centre of a course platform (for tests). */
+	/** Where a player stands on a course platform (world position). */
 	public Vec3 platformTop(int index) {
 		ParkourCourse.Platform pl = course.get(index);
-		return new Vec3(arena.origin().getX() + pl.x() + shift + 0.5, arena.origin().getY() + pl.y() + 1, arena.origin().getZ() + pl.z() + 0.5);
+		return new Vec3(arena.origin().getX() + pl.x() + shift + 0.5, arena.origin().getY() + pl.standY(), arena.origin().getZ() + pl.z() + 0.5);
+	}
+
+	@Override
+	public Component describe(ServerPlayer viewer) {
+		return Lang.tr(viewer, "parkour.describe", super.describe(viewer), Lang.tr(viewer, "parkour.difficulty." + difficulty.id()));
 	}
 
 	@Override
