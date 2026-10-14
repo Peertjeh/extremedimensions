@@ -48,17 +48,20 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 	public void setupAnim(ElderRenderState s) {
 		super.setupAnim(s);
 		float t = s.ageInTicks;
-		float at = s.actionTime;
+		// Dying, it plays its ultimate once more, ending in the bloom as it breaks apart
+		boolean dying = s.deathTime > 0;
+		int action = dying ? ElderBoss.ULTIMATE : s.action;
+		float at = dying ? s.deathTime * (200F / ElderBoss.DEATH_TICKS) : s.actionTime;
 		float drift = Mth.clamp(s.walkAnimationSpeed * 1.4F, 0, 1);
-		boolean ultimate = s.action == ElderBoss.ULTIMATE;
+		boolean ultimate = action == ElderBoss.ULTIMATE;
 		root.y += Mth.sin(t * 0.05F) * 2.2F;
 		body.zRot += Mth.sin(t * 0.03F) * 0.012F;
 		body.xRot += Mth.sin(t * 0.025F) * 0.01F + 0.05F * drift;
 		head.yRot += Mth.clamp(s.yRot, -45, 45) * Mth.DEG_TO_RAD * 0.5F;
 		head.xRot += Mth.clamp(s.xRot, -30, 30) * Mth.DEG_TO_RAD * 0.4F;
-		float rain = s.action == Weaver.NEEDLES ? ElderAnim.env(at, 14, 12, 14) : 0;
-		float charge = s.action == Weaver.LANCE ? ElderAnim.env(at, 20, 36, 8) : 0;
-		float whirl = s.action == Weaver.THOUSAND ? ElderAnim.env(at, 14, 56, 14) : 0;
+		float rain = action == Weaver.NEEDLES ? ElderAnim.env(at, 14, 12, 14) : 0;
+		float charge = action == Weaver.LANCE ? ElderAnim.env(at, 20, 36, 8) : 0;
+		float whirl = action == Weaver.THOUSAND ? ElderAnim.env(at, 14, 56, 14) : 0;
 		float storm = ultimate ? ElderAnim.env(at, 40, 140, 6) : 0;
 		halo.zRot += t * (0.006F + 0.04F * rain + 0.12F * charge + 0.06F * whirl + 0.14F * storm);
 		float haloSize = 1 + 0.15F * charge + 0.9F * storm;
@@ -95,7 +98,7 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 		handL.zRot += Mth.sin(t * 0.05F) * 0.06F;
 		handR.zRot -= Mth.sin(t * 0.05F + 0.9F) * 0.06F;
 
-		switch (s.action) {
+		switch (action) {
 			case Weaver.THREAD -> {
 				float e = ElderAnim.env(at, 10, 8, 12);
 				armR.xRot -= 0.9F * e;
@@ -160,14 +163,11 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 			default -> {
 			}
 		}
-		if (s.deathTime > 0) {
-			float k = Math.min(1, s.deathTime / 70F);
-			head.xRot += 0.6F * k;
-			body.xRot += 0.3F * k + Mth.sin(t * 2.4F) * 0.03F * k;
-			armL.zRot += 0.9F * k;
-			armR.zRot -= 0.9F * k;
-			halo.y += 40F * k * k;
-			root.y += 14F * k * k;
+		if (dying) {
+			// At the very end it sinks as it breaks apart
+			float sink = ElderAnim.smooth((s.deathTime - ElderBoss.DEATH_TICKS * 0.9F) / (ElderBoss.DEATH_TICKS * 0.1F));
+			root.y += 8F * sink;
 		}
+
 	}
 }

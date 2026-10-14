@@ -27,8 +27,10 @@ public abstract class ElderBoss extends Monster {
 	public static final int IDLE = 0;
 	/** The ultimate (the same for every Elder). */
 	public static final int ULTIMATE = 20;
-	/** Ticks its death takes. */
-	public static final int DEATH_TICKS = 70;
+	/** Ticks its death takes (it dies as it fought its ultimate, ending in the bloom). */
+	public static final int DEATH_TICKS = 100;
+	private static final String[] TITLES = {"gui.extremedimensions.elder.title.matriarch", "gui.extremedimensions.elder.title.ferryman",
+			"gui.extremedimensions.elder.title.weaver"};
 
 	private static final EntityDataAccessor<Integer> ACTION = SynchedEntityData.defineId(ElderBoss.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Float> TEMPO = SynchedEntityData.defineId(ElderBoss.class, EntityDataSerializers.FLOAT);
@@ -100,22 +102,49 @@ public abstract class ElderBoss extends Monster {
 		this.deathTime++;
 		if (this.level() instanceof ServerLevel level) {
 			java.util.concurrent.ThreadLocalRandom rnd = java.util.concurrent.ThreadLocalRandom.current();
+			String dim = ElderFx.dim(this);
 			double w = getBbWidth() * 0.7, h = getBbHeight();
-			if (this.deathTime % 5 == 0) {
+			double k = this.deathTime / (double) DEATH_TICKS;
+			if (this.deathTime == 1) {
+				// The bars close in on its name, and everyone near is made to watch
+				ElderFx.cinema(this, 96, com.extremedimensions.network.ModPackets.BossFxPayload.DEATH, getId(), DEATH_TICKS, TITLES[ElderFx.index(this)]);
+				WorldFx.soundIn(dim, "minecraft:block.beacon.deactivate", "hostile", getX(), getY() + h * 0.6, getZ(), 5f, 0.5f);
+				ElderFx.roar(this, 6f, 0.35f);
+			}
+			if (this.deathTime % 2 == 0) {
+				ElderFx.shake(this, getX(), getZ(), 64, (float) (0.15 + 0.6 * k), 4);
+			}
+			if (k < 0.8) {
+				// Its light is drawn in, as in its ultimate
+				for (int i = 0; i < 4; i++) {
+					double a = rnd.nextDouble() * Math.PI * 2;
+					WorldFx.particleIn(level, "minecraft:reverse_portal", getX() + Math.cos(a) * w * 2, getY() + rnd.nextDouble(0.2, 1.0) * h,
+							getZ() + Math.sin(a) * w * 2, 0.2, 0.2, 0.2, 0.4, 2);
+				}
+				WorldFx.particleIn(level, "minecraft:soul_fire_flame", getX(), getY() + h * 0.6, getZ(), w * 0.4, h * 0.2, w * 0.4, 0.05, 4);
+			}
+			if (this.deathTime % 6 == 0) {
 				// It breaks apart: bursts of light all over its body, louder towards the end
 				double x = getX() + rnd.nextDouble(-w, w), y = getY() + rnd.nextDouble(0.1, 0.95) * h, z = getZ() + rnd.nextDouble(-w, w);
 				WorldFx.particleIn(level, "minecraft:explosion", x, y, z, 0.5, 0.5, 0.5, 0, 1);
-				WorldFx.particleIn(level, "minecraft:soul_fire_flame", x, y, z, 1.2, 1.2, 1.2, 0.08, 30);
 				WorldFx.particleIn(level, "minecraft:end_rod", x, y, z, 1, 1, 1, 0.12, 14);
-				WorldFx.soundIn(ElderFx.dim(this), "minecraft:entity.generic.explode", "hostile", x, y, z, 2.5f, 0.5f + this.deathTime / 140f);
-				ElderFx.shake(this, getX(), getZ(), 48, 0.25f + this.deathTime / 200f, 8);
+				WorldFx.soundIn(dim, "minecraft:entity.generic.explode", "hostile", x, y, z, 2.5f, 0.5f + (float) k * 0.6f);
 			}
-			if (this.deathTime == DEATH_TICKS - 2) {
-				WorldFx.particleIn(level, "minecraft:explosion_emitter", getX(), getY() + h * 0.5, getZ(), 1, 1, 1, 0, 3);
-				WorldFx.particleIn(level, "extremedimensions:soul_mote", getX(), getY() + h * 0.5, getZ(), w, h * 0.4, w, 0.2, 200);
-				WorldFx.soundIn(ElderFx.dim(this), "minecraft:entity.wither.death", "hostile", getX(), getY() + 6, getZ(), 4f, 0.6f);
-				ElderFx.cinema(this, 96, com.extremedimensions.network.ModPackets.BossFxPayload.FLASH, 0, 0.8f, "");
-				ElderFx.shake(this, getX(), getZ(), 64, 1.2f, 30);
+			if (this.deathTime == DEATH_TICKS - 5) {
+				// The bloom
+				WorldFx.particleIn(level, "minecraft:explosion_emitter", getX(), getY() + h * 0.5, getZ(), 1, 1, 1, 0, 4);
+				WorldFx.particleIn(level, "extremedimensions:soul_mote", getX(), getY() + h * 0.5, getZ(), w, h * 0.4, w, 0.25, 220);
+				WorldFx.particleIn(level, "minecraft:soul_fire_flame", getX(), getY() + h * 0.5, getZ(), w, h * 0.4, w, 0.3, 160);
+				for (int r = 4; r <= 24; r += 5) {
+					ElderFx.ring(level, "minecraft:end_rod", getX(), getY() + 0.3, getZ(), r, 18 + r * 3, r * 0.2);
+				}
+				WorldFx.soundIn(dim, "minecraft:entity.wither.death", "hostile", getX(), getY() + 6, getZ(), 5f, 0.6f);
+				WorldFx.soundIn(dim, "minecraft:entity.generic.explode", "hostile", getX(), getY() + 6, getZ(), 5f, 0.4f);
+				ElderFx.cinema(this, 96, com.extremedimensions.network.ModPackets.BossFxPayload.FLASH, 0, 0.9f, "");
+				ElderFx.shake(this, getX(), getZ(), 80, 1.4f, 30);
+			}
+			if (this.deathTime == DEATH_TICKS - 1) {
+				ElderFx.cinema(this, 160, com.extremedimensions.network.ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");
 			}
 			if (this.deathTime >= DEATH_TICKS && !this.isRemoved()) {
 				level.broadcastEntityEvent(this, (byte) 60);

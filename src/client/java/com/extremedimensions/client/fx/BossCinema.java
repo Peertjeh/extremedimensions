@@ -28,6 +28,7 @@ public class BossCinema implements HudElement {
 	private static int moveBoss;
 	private static long ultAt = -1, ultEnd = -1, ultLength = 1;
 	private static String ultKey = "";
+	private static String ultLabel = "gui.extremedimensions.elder.ultimate_label";
 	private static int ultBoss;
 	private static long flashAt = -1;
 	private static float flashStrength;
@@ -59,7 +60,20 @@ public class BossCinema implements HudElement {
 				ultEnd = -1;
 				ultLength = Math.max(1, fx.value()) * 50L;
 				ultKey = fx.key();
+				ultLabel = "gui.extremedimensions.elder.ultimate_label";
 				ultBoss = boss;
+			}
+			case ModPackets.BossFxPayload.DEATH -> {
+				// It dies as it fought its ultimate: the bars close in on its name, and the view is held on it
+				introAt = -1;
+				moveAt = -1;
+				ultAt = now;
+				ultEnd = -1;
+				ultLength = (long) (Math.max(1, fx.strength()) * 50L);
+				ultKey = fx.key();
+				ultLabel = "gui.extremedimensions.elder.vanquished_label";
+				ultBoss = boss;
+				CameraLock.lock(fx.value(), ultLength);
 			}
 			case ModPackets.BossFxPayload.FLASH -> {
 				flashAt = now;
@@ -86,6 +100,7 @@ public class BossCinema implements HudElement {
 		ultAt = -1;
 		ultEnd = -1;
 		flashAt = -1;
+		CameraLock.release();
 	}
 
 	@Override
@@ -194,7 +209,7 @@ public class BossCinema implements HudElement {
 		// Its time runs out along the lower bar
 		int line = (int) (w * (1 - run));
 		g.fill(w / 2 - line / 2, h - bar / 2, w / 2 + line / 2, h - bar / 2 + 1, Ui.argb(0.9 * k, colour));
-		String label = Ui.tr("gui.extremedimensions.elder.ultimate_label");
+		String label = Ui.tr(ultLabel);
 		String name = Ui.tr(ultKey);
 		if (bar > 12) {
 			Ui.centered(g, font, label + "  —  " + name, w / 2, bar / 2 - 4, Ui.mix(0xFFFFFF, colour, 0.3), k);

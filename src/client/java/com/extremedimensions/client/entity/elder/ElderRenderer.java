@@ -63,8 +63,9 @@ public class ElderRenderer<T extends ElderBoss> extends MobRenderer<T, ElderRend
 		boolean calm = com.extremedimensions.client.ui.Ui.calm();
 		state.glow = Math.min(1.0F, calm ? 0.9F : breathe + flare);
 		if (state.deathTime > 0) {
-			// Dying, it burns brighter and brighter until it breaks apart
+			// Dying, it burns at full light until it breaks apart, without the red of a wound
 			state.glow = 1.0F;
+			state.hasRedOverlay = false;
 		}
 	}
 
@@ -88,9 +89,10 @@ public class ElderRenderer<T extends ElderBoss> extends MobRenderer<T, ElderRend
 	@Override
 	protected void scale(ElderRenderState state, PoseStack pose) {
 		float s = this.scale;
-		if (state.action == ElderBoss.ULTIMATE) {
-			// It swells as its ultimate builds, and snaps back as it breaks
-			float t = state.actionTime;
+		boolean dying = state.deathTime > 0;
+		if (state.action == ElderBoss.ULTIMATE || dying) {
+			// It swells as its ultimate builds (and as it dies, which plays its ultimate once more), then snaps back
+			float t = dying ? state.deathTime * (200F / ElderBoss.DEATH_TICKS) : state.actionTime;
 			float grow = ElderAnim.smooth(t / 40F) * (1 - ElderAnim.smooth((t - 190F) / 10F));
 			s *= 1.0F + 0.14F * grow;
 		}

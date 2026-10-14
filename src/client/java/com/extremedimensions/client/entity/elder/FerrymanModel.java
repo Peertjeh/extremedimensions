@@ -48,7 +48,10 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 	public void setupAnim(ElderRenderState s) {
 		super.setupAnim(s);
 		float t = s.ageInTicks;
-		float at = s.actionTime;
+		// Dying, it plays its ultimate once more, ending in the bloom as it breaks apart
+		boolean dying = s.deathTime > 0;
+		int action = dying ? ElderBoss.ULTIMATE : s.action;
+		float at = dying ? s.deathTime * (200F / ElderBoss.DEATH_TICKS) : s.actionTime;
 		float sail = Mth.clamp(s.walkAnimationSpeed * 1.2F, 0, 1);
 		root.y += Mth.sin(t * 0.06F) * 0.8F;
 		boat.zRot += Mth.sin(t * 0.05F) * (0.035F + 0.03F * sail);
@@ -67,8 +70,8 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 			strands[i].zRot += Mth.sin(t * 0.08F + i * 1.6F) * 0.12F;
 			strands[i].xRot += Mth.cos(t * 0.06F + i) * 0.08F + 0.15F * sail;
 		}
-		boolean ultimate = s.action == ElderBoss.ULTIMATE;
-		float lift = s.action == Ferryman.LANTERN ? ElderAnim.env(at, 10, 14, 10) : 0;
+		boolean ultimate = action == ElderBoss.ULTIMATE;
+		float lift = action == Ferryman.LANTERN ? ElderAnim.env(at, 10, 14, 10) : 0;
 		float storm = ultimate ? ElderAnim.env(at, 30, 150, 20) : 0;
 		for (int i = 0; i < lanterns.length; i++) {
 			lanterns[i].zRot += Mth.sin(t * 0.055F + i * 2.1F) * (0.1F + 0.2F * lift + 0.35F * storm);
@@ -86,7 +89,7 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 		armL.zRot += Mth.sin(t * 0.04F) * 0.03F;
 		armR.xRot += Mth.sin(t * 0.035F + 1F) * 0.02F;
 
-		switch (s.action) {
+		switch (action) {
 			case Ferryman.SLAM -> {
 				float wind = ElderAnim.smooth(at / 24F);
 				float down = ElderAnim.smooth((at - 24) / 6F);
@@ -166,14 +169,11 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 			default -> {
 			}
 		}
-		if (s.deathTime > 0) {
-			float k = Math.min(1, s.deathTime / 70F);
-			torso.xRot += 0.5F * k + Mth.sin(t * 2.1F) * 0.03F * k;
-			hood.xRot += 0.5F * k;
-			armL.zRot += 0.9F * k;
-			armR.xRot += 0.6F * k;
-			figure.y += 10F * k * k;
-			boat.zRot += 0.12F * k;
+		if (dying) {
+			// At the very end it sinks as it breaks apart
+			float sink = ElderAnim.smooth((s.deathTime - ElderBoss.DEATH_TICKS * 0.9F) / (ElderBoss.DEATH_TICKS * 0.1F));
+			root.y += 8F * sink;
 		}
+
 	}
 }

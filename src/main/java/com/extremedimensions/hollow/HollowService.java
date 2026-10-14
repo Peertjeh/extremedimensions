@@ -87,6 +87,8 @@ public final class HollowService {
 		int unseen;
 		int stared;
 		int wander;
+		/** Called by the Keeper or the Matriarch: not one of the hoard's own young. */
+		boolean brood;
 	}
 
 	static final class Guard {
@@ -394,8 +396,7 @@ public final class HollowService {
 		if (h == null) {
 			return;
 		}
-		DataStore.hoards().remove(h);
-		DataStore.markDirty();
+		abandon(h);
 		if (p != null) {
 			Advancements.grant(p, Advancements.HOARD_FOUND);
 			Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.HOLLOWS);
@@ -415,6 +416,7 @@ public final class HollowService {
 		}
 		slow = 0;
 		boolean wildCheck = s.getTickCount() % 600 < 20;
+		List<Hoard> wrecked = new ArrayList<>();
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
 			if (p.isSpectator()) {
 				continue;
@@ -427,6 +429,13 @@ public final class HollowService {
 					continue;
 				}
 				double d2 = h.distSq(p.getX(), p.getY(), p.getZ());
+				if (d2 < 96 * 96 && !intact(h)) {
+					// Its barrel is gone (broken, blown up, burnt): the nest is no more
+					if (!wrecked.contains(h)) {
+						wrecked.add(h);
+					}
+					continue;
+				}
 				if (d2 < 96 * 96) {
 					ambience(h, d2);
 				}
@@ -438,6 +447,7 @@ public final class HollowService {
 				wild(p);
 			}
 		}
+		wrecked.forEach(HollowService::abandon);
 		cull(s);
 	}
 
@@ -456,16 +466,16 @@ public final class HollowService {
 		}
 	}
 
-	/** Keeps a few Hollowlings around a hoard someone is near. */
+	/** Keeps a few Hollowlings around a hoard someone is near (fewer for a while after some were killed). */
 	private static void populate(Hoard h) {
 		int count = 0;
 		for (Little st : LITTLES.values()) {
-			if (h.key().equals(st.hoard)) {
+			if (h.key().equals(st.hoard) && !st.brood && st.mode != Mode.COMPANION) {
 				count++;
 			}
 		}
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		if (count >= Config.HOLLOWLINGS_PER_HOARD || rnd.nextInt(3) != 0) {
+		if (count >= youngAllowed(h, System.currentTimeMillis()) || rnd.nextInt(3) != 0) {
 			return;
 		}
 		ServerLevel level = levelOf(h.dim);
@@ -476,6 +486,53 @@ public final class HollowService {
 		Little st = new Little();
 		st.hoard = h.key();
 		spawnLittle(level, spot, st);
+	}
+
+	/** Whether a hoard's barrel still stands (taken as standing where its chunk is not loaded: nothing can have changed). */
+	public static boolean intact(Hoard h) {
+		ServerLevel level = levelOf(h.dim);
+		BlockPos core = new BlockPos(h.x, h.y, h.z);
+		return level == null || !level.isLoaded(core) || level.getBlockState(core).is(Blocks.BARREL);
+	}
+
+	/** The nest is no more: the hoard is struck off and its young scatter into the dark (a companion stays). */
+	private static void abandon(Hoard h) {
+		DataStore.hoards().remove(h);
+		DataStore.markDirty();
+		List<Mob> young = new ArrayList<>();
+		for (Map.Entry<UUID, Little> e : LITTLES.entrySet()) {
+			if (h.key().equals(e.getValue().hoard) && e.getValue().mode != Mode.COMPANION) {
+				ServerLevel level = LEVELS.get(e.getKey());
+				if (level != null && level.getEntity(e.getKey()) instanceof Mob m) {
+					young.add(m);
+				}
+			}
+		}
+		young.forEach(HollowService::fade);
+	}
+
+	/**
+	 * One of a hoard's young was killed. It is replaced only after {@code hollowling_respawn_seconds}, and several
+	 * killed come back one at a time, each a full wait after the last.
+	 */
+	public static void youngLost(Hoard h, long now) {
+		long wait = Math.max(0, Config.HOLLOWLING_RESPAWN_SECONDS) * 1000L;
+		if (h.lost <= 0 || h.youngBack < now) {
+			h.youngBack = now + wait;
+		}
+		h.lost = Math.min(Math.max(1, Config.HOLLOWLINGS_PER_HOARD), h.lost + 1);
+		DataStore.markDirty();
+	}
+
+	/** How many young a hoard may have now: all of them, less those killed and not yet replaced. */
+	public static int youngAllowed(Hoard h, long now) {
+		long wait = Math.max(1, Math.max(0, Config.HOLLOWLING_RESPAWN_SECONDS) * 1000L);
+		while (h.lost > 0 && now >= h.youngBack) {
+			h.lost--;
+			h.youngBack += wait;
+			DataStore.markDirty();
+		}
+		return Math.max(0, Config.HOLLOWLINGS_PER_HOARD - h.lost);
 	}
 
 	private static Hollowling spawnLittle(ServerLevel level, BlockPos pos, Little st) {
@@ -745,6 +802,12 @@ public final class HollowService {
 		LEVELS.remove(h.getUUID());
 		if (st == null) {
 			return;
+		}
+		if (st.mode != Mode.COMPANION && !st.brood && st.hoard != null) {
+			Hoard home = byKey(st.hoard);
+			if (home != null) {
+				youngLost(home, System.currentTimeMillis());
+			}
 		}
 		if (!st.carried.isEmpty()) {
 			h.spawnAtLocation((ServerLevel) h.level(), st.carried);
@@ -1081,6 +1144,7 @@ public final class HollowService {
 			if (spot != null) {
 				Little st = new Little();
 				st.hoard = hoard;
+				st.brood = true;
 				spawnLittle(level, spot, st);
 				WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", spot.getX() + 0.5, spot.getY() + 0.5, spot.getZ() + 0.5, 0.3, 0.4, 0.3, 0.0, 12);
 			}

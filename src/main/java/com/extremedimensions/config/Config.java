@@ -186,6 +186,8 @@ public final class Config {
 	public static double HOARD_WILD_CHANCE = 0.08;
 	/** Hollowlings that play around a hoard someone is near. */
 	public static int HOLLOWLINGS_PER_HOARD = 3;
+	/** Seconds before a killed Hollowling is replaced by another (one at a time, each a full wait after the last). */
+	public static int HOLLOWLING_RESPAWN_SECONDS = 120;
 	/** Chance that a Tether Fragment, offered in soul light, earns a Hollowling's trust. */
 	public static double HOLLOWLING_BOND_CHANCE = 0.4;
 	/** Minutes of play between the things a companion Hollowling brings you. */

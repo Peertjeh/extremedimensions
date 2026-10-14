@@ -46,7 +46,10 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 	public void setupAnim(ElderRenderState s) {
 		super.setupAnim(s);
 		float t = s.ageInTicks;
-		float at = s.actionTime;
+		// Dying, it plays its ultimate once more, ending in the bloom as it breaks apart
+		boolean dying = s.deathTime > 0;
+		int action = dying ? ElderBoss.ULTIMATE : s.action;
+		float at = dying ? s.deathTime * (200F / ElderBoss.DEATH_TICKS) : s.actionTime;
 		float walk = Mth.clamp(s.walkAnimationSpeed * 1.6F, 0, 1);
 		float stride = s.walkAnimationPos * 0.45F;
 		chest.y += Mth.sin(t * 0.04F) * 0.6F;
@@ -63,11 +66,11 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 			robe[i].xRot += Mth.sin(t * 0.05F + i * 0.9F) * 0.025F + walk * 0.12F * (0.6F + 0.4F * Mth.sin(stride * 2 + i));
 			robe[i].zRot += Mth.cos(t * 0.043F + i * 1.3F) * 0.02F;
 		}
-		boolean ultimate = s.action == ElderBoss.ULTIMATE;
-		float shake = s.action == Matriarch.LANTERNS ? ElderAnim.env(at, 6, 18, 8)
-				: s.action == Matriarch.BARRAGE ? ElderAnim.env(at, 10, 36, 10)
+		boolean ultimate = action == ElderBoss.ULTIMATE;
+		float shake = action == Matriarch.LANTERNS ? ElderAnim.env(at, 6, 18, 8)
+				: action == Matriarch.BARRAGE ? ElderAnim.env(at, 10, 36, 10)
 				: ultimate ? ElderAnim.env(at, 30, 150, 20) : 0;
-		float rush = s.action == Matriarch.RUSH ? ElderAnim.env(at - 18, 4, 22, 10) : 0;
+		float rush = action == Matriarch.RUSH ? ElderAnim.env(at - 18, 4, 22, 10) : 0;
 		for (int i = 0; i < moss.length; i++) {
 			moss[i].zRot += Mth.sin(t * 0.07F + i * 1.7F) * (0.09F + 0.2F * shake);
 			moss[i].xRot += Mth.cos(t * 0.055F + i * 0.6F) * 0.07F + 0.55F * rush + 0.15F * walk;
@@ -77,7 +80,7 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 			lanterns[i].zRot += Mth.sin(t * 0.05F + i * 2.3F) * 0.1F + Mth.sin(t * 1.1F + i) * 0.3F * shake + Mth.sin(t * 0.35F + i * 0.8F) * 0.6F * spin;
 			lanterns[i].xRot += Mth.cos(t * 0.041F + i * 1.1F) * 0.07F + 0.6F * rush + Mth.cos(t * 0.35F + i * 0.8F) * 0.6F * spin;
 		}
-		float spread = s.action == Matriarch.BARRAGE ? ElderAnim.env(at, 16, 30, 12) : ultimate ? ElderAnim.env(at - 30, 60, 100, 10) : 0;
+		float spread = action == Matriarch.BARRAGE ? ElderAnim.env(at, 16, 30, 12) : ultimate ? ElderAnim.env(at - 30, 60, 100, 10) : 0;
 		for (int i = 0; i < branches.length; i++) {
 			float side = (i % 2 == 0) ? 1 : -1;
 			branches[i].zRot += Mth.sin(t * 0.025F + i) * 0.015F + Mth.sin(t * 1.3F + i) * 0.07F * shake - side * 0.25F * spread;
@@ -88,7 +91,7 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 		handL.xRot += Mth.sin(t * 0.06F) * 0.06F;
 		handR.xRot += Mth.sin(t * 0.06F + 0.8F) * 0.06F;
 
-		switch (s.action) {
+		switch (action) {
 			case Matriarch.SWEEP -> {
 				// Back and up, then across in front of her, then home
 				float wind = ElderAnim.smooth(at / 18F);
@@ -184,17 +187,12 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 			default -> {
 			}
 		}
-		if (s.deathTime > 0) {
-			float k = Math.min(1, s.deathTime / 70F);
-			chest.xRot += 0.45F * k + Mth.sin(t * 2.3F) * 0.03F * k;
-			head.xRot += 0.6F * k;
-			armL.xRot += 0.9F * k;
-			armR.xRot += 0.9F * k;
-			armL.zRot += 0.3F * k;
-			armR.zRot -= 0.3F * k;
-			root.y += 7F * k * k;
-			crown.xRot += 0.3F * k;
+		if (dying) {
+			// At the very end it sinks as it breaks apart
+			float sink = ElderAnim.smooth((s.deathTime - ElderBoss.DEATH_TICKS * 0.9F) / (ElderBoss.DEATH_TICKS * 0.1F));
+			root.y += 8F * sink;
 		}
+
 	}
 
 	/** The Verdant Requiem on its 200-tick timeline. */

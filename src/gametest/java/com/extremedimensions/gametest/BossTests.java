@@ -5,6 +5,7 @@ import static com.extremedimensions.gametest.CurseTests.cursed;
 
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
+import com.extremedimensions.data.Hoard;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.elder.ElderTerrain;
 import com.extremedimensions.elder.ElderUltimate;
@@ -15,6 +16,7 @@ import com.extremedimensions.hollow.HollowService;
 import com.extremedimensions.mending.MendingService;
 import com.extremedimensions.mending.StarvedOne;
 import com.extremedimensions.penalty.Penalty;
+import com.extremedimensions.server.Dims;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
@@ -200,5 +202,40 @@ public class BossTests {
 			check(helper, level.getBlockState(ground.above()).isAir() && level.getBlockState(ground.above(3)).isAir(), "the thorns did not sink back");
 			helper.succeed();
 		});
+	}
+
+	@GameTest
+	public void aKilledHollowlingComesBackOnlyAfterAWhile(GameTestHelper helper) {
+		int per = Config.HOLLOWLINGS_PER_HOARD, secs = Config.HOLLOWLING_RESPAWN_SECONDS;
+		try {
+			Config.HOLLOWLINGS_PER_HOARD = 3;
+			Config.HOLLOWLING_RESPAWN_SECONDS = 120;
+			Hoard h = new Hoard(Dims.OVERWORLD, 0, 64, 0, "");
+			long now = 1_000_000L;
+			check(helper, HollowService.youngAllowed(h, now) == 3, "a whole hoard has %s young", HollowService.youngAllowed(h, now));
+			HollowService.youngLost(h, now);
+			HollowService.youngLost(h, now);
+			check(helper, HollowService.youngAllowed(h, now + 1000) == 1, "two killed, yet %s may play", HollowService.youngAllowed(h, now + 1000));
+			check(helper, HollowService.youngAllowed(h, now + 119_000) == 1, "one came back before two minutes");
+			check(helper, HollowService.youngAllowed(h, now + 121_000) == 2, "none came back after two minutes");
+			check(helper, HollowService.youngAllowed(h, now + 200_000) == 2, "the second came back without its own wait");
+			check(helper, HollowService.youngAllowed(h, now + 241_000) == 3, "the second did not come back after another two minutes");
+		} finally {
+			Config.HOLLOWLINGS_PER_HOARD = per;
+			Config.HOLLOWLING_RESPAWN_SECONDS = secs;
+		}
+		helper.succeed();
+	}
+
+	@GameTest
+	public void aNestWithoutItsBarrelIsNoMore(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos core = helper.absolutePos(new BlockPos(3, 1, 3));
+		Hoard h = new Hoard(Dims.of(level), core.getX(), core.getY(), core.getZ(), "");
+		level.setBlock(core, Blocks.BARREL.defaultBlockState(), 3);
+		check(helper, HollowService.intact(h), "a hoard with its barrel counts as wrecked");
+		level.setBlock(core, Blocks.AIR.defaultBlockState(), 3);
+		check(helper, !HollowService.intact(h), "a hoard without its barrel still counts as a nest");
+		helper.succeed();
 	}
 }

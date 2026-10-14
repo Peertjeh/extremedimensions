@@ -69,9 +69,12 @@ public class ClientShots implements FabricClientGameTest {
 		ctx.waitTicks(75);
 		face(sp, name);
 		sp.getServer().runCommand("kill @e[type=extremedimensions:" + name + "]");
-		ctx.waitTicks(35);
+		ctx.waitTicks(30);
+		ctx.runOnClient(mc -> check(com.extremedimensions.client.fx.CameraLock.locked(), "the view is not held on the dying " + name));
 		ctx.takeScreenshot("12_fight_" + name + "_death");
-		ctx.waitTicks(50);
+		ctx.waitTicks(66);
+		ctx.takeScreenshot("12_fight_" + name + "_death_bloom");
+		ctx.waitTicks(30);
 	}
 
 	private static java.util.List<com.extremedimensions.elder.ElderBoss> elders(MinecraftServer s) {

@@ -411,8 +411,9 @@ public final class ModPackets {
 	 * Server -> client: the cinema of an Elder's fight. {@code kind}: 0 = its title card as it arrives, 1 = the screen
 	 * shakes ({@code strength}, for {@code value} ticks), 2 = the name of a great blow ({@code key}), 3 = its ultimate
 	 * begins ({@code key} its name, {@code value} ticks long: black bars, its name, a gathering dark), 4 = a flash of
-	 * light ({@code strength}), 5 = the ultimate breaks (the bars lift). {@code boss}: 0 the Matriarch, 1 the
-	 * Ferryman, 2 the Last Weaver.
+	 * light ({@code strength}), 5 = the ultimate breaks (the bars lift), 6 = it dies ({@code value} its entity id,
+	 * {@code strength} the ticks its death takes, {@code key} its title: the bars close in and the view is held on it).
+	 * {@code boss}: 0 the Matriarch, 1 the Ferryman, 2 the Last Weaver.
 	 */
 	public record BossFxPayload(int kind, int boss, int value, float strength, String key) implements CustomPacketPayload {
 		public static final int INTRO = 0;
@@ -421,6 +422,7 @@ public final class ModPackets {
 		public static final int ULTIMATE = 3;
 		public static final int FLASH = 4;
 		public static final int ULTIMATE_END = 5;
+		public static final int DEATH = 6;
 		public static final Type<BossFxPayload> TYPE = new Type<>(ExtremeDimensions.id("boss_fx"));
 		public static final StreamCodec<FriendlyByteBuf, BossFxPayload> CODEC = StreamCodec.ofMember(BossFxPayload::write, BossFxPayload::read);
 

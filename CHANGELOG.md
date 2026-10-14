@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.13.1: Their Last Moment
+
+### Changed
+- **An Elder dies as it fought its ultimate**: the black bars close in on its name (*Vanquished*), it plays its
+  ultimate once more as it breaks apart, and it ends in the bloom. The view of everyone near is held on it for the
+  five seconds it takes (the camera swings round to it, then follows it); you are free again as it vanishes. It no
+  longer turns red as it dies.
+
+### Fixed
+- **A wrecked nest stays wrecked**: as soon as a hoard's barrel is gone, however it went (broken, blown up by an
+  Elder or a creeper, burnt), the hoard is no more and its young scatter into the dark. Before, a barrel lost any way
+  other than by a player's hand left the hoard standing and its young kept coming.
+- **Killed Hollowlings come back slowly**: a killed Hollowling is replaced only after two minutes, and several killed
+  come back one at a time, each two minutes after the last (`hollowling_respawn_seconds`). Before, they were back
+  within seconds. Young that only wandered off while nobody was near still return at once.
+
 ## 2.13.0: Wrath of the Elders
 
 *They were vast. Now they fight like it.*
