@@ -198,11 +198,20 @@ public final class WorldFx {
 	public static void title(ServerPlayer p, String titleKey, String color, String subtitleKey, String subtitleArgKey) {
 		Component subtitle = subtitleArgKey == null ? Component.translatable(subtitleKey)
 				: Component.translatable(subtitleKey, Component.translatable(subtitleArgKey));
-		ChatFormatting tint = ChatFormatting.getByName(color);
+		ChatFormatting tint = formatting(color);
 		p.connection.send(new ClientboundSetTitlesAnimationPacket(10, 70, 25));
 		p.connection.send(new ClientboundSetSubtitleTextPacket(subtitle.copy().withStyle(ChatFormatting.GRAY)));
 		p.connection.send(new ClientboundSetTitleTextPacket(Component.translatable(titleKey)
-				.withStyle(tint == null ? ChatFormatting.WHITE : tint, ChatFormatting.BOLD)));
+				.withStyle(tint, ChatFormatting.BOLD)));
+	}
+
+	/** A chat colour by its name ({@code "dark_purple"}); white if unknown. */
+	private static ChatFormatting formatting(String name) {
+		try {
+			return ChatFormatting.valueOf(name.toUpperCase(Locale.ROOT));
+		} catch (IllegalArgumentException e) {
+			return ChatFormatting.WHITE;
+		}
 	}
 
 	public static void tp(ServerPlayer p, String dim, double x, double y, double z) {
