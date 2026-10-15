@@ -60,6 +60,10 @@ public class ElderRenderer<T extends ElderBoss> extends MobRenderer<T, ElderRend
 		if (action == ElderBoss.ULTIMATE) {
 			flare = 0.3F + 0.15F * Mth.sin(now * 0.6F);
 		}
+		if (action == ElderBoss.SPAWN) {
+			// Still more light than matter as it forms
+			flare = 0.4F;
+		}
 		boolean calm = com.extremedimensions.client.ui.Ui.calm();
 		state.glow = Math.min(1.0F, calm ? 0.9F : breathe + flare);
 		if (state.deathTime > 0) {

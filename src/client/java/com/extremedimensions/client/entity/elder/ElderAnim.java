@@ -26,6 +26,22 @@ final class ElderAnim {
 		return 1 - smooth((t - in - hold) / out);
 	}
 
+	/** Back to its own size (every frame, before an animation scales it: a pose need not reset the scale). */
+	static void reset(ModelPart... parts) {
+		for (ModelPart p : parts) {
+			p.xScale = 1;
+			p.yScale = 1;
+			p.zScale = 1;
+		}
+	}
+
+	/** Scales a part by {@code k} on top of whatever it is scaled by already. */
+	static void scale(ModelPart p, float k) {
+		p.xScale *= k;
+		p.yScale *= k;
+		p.zScale *= k;
+	}
+
 	interface Finder {
 		ModelPart find(ModelPart root, String name);
 	}

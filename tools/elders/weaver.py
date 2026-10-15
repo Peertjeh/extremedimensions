@@ -1,9 +1,11 @@
 """The Last Weaver: a towering, crowned figure in layered robes, arms spread wide. A black under-robe rots into tatters
 beneath a violet over-robe hemmed in gilt and open at the front on an embroidered tabard; a cape falls from its
-shoulders under a mantle and lacquered pauldrons, and a high pointed collar frames a porcelain mask with a cross of light
-for an eye, veiled under a crown of thorns and needles. A spindle burns at its breast where the mantle is clasped.
-Glowing threads run from its long, ringed fingers, sagging into loops, back to its heart and down to hanging lanterns;
-spools turn at its hips, a ring of great needles circles it, and a halo of runes and needles turns behind its head."""
+shoulders under a mantle and lacquered pauldrons, and a high pointed collar frames its head: a mask of dark carved stone
+coming to a point at the chin, a tall diamond of an eye cut like a gem and set in gilt, brows swept up from it and
+plates over the cheeks (fine parts, four pixels to a model pixel), under a gothic mitre and a fan of spires and needles,
+veiled. A spindle burns at its breast where the mantle is clasped. Glowing threads run from its long, ringed fingers,
+sagging into loops, back to its heart and down to hanging lanterns; spools turn at its hips, a ring of great needles
+circles it, and a halo of runes and needles turns behind its head."""
 import math
 
 from elderlib import Model, catenary, rot_zyx, transpose
@@ -27,12 +29,15 @@ def build():
     m = Model("Weaver", 1024, 1024, seed=97)
     R = m.part("root", None, (0, 24, 0), anim=True)
     body = m.part("body", R, (0, 0, 0), anim=True)
-    _robe(m, body)
-    _sash(m, body)
+    # Each of body, torso and head keeps its own boxes in a "core" child, so the halo can show before the rest as it
+    # is woven (see WeaverModel)
+    core = m.part("bodycore", body, (0, 0, 0), anim=True)
+    _robe(m, body, core)
+    _sash(m, body, core)
     torso = m.part("torso", body, (0, -120, 0), anim=True)
-    _torso(m, torso)
+    _torso(m, torso, m.part("torsocore", torso, (0, 0, 0), anim=True))
     head = m.part("head", torso, (0, -28, 0), anim=True)
-    _head(m, head)
+    _head(m, m.part("headcore", head, (0, 0, 0), anim=True))
     _halo(m, head)
     for side, sx in (("l", 1), ("r", -1)):
         _arm(m, torso, side, sx)
@@ -43,11 +48,11 @@ def build():
 # ----------------------------------------------------------------------------- the robes
 
 
-def _robe(m, body):
+def _robe(m, body, core):
     """An under-robe of black tatters, a violet over-robe open at the front on an embroidered tabard, and a cape from
     the shoulders: long strips that sway (group robe)."""
-    m.box(body, -9, -120, -7, 18, 60, 14, "weave_under")
-    m.box(body, -11, -60, -9, 22, 58, 18, "weave_under")
+    m.box(core, -9, -120, -7, 18, 60, 14, "weave_under")
+    m.box(core, -11, -60, -9, 22, 58, 18, "weave_under")
     for i in range(28):
         a = TAU * i / 28 + 0.05 * (i % 3)
         length = 118 + (i * 11) % 14
@@ -79,25 +84,25 @@ def _robe(m, body):
         m.box(lo, -4.3, hem, -1.3, 8.6, 5, 2.6, "weave_trim")
 
 
-def _sash(m, body):
+def _sash(m, body, core):
     """A sash with a glowing cord, knotted at the front with embroidered tails, charms on short threads, and a spool
     turning on a bracket at each hip."""
-    m.box(body, -13, -125, -9.5, 26, 6, 19, "weave_trim")
-    m.box(body, -13.4, -119.5, -9.9, 26.8, 1.0, 19.8, "thread")
-    m.box(body, -7.4, -126.2, -11.6, 4.8, 5.8, 2.4, "weave_lacquer")
-    m.box(body, -8.6, -125.0, -11.0, 7.2, 3.4, 1.6, "weave_lacquer")
+    m.box(core, -13, -125, -9.5, 26, 6, 19, "weave_trim")
+    m.box(core, -13.4, -119.5, -9.9, 26.8, 1.0, 19.8, "thread")
+    m.box(core, -7.4, -126.2, -11.6, 4.8, 5.8, 2.4, "weave_lacquer")
+    m.box(core, -8.6, -125.0, -11.0, 7.2, 3.4, 1.6, "weave_lacquer")
     for j, (x, length, zr) in enumerate([(-6.6, 58, 0.06), (-3.6, 47, -0.05)]):
         t = m.part(f"sash_{j}", body, (x, -122, -10.4), (-0.16, 0, zr), group="robe")
         m.box(t, -1.7, 0, -0.5, 3.4, length, 1.0, "weave_lacquer")
         m.box(t, -2.0, length - 5, -0.8, 4.0, 5, 1.6, "weave_trim")
         m.strand(f"tassel_{j}", t, (0, length, 0), 5 + 2 * j, 0.6, "thread")
     for j, (x, length, charm) in enumerate([(6.6, 4.5, "glass"), (9.2, 3.0, "bone"), (11.6, 4.0, "glass")]):
-        c = m.strand(f"charm_{j}", body, (x, -119.2, -10.6), length, 0.5, "thread")
+        c = m.strand(f"charm_{j}", core, (x, -119.2, -10.6), length, 0.5, "thread")
         m.box(c, -0.6, length - 0.3, -0.6, 1.2, 0.6, 1.2, "gild")
         m.box(c, -0.9, length + 0.3, -0.9, 1.8, 2.2, 1.8, charm)
     for side, sx in (("l", 1), ("r", -1)):
-        m.box(body, 12.6 if sx > 0 else -22.6, -122.2, -4.6, 10, 1.2, 1.2, "iron")
-        m.box(body, sx * 22 - 0.3, -122.2, -4.3, 0.6, 3.6, 0.6, "iron")
+        m.box(core, 12.6 if sx > 0 else -22.6, -122.2, -4.6, 10, 1.2, 1.2, "iron")
+        m.box(core, sx * 22 - 0.3, -122.2, -4.3, 0.6, 3.6, 0.6, "iron")
         sp = m.part(f"spool_{side}", body, (sx * 22, -110, -4), anim=True)
         # a great needle threaded through the spool: its eye hangs on the hook, its point juts out below
         m.box(sp, -0.85, -10.2, -0.6, 0.5, 3.4, 1.2, "silver")
@@ -116,9 +121,9 @@ def _sash(m, body):
 # ----------------------------------------------------------------------------- the torso
 
 
-def _torso(m, t):
+def _torso(m, torso, t):
     """A laced bodice between the bands of a stole, a spindle brooch clasping the mantle, swags of beads, a high
-    pointed collar."""
+    pointed collar (all in the torso's core but the mantle, which ripples on its own)."""
     m.box(t, -11, -28, -6.5, 22, 28, 13, "weave")
     for sx in (1, -1):
         m.box(t, 4.75 if sx > 0 else -9.75, -28.4, -7.5, 5, 27, 1.1, "weave_runes")
@@ -151,7 +156,7 @@ def _torso(m, t):
         if abs(math.sin(a)) > 0.88:
             continue  # the pauldrons cover the shoulders
         length = 23 + (i * 5) % 8 if math.cos(a) < 0.3 else 15 + (i * 3) % 4
-        sm = m.part(f"wmantle_{i}", t, (13 * math.sin(a), -27.5, 8 * math.cos(a)), (0.8, a, 0), group="mantle")
+        sm = m.part(f"wmantle_{i}", torso, (13 * math.sin(a), -27.5, 8 * math.cos(a)), (0.8, a, 0), group="mantle")
         m.box(sm, -4, 0, -0.8, 8, length, 1.6, "weave_ragged")
         m.box(sm, -4.3, length - 11, -1.1, 8.6, 5, 2.2, "weave_trim")
     # a high collar of lacquered points round the back of the head
@@ -182,61 +187,91 @@ def _needle(m, part, y0, length, thick, point_up=True):
 
 
 def _head(m, head):
-    """A hood with a lacquered rim, a porcelain mask with a cross of light, a gilt crown of thorns and needles, and a
-    veil of gauze and thread."""
+    """A hood with a lacquered rim round a mask of dark carved stone, shaped like a shield coming to a point at the
+    chin. On it a tall diamond of an eye cut like a gem and set in gilt, brows swept up from it, plates laid over the
+    cheeks, a ridge lit by a thread of light; a slit of light runs up from the eye to the crown. Over the gilt band of
+    the crown a fan of gothic spires and needles, the middle one tallest; a veil of gauze and thread falls from it.
+    The mask, the eye and the spires are fine parts (four pixels to a model pixel). Everything here is in the head's
+    core."""
+    F = 0.25
     m.box(head, -8.5, -22, -5, 17, 22, 13, "weave")
     for sx in (1, -1):
         m.box(head, 7.0 if sx > 0 else -9.4, -21.6, -6.8, 2.4, 21.6, 2.4, "weave_lacquer")
     m.box(head, -9.4, -21.6, -6.8, 18.8, 2.2, 2.4, "weave_lacquer")
+    # the dark inside of the hood round the mask
+    m.box(head, -7.0, -19.6, -5.7, 14, 19.4, 0.7, "socket")
     # the mask
-    m.box(head, -6.5, -18, -7.4, 13, 17, 2, "porcelain")
-    m.box(head, -6.9, -19.4, -8.0, 13.8, 1.4, 1.4, "porcelain")
+    mask = m.part("mask", head, (0, 0, 0), scale=F)
+    m.box(mask, -6.6, -19.4, -6.6, 13.2, 19.2, 0.75, "mask_carved")
+    # brows swept up and out from the eye
     for side, sx in (("l", 1), ("r", -1)):
-        ch = m.part(f"cheek_{side}", head, (6.0 * sx, -9, -6.6), (0, -0.5 * sx, 0))
-        m.box(ch, -1.3, -7.5, -0.8, 2.6, 14, 1.6, "porcelain")
-    chin = m.part("chin", head, (0, -1.2, -6.5), (0, 0, math.pi / 4))
-    m.box(chin, -2.4, -2.4, -0.8, 4.8, 4.8, 1.6, "porcelain")
-    # the eye: a cross of light set in a dark groove
-    m.box(head, -0.9, -16.5, -8.2, 1.8, 13, 0.6, "eye")
-    m.box(head, -5.2, -11.5, -8.2, 10.4, 1.8, 0.6, "eye")
-    m.box(head, -1.8, -12.4, -8.5, 3.6, 3.6, 0.6, "glowcore")
-    m.box(head, -1.5, -17.1, -7.8, 3.0, 14.2, 0.5, "socket")
-    m.box(head, -5.8, -12.1, -7.8, 11.6, 3.0, 0.5, "socket")
-    # the crown: a gilt band with gems and points, a fan of thorns and needles
+        br = m.part(f"brow_{side}", head, (sx * 4.1, -16.0, -6.95), (0, 0.18 * sx, -0.42 * sx), scale=F)
+        m.box(br, -3.3, -0.75, -0.45, 6.6, 1.5, 0.9, "mask_ridge")
+        br2 = m.part(f"browh_{side}", head, (sx * 5.6, -17.6, -6.85), (0, 0.24 * sx, -0.62 * sx), scale=F)
+        m.box(br2, -1.9, -0.5, -0.35, 3.8, 1.0, 0.7, "mask_ridge")
+        # plates over the cheeks, one under another, turned back along the face
+        for j in range(3):
+            cl = m.part(f"cheekl_{side}{j}", head, (sx * (4.4 - 0.35 * j), -8.4 + 2.4 * j, -6.75 + 0.12 * j),
+                        (0, -0.38 * sx, 0.2 * sx), scale=F)
+            m.box(cl, -2.2 + 0.2 * j, -0.85, -0.4, 4.4 - 0.4 * j, 1.7, 0.8, "mask_ridge")
+        # a fang of carved stone at each side of the chin
+        fg = m.part(f"fang_{side}", head, (sx * 2.2, -3.2, -6.6), (0, -0.2 * sx, 0.3 * sx), scale=F)
+        m.box(fg, -0.45, -1.6, -0.4, 0.9, 3.6, 0.8, "mask_ridge")
+    # a ridge lit by a thread of light, from under the eye to the chin
+    rd = m.part("ridge", head, (0, -2.9, -6.85), scale=F)
+    m.box(rd, -0.5, -2.6, -0.4, 1.0, 5.0, 0.8, "mask_ridge_lit")
+    # the eye, in a gilt frame along the diamond's edges
+    ey = m.part("eye", head, (0, -10.4, -6.95), scale=F)
+    m.box(ey, -3.0, -4.8, -0.35, 6.0, 9.6, 0.4, "eye_lozenge")
+    a, b = 3.25, 5.2
+    side_len = math.hypot(a, b)
+    tilt = math.atan2(a, b)
+    for k, (sx, sy) in enumerate(((1, 1), (1, -1), (-1, 1), (-1, -1))):
+        fr = m.part(f"eyeframe_{k}", head, (sx * a / 2, -10.4 + sy * b / 2, -7.0), (0, 0, sx * sy * tilt), scale=F)
+        m.box(fr, -0.3, -side_len / 2 - 0.2, -0.35, 0.6, side_len + 0.4, 0.7, "gild")
+    # a slit of light from the eye up to the crown
+    ray = m.part("eyeray", head, (0, 0, 0), scale=F)
+    m.box(ray, -0.25, -19.4, -6.95, 0.5, 3.6, 0.35, "eye")
+    m.box(ray, -0.6, -19.8, -7.05, 1.2, 0.6, 0.5, "gild")
+    # the crown: a gilt band with gems, then a fan of gothic spires with needles between them
     m.box(head, -9.3, -24.6, -5.9, 18.6, 3.8, 14.8, "gild")
     gem = m.part("crowngem", head, (0, -23.2, -5.9), (0, 0, math.pi / 4))
     m.box(gem, -1.2, -1.2, -0.7, 2.4, 2.4, 0.9, "glass")
     for sx in (1, -1):
         m.box(head, sx * 5 - 0.7, -23.9, -6.5, 1.4, 1.4, 0.8, "glass")
-    for j, x in enumerate((-7.5, -2.5, 2.5, 7.5)):
-        pt = m.part(f"crownpt_{j}", head, (x, -24.6, -5.3), (0, 0, math.pi / 4))
-        m.box(pt, -1.3, -1.3, -0.45, 2.6, 2.6, 0.9, "gild")
-    for k in range(11):
-        a = -1.25 + 2.5 * k / 10
-        at = (8 * math.sin(a), -23, 1 + 5 * (1 - math.cos(a)))
-        if k % 2:
-            nd = m.part(f"wcrown{k}_0", head, at, (-0.18, 0, a * 0.7))
-            _needle(m, nd, 1, 30 - abs(k - 5) * 2.6, 1.7)
-            continue
-        lens = [14 - abs(k - 5) * 1.2, 11 - abs(k - 5), 8 - abs(k - 5) * 0.6]
-        segs = m.chain_of(f"wcrown{k}_", head, at, [(-0.25, 0, a * 0.75), (0.1, 0, a * 0.18), (0.12, 0, a * 0.15)],
-                          lens, [2.8, 2.0, 1.2], ["bark", "bark", "bone_dark"])
-        for j, seg in enumerate(segs[:2]):
-            sgn = 1 if (k + j) % 2 else -1
-            th = m.part(f"wthorn{k}_{j}", seg, (0, -lens[j] * 0.55, 0), (0.2, 0, 1.0 * sgn))
-            m.box(th, -0.45, -3.4, -0.45, 0.9, 3.4, 0.9, "bone_dark")
+    # a tall pointed mitre of carved stone behind the spires, a slit of light up its middle
+    mitre = m.part("mitre", head, (0, -24.0, 2.6), (-0.1, 0, 0), scale=F)
+    m.box(mitre, -7.5, -24, -0.4, 15, 24, 0.8, "mitre")
+    for k in range(9):
+        a = -1.2 + 2.4 * k / 8
+        h = 30 - abs(k - 4) * 4.6
+        sp = m.part(f"spire_{k}", head, (8.2 * math.sin(a), -24.2, 0.5 + 5.4 * (1 - math.cos(a))), (-0.14, 0, a * 0.42), scale=F)
+        w = 3.5 - abs(k - 4) * 0.24
+        y = 0.0
+        for frac, ww in ((0.16, 1.0), (0.42, 0.72), (0.26, 0.48), (0.16, 0.22)):
+            seg = h * frac
+            m.box(sp, -w * ww / 2, y - seg, -w * ww / 2, w * ww, seg, w * ww, "spire")
+            y -= seg
+            if ww > 0.3:
+                m.box(sp, -w * ww * 0.62, y - 0.35, -w * ww * 0.62, w * ww * 1.24, 0.7, w * ww * 1.24, "gild")
+        # buttresses at its foot
+        m.box(sp, -w * 0.75, -h * 0.1, -w * 0.3, w * 1.5, h * 0.1, w * 0.6, "spire")
+        if k % 2 == 1:
+            nd = m.part(f"crownneedle_{k}", head, (8.6 * math.sin(a + 0.15), -23.6, 1.5 + 5.6 * (1 - math.cos(a + 0.15))),
+                        (-0.22, 0, (a + 0.15) * 0.55), scale=F)
+            _needle(m, nd, 0, h * 0.8, 0.9)
     # the veil: gauze and glowing thread from the band round the sides and back (group veil)
     pts = [(9.0 * sx, -4.2 + 10.2 * j / 7) for sx in (1, -1) for j in range(8)] + [(-7.6 + 15.2 * j / 9, 8.6) for j in range(10)]
     for i, (x, z) in enumerate(pts):
         back = z > 8
         length = (14 + (i * 7) % 7) if back else (13 + (i * 5) % 7)
-        glow = i % 3 == 1
+        glow = i % 4 == 1
         m.strand(f"veil_{i}", head, (x, -20.9, z), length, 0.5 if glow else 1.0, "thread" if glow else "veil", group="veil")
     # in front, the veil parts round the mask and falls to the collar
     for j in range(10):
         sx, r = (1, -1)[j % 2], j // 2
-        glow = r % 2 == 1
-        m.strand(f"veilf_{j}", head, (sx * (7.3 + 0.7 * r), -20.6, -7.5 - 0.15 * r), 15 + 1.0 * r, 0.5 if glow else 0.9,
+        glow = r == 3
+        m.strand(f"veilf_{j}", head, (sx * (8.0 + 0.55 * r), -20.6, -7.2 + 0.25 * r), 15 + 1.0 * r, 0.5 if glow else 0.9,
                  "thread" if glow else "veil", group="veil")
     for j, sx in enumerate((1, -1)):
         c = m.strand(f"crowncharm_{j}", head, (9.9 * sx, -21.4, -5.4), 6, 0.5, "thread")

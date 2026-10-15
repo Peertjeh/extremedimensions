@@ -4,7 +4,9 @@
 	"package": "com.extremedimensions.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
+		"BlockDisplayAccess",
 		"CursedPlayerMixin",
+		"DisplayAccess",
 		"NaturalSpawnMixin",
 		"SealedInventoryMixin",
 		"SealedSlotMixin",

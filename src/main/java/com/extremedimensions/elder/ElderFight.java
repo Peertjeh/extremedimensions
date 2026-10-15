@@ -37,9 +37,9 @@ abstract class ElderFight {
 		bar.addPlayer(first);
 	}
 
-	/** Its bar follows its health, and everyone who comes near sees it. */
+	/** Its bar follows its health (filling while it forms), and everyone who comes near sees it. */
 	void keepBar(ElderBoss b) {
-		bar.setProgress(b.getHealth() / b.getMaxHealth());
+		bar.setProgress(action == ElderBoss.SPAWN ? (float) Math.min(1, beat.t / ElderSpawn.length()) : b.getHealth() / b.getMaxHealth());
 		if (ticks % 20 == 0) {
 			for (ServerPlayer q : level.players()) {
 				if (q.distanceToSqr(b) < 64 * 64) {
@@ -69,13 +69,13 @@ abstract class ElderFight {
 		action = a;
 		beat.reset();
 		b.setAction(a);
-		// The client plays the ultimate on a 200-tick timeline, whatever its length
-		b.setTempo(a == ElderBoss.ULTIMATE ? 200.0F / ElderUltimate.length() : (float) tempo());
+		// The client plays the ultimate on a 200-tick timeline and the forming on a 140-tick one, whatever their length
+		b.setTempo(a == ElderBoss.ULTIMATE ? 200.0F / ElderUltimate.length() : a == ElderBoss.SPAWN ? 140.0F / ElderSpawn.length() : (float) tempo());
 	}
 
-	/** Advances the action's clock (the ultimate always takes its full time). */
+	/** Advances the action's clock (the ultimate and the forming always take their full time). */
 	void step() {
-		beat.step(action == ElderBoss.ULTIMATE ? 1.0 : tempo());
+		beat.step(action == ElderBoss.ULTIMATE || action == ElderBoss.SPAWN ? 1.0 : tempo());
 	}
 
 	void end(ElderBoss b, double pause) {

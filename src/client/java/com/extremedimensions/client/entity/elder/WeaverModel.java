@@ -16,13 +16,15 @@ import net.minecraft.util.Mth;
  * before flinging everything near away; for the lance its halo spins up and it points; for the cradle its hands weave
  * and then pull the threads taut; for the thousand needles it rises with its arms up and its needles whirl. In its
  * ultimate it rises with its arms spread wide while its halo and its needles swell and whirl, until everything snaps.
- * Dying, its halo falls and it sinks.
+ * Dying, its halo falls and it sinks. As it forms, its halo comes first, then its needles are drawn in round it, and it
+ * is woven from the hem up: its robe unrolling, its body, its arms unfolding, its head, its veil, its lanterns last.
+ * Its face and crown are fine parts, shrunk to size here (see {@link WeaverGeometry#FINE_SCALE}).
  */
 public class WeaverModel extends EntityModel<ElderRenderState> {
 	public static final ModelLayerLocation LAYER = new ModelLayerLocation(ExtremeDimensions.id("weaver"), "main");
 
-	private final ModelPart root, body, head, halo, armL, armR, handL, handR, needles, spoolL, spoolR;
-	private final ModelPart[] robe, mantle, strands, lanterns, veil;
+	private final ModelPart root, body, head, halo, armL, armR, handL, handR, needles, spoolL, spoolR, bodyCore, torsoCore, headCore;
+	private final ModelPart[] robe, mantle, strands, lanterns, veil, fine;
 
 	public WeaverModel(ModelPart model) {
 		super(model);
@@ -42,11 +44,25 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 		this.strands = ElderAnim.parts(model, WeaverGeometry.STRAND, WeaverGeometry::find);
 		this.lanterns = ElderAnim.parts(model, WeaverGeometry.LANTERN, WeaverGeometry::find);
 		this.veil = ElderAnim.parts(model, WeaverGeometry.VEIL, WeaverGeometry::find);
+		this.fine = ElderAnim.parts(model, WeaverGeometry.FINE, WeaverGeometry::find);
+		this.bodyCore = WeaverGeometry.find(model, "bodycore");
+		this.torsoCore = WeaverGeometry.find(model, "torsocore");
+		this.headCore = WeaverGeometry.find(model, "headcore");
 	}
 
 	@Override
 	public void setupAnim(ElderRenderState s) {
 		super.setupAnim(s);
+		ElderAnim.reset(root, bodyCore, torsoCore, headCore, spoolL, spoolR, armL, armR, needles, halo);
+		ElderAnim.reset(robe);
+		ElderAnim.reset(mantle);
+		ElderAnim.reset(veil);
+		ElderAnim.reset(lanterns);
+		for (ModelPart f : fine) {
+			f.xScale = WeaverGeometry.FINE_SCALE;
+			f.yScale = WeaverGeometry.FINE_SCALE;
+			f.zScale = WeaverGeometry.FINE_SCALE;
+		}
 		float t = s.ageInTicks;
 		// Dying, it plays its ultimate once more, ending in the bloom as it breaks apart
 		boolean dying = s.deathTime > 0;
@@ -163,11 +179,54 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 			default -> {
 			}
 		}
+		if (action == ElderBoss.SPAWN) {
+			woven(at, t);
+		}
 		if (dying) {
 			// At the very end it sinks as it breaks apart
 			float sink = ElderAnim.smooth((s.deathTime - ElderBoss.DEATH_TICKS * 0.9F) / (ElderBoss.DEATH_TICKS * 0.1F));
 			root.y += 8F * sink;
 		}
 
+	}
+
+	/** Forming, on its 140-tick timeline: the halo first, its needles drawn in, then it is woven from the hem up. */
+	private void woven(float at, float t) {
+		ElderAnim.scale(halo, ElderAnim.smooth((at - 8) / 37F));
+		halo.zRot += t * 0.3F * (1 - ElderAnim.smooth((at - 100) / 30F));
+		float draw = ElderAnim.smooth((at - 18) / 47F);
+		float ring = at < 18 ? 0 : 1 + 1.6F * (1 - draw);
+		needles.xScale *= ring;
+		needles.yScale *= at < 18 ? 0 : 1;
+		needles.zScale *= ring;
+		needles.yRot += t * 0.5F * (1 - draw);
+		float hem = ElderAnim.smooth((at - 45) / 45F);
+		bodyCore.xScale *= 0.6F + 0.4F * hem;
+		bodyCore.yScale *= hem;
+		bodyCore.zScale *= 0.6F + 0.4F * hem;
+		for (int i = 0; i < robe.length; i++) {
+			// Each strip unrolls down from the waist
+			robe[i].yScale *= ElderAnim.smooth((at - 55 - (i % 12) * 3) / 30F);
+		}
+		ElderAnim.scale(spoolL, ElderAnim.smooth((at - 60) / 20F));
+		ElderAnim.scale(spoolR, ElderAnim.smooth((at - 60) / 20F));
+		ElderAnim.scale(torsoCore, ElderAnim.smooth((at - 70) / 25F));
+		for (ModelPart m : mantle) {
+			m.yScale *= ElderAnim.smooth((at - 85) / 25F);
+		}
+		float arms = ElderAnim.smooth((at - 80) / 32F);
+		ElderAnim.scale(armL, arms);
+		ElderAnim.scale(armR, arms);
+		armL.zRot += 1.2F * (1 - arms);
+		armR.zRot -= 1.2F * (1 - arms);
+		ElderAnim.scale(headCore, ElderAnim.smooth((at - 95) / 23F));
+		for (ModelPart v : veil) {
+			v.yScale *= ElderAnim.smooth((at - 110) / 20F);
+		}
+		for (int i = 0; i < lanterns.length; i++) {
+			ElderAnim.scale(lanterns[i], ElderAnim.smooth((at - 112 - i * 3) / 8F));
+		}
+		// The cocoon tears: it swells a little and settles
+		ElderAnim.scale(root, 1 + 0.06F * ElderAnim.env(at - 121, 2, 2, 12));
 	}
 }

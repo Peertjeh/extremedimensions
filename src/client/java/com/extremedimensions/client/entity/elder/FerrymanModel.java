@@ -17,6 +17,8 @@ import net.minecraft.util.Mth;
  * gaol he closes his raised fist and crushes, for the tide he plants the pole. In his ultimate the pole goes up and
  * stays up, the vortex swells and spins until it roars, and at the end he brings everything down. Dying, he sinks into
  * the boat.
+ * As he forms his boat condenses out of the smoke first, then he rises in it, his robe falling, his hood last, his
+ * lanterns kindling as the last bell rings.
  */
 public class FerrymanModel extends EntityModel<ElderRenderState> {
 	public static final ModelLayerLocation LAYER = new ModelLayerLocation(ExtremeDimensions.id("ferryman"), "main");
@@ -47,6 +49,9 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 	@Override
 	public void setupAnim(ElderRenderState s) {
 		super.setupAnim(s);
+		ElderAnim.reset(boat, figure, hood);
+		ElderAnim.reset(robe);
+		ElderAnim.reset(lanterns);
 		float t = s.ageInTicks;
 		// Dying, it plays its ultimate once more, ending in the bloom as it breaks apart
 		boolean dying = s.deathTime > 0;
@@ -152,6 +157,7 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 				torso.xRot += 0.22F * plant;
 				hood.xRot += 0.15F * plant;
 			}
+			case ElderBoss.SPAWN -> condensing(at, t);
 			case ElderBoss.ULTIMATE -> {
 				// The pole raised high and held, the vortex lifted, and at the end everything comes down
 				float hold = ElderAnim.env(at, 30, 150, 4);
@@ -175,5 +181,28 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 			root.y += 8F * sink;
 		}
 
+	}
+
+	/** Forming, on its 140-tick timeline: his boat condenses out of the smoke, then he rises in it, his hood last. */
+	private void condensing(float at, float t) {
+		float hull = ElderAnim.smooth((at - 25) / 45F);
+		float wobble = (1 - hull) * Mth.sin(t * 0.9F) * 0.15F;
+		boat.xScale *= hull * (1 + wobble);
+		boat.yScale *= hull;
+		boat.zScale *= hull * (1 - wobble);
+		float rise = ElderAnim.smooth((at - 65) / 50F);
+		figure.xScale *= 0.3F + 0.7F * rise;
+		figure.yScale *= rise;
+		figure.zScale *= 0.3F + 0.7F * rise;
+		for (int i = 0; i < robe.length; i++) {
+			robe[i].yScale *= ElderAnim.smooth((at - 75 - (i % 8) * 3) / 30F);
+		}
+		ElderAnim.scale(hood, ElderAnim.smooth((at - 105) / 20F));
+		for (int i = 0; i < lanterns.length; i++) {
+			ElderAnim.scale(lanterns[i], ElderAnim.smooth((at - 100 - i * 4) / 10F));
+		}
+		vortex.yRot += t * 0.5F * (1 - ElderAnim.smooth((at - 110) / 30F));
+		// He lifts his free hand as the last bell rings
+		armL.zRot -= 0.6F * ElderAnim.env(at - 100, 15, 15, 10);
 	}
 }

@@ -13,10 +13,11 @@ import net.minecraft.util.Mth;
  * The Matriarch moving: she breathes, her head follows her prey, her robe of bark ripples, the moss on her branches
  * sways and her lanterns swing; walking, she rolls from side to side and her arms swing with her steps. She sweeps one
  * arm back and across, shakes her branches until the lanterns fall, drives both hands into the ground for the roots,
- * throws her head back to wail, claws her way up as she rises; rears back and lunges for her charge, raises both arms
+ * throws her head back to wail; rears back and lunges for her charge, raises both arms
  * and slams them into the ground for the cathedral of thorns, throws her branches wide and flings her lanterns. Her
  * ultimate is the whole of her: hands into the ground, rising and spreading, arching back as her chest opens, and the
- * bloom. Dying, she slumps and sinks, trembling.
+ * bloom. Dying, she slumps and sinks, trembling. As she forms she is drawn up out of the earth clawing at the air, her
+ * branches growing, her moss unfurling, her lanterns kindling one by one and her crown last.
  */
 public class MatriarchModel extends EntityModel<ElderRenderState> {
 	public static final ModelLayerLocation LAYER = new ModelLayerLocation(ExtremeDimensions.id("matriarch"), "main");
@@ -45,6 +46,10 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 	@Override
 	public void setupAnim(ElderRenderState s) {
 		super.setupAnim(s);
+		ElderAnim.reset(crown);
+		ElderAnim.reset(branches);
+		ElderAnim.reset(moss);
+		ElderAnim.reset(lanterns);
 		float t = s.ageInTicks;
 		// Dying, it plays its ultimate once more, ending in the bloom as it breaks apart
 		boolean dying = s.deathTime > 0;
@@ -126,12 +131,7 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 				armL.xRot += 0.3F * e;
 				armR.xRot += 0.3F * e;
 			}
-			case Matriarch.RISE -> {
-				float k = 1 - ElderAnim.smooth(at / 60F);
-				armL.xRot -= 1.1F * k;
-				armR.xRot -= 1.1F * k;
-				head.xRot -= 0.4F * k;
-			}
+			case ElderBoss.SPAWN -> rising(at, t);
 			case Matriarch.RUSH -> {
 				// She rears back, arms flung behind her, then lunges with her talons out in front
 				float rear = ElderAnim.env(at, 14, 4, 4);
@@ -193,6 +193,34 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 			root.y += 8F * sink;
 		}
 
+	}
+
+	/** Forming, on its 140-tick timeline: drawn up out of the earth, clawing at the air, kindling her lanterns. */
+	private void rising(float at, float t) {
+		float reach = ElderAnim.env(at - 30, 30, 50, 25);
+		armL.xRot -= 1.3F * reach;
+		armR.xRot -= 1.3F * reach;
+		armL.zRot -= 0.3F * reach;
+		armR.zRot += 0.3F * reach;
+		foreL.xRot -= 0.4F * reach;
+		foreR.xRot -= 0.4F * reach;
+		head.xRot -= 0.5F * reach;
+		chest.xRot -= 0.15F * reach;
+		float claw = Mth.sin(at * 0.5F) * 0.15F * reach;
+		handL.xRot += claw;
+		handR.xRot -= claw;
+		for (int i = 0; i < branches.length; i++) {
+			ElderAnim.scale(branches[i], 0.2F + 0.8F * ElderAnim.smooth((at - 30 - i * 2) / 60F));
+		}
+		for (int i = 0; i < moss.length; i++) {
+			moss[i].yScale *= ElderAnim.smooth((at - 50 - (i % 10) * 3) / 40F);
+		}
+		for (int i = 0; i < lanterns.length; i++) {
+			ElderAnim.scale(lanterns[i], ElderAnim.smooth((at - 60 - i * 4) / 10F));
+		}
+		ElderAnim.scale(crown, ElderAnim.smooth((at - 95) / 25F));
+		// The earth breaks open round her and she shakes it off
+		chest.zRot += Mth.sin(t * 3.1F) * 0.05F * ElderAnim.env(at - 122, 2, 6, 10);
 	}
 
 	/** The Verdant Requiem on its 200-tick timeline. */

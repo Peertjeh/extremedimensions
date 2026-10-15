@@ -1,5 +1,47 @@
 # Changelog
 
+## 2.14.0: The Ground Remembers
+
+### Added
+- **Every Elder raises its own arena.** As it comes, blocks appear out of nothing ten to fifteen blocks away and fly to
+  their places round it: a sigil inlaid into the ground, a low rim with lit pillars, eight paths (bridges where the
+  ground falls away) out to eight towers, broken islands hanging overhead trailing spikes and lanterns, and chains
+  drawn out between the towers.
+  - **The Matriarch's** is obsidian and blackstone: a star of obsidian round an amethyst heart in a ring of crying
+    obsidian, her roots and moss creeping in at its edge, lantern towers with violet-burning cores, mossy islands with
+    crystals beneath. Its blocks come up out of the earth.
+  - **The Ferryman's** is blackstone and nether brick round a whirlpool of red nether brick and wart lit with
+    shroomlight, ringed by a deck of crimson planks; his towers are gallows posts with lanterns on chains, the great
+    ones with a boat hung between two posts, and his islands glow with magma beneath. Its blocks are swept in on a
+    whirl.
+  - **The Last Weaver's** is deepslate inlaid with a web of calcite, amethyst and sea lanterns, its spires thin and lit,
+    hung with cobwebs and tipped with end rods, and threads of light run from spire to spire and down to the heart of
+    the web. Its blocks are lowered from high above.
+  - When the fight is over the arena stands a while, then comes apart the way it came, block by block, and **the
+    ground is put back as it was**. Arenas only build into air and plants; the ground is only inlaid where the world
+    may be torn up (`elder_griefing` and the mobGriefing rule), never where a block holds data. Blocks of an arena drop
+    nothing when broken, and on a server stop the arena is taken down at once.
+- **Every Elder forms before it fights, each in its own way**, out of matter and light: black bars close in and the
+  view is held on it while it takes shape (it cannot be hurt meanwhile, and its health bar fills), then its name is
+  struck across the screen.
+  - The Matriarch is drawn up out of the earth: violet light spirals in over the ground, roots claw up round the spot
+    and she rises through a storm of obsidian tears, clawing at the air, her branches growing, her moss unfurling and
+    her lanterns kindling one by one, her crown last.
+  - The Ferryman answers the toll: three bells, a whirl of fire opening in the ground, chains of fire rising out of it;
+    his boat condenses out of the smoke, then he rises in it, his hood last, as the last bell rings.
+  - The Last Weaver is woven: threads of light come down out of the sky to one point and wind into a turning cocoon;
+    its halo forms first, its needles are drawn in round it, and it is woven from the hem up until the cocoon tears.
+- Settings for all of it: `elder_spawn_seconds` (7), `elder_spawn_camera` (on), `elder_arena` (on),
+  `elder_arena_size` (1), `elder_arena_build_seconds` (6), `elder_arena_flight_min` / `_max` (10 / 15 blocks),
+  `elder_arena_flight_ticks` (24), `elder_arena_linger_seconds` (30, -1 = it stays for good) and
+  `elder_arena_dissolve_seconds` (5).
+
+### Changed
+- **The Last Weaver has a new face**, in pixels four times finer than the rest of it: a mask of dark carved stone
+  coming to a point at the chin, a tall diamond of an eye cut like a gem and set in gilt, light bleeding out round it,
+  brows swept up from it and plates laid over the cheeks, under a gothic mitre and a fan of spires and needles.
+- The Ferryman now comes a little closer (16 to 22 blocks), so his arena takes in his passenger.
+
 ## 2.13.3: Asleep Means Asleep
 
 ### Fixed

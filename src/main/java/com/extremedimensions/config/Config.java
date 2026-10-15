@@ -369,6 +369,26 @@ public final class Config {
 	public static int ELDER_ULTIMATE_SCATTER = 1;
 	/** Share of the damage an Elder shrugs off while its ultimate builds. */
 	public static double ELDER_ULTIMATE_GUARD = 0.6;
+	/** Seconds an Elder takes to form out of matter and light before it fights (it cannot be hurt meanwhile). */
+	public static double ELDER_SPAWN_SECONDS = 7.0;
+	/** Whether the view of everyone near is held on an Elder while it forms: 1 = on, 0 = off. */
+	public static int ELDER_SPAWN_CAMERA = 1;
+	/** Whether an Elder raises its arena round it as it forms (blocks flying in to build it): 1 = on, 0 = off. */
+	public static int ELDER_ARENA = 1;
+	/** Size of the arenas, as a multiple (0.5 to 2). */
+	public static double ELDER_ARENA_SIZE = 1.0;
+	/** Seconds an arena takes to build. */
+	public static double ELDER_ARENA_BUILD_SECONDS = 6.0;
+	/** Nearest a block of an arena appears from its place, in blocks. */
+	public static int ELDER_ARENA_FLIGHT_MIN = 10;
+	/** Furthest a block of an arena appears from its place, in blocks. */
+	public static int ELDER_ARENA_FLIGHT_MAX = 15;
+	/** Ticks a block of an arena takes to fly to its place (20 ticks = 1 second). */
+	public static int ELDER_ARENA_FLIGHT_TICKS = 24;
+	/** Seconds an arena stands after its fight before it comes apart (-1 = it stays for good). */
+	public static int ELDER_ARENA_LINGER_SECONDS = 30;
+	/** Seconds an arena takes to come apart (the ground is put back as it was). */
+	public static double ELDER_ARENA_DISSOLVE_SECONDS = 5.0;
 	/** The Starved One's health grows by this share for every player at the Heart beyond the first. */
 	public static double STARVED_HEALTH_PER_PLAYER = 0.5;
 	/** Below this share of its health the Starved One turns ravenous: faster, quicker tricks, and famine. */

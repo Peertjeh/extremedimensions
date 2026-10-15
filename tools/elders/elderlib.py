@@ -109,11 +109,18 @@ class Model:
         self.rnd = random.Random(seed)
         self.seed = seed
 
-    def part(self, name, parent, pivot, rot=(0, 0, 0), anim=False, group=None):
+    def part(self, name, parent, pivot, rot=(0, 0, 0), anim=False, group=None, scale=None):
+        """A part. With {@code scale} (say 0.25) it is a fine part: its boxes are given in model pixels as usual but
+        built that many times larger and shrunk back by the model at run time, so their textures have that many times
+        more pixels (group "fine"; it may have no children)."""
         assert name not in self.idx, name
         assert parent is None or parent in self.idx, (name, parent)
+        assert parent is None or not self.idx[parent].get("scale"), (name, "a fine part has no children")
+        if scale:
+            assert group is None, (name, "a fine part is in the group fine")
+            group = "fine"
         p = dict(name=name, parent=parent, pivot=[float(c) for c in pivot], rot=[float(c) for c in rot], boxes=[],
-                 anim=anim or group is not None, group=group)
+                 anim=anim or group is not None, group=group, scale=scale)
         self.idx[name] = p
         self.parts.append(p)
         return name
@@ -746,12 +753,183 @@ MATS.update({
     "rune_plate": m_rune_plate,
 })
 
+# ----------------------------------------------------------------------------- the Last Weaver's face (fine pixels)
+# These are painted on fine parts (four pixels to a model pixel). The shaped ones cut their outline out of the front
+# and back faces and leave the thin edges clear, so a flat box reads as a shield, a diamond or a blade.
+
+
+def _front(ctx):
+    return ctx["face"] in ("north", "south")
+
+
+def _uv(ctx):
+    """(u, v): u from -1 at one side to 1 at the other, v from 0 at the top to 1 at the bottom of the face."""
+    return (ctx["px"] + 0.5) / ctx["fw"] * 2 - 1, (ctx["py"] + 0.5) / ctx["fh"]
+
+
+def _mask_inside(u, v):
+    """The mask's outline: square-shouldered at the top with clipped corners, narrowing to a pointed chin."""
+    if v < 0.07 and abs(u) > 1 - (0.07 - v) * 4:
+        return False
+    if v > 0.48:
+        return abs(u) <= 1 - ((v - 0.48) / 0.52) ** 1.45
+    return True
+
+
+def _mask_edge(ctx, inside):
+    """Distance in pixels from the edge of a shaped face (up to 4)."""
+    fw, fh, px, py = ctx["fw"], ctx["fh"], ctx["px"], ctx["py"]
+    best = 4
+    for r in range(1, 4):
+        for dx, dy in ((r, 0), (-r, 0), (0, r), (0, -r)):
+            qx, qy = px + dx, py + dy
+            if not (0 <= qx < fw and 0 <= qy < fh) or not inside((qx + 0.5) / fw * 2 - 1, (qy + 0.5) / fh):
+                return r - 1
+    return best
+
+
+def m_mask_carved(ctx):
+    """The mask: dark violet stone carved in flutes, a gilt bead along its edge, hairline cracks of light."""
+    gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
+    if not _front(ctx):
+        return (0, 0, 0, 0), None
+    u, v = _uv(ctx)
+    if not _mask_inside(u, v):
+        return (0, 0, 0, 0), None
+    e = _mask_edge(ctx, _mask_inside)
+    flute = 0.5 + 0.5 * math.cos(ctx["px"] * 2 * math.pi / max(6, ctx["fw"] / 7))
+    base = mix((14, 8, 24), (86, 58, 118), 0.15 + 0.6 * flute ** 2 * (1 - 0.35 * v) + 0.25 * noise(gx, gy, s, 3.0))
+    if noise(gx, gy, s + 3, 1.5) < 0.18:
+        base = shade(base, 0.8)
+    glow = None
+    # light bleeding out round the eye (the eye sits a little under halfway down)
+    ue, ve = u * 2.2, (v - 0.47) * 4.0
+    de = abs(ue) + abs(ve)
+    if 1.0 < de < 1.6:
+        k = (1.6 - de) / 0.6
+        base = mix(base, (120, 60, 180), 0.45 * k)
+        glow = (170, 90, 255, int(150 * k))
+    if abs(noise(gx, gy, s + 21, 22.0) - 0.5) < 0.012 and v > 0.12 and de > 1.2:
+        base, glow = (150, 80, 210), (200, 120, 255, 220)
+    if e == 0:
+        base = _gilt(ctx)
+    elif e == 1:
+        base = shade(_gilt(ctx), 0.6)
+    elif e == 2:
+        base = shade(base, 0.55)
+    return base + (255,), glow
+
+
+def m_mask_ridge(ctx, lit=False):
+    """A carved plate laid over the mask: lacquer-dark with a sheen along the top and a gilt lip below; lit, a thread
+    of light runs down its middle."""
+    gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
+    px, py, fw, fh = ctx["px"], ctx["py"], ctx["fw"], ctx["fh"]
+    base = mix((16, 9, 26), (74, 46, 104), noise(gx, gy, s, 2.0) * 0.6 + 0.2)
+    if ctx["face"] in ("top", "bottom"):
+        base = shade(base, 0.8)
+    glow = None
+    if py <= 0:
+        base = mix(base, (150, 120, 190), 0.5)
+    elif py >= fh - 2:
+        base = _gilt(ctx) if py == fh - 1 else shade(_gilt(ctx), 0.65)
+    elif (px + py) % 9 == 0:
+        base = shade(base, 0.7)
+    if lit and _front(ctx) and abs(px - (fw - 1) / 2) < 0.6:
+        base, glow = (190, 120, 250), (230, 170, 255, 240)
+    return base + (255,), glow
+
+
+def m_eye_lozenge(ctx):
+    """The eye: a tall diamond cut like a gem. A gilt rim, a dark socket, facets of violet light brightening inwards,
+    a white-hot core and a faint slit through it."""
+    if not _front(ctx):
+        return (0, 0, 0, 0), None
+    u, v = _uv(ctx)
+    v = v * 2 - 1
+    d = abs(u) + abs(v)
+    if d > 1:
+        return (0, 0, 0, 0), None
+    if d > 0.86:
+        lit = (u < 0) != (v > 0)
+        g = _gilt(ctx)
+        return (shade(g, 1.15) if lit else shade(g, 0.7)) + (255,), (210, 160, 90, 90) if lit else None
+    if d > 0.75:
+        return (18, 6, 28, 255), None
+    k = (0.75 - d) / 0.75
+    facet = 1.0 if (u >= 0) == (v < 0) else 0.82
+    if abs(u) < 0.045 and abs(v) < 0.5:
+        return (70, 20, 110, 255), (120, 50, 190, 200)
+    if k > 0.62:
+        return (250, 236, 255, 255), (255, 248, 255, 255)
+    c = mix((96, 30, 170), (236, 186, 255), (k / 0.62) ** 0.8)
+    c = shade(c, facet)
+    return c + (255,), c + (int(200 + 55 * k),)
+
+
+def m_spire(ctx):
+    """A gothic spire of dark stone: ribs running up it, gilt bands, and slit windows lit from within."""
+    gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
+    px, py, fw, fh = ctx["px"], ctx["py"], ctx["fw"], ctx["fh"]
+    base = mix((14, 9, 22), (66, 46, 92), 0.3 + 0.4 * noise(gx, gy, s, 2.5))
+    if px % 4 == 0:
+        base = shade(base, 0.6)
+    elif px % 4 == 1:
+        base = mix(base, (120, 96, 150), 0.25)
+    if ctx["face"] in ("top", "bottom"):
+        base = shade(base, 0.7)
+    glow = None
+    if py % 26 in (0, 1):
+        base = _gilt(ctx) if py % 26 == 0 else shade(_gilt(ctx), 0.6)
+    elif _front(ctx) and fw >= 4 and abs(px - (fw - 1) / 2) < 0.8 and py % 26 in range(8, 15):
+        base, glow = (170, 100, 240), (215, 150, 255, 235)
+    return base + (255,), glow
+
+
+def _mitre_inside(u, v):
+    return abs(u) <= min(1.0, (v / 0.62) ** 0.75)
+
+
+def m_mitre(ctx):
+    """The mitre behind the crown: a pointed gothic arch of dark stone, ribbed, gilt along its edge, with a slit of
+    light up its middle."""
+    gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
+    if not _front(ctx):
+        return (0, 0, 0, 0), None
+    u, v = _uv(ctx)
+    if not _mitre_inside(u, v):
+        return (0, 0, 0, 0), None
+    e = _mask_edge(ctx, _mitre_inside)
+    rib = ctx["px"] % 6
+    base = mix((12, 8, 22), (70, 50, 98), 0.25 + 0.35 * noise(gx, gy, s, 3.0) + (0.25 if rib == 1 else 0))
+    if rib == 0:
+        base = shade(base, 0.55)
+    glow = None
+    if abs(u) < 0.035 and v > 0.08:
+        base, glow = (200, 130, 255), (235, 180, 255, 240)
+    elif e == 0:
+        base = _gilt(ctx)
+    elif e == 1:
+        base = shade(_gilt(ctx), 0.6)
+    return base + (255,), glow
+
+
+MATS.update({
+    "mitre": m_mitre,
+    "mask_carved": m_mask_carved,
+    "mask_ridge": lambda c: m_mask_ridge(c),
+    "mask_ridge_lit": lambda c: m_mask_ridge(c, lit=True),
+    "eye_lozenge": m_eye_lozenge,
+    "spire": m_spire,
+})
+
 # ----------------------------------------------------------------------------- packing, painting, writing
 
 
-def _dims(b):
+def _dims(b, scale=None):
+    k = 1.0 / scale if scale else 1.0
     x, y, z, w, h, d = b
-    W, H, D = max(1, math.ceil(w - 1e-6)), max(1, math.ceil(h - 1e-6)), max(1, math.ceil(d - 1e-6))
+    W, H, D = max(1, math.ceil(w * k - 1e-6)), max(1, math.ceil(h * k - 1e-6)), max(1, math.ceil(d * k - 1e-6))
     return W, H, D
 
 
@@ -759,7 +937,7 @@ def pack(model):
     items = []
     for p in model.parts:
         for bi, bx in enumerate(p["boxes"]):
-            W, H, D = _dims(bx["b"])
+            W, H, D = _dims(bx["b"], p.get("scale"))
             items.append([p["name"], bi, 2 * (W + D), D + H, (W, H, D)])
     items.sort(key=lambda it: (-it[3], -it[2]))
     cx = cy = rowh = 0
@@ -855,10 +1033,11 @@ def write_java(model, uv, package, path):
             else:
                 pexpr = "r" + "".join(f'.getChild("{n}")' for n in path_of(parent))
             cubes = "CubeListBuilder.create()"
+            k = 1.0 / p["scale"] if p.get("scale") else 1.0
             for bi, bx in enumerate(p["boxes"]):
                 u, v, _ = uv[(p["name"], bi)]
-                x, y, z, w, h, d = bx["b"]
-                defo = f", new CubeDeformation({_f(bx['inflate'])})" if bx["inflate"] else ""
+                x, y, z, w, h, d = (c * k for c in bx["b"])
+                defo = f", new CubeDeformation({_f(bx['inflate'] * k)})" if bx["inflate"] else ""
                 cubes += f".texOffs({u}, {v}).addBox({_f(x)}, {_f(y)}, {_f(z)}, {_f(w)}, {_f(h)}, {_f(d)}{defo})"
             pv, rt = p["pivot"], p["rot"]
             pose = f"PartPose.offsetAndRotation({_f(pv[0])}, {_f(pv[1])}, {_f(pv[2])}, {_f(rt[0])}, {_f(rt[1])}, {_f(rt[2])})"
@@ -873,6 +1052,12 @@ def write_java(model, uv, package, path):
         A("")
         A(f"\t/** Parts that move together: {g}. */")
         A(f"\tpublic static final String[] {g.upper()} = {{" + ", ".join(f'"{n}"' for n in names) + "};")
+    scales = {p["scale"] for p in model.parts if p.get("scale")}
+    if scales:
+        assert len(scales) == 1, "one scale for all fine parts"
+        A("")
+        A("\t/** How much the fine parts are shrunk at run time (their boxes are built this much larger, for finer pixels). */")
+        A(f"\tpublic static final float FINE_SCALE = {_f(scales.pop())};")
     A("")
     A("\t/** The animated parts, by name. */")
     A("\tpublic static ModelPart find(ModelPart root, String name) {")

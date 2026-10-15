@@ -20,13 +20,15 @@ import net.minecraft.world.level.Level;
  * An Elder: a colossal boss moved and directed entirely by its service. It has no goals and no physics of its own
  * (nothing that size could path through a forest); it glides, sails or floats where it is put, with weight (see
  * {@link ElderMotion}), and its body and head turn only as its service turns them. Its body carries two numbers for
- * the client: the action under way, which the model animates, and the tempo the action runs at. While its ultimate
- * builds it shrugs off most harm; it dies slowly, breaking apart in light.
+ * the client: the action under way, which the model animates, and the tempo the action runs at. While it forms nothing
+ * hurts it; while its ultimate builds it shrugs off most harm; it dies slowly, breaking apart in light.
  */
 public abstract class ElderBoss extends Monster {
 	public static final int IDLE = 0;
 	/** The ultimate (the same for every Elder). */
 	public static final int ULTIMATE = 20;
+	/** Forming out of matter and light before the fight (see {@link ElderSpawn}); nothing hurts it meanwhile. */
+	public static final int SPAWN = 21;
 	/** Ticks its death takes (it dies as it fought its ultimate, ending in the bloom). */
 	public static final int DEATH_TICKS = 100;
 	private static final String[] TITLES = {"gui.extremedimensions.elder.title.matriarch", "gui.extremedimensions.elder.title.ferryman",
@@ -83,6 +85,12 @@ public abstract class ElderBoss extends Monster {
 
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+		if (getAction() == SPAWN && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+			// Still forming: blows pass through the light it is made of
+			WorldFx.particleIn(level, "minecraft:enchanted_hit", getX(), getY() + getBbHeight() * 0.5, getZ(), getBbWidth() * 0.5, getBbHeight() * 0.3,
+					getBbWidth() * 0.5, 0.2, 6);
+			return false;
+		}
 		if (getAction() == ULTIMATE) {
 			// Its ultimate builds behind a ward: most of a blow is shrugged off
 			amount *= (float) Math.max(0, 1 - Math.min(1, Config.ELDER_ULTIMATE_GUARD));

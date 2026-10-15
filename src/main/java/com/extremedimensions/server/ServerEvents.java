@@ -75,8 +75,9 @@ public final class ServerEvents {
 		// The mod's data is written with the world's own saves (autosave, /save-all, stop), never ahead of them
 		ServerLifecycleEvents.AFTER_SAVE.register((s, flush, force) -> DataStore.flush());
 		ServerLifecycleEvents.SERVER_STOPPING.register(s -> {
-			// Thorns and chains an Elder raised sink back before the world is saved
+			// Thorns and chains an Elder raised sink back, and its arena comes down, before the world is saved
 			com.extremedimensions.elder.ElderTerrain.clear();
+			com.extremedimensions.elder.ElderArena.clear();
 			DataStore.markDirty();
 			DataStore.flush();
 		});
@@ -96,6 +97,12 @@ public final class ServerEvents {
 			WorldFx.bind(null);
 		});
 		ServerTickEvents.END_SERVER_TICK.register(ServerEvents::tick);
+		// A block display of an Elder's arena that no arena is using (left over from a crash) is removed as it loads
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register((entity, level) ->
+				com.extremedimensions.elder.ElderArena.loaded(entity));
+		// A block of an Elder's arena broken by a player drops nothing
+		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, blockEntity) ->
+				com.extremedimensions.elder.ElderArena.broken(level, pos));
 		CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> TetherCommand.register(dispatcher));
 
 		ServerPlayerEvents.JOIN.register(ServerEvents::onJoin);
@@ -398,6 +405,7 @@ public final class ServerEvents {
 		com.extremedimensions.elder.ElderStrikes.tick(s);
 		com.extremedimensions.elder.ElderTerrain.tick(s);
 		com.extremedimensions.elder.WeaverService.tick(s);
+		com.extremedimensions.elder.ElderArena.tick(s);
 	}
 
 	/** Journal pages found by exploring. */

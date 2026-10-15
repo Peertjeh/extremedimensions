@@ -69,6 +69,7 @@ public final class WeaverService {
 		if (fight == null || !(e instanceof Weaver w)) {
 			return false;
 		}
+		ElderSpawn.skip(w, fight);
 		if (action == ElderBoss.ULTIMATE) {
 			fight.rise = 0;
 		}
@@ -156,11 +157,9 @@ public final class WeaverService {
 		u.drift = rnd.nextBoolean() ? 1 : -1;
 		u.makeBar(BOSS, BossEvent.BossBarColor.BLUE, BossEvent.BossBarOverlay.NOTCHED_10, p);
 		WEAVERS.put(w.getUUID(), u);
+		ElderSpawn.begin(w, u, spot);
 		WorldFx.soundIn(ElderFx.dim(w), "extremedimensions:lurker_shriek", "hostile", w.getX(), w.getY() + 12, w.getZ(), 5f, 1.2f);
-		ElderFx.burst(w, "extremedimensions:soul_mote", 120);
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.weaver_wakes"));
-		ElderFx.cinema(w, 96, ModPackets.BossFxPayload.INTRO, 0, 0, "");
-		ElderFx.shake(w, w.getX(), w.getZ(), 48, 0.4f, 30);
 		Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.LAST_WEAVER);
 		ElderFx.music(w, ElderFx.MUSIC_WEAVER);
 		return true;
@@ -204,6 +203,13 @@ public final class WeaverService {
 		if (u.ticks % 3 == 0) {
 			WorldFx.particleIn(u.level, "extremedimensions:soul_mote", w.getX(), w.getY() + 13, w.getZ(), 9, 3, 2, 0.0, 2);
 			ElderFx.ambience(w);
+		}
+		if (u.action == ElderBoss.SPAWN) {
+			// Forming: it hangs where it is woven, turned towards its prey
+			w.motion.brake(w, 0.015, HOVER);
+			w.motion.turn(w, ElderFx.yawTo(w, p.getX(), p.getZ()), 1.5f);
+			ElderSpawn.tick(w, u);
+			return;
 		}
 		float frac = w.getHealth() / w.getMaxHealth();
 		if ((u.kin == 0 && frac <= 0.6f) || (u.kin == 1 && frac <= 0.3f)) {
@@ -514,6 +520,7 @@ public final class WeaverService {
 	/** Slain: its thread is given back to everyone near, with silk, fragments and a relic. */
 	public static void onDefeat(Weaver w, Entity killer) {
 		Unweaving u = WEAVERS.remove(w.getUUID());
+		ElderArena.release(w);
 		ElderStrikes.forget(w);
 		ElderFx.silence(w, ElderFx.MUSIC_WEAVER);
 		if (u == null) {
@@ -549,6 +556,7 @@ public final class WeaverService {
 	/** Gone: it unravels into the dark, whole. */
 	public static void fade(Weaver w) {
 		Unweaving u = WEAVERS.remove(w.getUUID());
+		ElderArena.release(w);
 		if (u != null) {
 			u.bar.removeAllPlayers();
 			if (u.action == ElderBoss.ULTIMATE) {

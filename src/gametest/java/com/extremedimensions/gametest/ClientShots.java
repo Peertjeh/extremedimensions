@@ -36,7 +36,10 @@ import net.minecraft.world.item.Items;
  * that can be automated fail the run.
  */
 public class ClientShots implements FabricClientGameTest {
-	/** A live fight with one Elder, with a shot as it comes, at each blow, twice in its ultimate and as it dies. */
+	/**
+	 * A live fight with one Elder: two shots as it forms and its arena flies together, one as it arrives, one at each
+	 * blow, two in its ultimate, and two as it dies (its arena coming apart after).
+	 */
 	private static void liveFight(ClientGameTestContext ctx, TestSingleplayerContext sp, String name, int settle,
 			java.util.function.Consumer<MinecraftServer> summon, java.util.function.BiPredicate<net.minecraft.world.entity.Entity, Integer> force,
 			int[] blows, String[] blowNames) {
@@ -44,7 +47,12 @@ public class ClientShots implements FabricClientGameTest {
 		sp.getServer().runCommand("execute as @a at @s run tp @s ~120 ~ ~ 0 0");
 		ctx.waitTicks(20);
 		sp.getServer().runOnServer(summon::accept);
-		ctx.waitTicks(settle);
+		ctx.waitTicks(30);
+		ctx.runOnClient(mc -> check(com.extremedimensions.client.fx.CameraLock.locked(), "the view is not held on the forming " + name));
+		ctx.takeScreenshot("12_fight_" + name + "_forming_a");
+		ctx.waitTicks(60);
+		ctx.takeScreenshot("12_fight_" + name + "_forming_b");
+		ctx.waitTicks(Math.max(70, settle));
 		face(sp, name);
 		ctx.waitTicks(2);
 		ctx.takeScreenshot("12_fight_" + name + "_arrives");
@@ -418,12 +426,23 @@ public class ClientShots implements FabricClientGameTest {
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-6 ~ 0 0");
 				ctx.waitTicks(20);
 			}
+			// The Last Weaver's face up close (its mask, eye and crown in fine pixels)
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:weaver ^ ^ ^9 {NoAI:1b,Rotation:[180f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~13 ~ 0 4");
+			ctx.waitTicks(25);
+			ctx.takeScreenshot("11_weaver_face");
+			sp.getServer().runOnServer(s -> elders(s).forEach(net.minecraft.world.entity.Entity::discard));
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-13 ~ 0 0");
+			ctx.waitTicks(20);
 			sp.getServer().runCommand("execute as @a run gamemode survival @s");
 
 			// A live fight with each Elder: it comes, its three new blows one after another, its ultimate, its death. The
 			// player cannot be hurt, and the ultimate's curse is switched off so the shots after are unchanged.
 			int ultimateCurses = com.extremedimensions.config.Config.ELDER_ULTIMATE_CURSES;
 			com.extremedimensions.config.Config.ELDER_ULTIMATE_CURSES = 0;
+			// The arena comes apart soon after each death, so the last shots of a fight catch it
+			int linger = com.extremedimensions.config.Config.ELDER_ARENA_LINGER_SECONDS;
+			com.extremedimensions.config.Config.ELDER_ARENA_LINGER_SECONDS = 3;
 			sp.getServer().runCommand("effect give @a minecraft:resistance infinite 255 true");
 			sp.getServer().runCommand("effect give @a minecraft:saturation infinite 10 true");
 			sp.getServer().runCommand("effect give @a minecraft:fire_resistance infinite 0 true");
@@ -441,6 +460,7 @@ public class ClientShots implements FabricClientGameTest {
 							com.extremedimensions.elder.Weaver.CRADLE, com.extremedimensions.elder.Weaver.THOUSAND},
 					new String[] {"lance", "cradle", "thousand"});
 			com.extremedimensions.config.Config.ELDER_ULTIMATE_CURSES = ultimateCurses;
+			com.extremedimensions.config.Config.ELDER_ARENA_LINGER_SECONDS = linger;
 			sp.getServer().runCommand("effect clear @a");
 			sp.getServer().runCommand("kill @e[type=minecraft:item]");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");

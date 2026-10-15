@@ -15,7 +15,8 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
  * its title beneath; the names of its great blows flash up under the health bars as it calls them; when it unleashes
  * its ultimate black bars close in from above and below, the ultimate's name is slashed across the middle, the edges
  * of the screen darken in its colour and a thin line in the lower bar runs out with its time; when it breaks, a flash,
- * and the bars lift. Calm mode keeps the bars and names but drops the flashes and the pulsing.
+ * and the bars lift. As an Elder forms the bars close in the same way, with a line for it in the upper bar, until its
+ * name is struck. Calm mode keeps the bars and names but drops the flashes and the pulsing.
  */
 public class BossCinema implements HudElement {
 	private static final String[] NAMES = {"matriarch", "ferryman", "weaver"};
@@ -29,6 +30,8 @@ public class BossCinema implements HudElement {
 	private static long ultAt = -1, ultEnd = -1, ultLength = 1;
 	private static String ultKey = "";
 	private static String ultLabel = "gui.extremedimensions.elder.ultimate_label";
+	/** Whether the ultimate's name is slashed across the middle as the bars close (not as an Elder forms). */
+	private static boolean ultSlash = true;
 	private static int ultBoss;
 	private static long flashAt = -1;
 	private static float flashStrength;
@@ -61,7 +64,23 @@ public class BossCinema implements HudElement {
 				ultLength = Math.max(1, fx.value()) * 50L;
 				ultKey = fx.key();
 				ultLabel = "gui.extremedimensions.elder.ultimate_label";
+				ultSlash = true;
 				ultBoss = boss;
+			}
+			case ModPackets.BossFxPayload.SPAWN -> {
+				// It forms: the bars close in, a line for it in the upper bar, and perhaps the view is held on it
+				introAt = -1;
+				moveAt = -1;
+				ultAt = now;
+				ultEnd = -1;
+				ultLength = (long) (Math.max(1, Math.abs(fx.strength())) * 50L);
+				ultKey = fx.key();
+				ultLabel = "gui.extremedimensions.elder.forming_label";
+				ultSlash = false;
+				ultBoss = boss;
+				if (fx.strength() > 0) {
+					CameraLock.lock(fx.value(), ultLength);
+				}
 			}
 			case ModPackets.BossFxPayload.DEATH -> {
 				// It dies as it fought its ultimate: the bars close in on its name, and the view is held on it
@@ -72,6 +91,7 @@ public class BossCinema implements HudElement {
 				ultLength = (long) (Math.max(1, fx.strength()) * 50L);
 				ultKey = fx.key();
 				ultLabel = "gui.extremedimensions.elder.vanquished_label";
+				ultSlash = true;
 				ultBoss = boss;
 				CameraLock.lock(fx.value(), ultLength);
 			}
@@ -82,6 +102,10 @@ public class BossCinema implements HudElement {
 			case ModPackets.BossFxPayload.ULTIMATE_END -> {
 				if (ultAt >= 0 && ultEnd < 0) {
 					ultEnd = now;
+				}
+				if (!ultSlash) {
+					// Whole (perhaps sooner than planned): the view is free again
+					CameraLock.release();
 				}
 			}
 			default -> {
@@ -216,7 +240,7 @@ public class BossCinema implements HudElement {
 		}
 		// Its name slashed across the middle as it begins
 		double t = (now - ultAt) / 1000.0;
-		if (t < 3.2 && ultEnd < 0) {
+		if (t < 3.2 && ultEnd < 0 && ultSlash) {
 			double a = Math.min(Ui.ease(Math.min(1, t / 0.3)), Ui.ease(Math.min(1, (3.2 - t) / 0.8)));
 			int cy = (int) (h * 0.42);
 			int half = (int) (w * 0.45 * Ui.ease(Math.min(1, t / 0.4)));

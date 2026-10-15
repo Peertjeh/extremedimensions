@@ -48,7 +48,6 @@ import net.minecraft.world.level.block.Blocks;
 public final class MatriarchService {
 	private MatriarchService() {}
 
-	private static final int RISE_TICKS = 60;
 	private static final String BOSS = "boss.extremedimensions.matriarch";
 	private static final String ULT = "gui.extremedimensions.elder.ultimate.matriarch";
 
@@ -56,7 +55,8 @@ public final class MatriarchService {
 		String hoard;
 		double hx, hz;
 		int brood;
-		double sunk;
+		/** How far below the ground she starts, and how far she has risen. */
+		double sunk, risen;
 		double dirX, dirZ;
 		final Set<UUID> struck = new HashSet<>();
 	}
@@ -73,8 +73,11 @@ public final class MatriarchService {
 		if (fight == null || !(e instanceof Matriarch m)) {
 			return false;
 		}
-		if (fight.action == Matriarch.RISE) {
-			return false;
+		if (fight.action == ElderBoss.SPAWN) {
+			// Whole at once: risen the rest of the way
+			m.motion.heave(m, fight.sunk - fight.risen);
+			fight.risen = fight.sunk;
+			ElderSpawn.skip(m, fight);
 		}
 		if (action == ElderBoss.ULTIMATE) {
 			fight.beginUltimate(m, ULT);
@@ -98,6 +101,12 @@ public final class MatriarchService {
 			}
 		}
 		return false;
+	}
+
+	/** How far under the ground this Matriarch still is (while she rises out of it as she forms). */
+	static double sunk(ElderBoss b) {
+		Fight f = FIGHTS.get(b.getUUID());
+		return f == null ? 0 : Math.max(0, f.sunk - f.risen);
 	}
 
 	/** She rises near the hoard and turns on the player who woke it. */
@@ -129,7 +138,7 @@ public final class MatriarchService {
 		m.setYRot(yaw);
 		m.setYBodyRot(yaw);
 		m.setYHeadRot(yaw);
-		f.start(m, Matriarch.RISE);
+		ElderSpawn.begin(m, f, spot);
 		ElderFx.roar(m, 5f, 0.45f);
 		WorldFx.soundIn(ElderFx.dim(m), "minecraft:block.rooted_dirt.break", "hostile", m.getX(), m.getY() + f.sunk, m.getZ(), 4f, 0.4f);
 		for (ServerPlayer q : level.players()) {
@@ -138,8 +147,6 @@ public final class MatriarchService {
 				q.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.matriarch_comes"));
 			}
 		}
-		ElderFx.cinema(m, 96, ModPackets.BossFxPayload.INTRO, 0, 0, "");
-		ElderFx.shake(m, m.getX(), m.getZ(), 48, 0.7f, RISE_TICKS);
 		Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.MATRIARCH);
 		ElderFx.music(m, ElderFx.MUSIC_MATRIARCH);
 		return true;
@@ -185,18 +192,19 @@ public final class MatriarchService {
 			WorldFx.particleIn(m.level(), "extremedimensions:lurker_wisp", m.getX(), m.getY() + 11, m.getZ(), 7, 4, 4, 0, 2);
 			ElderFx.ambience(m);
 		}
-		// Rising out of the ground
-		if (f.action == Matriarch.RISE) {
-			m.motion.heave(m, f.sunk / RISE_TICKS);
-			double ground = m.getY() + f.sunk - f.ticks * f.sunk / RISE_TICKS;
-			WorldFx.particleIn(m.level(), "minecraft:large_smoke", m.getX(), ground, m.getZ(), 3, 0.4, 3, 0.02, 6);
-			if (f.ticks % 6 == 0) {
-				ElderTerrain.furrow(f.level, m.getX(), ground + 1, m.getZ(), 2.5, 0, 2, 4);
+		// Forming: drawn up out of the earth over the middle of it
+		if (f.action == ElderBoss.SPAWN) {
+			double length = ElderSpawn.length();
+			double k = f.beat.t / length;
+			if (k >= 0.3 && f.risen < f.sunk) {
+				double dy = Math.min(f.sunk - f.risen, f.sunk / (0.58 * length));
+				m.motion.heave(m, dy);
+				f.risen += dy;
 			}
-			if (f.ticks >= RISE_TICKS) {
-				f.end(m, 40);
-				ElderFx.roar(m, 5f, 0.5f);
-				ElderTerrain.mark(f.level, m.getX(), m.getY(), m.getZ(), 7, 0.6, ElderTerrain.Mark.ROOT);
+			m.motion.turn(m, ElderFx.yawTo(m, p.getX(), p.getZ()), 1.5f);
+			if (ElderSpawn.tick(m, f) && f.risen < f.sunk) {
+				m.motion.heave(m, f.sunk - f.risen);
+				f.risen = f.sunk;
 			}
 			return;
 		}
@@ -542,6 +550,7 @@ public final class MatriarchService {
 	/** Slain: relics, fragments and pages, and the hoard she guarded is free. */
 	public static void onDefeat(Matriarch m, Entity killer) {
 		Fight f = FIGHTS.remove(m.getUUID());
+		ElderArena.release(m);
 		ElderStrikes.forget(m);
 		ElderFx.silence(m, ElderFx.MUSIC_MATRIARCH);
 		if (f == null) {
@@ -573,6 +582,7 @@ public final class MatriarchService {
 	/** Gone: she sinks back into the ground, whole. */
 	public static void fade(Matriarch m) {
 		Fight f = FIGHTS.remove(m.getUUID());
+		ElderArena.release(m);
 		if (f != null) {
 			f.bar.removeAllPlayers();
 			if (f.action == ElderBoss.ULTIMATE) {

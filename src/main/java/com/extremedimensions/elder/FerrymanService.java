@@ -73,6 +73,7 @@ public final class FerrymanService {
 		if (fight == null || !(e instanceof Ferryman f)) {
 			return false;
 		}
+		ElderSpawn.skip(f, fight);
 		if (action == ElderBoss.ULTIMATE) {
 			fight.lift = 0;
 		}
@@ -141,7 +142,7 @@ public final class FerrymanService {
 
 	/** He comes for this player (also the operator command); false if he is already after them or cannot sail in. */
 	public static boolean summon(ServerPlayer p) {
-		return !hunting(p) && summonAt(p, ElderFx.near((ServerLevel) p.level(), p, 20, 28)) != null;
+		return !hunting(p) && summonAt(p, ElderFx.near((ServerLevel) p.level(), p, 16, 22)) != null;
 	}
 
 	/** He comes for this player, his boat at this spot; the Ferryman, or null if he is already after them. */
@@ -168,11 +169,10 @@ public final class FerrymanService {
 		fare.makeBar(BOSS, BossEvent.BossBarColor.YELLOW, BossEvent.BossBarOverlay.NOTCHED_10, p);
 		fare.cooldown = 60;
 		FARES.put(f.getUUID(), fare);
+		ElderSpawn.begin(f, fare, spot);
 		ElderFx.roar(f, 4f, 0.7f);
 		WorldFx.soundIn(ElderFx.dim(f), "minecraft:block.bell.use", "hostile", f.getX(), f.getY() + 8, f.getZ(), 5f, 0.45f);
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.ferryman_comes"));
-		ElderFx.cinema(f, 96, ModPackets.BossFxPayload.INTRO, 0, 0, "");
-		ElderFx.shake(f, f.getX(), f.getZ(), 48, 0.5f, 30);
 		Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.FERRYMAN);
 		ElderFx.music(f, ElderFx.MUSIC_FERRYMAN);
 		return f;
@@ -221,6 +221,13 @@ public final class FerrymanService {
 		if (fare.ticks % 3 == 0) {
 			WorldFx.particleIn(level, "minecraft:soul_fire_flame", f.getX(), f.getY() + 0.3, f.getZ(), 2.5, 0.1, 6, 0.01, 2);
 			ElderFx.ambience(f);
+		}
+		if (fare.action == ElderBoss.SPAWN) {
+			// Forming: his boat waits on the whirl, his hood turned to his passenger
+			f.motion.brake(f, 0.02, 0.1);
+			ElderFx.look(f, p);
+			ElderSpawn.tick(f, fare);
+			return;
 		}
 		if (!fare.doubled && f.getHealth() <= f.getMaxHealth() / 2) {
 			fare.doubled = true;
@@ -587,6 +594,7 @@ public final class FerrymanService {
 	/** Slain: fragments, perhaps a relic, and the Fee he was owed waived for his passenger and his slayer. */
 	public static void onDefeat(Ferryman f, Entity killer) {
 		Fare fare = FARES.remove(f.getUUID());
+		ElderArena.release(f);
 		ElderStrikes.forget(f);
 		ElderFx.silence(f, ElderFx.MUSIC_FERRYMAN);
 		if (fare == null) {
@@ -618,6 +626,7 @@ public final class FerrymanService {
 	/** Gone: he poles back into the dark, whole. */
 	public static void fade(Ferryman f) {
 		Fare fare = FARES.remove(f.getUUID());
+		ElderArena.release(f);
 		if (fare != null) {
 			fare.bar.removeAllPlayers();
 			if (fare.action == ElderBoss.ULTIMATE) {

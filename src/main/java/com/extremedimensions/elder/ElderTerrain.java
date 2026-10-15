@@ -25,7 +25,7 @@ import net.minecraft.world.level.gamerules.GameRules;
  * fire, the Weaver's is scorched and its sand fused to glass. Thorns and chains they raise are temporary and sink back
  * after a while. Nothing of this happens with {@code elder_griefing} off or when the mobGriefing rule forbids it: then
  * the blows still hurt and throw players, but the world stays as it was. Containers, blocks that hold data and the
- * blocks a Wither cannot break are never touched.
+ * blocks a Wither cannot break are never touched. A block of an arena torn out is neither thrown nor dropped.
  */
 public final class ElderTerrain {
 	private ElderTerrain() {}
@@ -94,7 +94,10 @@ public final class ElderTerrain {
 						continue;
 					}
 					budget++;
-					if (flingOneIn > 0 && s.isSolid() && rnd.nextInt(flingOneIn) == 0) {
+					if (ElderArena.holds(level, pos)) {
+						// An arena's block is torn out but neither thrown nor dropped
+						level.destroyBlock(pos, false, null, 512);
+					} else if (flingOneIn > 0 && s.isSolid() && rnd.nextInt(flingOneIn) == 0) {
 						fling(level, pos, s, dx, dz);
 					} else {
 						level.destroyBlock(pos, rnd.nextInt(6) == 0, null, 512);

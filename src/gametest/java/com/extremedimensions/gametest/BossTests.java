@@ -7,6 +7,8 @@ import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.Hoard;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.elder.ElderArena;
+import com.extremedimensions.elder.ElderBoss;
 import com.extremedimensions.elder.ElderTerrain;
 import com.extremedimensions.elder.ElderUltimate;
 import com.extremedimensions.elder.Ferryman;
@@ -83,7 +85,11 @@ public class BossTests {
 		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
 		p.giveExperienceLevels(10);
 		check(helper, FerrymanService.drainFactor(p) == 1.0, "the Tether drained faster before he came");
+		// No arena here: it would reach into the other tests round this one
+		int arena = Config.ELDER_ARENA;
+		Config.ELDER_ARENA = 0;
 		Ferryman f = FerrymanService.summonAt(p, helper.absolutePos(new BlockPos(5, 2, 5)));
+		Config.ELDER_ARENA = arena;
 		check(helper, f != null, "the Ferryman could not come");
 		check(helper, !FerrymanService.summon(p), "the Ferryman came twice for one passenger");
 		check(helper, FerrymanService.drainFactor(p) == Math.max(0.1, Config.FERRYMAN_DRAIN), "while he walks the drain is %s", FerrymanService.drainFactor(p));
@@ -95,6 +101,116 @@ public class BossTests {
 		check(helper, d.owned(Penalty.FERRYMANS_FEE) == 1, "slaying him left %s stacks of the Fee", d.owned(Penalty.FERRYMANS_FEE));
 		check(helper, FerrymanService.drainFactor(p) == 1.0, "the Tether still drains faster after he fell");
 		helper.succeed();
+	}
+
+	@GameTest
+	public void anElderCannotBeHurtWhileItForms(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper);
+		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		int arena = Config.ELDER_ARENA;
+		Config.ELDER_ARENA = 0;
+		Ferryman f = FerrymanService.summonAt(p, helper.absolutePos(new BlockPos(5, 2, 5)));
+		Config.ELDER_ARENA = arena;
+		check(helper, f != null, "the Ferryman could not come");
+		check(helper, f.getAction() == ElderBoss.SPAWN, "the Ferryman did not form first (action %s)", f.getAction());
+		float health = f.getHealth();
+		f.hurtServer(helper.getLevel(), helper.getLevel().damageSources().playerAttack(p), 40f);
+		check(helper, f.getHealth() == health, "he was hurt while he formed");
+		FerrymanService.force(f, Ferryman.KNELL);
+		check(helper, f.getAction() == Ferryman.KNELL, "forcing a blow did not end his forming (action %s)", f.getAction());
+		FerrymanService.fade(f);
+		helper.succeed();
+	}
+
+	/**
+	 * A whole arena, far from the other tests so it touches nothing of theirs: it builds (blocks flying in as block
+	 * displays), its Elder leaves, it comes apart, and the ground is as it was (plants it was built over aside).
+	 */
+	@GameTest(maxTicks = 400)
+	public void anElderRaisesItsArenaAndPutsTheGroundBack(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos origin = helper.absolutePos(BlockPos.ZERO);
+		int cx = (origin.getX() >> 4 << 4) + 6008, cz = (origin.getZ() >> 4 << 4) + 8;
+		for (int x = -3; x <= 3; x++) {
+			for (int z = -3; z <= 3; z++) {
+				level.getChunk((cx >> 4) + x, (cz >> 4) + z);
+				level.setChunkForced((cx >> 4) + x, (cz >> 4) + z, true);
+			}
+		}
+		int top = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, cx, cz);
+		BlockPos centre = new BlockPos(cx, top, cz);
+		java.util.Map<BlockPos, net.minecraft.world.level.block.state.BlockState> before = new java.util.HashMap<>();
+		for (BlockPos q : BlockPos.betweenClosed(centre.offset(-28, -10, -28), centre.offset(28, 32, 28))) {
+			before.put(q.immutable(), level.getBlockState(q));
+		}
+		double build = Config.ELDER_ARENA_BUILD_SECONDS, dissolve = Config.ELDER_ARENA_DISSOLVE_SECONDS;
+		int flight = Config.ELDER_ARENA_FLIGHT_TICKS, linger = Config.ELDER_ARENA_LINGER_SECONDS, on = Config.ELDER_ARENA;
+		Config.ELDER_ARENA = 1;
+		Config.ELDER_ARENA_BUILD_SECONDS = 1;
+		Config.ELDER_ARENA_FLIGHT_TICKS = 10;
+		Config.ELDER_ARENA_LINGER_SECONDS = 1;
+		Config.ELDER_ARENA_DISSOLVE_SECONDS = 1;
+		com.extremedimensions.elder.Weaver w = com.extremedimensions.registry.ModEntities.WEAVER.spawn(level, centre.above(2),
+				net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+		check(helper, w != null, "no Weaver to raise the arena");
+		int arenas = ElderArena.count();
+		ElderArena.raise(w, centre);
+		check(helper, ElderArena.count() == arenas + 1, "the Weaver raised no arena");
+		Runnable restore = () -> {
+			Config.ELDER_ARENA = on;
+			Config.ELDER_ARENA_BUILD_SECONDS = build;
+			Config.ELDER_ARENA_FLIGHT_TICKS = flight;
+			Config.ELDER_ARENA_LINGER_SECONDS = linger;
+			Config.ELDER_ARENA_DISSOLVE_SECONDS = dissolve;
+			for (int x = -3; x <= 3; x++) {
+				for (int z = -3; z <= 3; z++) {
+					level.setChunkForced((cx >> 4) + x, (cz >> 4) + z, false);
+				}
+			}
+		};
+		helper.runAfterDelay(8, () -> {
+			int flying = level.getEntitiesOfClass(net.minecraft.world.entity.Display.BlockDisplay.class, new AABB(centre).inflate(48),
+					d -> d.getTags().contains(ElderArena.TAG)).size();
+			if (flying == 0) {
+				restore.run();
+			}
+			check(helper, flying > 0, "no blocks were flying in");
+		});
+		helper.runAfterDelay(36, () -> {
+			int changed = 0;
+			for (java.util.Map.Entry<BlockPos, net.minecraft.world.level.block.state.BlockState> e : before.entrySet()) {
+				changed += level.getBlockState(e.getKey()) != e.getValue() ? 1 : 0;
+			}
+			if (changed < 40 || ElderArena.standing() < 40) {
+				restore.run();
+			}
+			check(helper, changed >= 40 && ElderArena.standing() >= 40, "the arena put down only %s blocks (%s changed)", ElderArena.standing(), changed);
+			w.discard();
+		});
+		helper.runAfterDelay(150, () -> {
+			restore.run();
+			check(helper, ElderArena.pending() == 0, "%s blocks of the arena are still on their way", ElderArena.pending());
+			check(helper, ElderArena.standing() == 0, "%s blocks of the arena still stand", ElderArena.standing());
+			int wrong = 0;
+			BlockPos first = null;
+			for (java.util.Map.Entry<BlockPos, net.minecraft.world.level.block.state.BlockState> e : before.entrySet()) {
+				net.minecraft.world.level.block.state.BlockState now = level.getBlockState(e.getKey());
+				// Plants built over are gone, and grass covered for a while may have died back to dirt
+				boolean plant = !e.getValue().isAir() && e.getValue().canBeReplaced() && !e.getValue().liquid() && now.isAir();
+				boolean grass = (e.getValue().is(Blocks.GRASS_BLOCK) || e.getValue().is(Blocks.MYCELIUM) || e.getValue().is(Blocks.PODZOL))
+						&& (now.is(Blocks.DIRT) || now.is(e.getValue().getBlock()));
+				if (now != e.getValue() && !plant && !grass) {
+					wrong++;
+					first = first == null ? e.getKey() : first;
+				}
+			}
+			check(helper, wrong == 0, "%s blocks were not put back (first at %s)", wrong, first);
+			int left = level.getEntitiesOfClass(net.minecraft.world.entity.Display.BlockDisplay.class, new AABB(centre).inflate(48),
+					d -> d.getTags().contains(ElderArena.TAG)).size();
+			check(helper, left == 0, "%s block displays of the arena were left behind", left);
+			helper.succeed();
+		});
 	}
 
 	@GameTest
