@@ -31,6 +31,7 @@ public final class HubConfig {
 	public Streaks streaks = new Streaks();
 	public Titles titles = new Titles();
 	public Arenas arenas = new Arenas();
+	public Leaderboards leaderboards = new Leaderboards();
 	public Map<String, Game> games = defaultGames();
 
 	/** BattleHub's own world. Every other dimension is normal gameplay that BattleHub leaves alone. */
@@ -152,6 +153,50 @@ public final class HubConfig {
 		public int blocksPerTick = 40000;
 		/** Arena themes per mode (forest, castle, nether, ice, sky); one is picked at random per match. */
 		public Map<String, List<String>> themes = defaultThemes();
+	}
+
+	/** Floating leaderboards above the wall of the lobby BattleHub builds (not at a lobby set with /battlehub setlobby). */
+	public static final class Leaderboards {
+		public boolean enabled = true;
+		/** Seconds before every board on a wall moves on to the next mode. */
+		public int cycleSeconds = 8;
+		/** Players per board. */
+		public int rows = 10;
+		/** Players with fewer kills are not on the K/D boards. */
+		public int minKillsForKd = 10;
+		/** Text size; 1 is the size of a name tag. */
+		public double scale = 1.0;
+		public List<BoardWall> walls = defaultWalls();
+	}
+
+	/** A row of boards on one side of the lobby wall. */
+	public static final class BoardWall {
+		/** northwest, northeast, southwest or southeast. */
+		public String side = "northwest";
+		/** Count ranked matches only (ranked duels). */
+		public boolean ranked;
+		/** One board each, left to right as seen from the plaza: kills, deaths, kd, coins, wins, elo. */
+		public List<String> stats = new ArrayList<>();
+		/** The modes the boards show in turn: all, pvp (FFA, duels, 1v2, 1v3) or a mode id such as sword or bed_wars. */
+		public List<String> modes = new ArrayList<>();
+
+		public BoardWall() {}
+
+		BoardWall(String side, boolean ranked, List<String> stats, List<String> modes) {
+			this.side = side;
+			this.ranked = ranked;
+			this.stats = new ArrayList<>(stats);
+			this.modes = new ArrayList<>(modes);
+		}
+	}
+
+	static List<BoardWall> defaultWalls() {
+		List<BoardWall> l = new ArrayList<>();
+		l.add(new BoardWall("northwest", false, List.of("kills", "deaths", "kd", "coins"),
+				List.of("pvp", "ffa", "sword", "axe", "mace", "bow", "crossbow", "1v2", "1v3")));
+		l.add(new BoardWall("southwest", true, List.of("elo", "kills", "deaths", "kd", "coins"),
+				List.of("all", "sword", "axe", "mace", "bow", "crossbow")));
+		return l;
 	}
 
 	/** Settings for one mode. Only the keys that matter for that mode are used. */
@@ -281,6 +326,19 @@ public final class HubConfig {
 		if (streaks.milestones == null) streaks.milestones = new ArrayList<>();
 		if (titles == null) titles = new Titles();
 		if (arenas == null) arenas = new Arenas();
+		if (leaderboards == null) leaderboards = new Leaderboards();
+		if (leaderboards.walls == null) leaderboards.walls = defaultWalls();
+		leaderboards.walls.removeIf(w -> w == null);
+		for (BoardWall w : leaderboards.walls) {
+			if (w.side == null) w.side = "northwest";
+			if (w.stats == null) w.stats = new ArrayList<>();
+			if (w.modes == null || w.modes.isEmpty()) w.modes = new ArrayList<>(List.of(w.ranked ? "all" : "pvp"));
+		}
+		leaderboards.cycleSeconds = Math.max(3, Math.min(600, leaderboards.cycleSeconds));
+		leaderboards.rows = Math.max(3, Math.min(15, leaderboards.rows));
+		leaderboards.minKillsForKd = Math.max(1, leaderboards.minKillsForKd);
+		if (!(leaderboards.scale >= 0.5)) leaderboards.scale = 1.0;
+		leaderboards.scale = Math.min(3.0, leaderboards.scale);
 		if (arenas.themes == null) arenas.themes = defaultThemes();
 		Map<String, List<String>> defThemes = defaultThemes();
 		for (GameMode mode : GameMode.values()) {

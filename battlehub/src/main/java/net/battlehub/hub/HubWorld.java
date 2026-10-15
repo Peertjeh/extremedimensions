@@ -68,6 +68,11 @@ public final class HubWorld {
 		return ORIGIN.getY();
 	}
 
+	/** Where the lobby layout's 0,0,0 is in the hub world. */
+	static BlockPos origin() {
+		return ORIGIN;
+	}
+
 	private static Path marker(MinecraftServer server) {
 		return PlayerStore.worldDir(server).resolve("hub.json");
 	}

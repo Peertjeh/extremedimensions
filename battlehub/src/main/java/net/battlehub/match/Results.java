@@ -45,6 +45,7 @@ public final class Results {
 			Rewards.Reward full = Rewards.compute(settings, o, kills, 1.0);
 			Rewards.Reward reward = new Rewards.Reward((int) Math.round(full.coins() * Math.max(0, m.coinFactor())), full.xp());
 			Progression.addCoins(prof, reward.coins());
+			StatsRecorder.recordCoins(prof, m.mode, m.ranked, reward.coins());
 			Progression.LevelChange lvl = Progression.addXp(prof, reward.xp(), Ranks.curve(), cfg.levels.bonusEvery, cfg.levels.bonusCoins);
 			int[] e = elo.get(id);
 			if (e != null) {

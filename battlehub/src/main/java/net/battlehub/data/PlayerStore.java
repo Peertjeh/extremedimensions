@@ -16,7 +16,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import net.battlehub.BattleHub;
 import net.battlehub.config.ConfigManager;
+import net.battlehub.config.HubConfig;
+import net.battlehub.core.CoinHistory;
+import net.battlehub.core.CosmeticDef;
 import net.battlehub.core.PlayerProfile;
+import net.battlehub.core.TitleDef;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.LevelResource;
@@ -38,6 +42,7 @@ public final class PlayerStore {
 	public static void load(MinecraftServer server) {
 		PROFILES.clear();
 		dir = worldDir(server).resolve("players");
+		List<UUID> estimated = new ArrayList<>();
 		try {
 			Files.createDirectories(dir);
 			try (DirectoryStream<Path> files = Files.newDirectoryStream(dir, "*.json")) {
@@ -48,6 +53,10 @@ public final class PlayerStore {
 							p.normalize();
 							UUID id = UUID.fromString(f.getFileName().toString().replace(".json", ""));
 							p.uuid = id.toString();
+							if (CoinHistory.needsEstimate(p)) {
+								estimateCoins(p);
+								estimated.add(id);
+							}
 							PROFILES.put(id, p);
 						}
 					} catch (Exception e) {
@@ -58,7 +67,27 @@ public final class PlayerStore {
 		} catch (IOException e) {
 			BattleHub.LOGGER.error("Could not read player data from {}", dir, e);
 		}
+		for (UUID id : estimated) {
+			save(id);
+		}
 		BattleHub.LOGGER.info("Loaded {} player profiles", PROFILES.size());
+	}
+
+	/** Profiles from before 1.6 did not count coins earned; estimate them once (see CoinHistory). */
+	private static void estimateCoins(PlayerProfile p) {
+		HubConfig cfg = ConfigManager.config();
+		long spent = 0;
+		for (TitleDef t : ConfigManager.titles().titles) {
+			if (t != null && t.id != null && p.ownedTitles.contains(t.id)) {
+				spent += Math.max(0, t.value);
+			}
+		}
+		for (CosmeticDef c : ConfigManager.cosmetics().cosmetics) {
+			if (c != null && c.id != null && p.ownedCosmetics.contains(c.id)) {
+				spent += Math.max(0, c.price);
+			}
+		}
+		CoinHistory.estimate(p, cfg.rewards.duel, cfg.rewards.party, cfg.rewards.ranked, spent);
 	}
 
 	/** Profile for this id; created (not yet saved) when unknown. */

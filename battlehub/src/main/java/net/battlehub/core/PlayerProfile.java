@@ -10,10 +10,13 @@ import java.util.Set;
  * Gson-friendly. Call {@link #normalize()} after loading to repair missing collections.
  */
 public final class PlayerProfile {
-	public int version = 1;
+	/** 2 since 1.6 (coins earned are counted); older files get an estimate on load, see {@link CoinHistory}. */
+	public int version = 2;
 	public String uuid = "";
 	public String name = "";
 	public long coins;
+	/** Every coin ever earned (matches, level bonuses, tournament prizes); spending does not lower it. */
+	public long coinsEarned;
 	public long xp;
 	public int level = 1;
 	/** Selected title id, empty for none. */
@@ -54,6 +57,7 @@ public final class PlayerProfile {
 		if (bestTimes == null) bestTimes = new LinkedHashMap<>();
 		if (level < 1) level = 1;
 		if (coins < 0) coins = 0;
+		if (coinsEarned < 0) coinsEarned = 0;
 		if (xp < 0) xp = 0;
 		modes.values().removeIf(v -> v == null);
 		ranked.values().removeIf(v -> v == null);

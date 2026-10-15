@@ -53,6 +53,7 @@ public final class HubEvents {
 			Queues.clear();
 			net.battlehub.games.Visibility.clear();
 			Sessions.clear();
+			net.battlehub.hub.HubBoards.clear();
 			Tasks.clear();
 			PlayerStore.unload();
 			BattleHub.setServer(null);
@@ -169,6 +170,7 @@ public final class HubEvents {
 		net.battlehub.spectate.Spectators.tick(server);
 		Menus.tick(server);
 		net.battlehub.progression.Cosmetics.tick(server, tick);
+		net.battlehub.hub.HubBoards.tick(server);
 		if (net.battlehub.debug.SelfTest.enabled()) {
 			net.battlehub.debug.SelfTest.tick();
 		}

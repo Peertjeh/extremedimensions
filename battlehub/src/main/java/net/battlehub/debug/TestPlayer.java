@@ -16,6 +16,8 @@ import net.minecraft.server.network.CommonListenerCookie;
 
 /** A real online player without a client, for the self-test. Ticks its own physics like a connected player. */
 public final class TestPlayer extends ServerPlayer {
+	private TestConnection link;
+
 	private TestPlayer(MinecraftServer server, ServerLevel level, GameProfile profile) {
 		super(server, level, profile, ClientInformation.createDefault());
 	}
@@ -27,8 +29,14 @@ public final class TestPlayer extends ServerPlayer {
 	public static TestPlayer join(MinecraftServer server, String name) {
 		GameProfile profile = new GameProfile(uuid(name), name);
 		TestPlayer p = new TestPlayer(server, server.overworld(), profile);
-		server.getPlayerList().placeNewPlayer(new TestConnection(), p, new CommonListenerCookie(profile, 0, p.clientInformation(), false));
+		p.link = new TestConnection();
+		server.getPlayerList().placeNewPlayer(p.link, p, new CommonListenerCookie(profile, 0, p.clientInformation(), false));
 		return p;
+	}
+
+	/** Ids of the entities this player's client would have now. */
+	public java.util.Set<Integer> clientEntities() {
+		return link.entities;
 	}
 
 	public void leave() {

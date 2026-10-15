@@ -19,6 +19,18 @@ public final class StatsRecorder {
 		return new Result(overall.streak, ms.streak, bestOverall, bestMode);
 	}
 
+	/** Coins paid for a match, per mode (and ranked) and overall, for the "coins earned" leaderboards. */
+	public static void recordCoins(PlayerProfile p, GameMode mode, boolean ranked, long coins) {
+		if (coins <= 0) {
+			return;
+		}
+		p.overall.coins += coins;
+		p.mode(mode).coins += coins;
+		if (ranked) {
+			p.rankedStats(mode).coins += coins;
+		}
+	}
+
 	private static void apply(ModeStats s, Outcome outcome, int kills, int deaths) {
 		s.played++;
 		s.kills += Math.max(0, kills);

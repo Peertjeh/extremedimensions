@@ -65,6 +65,7 @@ public final class SelfTest {
 		HubWorldTests.all(server, s);
 		lobbyAndMenus(server, s);
 		LayoutTests.all(s);
+		BoardTests.all(server, s);
 		MenuSecurityTests.all(server, s);
 		CosmeticsTests.all(server, s);
 		duel(server, s, GameMode.SWORD, "queue", "kill");
@@ -95,6 +96,12 @@ public final class SelfTest {
 		ArcadeTests.all(server, s);
 		TournamentTests.all(server, s);
 		ProgressionTests.all(server, s);
+		s.check("coins earned are counted per mode, for ranked and in total", () -> {
+			PlayerProfile a = PlayerStore.get(p("BHTestA").getUUID());
+			PlayerProfile b = PlayerStore.get(p("BHTestB").getUUID());
+			return a.peek(GameMode.SWORD).coins > 0 && a.rankedStats(GameMode.SWORD).coins > 0 && b.rankedStats(GameMode.SWORD).coins > 0
+					&& a.overall.coins >= a.peek(GameMode.SWORD).coins && a.coinsEarned >= a.overall.coins;
+		});
 		runningAtStop(server, s);
 		script = s;
 	}

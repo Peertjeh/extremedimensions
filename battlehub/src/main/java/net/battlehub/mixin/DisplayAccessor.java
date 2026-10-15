@@ -7,11 +7,16 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.world.entity.Display;
 
-/** Prop disguises: centre the block on its entity and move it smoothly. */
+/** Prop disguises (centre the block on its entity, move it smoothly) and the size of the lobby leaderboards. */
 @Mixin(Display.class)
 public interface DisplayAccessor {
 	@Accessor("DATA_TRANSLATION_ID")
 	static EntityDataAccessor<Vector3fc> battlehub$translation() {
+		throw new AssertionError();
+	}
+
+	@Accessor("DATA_SCALE_ID")
+	static EntityDataAccessor<Vector3fc> battlehub$scale() {
 		throw new AssertionError();
 	}
 

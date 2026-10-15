@@ -28,10 +28,15 @@ public final class Progression {
 			}
 		}
 		p.coins += bonus;
+		p.coinsEarned += bonus;
 		return new LevelChange(old, now, bonus);
 	}
 
+	/** Pays (or, when negative, takes) coins; payments count towards the coins earned. */
 	public static void addCoins(PlayerProfile p, long coins) {
 		p.coins = Math.max(0, p.coins + coins);
+		if (coins > 0) {
+			p.coinsEarned += coins;
+		}
 	}
 }

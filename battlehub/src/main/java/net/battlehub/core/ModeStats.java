@@ -10,6 +10,8 @@ public final class ModeStats {
 	public int deaths;
 	public int streak;
 	public int bestStreak;
+	/** Coins paid out for matches of this mode (counted since 1.6; older profiles got an estimate). */
+	public long coins;
 
 	public double kdr() {
 		return deaths == 0 ? kills : (double) kills / deaths;

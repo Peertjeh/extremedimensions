@@ -12,6 +12,7 @@
 		"ServerGamePacketListenerImplMixin",
 		"DisplayAccessor",
 		"BlockDisplayAccessor",
+		"TextDisplayAccessor",
 		"EntityMixin",
 		"LivingEntitySwingMixin"
 	],
