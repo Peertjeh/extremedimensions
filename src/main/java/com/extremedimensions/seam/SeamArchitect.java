@@ -7,15 +7,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 
+import com.extremedimensions.config.Config;
 import com.extremedimensions.registry.ModBlocks;
+import com.extremedimensions.server.BlockFlight;
+import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -25,6 +31,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.level.block.state.properties.WallSide;
+import net.minecraft.world.phys.AABB;
 
 /**
  * The architecture of the Seam: colossal gothic spires, giant looms, villages of jettied timber houses, towers hanging
@@ -312,13 +319,24 @@ public final class SeamArchitect {
 		}
 
 		private List<Map.Entry<Long, BlockState>> sorted;
+		/** Per block in {@link #sorted}: whether it will show (a side of it is not against another block of the plan). */
+		private boolean[] shown;
 
-		/** Joins its walls and fences and orders it bottom to top; safe off the server thread (it touches no world). */
+		/**
+		 * Joins its walls and fences, orders it bottom to top and marks which blocks will show; safe off the server
+		 * thread (it touches no world).
+		 */
 		public void prepare() {
 			if (sorted == null) {
 				connect();
 				sorted = new ArrayList<>(blocks.entrySet());
 				sorted.sort((a, b) -> Integer.compare(BlockPos.getY(a.getKey()), BlockPos.getY(b.getKey())));
+				shown = new boolean[sorted.size()];
+				for (int i = 0; i < shown.length; i++) {
+					long k = sorted.get(i).getKey();
+					int x = BlockPos.getX(k), y = BlockPos.getY(k), z = BlockPos.getZ(k);
+					shown[i] = !has(x + 1, y, z) || !has(x - 1, y, z) || !has(x, y + 1, z) || !has(x, y - 1, z) || !has(x, y, z + 1) || !has(x, y, z - 1);
+				}
 			}
 		}
 
@@ -326,21 +344,22 @@ public final class SeamArchitect {
 		public void queue() {
 			prepare();
 			int id = ++nextPlan;
-			List<Map.Entry<Long, BlockState>> list = sorted;
-			for (Map.Entry<Long, BlockState> e : list) {
-				QUEUE.add(new Job(e.getKey(), e.getValue(), null, id));
+			for (int i = 0; i < sorted.size(); i++) {
+				Map.Entry<Long, BlockState> e = sorted.get(i);
+				QUEUE.add(new Job(e.getKey(), e.getValue(), null, id, shown[i]));
 			}
 			for (Object[] a : after) {
 				@SuppressWarnings("unchecked") Consumer<ServerLevel> c = (Consumer<ServerLevel>) a[1];
-				QUEUE.add(new Job(((BlockPos) a[0]).asLong(), null, c, id));
+				QUEUE.add(new Job(((BlockPos) a[0]).asLong(), null, c, id, false));
 			}
-			UNBUILT.put(id, list.size());
+			UNBUILT.put(id, sorted.size());
+			LEFT.put(id, sorted.size() + after.size());
 			PLANS.put(id, new Meta(cell == null ? "" : cell, List.copyOf(falls), List.copyOf(marks)));
 		}
 	}
 
-	/** A queued block to set, or an action to run once every block of its plan stands. */
-	private record Job(long pos, BlockState state, Consumer<ServerLevel> action, int plan) {}
+	/** A queued block to set (and whether it will show), or an action to run once every block of its plan stands. */
+	private record Job(long pos, BlockState state, Consumer<ServerLevel> action, int plan, boolean shown) {}
 
 	/** What is remembered of a queued plan: its cell, light falls and marks (to forget them if the work is dropped). */
 	public record Meta(String cell, List<int[]> falls, List<String> marks) {}
@@ -353,8 +372,16 @@ public final class SeamArchitect {
 	private static final ArrayDeque<Job> READY = new ArrayDeque<>();
 	/** Actions waiting for the last blocks of their plan. */
 	private static final Map<Integer, List<Job>> HELD = new HashMap<>();
+	/** Per plan: blocks still to stand, and jobs (blocks and actions) still to do; a plan with none left is forgotten. */
 	private static final Map<Integer, Integer> UNBUILT = new HashMap<>();
+	private static final Map<Integer, Integer> LEFT = new HashMap<>();
 	private static final Map<Integer, Meta> PLANS = new HashMap<>();
+	/** Blocks someone is near enough to see come: they fly to their places, a few at a time, in order. */
+	private static final ArrayDeque<Job> NEAR = new ArrayDeque<>();
+	/** Blocks in the air now. */
+	private static final List<BlockFlight.Flight> FLIGHTS = new ArrayList<>();
+	private static double flyCredit;
+	private static final String SPARK = "extremedimensions:soul_mote";
 	private static int nextPlan;
 	private static int waiting;
 	private static int held;
@@ -366,14 +393,36 @@ public final class SeamArchitect {
 		READY.clear();
 		HELD.clear();
 		UNBUILT.clear();
+		LEFT.clear();
 		PLANS.clear();
+		NEAR.clear();
+		FLIGHTS.forEach(BlockFlight::cancel);
+		FLIGHTS.clear();
+		flyCredit = 0;
 		waiting = 0;
 		held = 0;
 	}
 
-	/** Blocks and actions still to do, waiting ones included. */
+	/**
+	 * On stopping, before the world is saved: blocks in the air land at once, and the plans not yet finished are
+	 * returned (their cells are forgotten, to be designed and built again when someone comes back).
+	 */
+	public static List<Meta> stop() {
+		for (BlockFlight.Flight f : List.copyOf(FLIGHTS)) {
+			BlockFlight.rush(f);
+		}
+		FLIGHTS.clear();
+		return new ArrayList<>(PLANS.values());
+	}
+
+	/** Blocks and actions still to do, waiting and flying ones included. */
 	public static int pending() {
-		return QUEUE.size() + READY.size() + waiting + held;
+		return QUEUE.size() + READY.size() + waiting + held + NEAR.size() + FLIGHTS.size();
+	}
+
+	/** Blocks flying to their places now (for tests). */
+	public static int flying() {
+		return FLIGHTS.size();
 	}
 
 	private static long built;
@@ -389,6 +438,18 @@ public final class SeamArchitect {
 	public static void tick(ServerLevel level, long budgetNanos) {
 		long deadline = System.nanoTime() + budgetNanos;
 		boolean had = pending() > 0;
+		List<ServerPlayer> watchers = new ArrayList<>();
+		for (ServerPlayer p : level.players()) {
+			if (!p.isSpectator()) {
+				watchers.add(p);
+			}
+		}
+		if (!FLIGHTS.isEmpty()) {
+			flights(watchers);
+		}
+		if (!NEAR.isEmpty()) {
+			launch(level, watchers);
+		}
 		if (!WAITING.isEmpty() && ++calls % 10 == 0) {
 			for (var it = WAITING.entrySet().iterator(); it.hasNext();) {
 				var e = it.next();
@@ -409,19 +470,21 @@ public final class SeamArchitect {
 			}
 			Job j = READY.isEmpty() ? QUEUE.poll() : READY.poll();
 			heavy = j.action() != null;
-			run(level, j);
+			run(level, j, watchers);
 		}
 		if (had && pending() == 0) {
 			com.extremedimensions.ExtremeDimensions.LOGGER.info("Seam architect: done, {} blocks built so far", built);
 		}
 	}
 
-	/** Does a job, or parks it: in its chunk's waiting list, or (an action) until its plan's blocks all stand. */
-	private static void run(ServerLevel level, Job j) {
+	/**
+	 * Does a job, or parks it: in its chunk's waiting list, (an action) until its plan's blocks all stand, or (a block
+	 * someone is near enough to see come) in line to fly to its place.
+	 */
+	private static void run(ServerLevel level, Job j, List<ServerPlayer> watchers) {
 		BlockPos pos = BlockPos.of(j.pos());
 		if (!level.isLoaded(pos)) {
-			WAITING.computeIfAbsent(chunkOf(j.pos()), k -> new ArrayDeque<>()).add(j);
-			waiting++;
+			park(j);
 			return;
 		}
 		if (j.action() != null) {
@@ -430,17 +493,184 @@ public final class SeamArchitect {
 				held++;
 			} else {
 				j.action().accept(level);
+				done(j.plan());
 			}
 			return;
 		}
+		if (flies(level, j, pos, watchers)) {
+			NEAR.add(j);
+			return;
+		}
+		place(level, j, pos);
+	}
+
+	private static void park(Job j) {
+		WAITING.computeIfAbsent(chunkOf(j.pos()), k -> new ArrayDeque<>()).add(j);
+		waiting++;
+	}
+
+	/** A block of a plan is put down; once its plan's blocks all stand, its actions follow. */
+	private static void place(ServerLevel level, Job j, BlockPos pos) {
 		level.setBlock(pos, j.state(), 2);
 		built++;
+		stood(j);
+	}
+
+	/** A block of a plan is done with (put down, or found taken by something else). */
+	private static void stood(Job j) {
 		if (UNBUILT.merge(j.plan(), -1, Integer::sum) <= 0) {
 			UNBUILT.remove(j.plan());
 			List<Job> actions = HELD.remove(j.plan());
 			if (actions != null) {
 				READY.addAll(actions);
 				held -= actions.size();
+			}
+		}
+		done(j.plan());
+	}
+
+	/** One more job of a plan done; once all are, the plan is forgotten. */
+	private static void done(int plan) {
+		if (LEFT.merge(plan, -1, Integer::sum) <= 0) {
+			LEFT.remove(plan);
+			PLANS.remove(plan);
+		}
+	}
+
+	// ------------------------------------------------------------------ the Seam building itself before your eyes
+
+	/**
+	 * Whether a block flies to its place instead of simply being there: it will show, its place is open air, and
+	 * someone is near enough to see it come ({@code seam_fly_range}), though not so near that it is the ground at
+	 * their feet (that is simply there, so no one falls through an island still being built).
+	 */
+	private static boolean flies(ServerLevel level, Job j, BlockPos pos, List<ServerPlayer> watchers) {
+		if (Config.SEAM_FLY_RANGE <= 0 || !j.shown() || j.state().isAir() || watchers.isEmpty() || !level.getBlockState(pos).isAir()) {
+			return false;
+		}
+		double range = Config.SEAM_FLY_RANGE;
+		boolean near = false;
+		for (ServerPlayer p : watchers) {
+			double dx = p.getX() - (pos.getX() + 0.5), dy = p.getY() - pos.getY(), dz = p.getZ() - (pos.getZ() + 0.5);
+			double flat = dx * dx + dz * dz;
+			if (flat < 4.5 * 4.5 && dy > -3 && dy < 7) {
+				return false;
+			}
+			near |= flat + dy * dy < range * range;
+		}
+		return near;
+	}
+
+	/** Sends blocks in line on their way: as many a tick as fill the air once a flight, never more in the air than allowed. */
+	private static void launch(ServerLevel level, List<ServerPlayer> watchers) {
+		int max = Math.max(1, Config.SEAM_FLY_MAX), ticks = Math.max(10, Config.SEAM_FLY_TICKS);
+		flyCredit = Math.min(flyCredit + max / (double) ticks, max);
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		while (flyCredit >= 1 && FLIGHTS.size() < max && !NEAR.isEmpty()) {
+			Job j = NEAR.poll();
+			BlockPos pos = BlockPos.of(j.pos());
+			if (!level.isLoaded(pos)) {
+				park(j);
+				continue;
+			}
+			if (!flies(level, j, pos, watchers)) {
+				place(level, j, pos);
+				continue;
+			}
+			BlockFlight.Flight f = BlockFlight.in(level, pos, j.state(), from(rnd), ticks, SPARK, rnd.nextInt(5) == 0 ? 5 : 0, new Arrival(level, j, pos));
+			if (f == null) {
+				place(level, j, pos);
+				continue;
+			}
+			flyCredit--;
+			FLIGHTS.add(f);
+			if (rnd.nextInt(40) == 0) {
+				WorldFx.soundIn(level.dimension().identifier().toString(), "minecraft:block.amethyst_block.resonate", "ambient", f.x(), f.y(), f.z(), 0.6f,
+						(float) rnd.nextDouble(0.7, 1.4));
+			}
+		}
+	}
+
+	/** Where a block sets off from: out of the nothing round and below its place, about {@code seam_fly_from} blocks off. */
+	private static double[] from(ThreadLocalRandom rnd) {
+		double dist = Math.max(2, Config.SEAM_FLY_FROM) * rnd.nextDouble(0.75, 1.25);
+		double az = rnd.nextDouble(Math.PI * 2), el = rnd.nextDouble(-1.1, 0.35);
+		return new double[] {Math.cos(az) * Math.cos(el) * dist, Math.sin(el) * dist, Math.sin(az) * Math.cos(el) * dist};
+	}
+
+	/** One tick of the blocks in the air; one about to be stepped on lands at once. */
+	private static void flights(List<ServerPlayer> watchers) {
+		var it = FLIGHTS.iterator();
+		while (it.hasNext()) {
+			BlockFlight.Flight f = it.next();
+			if (underfoot(f, watchers)) {
+				BlockFlight.rush(f);
+				it.remove();
+			} else if (BlockFlight.step(f)) {
+				it.remove();
+			}
+		}
+	}
+
+	/** Whether a block still flying in goes just under someone's feet. */
+	private static boolean underfoot(BlockFlight.Flight f, List<ServerPlayer> watchers) {
+		if (!BlockFlight.incoming(f)) {
+			return false;
+		}
+		for (ServerPlayer p : watchers) {
+			double dx = p.getX() - (f.pos.getX() + 0.5), dz = p.getZ() - (f.pos.getZ() + 0.5), dy = p.getY() - f.pos.getY();
+			if (dx * dx + dz * dz < 2.5 * 2.5 && dy >= 1 && dy < 4) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Whether someone (not an Elder) stands where a block would go. */
+	private static boolean occupied(ServerLevel level, BlockPos pos) {
+		return !level.getEntitiesOfClass(LivingEntity.class, new AABB(pos), e -> e.isAlive() && !(e instanceof com.extremedimensions.elder.ElderBoss)).isEmpty();
+	}
+
+	/** How a block of the Seam lands: in whatever open space is there, never on something someone has put there since. */
+	private record Arrival(ServerLevel level, Job job, BlockPos pos) implements BlockFlight.Landing {
+		@Override
+		public boolean fits() {
+			BlockState now = level.getBlockState(pos);
+			return now.isAir() || now.canBeReplaced() && !now.hasBlockEntity();
+		}
+
+		@Override
+		public boolean blocked() {
+			return occupied(level, pos);
+		}
+
+		@Override
+		public void land() {
+			place(level, job, pos);
+			ThreadLocalRandom rnd = ThreadLocalRandom.current();
+			if (rnd.nextInt(6) == 0) {
+				level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, job.state().getSoundType().getPlaceSound(),
+						net.minecraft.sounds.SoundSource.BLOCKS, 0.5f, (float) rnd.nextDouble(0.7, 1.1));
+			}
+		}
+
+		@Override
+		public void refused() {
+			stood(job);
+		}
+
+		@Override
+		public void missed() {
+			// Someone stood in its place all the while: it gets in line again
+			NEAR.add(job);
+		}
+
+		@Override
+		public void lost() {
+			if (level.isLoaded(pos)) {
+				place(level, job, pos);
+			} else {
+				park(job);
 			}
 		}
 	}
@@ -478,9 +708,11 @@ public final class SeamArchitect {
 		}
 		QUEUE.removeIf(j -> far.contains(j.plan()));
 		READY.removeIf(j -> far.contains(j.plan()));
+		NEAR.removeIf(j -> far.contains(j.plan()));
 		List<Meta> dropped = new ArrayList<>();
 		for (int id : far) {
 			UNBUILT.remove(id);
+			LEFT.remove(id);
 			List<Job> actions = HELD.remove(id);
 			if (actions != null) {
 				held -= actions.size();

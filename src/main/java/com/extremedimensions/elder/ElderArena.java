@@ -16,20 +16,17 @@ import org.joml.Vector3f;
 import com.mojang.math.Transformation;
 
 import com.extremedimensions.config.Config;
-import com.extremedimensions.mixin.BlockDisplayAccess;
 import com.extremedimensions.mixin.DisplayAccess;
+import com.extremedimensions.server.BlockFlight;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Brightness;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -48,7 +45,7 @@ import net.minecraft.world.phys.AABB;
  * <p>Blocks are only built into air and plants; the ground is only inlaid where the world may be torn up
  * ({@code elder_griefing} and the mobGriefing rule), and never where a block holds data. A block of an arena a player
  * breaks drops nothing, and nothing an Elder tears out of one is thrown about. On stopping, everything is put back at
- * once; a block display of an arena found in a chunk after a crash is removed.
+ * once. The blocks fly as {@link BlockFlight}s.
  */
 public final class ElderArena {
 	private ElderArena() {}
@@ -56,11 +53,6 @@ public final class ElderArena {
 	/** How a piece goes in: into air (and plants), or inlaid into the ground in place of its top block. */
 	static final int AIR = 0;
 	static final int GROUND = 1;
-
-	/** The tag on every block display of an arena. */
-	public static final String TAG = "extremedimensions_arena";
-	/** Ticks of the final drop into place. */
-	private static final int SETTLE = 4;
 
 	/** One block of an arena: where it goes, what it is, how it goes in, and what was there. */
 	static final class Piece {
@@ -78,18 +70,6 @@ public final class ElderArena {
 			this.kind = kind;
 			this.expect = expect;
 		}
-	}
-
-	/** A block on its way in or out. */
-	private static final class Flight {
-		Display.BlockDisplay display;
-		Piece piece;
-		int age;
-		boolean outward;
-		/** Where it starts (in) or ends (out), from the block. */
-		double ox, oy, oz;
-		Quaternionf spin;
-		int waits;
 	}
 
 	/** A chain or thread being drawn out. */
@@ -112,7 +92,7 @@ public final class ElderArena {
 		int linger = -1;
 		/** Ticks the boss has not been found (a chunk still loading, or gone). */
 		int missing;
-		final List<Flight> flights = new ArrayList<>();
+		final List<BlockFlight.Flight> flights = new ArrayList<>();
 		final List<Strand> strands = new ArrayList<>();
 		/** Every block it means to build, so a second arena near never builds over it. */
 		final Set<Long> claimed = new HashSet<>();
@@ -121,8 +101,6 @@ public final class ElderArena {
 	private static final List<Arena> ARENAS = new ArrayList<>();
 	/** Every block an arena has put down, by level and position. */
 	private static final Map<ServerLevel, Map<Long, Piece>> STANDING = new HashMap<>();
-	/** The block displays arenas are using now (any other display of an arena is a leftover). */
-	private static final Set<UUID> LIVE = new HashSet<>();
 
 	// ------------------------------------------------------------------ queries
 
@@ -243,12 +221,7 @@ public final class ElderArena {
 				launch(a, a.pieces.get(a.next++));
 			}
 		}
-		Iterator<Flight> fl = a.flights.iterator();
-		while (fl.hasNext()) {
-			if (fly(a, fl.next())) {
-				fl.remove();
-			}
-		}
+		a.flights.removeIf(BlockFlight::step);
 		if (!a.strung && !a.dissolving && a.next >= a.pieces.size() && a.flights.isEmpty()) {
 			a.strung = true;
 			if (a.linger < 0) {
@@ -259,7 +232,7 @@ public final class ElderArena {
 		while (st.hasNext()) {
 			Strand s = st.next();
 			if (s.display.isRemoved()) {
-				LIVE.remove(s.display.getUUID());
+				BlockFlight.forget(s.display);
 				st.remove();
 				continue;
 			}
@@ -306,23 +279,36 @@ public final class ElderArena {
 			return;
 		}
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		double[] o = offset(a, p, rnd, false);
-		Flight f = new Flight();
-		f.piece = p;
-		f.ox = o[0];
-		f.oy = o[1];
-		f.oz = o[2];
-		f.spin = new Quaternionf().rotateAxis((float) rnd.nextDouble(1.2, 2.8), randomAxis(rnd));
-		f.display = display(level, p.pos, p.state, pose(f.ox, f.oy, f.oz, f.spin, 0.15F));
-		if (f.display == null) {
+		BlockFlight.Flight f = BlockFlight.in(level, p.pos, p.state, offset(a, p, rnd, false), flightTicks(), ArenaDesign.spark(a.style), 2,
+				new BlockFlight.Landing() {
+					@Override
+					public boolean fits() {
+						return ElderArena.fits(level, p);
+					}
+
+					@Override
+					public boolean blocked() {
+						return ElderArena.blocked(level, p.pos);
+					}
+
+					@Override
+					public void land() {
+						place(a, p);
+					}
+				});
+		if (f == null) {
 			return;
 		}
 		a.flights.add(f);
-		double x = p.pos.getX() + 0.5 + f.ox, y = p.pos.getY() + 0.5 + f.oy, z = p.pos.getZ() + 0.5 + f.oz;
-		WorldFx.particleIn(level, ArenaDesign.spark(a.style), x, y, z, 0.15, 0.15, 0.15, 0.02, 3);
+		WorldFx.particleIn(level, ArenaDesign.spark(a.style), f.x(), f.y(), f.z(), 0.15, 0.15, 0.15, 0.02, 3);
 		if (a.next % 7 == 0) {
-			WorldFx.soundIn(level.dimension().identifier().toString(), ArenaDesign.whoosh(a.style), "hostile", x, y, z, 0.7f, (float) rnd.nextDouble(0.6, 1.3));
+			WorldFx.soundIn(level.dimension().identifier().toString(), ArenaDesign.whoosh(a.style), "hostile", f.x(), f.y(), f.z(), 0.7f,
+					(float) rnd.nextDouble(0.6, 1.3));
 		}
+	}
+
+	private static int flightTicks() {
+		return Math.max(10, Config.ELDER_ARENA_FLIGHT_TICKS);
 	}
 
 	/** A block taken back: the ground is put back as it was and the block flies off into nothing. */
@@ -342,92 +328,14 @@ public final class ElderArena {
 			return;
 		}
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		double[] o = offset(a, p, rnd, true);
-		Flight f = new Flight();
-		f.piece = p;
-		f.outward = true;
-		f.ox = o[0];
-		f.oy = o[1];
-		f.oz = o[2];
-		f.spin = new Quaternionf().rotateAxis((float) rnd.nextDouble(1.2, 2.8), randomAxis(rnd));
-		f.display = display(level, p.pos, p.state, pose(0, 0, 0, new Quaternionf(), 1F));
-		if (f.display != null) {
+		BlockFlight.Flight f = BlockFlight.out(level, p.pos, p.state, offset(a, p, rnd, true), flightTicks(), ArenaDesign.spark(a.style), 3);
+		if (f != null) {
 			a.flights.add(f);
 		}
 		if (a.out % 6 == 0) {
 			WorldFx.soundIn(level.dimension().identifier().toString(), ArenaDesign.whoosh(a.style), "hostile", p.pos.getX() + 0.5, p.pos.getY() + 0.5, p.pos.getZ() + 0.5,
 					0.6f, (float) rnd.nextDouble(0.8, 1.5));
 		}
-	}
-
-	/** One tick of a flight; true once it is over. */
-	private static boolean fly(Arena a, Flight f) {
-		ServerLevel level = a.level;
-		if (f.display.isRemoved()) {
-			LIVE.remove(f.display.getUUID());
-			return true;
-		}
-		int length = Math.max(10, Config.ELDER_ARENA_FLIGHT_TICKS);
-		f.age++;
-		DisplayAccess d = (DisplayAccess) f.display;
-		if (f.outward) {
-			if (f.age == 2) {
-				d.extremedimensions$setTransformation(pose(f.ox, f.oy, f.oz, f.spin, 0.05F));
-				d.extremedimensions$setInterpolationDuration(length);
-				d.extremedimensions$setInterpolationDelay(0);
-			}
-			if (f.age > 2 && f.age % 3 == 0) {
-				trail(a, f, Math.min(1, (f.age - 2) / (double) length));
-			}
-			if (f.age >= length + 3) {
-				drop(f.display);
-				return true;
-			}
-			return false;
-		}
-		int glide = length - SETTLE;
-		if (f.age == 2) {
-			// Up to just over its place, turning upright and growing to its size as it comes
-			Quaternionf tilt = new Quaternionf().rotateAxis(0.25F, randomAxis(ThreadLocalRandom.current()));
-			d.extremedimensions$setTransformation(pose(0, 1.25, 0, tilt, 1F));
-			d.extremedimensions$setInterpolationDuration(glide - 2);
-			d.extremedimensions$setInterpolationDelay(0);
-		}
-		if (f.age > 2 && f.age < glide && f.age % 2 == 0) {
-			trail(a, f, 1 - (f.age - 2) / (double) (glide - 2));
-		}
-		if (f.age == glide) {
-			// Then down into it
-			d.extremedimensions$setTransformation(pose(0, 0, 0, new Quaternionf(), 1F));
-			d.extremedimensions$setInterpolationDuration(SETTLE - 1);
-			d.extremedimensions$setInterpolationDelay(0);
-		}
-		if (f.age == length) {
-			if (!fits(level, f.piece)) {
-				drop(f.display);
-				return true;
-			}
-			if (blocked(level, f.piece.pos) && ++f.waits < 40) {
-				// Someone is standing where it goes: it hangs there until they move
-				f.age--;
-				return false;
-			}
-			if (!blocked(level, f.piece.pos)) {
-				place(a, f.piece);
-			}
-		}
-		if (f.age > length) {
-			drop(f.display);
-			return true;
-		}
-		return false;
-	}
-
-	/** Light trailing a flying block, {@code k} of the way from its start (in) or its block (out). */
-	private static void trail(Arena a, Flight f, double k) {
-		BlockPos p = f.piece.pos;
-		double x = p.getX() + 0.5 + f.ox * k, y = p.getY() + 0.5 + (f.outward ? f.oy * k : f.oy * k + 1.25 * (1 - k)), z = p.getZ() + 0.5 + f.oz * k;
-		WorldFx.particleIn(a.level, ArenaDesign.spark(a.style), x, y, z, 0.1, 0.1, 0.1, 0.0, 1);
 	}
 
 	/** The block lands: it is put down for real. */
@@ -507,52 +415,6 @@ public final class ElderArena {
 		return new double[] {Math.cos(az) * Math.cos(el) * dist, Math.sin(el) * dist, Math.sin(az) * Math.cos(el) * dist};
 	}
 
-	private static Vector3f randomAxis(ThreadLocalRandom rnd) {
-		Vector3f v = new Vector3f((float) rnd.nextGaussian(), (float) rnd.nextGaussian(), (float) rnd.nextGaussian());
-		return v.lengthSquared() < 1e-4 ? new Vector3f(0, 1, 0) : v.normalize();
-	}
-
-	/**
-	 * The look of a block in flight: the block turned by {@code q} and scaled by {@code s} about its own centre, its
-	 * centre moved by (ox, oy, oz) from its place. The display itself stands one block above the place (so it is lit
-	 * as the air there, not as the inside of the ground it is inlaid into).
-	 */
-	private static Transformation pose(double ox, double oy, double oz, Quaternionf q, float s) {
-		Vector3f half = new Vector3f(0.5F * s, 0.5F * s, 0.5F * s);
-		new Quaternionf(q).transform(half);
-		Vector3f t = new Vector3f((float) ox + 0.5F - half.x, (float) oy - 0.5F - half.y, (float) oz + 0.5F - half.z);
-		return new Transformation(t, new Quaternionf(q), new Vector3f(s, s, s), new Quaternionf());
-	}
-
-	private static Display.BlockDisplay display(ServerLevel level, BlockPos pos, BlockState state, Transformation look) {
-		Display.BlockDisplay d = new Display.BlockDisplay(blockDisplay(), level);
-		d.setPos(pos.getX(), pos.getY() + 1, pos.getZ());
-		((BlockDisplayAccess) d).extremedimensions$setBlockState(state);
-		((DisplayAccess) d).extremedimensions$setTransformation(look);
-		d.addTag(TAG);
-		LIVE.add(d.getUUID());
-		if (!level.addFreshEntity(d)) {
-			LIVE.remove(d.getUUID());
-			return null;
-		}
-		return d;
-	}
-
-	/** The vanilla block display's type, looked up by id (entity type constants come and go between versions). */
-	private static EntityType<?> blockDisplay() {
-		if (blockDisplay == null) {
-			blockDisplay = BuiltInRegistries.ENTITY_TYPE.get(Identifier.fromNamespaceAndPath("minecraft", "block_display")).map(h -> h.value()).orElseThrow();
-		}
-		return blockDisplay;
-	}
-
-	private static EntityType<?> blockDisplay;
-
-	private static void drop(Display.BlockDisplay d) {
-		LIVE.remove(d.getUUID());
-		d.discard();
-	}
-
 	// ------------------------------------------------------------------ chains and threads
 
 	/** Chains (threads, for the Weaver) are drawn out between the towers once they stand. */
@@ -587,18 +449,12 @@ public final class ElderArena {
 		new Quaternionf(q).transform(c);
 		Transformation full = new Transformation(new Vector3f(-c.x, -c.y, -c.z), new Quaternionf(q), new Vector3f(thick, len, thick), new Quaternionf());
 		Transformation none = new Transformation(new Vector3f(-c.x, -c.y, -c.z), new Quaternionf(q), new Vector3f(thick, 0.01F, thick), new Quaternionf());
-		Display.BlockDisplay d = new Display.BlockDisplay(blockDisplay(), a.level);
-		d.setPos(from[0], from[1], from[2]);
-		((BlockDisplayAccess) d).extremedimensions$setBlockState(look);
-		((DisplayAccess) d).extremedimensions$setTransformation(none);
+		Display.BlockDisplay d = BlockFlight.spawn(a.level, from[0], from[1], from[2], look, none);
+		if (d == null) {
+			return;
+		}
 		if (a.style == 2) {
 			((DisplayAccess) d).extremedimensions$setBrightnessOverride(Brightness.FULL_BRIGHT);
-		}
-		d.addTag(TAG);
-		LIVE.add(d.getUUID());
-		if (!a.level.addFreshEntity(d)) {
-			LIVE.remove(d.getUUID());
-			return;
 		}
 		Strand s = new Strand();
 		s.display = d;
@@ -608,7 +464,7 @@ public final class ElderArena {
 
 	private static void unstring(Arena a) {
 		for (Strand s : a.strands) {
-			drop(s.display);
+			BlockFlight.drop(s.display);
 		}
 		a.strands.clear();
 	}
@@ -635,22 +491,11 @@ public final class ElderArena {
 		return false;
 	}
 
-	/** A block display of an arena turning up that no arena is using (left over from a crash) is removed. */
-	public static void loaded(Entity e) {
-		if (e instanceof Display.BlockDisplay && !LIVE.contains(e.getUUID()) && e.removeTag(TAG)) {
-			e.discard();
-		}
-	}
-
 	/** On stopping: every arena is taken down at once and the ground put back, before the world is saved. */
 	public static void clear() {
 		for (Arena a : ARENAS) {
-			for (Flight f : a.flights) {
-				f.display.discard();
-			}
-			for (Strand s : a.strands) {
-				s.display.discard();
-			}
+			a.flights.forEach(BlockFlight::cancel);
+			a.strands.forEach(s -> BlockFlight.drop(s.display));
 			for (int i = a.pieces.size() - 1; i >= 0; i--) {
 				Piece p = a.pieces.get(i);
 				if (!p.placed) {
@@ -665,6 +510,5 @@ public final class ElderArena {
 		}
 		ARENAS.clear();
 		STANDING.clear();
-		LIVE.clear();
 	}
 }

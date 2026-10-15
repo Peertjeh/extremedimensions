@@ -7,9 +7,16 @@ import com.extremedimensions.seam.SeamArchitect;
 import com.extremedimensions.seam.SeamDepth;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.block.Blocks;
 
-/** The Fray beneath the Seam's islands: knots out past the rims, wells over them, strands between, a faster drain. */
+/**
+ * The Seam's islands as they are built (blocks fly in before a watcher's eyes, the ground at their feet is simply
+ * there) and the Fray beneath them: knots out past the rims, wells over them, strands between, a faster drain.
+ */
 public class FrayTests {
 	@GameTest
 	public void theFrayHangsBeneathTheIslands(GameTestHelper helper) {
@@ -55,5 +62,83 @@ public class FrayTests {
 		check(helper, SeamDepth.inShaft(w, 100.5, 60, 100.5, 2) && !SeamDepth.inShaft(w, 104.5, 60, 100.5, 2), "the shaft is not where its well is");
 		check(helper, !SeamDepth.inShaft(w, 100.5, 95, 100.5, 2) && !SeamDepth.inShaft(w, 100.5, 20, 100.5, 2), "the shaft reaches past its ends");
 		helper.succeed();
+	}
+
+	/**
+	 * The Seam builds itself before a watcher's eyes: a wall a few blocks off flies in (it is not there at once, and
+	 * stands whole a moment later), the ground right under them is simply there, and on stopping what is in the air
+	 * lands and an unfinished plan is handed back to be built again. Built where the test's own space is, in the
+	 * Overworld (the test server has no Seam), driving the Seam's builder by hand.
+	 */
+	@GameTest(maxTicks = 120)
+	public void theSeamBuildsItselfBeforeAWatchersEyes(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos o = helper.absolutePos(BlockPos.ZERO);
+		int base = Math.max(o.getY() + 3, 8);
+		ServerPlayer p = TestPlayers.survivor(helper, "test-watcher");
+		p.teleportTo(o.getX() + 1.5, base, o.getZ() + 1.5);
+		int range = Config.SEAM_FLY_RANGE;
+		Config.SEAM_FLY_RANGE = 48;
+		SeamArchitect.clear();
+		SeamArchitect.Plan wall = new SeamArchitect.Plan();
+		for (int y = 1; y <= 3; y++) {
+			for (int z = 4; z <= 6; z++) {
+				wall.set(o.getX() + 7, base + y, o.getZ() + z, Blocks.STONE.defaultBlockState());
+			}
+		}
+		// Right under the watcher's feet: the ground is simply there
+		wall.set(o.getX() + 1, base - 1, o.getZ() + 1, Blocks.STONE.defaultBlockState());
+		wall.queue();
+		BlockPos corner = new BlockPos(o.getX() + 7, base + 2, o.getZ() + 5);
+		BlockPos feet = new BlockPos(o.getX() + 1, base - 1, o.getZ() + 1);
+		Runnable restore = () -> {
+			Config.SEAM_FLY_RANGE = range;
+			SeamArchitect.clear();
+		};
+		for (int t = 1; t <= 50; t++) {
+			int tick = t;
+			helper.runAfterDelay(t, () -> {
+				SeamArchitect.tick(level, 5_000_000L);
+				if (tick == 3) {
+					boolean ok = SeamArchitect.flying() > 0 && level.getBlockState(corner).isAir() && level.getBlockState(feet).is(Blocks.STONE);
+					if (!ok) {
+						restore.run();
+					}
+					check(helper, ok, "the wall did not fly in (flying %s, corner %s, ground under the watcher %s)", SeamArchitect.flying(), level.getBlockState(corner),
+							level.getBlockState(feet));
+				}
+			});
+		}
+		helper.runAfterDelay(52, () -> {
+			int stood = 0;
+			for (int y = 1; y <= 3; y++) {
+				for (int z = 4; z <= 6; z++) {
+					stood += level.getBlockState(new BlockPos(o.getX() + 7, base + y, o.getZ() + z)).is(Blocks.STONE) ? 1 : 0;
+				}
+			}
+			boolean ok = stood == 9 && SeamArchitect.flying() == 0 && SeamArchitect.pending() == 0;
+			if (!ok) {
+				restore.run();
+			}
+			check(helper, ok, "the wall stands with %s of 9 blocks (%s flying, %s pending)", stood, SeamArchitect.flying(), SeamArchitect.pending());
+			// Stopping with a plan in the air: what flies lands at once, and the plan is handed back unfinished
+			SeamArchitect.Plan more = new SeamArchitect.Plan();
+			more.cell = "test@cell";
+			for (int z = 4; z <= 6; z++) {
+				more.set(o.getX() + 6, base + 4, o.getZ() + z, Blocks.STONE.defaultBlockState());
+			}
+			more.then(o.getX() + 6, base + 4, o.getZ() + 4, l -> {});
+			more.queue();
+			SeamArchitect.tick(level, 5_000_000L);
+			SeamArchitect.tick(level, 5_000_000L);
+			int inAir = SeamArchitect.flying();
+			java.util.List<SeamArchitect.Meta> left = SeamArchitect.stop();
+			boolean landed = level.getBlockState(new BlockPos(o.getX() + 6, base + 4, o.getZ() + 5)).is(Blocks.STONE);
+			boolean handed = left.stream().anyMatch(m -> "test@cell".equals(m.cell()));
+			restore.run();
+			check(helper, inAir > 0 && landed, "on stopping the blocks in the air did not land (%s in the air)", inAir);
+			check(helper, handed, "the unfinished plan was not handed back on stopping");
+			helper.succeed();
+		});
 	}
 }

@@ -79,6 +79,8 @@ public final class ServerEvents {
 			// Thorns and chains an Elder raised sink back, and its arena comes down, before the world is saved
 			com.extremedimensions.elder.ElderTerrain.clear();
 			com.extremedimensions.elder.ElderArena.clear();
+			// Blocks of the Seam in the air land, and islands not yet finished are built again on the next visit
+			SeamService.stopping();
 			DataStore.markDirty();
 			DataStore.flush();
 		});
@@ -98,13 +100,13 @@ public final class ServerEvents {
 			com.extremedimensions.coop.BurdenService.clear();
 			com.extremedimensions.tribe.RaidService.clear();
 			AtonementGuard.clear();
+			BlockFlight.clear();
 			DataStore.unload();
 			WorldFx.bind(null);
 		});
 		ServerTickEvents.END_SERVER_TICK.register(ServerEvents::tick);
-		// A block display of an Elder's arena that no arena is using (left over from a crash) is removed as it loads
-		net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register((entity, level) ->
-				com.extremedimensions.elder.ElderArena.loaded(entity));
+		// A flying block's display that nothing is using (left over from a crash) is removed as it loads
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> BlockFlight.loaded(entity));
 		// A block of an Elder's arena broken by a player drops nothing
 		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, blockEntity) ->
 				com.extremedimensions.elder.ElderArena.broken(level, pos));

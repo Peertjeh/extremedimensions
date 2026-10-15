@@ -519,6 +519,14 @@ public final class Config {
 
 	/** Milliseconds per tick the Seam may spend building islands (blocks in chunks nobody has loaded wait). */
 	public static int SEAM_BUILD_BUDGET_MS = 5;
+	/** Blocks from a player within which the Seam builds itself before their eyes, blocks flying in out of the nothing (0 = never: they are simply there). */
+	public static int SEAM_FLY_RANGE = 48;
+	/** Most blocks in the air at once while the Seam builds itself. */
+	public static int SEAM_FLY_MAX = 900;
+	/** Ticks a block of the Seam takes to fly to its place. */
+	public static int SEAM_FLY_TICKS = 18;
+	/** About how many blocks off its place a block of the Seam appears. */
+	public static int SEAM_FLY_FROM = 12;
 	/** Ticks between state updates sent to each player. */
 	public static int SYNC_INTERVAL_TICKS = 10;
 	/** Ticks after joining before items, recipes and effects are handed out. */

@@ -570,17 +570,36 @@ public final class SeamService {
 			near.add(new double[] {p.getX(), p.getZ()});
 		}
 		List<SeamArchitect.Meta> dropped = SeamArchitect.dropFar(near, 3.5 * CELL);
-		for (SeamArchitect.Meta m : dropped) {
+		forget(dropped);
+		if (!dropped.isEmpty()) {
+			ExtremeDimensions.LOGGER.info("Seam architect: put off {} unfinished islands far from everyone", dropped.size());
+		}
+	}
+
+	/**
+	 * On stopping, before the world is saved: blocks in the air land, and islands not yet finished are forgotten, so
+	 * they are designed and built again (whole) when someone comes back instead of staying half built for good.
+	 */
+	public static void stopping() {
+		List<SeamArchitect.Meta> left = SeamArchitect.stop();
+		forget(left);
+		if (!left.isEmpty()) {
+			ExtremeDimensions.LOGGER.info("Seam architect: {} unfinished islands will be built again on the next visit", left.size());
+		}
+	}
+
+	/** Forgets cells (and their light falls and marks), so they are designed again. */
+	private static void forget(List<SeamArchitect.Meta> plans) {
+		for (SeamArchitect.Meta m : plans) {
 			DataStore.seamCells().remove(m.cell());
 			for (int[] f : m.falls()) {
 				DataStore.seamCells().remove("f@" + f[0] + "," + f[1] + "," + f[2] + "," + f[3]);
 			}
 			m.marks().forEach(DataStore.seamCells()::remove);
 		}
-		if (!dropped.isEmpty()) {
+		if (!plans.isEmpty()) {
 			falls = null;
 			DataStore.markDirty();
-			ExtremeDimensions.LOGGER.info("Seam architect: put off {} unfinished islands far from everyone", dropped.size());
 		}
 	}
 

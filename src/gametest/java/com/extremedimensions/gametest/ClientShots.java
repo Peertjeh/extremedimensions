@@ -721,6 +721,32 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("09_trial_hud");
 
+			// The Seam builds itself before your eyes: an arch ten blocks ahead flies in out of the nothing
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				net.minecraft.world.phys.Vec3 look = p.getLookAngle().multiply(1, 0, 1).normalize();
+				double sideX = -look.z, sideZ = look.x;
+				int bx = (int) Math.floor(p.getX() + look.x * 10), bz = (int) Math.floor(p.getZ() + look.z * 10), by = (int) Math.floor(p.getY());
+				com.extremedimensions.seam.SeamArchitect.Plan arch = new com.extremedimensions.seam.SeamArchitect.Plan();
+				for (int w = -3; w <= 3; w++) {
+					for (int h = 0; h <= 6; h++) {
+						boolean edge = Math.abs(w) == 3 || h == 6;
+						if (!edge) {
+							continue;
+						}
+						int x = (int) Math.round(bx + sideX * w), z = (int) Math.round(bz + sideZ * w);
+						arch.set(x, by + h, z, (h + w) % 2 == 0 ? com.extremedimensions.registry.ModBlocks.HUSH_BRICKS.defaultBlockState()
+								: net.minecraft.world.level.block.Blocks.AMETHYST_BLOCK.defaultBlockState());
+					}
+				}
+				arch.queue();
+			});
+			ctx.waitTicks(9);
+			check(sp.getServer().computeOnServer(s -> com.extremedimensions.seam.SeamArchitect.flying() > 0), "nothing flies in as the Seam builds itself");
+			ctx.takeScreenshot("17_seam_rising");
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("17_seam_risen");
+
 			// The Fray: a well at the edge of the arrival island, and down on its knot among the strands
 			int[] well = sp.getServer().computeOnServer(s -> {
 				ServerPlayer p = player(s);
