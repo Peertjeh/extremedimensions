@@ -17,6 +17,9 @@
   Others*: your standing with the tribe, barters, hoards raided, Keepers and great ones slain, allies lifted up (and
   who lifted you), and curses carried for allies.
 
+### Fixed
+- An Elder's arena could fail to rise when the Elder appeared in ground that was still loading.
+
 ## 2.19.0: The Fray
 
 ### Added

@@ -110,6 +110,8 @@ public final class ElderArena {
 		double credit;
 		boolean strung, dissolving;
 		int linger = -1;
+		/** Ticks the boss has not been found (a chunk still loading, or gone). */
+		int missing;
 		final List<Flight> flights = new ArrayList<>();
 		final List<Strand> strands = new ArrayList<>();
 		/** Every block it means to build, so a second arena near never builds over it. */
@@ -228,7 +230,10 @@ public final class ElderArena {
 	/** One tick of an arena; true once it is gone. */
 	private static boolean step(Arena a) {
 		Entity boss = a.level.getEntity(a.boss);
-		if (!(boss instanceof ElderBoss e) || !e.isAlive()) {
+		if (boss instanceof ElderBoss e && e.isAlive()) {
+			a.missing = 0;
+		} else if (boss != null || ++a.missing > 60) {
+			// Slain, or gone for three seconds (not merely not yet found in a chunk that is still loading)
 			end(a);
 		}
 		if (!a.dissolving && a.next < a.pieces.size()) {

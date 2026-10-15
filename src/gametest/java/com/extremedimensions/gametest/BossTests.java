@@ -212,6 +212,7 @@ public class BossTests {
 			}
 			check(helper, changed >= 40 && ElderArena.standing() >= 40, "the arena put down only %s blocks (%s changed)", ElderArena.standing(), changed);
 			w.discard();
+			ElderArena.release(w);
 		});
 		helper.runAfterDelay(150, () -> {
 			restore.run();
