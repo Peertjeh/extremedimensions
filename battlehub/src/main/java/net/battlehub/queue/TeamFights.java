@@ -78,6 +78,15 @@ public final class TeamFights {
 		Msg.send(p, "teamfight.joined", label(p, mode, kit), Lang.tr(p, "teamfight.side." + side.id()));
 		Msg.sound(p, SoundEvents.NOTE_BLOCK_PLING, 0.6f, 1.2f);
 		Menus.refreshAll(p.level().getServer());
+		// The leader's party comes along on the team side (never against each other)
+		if (side != SideQueue.Side.SOLO) {
+			for (ServerPlayer f : net.battlehub.social.Groups.followers(p)) {
+				if (!q.contains(f.getUUID())) {
+					Msg.send(f, "group.following", p.getGameProfile().name(), label(f, mode, kit));
+					join(f, mode, kit, SideQueue.Side.TEAM);
+				}
+			}
+		}
 		return true;
 	}
 

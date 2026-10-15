@@ -58,6 +58,9 @@ public final class HubEvents {
 			net.battlehub.fair.Afk.clear();
 			net.battlehub.fair.AntiCheat.clear();
 			net.battlehub.fair.Reports.clear();
+			net.battlehub.social.Groups.clear();
+			net.battlehub.social.CustomGames.clear();
+			net.battlehub.social.Clans.clear();
 			net.battlehub.games.Visibility.clear();
 			Sessions.clear();
 			net.battlehub.hub.HubBoards.clear();
@@ -181,6 +184,7 @@ public final class HubEvents {
 		ArenaSlots.init(server);
 		net.battlehub.hub.HubWorld.ensureBuilt(server);
 		net.battlehub.progression.Seasons.init(server);
+		net.battlehub.social.Clans.load(server);
 	}
 
 	private static void stopping(MinecraftServer server) {
@@ -189,6 +193,7 @@ public final class HubEvents {
 			Queues.leaveAll(p);
 		}
 		PlayerStore.saveAll();
+		net.battlehub.social.Clans.save();
 	}
 
 	private static void tick(MinecraftServer server) {
@@ -206,6 +211,9 @@ public final class HubEvents {
 		net.battlehub.progression.Seasons.tick(server);
 		net.battlehub.fair.Afk.tick(server);
 		net.battlehub.fair.AntiCheat.tick(server);
+		if (tick % 1200 == 0) {
+			net.battlehub.social.Clans.tick(server);
+		}
 		if (net.battlehub.debug.SelfTest.enabled()) {
 			net.battlehub.debug.SelfTest.tick();
 		}
@@ -280,6 +288,8 @@ public final class HubEvents {
 		TitleService.remove(p);
 		net.battlehub.progression.Cosmetics.forget(p.getUUID());
 		net.battlehub.fair.AntiCheat.forget(p.getUUID());
+		net.battlehub.social.Groups.forget(p);
+		net.battlehub.social.CustomGames.forget(p);
 		PlayerStore.save(p.getUUID());
 		Sessions.remove(p.getUUID());
 	}

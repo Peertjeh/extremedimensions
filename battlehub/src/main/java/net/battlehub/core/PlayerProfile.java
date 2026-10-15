@@ -70,6 +70,12 @@ public final class PlayerProfile {
 	public int bestPassTier;
 	/** Times the player went back to level 1 after the top level. */
 	public int prestige;
+	/** Friends (uuids) and friend requests from others. */
+	public java.util.Set<String> friends = new LinkedHashSet<>();
+	public java.util.Set<String> friendRequests = new LinkedHashSet<>();
+	/** The clan (its name in lower case, empty for none) and clans that invited the player. */
+	public String clan = "";
+	public java.util.Set<String> clanInvites = new LinkedHashSet<>();
 	/** Matches left early in the last day, when the last one was, and until when queueing is blocked (epoch ms). */
 	public int leaves;
 	public long lastLeave;
@@ -99,6 +105,10 @@ public final class PlayerProfile {
 		dailyQuests.removeIf(q -> q == null || q.id == null);
 		weeklyQuests.removeIf(q -> q == null || q.id == null);
 		if (achievements == null) achievements = new LinkedHashMap<>();
+		if (friends == null) friends = new LinkedHashSet<>();
+		if (friendRequests == null) friendRequests = new LinkedHashSet<>();
+		if (clan == null) clan = "";
+		if (clanInvites == null) clanInvites = new LinkedHashSet<>();
 		kitLayouts.values().removeIf(l -> l == null);
 		if (level < 1) level = 1;
 		if (coins < 0) coins = 0;

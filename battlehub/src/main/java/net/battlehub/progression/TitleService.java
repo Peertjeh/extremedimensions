@@ -75,7 +75,9 @@ public final class TitleService {
 		// Team colours (CTF) win over the bought name colour
 		TeamColor color = override == null && inBattleHub ? Cosmetics.nameColor(prof) : null;
 		String stars = inBattleHub ? net.battlehub.core.Daily.prestigeStars(prof.prestige) : "";
-		boolean wanted = override != null || ((title != null || color != null || !stars.isEmpty()) && ConfigManager.config().titles.useScoreboardTeams);
+		net.battlehub.social.Clans.Clan clan = inBattleHub ? net.battlehub.social.Clans.of(p.getUUID()) : null;
+		boolean wanted = override != null || ((title != null || color != null || !stars.isEmpty() || clan != null)
+				&& ConfigManager.config().titles.useScoreboardTeams);
 		PlayerTeam team = board.getPlayerTeam(teamName);
 		if (!wanted) {
 			if (team != null) {
@@ -94,6 +96,9 @@ public final class TitleService {
 		MutableComponent prefix = Component.empty();
 		if (!stars.isEmpty()) {
 			prefix.append(Component.literal(stars + " ").withStyle(s -> s.withColor(0xFFAA00)));
+		}
+		if (clan != null) {
+			prefix.append(Component.literal("[" + clan.tag + "] ").withStyle(s -> s.withColor(0x55FFFF)));
 		}
 		if (override != null) {
 			prefix.append(override);

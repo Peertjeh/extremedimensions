@@ -1,7 +1,6 @@
 package net.battlehub.games.bedwars;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -116,15 +115,14 @@ public final class BedWarsMatch extends PartyMatch implements BedWarsShop.Teams 
 		this.format = BedWarsRules.SOLO.equals(formatVote) || BedWarsRules.DUO.equals(formatVote) ? formatVote : cfg.defaultFormat;
 		int count = BedWarsRules.teamCount(participants.size(), BedWarsRules.teamSize(format, cfg.duoTeamSize),
 				Math.min(cfg.maxTeams, BedWarsLayout.COLORS.length));
-		List<UUID> shuffled = new ArrayList<>(participants);
-		Collections.shuffle(shuffled, new java.util.Random(random.nextLong()));
-		List<List<UUID>> members = new ArrayList<>();
-		for (int i = 0; i < Math.max(1, count); i++) members.add(new ArrayList<>());
-		for (int i = 0; i < shuffled.size(); i++) {
-			int t = i % members.size();
-			slotInTeam.put(shuffled.get(i), members.get(t).size());
-			members.get(t).add(shuffled.get(i));
-			teamOf.put(shuffled.get(i), t);
+		// Friends who queued as a party end up on the same team when there is room
+		List<List<UUID>> members = net.battlehub.core.TeamSplit.split(participants, Math.max(1, count),
+				net.battlehub.social.Groups.among(participants), new java.util.Random(random.nextLong()));
+		for (int t = 0; t < members.size(); t++) {
+			for (int i = 0; i < members.get(t).size(); i++) {
+				slotInTeam.put(members.get(t).get(i), i);
+				teamOf.put(members.get(t).get(i), t);
+			}
 		}
 		for (int i = 0; i < members.size(); i++) {
 			teams.add(new TeamState(i, members.get(i)));

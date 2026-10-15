@@ -123,6 +123,7 @@ public final class HubCommands {
 				.then(Commands.argument("reason", StringArgumentType.greedyString())
 						.executes(c -> net.battlehub.fair.Reports.report(c.getSource().getPlayerOrException(),
 								StringArgumentType.getString(c, "player"), StringArgumentType.getString(c, "reason")) ? 1 : 0))));
+		registerSocial(d);
 		d.register(Commands.literal("quests").executes(c -> {
 			new net.battlehub.gui.QuestsMenu(c.getSource().getPlayerOrException()).open();
 			return 1;
@@ -342,5 +343,124 @@ public final class HubCommands {
 		}
 		Msg.send(p, "bots.practice_modes");
 		return 0;
+	}
+
+	private static com.mojang.brigadier.builder.RequiredArgumentBuilder<CommandSourceStack, String> name(String arg) {
+		return Commands.argument(arg, StringArgumentType.word())
+				.suggests((c, b) -> SharedSuggestionProvider.suggest(c.getSource().getOnlinePlayerNames(), b));
+	}
+
+	/** /friend, /party (and /pc), /clan (and /cc), /custom. */
+	private static void registerSocial(CommandDispatcher<CommandSourceStack> d) {
+		d.register(Commands.literal("friend")
+				.executes(c -> {
+					new net.battlehub.gui.FriendsMenu(c.getSource().getPlayerOrException()).open();
+					return 1;
+				})
+				.then(Commands.literal("add").then(name("player").executes(c -> {
+					net.battlehub.social.Friends.add(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "player"));
+					return 1;
+				})))
+				.then(Commands.literal("accept").then(name("player").executes(c -> {
+					net.battlehub.social.Friends.accept(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "player"));
+					return 1;
+				})))
+				.then(Commands.literal("deny").then(name("player").executes(c -> {
+					net.battlehub.social.Friends.deny(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "player"));
+					return 1;
+				})))
+				.then(Commands.literal("remove").then(name("player").executes(c -> {
+					net.battlehub.social.Friends.remove(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "player"));
+					return 1;
+				}))));
+		d.register(Commands.literal("party")
+				.executes(c -> {
+					new net.battlehub.gui.FriendsMenu(c.getSource().getPlayerOrException()).open();
+					return 1;
+				})
+				.then(Commands.literal("invite").then(Commands.argument("player", EntityArgument.player()).executes(c -> {
+					net.battlehub.social.Groups.invite(c.getSource().getPlayerOrException(), EntityArgument.getPlayer(c, "player"));
+					return 1;
+				})))
+				.then(Commands.literal("accept").then(Commands.argument("leader", EntityArgument.player()).executes(c -> {
+					net.battlehub.social.Groups.accept(c.getSource().getPlayerOrException(), EntityArgument.getPlayer(c, "leader"));
+					return 1;
+				})))
+				.then(Commands.literal("kick").then(Commands.argument("player", EntityArgument.player()).executes(c -> {
+					net.battlehub.social.Groups.kick(c.getSource().getPlayerOrException(), EntityArgument.getPlayer(c, "player"));
+					return 1;
+				})))
+				.then(Commands.literal("leave").executes(c -> {
+					net.battlehub.social.Groups.leave(c.getSource().getPlayerOrException(), false);
+					return 1;
+				}))
+				.then(Commands.literal("disband").executes(c -> {
+					net.battlehub.social.Groups.disband(c.getSource().getPlayerOrException());
+					return 1;
+				}))
+				.then(Commands.literal("chat").then(Commands.argument("message", StringArgumentType.greedyString()).executes(c -> {
+					net.battlehub.social.Groups.chat(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "message"));
+					return 1;
+				}))));
+		d.register(Commands.literal("pc").then(Commands.argument("message", StringArgumentType.greedyString()).executes(c -> {
+			net.battlehub.social.Groups.chat(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "message"));
+			return 1;
+		})));
+		d.register(Commands.literal("clan")
+				.executes(c -> {
+					new net.battlehub.gui.ClanMenu(c.getSource().getPlayerOrException()).open();
+					return 1;
+				})
+				.then(Commands.literal("create").then(Commands.argument("name", StringArgumentType.word())
+						.then(Commands.argument("tag", StringArgumentType.word()).executes(c -> {
+							net.battlehub.social.Clans.create(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "name"),
+									StringArgumentType.getString(c, "tag"));
+							return 1;
+						}))))
+				.then(Commands.literal("invite").then(name("player").executes(c -> {
+					net.battlehub.social.Clans.invite(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "player"));
+					return 1;
+				})))
+				.then(Commands.literal("join").then(Commands.argument("clan", StringArgumentType.word()).executes(c -> {
+					net.battlehub.social.Clans.join(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "clan"));
+					return 1;
+				})))
+				.then(Commands.literal("kick").then(name("player").executes(c -> {
+					net.battlehub.social.Clans.kick(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "player"));
+					return 1;
+				})))
+				.then(Commands.literal("leave").executes(c -> {
+					net.battlehub.social.Clans.leave(c.getSource().getPlayerOrException());
+					return 1;
+				}))
+				.then(Commands.literal("disband").executes(c -> {
+					net.battlehub.social.Clans.disband(c.getSource().getPlayerOrException());
+					return 1;
+				}))
+				.then(Commands.literal("chat").then(Commands.argument("message", StringArgumentType.greedyString()).executes(c -> {
+					net.battlehub.social.Clans.chat(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "message"));
+					return 1;
+				}))));
+		d.register(Commands.literal("cc").then(Commands.argument("message", StringArgumentType.greedyString()).executes(c -> {
+			net.battlehub.social.Clans.chat(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "message"));
+			return 1;
+		})));
+		d.register(Commands.literal("custom")
+				.executes(c -> {
+					new net.battlehub.gui.CustomGameMenu(c.getSource().getPlayerOrException()).open();
+					return 1;
+				})
+				.then(Commands.literal("create").then(Commands.argument("mode", StringArgumentType.word())
+						.suggests((c, b) -> SharedSuggestionProvider.suggest(allModeIds(), b))
+						.executes(c -> net.battlehub.social.CustomGames.create(c.getSource().getPlayerOrException(),
+								GameMode.byId(StringArgumentType.getString(c, "mode"))) != null ? 1 : 0)))
+				.then(Commands.literal("join").then(Commands.argument("code", StringArgumentType.word())
+						.executes(c -> net.battlehub.social.CustomGames.join(c.getSource().getPlayerOrException(),
+								StringArgumentType.getString(c, "code")) ? 1 : 0)))
+				.then(Commands.literal("start").executes(c -> net.battlehub.social.CustomGames.start(c.getSource().getPlayerOrException()) ? 1 : 0))
+				.then(Commands.literal("leave").executes(c -> {
+					net.battlehub.social.CustomGames.leave(c.getSource().getPlayerOrException(), false);
+					return 1;
+				})));
 	}
 }

@@ -25,7 +25,7 @@ public final class LeavePenalty {
 
 	/** A player left a match early. */
 	public static void left(UUID id, Match m) {
-		if (!cfg().leavePenalty || Bots.isBot(id)) {
+		if (!cfg().leavePenalty || Bots.isBot(id) || m.unrated()) {
 			return;
 		}
 		int people = 0;

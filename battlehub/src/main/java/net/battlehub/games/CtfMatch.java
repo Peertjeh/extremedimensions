@@ -1,7 +1,6 @@
 package net.battlehub.games;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -50,8 +49,8 @@ public final class CtfMatch extends PartyMatch {
 	public CtfMatch(int id, MinecraftServer server, List<ServerPlayer> players) {
 		super(id, GameMode.CTF, server, players);
 		ctf = new CtfGame((int) Math.max(1, game().setting("capturesToWin", 3)));
-		List<UUID> shuffled = new ArrayList<>(participants);
-		Collections.shuffle(shuffled, new java.util.Random(random.nextLong()));
+		List<UUID> shuffled = net.battlehub.core.TeamSplit.interleave(net.battlehub.core.TeamSplit.split(participants, 2,
+				net.battlehub.social.Groups.among(participants), new java.util.Random(random.nextLong())));
 		ctf.assign(shuffled);
 		int r = 0;
 		int b = 0;

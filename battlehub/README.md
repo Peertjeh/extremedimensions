@@ -56,6 +56,18 @@ and they come in three levels: **easy** walks and swings late, **normal** sprint
 * **Prestige**: at the top level, start again at level 1 with a star before your name and 5% more coins per
   prestige (up to 50%).
 
+### Friends, parties, clans and private games
+* **Friends** (`/friend add <name>`): a friends list that shows who is online and what they are doing (in the
+  lobby, waiting, playing Bed Wars, ...). Your friends hear it when you come into BattleHub.
+* **Parties** (`/party invite <name>`, up to 8): when the leader joins a party game, a 1v2 or a 1v3 on the team
+  side, the rest of the party comes along, and in Capture the Flag and Bed Wars the party ends up on the same
+  team. `/pc <message>` for party chat.
+* **Clans** (`/clan create <name> <tag>`, costs 1000 coins, up to 20 members): the clan tag in front of your
+  name, `/cc <message>` for clan chat, a point for every win of a member (three for a ranked win), a clan
+  leaderboard, and a **weekly clan war**: the clan with the most points in a week gets coins for every member.
+* **Private games** (`/custom`): open a lobby for any duel or party game and get a four-letter code; friends
+  join with `/custom join <code>`, you start it. Private games never count for stats, rewards or ELO.
+
 ### Ranked seasons
 Ranked runs in **seasons** of 8 weeks. Every rating has a **division** inside its tier (Gold III, Gold II,
 Gold I). The first 5 ranked matches per mode in a season are **placement matches** that count double. When a
@@ -277,6 +289,10 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/quests` / `/pass` / `/achievements` | everyone | Quests, the season pass, achievements and prestige |
 | `/kits` | everyone | The kit editor |
 | `/report <player> <reason>` | everyone | Report a player to the admins (once a minute) |
+| `/friend` / `/friend add\|accept\|deny\|remove <player>` | everyone | Friends and their status |
+| `/party invite\|accept\|kick <player>` / `/party leave\|disband` / `/pc <message>` | everyone | A party that plays together, and party chat |
+| `/clan` / `/clan create <name> <tag>` / `/clan invite\|kick <player>` / `/clan join <clan>` / `/clan leave\|disband` / `/cc <message>` | everyone | Clans and clan chat |
+| `/custom` / `/custom create <mode>` / `/custom join <code>` / `/custom start\|leave` | everyone | Private games with a code |
 | `/practice [mode] [easy\|normal\|hard]` | everyone | Practice against bots (sword, axe, mace, bow, crossbow, 1v2, 1v3); without a mode: the practice menu |
 | `/battlehub` | everyone | Open the main menu |
 | `/battlehub join <mode>` | everyone | Join a party lobby or duel queue (used by invites) |
@@ -323,6 +339,7 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   * `bots`: on/off, filling queues on/off, after how many seconds, party lobbies up to how many players, the
     level of bots that fill in, the most bots at once, the share of rewards in matches with bots, and how soon
     a bot leaves after its match
+  * `clans`: the price of a clan, the most members, and the coins per member for winning the weekly clan war
   * `featured`: the mode of the day on/off, the coin multiplier and the modes it picks from
   * `npcs`: the lobby characters on/off, their distance from the fountain, and per character the id, what a
     click does (`menu:pvp`, `menu:ranked`, `menu:party`, `menu:practice` or `game:<mode>`), the item it holds
@@ -365,7 +382,7 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   language, or put changed lines in `en_us.json` / `nl_nl.json` to reword them.
 
 Player data is stored per world in `world/battlehub/players/<uuid>.json`; saved survival states in
-`world/battlehub/survival/`.
+`world/battlehub/survival/`; clans in `world/battlehub/clans.json`.
 
 ---
 

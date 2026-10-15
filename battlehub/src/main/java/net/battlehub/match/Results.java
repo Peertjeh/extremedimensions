@@ -26,6 +26,7 @@ import net.battlehub.progression.Retention;
 import net.battlehub.progression.Seasons;
 import net.battlehub.progression.Ranks;
 import net.battlehub.progression.TitleService;
+import net.battlehub.social.Clans;
 import net.battlehub.util.Msg;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -36,7 +37,23 @@ public final class Results {
 	private Results() {}
 
 	public static void apply(Match m) {
+		try {
+			applyAll(m);
+		} finally {
+			Clans.save();
+		}
+	}
+
+	private static void applyAll(Match m) {
 		HubConfig cfg = ConfigManager.config();
+		if (m.unrated()) {
+			// Private games count for nothing
+			for (UUID id : m.participants()) {
+				ServerPlayer p = m.player(id);
+				if (p != null && !m.leftPlayers().contains(id)) Msg.raw(p, Lang.tr(p, "custom.unrated"));
+			}
+			return;
+		}
 		boolean withBots = false;
 		for (UUID id : m.participants()) {
 			withBots |= Bots.isBot(id);
@@ -58,6 +75,9 @@ public final class Results {
 			Outcome o = m.outcome(id);
 			int kills = m.kills(id);
 			StatsRecorder.Result streak = withBots ? null : StatsRecorder.record(prof, m.mode, m.ranked, o, kills, m.deaths(id));
+			if (!withBots && o == Outcome.WIN) {
+				Clans.won(id, m.ranked);
+			}
 			Rewards.Reward full = Rewards.compute(settings, o, kills, 1.0);
 			Rewards.Reward reward = new Rewards.Reward((int) Math.round(full.coins() * Math.max(0, m.coinFactor()) * botFactor * coinBonus
 					* Retention.coinFactor(prof)), (int) Math.round(full.xp() * botFactor));

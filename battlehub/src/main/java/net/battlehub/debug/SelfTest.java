@@ -108,6 +108,7 @@ public final class SelfTest {
 		ProgressionTests.all(server, s);
 		CompetitiveTests.all(server, s);
 		RetentionTests.all(server, s);
+		SocialTests.all(server, s);
 		s.check("coins earned are counted per mode, for ranked and in total", () -> {
 			PlayerProfile a = PlayerStore.get(p("BHTestA").getUUID());
 			PlayerProfile b = PlayerStore.get(p("BHTestB").getUUID());

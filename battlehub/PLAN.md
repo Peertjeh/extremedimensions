@@ -241,3 +241,13 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Prestige | Op het hoogste level terug naar level 1 (bevestigen met een tweede klik), met sterren voor je naam in tab en chat en 5% meer coins per prestige (hoogstens 50%). Titels voor pas en prestige komen in bestaande `titles.json` erbij. |
 | Menu | Het hoofdmenu heeft nu vijf rijen: spellen op de eerste rij, oefenen, kits, quests, seizoenspas en prestaties op de tweede, de deur onderaan. |
 
+## Versie 1.10 – Fase 4: samen spelen
+
+| Onderwerp | Keuze |
+|---|---|
+| Vrienden | `/friend add` stuurt een verzoek (klikbaar [Accepteren]/[Weigeren]); vraagt de ander ook, dan zijn jullie meteen vrienden. Hoogstens 100. De lijst laat zien wat een vriend doet (offline, normale wereld, lobby, wachten, spelen + modus); vrienden horen het als je BattleHub binnenkomt. Opgeslagen in het profiel, dus ook offline. |
+| Party's | Apart van de party-*spellen* (die heten in de code al `Parties`) heten ze in de code `Groups`. Hoogstens 8, alleen in het geheugen (weg na een herstart). Doet de leider mee aan een partyspel, of aan 1v2/1v3 aan de teamkant, dan gaan de leden die vrij in de lobby zijn mee. Duelwachtrijen volgen niet (dan zouden ze tegen elkaar spelen). In CTF en Bed Wars worden party's eerst verdeeld (grootste eerst, naar het kleinste team) en daarna de rest; te grote party's worden gesplitst. |
+| Clans | `clans.json` in de wereldmap. Beginnen kost 1000 coins; naam 3–16 tekens, tag 2–4 letters/cijfers, beide uniek. Tag in cyaan voor de naam (tab en chat). Elke winst van een lid: 1 punt, ranked-winst 3 (niet tegen bots, niet in privépotjes). Clanoorlog: elke maandag (ISO-week) wint de clan met de meeste weekpunten; elk lid krijgt 500 coins, daarna gaan de weekpunten naar 0. |
+| Privépotjes | Een lobby met een code van vier letters (zonder letters die je makkelijk verwart: I, L, O), voor elk duel en elk partyspel behalve het toernooi. De maker start; alleen spelers die vrij in de lobby staan doen mee. Het potje is `unrated`: geen statistieken, coins, XP, ELO, quests, pas, clanpunten of vertrekstraf. |
+| Menu | Hoofdmenu: vrienden & party (24), clan (25), privépotjes (31). |
+

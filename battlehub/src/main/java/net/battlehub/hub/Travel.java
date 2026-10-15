@@ -74,6 +74,7 @@ public final class Travel {
 		Msg.send(p, "hub.welcome");
 		net.battlehub.progression.FeaturedMode.announce(p);
 		net.battlehub.progression.Retention.login(p);
+		net.battlehub.social.Friends.entered(p);
 		Msg.sound(p, net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP, 0.5f, 1.4f);
 		return true;
 	}

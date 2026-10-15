@@ -122,6 +122,13 @@ public final class Parties {
 		}
 		Msg.sound(p, SoundEvents.NOTE_BLOCK_PLING, 0.6f, 1.2f);
 		Menus.refreshAll(server);
+		// Friends in the leader's party come along
+		for (ServerPlayer f : net.battlehub.social.Groups.followers(p)) {
+			if (!in(f.getUUID(), mode) && l.size() < l.max()) {
+				Msg.send(f, "group.following", p.getGameProfile().name(), Lang.tr(f, Icons.modeKey(mode)));
+				join(f, mode, "");
+			}
+		}
 		return true;
 	}
 

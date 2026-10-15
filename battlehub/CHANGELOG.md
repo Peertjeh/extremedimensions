@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.10.0
+
+### Added
+* **Friends** (`/friend`): requests, a list with what each friend is doing, a note when friends come online.
+* **Parties** (`/party`, up to 8): the party follows its leader into party games and team fights, and stays
+  on one team in Capture the Flag and Bed Wars. Party chat with `/pc`.
+* **Clans** (`/clan`): a tag before your name, clan chat (`/cc`), points for wins, a clan leaderboard and a
+  weekly clan war with coins for the winning clan.
+* **Private games** (`/custom`): your own lobby for a duel or party game with a code; never counts for stats,
+  rewards or ELO.
+* The main menu has buttons for friends, clans and private games.
+
 ## 1.9.0
 
 ### Added

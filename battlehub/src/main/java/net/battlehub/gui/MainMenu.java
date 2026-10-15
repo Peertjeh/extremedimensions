@@ -61,6 +61,15 @@ public final class MainMenu extends Screen {
 		c.set(23, Icon.of(Items.GOLDEN_APPLE).name(Lang.item(viewer, "menu.main.achievements"))
 				.lore(Lang.loreLines(viewer, "menu.main.achievements.lore")).clean().build(),
 				click -> new AchievementsMenu(viewer, false).open());
+		c.set(24, Icon.of(Items.PLAYER_HEAD).name(Lang.item(viewer, "menu.main.friends"))
+				.lore(Lang.loreLines(viewer, "menu.main.friends.lore")).clean().build(),
+				click -> new FriendsMenu(viewer).open());
+		c.set(25, Icon.of(net.battlehub.util.Ids.item("minecraft:white_banner")).name(Lang.item(viewer, "menu.main.clans"))
+				.lore(Lang.loreLines(viewer, "menu.main.clans.lore")).clean().build(),
+				click -> new ClanMenu(viewer).open());
+		c.set(31, Icon.of(Items.NAME_TAG).name(Lang.item(viewer, "menu.main.custom"))
+				.lore(Lang.loreLines(viewer, "menu.main.custom.lore")).clean().build(),
+				click -> new CustomGameMenu(viewer).open());
 		if (net.battlehub.hub.Travel.inBattleHub(viewer)) {
 			c.set(40, Icon.of(Items.OAK_DOOR).name(Lang.item(viewer, "menu.main.exit"))
 					.lore(Lang.loreLines(viewer, "menu.main.exit.lore")).build(),

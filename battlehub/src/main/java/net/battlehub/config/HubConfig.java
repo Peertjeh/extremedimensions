@@ -37,6 +37,7 @@ public final class HubConfig {
 	public Npcs npcs = new Npcs();
 	public Seasons seasons = new Seasons();
 	public Fairness fairness = new Fairness();
+	public ClanSettings clans = new ClanSettings();
 	public Map<String, Game> games = defaultGames();
 
 	/** BattleHub's own world. Every other dimension is normal gameplay that BattleHub leaves alone. */
@@ -276,6 +277,14 @@ public final class HubConfig {
 		public int reportCooldownSeconds = 60;
 	}
 
+	/** Clans: what it costs to start one, how many can join, and the coins for the weekly clan war. */
+	public static final class ClanSettings {
+		public int createCost = 1000;
+		public int maxMembers = 20;
+		/** Coins for every member of the clan with the most points in a week. */
+		public int warReward = 500;
+	}
+
 	/** Bots that play when there are not enough people, and for practice. */
 	public static final class Bots {
 		public boolean enabled = true;
@@ -478,6 +487,10 @@ public final class HubConfig {
 		seasons.keep = Math.max(0, Math.min(1, seasons.keep));
 		seasons.topDivisionStep = Math.max(1, seasons.topDivisionStep);
 		if (seasons.rewards == null) seasons.rewards = defaultSeasonRewards();
+		if (clans == null) clans = new ClanSettings();
+		clans.createCost = Math.max(0, clans.createCost);
+		clans.maxMembers = Math.max(2, Math.min(100, clans.maxMembers));
+		clans.warReward = Math.max(0, clans.warReward);
 		if (fairness == null) fairness = new Fairness();
 		if (fairness.leaveSteps == null) fairness.leaveSteps = new Fairness().leaveSteps;
 		fairness.leaveSteps.removeIf(v -> v == null);

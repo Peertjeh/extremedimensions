@@ -72,6 +72,8 @@ public abstract class Match {
 	protected final Map<UUID, Arena.Point> spawnOf = new HashMap<>();
 	protected final Map<UUID, Outcome> outcomes = new HashMap<>();
 	protected final RandomSource random = RandomSource.create();
+	/** A private game: no stats, rewards or ELO. */
+	private boolean unrated;
 	/** Damage, hits, combos and kills of everyone, for the recap at the end. */
 	protected final MatchRecap recap = new MatchRecap();
 	protected Arena arena;
@@ -242,6 +244,14 @@ public abstract class Match {
 
 	public MatchRecap recap() {
 		return recap;
+	}
+
+	public boolean unrated() {
+		return unrated;
+	}
+
+	public void setUnrated(boolean unrated) {
+		this.unrated = unrated;
 	}
 
 	/** A swing by a participant in play (from the swing hook). */
