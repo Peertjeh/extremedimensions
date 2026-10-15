@@ -26,6 +26,31 @@ no protection, no changed damage rules there.
 * Players moved in or out some other way (an admin `/tp`) are checked in or out automatically.
 * For a server that is only BattleHub, `hub.sendToHubOnJoin` puts everyone in the hub when they join.
 
+### Bots: never wait alone
+Not enough people online? Bots play along. They are real (simulated) players, so every game works with them,
+and they come in three levels: **easy** walks and swings late, **normal** sprints, strafes and jump-crits,
+**hard** reacts fast, aims well, w-taps, blocks with a shield and eats golden apples when low.
+
+* **Filling in**: someone alone in a casual duel queue, a party lobby, 1v2 or 1v3 for 15 seconds gets bots
+  (party lobbies up to 4 players). When a second person joins, the bots step out. Never in ranked.
+* **Practice**: `/practice [mode] [easy|normal|hard]` or the **Practice** item in the menu (and the
+  character on the plaza): a duel, 1v2 or 1v3 against bots, right away.
+* They know every game: they fight in duels, Free for All, Sumo, LMS, KOTH (they go for the hill), CTF (they
+  take the flag home), Bed Wars (they guard their bed), shoot in Bow and Crossbow PvP, run in TNT Run, shoot the
+  floor in Bow Spleef, jump the Parkour Race and hide or hunt in Prop Hunt.
+* Their names start with `Bot_`. Nothing about them is saved (no player files, no profiles), they never show
+  up on a leaderboard, and their join and leave messages stay out of chat.
+* A match with bots pays half the coins and XP and never counts for stats, streaks or ELO, so they cannot be
+  farmed.
+
+### Lobby characters and the mode of the day
+Eight characters stand around the fountain: PvP, Free for All, Ranked, Practice, Bed Wars, Prop Hunt, Party
+Games and Parkour. Above each: its name, how many people play it right now and a click hint; their heads turn
+towards you when you come close. Click one to go to that game.
+
+Every day another mode is the **mode of the day** with **double coins**: announced when you enter the hub,
+starred in the menus and on its character.
+
 ### Leaderboards in the lobby
 Floating boards hang above the plaza wall: **total kills** and **total deaths** over every BattleHub game
 on the north-west wall (between the ice and castle bridges), and the **best parkour runner** (most parkour
@@ -208,6 +233,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/cosmetics` | everyone | The cosmetics shop |
 | `/spectate [player]` | everyone | Spectate menu, or watch the match that player is in |
 | `/spectate leave` | everyone | Stop spectating |
+| `/practice [mode] [easy\|normal\|hard]` | everyone | Practice against bots (sword, axe, mace, bow, crossbow, 1v2, 1v3); without a mode: the practice menu |
 | `/battlehub` | everyone | Open the main menu |
 | `/battlehub join <mode>` | everyone | Join a party lobby or duel queue (used by invites) |
 | `/battlehub again` | everyone | Play again (same as the chat button or the lime dye) |
@@ -215,6 +241,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/battlehub setlobby` | admin (level 2) | Set the hub spawn to your position (in the hub world) |
 | `/battlehub lobby rebuild` | admin | Build the hub again (after it was damaged or changed) |
 | `/battlehub reload` | admin | Reload the config, kits, titles and language files |
+| `/battlehub bots` / `/battlehub bots clear` | admin | How many bots are on; take them all off |
 | `/battlehub matches` | admin | List running matches |
 | `/battlehub endmatch <id>` | admin | Stop a match without results and restore its players |
 | `/battlehub arena list` | admin | Arena themes, which modes use them, slots in use |
@@ -243,6 +270,13 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   * `levels`: XP curve (`baseXp`, `increment`, `growth`, `maxLevel`) and level bonus coins
   * `streaks.milestones`: which win streaks are announced
   * `arenas`: number of slots, slot spacing, floor height, blocks built per tick, **themes per mode**
+  * `bots`: on/off, filling queues on/off, after how many seconds, party lobbies up to how many players, the
+    level of bots that fill in, the most bots at once, the share of rewards in matches with bots, and how soon
+    a bot leaves after its match
+  * `featured`: the mode of the day on/off, the coin multiplier and the modes it picks from
+  * `npcs`: the lobby characters on/off, their distance from the fountain, and per character the id, what a
+    click does (`menu:pvp`, `menu:ranked`, `menu:party`, `menu:practice` or `game:<mode>`), the item it holds
+    and where it stands (an angle around the fountain)
   * `leaderboards`: on/off, seconds per mode, rows per board, the kills needed for the K/D board, text
     size, and per wall: the side (`northwest`, `northeast`, `southwest`, `southeast`), ranked or not, the
     boards from left to right (`kills`, `deaths`, `kd`, `coins`, `wins`, `elo`) and the modes shown in

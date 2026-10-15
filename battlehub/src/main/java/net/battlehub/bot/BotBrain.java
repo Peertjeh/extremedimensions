@@ -593,7 +593,6 @@ final class BotBrain {
 			factor = rnd.nextBoolean() ? 0.7 + rnd.nextDouble() * 0.15 : 1.2 + rnd.nextDouble() * 0.15;
 		}
 		bot.setDeltaMovement(j.vx() * factor, j.vy(), j.vz() * factor);
-		bot.hurtMarked = true;
 		pkWait = 1000;
 	}
 

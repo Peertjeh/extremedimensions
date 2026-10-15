@@ -31,6 +31,7 @@ import net.battlehub.queue.Queues;
 import net.battlehub.queue.TeamFights;
 import net.battlehub.util.Ids;
 import net.battlehub.util.Msg;
+import net.battlehub.util.Tags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -148,7 +149,7 @@ public final class HubNpcs {
 	/** Click boxes are real (clicks need them); old ones from before a restart are removed. */
 	private static void sweep(ServerLevel hub, boolean active) {
 		List<Entity> ours = new ArrayList<>(HITBOXES.values());
-		for (Interaction e : hub.getEntities(EntityTypeTest.forClass(Interaction.class), e -> e.getTags().contains(TAG))) {
+		for (Interaction e : hub.getEntities(EntityTypeTest.forClass(Interaction.class), HubNpcs::stray)) {
 			if (!ours.contains(e)) {
 				e.discard();
 			}
@@ -172,6 +173,18 @@ public final class HubNpcs {
 		}
 	}
 
+	/** A click box left from before a restart: it has our tag (or, if tags cannot be read, stands where a character stands). */
+	private static boolean stray(Interaction e) {
+		Boolean tagged = Tags.has(e, TAG);
+		if (tagged != null) {
+			return tagged;
+		}
+		for (Npc n : NPCS) {
+			if (e.position().distanceToSqr(n.pos) < 0.25) return true;
+		}
+		return false;
+	}
+
 	private static void removeHitboxes() {
 		for (Interaction i : HITBOXES.values()) {
 			i.discard();
@@ -181,12 +194,15 @@ public final class HubNpcs {
 
 	/** A click on a lobby character; true when it was one (the click is used up). */
 	public static boolean click(ServerPlayer p, Entity e) {
-		if (!(e instanceof Interaction) || !e.getTags().contains(TAG)) {
+		if (!(e instanceof Interaction)) {
 			return false;
 		}
 		Npc npc = null;
 		for (Map.Entry<Npc, Interaction> en : HITBOXES.entrySet()) {
 			if (en.getValue() == e) npc = en.getKey();
+		}
+		if (npc == null && !stray((Interaction) e)) {
+			return false;
 		}
 		// A right-click sends both a use and an attack sometimes: one action per click
 		Integer last = LAST_CLICK.get(p.getUUID());

@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.7.0
+
+### Added
+* **Bots** in three levels (easy, normal, hard). They fill casual duel queues, party lobbies, 1v2 and 1v3 when
+  someone waits alone for 15 seconds (party lobbies up to 4), and step out when a second person joins; never
+  ranked. Each game has its own bot behaviour: fighting with strafes, crits, w-taps, shields and golden apples;
+  bows and crossbows with leading and arcs; TNT Run running; Bow Spleef floor shots; parkour jumps; Prop Hunt
+  hiding and hunting; KOTH, CTF and Bed Wars objectives.
+* **Practice**: `/practice [mode] [level]` and a Practice menu: a duel, 1v2 or 1v3 against bots right away.
+* Matches with bots pay half the rewards and never count for stats, streaks or ELO. Nothing is saved for bots.
+* **Lobby characters** around the fountain for PvP, Free for All, Ranked, Practice, Bed Wars, Prop Hunt, Party
+  Games and Parkour, with live player counts, in each player's language. Click to play.
+* **Mode of the day** with double coins, announced in the hub and starred in the menus and on the characters.
+* Admin: `/battlehub bots` and `/battlehub bots clear`.
+
 ## 1.6.1
 
 ### Changed

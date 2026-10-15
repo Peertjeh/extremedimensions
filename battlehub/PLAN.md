@@ -202,3 +202,15 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Parkour-winst | Telt zoals de mod een parkour-winst al bijhoudt: eerste in een race, of alleen het parcours uitlopen (oefenen telt dus mee). |
 | Bijwerken | Een `config.json` met precies de borden van 1.6.0 krijgt de nieuwe drie; wie de borden zelf had aangepast, houdt die. De andere statistieken (K/D, coins, ELO, per modus, ranked) blijven in te stellen. |
 
+## Versie 1.7 – Fase 1: nooit meer wachten
+
+| Onderwerp | Keuze |
+|---|---|
+| Bots | Echte (gesimuleerde) spelers met een eigen nep-verbinding, zoals de testspelers: zo werkt elke bestaande modus zonder aanpassingen. Hun "brein" zet elke tick de invoer die een client zou sturen (lopen, strafen, sprinten, springen, kijken, slaan, boog spannen) en ze draaien hun eigen natuurkunde. Slaan gaat via het gewone aanval-event, voorwerpen via de gamemode, dus dezelfde regels als voor spelers. |
+| Niveaus | Makkelijk, normaal, moeilijk: reactietijd, mikfout, draaisnelheid, strafen, crits, w-tap, schild, gouden appels, boogfout, kans om een parkoursprong te verkeerd te schatten, zoekafstand in Prop Hunt. |
+| Gedrag per spel | Elke match geeft een stijl (vechten, schieten, rennen, parkour, bow spleef, prop hunt), wie vijand is (teams) en een doel (heuvel, vlag, eigen bed). Boogschoten met voorsprong en de juiste boog voor de afstand (pijlbaan zoals in vanilla). Parkoursprongen met precies genoeg snelheid volgens de spelernatuurkunde; Bed Wars-bots bewaken hun bed maar bouwen en kopen niet (te ingewikkeld voor nu). |
+| Opvullen | Na 15 s alleen in een gewone duelrij, partylobby (tot 4), 1v2 of 1v3; komt er een tweede mens, dan gaan de bots weg. Nooit ranked. Na het potje vertrekken ze na 4 s. Hoogstens 12 tegelijk, en nooit als de server bijna vol is (ze tellen mee voor het spelerslimiet). |
+| Eerlijk | Namen beginnen met `Bot_`. Geen spelersbestanden, profielen alleen in het geheugen, niet op ranglijsten, geen join-, leave- of advancementberichten. Potjes met bots: halve beloning, geen statistieken, reeksen of ELO, zodat je ze niet kunt farmen. |
+| Lobbyfiguren | Acht figuren rond de fontein (op 10,5 blokken, op de noordhelft, kijkend naar het spawnpunt). Lichaam (mannequin, anders armor stand) en tekst bestaan alleen bij de spelers, in hun taal, met live aantallen (alleen mensen); het hoofd draait naar wie dichtbij staat. Klikken gaat via een echte, onzichtbare interaction-entiteit; oude kopieën na een herstart worden opgeruimd. |
+| Modus van de dag | Elke dag een andere uit een lijst (alle modi een keer voordat er een terugkomt), dubbele coins, aangekondigd bij het binnenkomen van de hub, met een ster in het menu en op de figuur. |
+
