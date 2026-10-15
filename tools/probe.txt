@@ -1,11 +1,6 @@
-net.minecraft.client.particle.SingleQuadParticle
-net.minecraft.client.particle.SingleQuadParticle$FacingCameraMode
-net.minecraft.client.particle.SingleQuadParticle$Layer
-net.minecraft.client.particle.Particle
-net.minecraft.client.particle.ParticleEngine
-net.minecraft.client.particle.SpriteSet
-net.minecraft.client.particle.TextureSheetParticle
-net.minecraft.client.Camera
-#net/minecraft/client/particle/
-#QuadParticleRenderState
-#ParticleRenderType
+net.minecraft.client.Minecraft
+net.minecraft.client.multiplayer.ClientLevel
+net.minecraft.client.renderer.LevelRenderer
+net.minecraft.client.particle.ParticleResources
+net.minecraft.client.particle.ParticleProvider
+#net/fabricmc/fabric/api/client/particle/v1/
