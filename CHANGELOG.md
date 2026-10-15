@@ -18,8 +18,9 @@
     hung with cobwebs and tipped with end rods, and threads of light run from spire to spire and down to the heart of
     the web. Its blocks are lowered from high above.
   - When the fight is over the arena stands a while, then comes apart the way it came, block by block, and **the
-    ground is put back as it was**. Arenas only build into air and plants; the ground is only inlaid where the world
-    may be torn up (`elder_griefing` and the mobGriefing rule), never where a block holds data. Blocks of an arena drop
+    ground is put back as it was**. Arenas only build into air and plants, and no tower or pillar rises right beside a
+    player; the ground is only inlaid where the world may be torn up (`elder_griefing` and the mobGriefing rule), never
+    where a block holds data. Blocks of an arena drop
     nothing when broken, and on a server stop the arena is taken down at once.
 - **Every Elder forms before it fights, each in its own way**, out of matter and light: black bars close in and the
   view is held on it while it takes shape (it cannot be hurt meanwhile, and its health bar fills), then its name is

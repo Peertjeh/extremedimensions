@@ -38,7 +38,7 @@ import net.minecraft.world.level.block.state.properties.SlabType;
  * </ul>
  *
  * Sizes scale with {@code elder_arena_size}. Towers, rim pillars and islands are all or nothing: one that would not
- * fit in the air there is left out.
+ * fit in the air there is left out, and so is a tower or pillar that would rise right beside a player.
  */
 final class ArenaDesign {
 	private ArenaDesign() {}
@@ -222,6 +222,8 @@ final class ArenaDesign {
 		final boolean grief;
 		final Random rnd;
 		final LinkedHashMap<Long, ElderArena.Piece> pieces = new LinkedHashMap<>();
+		/** Where the players near stand (x, z): no tower or pillar rises right beside one of them. */
+		final List<double[]> people = new ArrayList<>();
 		LinkedHashMap<Long, ElderArena.Piece> group;
 
 		Plan(ServerLevel level, boolean grief, long seed) {
@@ -232,6 +234,17 @@ final class ArenaDesign {
 
 		void begin() {
 			group = new LinkedHashMap<>();
+		}
+
+		/** Whether someone stands within {@code r} blocks (across the ground) of the middle of block column (x, z). */
+		boolean crowded(int x, int z, double r) {
+			for (double[] q : people) {
+				double dx = q[0] - (x + 0.5), dz = q[1] - (z + 0.5);
+				if (dx * dx + dz * dz < r * r) {
+					return true;
+				}
+			}
+			return false;
 		}
 
 		/** A block into the air (or plants) there. */
@@ -333,6 +346,11 @@ final class ArenaDesign {
 
 	static Blueprint design(ServerLevel level, int style, BlockPos centre, boolean grief, long seed) {
 		Plan plan = new Plan(level, grief, seed);
+		for (net.minecraft.server.level.ServerPlayer q : level.players()) {
+			if (!q.isSpectator() && q.distanceToSqr(centre.getX() + 0.5, centre.getY(), centre.getZ() + 0.5) < 64 * 64) {
+				plan.people.add(new double[] {q.getX(), q.getZ()});
+			}
+		}
 		Palette pal = palette(style);
 		double size = Math.max(0.5, Math.min(2.0, Config.ELDER_ARENA_SIZE));
 		int cx = centre.getX(), cz = centre.getZ();
@@ -509,7 +527,7 @@ final class ArenaDesign {
 			double a = turn + TAU * (k + 0.5) / 8;
 			int x = (int) Math.round(cx + Math.cos(a) * r), z = (int) Math.round(cz + Math.sin(a) * r);
 			BlockPos g = plan.ground(x, gy, z);
-			if (g == null || Math.abs(g.getY() - gy) > 3) {
+			if (g == null || Math.abs(g.getY() - gy) > 3 || plan.crowded(x, z, 2.5)) {
 				continue;
 			}
 			int y = g.getY() + 1;
@@ -582,7 +600,7 @@ final class ArenaDesign {
 	private static double[] tower(Plan plan, Palette pal, int style, double fx, int gy, double fz, double a, boolean great) {
 		int x = (int) Math.round(fx), z = (int) Math.round(fz);
 		BlockPos g = plan.ground(x, gy, z);
-		if (g != null && g.getY() > gy + 6) {
+		if (g != null && g.getY() > gy + 6 || plan.crowded(x, z, great ? 5.5 : 3.5)) {
 			return null;
 		}
 		boolean floating = g == null || g.getY() < gy - 6;
