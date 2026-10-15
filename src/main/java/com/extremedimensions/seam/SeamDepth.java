@@ -401,6 +401,7 @@ public final class SeamDepth {
 		}
 		if (inFray(p.getY()) && SEEN.add(id)) {
 			// The first time down this visit
+			d.frayDescents++;
 			Journal.unlock(p, d, JournalEntry.FRAY);
 			Advancements.grant(p, Advancements.FRAY_ENTERED);
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.fray.entered").withStyle(ChatFormatting.DARK_PURPLE));

@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.20.0: The Wanderer's Ledger
+
+### Added
+- **The journal has three parts now**, chosen with tabs under the book: its *Pages* as before, a *Bestiary* and a
+  *Ledger*.
+- **The Bestiary**: a spread for every creature of the wound (the Lurker, the Hollowlings, the Keeper, the Starved
+  One, the Thinned, the Veil Rays, the Matriarch, the Ferryman and the Last Weaver). Each is a blank page with a
+  sigil until you have seen it close by and in plain sight; then its **likeness, turning to follow your cursor**, its
+  name, what the Wanderer wrote of it and how many you have slain. Slay enough of them (one of the great ones, three
+  of the rest) and the journal notes **how to face it**. Great ones count for everyone who fought them, the rest for
+  whoever struck last. You are told above the hotbar when a creature is written in.
+- **The Ledger**: what you have been through, counted, over three pages. *The Road*: expeditions, collapses, your
+  longest expedition, the furthest you went from a portal, deaths, visits to the Seam and descents into the Fray.
+  *The Burden*: curse stacks carried and lifted, scars, journal pages, your bound relic and creatures seen. *The
+  Others*: your standing with the tribe, barters, hoards raided, Keepers and great ones slain, allies lifted up (and
+  who lifted you), and curses carried for allies.
+
 ## 2.19.0: The Fray
 
 ### Added

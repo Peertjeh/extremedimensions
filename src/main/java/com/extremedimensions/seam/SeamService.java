@@ -192,6 +192,7 @@ public final class SeamService {
 		d.riftY = top + 1;
 		d.riftZ = z + 0.5;
 		d.inSeam = true;
+		d.seamVisits++;
 		d.seamMax = Math.max(30, Config.SEAM_SECONDS) + Config.WOVEN_SEAM_SECONDS * d.tetherTier
 				+ (com.extremedimensions.relic.RelicService.has(d, com.extremedimensions.relic.Relic.SEAM_LANTERN) ? Math.max(0, Config.RELIC_SEAM_LANTERN_SECONDS) : 0);
 		d.seamLeft = d.seamMax;

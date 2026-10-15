@@ -158,6 +158,17 @@ public class ClientShots implements FabricClientGameTest {
 		}
 	}
 
+	/** Presses the first button with this label, once (safe when pressing it rebuilds the screen's buttons). */
+	private static boolean pressOnce(net.minecraft.client.gui.screens.Screen screen, String label) {
+		for (GuiEventListener w : new ArrayList<>(screen.children())) {
+			if (w instanceof AbstractButton b && b.active && b.getMessage().getString().equals(label)) {
+				b.onPress(null);
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private static void check(boolean ok, String message) {
 		if (!ok) {
 			throw new AssertionError(message);
@@ -218,6 +229,30 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.runOnClient(mc -> com.extremedimensions.client.screen.BarterScreen.show(-1, -34, ""));
 			ctx.waitTicks(8);
 			ctx.takeScreenshot("14_barter_hated");
+			// The journal's bestiary (a creature well known, and a great one met once) and its ledger
+			com.extremedimensions.client.screen.JournalScreen[] journal = new com.extremedimensions.client.screen.JournalScreen[1];
+			ctx.runOnClient(mc -> {
+				journal[0] = new com.extremedimensions.client.screen.JournalScreen(java.util.Set.of("tethered", "anchor", "barter", "fray"),
+						"lurker:1:4;hollowling:1:0;keeper:1:1;starved_one:0:0;thinned:1:2;veil_ray:1:0;matriarch:1:0;ferryman:0:0;weaver:0:0",
+						"road:expeditions=12;road:collapses=3;road:longest=1834;road:furthest=742;road:deaths=5;road:seam_visits=4;road:fray_descents=2;"
+								+ "burden:curses=19/8;burden:lifted=6;burden:scars=4;burden:pages=21/37;burden:relic=ember_heart;burden:seen=6/9;"
+								+ "others:standing=trusted/47;others:bartered=9;others:raids=1;others:keepers=3;others:great=0;others:lifts_given=2;"
+								+ "others:lifts_taken=1;others:burdens=1", null);
+				mc.gui.setScreen(journal[0]);
+				check(pressOnce(journal[0], net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.journal.tab.beasts")), "the journal has no bestiary tab");
+			});
+			ctx.waitTicks(16);
+			ctx.takeScreenshot("16_bestiary_lurker");
+			ctx.runOnClient(mc -> {
+				for (int i = 0; i < 6; i++) {
+					pressOnce(journal[0], "▶");
+				}
+			});
+			ctx.waitTicks(16);
+			ctx.takeScreenshot("16_bestiary_matriarch");
+			ctx.runOnClient(mc -> pressOnce(journal[0], net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.journal.tab.ledger")));
+			ctx.waitTicks(16);
+			ctx.takeScreenshot("16_ledger");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
 			// Relics: all eight in the hotbar, and the Ember Heart bound to the Tether (shown in the Curses screen)
@@ -639,13 +674,13 @@ public class ClientShots implements FabricClientGameTest {
 			double out = Math.PI / 4;
 			float yaw = (float) Math.toDegrees(Math.atan2(-Math.cos(out), Math.sin(out)));
 			double sx = well[0] + 0.5 - Math.cos(out) * 6.5, sz = well[2] + 0.5 - Math.sin(out) * 6.5;
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s %.2f %d %.2f %.1f 38", sx, well[1] + 1, sz, yaw));
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f %.1f 38", sx, well[1] + 1, sz, yaw));
 			sp.getConnection().waitForChunksRender();
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("15_fray_well");
 			// On the knot, looking out along the strand east into the dark
 			float east = (float) Math.toDegrees(Math.atan2(-58, -6));
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s %.2f %d %.2f %.1f 8", well[0] - 2.5, well[3] + 1, well[2] + 0.5, east));
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f %.1f 8", well[0] - 2.5, well[3] + 1, well[2] + 0.5, east));
 			sp.getConnection().waitForChunksRender();
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("15_fray_knot");

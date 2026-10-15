@@ -347,6 +347,7 @@ public final class PenaltyService {
 		if (!d.removeStack(t)) {
 			return;
 		}
+		d.lifted++;
 		if (d.scars < 5) {
 			d.scars++;
 			Journal.unlock(p, d, JournalEntry.WOVEN);

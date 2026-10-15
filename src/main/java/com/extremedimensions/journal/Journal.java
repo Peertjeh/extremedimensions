@@ -60,7 +60,7 @@ public final class Journal {
 	}
 
 	public static void open(ServerPlayer p, PlayerData d) {
-		ServerPlayNetworking.send(p, new ModPackets.OpenJournalPayload(String.join(",", d.journal)));
+		ServerPlayNetworking.send(p, new ModPackets.OpenJournalPayload(String.join(",", d.journal), Bestiary.encode(d), Ledger.encode(d)));
 		WorldFx.soundSelf(p, "minecraft:item.book.page_turn", 1.0f, 0.9f);
 	}
 

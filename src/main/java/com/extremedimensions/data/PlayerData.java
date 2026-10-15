@@ -15,6 +15,10 @@ public class PlayerData {
 	// --- saved ---
 	public int expeditions = 0;
 	/** The name the player last played under (an ally's team is looked up by it while they are away). */
+	/** The journal's bestiary: creatures seen, and slain by id; and a few more things counted for its ledger. */
+	public Set<String> seen = new LinkedHashSet<>();
+	public Map<String, Integer> kills = new HashMap<>();
+	public int deaths = 0, seamVisits = 0, frayDescents = 0, lifted = 0;
 	/** Standing with the tribe (-100 to 100), gifts given today and wares bought today (offer index:times). */
 	public int tribeRep = 0;
 	public long tribeDay = -1;

@@ -147,6 +147,7 @@ public final class ServerEvents {
 			}
 		});
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
+			com.extremedimensions.journal.Bestiary.slain(entity, source.getEntity());
 			if ("minecraft:ender_dragon".equals(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString()) && WorldFx.server() != null
 					&& Dims.ours(entity.level())) {
 				WorldService.onDragonDeath(WorldFx.server());
@@ -157,6 +158,9 @@ public final class ServerEvents {
 					for (ItemEntity item : p.level().getEntitiesOfClass(ItemEntity.class, p.getBoundingBox().inflate(8), i -> i.distanceToSqr(p) <= 64)) {
 						item.discard();
 					}
+				}
+				if (Dims.ours(p)) {
+					DataStore.get(p.getUUID()).deaths++;
 				}
 				ExpeditionService.onDeath(p);
 			} else if (entity instanceof StarvedOne so) {
@@ -419,6 +423,9 @@ public final class ServerEvents {
 			}
 			if (d.tickCounter % 20 == 0) {
 				com.extremedimensions.tribe.Standing.second(p, d);
+			}
+			if (d.tickCounter % 40 == 7) {
+				com.extremedimensions.journal.Bestiary.scan(p);
 			}
 
 			d.tickCounter++;
