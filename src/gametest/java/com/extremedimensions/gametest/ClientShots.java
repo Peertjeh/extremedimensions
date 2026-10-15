@@ -65,6 +65,7 @@ public class ClientShots implements FabricClientGameTest {
 		face(sp, name);
 		ctx.waitTicks(2);
 		ctx.takeScreenshot("12_fight_" + name + "_arrives");
+		turns(ctx, sp, name);
 		for (int i = 0; i < blows.length; i++) {
 			int blow = blows[i];
 			sp.getServer().runOnServer(s -> elders(s).forEach(e -> force.test(e, blow)));
@@ -92,6 +93,40 @@ public class ClientShots implements FabricClientGameTest {
 		ctx.waitTicks(66);
 		ctx.takeScreenshot("12_fight_" + name + "_death_bloom");
 		ctx.waitTicks(30);
+	}
+
+	/**
+	 * The player steps a quarter round about the Elder: on the client its body turns after them (only its yaw is sent,
+	 * so a body left to itself would keep facing where it first stood).
+	 */
+	private static void turns(ClientGameTestContext ctx, TestSingleplayerContext sp, String name) {
+		float[] before = {Float.NaN};
+		ctx.runOnClient(mc -> clientElder(mc).ifPresent(e -> before[0] = e.yBodyRot));
+		sp.getServer().runOnServer(s -> {
+			ServerPlayer p = player(s);
+			elders(s).stream().findFirst().ifPresent(e -> {
+				double x = e.getX() - (p.getZ() - e.getZ()), z = e.getZ() + (p.getX() - e.getX());
+				int bx = (int) Math.floor(x), bz = (int) Math.floor(z);
+				p.level().getChunk(bx >> 4, bz >> 4);
+				int top = p.level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz);
+				p.teleportTo(x, top, z);
+			});
+		});
+		ctx.waitTicks(60);
+		ctx.runOnClient(mc -> {
+			com.extremedimensions.elder.ElderBoss e = clientElder(mc).orElse(null);
+			check(e != null && !Float.isNaN(before[0]), "no " + name + " on the client to turn");
+			float lag = Math.abs(net.minecraft.util.Mth.wrapDegrees(e.yBodyRot - e.getYRot()));
+			float turned = Math.abs(net.minecraft.util.Mth.wrapDegrees(e.yBodyRot - before[0]));
+			System.out.println("[turn] " + name + " body " + e.yBodyRot + " yaw " + e.getYRot() + " before " + before[0]);
+			check(lag < 12 && turned > 20, "the " + name + " does not turn on the client: body " + e.yBodyRot + ", yaw " + e.getYRot()
+					+ ", body before " + before[0]);
+		});
+	}
+
+	private static java.util.Optional<com.extremedimensions.elder.ElderBoss> clientElder(net.minecraft.client.Minecraft mc) {
+		return mc.level.getEntitiesOfClass(com.extremedimensions.elder.ElderBoss.class, mc.player.getBoundingBox().inflate(96)).stream()
+				.min(java.util.Comparator.comparingDouble(e -> e.distanceToSqr(mc.player)));
 	}
 
 	private static java.util.List<com.extremedimensions.elder.ElderBoss> elders(MinecraftServer s) {
@@ -257,7 +292,25 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("16_ledger");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
-			// Relics: all eight in the hotbar, and the Ember Heart bound to the Tether (shown in the Curses screen)
+			// Co-op: struck down, the player lies on the ground and crawls (seen from behind), and stands again after
+			sp.getServer().runOnServer(s -> com.extremedimensions.coop.FallenService.knockDown(player(s)));
+			ctx.waitTicks(10);
+			sp.getServer().runOnServer(s -> check(player(s).getPose() == net.minecraft.world.entity.Pose.SWIMMING,
+					"a fallen player stands on the server (pose " + player(s).getPose() + ")"));
+			ctx.runOnClient(mc -> {
+				check(mc.player.getPose() == net.minecraft.world.entity.Pose.SWIMMING, "a fallen player stands on the client (pose " + mc.player.getPose() + ")");
+				check(mc.player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.JUMP_STRENGTH) <= 1e-6,
+						"a fallen player can still jump on the client");
+				mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK);
+			});
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("13_fallen_crawl");
+			sp.getServer().runOnServer(s -> com.extremedimensions.coop.FallenService.forget(player(s)));
+			ctx.runOnClient(mc -> mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON));
+			ctx.waitTicks(10);
+			ctx.runOnClient(mc -> check(mc.player.getPose() != net.minecraft.world.entity.Pose.SWIMMING, "back on their feet, the player still crawls"));
+
+			// Relics: all nine in the hotbar, and the Ember Heart bound to the Tether (shown in the Curses screen)
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
 				int i = 0;

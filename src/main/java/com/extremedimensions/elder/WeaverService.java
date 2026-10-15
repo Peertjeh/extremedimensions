@@ -55,6 +55,8 @@ public final class WeaverService {
 		int kin;
 		int drift = 1;
 		double rise;
+		/** Whether this Lance sweeps back once more after its first pass. */
+		boolean back;
 	}
 
 	private static final Map<UUID, Unweaving> WEAVERS = new HashMap<>();
@@ -246,8 +248,10 @@ public final class WeaverService {
 				w.motion.toward(w, p.getX() + Math.cos(a) * dist, p.getZ() + Math.sin(a) * dist, ElderFight.speed(0.07), 0.008, HOVER);
 			}
 			if (u.ready()) {
-				int a = dist < 8 ? u.pick(Weaver.UNRAVEL, 4, Weaver.CRADLE, 1)
-						: u.pick(Weaver.THREAD, 2, Weaver.NEEDLES, 2, Weaver.LANCE, 3, Weaver.CRADLE, 3, Weaver.THOUSAND, 3);
+				// The Lance is its favourite blow, near and far
+				int lance = Math.max(0, Config.WEAVER_LANCE_WEIGHT);
+				int a = dist < 8 ? u.pick(Weaver.UNRAVEL, 4, Weaver.LANCE, (lance + 1) / 2, Weaver.CRADLE, 1)
+						: u.pick(Weaver.THREAD, 2, Weaver.NEEDLES, 2, Weaver.LANCE, lance, Weaver.CRADLE, 2, Weaver.THOUSAND, 2);
 				u.start(w, a);
 			}
 			return;
@@ -327,32 +331,44 @@ public final class WeaverService {
 		return new double[] {w.getX() + Math.sin(yaw) * 2.25, w.getY() + 16.5, w.getZ() - Math.cos(yaw) * 2.25};
 	}
 
-	/** Seraphic Lance: the halo spins up and fires a beam that sweeps across the ground through its prey. */
+	/**
+	 * Seraphic Lance: the halo spins up and fires a beam that sweeps across the ground through its prey, and often (always
+	 * once it is enraged) sweeps back again at where they fled to.
+	 */
 	private static void lance(Weaver w, Unweaving u, ServerPlayer p, Beat b) {
 		String dim = ElderFx.dim(w);
 		double[] h = halo(w);
 		if (b.at(1)) {
 			ElderFx.call(w, "seraphic_lance");
 			WorldFx.soundIn(dim, "minecraft:block.beacon.activate", "hostile", h[0], h[1], h[2], 5f, 0.5f);
+			u.back = u.enraged || ThreadLocalRandom.current().nextDouble() < Config.WEAVER_LANCE_RETURN;
 		}
-		if (b.between(0, 22)) {
+		if (b.between(0, 22) || (u.back && b.between(42, 56))) {
 			WorldFx.particleIn(u.level, "minecraft:end_rod", h[0], h[1], h[2], 2.5, 2.5, 2.5, -0.15, 3);
 			if (u.ticks % 4 == 0) {
 				AttackFx.impact(u.level, 2, AttackFx.IMPACT_CUT, h[0], h[1], h[2], 1.5);
 			}
 		}
 		if (b.at(22)) {
-			double dx = p.getX() - w.getX(), dz = p.getZ() - w.getZ();
-			double r = Math.max(8, Math.min(28, Math.sqrt(dx * dx + dz * dz)));
-			double a = Math.atan2(dz, dx);
-			double sweep = 0.75 * (u.drift > 0 ? 1 : -1);
-			ElderStrikes.beam(w, h[0], h[1], h[2], w.getX(), w.getZ(), a - sweep, a + sweep, r - 2, r + 2, u.delay(34), 12f);
-			WorldFx.soundIn(dim, "minecraft:entity.warden.sonic_boom", "hostile", h[0], h[1], h[2], 4f, 1.2f);
-			ElderFx.shake(w, p.getX(), p.getZ(), 30, 0.5f, 30);
+			sweep(w, u, p, h, u.drift > 0 ? 1 : -1);
 		}
-		if (b.past(62)) {
-			end(w, u, 60);
+		if (u.back && b.at(56)) {
+			// Back the other way, at where its prey went
+			sweep(w, u, p, h, u.drift > 0 ? -1 : 1);
 		}
+		if (b.past(u.back ? 96 : 62)) {
+			end(w, u, 40);
+		}
+	}
+
+	private static void sweep(Weaver w, Unweaving u, ServerPlayer p, double[] h, int way) {
+		double dx = p.getX() - w.getX(), dz = p.getZ() - w.getZ();
+		double r = Math.max(8, Math.min(28, Math.sqrt(dx * dx + dz * dz)));
+		double a = Math.atan2(dz, dx);
+		double sweep = 0.75 * way;
+		ElderStrikes.beam(w, h[0], h[1], h[2], w.getX(), w.getZ(), a - sweep, a + sweep, r - 2, r + 2, u.delay(34), (float) Config.WEAVER_LANCE_DAMAGE);
+		WorldFx.soundIn(ElderFx.dim(w), "minecraft:entity.warden.sonic_boom", "hostile", h[0], h[1], h[2], 4f, 1.2f);
+		ElderFx.shake(w, p.getX(), p.getZ(), 30, 0.5f, 30);
 	}
 
 	/** Cat's Cradle: threads strung across the ground round its prey, pulled taut until they cut. */
@@ -472,6 +488,7 @@ public final class WeaverService {
 				ElderStrikes.strike(w, q.getX(), q.getY(), q.getZ(), 2.0, 5f, 16, ElderStrikes.NEEDLE);
 			}
 		}
+		lanceRings(w, u, b, length);
 		if (b.every(20, 0)) {
 			ElderFight.markPlayers(w, near, "minecraft:end_rod");
 		}
@@ -493,6 +510,45 @@ public final class WeaverService {
 		if (b.past(length)) {
 			u.closeUltimate(w);
 		}
+	}
+
+	/**
+	 * In its ultimate the Lance sweeps whole circles: rings of beams round it, each turning the other way, marked on the
+	 * ground before they fire.
+	 */
+	private static void lanceRings(Weaver w, Unweaving u, Beat b, int length) {
+		int rings = Math.max(0, Math.min(4, Config.WEAVER_ULTIMATE_RINGS));
+		if (rings == 0) {
+			return;
+		}
+		double fire = Math.max(2, length * 0.25), warn = Math.max(1, fire - 20);
+		double gy = w.getY() - u.rise - HOVER;
+		double[] h = halo(w);
+		if (b.at(warn)) {
+			for (int i = 0; i < rings; i++) {
+				AttackFx.ring(u.level, 2, w.getX(), gy + 0.1, w.getZ(), ringRadius(i), (int) (fire - warn) + 6);
+			}
+			WorldFx.soundIn(ElderFx.dim(w), "minecraft:block.beacon.activate", "hostile", h[0], h[1], h[2], 6f, 0.4f);
+		}
+		if (b.between(warn, fire)) {
+			WorldFx.particleIn(u.level, "minecraft:end_rod", h[0], h[1], h[2], 3, 3, 3, -0.2, 5);
+		}
+		if (b.at(fire)) {
+			int duration = (int) Math.max(20, length * 0.5);
+			double base = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
+			for (int i = 0; i < rings; i++) {
+				double r = ringRadius(i), a0 = base + Math.PI * i, way = i % 2 == 0 ? 1 : -1;
+				ElderStrikes.beam(w, h[0], h[1], h[2], w.getX(), w.getZ(), a0, a0 + way * Math.PI * 2, r, r, duration,
+						(float) Config.WEAVER_ULTIMATE_RING_DAMAGE);
+			}
+			WorldFx.soundIn(ElderFx.dim(w), "minecraft:entity.warden.sonic_boom", "hostile", h[0], h[1], h[2], 6f, 0.9f);
+			ElderFx.shake(w, w.getX(), w.getZ(), 48, 0.7f, 20);
+		}
+	}
+
+	/** How far out ring {@code i} of its ultimate's Lance sweeps. */
+	static double ringRadius(int i) {
+		return 11 + i * 9;
 	}
 
 	/** Its kin come: Thinned from the village (only in the Seam, where they belong). */

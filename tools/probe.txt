@@ -1,2 +1,3 @@
-net.minecraft.client.gui.screens.inventory.InventoryScreen
-net.minecraft.client.gui.GuiGraphicsExtractor
+net.minecraft.commands.Commands
+net.minecraft.world.level.portal.TeleportTransition
+net.minecraft.world.entity.player.Player

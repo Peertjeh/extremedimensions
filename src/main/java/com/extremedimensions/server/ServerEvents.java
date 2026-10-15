@@ -121,6 +121,8 @@ public final class ServerEvents {
 		});
 		// Every player plays by the server's numbers: the HUD and screens get the world's settings on joining
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> com.extremedimensions.config.SettingsService.send(handler.getPlayer()));
+		// ... and who is fallen, to draw them crawling
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> com.extremedimensions.coop.FallenService.sync(s, handler.getPlayer()));
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
 			com.extremedimensions.coop.FallenService.forget(newPlayer);
 			PlayerData d = DataStore.get(newPlayer.getUUID());

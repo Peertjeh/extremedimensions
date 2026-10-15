@@ -1094,17 +1094,17 @@ public final class HollowService {
 		if (!summonHoard(p)) {
 			return false;
 		}
-		wake(DataStore.hoards().get(DataStore.hoards().size() - 1), p, true);
-		return true;
+		return wake(DataStore.hoards().get(DataStore.hoards().size() - 1), p, true);
 	}
 
-	private static void wake(Hoard h, ServerPlayer p, boolean forceMatriarch) {
-		if (h.keeperSlain || Config.KEEPER_ENABLED == 0 || p.isCreative() || p.isSpectator()) {
-			return;
+	/** Wakes a hoard's guard; forced (an operator calling the Matriarch), she comes whatever the mode or rules. */
+	private static boolean wake(Hoard h, ServerPlayer p, boolean forceMatriarch) {
+		if (!forceMatriarch && (h.keeperSlain || Config.KEEPER_ENABLED == 0 || p.isCreative() || p.isSpectator())) {
+			return false;
 		}
 		for (Guard g : KEEPERS.values()) {
 			if (h.key().equals(g.hoard)) {
-				return;
+				return false;
 			}
 		}
 		ServerLevel level = (ServerLevel) p.level();
@@ -1123,10 +1123,10 @@ public final class HollowService {
 		}
 		if (forceMatriarch || matriarchFor(DataStore.get(p.getUUID()))) {
 			// The mother of the hollows comes instead of a Keeper
-			com.extremedimensions.elder.MatriarchService.summon(p, h.key(), new BlockPos(h.x, h.y, h.z));
-			return;
+			return com.extremedimensions.elder.MatriarchService.summon(p, h.key(), new BlockPos(h.x, h.y, h.z));
 		}
 		spawnKeeper(p, level, spot, h.key());
+		return true;
 	}
 
 	/** Whether the Keeper of this hoard is awake and hunting. */

@@ -24,7 +24,9 @@ public enum Relic {
 	/** Lurkers cannot take items or armour, but come more often. */
 	LURKERS_TOOTH("lurkers_tooth"),
 	/** More time in the Seam, monsters notice you from farther at night. */
-	SEAM_LANTERN("seam_lantern");
+	SEAM_LANTERN("seam_lantern"),
+	/** Fall again sooner after an ally lifts you, bleed out sooner while fallen. */
+	KINDRED_KNOT("kindred_knot");
 
 	public final String id;
 
@@ -59,6 +61,7 @@ public enum Relic {
 			case TITHE_BELL -> new Object[] {Penalty.display(Math.round(Config.RELIC_TITHE_BELL_XP * 100))};
 			case LURKERS_TOOTH -> new Object[] {};
 			case SEAM_LANTERN -> new Object[] {Config.RELIC_SEAM_LANTERN_SECONDS};
+			case KINDRED_KNOT -> new Object[] {pct(Config.RELIC_KINDRED_KNOT_COOLDOWN)};
 		};
 	}
 
@@ -73,6 +76,7 @@ public enum Relic {
 			case TITHE_BELL -> new Object[] {Config.RELIC_TITHE_BELL_LEVELS};
 			case LURKERS_TOOTH -> new Object[] {Penalty.display(Config.RELIC_LURKERS_TOOTH_OFTEN)};
 			case SEAM_LANTERN -> new Object[] {Penalty.display(Math.round(Config.RELIC_SEAM_LANTERN_NOTICE * 100))};
+			case KINDRED_KNOT -> new Object[] {pct(Config.RELIC_KINDRED_KNOT_BLEED)};
 		};
 	}
 

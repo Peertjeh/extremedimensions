@@ -128,6 +128,12 @@ public final class ElderStrikes {
 		return STRIKES.size() + WISPS.size() + TETHERS.size() + WAVES.size() + BEAMS.size() + WEBS.size();
 	}
 
+	/** How many beams this Elder is sweeping (for tests). */
+	public static int beamsOf(Entity boss) {
+		UUID id = boss.getUUID();
+		return (int) BEAMS.stream().filter(b -> id.equals(b.source)).count();
+	}
+
 	static void strike(ElderBoss source, double x, double y, double z, double radius, float damage, int delay, int kind) {
 		Strike s = new Strike();
 		s.level = (ServerLevel) source.level();

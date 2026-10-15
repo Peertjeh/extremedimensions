@@ -76,6 +76,32 @@ public class BossTests {
 		helper.succeed();
 	}
 
+	/** {@code /tether boss matriarch} brings her, even to an operator in creative mode (not only her nest). */
+	@GameTest
+	public void anOperatorCallsTheMatriarchInCreative(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.creative(helper, "test-operator");
+		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		int arena = Config.ELDER_ARENA;
+		int hoards = DataStore.hoards().size();
+		Config.ELDER_ARENA = 0;
+		boolean ok;
+		try {
+			ok = HollowService.summonMatriarch(p);
+		} finally {
+			Config.ELDER_ARENA = arena;
+		}
+		java.util.List<com.extremedimensions.elder.Matriarch> found = helper.getLevel().getEntitiesOfClass(com.extremedimensions.elder.Matriarch.class,
+				p.getBoundingBox().inflate(48));
+		found.forEach(com.extremedimensions.elder.MatriarchService::fade);
+		while (DataStore.hoards().size() > hoards) {
+			DataStore.hoards().remove(DataStore.hoards().size() - 1);
+		}
+		check(helper, ok, "calling the Matriarch in creative failed");
+		check(helper, !found.isEmpty(), "only her nest came, not the Matriarch");
+		helper.succeed();
+	}
+
 	@GameTest
 	public void theFerrymanTakesHisTollAndWaivesTheFee(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper, Penalty.FERRYMANS_FEE, 2);
@@ -234,6 +260,41 @@ public class BossTests {
 			check(helper, wrong == 0, "%s blocks were not put back (first at %s)", wrong, first);
 			int left = level.getEntitiesOfClass(net.minecraft.world.entity.Display.BlockDisplay.class, new AABB(centre).inflate(48)).size();
 			check(helper, left == 0, "%s block displays of the arena were left behind", left);
+			helper.succeed();
+		});
+	}
+
+	/** The Weaver's ultimate sweeps its Lance round in two full rings, each its own beam. */
+	@GameTest(maxTicks = 200)
+	public void theWeaversUltimateSweepsTwoRingsOfLight(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper);
+		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		int arena = Config.ELDER_ARENA, rings = Config.WEAVER_ULTIMATE_RINGS, seconds = Config.ELDER_ULTIMATE_SECONDS;
+		Config.ELDER_ARENA = 0;
+		Config.WEAVER_ULTIMATE_RINGS = 2;
+		Config.ELDER_ULTIMATE_SECONDS = 6;
+		boolean came = WeaverService.summon(p, at.offset(12, 0, 0));
+		Config.ELDER_ARENA = arena;
+		com.extremedimensions.elder.Weaver w = helper.getLevel().getEntitiesOfClass(com.extremedimensions.elder.Weaver.class, p.getBoundingBox().inflate(48))
+				.stream().findFirst().orElse(null);
+		Runnable restore = () -> {
+			Config.WEAVER_ULTIMATE_RINGS = rings;
+			Config.ELDER_ULTIMATE_SECONDS = seconds;
+			if (w != null && w.isAlive()) {
+				WeaverService.fade(w);
+			}
+		};
+		if (!came || w == null) {
+			restore.run();
+		}
+		check(helper, came && w != null, "the Weaver did not come");
+		WeaverService.force(w, ElderBoss.ULTIMATE);
+		// Six seconds long, its rings fire a quarter of the way in (30 ticks) and sweep for half of it (60 ticks)
+		helper.runAfterDelay(45, () -> {
+			int beams = com.extremedimensions.elder.ElderStrikes.beamsOf(w);
+			restore.run();
+			check(helper, beams == 2, "its ultimate sweeps %s beams, not two rings", beams);
 			helper.succeed();
 		});
 	}

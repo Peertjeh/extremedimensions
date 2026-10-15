@@ -587,6 +587,33 @@ public final class ModPackets {
 		}
 	}
 
+	/** Server -> client: the players fallen now (drawn crawling, and the player themselves made to crawl). */
+	public record FallenPayload(java.util.List<java.util.UUID> fallen) implements CustomPacketPayload {
+		public static final Type<FallenPayload> TYPE = new Type<>(ExtremeDimensions.id("fallen"));
+		public static final StreamCodec<FriendlyByteBuf, FallenPayload> CODEC = StreamCodec.ofMember(FallenPayload::write, FallenPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeVarInt(fallen.size());
+			for (java.util.UUID id : fallen) {
+				buf.writeUUID(id);
+			}
+		}
+
+		private static FallenPayload read(FriendlyByteBuf buf) {
+			int n = buf.readVarInt();
+			java.util.List<java.util.UUID> list = new java.util.ArrayList<>(n);
+			for (int i = 0; i < n; i++) {
+				list.add(buf.readUUID());
+			}
+			return new FallenPayload(list);
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
 	/** Client -> server: buy a ware from the Hollowling the player barters with. */
 	public record BarterTradePayload(int young, int ware) implements CustomPacketPayload {
 		public static final Type<BarterTradePayload> TYPE = new Type<>(ExtremeDimensions.id("barter_trade"));

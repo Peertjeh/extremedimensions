@@ -32,6 +32,8 @@ public class PlayerData {
 	public boolean shareAnchors = false;
 	/** Co-op: allies lifted up, times lifted up by an ally, and curse stacks carried for allies. */
 	public int liftsGiven = 0, liftsTaken = 0, burdensCarried = 0;
+	/** Co-op: when (Overworld game time) the player last fell; -1 = never. They fall again only after a while. */
+	public long fallenAt = -1;
 	/** Steps of the first-expedition guide done (see Guide). */
 	public int guide = 0;
 	/** The relic bound to the Tether (its id), or null. */

@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.21.0: Down, Not Out
+
+### Added
+- **The Kindred Knot**, a ninth relic: a knot of red cord. Bound to your Tether, **you can fall again after half the
+  wait**, but fallen, you bleed out a third sooner. Found like the other relics.
+- **The Last Weaver's ultimate sweeps its Seraphic Lance round in two full rings of light**, an inner and an outer one,
+  each turning the other way. The rings are marked on the ground a second before they fire.
+
+### Changed
+- **Falling is something you get once in a while.** After a fall you cannot fall again for **30 minutes**: struck down
+  again sooner, you die as you would have (you are told how long is left). Lifted up, you are told when you can fall
+  again.
+- **The fallen really crawl now**: they lie on the ground, see the world from there, move at a fifth of a walk and
+  cannot jump, run or glide. Everyone sees them crawl.
+- **The fallen cannot use commands and cannot leave their world**, not by a command, a portal or anything else.
+- **The Last Weaver fires its Seraphic Lance far more often**, near and far, and after half of its sweeps (all of them
+  once it is enraged) it sweeps back again at where you fled to. It rests less after it.
+- New settings: the wait to fall again, how fast the fallen crawl, whether they are kept from commands and travel, the
+  Lance's weight, sweep back and damage, the ultimate's rings and their damage, and the Kindred Knot's numbers.
+
+### Fixed
+- **The Elders turn again.** Since 2.13 their bodies stayed facing where they first appeared on your screen (only their
+  heads followed you): the Matriarch, the Ferryman and the Last Weaver now turn to face you as they fight.
+- `/tether boss matriarch` brought only a nest of young Lurkers when used in creative mode: the Matriarch comes now.
+
 ## 2.20.0: The Wanderer's Ledger
 
 ### Added

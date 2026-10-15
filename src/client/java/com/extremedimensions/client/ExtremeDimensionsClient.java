@@ -118,6 +118,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(SeamSky::prepare);
 		ClientTickEvents.END_CLIENT_TICK.register(SeamAmbience::tick);
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ClientState::reset));
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.coop.ClientFallen::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.fx.BossCinema::reset));
 		HudElementRegistry.addLast(ExtremeDimensions.id("charge_hud"), new ChargeHud());
 		HudElementRegistry.addLast(ExtremeDimensions.id("stomach_hud"), new StomachHud());
@@ -187,6 +188,9 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BurdenPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(
 						new com.extremedimensions.client.screen.BurdenScreen(payload.friend(), payload.name(), payload.curses()))));
+		com.extremedimensions.client.coop.ClientFallen.init();
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.FallenPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> com.extremedimensions.client.coop.ClientFallen.receive(payload.fallen())));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BarterPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.screen.BarterScreen.show(payload.young(), payload.rep(), payload.offers())));
 	}

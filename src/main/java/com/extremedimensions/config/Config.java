@@ -272,6 +272,9 @@ public final class Config {
 	/** Seam Lantern: extra seconds in the Seam; how much farther monsters notice you at night in the Overworld (0.25 = a quarter). */
 	public static int RELIC_SEAM_LANTERN_SECONDS = 60;
 	public static double RELIC_SEAM_LANTERN_NOTICE = 0.25;
+	/** Kindred Knot: the wait before you can fall again, as a multiple (0.5 = halved); how long you last fallen, as a multiple (0.67 = a third shorter). */
+	public static double RELIC_KINDRED_KNOT_COOLDOWN = 0.5;
+	public static double RELIC_KINDRED_KNOT_BLEED = 0.67;
 	/** Chance a slain Keeper leaves a relic; relics the Starved One leaves every player who fought it; chance a Seam chest holds one. */
 	public static double RELIC_KEEPER_CHANCE = 0.35;
 	public static int RELIC_STARVED_ONE = 1;
@@ -363,6 +366,16 @@ public final class Config {
 	public static int WEAVER_TIME_GIFT = 60;
 	/** Relics the Last Weaver always leaves. */
 	public static int WEAVER_RELICS = 1;
+	/** How readily the Weaver fires its Seraphic Lance: its weight against its other blows (which weigh 1 to 4 each). */
+	public static int WEAVER_LANCE_WEIGHT = 8;
+	/** Chance the Lance sweeps back once more after its first pass (always, once the Weaver is enraged). */
+	public static double WEAVER_LANCE_RETURN = 0.5;
+	/** Damage of a Lance beam. */
+	public static double WEAVER_LANCE_DAMAGE = 12.0;
+	/** Rings of beams the Weaver's ultimate sweeps a full circle round it (0 to 4). */
+	public static int WEAVER_ULTIMATE_RINGS = 2;
+	/** Damage of a ring beam in the Weaver's ultimate. */
+	public static double WEAVER_ULTIMATE_RING_DAMAGE = 10.0;
 	/** How fast the Elders move, as a multiple of their own pace. */
 	public static double ELDER_SPEED = 1.5;
 	/** How often the Elders strike: the pause between their blows is divided by this. */
@@ -420,6 +433,12 @@ public final class Config {
 	public static int COOP_REVIVE_RANGE = 32;
 	/** Seconds a fallen player lasts before they bleed out. */
 	public static int COOP_FALLEN_SECONDS = 30;
+	/** Minutes after a fall before a player can fall again: struck down sooner, they die (0 = no wait). */
+	public static int COOP_FALLEN_COOLDOWN_MINUTES = 30;
+	/** How fast the fallen crawl, as a share of a walk (0 = not at all). */
+	public static double COOP_FALLEN_CRAWL_SPEED = 0.2;
+	/** Whether the fallen are kept from commands and from leaving their world: 1 = on, 0 = off. */
+	public static int COOP_FALLEN_LOCKED = 1;
 	/** Seconds an ally must crouch beside a fallen player to lift them up. */
 	public static double COOP_LIFT_SECONDS = 4.0;
 	/** Share of their health a lifted player gets back. */

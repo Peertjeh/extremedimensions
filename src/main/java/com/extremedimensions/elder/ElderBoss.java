@@ -106,6 +106,15 @@ public abstract class ElderBoss extends Monster {
 	}
 
 	@Override
+	public void aiStep() {
+		super.aiStep();
+		if (!(this.level() instanceof ServerLevel)) {
+			// Only its yaw and head reach a client, never its body: the body follows the yaw its service turned
+			this.yBodyRot = this.getYRot();
+		}
+	}
+
+	@Override
 	protected void tickDeath() {
 		this.deathTime++;
 		if (this.level() instanceof ServerLevel level) {

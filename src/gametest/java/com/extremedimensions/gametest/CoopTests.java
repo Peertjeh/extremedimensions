@@ -73,6 +73,64 @@ public class CoopTests {
 		});
 	}
 
+	/** A player falls at most once a while: struck down again too soon, they die; a Kindred Knot halves the wait. */
+	@GameTest
+	public void aPlayerFallsOnlyOnceInAWhile(GameTestHelper helper) {
+		ServerPlayer[] pair = allies(helper, "again");
+		ServerPlayer a = pair[0], b = pair[1];
+		var blow = helper.getLevel().damageSources().generic();
+		int minutes = Config.COOP_FALLEN_COOLDOWN_MINUTES;
+		try {
+			Config.COOP_FALLEN_COOLDOWN_MINUTES = 30;
+			check(helper, !FallenService.allowDeath(a, blow, 1000f), "the player did not fall the first time");
+			FallenService.lift(a, b);
+			long wait = FallenService.cooldownLeft(a);
+			check(helper, wait > 30 * 1200 - 40 && wait <= 30 * 1200, "after a fall the wait is %s ticks, not thirty minutes", wait);
+			check(helper, FallenService.allowDeath(a, blow, 1000f), "struck down again at once, the player fell again instead of dying");
+			check(helper, !FallenService.fallen(a), "dying, the player is still counted as fallen");
+			DataStore.get(a.getUUID()).relic = com.extremedimensions.relic.Relic.KINDRED_KNOT.id;
+			long knot = FallenService.cooldownLeft(a);
+			check(helper, Math.abs(knot - wait / 2) < 40, "with the Kindred Knot the wait is %s ticks, not half of %s", knot, wait);
+			DataStore.get(a.getUUID()).relic = null;
+			Config.COOP_FALLEN_COOLDOWN_MINUTES = 0;
+			check(helper, !FallenService.allowDeath(a, blow, 1000f), "with no wait set, the player could not fall again");
+			FallenService.forget(a);
+		} finally {
+			Config.COOP_FALLEN_COOLDOWN_MINUTES = minutes;
+		}
+		helper.succeed();
+	}
+
+	/** Fallen, a player crawls, cannot jump, cannot use commands and cannot be moved to another world. */
+	@GameTest
+	public void theFallenCrawlAndStayPut(GameTestHelper helper) {
+		ServerPlayer[] pair = allies(helper, "stay");
+		ServerPlayer a = pair[0];
+		double walk = a.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);
+		FallenService.knockDown(a);
+		check(helper, FallenService.fallen(a), "the player was not struck down");
+		check(helper, com.extremedimensions.coop.Crawl.crawls(a), "a fallen player does not crawl");
+		double crawl = a.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED);
+		double jump = a.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.JUMP_STRENGTH);
+		check(helper, crawl < walk * 0.9, "fallen, their speed is %s of %s", crawl, walk);
+		check(helper, jump <= 1e-6, "fallen, they can still jump (%s)", jump);
+		var server = helper.getLevel().getServer();
+		DataStore.get(a.getUUID()).shareAnchors = false;
+		server.getCommands().performPrefixedCommand(a.createCommandSourceStack(), "tether share on");
+		check(helper, !DataStore.get(a.getUUID()).shareAnchors, "a fallen player could still use a command");
+		ServerLevel nether = server.getLevel(net.minecraft.world.level.Level.NETHER);
+		if (nether != null) {
+			a.teleportTo(nether, a.getX(), 70, a.getZ(), java.util.Set.of(), 0f, 0f, true);
+			check(helper, a.level() == helper.getLevel(), "a fallen player was moved to the Nether");
+		}
+		FallenService.forget(a);
+		check(helper, a.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED) == walk, "back on their feet, they still crawl");
+		server.getCommands().performPrefixedCommand(a.createCommandSourceStack(), "tether share on");
+		check(helper, DataStore.get(a.getUUID()).shareAnchors, "on their feet again, the command still did not run (is the test sound?)");
+		DataStore.get(a.getUUID()).shareAnchors = false;
+		helper.succeed();
+	}
+
 	@GameTest
 	public void anAllyCarriesAStackOfACurse(GameTestHelper helper) {
 		ServerPlayer[] pair = allies(helper, "burden");
