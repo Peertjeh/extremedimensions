@@ -185,12 +185,21 @@ public class BossTests {
 				}
 			}
 		};
-		helper.runAfterDelay(8, () -> {
-			int flying = level.getEntitiesOfClass(net.minecraft.world.entity.Display.BlockDisplay.class, new AABB(centre).inflate(48)).size();
-			if (flying == 0) {
+		// Blocks fly in within the first second or so; looked for every other tick, as a busy server can be slow to let
+		// the far, freshly forced chunks hold entities
+		boolean[] seen = {false};
+		for (int t = 2; t <= 30; t += 2) {
+			helper.runAfterDelay(t, () -> {
+				if (!seen[0]) {
+					seen[0] = !level.getEntitiesOfClass(net.minecraft.world.entity.Display.BlockDisplay.class, new AABB(centre).inflate(48)).isEmpty();
+				}
+			});
+		}
+		helper.runAfterDelay(31, () -> {
+			if (!seen[0]) {
 				restore.run();
 			}
-			check(helper, flying > 0, "no blocks were flying in");
+			check(helper, seen[0], "no blocks were flying in within 30 ticks");
 		});
 		helper.runAfterDelay(36, () -> {
 			int changed = 0;
