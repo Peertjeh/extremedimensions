@@ -361,6 +361,9 @@ public class JournalScreen extends Screen {
 				e = type(b).create(mc.level, EntitySpawnReason.LOAD);
 				if (e == null) {
 					likenessError = b.id + ": could not be made";
+				} else {
+					// Never added to the world, so it is given an id of its own, one no real creature has
+					e.setId(-7300 - b.ordinal());
 				}
 			} catch (RuntimeException ex) {
 				e = null;
