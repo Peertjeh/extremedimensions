@@ -666,7 +666,7 @@
 	"boards.stat.elo": "&d&l♛ ELO RATING ♛",
 	"boards.desc.kills": "&8Players killed",
 	"boards.desc.deaths": "&8Times killed",
-	"boards.desc.kd": "&8Kills per death, at least {0} kills",
+	"boards.desc.kd": "&8Kills per death (min. {0} kills)",
 	"boards.desc.coins": "&8Coins won in matches",
 	"boards.desc.wins": "&8Matches won",
 	"boards.desc.elo": "&8Highest rating",

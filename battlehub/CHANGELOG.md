@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.6.0
+
+### Added
+* **Leaderboards in the lobby**: floating boards above the plaza wall. PvP on the north-west wall (kills,
+  deaths, K/D, coins earned) and Ranked on the south-west wall (ELO, kills, deaths, K/D, coins earned).
+  The boards go through the modes in turn, show your own place at the bottom and are in each player's own
+  language. They exist only on the players' clients. Walls, stats and modes are set in `config.json`
+  (`leaderboards`).
+* **Coins earned** are counted: per mode, for ranked, and in total (level bonuses and tournament prizes
+  included). For profiles from before 1.6 an estimate is made once from their match counts and the
+  reward settings, and the total is at least the coins they have plus what they spent in the shops.
+
 ## 1.5.0
 
 ### Added

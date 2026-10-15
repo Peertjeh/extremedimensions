@@ -184,3 +184,12 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Props | Een kwart trager (`propSpeed` 0,75) en 10 levens in plaats van 20 (`propHealth`), via tijdelijke attribuutwijzigingen die verdwijnen zodra de speler geen prop meer is. Bestaande `prophunt.json`-bestanden met de oude standaardwaarden worden bijgewerkt. |
 | Misslaan | In de lucht slaan kost geen levens meer (`airMissDamage` 0), alleen punten; een verkeerd object raken kost nog steeds allebei. |
 
+## Versie 1.6
+
+| Onderwerp | Keuze |
+|---|---|
+| Plek | Boven de lage muur rond het plein, op de twee plekken uit de screenshots: noordwest (tussen de brug naar het ijs- en het kasteeleiland) voor PvP, zuidwest (tussen nether en ijs) voor Ranked. De borden staan gelijk verdeeld over de kwartcirkel tussen twee bruggen, net boven de treden van de muur, en kijken naar de fontein. |
+| Techniek | Tekst-displays die alleen bij de spelers bestaan (eigen pakketten, zoals de sidebar): per speler in de eigen taal, met de eigen rij gemarkeerd en de eigen plek onderaan, en er blijft niets achter in de wereld. Echte entiteiten zouden voor iedereen dezelfde tekst tonen en met de wereld worden opgeslagen. Na wisselen van wereld of respawnen worden ze opnieuw gestuurd; alleen veranderde borden worden bijgewerkt. |
+| Inhoud | PvP: kills, keer dood, K/D (minstens 10 kills) en verdiende coins. Ranked: ELO (hoogste), kills, keer dood, K/D en coins uit ranked-potjes. "PvP" telt Free for All, de duels (ook boog en kruisboog), 1v2 en 1v3. Elke muur wisselt om de 8 seconden van modus (alle modi samen, dan per modus); de bolletjes onderaan laten zien welke. Alles in te stellen onder `leaderboards`. |
+| Klikken | Borden zijn niet aanklikbaar (een tekst-display heeft geen hitbox, en klikken op iets dat alleen bij de speler bestaat komt niet bij de server aan); daarom wisselen ze vanzelf. Het menu Stats → Ranglijsten blijft er ook. |
+| Verdiende coins | Werden nog niet bijgehouden. Nu per modus, per ranked-modus en in totaal (`coinsEarned`, ook levelbonussen en toernooiprijzen; admin-coins tellen niet mee). Oude profielen krijgen één keer een schatting uit hun gespeelde, gewonnen en kills per modus met de huidige beloningen; het totaal is minstens wat ze hebben plus wat ze aan titels en cosmetics uitgaven. |

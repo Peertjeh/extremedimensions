@@ -666,7 +666,7 @@
 	"boards.stat.elo": "&d&l♛ ELO-RATING ♛",
 	"boards.desc.kills": "&8Spelers uitgeschakeld",
 	"boards.desc.deaths": "&8Keer zelf uitgeschakeld",
-	"boards.desc.kd": "&8Kills per keer dood, minstens {0} kills",
+	"boards.desc.kd": "&8Kills per dood (min. {0} kills)",
 	"boards.desc.coins": "&8Coins gewonnen in potjes",
 	"boards.desc.wins": "&8Gewonnen potjes",
 	"boards.desc.elo": "&8Hoogste rating",

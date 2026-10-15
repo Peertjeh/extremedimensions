@@ -1,5 +1,6 @@
 package net.battlehub.debug;
 
+import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -8,6 +9,7 @@ import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.util.ReferenceCountUtil;
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import net.battlehub.mixin.ConnectionAccessor;
 import net.minecraft.network.Connection;
 import net.minecraft.network.PacketListener;
@@ -48,12 +50,26 @@ final class TestConnection extends Connection {
 		} else if (msg instanceof ClientboundAddEntityPacket add) {
 			entities.add(add.getId());
 		} else if (msg instanceof ClientboundRemoveEntitiesPacket rem) {
-			for (int id : rem.getEntityIds()) {
+			for (int id : removedIds(rem)) {
 				entities.remove(id);
 			}
 		} else if (msg instanceof ClientboundRespawnPacket) {
 			entities.clear();
 		}
+	}
+
+	/** The ids in a remove packet, whatever its getter is called in this version. */
+	private static int[] removedIds(ClientboundRemoveEntitiesPacket packet) {
+		for (Method m : packet.getClass().getMethods()) {
+			if (m.getParameterCount() == 0 && IntCollection.class.isAssignableFrom(m.getReturnType())) {
+				try {
+					return ((IntCollection) m.invoke(packet)).toIntArray();
+				} catch (ReflectiveOperationException e) {
+					return new int[0];
+				}
+			}
+		}
+		return new int[0];
 	}
 
 	@Override

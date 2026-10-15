@@ -26,6 +26,18 @@ no protection, no changed damage rules there.
 * Players moved in or out some other way (an admin `/tp`) are checked in or out automatically.
 * For a server that is only BattleHub, `hub.sendToHubOnJoin` puts everyone in the hub when they join.
 
+### Leaderboards in the lobby
+Floating boards hang above the plaza wall. The **PvP wall** (north-west, between the ice and castle
+bridges) shows kills, deaths, K/D and coins earned; the **Ranked wall** (south-west, between the nether
+and ice bridges) shows ELO, kills, deaths, K/D and coins earned from ranked duels. Every wall goes
+through its modes in turn (all PvP, Free for All, Sword, Axe, Mace, Bow, Crossbow, 1v2, 1v3; ranked: all
+and each duel mode), with a dot per mode at the bottom.
+
+Each player sees the boards in their own language, with their own row highlighted and their own place
+at the bottom. The boards are sent to the players' clients only: nothing is placed in the world, and
+nothing is left behind when the mod is removed. Which stats and modes each wall shows is set in
+`config.json` (`leaderboards`).
+
 ### One compass, seven menus
 | | |
 |---|---|
@@ -35,7 +47,7 @@ no protection, no changed damage rules there.
 | ✨ **Cosmetics** | Trails, kill effects, arrow trails, win effects and name colours, bought with coins |
 | 🏆 **Ranked** | Duels that change your ELO, from Bronze to Netherite |
 | 👁 **Spectate** | Every running match, live, with a **Join Spectator** button |
-| 📊 **Stats** | Wins, losses, kills, deaths, streaks, level, coins, title, ELO per mode, parkour records, leaderboards |
+| 📊 **Stats** | Wins, losses, kills, deaths, streaks, level, coins, title, ELO per mode, parkour records, leaderboards (also on the lobby wall) |
 
 The compass always sits in the same hotbar slot and cannot be dropped or moved. Every submenu has a back
 button. In a mode menu you choose **Queue** (random opponent) or **Challenge** (pick a player).
@@ -233,6 +245,10 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   * `levels`: XP curve (`baseXp`, `increment`, `growth`, `maxLevel`) and level bonus coins
   * `streaks.milestones`: which win streaks are announced
   * `arenas`: number of slots, slot spacing, floor height, blocks built per tick, **themes per mode**
+  * `leaderboards`: on/off, seconds per mode, rows per board, the kills needed for the K/D board, text
+    size, and per wall: the side (`northwest`, `northeast`, `southwest`, `southeast`), ranked or not, the
+    boards from left to right (`kills`, `deaths`, `kd`, `coins`, `wins`, `elo`) and the modes shown in
+    turn (`all`, `pvp` or a mode id such as `sword`, `ffa`, `1v2` or `bed_wars`)
   * `games`: per mode: on/off, min/max players, time limit, kit, and game settings
     (duel `arenaScale` (mace 1.8), TNT Run decay and floors, KOTH target, CTF captures, parkour jumps and coins
     per difficulty and countdown, LMS border, FFA `killsToWin` and spawn protection, tournament
