@@ -53,11 +53,35 @@ public class BarterScreen extends Screen {
 		}
 	}
 
+	/** The barter screen open now, if any. */
+	private static BarterScreen shown;
+
 	/** Opens the screen, or refreshes it in place after a barter (without playing its opening again). */
 	public static void show(int young, int rep, String data) {
-		Minecraft mc = Minecraft.getInstance();
-		long openAt = mc.screen instanceof BarterScreen b && b.young == young ? b.openAt : System.currentTimeMillis();
-		mc.gui.setScreen(new BarterScreen(young, rep, data, openAt));
+		BarterScreen before = shown;
+		long openAt = before != null && before.young == young ? before.openAt : System.currentTimeMillis();
+		BarterScreen next = new BarterScreen(young, rep, data, openAt);
+		Minecraft.getInstance().gui.setScreen(next);
+		shown = next;
+	}
+
+	@Override
+	public void removed() {
+		super.removed();
+		if (shown == this) {
+			shown = null;
+		}
+	}
+
+	private static int colour(Standing.Level level) {
+		return switch (level) {
+			case HUNTED -> Ui.BLOOD;
+			case HATED -> Ui.DANGER;
+			case WARY -> Ui.MUTED;
+			case TOLERATED -> Ui.WARN;
+			case TRUSTED -> Ui.OK;
+			case KIN -> Ui.SOUL;
+		};
 	}
 
 	private int panelH() {
@@ -105,8 +129,7 @@ public class BarterScreen extends Screen {
 		int x = this.width / 2 - PANEL_W / 2, y = this.height / 2 - panelH() / 2;
 		int cx = this.width / 2;
 		Standing.Level level = Standing.level(rep);
-		Integer c = level.colour().getColor();
-		int accent = c == null ? Ui.SOUL : c;
+		int accent = colour(level);
 		Ui.panel(g, x, y, PANEL_W, panelH(), Ui.SOUL_DIM, pe);
 		Ui.heading(g, this.font, Ui.tr("gui.extremedimensions.barter.title"), cx, y + 9, Ui.SOUL, pe);
 		// Standing: the level by name, and where the player stands from -100 to 100
