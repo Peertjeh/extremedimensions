@@ -13,7 +13,7 @@ import net.minecraft.network.chat.Component;
 /** Anchor status (sneak + empty hand on an anchor): your charge here, your record and your marks. */
 public class StatusScreen extends Screen {
 	private static final int PANEL_W = 250;
-	private static final int PANEL_H = 206;
+	private static final int PANEL_H = 222;
 	private final long openAt = System.currentTimeMillis();
 	/** Co-op: whether the player's anchors are open to their allies (they can draw on the player's charge in them). */
 	private boolean sharing;
@@ -74,7 +74,7 @@ public class StatusScreen extends Screen {
 		Ui.divider(g, x + 14, y + 120, PANEL_W - 28, Ui.SOUL, pe);
 
 		int ty = y + 128;
-		g.text(this.font, Ui.tr("gui.extremedimensions.marks.title"), x + 14, ty, Ui.argb(pe, Ui.SOUL));
+		g.text(this.font, Ui.tr("gui.extremedimensions.curses.title"), x + 14, ty, Ui.argb(pe, Ui.SOUL));
 		String drain = Ui.tr("hud.extremedimensions.drain", String.format("%.1f", ClientState.drainX100 / 100.0));
 		g.text(this.font, drain, x + PANEL_W - 14 - this.font.width(drain), ty, Ui.argb(pe, ClientState.drainX100 > 100 ? Ui.WARN : Ui.MUTED));
 		int ly = ty + 12;
