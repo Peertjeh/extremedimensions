@@ -117,7 +117,7 @@ public final class AnchorService {
 				if (!d.pendingOffer.isEmpty()) {
 					Sync.offer(p, d);
 				} else {
-					ServerPlayNetworking.send(p, new ModPackets.OpenStatusPayload());
+					ServerPlayNetworking.send(p, new ModPackets.OpenStatusPayload(d.shareAnchors));
 				}
 				return InteractionResult.SUCCESS;
 			}

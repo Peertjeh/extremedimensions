@@ -203,6 +203,16 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("02_inventory");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
+			// Co-op: an ally's burden (one curse full already), and the status screen with anchors opened to allies
+			ctx.runOnClient(mc -> mc.gui.setScreen(new com.extremedimensions.client.screen.BurdenScreen(java.util.UUID.randomUUID(), "Wren",
+					"accelerated_drain:3:4:1;cracked_armor:2:4:4;dwindling:1:3:0;glass_jaw:2:3:1")));
+			ctx.waitTicks(8);
+			ctx.takeScreenshot("13_burden");
+			ctx.runOnClient(mc -> mc.gui.setScreen(new com.extremedimensions.client.screen.StatusScreen(true)));
+			ctx.waitTicks(8);
+			ctx.takeScreenshot("13_status_shared");
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+
 			// Relics: all eight in the hotbar, and the Ember Heart bound to the Tether (shown in the Curses screen)
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);

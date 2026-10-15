@@ -36,6 +36,13 @@ public class Anchor {
 	/** Soul light nearby keeps Lurkers away (refreshed with the path check). */
 	public transient boolean warded = false;
 
+	/**
+	 * Co-op, set by the server: whether two players (by UUID) are allies, and whether a player opened their anchors
+	 * to their allies (their charge here can then be drawn on by them, after the ally's own).
+	 */
+	public static java.util.function.BiPredicate<String, String> allied = (a, b) -> false;
+	public static java.util.function.Predicate<String> open = k -> false;
+
 	public Anchor() {}
 
 	public Anchor(int x, int y, int z, String type) {
@@ -64,10 +71,25 @@ public class Anchor {
 		return dx * dx + dy * dy + dz * dz;
 	}
 
-	/** Charge this player can use here. */
+	/** Charge this player can use here: their own, the legacy shared charge, and what allies opened to them. */
 	public double of(String uid) {
 		fixLegacy();
-		return owners.getOrDefault(uid, 0.0) + owners.getOrDefault(SHARED, 0.0);
+		return owners.getOrDefault(uid, 0.0) + owners.getOrDefault(SHARED, 0.0) + shared(uid);
+	}
+
+	/** Charge here of allies who opened their anchors to this player. */
+	public double shared(String uid) {
+		double sum = 0;
+		for (Map.Entry<String, Double> e : owners.entrySet()) {
+			if (lends(e.getKey(), uid)) {
+				sum += e.getValue();
+			}
+		}
+		return sum;
+	}
+
+	private static boolean lends(String owner, String uid) {
+		return !owner.equals(uid) && !owner.equals(SHARED) && open.test(owner) && allied.test(uid, owner);
 	}
 
 	public void add(String uid, double amount) {
@@ -76,11 +98,17 @@ public class Anchor {
 		recalc();
 	}
 
-	/** Takes up to {@code amount} from this player (own charge first); returns what was taken. */
+	/** Takes up to {@code amount} from this player (own charge first, then the legacy shared, then allies'); returns what was taken. */
 	public double take(String uid, double amount) {
 		fixLegacy();
 		double taken = 0;
-		for (String k : new String[] {uid, SHARED}) {
+		List<String> from = new ArrayList<>(List.of(uid, SHARED));
+		for (String k : new java.util.TreeSet<>(owners.keySet())) {
+			if (lends(k, uid)) {
+				from.add(k);
+			}
+		}
+		for (String k : from) {
 			double have = owners.getOrDefault(k, 0.0);
 			double t = Math.min(have, amount - taken);
 			if (t > 0) {

@@ -71,6 +71,7 @@ public final class ServerEvents {
 		ServerLifecycleEvents.SERVER_STARTED.register(s -> {
 			WorldFx.bind(s);
 			DataStore.load(s);
+			com.extremedimensions.coop.Allies.init(s);
 		});
 		// The mod's data is written with the world's own saves (autosave, /save-all, stop), never ahead of them
 		ServerLifecycleEvents.AFTER_SAVE.register((s, flush, force) -> DataStore.flush());
@@ -93,6 +94,8 @@ public final class ServerEvents {
 			com.extremedimensions.elder.ElderStrikes.clear();
 			com.extremedimensions.elder.AttackFx.clear();
 			com.extremedimensions.elder.WeaverService.clear();
+			com.extremedimensions.coop.FallenService.clear();
+			com.extremedimensions.coop.BurdenService.clear();
 			AtonementGuard.clear();
 			DataStore.unload();
 			WorldFx.bind(null);
@@ -104,14 +107,21 @@ public final class ServerEvents {
 		// A block of an Elder's arena broken by a player drops nothing
 		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, blockEntity) ->
 				com.extremedimensions.elder.ElderArena.broken(level, pos));
+		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, blockEntity) ->
+				!(player instanceof ServerPlayer fallen && com.extremedimensions.coop.FallenService.fallen(fallen)));
 		CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> TetherCommand.register(dispatcher));
 
 		ServerPlayerEvents.JOIN.register(ServerEvents::onJoin);
 		// A leaving player's inventory is saved now; their curses and progress go with it
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> DataStore.flush());
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> {
+			// A fallen player who leaves bleeds out
+			com.extremedimensions.coop.FallenService.onLeave(handler.getPlayer());
+			DataStore.flush();
+		});
 		// Every player plays by the server's numbers: the HUD and screens get the world's settings on joining
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> com.extremedimensions.config.SettingsService.send(handler.getPlayer()));
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
+			com.extremedimensions.coop.FallenService.forget(newPlayer);
 			PlayerData d = DataStore.get(newPlayer.getUUID());
 			if (!alive) {
 				ExpeditionService.onRespawn(newPlayer, d);
@@ -121,6 +131,9 @@ public final class ServerEvents {
 
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(CurseEffects::afterDamage);
 		ServerLivingEntityEvents.ALLOW_DEATH.register(ExtremeCurses::oath);
+		// Co-op: struck down with an ally near, a player falls instead of dying, and cannot be hurt while fallen
+		ServerLivingEntityEvents.ALLOW_DEATH.register(com.extremedimensions.coop.FallenService::allowDeath);
+		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> com.extremedimensions.coop.FallenService.mayHurt(entity, source));
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(AtonementGuard::damaged);
 		// The Elders' blows: the Ferryman takes levels, the Weaver unpicks Seam time
 		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseTaken, taken, blocked) -> {
@@ -173,6 +186,9 @@ public final class ServerEvents {
 		});
 
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+			if (player instanceof ServerPlayer fallen && com.extremedimensions.coop.FallenService.fallen(fallen)) {
+				return InteractionResult.FAIL;
+			}
 			if (!Dims.ours(level)) {
 				return InteractionResult.PASS;
 			}
@@ -208,6 +224,9 @@ public final class ServerEvents {
 		});
 
 		UseItemCallback.EVENT.register((player, level, hand) -> {
+			if (player instanceof ServerPlayer fallen && com.extremedimensions.coop.FallenService.fallen(fallen)) {
+				return InteractionResult.FAIL;
+			}
 			if (player instanceof ServerPlayer sp && player.getItemInHand(hand).is(ModItems.TETHER_JOURNAL)) {
 				Journal.open(sp, DataStore.get(sp.getUUID()));
 				return InteractionResult.SUCCESS;
@@ -256,6 +275,8 @@ public final class ServerEvents {
 			}
 		});
 
+		AttackEntityCallback.EVENT.register((player, level, hand, entity, hit) ->
+				player instanceof ServerPlayer fallen && com.extremedimensions.coop.FallenService.fallen(fallen) ? InteractionResult.FAIL : InteractionResult.PASS);
 		AttackEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
 			if (player instanceof ServerPlayer sp && entity instanceof net.minecraft.world.entity.LivingEntity) {
 				CurseEffects.wear(sp);
@@ -264,8 +285,18 @@ public final class ServerEvents {
 		});
 
 		UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
+			if (player instanceof ServerPlayer fallen && com.extremedimensions.coop.FallenService.fallen(fallen)) {
+				return InteractionResult.FAIL;
+			}
 			if (!Dims.ours(level)) {
 				return InteractionResult.PASS;
+			}
+			if (hand == InteractionHand.MAIN_HAND && player instanceof ServerPlayer sp && entity instanceof ServerPlayer) {
+				// Co-op: sneak and an empty hand on an ally, to carry one of their curses
+				InteractionResult burden = com.extremedimensions.coop.BurdenService.interact(sp, entity);
+				if (burden != InteractionResult.PASS) {
+					return burden;
+				}
 			}
 			InteractionResult feral = ExtremeCurses.refuseTaming(player, entity);
 			if (feral != InteractionResult.PASS) {
@@ -280,6 +311,8 @@ public final class ServerEvents {
 
 	private static void onJoin(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
+		// Co-op: allies' teams are looked up by name, also while this player is away
+		d.name = p.getScoreboardName();
 		// Joining in another mod's world: the mod picks the player up again where they come back to one of its own
 		d.away = !Dims.ours(p);
 		d.dim = d.away ? Dims.OVERWORLD : Dims.of(p);
@@ -407,6 +440,7 @@ public final class ServerEvents {
 		com.extremedimensions.elder.ElderTerrain.tick(s);
 		com.extremedimensions.elder.WeaverService.tick(s);
 		com.extremedimensions.elder.ElderArena.tick(s);
+		com.extremedimensions.coop.FallenService.tick(s);
 		com.extremedimensions.elder.AttackFx.flush(s);
 	}
 

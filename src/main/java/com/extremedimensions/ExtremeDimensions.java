@@ -101,6 +101,14 @@ public class ExtremeDimensions implements ModInitializer {
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BossMusicPayload.TYPE, ModPackets.BossMusicPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BossFxPayload.TYPE, ModPackets.BossFxPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.AttackFxPayload.TYPE, ModPackets.AttackFxPayload.CODEC);
+		// Co-op: an ally's curses to carry one of, the offer to carry it, and anchors opened to allies
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BurdenPayload.TYPE, ModPackets.BurdenPayload.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.CarryPayload.TYPE, ModPackets.CarryPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.CarryPayload.TYPE, (payload, context) ->
+				com.extremedimensions.coop.BurdenService.offer(context.player(), payload.friend(), payload.curse()));
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.ShareAnchorsPayload.TYPE, ModPackets.ShareAnchorsPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.ShareAnchorsPayload.TYPE, (payload, context) ->
+				com.extremedimensions.coop.Allies.share(context.player(), payload.on()));
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.TrialsPayload.TYPE, ModPackets.TrialsPayload.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestTrialsPayload.TYPE, ModPackets.RequestTrialsPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestTrialsPayload.TYPE, (payload, context) ->

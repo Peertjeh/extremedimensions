@@ -14,6 +14,12 @@ import com.extremedimensions.penalty.Penalty;
 public class PlayerData {
 	// --- saved ---
 	public int expeditions = 0;
+	/** The name the player last played under (an ally's team is looked up by it while they are away). */
+	public String name = null;
+	/** Whether the player's charge in their anchors is open to their allies. */
+	public boolean shareAnchors = false;
+	/** Co-op: allies lifted up, times lifted up by an ally, and curse stacks carried for allies. */
+	public int liftsGiven = 0, liftsTaken = 0, burdensCarried = 0;
 	/** Steps of the first-expedition guide done (see Guide). */
 	public int guide = 0;
 	/** The relic bound to the Tether (its id), or null. */

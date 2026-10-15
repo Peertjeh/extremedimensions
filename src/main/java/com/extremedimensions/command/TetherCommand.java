@@ -27,7 +27,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Commands under {@code /tether}: {@code where} for everyone (the world you stand in and whether the mod acts there);
+ * Commands under {@code /tether}: {@code where} for everyone (the world you stand in and whether the mod acts there),
+ * and the co-op answers ({@code burden accept|refuse}, {@code share on|off});
  * for operators Overworld curses on or off, curses set or cleared, Lurkers, hoards, the Seam, bosses and difficulty.
  */
 public final class TetherCommand {
@@ -38,6 +39,13 @@ public final class TetherCommand {
 		dispatcher.register(Commands.literal("tether")
 				// Anyone may ask where they stand; everything else is for operators
 				.then(Commands.literal("where").executes(c -> where(c.getSource())))
+				// Co-op, for everyone: answering an offer to carry a curse, and opening one's anchors to allies
+				.then(Commands.literal("burden")
+						.then(Commands.literal("accept").executes(c -> burden(c.getSource(), true)))
+						.then(Commands.literal("refuse").executes(c -> burden(c.getSource(), false))))
+				.then(Commands.literal("share")
+						.then(Commands.literal("on").executes(c -> share(c.getSource(), true)))
+						.then(Commands.literal("off").executes(c -> share(c.getSource(), false))))
 				.then(Commands.literal("overworld_penalties").requires(op)
 						.executes(c -> show(c.getSource()))
 						.then(Commands.literal("on").executes(c -> set(c.getSource(), true)))
@@ -75,6 +83,26 @@ public final class TetherCommand {
 	}
 
 	/** {@code /tether where}: the world the player stands in, and whether the mod acts there (anyone may ask). */
+	/** {@code /tether burden accept|refuse}: the answer to an ally's offer to carry one of the player's curses. */
+	private static int burden(CommandSourceStack src, boolean yes) {
+		net.minecraft.server.level.ServerPlayer p = src.getPlayer();
+		if (p == null) {
+			return 0;
+		}
+		com.extremedimensions.coop.BurdenService.answer(p, yes);
+		return 1;
+	}
+
+	/** {@code /tether share on|off}: the player's anchors opened to their allies, or theirs alone again. */
+	private static int share(CommandSourceStack src, boolean on) {
+		net.minecraft.server.level.ServerPlayer p = src.getPlayer();
+		if (p == null) {
+			return 0;
+		}
+		com.extremedimensions.coop.Allies.share(p, on);
+		return 1;
+	}
+
 	private static int where(CommandSourceStack src) {
 		var level = src.getLevel();
 		String id = level.dimension().identifier().toString();

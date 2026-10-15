@@ -15,17 +15,37 @@ public class StatusScreen extends Screen {
 	private static final int PANEL_W = 250;
 	private static final int PANEL_H = 206;
 	private final long openAt = System.currentTimeMillis();
+	/** Co-op: whether the player's anchors are open to their allies (they can draw on the player's charge in them). */
+	private boolean sharing;
 
-	public StatusScreen() {
+	public StatusScreen(boolean sharing) {
 		super(Component.translatable("gui.extremedimensions.status.title"));
+		this.sharing = sharing;
 	}
 
 	@Override
 	protected void init() {
+		int by = this.height / 2 + PANEL_H / 2 - 28;
+		if (Config.COOP_SHARED_ANCHORS > 0) {
+			this.addRenderableWidget(Button.builder(shareLabel(), b -> {
+				sharing = !sharing;
+				net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(new com.extremedimensions.network.ModPackets.ShareAnchorsPayload(sharing));
+				b.setMessage(shareLabel());
+			}).pos(this.width / 2 - 115, by).size(140, 20)
+					.tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("gui.extremedimensions.status.share_hint")))
+					.build());
+			this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> this.onClose())
+					.pos(this.width / 2 + 31, by).size(84, 20).build());
+			return;
+		}
 		this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> this.onClose())
-				.pos(this.width / 2 - 50, this.height / 2 + PANEL_H / 2 - 28)
+				.pos(this.width / 2 - 50, by)
 				.size(100, 20)
 				.build());
+	}
+
+	private Component shareLabel() {
+		return Component.translatable(sharing ? "gui.extremedimensions.status.share_on" : "gui.extremedimensions.status.share_off");
 	}
 
 	@Override

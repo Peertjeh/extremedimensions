@@ -1,5 +1,28 @@
 # Changelog
 
+## 2.17.0: Bound Together
+
+### Added
+- **Fallen, not gone.** A player struck down while an ally is within 32 blocks falls instead of dying. Fallen, they
+  cannot be hurt, crawl, cannot fight or use anything, glow so they are found, and bleed out after 30 seconds. **An ally
+  crouching right beside them for 4 seconds lifts them up again** with a third of their health and a moment's
+  resistance; letting go, the lift slips back. Holding sneak for 3 seconds, the fallen give in. A totem still saves as
+  it always did, and what kills outright (the void, a collapse, /kill) still kills. Allies near see who has fallen and
+  how long they have, the fallen see who is lifting them.
+- **Share the burden.** Sneaking, right-click an ally with an empty hand to see the curses they carry, and offer to
+  carry one stack of one of them. They are asked in the chat (Let them / Refuse, for a minute); if they let you, the
+  stack comes off them and onto you, a thread of light running from them to you. Pact stacks stay with whoever swore
+  them, a curse you carry in full cannot be taken on, and the same two can do it again after 5 minutes.
+- **Open your anchors to your allies.** A toggle in the anchor's status screen (or `/tether share on|off`): your
+  charge in your anchors can then be drawn on by your allies, after their own and the old shared charge. Your timer
+  stays your own; what they draw is gone from yours.
+- **Allies** are everyone not on another scoreboard team; with `coop_allies` at 1 only players on the same team.
+- Two advancements: *Not Today* (lift up a fallen ally) and *Bear It Together* (carry a curse for an ally).
+- New settings in a new *Co-op* section: `coop_revive` (1), `coop_revive_range` (32), `coop_fallen_seconds` (30),
+  `coop_lift_seconds` (4), `coop_lift_health` (0.3), `coop_allies` (0), `coop_burden` (1), `coop_burden_toll` (0:
+  extra stacks the one who carries a curse takes on as well), `coop_burden_cooldown_minutes` (5),
+  `coop_shared_anchors` (1).
+
 ## 2.16.0: Every Blow Drawn
 
 ### Changed

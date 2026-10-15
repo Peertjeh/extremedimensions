@@ -40,6 +40,8 @@ public final class Advancements {
 	public static final String MATRIARCH_SLAIN = "matriarch_slain";
 	public static final String FERRYMAN_SLAIN = "ferryman_slain";
 	public static final String WEAVER_SLAIN = "weaver_slain";
+	public static final String LIFTED = "lifted";
+	public static final String BURDEN_CARRIED = "burden_carried";
 
 	/** Expeditions needed for {@link #VETERAN}. */
 	public static final int VETERAN_EXPEDITIONS = 10;

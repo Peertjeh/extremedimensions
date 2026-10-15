@@ -102,6 +102,13 @@ public final class AttackFx {
 		add(level, new Fx(RING, elder, 0, (float) x, (float) y, (float) z, 0, 0, 0, (float) radius, ticks));
 	}
 
+	/** A taut thread of light between two points (co-op: a curse carried from one player to another). */
+	public static void thread(net.minecraft.world.level.Level level, double x0, double y0, double z0, double x1, double y1, double z1, int ticks) {
+		if (level instanceof ServerLevel sl) {
+			line(sl, 2, LINE_THREAD_TAUT, x0, y0, z0, x1, y1, z1, ticks);
+		}
+	}
+
 	/** Effects gathered so far this tick (for tests). */
 	public static int pending() {
 		int n = 0;

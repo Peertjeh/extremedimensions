@@ -1,6 +1,5 @@
-net.minecraft.client.Minecraft
-net.minecraft.client.multiplayer.ClientLevel
-net.minecraft.client.renderer.LevelRenderer
-net.minecraft.client.particle.ParticleResources
-net.minecraft.client.particle.ParticleProvider
-#net/fabricmc/fabric/api/client/particle/v1/
+net.minecraft.network.chat.ClickEvent
+net.minecraft.network.chat.ClickEvent$RunCommand
+net.minecraft.network.chat.HoverEvent$ShowText
+net.minecraft.tags.DamageTypeTags
+net.minecraft.client.gui.components.Button$Builder

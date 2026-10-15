@@ -398,6 +398,29 @@ public final class Config {
 	/** Its speed once ravenous, as a multiple. */
 	public static double STARVED_ENRAGE_SPEED = 1.3;
 
+	// --- Co-op -----------------------------------------------------------------------------------
+
+	/** Whether a player struck down with an ally near falls instead of dying, to be lifted up again: 1 = on, 0 = off. */
+	public static int COOP_REVIVE = 1;
+	/** Blocks within which an ally must be for a player to fall instead of dying. */
+	public static int COOP_REVIVE_RANGE = 32;
+	/** Seconds a fallen player lasts before they bleed out. */
+	public static int COOP_FALLEN_SECONDS = 30;
+	/** Seconds an ally must crouch beside a fallen player to lift them up. */
+	public static double COOP_LIFT_SECONDS = 4.0;
+	/** Share of their health a lifted player gets back. */
+	public static double COOP_LIFT_HEALTH = 0.3;
+	/** Who counts as an ally: 0 = everyone not on another scoreboard team, 1 = only players on the same team. */
+	public static int COOP_ALLIES = 0;
+	/** Whether a player may carry one stack of an ally's curse for them, with their consent: 1 = on, 0 = off. */
+	public static int COOP_BURDEN = 1;
+	/** Extra stacks of the curse the one who carries it takes on as well (the toll of carrying it). */
+	public static int COOP_BURDEN_TOLL = 0;
+	/** Minutes before a player can carry another curse for the same ally. */
+	public static int COOP_BURDEN_COOLDOWN_MINUTES = 5;
+	/** Whether players may open their anchors to their allies: 1 = on, 0 = off. */
+	public static int COOP_SHARED_ANCHORS = 1;
+
 	// --- Technical -------------------------------------------------------------------------------
 
 	/** Milliseconds per tick the Seam may spend building islands (blocks in chunks nobody has loaded wait). */
@@ -433,7 +456,7 @@ public final class Config {
 			Map.entry("hoard_wild_chance", "hollow"), Map.entry("soul_woven_drain", "weaving"), Map.entry("seam_seconds", "seam"),
 			Map.entry("storm_chance", "dragon"), Map.entry("relic_ember_heart_nether", "relics"), Map.entry("pact_unlock", "pacts"),
 			Map.entry("trial_unlock", "trials"), Map.entry("matriarch_after_keepers", "elders"),
-			Map.entry("seam_build_budget_ms", "technical"));
+			Map.entry("coop_revive", "coop"), Map.entry("seam_build_budget_ms", "technical"));
 
 	/** One setting: its key in the file, its section, the field behind it and its default (as text). */
 	public record Setting(String key, String section, Field field, String fallback) {

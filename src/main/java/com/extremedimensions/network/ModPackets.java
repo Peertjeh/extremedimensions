@@ -76,15 +76,16 @@ public final class ModPackets {
 	}
 
 	/** Server -> client: open the anchor status screen. */
-	public record OpenStatusPayload() implements CustomPacketPayload {
+	public record OpenStatusPayload(boolean sharing) implements CustomPacketPayload {
 		public static final Type<OpenStatusPayload> TYPE = new Type<>(ExtremeDimensions.id("open_status"));
 		public static final StreamCodec<FriendlyByteBuf, OpenStatusPayload> CODEC = StreamCodec.ofMember(OpenStatusPayload::write, OpenStatusPayload::read);
 
 		private void write(FriendlyByteBuf buf) {
+			buf.writeBoolean(sharing);
 		}
 
 		private static OpenStatusPayload read(FriendlyByteBuf buf) {
-			return new OpenStatusPayload();
+			return new OpenStatusPayload(buf.readBoolean());
 		}
 
 		@Override
@@ -489,6 +490,69 @@ public final class ModPackets {
 						buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readVarInt()));
 			}
 			return new AttackFxPayload(detail, fx);
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: open (or close) the player's anchors to their allies. */
+	public record ShareAnchorsPayload(boolean on) implements CustomPacketPayload {
+		public static final Type<ShareAnchorsPayload> TYPE = new Type<>(ExtremeDimensions.id("share_anchors"));
+		public static final StreamCodec<FriendlyByteBuf, ShareAnchorsPayload> CODEC = StreamCodec.ofMember(ShareAnchorsPayload::write, ShareAnchorsPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeBoolean(on);
+		}
+
+		private static ShareAnchorsPayload read(FriendlyByteBuf buf) {
+			return new ShareAnchorsPayload(buf.readBoolean());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
+	 * Server -> client: an ally's curses, to carry one for them: "id:stacks:max:mine;..." (mine: the stacks of it the
+	 * player already carries).
+	 */
+	public record BurdenPayload(java.util.UUID friend, String name, String curses) implements CustomPacketPayload {
+		public static final Type<BurdenPayload> TYPE = new Type<>(ExtremeDimensions.id("burden"));
+		public static final StreamCodec<FriendlyByteBuf, BurdenPayload> CODEC = StreamCodec.ofMember(BurdenPayload::write, BurdenPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUUID(friend);
+			buf.writeUtf(name);
+			buf.writeUtf(curses);
+		}
+
+		private static BurdenPayload read(FriendlyByteBuf buf) {
+			return new BurdenPayload(buf.readUUID(), buf.readUtf(), buf.readUtf());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: offer to carry one stack of an ally's curse (they are asked first). */
+	public record CarryPayload(java.util.UUID friend, String curse) implements CustomPacketPayload {
+		public static final Type<CarryPayload> TYPE = new Type<>(ExtremeDimensions.id("carry"));
+		public static final StreamCodec<FriendlyByteBuf, CarryPayload> CODEC = StreamCodec.ofMember(CarryPayload::write, CarryPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUUID(friend);
+			buf.writeUtf(curse);
+		}
+
+		private static CarryPayload read(FriendlyByteBuf buf) {
+			return new CarryPayload(buf.readUUID(), buf.readUtf());
 		}
 
 		@Override
