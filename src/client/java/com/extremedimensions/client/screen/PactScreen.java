@@ -112,7 +112,7 @@ public class PactScreen extends Screen {
 		}
 		int[] index = new int[Group.values().length];
 		for (Penalty p : Penalty.values()) {
-			if (p.group == Group.OVERWORLD || p.max <= 0) {
+			if (!com.extremedimensions.pact.PactService.allowed(p)) {
 				continue;
 			}
 			int i = index[p.group.ordinal()]++;

@@ -81,6 +81,8 @@ public final class ExpeditionService {
 		d.arrivalX = p.getX();
 		d.arrivalZ = p.getZ();
 		d.hasRopeEnd = false;
+		// On the expedition from here (so a pact's stacks of Leaky Tank count as well)
+		d.inRun = true;
 		int leaky = d.stacks(Penalty.LEAKY_TANK);
 		if (leaky > 0) {
 			// Leaky Tank: every expedition starts with a share of the stored charge gone
@@ -115,6 +117,8 @@ public final class ExpeditionService {
 	/** Safe return: the chain disappears entirely and the Tether comes back. */
 	private static void complete(ServerPlayer p, PlayerData d) {
 		TetherService.clear(p, d, true);
+		// Ferryman's Fee: every crossing home is paid for in levels (counted while still on the expedition: a pact's too)
+		int fee = (int) Math.round(Penalty.FERRYMANS_FEE.value) * d.stacks(Penalty.FERRYMANS_FEE);
 		d.inRun = false;
 		d.linked.clear();
 		// Only an expedition that was one counts and earns: stepping through and straight back is not
@@ -125,8 +129,6 @@ public final class ExpeditionService {
 		d.longestRun = Math.max(d.longestRun, d.runTime);
 		d.runTime = 0;
 
-		// Ferryman's Fee: every crossing home is paid for in levels
-		int fee = (int) Math.round(Penalty.FERRYMANS_FEE.value) * d.stacks(Penalty.FERRYMANS_FEE);
 		// Tithe Bell: the bell takes its due for every crossing home
 		if (com.extremedimensions.relic.RelicService.has(d, com.extremedimensions.relic.Relic.TITHE_BELL)) {
 			fee += Math.max(0, Config.RELIC_TITHE_BELL_LEVELS);

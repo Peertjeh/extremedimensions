@@ -64,6 +64,9 @@ public final class RelicService {
 		if (before == r) {
 			return InteractionResult.FAIL;
 		}
+		if (locked(p, d)) {
+			return InteractionResult.FAIL;
+		}
 		stack.shrink(1);
 		d.relic = r.id;
 		if (before != null) {
@@ -83,7 +86,7 @@ public final class RelicService {
 	public static void unbind(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
 		Relic r = bound(d);
-		if (r == null) {
+		if (r == null || locked(p, d)) {
 			return;
 		}
 		d.relic = null;
@@ -93,6 +96,18 @@ public final class RelicService {
 		Sync.curses(p, d, false);
 		WorldFx.soundSelf(p, "minecraft:block.chain.break", 1.0f, 0.9f);
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.relic.unbound", Component.translatable(r.nameKey())), true);
+	}
+
+	/**
+	 * A relic is bound or taken off only at home and on one's feet: not on an expedition, in the Seam or fallen (its gift
+	 * and its price are paid for the whole of it, not swapped for the moment that suits). The player is told so.
+	 */
+	private static boolean locked(ServerPlayer p, PlayerData d) {
+		if (!d.inRun && !d.inSeam && !com.extremedimensions.coop.FallenService.fallen(p)) {
+			return false;
+		}
+		p.sendSystemMessage(Component.translatable("gui.extremedimensions.relic.locked"), true);
+		return true;
 	}
 
 	/** Drain multiplier from the bound relic in this world. */

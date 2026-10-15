@@ -70,7 +70,8 @@ public class BurdenScreen extends Screen {
 		int first = page * rows;
 		for (int i = first; i < Math.min(list.size(), first + rows); i++) {
 			Row r = list.get(i);
-			boolean full = r.mine() >= r.max();
+			// Room for the stack and its toll
+			boolean full = r.mine() + 1 + Math.max(0, com.extremedimensions.config.Config.COOP_BURDEN_TOLL) > r.max();
 			Button carry = Button.builder(Component.translatable(full ? "gui.extremedimensions.burden.full" : "gui.extremedimensions.burden.carry"), b -> {
 				ClientPlayNetworking.send(new ModPackets.CarryPayload(friend, r.pen().id));
 				this.onClose();

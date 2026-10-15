@@ -84,7 +84,7 @@ public class PactTests {
 		PlayerData d = DataStore.get(p.getUUID());
 		d.pact.put(Penalty.GLASS_JAW.id, 2);
 		d.pact.put(Penalty.DWINDLING.id, 1);
-		int heat = PactService.heat(d);
+		int heat = PactService.actingHeat(d);
 		int full = Config.PACT_FULL_SECONDS;
 		try {
 			Config.PACT_FULL_SECONDS = 600;

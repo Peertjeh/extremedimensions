@@ -73,7 +73,7 @@ public class CoopTests {
 		});
 	}
 
-	/** A player falls at most once a while: struck down again too soon, they die; a Kindred Knot halves the wait. */
+	/** A player falls at most once a while: struck down again too soon, they die; a Kindred Knot bound at the fall halves the wait. */
 	@GameTest
 	public void aPlayerFallsOnlyOnceInAWhile(GameTestHelper helper) {
 		ServerPlayer[] pair = allies(helper, "again");
@@ -89,9 +89,12 @@ public class CoopTests {
 			check(helper, FallenService.allowDeath(a, blow, 1000f), "struck down again at once, the player fell again instead of dying");
 			check(helper, !FallenService.fallen(a), "dying, the player is still counted as fallen");
 			DataStore.get(a.getUUID()).relic = com.extremedimensions.relic.Relic.KINDRED_KNOT.id;
+			check(helper, Math.abs(FallenService.cooldownLeft(a) - wait) < 40, "a Kindred Knot bound after the fall still shortened the wait");
+			DataStore.get(a.getUUID()).fallenKnot = true;
 			long knot = FallenService.cooldownLeft(a);
 			check(helper, Math.abs(knot - wait / 2) < 40, "with the Kindred Knot the wait is %s ticks, not half of %s", knot, wait);
 			DataStore.get(a.getUUID()).relic = null;
+			DataStore.get(a.getUUID()).fallenKnot = false;
 			Config.COOP_FALLEN_COOLDOWN_MINUTES = 0;
 			check(helper, !FallenService.allowDeath(a, blow, 1000f), "with no wait set, the player could not fall again");
 			FallenService.forget(a);
@@ -153,6 +156,17 @@ public class CoopTests {
 		BurdenService.offer(c, b.getUUID(), pen.id);
 		BurdenService.answer(b, false);
 		check(helper, DataStore.get(b.getUUID()).owned(pen) == 1 && DataStore.get(c.getUUID()).owned(pen) == 0, "a refused offer still moved the curse");
+		check(helper, DataStore.get(a.getUUID()).carriedFor.containsKey(b.getStringUUID()), "the wait before carrying again is not saved with the carrier");
+		// A day's relief spent, no other friend (or second account) can take more
+		int perDay = Config.COOP_BURDEN_RELIEF_PER_DAY;
+		try {
+			Config.COOP_BURDEN_RELIEF_PER_DAY = 1;
+			BurdenService.offer(c, b.getUUID(), pen.id);
+			BurdenService.answer(b, true);
+			check(helper, DataStore.get(b.getUUID()).owned(pen) == 1, "relieved again the same day, past the day's limit");
+		} finally {
+			Config.COOP_BURDEN_RELIEF_PER_DAY = perDay;
+		}
 		helper.succeed();
 	}
 

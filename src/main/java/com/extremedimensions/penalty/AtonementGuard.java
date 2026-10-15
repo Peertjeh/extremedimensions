@@ -37,6 +37,8 @@ public final class AtonementGuard {
 	private static final Set<UUID> NATURAL = ConcurrentHashMap.newKeySet();
 	/** Monster -> player -> damage dealt. */
 	private static final Map<UUID, Map<UUID, Float>> DEALT = new HashMap<>();
+	/** Monster -> its health just before the latest blow (the killing blow never reaches the after-damage event). */
+	private static final Map<UUID, Float> BEFORE = new HashMap<>();
 
 	/** Called as a monster is prepared for the world (a mixin on its spawn): remembers the wild ones. */
 	public static void spawned(Mob mob, EntitySpawnReason reason) {
@@ -68,14 +70,23 @@ public final class AtonementGuard {
 		DEALT.computeIfAbsent(e.getUUID(), k -> new HashMap<>()).merge(p.getUUID(), taken, Float::sum);
 	}
 
-	/** Whether this kill earns atonement. Also records it towards the limit at this place. */
+	/** Before every blow on a wild monster: its health, so the killing blow can be counted for the one who struck it. */
+	public static boolean hurting(LivingEntity e, DamageSource source, float amount) {
+		if (!(e instanceof Player) && NATURAL.contains(e.getUUID())) {
+			BEFORE.put(e.getUUID(), e.getHealth());
+		}
+		return true;
+	}
+
+	/** Whether this kill (the killer struck the last blow) earns atonement. Also records it towards the limit here. */
 	public static boolean counts(ServerPlayer killer, LivingEntity mob) {
 		boolean natural = NATURAL.remove(mob.getUUID());
 		Map<UUID, Float> dealt = DEALT.remove(mob.getUUID());
+		Float last = BEFORE.remove(mob.getUUID());
 		if (!natural) {
 			return false;
 		}
-		float mine = dealt == null ? 0 : dealt.getOrDefault(killer.getUUID(), 0f);
+		float mine = (dealt == null ? 0 : dealt.getOrDefault(killer.getUUID(), 0f)) + (last == null ? 0 : Math.max(0, last));
 		if (mine < mob.getMaxHealth() * Config.ATONE_KILL_MIN_SHARE) {
 			return false;
 		}
@@ -99,12 +110,14 @@ public final class AtonementGuard {
 	public static void forget(LivingEntity e) {
 		NATURAL.remove(e.getUUID());
 		DEALT.remove(e.getUUID());
+		BEFORE.remove(e.getUUID());
 	}
 
 	/** Now and then: monsters that despawned or unloaded are forgotten. */
 	public static void sweep(MinecraftServer s) {
 		NATURAL.removeIf(id -> !alive(s, id));
 		DEALT.keySet().removeIf(id -> !alive(s, id));
+		BEFORE.keySet().removeIf(id -> !NATURAL.contains(id));
 	}
 
 	private static boolean alive(MinecraftServer s, UUID id) {
@@ -119,5 +132,6 @@ public final class AtonementGuard {
 	public static void clear() {
 		NATURAL.clear();
 		DEALT.clear();
+		BEFORE.clear();
 	}
 }

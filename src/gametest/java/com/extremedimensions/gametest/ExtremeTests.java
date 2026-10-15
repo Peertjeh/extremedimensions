@@ -255,7 +255,16 @@ public class ExtremeTests {
 		Mob fought = wild(helper, 4.5, 4.5);
 		hit(p, fought, 0.6);
 		check(helper, AtonementGuard.counts(p, fought), "a wild zombie fought by hand earned nothing");
-		for (Mob m : List.of(farmed, wild, fought)) {
+		// One blow that kills outright never reaches the after-damage event: the health it took still counts
+		Mob felled = wild(helper, 5.5, 5.5);
+		AtonementGuard.hurting(felled, p.damageSources().playerAttack(p), 1000f);
+		check(helper, AtonementGuard.counts(p, felled), "a wild zombie felled with one blow earned nothing");
+		// Brought down to a sliver by a fall (a farm), the last blow is only that sliver
+		Mob dropped = wild(helper, 6.5, 6.5);
+		dropped.setHealth(1f);
+		AtonementGuard.hurting(dropped, p.damageSources().playerAttack(p), 1000f);
+		check(helper, !AtonementGuard.counts(p, dropped), "a zombie a fall had all but killed earned atonement for its last blow");
+		for (Mob m : List.of(farmed, wild, fought, felled, dropped)) {
 			m.discard();
 		}
 		helper.succeed();

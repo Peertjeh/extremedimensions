@@ -132,7 +132,7 @@ public final class FerrymanService {
 			}
 			// One chance per expedition; the Fee he is owed makes him likelier
 			d.ferrymanRolled = true;
-			double chance = Math.min(1, Math.max(0, Config.FERRYMAN_CHANCE) * (1 + d.owned(Penalty.FERRYMANS_FEE)));
+			double chance = Math.min(1, Math.max(0, Config.FERRYMAN_CHANCE) * (1 + d.stacks(Penalty.FERRYMANS_FEE)));
 			if (ThreadLocalRandom.current().nextDouble() < chance) {
 				summon(p);
 			}

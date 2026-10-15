@@ -40,9 +40,38 @@ public final class PactService {
 		};
 	}
 
-	/** Curses that act on expeditions can be sworn; the Overworld set cannot. */
+	/**
+	 * Curses that never act on an expedition beyond the wound (they bite at home, or need weather, water, snow or
+	 * animals the Nether and the End do not have): sworn, they would be heat without risk.
+	 */
+	private static final java.util.Set<Penalty> IDLE_BEYOND = java.util.EnumSet.of(Penalty.DEBT, Penalty.DIM_ANCHORS, Penalty.STORMCALLED,
+			Penalty.FERAL_SCENT, Penalty.FROSTBITTEN, Penalty.SHORT_BREATH);
+
+	/** Curses that act on expeditions can be sworn; the Overworld set, and those that never act beyond, cannot. */
 	public static boolean allowed(Penalty p) {
-		return p.group != Penalty.Group.OVERWORLD && p.max > 0;
+		return p.group != Penalty.Group.OVERWORLD && p.max > 0 && !IDLE_BEYOND.contains(p);
+	}
+
+	/**
+	 * The heat of the sworn stacks that really act: what each curse still had room for on top of the player's own
+	 * (stacks over a curse's maximum, or on a curse that cannot be sworn, count for nothing).
+	 */
+	public static int actingHeat(PlayerData d) {
+		if (d.pact == null) {
+			return 0;
+		}
+		int heat = 0;
+		for (Map.Entry<String, Integer> e : d.pact.entrySet()) {
+			Penalty p = Penalty.byId(e.getKey());
+			int sworn = e.getValue() == null ? 0 : e.getValue();
+			if (p == null || sworn <= 0 || !allowed(p)) {
+				continue;
+			}
+			int own = d.owned(p);
+			int acting = Math.max(0, Math.min(Math.max(own, p.max), own + sworn) - own);
+			heat += acting * (p.extreme ? 2 : 1);
+		}
+		return heat;
 	}
 
 	public static int heat(Map<String, Integer> pact) {
@@ -103,7 +132,7 @@ public final class PactService {
 
 	/** An expedition begins: a sworn pact takes hold. */
 	public static void begin(ServerPlayer p, PlayerData d) {
-		int heat = heat(d);
+		int heat = actingHeat(d);
 		if (heat > 0) {
 			CurseEffects.applyEffects(p, d);
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.pact.holds", heat), true);
@@ -112,7 +141,7 @@ public final class PactService {
 
 	/** A safe return with a pact: what it was sworn for. */
 	public static void kept(ServerPlayer p, PlayerData d) {
-		int heat = heat(d);
+		int heat = actingHeat(d);
 		if (heat <= 0) {
 			return;
 		}

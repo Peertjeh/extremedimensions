@@ -404,7 +404,10 @@ public final class PenaltyService {
 				atone(p, d, false, Config.ATONE_PER_MINUTE);
 			}
 			if (inOverworld) {
-				dawn(p, d);
+				dawn(p, d, active);
+			} else {
+				// Away from the Overworld the night is not watched: coming back by day earns no dawn
+				d.wasDark = -1;
 			}
 		}
 		return changed;
@@ -440,14 +443,23 @@ public final class PenaltyService {
 		}
 	}
 
-	/** Dawn in the Overworld: a night survived without dying is atonement. */
-	private static void dawn(ServerPlayer p, PlayerData d) {
+	/**
+	 * Dawn in the Overworld: a night survived without dying is atonement, if the player was really up and about in it
+	 * (standing idle or sleeping it all away earns nothing).
+	 */
+	private static void dawn(ServerPlayer p, PlayerData d, boolean active) {
 		int dark = p.level().isDarkOutside() ? 1 : 0;
+		if (dark == 1 && active) {
+			d.nightActive++;
+		}
 		if (d.wasDark == 1 && dark == 0) {
-			if (!d.diedToday) {
+			if (!d.diedToday && d.nightActive >= Math.max(0, Config.ATONE_NIGHT_ACTIVE_SECONDS)) {
 				atone(p, d, true, Config.ATONE_PER_DAY);
 			}
 			d.diedToday = false;
+		}
+		if (dark == 0 && d.wasDark != 0) {
+			d.nightActive = 0;
 		}
 		d.wasDark = dark;
 	}

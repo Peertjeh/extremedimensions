@@ -32,7 +32,9 @@ import net.minecraft.world.entity.Entity;
  * can offer to carry one stack of one of them; the ally is asked (in the chat) and, if they let them, the stack comes
  * off the ally and onto the one who offered (with {@code coop_burden_toll} stacks more as the toll of carrying it).
  * Pact stacks stay with whoever swore them. The same two players can do it again after
- * {@code coop_burden_cooldown_minutes}.
+ * {@code coop_burden_cooldown_minutes} (remembered across restarts), the carrier must have room for the stack and its
+ * toll, and no one is relieved of more than {@code coop_burden_relief_per_day} stacks a day, however many friends (or
+ * second accounts) offer.
  */
 public final class BurdenService {
 	private BurdenService() {}
@@ -46,12 +48,8 @@ public final class BurdenService {
 
 	/** Offers waiting for an answer, by the ally who is asked. */
 	private static final Map<UUID, Offer> OFFERS = new HashMap<>();
-	/** When each carrier last carried for each ally ("carrier>ally" -> game time). */
-	private static final Map<String, Long> LAST = new HashMap<>();
-
 	public static void clear() {
 		OFFERS.clear();
-		LAST.clear();
 	}
 
 	/** Sneak and an empty hand on an ally: their curses, to carry one for them. */
@@ -122,18 +120,35 @@ public final class BurdenService {
 				|| carrier.level() != friend.level() || carrier.distanceToSqr(friend) > REACH * REACH) {
 			return "gui.extremedimensions.burden.failed";
 		}
-		if (DataStore.get(friend.getUUID()).owned(pen) <= 0 || DataStore.get(carrier.getUUID()).owned(pen) >= pen.max) {
+		if (DataStore.get(friend.getUUID()).owned(pen) <= 0 || DataStore.get(carrier.getUUID()).owned(pen) + 1 + Math.max(0, Config.COOP_BURDEN_TOLL) > pen.max) {
 			return "gui.extremedimensions.burden.failed";
 		}
 		if (cooldownLeft(carrier, friend) > 0) {
 			return "gui.extremedimensions.burden.cooldown";
 		}
+		if (reliefsLeft(friend) <= 0) {
+			return "gui.extremedimensions.burden.spent";
+		}
 		return null;
+	}
+
+	/** The Overworld day (of 24000 ticks) it is now. */
+	private static long day() {
+		MinecraftServer s = WorldFx.server();
+		return s == null ? 0 : s.overworld().getGameTime() / 24000L;
+	}
+
+	/** Stacks this player may still be relieved of today. */
+	public static int reliefsLeft(ServerPlayer friend) {
+		PlayerData d = DataStore.get(friend.getUUID());
+		int used = d.reliefDay == day() ? d.reliefs : 0;
+		return Math.max(0, Config.COOP_BURDEN_RELIEF_PER_DAY - used);
 	}
 
 	/** Whole minutes before this carrier may carry for this ally again (0: now). */
 	private static int cooldownLeft(ServerPlayer carrier, ServerPlayer friend) {
-		Long last = LAST.get(carrier.getUUID() + ">" + friend.getUUID());
+		Map<String, Long> carried = DataStore.get(carrier.getUUID()).carriedFor;
+		Long last = carried == null ? null : carried.get(friend.getStringUUID());
 		MinecraftServer s = WorldFx.server();
 		if (last == null || s == null) {
 			return 0;
@@ -180,8 +195,19 @@ public final class BurdenService {
 		to.burdensCarried++;
 		MinecraftServer s = WorldFx.server();
 		if (s != null) {
-			LAST.put(carrier.getUUID() + ">" + friend.getUUID(), s.overworld().getGameTime());
+			long now = s.overworld().getGameTime();
+			if (to.carriedFor == null) {
+				to.carriedFor = new HashMap<>();
+			}
+			// Only waits still running are worth keeping
+			long wait = Math.max(0, Config.COOP_BURDEN_COOLDOWN_MINUTES) * 1200L;
+			to.carriedFor.values().removeIf(t -> t + wait < now);
+			to.carriedFor.put(friend.getStringUUID(), now);
 		}
+		long today = day();
+		from.reliefs = from.reliefDay == today ? from.reliefs + 1 : 1;
+		from.reliefDay = today;
+		DataStore.markDirty();
 		CurseEffects.applyEffects(friend, from);
 		CurseEffects.applyEffects(carrier, to);
 		// A thread of light carries it from one to the other

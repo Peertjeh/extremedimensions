@@ -86,6 +86,61 @@ public final class SeamService {
 		generation++;
 		designing = false;
 		seedKnown = false;
+		sealChecked = false;
+	}
+
+	// ------------------------------------------------------------------ the seal (is the Seam still the one we built?)
+
+	/** A barrier on the Seam's floor at the origin, set once: no island ever reaches down there, and no one can break it. */
+	public static final BlockPos SEAL = new BlockPos(0, 0, 0);
+	private static boolean sealChecked;
+
+	/**
+	 * Once a session, before anything is built: if the seal is gone (the Seam's folder was deleted or reset), every
+	 * island the world data remembers is forgotten so the Seam is designed again; islands a crash left unfinished
+	 * ({@code u@} marks) are designed again too. A cell is otherwise never designed twice, so breaking an island's
+	 * heart cannot make its chests and veins come back.
+	 */
+	public static void checkSeal(ServerLevel seam) {
+		if (sealChecked) {
+			return;
+		}
+		sealChecked = true;
+		seam.getChunk(0, 0);
+		boolean sealed = seam.getBlockState(SEAL).is(Blocks.BARRIER);
+		java.util.Set<String> cells = DataStore.seamCells();
+		if (!sealed && DataStore.seamSealed() && !cells.isEmpty()) {
+			ExtremeDimensions.LOGGER.info("The Seam was regenerated: its {} remembered islands and marks are designed again", cells.size());
+			cells.clear();
+		} else {
+			List<String> unfinished = new ArrayList<>();
+			for (String key : cells) {
+				if (key.startsWith("u@")) {
+					unfinished.add(key);
+				}
+			}
+			for (String key : unfinished) {
+				cells.remove(key);
+				cells.remove(key.substring(2));
+			}
+			if (!unfinished.isEmpty()) {
+				ExtremeDimensions.LOGGER.info("Seam architect: {} islands left unfinished by a crash will be built again", unfinished.size());
+			}
+		}
+		falls = null;
+		SeamDepth.forget();
+		if (!sealed) {
+			seam.setBlock(SEAL, Blocks.BARRIER.defaultBlockState(), 2);
+		}
+		DataStore.setSeamSealed(true);
+		DataStore.markDirty();
+	}
+
+	/** An island's plan is fully built: it no longer needs building again after a crash. */
+	static void built(SeamArchitect.Meta m) {
+		if (!m.cell().isEmpty() && DataStore.seamCells().remove("u@" + m.cell())) {
+			DataStore.markDirty();
+		}
 	}
 
 	public static boolean inSeam(ServerPlayer p) {
@@ -163,6 +218,7 @@ public final class SeamService {
 		if (seam == null || d.inSeam || com.extremedimensions.coop.FallenService.fallen(p)) {
 			return;
 		}
+		checkSeal(seam);
 		d.homeDim = Dims.of(from.level);
 		d.homeX = from.x;
 		d.homeY = from.y;
@@ -180,7 +236,8 @@ public final class SeamService {
 		Random rnd = new Random(x * 31L + z);
 		SeamArchitect.island(arrival, rnd, SeamArchitect.Shape.of(rnd, x, top, z, 12), true);
 		SeamArchitect.lamp(arrival, rnd, x - 3, top + 1, z - 3);
-		arrival.placeNow(seam);
+		// The ground round the landing is there at once; the rest of the island flies in around the one arriving
+		arrival.placeAround(seam, x + 2, z + 0.5, 7);
 		for (int dx = -1; dx <= 5; dx++) {
 			for (int dz = -1; dz <= 1; dz++) {
 				// the landing and the rift stand clear
@@ -442,6 +499,7 @@ public final class SeamService {
 
 	/** Designs the cells around the player, nearest first, one per call; the architect builds them over time. */
 	private static void build(ServerPlayer p) {
+		checkSeal((ServerLevel) p.level());
 		if (designing || SeamArchitect.pending() > 150_000) {
 			return;
 		}
@@ -456,11 +514,6 @@ public final class SeamService {
 					int cx = pcx + dx, cz = pcz + dz;
 					String key = "c@" + cx + "," + cz;
 					if (DataStore.seamCells().contains(key)) {
-						if (ring <= 1 && SeamArchitect.pending() == 0 && missing(p, cx, cz)) {
-							// The Seam was regenerated (its folder deleted): design the cell again
-							design(cx, cz);
-							return;
-						}
 						continue;
 					}
 					DataStore.seamCells().add(key);
@@ -492,15 +545,18 @@ public final class SeamService {
 		}
 	}
 
-	/** True when a cell is marked as built but its island is not there (the chunk is loaded and the centre is air). */
-	private static boolean missing(ServerPlayer p, int cx, int cz) {
-		int[] c = center(cx, cz);
-		if (nearHeart(c)) {
+	/**
+	 * Whether the player is over the island of the cell they are in (a designed cell, within its island's reach): a
+	 * wandering trial counts islands reached, not blocks of one's own laid out over the nothing.
+	 */
+	public static boolean overIsland(ServerPlayer p) {
+		int cx = Math.floorDiv(p.getBlockX(), CELL), cz = Math.floorDiv(p.getBlockZ(), CELL);
+		if (!DataStore.seamCells().contains("c@" + cx + "," + cz)) {
 			return false;
 		}
-		BlockPos pos = new BlockPos(c[0], c[1] - 1, c[2]);
-		ServerLevel level = (ServerLevel) p.level();
-		return level.isLoaded(pos) && level.getBlockState(pos).isAir();
+		int[] c = center(cx, cz);
+		double dx = p.getX() - c[0], dz = p.getZ() - c[2], reach = c[3] + 3;
+		return dx * dx + dz * dz <= reach * reach;
 	}
 
 	/** The island of a cell as it is (or will be) built: the same random source, so the rim is predicted exactly. */
@@ -534,7 +590,8 @@ public final class SeamService {
 			SeamArchitect.Plan plan = null;
 			try {
 				plan = plan(cx, cz, arrivals);
-			} catch (RuntimeException e) {
+			} catch (Throwable e) {
+				// Whatever goes wrong, the result is still handed back below, or the Seam would never design again
 				ExtremeDimensions.LOGGER.error("Could not design Seam cell {},{} (seed {})", cx, cz, seed, e);
 			}
 			SeamArchitect.Plan done = plan;
@@ -560,7 +617,8 @@ public final class SeamService {
 			SeamArchitect.Plan plan = null;
 			try {
 				plan = SeamDepth.plan(cx, cz, neighbour(cx, cz, arrivals), neighbour(cx + 1, cz, arrivals), neighbour(cx, cz + 1, arrivals), seed);
-			} catch (RuntimeException e) {
+			} catch (Throwable e) {
+				// Whatever goes wrong, the result is still handed back below, or the Seam would never design again
 				ExtremeDimensions.LOGGER.error("Could not design the Fray under Seam cell {},{} (seed {})", cx, cz, seed, e);
 			}
 			SeamArchitect.Plan done = plan;
@@ -594,7 +652,7 @@ public final class SeamService {
 	 * they are designed and built again (whole) when someone comes back instead of staying half built for good.
 	 */
 	public static void stopping() {
-		List<SeamArchitect.Meta> left = SeamArchitect.stop();
+		List<SeamArchitect.Meta> left = SeamArchitect.stop(seam());
 		forget(left);
 		if (!left.isEmpty()) {
 			ExtremeDimensions.LOGGER.info("Seam architect: {} unfinished islands will be built again on the next visit", left.size());
@@ -605,6 +663,7 @@ public final class SeamService {
 	private static void forget(List<SeamArchitect.Meta> plans) {
 		for (SeamArchitect.Meta m : plans) {
 			DataStore.seamCells().remove(m.cell());
+			DataStore.seamCells().remove("u@" + m.cell());
 			for (int[] f : m.falls()) {
 				DataStore.seamCells().remove("f@" + f[0] + "," + f[1] + "," + f[2] + "," + f[3]);
 			}
@@ -626,7 +685,11 @@ public final class SeamService {
 
 	/** On the server thread: the plan goes into the build queue and its marks and light falls into the world data. */
 	private static void commit(SeamArchitect.Plan plan) {
-		plan.queue();
+		String cell = plan.queue();
+		if (cell != null) {
+			// Until its last block stands, a crash leaves this island to be designed again
+			DataStore.seamCells().add("u@" + cell);
+		}
 		DataStore.seamCells().addAll(plan.marks);
 		SeamDepth.forget();
 		addFalls(plan.falls);

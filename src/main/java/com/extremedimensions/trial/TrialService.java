@@ -145,7 +145,7 @@ public final class TrialService {
 		if (run == null || d.seamPull > 0 || p.isCreative()) {
 			return;
 		}
-		if (Trial.Kind.WANDER.id.equals(run.kind) && p.onGround()) {
+		if (Trial.Kind.WANDER.id.equals(run.kind) && p.onGround() && SeamService.overIsland(p)) {
 			String cell = Math.floorDiv(p.getBlockX(), SeamService.CELL) + "," + Math.floorDiv(p.getBlockZ(), SeamService.CELL);
 			if (run.cells.add(cell)) {
 				set(p, run, run.cells.size());

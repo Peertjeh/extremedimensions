@@ -269,8 +269,14 @@ public final class SeamArchitect {
 			after.add(new Object[] {new BlockPos(x, y, z), action});
 		}
 
-		/** Joins walls, panes, bars and fences to their neighbours, as if a player had placed them one by one. */
+		private boolean connected;
+
+		/** Joins walls, panes, bars and fences to their neighbours, as if a player had placed them one by one (once). */
 		void connect() {
+			if (connected) {
+				return;
+			}
+			connected = true;
 			for (Map.Entry<Long, BlockState> e : blocks.entrySet()) {
 				BlockState s = e.getValue();
 				boolean isWall = s.hasProperty(BlockStateProperties.NORTH_WALL);
@@ -318,6 +324,25 @@ public final class SeamArchitect {
 			}
 		}
 
+		/**
+		 * Builds what lies within {@code radius} blocks (across) of a point right away, the ground someone is about to
+		 * stand on, and queues the rest ahead of all other work, so the island comes together around them.
+		 */
+		public void placeAround(ServerLevel level, double cx, double cz, double radius) {
+			connect();
+			double r2 = radius * radius;
+			for (var it = blocks.entrySet().iterator(); it.hasNext();) {
+				Map.Entry<Long, BlockState> e = it.next();
+				long k = e.getKey();
+				double dx = BlockPos.getX(k) + 0.5 - cx, dz = BlockPos.getZ(k) + 0.5 - cz;
+				if (dx * dx + dz * dz <= r2) {
+					level.setBlock(BlockPos.of(k), e.getValue(), 2);
+					it.remove();
+				}
+			}
+			queue(true);
+		}
+
 		private List<Map.Entry<Long, BlockState>> sorted;
 		/** Per block in {@link #sorted}: whether it will show (a side of it is not against another block of the plan). */
 		private boolean[] shown;
@@ -340,13 +365,19 @@ public final class SeamArchitect {
 			}
 		}
 
-		/** Queues it, bottom to top, so a structure rises from its island. */
-		public void queue() {
+		/** Queues it, bottom to top, so a structure rises from its island. Returns its cell key, or null if it has none. */
+		public String queue() {
+			return queue(false);
+		}
+
+		/** As {@link #queue()}; {@code first} puts it ahead of all other work waiting (something someone is looking at). */
+		public String queue(boolean first) {
 			prepare();
 			int id = ++nextPlan;
+			ArrayDeque<Job> into = first ? READY : QUEUE;
 			for (int i = 0; i < sorted.size(); i++) {
 				Map.Entry<Long, BlockState> e = sorted.get(i);
-				QUEUE.add(new Job(e.getKey(), e.getValue(), null, id, shown[i]));
+				into.add(new Job(e.getKey(), e.getValue(), null, id, shown[i]));
 			}
 			for (Object[] a : after) {
 				@SuppressWarnings("unchecked") Consumer<ServerLevel> c = (Consumer<ServerLevel>) a[1];
@@ -355,6 +386,7 @@ public final class SeamArchitect {
 			UNBUILT.put(id, sorted.size());
 			LEFT.put(id, sorted.size() + after.size());
 			PLANS.put(id, new Meta(cell == null ? "" : cell, List.copyOf(falls), List.copyOf(marks)));
+			return cell == null || cell.isEmpty() ? null : cell;
 		}
 	}
 
@@ -407,11 +439,20 @@ public final class SeamArchitect {
 	 * On stopping, before the world is saved: blocks in the air land at once, and the plans not yet finished are
 	 * returned (their cells are forgotten, to be designed and built again when someone comes back).
 	 */
-	public static List<Meta> stop() {
+	public static List<Meta> stop(ServerLevel level) {
 		for (BlockFlight.Flight f : List.copyOf(FLIGHTS)) {
 			BlockFlight.rush(f);
 		}
 		FLIGHTS.clear();
+		// Those still in line to fly are simply there (an island coming together round someone is not left half done)
+		while (level != null && !NEAR.isEmpty()) {
+			Job j = NEAR.poll();
+			BlockPos pos = BlockPos.of(j.pos());
+			if (level.isLoaded(pos)) {
+				place(level, j, pos);
+			}
+		}
+		NEAR.clear();
 		return new ArrayList<>(PLANS.values());
 	}
 
@@ -438,11 +479,19 @@ public final class SeamArchitect {
 	public static void tick(ServerLevel level, long budgetNanos) {
 		long deadline = System.nanoTime() + budgetNanos;
 		boolean had = pending() > 0;
-		List<ServerPlayer> watchers = new ArrayList<>();
-		for (ServerPlayer p : level.players()) {
+		// Where those who can watch stand, read once a tick (x, y, z after one another)
+		List<ServerPlayer> players = level.players();
+		double[] watchers = new double[players.size() * 3];
+		int w = 0;
+		for (ServerPlayer p : players) {
 			if (!p.isSpectator()) {
-				watchers.add(p);
+				watchers[w++] = p.getX();
+				watchers[w++] = p.getY();
+				watchers[w++] = p.getZ();
 			}
+		}
+		if (w < watchers.length) {
+			watchers = java.util.Arrays.copyOf(watchers, w);
 		}
 		if (!FLIGHTS.isEmpty()) {
 			flights(watchers);
@@ -481,7 +530,7 @@ public final class SeamArchitect {
 	 * Does a job, or parks it: in its chunk's waiting list, (an action) until its plan's blocks all stand, or (a block
 	 * someone is near enough to see come) in line to fly to its place.
 	 */
-	private static void run(ServerLevel level, Job j, List<ServerPlayer> watchers) {
+	private static void run(ServerLevel level, Job j, double[] watchers) {
 		BlockPos pos = BlockPos.of(j.pos());
 		if (!level.isLoaded(pos)) {
 			park(j);
@@ -533,7 +582,10 @@ public final class SeamArchitect {
 	private static void done(int plan) {
 		if (LEFT.merge(plan, -1, Integer::sum) <= 0) {
 			LEFT.remove(plan);
-			PLANS.remove(plan);
+			Meta m = PLANS.remove(plan);
+			if (m != null) {
+				SeamService.built(m);
+			}
 		}
 	}
 
@@ -544,25 +596,27 @@ public final class SeamArchitect {
 	 * someone is near enough to see it come ({@code seam_fly_range}), though not so near that it is the ground at
 	 * their feet (that is simply there, so no one falls through an island still being built).
 	 */
-	private static boolean flies(ServerLevel level, Job j, BlockPos pos, List<ServerPlayer> watchers) {
-		if (Config.SEAM_FLY_RANGE <= 0 || !j.shown() || j.state().isAir() || watchers.isEmpty() || !level.getBlockState(pos).isAir()) {
+	private static boolean flies(ServerLevel level, Job j, BlockPos pos, double[] watchers) {
+		if (Config.SEAM_FLY_RANGE <= 0 || watchers.length == 0 || !j.shown() || j.state().isAir()) {
 			return false;
 		}
-		double range = Config.SEAM_FLY_RANGE;
+		double range2 = (double) Config.SEAM_FLY_RANGE * Config.SEAM_FLY_RANGE;
+		double bx = pos.getX() + 0.5, by = pos.getY(), bz = pos.getZ() + 0.5;
 		boolean near = false;
-		for (ServerPlayer p : watchers) {
-			double dx = p.getX() - (pos.getX() + 0.5), dy = p.getY() - pos.getY(), dz = p.getZ() - (pos.getZ() + 0.5);
+		for (int i = 0; i < watchers.length; i += 3) {
+			double dx = watchers[i] - bx, dy = watchers[i + 1] - by, dz = watchers[i + 2] - bz;
 			double flat = dx * dx + dz * dz;
 			if (flat < 4.5 * 4.5 && dy > -3 && dy < 7) {
 				return false;
 			}
-			near |= flat + dy * dy < range * range;
+			near |= flat + dy * dy < range2;
 		}
-		return near;
+		// Only then the world is read: most blocks are far from everyone
+		return near && level.getBlockState(pos).isAir();
 	}
 
 	/** Sends blocks in line on their way: as many a tick as fill the air once a flight, never more in the air than allowed. */
-	private static void launch(ServerLevel level, List<ServerPlayer> watchers) {
+	private static void launch(ServerLevel level, double[] watchers) {
 		int max = Math.max(1, Config.SEAM_FLY_MAX), ticks = Math.max(10, Config.SEAM_FLY_TICKS);
 		flyCredit = Math.min(flyCredit + max / (double) ticks, max);
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
@@ -599,7 +653,7 @@ public final class SeamArchitect {
 	}
 
 	/** One tick of the blocks in the air; one about to be stepped on lands at once. */
-	private static void flights(List<ServerPlayer> watchers) {
+	private static void flights(double[] watchers) {
 		var it = FLIGHTS.iterator();
 		while (it.hasNext()) {
 			BlockFlight.Flight f = it.next();
@@ -613,12 +667,12 @@ public final class SeamArchitect {
 	}
 
 	/** Whether a block still flying in goes just under someone's feet. */
-	private static boolean underfoot(BlockFlight.Flight f, List<ServerPlayer> watchers) {
+	private static boolean underfoot(BlockFlight.Flight f, double[] watchers) {
 		if (!BlockFlight.incoming(f)) {
 			return false;
 		}
-		for (ServerPlayer p : watchers) {
-			double dx = p.getX() - (f.pos.getX() + 0.5), dz = p.getZ() - (f.pos.getZ() + 0.5), dy = p.getY() - f.pos.getY();
+		for (int i = 0; i < watchers.length; i += 3) {
+			double dx = watchers[i] - (f.pos.getX() + 0.5), dz = watchers[i + 2] - (f.pos.getZ() + 0.5), dy = watchers[i + 1] - f.pos.getY();
 			if (dx * dx + dz * dz < 2.5 * 2.5 && dy >= 1 && dy < 4) {
 				return true;
 			}

@@ -715,6 +715,10 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runOnServer(s -> {
 				PlayerData d = DataStore.get(player(s).getUUID());
 				check(d.inSeam && d.trial != null, "the trial did not begin with the visit to the Seam");
+				// The Seam carries its hidden seal, so a lost Seam folder is noticed (and nothing else redesigns an island)
+				net.minecraft.server.level.ServerLevel seamLevel = (net.minecraft.server.level.ServerLevel) player(s).level();
+				check(seamLevel.getBlockState(com.extremedimensions.seam.SeamService.SEAL).is(net.minecraft.world.level.block.Blocks.BARRIER)
+						&& DataStore.seamSealed(), "the Seam was not sealed on the first visit");
 				d.trial.score = com.extremedimensions.trial.Trial.Kind.byId(d.trial.kind).thresholds()[0];
 			});
 			sp.getConnection().waitForChunksRender();
@@ -739,7 +743,8 @@ public class ClientShots implements FabricClientGameTest {
 								: net.minecraft.world.level.block.Blocks.AMETHYST_BLOCK.defaultBlockState());
 					}
 				}
-				arch.queue();
+				// Ahead of the islands still being built around: it is what the camera looks at
+				arch.queue(true);
 			});
 			ctx.waitTicks(9);
 			check(sp.getServer().computeOnServer(s -> com.extremedimensions.seam.SeamArchitect.flying() > 0), "nothing flies in as the Seam builds itself");

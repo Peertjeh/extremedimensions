@@ -82,7 +82,8 @@ public final class FallenService {
 			return 0;
 		}
 		double wait = Math.max(0, Config.COOP_FALLEN_COOLDOWN_MINUTES) * 1200.0;
-		if (com.extremedimensions.relic.RelicService.has(d, com.extremedimensions.relic.Relic.KINDRED_KNOT)) {
+		// The Kindred Knot shortens the wait if it was bound when they fell (binding it afterwards does nothing)
+		if (d.fallenKnot) {
 			wait *= Math.max(0, Config.RELIC_KINDRED_KNOT_COOLDOWN);
 		}
 		long now = p.level().getServer().overworld().getGameTime();
@@ -205,7 +206,8 @@ public final class FallenService {
 		Fallen f = new Fallen();
 		PlayerData d = DataStore.get(p.getUUID());
 		double last = Math.max(1, Config.COOP_FALLEN_SECONDS) * 20.0;
-		if (com.extremedimensions.relic.RelicService.has(d, com.extremedimensions.relic.Relic.KINDRED_KNOT)) {
+		d.fallenKnot = com.extremedimensions.relic.RelicService.has(d, com.extremedimensions.relic.Relic.KINDRED_KNOT);
+		if (d.fallenKnot) {
 			last *= Math.max(0.05, Config.RELIC_KINDRED_KNOT_BLEED);
 		}
 		f.left = (int) Math.max(20, Math.round(last));

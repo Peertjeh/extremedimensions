@@ -47,6 +47,8 @@ public final class DataStore {
 		boolean heartBuilt = false;
 		/** The Starved One has fallen (it does not rise again, whether or not its Thread or Shears were used yet). */
 		boolean starvedSlain = false;
+		/** The Seam's hidden seal was set: if the Seam's own folder is ever lost, the seal is gone with it. */
+		boolean seamSealed = false;
 		/** Where wild hoards were wrecked, as "dim|x|z|gameTime": no new one nests near for a while. */
 		List<String> wrecks = new ArrayList<>();
 		/** The Rift Trials scoreboard. */
@@ -82,6 +84,7 @@ public final class DataStore {
 		data.ending = loaded.ending == null ? "" : loaded.ending;
 		data.heartBuilt = loaded.heartBuilt;
 		data.starvedSlain = loaded.starvedSlain;
+		data.seamSealed = loaded.seamSealed;
 		if (loaded.wrecks != null) {
 			data.wrecks = loaded.wrecks;
 		}
@@ -230,6 +233,15 @@ public final class DataStore {
 	public static void setHeartBuilt(boolean built) {
 		data.heartBuilt = built;
 		markDirty();
+	}
+
+	public static boolean seamSealed() {
+		return data.seamSealed;
+	}
+
+	public static void setSeamSealed(boolean sealed) {
+		data.seamSealed = sealed;
+		dirty = true;
 	}
 
 	public static Set<String> seamCells() {

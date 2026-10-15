@@ -107,6 +107,8 @@ public final class Config {
 	/** Points per Overworld day survived without dying, and per hostile mob slain at night in the Overworld. */
 	public static int ATONE_PER_DAY = 10;
 	public static int ATONE_PER_NIGHT_KILL = 1;
+	/** Active seconds in a night a player needs for its dawn to earn atonement (idling or sleeping it away earns none). */
+	public static int ATONE_NIGHT_ACTIVE_SECONDS = 120;
 	/** Share of every curse's atonement a death takes away (0.5 = half, 0 = none, 1 = all). */
 	public static double ATONE_DEATH_LOSS = 0.5;
 	/** Points needed for a curse's last stack, and how many more for every stack above it. */
@@ -457,6 +459,8 @@ public final class Config {
 	public static int COOP_BURDEN_TOLL = 0;
 	/** Minutes before a player can carry another curse for the same ally. */
 	public static int COOP_BURDEN_COOLDOWN_MINUTES = 5;
+	/** Stacks one player may be relieved of per Overworld day, by all their allies together. */
+	public static int COOP_BURDEN_RELIEF_PER_DAY = 3;
 	/** Whether players may open their anchors to their allies: 1 = on, 0 = off. */
 	public static int COOP_SHARED_ANCHORS = 1;
 
@@ -528,7 +532,7 @@ public final class Config {
 	/** Milliseconds per tick the Seam may spend building islands (blocks in chunks nobody has loaded wait). */
 	public static int SEAM_BUILD_BUDGET_MS = 5;
 	/** Blocks from a player within which the Seam builds itself before their eyes, blocks flying in out of the nothing (0 = never: they are simply there). */
-	public static int SEAM_FLY_RANGE = 48;
+	public static int SEAM_FLY_RANGE = 96;
 	/** Most blocks in the air at once while the Seam builds itself. */
 	public static int SEAM_FLY_MAX = 900;
 	/** Ticks a block of the Seam takes to fly to its place. */
@@ -672,7 +676,7 @@ public final class Config {
 			{"elder_ultimate_seconds", 2, 120}, {"elder_arena_linger_seconds", -1, 86400},
 			{"seam_build_budget_ms", 1, 50}, {"seam_fly_range", 0, 128}, {"seam_fly_max", 1, 5000}, {"seam_fly_ticks", 10, 200},
 			{"seam_fly_from", 2, 64}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
-			{"offer_timeout_seconds", 0, 3600}};
+			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600}, {"coop_burden_relief_per_day", 0, 100}};
 
 	/** Brings a setting back within its bounds, if it has any. */
 	private static void bound(Setting st) {

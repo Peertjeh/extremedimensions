@@ -1,5 +1,2 @@
-net.minecraft.world.entity.Entity
-net.minecraft.world.entity.LivingEntity
-net.minecraft.world.entity.item.ItemEntity
-net.minecraft.world.entity.OwnableEntity
-net.minecraft.world.level.block.Block
+net.minecraft.world.item.component.ItemContainerContents
+net.minecraft.world.item.component.BundleContents

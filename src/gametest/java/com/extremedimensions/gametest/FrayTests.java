@@ -149,7 +149,7 @@ public class FrayTests {
 			SeamArchitect.tick(level, 5_000_000L);
 			SeamArchitect.tick(level, 5_000_000L);
 			int inAir = SeamArchitect.flying();
-			java.util.List<SeamArchitect.Meta> left = SeamArchitect.stop();
+			java.util.List<SeamArchitect.Meta> left = SeamArchitect.stop(level);
 			boolean landed = level.getBlockState(new BlockPos(o.getX() + 6, base + 4, o.getZ() + 5)).is(Blocks.STONE);
 			boolean handed = left.stream().anyMatch(m -> "test@cell".equals(m.cell()));
 			restore.run();

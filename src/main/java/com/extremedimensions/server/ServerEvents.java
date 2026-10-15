@@ -106,6 +106,7 @@ public final class ServerEvents {
 			AtonementGuard.clear();
 			BlockFlight.clear();
 			com.extremedimensions.coop.Allies.clear();
+			Requests.clear();
 			DataStore.unload();
 			WorldFx.bind(null);
 		});
@@ -127,6 +128,7 @@ public final class ServerEvents {
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> {
 			// A fallen player who leaves bleeds out
 			com.extremedimensions.coop.FallenService.onLeave(handler.getPlayer());
+			Requests.forget(handler.getPlayer());
 			DataStore.flush();
 		});
 		// Every player plays by the server's numbers: the HUD and screens get the world's settings on joining
@@ -148,6 +150,7 @@ public final class ServerEvents {
 		ServerLivingEntityEvents.ALLOW_DEATH.register(com.extremedimensions.coop.FallenService::allowDeath);
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> com.extremedimensions.coop.FallenService.mayHurt(entity, source));
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(AtonementGuard::damaged);
+		ServerLivingEntityEvents.ALLOW_DAMAGE.register(AtonementGuard::hurting);
 		// The Elders' blows: the Ferryman takes levels, the Weaver unpicks Seam time
 		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseTaken, taken, blocked) -> {
 			if (entity instanceof ServerPlayer p && !blocked && taken > 0) {

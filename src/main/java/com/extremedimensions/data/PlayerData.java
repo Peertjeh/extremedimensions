@@ -36,6 +36,8 @@ public class PlayerData {
 	public int liftsGiven = 0, liftsTaken = 0, burdensCarried = 0;
 	/** Co-op: when (Overworld game time) the player last fell; -1 = never. They fall again only after a while. */
 	public long fallenAt = -1;
+	/** Whether the Kindred Knot was bound at that fall (it shortens the wait only then). */
+	public boolean fallenKnot = false;
 	/** Steps of the first-expedition guide done (see Guide). */
 	public int guide = 0;
 	/** The relic bound to the Tether (its id), or null. */
@@ -116,6 +118,11 @@ public class PlayerData {
 	public int fareOwed = 0;
 	/** Ultimates whose curse is owed (their bosses' keys): the player slipped away while one held them. */
 	public List<String> ultimatesOwed = new ArrayList<>();
+	/** Allies this player carried a curse for, and when (game time): the wait before carrying for them again. */
+	public Map<String, Long> carriedFor = new HashMap<>();
+	/** The Overworld day of the last curse carried for this player, and how many stacks were carried that day. */
+	public long reliefDay = -1;
+	public int reliefs = 0;
 	/** Ticks the current curse offer has stood unanswered (the Tether picks for the player after a while). */
 	public transient int offerAge = 0;
 	public double runTime = 0;
@@ -158,6 +165,8 @@ public class PlayerData {
 	public transient java.util.ArrayDeque<long[]> recentKills = new java.util.ArrayDeque<>();
 	/** Whether it was dark outside last time we looked (dawn = a night survived). */
 	public transient int wasDark = -1;
+	/** Active seconds in the current Overworld night (a dawn earns atonement only after enough of them). */
+	public transient int nightActive = 0;
 	/** Short Breath and Frostbitten: last air and frozen ticks seen, and the fraction still owed. */
 	public transient int lastAir = -1, lastFrozen = -1;
 	public transient double airCarry, frozenCarry;
