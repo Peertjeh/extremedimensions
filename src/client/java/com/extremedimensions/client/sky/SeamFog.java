@@ -7,7 +7,7 @@ import net.minecraft.util.Mth;
 /**
  * The mist of the Seam: banks of fog that roll through, so that how far you can see wanders between about fifty and a
  * hundred blocks. Thick banks also start close; thin ones leave the near air clear. The density is a slow field over
- * time and place, smoothed so it never jumps.
+ * time and place, smoothed so it never jumps. Down in the Fray, under the islands, it closes in to a few dozen blocks.
  */
 public final class SeamFog {
 	private SeamFog() {}
@@ -33,6 +33,12 @@ public final class SeamFog {
 		density += (target - density) * Math.min(1, dt * 0.6);
 		float end = (float) (100 - 50 * density);
 		float start = (float) (end * (0.55 - 0.47 * density));
+		// Down in the Fray the dark closes in: a few dozen blocks, and thicker the deeper
+		if (com.extremedimensions.config.Config.SEAM_FRAY > 0) {
+			double depth = Mth.clamp((com.extremedimensions.config.Config.SEAM_FRAY_TOP + 10 - mc.player.getY()) / 20.0, 0, 1);
+			end = (float) Mth.lerp(depth, end, 26 + 6 * (1 - density));
+			start = (float) Mth.lerp(depth, start, 2);
+		}
 		data.environmentalStart = Math.min(data.environmentalStart, start);
 		data.environmentalEnd = Math.min(data.environmentalEnd, end);
 	}

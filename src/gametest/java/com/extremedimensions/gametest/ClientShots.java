@@ -630,6 +630,26 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getConnection().waitForChunksRender();
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("09_trial_hud");
+
+			// The Fray: a well at the edge of the arrival island, and down on its knot among the strands
+			int[] well = sp.getServer().computeOnServer(s -> {
+				ServerPlayer p = player(s);
+				return com.extremedimensions.seam.SeamDepth.showcase((net.minecraft.server.level.ServerLevel) p.level(), p.getBlockX(), 96, p.getBlockZ());
+			});
+			double out = Math.PI / 4;
+			float yaw = (float) Math.toDegrees(Math.atan2(-Math.cos(out), Math.sin(out)));
+			double sx = well[0] + 0.5 - Math.cos(out) * 6.5, sz = well[2] + 0.5 - Math.sin(out) * 6.5;
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s %.2f %d %.2f %.1f 38", sx, well[1] + 1, sz, yaw));
+			sp.getConnection().waitForChunksRender();
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("15_fray_well");
+			// On the knot, looking out along the strand east into the dark
+			float east = (float) Math.toDegrees(Math.atan2(-58, -6));
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s %.2f %d %.2f %.1f 8", well[0] - 2.5, well[3] + 1, well[2] + 0.5, east));
+			sp.getConnection().waitForChunksRender();
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("15_fray_knot");
+			sp.getServer().runOnServer(s -> check(com.extremedimensions.seam.SeamDepth.inFray(player(s)), "standing on the knot, the player is not in the Fray"));
 		}
 	}
 }

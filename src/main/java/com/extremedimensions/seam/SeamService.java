@@ -81,6 +81,7 @@ public final class SeamService {
 	public static void clear() {
 		RIFTS.clear();
 		SeamArchitect.clear();
+		SeamDepth.clear();
 		falls = null;
 		generation++;
 		designing = false;
@@ -248,9 +249,11 @@ public final class SeamService {
 			return;
 		}
 		if (!p.isCreative() && !(MendingService.active() && MendingService.inArena(p))) {
-			d.seamLeft -= 1.0 / 20.0;
+			// Time runs out faster in the Fray
+			d.seamLeft -= SeamDepth.drain(p.getY()) / 20.0;
 		}
 		TetherService.lay(p, d);
+		SeamDepth.tick(p, d, tick);
 		String dim = SEAM_ID;
 		// The return rift: a column of soul light that drifts
 		if (tick % 3 == 0) {
@@ -452,6 +455,27 @@ public final class SeamService {
 				}
 			}
 		}
+		// Every island near is designed: now the Fray beneath them, nearest first
+		if (Config.SEAM_FRAY <= 0) {
+			return;
+		}
+		for (int ring = 0; ring <= 1; ring++) {
+			for (int dx = -ring; dx <= ring; dx++) {
+				for (int dz = -ring; dz <= ring; dz++) {
+					if (Math.max(Math.abs(dx), Math.abs(dz)) != ring) {
+						continue;
+					}
+					int cx = pcx + dx, cz = pcz + dz;
+					String key = "d@" + cx + "," + cz;
+					if (DataStore.seamCells().contains(key)) {
+						continue;
+					}
+					DataStore.seamCells().add(key);
+					designDepthLater(p.level().getServer(), cx, cz);
+					return;
+				}
+			}
+		}
 	}
 
 	/** True when a cell is marked as built but its island is not there (the chunk is loaded and the centre is air). */
@@ -512,6 +536,32 @@ public final class SeamService {
 		});
 	}
 
+	/** Designs the Fray beneath a cell on the architect's thread, like an island. */
+	private static void designDepthLater(MinecraftServer s, int cx, int cz) {
+		long seed = seed();
+		List<int[]> arrivals = arrivals();
+		int gen = generation;
+		designing = true;
+		DESIGNER.execute(() -> {
+			SeamArchitect.Plan plan = null;
+			try {
+				plan = SeamDepth.plan(cx, cz, neighbour(cx, cz, arrivals), neighbour(cx + 1, cz, arrivals), neighbour(cx, cz + 1, arrivals), seed);
+			} catch (RuntimeException e) {
+				ExtremeDimensions.LOGGER.error("Could not design the Fray under Seam cell {},{} (seed {})", cx, cz, seed, e);
+			}
+			SeamArchitect.Plan done = plan;
+			s.execute(() -> {
+				if (gen != generation) {
+					return;
+				}
+				designing = false;
+				if (done != null) {
+					commit(done);
+				}
+			});
+		});
+	}
+
 	/** Unfinished islands far from everyone in the Seam are forgotten (they wait in memory); they are designed again on return. */
 	private static void forgetFar(ServerLevel level) {
 		List<double[]> near = new ArrayList<>();
@@ -545,6 +595,7 @@ public final class SeamService {
 	private static void commit(SeamArchitect.Plan plan) {
 		plan.queue();
 		DataStore.seamCells().addAll(plan.marks);
+		SeamDepth.forget();
 		addFalls(plan.falls);
 		DataStore.markDirty();
 	}

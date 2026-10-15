@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.19.0: The Fray
+
+### Added
+- **The Fray: a second, deadlier layer of the Seam, far beneath its islands.** In the dark down there hang knots of
+  frayed thread as big as houses, wound round stone and banded with silk, strung together by sagging strands three
+  wide that run from knot to knot into the fog, fringed with webs and loose ends.
+  - **Wells**: about one island in three has a well at its edge, a ring of stone round a drop with lanterns on posts
+    and chains hanging into the dark. Jump in and the Seam lets you down gently onto the knot below, onto a pad of
+    crying obsidian between four soul lanterns. **Crouch on the pad a moment and its updraft carries you back up**,
+    and sets you down on the walk out to the island.
+  - **Time runs out twice as fast** in the Fray, the fog closes in to a few dozen blocks, and **the Thinned that walk
+    its knots hunt you from the start** (up to two on every knot near you). Slain down there they carry more silk, and
+    now and then a Tether Fragment.
+  - **Snarls**: most knots hold a barrel of what the Seam has swallowed, richer than any barrel above (more silk, a
+    Wanderer's Page, most often a Tether Fragment, echo shards, a better chance of a relic).
+  - The strands are walkable, but a fall from them is a fall into the nothing.
+  - The Fray is built beneath every part of the Seam as you go, also beneath islands you found before.
+- A journal page (*XXXVII. The Fray*) and two advancements: *Into the Fray* and *On the Updraft*.
+- New settings in the Seam section: `seam_fray` (1), `seam_fray_top` (56: below this height you are in the Fray),
+  `seam_fray_drain` (2), `seam_well_chance` (0.35), `seam_snarl_chance` (0.6), `seam_fray_thinned` (2) and
+  `seam_fray_fragment_chance` (0.12).
+
 ## 2.18.0: The Tribe Remembers
 
 ### Added

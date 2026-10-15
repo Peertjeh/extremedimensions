@@ -218,6 +218,20 @@ public final class Config {
 
 	/** Seconds a Seam Needle gives you in the Seam before it spits you out. */
 	public static int SEAM_SECONDS = 300;
+	/** Whether the Fray lies beneath the islands (knots and strands of frayed thread, wells down to them): 1 = on, 0 = off. */
+	public static int SEAM_FRAY = 1;
+	/** Height below which a visitor is in the Fray. */
+	public static int SEAM_FRAY_TOP = 56;
+	/** How much faster time runs out in the Fray. */
+	public static double SEAM_FRAY_DRAIN = 2.0;
+	/** Chance an island has a well down to the Fray at its edge. */
+	public static double SEAM_WELL_CHANCE = 0.35;
+	/** Chance a knot of the Fray holds a snarl (a barrel of what the Seam swallowed). */
+	public static double SEAM_SNARL_CHANCE = 0.6;
+	/** Thinned that walk each knot of the Fray near a visitor (they hunt there from the start). */
+	public static int SEAM_FRAY_THINNED = 2;
+	/** Chance a Thinned slain in the Fray leaves a Tether Fragment. */
+	public static double SEAM_FRAY_FRAGMENT_CHANCE = 0.12;
 
 	// --- After the Dragon and the Mending --------------------------------------------------------
 

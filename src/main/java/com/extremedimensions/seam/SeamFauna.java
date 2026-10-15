@@ -134,6 +134,10 @@ public final class SeamFauna {
 					break;
 				}
 			}
+			// The Thinned on the knots of the Fray near a visitor down there
+			if (SeamDepth.inFray(p.getY())) {
+				frayed(seam, p, rnd);
+			}
 			// The Thinned in villages near this visitor
 			for (String key : DataStore.seamCells()) {
 				if (!key.startsWith("v@")) {
@@ -160,6 +164,40 @@ public final class SeamFauna {
 							DRIVEN.put(t.getUUID(), new Driven(THINNED));
 						}
 					}
+				}
+			}
+		}
+	}
+
+	/** Thinned walk the knots of the Fray, up to {@code seam_fray_thinned} on each knot near the visitor. */
+	private static void frayed(ServerLevel seam, ServerPlayer p, ThreadLocalRandom rnd) {
+		for (String key : DataStore.seamCells()) {
+			if (!key.startsWith("k@")) {
+				continue;
+			}
+			String[] xyz = key.substring(2).split(",");
+			int kx = Integer.parseInt(xyz[0]), ky = Integer.parseInt(xyz[1]), kz = Integer.parseInt(xyz[2]);
+			double dx = kx - p.getX(), dy = ky - p.getY(), dz = kz - p.getZ();
+			if (dx * dx + dz * dz > 56 * 56 || Math.abs(dy) > 24) {
+				continue;
+			}
+			int count = 0;
+			for (Map.Entry<UUID, Driven> e : DRIVEN.entrySet()) {
+				Entity ent = seam.getEntity(e.getKey());
+				if (e.getValue().kind == THINNED && ent != null && ent.distanceToSqr(kx, ky, kz) < 14 * 14) {
+					count++;
+				}
+			}
+			if (count >= Math.max(0, com.extremedimensions.config.Config.SEAM_FRAY_THINNED) || rnd.nextInt(3) != 0) {
+				continue;
+			}
+			BlockPos at = new BlockPos(kx + rnd.nextInt(-3, 4), ky + 1, kz + rnd.nextInt(-3, 4));
+			if (seam.isLoaded(at) && seam.getBlockState(at).isAir() && seam.getBlockState(at.above()).isAir() && !seam.getBlockState(at.below()).isAir()
+					&& p.distanceToSqr(at.getX(), at.getY(), at.getZ()) > 10 * 10) {
+				Thinned t = ModEntities.THINNED.spawn(seam, at, EntitySpawnReason.EVENT);
+				if (t != null) {
+					DRIVEN.put(t.getUUID(), new Driven(THINNED));
+					WorldFx.particleIn(SeamService.SEAM.identifier().toString(), "extremedimensions:void_mote", at.getX() + 0.5, at.getY() + 1, at.getZ() + 0.5, 0.4, 0.8, 0.4, 0.0, 14);
 				}
 			}
 		}
@@ -215,7 +253,7 @@ public final class SeamFauna {
 	/** A visitor's thread runs thin: under a third of their time, or already being pulled out. */
 	private static boolean thin(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
-		return d.inSeam && !p.isCreative() && (d.seamPull > 0 || (d.seamMax > 0 && d.seamLeft < d.seamMax / 3)
+		return d.inSeam && !p.isCreative() && (d.seamPull > 0 || (d.seamMax > 0 && d.seamLeft < d.seamMax / 3) || SeamDepth.inFray(p.getY())
 				|| com.extremedimensions.trial.TrialService.hunted(d) || com.extremedimensions.elder.WeaverService.hunting(p));
 	}
 
@@ -268,6 +306,13 @@ public final class SeamFauna {
 		} else if (e instanceof Thinned) {
 			if (rnd.nextInt(3) > 0) {
 				Block.popResource(level, at, new ItemStack(ModItems.SEAM_SILK, 1 + rnd.nextInt(2)));
+			}
+			if (SeamDepth.inFray(e.getY())) {
+				// The Frayed carry more of what the Seam swallowed
+				Block.popResource(level, at, new ItemStack(ModItems.SEAM_SILK, 1 + rnd.nextInt(3)));
+				if (rnd.nextDouble() < com.extremedimensions.config.Config.SEAM_FRAY_FRAGMENT_CHANCE) {
+					Block.popResource(level, at, new ItemStack(ModItems.TETHER_FRAGMENT));
+				}
 			}
 			if (rnd.nextDouble() < 0.06) {
 				Block.popResource(level, at, new ItemStack(ModItems.WANDERERS_PAGE));

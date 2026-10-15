@@ -46,6 +46,8 @@ public final class Advancements {
 	public static final String TRIBE_TRUSTED = "tribe_trusted";
 	public static final String TRIBE_KIN = "tribe_kin";
 	public static final String RAIDER = "raider";
+	public static final String FRAY_ENTERED = "fray_entered";
+	public static final String FRAY_RISEN = "fray_risen";
 
 	/** Expeditions needed for {@link #VETERAN}. */
 	public static final int VETERAN_EXPEDITIONS = 10;
