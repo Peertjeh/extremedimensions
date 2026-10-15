@@ -43,8 +43,14 @@ public class ClientShots implements FabricClientGameTest {
 	private static void liveFight(ClientGameTestContext ctx, TestSingleplayerContext sp, String name, int settle,
 			java.util.function.Consumer<MinecraftServer> summon, java.util.function.BiPredicate<net.minecraft.world.entity.Entity, Integer> force,
 			int[] blows, String[] blowNames) {
-		// Each fight on untouched ground, away from the last one's craters and fires
-		sp.getServer().runCommand("execute as @a at @s run tp @s ~120 ~ ~ 0 0");
+		// Each fight on untouched ground, away from the last one's craters and fires (on top of it, not inside a hill)
+		sp.getServer().runOnServer(s -> {
+			ServerPlayer p = player(s);
+			double nx = p.getX() + 120, nz = p.getZ();
+			int top = p.level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, (int) Math.floor(nx), (int) Math.floor(nz));
+			p.teleportTo(nx, top, nz);
+		});
+		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
 		ctx.waitTicks(20);
 		sp.getServer().runOnServer(summon::accept);
 		ctx.waitTicks(30);

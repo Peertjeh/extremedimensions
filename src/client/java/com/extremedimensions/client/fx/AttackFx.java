@@ -268,7 +268,7 @@ public final class AttackFx {
 		AttackFxParticle p = decal(level, CRACK, 0, x, y, z, size, life);
 		p.fadeIn = 0;
 		p.fadeOut = life / 2;
-		p.peak = 0.9F;
+		p.peak = 0.7F;
 		tint(p, elder, 1);
 		add(p);
 	}
@@ -527,7 +527,7 @@ public final class AttackFx {
 			}
 			case 2 -> {
 				family = CHAIN;
-				half = 0.34F;
+				half = 0.42F;
 			}
 			case 3 -> {
 				family = BEAM;
@@ -613,7 +613,7 @@ public final class AttackFx {
 		p.mode = bomb ? AttackFxParticle.Mode.UPRIGHT : AttackFxParticle.Mode.BILLBOARD;
 		p.frames = bomb ? 4 : 6;
 		p.frameRate = bomb ? 0.3F : 0.4F;
-		p.size0 = p.size1 = bomb ? 0.75F : 0.6F;
+		p.size0 = p.size1 = bomb ? 1.0F : 0.9F;
 		p.setLifetime(5);
 		p.fadeIn = 2;
 		p.fadeOut = 2;
