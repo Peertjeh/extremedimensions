@@ -7,7 +7,7 @@ import net.battlehub.core.TitleDef;
 
 /** {@code config/battlehub/titles.json}. */
 public final class TitleConfig {
-	/** 0 in files from before 1.8 (they get the season titles). */
+	/** 0 in files from before 1.8; 2 from 1.8. Older files get the titles that are new. */
 	public int configVersion;
 	public List<TitleDef> titles = defaults();
 
@@ -40,6 +40,17 @@ public final class TitleConfig {
 		l.add(new TitleDef("champion", "&e&lChampion", "coins", 2000, ""));
 		l.add(new TitleDef("mythic", "&5&l&oMythic", "coins", 7500, ""));
 		l.addAll(seasonTitles());
+		l.addAll(passTitles());
+		return l;
+	}
+
+	/** 1.9: the season pass and prestige. */
+	static List<TitleDef> passTitles() {
+		List<TitleDef> l = new ArrayList<>();
+		l.add(new TitleDef("pass_25", "&aPass Climber", "pass", 25, ""));
+		l.add(new TitleDef("pass_master", "&6&lPass Master", "pass", 50, ""));
+		l.add(new TitleDef("prestige_1", "&e✦ Prestige", "prestige", 1, ""));
+		l.add(new TitleDef("prestige_5", "&6&l✦ Prestige V", "prestige", 5, ""));
 		return l;
 	}
 
@@ -63,6 +74,13 @@ public final class TitleConfig {
 				if (titles.stream().noneMatch(o -> o != null && t.id.equals(o.id))) titles.add(t);
 			}
 			configVersion = 2;
+		}
+		if (configVersion < 3) {
+			// Season pass and prestige titles are new in 1.9
+			for (TitleDef t : passTitles()) {
+				if (titles.stream().noneMatch(o -> o != null && t.id.equals(o.id))) titles.add(t);
+			}
+			configVersion = 3;
 		}
 		titles.removeIf(t -> t == null || t.id == null || t.id.isBlank());
 		for (TitleDef t : titles) {

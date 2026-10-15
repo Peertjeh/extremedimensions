@@ -254,6 +254,7 @@ public final class HubEvents {
 			net.battlehub.hub.Travel.guard(p);
 			HubItems.ensure(p, false);
 			net.battlehub.hub.Travel.showLevel(p);
+			net.battlehub.progression.Retention.login(p);
 		} else if (ConfigManager.config().hub.sendToHubOnJoin) {
 			net.battlehub.hub.Travel.enter(p);
 		} else if (ConfigManager.config().hub.joinHint) {

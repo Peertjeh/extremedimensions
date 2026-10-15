@@ -43,6 +43,19 @@ and they come in three levels: **easy** walks and swings late, **normal** sprint
 * A match with bots pays half the coins and XP and never counts for stats, streaks or ELO, so they cannot be
   farmed.
 
+### Quests, season pass, achievements, prestige
+* **Quests**: three new ones every day and three every week (`/quests`), different for every player: play,
+  win, kills, damage, ranked wins, the mode of the day, being MVP, or a specific mode. They pay coins, XP and
+  season pass XP.
+* **Login streak**: the first visit to the hub each day pays coins, more for every day in a row (50 up to 400).
+* **Season pass** (`/pass`), free for everyone: 50 tiers per ranked season, pass XP from every match and every
+  quest; coins on every tier, more on every fifth, a cosmetic you don't own yet on every tenth. Rewards are given
+  right away.
+* **Achievements** (`/achievements`): twelve goals with tiers (Fighter, Winner, Duelist, Free Runner, Bed
+  Breaker, Collector, ...); every tier pays coins once.
+* **Prestige**: at the top level, start again at level 1 with a star before your name and 5% more coins per
+  prestige (up to 50%).
+
 ### Ranked seasons
 Ranked runs in **seasons** of 8 weeks. Every rating has a **division** inside its tier (Gold III, Gold II,
 Gold I). The first 5 ranked matches per mode in a season are **placement matches** that count double. When a
@@ -261,6 +274,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/cosmetics` | everyone | The cosmetics shop |
 | `/spectate [player]` | everyone | Spectate menu, or watch the match that player is in |
 | `/spectate leave` | everyone | Stop spectating |
+| `/quests` / `/pass` / `/achievements` | everyone | Quests, the season pass, achievements and prestige |
 | `/kits` | everyone | The kit editor |
 | `/report <player> <reason>` | everyone | Report a player to the admins (once a minute) |
 | `/practice [mode] [easy\|normal\|hard]` | everyone | Practice against bots (sword, axe, mace, bow, crossbow, 1v2, 1v3); without a mode: the practice menu |
@@ -334,6 +348,9 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   heal for a hit, how long a prop must stand still to turn solid, taunt and decoy cooldowns and decoy time,
   arrows at the start and per find, the points for everything, and the blocks props can become. Kits:
   `prophunt_hunter` and `prophunt_prop`
+* **`progress.json`**: the number of daily and weekly quests, the quests (period, goal, mode, target, coins,
+  XP, pass XP), the login streak coins, the season pass (tiers, XP per tier, per match and per win, coins per
+  tier and every fifth tier, coins when the cosmetic is already owned), achievement coins and prestige on/off
 * **`kits.json`**: items per kit with slot (`0`–`35`, `head`, `chest`, `legs`, `feet`, `offhand`),
   count, enchantments, unbreakable, leather colour, plus potion effects
 * **`titles.json`**: titles with display text (`&` colour codes) and requirement:

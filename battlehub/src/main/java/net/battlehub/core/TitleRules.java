@@ -23,6 +23,8 @@ public final class TitleRules {
 			case "elo" -> mode != null ? p.elo(mode, startElo) >= t.value : p.bestElo(startElo) >= t.value;
 			case "coins" -> p.ownedTitles.contains(t.id);
 			case "season" -> p.bestSeasonTier >= t.value;
+			case "pass" -> p.bestPassTier >= t.value;
+			case "prestige" -> p.prestige >= t.value;
 			default -> false;
 		};
 	}

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.9.0
+
+### Added
+* **Quests**: three daily and three weekly quests per player, with coins, XP and season pass XP (`/quests`).
+* **Login streak**: coins for the first visit each day, more for every day in a row.
+* **Season pass**: 50 free tiers per season with coins and cosmetics, paid out right away (`/pass`).
+* **Achievements** with tiers and coin rewards (`/achievements`).
+* **Prestige** at the top level: back to level 1 with a star before your name and more coins.
+* New titles for the season pass and prestige (added to existing `titles.json` files).
+* The main menu has a second row: practice, kit editor, quests, season pass and achievements.
+* Settings in the new `progress.json`.
+
 ## 1.8.0
 
 ### Added

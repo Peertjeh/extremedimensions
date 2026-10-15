@@ -123,6 +123,18 @@ public final class HubCommands {
 				.then(Commands.argument("reason", StringArgumentType.greedyString())
 						.executes(c -> net.battlehub.fair.Reports.report(c.getSource().getPlayerOrException(),
 								StringArgumentType.getString(c, "player"), StringArgumentType.getString(c, "reason")) ? 1 : 0))));
+		d.register(Commands.literal("quests").executes(c -> {
+			new net.battlehub.gui.QuestsMenu(c.getSource().getPlayerOrException()).open();
+			return 1;
+		}));
+		d.register(Commands.literal("pass").executes(c -> {
+			new net.battlehub.gui.PassMenu(c.getSource().getPlayerOrException(), 0).open();
+			return 1;
+		}));
+		d.register(Commands.literal("achievements").executes(c -> {
+			new net.battlehub.gui.AchievementsMenu(c.getSource().getPlayerOrException(), false).open();
+			return 1;
+		}));
 		d.register(Commands.literal("kits").executes(c -> {
 			new net.battlehub.gui.KitListMenu(c.getSource().getPlayerOrException()).open();
 			return 1;

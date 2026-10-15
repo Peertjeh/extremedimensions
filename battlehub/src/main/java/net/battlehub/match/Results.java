@@ -12,6 +12,7 @@ import net.battlehub.core.Elo;
 import net.battlehub.core.Outcome;
 import net.battlehub.core.PlayerProfile;
 import net.battlehub.core.Progression;
+import net.battlehub.core.Quests;
 import net.battlehub.core.RewardSettings;
 import net.battlehub.core.Rewards;
 import net.battlehub.core.StatsRecorder;
@@ -21,6 +22,7 @@ import net.battlehub.data.PlayerStore;
 import net.battlehub.gui.Icons;
 import net.battlehub.lang.Lang;
 import net.battlehub.progression.FeaturedMode;
+import net.battlehub.progression.Retention;
 import net.battlehub.progression.Seasons;
 import net.battlehub.progression.Ranks;
 import net.battlehub.progression.TitleService;
@@ -57,8 +59,8 @@ public final class Results {
 			int kills = m.kills(id);
 			StatsRecorder.Result streak = withBots ? null : StatsRecorder.record(prof, m.mode, m.ranked, o, kills, m.deaths(id));
 			Rewards.Reward full = Rewards.compute(settings, o, kills, 1.0);
-			Rewards.Reward reward = new Rewards.Reward((int) Math.round(full.coins() * Math.max(0, m.coinFactor()) * botFactor * coinBonus),
-					(int) Math.round(full.xp() * botFactor));
+			Rewards.Reward reward = new Rewards.Reward((int) Math.round(full.coins() * Math.max(0, m.coinFactor()) * botFactor * coinBonus
+					* Retention.coinFactor(prof)), (int) Math.round(full.xp() * botFactor));
 			Progression.addCoins(prof, reward.coins());
 			StatsRecorder.recordCoins(prof, m.mode, m.ranked, reward.coins());
 			Progression.LevelChange lvl = Progression.addXp(prof, reward.xp(), Ranks.curve(), cfg.levels.bonusEvery, cfg.levels.bonusCoins);
@@ -67,6 +69,11 @@ public final class Results {
 				prof.setElo(m.mode, e[1]);
 				Seasons.played(prof, m.mode, e[1]);
 			}
+			// Quests, the season pass and achievements (bot matches count, at the bot share)
+			ServerPlayer online = m.player(id);
+			UUID mvp = m.participants().size() >= 2 ? m.recap().mvp(m.participants()) : null;
+			Retention.matchPlayed(online, prof, new Quests.Match(m.mode, o == Outcome.WIN, m.ranked, kills,
+					m.recap().line(id).dealt / 2, featured, id.equals(mvp)), botFactor);
 			List<TitleDef> unlocked = TitleRules.newlyUnlocked(ConfigManager.titles().titles, prof, Ranks.startElo());
 			PlayerStore.save(id);
 

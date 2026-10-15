@@ -7,7 +7,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Items;
 
-/** The BattleHub Compass menu: PvP, Ranged, Party Games, Cosmetics, Ranked, Spectate, Stats, Practice. */
+/** The BattleHub Compass menu: games on the first row, practice, kits, quests, pass and achievements on the second. */
 public final class MainMenu extends Screen {
 	public MainMenu(ServerPlayer viewer) {
 		super(viewer);
@@ -20,7 +20,7 @@ public final class MainMenu extends Screen {
 
 	@Override
 	public int rows() {
-		return 3;
+		return 5;
 	}
 
 	@Override
@@ -46,21 +46,30 @@ public final class MainMenu extends Screen {
 		c.set(16, Icon.of(Items.WRITABLE_BOOK).name(Lang.item(viewer, "menu.main.stats"))
 				.lore(Lang.loreLines(viewer, "menu.main.stats.lore")).clean().build(),
 				click -> new StatsMenu(viewer, viewer.getUUID()).open());
-		c.set(20, Icon.of(Items.TARGET).name(Lang.item(viewer, "menu.main.practice"))
+		c.set(19, Icon.of(Items.TARGET).name(Lang.item(viewer, "menu.main.practice"))
 				.lore(Lang.loreLines(viewer, "menu.main.practice.lore")).clean().build(),
 				click -> new PracticeMenu(viewer).open());
-		c.set(24, Icon.of(Items.CHEST).name(Lang.item(viewer, "menu.main.kits"))
+		c.set(20, Icon.of(Items.CHEST).name(Lang.item(viewer, "menu.main.kits"))
 				.lore(Lang.loreLines(viewer, "menu.main.kits.lore")).clean().build(),
 				click -> new KitListMenu(viewer).open());
+		c.set(21, Icon.of(Items.WRITABLE_BOOK).name(Lang.item(viewer, "menu.main.quests"))
+				.lore(Lang.loreLines(viewer, "menu.main.quests.lore")).clean().build(),
+				click -> new QuestsMenu(viewer).open());
+		c.set(22, Icon.of(Items.NETHER_STAR).name(Lang.item(viewer, "menu.main.pass"))
+				.lore(Lang.loreLines(viewer, "menu.main.pass.lore")).clean().build(),
+				click -> new PassMenu(viewer, 0).open());
+		c.set(23, Icon.of(Items.GOLDEN_APPLE).name(Lang.item(viewer, "menu.main.achievements"))
+				.lore(Lang.loreLines(viewer, "menu.main.achievements.lore")).clean().build(),
+				click -> new AchievementsMenu(viewer, false).open());
 		if (net.battlehub.hub.Travel.inBattleHub(viewer)) {
-			c.set(22, Icon.of(Items.OAK_DOOR).name(Lang.item(viewer, "menu.main.exit"))
+			c.set(40, Icon.of(Items.OAK_DOOR).name(Lang.item(viewer, "menu.main.exit"))
 					.lore(Lang.loreLines(viewer, "menu.main.exit.lore")).build(),
 					click -> {
 						viewer.closeContainer();
 						net.battlehub.hub.Travel.leave(viewer);
 					});
 		} else {
-			c.set(22, Icon.of(Items.ENDER_PEARL).name(Lang.item(viewer, "menu.main.enter"))
+			c.set(40, Icon.of(Items.ENDER_PEARL).name(Lang.item(viewer, "menu.main.enter"))
 					.lore(Lang.loreLines(viewer, "menu.main.enter.lore")).build(),
 					click -> {
 						viewer.closeContainer();

@@ -230,3 +230,14 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Anti-cheat | Alleen meldingen aan admins en in het log, nooit straffen: reach (afstand van de ogen tot de hitbox, twee keer binnen 10 s), meer dan 20 klikken per seconde drie seconden lang, 4 s zweven zonder te vallen, en meer dan 13 blokken per seconde (niet direct na een klap of met speed). Echte anti-cheat kan niet goed zonder client-informatie; dit vangt de duidelijke gevallen. |
 | Meldingen | `/report` schrijft één JSON-regel per melding in `reports.log`, met de match waar de speler in zat, en laat het online admins zien; één per minuut per speler. |
 
+## Versie 1.9 – Fase 3: blijven terugkomen
+
+| Onderwerp | Keuze |
+|---|---|
+| Quests | Een pool in `progress.json`; elke speler krijgt per dag 3 en per week 3 quests, gekozen met een seed uit zijn id en de datum (dus de hele dag dezelfde, maar niet voor iedereen dezelfde). Doelen: spelen, winnen, kills, schade (hartjes uit de recap), ranked winnen, de modus van de dag, MVP, eventueel voor één modus. Voortgang komt uit elk potje, ook potjes met bots (die tellen dan voor het deel dat ze opleveren). |
+| Inlogreeks | De eerste keer per dag in de hub: coins voor dag 1, 2, 3, ... op rij (50 tot 400, de laatste herhaalt); een gemiste dag begint opnieuw. |
+| Seizoenspas | Gratis, 50 tiers per ranked-seizoen (hetzelfde seizoen als ranked). Pas-XP per potje en per winst, en uit quests. Elke tier betaalt meteen uit: coins, meer elke vijfde tier, op elke tiende de goedkoopste cosmetic die je nog niet hebt (anders coins). Geen betaalde pas. |
+| Prestaties | Twaalf doelen die uit het profiel worden gemeten (kills, winst, potjes, reeks, duels, level, verzameling, parkour, Bed Wars, Prop Hunt, seizoenen, quests), elk met tiers; elke tier betaalt één keer (100 × tier²). |
+| Prestige | Op het hoogste level terug naar level 1 (bevestigen met een tweede klik), met sterren voor je naam in tab en chat en 5% meer coins per prestige (hoogstens 50%). Titels voor pas en prestige komen in bestaande `titles.json` erbij. |
+| Menu | Het hoofdmenu heeft nu vijf rijen: spellen op de eerste rij, oefenen, kits, quests, seizoenspas en prestaties op de tweede, de deur onderaan. |
+
