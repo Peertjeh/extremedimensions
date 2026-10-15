@@ -3,7 +3,6 @@ package com.extremedimensions.elder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -183,21 +182,27 @@ public final class FerrymanService {
 			return;
 		}
 		List<Runnable> later = new ArrayList<>();
-		Iterator<Map.Entry<UUID, Fare>> it = FARES.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry<UUID, Fare> e = it.next();
+		// Over a copy: a blast of one may sink another, and his end takes him out of the fares mid-loop
+		for (Map.Entry<UUID, Fare> e : List.copyOf(FARES.entrySet())) {
 			Fare fare = e.getValue();
+			if (FARES.get(e.getKey()) != fare) {
+				continue;
+			}
 			Entity ent = fare.level.getEntity(e.getKey());
 			if (!(ent instanceof Ferryman f) || !f.isAlive()) {
 				fare.bar.removeAllPlayers();
-				it.remove();
+				FARES.remove(e.getKey());
 				continue;
 			}
 			fare.ticks++;
 			ServerPlayer p = s.getPlayerList().getPlayer(fare.target);
 			if (p == null || !p.isAlive() || p.level() != f.level() || f.distanceToSqr(p) > 80 * 80) {
-				// Gone home with him still sailing: he collects his fare on the way out
-				if (p != null && p.isAlive() && p.level() != f.level() && !DataStore.get(p.getUUID()).inRun) {
+				// Gone home, outrun or slipped away with him still sailing: he collects his fare all the same (a death is
+				// paid for enough). One who left the game pays when they come back.
+				if (p == null) {
+					DataStore.get(fare.target).fareOwed += Math.max(0, Config.FERRYMAN_ESCAPE_LEVELS);
+					DataStore.markDirty();
+				} else if (p.isAlive() && (p.level() == f.level() || !DataStore.get(p.getUUID()).inRun)) {
 					later.add(() -> collect(p));
 				}
 				later.add(() -> fade(f));
@@ -289,7 +294,7 @@ public final class FerrymanService {
 				}
 			}
 			case Ferryman.CHAIN -> {
-				if (b.at(10)) {
+				if (b.at(10) && !p.isCreative() && !p.isSpectator()) {
 					// A chain of soul fire lashes out from the boat and hauls its passenger in
 					AttackFx.line((ServerLevel) f.level(), 1, AttackFx.LINE_CHAIN, f.getX(), f.getY() + 9, f.getZ(), p.getX(), p.getY() + 1, p.getZ(), 6);
 					AttackFx.impact((ServerLevel) f.level(), 1, AttackFx.IMPACT_WISP, p.getX(), p.getY() + 1, p.getZ(), 1);
@@ -595,6 +600,20 @@ public final class FerrymanService {
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.ferryman_toll", levels), true);
 	}
 
+	/** A fare owed by someone who left the game while he sailed is collected as they come back. */
+	public static void collectOwed(ServerPlayer p, PlayerData d) {
+		if (d.fareOwed <= 0) {
+			return;
+		}
+		int levels = Math.min(p.experienceLevel, d.fareOwed);
+		d.fareOwed = 0;
+		if (levels > 0) {
+			p.giveExperienceLevels(-levels);
+		}
+		p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.ferryman_collects", levels));
+		DataStore.markDirty();
+	}
+
 	private static void collect(ServerPlayer p) {
 		int levels = Math.min(p.experienceLevel, Math.max(0, Config.FERRYMAN_ESCAPE_LEVELS));
 		if (levels > 0) {
@@ -619,9 +638,9 @@ public final class FerrymanService {
 		ElderFx.burst(f, "minecraft:soul", 80);
 		AttackFx.burst(level, 1, f.getX(), f.getY() + 2, f.getZ(), 9);
 		ElderFx.cinema(f, 160, ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");
-		f.spawnAtLocation(level, new ItemStack(ModItems.TETHER_FRAGMENT, 3));
+		ElderFx.loot(f, fare.target, new ItemStack(ModItems.TETHER_FRAGMENT, 3));
 		if (ThreadLocalRandom.current().nextDouble() < Config.FERRYMAN_RELIC_CHANCE) {
-			f.spawnAtLocation(level, RelicService.random());
+			ElderFx.loot(f, fare.target, RelicService.random());
 		}
 		for (ServerPlayer p : level.players()) {
 			if (p.distanceToSqr(f) >= 64 * 64) {
@@ -642,6 +661,7 @@ public final class FerrymanService {
 		Fare fare = FARES.remove(f.getUUID());
 		ElderArena.release(f);
 		if (fare != null) {
+			fare.abandonUltimate(BOSS);
 			fare.bar.removeAllPlayers();
 			if (fare.action == ElderBoss.ULTIMATE) {
 				ElderFx.cinema(f, 160, ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");

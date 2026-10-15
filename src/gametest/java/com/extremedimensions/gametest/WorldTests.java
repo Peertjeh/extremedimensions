@@ -158,4 +158,60 @@ public class WorldTests {
 			helper.succeed();
 		});
 	}
+
+	/** Stepping through a portal and straight back is not an expedition: no count, no return's atonement. */
+	@GameTest
+	public void aStepThroughAndBackIsNoExpedition(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "test-hopper");
+		PlayerData d = DataStore.get(p.getUUID());
+		int before = d.expeditions;
+		d.inRun = true;
+		d.runActive = 4;
+		ExpeditionService.onDimensionChange(p, d, Dims.NETHER, Dims.OVERWORLD);
+		CurseTests.check(helper, d.expeditions == before && !d.inRun, "a four-second hop counted as an expedition (%s, was %s)", d.expeditions, before);
+		d.inRun = true;
+		d.runActive = Math.max(1, Config.ATONE_RETURN_MIN_SECONDS) + 5;
+		ExpeditionService.onDimensionChange(p, d, Dims.NETHER, Dims.OVERWORLD);
+		CurseTests.check(helper, d.expeditions == before + 1, "a real expedition did not count (%s, was %s)", d.expeditions, before);
+		helper.succeed();
+	}
+
+	/** An anchor that keeps someone else's charge cannot be broken out from under them; an empty or own one can. */
+	@GameTest
+	public void anotherPlayersAnchorCannotBeBroken(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "test-breaker");
+		BlockPos pos = helper.absolutePos(new BlockPos(3, 2, 3));
+		com.extremedimensions.data.Anchor a = new com.extremedimensions.data.Anchor(pos.getX(), pos.getY(), pos.getZ(), Dims.NETHER);
+		String key = a.key();
+		DataStore.anchors().put(key, a);
+		try {
+			CurseTests.check(helper, com.extremedimensions.anchor.AnchorService.mayBreak(p, Dims.OVERWORLD, pos), "an empty anchor could not be broken");
+			a.add(p.getStringUUID(), 100);
+			CurseTests.check(helper, com.extremedimensions.anchor.AnchorService.mayBreak(p, Dims.OVERWORLD, pos), "the player's own anchor could not be broken");
+			a.add(java.util.UUID.randomUUID().toString(), 100);
+			CurseTests.check(helper, !com.extremedimensions.anchor.AnchorService.mayBreak(p, Dims.OVERWORLD, pos), "another player's charge could be broken out from under them");
+		} finally {
+			DataStore.anchors().remove(key);
+		}
+		helper.succeed();
+	}
+
+	/** A curse offer left unanswered (a client that never shows it) is chosen by the Tether after the set time. */
+	@GameTest(maxTicks = 100)
+	public void anUnansweredCurseOfferIsChosenForThePlayer(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "test-silent");
+		PlayerData d = DataStore.get(p.getUUID());
+		int timeout = Config.OFFER_TIMEOUT_SECONDS;
+		Config.OFFER_TIMEOUT_SECONDS = 1;
+		int stacks = d.curses.values().stream().mapToInt(Integer::intValue).sum();
+		com.extremedimensions.penalty.PenaltyService.owe(d, false);
+		d.offerDelay = -1;
+		CurseTests.check(helper, !d.pendingOffer.isEmpty(), "no offer was drawn");
+		helper.runAfterDelay(40, () -> {
+			Config.OFFER_TIMEOUT_SECONDS = timeout;
+			int now = d.curses.values().stream().mapToInt(Integer::intValue).sum();
+			CurseTests.check(helper, d.pendingOffer.isEmpty() && now > stacks, "the offer still stands (%s) and the curses went from %s to %s", d.pendingOffer, stacks, now);
+			helper.succeed();
+		});
+	}
 }

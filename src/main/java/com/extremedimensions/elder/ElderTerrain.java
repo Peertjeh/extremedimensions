@@ -62,6 +62,10 @@ public final class ElderTerrain {
 		if (s.isAir() || s.hasBlockEntity() || s.is(BlockTags.WITHER_IMMUNE) || s.is(Blocks.NETHER_PORTAL) || s.is(Blocks.END_PORTAL)) {
 			return false;
 		}
+		// An arena's blocks are not torn up or changed (it puts the ground back itself, and what it built drops nothing)
+		if (ElderArena.holds(level, pos) || temporary(level, pos)) {
+			return false;
+		}
 		float hard = s.getDestroySpeed(level, pos);
 		return hard >= 0 && hard < 30;
 	}
@@ -158,7 +162,7 @@ public final class ElderTerrain {
 				}
 				BlockPos above = pos.above();
 				BlockState over = level.getBlockState(above);
-				if (over.canBeReplaced() && !over.liquid()) {
+				if (over.canBeReplaced() && !over.liquid() && !ElderArena.holds(level, above)) {
 					BlockState top = cover(mark, rnd);
 					if (top != null) {
 						level.setBlock(above, top, 3);
@@ -232,7 +236,7 @@ public final class ElderTerrain {
 		for (int i = 1; i <= height; i++) {
 			BlockPos pos = ground.above(i);
 			BlockState was = level.getBlockState(pos);
-			if (!was.canBeReplaced() || was.liquid() || was.hasBlockEntity()) {
+			if (!was.canBeReplaced() || was.liquid() || was.hasBlockEntity() || ElderArena.holds(level, pos)) {
 				break;
 			}
 			BlockState put = block.defaultBlockState();
@@ -245,6 +249,16 @@ public final class ElderTerrain {
 			t.left = ticks + i * 2;
 			TEMPORARY.add(t);
 		}
+	}
+
+	/** Whether this block was raised by an Elder for a while (thorns, the bars of a cage): it drops nothing. */
+	public static boolean temporary(Level level, BlockPos pos) {
+		for (Temporary t : TEMPORARY) {
+			if (t.level == level && t.pos.equals(pos)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static void tick(MinecraftServer s) {

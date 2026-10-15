@@ -134,7 +134,8 @@ public final class MendingService {
 			}
 		}
 		if (boss == null) {
-			if (open() && DataStore.heartBuilt() && s.getTickCount() % 10 == 0) {
+			// Once slain it stays slain: the altar wakes nothing more (its Thread and Shears lie there to be used)
+			if (open() && DataStore.heartBuilt() && !DataStore.starvedSlain() && s.getTickCount() % 10 == 0) {
 				for (ServerPlayer p : seam.players()) {
 					if (!p.isSpectator() && p.distanceToSqr(HX + 0.5, HY + 1, HZ + 0.5) < 3.5 * 3.5) {
 						start(seam, p);
@@ -326,7 +327,7 @@ public final class MendingService {
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		for (ServerPlayer p : arena) {
 			PlayerData d = DataStore.get(p.getUUID());
-			if (!d.inSeam) {
+			if (!d.inSeam || p.isCreative() || p.isSpectator()) {
 				continue;
 			}
 			double a = rnd.nextDouble() * Math.PI * 2;
@@ -342,6 +343,9 @@ public final class MendingService {
 	private static void drag(StarvedOne so, List<ServerPlayer> arena) {
 		roar(so, 4f);
 		for (ServerPlayer p : arena) {
+			if (p.isCreative() || p.isSpectator()) {
+				continue;
+			}
 			Vec3 to = so.position().subtract(p.position());
 			double dist = to.length();
 			if (dist < 26 && dist > 3) {
@@ -477,6 +481,7 @@ public final class MendingService {
 		boss = null;
 		bar = null;
 		stun = 0;
+		DataStore.setStarvedSlain(true);
 		ServerLevel seam = (ServerLevel) so.level();
 		unlight(seam);
 		BlockPos c = new BlockPos(HX, HY + 1, HZ);
@@ -486,7 +491,7 @@ public final class MendingService {
 		WorldFx.particleIn(dim, "extremedimensions:soul_mote", so.getX(), so.getY() + 3, so.getZ(), 2, 3, 2, 0, 200);
 		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 3, so.getZ(), 2, 3, 2, 0, 120);
 		for (ServerPlayer p : seam.players()) {
-			if (inArena(p)) {
+			if (inArena(p) && !p.isSpectator() && !p.isCreative()) {
 				// Each who fought it takes something from its hoard of everything it ever ate
 				for (int i = 0; i < Math.max(0, com.extremedimensions.config.Config.RELIC_STARVED_ONE); i++) {
 					WorldFx.give(p, com.extremedimensions.relic.RelicService.random());

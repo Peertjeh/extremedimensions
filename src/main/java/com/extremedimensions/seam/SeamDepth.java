@@ -329,8 +329,16 @@ public final class SeamDepth {
 			List<Well> out = new ArrayList<>();
 			for (String key : DataStore.seamCells()) {
 				if (key.startsWith("w@")) {
+					// A well is "w@x,top,z,knotY"; anything else under the prefix (a village's Weaver roll before 2.22) is not one
 					String[] v = key.substring(2).split(",");
-					out.add(new Well(Integer.parseInt(v[0]), Integer.parseInt(v[1]), Integer.parseInt(v[2]), Integer.parseInt(v[3])));
+					if (v.length != 4) {
+						continue;
+					}
+					try {
+						out.add(new Well(Integer.parseInt(v[0]), Integer.parseInt(v[1]), Integer.parseInt(v[2]), Integer.parseInt(v[3])));
+					} catch (NumberFormatException e) {
+						// not a well
+					}
 				}
 			}
 			wells = out;

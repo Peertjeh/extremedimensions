@@ -54,6 +54,22 @@ public class FrayTests {
 		helper.succeed();
 	}
 
+	/** A village's Weaver roll saved before 2.22 ("w@x,z") shares the wells' prefix: it is skipped, never read as a well. */
+	@GameTest
+	public void anOldWeaverRollIsNotTakenForAWell(GameTestHelper helper) {
+		java.util.Set<String> cells = com.extremedimensions.data.DataStore.seamCells();
+		cells.add("w@123,456");
+		SeamDepth.forget();
+		try {
+			int wells = SeamDepth.wells().size();
+			check(helper, wells >= 0, "no wells");
+		} finally {
+			cells.remove("w@123,456");
+			SeamDepth.forget();
+		}
+		helper.succeed();
+	}
+
 	@GameTest
 	public void timeRunsOutFasterInTheFray(GameTestHelper helper) {
 		check(helper, SeamDepth.drain(Config.SEAM_FRAY_TOP - 10) == Config.SEAM_FRAY_DRAIN, "the Fray drains at %s", SeamDepth.drain(Config.SEAM_FRAY_TOP - 10));
@@ -68,10 +84,11 @@ public class FrayTests {
 	 * The Seam builds itself before a watcher's eyes: a wall a few blocks off flies in (it is not there at once, and
 	 * stands whole a moment later), the ground right under them is simply there, and on stopping what is in the air
 	 * lands and an unfinished plan is handed back to be built again. Built where the test's own space is, in the
-	 * Overworld (the test server has no Seam), driving the Seam's builder by hand.
+	 * Overworld (the test server has no Seam), driving the Seam's builder by hand. The builder's queue is shared, so
+	 * this runs as the second half of the Seam's performance test ({@link PerfTests#seamStructures}), never beside it;
+	 * it ends the test.
 	 */
-	@GameTest(maxTicks = 120)
-	public void theSeamBuildsItselfBeforeAWatchersEyes(GameTestHelper helper) {
+	static void seamBuildsBeforeAWatcher(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		BlockPos o = helper.absolutePos(BlockPos.ZERO);
 		int base = Math.max(o.getY() + 3, 8);
@@ -79,8 +96,8 @@ public class FrayTests {
 		p.teleportTo(o.getX() + 1.5, base, o.getZ() + 1.5);
 		int range = Config.SEAM_FLY_RANGE;
 		Config.SEAM_FLY_RANGE = 48;
-		SeamArchitect.clear();
 		SeamArchitect.Plan wall = new SeamArchitect.Plan();
+		wall.cell = "test@wall";
 		for (int y = 1; y <= 3; y++) {
 			for (int z = 4; z <= 6; z++) {
 				wall.set(o.getX() + 7, base + y, o.getZ() + z, Blocks.STONE.defaultBlockState());

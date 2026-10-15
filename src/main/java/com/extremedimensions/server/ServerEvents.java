@@ -74,7 +74,11 @@ public final class ServerEvents {
 			com.extremedimensions.coop.Allies.init(s);
 		});
 		// The mod's data is written with the world's own saves (autosave, /save-all, stop), never ahead of them
-		ServerLifecycleEvents.AFTER_SAVE.register((s, flush, force) -> DataStore.flush());
+		ServerLifecycleEvents.AFTER_SAVE.register((s, flush, force) -> {
+			// Everything, every time: small changes (charge drained, atonement gathered) mark nothing dirty on their own
+			DataStore.markDirty();
+			DataStore.flush();
+		});
 		ServerLifecycleEvents.SERVER_STOPPING.register(s -> {
 			// Thorns and chains an Elder raised sink back, and its arena comes down, before the world is saved
 			com.extremedimensions.elder.ElderTerrain.clear();
@@ -101,6 +105,7 @@ public final class ServerEvents {
 			com.extremedimensions.tribe.RaidService.clear();
 			AtonementGuard.clear();
 			BlockFlight.clear();
+			com.extremedimensions.coop.Allies.clear();
 			DataStore.unload();
 			WorldFx.bind(null);
 		});
@@ -112,6 +117,9 @@ public final class ServerEvents {
 				com.extremedimensions.elder.ElderArena.broken(level, pos));
 		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, blockEntity) ->
 				!(player instanceof ServerPlayer fallen && com.extremedimensions.coop.FallenService.fallen(fallen)));
+		// An anchor that keeps someone else's charge cannot be broken out from under them
+		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, blockEntity) ->
+				!(player instanceof ServerPlayer sp) || !AnchorService.isAnchorBlock(state) || AnchorService.mayBreak(sp, Dims.of(level), pos));
 		CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> TetherCommand.register(dispatcher));
 
 		ServerPlayerEvents.JOIN.register(ServerEvents::onJoin);
@@ -325,9 +333,10 @@ public final class ServerEvents {
 		// Joining in another mod's world: the mod picks the player up again where they come back to one of its own
 		d.away = !Dims.ours(p);
 		d.dim = d.away ? Dims.OVERWORLD : Dims.of(p);
-		d.collapsing = false;
+		// Left during the pull of a Collapse: the death it was owed follows now (no second curse, no way out)
+		d.collapsing = d.collapseOwed && !d.away;
 		d.collapseRetry = 0;
-		d.inRun = Dims.isBeyond(d.dim) && !d.linked.isEmpty();
+		d.inRun = !d.collapsing && Dims.isBeyond(d.dim) && !d.linked.isEmpty();
 		d.lastWarn = Integer.MAX_VALUE;
 		if (!d.pendingOffer.isEmpty()) {
 			d.pendingPenalties = Math.max(1, d.pendingPenalties);
@@ -362,6 +371,8 @@ public final class ServerEvents {
 	/** Shortly after joining, once the player really stands in the world and commands can target them. */
 	private static void afterJoin(ServerPlayer p, PlayerData d) {
 		CurseEffects.applyEffects(p, d);
+		com.extremedimensions.elder.FerrymanService.collectOwed(p, d);
+		com.extremedimensions.elder.ElderUltimate.collectOwed(p, d);
 		List<RecipeHolder<?>> recipes = new ArrayList<>();
 		for (String recipe : RECIPES) {
 			p.level().getServer().getRecipeManager().byKey(ResourceKey.create(Registries.RECIPE, WorldFx.id(recipe))).ifPresent(recipes::add);
@@ -391,7 +402,17 @@ public final class ServerEvents {
 			}
 			if (d.offerDelay > 0 && --d.offerDelay == 0) {
 				d.offerDelay = -1;
+				d.offerAge = 0;
 				Sync.offer(p, d);
+			}
+			if (d.pendingOffer.isEmpty() || d.offerDelay > 0) {
+				d.offerAge = 0;
+			} else if (Config.OFFER_TIMEOUT_SECONDS > 0 && ++d.offerAge >= Config.OFFER_TIMEOUT_SECONDS * 20) {
+				// An offer left unanswered too long: the Tether chooses
+				d.offerAge = 0;
+				String pick = d.pendingOffer.get(java.util.concurrent.ThreadLocalRandom.current().nextInt(d.pendingOffer.size()));
+				p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.choice.timeout"));
+				PenaltyService.choose(p, pick);
 			}
 
 			// Another mod's world lies outside the wound's reach: the curses sleep, an expedition waits for the

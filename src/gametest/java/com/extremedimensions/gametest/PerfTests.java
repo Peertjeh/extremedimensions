@@ -127,7 +127,8 @@ public class PerfTests {
 			// worst only has to stay far from a stall
 			CurseTests.check(helper, p95 < budget / 1e6 + 5, "95%% of building ticks took up to %s ms (budget %s ms)", p95, budget / 1e6);
 			CurseTests.check(helper, worst < budget / 1e6 + 60, "a tick of building took %s ms (budget %s ms)", worst, budget / 1e6);
-			helper.succeed();
+			// Then, with the queue to itself, the Seam building itself before a watcher's eyes
+			FrayTests.seamBuildsBeforeAWatcher(helper);
 		});
 	}
 }

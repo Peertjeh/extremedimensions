@@ -72,6 +72,21 @@ public class Anchor {
 	}
 
 	/** Charge this player can use here: their own, the legacy shared charge, and what allies opened to them. */
+	/** This player's own charge here (not what was shared before 2.17, nor what allies opened to them). */
+	public double own(String uid) {
+		return owners.getOrDefault(uid, 0.0);
+	}
+
+	/** Whether someone other than this player keeps charge here. */
+	public boolean holdsOthers(String uid) {
+		for (Map.Entry<String, Double> e : owners.entrySet()) {
+			if (!e.getKey().equals(uid) && e.getValue() >= 1) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public double of(String uid) {
 		fixLegacy();
 		return owners.getOrDefault(uid, 0.0) + owners.getOrDefault(SHARED, 0.0) + shared(uid);

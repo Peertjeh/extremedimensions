@@ -159,7 +159,8 @@ public final class SeamService {
 	private static void enter(ServerPlayer p, Rift from) {
 		ServerLevel seam = seam();
 		PlayerData d = DataStore.get(p.getUUID());
-		if (seam == null || d.inSeam) {
+		// The fallen cannot leave their world, not even through a rift
+		if (seam == null || d.inSeam || com.extremedimensions.coop.FallenService.fallen(p)) {
 			return;
 		}
 		d.homeDim = Dims.of(from.level);
@@ -193,7 +194,7 @@ public final class SeamService {
 		d.riftZ = z + 0.5;
 		d.inSeam = true;
 		d.seamVisits++;
-		d.seamMax = Math.max(30, Config.SEAM_SECONDS) + Config.WOVEN_SEAM_SECONDS * d.tetherTier
+		d.seamMax = Math.max(30, Config.SEAM_SECONDS) + Config.WOVEN_SEAM_SECONDS * TetherService.carriedTier(p, d)
 				+ (com.extremedimensions.relic.RelicService.has(d, com.extremedimensions.relic.Relic.SEAM_LANTERN) ? Math.max(0, Config.RELIC_SEAM_LANTERN_SECONDS) : 0);
 		d.seamLeft = d.seamMax;
 		d.seamPull = 0;
@@ -225,14 +226,14 @@ public final class SeamService {
 		boolean slow = s.getTickCount() % 20 == 0;
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
 			PlayerData d = DataStore.get(p.getUUID());
-			if (!d.inSeam) {
+			if (!d.inSeam || !p.isAlive()) {
 				continue;
 			}
 			if (!inSeam(p)) {
 				// Left the Seam some other way (a command, a death): the thread is cut
 				d.inSeam = false;
 				com.extremedimensions.trial.TrialService.fail(p, d);
-				TetherService.clear(p, d, false);
+				TetherService.clearThread(p, d);
 				continue;
 			}
 			tickPlayer(p, d, s.getTickCount());
@@ -273,10 +274,16 @@ public final class SeamService {
 			// The Thinned watch, but here they do not take
 			LurkerService.spawnWatch(p);
 		}
-		if (p.distanceToSqr(d.riftX, d.riftY + 0.5, d.riftZ) < 1.4 * 1.4) {
+		boolean fallen = com.extremedimensions.coop.FallenService.fallen(p);
+		if (d.seamLeft <= 0 || p.getY() < 8) {
+			// Out of time (checked first: no slipping through the rift as it runs out); fallen, there is no pulling them out
+			if (fallen) {
+				com.extremedimensions.coop.FallenService.bleedOut(p);
+			} else {
+				collapse(p, d);
+			}
+		} else if (!fallen && p.distanceToSqr(d.riftX, d.riftY + 0.5, d.riftZ) < 1.4 * 1.4) {
 			exit(p, d);
-		} else if (d.seamLeft <= 0 || p.getY() < 8) {
-			collapse(p, d);
 		}
 		villages(p);
 	}
@@ -295,7 +302,8 @@ public final class SeamService {
 	private static void exit(ServerPlayer p, PlayerData d) {
 		d.inSeam = false;
 		com.extremedimensions.trial.TrialService.finish(p, d);
-		TetherService.clear(p, d, false);
+		// The thread home is taken up; a Tether bound before the visit stays bound
+		TetherService.clearThread(p, d);
 		WorldFx.tp(p, Dims.fullIdOf(d.homeDim), d.homeX, d.homeY, d.homeZ);
 		WorldFx.fx(p, Fx.SAFE, 0);
 		WorldFx.soundSelf(p, "extremedimensions:portal_home", 0.6f, 1.1f);
@@ -317,10 +325,15 @@ public final class SeamService {
 		if (--d.seamPull > 0) {
 			return;
 		}
+		if (com.extremedimensions.coop.FallenService.fallen(p)) {
+			// Fell during the pull: the Seam cannot drag them out, and they do not last
+			com.extremedimensions.coop.FallenService.bleedOut(p);
+			return;
+		}
 		d.inSeam = false;
 		d.collapses++;
 		com.extremedimensions.trial.TrialService.fail(p, d);
-		TetherService.clear(p, d, false);
+		TetherService.clearThread(p, d);
 		p.removeEffect(MobEffects.LEVITATION);
 		WorldFx.tp(p, Dims.fullIdOf(d.homeDim), d.homeX, d.homeY, d.homeZ);
 		PenaltyService.curse(p, Dims.OVERWORLD.equals(d.homeDim));

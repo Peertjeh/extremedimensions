@@ -142,14 +142,39 @@ public final class TetherService {
 		d.hasRopeEnd = false;
 	}
 
-	/** Every 10 seconds: removes segments of players who are no longer bound, including leftovers. */
+	/** Removes this player's chain (or thread home in the Seam) and nothing else: they stay bound. */
+	public static void clearThread(ServerPlayer p, PlayerData d) {
+		WorldFx.run("kill @e[type=minecraft:block_display,tag=" + tag(p) + "]");
+		d.hasRopeEnd = false;
+	}
+
+	/**
+	 * The best Tether tier a player has with them: the one they are bound with, or a woven Tether they carry (the Seam
+	 * grants its extra time for it).
+	 */
+	public static int carriedTier(ServerPlayer p, PlayerData d) {
+		int best = d.tetherAnchor != null ? d.tetherTier : 0;
+		var inv = p.getInventory();
+		for (int i = 0; i < inv.getContainerSize() && best < 2; i++) {
+			ItemStack s = inv.getItem(i);
+			if (s.is(ModItems.SEAM_WOVEN_TETHER)) {
+				best = 2;
+			} else if (s.is(ModItems.SOUL_WOVEN_TETHER)) {
+				best = Math.max(best, 1);
+			}
+		}
+		return best;
+	}
+
+	/** Every 10 seconds: removes segments of players who are no longer bound (or laying a thread in the Seam), including leftovers. */
 	public static void sweep(MinecraftServer s) {
 		if (s.getTickCount() % 200 != 0) {
 			return;
 		}
 		StringBuilder sel = new StringBuilder("kill @e[type=minecraft:block_display,tag=" + TAG);
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
-			if (DataStore.get(p.getUUID()).tetherAnchor != null) {
+			PlayerData d = DataStore.get(p.getUUID());
+			if (d.tetherAnchor != null || d.inSeam) {
 				sel.append(",tag=!").append(tag(p));
 			}
 		}

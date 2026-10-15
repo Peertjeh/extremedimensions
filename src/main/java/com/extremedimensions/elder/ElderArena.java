@@ -123,6 +123,12 @@ public final class ElderArena {
 		return true;
 	}
 
+	/** A block some arena has put down in this level (for tests), or null. */
+	public static BlockPos anyStanding(ServerLevel level) {
+		Map<Long, Piece> m = STANDING.get(level);
+		return m == null || m.isEmpty() ? null : m.values().iterator().next().pos;
+	}
+
 	/** Arenas standing or on their way (for tests). */
 	public static int count() {
 		return ARENAS.size();

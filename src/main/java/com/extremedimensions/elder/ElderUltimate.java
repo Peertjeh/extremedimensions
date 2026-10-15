@@ -45,17 +45,49 @@ public final class ElderUltimate {
 
 	/** Lays the curse on everyone within reach; returns how many it touched. */
 	public static int curse(ElderBoss b, String bossKey) {
+		return curseAll(b, bossKey).size();
+	}
+
+	/** Lays the curse on everyone within reach; returns who it touched. */
+	static java.util.Set<java.util.UUID> curseAll(ElderBoss b, String bossKey) {
 		ServerLevel level = (ServerLevel) b.level();
 		double r = Math.max(0, Config.ELDER_ULTIMATE_RADIUS);
-		int n = 0;
+		java.util.Set<java.util.UUID> struck = new java.util.HashSet<>();
 		for (ServerPlayer p : List.copyOf(level.players())) {
 			if (p.isSpectator() || p.isCreative() || !p.isAlive() || p.distanceToSqr(b) > r * r) {
 				continue;
 			}
 			strike(p, bossKey);
-			n++;
+			struck.add(p.getUUID());
 		}
-		return n;
+		return struck;
+	}
+
+	/**
+	 * The curse of an ultimate is owed by someone it held who slipped away: laid now if they are in the game, else as
+	 * they come back (see {@link #collectOwed}).
+	 */
+	public static void owe(java.util.UUID id, String bossKey) {
+		ServerPlayer p = WorldFx.server() == null ? null : WorldFx.server().getPlayerList().getPlayer(id);
+		if (p != null) {
+			strike(p, bossKey);
+			return;
+		}
+		DataStore.get(id).ultimatesOwed.add(bossKey);
+		DataStore.markDirty();
+	}
+
+	/** Lays the curses of ultimates owed by a player who left while one held them. */
+	public static void collectOwed(ServerPlayer p, PlayerData d) {
+		if (d.ultimatesOwed.isEmpty()) {
+			return;
+		}
+		List<String> owed = new ArrayList<>(d.ultimatesOwed);
+		d.ultimatesOwed.clear();
+		for (String key : owed) {
+			strike(p, key);
+		}
+		DataStore.markDirty();
 	}
 
 	/** One player: extreme curses, or, when they have no room for them, everything they carry flung around them. */

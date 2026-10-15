@@ -24,6 +24,7 @@ import com.extremedimensions.server.WorldFx;
 import com.extremedimensions.tether.TetherService;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -165,7 +166,7 @@ public final class AnchorService {
 		String uid = p.getStringUUID();
 		// Dim Anchors: each anchor holds less of this player's time
 		double cap = Math.max(60, Config.MAX_CHARGE - 60 * Penalty.DIM_ANCHORS.value * d.stacks(Penalty.DIM_ANCHORS));
-		double space = cap - (anchor != null ? anchor.of(uid) : 0);
+		double space = cap - (anchor != null ? anchor.own(uid) : 0);
 		if (space < 1) {
 			return InteractionResult.SUCCESS;
 		}
@@ -196,7 +197,7 @@ public final class AnchorService {
 		anchor.add(uid, added);
 		Advancements.grant(p, Advancements.ANCHOR_CHARGED);
 		com.extremedimensions.guide.Guide.done(p, d, com.extremedimensions.guide.Guide.ANCHOR);
-		if (cap - anchor.of(uid) < 1) {
+		if (cap - anchor.own(uid) < 1) {
 			Journal.unlock(p, d, JournalEntry.SILENCE);
 			Advancements.grant(p, Advancements.ANCHOR_FULL);
 		}
@@ -211,6 +212,22 @@ public final class AnchorService {
 		WorldFx.sound(p, nether ? "minecraft:block.respawn_anchor.charge" : "minecraft:block.end_portal_frame.fill", 0.8f, instant ? 1.0f : 1.2f);
 		Sync.state(p, d);
 		return InteractionResult.SUCCESS;
+	}
+
+	/**
+	 * Whether a player may break this block: not an anchor that keeps someone else's charge (breaking it would end
+	 * their expedition), unless they are in creative. They are told why.
+	 */
+	public static boolean mayBreak(ServerPlayer p, String dim, BlockPos pos) {
+		if (!Dims.OVERWORLD.equals(dim) || p.isCreative()) {
+			return true;
+		}
+		Anchor a = DataStore.anchors().get(Anchor.key(pos.getX(), pos.getY(), pos.getZ()));
+		if (a == null || !a.holdsOthers(p.getStringUUID())) {
+			return true;
+		}
+		p.sendSystemMessage(Component.translatable("gui.extremedimensions.anchor.not_yours"), true);
+		return false;
 	}
 
 	public static void onBroken(String dim, BlockPos pos) {

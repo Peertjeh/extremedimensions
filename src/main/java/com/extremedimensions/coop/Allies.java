@@ -35,6 +35,11 @@ public final class Allies {
 		};
 	}
 
+	/** On stopping: lets go of the server (a single-player world closed is not kept in memory). */
+	public static void clear() {
+		server = null;
+	}
+
 	/** The player opens their anchors to their allies (or closes them again). */
 	public static void share(ServerPlayer p, boolean on) {
 		if (Config.COOP_SHARED_ANCHORS <= 0) {

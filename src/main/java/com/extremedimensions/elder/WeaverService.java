@@ -2,7 +2,6 @@ package com.extremedimensions.elder;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -117,7 +116,8 @@ public final class WeaverService {
 		if (!unlocked() || p.isCreative() || p.isSpectator()) {
 			return;
 		}
-		if (!DataStore.seamCells().add("w@" + vx + "," + vz)) {
+		// Each village rolls once ("wv@"; before 2.22 the roll was kept as "w@x,z", which wells also use)
+		if (DataStore.seamCells().contains("w@" + vx + "," + vz) || !DataStore.seamCells().add("wv@" + vx + "," + vz)) {
 			return;
 		}
 		DataStore.markDirty();
@@ -172,21 +172,30 @@ public final class WeaverService {
 			return;
 		}
 		List<Runnable> later = new ArrayList<>();
-		Iterator<Map.Entry<UUID, Unweaving>> it = WEAVERS.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry<UUID, Unweaving> e = it.next();
+		// Over a copy: a blast of one may slay another, and its death takes it out of the fights mid-loop
+		for (Map.Entry<UUID, Unweaving> e : List.copyOf(WEAVERS.entrySet())) {
 			Unweaving u = e.getValue();
+			if (WEAVERS.get(e.getKey()) != u) {
+				continue;
+			}
 			Entity ent = u.level.getEntity(e.getKey());
 			if (!(ent instanceof Weaver w) || !w.isAlive()) {
 				u.bar.removeAllPlayers();
-				it.remove();
+				WEAVERS.remove(e.getKey());
 				continue;
 			}
 			u.ticks++;
 			ServerPlayer p = s.getPlayerList().getPlayer(u.target);
 			if (p == null || !p.isAlive() || p.level() != w.level() || w.distanceToSqr(p) > 80 * 80) {
-				later.add(() -> fade(w));
-				continue;
+				// Its prey gone: it turns on another near it, if there is one, and only leaves when there is none
+				p = u.successor(w, 48);
+				if (p == null) {
+					later.add(() -> fade(w));
+					continue;
+				}
+				u.target = p.getUUID();
+				w.setTarget(p);
+				u.makeBarFor(p);
 			}
 			drive(w, u, p, later);
 		}
@@ -392,6 +401,10 @@ public final class WeaverService {
 				double[] a0 = anchors[i], a1 = anchors[(i + 3) % 7];
 				lines.add(new double[] {a0[0], a0[1], a0[2], a1[0], a1[1], a1[2]});
 			}
+			// One thread runs right through where its prey stands (standing still is no shelter)
+			double through = base + Math.PI / 7;
+			lines.add(new double[] {p.getX() + Math.cos(through) * 10, p.getY() + 1.0, p.getZ() + Math.sin(through) * 10,
+					p.getX() - Math.cos(through) * 10, p.getY() + 1.0, p.getZ() - Math.sin(through) * 10});
 			double yaw = Math.toRadians(w.getYRot());
 			for (int side = -1; side <= 1; side += 2) {
 				double hx = w.getX() - Math.cos(yaw) * 9.5 * side, hz = w.getZ() - Math.sin(yaw) * 9.5 * side;
@@ -597,10 +610,10 @@ public final class WeaverService {
 		ElderFx.burst(w, "minecraft:end_rod", 60);
 		AttackFx.burst(level, 2, w.getX(), w.getY() + 2, w.getZ(), 9);
 		ElderFx.cinema(w, 160, ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");
-		w.spawnAtLocation(level, new ItemStack(ModItems.SEAM_SILK, 8));
-		w.spawnAtLocation(level, new ItemStack(ModItems.TETHER_FRAGMENT, 3));
+		ElderFx.loot(w, u.target, new ItemStack(ModItems.SEAM_SILK, 8));
+		ElderFx.loot(w, u.target, new ItemStack(ModItems.TETHER_FRAGMENT, 3));
 		for (int i = 0; i < Math.max(0, Config.WEAVER_RELICS); i++) {
-			w.spawnAtLocation(level, RelicService.random());
+			ElderFx.loot(w, u.target, RelicService.random());
 		}
 		int gift = Math.max(0, Config.WEAVER_TIME_GIFT);
 		for (ServerPlayer p : level.players()) {
@@ -624,6 +637,7 @@ public final class WeaverService {
 		Unweaving u = WEAVERS.remove(w.getUUID());
 		ElderArena.release(w);
 		if (u != null) {
+			u.abandonUltimate(BOSS);
 			u.bar.removeAllPlayers();
 			if (u.action == ElderBoss.ULTIMATE) {
 				ElderFx.cinema(w, 160, ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");

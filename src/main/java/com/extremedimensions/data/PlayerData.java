@@ -108,7 +108,15 @@ public class PlayerData {
 	public transient boolean diedAway = false;
 	public transient boolean inRun = false;
 	public transient boolean collapsing = false;
-	public transient double runTime = 0;
+	/** The charge ran out and the death that follows has not come yet (it comes on joining, if they left meanwhile). */
+	public boolean collapseOwed = false;
+	/** Levels the Ferryman is owed by someone who left the game while he sailed for them. */
+	public int fareOwed = 0;
+	/** Ultimates whose curse is owed (their bosses' keys): the player slipped away while one held them. */
+	public List<String> ultimatesOwed = new ArrayList<>();
+	/** Ticks the current curse offer has stood unanswered (the Tether picks for the player after a while). */
+	public transient int offerAge = 0;
+	public double runTime = 0;
 	public transient int grace = 0;
 	public transient int tickCounter = 0;
 	public transient int lastWarn = Integer.MAX_VALUE;
@@ -132,7 +140,7 @@ public class PlayerData {
 	/** Active seconds on the current expedition not yet turned into atonement. */
 	public transient double activeSecs = 0;
 	/** Active seconds on the current expedition (a kept pact pays by them). */
-	public transient int runActive = 0;
+	public int runActive = 0;
 	// Curse upkeep: what the player had last tick (XP and food skims), sleep, spells and risings
 	public transient int lastXp = -1;
 	public transient double xpCarry = 0;
@@ -240,6 +248,6 @@ public class PlayerData {
 	}
 
 	public double debtFactor() {
-		return Math.pow(Math.max(0, 1.0 - Penalty.DEBT.frac()), stacks(Penalty.DEBT));
+		return Math.pow(Math.max(0.05, 1.0 - Penalty.DEBT.frac()), stacks(Penalty.DEBT));
 	}
 }

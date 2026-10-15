@@ -3,7 +3,6 @@ package com.extremedimensions.elder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +58,8 @@ public final class MatriarchService {
 		double sunk, risen;
 		double dirX, dirZ;
 		final Set<UUID> struck = new HashSet<>();
+		/** Ticks her prey has stayed perched out of her reach, high above her. */
+		int perched;
 	}
 
 	private static final Map<UUID, Fight> FIGHTS = new HashMap<>();
@@ -157,22 +158,31 @@ public final class MatriarchService {
 			return;
 		}
 		List<Runnable> later = new ArrayList<>();
-		Iterator<Map.Entry<UUID, Fight>> it = FIGHTS.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry<UUID, Fight> e = it.next();
+		// Over a copy: a blast of one may slay another, and her death takes her out of the fights mid-loop
+		for (Map.Entry<UUID, Fight> e : List.copyOf(FIGHTS.entrySet())) {
 			Fight f = e.getValue();
+			if (FIGHTS.get(e.getKey()) != f) {
+				continue;
+			}
 			Entity ent = f.level.getEntity(e.getKey());
 			if (!(ent instanceof Matriarch m) || !m.isAlive()) {
 				f.bar.removeAllPlayers();
-				it.remove();
+				FIGHTS.remove(e.getKey());
 				continue;
 			}
 			f.ticks++;
 			ServerPlayer p = s.getPlayerList().getPlayer(f.target);
 			double hx = f.hx - (p == null ? 0 : p.getX()), hz = f.hz - (p == null ? 0 : p.getZ());
 			if (p == null || !p.isAlive() || p.level() != m.level() || hx * hx + hz * hz > 80 * 80) {
-				later.add(() -> fade(m));
-				continue;
+				// Her prey gone: she turns on another near her, if there is one, and only sinks back when there is none
+				p = f.successor(m, 48);
+				if (p == null) {
+					later.add(() -> fade(m));
+					continue;
+				}
+				f.target = p.getUUID();
+				m.setTarget(p);
+				f.makeBarFor(p);
 			}
 			drive(m, f, p, later);
 		}
@@ -239,6 +249,15 @@ public final class MatriarchService {
 				m.motion.brake(m, 0.02, 0);
 			}
 			f.walk(m, 3.4, 2.5f);
+			// Out of her reach high above her (a pillar, a tower): roots lash up and drag them down
+			if (p.getY() - m.getY() > 9 && dist < 24 && !p.isCreative() && !p.isSpectator()) {
+				if (++f.perched >= 40) {
+					f.perched = 0;
+					lash(m, p);
+				}
+			} else {
+				f.perched = 0;
+			}
 			if (f.ready()) {
 				int a = dist <= 13 ? f.pick(Matriarch.SWEEP, 3, Matriarch.CATHEDRAL, 3, Matriarch.ROOTS, 2, Matriarch.WAIL, 1)
 						: dist <= 30 ? f.pick(Matriarch.RUSH, 3, Matriarch.BARRAGE, 3, Matriarch.ROOTS, 2, Matriarch.LANTERNS, 2)
@@ -557,6 +576,22 @@ public final class MatriarchService {
 	}
 
 	/** Slain: relics, fragments and pages, and the hoard she guarded is free. */
+	/** Roots lash up from the ground at a prey perched out of reach and drag them down, hard. */
+	private static void lash(Matriarch m, ServerPlayer p) {
+		ServerLevel level = (ServerLevel) m.level();
+		String dim = ElderFx.dim(m);
+		double base = m.getY();
+		for (double y = base; y < p.getY(); y += 1.5) {
+			WorldFx.particleIn(level, "minecraft:spore_blossom_air", p.getX(), y, p.getZ(), 0.3, 0.4, 0.3, 0.02, 4);
+		}
+		WorldFx.soundIn(dim, "minecraft:block.rooted_dirt.break", "hostile", p.getX(), p.getY(), p.getZ(), 3f, 0.5f);
+		WorldFx.soundIn(dim, "minecraft:entity.evoker_fangs.attack", "hostile", p.getX(), p.getY(), p.getZ(), 3f, 0.6f);
+		p.hurtServer(level, level.damageSources().mobAttack(m), 4f);
+		p.setDeltaMovement((m.getX() - p.getX()) * 0.06, -1.2, (m.getZ() - p.getZ()) * 0.06);
+		p.needsSync = true;
+		WorldFx.effect(p, MobEffects.SLOWNESS, 2, 1);
+	}
+
 	public static void onDefeat(Matriarch m, Entity killer) {
 		Fight f = FIGHTS.remove(m.getUUID());
 		ElderArena.release(m);
@@ -572,13 +607,15 @@ public final class MatriarchService {
 		ElderFx.burst(m, "minecraft:soul_fire_flame", 60);
 		AttackFx.burst(level, 0, m.getX(), m.getY() + 2, m.getZ(), 9);
 		ElderFx.cinema(m, 160, ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");
-		m.spawnAtLocation(level, new ItemStack(ModItems.TETHER_FRAGMENT, 4));
-		m.spawnAtLocation(level, new ItemStack(ModItems.WANDERERS_PAGE, 2));
+		ElderFx.loot(m, f.target, new ItemStack(ModItems.TETHER_FRAGMENT, 4));
+		ElderFx.loot(m, f.target, new ItemStack(ModItems.WANDERERS_PAGE, 2));
 		for (int i = 0; i < Math.max(0, Config.MATRIARCH_RELICS); i++) {
-			m.spawnAtLocation(level, RelicService.random());
+			ElderFx.loot(m, f.target, RelicService.random());
 		}
+		// She has fallen to the one she came for, wherever they stood (she does not come for them again), and to all near
+		DataStore.get(f.target).matriarchSlain = true;
 		for (ServerPlayer p : level.players()) {
-			if (p.distanceToSqr(m) < 64 * 64) {
+			if (p.getUUID().equals(f.target) || p.distanceToSqr(m) < 64 * 64) {
 				PlayerData d = DataStore.get(p.getUUID());
 				d.matriarchSlain = true;
 				Advancements.grant(p, Advancements.MATRIARCH_SLAIN);
@@ -594,6 +631,7 @@ public final class MatriarchService {
 		Fight f = FIGHTS.remove(m.getUUID());
 		ElderArena.release(m);
 		if (f != null) {
+			f.abandonUltimate(BOSS);
 			f.bar.removeAllPlayers();
 			if (f.action == ElderBoss.ULTIMATE) {
 				ElderFx.cinema(m, 160, ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");

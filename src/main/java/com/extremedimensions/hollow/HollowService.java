@@ -1345,6 +1345,11 @@ public final class HollowService {
 			Standing.change(kp, Config.TRIBE_REP_KEEPER, "gui.extremedimensions.tribe.why.keeper");
 		}
 		ServerLevel level = (ServerLevel) k.level();
+		if (g.hoard == null) {
+			// A Keeper sent to hunt a hated player guards nothing: it leaves nothing, and does not count towards the Matriarch
+			DataStore.markDirty();
+			return;
+		}
 		k.spawnAtLocation(level, new ItemStack(ModItems.TETHER_FRAGMENT, 2));
 		k.spawnAtLocation(level, new ItemStack(ModItems.WANDERERS_PAGE));
 		if (ThreadLocalRandom.current().nextDouble() < Config.RELIC_KEEPER_CHANCE) {

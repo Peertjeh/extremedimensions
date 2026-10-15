@@ -27,6 +27,8 @@ abstract class ElderFight {
 	int ticks, action, lastAction;
 	double cooldown = 70;
 	boolean enraged, ultimateSpent;
+	/** Who stood within the ultimate's reach as it began: none escapes its curse by leaving, logging out or dying. */
+	final java.util.Set<UUID> doomed = new java.util.HashSet<>();
 	/** Distance walked since the last heavy step. */
 	double stride;
 	final Beat beat = new Beat();
@@ -46,7 +48,18 @@ abstract class ElderFight {
 					bar.addPlayer(q);
 				}
 			}
+			// ... and lets go of those who left (another world, far off): the sky lifts for them
+			for (ServerPlayer q : List.copyOf(bar.getPlayers())) {
+				if (q.level() != level || q.distanceToSqr(b) > 96 * 96) {
+					bar.removePlayer(q);
+				}
+			}
 		}
+	}
+
+	/** Its new prey sees its bar at once. */
+	void makeBarFor(ServerPlayer p) {
+		bar.addPlayer(p);
 	}
 
 	/** How quickly a blow plays out, as a multiple of its own pace. */
@@ -116,6 +129,13 @@ abstract class ElderFight {
 	/** The ultimate begins: black bars and its name for everyone in reach, the world fog closing in. */
 	void beginUltimate(ElderBoss b, String nameKey) {
 		ultimateSpent = true;
+		doomed.clear();
+		double r = Math.max(0, Config.ELDER_ULTIMATE_RADIUS);
+		for (ServerPlayer q : level.players()) {
+			if (!q.isSpectator() && !q.isCreative() && q.isAlive() && q.distanceToSqr(b) <= r * r) {
+				doomed.add(q.getUUID());
+			}
+		}
 		start(b, ElderBoss.ULTIMATE);
 		b.motion.halt();
 		bar.setCreateWorldFog(true);
@@ -131,8 +151,45 @@ abstract class ElderFight {
 	/** The ultimate breaks: its curse, a flash, and the bars lift. */
 	void breakUltimate(ElderBoss b, String bossKey) {
 		ElderFx.cinema(b, Math.max(64, Config.ELDER_ULTIMATE_RADIUS + 16), ModPackets.BossFxPayload.FLASH, 0, 1, "");
-		ElderUltimate.curse(b, bossKey);
+		java.util.Set<UUID> struck = ElderUltimate.curseAll(b, bossKey);
+		// Those it held who slipped away (left, logged out, died) since it began are cursed all the same
+		for (UUID id : doomed) {
+			if (!struck.contains(id)) {
+				ElderUltimate.owe(id, bossKey);
+			}
+		}
+		doomed.clear();
 		ElderFx.shake(b, b.getX(), b.getZ(), Math.max(64, Config.ELDER_ULTIMATE_RADIUS), 1.6f, 40);
+	}
+
+	/** The ultimate is cut short (the Elder leaves): those it held take its curse all the same. */
+	void abandonUltimate(String bossKey) {
+		if (action == ElderBoss.ULTIMATE) {
+			for (UUID id : doomed) {
+				ElderUltimate.owe(id, bossKey);
+			}
+		}
+		doomed.clear();
+	}
+
+	/**
+	 * Someone else to fight when its prey is gone (left, dead, too far): the nearest player near it who can be fought,
+	 * or null.
+	 */
+	ServerPlayer successor(ElderBoss b, double radius) {
+		ServerPlayer best = null;
+		double bestD = radius * radius;
+		for (ServerPlayer q : level.players()) {
+			if (q.getUUID().equals(target) || q.isSpectator() || q.isCreative() || !q.isAlive()) {
+				continue;
+			}
+			double d = q.distanceToSqr(b);
+			if (d < bestD) {
+				bestD = d;
+				best = q;
+			}
+		}
+		return best;
 	}
 
 	void closeUltimate(ElderBoss b) {

@@ -74,6 +74,21 @@ final class ElderFx {
 		return p.blockPosition().offset(6, 0, 6);
 	}
 
+	/**
+	 * What a slain Elder leaves falls at the feet of the one it fought (if they are near and alive), not under the Elder,
+	 * which may hang over lava or the void; it lies there a long while and does not burn.
+	 */
+	static void loot(ElderBoss b, java.util.UUID target, net.minecraft.world.item.ItemStack stack) {
+		ServerLevel level = (ServerLevel) b.level();
+		ServerPlayer p = target == null ? null : level.getServer().getPlayerList().getPlayer(target);
+		Entity at = p != null && p.isAlive() && p.level() == level && p.distanceToSqr(b) < 96 * 96 ? p : b;
+		net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(level, at.getX(), at.getY() + 0.5, at.getZ(), stack);
+		item.setDefaultPickUpDelay();
+		item.setInvulnerable(true);
+		item.setUnlimitedLifetime();
+		level.addFreshEntity(item);
+	}
+
 	/** The yaw that faces from one point towards another. */
 	static float yawTo(Entity from, double x, double z) {
 		return (float) (Mth.atan2(z - from.getZ(), x - from.getX()) * Mth.RAD_TO_DEG) - 90.0F;

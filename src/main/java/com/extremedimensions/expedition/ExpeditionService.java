@@ -46,7 +46,10 @@ public final class ExpeditionService {
 
 	public static void onDimensionChange(ServerPlayer p, PlayerData d, String from, String to) {
 		if (Dims.isBeyond(to) && !d.collapsing) {
-			start(p, d, to);
+			if (!(d.inRun && Dims.SEAM.equals(from))) {
+				start(p, d, to);
+			}
+			// Back from a detour into the Seam, the expedition carries on where it was (it is not begun anew)
 		} else if (Dims.OVERWORLD.equals(to) && Dims.isBeyond(from) && d.inRun && !d.collapsing) {
 			complete(p, d);
 		}
@@ -114,7 +117,11 @@ public final class ExpeditionService {
 		TetherService.clear(p, d, true);
 		d.inRun = false;
 		d.linked.clear();
-		d.expeditions++;
+		// Only an expedition that was one counts and earns: stepping through and straight back is not
+		boolean real = d.runActive >= Math.max(0, Config.ATONE_RETURN_MIN_SECONDS);
+		if (real) {
+			d.expeditions++;
+		}
 		d.longestRun = Math.max(d.longestRun, d.runTime);
 		d.runTime = 0;
 
@@ -127,8 +134,10 @@ public final class ExpeditionService {
 		if (fee > 0 && p.experienceLevel > 0) {
 			p.giveExperienceLevels(-Math.min(fee, p.experienceLevel));
 		}
-		PenaltyService.atone(p, d, false, Config.ATONE_PER_RETURN);
-		// A pact kept to the end pays out
+		if (real) {
+			PenaltyService.atone(p, d, false, Config.ATONE_PER_RETURN);
+		}
+		// A pact kept to the end pays out (its share of the reward is its active time)
 		com.extremedimensions.pact.PactService.kept(p, d);
 		WorldFx.fx(p, Fx.SAFE, 0);
 		WorldFx.particles(p, "minecraft:totem_of_undying", 1.0, 0.5, 0.35, 40);
@@ -153,6 +162,13 @@ public final class ExpeditionService {
 	private static void unravel(ServerPlayer p, PlayerData d) {
 		TetherService.clear(p, d, false);
 		d.tetherTier = 0;
+		// Saved from the Collapse, not returned: the expedition ends here, without the reward of a safe return
+		com.extremedimensions.pact.PactService.broken(p, d);
+		d.inRun = false;
+		d.linked.clear();
+		d.longestRun = Math.max(d.longestRun, d.runTime);
+		d.runTime = 0;
+		DataStore.markDirty();
 		WorldFx.particles(p, "extremedimensions:soul_mote", 1.0, 1.0, 0.0, 40);
 		WorldFx.sound(p, "extremedimensions:rift_open", 1.0f, 1.3f);
 		Journal.unlock(p, d, JournalEntry.WOVEN);
@@ -199,12 +215,14 @@ public final class ExpeditionService {
 		}
 
 		boolean changed = false;
-		if (Dims.isBeyond(dim) && d.inRun && !d.collapsing) {
-			d.currentDrain = d.drainMultiplier() * TetherService.distanceFactor(p, d) * WorldService.drainFactor(dim)
+		// A detour into the Seam does not stop the expedition's charge running out (its distance does not count there)
+		boolean seam = Dims.SEAM.equals(dim);
+		if ((Dims.isBeyond(dim) || seam) && d.inRun && !d.collapsing) {
+			d.currentDrain = d.drainMultiplier() * (seam ? 1.0 : TetherService.distanceFactor(p, d)) * WorldService.drainFactor(dim)
 					* com.extremedimensions.relic.RelicService.drainFactor(d, dim) * com.extremedimensions.elder.FerrymanService.drainFactor(p);
 			double left = AnchorService.drainLinked(p, d, d.currentDrain / 20.0);
 			d.runTime += 1.0 / 20.0;
-			double far = TetherService.arrivalDistance(p, d);
+			double far = seam ? 0 : TetherService.arrivalDistance(p, d);
 			if (far > d.furthest) {
 				d.furthest = far;
 				if (far >= Advancements.LONG_TETHER_BLOCKS) {
@@ -231,7 +249,7 @@ public final class ExpeditionService {
 		} else if (d.collapsing) {
 			pull(p, d);
 		}
-		if (!(Dims.isBeyond(dim) && d.inRun)) {
+		if (!((Dims.isBeyond(dim) || seam) && d.inRun)) {
 			d.currentDrain = d.drainMultiplier();
 		}
 		return changed;
@@ -271,6 +289,7 @@ public final class ExpeditionService {
 		TetherService.clear(p, d, false);
 		com.extremedimensions.pact.PactService.broken(p, d);
 		d.collapsing = true;
+		d.collapseOwed = true;
 		d.collapseRetry = -Config.COLLAPSE_PULL_TICKS;
 		d.collapses++;
 		PenaltyService.owe(d, false);
@@ -315,6 +334,7 @@ public final class ExpeditionService {
 			return;
 		}
 		d.diedToday = true;
+		d.collapseOwed = false;
 		// Every death undoes part of the penance, wherever it happens
 		d.atonementLost += PenaltyService.deathToll(d);
 		// Death always costs the chain (and the Tether item)
@@ -324,6 +344,22 @@ public final class ExpeditionService {
 		if (Dims.OVERWORLD.equals(dim) && DataStore.overworldPenalties() && !d.collapsing) {
 			d.endedIn = Dims.OVERWORLD;
 			PenaltyService.owe(d, true);
+			DataStore.markDirty();
+			return;
+		}
+		if (Dims.SEAM.equals(dim) && !d.collapsing) {
+			// A death in the Seam costs what its Collapse would: a curse of the set of the world the visit began from,
+			// and (on an expedition) the charge carried, as a death beyond would
+			if (d.inRun) {
+				com.extremedimensions.pact.PactService.broken(p, d);
+				for (Anchor a : AnchorService.linked(d)) {
+					a.clear(p.getStringUUID());
+				}
+			}
+			d.inRun = false;
+			d.linked.clear();
+			d.endedIn = dim;
+			PenaltyService.owe(d, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties());
 			DataStore.markDirty();
 			return;
 		}
@@ -358,6 +394,11 @@ public final class ExpeditionService {
 			d.runTime = 0;
 			d.away = !Dims.ours(p);
 			d.dim = d.away ? Dims.OVERWORLD : Dims.of(p);
+			if (!d.away && Dims.isBeyond(Dims.of(p))) {
+				// A respawn point beyond the wound sends the player home, as any respawn does
+				sendToSpawn(p);
+				d.dim = Dims.OVERWORLD;
+			}
 			CurseEffects.applyEffects(p, d);
 			return;
 		}

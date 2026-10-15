@@ -86,6 +86,8 @@ public final class Config {
 	public static int OFFER_COUNT = 3;
 	/** Ticks after respawning before the curse screen opens. */
 	public static int OFFER_DELAY_TICKS = 70;
+	/** Seconds an offer of curse cards may stand unanswered before the Tether chooses one itself (0 = never). */
+	public static int OFFER_TIMEOUT_SECONDS = 120;
 	/** Chance that an offer is multiplied: then every card carries its own multiplier between the two values below. */
 	public static double MULTIPLIER_CHANCE = 0.15;
 	public static int MULTIPLIER_MIN = 2;
@@ -100,6 +102,8 @@ public final class Config {
 	public static int ATONE_PER_MINUTE = 1;
 	public static int ATONE_PER_ELITE = 3;
 	public static int ATONE_PER_RETURN = 5;
+	/** Active seconds beyond the wound an expedition needs before its safe return counts and earns atonement. */
+	public static int ATONE_RETURN_MIN_SECONDS = 60;
 	/** Points per Overworld day survived without dying, and per hostile mob slain at night in the Overworld. */
 	public static int ATONE_PER_DAY = 10;
 	public static int ATONE_PER_NIGHT_KILL = 1;
@@ -651,6 +655,42 @@ public final class Config {
 		}
 	}
 
+	/**
+	 * Values that must stay within bounds or the game breaks (a divisor of zero, an overflowing timer, a negative
+	 * drain): {key, lowest, highest}. Anything set outside them, from the file or the settings screen, is brought back
+	 * inside.
+	 */
+	private static final Object[][] BOUNDS = {
+			{"sync_interval_ticks", 1, 200}, {"join_delay_ticks", 0, 1200}, {"idle_ticks", 20, 72000},
+			{"collapse_pull_ticks", 1, 400}, {"leech_seconds", 1, 3600}, {"rope_segment", 0.25, 8},
+			{"lurker_ward_range", 0, 16}, {"scar_drain_reduction", 0, 0.2}, {"pact_full_seconds", 0, 86400},
+			{"elder_speed", 0.1, 10}, {"elder_attack_speed", 0.1, 10}, {"elder_windup_speed", 0.2, 10},
+			{"elder_ultimate_seconds", 2, 120}, {"elder_arena_linger_seconds", -1, 86400},
+			{"seam_build_budget_ms", 1, 50}, {"seam_fly_range", 0, 128}, {"seam_fly_max", 1, 5000}, {"seam_fly_ticks", 10, 200},
+			{"seam_fly_from", 2, 64}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
+			{"offer_timeout_seconds", 0, 3600}};
+
+	/** Brings a setting back within its bounds, if it has any. */
+	private static void bound(Setting st) {
+		for (Object[] b : BOUNDS) {
+			if (!b[0].equals(st.key())) {
+				continue;
+			}
+			double lo = ((Number) b[1]).doubleValue(), hi = ((Number) b[2]).doubleValue();
+			try {
+				if (st.whole()) {
+					st.field().setInt(null, (int) Math.max(lo, Math.min(hi, st.field().getInt(null))));
+				} else {
+					double v = st.field().getDouble(null);
+					st.field().setDouble(null, Double.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : lo);
+				}
+			} catch (IllegalAccessException e) {
+				// unreachable: the fields are public
+			}
+			return;
+		}
+	}
+
 	/** Takes over every value the json holds (the file's layout); a value that does not fit keeps the current one. */
 	public static void apply(JsonObject json) {
 		for (Setting st : settings()) {
@@ -660,12 +700,17 @@ public final class Config {
 					if (st.whole()) {
 						st.field().setInt(null, v.getAsInt());
 					} else {
-						st.field().setDouble(null, v.getAsDouble());
+						double d = v.getAsDouble();
+						if (!Double.isFinite(d)) {
+							throw new NumberFormatException("not a number");
+						}
+						st.field().setDouble(null, d);
 					}
 				} catch (Exception e) {
 					ExtremeDimensions.LOGGER.warn("Invalid config value for {}, keeping {}", st.key(), st.value());
 				}
 			}
+			bound(st);
 		}
 		// Curses: { "scar": { "max": 3, "per_stack": 2.0 }, ... }
 		JsonObject pens = json.has("penalties") && json.get("penalties").isJsonObject() ? json.getAsJsonObject("penalties") : new JsonObject();
@@ -677,7 +722,10 @@ public final class Config {
 						pen.max = Math.max(0, o.get("max").getAsInt());
 					}
 					if (o.has("per_stack")) {
-						pen.value = o.get("per_stack").getAsDouble();
+						double v = o.get("per_stack").getAsDouble();
+						if (Double.isFinite(v) && v >= 0) {
+							pen.value = v;
+						}
 					}
 				}
 			} catch (Exception e) {
@@ -766,12 +814,14 @@ public final class Config {
 							return false;
 						}
 						st.field().setInt(null, v);
+						bound(st);
 					} else {
 						double v = Double.parseDouble(text);
 						if (!Double.isFinite(v) || v < 0) {
 							return false;
 						}
 						st.field().setDouble(null, v);
+						bound(st);
 					}
 					return true;
 				}

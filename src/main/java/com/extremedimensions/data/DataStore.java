@@ -45,6 +45,10 @@ public final class DataStore {
 		/** "" until the Starved One falls; then "mended" or "severed". */
 		String ending = "";
 		boolean heartBuilt = false;
+		/** The Starved One has fallen (it does not rise again, whether or not its Thread or Shears were used yet). */
+		boolean starvedSlain = false;
+		/** Where wild hoards were wrecked, as "dim|x|z|gameTime": no new one nests near for a while. */
+		List<String> wrecks = new ArrayList<>();
 		/** The Rift Trials scoreboard. */
 		com.extremedimensions.trial.TrialBoard trials = new com.extremedimensions.trial.TrialBoard();
 	}
@@ -77,6 +81,10 @@ public final class DataStore {
 		data.sealBroken = loaded.sealBroken;
 		data.ending = loaded.ending == null ? "" : loaded.ending;
 		data.heartBuilt = loaded.heartBuilt;
+		data.starvedSlain = loaded.starvedSlain;
+		if (loaded.wrecks != null) {
+			data.wrecks = loaded.wrecks;
+		}
 		if (loaded.seamCells != null) {
 			data.seamCells = loaded.seamCells;
 		}
@@ -203,6 +211,20 @@ public final class DataStore {
 
 	public static boolean heartBuilt() {
 		return data.heartBuilt;
+	}
+
+	public static boolean starvedSlain() {
+		return data.starvedSlain;
+	}
+
+	public static void setStarvedSlain(boolean slain) {
+		data.starvedSlain = slain;
+		markDirty();
+	}
+
+	/** Where wild hoards were wrecked ("dim|x|z|gameTime"). */
+	public static List<String> wrecks() {
+		return data.wrecks;
 	}
 
 	public static void setHeartBuilt(boolean built) {
