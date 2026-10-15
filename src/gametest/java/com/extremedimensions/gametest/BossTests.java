@@ -310,7 +310,7 @@ public class BossTests {
 		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
 		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
 		// It must not die to the needles while the rings are counted
-		p.setInvulnerable(true);
+		p.getAbilities().invulnerable = true;
 		Runnable unforce = forceAround(helper, 3);
 		helper.runAfterDelay(5, () -> {
 			int arena = Config.ELDER_ARENA, rings = Config.WEAVER_ULTIMATE_RINGS, seconds = Config.ELDER_ULTIMATE_SECONDS;
@@ -324,7 +324,7 @@ public class BossTests {
 			Runnable restore = () -> {
 				Config.WEAVER_ULTIMATE_RINGS = rings;
 				Config.ELDER_ULTIMATE_SECONDS = seconds;
-				p.setInvulnerable(false);
+				p.getAbilities().invulnerable = false;
 				if (w != null && w.isAlive()) {
 					WeaverService.fade(w);
 				}

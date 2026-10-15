@@ -192,6 +192,8 @@ public final class RaidService {
 
 	private static void fail(Raid r, ServerPlayer p) {
 		r.bar.removeAllPlayers();
+		// The young that swarmed out go home with what they took, and are gone
+		HollowService.releaseYoung(r.young, HollowService.hoardByKey(r.hoard));
 		if (p != null) {
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.raid.failed").withStyle(ChatFormatting.GRAY));
 		}
@@ -200,6 +202,7 @@ public final class RaidService {
 	/** The Keeper fell: the hoard spills its spoils. */
 	private static void win(Raid r, Hoard h, ServerPlayer p) {
 		r.bar.removeAllPlayers();
+		HollowService.releaseYoung(r.young, null);
 		h.raided = true;
 		HollowService.deposit(h, spoils());
 		PlayerData d = DataStore.get(p.getUUID());

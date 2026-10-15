@@ -184,11 +184,11 @@ public final class ServerEvents {
 			} else if (entity instanceof com.extremedimensions.elder.Weaver w) {
 				com.extremedimensions.elder.WeaverService.onDefeat(w, source.getEntity());
 			} else if (entity instanceof Keeper k) {
-				HollowService.onKeeperDeath(k, source.getEntity());
+				HollowService.onKeeperDeath(k, HollowService.culprit(k, source.getEntity()));
 			} else if (entity instanceof Hollowling h) {
-				HollowService.onHollowlingDeath(h, source.getEntity());
+				HollowService.onHollowlingDeath(h, HollowService.culprit(h, source.getEntity()));
 			} else if (entity instanceof Lurker l) {
-				LurkerService.onDeath(l, source.getEntity());
+				LurkerService.onDeath(l, HollowService.culprit(l, source.getEntity()));
 			} else if (entity instanceof com.extremedimensions.seam.VeilRay || entity instanceof com.extremedimensions.seam.Thinned) {
 				com.extremedimensions.seam.SeamFauna.onDeath(entity);
 				if (source.getEntity() instanceof ServerPlayer killer) {
@@ -221,7 +221,9 @@ public final class ServerEvents {
 						? SeamService.openRift(sp, hit.getBlockPos(), hit.getDirection(), player.getItemInHand(hand))
 						: InteractionResult.SUCCESS;
 			}
-			if (player instanceof ServerPlayer sp && hand == InteractionHand.MAIN_HAND && level.getBlockState(hit.getBlockPos()).is(Blocks.BARREL)) {
+			// Only when the barrel really opens (sneaking with something in hand places or uses it instead)
+			if (player instanceof ServerPlayer sp && hand == InteractionHand.MAIN_HAND && level.getBlockState(hit.getBlockPos()).is(Blocks.BARREL)
+					&& !(sp.isSecondaryUseActive() && (!sp.getMainHandItem().isEmpty() || !sp.getOffhandItem().isEmpty()))) {
 				Hoard h = HollowService.hoardAt(Dims.of(level), hit.getBlockPos());
 				if (h != null) {
 					HollowService.onHoardOpened(sp, h);

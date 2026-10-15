@@ -570,8 +570,8 @@ public final class LurkerService {
 		String dim = l.level().dimension().identifier().toString();
 		String sound = struck ? "extremedimensions:lurker_shriek" : "extremedimensions:lurker_flee";
 		WorldFx.soundIn(dim, sound, "hostile", l.getX(), l.getY() + 2.5, l.getZ(), 1.6f, 1f);
-		if (!struck && (!st.loot.stack.isEmpty() || st.loot.levels > 0)) {
-			// It runs home to its hoard: follow it, and you find where your things went
+		if (!st.loot.stack.isEmpty() || st.loot.levels > 0) {
+			// It runs home to its hoard (struck or not): follow it, and you find where your things went
 			st.hoard = HollowService.hoardFor(p, l.position());
 			if (st.hoard != null) {
 				st.limit = 20 * 25;
@@ -739,8 +739,24 @@ public final class LurkerService {
 		WorldFx.particleIn(dim, "minecraft:reverse_portal", l.getX(), l.getY() + 1.4, l.getZ(), 0.3, 1.0, 0.3, 0.1, 30);
 		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", l.getX(), l.getY() + 1.6, l.getZ(), 0.5, 1.2, 0.5, 0.0, 30);
 		WorldFx.soundIn(dim, "extremedimensions:lurker_vanish", "hostile", l.getX(), l.getY() + 1.5, l.getZ(), 1f, 1f);
-		STATES.remove(l.getUUID());
+		State st = STATES.remove(l.getUUID());
 		LEVELS.remove(l.getUUID());
+		if (st != null && (!st.loot.stack.isEmpty() || st.loot.levels > 0) && l.level() instanceof ServerLevel level) {
+			// What it took is never simply gone (its victim left, it was cut off, the server stopped): it ends up in the
+			// hoard it would have run to, or falls where it stood
+			Hoard h = st.hoard;
+			ServerPlayer from = st.loot.from == null || WorldFx.server() == null ? null : WorldFx.server().getPlayerList().getPlayer(st.loot.from);
+			if (h == null && from != null && from.level() == level) {
+				h = HollowService.hoardFor(from, l.position());
+			}
+			if (h != null) {
+				HollowService.stash(h, st.loot.stack, st.loot.levels);
+			} else if (!st.loot.stack.isEmpty()) {
+				l.spawnAtLocation(level, st.loot.stack);
+			}
+			st.loot.stack = ItemStack.EMPTY;
+			st.loot.levels = 0;
+		}
 		l.discard();
 	}
 

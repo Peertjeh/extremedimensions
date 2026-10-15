@@ -42,10 +42,12 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -104,6 +106,8 @@ public final class HollowService {
 		ServerBossEvent bar;
 		int ticks;
 		int nextTrick = 120;
+		/** Ticks its prey has stayed perched out of its reach above it. */
+		int perched;
 	}
 
 	private static final Map<UUID, Little> LITTLES = new HashMap<>();
@@ -461,6 +465,7 @@ public final class HollowService {
 				}
 				if (d2 < 96 * 96) {
 					ambience(h, d2);
+					unhook(h);
 				}
 				if (d2 < 44 * 44) {
 					populate(h);
@@ -470,8 +475,54 @@ public final class HollowService {
 				wild(p);
 			}
 		}
-		wrecked.forEach(HollowService::abandon);
+		for (Hoard h : wrecked) {
+			// Blown up, burnt, drained from below: whoever is near answers for it, as if they had broken it themselves
+			ServerLevel level = levelOf(h.dim);
+			ServerPlayer near = null;
+			if (level != null) {
+				Player found = level.getNearestPlayer(h.x + 0.5, h.y, h.z + 0.5, 24, e -> e instanceof ServerPlayer sp && !sp.isSpectator());
+				near = found instanceof ServerPlayer sp ? sp : null;
+			}
+			if (level != null) {
+				onBroken(level, new BlockPos(h.x, h.y, h.z), near);
+			} else {
+				abandon(h);
+			}
+		}
 		cull(s);
+	}
+
+	/** A hopper (or a hopper cart) set under a hoard's barrel to drain it is pulled off: the tribe's things are not taken that way. */
+	private static void unhook(Hoard h) {
+		ServerLevel level = levelOf(h.dim);
+		BlockPos below = new BlockPos(h.x, h.y - 1, h.z);
+		if (level == null || !level.isLoaded(below)) {
+			return;
+		}
+		if (level.getBlockState(below).is(Blocks.HOPPER)) {
+			level.destroyBlock(below, true);
+		}
+		for (Entity e : level.getEntities((Entity) null, new net.minecraft.world.phys.AABB(below).inflate(0.5),
+				e -> "hopper_minecart".equals(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).getPath()))) {
+			e.kill(level);
+		}
+	}
+
+	/** Whether a hoard was wrecked near here not long ago (no new one nests there yet). */
+	private static boolean wreckedNear(ServerLevel level, String dim, double x, double z, double range) {
+		long now = level.getGameTime(), keep = Math.max(0, Config.HOARD_WRECK_MINUTES) * 1200L;
+		DataStore.wrecks().removeIf(w -> {
+			String[] v = w.split("\\|");
+			return v.length != 4 || now - Long.parseLong(v[3]) > keep || now < Long.parseLong(v[3]);
+		});
+		for (String w : DataStore.wrecks()) {
+			String[] v = w.split("\\|");
+			double dx = Integer.parseInt(v[1]) - x, dz = Integer.parseInt(v[2]) - z;
+			if (v[0].equals(dim) && dx * dx + dz * dz < range * range) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static final Map<String, Long> WHISPERED = new HashMap<>();
@@ -521,6 +572,9 @@ public final class HollowService {
 	/** The nest is no more: the hoard is struck off and its young scatter into the dark (a companion stays). */
 	private static void abandon(Hoard h) {
 		DataStore.hoards().remove(h);
+		ServerLevel at = levelOf(h.dim);
+		// Remembered a while: no new hoard nests near a wrecked one (and with it a fresh Keeper and trinkets)
+		DataStore.wrecks().add(h.dim + "|" + h.x + "|" + h.z + "|" + (at == null ? 0 : at.getGameTime()));
 		DataStore.markDirty();
 		List<Mob> young = new ArrayList<>();
 		for (Map.Entry<UUID, Little> e : LITTLES.entrySet()) {
@@ -581,6 +635,9 @@ public final class HollowService {
 				return;
 			}
 		}
+		if (wreckedNear(level, Dims.of(p), p.getX(), p.getZ(), 256)) {
+			return;
+		}
 		if (ThreadLocalRandom.current().nextDouble() >= Config.HOARD_WILD_CHANCE) {
 			return;
 		}
@@ -633,6 +690,13 @@ public final class HollowService {
 			if (!(ent instanceof Hollowling h) || !h.isAlive()) {
 				it.remove();
 				LEVELS.remove(e.getKey());
+				// Gone with its chunk while carrying something home: it gets there all the same
+				Little lost = e.getValue();
+				Hoard home = lost.carried.isEmpty() ? null : byKey(lost.hoard);
+				if (home != null) {
+					deposit(home, new ArrayList<>(List.of(lost.carried)));
+					lost.carried = ItemStack.EMPTY;
+				}
 				continue;
 			}
 			Little st = e.getValue();
@@ -794,6 +858,11 @@ public final class HollowService {
 	}
 
 	private static void steal(Hollowling h, Little st, ServerPlayer p) {
+		if (!st.carried.isEmpty()) {
+			// Its hands are full already
+			flee(h, st);
+			return;
+		}
 		var inv = p.getInventory();
 		List<Integer> slots = new ArrayList<>();
 		for (int i = 0; i < 36; i++) {
@@ -876,14 +945,9 @@ public final class HollowService {
 		if (Config.TRIBE_ENABLED > 0 && BarterService.LIKES.containsKey(stack.getItem()) && st.carried.isEmpty() && !st.bold) {
 			ItemStack gift = BarterService.gift(p, stack);
 			if (!gift.isEmpty()) {
+				// A gift is the tribe's now: it vanishes into the young one's rags (it is not put where it could be taken back)
 				giggle(h);
 				WorldFx.particleIn(h.level().dimension().identifier().toString(), "extremedimensions:soul_mote", h.getX(), h.getY() + 0.8, h.getZ(), 0.3, 0.3, 0.3, 0.0, 8);
-				if (st.mode != Mode.COMPANION && byKey(st.hoard) != null) {
-					// It hurries home with it
-					st.carried = gift;
-					st.mode = Mode.CARRY;
-					st.ticks = 0;
-				}
 			}
 			return InteractionResult.SUCCESS;
 		}
@@ -930,7 +994,12 @@ public final class HollowService {
 		WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_bond", "neutral", h.getX(), h.getY() + 0.8, h.getZ(), 1f, 1f);
 		Advancements.grant(p, Advancements.HOLLOW_BOUND);
 		Journal.unlock(p, d, JournalEntry.LITTLE_THIEVES);
-		Standing.change(p, Config.TRIBE_REP_BOND, "gui.extremedimensions.tribe.why.bond");
+		// The tribe takes note of a bond once in a while, not of every bond made again after a companion is lost
+		long day = ((ServerLevel) h.level()).getServer().overworld().getGameTime() / 24000L;
+		if (d.bondRepDay < 0 || day - d.bondRepDay >= Math.max(0, Config.TRIBE_BOND_REP_DAYS)) {
+			d.bondRepDay = day;
+			Standing.change(p, Config.TRIBE_REP_BOND, "gui.extremedimensions.tribe.why.bond");
+		}
 		DataStore.markDirty();
 	}
 
@@ -961,7 +1030,9 @@ public final class HollowService {
 	/** Whether this entity is a Hollowling this player can barter with right now (for the barter screen's buttons). */
 	public static boolean canBarter(ServerPlayer p, Entity e) {
 		Little st = e == null ? null : LITTLES.get(e.getUUID());
-		return st != null && !st.bold && e.isAlive() && e.level() == p.level() && e.distanceToSqr(p) <= BarterService.REACH * BarterService.REACH;
+		boolean theirs = st != null && (st.mode == Mode.BARTER && p.getUUID().equals(st.trader) || st.mode == Mode.COMPANION && p.getUUID().equals(st.owner));
+		return theirs && !st.bold && !st.brood && e.isAlive() && e.level() == p.level() && !p.isSpectator()
+				&& !com.extremedimensions.coop.FallenService.fallen(p) && e.distanceToSqr(p) <= BarterService.REACH * BarterService.REACH;
 	}
 
 	private static void toughen(Hollowling h) {
@@ -1233,7 +1304,23 @@ public final class HollowService {
 				continue;
 			}
 			if (g.ticks % 20 == 0) {
+				// It turns on whoever hurts it most recently, not only on the one who woke it
+				if (k.getLastHurtByMob() instanceof ServerPlayer attacker && attacker != p && attacker.isAlive() && !attacker.isCreative()
+						&& !attacker.isSpectator() && attacker.level() == k.level() && k.distanceToSqr(attacker) < 48 * 48) {
+					p = attacker;
+					g.target = attacker.getUUID();
+					g.bar.addPlayer(attacker);
+				}
 				k.setTarget(p);
+			}
+			// Perched out of its reach (a pillar, a ledge): it reaches up and hauls them down
+			if (p.getY() - k.getY() > 3.5 && k.distanceToSqr(p.getX(), k.getY(), p.getZ()) < 10 * 10 && !p.isCreative()) {
+				if (++g.perched >= 60) {
+					g.perched = 0;
+					haul(k, p);
+				}
+			} else {
+				g.perched = 0;
 			}
 			g.bar.setProgress(k.getHealth() / k.getMaxHealth());
 			double d2 = k.distanceToSqr(p);
@@ -1257,6 +1344,16 @@ public final class HollowService {
 			}
 		}
 		later.forEach(Runnable::run);
+	}
+
+	/** The Keeper reaches up at a prey out of its reach and drags them down to it. */
+	private static void haul(Keeper k, ServerPlayer p) {
+		ServerLevel level = (ServerLevel) k.level();
+		roar(k);
+		WorldFx.particleIn(level, "extremedimensions:lurker_wisp", p.getX(), p.getY() + 1, p.getZ(), 0.4, 0.8, 0.4, 0.0, 20);
+		p.hurtServer(level, level.damageSources().mobAttack(k), 3f);
+		p.setDeltaMovement((k.getX() - p.getX()) * 0.12, -1.0, (k.getZ() - p.getZ()) * 0.12);
+		p.needsSync = true;
 	}
 
 	private static void blinkBehind(Keeper k, ServerPlayer p) {
@@ -1313,9 +1410,43 @@ public final class HollowService {
 		return out;
 	}
 
+	/**
+	 * A raid is over: the young it sent out are gone. What they carry goes into the hoard (a failed raid) or falls where
+	 * they stand (a raid won, its hoard null).
+	 */
+	public static void releaseYoung(List<UUID> ids, Hoard home) {
+		for (UUID id : List.copyOf(ids)) {
+			Little st = LITTLES.get(id);
+			ServerLevel level = LEVELS.get(id);
+			Entity e = level == null ? null : level.getEntity(id);
+			if (st != null && home != null && !st.carried.isEmpty()) {
+				deposit(home, new ArrayList<>(List.of(st.carried)));
+				st.carried = ItemStack.EMPTY;
+			}
+			if (e instanceof Mob m) {
+				fade(m);
+			}
+		}
+		ids.clear();
+	}
+
 	/** Whether this Hollowling is still about. */
 	public static boolean youngAlive(UUID id) {
 		return LITTLES.containsKey(id);
+	}
+
+	/**
+	 * Who is to blame for one of the tribe's deaths: the killer if a player, the owner of a tamed animal that did it,
+	 * or else whoever last hurt it (lava, a fall, a trap after their blow). Null if no player had a hand in it.
+	 */
+	public static Entity culprit(LivingEntity dead, Entity killer) {
+		if (killer instanceof ServerPlayer) {
+			return killer;
+		}
+		if (killer instanceof net.minecraft.world.entity.OwnableEntity o && o.getOwner() instanceof ServerPlayer owner) {
+			return owner;
+		}
+		return dead.getLastHurtByPlayer() instanceof ServerPlayer p ? p : killer;
 	}
 
 	/** A hoard's guardian has fallen: what it kept is free to take. */
@@ -1375,7 +1506,12 @@ public final class HollowService {
 		if (g != null) {
 			g.bar.removeAllPlayers();
 		}
-		LITTLES.remove(m.getUUID());
+		Little gone = LITTLES.remove(m.getUUID());
+		if (gone != null && !gone.carried.isEmpty() && m.level() instanceof ServerLevel sl) {
+			// What it carried is left behind where it fades, never lost
+			m.spawnAtLocation(sl, gone.carried);
+			gone.carried = ItemStack.EMPTY;
+		}
 		LEVELS.remove(m.getUUID());
 		m.discard();
 	}

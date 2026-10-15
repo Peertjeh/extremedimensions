@@ -76,7 +76,7 @@ final class ElderFx {
 
 	/**
 	 * What a slain Elder leaves falls at the feet of the one it fought (if they are near and alive), not under the Elder,
-	 * which may hang over lava or the void; it lies there a long while and does not burn.
+	 * which may hang over lava or the void; it lies there a long while.
 	 */
 	static void loot(ElderBoss b, java.util.UUID target, net.minecraft.world.item.ItemStack stack) {
 		ServerLevel level = (ServerLevel) b.level();
@@ -84,7 +84,6 @@ final class ElderFx {
 		Entity at = p != null && p.isAlive() && p.level() == level && p.distanceToSqr(b) < 96 * 96 ? p : b;
 		net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(level, at.getX(), at.getY() + 0.5, at.getZ(), stack);
 		item.setDefaultPickUpDelay();
-		item.setInvulnerable(true);
 		item.setUnlimitedLifetime();
 		level.addFreshEntity(item);
 	}

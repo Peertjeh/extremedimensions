@@ -193,6 +193,8 @@ public final class Config {
 
 	/** Chance every 30 seconds, in a dark forest, pale garden or soul sand valley, that an old hoard lies nearby. */
 	public static double HOARD_WILD_CHANCE = 0.08;
+	/** Minutes (of the world's time) after a hoard is wrecked before a new one may nest within 256 blocks of it. */
+	public static int HOARD_WRECK_MINUTES = 120;
 	/** Hollowlings that play around a hoard someone is near. */
 	public static int HOLLOWLINGS_PER_HOARD = 3;
 	/** Seconds before a killed Hollowling is replaced by another (one at a time, each a full wait after the last). */
@@ -480,6 +482,8 @@ public final class Config {
 	public static int TRIBE_REP_BARTER = 1;
 	/** Standing gained when a Hollowling bonds with the player. */
 	public static int TRIBE_REP_BOND = 10;
+	/** In-game days before bonding with one of the young again earns standing (a bond made again and again earns it once). */
+	public static int TRIBE_BOND_REP_DAYS = 3;
 	/** Standing lost for killing a Hollowling (negative). */
 	public static int TRIBE_REP_HOLLOWLING = -12;
 	/** Standing lost for killing a Keeper (negative). */

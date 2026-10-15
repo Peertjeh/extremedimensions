@@ -27,6 +27,8 @@ public class PlayerData {
 	/** Online seconds until the tribe forgets a point of a grudge, and until it next hunts this player. */
 	public int tribeForgetIn = 0, tribeHuntIn = 0;
 	public int raidsWon = 0, bartered = 0;
+	/** The day (Overworld game days) the tribe last took note of a bond with one of its young; -1 = never. */
+	public long bondRepDay = -1;
 	public String name = null;
 	/** Whether the player's charge in their anchors is open to their allies. */
 	public boolean shareAnchors = false;
