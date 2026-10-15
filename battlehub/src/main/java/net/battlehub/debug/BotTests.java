@@ -189,7 +189,11 @@ final class BotTests {
 	private static void partyFill(MinecraftServer server, Script s) {
 		String tag = "bots party";
 		SelfTest.reset(s, tag);
-		s.run(tag + ": A joins Sumo alone", () -> {
+		s.run(tag + ": A joins Sumo alone (short countdown for the test)", () -> {
+			VARS.put("partyCountdown", ConfigManager.config().timings.partyCountdownSeconds);
+			VARS.put("partyFull", ConfigManager.config().timings.partyFullCountdownSeconds);
+			ConfigManager.config().timings.partyCountdownSeconds = 4;
+			ConfigManager.config().timings.partyFullCountdownSeconds = 2;
 			cfg().fillQueues = true;
 			cfg().fillAfterSeconds = 1;
 			cfg().partyFillTo = 4;
@@ -209,7 +213,11 @@ final class BotTests {
 			return p(A).getLastHurtByMob() != null;
 		});
 		endAndClean(s, tag);
-		s.run(tag + ": filling off", () -> cfg().fillQueues = false);
+		s.run(tag + ": filling off, countdown as before", () -> {
+			cfg().fillQueues = false;
+			ConfigManager.config().timings.partyCountdownSeconds = (int) VARS.get("partyCountdown");
+			ConfigManager.config().timings.partyFullCountdownSeconds = (int) VARS.get("partyFull");
+		});
 	}
 
 	/** A bot on an easy parkour course gets past the first platforms. */
