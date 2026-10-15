@@ -47,8 +47,11 @@ public class ClientShots implements FabricClientGameTest {
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
 			double nx = p.getX() + 120, nz = p.getZ();
-			int top = p.level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, (int) Math.floor(nx), (int) Math.floor(nz));
-			p.teleportTo(nx, top, nz);
+			int bx = (int) Math.floor(nx), bz = (int) Math.floor(nz);
+			// load the chunk first: an unloaded one has no ground to stand on
+			p.level().getChunk(bx >> 4, bz >> 4);
+			int top = p.level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz);
+			p.teleportTo(nx, top > p.getY() - 48 ? top : p.getY(), nz);
 		});
 		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
 		ctx.waitTicks(20);
