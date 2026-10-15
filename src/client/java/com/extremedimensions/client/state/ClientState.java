@@ -93,6 +93,8 @@ public final class ClientState {
 	}
 
 	public static void apply(ModPackets.StatePayload s) {
+		// What follows holds for the world the client stands in now, and only there
+		stateLevel = net.minecraft.client.Minecraft.getInstance().level;
 		nearNether = s.nearNether();
 		nearEnd = s.nearEnd();
 		runCharge = s.runCharge();
@@ -119,9 +121,30 @@ public final class ClientState {
 		}
 	}
 
-	/** In another mod's world: the mod sleeps there, and its HUD with it. */
+	/**
+	 * The client world the last state came from. In any other world (after a portal, or on another server behind a
+	 * proxy, which never says goodbye to the client) what the client holds is stale, and nothing of it acts until the
+	 * server speaks again; a server without the mod never does.
+	 */
+	private static Object stateLevel = null;
+
+	/** In another mod's world, or in a world the server has said nothing about: the mod sleeps there, and its HUD with it. */
 	public static boolean away() {
-		return dimCode == 4;
+		var level = net.minecraft.client.Minecraft.getInstance().level;
+		return dimCode == 4 || level == null || level != stateLevel;
+	}
+
+	/** Every client tick: in a world the mod sleeps in, no pocket stays sealed and every stack holds its full count. */
+	public static void tick() {
+		if (away()) {
+			SealedPockets.client = 0;
+			Dwindling.client = 0;
+		}
+	}
+
+	/** Whether the server the client plays on runs the mod at all (its screens and requests mean nothing elsewhere). */
+	public static boolean modOnServer() {
+		return net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.canSend(ModPackets.RequestCursesPayload.TYPE);
 	}
 
 	/** Whether a Collapse sequence is still running (the death screen is skipped during it). */
@@ -210,6 +233,7 @@ public final class ClientState {
 
 	/** Back to defaults when leaving a world. */
 	public static void reset() {
+		stateLevel = null;
 		nearNether = -1;
 		nearEnd = -1;
 		runCharge = 0;

@@ -74,6 +74,24 @@ public class WorldTests {
 		helper.succeed();
 	}
 
+	/** Any player, operator or not, can ask where they stand and whether the mod acts there. */
+	@GameTest
+	public void anyoneMayAskWhereTheModActs(GameTestHelper helper) throws Exception {
+		ServerPlayer p = TestPlayers.survivor(helper);
+		var source = p.createCommandSourceStack();
+		int acts = helper.getLevel().getServer().getCommands().getDispatcher().execute("tether where", source);
+		CurseTests.check(helper, acts == 1, "/tether where in the Overworld should say the mod acts here, got %s", acts);
+		boolean blocked;
+		try {
+			helper.getLevel().getServer().getCommands().getDispatcher().execute("tether curse clear", source);
+			blocked = false;
+		} catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+			blocked = true;
+		}
+		CurseTests.check(helper, blocked, "the operator commands should stay closed to a player who is no operator");
+		helper.succeed();
+	}
+
 	@GameTest
 	public void worldDataSurvivesACrashMidWrite(GameTestHelper helper) throws Exception {
 		Path dir = Files.createTempDirectory("ed-data");

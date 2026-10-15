@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.13.3: Asleep Means Asleep
+
+### Fixed
+- **No curse follows you onto a server or into a world without the mod.** Behind a proxy (a hub such as a battle
+  hub), switching servers never disconnects the client, so it kept the last server's curses and went on sealing
+  pockets, shrinking stacks, hatching the hunger bar and showing the HUD. The client now trusts what it knows only in
+  the world the server last told it about: in any other world, until the server speaks again (and a server without
+  the mod never does), nothing of the mod acts and its HUD stays hidden.
+- On a server without the mod the journal and Curses buttons no longer appear in the inventory, and the mod's keys do
+  nothing.
+
+### Added
+- **`/tether where`**, for every player: names the world you stand in, the version of the mod on the server, and
+  whether the mod acts there. If it answers "Unknown command", the server runs an older version (or no Extreme
+  Dimensions at all). Every other `/tether` command stays for operators only.
+
 ## 2.13.2: Within the Wound's Reach
 
 ### Changed

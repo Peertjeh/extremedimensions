@@ -26,47 +26,64 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
-/** Operator commands under {@code /tether}: Overworld curses on or off, curses set or cleared, Lurkers, hoards, the Seam. */
+/**
+ * Commands under {@code /tether}: {@code where} for everyone (the world you stand in and whether the mod acts there);
+ * for operators Overworld curses on or off, curses set or cleared, Lurkers, hoards, the Seam, bosses and difficulty.
+ */
 public final class TetherCommand {
 	private TetherCommand() {}
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+		java.util.function.Predicate<CommandSourceStack> op = Commands.hasPermission(Commands.LEVEL_GAMEMASTERS);
 		dispatcher.register(Commands.literal("tether")
-				.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
-				.then(Commands.literal("overworld_penalties")
+				// Anyone may ask where they stand; everything else is for operators
+				.then(Commands.literal("where").executes(c -> where(c.getSource())))
+				.then(Commands.literal("overworld_penalties").requires(op)
 						.executes(c -> show(c.getSource()))
 						.then(Commands.literal("on").executes(c -> set(c.getSource(), true)))
 						.then(Commands.literal("off").executes(c -> set(c.getSource(), false))))
-				.then(Commands.literal("lurker")
+				.then(Commands.literal("lurker").requires(op)
 						.then(Commands.literal("watch").executes(c -> lurker(c.getSource(), "watch")))
 						.then(Commands.literal("stalk").executes(c -> lurker(c.getSource(), "stalk")))
 						.then(Commands.literal("drain").executes(c -> lurker(c.getSource(), "drain"))))
-				.then(Commands.literal("hoard").executes(c -> hoard(c.getSource())))
-				.then(Commands.literal("boss")
+				.then(Commands.literal("hoard").requires(op).executes(c -> hoard(c.getSource())))
+				.then(Commands.literal("boss").requires(op)
 						.then(Commands.literal("matriarch").executes(c -> boss(c.getSource(), "matriarch")))
 						.then(Commands.literal("ferryman").executes(c -> boss(c.getSource(), "ferryman")))
 						.then(Commands.literal("weaver").executes(c -> boss(c.getSource(), "weaver"))))
-				.then(Commands.literal("seam").executes(c -> seam(c.getSource())))
-				.then(Commands.literal("break_seal").executes(c -> {
+				.then(Commands.literal("seam").requires(op).executes(c -> seam(c.getSource())))
+				.then(Commands.literal("break_seal").requires(op).executes(c -> {
 					MendingService.breakSeal(c.getSource().getServer());
 					return 1;
 				}))
-				.then(Commands.literal("seam_showcase").executes(c -> {
+				.then(Commands.literal("seam_showcase").requires(op).executes(c -> {
 					int n = SeamService.showcase(c.getSource().getServer());
 					c.getSource().sendSuccess(() -> Component.literal("Designed " + n + " Seam structures; building " + SeamArchitect.pending() + " blocks"), false);
 					return n;
 				}))
-				.then(Commands.literal("storm").executes(c -> {
+				.then(Commands.literal("storm").requires(op).executes(c -> {
 					WorldService.begin(c.getSource().getPlayerOrException(), c.getSource().getServer().getTickCount());
 					return 1;
 				}))
-				.then(preset())
-				.then(Commands.literal("curse")
+				.then(preset().requires(op))
+				.then(Commands.literal("curse").requires(op)
 						.then(Commands.literal("clear").executes(c -> clearCurses(c.getSource())))
 						.then(Commands.argument("id", StringArgumentType.word())
 								.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.Arrays.stream(Penalty.values()).map(p -> p.id), b))
 								.then(Commands.argument("stacks", IntegerArgumentType.integer(0, 99))
 										.executes(c -> setCurse(c.getSource(), StringArgumentType.getString(c, "id"), IntegerArgumentType.getInteger(c, "stacks")))))));
+	}
+
+	/** {@code /tether where}: the world the player stands in, and whether the mod acts there (anyone may ask). */
+	private static int where(CommandSourceStack src) {
+		var level = src.getLevel();
+		String id = level.dimension().identifier().toString();
+		boolean ours = com.extremedimensions.server.Dims.ours(level);
+		String version = net.fabricmc.loader.api.FabricLoader.getInstance().getModContainer(com.extremedimensions.ExtremeDimensions.MOD_ID)
+				.map(m -> m.getMetadata().getVersion().getFriendlyString()).orElse("?");
+		src.sendSuccess(() -> Component.translatable(ours ? "commands.extremedimensions.where.ours" : "commands.extremedimensions.where.asleep",
+				id, version), false);
+		return ours ? 1 : 0;
 	}
 
 	/** {@code /tether boss <name>}: one of the Elders comes for the player at once, whatever the world's rules. */

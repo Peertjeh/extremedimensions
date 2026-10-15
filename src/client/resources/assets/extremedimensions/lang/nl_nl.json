@@ -1096,6 +1096,8 @@
   "gui.extremedimensions.elder.starved_ravenous": "De Starved One raakt uitgehongerd.",
   "commands.extremedimensions.boss": "%s komt voor je.",
   "commands.extremedimensions.boss_failed": "Hij kon hier niet komen: geen grond om op te staan, of hij zit al achter je aan.",
+  "commands.extremedimensions.where.ours": "Je staat in %s. Extreme Dimensions %s werkt in deze wereld.",
+  "commands.extremedimensions.where.asleep": "Je staat in %s. Extreme Dimensions %s slaapt in deze wereld: je vloeken werken hier niet.",
   "advancements.extremedimensions.matriarch_slain.title": "Moeder der maskers",
   "advancements.extremedimensions.matriarch_slain.description": "Versla de Matriarch, de oudste der Keepers",
   "advancements.extremedimensions.ferryman_slain.title": "Zwartrijder",

@@ -72,17 +72,17 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				client.gui.setScreen(new SettingsScreen(null));
 			}
 			while (OPEN_CURSES.consumeClick()) {
-				if (client.getConnection() != null) {
+				if (client.getConnection() != null && ClientState.modOnServer()) {
 					ClientPlayNetworking.send(new ModPackets.RequestCursesPayload(true));
 				}
 			}
 			while (OPEN_TRIALS.consumeClick()) {
-				if (client.getConnection() != null) {
+				if (client.getConnection() != null && ClientState.modOnServer()) {
 					com.extremedimensions.client.screen.TrialsScreen.request(null);
 				}
 			}
 			while (OPEN_JOURNAL.consumeClick()) {
-				if (client.getConnection() != null) {
+				if (client.getConnection() != null && ClientState.modOnServer()) {
 					ClientPlayNetworking.send(new ModPackets.RequestJournalPayload());
 				}
 			}
@@ -98,7 +98,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				client.gui.setScreen(null);
 				return;
 			}
-			if (screen instanceof InventoryScreen inv) {
+			// On a server without the mod (a hub behind a proxy, say) its buttons would only ask into the void
+			if (screen instanceof InventoryScreen inv && ClientState.modOnServer()) {
 				JournalButton.attach(inv);
 				CursesButton.attach(inv);
 			}
@@ -110,6 +111,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 			}
 		});
 
+		ClientTickEvents.END_CLIENT_TICK.register(mc -> ClientState.tick());
 		ClientTickEvents.END_CLIENT_TICK.register(MenuMusic::tick);
 		ClientTickEvents.END_CLIENT_TICK.register(com.extremedimensions.client.audio.BossMusic::tick);
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> com.extremedimensions.client.fx.CameraShake.tick());
