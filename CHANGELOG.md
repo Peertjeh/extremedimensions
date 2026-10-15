@@ -1,5 +1,73 @@
 # Changelog
 
+## 2.22.0: The Seam Rises
+
+### Added
+- **The Seam builds itself before your eyes.** Out to the edge of the fog (96 blocks), every block of an island that
+  will show flies in out of the nothing, turning and growing as it comes, and settles into its place, bottom to top:
+  islands, bridges, spires and villages come together around you instead of simply being there. The ground right
+  under anyone's feet is always there at once, and a block about to be stepped on lands straight away.
+- **You arrive on a patch of ground and the island comes together around you**: only the ground round the landing and
+  the rift is there when you step through; the rest of the arrival island flies in around you.
+- Islands left half built by a restart or a crash are built again on the next visit.
+- New settings: how far off the Seam builds itself before your eyes, how many blocks fly at once, how long a flight
+  takes and how far off blocks appear; the wait before an unanswered curse offer is chosen for you; the active time a
+  return needs to count; the active part of a night its dawn needs; how often a bond with one of the young earns
+  standing; how long a wrecked hoard keeps others away; and how many curse stacks one player can be relieved of a day.
+
+### Changed
+- **A curse offer left unanswered for two minutes is chosen for you**, so a closed or broken screen never leaves a curse
+  hanging.
+- **A return counts only after a real expedition**: a minute of active play beyond the wound before a safe return
+  counts towards your expeditions or earns atonement (stepping through and back earns nothing).
+- **A dawn earns atonement only if you were up and about in its night** (two active minutes): standing idle or
+  sleeping the night away earns nothing.
+- **Relics are bound and taken off only at home and on your feet**, not on an expedition, in the Seam or fallen. The
+  Kindred Knot shortens the wait to fall again only if it was bound when you fell.
+- **Pacts**: curses that never act beyond the wound (Debt, Dimensional Anchors, Stormcalled, Feral Scent, Frostbitten
+  and Short Breath) can no longer be sworn, and sworn stacks above a curse's maximum count for nothing.
+- **Carrying curses for allies**: the wait before carrying for the same ally again is remembered across restarts, the
+  carrier needs room for the stack *and* its toll, and no one is relieved of more than three stacks a day, however many
+  friends offer.
+- **An anchor that keeps someone else's charge cannot be broken** out from under them.
+- **Dying in the Seam has a price**: it owes a curse, and on an expedition it also costs the charge you drew on and
+  breaks your pact.
+- **The Starved One rises only once.** Its relic goes only to those who really fought it (not in creative or
+  spectator mode).
+- **The Matriarch and the Keeper pull down those who perch above them** out of reach, and the Keeper turns on whoever
+  last struck it.
+- **Logging out or dying during an Elder's ultimate no longer escapes its curses**: they are laid on you when you come
+  back, and the fight goes on with the next player near instead of ending. The Ferryman's fare is collected the same
+  way.
+- **An Elder's loot lands at the feet of the one it was fighting**, never over lava or the void, and no longer
+  despawns.
+- **A wrecked hoard keeps others away**: no new hoard nests within 256 blocks for two hours, and wrecking one counts
+  against the nearest player. Hoppers and hopper carts under a hoard's barrel are taken away.
+- **The Keepers that come hunting you carry no hoard loot.** A bond with one of the young earns standing once in three
+  days, gifts cannot be picked up again, bartering is only with the young that trade with you (on your feet, close by
+  and not as a spectator), and a creature your pet kills counts as yours.
+- A Lurker that vanishes leaves what it stole in a hoard or on the ground; Hollowlings drop what they carry when they
+  fade; young taken in a raid go free when it ends.
+- The Wandering trial counts islands reached, not blocks of your own laid out over the nothing.
+
+### Fixed
+- **A crash in the Seam** when a village's Weaver had been rolled before this version (its record was read as a well).
+- **Breaking the heart of an island made its chests and ore veins come back**: an island is now never designed twice.
+  The Seam carries a hidden seal instead, so a Seam that was really deleted is still built again.
+- A killing blow did not count towards atonement from a kill (a monster felled with one strong hit earned nothing).
+- Stepping into the Seam during a Nether or End expedition and back started a new expedition, and the Tether's thread
+  was cut while in the Seam.
+- A fallen player could be stranded in the Seam; now the fallen cannot enter it, and the Seam's pull bleeds them out.
+- Logging out while being pulled home by a collapse escaped it; coming back to life beyond the wound after dying
+  there left you beyond instead of at home.
+- Expedition time and active time were lost on a relog; world data is written with every world save.
+- Blocks of an Elder's arena and its temporary blocks dropped items when broken or blown up.
+- An Elder killed by another Elder could crash the server; boss bars stayed with players who had left.
+- Settings outside sensible bounds (a sync interval of 0, negative or non-numeric values) could crash the server; they
+  are kept within bounds now.
+- A modified client could flood the server with requests; each kind is now limited per player.
+- The Seam stopped building for good if designing an island ever failed.
+
 ## 2.21.0: Down, Not Out
 
 ### Added
