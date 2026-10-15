@@ -24,7 +24,7 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 	public static final ModelLayerLocation LAYER = new ModelLayerLocation(ExtremeDimensions.id("ferryman"), "main");
 
 	private final ModelPart root, boat, figure, torso, hood, armL, armR, foreL, foreR, vortex, vortexB, vortexC;
-	private final ModelPart[] robe, mantle, strands, lanterns;
+	private final ModelPart[] robe, mantle, strands, lanterns, fine;
 
 	public FerrymanModel(ModelPart model) {
 		super(model);
@@ -44,6 +44,7 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 		this.mantle = ElderAnim.parts(model, FerrymanGeometry.MANTLE, FerrymanGeometry::find);
 		this.strands = ElderAnim.parts(model, FerrymanGeometry.STRAND, FerrymanGeometry::find);
 		this.lanterns = ElderAnim.parts(model, FerrymanGeometry.LANTERN, FerrymanGeometry::find);
+		this.fine = ElderAnim.parts(model, FerrymanGeometry.FINE, FerrymanGeometry::find);
 	}
 
 	@Override
@@ -52,6 +53,13 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 		ElderAnim.reset(boat, figure, hood);
 		ElderAnim.reset(robe);
 		ElderAnim.reset(lanterns);
+		// His skull, its eyes, coin and jaw, the hood's frayed edge and the prow's eyes are fine parts, built four times
+		// larger for finer pixels and shrunk to size here
+		for (ModelPart f : fine) {
+			f.xScale = FerrymanGeometry.FINE_SCALE;
+			f.yScale = FerrymanGeometry.FINE_SCALE;
+			f.zScale = FerrymanGeometry.FINE_SCALE;
+		}
 		float t = s.ageInTicks;
 		// Dying, it plays its ultimate once more, ending in the bloom as it breaks apart
 		boolean dying = s.deathTime > 0;

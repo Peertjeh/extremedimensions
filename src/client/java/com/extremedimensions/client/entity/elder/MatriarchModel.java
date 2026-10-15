@@ -23,7 +23,7 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 	public static final ModelLayerLocation LAYER = new ModelLayerLocation(ExtremeDimensions.id("matriarch"), "main");
 
 	private final ModelPart root, chest, head, crown, armL, armR, foreL, foreR, handL, handR;
-	private final ModelPart[] robe, moss, lanterns, branches;
+	private final ModelPart[] robe, moss, lanterns, branches, fine;
 
 	public MatriarchModel(ModelPart model) {
 		super(model);
@@ -41,6 +41,7 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 		this.moss = ElderAnim.parts(model, MatriarchGeometry.MOSS, MatriarchGeometry::find);
 		this.lanterns = ElderAnim.parts(model, MatriarchGeometry.LANTERN, MatriarchGeometry::find);
 		this.branches = ElderAnim.parts(model, MatriarchGeometry.BRANCH, MatriarchGeometry::find);
+		this.fine = ElderAnim.parts(model, MatriarchGeometry.FINE, MatriarchGeometry::find);
 	}
 
 	@Override
@@ -50,6 +51,12 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 		ElderAnim.reset(branches);
 		ElderAnim.reset(moss);
 		ElderAnim.reset(lanterns);
+		// Her face and heart are fine parts, built four times larger for finer pixels and shrunk to size here
+		for (ModelPart f : fine) {
+			f.xScale = MatriarchGeometry.FINE_SCALE;
+			f.yScale = MatriarchGeometry.FINE_SCALE;
+			f.zScale = MatriarchGeometry.FINE_SCALE;
+		}
 		float t = s.ageInTicks;
 		// Dying, it plays its ultimate once more, ending in the bloom as it breaks apart
 		boolean dying = s.deathTime > 0;

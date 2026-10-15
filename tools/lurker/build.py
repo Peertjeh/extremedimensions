@@ -47,7 +47,7 @@ def build():
     neck = m.part("neck", hips, (0, -19, -3), (0.35, 0, 0))
     m.box(neck, -3.5, -7, -3.5, 7, 8, 7, "t_cloak")
     head = m.part("head", neck, (0, -6, -1), (-0.77, 0, 0))
-    m.box(head, -6, -11, -10, 12, 12, 13, "t_skin")
+    m.box(head, -6, -11, -10, 12, 12, 13, "t_head")
     hood = m.part("hood", head, (0, 0, 0))
     m.box(hood, -7, -12.5, -8, 14, 7, 14, "t_cloak")
     m.box(hood, -7.2, -12.7, -10.4, 14.4, 1.6, 2.6, "t_cloak")
@@ -154,6 +154,19 @@ def _sinew(ctx, key="limb"):
     if abs(noise(gx, gy, s + 31, 7.0) - 0.5) < 0.012 and noise(gx, gy, s + 33, 11) > 0.6:
         base, glow = shade(P["crack"], 0.6), P["crack"] + (200,)
     return base + (255,), glow
+
+
+def _head(ctx):
+    """The head under the mask: hide on the sides and behind, and in front the deep shadow of the hood, so the mask's
+    own outline stands out against it."""
+    if ctx["face"] != "north":
+        return _sinew(ctx, "skin")
+    gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
+    lo, hi = P["cloak"]
+    base = shade(mix(lo, hi, 0.2 + 0.3 * noise(gx, gy, s + 3, 2.0)), 0.42)
+    if _edge(ctx) == 0:
+        base = shade(base, 0.8)
+    return base + (255,), None
 
 
 def _tendril(ctx, drip=False):
@@ -315,6 +328,7 @@ MATERIALS = {
     "t_cloak_ragged": lambda c: _cloth(c, ragged=True),
     "t_limb": lambda c: _sinew(c, "limb"),
     "t_skin": lambda c: _sinew(c, "skin"),
+    "t_head": _head,
     "t_tendril": lambda c: _tendril(c),
     "t_drip": lambda c: _tendril(c, drip=True),
     "t_claw": _claw,
