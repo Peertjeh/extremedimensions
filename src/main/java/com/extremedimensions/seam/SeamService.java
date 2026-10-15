@@ -122,6 +122,8 @@ public final class SeamService {
 			for (String key : unfinished) {
 				cells.remove(key);
 				cells.remove(key.substring(2));
+				// Some of it may stand already: it is built again only into open air
+				cells.add("r@" + key.substring(2));
 			}
 			if (!unfinished.isEmpty()) {
 				ExtremeDimensions.LOGGER.info("Seam architect: {} islands left unfinished by a crash will be built again", unfinished.size());
@@ -138,7 +140,7 @@ public final class SeamService {
 
 	/** An island's plan is fully built: it no longer needs building again after a crash. */
 	static void built(SeamArchitect.Meta m) {
-		if (!m.cell().isEmpty() && DataStore.seamCells().remove("u@" + m.cell())) {
+		if (!m.cell().isEmpty() && (DataStore.seamCells().remove("u@" + m.cell()) | DataStore.seamCells().remove("r@" + m.cell()))) {
 			DataStore.markDirty();
 		}
 	}
@@ -517,6 +519,8 @@ public final class SeamService {
 						continue;
 					}
 					DataStore.seamCells().add(key);
+					// Until its last block stands (a stop while it is still being designed included), it is unfinished
+					DataStore.seamCells().add("u@" + key);
 					designLater(p.level().getServer(), cx, cz);
 					return;
 				}
@@ -538,6 +542,7 @@ public final class SeamService {
 						continue;
 					}
 					DataStore.seamCells().add(key);
+					DataStore.seamCells().add("u@" + key);
 					designDepthLater(p.level().getServer(), cx, cz);
 					return;
 				}
@@ -555,7 +560,14 @@ public final class SeamService {
 			return false;
 		}
 		int[] c = center(cx, cz);
-		double dx = p.getX() - c[0], dz = p.getZ() - c[2], reach = c[3] + 3;
+		if (nearHeart(c)) {
+			return false;
+		}
+		int r = c[3];
+		if (nearArrival(c[0], c[2], r + 18, arrivals())) {
+			r = Math.min(r, 10);
+		}
+		double dx = p.getX() - c[0], dz = p.getZ() - c[2], reach = r + 3;
 		return dx * dx + dz * dz <= reach * reach;
 	}
 
@@ -602,6 +614,9 @@ public final class SeamService {
 				designing = false;
 				if (done != null) {
 					commit(done);
+				} else {
+					// Nothing to build there (the Heart's crown stands there, or the design failed)
+					DataStore.seamCells().remove("u@c@" + cx + "," + cz);
 				}
 			});
 		});
@@ -629,6 +644,8 @@ public final class SeamService {
 				designing = false;
 				if (done != null) {
 					commit(done);
+				} else {
+					DataStore.seamCells().remove("u@d@" + cx + "," + cz);
 				}
 			});
 		});
@@ -662,8 +679,16 @@ public final class SeamService {
 	/** Forgets cells (and their light falls and marks), so they are designed again. */
 	private static void forget(List<SeamArchitect.Meta> plans) {
 		for (SeamArchitect.Meta m : plans) {
+			if (m.cell().isEmpty()) {
+				// An arrival island or the Heart's crown: not designed again, so its light falls stay
+				continue;
+			}
 			DataStore.seamCells().remove(m.cell());
 			DataStore.seamCells().remove("u@" + m.cell());
+			if (m.started()) {
+				// Partly standing: when it is designed again it only fills open air, and its veins do not grow back
+				DataStore.seamCells().add("r@" + m.cell());
+			}
 			for (int[] f : m.falls()) {
 				DataStore.seamCells().remove("f@" + f[0] + "," + f[1] + "," + f[2] + "," + f[3]);
 			}
@@ -675,16 +700,9 @@ public final class SeamService {
 		}
 	}
 
-	/** Designs a cell right away and queues it (the operator showcase and a regenerated Seam). */
-	private static void design(int cx, int cz) {
-		SeamArchitect.Plan plan = plan(cx, cz, arrivals());
-		if (plan != null) {
-			commit(plan);
-		}
-	}
-
 	/** On the server thread: the plan goes into the build queue and its marks and light falls into the world data. */
 	private static void commit(SeamArchitect.Plan plan) {
+		plan.rebuild = plan.cell != null && DataStore.seamCells().contains("r@" + plan.cell);
 		String cell = plan.queue();
 		if (cell != null) {
 			// Until its last block stands, a crash leaves this island to be designed again

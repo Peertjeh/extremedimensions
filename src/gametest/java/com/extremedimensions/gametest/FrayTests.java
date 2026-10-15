@@ -155,6 +155,28 @@ public class FrayTests {
 			restore.run();
 			check(helper, inAir > 0 && landed, "on stopping the blocks in the air did not land (%s in the air)", inAir);
 			check(helper, handed, "the unfinished plan was not handed back on stopping");
+			// Built again after it was left half done: only open air is filled, and its veins come back as plain stone
+			int range0 = Config.SEAM_FLY_RANGE;
+			BlockPos kept = new BlockPos(o.getX() + 9, base + 1, o.getZ() + 2);
+			BlockPos vein = new BlockPos(o.getX() + 9, base + 2, o.getZ() + 2);
+			boolean keptOk, veinOk;
+			try {
+				Config.SEAM_FLY_RANGE = 0;
+				level.setBlock(kept, Blocks.OAK_PLANKS.defaultBlockState(), 2);
+				SeamArchitect.Plan again = new SeamArchitect.Plan();
+				again.rebuild = true;
+				again.set(kept.getX(), kept.getY(), kept.getZ(), Blocks.STONE.defaultBlockState());
+				again.set(vein.getX(), vein.getY(), vein.getZ(), com.extremedimensions.registry.ModBlocks.SEAM_VEIN.defaultBlockState());
+				again.queue();
+				SeamArchitect.tick(level, 5_000_000L);
+				keptOk = level.getBlockState(kept).is(Blocks.OAK_PLANKS);
+				veinOk = !level.getBlockState(vein).isAir() && !level.getBlockState(vein).is(com.extremedimensions.registry.ModBlocks.SEAM_VEIN);
+			} finally {
+				Config.SEAM_FLY_RANGE = range0;
+				SeamArchitect.clear();
+			}
+			check(helper, keptOk, "an island built again overwrote what stood in its way");
+			check(helper, veinOk, "an island built again grew its vein back (%s)", level.getBlockState(vein));
 			helper.succeed();
 		});
 	}

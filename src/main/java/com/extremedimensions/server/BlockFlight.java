@@ -188,7 +188,11 @@ public final class BlockFlight {
 					f.age--;
 					return false;
 				}
+				// Its job goes back to whoever sent it: this flight is over at once (it must not land as well)
+				f.landed = true;
 				f.landing.missed();
+				drop(f.display);
+				return true;
 			} else {
 				f.landed = true;
 				f.landing.land();

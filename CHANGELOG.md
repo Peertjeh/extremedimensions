@@ -9,7 +9,9 @@
   under anyone's feet is always there at once, and a block about to be stepped on lands straight away.
 - **You arrive on a patch of ground and the island comes together around you**: only the ground round the landing and
   the rift is there when you step through; the rest of the arrival island flies in around you.
-- Islands left half built by a restart or a crash are built again on the next visit.
+- Islands left half built by a restart or a crash are built again on the next visit, only into open air: what you
+  built or dug there stays, and mined veins do not grow back. A block never comes down inside a player, and one in
+  line to fly that is about to be walked over is put down at once.
 - New settings: how far off the Seam builds itself before your eyes, how many blocks fly at once, how long a flight
   takes and how far off blocks appear; the wait before an unanswered curse offer is chosen for you; the active time a
   return needs to count; the active part of a night its dawn needs; how often a bond with one of the young earns

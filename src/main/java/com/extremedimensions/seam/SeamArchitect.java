@@ -240,6 +240,11 @@ public final class SeamArchitect {
 		public String cell;
 		/** Keys for the world data (villages...), written when the plan is queued on the server thread. */
 		public final List<String> marks = new ArrayList<>();
+		/**
+		 * Built again after it was left half done (a restart, a crash, work dropped far from everyone): it only fills
+		 * open air, never what stands there now, and its veins are plain stone (what was mined does not grow back).
+		 */
+		public boolean rebuild;
 
 		public void set(int x, int y, int z, BlockState s) {
 			if (s != null && y > 1 && y < 250) {
@@ -329,18 +334,20 @@ public final class SeamArchitect {
 		 * stand on, and queues the rest ahead of all other work, so the island comes together around them.
 		 */
 		public void placeAround(ServerLevel level, double cx, double cz, double radius) {
-			connect();
+			// Which blocks show is judged on the whole island, the core included: the rim of the core is no wall
+			prepare();
 			double r2 = radius * radius;
-			for (var it = blocks.entrySet().iterator(); it.hasNext();) {
-				Map.Entry<Long, BlockState> e = it.next();
+			boolean[] now = new boolean[sorted.size()];
+			for (int i = 0; i < now.length; i++) {
+				Map.Entry<Long, BlockState> e = sorted.get(i);
 				long k = e.getKey();
 				double dx = BlockPos.getX(k) + 0.5 - cx, dz = BlockPos.getZ(k) + 0.5 - cz;
 				if (dx * dx + dz * dz <= r2) {
 					level.setBlock(BlockPos.of(k), e.getValue(), 2);
-					it.remove();
+					now[i] = true;
 				}
 			}
-			queue(true);
+			enqueue(true, now);
 		}
 
 		private List<Map.Entry<Long, BlockState>> sorted;
@@ -373,19 +380,32 @@ public final class SeamArchitect {
 		/** As {@link #queue()}; {@code first} puts it ahead of all other work waiting (something someone is looking at). */
 		public String queue(boolean first) {
 			prepare();
+			return enqueue(first, null);
+		}
+
+		/** Queues the blocks not already put down ({@code done}, may be null) and the actions. */
+		private String enqueue(boolean first, boolean[] done) {
 			int id = ++nextPlan;
 			ArrayDeque<Job> into = first ? READY : QUEUE;
+			int count = 0;
 			for (int i = 0; i < sorted.size(); i++) {
+				if (done != null && done[i]) {
+					continue;
+				}
 				Map.Entry<Long, BlockState> e = sorted.get(i);
 				into.add(new Job(e.getKey(), e.getValue(), null, id, shown[i]));
+				count++;
+			}
+			if (rebuild) {
+				REBUILD.add(id);
 			}
 			for (Object[] a : after) {
 				@SuppressWarnings("unchecked") Consumer<ServerLevel> c = (Consumer<ServerLevel>) a[1];
 				QUEUE.add(new Job(((BlockPos) a[0]).asLong(), null, c, id, false));
 			}
-			UNBUILT.put(id, sorted.size());
-			LEFT.put(id, sorted.size() + after.size());
-			PLANS.put(id, new Meta(cell == null ? "" : cell, List.copyOf(falls), List.copyOf(marks)));
+			UNBUILT.put(id, count);
+			LEFT.put(id, count + after.size());
+			PLANS.put(id, new Meta(cell == null ? "" : cell, List.copyOf(falls), List.copyOf(marks), count, false));
 			return cell == null || cell.isEmpty() ? null : cell;
 		}
 	}
@@ -394,7 +414,12 @@ public final class SeamArchitect {
 	private record Job(long pos, BlockState state, Consumer<ServerLevel> action, int plan, boolean shown) {}
 
 	/** What is remembered of a queued plan: its cell, light falls and marks (to forget them if the work is dropped). */
-	public record Meta(String cell, List<int[]> falls, List<String> marks) {}
+	public record Meta(String cell, List<int[]> falls, List<String> marks, int blocks, boolean started) {}
+
+	/** A plan's record as handed back, with whether any of its blocks was already put down. */
+	private static Meta handed(int id, Meta m) {
+		return new Meta(m.cell(), m.falls(), m.marks(), m.blocks(), UNBUILT.getOrDefault(id, 0) < m.blocks());
+	}
 
 	/** Fresh work, bottom to top. */
 	private static final ArrayDeque<Job> QUEUE = new ArrayDeque<>();
@@ -408,6 +433,10 @@ public final class SeamArchitect {
 	private static final Map<Integer, Integer> UNBUILT = new HashMap<>();
 	private static final Map<Integer, Integer> LEFT = new HashMap<>();
 	private static final Map<Integer, Meta> PLANS = new HashMap<>();
+	/** Plans built again after they were left half done (see {@link Plan#rebuild}). */
+	private static final java.util.Set<Integer> REBUILD = new java.util.HashSet<>();
+	/** How often a block in line to fly found someone standing in its place, by position: after a while it gives up. */
+	private static final Map<Long, Integer> MISSES = new HashMap<>();
 	/** Blocks someone is near enough to see come: they fly to their places, a few at a time, in order. */
 	private static final ArrayDeque<Job> NEAR = new ArrayDeque<>();
 	/** Blocks in the air now. */
@@ -418,6 +447,7 @@ public final class SeamArchitect {
 	private static int waiting;
 	private static int held;
 	private static int calls;
+	private static int sweeps;
 
 	public static void clear() {
 		QUEUE.clear();
@@ -427,6 +457,8 @@ public final class SeamArchitect {
 		UNBUILT.clear();
 		LEFT.clear();
 		PLANS.clear();
+		REBUILD.clear();
+		MISSES.clear();
 		NEAR.clear();
 		FLIGHTS.forEach(BlockFlight::cancel);
 		FLIGHTS.clear();
@@ -444,16 +476,19 @@ public final class SeamArchitect {
 			BlockFlight.rush(f);
 		}
 		FLIGHTS.clear();
-		// Those still in line to fly are simply there (an island coming together round someone is not left half done)
+		// Those still in line to fly are simply there (an island coming together round someone is not left half done),
+		// where the air is still open and no one stands
 		while (level != null && !NEAR.isEmpty()) {
 			Job j = NEAR.poll();
 			BlockPos pos = BlockPos.of(j.pos());
-			if (level.isLoaded(pos)) {
-				place(level, j, pos);
+			if (level.isLoaded(pos) && !settle(level, j, pos)) {
+				stood(j);
 			}
 		}
 		NEAR.clear();
-		return new ArrayList<>(PLANS.values());
+		List<Meta> left = new ArrayList<>();
+		PLANS.forEach((id, m) -> left.add(handed(id, m)));
+		return left;
 	}
 
 	/** Blocks and actions still to do, waiting and flying ones included. */
@@ -497,6 +532,9 @@ public final class SeamArchitect {
 			flights(watchers);
 		}
 		if (!NEAR.isEmpty()) {
+			if (++sweeps % 4 == 0) {
+				underfootInLine(level, watchers);
+			}
 			launch(level, watchers);
 		}
 		if (!WAITING.isEmpty() && ++calls % 10 == 0) {
@@ -550,7 +588,24 @@ public final class SeamArchitect {
 			NEAR.add(j);
 			return;
 		}
+		if (touching(watchers, pos) && solid(level, j, pos) && occupied(level, pos)) {
+			// Someone stands where it goes: it waits in line instead of walling them in
+			NEAR.add(j);
+			return;
+		}
 		place(level, j, pos);
+	}
+
+	/** Whether a watcher's body takes up some of this block (read from where they stand, no world lookup). */
+	private static boolean touching(double[] watchers, BlockPos pos) {
+		double bx = pos.getX() + 0.5, bz = pos.getZ() + 0.5;
+		for (int i = 0; i < watchers.length; i += 3) {
+			double dy = watchers[i + 1] - pos.getY();
+			if (Math.abs(watchers[i] - bx) < 1.4 && Math.abs(watchers[i + 2] - bz) < 1.4 && dy > -2 && dy < 1) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static void park(Job j) {
@@ -560,9 +615,47 @@ public final class SeamArchitect {
 
 	/** A block of a plan is put down; once its plan's blocks all stand, its actions follow. */
 	private static void place(ServerLevel level, Job j, BlockPos pos) {
-		level.setBlock(pos, j.state(), 2);
+		BlockState state = j.state();
+		if (REBUILD.contains(j.plan())) {
+			if (!open(level, pos)) {
+				// Built again: what stands there now (a player's work, the half built first time) stays
+				stood(j);
+				return;
+			}
+			if (state.is(ModBlocks.SEAM_VEIN)) {
+				state = stone();
+			}
+		}
+		level.setBlock(pos, state, 2);
 		built++;
 		stood(j);
+	}
+
+	/** Open air, or something any block may take the place of (grass, snow), holding nothing. */
+	private static boolean open(ServerLevel level, BlockPos pos) {
+		BlockState now = level.getBlockState(pos);
+		return now.isAir() || now.canBeReplaced() && !now.hasBlockEntity();
+	}
+
+	/**
+	 * Puts a block from the line to fly straight down instead: only into open air, never into someone. Returns false
+	 * when someone stands there (it may go back in line); a place taken since is given up.
+	 */
+	private static boolean settle(ServerLevel level, Job j, BlockPos pos) {
+		if (!open(level, pos)) {
+			stood(j);
+			return true;
+		}
+		if (solid(level, j, pos) && occupied(level, pos)) {
+			return false;
+		}
+		place(level, j, pos);
+		return true;
+	}
+
+	/** Whether a block would be in the way where it goes (grass, flowers and vines are not). */
+	private static boolean solid(ServerLevel level, Job j, BlockPos pos) {
+		return !j.state().getCollisionShape(level, pos).isEmpty();
 	}
 
 	/** A block of a plan is done with (put down, or found taken by something else). */
@@ -582,6 +675,7 @@ public final class SeamArchitect {
 	private static void done(int plan) {
 		if (LEFT.merge(plan, -1, Integer::sum) <= 0) {
 			LEFT.remove(plan);
+			REBUILD.remove(plan);
 			Meta m = PLANS.remove(plan);
 			if (m != null) {
 				SeamService.built(m);
@@ -620,7 +714,10 @@ public final class SeamArchitect {
 		int max = Math.max(1, Config.SEAM_FLY_MAX), ticks = Math.max(10, Config.SEAM_FLY_TICKS);
 		flyCredit = Math.min(flyCredit + max / (double) ticks, max);
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		while (flyCredit >= 1 && FLIGHTS.size() < max && !NEAR.isEmpty()) {
+		// Blocks no longer watched are simply put down, but no more than this a tick (a long line left behind would stall)
+		int direct = 0;
+		List<Job> later = new ArrayList<>();
+		while (flyCredit >= 1 && FLIGHTS.size() < max && !NEAR.isEmpty() && direct < 512) {
 			Job j = NEAR.poll();
 			BlockPos pos = BlockPos.of(j.pos());
 			if (!level.isLoaded(pos)) {
@@ -628,12 +725,17 @@ public final class SeamArchitect {
 				continue;
 			}
 			if (!flies(level, j, pos, watchers)) {
-				place(level, j, pos);
+				direct++;
+				if (!settle(level, j, pos)) {
+					later.add(j);
+				}
 				continue;
 			}
 			BlockFlight.Flight f = BlockFlight.in(level, pos, j.state(), from(rnd), ticks, SPARK, rnd.nextInt(5) == 0 ? 5 : 0, new Arrival(level, j, pos));
 			if (f == null) {
-				place(level, j, pos);
+				if (!settle(level, j, pos)) {
+					later.add(j);
+				}
 				continue;
 			}
 			flyCredit--;
@@ -641,6 +743,32 @@ public final class SeamArchitect {
 			if (rnd.nextInt(40) == 0) {
 				WorldFx.soundIn(level.dimension().identifier().toString(), "minecraft:block.amethyst_block.resonate", "ambient", f.x(), f.y(), f.z(), 0.6f,
 						(float) rnd.nextDouble(0.7, 1.4));
+			}
+		}
+		NEAR.addAll(later);
+	}
+
+	/**
+	 * Blocks still in line to fly that go just under someone's feet are put down now: no one walks out over an island
+	 * coming together and drops through a gap that is still on its way.
+	 */
+	private static void underfootInLine(ServerLevel level, double[] watchers) {
+		if (watchers.length == 0) {
+			return;
+		}
+		for (var it = NEAR.iterator(); it.hasNext();) {
+			Job j = it.next();
+			long k = j.pos();
+			double bx = BlockPos.getX(k) + 0.5, by = BlockPos.getY(k), bz = BlockPos.getZ(k) + 0.5;
+			for (int i = 0; i < watchers.length; i += 3) {
+				double dx = watchers[i] - bx, dy = watchers[i + 1] - by, dz = watchers[i + 2] - bz;
+				if (dx * dx + dz * dz < 2.5 * 2.5 && dy >= 0.5 && dy < 5) {
+					BlockPos pos = BlockPos.of(k);
+					if (level.isLoaded(pos) && settle(level, j, pos)) {
+						it.remove();
+					}
+					break;
+				}
 			}
 		}
 	}
@@ -680,26 +808,28 @@ public final class SeamArchitect {
 		return false;
 	}
 
-	/** Whether someone (not an Elder) stands where a block would go. */
+	/** Whether someone (a player or a creature, not an Elder) stands where a block would go. */
 	private static boolean occupied(ServerLevel level, BlockPos pos) {
-		return !level.getEntitiesOfClass(LivingEntity.class, new AABB(pos), e -> e.isAlive() && !(e instanceof com.extremedimensions.elder.ElderBoss)).isEmpty();
+		return !level.getEntitiesOfClass(LivingEntity.class, new AABB(pos),
+				e -> e.isAlive() && (e instanceof net.minecraft.world.entity.player.Player || e instanceof net.minecraft.world.entity.Mob)
+						&& !(e instanceof com.extremedimensions.elder.ElderBoss)).isEmpty();
 	}
 
 	/** How a block of the Seam lands: in whatever open space is there, never on something someone has put there since. */
 	private record Arrival(ServerLevel level, Job job, BlockPos pos) implements BlockFlight.Landing {
 		@Override
 		public boolean fits() {
-			BlockState now = level.getBlockState(pos);
-			return now.isAir() || now.canBeReplaced() && !now.hasBlockEntity();
+			return open(level, pos);
 		}
 
 		@Override
 		public boolean blocked() {
-			return occupied(level, pos);
+			return solid(level, job, pos) && occupied(level, pos);
 		}
 
 		@Override
 		public void land() {
+			MISSES.remove(job.pos());
 			place(level, job, pos);
 			ThreadLocalRandom rnd = ThreadLocalRandom.current();
 			if (rnd.nextInt(6) == 0) {
@@ -715,16 +845,21 @@ public final class SeamArchitect {
 
 		@Override
 		public void missed() {
-			// Someone stood in its place all the while: it gets in line again
-			NEAR.add(job);
+			// Someone stood in its place all the while: it gets in line again, though not for ever
+			if (MISSES.merge(job.pos(), 1, Integer::sum) >= 8) {
+				MISSES.remove(job.pos());
+				stood(job);
+			} else {
+				NEAR.add(job);
+			}
 		}
 
 		@Override
 		public void lost() {
-			if (level.isLoaded(pos)) {
-				place(level, job, pos);
-			} else {
+			if (!level.isLoaded(pos)) {
 				park(job);
+			} else if (!settle(level, job, pos)) {
+				NEAR.add(job);
 			}
 		}
 	}
@@ -765,7 +900,6 @@ public final class SeamArchitect {
 		NEAR.removeIf(j -> far.contains(j.plan()));
 		List<Meta> dropped = new ArrayList<>();
 		for (int id : far) {
-			UNBUILT.remove(id);
 			LEFT.remove(id);
 			List<Job> actions = HELD.remove(id);
 			if (actions != null) {
@@ -773,8 +907,10 @@ public final class SeamArchitect {
 			}
 			Meta m = PLANS.remove(id);
 			if (m != null) {
-				dropped.add(m);
+				dropped.add(handed(id, m));
 			}
+			UNBUILT.remove(id);
+			REBUILD.remove(id);
 		}
 		return dropped;
 	}
