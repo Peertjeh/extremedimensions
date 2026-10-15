@@ -243,6 +243,8 @@ public class ClientShots implements FabricClientGameTest {
 			});
 			ctx.waitTicks(16);
 			ctx.takeScreenshot("16_bestiary_lurker");
+			ctx.runOnClient(mc -> check(com.extremedimensions.client.screen.JournalScreen.likenessError() == null,
+					"the bestiary could not draw a likeness: " + com.extremedimensions.client.screen.JournalScreen.likenessError()));
 			ctx.runOnClient(mc -> {
 				for (int i = 0; i < 6; i++) {
 					pressOnce(journal[0], "▶");
@@ -672,19 +674,20 @@ public class ClientShots implements FabricClientGameTest {
 				return com.extremedimensions.seam.SeamDepth.showcase((net.minecraft.server.level.ServerLevel) p.level(), p.getBlockX(), 96, p.getBlockZ());
 			});
 			double out = Math.PI / 4;
-			float yaw = (float) Math.toDegrees(Math.atan2(-Math.cos(out), Math.sin(out)));
-			double sx = well[0] + 0.5 - Math.cos(out) * 6.5, sz = well[2] + 0.5 - Math.sin(out) * 6.5;
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f %.1f 38", sx, well[1] + 1, sz, yaw));
+			// A spectator's eye: from out over the drop, looking back at the well and its island
+			sp.getServer().runCommand("gamemode spectator @a");
+			float inward = (float) Math.toDegrees(Math.atan2(Math.cos(out), -Math.sin(out)));
+			double sx = well[0] + 0.5 + Math.cos(out) * 8, sz = well[2] + 0.5 + Math.sin(out) * 8;
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f %.1f 32", sx, well[1] + 6, sz, inward));
 			sp.getConnection().waitForChunksRender();
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("15_fray_well");
-			// On the knot, looking out along the strand east into the dark
-			float east = (float) Math.toDegrees(Math.atan2(-58, -6));
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f %.1f 8", well[0] - 2.5, well[3] + 1, well[2] + 0.5, east));
+			// Down in the Fray, off to the side above the knot: its landing, its lanterns and the strands running off
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f -45 30", well[0] - 9.5, well[3] + 8, well[2] - 9.5));
 			sp.getConnection().waitForChunksRender();
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("15_fray_knot");
-			sp.getServer().runOnServer(s -> check(com.extremedimensions.seam.SeamDepth.inFray(player(s)), "standing on the knot, the player is not in the Fray"));
+			sp.getServer().runOnServer(s -> check(com.extremedimensions.seam.SeamDepth.inFray(player(s)), "above the knot, the player is not in the Fray"));
 		}
 	}
 }

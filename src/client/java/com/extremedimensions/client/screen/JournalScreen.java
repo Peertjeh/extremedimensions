@@ -61,6 +61,12 @@ public class JournalScreen extends Screen {
 
 	/** Likenesses for the bestiary, made once (and none where a creature cannot be made here). */
 	private static final Map<Bestiary.Beast, LivingEntity> LIKENESS = new EnumMap<>(Bestiary.Beast.class);
+	/** Why the last likeness could not be made or drawn (null when all went well), for the tests. */
+	private static String likenessError;
+
+	public static String likenessError() {
+		return likenessError;
+	}
 
 	public JournalScreen(Set<String> unlocked, Screen parent) {
 		this(unlocked, "", "", parent);
@@ -286,6 +292,8 @@ public class JournalScreen extends Screen {
 						fx + fw * 0.35f, fy + fh * 0.4f, e);
 			} catch (RuntimeException ex) {
 				LIKENESS.put(b.beast(), null);
+				likenessError = b.beast().id + ": " + ex;
+				com.extremedimensions.ExtremeDimensions.LOGGER.warn("Could not draw the likeness of {}", b.beast().id, ex);
 			}
 		} else {
 			Ui.runeSocket(g, b.beast().id, fx + fw / 2 - 8, fy + fh / 2 - 8, Ui.SOUL_DIM, alpha, 0.2);
@@ -297,7 +305,8 @@ public class JournalScreen extends Screen {
 
 	/** The right page: what is known of it once seen, and how to face it once enough have been slain. */
 	private void beastRight(GuiGraphicsExtractor g, Beast b, int x, int y, double alpha) {
-		int ty = y + 14;
+		// Set close, as a book is, so what is known and how to face it share the page
+		int ty = y + 12, lh = 9;
 		if (!b.seen()) {
 			for (String line : Ui.wrap(this.font, Ui.tr("gui.extremedimensions.bestiary.unseen_text"), TEXT_W)) {
 				Ui.ink(g, this.font, line, x + 12, ty, INK_FAINT, alpha);
@@ -308,13 +317,13 @@ public class JournalScreen extends Screen {
 		}
 		for (String line : Ui.wrap(this.font, Ui.tr(b.beast().loreKey()), TEXT_W)) {
 			Ui.ink(g, this.font, line, x + 12, ty, INK, alpha);
-			ty += 11;
+			ty += lh;
 		}
-		ty += 6;
+		ty += 4;
 		String head = Ui.tr("gui.extremedimensions.bestiary.notes_title");
 		Ui.ink(g, this.font, head, x + 12, ty, INK_TEAL, alpha);
-		g.fill(x + 12, ty + 10, x + 12 + this.font.width(head), ty + 11, Ui.argb(alpha * 0.5, INK_TEAL));
-		ty += 14;
+		g.fill(x + 12, ty + 9, x + 12 + this.font.width(head), ty + 10, Ui.argb(alpha * 0.5, INK_TEAL));
+		ty += 12;
 		String notes = b.slain() >= b.beast().notesAt ? Ui.tr(b.beast().notesKey())
 				: Ui.tr("gui.extremedimensions.bestiary.notes_locked", b.beast().notesAt - b.slain());
 		for (String line : Ui.wrap(this.font, notes, TEXT_W)) {
@@ -322,7 +331,7 @@ public class JournalScreen extends Screen {
 				break;
 			}
 			Ui.ink(g, this.font, line, x + 12, ty, b.slain() >= b.beast().notesAt ? INK_TEAL : INK_FAINT, alpha);
-			ty += 11;
+			ty += lh;
 		}
 		number(g, spread + 1, x, y, alpha);
 	}
@@ -350,8 +359,13 @@ public class JournalScreen extends Screen {
 		if (mc.level != null) {
 			try {
 				e = type(b).create(mc.level, EntitySpawnReason.LOAD);
+				if (e == null) {
+					likenessError = b.id + ": could not be made";
+				}
 			} catch (RuntimeException ex) {
 				e = null;
+				likenessError = b.id + ": " + ex;
+				com.extremedimensions.ExtremeDimensions.LOGGER.warn("Could not make the likeness of {}", b.id, ex);
 			}
 		}
 		LIKENESS.put(b, e);
