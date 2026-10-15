@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.1
+
+### Changed
+* **Three lobby leaderboards instead of nine**: total kills and total deaths over every BattleHub game on
+  the north-west wall, and the best parkour runner (most parkour races won) on the south-west wall. The
+  text is a little bigger. A `config.json` with the 1.6.0 boards is updated; changed boards are kept.
+
 ## 1.6.0
 
 ### Added

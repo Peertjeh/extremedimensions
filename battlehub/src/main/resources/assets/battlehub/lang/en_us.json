@@ -670,7 +670,7 @@
 	"boards.desc.coins": "&8Coins won in matches",
 	"boards.desc.wins": "&8Matches won",
 	"boards.desc.elo": "&8Highest rating",
-	"boards.scope.all": "&fAll modes",
+	"boards.scope.all": "&fAll BattleHub games",
 	"boards.scope.pvp": "&c&lPvP &7(all modes)",
 	"boards.ranked": "&6&lRanked &8· {0}",
 	"boards.row": "{0} &f{1} &8- &e{2}",
@@ -678,5 +678,7 @@
 	"boards.row_empty": "&8#{0} -",
 	"boards.you": "&7You: {0} &8- &e{1}",
 	"boards.you_none": "&7You: &8not on this board yet",
-	"boards.elo_value": "{0} &8({1}&8)"
+	"boards.elo_value": "{0} &8({1}&8)",
+	"boards.stat.wins.parkour": "&a&l★ BEST PARKOUR RUNNER ★",
+	"boards.desc.wins.parkour": "&8Most parkour races won"
 }

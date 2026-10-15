@@ -24,8 +24,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * The leaderboards above the lobby wall: where they hang, who is on them in which order, the player's own line,
- * switching modes, and the boards coming back after a player left the hub world.
+ * The leaderboards above the lobby wall (total kills, total deaths, best parkour runner): where they hang, who is
+ * on them in which order, the player's own line, switching modes, and the boards coming back after a player left
+ * the hub world.
  */
 final class BoardTests {
 	private BoardTests() {}
@@ -54,97 +55,92 @@ final class BoardTests {
 	static void all(MinecraftServer server, Script s) {
 		String tag = "boards";
 		SelfTest.reset(s, tag);
-		s.run(tag + ": one mode per wall, three players with stats", () -> {
-			VARS.put("boardModes0", new ArrayList<>(lb().walls.get(0).modes));
-			VARS.put("boardModes1", new ArrayList<>(lb().walls.get(1).modes));
+		s.run(tag + ": three players with stats", () -> {
 			VARS.put("boardCycle", lb().cycleSeconds);
-			lb().walls.get(0).modes = new ArrayList<>(List.of("pvp"));
-			lb().walls.get(1).modes = new ArrayList<>(List.of("all"));
 			HubBoards.rebuild();
 			for (String n : L) {
 				SelfTest.join(server, n);
 			}
 			PlayerProfile a = PlayerStore.get(p(L[0]));
-			stats(a.mode(GameMode.SWORD), 30, 10, 500);
-			stats(a.rankedStats(GameMode.SWORD), 12, 4, 200);
-			a.setElo(GameMode.SWORD, 1300);
+			stats(a.overall, 30, 10, 0);
+			stats(a.mode(GameMode.SWORD), 20, 5, 0);
+			a.mode(GameMode.PARKOUR).played = 6;
+			a.mode(GameMode.PARKOUR).wins = 4;
 			PlayerProfile b = PlayerStore.get(p(L[1]));
-			stats(b.mode(GameMode.SWORD), 50, 50, 300);
-			stats(b.mode(GameMode.FFA), 5, 0, 20);
-			// Not a PvP mode: must not count on the PvP wall
-			stats(b.mode(GameMode.BED_WARS), 99, 0, 0);
-			b.setElo(GameMode.AXE, 1100);
+			stats(b.overall, 55, 50, 0);
+			stats(b.mode(GameMode.SWORD), 40, 30, 0);
+			b.mode(GameMode.PARKOUR).played = 3;
+			b.mode(GameMode.PARKOUR).wins = 1;
 			PlayerProfile c = PlayerStore.get(p(L[2]));
-			stats(c.mode(GameMode.AXE), 3, 0, 10);
+			stats(c.overall, 3, 0, 0);
+			c.mode(GameMode.PARKOUR).played = 2;
 		});
-		s.waitFor(tag + ": all nine boards are on every player's client", 80, () -> {
+		s.waitFor(tag + ": the three boards are on every player's client", 80, () -> {
 			for (String n : L) {
 				if (!hasAll(n)) return false;
 			}
-			return HubBoards.boardCount() == 9;
+			return HubBoards.boardCount() == 3;
 		});
-		s.check(tag + ": PvP boards hang above the north-west wall, kills on the west end, facing the fountain", () -> {
-			for (int i = 0; i < 4; i++) {
-				if (!hangsWell(server, 0, i, -1, -1)) return false;
-			}
+		s.check(tag + ": kills and deaths hang above the north-west wall, kills on the west side, facing the fountain", () -> {
+			if (!hangsWell(server, 0, 0, -1, -1) || !hangsWell(server, 0, 1, -1, -1)) return false;
 			Vec3 kills = HubBoards.position(0, 0);
-			Vec3 coins = HubBoards.position(0, 3);
-			return kills.x < coins.x && kills.z > coins.z;
+			Vec3 deaths = HubBoards.position(0, 1);
+			return kills.x < deaths.x && kills.z > deaths.z;
 		});
-		s.check(tag + ": Ranked boards hang above the south-west wall, facing the fountain", () -> {
-			for (int i = 0; i < 5; i++) {
-				if (!hangsWell(server, 1, i, -1, 1)) return false;
-			}
-			return true;
+		s.check(tag + ": the parkour board hangs in the middle of the south-west wall, facing the fountain", () -> {
+			Vec3 pk = HubBoards.position(1, 0);
+			return hangsWell(server, 1, 0, -1, 1) && Math.abs(Math.abs(pk.x - 0.5) - Math.abs(pk.z - 0.5)) < 1;
 		});
-		s.waitFor(tag + ": kills over all PvP modes (Bed Wars not counted)", 60, () -> {
+		s.waitFor(tag + ": total kills over every game", 60, () -> {
 			String t = board(L[0], 0, 0);
-			return t.contains("#1 BHTestL2 - 55") && t.contains("#2 BHTestL1 - 30") && t.contains("#3 BHTestL3 - 3");
+			return t.contains(Lang.tr(p(L[0]), "boards.scope.all").getString())
+					&& t.contains("#1 BHTestL2 - 55") && t.contains("#2 BHTestL1 - 30") && t.contains("#3 BHTestL3 - 3")
+					&& !t.contains("●");
 		});
-		s.check(tag + ": deaths; nobody with zero deaths", () -> {
+		s.check(tag + ": total deaths; nobody with zero deaths", () -> {
 			String t = board(L[0], 0, 1);
 			return t.contains("#1 BHTestL2 - 50") && t.contains("#2 BHTestL1 - 10") && !t.contains("BHTestL3") && t.contains("#3 -");
 		});
-		s.check(tag + ": K/D with two decimals; fewer than 10 kills is left out", () -> {
-			String t = board(L[0], 0, 2);
-			return t.contains("#1 BHTestL1 - 3.00") && t.contains("#2 BHTestL2 - 1.10") && !t.contains("BHTestL3");
-		});
-		s.check(tag + ": coins earned", () -> {
-			String t = board(L[0], 0, 3);
-			return t.contains("#1 BHTestL1 - 500") && t.contains("#2 BHTestL2 - 320") && t.contains("#3 BHTestL3 - 10");
+		s.check(tag + ": best parkour runner: most races won", () -> {
+			String t = board(L[0], 1, 0);
+			return t.contains(Lang.tr(p(L[0]), "boards.stat.wins.parkour").getString())
+					&& t.contains("#1 BHTestL1 - 4") && t.contains("#2 BHTestL2 - 1") && !t.contains("BHTestL3");
 		});
 		s.check(tag + ": each player sees their own place at the bottom", () -> {
 			String you = Lang.tr(p(L[2]), "boards.you", Component.literal("#3"), "3").getString();
 			String none = Lang.tr(p(L[2]), "boards.you_none").getString();
-			return board(L[2], 0, 0).contains(you) && board(L[2], 0, 2).contains(none)
+			return board(L[2], 0, 0).contains(you) && board(L[2], 1, 0).contains(none)
 					&& board(L[0], 0, 0).contains(Lang.tr(p(L[0]), "boards.you", Component.literal("#2"), "30").getString());
 		});
-		s.check(tag + ": ranked ELO: best rating, only players who played ranked", () -> {
-			String t = board(L[0], 1, 0);
-			return t.contains("#1 BHTestL1 - 1,300") && t.contains("#2 BHTestL2 - 1,100") && !t.contains("BHTestL3");
-		});
-		s.check(tag + ": ranked kills and coins count ranked matches only", () -> {
-			String kills = board(L[0], 1, 1);
-			String coins = board(L[0], 1, 4);
-			return kills.contains("#1 BHTestL1 - 12") && !kills.contains("BHTestL2") && coins.contains("#1 BHTestL1 - 200");
+		s.check(tag + ": a config from 1.6.0 gets the three boards; a changed one is kept", () -> {
+			HubConfig old = new HubConfig();
+			old.configVersion = 2;
+			old.leaderboards.walls = HubConfig.wallsOf160();
+			old.leaderboards.scale = 1.0;
+			old.normalize();
+			HubConfig changed = new HubConfig();
+			changed.configVersion = 2;
+			changed.leaderboards.walls = HubConfig.wallsOf160();
+			changed.leaderboards.walls.get(0).stats = new ArrayList<>(List.of("kills"));
+			changed.normalize();
+			return old.leaderboards.walls.size() == 2 && old.leaderboards.walls.get(0).stats.equals(List.of("kills", "deaths"))
+					&& old.leaderboards.walls.get(1).modes.equals(List.of("parkour")) && old.leaderboards.scale == 1.25
+					&& changed.leaderboards.walls.get(1).ranked && changed.leaderboards.walls.get(0).stats.equals(List.of("kills"));
 		});
 
-		s.run(tag + ": the PvP wall switches between all PvP and Sword", () -> {
-			lb().walls.get(0).modes = new ArrayList<>(List.of("pvp", "sword"));
+		s.run(tag + ": the kills wall switches between all games and Sword", () -> {
+			lb().walls.get(0).modes = new ArrayList<>(List.of("all", "sword"));
 			lb().cycleSeconds = 3;
 			HubBoards.rebuild();
 		});
-		s.waitFor(tag + ": Sword only: L3 (axe) is gone", 200, () -> {
+		s.waitFor(tag + ": Sword only: L3 (no sword kills) is gone", 200, () -> {
 			String t = board(L[0], 0, 0);
-			return t.contains(Lang.tr(p(L[0]), "mode.sword").getString()) && t.contains("#1 BHTestL2 - 50")
-					&& t.contains("#2 BHTestL1 - 30") && !t.contains("BHTestL3");
+			return t.contains(Lang.tr(p(L[0]), "mode.sword").getString()) && t.contains("#1 BHTestL2 - 40")
+					&& t.contains("#2 BHTestL1 - 20") && !t.contains("BHTestL3") && t.contains("●");
 		});
-		s.waitFor(tag + ": and back to all PvP modes", 200, () -> board(L[0], 0, 0).contains("#1 BHTestL2 - 55"));
+		s.waitFor(tag + ": and back to all games", 200, () -> board(L[0], 0, 0).contains("#1 BHTestL2 - 55"));
 
-		s.run(tag + ": L1 leaves BattleHub", () -> {
-			VARS.put("boardIds", HubBoards.entityIds());
-			Travel.leave(p(L[0]));
-		});
+		s.run(tag + ": L1 leaves BattleHub", () -> Travel.leave(p(L[0])));
 		s.waitFor(tag + ": L1's client dropped the boards", 60, () -> !HubWorld.is(p(L[0]).level())
 				&& !HubBoards.showing(p(L[0]).getUUID())
 				&& Collections.disjoint(p(L[0]).clientEntities(), HubBoards.entityIds()));
@@ -164,23 +160,19 @@ final class BoardTests {
 		});
 		s.run(tag + ": boards back on with the default modes; test stats cleared", () -> {
 			lb().enabled = true;
-			@SuppressWarnings("unchecked")
-			List<String> m0 = (List<String>) VARS.get("boardModes0");
-			@SuppressWarnings("unchecked")
-			List<String> m1 = (List<String>) VARS.get("boardModes1");
-			lb().walls.get(0).modes = m0;
-			lb().walls.get(1).modes = m1;
+			lb().walls.get(0).modes = new ArrayList<>(List.of("all"));
 			lb().cycleSeconds = (int) VARS.get("boardCycle");
 			HubBoards.rebuild();
 			for (String n : L) {
 				PlayerProfile pr = PlayerStore.get(p(n));
+				pr.overall = new ModeStats();
 				pr.modes.clear();
 				pr.ranked.clear();
 				pr.elo.clear();
 				p(n).leave();
 			}
 		});
-		s.waitFor(tag + ": boards are back", 60, () -> HubBoards.boardCount() == 9);
+		s.waitFor(tag + ": boards are back", 60, () -> HubBoards.boardCount() == 3);
 	}
 
 	/** Above the wall in this quarter (signs of x and z from the fountain), in the air, turned towards the fountain. */

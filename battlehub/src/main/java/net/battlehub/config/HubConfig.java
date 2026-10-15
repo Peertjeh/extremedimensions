@@ -11,7 +11,7 @@ import net.battlehub.core.RewardSettings;
 
 /** {@code config/battlehub/config.json}. Every field has a default; missing keys are filled in on load. */
 public final class HubConfig {
-	public static final int CURRENT_VERSION = 2;
+	public static final int CURRENT_VERSION = 3;
 
 	public int configVersion = CURRENT_VERSION;
 
@@ -165,7 +165,7 @@ public final class HubConfig {
 		/** Players with fewer kills are not on the K/D boards. */
 		public int minKillsForKd = 10;
 		/** Text size; 1 is the size of a name tag. */
-		public double scale = 1.0;
+		public double scale = 1.25;
 		public List<BoardWall> walls = defaultWalls();
 	}
 
@@ -190,13 +190,36 @@ public final class HubConfig {
 		}
 	}
 
+	/** Total kills and deaths over every game on the north-west wall, the best parkour runner on the south-west wall. */
 	static List<BoardWall> defaultWalls() {
+		List<BoardWall> l = new ArrayList<>();
+		l.add(new BoardWall("northwest", false, List.of("kills", "deaths"), List.of("all")));
+		l.add(new BoardWall("southwest", false, List.of("wins"), List.of("parkour")));
+		return l;
+	}
+
+	/** What 1.6.0 wrote by default (PvP and Ranked walls); replaced by the new default on upgrade. */
+	public static List<BoardWall> wallsOf160() {
 		List<BoardWall> l = new ArrayList<>();
 		l.add(new BoardWall("northwest", false, List.of("kills", "deaths", "kd", "coins"),
 				List.of("pvp", "ffa", "sword", "axe", "mace", "bow", "crossbow", "1v2", "1v3")));
 		l.add(new BoardWall("southwest", true, List.of("elo", "kills", "deaths", "kd", "coins"),
 				List.of("all", "sword", "axe", "mace", "bow", "crossbow")));
 		return l;
+	}
+
+	private static boolean sameWalls(List<BoardWall> a, List<BoardWall> b) {
+		if (a == null || a.size() != b.size()) {
+			return false;
+		}
+		for (int i = 0; i < a.size(); i++) {
+			BoardWall x = a.get(i);
+			BoardWall y = b.get(i);
+			if (x == null || x.ranked != y.ranked || !y.side.equals(x.side) || !y.stats.equals(x.stats) || !y.modes.equals(x.modes)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/** Settings for one mode. Only the keys that matter for that mode are used. */
@@ -289,6 +312,7 @@ public final class HubConfig {
 	public HubConfig normalize() {
 		if (hub == null) hub = new Hub();
 		if (lobby == null) lobby = new Lobby();
+		int from = configVersion;
 		if (configVersion < 2) {
 			// 1.0 used a lobby in the normal world; 1.1 has its own world, so the old position no longer applies.
 			lobby.set = false;
@@ -327,6 +351,11 @@ public final class HubConfig {
 		if (titles == null) titles = new Titles();
 		if (arenas == null) arenas = new Arenas();
 		if (leaderboards == null) leaderboards = new Leaderboards();
+		if (from < 3 && sameWalls(leaderboards.walls, wallsOf160())) {
+			// 1.6.1: three boards instead of nine (kills, deaths, parkour), a little bigger
+			leaderboards.walls = defaultWalls();
+			if (leaderboards.scale == 1.0) leaderboards.scale = 1.25;
+		}
 		if (leaderboards.walls == null) leaderboards.walls = defaultWalls();
 		leaderboards.walls.removeIf(w -> w == null);
 		for (BoardWall w : leaderboards.walls) {
@@ -337,7 +366,7 @@ public final class HubConfig {
 		leaderboards.cycleSeconds = Math.max(3, Math.min(600, leaderboards.cycleSeconds));
 		leaderboards.rows = Math.max(3, Math.min(15, leaderboards.rows));
 		leaderboards.minKillsForKd = Math.max(1, leaderboards.minKillsForKd);
-		if (!(leaderboards.scale >= 0.5)) leaderboards.scale = 1.0;
+		if (!(leaderboards.scale >= 0.5)) leaderboards.scale = 1.25;
 		leaderboards.scale = Math.min(3.0, leaderboards.scale);
 		if (arenas.themes == null) arenas.themes = defaultThemes();
 		Map<String, List<String>> defThemes = defaultThemes();

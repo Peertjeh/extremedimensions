@@ -193,3 +193,12 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Inhoud | PvP: kills, keer dood, K/D (minstens 10 kills) en verdiende coins. Ranked: ELO (hoogste), kills, keer dood, K/D en coins uit ranked-potjes. "PvP" telt Free for All, de duels (ook boog en kruisboog), 1v2 en 1v3. Elke muur wisselt om de 8 seconden van modus (alle modi samen, dan per modus); de bolletjes onderaan laten zien welke. Alles in te stellen onder `leaderboards`. |
 | Klikken | Borden zijn niet aanklikbaar (een tekst-display heeft geen hitbox, en klikken op iets dat alleen bij de speler bestaat komt niet bij de server aan); daarom wisselen ze vanzelf. Het menu Stats → Ranglijsten blijft er ook. |
 | Verdiende coins | Werden nog niet bijgehouden. Nu per modus, per ranked-modus en in totaal (`coinsEarned`, ook levelbonussen en toernooiprijzen; admin-coins tellen niet mee). Oude profielen krijgen één keer een schatting uit hun gespeelde, gewonnen en kills per modus met de huidige beloningen; het totaal is minstens wat ze hebben plus wat ze aan titels en cosmetics uitgaven. |
+
+## Versie 1.6.1
+
+| Onderwerp | Keuze |
+|---|---|
+| Minder borden | Op verzoek drie borden in plaats van negen: totaal kills en totaal keer dood over alle spellen in BattleHub (noordwest), en de beste parkour runner (meeste parkour races gewonnen, midden op de zuidwestmuur). Geen wisselende modi meer, iets grotere tekst (`scale` 1,25). |
+| Parkour-winst | Telt zoals de mod een parkour-winst al bijhoudt: eerste in een race, of alleen het parcours uitlopen (oefenen telt dus mee). |
+| Bijwerken | Een `config.json` met precies de borden van 1.6.0 krijgt de nieuwe drie; wie de borden zelf had aangepast, houdt die. De andere statistieken (K/D, coins, ELO, per modus, ranked) blijven in te stellen. |
+

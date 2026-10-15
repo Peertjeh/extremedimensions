@@ -74,6 +74,14 @@ class BoardStatsTest {
 	}
 
 	@Test
+	void parkourRunnerIsRankedByRacesWon() {
+		PlayerProfile p = new PlayerProfile();
+		p.modes.put("parkour", stats(9, 4, 0, 0, 0));
+		assertEquals(4, BoardStats.value(p, Stat.WINS, BoardStats.scope("parkour"), false, 10));
+		assertEquals(0, BoardStats.value(new PlayerProfile(), Stat.WINS, BoardStats.scope("parkour"), false, 10));
+	}
+
+	@Test
 	void kdNeedsEnoughKillsAndSurvivesNoDeaths() {
 		PlayerProfile p = new PlayerProfile();
 		p.modes.put("axe", stats(2, 2, 9, 0, 0));

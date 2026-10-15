@@ -670,7 +670,7 @@
 	"boards.desc.coins": "&8Coins gewonnen in potjes",
 	"boards.desc.wins": "&8Gewonnen potjes",
 	"boards.desc.elo": "&8Hoogste rating",
-	"boards.scope.all": "&fAlle modi",
+	"boards.scope.all": "&fAlle spellen in BattleHub",
 	"boards.scope.pvp": "&c&lPvP &7(alle modi)",
 	"boards.ranked": "&6&lRanked &8· {0}",
 	"boards.row": "{0} &f{1} &8- &e{2}",
@@ -678,5 +678,7 @@
 	"boards.row_empty": "&8#{0} -",
 	"boards.you": "&7Jij: {0} &8- &e{1}",
 	"boards.you_none": "&7Jij: &8nog niet op dit bord",
-	"boards.elo_value": "{0} &8({1}&8)"
+	"boards.elo_value": "{0} &8({1}&8)",
+	"boards.stat.wins.parkour": "&a&l★ BESTE PARKOUR RUNNER ★",
+	"boards.desc.wins.parkour": "&8Meeste parkour races gewonnen"
 }

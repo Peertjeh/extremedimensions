@@ -318,9 +318,9 @@ public final class HubBoards {
 		BoardStats.Scope scope = w.scopes.get(Math.max(0, w.scope));
 		Ranking ranking = w.rankings.get(b.stat);
 		List<Component> lines = new ArrayList<>();
-		lines.add(Lang.tr(p, "boards.stat." + b.stat.id()));
+		lines.add(Lang.tr(p, key("boards.stat.", b.stat, scope)));
 		lines.add(w.ranked ? Lang.tr(p, "boards.ranked", scopeName(p, scope)) : scopeName(p, scope));
-		lines.add(Lang.tr(p, "boards.desc." + b.stat.id(), cfg.leaderboards.minKillsForKd));
+		lines.add(Lang.tr(p, key("boards.desc.", b.stat, scope), cfg.leaderboards.minKillsForKd));
 		lines.add(Component.empty());
 		String self = p.getUUID().toString();
 		for (int i = 0; i < cfg.leaderboards.rows; i++) {
@@ -347,6 +347,12 @@ public final class HubBoards {
 			out.append(lines.get(i));
 		}
 		return out;
+	}
+
+	/** A text for this stat in this mode when there is one ("boards.stat.wins.parkour"), else the general one. */
+	private static String key(String prefix, BoardStats.Stat stat, BoardStats.Scope scope) {
+		String special = prefix + stat.id() + "." + scope.id();
+		return Lang.has(special) ? special : prefix + stat.id();
 	}
 
 	private static Component scopeName(ServerPlayer p, BoardStats.Scope scope) {
