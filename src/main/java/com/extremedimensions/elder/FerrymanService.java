@@ -290,7 +290,9 @@ public final class FerrymanService {
 			}
 			case Ferryman.CHAIN -> {
 				if (b.at(10)) {
-					ElderFx.line(dim, "minecraft:soul_fire_flame", f.getX(), f.getY() + 9, f.getZ(), p.getX(), p.getY() + 1, p.getZ(), 24);
+					// A chain of soul fire lashes out from the boat and hauls its passenger in
+					AttackFx.line((ServerLevel) f.level(), 1, AttackFx.LINE_CHAIN, f.getX(), f.getY() + 9, f.getZ(), p.getX(), p.getY() + 1, p.getZ(), 6);
+					AttackFx.impact((ServerLevel) f.level(), 1, AttackFx.IMPACT_WISP, p.getX(), p.getY() + 1, p.getZ(), 1);
 					WorldFx.soundIn(dim, "minecraft:block.chain.break", "hostile", p.getX(), p.getY(), p.getZ(), 3f, 0.5f);
 					ElderFx.pull(f, p, 9);
 					WorldFx.effect(p, MobEffects.SLOWNESS, 2, 1);
@@ -387,10 +389,10 @@ public final class FerrymanService {
 			f.motion.drive(f, -dx / d * 0.18, -dz / d * 0.18, 0.03, 0.1);
 			f.motion.turn(f, ElderFx.yawTo(f, p.getX(), p.getZ()), 5f);
 			ElderFx.look(f, p);
-			if (fare.ticks % 3 == 0) {
-				for (int i = 4; i < 40; i += 2) {
-					WorldFx.particleIn(level, "minecraft:soul_fire_flame", f.getX() + dx / d * i, p.getY() + 0.2, f.getZ() + dz / d * i, 0.5, 0, 0.5, 0, 1);
-				}
+			// The way the boat will take, its sigils kindling along the ground
+			if (fare.ticks % 6 == 0) {
+				AttackFx.line(level, 1, AttackFx.LINE_PATH, f.getX() + dx / d * 4, p.getY(), f.getZ() + dz / d * 4,
+						f.getX() + dx / d * 40, p.getY(), f.getZ() + dz / d * 40, 7);
 			}
 		}
 		if (b.at(20)) {
@@ -412,8 +414,10 @@ public final class FerrymanService {
 			if (fare.ticks % 2 == 0) {
 				ElderTerrain.mark(level, f.getX() - fare.dirX * 6, f.getY(), f.getZ() - fare.dirZ * 6, 2, 0.5, ElderTerrain.Mark.SOUL);
 			}
-			WorldFx.particleIn(level, "minecraft:soul_fire_flame", fx, f.getY() + 1, fz, 2, 0.6, 2, 0.08, 10);
-			WorldFx.particleIn(level, "minecraft:soul", f.getX(), f.getY() + 3, f.getZ(), 3, 2, 3, 0.02, 4);
+			if (fare.ticks % 2 == 0) {
+				AttackFx.impact(level, 1, AttackFx.IMPACT_CHARGE, fx, f.getY(), fz, 2.2);
+			}
+			WorldFx.particleIn(level, "minecraft:soul", f.getX(), f.getY() + 3, f.getZ(), 3, 2, 3, 0.02, 2);
 			for (ServerPlayer q : ElderFx.targets(f, 12)) {
 				double qx = q.getX() - f.getX(), qz = q.getZ() - f.getZ();
 				// Along the hull (it is long) and within reach of it
@@ -460,20 +464,24 @@ public final class FerrymanService {
 					double a = 2 * Math.PI * i / 14;
 					ElderTerrain.column(level, cx + Math.cos(a) * 3.2, cy, cz + Math.sin(a) * 3.2, 4, Blocks.IRON_BARS, 90);
 				}
-				ElderFx.ring(level, "minecraft:soul_fire_flame", cx, cy + 0.2, cz, 3.2, 28, 0);
+				AttackFx.ring(level, 1, cx, cy, cz, 3.2, (int) (26 / Math.max(0.5, f.getTempo())));
 				WorldFx.effect(q, MobEffects.SLOWNESS, 4, 1);
 				WorldFx.soundIn(dim, "minecraft:block.chain.place", "hostile", cx, cy, cz, 3f, 0.5f);
 			}
 		}
 		if (b.between(12, 36) && fare.ticks % 3 == 0) {
+			// Chains of soul fire from the bars to a point overhead, drawing in as the cage crushes
 			for (double[] c : fare.cages) {
 				double r = 3.2 - 2.2 * (b.t - 12) / 24.0;
-				ElderFx.ring(level, "minecraft:soul", c[0], c[1] + 1 + (b.t % 3), c[2], r, 16, b.t * 0.2);
+				for (int i = 0; i < 7; i++) {
+					double a = 2 * Math.PI * i / 7 + b.t * 0.05;
+					AttackFx.line(level, 1, AttackFx.LINE_CHAIN, c[0] + Math.cos(a) * r, c[1], c[2] + Math.sin(a) * r, c[0], c[1] + 5.5, c[2], 3);
+				}
 			}
 		}
 		if (b.at(36)) {
 			for (double[] c : fare.cages) {
-				WorldFx.particleIn(level, "minecraft:soul_fire_flame", c[0], c[1] + 1, c[2], 1.2, 1, 1.2, 0.1, 50);
+				AttackFx.impact(level, 1, ElderStrikes.SOULFALL, c[0], c[1], c[2], 3.6);
 				WorldFx.soundIn(dim, "minecraft:entity.iron_golem.damage", "hostile", c[0], c[1], c[2], 3f, 0.4f);
 				for (ServerPlayer q : ElderFx.targets(f, 60)) {
 					if (q.distanceToSqr(c[0], c[1], c[2]) < 3.6 * 3.6) {
@@ -525,6 +533,10 @@ public final class FerrymanService {
 			fare.lift += 0.15;
 			f.motion.heave(f, 0.15);
 		}
+		if (b.at(1)) {
+			// The toll is laid on the ground under him while he hangs over it
+			AttackFx.ring(level, 1, f.getX(), f.getY(), f.getZ(), 12, (int) (length / Math.max(0.5, f.getTempo())));
+		}
 		if (b.every(2, 0)) {
 			ElderFx.shake(f, f.getX(), f.getZ(), 64, (float) (0.15 + 0.45 * k), 4);
 			WorldFx.particleIn(level, "minecraft:soul", f.getX(), f.getY() - 0.5, f.getZ(), 3, 0.5, 7, 0.03, 3);
@@ -564,6 +576,7 @@ public final class FerrymanService {
 			ElderTerrain.blast(f, f.getX(), f.getY() + 0.5, f.getZ(), 3.2f, false);
 			ElderStrikes.wave(f, f.getX(), f.getY(), f.getZ(), 1.2, 38, 10f, "minecraft:soul_fire_flame", ElderTerrain.Mark.SOUL);
 			ElderTerrain.mark(level, f.getX(), f.getY(), f.getZ(), 16, 0.6, ElderTerrain.Mark.SOUL);
+			AttackFx.burst(level, 1, f.getX(), f.getY() + 1, f.getZ(), 8);
 			fare.breakUltimate(f, BOSS);
 		}
 		if (b.past(length)) {
@@ -602,8 +615,9 @@ public final class FerrymanService {
 		}
 		fare.bar.removeAllPlayers();
 		ServerLevel level = (ServerLevel) f.level();
-		ElderFx.burst(f, "minecraft:soul_fire_flame", 200);
+		ElderFx.burst(f, "minecraft:soul_fire_flame", 100);
 		ElderFx.burst(f, "minecraft:soul", 80);
+		AttackFx.burst(level, 1, f.getX(), f.getY() + 2, f.getZ(), 9);
 		ElderFx.cinema(f, 160, ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");
 		f.spawnAtLocation(level, new ItemStack(ModItems.TETHER_FRAGMENT, 3));
 		if (ThreadLocalRandom.current().nextDouble() < Config.FERRYMAN_RELIC_CHANCE) {

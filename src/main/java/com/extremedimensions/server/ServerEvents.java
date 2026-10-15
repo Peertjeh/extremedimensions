@@ -91,6 +91,7 @@ public final class ServerEvents {
 			com.extremedimensions.elder.FerrymanService.clear();
 			com.extremedimensions.elder.MatriarchService.clear();
 			com.extremedimensions.elder.ElderStrikes.clear();
+			com.extremedimensions.elder.AttackFx.clear();
 			com.extremedimensions.elder.WeaverService.clear();
 			AtonementGuard.clear();
 			DataStore.unload();
@@ -406,6 +407,7 @@ public final class ServerEvents {
 		com.extremedimensions.elder.ElderTerrain.tick(s);
 		com.extremedimensions.elder.WeaverService.tick(s);
 		com.extremedimensions.elder.ElderArena.tick(s);
+		com.extremedimensions.elder.AttackFx.flush(s);
 	}
 
 	/** Journal pages found by exploring. */

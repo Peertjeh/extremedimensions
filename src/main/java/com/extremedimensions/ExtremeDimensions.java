@@ -100,6 +100,7 @@ public class ExtremeDimensions implements ModInitializer {
 
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BossMusicPayload.TYPE, ModPackets.BossMusicPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BossFxPayload.TYPE, ModPackets.BossFxPayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.AttackFxPayload.TYPE, ModPackets.AttackFxPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.TrialsPayload.TYPE, ModPackets.TrialsPayload.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestTrialsPayload.TYPE, ModPackets.RequestTrialsPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestTrialsPayload.TYPE, (payload, context) ->

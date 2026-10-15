@@ -307,7 +307,7 @@ public final class MatriarchService {
 		for (int i = 0; i < 9; i++) {
 			double a = -1.1 + 2.2 * i / 8;
 			double cx = fx * Math.cos(a) - fz * Math.sin(a), cz = fz * Math.cos(a) + fx * Math.sin(a);
-			WorldFx.particleIn(level, "minecraft:sweep_attack", m.getX() + cx * 8, m.getY() + 3, m.getZ() + cz * 8, 0, 0, 0, 0, 1);
+			AttackFx.impact(level, 0, AttackFx.IMPACT_CHARGE, m.getX() + cx * 9, m.getY(), m.getZ() + cz * 9, 1.6);
 			ElderTerrain.furrow(level, m.getX() + cx * 9, m.getY(), m.getZ() + cz * 9, 1.4, 0, 2, 7);
 		}
 		WorldFx.soundIn(dim, "minecraft:entity.player.attack.sweep", "hostile", m.getX(), m.getY() + 4, m.getZ(), 4f, 0.4f);
@@ -343,6 +343,7 @@ public final class MatriarchService {
 		WorldFx.soundIn(dim, "extremedimensions:lurker_shriek", "hostile", m.getX(), m.getY() + 10, m.getZ(), 5f, 0.4f);
 		WorldFx.particleIn(m.level(), "extremedimensions:lurker_wisp", m.getX(), m.getY() + 10, m.getZ(), 5, 3, 5, 0.0, 90);
 		WorldFx.particleIn(m.level(), "minecraft:sonic_boom", m.getX(), m.getY() + 11, m.getZ(), 0, 0, 0, 0, 1);
+		AttackFx.wave((ServerLevel) m.level(), 0, true, m.getX(), m.getY(), m.getZ(), 2, 1.3, 20);
 		ElderFx.shake(m, m.getX(), m.getZ(), 32, 0.8f, 20);
 		for (ServerPlayer q : ElderFx.targets(m, 20)) {
 			WorldFx.effect(q, MobEffects.DARKNESS, 5, 0);
@@ -363,13 +364,12 @@ public final class MatriarchService {
 		if (b.between(0, 18)) {
 			m.motion.turn(m, ElderFx.yawTo(m, p.getX(), p.getZ()), 6f);
 			m.motion.brake(m, 0.05, 0);
-			// The way she will take, burning on the ground
-			if (f.ticks % 3 == 0) {
+			// The way she will take, her sigils kindling one after another along the ground
+			if (f.ticks % 6 == 0) {
 				double dx = p.getX() - m.getX(), dz = p.getZ() - m.getZ();
 				double d = Math.max(0.1, Math.sqrt(dx * dx + dz * dz));
-				for (int i = 3; i < 30; i += 2) {
-					WorldFx.particleIn(level, "minecraft:flame", m.getX() + dx / d * i, m.getY() + 0.3, m.getZ() + dz / d * i, 0.6, 0, 0.6, 0, 1);
-				}
+				AttackFx.line(level, 0, AttackFx.LINE_PATH, m.getX() + dx / d * 3, m.getY(), m.getZ() + dz / d * 3,
+						m.getX() + dx / d * 30, m.getY(), m.getZ() + dz / d * 30, 7);
 			}
 			WorldFx.particleIn(level, "minecraft:campfire_cosy_smoke", m.getX(), m.getY() + 0.5, m.getZ(), 3, 0.2, 3, 0.02, 2);
 		}
@@ -388,8 +388,10 @@ public final class MatriarchService {
 			m.motion.turn(m, (float) (Math.atan2(f.dirZ, f.dirX) * 180 / Math.PI) - 90f, 8f);
 			double fx = m.getX() + f.dirX * 3, fz = m.getZ() + f.dirZ * 3;
 			ElderTerrain.furrow(level, fx, m.getY(), fz, 2.6, 1, 4, 6);
-			WorldFx.particleIn(level, "minecraft:campfire_cosy_smoke", fx, m.getY() + 1, fz, 1.5, 0.5, 1.5, 0.03, 4);
-			WorldFx.particleIn(level, "minecraft:crit", fx, m.getY() + 2, fz, 2, 1, 2, 0.3, 8);
+			WorldFx.particleIn(level, "minecraft:campfire_cosy_smoke", fx, m.getY() + 1, fz, 1.5, 0.5, 1.5, 0.03, 2);
+			if (f.ticks % 2 == 0) {
+				AttackFx.impact(level, 0, AttackFx.IMPACT_CHARGE, fx, m.getY(), fz, 2.6);
+			}
 			if (f.ticks % 3 == 0) {
 				ElderFx.step(m, 3f);
 			}
@@ -427,10 +429,9 @@ public final class MatriarchService {
 		double[] radius = {7, 13, 19};
 		for (int k = 0; k < 3; k++) {
 			double mark = 20 + k * 10;
-			if (b.between(mark - 10, mark) && f.ticks % 2 == 0) {
-				// The ring cracks before it bursts
-				ElderFx.ring(level, "minecraft:smoke", m.getX(), m.getY() + 0.2, m.getZ(), radius[k], (int) (radius[k] * 4), f.ticks * 0.05);
-				ElderFx.ring(level, "extremedimensions:lurker_wisp", m.getX(), m.getY() + 0.3, m.getZ(), radius[k], (int) radius[k], 0);
+			if (b.at(mark - 10)) {
+				// The ring is drawn on the ground before it bursts
+				AttackFx.ring(level, 0, m.getX(), m.getY(), m.getZ(), radius[k], 12);
 			}
 			if (b.at(mark)) {
 				ThreadLocalRandom rnd = ThreadLocalRandom.current();
@@ -439,7 +440,7 @@ public final class MatriarchService {
 					double a = 2 * Math.PI * i / n + k * 0.3;
 					double x = m.getX() + Math.cos(a) * radius[k], z = m.getZ() + Math.sin(a) * radius[k];
 					ElderTerrain.column(level, x, m.getY(), z, 2 + rnd.nextInt(3), Blocks.MANGROVE_ROOTS, 110 + k * 10);
-					WorldFx.particleIn(level, "minecraft:large_smoke", x, m.getY() + 1, z, 0.5, 1, 0.5, 0.02, 3);
+					AttackFx.impact(level, 0, AttackFx.IMPACT_CHARGE, x, m.getY(), z, 1.4);
 					ElderTerrain.mark(level, x, m.getY(), z, 1.6, 0.6, ElderTerrain.Mark.ROOT);
 				}
 				WorldFx.soundIn(dim, "minecraft:block.rooted_dirt.break", "hostile", m.getX(), m.getY(), m.getZ(), 5f, 0.4f + k * 0.1f);
@@ -495,9 +496,12 @@ public final class MatriarchService {
 		if (b.every(2, 0)) {
 			ElderFx.shake(m, m.getX(), m.getZ(), 64, (float) (0.15 + 0.5 * k), 4);
 		}
+		if (b.at(1)) {
+			// Her roots go down: a slow ring of torn earth runs out from her
+			AttackFx.wave(level, 0, true, m.getX(), m.getY(), m.getZ(), 2, 0.6, 2 + length * 0.15 * 0.6);
+		}
 		if (b.between(0, length * 0.15)) {
-			WorldFx.particleIn(level, "minecraft:large_smoke", m.getX(), m.getY() + 0.5, m.getZ(), 4, 0.4, 4, 0.03, 6);
-			ElderFx.ring(level, "extremedimensions:lurker_wisp", m.getX(), m.getY() + 0.3, m.getZ(), 2 + b.t * 0.6, 24, b.t * 0.1);
+			WorldFx.particleIn(level, "minecraft:large_smoke", m.getX(), m.getY() + 0.5, m.getZ(), 4, 0.4, 4, 0.03, 3);
 		}
 		if (b.between(length * 0.15, length * 0.75)) {
 			if (b.every(6, 0)) {
@@ -505,7 +509,7 @@ public final class MatriarchService {
 				double a = b.t * 0.55, r = 6 + (b.t * 1.7) % 22;
 				double x = m.getX() + Math.cos(a) * r, z = m.getZ() + Math.sin(a) * r;
 				ElderTerrain.column(level, x, m.getY(), z, 4 + rnd.nextInt(4), Blocks.MANGROVE_ROOTS, 220);
-				WorldFx.particleIn(level, "minecraft:explosion", x, m.getY() + 1, z, 0.5, 0.5, 0.5, 0, 1);
+				AttackFx.impact(level, 0, ElderStrikes.ROOTS, x, m.getY(), z, 2.4);
 				WorldFx.soundIn(dim, "minecraft:block.rooted_dirt.place", "hostile", x, m.getY(), z, 3f, 0.4f);
 				ElderTerrain.mark(level, x, m.getY(), z, 2.5, 0.6, ElderTerrain.Mark.ROOT);
 				for (ServerPlayer q : ElderFx.targets(m, 40)) {
@@ -518,6 +522,10 @@ public final class MatriarchService {
 			if (b.every(20, 0)) {
 				ElderFight.markPlayers(m, ElderFx.targets(m, 64), "minecraft:end_rod");
 			}
+		}
+		if (b.at(length * 0.75)) {
+			// Her sigil opens under her as she draws the light in
+			AttackFx.ring(level, 0, m.getX(), m.getY(), m.getZ(), 10, (int) (length * 0.25));
 		}
 		if (b.between(length * 0.75, length - 10)) {
 			ThreadLocalRandom rnd = ThreadLocalRandom.current();
@@ -540,6 +548,7 @@ public final class MatriarchService {
 			ElderStrikes.wave(m, m.getX(), m.getY(), m.getZ(), 1.1, 36, 10f, "minecraft:soul_fire_flame", ElderTerrain.Mark.ROOT);
 			ElderStrikes.wave(m, m.getX(), m.getY(), m.getZ(), 0.8, 26, 0f, "extremedimensions:lurker_wisp", null);
 			ElderTerrain.mark(level, m.getX(), m.getY(), m.getZ(), 18, 0.5, ElderTerrain.Mark.ROOT);
+			AttackFx.burst(level, 0, m.getX(), m.getY() + 1, m.getZ(), 8);
 			f.breakUltimate(m, BOSS);
 		}
 		if (b.past(length)) {
@@ -560,7 +569,8 @@ public final class MatriarchService {
 		HollowService.markSlain(f.hoard);
 		ServerLevel level = (ServerLevel) m.level();
 		ElderFx.burst(m, "extremedimensions:lurker_wisp", 200);
-		ElderFx.burst(m, "minecraft:soul_fire_flame", 120);
+		ElderFx.burst(m, "minecraft:soul_fire_flame", 60);
+		AttackFx.burst(level, 0, m.getX(), m.getY() + 2, m.getZ(), 9);
 		ElderFx.cinema(m, 160, ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");
 		m.spawnAtLocation(level, new ItemStack(ModItems.TETHER_FRAGMENT, 4));
 		m.spawnAtLocation(level, new ItemStack(ModItems.WANDERERS_PAGE, 2));

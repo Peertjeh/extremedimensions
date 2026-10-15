@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.16.0: Every Blow Drawn
+
+### Changed
+- **The Elders' attacks are drawn in fine detail**, with sprites of their own in place of the game's flames and smoke:
+  - **Every blow is foretold by the Elder's sigil on the ground**, turning and tightening on the spot until the blow
+    lands, a ring round it showing exactly how far it reaches: the Matriarch's mandala of braided roots and thorns
+    round her weeping eye, the Ferryman's toll of chain links, runes and watching skulls round an obol, the Last
+    Weaver's web of silk with dew of light and its gem of an eye. What the blow brings falls onto it as it comes: one
+    of her lanterns, a needle of light or the great lance, a comet of soul fire.
+  - **Blows land in a flash, crack the ground** (the cracks glow a while) **and throw the Elder's own matter**: bark,
+    thorns, turning leaves and violet fire from the Matriarch; ash, soul fire and spinning obols from the Ferryman;
+    glass shards and glints of light from the Last Weaver. Explosions, charges and the talons' sweep tear the ground
+    the same way.
+  - **Shockwaves run out as rings** of torn earth, soul fire or woven light, at exactly the pace that hurts (jump
+    the ring), shedding debris as they go.
+  - **Threads, chains and beams are drawn along their lines**: the Weaver's silk, slack and violet or pulled taut,
+    white and gold; the Ferryman's chains of soul fire (the chain that hauls you in, the cage that crushes inwards);
+    the Seraphic Lance as a beam of white and gold crackling with light, leaving a scorched trail of cracks.
+  - **Soul wisps and lantern bombs fly as themselves**: a teal flame with a skull's face, a lantern of black iron
+    with violet fire in it, both trailing fire.
+  - Charges are foretold by **a path of sigils** kindling along the ground; the Cathedral of Thorns draws each ring
+    on the ground before it bursts; the Gaol of Chains and the ultimates lay the Elder's sigil under it while they
+    last; the ultimates and the Elders' deaths end in **a great burst** of their matter.
+- The server now sends each player one packet a tick with the effects near them, instead of hundreds of particle
+  packets: fights cost less bandwidth than before.
+- New setting `elder_attack_fx_detail` (1): how much debris the blows throw (0.25 to 2); sigils, rings and threads
+  are always drawn. With *reduce flashing* on, the flashes are small and dim and the sigils do not pulse.
+
 ## 2.15.0: Faces in the Dark
 
 ### Changed

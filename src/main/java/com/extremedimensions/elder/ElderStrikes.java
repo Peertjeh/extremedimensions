@@ -24,11 +24,13 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * The Elders' blows that are not a hand on a body. Strikes are foretold by a ring of light and land a moment later
- * where the ring was (step out of it). Soul wisps and lantern bombs drift after their prey (the bombs burst where they
+ * The Elders' blows that are not a hand on a body. Strikes are foretold by the Elder's sigil on the ground and land a
+ * moment later where it was (step out of it). Soul wisps and lantern bombs drift after their prey (the bombs burst where they
  * hit). Shockwaves run out over the ground in a ring (jump them). A beam sweeps the ground and carves it. Threads hold
  * a player to the spot they stood on, and a web of threads strung across the ground cuts whatever stands in it when it
  * is pulled taut.
+ *
+ * <p>How they look is drawn by the client from what {@link AttackFx} sends it.
  */
 public final class ElderStrikes {
 	private ElderStrikes() {}
@@ -47,7 +49,7 @@ public final class ElderStrikes {
 		UUID source;
 		double x, y, z, radius;
 		float damage;
-		int delay, age, kind;
+		int delay, age, kind, elder;
 	}
 
 	private static final class Wisp {
@@ -55,7 +57,7 @@ public final class ElderStrikes {
 		UUID source, target;
 		double x, y, z, vx, vy, vz;
 		float damage, blast;
-		int age;
+		int age, id, elder;
 	}
 
 	private static final class Tether {
@@ -93,6 +95,7 @@ public final class ElderStrikes {
 		float damage;
 	}
 
+	private static int nextWisp;
 	private static final List<Strike> STRIKES = new ArrayList<>();
 	private static final List<Wisp> WISPS = new ArrayList<>();
 	private static final List<Tether> TETHERS = new ArrayList<>();
@@ -136,7 +139,10 @@ public final class ElderStrikes {
 		s.damage = damage;
 		s.delay = Math.max(4, delay);
 		s.kind = kind;
+		s.elder = AttackFx.of(source);
 		STRIKES.add(s);
+		// The warning: the Elder's sigil on the ground, tightening as the blow comes (and what falls on it)
+		AttackFx.sigil(s.level, s.elder, kind, x, y, z, radius, s.delay);
 	}
 
 	static void wisp(ElderBoss source, double x, double y, double z, ServerPlayer target, float damage) {
@@ -155,6 +161,8 @@ public final class ElderStrikes {
 		w.vy = 0.25;
 		w.damage = damage;
 		w.blast = blast;
+		w.id = ++nextWisp;
+		w.elder = AttackFx.of(source);
 		WISPS.add(w);
 	}
 
@@ -187,6 +195,8 @@ public final class ElderStrikes {
 		w.particle = particle;
 		w.mark = mark;
 		WAVES.add(w);
+		// The client draws the ring running out at the same pace (a wave that does no harm is drawn faint)
+		AttackFx.wave(w.level, AttackFx.of(source), damage <= 0, x, y, z, w.r, speed, max);
 	}
 
 	/**
@@ -273,23 +283,6 @@ public final class ElderStrikes {
 		while (it.hasNext()) {
 			Strike s = it.next();
 			s.age++;
-			String warn = switch (s.kind) {
-				case LANTERN, SOULFALL -> "minecraft:soul_fire_flame";
-				case ROOTS -> "minecraft:smoke";
-				case SLAM -> "minecraft:flame";
-				case SPEAR -> "minecraft:end_rod";
-				default -> "minecraft:witch";
-			};
-			if (s.age < s.delay && s.age % 3 == 0) {
-				// The warning: a ring on the ground that tightens as the blow comes
-				double r = s.radius * (1.0 - 0.35 * s.age / (double) s.delay);
-				ElderFx.ring(s.level, warn, s.x, s.y + 0.15, s.z, r, (int) Math.min(28, 10 + s.radius * 3), s.age * 0.1);
-				if (s.kind == LANTERN || s.kind == SOULFALL) {
-					WorldFx.particleIn(s.level, "minecraft:soul_fire_flame", s.x, s.y + 14 - 14.0 * s.age / s.delay, s.z, 0.15, 0.15, 0.15, 0, 3);
-				} else if (s.kind == NEEDLE || s.kind == SPEAR) {
-					WorldFx.particleIn(s.level, "minecraft:end_rod", s.x, s.y + 11 - 11.0 * s.age / s.delay, s.z, 0.05, 0.3, 0.05, 0, s.kind == SPEAR ? 4 : 1);
-				}
-			}
 			if (s.age >= s.delay) {
 				it.remove();
 				later.add(() -> land(s));
@@ -301,16 +294,14 @@ public final class ElderStrikes {
 	private static void land(Strike s) {
 		ElderBoss b = boss(s.level, s.source);
 		String dim = s.level.dimension().identifier().toString();
+		AttackFx.impact(s.level, s.elder, s.kind, s.x, s.y, s.z, s.radius);
 		switch (s.kind) {
 			case LANTERN -> {
-				WorldFx.particleIn(s.level, "minecraft:soul_fire_flame", s.x, s.y + 0.5, s.z, s.radius * 0.5, 0.4, s.radius * 0.5, 0.06, 60);
 				WorldFx.soundIn(dim, "minecraft:block.glass.break", "hostile", s.x, s.y, s.z, 2f, 0.6f);
 				WorldFx.soundIn(dim, "minecraft:item.firecharge.use", "hostile", s.x, s.y, s.z, 2f, 0.7f);
 				ElderTerrain.mark(s.level, s.x, s.y, s.z, s.radius * 0.7, 0.35, ElderTerrain.Mark.ROOT);
 			}
 			case ROOTS -> {
-				WorldFx.particleIn(s.level, "minecraft:large_smoke", s.x, s.y + 1, s.z, s.radius * 0.4, 0.8, s.radius * 0.4, 0.02, 30);
-				WorldFx.particleIn(s.level, "extremedimensions:lurker_wisp", s.x, s.y + 1.5, s.z, s.radius * 0.4, 1.2, s.radius * 0.4, 0, 20);
 				WorldFx.soundIn(dim, "minecraft:block.rooted_dirt.break", "hostile", s.x, s.y, s.z, 2f, 0.5f);
 				// Roots burst out of the ground for a while
 				for (int i = 0; i < 4; i++) {
@@ -320,27 +311,21 @@ public final class ElderStrikes {
 				ElderTerrain.mark(s.level, s.x, s.y, s.z, s.radius, 0.5, ElderTerrain.Mark.ROOT);
 			}
 			case SLAM -> {
-				WorldFx.particleIn(s.level, "minecraft:lava", s.x, s.y + 0.3, s.z, s.radius * 0.4, 0.2, s.radius * 0.4, 0, 12);
-				WorldFx.particleIn(s.level, "minecraft:explosion", s.x, s.y + 0.5, s.z, 0.3, 0.1, 0.3, 0, 1);
 				WorldFx.soundIn(dim, "minecraft:entity.generic.explode", "hostile", s.x, s.y, s.z, 1.5f, 0.6f);
 				ElderTerrain.furrow(s.level, s.x, s.y - 1, s.z, s.radius * 0.6, 1, 0, 4);
 				ElderTerrain.mark(s.level, s.x, s.y, s.z, s.radius, 0.6, ElderTerrain.Mark.SOUL);
 			}
 			case SPEAR -> {
-				WorldFx.particleIn(s.level, "minecraft:end_rod", s.x, s.y + 0.5, s.z, s.radius * 0.4, 1.2, s.radius * 0.4, 0.15, 80);
 				if (b != null) {
 					ElderTerrain.blast(b, s.x, s.y, s.z, 2.6f, false);
 				}
 				ElderTerrain.mark(s.level, s.x, s.y, s.z, s.radius + 2, 0.5, ElderTerrain.Mark.SCORCH);
 			}
 			case SOULFALL -> {
-				WorldFx.particleIn(s.level, "minecraft:soul_fire_flame", s.x, s.y + 0.5, s.z, s.radius * 0.5, 0.6, s.radius * 0.5, 0.08, 70);
-				WorldFx.particleIn(s.level, "minecraft:soul", s.x, s.y + 0.5, s.z, s.radius * 0.4, 0.6, s.radius * 0.4, 0.03, 20);
 				WorldFx.soundIn(dim, "minecraft:entity.blaze.shoot", "hostile", s.x, s.y, s.z, 2f, 0.5f);
 				ElderTerrain.mark(s.level, s.x, s.y, s.z, s.radius, 0.7, ElderTerrain.Mark.SOUL);
 			}
 			default -> {
-				WorldFx.particleIn(s.level, "minecraft:end_rod", s.x, s.y + 0.5, s.z, s.radius * 0.3, 0.6, s.radius * 0.3, 0.05, 30);
 				WorldFx.soundIn(dim, "minecraft:entity.arrow.hit", "hostile", s.x, s.y, s.z, 2f, 0.5f);
 				ElderTerrain.mark(s.level, s.x, s.y, s.z, s.radius * 0.6, 0.3, ElderTerrain.Mark.SCORCH);
 			}
@@ -370,7 +355,7 @@ public final class ElderStrikes {
 			w.age++;
 			ServerPlayer p = s.getPlayerList().getPlayer(w.target);
 			if (p == null || !p.isAlive() || p.level() != w.level || w.age > 200) {
-				WorldFx.particleIn(w.level, "minecraft:soul", w.x, w.y, w.z, 0.2, 0.2, 0.2, 0.02, 6);
+				AttackFx.impact(w.level, w.elder, AttackFx.IMPACT_WISP, w.x, w.y, w.z, 1);
 				it.remove();
 				continue;
 			}
@@ -384,16 +369,7 @@ public final class ElderStrikes {
 			w.x += w.vx;
 			w.y += w.vy;
 			w.z += w.vz;
-			if (w.blast > 0) {
-				WorldFx.particleIn(w.level, "minecraft:flame", w.x, w.y, w.z, 0.15, 0.15, 0.15, 0.01, 2);
-				WorldFx.particleIn(w.level, "minecraft:soul_fire_flame", w.x, w.y, w.z, 0.2, 0.2, 0.2, 0.01, 2);
-				WorldFx.particleIn(w.level, "minecraft:large_smoke", w.x, w.y, w.z, 0.1, 0.1, 0.1, 0.0, 1);
-			} else {
-				WorldFx.particleIn(w.level, "minecraft:soul_fire_flame", w.x, w.y, w.z, 0.12, 0.12, 0.12, 0.01, 3);
-			}
-			if (w.age % 2 == 0) {
-				WorldFx.particleIn(w.level, "extremedimensions:soul_mote", w.x, w.y, w.z, 0.2, 0.2, 0.2, 0, 1);
-			}
+			AttackFx.wisp(w.level, w.elder, w.blast > 0 ? AttackFx.WISP_BOMB : AttackFx.WISP_SOUL, w.id, w.x, w.y, w.z, w.vx, w.vy, w.vz);
 			// A bomb also bursts on the ground it flies into
 			boolean struck = d < 1.3;
 			if (w.blast > 0 && !struck && w.age > 10) {
@@ -403,7 +379,7 @@ public final class ElderStrikes {
 			if (struck) {
 				it.remove();
 				later.add(() -> {
-					WorldFx.particleIn(w.level, "minecraft:soul_fire_flame", w.x, w.y, w.z, 0.4, 0.4, 0.4, 0.05, 25);
+					AttackFx.impact(w.level, w.elder, w.blast > 0 ? AttackFx.IMPACT_BOMB : AttackFx.IMPACT_WISP, w.x, w.y, w.z, 1.5);
 					WorldFx.soundIn(w.level.dimension().identifier().toString(), "minecraft:entity.vex.hurt", "hostile", w.x, w.y, w.z, 1.5f, 0.5f);
 					ElderBoss b = boss(w.level, w.source);
 					if (w.blast > 0 && b != null) {
@@ -428,12 +404,12 @@ public final class ElderStrikes {
 				it.remove();
 				continue;
 			}
-			String dim = t.level.dimension().identifier().toString();
 			// The thread runs from the Weaver's hand to the player
 			double yaw = Math.toRadians(boss.getYRot());
 			double hx = boss.getX() - Math.cos(yaw) * 9.5 * t.side, hz = boss.getZ() - Math.sin(yaw) * 9.5 * t.side;
 			if (t.age % 2 == 0) {
-				ElderFx.line(dim, "minecraft:witch", hx, boss.getY() + 13.5, hz, p.getX(), p.getY() + 1.2, p.getZ(), 18);
+				AttackFx.line(t.level, AttackFx.of(boss instanceof ElderBoss eb ? eb : null), AttackFx.LINE_THREAD, hx, boss.getY() + 13.5, hz,
+						p.getX(), p.getY() + 1.2, p.getZ(), 2);
 			}
 			// It holds them near the spot it caught them: straying, they are yanked back
 			double dx = t.ax - p.getX(), dz = t.az - p.getZ();
@@ -457,11 +433,6 @@ public final class ElderStrikes {
 			if (w.r > w.max) {
 				it.remove();
 				continue;
-			}
-			int n = (int) Math.min(140, 12 + w.r * 4);
-			ElderFx.ring(w.level, w.particle, w.x, w.y + 0.2, w.z, w.r, n, w.r * 0.05);
-			if (((int) (w.r * 10)) % 3 == 0) {
-				ElderFx.ring(w.level, "minecraft:poof", w.x, w.y + 0.4, w.z, w.r, n / 3, 0.3);
 			}
 			if (w.mark != null) {
 				for (int i = 0; i < 6; i++) {
@@ -503,11 +474,10 @@ public final class ElderStrikes {
 				gy = b.fy - 16;
 			}
 			String dim = b.level.dimension().identifier().toString();
-			ElderFx.line(dim, "minecraft:end_rod", b.fx, b.fy, b.fz, gx, gy + 0.2, gz, 26);
-			ElderFx.line(dim, "minecraft:electric_spark", b.fx, b.fy, b.fz, gx, gy + 0.2, gz, 12);
-			WorldFx.particleIn(b.level, "minecraft:lava", gx, gy + 0.3, gz, 0.6, 0.1, 0.6, 0, 3);
-			WorldFx.particleIn(b.level, "minecraft:large_smoke", gx, gy + 0.5, gz, 0.5, 0.3, 0.5, 0.02, 4);
+			int elder = AttackFx.of(boss);
+			AttackFx.line(b.level, elder, AttackFx.LINE_BEAM, b.fx, b.fy, b.fz, gx, gy + 0.2, gz, 2);
 			if (b.age % 3 == 0) {
+				AttackFx.impact(b.level, elder, AttackFx.IMPACT_SCORCH, gx, gy, gz, 1.4);
 				WorldFx.soundIn(dim, "minecraft:block.fire.extinguish", "hostile", gx, gy, gz, 1.2f, 0.6f);
 			}
 			// It carves a burning trench
@@ -542,9 +512,10 @@ public final class ElderStrikes {
 			String dim = w.level.dimension().identifier().toString();
 			boolean taut = w.age >= w.duration;
 			if (w.age % 2 == 0 || taut) {
+				ElderBoss owner = boss(w.level, w.source);
 				for (double[] l : w.lines) {
-					ElderFx.line(dim, taut ? "minecraft:end_rod" : "minecraft:witch", l[0], l[1], l[2], l[3], l[4], l[5],
-							(int) Math.min(40, 4 + Math.hypot(l[3] - l[0], l[5] - l[2]) * 1.2));
+					AttackFx.line(w.level, AttackFx.of(owner), taut ? AttackFx.LINE_THREAD_TAUT : AttackFx.LINE_THREAD, l[0], l[1], l[2], l[3], l[4], l[5],
+							taut ? 12 : 2);
 				}
 			}
 			for (ServerPlayer p : w.level.players()) {
@@ -588,7 +559,7 @@ public final class ElderStrikes {
 			if (s.is(BlockTags.LEAVES) || s.is(BlockTags.WOOL) || s.is(BlockTags.FLOWERS) || s.is(Blocks.GLASS) || s.is(Blocks.GLASS_PANE)
 					|| (s.canBeReplaced() && !s.isAir() && !s.liquid())) {
 				level.destroyBlock(pos, false, null, 512);
-				WorldFx.particleIn(level, "minecraft:enchanted_hit", pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 0.2, 0.2, 0.2, 0.1, 2);
+				AttackFx.impact(level, 2, AttackFx.IMPACT_CUT, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 0.6);
 			}
 		}
 	}

@@ -103,6 +103,22 @@ public class BossTests {
 		helper.succeed();
 	}
 
+	/** The Elders' attack effects reach the client as they were sent (every field of every effect, in order). */
+	@GameTest
+	public void attackEffectsSurviveTheWire(GameTestHelper helper) {
+		java.util.List<com.extremedimensions.network.ModPackets.AttackFxPayload.Fx> fx = java.util.List.of(
+				new com.extremedimensions.network.ModPackets.AttackFxPayload.Fx(1, 0, 2, 1.5F, 64F, -3.25F, 0, 0, 0, 2.8F, 28),
+				new com.extremedimensions.network.ModPackets.AttackFxPayload.Fx(4, 2, 1, -10F, 70F, 4F, 6F, 64F, 9.5F, 0, 12),
+				new com.extremedimensions.network.ModPackets.AttackFxPayload.Fx(5, 1, 0, 3F, 66.5F, 3F, 0.04F, -0.01F, 0.02F, 0, 123456));
+		com.extremedimensions.network.ModPackets.AttackFxPayload sent = new com.extremedimensions.network.ModPackets.AttackFxPayload(1.5F, fx);
+		net.minecraft.network.FriendlyByteBuf buf = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+		com.extremedimensions.network.ModPackets.AttackFxPayload.CODEC.encode(buf, sent);
+		com.extremedimensions.network.ModPackets.AttackFxPayload back = com.extremedimensions.network.ModPackets.AttackFxPayload.CODEC.decode(buf);
+		check(helper, back.equals(sent), "the attack effects came back changed: %s", back);
+		check(helper, buf.readableBytes() == 0, "%s bytes were left over", buf.readableBytes());
+		helper.succeed();
+	}
+
 	@GameTest
 	public void anElderCannotBeHurtWhileItForms(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);

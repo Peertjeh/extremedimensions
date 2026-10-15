@@ -90,6 +90,39 @@ public class ClientShots implements FabricClientGameTest {
 		return p.level().getEntitiesOfClass(com.extremedimensions.elder.ElderBoss.class, p.getBoundingBox().inflate(96));
 	}
 
+	/**
+	 * Attack effects drawn in front of the camera (as the server would send them), for the shots: 0 the three sigils
+	 * with what falls on them, 1 blows landing on them with shockwaves, 2 lines and wisps.
+	 */
+	private static void fx(net.minecraft.client.Minecraft mc, int which) {
+		double x = mc.player.getX(), z = mc.player.getZ() + 11;
+		double g = Math.floor(mc.player.getY()) - 8;
+		java.util.List<com.extremedimensions.network.ModPackets.AttackFxPayload.Fx> list = new java.util.ArrayList<>();
+		int[] strikes = {1, 3, 4};
+		int[] blows = {2, 6, 5};
+		for (int e = 0; e < 3; e++) {
+			float ex = (float) (x + (1 - e) * 7.5);
+			if (which == 0) {
+				list.add(new com.extremedimensions.network.ModPackets.AttackFxPayload.Fx(1, e, strikes[e], ex, (float) g, (float) z, 0, 0, 0, 3.0F, 50));
+			} else if (which == 1) {
+				list.add(new com.extremedimensions.network.ModPackets.AttackFxPayload.Fx(2, e, blows[e], ex, (float) g, (float) z, 0, 0, 0, 3.0F, 0));
+				list.add(new com.extremedimensions.network.ModPackets.AttackFxPayload.Fx(3, e, 0, ex, (float) g, (float) z, 0.25F, 1.5F, 0, 6.5F, 0));
+			}
+		}
+		if (which == 2) {
+			float gy = (float) g;
+			list.add(new com.extremedimensions.network.ModPackets.AttackFxPayload.Fx(4, 2, 0, (float) x + 10, gy + 7, (float) z + 4, (float) x + 7, gy, (float) z - 2, 0, 60));
+			list.add(new com.extremedimensions.network.ModPackets.AttackFxPayload.Fx(4, 2, 1, (float) x + 7, gy + 7, (float) z + 4, (float) x + 4, gy, (float) z - 2, 0, 60));
+			list.add(new com.extremedimensions.network.ModPackets.AttackFxPayload.Fx(4, 1, 2, (float) x + 2, gy + 8, (float) z + 5, (float) x + 1, gy, (float) z - 1, 0, 60));
+			list.add(new com.extremedimensions.network.ModPackets.AttackFxPayload.Fx(4, 2, 3, (float) x - 2, gy + 11, (float) z + 6, (float) x - 3, gy, (float) z, 0, 60));
+			list.add(new com.extremedimensions.network.ModPackets.AttackFxPayload.Fx(4, 1, 4, (float) x - 6, gy + 6, (float) z + 4, (float) x - 8, gy + 1, (float) z - 1, 0, 60));
+			list.add(new com.extremedimensions.network.ModPackets.AttackFxPayload.Fx(4, 0, 5, (float) x - 9, gy, (float) z - 4, (float) x + 9, gy, (float) z - 4, 0, 60));
+			list.add(new com.extremedimensions.network.ModPackets.AttackFxPayload.Fx(5, 1, 0, (float) x - 1.5F, gy + 3, (float) z - 3, 0, 0, 0, 0, 9001));
+			list.add(new com.extremedimensions.network.ModPackets.AttackFxPayload.Fx(5, 0, 1, (float) x + 1.5F, gy + 3, (float) z - 3, 0, 0, 0, 0, 9002));
+		}
+		com.extremedimensions.client.fx.AttackFx.handle(new com.extremedimensions.network.ModPackets.AttackFxPayload(1.0F, list));
+	}
+
 	/** Every mob near the player (the creatures summoned for a shot). */
 	private static java.util.List<net.minecraft.world.entity.Mob> mobs(MinecraftServer s) {
 		ServerPlayer p = player(s);
@@ -481,6 +514,28 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("time set noon");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-7.3 ~ 0 0");
 			ctx.waitTicks(20);
+			// The Elders' attacks drawn in detail: their sigils by day and by night, with what falls on them; blows landing
+			// with their debris and shockwaves; threads, chains, a beam, a stream, a path of sigils and two wisps
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~8 ~ 0 48");
+			ctx.waitTicks(10);
+			ctx.runOnClient(mc -> fx(mc, 0));
+			ctx.waitTicks(22);
+			ctx.takeScreenshot("14_fx_sigils_day");
+			sp.getServer().runCommand("time set midnight");
+			ctx.waitTicks(10);
+			ctx.runOnClient(mc -> fx(mc, 0));
+			ctx.waitTicks(22);
+			ctx.takeScreenshot("14_fx_sigils_night");
+			ctx.runOnClient(mc -> fx(mc, 1));
+			ctx.waitTicks(4);
+			ctx.takeScreenshot("14_fx_impacts");
+			ctx.waitTicks(40);
+			ctx.runOnClient(mc -> fx(mc, 2));
+			ctx.waitTicks(2);
+			ctx.takeScreenshot("14_fx_lines");
+			sp.getServer().runCommand("time set noon");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-8 ~ 0 0");
+			ctx.waitTicks(30);
 			sp.getServer().runCommand("execute as @a run gamemode survival @s");
 
 			// A live fight with each Elder: it comes, its three new blows one after another, its ultimate, its death. The

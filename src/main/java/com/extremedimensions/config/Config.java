@@ -389,6 +389,8 @@ public final class Config {
 	public static int ELDER_ARENA_LINGER_SECONDS = 30;
 	/** Seconds an arena takes to come apart (the ground is put back as it was). */
 	public static double ELDER_ARENA_DISSOLVE_SECONDS = 5.0;
+	/** How much debris the Elders' blows throw, as a multiple (0.25 to 2); their sigils, rings and threads are always drawn. */
+	public static double ELDER_ATTACK_FX_DETAIL = 1.0;
 	/** The Starved One's health grows by this share for every player at the Heart beyond the first. */
 	public static double STARVED_HEALTH_PER_PLAYER = 0.5;
 	/** Below this share of its health the Starved One turns ravenous: faster, quicker tricks, and famine. */

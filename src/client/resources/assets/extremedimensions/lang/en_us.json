@@ -1185,6 +1185,8 @@
   "config.extremedimensions.elder_arena_linger_seconds.desc": "Seconds an arena stands after its fight before it comes apart; -1 = it stays for good.",
   "config.extremedimensions.elder_arena_dissolve_seconds": "Elders: arena comes apart in",
   "config.extremedimensions.elder_arena_dissolve_seconds.desc": "Seconds an arena takes to come apart; the ground is put back as it was.",
+  "config.extremedimensions.elder_attack_fx_detail": "Elders: attack detail",
+  "config.extremedimensions.elder_attack_fx_detail.desc": "How much debris the Elders' blows throw, as a multiple (0.25 to 2). Their sigils, rings and threads are always drawn.",
   "config.extremedimensions.starved_health_per_player": "Starved One: health per extra player",
   "config.extremedimensions.starved_health_per_player.desc": "Its health grows by this share for every player at the Heart beyond the first (0.5 = half again each).",
   "config.extremedimensions.starved_enrage_at": "Starved One: ravenous below",

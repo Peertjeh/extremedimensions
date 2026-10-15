@@ -1185,6 +1185,8 @@
   "config.extremedimensions.elder_arena_linger_seconds.desc": "Seconden dat een arena na het gevecht blijft staan voordat hij uiteenvalt; -1 = hij blijft voorgoed.",
   "config.extremedimensions.elder_arena_dissolve_seconds": "Ouden: arena valt uiteen in",
   "config.extremedimensions.elder_arena_dissolve_seconds.desc": "Seconden die het uiteenvallen van een arena duurt; de grond wordt teruggezet zoals hij was.",
+  "config.extremedimensions.elder_attack_fx_detail": "Ouden: detail van aanvallen",
+  "config.extremedimensions.elder_attack_fx_detail.desc": "Hoeveel brokstukken de slagen van de Ouden rondstrooien, als veelvoud (0,25 tot 2). Hun tekens, ringen en draden worden altijd getekend.",
   "config.extremedimensions.starved_health_per_player": "Starved One: gezondheid per extra speler",
   "config.extremedimensions.starved_health_per_player.desc": "Zijn gezondheid groeit met dit deel voor elke speler bij het Hart na de eerste (0.5 = de helft erbij per speler).",
   "config.extremedimensions.starved_enrage_at": "Starved One: uitgehongerd onder",

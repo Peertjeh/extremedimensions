@@ -336,8 +336,10 @@ public final class WeaverService {
 			WorldFx.soundIn(dim, "minecraft:block.beacon.activate", "hostile", h[0], h[1], h[2], 5f, 0.5f);
 		}
 		if (b.between(0, 22)) {
-			WorldFx.particleIn(u.level, "minecraft:end_rod", h[0], h[1], h[2], 2.5, 2.5, 2.5, -0.15, 6);
-			WorldFx.particleIn(u.level, "minecraft:electric_spark", h[0], h[1], h[2], 1, 1, 1, 0.2, 3);
+			WorldFx.particleIn(u.level, "minecraft:end_rod", h[0], h[1], h[2], 2.5, 2.5, 2.5, -0.15, 3);
+			if (u.ticks % 4 == 0) {
+				AttackFx.impact(u.level, 2, AttackFx.IMPACT_CUT, h[0], h[1], h[2], 1.5);
+			}
 		}
 		if (b.at(22)) {
 			double dx = p.getX() - w.getX(), dz = p.getZ() - w.getZ();
@@ -431,6 +433,11 @@ public final class WeaverService {
 			u.rise += 0.15;
 			w.motion.heave(w, 0.15);
 		}
+		if (b.at(1)) {
+			// Its web is laid on the ground under it
+			double gy = ElderFx.surface(level, w.getX(), w.getY(), w.getZ(), 4, 24);
+			AttackFx.ring(level, 2, w.getX(), Double.isNaN(gy) ? w.getY() - HOVER : gy, w.getZ(), 26, (int) (length / Math.max(0.5, w.getTempo())));
+		}
 		if (b.every(2, 0)) {
 			ElderFx.shake(w, w.getX(), w.getZ(), 64, (float) (0.1 + 0.4 * k), 4);
 		}
@@ -441,7 +448,8 @@ public final class WeaverService {
 			for (ServerPlayer q : near) {
 				double side = (i++ % 2 == 0) ? 1 : -1;
 				double hx = w.getX() - Math.cos(yaw) * 9.5 * side, hz = w.getZ() - Math.sin(yaw) * 9.5 * side;
-				ElderFx.line(dim, b.t > length * 0.6 ? "minecraft:end_rod" : "minecraft:witch", hx, w.getY() + 13.5, hz, q.getX(), q.getY() + 1.2, q.getZ(), 20);
+				AttackFx.line(level, 2, b.t > length * 0.6 ? AttackFx.LINE_THREAD_TAUT : AttackFx.LINE_THREAD, hx, w.getY() + 13.5, hz,
+						q.getX(), q.getY() + 1.2, q.getZ(), 3);
 			}
 		}
 		if (b.every(20, 30)) {
@@ -458,7 +466,7 @@ public final class WeaverService {
 				double a = 2 * Math.PI * m / 12 + b.t * 0.02;
 				double gx = w.getX() + Math.cos(a) * 26, gz = w.getZ() + Math.sin(a) * 26;
 				double gy = ElderFx.surface(level, gx, w.getY() - u.rise, gz, 8, 20);
-				ElderFx.line(dim, "minecraft:end_rod", w.getX(), apexY, w.getZ(), gx, Double.isNaN(gy) ? w.getY() - u.rise - HOVER : gy, gz, 26);
+				AttackFx.line(level, 2, AttackFx.LINE_THREAD_TAUT, w.getX(), apexY, w.getZ(), gx, Double.isNaN(gy) ? w.getY() - u.rise - HOVER : gy, gz, 8);
 			}
 			for (ServerPlayer q : near) {
 				ElderStrikes.strike(w, q.getX(), q.getY(), q.getZ(), 2.0, 5f, 16, ElderStrikes.NEEDLE);
@@ -479,6 +487,7 @@ public final class WeaverService {
 			ElderTerrain.blast(w, w.getX(), gy + 0.5, w.getZ(), 3.0f, false);
 			ElderStrikes.wave(w, w.getX(), gy, w.getZ(), 1.2, 34, 9f, "minecraft:end_rod", ElderTerrain.Mark.SCORCH);
 			ElderTerrain.mark(level, w.getX(), gy, w.getZ(), 14, 0.5, ElderTerrain.Mark.SCORCH);
+			AttackFx.burst(level, 2, w.getX(), gy + 1, w.getZ(), 8);
 			u.breakUltimate(w, BOSS);
 		}
 		if (b.past(length)) {
@@ -528,8 +537,9 @@ public final class WeaverService {
 		}
 		u.bar.removeAllPlayers();
 		ServerLevel level = (ServerLevel) w.level();
-		ElderFx.burst(w, "extremedimensions:soul_mote", 240);
-		ElderFx.burst(w, "minecraft:end_rod", 120);
+		ElderFx.burst(w, "extremedimensions:soul_mote", 160);
+		ElderFx.burst(w, "minecraft:end_rod", 60);
+		AttackFx.burst(level, 2, w.getX(), w.getY() + 2, w.getZ(), 9);
 		ElderFx.cinema(w, 160, ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");
 		w.spawnAtLocation(level, new ItemStack(ModItems.SEAM_SILK, 8));
 		w.spawnAtLocation(level, new ItemStack(ModItems.TETHER_FRAGMENT, 3));

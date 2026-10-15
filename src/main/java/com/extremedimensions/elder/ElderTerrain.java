@@ -55,6 +55,7 @@ public final class ElderTerrain {
 		ServerLevel level = (ServerLevel) b.level();
 		boolean grief = griefing(level);
 		level.explode(b, x, y, z, power, fire && grief, grief ? Level.ExplosionInteraction.MOB : Level.ExplosionInteraction.NONE);
+		AttackFx.impact(level, AttackFx.of(b), AttackFx.IMPACT_BLAST, x, y, z, power);
 	}
 
 	private static boolean breakable(ServerLevel level, BlockPos pos, BlockState s) {

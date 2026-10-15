@@ -446,4 +446,54 @@ public final class ModPackets {
 			return TYPE;
 		}
 	}
+
+	/**
+	 * The Elders' attack effects of one tick, for one player: sigils, impacts, shockwaves, threads and beams, wisps and
+	 * bursts (see {@code AttackFx} on each side). The client draws them in fine detail; {@code detail} scales how much
+	 * debris it throws.
+	 */
+	public record AttackFxPayload(float detail, java.util.List<Fx> fx) implements CustomPacketPayload {
+		public static final Type<AttackFxPayload> TYPE = new Type<>(ExtremeDimensions.id("attack_fx"));
+		public static final StreamCodec<FriendlyByteBuf, AttackFxPayload> CODEC = StreamCodec.ofMember(AttackFxPayload::write, AttackFxPayload::read);
+
+		/**
+		 * One effect: what it is, whose (0 the Matriarch, 1 the Ferryman, 2 the Last Weaver), which kind of it, a point,
+		 * a second point (or a speed or velocity), a size and a length in ticks (or an id).
+		 */
+		public record Fx(int kind, int elder, int variant, float x, float y, float z, float x2, float y2, float z2, float size, int ticks) {}
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeFloat(detail);
+			buf.writeVarInt(fx.size());
+			for (Fx f : fx) {
+				buf.writeByte(f.kind());
+				buf.writeByte(f.elder());
+				buf.writeByte(f.variant());
+				buf.writeFloat(f.x());
+				buf.writeFloat(f.y());
+				buf.writeFloat(f.z());
+				buf.writeFloat(f.x2());
+				buf.writeFloat(f.y2());
+				buf.writeFloat(f.z2());
+				buf.writeFloat(f.size());
+				buf.writeVarInt(f.ticks());
+			}
+		}
+
+		private static AttackFxPayload read(FriendlyByteBuf buf) {
+			float detail = buf.readFloat();
+			int n = buf.readVarInt();
+			java.util.List<Fx> fx = new java.util.ArrayList<>(Math.min(n, 4096));
+			for (int i = 0; i < n; i++) {
+				fx.add(new Fx(buf.readByte(), buf.readByte(), buf.readByte(), buf.readFloat(), buf.readFloat(), buf.readFloat(),
+						buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readFloat(), buf.readVarInt()));
+			}
+			return new AttackFxPayload(detail, fx);
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
 }

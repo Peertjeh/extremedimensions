@@ -124,6 +124,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		HudElementRegistry.addLast(ExtremeDimensions.id("boss_cinema"), new com.extremedimensions.client.fx.BossCinema());
 		Tooltips.register();
 		MoteParticle.register();
+		com.extremedimensions.client.fx.AttackFx.register();
 		ModelLayerRegistry.registerModelLayer(LurkerModel.LAYER, LurkerModel::createBodyLayer);
 		EntityRendererRegistry.register(ModEntities.LURKER, ctx -> new LurkerRenderer<>(ctx, "lurker", 1.4F, 1.1F, false));
 		EntityRendererRegistry.register(ModEntities.HOLLOWLING, ctx -> new LurkerRenderer<>(ctx, "hollowling", 0.42F, 0.4F, true));
@@ -167,6 +168,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 								JournalButton.takeReturn()))));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BossFxPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.fx.BossCinema.handle(payload)));
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.AttackFxPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> com.extremedimensions.client.fx.AttackFx.handle(payload)));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BossMusicPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> {
 					if (payload.stop()) {
