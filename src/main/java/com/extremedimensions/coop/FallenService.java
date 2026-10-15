@@ -254,7 +254,6 @@ public final class FallenService {
 		f.ending = true;
 		ServerLevel level = (ServerLevel) p.level();
 		DamageSource source = f.source != null ? f.source : level.damageSources().generic();
-		p.invulnerableTime = 0;
 		p.hurtServer(level, source, Float.MAX_VALUE);
 		if (p.isAlive() && !holdsTotem(p) && p.getHealth() <= 1.0F) {
 			p.kill(level);
