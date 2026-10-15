@@ -20,6 +20,7 @@ import net.battlehub.config.ConfigManager;
 import net.battlehub.config.HubConfig;
 import net.battlehub.core.BotStyle;
 import net.battlehub.core.GameMode;
+import net.battlehub.core.MatchRecap;
 import net.battlehub.core.Outcome;
 import net.battlehub.data.Snapshots;
 import net.battlehub.gui.Icons;
@@ -71,6 +72,8 @@ public abstract class Match {
 	protected final Map<UUID, Arena.Point> spawnOf = new HashMap<>();
 	protected final Map<UUID, Outcome> outcomes = new HashMap<>();
 	protected final RandomSource random = RandomSource.create();
+	/** Damage, hits, combos and kills of everyone, for the recap at the end. */
+	protected final MatchRecap recap = new MatchRecap();
 	protected Arena arena;
 	protected Phase phase = Phase.BUILDING;
 	protected int phaseTicks;
@@ -234,6 +237,37 @@ public abstract class Match {
 
 	/** After everyone went home: remove what the game left behind (displays, shopkeepers, scoreboards). */
 	protected void onClosed() {}
+
+	// ------------------------------------------------------------------ recap
+
+	public MatchRecap recap() {
+		return recap;
+	}
+
+	/** A swing by a participant in play (from the swing hook). */
+	public void recordSwing(ServerPlayer p) {
+		if (phase == Phase.RUNNING && inPlay(p.getUUID())) {
+			recap.swing(p.getUUID());
+		}
+	}
+
+	/** Damage between players of this match (or from the world when {@code attacker} is null). */
+	public void recordHit(ServerPlayer attacker, ServerPlayer victim, float amount, boolean arrow) {
+		if (phase != Phase.RUNNING || !participants.contains(victim.getUUID())) {
+			return;
+		}
+		UUID a = attacker != null && participants.contains(attacker.getUUID()) ? attacker.getUUID() : null;
+		recap.hit(a, victim.getUUID(), amount, arrow);
+		if (a != null) {
+			net.battlehub.fair.Teaming.hit(this, a, victim.getUUID(), runTicks / 20);
+		}
+	}
+
+	public void recordShot(ServerPlayer shooter) {
+		if (phase == Phase.RUNNING && inPlay(shooter.getUUID())) {
+			recap.shot(shooter.getUUID());
+		}
+	}
 
 	/** Share of the coin reward paid out (1 = all); XP is not affected. */
 	public double coinFactor() {
@@ -428,6 +462,9 @@ public abstract class Match {
 			case COUNTDOWN -> tickCountdown();
 			case RUNNING -> {
 				runTicks++;
+				if (runTicks % 20 == 0) {
+					net.battlehub.fair.Teaming.tick(this, runTicks / 20);
+				}
 				voidCheck();
 				if (phase == Phase.RUNNING) {
 					tickGame();
@@ -571,6 +608,7 @@ public abstract class Match {
 		boolean credited = killer != null && killer != victim && participants.contains(killer.getUUID());
 		if (credited) {
 			kills.merge(killer.getUUID(), 1, Integer::sum);
+			recap.kill(killer.getUUID());
 			Msg.sound(killer, SoundEvents.EXPERIENCE_ORB_PICKUP, 1f, 1.2f);
 			Cosmetics.onKill(killer, victim, victim.position());
 		}
@@ -644,6 +682,9 @@ public abstract class Match {
 			abort("match.cancelled_left");
 			return;
 		}
+		if (phase == Phase.COUNTDOWN || phase == Phase.RUNNING) {
+			net.battlehub.fair.LeavePenalty.left(id, this);
+		}
 		if (teleported) {
 			Snapshots.restore(p, teleport);
 			onRestored(p);
@@ -703,6 +744,11 @@ public abstract class Match {
 		} catch (Exception e) {
 			BattleHub.LOGGER.error("Could not apply results of match {}", id, e);
 		}
+		try {
+			RecapMessages.send(this);
+		} catch (RuntimeException e) {
+			BattleHub.LOGGER.error("Could not show the recap of match {}", id, e);
+		}
 		Menus.refreshAll(server);
 	}
 
@@ -730,6 +776,7 @@ public abstract class Match {
 
 	/** Game leftovers and loose entities go before the arena is cleared; a failing game hook never blocks cleanup. */
 	private void cleanUp() {
+		net.battlehub.fair.Teaming.forget(id);
 		try {
 			onClosed();
 		} catch (RuntimeException e) {

@@ -40,9 +40,11 @@ public final class RankedMenu extends Screen {
 		for (int i = 0; i < modes.length; i++) {
 			GameMode m = modes[i];
 			int elo = prof.elo(m, Ranks.startElo());
+			int placements = net.battlehub.progression.Seasons.placementsLeft(prof, m);
 			boolean queued = Queues.isQueued(viewer.getUUID(), m, true);
 			Icon icon = Icon.of(Icons.mode(m)).name(Lang.item(viewer, "menu.ranked.mode", Lang.tr(viewer, Icons.modeKey(m))))
-					.lore(Lang.lore(viewer, "menu.ranked.elo", elo, Ranks.tierName(viewer, elo)))
+					.lore(placements > 0 ? Lang.lore(viewer, "menu.ranked.placement", placements)
+							: Lang.lore(viewer, "menu.ranked.elo", elo, net.battlehub.progression.Seasons.rankName(viewer, elo)))
 					.lore(Lang.lore(viewer, "menu.ranked.record", prof.rankedStats(m).wins, prof.rankedStats(m).losses))
 					.lore(Lang.lore(viewer, "menu.mode.queued", Queues.waiting(m, true, Queues.formatOf(viewer))))
 					.lore(Component.empty())
@@ -56,6 +58,17 @@ public final class RankedMenu extends Screen {
 					new RankedMenu(viewer).open();
 				}
 			});
+		}
+		if (net.battlehub.progression.Seasons.enabled()) {
+			Icon season = Icon.of(Items.CLOCK).name(Lang.item(viewer, "menu.ranked.season", net.battlehub.progression.Seasons.current()))
+					.lore(Lang.lore(viewer, "menu.ranked.season_left", net.battlehub.progression.Seasons.daysLeft()))
+					.lore(Lang.loreLines(viewer, "menu.ranked.season.lore"));
+			if (!prof.pastSeasons.isEmpty()) {
+				net.battlehub.core.SeasonRecord last = prof.pastSeasons.get(prof.pastSeasons.size() - 1);
+				season.lore(Component.empty()).lore(Lang.lore(viewer, "menu.ranked.season_last", last.season,
+						net.battlehub.progression.Seasons.rankName(viewer, last.peakElo)));
+			}
+			c.set(4, season.build());
 		}
 		c.set(21, FormatButton.icon(viewer), click -> FormatButton.toggle(viewer, () -> new RankedMenu(viewer).open()));
 		c.set(23, Icon.of(Items.GOLD_INGOT).name(Lang.item(viewer, "menu.leaderboards"))

@@ -21,6 +21,7 @@ import net.battlehub.data.PlayerStore;
 import net.battlehub.gui.Icons;
 import net.battlehub.lang.Lang;
 import net.battlehub.progression.FeaturedMode;
+import net.battlehub.progression.Seasons;
 import net.battlehub.progression.Ranks;
 import net.battlehub.progression.TitleService;
 import net.battlehub.util.Msg;
@@ -64,6 +65,7 @@ public final class Results {
 			int[] e = elo.get(id);
 			if (e != null) {
 				prof.setElo(m.mode, e[1]);
+				Seasons.played(prof, m.mode, e[1]);
 			}
 			List<TitleDef> unlocked = TitleRules.newlyUnlocked(ConfigManager.titles().titles, prof, Ranks.startElo());
 			PlayerStore.save(id);
@@ -91,7 +93,11 @@ public final class Results {
 			if (e != null) {
 				int diff = e[1] - e[0];
 				Component change = Lang.format((diff >= 0 ? "&a+" : "&c") + diff);
-				Msg.raw(p, Lang.tr(p, "result.elo", e[1], change, Ranks.tierName(p, e[1])));
+				Msg.raw(p, Lang.tr(p, "result.elo", e[1], change, Seasons.rankName(p, e[1])));
+				int left = Seasons.placementsLeft(prof, m.mode);
+				if (left > 0) {
+					Msg.raw(p, Lang.tr(p, "result.placement", left));
+				}
 				if (!Ranks.tiers().tierFor(e[0]).id().equals(Ranks.tiers().tierFor(e[1]).id())) {
 					Msg.raw(p, Lang.tr(p, diff > 0 ? "result.tier_up" : "result.tier_down", Ranks.tierName(p, e[1])));
 				}
@@ -122,21 +128,22 @@ public final class Results {
 		int start = cfg.elo.start;
 		int ra = PlayerStore.get(a).elo(m.mode, start);
 		int rb = PlayerStore.get(b).elo(m.mode, start);
+		// Placement matches at the start of a season count double, for each player separately
+		int ka = Seasons.kFactor(PlayerStore.get(a), m.mode, cfg.elo.kFactor);
+		int kb = Seasons.kFactor(PlayerStore.get(b), m.mode, cfg.elo.kFactor);
 		Outcome oa = m.outcome(a);
 		Outcome ob = m.outcome(b);
 		int na;
 		int nb;
 		if (oa == Outcome.WIN && ob != Outcome.WIN) {
-			int[] r = Elo.afterWin(ra, rb, cfg.elo.kFactor, cfg.elo.floor);
-			na = r[0];
-			nb = r[1];
+			na = Elo.afterWin(ra, rb, ka, cfg.elo.floor)[0];
+			nb = Elo.afterWin(ra, rb, kb, cfg.elo.floor)[1];
 		} else if (ob == Outcome.WIN && oa != Outcome.WIN) {
-			int[] r = Elo.afterWin(rb, ra, cfg.elo.kFactor, cfg.elo.floor);
-			nb = r[0];
-			na = r[1];
+			nb = Elo.afterWin(rb, ra, kb, cfg.elo.floor)[0];
+			na = Elo.afterWin(rb, ra, ka, cfg.elo.floor)[1];
 		} else {
-			na = Math.max(cfg.elo.floor, ra + Elo.delta(ra, rb, 0.5, cfg.elo.kFactor));
-			nb = Math.max(cfg.elo.floor, rb + Elo.delta(rb, ra, 0.5, cfg.elo.kFactor));
+			na = Math.max(cfg.elo.floor, ra + Elo.delta(ra, rb, 0.5, ka));
+			nb = Math.max(cfg.elo.floor, rb + Elo.delta(rb, ra, 0.5, kb));
 		}
 		out.put(a, new int[] {ra, na});
 		out.put(b, new int[] {rb, nb});

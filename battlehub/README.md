@@ -43,6 +43,34 @@ and they come in three levels: **easy** walks and swings late, **normal** sprint
 * A match with bots pays half the coins and XP and never counts for stats, streaks or ELO, so they cannot be
   farmed.
 
+### Ranked seasons
+Ranked runs in **seasons** of 8 weeks. Every rating has a **division** inside its tier (Gold III, Gold II,
+Gold I). The first 5 ranked matches per mode in a season are **placement matches** that count double. When a
+season ends, your peak rating decides your reward (coins per tier) and the season titles (Season Veteran, Gold,
+Diamond and Netherite Season); then every rating moves halfway back to the start. The Ranked menu shows the
+season, the days left and how your last season ended. A season that ends while the server is off is closed at
+the next start.
+
+### After every match: a recap
+Damage dealt and taken (in hearts), hits and swings with your accuracy, your longest combo, arrows shot and hit,
+and the **MVP** of the match.
+
+### Kit editor
+`/kits` or **Kit editor** in the menu: put the items of every kit where you want them (click an item, then its
+new place). Used every time that kit is handed out.
+
+### Fair play
+* **Leaving early** (disconnect or `/hub` while a match with at least two people runs) blocks queueing for a
+  while: 30 seconds, then 2, 5, 15 and 30 minutes within a day. Matches with bots don't count.
+* **Idle players** are taken out of a match after 90 seconds and out of a queue after 5 minutes (props in Prop
+  Hunt may stand still, of course).
+* **No teaming** in Free for All and Last Man Standing: two players who stay together for a long time, fighting
+  others but never each other, are warned and glow for a while.
+* **Alerts for admins** (never automatic punishments): hits from too far away, clicking faster than a hand
+  can, hovering in the air, moving faster than possible. Logged and shown to online admins.
+* `/report <player> <reason>`: saved in `world/battlehub/reports.log` with the match the player was in and
+  shown to online admins; `/battlehub reports` lists the latest.
+
 ### Lobby characters and the mode of the day
 Eight characters stand around the fountain: PvP, Free for All, Ranked, Practice, Bed Wars, Prop Hunt, Party
 Games and Parkour. Above each: its name, how many people play it right now and a click hint; their heads turn
@@ -233,6 +261,8 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/cosmetics` | everyone | The cosmetics shop |
 | `/spectate [player]` | everyone | Spectate menu, or watch the match that player is in |
 | `/spectate leave` | everyone | Stop spectating |
+| `/kits` | everyone | The kit editor |
+| `/report <player> <reason>` | everyone | Report a player to the admins (once a minute) |
 | `/practice [mode] [easy\|normal\|hard]` | everyone | Practice against bots (sword, axe, mace, bow, crossbow, 1v2, 1v3); without a mode: the practice menu |
 | `/battlehub` | everyone | Open the main menu |
 | `/battlehub join <mode>` | everyone | Join a party lobby or duel queue (used by invites) |
@@ -241,6 +271,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/battlehub setlobby` | admin (level 2) | Set the hub spawn to your position (in the hub world) |
 | `/battlehub lobby rebuild` | admin | Build the hub again (after it was damaged or changed) |
 | `/battlehub reload` | admin | Reload the config, kits, titles and language files |
+| `/battlehub reports` | admin | The latest reports since the server started |
 | `/battlehub bots` / `/battlehub bots clear` | admin | How many bots are on; take them all off |
 | `/battlehub matches` | admin | List running matches |
 | `/battlehub endmatch <id>` | admin | Stop a match without results and restore its players |
@@ -270,6 +301,11 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   * `levels`: XP curve (`baseXp`, `increment`, `growth`, `maxLevel`) and level bonus coins
   * `streaks.milestones`: which win streaks are announced
   * `arenas`: number of slots, slot spacing, floor height, blocks built per tick, **themes per mode**
+  * `seasons`: on/off, the start date of season 1, the length in days, the number of placement matches, how
+    much of a rating stays at a new season, the coins per tier, the size of the Netherite divisions
+  * `fairness`: the leave penalty and its waiting times, the idle limits in matches and queues, the teaming
+    check and its time, the admin alerts and their limits (reach, clicks per second, hovering, speed), the
+    time between reports
   * `bots`: on/off, filling queues on/off, after how many seconds, party lobbies up to how many players, the
     level of bots that fill in, the most bots at once, the share of rewards in matches with bots, and how soon
     a bot leaves after its match

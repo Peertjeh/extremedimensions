@@ -40,6 +40,40 @@ public final class PlayerProfile {
 	public Set<String> ownedCosmetics = new LinkedHashSet<>();
 	/** Selected cosmetic per category ("trail", "kill", ...). */
 	public Map<String, String> cosmetics = new LinkedHashMap<>();
+	/** Season the season counters belong to (0: not in a season yet). */
+	public int season;
+	/** Ranked matches per mode this season; the first few are placement matches. */
+	public Map<String, Integer> seasonPlayed = new LinkedHashMap<>();
+	/** Highest rating per mode this season. */
+	public Map<String, Integer> seasonPeak = new LinkedHashMap<>();
+	/** How earlier seasons ended. */
+	public java.util.List<SeasonRecord> pastSeasons = new java.util.ArrayList<>();
+	/** Best tier reached in a finished season (index from the bottom, -1: none). */
+	public int bestSeasonTier = -1;
+	/** Own arrangement per kit (see KitLayout). */
+	public Map<String, java.util.List<Integer>> kitLayouts = new LinkedHashMap<>();
+	/** Day (since 1970) and week of the quests below, and the quests themselves. */
+	public long questDay = -1;
+	public long questWeek = -1;
+	public java.util.List<QuestProgress> dailyQuests = new java.util.ArrayList<>();
+	public java.util.List<QuestProgress> weeklyQuests = new java.util.ArrayList<>();
+	public int questsDone;
+	/** Tier reached per achievement (so each tier pays once). */
+	public Map<String, Integer> achievements = new LinkedHashMap<>();
+	/** Last day a login reward was given and the streak of days in a row. */
+	public long loginDay = -1;
+	public int loginStreak;
+	/** Season pass: season it belongs to, its XP, the highest tier paid out, and the best tier ever. */
+	public int passSeason;
+	public long passXp;
+	public int passTier;
+	public int bestPassTier;
+	/** Times the player went back to level 1 after the top level. */
+	public int prestige;
+	/** Matches left early in the last day, when the last one was, and until when queueing is blocked (epoch ms). */
+	public int leaves;
+	public long lastLeave;
+	public long queueBlockedUntil;
 
 	public PlayerProfile normalize() {
 		if (uuid == null) uuid = "";
@@ -55,6 +89,17 @@ public final class PlayerProfile {
 		if (ranked == null) ranked = new LinkedHashMap<>();
 		if (elo == null) elo = new LinkedHashMap<>();
 		if (bestTimes == null) bestTimes = new LinkedHashMap<>();
+		if (seasonPlayed == null) seasonPlayed = new LinkedHashMap<>();
+		if (seasonPeak == null) seasonPeak = new LinkedHashMap<>();
+		if (pastSeasons == null) pastSeasons = new java.util.ArrayList<>();
+		if (kitLayouts == null) kitLayouts = new LinkedHashMap<>();
+		pastSeasons.removeIf(r -> r == null);
+		if (dailyQuests == null) dailyQuests = new java.util.ArrayList<>();
+		if (weeklyQuests == null) weeklyQuests = new java.util.ArrayList<>();
+		dailyQuests.removeIf(q -> q == null || q.id == null);
+		weeklyQuests.removeIf(q -> q == null || q.id == null);
+		if (achievements == null) achievements = new LinkedHashMap<>();
+		kitLayouts.values().removeIf(l -> l == null);
 		if (level < 1) level = 1;
 		if (coins < 0) coins = 0;
 		if (coinsEarned < 0) coinsEarned = 0;

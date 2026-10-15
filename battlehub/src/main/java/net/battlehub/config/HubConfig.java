@@ -35,6 +35,8 @@ public final class HubConfig {
 	public Bots bots = new Bots();
 	public FeaturedMode featured = new FeaturedMode();
 	public Npcs npcs = new Npcs();
+	public Seasons seasons = new Seasons();
+	public Fairness fairness = new Fairness();
 	public Map<String, Game> games = defaultGames();
 
 	/** BattleHub's own world. Every other dimension is normal gameplay that BattleHub leaves alone. */
@@ -223,6 +225,55 @@ public final class HubConfig {
 			}
 		}
 		return true;
+	}
+
+	/** Ranked seasons: fixed length from a start date; placements, a soft reset and rewards per tier. */
+	public static final class Seasons {
+		public boolean enabled = true;
+		/** First day of season 1 (yyyy-mm-dd). */
+		public String start = "2026-10-01";
+		public int lengthDays = 56;
+		/** The first ranked matches per mode in a season count double for the rating. */
+		public int placements = 5;
+		/** Share of the distance to the start rating that stays at a new season (0.5: halfway back). */
+		public double keep = 0.5;
+		/** Coins at the end of a season for the tier of your peak rating. */
+		public Map<String, Integer> rewards = defaultSeasonRewards();
+		/** Netherite has no ceiling: its divisions go up every this many points. */
+		public int topDivisionStep = 100;
+	}
+
+	static Map<String, Integer> defaultSeasonRewards() {
+		Map<String, Integer> m = new LinkedHashMap<>();
+		m.put("bronze", 100);
+		m.put("silver", 250);
+		m.put("gold", 500);
+		m.put("diamond", 1000);
+		m.put("netherite", 2000);
+		return m;
+	}
+
+	/** Fair play: waiting after leaving matches, idle players, teaming, alerts for admins, reports. */
+	public static final class Fairness {
+		/** Leaving a match early (with at least two people in it) blocks queueing for a while. */
+		public boolean leavePenalty = true;
+		/** Seconds of waiting for the 1st, 2nd, 3rd, ... leave within a day. */
+		public List<Integer> leaveSteps = new ArrayList<>(List.of(30, 120, 300, 900, 1800));
+		/** Seconds without moving before an idle player is taken out of a match (0: never). */
+		public int afkMatchSeconds = 90;
+		/** ... or out of a queue. */
+		public int afkQueueSeconds = 300;
+		/** Free for All and Last Man Standing: warn two players who stay together without fighting each other. */
+		public boolean antiTeaming = true;
+		public int teamingSeconds = 30;
+		/** Alerts for admins (never punishments). */
+		public boolean antiCheat = true;
+		public double maxReach = 3.6;
+		public double maxCps = 20;
+		public int hoverTicks = 80;
+		/** Blocks per second on the ground (sprint-jumping is about 7). */
+		public double maxSpeed = 13;
+		public int reportCooldownSeconds = 60;
 	}
 
 	/** Bots that play when there are not enough people, and for practice. */
@@ -420,6 +471,18 @@ public final class HubConfig {
 		if (streaks.milestones == null) streaks.milestones = new ArrayList<>();
 		if (titles == null) titles = new Titles();
 		if (arenas == null) arenas = new Arenas();
+		if (seasons == null) seasons = new Seasons();
+		if (seasons.start == null) seasons.start = "2026-10-01";
+		seasons.lengthDays = Math.max(1, seasons.lengthDays);
+		seasons.placements = Math.max(0, seasons.placements);
+		seasons.keep = Math.max(0, Math.min(1, seasons.keep));
+		seasons.topDivisionStep = Math.max(1, seasons.topDivisionStep);
+		if (seasons.rewards == null) seasons.rewards = defaultSeasonRewards();
+		if (fairness == null) fairness = new Fairness();
+		if (fairness.leaveSteps == null) fairness.leaveSteps = new Fairness().leaveSteps;
+		fairness.leaveSteps.removeIf(v -> v == null);
+		fairness.afkMatchSeconds = Math.max(0, fairness.afkMatchSeconds);
+		fairness.afkQueueSeconds = Math.max(0, fairness.afkQueueSeconds);
 		if (bots == null) bots = new Bots();
 		bots.fillAfterSeconds = Math.max(0, bots.fillAfterSeconds);
 		bots.partyFillTo = Math.max(2, Math.min(16, bots.partyFillTo));

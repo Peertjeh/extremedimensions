@@ -65,6 +65,11 @@ public final class SelfTest {
 		s.run("no bots filling queues and no mode of the day, so every test knows who plays and what it pays", () -> {
 			ConfigManager.config().bots.fillQueues = false;
 			ConfigManager.config().featured.enabled = false;
+			// Tests leave matches and stand still on purpose; fairness tests switch these on themselves
+			ConfigManager.config().fairness.leavePenalty = false;
+			ConfigManager.config().fairness.afkMatchSeconds = 0;
+			ConfigManager.config().fairness.afkQueueSeconds = 0;
+			ConfigManager.config().fairness.antiTeaming = false;
 		});
 		HubWorldTests.all(server, s);
 		lobbyAndMenus(server, s);
@@ -101,6 +106,7 @@ public final class SelfTest {
 		ArcadeTests.all(server, s);
 		TournamentTests.all(server, s);
 		ProgressionTests.all(server, s);
+		CompetitiveTests.all(server, s);
 		s.check("coins earned are counted per mode, for ranked and in total", () -> {
 			PlayerProfile a = PlayerStore.get(p("BHTestA").getUUID());
 			PlayerProfile b = PlayerStore.get(p("BHTestB").getUUID());

@@ -49,6 +49,9 @@ public final class MainMenu extends Screen {
 		c.set(20, Icon.of(Items.TARGET).name(Lang.item(viewer, "menu.main.practice"))
 				.lore(Lang.loreLines(viewer, "menu.main.practice.lore")).clean().build(),
 				click -> new PracticeMenu(viewer).open());
+		c.set(24, Icon.of(Items.CHEST).name(Lang.item(viewer, "menu.main.kits"))
+				.lore(Lang.loreLines(viewer, "menu.main.kits.lore")).clean().build(),
+				click -> new KitListMenu(viewer).open());
 		if (net.battlehub.hub.Travel.inBattleHub(viewer)) {
 			c.set(22, Icon.of(Items.OAK_DOOR).name(Lang.item(viewer, "menu.main.exit"))
 					.lore(Lang.loreLines(viewer, "menu.main.exit.lore")).build(),

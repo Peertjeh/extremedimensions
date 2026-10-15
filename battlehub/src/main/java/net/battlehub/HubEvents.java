@@ -25,6 +25,7 @@ import net.battlehub.util.Tasks;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
@@ -38,6 +39,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
 
 /** Wires BattleHub to the Fabric events. */
@@ -53,6 +55,9 @@ public final class HubEvents {
 			Queues.clear();
 			net.battlehub.bot.Bots.clear();
 			net.battlehub.hub.HubNpcs.clear();
+			net.battlehub.fair.Afk.clear();
+			net.battlehub.fair.AntiCheat.clear();
+			net.battlehub.fair.Reports.clear();
 			net.battlehub.games.Visibility.clear();
 			Sessions.clear();
 			net.battlehub.hub.HubBoards.clear();
@@ -75,6 +80,22 @@ public final class HubEvents {
 		});
 		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) ->
 				!(entity instanceof ServerPlayer p) || allowDeath(p, source));
+		// Damage in matches feeds the recap, the teaming check and the reach check
+		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, base, taken, blocked) -> {
+			if (entity instanceof ServerPlayer victim) {
+				afterDamage(victim, source, taken);
+			}
+		});
+		// Arrows that players in a match shoot count for the recap
+		ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
+			if (entity instanceof Projectile proj && proj.getOwner() instanceof ServerPlayer shooter
+					&& entity instanceof net.minecraft.world.entity.projectile.arrow.AbstractArrow) {
+				Match m = matchOf(shooter);
+				if (m != null) {
+					m.recordShot(shooter);
+				}
+			}
+		});
 
 		// In a match the game decides about blocks, clicks and attacks; elsewhere the lobby protection does
 		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, be) -> {
@@ -159,6 +180,7 @@ public final class HubEvents {
 		net.battlehub.hub.Travel.init(server);
 		ArenaSlots.init(server);
 		net.battlehub.hub.HubWorld.ensureBuilt(server);
+		net.battlehub.progression.Seasons.init(server);
 	}
 
 	private static void stopping(MinecraftServer server) {
@@ -181,6 +203,9 @@ public final class HubEvents {
 		net.battlehub.progression.Cosmetics.tick(server, tick);
 		net.battlehub.hub.HubBoards.tick(server);
 		net.battlehub.hub.HubNpcs.tick(server);
+		net.battlehub.progression.Seasons.tick(server);
+		net.battlehub.fair.Afk.tick(server);
+		net.battlehub.fair.AntiCheat.tick(server);
 		if (net.battlehub.debug.SelfTest.enabled()) {
 			net.battlehub.debug.SelfTest.tick();
 		}
@@ -253,6 +278,7 @@ public final class HubEvents {
 		Queues.leaveAll(p);
 		TitleService.remove(p);
 		net.battlehub.progression.Cosmetics.forget(p.getUUID());
+		net.battlehub.fair.AntiCheat.forget(p.getUUID());
 		PlayerStore.save(p.getUUID());
 		Sessions.remove(p.getUUID());
 	}
@@ -298,9 +324,25 @@ public final class HubEvents {
 
 	/** An arm swing (from the network, on the server thread). */
 	public static void swung(ServerPlayer p) {
+		net.battlehub.fair.Afk.active(p.getUUID());
+		net.battlehub.fair.AntiCheat.swing(p);
 		Match m = matchOf(p);
 		if (m != null && !p.hasDisconnected()) {
+			m.recordSwing(p);
 			m.onSwing(p);
+		}
+	}
+
+	private static void afterDamage(ServerPlayer victim, net.minecraft.world.damagesource.DamageSource source, float taken) {
+		Match m = matchOf(victim);
+		if (m == null) {
+			return;
+		}
+		ServerPlayer attacker = source.getEntity() instanceof ServerPlayer a ? a : null;
+		boolean arrow = source.getDirectEntity() instanceof Projectile;
+		m.recordHit(attacker, victim, taken, arrow);
+		if (attacker != null && !arrow && source.getDirectEntity() == attacker) {
+			net.battlehub.fair.AntiCheat.hit(attacker, victim);
 		}
 	}
 

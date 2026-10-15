@@ -214,3 +214,19 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Lobbyfiguren | Acht figuren rond de fontein (op 10,5 blokken, op de noordhelft, kijkend naar het spawnpunt). Lichaam (mannequin, anders armor stand) en tekst bestaan alleen bij de spelers, in hun taal, met live aantallen (alleen mensen); het hoofd draait naar wie dichtbij staat. Klikken gaat via een echte, onzichtbare interaction-entiteit; oude kopieën na een herstart worden opgeruimd. |
 | Modus van de dag | Elke dag een andere uit een lijst (alle modi een keer voordat er een terugkomt), dubbele coins, aangekondigd bij het binnenkomen van de hub, met een ster in het menu en op de figuur. |
 
+## Versie 1.8 – Fase 2: competitief
+
+| Onderwerp | Keuze |
+|---|---|
+| Seizoenen | Vaste lengte (56 dagen) vanaf een startdatum in de config, dus het seizoensnummer volgt uit de datum. Welk seizoen al is afgesloten staat in `season.json`; een seizoen dat eindigde terwijl de server uit stond, wordt bij de volgende start afgesloten. Afsluiten gebeurt voor alle profielen tegelijk (ze staan toch in het geheugen). |
+| Divisies | Elke tier in drie gelijke delen (III laag, I hoog); Netheriet heeft geen plafond en gaat per 100 punten omhoog. |
+| Plaatsing | De eerste 5 ranked-potjes per modus per seizoen gebruiken een dubbele K-factor, per speler apart (dus de één kan in plaatsing zijn en de ander niet). |
+| Einde | Piek van het seizoen (hoogste rating in welke modus dan ook) bepaalt tier, coins en de nieuwe titelvoorwaarde `season` (hoogste tier ooit aan het einde van een seizoen). Daarna gaat elke rating halverwege terug naar de start. Bestaande `titles.json` krijgen de vier seizoenstitels erbij. |
+| Recap | Elke match houdt per speler schade, raak en zwaaien, pijlen, combo's en kills bij (via het schade-event van Fabric, het zwaai-event en nieuwe pijlen in de wereld). Na afloop krijgt iedereen zijn eigen regels en de MVP (kills tellen het zwaarst, dan schade). |
+| Kit-editor | Per kit een eigen indeling (welke inventarisplek elk genummerd kit-item krijgt). In het menu: klik een item en dan een plek, ze wisselen; bewaard in het profiel. Harnas en offhand blijven waar ze horen. Ongeldige indelingen worden genegeerd. |
+| Vroeg weggaan | Telt alleen in potjes met minstens twee mensen en zonder bots, zodra het aftellen bezig is. De wachttijd groeit per keer binnen een dag (30 s, 2, 5, 15, 30 min) en vergeten wordt een dag na de laatste keer. |
+| AFK | Niet bewegen, rondkijken of zwaaien: na 90 s uit het potje (telt als weggaan), na 5 min uit de wachtrij. Props in Prop Hunt staan juist stil en worden met rust gelaten. |
+| Teamen | Alleen in Free for All en Last Man Standing, vanaf drie spelers: twee spelers die lang (30 s) dicht bij elkaar blijven, wel anderen raken maar elkaar niet, krijgen een waarschuwing en gloeien 10 s. |
+| Anti-cheat | Alleen meldingen aan admins en in het log, nooit straffen: reach (afstand van de ogen tot de hitbox, twee keer binnen 10 s), meer dan 20 klikken per seconde drie seconden lang, 4 s zweven zonder te vallen, en meer dan 13 blokken per seconde (niet direct na een klap of met speed). Echte anti-cheat kan niet goed zonder client-informatie; dit vangt de duidelijke gevallen. |
+| Meldingen | `/report` schrijft één JSON-regel per melding in `reports.log`, met de match waar de speler in zat, en laat het online admins zien; één per minuut per speler. |
+

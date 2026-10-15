@@ -2,7 +2,8 @@ package net.battlehub.core;
 
 /**
  * A title from the config. {@code display} may use {@code &} colour codes.
- * Requirement types: default, level, wins, duel_wins, mode_wins, streak, mode_streak, kills, elo, coins.
+ * Requirement types: default, level, wins, duel_wins, mode_wins, streak, mode_streak, kills, elo, coins, season
+ * (the tier reached at the end of a ranked season: 0 bronze, 1 silver, 2 gold, 3 diamond, 4 netherite).
  */
 public final class TitleDef {
 	public String id = "";

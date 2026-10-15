@@ -146,6 +146,9 @@ public final class Queues {
 			Msg.send(p, "tournament.busy");
 			return false;
 		}
+		if (net.battlehub.fair.LeavePenalty.blocks(p)) {
+			return false;
+		}
 		HubConfig.Game g = ConfigManager.config().game(mode);
 		if (!g.enabled) {
 			Msg.send(p, "queue.disabled", Lang.tr(p, Icons.modeKey(mode)));

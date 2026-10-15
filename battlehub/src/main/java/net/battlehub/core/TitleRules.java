@@ -22,6 +22,7 @@ public final class TitleRules {
 			case "kills" -> p.overall.kills >= t.value;
 			case "elo" -> mode != null ? p.elo(mode, startElo) >= t.value : p.bestElo(startElo) >= t.value;
 			case "coins" -> p.ownedTitles.contains(t.id);
+			case "season" -> p.bestSeasonTier >= t.value;
 			default -> false;
 		};
 	}

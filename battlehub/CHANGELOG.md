@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.8.0
+
+### Added
+* **Ranked seasons** of 8 weeks: divisions in every tier (Gold III to Gold I), 5 placement matches per mode
+  that count double, a reward in coins for the tier of your peak at the end, season titles, and a soft reset
+  (halfway back to the start). The Ranked menu shows the season and how your last one ended.
+* **Match recap** after every match: damage dealt and taken, hits and accuracy, longest combo, arrows, and the
+  MVP.
+* **Kit editor** (`/kits` and in the menu): your own layout for every kit.
+* **Fair play**: a growing wait after leaving matches early, idle players taken out of matches and queues,
+  a teaming warning in Free for All and Last Man Standing, alerts for admins (reach, click speed, hovering,
+  speed) and `/report` with `/battlehub reports`.
+
 ## 1.7.0
 
 ### Added

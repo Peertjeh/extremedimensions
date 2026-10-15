@@ -1,10 +1,14 @@
 package net.battlehub.match;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import net.battlehub.BattleHub;
 import net.battlehub.config.ConfigManager;
 import net.battlehub.config.KitConfig;
+import net.battlehub.core.KitLayout;
+import net.battlehub.data.PlayerStore;
 import net.battlehub.util.Ids;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerPlayer;
@@ -26,6 +30,33 @@ public final class Kits {
 	 *
 	 * @param leatherColor colour for leather armour (-1 keeps the kit's own colour), used for CTF teams
 	 */
+	/** The inventory slots (0-35) the kit puts items in, in kit order; these are what a player can rearrange. */
+	public static List<Integer> numericSlots(KitConfig.Kit kit) {
+		List<Integer> out = new ArrayList<>();
+		for (KitConfig.KitItem ki : kit.items) {
+			int i = numeric(ki);
+			if (i >= 0) out.add(i);
+		}
+		return out;
+	}
+
+	/** The kit item that normally goes in this inventory slot. */
+	public static KitConfig.KitItem itemAt(KitConfig.Kit kit, int slot) {
+		for (KitConfig.KitItem ki : kit.items) {
+			if (numeric(ki) == slot) return ki;
+		}
+		return null;
+	}
+
+	private static int numeric(KitConfig.KitItem ki) {
+		try {
+			int i = Integer.parseInt(ki.slot == null ? "0" : ki.slot.trim());
+			return i >= 0 && i < 36 ? i : -1;
+		} catch (NumberFormatException e) {
+			return -1;
+		}
+	}
+
 	public static void give(ServerPlayer p, String kitName, int leatherColor) {
 		Inventory inv = p.getInventory();
 		inv.clearContent();
@@ -36,6 +67,9 @@ public final class Kits {
 			p.inventoryMenu.sendAllDataToRemote();
 			return;
 		}
+		// The player's own arrangement of this kit, if they made one
+		List<Integer> kitSlots = numericSlots(kit);
+		List<Integer> layout = PlayerStore.get(p).kitLayouts.get(kitName);
 		for (KitConfig.KitItem ki : kit.items) {
 			ItemStack stack = stack(p, ki, leatherColor);
 			if (stack.isEmpty()) {
@@ -54,6 +88,9 @@ public final class Kits {
 						i = Integer.parseInt(slot);
 					} catch (NumberFormatException e) {
 						i = -1;
+					}
+					if (i >= 0 && i < 36) {
+						i = KitLayout.slotFor(i, kitSlots, layout);
 					}
 					if (i >= 0 && i < 36 && inv.getItem(i).isEmpty()) {
 						inv.setItem(i, stack);

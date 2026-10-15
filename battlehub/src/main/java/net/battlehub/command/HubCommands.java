@@ -118,6 +118,16 @@ public final class HubCommands {
 											return 1;
 										})))));
 
+		d.register(Commands.literal("report").then(Commands.argument("player", StringArgumentType.word())
+				.suggests((c, b) -> SharedSuggestionProvider.suggest(c.getSource().getOnlinePlayerNames(), b))
+				.then(Commands.argument("reason", StringArgumentType.greedyString())
+						.executes(c -> net.battlehub.fair.Reports.report(c.getSource().getPlayerOrException(),
+								StringArgumentType.getString(c, "player"), StringArgumentType.getString(c, "reason")) ? 1 : 0))));
+		d.register(Commands.literal("kits").executes(c -> {
+			new net.battlehub.gui.KitListMenu(c.getSource().getPlayerOrException()).open();
+			return 1;
+		}));
+
 		d.register(Commands.literal("practice")
 				.executes(c -> {
 					new net.battlehub.gui.PracticeMenu(c.getSource().getPlayerOrException()).open();
@@ -136,6 +146,17 @@ public final class HubCommands {
 					new MainMenu(c.getSource().getPlayerOrException()).open();
 					return 1;
 				})
+				.then(Commands.literal("reports").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.executes(c -> {
+							java.util.List<String> recent = net.battlehub.fair.Reports.recent();
+							if (recent.isEmpty()) {
+								c.getSource().sendSuccess(() -> Lang.tr("fair.reports_none"), false);
+							}
+							for (String line : recent) {
+								c.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal(line), false);
+							}
+							return recent.size();
+						}))
 				.then(Commands.literal("bots").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(c -> {
 							c.getSource().sendSuccess(() -> Lang.tr("bots.count", net.battlehub.bot.Bots.online()), false);
