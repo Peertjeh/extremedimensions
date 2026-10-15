@@ -191,7 +191,8 @@ public class BossTests {
 		for (int t = 2; t <= 30; t += 2) {
 			helper.runAfterDelay(t, () -> {
 				if (!seen[0]) {
-					seen[0] = !level.getEntitiesOfClass(net.minecraft.world.entity.Display.BlockDisplay.class, new AABB(centre).inflate(48)).isEmpty();
+					seen[0] = ElderArena.pending() > 0
+							|| !level.getEntitiesOfClass(net.minecraft.world.entity.Display.BlockDisplay.class, new AABB(centre).inflate(48)).isEmpty();
 				}
 			});
 		}

@@ -66,7 +66,8 @@ public class CoopTests {
 		check(helper, FallenService.fallen(a), "the player did not fall");
 		a.setShiftKeyDown(true);
 		helper.runAfterDelay(80, () -> {
-			check(helper, !a.isAlive(), "holding sneak, the fallen player did not give in");
+			check(helper, !a.isAlive(), "holding sneak, the fallen player did not give in (fallen %s, health %s, sneaking %s)",
+					FallenService.fallen(a), a.getHealth(), a.isShiftKeyDown());
 			check(helper, !FallenService.fallen(a), "a dead player is still counted as fallen");
 			helper.succeed();
 		});

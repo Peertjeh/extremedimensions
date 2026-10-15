@@ -254,9 +254,12 @@ public final class FallenService {
 		f.ending = true;
 		ServerLevel level = (ServerLevel) p.level();
 		DamageSource source = f.source != null ? f.source : level.damageSources().generic();
+		boolean totem = holdsTotem(p);
 		p.hurtServer(level, source, Float.MAX_VALUE);
-		if (p.isAlive() && !holdsTotem(p) && p.getHealth() <= 1.0F) {
-			p.kill(level);
+		if (p.isAlive() && !totem) {
+			// The blow could not land (a moment's shelter after joining, say): they die of it all the same
+			p.setHealth(0.0F);
+			p.die(source);
 		}
 		FALLEN.remove(p.getUUID());
 	}
