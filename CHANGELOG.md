@@ -22,6 +22,10 @@
   `seam_fray_drain` (2), `seam_well_chance` (0.35), `seam_snarl_chance` (0.6), `seam_fray_thinned` (2) and
   `seam_fray_fragment_chance` (0.12).
 
+### Fixed
+- The barter screen and an ally's burden no longer run off the top and bottom of a small window: they show as many
+  rows as fit, with pages for the rest.
+
 ## 2.18.0: The Tribe Remembers
 
 ### Added

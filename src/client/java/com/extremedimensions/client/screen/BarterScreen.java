@@ -23,7 +23,9 @@ import net.minecraft.world.item.ItemStack;
  */
 public class BarterScreen extends Screen {
 	private static final int PANEL_W = 320;
-	private static final int ROW_H = 26;
+	private static final int ROW_H = 24;
+	/** Room for the title, the standing and its meter, and for the hint and the buttons below the wares. */
+	private static final int HEAD = 56, FOOT = 48;
 
 	private record Offer(BarterService.Ware ware, int price, int left) {}
 
@@ -31,6 +33,9 @@ public class BarterScreen extends Screen {
 	private final int rep;
 	private final List<Offer> offers = new ArrayList<>();
 	private final long openAt;
+	/** Wares shown at once (as many as the window has room for) and the page of them shown. */
+	private int rows = 1;
+	private int page;
 
 	private BarterScreen(int young, int rep, String data, long openAt) {
 		super(Component.translatable("gui.extremedimensions.barter.title"));
@@ -85,7 +90,11 @@ public class BarterScreen extends Screen {
 	}
 
 	private int panelH() {
-		return 84 + Math.max(1, offers.size()) * ROW_H + 50;
+		return HEAD + Math.max(1, rows) * ROW_H + FOOT;
+	}
+
+	private int pages() {
+		return Math.max(1, (offers.size() + rows - 1) / rows);
 	}
 
 	private int have(Item item) {
@@ -107,19 +116,33 @@ public class BarterScreen extends Screen {
 	@Override
 	protected void init() {
 		this.clearWidgets();
+		rows = Math.max(2, Math.min(Math.max(1, offers.size()), (this.height - 12 - HEAD - FOOT) / ROW_H));
+		page = Math.min(page, pages() - 1);
 		int x = this.width / 2 - PANEL_W / 2, y = this.height / 2 - panelH() / 2;
-		for (int i = 0; i < offers.size(); i++) {
+		int first = page * rows;
+		for (int i = first; i < Math.min(offers.size(), first + rows); i++) {
 			Offer o = offers.get(i);
 			boolean can = o.left() > 0 && have(o.ware().want()) >= o.price();
 			String label = o.left() <= 0 ? "gui.extremedimensions.barter.sold" : "gui.extremedimensions.barter.buy";
 			Button buy = Button.builder(Component.translatable(label), b ->
 					ClientPlayNetworking.send(new ModPackets.BarterTradePayload(young, o.ware().id())))
-					.pos(x + PANEL_W - 14 - 64, y + 80 + i * ROW_H).size(64, 18).build();
+					.pos(x + PANEL_W - 14 - 64, y + HEAD + (i - first) * ROW_H).size(64, 18).build();
 			buy.active = can;
 			this.addRenderableWidget(buy);
 		}
+		int by = y + panelH() - 24;
+		if (pages() > 1) {
+			this.addRenderableWidget(Button.builder(Component.literal("<"), b -> {
+				page = (page + pages() - 1) % pages();
+				this.init();
+			}).pos(x + 14, by).size(20, 18).build());
+			this.addRenderableWidget(Button.builder(Component.literal(">"), b -> {
+				page = (page + 1) % pages();
+				this.init();
+			}).pos(x + 38, by).size(20, 18).build());
+		}
 		this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> this.onClose())
-				.pos(this.width / 2 - 40, y + panelH() - 26).size(80, 18).build());
+				.pos(this.width / 2 - 40, by).size(80, 18).build());
 	}
 
 	@Override
@@ -133,19 +156,22 @@ public class BarterScreen extends Screen {
 		Ui.panel(g, x, y, PANEL_W, panelH(), Ui.SOUL_DIM, pe);
 		Ui.heading(g, this.font, Ui.tr("gui.extremedimensions.barter.title"), cx, y + 9, Ui.SOUL, pe);
 		// Standing: the level by name, and where the player stands from -100 to 100
-		String name = Ui.tr(level.key()) + "  (" + (rep > 0 ? "+" : "") + rep + ")";
-		Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.barter.standing"), cx, y + 26, Ui.MUTED, pe);
-		Ui.centered(g, this.font, name, cx, y + 37, accent, pe);
-		Ui.meter(g, x + 30, y + 50, PANEL_W - 60, 5, (rep - Standing.MIN) / (double) (Standing.MAX - Standing.MIN), accent, pe, false);
+		String label = Ui.tr("gui.extremedimensions.barter.standing") + ": ";
+		String name = Ui.tr(level.key()) + " (" + (rep > 0 ? "+" : "") + rep + ")";
+		int lw = this.font.width(label), nw = this.font.width(name);
+		g.text(this.font, label, cx - (lw + nw) / 2, y + 22, Ui.argb(pe, Ui.MUTED));
+		g.text(this.font, name, cx - (lw + nw) / 2 + lw, y + 22, Ui.argb(pe, accent));
+		Ui.meter(g, x + 30, y + 35, PANEL_W - 60, 5, (rep - Standing.MIN) / (double) (Standing.MAX - Standing.MIN), accent, pe, false);
 		int zero = x + 30 + (PANEL_W - 60) / 2;
-		g.fill(zero, y + 48, zero + 1, y + 57, Ui.argb(pe, Ui.PARCHMENT));
-		Ui.divider(g, x + 14, y + 66, PANEL_W - 28, Ui.SOUL_DIM, pe);
+		g.fill(zero, y + 33, zero + 1, y + 42, Ui.argb(pe, Ui.PARCHMENT));
+		Ui.divider(g, x + 14, y + 48, PANEL_W - 28, Ui.SOUL_DIM, pe);
 		if (offers.isEmpty()) {
-			Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.barter.nothing"), cx, y + 84, Ui.PARCHMENT, pe);
+			Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.barter.nothing"), cx, y + HEAD + 6, Ui.PARCHMENT, pe);
 		}
-		for (int i = 0; i < offers.size(); i++) {
+		int first = page * rows;
+		for (int i = first; i < Math.min(offers.size(), first + rows); i++) {
 			Offer o = offers.get(i);
-			int ry = y + 80 + i * ROW_H;
+			int ry = y + HEAD + (i - first) * ROW_H;
 			boolean kin = o.ware().id() == BarterService.RELIC || o.ware().id() == BarterService.CLOTH;
 			if (kin) {
 				g.fill(x + 8, ry - 3, x + PANEL_W - 8, ry + ROW_H - 5, Ui.argb(pe * 0.18, Ui.SOUL));
@@ -164,10 +190,13 @@ public class BarterScreen extends Screen {
 			g.text(this.font, Ui.tr("gui.extremedimensions.barter.left", o.left(), o.ware().uses()), x + 92, ry + 10,
 					Ui.argb(pe, o.left() > 0 ? Ui.MUTED : Ui.WARN));
 		}
-		int hy = y + panelH() - 48;
+		int hy = y + panelH() - FOOT + 2;
 		for (String line : Ui.wrap(this.font, Ui.tr("gui.extremedimensions.barter.hint"), PANEL_W - 28)) {
 			Ui.centered(g, this.font, line, cx, hy, Ui.MUTED, pe);
 			hy += 10;
+		}
+		if (pages() > 1) {
+			g.text(this.font, (page + 1) + "/" + pages(), x + 64, y + panelH() - 19, Ui.argb(pe, Ui.MUTED));
 		}
 	}
 

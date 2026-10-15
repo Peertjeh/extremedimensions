@@ -21,13 +21,14 @@ import net.minecraft.network.chat.Component;
 public class BurdenScreen extends Screen {
 	private static final int PANEL_W = 300;
 	private static final int ROW_H = 24;
-	private static final int ROWS = 7;
+	/** Curses shown at once: up to seven, fewer in a small window. */
+	private int rows = 7;
 
 	private record Row(Penalty pen, int stacks, int max, int mine) {}
 
 	private final UUID friend;
 	private final String name;
-	private final List<Row> rows = new ArrayList<>();
+	private final List<Row> list = new ArrayList<>();
 	private final long openAt = System.currentTimeMillis();
 	private int page;
 
@@ -45,7 +46,7 @@ public class BurdenScreen extends Screen {
 				continue;
 			}
 			try {
-				rows.add(new Row(pen, Integer.parseInt(kv[1]), Integer.parseInt(kv[2]), Integer.parseInt(kv[3])));
+				list.add(new Row(pen, Integer.parseInt(kv[1]), Integer.parseInt(kv[2]), Integer.parseInt(kv[3])));
 			} catch (NumberFormatException e) {
 				// skip a damaged entry
 			}
@@ -53,20 +54,22 @@ public class BurdenScreen extends Screen {
 	}
 
 	private int panelH() {
-		return 64 + Math.max(1, Math.min(ROWS, rows.size())) * ROW_H + 30;
+		return 64 + Math.max(1, Math.min(this.rows, this.list.size())) * ROW_H + 30;
 	}
 
 	private int pages() {
-		return Math.max(1, (rows.size() + ROWS - 1) / ROWS);
+		return Math.max(1, (list.size() + rows - 1) / rows);
 	}
 
 	@Override
 	protected void init() {
 		this.clearWidgets();
+		rows = Math.max(2, Math.min(7, (this.height - 12 - 94) / ROW_H));
+		page = Math.min(page, pages() - 1);
 		int x = this.width / 2 - PANEL_W / 2, y = this.height / 2 - panelH() / 2;
-		int first = page * ROWS;
-		for (int i = first; i < Math.min(rows.size(), first + ROWS); i++) {
-			Row r = rows.get(i);
+		int first = page * rows;
+		for (int i = first; i < Math.min(list.size(), first + rows); i++) {
+			Row r = list.get(i);
 			boolean full = r.mine() >= r.max();
 			Button carry = Button.builder(Component.translatable(full ? "gui.extremedimensions.burden.full" : "gui.extremedimensions.burden.carry"), b -> {
 				ClientPlayNetworking.send(new ModPackets.CarryPayload(friend, r.pen().id));
@@ -103,13 +106,13 @@ public class BurdenScreen extends Screen {
 			Ui.centered(g, this.font, line, cx, ty, Ui.MUTED, pe);
 			ty += 10;
 		}
-		if (rows.isEmpty()) {
+		if (list.isEmpty()) {
 			Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.burden.none", name), cx, y + 64, Ui.PARCHMENT, pe);
 			return;
 		}
-		int first = page * ROWS;
-		for (int i = first; i < Math.min(rows.size(), first + ROWS); i++) {
-			Row r = rows.get(i);
+		int first = page * rows;
+		for (int i = first; i < Math.min(list.size(), first + rows); i++) {
+			Row r = list.get(i);
 			int ry = y + 56 + (i - first) * ROW_H;
 			int accent = Ui.setColour(r.pen().group);
 			Ui.runeSocket(g, r.pen().id, x + 14, ry, accent, pe, 0.4);

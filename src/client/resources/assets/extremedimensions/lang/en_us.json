@@ -1336,7 +1336,7 @@
   "gui.extremedimensions.tribe.why.lurker": "a Lurker slain",
   "gui.extremedimensions.tribe.why.raid": "a raid",
   "gui.extremedimensions.barter.title": "Barter",
-  "gui.extremedimensions.barter.standing": "Your standing with the tribe",
+  "gui.extremedimensions.barter.standing": "Standing with the tribe",
   "gui.extremedimensions.barter.buy": "Barter",
   "gui.extremedimensions.barter.sold": "Sold out",
   "gui.extremedimensions.barter.left": "%s of %s left today",

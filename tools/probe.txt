@@ -1,5 +1,2 @@
-net.minecraft.network.chat.ClickEvent
-net.minecraft.network.chat.ClickEvent$RunCommand
-net.minecraft.network.chat.HoverEvent$ShowText
-net.minecraft.tags.DamageTypeTags
-net.minecraft.client.gui.components.Button$Builder
+net.minecraft.client.gui.screens.inventory.InventoryScreen
+net.minecraft.client.gui.GuiGraphicsExtractor

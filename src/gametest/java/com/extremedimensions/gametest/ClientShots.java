@@ -205,7 +205,7 @@ public class ClientShots implements FabricClientGameTest {
 
 			// Co-op: an ally's burden (one curse full already), and the status screen with anchors opened to allies
 			ctx.runOnClient(mc -> mc.gui.setScreen(new com.extremedimensions.client.screen.BurdenScreen(java.util.UUID.randomUUID(), "Wren",
-					"accelerated_drain:3:4:1;cracked_armor:2:4:4;dwindling:1:3:0;glass_jaw:2:3:1")));
+					"accelerated_drain:3:4:1;cracked_armor:2:4:4;dwindling:1:3:0;glass_jaw:2:3:1;debt:1:4:0;scar:2:3:2;frailty:3:4:1;heavy_legs:1:3:3")));
 			ctx.waitTicks(8);
 			ctx.takeScreenshot("13_burden");
 			ctx.runOnClient(mc -> mc.gui.setScreen(new com.extremedimensions.client.screen.StatusScreen(true)));
