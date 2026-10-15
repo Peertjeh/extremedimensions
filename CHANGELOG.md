@@ -1,5 +1,42 @@
 # Changelog
 
+## 2.18.0: The Tribe Remembers
+
+### Added
+- **The tribe remembers what you do to it.** Every player has a standing with the tribe (the Lurkers, their young and
+  their Keepers), from -100 to 100, in six levels: *Hunted*, *Hated*, *Wary* (where everyone starts), *Tolerated*,
+  *Trusted* and *Kin*. Gifts, barter and a Hollowling's bond win standing; killing its own (a Hollowling -12, a Keeper
+  -8, a Lurker -1), breaking up its hoards and raiding them lose it. A grudge fades slowly as you play (a point every
+  15 minutes). You are told above the hotbar every time it changes, and in the chat when your level does;
+  `/tether tribe` shows where you stand.
+  - **Hated** and **Hunted**: the young steal from you twice as often; the hunted have a Keeper come for them out of
+    the dark every 25 minutes.
+  - **Tolerated**: the young no longer steal from you, and will barter.
+  - **Trusted**: better prices, a Hollowling always takes to you when you offer it a fragment in soul light, and your
+    own hoards (where the Lurkers took your things) open without waking their Keeper.
+  - **Kin**: the best prices, a relic and a Mending Cloth among the wares, and half the time a Lurker about to take
+    from you looks at you a long moment and lets you be.
+- **Gifts.** Give a Hollowling something small and shiny (four gold nuggets, two amethyst shards, four glow berries,
+  an emerald, a candle...) and it hurries home with it, and the tribe thinks better of you: 3 standing a gift, four
+  gifts a day (an echo shard counts double).
+- **Barter.** Once the tribe tolerates you, right-click a Hollowling with an empty hand: it stops, looks at you, and
+  barters. A Tether Fragment always (for 5 emeralds before discounts, once a day), four wares that change every day
+  (Wanderer's Pages, soul torches, bottles of experience, an echo shard, ender pearls, a name tag, glow ink, a golden
+  apple, soul lanterns, candles), each for things the young like and only so often a day. The trusted pay a quarter
+  less, kin 40% less. A new barter screen shows your standing, what each ware costs and how many times more today.
+- **Raids.** Opening a hoard that is not your own is a raid on it: its young swarm out, bold, stealing all they can
+  carry back into the hoard (catch them, or hold out 45 seconds), then its Keeper wakes. Slay it and the hoard spills
+  its spoils: Tether Fragments, pages, emeralds, things the tribe hid away (diamonds, echo shards, golden apples...),
+  and now and then a relic. Go more than 48 blocks from the hoard or fall, and the raid fails; the hoard keeps its
+  secrets and can be raided again. A raid costs 15 standing (its young and its Keeper cost nothing more), and the
+  Matriarch still answers for her hoards herself.
+- Two journal pages (*XXXV. Small Bargains*, *XXXVI. The Raid*) and four advancements: *Small Bargains*, *Trusted by
+  the Tribe*, *One of Their Own* and *Raider*.
+- A new *The tribe* section in the settings with every number above: `tribe_enabled`, the five level marks, what each
+  deed is worth, `tribe_forget_minutes`, `tribe_hunt_minutes`, `tribe_kin_theft_chance`, the barter prices and
+  discounts (`tribe_barter_fragment_price`, `tribe_barter_relic_price`...), and the raids (`tribe_raid`,
+  `tribe_raid_young`, `tribe_raid_young_seconds`, `tribe_raid_range`, `tribe_raid_relic_chance`).
+
 ## 2.17.0: Bound Together
 
 ### Added
@@ -22,6 +59,10 @@
   `coop_lift_seconds` (4), `coop_lift_health` (0.3), `coop_allies` (0), `coop_burden` (1), `coop_burden_toll` (0:
   extra stacks the one who carries a curse takes on as well), `coop_burden_cooldown_minutes` (5),
   `coop_shared_anchors` (1).
+
+### Fixed
+- The anchor's status screen showed a raw text key over its list of curses, and its new button row covered the last
+  line.
 
 ## 2.16.0: Every Blow Drawn
 

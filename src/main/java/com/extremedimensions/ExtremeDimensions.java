@@ -109,6 +109,11 @@ public class ExtremeDimensions implements ModInitializer {
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.ShareAnchorsPayload.TYPE, ModPackets.ShareAnchorsPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.ShareAnchorsPayload.TYPE, (payload, context) ->
 				com.extremedimensions.coop.Allies.share(context.player(), payload.on()));
+		// The tribe: barter with a Hollowling
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BarterPayload.TYPE, ModPackets.BarterPayload.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.BarterTradePayload.TYPE, ModPackets.BarterTradePayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.BarterTradePayload.TYPE, (payload, context) ->
+				com.extremedimensions.tribe.BarterService.onTrade(context.player(), payload.young(), payload.ware()));
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.TrialsPayload.TYPE, ModPackets.TrialsPayload.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestTrialsPayload.TYPE, ModPackets.RequestTrialsPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestTrialsPayload.TYPE, (payload, context) ->

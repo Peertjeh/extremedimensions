@@ -22,6 +22,9 @@ import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
+import com.extremedimensions.tribe.BarterService;
+import com.extremedimensions.tribe.RaidService;
+import com.extremedimensions.tribe.Standing;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -76,7 +79,7 @@ import net.minecraft.world.effect.MobEffects;
 public final class HollowService {
 	private HollowService() {}
 
-	enum Mode { IDLE, FROZEN, SNEAK, CARRY, FLEE, COMPANION }
+	enum Mode { IDLE, FROZEN, SNEAK, CARRY, FLEE, COMPANION, BARTER }
 
 	static final class Little {
 		Mode mode = Mode.IDLE;
@@ -89,6 +92,10 @@ public final class HollowService {
 		int wander;
 		/** Called by the Keeper or the Matriarch: not one of the hoard's own young. */
 		boolean brood;
+		/** Out of a raided hoard: being watched does not stop it, and it steals from anyone. */
+		boolean bold;
+		/** The player it barters with. */
+		UUID trader;
 	}
 
 	static final class Guard {
@@ -128,6 +135,10 @@ public final class HollowService {
 			}
 		}
 		return null;
+	}
+
+	public static Hoard hoardByKey(String key) {
+		return byKey(key);
 	}
 
 	private static Hoard byKey(String key) {
@@ -388,6 +399,14 @@ public final class HollowService {
 		PlayerData d = DataStore.get(p.getUUID());
 		Advancements.grant(p, Advancements.HOARD_FOUND);
 		Journal.unlock(p, d, JournalEntry.HOLLOWS);
+		if (RaidService.start(p, h)) {
+			return;
+		}
+		if (p.getStringUUID().equals(h.owner) && !h.keeperSlain && Standing.atLeast(p, Standing.Level.TRUSTED)) {
+			// The tribe gives back what was taken from a friend
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.tribe.own_hoard"), true);
+			return;
+		}
 		wake(h, p);
 	}
 
@@ -398,6 +417,9 @@ public final class HollowService {
 		}
 		abandon(h);
 		if (p != null) {
+			if (!p.getStringUUID().equals(h.owner)) {
+				Standing.change(p, Config.TRIBE_REP_HOARD_BROKEN, "gui.extremedimensions.tribe.why.hoard");
+			}
 			Advancements.grant(p, Advancements.HOARD_FOUND);
 			Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.HOLLOWS);
 			wake(h, p);
@@ -654,10 +676,13 @@ public final class HollowService {
 					st.wander = 60 + rnd.nextInt(80);
 					h.getNavigation().moveTo(nest.x + rnd.nextInt(-7, 8), nest.y, nest.z + rnd.nextInt(-7, 8), 0.8);
 				}
-				if (p != null && h.distanceToSqr(p) < 14 * 14) {
+				if (st.bold && p != null && hasLoot(p)) {
+					st.mode = Mode.SNEAK;
+					st.ticks = 0;
+				} else if (p != null && h.distanceToSqr(p) < 14 * 14) {
 					if (seen(p, h, 0.93)) {
 						freeze(h, st);
-					} else if (st.ticks % 40 == 0 && ThreadLocalRandom.current().nextInt(3) == 0 && hasLoot(p)) {
+					} else if (st.ticks % 40 == 0 && ThreadLocalRandom.current().nextInt(3) < Standing.theftOdds(p) && hasLoot(p)) {
 						st.mode = Mode.SNEAK;
 						st.ticks = 0;
 					}
@@ -678,7 +703,7 @@ public final class HollowService {
 						flee(h, st);
 					}
 				} else if (++st.unseen > 20) {
-					st.mode = hasLoot(p) ? Mode.SNEAK : Mode.IDLE;
+					st.mode = hasLoot(p) && Standing.theftOdds(p) > 0 ? Mode.SNEAK : Mode.IDLE;
 					st.ticks = 0;
 				}
 			}
@@ -688,7 +713,7 @@ public final class HollowService {
 					st.mode = Mode.IDLE;
 					break;
 				}
-				if (seen(p, h, 0.93)) {
+				if (!st.bold && seen(p, h, 0.93)) {
 					freeze(h, st);
 					break;
 				}
@@ -710,6 +735,18 @@ public final class HollowService {
 					st.mode = Mode.IDLE;
 					st.ticks = 0;
 				}
+			}
+			case BARTER -> {
+				h.getNavigation().stop();
+				h.setLurkerPose(Lurker.POSE_WATCH);
+				ServerPlayer t = st.trader == null ? null : WorldFx.server().getPlayerList().getPlayer(st.trader);
+				if (t == null || t.level() != h.level() || h.distanceToSqr(t) > BarterService.REACH * BarterService.REACH || st.ticks > 1200) {
+					st.mode = Mode.IDLE;
+					st.trader = null;
+					st.ticks = 0;
+					break;
+				}
+				h.getLookControl().setLookAt(t, 30, 30);
 			}
 			case FLEE -> {
 				h.setLurkerPose(Lurker.POSE_RUN);
@@ -798,11 +835,14 @@ public final class HollowService {
 		}
 	}
 
-	public static void onHollowlingDeath(Hollowling h) {
+	public static void onHollowlingDeath(Hollowling h, Entity killer) {
 		Little st = LITTLES.remove(h.getUUID());
 		LEVELS.remove(h.getUUID());
 		if (st == null) {
 			return;
+		}
+		if (killer instanceof ServerPlayer p && !st.brood) {
+			Standing.change(p, Config.TRIBE_REP_HOLLOWLING, "gui.extremedimensions.tribe.why.hollowling");
 		}
 		if (st.mode != Mode.COMPANION && !st.brood && st.hoard != null) {
 			Hoard home = byKey(st.hoard);
@@ -827,7 +867,27 @@ public final class HollowService {
 	 */
 	public static InteractionResult onInteract(ServerPlayer p, Hollowling h, ItemStack stack) {
 		Little st = LITTLES.get(h.getUUID());
-		if (st == null || st.mode == Mode.COMPANION || !stack.is(ModItems.TETHER_FRAGMENT)) {
+		if (st == null) {
+			return InteractionResult.PASS;
+		}
+		if (Config.TRIBE_ENABLED > 0 && stack.isEmpty()) {
+			return barter(p, h, st);
+		}
+		if (Config.TRIBE_ENABLED > 0 && BarterService.LIKES.containsKey(stack.getItem()) && st.carried.isEmpty() && !st.bold) {
+			ItemStack gift = BarterService.gift(p, stack);
+			if (!gift.isEmpty()) {
+				giggle(h);
+				WorldFx.particleIn(h.level().dimension().identifier().toString(), "extremedimensions:soul_mote", h.getX(), h.getY() + 0.8, h.getZ(), 0.3, 0.3, 0.3, 0.0, 8);
+				if (st.mode != Mode.COMPANION && byKey(st.hoard) != null) {
+					// It hurries home with it
+					st.carried = gift;
+					st.mode = Mode.CARRY;
+					st.ticks = 0;
+				}
+			}
+			return InteractionResult.SUCCESS;
+		}
+		if (st.mode == Mode.COMPANION || !stack.is(ModItems.TETHER_FRAGMENT)) {
 			return InteractionResult.PASS;
 		}
 		PlayerData d = DataStore.get(p.getUUID());
@@ -845,7 +905,7 @@ public final class HollowService {
 		}
 		String dim = level.dimension().identifier().toString();
 		WorldFx.particleIn(dim, "extremedimensions:soul_mote", h.getX(), h.getY() + 0.8, h.getZ(), 0.4, 0.4, 0.4, 0.0, 14);
-		if (ThreadLocalRandom.current().nextDouble() >= Config.HOLLOWLING_BOND_CHANCE) {
+		if (!Standing.atLeast(p, Standing.Level.TRUSTED) && ThreadLocalRandom.current().nextDouble() >= Config.HOLLOWLING_BOND_CHANCE) {
 			h.getLookControl().setLookAt(p, 30, 30);
 			st.mode = Mode.FROZEN;
 			st.stared = 0;
@@ -870,7 +930,38 @@ public final class HollowService {
 		WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_bond", "neutral", h.getX(), h.getY() + 0.8, h.getZ(), 1f, 1f);
 		Advancements.grant(p, Advancements.HOLLOW_BOUND);
 		Journal.unlock(p, d, JournalEntry.LITTLE_THIEVES);
+		Standing.change(p, Config.TRIBE_REP_BOND, "gui.extremedimensions.tribe.why.bond");
 		DataStore.markDirty();
+	}
+
+	/** An empty hand: the Hollowling barters, if the tribe tolerates the player; otherwise it giggles and runs. */
+	private static InteractionResult barter(ServerPlayer p, Hollowling h, Little st) {
+		if (st.bold || st.mode == Mode.FLEE || st.mode == Mode.CARRY) {
+			return InteractionResult.PASS;
+		}
+		if (!Standing.atLeast(p, Standing.Level.TOLERATED) && !p.isCreative()) {
+			giggle(h);
+			if (st.mode != Mode.COMPANION) {
+				flee(h, st);
+			}
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.barter.distrust_now", Standing.describe(p)), true);
+			return InteractionResult.SUCCESS;
+		}
+		if (st.mode != Mode.COMPANION) {
+			st.mode = Mode.BARTER;
+			st.trader = p.getUUID();
+			st.ticks = 0;
+		}
+		h.getLookControl().setLookAt(p, 30, 30);
+		WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_ambient", "neutral", h.getX(), h.getY() + 0.8, h.getZ(), 0.8f, 1.3f);
+		BarterService.open(p, h);
+		return InteractionResult.SUCCESS;
+	}
+
+	/** Whether this entity is a Hollowling this player can barter with right now (for the barter screen's buttons). */
+	public static boolean canBarter(ServerPlayer p, Entity e) {
+		Little st = e == null ? null : LITTLES.get(e.getUUID());
+		return st != null && !st.bold && e.isAlive() && e.level() == p.level() && e.distanceToSqr(p) <= BarterService.REACH * BarterService.REACH;
 	}
 
 	private static void toughen(Hollowling h) {
@@ -1035,14 +1126,60 @@ public final class HollowService {
 			com.extremedimensions.elder.MatriarchService.summon(p, h.key(), new BlockPos(h.x, h.y, h.z));
 			return;
 		}
+		spawnKeeper(p, level, spot, h.key());
+	}
+
+	/** Whether the Keeper of this hoard is awake and hunting. */
+	public static boolean keeperAwake(String hoard) {
+		for (Guard g : KEEPERS.values()) {
+			if (hoard.equals(g.hoard)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** The tribe hunts this player: a Keeper of no hoard comes for them out of the dark, behind them. */
+	public static boolean hunt(ServerPlayer p) {
+		String dim = Dims.of(p);
+		if (Config.KEEPER_ENABLED == 0 || p.isCreative() || p.isSpectator() || Dims.END.equals(dim) || Dims.SEAM.equals(dim)) {
+			return false;
+		}
+		for (Guard g : KEEPERS.values()) {
+			if (g.hoard == null && p.getUUID().equals(g.target)) {
+				return false;
+			}
+		}
+		ServerLevel level = (ServerLevel) p.level();
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		double behind = Math.toRadians(p.getYRot()) + Math.PI / 2;
+		boolean nether = Dims.NETHER.equals(dim);
+		BlockPos spot = null;
+		for (int i = 0; i < 12 && spot == null; i++) {
+			double a = behind + (rnd.nextDouble() - 0.5) * 1.6;
+			int x = (int) Math.floor(p.getX() + Math.cos(a) * (14 + rnd.nextInt(8)));
+			int z = (int) Math.floor(p.getZ() + Math.sin(a) * (14 + rnd.nextInt(8)));
+			spot = nether ? standable(level, x, (int) p.getY() + 6, z, 14) : surface(level, x, z);
+		}
+		if (spot == null || Math.abs(spot.getY() - p.getY()) > 24) {
+			return false;
+		}
+		if (spawnKeeper(p, level, spot, null) == null) {
+			return false;
+		}
+		p.sendSystemMessage(Component.translatable("gui.extremedimensions.tribe.hunted").withStyle(net.minecraft.ChatFormatting.DARK_RED));
+		return true;
+	}
+
+	private static Keeper spawnKeeper(ServerPlayer p, ServerLevel level, BlockPos spot, String hoard) {
 		Keeper k = ModEntities.KEEPER.spawn(level, spot, EntitySpawnReason.EVENT);
 		if (k == null) {
-			return;
+			return null;
 		}
 		k.setPersistenceRequired();
 		k.setTarget(p);
 		Guard g = new Guard();
-		g.hoard = h.key();
+		g.hoard = hoard;
 		g.target = p.getUUID();
 		g.bar = new ServerBossEvent(UUID.randomUUID(), Component.translatable("boss.extremedimensions.keeper"), BossEvent.BossBarColor.WHITE,
 				BossEvent.BossBarOverlay.NOTCHED_10);
@@ -1052,6 +1189,7 @@ public final class HollowService {
 		roar(k);
 		hush(k, 4);
 		Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.KEEPER);
+		return k;
 	}
 
 	private static void roar(Keeper k) {
@@ -1152,6 +1290,34 @@ public final class HollowService {
 		}
 	}
 
+	/** The young of a raided hoard swarm out, bold, to steal from anyone near; their ids. */
+	public static List<UUID> raidYoung(ServerLevel level, BlockPos center, String hoard, int count) {
+		List<UUID> out = new ArrayList<>();
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		String dim = level.dimension().identifier().toString();
+		for (int i = 0; i < count; i++) {
+			BlockPos spot = groundAt(level, center.offset(rnd.nextInt(-4, 5), 0, rnd.nextInt(-4, 5)));
+			if (spot == null) {
+				spot = center.above();
+			}
+			Little st = new Little();
+			st.hoard = hoard;
+			st.brood = true;
+			st.bold = true;
+			Hollowling l = spawnLittle(level, spot, st);
+			if (l != null) {
+				out.add(l.getUUID());
+				WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", spot.getX() + 0.5, spot.getY() + 0.5, spot.getZ() + 0.5, 0.3, 0.4, 0.3, 0.0, 12);
+			}
+		}
+		return out;
+	}
+
+	/** Whether this Hollowling is still about. */
+	public static boolean youngAlive(UUID id) {
+		return LITTLES.containsKey(id);
+	}
+
 	/** A hoard's guardian has fallen: what it kept is free to take. */
 	public static void markSlain(String hoard) {
 		Hoard home = byKey(hoard);
@@ -1173,6 +1339,10 @@ public final class HollowService {
 		if (home != null) {
 			home.keeperSlain = true;
 			DataStore.markDirty();
+		}
+		// A Keeper slain in a raid (already paid for) or sent to hunt the player costs nothing more
+		if (killer instanceof ServerPlayer kp && g.hoard != null && !RaidService.raiding(g.hoard)) {
+			Standing.change(kp, Config.TRIBE_REP_KEEPER, "gui.extremedimensions.tribe.why.keeper");
 		}
 		ServerLevel level = (ServerLevel) k.level();
 		k.spawnAtLocation(level, new ItemStack(ModItems.TETHER_FRAGMENT, 2));

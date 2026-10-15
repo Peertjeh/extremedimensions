@@ -560,4 +560,45 @@ public final class ModPackets {
 			return TYPE;
 		}
 	}
+
+	/** Server -> client: barter with a Hollowling (its entity id, the player's standing, the wares "id:price:left;..."). */
+	public record BarterPayload(int young, int rep, String offers) implements CustomPacketPayload {
+		public static final Type<BarterPayload> TYPE = new Type<>(ExtremeDimensions.id("barter"));
+		public static final StreamCodec<FriendlyByteBuf, BarterPayload> CODEC = StreamCodec.ofMember(BarterPayload::write, BarterPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeVarInt(young);
+			buf.writeVarInt(rep);
+			buf.writeUtf(offers);
+		}
+
+		private static BarterPayload read(FriendlyByteBuf buf) {
+			return new BarterPayload(buf.readVarInt(), buf.readVarInt(), buf.readUtf());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: buy a ware from the Hollowling the player barters with. */
+	public record BarterTradePayload(int young, int ware) implements CustomPacketPayload {
+		public static final Type<BarterTradePayload> TYPE = new Type<>(ExtremeDimensions.id("barter_trade"));
+		public static final StreamCodec<FriendlyByteBuf, BarterTradePayload> CODEC = StreamCodec.ofMember(BarterTradePayload::write, BarterTradePayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeVarInt(young);
+			buf.writeVarInt(ware);
+		}
+
+		private static BarterTradePayload read(FriendlyByteBuf buf) {
+			return new BarterTradePayload(buf.readVarInt(), buf.readVarInt());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
 }

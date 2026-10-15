@@ -28,7 +28,7 @@ import net.minecraft.server.level.ServerPlayer;
 
 /**
  * Commands under {@code /tether}: {@code where} for everyone (the world you stand in and whether the mod acts there),
- * and the co-op answers ({@code burden accept|refuse}, {@code share on|off});
+ * the co-op answers ({@code burden accept|refuse}, {@code share on|off}) and {@code tribe} (where you stand with it);
  * for operators Overworld curses on or off, curses set or cleared, Lurkers, hoards, the Seam, bosses and difficulty.
  */
 public final class TetherCommand {
@@ -46,6 +46,11 @@ public final class TetherCommand {
 				.then(Commands.literal("share")
 						.then(Commands.literal("on").executes(c -> share(c.getSource(), true)))
 						.then(Commands.literal("off").executes(c -> share(c.getSource(), false))))
+				// The tribe: anyone may ask where they stand with it; operators may set it
+				.then(Commands.literal("tribe").executes(c -> tribe(c.getSource()))
+						.then(Commands.literal("set").requires(op)
+								.then(Commands.argument("standing", IntegerArgumentType.integer(-100, 100))
+										.executes(c -> tribeSet(c.getSource(), IntegerArgumentType.getInteger(c, "standing"))))))
 				.then(Commands.literal("overworld_penalties").requires(op)
 						.executes(c -> show(c.getSource()))
 						.then(Commands.literal("on").executes(c -> set(c.getSource(), true)))
@@ -100,6 +105,26 @@ public final class TetherCommand {
 			return 0;
 		}
 		com.extremedimensions.coop.Allies.share(p, on);
+		return 1;
+	}
+
+	private static int tribe(CommandSourceStack src) {
+		ServerPlayer p = src.getPlayer();
+		if (p == null) {
+			return 0;
+		}
+		src.sendSuccess(() -> com.extremedimensions.tribe.Standing.describe(p), false);
+		return 1;
+	}
+
+	private static int tribeSet(CommandSourceStack src, int standing) {
+		ServerPlayer p = src.getPlayer();
+		if (p == null) {
+			return 0;
+		}
+		com.extremedimensions.data.DataStore.get(p.getUUID()).tribeRep = standing;
+		com.extremedimensions.data.DataStore.markDirty();
+		src.sendSuccess(() -> com.extremedimensions.tribe.Standing.describe(p), false);
 		return 1;
 	}
 

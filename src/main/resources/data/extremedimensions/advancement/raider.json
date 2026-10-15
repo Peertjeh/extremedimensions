@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:keeper_slain",
+  "display": {
+    "icon": {
+      "id": "minecraft:barrel"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.raider.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.raider.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -211,6 +211,13 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.runOnClient(mc -> mc.gui.setScreen(new com.extremedimensions.client.screen.StatusScreen(true)));
 			ctx.waitTicks(8);
 			ctx.takeScreenshot("13_status_shared");
+			// The tribe: barter as kin (every ware, a relic and a cloth among them, one sold out for today)
+			ctx.runOnClient(mc -> com.extremedimensions.client.screen.BarterScreen.show(-1, 82, "100:3:1;3:10:1;0:8:2;7:2:0;5:12:1;101:12:1;102:3:1"));
+			ctx.waitTicks(8);
+			ctx.takeScreenshot("14_barter_kin");
+			ctx.runOnClient(mc -> com.extremedimensions.client.screen.BarterScreen.show(-1, -34, ""));
+			ctx.waitTicks(8);
+			ctx.takeScreenshot("14_barter_hated");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
 			// Relics: all eight in the hotbar, and the Ember Heart bound to the Tether (shown in the Curses screen)

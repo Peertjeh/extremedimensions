@@ -187,5 +187,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BurdenPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(
 						new com.extremedimensions.client.screen.BurdenScreen(payload.friend(), payload.name(), payload.curses()))));
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BarterPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> com.extremedimensions.client.screen.BarterScreen.show(payload.young(), payload.rep(), payload.offers())));
 	}
 }

@@ -39,7 +39,9 @@ public enum JournalEntry {
 	ENDING("ending"),
 	MATRIARCH("matriarch"),
 	FERRYMAN("ferryman"),
-	LAST_WEAVER("last_weaver");
+	LAST_WEAVER("last_weaver"),
+	BARTER("barter"),
+	RAID("raid");
 
 	public final String id;
 

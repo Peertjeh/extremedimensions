@@ -421,6 +421,67 @@ public final class Config {
 	/** Whether players may open their anchors to their allies: 1 = on, 0 = off. */
 	public static int COOP_SHARED_ANCHORS = 1;
 
+	// --- The tribe -------------------------------------------------------------------------------
+
+	/** Whether the tribe remembers what each player does to it (standing, gifts, barter, raids): 1 = on, 0 = off. */
+	public static int TRIBE_ENABLED = 1;
+	/** Standing from which the tribe tolerates a player: its young stop stealing from them and will barter. */
+	public static int TRIBE_TOLERATED_AT = 15;
+	/** Standing from which the tribe trusts a player: better prices, their own hoards open without a fight. */
+	public static int TRIBE_TRUSTED_AT = 40;
+	/** Standing from which a player is kin to the tribe: the best prices, rare wares, Lurkers often spare them. */
+	public static int TRIBE_KIN_AT = 75;
+	/** Standing below which the tribe hates a player: its young steal from them twice as often. */
+	public static int TRIBE_HATED_AT = -20;
+	/** Standing below which the tribe hunts a player: a Keeper comes for them now and then. */
+	public static int TRIBE_HUNTED_AT = -50;
+	/** Standing gained for a gift to a Hollowling. */
+	public static int TRIBE_REP_GIFT = 3;
+	/** Gifts per day that win standing (a day in the Overworld). */
+	public static int TRIBE_GIFTS_PER_DAY = 4;
+	/** Standing gained for each barter. */
+	public static int TRIBE_REP_BARTER = 1;
+	/** Standing gained when a Hollowling bonds with the player. */
+	public static int TRIBE_REP_BOND = 10;
+	/** Standing lost for killing a Hollowling (negative). */
+	public static int TRIBE_REP_HOLLOWLING = -12;
+	/** Standing lost for killing a Keeper (negative). */
+	public static int TRIBE_REP_KEEPER = -8;
+	/** Standing lost for killing a Lurker (negative). */
+	public static int TRIBE_REP_LURKER = -1;
+	/** Standing lost for breaking up a hoard that is not the player's own (negative). */
+	public static int TRIBE_REP_HOARD_BROKEN = -6;
+	/** Standing lost for raiding a hoard (negative). */
+	public static int TRIBE_REP_RAID = -15;
+	/** Minutes of play in which a player the tribe holds a grudge against wins back one point of standing (0 = never). */
+	public static int TRIBE_FORGET_MINUTES = 15;
+	/** Minutes between the Keepers that hunt a player the tribe hunts (0 = never). */
+	public static int TRIBE_HUNT_MINUTES = 25;
+	/** Chance a Lurker still steals from someone who is kin to the tribe (1 = as from anyone). */
+	public static double TRIBE_KIN_THEFT_CHANCE = 0.5;
+	/** Wares a Hollowling offers in a day. */
+	public static int TRIBE_BARTER_OFFERS = 4;
+	/** Scales every price in barter. */
+	public static double TRIBE_BARTER_PRICE = 1.0;
+	/** Share taken off prices for players the tribe trusts. */
+	public static double TRIBE_BARTER_TRUSTED_DISCOUNT = 0.25;
+	/** Share taken off prices for kin of the tribe. */
+	public static double TRIBE_BARTER_KIN_DISCOUNT = 0.4;
+	/** Emeralds a Hollowling asks for a Tether Fragment (before discounts). */
+	public static int TRIBE_BARTER_FRAGMENT_PRICE = 5;
+	/** Emeralds a Hollowling asks kin for a relic (before discounts; 0 = never offered). */
+	public static int TRIBE_BARTER_RELIC_PRICE = 20;
+	/** Whether opening a hoard that is not the player's own starts a raid: 1 = on, 0 = off (the Keeper only). */
+	public static int TRIBE_RAID = 1;
+	/** Young that swarm out of a raided hoard. */
+	public static int TRIBE_RAID_YOUNG = 5;
+	/** Seconds the young of a raided hoard fight before the Keeper wakes. */
+	public static int TRIBE_RAID_YOUNG_SECONDS = 45;
+	/** Blocks from the hoard a raider may go before the raid fails. */
+	public static int TRIBE_RAID_RANGE = 48;
+	/** Chance the spoils of a raid hold a relic. */
+	public static double TRIBE_RAID_RELIC_CHANCE = 0.15;
+
 	// --- Technical -------------------------------------------------------------------------------
 
 	/** Milliseconds per tick the Seam may spend building islands (blocks in chunks nobody has loaded wait). */
@@ -456,7 +517,7 @@ public final class Config {
 			Map.entry("hoard_wild_chance", "hollow"), Map.entry("soul_woven_drain", "weaving"), Map.entry("seam_seconds", "seam"),
 			Map.entry("storm_chance", "dragon"), Map.entry("relic_ember_heart_nether", "relics"), Map.entry("pact_unlock", "pacts"),
 			Map.entry("trial_unlock", "trials"), Map.entry("matriarch_after_keepers", "elders"),
-			Map.entry("coop_revive", "coop"), Map.entry("seam_build_budget_ms", "technical"));
+			Map.entry("coop_revive", "coop"), Map.entry("tribe_enabled", "tribe"), Map.entry("seam_build_budget_ms", "technical"));
 
 	/** One setting: its key in the file, its section, the field behind it and its default (as text). */
 	public record Setting(String key, String section, Field field, String fallback) {

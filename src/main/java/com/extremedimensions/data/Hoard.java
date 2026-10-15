@@ -7,6 +7,8 @@ public class Hoard {
 	/** UUID of the player whose things fill it; empty for an old hoard found in the wild. */
 	public String owner = "";
 	public boolean keeperSlain = false;
+	/** Raided and plundered: no raid starts on it again. */
+	public boolean raided = false;
 	/** Young killed and not yet replaced, and when (epoch ms) the next of them may come back. */
 	public int lost = 0;
 	public long youngBack = 0;

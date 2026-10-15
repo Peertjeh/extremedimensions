@@ -96,6 +96,7 @@ public final class ServerEvents {
 			com.extremedimensions.elder.WeaverService.clear();
 			com.extremedimensions.coop.FallenService.clear();
 			com.extremedimensions.coop.BurdenService.clear();
+			com.extremedimensions.tribe.RaidService.clear();
 			AtonementGuard.clear();
 			DataStore.unload();
 			WorldFx.bind(null);
@@ -169,7 +170,7 @@ public final class ServerEvents {
 			} else if (entity instanceof Keeper k) {
 				HollowService.onKeeperDeath(k, source.getEntity());
 			} else if (entity instanceof Hollowling h) {
-				HollowService.onHollowlingDeath(h);
+				HollowService.onHollowlingDeath(h, source.getEntity());
 			} else if (entity instanceof Lurker l) {
 				LurkerService.onDeath(l, source.getEntity());
 			} else if (entity instanceof com.extremedimensions.seam.VeilRay || entity instanceof com.extremedimensions.seam.Thinned) {
@@ -416,6 +417,9 @@ public final class ServerEvents {
 				CurseEffects.refreshEffects(p, d);
 				discover(p, d, dim);
 			}
+			if (d.tickCounter % 20 == 0) {
+				com.extremedimensions.tribe.Standing.second(p, d);
+			}
 
 			d.tickCounter++;
 			if (sync || d.tickCounter % Config.SYNC_INTERVAL_TICKS == 0) {
@@ -441,6 +445,7 @@ public final class ServerEvents {
 		com.extremedimensions.elder.WeaverService.tick(s);
 		com.extremedimensions.elder.ElderArena.tick(s);
 		com.extremedimensions.coop.FallenService.tick(s);
+		com.extremedimensions.tribe.RaidService.tick(s);
 		com.extremedimensions.elder.AttackFx.flush(s);
 	}
 

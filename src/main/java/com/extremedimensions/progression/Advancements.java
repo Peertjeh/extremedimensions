@@ -42,6 +42,10 @@ public final class Advancements {
 	public static final String WEAVER_SLAIN = "weaver_slain";
 	public static final String LIFTED = "lifted";
 	public static final String BURDEN_CARRIED = "burden_carried";
+	public static final String FIRST_BARTER = "first_barter";
+	public static final String TRIBE_TRUSTED = "tribe_trusted";
+	public static final String TRIBE_KIN = "tribe_kin";
+	public static final String RAIDER = "raider";
 
 	/** Expeditions needed for {@link #VETERAN}. */
 	public static final int VETERAN_EXPEDITIONS = 10;

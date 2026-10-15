@@ -422,6 +422,12 @@ public final class LurkerService {
 				run(l, st, p, true);
 				return;
 			}
+			if (com.extremedimensions.tribe.Standing.spared(p)) {
+				// Kin of the tribe: it looks at them a long moment, and lets them be
+				p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.tribe.spared"), true);
+				run(l, st, p, true);
+				return;
+			}
 			snatch(l, st, p);
 		}
 		if (st.ticks >= TAKE_TICKS) {
@@ -769,6 +775,7 @@ public final class LurkerService {
 			}
 			Advancements.grant(p, Advancements.HUNTED);
 			Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.TRIBE);
+			com.extremedimensions.tribe.Standing.change(p, Config.TRIBE_REP_LURKER, "gui.extremedimensions.tribe.why.lurker");
 		}
 	}
 

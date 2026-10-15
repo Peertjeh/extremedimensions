@@ -15,6 +15,14 @@ public class PlayerData {
 	// --- saved ---
 	public int expeditions = 0;
 	/** The name the player last played under (an ally's team is looked up by it while they are away). */
+	/** Standing with the tribe (-100 to 100), gifts given today and wares bought today (offer index:times). */
+	public int tribeRep = 0;
+	public long tribeDay = -1;
+	public int tribeGifts = 0;
+	public Map<Integer, Integer> barterUsed = new HashMap<>();
+	/** Online seconds until the tribe forgets a point of a grudge, and until it next hunts this player. */
+	public int tribeForgetIn = 0, tribeHuntIn = 0;
+	public int raidsWon = 0, bartered = 0;
 	public String name = null;
 	/** Whether the player's charge in their anchors is open to their allies. */
 	public boolean shareAnchors = false;
