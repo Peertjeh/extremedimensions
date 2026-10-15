@@ -59,7 +59,7 @@ public final class HubItems {
 		}
 		for (int i = 0; i < inv.getContainerSize(); i++) {
 			String tag = Icon.tagOf(inv.getItem(i));
-			if (tag.isEmpty()) {
+			if (tag.isEmpty() || net.battlehub.progression.Wardrobe.isPiece(tag)) {
 				continue;
 			}
 			boolean keep = (i == compassSlot && tag.equals(COMPASS)) || (i == leaveSlot && tag.equals(lastItem))

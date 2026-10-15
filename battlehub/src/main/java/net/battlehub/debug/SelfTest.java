@@ -70,6 +70,9 @@ public final class SelfTest {
 			ConfigManager.config().fairness.afkMatchSeconds = 0;
 			ConfigManager.config().fairness.afkQueueSeconds = 0;
 			ConfigManager.config().fairness.antiTeaming = false;
+			// The camera flights make every start and end longer; the show test switches them on itself
+			ConfigManager.config().effects.intro = false;
+			ConfigManager.config().effects.victoryCamera = false;
 		});
 		HubWorldTests.all(server, s);
 		lobbyAndMenus(server, s);
@@ -109,6 +112,7 @@ public final class SelfTest {
 		CompetitiveTests.all(server, s);
 		RetentionTests.all(server, s);
 		SocialTests.all(server, s);
+		FxTests.all(server, s);
 		s.check("coins earned are counted per mode, for ranked and in total", () -> {
 			PlayerProfile a = PlayerStore.get(p("BHTestA").getUUID());
 			PlayerProfile b = PlayerStore.get(p("BHTestB").getUUID());

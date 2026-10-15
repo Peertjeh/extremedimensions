@@ -38,6 +38,9 @@ public final class HubConfig {
 	public Seasons seasons = new Seasons();
 	public Fairness fairness = new Fairness();
 	public ClanSettings clans = new ClanSettings();
+	public Effects effects = new Effects();
+	public LobbyExtras lobbyExtras = new LobbyExtras();
+	public ResourcePack resourcePack = new ResourcePack();
 	public Map<String, Game> games = defaultGames();
 
 	/** BattleHub's own world. Every other dimension is normal gameplay that BattleHub leaves alone. */
@@ -285,6 +288,51 @@ public final class HubConfig {
 		public int warReward = 500;
 	}
 
+	/** Show around matches: the intro flight over the arena, the killfeed and the victory shot. */
+	public static final class Effects {
+		/** At the start: the camera flies over the arena while the names are shown. */
+		public boolean intro = true;
+		public int introSeconds = 3;
+		/** At the end: the camera circles the winner. */
+		public boolean victoryCamera = true;
+		/** The last kills on the right of the screen (matches without their own sidebar), and a line in chat. */
+		public boolean killfeed = true;
+		public int killfeedLines = 5;
+	}
+
+	/** Extras in the lobby: double jump and the training dummy. */
+	public static final class LobbyExtras {
+		/** Press jump twice in the air to jump again (not in matches, not while spectating). */
+		public boolean doubleJump = true;
+		public double doubleJumpForward = 1.1;
+		public double doubleJumpUp = 0.75;
+		public int doubleJumpCooldownTicks = 20;
+		/** A dummy on the plaza that shows what your hits would do with a diamond sword. */
+		public boolean dummy = true;
+		/** Where it stands: degrees around the fountain (0 east, 90 south) and the distance. */
+		public double dummyAngle = 135;
+		public double dummyRadius = 8;
+	}
+
+	/**
+	 * The optional resource pack: icons in the killfeed and titles, BattleHub sounds and music. Players can say no;
+	 * everything works without it. Either BattleHub serves it itself ({@code port} and {@code host}, the address
+	 * players use for the server), or you host the zip yourself and fill in {@code url}.
+	 */
+	public static final class ResourcePack {
+		public boolean enabled = false;
+		/** Your own address for the zip (then nothing is served); empty: BattleHub serves it. */
+		public String url = "";
+		/** The server's address as players see it (for the built-in server). */
+		public String host = "";
+		public int port = 25599;
+		/** Players who say no cannot join BattleHub. */
+		public boolean required = false;
+		/** Music in the lobby (with the pack). */
+		public boolean music = true;
+		public int musicEverySeconds = 240;
+	}
+
 	/** Bots that play when there are not enough people, and for practice. */
 	public static final class Bots {
 		public boolean enabled = true;
@@ -488,6 +536,14 @@ public final class HubConfig {
 		seasons.topDivisionStep = Math.max(1, seasons.topDivisionStep);
 		if (seasons.rewards == null) seasons.rewards = defaultSeasonRewards();
 		if (clans == null) clans = new ClanSettings();
+		if (effects == null) effects = new Effects();
+		if (lobbyExtras == null) lobbyExtras = new LobbyExtras();
+		if (resourcePack == null) resourcePack = new ResourcePack();
+		effects.introSeconds = Math.max(0, Math.min(10, effects.introSeconds));
+		effects.killfeedLines = Math.max(1, Math.min(10, effects.killfeedLines));
+		lobbyExtras.doubleJumpCooldownTicks = Math.max(0, lobbyExtras.doubleJumpCooldownTicks);
+		if (resourcePack.url == null) resourcePack.url = "";
+		if (resourcePack.host == null) resourcePack.host = "";
 		clans.createCost = Math.max(0, clans.createCost);
 		clans.maxMembers = Math.max(2, Math.min(100, clans.maxMembers));
 		clans.warReward = Math.max(0, clans.warReward);

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.11.0
+
+### Added
+* **Match intro**: the camera flies over the arena at the start while the mode and the players are shown.
+* **Killfeed** on the right of the screen with an icon per kill (games without their own scoreboard).
+* **Victory shot**: the camera circles the winner at the end.
+* **Double jump** in the lobby.
+* **Training dummy** on the plaza with damage (as with a diamond sword), crits, combo, CPS and reach.
+* **Wardrobe**: hats and outfits for the lobby in the cosmetics shop (added to existing `cosmetics.json` files).
+* **Optional resource pack** (off by default): pixel icons, BattleHub sounds and lobby music, built by BattleHub
+  and served on its own port or from your own URL; your own files can be added on top.
+
 ## 1.10.0
 
 ### Added

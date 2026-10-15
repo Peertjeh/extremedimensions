@@ -15,7 +15,8 @@
 		"TextDisplayAccessor",
 		"InteractionAccessor",
 		"EntityMixin",
-		"LivingEntitySwingMixin"
+		"LivingEntitySwingMixin",
+		"ResourcePackResponseMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

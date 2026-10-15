@@ -86,8 +86,8 @@ final class CosmeticsTests {
 		s.check(tag + ": the compass menu has a cosmetics button", () -> p("BHTestA").containerMenu instanceof HubMenu m
 				&& m.getSlot(13).getItem().is(Items.FIREWORK_ROCKET));
 		s.run(tag + ": A opens the shop", () -> click("BHTestA", "Cosmetics"));
-		s.waitFor(tag + ": five categories", 5, () -> p("BHTestA").containerMenu instanceof HubMenu m && m.screen() instanceof CosmeticsMenu
-				&& !m.getSlot(11).getItem().isEmpty() && !m.getSlot(15).getItem().isEmpty());
+		s.waitFor(tag + ": seven categories (with the wardrobe)", 5, () -> p("BHTestA").containerMenu instanceof HubMenu m
+				&& m.screen() instanceof CosmeticsMenu && !m.getSlot(10).getItem().isEmpty() && !m.getSlot(16).getItem().isEmpty());
 		s.run(tag + ": A opens trails", () -> click("BHTestA", "Trails"));
 		s.waitFor(tag + ": the trails page", 5, () -> p("BHTestA").containerMenu instanceof HubMenu m && m.screen() instanceof CosmeticCategoryMenu);
 		s.run(tag + ": A clicks Flames (400 coins)", () -> click("BHTestA", "Flames"));

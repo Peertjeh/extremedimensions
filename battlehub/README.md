@@ -56,6 +56,28 @@ and they come in three levels: **easy** walks and swings late, **normal** sprint
 * **Prestige**: at the top level, start again at level 1 with a star before your name and 5% more coins per
   prestige (up to 50%).
 
+### The show: intros, killfeed, victory shot
+* **Match intro**: when a match starts, the camera flies over the arena while the mode and the players are shown
+  (only your view moves; you stay at your spawn).
+* **Killfeed** on the right of the screen in every game without its own scoreboard: the last kills with an
+  icon for how they happened (sword, bow, a fall), plus a line in chat.
+* **Victory shot**: at the end the camera circles the winner while the win effects go off.
+
+### Lobby extras
+* **Double jump** everywhere in the lobby (press jump twice), with a short cooldown.
+* **Training dummy** on the plaza: each player sees their own numbers above it: what the hit would have done
+  with a diamond sword (the attack cooldown and critical hits count), the combo, clicks per second, reach and
+  the average. A number floats up from every hit; right-click to start over.
+* **Wardrobe**: hats (glass, slime, TNT, a beacon, a dragon head, ...) and outfits in a colour, worn in the lobby
+  only, in the cosmetics shop.
+
+### Optional resource pack
+Off by default. When switched on, players get it offered when they come into BattleHub and may say no:
+everything works without it. With it they get pixel icons in the killfeed and on the dummy, BattleHub sounds
+(intro, kill, hit, double jump) and lobby music. BattleHub builds the pack itself and can serve it on its own
+port, or you host the zip from `config/battlehub/resourcepack/` yourself. Put your own `.ogg` sounds, textures or
+a `pack.png` in `config/battlehub/resourcepack/overlay/` and they are added to the pack.
+
 ### Friends, parties, clans and private games
 * **Friends** (`/friend add <name>`): a friends list that shows who is online and what they are doing (in the
   lobby, waiting, playing Bed Wars, ...). Your friends hear it when you come into BattleHub.
@@ -339,6 +361,11 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   * `bots`: on/off, filling queues on/off, after how many seconds, party lobbies up to how many players, the
     level of bots that fill in, the most bots at once, the share of rewards in matches with bots, and how soon
     a bot leaves after its match
+  * `effects`: the match intro on/off and its seconds, the victory shot, the killfeed and its number of lines
+  * `lobbyExtras`: double jump on/off, its push forward and up and its cooldown; the training dummy on/off and
+    where it stands (angle around the fountain and distance)
+  * `resourcePack`: on/off, your own `url` for the zip or the `host` (the address players use) and `port` for the
+    built-in server, whether players must accept it, lobby music and how often
   * `clans`: the price of a clan, the most members, and the coins per member for winning the weekly clan war
   * `featured`: the mode of the day on/off, the coin multiplier and the modes it picks from
   * `npcs`: the lobby characters on/off, their distance from the fountain, and per character the id, what a
@@ -372,10 +399,11 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   count, enchantments, unbreakable, leather colour, plus potion effects
 * **`titles.json`**: titles with display text (`&` colour codes) and requirement:
   `default`, `level`, `wins`, `duel_wins`, `mode_wins`, `streak`, `mode_streak`, `kills`, `elo` or `coins` (price)
-* **`cosmetics.json`**: the shop: per cosmetic an id, category (`trail`, `kill`, `arrow`, `win`, `color`),
+* **`cosmetics.json`**: the shop: per cosmetic an id, category (`trail`, `kill`, `arrow`, `win`, `color`, `hat`, `outfit`),
   display text, icon item, price and effect (a particle id for trails and arrows; `lightning`, `explosion`,
   `hearts`, `flames`, `souls`, `blood`, `firework` or `totem` for kills; `fireworks`, `totem`, `hearts`,
-  `notes`, `flames` or `sparks` for wins; a chat colour for names), plus `trailsInMatches`
+  `notes`, `flames` or `sparks` for wins; a chat colour for names; an item id for hats; a colour `#RRGGBB` for
+  outfits), plus `trailsInMatches`
 * **`lang/`**: every text players see. **English and Dutch are built in**: players see BattleHub in
   their own client language when there is a file for it, otherwise in the server default (`language` in
   `config.json`). `en_us.json` is written here as a template. Copy it to e.g. `de_de.json` to add a

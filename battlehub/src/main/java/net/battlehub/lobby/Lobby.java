@@ -52,5 +52,6 @@ public final class Lobby {
 	/** Heal, feed and hand out the lobby items. */
 	public static void refresh(ServerPlayer p) {
 		HubItems.ensure(p, Sessions.state(p.getUUID()) == Sessions.State.QUEUED);
+		net.battlehub.progression.Wardrobe.apply(p);
 	}
 }

@@ -109,6 +109,9 @@ public final class Cosmetics {
 		if (c.category().equals("color")) {
 			TitleService.apply(p);
 		}
+		if (CosmeticRules.WARDROBE.contains(c.category())) {
+			Wardrobe.apply(p);
+		}
 		if (result != ClickResult.DESELECTED && !c.category().equals("color")) {
 			preview(p, c);
 		}
@@ -120,6 +123,9 @@ public final class Cosmetics {
 		PlayerStore.save(p.getUUID());
 		if (category.equals("color")) {
 			TitleService.apply(p);
+		}
+		if (CosmeticRules.WARDROBE.contains(category)) {
+			Wardrobe.apply(p);
 		}
 	}
 
@@ -211,6 +217,8 @@ public final class Cosmetics {
 				case "kill" -> KILL_EFFECTS.contains(c.effect);
 				case "win" -> WIN_EFFECTS.contains(c.effect);
 				case "color" -> teamColor(c.effect) != null;
+				case "hat" -> Ids.isItem(c.effect);
+				case "outfit" -> CosmeticRules.rgb(c.effect) >= 0;
 				default -> false;
 			};
 			if (!ok) out.add(c.id + " effect " + c.effect);

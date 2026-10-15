@@ -11,6 +11,8 @@ import net.battlehub.core.CosmeticDef;
  * sparks; colours: a chat colour name (red, gold, aqua, ...).
  */
 public final class CosmeticConfig {
+	/** 2: the wardrobe (hats and outfits) was added. */
+	public int configVersion;
 	/** Show trails during matches too (not only in the hub). */
 	public boolean trailsInMatches = true;
 	public List<CosmeticDef> cosmetics = defaults();
@@ -73,9 +75,39 @@ public final class CosmeticConfig {
 		return l;
 	}
 
+	/** Hats (any item worn on the head) and outfits (dyed leather, a colour "#RRGGBB"), worn in the lobby. */
+	static List<CosmeticDef> wardrobe() {
+		List<CosmeticDef> l = new ArrayList<>();
+		l.add(c("hat_glass", "hat", "&bGlass Helmet", "glass", 300, "minecraft:glass"));
+		l.add(c("hat_slime", "hat", "&aSlime", "slime_block", 500, "minecraft:slime_block"));
+		l.add(c("hat_lantern", "hat", "&6Jack o'Lantern", "jack_o_lantern", 500, "minecraft:jack_o_lantern"));
+		l.add(c("hat_tnt", "hat", "&cTNT", "tnt", 600, "minecraft:tnt"));
+		l.add(c("hat_cake", "hat", "&fCake", "cake", 700, "minecraft:cake"));
+		l.add(c("hat_sea_lantern", "hat", "&3Sea Lantern", "sea_lantern", 700, "minecraft:sea_lantern"));
+		l.add(c("hat_gold", "hat", "&6Gold Block", "gold_block", 900, "minecraft:gold_block"));
+		l.add(c("hat_creeper", "hat", "&aCreeper Head", "creeper_head", 1000, "minecraft:creeper_head"));
+		l.add(c("hat_beacon", "hat", "&b&lBeacon", "beacon", 1500, "minecraft:beacon"));
+		l.add(c("hat_dragon", "hat", "&5&lDragon Head", "dragon_head", 2000, "minecraft:dragon_head"));
+		l.add(c("outfit_white", "outfit", "&fWhite Outfit", "white_wool", 400, "#F9FFFE"));
+		l.add(c("outfit_red", "outfit", "&cRed Outfit", "red_wool", 400, "#B02E26"));
+		l.add(c("outfit_blue", "outfit", "&9Blue Outfit", "blue_wool", 400, "#3C44AA"));
+		l.add(c("outfit_green", "outfit", "&2Green Outfit", "green_wool", 400, "#5E7C16"));
+		l.add(c("outfit_black", "outfit", "&8Black Outfit", "black_wool", 500, "#1D1D21"));
+		l.add(c("outfit_pink", "outfit", "&dPink Outfit", "pink_wool", 500, "#F38BAA"));
+		l.add(c("outfit_purple", "outfit", "&5Purple Outfit", "purple_wool", 500, "#8932B8"));
+		l.add(c("outfit_gold", "outfit", "&6Golden Outfit", "yellow_wool", 800, "#F9C74F"));
+		return l;
+	}
+
 	public CosmeticConfig normalize() {
 		if (cosmetics == null) {
 			cosmetics = defaults();
+		}
+		if (configVersion < 2) {
+			for (CosmeticDef w : wardrobe()) {
+				if (cosmetics.stream().noneMatch(o -> o != null && w.id.equals(o.id))) cosmetics.add(w);
+			}
+			configVersion = 2;
 		}
 		cosmetics.removeIf(c -> c == null || c.id == null || c.id.isBlank());
 		for (CosmeticDef c : cosmetics) {

@@ -6,7 +6,9 @@ import java.util.List;
 public final class CosmeticRules {
 	private CosmeticRules() {}
 
-	public static final List<String> CATEGORIES = List.of("trail", "kill", "arrow", "win", "color");
+	public static final List<String> CATEGORIES = List.of("trail", "kill", "arrow", "win", "color", "hat", "outfit");
+	/** Categories worn in the lobby (the wardrobe). */
+	public static final List<String> WARDROBE = List.of("hat", "outfit");
 
 	public enum BuyResult { BOUGHT, ALREADY_OWNED, TOO_EXPENSIVE }
 
@@ -51,5 +53,19 @@ public final class CosmeticRules {
 			}
 		}
 		return null;
+	}
+
+	/** A colour for an outfit: "#RRGGBB" or "RRGGBB"; -1 when it is not one. */
+	public static int rgb(String text) {
+		if (text == null) return -1;
+		String t = text.trim();
+		if (t.startsWith("#")) t = t.substring(1);
+		if (t.length() != 6) return -1;
+		try {
+			int v = Integer.parseInt(t, 16);
+			return v < 0 || t.startsWith("+") ? -1 : v;
+		} catch (NumberFormatException e) {
+			return -1;
+		}
 	}
 }

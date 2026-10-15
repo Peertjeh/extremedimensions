@@ -75,6 +75,7 @@ public final class Travel {
 		net.battlehub.progression.FeaturedMode.announce(p);
 		net.battlehub.progression.Retention.login(p);
 		net.battlehub.social.Friends.entered(p);
+		net.battlehub.fx.ResourcePack.offer(p);
 		Msg.sound(p, net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP, 0.5f, 1.4f);
 		return true;
 	}
@@ -86,6 +87,8 @@ public final class Travel {
 			return false;
 		}
 		leaveGames(p, true);
+		net.battlehub.fx.Sounds.stopMusic(p);
+		net.battlehub.lobby.DoubleJump.reset(p);
 		if (SURVIVAL.has(p.getUUID())) {
 			SURVIVAL.restore(p, StateStore.Restore.FULL, Travel::toWorldSpawn, level -> !HubWorld.isBattleHub(level));
 		} else {

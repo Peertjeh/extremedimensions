@@ -81,6 +81,10 @@ public abstract class Match {
 	protected int phaseTicks;
 	protected int runTicks;
 	private boolean teleported;
+	/** Ticks of the intro flight at the start of the countdown (0: none). */
+	protected int introTicks;
+	/** How the next death came about (set by {@link #handleDeath}, read by {@link #killed}): melee, arrow or other. */
+	private String nextCause = "";
 
 	protected Match(int id, GameMode mode, boolean ranked, MinecraftServer server, List<ServerPlayer> players) {
 		this.id = id;
@@ -392,11 +396,14 @@ public abstract class Match {
 			return;
 		}
 		setPhase(Phase.COUNTDOWN);
+		introTicks = net.battlehub.fx.Cinematics.intro(this);
 		Menus.refreshAll(server);
 	}
 
 	private void prepare(ServerPlayer p, int index) {
 		p.closeContainer();
+		net.battlehub.lobby.DoubleJump.reset(p);
+		net.battlehub.fx.Sounds.stopMusic(p);
 		Snapshots.take(p);
 		p.stopRiding();
 		resetForPlay(p);
@@ -435,6 +442,7 @@ public abstract class Match {
 			Kits.give(p, kit(), leatherColor(id));
 		}
 		runTicks = 0;
+		introTicks = 0;
 		setPhase(Phase.COUNTDOWN);
 	}
 
@@ -505,8 +513,23 @@ public abstract class Match {
 		}
 	}
 
+	/** Big title while the camera flies over the arena: the mode and who plays. */
+	protected Component introTitle(ServerPlayer p) {
+		return Lang.tr(p, "intro.title", Lang.tr(p, Icons.modeKey(mode)));
+	}
+
 	private void tickCountdown() {
-		int total = Math.max(1, countdownSeconds()) * 20;
+		// After an intro there are always three seconds left to count down
+		int total = Math.max(Math.max(1, countdownSeconds()) * 20, introTicks > 0 ? introTicks + 60 : 0);
+		if (introTicks > 0 && phaseTicks == 1) {
+			for (UUID id : alive) {
+				ServerPlayer p = player(id);
+				if (p == null) continue;
+				Msg.title(p, introTitle(p), describe(p), 5, introTicks, 10);
+				Msg.sound(p, SoundEvents.UI_TOAST_IN, 1f, 0.8f);
+				net.battlehub.fx.Sounds.play(p, net.battlehub.fx.Sounds.INTRO);
+			}
+		}
 		for (UUID id : alive) {
 			ServerPlayer p = player(id);
 			Arena.Point sp = spawnOf.get(id);
@@ -518,7 +541,7 @@ public abstract class Match {
 				p.setDeltaMovement(Vec3.ZERO);
 			}
 		}
-		if ((phaseTicks - 1) % 20 == 0) {
+		if ((phaseTicks - 1) % 20 == 0 && phaseTicks > introTicks) {
 			int secs = (total - phaseTicks + 1 + 19) / 20;
 			if (secs > 0) {
 				for (UUID id : alive) {
@@ -531,6 +554,8 @@ public abstract class Match {
 			}
 		}
 		if (phaseTicks >= total) {
+			net.battlehub.fx.Cinematics.stopMatch(server, id);
+			introTicks = 0;
 			setPhase(Phase.RUNNING);
 			for (UUID id : alive) {
 				ServerPlayer p = player(id);
@@ -609,6 +634,9 @@ public abstract class Match {
 		if (killer == null || killer == victim) {
 			killer = lastAttacker(victim);
 		}
+		Entity direct = source == null ? null : source.getDirectEntity();
+		nextCause = direct instanceof net.minecraft.world.entity.projectile.Projectile ? "arrow"
+				: direct instanceof Player ? "melee" : "other";
 		killed(victim, killer, false);
 	}
 
@@ -623,6 +651,12 @@ public abstract class Match {
 			Cosmetics.onKill(killer, victim, victim.position());
 		}
 		final ServerPlayer k = credited ? killer : null;
+		String cause = fell ? "fall" : nextCause.isEmpty() ? "melee" : nextCause;
+		nextCause = "";
+		net.battlehub.fx.Killfeed.kill(this, v, k == null ? null : k.getUUID(), cause);
+		if (k != null) {
+			net.battlehub.fx.Sounds.play(k, net.battlehub.fx.Sounds.KILL);
+		}
 		forEveryone(p -> {
 			if (k != null) {
 				Msg.send(p, fell ? "match.knocked_off" : "match.killed", name(v), name(k.getUUID()));
@@ -682,12 +716,16 @@ public abstract class Match {
 		UUID id = p.getUUID();
 		if (!participants.contains(id) || left.contains(id) || phase == Phase.CLOSED) {
 			if (watchers.remove(id)) {
+				net.battlehub.fx.Cinematics.stop(p);
+				net.battlehub.fx.Killfeed.hide(this, p);
 				Snapshots.restore(p, teleport);
 			}
 			return;
 		}
 		left.add(id);
 		boolean wasAlive = alive.remove(id);
+		net.battlehub.fx.Cinematics.stop(p);
+		net.battlehub.fx.Killfeed.hide(this, p);
 		if (phase == Phase.BUILDING) {
 			abort("match.cancelled_left");
 			return;
@@ -749,6 +787,12 @@ public abstract class Match {
 			p.clearFire();
 		}
 		forWatchers(p -> Msg.send(p, draw ? "match.ended_draw" : "match.ended_winner", winnerNames));
+		for (UUID w : winners) {
+			if (!left.contains(w) && player(w) != null) {
+				net.battlehub.fx.Cinematics.victory(this, w, endDelayTicks() - 10);
+				break;
+			}
+		}
 		try {
 			Results.apply(this);
 		} catch (Exception e) {
@@ -778,6 +822,8 @@ public abstract class Match {
 			return;
 		}
 		setPhase(Phase.CLOSED);
+		net.battlehub.fx.Cinematics.stopMatch(server, id);
+		net.battlehub.fx.Killfeed.close(this);
 		sendHome(offersPlayAgain());
 		cleanUp();
 		clearArena();
@@ -860,14 +906,22 @@ public abstract class Match {
 		watchers.add(p.getUUID());
 		teleport(p, arena.spectator());
 		onWatcherAdded(p);
+		net.battlehub.fx.Killfeed.watcherAdded(this, p);
 	}
 
 	public void removeWatcher(UUID id) {
 		watchers.remove(id);
 		ServerPlayer p = player(id);
 		if (p != null) {
+			net.battlehub.fx.Cinematics.stop(p);
+			net.battlehub.fx.Killfeed.hide(this, p);
 			onRestored(p);
 		}
+	}
+
+	/** Games with their own sidebar (Bed Wars, Prop Hunt) keep it; the others show the killfeed there. */
+	public boolean ownSidebar() {
+		return false;
 	}
 
 	public Set<UUID> watchers() {

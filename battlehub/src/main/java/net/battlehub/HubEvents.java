@@ -55,6 +55,12 @@ public final class HubEvents {
 			Queues.clear();
 			net.battlehub.bot.Bots.clear();
 			net.battlehub.hub.HubNpcs.clear();
+			net.battlehub.hub.HubDummy.clear();
+			net.battlehub.fx.Cinematics.clear();
+			net.battlehub.fx.Killfeed.clear();
+			net.battlehub.fx.Sounds.clear();
+			net.battlehub.fx.ResourcePack.stop();
+			net.battlehub.lobby.DoubleJump.clear();
 			net.battlehub.fair.Afk.clear();
 			net.battlehub.fair.AntiCheat.clear();
 			net.battlehub.fair.Reports.clear();
@@ -135,7 +141,7 @@ public final class HubEvents {
 			return InteractionResult.PASS;
 		});
 		UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
-			if (player instanceof ServerPlayer sp && net.battlehub.hub.HubNpcs.click(sp, entity)) {
+			if (player instanceof ServerPlayer sp && (net.battlehub.hub.HubDummy.use(sp, entity) || net.battlehub.hub.HubNpcs.click(sp, entity))) {
 				return InteractionResult.SUCCESS;
 			}
 			Match m = player instanceof ServerPlayer sp ? matchOf(sp) : null;
@@ -156,7 +162,7 @@ public final class HubEvents {
 			return m == null ? InteractionResult.PASS : m.onAttackBlock((ServerPlayer) player, pos);
 		});
 		AttackEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
-			if (player instanceof ServerPlayer sp && net.battlehub.hub.HubNpcs.click(sp, entity)) {
+			if (player instanceof ServerPlayer sp && (net.battlehub.hub.HubDummy.hit(sp, entity) || net.battlehub.hub.HubNpcs.click(sp, entity))) {
 				return InteractionResult.FAIL;
 			}
 			Match m = player instanceof ServerPlayer sp ? matchOf(sp) : null;
@@ -185,6 +191,7 @@ public final class HubEvents {
 		net.battlehub.hub.HubWorld.ensureBuilt(server);
 		net.battlehub.progression.Seasons.init(server);
 		net.battlehub.social.Clans.load(server);
+		net.battlehub.fx.ResourcePack.start(server);
 	}
 
 	private static void stopping(MinecraftServer server) {
@@ -208,6 +215,9 @@ public final class HubEvents {
 		net.battlehub.progression.Cosmetics.tick(server, tick);
 		net.battlehub.hub.HubBoards.tick(server);
 		net.battlehub.hub.HubNpcs.tick(server);
+		net.battlehub.hub.HubDummy.tick(server);
+		net.battlehub.fx.Cinematics.tick(server);
+		net.battlehub.lobby.DoubleJump.tick(server);
 		net.battlehub.progression.Seasons.tick(server);
 		net.battlehub.fair.Afk.tick(server);
 		net.battlehub.fair.AntiCheat.tick(server);
@@ -232,6 +242,7 @@ public final class HubEvents {
 		}
 		Lobby.refresh(p);
 		net.battlehub.hub.Travel.showLevel(p);
+		net.battlehub.fx.Sounds.lobbyMusic(p, tick);
 		if (ConfigManager.config().lobby.keepFed) {
 			if (p.getFoodData().getFoodLevel() < 20) {
 				p.getFoodData().setFoodLevel(20);
@@ -263,6 +274,7 @@ public final class HubEvents {
 			HubItems.ensure(p, false);
 			net.battlehub.hub.Travel.showLevel(p);
 			net.battlehub.progression.Retention.login(p);
+			net.battlehub.fx.ResourcePack.offer(p);
 		} else if (ConfigManager.config().hub.sendToHubOnJoin) {
 			net.battlehub.hub.Travel.enter(p);
 		} else if (ConfigManager.config().hub.joinHint) {
@@ -288,6 +300,10 @@ public final class HubEvents {
 		TitleService.remove(p);
 		net.battlehub.progression.Cosmetics.forget(p.getUUID());
 		net.battlehub.fair.AntiCheat.forget(p.getUUID());
+		net.battlehub.fx.Sounds.forget(p.getUUID());
+		net.battlehub.fx.ResourcePack.forget(p.getUUID());
+		net.battlehub.lobby.DoubleJump.forget(p.getUUID());
+		net.battlehub.hub.HubDummy.forget(p.getUUID());
 		net.battlehub.social.Groups.forget(p);
 		net.battlehub.social.CustomGames.forget(p);
 		PlayerStore.save(p.getUUID());
@@ -337,6 +353,7 @@ public final class HubEvents {
 	public static void swung(ServerPlayer p) {
 		net.battlehub.fair.Afk.active(p.getUUID());
 		net.battlehub.fair.AntiCheat.swing(p);
+		net.battlehub.hub.HubDummy.swing(p);
 		Match m = matchOf(p);
 		if (m != null && !p.hasDisconnected()) {
 			m.recordSwing(p);

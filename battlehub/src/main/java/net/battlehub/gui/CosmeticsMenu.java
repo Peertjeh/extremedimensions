@@ -37,6 +37,8 @@ public final class CosmeticsMenu extends Screen {
 			case "kill" -> Items.DIAMOND_SWORD;
 			case "arrow" -> Items.SPECTRAL_ARROW;
 			case "win" -> Items.FIREWORK_ROCKET;
+			case "hat" -> Ids.item("minecraft:golden_helmet");
+			case "outfit" -> Ids.item("minecraft:leather_chestplate");
 			default -> Ids.item("minecraft:magenta_dye");
 		};
 	}
@@ -46,7 +48,7 @@ public final class CosmeticsMenu extends Screen {
 		PlayerProfile prof = PlayerStore.get(viewer);
 		c.set(4, Icon.of(Items.SUNFLOWER).name(Lang.item(viewer, "menu.cosmetics.coins", prof.coins))
 				.lore(Lang.loreLines(viewer, "menu.cosmetics.coins.lore")).build());
-		int slot = 11;
+		int slot = 10;
 		for (String cat : CosmeticRules.CATEGORIES) {
 			List<CosmeticDef> defs = Cosmetics.inCategory(cat);
 			long owned = defs.stream().filter(d -> CosmeticRules.owns(prof, d)).count();

@@ -883,4 +883,9 @@ public final class PropHuntMatch extends PartyMatch {
 	public Component status(ServerPlayer viewer) {
 		return Lang.tr(viewer, "prophunt.status", round, cfg.rounds, props.size());
 	}
+
+	@Override
+	public boolean ownSidebar() {
+		return true;
+	}
 }

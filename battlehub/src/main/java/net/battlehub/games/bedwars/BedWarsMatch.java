@@ -803,4 +803,9 @@ public final class BedWarsMatch extends PartyMatch implements BedWarsShop.Teams 
 	public int limitSeconds() {
 		return timeLimitTicks() / 20;
 	}
+
+	@Override
+	public boolean ownSidebar() {
+		return true;
+	}
 }

@@ -53,6 +53,7 @@ public final class Spectators {
 				Queues.leaveAll(p);
 			}
 			p.closeContainer();
+			net.battlehub.lobby.DoubleJump.reset(p);
 			Snapshots.take(p);
 		}
 		Sessions.toSpectating(p.getUUID(), m.id);
