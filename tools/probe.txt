@@ -1,5 +1,11 @@
-net.minecraft.world.entity.Display
-net.minecraft.world.entity.Display$BlockDisplay
-com.mojang.math.Transformation
-net.minecraft.util.Brightness
-#net/minecraft/world/entity/EntityType
+net.minecraft.client.particle.SingleQuadParticle
+net.minecraft.client.particle.SingleQuadParticle$FacingCameraMode
+net.minecraft.client.particle.SingleQuadParticle$Layer
+net.minecraft.client.particle.Particle
+net.minecraft.client.particle.ParticleEngine
+net.minecraft.client.particle.SpriteSet
+net.minecraft.client.particle.TextureSheetParticle
+net.minecraft.client.Camera
+#net/minecraft/client/particle/
+#QuadParticleRenderState
+#ParticleRenderType
