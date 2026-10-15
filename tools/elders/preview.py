@@ -1,9 +1,9 @@
 """Renders an Elder's model to a PNG without the game: textured boxes, a z-buffer, simple light and the glow layer.
 
-usage: python3 tools/elders/preview.py <name> <out.png> [front|side|three] [scale] [crop: x0,y0,x1,y1 in model pixels]
+usage: python3 tools/elders/preview.py <name> <out.png> [front|side|three|top|bottom|over|under] [scale] [crop: x0,y0,x1,y1 in model pixels]
 
-Reads the preview JSON written by build.py (python3 tools/elders/build.py <dir>) from the same directory as <out.png>,
-and the textures from the resource folder. Model space is Minecraft's (pixels, Y down, the creature faces -Z); the
+Reads the preview JSON written by build.py (python3 tools/elders/build.py <dir>, or tools/lurker/build.py) from the
+same directory as <out.png>, and the textures from the resource folder (the Elders' folder, else the entity folder). Model space is Minecraft's (pixels, Y down, the creature faces -Z); the
 view looks at the creature's front.
 """
 import json
@@ -47,17 +47,27 @@ def faces(box):
 
 def render(name, out, view="front", scale=3.0, crop=None):
     data = json.load(open(os.path.join(os.path.dirname(out) or ".", name + ".json")))
-    base = np.asarray(Image.open(os.path.join(TEX, name + ".png")).convert("RGBA"), dtype=np.float32) / 255
-    glow = np.asarray(Image.open(os.path.join(TEX, name + "_glow.png")).convert("RGBA"), dtype=np.float32) / 255
+    tex = TEX if os.path.exists(os.path.join(TEX, name + ".png")) else os.path.dirname(TEX)
+    base = np.asarray(Image.open(os.path.join(tex, name + ".png")).convert("RGBA"), dtype=np.float32) / 255
+    glow = np.asarray(Image.open(os.path.join(tex, name + "_glow.png")).convert("RGBA"), dtype=np.float32) / 255
     th, tw = base.shape[:2]
-    yaw = {"front": 0.0, "side": math.pi / 2, "three": math.pi / 5}[view]
+    yaw = {"front": 0.0, "side": math.pi / 2, "three": math.pi / 5, "top": 0.0, "bottom": 0.0, "over": math.pi / 5,
+           "under": math.pi / 5}[view]
+    # over and under tilt the three-quarter view to look down on the creature or up at it
+    pitch = {"over": -0.6, "under": 0.6}.get(view, 0.0)
     cy, sy = math.cos(yaw), math.sin(yaw)
+    cp, sp = math.cos(pitch), math.sin(pitch)
 
     def view_of(p):
-        # Turn the model about Y, then look along +Z from in front (screen x = -model x, so its left is on our right)
+        # Turn the model about Y, then look along +Z from in front (screen x = -model x, so its left is on our right);
+        # from above the screen runs along x and z (the front up), from below the same, mirrored
         x, y, z = p
+        if view == "top":
+            return (-x, z, y)
+        if view == "bottom":
+            return (x, z, -y)
         xr, zr = x * cy - z * sy, x * sy + z * cy
-        return (-xr, y, zr)
+        return (-xr, y * cp - zr * sp, y * sp + zr * cp)
 
     quads = []
     for box in data["boxes"]:

@@ -914,6 +914,214 @@ def m_mitre(ctx):
     return base + (255,), glow
 
 
+# ----------------------------------------------------------------------------- the Matriarch's and Ferryman's faces
+
+
+def _almond(u, v):
+    """An almond (an eye) filling the face: v from -1 to 1 tapering to points at u = +-1."""
+    return abs(v) <= max(0.0, 1 - u * u) ** 1.1
+
+
+def _mother_inside(u, v):
+    """The Matriarch's mask: broad at the brow, narrowing in long curves to a rounded chin."""
+    if v < 0.06:
+        return abs(u) <= 0.82 + v * 3
+    if v > 0.55:
+        k = (v - 0.55) / 0.45
+        return abs(u) <= 1 - 0.62 * k ** 1.3
+    return True
+
+
+# where the features sit on the Matriarch's mask (u across, v down), matching matriarch.py
+_MOTHER_EYES = ((-0.51, 0.34), (0.51, 0.34))
+
+
+def m_mother_mask(ctx):
+    """The Matriarch's mask of pale carved wood: grain running down it, dark patina in the hollows, deep shadow in
+    the eye sockets, tears of violet light running down from them, a sigil burning on the brow, and a moss-dark
+    groove for a mouth."""
+    gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
+    if not _front(ctx):
+        return (0, 0, 0, 0), None
+    u, v = _uv(ctx)
+    if not _mother_inside(u, v):
+        return (0, 0, 0, 0), None
+    e = _mask_edge(ctx, _mother_inside)
+    grain = noise(gx * 2.4, gy * 0.22, s, 4.0)
+    base = mix((112, 76, 50), (214, 176, 128), 0.25 + 0.55 * grain + 0.2 * noise(gx, gy, s + 3, 2.0))
+    if abs(noise(gx * 1.2, gy * 0.1, s + 9, 3.0) - 0.5) < 0.03:
+        base = shade(base, 0.6)
+    # the carving: cheek hollows and a ridge down the nose
+    hollow = max(0.0, 1 - ((abs(u) - 0.55) / 0.25) ** 2 - ((v - 0.58) / 0.16) ** 2)
+    ridge = max(0.0, 1 - (u / 0.09) ** 2) * (0.25 < v < 0.68)
+    base = shade(base, 1 - 0.35 * hollow + 0.12 * ridge)
+    glow = None
+    for ex, ey in _MOTHER_EYES:
+        du, dv = (u - ex) / 0.36, (v - ey) / 0.11
+        if _almond(du, dv * 1.0) and abs(du) < 1:
+            base = mix((24, 12, 20), base, 0.15 * abs(du))
+        # tears of light running down from the eye
+        if 0.40 < v < 0.82 and abs(u - ex - 0.04 * math.sin(v * 22)) < 0.035 and noise(gx, gy, s + 31, 6) > 0.25:
+            base, glow = (170, 90, 230), (214, 140, 255, int(230 - 200 * (v - 0.4)))
+    # the sigil on the brow: a small diamond with a ring
+    du, dv = u / 0.14, (v - 0.13) / 0.06
+    if abs(du) + abs(dv) < 1:
+        base, glow = (200, 120, 255), (235, 180, 255, 255)
+    elif abs(math.hypot(u / 0.24, (v - 0.13) / 0.1) - 1) < 0.12:
+        base = shade(base, 0.55)
+    # the mouth: a long dark groove
+    if abs(v - 0.8) < 0.012 + 0.01 * (1 - abs(u) / 0.4) and abs(u) < 0.4:
+        base = (30, 18, 22)
+    if e == 0:
+        base = shade(base, 0.5)
+    elif e == 1:
+        base = shade(base, 0.75)
+    return base + (255,), glow
+
+
+def m_mother_eye(ctx):
+    """The Matriarch's eye: an almond of violet light round a slit of a pupil, a white catchlight, a dark lid line."""
+    if not _front(ctx):
+        return (0, 0, 0, 0), None
+    u, v = _uv(ctx)
+    v = v * 2 - 1
+    if not _almond(u, v):
+        return (0, 0, 0, 0), None
+    edge = abs(v) / max(1e-6, max(0.0, 1 - u * u) ** 1.1)
+    if edge > 0.82:
+        return (40, 16, 40, 255), None
+    k = 1 - edge
+    if abs(u) < 0.07 * (1 - abs(v)) + 0.02:
+        return (50, 10, 70, 255), (120, 40, 180, 200)
+    if -0.38 < u < -0.22 and -0.5 < v < -0.15:
+        return (255, 245, 255, 255), (255, 250, 255, 255)
+    c = mix((120, 40, 190), (238, 196, 255), k ** 0.7)
+    return c + (255,), c + (int(190 + 65 * k),)
+
+
+def _skull_inside(u, v):
+    """A skull seen from the front: a round dome, cheekbones, narrowing to the jaw."""
+    if v < 0.45:
+        return u * u + ((v - 0.45) / 0.47) ** 2 <= 1.0
+    if v < 0.68:
+        return abs(u) <= 0.94 - (v - 0.45) * 0.4
+    return abs(u) <= 0.72 - (v - 0.68) * 0.9
+
+
+_SKULL_EYES = ((-0.42, 0.47), (0.42, 0.47))
+
+
+def m_skull_face(ctx):
+    """The face in the Ferryman's hood: old bone, yellowed and cracked, darkening into the shadow of the hood at its
+    edges, with deep sockets, the hollow of the nose and a row of teeth."""
+    gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
+    if not _front(ctx):
+        return (0, 0, 0, 0), None
+    u, v = _uv(ctx)
+    if not _skull_inside(u, v):
+        return (0, 0, 0, 0), None
+    base = mix((150, 138, 112), (222, 212, 186), 0.4 + 0.4 * noise(gx, gy, s, 3.0) + 0.2 * noise(gx, gy, s + 1, 1.5))
+    # the hood's shadow falls over the top and the sides
+    dark = min(1.0, max(0.0, (abs(u) - 0.4) / 0.6) * 1.0 + max(0.0, (0.32 - v) / 0.32) * 0.95)
+    base = mix(base, (20, 18, 30), dark)
+    glow = None
+    for ex, ey in _SKULL_EYES:
+        d = math.hypot((u - ex) / 0.27, (v - ey) / 0.11)
+        if d < 1:
+            base = mix((6, 4, 12), (40, 34, 44), d ** 3)
+    # the nose: an upside-down heart of shadow
+    if 0.56 < v < 0.66 and abs(u) < 0.13 * (v - 0.54) / 0.12 + 0.02:
+        base = (14, 10, 18)
+    # teeth
+    if 0.73 < v < 0.82 and abs(u) < 0.55:
+        tooth = int((u + 0.55) / 0.11)
+        if ((u + 0.55) / 0.11) % 1 < 0.18 or v > 0.805:
+            base = (40, 32, 34)
+        else:
+            base = mix((206, 194, 160), (238, 230, 204), (tooth % 2) * 0.5)
+    if abs(noise(gx, gy, s + 21, 14.0) - 0.5) < 0.012 and v < 0.7:
+        base = shade(base, 0.5)
+    e = _mask_edge(ctx, _skull_inside)
+    if e == 0:
+        base = shade(base, 0.55)
+    return base + (255,), glow
+
+
+def m_soul_eye(ctx):
+    """A point of soul light deep in a socket: white at the heart, pale teal fading out (round, on its front)."""
+    if not _front(ctx):
+        return (0, 0, 0, 0), None
+    u, v = _uv(ctx)
+    d = math.hypot(u, v * 2 - 1)
+    if d > 1:
+        return (0, 0, 0, 0), None
+    c = mix((120, 230, 220), (245, 255, 252), max(0.0, 1 - d * 1.6))
+    return c + (255,), c + (int(140 + 115 * (1 - d)),)
+
+
+def m_coin(ctx):
+    """An old gold coin, worn, with a stamped ring and a face rubbed almost smooth (round, on its front)."""
+    if not _front(ctx):
+        return shade(_gilt(ctx), 0.6) + (255,), None
+    u, v = _uv(ctx)
+    d = math.hypot(u, v * 2 - 1)
+    if d > 1:
+        return (0, 0, 0, 0), None
+    base = _gilt(ctx)
+    if abs(d - 0.78) < 0.07:
+        base = shade(base, 0.7)
+    elif d < 0.45 and noise(ctx["gx"], ctx["gy"], ctx["seed"] + 5, 2) > 0.55:
+        base = shade(base, 1.18)
+    if u < -0.3 and v < 0.35:
+        base = shade(base, 1.15)
+    return base + (255,), None
+
+
+def m_mother_heart(ctx):
+    """The Matriarch's breast: ribs of root arching round a seed of violet light, veins of light running out from it
+    through the gaps (an oval, on its front)."""
+    gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
+    if not _front(ctx):
+        return (0, 0, 0, 0), None
+    u, v = _uv(ctx)
+    r = math.hypot(u, (v - 0.5) / 0.5)
+    if r > 1:
+        return (0, 0, 0, 0), None
+    seed = math.hypot(u / 0.2, (v - 0.5) / 0.2)
+    if seed < 1:
+        k = 1 - seed
+        c = mix((150, 60, 220), (255, 240, 255), k ** 0.6)
+        if (u > 0) == (v < 0.5):
+            c = shade(c, 0.88)
+        return c + (255,), c + (int(200 + 55 * k),)
+    a = math.atan2(v - 0.5, u)
+    vein = abs(math.sin(a * 4 + noise(gx, gy, s + 7, 9.0) * 1.5)) < 0.09 and seed > 1.1
+    wave = math.sin((v - 0.5) * math.pi * 9 + abs(u) * 2.4)
+    rib = wave > -0.15 and abs(u) > 0.23
+    if r > 0.9:
+        base = shade(mix((40, 24, 22), (90, 58, 40), noise(gx, gy, s, 2)), 0.7)
+        return base + (255,), None
+    if rib and not vein:
+        grain = noise(gx * 0.4, gy * 2.0, s + 3, 3.0)
+        base = mix((52, 30, 26), (128, 84, 56), grain)
+        if wave < 0.05 or wave > 0.95:
+            base = shade(base, 0.6)
+        return base + (255,), None
+    # the gaps: light welling up from behind, brightest near the seed
+    k = max(0.0, 1 - r) ** 0.8
+    c = mix((40, 10, 60), (200, 120, 255), k)
+    return c + (255,), c + (int(60 + 180 * k),)
+
+
+MATS.update({
+    "mother_heart": m_mother_heart,
+    "mother_mask": m_mother_mask,
+    "mother_eye": m_mother_eye,
+    "skull_face": m_skull_face,
+    "soul_eye": m_soul_eye,
+    "coin": m_coin,
+})
+
 MATS.update({
     "mitre": m_mitre,
     "mask_carved": m_mask_carved,

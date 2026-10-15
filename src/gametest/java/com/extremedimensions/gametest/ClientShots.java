@@ -32,7 +32,7 @@ import net.minecraft.world.item.Items;
 
 /**
  * The client side in a real game window: the HUD, the inventory and other menus with sealed slots, the Curses screen,
- * the curse cards and the tribe at night. Every screen is saved as a screenshot (uploaded by CI) for review; the checks
+ * the curse cards, the tribe at night and every creature's face up close. Every screen is saved as a screenshot (uploaded by CI) for review; the checks
  * that can be automated fail the run.
  */
 public class ClientShots implements FabricClientGameTest {
@@ -88,6 +88,12 @@ public class ClientShots implements FabricClientGameTest {
 	private static java.util.List<com.extremedimensions.elder.ElderBoss> elders(MinecraftServer s) {
 		ServerPlayer p = player(s);
 		return p.level().getEntitiesOfClass(com.extremedimensions.elder.ElderBoss.class, p.getBoundingBox().inflate(96));
+	}
+
+	/** Every mob near the player (the creatures summoned for a shot). */
+	private static java.util.List<net.minecraft.world.entity.Mob> mobs(MinecraftServer s) {
+		ServerPlayer p = player(s);
+		return p.level().getEntitiesOfClass(net.minecraft.world.entity.Mob.class, p.getBoundingBox().inflate(24));
 	}
 
 	/** The player turns to the Elder, looking a little up at it (and no longer burning, so the shot is clear). */
@@ -350,6 +356,20 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.runOnClient(mc -> ClientOptions.setGuidance(false));
 			// (long enough for any line in the chat to fade)
 			ctx.waitTicks(210);
+			// The tribe's faces up close by day (masks, brows and eyes in fine pixels): name, how far off it stands (its
+			// hunched head reaches toward the camera), and how far the camera rises to meet its eyes
+			for (String[] kin : new String[][] {{"lurker", "4.4", "1.2"}, {"hollowling", "1.6", "-0.75"}, {"keeper", "5.5", "1.9"},
+					{"starved_one", "7.4", "3.1"}, {"thinned", "3.3", "0.5"}}) {
+				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
+				sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:" + kin[0] + " ^ ^ ^" + kin[1]
+						+ " {NoAI:1b,Rotation:[180f,0f]}");
+				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~" + kin[2] + " ~ 0 0");
+				ctx.waitTicks(12);
+				ctx.takeScreenshot("06_face_" + kin[0]);
+				sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));
+				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~" + (-Double.parseDouble(kin[2])) + " ~ 0 0");
+				ctx.waitTicks(5);
+			}
 			// name, distance, yaw (the Ferryman a little turned, to show the boat), camera height for the face
 			for (String[] elder : new String[][] {{"matriarch", "22", "180", "9"}, {"ferryman", "24", "220", "8.5"}, {"weaver", "23", "180", "12.5"}}) {
 				int dist = Integer.parseInt(elder[1]);
@@ -433,6 +453,33 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("11_weaver_face");
 			sp.getServer().runOnServer(s -> elders(s).forEach(net.minecraft.world.entity.Entity::discard));
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-13 ~ 0 0");
+			ctx.waitTicks(20);
+			// The Matriarch's weeping mask and the Ferryman's skull up close: name, distance, camera rise
+			for (String[] elder : new String[][] {{"matriarch", "9.5", "9.9"}, {"ferryman", "7", "9.5"}}) {
+				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
+				sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:" + elder[0] + " ^ ^ ^" + elder[1]
+						+ " {NoAI:1b,Rotation:[180f,0f]}");
+				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~" + elder[2] + " ~ 0 3");
+				ctx.waitTicks(25);
+				ctx.takeScreenshot("11_" + elder[0] + "_face");
+				sp.getServer().runOnServer(s -> elders(s).forEach(net.minecraft.world.entity.Entity::discard));
+				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-" + elder[2] + " ~ 0 0");
+				ctx.waitTicks(20);
+			}
+			// A Veil Ray hanging overhead: from below by day (its pale belly, spots and trailing lights), then from above
+			// at night (its veins and knots of light)
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:veil_ray ^ ^4 ^6 {NoAI:1b,Rotation:[150f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 -29");
+			ctx.waitTicks(15);
+			ctx.takeScreenshot("13_veil_ray_below");
+			sp.getServer().runCommand("time set midnight");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~7.3 ~ 0 34");
+			ctx.waitTicks(15);
+			ctx.takeScreenshot("13_veil_ray_above");
+			sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));
+			sp.getServer().runCommand("time set noon");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-7.3 ~ 0 0");
 			ctx.waitTicks(20);
 			sp.getServer().runCommand("execute as @a run gamemode survival @s");
 

@@ -39,7 +39,10 @@ def build():
 
     # ---- the chest, split by light
     chest = m.part("chest", R, (0, -60, 0), anim=True)
-    m.box(chest, -15, -36, -9, 30, 36, 17, "bark_crack")
+    m.box(chest, -15, -36, -9, 30, 36, 17, "bark_veins")
+    # her breast in fine pixels: ribs of root round a seed of light (it opens in her ultimate)
+    heart = m.part("mheart", chest, (0, -21, -9.05), scale=0.25)
+    m.box(heart, -8.5, -10.5, -0.5, 17, 21, 0.6, "mother_heart")
     m.box(chest, -12, -11, -10.5, 24, 11, 2, "bark")
     for k in range(6):
         y = -33 + k * 5
@@ -65,24 +68,29 @@ def build():
     head = m.part("head", neck, (0, -10, -1), anim=True)
     m.box(head, -10, -25, -3, 20, 25, 13, "bark")
     mask = m.part("mask", head, (0, -12.5, -3))
-    m.box(mask, -9, -12.5, -2, 18, 25, 2, "mask")
-    m.box(mask, -10, -10, -4.5, 20, 3.5, 3.5, "mask")
-    m.box(mask, -2, -6.5, -4.8, 4, 13, 3, "mask")
-    m.box(mask, -6, 7, -2.6, 12, 1.4, 1, "socket")
-    m.box(mask, -0.6, 8.4, -2.6, 1.2, 3.5, 1, "socket")
+    # the face itself is carved in fine pixels (four to a model pixel): pale wood with sockets, tears of light and a
+    # sigil on the brow (m_mother_mask paints them where the parts below put the eyes and the mouth)
+    F = 0.25
+    m.box(mask, -8.6, -12, -1.6, 17.2, 24, 1.6, "bark")
+    face = m.part("mface", mask, (0, 0, 0), scale=F)
+    m.box(face, -9, -12.5, -2.5, 18, 25, 0.9, "mother_mask")
+    nose = m.part("mnose", mask, (0, 0.6, -2.45), scale=F)
+    m.box(nose, -1.0, -5.2, -1.2, 2.0, 10, 1.2, "mask")
     for side, sx in (("l", 1), ("r", -1)):
         ch = m.part(f"cheek_{side}", mask, (8.5 * sx, 1, -1), (0, 0.55 * sx, 0))
         m.box(ch, -2.5, -8, -1, 5, 17, 2, "mask")
-        so = m.part(f"socket_{side}", mask, (4.6 * sx, -4, -2.1), (0, 0, -0.4 * sx))
-        m.box(so, -4, -1.6, -0.4, 8, 3.2, 0.5, "socket")
-        ey = m.part(f"eye_{side}", so, (0, 0, -0.3))
-        m.box(ey, -3.3, -0.8, -0.45, 6.6, 1.6, 0.5, "eye")
+        # a sorrowing brow, raised where it meets the nose, over an almond of violet light
+        br = m.part(f"mbrow_{side}", mask, (4.5 * sx, -6.9, -2.55), (0, 0, 0.26 * sx), scale=F)
+        m.box(br, -4.4, -0.9, -0.75, 8.8, 1.8, 1.5, "mask")
+        ey = m.part(f"meye_{side}", mask, (4.6 * sx, -4.0, -2.55), (0, 0, -0.1 * sx), scale=F)
+        m.box(ey, -3.3, -1.1, -0.2, 6.6, 2.2, 0.3, "mother_eye")
         hs = m.part(f"mhorn_{side}", mask, (9 * sx, -8, -1), (0.2, 0, -1.0 * sx))
         m.box(hs, -1.2, -9, -1.2, 2.4, 9, 2.4, "mask")
         m.box(hs, -0.6, -14, -0.6, 1.2, 5, 1.2, "bone_dark")
-        for j in range(3):
-            # carved grooves running down the cheeks
-            m.box(mask, sx * (3 + j * 1.8) - 0.3, 1 + j, -2.3, 0.6, 7 - j, 0.4, "socket")
+    # roots and moss trailing from the carved mouth
+    for k, (x, length) in enumerate([(-3.2, 3.0), (-1.9, 5.2), (-0.6, 3.6), (0.7, 6.0), (2.0, 4.0), (3.3, 2.6)]):
+        rt = m.part(f"mroot_{k}", mask, (x, 7.6, -2.3), (0.08 * (1 if k % 2 else -1), 0, 0.06 * (k - 2.5)), scale=F)
+        m.box(rt, -0.25, 0, -0.25, 0.5, length, 0.5, "bark" if k % 2 else "moss")
     chin = m.part("chin", mask, (0, 13, -3), (0, 0, math.pi / 4))
     m.box(chin, -3.8, -3.8, -1, 7.6, 7.6, 2.2, "mask")
     crown = m.part("crown", head, (0, -25, 3), anim=True)

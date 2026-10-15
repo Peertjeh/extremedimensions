@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.15.0: Faces in the Dark
+
+### Changed
+- **The Matriarch has a new face**, in pixels four times finer than the rest of her, like the Last Weaver's: a weeping
+  mother's mask of carved wood with almond eyes and slit pupils of light under carved brows, tears of light running
+  from them, a sigil burning on the brow and a groove of a mouth, roots creeping in over its edges. Her chest opens on
+  a ribcage of roots round a seed of light, its veins running out into the bark.
+- **The Ferryman's hood is no longer a black box with two slits**: deep in its shadow is a skull, teal soul-lights
+  burning in its sockets and a coin clenched in its teeth, its jaw hanging, the hood's edge frayed over it. The skull on
+  his boat's prow has the same soul-lights.
+- **The tribe has been rebuilt** (Lurkers, Hollowlings, Keepers, the Starved One and the Thinned share one body), with
+  fine-pixel masks, brows, eyes, a frayed hood with a fringe over the brow, and long hooked claws, and every one of
+  them newly painted. Each has its own face: the Lurker a long shield of stone split by a crack of light, with slanted
+  almond eyes; the Hollowling a round, soft face with wide lamp eyes and a hollow little mouth; the Keeper a skull of
+  bone with pinpoint eyes in rings; the Starved One a gaunt mask with sunken cheeks, ember eyes and a wide, jagged
+  maw; the Thinned faint porcelain with thin pale slits for eyes.
+- **The Veil Ray has been rebuilt** as a true manta, its wings, back, belly and tail thin plates in fine pixels cut to
+  a swept outline: dark indigo above with veins of light fanning out from the shoulders and knots of light along
+  them, pale beneath with dark spots, gill slits, a row of lights along the trailing edge and the edge itself lit, a
+  stepped head with a lit mouth and glowing eyes, and a raked dorsal fin with a glowing leading edge.
+
 ## 2.14.0: The Ground Remembers
 
 ### Added
