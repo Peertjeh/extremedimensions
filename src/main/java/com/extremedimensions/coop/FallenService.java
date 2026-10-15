@@ -262,11 +262,16 @@ public final class FallenService {
 
 	/** Ends a fall without a word (lifted, dead, gone or moved on): they stand and walk again. */
 	private static void release(UUID id, ServerPlayer p) {
-		if (FALLEN.remove(id) != null) {
+		boolean was = FALLEN.remove(id) != null;
+		if (was) {
 			changed = true;
 		}
 		if (p != null) {
 			crawl(p, false);
+			if (was && p.isAlive()) {
+				// The countdown above the hotbar goes with the fall
+				p.sendSystemMessage(Component.empty(), true);
+			}
 		}
 	}
 
