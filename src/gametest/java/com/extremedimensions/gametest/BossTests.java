@@ -170,8 +170,7 @@ public class BossTests {
 			}
 		};
 		helper.runAfterDelay(8, () -> {
-			int flying = level.getEntitiesOfClass(net.minecraft.world.entity.Display.BlockDisplay.class, new AABB(centre).inflate(48),
-					d -> d.getTags().contains(ElderArena.TAG)).size();
+			int flying = level.getEntitiesOfClass(net.minecraft.world.entity.Display.BlockDisplay.class, new AABB(centre).inflate(48)).size();
 			if (flying == 0) {
 				restore.run();
 			}
@@ -206,8 +205,7 @@ public class BossTests {
 				}
 			}
 			check(helper, wrong == 0, "%s blocks were not put back (first at %s)", wrong, first);
-			int left = level.getEntitiesOfClass(net.minecraft.world.entity.Display.BlockDisplay.class, new AABB(centre).inflate(48),
-					d -> d.getTags().contains(ElderArena.TAG)).size();
+			int left = level.getEntitiesOfClass(net.minecraft.world.entity.Display.BlockDisplay.class, new AABB(centre).inflate(48)).size();
 			check(helper, left == 0, "%s block displays of the arena were left behind", left);
 			helper.succeed();
 		});

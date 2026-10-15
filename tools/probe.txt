@@ -1,6 +1,5 @@
-net.minecraft.client.model.geom.ModelPart
-net.minecraft.client.model.geom.PartPose
-net.minecraft.client.model.EntityModel
-net.minecraft.client.model.Model
-net.minecraft.client.DeltaTracker
-net.minecraft.util.Mth
+net.minecraft.world.entity.Display
+net.minecraft.world.entity.Display$BlockDisplay
+com.mojang.math.Transformation
+net.minecraft.util.Brightness
+#net/minecraft/world/entity/EntityType

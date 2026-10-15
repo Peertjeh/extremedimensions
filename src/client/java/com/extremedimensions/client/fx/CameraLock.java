@@ -8,8 +8,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * While an Elder dies, the view is held on it: over the first moment the camera swings round to it, then follows it
- * until it has broken apart. The player is turned with the camera, so the view stays where it was when the hold ends.
+ * While an Elder forms or dies, the view is held on it: over the first moment the camera swings round to it, then
+ * follows it until it is whole or has broken apart. The player is turned with the camera, so the view stays where it was when the hold ends.
  */
 public final class CameraLock {
 	private CameraLock() {}
@@ -44,6 +44,10 @@ public final class CameraLock {
 		Minecraft mc = Minecraft.getInstance();
 		long now = System.currentTimeMillis();
 		Entity e = mc.level == null ? null : mc.level.getEntity(entity);
+		if (e == null && mc.player != null && now <= until && now - from < 1500) {
+			// An Elder just summoned may reach this client a moment after the word to look at it
+			return null;
+		}
 		if (mc.player == null || e == null || now > until) {
 			entity = -1;
 			return null;

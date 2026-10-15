@@ -21,6 +21,8 @@ import com.extremedimensions.mixin.DisplayAccess;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
@@ -518,7 +520,7 @@ public final class ElderArena {
 	}
 
 	private static Display.BlockDisplay display(ServerLevel level, BlockPos pos, BlockState state, Transformation look) {
-		Display.BlockDisplay d = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, level);
+		Display.BlockDisplay d = new Display.BlockDisplay(blockDisplay(), level);
 		d.setPos(pos.getX(), pos.getY() + 1, pos.getZ());
 		((BlockDisplayAccess) d).extremedimensions$setBlockState(state);
 		((DisplayAccess) d).extremedimensions$setTransformation(look);
@@ -530,6 +532,16 @@ public final class ElderArena {
 		}
 		return d;
 	}
+
+	/** The vanilla block display's type, looked up by id (entity type constants come and go between versions). */
+	private static EntityType<?> blockDisplay() {
+		if (blockDisplay == null) {
+			blockDisplay = BuiltInRegistries.ENTITY_TYPE.get(Identifier.fromNamespaceAndPath("minecraft", "block_display")).map(h -> h.value()).orElseThrow();
+		}
+		return blockDisplay;
+	}
+
+	private static EntityType<?> blockDisplay;
 
 	private static void drop(Display.BlockDisplay d) {
 		LIVE.remove(d.getUUID());
@@ -570,7 +582,7 @@ public final class ElderArena {
 		new Quaternionf(q).transform(c);
 		Transformation full = new Transformation(new Vector3f(-c.x, -c.y, -c.z), new Quaternionf(q), new Vector3f(thick, len, thick), new Quaternionf());
 		Transformation none = new Transformation(new Vector3f(-c.x, -c.y, -c.z), new Quaternionf(q), new Vector3f(thick, 0.01F, thick), new Quaternionf());
-		Display.BlockDisplay d = new Display.BlockDisplay(EntityType.BLOCK_DISPLAY, a.level);
+		Display.BlockDisplay d = new Display.BlockDisplay(blockDisplay(), a.level);
 		d.setPos(from[0], from[1], from[2]);
 		((BlockDisplayAccess) d).extremedimensions$setBlockState(look);
 		((DisplayAccess) d).extremedimensions$setTransformation(none);
@@ -620,7 +632,7 @@ public final class ElderArena {
 
 	/** A block display of an arena turning up that no arena is using (left over from a crash) is removed. */
 	public static void loaded(Entity e) {
-		if (e instanceof Display.BlockDisplay && e.getTags().contains(TAG) && !LIVE.contains(e.getUUID())) {
+		if (e instanceof Display.BlockDisplay && !LIVE.contains(e.getUUID()) && e.removeTag(TAG)) {
 			e.discard();
 		}
 	}
