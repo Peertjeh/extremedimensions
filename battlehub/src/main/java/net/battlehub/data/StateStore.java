@@ -279,7 +279,8 @@ public final class StateStore {
 	}
 
 	private void write(ServerPlayer p, State s) {
-		if (dir == null) {
+		// Bots keep their state in memory only
+		if (dir == null || net.battlehub.bot.Bots.isBot(p.getUUID())) {
 			return;
 		}
 		try {

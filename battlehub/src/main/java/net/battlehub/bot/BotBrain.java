@@ -1,0 +1,692 @@
+package net.battlehub.bot;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Predicate;
+
+import net.battlehub.core.BotLevel;
+import net.battlehub.core.BotMath;
+import net.battlehub.core.ParkourCourse;
+import net.battlehub.games.ParkourMatch;
+import net.battlehub.games.prophunt.Disguise;
+import net.battlehub.games.prophunt.PropHuntMatch;
+import net.battlehub.match.Match;
+import net.battlehub.match.Matches;
+import net.battlehub.session.Sessions;
+import net.battlehub.util.Ids;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
+
+/**
+ * What a bot thinks, twenty times a second: it picks a target or a goal for the game it is in and sets the
+ * inputs a client would (walk, strafe, sprint, jump, look, hit, draw a bow). Its level decides how quickly it
+ * reacts, how well it aims and which tricks it knows.
+ */
+final class BotBrain {
+	private static final double BOW_SPEED = 3.0;
+	private static final double CROSSBOW_SPEED = 3.15;
+
+	private final BotPlayer bot;
+	private final BotLevel skill;
+	private final RandomSource rnd = RandomSource.create();
+	private int ticks;
+	private UUID target;
+	private int seen;
+	private int strafe = 1;
+	private int wTap;
+	private float yawError;
+	private float pitchError;
+	private Vec3 wander;
+	private int wanderTicks;
+	private Vec3 lastPos = Vec3.ZERO;
+	private int stuck;
+	private int eating;
+	private float runYaw = Float.NaN;
+	// Parkour: the platform the bot last stood on and the pause before the next jump
+	private int pkOn = -2;
+	private int pkWait;
+	private int pkAirTicks;
+	// Prop Hunt
+	private Vec3 hideSpot;
+	private int hideTicks;
+
+	BotBrain(BotPlayer bot) {
+		this.bot = bot;
+		this.skill = bot.skill;
+	}
+
+	void tick() {
+		ticks++;
+		bot.zza = 0;
+		bot.xxa = 0;
+		bot.setJumping(false);
+		Match m = Matches.of(bot.getUUID());
+		if (m == null || Sessions.state(bot.getUUID()) != Sessions.State.MATCH) {
+			forget();
+			return;
+		}
+		if (!m.inPlay(bot.getUUID()) || bot.isSpectator()) {
+			stopUsing();
+			bot.setSprinting(false);
+			pkOn = -2;
+			return;
+		}
+		if (ticks % 30 == 0) {
+			yawError = (float) ((rnd.nextDouble() * 2 - 1) * skill.aimError);
+			pitchError = (float) ((rnd.nextDouble() * 2 - 1) * skill.aimError * 0.5);
+		}
+		switch (m.botStyle()) {
+			case MELEE -> melee(m);
+			case RANGED -> ranged(m);
+			case RUNNER -> runner(m, false);
+			case PARKOUR -> parkour(m);
+			case BOW_SPLEEF -> runner(m, true);
+			case PROP_HUNT -> propHunt(m);
+		}
+		if (m.botStyle() != net.battlehub.core.BotStyle.PARKOUR) {
+			keepSafe();
+			unstick();
+		}
+		if (wTap > 0) {
+			wTap--;
+		}
+	}
+
+	private void forget() {
+		target = null;
+		wander = null;
+		hideSpot = null;
+		pkOn = -2;
+		eating = 0;
+		runYaw = Float.NaN;
+		stopUsing();
+		bot.setSprinting(false);
+	}
+
+	private ServerLevel level() {
+		return bot.level();
+	}
+
+	// ------------------------------------------------------------------ targets
+
+	/** The nearest enemy in play (the current one a little preferred), or null. */
+	private ServerPlayer target(Match m, double range) {
+		ServerPlayer best = null;
+		double bestD = range;
+		for (UUID id : m.participants()) {
+			if (id.equals(bot.getUUID()) || !m.inPlay(id) || !m.isEnemy(bot.getUUID(), id)) continue;
+			ServerPlayer p = m.player(id);
+			if (p == null || p.level() != bot.level() || p.isSpectator()) continue;
+			double d = p.distanceTo(bot) - (id.equals(target) ? 3 : 0);
+			if (d < bestD) {
+				best = p;
+				bestD = d;
+			}
+		}
+		if (best == null) {
+			target = null;
+			return null;
+		}
+		if (!best.getUUID().equals(target)) {
+			target = best.getUUID();
+			seen = 0;
+		} else {
+			seen++;
+		}
+		return best;
+	}
+
+	// ------------------------------------------------------------------ looking and moving
+
+	private float turnSpeed() {
+		return switch (skill) {
+			case EASY -> 12f;
+			case NORMAL -> 25f;
+			case HARD -> 45f;
+		};
+	}
+
+	private void look(float yaw, float pitch) {
+		float y = BotMath.turn(bot.getYRot(), yaw, turnSpeed());
+		float p = BotMath.turn(bot.getXRot(), pitch, turnSpeed());
+		bot.setYRot(y);
+		bot.setYHeadRot(y);
+		bot.yBodyRot = y;
+		bot.setXRot(Math.max(-90f, Math.min(90f, p)));
+	}
+
+	private void lookAt(Vec3 at, boolean withError) {
+		Vec3 eye = bot.getEyePosition();
+		double dx = at.x - eye.x;
+		double dz = at.z - eye.z;
+		float yaw = BotMath.yaw(dx, dz) + (withError ? yawError : 0);
+		float pitch = BotMath.pitch(Math.sqrt(dx * dx + dz * dz), at.y - eye.y) + (withError ? pitchError : 0);
+		look(yaw, pitch);
+	}
+
+	/** Walks (and sprints) towards a spot; jumps over steps. */
+	private void goTo(Vec3 dest, boolean sprint) {
+		Vec3 pos = bot.position();
+		double dx = dest.x - pos.x;
+		double dz = dest.z - pos.z;
+		double d = Math.sqrt(dx * dx + dz * dz);
+		if (d < 0.7) {
+			bot.setSprinting(false);
+			return;
+		}
+		look(BotMath.yaw(dx, dz), 0f);
+		bot.zza = 1f;
+		bot.setSprinting(sprint && skill.sprints && d > 3 && wTap == 0);
+		if (bot.onGround() && (bot.horizontalCollision || (dest.y - pos.y > 0.6 && d < 2.5))) {
+			bot.setJumping(true);
+		}
+	}
+
+	/** Somewhere random nearby with ground under it. */
+	private void wanderAbout(Vec3 around, double radius) {
+		if (wander == null || wanderTicks-- <= 0 || bot.position().distanceTo(wander) < 1.2) {
+			wander = null;
+			for (int i = 0; i < 12 && wander == null; i++) {
+				double a = rnd.nextDouble() * Math.PI * 2;
+				double r = 3 + rnd.nextDouble() * radius;
+				Vec3 c = around.add(Math.cos(a) * r, 0, Math.sin(a) * r);
+				if (BotActions.groundBelow(level(), c.x, around.y + 1, c.z, 4)) {
+					wander = c;
+				}
+			}
+			wanderTicks = 120;
+			if (wander == null) {
+				return;
+			}
+		}
+		goTo(wander, false);
+	}
+
+	/** Never walks off an edge into the void or a hole. */
+	private void keepSafe() {
+		if (!bot.onGround() || (bot.zza == 0 && bot.xxa == 0)) {
+			return;
+		}
+		Vec3 fwd = BotActions.dir(bot.getYRot());
+		Vec3 right = new Vec3(-fwd.z, 0, fwd.x);
+		Vec3 move = fwd.scale(bot.zza).add(right.scale(-bot.xxa));
+		if (move.lengthSqr() < 1e-4 || safe(move.normalize())) {
+			return;
+		}
+		// Try going only straight on, or only sideways
+		if (bot.zza != 0 && safe(fwd.scale(Math.signum(bot.zza)))) {
+			bot.xxa = 0;
+			strafe = -strafe;
+		} else if (bot.xxa != 0 && safe(right.scale(-Math.signum(bot.xxa)))) {
+			bot.zza = 0;
+		} else {
+			bot.zza = 0;
+			bot.xxa = 0;
+			bot.setSprinting(false);
+			strafe = -strafe;
+		}
+	}
+
+	private boolean safe(Vec3 dir) {
+		Vec3 p = bot.position().add(dir.scale(1.1));
+		return BotActions.groundBelow(level(), p.x, p.y, p.z, 4);
+	}
+
+	/** Pushing against something for a second: jump and change direction. */
+	private void unstick() {
+		if (ticks % 20 != 0) {
+			return;
+		}
+		Vec3 pos = bot.position();
+		boolean trying = bot.zza != 0 || bot.xxa != 0;
+		if (trying && pos.distanceToSqr(lastPos) < 0.04) {
+			stuck++;
+			if (stuck >= 2) {
+				bot.setJumping(true);
+				strafe = -strafe;
+				wander = null;
+			}
+		} else {
+			stuck = 0;
+		}
+		lastPos = pos;
+	}
+
+	// ------------------------------------------------------------------ items
+
+	private int find(Predicate<ItemStack> what) {
+		Inventory inv = bot.getInventory();
+		for (int i = 0; i < 9; i++) {
+			if (what.test(inv.getItem(i))) return i;
+		}
+		return -1;
+	}
+
+	private static boolean isMelee(ItemStack s) {
+		return s.is(ItemTags.SWORDS) || s.is(ItemTags.AXES) || s.is(Items.MACE);
+	}
+
+	private boolean select(Predicate<ItemStack> what) {
+		if (what.test(bot.getMainHandItem())) {
+			return true;
+		}
+		int slot = find(what);
+		if (slot < 0) {
+			return false;
+		}
+		stopUsing();
+		bot.getInventory().setSelectedSlot(slot);
+		return true;
+	}
+
+	private void stopUsing() {
+		if (bot.isUsingItem()) {
+			bot.stopUsingItem();
+		}
+	}
+
+	/** Golden apple when low on health (normal and hard bots). */
+	private boolean eat() {
+		if (eating > 0) {
+			eating--;
+			if (!bot.isUsingItem()) {
+				eating = 0;
+			}
+			return eating > 0;
+		}
+		if (skill.eatBelow <= 0 || bot.getHealth() >= skill.eatBelow) {
+			return false;
+		}
+		int slot = find(s -> s.is(Items.GOLDEN_APPLE) || s.is(Items.ENCHANTED_GOLDEN_APPLE));
+		if (slot < 0) {
+			return false;
+		}
+		stopUsing();
+		bot.getInventory().setSelectedSlot(slot);
+		BotActions.use(bot, InteractionHand.MAIN_HAND);
+		eating = 40;
+		return true;
+	}
+
+	// ------------------------------------------------------------------ fighting
+
+	private float hitAt() {
+		return switch (skill) {
+			case EASY -> 1.0f;
+			case NORMAL -> 0.93f;
+			case HARD -> 0.9f;
+		};
+	}
+
+	private void melee(Match m) {
+		ServerPlayer t = target(m, 64);
+		Vec3 goal = m.botObjective(bot);
+		if (t == null || (goal != null && t.distanceTo(bot) > 12 && bot.position().distanceTo(goal) > 2.5)) {
+			stopUsing();
+			if (goal != null) {
+				goTo(goal, true);
+			} else {
+				wanderAbout(bot.position(), 8);
+			}
+			return;
+		}
+		fight(t);
+	}
+
+	/** Close combat with one enemy. */
+	private void fight(ServerPlayer t) {
+		double dist = t.distanceTo(bot);
+		if (seen < skill.reactionTicks) {
+			lookAt(t.getEyePosition(), false);
+			return;
+		}
+		if (eat()) {
+			lookAt(t.getEyePosition(), false);
+			bot.zza = -1f;
+			bot.xxa = strafe;
+			return;
+		}
+		select(BotBrain::isMelee);
+		lookAt(t.position().add(0, t.getBbHeight() * 0.6, 0), true);
+		if (dist > 3.2) {
+			shield(false);
+			Vec3 to = t.position();
+			Vec3 pos = bot.position();
+			bot.zza = 1f;
+			bot.setSprinting(skill.sprints && wTap == 0);
+			if (bot.onGround() && (bot.horizontalCollision || (to.y - pos.y > 0.6 && dist < 4))) {
+				bot.setJumping(true);
+			}
+			// A jump while closing in lands a critical hit
+			if (bot.onGround() && dist < 4.5 && rnd.nextDouble() < skill.critChance / 10) {
+				bot.setJumping(true);
+			}
+			return;
+		}
+		bot.zza = wTap > 0 ? 0f : (dist > 2.6 ? 1f : (dist < 1.6 ? -0.6f : 0.25f));
+		bot.setSprinting(skill.sprints && wTap == 0 && dist > 2.0);
+		if (skill.strafe > 0) {
+			if (rnd.nextDouble() < skill.strafe / 20) {
+				strafe = -strafe;
+			}
+			bot.xxa = strafe * 0.8f;
+		}
+		float strength = bot.getAttackStrengthScale(0.5f);
+		boolean falling = !bot.onGround() && bot.getDeltaMovement().y < 0;
+		boolean ready = strength >= hitAt() || (skill == BotLevel.HARD && falling && strength >= 0.85f);
+		if (skill == BotLevel.EASY && rnd.nextFloat() < 0.5f) {
+			ready = false;
+		}
+		shield(strength < 0.6f);
+		if (ready && dist <= 3.0 && bot.hasLineOfSight(t)) {
+			shield(false);
+			BotActions.attack(bot, t);
+			bot.resetAttackStrengthTicker();
+			if (skill.wTap) {
+				wTap = 2;
+			}
+		}
+	}
+
+	/** Raise the shield in the off hand while the attack recharges. */
+	private void shield(boolean up) {
+		if (skill.shield <= 0 || !bot.getOffhandItem().is(Items.SHIELD)) {
+			return;
+		}
+		boolean blocking = bot.isUsingItem() && bot.getUsedItemHand() == InteractionHand.OFF_HAND;
+		if (up && !blocking && !bot.isUsingItem() && rnd.nextDouble() < skill.shield / 4) {
+			BotActions.use(bot, InteractionHand.OFF_HAND);
+		} else if (!up && blocking) {
+			bot.stopUsingItem();
+		}
+	}
+
+	private void ranged(Match m) {
+		ServerPlayer t = target(m, 80);
+		if (t == null) {
+			stopUsing();
+			Vec3 goal = m.botObjective(bot);
+			if (goal != null) {
+				goTo(goal, true);
+			} else {
+				wanderAbout(bot.position(), 8);
+			}
+			return;
+		}
+		double dist = t.distanceTo(bot);
+		if (dist < 3.5 && find(BotBrain::isMelee) >= 0) {
+			fight(t);
+			return;
+		}
+		if (seen < skill.reactionTicks) {
+			lookAt(t.getEyePosition(), false);
+			return;
+		}
+		// Keep some distance and move sideways so the other one has to aim
+		if (dist < 9) {
+			bot.zza = -1f;
+		} else if (dist > 24) {
+			bot.zza = 1f;
+			bot.setSprinting(skill.sprints);
+		}
+		if (skill.strafe > 0) {
+			if (rnd.nextDouble() < skill.strafe / 15) {
+				strafe = -strafe;
+			}
+			bot.xxa = strafe;
+		}
+		shoot(t.position().add(0, t.getBbHeight() * 0.55, 0), t.getDeltaMovement());
+	}
+
+	/** Draws and lets go of the bow (or charges and fires the crossbow) at a point, leading a moving target. */
+	private void shoot(Vec3 at, Vec3 motion) {
+		boolean crossbow;
+		if (select(s -> s.is(Items.BOW))) {
+			crossbow = false;
+		} else if (select(s -> s.is(Items.CROSSBOW))) {
+			crossbow = true;
+		} else {
+			return;
+		}
+		double speed = crossbow ? CROSSBOW_SPEED : BOW_SPEED;
+		Vec3 eye = bot.getEyePosition();
+		double h = Math.hypot(at.x - eye.x, at.z - eye.z);
+		Vec3 aim = at.add(motion.x * BotMath.arrowTicks(h, speed), 0, motion.z * BotMath.arrowTicks(h, speed));
+		double dx = aim.x - eye.x;
+		double dz = aim.z - eye.z;
+		float err = (float) skill.bowError;
+		float yaw = BotMath.yaw(dx, dz) + (float) ((rnd.nextDouble() * 2 - 1) * err);
+		float pitch = BotMath.arrowPitch(Math.sqrt(dx * dx + dz * dz), aim.y - eye.y, speed) + (float) ((rnd.nextDouble() * 2 - 1) * err);
+		look(yaw, pitch);
+		boolean aimed = Math.abs(BotMath.wrap(bot.getYRot() - yaw)) < 3 && Math.abs(bot.getXRot() - pitch) < 3;
+		ItemStack held = bot.getMainHandItem();
+		if (crossbow) {
+			if (CrossbowItem.isCharged(held)) {
+				if (aimed) {
+					BotActions.use(bot, InteractionHand.MAIN_HAND);
+				}
+			} else if (!bot.isUsingItem()) {
+				BotActions.use(bot, InteractionHand.MAIN_HAND);
+			} else if (bot.getTicksUsingItem() >= 26) {
+				bot.releaseUsingItem();
+			}
+			return;
+		}
+		if (!bot.isUsingItem()) {
+			BotActions.use(bot, InteractionHand.MAIN_HAND);
+		} else if (bot.getTicksUsingItem() >= 20 + (skill == BotLevel.EASY ? 10 : 0) && aimed) {
+			bot.releaseUsingItem();
+		}
+	}
+
+	// ------------------------------------------------------------------ TNT Run and Bow Spleef
+
+	/** Keeps running over the floor that is left, now and then turning to where there is most of it. */
+	private void runner(Match m, boolean shootFloor) {
+		bot.setSprinting(skill.sprints || !shootFloor);
+		float yaw = Float.isNaN(runYaw) ? bot.getYRot() : runYaw;
+		if (ticks % 6 == 0 || !floorAhead(yaw, 1.2)) {
+			yaw = bestRunDirection(yaw);
+			runYaw = yaw;
+		}
+		if (shootFloor) {
+			ServerPlayer t = target(m, 40);
+			if (t != null && seen >= skill.reactionTicks && find(s -> s.is(Items.BOW)) >= 0) {
+				// Shoot the floor under the nearest other player, moving slowly while aiming
+				shoot(t.position().add(0, -0.6, 0), t.getDeltaMovement());
+				bot.zza = 0.5f;
+				bot.xxa = 0;
+				if (!floorAhead(bot.getYRot(), 1.0)) {
+					bot.zza = 0;
+				}
+				return;
+			}
+		}
+		look(yaw, 10f);
+		bot.zza = 1f;
+		if (bot.onGround() && !floorAhead(yaw, 0.9) && floorAhead(yaw, 2.4)) {
+			bot.setJumping(true);
+		}
+	}
+
+	private boolean floorAhead(float yaw, double distance) {
+		Vec3 p = bot.position().add(BotActions.dir(yaw).scale(distance));
+		return BotActions.floorAt(level(), p.x, p.y, p.z);
+	}
+
+	/** Of sixteen directions, the one with the most floor ahead (a small preference for keeping course). */
+	private float bestRunDirection(float current) {
+		float best = current;
+		double bestScore = -1;
+		for (int i = 0; i < 16; i++) {
+			float yaw = current + i * 22.5f;
+			double score = 0;
+			for (int d = 1; d <= 7; d++) {
+				if (floorAhead(yaw, d)) {
+					score += 1.0 / d + 0.2;
+				} else if (d <= 2) {
+					score -= 1.5;
+				}
+			}
+			score -= Math.abs(BotMath.wrap(yaw - current)) / 360.0;
+			score += rnd.nextDouble() * 0.2;
+			if (score > bestScore) {
+				bestScore = score;
+				best = yaw;
+			}
+		}
+		return BotMath.wrap(best);
+	}
+
+	// ------------------------------------------------------------------ parkour
+
+	/** From platform to platform: a short look, then a jump with just enough speed (sometimes misjudged). */
+	private void parkour(Match m) {
+		ParkourMatch pm = (ParkourMatch) m;
+		List<ParkourCourse.Platform> course = pm.course();
+		if (course == null || course.isEmpty()) {
+			return;
+		}
+		bot.setSprinting(false);
+		if (!bot.onGround()) {
+			pkAirTicks++;
+			return;
+		}
+		int on = pm.platformIndex(bot);
+		int next = (on >= 0 ? on : Math.max(-1, pm.lastPlatform(bot.getUUID()))) + 1;
+		if (next >= course.size()) {
+			return;
+		}
+		Vec3 to = pm.platformTop(next);
+		Vec3 pos = bot.position();
+		double dx = to.x - pos.x;
+		double dz = to.z - pos.z;
+		look(BotMath.yaw(dx, dz), 15f);
+		if (on != pkOn || pkAirTicks > 0) {
+			pkOn = on;
+			pkAirTicks = 0;
+			pkWait = switch (skill) {
+				case EASY -> 14 + rnd.nextInt(12);
+				case NORMAL -> 6 + rnd.nextInt(8);
+				case HARD -> 2 + rnd.nextInt(4);
+			};
+		}
+		if (pkWait-- > 0) {
+			return;
+		}
+		if (Math.hypot(dx, dz) < 0.8 && Math.abs(to.y - pos.y) < 0.6) {
+			bot.zza = 1f;
+			return;
+		}
+		BotMath.Jump j = BotMath.jump(dx, to.y - pos.y, dz, groundFriction());
+		double factor = 1.0;
+		if (rnd.nextDouble() < skill.parkourFail) {
+			factor = rnd.nextBoolean() ? 0.7 + rnd.nextDouble() * 0.15 : 1.2 + rnd.nextDouble() * 0.15;
+		}
+		bot.setDeltaMovement(j.vx() * factor, j.vy(), j.vz() * factor);
+		bot.hurtMarked = true;
+		pkWait = 1000;
+	}
+
+	/** How much the block under the bot slows it on the first tick of a jump (ice and slime less). */
+	private double groundFriction() {
+		BlockState st = level().getBlockState(bot.blockPosition().below());
+		return st.getBlock().getFriction() * BotMath.PLAYER_DRAG_XZ;
+	}
+
+	// ------------------------------------------------------------------ Prop Hunt
+
+	private void propHunt(Match m) {
+		PropHuntMatch ph = (PropHuntMatch) m;
+		UUID id = bot.getUUID();
+		PropHuntMatch.Role role = ph.role(id);
+		if (role == PropHuntMatch.Role.PROP) {
+			hide(ph);
+		} else if (role == PropHuntMatch.Role.HUNTER) {
+			hunt(ph);
+		}
+	}
+
+	private void hide(PropHuntMatch ph) {
+		UUID id = bot.getUUID();
+		if (ph.disguise(id) == null) {
+			List<String> blocks = ph.disguiseList();
+			if (!blocks.isEmpty()) {
+				BlockState st = Ids.state(blocks.get(rnd.nextInt(blocks.size())));
+				if (st != null) {
+					ph.disguise(bot, st);
+				}
+			}
+			hideSpot = null;
+		}
+		if (hideSpot == null) {
+			Vec3 from = bot.position();
+			for (int i = 0; i < 16 && hideSpot == null; i++) {
+				double a = rnd.nextDouble() * Math.PI * 2;
+				double r = 5 + rnd.nextDouble() * 14;
+				Vec3 c = from.add(Math.cos(a) * r, 0, Math.sin(a) * r);
+				if (BotActions.groundBelow(level(), c.x, from.y + 1, c.z, 3)) {
+					hideSpot = c;
+				}
+			}
+			hideTicks = 160;
+		}
+		if (hideSpot != null && hideTicks-- > 0 && bot.position().distanceTo(hideSpot) > 0.8) {
+			goTo(hideSpot, false);
+			return;
+		}
+		// Standing still turns a prop solid; a hard bot runs when a hunter comes very close
+		if (skill == BotLevel.HARD && ph.stage() == PropHuntMatch.Stage.HUNTING) {
+			ServerPlayer hunter = target(ph, 3);
+			if (hunter != null) {
+				Vec3 away = bot.position().subtract(hunter.position()).normalize().scale(6);
+				hideSpot = bot.position().add(away);
+				hideTicks = 40;
+			}
+		}
+	}
+
+	private void hunt(PropHuntMatch ph) {
+		if (ph.stage() != PropHuntMatch.Stage.HUNTING) {
+			return;
+		}
+		select(BotBrain::isMelee);
+		ServerPlayer prop = null;
+		Vec3 propAt = null;
+		double best = skill.noticeRange;
+		for (UUID id : ph.props()) {
+			Disguise d = ph.disguise(id);
+			ServerPlayer p = ph.player(id);
+			if (d == null || p == null || !ph.inPlay(id)) continue;
+			double dist = d.position().distanceTo(bot.position());
+			if (dist < best) {
+				best = dist;
+				prop = p;
+				propAt = d.position();
+			}
+		}
+		if (prop == null) {
+			wanderAbout(bot.position(), 10);
+			return;
+		}
+		Vec3 center = propAt.add(0, 0.5, 0);
+		if (best > 2.6) {
+			goTo(propAt, true);
+			return;
+		}
+		lookAt(center, false);
+		if (bot.getAttackStrengthScale(0.5f) >= hitAt()) {
+			ph.hitProp(bot, prop);
+			BotActions.swing(bot);
+		}
+	}
+}

@@ -101,6 +101,16 @@ public final class TeamFights {
 		return q == null ? 0 : q.count(side);
 	}
 
+	/** Who waits for this mode and kit. */
+	public static List<UUID> waitingIds(GameMode mode, GameMode kit) {
+		SideQueue q = QUEUES.get(key(mode, kitOrDefault(kit)));
+		List<UUID> out = new ArrayList<>();
+		if (q != null) {
+			for (SideQueue.Entry e : q.entries()) out.add(e.id());
+		}
+		return out;
+	}
+
 	public static int waiting(GameMode mode, GameMode kit) {
 		SideQueue q = QUEUES.get(key(mode, kitOrDefault(kit)));
 		return q == null ? 0 : q.size();

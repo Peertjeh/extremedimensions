@@ -73,6 +73,22 @@ public final class Queues {
 		return q == null ? 0 : q.size();
 	}
 
+	/** Who waits in this queue, in order. */
+	public static List<UUID> waitingIds(GameMode mode, boolean ranked, DuelFormat format) {
+		Matchmaker q = QUEUES.get(key(mode, ranked, format));
+		List<UUID> out = new java.util.ArrayList<>();
+		if (q != null) {
+			for (Matchmaker.Entry e : q.entries()) out.add(e.id());
+		}
+		return out;
+	}
+
+	/** Server tick at which the player joined their duel queue, or -1. */
+	public static long queuedSince(UUID id) {
+		Long t = SINCE.get(id);
+		return t == null ? -1 : t;
+	}
+
 	/** Waiting in this mode's queue (either format). */
 	public static boolean isQueued(UUID id, GameMode mode, boolean ranked) {
 		for (DuelFormat f : DuelFormat.values()) {

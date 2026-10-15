@@ -29,6 +29,11 @@ public final class TntRunMatch extends PartyMatch {
 	}
 
 	@Override
+	public net.battlehub.core.BotStyle botStyle() {
+		return net.battlehub.core.BotStyle.RUNNER;
+	}
+
+	@Override
 	protected Blueprint design(Theme theme) {
 		decay = new BlockDecay((int) Math.max(1, game().setting("decayTicks", 8)));
 		return PartyLayouts.tntRun(theme, random, layers());

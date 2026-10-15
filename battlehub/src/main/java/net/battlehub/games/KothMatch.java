@@ -52,6 +52,12 @@ public final class KothMatch extends PartyMatch {
 		}
 	}
 
+	@Override
+	public net.minecraft.world.phys.Vec3 botObjective(ServerPlayer bot) {
+		BlockPos z = arena.mark("zone");
+		return new net.minecraft.world.phys.Vec3(z.getX() + 0.5, z.getY(), z.getZ() + 0.5);
+	}
+
 	public boolean inZone(ServerPlayer p) {
 		BlockPos z = arena.mark("zone");
 		return Math.abs(p.getX() - (z.getX() + 0.5)) <= 2.6 && Math.abs(p.getZ() - (z.getZ() + 0.5)) <= 2.6

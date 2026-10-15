@@ -51,6 +51,8 @@ public final class HubEvents {
 		ServerLifecycleEvents.SERVER_STOPPING.register(HubEvents::stopping);
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
 			Queues.clear();
+			net.battlehub.bot.Bots.clear();
+			net.battlehub.hub.HubNpcs.clear();
 			net.battlehub.games.Visibility.clear();
 			Sessions.clear();
 			net.battlehub.hub.HubBoards.clear();
@@ -109,6 +111,9 @@ public final class HubEvents {
 			return InteractionResult.PASS;
 		});
 		UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
+			if (player instanceof ServerPlayer sp && net.battlehub.hub.HubNpcs.click(sp, entity)) {
+				return InteractionResult.SUCCESS;
+			}
 			Match m = player instanceof ServerPlayer sp ? matchOf(sp) : null;
 			if (m != null) {
 				InteractionResult r = m.onUseEntity((ServerPlayer) player, entity);
@@ -127,6 +132,9 @@ public final class HubEvents {
 			return m == null ? InteractionResult.PASS : m.onAttackBlock((ServerPlayer) player, pos);
 		});
 		AttackEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
+			if (player instanceof ServerPlayer sp && net.battlehub.hub.HubNpcs.click(sp, entity)) {
+				return InteractionResult.FAIL;
+			}
 			Match m = player instanceof ServerPlayer sp ? matchOf(sp) : null;
 			if (m != null) {
 				InteractionResult r = m.onAttackEntity((ServerPlayer) player, entity);
@@ -166,11 +174,13 @@ public final class HubEvents {
 		Tasks.tick();
 		ArenaBuilder.tick();
 		Matches.tick();
+		net.battlehub.bot.Bots.tick(server);
 		Queues.tick(server);
 		net.battlehub.spectate.Spectators.tick(server);
 		Menus.tick(server);
 		net.battlehub.progression.Cosmetics.tick(server, tick);
 		net.battlehub.hub.HubBoards.tick(server);
+		net.battlehub.hub.HubNpcs.tick(server);
 		if (net.battlehub.debug.SelfTest.enabled()) {
 			net.battlehub.debug.SelfTest.tick();
 		}

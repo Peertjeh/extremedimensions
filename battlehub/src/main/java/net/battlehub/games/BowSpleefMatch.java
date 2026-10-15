@@ -26,6 +26,11 @@ public final class BowSpleefMatch extends PartyMatch {
 	}
 
 	@Override
+	public net.battlehub.core.BotStyle botStyle() {
+		return net.battlehub.core.BotStyle.BOW_SPLEEF;
+	}
+
+	@Override
 	protected Blueprint design(Theme theme) {
 		return PartyLayouts.spleef(theme, random);
 	}

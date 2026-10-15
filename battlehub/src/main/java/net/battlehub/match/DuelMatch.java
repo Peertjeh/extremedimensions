@@ -39,6 +39,11 @@ public final class DuelMatch extends Match {
 	}
 
 	@Override
+	public net.battlehub.core.BotStyle botStyle() {
+		return mode.isRanged() ? net.battlehub.core.BotStyle.RANGED : net.battlehub.core.BotStyle.MELEE;
+	}
+
+	@Override
 	protected Blueprint design(Theme theme) {
 		// Mace (and any duel with an arenaScale setting) gets a bigger arena
 		return DuelLayout.design(theme, random, mode.isRanged(), game().setting("arenaScale", 1.0), 1);

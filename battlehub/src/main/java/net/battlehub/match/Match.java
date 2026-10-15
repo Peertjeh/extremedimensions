@@ -18,6 +18,7 @@ import net.battlehub.arena.Blueprint;
 import net.battlehub.arena.Theme;
 import net.battlehub.config.ConfigManager;
 import net.battlehub.config.HubConfig;
+import net.battlehub.core.BotStyle;
 import net.battlehub.core.GameMode;
 import net.battlehub.core.Outcome;
 import net.battlehub.data.Snapshots;
@@ -242,6 +243,28 @@ public abstract class Match {
 	/** Lang key of the line that explains why no coins were paid, or null. */
 	public String noCoinsKey() {
 		return null;
+	}
+
+	// ------------------------------------------------------------------ bots
+
+	/** How bots play this match. */
+	public BotStyle botStyle() {
+		return BotStyle.MELEE;
+	}
+
+	/** Should {@code a} fight {@code b}? Team games say no for teammates. */
+	public boolean isEnemy(UUID a, UUID b) {
+		return !a.equals(b);
+	}
+
+	/** Where a bot goes when nobody is close to fight (a hill, a flag, its bed); null: after the nearest enemy. */
+	public Vec3 botObjective(ServerPlayer bot) {
+		return null;
+	}
+
+	/** True while this participant can act: the match is running and they are not out or waiting to respawn. */
+	public boolean inPlay(UUID id) {
+		return phase == Phase.RUNNING && active(id) && !left.contains(id);
 	}
 
 	/** Lang key of a short status line for the Spectate menu. */

@@ -1,0 +1,81 @@
+package net.battlehub.gui;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import net.battlehub.bot.Bots;
+import net.battlehub.core.BotLevel;
+import net.battlehub.core.GameMode;
+import net.battlehub.lang.Lang;
+import net.battlehub.util.Icon;
+import net.battlehub.util.Ids;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+
+/** Practice against bots: pick how good they are, then a duel, 1v2 or 1v3. Starts right away. */
+public final class PracticeMenu extends Screen {
+	private static final Map<UUID, BotLevel> LEVEL = new HashMap<>();
+
+	public PracticeMenu(ServerPlayer viewer) {
+		super(viewer);
+	}
+
+	public static BotLevel level(UUID id) {
+		return LEVEL.getOrDefault(id, BotLevel.NORMAL);
+	}
+
+	@Override
+	public Component title() {
+		return Lang.tr(viewer, "menu.practice.title");
+	}
+
+	@Override
+	public int rows() {
+		return 4;
+	}
+
+	@Override
+	public void draw(Canvas c) {
+		BotLevel chosen = level(viewer.getUUID());
+		c.set(4, Icon.of(Items.TARGET).name(Lang.item(viewer, "menu.practice.info"))
+				.lore(Lang.loreLines(viewer, "menu.practice.info.lore")).build());
+		Item[] dyes = {Ids.item("minecraft:lime_dye"), Ids.item("minecraft:yellow_dye"), Ids.item("minecraft:red_dye")};
+		int slot = 11;
+		for (BotLevel l : BotLevel.values()) {
+			boolean on = l == chosen;
+			c.set(slot, Icon.of(dyes[l.ordinal()]).name(Lang.item(viewer, "bots.level_button", Lang.tr(viewer, "bots.level." + l.id())))
+					.lore(Lang.loreLines(viewer, "bots.level." + l.id() + ".lore"))
+					.lore(Component.empty())
+					.lore(Lang.lore(viewer, on ? "menu.practice.chosen" : "menu.practice.choose")).glint(on).build(),
+					click -> {
+						LEVEL.put(viewer.getUUID(), l);
+						new PracticeMenu(viewer).open();
+					});
+			slot += 2;
+		}
+		slot = 19;
+		for (GameMode m : GameMode.duels()) {
+			c.set(slot++, Icon.of(Icons.mode(m)).name(Lang.item(viewer, Icons.modeKey(m)))
+					.lore(Lang.lore(viewer, "menu.practice.duel", Lang.tr(viewer, "bots.level." + chosen.id())))
+					.lore(Lang.lore(viewer, "menu.practice.click")).clean().build(),
+					click -> {
+						viewer.closeContainer();
+						Bots.practice(viewer, m, level(viewer.getUUID()));
+					});
+		}
+		for (GameMode m : GameMode.teamFights()) {
+			c.set(slot++, Icon.of(Items.PLAYER_HEAD).count(m.opponents()).name(Lang.item(viewer, Icons.modeKey(m)))
+					.lore(Lang.lore(viewer, "menu.practice.team", m.opponents(), Lang.tr(viewer, "bots.level." + chosen.id())))
+					.lore(Lang.lore(viewer, "menu.practice.click")).clean().build(),
+					click -> {
+						viewer.closeContainer();
+						Bots.practiceTeam(viewer, m, GameMode.SWORD, level(viewer.getUUID()));
+					});
+		}
+		c.back(() -> new MainMenu(viewer).open());
+		c.fill();
+	}
+}

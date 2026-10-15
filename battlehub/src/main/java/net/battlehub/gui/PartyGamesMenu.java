@@ -54,9 +54,12 @@ public final class PartyGamesMenu extends Screen {
 				.lore(Lang.lore(viewer, "menu.party.lobby", Queues.partyCount(m), g.maxPlayers, g.minPlayers))
 				.lore(secs >= 0 ? Lang.lore(viewer, "menu.party.starting", secs) : Lang.lore(viewer, "menu.party.waiting"))
 				.lore(Lang.lore(viewer, "menu.mode.playing", Matches.playing(m)))
-				.lore(Component.empty())
-				.lore(Lang.lore(viewer, "menu.click_to_open"))
-				.glint(Queues.inParty(viewer.getUUID(), m))
+				.lore(Component.empty());
+		if (net.battlehub.progression.FeaturedMode.is(m)) {
+			icon.lore(Lang.lore(viewer, "featured.lore", net.battlehub.progression.FeaturedMode.multiplierText())).glint(true);
+		}
+		icon.lore(Lang.lore(viewer, "menu.click_to_open"))
+				.glint(Queues.inParty(viewer.getUUID(), m) || net.battlehub.progression.FeaturedMode.is(m))
 				.clean();
 		if (!g.enabled) {
 			icon.lore(Lang.lore(viewer, "menu.disabled"));

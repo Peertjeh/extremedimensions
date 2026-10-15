@@ -32,6 +32,9 @@ public final class HubConfig {
 	public Titles titles = new Titles();
 	public Arenas arenas = new Arenas();
 	public Leaderboards leaderboards = new Leaderboards();
+	public Bots bots = new Bots();
+	public FeaturedMode featured = new FeaturedMode();
+	public Npcs npcs = new Npcs();
 	public Map<String, Game> games = defaultGames();
 
 	/** BattleHub's own world. Every other dimension is normal gameplay that BattleHub leaves alone. */
@@ -222,6 +225,73 @@ public final class HubConfig {
 		return true;
 	}
 
+	/** Bots that play when there are not enough people, and for practice. */
+	public static final class Bots {
+		public boolean enabled = true;
+		/** Fill duel queues, party lobbies, 1v2 and 1v3 with bots when a player waits too long (never ranked). */
+		public boolean fillQueues = true;
+		public int fillAfterSeconds = 15;
+		/** Party lobbies are filled up to this many players (at least the game's minimum, at most its maximum). */
+		public int partyFillTo = 4;
+		/** easy, normal or hard. */
+		public String fillLevel = "normal";
+		public int maxBots = 12;
+		/** Share of the coins and XP paid in matches with bots; such matches never count for stats or ELO. */
+		public double rewardFactor = 0.5;
+		/** A bot leaves this many seconds after it is back in the lobby. */
+		public int idleSeconds = 4;
+	}
+
+	/** The mode of the day: another mode every day, with more coins. */
+	public static final class FeaturedMode {
+		public boolean enabled = true;
+		public double coinMultiplier = 2.0;
+		public List<String> modes = new ArrayList<>(List.of("ffa", "bed_wars", "prop_hunt", "sumo", "tnt_run", "bow_spleef",
+				"koth", "ctf", "lms", "parkour", "1v2", "1v3"));
+	}
+
+	/** Characters on the lobby plaza that take you to a game. */
+	public static final class Npcs {
+		public boolean enabled = true;
+		/** Distance from the fountain. */
+		public double radius = 10.5;
+		public List<Npc> list = defaultNpcs();
+	}
+
+	/** One lobby character. */
+	public static final class Npc {
+		/** Lang key part: npc.<id>. */
+		public String id = "";
+		/** menu:pvp, menu:ranked, menu:party, menu:practice or game:<mode id>. */
+		public String action = "";
+		/** The item in its hand. */
+		public String item = "minecraft:diamond_sword";
+		/** Where on the circle around the fountain, in degrees: 0 east, 90 south, 180 west, 270 north. */
+		public double angle;
+
+		public Npc() {}
+
+		Npc(String id, String action, String item, double angle) {
+			this.id = id;
+			this.action = action;
+			this.item = item;
+			this.angle = angle;
+		}
+	}
+
+	static List<Npc> defaultNpcs() {
+		List<Npc> l = new ArrayList<>();
+		l.add(new Npc("pvp", "menu:pvp", "minecraft:diamond_sword", 190));
+		l.add(new Npc("ffa", "game:ffa", "minecraft:iron_axe", 210));
+		l.add(new Npc("ranked", "menu:ranked", "minecraft:netherite_sword", 230));
+		l.add(new Npc("practice", "menu:practice", "minecraft:target", 250));
+		l.add(new Npc("bed_wars", "game:bed_wars", "minecraft:red_bed", 290));
+		l.add(new Npc("prop_hunt", "game:prop_hunt", "minecraft:bookshelf", 310));
+		l.add(new Npc("party", "menu:party", "minecraft:cake", 330));
+		l.add(new Npc("parkour", "game:parkour", "minecraft:feather", 350));
+		return l;
+	}
+
 	/** Settings for one mode. Only the keys that matter for that mode are used. */
 	public static final class Game {
 		public boolean enabled = true;
@@ -350,6 +420,17 @@ public final class HubConfig {
 		if (streaks.milestones == null) streaks.milestones = new ArrayList<>();
 		if (titles == null) titles = new Titles();
 		if (arenas == null) arenas = new Arenas();
+		if (bots == null) bots = new Bots();
+		bots.fillAfterSeconds = Math.max(0, bots.fillAfterSeconds);
+		bots.partyFillTo = Math.max(2, Math.min(16, bots.partyFillTo));
+		bots.maxBots = Math.max(0, Math.min(64, bots.maxBots));
+		bots.idleSeconds = Math.max(1, bots.idleSeconds);
+		if (bots.fillLevel == null) bots.fillLevel = "normal";
+		if (featured == null) featured = new FeaturedMode();
+		if (featured.modes == null) featured.modes = new FeaturedMode().modes;
+		if (npcs == null) npcs = new Npcs();
+		if (npcs.list == null) npcs.list = defaultNpcs();
+		npcs.list.removeIf(n -> n == null || n.id == null || n.action == null);
 		if (leaderboards == null) leaderboards = new Leaderboards();
 		if (from < 3 && sameWalls(leaderboards.walls, wallsOf160())) {
 			// 1.6.1: three boards instead of nine (kills, deaths, parkour), a little bigger

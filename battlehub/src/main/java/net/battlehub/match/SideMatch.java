@@ -49,6 +49,16 @@ public abstract class SideMatch extends Match {
 	/** A side as shown in messages. */
 	public abstract Component sideName(ServerPlayer viewer, int side);
 
+	@Override
+	public boolean isEnemy(UUID a, UUID b) {
+		return side(a) != side(b);
+	}
+
+	@Override
+	public net.battlehub.core.BotStyle botStyle() {
+		return kitMode.isRanged() ? net.battlehub.core.BotStyle.RANGED : net.battlehub.core.BotStyle.MELEE;
+	}
+
 	public int side(UUID id) {
 		return sides.get(0).contains(id) ? 0 : 1;
 	}

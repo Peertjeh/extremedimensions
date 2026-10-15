@@ -207,6 +207,22 @@ public final class BedWarsMatch extends PartyMatch implements BedWarsShop.Teams 
 		return arena == null ? null : arena.mark("bed_" + team);
 	}
 
+	@Override
+	public boolean isEnemy(UUID a, UUID b) {
+		return teamOf(a) != teamOf(b);
+	}
+
+	/** Bots guard their own bed while it stands; after that they go hunting. */
+	@Override
+	public net.minecraft.world.phys.Vec3 botObjective(ServerPlayer bot) {
+		TeamState t = team(bot.getUUID());
+		BlockPos b = t == null ? null : bed(t.index);
+		if (b == null || !t.bedAlive()) {
+			return null;
+		}
+		return new net.minecraft.world.phys.Vec3(b.getX() + 0.5, b.getY(), b.getZ() + 0.5);
+	}
+
 	public boolean isActive(UUID id) {
 		return active(id);
 	}

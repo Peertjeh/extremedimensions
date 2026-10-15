@@ -50,6 +50,11 @@ public final class FfaMatch extends PartyMatch {
 		return Lang.tr(p, kitMode == null ? "ffa.kit_default" : net.battlehub.gui.Icons.modeKey(kitMode));
 	}
 
+	@Override
+	public net.battlehub.core.BotStyle botStyle() {
+		return kitMode.isRanged() ? net.battlehub.core.BotStyle.RANGED : net.battlehub.core.BotStyle.MELEE;
+	}
+
 	public int target() {
 		return (int) Math.max(1, game().setting("killsToWin", 15));
 	}

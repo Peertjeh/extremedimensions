@@ -10,8 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import org.joml.Vector3f;
-
 import net.battlehub.BattleHub;
 import net.battlehub.config.ConfigManager;
 import net.battlehub.config.HubConfig;
@@ -22,24 +20,14 @@ import net.battlehub.core.PlayerProfile;
 import net.battlehub.data.PlayerStore;
 import net.battlehub.gui.Icons;
 import net.battlehub.lang.Lang;
-import net.battlehub.mixin.DisplayAccessor;
-import net.battlehub.mixin.TextDisplayAccessor;
 import net.battlehub.progression.Ranks;
-import net.battlehub.util.Ids;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextColor;
-import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
-import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
-import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
-import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.phys.Vec3;
 
@@ -59,7 +47,6 @@ public final class HubBoards {
 	private static final int MAX_BOARDS = 8;
 	private static final int LINE_WIDTH = 260;
 	private static final int BACKGROUND = 0x70000000;
-	private static final byte SHADOW = 1;
 	/** Stats change after matches; the order is worked out again this often. */
 	private static final int RANK_TICKS = 100;
 
@@ -79,20 +66,8 @@ public final class HubBoards {
 		}
 	}
 
-	/** A player whose client has the boards; a new player object or another level means a new client world. */
-	private static final class Viewer {
-		final ServerPlayer player;
-		final ServerLevel level;
-		final Map<Integer, Component> sent = new HashMap<>();
-
-		Viewer(ServerPlayer player, ServerLevel level) {
-			this.player = player;
-			this.level = level;
-		}
-	}
-
 	private static final List<Wall> WALLS = new ArrayList<>();
-	private static final Map<UUID, Viewer> VIEWERS = new HashMap<>();
+	private static final HubViewers VIEWERS = new HubViewers();
 	private static HubConfig builtFor;
 	private static int ticks;
 
@@ -102,32 +77,11 @@ public final class HubBoards {
 		ServerLevel hub = server.getLevel(HubWorld.KEY);
 		if (cfg != builtFor) {
 			// New config (/battlehub reload): take the old boards away and place them again
-			hideAll();
+			VIEWERS.clear(HubBoards::remove);
 			build(cfg, hub);
 		}
 		boolean active = hub != null && HubWorld.ready() && !WALLS.isEmpty();
-		Set<UUID> online = new HashSet<>();
-		List<Viewer> fresh = new ArrayList<>();
-		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-			online.add(p.getUUID());
-			Viewer v = VIEWERS.get(p.getUUID());
-			boolean wants = active && p.level() == hub;
-			if (v != null && (!wants || v.player != p || v.level != p.level())) {
-				if (v.player == p && v.level == p.level()) {
-					// Still in the hub: the boards were switched off or the lobby is being rebuilt
-					remove(p);
-				}
-				// Otherwise the client left the hub world (or respawned) and dropped the boards itself
-				VIEWERS.remove(p.getUUID());
-				v = null;
-			}
-			if (wants && v == null) {
-				v = new Viewer(p, hub);
-				VIEWERS.put(p.getUUID(), v);
-				fresh.add(v);
-			}
-		}
-		VIEWERS.keySet().retainAll(online);
+		List<HubViewers.Viewer> fresh = VIEWERS.update(server, hub, active, HubBoards::remove);
 		boolean second = ticks % 20 == 0;
 		if (!active || VIEWERS.isEmpty() || (!second && fresh.isEmpty())) {
 			return;
@@ -140,7 +94,7 @@ public final class HubBoards {
 				rank(w, cfg);
 			}
 		}
-		for (Viewer v : VIEWERS.values()) {
+		for (HubViewers.Viewer v : VIEWERS.all()) {
 			boolean isNew = fresh.contains(v);
 			if (isNew) {
 				spawn(v.player, cfg);
@@ -158,12 +112,12 @@ public final class HubBoards {
 
 	public static void clear() {
 		WALLS.clear();
-		VIEWERS.clear();
+		VIEWERS.forget();
 		builtFor = null;
 	}
 
 	private static EntityType<?> textDisplay() {
-		return BuiltInRegistries.ENTITY_TYPE.getValue(Ids.id("minecraft:text_display"));
+		return ClientEntities.type("minecraft:text_display");
 	}
 
 	private static void build(HubConfig cfg, ServerLevel hub) {
@@ -210,11 +164,11 @@ public final class HubBoards {
 				// A fixed text faces where its yaw points: towards the fountain
 				float yaw = (float) Math.toDegrees(Math.atan2(Math.cos(a), -Math.sin(a)));
 				// Only for a unique network id: this entity is never added to the world
-				Entity e = type.create(hub, EntitySpawnReason.COMMAND);
-				if (e == null) {
+				ClientEntities.Handle h = ClientEntities.handle(hub, type);
+				if (h == null) {
 					return;
 				}
-				w.boards.add(new Board(e.getId(), e.getUUID(), stats.get(i), new Vec3(x, o.getY() + HEIGHT, z), yaw));
+				w.boards.add(new Board(h.id(), h.uuid(), stats.get(i), new Vec3(x, o.getY() + HEIGHT, z), yaw));
 			}
 			WALLS.add(w);
 		}
@@ -260,48 +214,30 @@ public final class HubBoards {
 
 	private static void spawn(ServerPlayer p, HubConfig cfg) {
 		EntityType<?> type = textDisplay();
-		float s = (float) cfg.leaderboards.scale;
+		float scale = (float) cfg.leaderboards.scale;
 		for (Wall w : WALLS) {
 			for (Board b : w.boards) {
-				p.connection.send(new ClientboundAddEntityPacket(b.entityId, b.uuid, b.pos.x, b.pos.y, b.pos.z, 0f, b.yaw, type, 0, Vec3.ZERO, b.yaw));
-				List<SynchedEntityData.DataValue<?>> data = new ArrayList<>();
-				data.add(SynchedEntityData.DataValue.create(TextDisplayAccessor.battlehub$lineWidth(), LINE_WIDTH));
-				data.add(SynchedEntityData.DataValue.create(TextDisplayAccessor.battlehub$background(), BACKGROUND));
-				data.add(SynchedEntityData.DataValue.create(TextDisplayAccessor.battlehub$styleFlags(), SHADOW));
-				data.add(SynchedEntityData.DataValue.create(DisplayAccessor.battlehub$scale(), new Vector3f(s, s, s)));
-				p.connection.send(new ClientboundSetEntityDataPacket(b.entityId, data));
+				ClientEntities.add(p, new ClientEntities.Handle(b.entityId, b.uuid, null), type, b.pos, b.yaw, b.yaw);
+				ClientEntities.textStyle(p, b.entityId, LINE_WIDTH, BACKGROUND, ClientEntities.SHADOW, scale, ClientEntities.BILLBOARD_FIXED);
 			}
 		}
 	}
 
 	/** Sends the boards whose text changed for this player. */
-	private static void update(Viewer v, HubConfig cfg) {
+	private static void update(HubViewers.Viewer v, HubConfig cfg) {
 		for (Wall w : WALLS) {
 			for (Board b : w.boards) {
 				Component text = text(v.player, w, b, cfg);
 				if (!text.equals(v.sent.get(b.entityId))) {
 					v.sent.put(b.entityId, text);
-					v.player.connection.send(new ClientboundSetEntityDataPacket(b.entityId,
-							List.<SynchedEntityData.DataValue<?>>of(SynchedEntityData.DataValue.create(TextDisplayAccessor.battlehub$text(), text))));
+					ClientEntities.text(v.player, b.entityId, text);
 				}
 			}
 		}
 	}
 
 	private static void remove(ServerPlayer p) {
-		int[] ids = ids();
-		if (ids.length > 0) {
-			p.connection.send(new ClientboundRemoveEntitiesPacket(ids));
-		}
-	}
-
-	private static void hideAll() {
-		for (Viewer v : VIEWERS.values()) {
-			if (!v.player.hasDisconnected() && v.player.level() == v.level) {
-				remove(v.player);
-			}
-		}
-		VIEWERS.clear();
+		ClientEntities.remove(p, ids());
 	}
 
 	private static int[] ids() {
@@ -404,12 +340,12 @@ public final class HubBoards {
 	}
 
 	public static boolean showing(UUID viewer) {
-		return VIEWERS.containsKey(viewer);
+		return VIEWERS.get(viewer) != null;
 	}
 
 	/** The text this player was sent for a board (wall and board in config order), or "" when none. */
 	public static String shown(UUID viewer, int wall, int board) {
-		Viewer v = VIEWERS.get(viewer);
+		HubViewers.Viewer v = VIEWERS.get(viewer);
 		if (v == null || wall >= WALLS.size() || board >= WALLS.get(wall).boards.size()) {
 			return "";
 		}

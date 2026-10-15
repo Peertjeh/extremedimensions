@@ -102,6 +102,21 @@ public final class ParkourMatch extends PartyMatch {
 		forEveryone(p -> Msg.send(p, "parkour.start", Lang.tr(p, "parkour.difficulty." + difficulty.id()), jumps, race.finishIndex() - 1));
 	}
 
+	@Override
+	public net.battlehub.core.BotStyle botStyle() {
+		return net.battlehub.core.BotStyle.PARKOUR;
+	}
+
+	/** The platform a player stands on (index in the course), or -1. */
+	public int platformIndex(ServerPlayer p) {
+		return platformUnder(p);
+	}
+
+	/** The last checkpoint platform a player reached, or -1 (still at the start). */
+	public int lastPlatform(UUID id) {
+		return lastPlatform.getOrDefault(id, -1);
+	}
+
 	/** Index in {@link #course} of the platform the player stands on, or -1. */
 	private int platformUnder(ServerPlayer p) {
 		if (!p.onGround()) {

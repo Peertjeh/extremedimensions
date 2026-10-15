@@ -152,6 +152,41 @@ public final class CtfMatch extends PartyMatch {
 		}
 	}
 
+	@Override
+	public boolean isEnemy(UUID a, UUID b) {
+		Team ta = ctf.teamOf(a);
+		return ta == null || ta != ctf.teamOf(b);
+	}
+
+	/** Carrying a flag: home. Own flag on the ground nearby: bring it back. Otherwise: the enemy flag (or our carrier). */
+	@Override
+	public net.minecraft.world.phys.Vec3 botObjective(ServerPlayer bot) {
+		Team mine = ctf.teamOf(bot.getUUID());
+		if (mine == null) {
+			return null;
+		}
+		Team enemy = mine.other();
+		if (bot.getUUID().equals(ctf.carrier(enemy))) {
+			return center(home(mine));
+		}
+		BlockPos ownDropped = dropped.get(mine);
+		if (ctf.state(mine) == CtfGame.FlagState.DROPPED && ownDropped != null && bot.position().distanceTo(center(ownDropped)) < 24) {
+			return center(ownDropped);
+		}
+		return switch (ctf.state(enemy)) {
+			case HOME -> center(home(enemy));
+			case DROPPED -> dropped.get(enemy) == null ? center(home(enemy)) : center(dropped.get(enemy));
+			case CARRIED -> {
+				ServerPlayer c = player(ctf.carrier(enemy));
+				yield c == null ? center(home(mine)) : c.position();
+			}
+		};
+	}
+
+	private static net.minecraft.world.phys.Vec3 center(BlockPos p) {
+		return new net.minecraft.world.phys.Vec3(p.getX() + 0.5, p.getY(), p.getZ() + 0.5);
+	}
+
 	public BlockPos home(Team t) {
 		return arena.mark("flag_" + color(t));
 	}

@@ -33,6 +33,8 @@ public final class PlayerStore {
 	private PlayerStore() {}
 
 	private static final Map<UUID, PlayerProfile> PROFILES = new ConcurrentHashMap<>();
+	/** Bots: a profile while they play, never saved and never on a leaderboard. */
+	private static final Map<UUID, PlayerProfile> BOTS = new ConcurrentHashMap<>();
 	private static Path dir;
 
 	public static Path worldDir(MinecraftServer server) {
@@ -92,6 +94,13 @@ public final class PlayerStore {
 
 	/** Profile for this id; created (not yet saved) when unknown. */
 	public static PlayerProfile get(UUID id) {
+		if (net.battlehub.bot.Bots.isBot(id)) {
+			return BOTS.computeIfAbsent(id, k -> {
+				PlayerProfile p = new PlayerProfile();
+				p.uuid = k.toString();
+				return p;
+			});
+		}
 		return PROFILES.computeIfAbsent(id, k -> {
 			PlayerProfile p = new PlayerProfile();
 			p.uuid = k.toString();
@@ -154,6 +163,7 @@ public final class PlayerStore {
 
 	public static void unload() {
 		PROFILES.clear();
+		BOTS.clear();
 		dir = null;
 	}
 }

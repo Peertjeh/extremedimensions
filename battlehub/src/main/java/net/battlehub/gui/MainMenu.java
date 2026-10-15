@@ -7,7 +7,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Items;
 
-/** The BattleHub Compass menu: PvP, Ranged, Party Games, Cosmetics, Ranked, Spectate, Stats. */
+/** The BattleHub Compass menu: PvP, Ranged, Party Games, Cosmetics, Ranked, Spectate, Stats, Practice. */
 public final class MainMenu extends Screen {
 	public MainMenu(ServerPlayer viewer) {
 		super(viewer);
@@ -46,6 +46,9 @@ public final class MainMenu extends Screen {
 		c.set(16, Icon.of(Items.WRITABLE_BOOK).name(Lang.item(viewer, "menu.main.stats"))
 				.lore(Lang.loreLines(viewer, "menu.main.stats.lore")).clean().build(),
 				click -> new StatsMenu(viewer, viewer.getUUID()).open());
+		c.set(20, Icon.of(Items.TARGET).name(Lang.item(viewer, "menu.main.practice"))
+				.lore(Lang.loreLines(viewer, "menu.main.practice.lore")).clean().build(),
+				click -> new PracticeMenu(viewer).open());
 		if (net.battlehub.hub.Travel.inBattleHub(viewer)) {
 			c.set(22, Icon.of(Items.OAK_DOOR).name(Lang.item(viewer, "menu.main.exit"))
 					.lore(Lang.loreLines(viewer, "menu.main.exit.lore")).build(),

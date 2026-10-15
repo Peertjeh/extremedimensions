@@ -118,11 +118,39 @@ public final class HubCommands {
 											return 1;
 										})))));
 
+		d.register(Commands.literal("practice")
+				.executes(c -> {
+					new net.battlehub.gui.PracticeMenu(c.getSource().getPlayerOrException()).open();
+					return 1;
+				})
+				.then(Commands.argument("mode", StringArgumentType.word())
+						.suggests((c, b) -> SharedSuggestionProvider.suggest(practiceModes(), b))
+						.executes(c -> practice(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode"), null))
+						.then(Commands.argument("level", StringArgumentType.word())
+								.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.List.of("easy", "normal", "hard"), b))
+								.executes(c -> practice(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode"),
+										StringArgumentType.getString(c, "level"))))));
+
 		d.register(Commands.literal("battlehub")
 				.executes(c -> {
 					new MainMenu(c.getSource().getPlayerOrException()).open();
 					return 1;
 				})
+				.then(Commands.literal("bots").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.executes(c -> {
+							c.getSource().sendSuccess(() -> Lang.tr("bots.count", net.battlehub.bot.Bots.online()), false);
+							return 1;
+						})
+						.then(Commands.literal("clear").executes(c -> {
+							int n = net.battlehub.bot.Bots.online();
+							for (net.battlehub.bot.BotPlayer b : net.battlehub.bot.Bots.all()) {
+								Match m = Matches.of(b.getUUID());
+								if (m != null) m.quit(b);
+								net.battlehub.bot.Bots.remove(b);
+							}
+							c.getSource().sendSuccess(() -> Lang.tr("bots.cleared", n), true);
+							return n;
+						})))
 				.then(Commands.literal("join").then(Commands.argument("mode", StringArgumentType.word())
 						.suggests((c, b) -> SharedSuggestionProvider.suggest(allModeIds(), b))
 						.executes(c -> joinMode(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode")))))
@@ -260,5 +288,26 @@ public final class HubCommands {
 		src.sendSuccess(() -> Lang.tr(p, ok ? "admin.reloaded" : "admin.reload_failed"), true);
 		BattleHub.LOGGER.info("Configuration reloaded ({})", ok ? "ok" : "with errors");
 		return ok ? 1 : 0;
+	}
+
+	private static java.util.List<String> practiceModes() {
+		java.util.List<String> out = new java.util.ArrayList<>();
+		for (GameMode m : GameMode.duels()) out.add(m.id());
+		for (GameMode m : GameMode.teamFights()) out.add(m.id());
+		return out;
+	}
+
+	/** /practice sword hard: a duel against a bot right away (or 1v2 / 1v3 against bots). */
+	private static int practice(ServerPlayer p, String modeId, String level) {
+		GameMode mode = GameMode.byId(modeId);
+		net.battlehub.core.BotLevel l = net.battlehub.core.BotLevel.parse(level, net.battlehub.gui.PracticeMenu.level(p.getUUID()));
+		if (mode != null && mode.isDuel()) {
+			return net.battlehub.bot.Bots.practice(p, mode, l) ? 1 : 0;
+		}
+		if (mode != null && mode.isTeamFight()) {
+			return net.battlehub.bot.Bots.practiceTeam(p, mode, GameMode.SWORD, l) ? 1 : 0;
+		}
+		Msg.send(p, "bots.practice_modes");
+		return 0;
 	}
 }

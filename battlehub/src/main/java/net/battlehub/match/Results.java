@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import net.battlehub.bot.Bots;
 import net.battlehub.config.ConfigManager;
 import net.battlehub.config.HubConfig;
 import net.battlehub.core.Elo;
@@ -19,6 +20,7 @@ import net.battlehub.core.TitleRules;
 import net.battlehub.data.PlayerStore;
 import net.battlehub.gui.Icons;
 import net.battlehub.lang.Lang;
+import net.battlehub.progression.FeaturedMode;
 import net.battlehub.progression.Ranks;
 import net.battlehub.progression.TitleService;
 import net.battlehub.util.Msg;
@@ -32,18 +34,30 @@ public final class Results {
 
 	public static void apply(Match m) {
 		HubConfig cfg = ConfigManager.config();
+		boolean withBots = false;
+		for (UUID id : m.participants()) {
+			withBots |= Bots.isBot(id);
+		}
 		Map<UUID, int[]> elo = new HashMap<>();
-		if (m.ranked && m.mode.isDuel() && m.participants().size() == 2) {
+		if (m.ranked && !withBots && m.mode.isDuel() && m.participants().size() == 2) {
 			elo = rankedElo(m, cfg);
 		}
 		RewardSettings settings = m.ranked ? cfg.rewards.ranked : (m.mode.isDuel() ? cfg.rewards.duel : cfg.rewards.party);
+		// Matches with bots pay part of the reward and leave the stats alone; the mode of the day pays more
+		double botFactor = withBots ? Math.max(0, Math.min(1, cfg.bots.rewardFactor)) : 1.0;
+		boolean featured = FeaturedMode.is(m.mode);
+		double coinBonus = featured ? FeaturedMode.multiplier() : 1.0;
 		for (UUID id : m.participants()) {
+			if (Bots.isBot(id)) {
+				continue;
+			}
 			PlayerProfile prof = PlayerStore.get(id);
 			Outcome o = m.outcome(id);
 			int kills = m.kills(id);
-			StatsRecorder.Result streak = StatsRecorder.record(prof, m.mode, m.ranked, o, kills, m.deaths(id));
+			StatsRecorder.Result streak = withBots ? null : StatsRecorder.record(prof, m.mode, m.ranked, o, kills, m.deaths(id));
 			Rewards.Reward full = Rewards.compute(settings, o, kills, 1.0);
-			Rewards.Reward reward = new Rewards.Reward((int) Math.round(full.coins() * Math.max(0, m.coinFactor())), full.xp());
+			Rewards.Reward reward = new Rewards.Reward((int) Math.round(full.coins() * Math.max(0, m.coinFactor()) * botFactor * coinBonus),
+					(int) Math.round(full.xp() * botFactor));
 			Progression.addCoins(prof, reward.coins());
 			StatsRecorder.recordCoins(prof, m.mode, m.ranked, reward.coins());
 			Progression.LevelChange lvl = Progression.addXp(prof, reward.xp(), Ranks.curve(), cfg.levels.bonusEvery, cfg.levels.bonusCoins);
@@ -55,7 +69,7 @@ public final class Results {
 			PlayerStore.save(id);
 
 			ServerPlayer p = m.player(id);
-			boolean milestone = o == Outcome.WIN && StatsRecorder.isMilestone(streak.overallStreak(), cfg.streaks.milestones);
+			boolean milestone = streak != null && o == Outcome.WIN && StatsRecorder.isMilestone(streak.overallStreak(), cfg.streaks.milestones);
 			if (milestone) {
 				Msg.broadcast(m.server, "streak.milestone", m.name(id), streak.overallStreak());
 			}
@@ -65,8 +79,14 @@ public final class Results {
 			Msg.raw(p, Lang.tr(p, "result.header", Lang.tr(p, Icons.modeKey(m.mode))));
 			Msg.raw(p, Lang.tr(p, "result." + o.name().toLowerCase(java.util.Locale.ROOT)));
 			Msg.raw(p, Lang.tr(p, "result.rewards", reward.coins(), reward.xp(), kills));
-			if (reward.coins() < full.coins() && m.noCoinsKey() != null) {
+			if (m.coinFactor() < 1 && m.noCoinsKey() != null) {
 				Msg.raw(p, Lang.tr(p, m.noCoinsKey()));
+			}
+			if (withBots) {
+				Msg.raw(p, Lang.tr(p, "result.bots", Math.round(botFactor * 100)));
+			}
+			if (featured && reward.coins() > 0) {
+				Msg.raw(p, Lang.tr(p, "result.featured", FeaturedMode.multiplierText()));
 			}
 			if (e != null) {
 				int diff = e[1] - e[0];
@@ -76,7 +96,7 @@ public final class Results {
 					Msg.raw(p, Lang.tr(p, diff > 0 ? "result.tier_up" : "result.tier_down", Ranks.tierName(p, e[1])));
 				}
 			}
-			if (o == Outcome.WIN) {
+			if (o == Outcome.WIN && streak != null) {
 				Msg.raw(p, Lang.tr(p, "result.streak", streak.overallStreak(), streak.modeStreak()));
 			}
 			if (lvl.leveledUp()) {

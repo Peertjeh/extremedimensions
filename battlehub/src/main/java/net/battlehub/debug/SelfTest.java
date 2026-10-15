@@ -62,10 +62,15 @@ public final class SelfTest {
 				if (!e.getValue().hasDisconnected() && !KEEP_ONLINE.contains(e.getKey())) e.getValue().leave();
 			}
 		});
+		s.run("no bots filling queues and no mode of the day, so every test knows who plays and what it pays", () -> {
+			ConfigManager.config().bots.fillQueues = false;
+			ConfigManager.config().featured.enabled = false;
+		});
 		HubWorldTests.all(server, s);
 		lobbyAndMenus(server, s);
 		LayoutTests.all(s);
 		BoardTests.all(server, s);
+		BotTests.all(server, s);
 		MenuSecurityTests.all(server, s);
 		CosmeticsTests.all(server, s);
 		duel(server, s, GameMode.SWORD, "queue", "kill");

@@ -152,6 +152,18 @@ public final class PropHuntMatch extends PartyMatch {
 	public Cooldowns<String> cooldowns() { return cooldowns; }
 	public long now() { return runTicks; }
 
+	@Override
+	public net.battlehub.core.BotStyle botStyle() {
+		return net.battlehub.core.BotStyle.PROP_HUNT;
+	}
+
+	@Override
+	public boolean isEnemy(UUID a, UUID b) {
+		Role ra = role(a);
+		Role rb = role(b);
+		return ra != Role.OUT && rb != Role.OUT && ra != rb;
+	}
+
 	public Role role(UUID id) {
 		if (hunters.contains(id)) return Role.HUNTER;
 		if (props.contains(id)) return Role.PROP;

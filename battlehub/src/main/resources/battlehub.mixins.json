@@ -13,6 +13,7 @@
 		"DisplayAccessor",
 		"BlockDisplayAccessor",
 		"TextDisplayAccessor",
+		"InteractionAccessor",
 		"EntityMixin",
 		"LivingEntitySwingMixin"
 	],
