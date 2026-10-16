@@ -727,9 +727,9 @@ public class ClientShots implements FabricClientGameTest {
 					}
 				}
 			});
-			// no HUD for these, and a view far enough for a colossus (chunks are not awaited: the far shots take their time)
+			// no guide over these, and a view far enough for a colossus (chunks are not awaited: the far shots take their time)
 			ctx.runOnClient(mc -> {
-				mc.options.hideGui = true;
+				ClientOptions.setGuidance(false);
 				mc.options.renderDistance().set(10);
 			});
 			sp.getServer().runCommand("execute as @a run gamemode spectator @s");
@@ -774,7 +774,7 @@ public class ClientShots implements FabricClientGameTest {
 				}
 			}
 			ctx.runOnClient(mc -> {
-				mc.options.hideGui = false;
+				ClientOptions.setGuidance(true);
 				mc.options.renderDistance().set(5);
 			});
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 0", home[0], home[1], home[2]));
