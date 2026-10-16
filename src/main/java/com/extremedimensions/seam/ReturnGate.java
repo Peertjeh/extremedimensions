@@ -43,9 +43,9 @@ public final class ReturnGate {
 		return mc("ochre_froglight", lantern());
 	}
 
-	/** Masonry of the gate from foot to crown: dark at the feet, then the pale bricks that catch the gold light. */
+	/** Masonry of the gate from foot to crown: dark only at the feet, then mostly the pale bricks that catch the gold. */
 	private static BlockState[] grad() {
-		return new BlockState[] {bsBrick(), brick(), brick(), tile(), pale(), pale(), palePol()};
+		return new BlockState[] {bsBrick(), brick(), tile(), pale(), pale(), palePol(), palePol()};
 	}
 
 	/**
@@ -136,8 +136,12 @@ public final class ReturnGate {
 						b = axis(pillar(), Direction.Axis.Y);
 					} else if (ly == h - 3) {
 						b = carved();
-					} else if (ly == h - 1 || ly == h) {
+					} else if (ly == h - 1 || ly == h || ly == 8 || ly == 16) {
+						// the crown, and a string course under each step of the batter
 						b = palePol();
+					} else if (ly <= 2) {
+						// a plinth of polished blackstone
+						b = bsPol();
 					} else {
 						b = drip(g, t, seed, f.wx(x, z), f.wz(x, z), rnd);
 						if (ly < h / 3) {

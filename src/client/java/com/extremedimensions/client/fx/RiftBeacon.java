@@ -56,11 +56,12 @@ public final class RiftBeacon {
 		double dx = rx - eye.x, dz = rz - eye.z;
 		double dist = Math.sqrt(dx * dx + dz * dz);
 		// Past what the fog lets show, drawn nearer on the true line to it, at the same size in view
-		double near = Math.max(24, SeamFog.end() * 0.7);
+		// (well inside the fog, so it is dimmed but not lost, and never thinner than a block at that distance)
+		double near = Math.max(20, SeamFog.end() * 0.45);
 		double s = dist > near ? near / dist : 1;
 		double y0 = ry - BELOW, y1 = ry + Config.SEAM_RIFT_BEAM;
 		double step = (y1 - y0) / TILES;
-		float half = (float) Math.max(step * s / 2, 0.0045 * near);
+		float half = (float) Math.max(step * s / 2, s < 1 ? 0.012 * near : 0);
 		// Standing in it, it thins so it does not blind
 		float close = (float) Mth.clamp((dist - 1.0) / 5.0, 0.3, 1.0);
 		boolean fresh = COLUMN.isEmpty() || !COLUMN.get(0).isAlive();
@@ -95,7 +96,7 @@ public final class RiftBeacon {
 			// It fades out into the nothing below and thins away high above
 			double k = (double) i / (TILES - 1);
 			double ends = Math.min(1, Math.min(k / 0.25, (1 - k) / 0.3));
-			p.peak = (float) (0.8 * ends * ends) * close;
+			p.peak = (float) ((s < 1 ? 1.0 : 0.8) * ends * ends) * close;
 		}
 		// The glow over the rift, seen where it really is
 		boolean there = s >= 1;
@@ -118,7 +119,8 @@ public final class RiftBeacon {
 		}
 		// Gold ripples out over the threshold now and then
 		if (dist < 48 && ticks % 36 == 0) {
-			AttackFxParticle w = AttackFx.make(level, AttackFx.WAVE, rnd.nextInt(3), rx, ry + 0.03, rz);
+			// (the gold ring of the wave sprites)
+			AttackFxParticle w = AttackFx.make(level, AttackFx.WAVE, 2, rx, ry + 0.03, rz);
 			w.mode = AttackFxParticle.Mode.GROUND;
 			w.size0 = 0.3F;
 			w.size1 = 2.6F;
