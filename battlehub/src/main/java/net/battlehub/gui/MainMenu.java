@@ -67,6 +67,9 @@ public final class MainMenu extends Screen {
 		c.set(25, Icon.of(net.battlehub.util.Ids.item("minecraft:white_banner")).name(Lang.item(viewer, "menu.main.clans"))
 				.lore(Lang.loreLines(viewer, "menu.main.clans.lore")).clean().build(),
 				click -> new ClanMenu(viewer).open());
+		c.set(30, Icon.of(net.battlehub.util.Ids.item("minecraft:blue_terracotta")).name(Lang.item(viewer, "menu.main.duel_games"))
+				.lore(Lang.loreLines(viewer, "menu.main.duel_games.lore")).clean().build(),
+				click -> new ModeListMenu(viewer, ModeListMenu.Kind.GAMES).open());
 		c.set(31, Icon.of(Items.NAME_TAG).name(Lang.item(viewer, "menu.main.custom"))
 				.lore(Lang.loreLines(viewer, "menu.main.custom.lore")).clean().build(),
 				click -> new CustomGameMenu(viewer).open());

@@ -24,7 +24,7 @@ public final class RankedMenu extends Screen {
 
 	@Override
 	public int rows() {
-		return 4;
+		return 5;
 	}
 
 	@Override
@@ -35,8 +35,8 @@ public final class RankedMenu extends Screen {
 	@Override
 	public void draw(Canvas c) {
 		PlayerProfile prof = PlayerStore.get(viewer);
-		int[] slots = {11, 12, 13, 14, 15};
 		GameMode[] modes = GameMode.duels();
+		int[] slots = net.battlehub.core.MenuSlots.centered(modes.length, 1, 5);
 		for (int i = 0; i < modes.length; i++) {
 			GameMode m = modes[i];
 			int elo = prof.elo(m, Ranks.startElo());
@@ -70,8 +70,8 @@ public final class RankedMenu extends Screen {
 			}
 			c.set(4, season.build());
 		}
-		c.set(21, FormatButton.icon(viewer), click -> FormatButton.toggle(viewer, () -> new RankedMenu(viewer).open()));
-		c.set(23, Icon.of(Items.GOLD_INGOT).name(Lang.item(viewer, "menu.leaderboards"))
+		c.set(30, FormatButton.icon(viewer), click -> FormatButton.toggle(viewer, () -> new RankedMenu(viewer).open()));
+		c.set(32, Icon.of(Items.GOLD_INGOT).name(Lang.item(viewer, "menu.leaderboards"))
 				.lore(Lang.loreLines(viewer, "menu.leaderboards.lore")).build(),
 				click -> new LeaderboardMenu(viewer, () -> new RankedMenu(viewer).open()).open());
 		c.back(() -> new MainMenu(viewer).open());

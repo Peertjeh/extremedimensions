@@ -24,12 +24,12 @@ import net.minecraft.sounds.SoundEvents;
  * between rounds both players go back to their spawn with a fresh kit. Leaving loses the whole series. A series
  * counts as one match for stats, coins and ELO.
  */
-public final class DuelMatch extends Match {
+public class DuelMatch extends Match {
 	public final DuelFormat format;
 	/** Started from a challenge (the "play again" offer is then a rematch). */
 	public final boolean challenge;
 	private final Map<UUID, Integer> roundWins = new HashMap<>();
-	private int round = 1;
+	protected int round = 1;
 
 	public DuelMatch(int id, GameMode mode, boolean ranked, DuelFormat format, boolean challenge, MinecraftServer server,
 			ServerPlayer a, ServerPlayer b) {
@@ -49,6 +49,8 @@ public final class DuelMatch extends Match {
 		return DuelLayout.design(theme, random, mode.isRanged(), game().setting("arenaScale", 1.0), 1);
 	}
 
+
+
 	public int round() {
 		return round;
 	}
@@ -57,11 +59,11 @@ public final class DuelMatch extends Match {
 		return roundWins.getOrDefault(id, 0);
 	}
 
-	private UUID other(UUID id) {
+	protected UUID other(UUID id) {
 		return participants.get(0).equals(id) ? participants.get(1) : participants.get(0);
 	}
 
-	private Component score(ServerPlayer viewer) {
+	protected Component score(ServerPlayer viewer) {
 		UUID a = participants.get(0);
 		UUID b = participants.get(1);
 		return Lang.tr(viewer, "match.round_score", name(a), roundWins(a), roundWins(b), name(b));
@@ -86,7 +88,7 @@ public final class DuelMatch extends Match {
 	}
 
 	/** One round to {@code winner}. Either the series is decided (the loser is out, so the match ends) or the next round starts. */
-	private void roundWon(UUID winner, UUID loser) {
+	protected void roundWon(UUID winner, UUID loser) {
 		int wins = roundWins.merge(winner, 1, Integer::sum);
 		if (wins >= format.roundsToWin()) {
 			ServerPlayer lp = player(loser);

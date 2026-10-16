@@ -65,24 +65,10 @@ public final class StatsMenu extends Screen {
 				.lore(Lang.lore(viewer, "menu.stats.streak_best", o.bestStreak));
 		c.set(24, streak.build());
 
-		// Duels, then 1v2 and 1v3
-		List<GameMode> fights = new java.util.ArrayList<>(List.of(GameMode.duels()));
-		fights.addAll(List.of(GameMode.teamFights()));
-		int fightStart = 31 - fights.size() / 2;
-		for (int i = 0; i < fights.size(); i++) {
-			c.set(fightStart + i, modeIcon(p, fights.get(i)).build());
-		}
-		// Nine party games on the fifth row, the others next to the buttons on the last row
-		GameMode[] parties = GameMode.parties();
-		int[] extra = {46, 52, 45, 53};
-		int row = Math.min(9, parties.length);
-		int start = 40 - row / 2;
-		for (int i = 0; i < parties.length; i++) {
-			int slot = i < row ? start + i : (i - row < extra.length ? extra[i - row] : -1);
-			if (slot >= 0) {
-				c.set(slot, modeIcon(p, parties[i]).build());
-			}
-		}
+		// Every mode on its own page (there are too many for this one)
+		c.set(31, Icon.of(Items.BOOK).name(Lang.item(viewer, "menu.stats.per_mode"))
+				.lore(Lang.loreLines(viewer, "menu.stats.per_mode.lore")).build(),
+				click -> new ModeStatsMenu(viewer, target).open());
 
 		if (self) {
 			c.set(47, Icon.of(Items.NAME_TAG).name(Lang.item(viewer, "menu.titles"))
@@ -97,6 +83,10 @@ public final class StatsMenu extends Screen {
 	}
 
 	private java.util.List<Component> lines(ModeStats s) {
+		return lines(viewer, s);
+	}
+
+	static java.util.List<Component> lines(ServerPlayer viewer, ModeStats s) {
 		return java.util.List.of(
 				Lang.lore(viewer, "menu.stats.wins", s.wins),
 				Lang.lore(viewer, "menu.stats.losses", s.losses),
@@ -108,9 +98,9 @@ public final class StatsMenu extends Screen {
 				Lang.lore(viewer, "menu.stats.streak_best", s.bestStreak));
 	}
 
-	private Icon modeIcon(PlayerProfile p, GameMode m) {
+	static Icon modeIcon(ServerPlayer viewer, PlayerProfile p, GameMode m) {
 		ModeStats s = p.peek(m);
-		Icon icon = Icon.of(Icons.mode(m)).name(Lang.item(viewer, Icons.modeKey(m))).lore(lines(s));
+		Icon icon = Icon.of(Icons.mode(m)).name(Lang.item(viewer, Icons.modeKey(m))).lore(lines(viewer, s));
 		if (m == GameMode.TOURNAMENT) {
 			icon.lore(Component.empty()).lore(Lang.lore(viewer, "menu.stats.tournaments_won", p.tournamentsWon));
 		}

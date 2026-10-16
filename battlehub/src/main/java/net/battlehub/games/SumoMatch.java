@@ -21,6 +21,7 @@ public final class SumoMatch extends PartyMatch {
 		return PartyLayouts.sumo(theme, random);
 	}
 
+
 	@Override
 	protected boolean damageAllowed(ServerPlayer victim, DamageSource source, ServerPlayer attacker) {
 		// Only punches from other players: they push, Resistance makes them harmless.

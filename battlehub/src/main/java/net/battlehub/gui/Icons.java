@@ -29,6 +29,12 @@ public final class Icons {
 			case PROP_HUNT -> Items.BARREL;
 			case ONE_V_TWO -> Items.SHIELD;
 			case ONE_V_THREE -> Items.NETHERITE_SWORD;
+			case BRIDGE -> Ids.item("minecraft:blue_terracotta");
+			case BOXING -> Items.IRON_CHESTPLATE;
+			case BUILD_UHC -> Items.LAVA_BUCKET;
+			case SPLEEF -> Items.DIAMOND_SHOVEL;
+			case SKYWARS -> Ids.item("minecraft:grass_block");
+			case MURDER_MYSTERY -> Items.IRON_SWORD;
 		};
 	}
 

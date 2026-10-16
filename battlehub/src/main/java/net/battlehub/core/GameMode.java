@@ -9,6 +9,12 @@ public enum GameMode {
 	MACE(Category.DUEL, false, 2, 2),
 	BOW(Category.DUEL, true, 2, 2),
 	CROSSBOW(Category.DUEL, true, 2, 2),
+	/** Two islands with a goal each and a bridge to build between them; jump into the other goal to score. */
+	BRIDGE(Category.DUEL, false, 2, 2),
+	/** No damage: the first to land 100 hits wins. */
+	BOXING(Category.DUEL, false, 2, 2),
+	/** Build, buckets, golden apples and no natural healing. */
+	BUILD_UHC(Category.DUEL, false, 2, 2),
 	BOW_SPLEEF(Category.PARTY, true, 2, 16),
 	TNT_RUN(Category.PARTY, false, 2, 16),
 	SUMO(Category.PARTY, false, 2, 16),
@@ -23,6 +29,12 @@ public enum GameMode {
 	BED_WARS(Category.PARTY, false, 2, 16),
 	/** Hunters look for props hidden as blocks. */
 	PROP_HUNT(Category.PARTY, false, 2, 16),
+	/** Dig the snow away under the others with a shovel; the last one standing wins. */
+	SPLEEF(Category.PARTY, false, 2, 16),
+	/** Everyone on their own island with chests; loot, bridge over and be the last one alive. */
+	SKYWARS(Category.PARTY, false, 2, 12),
+	/** One murderer, one detective, the rest innocent: find the murderer before everyone is gone. */
+	MURDER_MYSTERY(Category.PARTY, false, 4, 16),
 	/** One player against a team of two, with a sword, axe or mace kit. */
 	ONE_V_TWO("1v2", Category.TEAM, false, 3, 3),
 	/** One player against a team of three. */
@@ -102,16 +114,35 @@ public enum GameMode {
 	}
 
 	public static GameMode[] duels() {
+		return new GameMode[] {SWORD, AXE, MACE, BOW, CROSSBOW, BRIDGE, BOXING, BUILD_UHC};
+	}
+
+	/** Duels that are only a kit (no rules of their own): these can be tournament kits. */
+	public static GameMode[] kitDuels() {
 		return new GameMode[] {SWORD, AXE, MACE, BOW, CROSSBOW};
 	}
 
+	public boolean isKitDuel() {
+		for (GameMode m : kitDuels()) {
+			if (m == this) return true;
+		}
+		return false;
+	}
+
+	/** Duels with rules of their own (the Duel Games menu). */
+	public static GameMode[] duelGames() {
+		return new GameMode[] {BRIDGE, BOXING, BUILD_UHC};
+	}
+
 	public static GameMode[] parties() {
-		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, FFA, TOURNAMENT, BED_WARS, PROP_HUNT};
+		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, FFA, TOURNAMENT, BED_WARS, PROP_HUNT,
+				SPLEEF, SKYWARS, MURDER_MYSTERY};
 	}
 
 	/** The Party Games menu (Free for All is under PvP). */
 	public static GameMode[] partyMenu() {
-		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, TOURNAMENT, BED_WARS, PROP_HUNT};
+		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, TOURNAMENT, BED_WARS, PROP_HUNT,
+				SPLEEF, SKYWARS, MURDER_MYSTERY};
 	}
 
 	public static GameMode[] teamFights() {

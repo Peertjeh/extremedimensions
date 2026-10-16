@@ -17,6 +17,7 @@ import net.battlehub.gui.Menus;
 import net.battlehub.lang.Lang;
 import net.battlehub.lobby.HubItems;
 import net.battlehub.match.DuelMatch;
+import net.battlehub.match.Duels;
 import net.battlehub.match.Matches;
 import net.battlehub.progression.Ranks;
 import net.battlehub.session.Sessions;
@@ -258,7 +259,7 @@ public final class Queues {
 		SINCE.remove(b.getUUID());
 		PlayAgain.forget(a.getUUID());
 		PlayAgain.forget(b.getUUID());
-		DuelMatch m = new DuelMatch(Matches.newId(), mode, ranked, format, challenge, server, a, b);
+		DuelMatch m = Duels.create(Matches.newId(), mode, ranked, format, challenge, server, a, b);
 		if (!Matches.start(m)) {
 			Sessions.toLobby(a.getUUID());
 			Sessions.toLobby(b.getUUID());

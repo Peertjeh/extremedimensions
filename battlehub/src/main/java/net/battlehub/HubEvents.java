@@ -60,6 +60,7 @@ public final class HubEvents {
 			net.battlehub.fx.Killfeed.clear();
 			net.battlehub.fx.Sounds.clear();
 			net.battlehub.fx.ResourcePack.stop();
+			net.battlehub.arena.CustomMaps.clear();
 			net.battlehub.lobby.DoubleJump.clear();
 			net.battlehub.fair.Afk.clear();
 			net.battlehub.fair.AntiCheat.clear();
@@ -192,6 +193,7 @@ public final class HubEvents {
 		net.battlehub.progression.Seasons.init(server);
 		net.battlehub.social.Clans.load(server);
 		net.battlehub.fx.ResourcePack.start(server);
+		net.battlehub.arena.CustomMaps.load(server);
 	}
 
 	private static void stopping(MinecraftServer server) {

@@ -23,13 +23,13 @@ public final class DuelModeMenu extends Screen {
 
 	@Override
 	public int rows() {
-		return 3;
+		return 4;
 	}
 
 	@Override
 	public void draw(Canvas c) {
-		int[] slots = {11, 12, 13, 14, 15};
 		GameMode[] modes = GameMode.duels();
+		int[] slots = net.battlehub.core.MenuSlots.centered(modes.length, 1, 5);
 		for (int i = 0; i < modes.length; i++) {
 			GameMode m = modes[i];
 			c.set(slots[i], Icon.of(Icons.mode(m)).name(Lang.item(viewer, Icons.modeKey(m)))
@@ -41,7 +41,7 @@ public final class DuelModeMenu extends Screen {
 						Challenges.send(viewer, target, m);
 					});
 		}
-		c.set(22, FormatButton.icon(viewer), click -> FormatButton.toggle(viewer, () -> new DuelModeMenu(viewer, target).open()));
+		c.set(31, FormatButton.icon(viewer), click -> FormatButton.toggle(viewer, () -> new DuelModeMenu(viewer, target).open()));
 		c.fill();
 	}
 }

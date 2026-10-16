@@ -69,7 +69,8 @@ public final class Arena {
 
 	/** Box that holds everything the arena built, plus room for projectiles. */
 	public AABB bounds() {
-		if (bp.isEmpty()) {
+		if (bp.minX() > bp.maxX()) {
+			// Nothing placed and no room reserved
 			return new AABB(origin).inflate(32);
 		}
 		return new AABB(origin.getX() + bp.minX(), origin.getY() + bp.minY(), origin.getZ() + bp.minZ(),

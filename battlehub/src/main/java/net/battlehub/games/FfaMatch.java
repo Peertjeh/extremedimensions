@@ -68,6 +68,7 @@ public final class FfaMatch extends PartyMatch {
 		return PartyLayouts.ffa(theme, random);
 	}
 
+
 	/** Spread over the spawn ring. */
 	@Override
 	protected Arena.Point spawnPoint(UUID id, int index) {

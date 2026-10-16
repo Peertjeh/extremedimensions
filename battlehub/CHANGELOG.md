@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.12.0
+
+### Added
+* **The Bridge**, **Boxing** and **Build UHC**: duel games with their own rules, in a new Duel Games menu,
+  with queues, challenges, ranked, practice against bots and their own ELO.
+* **Spleef**, **SkyWars** and **Murder Mystery**: three new party games. SkyWars loot is set in `skywars.json`.
+* **Map vote** in every party game lobby: any map, a theme, or a hand-built map.
+* **Hand-built maps**: structure files (.nbt) in `config/battlehub/maps/<mode>/` with structure-block
+  markers for spawns and game spots.
+* Stats per mode moved to their own page (there are 24 modes now).
+
 ## 1.11.0
 
 ### Added

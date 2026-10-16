@@ -34,7 +34,7 @@ public final class PracticeMenu extends Screen {
 
 	@Override
 	public int rows() {
-		return 4;
+		return 5;
 	}
 
 	@Override
@@ -56,9 +56,12 @@ public final class PracticeMenu extends Screen {
 					});
 			slot += 2;
 		}
-		slot = 19;
+		java.util.List<GameMode> all = new java.util.ArrayList<>(java.util.List.of(GameMode.duels()));
+		all.addAll(java.util.List.of(GameMode.teamFights()));
+		int[] slots = net.battlehub.core.MenuSlots.centered(all.size(), 2, 7);
+		int at = 0;
 		for (GameMode m : GameMode.duels()) {
-			c.set(slot++, Icon.of(Icons.mode(m)).name(Lang.item(viewer, Icons.modeKey(m)))
+			c.set(slots[at++], Icon.of(Icons.mode(m)).name(Lang.item(viewer, Icons.modeKey(m)))
 					.lore(Lang.lore(viewer, "menu.practice.duel", Lang.tr(viewer, "bots.level." + chosen.id())))
 					.lore(Lang.lore(viewer, "menu.practice.click")).clean().build(),
 					click -> {
@@ -67,7 +70,7 @@ public final class PracticeMenu extends Screen {
 					});
 		}
 		for (GameMode m : GameMode.teamFights()) {
-			c.set(slot++, Icon.of(Items.PLAYER_HEAD).count(m.opponents()).name(Lang.item(viewer, Icons.modeKey(m)))
+			c.set(slots[at++], Icon.of(Items.PLAYER_HEAD).count(m.opponents()).name(Lang.item(viewer, Icons.modeKey(m)))
 					.lore(Lang.lore(viewer, "menu.practice.team", m.opponents(), Lang.tr(viewer, "bots.level." + chosen.id())))
 					.lore(Lang.lore(viewer, "menu.practice.click")).clean().build(),
 					click -> {

@@ -159,8 +159,14 @@ class GameRulesTest {
 			assertEquals(m, GameMode.byId(m.id()));
 		}
 		assertNull(GameMode.byId("nope"));
-		assertEquals(5, GameMode.duels().length);
-		assertEquals(11, GameMode.parties().length);
+		assertEquals(8, GameMode.duels().length);
+		assertEquals(5, GameMode.kitDuels().length);
+		assertEquals(14, GameMode.parties().length);
+		assertTrue(GameMode.SWORD.isKitDuel());
+		assertFalse(GameMode.BRIDGE.isKitDuel());
+		assertTrue(GameMode.BRIDGE.isDuel());
+		assertEquals(GameMode.MURDER_MYSTERY, GameMode.byId("murder_mystery"));
+		assertEquals(4, GameMode.MURDER_MYSTERY.defaultMinPlayers());
 		assertEquals("1v2", GameMode.ONE_V_TWO.id());
 		assertEquals(GameMode.ONE_V_THREE, GameMode.byId("1v3"));
 		assertEquals(3, GameMode.ONE_V_THREE.opponents());

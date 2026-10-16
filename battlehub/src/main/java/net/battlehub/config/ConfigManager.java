@@ -28,6 +28,7 @@ public final class ConfigManager {
 	private static BedWarsConfig bedwars = new BedWarsConfig().normalize();
 	private static PropHuntConfig prophunt = new PropHuntConfig().normalize();
 	private static ProgressConfig progress = new ProgressConfig().normalize();
+	private static SkyWarsConfig skywars = new SkyWarsConfig().normalize();
 
 	public static Path dir() {
 		return FabricLoader.getInstance().getConfigDir().resolve(BattleHub.MOD_ID);
@@ -59,6 +60,10 @@ public final class ConfigManager {
 
 	public static ProgressConfig progress() {
 		return progress;
+	}
+
+	public static SkyWarsConfig skywars() {
+		return skywars;
 	}
 
 	/** (Re)loads every file. A broken file keeps the previous values and is reported in the log. */
@@ -115,6 +120,13 @@ public final class ConfigManager {
 		if (pr != null) {
 			progress = pr.normalize();
 			write("progress.json", progress);
+		} else {
+			ok = false;
+		}
+		SkyWarsConfig sw = read("skywars.json", SkyWarsConfig.class, SkyWarsConfig::new);
+		if (sw != null) {
+			skywars = sw.normalize();
+			write("skywars.json", skywars);
 		} else {
 			ok = false;
 		}

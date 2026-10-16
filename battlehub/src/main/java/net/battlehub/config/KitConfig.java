@@ -90,6 +90,20 @@ public final class KitConfig {
 		m.put("prophunt_hunter", armor(new Kit().add(i("iron_sword", 1, "0")).add(i("bow", 1, "1")), "chainmail")
 				.effect("minecraft:saturation", 0));
 		m.put("prophunt_prop", new Kit().effect("minecraft:saturation", 0));
+		// The Bridge: clay in the team colour is handed out by the game
+		m.put("bridge", armor(new Kit().add(i("iron_sword", 1, "0")).add(i("bow", 1, "1")).add(i("diamond_pickaxe", 1, "2")
+				.ench("minecraft:efficiency", 2)).add(i("golden_apple", 8, "5")).add(i("arrow", 1, "8")), "leather"));
+		m.put("boxing", new Kit().add(i("diamond_sword", 1, "0").ench("minecraft:sharpness", 1)).effect("minecraft:speed", 1)
+				.effect("minecraft:resistance", 4).effect("minecraft:saturation", 0));
+		m.put("build_uhc", armor(new Kit().add(i("diamond_sword", 1, "0").ench("minecraft:sharpness", 2))
+				.add(i("fishing_rod", 1, "1")).add(i("bow", 1, "2").ench("minecraft:power", 2))
+				.add(i("golden_apple", 6, "3")).add(i("lava_bucket", 1, "4")).add(i("water_bucket", 1, "5"))
+				.add(i("cobblestone", 64, "6")).add(i("oak_planks", 64, "7")).add(i("diamond_axe", 1, "8"))
+				.add(i("arrow", 32, "9")).add(i("diamond_pickaxe", 1, "10")).add(i("lava_bucket", 1, "11"))
+				.add(i("water_bucket", 1, "12")).add(i("cooked_beef", 16, "13")), "diamond"));
+		m.put("spleef", new Kit().add(i("diamond_shovel", 1, "0").ench("minecraft:efficiency", 5)).effect("minecraft:saturation", 0));
+		m.put("skywars", new Kit());
+		m.put("murder_mystery", new Kit().effect("minecraft:saturation", 0));
 		return m;
 	}
 

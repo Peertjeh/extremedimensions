@@ -29,14 +29,15 @@ public final class LmsMatch extends PartyMatch {
 
 	public LmsMatch(int id, MinecraftServer server, List<ServerPlayer> players) {
 		super(id, GameMode.LMS, server, players);
+		shrink = new BorderShrink(game().setting("borderStart", 80), game().setting("borderEnd", 8),
+				(int) game().setting("borderDelaySeconds", 45) * 20, (int) game().setting("borderShrinkSeconds", 180) * 20);
 	}
 
 	@Override
 	protected Blueprint design(Theme theme) {
-		shrink = new BorderShrink(game().setting("borderStart", 80), game().setting("borderEnd", 8),
-				(int) game().setting("borderDelaySeconds", 45) * 20, (int) game().setting("borderShrinkSeconds", 180) * 20);
 		return PartyLayouts.lms(theme, random);
 	}
+
 
 	private void sendBorder(ServerPlayer p) {
 		p.connection.send(new ClientboundInitializeBorderPacket(border));

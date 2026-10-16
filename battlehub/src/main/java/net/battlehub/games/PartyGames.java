@@ -27,7 +27,7 @@ public final class PartyGames {
 	public static Match create(GameMode mode, MinecraftServer server, List<ServerPlayer> players, java.util.Map<String, String> votes) {
 		String option = votes.getOrDefault("", "");
 		int id = Matches.newId();
-		return switch (mode) {
+		Match m = switch (mode) {
 			case BOW_SPLEEF -> new BowSpleefMatch(id, server, players);
 			case TNT_RUN -> new TntRunMatch(id, server, players);
 			case SUMO -> new SumoMatch(id, server, players);
@@ -40,7 +40,14 @@ public final class PartyGames {
 			case TOURNAMENT -> null;
 			case BED_WARS -> new net.battlehub.games.bedwars.BedWarsMatch(id, server, players, votes.getOrDefault("format", ""));
 			case PROP_HUNT -> new net.battlehub.games.prophunt.PropHuntMatch(id, server, players);
+			case SPLEEF -> new SpleefMatch(id, server, players);
+			case SKYWARS -> new SkyWarsMatch(id, server, players);
+			case MURDER_MYSTERY -> new MurderMysteryMatch(id, server, players);
 			default -> null;
 		};
+		if (m != null) {
+			m.chooseMap(votes.getOrDefault("map", ""));
+		}
+		return m;
 	}
 }

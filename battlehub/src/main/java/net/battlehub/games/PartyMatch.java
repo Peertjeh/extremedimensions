@@ -75,6 +75,7 @@ public abstract class PartyMatch extends Match {
 		p.getFoodData().setFoodLevel(20);
 		p.clearFire();
 		Kits.give(p, kit(), leatherColor(p.getUUID()));
+		afterKit(p);
 		Msg.sound(p, SoundEvents.ENDERMAN_TELEPORT, 0.6f, 1.2f);
 		onRespawned(p);
 	}

@@ -171,6 +171,14 @@ remembered). In a best of 3 the loser of a round gives the opponent a point; bot
 spawn with a fresh kit and a short countdown. When a round's time runs out, more health wins it. The
 series counts as one match for stats, coins and ELO. Queues are separate per format.
 
+### Duel games: The Bridge, Boxing, Build UHC
+In their own menu (Duel Games), with queues, challenges, ranked, practice against bots and their own ELO:
+* **The Bridge**: red against blue, each on an island with a goal. Build across with clay and jump into the
+  other goal to score; dying only sends you home. First to five goals wins.
+* **Boxing**: no damage, only knockback; the first to land 100 hits wins the round. Combos are shown.
+* **Build UHC**: blocks, lava and water buckets, a rod, a bow and golden apples. No natural healing: only
+  golden apples heal. Only blocks players placed can be broken.
+
 ### Play again
 After every match a **[Play again]** button appears in chat and a lime dye in your first hotbar slot,
 for 30 seconds. It queues you for the same mode, format and ranked setting, asks the same opponent for a
@@ -184,12 +192,35 @@ for 30 seconds. It queues you for the same mode, format and ranked setting, asks
 * **Capture The Flag**: red against blue, three captures to win, respawns after a short delay.
 * **Parkour Race**: a new course every race, with checkpoints and a timer; ranked by finish time.
 * **Last Man Standing**: free-for-all inside a shrinking border.
+* **Spleef**: dig the snow away under the others with a fast shovel; every block gives a snowball to push with.
+* **SkyWars** (2–12): everyone on their own island with a chest, stepping-stone islands and a middle island
+  with the best loot (`skywars.json`). Build, break, fight; whoever dies drops everything.
+* **Murder Mystery** (4–16): one murderer (a sword after ten seconds, one hit kills), one detective (a bow
+  with an arrow back after every shot), the rest innocent. Gold lies around: ten gold buys a bow. Shoot an
+  innocent and you die too. The innocents win when the murderer is shot or time runs out.
 * **Bed Wars** and **Prop Hunt**: see below.
 * **Free for All** (in the PvP menu): everyone against everyone with respawns and spawn protection; the
   first to the kill target (15) wins, or the most kills when time runs out.
 
 Each game has a lobby with a minimum and maximum player count. A countdown starts once the minimum
 is reached, and gets shorter when the lobby is full.
+
+**Map vote**: in every party game lobby you can vote for the map: any, one of the themes, or a hand-built map.
+The most votes win.
+
+### Hand-built maps
+Build a map, save it with a structure block and put the `.nbt` file in `config/battlehub/maps/<mode id>/`
+(or `maps/all/` for every game that takes hand-built maps), then `/battlehub reload`. Mark the spots with
+structure blocks in **Data** mode: `spawn` (or `spawn:90` to face west; `0` faces south), `spectator`, and the
+game's own spots. The markers are taken out when the map is placed.
+* Duels, Boxing, Build UHC, Free for All, Last Man Standing, Sumo, Spleef, SkyWars, Murder Mystery: spawns
+  (duels need two). SkyWars fills chests marked `chest` and `center_chest`; Murder Mystery drops gold on
+  `gold` spots (anywhere on the floor without them); Build UHC builds inside `build_min`/`build_max` (the whole
+  map without them).
+* The Bridge: two spawns (red first) plus `goal_red`, `goal_blue`, `build_min` and `build_max`.
+* King of the Hill: spawns plus `zone`.
+
+Without a vote, a hand-built map is used half of the time when there is one (`arenas.customMapChance`).
 
 ### Bed Wars (2–16 players)
 In the lobby you vote for **solo** (everyone for themselves) or **duos** (teams of two). Every player or
@@ -331,8 +362,9 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/battlehub coins <player>` | admin | Show a player's coins |
 | `/battlehub coins give\|take\|set <player> <amount>` | admin | Change a player's coins (also offline; never below zero) |
 
-Mode ids: `sword`, `axe`, `mace`, `bow`, `crossbow`, `bow_spleef`, `tnt_run`, `sumo`, `koth`, `ctf`,
-`parkour`, `lms`, `ffa`, `tournament`, `bed_wars`, `prop_hunt`, `1v2`, `1v3`.
+Mode ids: `sword`, `axe`, `mace`, `bow`, `crossbow`, `bridge`, `boxing`, `build_uhc`, `bow_spleef`, `tnt_run`,
+`sumo`, `koth`, `ctf`, `parkour`, `lms`, `ffa`, `tournament`, `bed_wars`, `prop_hunt`, `spleef`, `skywars`,
+`murder_mystery`, `1v2`, `1v3`.
 
 ---
 
@@ -352,7 +384,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   * `elo`: start rating, K-factor, floor, tier thresholds, ranked matchmaking window
   * `levels`: XP curve (`baseXp`, `increment`, `growth`, `maxLevel`) and level bonus coins
   * `streaks.milestones`: which win streaks are announced
-  * `arenas`: number of slots, slot spacing, floor height, blocks built per tick, **themes per mode**
+  * `arenas`: number of slots, slot spacing, floor height, blocks built per tick, **themes per mode**, and how
+    often a hand-built map is used without a vote (`customMapChance`)
   * `seasons`: on/off, the start date of season 1, the length in days, the number of placement matches, how
     much of a rating stays at a new season, the coins per tier, the size of the Netherite divisions
   * `fairness`: the leave penalty and its waiting times, the idle limits in matches and queues, the teaming
@@ -395,6 +428,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
 * **`progress.json`**: the number of daily and weekly quests, the quests (period, goal, mode, target, coins,
   XP, pass XP), the login streak coins, the season pass (tiers, XP per tier, per match and per win, coins per
   tier and every fifth tier, coins when the cosmetic is already owned), achievement coins and prestige on/off
+* **`skywars.json`**: the loot of the island chests and of the middle chests, one line per item:
+  `"minecraft:iron_sword 1 x3"` (item, count or `min-max`, `x` weight)
 * **`kits.json`**: items per kit with slot (`0`–`35`, `head`, `chest`, `legs`, `feet`, `offhand`),
   count, enchantments, unbreakable, leather colour, plus potion effects
 * **`titles.json`**: titles with display text (`&` colour codes) and requirement:

@@ -173,7 +173,7 @@ final class PartyTests {
 	}
 
 	/** B, C and D fall off; A is the last one standing. */
-	private static void fallOff(Script s) {
+	static void fallOff(Script s) {
 		s.run("B, C and D fall off", () -> {
 			for (String n : new String[] {"BHTestB", "BHTestC", "BHTestD"}) {
 				ServerPlayer pl = p(n);

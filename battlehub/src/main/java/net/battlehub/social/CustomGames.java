@@ -151,7 +151,7 @@ public final class CustomGames {
 		}
 		Match m;
 		if (l.mode.isDuel()) {
-			m = new DuelMatch(Matches.newId(), l.mode, false, DuelFormat.BO1, true, server, players.get(0), players.get(1));
+			m = net.battlehub.match.Duels.create(Matches.newId(), l.mode, false, DuelFormat.BO1, true, server, players.get(0), players.get(1));
 		} else {
 			m = PartyGames.create(l.mode, server, players, l.options);
 		}

@@ -154,6 +154,12 @@ public final class PartyGameMenu extends Screen {
 		} else if (mode == GameMode.BED_WARS) {
 			bedWarsFormat(c);
 		}
+		if (mode != GameMode.TOURNAMENT) {
+			c.set(13, Icon.of(Items.FILLED_MAP).name(Lang.item(viewer, "menu.mapvote.button"))
+					.lore(Lang.lore(viewer, "menu.mapvote.leading", MapVoteMenu.leading(viewer, mode)))
+					.lore(Lang.loreLines(viewer, "menu.mapvote.button.lore")).clean().build(),
+					click -> new MapVoteMenu(viewer, mode).open());
+		}
 		c.set(15, Icon.of(Items.NAME_TAG).name(Lang.item(viewer, "menu.party.invite"))
 				.lore(Lang.loreLines(viewer, "menu.party.invite.lore")).build(),
 				click -> Queues.challengeMenu(viewer, mode));

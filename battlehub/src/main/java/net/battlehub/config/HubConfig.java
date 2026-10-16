@@ -162,6 +162,8 @@ public final class HubConfig {
 		public int blocksPerTick = 40000;
 		/** Arena themes per mode (forest, castle, nether, ice, sky); one is picked at random per match. */
 		public Map<String, List<String>> themes = defaultThemes();
+		/** Without a map vote: the chance that a hand-built map (config/battlehub/maps) is used, when there is one. */
+		public double customMapChance = 0.5;
 	}
 
 	/** Floating leaderboards above the wall of the lobby BattleHub builds (not at a lobby set with /battlehub setlobby). */
@@ -355,7 +357,7 @@ public final class HubConfig {
 		public boolean enabled = true;
 		public double coinMultiplier = 2.0;
 		public List<String> modes = new ArrayList<>(List.of("ffa", "bed_wars", "prop_hunt", "sumo", "tnt_run", "bow_spleef",
-				"koth", "ctf", "lms", "parkour", "1v2", "1v3"));
+				"koth", "ctf", "lms", "parkour", "1v2", "1v3", "spleef", "skywars", "murder_mystery"));
 	}
 
 	/** Characters on the lobby plaza that take you to a game. */
@@ -466,6 +468,14 @@ public final class HubConfig {
 		// Bed Wars and Prop Hunt keep their own settings in bedwars.json and prophunt.json
 		m.put("bed_wars", new Game(2, 16, 1800, "bedwars"));
 		m.put("prop_hunt", new Game(3, 16, 0, "prophunt_hunter"));
+		// Phase 6 modes
+		m.put("bridge", new Game(2, 2, 900, "bridge").with("goalsToWin", 5));
+		m.put("boxing", new Game(2, 2, 300, "boxing").with("hitsToWin", 100));
+		m.put("build_uhc", new Game(2, 2, 900, "build_uhc").with("buildHeight", 20));
+		m.put("spleef", new Game(2, 16, 300, "spleef").with("layers", 2));
+		m.put("skywars", new Game(2, 12, 600, "skywars").with("islandChestRolls", 7).with("centerChestRolls", 9));
+		m.put("murder_mystery", new Game(4, 16, 300, "murder_mystery").with("goldToBow", 10).with("goldEverySeconds", 3)
+				.with("swordAfterSeconds", 10).with("arrowCooldownSeconds", 4));
 		return m;
 	}
 

@@ -83,6 +83,10 @@ public abstract class Match {
 	private boolean teleported;
 	/** Ticks of the intro flight at the start of the countdown (0: none). */
 	protected int introTicks;
+	/** The map the lobby voted for: "theme:<id>", "custom:<id>", or "" for a random one. */
+	private String mapChoice = "";
+	/** The hand-built map this match is played on, or null for a generated arena. */
+	private net.battlehub.arena.CustomMaps.Map customMap;
 	/** How the next death came about (set by {@link #handleDeath}, read by {@link #killed}): melee, arrow or other. */
 	private String nextCause = "";
 
@@ -333,7 +337,8 @@ public abstract class Match {
 			return false;
 		}
 		Theme theme = pickTheme();
-		Blueprint bp = design(theme);
+		customMap = pickCustomMap();
+		Blueprint bp = customMap != null ? customMap.blueprint() : design(theme);
 		arena = new Arena(level, slot, theme, ArenaWorld.origin(slot), bp);
 		ArenaSlots.markBuilt(slot, arena.bounds());
 		for (UUID id : participants) {
@@ -341,13 +346,49 @@ public abstract class Match {
 			ServerPlayer p = player(id);
 			if (p != null) {
 				p.closeContainer();
-				Msg.send(p, "match.preparing", Lang.tr(p, Icons.modeKey(mode)), Lang.tr(p, "theme." + theme.id()));
+				Msg.send(p, "match.preparing", Lang.tr(p, Icons.modeKey(mode)),
+						customMap != null ? Component.literal(customMap.name()) : Lang.tr(p, "theme." + theme.id()));
 				Msg.sound(p, SoundEvents.NOTE_BLOCK_PLING, 0.8f, 1.6f);
 			}
 		}
 		ArenaBuilder.build(arena, this::onBuilt);
 		return true;
 	}
+
+	/** The lobby's map vote ("theme:forest", "custom:sky_castle"; "" or "random" for any). */
+	public void chooseMap(String choice) {
+		mapChoice = choice == null ? "" : choice.trim();
+	}
+
+	/** Hand-built maps this game can use (see {@link net.battlehub.arena.MapRules}). */
+	public List<net.battlehub.arena.CustomMaps.Map> customMapOptions() {
+		return net.battlehub.arena.MapRules.maps(mode);
+	}
+
+	/** The voted custom map, or (without a vote for a theme) sometimes a random one. */
+	private net.battlehub.arena.CustomMaps.Map pickCustomMap() {
+		List<net.battlehub.arena.CustomMaps.Map> options = customMapOptions();
+		if (options.isEmpty() || mapChoice.startsWith("theme:")) {
+			return null;
+		}
+		if (mapChoice.startsWith("custom:")) {
+			String id = mapChoice.substring(7);
+			for (net.battlehub.arena.CustomMaps.Map m : options) {
+				if (m.id.equals(id)) return m;
+			}
+		}
+		return random.nextDouble() < ConfigManager.config().arenas.customMapChance ? options.get(random.nextInt(options.size())) : null;
+	}
+
+	public net.battlehub.arena.CustomMaps.Map customMap() {
+		return customMap;
+	}
+
+	/** After the arena is built (or the custom map placed), before anyone arrives. */
+	protected void onArenaReady() {}
+
+	/** After a player got the kit (start, a new round, a respawn): games add their own items. */
+	protected void afterKit(ServerPlayer p) {}
 
 	/** Whose theme list to use (a tournament uses its kit's mode). */
 	protected String themeMode() {
@@ -373,6 +414,12 @@ public abstract class Match {
 		if (options.isEmpty()) {
 			options.add(Theme.CASTLE);
 		}
+		if (mapChoice.startsWith("theme:")) {
+			Theme voted = Theme.byId(mapChoice.substring(6));
+			if (voted != null && options.contains(voted)) {
+				return voted;
+			}
+		}
 		return options.get(random.nextInt(options.size()));
 	}
 
@@ -380,6 +427,14 @@ public abstract class Match {
 		if (phase != Phase.BUILDING) {
 			return;
 		}
+		if (customMap != null) {
+			try {
+				customMap.place(arena);
+			} catch (RuntimeException e) {
+				BattleHub.LOGGER.error("Custom map {} could not be placed", customMap.id, e);
+			}
+		}
+		onArenaReady();
 		int index = 0;
 		for (UUID id : participants) {
 			ServerPlayer p = player(id);
@@ -411,6 +466,7 @@ public abstract class Match {
 		spawnOf.put(p.getUUID(), sp);
 		teleport(p, sp);
 		Kits.give(p, kit(), leatherColor(p.getUUID()));
+		afterKit(p);
 		onArrived(p, index);
 	}
 
@@ -440,6 +496,7 @@ public abstract class Match {
 			resetForPlay(p);
 			teleport(p, sp);
 			Kits.give(p, kit(), leatherColor(id));
+			afterKit(p);
 		}
 		runTicks = 0;
 		introTicks = 0;

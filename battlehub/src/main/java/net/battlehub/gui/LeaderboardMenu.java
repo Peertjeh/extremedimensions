@@ -31,24 +31,24 @@ public final class LeaderboardMenu extends Screen {
 
 	@Override
 	public int rows() {
-		return 4;
+		return 5;
 	}
 
 	@Override
 	public void draw(Canvas c) {
 		int start = Ranks.startElo();
-		int[] eloSlots = {11, 12, 13, 14, 15};
 		GameMode[] duels = GameMode.duels();
+		int[] eloSlots = net.battlehub.core.MenuSlots.centered(duels.length, 1, 5);
 		for (int i = 0; i < duels.length; i++) {
 			GameMode m = duels[i];
 			// Only players who played ranked in this mode are listed.
 			c.set(eloSlots[i], board(Icons.mode(m), Lang.item(viewer, "menu.leaderboards.elo", Lang.tr(viewer, Icons.modeKey(m))),
 					p -> p.elo.containsKey(m.id()) ? p.elo(m, start) : Long.MIN_VALUE, Long.MIN_VALUE, true, m).build());
 		}
-		c.set(19, board(Items.DIAMOND, Lang.item(viewer, "menu.leaderboards.wins"), p -> p.overall.wins, 0, false, null).build());
-		c.set(21, board(Items.EXPERIENCE_BOTTLE, Lang.item(viewer, "menu.leaderboards.level"), p -> p.xp, 0, false, null).build());
-		c.set(23, board(Items.BLAZE_POWDER, Lang.item(viewer, "menu.leaderboards.streak"), p -> p.overall.bestStreak, 0, false, null).build());
-		c.set(25, board(Items.IRON_SWORD, Lang.item(viewer, "menu.leaderboards.kills"), p -> p.overall.kills, 0, false, null).build());
+		c.set(28, board(Items.DIAMOND, Lang.item(viewer, "menu.leaderboards.wins"), p -> p.overall.wins, 0, false, null).build());
+		c.set(30, board(Items.EXPERIENCE_BOTTLE, Lang.item(viewer, "menu.leaderboards.level"), p -> p.xp, 0, false, null).build());
+		c.set(32, board(Items.BLAZE_POWDER, Lang.item(viewer, "menu.leaderboards.streak"), p -> p.overall.bestStreak, 0, false, null).build());
+		c.set(34, board(Items.IRON_SWORD, Lang.item(viewer, "menu.leaderboards.kills"), p -> p.overall.kills, 0, false, null).build());
 		c.back(back);
 		c.fill();
 	}

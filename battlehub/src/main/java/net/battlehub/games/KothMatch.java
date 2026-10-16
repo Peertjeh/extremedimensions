@@ -28,6 +28,7 @@ public final class KothMatch extends PartyMatch {
 
 	public KothMatch(int id, MinecraftServer server, List<ServerPlayer> players) {
 		super(id, GameMode.KOTH, server, players);
+		score = new KothScore((int) Math.max(1, game().setting("pointsPerSecond", 1)), false);
 	}
 
 	private int target() {
@@ -36,9 +37,10 @@ public final class KothMatch extends PartyMatch {
 
 	@Override
 	protected Blueprint design(Theme theme) {
-		score = new KothScore((int) Math.max(1, game().setting("pointsPerSecond", 1)), false);
 		return PartyLayouts.koth(theme, random);
 	}
+
+
 
 	@Override
 	protected void onKilled(ServerPlayer victim, ServerPlayer killer) {

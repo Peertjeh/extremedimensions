@@ -320,6 +320,7 @@ public final class HubCommands {
 		Ranks.reload();
 		// The pack is built again (new overlay files, other settings); players are offered it on their next visit
 		net.battlehub.fx.ResourcePack.start(src.getServer());
+		net.battlehub.arena.CustomMaps.load(src.getServer());
 		ServerPlayer p = src.getPlayer();
 		src.sendSuccess(() -> Lang.tr(p, ok ? "admin.reloaded" : "admin.reload_failed"), true);
 		BattleHub.LOGGER.info("Configuration reloaded ({})", ok ? "ok" : "with errors");

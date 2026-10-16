@@ -23,7 +23,7 @@ public final class PartyGamesMenu extends Screen {
 
 	@Override
 	public int rows() {
-		return 4;
+		return 5;
 	}
 
 	@Override
@@ -34,12 +34,11 @@ public final class PartyGamesMenu extends Screen {
 	@Override
 	public void draw(Canvas c) {
 		GameMode[] games = GameMode.partyMenu();
-		// Seven on the first row, the rest centred on the row below
-		int below = Math.max(0, games.length - 7);
+		// Seven on a row, each row centred
+		int[] slots = net.battlehub.core.MenuSlots.centered(games.length, 1, 7);
 		for (int i = 0; i < games.length; i++) {
 			GameMode m = games[i];
-			int slot = i < 7 ? 10 + i : 22 - (below - 1) + 2 * (i - 7);
-			c.set(slot, icon(viewer, m).build(), click -> new PartyGameMenu(viewer, m).open());
+			c.set(slots[i], icon(viewer, m).build(), click -> new PartyGameMenu(viewer, m).open());
 		}
 		c.back(() -> new MainMenu(viewer).open());
 		c.fill();

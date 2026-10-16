@@ -26,10 +26,10 @@ public final class Tournaments {
 	/** The kit a vote stands for ("random" or nothing: any duel kit). */
 	static GameMode kitFor(String vote) {
 		GameMode m = GameMode.byId(vote);
-		if (m != null && m.isDuel()) {
+		if (m != null && m.isKitDuel()) {
 			return m;
 		}
-		GameMode[] duels = GameMode.duels();
+		GameMode[] duels = GameMode.kitDuels();
 		return duels[RANDOM.nextInt(duels.length)];
 	}
 

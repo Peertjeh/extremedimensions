@@ -42,6 +42,14 @@ final class LayoutTests {
 		}
 		m.put("prophunt", t -> net.battlehub.arena.layout.PropHuntLayout.design(t, rnd,
 				net.battlehub.config.ConfigManager.prophunt().disguises));
+		m.put("bridge", t -> net.battlehub.arena.layout.NewLayouts.bridge(t, rnd));
+		m.put("boxing", t -> net.battlehub.arena.layout.NewLayouts.boxing(t, rnd));
+		m.put("build_uhc", t -> net.battlehub.arena.layout.NewLayouts.buildUhc(t, rnd, 20));
+		m.put("spleef", t -> net.battlehub.arena.layout.NewLayouts.snowSpleef(t, rnd, 2));
+		for (int n : new int[] {2, 6, 12}) {
+			m.put("skywars" + n, t -> net.battlehub.arena.layout.NewLayouts.skywars(t, rnd, n));
+		}
+		m.put("murder", t -> net.battlehub.arena.layout.NewLayouts.murder(t, rnd));
 		return m;
 	}
 
@@ -50,6 +58,9 @@ final class LayoutTests {
 			case "koth" -> List.of("zone");
 			case "ctf" -> List.of("flag_red", "flag_blue", "spawn_red", "spawn_blue");
 			case "prophunt" -> List.of("hunter_cage", "hunter_release");
+			case "bridge" -> List.of("goal_red", "goal_blue", "build_min", "build_max");
+			case "build_uhc" -> List.of("build_min", "build_max");
+			case "skywars2", "skywars6", "skywars12" -> List.of("chest", "center_chest");
 			default -> {
 				if (!layout.startsWith("bedwars")) yield List.of();
 				List<String> marks = new ArrayList<>(List.of("gen_diamond", "gen_emerald", "build_min", "build_max", "podium"));
