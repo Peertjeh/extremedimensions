@@ -452,8 +452,10 @@ public class BossTests {
 	public void theThornsTheEldersRaiseSinkBack(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		BlockPos ground = helper.absolutePos(new BlockPos(2, 1, 2));
-		// The test's ground is kept loaded, as a player near would keep it (raised blocks wait for loaded ground)
-		level.setChunkForced(ground.getX() >> 4, ground.getZ() >> 4, true);
+		// Someone stands near, as in a real fight: raised blocks wait for loaded ground, and a test's own ground counts
+		// as loaded only while a test looks at it, not between ticks (a forced chunk does not change that)
+		ServerPlayer watcher = TestPlayers.creative(helper, "thorn-watcher");
+		watcher.teleportTo(ground.getX() + 0.5, ground.getY() + 1, ground.getZ() - 1.5);
 		level.setBlock(ground, Blocks.STONE.defaultBlockState(), 3);
 		for (int i = 1; i <= 4; i++) {
 			level.setBlock(ground.above(i), Blocks.AIR.defaultBlockState(), 3);
@@ -469,7 +471,7 @@ public class BossTests {
 		String atStart = ElderTerrain.describe(level, ground.above(3));
 		helper.runAfterDelay(100, () -> {
 			int ticks = level.getServer().getTickCount() - serverStart;
-			level.setChunkForced(ground.getX() >> 4, ground.getZ() >> 4, false);
+			level.getServer().getPlayerList().remove(watcher);
 			check(helper, !level.getBlockState(ground.above()).is(thorn) && !level.getBlockState(ground.above(3)).is(thorn)
 					&& !ElderTerrain.temporary(level, ground.above(2)), "the thorns did not sink back (%s, %s) after %s server ticks; at the start: %s; now: %s",
 					level.getBlockState(ground.above()), level.getBlockState(ground.above(3)), ticks, atStart, ElderTerrain.describe(level, ground.above(3)));
