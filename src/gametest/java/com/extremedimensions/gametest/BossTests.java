@@ -314,43 +314,47 @@ public class BossTests {
 		// It must not die to the needles while the rings are counted
 		p.getAbilities().invulnerable = true;
 		Runnable unforce = forceAround(helper, 3);
-		// Both steps are scheduled up front (a step scheduled from inside another upsets the test's list of steps)
-		Runnable[] after = {null};
-		helper.runAfterDelay(50, () -> {
-			if (after[0] != null) {
-				after[0].run();
+		// Every step is scheduled up front (a step scheduled from inside another upsets the test's list of steps)
+		com.extremedimensions.elder.Weaver[] weaver = {null};
+		int[] most = {0};
+		int rings = Config.WEAVER_ULTIMATE_RINGS, seconds = Config.ELDER_ULTIMATE_SECONDS;
+		Runnable restore = () -> {
+			Config.WEAVER_ULTIMATE_RINGS = rings;
+			Config.ELDER_ULTIMATE_SECONDS = seconds;
+			p.getAbilities().invulnerable = false;
+			if (weaver[0] != null && weaver[0].isAlive()) {
+				WeaverService.fade(weaver[0]);
 			}
-		});
+			unforce.run();
+		};
 		helper.runAfterDelay(5, () -> {
-			int arena = Config.ELDER_ARENA, rings = Config.WEAVER_ULTIMATE_RINGS, seconds = Config.ELDER_ULTIMATE_SECONDS;
+			int arena = Config.ELDER_ARENA;
 			Config.ELDER_ARENA = 0;
 			Config.WEAVER_ULTIMATE_RINGS = 2;
 			Config.ELDER_ULTIMATE_SECONDS = 6;
 			boolean came = WeaverService.summon(p, at.offset(12, 0, 0));
 			Config.ELDER_ARENA = arena;
-			com.extremedimensions.elder.Weaver w = helper.getLevel().getEntitiesOfClass(com.extremedimensions.elder.Weaver.class, p.getBoundingBox().inflate(48))
+			weaver[0] = helper.getLevel().getEntitiesOfClass(com.extremedimensions.elder.Weaver.class, p.getBoundingBox().inflate(48))
 					.stream().findFirst().orElse(null);
-			Runnable restore = () -> {
-				Config.WEAVER_ULTIMATE_RINGS = rings;
-				Config.ELDER_ULTIMATE_SECONDS = seconds;
-				p.getAbilities().invulnerable = false;
-				if (w != null && w.isAlive()) {
-					WeaverService.fade(w);
-				}
-				unforce.run();
-			};
-			if (!came || w == null) {
+			if (!came || weaver[0] == null) {
 				restore.run();
 			}
-			check(helper, came && w != null, "the Weaver did not come");
-			WeaverService.force(w, ElderBoss.ULTIMATE);
-			// Six seconds long, its rings fire a quarter of the way in (30 ticks) and sweep for half of it (60 ticks)
-			after[0] = () -> {
-				int beams = com.extremedimensions.elder.ElderStrikes.beamsOf(w);
-				restore.run();
-				check(helper, beams == 2, "its ultimate sweeps %s beams, not two rings", beams);
-				helper.succeed();
-			};
+			check(helper, came && weaver[0] != null, "the Weaver did not come");
+			WeaverService.force(weaver[0], ElderBoss.ULTIMATE);
+		});
+		// Six seconds long, its rings fire a quarter of the way in (30 ticks) and sweep for half of it (60 ticks): the
+		// beams are counted all through it, so a slow tick on a busy machine cannot make the count miss them
+		for (int t = 15; t <= 110; t += 2) {
+			helper.runAfterDelay(t, () -> {
+				if (weaver[0] != null) {
+					most[0] = Math.max(most[0], com.extremedimensions.elder.ElderStrikes.beamsOf(weaver[0]));
+				}
+			});
+		}
+		helper.runAfterDelay(115, () -> {
+			restore.run();
+			check(helper, most[0] == 2, "its ultimate swept at most %s beams at once, not two rings", most[0]);
+			helper.succeed();
 		});
 	}
 
@@ -448,6 +452,8 @@ public class BossTests {
 	public void theThornsTheEldersRaiseSinkBack(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		BlockPos ground = helper.absolutePos(new BlockPos(2, 1, 2));
+		// The test's ground is kept loaded, as a player near would keep it (raised blocks wait for loaded ground)
+		level.setChunkForced(ground.getX() >> 4, ground.getZ() >> 4, true);
 		level.setBlock(ground, Blocks.STONE.defaultBlockState(), 3);
 		for (int i = 1; i <= 4; i++) {
 			level.setBlock(ground.above(i), Blocks.AIR.defaultBlockState(), 3);
@@ -462,6 +468,7 @@ public class BossTests {
 		int serverStart = level.getServer().getTickCount();
 		helper.runAfterDelay(100, () -> {
 			int ticks = level.getServer().getTickCount() - serverStart;
+			level.setChunkForced(ground.getX() >> 4, ground.getZ() >> 4, false);
 			check(helper, !level.getBlockState(ground.above()).is(thorn) && !level.getBlockState(ground.above(3)).is(thorn)
 					&& !ElderTerrain.temporary(level, ground.above(2)), "the thorns did not sink back (%s, %s, still held: %s) after %s server ticks",
 					level.getBlockState(ground.above()), level.getBlockState(ground.above(3)), ElderTerrain.temporary(level, ground.above(3)), ticks);
