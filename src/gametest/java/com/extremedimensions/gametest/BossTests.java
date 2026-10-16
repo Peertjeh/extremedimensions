@@ -453,7 +453,7 @@ public class BossTests {
 			level.setBlock(ground.above(i), Blocks.AIR.defaultBlockState(), 3);
 		}
 		// A block no Elder ever raises or strews, so another test's Elder fighting nearby cannot muddle what is seen
-		net.minecraft.world.level.block.Block thorn = Blocks.CYAN_STAINED_GLASS;
+		net.minecraft.world.level.block.Block thorn = Blocks.OAK_PLANKS;
 		ElderTerrain.column(level, ground.getX() + 0.5, ground.getY() + 1, ground.getZ() + 0.5, 3, thorn, 5);
 		check(helper, level.getBlockState(ground.above()).is(thorn), "no thorns rose out of the ground");
 		check(helper, level.getBlockState(ground.above(3)).is(thorn), "the thorns did not rise three blocks");
