@@ -21,3 +21,4 @@ remappedSrc/
 
 # macos
 .DS_Store
+javac.*.args
