@@ -815,6 +815,10 @@ public class ClientShots implements FabricClientGameTest {
 
 			// Into the Seam with the trial taken up: it begins, and the timer carries its line
 			sp.getServer().runCommand("execute as @a run tether seam");
+			// On a busy machine the server can run seconds behind the client: wait until the visitor is in the Seam
+			for (int i = 0; i < 40 && !sp.getServer().computeOnServer(s -> com.extremedimensions.seam.SeamService.inSeam(player(s))); i++) {
+				ctx.waitTicks(5);
+			}
 			ctx.waitTicks(20);
 			sp.getServer().runOnServer(s -> {
 				PlayerData d = DataStore.get(player(s).getUUID());
