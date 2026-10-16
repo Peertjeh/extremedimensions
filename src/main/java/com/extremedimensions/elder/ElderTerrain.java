@@ -40,6 +40,8 @@ public final class ElderTerrain {
 		int left;
 		/** Times it may still wait for its ground to load again (each a second, an hour in all) before it is forgotten. */
 		int tries = 3600;
+		/** What the last look at its ground saw (for a test's failure message). */
+		String seen = "not looked yet";
 	}
 
 	private static final List<Temporary> TEMPORARY = new ArrayList<>();
@@ -270,7 +272,7 @@ public final class ElderTerrain {
 	public static String describe(Level level, BlockPos pos) {
 		for (Temporary t : TEMPORARY) {
 			if (t.level == level && t.pos.equals(pos)) {
-				return "ticked " + ticked + ", left " + t.left + ", tries " + t.tries + ", loaded " + level.isLoaded(pos);
+				return "ticked " + ticked + ", left " + t.left + ", tries " + t.tries + ", loaded " + level.isLoaded(pos) + ", last look: " + t.seen;
 			}
 		}
 		return "ticked " + ticked + ", not held, loaded " + level.isLoaded(pos);
@@ -288,7 +290,7 @@ public final class ElderTerrain {
 			if (--t.left > 0) {
 				continue;
 			}
-			if (!t.level.isLoaded(t.pos)) {
+			if (!loaded(t)) {
 				// Its ground is not loaded (everyone left): it sinks back once someone comes near again, not never
 				t.left = 20;
 				if (--t.tries > 0) {
@@ -300,8 +302,16 @@ public final class ElderTerrain {
 		}
 	}
 
+	/** Whether a raised block's ground is in memory (asked two ways: the chunk itself, and the level's own answer). */
+	private static boolean loaded(Temporary t) {
+		boolean chunk = t.level.getChunkSource().getChunkNow(t.pos.getX() >> 4, t.pos.getZ() >> 4) != null;
+		boolean level = t.level.isLoaded(t.pos);
+		t.seen = "at " + ticked + " chunk " + chunk + ", level " + level + ", on " + Thread.currentThread().getName();
+		return chunk || level;
+	}
+
 	private static void restore(Temporary t) {
-		if (t.level.isLoaded(t.pos) && t.level.getBlockState(t.pos).is(t.placed.getBlock())) {
+		if (loaded(t) && t.level.getBlockState(t.pos).is(t.placed.getBlock())) {
 			t.level.setBlock(t.pos, t.original, 3);
 		}
 	}
