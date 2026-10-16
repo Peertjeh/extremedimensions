@@ -349,7 +349,7 @@ final class NewModeTests {
 	/** Clearing a chest full of loot leaves no items behind (in a spot no arena uses). */
 	private static void chestClear(Script s) {
 		String tag = "arena clearing";
-		s.run(tag + ": a chest with loot and an item on the ground, then the area is cleared", () -> {
+		s.run(tag + ": a barrel full of loot in a spot no arena uses (its chunk is held, as an arena's is)", () -> {
 			net.minecraft.server.level.ServerLevel l = net.battlehub.arena.ArenaWorld.level(p(A).level().getServer());
 			BlockPos o = net.battlehub.arena.ArenaWorld.origin(net.battlehub.arena.ArenaSlots.capacity() - 1).above(40);
 			net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(o).inflate(4);
@@ -359,9 +359,17 @@ final class NewModeTests {
 			if (l.getBlockEntity(o) instanceof Container c) {
 				for (int i = 0; i < 9; i++) c.setItem(i, new ItemStack(Items.GOLD_INGOT, 16));
 			}
-			l.addFreshEntity(new net.minecraft.world.entity.item.ItemEntity(l, o.getX() + 0.5, o.getY() + 2, o.getZ() + 0.5, new ItemStack(Items.EMERALD)));
 			VARS.put("clearBox", box);
 			VARS.put("clearDone", false);
+		});
+		// A freshly loaded chunk shows its entities only after a moment; in a game the arena has long been loaded
+		s.pause(40);
+		s.run(tag + ": an item on the ground, then the area is cleared", () -> {
+			net.minecraft.server.level.ServerLevel l = net.battlehub.arena.ArenaWorld.level(p(A).level().getServer());
+			net.minecraft.world.phys.AABB box = (net.minecraft.world.phys.AABB) VARS.get("clearBox");
+			BlockPos o = BlockPos.containing(box.getCenter());
+			l.addFreshEntity(new net.minecraft.world.entity.item.ItemEntity(l, o.getX() + 0.5, o.getY() + 2, o.getZ() + 0.5, new ItemStack(Items.EMERALD)));
+			VARS.put("clearSeen", net.battlehub.arena.Loose.count(l, box.inflate(16)));
 			net.battlehub.arena.ArenaBuilder.clear(l, box, () -> VARS.put("clearDone", true));
 		});
 		s.waitFor(tag + ": done", 200, () -> Boolean.TRUE.equals(VARS.get("clearDone")));
@@ -369,7 +377,11 @@ final class NewModeTests {
 			net.minecraft.server.level.ServerLevel l = net.battlehub.arena.ArenaWorld.level(p(A).level().getServer());
 			net.minecraft.world.phys.AABB box = (net.minecraft.world.phys.AABB) VARS.get("clearBox");
 			BlockPos o = BlockPos.containing(box.getCenter());
-			boolean ok = l.getBlockState(o).isAir() && net.battlehub.arena.Loose.count(l, box.inflate(16)) == 0;
+			int left = net.battlehub.arena.Loose.count(l, box.inflate(16));
+			boolean ok = l.getBlockState(o).isAir() && left == 0 && (int) VARS.get("clearSeen") == 1;
+			if (!ok) {
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST arena clearing: block {}, {} loose entities left, {} seen before", l.getBlockState(o), left, VARS.get("clearSeen"));
+			}
 			net.battlehub.arena.ArenaChunks.release(l, box);
 			return ok;
 		});

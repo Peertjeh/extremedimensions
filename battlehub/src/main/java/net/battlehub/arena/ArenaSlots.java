@@ -59,10 +59,11 @@ public final class ArenaSlots {
 			BattleHub.LOGGER.info("Cleaning arena slot {} left over from the last run", slot);
 			AABB box = new AABB(b[0], b[1], b[2], b[3], b[4], b[5]);
 			ArenaChunks.hold(level, box);
-			ArenaBuilder.clear(level, box, () -> {
+			// Cleared a few seconds later, once the entities of the freshly loaded chunks are there to be swept too
+			net.battlehub.util.Tasks.later(60, () -> ArenaBuilder.clear(level, box, () -> {
 				ArenaChunks.release(level, box);
 				release(slot);
-			});
+			}));
 		}
 		save();
 	}
