@@ -51,6 +51,11 @@ final class BotBrain {
 	private int stuck;
 	/** Ticks left of a sidestep round something the bot ran into (a wall, cover). */
 	private int detour;
+	// The route to where the bot is going, worked out again now and then
+	private List<Vec3> path;
+	private int pathIndex;
+	private int pathAge;
+	private Vec3 pathGoal;
 	private int eating;
 	private float runYaw = Float.NaN;
 	// Parkour: the platform the bot last stood on and the pause before the next jump
@@ -111,6 +116,7 @@ final class BotBrain {
 	private void forget() {
 		target = null;
 		wander = null;
+		path = null;
 		hideSpot = null;
 		pkOn = -2;
 		eating = 0;
@@ -180,7 +186,40 @@ final class BotBrain {
 		look(yaw, pitch);
 	}
 
-	/** Walks (and sprints) towards a spot; jumps over steps. */
+	/**
+	 * The next point on the way to {@code dest}: a corner of the route round walls and cover, or {@code dest}
+	 * itself when the way is straight or no route was found. The route is worked out again every second, or
+	 * sooner when the goal moved.
+	 */
+	private Vec3 waypoint(Vec3 dest) {
+		pathAge++;
+		if (path == null || pathAge > 20 || pathGoal == null || pathGoal.distanceToSqr(dest) > 4) {
+			path = BotPath.find(level(), bot.position(), dest);
+			pathIndex = 0;
+			pathAge = 0;
+			pathGoal = dest;
+		}
+		if (path == null) {
+			return dest;
+		}
+		Vec3 pos = bot.position();
+		while (pathIndex < path.size()) {
+			Vec3 w = path.get(pathIndex);
+			double dx = w.x - pos.x;
+			double dz = w.z - pos.z;
+			if (dx * dx + dz * dz > 0.5 * 0.5 || Math.abs(w.y - pos.y) > 1.2) break;
+			pathIndex++;
+		}
+		// Look a little further along a straight stretch, so the bot walks smoothly
+		if (pathIndex + 1 < path.size()) {
+			Vec3 a = path.get(pathIndex);
+			Vec3 b = path.get(pathIndex + 1);
+			if (Math.abs(a.y - b.y) < 0.1 && a.distanceToSqr(pos) < 1.2) return b;
+		}
+		return pathIndex < path.size() ? path.get(pathIndex) : dest;
+	}
+
+	/** Walks (and sprints) towards a spot along a route round obstacles; jumps over steps. */
 	private void goTo(Vec3 dest, boolean sprint) {
 		Vec3 pos = bot.position();
 		double dx = dest.x - pos.x;
@@ -190,11 +229,15 @@ final class BotBrain {
 			bot.setSprinting(false);
 			return;
 		}
-		look(BotMath.yaw(dx, dz), 0f);
+		Vec3 next = waypoint(dest);
+		double nx = next.x - pos.x;
+		double nz = next.z - pos.z;
+		look(BotMath.yaw(nx, nz), 0f);
 		bot.zza = 1f;
 		bot.setSprinting(sprint && skill.sprints && d > 3 && wTap == 0);
 		sidestep();
-		if (bot.onGround() && (bot.horizontalCollision || (dest.y - pos.y > 0.6 && d < 2.5))) {
+		if (bot.onGround() && (bot.horizontalCollision || (next.y - pos.y > 0.5 && Math.sqrt(nx * nx + nz * nz) < 2.0)
+				|| (dest.y - pos.y > 0.6 && d < 2.5))) {
 			bot.setJumping(true);
 		}
 	}
@@ -270,6 +313,8 @@ final class BotBrain {
 				bot.setJumping(true);
 				strafe = -strafe;
 				wander = null;
+				// The route may be out of date (a block placed, a player in the way): work it out again
+				path = null;
 				// Go round it: a sidestep, to the other side each time it does not help
 				detour = 25 + rnd.nextInt(20);
 			}
@@ -379,9 +424,15 @@ final class BotBrain {
 			shield(false);
 			Vec3 to = t.position();
 			Vec3 pos = bot.position();
+			// Far off: follow the route round walls and cover; close by and in sight: straight at them
+			Vec3 next = dist > 5 || !bot.hasLineOfSight(t) ? waypoint(to) : to;
+			if (next != to) {
+				look(BotMath.yaw(next.x - pos.x, next.z - pos.z), 0f);
+			}
 			bot.zza = 1f;
 			bot.setSprinting(skill.sprints && wTap == 0);
-			if (bot.onGround() && (bot.horizontalCollision || (to.y - pos.y > 0.6 && dist < 4))) {
+			if (bot.onGround() && (bot.horizontalCollision || (next.y - pos.y > 0.5 && next.distanceToSqr(pos) < 4)
+					|| (to.y - pos.y > 0.6 && dist < 4))) {
 				bot.setJumping(true);
 			}
 			sidestep();

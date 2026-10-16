@@ -19,6 +19,8 @@
 
 ### Changed
 * Block names in layouts can carry properties (`oak_stairs[facing=north,half=top]`).
+* **Bots find their way**: they work out a route round walls, cover and hills (and up steps) instead of running
+  straight at you, so they no longer get stuck behind obstacles in the new, more varied arenas.
 
 ## 1.15.0
 
