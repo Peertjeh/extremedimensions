@@ -76,8 +76,8 @@ final class CosmeticsTests {
 			return pet != null && !pet.isRemoved() && pet.position().distanceTo(p("BHTestA").position()) < 2.5;
 		});
 		s.check(tag + ": the outfit fades from orange at the top to purple at the feet", () ->
-				net.minecraft.world.item.component.DyedItemColor.getOrDefault(p("BHTestA").getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST), 0) == 0xFFB000
-						&& net.minecraft.world.item.component.DyedItemColor.getOrDefault(p("BHTestA").getItemBySlot(net.minecraft.world.entity.EquipmentSlot.FEET), 0) == 0x8A2BE2);
+				(net.minecraft.world.item.component.DyedItemColor.getOrDefault(p("BHTestA").getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST), 0) & 0xFFFFFF) == 0xFFB000
+						&& (net.minecraft.world.item.component.DyedItemColor.getOrDefault(p("BHTestA").getItemBySlot(net.minecraft.world.entity.EquipmentSlot.FEET), 0) & 0xFFFFFF) == 0x8A2BE2);
 		s.check(tag + ": a sword from a kit looks like a blaze rod and shines; a bow stays a bow", () -> {
 			ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
 			ItemStack bow = new ItemStack(Items.BOW);

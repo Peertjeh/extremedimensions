@@ -457,7 +457,7 @@ public final class Cosmetics {
 			case "dragon" -> {
 				for (int i = 0; i < 14; i++) {
 					double a = phase * 2 + i * 0.45;
-					burst(level, "minecraft:dragon_breath", at.x + Math.cos(a) * 1.3, at.y + i * 0.18, at.z + Math.sin(a) * 1.3, 1, 0, 0, 0, 0);
+					burst(level, i % 2 == 0 ? "dust:#9B30FF>#3D0060:1.4" : "minecraft:reverse_portal", at.x + Math.cos(a) * 1.3, at.y + i * 0.18, at.z + Math.sin(a) * 1.3, 1, 0, 0, 0, 0);
 				}
 				if (ticks % 60 == 0) sound(level, at, "entity.ender_dragon.growl", 0.5f, 1.2f);
 			}
