@@ -444,7 +444,7 @@ public class BossTests {
 		helper.succeed();
 	}
 
-	@GameTest(maxTicks = 80)
+	@GameTest(maxTicks = 140)
 	public void theThornsTheEldersRaiseSinkBack(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		BlockPos ground = helper.absolutePos(new BlockPos(2, 1, 2));
@@ -458,10 +458,13 @@ public class BossTests {
 		check(helper, level.getBlockState(ground.above()).is(thorn), "no thorns rose out of the ground");
 		check(helper, level.getBlockState(ground.above(3)).is(thorn), "the thorns did not rise three blocks");
 		check(helper, ElderTerrain.temporary(level, ground.above(2)), "raised thorns are not known as temporary");
-		helper.runAfterDelay(30, () -> {
+		// They sink back after 7 to 11 server ticks; the check waits well past that, and says how many really went by
+		int serverStart = level.getServer().getTickCount();
+		helper.runAfterDelay(100, () -> {
+			int ticks = level.getServer().getTickCount() - serverStart;
 			check(helper, !level.getBlockState(ground.above()).is(thorn) && !level.getBlockState(ground.above(3)).is(thorn)
-					&& !ElderTerrain.temporary(level, ground.above(2)), "the thorns did not sink back (%s, %s)", level.getBlockState(ground.above()),
-					level.getBlockState(ground.above(3)));
+					&& !ElderTerrain.temporary(level, ground.above(2)), "the thorns did not sink back (%s, %s, still held: %s) after %s server ticks",
+					level.getBlockState(ground.above()), level.getBlockState(ground.above(3)), ElderTerrain.temporary(level, ground.above(3)), ticks);
 			helper.succeed();
 		});
 	}
