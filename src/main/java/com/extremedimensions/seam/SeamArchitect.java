@@ -1108,9 +1108,12 @@ public final class SeamArchitect {
 	}
 
 	/**
-	 * A floating island: turf of moss and pale moss with grass, flowers, firefly bushes and eyeblossoms over a deep,
-	 * tapering underside whose rock darkens with depth and is threaded with silk, hung with vines, roots, chains and
-	 * soul lanterns, with long fangs of stone tipped with amethyst, and light pouring off its edges.
+	 * A floating island: turf of moss and pale moss with grass, flowers, firefly bushes and eyeblossoms over an
+	 * underside built as an upside-down mountain (the way the best floating islands are built: a mound turned over,
+	 * not a bowl): a pointed summit under the middle, two to four lesser summits about it, ribs and gullies running down
+	 * its flanks. Its rock darkens with depth in streaks that run down the stone, crossed by thin strata that rise and
+	 * fall across it, and is threaded with silk, hung with vines, roots, chains and soul lanterns, with long fangs of
+	 * stone tipped with amethyst, and light pouring off its edges.
 	 *
 	 * @return the depth of the underside at the centre
 	 */
@@ -1125,6 +1128,14 @@ public final class SeamArchitect {
 		BlockState[] rock = rockGrad();
 		// deep under small islands, relatively shallower under the great ones (still thirty blocks of rock)
 		double deep = r <= 16 ? r * 1.15 : 18.4 + (r - 16) * 0.65;
+		// The lesser summits of the underside: where each hangs, how wide and how deep (drawn from their own source,
+		// so all that is drawn after is as it was)
+		Random under = new Random(seed ^ 0x51DE5L);
+		double[][] lobes = new double[2 + under.nextInt(3)][];
+		for (int i = 0; i < lobes.length; i++) {
+			double a = under.nextDouble() * Math.PI * 2, out = (0.25 + under.nextDouble() * 0.4) * r;
+			lobes[i] = new double[] {Math.cos(a) * out, Math.sin(a) * out, r * (0.22 + under.nextDouble() * 0.2), deep * (0.2 + under.nextDouble() * 0.3)};
+		}
 		for (int dx = -span; dx <= span; dx++) {
 			for (int dz = -span; dz <= span; dz++) {
 				double ang = Math.atan2(dz, dx);
@@ -1134,9 +1145,18 @@ public final class SeamArchitect {
 					continue;
 				}
 				double f = 1 - dist / edge;
-				int d = 2 + (int) Math.round(Math.pow(f, 0.62) * deep) + rnd.nextInt(2);
-				depth[dx + span][dz + span] = d;
 				int x = cx + dx, z = cz + dz;
+				// ribs and gullies down the flanks (ridged noise), the pointed summit under the middle, the lesser ones
+				double rib = 1 - Math.abs(2 * noise(seed + 3, x / 7.0, z / 7.0) - 1);
+				double dd = Math.pow(f, 0.7) * deep * (0.7 + 0.3 * rib);
+				double mid = Math.max(0, 1 - dist / (0.42 * r));
+				dd += deep * 0.3 * Math.pow(mid, 1.5);
+				for (double[] l : lobes) {
+					double q = Math.max(0, 1 - Math.hypot(dx - l[0], dz - l[1]) / l[2]);
+					dd += l[3] * Math.pow(q, 1.4) * Math.min(1, f * 3);
+				}
+				int d = 2 + (int) Math.round(dd) + rnd.nextInt(2);
+				depth[dx + span][dz + span] = d;
 				double patch = noise(seed, x / 7.0, z / 7.0) * 0.7 + noise(seed + 1, x / 3.0, z / 3.0) * 0.3;
 				for (int y = top - d; y <= top; y++) {
 					BlockState b;
@@ -1154,7 +1174,7 @@ public final class SeamArchitect {
 						b = stone();
 					} else {
 						double k = (double) (top - y) / Math.max(1, d);
-						b = rnd.nextDouble() < 0.015 + 0.05 * k ? vein() : grad(rock, k, rnd);
+						b = rnd.nextDouble() < 0.015 + 0.05 * k ? vein() : rockAt(rock, seed, x, y, z, top, k, rnd);
 					}
 					p.set(x, y, z, b);
 				}
@@ -1225,6 +1245,22 @@ public final class SeamArchitect {
 			p.falls.add(new int[] {ex, top, ez, 18 + rnd.nextInt(30)});
 		}
 		return depth[span][span];
+	}
+
+	/**
+	 * Island rock at a depth fraction {@code k}: the bands of the gradient move up and down from column to column,
+	 * so they run down the stone in streaks (the way rock weathers, and the way builders blend a gradient: a drip,
+	 * not a speckle), crossed every eight blocks by a thin stratum, chalk-pale above and basalt-dark below, that rises
+	 * and falls across the island.
+	 */
+	static BlockState rockAt(BlockState[] rock, long seed, int x, int y, int z, int top, double k, Random rnd) {
+		int band = (int) Math.floor(top - y + noise(seed + 11, x / 11.0, z / 11.0) * 5);
+		if (Math.floorMod(band, 8) == 3 && k > 0.12 && k < 0.88) {
+			return k < 0.5 ? mc("calcite", stone()) : mc("smooth_basalt", stone());
+		}
+		double streak = (noise(seed + 9, x / 2.2, z / 2.2) - 0.5) * 0.5;
+		double v = Math.max(0, Math.min(1, k + streak + (rnd.nextDouble() - 0.5) * 0.14)) * (rock.length - 1);
+		return rock[(int) Math.round(v)];
 	}
 
 	// ------------------------------------------------------------------ small things

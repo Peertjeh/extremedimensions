@@ -51,7 +51,7 @@ public final class RiftBeacon {
 		}
 		ticks++;
 		RandomSource rnd = level.getRandom();
-		Vec3 eye = mc.gameRenderer.getMainCamera().position();
+		Vec3 eye = mc.player.getEyePosition();
 		double rx = ClientState.riftX, ry = ClientState.riftY, rz = ClientState.riftZ;
 		double dx = rx - eye.x, dz = rz - eye.z;
 		double dist = Math.sqrt(dx * dx + dz * dz);
