@@ -143,7 +143,7 @@ public final class Colossus {
 			}
 			case 1 -> {
 				// Bone: pale walls and dark trim under slate roofs, cold glass
-				s.wall = new BlockState[] {smooth(), pale(), pale(), palePol(), pale(), palePol()};
+				s.wall = new BlockState[] {pale(), pale(), pale(), palePol(), pale(), palePol()};
 				s.trim = new BlockState[] {bsPol(), smooth(), smooth()};
 				s.roof = new BlockState[] {tileStairs(), mc("deepslate_tile_stairs", tileStairs()), mc("deepslate_tile_stairs", tileStairs()), bsStairs()};
 				s.roofFill = mc("deepslate_tiles", tile());
@@ -1499,8 +1499,9 @@ public final class Colossus {
 			}
 		}
 		Frame up = new Frame(b.p, b.wx(0, 0), b.oy + ph, b.wz(0, 0), b.rot);
-		int th = 5 + rnd.nextInt(2);
-		int D = Math.min(pw - th - 2, 9 + rnd.nextInt(4));
+		// slender towers well apart, so the arch between them reads as a gate
+		int th = 4 + rnd.nextInt(2);
+		int D = Math.min(pw - th - 2, 12 + rnd.nextInt(3));
 		int tallness = Math.min(maxH - ph, 60 + rnd.nextInt(30));
 		long seed = rnd.nextLong();
 		Form tf = formFor(rnd, true);
