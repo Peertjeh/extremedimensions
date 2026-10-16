@@ -148,7 +148,7 @@ final class CosmeticsTests {
 			if (!(p("BHTestA").containerMenu instanceof HubMenu m) || !(m.screen() instanceof CosmeticsMenu)) return false;
 			for (int slot : net.battlehub.core.MenuSlots.centered(11, 1, 6)) {
 				ItemStack it = m.getSlot(slot).getItem();
-				if (it.isEmpty() || it.is(Items.BLACK_STAINED_GLASS_PANE)) return false;
+				if (it.isEmpty() || it.is(net.battlehub.util.Ids.item("minecraft:black_stained_glass_pane"))) return false;
 			}
 			return true;
 		});
