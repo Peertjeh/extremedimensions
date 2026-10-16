@@ -38,8 +38,8 @@ public final class ElderTerrain {
 		BlockPos pos;
 		BlockState placed, original;
 		int left;
-		/** Times it may still wait for its ground to load again (each a few seconds) before it is forgotten. */
-		int tries = 720;
+		/** Times it may still wait for its ground to load again (each a second, an hour in all) before it is forgotten. */
+		int tries = 3600;
 	}
 
 	private static final List<Temporary> TEMPORARY = new ArrayList<>();
@@ -276,7 +276,7 @@ public final class ElderTerrain {
 			}
 			if (!t.level.isLoaded(t.pos)) {
 				// Its ground is not loaded (everyone left): it sinks back once someone comes near again, not never
-				t.left = 100;
+				t.left = 20;
 				if (--t.tries > 0) {
 					continue;
 				}
