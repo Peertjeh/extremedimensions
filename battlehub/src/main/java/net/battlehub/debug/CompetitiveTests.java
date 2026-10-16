@@ -75,7 +75,7 @@ final class CompetitiveTests {
 		s.run(tag + ": A hits B three times", () -> {
 			for (int i = 0; i < 3; i++) {
 				ServerPlayer b = p(B);
-				b.invulnerableTime = 0;
+				SelfTest.clearHurtCooldown(b);
 				b.hurtServer(b.level(), b.damageSources().playerAttack(p(A)), 3f);
 			}
 		});
@@ -86,7 +86,7 @@ final class CompetitiveTests {
 		});
 		s.run(tag + ": A wins", () -> {
 			ServerPlayer b = p(B);
-			b.invulnerableTime = 0;
+			SelfTest.clearHurtCooldown(b);
 			b.hurtServer(b.level(), b.damageSources().playerAttack(p(A)), 1000f);
 		});
 		s.check(tag + ": A is the MVP", () -> {

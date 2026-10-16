@@ -144,7 +144,9 @@ public final class CustomMaps {
 	static Map read(MinecraftServer server, Path file, String mode) {
 		try {
 			CompoundTag tag = NbtIo.readCompressed(file, NbtAccounter.unlimitedHeap());
-			StructureTemplate t = server.getStructureManager().readStructure(tag);
+			// Read straight from the file (saved by a structure block of this game version)
+			StructureTemplate t = new StructureTemplate();
+			t.load(server.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK), tag);
 			Vec3i size = t.getSize();
 			if (size.getX() <= 0 || size.getY() <= 0 || size.getZ() <= 0) {
 				BattleHub.LOGGER.warn("Custom map {} is empty", file);
