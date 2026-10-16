@@ -259,21 +259,6 @@ public final class SelfTest {
 		});
 	}
 
-	private static java.lang.reflect.Field hurtCooldown;
-
-	/** The short time after a hit in which a player cannot be hurt again (private in this version: set by name). */
-	static void clearHurtCooldown(net.minecraft.world.entity.Entity e) {
-		try {
-			if (hurtCooldown == null) {
-				hurtCooldown = net.minecraft.world.entity.Entity.class.getDeclaredField("invulnerableTime");
-				hurtCooldown.setAccessible(true);
-			}
-			hurtCooldown.setInt(e, 0);
-		} catch (ReflectiveOperationException | RuntimeException ex) {
-			BattleHub.LOGGER.warn("SELFTEST could not clear the hurt cooldown: {}", ex.toString());
-		}
-	}
-
 	/** Puts every test player back in the lobby, so a failed scenario cannot break the next one. */
 	static void reset(Script s, String tag) {
 		s.run(tag + ": reset leftovers", () -> {

@@ -345,8 +345,14 @@ final class NewModeTests {
 			var a = m.arena();
 			BlockPos floor = BlockPos.containing(a.spawn(0).pos()).below();
 			BlockPos marker = BlockPos.containing(a.spawn(0).pos());
-			return a.level().getBlockState(floor).is(Blocks.STONE) && a.level().getBlockState(marker).isAir()
+			boolean ok = a.level().getBlockState(floor).is(Blocks.STONE) && a.level().getBlockState(marker).isAir()
 					&& p(A).position().distanceTo(a.spawn(0).pos()) < 1.5 && p(B).position().distanceTo(a.spawn(1).pos()) < 1.5;
+			if (!ok) {
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST custom map placed: floor {} marker {} spawn0 {} A at {} spawn1 {} B at {}",
+						a.level().getBlockState(floor), a.level().getBlockState(marker), a.spawn(0).pos(), p(A).position(),
+						a.spawn(1).pos(), p(B).position());
+			}
+			return ok;
 		});
 		s.run(tag + ": end it; the map file goes again", () -> {
 			Matches.end(match().id);

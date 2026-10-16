@@ -72,13 +72,14 @@ final class CompetitiveTests {
 		s.check(tag + ": A's sword is in slot 3, B's in slot 0", () ->
 				p(A).getInventory().getItem(3).is(Items.DIAMOND_SWORD) && !p(A).getInventory().getItem(0).is(Items.DIAMOND_SWORD)
 						&& p(B).getInventory().getItem(0).is(Items.DIAMOND_SWORD));
-		s.run(tag + ": A hits B three times", () -> {
-			for (int i = 0; i < 3; i++) {
+		// Three hits, each after the short time in which a player cannot be hurt again
+		for (int i = 1; i <= 3; i++) {
+			s.run(tag + ": A hits B (" + i + ")", () -> {
 				ServerPlayer b = p(B);
-				SelfTest.clearHurtCooldown(b);
 				b.hurtServer(b.level(), b.damageSources().playerAttack(p(A)), 3f);
-			}
-		});
+			});
+			s.pause(11);
+		}
 		s.check(tag + ": the recap counts the hits, the damage and the combo", () -> {
 			var l = matchOf(A).recap().line(p(A).getUUID());
 			double taken = matchOf(A).recap().line(p(B).getUUID()).taken;
@@ -91,7 +92,6 @@ final class CompetitiveTests {
 		});
 		s.run(tag + ": A wins", () -> {
 			ServerPlayer b = p(B);
-			SelfTest.clearHurtCooldown(b);
 			b.hurtServer(b.level(), b.damageSources().playerAttack(p(A)), 1000f);
 		});
 		s.check(tag + ": A is the MVP", () -> {

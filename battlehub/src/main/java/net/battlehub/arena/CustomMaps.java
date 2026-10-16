@@ -152,12 +152,14 @@ public final class CustomMaps {
 				BattleHub.LOGGER.warn("Custom map {} is empty", file);
 				return null;
 			}
-			List<Marker> markers = new ArrayList<>();
-			for (StructureTemplate.StructureBlockInfo info : t.filterBlocks(BlockPos.ZERO, new StructurePlaceSettings(), Blocks.STRUCTURE_BLOCK)) {
-				CompoundTag nbt = info.nbt();
-				if (nbt == null || !"DATA".equalsIgnoreCase(nbt.getStringOr("mode", ""))) continue;
-				MapMarkers.Marker mk = MapMarkers.parse(nbt.getStringOr("metadata", ""));
-				if (mk != null) markers.add(new Marker(mk.name(), mk.yaw(), info.pos()));
+			List<Marker> markers = markers(tag);
+			if (markers.isEmpty()) {
+				for (StructureTemplate.StructureBlockInfo info : t.filterBlocks(BlockPos.ZERO, new StructurePlaceSettings(), Blocks.STRUCTURE_BLOCK)) {
+					CompoundTag nbt = info.nbt();
+					if (nbt == null || !"DATA".equalsIgnoreCase(nbt.getStringOr("mode", ""))) continue;
+					MapMarkers.Marker mk = MapMarkers.parse(nbt.getStringOr("metadata", ""));
+					if (mk != null) markers.add(new Marker(mk.name(), mk.yaw(), info.pos()));
+				}
 			}
 			String id = MapMarkers.id(file.getFileName().toString());
 			return new Map(id, mode, t, size, markers);
@@ -165,6 +167,25 @@ public final class CustomMaps {
 			BattleHub.LOGGER.warn("Custom map {} could not be read: {}", file, e.toString());
 			return null;
 		}
+	}
+
+	/**
+	 * The markers straight from the file: every block with structure block data in Data mode ("blocks", each with
+	 * "pos" and "nbt"). Read from the file itself, so it does not depend on what the template keeps.
+	 */
+	static List<Marker> markers(CompoundTag root) {
+		List<Marker> out = new ArrayList<>();
+		net.minecraft.nbt.ListTag blocks = root.getListOrEmpty("blocks");
+		for (int i = 0; i < blocks.size(); i++) {
+			CompoundTag b = blocks.getCompoundOrEmpty(i);
+			CompoundTag nbt = b.getCompoundOrEmpty("nbt");
+			if (!"DATA".equalsIgnoreCase(nbt.getStringOr("mode", ""))) continue;
+			MapMarkers.Marker mk = MapMarkers.parse(nbt.getStringOr("metadata", ""));
+			if (mk == null) continue;
+			net.minecraft.nbt.ListTag pos = b.getListOrEmpty("pos");
+			out.add(new Marker(mk.name(), mk.yaw(), new BlockPos(pos.getIntOr(0, 0), pos.getIntOr(1, 0), pos.getIntOr(2, 0))));
+		}
+		return out;
 	}
 
 	/** Maps a mode can use: its own folder and "all", with enough spawns and every spot it needs. */

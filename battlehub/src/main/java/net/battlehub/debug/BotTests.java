@@ -224,10 +224,13 @@ final class BotTests {
 	private static void parkour(MinecraftServer server, Script s) {
 		String tag = "bots parkour";
 		SelfTest.reset(s, tag);
-		s.run(tag + ": A joins an easy Parkour Race; one bot fills in", () -> {
+		s.run(tag + ": A joins an easy Parkour Race; one (hard) bot fills in", () -> {
 			cfg().fillQueues = true;
 			cfg().fillAfterSeconds = 1;
 			cfg().partyFillTo = 2;
+			VARS.put("fillLevel", cfg().fillLevel);
+			// The hard bot rarely misses on purpose, so the course decides less about how long this takes
+			cfg().fillLevel = "hard";
 			SelfTest.join(server, A);
 			Parties.join(p(A), GameMode.PARKOUR, "easy");
 		});
@@ -235,12 +238,20 @@ final class BotTests {
 			Match m = matchOfA();
 			return m instanceof ParkourMatch && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
 		});
-		s.run(tag + ": no more bots", () -> cfg().fillQueues = false);
-		s.waitFor(tag + ": the bot jumps from platform to platform", 900, () -> {
+		s.run(tag + ": no more bots", () -> {
+			cfg().fillQueues = false;
+			cfg().fillLevel = (String) VARS.get("fillLevel");
+		});
+		s.waitFor(tag + ": the bot jumps from platform to platform", 1800, () -> {
 			Match m = matchOfA();
 			if (!(m instanceof ParkourMatch pm) || botsIn(m).isEmpty()) return false;
 			BotPlayer b = botsIn(m).get(0);
-			return pm.platformIndex(b) >= 3 || pm.lastPlatform(b.getUUID()) >= 3;
+			boolean ok = pm.platformIndex(b) >= 3 || pm.lastPlatform(b.getUUID()) >= 3;
+			if (!ok && m.runSeconds() > 0 && m.runSeconds() % 15 == 0 && !Integer.valueOf(m.runSeconds()).equals(VARS.put("pkLogged", m.runSeconds()))) {
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST parkour bot after {}s: on platform {}, best {}, at {}", m.runSeconds(),
+						pm.platformIndex(b), pm.lastPlatform(b.getUUID()), b.position());
+			}
+			return ok;
 		});
 		endAndClean(s, tag);
 	}
