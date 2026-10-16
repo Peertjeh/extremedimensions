@@ -53,6 +53,11 @@ final class NewModeTests {
 			c.game(GameMode.BRIDGE).settings.put("goalsToWin", 2.0);
 			c.game(GameMode.BOXING).settings.put("hitsToWin", 4.0);
 			c.game(GameMode.MURDER_MYSTERY).settings.put("swordAfterSeconds", 1.0);
+			c.game(GameMode.BRIDGE_DUOS).settings.put("goalsToWin", 2.0);
+			c.game(GameMode.BRIDGE_FOUR).settings.put("goalsToWin", 2.0);
+			c.game(GameMode.BRIDGE_CHAOS).settings.put("goalsToWin", 3.0);
+			c.game(GameMode.BRIDGE_CHAOS).settings.put("powerupSeconds", 600.0);
+			c.game(GameMode.BRIDGE_CHAOS).settings.put("eventSeconds", 600.0);
 			c.arenas.customMapChance = 0.0;
 		});
 		PartyTests.party(server, s, GameMode.SPLEEF, NewModeTests::spleef);
@@ -60,7 +65,10 @@ final class NewModeTests {
 		PartyTests.party(server, s, GameMode.MURDER_MYSTERY, NewModeTests::murder);
 		PartyTests.party(server, s, GameMode.SUMO, NewModeTests::votedIce,
 				new String[] {"map:theme:ice", "map:theme:ice", "map:theme:ice", "map:theme:desert"});
+		PartyTests.party(server, s, GameMode.BRIDGE_DUOS, NewModeTests::bridgeDuos);
+		PartyTests.party(server, s, GameMode.BRIDGE_FOUR, NewModeTests::bridgeFour);
 		bridge(server, s);
+		bridgeChaos(server, s);
 		boxing(server, s);
 		buildUhc(server, s);
 		customMap(server, s);
@@ -238,6 +246,115 @@ final class NewModeTests {
 		});
 		s.waitFor(tag + ": two goals: A wins", 20, () -> match().phase() != Match.Phase.RUNNING
 				&& match().outcome(p(A).getUUID()) == Outcome.WIN);
+		closed(s, tag);
+	}
+
+	private static net.battlehub.games.BridgePartyMatch partyBridge() {
+		return (net.battlehub.games.BridgePartyMatch) match();
+	}
+
+	/** A jumps into the goal of the first team that is not A's own. */
+	private static void intoEnemyGoal(Script s, String tag) {
+		s.run(tag + ": A jumps into an enemy goal", () -> {
+			int own = partyBridge().team(p(A).getUUID());
+			int enemy = own == 0 ? 1 : 0;
+			BlockPos g = match().arena().mark("goal_" + enemy);
+			PartyTests.tp(p(A), g.getX() + 0.5, g.getY() - 1, g.getZ() + 0.5);
+		});
+	}
+
+	private static void bridgeDuos(Script s) {
+		String tag = "bridge 2v2";
+		s.check(tag + ": two teams of two, on two islands, with clay in their colour", () -> {
+			net.battlehub.games.BridgePartyMatch m = partyBridge();
+			int red = 0;
+			for (UUID id : m.participants()) if (m.team(id) == 0) red++;
+			return m.teamCount() == 2 && red == 2 && m.arena().marks("goal_1").size() == 1 && m.arena().marks("goal_2").isEmpty()
+					&& p(A).getInventory().countItem(net.battlehub.util.Ids.item("minecraft:" + (m.team(p(A).getUUID()) == 0 ? "red" : "blue") + "_terracotta")) == 128;
+		});
+		s.check(tag + ": no friendly fire, enemies can be hit", () -> {
+			net.battlehub.games.BridgePartyMatch m = partyBridge();
+			UUID a = p(A).getUUID();
+			UUID mate = null;
+			UUID enemy = null;
+			for (UUID id : m.participants()) {
+				if (id.equals(a)) continue;
+				if (m.team(id) == m.team(a)) mate = id; else enemy = id;
+			}
+			return mate != null && enemy != null && !m.isEnemy(a, mate) && m.isEnemy(a, enemy);
+		});
+		intoEnemyGoal(s, tag);
+		s.waitFor(tag + ": a goal for A's team, everyone back home", 10, () -> partyBridge().goals(partyBridge().team(p(A).getUUID())) == 1
+				&& match().phase() == Match.Phase.COUNTDOWN);
+		s.waitFor(tag + ": the next point starts", 200, () -> match().phase() == Match.Phase.RUNNING);
+		intoEnemyGoal(s, tag);
+		s.waitFor(tag + ": two goals: A's team wins", 20, () -> match().phase() != Match.Phase.RUNNING
+				&& match().outcome(p(A).getUUID()) == Outcome.WIN);
+	}
+
+	private static void bridgeFour(Script s) {
+		String tag = "bridge 1v1v1v1";
+		s.check(tag + ": four islands, everyone on their own", () -> {
+			net.battlehub.games.BridgePartyMatch m = partyBridge();
+			java.util.Set<Integer> seen = new java.util.HashSet<>();
+			for (UUID id : m.participants()) seen.add(m.team(id));
+			return m.teamCount() == 4 && seen.size() == 4 && m.arena().marks("goal_3").size() == 1 && m.isEnemy(p(A).getUUID(), p(B).getUUID());
+		});
+		s.check(tag + ": each one starts on their own island, near their own goal", () -> {
+			net.battlehub.games.BridgePartyMatch m = partyBridge();
+			for (UUID id : m.participants()) {
+				ServerPlayer pl = m.player(id);
+				BlockPos g = m.arena().mark("goal_" + m.team(id));
+				if (pl == null || pl.position().distanceTo(net.minecraft.world.phys.Vec3.atBottomCenterOf(g)) > 8) return false;
+			}
+			return true;
+		});
+		intoEnemyGoal(s, tag);
+		s.waitFor(tag + ": a goal for A", 10, () -> partyBridge().goals(partyBridge().team(p(A).getUUID())) == 1
+				&& match().phase() == Match.Phase.COUNTDOWN);
+		s.waitFor(tag + ": the next point starts", 200, () -> match().phase() == Match.Phase.RUNNING);
+		intoEnemyGoal(s, tag);
+		s.waitFor(tag + ": two goals: A wins", 20, () -> match().phase() != Match.Phase.RUNNING
+				&& match().outcome(p(A).getUUID()) == Outcome.WIN && match().outcome(p(B).getUUID()) != Outcome.WIN);
+	}
+
+	private static void bridgeChaos(MinecraftServer server, Script s) {
+		String tag = "bridge chaos";
+		duel(server, s, GameMode.BRIDGE_CHAOS);
+		s.check(tag + ": a Chaos match (never ranked) with a wind charge in the kit", () -> match() instanceof net.battlehub.games.duel.BridgeChaosMatch
+				&& !match().ranked && p(A).getInventory().countItem(net.battlehub.util.Ids.item("minecraft:wind_charge")) >= 1);
+		s.run(tag + ": a power-up falls onto the middle", () -> ((net.battlehub.games.duel.BridgeChaosMatch) match()).dropPowerup("pearl"));
+		s.check(tag + ": a glowing ender pearl lies in the middle", () -> {
+			net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(match().arena().origin()).inflate(3, 5, 3);
+			return !match().arena().level().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, box,
+					e -> e.getItem().is(Items.ENDER_PEARL) && e.hasGlowingTag()).isEmpty();
+		});
+		s.run(tag + ": A builds a block over the middle", () -> {
+			BlockPos at = match().arena().origin().offset(1, 0, 3);
+			VARS.put("chaosBlock", at);
+			if (match().onPlaceBlock(p(A), at, new ItemStack(net.battlehub.util.Ids.item("minecraft:red_terracotta")))) {
+				match().arena().level().setBlock(at, net.battlehub.util.Ids.state("minecraft:red_terracotta"), 3);
+			}
+		});
+		s.pause(3);
+		s.run(tag + ": the bridge crumbles", () -> ((net.battlehub.games.duel.BridgeChaosMatch) match()).event("crumble"));
+		s.check(tag + ": the block A built is gone", () -> match().arena().level().getBlockState((BlockPos) VARS.get("chaosBlock")).isAir());
+		s.run(tag + ": low gravity for everyone", () -> ((net.battlehub.games.duel.BridgeChaosMatch) match()).event("low_gravity"));
+		s.check(tag + ": A jumps higher and floats", () -> p(A).hasEffect(net.battlehub.util.Ids.effect("minecraft:jump_boost").orElseThrow())
+				&& p(A).hasEffect(net.battlehub.util.Ids.effect("minecraft:slow_falling").orElseThrow()));
+		s.run(tag + ": the next goal counts double", () -> ((net.battlehub.games.duel.BridgeChaosMatch) match()).event("double_goal"));
+		s.run(tag + ": A jumps into the blue goal", () -> {
+			BlockPos g = match().arena().mark("goal_blue");
+			PartyTests.tp(p(A), g.getX() + 0.5, g.getY() - 1, g.getZ() + 0.5);
+		});
+		s.waitFor(tag + ": two goals for A at once, and the next one is normal again", 10, () ->
+				((BridgeMatch) match()).goals(p(A).getUUID()) == 2 && !((net.battlehub.games.duel.BridgeChaosMatch) match()).doubleGoal());
+		s.waitFor(tag + ": the next point starts", 200, () -> match().phase() == Match.Phase.RUNNING);
+		s.run(tag + ": A scores once more", () -> {
+			BlockPos g = match().arena().mark("goal_blue");
+			PartyTests.tp(p(A), g.getX() + 0.5, g.getY() - 1, g.getZ() + 0.5);
+		});
+		s.waitFor(tag + ": three goals: A wins", 20, () -> match().phase() != Match.Phase.RUNNING && match().outcome(p(A).getUUID()) == Outcome.WIN);
 		closed(s, tag);
 	}
 

@@ -159,9 +159,15 @@ class GameRulesTest {
 			assertEquals(m, GameMode.byId(m.id()));
 		}
 		assertNull(GameMode.byId("nope"));
-		assertEquals(8, GameMode.duels().length);
+		assertEquals(9, GameMode.duels().length);
+		assertEquals(8, GameMode.rankedDuels().length, "the test mode is never ranked");
+		assertTrue(GameMode.BRIDGE_CHAOS.isTest() && GameMode.BRIDGE_CHAOS.isDuel() && !GameMode.BRIDGE.isTest());
 		assertEquals(5, GameMode.kitDuels().length);
-		assertEquals(14, GameMode.parties().length);
+		assertEquals(16, GameMode.parties().length);
+		assertEquals(GameMode.BRIDGE_DUOS, GameMode.byId("bridge_2v2"));
+		assertEquals(GameMode.BRIDGE_FOUR, GameMode.byId("bridge_1v1v1v1"));
+		assertEquals(4, GameMode.BRIDGE_DUOS.defaultMinPlayers());
+		assertEquals(4, GameMode.BRIDGE_FOUR.defaultMaxPlayers());
 		assertTrue(GameMode.SWORD.isKitDuel());
 		assertFalse(GameMode.BRIDGE.isKitDuel());
 		assertTrue(GameMode.BRIDGE.isDuel());

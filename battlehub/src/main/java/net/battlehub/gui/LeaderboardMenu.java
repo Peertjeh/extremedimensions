@@ -37,7 +37,7 @@ public final class LeaderboardMenu extends Screen {
 	@Override
 	public void draw(Canvas c) {
 		int start = Ranks.startElo();
-		GameMode[] duels = GameMode.duels();
+		GameMode[] duels = GameMode.rankedDuels();
 		int[] eloSlots = net.battlehub.core.MenuSlots.centered(duels.length, 1, 5);
 		for (int i = 0; i < duels.length; i++) {
 			GameMode m = duels[i];

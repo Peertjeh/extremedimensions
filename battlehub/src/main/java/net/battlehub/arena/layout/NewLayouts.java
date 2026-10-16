@@ -78,6 +78,90 @@ public final class NewLayouts {
 		return bp;
 	}
 
+	/** Team colours of the Bridge for parties: red, blue, lime, yellow. */
+	public static final String[] BRIDGE_COLORS = {"red", "blue", "lime", "yellow"};
+
+	/**
+	 * The Bridge for 2 to 4 teams: an island per team on a ring round a small middle platform, each with a goal (a
+	 * 3x3 hole at the back) and a narrow path to the middle. Team 0 is west, 1 east, 2 north, 3 south (for three
+	 * teams a third apart). Spawns: {@code perTeam} per island, team by team. Marks: goal_0 .. goal_n (the middle of
+	 * each hole, at floor height), build_min, build_max.
+	 */
+	public static Blueprint bridgeRing(Theme t, RandomSource rnd, int teams, int perTeam) {
+		Blueprint bp = new Blueprint();
+		int n = Math.max(2, Math.min(4, teams));
+		int per = Math.max(1, Math.min(4, perTeam));
+		int ring = n == 2 ? BRIDGE_ISLAND : 23;
+		double[] angles = n == 3 ? new double[] {Math.PI, Math.PI / 3, -Math.PI / 3}
+				: new double[] {Math.PI, 0, -Math.PI / 2, Math.PI / 2};
+		net.battlehub.arena.gen.Style style = net.battlehub.arena.gen.Style.of(t, rnd, ring);
+		// The middle and the paths first, so the islands sit on top
+		Build.disc(bp, 0, 0, 0, 2.6, t::accent);
+		for (int i = 0; i < n; i++) {
+			double a = angles[i];
+			for (int d = 3; d <= ring - 5; d++) {
+				bp.set((int) Math.round(Math.cos(a) * d), 0, (int) Math.round(Math.sin(a) * d), t.trim());
+			}
+		}
+		for (int i = 0; i < n; i++) {
+			double a = angles[i];
+			int cx = (int) Math.round(Math.cos(a) * ring);
+			int cz = (int) Math.round(Math.sin(a) * ring);
+			BlockState team = Build.s(BRIDGE_COLORS[i] + "_terracotta");
+			for (int x = -6; x <= 6; x++) {
+				for (int z = -6; z <= 6; z++) {
+					double d = Math.sqrt(x * x + z * z);
+					if (d > 6.2) continue;
+					bp.set(cx + x, 0, cz + z, d > 5.3 ? team : style.floor(cx + x, cz + z, rnd));
+					bp.set(cx + x, -1, cz + z, t.under());
+					if (d < 4.5) bp.set(cx + x, -2, cz + z, t.under());
+				}
+			}
+			// The goal at the back (away from the middle), ringed in the team colour
+			int gx = cx + (int) Math.round(Math.cos(a) * 3);
+			int gz = cz + (int) Math.round(Math.sin(a) * 3);
+			for (int x = -2; x <= 2; x++) {
+				for (int z = -2; z <= 2; z++) {
+					if (Math.abs(x) == 2 || Math.abs(z) == 2) {
+						bp.set(gx + x, 0, gz + z, team);
+					} else {
+						bp.remove(gx + x, 0, gz + z);
+						bp.remove(gx + x, -1, gz + z);
+						bp.remove(gx + x, -2, gz + z);
+					}
+				}
+			}
+			bp.mark("goal_" + i, gx, 0, gz);
+			// Two lamp pillars on the sides
+			double side = a + Math.PI / 2;
+			for (int s2 = -1; s2 <= 1; s2 += 2) {
+				int px = cx + (int) Math.round(Math.cos(side) * 4 * s2 - Math.cos(a) * 1);
+				int pz = cz + (int) Math.round(Math.sin(side) * 4 * s2 - Math.sin(a) * 1);
+				Build.pillar(bp, px, 1, pz, 3, t.pillar());
+				bp.set(px, 4, pz, t.light());
+			}
+			// Spawns towards the front of the island, side by side, facing the middle
+			float yaw = (float) Math.toDegrees(Math.atan2(Math.cos(a), -Math.sin(a)));
+			for (int k = 0; k < per; k++) {
+				double off = (k - (per - 1) / 2.0) * 2;
+				double sx = cx - Math.cos(a) * 1.5 + Math.cos(side) * off;
+				double sz = cz - Math.sin(a) * 1.5 + Math.sin(side) * off;
+				bp.spawn(Math.floor(sx) + 0.5, 1, Math.floor(sz) + 0.5, yaw);
+			}
+		}
+		int reach = ring + 7;
+		bp.mark("build_min", -reach, -6, -reach);
+		bp.mark("build_max", reach, 8, reach);
+		bp.playArea(net.battlehub.arena.Blueprint.circle(reach), 8);
+		bp.include(-reach - 1, -7, -reach - 1);
+		bp.include(reach + 1, 10, reach + 1);
+		Decor.ring(bp, t, rnd, reach + 6, reach + 12, -12);
+		bp.spectator(0.5, 22, -(reach + 4) + 0.5, 0, 40);
+		bp.voidY(-8);
+		bp.radius(reach + 18);
+		return bp;
+	}
+
 	/** Boxing: a square ring with corner posts and a low rope of fences. */
 	public static Blueprint boxing(Theme t, RandomSource rnd) {
 		Blueprint bp = new Blueprint();

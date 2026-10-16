@@ -150,6 +150,21 @@ public final class BuildRules {
 		return broken;
 	}
 
+	/** Every placed block where {@code where} holds falls apart (with a puff); returns how many. */
+	public int crumble(java.util.function.Predicate<BlockPos> where) {
+		List<Long> gone = new ArrayList<>();
+		for (long l : placed) {
+			if (where.test(BlockPos.of(l))) gone.add(l);
+		}
+		for (long l : gone) {
+			BlockPos p = BlockPos.of(l);
+			level.setBlock(p, Blocks.AIR.defaultBlockState(), FLAGS);
+			level.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF, p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5, 3, 0.25, 0.25, 0.25, 0.02);
+			placed.remove(l);
+		}
+		return gone.size();
+	}
+
 	static boolean blastProof(BlockState st) {
 		String id = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(st.getBlock()).getPath();
 		return id.contains("glass") || id.equals("obsidian");

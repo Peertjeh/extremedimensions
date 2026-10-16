@@ -30,6 +30,9 @@ public final class Icons {
 			case ONE_V_TWO -> Items.SHIELD;
 			case ONE_V_THREE -> Items.NETHERITE_SWORD;
 			case BRIDGE -> Ids.item("minecraft:blue_terracotta");
+			case BRIDGE_CHAOS -> Ids.item("minecraft:wind_charge");
+			case BRIDGE_DUOS -> Ids.item("minecraft:red_terracotta");
+			case BRIDGE_FOUR -> Ids.item("minecraft:lime_terracotta");
 			case BOXING -> Items.IRON_CHESTPLATE;
 			case BUILD_UHC -> Items.LAVA_BUCKET;
 			case SPLEEF -> Items.DIAMOND_SHOVEL;

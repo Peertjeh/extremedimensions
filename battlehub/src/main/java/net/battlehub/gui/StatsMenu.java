@@ -55,7 +55,7 @@ public final class StatsMenu extends Screen {
 		c.set(20, Icon.of(Items.DIAMOND).name(Lang.item(viewer, "menu.stats.overall"))
 				.lore(lines(o)).build());
 		Icon ranked = Icon.of(Items.NETHER_STAR).name(Lang.item(viewer, "menu.stats.ranked"));
-		for (GameMode m : GameMode.duels()) {
+		for (GameMode m : GameMode.rankedDuels()) {
 			int elo = p.elo(m, Ranks.startElo());
 			ranked.lore(Lang.lore(viewer, "menu.stats.ranked_line", Lang.tr(viewer, Icons.modeKey(m)), elo, Ranks.tierName(viewer, elo)));
 		}

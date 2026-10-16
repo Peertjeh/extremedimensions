@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.17.0
+
+### Added
+* **The Bridge 2v2**: a party game for four, red against blue with two on each island. Friends in a party play
+  on the same team; bots fill empty places.
+* **The Bridge 1v1v1v1**: two to four players, each on their own island round a middle platform with a path to
+  every island; score in anyone else's goal. First to four goals wins (`goalsToWin`).
+* **The Bridge: Chaos** (test mode, next to the normal Bridge, never ranked): power-ups fall onto the middle every
+  12 seconds (`powerupSeconds`) and every 35 seconds (`eventSeconds`) something happens to everyone: low gravity,
+  a speed rush, a double goal, the bridge crumbling over the middle, or two wind charges each. Everyone starts
+  with a wind charge.
+
 ## 1.16.0
 
 ### Added

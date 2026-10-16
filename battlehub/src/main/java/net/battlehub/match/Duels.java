@@ -17,6 +17,7 @@ public final class Duels {
 		return switch (mode) {
 			// The Bridge is played to a number of goals, never in rounds
 			case BRIDGE -> new BridgeMatch(id, ranked, challenge, server, a, b);
+			case BRIDGE_CHAOS -> new net.battlehub.games.duel.BridgeChaosMatch(id, challenge, server, a, b);
 			case BOXING -> new BoxingMatch(id, ranked, format, challenge, server, a, b);
 			case BUILD_UHC -> new BuildUhcMatch(id, ranked, format, challenge, server, a, b);
 			default -> new DuelMatch(id, mode, ranked, format, challenge, server, a, b);

@@ -330,3 +330,13 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Bestaande servers | `LOBBY_VERSION` gaat naar 2: bij de eerste start wordt de oude hub weggehaald en de nieuwe gebouwd. |
 | Controle | De zelftest kijkt of alle bloknamen (met eigenschappen) bestaan, of de vier poorten open zijn met een brug en een beacon, of het midden een beacon heeft en of de plekken van de figuren en de oefenpop vrij zijn. |
 
+## Versie 1.17 – Meer Bridge
+
+| Onderwerp | Keuze |
+|---|---|
+| Waar | 2v2 en 1v1v1v1 zijn partyspellen (een lobby die vol loopt, met bots als het te lang duurt), zodat er geen aparte team-wachtrij nodig is. Chaos is een duel (wachtrij, uitdagen, oefenen tegen bots), maar nooit ranked: een test hoort geen ELO te kosten. De gewone Bridge is niet veranderd. |
+| Layout | Een nieuwe layout voor 2 tot 4 teams (`bridgeRing`): eilanden op een ring rond een klein middenplatform, met een smal pad van elk eiland naar het midden (voor de bots), het doel achterop elk eiland en spawns naast elkaar vooraan. Bij 3 teams staan ze een derde slag uit elkaar. De vloer krijgt het kleurverloop van 1.15. |
+| 2v2 | Teams worden verdeeld zoals bij CTF (party's bij elkaar). Geen eigen vuur. Elk lid scoort voor het team; na een doelpunt gaan alle vier naar huis. |
+| 1v1v1v1 | Ieder een eigen team en kleur (rood, blauw, groen, geel). Met 2 of 3 spelers worden het 2 of 3 eilanden. Scoren mag in elk doel behalve het eigen doel. Bots kiezen het dichtstbijzijnde vreemde doel. Standaard eerst 4 (in plaats van 5), omdat er meer doelen zijn. |
+| Chaos | Power-ups vallen gloeiend op het middenplatform (gewoon oppakken): windcharges, enderparel, gouden appel, sneeuwballen, spinnenwebben, pijlen, witte klei, knockback-stok. Events (10 s): lage zwaartekracht (jump boost + slow falling), snelheid, dubbel doelpunt (tot het volgende doelpunt), instorten (alle geplaatste blokken boven het midden verdwijnen) en een cadeautje (2 windcharges). De tellers lopen door over doelpunten heen, zodat snelle doelpunten de events niet tegenhouden. |
+

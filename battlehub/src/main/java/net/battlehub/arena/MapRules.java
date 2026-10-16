@@ -25,7 +25,7 @@ public final class MapRules {
 
 	public static List<String> marks(GameMode mode) {
 		return switch (mode) {
-			case BRIDGE -> List.of("goal_red", "goal_blue", "build_min", "build_max");
+			case BRIDGE, BRIDGE_CHAOS -> List.of("goal_red", "goal_blue", "build_min", "build_max");
 			case KOTH -> List.of("zone");
 			default -> List.of();
 		};

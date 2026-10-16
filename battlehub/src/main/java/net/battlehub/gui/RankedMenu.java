@@ -35,7 +35,7 @@ public final class RankedMenu extends Screen {
 	@Override
 	public void draw(Canvas c) {
 		PlayerProfile prof = PlayerStore.get(viewer);
-		GameMode[] modes = GameMode.duels();
+		GameMode[] modes = GameMode.rankedDuels();
 		int[] slots = net.battlehub.core.MenuSlots.centered(modes.length, 1, 5);
 		for (int i = 0; i < modes.length; i++) {
 			GameMode m = modes[i];

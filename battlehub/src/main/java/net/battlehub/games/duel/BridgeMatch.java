@@ -33,23 +33,33 @@ import net.minecraft.world.phys.Vec3;
  * goal to score; after a goal both go back to their island. Dying (or falling) only sends you back home. First
  * to five goals wins; when time is up, more goals wins.
  */
-public final class BridgeMatch extends DuelMatch {
+public class BridgeMatch extends DuelMatch {
 	private static final int RED = 0xB02E26;
 	private static final int BLUE = 0x3C44AA;
 
 	private final Map<UUID, Integer> goals = new HashMap<>();
-	private BuildRules build;
+	protected BuildRules build;
 	private int goalsScored;
 
 	public BridgeMatch(int id, boolean ranked, boolean challenge, MinecraftServer server, ServerPlayer a, ServerPlayer b) {
-		super(id, GameMode.BRIDGE, ranked, DuelFormat.BO1, challenge, server, a, b);
+		this(id, GameMode.BRIDGE, ranked, challenge, server, a, b);
+	}
+
+	/** For variants of the Bridge (the test mode with power-ups). */
+	protected BridgeMatch(int id, GameMode mode, boolean ranked, boolean challenge, MinecraftServer server, ServerPlayer a, ServerPlayer b) {
+		super(id, mode, ranked, DuelFormat.BO1, challenge, server, a, b);
+	}
+
+	/** How many goals a goal is worth right now. */
+	protected int goalValue() {
+		return 1;
 	}
 
 	private int goalsToWin() {
 		return (int) Math.max(1, game().setting("goalsToWin", 5));
 	}
 
-	private boolean red(UUID id) {
+	protected boolean red(UUID id) {
 		return participants.get(0).equals(id);
 	}
 
@@ -163,7 +173,7 @@ public final class BridgeMatch extends DuelMatch {
 
 	/** A goal: everyone back home, or the match is won. */
 	void scored(UUID scorer) {
-		int n = goals.merge(scorer, 1, Integer::sum);
+		int n = goals.merge(scorer, goalValue(), Integer::sum);
 		goalsScored++;
 		UUID a = participants.get(0);
 		UUID b = participants.get(1);

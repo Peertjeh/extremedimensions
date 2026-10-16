@@ -11,6 +11,8 @@ public enum GameMode {
 	CROSSBOW(Category.DUEL, true, 2, 2),
 	/** Two islands with a goal each and a bridge to build between them; jump into the other goal to score. */
 	BRIDGE(Category.DUEL, false, 2, 2),
+	/** The Bridge with power-ups and random events (a test mode next to the normal Bridge; never ranked). */
+	BRIDGE_CHAOS(Category.DUEL, false, 2, 2),
 	/** No damage: the first to land 100 hits wins. */
 	BOXING(Category.DUEL, false, 2, 2),
 	/** Build, buckets, golden apples and no natural healing. */
@@ -35,6 +37,10 @@ public enum GameMode {
 	SKYWARS(Category.PARTY, false, 2, 12),
 	/** One murderer, one detective, the rest innocent: find the murderer before everyone is gone. */
 	MURDER_MYSTERY(Category.PARTY, false, 4, 16),
+	/** The Bridge, two against two. */
+	BRIDGE_DUOS("bridge_2v2", Category.PARTY, false, 4, 4),
+	/** The Bridge, everyone on their own island (up to four). */
+	BRIDGE_FOUR("bridge_1v1v1v1", Category.PARTY, false, 2, 4),
 	/** One player against a team of two, with a sword, axe or mace kit. */
 	ONE_V_TWO("1v2", Category.TEAM, false, 3, 3),
 	/** One player against a team of three. */
@@ -88,6 +94,11 @@ public enum GameMode {
 		return ranged;
 	}
 
+	/** A test mode: playable, but not ranked and marked as a test in the menus. */
+	public boolean isTest() {
+		return this == BRIDGE_CHAOS;
+	}
+
 	public int defaultMinPlayers() {
 		return defaultMin;
 	}
@@ -114,7 +125,12 @@ public enum GameMode {
 	}
 
 	public static GameMode[] duels() {
-		return new GameMode[] {SWORD, AXE, MACE, BOW, CROSSBOW, BRIDGE, BOXING, BUILD_UHC};
+		return new GameMode[] {SWORD, AXE, MACE, BOW, CROSSBOW, BRIDGE, BOXING, BUILD_UHC, BRIDGE_CHAOS};
+	}
+
+	/** Duels with ranked queues (all but the test modes). */
+	public static GameMode[] rankedDuels() {
+		return java.util.Arrays.stream(duels()).filter(m -> !m.isTest()).toArray(GameMode[]::new);
 	}
 
 	/** Duels that are only a kit (no rules of their own): these can be tournament kits. */
@@ -131,18 +147,18 @@ public enum GameMode {
 
 	/** Duels with rules of their own (the Duel Games menu). */
 	public static GameMode[] duelGames() {
-		return new GameMode[] {BRIDGE, BOXING, BUILD_UHC};
+		return new GameMode[] {BRIDGE, BOXING, BUILD_UHC, BRIDGE_CHAOS};
 	}
 
 	public static GameMode[] parties() {
 		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, FFA, TOURNAMENT, BED_WARS, PROP_HUNT,
-				SPLEEF, SKYWARS, MURDER_MYSTERY};
+				SPLEEF, SKYWARS, MURDER_MYSTERY, BRIDGE_DUOS, BRIDGE_FOUR};
 	}
 
 	/** The Party Games menu (Free for All is under PvP). */
 	public static GameMode[] partyMenu() {
 		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, TOURNAMENT, BED_WARS, PROP_HUNT,
-				SPLEEF, SKYWARS, MURDER_MYSTERY};
+				SPLEEF, SKYWARS, MURDER_MYSTERY, BRIDGE_DUOS, BRIDGE_FOUR};
 	}
 
 	public static GameMode[] teamFights() {

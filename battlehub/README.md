@@ -180,6 +180,10 @@ series counts as one match for stats, coins and ELO. Queues are separate per for
 In their own menu (Duel Games), with queues, challenges, ranked, practice against bots and their own ELO:
 * **The Bridge**: red against blue, each on an island with a goal. Build across with clay and jump into the
   other goal to score; dying only sends you home. First to five goals wins.
+* **The Bridge: Chaos** *(test mode, never ranked)*: the Bridge with a glowing power-up falling onto the middle
+  every few seconds (wind charges, an ender pearl, a golden apple, snowballs, cobwebs, arrows, extra clay or a
+  knockback stick) and a wild event every half minute: low gravity, a speed rush, a double goal, the middle of
+  the bridge crumbling, or wind charges for everyone. The normal Bridge stays as it is.
 * **Boxing**: no damage, only knockback; the first to land 100 hits wins the round. Combos are shown.
 * **Build UHC**: blocks, lava and water buckets, a rod, a bow and golden apples. No natural healing: only
   golden apples heal. Only blocks players placed can be broken. You build inside the walls, up to the build
@@ -202,6 +206,9 @@ for 30 seconds. It queues you for the same mode, format and ranked setting, asks
 * **SkyWars** (2–12): everyone on their own island with a chest, stepping-stone islands and a middle island
   with the best loot (`skywars.json`). Build, break, fight; whoever dies drops everything. You can bridge
   between the islands, but not far out into the void or high into the sky.
+* **The Bridge 2v2**: red against blue with two on each island; score together, no friendly fire.
+* **The Bridge 1v1v1v1** (2–4): everyone on their own island (red, blue, green, yellow) round a middle platform;
+  jump into anyone else's goal to score. First to four goals wins.
 * **Murder Mystery** (4–16): one murderer (a sword after ten seconds, one hit kills), one detective (a bow
   with an arrow back after every shot), the rest innocent. Gold lies around: ten gold buys a bow. Shoot an
   innocent and you die too. The innocents win when the murderer is shot or time runs out.

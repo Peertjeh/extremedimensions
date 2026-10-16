@@ -43,6 +43,9 @@ final class LayoutTests {
 		m.put("prophunt", t -> net.battlehub.arena.layout.PropHuntLayout.design(t, rnd,
 				net.battlehub.config.ConfigManager.prophunt().disguises));
 		m.put("bridge", t -> net.battlehub.arena.layout.NewLayouts.bridge(t, rnd));
+		m.put("bridge_ring2", t -> net.battlehub.arena.layout.NewLayouts.bridgeRing(t, rnd, 2, 2));
+		m.put("bridge_ring3", t -> net.battlehub.arena.layout.NewLayouts.bridgeRing(t, rnd, 3, 1));
+		m.put("bridge_ring4", t -> net.battlehub.arena.layout.NewLayouts.bridgeRing(t, rnd, 4, 1));
 		m.put("boxing", t -> net.battlehub.arena.layout.NewLayouts.boxing(t, rnd));
 		m.put("build_uhc", t -> net.battlehub.arena.layout.NewLayouts.buildUhc(t, rnd, 20));
 		m.put("spleef", t -> net.battlehub.arena.layout.NewLayouts.snowSpleef(t, rnd, 2));
@@ -59,6 +62,9 @@ final class LayoutTests {
 			case "ctf" -> List.of("flag_red", "flag_blue", "spawn_red", "spawn_blue");
 			case "prophunt" -> List.of("hunter_cage", "hunter_release");
 			case "bridge" -> List.of("goal_red", "goal_blue", "build_min", "build_max");
+			case "bridge_ring2" -> List.of("goal_0", "goal_1", "build_min", "build_max");
+			case "bridge_ring3" -> List.of("goal_0", "goal_1", "goal_2", "build_min", "build_max");
+			case "bridge_ring4" -> List.of("goal_0", "goal_1", "goal_2", "goal_3", "build_min", "build_max");
 			case "build_uhc" -> List.of("build_min", "build_max");
 			case "skywars2", "skywars6", "skywars12" -> List.of("chest", "center_chest");
 			default -> {
@@ -82,6 +88,8 @@ final class LayoutTests {
 				Preview.log("duel_" + t.id(), Preview.iso(DuelLayout.design(t, rnd, false), 5, false));
 			}
 			Preview.log("skywars", Preview.iso(net.battlehub.arena.layout.NewLayouts.skywars(Theme.FOREST, rnd, 8), 4, false));
+			Preview.log("bridge_1v1v1v1", Preview.iso(net.battlehub.arena.layout.NewLayouts.bridgeRing(Theme.CASTLE, rnd, 4, 1), 5, false));
+			Preview.log("bridge_2v2", Preview.iso(net.battlehub.arena.layout.NewLayouts.bridgeRing(Theme.CHERRY, rnd, 2, 2), 5, false));
 		});
 		s.check("layouts: every layout in every theme is sound", () -> {
 			List<String> problems = new ArrayList<>();

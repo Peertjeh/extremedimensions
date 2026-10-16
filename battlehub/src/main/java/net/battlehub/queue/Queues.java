@@ -119,6 +119,8 @@ public final class Queues {
 		if (!canQueue(p, mode)) {
 			return false;
 		}
+		// Test modes are never ranked
+		ranked = ranked && !mode.isTest();
 		leaveAll(p);
 		PlayAgain.forget(p.getUUID());
 		int rating = ranked ? PlayerStore.get(p).elo(mode, Ranks.startElo()) : 0;

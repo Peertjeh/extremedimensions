@@ -43,6 +43,7 @@ public final class PartyGames {
 			case SPLEEF -> new SpleefMatch(id, server, players);
 			case SKYWARS -> new SkyWarsMatch(id, server, players);
 			case MURDER_MYSTERY -> new MurderMysteryMatch(id, server, players);
+			case BRIDGE_DUOS, BRIDGE_FOUR -> new BridgePartyMatch(id, mode, server, players);
 			default -> null;
 		};
 		if (m != null) {
