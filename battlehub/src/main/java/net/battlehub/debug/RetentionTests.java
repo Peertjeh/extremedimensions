@@ -32,6 +32,7 @@ final class RetentionTests {
 	static void all(MinecraftServer server, Script s) {
 		String tag = "retention";
 		SelfTest.reset(s, tag);
+		s.run(tag + ": quests, pass and achievements on for this test", () -> Retention.pausedForTest = false);
 		s.run(tag + ": A has quests for today and this week", () -> SelfTest.join(server, A));
 		s.check(tag + ": three daily and three weekly quests", () -> {
 			Retention.ensureQuests(prof());
@@ -107,5 +108,6 @@ final class RetentionTests {
 			List<QuestProgress> d = prof().dailyQuests;
 			return !d.isEmpty() && prof().passSeason >= 1;
 		});
+		s.run(tag + ": quests, pass and achievements off again for the other tests", () -> Retention.pausedForTest = true);
 	}
 }

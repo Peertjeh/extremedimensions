@@ -28,6 +28,13 @@ import net.minecraft.sounds.SoundEvents;
 public final class Retention {
 	private Retention() {}
 
+	/**
+	 * Self-test: quests, the pass, achievements and login rewards pay coins at moments the other tests do not
+	 * expect (which quests a player has depends on the day). Off while those tests run; the retention test turns
+	 * it back on for itself.
+	 */
+	public static boolean pausedForTest;
+
 	private static ProgressConfig cfg() {
 		return ConfigManager.progress();
 	}
@@ -72,6 +79,9 @@ public final class Retention {
 
 	/** One match for one player: quests forward, pass XP, achievements. */
 	public static void matchPlayed(ServerPlayer p, PlayerProfile prof, Quests.Match match, double passFactor) {
+		if (pausedForTest) {
+			return;
+		}
 		ensureQuests(prof);
 		List<QuestProgress> all = new ArrayList<>(prof.dailyQuests);
 		all.addAll(prof.weeklyQuests);
@@ -200,6 +210,9 @@ public final class Retention {
 
 	/** The first time a player comes into the hub on a day: the streak goes up and pays coins. */
 	public static void login(ServerPlayer p) {
+		if (pausedForTest) {
+			return;
+		}
 		PlayerProfile prof = PlayerStore.get(p);
 		long day = today();
 		ensureQuests(prof);

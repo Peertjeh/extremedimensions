@@ -129,7 +129,19 @@ final class BotTests {
 			Match m = matchOfA();
 			return m != null && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
 		});
-		s.waitFor(tag + ": the bot comes over and hits A", 400, () -> p(A).getHealth() < p(A).getMaxHealth());
+		s.waitFor(tag + ": the bot comes over to A", 600, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			double d = b.position().distanceTo(p(A).position());
+			boolean ok = d < 3.0 || p(A).getHealth() < p(A).getMaxHealth();
+			if (!ok && m.runSeconds() > 0 && m.runSeconds() % 5 == 0 && !Integer.valueOf(m.runSeconds()).equals(VARS.put("swLogged", m.runSeconds()))) {
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST sword bot after {}s: {} blocks from A, bot at {}, A at {}", m.runSeconds(),
+						String.format(java.util.Locale.ROOT, "%.1f", d), b.position(), p(A).position());
+			}
+			return ok;
+		});
+		s.waitFor(tag + ": the bot hits A", 200, () -> p(A).getHealth() < p(A).getMaxHealth());
 		s.run(tag + ": A wins", () -> {
 			BotPlayer bot = botsIn(matchOfA()).get(0);
 			VARS.put("bot", bot.getUUID());

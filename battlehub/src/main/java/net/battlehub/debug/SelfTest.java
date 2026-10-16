@@ -75,6 +75,8 @@ public final class SelfTest {
 			ConfigManager.config().effects.victoryCamera = false;
 			// The real weekly schedule must not start a tournament in the middle of a test
 			ConfigManager.config().weekly.enabled = false;
+			// Quest, pass and achievement coins would show up in the coin checks of other tests
+			net.battlehub.progression.Retention.pausedForTest = true;
 		});
 		HubWorldTests.all(server, s);
 		lobbyAndMenus(server, s);
