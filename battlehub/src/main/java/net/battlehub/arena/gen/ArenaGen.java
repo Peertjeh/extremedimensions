@@ -24,8 +24,18 @@ public final class ArenaGen {
 	public static Blueprint duel(Theme t, RandomSource rnd, boolean ranged, double scale, int perSide) {
 		double s = Math.max(0.5, Math.min(3.0, scale));
 		int n = Math.max(1, Math.min(8, perSide));
-		return t.open() ? islands(t, rnd, ranged, s, n) : walled(t, rnd, ranged, s, n);
+		return t.open() ? islands(t, rnd, ranged, s, n) : walled(t, rnd, ranged, s, n, 0);
 	}
+
+	/**
+	 * An arena to build in (Build UHC): always walled, also in the open themes, with room for {@code buildHeight}
+	 * blocks above the ground and an invisible barrier above the wall up to there.
+	 */
+	public static Blueprint buildArena(Theme t, RandomSource rnd, double scale, int buildHeight) {
+		return walled(t, rnd, false, Math.max(0.5, Math.min(3.0, scale)), 1, Math.max(6, buildHeight));
+	}
+
+	private static final int WALL_HEIGHT = 4;
 
 	/** Spawn column on the west side; the other spawn is its mirror image. */
 	private static int spawnX(Field f) {
@@ -63,7 +73,7 @@ public final class ArenaGen {
 		return Math.max(1, (int) Math.round(value * factor));
 	}
 
-	private static Blueprint walled(Theme t, RandomSource rnd, boolean ranged, double s, int perSide) {
+	private static Blueprint walled(Theme t, RandomSource rnd, boolean ranged, double s, int perSide, int buildHeight) {
 		Blueprint bp = new Blueprint();
 		Shape shape = Shape.random(rnd);
 		int r = scaled(15 + rnd.nextInt(7), s);
@@ -74,10 +84,15 @@ public final class ArenaGen {
 		int features = ranged ? 5 + rnd.nextInt(4) : 3 + rnd.nextInt(3);
 		Features.scatter(bp, f, t, rnd, scaled(features, s * s), Features.kinds(t, ranged));
 		f.build(bp, t, rnd, 6);
-		f.walls(bp, t, rnd, 4);
+		f.walls(bp, t, rnd, WALL_HEIGHT);
 		Features.plants(bp, f, t, rnd, 7);
 		Scenery.around(bp, t, rnd, r + 4, r + 12, 0);
 		spawns(bp, f, perSide);
+		int top = buildHeight > 0 ? f.maxHeight() + buildHeight : f.maxHeight() + 40;
+		bp.playArea(f.columns(), top);
+		if (buildHeight > 0) {
+			f.barrier(bp, WALL_HEIGHT, top + 2);
+		}
 		bp.spectator(0.5, f.maxHeight() + scaled(15, s), -(r + 8) + 0.5, 0, 35);
 		bp.voidY(-12);
 		bp.radius(r + 24);
@@ -118,6 +133,8 @@ public final class ArenaGen {
 		int far = scaled(14, s);
 		Scenery.around(bp, t, rnd, r + far, r + far + 8, -10);
 		spawns(bp, f, perSide);
+		// The islands and the satellites round them; the scenery further out is not part of the field
+		bp.playArea(Blueprint.circle(r + scaled(12, s) + 8), f.maxHeight() + 40);
 		bp.spectator(0.5, scaled(24, s), -(r + far) + 0.5, 0, 35);
 		bp.voidY(-14);
 		bp.radius(r + far + scaled(16, s));

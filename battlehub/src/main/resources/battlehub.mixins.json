@@ -16,7 +16,9 @@
 		"InteractionAccessor",
 		"EntityMixin",
 		"LivingEntitySwingMixin",
-		"ResourcePackResponseMixin"
+		"ResourcePackResponseMixin",
+		"FlowingFluidMixin",
+		"BucketItemMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

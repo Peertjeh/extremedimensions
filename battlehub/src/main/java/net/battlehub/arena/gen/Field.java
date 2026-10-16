@@ -224,6 +224,32 @@ public final class Field {
 		return m;
 	}
 
+	/** Every column inside the outline (packed with {@link Blueprint#column}). */
+	public java.util.Set<Long> columns() {
+		java.util.Set<Long> out = new java.util.HashSet<>();
+		for (int x = -r - 1; x <= r + 1; x++) {
+			for (int z = -r - 1; z <= r + 1; z++) {
+				if (inside(x, z)) out.add(Blueprint.column(x, z));
+			}
+		}
+		return out;
+	}
+
+	/**
+	 * Invisible barrier blocks on top of the wall (made with the same {@code height}) up to {@code top}, so
+	 * nobody builds or climbs over it and water stays inside.
+	 */
+	public void barrier(Blueprint bp, int height, int top) {
+		for (int x = -r - 2; x <= r + 2; x++) {
+			for (int z = -r - 2; z <= r + 2; z++) {
+				if (!isRim(x, z)) continue;
+				for (int y = rimBase(x, z) + height + 2; y <= top; y++) {
+					bp.set(x, y, z, Build.s("barrier"));
+				}
+			}
+		}
+	}
+
 	/** A wall around the outline, {@code height} blocks above the floor next to it, in the theme's style. */
 	public void walls(Blueprint bp, Theme t, RandomSource rnd, int height) {
 		int step = 0;

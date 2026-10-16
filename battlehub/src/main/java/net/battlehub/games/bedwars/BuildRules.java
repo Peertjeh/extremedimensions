@@ -28,12 +28,20 @@ public final class BuildRules {
 	private final Set<Long> placed = new HashSet<>();
 	/** Positions a player is placing at this tick, checked on the next tick. */
 	private final Map<Long, Integer> pending = new HashMap<>();
+	/** The arena's playing field (inside the walls, below the top); everything by default. */
+	private java.util.function.Predicate<BlockPos> area = p -> true;
 
 	public BuildRules(ServerLevel level, BlockPos min, BlockPos max, int protectionRadius) {
 		this.level = level;
 		this.min = min;
 		this.max = max;
 		this.radius = protectionRadius;
+	}
+
+	/** Building only where this holds as well (the arena's play area). */
+	public BuildRules area(java.util.function.Predicate<BlockPos> where) {
+		this.area = where == null ? p -> true : where;
+		return this;
 	}
 
 	/** No building within the protection radius of this spot (spawns, shops, generators). */
@@ -61,7 +69,7 @@ public final class BuildRules {
 	public enum Verdict { OK, OUTSIDE, PROTECTED }
 
 	public Verdict mayPlace(BlockPos target) {
-		if (!inBox(target)) {
+		if (!inBox(target) || !area.test(target)) {
 			return Verdict.OUTSIDE;
 		}
 		if (isProtected(target)) {

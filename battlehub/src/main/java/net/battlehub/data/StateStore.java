@@ -176,7 +176,7 @@ public final class StateStore {
 			for (int i = 0; i < Math.min(inv.getContainerSize(), s.items.size()); i++) {
 				inv.setItem(i, s.items.get(i).copy());
 			}
-			inv.setSelectedSlot(Math.max(0, Math.min(8, s.selected)));
+			net.battlehub.util.Inv.select(p, s.selected);
 			p.removeAllEffects();
 			for (MobEffectInstance e : s.effects) {
 				p.addEffect(new MobEffectInstance(e));

@@ -115,11 +115,11 @@ public final class NewLayouts {
 	 * and build_max: the box players may build in.
 	 */
 	public static Blueprint buildUhc(Theme t, RandomSource rnd, int buildHeight) {
-		Blueprint bp = DuelLayout.design(t, rnd, false, 1.5, 1);
-		int top = Math.max(bp.maxY(), 0) + Math.max(6, buildHeight);
+		Blueprint bp = net.battlehub.arena.gen.ArenaGen.buildArena(t, rnd, 1.5, buildHeight);
+		// The box round the field; the field itself (inside the walls, up to the top) is the play area
 		bp.mark("build_min", bp.minX() + 1, bp.minY(), bp.minZ() + 1);
-		bp.mark("build_max", bp.maxX() - 1, top, bp.maxZ() - 1);
-		bp.include(bp.minX(), top + 1, bp.minZ());
+		bp.mark("build_max", bp.maxX() - 1, bp.playTop(), bp.maxZ() - 1);
+		bp.include(bp.minX(), bp.playTop() + 3, bp.minZ());
 		return bp;
 	}
 
@@ -196,6 +196,8 @@ public final class NewLayouts {
 		}
 		bp.include((int) -ring - 8, -12, (int) -ring - 8);
 		bp.include((int) ring + 8, 20, (int) ring + 8);
+		// Bridging between the islands is fine; far out into the void or high up in the sky is not
+		bp.playArea(Blueprint.circle((int) ring + 8), 18);
 		bp.spectator(0.5, 30, -(ring + 10) + 0.5, 0, 40);
 		bp.voidY(-14);
 		bp.radius((int) ring + 24);

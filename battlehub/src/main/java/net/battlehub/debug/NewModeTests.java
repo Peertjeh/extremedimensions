@@ -170,16 +170,31 @@ final class NewModeTests {
 	// ------------------------------------------------------------------ duel games
 
 	private static void duel(MinecraftServer server, Script s, GameMode mode) {
+		duel(server, s, mode, null);
+	}
+
+	/** {@code inCountdown}: runs once the players are in the arena, before the fight starts. */
+	private static void duel(MinecraftServer server, Script s, GameMode mode, Runnable inCountdown) {
 		String tag = mode.id();
 		SelfTest.reset(s, tag);
 		s.run(tag + ": A challenges B (best of 1)", () -> {
 			SelfTest.join(server, A);
 			SelfTest.join(server, B);
+			// Both hold something else than the first slot, as after a fight with blocks in hand
+			p(A).pickSlot(4);
+			p(B).pickSlot(6);
 			net.battlehub.data.PlayerStore.get(p(A)).duelFormat = "bo1";
 			net.battlehub.data.PlayerStore.get(p(B)).duelFormat = "bo1";
 			net.battlehub.queue.Challenges.send(p(A), p(B), mode);
 			net.battlehub.queue.Challenges.accept(p(B), p(A));
 		});
+		if (inCountdown != null) {
+			s.waitFor(tag + ": in the arena, counting down", 600, () -> {
+				Match m = Matches.of(p(A).getUUID());
+				return m != null && m.phase() == Match.Phase.COUNTDOWN;
+			});
+			s.run(tag + ": during the countdown", inCountdown);
+		}
 		s.waitFor(tag + ": fight running", 600, () -> {
 			Match m = Matches.of(p(A).getUUID());
 			if (m != null && m.phase() == Match.Phase.RUNNING) {
@@ -245,7 +260,68 @@ final class NewModeTests {
 
 	private static void buildUhc(MinecraftServer server, Script s) {
 		String tag = "build_uhc";
-		duel(server, s, GameMode.BUILD_UHC);
+		duel(server, s, GameMode.BUILD_UHC, () -> {
+			// Something left from an earlier game on this spot: an item and an arrow
+			Match m = Matches.of(p(A).getUUID());
+			net.minecraft.server.level.ServerLevel l = m.arena().level();
+			BlockPos at = m.arena().origin().above(2);
+			net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(l, at.getX() + 0.5, at.getY(), at.getZ() + 0.5,
+					new ItemStack(Items.DIAMOND));
+			l.addFreshEntity(item);
+			VARS.put("leftover", item);
+		});
+		s.check(tag + ": what lay in the arena before the start is gone", () ->
+				((net.minecraft.world.entity.Entity) VARS.get("leftover")).isRemoved());
+		s.check(tag + ": after the kit, client and server both hold the first slot", () ->
+				p(A).getInventory().getSelectedSlot() == 0 && p(A).clientSlot() == 0 && p(B).getInventory().getSelectedSlot() == 0 && p(B).clientSlot() == 0);
+		s.check(tag + ": the arena's chunks stay loaded while it is in use", () -> {
+			net.battlehub.arena.Arena a = match().arena();
+			BlockPos far = a.origin().offset(a.blueprint().maxX(), 0, a.blueprint().maxZ());
+			long key = (far.getX() >> 4 & 0xFFFFFFFFL) | ((long) (far.getZ() >> 4) << 32);
+			return net.battlehub.arena.ArenaChunks.held() > 0 && a.level().getForceLoadedChunks().contains(key);
+		});
+		s.check(tag + ": building stops at the walls and below the top", () -> {
+			net.battlehub.arena.Arena a = match().arena();
+			BlockPos o = a.origin();
+			ItemStack cob = new ItemStack(Items.COBBLESTONE);
+			BlockPos inside = BlockPos.containing(p(A).position()).above(3);
+			BlockPos beyondWall = o.offset(a.blueprint().maxX() - 2, 3, 0);
+			BlockPos tooHigh = o.offset(0, a.blueprint().playTop() + 1, 0);
+			boolean barrier = a.blueprint().blocks().values().stream().anyMatch(st -> st.is(Blocks.BARRIER));
+			return a.blueprint().hasPlayArea() && barrier && match().onPlaceBlock(p(A), inside, cob)
+					&& !match().onPlaceBlock(p(A), beyondWall, cob) && !match().onPlaceBlock(p(A), tooHigh, cob);
+		});
+		s.check(tag + ": water flows on the field, not over the wall, into the void or between arenas", () -> {
+			net.battlehub.arena.Arena a = match().arena();
+			BlockPos o = a.origin();
+			net.minecraft.server.level.ServerLevel l = a.level();
+			int belowVoid = (int) Math.floor(a.voidY()) - o.getY() - 2;
+			return net.battlehub.arena.FluidGuard.maySpread(l, o.above(2)) && !net.battlehub.arena.FluidGuard.maySpread(l, o.offset(a.blueprint().maxX() - 2, 3, 0))
+					&& !net.battlehub.arena.FluidGuard.maySpread(l, o.offset(0, belowVoid, 0)) && !net.battlehub.arena.FluidGuard.maySpread(l, o.offset(500, 0, 0));
+		});
+		s.check(tag + ": a bucket is emptied on the field, not beyond the wall", () -> {
+			net.battlehub.arena.Arena a = match().arena();
+			ItemStack before = p(A).getMainHandItem().copy();
+			p(A).setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.WATER_BUCKET));
+			boolean in = net.battlehub.arena.FluidGuard.mayEmpty(p(A), a.level(), BlockPos.containing(p(A).position()).above(3));
+			boolean out = net.battlehub.arena.FluidGuard.mayEmpty(p(A), a.level(), a.origin().offset(a.blueprint().maxX() - 2, 3, 0));
+			p(A).setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, before);
+			return in && !out;
+		});
+		s.run(tag + ": a chest with loot and an arrow in the arena", () -> {
+			net.battlehub.arena.Arena a = match().arena();
+			BlockPos c = BlockPos.containing(p(B).position()).offset(2, 0, 0);
+			a.level().setBlock(c, Blocks.CHEST.defaultBlockState(), 3);
+			if (a.level().getBlockEntity(c) instanceof Container box) {
+				box.setItem(0, new ItemStack(Items.GOLDEN_APPLE, 5));
+				box.setItem(1, new ItemStack(Items.DIAMOND_SWORD));
+			}
+			net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(a.level(), c.getX() + 0.5, c.getY() + 2, c.getZ() + 0.5,
+					new ItemStack(Items.ARROW, 3));
+			a.level().addFreshEntity(item);
+			VARS.put("uhcBox", a.bounds());
+			VARS.put("uhcLevel", a.level());
+		});
 		s.check(tag + ": the kit has blocks, buckets and golden apples; survival mode", () ->
 				p(A).getInventory().countItem(Items.COBBLESTONE) == 64 && p(A).getInventory().countItem(Items.LAVA_BUCKET) == 2
 						&& p(A).getInventory().countItem(Items.GOLDEN_APPLE) == 6 && p(A).gameMode() == net.minecraft.world.level.GameType.SURVIVAL);
@@ -259,6 +335,44 @@ final class NewModeTests {
 		s.run(tag + ": A kills B", () -> PartyTests.hit(B, A, 1000f));
 		s.waitFor(tag + ": A wins", 20, () -> match().phase() != Match.Phase.RUNNING && match().outcome(p(A).getUUID()) == Outcome.WIN);
 		closed(s, tag);
+		s.check(tag + ": back in the lobby, client and server agree on the hotbar slot", () ->
+				p(A).getInventory().getSelectedSlot() == p(A).clientSlot() && p(B).getInventory().getSelectedSlot() == p(B).clientSlot());
+		s.waitFor(tag + ": arena cleared", 600, () -> net.battlehub.arena.ArenaSlots.busy() == 0);
+		s.check(tag + ": nothing left lying where the arena was (the chest did not spill), chunks let go", () -> {
+			net.minecraft.world.phys.AABB box = (net.minecraft.world.phys.AABB) VARS.get("uhcBox");
+			net.minecraft.server.level.ServerLevel l = (net.minecraft.server.level.ServerLevel) VARS.get("uhcLevel");
+			return net.battlehub.arena.Loose.count(l, box.inflate(16)) == 0 && net.battlehub.arena.ArenaChunks.held() == 0;
+		});
+		chestClear(s);
+	}
+
+	/** Clearing a chest full of loot leaves no items behind (in a spot no arena uses). */
+	private static void chestClear(Script s) {
+		String tag = "arena clearing";
+		s.run(tag + ": a chest with loot and an item on the ground, then the area is cleared", () -> {
+			net.minecraft.server.level.ServerLevel l = net.battlehub.arena.ArenaWorld.level(p(A).level().getServer());
+			BlockPos o = net.battlehub.arena.ArenaWorld.origin(net.battlehub.arena.ArenaSlots.capacity() - 1).above(40);
+			net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(o).inflate(4);
+			net.battlehub.arena.ArenaChunks.hold(l, box);
+			l.setBlock(o.below(), Blocks.STONE.defaultBlockState(), 3);
+			l.setBlock(o, Blocks.BARREL.defaultBlockState(), 3);
+			if (l.getBlockEntity(o) instanceof Container c) {
+				for (int i = 0; i < 9; i++) c.setItem(i, new ItemStack(Items.GOLD_INGOT, 16));
+			}
+			l.addFreshEntity(new net.minecraft.world.entity.item.ItemEntity(l, o.getX() + 0.5, o.getY() + 2, o.getZ() + 0.5, new ItemStack(Items.EMERALD)));
+			VARS.put("clearBox", box);
+			VARS.put("clearDone", false);
+			net.battlehub.arena.ArenaBuilder.clear(l, box, () -> VARS.put("clearDone", true));
+		});
+		s.waitFor(tag + ": done", 200, () -> Boolean.TRUE.equals(VARS.get("clearDone")));
+		s.check(tag + ": the barrel is gone and nothing lies on the ground", () -> {
+			net.minecraft.server.level.ServerLevel l = net.battlehub.arena.ArenaWorld.level(p(A).level().getServer());
+			net.minecraft.world.phys.AABB box = (net.minecraft.world.phys.AABB) VARS.get("clearBox");
+			BlockPos o = BlockPos.containing(box.getCenter());
+			boolean ok = l.getBlockState(o).isAir() && net.battlehub.arena.Loose.count(l, box.inflate(16)) == 0;
+			net.battlehub.arena.ArenaChunks.release(l, box);
+			return ok;
+		});
 	}
 
 	// ------------------------------------------------------------------ a hand-built map

@@ -341,6 +341,7 @@ public abstract class Match {
 		Blueprint bp = customMap != null ? customMap.blueprint() : design(theme);
 		arena = new Arena(level, slot, theme, ArenaWorld.origin(slot), bp);
 		ArenaSlots.markBuilt(slot, arena.bounds());
+		net.battlehub.arena.ArenaChunks.hold(level, arena.bounds());
 		for (UUID id : participants) {
 			Sessions.toMatch(id, this.id);
 			ServerPlayer p = player(id);
@@ -427,6 +428,7 @@ public abstract class Match {
 		if (phase != Phase.BUILDING) {
 			return;
 		}
+		sweepLeftovers();
 		onArenaReady();
 		int index = 0;
 		for (UUID id : participants) {
@@ -494,6 +496,13 @@ public abstract class Match {
 		runTicks = 0;
 		introTicks = 0;
 		setPhase(Phase.COUNTDOWN);
+	}
+
+	/** Loose items, arrows, XP and the like in and around the arena (not the game's own figures or shops). */
+	protected void sweepLeftovers() {
+		if (arena != null) {
+			net.battlehub.arena.Loose.sweep(arena.level(), arena.bounds().inflate(16));
+		}
 	}
 
 	/** Removes projectiles, dropped items and other loose entities from the arena. */
@@ -606,6 +615,8 @@ public abstract class Match {
 		if (phaseTicks >= total) {
 			net.battlehub.fx.Cinematics.stopMatch(server, id);
 			introTicks = 0;
+			// Items or arrows from an earlier game on this spot (their chunks may load only now) never reach play
+			sweepLeftovers();
 			setPhase(Phase.RUNNING);
 			for (UUID id : alive) {
 				ServerPlayer p = player(id);
@@ -947,7 +958,12 @@ public abstract class Match {
 	private void clearArena() {
 		if (arena != null) {
 			int slot = arena.slot();
-			ArenaBuilder.clear(arena, () -> ArenaSlots.release(slot));
+			ServerLevel level = arena.level();
+			net.minecraft.world.phys.AABB box = arena.bounds();
+			ArenaBuilder.clear(arena, () -> {
+				net.battlehub.arena.ArenaChunks.release(level, box);
+				ArenaSlots.release(slot);
+			});
 		}
 	}
 

@@ -27,6 +27,8 @@ import net.minecraft.network.protocol.game.ClientboundRespawnPacket;
  */
 final class TestConnection extends Connection {
 	final Set<Integer> entities = ConcurrentHashMap.newKeySet();
+	/** The hotbar slot the client holds, as far as the server told it (-1: never told). */
+	volatile int heldSlot = -1;
 
 	TestConnection() {
 		super(PacketFlow.SERVERBOUND);
@@ -55,6 +57,8 @@ final class TestConnection extends Connection {
 			}
 		} else if (msg instanceof ClientboundRespawnPacket) {
 			entities.clear();
+		} else if (msg instanceof net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket held) {
+			heldSlot = held.slot();
 		}
 	}
 

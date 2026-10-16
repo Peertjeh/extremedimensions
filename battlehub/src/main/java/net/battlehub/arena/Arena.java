@@ -85,6 +85,17 @@ public final class Arena {
 		return dx * dx + dz * dz <= (double) r * r && pos.y > origin.getY() + bp.voidY() - 25 && pos.y < origin.getY() + 70;
 	}
 
+	/** Inside the playing field: players may build here and water and lava may flow here. */
+	public boolean inPlayArea(BlockPos pos) {
+		return bp.inPlayArea(pos.getX() - origin.getX(), pos.getY() - origin.getY(), pos.getZ() - origin.getZ());
+	}
+
+	/** Horizontally within the arena box (with some room around it). */
+	public boolean around(BlockPos pos, int margin) {
+		AABB b = bounds();
+		return pos.getX() >= b.minX - margin && pos.getX() <= b.maxX + margin && pos.getZ() >= b.minZ - margin && pos.getZ() <= b.maxZ + margin;
+	}
+
 	public boolean contains(Vec3 pos) {
 		return bounds().inflate(16).contains(pos);
 	}

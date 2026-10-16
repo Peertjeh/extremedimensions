@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Blocks;
@@ -28,6 +29,10 @@ public final class Blueprint {
 	private int radius = 40;
 	private int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
 	private int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+	/** The columns (x, z) that belong to the playing field, or null when the whole box does. */
+	private Set<Long> playColumns;
+	/** Nothing may be built or flow above this relative Y. */
+	private int playTop = Integer.MAX_VALUE;
 
 	public void set(int x, int y, int z, BlockState state) {
 		if (state == null) {
@@ -148,6 +153,45 @@ public final class Blueprint {
 
 	public boolean isEmpty() {
 		return blocks.isEmpty();
+	}
+
+	/**
+	 * The playing field: what players may build in and where water and lava may flow. Columns are packed with
+	 * {@link #column(int, int)}; {@code top} is the highest relative Y.
+	 */
+	public void playArea(Set<Long> columns, int top) {
+		this.playColumns = columns;
+		this.playTop = top;
+	}
+
+	public boolean hasPlayArea() {
+		return playColumns != null;
+	}
+
+	public int playTop() {
+		return playTop;
+	}
+
+	/** Inside the playing field (always true for blueprints without one, except above the top). */
+	public boolean inPlayArea(int x, int y, int z) {
+		return y <= playTop && (playColumns == null || playColumns.contains(column(x, z)));
+	}
+
+	public static long column(int x, int z) {
+		return ((long) x << 32) | (z & 0xFFFFFFFFL);
+	}
+
+	/** Every column within {@code radius} of the origin (open maps: islands in the void). */
+	public static Set<Long> circle(int radius) {
+		Set<Long> out = new java.util.HashSet<>();
+		for (int x = -radius; x <= radius; x++) {
+			for (int z = -radius; z <= radius; z++) {
+				if (x * x + z * z <= radius * radius + radius) {
+					out.add(column(x, z));
+				}
+			}
+		}
+		return out;
 	}
 
 	public int minX() { return minX; }

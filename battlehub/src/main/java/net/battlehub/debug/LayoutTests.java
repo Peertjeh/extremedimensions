@@ -126,6 +126,13 @@ final class LayoutTests {
 			if (y - 1 <= bp.voidY()) {
 				problems.add(where + ": spawn is below the void line");
 			}
+			if (!bp.inPlayArea(x, y, z)) {
+				problems.add(where + ": spawn " + x + "," + y + "," + z + " is outside the playing field");
+			}
+		}
+		if (layout.equals("build_uhc") && (!bp.hasPlayArea()
+				|| bp.blocks().values().stream().noneMatch(st -> st.is(net.minecraft.world.level.block.Blocks.BARRIER)))) {
+			problems.add(where + ": no walled field with a barrier to build in");
 		}
 		for (String mark : required(layout)) {
 			if (bp.marks(mark).isEmpty()) {

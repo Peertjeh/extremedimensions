@@ -10,9 +10,12 @@ import net.battlehub.BattleHub;
 import net.battlehub.config.ConfigManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Clearable;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
@@ -25,6 +28,10 @@ public final class ArenaBuilder {
 
 	/** Send to clients, skip shape updates of neighbours, never drop items. */
 	private static final int FLAGS = 2 | 16 | 32;
+	/** Clearing also skips what a block entity does when it goes (a chest spilling its contents). */
+	private static final int CLEAR_FLAGS = FLAGS | Block.UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS;
+	/** Items and arrows that flew a little way out of the arena are swept up too. */
+	private static final double SWEEP_MARGIN = 16;
 
 	private interface Job {
 		/** Work through up to {@code budget} units; return the units used. */
@@ -177,9 +184,7 @@ public final class ArenaBuilder {
 		@Override
 		public int step(int budget) {
 			if (!entitiesCleared) {
-				for (Entity e : level.getEntities((Entity) null, box.inflate(8), e -> !(e instanceof Player))) {
-					e.discard();
-				}
+				removeEntities();
 				entitiesCleared = true;
 			}
 			BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
@@ -190,7 +195,12 @@ public final class ArenaBuilder {
 			while (used < budget && !finished) {
 				pos.set(x, y, z);
 				if (!level.getBlockState(pos).isAir()) {
-					level.setBlock(pos, air, FLAGS);
+					// Chests, barrels, furnaces and the like are emptied first, so nothing spills out
+					BlockEntity be = level.getBlockEntity(pos);
+					if (be instanceof Clearable c) {
+						c.clearContent();
+					}
+					level.setBlock(pos, air, CLEAR_FLAGS);
 					used++;
 				} else if (++reads % 4 == 0) {
 					used++;
@@ -201,11 +211,19 @@ public final class ArenaBuilder {
 						z = minZ;
 						if (++y > maxY) {
 							finished = true;
+							// Anything that still dropped while the blocks went
+							removeEntities();
 						}
 					}
 				}
 			}
 			return used;
+		}
+
+		private void removeEntities() {
+			for (Entity e : level.getEntities((Entity) null, box.inflate(SWEEP_MARGIN), e -> !(e instanceof Player))) {
+				e.discard();
+			}
 		}
 
 		@Override

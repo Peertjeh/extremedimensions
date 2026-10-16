@@ -99,7 +99,7 @@ public final class SkyWarsMatch extends PartyMatch {
 
 	@Override
 	public boolean onPlaceBlock(ServerPlayer p, BlockPos target, ItemStack held) {
-		return phase == Phase.RUNNING && active(p.getUUID()) && arena.bounds().contains(Vec3.atCenterOf(target))
+		return phase == Phase.RUNNING && active(p.getUUID()) && arena.bounds().contains(Vec3.atCenterOf(target)) && arena.inPlayArea(target)
 				&& (held.getItem() instanceof BlockItem || held.getItem() instanceof BucketItem);
 	}
 

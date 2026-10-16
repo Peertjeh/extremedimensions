@@ -337,7 +337,7 @@ public final class PropHuntMatch extends PartyMatch {
 				.tag(ITEM_TAUNT).build());
 		inv.setItem(3, Icon.of(Items.SLIME_BALL).name(Lang.item(p, "prophunt.item.decoy")).lore(Lang.loreLines(p, "prophunt.item.decoy.lore", cfg.decoySeconds, cfg.decoyCooldownSeconds))
 				.tag(ITEM_DECOY).build());
-		inv.setSelectedSlot(0);
+		net.battlehub.util.Inv.select(p, 0);
 		p.inventoryMenu.sendAllDataToRemote();
 	}
 

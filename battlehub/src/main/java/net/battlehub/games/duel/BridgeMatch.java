@@ -76,7 +76,7 @@ public final class BridgeMatch extends DuelMatch {
 
 	@Override
 	protected void onArenaReady() {
-		build = new BuildRules(arena.level(), arena.mark("build_min"), arena.mark("build_max"), 1);
+		build = new BuildRules(arena.level(), arena.mark("build_min"), arena.mark("build_max"), 1).area(arena::inPlayArea);
 		build.protect(arena.mark("goal_red"));
 		build.protect(arena.mark("goal_blue"));
 		for (int i = 0; i < Math.min(2, arena.spawnCount()); i++) {

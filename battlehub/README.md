@@ -177,7 +177,8 @@ In their own menu (Duel Games), with queues, challenges, ranked, practice agains
   other goal to score; dying only sends you home. First to five goals wins.
 * **Boxing**: no damage, only knockback; the first to land 100 hits wins the round. Combos are shown.
 * **Build UHC**: blocks, lava and water buckets, a rod, a bow and golden apples. No natural healing: only
-  golden apples heal. Only blocks players placed can be broken.
+  golden apples heal. Only blocks players placed can be broken. You build inside the walls, up to the build
+  height (`buildHeight`); an invisible barrier above the wall keeps players and water in.
 
 ### Play again
 After every match a **[Play again]** button appears in chat and a lime dye in your first hotbar slot,
@@ -194,7 +195,8 @@ for 30 seconds. It queues you for the same mode, format and ranked setting, asks
 * **Last Man Standing**: free-for-all inside a shrinking border.
 * **Spleef**: dig the snow away under the others with a fast shovel; every block gives a snowball to push with.
 * **SkyWars** (2–12): everyone on their own island with a chest, stepping-stone islands and a middle island
-  with the best loot (`skywars.json`). Build, break, fight; whoever dies drops everything.
+  with the best loot (`skywars.json`). Build, break, fight; whoever dies drops everything. You can bridge
+  between the islands, but not far out into the void or high into the sky.
 * **Murder Mystery** (4–16): one murderer (a sword after ten seconds, one hit kills), one detective (a bow
   with an arrow back after every shot), the rest innocent. Gold lies around: ten gold buys a bow. Shoot an
   innocent and you die too. The innocents win when the murderer is shot or time runs out.

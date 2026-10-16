@@ -55,7 +55,7 @@ public final class BuildUhcMatch extends DuelMatch {
 			min = BlockPos.containing(b.minX, b.minY, b.minZ);
 			max = BlockPos.containing(b.maxX - 1, b.maxY + 10, b.maxZ - 1);
 		}
-		build = new BuildRules(arena.level(), min, max, 1);
+		build = new BuildRules(arena.level(), min, max, 1).area(arena::inPlayArea);
 		for (int i = 0; i < Math.min(2, arena.spawnCount()); i++) {
 			build.protect(BlockPos.containing(arena.spawn(i).pos()));
 		}

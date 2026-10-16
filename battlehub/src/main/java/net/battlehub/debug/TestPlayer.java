@@ -39,6 +39,17 @@ public final class TestPlayer extends ServerPlayer {
 		return link.entities;
 	}
 
+	/** The hotbar slot this player's client holds. */
+	public int clientSlot() {
+		return link.heldSlot;
+	}
+
+	/** The player picks a hotbar slot on the client (the server hears about it, as with a real client). */
+	public void pickSlot(int slot) {
+		link.heldSlot = slot;
+		getInventory().setSelectedSlot(slot);
+	}
+
 	public void leave() {
 		connection.onDisconnect(new DisconnectionDetails(Component.literal("self-test")));
 	}

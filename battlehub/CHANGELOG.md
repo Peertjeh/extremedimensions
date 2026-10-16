@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.13.1
+
+### Fixed
+* **Items no longer stay behind in the arenas.** Chests (SkyWars loot, anything players placed) are emptied
+  before an arena is cleared instead of spilling their contents; items, arrows and XP are swept up after the
+  blocks are gone too; and an arena's chunks stay loaded until it is cleared, so nothing is saved in a chunk that
+  unloaded mid-game and turns up in the next arena on that spot. Anything left from an older game is removed
+  before the next one starts.
+* **No more building out of the map.** Build UHC is always a walled field (also in the open themes) with an
+  invisible barrier above the wall up to the build height; blocks and buckets only go on the playing field.
+  SkyWars has a limit on how far out and how high you can build.
+* **Water and lava stay on the playing field**: they never flow over a wall, off an island into the void or out
+  of an arena, and buckets aimed at the air are checked like blocks.
+* **The item in your hand after a respawn is the one you see.** When the kit selects the first hotbar slot
+  (after a death, a new round or the start), the client is told as well; before, your screen still showed the
+  old slot (blocks, a bow) that you could not use, while others saw you holding the sword.
+
 ## 1.13.0
 
 ### Added

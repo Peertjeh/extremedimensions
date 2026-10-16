@@ -47,6 +47,7 @@ public final class ArenaSlots {
 		if (level == null) {
 			return;
 		}
+		ArenaChunks.reset(level);
 		for (Map.Entry<Integer, double[]> e : new HashMap<>(dirty).entrySet()) {
 			int slot = e.getKey();
 			double[] b = e.getValue();
@@ -56,7 +57,12 @@ public final class ArenaSlots {
 			}
 			alloc.reserve(slot);
 			BattleHub.LOGGER.info("Cleaning arena slot {} left over from the last run", slot);
-			ArenaBuilder.clear(level, new AABB(b[0], b[1], b[2], b[3], b[4], b[5]), () -> release(slot));
+			AABB box = new AABB(b[0], b[1], b[2], b[3], b[4], b[5]);
+			ArenaChunks.hold(level, box);
+			ArenaBuilder.clear(level, box, () -> {
+				ArenaChunks.release(level, box);
+				release(slot);
+			});
 		}
 		save();
 	}

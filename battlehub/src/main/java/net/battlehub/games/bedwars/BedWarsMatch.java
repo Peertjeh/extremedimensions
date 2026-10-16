@@ -287,7 +287,7 @@ public final class BedWarsMatch extends PartyMatch implements BedWarsShop.Teams 
 		setUp = true;
 		ServerLevel level = arena.level();
 		gens = new Generators(level);
-		build = new BuildRules(level, arena.mark("build_min"), arena.mark("build_max"), cfg.protectionRadius);
+		build = new BuildRules(level, arena.mark("build_min"), arena.mark("build_max"), cfg.protectionRadius).area(arena::inPlayArea);
 		for (int t = 0; t < teams.size(); t++) {
 			BlockPos gen = arena.mark("gen_" + t);
 			gens.add(gen, Resource.IRON, t, cfg);

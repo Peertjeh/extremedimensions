@@ -104,7 +104,7 @@ public final class Kits {
 			Ids.effect(e.getKey()).ifPresent(h -> p.addEffect(new MobEffectInstance(h, MobEffectInstance.INFINITE_DURATION,
 					Math.max(0, e.getValue()), false, false, true)));
 		}
-		inv.setSelectedSlot(0);
+		net.battlehub.util.Inv.select(p, 0);
 		p.inventoryMenu.sendAllDataToRemote();
 	}
 
