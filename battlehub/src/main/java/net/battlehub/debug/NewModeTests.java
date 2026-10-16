@@ -330,12 +330,12 @@ final class NewModeTests {
 		});
 		s.check(tag + ": read with two spawns, offered to sword duels only", () -> {
 			CustomMaps.Map m = CustomMaps.byId("selftest_map");
-			if (m == null || m.spawns() != 2) {
+			if (m == null || m.spawns() != 2 || m.blockCount() != 45) {
 				net.battlehub.BattleHub.LOGGER.warn("SELFTEST custom maps: {} loaded; file there: {}; selftest_map: {}",
 						CustomMaps.all().size(), Files.exists(mapFile()),
-						m == null ? "missing" : m.spawns() + " spawns, markers " + m.markers + ", size " + m.size);
+						m == null ? "missing" : m.spawns() + " spawns, " + m.blockCount() + " blocks, markers " + m.markers + ", size " + m.size);
 			}
-			return m != null && m.spawns() == 2 && MapRules.maps(GameMode.SWORD).contains(m) && MapRules.maps(GameMode.SUMO).isEmpty()
+			return m != null && m.spawns() == 2 && m.blockCount() == 45 && MapRules.maps(GameMode.SWORD).contains(m) && MapRules.maps(GameMode.SUMO).isEmpty()
 					&& MapRules.maps(GameMode.BRIDGE).isEmpty();
 		});
 		duel(server, s, GameMode.SWORD);

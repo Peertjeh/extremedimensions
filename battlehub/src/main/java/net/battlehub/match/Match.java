@@ -427,13 +427,6 @@ public abstract class Match {
 		if (phase != Phase.BUILDING) {
 			return;
 		}
-		if (customMap != null) {
-			try {
-				customMap.place(arena);
-			} catch (RuntimeException e) {
-				BattleHub.LOGGER.error("Custom map {} could not be placed", customMap.id, e);
-			}
-		}
 		onArenaReady();
 		int index = 0;
 		for (UUID id : participants) {

@@ -212,7 +212,8 @@ The most votes win.
 Build a map, save it with a structure block and put the `.nbt` file in `config/battlehub/maps/<mode id>/`
 (or `maps/all/` for every game that takes hand-built maps), then `/battlehub reload`. Mark the spots with
 structure blocks in **Data** mode: `spawn` (or `spawn:90` to face west; `0` faces south), `spectator`, and the
-game's own spots. The markers are taken out when the map is placed.
+game's own spots. The markers are not built. Only blocks are taken over: what is inside chests or written
+on signs is not (SkyWars fills its chests itself).
 * Duels, Boxing, Build UHC, Free for All, Last Man Standing, Sumo, Spleef, SkyWars, Murder Mystery: spawns
   (duels need two). SkyWars fills chests marked `chest` and `center_chest`; Murder Mystery drops gold on
   `gold` spots (anywhere on the floor without them); Build UHC builds inside `build_min`/`build_max` (the whole
