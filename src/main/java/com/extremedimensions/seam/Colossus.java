@@ -820,7 +820,7 @@ public final class Colossus {
 			tr.half = h;
 			tr.y0 = y;
 			tr.height = Math.max(great ? 9 : 7, (int) Math.round(heights[i] * scale));
-			boolean last = i == tiers - 1 || h - 2 < 3;
+			boolean last = i == tiers - 1;
 			int roll = rnd.nextInt(10);
 			if (i == 0) {
 				tr.body = roll < 5 ? LANCET : roll < 7 ? ARCADE : roll < 9 ? BANDED : COLONNADE;
@@ -855,8 +855,9 @@ public final class Colossus {
 			prevHalf = h;
 			prevForm = form;
 			y = y1 + 1;
-			// the next tier steps in two (or three), and often turns from square to octagon, octagon to round
-			h -= h >= 8 && rnd.nextInt(3) == 0 ? 3 : 2;
+			// the next tier steps in (a slender tower by one, or not at all), and often turns from square to octagon,
+			// octagon to round
+			h -= h >= 8 ? (rnd.nextInt(3) == 0 ? 3 : 2) : h >= 6 ? 2 : rnd.nextInt(2);
 			if (form == Form.SQUARE && rnd.nextInt(3) == 0) {
 				form = Form.OCTAGON;
 			} else if (form == Form.OCTAGON && rnd.nextInt(3) == 0) {
@@ -1498,8 +1499,8 @@ public final class Colossus {
 			}
 		}
 		Frame up = new Frame(b.p, b.wx(0, 0), b.oy + ph, b.wz(0, 0), b.rot);
-		int th = 4 + rnd.nextInt(2);
-		int D = Math.min(pw - th - 2, 8 + rnd.nextInt(4));
+		int th = 5 + rnd.nextInt(2);
+		int D = Math.min(pw - th - 2, 9 + rnd.nextInt(4));
 		int tallness = Math.min(maxH - ph, 60 + rnd.nextInt(30));
 		long seed = rnd.nextLong();
 		Form tf = formFor(rnd, true);
@@ -1545,9 +1546,8 @@ public final class Colossus {
 				doorway(toward, 0, bh, 2, deck);
 				landing(back, deck, true);
 			}
-			if (back.topY > tallness) {
-				return ph + back.topY;
-			}
+			forecourt(b.p, b, rnd, top, pw + 1, Math.max(3, R - pw - 2), 4);
+			return ph + Math.max(left.topY, back.topY);
 		}
 		forecourt(b.p, b, rnd, top, pw + 1, Math.max(3, R - pw - 2), 4);
 		return ph + left.topY;
