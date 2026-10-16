@@ -179,7 +179,7 @@ public class ClientShots implements FabricClientGameTest {
 	/** Puts the camera at a spot, turned to face a point across the ground, at a pitch. */
 	private static void eye(TestSingleplayerContext sp, double x, double y, double z, double tx, double tz, float pitch) {
 		float yaw = (float) Math.toDegrees(Math.atan2(-(tx - x), tz - z));
-		sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s %.2f %.2f %.2f %.1f %.1f", x, y, z, yaw, pitch));
+		sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %.2f %.2f %.1f %.1f", x, y, z, yaw, pitch));
 	}
 
 	private static void face(TestSingleplayerContext sp, String name) {
@@ -882,7 +882,7 @@ public class ClientShots implements FabricClientGameTest {
 			// the column and the compass are drawn from where the server says the rift is
 			ctx.runOnClient(mc -> check(ClientState.riftKnown(), "the client does not know where the rift home is"));
 			// Back where the visitor stepped out, for what follows
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s %.2f %.2f %.2f", gate[5], gate[6], gate[7]));
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %.2f %.2f", gate[5], gate[6], gate[7]));
 			ctx.waitTicks(10);
 
 			// The Fray: a well at the edge of the arrival island, and down on its knot among the strands

@@ -1,5 +1,42 @@
 # Changelog
 
+## 2.24.0: The Way Home
+
+### Added
+- **The Return Gate.** You no longer arrive in the Seam on a bare island beside a wisp of particles: you step out of
+  a monumental gate of hush masonry, looking out over the island, with the way home at your back. Twin battered pylons
+  (stepping in as they rise, with round mouldings up their corners and tall niches lined with glowing silk), a lower
+  portal between them with a pointed arch and a hood moulding, an eye of gold over the door on both faces, braziers of
+  signal fire on the pylons whose smoke climbs high over the fog, lantern posts on their corners, obelisks before them,
+  and a processional way with a line of gold set in its paving and gold lamps along it. The gate is built from the
+  ideas of gateways made to be found and walked through slowly: the pylons of Karnak and Edfu, the torii of
+  Itsukushima, the receding orders of a Gothic portal and the avenue of lamps before a temple. It flies in around you
+  as you arrive.
+- **The rift home hangs between the pylons** and wanders over the pale stones of the threshold, never off them (a
+  Restless Rift trial still lets it slip out and roam).
+- **Gold means home.** Gold is a colour no other light in the Seam gives. A column of gold light now stands over the
+  rift, from deep in the void below to high over the islands, and it shows through the fog from anywhere in the Seam,
+  faint and far, exactly where the rift is (the way the lit mountain of Journey or the sword's beam in Shadow of the
+  Colossus guide you). Gold ripples run out over the threshold, sparks rise and the rift hums, so it can be found by
+  ear in the mist.
+- **A compass home**: beside the distance to the rift, the HUD shows a gold arrow that turns as you turn, and the
+  distance counts down live.
+- **The arrival island is joined to the Seam by a bridge** to the nearest island it can reach, with the gate on the far
+  side looking down the island to it. Coming back by the same rift, you find the same gate and the same bridge.
+- **Bridges** pass under a gateway where they leave each island, framing the view across (as the towers at the ends of
+  the Charles Bridge do). Some long bridges are hung instead of built: a deck of dark wood with fence rails slung from
+  chain cables that sag between timber frames, with strips of silk hanging from the deck like prayer flags.
+- Rock outcrops break up through the turf of the open islands.
+- New settings: the Return Gate, the height of the column of light, the compass, how far off the rift can be heard,
+  and whether the rift keeps to its threshold.
+
+### Changed
+- **Islands hang as upside-down mountains**: a pointed summit under the middle, two to four lesser summits about it
+  and ribs down the flanks, where they used to be smooth bowls. Their rock darkens with depth in streaks that run down
+  the stone instead of a speckle, crossed by thin strata, chalk-pale above and basalt-dark below.
+- The dust of light in the Seam's air drifts on a breath of wind that always blows towards the way home.
+- The Seam's journal page and the Restless Rift twist tell of the gate.
+
 ## 2.23.0: Hushwork
 
 ### Added

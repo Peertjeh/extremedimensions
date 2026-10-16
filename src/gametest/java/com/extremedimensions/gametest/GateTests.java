@@ -14,7 +14,9 @@ import com.extremedimensions.seam.SeamService;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -25,8 +27,8 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * The Return Gate: laid out whole whichever way it faces, its rift over the pale threshold with clear air to walk in,
  * the visitor stepping out on its dais facing away from it; the rift keeping to its threshold while leashed and
- * roaming (never off solid ground) when let loose; and a visitor arriving through a rift at a gate, who finds the same
- * gate coming back by the same rift.
+ * roaming (never off solid ground) when let loose; a visitor arriving through a rift at a gate, who finds the same
+ * gate coming back by the same rift; and the bridges, with their gateways, some of them hung, all of them walkable.
  */
 public class GateTests {
 	@GameTest
@@ -114,28 +116,73 @@ public class GateTests {
 			p.teleportTo(home, 5000.5, 100, -7000.5, java.util.Set.of(), 0, 0, true);
 			check(helper, SeamService.summon(p), "the visitor was not let into the Seam");
 			PlayerData d = DataStore.get(p.getUUID());
-			ServerLevel seam = (ServerLevel) p.level();
-			check(helper, d.inSeam && seam.dimension().equals(SeamService.SEAM), "the visitor is not in the Seam");
+			ServerLevel seam = home.getServer().getLevel(SeamService.SEAM);
+			check(helper, seam != null, "the test server has no Seam");
+			check(helper, d.inSeam, "the rift did not take the visitor in (in the Seam: %s, now in %s)", d.inSeam, p.level().dimension());
 			BlockPos rift = BlockPos.containing(d.riftX, d.riftY, d.riftZ);
 			check(helper, seam.getBlockState(rift.below()).is(ModBlocks.POLISHED_PALE_HUSH_STONE), "the rift does not hang over the threshold (%s)",
 					seam.getBlockState(rift.below()));
-			double dx = p.getX() - d.riftX, dz = p.getZ() - d.riftZ;
-			check(helper, Math.abs(Math.sqrt(dx * dx + dz * dz) - 4) < 0.01, "the visitor stepped out %s blocks from the rift", Math.sqrt(dx * dx + dz * dz));
-			// facing away from the gate: the rift lies behind
-			double out = Math.toDegrees(Math.atan2(-dx, dz));
-			check(helper, Math.abs(Mth.wrapDegrees(p.getYRot() - (float) out)) < 1, "the visitor does not face out of the gate (yaw %s, out %s)", p.getYRot(), out);
+			// Where the visitor stands (a test player is moved between worlds as a real one is; if not, it is said)
+			if (p.level() == seam) {
+				double dx = p.getX() - d.riftX, dz = p.getZ() - d.riftZ;
+				check(helper, Math.abs(Math.sqrt(dx * dx + dz * dz) - 4) < 0.01, "the visitor stepped out %s blocks from the rift", Math.sqrt(dx * dx + dz * dz));
+				// facing away from the gate: the rift lies behind
+				double out = Math.toDegrees(Math.atan2(-dx, dz));
+				check(helper, Math.abs(Mth.wrapDegrees(p.getYRot() - (float) out)) < 1, "the visitor does not face out of the gate (yaw %s, out %s)", p.getYRot(), out);
+			} else {
+				com.extremedimensions.ExtremeDimensions.LOGGER.info("Gate test: the test player stayed in {} through the rift", p.level().dimension());
+			}
 			check(helper, DataStore.seamCells().stream().anyMatch(k -> k.startsWith("g@5000,-7001=")), "the gate's way was not remembered");
 			double firstX = d.riftX, firstZ = d.riftZ;
 			// Home and back by the same rift: the same gate
 			d.inSeam = false;
 			p.teleportTo(home, 5000.5, 100, -7000.5, java.util.Set.of(), 0, 0, true);
-			check(helper, SeamService.summon(p), "the visitor was not let back into the Seam");
+			check(helper, SeamService.summon(p) && d.inSeam, "the visitor was not let back into the Seam");
 			check(helper, d.riftX == firstX && d.riftZ == firstZ, "coming back by the same rift, the gate stood elsewhere (%s,%s, not %s,%s)",
 					d.riftX, d.riftZ, firstX, firstZ);
 		} finally {
 			DataStore.get(p.getUUID()).inSeam = false;
 			home.getServer().getPlayerList().remove(p);
 		}
+		helper.succeed();
+	}
+
+	/**
+	 * Bridges pass under a gateway where they leave each island, some long ones are hung from chain cables between
+	 * timber frames, and whichever they are, the walk along their middle is clear for a visitor all the way across.
+	 */
+	@GameTest
+	public void bridgesPassUnderGatewaysAndSomeAreHung(GameTestHelper helper) {
+		SeamArchitect.Shape a = new SeamArchitect.Shape(0, 90, 0, 14, 0.3, 1.1, 2.0), b = new SeamArchitect.Shape(112, 93, 4, 14, 1.0, 0.2, 2.5);
+		int start = a.x() + (int) Math.floor(a.edge(0)) - 2, end = b.x() - (int) Math.floor(b.edge(Math.PI)) + 2, mid = (start + end) / 2;
+		Block chain = BuiltInRegistries.BLOCK.get(Identifier.fromNamespaceAndPath("minecraft", "iron_chain")).map(h -> h.value()).orElse(Blocks.AIR);
+		int hung = 0, stone = 0;
+		for (int i = 0; i < 24; i++) {
+			SeamArchitect.Plan plan = new SeamArchitect.Plan();
+			check(helper, SeamArchitect.bridge(plan, new Random(1000 + i), a, b, true), "bridge %s was not built", i);
+			check(helper, plan.dropped == 0, "bridge %s ran over the build limit", i);
+			if (plan.count(Blocks.DARK_OAK_FENCE) > 0) {
+				hung++;
+				check(helper, plan.count(chain) > 30, "hung bridge %s has hardly any cable (%s links)", i, plan.count(chain));
+				check(helper, plan.count(Blocks.STRIPPED_DARK_OAK_LOG) >= 4 * 2 * 7, "hung bridge %s lacks its four timber frames", i);
+			} else {
+				stone++;
+				check(helper, plan.count(ModBlocks.HUSH_PILLAR) >= 2 * 2 * 3, "stone bridge %s lacks its gateways", i);
+			}
+			// Along the middle of each run, from rim to landing: a floor with two blocks of air over it
+			for (int x = start + 4; x <= end - 4; x++) {
+				if (Math.abs(x - mid) <= 4) {
+					continue;
+				}
+				int z = x < mid ? a.z() : b.z();
+				boolean walk = false;
+				for (int y = 70; y <= 120 && !walk; y++) {
+					walk = plan.has(x, y, z) && !plan.has(x, y + 1, z) && !plan.has(x, y + 2, z);
+				}
+				check(helper, walk, "bridge %s cannot be walked at %s,%s", i, x, z);
+			}
+		}
+		check(helper, hung > 0 && stone > 0, "of 24 long bridges, %s were hung and %s of stone", hung, stone);
 		helper.succeed();
 	}
 

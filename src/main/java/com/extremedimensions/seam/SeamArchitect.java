@@ -1361,6 +1361,42 @@ public final class SeamArchitect {
 		}
 	}
 
+	/**
+	 * The island's rock breaking up through the turf: a lumpy crag of stone, cobbles and moss-grown cobbles a few
+	 * blocks high, its foot sunk into the ground, moss and a fern on its top and glowing lichen in its cracks.
+	 */
+	static void outcrop(Plan p, Random rnd, int cx, int y, int cz) {
+		long seed = rnd.nextLong();
+		double rad = 1.6 + rnd.nextDouble() * 1.2;
+		int h = 2 + rnd.nextInt(3);
+		BlockState[] rock = {stone(), cobble(), mc("mossy_cobblestone", cobble()), mc("tuff", stone())};
+		for (int dx = -3; dx <= 3; dx++) {
+			for (int dz = -3; dz <= 3; dz++) {
+				double lump = noise(seed, (cx + dx) / 1.7, (cz + dz) / 1.7);
+				double r = Math.sqrt(dx * dx + dz * dz) / (rad * (0.75 + 0.5 * lump));
+				if (r > 1) {
+					continue;
+				}
+				int top = (int) Math.round(h * (1 - r * r) * (0.7 + 0.6 * lump));
+				// its foot sunk into the turf
+				p.set(cx + dx, y - 1, cz + dz, rock[rnd.nextInt(2)]);
+				for (int k = 0; k < top; k++) {
+					p.set(cx + dx, y + k, cz + dz, rock[rnd.nextInt(rock.length)]);
+				}
+				if (top > 0 && rnd.nextInt(3) > 0) {
+					p.soft(cx + dx, y + top, cz + dz, rnd.nextInt(4) == 0 ? mc("fern") : mc("moss_carpet"));
+				}
+			}
+		}
+		for (int i = 0; i < 3; i++) {
+			Direction d = Direction.Plane.HORIZONTAL.getRandomDirection(net.minecraft.util.RandomSource.create(seed + i));
+			int lx = cx + d.getStepX() * 2, lz = cz + d.getStepZ() * 2;
+			if (p.has(lx, y, lz) && !p.has(lx + d.getStepX(), y, lz + d.getStepZ())) {
+				p.set(lx + d.getStepX(), y, lz + d.getStepZ(), lichen(d.getOpposite()));
+			}
+		}
+	}
+
 	/** A ring of standing stones around a soul fire, grown over with glowing lichen. */
 	static void stones(Plan p, Random rnd, int cx, int y, int cz) {
 		int n = 5 + rnd.nextInt(3);
@@ -1852,10 +1888,10 @@ public final class SeamArchitect {
 
 	/** An ordinary island: ruins, dead trees, lamps, standing stones, crystals, spread over its open ground. */
 	public static void plain(Plan p, Random rnd, Shape s) {
-		grounds(p, rnd, s, 1 + s.r / 6 + rnd.nextInt(2), ARCH, ARCH, TREE, LAMP, STONES, CLUSTER, FLOATING);
+		grounds(p, rnd, s, 1 + s.r / 6 + rnd.nextInt(2), ARCH, ARCH, TREE, LAMP, STONES, CLUSTER, FLOATING, OUTCROP, OUTCROP);
 	}
 
-	static final int ARCH = 0, TREE = 1, LAMP = 2, STONES = 3, CLUSTER = 4, FLOATING = 5;
+	static final int ARCH = 0, TREE = 1, LAMP = 2, STONES = 3, CLUSTER = 4, FLOATING = 5, OUTCROP = 6;
 
 	/**
 	 * Dresses the open ground of an island with the given kinds of things: never on a building, a floor, a street
@@ -1871,7 +1907,7 @@ public final class SeamArchitect {
 			}
 			int kind = kinds[rnd.nextInt(kinds.length)];
 			int scale = 9 + rnd.nextInt(8);
-			int room = switch (kind) { case ARCH -> 6; case STONES -> 5; case CLUSTER -> 4; case TREE -> 3; default -> 2; };
+			int room = switch (kind) { case ARCH -> 6; case STONES -> 5; case CLUSTER, OUTCROP -> 4; case TREE -> 3; default -> 2; };
 			int tall = switch (kind) { case ARCH -> 14; case TREE -> 11; case CLUSTER -> scale + 2; case FLOATING -> 30; default -> 6; };
 			if (!free(p, x, s.top, z, room, tall)) {
 				continue;
@@ -1883,6 +1919,7 @@ public final class SeamArchitect {
 				case LAMP -> lamp(p, rnd, x, y, z);
 				case STONES -> stones(p, rnd, x, y, z);
 				case CLUSTER -> cluster(p, rnd, x, y, z, scale);
+				case OUTCROP -> outcrop(p, rnd, x, y, z);
 				default -> crystal(p, rnd, x, s.top + 13 + rnd.nextInt(7), z, 2 + rnd.nextInt(2));
 			}
 			placed++;
@@ -2086,11 +2123,17 @@ public final class SeamArchitect {
 	}
 
 	/**
-	 * A stone bridge from one island to the next along an axis: it starts and ends a couple of blocks inside each
-	 * island's predicted rim (where the island's street meets it), runs straight, turns on a landing halfway to line up
-	 * with the other island, and climbs with slab ramps or real stairs. Kerbs with connected wall railings and posts
-	 * with lanterns line it; underneath, every span is a shallow pointed arch of masonry springing from pendants that
-	 * end in soul lanterns, and the landing rests on a tapering pier.
+	 * A bridge from one island to the next along an axis: it starts and ends a couple of blocks inside each island's
+	 * predicted rim (where the island's street meets it), runs straight, turns on a landing halfway to line up with the
+	 * other island, and climbs with slab ramps or real stairs; the landing rests on a tapering pier. Where it leaves
+	 * each island it passes under a gateway that frames the view across (as the towers at the ends of the Charles
+	 * Bridge do).
+	 *
+	 * <p>Most bridges are of stone: kerbs with connected wall railings and posts with lanterns, and under every span a
+	 * shallow pointed arch of masonry springing from pendants that end in soul lanterns. Some long ones are hung
+	 * instead, the way the footbridges of the high mountains are: a deck of dark wood with fence rails, slung from
+	 * chain cables that sag between frames of timber at either end of each run, with strips of silk hanging from the
+	 * deck like prayer flags.
 	 *
 	 * @return false when the islands are too close or too steep apart for a bridge
 	 */
@@ -2125,6 +2168,9 @@ public final class SeamArchitect {
 		}
 		BlockState[] deckGrad = {tile(), bsBrick(), smooth()};
 		BlockState stairB = brickStairs();
+		// Hung, or of stone: only a long bridge is hung, its runs long enough to sag
+		boolean hung = mid - 3 - start >= 16 && end - mid - 3 >= 16 && rnd.nextInt(3) == 0;
+		BlockState wood = planks(), woodSlab = mc("dark_oak_slab", tileSlab()), woodStairs = mc("dark_oak_stairs", stairB);
 		// Place the deck
 		for (Map.Entry<Long, int[]> e : deck.entrySet()) {
 			int m = (int) (e.getKey() >> 32), pp = e.getKey().intValue();
@@ -2135,20 +2181,23 @@ public final class SeamArchitect {
 				p.soft(x, c[0], z, grad(deckGrad, rnd.nextDouble(), rnd));
 				continue;
 			}
+			boolean timber = hung && (m < mid - 3 || m > mid + 3);
 			if (c[2] != 0) {
 				Direction up = alongX ? (c[2] > 0 ? Direction.EAST : Direction.WEST) : (c[2] > 0 ? Direction.SOUTH : Direction.NORTH);
-				p.set(x, c[0], z, stairs(stairB, up, false));
-				p.set(x, c[0] - 1, z, tile());
+				p.set(x, c[0], z, stairs(timber ? woodStairs : stairB, up, false));
+				p.set(x, c[0] - 1, z, timber ? wood : tile());
 			} else {
-				p.set(x, c[0], z, grad(deckGrad, noise(7, x / 3.0, z / 3.0), rnd));
+				p.set(x, c[0], z, timber ? wood : grad(deckGrad, noise(7, x / 3.0, z / 3.0), rnd));
 				if (c[1] == 1) {
-					p.set(x, c[0] + 1, z, slab(tileSlab(), false));
+					p.set(x, c[0] + 1, z, slab(timber ? woodSlab : tileSlab(), false));
 				}
 			}
 		}
-		// Arches under both runs
-		arcade(p, rnd, deck, start, mid - 3, ap, alongX, a, b);
-		arcade(p, rnd, deck, mid + 3, end, bp, alongX, a, b);
+		// Arches under both runs of a stone bridge
+		if (!hung) {
+			arcade(p, rnd, deck, start, mid - 3, ap, alongX, a, b);
+			arcade(p, rnd, deck, mid + 3, end, bp, alongX, a, b);
+		}
 		// Kerbs and railings around the deck (as high as the deck's walking surface), corbels under the kerbs
 		Map<Long, Integer> rails = new LinkedHashMap<>();
 		Map<Long, Direction> railOut = new HashMap<>();
@@ -2172,13 +2221,28 @@ public final class SeamArchitect {
 			}
 		}
 		int count = 0;
+		BlockState fence = mc("dark_oak_fence", brickWall());
 		for (Map.Entry<Long, Integer> e : rails.entrySet()) {
 			int m = (int) (e.getKey() >> 32), pp = e.getKey().intValue();
 			int y = e.getValue();
 			int x = alongX ? m : pp, z = alongX ? pp : m;
+			Direction out = railOut.get(e.getKey());
+			if (hung && (m < mid - 3 || m > mid + 3)) {
+				// a timber kerb and a fence rail; now and then a strip of silk hanging from the deck's edge
+				p.set(x, y, z, wood);
+				p.set(x, y + 1, z, fence);
+				if (Math.floorMod(m, 5) == 0 && out.getAxis() != (alongX ? Direction.Axis.X : Direction.Axis.Z)) {
+					int len = 2 + rnd.nextInt(4);
+					BlockState silk = rnd.nextBoolean() ? wool() : rnd.nextBoolean() ? wool2() : mc("white_wool", wool());
+					for (int k = 1; k <= len; k++) {
+						p.soft(x, y - k, z, silk);
+					}
+				}
+				count++;
+				continue;
+			}
 			p.set(x, y, z, bsBrick());
 			p.set(x, y + 1, z, brickWall());
-			Direction out = railOut.get(e.getKey());
 			p.soft(x, y - 1, z, stairs(brickStairs(), out.getOpposite(), true));
 			if (Math.floorMod(m, 6) == 0) {
 				p.set(x, y + 2, z, brickWall());
@@ -2188,6 +2252,21 @@ public final class SeamArchitect {
 			}
 			count++;
 		}
+		if (hung) {
+			sling(p, rnd, deck, start, mid - 3, ap, alongX, a, b);
+			sling(p, rnd, deck, mid + 3, end, bp, alongX, a, b);
+			// frames at the landing too, where the cables of each run are made fast
+			int[] l1 = deck.get(key(mid - 3, ap)), l2 = deck.get(key(mid + 3, bp));
+			if (l1 != null) {
+				frame(p, mid - 3, l1[0] + 1, ap, alongX);
+			}
+			if (l2 != null) {
+				frame(p, mid + 3, l2[0] + 1, bp, alongX);
+			}
+		}
+		// The gateways where the bridge leaves each island, framing the view across
+		gateway(p, rnd, deck, start, mid - 3, ap, alongX, a, b, hung, true);
+		gateway(p, rnd, deck, mid + 3, end, bp, alongX, a, b, hung, false);
 		// The pier under the landing
 		int pierP = (p0 + p1) / 2, pierHalf = Math.max(2, (p1 - p0) / 2);
 		for (int k = 1; k <= 9; k++) {
@@ -2202,6 +2281,140 @@ public final class SeamArchitect {
 		int lx = alongX ? mid : pierP, lz = alongX ? pierP : mid;
 		p.falls.add(new int[] {lx, ym - 10, lz, 20});
 		return count > 0;
+	}
+
+	/**
+	 * The first level deck cell of a run out over the nothing (no step of stairs), counting from its island's end
+	 * ({@code fromStart}), or null: where a gateway stands, and where a hung bridge's cables are made fast.
+	 */
+	private static int[] firstOut(Map<Long, int[]> deck, int m0, int m1, int pp, boolean alongX, Shape a, Shape b, boolean fromStart) {
+		for (int i = 0; i <= m1 - m0; i++) {
+			int m = fromStart ? m0 + i : m1 - i;
+			int[] c = deck.get(key(m, pp));
+			int x = alongX ? m : pp, z = alongX ? pp : m;
+			if (c != null && c[2] == 0 && !a.inside(x, z, -1) && !b.inside(x, z, -1)) {
+				return new int[] {m, c[0], c[1], c[2]};
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * A gateway over the deck where a run leaves its island: for a stone bridge two pillars and a pointed arch with a
+	 * keystone and a soul lantern hung in it; for a hung bridge a timber frame the cables hang from (see {@link #frame}).
+	 */
+	private static void gateway(Plan p, Random rnd, Map<Long, int[]> deck, int m0, int m1, int pp, boolean alongX, Shape a, Shape b,
+			boolean hung, boolean fromStart) {
+		int[] g = firstOut(deck, m0, m1, pp, alongX, a, b, fromStart);
+		if (g == null) {
+			return;
+		}
+		int m = g[0], y = g[1] + 1;
+		if (hung) {
+			frame(p, m, y, pp, alongX);
+			return;
+		}
+		Direction across = alongX ? Direction.SOUTH : Direction.EAST;
+		for (int w = -2; w <= 2; w += 4) {
+			int x = alongX ? m : pp + w, z = alongX ? pp + w : m;
+			for (int k = 0; k <= 3; k++) {
+				p.set(x, y + k, z, k == 0 ? palePol() : axis(pillar(), Direction.Axis.Y));
+			}
+			p.set(x, y + 4, z, palePol());
+			p.set(x, y + 5, z, paleWall());
+		}
+		for (int w = -1; w <= 1; w++) {
+			int x = alongX ? m : pp + w, z = alongX ? pp + w : m;
+			if (w == 0) {
+				p.set(x, y + 4, z, carved());
+				p.set(x, y + 5, z, palePol());
+				p.set(x, y + 3, z, hanging(soulLantern()));
+			} else {
+				p.set(x, y + 4, z, stairs(palePolStairs(), w > 0 ? across : across.getOpposite(), true));
+			}
+		}
+	}
+
+	/**
+	 * The timber frame of a hung bridge, standing over the deck at {@code m} (its feet at {@code y}): two posts, a
+	 * tie beam over the walk, a top beam reaching past the posts with its ends cut back, and a lantern hung from it,
+	 * the way a torii frames the way through.
+	 */
+	private static void frame(Plan p, int m, int y, int pp, boolean alongX) {
+		Direction across = alongX ? Direction.SOUTH : Direction.EAST;
+		BlockState beam = planks(), post = axis(strippedLog(), Direction.Axis.Y);
+		for (int w = -3; w <= 3; w++) {
+			int x = alongX ? m : pp + w, z = alongX ? pp + w : m;
+			if (Math.abs(w) == 2) {
+				for (int k = 0; k <= 6; k++) {
+					p.set(x, y + k, z, post);
+				}
+			} else if (Math.abs(w) <= 1) {
+				p.set(x, y + 4, z, beam);
+			}
+			if (Math.abs(w) == 3) {
+				// the top beam's ends, cut back underneath
+				p.set(x, y + 7, z, stairs(mc("dark_oak_stairs", beam), w > 0 ? across.getOpposite() : across, true));
+			} else {
+				p.set(x, y + 7, z, beam);
+			}
+		}
+		int x = alongX ? m : pp, z = alongX ? pp : m;
+		p.set(x, y + 6, z, hanging(lantern()));
+	}
+
+	/**
+	 * The cables of one hung run: from the top of the timber frame at its island's end to the landing, a chain on each
+	 * side sags low over the middle of the run and rises again, and hangers of chain drop from it to the rails every
+	 * other block; lanterns hang under the deck here and there.
+	 */
+	private static void sling(Plan p, Random rnd, Map<Long, int[]> deck, int m0, int m1, int pp, boolean alongX, Shape a, Shape b) {
+		int[] s0 = firstOut(deck, m0, m1, pp, alongX, a, b, true), s1 = firstOut(deck, m0, m1, pp, alongX, a, b, false);
+		if (s0 == null || s1 == null || s1[0] - s0[0] < 8) {
+			return;
+		}
+		BlockState along = axis(chain(), alongX ? Direction.Axis.X : Direction.Axis.Z), down = axis(chain(), Direction.Axis.Y);
+		int mA = s0[0], mB = s1[0];
+		for (int w = -2; w <= 2; w += 4) {
+			int prev = Integer.MIN_VALUE;
+			for (int m = mA; m <= mB; m++) {
+				int[] c = deck.get(key(m, pp));
+				if (c == null) {
+					continue;
+				}
+				double t = (double) (m - mA) / (mB - mA);
+				int deckY = c[0] + c[1];
+				int cy = deckY + 2 + (int) Math.round(5.5 * Math.pow(2 * t - 1, 2));
+				int x = alongX ? m : pp + w, z = alongX ? pp + w : m;
+				if (m == mA || m == mB) {
+					// the cable is made fast at the frames (and over the landing at its own height)
+					p.soft(x, cy, z, along);
+					prev = cy;
+					continue;
+				}
+				p.soft(x, cy, z, along);
+				// where the cable steps more than a block, a link joins the steps
+				if (prev != Integer.MIN_VALUE) {
+					for (int k = Math.min(prev, cy) + 1; k < Math.max(prev, cy); k++) {
+						p.soft(x, k, z, down);
+					}
+				}
+				prev = cy;
+				if ((m - mA) % 2 == 0) {
+					for (int k = deckY + 2; k < cy; k++) {
+						p.soft(x, k, z, down);
+					}
+				}
+			}
+		}
+		for (int m = mA + 3; m < mB; m += 7) {
+			int[] c = deck.get(key(m, pp));
+			if (c != null) {
+				int x = alongX ? m : pp, z = alongX ? pp : m;
+				p.soft(x, c[0] - 1, z, chain());
+				p.soft(x, c[0] - 2, z, hanging(lantern()));
+			}
+		}
 	}
 
 	/**
