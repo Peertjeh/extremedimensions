@@ -893,8 +893,9 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("19_island_under");
 			// the column and the compass are drawn from where the server says the rift is
 			ctx.runOnClient(mc -> check(ClientState.riftKnown(), "the client does not know where the rift home is"));
-			// Back where the visitor stepped out, for what follows
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %.2f %.2f", gate[5], gate[6], gate[7]));
+			// Back onto the arrival island for what follows: out along the processional way, well clear of the rift (it
+			// may have wandered off its threshold by now, under the Restless Rift twist, and would take a spectator home)
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %.2f %.2f", gx + ox * 9, gate[6], gz + oz * 9));
 			ctx.waitTicks(10);
 
 			// The Fray: a well at the edge of the arrival island, and down on its knot among the strands
