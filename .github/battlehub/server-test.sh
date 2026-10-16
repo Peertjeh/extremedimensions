@@ -34,11 +34,13 @@ send 'stop' 1
 for i in $(seq 1 60); do grep -q "All dimensions are saved\|ThreadedAnvilChunkStorage: All dimensions" out.log && break; sleep 1; done
 sleep 3
 echo "===== server log (filtered) ====="
-sed -n '/Loading Minecraft\|Starting minecraft server/,$p' out.log | grep -iE "battlehub|selftest|exception|error|warn|caused by|at net\.battlehub|mixin|Done \(" | grep -v "Ambiguous\|Couldn't load chunk\|SELFTEST PASS" | head -400
+sed -n '/Loading Minecraft\|Starting minecraft server/,$p' out.log | grep -iE "battlehub|selftest|exception|error|warn|caused by|at net\.battlehub|mixin|Done \(" | grep -v "Ambiguous\|Couldn't load chunk\|SELFTEST PASS\|SELFTEST IMG" | head -400
 echo "===== around each failure ====="
-grep -n "SELFTEST FAIL" out.log | cut -d: -f1 | while read -r n; do sed -n "$((n > 12 ? n - 12 : 1)),$((n + 2))p" out.log; echo "-----"; done | head -400
+grep -n "SELFTEST FAIL" out.log | cut -d: -f1 | while read -r n; do sed -n "$((n > 12 ? n - 12 : 1)),$((n + 2))p" out.log | grep -v "SELFTEST IMG"; echo "-----"; done | head -400
 echo "===== tail ====="
 tail -25 out.log
+echo "===== pictures (base64 JPEG, one part per line) ====="
+grep "SELFTEST IMG" out.log | sed 's/^.*SELFTEST IMG /IMG /'
 echo "===== files ====="
 ls -la config/battlehub world/battlehub world/battlehub/players world/battlehub/restore 2>/dev/null
 FAIL=0

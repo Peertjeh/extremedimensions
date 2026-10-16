@@ -73,6 +73,16 @@ final class LayoutTests {
 	}
 
 	static void all(Script s) {
+		s.run("layouts: pictures of the hub and a few arenas for the log", () -> {
+			Blueprint hub = net.battlehub.hub.HubWorld.previewBlueprint();
+			Preview.log("hub_south_east", Preview.iso(hub, 3, false));
+			Preview.log("hub_north_west", Preview.iso(hub, 3, true));
+			RandomSource rnd = RandomSource.create(2026);
+			for (Theme t : new Theme[] {Theme.CASTLE, Theme.BADLANDS, Theme.OCEAN, Theme.DEEP_DARK, Theme.SKY}) {
+				Preview.log("duel_" + t.id(), Preview.iso(DuelLayout.design(t, rnd, false), 5, false));
+			}
+			Preview.log("skywars", Preview.iso(net.battlehub.arena.layout.NewLayouts.skywars(Theme.FOREST, rnd, 8), 4, false));
+		});
 		s.check("layouts: every layout in every theme is sound", () -> {
 			List<String> problems = new ArrayList<>();
 			RandomSource rnd = RandomSource.create(1234);

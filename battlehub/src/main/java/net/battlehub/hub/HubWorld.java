@@ -68,6 +68,11 @@ public final class HubWorld {
 		return ORIGIN.getY();
 	}
 
+	/** The lobby's blueprint, as it is built (for the pictures in the self-test). */
+	public static Blueprint previewBlueprint() {
+		return HubLayout.design(20260101L);
+	}
+
 	/** Radius of the plaza round the fountain (its balustrade carries the leaderboards). */
 	public static int plazaRadius() {
 		return HubLayout.RADIUS;
