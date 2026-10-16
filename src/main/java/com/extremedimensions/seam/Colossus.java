@@ -1248,10 +1248,10 @@ public final class Colossus {
 
 	/** A cathedral: a great crossing tower, a nave before it ending in a portal, transepts either side, an apse behind. */
 	private static int cathedral(Frame b, Scheme sc, Random rnd, int R, int maxH, int crown, int[] n, int top) {
-		int H = 7 + rnd.nextInt(2);
-		int w = 4 + rnd.nextInt(2);
+		int H = 8 + rnd.nextInt(3);
+		int w = 5 + rnd.nextInt(2);
 		boolean aisles = rnd.nextBoolean() && w + 4 + 3 < R;
-		int hallH = 13 + rnd.nextInt(4);
+		int hallH = 15 + rnd.nextInt(5);
 		int z1 = Math.min(R - 5, H + 12 + rnd.nextInt(6));
 		Tower t = tower(b, sc, rnd, 0, 0, H, maxH, true, crown, formFor(rnd, true));
 		n[0]++;
@@ -1289,7 +1289,7 @@ public final class Colossus {
 		Form ring = rnd.nextBoolean() ? Form.OCTAGON : Form.ROUND;
 		int Rc = (int) ((R - 4) / (ring == Form.OCTAGON ? 1.1 : 1.0));
 		int hw = 9 + rnd.nextInt(4);
-		Tower keep = tower(b, sc, rnd, 0, 0, 6 + rnd.nextInt(3), maxH, true, crown, formFor(rnd, true));
+		Tower keep = tower(b, sc, rnd, 0, 0, 7 + rnd.nextInt(3), maxH, true, crown, formFor(rnd, true));
 		n[0]++;
 		Tower curtain = new Tower();
 		curtain.f = b;
@@ -1367,7 +1367,7 @@ public final class Colossus {
 
 	/** A cluster: a great spire, and round it towers of every height joined to it by sky bridges. */
 	private static int cluster(Frame b, Scheme sc, Random rnd, int R, int maxH, int crown, int[] n, int top) {
-		int H = 6 + rnd.nextInt(3);
+		int H = 8 + rnd.nextInt(3);
 		Tower main = tower(b, sc, rnd, 0, 0, H, maxH, true, crown, formFor(rnd, true));
 		n[0]++;
 		int sats = 3 + rnd.nextInt(3);
@@ -1474,7 +1474,7 @@ public final class Colossus {
 		}
 		// the temple on the top: a tower of its own
 		Frame temple = new Frame(b.p, b.wx(0, 0), b.oy + topY, b.wz(0, 0), b.rot);
-		Tower t = tower(temple, sc, rnd, 0, 0, Math.max(4, Math.min(7, lastHalf - 3)), maxH - topY, true, crown, formFor(rnd, false));
+		Tower t = tower(temple, sc, rnd, 0, 0, Math.max(5, Math.min(8, lastHalf - 3)), maxH - topY, true, crown, formFor(rnd, false));
 		n[0]++;
 		forecourt(b.p, b, rnd, top, zs + 1, Math.max(2, R - zs - 1), 4);
 		return topY + t.topY;

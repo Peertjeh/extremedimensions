@@ -753,21 +753,22 @@ public class ClientShots implements FabricClientGameTest {
 					return built[0] + ", " + plan.size() + " blocks";
 				});
 				com.extremedimensions.ExtremeDimensions.LOGGER.info("Colossus shot {} ({}): {}", k, plans[k], what);
-				sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 -2", cx, skyTop + 48, cz - 118));
-				ctx.waitTicks(120);
+				// from a corner first (its chunks take a while to show), then from the front, nearer
+				sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 -45 10", cx - 60, skyTop + 40, cz - 60));
+				ctx.waitTicks(160);
+				ctx.takeScreenshot("18_colossus_" + plans[k] + "_corner");
+				sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 -8", cx, skyTop + 28, cz - 78));
+				ctx.waitTicks(60);
 				ctx.takeScreenshot("18_colossus_" + plans[k]);
 				if (k == 0 || k == 2) {
-					// from a corner, nearer, and up close on its face
-					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 -45 6", cx - 62, skyTop + 40, cz - 62));
-					ctx.waitTicks(60);
-					ctx.takeScreenshot("18_colossus_" + plans[k] + "_corner");
+					// up close on its face
 					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 -12", cx, skyTop + 10, cz - 44));
-					ctx.waitTicks(20);
+					ctx.waitTicks(30);
 					ctx.takeScreenshot("18_colossus_" + plans[k] + "_close");
 				}
 				if (k == 0) {
 					sp.getServer().runCommand("time set midnight");
-					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 -2", cx, skyTop + 40, cz - 96));
+					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 -8", cx, skyTop + 28, cz - 78));
 					ctx.waitTicks(30);
 					ctx.takeScreenshot("18_colossus_night");
 					sp.getServer().runCommand("time set noon");
