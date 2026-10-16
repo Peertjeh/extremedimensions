@@ -49,6 +49,8 @@ final class BotBrain {
 	private int wanderTicks;
 	private Vec3 lastPos = Vec3.ZERO;
 	private int stuck;
+	/** Ticks left of a sidestep round something the bot ran into (a wall, cover). */
+	private int detour;
 	private int eating;
 	private float runYaw = Float.NaN;
 	// Parkour: the platform the bot last stood on and the pause before the next jump
@@ -66,6 +68,9 @@ final class BotBrain {
 
 	void tick() {
 		ticks++;
+		if (detour > 0) {
+			detour--;
+		}
 		bot.zza = 0;
 		bot.xxa = 0;
 		bot.setJumping(false);
@@ -186,6 +191,7 @@ final class BotBrain {
 		look(BotMath.yaw(dx, dz), 0f);
 		bot.zza = 1f;
 		bot.setSprinting(sprint && skill.sprints && d > 3 && wTap == 0);
+		sidestep();
 		if (bot.onGround() && (bot.horizontalCollision || (dest.y - pos.y > 0.6 && d < 2.5))) {
 			bot.setJumping(true);
 		}
@@ -241,6 +247,15 @@ final class BotBrain {
 		return BotActions.groundBelow(level(), p.x, p.y, p.z, 4);
 	}
 
+	/** While going round something: mostly sideways, a little forward. */
+	private void sidestep() {
+		if (detour > 0) {
+			bot.zza = 0.35f;
+			bot.xxa = strafe;
+			bot.setSprinting(false);
+		}
+	}
+
 	/** Pushing against something for a second: jump and change direction. */
 	private void unstick() {
 		if (ticks % 20 != 0) {
@@ -254,6 +269,8 @@ final class BotBrain {
 				bot.setJumping(true);
 				strafe = -strafe;
 				wander = null;
+				// Go round it: a sidestep, to the other side each time it does not help
+				detour = 25 + rnd.nextInt(20);
 			}
 		} else {
 			stuck = 0;
@@ -366,6 +383,7 @@ final class BotBrain {
 			if (bot.onGround() && (bot.horizontalCollision || (to.y - pos.y > 0.6 && dist < 4))) {
 				bot.setJumping(true);
 			}
+			sidestep();
 			// A jump while closing in lands a critical hit
 			if (bot.onGround() && dist < 4.5 && rnd.nextDouble() < skill.critChance / 10) {
 				bot.setJumping(true);

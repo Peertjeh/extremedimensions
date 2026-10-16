@@ -11,6 +11,9 @@
 
 ### Fixed
 * Titles for seasons, the season pass and prestige now say what they need in the titles menu.
+* Bots go round walls and cover instead of running into them.
+* Standing still during the countdown no longer counts as being idle.
+* Hand-built maps are read from the structure file by BattleHub itself and built like any arena.
 
 ## 1.12.0
 
