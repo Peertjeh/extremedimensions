@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "extremedimensions:hush_stone_slab",
+    "extremedimensions:cobbled_hush_stone_slab",
+    "extremedimensions:polished_hush_stone_slab",
+    "extremedimensions:hush_brick_slab",
+    "extremedimensions:mossy_hush_brick_slab",
+    "extremedimensions:hush_tile_slab",
+    "extremedimensions:pale_hush_brick_slab",
+    "extremedimensions:polished_pale_hush_stone_slab"
+  ]
+}

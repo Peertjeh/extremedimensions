@@ -759,7 +759,7 @@ public final class SeamService {
 		int x = s.x(), top = s.top(), z = s.z(), r = s.r();
 		switch (kind) {
 			case SPIRE -> {
-				SeamArchitect.spire(plan, rnd, x, top, z, r);
+				Colossus.build(plan, rnd, x, top, z, r);
 				SeamArchitect.streets(plan, rnd, s, mask, 0, false);
 				SeamArchitect.grounds(plan, rnd, s, 6, SeamArchitect.ARCH, SeamArchitect.TREE, SeamArchitect.LAMP, SeamArchitect.STONES, SeamArchitect.CLUSTER);
 			}
@@ -792,8 +792,26 @@ public final class SeamService {
 	}
 
 	/**
-	 * Operator showcase: designs one of every kind of structure in a row of cells far from everything (x = 40..45
-	 * cells), at different heights and joined by bridges, so they can be visited with a teleport.
+	 * A colossal building on its island at a spot, designed as the Seam designs its great islands (no bridges), to a
+	 * given plan (-1: any): the plan, for showing one off, and what was built.
+	 */
+	public static SeamArchitect.Plan colossus(long seed, int x, int top, int z, int r, int layout, Colossus.Summary[] built) {
+		Random rnd = new Random(seed);
+		SeamArchitect.Shape shape = SeamArchitect.Shape.of(rnd, x, top, z, r);
+		SeamArchitect.Plan plan = new SeamArchitect.Plan();
+		int depth = SeamArchitect.island(plan, rnd, shape, true);
+		Colossus.Summary summary = Colossus.build(plan, rnd, x, top, z, r, layout);
+		SeamArchitect.grounds(plan, rnd, shape, 6, SeamArchitect.ARCH, SeamArchitect.TREE, SeamArchitect.LAMP, SeamArchitect.STONES, SeamArchitect.CLUSTER);
+		if (built != null && built.length > 0) {
+			built[0] = summary;
+		}
+		return plan;
+	}
+
+	/**
+	 * Operator showcase: designs one of every kind of structure (three colossal buildings, to see how they differ) in a
+	 * row of cells far from everything (x = 40..47 cells), at different heights and joined by bridges, so they can be
+	 * visited with a teleport.
 	 */
 	public static int showcase(MinecraftServer s) {
 		return s.getLevel(SEAM) == null ? 0 : designShowcase();
@@ -801,7 +819,7 @@ public final class SeamService {
 
 	/** Designs the showcase row and queues its blocks (see {@link #showcase}); returns how many structures. */
 	public static int designShowcase() {
-		int[] kinds = {SPIRE, LOOM, VILLAGE, HANGING, HALO, PLAIN};
+		int[] kinds = {SPIRE, SPIRE, SPIRE, LOOM, VILLAGE, HANGING, HALO, PLAIN};
 		int n = kinds.length;
 		Random[] rnds = new Random[n];
 		SeamArchitect.Shape[] shapes = new SeamArchitect.Shape[n];
@@ -826,7 +844,7 @@ public final class SeamService {
 			commit(plan);
 		}
 		ExtremeDimensions.LOGGER.info("Seam showcase: {} structures, {} blocks queued at x={}..{} z={}", n, SeamArchitect.pending(),
-				40 * CELL, 46 * CELL, 40 * CELL + CELL / 2);
+				40 * CELL, (40 + n) * CELL, 40 * CELL + CELL / 2);
 		return n;
 	}
 

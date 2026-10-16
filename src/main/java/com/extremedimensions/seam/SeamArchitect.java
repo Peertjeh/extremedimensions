@@ -34,14 +34,15 @@ import net.minecraft.world.level.block.state.properties.WallSide;
 import net.minecraft.world.phys.AABB;
 
 /**
- * The architecture of the Seam: colossal gothic spires, giant looms, villages of jettied timber houses, towers hanging
- * upside down beneath their islands, tilted halos around floating crystals, broken obelisks, and stone bridges strung
- * between it all.
+ * The architecture of the Seam: colossal buildings assembled from parts (see {@link Colossus}), giant looms, villages
+ * of jettied timber houses, towers hanging upside down beneath their islands, tilted halos around floating crystals,
+ * broken obelisks, and stone bridges strung between it all.
  *
  * <p>Built the way a builder would: every surface has <b>depth</b> (pilasters, recessed windows with arched heads and
  * sills, corbels under ledges, water tables, stepped buttresses, stair roofs with dormers, layered portals) and every
- * material runs through a <b>gradient</b> (blackstone at the foot, deepslate in the body, tuff at the crown) with a
- * little dither and weathering, so nothing reads as a flat wall of one block.
+ * material runs through a <b>gradient</b> up the hush stone's ladder of tones (blackstone at the foot, dark hush bricks
+ * in the body, pale hush stone at the crown) with a little dither and weathering, so nothing reads as a flat wall of
+ * one block.
  *
  * <p>Everything is designed into a {@link Plan} first and then built a few thousand blocks per tick from a queue,
  * bottom to top, so even the largest spire never stalls the server. Walls, panes and fences are connected to their
@@ -113,56 +114,75 @@ public final class SeamArchitect {
 		};
 	}
 
-	private static BlockState stone() { return ModBlocks.HUSH_STONE.defaultBlockState(); }
-	private static BlockState brick() { return ModBlocks.HUSH_BRICKS.defaultBlockState(); }
-	private static BlockState vein() { return ModBlocks.SEAM_VEIN.defaultBlockState(); }
-	private static BlockState dsBrick() { return mc("deepslate_bricks", brick()); }
-	private static BlockState dsTile() { return mc("deepslate_tiles", brick()); }
-	private static BlockState dsPol() { return mc("polished_deepslate", stone()); }
-	private static BlockState dsChis() { return mc("chiseled_deepslate", dsPol()); }
-	private static BlockState bsBrick() { return mc("polished_blackstone_bricks", dsBrick()); }
-	private static BlockState bsPol() { return mc("polished_blackstone", dsPol()); }
-	private static BlockState dsWall() { return mc("deepslate_brick_wall", dsBrick()); }
-	private static BlockState bsWall() { return mc("polished_blackstone_brick_wall", dsWall()); }
-	private static BlockState dsSlab() { return mc("deepslate_tile_slab", dsTile()); }
-	private static BlockState dsStairs() { return mc("deepslate_tile_stairs", dsTile()); }
-	private static BlockState dsBrickStairs() { return mc("deepslate_brick_stairs", dsStairs()); }
-	private static BlockState bsStairs() { return mc("polished_blackstone_brick_stairs", dsStairs()); }
-	private static BlockState glass() { return mc("purple_stained_glass", vein()); }
-	private static BlockState glass2() { return mc("magenta_stained_glass", glass()); }
-	private static BlockState glass3() { return mc("blue_stained_glass", glass()); }
-	private static BlockState warmPane() { return mc("orange_stained_glass_pane", mc("orange_stained_glass", glass())); }
-	private static BlockState amethyst() { return mc("amethyst_block", vein()); }
-	private static BlockState crying() { return mc("crying_obsidian", vein()); }
-	private static BlockState chain() { return mc("iron_chain", mc("chain", Blocks.COBWEB.defaultBlockState())); }
-	private static BlockState lantern() { return mc("lantern", Blocks.SOUL_LANTERN.defaultBlockState()); }
-	private static BlockState soulLantern() { return Blocks.SOUL_LANTERN.defaultBlockState(); }
-	private static BlockState endRod() { return mc("end_rod", vein()); }
-	private static BlockState moss() { return mc("moss_block", stone()); }
-	private static BlockState wool() { return mc("purple_wool", glass()); }
-	private static BlockState wool2() { return mc("magenta_wool", wool()); }
-	private static BlockState woolDark() { return mc("black_wool", dsTile()); }
-	private static BlockState planks() { return mc("dark_oak_planks", brick()); }
-	private static BlockState log() { return mc("dark_oak_log", dsPol()); }
-	private static BlockState strippedLog() { return mc("stripped_dark_oak_log", log()); }
-	private static BlockState plaster() { return mc("purple_terracotta", brick()); }
+	// The hush masonry (the Seam's own stone, from the darkest cobbles to the pale crowns), and the vanilla stone it is
+	// set off against: blackstone at the feet of buildings, deepslate in the slate of their roofs.
+	static BlockState stone() { return ModBlocks.HUSH_STONE.defaultBlockState(); }
+	static BlockState cobble() { return ModBlocks.COBBLED_HUSH_STONE.defaultBlockState(); }
+	static BlockState brick() { return ModBlocks.HUSH_BRICKS.defaultBlockState(); }
+	static BlockState tile() { return ModBlocks.HUSH_TILES.defaultBlockState(); }
+	static BlockState smooth() { return ModBlocks.POLISHED_HUSH_STONE.defaultBlockState(); }
+	static BlockState carved() { return ModBlocks.CHISELED_HUSH_BRICKS.defaultBlockState(); }
+	static BlockState cracked() { return ModBlocks.CRACKED_HUSH_BRICKS.defaultBlockState(); }
+	static BlockState mossy() { return ModBlocks.MOSSY_HUSH_BRICKS.defaultBlockState(); }
+	static BlockState silked() { return ModBlocks.SILKED_HUSH_BRICKS.defaultBlockState(); }
+	static BlockState pale() { return ModBlocks.PALE_HUSH_BRICKS.defaultBlockState(); }
+	static BlockState palePol() { return ModBlocks.POLISHED_PALE_HUSH_STONE.defaultBlockState(); }
+	static BlockState pillar() { return ModBlocks.HUSH_PILLAR.defaultBlockState(); }
+	static BlockState vein() { return ModBlocks.SEAM_VEIN.defaultBlockState(); }
+	static BlockState brickWall() { return ModBlocks.HUSH_BRICK_WALL.defaultBlockState(); }
+	static BlockState tileSlab() { return ModBlocks.HUSH_TILE_SLAB.defaultBlockState(); }
+	static BlockState tileStairs() { return ModBlocks.HUSH_TILE_STAIRS.defaultBlockState(); }
+	static BlockState brickStairs() { return ModBlocks.HUSH_BRICK_STAIRS.defaultBlockState(); }
+	static BlockState paleStairs() { return ModBlocks.PALE_HUSH_BRICK_STAIRS.defaultBlockState(); }
+	static BlockState paleSlab() { return ModBlocks.PALE_HUSH_BRICK_SLAB.defaultBlockState(); }
+	static BlockState paleWall() { return ModBlocks.PALE_HUSH_BRICK_WALL.defaultBlockState(); }
+	static BlockState smoothStairs() { return ModBlocks.POLISHED_HUSH_STONE_STAIRS.defaultBlockState(); }
+	static BlockState smoothSlab() { return ModBlocks.POLISHED_HUSH_STONE_SLAB.defaultBlockState(); }
+	static BlockState palePolStairs() { return ModBlocks.POLISHED_PALE_HUSH_STONE_STAIRS.defaultBlockState(); }
+	static BlockState palePolSlab() { return ModBlocks.POLISHED_PALE_HUSH_STONE_SLAB.defaultBlockState(); }
+	static BlockState cobbleStairs() { return ModBlocks.COBBLED_HUSH_STONE_STAIRS.defaultBlockState(); }
+	static BlockState cobbleWall() { return ModBlocks.COBBLED_HUSH_STONE_WALL.defaultBlockState(); }
+	static BlockState bsBrick() { return mc("polished_blackstone_bricks", brick()); }
+	static BlockState bsPol() { return mc("polished_blackstone", smooth()); }
+	static BlockState bsWall() { return mc("polished_blackstone_brick_wall", brickWall()); }
+	static BlockState bsStairs() { return mc("polished_blackstone_brick_stairs", tileStairs()); }
+	static BlockState glass() { return mc("purple_stained_glass", vein()); }
+	static BlockState glass2() { return mc("magenta_stained_glass", glass()); }
+	static BlockState glass3() { return mc("blue_stained_glass", glass()); }
+	static BlockState warmPane() { return mc("orange_stained_glass_pane", mc("orange_stained_glass", glass())); }
+	static BlockState amethyst() { return mc("amethyst_block", vein()); }
+	static BlockState crying() { return mc("crying_obsidian", vein()); }
+	static BlockState chain() { return mc("iron_chain", mc("chain", Blocks.COBWEB.defaultBlockState())); }
+	static BlockState lantern() { return mc("lantern", Blocks.SOUL_LANTERN.defaultBlockState()); }
+	static BlockState soulLantern() { return Blocks.SOUL_LANTERN.defaultBlockState(); }
+	static BlockState endRod() { return mc("end_rod", vein()); }
+	static BlockState moss() { return mc("moss_block", stone()); }
+	static BlockState wool() { return mc("purple_wool", glass()); }
+	static BlockState wool2() { return mc("magenta_wool", wool()); }
+	static BlockState woolDark() { return mc("black_wool", tile()); }
+	static BlockState planks() { return mc("dark_oak_planks", brick()); }
+	static BlockState log() { return mc("dark_oak_log", smooth()); }
+	static BlockState strippedLog() { return mc("stripped_dark_oak_log", log()); }
+	static BlockState plaster() { return mc("purple_terracotta", brick()); }
 
 	// ------------------------------------------------------------------ palettes: gradients, dither, weathering
 
-	/** Masonry from the foot of a building to its crown: black, then deepslate, then pale tuff. */
+	/**
+	 * Masonry from the foot of a building to its crown, climbing the hush stone's ladder of tones: blackstone at the
+	 * foot, dark hush bricks, the lighter tiles, then the pale bricks and the polished pale stone of the crown.
+	 */
 	static BlockState[] wallGrad() {
-		BlockState ds = dsBrick();
-		return new BlockState[] {mc("blackstone", ds), bsBrick(), ds, dsTile(), mc("tuff_bricks", dsTile()), mc("polished_tuff", mc("tuff_bricks", dsTile()))};
+		return new BlockState[] {mc("blackstone", bsBrick()), bsBrick(), brick(), brick(), tile(), pale(), palePol()};
 	}
 
-	/** Trim, pilasters and frames: smooth stone, a shade off the wall behind it. */
+	/** Trim, pilasters and frames: polished stone, a shade off the wall behind it, paling with height. */
 	static BlockState[] trimGrad() {
-		return new BlockState[] {bsPol(), dsPol(), dsPol(), mc("polished_tuff", dsPol())};
+		return new BlockState[] {bsPol(), smooth(), smooth(), palePol()};
 	}
 
 	/** Island rock, from just under the turf down to the deepest fang. */
 	static BlockState[] rockGrad() {
-		return new BlockState[] {stone(), mc("deepslate", stone()), mc("cobbled_deepslate", stone()), mc("tuff", stone()), mc("blackstone", stone())};
+		return new BlockState[] {stone(), mc("deepslate", stone()), cobble(), mc("tuff", stone()), mc("blackstone", stone())};
 	}
 
 	/** Picks from a gradient at t (0..1) with dither, so bands blend into each other. */
@@ -172,16 +192,16 @@ public final class SeamArchitect {
 		return g[Math.max(0, Math.min(g.length - 1, i))];
 	}
 
-	/** Cracks and wear, here and there. */
+	/** Cracks, moss and wear, here and there. */
 	static BlockState weather(BlockState s, Random rnd, double chance) {
 		if (s == null || rnd.nextDouble() >= chance) {
 			return s;
 		}
-		if (s == dsBrick()) {
-			return mc("cracked_deepslate_bricks", s);
+		if (s == brick()) {
+			return rnd.nextInt(3) == 0 ? mossy() : cracked();
 		}
-		if (s == dsTile()) {
-			return mc("cracked_deepslate_tiles", s);
+		if (s == stone()) {
+			return cobble();
 		}
 		if (s == bsBrick()) {
 			return mc("cracked_polished_blackstone_bricks", s);
@@ -194,10 +214,10 @@ public final class SeamArchitect {
 		return weather(grad(wallGrad(), t, rnd), rnd, 0.12);
 	}
 
-	/** Roof stairs: deepslate tiles mottled with blackstone, the way old slate weathers. */
+	/** Roof stairs: hush tiles mottled with deepslate and blackstone, the way old slate weathers. */
 	static BlockState roofStairs(Random rnd) {
 		int k = rnd.nextInt(10);
-		return k < 6 ? dsStairs() : k < 9 ? bsStairs() : mc("cobbled_deepslate_stairs", dsStairs());
+		return k < 5 ? tileStairs() : k < 8 ? mc("deepslate_tile_stairs", tileStairs()) : k < 9 ? bsStairs() : cobbleStairs();
 	}
 
 	/** Stained glass for tall windows: violet, with magenta and blue panes worked in. */
@@ -246,10 +266,41 @@ public final class SeamArchitect {
 		 */
 		public boolean rebuild;
 
+		/** Blocks a design tried to lay outside the heights a plan builds at (a design that runs too tall). */
+		public int dropped;
+
 		public void set(int x, int y, int z, BlockState s) {
 			if (s != null && y > 1 && y < 250) {
 				blocks.put(BlockPos.asLong(x, y, z), s);
+			} else if (s != null) {
+				dropped++;
 			}
+		}
+
+		/** How many blocks the plan lays. */
+		public int size() {
+			return blocks.size();
+		}
+
+		/** The farthest any block of the plan lies from a column, across the ground. */
+		public double reach(int cx, int cz) {
+			double far = 0;
+			for (long k : blocks.keySet()) {
+				double dx = BlockPos.getX(k) - cx, dz = BlockPos.getZ(k) - cz;
+				far = Math.max(far, dx * dx + dz * dz);
+			}
+			return Math.sqrt(far);
+		}
+
+		/** How many of the plan's blocks are of a block. */
+		public int count(net.minecraft.world.level.block.Block block) {
+			int n = 0;
+			for (BlockState s : blocks.values()) {
+				if (s.is(block)) {
+					n++;
+				}
+			}
+			return n;
 		}
 
 		public void soft(int x, int y, int z, BlockState s) {
@@ -1079,7 +1130,7 @@ public final class SeamArchitect {
 						if (!mossy) {
 							b = rnd.nextInt(6) == 0 ? brick() : stone();
 						} else if (patch < 0.2 || f < 0.06) {
-							b = rnd.nextInt(3) == 0 ? mc("cobbled_deepslate", stone()) : stone();
+							b = rnd.nextInt(3) == 0 ? cobble() : stone();
 						} else if (patch < 0.38) {
 							b = paleMoss;
 						} else {
@@ -1175,8 +1226,8 @@ public final class SeamArchitect {
 			p.set(x, y + h, z, rnd.nextBoolean() ? lantern() : soulLantern());
 		} else {
 			p.set(x, y + h, z, bsWall());
-			p.set(x, y + h + 1, z, dsChis());
-			p.set(x + 1, y + h + 1, z, slab(dsSlab(), false));
+			p.set(x, y + h + 1, z, carved());
+			p.set(x + 1, y + h + 1, z, slab(tileSlab(), false));
 			p.set(x + 1, y + h, z, chain());
 			p.set(x + 1, y + h - 1, z, hanging(lantern()));
 		}
@@ -1208,11 +1259,11 @@ public final class SeamArchitect {
 			int rise = (int) Math.round((half - Math.abs(lx)) * 0.9);
 			for (int lz = 0; lz <= 1; lz++) {
 				f.set(lx, h + rise, lz, wall(0.6, rnd));
-				f.set(lx, h + rise - 1, lz, lx == 0 ? dsChis() : stairs(dsBrickStairs(), lx < 0 ? Direction.WEST : Direction.EAST, true));
+				f.set(lx, h + rise - 1, lz, lx == 0 ? carved() : stairs(brickStairs(), lx < 0 ? Direction.WEST : Direction.EAST, true));
 			}
 		}
 		int apex = h + (int) Math.round(half * 0.9);
-		f.set(0, apex + 1, 0, dsWall());
+		f.set(0, apex + 1, 0, brickWall());
 		f.set(0, apex - 2, 0, chain());
 		f.set(0, apex - 3, 0, hanging(soulLantern()));
 	}
@@ -1286,507 +1337,6 @@ public final class SeamArchitect {
 		};
 	}
 
-	// ------------------------------------------------------------------ the great spire
-
-	/**
-	 * A colossal gothic spire: tiers of masonry stepping inward from blackstone to tuff, pilastered faces with recessed
-	 * stained-glass windows under arched heads, sills and corbelled ledges, diamond rose windows, stepped buttresses
-	 * crowned with pinnacles, a stair roof with dormers and a crowned needle, a glowing core with a spiral stair up to
-	 * a reliquary; in front a nave with a layered portal, and three satellite towers joined by sky bridges.
-	 */
-	public static void spire(Plan p, Random rnd, int cx, int top, int cz, int r) {
-		Frame base = new Frame(p, cx, top + 1, cz, rnd.nextInt(4));
-		int b0 = Math.max(9, Math.min(12, r / 2 - 1));
-		int b = b0;
-		int tiers = 3 + rnd.nextInt(2);
-		int[] heights = {24 + rnd.nextInt(8), 18 + rnd.nextInt(6), 14 + rnd.nextInt(5), 11 + rnd.nextInt(4)};
-		int total = 0;
-		for (int t = 0; t < tiers; t++) {
-			total += heights[t] + 1;
-		}
-		total += 20;
-		BlockState vines = mc("cave_vines");
-		int y = 0;
-		int firstH = heights[0];
-		int lastFloor = 0;
-		for (int t = 0; t < tiers && b >= 5; t++) {
-			int h = heights[t];
-			Frame f = new Frame(p, cx, top + 1 + y, cz, base.rot);
-			final int yy = y;
-			// Floor (a ring once off the ground: the stair well stays open), reaching out over the terrace below
-			int fl = t == 0 ? b : b + 2;
-			for (int lx = -fl; lx <= fl; lx++) {
-				for (int lz = -fl; lz <= fl; lz++) {
-					if (t == 0 || lx * lx + lz * lz > 20) {
-						f.set(lx, 0, lz, t == 0 && (lx + lz & 1) == 0 ? bsBrick() : dsPol());
-					}
-				}
-			}
-			lastFloor = y;
-			int wTop = h - 4;
-			for (int side = 0; side < 4; side++) {
-				boolean front = side == 0;
-				int[] centers = front && t == 0 ? new int[] {0} : (b >= 10 ? new int[] {0, 5, -5} : new int[] {0, 4, -4});
-				Direction out = Face.out(side), along = Face.along(side);
-				for (int ly = 1; ly <= h; ly++) {
-					double tt = (double) (yy + ly) / total;
-					for (int u = -b + 2; u <= b - 2; u++) {
-						int lx = Face.lx(side, u, b), lz = Face.lz(side, u, b);
-						if (t == 0 && front && Math.abs(u) <= 1 && ly <= (u == 0 ? 6 : 5)) {
-							f.clear(lx, ly, lz); // the door
-							continue;
-						}
-						if (t > 0 && u == 0 && ly <= 2) {
-							f.clear(lx, ly, lz); // out onto the terrace
-							continue;
-						}
-						int win = Integer.MIN_VALUE;
-						for (int k : centers) {
-							int du = Math.abs(u - k);
-							if (Math.abs(k) <= b - 3 && du <= 1 && ly >= 3 && ly <= (du == 0 ? wTop : wTop - 1)) {
-								win = k;
-							}
-						}
-						if (win != Integer.MIN_VALUE) {
-							// Recessed: the opening in the wall, the glass a block behind it
-							f.clear(lx, ly, lz);
-							f.set(Face.lx(side, u, b - 1), ly, Face.lz(side, u, b - 1), ly % 6 == 0 ? vein() : stainedGlass(u, ly, wTop));
-						} else {
-							f.set(lx, ly, lz, ly == 1 || ly == h ? bsBrick() : wall(tt, rnd));
-						}
-					}
-				}
-				// Window heads and sills
-				for (int k : centers) {
-					if (Math.abs(k) > b - 3) {
-						continue;
-					}
-					f.set(Face.lx(side, k - 1, b), wTop, Face.lz(side, k - 1, b), stairs(dsBrickStairs(), along.getOpposite(), true));
-					f.set(Face.lx(side, k + 1, b), wTop, Face.lz(side, k + 1, b), stairs(dsBrickStairs(), along, true));
-					f.set(Face.lx(side, k, b), wTop + 1, Face.lz(side, k, b), dsChis());
-					if (!(t == 0 && front)) {
-						for (int du = -1; du <= 1; du++) {
-							f.set(Face.lx(side, k + du, b + 1), 2, Face.lz(side, k + du, b + 1), stairs(dsBrickStairs(), out.getOpposite(), true));
-						}
-					}
-				}
-				// Pilasters between the windows: a stepped base, a smooth shaft, a carved capital
-				int[] pil = b >= 10 ? new int[] {-3, 3, -8, 8} : new int[] {-2, 2, -6, 6};
-				for (int u : pil) {
-					if (Math.abs(u) > b - 2 || (t == 0 && front && Math.abs(u) <= 4)) {
-						continue;
-					}
-					for (int ly = 1; ly < h; ly++) {
-						double tt = (double) (yy + ly) / total;
-						BlockState s = ly == 1 ? bsBrick() : ly == h - 1 ? dsChis() : grad(trimGrad(), tt, rnd);
-						f.set(Face.lx(side, u, b + 1), ly, Face.lz(side, u, b + 1), s);
-					}
-					f.set(Face.lx(side, u, b + 2), 1, Face.lz(side, u, b + 2), stairs(bsStairs(), out.getOpposite(), false));
-				}
-				// Corbels under the ledge, a water table at the foot, glowing lichen low on the stone
-				for (int u = -b + 2; u <= b - 2; u++) {
-					int clx = Face.lx(side, u, b + 1), clz = Face.lz(side, u, b + 1);
-					if ((u & 1) == 0 && !f.has(clx, h, clz)) {
-						f.set(clx, h, clz, stairs(dsBrickStairs(), out.getOpposite(), true));
-					}
-					if (t == 0 && !(front && Math.abs(u) <= 4)) {
-						f.soft(clx, 1, clz, bsBrick());
-						f.soft(clx, 2, clz, stairs(bsStairs(), out.getOpposite(), false));
-					}
-					if (t == 0 && rnd.nextInt(9) == 0) {
-						f.soft(clx, 3 + rnd.nextInt(5), clz, lichen(out.getOpposite()));
-					}
-				}
-			}
-			// The diamond rose window above the door, front and back, recessed behind a ring of silk
-			if (h >= 13) {
-				int c = h - 5;
-				for (int u = -3; u <= 3; u++) {
-					for (int dy = -3; dy <= 3; dy++) {
-						int m = Math.abs(u) + Math.abs(dy);
-						if (m > 3) {
-							continue;
-						}
-						for (int side : new int[] {0, 2}) {
-							if (m == 3) {
-								f.set(Face.lx(side, u, b), c + dy, Face.lz(side, u, b), vein());
-							} else {
-								f.clear(Face.lx(side, u, b), c + dy, Face.lz(side, u, b));
-								f.set(Face.lx(side, u, b - 1), c + dy, Face.lz(side, u, b - 1), m == 0 ? crying() : (m == 1 ? glass3() : glass2()));
-							}
-						}
-					}
-				}
-			}
-			// Corner buttresses, stepping back as they rise, crowned with pinnacles
-			int low = (int) (h * 0.45);
-			for (int sx = -1; sx <= 1; sx += 2) {
-				for (int sz = -1; sz <= 1; sz += 2) {
-					for (int ly = 0; ly <= h + 3; ly++) {
-						double tt = (double) (yy + ly) / total;
-						for (int ax = -1; ax <= 1; ax++) {
-							for (int az = -1; az <= 1; az++) {
-								f.set(sx * b + ax, ly, sz * b + az, ly % 7 == 6 ? dsTile() : grad(trimGrad(), tt, rnd));
-							}
-						}
-						if (ly <= low) {
-							f.set(sx * (b + 2), ly, sz * b, wall(tt, rnd));
-							f.set(sx * b, ly, sz * (b + 2), wall(tt, rnd));
-							f.set(sx * (b + 2), ly, sz * (b + 1), wall(tt, rnd));
-							f.set(sx * (b + 1), ly, sz * (b + 2), wall(tt, rnd));
-						}
-					}
-					f.set(sx * (b + 2), low + 1, sz * b, stairs(dsBrickStairs(), sx > 0 ? Direction.WEST : Direction.EAST, false));
-					f.set(sx * (b + 2), low + 1, sz * (b + 1), stairs(dsBrickStairs(), sx > 0 ? Direction.WEST : Direction.EAST, false));
-					f.set(sx * b, low + 1, sz * (b + 2), stairs(dsBrickStairs(), sz > 0 ? Direction.NORTH : Direction.SOUTH, false));
-					f.set(sx * (b + 1), low + 1, sz * (b + 2), stairs(dsBrickStairs(), sz > 0 ? Direction.NORTH : Direction.SOUTH, false));
-					int px = sx * b, pz = sz * b;
-					f.set(px, h + 4, pz, dsChis());
-					f.set(px, h + 5, pz, dsWall());
-					f.set(px, h + 6, pz, dsWall());
-					f.set(px, h + 7, pz, dsWall());
-					f.set(px, h + 8, pz, endRod());
-					for (Direction d : new Direction[] {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST}) {
-						f.set(px + d.getStepX(), h + 5, pz + d.getStepZ(), stairs(dsBrickStairs(), d.getOpposite(), false));
-					}
-					f.set(px + sx * 2, h + 2, pz, slab(dsSlab(), false));
-					f.set(px + sx * 2, h + 1, pz, chain());
-					f.set(px + sx * 2, h, pz, hanging(soulLantern()));
-				}
-			}
-			// The ledge: an overhang with chains, lanterns and vines hanging from it
-			int e = b + 1;
-			for (int u = -e; u <= e; u++) {
-				int[][] ring = {{u, e}, {u, -e}, {e, u}, {-e, u}};
-				for (int[] q : ring) {
-					f.soft(q[0], h + 1, q[1], slab(dsSlab(), false));
-					if ((u & 3) == 2 && rnd.nextInt(3) > 0) {
-						int len = 1 + rnd.nextInt(3);
-						for (int k = 1; k <= len; k++) {
-							f.soft(q[0], h + 1 - k, q[1], chain());
-						}
-						f.soft(q[0], h - len, q[1], hanging(rnd.nextInt(3) == 0 ? soulLantern() : lantern()));
-					} else if (vines != null && rnd.nextInt(6) == 0) {
-						int len = 2 + rnd.nextInt(8);
-						for (int k = 0; k < len; k++) {
-							f.soft(q[0], h - k, q[1], vines);
-						}
-					}
-				}
-			}
-			// Warm light inside so the windows glow
-			for (int[] q : new int[][] {{b - 1, b - 2}, {-b + 1, b - 2}, {b - 1, -b + 2}, {-b + 1, -b + 2}}) {
-				f.set(q[0], 1, q[1], lantern());
-			}
-			// A parapet around the terrace above
-			for (int u = -b; u <= b; u++) {
-				f.soft(u, h + 2, b, dsWall());
-				f.soft(u, h + 2, -b, dsWall());
-				f.soft(b, h + 2, u, dsWall());
-				f.soft(-b, h + 2, u, dsWall());
-			}
-			y += h + 1;
-			b -= 2;
-		}
-		roof(base, rnd, y, b + 2);
-		// The core: a column of silk inside violet glass, from the ground to the roof
-		for (int ly = 1; ly < y; ly++) {
-			for (int ax = -1; ax <= 1; ax++) {
-				for (int az = -1; az <= 1; az++) {
-					base.set(ax, ly, az, ax == 0 && az == 0 ? (ly % 6 == 0 ? crying() : vein()) : glass());
-				}
-			}
-		}
-		// The spiral stair around it
-		for (int ly = 1; ly < y; ly++) {
-			double a = ly * Math.PI / 8;
-			for (double rr = 2.2; rr <= 4.4; rr += 0.7) {
-				for (double da = 0; da < 0.4; da += 0.2) {
-					int sx = (int) Math.round(Math.cos(a + da) * rr), sz = (int) Math.round(Math.sin(a + da) * rr);
-					if (Math.abs(sx) <= 1 && Math.abs(sz) <= 1) {
-						continue;
-					}
-					base.set(sx, ly, sz, dsPol());
-					for (int hh = 1; hh <= 3; hh++) {
-						BlockPos above = base.pos(sx, ly + hh, sz);
-						if (Math.abs(sx) < 5 && Math.abs(sz) < 5) {
-							p.clear(above.getX(), above.getY(), above.getZ());
-						}
-					}
-				}
-			}
-		}
-		int bl = b + 2;
-		base.then(-bl + 1, lastFloor + 1, -bl + 3, loot(base.pos(-bl + 1, lastFloor + 1, -bl + 3), 3));
-		nave(base, rnd, b0);
-		// The parvis: a paved forecourt before the portal, narrowing as it runs out toward the street
-		BlockState[] path = pathGrad();
-		int z1 = b0 + 10;
-		for (int lz = z1 + 2; lz <= z1 + 12; lz++) {
-			int hw = lz <= z1 + 7 ? 8 : 8 - (lz - z1 - 7) * 2;
-			for (int lx = -hw; lx <= hw; lx++) {
-				double t = Math.min(1, (Math.abs(lx) / 9.0 + (lz - z1 - 2) / 12.0) / 1.4);
-				pave(p, base.wx(lx, lz), top, base.wz(lx, lz), weather(grad(path, t, rnd), rnd, 0.1));
-			}
-		}
-		int terrace = firstH + 1;
-		for (int side = 1; side < 4; side++) {
-			Frame g = new Frame(p, cx, top + 1, cz, base.rot + side);
-			satellite(g, rnd, b0, b0 + 9, terrace + 8 + rnd.nextInt(10), terrace);
-		}
-	}
-
-	/** A stair roof rising to a needle, with dormers on every side, crockets on the hips and a floating crown. */
-	private static void roof(Frame f, Random rnd, int y, int half0) {
-		int s = 14 + rnd.nextInt(10);
-		int dormerK = s / 3;
-		for (int k = 0; k <= s; k++) {
-			int half = (int) Math.round(half0 * (1 - (double) k / s));
-			if (half <= 0) {
-				break;
-			}
-			for (int side = 0; side < 4; side++) {
-				Direction in = Face.out(side).getOpposite();
-				for (int u = -half + 1; u <= half - 1; u++) {
-					f.set(Face.lx(side, u, half), y + k, Face.lz(side, u, half), stairs(roofStairs(rnd), in, false));
-					f.set(Face.lx(side, u, half - 1), y + k, Face.lz(side, u, half - 1), dsTile());
-				}
-				// the hip, with a crocket every third course
-				int hx = Face.lx(side, half, half), hz = Face.lz(side, half, half);
-				f.set(hx, y + k, hz, bsPol());
-				if (k % 3 == 1) {
-					f.set(Face.lx(side, half + 1, half + 1), y + k, Face.lz(side, half + 1, half + 1), dsWall());
-				}
-			}
-		}
-		// Dormers: a small gabled window standing out of each face
-		int dh = (int) Math.round(half0 * (1 - (double) dormerK / s));
-		for (int side = 0; side < 4; side++) {
-			Direction along = Face.along(side);
-			int pl = dh + 1;
-			for (int ly = 0; ly <= 2; ly++) {
-				f.set(Face.lx(side, -1, pl), y + dormerK + ly, Face.lz(side, -1, pl), dsBrick());
-				f.set(Face.lx(side, 1, pl), y + dormerK + ly, Face.lz(side, 1, pl), dsBrick());
-				f.set(Face.lx(side, 0, pl), y + dormerK + ly, Face.lz(side, 0, pl), ly == 2 ? dsChis() : glass());
-				f.clear(Face.lx(side, 0, pl - 1), y + dormerK + ly, Face.lz(side, 0, pl - 1));
-			}
-			for (int d = 0; d <= 1; d++) {
-				f.set(Face.lx(side, -1, pl - d), y + dormerK + 3, Face.lz(side, -1, pl - d), stairs(dsStairs(), along, false));
-				f.set(Face.lx(side, 1, pl - d), y + dormerK + 3, Face.lz(side, 1, pl - d), stairs(dsStairs(), along.getOpposite(), false));
-				f.set(Face.lx(side, 0, pl - d), y + dormerK + 3, Face.lz(side, 0, pl - d), dsTile());
-				f.set(Face.lx(side, 0, pl - d), y + dormerK + 4, Face.lz(side, 0, pl - d), slab(dsSlab(), false));
-			}
-		}
-		// The needle and its floating crown
-		int tip = y + s;
-		for (int k = 0; k < 6; k++) {
-			f.set(0, tip + k, 0, k < 2 ? dsChis() : dsWall());
-		}
-		f.set(0, tip + 6, 0, vein());
-		f.set(0, tip + 7, 0, endRod());
-		for (int a = 0; a < 16; a++) {
-			double an = a * Math.PI / 8;
-			f.set((int) Math.round(Math.cos(an) * 3), tip + 4, (int) Math.round(Math.sin(an) * 3), a % 4 == 0 ? vein() : bsPol());
-		}
-	}
-
-	/** The nave in front of a spire: buttressed walls, recessed windows, a steep stair roof and a layered portal. */
-	private static void nave(Frame f, Random rnd, int b0) {
-		int z0 = b0 + 1, z1 = b0 + 10, w = 4, h = 13;
-		for (int lz = z0; lz <= z1; lz++) {
-			boolean bay = (lz - z0) % 3 == 1;
-			for (int lx = -w; lx <= w; lx++) {
-				f.set(lx, 0, lz, (lx + lz & 1) == 0 ? bsBrick() : dsPol());
-				boolean sideWall = Math.abs(lx) == w;
-				boolean frontWall = lz == z1;
-				for (int ly = 1; ly <= h; ly++) {
-					double t = ly / 40.0;
-					if (!sideWall && !frontWall) {
-						f.clear(lx, ly, lz);
-						continue;
-					}
-					boolean window = sideWall && bay && ly >= 3 && ly <= 9;
-					boolean door = frontWall && Math.abs(lx) <= 1 && ly <= (lx == 0 ? 6 : 5);
-					if (door) {
-						f.clear(lx, ly, lz);
-					} else if (window) {
-						f.clear(lx, ly, lz);
-						f.set(lx - Integer.signum(lx), ly, lz, ly == 9 ? vein() : stainedGlass(lz, ly, 9));
-					} else {
-						f.set(lx, ly, lz, ly == 1 || ly == h ? bsBrick() : wall(t, rnd));
-					}
-				}
-				// side buttresses between the bays, with a sloped cap
-				if (sideWall && (lz - z0) % 3 == 0) {
-					int sx = Integer.signum(lx);
-					for (int ly = 1; ly <= 9; ly++) {
-						f.set(lx + sx, ly, lz, grad(trimGrad(), ly / 40.0, rnd));
-					}
-					f.set(lx + sx, 10, lz, stairs(bsStairs(), sx > 0 ? Direction.WEST : Direction.EAST, false));
-					f.set(lx + sx * 2, 1, lz, stairs(bsStairs(), sx > 0 ? Direction.WEST : Direction.EAST, false));
-				}
-				// window heads
-				if (sideWall && bay) {
-					f.set(lx, 10, lz, dsChis());
-				}
-			}
-			// Steep stair roof with a tile ridge
-			for (int k = 0; k <= w + 1; k++) {
-				int half = w + 1 - k;
-				f.set(half, h + 1 + k, lz, stairs(roofStairs(rnd), Direction.WEST, false));
-				f.set(-half, h + 1 + k, lz, stairs(roofStairs(rnd), Direction.EAST, false));
-				if (half == 0) {
-					f.set(0, h + 1 + k, lz, dsTile());
-				}
-			}
-			f.set(w + 1, h, lz, stairs(dsBrickStairs(), Direction.WEST, true));
-			f.set(-w - 1, h, lz, stairs(dsBrickStairs(), Direction.EAST, true));
-			if ((lz - z0) % 3 == 2) {
-				f.set(0, h, lz, chain());
-				f.set(0, h - 1, lz, chain());
-				f.set(0, h - 2, lz, hanging(lantern()));
-			}
-		}
-		// The gable front filled in, a small rose in it, a pinnacle on top
-		for (int k = 0; k <= w; k++) {
-			int half = w - k;
-			for (int lx = -half; lx <= half; lx++) {
-				f.set(lx, h + 1 + k, z1, Math.abs(lx) + Math.abs(k - 2) <= 1 ? (lx == 0 && k == 2 ? crying() : glass2()) : wall(0.45, rnd));
-			}
-		}
-		f.set(0, h + w + 3, z1, dsWall());
-		f.set(0, h + w + 4, z1, dsWall());
-		f.set(0, h + w + 5, z1, endRod());
-		// The portal: three receding orders of arches, each a block deeper and a block smaller
-		for (int order = 1; order <= 3; order++) {
-			int lz = z1 + order;
-			int hw = 1 + order, ah = 5 + order;
-			for (int ly = 0; ly <= ah + 1; ly++) {
-				for (int lx = -hw - 1; lx <= hw + 1; lx++) {
-					boolean jamb = Math.abs(lx) == hw + 1 && ly <= ah;
-					boolean head = ly == ah + 1 && Math.abs(lx) <= hw + 1;
-					if (order < 3 && !jamb && !head) {
-						continue;
-					}
-					if (order == 3 && !jamb && !head) {
-						continue;
-					}
-					f.set(lx, ly, lz, ly == 0 ? bsBrick() : jamb ? grad(trimGrad(), ly / 30.0, rnd) : wall(0.35, rnd));
-				}
-				// arch corners curved with stairs
-				f.set(-hw, ah, lz, stairs(dsBrickStairs(), Direction.WEST, true));
-				f.set(hw, ah, lz, stairs(dsBrickStairs(), Direction.EAST, true));
-			}
-			f.set(0, ah + 1, lz, dsChis());
-			f.set(-hw - 1, ah + 2, lz, slab(dsSlab(), false));
-			f.set(hw + 1, ah + 2, lz, slab(dsSlab(), false));
-		}
-		// Banners either side of the portal
-		for (int side = -1; side <= 1; side += 2) {
-			int uc = side * 6;
-			for (int k = 0; k < 10; k++) {
-				for (int du = -1; du <= 1; du++) {
-					if (k == 9 && du != 0) {
-						continue;
-					}
-					int m = Math.abs(du) + Math.abs(k - 4);
-					BlockState cl = k == 0 ? woolDark() : (m == 1 ? wool2() : m == 0 ? vein() : wool());
-					f.set(uc + du, 12 - k, z1 + 1, cl);
-				}
-			}
-		}
-		// Steps and lamps before the door
-		for (int lx = -3; lx <= 3; lx++) {
-			f.set(lx, 0, z1 + 4, stairs(bsStairs(), Direction.NORTH, false));
-		}
-		lamp(f.p, rnd, f.wx(-6, z1 + 5), f.oy, f.wz(-6, z1 + 5));
-		lamp(f.p, rnd, f.wx(6, z1 + 5), f.oy, f.wz(6, z1 + 5));
-	}
-
-	/** A satellite tower at local (0, d) with pilastered corners, a cone of stairs and a sky bridge back to the spire. */
-	private static void satellite(Frame f, Random rnd, int b0, int d, int h, int bridgeY) {
-		int w = 2;
-		for (int ly = 0; ly <= h; ly++) {
-			double t = ly / (double) (h + 14);
-			for (int lx = -w - 1; lx <= w + 1; lx++) {
-				for (int lz = d - w - 1; lz <= d + w + 1; lz++) {
-					boolean outer = Math.abs(lx) == w + 1 || Math.abs(lz - d) == w + 1;
-					boolean edgeX = Math.abs(lx) == w, edgeZ = Math.abs(lz - d) == w;
-					if (outer) {
-						// pilasters at the corners only
-						if (Math.abs(lx) == w + 1 && Math.abs(lz - d) == w + 1) {
-							continue;
-						}
-						if ((Math.abs(lx) == w + 1 && Math.abs(lz - d) == w) || (Math.abs(lz - d) == w + 1 && Math.abs(lx) == w)) {
-							f.set(lx, ly, lz, ly % 8 == 0 ? dsChis() : grad(trimGrad(), t, rnd));
-						}
-						continue;
-					}
-					if (ly == 0 || ly == bridgeY) {
-						f.set(lx, ly, lz, dsPol());
-					} else if (edgeX || edgeZ) {
-						boolean window = !(edgeX && edgeZ) && (lx == 0 || lz == d) && ly % 7 >= 3 && ly % 7 <= 5;
-						if (window) {
-							f.clear(lx, ly, lz);
-							int ix = edgeX ? lx - Integer.signum(lx) : lx, iz = edgeZ ? lz - Integer.signum(lz - d) : lz;
-							f.set(ix, ly, iz, stainedGlass(lx + lz, ly % 7, 5));
-						} else {
-							f.set(lx, ly, lz, ly % 7 == 0 ? bsBrick() : wall(t, rnd));
-						}
-					} else if (ly != bridgeY) {
-						f.clear(lx, ly, lz);
-					}
-				}
-			}
-		}
-		// A cone of stairs with a needle
-		for (int k = 0; k <= 9; k++) {
-			int half = (int) Math.round((w + 2) * (1 - k / 9.0));
-			if (half <= 0) {
-				break;
-			}
-			for (int u = -half; u <= half; u++) {
-				f.set(u, h + 1 + k, d + half, stairs(roofStairs(rnd), Direction.NORTH, false));
-				f.set(u, h + 1 + k, d - half, stairs(roofStairs(rnd), Direction.SOUTH, false));
-				f.set(half, h + 1 + k, d + u, stairs(roofStairs(rnd), Direction.WEST, false));
-				f.set(-half, h + 1 + k, d + u, stairs(roofStairs(rnd), Direction.EAST, false));
-			}
-			for (int s = -1; s <= 1; s += 2) {
-				for (int s2 = -1; s2 <= 1; s2 += 2) {
-					f.set(s * half, h + 1 + k, d + s2 * half, bsPol());
-				}
-			}
-		}
-		f.set(0, h + 10, d, dsWall());
-		f.set(0, h + 11, d, dsWall());
-		f.set(0, h + 12, d, endRod());
-		f.set(0, bridgeY + 3, d, hanging(soulLantern()));
-		// The sky bridge from the terrace's edge, through a gap in its parapet, to a doorway in the tower
-		for (int lx = -1; lx <= 1; lx++) {
-			f.clear(lx, bridgeY + 1, b0);
-		}
-		for (int lz = b0 + 1; lz < d - w; lz++) {
-			for (int lx = -1; lx <= 1; lx++) {
-				f.soft(lx, bridgeY, lz, lx == 0 ? planks() : dsTile());
-			}
-			f.soft(-2, bridgeY, lz, bsBrick());
-			f.soft(2, bridgeY, lz, bsBrick());
-			f.soft(-2, bridgeY + 1, lz, dsWall());
-			f.soft(2, bridgeY + 1, lz, dsWall());
-			f.soft(-2, bridgeY - 1, lz, stairs(dsBrickStairs(), Direction.EAST, true));
-			f.soft(2, bridgeY - 1, lz, stairs(dsBrickStairs(), Direction.WEST, true));
-			if (lz % 4 == 2) {
-				f.soft(0, bridgeY - 1, lz, chain());
-				f.soft(0, bridgeY - 2, lz, hanging(lantern()));
-			}
-		}
-		for (int lx = -1; lx <= 1; lx++) {
-			for (int ly = 1; ly <= 3; ly++) {
-				f.clear(lx, bridgeY + ly, d - w);
-			}
-		}
-	}
-
 	// ------------------------------------------------------------------ the giant loom
 
 	/**
@@ -1813,7 +1363,7 @@ public final class SeamArchitect {
 				for (int ax = -1; ax <= 1; ax++) {
 					for (int az = -1; az <= 1; az++) {
 						boolean core = ax == 0 && az == 0;
-						f.set(side * sx + ax, ly, az, core && ly > 2 ? vein() : ly % 8 == 7 ? dsChis() : wall(t, rnd));
+						f.set(side * sx + ax, ly, az, core && ly > 2 ? vein() : ly % 8 == 7 ? carved() : wall(t, rnd));
 					}
 				}
 				// a stepped plinth
@@ -1832,9 +1382,9 @@ public final class SeamArchitect {
 					}
 				}
 			}
-			f.set(side * sx, h + 5, 0, dsChis());
-			f.set(side * sx, h + 6, 0, dsWall());
-			f.set(side * sx, h + 7, 0, dsWall());
+			f.set(side * sx, h + 5, 0, carved());
+			f.set(side * sx, h + 6, 0, brickWall());
+			f.set(side * sx, h + 7, 0, brickWall());
 			f.set(side * sx, h + 8, 0, endRod());
 		}
 		// Beams, with corbels under the ends
@@ -1847,7 +1397,7 @@ public final class SeamArchitect {
 			}
 		}
 		for (int side = -1; side <= 1; side += 2) {
-			f.set(side * (sx - 2), h - 1, 0, stairs(dsBrickStairs(), side > 0 ? Direction.EAST : Direction.WEST, true));
+			f.set(side * (sx - 2), h - 1, 0, stairs(brickStairs(), side > 0 ? Direction.EAST : Direction.WEST, true));
 		}
 		// Threads and the tapestry
 		int mid = (h + 4) / 2, woven = 8 + rnd.nextInt(Math.max(1, h - 14));
@@ -1922,12 +1472,12 @@ public final class SeamArchitect {
 					if ((x - cx) * (x - cx) + (z - cz) * (z - cz) <= plaza * plaza) {
 						break;
 					}
-					pave(p, x, top, z, rnd.nextInt(4) == 0 ? mc("cobbled_deepslate", stone()) : mc("tuff_bricks", dsTile()));
+					pave(p, x, top, z, rnd.nextInt(4) == 0 ? cobble() : tile());
 				}
 			}
 		}
-		// Plaza: dressed tuff at the heart, darkening to the rim
-		BlockState[] paving = {mc("polished_tuff", dsPol()), mc("tuff_bricks", dsTile()), dsTile(), bsBrick(), mc("cobbled_deepslate", stone())};
+		// Plaza: polished pale stone at the heart, darkening to cobbles at the rim
+		BlockState[] paving = pathGrad();
 		for (int dx = -plaza; dx <= plaza; dx++) {
 			for (int dz = -plaza; dz <= plaza; dz++) {
 				double dd = Math.sqrt(dx * dx + dz * dz);
@@ -1951,7 +1501,7 @@ public final class SeamArchitect {
 					if (belfry && (ax == 0 || az == 0)) {
 						continue;
 					}
-					p.set(cx + ax, top + ly, cz + az, ly % 5 == 0 ? dsChis() : wall(t, rnd));
+					p.set(cx + ax, top + ly, cz + az, ly % 5 == 0 ? carved() : wall(t, rnd));
 				}
 			}
 			if (ly == 1) {
@@ -1965,7 +1515,7 @@ public final class SeamArchitect {
 		}
 		p.set(cx, top + h - 1, cz, mc("bell", lantern()));
 		for (Direction d : new Direction[] {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST}) {
-			p.set(cx + d.getStepX(), top + h - 1, cz + d.getStepZ(), stairs(dsBrickStairs(), d.getOpposite(), true));
+			p.set(cx + d.getStepX(), top + h - 1, cz + d.getStepZ(), stairs(brickStairs(), d.getOpposite(), true));
 		}
 		for (int k = 1; k <= 7; k++) {
 			int half = k < 3 ? 1 : 0;
@@ -1973,7 +1523,7 @@ public final class SeamArchitect {
 				for (int az = -half; az <= half; az++) {
 					p.set(cx + ax, top + h + k, cz + az, k == 7 ? endRod() : half == 1 && (ax != 0 || az != 0) && k == 1
 							? stairs(roofStairs(rnd), ax > 0 ? Direction.WEST : ax < 0 ? Direction.EAST : az > 0 ? Direction.NORTH : Direction.SOUTH, false)
-							: k > 3 ? dsWall() : dsTile());
+							: k > 3 ? brickWall() : tile());
 				}
 			}
 		}
@@ -2014,7 +1564,7 @@ public final class SeamArchitect {
 				if (rim) {
 					boolean gate = gateOnX ? dx == gateX * half && Math.abs(dz) <= 1 : dz == gateZ * half && Math.abs(dx) <= 1;
 					if (!gate) {
-						p.set(x, top + 1, z, Math.abs(dx) == half && Math.abs(dz) == half ? bsBrick() : dsWall());
+						p.set(x, top + 1, z, Math.abs(dx) == half && Math.abs(dz) == half ? bsBrick() : brickWall());
 					}
 				}
 			}
@@ -2044,7 +1594,7 @@ public final class SeamArchitect {
 		// Ground floor: masonry
 		for (int lx = -w; lx <= w; lx++) {
 			for (int lz = -d; lz <= d; lz++) {
-				f.set(lx, -1, lz, dsPol());
+				f.set(lx, -1, lz, smooth());
 				boolean edgeX = Math.abs(lx) == w, edgeZ = Math.abs(lz) == d;
 				for (int ly = 0; ly < h1; ly++) {
 					if (!edgeX && !edgeZ) {
@@ -2067,8 +1617,8 @@ public final class SeamArchitect {
 		}
 		// Sills under the ground-floor windows
 		for (int s = -1; s <= 1; s += 2) {
-			f.set(s, 0, d + 1, stairs(dsBrickStairs(), Direction.NORTH, true));
-			f.set(s, 0, -d - 1, stairs(dsBrickStairs(), Direction.SOUTH, true));
+			f.set(s, 0, d + 1, stairs(brickStairs(), Direction.NORTH, true));
+			f.set(s, 0, -d - 1, stairs(brickStairs(), Direction.SOUTH, true));
 		}
 		// The jetty: a beam course, then the upper floor overhanging front and back by one
 		int dz = d + 1;
@@ -2116,7 +1666,7 @@ public final class SeamArchitect {
 				f.set(half, ry + k, lz, stairs(roofStairs(rnd), Direction.WEST, false));
 				f.set(-half, ry + k, lz, stairs(roofStairs(rnd), Direction.EAST, false));
 				if (half == 0) {
-					f.set(0, ry + k, lz, dsTile());
+					f.set(0, ry + k, lz, tile());
 				}
 				if (Math.abs(lz) == dz && half > 0) {
 					for (int lx = -half + 1; lx <= half - 1; lx++) {
@@ -2129,7 +1679,7 @@ public final class SeamArchitect {
 		// Chimney at the back with a smouldering fire on top
 		int chx = w - 1, chz = -dz;
 		for (int ly = 0; ly <= ry + rw + 1; ly++) {
-			f.set(chx, ly, chz, ly > ry ? mc("bricks", dsBrick()) : grad(wallGrad(), ly / 20.0, rnd));
+			f.set(chx, ly, chz, ly > ry ? mc("bricks", brick()) : grad(wallGrad(), ly / 20.0, rnd));
 		}
 		f.set(chx, ry + rw + 2, chz, mc("campfire", lantern()));
 		// Door, with a lantern on a bracket beside it
@@ -2138,8 +1688,8 @@ public final class SeamArchitect {
 			f.set(0, 0, d, door.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH).setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.LOWER));
 			f.set(0, 1, d, door.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH).setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.UPPER));
 		}
-		f.set(0, -1, d + 1, dsPol());
-		f.set(1, 2, d + 1, stairs(dsBrickStairs(), Direction.NORTH, true));
+		f.set(0, -1, d + 1, smooth());
+		f.set(1, 2, d + 1, stairs(brickStairs(), Direction.NORTH, true));
 		f.set(1, 1, d + 1, hanging(lantern()));
 		if (withLore) {
 			f.then(-w + 1, 0, d - 1, loot(f.pos(-w + 1, 0, d - 1), 2));
@@ -2169,7 +1719,7 @@ public final class SeamArchitect {
 			if (k % 8 == 0) {
 				for (int lx = -b + 1; lx <= b - 1; lx++) {
 					for (int lz = -b + 1; lz <= b - 1; lz++) {
-						p.set(cx + lx, y, cz + lz, dsPol());
+						p.set(cx + lx, y, cz + lz, smooth());
 					}
 				}
 				p.set(cx, y - 1, cz, hanging(lantern()));
@@ -2177,7 +1727,7 @@ public final class SeamArchitect {
 				for (int side = 0; side < 4; side++) {
 					Direction in = Face.out(side).getOpposite();
 					for (int u = -b + 1; u <= b - 1; u += 2) {
-						p.set(cx + Face.lx(side, u, b + 1), y, cz + Face.lz(side, u, b + 1), stairs(dsBrickStairs(), in, false));
+						p.set(cx + Face.lx(side, u, b + 1), y, cz + Face.lz(side, u, b + 1), stairs(brickStairs(), in, false));
 					}
 				}
 			}
@@ -2323,7 +1873,7 @@ public final class SeamArchitect {
 
 	/** The surface of an island as {@link #island} lays it. */
 	static boolean turf(BlockState s) {
-		return s == moss() || s == mc("pale_moss_block", moss()) || s == stone() || s == brick() || s == mc("cobbled_deepslate", stone());
+		return s == moss() || s == mc("pale_moss_block", moss()) || s == stone() || s == brick() || s == cobble() || s == mc("cobbled_deepslate", stone());
 	}
 
 	/** Grass, ferns and flowers: what a path or a building may simply replace. */
@@ -2345,9 +1895,9 @@ public final class SeamArchitect {
 		}
 	}
 
-	/** Paving from the centre of a building out to its rim: light dressed tuff, darkening to rough deepslate. */
+	/** Paving from the middle of a street to its worn edges: polished pale stone, pale bricks, tiles, bricks, cobbles. */
 	static BlockState[] pathGrad() {
-		return new BlockState[] {mc("polished_tuff", dsPol()), mc("tuff_bricks", dsTile()), dsTile(), bsBrick(), mc("cobbled_deepslate", stone())};
+		return new BlockState[] {palePol(), pale(), tile(), brick(), cobble()};
 	}
 
 	/**
@@ -2359,7 +1909,7 @@ public final class SeamArchitect {
 	public static void streets(Plan p, Random rnd, Shape s, int mask, int inner, boolean trail) {
 		int[][] dirs = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 		BlockState[] path = pathGrad();
-		BlockState[] worn = {mc("cobbled_deepslate", stone()), mc("tuff", stone()), mc("deepslate", stone()), stone()};
+		BlockState[] worn = {cobble(), mc("tuff", stone()), mc("deepslate", stone()), stone()};
 		for (int i = 0; i < 4; i++) {
 			if ((mask & (1 << i)) == 0) {
 				continue;
@@ -2523,8 +2073,8 @@ public final class SeamArchitect {
 				}
 			}
 		}
-		BlockState[] deckGrad = {dsTile(), bsBrick(), dsPol()};
-		BlockState stairB = dsBrickStairs();
+		BlockState[] deckGrad = {tile(), bsBrick(), smooth()};
+		BlockState stairB = brickStairs();
 		// Place the deck
 		for (Map.Entry<Long, int[]> e : deck.entrySet()) {
 			int m = (int) (e.getKey() >> 32), pp = e.getKey().intValue();
@@ -2538,11 +2088,11 @@ public final class SeamArchitect {
 			if (c[2] != 0) {
 				Direction up = alongX ? (c[2] > 0 ? Direction.EAST : Direction.WEST) : (c[2] > 0 ? Direction.SOUTH : Direction.NORTH);
 				p.set(x, c[0], z, stairs(stairB, up, false));
-				p.set(x, c[0] - 1, z, dsTile());
+				p.set(x, c[0] - 1, z, tile());
 			} else {
 				p.set(x, c[0], z, grad(deckGrad, noise(7, x / 3.0, z / 3.0), rnd));
 				if (c[1] == 1) {
-					p.set(x, c[0] + 1, z, slab(dsSlab(), false));
+					p.set(x, c[0] + 1, z, slab(tileSlab(), false));
 				}
 			}
 		}
@@ -2577,11 +2127,11 @@ public final class SeamArchitect {
 			int y = e.getValue();
 			int x = alongX ? m : pp, z = alongX ? pp : m;
 			p.set(x, y, z, bsBrick());
-			p.set(x, y + 1, z, dsWall());
+			p.set(x, y + 1, z, brickWall());
 			Direction out = railOut.get(e.getKey());
-			p.soft(x, y - 1, z, stairs(dsBrickStairs(), out.getOpposite(), true));
+			p.soft(x, y - 1, z, stairs(brickStairs(), out.getOpposite(), true));
 			if (Math.floorMod(m, 6) == 0) {
-				p.set(x, y + 2, z, dsWall());
+				p.set(x, y + 2, z, brickWall());
 				if (Math.floorMod(m, 12) == 0) {
 					p.set(x, y + 3, z, rnd.nextBoolean() ? lantern() : soulLantern());
 				}
@@ -2621,7 +2171,7 @@ public final class SeamArchitect {
 			double u = (i / per) % 1.0;
 			depth[i] = 1 + (int) Math.round(3.4 * (1 - Math.sin(Math.PI * u)));
 		}
-		BlockState[] under = {dsTile(), dsBrick(), bsBrick()};
+		BlockState[] under = {tile(), brick(), bsBrick()};
 		for (int i = 0; i <= len; i++) {
 			int m = m0 + i;
 			for (int w = -1; w <= 1; w++) {
@@ -2642,7 +2192,7 @@ public final class SeamArchitect {
 						if (prev > d || next > d) {
 							boolean towardPlus = next > prev;
 							Direction f = alongX ? (towardPlus ? Direction.EAST : Direction.WEST) : (towardPlus ? Direction.SOUTH : Direction.NORTH);
-							s = stairs(dsBrickStairs(), f, true);
+							s = stairs(brickStairs(), f, true);
 						}
 					}
 					p.soft(x, c[0] - k, z, s);
@@ -2654,7 +2204,7 @@ public final class SeamArchitect {
 			int x = alongX ? m : pp, z = alongX ? pp : m;
 			if (pendant && c != null && !a.inside(x, z, -1) && !b.inside(x, z, -1)) {
 				int y = c[0] - depth[i] - 1;
-				p.soft(x, y, z, dsChis());
+				p.soft(x, y, z, carved());
 				p.soft(x, y - 1, z, bsWall());
 				int links = 1 + rnd.nextInt(3);
 				for (int k = 1; k <= links; k++) {
@@ -2710,9 +2260,9 @@ public final class SeamArchitect {
 				int x2 = hx + (int) Math.round(Math.cos(an) * (radius + dr)), z2 = hz + (int) Math.round(Math.sin(an) * (radius + dr));
 				p.set(x2, y, z2, i % 20 < 2 ? vein() : grad(wallGrad(), t, rnd));
 				if (dr == 0) {
-					p.set(x2, y + 1, z2, i % 20 < 2 ? vein() : slab(dsSlab(), false));
+					p.set(x2, y + 1, z2, i % 20 < 2 ? vein() : slab(tileSlab(), false));
 				} else {
-					p.set(x2, y - 1, z2, stairs(dsBrickStairs(), Direction.NORTH, true));
+					p.set(x2, y - 1, z2, stairs(brickStairs(), Direction.NORTH, true));
 				}
 			}
 			if (i % 17 == 0) {
@@ -2738,7 +2288,7 @@ public final class SeamArchitect {
 						Direction in = Math.abs(dx) == half ? (dx > 0 ? Direction.WEST : Direction.EAST) : (dz > 0 ? Direction.NORTH : Direction.SOUTH);
 						p.set(ox + dx, y + j, oz + dz, stairs(bsStairs(), in, false));
 					} else {
-						p.set(ox + dx, y + j, oz + dz, rim ? bsPol() : (dx + dz & 1) == 0 ? bsBrick() : dsPol());
+						p.set(ox + dx, y + j, oz + dz, rim ? bsPol() : (dx + dz & 1) == 0 ? bsBrick() : smooth());
 					}
 				}
 			}
@@ -2746,7 +2296,7 @@ public final class SeamArchitect {
 		int base = y + 3;
 		int H = 92 + rnd.nextInt(20);
 		double[][] segments = {{0, 0.42}, {0.47, 0.76}, {0.81, 1.0}};
-		BlockState[] g = {mc("blackstone", bsPol()), bsPol(), dsPol(), dsTile(), mc("polished_tuff", dsTile()), amethyst()};
+		BlockState[] g = {mc("blackstone", bsPol()), bsPol(), smooth(), tile(), mc("polished_tuff", tile()), amethyst()};
 		for (double[] seg : segments) {
 			int k0 = (int) (seg[0] * H), k1 = (int) (seg[1] * H);
 			for (int k = k0; k < k1; k++) {

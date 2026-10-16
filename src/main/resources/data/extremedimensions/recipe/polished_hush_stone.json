@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "##",
+    "##"
+  ],
+  "key": {
+    "#": "extremedimensions:cobbled_hush_stone"
+  },
+  "result": {
+    "id": "extremedimensions:polished_hush_stone",
+    "count": 4
+  }
+}

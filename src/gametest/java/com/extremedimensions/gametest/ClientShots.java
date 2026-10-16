@@ -13,6 +13,7 @@ import com.extremedimensions.client.screen.SettingsScreen;
 import com.extremedimensions.client.state.ClientState;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.registry.ModBlocks;
 import com.extremedimensions.network.Sync;
 import com.extremedimensions.penalty.SealedPockets;
 
@@ -25,6 +26,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.item.ItemStack;
@@ -684,6 +686,91 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
 			ctx.runOnClient(mc -> ClientOptions.setGuidance(true));
 			ctx.waitTicks(25);
+
+			// The hush masonry: every stone of the family with its slab, stairs and wall, the rest of the family behind
+			int[] home = sp.getServer().computeOnServer(s -> new int[] {player(s).getBlockX(), player(s).getBlockY(), player(s).getBlockZ()});
+			sp.getServer().runOnServer(s -> {
+				net.minecraft.server.level.ServerLevel lvl = (net.minecraft.server.level.ServerLevel) player(s).level();
+				net.minecraft.world.level.block.Block[][] rows = {
+						{ModBlocks.COBBLED_HUSH_STONE, ModBlocks.COBBLED_HUSH_STONE_SLAB, ModBlocks.COBBLED_HUSH_STONE_STAIRS, ModBlocks.COBBLED_HUSH_STONE_WALL},
+						{ModBlocks.HUSH_STONE, ModBlocks.HUSH_STONE_SLAB, ModBlocks.HUSH_STONE_STAIRS, ModBlocks.HUSH_STONE_WALL},
+						{ModBlocks.HUSH_BRICKS, ModBlocks.HUSH_BRICK_SLAB, ModBlocks.HUSH_BRICK_STAIRS, ModBlocks.HUSH_BRICK_WALL},
+						{ModBlocks.MOSSY_HUSH_BRICKS, ModBlocks.MOSSY_HUSH_BRICK_SLAB, ModBlocks.MOSSY_HUSH_BRICK_STAIRS, ModBlocks.MOSSY_HUSH_BRICK_WALL},
+						{ModBlocks.POLISHED_HUSH_STONE, ModBlocks.POLISHED_HUSH_STONE_SLAB, ModBlocks.POLISHED_HUSH_STONE_STAIRS, ModBlocks.POLISHED_HUSH_STONE_WALL},
+						{ModBlocks.HUSH_TILES, ModBlocks.HUSH_TILE_SLAB, ModBlocks.HUSH_TILE_STAIRS, ModBlocks.HUSH_TILE_WALL},
+						{ModBlocks.PALE_HUSH_BRICKS, ModBlocks.PALE_HUSH_BRICK_SLAB, ModBlocks.PALE_HUSH_BRICK_STAIRS, ModBlocks.PALE_HUSH_BRICK_WALL},
+						{ModBlocks.POLISHED_PALE_HUSH_STONE, ModBlocks.POLISHED_PALE_HUSH_STONE_SLAB, ModBlocks.POLISHED_PALE_HUSH_STONE_STAIRS,
+								ModBlocks.POLISHED_PALE_HUSH_STONE_WALL}};
+				int x0 = home[0] - 8, y = home[1], z = home[2] + 7;
+				for (int i = 0; i < rows.length; i++) {
+					int x = x0 + i * 2;
+					// two blocks with a slab on them, stairs before them stepping down toward the camera, a wall beside
+					lvl.setBlock(new BlockPos(x, y, z), rows[i][0].defaultBlockState(), 3);
+					lvl.setBlock(new BlockPos(x, y + 1, z), rows[i][0].defaultBlockState(), 3);
+					lvl.setBlock(new BlockPos(x, y + 2, z), rows[i][1].defaultBlockState(), 3);
+					lvl.setBlock(new BlockPos(x, y, z - 1), rows[i][2].defaultBlockState()
+							.setValue(net.minecraft.world.level.block.StairBlock.FACING, net.minecraft.core.Direction.SOUTH), 3);
+					lvl.setBlock(new BlockPos(x + 1, y, z), rows[i][3].defaultBlockState(), 3);
+					lvl.setBlock(new BlockPos(x + 1, y + 1, z), rows[i][3].defaultBlockState(), 3);
+				}
+				net.minecraft.world.level.block.Block[] rest = {ModBlocks.CRACKED_HUSH_BRICKS, ModBlocks.CHISELED_HUSH_BRICKS, ModBlocks.SILKED_HUSH_BRICKS,
+						ModBlocks.HUSH_PILLAR, ModBlocks.SEAM_VEIN, ModBlocks.HUSH_PILLAR, ModBlocks.CHISELED_HUSH_BRICKS, ModBlocks.SILKED_HUSH_BRICKS};
+				for (int i = 0; i < rest.length; i++) {
+					for (int k = 0; k < 3; k++) {
+						lvl.setBlock(new BlockPos(x0 + i * 2, y + k, z + 3), rest[i].defaultBlockState(), 3);
+					}
+				}
+			});
+			ctx.runOnClient(mc -> mc.options.renderDistance().set(16));
+			sp.getServer().runCommand("execute as @a run gamemode spectator @s");
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f 0 14", home[0] - 0.5, home[1] + 3.2, home[2] - 2.5));
+			sp.getConnection().waitForChunksRender();
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("18_masonry");
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f 20 18", home[0] - 5.5, home[1] + 2.2, home[2] + 2.5));
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("18_masonry_close");
+
+			// Colossal buildings, one of each plan, each on its island as the Seam would design it (far out, in the sky)
+			String[] plans = {"cathedral", "citadel", "cluster", "ziggurat", "gateway"};
+			int skyTop = 120;
+			for (int k = 0; k < plans.length; k++) {
+				final int kk = k;
+				int cx = home[0] + 700 + k * 300, cz = home[2] + 300;
+				String what = sp.getServer().computeOnServer(s -> {
+					com.extremedimensions.seam.Colossus.Summary[] built = new com.extremedimensions.seam.Colossus.Summary[1];
+					com.extremedimensions.seam.SeamArchitect.Plan plan = com.extremedimensions.seam.SeamService.colossus(4242L + kk * 7717L, cx, skyTop, cz, 36, kk, built);
+					plan.placeNow((net.minecraft.server.level.ServerLevel) player(s).level());
+					return built[0] + ", " + plan.size() + " blocks";
+				});
+				com.extremedimensions.ExtremeDimensions.LOGGER.info("Colossus shot {} ({}): {}", k, plans[k], what);
+				sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 -2", cx, skyTop + 48, cz - 118));
+				sp.getConnection().waitForChunksRender();
+				ctx.waitTicks(40);
+				ctx.takeScreenshot("18_colossus_" + plans[k]);
+				if (k == 0 || k == 2) {
+					// from a corner, nearer, and up close on its face
+					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 -45 6", cx - 62, skyTop + 40, cz - 62));
+					sp.getConnection().waitForChunksRender();
+					ctx.waitTicks(30);
+					ctx.takeScreenshot("18_colossus_" + plans[k] + "_corner");
+					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 -12", cx, skyTop + 10, cz - 44));
+					ctx.waitTicks(20);
+					ctx.takeScreenshot("18_colossus_" + plans[k] + "_close");
+				}
+				if (k == 0) {
+					sp.getServer().runCommand("time set midnight");
+					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 -2", cx, skyTop + 40, cz - 96));
+					ctx.waitTicks(30);
+					ctx.takeScreenshot("18_colossus_night");
+					sp.getServer().runCommand("time set noon");
+				}
+			}
+			ctx.runOnClient(mc -> mc.options.renderDistance().set(12));
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 0", home[0], home[1], home[2]));
+			sp.getServer().runCommand("execute as @a run gamemode survival @s");
+			sp.getConnection().waitForChunksRender();
+			ctx.waitTicks(20);
 
 			// Rift Trials: the screen (asked for as the button does) with a board, then taken up
 			sp.getServer().runOnServer(s -> {

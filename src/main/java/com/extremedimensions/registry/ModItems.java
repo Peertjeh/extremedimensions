@@ -51,9 +51,8 @@ public final class ModItems {
 	/** The relics: bound to the Tether one at a time, each with a gift and a price (see Relic). */
 	public static final java.util.Map<com.extremedimensions.relic.Relic, Item> RELICS = relics();
 
-	public static final Item HUSH_STONE = block(ModBlocks.HUSH_STONE);
-	public static final Item HUSH_BRICKS = block(ModBlocks.HUSH_BRICKS);
-	public static final Item SEAM_VEIN = block(ModBlocks.SEAM_VEIN);
+	/** Every block of the hush masonry family as an item, in creative-tab order (the vein last). */
+	public static final java.util.List<Item> HUSH = ModBlocks.HUSH.stream().map(ModItems::block).toList();
 
 	private static Item block(Block block) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, BuiltInRegistries.BLOCK.getKey(block));

@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "extremedimensions:block/cobbled_hush_stone_slab"
+    },
+    "type=top": {
+      "model": "extremedimensions:block/cobbled_hush_stone_slab_top"
+    },
+    "type=double": {
+      "model": "extremedimensions:block/cobbled_hush_stone"
+    }
+  }
+}

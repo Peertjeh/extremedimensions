@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "#",
+    "#"
+  ],
+  "key": {
+    "#": "extremedimensions:polished_hush_stone"
+  },
+  "result": {
+    "id": "extremedimensions:hush_pillar",
+    "count": 2
+  }
+}

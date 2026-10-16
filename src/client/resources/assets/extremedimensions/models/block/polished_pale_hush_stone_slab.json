@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "extremedimensions:block/polished_pale_hush_stone",
+    "top": "extremedimensions:block/polished_pale_hush_stone",
+    "side": "extremedimensions:block/polished_pale_hush_stone"
+  }
+}

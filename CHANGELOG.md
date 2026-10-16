@@ -1,5 +1,41 @@
 # Changelog
 
+## 2.23.0: Hushwork
+
+### Added
+- **The hush masonry**: the Seam's stone is now a whole family of building blocks with new, finely drawn textures.
+  Hush stone, cobbled hush stone, polished hush stone, hush bricks (cracked and mossy too), hush tiles, chiseled hush
+  bricks, a hush pillar, pale hush bricks and polished pale hush stone (the stone bleached by the Seam's light), and
+  silked hush bricks with glowing seam silk threaded through their mortar. Eight of them have a slab, stairs and a
+  wall. The textures are drawn to be cut in half: brick courses, cobbles and tiles break along the middle of a block,
+  so slabs, stairs and walls show whole courses and whole stones at their edges and line up with the blocks beside them.
+- Recipes for all of it at the crafting table and the stonecutter: polished from cobbled, bricks from stone, tiles from
+  bricks, a pillar from polished stone, chiseled bricks from slabs, the pale stone with bone meal, silked bricks with
+  seam silk, mossy bricks with moss or vines, cracked bricks in a furnace. Cobbled hush stone makes stone tools and
+  furnaces.
+- **Colossal buildings assembled from parts.** The great islands of the Seam no longer carry one kind of spire: every
+  colossus is put together from a kit, so no two are alike. Five plans (a cathedral with its crossing tower, nave,
+  transepts and apse; a citadel with a keep inside a towered curtain wall and a gatehouse; a cluster of towers round
+  a great spire joined by sky bridges; a stepped ziggurat with a temple on top; a gateway of twin towers spanned by an
+  arch). Towers stacked from tiers that step in as they rise and turn from square to octagonal to round, each tier with
+  its own body (lancet windows between pilasters, an open arcade, a colonnade, banded masonry with round windows, an
+  open belfry, a lantern of glass), corbelled ledges, balustrades or battlements, buttresses with pinnacles or
+  turrets. Crowned with a spire, a ribbed dome with a lantern, a crown of pinnacles under a floating halo, a terrace
+  with a hovering crystal, or broken walls open to the sky. Built in one of four schemes: the full ladder from a
+  blackstone foot to a pale crown, pale walls under dark slate roofs, black stone lit by silk, or a ruin overgrown with
+  moss. Great towers still have their glowing core, a spiral stair to the top and a reliquary at its head.
+- The operator showcase (`/tether seam_showcase`) shows three colossi side by side.
+
+### Changed
+- **The Seam is built of its own stone.** Every building's masonry climbs the hush stone's ladder of tones by height
+  (blackstone at the foot, dark hush bricks, tiles, pale bricks, polished pale stone at the crown); trim and pilasters
+  are polished hush stone and hush pillars, roofs are hush tiles mottled with deepslate slate, streets and plazas are
+  paved from polished pale stone at the middle to cobbles at the edges, and walls weather to cracked and mossy bricks.
+
+### Fixed
+- Hush stone, hush bricks and Seam veins could not be mined properly: they took ages and dropped nothing, so a vein
+  never gave its seam silk. Every block of the family is now mined with a pickaxe and drops as it should.
+
 ## 2.22.0: The Seam Rises
 
 ### Added

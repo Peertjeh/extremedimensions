@@ -37,9 +37,7 @@ public final class ModItemGroups {
 					out.accept(ModItems.MENDING_THREAD);
 					out.accept(ModItems.SEVERING_SHEARS);
 					ModItems.RELICS.values().forEach(out::accept);
-					out.accept(ModItems.HUSH_STONE);
-					out.accept(ModItems.HUSH_BRICKS);
-					out.accept(ModItems.SEAM_VEIN);
+					ModItems.HUSH.forEach(out::accept);
 					out.accept(Items.LODESTONE);
 				})
 				.build());

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "#  ",
+    "## ",
+    "###"
+  ],
+  "key": {
+    "#": "extremedimensions:hush_stone"
+  },
+  "result": {
+    "id": "extremedimensions:hush_stone_stairs",
+    "count": 4
+  }
+}

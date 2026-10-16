@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "###",
+    "#B#",
+    "###"
+  ],
+  "key": {
+    "#": "extremedimensions:polished_hush_stone",
+    "B": "minecraft:bone_meal"
+  },
+  "result": {
+    "id": "extremedimensions:polished_pale_hush_stone",
+    "count": 8
+  }
+}

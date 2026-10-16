@@ -82,7 +82,7 @@ public class PerfTests {
 		int kinds = SeamService.designShowcase();
 		double designMs = (System.nanoTime() - t0) / 1e6;
 		int queued = SeamArchitect.pending();
-		CurseTests.check(helper, kinds == 6 && queued > 1000, "the showcase designed %s structures with %s blocks", kinds, queued);
+		CurseTests.check(helper, kinds == 8 && queued > 1000, "the showcase designed %s structures with %s blocks", kinds, queued);
 		long budget = com.extremedimensions.config.Config.SEAM_BUILD_BUDGET_MS * 1_000_000L;
 		// Nothing is loaded out there yet: a tick of building must cost about nothing and load no chunk
 		long t1 = System.nanoTime();

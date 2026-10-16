@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "###"
+  ],
+  "key": {
+    "#": "extremedimensions:hush_bricks"
+  },
+  "result": {
+    "id": "extremedimensions:hush_brick_slab",
+    "count": 6
+  }
+}
