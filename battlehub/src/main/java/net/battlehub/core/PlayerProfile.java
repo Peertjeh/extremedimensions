@@ -36,6 +36,8 @@ public final class PlayerProfile {
 	/** Preferred duel format: "bo1" or "bo3". */
 	public String duelFormat = "bo1";
 	public int tournamentsWon;
+	/** Weekly tournaments won. */
+	public int weeklyWins;
 	/** Cosmetics bought with coins (ids from cosmetics.json). */
 	public Set<String> ownedCosmetics = new LinkedHashSet<>();
 	/** Selected cosmetic per category ("trail", "kill", ...). */

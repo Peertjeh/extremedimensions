@@ -856,6 +856,11 @@ public abstract class Match {
 			BattleHub.LOGGER.error("Could not apply results of match {}", id, e);
 		}
 		try {
+			net.battlehub.export.MatchLog.record(this);
+		} catch (RuntimeException e) {
+			BattleHub.LOGGER.error("Could not log match {}", id, e);
+		}
+		try {
 			RecapMessages.send(this);
 		} catch (RuntimeException e) {
 			BattleHub.LOGGER.error("Could not show the recap of match {}", id, e);

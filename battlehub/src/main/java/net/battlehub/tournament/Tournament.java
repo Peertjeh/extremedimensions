@@ -101,6 +101,9 @@ public final class Tournament {
 
 	public final int id;
 	public final GameMode kit;
+	/** The weekly tournament (bigger prizes, kept in the history). */
+	public boolean weekly;
+	private final int startPlayers;
 	public final int teamSize;
 	private final MinecraftServer server;
 	private final Random random;
@@ -119,6 +122,7 @@ public final class Tournament {
 		this.server = server;
 		this.kit = kit;
 		this.random = random;
+		this.startPlayers = players.size();
 		List<UUID> ids = new ArrayList<>();
 		for (ServerPlayer p : players) {
 			ids.add(p.getUUID());
@@ -375,6 +379,11 @@ public final class Tournament {
 		tell(p -> Msg.send(p, "tournament.next_round", roundName(p), breakTicks / 20));
 	}
 
+	/** Players at the start. */
+	public int size() {
+		return startPlayers;
+	}
+
 	private void finish() {
 		done = true;
 		Team champion = teams.get(bracket.champion());
@@ -396,6 +405,10 @@ public final class Tournament {
 				Msg.sound(p, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
 				Cosmetics.winEffect("fireworks", p.level(), p.position(), 0);
 			}
+		}
+		if (weekly) {
+			WeeklyTournament.finished(this, new ArrayList<>(champion.present),
+					finalist == null ? List.of() : new ArrayList<>(finalist.present), champion.memberNames());
 		}
 		if (finalist != null) {
 			for (UUID id : finalist.present) {

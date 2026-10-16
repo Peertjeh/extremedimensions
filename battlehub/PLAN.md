@@ -278,3 +278,12 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Eigen maps | Structuurbestanden (.nbt van een structure block) in `config/battlehub/maps/<modus>/` of `maps/all/`. Markers zijn structure blocks in Data-modus met tekst `spawn`, `spawn:90`, `spectator`, `goal_red`, ... De map wordt in één keer geplaatst (de vanilla-plaatsing) en daarna worden de markers weggehaald; het arenavak wordt na afloop gewist zoals altijd. Alleen modi die niet van een vaste vorm afhangen nemen eigen maps (zie README); de rest blijft gegenereerd. Zonder stem wordt een eigen map in de helft van de gevallen gebruikt (`customMapChance`). |
 | Menu's | Knoppen worden nu automatisch gecentreerd per rij (er zijn 8 duels en 13 partyspellen); statistieken per modus staan op een eigen pagina. |
 
+## Versie 1.13 – Fase 7: stats-export en wekelijkse toernooien
+
+| Onderwerp | Keuze |
+|---|---|
+| Discord | Bewust niet gebouwd (zo gevraagd): geen webhooks of andere Discord-koppeling. |
+| Wekelijks toernooi | Een vaste dag en tijd in de tijdzone van de server (of een ingestelde). Aanmelden opent een kwartier vooraf (melding met knop), herinneringen op 5 en 1 minuut. Bij de start spelen alle aangemelde spelers die vrij in BattleHub staan het gewone toernooi (zelfde bracket, best of 3), met de ingestelde kit en teamgrootte. Te weinig spelers: afgelast. Eén keer per ISO-week, ook na een herstart (`weekly.json` in de wereldmap). Bovenop de gewone prijzen: 2000/500 coins, `weeklyWins` in het profiel en twee titels (1 en 5 keer). Admins kunnen de aanmelding meteen openen (`/battlehub weekly open <seconden>`). |
+| Export | JSON-bestanden voor een website, elke 5 minuten (en bij het stoppen van de server): spelers, ranglijsten, clans, seizoen, recente wedstrijden (alleen in het geheugen, de laatste 100), wekelijkse toernooien en serverstatus. Verzamelen op de serverthread, schrijven op een eigen thread, elk bestand in één keer vervangen (tijdelijk bestand + verplaatsen), dus een website leest nooit een half bestand. Een eenvoudige `index.html` wordt één keer neergezet. Bots tellen niet mee. |
+| Webserver | Optioneel (standaard uit): een kleine ingebouwde HTTP-server die alleen de exportmap serveert (geen paden erbuiten), met `Access-Control-Allow-Origin: *` zodat een website op een ander adres de bestanden kan ophalen. |
+

@@ -61,6 +61,9 @@ public final class HubEvents {
 			net.battlehub.fx.Sounds.clear();
 			net.battlehub.fx.ResourcePack.stop();
 			net.battlehub.arena.CustomMaps.clear();
+			net.battlehub.tournament.WeeklyTournament.clear();
+			net.battlehub.export.StatsExport.stop();
+			net.battlehub.export.MatchLog.clear();
 			net.battlehub.lobby.DoubleJump.clear();
 			net.battlehub.fair.Afk.clear();
 			net.battlehub.fair.AntiCheat.clear();
@@ -194,6 +197,7 @@ public final class HubEvents {
 		net.battlehub.social.Clans.load(server);
 		net.battlehub.fx.ResourcePack.start(server);
 		net.battlehub.arena.CustomMaps.load(server);
+		net.battlehub.tournament.WeeklyTournament.load(server);
 	}
 
 	private static void stopping(MinecraftServer server) {
@@ -203,6 +207,10 @@ public final class HubEvents {
 		}
 		PlayerStore.saveAll();
 		net.battlehub.social.Clans.save();
+		if (ConfigManager.config().export.enabled) {
+			// A last picture of the stats before the server goes down
+			net.battlehub.export.StatsExport.write(server, true);
+		}
 	}
 
 	private static void tick(MinecraftServer server) {
@@ -220,6 +228,10 @@ public final class HubEvents {
 		net.battlehub.hub.HubDummy.tick(server);
 		net.battlehub.fx.Cinematics.tick(server);
 		net.battlehub.lobby.DoubleJump.tick(server);
+		net.battlehub.export.StatsExport.tick(server);
+		if (tick % 10 == 0) {
+			net.battlehub.tournament.WeeklyTournament.tick(server);
+		}
 		net.battlehub.progression.Seasons.tick(server);
 		net.battlehub.fair.Afk.tick(server);
 		net.battlehub.fair.AntiCheat.tick(server);

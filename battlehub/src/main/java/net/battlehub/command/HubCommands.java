@@ -209,7 +209,27 @@ public final class HubCommands {
 								.executes(c -> AdminCommands.endMatch(c.getSource(), IntegerArgumentType.getInteger(c, "id")))))
 				.then(Commands.literal("arena").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.then(Commands.literal("list").executes(c -> AdminCommands.arenaList(c.getSource()))))
-				.then(coinsCommand()));
+				.then(coinsCommand())
+				.then(Commands.literal("weekly")
+						.executes(c -> weeklyStatus(c.getSource().getPlayerOrException()))
+						.then(Commands.literal("join").executes(c -> net.battlehub.tournament.WeeklyTournament
+								.join(c.getSource().getPlayerOrException()) ? 1 : 0))
+						.then(Commands.literal("leave").executes(c -> net.battlehub.tournament.WeeklyTournament
+								.leave(c.getSource().getPlayerOrException()) ? 1 : 0))
+						.then(Commands.literal("open").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+								.then(Commands.argument("seconds", IntegerArgumentType.integer(10, 7200)).executes(c -> {
+									net.battlehub.tournament.WeeklyTournament.openNow(c.getSource().getServer(),
+											IntegerArgumentType.getInteger(c, "seconds"));
+									return 1;
+								}))))
+				.then(Commands.literal("export").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.executes(c -> {
+							boolean ok = net.battlehub.export.StatsExport.write(c.getSource().getServer(), false);
+							ServerPlayer p = c.getSource().getPlayer();
+							c.getSource().sendSuccess(() -> Lang.tr(p, ok ? "export.done" : "export.failed",
+									net.battlehub.export.StatsExport.dir().toString()), true);
+							return ok ? 1 : 0;
+						})));
 		if (net.battlehub.debug.SelfTest.enabled()) {
 			d.register(Commands.literal("battlehub").then(Commands.literal("selftest")
 					.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
@@ -223,6 +243,19 @@ public final class HubCommands {
 						return 1;
 					})));
 		}
+	}
+
+	/** When the next weekly tournament is, and whether you signed up. */
+	private static int weeklyStatus(ServerPlayer p) {
+		java.time.ZonedDateTime next = net.battlehub.tournament.WeeklyTournament.next();
+		String when = next.format(java.time.format.DateTimeFormatter.ofPattern("EEEE d MMMM HH:mm",
+				java.util.Locale.forLanguageTag(Lang.languageOf(p).replace('_', '-'))));
+		Msg.send(p, "weekly.status", when, net.battlehub.tournament.WeeklyTournament.signups(),
+				Lang.tr(p, net.battlehub.tournament.WeeklyTournament.signedUp(p.getUUID()) ? "weekly.status_in" : "weekly.status_out"));
+		if (net.battlehub.tournament.WeeklyTournament.signupsOpen() && !net.battlehub.tournament.WeeklyTournament.signedUp(p.getUUID())) {
+			Msg.raw(p, Msg.button(p, "weekly.join_button", "weekly.join_hover", "/battlehub weekly join"));
+		}
+		return 1;
 	}
 
 	/** /battlehub coins <player> | give|take|set <player> <amount> (admins). */

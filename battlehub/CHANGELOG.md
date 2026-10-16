@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.13.0
+
+### Added
+* **Weekly tournament**: every week at a set time, with sign-ups, reminders, bigger prizes, a weekly win in
+  your stats and the Weekly Champion and Weekly Legend titles (`/battlehub weekly`).
+* **Stats export** for a website: players, leaderboards, clans, the season, recent matches, weekly tournaments
+  and the server as JSON, an example `index.html`, and an optional built-in web server with CORS
+  (`/battlehub export`).
+
+### Fixed
+* Titles for seasons, the season pass and prestige now say what they need in the titles menu.
+
 ## 1.12.0
 
 ### Added

@@ -41,6 +41,15 @@ public final class TitleConfig {
 		l.add(new TitleDef("mythic", "&5&l&oMythic", "coins", 7500, ""));
 		l.addAll(seasonTitles());
 		l.addAll(passTitles());
+		l.addAll(weeklyTitles());
+		return l;
+	}
+
+	/** 1.13: weekly tournament champions. */
+	static List<TitleDef> weeklyTitles() {
+		List<TitleDef> l = new ArrayList<>();
+		l.add(new TitleDef("weekly_champion", "&6&l♛ Weekly Champion", "weekly_wins", 1, ""));
+		l.add(new TitleDef("weekly_legend", "&d&l♛ Weekly Legend", "weekly_wins", 5, ""));
 		return l;
 	}
 
@@ -81,6 +90,13 @@ public final class TitleConfig {
 				if (titles.stream().noneMatch(o -> o != null && t.id.equals(o.id))) titles.add(t);
 			}
 			configVersion = 3;
+		}
+		if (configVersion < 4) {
+			// Weekly tournament titles are new in 1.13
+			for (TitleDef t : weeklyTitles()) {
+				if (titles.stream().noneMatch(o -> o != null && t.id.equals(o.id))) titles.add(t);
+			}
+			configVersion = 4;
 		}
 		titles.removeIf(t -> t == null || t.id == null || t.id.isBlank());
 		for (TitleDef t : titles) {

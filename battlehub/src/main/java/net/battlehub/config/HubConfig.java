@@ -41,6 +41,8 @@ public final class HubConfig {
 	public Effects effects = new Effects();
 	public LobbyExtras lobbyExtras = new LobbyExtras();
 	public ResourcePack resourcePack = new ResourcePack();
+	public WeeklyTournament weekly = new WeeklyTournament();
+	public Export export = new Export();
 	public Map<String, Game> games = defaultGames();
 
 	/** BattleHub's own world. Every other dimension is normal gameplay that BattleHub leaves alone. */
@@ -335,6 +337,43 @@ public final class HubConfig {
 		public int musicEverySeconds = 240;
 	}
 
+	/** A tournament every week at a set time: sign up in the minutes before, bigger prizes. */
+	public static final class WeeklyTournament {
+		public boolean enabled = true;
+		/** Day of the week (monday ... sunday) and time (24 hours) in {@code zone}. */
+		public String day = "saturday";
+		public String time = "20:00";
+		/** A time zone such as "Europe/Amsterdam"; empty: the server's own. */
+		public String zone = "";
+		/** Sign-ups open this many minutes before the start. */
+		public int signupMinutes = 15;
+		public int minPlayers = 4;
+		/** sword, axe, mace, bow, crossbow or random. */
+		public String kit = "random";
+		/** 1, 2, 4 or 8 players per team. */
+		public int teamSize = 1;
+		/** On top of the normal tournament prizes. */
+		public int winnerCoins = 2000;
+		public int finalistCoins = 500;
+	}
+
+	/**
+	 * Stats as JSON files for a website: players, leaderboards, clans, the season, recent matches, weekly
+	 * tournaments and the server. Written every few minutes; optionally served over HTTP (with CORS, so a website
+	 * on another address can read them).
+	 */
+	public static final class Export {
+		public boolean enabled = false;
+		public int everyMinutes = 5;
+		/** Where the files go; empty: config/battlehub/export. */
+		public String directory = "";
+		public boolean serveHttp = false;
+		public int port = 25601;
+		/** Players per leaderboard. */
+		public int top = 50;
+		public int recentMatches = 100;
+	}
+
 	/** Bots that play when there are not enough people, and for practice. */
 	public static final class Bots {
 		public boolean enabled = true;
@@ -549,6 +588,14 @@ public final class HubConfig {
 		if (effects == null) effects = new Effects();
 		if (lobbyExtras == null) lobbyExtras = new LobbyExtras();
 		if (resourcePack == null) resourcePack = new ResourcePack();
+		if (weekly == null) weekly = new WeeklyTournament();
+		if (export == null) export = new Export();
+		weekly.signupMinutes = Math.max(1, Math.min(120, weekly.signupMinutes));
+		weekly.minPlayers = Math.max(2, weekly.minPlayers);
+		export.everyMinutes = Math.max(1, export.everyMinutes);
+		export.top = Math.max(1, Math.min(1000, export.top));
+		export.recentMatches = Math.max(0, Math.min(1000, export.recentMatches));
+		if (export.directory == null) export.directory = "";
 		effects.introSeconds = Math.max(0, Math.min(10, effects.introSeconds));
 		effects.killfeedLines = Math.max(1, Math.min(10, effects.killfeedLines));
 		lobbyExtras.doubleJumpCooldownTicks = Math.max(0, lobbyExtras.doubleJumpCooldownTicks);

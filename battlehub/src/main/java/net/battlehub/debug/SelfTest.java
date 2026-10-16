@@ -73,6 +73,8 @@ public final class SelfTest {
 			// The camera flights make every start and end longer; the show test switches them on itself
 			ConfigManager.config().effects.intro = false;
 			ConfigManager.config().effects.victoryCamera = false;
+			// The real weekly schedule must not start a tournament in the middle of a test
+			ConfigManager.config().weekly.enabled = false;
 		});
 		HubWorldTests.all(server, s);
 		lobbyAndMenus(server, s);
@@ -114,6 +116,7 @@ public final class SelfTest {
 		SocialTests.all(server, s);
 		FxTests.all(server, s);
 		NewModeTests.all(server, s);
+		WeeklyExportTests.all(server, s);
 		s.check("coins earned are counted per mode, for ranked and in total", () -> {
 			PlayerProfile a = PlayerStore.get(p("BHTestA").getUUID());
 			PlayerProfile b = PlayerStore.get(p("BHTestB").getUUID());

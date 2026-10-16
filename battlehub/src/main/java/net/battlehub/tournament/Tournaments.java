@@ -57,6 +57,21 @@ public final class Tournaments {
 		return true;
 	}
 
+	/** The weekly tournament: like a lobby tournament, but marked as weekly; null with fewer than two players. */
+	public static Tournament startWeekly(MinecraftServer server, List<ServerPlayer> players, String kit, int teamSize) {
+		if (players.size() < 2) {
+			return null;
+		}
+		Tournament t = new Tournament(nextId++, server, kitFor(kit), teamSizeFor(String.valueOf(teamSize)), players, RANDOM);
+		t.weekly = true;
+		ACTIVE.add(t);
+		for (ServerPlayer p : players) {
+			BY_PLAYER.put(p.getUUID(), t);
+		}
+		t.begin();
+		return t;
+	}
+
 	public static boolean isIn(UUID id) {
 		return BY_PLAYER.containsKey(id);
 	}

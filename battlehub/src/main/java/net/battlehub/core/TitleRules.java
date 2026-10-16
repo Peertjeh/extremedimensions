@@ -25,6 +25,7 @@ public final class TitleRules {
 			case "season" -> p.bestSeasonTier >= t.value;
 			case "pass" -> p.bestPassTier >= t.value;
 			case "prestige" -> p.prestige >= t.value;
+			case "weekly_wins" -> p.weeklyWins >= t.value;
 			default -> false;
 		};
 	}

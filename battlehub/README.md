@@ -258,6 +258,24 @@ friendly fire. Matches of a round are played side by side; while you wait you ca
 `/hub` or the leave item leaves the tournament; a team with nobody left loses by walkover. The
 champions get 500 coins each (runners-up 150) and a tournament win in their stats.
 
+### Weekly tournament
+Every week at a set time (Saturday 20:00 by default) BattleHub runs a tournament on its own. Sign-ups open
+15 minutes before with an announcement and a **[Sign up]** button (or `/battlehub weekly join`), with
+reminders at 5 and 1 minute. Everyone who signed up and is free in BattleHub plays; with too few players it is
+called off. On top of the normal prizes the champions get 2000 coins (runners-up 500), a weekly win in their
+stats and the **Weekly Champion** title (five wins: **Weekly Legend**). It runs once a week, also across
+restarts, and the results are kept for the website export. `/battlehub weekly` shows when the next one is.
+
+### Stats for a website
+Switch on `export` in `config.json` and BattleHub writes JSON files every few minutes (to
+`config/battlehub/export/` or a folder you choose, for example your web server's): `players.json` (every
+player's level, coins, stats per mode, ELO, clan, records), `leaderboards.json` (kills, wins, K/D, level,
+prestige, coins earned, tournaments, weekly wins, ELO per duel mode, wins per mode, parkour times),
+`clans.json`, `season.json`, `matches.json` (the last 100 matches), `tournaments.json` (the weekly
+tournaments) and `server.json` (who is online, matches per mode, the mode of the day). An `index.html` that
+shows them is written once; change it as you like. With `serveHttp` on, BattleHub serves the folder itself
+on its own port, readable by a website on another address (CORS). `/battlehub export` writes them right away.
+
 ### Parkour: always unique
 Every race is a newly generated course: **30, 50, 70 or 90 jumps** for **easy, medium, hard or
 extreme**. Courses mix ladders, half-block slab steps, fence posts, slippery ice, 1×1 landings,
@@ -361,6 +379,9 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/battlehub arena list` | admin | Arena themes, which modes use them, slots in use |
 | `/battlehub coins <player>` | admin | Show a player's coins |
 | `/battlehub coins give\|take\|set <player> <amount>` | admin | Change a player's coins (also offline; never below zero) |
+| `/battlehub weekly` / `/battlehub weekly join\|leave` | everyone | When the weekly tournament is; sign up or out |
+| `/battlehub weekly open <seconds>` | admin | Open sign-ups now, starting in that many seconds |
+| `/battlehub export` | admin | Write the stats files for the website now |
 
 Mode ids: `sword`, `axe`, `mace`, `bow`, `crossbow`, `bridge`, `boxing`, `build_uhc`, `bow_spleef`, `tnt_run`,
 `sumo`, `koth`, `ctf`, `parkour`, `lms`, `ffa`, `tournament`, `bed_wars`, `prop_hunt`, `spleef`, `skywars`,
@@ -399,6 +420,10 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
     where it stands (angle around the fountain and distance)
   * `resourcePack`: on/off, your own `url` for the zip or the `host` (the address players use) and `port` for the
     built-in server, whether players must accept it, lobby music and how often
+  * `weekly`: the weekly tournament on/off, day, time, time zone, sign-up minutes, minimum players, kit, team
+    size and the extra coins for champions and runners-up
+  * `export`: the stats files on/off, every how many minutes, the folder, the built-in web server and its port,
+    players per leaderboard and how many recent matches
   * `clans`: the price of a clan, the most members, and the coins per member for winning the weekly clan war
   * `featured`: the mode of the day on/off, the coin multiplier and the modes it picks from
   * `npcs`: the lobby characters on/off, their distance from the fountain, and per character the id, what a
@@ -445,7 +470,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   language, or put changed lines in `en_us.json` / `nl_nl.json` to reword them.
 
 Player data is stored per world in `world/battlehub/players/<uuid>.json`; saved survival states in
-`world/battlehub/survival/`; clans in `world/battlehub/clans.json`.
+`world/battlehub/survival/`; clans in `world/battlehub/clans.json`; the weekly tournament history in
+`world/battlehub/weekly.json`.
 
 ---
 
