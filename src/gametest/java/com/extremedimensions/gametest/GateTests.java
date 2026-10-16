@@ -4,7 +4,6 @@ import static com.extremedimensions.gametest.CurseTests.check;
 
 import java.util.Random;
 
-import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.registry.ModBlocks;
 import com.extremedimensions.seam.ReturnGate;
@@ -18,7 +17,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -27,8 +25,8 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * The Return Gate: laid out whole whichever way it faces, its rift over the pale threshold with clear air to walk in,
  * the visitor stepping out on its dais facing away from it; the rift keeping to its threshold while leashed and
- * roaming (never off solid ground) when let loose; a visitor arriving through a rift at a gate, who finds the same
- * gate coming back by the same rift; and the bridges, with their gateways, some of them hung, all of them walkable.
+ * roaming (never off solid ground) when let loose; and the bridges, with their gateways, some of them hung, all of them
+ * walkable. (Arriving at a gate is tested in the client test, the test server having no Seam.)
  */
 public class GateTests {
 	@GameTest
@@ -104,46 +102,6 @@ public class GateTests {
 			roamed |= !level.getBlockState(at.below()).is(ModBlocks.POLISHED_PALE_HUSH_STONE);
 		}
 		check(helper, roamed, "let loose, the rift never left its threshold");
-		helper.succeed();
-	}
-
-	/** Through a rift far out: the visitor steps out of a gate, its rift on the threshold; back by the same rift, the same gate. */
-	@GameTest(maxTicks = 60)
-	public void aVisitorStepsOutOfTheGate(GameTestHelper helper) {
-		ServerPlayer p = TestPlayers.survivor(helper, "test-arrival");
-		ServerLevel home = helper.getLevel();
-		try {
-			p.teleportTo(home, 5000.5, 100, -7000.5, java.util.Set.of(), 0, 0, true);
-			check(helper, SeamService.summon(p), "the visitor was not let into the Seam");
-			PlayerData d = DataStore.get(p.getUUID());
-			ServerLevel seam = home.getServer().getLevel(SeamService.SEAM);
-			check(helper, seam != null, "the test server has no Seam");
-			check(helper, d.inSeam, "the rift did not take the visitor in (in the Seam: %s, now in %s)", d.inSeam, p.level().dimension());
-			BlockPos rift = BlockPos.containing(d.riftX, d.riftY, d.riftZ);
-			check(helper, seam.getBlockState(rift.below()).is(ModBlocks.POLISHED_PALE_HUSH_STONE), "the rift does not hang over the threshold (%s)",
-					seam.getBlockState(rift.below()));
-			// Where the visitor stands (a test player is moved between worlds as a real one is; if not, it is said)
-			if (p.level() == seam) {
-				double dx = p.getX() - d.riftX, dz = p.getZ() - d.riftZ;
-				check(helper, Math.abs(Math.sqrt(dx * dx + dz * dz) - 4) < 0.01, "the visitor stepped out %s blocks from the rift", Math.sqrt(dx * dx + dz * dz));
-				// facing away from the gate: the rift lies behind
-				double out = Math.toDegrees(Math.atan2(-dx, dz));
-				check(helper, Math.abs(Mth.wrapDegrees(p.getYRot() - (float) out)) < 1, "the visitor does not face out of the gate (yaw %s, out %s)", p.getYRot(), out);
-			} else {
-				com.extremedimensions.ExtremeDimensions.LOGGER.info("Gate test: the test player stayed in {} through the rift", p.level().dimension());
-			}
-			check(helper, DataStore.seamCells().stream().anyMatch(k -> k.startsWith("g@5000,-7001=")), "the gate's way was not remembered");
-			double firstX = d.riftX, firstZ = d.riftZ;
-			// Home and back by the same rift: the same gate
-			d.inSeam = false;
-			p.teleportTo(home, 5000.5, 100, -7000.5, java.util.Set.of(), 0, 0, true);
-			check(helper, SeamService.summon(p) && d.inSeam, "the visitor was not let back into the Seam");
-			check(helper, d.riftX == firstX && d.riftZ == firstZ, "coming back by the same rift, the gate stood elsewhere (%s,%s, not %s,%s)",
-					d.riftX, d.riftZ, firstX, firstZ);
-		} finally {
-			DataStore.get(p.getUUID()).inSeam = false;
-			home.getServer().getPlayerList().remove(p);
-		}
 		helper.succeed();
 	}
 

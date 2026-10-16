@@ -293,6 +293,11 @@ public final class SeamService {
 		// Out of the gate, facing away from it, the way home at their back
 		WorldFx.tp(p, SEAM_ID, landX, landY, landZ, yaw, 0);
 		WorldFx.sound(p, "extremedimensions:rift_open", 1.0f, 0.8f);
+		if (gate && d.seamVisits <= 3) {
+			// The first few times, a word on where home is
+			p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.seam.gate_hint")
+					.withStyle(net.minecraft.ChatFormatting.GOLD), true);
+		}
 		WorldFx.fx(p, Fx.START_END, 0);
 		Advancements.grant(p, Advancements.SEAM_ENTERED);
 		Journal.unlock(p, d, JournalEntry.SEAM);

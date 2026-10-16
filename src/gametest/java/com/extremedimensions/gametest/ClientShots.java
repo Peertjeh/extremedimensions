@@ -824,6 +824,14 @@ public class ClientShots implements FabricClientGameTest {
 				check(seamLevel.getBlockState(com.extremedimensions.seam.SeamService.SEAL).is(net.minecraft.world.level.block.Blocks.BARRIER)
 						&& DataStore.seamSealed(), "the Seam was not sealed on the first visit");
 				d.trial.score = com.extremedimensions.trial.Trial.Kind.byId(d.trial.kind).thresholds()[0];
+				// Out of the Return Gate: four blocks before its threshold of pale stones, facing away from it, and its
+				// way (to the island its bridge runs to) remembered for the rift
+				ServerPlayer p = player(s);
+				double yaw = Math.toRadians(p.getYRot());
+				BlockPos threshold = BlockPos.containing(p.getX() + Math.sin(yaw) * 4, p.getY() - 1, p.getZ() - Math.cos(yaw) * 4);
+				check(seamLevel.getBlockState(threshold).is(ModBlocks.POLISHED_PALE_HUSH_STONE),
+						"the visitor did not step out of a gate (behind them: " + seamLevel.getBlockState(threshold) + ")");
+				check(DataStore.seamCells().stream().anyMatch(k -> k.startsWith("g@")), "the gate's way was not remembered");
 			});
 			sp.getConnection().waitForChunksRender();
 			ctx.waitTicks(40);
@@ -879,6 +887,10 @@ public class ClientShots implements FabricClientGameTest {
 			eye(sp, gx + ox * 170 + sx2 * 40, gy + 14, gz + oz * 170 + sz2 * 40, gx, gz, -4);
 			ctx.waitTicks(60);
 			ctx.takeScreenshot("19_gate_far");
+			// From below and behind the gate: the underside of its rock and of the arrival island, an upside-down mountain
+			eye(sp, gx - ox * 30 + sx2 * 12, gy - 26, gz - oz * 30 + sz2 * 12, gx - ox * 4, gz - oz * 4, -22);
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("19_island_under");
 			// the column and the compass are drawn from where the server says the rift is
 			ctx.runOnClient(mc -> check(ClientState.riftKnown(), "the client does not know where the rift home is"));
 			// Back where the visitor stepped out, for what follows

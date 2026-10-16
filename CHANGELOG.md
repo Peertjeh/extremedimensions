@@ -21,6 +21,8 @@
   ear in the mist.
 - **A compass home**: beside the distance to the rift, the HUD shows a gold arrow that turns as you turn, and the
   distance counts down live.
+- The first few times you arrive, a line in gold tells you that the gate at your back is the way home, and to follow
+  the gold when you lose sight of it.
 - **The arrival island is joined to the Seam by a bridge** to the nearest island it can reach, with the gate on the far
   side looking down the island to it. Coming back by the same rift, you find the same gate and the same bridge.
 - **Bridges** pass under a gateway where they leave each island, framing the view across (as the towers at the ends of
