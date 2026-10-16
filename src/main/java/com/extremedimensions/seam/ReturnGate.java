@@ -113,7 +113,7 @@ public final class ReturnGate {
 
 	/**
 	 * One pylon, on side {@code s}: solid, battered on its outer face (it steps in twice on the way up, a ledge of
-	 * slabs at each step), with round mouldings up its corners, a tall niche lined with glowing silk in its front and
+	 * slabs with gold lanterns at each step), with round mouldings up its corners, a tall niche lined with glowing silk in its front and
 	 * back, a frieze near the top, a projecting cornice, lantern posts on the roof's corners and a brazier of gold
 	 * fire (signal fires, whose smoke climbs high over the fog).
 	 */
@@ -151,10 +151,14 @@ public final class ReturnGate {
 					f.set(x, ly, z, b);
 				}
 			}
-			// The ledge where the outer face steps in
+			// The ledge where the outer face steps in, gold lanterns along it lighting the face above
 			if (out < outer(ly - 1)) {
 				for (int z = -4; z <= 3; z++) {
-					f.set(s * (out + 1), ly, z, slab(palePolSlab(), false));
+					boolean lamp = z == -4 || z == 0 || z == 3;
+					f.set(s * (out + 1), ly, z, lamp ? palePol() : slab(palePolSlab(), false));
+					if (lamp) {
+						f.set(s * (out + 1), ly + 1, z, lantern());
+					}
 				}
 			}
 		}

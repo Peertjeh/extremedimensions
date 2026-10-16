@@ -5,7 +5,8 @@
 ### Added
 - **The Return Gate.** You no longer arrive in the Seam on a bare island beside a wisp of particles: you step out of
   a monumental gate of hush masonry, looking out over the island, with the way home at your back. Twin battered pylons
-  (stepping in as they rise, with round mouldings up their corners and tall niches lined with glowing silk), a lower
+  (stepping in as they rise, gold lanterns along each ledge, round mouldings up their corners, tall niches lined with
+  glowing silk, paling from a plinth of polished blackstone to a pale crown), a lower
   portal between them with a pointed arch and a hood moulding, an eye of gold over the door on both faces, braziers of
   signal fire on the pylons whose smoke climbs high over the fog, lantern posts on their corners, obelisks before them,
   and a processional way with a line of gold set in its paving and gold lamps along it. The gate is built from the
