@@ -50,6 +50,41 @@ final class HubWorldTests {
 			Vec3 spawn = HubWorld.defaultSpawn();
 			return !HubWorld.level(server).getBlockState(BlockPos.containing(spawn.x, spawn.y - 1, spawn.z)).isAir();
 		});
+		s.check(tag + ": the plaza: four open gateways with bridges to the four buildings, beacons shining", () -> {
+			net.minecraft.server.level.ServerLevel hub = HubWorld.level(server);
+			int y = HubWorld.floorY();
+			int r = HubWorld.plazaRadius();
+			boolean ok = hub.getBlockState(new BlockPos(0, y + 15, 0)).is(net.minecraft.world.level.block.Blocks.BEACON);
+			int[][] dirs = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
+			for (int[] d : dirs) {
+				BlockPos gate = new BlockPos(d[0] * r, y, d[1] * r);
+				ok &= !hub.getBlockState(gate).isAir() && hub.getBlockState(gate.above()).isAir() && hub.getBlockState(gate.above(2)).isAir();
+				ok &= !hub.getBlockState(new BlockPos(d[0] * (r + 12), y, d[1] * (r + 12))).isAir();
+				ok &= hub.getBlockState(new BlockPos(d[0] * r, y + 13, d[1] * r)).is(net.minecraft.world.level.block.Blocks.BEACON);
+			}
+			return ok;
+		});
+		s.check(tag + ": where the lobby characters and the dummy stand there is room", () -> {
+			net.minecraft.server.level.ServerLevel hub = HubWorld.level(server);
+			var cfg = ConfigManager.config();
+			java.util.List<Double> angles = new java.util.ArrayList<>();
+			java.util.List<Double> radii = new java.util.ArrayList<>();
+			for (var n : cfg.npcs.list) {
+				angles.add(n.angle);
+				radii.add(cfg.npcs.radius);
+			}
+			angles.add(cfg.lobbyExtras.dummyAngle);
+			radii.add(cfg.lobbyExtras.dummyRadius);
+			for (int i = 0; i < angles.size(); i++) {
+				double a = Math.toRadians(angles.get(i));
+				BlockPos at = BlockPos.containing(0.5 + Math.cos(a) * radii.get(i), HubWorld.floorY() + 1, 0.5 + Math.sin(a) * radii.get(i));
+				if (!hub.getBlockState(at).isAir() || !hub.getBlockState(at.above()).isAir() || hub.getBlockState(at.below()).isAir()) {
+					net.battlehub.BattleHub.LOGGER.warn("SELFTEST hub: no room at {} ({})", at, hub.getBlockState(at));
+					return false;
+				}
+			}
+			return true;
+		});
 		s.run(tag + ": S plays survival in the normal world", () -> {
 			ServerPlayer pl = SelfTest.joinOutside(server, S);
 			pl.setGameMode(GameType.SURVIVAL);

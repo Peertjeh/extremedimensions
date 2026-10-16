@@ -182,7 +182,8 @@ final class BoardTests {
 		double dx = pos.x - 0.5;
 		double dz = pos.z - 0.5;
 		double r = Math.sqrt(dx * dx + dz * dz);
-		if (Math.signum(dx) != sx || Math.signum(dz) != sz || r < 19 || r > 23) return false;
+		int plaza = HubWorld.plazaRadius();
+		if (Math.signum(dx) != sx || Math.signum(dz) != sz || r < plaza - 4 || r > plaza) return false;
 		if (pos.y <= HubWorld.floorY() + 2.5 || pos.y > HubWorld.floorY() + 4) return false;
 		// Just above the slabs on the wall, so the block above the text's foot is air
 		if (!HubWorld.level(server).getBlockState(BlockPos.containing(pos.add(0, 0.5, 0))).isAir()) return false;

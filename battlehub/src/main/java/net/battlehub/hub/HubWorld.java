@@ -32,7 +32,7 @@ public final class HubWorld {
 
 	public static final ResourceKey<Level> KEY = ResourceKey.create(Registries.DIMENSION, BattleHub.id("hub"));
 	/** Bump to rebuild the lobby on existing servers after a layout change. */
-	private static final int LOBBY_VERSION = 1;
+	private static final int LOBBY_VERSION = 2;
 	private static final BlockPos ORIGIN = new BlockPos(0, 100, 0);
 
 	private static volatile boolean ready;
@@ -66,6 +66,11 @@ public final class HubWorld {
 
 	public static int floorY() {
 		return ORIGIN.getY();
+	}
+
+	/** Radius of the plaza round the fountain (its balustrade carries the leaderboards). */
+	public static int plazaRadius() {
+		return HubLayout.RADIUS;
 	}
 
 	/** Where the lobby layout's 0,0,0 is in the hub world. */

@@ -18,12 +18,46 @@ public final class Build {
 	/** Block names a layout asked for that this version does not have (they come out as air). */
 	private static final java.util.Set<String> UNKNOWN = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
+	private static final java.util.Map<String, BlockState> STATES = new java.util.concurrent.ConcurrentHashMap<>();
+
+	/**
+	 * A block by name, optionally with properties: {@code "stone"}, {@code "oak_stairs[facing=north,half=top]"},
+	 * {@code "lantern[hanging=true]"}. Unknown properties or values are left at their default.
+	 */
 	public static BlockState s(String id) {
-		BlockState st = Ids.state(id);
-		if (st.isAir() && !id.endsWith("air")) {
-			UNKNOWN.add(id);
+		BlockState cached = STATES.get(id);
+		if (cached != null) {
+			return cached;
 		}
+		int open = id.indexOf('[');
+		String name = open < 0 ? id : id.substring(0, open);
+		BlockState st = Ids.state(name);
+		if (st.isAir() && !name.endsWith("air")) {
+			UNKNOWN.add(name);
+		}
+		if (open >= 0 && id.endsWith("]")) {
+			for (String pair : id.substring(open + 1, id.length() - 1).split(",")) {
+				int eq = pair.indexOf('=');
+				if (eq <= 0) continue;
+				net.minecraft.world.level.block.state.properties.Property<?> prop = st.getBlock().getStateDefinition().getProperty(pair.substring(0, eq).trim());
+				if (prop == null) {
+					UNKNOWN.add(id);
+					continue;
+				}
+				st = with(st, prop, pair.substring(eq + 1).trim());
+			}
+		}
+		STATES.put(id, st);
 		return st;
+	}
+
+	private static <T extends Comparable<T>> BlockState with(BlockState st, net.minecraft.world.level.block.state.properties.Property<T> prop, String value) {
+		java.util.Optional<T> v = prop.getValue(value);
+		if (v.isEmpty()) {
+			UNKNOWN.add(prop.getName() + "=" + value);
+			return st;
+		}
+		return st.setValue(prop, v.get());
 	}
 
 	public static java.util.Set<String> unknown() {

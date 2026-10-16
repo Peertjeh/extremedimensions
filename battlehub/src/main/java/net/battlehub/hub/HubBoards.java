@@ -42,8 +42,8 @@ public final class HubBoards {
 	/** Above the middle of the low wall around the plaza, a little higher than its slabs. */
 	private static final double RADIUS = HubLayout.RADIUS - 0.6;
 	private static final double HEIGHT = 2.6;
-	/** Room left at both ends of a wall, in degrees, so no board hangs over a bridge. */
-	private static final double MARGIN = 6;
+	/** Room left at both ends of a wall, in degrees, so no board hangs over a gateway or its towers. */
+	private static final double MARGIN = 14;
 	private static final int MAX_BOARDS = 8;
 	private static final int LINE_WIDTH = 260;
 	private static final int BACKGROUND = 0x70000000;

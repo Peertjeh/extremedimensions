@@ -320,3 +320,13 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Variatie | Straal 13–24 (was 15–21), spawns 3 tot 7 blokken van de rand (maar altijd minstens 16 uit elkaar), muren 3–6 hoog, vijf soorten terrein (vlak tot heuvelachtig), meer of minder obstakels en planten, vier nieuwe middens (krater, plateau, ruïnes, vloermozaïek). Eilanden: 1 tot 5 satellieten op wisselende afstand en hoogte, het hoofdeiland 11–19 groot. Puntsymmetrie (eerlijkheid) blijft: alleen het uiterlijk van de vloer is niet symmetrisch. |
 | Controle | De zelftest kijkt of elke bloknaam in thema's, verlopen en layouts bestaat (een onbekende naam zou als lucht verschijnen) en of twaalf arena's na elkaar echt verschillen. |
 
+## Versie 1.16 – Een professionele hub
+
+| Onderwerp | Keuze |
+|---|---|
+| Aanpak | Alles in code (geen schematic-bestanden): een kleine gereedschapskist (`HubKit`) met kleurverlopen met rafels, "textuur" (af en toe een ander blok, zoals bouwers een vlakke muur breken), schijven, ringen, cilinders, kegels, koepels, dozen, eilandonderkanten, lantaarns aan kettingen en bomen. Bloknamen mogen eigenschappen hebben (`quartz_stairs[facing=east,half=bottom]`). |
+| Indeling | Het plein wordt groter (straal 27, was 22) zodat de figuren (10,5), de oefenpop (8) en de ranglijsten (boven de balustrade) op hun plek blijven. De ranglijsten houden meer afstand tot de poorten (14°). Vier poorten op de assen met torens, een boog, een hangende lantaarn en een gekleurde beacon; bruggen van 7 breed met lantaarns, leuningen en bogen eronder. Op 64 blokken vier eilanden (straal 20) met elk een groot gebouw; het colosseum ligt in het noorden, recht in beeld vanaf de spawn. Kleine zwevende eilanden met bomen op de diagonalen. |
+| Kleur | Het plein loopt van smooth quartz in het midden via calcite en diorite naar andesite aan de rand, met een donkere kompasroos (zwart en deepslate, gouden punten, koperen diagonalen), een koperen ring met zeelantaarns, en een balustrade van quartz op zwarte bricks. Torens lopen van zwarte bricks via deepslate en stone bricks naar wit quartz; de spits van de toren loopt van groen naar vers koper (gewaxt, dus het blijft zo). |
+| Bestaande servers | `LOBBY_VERSION` gaat naar 2: bij de eerste start wordt de oude hub weggehaald en de nieuwe gebouwd. |
+| Controle | De zelftest kijkt of alle bloknamen (met eigenschappen) bestaan, of de vier poorten open zijn met een brug en een beacon, of het midden een beacon heeft en of de plekken van de figuren en de oefenpop vrij zijn. |
+

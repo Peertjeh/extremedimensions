@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.16.0
+
+### Added
+* **A new, much bigger hub.** A marble plaza with a compass rose fading from white to grey, a three-tier
+  fountain with four waterfalls under a beacon beam, a balustrade with four gateways (two towers, an arch, a
+  hanging lantern and a coloured beacon each) and bridges with lamps and arches to four grand buildings:
+  * a **colosseum** (north, in view from the spawn): two rows of arches, seats rising round a sand arena and a
+    golden trophy;
+  * a **castle** (east): curtain walls, a gatehouse with a portcullis, four round towers with pointed roofs and a
+    keep with a flag;
+  * a **temple of champions** (south): steps, a ring of quartz columns, a gable roof with a golden emblem, fires
+    at the front and a gold, iron and copper podium inside;
+  * an **arcane tower** (west): 34 blocks high with spiral windows and amethyst bands, a balcony, a copper spire
+    and crystals floating round it.
+  Small floating islands with trees fill the gaps. Walls, floors, roofs and the undersides of the islands fade
+  through colour gradients. Existing servers get the new hub automatically (the old one is removed first).
+
+### Changed
+* Block names in layouts can carry properties (`oak_stairs[facing=north,half=top]`).
+
 ## 1.15.0
 
 ### Added
