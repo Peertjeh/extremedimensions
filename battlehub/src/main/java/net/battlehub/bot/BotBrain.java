@@ -98,8 +98,10 @@ final class BotBrain {
 			case PROP_HUNT -> propHunt(m);
 		}
 		if (m.botStyle() != net.battlehub.core.BotStyle.PARKOUR) {
+			// What the bot wanted, before an edge held it back: standing still at an edge is being stuck too
+			boolean wanted = bot.zza != 0 || bot.xxa != 0;
 			keepSafe();
-			unstick();
+			unstick(wanted);
 		}
 		if (wTap > 0) {
 			wTap--;
@@ -256,13 +258,12 @@ final class BotBrain {
 		}
 	}
 
-	/** Pushing against something for a second: jump and change direction. */
-	private void unstick() {
+	/** Pushing against something (or held back at an edge) for a second: jump and change direction. */
+	private void unstick(boolean trying) {
 		if (ticks % 20 != 0) {
 			return;
 		}
 		Vec3 pos = bot.position();
-		boolean trying = bot.zza != 0 || bot.xxa != 0;
 		if (trying && pos.distanceToSqr(lastPos) < 0.04) {
 			stuck++;
 			if (stuck >= 2) {

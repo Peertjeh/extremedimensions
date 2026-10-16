@@ -12,6 +12,7 @@
 ### Fixed
 * Titles for seasons, the season pass and prestige now say what they need in the titles menu.
 * Bots go round walls and cover instead of running into them.
+* Bots no longer stop at the edge of a fountain: shallow water is not a drop, and a bot held back at an edge walks round it.
 * Standing still during the countdown no longer counts as being idle.
 * Hand-built maps are read from the structure file by BattleHub itself and built like any arena.
 

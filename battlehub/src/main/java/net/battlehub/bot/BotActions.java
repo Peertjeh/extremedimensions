@@ -10,6 +10,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
@@ -73,11 +74,16 @@ final class BotActions {
 		}
 	}
 
-	/** Is there something to stand on within a few blocks below this spot? */
+	/** Is there something to stand on within a few blocks below this spot? Water does not count as a hole; lava does. */
 	static boolean groundBelow(ServerLevel level, double x, double y, double z, int depth) {
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(Math.floor(x), Math.floor(y) - 1, Math.floor(z));
 		for (int i = 0; i < depth; i++) {
 			BlockState st = level.getBlockState(pos);
+			if (st.is(Blocks.WATER)) {
+				// A pool (a fountain) is no drop: what counts is the bottom under it
+				pos.move(0, -1, 0);
+				continue;
+			}
 			if (!st.isAir() && st.getFluidState().isEmpty()) {
 				return true;
 			}
