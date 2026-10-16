@@ -701,7 +701,13 @@ public class ClientShots implements FabricClientGameTest {
 						{ModBlocks.PALE_HUSH_BRICKS, ModBlocks.PALE_HUSH_BRICK_SLAB, ModBlocks.PALE_HUSH_BRICK_STAIRS, ModBlocks.PALE_HUSH_BRICK_WALL},
 						{ModBlocks.POLISHED_PALE_HUSH_STONE, ModBlocks.POLISHED_PALE_HUSH_STONE_SLAB, ModBlocks.POLISHED_PALE_HUSH_STONE_STAIRS,
 								ModBlocks.POLISHED_PALE_HUSH_STONE_WALL}};
-				int x0 = home[0] - 8, y = home[1], z = home[2] + 7;
+				// on a floor of tiles in the open sky, away from the battlefield the fights left
+				int x0 = home[0] + 292, y = 110, z = home[2] + 7;
+				for (int x = x0 - 3; x <= x0 + 18; x++) {
+					for (int dz = -4; dz <= 6; dz++) {
+						lvl.setBlock(new BlockPos(x, y - 1, z + dz), ModBlocks.POLISHED_HUSH_STONE.defaultBlockState(), 3);
+					}
+				}
 				for (int i = 0; i < rows.length; i++) {
 					int x = x0 + i * 2;
 					// two blocks with a slab on them, stairs before them stepping down toward the camera, a wall beside
@@ -721,14 +727,17 @@ public class ClientShots implements FabricClientGameTest {
 					}
 				}
 			});
-			ctx.runOnClient(mc -> mc.options.renderDistance().set(16));
+			// no HUD for these, and a view far enough for a colossus (chunks are not awaited: the far shots take their time)
+			ctx.runOnClient(mc -> {
+				mc.options.hideGui = true;
+				mc.options.renderDistance().set(10);
+			});
 			sp.getServer().runCommand("execute as @a run gamemode spectator @s");
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f 0 14", home[0] - 0.5, home[1] + 3.2, home[2] - 2.5));
-			sp.getConnection().waitForChunksRender();
-			ctx.waitTicks(20);
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f 0 16", home[0] + 299.5, 113.2, home[2] - 2.5));
+			ctx.waitTicks(80);
 			ctx.takeScreenshot("18_masonry");
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f 20 18", home[0] - 5.5, home[1] + 2.2, home[2] + 2.5));
-			ctx.waitTicks(10);
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f 0 22", home[0] + 297.5, 112.0, home[2] + 3.0));
+			ctx.waitTicks(15);
 			ctx.takeScreenshot("18_masonry_close");
 
 			// Colossal buildings, one of each plan, each on its island as the Seam would design it (far out, in the sky)
@@ -745,14 +754,12 @@ public class ClientShots implements FabricClientGameTest {
 				});
 				com.extremedimensions.ExtremeDimensions.LOGGER.info("Colossus shot {} ({}): {}", k, plans[k], what);
 				sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 -2", cx, skyTop + 48, cz - 118));
-				sp.getConnection().waitForChunksRender();
-				ctx.waitTicks(40);
+				ctx.waitTicks(120);
 				ctx.takeScreenshot("18_colossus_" + plans[k]);
 				if (k == 0 || k == 2) {
 					// from a corner, nearer, and up close on its face
 					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 -45 6", cx - 62, skyTop + 40, cz - 62));
-					sp.getConnection().waitForChunksRender();
-					ctx.waitTicks(30);
+					ctx.waitTicks(60);
 					ctx.takeScreenshot("18_colossus_" + plans[k] + "_corner");
 					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 -12", cx, skyTop + 10, cz - 44));
 					ctx.waitTicks(20);
@@ -766,7 +773,10 @@ public class ClientShots implements FabricClientGameTest {
 					sp.getServer().runCommand("time set noon");
 				}
 			}
-			ctx.runOnClient(mc -> mc.options.renderDistance().set(12));
+			ctx.runOnClient(mc -> {
+				mc.options.hideGui = false;
+				mc.options.renderDistance().set(5);
+			});
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 0", home[0], home[1], home[2]));
 			sp.getServer().runCommand("execute as @a run gamemode survival @s");
 			sp.getConnection().waitForChunksRender();
