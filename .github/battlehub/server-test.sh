@@ -34,7 +34,9 @@ send 'stop' 1
 for i in $(seq 1 60); do grep -q "All dimensions are saved\|ThreadedAnvilChunkStorage: All dimensions" out.log && break; sleep 1; done
 sleep 3
 echo "===== server log (filtered) ====="
-sed -n '/Loading Minecraft\|Starting minecraft server/,$p' out.log | grep -iE "battlehub|selftest|exception|error|warn|caused by|at net\.battlehub|mixin|Done \(" | grep -v "Ambiguous\|Couldn't load chunk" | head -300
+sed -n '/Loading Minecraft\|Starting minecraft server/,$p' out.log | grep -iE "battlehub|selftest|exception|error|warn|caused by|at net\.battlehub|mixin|Done \(" | grep -v "Ambiguous\|Couldn't load chunk\|SELFTEST PASS" | head -400
+echo "===== around each failure ====="
+grep -n "SELFTEST FAIL" out.log | cut -d: -f1 | while read -r n; do sed -n "$((n > 12 ? n - 12 : 1)),$((n + 2))p" out.log; echo "-----"; done | head -400
 echo "===== tail ====="
 tail -25 out.log
 echo "===== files ====="

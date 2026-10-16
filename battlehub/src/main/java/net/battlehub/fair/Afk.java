@@ -55,7 +55,10 @@ public final class Afk {
 			Seen before = SEEN.put(id, now);
 			boolean moved = before == null || before.pos.distanceToSqr(now.pos) > 0.02
 					|| Math.abs(before.yaw - now.yaw) > 1 || Math.abs(before.pitch - now.pitch) > 1;
-			int idle = moved ? 0 : IDLE.getOrDefault(id, 0) + 1;
+			// Nobody can move during a countdown (or while the arena is built): that is not being idle
+			Match m = Matches.of(id);
+			boolean frozen = m != null && m.phase() != Match.Phase.RUNNING;
+			int idle = moved || frozen ? 0 : IDLE.getOrDefault(id, 0) + 1;
 			IDLE.put(id, idle);
 			check(p, idle);
 		}

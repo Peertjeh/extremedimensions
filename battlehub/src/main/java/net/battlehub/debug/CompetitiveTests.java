@@ -82,7 +82,12 @@ final class CompetitiveTests {
 		s.check(tag + ": the recap counts the hits, the damage and the combo", () -> {
 			var l = matchOf(A).recap().line(p(A).getUUID());
 			double taken = matchOf(A).recap().line(p(B).getUUID()).taken;
-			return l.hits == 3 && l.bestCombo == 3 && l.dealt > 0 && Math.abs(l.dealt - taken) < 0.01;
+			boolean ok = l.hits == 3 && l.bestCombo == 3 && l.dealt > 0 && Math.abs(l.dealt - taken) < 0.01;
+			if (!ok) {
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST recap: hits {}, best combo {}, dealt {}, B took {}, B health {}",
+						l.hits, l.bestCombo, l.dealt, taken, p(B).getHealth());
+			}
+			return ok;
 		});
 		s.run(tag + ": A wins", () -> {
 			ServerPlayer b = p(B);
@@ -134,11 +139,17 @@ final class CompetitiveTests {
 			Challenges.send(p(A), p(B), GameMode.SWORD);
 			Challenges.accept(p(B), p(A));
 		});
-		s.waitFor(tag + ": duel running", 600, () -> matchOf(A) != null && matchOf(A).phase() == Match.Phase.RUNNING);
-		s.run(tag + ": remember the match", () -> VARS.put("afkMatch", matchOf(A)));
+		s.waitFor(tag + ": duel running", 600, () -> {
+			Match m = matchOf(A);
+			if (m != null && m.phase() == Match.Phase.RUNNING) {
+				VARS.put("afkMatch", m);
+				return true;
+			}
+			return false;
+		});
 		s.waitFor(tag + ": an idle player was taken out and the match ended", 200, () -> {
 			Match m = (Match) VARS.get("afkMatch");
-			return !m.leftPlayers().isEmpty() && (m.phase() == Match.Phase.ENDING || m.phase() == Match.Phase.CLOSED);
+			return m != null && !m.leftPlayers().isEmpty() && (m.phase() == Match.Phase.ENDING || m.phase() == Match.Phase.CLOSED);
 		});
 		s.run(tag + ": idle check off again", () -> fair().afkMatchSeconds = 0);
 		s.waitFor(tag + ": arena free", 600, () -> ArenaSlots.busy() == 0);

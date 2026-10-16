@@ -45,3 +45,10 @@ jobs:
         env:
           SELFTEST: '1'
           SELFTEST_TIMEOUT: '1260'
+      - name: keep the server log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: server-log
+          path: /tmp/srv/out.log
+          if-no-files-found: ignore
