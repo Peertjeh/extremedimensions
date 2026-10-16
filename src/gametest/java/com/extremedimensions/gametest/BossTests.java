@@ -466,12 +466,13 @@ public class BossTests {
 		check(helper, ElderTerrain.temporary(level, ground.above(2)), "raised thorns are not known as temporary");
 		// They sink back after 7 to 11 server ticks; the check waits well past that, and says how many really went by
 		int serverStart = level.getServer().getTickCount();
+		String atStart = ElderTerrain.describe(level, ground.above(3));
 		helper.runAfterDelay(100, () -> {
 			int ticks = level.getServer().getTickCount() - serverStart;
 			level.setChunkForced(ground.getX() >> 4, ground.getZ() >> 4, false);
 			check(helper, !level.getBlockState(ground.above()).is(thorn) && !level.getBlockState(ground.above(3)).is(thorn)
-					&& !ElderTerrain.temporary(level, ground.above(2)), "the thorns did not sink back (%s, %s, still held: %s) after %s server ticks",
-					level.getBlockState(ground.above()), level.getBlockState(ground.above(3)), ElderTerrain.temporary(level, ground.above(3)), ticks);
+					&& !ElderTerrain.temporary(level, ground.above(2)), "the thorns did not sink back (%s, %s) after %s server ticks; at the start: %s; now: %s",
+					level.getBlockState(ground.above()), level.getBlockState(ground.above(3)), ticks, atStart, ElderTerrain.describe(level, ground.above(3)));
 			helper.succeed();
 		});
 	}

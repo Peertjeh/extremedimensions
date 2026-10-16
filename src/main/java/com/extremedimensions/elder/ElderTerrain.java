@@ -263,7 +263,21 @@ public final class ElderTerrain {
 		return false;
 	}
 
+	/** Ticks run so far (for tests and logs). */
+	private static long ticked;
+
+	/** What is known of a raised block here, for a test's failure message. */
+	public static String describe(Level level, BlockPos pos) {
+		for (Temporary t : TEMPORARY) {
+			if (t.level == level && t.pos.equals(pos)) {
+				return "ticked " + ticked + ", left " + t.left + ", tries " + t.tries + ", loaded " + level.isLoaded(pos);
+			}
+		}
+		return "ticked " + ticked + ", not held, loaded " + level.isLoaded(pos);
+	}
+
 	public static void tick(MinecraftServer s) {
+		ticked++;
 		budget = 0;
 		if (TEMPORARY.isEmpty()) {
 			return;
