@@ -17,7 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.DyedItemColor;
 
 /**
- * The wardrobe: a hat and an outfit (dyed leather) worn in the lobby only. The pieces are locked BattleHub items;
+ * The wardrobe: a hat and an outfit (dyed leather, one colour or a fade) worn in the lobby only. The pieces are locked BattleHub items;
  * the kit replaces them in a match and they are never taken along to the normal world. Armour of the player's
  * own in those slots is left alone.
  */
@@ -40,10 +40,11 @@ public final class Wardrobe {
 		CosmeticDef hat = CosmeticRules.active(prof, "hat", Cosmetics.all());
 		CosmeticDef outfit = CosmeticRules.active(prof, "outfit", Cosmetics.all());
 		set(p, EquipmentSlot.HEAD, hat == null || !Ids.isItem(hat.effect) ? ItemStack.EMPTY : piece(p, hat, hat.effect, -1));
-		int rgb = outfit == null ? -1 : CosmeticRules.rgb(outfit.effect);
-		set(p, EquipmentSlot.CHEST, rgb < 0 ? ItemStack.EMPTY : piece(p, outfit, "minecraft:leather_chestplate", rgb));
-		set(p, EquipmentSlot.LEGS, rgb < 0 ? ItemStack.EMPTY : piece(p, outfit, "minecraft:leather_leggings", rgb));
-		set(p, EquipmentSlot.FEET, rgb < 0 ? ItemStack.EMPTY : piece(p, outfit, "minecraft:leather_boots", rgb));
+		// One colour, or a fade from the chestplate down to the boots
+		int[] rgb = outfit == null ? null : CosmeticRules.outfitColors(outfit.effect);
+		set(p, EquipmentSlot.CHEST, rgb == null ? ItemStack.EMPTY : piece(p, outfit, "minecraft:leather_chestplate", rgb[0]));
+		set(p, EquipmentSlot.LEGS, rgb == null ? ItemStack.EMPTY : piece(p, outfit, "minecraft:leather_leggings", rgb[1]));
+		set(p, EquipmentSlot.FEET, rgb == null ? ItemStack.EMPTY : piece(p, outfit, "minecraft:leather_boots", rgb[2]));
 	}
 
 	private static ItemStack piece(ServerPlayer p, CosmeticDef c, String item, int rgb) {

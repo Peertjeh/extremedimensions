@@ -201,6 +201,7 @@ public final class HubEvents {
 	}
 
 	private static void stopping(MinecraftServer server) {
+		net.battlehub.progression.Pets.removeAll();
 		Matches.shutdown(server);
 		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
 			Queues.leaveAll(p);

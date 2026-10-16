@@ -704,6 +704,7 @@ public abstract class Match {
 	protected void killed(ServerPlayer victim, ServerPlayer killer, boolean fell) {
 		UUID v = victim.getUUID();
 		deaths.merge(v, 1, Integer::sum);
+		Cosmetics.onDeath(victim, victim.position());
 		boolean credited = killer != null && killer != victim && participants.contains(killer.getUUID());
 		if (credited) {
 			kills.merge(killer.getUUID(), 1, Integer::sum);

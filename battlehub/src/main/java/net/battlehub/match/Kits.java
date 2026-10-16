@@ -129,6 +129,7 @@ public final class Kits {
 		if (color >= 0 && Ids.key(item).startsWith("minecraft:leather_")) {
 			stack.set(DataComponents.DYED_COLOR, new DyedItemColor(color));
 		}
+		net.battlehub.progression.Cosmetics.applySkin(p, stack);
 		return stack;
 	}
 }

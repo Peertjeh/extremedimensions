@@ -142,7 +142,7 @@ ranked, switching modes every few seconds) can be set in `config.json` (`leaderb
 | ⚔ **PvP** | Free for All, 1v1, 1v2 and 1v3, each with the sword, axe or mace kit |
 | 🏹 **Ranged** | Bow PvP, Crossbow PvP |
 | 🎮 **Party Games** | Bow Spleef, TNT Run, Sumo, King of the Hill, Capture The Flag, Parkour Race, Last Man Standing, **Tournament** |
-| ✨ **Cosmetics** | Trails, kill effects, arrow trails, win effects and name colours, bought with coins |
+| ✨ **Cosmetics** | Almost 250: trails, auras (wings, halos, clouds), kill and win effects with real fireworks and lightning, death cries, weapon skins, pets, hats, outfits and name colours, bought with coins |
 | 🏆 **Ranked** | Duels that change your ELO, from Bronze to Netherite |
 | 👁 **Spectate** | Every running match, live, with a **Join Spectator** button |
 | 📊 **Stats** | Wins, losses, kills, deaths, streaks, level, coins, title, ELO per mode, parkour records, leaderboards (also on the lobby wall) |
@@ -300,14 +300,26 @@ in its own slot, so many matches can run at the same time. Every arena is cleane
 
 ### Cosmetics
 Spend your coins in the **Cosmetics** shop (compass menu or `/cosmetics`):
-* **Trails**: particles behind you while you walk (flames, hearts, notes, snow, cherry blossom, …)
-* **Kill effects**: lightning, explosion, blood, souls, firework, totem, … where you defeat someone
-* **Arrow trails**: particles behind your arrows
-* **Win effects**: fireworks, totem rain, a ring of fire, … around you while the match ends
+* **Trails**: particles behind you while you walk: flames, hearts, cherry blossom, coloured dust, fading
+  colours (Inferno, Frostbite, Void), light streaks, a rainbow, Midas Touch, diamond rain, …
+* **Auras** in the lobby: angel, demon, phoenix, frost, soul and rainbow **wings**, halos, crowns, orbits, a DNA
+  helix, rain, thunder and snow **clouds** above your head, a galaxy at your feet, a tornado, a royal cape, …
+* **Arrow trails**: particles behind your arrows (rainbow and laser arrows too)
+* **Kill effects**: lightning, a real **firework burst**, a **lightning strike**, shatter, sculk shriek, gust,
+  confetti, sonic boom, jackpot, … where you defeat someone
+* **Win effects**: a **grand finale** of fireworks, a **thunderstorm**, rainbow rings, dragon's breath, an aurora,
+  confetti, sakura, gold rain, … around you while the match ends
+* **Death cries**: a sound where you fall (a screaming goat, a dragon roar, a war horn, …)
+* **Weapon skins**: your sword takes the look of another item in matches: a blaze rod, a trident, a spear, a
+  lightsaber, a war hammer, a fish… It is still the same sword, so it changes nothing in the fight.
+* **Pets**: a baby dragon, a copper golem, a little ghast, a beacon, a nether star, … floating by your shoulder
+  in the lobby
+* **Hats** and **outfits** (the wardrobe), outfits also fading from top to bottom (Sunset, Ocean, Fire, …)
 * **Name colours**: on your nametag, in chat and in the tab list while you're in BattleHub
 
-One cosmetic per category is active; click to buy, use or turn it off. Everything is vanilla particles
-and sounds, purely visual, and only in BattleHub's worlds. Prices and the list are in `cosmetics.json`.
+One cosmetic per category is active; click to buy, use or turn it off. Everything is vanilla particles,
+models and sounds, purely visual, and only in BattleHub's worlds; fireworks and lightning are only drawn on the
+players' screens, so they never hurt anyone. Prices and the list are in `cosmetics.json`.
 
 ### Progression
 * **Coins** for winning, playing and kills.
@@ -462,11 +474,23 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   count, enchantments, unbreakable, leather colour, plus potion effects
 * **`titles.json`**: titles with display text (`&` colour codes) and requirement:
   `default`, `level`, `wins`, `duel_wins`, `mode_wins`, `streak`, `mode_streak`, `kills`, `elo` or `coins` (price)
-* **`cosmetics.json`**: the shop: per cosmetic an id, category (`trail`, `kill`, `arrow`, `win`, `color`, `hat`, `outfit`),
-  display text, icon item, price and effect (a particle id for trails and arrows; `lightning`, `explosion`,
-  `hearts`, `flames`, `souls`, `blood`, `firework` or `totem` for kills; `fireworks`, `totem`, `hearts`,
-  `notes`, `flames` or `sparks` for wins; a chat colour for names; an item id for hats; a colour `#RRGGBB` for
-  outfits), plus `trailsInMatches`
+* **`cosmetics.json`**: the shop: per cosmetic an id, category (`trail`, `aura`, `arrow`, `kill`, `win`, `cry`,
+  `skin`, `pet`, `hat`, `outfit`, `color`), display text, icon item, price and effect:
+  * trails and arrows: a particle: an id (`flame`), `dust:#RRGGBB` (optionally `:size`), `dust:#RRGGBB>#RRGGBB`
+    (fading), `rainbow`, `trail:#RRGGBB` (a streak of light), `block:<block>`, `item:<item>` or
+    `tint:entity_effect:#RRGGBB`; join several with `+`
+  * auras: `shape:particle`, with shape `halo`, `crown`, `wings`, `orbit`, `helix`, `cloud`, `spiral`, `galaxy`,
+    `heart`, `ring`, `tornado` or `cape` (for example `wings:dust:#FFFFFF`)
+  * kills: `lightning`, `explosion`, `hearts`, `flames`, `souls`, `blood`, `firework`, `totem`, `smite`, `rocket`,
+    `frost`, `sculk`, `gust`, `confetti`, `ender`, `cherry`, `sonic`, `squid`, `bubbles`, `skull`, `gold`, `notes`
+  * wins: `fireworks`, `totem`, `hearts`, `notes`, `flames`, `sparks`, `rockets`, `storm`, `rainbow`, `dragon`,
+    `galaxy`, `snow`, `confetti`, `aurora`, `sakura`, `souls`, `gold_rain`
+  * death cries: a sound id, optionally `;pitch` (`entity.goat.screaming.death;1.2`)
+  * weapon skins: the item whose look swords take, optionally `;glint` (`minecraft:trident`)
+  * pets and hats: an item id; outfits: `#RRGGBB`, `#RRGGBB>#RRGGBB` (fading) or three colours `#..,#..,#..`
+  * name colours: a chat colour
+
+  plus `trailsInMatches`. New cosmetics are added to an existing file when BattleHub updates.
 * **`lang/`**: every text players see. **English and Dutch are built in**: players see BattleHub in
   their own client language when there is a file for it, otherwise in the server default (`language` in
   `config.json`). `en_us.json` is written here as a template. Copy it to e.g. `de_de.json` to add a

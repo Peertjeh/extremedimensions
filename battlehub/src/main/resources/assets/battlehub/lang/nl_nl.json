@@ -1060,5 +1060,14 @@
 	"title.req.season": "&7Eindig een ranked-seizoen op tier {0} of hoger",
 	"title.req.pass": "&7Haal tier {0} van de seizoenspas",
 	"title.req.prestige": "&7Bereik prestige {0}",
-	"title.req.weekly_wins": "&7Win {0} wekelijkse toernooi(en)"
+	"title.req.weekly_wins": "&7Win {0} wekelijkse toernooi(en)",
+	"menu.cosmetics.cat.aura": "&d&lAura's",
+	"menu.cosmetics.cat.aura.lore": "&7Vleugels, halo's, kronen en wolken\n&7van deeltjes om je heen in de lobby.",
+	"menu.cosmetics.cat.cry": "&e&lDoodskreten",
+	"menu.cosmetics.cat.cry.lore": "&7Een geluid waar je valt in een potje.",
+	"menu.cosmetics.cat.skin": "&6&lWapenskins",
+	"menu.cosmetics.cat.skin.lore": "&7Je zwaard krijgt in potjes het uiterlijk\n&7van een ander item. Het blijft hetzelfde zwaard.",
+	"menu.cosmetics.cat.pet": "&a&lHuisdieren",
+	"menu.cosmetics.cat.pet.lore": "&7Iets dat naast je schouder zweeft\n&7in de lobby.",
+	"cosmetics.skin_preview": "&7In potjes ziet je zwaard eruit als {0}&7."
 }

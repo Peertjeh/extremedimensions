@@ -16,6 +16,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.TeamColor;
@@ -52,6 +53,63 @@ final class CosmeticsTests {
 	static void all(MinecraftServer server, Script s) {
 		coinsCommand(server, s);
 		shop(server, s);
+		more(server, s);
+	}
+
+	/** Auras, pets, weapon skins, death cries, fading outfits and the firework and lightning effects. */
+	private static void more(MinecraftServer server, Script s) {
+		String tag = "cosmetics more";
+		s.run(tag + ": A gets coins and buys angel wings, a baby dragon, a blaze rod skin, a goat cry and a sunset outfit", () -> {
+			prof("BHTestA").coins += 50000;
+			VARS().put("auraFrames", net.battlehub.progression.Auras.frames());
+			VARS().put("spectacles", net.battlehub.fx.Spectacle.shown());
+			for (String id : List.of("aura_angel", "pet_dragon", "skin_blaze", "cry_goat", "outfit_sunset")) {
+				Cosmetics.click(p("BHTestA"), Cosmetics.byId(id));
+			}
+			p("BHTestA").closeContainer();
+		});
+		s.check(tag + ": all five in use", () -> List.of("aura", "pet", "skin", "cry", "outfit").stream()
+				.allMatch(c -> prof("BHTestA").cosmetics.containsKey(c)));
+		s.waitFor(tag + ": the wings are drawn round A", 40, () -> net.battlehub.progression.Auras.frames() > (int) VARS().get("auraFrames") + 3);
+		s.waitFor(tag + ": the dragon floats by A's shoulder", 40, () -> {
+			net.minecraft.world.entity.Entity pet = net.battlehub.progression.Pets.entity(p("BHTestA").getUUID());
+			return pet != null && !pet.isRemoved() && pet.position().distanceTo(p("BHTestA").position()) < 2.5;
+		});
+		s.check(tag + ": the outfit fades from orange at the top to purple at the feet", () ->
+				net.minecraft.world.item.component.DyedItemColor.getOrDefault(p("BHTestA").getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST), 0) == 0xFFB000
+						&& net.minecraft.world.item.component.DyedItemColor.getOrDefault(p("BHTestA").getItemBySlot(net.minecraft.world.entity.EquipmentSlot.FEET), 0) == 0x8A2BE2);
+		s.check(tag + ": a sword from a kit looks like a blaze rod and shines; a bow stays a bow", () -> {
+			ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
+			ItemStack bow = new ItemStack(Items.BOW);
+			Cosmetics.applySkin(p("BHTestA"), sword);
+			Cosmetics.applySkin(p("BHTestA"), bow);
+			return net.battlehub.util.Ids.id("minecraft:blaze_rod").equals(sword.get(net.minecraft.core.component.DataComponents.ITEM_MODEL))
+					&& Boolean.TRUE.equals(sword.get(net.minecraft.core.component.DataComponents.ENCHANTMENT_GLINT_OVERRIDE))
+					&& !net.battlehub.util.Ids.id("minecraft:blaze_rod").equals(bow.get(net.minecraft.core.component.DataComponents.ITEM_MODEL));
+		});
+		s.run(tag + ": the cry, a firework burst and a lightning bolt play", () -> {
+			ServerPlayer a = p("BHTestA");
+			Cosmetics.cry(a.level(), Cosmetics.byId("cry_goat").effect, a.position());
+			Cosmetics.killEffect("rocket", a.level(), a.position());
+			Cosmetics.killEffect("smite", a.level(), a.position());
+		});
+		s.check(tag + ": the firework and the bolt were shown (on the clients only)", () ->
+				net.battlehub.fx.Spectacle.shown() >= (int) VARS().get("spectacles") + 2);
+		s.run(tag + ": A goes back to survival", () -> net.battlehub.hub.Travel.leave(p("BHTestA")));
+		s.waitFor(tag + ": the pet stays behind in the hub and goes", 10, () -> !net.battlehub.progression.Pets.has(p("BHTestA").getUUID()));
+		s.run(tag + ": A comes back", () -> net.battlehub.hub.Travel.enter(p("BHTestA")));
+		s.waitFor(tag + ": the pet is back", 40, () -> net.battlehub.progression.Pets.has(p("BHTestA").getUUID()));
+		s.run(tag + ": A takes off the pet, wings, skin, cry and outfit (the duels after this use the earlier ones)", () -> {
+			for (String c : List.of("aura", "pet", "skin", "cry", "outfit")) {
+				Cosmetics.clear(p("BHTestA"), c);
+			}
+		});
+		s.waitFor(tag + ": the pet is gone", 10, () -> !net.battlehub.progression.Pets.has(p("BHTestA").getUUID())
+				&& p("BHTestA").getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).isEmpty());
+	}
+
+	private static java.util.Map<String, Object> VARS() {
+		return SelfTest.VARS;
 	}
 
 	/** /battlehub coins as an admin (the server console): give, take (never below zero), set, also offline. */
@@ -86,8 +144,14 @@ final class CosmeticsTests {
 		s.check(tag + ": the compass menu has a cosmetics button", () -> p("BHTestA").containerMenu instanceof HubMenu m
 				&& m.getSlot(13).getItem().is(Items.FIREWORK_ROCKET));
 		s.run(tag + ": A opens the shop", () -> click("BHTestA", "Cosmetics"));
-		s.waitFor(tag + ": seven categories (with the wardrobe)", 5, () -> p("BHTestA").containerMenu instanceof HubMenu m
-				&& m.screen() instanceof CosmeticsMenu && !m.getSlot(10).getItem().isEmpty() && !m.getSlot(16).getItem().isEmpty());
+		s.waitFor(tag + ": eleven categories (trails to name colours)", 5, () -> {
+			if (!(p("BHTestA").containerMenu instanceof HubMenu m) || !(m.screen() instanceof CosmeticsMenu)) return false;
+			for (int slot : net.battlehub.core.MenuSlots.centered(11, 1, 6)) {
+				ItemStack it = m.getSlot(slot).getItem();
+				if (it.isEmpty() || it.is(Items.BLACK_STAINED_GLASS_PANE)) return false;
+			}
+			return true;
+		});
 		s.run(tag + ": A opens trails", () -> click("BHTestA", "Trails"));
 		s.waitFor(tag + ": the trails page", 5, () -> p("BHTestA").containerMenu instanceof HubMenu m && m.screen() instanceof CosmeticCategoryMenu);
 		s.run(tag + ": A clicks Flames (400 coins)", () -> click("BHTestA", "Flames"));

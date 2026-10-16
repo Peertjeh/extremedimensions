@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.14.0
+
+### Added
+* **Almost 250 cosmetics** (from 66), in eleven categories:
+  * **Auras** (new): wings (angel, demon, phoenix, frost, soul, rainbow), halos, crowns, orbits, a DNA helix,
+    rain, thunder and snow clouds above your head, a galaxy at your feet, a tornado, a royal cape; drawn round
+    you in the lobby.
+  * **Death cries** (new): a sound where you fall.
+  * **Weapon skins** (new): your sword takes the look of a blaze rod, trident, spear, lightsaber, war hammer,
+    fish, … in matches (purely the look: it stays the same sword).
+  * **Pets** (new): a baby dragon, copper golem, little ghast, beacon, nether star, … floating by your shoulder
+    in the lobby.
+  * Many more **trails** and **arrow trails**: coloured and fading dust, rainbows, light streaks, block and item
+    crumbs, fireflies, sculk souls, copper fire, …
+  * More **kill effects**, among them a real **firework burst** and a **lightning strike**, both drawn only on
+    the players' screens so they never hurt anyone; more **win effects** (a grand finale of fireworks, a
+    thunderstorm, rainbow rings, an aurora, dragon's breath, …).
+  * More **hats** and **outfits**, outfits now also fading from top to bottom or with a colour per piece.
+* Cosmetic particles can be written in many ways in `cosmetics.json`: `dust:#RRGGBB`, fades, `rainbow`,
+  `trail:#RRGGBB`, `block:`, `item:`, `tint:` and combinations with `+`. Existing files get the new cosmetics.
+
 ## 1.13.1
 
 ### Fixed

@@ -18,7 +18,8 @@
 		"LivingEntitySwingMixin",
 		"ResourcePackResponseMixin",
 		"FlowingFluidMixin",
-		"BucketItemMixin"
+		"BucketItemMixin",
+		"ItemDisplayAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

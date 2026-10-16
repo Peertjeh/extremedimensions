@@ -1060,5 +1060,14 @@
 	"title.req.season": "&7End a ranked season at tier {0} or higher",
 	"title.req.pass": "&7Reach tier {0} of the season pass",
 	"title.req.prestige": "&7Reach prestige {0}",
-	"title.req.weekly_wins": "&7Win {0} weekly tournament(s)"
+	"title.req.weekly_wins": "&7Win {0} weekly tournament(s)",
+	"menu.cosmetics.cat.aura": "&d&lAuras",
+	"menu.cosmetics.cat.aura.lore": "&7Wings, halos, crowns and clouds\n&7of particles round you in the lobby.",
+	"menu.cosmetics.cat.cry": "&e&lDeath Cries",
+	"menu.cosmetics.cat.cry.lore": "&7A sound where you fall in a match.",
+	"menu.cosmetics.cat.skin": "&6&lWeapon Skins",
+	"menu.cosmetics.cat.skin.lore": "&7Your sword takes the look of another\n&7item in matches. It is still the same sword.",
+	"menu.cosmetics.cat.pet": "&a&lPets",
+	"menu.cosmetics.cat.pet.lore": "&7Something floating by your shoulder\n&7in the lobby.",
+	"cosmetics.skin_preview": "&7In matches your sword looks like {0}&7."
 }

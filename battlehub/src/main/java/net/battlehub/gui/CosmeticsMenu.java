@@ -28,15 +28,19 @@ public final class CosmeticsMenu extends Screen {
 
 	@Override
 	public int rows() {
-		return 4;
+		return 5;
 	}
 
 	static Item icon(String category) {
 		return switch (category) {
 			case "trail" -> Items.BLAZE_POWDER;
+			case "aura" -> Ids.item("minecraft:feather");
 			case "kill" -> Items.DIAMOND_SWORD;
 			case "arrow" -> Items.SPECTRAL_ARROW;
 			case "win" -> Items.FIREWORK_ROCKET;
+			case "cry" -> Ids.item("minecraft:goat_horn");
+			case "skin" -> Ids.item("minecraft:blaze_rod");
+			case "pet" -> Ids.item("minecraft:dragon_head");
 			case "hat" -> Ids.item("minecraft:golden_helmet");
 			case "outfit" -> Ids.item("minecraft:leather_chestplate");
 			default -> Ids.item("minecraft:magenta_dye");
@@ -48,8 +52,10 @@ public final class CosmeticsMenu extends Screen {
 		PlayerProfile prof = PlayerStore.get(viewer);
 		c.set(4, Icon.of(Items.SUNFLOWER).name(Lang.item(viewer, "menu.cosmetics.coins", prof.coins))
 				.lore(Lang.loreLines(viewer, "menu.cosmetics.coins.lore")).build());
-		int slot = 10;
+		int[] slots = net.battlehub.core.MenuSlots.centered(CosmeticRules.CATEGORIES.size(), 1, 6);
+		int n = 0;
 		for (String cat : CosmeticRules.CATEGORIES) {
+			int slot = slots[n++];
 			List<CosmeticDef> defs = Cosmetics.inCategory(cat);
 			long owned = defs.stream().filter(d -> CosmeticRules.owns(prof, d)).count();
 			CosmeticDef active = CosmeticRules.active(prof, cat, Cosmetics.all());
@@ -64,7 +70,6 @@ public final class CosmeticsMenu extends Screen {
 				icon.glint(true);
 			}
 			c.set(slot, icon.build(), click -> new CosmeticCategoryMenu(viewer, cat, 0).open());
-			slot++;
 		}
 		c.back(() -> new MainMenu(viewer).open());
 		c.fill();

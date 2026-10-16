@@ -296,3 +296,17 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Water en lava | Een mixin op `FlowingFluid.spreadTo` laat vloeistof in de arenawereld alleen stromen binnen het speelveld van een arena en boven de void-lijn; anders bleven watervallen onder eilanden voor altijd staan (die vallen buiten het gebied dat gewist wordt). Een mixin op `BucketItem.emptyContents` controleert ook emmers die op de lucht of op water gericht worden (die gaan niet langs het blok-event). |
 | Hand-item | De kit zette het geselecteerde hotbarvak alleen op de server op 0. De client hield het oude vak vast: hij liet blokken zien die je niet kon gebruiken, terwijl anderen het zwaard zagen. Nu stuurt BattleHub altijd `ClientboundSetHeldSlotPacket` mee (kit, Prop Hunt, terugzetten van je inventaris). |
 
+## Versie 1.14 – Veel meer cosmetics
+
+| Onderwerp | Keuze |
+|---|---|
+| Omvang | Van 66 naar 247 cosmetics in elf categorieën: trails, aura's (nieuw), pijltrails, killeffecten, wineffecten, doodskreten (nieuw), wapenskins (nieuw), huisdieren (nieuw), hoeden, outfits en naamkleuren. Bestaande `cosmetics.json` krijgen de nieuwe erbij (configVersion 3), zonder iets weg te halen. |
+| Particles | Een eigen kleine notatie (`ParticleSpec`, los te testen): een particle-id, `dust:#RRGGBB[:grootte]`, `dust:#van>#naar` (vervagend), `rainbow` (de tint draait door), `trail:#RRGGBB` (lichtstreep), `block:`/`item:` (kruimels), `tint:entity_effect:#RRGGBB`, en combinaties met `+`. Zo zijn gekleurde trails en verlopen mogelijk zonder resourcepack. |
+| Aura's | Vormen als punten rond de voeten (`AuraShape`, los te testen: vleugels die klapperen en aan de rugkant staan, halo, kroon, baan, helix, wolk met druppels, spiraal, melkweg, hart, ring, tornado, cape). Om de 3 ticks een frame en hoogstens zo'n 60 punten, zodat een lobby vol vleugels het netwerk niet overspoelt. Alleen in de lobby van de hub, niet in potjes. |
+| Vuurwerk en bliksem | Echte vuurwerkexplosies (met kleuren en vormen) en bliksem bestaan alleen bij de kijkers: BattleHub stuurt een raket die meteen ontploft (entity-event 17) en een bliksemschicht die na 1,5 s weer verdwijnt. Op de server bestaat er niets, dus geen schade, geen brand en geen geraakte mobs (een echte vuurpijl met ontploffing doet wel schade). |
+| Wapenskins | Via het `item_model`-component krijgt een zwaard uit de kit het uiterlijk van een ander vanilla item (blaze rod, trident, speer, end rod als lichtzwaard, ...), eventueel met glans. Het item blijft een zwaard met dezelfde schade, dus eerlijk. Alleen zwaarden (bogen hebben een span-animatie die met een ander model niet klopt). |
+| Huisdieren | Een item display dat elke tick naar je rechterschouder springt (met interpolatie, dus vloeiend), op en neer deint en langzaam draait. Bewust geen passagier op de speler: dat geeft problemen bij teleporteren tussen werelden. Weg zodra je de lobby verlaat, terug als je terugkomt; achtergebleven exemplaren (na een crash) worden opgeruimd via een tag. |
+| Doodskreten | Een vanilla geluid (met optionele toonhoogte) waar je in een potje sterft, voor iedereen in de buurt. |
+| Outfits | Eén kleur, een verloop van boven naar beneden (`#van>#naar`, de broek krijgt de mengkleur) of drie losse kleuren. |
+| Wat niet | Eigen 3D-modellen of textures voor items en hoeden vragen het resourcepack en een modelbestand per item; dat is te veel voor nu. Wapenskins en huisdieren gebruiken daarom vanilla modellen. |
+
