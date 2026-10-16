@@ -7,6 +7,7 @@ import net.battlehub.arena.Build;
 import net.battlehub.arena.Theme;
 import net.battlehub.arena.gen.Features;
 import net.battlehub.arena.gen.Field;
+import net.battlehub.arena.gen.Style;
 import net.battlehub.arena.gen.Shape;
 import net.battlehub.arena.gen.Symmetry;
 import net.battlehub.core.ParkourCourse;
@@ -72,7 +73,8 @@ public final class PartyLayouts {
 		Blueprint bp = new Blueprint();
 		int r = 6 + rnd.nextInt(4);
 		Field f = new Field(r, Shape.roundish(rnd), Symmetry.POINT);
-		f.build(bp, t, rnd, 6);
+		Style style = Style.of(t, rnd, r);
+		f.build(bp, style, rnd, 6);
 		for (int x = -r - 1; x <= r + 1; x++) {
 			for (int z = -r - 1; z <= r + 1; z++) {
 				boolean edge = f.inside(x, z) && (!f.inside(x + 1, z) || !f.inside(x - 1, z) || !f.inside(x, z + 1) || !f.inside(x, z - 1));
@@ -96,15 +98,16 @@ public final class PartyLayouts {
 		Blueprint bp = new Blueprint();
 		int r = 22 + rnd.nextInt(4);
 		Field f = new Field(r, Shape.roundish(rnd), Symmetry.POINT);
+		Style style = Style.of(t, rnd, r);
 		double ring = Math.round(r * 0.8);
 		f.keepBandClear(ring - 1.6, ring + 1.6);
 		f.hills(rnd, 3 + rnd.nextInt(3), 1);
-		int style = rnd.nextInt(3);
+		int hillShape = rnd.nextInt(3);
 		for (int x = -7; x <= 7; x++) {
 			for (int z = -7; z <= 7; z++) {
 				int m = Math.max(Math.abs(x), Math.abs(z));
 				double d = Math.sqrt(x * x + z * z);
-				int hgt = switch (style) {
+				int hgt = switch (hillShape) {
 					case 0 -> m <= 2 || d <= 3 ? 3 : (d <= 5.5 ? 2 : (d <= 8 ? 1 : 0));
 					case 1 -> m <= 2 ? 3 : (m <= 4 ? 2 : (m <= 6 ? 1 : 0));
 					default -> {
@@ -121,14 +124,14 @@ public final class PartyLayouts {
 		}
 		f.use(0, 0, 8);
 		Features.scatter(bp, f, t, rnd, 4 + rnd.nextInt(4), Features.kinds(t, false));
-		f.build(bp, t, rnd, 5);
+		f.build(bp, style, rnd, 5);
 		for (int x = -2; x <= 2; x++) {
 			for (int z = -2; z <= 2; z++) {
 				bp.set(x, 3, z, t.marker());
 			}
 		}
 		bp.mark("zone", 0, 4, 0);
-		f.walls(bp, t, rnd, 4);
+		f.walls(bp, style, rnd, 4);
 		Features.plants(bp, f, t, rnd, 9);
 		bp.spawnRing(16, ring, 1);
 		bp.spectator(0.5, 18, -(r + 6) + 0.5, 0, 35);
@@ -335,12 +338,13 @@ public final class PartyLayouts {
 		Blueprint bp = new Blueprint();
 		int r = 28 + rnd.nextInt(6);
 		Field f = new Field(r, Shape.roundish(rnd), Symmetry.POINT);
+		Style style = Style.of(t, rnd, r);
 		double ring = Math.round(r * 0.72);
 		f.keepBandClear(ring - 1.6, ring + 1.6);
 		f.hills(rnd, 6 + rnd.nextInt(4), 2);
 		Features.scatter(bp, f, t, rnd, 12 + rnd.nextInt(6), Features.kinds(t, true));
-		f.build(bp, t, rnd, 5);
-		f.walls(bp, t, rnd, 4);
+		f.build(bp, style, rnd, 5);
+		f.walls(bp, style, rnd, 4);
 		Features.plants(bp, f, t, rnd, 8);
 		bp.spawnRing(16, ring, 1);
 		bp.spectator(0.5, 30, -(r + 8) + 0.5, 0, 45);
@@ -353,13 +357,14 @@ public final class PartyLayouts {
 		Blueprint bp = new Blueprint();
 		int r = 26 + rnd.nextInt(5);
 		Field f = new Field(r, Shape.roundish(rnd), Symmetry.POINT);
+		Style style = Style.of(t, rnd, r);
 		double ring = Math.round(r * 0.75);
 		f.keepBandClear(ring - 1.6, ring + 1.6);
 		f.keepClear(0, 0, 3);
 		f.hills(rnd, 5 + rnd.nextInt(4), 2);
 		Features.scatter(bp, f, t, rnd, 9 + rnd.nextInt(5), Features.kinds(t, true));
-		f.build(bp, t, rnd, 5);
-		f.walls(bp, t, rnd, 4);
+		f.build(bp, style, rnd, 5);
+		f.walls(bp, style, rnd, 4);
 		Features.plants(bp, f, t, rnd, 8);
 		bp.spawnRing(16, ring, 1);
 		bp.spectator(0.5, 28, -(r + 8) + 0.5, 0, 45);

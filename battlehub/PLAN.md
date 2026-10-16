@@ -310,3 +310,13 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Outfits | Eén kleur, een verloop van boven naar beneden (`#van>#naar`, de broek krijgt de mengkleur) of drie losse kleuren. |
 | Wat niet | Eigen 3D-modellen of textures voor items en hoeden vragen het resourcepack en een modelbestand per item; dat is te veel voor nu. Wapenskins en huisdieren gebruiken daarom vanilla modellen. |
 
+## Versie 1.15 – Originelere maps
+
+| Onderwerp | Keuze |
+|---|---|
+| Kleurverlopen | Per thema 2 tot 4 verlopen van blokken die in elkaar overgaan (`Palettes`), bijvoorbeeld cobblestone → andesite → stone → stone bricks → polished andesite → smooth stone, de terracotta-banden van Badlands, of gewaxt koper van vers tot groen (gewaxt, zodat het niet verder verweert). Een arena kiest er één, soms omgekeerd. |
+| Patronen | Elke vloer volgt een willekeurig patroon (`FloorPattern`, los te testen): wolken (ruis), van het midden naar buiten, golvende banden, vlakken (Voronoi), ringen of marmeraders. Grootte en richting zijn ook willekeurig. Per blok een klein beetje "rafel" (dithering), zodat de grenzen tussen twee blokken geleidelijk lopen zoals bij een echte fade. Muren lopen van voet naar top door een eigen verloop (behalve hagen, paddenstoelhoeden en terracotta-banden, die hun eigen stijl houden). |
+| Ruis | Eigen value noise met een paar octaven (`Noise`), zelfde seed = zelfde patroon; geen Minecraft-klassen nodig. |
+| Variatie | Straal 13–24 (was 15–21), spawns 3 tot 7 blokken van de rand (maar altijd minstens 16 uit elkaar), muren 3–6 hoog, vijf soorten terrein (vlak tot heuvelachtig), meer of minder obstakels en planten, vier nieuwe middens (krater, plateau, ruïnes, vloermozaïek). Eilanden: 1 tot 5 satellieten op wisselende afstand en hoogte, het hoofdeiland 11–19 groot. Puntsymmetrie (eerlijkheid) blijft: alleen het uiterlijk van de vloer is niet symmetrisch. |
+| Controle | De zelftest kijkt of elke bloknaam in thema's, verlopen en layouts bestaat (een onbekende naam zou als lucht verschijnen) en of twaalf arena's na elkaar echt verschillen. |
+

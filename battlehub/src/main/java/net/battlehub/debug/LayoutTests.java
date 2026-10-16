@@ -93,6 +93,29 @@ final class LayoutTests {
 			}
 			return problems.isEmpty();
 		});
+		s.check("layouts: every block name in the themes, gradients and layouts exists", () -> {
+			if (!net.battlehub.arena.Build.unknown().isEmpty()) {
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST unknown block names: {}", net.battlehub.arena.Build.unknown());
+			}
+			return net.battlehub.arena.Build.unknown().isEmpty();
+		});
+		s.check("layouts: the floors of generated arenas differ from one arena to the next", () -> {
+			RandomSource rnd = RandomSource.create(99);
+			java.util.Set<String> looks = new java.util.HashSet<>();
+			java.util.Set<Integer> sizes = new java.util.HashSet<>();
+			for (int i = 0; i < 12; i++) {
+				Blueprint bp = DuelLayout.design(Theme.CASTLE, rnd, false);
+				java.util.Map<net.minecraft.world.level.block.state.BlockState, Integer> count = new java.util.HashMap<>();
+				for (int x = -6; x <= 6; x++) {
+					for (int z = -6; z <= 6; z++) {
+						if (bp.has(x, 0, z)) count.merge(bp.get(x, 0, z), 1, Integer::sum);
+					}
+				}
+				looks.add(count.toString());
+				sizes.add(bp.maxX() - bp.minX());
+			}
+			return looks.size() >= 10 && sizes.size() >= 4;
+		});
 	}
 
 	private static void check(String where, String layout, Blueprint bp, List<String> problems) {

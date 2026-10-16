@@ -153,18 +153,18 @@ public enum Theme {
 
 	/** A random floor block from the theme mix. */
 	public BlockState floor(RandomSource rnd) {
-		return Ids.state(p.floor[rnd.nextInt(p.floor.length)]);
+		return Build.s(p.floor[rnd.nextInt(p.floor.length)]);
 	}
 
-	public BlockState under() { return Ids.state(p.under); }
-	public BlockState wall() { return Ids.state(p.wall); }
-	public BlockState accent() { return Ids.state(p.accent); }
-	public BlockState trim() { return Ids.state(p.trim); }
-	public BlockState rough() { return Ids.state(p.rough); }
-	public BlockState light() { return Ids.state(p.light); }
-	public BlockState pillar() { return Ids.state(p.pillar); }
-	public BlockState soft() { return Ids.state(p.soft); }
-	public BlockState marker() { return Ids.state(p.marker); }
+	public BlockState under() { return Build.s(p.under); }
+	public BlockState wall() { return Build.s(p.wall); }
+	public BlockState accent() { return Build.s(p.accent); }
+	public BlockState trim() { return Build.s(p.trim); }
+	public BlockState rough() { return Build.s(p.rough); }
+	public BlockState light() { return Build.s(p.light); }
+	public BlockState pillar() { return Build.s(p.pillar); }
+	public BlockState soft() { return Build.s(p.soft); }
+	public BlockState marker() { return Build.s(p.marker); }
 
 	/** No walls; arenas are floating islands. */
 	public boolean open() {
@@ -176,22 +176,22 @@ public enum Theme {
 	}
 
 	public BlockState log() {
-		return Ids.state(p.log.isEmpty() ? "oak_log" : p.log);
+		return Build.s(p.log.isEmpty() ? "oak_log" : p.log);
 	}
 
 	/** Leaves that never decay. */
 	public BlockState leaves() {
 		String id = p.leaves.isEmpty() ? "oak_leaves" : p.leaves;
-		return id.endsWith("_leaves") ? Build.leaves(id) : Ids.state(id);
+		return id.endsWith("_leaves") ? Build.leaves(id) : Build.s(id);
 	}
 
 	/** A random plant for the floor, or null when the theme has none. */
 	public BlockState plant(RandomSource rnd) {
-		return p.plants.length == 0 ? null : Ids.state(p.plants[rnd.nextInt(p.plants.length)]);
+		return p.plants.length == 0 ? null : Build.s(p.plants[rnd.nextInt(p.plants.length)]);
 	}
 
 	/** Block that disappears in Bow Spleef and TNT Run. */
 	public BlockState breakable(RandomSource rnd) {
-		return Ids.state(p.breakable[rnd.nextInt(p.breakable.length)]);
+		return Build.s(p.breakable[rnd.nextInt(p.breakable.length)]);
 	}
 }

@@ -295,6 +295,13 @@ hexagon, ellipse, cross), size, hills, obstacles, cover and scenery are random. 
 **point-symmetric**, so both players get exactly the same ground and cover. Sky and End are floating
 islands. Party games get random shapes, hills and cover too.
 
+Every arena also gets its own **look**: one of the theme's colour gradients (stone to polished andesite, the
+badlands terracotta bands, waxed copper from fresh to green, ...) laid out in a random pattern (clouds, bands,
+rings, patches or marble veins) with frayed borders, walls that fade from foot to top, and a random middle (a
+hill, pillars, a fountain, a monument, a crater, a plateau, ruins or a floor mosaic). How big the arena is, how
+far apart the spawns are, how high the walls are and how hilly the ground is all change per match, as do the
+number, distance and height of the floating islands.
+
 You don't have to build anything. Matches run in their own empty dimension (`battlehub:arenas`), each
 in its own slot, so many matches can run at the same time. Every arena is cleaned up afterwards.
 

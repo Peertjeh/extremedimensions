@@ -158,11 +158,12 @@ public final class NewLayouts {
 		int n = Math.max(4, players);
 		double ring = Math.max(20, n * 3.2);
 		BlockState chest = Build.s("chest");
+		net.battlehub.arena.gen.Style style = net.battlehub.arena.gen.Style.of(t, rnd, (int) ring);
 		for (int i = 0; i < n; i++) {
 			double a = i * Math.PI * 2 / n;
 			int cx = (int) Math.round(Math.cos(a) * ring);
 			int cz = (int) Math.round(Math.sin(a) * ring);
-			Build.island(bp, cx, 0, cz, 3.6, 4, () -> t.floor(rnd), t.under(), t.rough(), rnd);
+			Build.island(bp, cx, 0, cz, 3.6, 4, (x, z) -> style.floor(x, z, rnd), t.under(), t.rough(), rnd);
 			// A chest at the outer edge, a little tree or pillar on the side
 			int ox = (int) Math.round(Math.cos(a) * 2);
 			int oz = (int) Math.round(Math.sin(a) * 2);
@@ -186,7 +187,7 @@ public final class NewLayouts {
 			}
 		}
 		// The middle: a big island with four chests round a pillar
-		Build.island(bp, 0, 0, 0, 7.5, 6, () -> t.floor(rnd), t.under(), t.rough(), rnd);
+		Build.island(bp, 0, 0, 0, 7.5, 6, (x, z) -> style.floor(x, z, rnd), t.under(), t.rough(), rnd);
 		Build.pillar(bp, 0, 1, 0, 4, t.pillar());
 		bp.set(0, 5, 0, t.light());
 		int[][] cc = {{2, 0}, {-2, 0}, {0, 2}, {0, -2}};

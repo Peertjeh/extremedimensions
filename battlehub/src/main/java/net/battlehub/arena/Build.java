@@ -15,8 +15,19 @@ import net.minecraft.world.level.block.state.properties.SlabType;
 public final class Build {
 	private Build() {}
 
+	/** Block names a layout asked for that this version does not have (they come out as air). */
+	private static final java.util.Set<String> UNKNOWN = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
 	public static BlockState s(String id) {
-		return Ids.state(id);
+		BlockState st = Ids.state(id);
+		if (st.isAir() && !id.endsWith("air")) {
+			UNKNOWN.add(id);
+		}
+		return st;
+	}
+
+	public static java.util.Set<String> unknown() {
+		return UNKNOWN;
 	}
 
 	/** Leaves that never decay. */
@@ -93,6 +104,22 @@ public final class Build {
 			BlockState st = d <= 2 ? under : deep;
 			disc(bp, cx, y - d, cz, rr, () -> st);
 		}
+	}
+
+	/** An island whose top follows a pattern: {@code top} gives the block for each column (x, z). */
+	public static void island(Blueprint bp, int cx, int y, int cz, double r, int depth,
+			java.util.function.BiFunction<Integer, Integer, BlockState> top, BlockState under, BlockState deep, RandomSource rnd) {
+		int ir = (int) Math.ceil(r);
+		for (int x = cx - ir; x <= cx + ir; x++) {
+			for (int z = cz - ir; z <= cz + ir; z++) {
+				double dx = x - cx;
+				double dz = z - cz;
+				if (dx * dx + dz * dz <= r * r + r * 0.6) {
+					bp.set(x, y, z, top.apply(x, z));
+				}
+			}
+		}
+		island(bp, cx, y, cz, r, depth, (Supplier<BlockState>) () -> null, under, deep, rnd);
 	}
 
 	public static void pillar(Blueprint bp, int x, int y, int z, int h, BlockState block) {

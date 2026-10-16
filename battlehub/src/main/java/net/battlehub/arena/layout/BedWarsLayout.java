@@ -51,17 +51,18 @@ public final class BedWarsLayout {
 		int n = Math.max(2, Math.min(COLORS.length, teams));
 		int r = teamRadius(n);
 		double start = n == 2 ? Math.PI : Math.PI / 2;
+		net.battlehub.arena.gen.Style style = net.battlehub.arena.gen.Style.of(t, rnd, r);
 		for (int i = 0; i < n; i++) {
-			teamIsland(bp, t, rnd, i, start + i * 2 * Math.PI / n, r);
+			teamIsland(bp, t, style, rnd, i, start + i * 2 * Math.PI / n, r);
 		}
 		// A diamond island between every two teams; with more than four teams, four of them
 		int diamonds = Math.min(n, 4);
 		double ring = n <= 4 ? r * 0.62 : r * 0.55;
 		for (int k = 0; k < diamonds; k++) {
 			double a = start + (k + 0.5) * 2 * Math.PI / diamonds;
-			diamondIsland(bp, t, rnd, (int) Math.round(Math.cos(a) * ring), (int) Math.round(Math.sin(a) * ring));
+			diamondIsland(bp, t, style, rnd, (int) Math.round(Math.cos(a) * ring), (int) Math.round(Math.sin(a) * ring));
 		}
-		centre(bp, t, rnd);
+		centre(bp, t, style, rnd);
 		Decor.ring(bp, t, rnd, r + 14, r + 24, Math.min(-18, -buildDepth - 8));
 		int edge = r + BUILD_MARGIN;
 		bp.include(-edge, -buildDepth, -edge);
@@ -84,7 +85,7 @@ public final class BedWarsLayout {
 		return dz >= 0 ? Direction.SOUTH : Direction.NORTH;
 	}
 
-	private static void teamIsland(Blueprint bp, Theme t, RandomSource rnd, int team, double angle, int r) {
+	private static void teamIsland(Blueprint bp, Theme t, net.battlehub.arena.gen.Style style, RandomSource rnd, int team, double angle, int r) {
 		String color = COLORS[team];
 		double ox = Math.cos(angle);
 		double oz = Math.sin(angle);
@@ -93,7 +94,7 @@ public final class BedWarsLayout {
 		// Outward along the island's axis (away from the centre) and sideways
 		Direction out = nearest(ox, oz);
 		Direction side = out.getClockWise();
-		Build.island(bp, cx, 0, cz, 8.5, 6, () -> t.floor(rnd), t.under(), t.rough(), rnd);
+		Build.island(bp, cx, 0, cz, 8.5, 6, (x, z) -> style.floor(x, z, rnd), t.under(), t.rough(), rnd);
 		BlockState teamBlock = Ids.state("minecraft:" + color + "_concrete");
 		BlockState teamWool = Ids.state("minecraft:" + color + "_wool");
 		// A coloured border so everyone knows whose island it is
@@ -135,14 +136,14 @@ public final class BedWarsLayout {
 		bp.mark("shopblock_" + team, sx + side.getStepX(), 1, sz + side.getStepZ());
 	}
 
-	private static void diamondIsland(Blueprint bp, Theme t, RandomSource rnd, int x, int z) {
-		Build.island(bp, x, 0, z, 3.6, 4, () -> t.floor(rnd), t.under(), t.rough(), rnd);
+	private static void diamondIsland(Blueprint bp, Theme t, net.battlehub.arena.gen.Style style, RandomSource rnd, int x, int z) {
+		Build.island(bp, x, 0, z, 3.6, 4, (px, pz) -> style.floor(px, pz, rnd), t.under(), t.rough(), rnd);
 		bp.set(x, 0, z, Ids.state("minecraft:diamond_block"));
 		bp.mark("gen_diamond", x, 1, z);
 	}
 
-	private static void centre(Blueprint bp, Theme t, RandomSource rnd) {
-		Build.island(bp, 0, 0, 0, 7.5, 7, () -> t.floor(rnd), t.under(), t.rough(), rnd);
+	private static void centre(Blueprint bp, Theme t, net.battlehub.arena.gen.Style style, RandomSource rnd) {
+		Build.island(bp, 0, 0, 0, 7.5, 7, (x, z) -> style.floor(x, z, rnd), t.under(), t.rough(), rnd);
 		for (int sx : new int[] {-2, 2}) {
 			bp.set(sx, 0, 0, Ids.state("minecraft:emerald_block"));
 			bp.mark("gen_emerald", sx, 1, 0);

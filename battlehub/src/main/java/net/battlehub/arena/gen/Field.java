@@ -182,11 +182,20 @@ public final class Field {
 
 	/** Floor blocks on top of every column, filler below and a rough, tapering underside. */
 	public void build(Blueprint bp, Theme t, RandomSource rnd, int depth) {
+		build(bp, null, t, rnd, depth);
+	}
+
+	/** The same, with the floor following the arena's colour gradient and pattern. */
+	public void build(Blueprint bp, Style style, RandomSource rnd, int depth) {
+		build(bp, style, style.theme, rnd, depth);
+	}
+
+	private void build(Blueprint bp, Style style, Theme t, RandomSource rnd, int depth) {
 		for (int x = -r - 1; x <= r + 1; x++) {
 			for (int z = -r - 1; z <= r + 1; z++) {
 				if (!inside(x, z)) continue;
 				int top = height(x, z);
-				bp.set(x, top, z, t.floor(rnd));
+				bp.set(x, top, z, style == null ? t.floor(rnd) : style.floor(x, z, rnd));
 				for (int y = -1; y < top; y++) {
 					bp.set(x, y, z, t.under());
 				}
@@ -252,6 +261,15 @@ public final class Field {
 
 	/** A wall around the outline, {@code height} blocks above the floor next to it, in the theme's style. */
 	public void walls(Blueprint bp, Theme t, RandomSource rnd, int height) {
+		walls(bp, null, t, rnd, height);
+	}
+
+	/** The same, fading from foot to top in the arena's wall gradient where the theme has one. */
+	public void walls(Blueprint bp, Style style, RandomSource rnd, int height) {
+		walls(bp, style, style.theme, rnd, height);
+	}
+
+	private void walls(Blueprint bp, Style style, Theme t, RandomSource rnd, int height) {
 		int step = 0;
 		for (int x = -r - 2; x <= r + 2; x++) {
 			for (int z = -r - 2; z <= r + 2; z++) {
@@ -259,7 +277,8 @@ public final class Field {
 				int base = rimBase(x, z);
 				int topY = base + height;
 				for (int y = -1; y <= topY; y++) {
-					bp.set(x, y, z, wallBlock(t, y - base, height, rnd));
+					BlockState styled = style == null ? null : style.wall(y - base, height, x, z);
+					bp.set(x, y, z, styled != null && usesStyledWall(t) ? styled : wallBlock(t, y - base, height, rnd));
 				}
 				switch (t) {
 					case CASTLE, DESERT, BADLANDS -> {
@@ -274,6 +293,14 @@ public final class Field {
 				}
 			}
 		}
+	}
+
+	/** Hedges, mushroom caps and terracotta bands keep their own look. */
+	private static boolean usesStyledWall(Theme t) {
+		return switch (t) {
+			case FOREST, JUNGLE, CHERRY, MUSHROOM, BADLANDS -> false;
+			default -> true;
+		};
 	}
 
 	private static BlockState wallBlock(Theme t, int above, int height, RandomSource rnd) {

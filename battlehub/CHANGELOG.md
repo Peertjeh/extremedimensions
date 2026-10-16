@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.15.0
+
+### Added
+* **Every generated arena looks different.** Floors follow one of the theme's colour gradients (several per
+  theme) in a random pattern: soft clouds, bands, rings, patches or marble veins, with frayed borders like a
+  real fade. Walls fade from their foot to their top. Bed Wars, SkyWars and the party games get it too.
+* **More variety in shape**: arenas from small to big (radius 13 to 24), spawns closer or further apart, walls
+  3 to 6 high, flat to hilly ground, and four new middles (a crater, a plateau, ruins and a floor mosaic). Island
+  arenas vary in how many satellites there are, how far away and how high.
+
 ## 1.14.0
 
 ### Added
