@@ -96,7 +96,8 @@ final class Palettes {
 					g("dark_prismarine", "prismarine_bricks", "prismarine_bricks", "prismarine"),
 					g("waxed_oxidized_copper", "waxed_weathered_copper", "waxed_exposed_copper", "waxed_copper_block"))),
 			Map.entry(Theme.SKY, List.of(
-					g("calcite", "smooth_quartz", "quartz_bricks", "chiseled_quartz_block"))));
+					g("calcite", "smooth_quartz", "quartz_bricks", "chiseled_quartz_block"),
+					g("stone", "diorite", "calcite", "white_concrete"))));
 
 	static List<String[]> floors(Theme t) {
 		return FLOORS.getOrDefault(t, List.of());
