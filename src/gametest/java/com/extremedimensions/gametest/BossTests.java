@@ -83,28 +83,30 @@ public class BossTests {
 		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
 		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
 		Runnable unforce = forceAround(helper, 3);
+		// Both steps are scheduled up front (a step scheduled from inside another upsets the test's list of steps)
+		boolean[] ok = {false};
+		int[] hoards = {0};
 		helper.runAfterDelay(5, () -> {
 			int arena = Config.ELDER_ARENA;
-			int hoards = DataStore.hoards().size();
+			hoards[0] = DataStore.hoards().size();
 			Config.ELDER_ARENA = 0;
-			boolean ok;
 			try {
-				ok = HollowService.summonMatriarch(p);
+				ok[0] = HollowService.summonMatriarch(p);
 			} finally {
 				Config.ELDER_ARENA = arena;
 			}
-			helper.runAfterDelay(2, () -> {
-				java.util.List<com.extremedimensions.elder.Matriarch> found = helper.getLevel().getEntitiesOfClass(com.extremedimensions.elder.Matriarch.class,
-						p.getBoundingBox().inflate(48));
-				found.forEach(com.extremedimensions.elder.MatriarchService::fade);
-				while (DataStore.hoards().size() > hoards) {
-					DataStore.hoards().remove(DataStore.hoards().size() - 1);
-				}
-				unforce.run();
-				check(helper, ok, "calling the Matriarch in creative failed");
-				check(helper, !found.isEmpty(), "only her nest came, not the Matriarch");
-				helper.succeed();
-			});
+		});
+		helper.runAfterDelay(7, () -> {
+			java.util.List<com.extremedimensions.elder.Matriarch> found = helper.getLevel().getEntitiesOfClass(com.extremedimensions.elder.Matriarch.class,
+					p.getBoundingBox().inflate(48));
+			found.forEach(com.extremedimensions.elder.MatriarchService::fade);
+			while (DataStore.hoards().size() > hoards[0]) {
+				DataStore.hoards().remove(DataStore.hoards().size() - 1);
+			}
+			unforce.run();
+			check(helper, ok[0], "calling the Matriarch in creative failed");
+			check(helper, !found.isEmpty(), "only her nest came, not the Matriarch");
+			helper.succeed();
 		});
 	}
 
@@ -312,6 +314,13 @@ public class BossTests {
 		// It must not die to the needles while the rings are counted
 		p.getAbilities().invulnerable = true;
 		Runnable unforce = forceAround(helper, 3);
+		// Both steps are scheduled up front (a step scheduled from inside another upsets the test's list of steps)
+		Runnable[] after = {null};
+		helper.runAfterDelay(50, () -> {
+			if (after[0] != null) {
+				after[0].run();
+			}
+		});
 		helper.runAfterDelay(5, () -> {
 			int arena = Config.ELDER_ARENA, rings = Config.WEAVER_ULTIMATE_RINGS, seconds = Config.ELDER_ULTIMATE_SECONDS;
 			Config.ELDER_ARENA = 0;
@@ -336,12 +345,12 @@ public class BossTests {
 			check(helper, came && w != null, "the Weaver did not come");
 			WeaverService.force(w, ElderBoss.ULTIMATE);
 			// Six seconds long, its rings fire a quarter of the way in (30 ticks) and sweep for half of it (60 ticks)
-			helper.runAfterDelay(45, () -> {
+			after[0] = () -> {
 				int beams = com.extremedimensions.elder.ElderStrikes.beamsOf(w);
 				restore.run();
 				check(helper, beams == 2, "its ultimate sweeps %s beams, not two rings", beams);
 				helper.succeed();
-			});
+			};
 		});
 	}
 
@@ -443,11 +452,16 @@ public class BossTests {
 		for (int i = 1; i <= 4; i++) {
 			level.setBlock(ground.above(i), Blocks.AIR.defaultBlockState(), 3);
 		}
-		ElderTerrain.column(level, ground.getX() + 0.5, ground.getY() + 1, ground.getZ() + 0.5, 3, Blocks.MANGROVE_ROOTS, 5);
-		check(helper, level.getBlockState(ground.above()).is(Blocks.MANGROVE_ROOTS), "no thorns rose out of the ground");
-		check(helper, level.getBlockState(ground.above(3)).is(Blocks.MANGROVE_ROOTS), "the thorns did not rise three blocks");
+		// A block no Elder ever raises or strews, so another test's Elder fighting nearby cannot muddle what is seen
+		net.minecraft.world.level.block.Block thorn = Blocks.CYAN_STAINED_GLASS;
+		ElderTerrain.column(level, ground.getX() + 0.5, ground.getY() + 1, ground.getZ() + 0.5, 3, thorn, 5);
+		check(helper, level.getBlockState(ground.above()).is(thorn), "no thorns rose out of the ground");
+		check(helper, level.getBlockState(ground.above(3)).is(thorn), "the thorns did not rise three blocks");
+		check(helper, ElderTerrain.temporary(level, ground.above(2)), "raised thorns are not known as temporary");
 		helper.runAfterDelay(30, () -> {
-			check(helper, level.getBlockState(ground.above()).isAir() && level.getBlockState(ground.above(3)).isAir(), "the thorns did not sink back");
+			check(helper, !level.getBlockState(ground.above()).is(thorn) && !level.getBlockState(ground.above(3)).is(thorn)
+					&& !ElderTerrain.temporary(level, ground.above(2)), "the thorns did not sink back (%s, %s)", level.getBlockState(ground.above()),
+					level.getBlockState(ground.above(3)));
 			helper.succeed();
 		});
 	}

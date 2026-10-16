@@ -64,6 +64,8 @@
   there left you beyond instead of at home.
 - Expedition time and active time were lost on a relog; world data is written with every world save.
 - Blocks of an Elder's arena and its temporary blocks dropped items when broken or blown up.
+- Thorns and chains an Elder raised stayed for good if their ground was unloaded when they were due to sink back;
+  they sink back once it is loaded again.
 - An Elder killed by another Elder could crash the server; boss bars stayed with players who had left.
 - Settings outside sensible bounds (a sync interval of 0, negative or non-numeric values) could crash the server; they
   are kept within bounds now.

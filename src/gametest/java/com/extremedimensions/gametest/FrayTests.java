@@ -88,33 +88,37 @@ public class FrayTests {
 	 * this runs as the second half of the Seam's performance test ({@link PerfTests#seamStructures}), never beside it;
 	 * it ends the test.
 	 */
-	static void seamBuildsBeforeAWatcher(GameTestHelper helper) {
+	static void seamBuildsBeforeAWatcher(GameTestHelper helper, int start) {
+		// Every step is scheduled here, up front: a step scheduled from inside another one would upset the test's own
+		// list of steps while it is being run through
 		ServerLevel level = helper.getLevel();
 		BlockPos o = helper.absolutePos(BlockPos.ZERO);
 		int base = Math.max(o.getY() + 3, 8);
-		ServerPlayer p = TestPlayers.survivor(helper, "test-watcher");
-		p.teleportTo(o.getX() + 1.5, base, o.getZ() + 1.5);
 		int range = Config.SEAM_FLY_RANGE;
-		Config.SEAM_FLY_RANGE = 48;
-		SeamArchitect.Plan wall = new SeamArchitect.Plan();
-		wall.cell = "test@wall";
-		for (int y = 1; y <= 3; y++) {
-			for (int z = 4; z <= 6; z++) {
-				wall.set(o.getX() + 7, base + y, o.getZ() + z, Blocks.STONE.defaultBlockState());
-			}
-		}
-		// Right under the watcher's feet: the ground is simply there
-		wall.set(o.getX() + 1, base - 1, o.getZ() + 1, Blocks.STONE.defaultBlockState());
-		wall.queue();
 		BlockPos corner = new BlockPos(o.getX() + 7, base + 2, o.getZ() + 5);
 		BlockPos feet = new BlockPos(o.getX() + 1, base - 1, o.getZ() + 1);
 		Runnable restore = () -> {
 			Config.SEAM_FLY_RANGE = range;
 			SeamArchitect.clear();
 		};
+		helper.runAfterDelay(start, () -> {
+			ServerPlayer p = TestPlayers.survivor(helper, "test-watcher");
+			p.teleportTo(o.getX() + 1.5, base, o.getZ() + 1.5);
+			Config.SEAM_FLY_RANGE = 48;
+			SeamArchitect.Plan wall = new SeamArchitect.Plan();
+			wall.cell = "test@wall";
+			for (int y = 1; y <= 3; y++) {
+				for (int z = 4; z <= 6; z++) {
+					wall.set(o.getX() + 7, base + y, o.getZ() + z, Blocks.STONE.defaultBlockState());
+				}
+			}
+			// Right under the watcher's feet: the ground is simply there
+			wall.set(o.getX() + 1, base - 1, o.getZ() + 1, Blocks.STONE.defaultBlockState());
+			wall.queue();
+		});
 		for (int t = 1; t <= 50; t++) {
 			int tick = t;
-			helper.runAfterDelay(t, () -> {
+			helper.runAfterDelay(start + t, () -> {
 				SeamArchitect.tick(level, 5_000_000L);
 				if (tick == 3) {
 					boolean ok = SeamArchitect.flying() > 0 && level.getBlockState(corner).isAir() && level.getBlockState(feet).is(Blocks.STONE);
@@ -126,7 +130,7 @@ public class FrayTests {
 				}
 			});
 		}
-		helper.runAfterDelay(52, () -> {
+		helper.runAfterDelay(start + 52, () -> {
 			int stood = 0;
 			for (int y = 1; y <= 3; y++) {
 				for (int z = 4; z <= 6; z++) {
