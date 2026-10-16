@@ -292,6 +292,20 @@ public final class SeamArchitect {
 			return Math.sqrt(far);
 		}
 
+		/** The block the plan lays at a spot, or null (for the tests). */
+		public BlockState at(int x, int y, int z) {
+			return blocks.get(BlockPos.asLong(x, y, z));
+		}
+
+		/** The height of the plan's highest block (0 for an empty plan). */
+		public int highest() {
+			int top = 0;
+			for (long k : blocks.keySet()) {
+				top = Math.max(top, BlockPos.getY(k));
+			}
+			return top;
+		}
+
 		/** How many of the plan's blocks are of a block. */
 		public int count(net.minecraft.world.level.block.Block block) {
 			int n = 0;

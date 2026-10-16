@@ -240,6 +240,19 @@ public final class Config {
 	public static int SEAM_FRAY_THINNED = 2;
 	/** Chance a Thinned slain in the Fray leaves a Tether Fragment. */
 	public static double SEAM_FRAY_FRAGMENT_CHANCE = 0.12;
+	/**
+	 * Whether a Return Gate stands where visitors arrive in the Seam, its rift between its pylons and a bridge from
+	 * its island to the nearest one (1 = on, 0 = off: a bare island and the rift beside the landing).
+	 */
+	public static int SEAM_RETURN_GATE = 1;
+	/** Height in blocks of the column of gold light over the rift home, seen through the fog from anywhere in the Seam (0 = none). */
+	public static int SEAM_RIFT_BEAM = 120;
+	/** Whether the HUD points the way to the rift home beside its distance (1 = on, 0 = off). */
+	public static int SEAM_RIFT_COMPASS = 1;
+	/** Blocks within which the rift home can be heard humming (0 = silent). */
+	public static int SEAM_RIFT_HUM = 40;
+	/** Whether the rift home wanders only over its gate's threshold (1) or over any ground (0); a Restless Rift trial always lets it roam. */
+	public static int SEAM_RIFT_LEASH = 1;
 
 	// --- After the Dragon and the Mending --------------------------------------------------------
 

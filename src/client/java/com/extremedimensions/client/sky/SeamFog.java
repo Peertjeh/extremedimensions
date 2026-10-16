@@ -14,6 +14,13 @@ public final class SeamFog {
 
 	private static double density = 0.5;
 	private static long last;
+	/** How far the fog let anyone see when it was last set up (blocks). */
+	private static float lastEnd = 75;
+
+	/** How far the fog lets anyone see now (blocks), for what must show through it. */
+	public static float end() {
+		return lastEnd;
+	}
 
 	public static void apply(FogData data) {
 		Minecraft mc = Minecraft.getInstance();
@@ -41,5 +48,6 @@ public final class SeamFog {
 		}
 		data.environmentalStart = Math.min(data.environmentalStart, start);
 		data.environmentalEnd = Math.min(data.environmentalEnd, end);
+		lastEnd = data.environmentalEnd;
 	}
 }

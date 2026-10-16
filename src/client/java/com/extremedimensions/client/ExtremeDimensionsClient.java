@@ -117,6 +117,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> com.extremedimensions.client.fx.CameraShake.tick());
 		ClientTickEvents.END_CLIENT_TICK.register(SeamSky::prepare);
 		ClientTickEvents.END_CLIENT_TICK.register(SeamAmbience::tick);
+		ClientTickEvents.END_CLIENT_TICK.register(com.extremedimensions.client.fx.RiftBeacon::tick);
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ClientState::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.coop.ClientFallen::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.fx.BossCinema::reset));

@@ -91,11 +91,16 @@ public final class AttackFx {
 
 	// ------------------------------------------------------------------ building blocks
 
-	private static AttackFxParticle make(ClientLevel level, int family, int frame, double x, double y, double z) {
+	/** Whether the sprites are stitched yet (they are once the particle atlas is). */
+	static boolean ready() {
+		return SPRITES[BEAM] != null;
+	}
+
+	static AttackFxParticle make(ClientLevel level, int family, int frame, double x, double y, double z) {
 		return new AttackFxParticle(level, x, y, z, SPRITES[family], COUNT[family], frame);
 	}
 
-	private static AttackFxParticle add(AttackFxParticle p) {
+	static AttackFxParticle add(AttackFxParticle p) {
 		Minecraft.getInstance().particleEngine.add(p.start());
 		return p;
 	}

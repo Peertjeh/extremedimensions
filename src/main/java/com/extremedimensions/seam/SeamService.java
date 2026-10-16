@@ -236,21 +236,51 @@ public final class SeamService {
 		int top = 96;
 		SeamArchitect.Plan arrival = new SeamArchitect.Plan();
 		Random rnd = new Random(x * 31L + z);
-		SeamArchitect.island(arrival, rnd, SeamArchitect.Shape.of(rnd, x, top, z, 12), true);
-		SeamArchitect.lamp(arrival, rnd, x - 3, top + 1, z - 3);
-		// The ground round the landing is there at once; the rest of the island flies in around the one arriving
-		arrival.placeAround(seam, x + 2, z + 0.5, 7);
-		for (int dx = -1; dx <= 5; dx++) {
-			for (int dz = -1; dz <= 1; dz++) {
-				// the landing and the rift stand clear
-				seam.setBlock(new BlockPos(x + dx, top + 1, z + dz), Blocks.AIR.defaultBlockState(), 2);
+		SeamArchitect.Shape shape = SeamArchitect.Shape.of(rnd, x, top, z, 12);
+		double landX = x + 0.5, landY = top + 1, landZ = z + 0.5;
+		float yaw = p.getYRot();
+		double riftX = x + 3.5, riftY = top + 1, riftZ = z + 0.5;
+		boolean gate = Config.SEAM_RETURN_GATE > 0;
+		if (gate) {
+			// The gate stands on the far side of the island from the bridge, looking down the island to it
+			Approach way = approach(x, z, shape);
+			Direction out = way.dir();
+			int tx = x - out.getStepX() * ReturnGate.OFFSET, tz = z - out.getStepZ() * ReturnGate.OFFSET;
+			// The gate's rock first; the arrival island is laid over it where they meet
+			SeamArchitect.island(arrival, rnd, SeamArchitect.Shape.of(rnd, tx, top, tz, ReturnGate.ROCK), true);
+			SeamArchitect.island(arrival, rnd, shape, true);
+			ReturnGate.Gate g = ReturnGate.build(arrival, rnd, tx, top, tz, out);
+			if (way.to() != null) {
+				boolean alongX = out.getAxis() == Direction.Axis.X;
+				boolean ahead = out.getAxisDirection() == Direction.AxisDirection.POSITIVE;
+				SeamArchitect.bridge(arrival, rnd, ahead ? shape : way.to(), ahead ? way.to() : shape, alongX);
+			}
+			landX = g.landX();
+			landY = g.landY();
+			landZ = g.landZ();
+			yaw = g.yaw();
+			riftX = g.riftX();
+			riftY = g.riftY();
+			riftZ = g.riftZ();
+		} else {
+			SeamArchitect.island(arrival, rnd, shape, true);
+			SeamArchitect.lamp(arrival, rnd, x - 3, top + 1, z - 3);
+		}
+		// The ground under the one arriving is there at once; the rest of the island (its gate too) flies in around them
+		arrival.placeAround(seam, gate ? landX : x + 2, gate ? landZ : z + 0.5, gate ? 4.5 : 7);
+		if (!gate) {
+			for (int dx = -1; dx <= 5; dx++) {
+				for (int dz = -1; dz <= 1; dz++) {
+					// the landing and the rift stand clear
+					seam.setBlock(new BlockPos(x + dx, top + 1, z + dz), Blocks.AIR.defaultBlockState(), 2);
+				}
 			}
 		}
 		addFalls(arrival.falls);
 		DataStore.seamCells().add("a@" + x + "," + z);
-		d.riftX = x + 3.5;
-		d.riftY = top + 1;
-		d.riftZ = z + 0.5;
+		d.riftX = riftX;
+		d.riftY = riftY;
+		d.riftZ = riftZ;
 		d.inSeam = true;
 		d.seamVisits++;
 		d.seamMax = Math.max(30, Config.SEAM_SECONDS) + Config.WOVEN_SEAM_SECONDS * TetherService.carriedTier(p, d)
@@ -260,7 +290,8 @@ public final class SeamService {
 		// A Rift Trial taken up at home begins with this visit
 		com.extremedimensions.trial.TrialService.begin(p, d, x, z);
 		d.hasRopeEnd = false;
-		WorldFx.tp(p, SEAM_ID, x + 0.5, top + 1, z + 0.5);
+		// Out of the gate, facing away from it, the way home at their back
+		WorldFx.tp(p, SEAM_ID, landX, landY, landZ, yaw, 0);
 		WorldFx.sound(p, "extremedimensions:rift_open", 1.0f, 0.8f);
 		WorldFx.fx(p, Fx.START_END, 0);
 		Advancements.grant(p, Advancements.SEAM_ENTERED);
@@ -316,15 +347,24 @@ public final class SeamService {
 		TetherService.lay(p, d);
 		SeamDepth.tick(p, d, tick);
 		String dim = SEAM_ID;
-		// The return rift: a column of soul light that drifts
+		// The return rift: sparks of gold spiralling up, and the pull of a portal (the column over it is the client's)
 		if (tick % 3 == 0) {
 			double a = tick * 0.2;
-			WorldFx.particleIn(dim, "extremedimensions:soul_mote", d.riftX + Math.cos(a) * 0.5, d.riftY + 0.6 + (tick % 30) / 15.0,
-					d.riftZ + Math.sin(a) * 0.5, 0, 0, 0, 0, 1);
+			WorldFx.particleIn(dim, "extremedimensions:ember_mote", d.riftX + Math.cos(a) * 0.6, d.riftY + 0.3 + (tick % 30) / 15.0,
+					d.riftZ + Math.sin(a) * 0.6, 0, 0, 0, 0, 1);
 			WorldFx.particleIn(dim, "minecraft:reverse_portal", d.riftX, d.riftY + 1, d.riftZ, 0.15, 0.5, 0.15, 0.04, 2);
 		}
-		if (tick % (com.extremedimensions.trial.TrialService.restless(d) ? 100 : 200) == 0) {
-			drift(d);
+		boolean restless = com.extremedimensions.trial.TrialService.restless(d);
+		if (tick % (restless ? 100 : 200) == 0) {
+			drift(seam(), d, Config.SEAM_RIFT_LEASH > 0 && !restless);
+		}
+		// It hums: a sound from the rift itself, so it can be found by ear in the fog
+		if (Config.SEAM_RIFT_HUM > 0 && tick % 80 == 0 && p.distanceToSqr(d.riftX, d.riftY, d.riftZ) < Config.SEAM_RIFT_HUM * Config.SEAM_RIFT_HUM) {
+			float vol = Config.SEAM_RIFT_HUM / 16f;
+			WorldFx.soundFor(p, "minecraft:block.beacon.ambient", "ambient", d.riftX, d.riftY + 1, d.riftZ, vol, 0.62f);
+			if (ThreadLocalRandom.current().nextInt(3) == 0) {
+				WorldFx.soundFor(p, "minecraft:block.amethyst_block.chime", "ambient", d.riftX, d.riftY + 1.5, d.riftZ, vol * 0.6f, 0.7f);
+			}
 		}
 		if (tick % 160 == 0) {
 			WorldFx.soundSelf(p, "extremedimensions:seam_ambient", 0.5f, 1.0f);
@@ -347,14 +387,28 @@ public final class SeamService {
 		villages(p);
 	}
 
-	/** The rift wanders a block at a time, but never off solid ground. */
-	private static void drift(PlayerData d) {
-		ServerLevel seam = seam();
+	/**
+	 * The rift wanders a block at a time, never off solid ground. Leashed, it keeps to the floor it stands on (its
+	 * gate's threshold); let loose (a Restless Rift trial, or the leash turned off) it roams, a step up or down too.
+	 */
+	public static void drift(ServerLevel seam, PlayerData d, boolean leashed) {
 		Direction dir = Direction.Plane.HORIZONTAL.getRandomDirection(seam.getRandom());
-		BlockPos next = BlockPos.containing(d.riftX + dir.getStepX(), d.riftY, d.riftZ + dir.getStepZ());
-		if (seam.getBlockState(next).isAir() && !seam.getBlockState(next.below()).isAir()) {
-			d.riftX = next.getX() + 0.5;
-			d.riftZ = next.getZ() + 0.5;
+		BlockPos at = BlockPos.containing(d.riftX, d.riftY, d.riftZ);
+		BlockState floor = seam.getBlockState(at.below());
+		BlockPos next = at.relative(dir);
+		for (int dy : leashed ? new int[] {0} : new int[] {0, 1, -1}) {
+			BlockPos n = next.above(dy);
+			BlockState under = seam.getBlockState(n.below());
+			if (!seam.getBlockState(n).isAir() || !seam.getBlockState(n.above()).isAir() || !under.isFaceSturdy(seam, n.below(), Direction.UP)) {
+				continue;
+			}
+			if (leashed && !under.is(floor.getBlock())) {
+				return;
+			}
+			d.riftX = n.getX() + 0.5;
+			d.riftY = n.getY();
+			d.riftZ = n.getZ() + 0.5;
+			return;
 		}
 	}
 
@@ -485,6 +539,83 @@ public final class SeamService {
 			}
 		}
 		return false;
+	}
+
+	/** The way an arrival island looks out (towards the island it is joined to), and the island its bridge runs to. */
+	private record Approach(Direction dir, SeamArchitect.Shape to) {}
+
+	/**
+	 * Where the arrival island is joined to the rest of the Seam: the nearest island along one of the four directions
+	 * that a bridge can reach without a landing as wide as a square, or one the arrival island already touches (no
+	 * bridge then). Remembered for the spot ("g@x,z=dir[,cx,cz,r]"), so whoever comes back by the same rift finds the
+	 * same gate and the same bridge, however the islands round it were built since.
+	 */
+	private static Approach approach(int x, int z, SeamArchitect.Shape a) {
+		String prefix = "g@" + x + "," + z + "=";
+		for (String key : DataStore.seamCells()) {
+			if (!key.startsWith(prefix)) {
+				continue;
+			}
+			try {
+				String[] v = key.substring(prefix.length()).split(",");
+				Direction dir = Direction.from2DDataValue(Integer.parseInt(v[0]));
+				if (v.length < 4) {
+					return new Approach(dir, null);
+				}
+				int cx = Integer.parseInt(v[1]), cz = Integer.parseInt(v[2]), r = Integer.parseInt(v[3]);
+				int[] c = center(cx, cz);
+				return new Approach(dir, SeamArchitect.Shape.of(new Random(hash(cx, cz, seed() + 7)), c[0], c[1], c[2], r));
+			} catch (RuntimeException e) {
+				break;
+			}
+		}
+		// An island built before this arrival was designed without it; one still to come will be designed with it
+		List<int[]> before = arrivals();
+		List<int[]> with = new ArrayList<>(before);
+		with.add(new int[] {x, z});
+		int acx = Math.floorDiv(x, CELL), acz = Math.floorDiv(z, CELL);
+		Direction best = null;
+		SeamArchitect.Shape to = null;
+		String cell = "";
+		double score = Double.MAX_VALUE;
+		for (int cx = acx - 1; cx <= acx + 1; cx++) {
+			for (int cz = acz - 1; cz <= acz + 1; cz++) {
+				int[] c = center(cx, cz);
+				if (nearHeart(c)) {
+					continue;
+				}
+				boolean built = DataStore.seamCells().contains("c@" + cx + "," + cz);
+				SeamArchitect.Shape s = shapeOf(cx, cz, new Random(hash(cx, cz, seed() + 7)), built ? before : with);
+				double dx = s.x() - a.x(), dz = s.z() - a.z();
+				boolean alongX = Math.abs(dx) >= Math.abs(dz);
+				double along = Math.abs(alongX ? dx : dz), side = Math.abs(alongX ? dz : dx);
+				boolean touch = Math.sqrt(dx * dx + dz * dz) - s.r() - a.r() <= 2;
+				boolean ahead = alongX ? dx > 0 : dz > 0;
+				if (!touch && (side > 30 || !(ahead ? SeamArchitect.canBridge(a, s, alongX) : SeamArchitect.canBridge(s, a, alongX)))) {
+					continue;
+				}
+				double sc = touch ? 0 : along + 1.5 * side;
+				if (sc < score) {
+					score = sc;
+					best = alongX ? (dx > 0 ? Direction.EAST : Direction.WEST) : (dz > 0 ? Direction.SOUTH : Direction.NORTH);
+					to = touch ? null : s;
+					cell = touch ? "" : "," + cx + "," + cz + "," + s.r();
+				}
+			}
+		}
+		// Beside the Heart, the gate looks to it
+		double hx = MendingService.HX - a.x(), hz = MendingService.HZ - a.z();
+		boolean heart = DataStore.heartBuilt() || MendingService.opensNearHeart();
+		if (heart && Math.sqrt(hx * hx + hz * hz) - MendingService.HR - a.r() <= 2) {
+			best = Math.abs(hx) >= Math.abs(hz) ? (hx > 0 ? Direction.EAST : Direction.WEST) : (hz > 0 ? Direction.SOUTH : Direction.NORTH);
+			to = null;
+			cell = "";
+		}
+		if (best == null) {
+			best = Direction.from2DDataValue(Math.floorMod(x * 7 + z * 13, 4));
+		}
+		DataStore.seamCells().add(prefix + best.get2DDataValue() + cell);
+		return new Approach(best, to);
 	}
 
 	/** Every rift's arrival island (x, z), copied on the server thread so a design can read it on its own. */

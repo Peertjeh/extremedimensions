@@ -61,9 +61,10 @@ public class MoteParticle extends SingleQuadParticle {
 				this.baseSize = 0.05F + this.random.nextFloat() * 0.05F;
 			}
 			case DUST -> {
-				this.xd = (this.random.nextFloat() - 0.5F) * 0.006;
+				// what is given is the wind it drifts on (in the Seam, a breath of air towards the way home)
+				this.xd = xd + (this.random.nextFloat() - 0.5F) * 0.006;
 				this.yd = -0.01 - this.random.nextFloat() * 0.012;
-				this.zd = (this.random.nextFloat() - 0.5F) * 0.006;
+				this.zd = zd + (this.random.nextFloat() - 0.5F) * 0.006;
 				this.friction = 1.0F;
 				this.lifetime = 160 + this.random.nextInt(120);
 				this.baseSize = 0.025F + this.random.nextFloat() * 0.025F;

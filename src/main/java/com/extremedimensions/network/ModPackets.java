@@ -19,10 +19,11 @@ public final class ModPackets {
 	 * tetherDist: -1 = not bound, else blocks to the arrival portal (beyond) or to the anchor (Overworld).
 	 * guide: steps of the first-expedition guide done (Guide.STEPS = finished).
 	 * trial: the Rift Trial under way in the Seam, "kind;twist;score;bronze;silver;gold" (empty without one).
+	 * riftX/riftY/riftZ: where the rift home hangs in the Seam (its floor), for the column of light and the compass.
 	 */
 	public record StatePayload(int nearNether, int nearEnd, int runCharge, int runMax, int dimCode, int drainX100,
 							int expeditions, int collapses, int longestRun, int runSecs, String penalties,
-							int scars, int tetherDist, int guide, String trial) implements CustomPacketPayload {
+							int scars, int tetherDist, int guide, String trial, float riftX, float riftY, float riftZ) implements CustomPacketPayload {
 		public static final Type<StatePayload> TYPE = new Type<>(ExtremeDimensions.id("state"));
 		public static final StreamCodec<FriendlyByteBuf, StatePayload> CODEC = StreamCodec.ofMember(StatePayload::write, StatePayload::read);
 
@@ -42,12 +43,15 @@ public final class ModPackets {
 			buf.writeVarInt(tetherDist);
 			buf.writeVarInt(guide);
 			buf.writeUtf(trial);
+			buf.writeFloat(riftX);
+			buf.writeFloat(riftY);
+			buf.writeFloat(riftZ);
 		}
 
 		private static StatePayload read(FriendlyByteBuf buf) {
 			return new StatePayload(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
 					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(),
-					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf());
+					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(), buf.readFloat(), buf.readFloat(), buf.readFloat());
 		}
 
 		@Override

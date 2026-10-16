@@ -32,6 +32,8 @@ public final class ClientState {
 	public static int scars = 0;
 	/** -1 = not bound, else blocks to the arrival portal (beyond) or the anchor (Overworld). */
 	public static int tetherDist = -1;
+	/** Where the rift home hangs (its floor), while in the Seam. */
+	public static double riftX, riftY, riftZ;
 	/** The Rift Trial under way: "kind;twist;score;bronze;silver;gold", or "" without one. */
 	public static String trial = "";
 	public static long syncMs = 0;
@@ -114,6 +116,9 @@ public final class ClientState {
 		tetherDist = s.tetherDist();
 		guide = s.guide();
 		trial = s.trial();
+		riftX = s.riftX();
+		riftY = s.riftY();
+		riftZ = s.riftZ();
 		syncMs = System.currentTimeMillis();
 		// First update from the Overworld after a Collapse: start the fade-in
 		if (collapseAt > 0 && homeAt <= collapseAt && dimCode == 0 && syncMs - collapseAt > 2000) {
@@ -127,6 +132,11 @@ public final class ClientState {
 	 * server speaks again; a server without the mod never does.
 	 */
 	private static Object stateLevel = null;
+
+	/** In the Seam, with a rift home to go back through. */
+	public static boolean riftKnown() {
+		return dimCode == 3 && tetherDist >= 0 && !away();
+	}
 
 	/** In another mod's world, or in a world the server has said nothing about: the mod sleeps there, and its HUD with it. */
 	public static boolean away() {

@@ -227,8 +227,11 @@ public class ChargeHud implements HudElement {
 		Ui.meter(g, px + 7, py + 17, pw - 14, 6, remaining / Math.max(1, ClientState.runMax), barColor, 1.0, true);
 
 		StringBuilder info = new StringBuilder();
+		// In the Seam, a gold arrow beside the distance points the way home, turning as the player turns
+		boolean compass = seam && ClientState.riftKnown() && Config.SEAM_RIFT_COMPASS > 0 && mcPlayer() != null;
 		if (ClientState.tetherDist >= 0) {
-			info.append(Ui.tr(seam ? "hud.extremedimensions.rift_distance" : "hud.extremedimensions.tether_distance", ClientState.tetherDist));
+			int dist = compass ? riftDistance() : ClientState.tetherDist;
+			info.append(Ui.tr(seam ? "hud.extremedimensions.rift_distance" : "hud.extremedimensions.tether_distance", dist));
 		}
 		if (ClientState.drainX100 > 100) {
 			if (info.length() > 0) {
@@ -239,10 +242,60 @@ public class ChargeHud implements HudElement {
 		if (info.length() > 0) {
 			int dc = ClientState.drainX100 >= 300 ? Ui.DANGER : ClientState.drainX100 >= 180 ? Ui.WARN : Ui.MUTED;
 			String s = info.toString();
-			g.text(font, s, px + pw / 2 - font.width(s) / 2, py + 26, Ui.argb(255, dc));
+			int tx = px + pw / 2 - font.width(s) / 2 + (compass ? 6 : 0);
+			g.text(font, s, tx, py + 26, Ui.argb(255, dc));
+			if (compass) {
+				arrow(g, tx - 7, py + 30, riftDistance() < 2 ? Float.NaN : riftBearing());
+			}
 		}
 		if (trial != null) {
 			trialLine(g, font, trial, px, py + TIMER_H - 2, pw);
+		}
+	}
+
+	/** The gold of the way home. */
+	private static final int HOME = 0xFFCC66;
+
+	private static net.minecraft.world.entity.player.Player mcPlayer() {
+		return Minecraft.getInstance().player;
+	}
+
+	/** Blocks to the rift home across the ground, measured now (the server's count comes once a second). */
+	private static int riftDistance() {
+		var p = mcPlayer();
+		double dx = ClientState.riftX - p.getX(), dz = ClientState.riftZ - p.getZ();
+		return (int) Math.sqrt(dx * dx + dz * dz);
+	}
+
+	/** Which way the rift home lies from where the player looks, in radians clockwise (0 straight ahead). */
+	private static float riftBearing() {
+		var p = mcPlayer();
+		double world = Math.atan2(ClientState.riftZ - p.getZ(), ClientState.riftX - p.getX());
+		double facing = Math.toRadians(p.getYRot()) + Math.PI / 2;
+		return (float) (world - facing);
+	}
+
+	/**
+	 * A small gold arrow centred on ({@code cx}, {@code cy}) and turned by {@code angle} (clockwise, 0 is up), over a
+	 * dark one a pixel lower so it reads on any sky; a gold diamond instead when the angle is NaN (it is right here).
+	 */
+	private static void arrow(GuiGraphicsExtractor g, int cx, int cy, float angle) {
+		for (int pass = 0; pass < 2; pass++) {
+			int color = pass == 0 ? Ui.argb(200, 0x000000) : Ui.argb(255, HOME);
+			g.pose().pushMatrix();
+			g.pose().translate(cx + 0.5f, cy + (pass == 0 ? 1.5f : 0.5f));
+			if (Float.isNaN(angle)) {
+				g.pose().rotate((float) (Math.PI / 4));
+				g.fill(-2, -2, 2, 2, color);
+			} else {
+				g.pose().rotate(angle);
+				// the head, widening down from the tip, then the shaft
+				for (int i = 0; i < 4; i++) {
+					g.fill(-i - 1, -5 + i, i + 1, -4 + i, color);
+				}
+				g.fill(-1, -1, 1, 3, color);
+			}
+			g.pose().popMatrix();
 		}
 	}
 

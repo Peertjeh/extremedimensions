@@ -221,6 +221,14 @@ public final class WorldFx {
 		}
 	}
 
+	/** As {@link #tp(ServerPlayer, String, double, double, double)}, turned to face a way. */
+	public static void tp(ServerPlayer p, String dim, double x, double y, double z, float yaw, float pitch) {
+		ServerLevel level = level(dim);
+		if (level != null) {
+			p.teleportTo(level, x, y, z, Set.of(), yaw, pitch, true);
+		}
+	}
+
 	/** A vanilla effect as {@code /effect give ... true} would give it: no particles, no icon. */
 	public static void effect(ServerPlayer p, Holder<MobEffect> effect, int seconds, int amplifier) {
 		p.addEffect(new MobEffectInstance(effect, seconds * 20, amplifier, false, false));

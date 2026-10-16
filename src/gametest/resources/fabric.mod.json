@@ -19,7 +19,8 @@
 			"com.extremedimensions.gametest.TribeTests",
 			"com.extremedimensions.gametest.FrayTests",
 			"com.extremedimensions.gametest.JournalTests",
-			"com.extremedimensions.gametest.MasonryTests"
+			"com.extremedimensions.gametest.MasonryTests",
+			"com.extremedimensions.gametest.GateTests"
 		],
 		"fabric-client-gametest": [
 			"com.extremedimensions.gametest.ClientShots"

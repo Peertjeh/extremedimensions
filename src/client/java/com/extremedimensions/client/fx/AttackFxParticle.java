@@ -135,6 +135,11 @@ public class AttackFxParticle extends SingleQuadParticle {
 		return this.zd;
 	}
 
+	/** Puts it somewhere else; it is drawn sliding there over the tick. */
+	void place(double px, double py, double pz) {
+		this.setPos(px, py, pz);
+	}
+
 	void velocity(double vx, double vy, double vz) {
 		this.xd = vx;
 		this.yd = vy;

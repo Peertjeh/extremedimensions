@@ -176,6 +176,12 @@ public class ClientShots implements FabricClientGameTest {
 	}
 
 	/** The player turns to the Elder, looking a little up at it (and no longer burning, so the shot is clear). */
+	/** Puts the camera at a spot, turned to face a point across the ground, at a pitch. */
+	private static void eye(TestSingleplayerContext sp, double x, double y, double z, double tx, double tz, float pitch) {
+		float yaw = (float) Math.toDegrees(Math.atan2(-(tx - x), tz - z));
+		sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s %.2f %.2f %.2f %.1f %.1f", x, y, z, yaw, pitch));
+	}
+
 	private static void face(TestSingleplayerContext sp, String name) {
 		sp.getServer().runOnServer(s -> player(s).setRemainingFireTicks(0));
 		sp.getServer().runCommand("execute as @a at @s facing entity @e[type=extremedimensions:" + name + ",limit=1,sort=nearest] feet run tp @s ~ ~ ~ ~ ~");
@@ -849,6 +855,35 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("17_seam_rising");
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("17_seam_risen");
+
+			// The Return Gate the visitor stepped out of: from the processional way, from the side, at its threshold,
+			// and from far out past the fog, where only the gold column over the rift still shows
+			double[] gate = sp.getServer().computeOnServer(s -> {
+				ServerPlayer p = player(s);
+				PlayerData d = DataStore.get(p.getUUID());
+				double yaw = Math.toRadians(p.getYRot());
+				return new double[] {d.riftX, d.riftY, d.riftZ, -Math.sin(yaw), Math.cos(yaw), p.getX(), p.getY(), p.getZ()};
+			});
+			sp.getServer().runCommand("gamemode spectator @a");
+			ctx.waitTicks(100);
+			double gx = gate[0], gy = gate[1], gz = gate[2], ox = gate[3], oz = gate[4], sx2 = -oz, sz2 = ox;
+			eye(sp, gx + ox * 27, gy + 6, gz + oz * 27, gx, gz, -16);
+			ctx.waitTicks(60);
+			ctx.takeScreenshot("19_gate_front");
+			eye(sp, gx + ox * 19 + sx2 * 24, gy + 9, gz + oz * 19 + sz2 * 24, gx, gz, -10);
+			ctx.waitTicks(50);
+			ctx.takeScreenshot("19_gate_side");
+			eye(sp, gx + ox * 6.5 + sx2 * 2.5, gy + 1.2, gz + oz * 6.5 + sz2 * 2.5, gx, gz, -6);
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("19_gate_threshold");
+			eye(sp, gx + ox * 170 + sx2 * 40, gy + 14, gz + oz * 170 + sz2 * 40, gx, gz, -4);
+			ctx.waitTicks(60);
+			ctx.takeScreenshot("19_gate_far");
+			// the column and the compass are drawn from where the server says the rift is
+			ctx.runOnClient(mc -> check(ClientState.riftKnown(), "the client does not know where the rift home is"));
+			// Back where the visitor stepped out, for what follows
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s %.2f %.2f %.2f", gate[5], gate[6], gate[7]));
+			ctx.waitTicks(10);
 
 			// The Fray: a well at the edge of the arrival island, and down on its knot among the strands
 			int[] well = sp.getServer().computeOnServer(s -> {

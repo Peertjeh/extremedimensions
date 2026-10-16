@@ -35,7 +35,8 @@ public final class Sync {
 				seam ? 100 : (int) Math.round(d.currentDrain * 100), d.expeditions, d.collapses,
 				(int) d.longestRun, (int) d.runTime, penalties(d), d.scars,
 				seam ? SeamService.riftDistance(p, d) : TetherService.distance(p, d), com.extremedimensions.guide.Guide.progress(d),
-				seam ? com.extremedimensions.trial.TrialService.hud(d) : ""));
+				seam ? com.extremedimensions.trial.TrialService.hud(d) : "",
+				seam ? (float) d.riftX : 0, seam ? (float) d.riftY : 0, seam ? (float) d.riftZ : 0));
 	}
 
 	/** The cards on offer: "@set" (beyond or overworld), then "id:multiplier:stacks:max:valuePerStack", comma separated. */

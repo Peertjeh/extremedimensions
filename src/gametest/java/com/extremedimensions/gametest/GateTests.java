@@ -1,0 +1,145 @@
+package com.extremedimensions.gametest;
+
+import static com.extremedimensions.gametest.CurseTests.check;
+
+import java.util.Random;
+
+import com.extremedimensions.data.DataStore;
+import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.registry.ModBlocks;
+import com.extremedimensions.seam.ReturnGate;
+import com.extremedimensions.seam.SeamArchitect;
+import com.extremedimensions.seam.SeamService;
+
+import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+
+/**
+ * The Return Gate: laid out whole whichever way it faces, its rift over the pale threshold with clear air to walk in,
+ * the visitor stepping out on its dais facing away from it; the rift keeping to its threshold while leashed and
+ * roaming (never off solid ground) when let loose; and a visitor arriving through a rift at a gate, who finds the same
+ * gate coming back by the same rift.
+ */
+public class GateTests {
+	@GameTest
+	public void theGateHoldsItsRiftWhicheverWayItFaces(GameTestHelper helper) {
+		int top = 99;
+		for (Direction front : Direction.Plane.HORIZONTAL) {
+			SeamArchitect.Plan plan = new SeamArchitect.Plan();
+			ReturnGate.Gate g = ReturnGate.build(plan, new Random(31), 0, top, 0, front);
+			int rx = Mth.floor(g.riftX()), ry = (int) g.riftY(), rz = Mth.floor(g.riftZ());
+			int lx = Mth.floor(g.landX()), ly = (int) g.landY(), lz = Mth.floor(g.landZ());
+			check(helper, plan.dropped == 0, "facing %s, the gate ran %s blocks over the build limit", front, plan.dropped);
+			check(helper, plan.reach(0, 0) <= ReturnGate.REACH, "facing %s, the gate reaches %s out", front, plan.reach(0, 0));
+			check(helper, plan.highest() - top >= 25, "facing %s, the gate is only %s blocks tall", front, plan.highest() - top);
+			check(helper, ry == top + 2 && ly == top + 2, "facing %s, the rift (%s) or the landing (%s) is not on the dais", front, ry, ly);
+			check(helper, lx - rx == front.getStepX() * 4 && lz - rz == front.getStepZ() * 4,
+					"facing %s, the visitor does not step out in front of the rift (%s,%s from it)", front, lx - rx, lz - rz);
+			check(helper, Math.abs(Mth.wrapDegrees(g.yaw() - front.toYRot())) < 0.01, "facing %s, the visitor looks the wrong way (%s)", front, g.yaw());
+			// The threshold: pale stones under the rift and around it, chiseled bricks before and behind
+			Direction side = front.getClockWise();
+			for (int a = -2; a <= 2; a++) {
+				for (int b = -1; b <= 1; b++) {
+					int x = rx + side.getStepX() * a + front.getStepX() * b, z = rz + side.getStepZ() * a + front.getStepZ() * b;
+					check(helper, is(plan.at(x, ry - 1, z), ModBlocks.POLISHED_PALE_HUSH_STONE), "facing %s, the threshold has a gap at %s,%s", front, a, b);
+				}
+				for (int b = -2; b <= 2; b += 4) {
+					int x = rx + side.getStepX() * a + front.getStepX() * b, z = rz + side.getStepZ() * a + front.getStepZ() * b;
+					check(helper, is(plan.at(x, ry - 1, z), ModBlocks.CHISELED_HUSH_BRICKS), "facing %s, the threshold is open at %s,%s", front, a, b);
+				}
+			}
+			// From the landing to the rift and on through the gate: clear for a visitor to walk, floor underfoot
+			for (int k = -4; k <= 4; k++) {
+				int x = rx + front.getStepX() * k, z = rz + front.getStepZ() * k;
+				check(helper, plan.at(x, ry - 1, z) != null, "facing %s, no floor %s blocks from the rift", front, k);
+				check(helper, !plan.has(x, ry, z) && !plan.has(x, ry + 1, z), "facing %s, the way through is blocked %s blocks from the rift", front, k);
+			}
+			check(helper, plan.count(Blocks.OCHRE_FROGLIGHT) >= 20, "facing %s, the gate has only %s gold lights", front, plan.count(Blocks.OCHRE_FROGLIGHT));
+			check(helper, plan.count(Blocks.CAMPFIRE) == 8, "facing %s, the braziers hold %s fires, not eight", front, plan.count(Blocks.CAMPFIRE));
+		}
+		helper.succeed();
+	}
+
+	/** Leashed, the rift keeps to the pale stones; let loose it roams, but never over the nothing or into a wall. */
+	@GameTest
+	public void theRiftKeepsToItsThreshold(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos o = helper.absolutePos(new BlockPos(4, 1, 4));
+		// A threshold of 3 by 3 pale stones, a ring of chiseled bricks, an outer ring of tiles; open air over all
+		for (int dx = -3; dx <= 3; dx++) {
+			for (int dz = -3; dz <= 3; dz++) {
+				int ring = Math.max(Math.abs(dx), Math.abs(dz));
+				Block b = ring <= 1 ? ModBlocks.POLISHED_PALE_HUSH_STONE : ring == 2 ? ModBlocks.CHISELED_HUSH_BRICKS : ModBlocks.HUSH_TILES;
+				level.setBlock(o.offset(dx, 0, dz), b.defaultBlockState(), 3);
+				for (int y = 1; y <= 3; y++) {
+					level.setBlock(o.offset(dx, y, dz), Blocks.AIR.defaultBlockState(), 3);
+				}
+			}
+		}
+		PlayerData d = new PlayerData();
+		d.riftX = o.getX() + 0.5;
+		d.riftY = o.getY() + 1;
+		d.riftZ = o.getZ() + 0.5;
+		for (int i = 0; i < 400; i++) {
+			SeamService.drift(level, d, true);
+			BlockPos at = BlockPos.containing(d.riftX, d.riftY, d.riftZ);
+			check(helper, level.getBlockState(at.below()).is(ModBlocks.POLISHED_PALE_HUSH_STONE), "the leashed rift left its threshold for %s", at);
+		}
+		boolean roamed = false;
+		for (int i = 0; i < 400; i++) {
+			SeamService.drift(level, d, false);
+			BlockPos at = BlockPos.containing(d.riftX, d.riftY, d.riftZ);
+			check(helper, level.getBlockState(at).isAir() && level.getBlockState(at.below()).isFaceSturdy(level, at.below(), Direction.UP),
+					"the loose rift stands in a wall or over nothing at %s", at);
+			roamed |= !level.getBlockState(at.below()).is(ModBlocks.POLISHED_PALE_HUSH_STONE);
+		}
+		check(helper, roamed, "let loose, the rift never left its threshold");
+		helper.succeed();
+	}
+
+	/** Through a rift far out: the visitor steps out of a gate, its rift on the threshold; back by the same rift, the same gate. */
+	@GameTest(maxTicks = 60)
+	public void aVisitorStepsOutOfTheGate(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "test-arrival");
+		ServerLevel home = helper.getLevel();
+		try {
+			p.teleportTo(home, 5000.5, 100, -7000.5, java.util.Set.of(), 0, 0, true);
+			check(helper, SeamService.summon(p), "the visitor was not let into the Seam");
+			PlayerData d = DataStore.get(p.getUUID());
+			ServerLevel seam = (ServerLevel) p.level();
+			check(helper, d.inSeam && seam.dimension().equals(SeamService.SEAM), "the visitor is not in the Seam");
+			BlockPos rift = BlockPos.containing(d.riftX, d.riftY, d.riftZ);
+			check(helper, seam.getBlockState(rift.below()).is(ModBlocks.POLISHED_PALE_HUSH_STONE), "the rift does not hang over the threshold (%s)",
+					seam.getBlockState(rift.below()));
+			double dx = p.getX() - d.riftX, dz = p.getZ() - d.riftZ;
+			check(helper, Math.abs(Math.sqrt(dx * dx + dz * dz) - 4) < 0.01, "the visitor stepped out %s blocks from the rift", Math.sqrt(dx * dx + dz * dz));
+			// facing away from the gate: the rift lies behind
+			double out = Math.toDegrees(Math.atan2(-dx, dz));
+			check(helper, Math.abs(Mth.wrapDegrees(p.getYRot() - (float) out)) < 1, "the visitor does not face out of the gate (yaw %s, out %s)", p.getYRot(), out);
+			check(helper, DataStore.seamCells().stream().anyMatch(k -> k.startsWith("g@5000,-7001=")), "the gate's way was not remembered");
+			double firstX = d.riftX, firstZ = d.riftZ;
+			// Home and back by the same rift: the same gate
+			d.inSeam = false;
+			p.teleportTo(home, 5000.5, 100, -7000.5, java.util.Set.of(), 0, 0, true);
+			check(helper, SeamService.summon(p), "the visitor was not let back into the Seam");
+			check(helper, d.riftX == firstX && d.riftZ == firstZ, "coming back by the same rift, the gate stood elsewhere (%s,%s, not %s,%s)",
+					d.riftX, d.riftZ, firstX, firstZ);
+		} finally {
+			DataStore.get(p.getUUID()).inSeam = false;
+			home.getServer().getPlayerList().remove(p);
+		}
+		helper.succeed();
+	}
+
+	private static boolean is(BlockState s, Block b) {
+		return s != null && s.is(b);
+	}
+}
