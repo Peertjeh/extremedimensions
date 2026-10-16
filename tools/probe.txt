@@ -1,2 +1,2 @@
-net.minecraft.world.item.component.ItemContainerContents
-net.minecraft.world.item.component.BundleContents
+net.minecraft.core.component.DataComponents
+#component/DataComponents

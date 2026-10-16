@@ -51,6 +51,9 @@
 - A Lurker that vanishes leaves what it stole in a hoard or on the ground; Hollowlings drop what they carry when they
   fade; young taken in a raid go free when it ends.
 - The Wandering trial counts islands reached, not blocks of your own laid out over the nothing.
+- **Shulker boxes and bundles are no way round the carrying curses.** Sealed Pockets seals the same share of every box
+  you carry (what lies in its sealed slots comes out), Dwindling shrinks the stacks inside a carried box or bundle, and
+  Lead Pockets weighs every stack inside as a stack of its own. A box set down as a block is untouched.
 
 ### Fixed
 - **A crash in the Seam** when a village's Weaver had been rolled before this version (its record was read as a well).
@@ -71,6 +74,7 @@
   are kept within bounds now.
 - A modified client could flood the server with requests; each kind is now limited per player.
 - The Seam stopped building for good if designing an island ever failed.
+- Dwindling lost what was left of a split stack when the inventory had room for only part of it; it falls out now.
 
 ## 2.21.0: Down, Not Out
 

@@ -287,18 +287,40 @@ public final class ElderTerrain {
 		Iterator<Temporary> it = TEMPORARY.iterator();
 		while (it.hasNext()) {
 			Temporary t = it.next();
-			if (--t.left > 0) {
-				continue;
+			if (due(t)) {
+				it.remove();
+				restore(t);
 			}
-			if (!loaded(t)) {
-				// Its ground is not loaded (everyone left): it sinks back once someone comes near again, not never
-				t.left = 20;
-				if (--t.tries > 0) {
-					continue;
+		}
+	}
+
+	/** One tick of a raised block: whether it is to sink back now (or has waited too long for its ground). */
+	private static boolean due(Temporary t) {
+		if (--t.left > 0) {
+			return false;
+		}
+		if (!loaded(t)) {
+			// Its ground is not loaded (everyone left): it sinks back once someone comes near again, not never
+			t.left = 20;
+			return --t.tries <= 0;
+		}
+		return true;
+	}
+
+	/**
+	 * For tests: {@code ticks} ticks go by now for the raised blocks at a spot. A test's own ground counts as loaded
+	 * only while the test itself runs, not when the server ticks the raised blocks, as a player's ground always does.
+	 */
+	public static void tickAt(Level level, BlockPos pos, int ticks) {
+		for (int i = 0; i < ticks; i++) {
+			Iterator<Temporary> it = TEMPORARY.iterator();
+			while (it.hasNext()) {
+				Temporary t = it.next();
+				if (t.level == level && t.pos.equals(pos) && due(t)) {
+					it.remove();
+					restore(t);
 				}
 			}
-			it.remove();
-			restore(t);
 		}
 	}
 

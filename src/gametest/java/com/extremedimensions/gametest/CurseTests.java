@@ -7,11 +7,14 @@ import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.expedition.ExpeditionService;
 import com.extremedimensions.penalty.Penalty;
+import com.extremedimensions.penalty.CarriedContainers;
 import com.extremedimensions.penalty.CurseEffects;
+import com.extremedimensions.penalty.Dwindling;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.penalty.SealedPockets;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -19,6 +22,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemContainerContents;
 
 /**
  * The curses do what their cards say. Runs on a headless dedicated server ({@code ./gradlew runGameTest}), so it also
@@ -108,6 +112,45 @@ public class CurseTests {
 		p.getInventory().setItem(13, ItemStack.EMPTY);
 		dirt.playerTouch(p);
 		check(helper, p.getInventory().getItem(13).is(Items.DIRT), "a freed unsealed slot did not take the item");
+		helper.succeed();
+	}
+
+	/** A shulker box or bundle carried in the inventory is no way round the carrying curses. */
+	@GameTest
+	public void carriedBoxesAreNoWayRoundThePocketCurses(GameTestHelper helper) {
+		List<ItemStack> full = new ArrayList<>();
+		for (int i = 0; i < 27; i++) {
+			full.add(new ItemStack(Items.STONE, 64));
+		}
+		// Sealed Pockets 3 seals 9 of 36 slots, so 7 of a box's 27 (rounded up); what lies there comes out
+		ServerPlayer sealed = cursed(helper, Penalty.SEALED_POCKETS, 3);
+		ItemStack box = new ItemStack(Items.SHULKER_BOX);
+		box.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(full));
+		sealed.getInventory().setItem(0, box);
+		List<ItemStack> out = new ArrayList<>();
+		CarriedContainers.seal(sealed, SealedPockets.count(sealed), out::add);
+		int kept = CarriedContainers.inside(sealed.getInventory().getItem(0));
+		check(helper, kept == 27 - CarriedContainers.sealedInBox(9) && kept == 20, "a carried box with 9 pocket slots sealed kept %s stacks, expected 20", kept);
+		check(helper, out.size() == 7 && out.stream().allMatch(s -> s.is(Items.STONE) && s.getCount() == 64), "the sealed slots of the box gave out %s", out);
+		// Lead Pockets weighs each stack inside as one of its own: the box and its 20 stacks are 21
+		check(helper, 1 + CarriedContainers.inside(box) > 18, "a full box does not weigh down the pockets");
+
+		// Dwindling shrinks the stacks inside a carried box, and nothing is lost or made
+		ServerPlayer small = cursed(helper, Penalty.DWINDLING, 2);
+		int limit = Dwindling.limit(small, 64);
+		ItemStack box2 = new ItemStack(Items.SHULKER_BOX);
+		box2.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(new ItemStack(Items.COBBLESTONE, 64), new ItemStack(Items.DIRT, 64))));
+		small.getInventory().setItem(0, box2);
+		List<ItemStack> rest = new ArrayList<>();
+		CarriedContainers.dwindle(small, rest::add);
+		int inside = 0, biggest = 0;
+		for (ItemStack s : small.getInventory().getItem(0).get(DataComponents.CONTAINER).nonEmptyItemCopyStream().toList()) {
+			inside += s.getCount();
+			biggest = Math.max(biggest, s.getCount());
+		}
+		int given = rest.stream().mapToInt(ItemStack::getCount).sum();
+		check(helper, biggest <= limit, "a stack of %s inside a carried box is above the Dwindling limit %s", biggest, limit);
+		check(helper, inside + given == 128, "shrinking the box's stacks lost or made items: 128 became %s inside and %s out", inside, given);
 		helper.succeed();
 	}
 

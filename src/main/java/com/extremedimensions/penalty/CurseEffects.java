@@ -307,6 +307,13 @@ public final class CurseEffects {
 				throwAway(p, s, 20);
 			}
 		}
+		// A carried box is sealed in the same share: what lies in its sealed slots comes out into the pockets, or falls
+		CarriedContainers.seal(p, n, s -> {
+			inv.add(s);
+			if (!s.isEmpty()) {
+				throwAway(p, s, 20);
+			}
+		});
 	}
 
 	/** Shrunken Stomach: the most food the player can hold. */
@@ -370,7 +377,7 @@ public final class CurseEffects {
 		d.lastFrozen = frozen;
 	}
 
-	/** Lead Pockets: slower while more than half of the main inventory is full. */
+	/** Lead Pockets: slower while more than half of the main inventory is full (counting what lies inside boxes and bundles). */
 	private static void leadPockets(ServerPlayer p, PlayerData d) {
 		int stacks = d.stacks(Penalty.LEAD_POCKETS);
 		double want = 0;
@@ -378,8 +385,10 @@ public final class CurseEffects {
 			var inv = p.getInventory();
 			int used = 0;
 			for (int i = 0; i < 36; i++) {
-				if (!inv.getItem(i).isEmpty()) {
-					used++;
+				ItemStack s = inv.getItem(i);
+				if (!s.isEmpty()) {
+					// Every stack inside a carried box or bundle weighs as one of its own
+					used += 1 + CarriedContainers.inside(s);
 				}
 			}
 			if (used > 18) {

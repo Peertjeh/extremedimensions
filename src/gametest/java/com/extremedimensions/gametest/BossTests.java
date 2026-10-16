@@ -448,14 +448,10 @@ public class BossTests {
 		helper.succeed();
 	}
 
-	@GameTest(maxTicks = 140)
+	@GameTest(maxTicks = 80)
 	public void theThornsTheEldersRaiseSinkBack(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		BlockPos ground = helper.absolutePos(new BlockPos(2, 1, 2));
-		// Someone stands near, as in a real fight: raised blocks wait for loaded ground, and a test's own ground counts
-		// as loaded only while a test looks at it, not between ticks (a forced chunk does not change that)
-		ServerPlayer watcher = TestPlayers.creative(helper, "thorn-watcher");
-		watcher.teleportTo(ground.getX() + 0.5, ground.getY() + 1, ground.getZ() - 1.5);
 		level.setBlock(ground, Blocks.STONE.defaultBlockState(), 3);
 		for (int i = 1; i <= 4; i++) {
 			level.setBlock(ground.above(i), Blocks.AIR.defaultBlockState(), 3);
@@ -466,15 +462,17 @@ public class BossTests {
 		check(helper, level.getBlockState(ground.above()).is(thorn), "no thorns rose out of the ground");
 		check(helper, level.getBlockState(ground.above(3)).is(thorn), "the thorns did not rise three blocks");
 		check(helper, ElderTerrain.temporary(level, ground.above(2)), "raised thorns are not known as temporary");
-		// They sink back after 7 to 11 server ticks; the check waits well past that, and says how many really went by
-		int serverStart = level.getServer().getTickCount();
+		// They sink back after 7 to 11 ticks. Raised blocks wait while their ground is unloaded, and a test's own ground
+		// counts as loaded only while the test runs (never when the server ticks them, as a player's ground does), so
+		// their time runs out here: a block forgotten while it waited would stay
 		String atStart = ElderTerrain.describe(level, ground.above(3));
-		helper.runAfterDelay(100, () -> {
-			int ticks = level.getServer().getTickCount() - serverStart;
-			level.getServer().getPlayerList().remove(watcher);
+		helper.runAfterDelay(30, () -> {
+			for (int i = 1; i <= 3; i++) {
+				ElderTerrain.tickAt(level, ground.above(i), 30);
+			}
 			check(helper, !level.getBlockState(ground.above()).is(thorn) && !level.getBlockState(ground.above(3)).is(thorn)
-					&& !ElderTerrain.temporary(level, ground.above(2)), "the thorns did not sink back (%s, %s) after %s server ticks; at the start: %s; now: %s",
-					level.getBlockState(ground.above()), level.getBlockState(ground.above(3)), ticks, atStart, ElderTerrain.describe(level, ground.above(3)));
+					&& !ElderTerrain.temporary(level, ground.above(2)), "the thorns did not sink back (%s, %s); at the start: %s; now: %s",
+					level.getBlockState(ground.above()), level.getBlockState(ground.above(3)), atStart, ElderTerrain.describe(level, ground.above(3)));
 			helper.succeed();
 		});
 	}

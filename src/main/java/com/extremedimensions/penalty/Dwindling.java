@@ -11,8 +11,9 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * Dwindling, on both sides: a stack in the player's own inventory holds half as much per stack of the curse (64, 32,
- * 16, 8). Chests and other containers are untouched. The client keeps the local player's stacks from the curse sync, so
- * menus agree with the server.
+ * 16, 8), and so does a stack inside a shulker box or bundle the player carries (see CarriedContainers). Chests and
+ * other containers are untouched. The client keeps the local player's stacks from the curse sync, so menus agree with
+ * the server.
  */
 public final class Dwindling {
 	private Dwindling() {}
@@ -58,12 +59,20 @@ public final class Dwindling {
 			if (s.getCount() <= max) {
 				continue;
 			}
-			ItemStack rest = s.split(s.getCount() - max);
-			if (!inv.add(rest) && !rest.isEmpty()) {
-				ItemEntity item = new ItemEntity(p.level(), p.getX(), p.getEyeY() - 0.3, p.getZ(), rest);
-				item.setPickUpDelay(40);
-				p.level().addFreshEntity(item);
-			}
+			give(p, s.split(s.getCount() - max));
+		}
+		// The stacks inside a carried box or bundle shrink too
+		CarriedContainers.dwindle(p, rest -> give(p, rest));
+	}
+
+	/** What a split leaves over goes to free room in the inventory; whatever still finds none falls out. */
+	private static void give(ServerPlayer p, ItemStack rest) {
+		// add() says whether anything went in, not whether all of it did: what is left over must not be lost
+		p.getInventory().add(rest);
+		if (!rest.isEmpty()) {
+			ItemEntity item = new ItemEntity(p.level(), p.getX(), p.getEyeY() - 0.3, p.getZ(), rest);
+			item.setPickUpDelay(40);
+			p.level().addFreshEntity(item);
 		}
 	}
 }
