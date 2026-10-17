@@ -1304,7 +1304,8 @@ public final class Colossus {
 		Scheme sc = scheme(rnd, scheme);
 		int schemeId = sc.ruin ? 3 : sc.band == silked() ? 2 : sc.floor == palePol() ? 1 : 0;
 		Frame base = new Frame(p, cx, top + 1, cz, rnd.nextInt(4));
-		int R = Math.max(20, r - 5);
+		// (a block of room kept for the plinth round its foot and the rubble that falls from it)
+		int R = Math.max(20, r - 6);
 		int maxH = Math.min(128, 236 - top);
 		int layout = plan >= 0 ? plan % 5 : rnd.nextInt(5);
 		// Its materials are planned over its own height, from a stream of their own (so a change to how stone is
@@ -1330,8 +1331,9 @@ public final class Colossus {
 
 	/**
 	 * The plinth round the foot of every wall: a course of stairs a block out, sloping away from the wall, wherever a
-	 * wall (five blocks high at least, so not a lamp post) stands on the ground with open ground before it. Every part
-	 * of the building, towers, halls, podiums and piers, gets the same, so its foot reads as one.
+	 * wall stands on the ground with open ground before it (a wall: three blocks high at least, and running on beside
+	 * it, so not a lamp post). Every part of the building, towers, halls, podiums and piers, gets the same, so its foot
+	 * reads as one.
 	 */
 	static void socle(Plan p, Scheme sc, int y) {
 		List<int[]> steps = new ArrayList<>();
@@ -1341,7 +1343,14 @@ public final class Colossus {
 				continue;
 			}
 			int x = net.minecraft.core.BlockPos.getX(k), z = net.minecraft.core.BlockPos.getZ(k);
-			if (!p.has(x, y + 1, z) || !p.has(x, y + 2, z) || !p.has(x, y + 3, z) || !p.has(x, y + 4, z)) {
+			if (!p.has(x, y + 1, z) || !p.has(x, y + 2, z)) {
+				continue;
+			}
+			boolean runs = false;
+			for (Direction d : dirs) {
+				runs |= p.has(x + d.getStepX(), y + 1, z + d.getStepZ()) && p.has(x + d.getStepX(), y + 2, z + d.getStepZ());
+			}
+			if (!runs) {
 				continue;
 			}
 			for (Direction d : dirs) {

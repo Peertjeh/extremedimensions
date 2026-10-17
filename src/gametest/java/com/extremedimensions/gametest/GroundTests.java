@@ -68,7 +68,7 @@ public class GroundTests {
 
 	/**
 	 * Whatever is built on an island stands on ground: under every block of a village, a loom or a colossal building at
-	 * its floor there is the island (levelled, or a ledge grown under it); and a colossal building has its plinth.
+	 * its floor there is the island (levelled, or a ledge grown under it); and a cathedral has its plinth.
 	 */
 	@GameTest(maxTicks = 300)
 	public void whatIsBuiltStandsOnGround(GameTestHelper helper) {
@@ -93,15 +93,18 @@ public class GroundTests {
 				}
 				check(helper, stood > 20, "the %s (seed %s) has hardly anything on the ground (%s blocks)", names[k], seed, stood);
 				check(helper, bare == 0, "%s blocks of the %s (seed %s) stand over the nothing", bare, names[k], seed);
-				if (kinds[k] == 3) {
-					int plinth = 0;
-					for (long key : p.positions()) {
-						BlockState b = p.at(BlockPos.getX(key), BlockPos.getY(key), BlockPos.getZ(key));
-						plinth += BlockPos.getY(key) == top + 1 && b.getBlock() instanceof net.minecraft.world.level.block.StairBlock ? 1 : 0;
-					}
-					check(helper, plinth > 40, "the colossal building (seed %s) has no plinth round its foot (%s stairs)", seed, plinth);
-				}
 			}
+		}
+		// a cathedral's walls stand on a plinth all round (stepped plans stand on their own steps)
+		for (int seed = 0; seed < 3; seed++) {
+			SeamArchitect.Plan p = new SeamArchitect.Plan();
+			Colossus.build(p, new Random(70 + seed), 0, top, 0, 36, Colossus.CATHEDRAL, Colossus.TWILIGHT);
+			int plinth = 0;
+			for (long key : p.positions()) {
+				BlockState b = p.at(BlockPos.getX(key), BlockPos.getY(key), BlockPos.getZ(key));
+				plinth += BlockPos.getY(key) == top + 1 && b.getBlock() instanceof net.minecraft.world.level.block.StairBlock ? 1 : 0;
+			}
+			check(helper, plinth > 40, "the cathedral (seed %s) has no plinth round its foot (%s stairs)", seed, plinth);
 		}
 		helper.succeed();
 	}

@@ -93,11 +93,19 @@ public final class Ruin {
 			top = Math.max(top, BlockPos.getY(k));
 		}
 		int height = Math.max(8, top - base);
-		Set<Long> keep = new HashSet<>();
+		// What its actions (a reliquary) stand on is kept whole, the whole column under them and round them, so they
+		// never end up hanging over a fall
+		Set<Long> keep = new HashSet<>(), support = new HashSet<>();
 		for (Object[] a : p.after) {
 			BlockPos at = (BlockPos) a[0];
-			for (int dy = -2; dy <= 1; dy++) {
-				keep.add(at.offset(0, dy, 0).asLong());
+			support.add(at.asLong());
+			support.add(at.below().asLong());
+			for (int dx = -2; dx <= 2; dx++) {
+				for (int dz = -2; dz <= 2; dz++) {
+					for (int y = base; y <= at.getY() + 1; y++) {
+						keep.add(key(at.getX() + dx, y, at.getZ() + dz));
+					}
+				}
 			}
 		}
 		Set<Long> before = grounded(p, base);
@@ -153,12 +161,12 @@ public final class Ruin {
 			fell(p, gone, keep, base, (int) peak[0], cut, (int) peak[2], 5 + rnd.nextInt(4), noiseSeed + 100 + k);
 		}
 		// The broken edges wear (and glass beside a break shatters) before what is left hanging is found
-		weather(p, rnd, gone, base);
+		weather(p, rnd, gone, base, keep);
 		// What was left hanging falls too (not what was built to float, which never stood on the ground)
 		Set<Long> after = grounded(p, base);
 		List<Long> loose = new ArrayList<>();
 		for (long k : before) {
-			if (p.blocks.containsKey(k) && !after.contains(k) && !keep.contains(k)) {
+			if (p.blocks.containsKey(k) && !after.contains(k) && !support.contains(k)) {
 				loose.add(k);
 			}
 		}
@@ -227,7 +235,7 @@ public final class Ruin {
 	}
 
 	/** The broken edges: cracked and mossy, a slab left where a course broke off, glass near a break gone. */
-	private static void weather(Plan p, Random rnd, Set<Long> gone, int base) {
+	private static void weather(Plan p, Random rnd, Set<Long> gone, int base, Set<Long> keep) {
 		Map<BlockState, BlockState> slabs = new HashMap<>();
 		slabs.put(tile(), tileSlab());
 		slabs.put(pale(), paleSlab());
@@ -246,6 +254,9 @@ public final class Ruin {
 			}
 		}
 		for (long k : edge) {
+			if (keep.contains(k)) {
+				continue;
+			}
 			BlockState s = p.blocks.get(k);
 			int x = BlockPos.getX(k), y = BlockPos.getY(k), z = BlockPos.getZ(k);
 			if (net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(s.getBlock()).getPath().contains("glass")) {
@@ -299,8 +310,8 @@ public final class Ruin {
 			}
 			int x = BlockPos.getX(k), y = BlockPos.getY(k), z = BlockPos.getZ(k);
 			// it lands a little out from where it fell
-			x += rnd.nextInt(5) - 2;
-			z += rnd.nextInt(5) - 2;
+			x += rnd.nextInt(3) - 1;
+			z += rnd.nextInt(3) - 1;
 			int land = y;
 			while (land > base + 1 && !p.has(x, land - 1, z)) {
 				land--;
