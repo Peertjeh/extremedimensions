@@ -245,8 +245,6 @@ public final class Config {
 	 * its island to the nearest one (1 = on, 0 = off: a bare island and the rift beside the landing).
 	 */
 	public static int SEAM_RETURN_GATE = 1;
-	/** Height in blocks of the column of gold light over the rift home, seen through the fog from anywhere in the Seam (0 = none). */
-	public static int SEAM_RIFT_BEAM = 120;
 	/** Whether the HUD points the way to the rift home beside its distance (1 = on, 0 = off). */
 	public static int SEAM_RIFT_COMPASS = 1;
 	/** Blocks within which the rift home can be heard humming (0 = silent). */

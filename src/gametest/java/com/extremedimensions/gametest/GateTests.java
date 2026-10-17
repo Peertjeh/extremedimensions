@@ -17,9 +17,7 @@ import com.extremedimensions.seam.SeamService;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Block;
@@ -168,27 +166,22 @@ public class GateTests {
 	}
 
 	/**
-	 * Bridges pass under a gateway where they leave each island, some long ones are hung from chain cables between
-	 * timber frames, and whichever they are, the walk along their middle is clear for a visitor all the way across.
+	 * Bridges are of stone, every one: no timber in them anywhere, a gateway over the deck where they leave each
+	 * island, and the walk along their middle clear for a visitor all the way across.
 	 */
 	@GameTest
-	public void bridgesPassUnderGatewaysAndSomeAreHung(GameTestHelper helper) {
+	public void bridgesAreOfStoneAndPassUnderGateways(GameTestHelper helper) {
 		SeamArchitect.Shape a = new SeamArchitect.Shape(0, 90, 0, 14, 0.3, 1.1, 2.0), b = new SeamArchitect.Shape(112, 93, 4, 14, 1.0, 0.2, 2.5);
 		int start = a.x() + (int) Math.floor(a.edge(0)) - 2, end = b.x() - (int) Math.floor(b.edge(Math.PI)) + 2, mid = (start + end) / 2;
-		Block chain = BuiltInRegistries.BLOCK.get(Identifier.fromNamespaceAndPath("minecraft", "iron_chain")).map(h -> h.value()).orElse(Blocks.AIR);
-		int hung = 0, stone = 0;
+		Block[] wood = {Blocks.DARK_OAK_FENCE, Blocks.DARK_OAK_PLANKS, Blocks.DARK_OAK_SLAB, Blocks.DARK_OAK_STAIRS, Blocks.STRIPPED_DARK_OAK_LOG};
 		for (int i = 0; i < 24; i++) {
 			SeamArchitect.Plan plan = new SeamArchitect.Plan();
 			check(helper, SeamArchitect.bridge(plan, new Random(1000 + i), a, b, true), "bridge %s was not built", i);
 			check(helper, plan.dropped == 0, "bridge %s ran over the build limit", i);
-			if (plan.count(Blocks.DARK_OAK_FENCE) > 0) {
-				hung++;
-				check(helper, plan.count(chain) > 30, "hung bridge %s has hardly any cable (%s links)", i, plan.count(chain));
-				check(helper, plan.count(Blocks.STRIPPED_DARK_OAK_LOG) >= 4 * 2 * 7, "hung bridge %s lacks its four timber frames", i);
-			} else {
-				stone++;
-				check(helper, plan.count(ModBlocks.HUSH_PILLAR) >= 2 * 2 * 3, "stone bridge %s lacks its gateways", i);
+			for (Block w : wood) {
+				check(helper, plan.count(w) == 0, "bridge %s has %s blocks of %s in it", i, plan.count(w), w);
 			}
+			check(helper, plan.count(ModBlocks.HUSH_PILLAR) >= 2 * 2 * 3, "bridge %s lacks its gateways", i);
 			// Along the middle of each run, from rim to landing: a floor with two blocks of air over it
 			for (int x = start + 4; x <= end - 4; x++) {
 				if (Math.abs(x - mid) <= 4) {
@@ -202,7 +195,6 @@ public class GateTests {
 				check(helper, walk, "bridge %s cannot be walked at %s,%s", i, x, z);
 			}
 		}
-		check(helper, hung > 0 && stone > 0, "of 24 long bridges, %s were hung and %s of stone", hung, stone);
 		helper.succeed();
 	}
 

@@ -15,7 +15,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  * Itsukushima, a frame that stands at the edge and opens onto nothing; the receding orders of a Gothic portal; and the
  * avenue of lamps that leads up to a temple. Its light is gold, a colour nothing else in the Seam gives (the soul
  * lanterns are blue, the falls and veins white and violet), so gold always means home: braziers on the pylons, an eye
- * of gold over the door, a line of gold set in the paving that leads back to it, and the column over the rift.
+ * of gold over the door and gold lamps along the way that leads back to it.
  *
  * <p>The rift hangs over the threshold between the pylons and wanders over its pale stones, never off them (see
  * {@link #threshold()}). The gate is built on a rock of its own, joined to the arrival island like a lobe.
@@ -78,8 +78,8 @@ public final class ReturnGate {
 
 	/**
 	 * A platform a block high with a step of slabs all round, bordered in polished stone and paved in tiles; between
-	 * the pylons the threshold of pale stones, closed front and back by a row of chiseled bricks, and a line of gold
-	 * through the paving on the gate's axis.
+	 * the pylons the threshold of pale stones, closed front and back by a row of chiseled bricks, and a line of pale
+	 * stone inlaid through the paving on the gate's axis.
 	 */
 	private static void dais(Frame f, Random rnd) {
 		for (int x = -10; x <= 10; x++) {
@@ -96,7 +96,7 @@ public final class ReturnGate {
 				} else if (Math.abs(x) <= 2 && Math.abs(z) == 2) {
 					b = carved();
 				} else if (x == 0) {
-					b = gold();
+					b = palePol();
 				} else if (border) {
 					b = smooth();
 				} else {
@@ -319,8 +319,8 @@ public final class ReturnGate {
 	}
 
 	/**
-	 * The processional way from the dais over the island: pale paving with the gold line down its middle, set into
-	 * the turf, a ragged border of worn stone, and pairs of gold lamps along it; only where the island has ground.
+	 * The processional way from the dais over the island: pale paving with a line of chiseled stone down its middle,
+	 * set into the turf, a ragged border of worn stone, and pairs of gold lamps along it; only where the island has ground.
 	 */
 	private static void way(Frame f, Plan p, Random rnd, int top) {
 		for (int z = 7; z <= 7 + OFFSET + 8; z++) {
@@ -332,7 +332,7 @@ public final class ReturnGate {
 				if (Math.abs(x) == 2 && rnd.nextInt(3) == 0) {
 					continue;
 				}
-				BlockState b = x == 0 ? gold() : Math.abs(x) == 1 ? (rnd.nextInt(7) == 0 ? tile() : palePol())
+				BlockState b = x == 0 ? (z % 3 == 0 ? carved() : palePol()) : Math.abs(x) == 1 ? (rnd.nextInt(7) == 0 ? tile() : palePol())
 						: weather(rnd.nextBoolean() ? smooth() : tile(), rnd, 0.3);
 				p.set(wx, top, wz, b);
 				p.clear(wx, top + 1, wz);

@@ -901,7 +901,7 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("17_seam_risen");
 
 			// The Return Gate the visitor stepped out of: from the processional way, from the side, at its threshold,
-			// and from far out past the fog, where only the gold column over the rift still shows
+			// and from far out in the fog
 			double[] gate = sp.getServer().computeOnServer(s -> {
 				ServerPlayer p = player(s);
 				PlayerData d = DataStore.get(p.getUUID());
@@ -927,7 +927,7 @@ public class ClientShots implements FabricClientGameTest {
 			eye(sp, gx - ox * 30 + sx2 * 12, gy - 26, gz - oz * 30 + sz2 * 12, gx - ox * 4, gz - oz * 4, -22);
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("19_island_under");
-			// the column and the compass are drawn from where the server says the rift is
+			// the compass points to where the server says the rift is
 			ctx.runOnClient(mc -> check(ClientState.riftKnown(), "the client does not know where the rift home is"));
 			// The tear over the rift home, the world above hazy at the end of its tunnel: straight on and close, from
 			// aside, from behind the gate (the tunnel runs away from whoever looks, either side), and by night up there.
