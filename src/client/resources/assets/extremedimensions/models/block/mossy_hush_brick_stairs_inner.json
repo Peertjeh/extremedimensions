@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/inner_stairs",
+  "textures": {
+    "bottom": "extremedimensions:block/mossy_hush_bricks",
+    "top": "extremedimensions:block/mossy_hush_bricks",
+    "side": "extremedimensions:block/mossy_hush_bricks"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "extremedimensions:block/polished_pale_hush_stone_slab"
+    },
+    "type=top": {
+      "model": "extremedimensions:block/polished_pale_hush_stone_slab_top"
+    },
+    "type=double": {
+      "model": "extremedimensions:block/polished_pale_hush_stone"
+    }
+  }
+}

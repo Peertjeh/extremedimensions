@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "extremedimensions:hush_stone_wall",
+    "extremedimensions:cobbled_hush_stone_wall",
+    "extremedimensions:polished_hush_stone_wall",
+    "extremedimensions:hush_brick_wall",
+    "extremedimensions:mossy_hush_brick_wall",
+    "extremedimensions:hush_tile_wall",
+    "extremedimensions:pale_hush_brick_wall",
+    "extremedimensions:polished_pale_hush_stone_wall"
+  ]
+}

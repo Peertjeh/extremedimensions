@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": "extremedimensions:hush_stone",
+  "result": {
+    "id": "extremedimensions:cobbled_hush_stone_slab",
+    "count": 2
+  }
+}

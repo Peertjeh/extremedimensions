@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:hoard_found",
+  "display": {
+    "icon": {
+      "id": "minecraft:skeleton_skull"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.keeper_slain.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.keeper_slain.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

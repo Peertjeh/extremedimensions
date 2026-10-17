@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "extremedimensions:block/void_lodestone_top",
+    "side": "extremedimensions:block/void_lodestone_side"
+  }
+}

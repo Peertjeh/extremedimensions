@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:robbed",
+  "display": {
+    "icon": {
+      "id": "minecraft:barrel"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.hoard_found.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.hoard_found.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

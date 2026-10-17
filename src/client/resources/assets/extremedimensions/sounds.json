@@ -1,0 +1,207 @@
+{
+  "penalty": {
+    "subtitle": "subtitles.extremedimensions.penalty",
+    "sounds": [
+      "extremedimensions:penalty"
+    ]
+  },
+  "expedition_ended": {
+    "subtitle": "subtitles.extremedimensions.expedition_ended",
+    "sounds": [
+      "extremedimensions:expedition_ended"
+    ]
+  },
+  "music.menu_1": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/menu_1",
+        "stream": true
+      }
+    ]
+  },
+  "music.menu_2": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/menu_2",
+        "stream": true
+      }
+    ]
+  },
+  "portal_beyond": {
+    "subtitle": "subtitles.extremedimensions.portal_beyond",
+    "sounds": [
+      "extremedimensions:portal_beyond"
+    ]
+  },
+  "portal_home": {
+    "subtitle": "subtitles.extremedimensions.portal_home",
+    "sounds": [
+      "extremedimensions:portal_home"
+    ]
+  },
+  "collapse": {
+    "subtitle": "subtitles.extremedimensions.collapse",
+    "sounds": [
+      "extremedimensions:collapse"
+    ]
+  },
+  "lurker_whisper": {
+    "subtitle": "subtitles.extremedimensions.lurker_whisper",
+    "sounds": [
+      "extremedimensions:lurker_whisper"
+    ]
+  },
+  "lurker_take": {
+    "subtitle": "subtitles.extremedimensions.lurker_take",
+    "sounds": [
+      "extremedimensions:lurker_take"
+    ]
+  },
+  "lurker_drain": {
+    "subtitle": "subtitles.extremedimensions.lurker_drain",
+    "sounds": [
+      "extremedimensions:lurker_drain"
+    ]
+  },
+  "lurker_vanish": {
+    "subtitle": "subtitles.extremedimensions.lurker_vanish",
+    "sounds": [
+      "extremedimensions:lurker_vanish"
+    ]
+  },
+  "lurker_ambient": {
+    "subtitle": "subtitles.extremedimensions.lurker_ambient",
+    "sounds": [
+      "extremedimensions:lurker_breath1",
+      "extremedimensions:lurker_breath2",
+      {
+        "name": "extremedimensions:lurker_whisper",
+        "weight": 2
+      }
+    ]
+  },
+  "lurker_step": {
+    "subtitle": "subtitles.extremedimensions.lurker_step",
+    "sounds": [
+      "extremedimensions:lurker_step1",
+      "extremedimensions:lurker_step2",
+      "extremedimensions:lurker_step3"
+    ]
+  },
+  "lurker_hurt": {
+    "subtitle": "subtitles.extremedimensions.lurker_hurt",
+    "sounds": [
+      "extremedimensions:lurker_hurt1",
+      "extremedimensions:lurker_hurt2",
+      "extremedimensions:lurker_hurt3"
+    ]
+  },
+  "lurker_death": {
+    "subtitle": "subtitles.extremedimensions.lurker_death",
+    "sounds": [
+      "extremedimensions:lurker_death"
+    ]
+  },
+  "lurker_shriek": {
+    "subtitle": "subtitles.extremedimensions.lurker_shriek",
+    "sounds": [
+      "extremedimensions:lurker_shriek"
+    ]
+  },
+  "lurker_flee": {
+    "subtitle": "subtitles.extremedimensions.lurker_flee",
+    "sounds": [
+      "extremedimensions:lurker_flee"
+    ]
+  },
+  "hollowling_ambient": {
+    "subtitle": "subtitles.extremedimensions.hollowling_ambient",
+    "sounds": [
+      "extremedimensions:hollowling_chitter1",
+      "extremedimensions:hollowling_chitter2",
+      "extremedimensions:hollowling_chitter3"
+    ]
+  },
+  "hollowling_giggle": {
+    "subtitle": "subtitles.extremedimensions.hollowling_giggle",
+    "sounds": [
+      "extremedimensions:hollowling_giggle"
+    ]
+  },
+  "hollowling_hurt": {
+    "subtitle": "subtitles.extremedimensions.hollowling_hurt",
+    "sounds": [
+      "extremedimensions:hollowling_hurt1",
+      "extremedimensions:hollowling_hurt2"
+    ]
+  },
+  "hollowling_death": {
+    "subtitle": "subtitles.extremedimensions.hollowling_death",
+    "sounds": [
+      "extremedimensions:hollowling_death"
+    ]
+  },
+  "hollowling_bond": {
+    "subtitle": "subtitles.extremedimensions.hollowling_bond",
+    "sounds": [
+      "extremedimensions:hollowling_bond"
+    ]
+  },
+  "keeper_roar": {
+    "subtitle": "subtitles.extremedimensions.keeper_roar",
+    "sounds": [
+      "extremedimensions:keeper_roar"
+    ]
+  },
+  "hoard_ambient": {
+    "subtitle": "subtitles.extremedimensions.hoard_ambient",
+    "sounds": [
+      "extremedimensions:hoard_ambient"
+    ]
+  },
+  "rift_open": {
+    "subtitle": "subtitles.extremedimensions.rift_open",
+    "sounds": [
+      "extremedimensions:rift_open"
+    ]
+  },
+  "seam_ambient": {
+    "subtitle": "subtitles.extremedimensions.seam_ambient",
+    "sounds": [
+      "extremedimensions:seam_ambient"
+    ]
+  },
+  "veil_ray_song": {
+    "subtitle": "subtitles.extremedimensions.veil_ray_song",
+    "sounds": [
+      {
+        "name": "extremedimensions:veil_ray_song",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "music.boss_matriarch": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/boss_matriarch",
+        "stream": true
+      }
+    ]
+  },
+  "music.boss_ferryman": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/boss_ferryman",
+        "stream": true
+      }
+    ]
+  },
+  "music.boss_weaver": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/boss_weaver",
+        "stream": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:tribe_trusted",
+  "display": {
+    "icon": {
+      "id": "minecraft:echo_shard"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.tribe_kin.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.tribe_kin.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

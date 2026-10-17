@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:seam_entered",
+  "display": {
+    "icon": {
+      "id": "minecraft:cobweb"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.fray_entered.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.fray_entered.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

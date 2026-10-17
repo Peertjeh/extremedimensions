@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "extremedimensions:seam_silk",
+    "extremedimensions:seam_silk",
+    "extremedimensions:seam_silk",
+    "extremedimensions:tether_fragment"
+  ],
+  "result": {
+    "id": "extremedimensions:seam_needle",
+    "count": 1
+  }
+}

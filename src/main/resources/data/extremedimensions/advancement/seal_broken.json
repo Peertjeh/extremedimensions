@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:seam_entered",
+  "display": {
+    "icon": {
+      "id": "minecraft:dragon_head"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.seal_broken.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.seal_broken.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

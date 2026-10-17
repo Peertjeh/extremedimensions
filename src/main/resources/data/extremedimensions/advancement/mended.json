@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:marked",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:tether_fragment"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.mended.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.mended.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

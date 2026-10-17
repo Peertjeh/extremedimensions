@@ -1,0 +1,22 @@
+package com.extremedimensions.network;
+
+/** Client animations triggered by the server (see {@link ModPackets.FxPayload}). */
+public final class Fx {
+	private Fx() {}
+
+	public static final int DEPOSIT_NETHER = 1;
+	public static final int DEPOSIT_END = 2;
+	public static final int START_NETHER = 3;
+	public static final int START_END = 4;
+	public static final int SAFE = 5;
+	public static final int COLLAPSE = 6;
+	public static final int BOUNCE = 7;
+	public static final int PENALTY = 8;
+	public static final int ENDED = 9;
+	public static final int TIE = 10;
+	public static final int TAKEN = 11;
+	/** The seal broke (the Ender Dragon died): a white flash and the world cracking. */
+	public static final int SEAL = 12;
+	/** A Wound Storm begins nearby. */
+	public static final int STORM = 13;
+}

@@ -1,0 +1,23 @@
+{
+	"required": false,
+	"minVersion": "0.8",
+	"package": "com.extremedimensions.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"BlockDisplayAccess",
+		"CursedPlayerMixin",
+		"DisplayAccess",
+		"ElderDropsMixin",
+		"FallenCommandsMixin",
+		"FallenPoseMixin",
+		"FallenTravelMixin",
+		"NaturalSpawnMixin",
+		"SealedInventoryMixin",
+		"SealedSlotMixin",
+		"UnhealingMixin",
+		"VillagerPricesMixin"
+	],
+	"injectors": {
+		"defaultRequire": 0
+	}
+}

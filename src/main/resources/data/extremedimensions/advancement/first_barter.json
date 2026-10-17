@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:hoard_found",
+  "display": {
+    "icon": {
+      "id": "minecraft:gold_nugget"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.first_barter.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.first_barter.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/stairs",
+  "textures": {
+    "bottom": "extremedimensions:block/hush_tiles",
+    "top": "extremedimensions:block/hush_tiles",
+    "side": "extremedimensions:block/hush_tiles"
+  }
+}

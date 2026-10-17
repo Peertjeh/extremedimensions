@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:fray_entered",
+  "display": {
+    "icon": {
+      "id": "minecraft:soul_lantern"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.fray_risen.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.fray_risen.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

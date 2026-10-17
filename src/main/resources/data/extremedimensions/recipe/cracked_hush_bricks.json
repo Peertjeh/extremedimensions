@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:smelting",
+  "category": "blocks",
+  "ingredient": "extremedimensions:hush_bricks",
+  "result": {
+    "id": "extremedimensions:cracked_hush_bricks"
+  },
+  "experience": 0.1,
+  "cookingtime": 200
+}

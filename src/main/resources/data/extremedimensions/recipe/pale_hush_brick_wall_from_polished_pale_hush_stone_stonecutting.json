@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": "extremedimensions:polished_pale_hush_stone",
+  "result": {
+    "id": "extremedimensions:pale_hush_brick_wall",
+    "count": 1
+  }
+}

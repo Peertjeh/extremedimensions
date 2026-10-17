@@ -54,13 +54,65 @@ java {
 	targetCompatibility = JavaVersion.VERSION_25
 }
 
+tasks.named("sourcesJar") {
+	exclude "com/terraformersmc/**"
+}
+
 jar {
 	def projectName = project.name
 	inputs.property "projectName", projectName
 
+	// Compile-time stand-ins for Mod Menu's API: Mod Menu brings the real ones when installed
+	exclude "com/terraformersmc/**"
+
 	from("LICENSE") {
 		rename { "${it}_$projectName"}
 	}
+}
+
+// Every language file must fit the English one: no unknown keys and the same placeholders in every string. Languages
+// shipped with the mod must also be complete; a community translation may lag behind (the game shows English there).
+def langDir = layout.projectDirectory.dir("src/client/resources/assets/extremedimensions/lang")
+tasks.register("checkTranslations") {
+	description = "Checks every language file against en_us.json"
+	group = "verification"
+	def dir = langDir.asFile
+	inputs.dir(dir)
+	def complete = ["nl_nl.json"]
+	doLast {
+		def slurp = { File f -> new groovy.json.JsonSlurper().parse(f, "UTF-8") }
+		def en = slurp(new File(dir, "en_us.json"))
+		def holes = { String v ->
+			def found = []
+			def m = java.util.regex.Pattern.compile('%(\\d+\\$)?[sd]|%%').matcher(v)
+			while (m.find()) {
+				found << m.group()
+			}
+			found.sort()
+		}
+		def problems = []
+		dir.listFiles().findAll { it.name.endsWith(".json") && it.name != "en_us.json" }.sort { it.name }.each { File f ->
+			def lang = slurp(f)
+			def missing = en.keySet() - lang.keySet()
+			if (missing && complete.contains(f.name)) {
+				problems << "${f.name}: ${missing.size()} key(s) missing: ${missing.take(10)}"
+			} else if (missing) {
+				logger.warn("${f.name}: ${missing.size()} key(s) not translated yet (English is shown)")
+			}
+			(lang.keySet() - en.keySet()).each { problems << "${f.name}: unknown key ${it}" }
+			lang.each { k, v ->
+				if (en.containsKey(k) && holes(en[k].toString()) != holes(v.toString())) {
+					problems << "${f.name}: ${k} has placeholders ${holes(v.toString())}, English has ${holes(en[k].toString())}"
+				}
+			}
+		}
+		if (problems) {
+			throw new GradleException("Translation problems:\n" + problems.join("\n"))
+		}
+	}
+}
+tasks.named("check") {
+	dependsOn("checkTranslations")
 }
 
 // configure the maven publication
@@ -77,5 +129,17 @@ publishing {
 		// Notice: This block does NOT have the same function as the block in the top level.
 		// The repositories here will be used for publishing your artifact, not for
 		// retrieving dependencies.
+	}
+}
+
+// Game tests: server tests on a headless dedicated server (./gradlew runGameTest) and a client test in a real
+// window (./gradlew runClientGameTest). Both run in CI on every push; sources live in src/gametest.
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "extremedimensions-gametest"
+		enableGameTests = true
+		enableClientGameTests = true
+		eula = true
 	}
 }

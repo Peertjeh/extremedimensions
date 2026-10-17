@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "extremedimensions:seam_silk",
+    "extremedimensions:seam_silk",
+    "extremedimensions:seam_silk",
+    "extremedimensions:seam_silk",
+    "extremedimensions:tether_fragment",
+    "extremedimensions:veil_wing"
+  ],
+  "result": {
+    "id": "extremedimensions:mending_cloth",
+    "count": 1
+  }
+}

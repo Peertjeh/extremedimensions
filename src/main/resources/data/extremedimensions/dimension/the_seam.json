@@ -1,0 +1,13 @@
+{
+  "type": "extremedimensions:the_seam",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "biome": "extremedimensions:seam",
+      "features": false,
+      "lakes": false,
+      "layers": [],
+      "structure_overrides": []
+    }
+  }
+}

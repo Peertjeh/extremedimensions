@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "###",
+    "###"
+  ],
+  "key": {
+    "#": "extremedimensions:hush_tiles"
+  },
+  "result": {
+    "id": "extremedimensions:hush_tile_wall",
+    "count": 6
+  }
+}

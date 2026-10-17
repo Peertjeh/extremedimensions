@@ -1,0 +1,34 @@
+{
+	"schemaVersion": 1,
+	"id": "extremedimensions-gametest",
+	"version": "1",
+	"name": "Extreme Dimensions tests",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-gametest": [
+			"com.extremedimensions.gametest.CurseTests",
+			"com.extremedimensions.gametest.ExtremeTests",
+			"com.extremedimensions.gametest.SettingsTests",
+			"com.extremedimensions.gametest.RelicTests",
+			"com.extremedimensions.gametest.PactTests",
+			"com.extremedimensions.gametest.TrialTests",
+			"com.extremedimensions.gametest.BossTests",
+			"com.extremedimensions.gametest.WorldTests",
+			"com.extremedimensions.gametest.PerfTests",
+			"com.extremedimensions.gametest.CoopTests",
+			"com.extremedimensions.gametest.TribeTests",
+			"com.extremedimensions.gametest.FrayTests",
+			"com.extremedimensions.gametest.JournalTests",
+			"com.extremedimensions.gametest.MasonryTests",
+			"com.extremedimensions.gametest.GateTests",
+			"com.extremedimensions.gametest.ArchitectureTests",
+			"com.extremedimensions.gametest.ResetTests"
+		],
+		"fabric-client-gametest": [
+			"com.extremedimensions.gametest.ClientShots"
+		]
+	},
+	"depends": {
+		"extremedimensions": "*"
+	}
+}

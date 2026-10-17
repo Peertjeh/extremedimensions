@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": "extremedimensions:mossy_hush_bricks",
+  "result": {
+    "id": "extremedimensions:mossy_hush_brick_stairs",
+    "count": 1
+  }
+}
