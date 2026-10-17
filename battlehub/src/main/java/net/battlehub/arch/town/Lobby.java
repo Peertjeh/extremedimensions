@@ -256,9 +256,10 @@ public final class Lobby {
 				// front faces the avenue: towards -lateral
 				front = lateralFacing(d, -side);
 				if (rng.next() < s.density && house(fx, fz, front, s, lib, districts, t, occ, rng, out, w)) {
-					along += w + rng.range(1, 2);
+					// mostly in rows, now and then an alley
+					along += w + (rng.chance(0.25) ? rng.range(2, 3) : 0);
 				} else {
-					along += 3;
+					along += 2;
 				}
 			}
 		}
@@ -279,9 +280,9 @@ public final class Lobby {
 				int fx = alongZ ? at + side * 4 : pos + w / 2, fz = alongZ ? pos + w / 2 : at + side * 4;
 				Dir front = alongZ ? (side > 0 ? Dir.WEST : Dir.EAST) : (side > 0 ? Dir.NORTH : Dir.SOUTH);
 				if (rng.next() < s.density && house(fx, fz, front, s, lib, districts, t, occ, rng, out, w)) {
-					pos += w + rng.range(1, 2);
+					pos += w + (rng.chance(0.25) ? rng.range(2, 3) : 0);
 				} else {
-					pos += 3;
+					pos += 2;
 				}
 			}
 		}
@@ -320,7 +321,7 @@ public final class Lobby {
 		if (hi - lo > 5) return false;
 		int floor = streetHeight(t, fx, fz, front);
 		t.level(rect[0], rect[1], rect[2], rect[3], floor - 1, 2);
-		occ.rect(rect[0] - 1, rect[1] - 1, rect[2] + 1, rect[3] + 1);
+		occ.rect(rect[0], rect[1], rect[2], rect[3]);
 		Xform frame = Xform.facing(front, fx, floor, fz);
 		Building b = Architect.build(br, lib, frame, t::height);
 		out.buildings.add(b);
@@ -424,7 +425,7 @@ public final class Lobby {
 		mc.field(Slot.GROUND, new Gradient.Stack().add(Gradient.noise(seed + 4, 14, 2), 1));
 		mc.field(Slot.SOIL, new Gradient.Stack().add(Gradient.noise(seed + 5, 6, 2), 1));
 		Probe p = new Probe();
-		Cell ground = Cell.of(Slot.GROUND), soil = Cell.of(Slot.SOIL), rock = Cell.of(Slot.ROCK);
+		Cell ground = Cell.of(Slot.GROUND), soil = Cell.of(Slot.SOIL), rock = Cell.of(Slot.ROCK), wall = Cell.of(Slot.FOUNDATION);
 		for (int x = t.minX; x < t.minX + t.size; x++) {
 			for (int z = t.minZ; z < t.minZ + t.size; z++) {
 				int h = t.height(x, z);
@@ -443,11 +444,24 @@ public final class Lobby {
 					}
 					if (!show) continue;
 					Cell c = y == h ? ground : y >= h - 3 ? soil : rock;
+					// where the land stands over a road or a building plot, its face is a masonry retaining wall
+					if (y < h && retaining(t, x, y, z)) c = wall;
 					p.set(x, y, z, x, y, z, c);
 					v.set(x, y, z, Resolver.resolve(c, p, mc));
 				}
 			}
 		}
+	}
+
+	/** A face of land that looks out over a built column lower than it (a road, a plot, the plaza). */
+	static boolean retaining(Terrain t, int x, int y, int z) {
+		for (Dir d : Dir.values()) {
+			int nx = x + d.dx, nz = z + d.dz;
+			if (!t.built(nx, nz) && Math.hypot(nx, nz) > Plaza.RADIUS + 1) continue;
+			int nh = t.height(nx, nz);
+			if (nh != Terrain.NONE && y > nh) return true;
+		}
+		return false;
 	}
 
 	static void emitLiteral(Plan plan, Voxels v) {

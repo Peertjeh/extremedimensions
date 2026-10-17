@@ -127,12 +127,14 @@ public final class RoofField {
 		top.forEach((key, h) -> {
 			int x = Plan.kx(key), z = Plan.kz(key);
 			int lowest = h;
+			int lowestReal = h;
 			Dir down = null;
 			int downCount = 0;
 			Dir up = null;
 			int upBest = h;
 			for (Dir d : Dir.values()) {
 				int n = at(x + d.dx, z + d.dz);
+				if (n != Integer.MIN_VALUE) lowestReal = Math.min(lowestReal, n);
 				if (n == Integer.MIN_VALUE) n = baseAt(x, z) - 1;
 				lowest = Math.min(lowest, n);
 				if (n < h) {
@@ -145,8 +147,9 @@ public final class RoofField {
 				}
 			}
 			int b = baseAt(x, z);
-			// down to the lowest neighbour, so each step of the roof rests on the one below (no edge-only joins)
-			int from = Math.max(b, Math.min(h, lowest));
+			// down to the lowest roof neighbour, so each step rests on the one below (no edge-only joins); the
+			// outer edges (verges and eaves) stay one block thick instead of hanging down to the eaves
+			int from = Math.max(b, Math.min(h, lowestReal));
 			for (int y = from; y < h; y++) c.set(x, y, z, Cell.of(roof, prio));
 			boolean edgeCell = false;
 			for (Dir d : Dir.values()) {

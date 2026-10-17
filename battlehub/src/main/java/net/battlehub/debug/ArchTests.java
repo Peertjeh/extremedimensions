@@ -108,9 +108,9 @@ final class ArchTests {
 			Lobby.Result r = ArchLobby.last();
 			if (r == null) return;
 			Render rd = new Render(r.voxels);
-			Preview.log("citadel_overview", rd.view(0, 32, 0.55, 1280, 800));
-			Preview.log("citadel_from_south_east", rd.view(135, 30, 0.6, 1280, 800));
-			Preview.log("citadel_spawn_view", rd.perspective(new double[] {0.5, 9, 26}, new double[] {0.5, 16, -80}, 70, 1280, 800));
+			Preview.log("citadel_overview", rd.view(0, 32, 0.55, 960, 600));
+			Preview.log("citadel_from_south_east", rd.view(135, 30, 0.6, 960, 600));
+			Preview.log("citadel_spawn_view", rd.perspective(new double[] {0.5, 9, 26}, new double[] {0.5, 16, -80}, 70, 960, 600));
 			Library lib = Library.defaults();
 			String[][] examples = {{"cathedral", "2"}, {"castle", "7"}, {"mage_tower", "9"}, {"temple_ruin", "6"}};
 			for (String[] ex : examples) {
@@ -123,7 +123,7 @@ final class ArchTests {
 				b.emit(v);
 				Connect.apply(v);
 				int[] box = {b.plan.minX(), b.plan.minY(), b.plan.minZ(), b.plan.maxX(), b.plan.maxY(), b.plan.maxZ()};
-				Preview.log("arch_" + ex[0] + "_" + ex[1], new Render(v).view(30, 20, 0.8, 960, 640, box));
+				Preview.log("arch_" + ex[0] + "_" + ex[1], new Render(v).view(30, 20, 0.8, 720, 480, box));
 			}
 		});
 	}

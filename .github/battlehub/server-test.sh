@@ -41,6 +41,8 @@ echo "===== tail ====="
 tail -25 out.log
 echo "===== pictures (base64 JPEG, one part per line) ====="
 grep "SELFTEST IMG" out.log | sed 's/^.*SELFTEST IMG /IMG /'
+echo "===== architecture (summary) ====="
+grep -a "SELFTEST architecture\|Architecture: lobby\|Architecture: .*missing\|SELFTEST FINISHED" out.log | grep -v "SELFTEST IMG" | sed 's/^.*\(SELFTEST\|Architecture\)/\1/' | cut -c1-700 | head -40
 echo "===== files ====="
 ls -la config/battlehub world/battlehub world/battlehub/players world/battlehub/restore 2>/dev/null
 FAIL=0

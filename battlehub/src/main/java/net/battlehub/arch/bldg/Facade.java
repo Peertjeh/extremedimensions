@@ -111,7 +111,7 @@ public final class Facade {
 		if (r.timberUpper && r.floors.length > 1) {
 			int split = r.floors[1];
 			c.place("wall.body", Xform.ID, Spec.of(len, split, d).with("plinth", r.plinth).with("quoins", r.quoins));
-			c.place("wall.timber", Xform.at(0, split, 0), Spec.of(len, h - split, d).with("span", Math.max(3, r.bay - 1)));
+			c.place("wall.timber", Xform.at(0, split, 0), Spec.of(len, h - split, d).with("span", Math.max(4, r.bay)));
 		} else {
 			c.place("wall.body", Xform.ID, Spec.of(len, h, d).with("plinth", r.plinth).with("bands", r.bands ? bands : new int[0])
 					.with("cornice", r.cornice).with("quoins", r.quoins));
