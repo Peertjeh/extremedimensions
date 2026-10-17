@@ -102,10 +102,10 @@ public final class SeamService {
 	private static boolean sealChecked;
 
 	/**
-	 * Once a session, before anything is built: if the seal is gone (the Seam's folder was deleted or reset), every
-	 * island the world data remembers is forgotten so the Seam is designed again; islands a crash left unfinished
-	 * ({@code u@} marks) are designed again too. A cell is otherwise never designed twice, so breaking an island's
-	 * heart cannot make its chests and veins come back.
+	 * Once a session, before anything is built: if the seal is gone (the Seam's folder was deleted, or reset with
+	 * {@link SeamReset}), everything the world data remembers of it is forgotten so the Seam is designed again (see
+	 * {@link #forget()}); islands a crash left unfinished ({@code u@} marks) are designed again too. A cell is otherwise
+	 * never designed twice, so breaking an island's heart cannot make its chests and veins come back.
 	 */
 	public static void checkSeal(ServerLevel seam) {
 		if (sealChecked) {
@@ -115,9 +115,9 @@ public final class SeamService {
 		seam.getChunk(0, 0);
 		boolean sealed = seam.getBlockState(SEAL).is(Blocks.BARRIER);
 		java.util.Set<String> cells = DataStore.seamCells();
-		if (!sealed && DataStore.seamSealed() && !cells.isEmpty()) {
-			ExtremeDimensions.LOGGER.info("The Seam was regenerated: its {} remembered islands and marks are designed again", cells.size());
-			cells.clear();
+		if (!sealed && DataStore.seamSealed()) {
+			ExtremeDimensions.LOGGER.info("The Seam was made anew: its {} remembered islands and marks are designed again", cells.size());
+			forget();
 		} else {
 			List<String> unfinished = new ArrayList<>();
 			for (String key : cells) {
@@ -141,6 +141,40 @@ public final class SeamService {
 			seam.setBlock(SEAL, Blocks.BARRIER.defaultBlockState(), 2);
 		}
 		DataStore.setSeamSealed(true);
+		DataStore.markDirty();
+	}
+
+	/**
+	 * The Seam is new: its islands and marks (villages, looms, barrels, falls) are forgotten, and the Heart, which is
+	 * built again when someone comes near it; whoever was inside it is brought home when next seen ({@link #lost}).
+	 */
+	private static void forget() {
+		DataStore.seamCells().clear();
+		DataStore.setHeartBuilt(false);
+		for (PlayerData d : DataStore.players()) {
+			if (d.inSeam) {
+				d.inSeam = false;
+				d.seamLost = true;
+			}
+		}
+	}
+
+	/**
+	 * The Seam was made anew while this player was in it: they are home again where their rift opened, with no curse
+	 * and no collapse counted (a trial they were on is simply over).
+	 */
+	private static void lost(ServerPlayer p, PlayerData d) {
+		d.seamLost = false;
+		d.seamPull = 0;
+		d.trial = null;
+		TetherService.clearThread(p, d);
+		if (inSeam(p)) {
+			WorldFx.tp(p, Dims.fullIdOf(d.homeDim), d.homeX, d.homeY, d.homeZ);
+			WorldFx.fx(p, Fx.SAFE, 0);
+			p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.seam.made_anew")
+					.withStyle(net.minecraft.ChatFormatting.GOLD));
+		}
+		Sync.state(p, d);
 		DataStore.markDirty();
 	}
 
@@ -335,6 +369,14 @@ public final class SeamService {
 		boolean slow = s.getTickCount() % 20 == 0;
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
 			PlayerData d = DataStore.get(p.getUUID());
+			if (d.inSeam && level != null && inSeam(p)) {
+				// A visit carried over from before the server started: is the Seam it was in still there?
+				checkSeal(level);
+			}
+			if (d.seamLost && p.isAlive()) {
+				lost(p, d);
+				continue;
+			}
 			if (!d.inSeam || !p.isAlive()) {
 				continue;
 			}

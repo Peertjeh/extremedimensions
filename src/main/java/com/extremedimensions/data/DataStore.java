@@ -277,6 +277,11 @@ public final class DataStore {
 		return d;
 	}
 
+	/** Every player's data, whether or not they are online. */
+	public static java.util.Collection<PlayerData> players() {
+		return data.players.values();
+	}
+
 	public static Map<String, Anchor> anchors() {
 		return data.altars;
 	}

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.25.1: A Clean Slate
+
+### Added
+- **Admins can reset the Seam.** `/tether seam_reset` says what a reset does, `/tether seam_reset confirm` asks for
+  one and `/tether seam_reset cancel` calls it off. An open world cannot be wiped, so the reset happens the next time
+  the world loads (restart the server, or leave a singleplayer world and open it again): before the Seam loads, its
+  folder is wiped, and nothing else of the world is touched. The world's memory of it (islands, villages, looms,
+  barrels, the Heart) is forgotten, so it is designed and built anew as players explore, and anyone who was still
+  inside is brought home where their rift opened, with no curse and no collapse counted. It takes permission level 3
+  (an admin, the server console, or the host of a singleplayer world with cheats on), so no command block can do it.
+- New setting: on a reset, keep the old Seam aside in the world's folder instead of wiping it (off by default).
+
+### Fixed
+- A Seam whose folder was deleted by hand is treated the same way: a player who was inside is brought home, no longer
+  dropped into the void to be pulled out cursed.
+
 ## 2.25.0: Torn Open
 
 ### Added

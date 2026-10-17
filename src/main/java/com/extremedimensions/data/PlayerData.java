@@ -90,6 +90,8 @@ public class PlayerData {
 	public float riftYaw;
 	public String homeDim = "overworld";
 	public double homeX, homeY, homeZ;
+	/** Was in the Seam when it was made anew: brought home (no curse) when next seen. */
+	public boolean seamLost = false;
 	public transient int seamPull = 0;
 	/** Tier of the bound Tether: 0 iron chain, 1 soul-woven, 2 seam-woven. */
 	public int tetherTier = 0;

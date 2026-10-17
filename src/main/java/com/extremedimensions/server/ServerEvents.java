@@ -68,6 +68,8 @@ public final class ServerEvents {
 	private static int effectTimer = 0;
 
 	public static void register() {
+		// A reset of the Seam that an operator asked for is carried out before the worlds load
+		ServerLifecycleEvents.SERVER_STARTING.register(com.extremedimensions.seam.SeamReset::starting);
 		ServerLifecycleEvents.SERVER_STARTED.register(s -> {
 			WorldFx.bind(s);
 			DataStore.load(s);

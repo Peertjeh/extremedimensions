@@ -13,6 +13,7 @@ import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.hollow.HollowService;
 import com.extremedimensions.lurker.LurkerService;
 import com.extremedimensions.seam.SeamArchitect;
+import com.extremedimensions.seam.SeamReset;
 import com.extremedimensions.penalty.CurseEffects;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.seam.SeamService;
@@ -29,13 +30,16 @@ import net.minecraft.server.level.ServerPlayer;
 /**
  * Commands under {@code /tether}: {@code where} for everyone (the world you stand in and whether the mod acts there),
  * the co-op answers ({@code burden accept|refuse}, {@code share on|off}) and {@code tribe} (where you stand with it);
- * for operators Overworld curses on or off, curses set or cleared, Lurkers, hoards, the Seam, bosses and difficulty.
+ * for operators Overworld curses on or off, curses set or cleared, Lurkers, hoards, the Seam, bosses and difficulty;
+ * for admins a reset of the Seam.
  */
 public final class TetherCommand {
 	private TetherCommand() {}
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		java.util.function.Predicate<CommandSourceStack> op = Commands.hasPermission(Commands.LEVEL_GAMEMASTERS);
+		// Wiping a world is for admins (and the server console), not for command blocks
+		java.util.function.Predicate<CommandSourceStack> admin = Commands.hasPermission(Commands.LEVEL_ADMINS);
 		dispatcher.register(Commands.literal("tether")
 				// Anyone may ask where they stand; everything else is for operators
 				.then(Commands.literal("where").executes(c -> where(c.getSource())))
@@ -65,6 +69,10 @@ public final class TetherCommand {
 						.then(Commands.literal("ferryman").executes(c -> boss(c.getSource(), "ferryman")))
 						.then(Commands.literal("weaver").executes(c -> boss(c.getSource(), "weaver"))))
 				.then(Commands.literal("seam").requires(op).executes(c -> seam(c.getSource())))
+				.then(Commands.literal("seam_reset").requires(admin)
+						.executes(c -> seamReset(c.getSource()))
+						.then(Commands.literal("confirm").executes(c -> seamResetConfirm(c.getSource())))
+						.then(Commands.literal("cancel").executes(c -> seamResetCancel(c.getSource()))))
 				.then(Commands.literal("break_seal").requires(op).executes(c -> {
 					MendingService.breakSeal(c.getSource().getServer());
 					return 1;
@@ -227,6 +235,47 @@ public final class TetherCommand {
 		boolean ok = SeamService.summon(p);
 		src.sendSuccess(() -> Component.translatable(ok ? "commands.extremedimensions.seam.entered" : "commands.extremedimensions.seam.failed"), false);
 		return ok ? 1 : 0;
+	}
+
+	/**
+	 * {@code /tether seam_reset}: what a reset of the Seam does, or that one is waiting. The texts fall back on English
+	 * where they are not translated (the server console).
+	 */
+	private static int seamReset(CommandSourceStack src) {
+		java.nio.file.Path root = SeamReset.root(src.getServer());
+		if (SeamReset.waiting(root)) {
+			src.sendSuccess(() -> Component.translatableWithFallback("commands.extremedimensions.seam_reset.waiting",
+					"A reset of the Seam is waiting (asked for by %s). It happens the next time the world loads. To call it off: /tether seam_reset cancel",
+					SeamReset.askedBy(root)), false);
+			return 1;
+		}
+		src.sendSuccess(() -> Component.translatableWithFallback("commands.extremedimensions.seam_reset.ask",
+				"A reset wipes the Seam: every island and building in it, and everything left there. It is then built anew as players explore. "
+						+ "An open world cannot be wiped, so it happens the next time the world loads: restart the server, or leave the world and open it again. "
+						+ "Anyone still in the Seam then is brought home safely. To go ahead: /tether seam_reset confirm"), false);
+		return 0;
+	}
+
+	/** {@code /tether seam_reset confirm}: the Seam is wiped the next time the world loads. */
+	private static int seamResetConfirm(CommandSourceStack src) {
+		if (!SeamReset.ask(SeamReset.root(src.getServer()), src.getTextName())) {
+			src.sendFailure(Component.translatableWithFallback("commands.extremedimensions.seam_reset.failed",
+					"The reset could not be asked for: the world's folder cannot be written to. See the server log."));
+			return 0;
+		}
+		src.sendSuccess(() -> Component.translatableWithFallback("commands.extremedimensions.seam_reset.confirmed",
+				"The Seam will be made anew the next time the world loads (restart the server, or leave the world and open it again). "
+						+ "Until then it stays as it is. To call it off: /tether seam_reset cancel"), true);
+		return 1;
+	}
+
+	/** {@code /tether seam_reset cancel}: a reset that was waiting is called off. */
+	private static int seamResetCancel(CommandSourceStack src) {
+		boolean was = SeamReset.callOff(SeamReset.root(src.getServer()));
+		src.sendSuccess(() -> was
+				? Component.translatableWithFallback("commands.extremedimensions.seam_reset.cancelled", "The reset of the Seam is called off.")
+				: Component.translatableWithFallback("commands.extremedimensions.seam_reset.none", "No reset of the Seam is waiting."), was);
+		return was ? 1 : 0;
 	}
 
 	private static int show(CommandSourceStack src) {

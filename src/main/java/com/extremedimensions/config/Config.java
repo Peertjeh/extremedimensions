@@ -262,6 +262,8 @@ public final class Config {
 	public static int SEAM_PORTAL_RADIUS = 20;
 	/** Radius, in tenths of a block, of the tear a Seam Needle opens in the world. */
 	public static int SEAM_PORTAL_ENTRY_RADIUS = 16;
+	/** Whether a reset of the Seam keeps the old one aside in the world's folder (1) or wipes it (0). */
+	public static int SEAM_RESET_BACKUP = 0;
 
 	// --- After the Dragon and the Mending --------------------------------------------------------
 
