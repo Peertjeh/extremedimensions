@@ -946,7 +946,8 @@ public class ClientShots implements FabricClientGameTest {
 					new net.minecraft.world.phys.AABB(rx - 3, ry - 3, rz - 3, rx + 3, ry + 3, rz + 3), com.extremedimensions.seam.RiftPortal::seen).isEmpty(),
 					"the rift home has no tear the visitor can see"));
 			ctx.takeScreenshot("25_portal_near");
-			eye(sp, rx + fx * 5.2 - fz * 3.6, eyeY + 0.3, rz + fz * 5.2 + fx * 3.6, rx, rz, 0);
+			// (the gate's passage is deep: from much further aside its pylon hides the tear)
+			eye(sp, rx + fx * 6.5 - fz * 1.7, eyeY + 0.3, rz + fz * 6.5 + fx * 1.7, rx, rz, 0);
 			ctx.waitTicks(20);
 			ctx.takeScreenshot("25_portal_aside");
 			eye(sp, rx - fx * 5.5, eyeY, rz - fz * 5.5, rx, rz, 0);

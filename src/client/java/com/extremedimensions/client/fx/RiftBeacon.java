@@ -6,11 +6,13 @@ import java.util.List;
 import com.extremedimensions.client.sky.SeamFog;
 import com.extremedimensions.client.state.ClientState;
 import com.extremedimensions.config.Config;
+import com.extremedimensions.seam.RiftPortal;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -64,6 +66,8 @@ public final class RiftBeacon {
 		float half = (float) Math.max(step * s / 2, s < 1 ? 0.012 * near : 0);
 		// Standing in it, it thins so it does not blind
 		float close = (float) Mth.clamp((dist - 1.0) / 5.0, 0.3, 1.0);
+		// A tear standing over the rift: seen where it is, the column rises from the top of it, not through its tunnel
+		double tearTop = s >= 1 ? tearTop(level, rx, ry, rz) : Double.NaN;
 		boolean fresh = COLUMN.isEmpty() || !COLUMN.get(0).isAlive();
 		if (fresh) {
 			clearColumn();
@@ -96,6 +100,9 @@ public final class RiftBeacon {
 			// It fades out into the nothing below and thins away high above
 			double k = (double) i / (TILES - 1);
 			double ends = Math.min(1, Math.min(k / 0.25, (1 - k) / 0.3));
+			if (!Double.isNaN(tearTop) && y > ry - 2) {
+				ends *= Mth.clamp((y - tearTop) / 2.5, 0, 1);
+			}
 			p.peak = (float) ((s < 1 ? 1.0 : 0.8) * ends * ends) * close;
 		}
 		// The glow over the rift, seen where it really is
@@ -113,7 +120,7 @@ public final class RiftBeacon {
 		}
 		glow.place(rx, ry + 1.1, rz);
 		glow.extend(40);
-		glow.peak = there ? 0.55F : 0;
+		glow.peak = there && Double.isNaN(tearTop) ? 0.55F : 0;
 		if (!there) {
 			return;
 		}
@@ -146,6 +153,15 @@ public final class RiftBeacon {
 			g.color(R, G, B);
 			AttackFx.add(g);
 		}
+	}
+
+	/** The top of a tear standing over the rift that the player can see, or NaN when there is none. */
+	private static double tearTop(ClientLevel level, double rx, double ry, double rz) {
+		double top = Double.NaN;
+		for (RiftPortal t : level.getEntitiesOfClass(RiftPortal.class, new AABB(rx - 3, ry - 3, rz - 3, rx + 3, ry + 3, rz + 3), RiftPortal::seen)) {
+			top = t.getY() + 2 * t.radius() + 0.3;
+		}
+		return top;
 	}
 
 	private static void clearColumn() {
