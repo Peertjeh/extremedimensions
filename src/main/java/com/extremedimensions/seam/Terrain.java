@@ -78,6 +78,12 @@ public final class Terrain {
 		return i < 0 || !land[i] ? fallback : surf[i];
 	}
 
+	/** The lowest block of the island's rock under a column, or {@code fallback} where it has no land. */
+	public int bottomAt(int x, int z, int fallback) {
+		int i = at(x, z);
+		return i < 0 || !land[i] ? fallback : bottom[i];
+	}
+
 	private static double smooth(double e0, double e1, double v) {
 		double t = Math.max(0, Math.min(1, (v - e0) / (e1 - e0)));
 		return t * t * (3 - 2 * t);
@@ -164,20 +170,22 @@ public final class Terrain {
 			}
 		}
 		int r = s.r(), top = s.top(), cx = s.x(), cz = s.z();
-		// Fangs of stone hanging far below, darkening and ending in amethyst
+		// Fangs of stone hanging below, tapering to a point (thick at the root, a needle at the tip), darkening and
+		// ending in amethyst
 		BlockState[] rock = rockGrad();
-		int fangs = 2 + r / 5;
+		int fangs = 1 + r / 8;
 		for (int k = 0; k < fangs; k++) {
-			int fx = (int) ((rnd.nextDouble() - 0.5) * r), fz = (int) ((rnd.nextDouble() - 0.5) * r);
+			int fx = (int) ((rnd.nextDouble() - 0.5) * r * 0.8), fz = (int) ((rnd.nextDouble() - 0.5) * r * 0.8);
 			int i = at(cx + fx, cz + fz);
 			if (i < 0 || !land[i]) {
 				continue;
 			}
-			int base = bottom[i];
-			int len = 6 + rnd.nextInt(Math.max(2, Math.min(r, 26)));
-			double rad = 1.5 + rnd.nextDouble() * 2.0;
+			// rooted a little up inside the rock, so it grows out of the underside rather than hanging off it
+			int base = bottom[i] + 2;
+			int len = 5 + rnd.nextInt(Math.max(2, Math.min(r / 2 + 4, 18)));
+			double rad = 1.8 + rnd.nextDouble() * 1.6;
 			for (int j = 0; j < len; j++) {
-				double rr = rad * (1 - (double) j / len);
+				double rr = rad * Math.pow(1 - (double) j / len, 1.6);
 				int ir = (int) Math.ceil(rr);
 				double t = (double) j / len;
 				for (int ax = -ir; ax <= ir; ax++) {

@@ -1,163 +1,148 @@
 # How the Seam is built
 
-This note describes the procedural architecture of the Seam: what exists, how it fits together, how materials and
-gradients are planned, how to extend it, and what it cannot do yet. It was written for 2.25.0, when building-wide
-material planning arrived. File and method names are in `src/main/java/com/extremedimensions/seam/`.
+This note describes how the Seam is generated: its islands, what stands on them, how materials and gradients are
+planned, how age and damage are applied, how to extend it, and what it cannot do yet. It covers 2.26.0, when the
+whole of the Seam's world generation moved onto one pipeline (ground planned first, structures designed apart and set
+down on it, then aged). File and method names are in `src/main/java/com/extremedimensions/seam/`.
 
 ## A. Assessment: where it stood
 
-The Seam was already generated as a hierarchy, though the hierarchy lived in code rather than in data:
+Before 2.26 the Seam was generated as a hierarchy that lived in code, and building-wide material planning existed for
+the colossal buildings only (2.25). What players saw, and what the code explained:
 
-| Level | Where it lives | What it decides |
-| --- | --- | --- |
-| Dimension | `SeamService` | the island grid (`CELL` = 100 blocks), arrival, the build queue, the seal |
-| Region | `SeamArchitect.design...` | one island (or none) per cell, its kind, bridges between neighbours |
-| Island | `SeamArchitect.island`, `Shape` | the rock: an upside-down mountain with summits, ribs, strata, turf |
-| Building | `Colossus.build`, `ReturnGate.build`, `village`, `loom`, ... | the plan of one structure |
-| Assembly | `Colossus.tower`, `hall`, `apse`, the citadel's curtain wall | a tower of tiers, a nave, a wall |
-| Module | tier bodies, corners, crowns, `portal`, `bridge`, `parapet` | one recognisable architectural part |
-| Block | `Frame.set` / `Plan.set` | a block of the world, in a rotated local frame |
+| What was seen | Why |
+| --- | --- |
+| Islands like pucks: a flat top, a cut edge, a ring of grey stone round the rim, columns of rock beneath | Every island's top was one height, its coast three sine waves, its rim a fixed band of stone, and every column of its underside a random block longer or shorter than the next |
+| Buildings whose foot did not meet the ground | Buildings were laid out against the island's radius, not its coast: on a bay they hung over the nothing. Nothing tied a wall's foot to the ground |
+| Great buildings that were not one building | Each part used its own heights: a hall met a tower at any height, an octagonal or round crossing tower left gaps where the nave met it, west towers stood a block off the front, the towers of a cluster stood apart on the turf |
+| Too little variety | One plan per layout, symmetric towers, one look per scheme |
+| Nothing damaged but a whole "ruin" scheme | Damage existed only as broken crowns of that one scheme |
+| Timber bridges and a gold column and line of gold at the rift | Hung bridges of dark oak; a beam effect and a line of froglights |
 
-Strengths at that point: a working kit of parts (five plans of colossal building, six kinds of tier body, two kinds
-of corner, five crowns, four schemes of material), rotation through `Frame`, every structure planned before a single
-block is placed (so plans can be tested on a server with no world), and a build queue that flies blocks in.
+## B. Architecture: the pipeline
 
-The weaknesses that mattered most, measured against a professional procedural pipeline:
+```
+SeamService.plan(cell)
+  Shape            the island's footprint and coast (predictable by neighbours, for bridges)
+  Terrain.of       the ground, planned as a surface: relief, shoulder, coast, underside; corridors to bridges
+  Terrain.emit     the island laid; each column's surface recorded on the Plan (ground map)
+  build(kind)      every structure designed on a Plan of its own (Colossus, loom, village, halo)
+    Ruin.apply     its age and damage, on its own blocks only
+    Terrain.settle the ground fitted to it: levelled, blended, a ledge grown under any overhang
+    Plan.merge     the structure set down; the paving it asked for laid on the real ground
+  streets, grounds the island dressed, following the ground
+  bridges          stone only
+```
 
-1. **Gradients restarted at every part.** A tower shaded its masonry by `height / building height`, a hall by
-   `height / 48`, the citadel's curtain wall by `height / (2.5 × wall height)`. Where a hall met a tower they showed
-   different stone at the same height: a visible seam at every junction.
-2. **Per-block randomness.** Each block's rung on its ladder was moved by `±0.575` of a rung drawn from the layout's
-   random stream, and wear (moss, cracks) was a second coin per block. The result read as speckle, not as a gradient.
-3. **One random stream for everything.** Choosing stone consumed the same stream as choosing towers, so any change to
-   how stone is chosen moved towers too.
-4. **No briefs.** A building's plan and scheme could only be drawn at random; there was no way to ask for, say, a
-   ruined citadel.
-5. **Thin validation of materials.** Tests covered fit, height, gates and bridges, not determinism or gradients.
+- **Terrain** holds the island as arrays (land, surface, underside, built) before a block is laid, so structures can be
+  fitted to it and it to them.
+- **Plan** gained a ground map (`ground(x, z, fallback)`), deferred paving (asked for on a structure's own plan, laid
+  on merge) and `merge`.
+- **Ruin** knows nothing of buildings beyond their blocks: it works on any structure's plan.
+- **Colossus** keeps the material plan of 2.25 (`MaterialContext`, one per building, world coordinates) and now
+  closes its massing (datum lines, square crossings, engaged towers, a podium) and lays a plinth round every wall.
 
-## B. Architecture: what changed
+Random streams stay separate: layout (the cell's stream), materials and look (from the building's position), age (from
+the building's position), terrain (one number drawn, then its own stream).
 
-Materials now have their own layer between a building's scheme and its blocks:
+## C. Implementation (2.26.0)
 
-- **`Colossus.Scheme`** holds a building's *roles*: the wall ladder (dark to pale), the trim ladder, roof, roof fill,
-  corbels, caps, rails, floors, glass, accent, band and pier. Which role a block plays is decided by the module that
-  lays it; the scheme only says what that role is made of.
-- **`MaterialContext`** is the material plan of one building, made once in `Colossus.build` from where the building
-  stands. It decides only *where on a ladder* a block falls, from the block's world coordinates. Every module of the
-  building asks the same context, so the same world block gets the same answer whichever module asks.
-
-Modules call `sc.masonryAt(frame, x, y, z, bias)` and `sc.trimAt(frame, x, y, z, bias)` with their local
-coordinates; the scheme converts them through the frame (`p_world = R · p_local + o`) and asks the context.
-
-Materials draw on a stream of their own (the context's seed comes from the building's position, not from the layout
-stream), so changing how stone is chosen changes no geometry.
-
-## C. Implementation (2.25.0)
-
-- `MaterialContext` (new): height easing, smooth streak and patch fields, positional dither, wear in patches.
-- `Colossus`: every masonry and trim site that followed a gradient now goes through the context (29 sites); the three
-  separate gradient functions are gone. Fixed rungs remain where the role demands them (a plinth course is always the
-  darkest trim, ribs and finials the palest).
-- `Colossus.build(..., plan, scheme)` and `SeamService.colossus(..., layout, scheme, ...)`: a building can be told its
-  scheme (`TWILIGHT`, `BONE`, `GLOAM`, `RUIN`). The scheme's draw from the stream is kept either way, so a building
-  told its scheme keeps the shape its seed gives (except a ruin, whose crowns break and battlements rag).
-- `Plan.fingerprint()`: an order-independent hash of every block a plan lays, for determinism tests.
+- `Terrain` (new): relief (mounds up to four blocks on the largest islands, a crown), a two-block shoulder at the coast,
+  level corridors to bridges, a smooth underside (summit, lobes, ribs, a slow wander; no random per column),
+  conical fangs, growth, falls; `settle` with a chamfer distance field (margin 2, blend 5), ledges under overhangs,
+  masonry faces where the levelled ground drops.
+- `Shape.edge`: five harmonics instead of three (bays, headlands, coves); `nearest()` for fitting.
+- `Ruin` (new): conditions, bites, fallen crowns, loose blocks dropped, broken edges worn, glass broken, vines,
+  rubble.
+- `Colossus`: `tower(..., firstTier)`; square crossing tower rising past the ridges; engaged west towers on the eaves
+  line (pair, two heights, or one); cluster on a podium with wings and doors; hall gables closed at both ends; broad
+  tiers no longer glass lanterns; `socle` (the plinth); `look` (glazing and roof per building); Gloam without cobbles.
+- `SeamService`: the pipeline above for cells, the showcase, `colossus` and `showpiece`; the arrival gate set down on
+  the arrival island and its rock together.
+- Bridges: stone only. Rift: a frame of blocks and pixel-art textures (client); no beam, no line of gold.
 
 ## D. Module library
 
 | Kind | Modules |
 | --- | --- |
-| Tier bodies | `lancet` (tall pointed windows), `arcade` (open arches round an inner core), `colonnade` (piers round a core), `banded` (pale and dark courses with blind arches), `belfry` (open bell stage), `glasshouse` (lantern of glass) |
-| Corners | `buttresses` (stepped, with bands), `turrets` (corbelled, with slits) |
-| Crowns | spire (`cone` + `needle`), dome, crown of pinnacles, terrace, broken (ruins) |
-| Building parts | `parapet` (with or without merlons), `floor`, `core` (spiral stair in a glowing well), `hall` (nave, aisles, flying buttresses, clerestory), `apse`, `portal`, `bridge` (sky bridge between towers), `forecourt`, curtain wall, gatehouse |
+| Ground | island surface, shoulder, corridors, underside, fangs, growth, ledges, retaining masonry |
+| Tier bodies | `lancet`, `arcade`, `colonnade`, `banded`, `belfry`, `glasshouse` (slender tiers only) |
+| Corners | `buttresses`, `turrets` |
+| Crowns | spire, dome, crown of pinnacles, terrace, broken |
+| Building parts | `parapet`, `floor`, `core`, `hall` (both gables closed), `apse`, `portal`, `bridge`, `forecourt`, curtain wall, gatehouse, `podium`, `socle` |
 | Plans | cathedral, citadel, cluster, ziggurat, gateway |
-| Other structures | the Return Gate (`ReturnGate`), villages, looms, spires, crystals, lamps, arches, obelisks, graveyards, bridges with gateways and hung decks (`SeamArchitect`) |
+| Other structures | the Return Gate, villages, looms, halos, hanging towers, arches, obelisks, graveyards, stone bridges with gateways |
+| Age | `Ruin.apply`: bites, fallen crowns, worn edges, broken glass, vines, rubble |
 
 ## E. Materials and gradients
 
-For a building with foot `f` and crown `c` (world heights) and a block at world `(x, y, z)`:
+Unchanged in principle from 2.25: for a building with foot `f` and crown `c` and a block at `(x, y, z)`,
 
 ```
-t       = clamp((y − f) / (c − f), 0, 1)
-height  = 1 − (1 − t)²                                  eased out: the dark foot is a plinth, the crown long
-streak  = 2·noise(x/2.3 + z/2.9, y/12) − 1              narrow across a face, about a dozen blocks long down it
-patch   = 2·noise((x + z)/9, y/7) − 1                   broad patches across a face
-place   = clamp(height + bias + 0.11·streak + 0.08·patch, 0, 1)
-rung    = round(place · (n − 1) + 0.5·(hash(x, y, z) − 0.5))   a quarter rung of dither, from the position
-worn    = noise(x/4 + z/5, y/4) < wear · (1.6 − height)  and  hash₂(x, y, z) < 0.75
+t      = clamp((y − f) / (c − f), 0, 1)
+height = 1 − (1 − t)²
+place  = clamp(height + bias + 0.11·streak + 0.08·patch, 0, 1)
+rung   = round(place · (n − 1) + 0.5·(hash − 0.5))
 ```
 
-Noise moves the *place on the ladder*, never the block directly, and the only per-block term is a quarter-rung
-dither drawn from the position, so band edges are soft but neighbouring stones never jump. The ease-out exists
-because most of a building's stone is low down (halls, walls); laid evenly by height, nearly all of it would be the
-dark of the foot.
-
-Only the vertical gradient is used so far. Horizontal, radial and structural gradients fit the same shape (another
-term added to `place`) but are not implemented.
+New in 2.26: the plinth uses the scheme's darkest stairs (a structural gradient: foundation to wall); retaining faces
+under levelled ground are polished blackstone over blackstone bricks and hush bricks; the island's rock keeps its
+streaks and strata; a building's glazing and roofing are drawn per building (`look`) within its scheme.
 
 ## F. Validation and tests
 
-Gametests that run on every push (`src/gametest/java/.../gametest/`):
+Gametests run on every push (`src/gametest/java/.../gametest/`):
 
-- `ArchitectureTests.aSeedAlwaysBuildsTheSameBuilding`: every plan built twice from one seed has the same
-  fingerprint; the next seed builds another.
-- `ArchitectureTests.aBuildingToldItsSchemeKeepsItsShape`: a building told its scheme is built in it, to the same
-  shape its seed gives in any other (ruins excepted).
-- `ArchitectureTests.aBlockIsTheSameStoneWhicheverPartLaysIt`: two contexts made alike agree on every block, worn
-  or not.
-- `ArchitectureTests.theGradientClimbsFromFootToCrown`: the mean rung climbs with height, the foot is dark, the crown
-  pale, and a course asked to be paler is.
-- `ArchitectureTests.neighbouringStonesShadeSmoothly`: the place on the ladder moves by less than 0.2 between side
-  neighbours and 0.12 between stacked ones; fewer than 1 in 200 neighbouring pairs differ by more than one rung.
-- `MasonryTests.colossiFitTheirIslandsAndDiffer`, `GateTests`: fit within the island, below the build limit,
-  variety, the gate's geometry in every direction, walkable bridges.
+- `GroundTests.theGroundRollsButNeverJumps`: a great island's top rises and falls three blocks or more, fewer than one
+  in fifty neighbouring columns step two blocks or more, its underside rarely jumps, its coast is no circle.
+- `GroundTests.whatIsBuiltStandsOnGround`: villages, looms and colossal buildings from several seeds: no solid block at
+  floor level stands over the nothing; a colossal building has its plinth.
+- `GroundTests.anOverhangStandsOnALedge`: a wall reaching past a small island's coast stands on a grown ledge faced in
+  masonry.
+- `GroundTests.aRuinLeavesNothingHanging`: every plan as a ruin loses much, leaves nothing that stood hanging, keeps
+  its foot, and falls the same way from the same seed.
+- `GroundTests.damageFollowsTheSetting`: none damaged at 0, all at 100, the ruined scheme always a ruin.
+- `GateTests.bridgesAreOfStoneAndPassUnderGateways`: no timber in any bridge; gateways; the walk clear.
+- `ArchitectureTests`, `MasonryTests`: determinism, schemes, gradients, fit within the island, variety.
 
-The client test photographs every plan from a corner and from the front, two of them up close and one at night, plus
-a ruined citadel (`18_colossus_*`).
+The client test photographs every plan of colossal building (`18_colossus_*`), a village, a loom, a plain island
+(and its underside) and a halo island (`20_island_*`), the gate, and both kinds of rift (`25_*`).
 
 ## G. Example buildings
-
-There are no brief files yet; these are the plan and scheme to ask for:
 
 | Example | Call |
 | --- | --- |
 | Castle | `SeamService.colossus(seed, x, top, z, r, Colossus.CITADEL, Colossus.GLOAM, null)` |
 | Cathedral | `SeamService.colossus(seed, x, top, z, r, Colossus.CATHEDRAL, Colossus.BONE, null)` |
-| Magical tower | `SeamService.colossus(seed, x, top, z, r, Colossus.CLUSTER, Colossus.TWILIGHT, null)` (a great spire with lantern tiers and sky bridges) |
+| Magical tower | `SeamService.colossus(seed, x, top, z, r, Colossus.CLUSTER, Colossus.TWILIGHT, null)` |
 | Ruined complex | `SeamService.colossus(seed, x, top, z, r, Colossus.CITADEL, Colossus.RUIN, null)` |
+| A village, a loom, ... | `SeamService.showpiece(seed, x, top, z, kind)`, kinds in `SeamService.SHOWPIECES` |
 
 `plan.placeNow(level)` places the result at once; `plan.queue(...)` flies it in.
 
 ## H. Extending it
 
-- **A new module**: write a static method in `Colossus` that takes the `Tower` (or a `Frame` and `Scheme`) and lays
-  blocks through `f.set` / `f.soft`. Use `sc.masonryAt` / `sc.trimAt` for anything on a ladder, and the scheme's roles
-  (`sc.floor`, `sc.band`, `sc.pier`, ...) for the rest. Never pick a ladder rung from a height of your own.
-- **A new tier body**: add a constant next to `LANCET`..`LANTERN`, a case in `tier`, and a weight where `tower` rolls
-  bodies.
-- **A new scheme**: add a case to `Colossus.scheme` filling every role, a constant next to `RUIN`, and its id in the
-  summary.
-- **Materials elsewhere**: any structure can make its own `MaterialContext.of(seed, foot, crown, wear)` and ask it
-  for `masonry` / `pick` with world coordinates.
+- **A new structure**: design it on a `Plan` of its own, from `top + 1` up (pave with `pave`, which waits for the
+  merge), then `ground.settle(plan, structure, top)` and `plan.merge(structure)` (`SeamService.standOn` does both). It
+  stands on levelled ground, overhang or not.
+- **Age**: `Ruin.apply(structure, rnd, condition, top)` before settling; draw the condition with `Ruin.condition`.
+- **A new module, tier body or scheme**: as before (see `Colossus`); use `sc.masonryAt` / `sc.trimAt` for anything on
+  a ladder; `socle` gives it a plinth.
+- **Ground of a new kind**: give `Terrain` another term in `plan` (it is one surface and one underside per column).
 
 ## I. Known limitations
 
-- **The rift's view is painted, not live.** The far end of a rift's tunnel shows a painted, blurred view of where it
-  leads (the Overworld by day or night, the Nether, the Seam), not the actual world. Rendering another dimension
-  live needs a second world renderer, which a mod cannot add safely.
-- Only colossal buildings use the material context. The Return Gate, islands, villages, bridges and paving still
-  shade by part with per-block dither.
-- No data-driven briefs, no constraint solver: plans are code, and their proportions are fixed rules with random
-  ranges.
-- A building's stone pattern belongs to where it stands; the same plan built elsewhere shows a different (equally
-  valid) pattern.
-- Only vertical gradients.
+- **The rift's view is painted, not live** (a second world renderer is not something a mod can add safely).
+- Terrain is one surface per column: no caves, arches of rock or overhangs within an island.
+- Bridges and streets meet islands at their height; an arrival bridge lands on its far island without that island's
+  corridor (a step of a block can show there).
+- Damage is geometric (it knows blocks and height, not which part is a pier or an ornament).
+- Only the colossal buildings use the building-wide material plan.
 
 ## J. Roadmap
 
-1. Move the Return Gate, villages and bridges onto `MaterialContext`, with one context per settlement.
-2. Horizontal and radial gradient terms (a darker side facing the void, paler towards a building's heart).
-3. Briefs as data (JSON in `data/extremedimensions/briefs/`): plan, scheme, height band, required modules.
-4. Structural checks in the tests: no floating masonry, every floor reachable from the door.
-5. Weathering by exposure (moss on faces that look down, cracks near edges) instead of noise alone.
+1. Damage by role: give modules a structural tag so piers resist and ornaments fall first.
+2. Terrain features: rock arches, terraces cut into the larger islands, paths that follow contours.
+3. Villages laid out on the ground's contours, houses stepping with it.
+4. Material plan for villages, the gate and bridges (one `MaterialContext` per settlement).
+5. Briefs as data (plan, scheme, condition, height band) in `data/extremedimensions/briefs/`.

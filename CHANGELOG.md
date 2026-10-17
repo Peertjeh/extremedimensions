@@ -1,5 +1,40 @@
 # Changelog
 
+## 2.26.0: Ground and Ruin
+
+### Changed
+- **The rift looks like Minecraft.** A rift is framed by a ring of blocks (obsidian, crying rift stone, rift stone
+  bricks) built round its opening like a nether portal's frame, lit by the world, its cracks glowing; the blocks fly in
+  as it opens and shrink away as it closes. In the opening a swirling skin like a nether portal's, and through it the
+  tunnel to the world beyond. Every texture is pixel art at Minecraft's own pixel size.
+- **Islands roll.** Their tops rise and fall in low mounds with a gentle crown, the turf rounds over the coast instead
+  of ending in a cut, the coast wanders in bays and headlands, and the underside is one smooth upside-down mountain
+  with fangs tapering to a point, no longer a bundle of columns. No grey ring of stone round every rim: bare rock shows
+  only here and there.
+- **Buildings stand on the ground.** Everything built on an island is set down on it: the ground under it levelled and
+  blended into the land round it, and wherever a building reaches out over a bay the island grows a ledge of rock
+  under it, faced in masonry where it shows. Every wall has a plinth at its foot. Streets, paving and what dresses an
+  island follow the ground.
+- **Great buildings are one building.** A cathedral's crossing tower is square and rises past the roofs of its nave,
+  transepts and apse, so they run into its walls; its west towers stand in its front, their first ledge level with the
+  nave's eaves: a pair, a pair of two heights, or one alone. A cluster of towers stands on one podium, with low wings
+  joining its towers to the spire and a stair up at the front. Broad tiers are no longer flat walls of glass.
+- **More variety.** Every building draws its own glazing and roofing within its scheme, and its own age.
+- Villages keep clear of the coast where it comes in near.
+
+### Added
+- **Age and damage.** Every building has a condition: intact, weathered, damaged or a ruin. Damage falls where it
+  would: ragged breaks high on the walls, crowns fallen, nothing left hanging in the air, broken edges cracked and
+  mossy with vines hanging from them, glass gone near a break, and the fallen stone in heaps at the foot. Looms and
+  villages age too (a village is never a ruin). A new setting says how many buildings are damaged or worse.
+- Gametests for the ground and for damage; the client test photographs a village, a loom, a plain island (from below
+  too) and a halo island.
+
+### Removed
+- The gold column over the rift home and the line of gold light in the gate's paving (the arrow on the HUD shows the
+  way home). The setting for the column's height is gone with it.
+- Hung bridges of timber: every bridge is of stone.
+
 ## 2.25.1: A Clean Slate
 
 ### Added

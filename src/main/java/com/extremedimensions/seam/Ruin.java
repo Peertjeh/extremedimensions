@@ -117,10 +117,10 @@ public final class Ruin {
 		}
 		int sites = switch (condition) {
 			case WEATHERED -> 1 + rnd.nextInt(2);
-			case DAMAGED -> 3 + rnd.nextInt(4);
-			default -> 7 + rnd.nextInt(6);
+			case DAMAGED -> 4 + rnd.nextInt(4);
+			default -> 8 + rnd.nextInt(6);
 		};
-		double size = condition == WEATHERED ? 1.6 : condition == DAMAGED ? 2.6 : 3.6;
+		double size = condition == WEATHERED ? 1.7 : condition == DAMAGED ? 3.1 : 4.0;
 		// the lowest a blow lands: on what is barely touched, only the top third; on a ruin, down to the second floor
 		double lowest = condition == WEATHERED ? 0.66 : condition == DAMAGED ? 0.35 : 0.12;
 		long noiseSeed = rnd.nextLong();
@@ -152,6 +152,8 @@ public final class Ruin {
 			int cut = (int) peak[1] - 4 - rnd.nextInt(Math.max(1, (int) ((peak[1] - base) * 0.25)));
 			fell(p, gone, keep, base, (int) peak[0], cut, (int) peak[2], 5 + rnd.nextInt(4), noiseSeed + 100 + k);
 		}
+		// The broken edges wear (and glass beside a break shatters) before what is left hanging is found
+		weather(p, rnd, gone, base);
 		// What was left hanging falls too (not what was built to float, which never stood on the ground)
 		Set<Long> after = grounded(p, base);
 		List<Long> loose = new ArrayList<>();
@@ -164,7 +166,7 @@ public final class Ruin {
 			p.blocks.remove(k);
 			gone.add(k);
 		}
-		weather(p, rnd, gone, base);
+		vines(p, rnd, gone, base);
 		rubble(p, rnd, gone, base, condition);
 	}
 
@@ -224,7 +226,7 @@ public final class Ruin {
 		return s;
 	}
 
-	/** The broken edges: cracked and mossy, a slab left where a course broke off, vines hanging, glass near a break gone. */
+	/** The broken edges: cracked and mossy, a slab left where a course broke off, glass near a break gone. */
 	private static void weather(Plan p, Random rnd, Set<Long> gone, int base) {
 		Map<BlockState, BlockState> slabs = new HashMap<>();
 		slabs.put(tile(), tileSlab());
@@ -232,7 +234,6 @@ public final class Ruin {
 		slabs.put(smooth(), smoothSlab());
 		slabs.put(palePol(), palePolSlab());
 		slabs.put(brick(), tileSlab());
-		BlockState vines = mc("cave_vines");
 		int[][] nb = {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}};
 		Set<Long> edge = new HashSet<>();
 		for (long k : gone) {
@@ -260,12 +261,25 @@ public final class Ruin {
 			} else if (rnd.nextInt(2) == 0) {
 				p.blocks.put(k, worn(s, rnd));
 			}
-			// vines hang from the underside of a broken course
-			if (vines != null && !p.has(x, y - 1, z) && gone.contains(key(x, y - 1, z)) && rnd.nextInt(5) == 0) {
-				int len = 1 + rnd.nextInt(4);
-				for (int j = 1; j <= len && !p.has(x, y - j, z) && y - j > base + 1; j++) {
-					p.blocks.put(key(x, y - j, z), vines);
-				}
+		}
+	}
+
+	/** Vines hanging from the undersides of broken courses (from what still stands, once the loose has fallen). */
+	private static void vines(Plan p, Random rnd, Set<Long> gone, int base) {
+		BlockState vines = mc("cave_vines");
+		if (vines == null) {
+			return;
+		}
+		List<long[]> hang = new ArrayList<>();
+		for (long k : gone) {
+			int x = BlockPos.getX(k), y = BlockPos.getY(k), z = BlockPos.getZ(k);
+			if (!p.has(x, y, z) && p.has(x, y + 1, z) && rnd.nextInt(6) == 0) {
+				hang.add(new long[] {x, y, z, 1 + rnd.nextInt(4)});
+			}
+		}
+		for (long[] h : hang) {
+			for (int j = 0; j < h[3] && !p.has((int) h[0], (int) h[1] - j, (int) h[2]) && h[1] - j > base + 1; j++) {
+				p.blocks.put(key((int) h[0], (int) (h[1] - j), (int) h[2]), vines);
 			}
 		}
 	}
@@ -275,7 +289,7 @@ public final class Ruin {
 	 * thing under it (a floor, a terrace, or the ground at {@code base + 1}), two high at most.
 	 */
 	private static void rubble(Plan p, Random rnd, Set<Long> gone, int base, int condition) {
-		double share = condition == WEATHERED ? 0.08 : condition == DAMAGED ? 0.14 : 0.2;
+		double share = condition == WEATHERED ? 0.1 : condition == DAMAGED ? 0.18 : 0.24;
 		BlockState[] heap = {cobble(), cobble(), mc("mossy_cobblestone", cobble()), cracked(), mc("tuff", stone())};
 		BlockState stairs = cobbleStairs();
 		Direction[] dirs = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};

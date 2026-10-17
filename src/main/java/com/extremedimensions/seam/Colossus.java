@@ -221,6 +221,32 @@ public final class Colossus {
 		return s;
 	}
 
+	/**
+	 * A building's own look within its scheme, from a stream of its own (so it changes no shape): which colours its
+	 * windows are glazed in, and what its roofs are mostly laid with.
+	 */
+	static void look(Scheme sc, Random rnd) {
+		if (sc.ruin) {
+			return;
+		}
+		BlockState[][] glazing = {
+			{glass(), glass2(), glass3()},
+			{mc("light_blue_stained_glass", glass3()), glass(), mc("white_stained_glass", glass3())},
+			{glass2(), mc("pink_stained_glass", glass2()), glass()},
+			{mc("cyan_stained_glass", glass3()), glass3(), glass()},
+		};
+		int g = rnd.nextInt(glazing.length + 2);
+		if (g < glazing.length) {
+			sc.glass = glazing[g];
+		}
+		BlockState slate = mc("deepslate_tile_stairs", tileStairs());
+		switch (rnd.nextInt(4)) {
+			case 0 -> sc.roof = new BlockState[] {slate, slate, slate, tileStairs()};
+			case 1 -> sc.roof = new BlockState[] {bsStairs(), bsStairs(), slate};
+			default -> { /* the scheme's own roof */ }
+		}
+	}
+
 	// ------------------------------------------------------------------ tiers
 
 	static final int LANCET = 0, ARCADE = 1, COLONNADE = 2, BANDED = 3, BELFRY = 4, LANTERN = 5;
@@ -1285,6 +1311,7 @@ public final class Colossus {
 		// chosen moves no tower), drawn from where it stands
 		long matSeed = cx * 341873128712L ^ cz * 132897987541L ^ top * 0x9E3779B97F4A7C15L;
 		sc.ctx = MaterialContext.of(matSeed, top + 1, top + 1 + (layout == ZIGGURAT ? (int) (maxH * 0.6) : maxH), sc.wear);
+		look(sc, new Random(matSeed ^ 0x6C0F_7EL));
 		int crown = crownFor(rnd);
 		int[] towers = {0};
 		int height = switch (layout) {

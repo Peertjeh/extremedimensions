@@ -991,7 +991,8 @@ public final class SeamService {
 			}
 			case VILLAGE -> {
 				SeamArchitect.Plan b = new SeamArchitect.Plan();
-				SeamArchitect.village(b, rnd, x, top, z, r);
+				// laid out for the room the island has (its houses stay clear of the coast where it comes in nearest)
+				SeamArchitect.village(b, rnd, x, top, z, Math.min(r, (int) Math.round(s.nearest()) + 3));
 				// the Thinned live in it: worn, broken here and there, never a ruin
 				age(b, rnd, top, Ruin.DAMAGED);
 				standOn(plan, b, ground, top);

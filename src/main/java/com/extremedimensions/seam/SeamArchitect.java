@@ -327,6 +327,11 @@ public final class SeamArchitect {
 			return blocks.size();
 		}
 
+		/** Where the plan lays blocks (for tests: read only). */
+		public java.util.Set<Long> positions() {
+			return java.util.Collections.unmodifiableSet(blocks.keySet());
+		}
+
 		/**
 		 * A number standing for everything the plan lays, block by block (the same plan gives the same number, whatever
 		 * order its blocks were laid in; any block laid differently, almost surely another).

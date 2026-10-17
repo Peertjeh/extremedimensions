@@ -831,7 +831,7 @@ public class ClientShots implements FabricClientGameTest {
 				ctx.takeScreenshot("20_island_" + kinds[k]);
 				if (k == 0 || k == 1) {
 					// on the ground, among what stands there
-					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 20 8", cx - 10, skyTop + 6, cz - 26));
+					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 25 16", cx - 16, skyTop + 12, cz - 34));
 					ctx.waitTicks(40);
 					ctx.takeScreenshot("20_island_" + kinds[k] + "_close");
 				}
