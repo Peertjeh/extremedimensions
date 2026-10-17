@@ -961,11 +961,16 @@ public final class SeamService {
 	 * given plan (-1: any): the plan, for showing one off, and what was built.
 	 */
 	public static SeamArchitect.Plan colossus(long seed, int x, int top, int z, int r, int layout, Colossus.Summary[] built) {
+		return colossus(seed, x, top, z, r, layout, -1, built);
+	}
+
+	/** As above, in a given scheme of materials (-1: any; see {@link Colossus#RUIN} and the rest). */
+	public static SeamArchitect.Plan colossus(long seed, int x, int top, int z, int r, int layout, int scheme, Colossus.Summary[] built) {
 		Random rnd = new Random(seed);
 		SeamArchitect.Shape shape = SeamArchitect.Shape.of(rnd, x, top, z, r);
 		SeamArchitect.Plan plan = new SeamArchitect.Plan();
 		int depth = SeamArchitect.island(plan, rnd, shape, true);
-		Colossus.Summary summary = Colossus.build(plan, rnd, x, top, z, r, layout);
+		Colossus.Summary summary = Colossus.build(plan, rnd, x, top, z, r, layout, scheme);
 		SeamArchitect.grounds(plan, rnd, shape, 6, SeamArchitect.ARCH, SeamArchitect.TREE, SeamArchitect.LAMP, SeamArchitect.STONES, SeamArchitect.CLUSTER);
 		if (built != null && built.length > 0) {
 			built[0] = summary;

@@ -282,6 +282,21 @@ public final class SeamArchitect {
 			return blocks.size();
 		}
 
+		/**
+		 * A number standing for everything the plan lays, block by block (the same plan gives the same number, whatever
+		 * order its blocks were laid in; any block laid differently, almost surely another).
+		 */
+		public long fingerprint() {
+			long sum = 0;
+			for (var e : blocks.entrySet()) {
+				long h = e.getKey() * 0x9E3779B97F4A7C15L ^ net.minecraft.world.level.block.Block.getId(e.getValue()) * 0xC2B2AE3D27D4EB4FL;
+				h ^= h >>> 31;
+				h *= 0xBF58476D1CE4E5B9L;
+				sum += h ^ h >>> 29;
+			}
+			return sum;
+		}
+
 		/** The farthest any block of the plan lies from a column, across the ground. */
 		public double reach(int cx, int cz) {
 			double far = 0;

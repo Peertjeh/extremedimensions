@@ -10,15 +10,16 @@ import net.minecraft.world.level.block.state.BlockState;
  * tower, wing or wall it is assembled from. Two modules that lay the same block of the world lay the same stone.
  *
  * <p>A block's place on the ladder is its height between the building's foot and its crown, eased so the dark foot
- * stays short and the pale crown long, moved a little by two fields of smooth noise (narrow streaks that run down
- * the stone, the way weathering and a builder's hand blend a gradient, and broad patches across a face), never by a
- * coin tossed for each block. What dither is left to soften the edges between bands is drawn from the position
- * itself, so it too is the same whichever module asks. Wear (cracks, moss) gathers in patches, more of it low down.
+ * stays short and the pale crown long (see {@link #height}), moved a little by two fields of smooth noise (narrow
+ * streaks that run down the stone, the way weathering and a builder's hand blend a gradient, and broad patches across
+ * a face), never by a coin tossed for each block. What dither is left to soften the edges between bands is drawn from
+ * the position itself, so it too is the same whichever module asks. Wear (cracks, moss) gathers in patches, more of
+ * it low down.
  *
  * <p>The ladder itself, and the other roles (trim, roof, floor...), belong to the building's scheme; this decides only
  * where on each ladder a block falls.
  */
-final class MaterialContext {
+public final class MaterialContext {
 	final long seed;
 	/** The building's foot and crown (world heights) that its gradients run between. */
 	final int foot, crown;
@@ -27,7 +28,7 @@ final class MaterialContext {
 	/** How much of the masonry wears (cracks, moss), at most; more at the foot, in patches. */
 	final double wear;
 
-	MaterialContext(long seed, int foot, int crown, double streaks, double patches, double wear) {
+	public MaterialContext(long seed, int foot, int crown, double streaks, double patches, double wear) {
 		this.seed = seed;
 		this.foot = foot;
 		this.crown = Math.max(foot + 1, crown);
@@ -36,23 +37,28 @@ final class MaterialContext {
 		this.wear = wear;
 	}
 
-	/** The usual context: streaks of a sixth of the ladder, patches of a tenth. */
-	static MaterialContext of(long seed, int foot, int crown, double wear) {
-		return new MaterialContext(seed, foot, crown, 0.16, 0.1, wear);
+	/** The usual context: streaks of about a ninth of the ladder, patches of a twelfth. */
+	public static MaterialContext of(long seed, int foot, int crown, double wear) {
+		return new MaterialContext(seed, foot, crown, 0.11, 0.08, wear);
 	}
 
-	/** Height between foot and crown, 0..1, eased (smoothstep) so the bands gather at neither end. */
-	double height(int y) {
+	/**
+	 * Height between foot and crown, 0..1, eased out: it climbs the ladder quickly off the ground and slowly near the
+	 * top, so the dark foot is a plinth, not half the building, and the pale crown is long. (Most of a building's stone
+	 * is low down, in its halls and walls; laid evenly by height, all of it would be the dark of the foot.)
+	 */
+	public double height(int y) {
 		double t = Math.max(0, Math.min(1, (y - foot) / (double) (crown - foot)));
-		return t * t * (3 - 2 * t);
+		return 1 - (1 - t) * (1 - t);
 	}
 
 	/**
 	 * Where a block of the world falls on a ladder, 0..1: its eased height plus {@code bias} (a module asking for a
 	 * paler or darker course), moved by the streaks and the patches.
 	 */
-	double place(int x, int y, int z, double bias) {
-		double streak = (noise(seed, x / 2.3, z / 2.3) - 0.5) * 2;
+	public double place(int x, int y, int z, double bias) {
+		// narrow across a face, a dozen blocks long down it: whichever way the face looks
+		double streak = (noise(seed, x / 2.3 + z / 2.9, y / 12.0) - 0.5) * 2;
 		double patch = (noise(seed + 1, (x + z) / 9.0, y / 7.0) - 0.5) * 2;
 		return Math.max(0, Math.min(1, height(y) + bias + streak * streaks + patch * patches));
 	}
@@ -67,13 +73,13 @@ final class MaterialContext {
 	}
 
 	/** The block of a ladder for a world position: its place, with a little dither of its own to soften the bands. */
-	BlockState pick(BlockState[] ladder, int x, int y, int z, double bias) {
+	public BlockState pick(BlockState[] ladder, int x, int y, int z, double bias) {
 		double v = place(x, y, z, bias) * (ladder.length - 1) + (hash(x, y, z, 1) - 0.5) * 0.5;
 		return ladder[(int) Math.max(0, Math.min(ladder.length - 1, Math.round(v)))];
 	}
 
 	/** Whether the block at a position is worn: in patches, more of them towards the foot. */
-	boolean worn(int x, int y, int z) {
+	public boolean worn(int x, int y, int z) {
 		if (wear <= 0) {
 			return false;
 		}
@@ -82,7 +88,7 @@ final class MaterialContext {
 	}
 
 	/** Masonry of a ladder at a world position, worn where wear gathers. */
-	BlockState masonry(BlockState[] ladder, int x, int y, int z, double bias) {
+	public BlockState masonry(BlockState[] ladder, int x, int y, int z, double bias) {
 		BlockState b = pick(ladder, x, y, z, bias);
 		if (worn(x, y, z)) {
 			if (b == brick()) {

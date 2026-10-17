@@ -777,14 +777,16 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("25_rift_world_aside");
 
 			// Colossal buildings, one of each plan, each on its island as the Seam would design it (far out, in the sky)
-			String[] plans = {"cathedral", "citadel", "cluster", "ziggurat", "gateway"};
+			// and a sixth: a citadel fallen to ruin, its stone worn to moss and cracks and its crowns broken
+			String[] plans = {"cathedral", "citadel", "cluster", "ziggurat", "gateway", "ruin"};
 			int skyTop = 120;
 			for (int k = 0; k < plans.length; k++) {
 				final int kk = k;
 				int cx = home[0] + 700 + k * 300, cz = home[2] + 300;
 				String what = sp.getServer().computeOnServer(s -> {
 					com.extremedimensions.seam.Colossus.Summary[] built = new com.extremedimensions.seam.Colossus.Summary[1];
-					com.extremedimensions.seam.SeamArchitect.Plan plan = com.extremedimensions.seam.SeamService.colossus(4242L + kk * 7717L, cx, skyTop, cz, 36, kk, built);
+					com.extremedimensions.seam.SeamArchitect.Plan plan = com.extremedimensions.seam.SeamService.colossus(4242L + kk * 7717L, cx, skyTop, cz, 36,
+							kk % 5, kk == 5 ? com.extremedimensions.seam.Colossus.RUIN : -1, built);
 					plan.placeNow((net.minecraft.server.level.ServerLevel) player(s).level());
 					return built[0] + ", " + plan.size() + " blocks";
 				});

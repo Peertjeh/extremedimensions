@@ -94,17 +94,32 @@ public final class Colossus {
 
 	// ------------------------------------------------------------------ schemes of material
 
-	/** The materials of one building: its masonry from foot to crown, trim, roof, ledges, floors, glass and accent. */
+	/**
+	 * The materials of one building: its masonry from foot to crown, trim, roof, ledges, floors, glass and accent, and
+	 * the plan ({@link MaterialContext}) of where each block of the world falls on its ladders.
+	 */
 	static final class Scheme {
 		BlockState[] wall, trim, roof, glass;
 		BlockState roofFill, corbel, cap, rail, floor, floorAlt, accent, band, pier;
 		double wear;
 		boolean ruin;
+		MaterialContext ctx;
 
-		BlockState masonry(double t, Random rnd) {
-			return weather(grad(wall, t, rnd), rnd, wear);
+		/**
+		 * Masonry for the block at ({@code x}, {@code y}, {@code z}) of frame {@code f}: its rung of the wall's ladder
+		 * is chosen by where the block stands in the world, so every tower, hall and wall of the building shades alike
+		 * at the same height and they meet without a seam; {@code bias} makes a course paler (+) or darker (-).
+		 */
+		BlockState masonryAt(Frame f, int x, int y, int z, double bias) {
+			return ctx.masonry(wall, f.wx(x, z), f.oy + y, f.wz(x, z), bias);
 		}
 
+		/** Trim for a block of a frame, on the trim's ladder as masonry is on the wall's (never worn). */
+		BlockState trimAt(Frame f, int x, int y, int z, double bias) {
+			return ctx.pick(trim, f.wx(x, z), f.oy + y, f.wz(x, z), bias);
+		}
+
+		/** Trim at a fixed rung (0 the darkest, a plinth; 1 the palest, a rib), a little dither drawn from the stream. */
 		BlockState trim(double t, Random rnd) {
 			return grad(trim, t, rnd);
 		}
@@ -121,10 +136,15 @@ public final class Colossus {
 		}
 	}
 
-	static Scheme scheme(Random rnd) {
+	public static final int TWILIGHT = 0, BONE = 1, GLOAM = 2, RUIN = 3;
+
+	/** The materials of a building, of a given scheme ({@code id}; -1: the one its stream gives). */
+	static Scheme scheme(Random rnd, int id) {
 		Scheme s = new Scheme();
 		BlockState purple = glass(), magenta = glass2(), blue = glass3();
-		switch (rnd.nextInt(4)) {
+		// drawn whether or not it is wanted, so a building told its scheme is otherwise the one its seed builds
+		int drawn = rnd.nextInt(4);
+		switch (id >= 0 ? id % 4 : drawn) {
 			case 0 -> {
 				// Twilight: the full ladder of the hush stone, from a blackstone foot to a pale crown
 				s.wall = wallGrad();
@@ -208,21 +228,16 @@ public final class Colossus {
 		boolean merlons;
 	}
 
-	/** A tower being built: its frame (centred on it), scheme, the height its masonry's gradient runs over. */
+	/** A tower being built: its frame (centred on it), scheme and random stream. */
 	static final class Tower {
 		Frame f;
 		Scheme sc;
 		Random rnd;
-		double total;
 		/** Where the tower's top tier ends, and its footprint there, once built. */
 		int topY, topHalf;
 		Form topForm;
 		/** Height of every tier's floor (for bridges to land on). */
 		final List<int[]> floors = new ArrayList<>();
-	}
-
-	private static double t(Tower w, int ly) {
-		return Math.max(0, Math.min(1, ly / w.total));
 	}
 
 	/** A tier's floor, reaching out over the ledge below; above the ground it leaves the stair well open. */
@@ -301,9 +316,9 @@ public final class Colossus {
 					continue;
 				}
 				if (merlons) {
-					w.f.soft(x, y, z, w.sc.masonry(t(w, y), w.rnd));
+					w.f.soft(x, y, z, w.sc.masonryAt(w.f, x, y, z, 0));
 					if ((x + z & 1) == 0) {
-						w.f.soft(x, y + 1, z, w.sc.masonry(t(w, y), w.rnd));
+						w.f.soft(x, y + 1, z, w.sc.masonryAt(w.f, x, y + 1, z, 0));
 					}
 				} else {
 					w.f.soft(x, y, z, w.sc.rail);
@@ -347,7 +362,7 @@ public final class Colossus {
 						f.set(x, y, z, sc.band);
 						continue;
 					}
-					f.set(x, y, z, ly == 1 ? sc.trim(0, w.rnd) : sc.masonry(t(w, y), w.rnd));
+					f.set(x, y, z, ly == 1 ? sc.trim(0, w.rnd) : sc.masonryAt(f, x, y, z, 0));
 				}
 				if (win && !(door && o == Direction.SOUTH)) {
 					// the sill, standing out under the window
@@ -390,7 +405,7 @@ public final class Colossus {
 					} else if (b == 9 && ly < ah) {
 						f.set(x, y, z, sc.pier);
 					} else {
-						f.set(x, y, z, sc.masonry(t(w, y), w.rnd));
+						f.set(x, y, z, sc.masonryAt(f, x, y, z, 0));
 					}
 				}
 			}
@@ -432,7 +447,7 @@ public final class Colossus {
 					if (ly == H) {
 						f.set(x, y0 + ly, z, sc.band);
 					} else if (ly == H - 1) {
-						f.set(x, y0 + ly, z, sc.trim(t(w, y0 + ly), w.rnd));
+						f.set(x, y0 + ly, z, sc.trimAt(f, x, y0 + ly, z, 0));
 					} else if (column) {
 						f.set(x, y0 + ly, z, ly == 1 ? sc.trim(0, w.rnd) : sc.pier);
 					} else {
@@ -474,7 +489,7 @@ public final class Colossus {
 						continue;
 					}
 					boolean pale = (ly / 2 & 1) == 0;
-					BlockState s = sc.masonry(pale ? Math.min(1, t(w, y) + 0.35) : Math.max(0, t(w, y) - 0.25), w.rnd);
+					BlockState s = sc.masonryAt(f, x, y, z, pale ? 0.35 : -0.25);
 					// blind arches: recessed panels, three wide, darker within
 					if (b != 9 && ly >= 2 && ly <= oc - 3 && !(b != 0 && ly == oc - 3)) {
 						f.clear(x, y, z);
@@ -516,7 +531,7 @@ public final class Colossus {
 				for (int ly = 1; ly <= H; ly++) {
 					int y = y0 + ly;
 					if (pier || ly >= H - 1) {
-						f.set(x, y, z, pier ? sc.pier : sc.masonry(t(w, y), w.rnd));
+						f.set(x, y, z, pier ? sc.pier : sc.masonryAt(f, x, y, z, 0));
 					} else if (ly == H - 2 && Math.abs(u) == h - 2 && tr.form == Form.SQUARE) {
 						f.set(x, y, z, stairs(sc.corbel, aside(o, u > 0 ? -1 : 1), true));
 					} else {
@@ -554,7 +569,7 @@ public final class Colossus {
 					if (door && o == Direction.SOUTH && Math.abs(x) <= 1 && ly <= (x == 0 ? 6 : 5)) {
 						f.clear(x, y, z);
 					} else if (ly == 1 || ly == H) {
-						f.set(x, y, z, sc.trim(t(w, y), w.rnd));
+						f.set(x, y, z, sc.trimAt(f, x, y, z, 0));
 					} else if (mullion || ly % 6 == 0) {
 						f.set(x, y, z, mullion ? sc.pier : sc.band);
 					} else {
@@ -577,14 +592,14 @@ public final class Colossus {
 					int y = y0 + ly;
 					for (int ax = -1; ax <= 1; ax++) {
 						for (int az = -1; az <= 1; az++) {
-							f.set(sx * h + ax, y, sz * h + az, ly % 7 == 6 ? sc.band : sc.trim(t(w, y), w.rnd));
+							f.set(sx * h + ax, y, sz * h + az, ly % 7 == 6 ? sc.band : sc.trimAt(f, sx * h + ax, y, sz * h + az, 0));
 						}
 					}
 					if (ly <= low) {
-						f.set(sx * (h + 2), y, sz * h, sc.masonry(t(w, y), w.rnd));
-						f.set(sx * h, y, sz * (h + 2), sc.masonry(t(w, y), w.rnd));
-						f.set(sx * (h + 2), y, sz * (h + 1), sc.masonry(t(w, y), w.rnd));
-						f.set(sx * (h + 1), y, sz * (h + 2), sc.masonry(t(w, y), w.rnd));
+						f.set(sx * (h + 2), y, sz * h, sc.masonryAt(f, sx * (h + 2), y, sz * h, 0));
+						f.set(sx * h, y, sz * (h + 2), sc.masonryAt(f, sx * h, y, sz * (h + 2), 0));
+						f.set(sx * (h + 2), y, sz * (h + 1), sc.masonryAt(f, sx * (h + 2), y, sz * (h + 1), 0));
+						f.set(sx * (h + 1), y, sz * (h + 2), sc.masonryAt(f, sx * (h + 1), y, sz * (h + 2), 0));
 					}
 				}
 				Direction ix = sx > 0 ? Direction.WEST : Direction.EAST, iz = sz > 0 ? Direction.NORTH : Direction.SOUTH;
@@ -627,7 +642,7 @@ public final class Colossus {
 								continue;
 							}
 							boolean slit = (y - base) % 4 == 2 && (dx == 0 || dz == 0);
-							f.set(tx + dx, y, tz + dz, slit ? mc("iron_bars", sc.pier) : sc.masonry(t(w, y), w.rnd));
+							f.set(tx + dx, y, tz + dz, slit ? mc("iron_bars", sc.pier) : sc.masonryAt(f, tx + dx, y, tz + dz, 0));
 						}
 					}
 				}
@@ -759,7 +774,7 @@ public final class Colossus {
 						if (rim(form, x, z, h)) {
 							int up = (int) Math.round(noise(x * 31L + z, x * 0.4, z * 0.4) * 8) - 2;
 							for (int k = 1; k <= up; k++) {
-								f.set(x, y + 1 + k, z, sc.masonry(t(w, y + k), rnd));
+								f.set(x, y + 1 + k, z, sc.masonryAt(f, x, y + 1 + k, z, 0));
 							}
 						} else if (inside(form, x, z, h) && rnd.nextInt(7) == 0) {
 							f.soft(x, y + 1, z, rnd.nextBoolean() ? cobble() : mossy());
@@ -793,7 +808,6 @@ public final class Colossus {
 		w.f = new Frame(base.p, base.wx(ox, oz), base.oy, base.wz(ox, oz), base.rot);
 		w.sc = sc;
 		w.rnd = rnd;
-		w.total = maxH;
 		int tiers = great ? 3 + rnd.nextInt(2) : 2 + rnd.nextInt(2);
 		// Heights first, so the stack and its crown fit the height they are given
 		int[] heights = new int[tiers];
@@ -1003,7 +1017,7 @@ public final class Colossus {
 						f.clear(lx, ly, lz);
 						f.set(lx - Integer.signum(lx), ly, lz, ly == wh ? sc.accent : sc.glass(lz, ly, wh));
 					} else {
-						f.set(lx, ly, lz, ly == 1 ? sc.trim(0, rnd) : sc.masonry(t, rnd));
+						f.set(lx, ly, lz, ly == 1 ? sc.trim(0, rnd) : sc.masonryAt(f, lx, ly, lz, 0));
 					}
 				}
 				if ((sideWall || aisleWall) && bay) {
@@ -1016,7 +1030,7 @@ public final class Colossus {
 					int px = s * (w + aw + 1);
 					int top = aisles ? ah + 2 : h - 3;
 					for (int ly = 1; ly <= top; ly++) {
-						f.set(px, ly, lz, sc.trim(ly / 48.0, rnd));
+						f.set(px, ly, lz, sc.trimAt(f, px, ly, lz, 0));
 					}
 					f.set(px + s, 1, lz, stairs(sc.corbel, s > 0 ? Direction.WEST : Direction.EAST, false));
 					if (aisles) {
@@ -1024,7 +1038,7 @@ public final class Colossus {
 						for (int k = 1; k <= aw; k++) {
 							int fx = px - s * k;
 							int fy = top + k;
-							f.set(fx, fy, lz, sc.masonry(0.5, rnd));
+							f.set(fx, fy, lz, sc.masonryAt(f, fx, fy, lz, 0));
 							f.set(fx, fy - 1, lz, stairs(sc.corbel, s > 0 ? Direction.EAST : Direction.WEST, true));
 						}
 						pinnacleAt(f, sc, px, top + 1, lz);
@@ -1061,7 +1075,7 @@ public final class Colossus {
 			int half = w - k;
 			for (int lx = -half; lx <= half; lx++) {
 				int m = Math.abs(lx) + Math.abs(k - 2);
-				f.set(lx, h + 1 + k, z1, m <= 1 ? (lx == 0 && k == 2 ? crying() : sc.glass[1]) : sc.masonry(0.5, rnd));
+				f.set(lx, h + 1 + k, z1, m <= 1 ? (lx == 0 && k == 2 ? crying() : sc.glass[1]) : sc.masonryAt(f, lx, h + 1 + k, z1, 0));
 			}
 		}
 		needleAt(f, sc, 0, h + w + 3, z1, 2);
@@ -1096,7 +1110,7 @@ public final class Colossus {
 					if (!jamb && !head) {
 						continue;
 					}
-					f.set(lx, ly, lz, ly == 0 ? sc.floorAlt : jamb ? sc.pier : sc.masonry(0.35, rnd));
+					f.set(lx, ly, lz, ly == 0 ? sc.floorAlt : jamb ? sc.pier : sc.masonryAt(f, lx, ly, lz, 0.15));
 				}
 				f.set(-hw, ah, lz, stairs(sc.corbel, Direction.WEST, true));
 				f.set(hw, ah, lz, stairs(sc.corbel, Direction.EAST, true));
@@ -1146,7 +1160,7 @@ public final class Colossus {
 						f.clear(x, ly, z);
 						f.set(x - o.getStepX(), ly, z - o.getStepZ(), sc.glass(x, ly, h - 3));
 					} else {
-						f.set(x, ly, z, ly == 1 ? sc.trim(0, rnd) : sc.masonry(ly / 48.0, rnd));
+						f.set(x, ly, z, ly == 1 ? sc.trim(0, rnd) : sc.masonryAt(f, x, ly, z, 0));
 					}
 				}
 			}
@@ -1228,12 +1242,24 @@ public final class Colossus {
 
 	/** As {@link #build(Plan, Random, int, int, int, int)}, to a given plan (-1: one drawn at random). */
 	public static Summary build(Plan p, Random rnd, int cx, int top, int cz, int r, int plan) {
-		Scheme sc = scheme(rnd);
+		return build(p, rnd, cx, top, cz, r, plan, -1);
+	}
+
+	/**
+	 * As {@link #build(Plan, Random, int, int, int, int, int)}, in a given scheme of materials too ({@link #TWILIGHT},
+	 * {@link #BONE}, {@link #GLOAM} or {@link #RUIN}; -1: the one drawn).
+	 */
+	public static Summary build(Plan p, Random rnd, int cx, int top, int cz, int r, int plan, int scheme) {
+		Scheme sc = scheme(rnd, scheme);
 		int schemeId = sc.ruin ? 3 : sc.band == silked() ? 2 : sc.floor == palePol() ? 1 : 0;
 		Frame base = new Frame(p, cx, top + 1, cz, rnd.nextInt(4));
 		int R = Math.max(20, r - 5);
 		int maxH = Math.min(128, 236 - top);
 		int layout = plan >= 0 ? plan % 5 : rnd.nextInt(5);
+		// Its materials are planned over its own height, from a stream of their own (so a change to how stone is
+		// chosen moves no tower), drawn from where it stands
+		long matSeed = cx * 341873128712L ^ cz * 132897987541L ^ top * 0x9E3779B97F4A7C15L;
+		sc.ctx = MaterialContext.of(matSeed, top + 1, top + 1 + (layout == ZIGGURAT ? (int) (maxH * 0.6) : maxH), sc.wear);
 		int crown = crownFor(rnd);
 		int[] towers = {0};
 		int height = switch (layout) {
@@ -1291,11 +1317,6 @@ public final class Colossus {
 		int hw = 9 + rnd.nextInt(4);
 		Tower keep = tower(b, sc, rnd, 0, 0, 7 + rnd.nextInt(3), maxH, true, crown, formFor(rnd, true));
 		n[0]++;
-		Tower curtain = new Tower();
-		curtain.f = b;
-		curtain.sc = sc;
-		curtain.rnd = rnd;
-		curtain.total = hw * 2.5;
 		for (int x = -Rc; x <= Rc; x++) {
 			for (int z = -Rc; z <= Rc; z++) {
 				boolean outer = rim(ring, x, z, Rc), wall = outer || rim(ring, x, z, Rc - 1);
@@ -1312,13 +1333,13 @@ public final class Colossus {
 						}
 						continue;
 					}
-					b.set(x, ly, z, ly == 0 ? sc.floorAlt : ly == hw ? sc.floor : sc.masonry(t(curtain, ly), rnd));
+					b.set(x, ly, z, ly == 0 ? sc.floorAlt : ly == hw ? sc.floor : sc.masonryAt(b, x, ly, z, 0));
 				}
 				if (outer) {
 					// battlements on the outer edge; the inner edge is the walk
-					b.set(x, hw + 1, z, sc.masonry(t(curtain, hw), rnd));
+					b.set(x, hw + 1, z, sc.masonryAt(b, x, hw + 1, z, 0));
 					if ((x + z & 1) == 0) {
-						b.set(x, hw + 2, z, sc.masonry(t(curtain, hw), rnd));
+						b.set(x, hw + 2, z, sc.masonryAt(b, x, hw + 2, z, 0));
 					}
 				}
 			}
@@ -1414,7 +1435,6 @@ public final class Colossus {
 		w.f = b;
 		w.sc = sc;
 		w.rnd = rnd;
-		w.total = maxH * 0.6;
 		int y = 0, h = z0, lastHalf = z0;
 		for (int i = 0; i < stages && h >= 7; i++) {
 			// as tall as it steps back, so the stair up the front climbs one block for every block it runs
@@ -1429,11 +1449,11 @@ public final class Colossus {
 						int yy = y + ly;
 						if (edge) {
 							boolean pale = (yy / 2 & 1) == 0;
-							b.set(x, yy, z, ly == sh ? sc.band : sc.masonry(pale ? t(w, yy) + 0.3 : t(w, yy) - 0.2, rnd));
+							b.set(x, yy, z, ly == sh ? sc.band : sc.masonryAt(b, x, yy, z, pale ? 0.3 : -0.2));
 						} else if (ly == sh) {
 							b.set(x, yy, z, (x + z & 1) == 0 ? sc.floor : sc.floorAlt);
 						} else if (rim(form, x, z, h - 1)) {
-							b.set(x, yy, z, sc.masonry(t(w, yy), rnd));
+							b.set(x, yy, z, sc.masonryAt(b, x, yy, z, 0));
 						}
 					}
 				}
@@ -1462,12 +1482,12 @@ public final class Colossus {
 					b.clear(x, ly + k, z);
 				}
 				for (int below = ly - 2; below >= 0 && !b.has(x, below, z); below--) {
-					b.set(x, below, z, sc.masonry(t(w, below), rnd));
+					b.set(x, below, z, sc.masonryAt(b, x, below, z, 0));
 				}
 			}
 			for (int s = -1; s <= 1; s += 2) {
 				for (int below = ly - 1; below >= 0 && !b.has(s * 3, below, z); below--) {
-					b.set(s * 3, below, z, sc.masonry(t(w, below), rnd));
+					b.set(s * 3, below, z, sc.masonryAt(b, s * 3, below, z, 0));
 				}
 				b.set(s * 3, ly, z, sc.rail);
 			}
@@ -1517,7 +1537,7 @@ public final class Colossus {
 			int under = deck - 3 - (int) Math.round(rise * (1 - e));
 			for (int z = -2; z <= 2; z++) {
 				for (int y = under; y <= deck; y++) {
-					up.set(x, y, z, y == deck ? (Math.abs(z) == 2 ? sc.trim(0.6, rnd) : sc.floor) : sc.masonry(0.55, rnd));
+					up.set(x, y, z, y == deck ? (Math.abs(z) == 2 ? sc.trim(0.6, rnd) : sc.floor) : sc.masonryAt(up, x, y, z, 0));
 				}
 				up.set(x, under - 1, z, stairs(sc.corbel, x < 0 ? Direction.WEST : Direction.EAST, true));
 				if (Math.abs(z) == 2) {
