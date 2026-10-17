@@ -262,6 +262,27 @@ a **final kill**. Whoever kills you takes your resources. Only blocks that playe
 destroys every bed, at 27:00 everyone glows. The last team standing wins and stands on a golden podium.
 A sidebar shows the teams and beds, a boss bar the next event.
 
+The maps are built by the architecture engine, dressed in the arena's theme, and every map is new:
+* **Your island**: the spawn on a square in your team colour, the generator under a **forge** canopy (an anvil, a
+  blast furnace, lamps; it covers you from arrows while you collect, but is open on every side), the bed on a
+  wool plinth at the back with a **gate** behind it (an arch with team banners; nothing stands within three
+  blocks of the bed, so you can build your defence all round it), the shopkeeper under a **market stall** with a
+  striped awning in your colour, and a **lookout**: a platform four blocks up with a parapet and a stair, high
+  ground over the bridges coming in. Trees, lamps and plants fill the rest, but never the lanes: every island
+  keeps a free stretch of coast towards the middle, its neighbours and its two nearest diamond islands.
+* **Diamond islands**: a ruined pavilion, the same on all four sides: pillars on the corners, broken lintels,
+  knee-high cover beside each pillar and gaps three wide to run through.
+* **The middle**: a colonnade of eight columns under a round entablature with a banner for every team, a
+  compass in the floor, pedestals with lamps as cover between the emerald generators, and a crystal floating
+  high above.
+* **Around it**: landmarks of the theme on big rocks in the distance (a castle, a mage tower, a temple ruin, a
+  chapel...) and small floating islands with trees, outside the area you can build in.
+* **Fair**: every team gets exactly the same island, turned or mirrored (eight teams sit on an octagon so every
+  island faces the middle alike). The map is checked before it is placed: the spawn, bed, generator and shop
+  can be walked to, the free zones are free, every lane has a coast to bridge from, and nothing hangs in the air.
+
+The plain islands of earlier versions are still there: `"mapStyle": "classic"` in `bedwars.json`.
+
 ### Prop Hunt (3–16 players)
 Each round some players are **hunters** and the rest are **props**. Props get 30 seconds to hide while
 the hunters wait blind in a glass cage. Props are a quarter slower and have half the health of a hunter.
@@ -324,6 +345,17 @@ rings, patches or marble veins) with frayed borders, walls that fade from foot t
 hill, pillars, a fountain, a monument, a crater, a plateau, ruins or a floor mosaic). How big the arena is, how
 far apart the spawns are, how high the walls are and how hilly the ground is all change per match, as do the
 number, distance and height of the floating islands.
+
+**Immersion**: walled arenas (duels, team fights, Boxing, King of the Hill, Free for All, Last Man Standing)
+stand in the middle of **stands**, as in a real arena: rows of seats on a podium wall, a promenade with lamps
+and braziers, an outer wall with windows, battlements and banners in red and blue, a gatehouse with two towers
+behind each spawn side, and landmarks of the theme on rocks beyond, where the spectators look. Arenas over the
+void and the open themes (Sky, End) get small floating islands with trees and lamps, and landmarks further out.
+The cover on the field includes pieces from the architecture engine (archways to fight through, broken
+colonnades, monuments on stepped plinths, roofed wells, stacked crates and barrels, market stalls), always the
+same on both halves. A few particles of the theme drift round the players: fireflies in the forest, spores in
+the nether and the jungle, snow on ice, petals under the cherry trees, souls in the deep dark.
+(`arenas.architecture` and `arenas.ambience` switch these off.)
 
 You don't have to build anything. Matches run in their own empty dimension (`battlehub:arenas`), each
 in its own slot, so many matches can run at the same time. Every arena is cleaned up afterwards.
@@ -454,8 +486,9 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   * `elo`: start rating, K-factor, floor, tier thresholds, ranked matchmaking window
   * `levels`: XP curve (`baseXp`, `increment`, `growth`, `maxLevel`) and level bonus coins
   * `streaks.milestones`: which win streaks are announced
-  * `arenas`: number of slots, slot spacing, floor height, blocks built per tick, **themes per mode**, and how
-    often a hand-built map is used without a vote (`customMapChance`)
+  * `arenas`: number of slots, slot spacing, floor height, blocks built per tick, **themes per mode**, how
+    often a hand-built map is used without a vote (`customMapChance`), stands, islands, landmarks and engine
+    cover round and in generated arenas (`architecture`), and the theme particles (`ambience`)
   * `seasons`: on/off, the start date of season 1, the length in days, the number of placement matches, how
     much of a rating stays at a new season, the coins per tier, the size of the Netherite divisions
   * `fairness`: the leave penalty and its waiting times, the idle limits in matches and queues, the teaming
@@ -487,7 +520,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
     per difficulty and countdown, LMS border, FFA `killsToWin` and spawn protection, tournament
     `winnerCoins`, `finalistCoins` and `breakSeconds`; the tournament time limit is per round; 1v2 and 1v3
     `roundsToWin`)
-* **`bedwars.json`**: the format when nobody votes (`solo` or `duo`), the duo team size, the most islands
+* **`bedwars.json`**: the maps (`mapStyle`: `arch`, built by the architecture engine, or `classic`), the
+  format when nobody votes (`solo` or `duo`), the duo team size, the most islands
   (2–8), respawn time, podium time, build
   height and depth, the protected radius around spawns, shops and generators, dropping, the killer taking
   resources, TNT fuse and power; per generator kind the ticks between drops per tier, items per drop and

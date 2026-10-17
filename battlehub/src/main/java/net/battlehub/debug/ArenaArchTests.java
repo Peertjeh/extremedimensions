@@ -95,9 +95,9 @@ final class ArenaArchTests {
 					int x = BlockPos.getX(k), y = BlockPos.getY(k), z = BlockPos.getZ(k);
 					BlockState st = e.getValue();
 					if (st.getBlock() instanceof net.minecraft.world.level.block.StairBlock && !bp.inPlayArea(x, 1, z)) seats++;
-					if (y >= 1 && bp.inPlayArea(x, y, z) && Math.hypot(x, z) < 10 && st.blocksMotion()) {
+					if (y >= 1 && bp.inPlayArea(x, y, z) && Math.hypot(x, z) < 10 && solid(st)) {
 						solid++;
-						if (!bp.get(-x, y, -z).blocksMotion()) unlike++;
+						if (!solid(bp.get(-x, y, -z))) unlike++;
 					}
 				}
 				BattleHub.LOGGER.info("SELFTEST arena: duel {}: {} stair blocks in the stands, {} solid blocks in the middle, {} without a twin, core {}", t.id(),
@@ -131,5 +131,10 @@ final class ArenaArchTests {
 			Blueprint sumo = net.battlehub.arena.layout.PartyLayouts.sumo(Theme.CHERRY, rnd);
 			Preview.log("sumo_cherry_islands", Preview.iso(sumo, 2, false));
 		});
+	}
+
+	/** A block you bump into (plants and air are not). */
+	private static boolean solid(BlockState st) {
+		return !st.getCollisionShape(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, BlockPos.ZERO).isEmpty();
 	}
 }

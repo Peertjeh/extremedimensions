@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.19.0
+
+### Added
+* **Bed Wars maps from the architecture engine**, dressed in all 13 themes, with decoration that is also
+  tactics: the generator under a forge canopy (cover from arrows, open on every side), the bed at the back with
+  an arched gate behind it and three free blocks all round to build a defence, the shopkeeper under a market
+  stall in the team colour, a lookout platform with a parapet and a stair (high ground over the bridges), ruined
+  pavilions with corner cover on the diamond islands, a colonnade with team banners round the emerald
+  generators, and landmarks of the theme (castles, mage towers, temple ruins, chapels) on rocks in the distance.
+  Every team gets exactly the same island, turned or mirrored; eight teams sit on an octagon. Every map is
+  checked before it is placed (points, free zones, routes from the spawn, a free coast towards every target,
+  fairness, nothing floating). `bedwars.json` `"mapStyle": "classic"` brings back the old islands.
+* **Stands round walled arenas** (duels, team fights, Boxing, King of the Hill, Free for All, Last Man
+  Standing): seats on a podium wall, a promenade with lamps and braziers, an outer wall with windows and red and
+  blue banners, gatehouses behind the spawn sides, landmarks beyond. Arenas over the void and the Sky and End
+  themes get floating islands with trees and lamps instead.
+* **Cover pieces from the engine** on generated fields: archways, broken colonnades, monuments, wells, crates,
+  market stalls, the same on both halves.
+* **Theme particles** drifting round the players in a match.
+* Config: `arenas.architecture`, `arenas.ambience`, `bedwars.json` `mapStyle`.
+
+### Changed
+* KOTH, Free for All and Last Man Standing arenas now have surroundings too.
+* Only the chunks where play happens are kept loaded while an arena stands; landmarks in the distance load and
+  unload like any other chunk.
+
 ## 1.18.0
 
 ### Added

@@ -322,3 +322,49 @@ The lobby in `config/battlehub/config.json`:
 5. **Texture-based colour analysis** for discovered mod blocks (when a resource pack is available on the server).
 6. **Fingerprints across buildings:** penalise near-identical houses side by side, and keep rare features rare
    across the whole lobby.
+
+## K. Arenas (1.19)
+
+The same engine dresses the arenas where the games are played (`net.battlehub.arch.arena`).
+
+* **Themes (`Dress`).** Each of the 13 arena themes is a dress: one palette for everything in its arenas
+  (ground, island rock, paving and the masonry, roofs, timber, glass and lights of its buildings), the style its
+  buildings are drawn in, its trees (round, conifer, jungle, cherry, fungus, giant mushroom, palm), ground cover
+  and flowers, a scenery feature (boulders, basalt columns, ice spikes, cacti, mesa stacks, obsidian obelisks,
+  deepslate spires, prismarine spires, clouds), its lamp, the landmarks that may stand in the distance, its cloth
+  colour and an ambient particle. Every theme has two or more variants (another roof, other stone).
+* **Bed Wars (`BedWars`, `Kit`, `Isle`).** Every island is a building container in its own frame (local +z
+  towards the middle), drawn in roles: the land (`Isle`: a wobbling coastline, a flat top, a tapering underside
+  with hanging roots or vines), paving, and the parts of the kit: forge, market stall, lookout, bed gate, ruined
+  pavilion, colonnade. Team islands are drawn from one seed, so all of them are the same; the frame is turned to
+  the nearest axis towards the middle and mirrored when the middle lies to its left, so with eight teams (an
+  octagon turned by 22.5°) every island sees the middle the same way. Diamond islands and the middle are
+  four-fold symmetric. Lanes towards the middle, the neighbours and the nearest diamonds (the union over all
+  islands, seen from each island's own frame) are kept free of trees and scenery; zones round the spawn, the bed,
+  the generator, the shopkeeper and the lookout are carved free after decoration.
+* **Surroundings (`Surroundings`, `Backdrop`).** Round a walled arena on the ground: stands (seats on a podium
+  wall, a promenade, an outer wall with windows and battlements, gatehouses behind the spawn sides, banners,
+  lamps, braziers), and landmarks on rocks beyond, where the spectators look. Round an arena over the void and in
+  the open themes: islets and landmarks. Landmarks are archetypes (castle, mage tower, temple ruin, chapel,
+  watchtower...) briefed with the dress palette, built once to learn their size, moved out until their rock is
+  clear of the play area (for Bed Wars: of the whole square players may build in) and emitted with that offset.
+  Nothing is drawn over a column the arena uses.
+* **Cover (`Cover`).** Archways, broken colonnades, monuments, wells, crates and stalls, each within a 5 × 5
+  footprint. The game places a piece and its copy on the other half with frames turned half round (point
+  symmetry) or mirrored (mirror symmetry), from the same seed, so the two are exactly alike.
+* **Checks (`ArenaCheck`).** Points present and usable (a bed foot at the bed mark, generators on their blocks,
+  room for the shopkeeper, a shop barrel), zones free, walkable from each spawn to its bed, generator and
+  shopkeeper, a free coast towards every target within 28° of the straight line that can be walked to, the same
+  island for every team (stand/obstacle/open compared point by point in each island's frame), nothing of the
+  play area hanging in the air; tactical numbers (cover round the generator, the high ground) for the log.
+  JUnit: `ArenaTest`, `SurroundingsTest`. In the game: `ArenaArchTests` (every theme and team count, a map placed
+  in the world and walked, duel arenas with stands and symmetric cover, pictures).
+* **Integration.** `arena/ArchArenas` turns a plan into a blueprint (marks, spawns, spectator, build box, and the
+  "core" box whose chunks stay loaded). `BedWarsLayout` uses it unless `bedwars.json` says `classic`;
+  `Scenery.around` uses `Surroundings` unless `arenas.architecture` is off; `Features` adds the cover kinds.
+  `fx/Ambience` sends the theme particle round the players.
+* **Cost.** A Bed Wars map takes about 10 ms for the play area and 20–120 ms with its landmarks (warm); stands
+  with landmarks about 30–80 ms. Arenas come to 20,000–100,000 blocks.
+* **Limits.** Islands still turn in 90° steps: with 3, 5, 6 or 7 teams the islands face the middle less exactly
+  than with 2, 4 or 8 (as before), although every island is still the same. The stands are round, so square
+  arenas get a paved court between their walls and the seats.
