@@ -253,6 +253,15 @@ public final class Config {
 	public static int SEAM_RIFT_HUM = 40;
 	/** Whether the rift home wanders only over its gate's threshold (1) or over any ground (0); a Restless Rift trial always lets it roam. */
 	public static int SEAM_RIFT_LEASH = 1;
+	/**
+	 * Whether rifts are seen as tears in the world, a burning rim round a tunnel of light with the world they lead to
+	 * hazy at its far end, that you walk through (1 = on, 0 = off: a spot of sparks you step into).
+	 */
+	public static int SEAM_PORTAL = 1;
+	/** Radius, in tenths of a block, of the rift home's tear (at most 24 in a gate, whose opening is five blocks wide). */
+	public static int SEAM_PORTAL_RADIUS = 20;
+	/** Radius, in tenths of a block, of the tear a Seam Needle opens in the world. */
+	public static int SEAM_PORTAL_ENTRY_RADIUS = 16;
 
 	// --- After the Dragon and the Mending --------------------------------------------------------
 

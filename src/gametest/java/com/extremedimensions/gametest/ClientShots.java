@@ -746,6 +746,36 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(15);
 			ctx.takeScreenshot("18_masonry_close");
 
+			// A rift a Seam Needle tears in the world: across the face of the crying obsidian it was opened on, the Seam
+			// hazy at the far end of its tunnel; straight on, and from aside
+			int[] tear = {home[0] + 340, 110, home[2] + 7};
+			sp.getServer().runOnServer(s -> {
+				net.minecraft.server.level.ServerLevel lvl = (net.minecraft.server.level.ServerLevel) player(s).level();
+				for (int x = tear[0] - 5; x <= tear[0] + 5; x++) {
+					for (int dz = -8; dz <= 4; dz++) {
+						lvl.setBlock(new BlockPos(x, tear[1] - 1, tear[2] + dz), ModBlocks.HUSH_TILES.defaultBlockState(), 3);
+					}
+				}
+				for (int x = tear[0] - 2; x <= tear[0] + 2; x++) {
+					for (int k = 0; k < 5; k++) {
+						lvl.setBlock(new BlockPos(x, tear[1] + k, tear[2] + 3), (x == tear[0] && k < 3 ? net.minecraft.world.level.block.Blocks.CRYING_OBSIDIAN
+								: net.minecraft.world.level.block.Blocks.OBSIDIAN).defaultBlockState(), 3);
+					}
+				}
+				com.extremedimensions.seam.SeamService.openRift(player(s), new BlockPos(tear[0], tear[1], tear[2] + 3), net.minecraft.core.Direction.NORTH,
+						new net.minecraft.world.item.ItemStack(com.extremedimensions.registry.ModItems.SEAM_NEEDLE));
+			});
+			ctx.waitTicks(5);
+			check(sp.getServer().computeOnServer(s -> !player(s).level().getEntitiesOfClass(com.extremedimensions.seam.RiftPortal.class,
+					new net.minecraft.world.phys.AABB(new BlockPos(tear[0], tear[1], tear[2])).inflate(4)).isEmpty()), "a Seam Needle's rift has no tear to see");
+			// the ring stands on the floor in front of the obsidian, its middle at the camera's height
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.2f %.1f 0 0", tear[0] + 0.5, tear[1] + 1.75 - 1.62, tear[2] - 4.5));
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("25_rift_world");
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.2f %.1f 38 4", tear[0] + 4.5, tear[1] + 1.75 - 1.62, tear[2] - 2.6));
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("25_rift_world_aside");
+
 			// Colossal buildings, one of each plan, each on its island as the Seam would design it (far out, in the sky)
 			String[] plans = {"cathedral", "citadel", "cluster", "ziggurat", "gateway"};
 			int skyTop = 120;
@@ -897,6 +927,37 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("19_island_under");
 			// the column and the compass are drawn from where the server says the rift is
 			ctx.runOnClient(mc -> check(ClientState.riftKnown(), "the client does not know where the rift home is"));
+			// The tear over the rift home, the world above hazy at the end of its tunnel: straight on and close, from
+			// aside, from behind the gate (the tunnel runs away from whoever looks, either side), and by night up there.
+			// Where the rift stands now, it having wandered since
+			double[] rift = sp.getServer().computeOnServer(s -> {
+				PlayerData d = DataStore.get(player(s).getUUID());
+				double a = Math.toRadians(d.riftYaw);
+				return new double[] {d.riftX, d.riftY, d.riftZ, -Math.sin(a), Math.cos(a)};
+			});
+			double rx = rift[0], ry = rift[1], rz = rift[2], fx = rift[3], fz = rift[4];
+			// eye level with the middle of the ring
+			double eyeY = ry + com.extremedimensions.seam.RiftPortals.homeRadius() + 0.15 - 1.62;
+			eye(sp, rx + fx * 4.6, eyeY, rz + fz * 4.6, rx, rz, 0);
+			ctx.waitTicks(40);
+			ctx.runOnClient(mc -> check(!mc.level.getEntitiesOfClass(com.extremedimensions.seam.RiftPortal.class,
+					new net.minecraft.world.phys.AABB(rx - 3, ry - 3, rz - 3, rx + 3, ry + 3, rz + 3), com.extremedimensions.seam.RiftPortal::seen).isEmpty(),
+					"the rift home has no tear the visitor can see"));
+			ctx.takeScreenshot("25_portal_near");
+			eye(sp, rx + fx * 5.2 - fz * 3.6, eyeY + 0.3, rz + fz * 5.2 + fx * 3.6, rx, rz, 0);
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("25_portal_aside");
+			eye(sp, rx - fx * 5.5, eyeY, rz - fz * 5.5, rx, rz, 0);
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("25_portal_behind");
+			sp.getServer().runCommand("time set midnight");
+			eye(sp, rx + fx * 4.6, eyeY, rz + fz * 4.6, rx, rz, 0);
+			ctx.waitTicks(50);
+			ctx.takeScreenshot("25_portal_night");
+			sp.getServer().runCommand("time set noon");
+			eye(sp, rx + fx * 12, eyeY + 2, rz + fz * 12, rx, rz, -6);
+			ctx.waitTicks(50);
+			ctx.takeScreenshot("25_portal_gate");
 			// Back onto the arrival island for what follows: out along the processional way, well clear of the rift (it
 			// may have wandered off its threshold by now, under the Restless Rift twist, and would take a spectator home)
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %.2f %.2f", gx + ox * 9, gate[6], gz + oz * 9));

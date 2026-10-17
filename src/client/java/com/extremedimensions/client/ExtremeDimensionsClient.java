@@ -135,6 +135,11 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ModelLayerRegistry.registerModelLayer(VeilRayModel.LAYER, VeilRayModel::createBodyLayer);
 		EntityRendererRegistry.register(ModEntities.VEIL_RAY, VeilRayRenderer::new);
 		EntityRendererRegistry.register(ModEntities.THINNED, ctx -> new LurkerRenderer<>(ctx, "thinned", 1.05F, 0.7F, false));
+		EntityRendererRegistry.register(ModEntities.RIFT_PORTAL, com.extremedimensions.client.entity.RiftPortalRenderer::new);
+		com.extremedimensions.seam.RiftPortal.viewer = () -> {
+			net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+			return mc.player == null ? -1 : mc.player.getId();
+		};
 		// The Elders: colossal, each with a model of its own (see tools/elders)
 		ModelLayerRegistry.registerModelLayer(com.extremedimensions.client.entity.elder.MatriarchModel.LAYER,
 				com.extremedimensions.client.entity.elder.MatriarchGeometry::create);

@@ -86,6 +86,8 @@ public class PlayerData {
 	public boolean inSeam = false;
 	public double seamLeft = 0, seamMax = 0;
 	public double riftX, riftY, riftZ;
+	/** The way the rift home's tear faces (a yaw: it stands across its gate). */
+	public float riftYaw;
 	public String homeDim = "overworld";
 	public double homeX, homeY, homeZ;
 	public transient int seamPull = 0;

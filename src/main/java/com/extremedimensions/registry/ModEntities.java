@@ -109,6 +109,15 @@ public final class ModEntities {
 					.updateInterval(1)
 					.build(WEAVER_KEY));
 
+	private static final ResourceKey<EntityType<?>> RIFT_PORTAL_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("rift_portal"));
+
+	/** A rift as it is seen (a sight only, never saved); put where each rift stands by {@code SeamService}. */
+	public static final EntityType<com.extremedimensions.seam.RiftPortal> RIFT_PORTAL = Registry.register(BuiltInRegistries.ENTITY_TYPE, RIFT_PORTAL_KEY,
+			EntityType.Builder.<com.extremedimensions.seam.RiftPortal>of(com.extremedimensions.seam.RiftPortal::new, MobCategory.MISC)
+					.sized(0.5f, 0.5f)
+					.clientTrackingRange(10)
+					.build(RIFT_PORTAL_KEY));
+
 	public static void init() {
 		FabricDefaultAttributeRegistry.register(MATRIARCH, com.extremedimensions.elder.Matriarch.createAttributes());
 		FabricDefaultAttributeRegistry.register(FERRYMAN, com.extremedimensions.elder.Ferryman.createAttributes());

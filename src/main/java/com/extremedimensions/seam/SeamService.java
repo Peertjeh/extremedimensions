@@ -74,12 +74,18 @@ public final class SeamService {
 		ServerLevel level;
 		double x, y, z;
 		int ticks;
+		/** How it is seen, when tears are on (null otherwise). */
+		RiftPortal portal;
 	}
+
+	/** Ticks a rift a Seam Needle tears stays open. */
+	private static final int RIFT_TICKS = 300;
 
 	private static final List<Rift> RIFTS = new ArrayList<>();
 
 	public static void clear() {
 		RIFTS.clear();
+		RiftPortals.clear();
 		SeamArchitect.clear();
 		SeamDepth.clear();
 		falls = null;
@@ -174,6 +180,7 @@ public final class SeamService {
 		r.x = at.getX() + 0.5;
 		r.y = at.getY() + 0.1;
 		r.z = at.getZ() + 0.5;
+		r.portal = RiftPortals.entry(level, p, r.x, at.getY(), r.z, face, RIFT_TICKS);
 		RIFTS.add(r);
 		String dim = level.dimension().identifier().toString();
 		WorldFx.soundIn(dim, "extremedimensions:rift_open", "player", r.x, r.y + 1, r.z, 1.5f, 1f);
@@ -187,7 +194,8 @@ public final class SeamService {
 			Rift r = it.next();
 			r.ticks++;
 			String dim = r.level.dimension().identifier().toString();
-			if (r.ticks % 2 == 0) {
+			// a tear has sparks of its own; a bare rift is all motes
+			if (r.ticks % 2 == 0 && r.portal == null) {
 				double a = r.ticks * 0.35;
 				for (int k = 0; k < 3; k++) {
 					double ang = a + k * 2.094;
@@ -200,11 +208,12 @@ public final class SeamService {
 				WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", r.x, r.y + 1, r.z, 0.3, 0.5, 0.3, 0, 2);
 			}
 			for (ServerPlayer p : r.level.players()) {
-				if (!p.isSpectator() && p.distanceToSqr(r.x, r.y + 0.5, r.z) < 1.3 * 1.3) {
+				if (!p.isSpectator() && (p.distanceToSqr(r.x, r.y + 0.5, r.z) < 1.3 * 1.3
+						|| r.portal != null && RiftPortals.through(p, r.portal.getX(), r.portal.getY(), r.portal.getZ(), r.portal.getYRot(), r.portal.radius()))) {
 					later.add(() -> enter(p, r));
 				}
 			}
-			if (r.ticks > 300) {
+			if (r.ticks > RIFT_TICKS) {
 				WorldFx.particleIn(dim, "minecraft:reverse_portal", r.x, r.y + 1, r.z, 0.3, 0.8, 0.3, 0.3, 30);
 				it.remove();
 			}
@@ -240,6 +249,8 @@ public final class SeamService {
 		double landX = x + 0.5, landY = top + 1, landZ = z + 0.5;
 		float yaw = p.getYRot();
 		double riftX = x + 3.5, riftY = top + 1, riftZ = z + 0.5;
+		// a bare rift beside the landing faces it across the island
+		float riftYaw = -90;
 		boolean gate = Config.SEAM_RETURN_GATE > 0;
 		if (gate) {
 			// The gate stands on the far side of the island from the bridge, looking down the island to it
@@ -262,6 +273,8 @@ public final class SeamService {
 			riftX = g.riftX();
 			riftY = g.riftY();
 			riftZ = g.riftZ();
+			// its tear stands across the gate, between the pylons
+			riftYaw = g.yaw();
 		} else {
 			SeamArchitect.island(arrival, rnd, shape, true);
 			SeamArchitect.lamp(arrival, rnd, x - 3, top + 1, z - 3);
@@ -281,6 +294,7 @@ public final class SeamService {
 		d.riftX = riftX;
 		d.riftY = riftY;
 		d.riftZ = riftZ;
+		d.riftYaw = riftYaw;
 		d.inSeam = true;
 		d.seamVisits++;
 		d.seamMax = Math.max(30, Config.SEAM_SECONDS) + Config.WOVEN_SEAM_SECONDS * TetherService.carriedTier(p, d)
@@ -327,6 +341,7 @@ public final class SeamService {
 			if (!inSeam(p)) {
 				// Left the Seam some other way (a command, a death): the thread is cut
 				d.inSeam = false;
+				RiftPortals.closeHome(p);
 				com.extremedimensions.trial.TrialService.fail(p, d);
 				TetherService.clearThread(p, d);
 				continue;
@@ -352,8 +367,13 @@ public final class SeamService {
 		TetherService.lay(p, d);
 		SeamDepth.tick(p, d, tick);
 		String dim = SEAM_ID;
-		// The return rift: sparks of gold spiralling up, and the pull of a portal (the column over it is the client's)
-		if (tick % 3 == 0) {
+		ServerLevel seam = seam();
+		if (seam != null) {
+			RiftPortals.keepHome(seam, p, d);
+		}
+		// The return rift: sparks of gold spiralling up, and the pull of a portal (the column over it is the client's;
+		// a tear, when it has one, has sparks of its own)
+		if (tick % 3 == 0 && !RiftPortals.on()) {
 			double a = tick * 0.2;
 			WorldFx.particleIn(dim, "extremedimensions:ember_mote", d.riftX + Math.cos(a) * 0.6, d.riftY + 0.3 + (tick % 30) / 15.0,
 					d.riftZ + Math.sin(a) * 0.6, 0, 0, 0, 0, 1);
@@ -361,7 +381,7 @@ public final class SeamService {
 		}
 		boolean restless = com.extremedimensions.trial.TrialService.restless(d);
 		if (tick % (restless ? 100 : 200) == 0) {
-			drift(seam(), d, Config.SEAM_RIFT_LEASH > 0 && !restless);
+			drift(seam, d, Config.SEAM_RIFT_LEASH > 0 && !restless);
 		}
 		// It hums: a sound from the rift itself, so it can be found by ear in the fog
 		if (Config.SEAM_RIFT_HUM > 0 && tick % 80 == 0 && p.distanceToSqr(d.riftX, d.riftY, d.riftZ) < Config.SEAM_RIFT_HUM * Config.SEAM_RIFT_HUM) {
@@ -386,7 +406,8 @@ public final class SeamService {
 			} else {
 				collapse(p, d);
 			}
-		} else if (!fallen && p.distanceToSqr(d.riftX, d.riftY + 0.5, d.riftZ) < 1.4 * 1.4) {
+		} else if (!fallen && (p.distanceToSqr(d.riftX, d.riftY + 0.5, d.riftZ) < 1.4 * 1.4
+				|| RiftPortals.on() && RiftPortals.through(p, d.riftX, d.riftY, d.riftZ, d.riftYaw, RiftPortals.homeRadius()))) {
 			exit(p, d);
 		}
 		villages(p);
@@ -394,10 +415,16 @@ public final class SeamService {
 
 	/**
 	 * The rift wanders a block at a time, never off solid ground. Leashed, it keeps to the floor it stands on (its
-	 * gate's threshold); let loose (a Restless Rift trial, or the leash turned off) it roams, a step up or down too.
+	 * gate's threshold), and with a tear (which stands across the gate, as wide as its opening) only back and forth
+	 * through the gate, never sideways into a pylon; let loose (a Restless Rift trial, or the leash turned off) it
+	 * roams, a step up or down too.
 	 */
 	public static void drift(ServerLevel seam, PlayerData d, boolean leashed) {
 		Direction dir = Direction.Plane.HORIZONTAL.getRandomDirection(seam.getRandom());
+		if (leashed && RiftPortals.on()) {
+			Direction ahead = Direction.fromYRot(d.riftYaw);
+			dir = seam.getRandom().nextBoolean() ? ahead : ahead.getOpposite();
+		}
 		BlockPos at = BlockPos.containing(d.riftX, d.riftY, d.riftZ);
 		BlockState floor = seam.getBlockState(at.below());
 		BlockPos next = at.relative(dir);
@@ -419,6 +446,7 @@ public final class SeamService {
 
 	private static void exit(ServerPlayer p, PlayerData d) {
 		d.inSeam = false;
+		RiftPortals.closeHome(p);
 		com.extremedimensions.trial.TrialService.finish(p, d);
 		// The thread home is taken up; a Tether bound before the visit stays bound
 		TetherService.clearThread(p, d);
@@ -449,6 +477,7 @@ public final class SeamService {
 			return;
 		}
 		d.inSeam = false;
+		RiftPortals.closeHome(p);
 		d.collapses++;
 		com.extremedimensions.trial.TrialService.fail(p, d);
 		TetherService.clearThread(p, d);

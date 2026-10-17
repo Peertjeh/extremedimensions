@@ -4,9 +4,13 @@ import static com.extremedimensions.gametest.CurseTests.check;
 
 import java.util.Random;
 
+import com.extremedimensions.config.Config;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.registry.ModBlocks;
 import com.extremedimensions.seam.ReturnGate;
+import com.extremedimensions.seam.RiftPortal;
+import com.extremedimensions.seam.RiftPortals;
 import com.extremedimensions.seam.SeamArchitect;
 import com.extremedimensions.seam.SeamService;
 
@@ -68,7 +72,10 @@ public class GateTests {
 		helper.succeed();
 	}
 
-	/** Leashed, the rift keeps to the pale stones; let loose it roams, but never over the nothing or into a wall. */
+	/**
+	 * Leashed, the rift keeps to the pale stones, and only back and forth through its gate; let loose it roams, but
+	 * never over the nothing or into a wall.
+	 */
 	@GameTest
 	public void theRiftKeepsToItsThreshold(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
@@ -92,6 +99,8 @@ public class GateTests {
 			SeamService.drift(level, d, true);
 			BlockPos at = BlockPos.containing(d.riftX, d.riftY, d.riftZ);
 			check(helper, level.getBlockState(at.below()).is(ModBlocks.POLISHED_PALE_HUSH_STONE), "the leashed rift left its threshold for %s", at);
+			// its tear stands across the gate (facing south here): it goes back and forth through it, not sideways
+			check(helper, Config.SEAM_PORTAL <= 0 || at.getX() == o.getX(), "the leashed rift stepped sideways out of its gate to %s", at);
 		}
 		boolean roamed = false;
 		for (int i = 0; i < 400; i++) {
@@ -103,6 +112,59 @@ public class GateTests {
 		}
 		check(helper, roamed, "let loose, the rift never left its threshold");
 		helper.succeed();
+	}
+
+	/**
+	 * A tear is passed through by walking into its opening, from either side, whichever way it faces: not by standing
+	 * beside it, over it or a few steps in front of it.
+	 */
+	@GameTest
+	public void aTearIsPassedThroughItsOpening(GameTestHelper helper) {
+		float r = 2;
+		for (float yaw : new float[] {0, 90, 180, -90, 37}) {
+			double a = Math.toRadians(yaw);
+			double fx = -Math.sin(a), fz = Math.cos(a), sx = Math.cos(a), sz = Math.sin(a);
+			// {steps ahead, steps across, height of the feet over the floor, passes?}
+			double[][] cases = {{0, 0, 0, 1}, {0.5, 0.3, 0, 1}, {-0.5, -0.6, 0.5, 1}, {0, 1.0, 0, 1}, {1.5, 0, 0, 0}, {-1.2, 0, 0, 0},
+					{0, 2.4, 0, 0}, {0, 0, 4.5, 0}, {0, 0, -2.5, 0}};
+			for (double[] c : cases) {
+				// the middle of a body as tall as a player's
+				boolean through = RiftPortals.through(100 + fx * c[0] + sx * c[1], 64 + c[2] + 0.9, 100 + fz * c[0] + sz * c[1], 100, 64, 100, yaw, r);
+				check(helper, through == (c[3] > 0), "facing %s, %s ahead, %s across, %s up: %s", yaw, c[0], c[1], c[2],
+						through ? "passed through a tear from outside it" : "walked into a tear and did not pass through");
+			}
+		}
+		helper.succeed();
+	}
+
+	/** A tear left to close shrinks shut and goes when it is told; one nobody keeps goes by itself; one kept stays. */
+	@GameTest(maxTicks = 100)
+	public void aTearClosesWhenItIsNoLongerKept(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos o = helper.absolutePos(new BlockPos(2, 2, 2));
+		RiftPortal closing = new RiftPortal(ModEntities.RIFT_PORTAL, level), unkept = new RiftPortal(ModEntities.RIFT_PORTAL, level),
+				kept = new RiftPortal(ModEntities.RIFT_PORTAL, level);
+		for (RiftPortal t : new RiftPortal[] {closing, unkept, kept}) {
+			t.setPos(o.getX() + 0.5, o.getY(), o.getZ() + 0.5);
+			level.addFreshEntity(t);
+		}
+		closing.closeIn(20);
+		for (int t = 1; t <= 70; t++) {
+			int at = t;
+			helper.runAfterDelay(t, () -> {
+				kept.keep();
+				if (at == 10) {
+					check(helper, !closing.isRemoved() && closing.openness(0) > 0.5F, "a closing tear was gone (or shut) too soon");
+				}
+			});
+		}
+		helper.runAfterDelay(75, () -> {
+			check(helper, closing.isRemoved(), "a tear told to close in 20 ticks was still there after 75");
+			check(helper, unkept.isRemoved(), "a tear nobody kept was still there after 75 ticks");
+			check(helper, !kept.isRemoved(), "a tear kept every tick closed anyway");
+			kept.discard();
+			helper.succeed();
+		});
 	}
 
 	/**
