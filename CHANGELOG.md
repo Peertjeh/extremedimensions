@@ -1,5 +1,35 @@
 # Changelog
 
+## 2.25.0: Torn Open
+
+### Added
+- **Rifts are tears in the world.** A rift no longer shows as a wisp of sparks: it is a ring torn in the air with a
+  burning magenta rim, cracks running out from it like broken glass, a faint shimmering skin across the opening and
+  chips of rock tumbling round it. Through it runs a tunnel of light, rings of it turning down into the distance, and
+  at the far end, hazy, the world it leads to: from the Seam, the Overworld by day or by night (as it is up there) or
+  the Nether, whichever you came from; from the world, the Seam. The tunnel always runs away from you, from either
+  side, and shifts as you move like something far off.
+- **The rift home stands in its gate**, across the opening between the pylons, a tear only you see (in co-op, each
+  visitor sees their own). It wanders only back and forth through the gate, never sideways into a pylon. Walk into it
+  to go home.
+- **A Seam Needle's rift** tears open across the face of the crying obsidian it was used on (facing you, when used on
+  a top or a bottom), smaller, with the Seam at the far end, and shrinks shut when it closes. Walk into it to go
+  through.
+- New settings: tears on or off (off, a rift is the old spot of sparks), and the size of each kind of tear.
+- `docs/architecture.md`: how the Seam's buildings are made, how to extend them, what they cannot do yet, and what
+  comes next.
+
+### Changed
+- **The colossal buildings shade as one.** Each used to start its gradient of stone again in every part (a tower over
+  the building's height, a hall over 48 blocks, a curtain wall over its own), and tossed a coin for every block, so a
+  hall showed other stone than the tower beside it and every band was a speckle. Now each building has one plan of its
+  materials, worked out from where each block stands in the world: the stone climbs from a plinth of blackstone to a
+  pale crown in bands with soft, ragged edges, moved by streaks that run down the stone and broad patches across a
+  face, and tower, hall and wall meet without a seam. Moss and cracks gather in patches, more of them low down.
+- Choosing stone no longer draws on the same chance as choosing towers, so the buildings' shapes are steadier from
+  one version to the next.
+- A sixth colossus joins the client test's photographs: a citadel fallen to ruin.
+
 ## 2.24.0: The Way Home
 
 ### Added

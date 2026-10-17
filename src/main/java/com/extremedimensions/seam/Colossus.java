@@ -1214,7 +1214,7 @@ public final class Colossus {
 
 	// ------------------------------------------------------------------ plans
 
-	static final int CATHEDRAL = 0, CITADEL = 1, CLUSTER = 2, ZIGGURAT = 3, GATEWAY = 4;
+	public static final int CATHEDRAL = 0, CITADEL = 1, CLUSTER = 2, ZIGGURAT = 3, GATEWAY = 4;
 
 	/** What was built, for tests and logs: the plan, the scheme, the crown of the great tower. */
 	public record Summary(int layout, int scheme, int crown, int towers, int height) {}
