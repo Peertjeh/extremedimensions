@@ -79,6 +79,7 @@ public final class SelfTest {
 			net.battlehub.progression.Retention.pausedForTest = true;
 		});
 		HubWorldTests.all(server, s);
+		ArchTests.all(server, s);
 		lobbyAndMenus(server, s);
 		LayoutTests.all(s);
 		BoardTests.all(server, s);

@@ -32,7 +32,7 @@ public final class HubWorld {
 
 	public static final ResourceKey<Level> KEY = ResourceKey.create(Registries.DIMENSION, BattleHub.id("hub"));
 	/** Bump to rebuild the lobby on existing servers after a layout change. */
-	private static final int LOBBY_VERSION = 2;
+	private static final int LOBBY_VERSION = 3;
 	private static final BlockPos ORIGIN = new BlockPos(0, 100, 0);
 
 	private static volatile boolean ready;
@@ -70,7 +70,19 @@ public final class HubWorld {
 
 	/** The lobby's blueprint, as it is built (for the pictures in the self-test). */
 	public static Blueprint previewBlueprint() {
-		return HubLayout.design(20260101L);
+		return design();
+	}
+
+	/** The lobby of the configured style: the generated citadel, or the classic plaza with four buildings. */
+	static Blueprint design() {
+		var cfg = ConfigManager.config().lobby;
+		return "classic".equals(cfg.style) ? HubLayout.design(20260101L) : ArchLobby.design(cfg);
+	}
+
+	/** What the lobby is built from: changing the style or the seed rebuilds it. */
+	private static String recipe() {
+		var cfg = ConfigManager.config().lobby;
+		return "classic".equals(cfg.style) ? "classic" : "citadel:" + cfg.seed + ":" + cfg.detail + ":" + cfg.islandRadius + ":" + cfg.townDensity;
 	}
 
 	/** Radius of the plaza round the fountain (its balustrade carries the leaderboards). */
@@ -95,7 +107,8 @@ public final class HubWorld {
 			return;
 		}
 		JsonObject old = readMarker(server);
-		if (old != null && old.has("version") && old.get("version").getAsInt() >= LOBBY_VERSION) {
+		if (old != null && old.has("version") && old.get("version").getAsInt() >= LOBBY_VERSION && old.has("recipe")
+				&& old.get("recipe").getAsString().equals(recipe())) {
 			ready = true;
 			return;
 		}
@@ -117,7 +130,7 @@ public final class HubWorld {
 					old.get("maxX").getAsInt() + 1, old.get("maxY").getAsInt() + 1, old.get("maxZ").getAsInt() + 1);
 			ArenaBuilder.clear(level, box, null);
 		}
-		Blueprint bp = HubLayout.design(20260101L);
+		Blueprint bp = design();
 		Arena lobby = new Arena(level, -1, Theme.CASTLE, ORIGIN, bp);
 		ArenaBuilder.build(lobby, () -> {
 			writeMarker(server, bp);
@@ -142,6 +155,7 @@ public final class HubWorld {
 	private static void writeMarker(MinecraftServer server, Blueprint bp) {
 		JsonObject o = new JsonObject();
 		o.addProperty("version", LOBBY_VERSION);
+		o.addProperty("recipe", recipe());
 		o.addProperty("minX", ORIGIN.getX() + bp.minX());
 		o.addProperty("minY", ORIGIN.getY() + bp.minY());
 		o.addProperty("minZ", ORIGIN.getZ() + bp.minZ());

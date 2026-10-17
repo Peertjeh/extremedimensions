@@ -14,14 +14,25 @@ command, and **vanilla clients can join**: BattleHub runs on the server only.
 ## Features
 
 ### Its own world
-BattleHub lives in its own dimension, `battlehub:hub`, in a hub the mod builds itself in the style of the big
-servers: a marble plaza with a compass rose that fades from white to grey, a three-tier fountain with waterfalls
-under a beacon beam, a balustrade with four gateways (towers, an arch and a coloured beacon each) and bridges to
-four grand buildings: a **colosseum** (north, in view from the spawn), a **castle** with a keep and round towers
-(east), a **temple of champions** with a podium (south) and an **arcane tower** with a copper spire and floating
-crystals (west), with small floating islands and trees in between. Floors, walls, roofs and the undersides of
-the islands fade through colour gradients. The normal world is left alone: no compass, no protection, no changed
-damage rules there.
+BattleHub lives in its own dimension, `battlehub:hub`, in a lobby the mod generates itself: **the Citadel**, a
+whole city on a floating island, designed by BattleHub's **procedural architecture engine** (see
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). At its heart lies the marble plaza (compass rose, three-tier
+fountain under a beacon, the leaderboards on its balustrade, the lobby characters) with four gateways and four
+avenues out to four districts, each anchored by a landmark that faces the plaza:
+* a **gothic cathedral** to the north, framed by the north gate as you arrive: nave, aisles, transept, apse,
+  flying buttresses, a west front with a portal, a rose window and towers, stained glass and pews inside;
+* a **castle** on a hill to the east: curtain walls with wall walks, round, square or octagonal towers
+  (crenellated or with cones), a gatehouse with a portcullis, a keep, a great hall and a courtyard with a well;
+* a **temple ruin** to the south: a podium, a colonnade or a round tholos, a precinct with a stoa, obelisks,
+  broken columns and moss everywhere;
+* a **mage tower** to the west: tapering stages with balconies and glowing runes, turrets, a copper or crystal
+  crown, floating crystals and a library annex.
+Between them, town blocks with dozens of houses, shops, chapels and market halls along streets and avenues,
+gardens inside the blocks, watchtowers on the cliffs, forests towards the edge and small islands floating
+around. Every district has its own palette (slate roofs by the cathedral, copper by the mage tower...), and
+houses between two districts take after the nearer one. Every seed gives a different city with the same plan
+(`lobby.seed`), and the classic lobby of 1.16 is still there (`lobby.style: "classic"`). The normal world is
+left alone: no compass, no protection, no changed damage rules there.
 
 * `/hub` takes you to BattleHub. Your survival state (inventory, XP, health, hunger, effects, game mode
   and position) is saved to disk.
@@ -430,7 +441,11 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
 * **`config.json`**
   * `hub`: send players to BattleHub when they join (for BattleHub-only servers), join hint, game mode in the
     hub (adventure or survival), level on the XP bar, exit door item
-  * `lobby`: spawn position in the hub (set with `/battlehub setlobby`), teleport on join, keep fed, void height
+  * `lobby`: spawn position in the hub (set with `/battlehub setlobby`), teleport on join, keep fed, void height,
+    and the lobby itself: `style` (`citadel` or `classic`), `seed` (another seed, another city), `detail` (0
+    structure only, 1 normal, 2 every ornament and piece of furniture), `islandRadius` (100-200), `townDensity`
+    (0-1) and `discoverModBlocks` (let palettes use block families from other mods). Changing them rebuilds the
+    lobby at the next start (or `/battlehub lobby rebuild`).
   * `compass`: hotbar slot, item, glint
   * `protection`: no damage or death outside matches, lobby block protection, no item drops
   * `timings`: countdowns (also between best-of-3 rounds), end delay, play-again time, challenge expiry,
