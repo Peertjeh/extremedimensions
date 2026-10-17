@@ -168,7 +168,8 @@ public class RiftPortalRenderer extends EntityRenderer<RiftPortal, RiftPortalRen
 				float d = Mth.sqrt(cx * cx + cyy * cyy);
 				float a = (float) Math.atan2(cyy, cx);
 				float wave = Math.max(0, 0.6F * Mth.sin(3 * a + p1) + 0.4F * Mth.sin(7 * a + p2));
-				float band = CELL * (1.05F + 1.5F * wave) - hash(seed, i, j, 1) * CELL * 0.5F;
+				// never thinner than a block and a half of grid, so no line out from the middle misses the frame
+				float band = CELL * (2.0F + 1.6F * wave) - hash(seed, i, j, 1) * CELL * 0.5F;
 				if (d < R + CELL * 0.35F || d > R + band || Math.abs(cx) + CELL / 2 > most + 0.001F) {
 					continue;
 				}
@@ -181,8 +182,8 @@ public class RiftPortalRenderer extends EntityRenderer<RiftPortal, RiftPortalRen
 				float h1 = hash(seed, i, j, 3);
 				int face = d < R + CELL * 1.1F ? (h1 < 0.45F ? CRYING : h1 < 0.8F ? OBSIDIAN : CRACKED) : (h1 < 0.4F ? BRICKS : h1 < 0.8F ? OBSIDIAN : CRACKED);
 				// they fly in from the opening outward as it tears open, and shrink away as it closes
-				float delay = 0.5F * (d - R) / (CELL * 2.6F) + hash(seed, i, j, 4) * 0.25F;
-				float grow = Mth.clamp((open - delay) / 0.35F, 0, 1);
+				float delay = 0.45F * Mth.clamp((d - R) / band, 0, 1) + hash(seed, i, j, 4) * 0.2F;
+				float grow = Mth.clamp((open - delay) / 0.3F, 0, 1);
 				if (grow <= 0) {
 					continue;
 				}

@@ -269,6 +269,51 @@ public final class SeamArchitect {
 		/** Blocks a design tried to lay outside the heights a plan builds at (a design that runs too tall). */
 		public int dropped;
 
+		/** The island's surface under each column it covers, as {@link Terrain} lays it (what stands on the ground reads it). */
+		final Map<Long, Integer> ground = new HashMap<>();
+		/**
+		 * Paving asked for on a plan that has no ground of its own (a structure planned apart from its island): laid on
+		 * the island's surface when the structure is merged onto it. Each: x, the height it expected, z, the block.
+		 */
+		final List<Object[]> paving = new ArrayList<>();
+
+		static long column(int x, int z) {
+			return ((long) x << 32) | (z & 0xFFFFFFFFL);
+		}
+
+		static int columnX(long c) {
+			return (int) (c >> 32);
+		}
+
+		static int columnZ(long c) {
+			return (int) c;
+		}
+
+		public void setGround(int x, int z, int y) {
+			ground.put(column(x, z), y);
+		}
+
+		/** The surface of the ground under a column, or {@code fallback} where the plan has none there. */
+		public int ground(int x, int z, int fallback) {
+			Integer y = ground.get(column(x, z));
+			return y == null ? fallback : y;
+		}
+
+		/**
+		 * Sets a plan designed apart (a structure) down on this one: its blocks over these, its actions, light falls and
+		 * marks, then the paving it asked for, on this plan's ground.
+		 */
+		public void merge(Plan o) {
+			blocks.putAll(o.blocks);
+			after.addAll(o.after);
+			falls.addAll(o.falls);
+			marks.addAll(o.marks);
+			dropped += o.dropped;
+			for (Object[] pv : o.paving) {
+				pave(this, (int) pv[0], (int) pv[1], (int) pv[2], (BlockState) pv[3]);
+			}
+		}
+
 		public void set(int x, int y, int z, BlockState s) {
 			if (s != null && y > 1 && y < 250) {
 				blocks.put(BlockPos.asLong(x, y, z), s);
@@ -1110,10 +1155,23 @@ public final class SeamArchitect {
 			return new Shape(x, top, z, r, rnd.nextDouble() * 6.28, rnd.nextDouble() * 6.28, rnd.nextDouble() * 6.28);
 		}
 
-		/** The rim's distance from the centre at an angle; big islands wobble less, so what is built on them fits. */
+		/**
+		 * The coast's distance from the centre at an angle: it wanders in broad bays and headlands with smaller coves in
+		 * them; big islands wander less, so what is built on them fits.
+		 */
 		public double edge(double ang) {
 			double w = r >= 20 ? 0.55 : 1.0;
-			return r * (0.92 + w * (0.07 * Math.sin(ang * 3 + p1) + 0.045 * Math.sin(ang * 5 + p2) + 0.02 * Math.sin(ang * 11 + p3)));
+			return r * (0.91 + w * (0.05 * Math.sin(ang * 2 + p1 + p3) + 0.06 * Math.sin(ang * 3 + p1) + 0.04 * Math.sin(ang * 5 + p2)
+					+ 0.025 * Math.sin(ang * 7 + p3 * 1.7) + 0.015 * Math.sin(ang * 13 + p2 * 2.3)));
+		}
+
+		/** The nearest the coast comes to the centre, all round. */
+		public double nearest() {
+			double least = r;
+			for (int i = 0; i < 360; i += 3) {
+				least = Math.min(least, edge(Math.toRadians(i)));
+			}
+			return least;
 		}
 
 		public boolean inside(int px, int pz, double margin) {
@@ -1123,143 +1181,13 @@ public final class SeamArchitect {
 	}
 
 	/**
-	 * A floating island: turf of moss and pale moss with grass, flowers, firefly bushes and eyeblossoms over an
-	 * underside built as an upside-down mountain (the way the best floating islands are built: a mound turned over,
-	 * not a bowl): a pointed summit under the middle, two to four lesser summits about it, ribs and gullies running down
-	 * its flanks. Its rock darkens with depth in streaks that run down the stone, crossed by thin strata that rise and
-	 * fall across it, and is threaded with silk, hung with vines, roots, chains and soul lanterns, with long fangs of
-	 * stone tipped with amethyst, and light pouring off its edges.
+	 * A floating island (see {@link Terrain}): rolling turf over an underside built as an upside-down mountain, its
+	 * ground level out to the rim on every side (where a bridge might come in).
 	 *
 	 * @return the depth of the underside at the centre
 	 */
 	public static int island(Plan p, Random rnd, Shape s, boolean mossy) {
-		int cx = s.x, top = s.top, cz = s.z, r = s.r;
-		int span = r + 3;
-		int[][] depth = new int[span * 2 + 1][span * 2 + 1];
-		long seed = rnd.nextLong();
-		BlockState grass = mc("short_grass"), fern = mc("fern"), allium = mc("allium"), bluet = mc("azure_bluet");
-		BlockState firefly = mc("firefly_bush"), eye = mc("open_eyeblossom"), paleMoss = mc("pale_moss_block", moss());
-		BlockState vines = mc("cave_vines"), pale = mc("pale_hanging_moss"), roots = mc("hanging_roots");
-		BlockState[] rock = rockGrad();
-		// deep under small islands, relatively shallower under the great ones (still thirty blocks of rock)
-		double deep = r <= 16 ? r * 1.15 : 18.4 + (r - 16) * 0.65;
-		// The lesser summits of the underside: where each hangs, how wide and how deep (drawn from their own source,
-		// so all that is drawn after is as it was)
-		Random under = new Random(seed ^ 0x51DE5L);
-		double[][] lobes = new double[2 + under.nextInt(3)][];
-		for (int i = 0; i < lobes.length; i++) {
-			double a = under.nextDouble() * Math.PI * 2, out = (0.25 + under.nextDouble() * 0.4) * r;
-			lobes[i] = new double[] {Math.cos(a) * out, Math.sin(a) * out, r * (0.22 + under.nextDouble() * 0.2), deep * (0.2 + under.nextDouble() * 0.3)};
-		}
-		for (int dx = -span; dx <= span; dx++) {
-			for (int dz = -span; dz <= span; dz++) {
-				double ang = Math.atan2(dz, dx);
-				double edge = s.edge(ang);
-				double dist = Math.sqrt(dx * dx + dz * dz);
-				if (dist > edge) {
-					continue;
-				}
-				double f = 1 - dist / edge;
-				int x = cx + dx, z = cz + dz;
-				// ribs and gullies down the flanks (ridged noise), the pointed summit under the middle, the lesser ones
-				double rib = 1 - Math.abs(2 * noise(seed + 3, x / 7.0, z / 7.0) - 1);
-				double dd = Math.pow(f, 0.7) * deep * (0.7 + 0.3 * rib);
-				double mid = Math.max(0, 1 - dist / (0.42 * r));
-				dd += deep * 0.3 * Math.pow(mid, 1.5);
-				for (double[] l : lobes) {
-					double q = Math.max(0, 1 - Math.hypot(dx - l[0], dz - l[1]) / l[2]);
-					dd += l[3] * Math.pow(q, 1.4) * Math.min(1, f * 3);
-				}
-				int d = 2 + (int) Math.round(dd) + rnd.nextInt(2);
-				depth[dx + span][dz + span] = d;
-				double patch = noise(seed, x / 7.0, z / 7.0) * 0.7 + noise(seed + 1, x / 3.0, z / 3.0) * 0.3;
-				for (int y = top - d; y <= top; y++) {
-					BlockState b;
-					if (y == top) {
-						if (!mossy) {
-							b = rnd.nextInt(6) == 0 ? brick() : stone();
-						} else if (patch < 0.2 || f < 0.06) {
-							b = rnd.nextInt(3) == 0 ? cobble() : stone();
-						} else if (patch < 0.38) {
-							b = paleMoss;
-						} else {
-							b = moss();
-						}
-					} else if (y > top - 3) {
-						b = stone();
-					} else {
-						double k = (double) (top - y) / Math.max(1, d);
-						b = rnd.nextDouble() < 0.015 + 0.05 * k ? vein() : rockAt(rock, seed, x, y, z, top, k, rnd);
-					}
-					p.set(x, y, z, b);
-				}
-				// Growth on the top
-				if (mossy && f > 0.1 && patch >= 0.2) {
-					int k = rnd.nextInt(1000);
-					BlockState g = k < 150 ? grass : k < 190 ? fern : k < 210 ? allium : k < 220 ? bluet
-							: k < 232 ? firefly : k < 240 ? eye : null;
-					p.set(x, top + 1, z, g);
-				}
-				// Growth hanging from the underside near the rim
-				if (f < 0.4 && rnd.nextInt(6) == 0) {
-					int len = 2 + rnd.nextInt(7);
-					int kind = rnd.nextInt(3);
-					for (int k = 1; k <= len; k++) {
-						BlockState h = kind == 0 && vines != null
-								? (rnd.nextInt(3) == 0 && vines.hasProperty(BlockStateProperties.BERRIES) ? vines.setValue(BlockStateProperties.BERRIES, true) : vines)
-								: kind == 1 ? pale : roots;
-						p.set(x, top - d - k, z, h);
-						if (kind == 2) {
-							break;
-						}
-					}
-				}
-			}
-		}
-		// Fangs of stone hanging far below, darkening and ending in amethyst
-		int fangs = 2 + r / 5;
-		for (int i = 0; i < fangs; i++) {
-			int fx = (int) ((rnd.nextDouble() - 0.5) * r), fz = (int) ((rnd.nextDouble() - 0.5) * r);
-			int base = depth[fx + span][fz + span];
-			if (base == 0) {
-				continue;
-			}
-			int len = 6 + rnd.nextInt(Math.max(2, Math.min(r, 26)));
-			double rad = 1.5 + rnd.nextDouble() * 2.0;
-			for (int k = 0; k < len; k++) {
-				double rr = rad * (1 - (double) k / len);
-				int ir = (int) Math.ceil(rr);
-				double t = (double) k / len;
-				for (int ax = -ir; ax <= ir; ax++) {
-					for (int az = -ir; az <= ir; az++) {
-						if (ax * ax + az * az <= rr * rr + 0.3) {
-							BlockState b = t > 0.82 ? (rnd.nextInt(3) == 0 ? crying() : amethyst()) : grad(rock, 0.55 + t * 0.45, rnd);
-							p.set(cx + fx + ax, top - base - k, cz + fz + az, b);
-						}
-					}
-				}
-			}
-		}
-		// Soul lanterns on long chains beneath
-		for (int i = 0; i < 2 + rnd.nextInt(3); i++) {
-			int hx = (int) ((rnd.nextDouble() - 0.5) * r * 1.2), hz = (int) ((rnd.nextDouble() - 0.5) * r * 1.2);
-			int base = depth[hx + span][hz + span];
-			if (base == 0) {
-				continue;
-			}
-			int len = 2 + rnd.nextInt(7);
-			for (int k = 1; k <= len; k++) {
-				p.soft(cx + hx, top - base - k, cz + hz, chain());
-			}
-			p.soft(cx + hx, top - base - len - 1, cz + hz, hanging(soulLantern()));
-		}
-		// Light pouring off the edges
-		for (int i = 0; i < 1 + r / 14 + rnd.nextInt(2); i++) {
-			double a = rnd.nextDouble() * Math.PI * 2;
-			int ex = cx + (int) Math.round(Math.cos(a) * r * 0.8), ez = cz + (int) Math.round(Math.sin(a) * r * 0.8);
-			p.falls.add(new int[] {ex, top, ez, 18 + rnd.nextInt(30)});
-		}
-		return depth[span][span];
+		return Terrain.of(rnd, s, Terrain.ALL_SIDES, mossy).emit(p);
 	}
 
 	/**
@@ -1534,8 +1462,9 @@ public final class SeamArchitect {
 				f.set(lx, 3 + (int) Math.round(Math.sin(an) * 2.5) - 2, 6 + (int) Math.round(Math.cos(an) * 2.5), Math.abs(lx) == 3 ? log() : wool());
 			}
 		}
+		// cobwebs over the weaving floor
 		for (int i = 0; i < 10; i++) {
-			f.soft(rnd.nextInt(-r / 2, r / 2 + 1), 0, rnd.nextInt(-r / 2, r / 2 + 1), Blocks.COBWEB.defaultBlockState());
+			f.soft(rnd.nextInt(-sx, sx + 1), 0, rnd.nextInt(-3, 9), Blocks.COBWEB.defaultBlockState());
 		}
 		f.then(sx - 3, 0, -3, loot(f.pos(sx - 3, 0, -3), 1));
 	}
@@ -1927,7 +1856,7 @@ public final class SeamArchitect {
 			if (!free(p, x, s.top, z, room, tall)) {
 				continue;
 			}
-			int y = s.top + 1;
+			int y = p.ground(x, z, s.top) + 1;
 			switch (kind) {
 				case ARCH -> arch(p, rnd, x, y, z);
 				case TREE -> deadTree(p, rnd, x, y, z);
@@ -1935,7 +1864,7 @@ public final class SeamArchitect {
 				case STONES -> stones(p, rnd, x, y, z);
 				case CLUSTER -> cluster(p, rnd, x, y, z, scale);
 				case OUTCROP -> outcrop(p, rnd, x, y, z);
-				default -> crystal(p, rnd, x, s.top + 13 + rnd.nextInt(7), z, 2 + rnd.nextInt(2));
+				default -> crystal(p, rnd, x, y + 12 + rnd.nextInt(7), z, 2 + rnd.nextInt(2));
 			}
 			placed++;
 		}
@@ -1946,26 +1875,35 @@ public final class SeamArchitect {
 		return free(p, x, top, z, rad, 30);
 	}
 
-	/** As {@link #free(Plan, int, int, int, int)}, with the open air above the middle only checked {@code tall} high. */
+	/**
+	 * As {@link #free(Plan, int, int, int, int)}, with the open air above the middle only checked {@code tall} high. The
+	 * ground is read where the island lays it ({@code top} where the plan has none): the patch must be near level, its
+	 * surface within a block of the middle's.
+	 */
 	static boolean free(Plan p, int x, int top, int z, int rad, int tall) {
+		int y0 = p.ground(x, z, top);
 		for (int dx = -rad; dx <= rad; dx++) {
 			for (int dz = -rad; dz <= rad; dz++) {
-				BlockState g = p.get(x + dx, top, z + dz);
+				int g0 = p.ground(x + dx, z + dz, top);
+				if (Math.abs(g0 - y0) > 1) {
+					return false;
+				}
+				BlockState g = p.get(x + dx, g0, z + dz);
 				if (g == null || !turf(g)) {
 					return false;
 				}
-				BlockState on = p.get(x + dx, top + 1, z + dz);
+				BlockState on = p.get(x + dx, g0 + 1, z + dz);
 				if (on != null && !growth(on)) {
 					return false;
 				}
-				for (int y = top + 2; y <= top + Math.min(6, tall); y++) {
+				for (int y = g0 + 2; y <= g0 + Math.min(6, tall); y++) {
 					if (p.has(x + dx, y, z + dz)) {
 						return false;
 					}
 				}
 			}
 		}
-		for (int y = top + 7; y <= top + tall; y++) {
+		for (int y = y0 + 7; y <= y0 + tall; y++) {
 			if (p.has(x, y, z)) {
 				return false;
 			}
@@ -1984,16 +1922,25 @@ public final class SeamArchitect {
 				|| s == mc("open_eyeblossom");
 	}
 
-	/** Re-surfaces turf (and only turf) with paving, clearing the growth on it. */
+	/**
+	 * Re-surfaces turf (and only turf) with paving, clearing the growth on it, on the ground's surface where the island
+	 * lays it ({@code top} where the plan has no ground of its own). On a structure planned apart from its island it is
+	 * kept, to be laid when the structure is merged onto the island.
+	 */
 	static void pave(Plan p, int x, int top, int z, BlockState s) {
-		BlockState g = p.get(x, top, z);
+		if (p.ground.isEmpty()) {
+			p.paving.add(new Object[] {x, top, z, s});
+			return;
+		}
+		int y = p.ground(x, z, top);
+		BlockState g = p.get(x, y, z);
 		if (g == null || !turf(g)) {
 			return;
 		}
-		p.set(x, top, z, s);
-		BlockState on = p.get(x, top + 1, z);
+		p.set(x, y, z, s);
+		BlockState on = p.get(x, y + 1, z);
 		if (on != null && growth(on)) {
-			p.clear(x, top + 1, z);
+			p.clear(x, y + 1, z);
 		}
 	}
 
@@ -2037,7 +1984,7 @@ public final class SeamArchitect {
 					int side = ((k - inner) / 9 & 1) == 0 ? 2 : -2;
 					int x = s.x + sx * k + sz * side, z = s.z + sz * k + sx * side;
 					if (free(p, x, s.top, z, 1)) {
-						lamp(p, rnd, x, s.top + 1, z);
+						lamp(p, rnd, x, p.ground(x, z, s.top) + 1, z);
 					}
 				}
 			}
@@ -2046,7 +1993,7 @@ public final class SeamArchitect {
 				for (int side = -2; side <= 2; side += 4) {
 					int x = s.x + sx * (len - 2) + sz * side, z = s.z + sz * (len - 2) + sx * side;
 					if (free(p, x, s.top, z, 1)) {
-						lamp(p, rnd, x, s.top + 1, z);
+						lamp(p, rnd, x, p.ground(x, z, s.top) + 1, z);
 					}
 				}
 			}

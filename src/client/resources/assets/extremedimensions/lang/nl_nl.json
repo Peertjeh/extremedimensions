@@ -1489,6 +1489,8 @@
   "config.extremedimensions.seam_portal_entry_radius.desc": "Straal van de scheur die een Seamnaald in de wereld opent, in tienden van een blok (16 = iets meer dan anderhalf blok).",
   "config.extremedimensions.seam_reset_backup": "Seam-reset: oude Seam bewaren",
   "config.extremedimensions.seam_reset_backup.desc": "Als een admin de Seam reset (/tether seam_reset): of de oude Seam apart wordt bewaard in de map van de wereld, als the_seam-before-reset-<datum> naast de nieuwe (1), of gewist (0). Een bewaarde kopie neemt net zoveel ruimte in als de Seam deed.",
+  "config.extremedimensions.seam_damage": "Seam: beschadigde gebouwen (%)",
+  "config.extremedimensions.seam_damage.desc": "Van elke honderd gebouwen in de Seam: hoeveel er beschadigd of erger zijn, met opengebroken muren, ingestorte daken en kronen en het puin in hopen aan hun voet (een derde daarvan is een ruïne). De rest is alleen verweerd, of af en toe gaaf. 0: geen beschadigde.",
   "gui.extremedimensions.fray.entered": "De Rafel. Hier beneden raakt de tijd sneller op, en de Thinned jagen.",
   "advancements.extremedimensions.fray_entered.title": "De Rafel in",
   "advancements.extremedimensions.fray_entered.description": "Daal af onder de eilanden van de Seam, de Rafel in",

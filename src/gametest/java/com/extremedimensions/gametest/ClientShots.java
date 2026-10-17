@@ -812,6 +812,36 @@ public class ClientShots implements FabricClientGameTest {
 					sp.getServer().runCommand("time set noon");
 				}
 			}
+			// Islands of the other kinds as the Seam designs them: rolling ground, a coast of bays and headlands, what stands
+			// on it set down on levelled ground with a plinth round it, worn or broken by age; and an island from below
+			String[] kinds = {"village", "loom", "plain", "halo"};
+			int[] kindIds = {2, 1, 0, 5};
+			for (int k = 0; k < kinds.length; k++) {
+				final int kk = k;
+				int cx = home[0] + 700 + (6 + k) * 300, cz = home[2] + 300;
+				String what = sp.getServer().computeOnServer(s -> {
+					com.extremedimensions.seam.SeamArchitect.Plan plan = com.extremedimensions.seam.SeamService.showpiece(9100L + kk * 131L, cx, skyTop, cz,
+							kindIds[kk]);
+					plan.placeNow((net.minecraft.server.level.ServerLevel) player(s).level());
+					return plan.size() + " blocks";
+				});
+				com.extremedimensions.ExtremeDimensions.LOGGER.info("Island shot {} ({}): {}", k, kinds[k], what);
+				sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 -45 22", cx - 42, skyTop + 26, cz - 42));
+				ctx.waitTicks(160);
+				ctx.takeScreenshot("20_island_" + kinds[k]);
+				if (k == 0 || k == 1) {
+					// on the ground, among what stands there
+					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 20 8", cx - 10, skyTop + 6, cz - 26));
+					ctx.waitTicks(40);
+					ctx.takeScreenshot("20_island_" + kinds[k] + "_close");
+				}
+				if (k == 2) {
+					// its underside, from below and off to the side
+					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 -45 -28", cx - 34, skyTop - 26, cz - 34));
+					ctx.waitTicks(40);
+					ctx.takeScreenshot("20_island_plain_under");
+				}
+			}
 			ctx.runOnClient(mc -> {
 				ClientOptions.setGuidance(true);
 				mc.options.renderDistance().set(5);

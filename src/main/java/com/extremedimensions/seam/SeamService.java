@@ -292,9 +292,16 @@ public final class SeamService {
 			Direction out = way.dir();
 			int tx = x - out.getStepX() * ReturnGate.OFFSET, tz = z - out.getStepZ() * ReturnGate.OFFSET;
 			// The gate's rock first; the arrival island is laid over it where they meet
-			SeamArchitect.island(arrival, rnd, SeamArchitect.Shape.of(rnd, tx, top, tz, ReturnGate.ROCK), true);
-			SeamArchitect.island(arrival, rnd, shape, true);
-			ReturnGate.Gate g = ReturnGate.build(arrival, rnd, tx, top, tz, out);
+			Terrain rock = Terrain.of(rnd, SeamArchitect.Shape.of(rnd, tx, top, tz, ReturnGate.ROCK), Terrain.ALL_SIDES);
+			rock.emit(arrival);
+			Terrain land = Terrain.of(rnd, shape, Terrain.ALL_SIDES);
+			land.emit(arrival);
+			// The gate is set down on them: the ground under it levelled, a ledge grown under whatever overhangs
+			SeamArchitect.Plan gatePlan = new SeamArchitect.Plan();
+			ReturnGate.Gate g = ReturnGate.build(gatePlan, rnd, tx, top, tz, out);
+			Terrain.settle(arrival, gatePlan, top, rock, land);
+			arrival.merge(gatePlan);
+			ReturnGate.approach(arrival, rnd, tx, top, tz, out);
 			if (way.to() != null) {
 				boolean alongX = out.getAxis() == Direction.Axis.X;
 				boolean ahead = out.getAxisDirection() == Direction.AxisDirection.POSITIVE;
@@ -940,8 +947,9 @@ public final class SeamService {
 		boolean fromWest = west != null && (hash(cx - 1, cz, seed() + 11) & 3) != 0 && SeamArchitect.canBridge(west, shape, true);
 		boolean fromNorth = north != null && (hash(cx, cz - 1, seed() + 13) & 3) != 0 && SeamArchitect.canBridge(north, shape, false);
 		int mask = (toEast ? 1 : 0) | (fromWest ? 2 : 0) | (toSouth ? 4 : 0) | (fromNorth ? 8 : 0);
-		int depth = SeamArchitect.island(plan, rnd, shape, true);
-		build(plan, rnd, kind, shape, depth, mask);
+		Terrain ground = Terrain.of(rnd, shape, mask);
+		int depth = ground.emit(plan);
+		build(plan, rnd, kind, shape, depth, mask, ground);
 		if (toEast) {
 			SeamArchitect.bridge(plan, rnd, shape, east, true);
 		}
@@ -960,23 +968,33 @@ public final class SeamService {
 
 	/**
 	 * Builds what stands on an island, then lays its streets out to the bridges ({@code mask}: bit 0 east, 1 west,
-	 * 2 south, 3 north) and dresses the open ground that is left.
+	 * 2 south, 3 north) and dresses the open ground that is left. Whatever stands on the ground is designed on its own
+	 * first and then set down on the island ({@link #standOn}), so the ground is fitted to it.
 	 */
-	private static void build(SeamArchitect.Plan plan, Random rnd, int kind, SeamArchitect.Shape s, int depth, int mask) {
+	private static void build(SeamArchitect.Plan plan, Random rnd, int kind, SeamArchitect.Shape s, int depth, int mask, Terrain ground) {
 		int x = s.x(), top = s.top(), z = s.z(), r = s.r();
 		switch (kind) {
 			case SPIRE -> {
-				Colossus.build(plan, rnd, x, top, z, r);
+				SeamArchitect.Plan b = new SeamArchitect.Plan();
+				Colossus.build(b, rnd, x, top, z, colossusRadius(s));
+				standOn(plan, b, ground, top);
 				SeamArchitect.streets(plan, rnd, s, mask, 0, false);
 				SeamArchitect.grounds(plan, rnd, s, 6, SeamArchitect.ARCH, SeamArchitect.TREE, SeamArchitect.LAMP, SeamArchitect.STONES, SeamArchitect.CLUSTER);
 			}
 			case LOOM -> {
-				SeamArchitect.loom(plan, rnd, x, top, z, r);
+				SeamArchitect.Plan b = new SeamArchitect.Plan();
+				SeamArchitect.loom(b, rnd, x, top, z, r);
+				age(b, rnd, top, Ruin.RUINED);
+				standOn(plan, b, ground, top);
 				SeamArchitect.streets(plan, rnd, s, mask, 0, false);
 				SeamArchitect.grounds(plan, rnd, s, 5, SeamArchitect.ARCH, SeamArchitect.TREE, SeamArchitect.LAMP, SeamArchitect.STONES);
 			}
 			case VILLAGE -> {
-				SeamArchitect.village(plan, rnd, x, top, z, r);
+				SeamArchitect.Plan b = new SeamArchitect.Plan();
+				SeamArchitect.village(b, rnd, x, top, z, r);
+				// the Thinned live in it: worn, broken here and there, never a ruin
+				age(b, rnd, top, Ruin.DAMAGED);
+				standOn(plan, b, ground, top);
 				SeamArchitect.streets(plan, rnd, s, mask, r >= 24 ? 9 : 7, false);
 				SeamArchitect.grounds(plan, rnd, s, 3, SeamArchitect.TREE, SeamArchitect.LAMP);
 				plan.marks.add("v@" + x + "," + top + "," + z);
@@ -987,7 +1005,9 @@ public final class SeamService {
 				SeamArchitect.plain(plan, rnd, s);
 			}
 			case HALO -> {
-				SeamArchitect.halo(plan, rnd, x, top, z, r);
+				SeamArchitect.Plan b = new SeamArchitect.Plan();
+				SeamArchitect.halo(b, rnd, x, top, z, r);
+				standOn(plan, b, ground, top);
 				SeamArchitect.streets(plan, rnd, s, mask, 6, true);
 				SeamArchitect.grounds(plan, rnd, s, 3 + rnd.nextInt(2), SeamArchitect.CLUSTER, SeamArchitect.CLUSTER, SeamArchitect.LAMP);
 			}
@@ -996,6 +1016,29 @@ public final class SeamService {
 				SeamArchitect.plain(plan, rnd, s);
 			}
 		}
+	}
+
+	/**
+	 * What time has done to a structure designed on its own (a condition drawn as for a colossal building, no worse than
+	 * {@code worst}), from a stream of its own drawn from {@code rnd}.
+	 */
+	private static void age(SeamArchitect.Plan structure, Random rnd, int top, int worst) {
+		Random age = new Random(rnd.nextLong());
+		Ruin.apply(structure, age, Math.min(worst, Ruin.condition(age, false)), top);
+	}
+
+	/** Sets a structure designed on its own down on its island: the ground fitted to it, then the structure merged on. */
+	private static void standOn(SeamArchitect.Plan plan, SeamArchitect.Plan structure, Terrain ground, int top) {
+		ground.settle(plan, structure, top);
+		plan.merge(structure);
+	}
+
+	/**
+	 * The island radius a colossal building is laid out for: between the island's radius and where its coast comes in
+	 * nearest, so it fills the island without hanging far out over a bay (what overhangs stands on a ledge grown for it).
+	 */
+	static int colossusRadius(SeamArchitect.Shape s) {
+		return Math.min(s.r(), (int) Math.round((s.nearest() + s.r()) / 2) + 1);
 	}
 
 	/**
@@ -1011,12 +1054,33 @@ public final class SeamService {
 		Random rnd = new Random(seed);
 		SeamArchitect.Shape shape = SeamArchitect.Shape.of(rnd, x, top, z, r);
 		SeamArchitect.Plan plan = new SeamArchitect.Plan();
-		int depth = SeamArchitect.island(plan, rnd, shape, true);
-		Colossus.Summary summary = Colossus.build(plan, rnd, x, top, z, r, layout, scheme);
+		Terrain ground = Terrain.of(rnd, shape, 0);
+		ground.emit(plan);
+		SeamArchitect.Plan b = new SeamArchitect.Plan();
+		Colossus.Summary summary = Colossus.build(b, rnd, x, top, z, colossusRadius(shape), layout, scheme);
+		standOn(plan, b, ground, top);
 		SeamArchitect.grounds(plan, rnd, shape, 6, SeamArchitect.ARCH, SeamArchitect.TREE, SeamArchitect.LAMP, SeamArchitect.STONES, SeamArchitect.CLUSTER);
 		if (built != null && built.length > 0) {
 			built[0] = summary;
 		}
+		return plan;
+	}
+
+	/** The kinds of island {@link #showpiece} designs, by name. */
+	public static final String[] SHOWPIECES = {"plain", "loom", "village", "spire", "hanging", "halo"};
+
+	/**
+	 * An island of a kind ({@link #SHOWPIECES}, as the Seam designs it, with no bridges) at a spot, for showing off and
+	 * for tests: its ground, what stands on it and its dressing.
+	 */
+	public static SeamArchitect.Plan showpiece(long seed, int x, int top, int z, int kind) {
+		Random rnd = new Random(seed);
+		int r = switch (kind) { case SPIRE -> 36; case VILLAGE -> 28; case LOOM -> 24; case HANGING -> 16; case HALO -> 18; default -> 18; };
+		SeamArchitect.Shape shape = SeamArchitect.Shape.of(rnd, x, top, z, r);
+		SeamArchitect.Plan plan = new SeamArchitect.Plan();
+		Terrain ground = Terrain.of(rnd, shape, 0);
+		int depth = ground.emit(plan);
+		build(plan, rnd, kind, shape, depth, 0, ground);
 		return plan;
 	}
 
@@ -1048,8 +1112,10 @@ public final class SeamService {
 			boolean west = i > 0 && SeamArchitect.canBridge(shapes[i - 1], shapes[i], true);
 			SeamArchitect.Plan plan = new SeamArchitect.Plan();
 			plan.cell = "c@" + (40 + i) + ",40";
-			int depth = SeamArchitect.island(plan, rnds[i], shapes[i], true);
-			build(plan, rnds[i], kinds[i], shapes[i], depth, (east ? 1 : 0) | (west ? 2 : 0));
+			int mask = (east ? 1 : 0) | (west ? 2 : 0);
+			Terrain ground = Terrain.of(rnds[i], shapes[i], mask);
+			int depth = ground.emit(plan);
+			build(plan, rnds[i], kinds[i], shapes[i], depth, mask, ground);
 			if (east) {
 				SeamArchitect.bridge(plan, rnds[i], shapes[i], shapes[i + 1], true);
 			}

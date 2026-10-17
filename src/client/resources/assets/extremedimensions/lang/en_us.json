@@ -1489,6 +1489,8 @@
   "config.extremedimensions.seam_portal_entry_radius.desc": "Radius of the tear a Seam Needle opens in the world, in tenths of a block (16 = one and a half blocks and a bit).",
   "config.extremedimensions.seam_reset_backup": "Seam reset: keep the old Seam",
   "config.extremedimensions.seam_reset_backup.desc": "When an admin resets the Seam (/tether seam_reset), whether the old one is kept aside in the world's folder, as the_seam-before-reset-<date> beside the new one (1), or wiped (0). A kept copy takes up as much room as the Seam did.",
+  "config.extremedimensions.seam_damage": "Seam: damaged buildings (%)",
+  "config.extremedimensions.seam_damage.desc": "Of every hundred buildings in the Seam, how many are damaged or worse: walls broken open, roofs and crowns fallen, the stone lying in heaps at their feet (a third of those are ruins). The rest are only weathered, or now and then intact. 0: none damaged.",
   "gui.extremedimensions.fray.entered": "The Fray. Time runs out faster down here, and the Thinned are hunting.",
   "advancements.extremedimensions.fray_entered.title": "Into the Fray",
   "advancements.extremedimensions.fray_entered.description": "Go down beneath the islands of the Seam, into the Fray",

@@ -262,6 +262,11 @@ public final class Config {
 	public static int SEAM_PORTAL_ENTRY_RADIUS = 16;
 	/** Whether a reset of the Seam keeps the old one aside in the world's folder (1) or wipes it (0). */
 	public static int SEAM_RESET_BACKUP = 0;
+	/**
+	 * Of every hundred buildings in the Seam, how many are damaged or worse (a third of those ruins, crowns fallen and
+	 * walls broken open); the rest are only weathered, or now and then intact. 0: none damaged.
+	 */
+	public static int SEAM_DAMAGE = 45;
 
 	// --- After the Dragon and the Mending --------------------------------------------------------
 
@@ -697,7 +702,7 @@ public final class Config {
 			{"elder_speed", 0.1, 10}, {"elder_attack_speed", 0.1, 10}, {"elder_windup_speed", 0.2, 10},
 			{"elder_ultimate_seconds", 2, 120}, {"elder_arena_linger_seconds", -1, 86400},
 			{"seam_build_budget_ms", 1, 50}, {"seam_fly_range", 0, 128}, {"seam_fly_max", 1, 5000}, {"seam_fly_ticks", 10, 200},
-			{"seam_fly_from", 2, 64}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
+			{"seam_fly_from", 2, 64}, {"seam_damage", 0, 100}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
 			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600}, {"coop_burden_relief_per_day", 0, 100}};
 
 	/** Brings a setting back within its bounds, if it has any. */

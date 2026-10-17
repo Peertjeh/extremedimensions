@@ -101,6 +101,8 @@ public final class Colossus {
 	static final class Scheme {
 		BlockState[] wall, trim, roof, glass;
 		BlockState roofFill, corbel, cap, rail, floor, floorAlt, accent, band, pier;
+		/** Stairs of the dark course round the foot of every wall (the plinth's water table). */
+		BlockState plinth;
 		double wear;
 		boolean ruin;
 		MaterialContext ctx;
@@ -159,7 +161,8 @@ public final class Colossus {
 				s.accent = vein();
 				s.band = carved();
 				s.glass = new BlockState[] {purple, magenta, blue};
-				s.wear = 0.1;
+				s.plinth = bsStairs();
+				s.wear = 0.08;
 			}
 			case 1 -> {
 				// Bone: pale walls and dark trim under slate roofs, cold glass
@@ -175,11 +178,12 @@ public final class Colossus {
 				s.accent = silked();
 				s.band = smooth();
 				s.glass = new BlockState[] {mc("light_blue_stained_glass", blue), purple, mc("white_stained_glass", blue)};
+				s.plinth = smoothStairs();
 				s.wear = 0.05;
 			}
 			case 2 -> {
 				// Gloam: black and dark hush stone, lit by courses of silk
-				s.wall = new BlockState[] {mc("blackstone", bsBrick()), bsBrick(), cobble(), brick(), brick(), tile()};
+				s.wall = new BlockState[] {mc("blackstone", bsBrick()), bsBrick(), bsBrick(), brick(), brick(), tile()};
 				s.trim = new BlockState[] {bsPol(), bsPol(), smooth()};
 				s.roof = new BlockState[] {bsStairs(), cobbleStairs(), tileStairs()};
 				s.roofFill = bsBrick();
@@ -191,7 +195,8 @@ public final class Colossus {
 				s.accent = silked();
 				s.band = silked();
 				s.glass = new BlockState[] {magenta, purple, crying()};
-				s.wear = 0.1;
+				s.plinth = bsStairs();
+				s.wear = 0.07;
 			}
 			default -> {
 				// Ruin: the ladder worn down to moss and cracks, its crowns broken
@@ -207,7 +212,8 @@ public final class Colossus {
 				s.accent = vein();
 				s.band = carved();
 				s.glass = new BlockState[] {purple, magenta, blue};
-				s.wear = 0.32;
+				s.plinth = cobbleStairs();
+				s.wear = 0.28;
 				s.ruin = true;
 			}
 		}
@@ -804,6 +810,15 @@ public final class Colossus {
 	 * gets a glowing core with a spiral stair up through it, a reliquary on its last floor, and four or five tiers.
 	 */
 	static Tower tower(Frame base, Scheme sc, Random rnd, int ox, int oz, int half, int maxH, boolean great, int crown, Form form0) {
+		return tower(base, sc, rnd, ox, oz, half, maxH, great, crown, form0, -1);
+	}
+
+	/**
+	 * As {@link #tower(Frame, Scheme, Random, int, int, int, int, boolean, int, Form)}, its first tier {@code firstTier}
+	 * blocks tall (-1: as its stream gives): so the tower's first ledge lines up with the eaves of the halls beside it, or
+	 * its first stage rises past the ridges of the roofs that run into it.
+	 */
+	static Tower tower(Frame base, Scheme sc, Random rnd, int ox, int oz, int half, int maxH, boolean great, int crown, Form form0, int firstTier) {
 		Tower w = new Tower();
 		w.f = new Frame(base.p, base.wx(ox, oz), base.oy, base.wz(ox, oz), base.rot);
 		w.sc = sc;
@@ -814,7 +829,9 @@ public final class Colossus {
 		int sum = 0;
 		for (int i = 0; i < tiers; i++) {
 			heights[i] = great ? (i == 0 ? 20 + rnd.nextInt(8) : 13 + rnd.nextInt(6) - i) : (i == 0 ? 12 + rnd.nextInt(8) : 9 + rnd.nextInt(5));
-			sum += heights[i] + 1;
+			if (i > 0 || firstTier <= 0) {
+				sum += heights[i] + 1;
+			}
 		}
 		double crownShare = switch (crown) {
 			case SPIRE -> 3.2 * half + 10;
@@ -822,7 +839,7 @@ public final class Colossus {
 			case CROWN -> 1.5 * half + 16;
 			default -> 16;
 		};
-		double scale = Math.min(1, (maxH - crownShare) / Math.max(1, sum));
+		double scale = Math.min(1, (maxH - crownShare - (firstTier > 0 ? firstTier + 1 : 0)) / Math.max(1, sum));
 		int y = 0, h = half;
 		Form form = form0;
 		int prevHalf = -1;
@@ -833,7 +850,7 @@ public final class Colossus {
 			tr.form = form;
 			tr.half = h;
 			tr.y0 = y;
-			tr.height = Math.max(great ? 9 : 7, (int) Math.round(heights[i] * scale));
+			tr.height = i == 0 && firstTier > 0 ? firstTier : Math.max(great ? 9 : 7, (int) Math.round(heights[i] * scale));
 			boolean last = i == tiers - 1;
 			int roll = rnd.nextInt(10);
 			if (i == 0) {
@@ -843,7 +860,8 @@ public final class Colossus {
 			} else {
 				tr.body = roll < 4 ? LANCET : roll < 6 ? COLONNADE : roll < 8 ? BANDED : LANTERN;
 			}
-			if (tr.body == ARCADE && h < 7 || tr.body == COLONNADE && h < 6) {
+			// (a lantern of glass is for a slender tier: on a broad one it is a flat wall of panes)
+			if (tr.body == ARCADE && h < 7 || tr.body == COLONNADE && h < 6 || tr.body == LANTERN && h > 6) {
 				tr.body = LANCET;
 			}
 			tr.corners = form == Form.ROUND ? NO_CORNERS : rnd.nextInt(3);
@@ -1079,6 +1097,13 @@ public final class Colossus {
 			}
 		}
 		needleAt(f, sc, 0, h + w + 3, z1, 2);
+		// The near end closed too (it stands against a tower or a wing): its gable filled, plain
+		for (int k = 0; k <= w; k++) {
+			int half = w - k;
+			for (int lx = -half; lx <= half; lx++) {
+				f.soft(lx, h + 1 + k, z0, sc.masonryAt(f, lx, h + 1 + k, z0, 0));
+			}
+		}
 		if (portal) {
 			portal(f, sc, rnd, z1);
 		}
@@ -1269,17 +1294,56 @@ public final class Colossus {
 			case ZIGGURAT -> ziggurat(base, sc, rnd, R, maxH, crown, towers, top);
 			default -> gateway(base, sc, rnd, R, maxH, crown, towers, top);
 		};
+		socle(p, sc, top + 1);
+		// What time has done to it, drawn from a stream of its own (from where it stands, like its stone)
+		Random age = new Random(matSeed ^ 0x5EA5_0A6EL);
+		Ruin.apply(p, age, Ruin.condition(age, sc.ruin), top);
 		return new Summary(layout, schemeId, crown, towers[0], height);
 	}
 
-	/** A cathedral: a great crossing tower, a nave before it ending in a portal, transepts either side, an apse behind. */
+	/**
+	 * The plinth round the foot of every wall: a course of stairs a block out, sloping away from the wall, wherever a
+	 * wall (five blocks high at least, so not a lamp post) stands on the ground with open ground before it. Every part
+	 * of the building, towers, halls, podiums and piers, gets the same, so its foot reads as one.
+	 */
+	static void socle(Plan p, Scheme sc, int y) {
+		List<int[]> steps = new ArrayList<>();
+		Direction[] dirs = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
+		for (long k : p.blocks.keySet()) {
+			if (net.minecraft.core.BlockPos.getY(k) != y) {
+				continue;
+			}
+			int x = net.minecraft.core.BlockPos.getX(k), z = net.minecraft.core.BlockPos.getZ(k);
+			if (!p.has(x, y + 1, z) || !p.has(x, y + 2, z) || !p.has(x, y + 3, z) || !p.has(x, y + 4, z)) {
+				continue;
+			}
+			for (Direction d : dirs) {
+				int nx = x + d.getStepX(), nz = z + d.getStepZ();
+				if (!p.has(nx, y, nz) && !p.has(nx, y + 1, nz) && !p.has(nx, y + 2, nz)) {
+					steps.add(new int[] {nx, nz, d.getOpposite().get2DDataValue()});
+				}
+			}
+		}
+		for (int[] st : steps) {
+			p.soft(st[0], y, st[1], stairs(sc.plinth, Direction.from2DDataValue(st[2]), false));
+		}
+	}
+
+	/**
+	 * A cathedral: a great crossing tower, a nave before it ending in a portal, transepts either side, an apse behind.
+	 * They make one building: the crossing tower is square where they meet it, and its first stage rises past their
+	 * ridges, so every roof runs into its walls; towers at the west front stand engaged in it, their first ledge on the
+	 * line of the nave's eaves (a pair, a pair of two heights, or one alone).
+	 */
 	private static int cathedral(Frame b, Scheme sc, Random rnd, int R, int maxH, int crown, int[] n, int top) {
 		int H = 8 + rnd.nextInt(3);
 		int w = 5 + rnd.nextInt(2);
 		boolean aisles = rnd.nextBoolean() && w + 4 + 3 < R;
 		int hallH = 15 + rnd.nextInt(5);
 		int z1 = Math.min(R - 5, H + 12 + rnd.nextInt(6));
-		Tower t = tower(b, sc, rnd, 0, 0, H, maxH, true, crown, formFor(rnd, true));
+		// (its form is drawn all the same, so the rest of it is what its seed gives)
+		formFor(rnd, true);
+		Tower t = tower(b, sc, rnd, 0, 0, H, maxH, true, crown, Form.SQUARE, hallH + w + 3);
 		n[0]++;
 		hall(b, sc, rnd, H + 1, z1, w, hallH, true, aisles);
 		// transepts, left and right, ending in closed gables
@@ -1293,18 +1357,25 @@ public final class Colossus {
 		Frame back = new Frame(b.p, b.wx(0, 0), b.oy, b.wz(0, 0), b.rot + 2);
 		apse(back, sc, rnd, H + 1, Math.min(w + 1, R - H - 3), hallH - 3);
 		doorway(back, 0, H, 3, 0);
-		// twin towers either side of the portal, often
+		// towers at the west front, often
 		if (rnd.nextInt(3) > 0) {
 			int th = 3 + rnd.nextInt(2);
-			int tx = w + (aisles ? 3 : 0) + th + 2, tz = z1 - th;
+			int aw = aisles ? 3 : 0;
+			int tx = w + aw + th + 1, tz = z1 - th;
 			int small = rnd.nextInt(10) < 6 ? SPIRE : crownFor(rnd);
-			Form tf = formFor(rnd, false);
+			formFor(rnd, false);
 			int tallness = Math.min(maxH - 10, 40 + rnd.nextInt(20));
-			// twins: the same seed for both, so they match
+			// the pair grown from one seed, so they match
 			long seed = rnd.nextLong();
-			tower(b, sc, new Random(seed), -tx, tz, th, tallness, false, small, tf);
-			tower(b, sc, new Random(seed), tx, tz, th, tallness, false, small, tf);
-			n[0] += 2;
+			int kind = rnd.nextInt(4), lone = rnd.nextBoolean() ? 1 : -1;
+			for (int sgn = -1; sgn <= 1; sgn += 2) {
+				if (kind == 0 && sgn != lone) {
+					continue;
+				}
+				int tall = kind == 1 && sgn > 0 ? tallness * 3 / 4 : tallness;
+				tower(b, sc, new Random(seed), sgn * tx, tz, th, tall, false, small, Form.SQUARE, hallH);
+				n[0]++;
+			}
 		}
 		forecourt(b.p, b, rnd, top, z1 + 5, Math.max(4, R - z1 - 3), 7);
 		return t.topY;
@@ -1386,26 +1457,52 @@ public final class Colossus {
 		return keep.topY;
 	}
 
-	/** A cluster: a great spire, and round it towers of every height joined to it by sky bridges. */
+	/**
+	 * A cluster: a great spire, and round it towers of every height, all on one podium. Low wings on the podium join
+	 * each tower to the spire (their roofs under the towers' first ledges), sky bridges join them higher up, and a stair
+	 * climbs to the podium at the front.
+	 */
 	private static int cluster(Frame b, Scheme sc, Random rnd, int R, int maxH, int crown, int[] n, int top) {
 		int H = 8 + rnd.nextInt(3);
-		Tower main = tower(b, sc, rnd, 0, 0, H, maxH, true, crown, formFor(rnd, true));
-		n[0]++;
+		int ph = 2 + rnd.nextInt(2);
 		int sats = 3 + rnd.nextInt(3);
-		// to the sides and behind, leaving the front to the door; a fourth and fifth beside the first two
+		// to the sides and behind, leaving the front to the stair; a fourth and fifth beside the first two
 		int[] sides = {1, 3, 2, 1, 3};
+		// where each tower stands, in the frame turned to its side: its side, across, out, half-size and height
+		int[][] sat = new int[sats][];
 		for (int i = 0; i < sats; i++) {
-			Frame g = new Frame(b.p, b.wx(0, 0), b.oy, b.wz(0, 0), b.rot + sides[i]);
 			int th = 3 + rnd.nextInt(2);
 			int off = i >= 3 ? (i == 3 ? 1 : -1) * (H - 1) : rnd.nextInt(5) - 2;
-			int d = Math.min(R - th - 2, H + 7 + rnd.nextInt(6));
-			int tall = Math.min(maxH - 10, 22 + rnd.nextInt(30));
-			Tower s = tower(g, sc, rnd, off, d, th, tall, false, crownFor(rnd), formFor(rnd, false));
+			int d = Math.min(R - th - 4, H + 7 + rnd.nextInt(6));
+			int tall = Math.min(maxH - 10 - ph, 22 + rnd.nextInt(30));
+			sat[i] = new int[] {sides[i], off, d, th, tall};
+		}
+		int front = podium(b, sc, ph, H, sat);
+		Frame up = new Frame(b.p, b.wx(0, 0), b.oy + ph, b.wz(0, 0), b.rot);
+		formFor(rnd, true);
+		Tower main = tower(up, sc, rnd, 0, 0, H, maxH - ph, true, crown, Form.SQUARE);
+		n[0]++;
+		for (int[] t : sat) {
+			Frame g = new Frame(b.p, up.wx(0, 0), up.oy, up.wz(0, 0), up.rot + t[0]);
+			int off = t[1], d = t[2], th = t[3];
+			int wingH = 6 + rnd.nextInt(3);
+			boolean wing = Math.abs(off) <= H - 3 && d - th - 1 > H + 2;
+			if (wing) {
+				Frame wf = new Frame(b.p, g.wx(off, 0), g.oy, g.wz(off, 0), g.rot);
+				hall(wf, sc, rnd, H + 1, d - th - 1, 2, wingH, false, false);
+			}
+			formFor(rnd, false);
+			Tower s = tower(g, sc, rnd, off, d, th, t[4], false, crownFor(rnd), Form.SQUARE, wingH + 5);
 			n[0]++;
+			if (wing) {
+				// doors from the wing into the spire and into the tower
+				doorway(g, off, H, 2, 0);
+				doorway(g, off, d - th + 1, 3, 0);
+			}
 			// a bridge at one of the spire's floors that the tower still reaches
 			int by = -1;
 			for (int[] fl : main.floors) {
-				if (fl[0] >= 8 && fl[0] < s.topY - 4 && halfAt(s, fl[0]) >= 2) {
+				if (fl[0] >= 8 && fl[0] < s.topY - 4 && halfAt(s, fl[0]) >= 2 && fl[0] > wingH + 6) {
 					by = fl[0];
 				}
 			}
@@ -1421,8 +1518,77 @@ public final class Colossus {
 			doorway(g, off, d - sh + 1, 2, by);
 			landing(s, by, false);
 		}
-		forecourt(b.p, b, rnd, top, H + 2, Math.max(4, R - H - 4), 5);
-		return main.topY;
+		// the stair up to the podium at the front
+		for (int k = 0; k < ph; k++) {
+			int z = front + ph - k;
+			for (int x = -2; x <= 2; x++) {
+				b.set(x, k, z, stairs(sc.corbel, Direction.NORTH, false));
+				for (int below = k - 1; below >= 0; below--) {
+					b.set(x, below, z, sc.masonryAt(b, x, below, z, 0));
+				}
+			}
+		}
+		forecourt(b.p, b, rnd, top, front + ph + 1, Math.max(4, R - front - ph - 2), 5);
+		return ph + main.topY;
+	}
+
+	/** Where a point of a frame turned {@code r} quarter turns from a base frame lies in the base frame: across, then out. */
+	private static int[] turned(int r, int x, int z) {
+		return switch (r & 3) {
+			case 1 -> new int[] {-z, x};
+			case 2 -> new int[] {-x, -z};
+			case 3 -> new int[] {z, -x};
+			default -> new int[] {x, z};
+		};
+	}
+
+	/**
+	 * The podium of a cluster, {@code ph} high: round the spire (half-size {@code h}) and each tower ({@code sat}: side,
+	 * across, out, half-size), and in a band from the spire out to each, its edge coped in trim. Returns how far it
+	 * reaches out at the front, on the axis.
+	 */
+	private static int podium(Frame b, Scheme sc, int ph, int h, int[][] sat) {
+		int reach = h + 4;
+		for (int[] t : sat) {
+			reach = Math.max(reach, t[2] + t[3] + 4);
+		}
+		boolean[][] in = new boolean[reach * 2 + 1][reach * 2 + 1];
+		for (int x = -reach; x <= reach; x++) {
+			for (int z = -reach; z <= reach; z++) {
+				boolean inside = Math.max(Math.abs(x), Math.abs(z)) <= h + 3;
+				for (int[] t : sat) {
+					int[] c = turned(t[0], t[1], t[2]);
+					inside |= Math.max(Math.abs(x - c[0]), Math.abs(z - c[1])) <= t[3] + 2;
+					// the band out to it, in the tower's own frame
+					int[] l = turned(4 - t[0], x, z);
+					inside |= l[1] >= 0 && l[1] <= t[2] && Math.abs(l[0] - t[1]) <= 4;
+				}
+				in[x + reach][z + reach] = inside;
+			}
+		}
+		int front = h + 3;
+		for (int x = -reach; x <= reach; x++) {
+			for (int z = -reach; z <= reach; z++) {
+				if (!in[x + reach][z + reach]) {
+					continue;
+				}
+				if (x == 0) {
+					front = Math.max(front, z);
+				}
+				boolean edge = x == -reach || x == reach || z == -reach || z == reach || !in[x + reach + 1][z + reach] || !in[x + reach - 1][z + reach]
+						|| !in[x + reach][z + reach + 1] || !in[x + reach][z + reach - 1];
+				for (int y = 0; y < ph; y++) {
+					BlockState s;
+					if (y == ph - 1) {
+						s = edge ? sc.trimAt(b, x, y, z, 0) : (x + z & 1) == 0 ? sc.floor : sc.floorAlt;
+					} else {
+						s = sc.masonryAt(b, x, y, z, -0.1);
+					}
+					b.set(x, y, z, s);
+				}
+			}
+		}
+		return front;
 	}
 
 	/** A ziggurat: stages of banded masonry stepping in, a great stair up its front, a temple tower on the top. */

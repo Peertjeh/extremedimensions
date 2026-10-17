@@ -50,7 +50,8 @@ public final class ReturnGate {
 
 	/**
 	 * Lays the gate out with its threshold at ({@code tx}, {@code tz}), on ground whose surface is at {@code top}, its
-	 * front (where the visitor steps out) facing {@code front}.
+	 * front (where the visitor steps out) facing {@code front}. The processional way before it is laid over the island
+	 * itself, once the gate stands on it ({@link #approach}).
 	 */
 	public static Gate build(Plan p, Random rnd, int tx, int top, int tz, Direction front) {
 		int rot = switch (front) {
@@ -68,7 +69,6 @@ public final class ReturnGate {
 			obelisk(f, s * 7, 5);
 		}
 		portal(f, rnd, seed);
-		way(f, p, rnd, top);
 		double rx = f.wx(0, 0) + 0.5, rz = f.wz(0, 0) + 0.5;
 		double lx = f.wx(0, 4) + 0.5, lz = f.wz(0, 4) + 0.5;
 		return new Gate(rx, top + 2, rz, lx, top + 2, lz, front.toYRot());
@@ -306,6 +306,17 @@ public final class ReturnGate {
 	}
 
 	// ------------------------------------------------------------------ before the gate
+
+	/** The processional way before a gate laid out as {@link #build} lays it, over the island it stands on. */
+	public static void approach(Plan p, Random rnd, int tx, int top, int tz, Direction front) {
+		int rot = switch (front) {
+			case WEST -> 1;
+			case NORTH -> 2;
+			case EAST -> 3;
+			default -> 0;
+		};
+		way(new Frame(p, tx, top + 1, tz, rot), p, rnd, top);
+	}
 
 	/** An obelisk standing before a pylon: a chiseled plinth, a pillar shaft, a pale cap and a gold lantern on top. */
 	private static void obelisk(Frame f, int x, int z) {
