@@ -1,5 +1,7 @@
 package com.extremedimensions.client.entity;
 
+import org.joml.Matrix4f;
+
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -90,7 +92,7 @@ public class RiftPortalRenderer extends EntityRenderer<RiftPortal, RiftPortalRen
 		float t = state.time;
 		pose.pushPose();
 		pose.translate(0, cy, 0);
-		pose.mulPose(Axis.YP.rotationDegrees(-state.yaw));
+		pose.mulPose(new Matrix4f().rotation(Axis.YP.rotationDegrees(-state.yaw)));
 		int layer = 0;
 		// The world at the far end, hazy
 		layer = disc(out, pose, v, layer, RenderTypes.entityTranslucentEmissive(VIEWS[state.view]), r * 1.15F, 2.6F, 0, alpha(0.97F));
@@ -162,8 +164,8 @@ public class RiftPortalRenderer extends EntityRenderer<RiftPortal, RiftPortalRen
 	private static void cube(SubmitNodeCollector out, PoseStack pose, RenderType type, float x, float y, float z, float size, float spin, int seed) {
 		pose.pushPose();
 		pose.translate(x, y, z);
-		pose.mulPose(Axis.XP.rotationDegrees(spin + seed * 31));
-		pose.mulPose(Axis.YP.rotationDegrees(spin * 0.7F + seed * 53));
+		pose.mulPose(new Matrix4f().rotation(Axis.XP.rotationDegrees(spin + seed * 31)));
+		pose.mulPose(new Matrix4f().rotation(Axis.YP.rotationDegrees(spin * 0.7F + seed * 53)));
 		pose.scale(size, size * (0.7F + 0.1F * (seed % 4)), size);
 		out.submitCustomGeometry(pose, type, (p, vc) -> {
 			float[][][] faces = {
