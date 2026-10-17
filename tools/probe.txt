@@ -1,2 +1,12 @@
-net.minecraft.core.component.DataComponents
-#component/DataComponents
+net.minecraft.client.renderer.entity.EntityRenderer
+net.minecraft.client.renderer.rendertype.RenderTypes
+net.minecraft.client.renderer.entity.state.EntityRenderState
+net.minecraft.client.renderer.texture.DynamicTexture
+net.minecraft.client.Screenshot
+com.mojang.blaze3d.vertex.VertexConsumer
+net.minecraft.client.renderer.entity.EntityRenderers
+#SubmitNodeCollector
+#OrderedSubmitNodeCollector
+#CameraRenderState
+#state/LevelRenderState
+#SubmitNodeStorage
