@@ -12,7 +12,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
  * Bed Wars: one floating island per team (2 to 8) around a centre island, diamond islands between the teams and
- * emerald generators in the middle. Marks per team i: spawn_i, bed_i (the foot), gen_i (iron and gold), shop_i;
+ * emerald generators in the middle. By default the map comes from the architecture engine
+ * ({@link net.battlehub.arch.arena.BedWars}); the classic islands are kept for bedwars.json "mapStyle": "classic". Marks per team i: spawn_i, bed_i (the foot), gen_i (iron and gold), shop_i;
  * plus gen_diamond and gen_emerald. Island floors are at y = 0; bridges have to be built. The arena box reaches
  * {@code buildHeight} above and {@code buildDepth} below the floors and past the islands, so everything players
  * build is inside it (and cleared afterwards).
@@ -47,6 +48,14 @@ public final class BedWarsLayout {
 	}
 
 	public static Blueprint design(Theme t, RandomSource rnd, int teams, int buildHeight, int buildDepth) {
+		if (!"classic".equals(net.battlehub.config.ConfigManager.bedwars().mapStyle)) {
+			return net.battlehub.arena.ArchArenas.bedwars(t, rnd.nextLong(), teams, buildHeight, buildDepth);
+		}
+		return classic(t, rnd, teams, buildHeight, buildDepth);
+	}
+
+	/** The plain islands of earlier versions (bedwars.json: "mapStyle": "classic"). */
+	public static Blueprint classic(Theme t, RandomSource rnd, int teams, int buildHeight, int buildDepth) {
 		Blueprint bp = new Blueprint();
 		int n = Math.max(2, Math.min(COLORS.length, teams));
 		int r = teamRadius(n);

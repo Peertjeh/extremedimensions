@@ -18,8 +18,21 @@ public final class Scenery {
 		return (int) Math.round(Math.sin(a) * r);
 	}
 
-	/** Fills the ring between {@code rIn} and {@code rOut}; {@code y} is the ground height of the ring. */
+	/**
+	 * Fills the ring between {@code rIn} and {@code rOut}; {@code y} is the ground height of the ring. With
+	 * {@code arenas.architecture} on, the architecture engine builds it (stands, islands, landmarks); otherwise the
+	 * simple scenery of earlier versions.
+	 */
 	public static void around(Blueprint bp, Theme t, RandomSource rnd, int rIn, int rOut, int y) {
+		if (net.battlehub.config.ConfigManager.config().arenas.architecture) {
+			net.battlehub.arena.ArchArenas.surroundings(bp, t, rnd.nextLong(), rIn, rOut, y);
+			return;
+		}
+		simple(bp, t, rnd, rIn, rOut, y);
+	}
+
+	/** The scenery of earlier versions: a ring of trees, towers, spikes or columns, or floating islands. */
+	public static void simple(Blueprint bp, Theme t, RandomSource rnd, int rIn, int rOut, int y) {
 		int count = Math.max(5, (rIn + rOut) / 3);
 		if (t.open()) {
 			floatingIslands(bp, t, rnd, rIn, rOut, y, count);

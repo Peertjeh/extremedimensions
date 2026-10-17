@@ -77,6 +77,17 @@ public final class Arena {
 				origin.getX() + bp.maxX() + 1, origin.getY() + bp.maxY() + 1, origin.getZ() + bp.maxZ() + 1).inflate(4);
 	}
 
+	/**
+	 * The chunks to keep loaded while the arena stands: where play happens plus room for arrows and items flying
+	 * out of it. Landmarks and islands in the distance are left to load and unload like any other chunk.
+	 */
+	public AABB held() {
+		int[] c = bp.core();
+		if (c == null) return bounds();
+		return new AABB(origin.getX() + c[0], origin.getY() + c[1], origin.getZ() + c[2], origin.getX() + c[3] + 1, origin.getY() + c[4] + 1,
+				origin.getZ() + c[5] + 1).inflate(16).intersect(bounds());
+	}
+
 	/** Spectators stay within this horizontal radius of the origin and this height band. */
 	public boolean inSpectatorBounds(Vec3 pos) {
 		double dx = pos.x - (origin.getX() + 0.5);

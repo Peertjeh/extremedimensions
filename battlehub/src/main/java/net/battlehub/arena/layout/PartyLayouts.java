@@ -133,6 +133,7 @@ public final class PartyLayouts {
 		bp.mark("zone", 0, 4, 0);
 		f.walls(bp, style, rnd, 4);
 		Features.plants(bp, f, t, rnd, 9);
+		net.battlehub.arena.gen.Scenery.around(bp, t, rnd, r + 4, r + 12, 0);
 		bp.spawnRing(16, ring, 1);
 		bp.spectator(0.5, 18, -(r + 6) + 0.5, 0, 35);
 		bp.voidY(-10);
@@ -346,6 +347,7 @@ public final class PartyLayouts {
 		f.build(bp, style, rnd, 5);
 		f.walls(bp, style, rnd, 4);
 		Features.plants(bp, f, t, rnd, 8);
+		net.battlehub.arena.gen.Scenery.around(bp, t, rnd, r + 4, r + 12, 0);
 		bp.spawnRing(16, ring, 1);
 		bp.spectator(0.5, 30, -(r + 8) + 0.5, 0, 45);
 		bp.voidY(-10);
@@ -366,6 +368,7 @@ public final class PartyLayouts {
 		f.build(bp, style, rnd, 5);
 		f.walls(bp, style, rnd, 4);
 		Features.plants(bp, f, t, rnd, 8);
+		net.battlehub.arena.gen.Scenery.around(bp, t, rnd, r + 4, r + 12, 0);
 		bp.spawnRing(16, ring, 1);
 		bp.spectator(0.5, 28, -(r + 8) + 0.5, 0, 45);
 		bp.voidY(-10);

@@ -33,6 +33,8 @@ public final class Blueprint {
 	private Set<Long> playColumns;
 	/** Nothing may be built or flow above this relative Y. */
 	private int playTop = Integer.MAX_VALUE;
+	/** The part where play happens {x0, y0, z0, x1, y1, z1}; scenery outside it needs no chunks kept loaded. */
+	private int[] core;
 
 	public void set(int x, int y, int z, BlockState state) {
 		if (state == null) {
@@ -192,6 +194,16 @@ public final class Blueprint {
 			}
 		}
 		return out;
+	}
+
+	/** Marks the box where play happens (the rest is scenery); only its chunks are kept loaded. */
+	public void core(int x0, int y0, int z0, int x1, int y1, int z1) {
+		core = new int[] {Math.min(x0, x1), Math.min(y0, y1), Math.min(z0, z1), Math.max(x0, x1), Math.max(y0, y1), Math.max(z0, z1)};
+	}
+
+	/** The box where play happens, or null when the whole arena is. */
+	public int[] core() {
+		return core;
 	}
 
 	public int minX() { return minX; }

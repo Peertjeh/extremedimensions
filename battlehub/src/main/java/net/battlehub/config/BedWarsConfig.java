@@ -14,6 +14,12 @@ public final class BedWarsConfig {
 	public String defaultFormat = "duo";
 	/** Players per team in duo. */
 	public int duoTeamSize = 2;
+	/**
+	 * The maps: "arch" (built by the architecture engine: forges over the generators, market stalls, lookouts, a
+	 * gate behind every bed, ruined pavilions on the diamond islands, a colonnade in the middle and landmarks in
+	 * the distance) or "classic" (the plain islands of earlier versions).
+	 */
+	public String mapStyle = "arch";
 	/** Most islands (teams) in one arena, 2 to 8; with more players than fit, teams grow. */
 	public int maxTeams = 8;
 	public int respawnSeconds = 5;
@@ -189,6 +195,7 @@ public final class BedWarsConfig {
 
 	public BedWarsConfig normalize() {
 		if (!"solo".equals(defaultFormat) && !"duo".equals(defaultFormat)) defaultFormat = "duo";
+		if (!"classic".equals(mapStyle)) mapStyle = "arch";
 		duoTeamSize = Math.max(1, Math.min(4, duoTeamSize));
 		maxTeams = Math.max(2, Math.min(8, maxTeams));
 		respawnSeconds = Math.max(0, respawnSeconds);

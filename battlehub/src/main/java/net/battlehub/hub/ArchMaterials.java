@@ -21,14 +21,14 @@ import net.minecraft.world.level.block.state.BlockState;
  * block families from other mods are discovered from the registry (a block with matching stairs and a slab), with
  * the game's map colour as their colour and their tags guessed from the name.
  */
-final class ArchMaterials {
+public final class ArchMaterials {
 	private ArchMaterials() {}
 
 	private static boolean checked;
 	private static final List<String> missing = new ArrayList<>();
 	private static int discovered;
 
-	static synchronized void prepare(boolean discoverModBlocks) {
+	public static synchronized void prepare(boolean discoverModBlocks) {
 		if (!checked) {
 			checked = true;
 			for (Material m : Catalog.families()) {

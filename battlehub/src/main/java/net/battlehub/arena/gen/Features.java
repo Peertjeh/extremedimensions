@@ -18,7 +18,15 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class Features {
 	private Features() {}
 
-	public enum Kind { PILLAR, WALL, BOULDER, TREE, RUIN, SPIKE, ARCH, PLATFORM }
+	public enum Kind {
+		PILLAR, WALL, BOULDER, TREE, RUIN, SPIKE, ARCH, PLATFORM,
+		/** Pieces from the architecture engine (see {@link net.battlehub.arch.arena.Cover}). */
+		ARCHWAY, COLONNADE, MONUMENT, WELL, CRATES, STALL;
+
+		public boolean architecture() {
+			return ordinal() >= ARCHWAY.ordinal();
+		}
+	}
 
 	/** Which kinds suit a theme (ranged duels also get raised platforms). */
 	public static List<Kind> kinds(Theme t, boolean ranged) {
@@ -34,15 +42,23 @@ public final class Features {
 			k.add(Kind.PLATFORM);
 			k.add(Kind.PLATFORM);
 		}
+		if (net.battlehub.config.ConfigManager.config().arenas.architecture) {
+			// the engine's pieces: archways and colonnades everywhere, a well where there is water, crates and stalls
+			// where people would trade
+			k.addAll(List.of(Kind.ARCHWAY, Kind.ARCHWAY, Kind.COLONNADE, Kind.COLONNADE, Kind.MONUMENT, Kind.CRATES));
+			if (t != Theme.NETHER && !t.open()) k.add(Kind.WELL);
+			if (!t.open() && t != Theme.DEEP_DARK && t != Theme.END) k.add(Kind.STALL);
+		}
 		return k;
 	}
 
 	/** Footprint radius of a kind (columns from its centre). */
 	static int radius(Kind kind) {
+		if (kind.architecture()) return net.battlehub.arch.arena.Cover.RADIUS;
 		return switch (kind) {
 			case PILLAR, SPIKE -> 1;
 			case TREE, BOULDER, RUIN, ARCH -> 2;
-			case WALL, PLATFORM -> 2;
+			default -> 2;
 		};
 	}
 
@@ -84,6 +100,10 @@ public final class Features {
 			}
 		}
 		f.use(x, z, rad + 1);
+		if (kind.architecture()) {
+			net.battlehub.arena.ArchArenas.cover(bp, t, rnd.nextLong(), kind.name(), x, base + 1, z, rnd.nextInt(4), f.symmetry);
+			return;
+		}
 		Blueprint fb = new Blueprint();
 		build(fb, t, rnd, kind);
 		stamp(bp, fb, f.symmetry, x, base + 1, z);

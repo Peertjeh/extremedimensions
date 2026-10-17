@@ -211,6 +211,26 @@ public final class Catalog {
 			cherry_leaves e6aac8 c leaves organic pink
 			jungle_leaves 4f8a20 c leaves organic
 			pale_oak_leaves a0a597 c leaves organic light
+			netherrack 6f3634 c ground dark red nether
+			crimson_nylium 852020 c ground red nether
+			warped_nylium 2b7265 c ground cool nether
+			soul_soil 4b3a2f c ground dark
+			soul_sand 51402f c ground dark
+			magma_block 8e3f20 c ground warm
+			nether_wart_block 732a1e c leaves organic red
+			warped_wart_block 167e86 c leaves organic cool
+			crimson_stem 5c1d2a -l wood timber dark red l=crimson_stem
+			warped_stem 3a3b4e -l wood timber cool l=warped_stem
+			packed_ice 8db4fe c ice light cool
+			blue_ice 74a8fd c ice cool
+			mycelium 6f6265 c ground organic
+			red_mushroom_block c42e2c c organic red
+			brown_mushroom_block 957051 c organic warm
+			sculk 0d1e24 c ground dark
+			red_sand be6621 c ground sand red
+			acacia_log 676157 -l wood timber l=acacia_log
+			stripped_jungle_log ab8456 -l wood timber light l=stripped_jungle_log
+			diamond_block 62ede4 c accent precious
 			water 3f76e4 c water
 			""";
 
@@ -315,6 +335,24 @@ public final class Catalog {
 			potted_blue_orchid 7c4536 m
 			red_carpet a12722 m
 			oak_sapling 4a7a29 m
+			crimson_roots 7b0a20 m
+			warped_roots 147a6f m
+			crimson_fungus a02020 m
+			warped_fungus 147a6f m
+			nether_sprouts 147a6f m
+			red_mushroom c42e2c m
+			brown_mushroom 957051 m
+			dead_bush 6b4f2a m
+			cactus 5b8a2f m
+			blue_orchid 2aa0d0 m
+			short_dry_grass b8a060 m
+			tall_dry_grass b8a060 m
+			firefly_bush 4f6f30 gm
+			spore_blossom d070a0 m
+			sculk_sensor 0d4f5a gm
+			snow f9fefe m
+			lava d05010 g
+			weeping_vines 7b0a20 m
 			""";
 
 	static {

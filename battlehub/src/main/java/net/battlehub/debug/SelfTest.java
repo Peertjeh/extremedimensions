@@ -80,6 +80,7 @@ public final class SelfTest {
 		});
 		HubWorldTests.all(server, s);
 		ArchTests.all(server, s);
+		ArenaArchTests.all(server, s);
 		lobbyAndMenus(server, s);
 		LayoutTests.all(s);
 		BoardTests.all(server, s);

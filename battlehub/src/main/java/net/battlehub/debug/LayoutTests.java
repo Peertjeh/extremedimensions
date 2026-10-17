@@ -95,6 +95,8 @@ final class LayoutTests {
 			RandomSource rnd = RandomSource.create(1234);
 			for (int round = 0; round < 6; round++) {
 				for (Map.Entry<String, Function<Theme, Blueprint>> e : layouts(rnd).entrySet()) {
+					// the Bed Wars maps come from the architecture engine, which has its own checks: one round is enough here
+					if (round > 0 && e.getKey().startsWith("bedwars")) continue;
 					for (Theme theme : Theme.values()) {
 						String where = e.getKey() + "/" + theme.id();
 						try {

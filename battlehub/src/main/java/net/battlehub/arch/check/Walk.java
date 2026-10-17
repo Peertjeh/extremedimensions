@@ -22,13 +22,23 @@ public final class Walk {
 		int at(int x, int y, int z);
 	}
 
+	/** Small plants of the arena themes that players walk through. */
+	static final java.util.Set<String> PASSABLE = java.util.Set.of("dead_bush", "crimson_roots", "warped_roots", "nether_sprouts", "crimson_fungus",
+			"warped_fungus", "red_mushroom", "brown_mushroom", "short_dry_grass", "tall_dry_grass", "blue_orchid", "firefly_bush", "snow", "bush",
+			"spore_blossom", "sea_pickle", "tall_grass", "large_fern", "weeping_vines");
+
+	/** 0 = passable, 1 = support you can stand on, 2 = in the way but not standable (fences, panes, lanterns). */
+	public static int kind(String id) {
+		return ofName(id);
+	}
+
 	static int ofName(String id) {
 		if (id == null || id.equals("air")) return 0;
 		String b = Props.base(id);
 		if (b.endsWith("_door")) return 0;
 		if (b.endsWith("_trapdoor")) return "true".equals(Props.get(id, "open")) ? 0 : 1;
 		if (b.endsWith("_fence") || b.endsWith("_wall") && !b.contains("wall_") || b.endsWith("_pane") || b.endsWith("_bars") || b.endsWith("_fence_gate")) return 2;
-		if (b.equals("water")) return 0;
+		if (b.equals("water") || b.equals("lava")) return 0;
 		Catalog.Kind k = Catalog.kind(b);
 		if (b.endsWith("_slab") || b.endsWith("_stairs")) return 1;
 		if (k == null) return 1;
@@ -37,7 +47,7 @@ public final class Walk {
 			return b.endsWith("_carpet") || b.contains("grass") || b.contains("fern") || b.contains("flower") || b.contains("tulip") || b.contains("petals")
 					|| b.equals("vine") || b.equals("glow_lichen") || b.equals("poppy") || b.equals("dandelion") || b.equals("cornflower") || b.equals("allium")
 					|| b.equals("azure_bluet") || b.equals("oxeye_daisy") || b.equals("lily_of_the_valley") || b.equals("leaf_litter") || b.equals("hanging_roots")
-					|| b.equals("iron_chain") || b.equals("cobweb") ? 0 : 2;
+					|| b.equals("iron_chain") || b.equals("cobweb") || PASSABLE.contains(b) ? 0 : 2;
 		}
 		return 1;
 	}

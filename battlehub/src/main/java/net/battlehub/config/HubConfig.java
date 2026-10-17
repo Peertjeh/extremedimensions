@@ -182,6 +182,13 @@ public final class HubConfig {
 		public Map<String, List<String>> themes = defaultThemes();
 		/** Without a map vote: the chance that a hand-built map (config/battlehub/maps) is used, when there is one. */
 		public double customMapChance = 0.5;
+		/**
+		 * Generated arenas are dressed by the architecture engine: stands with gatehouses round walled arenas,
+		 * islands and landmarks round the others (false: the simple scenery of earlier versions).
+		 */
+		public boolean architecture = true;
+		/** Particles of the theme drift round the players in a match: petals, ash, snow, spores, fireflies. */
+		public boolean ambience = true;
 	}
 
 	/** Floating leaderboards above the wall of the lobby BattleHub builds (not at a lobby set with /battlehub setlobby). */

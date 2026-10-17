@@ -341,7 +341,7 @@ public abstract class Match {
 		Blueprint bp = customMap != null ? customMap.blueprint() : design(theme);
 		arena = new Arena(level, slot, theme, ArenaWorld.origin(slot), bp);
 		ArenaSlots.markBuilt(slot, arena.bounds());
-		net.battlehub.arena.ArenaChunks.hold(level, arena.bounds());
+		net.battlehub.arena.ArenaChunks.hold(level, arena.held());
 		for (UUID id : participants) {
 			Sessions.toMatch(id, this.id);
 			ServerPlayer p = player(id);
@@ -530,6 +530,9 @@ public abstract class Match {
 
 	void tick() {
 		phaseTicks++;
+		if ((phase == Phase.RUNNING || phase == Phase.COUNTDOWN) && phaseTicks % 10 == 0) {
+			ambience();
+		}
 		switch (phase) {
 			case BUILDING -> {
 				if (phaseTicks > ConfigManager.config().timings.arenaBuildTimeoutSeconds * 20) {
@@ -570,6 +573,23 @@ public abstract class Match {
 			}
 			default -> { }
 		}
+	}
+
+	/** A few particles of the arena's theme drifting round everyone in it (arenas.ambience). */
+	private void ambience() {
+		if (arena == null || customMap != null || !ConfigManager.config().arenas.ambience) {
+			return;
+		}
+		net.minecraft.core.particles.ParticleOptions particle = net.battlehub.fx.Ambience.particle(arena.theme());
+		if (particle == null) {
+			return;
+		}
+		ServerLevel level = arena.level();
+		forEveryone(p -> {
+			if (p.level() == level) {
+				level.sendParticles(particle, p.getX(), p.getY() + 3, p.getZ(), 5, 7, 3, 7, 0.01);
+			}
+		});
 	}
 
 	/** Big title while the camera flies over the arena: the mode and who plays. */
@@ -960,7 +980,7 @@ public abstract class Match {
 		if (arena != null) {
 			int slot = arena.slot();
 			ServerLevel level = arena.level();
-			net.minecraft.world.phys.AABB box = arena.bounds();
+			net.minecraft.world.phys.AABB box = arena.held();
 			ArenaBuilder.clear(arena, () -> {
 				net.battlehub.arena.ArenaChunks.release(level, box);
 				ArenaSlots.release(slot);
