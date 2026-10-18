@@ -112,7 +112,9 @@ public class BossTests {
 
 	/**
 	 * Forces the chunks round the test's space (an Elder appears a little way off, and must be about to be found and
-	 * driven wherever the test happens to stand); returns what lets them go again.
+	 * driven wherever the test happens to stand). They are not let go again: the game keeps the chunks of every test's
+	 * structure forced the same way, and letting go of one a neighbouring test stands in stops that test. The test
+	 * server forgets them when it stops. Returns what the tests call when done (nothing to do).
 	 */
 	private static Runnable forceAround(GameTestHelper helper, int r) {
 		ServerLevel level = helper.getLevel();
@@ -123,13 +125,7 @@ public class BossTests {
 				level.setChunkForced(cx + dx, cz + dz, true);
 			}
 		}
-		return () -> {
-			for (int dx = -r; dx <= r; dx++) {
-				for (int dz = -r; dz <= r; dz++) {
-					level.setChunkForced(cx + dx, cz + dz, false);
-				}
-			}
-		};
+		return () -> {};
 	}
 
 	@GameTest

@@ -33,7 +33,8 @@ import net.minecraft.world.item.Items;
 
 /**
  * How hard the Elders fight (and how that grows with those who come against them), the spells they lay, how they keep
- * flyers down, the Ferryman's gaol and the Weaver's longer Lance.
+ * flyers down, the Ferryman's gaol and the Weaver's longer Lance. No chunks are forced here: the test players keep
+ * theirs loaded, and letting go of forced chunks could stop the tests round these.
  */
 public class ElderFightTests {
 	/** No arena in these tests: it would reach into the other tests round them. */
@@ -50,25 +51,6 @@ public class ElderFightTests {
 	private static void stand(GameTestHelper helper, ServerPlayer p, int x, int z) {
 		BlockPos at = helper.absolutePos(new BlockPos(x, 2, z));
 		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
-	}
-
-	/** Forces the chunks round the test's space (see BossTests); returns what lets them go again. */
-	private static Runnable forceAround(GameTestHelper helper, int r) {
-		ServerLevel level = helper.getLevel();
-		BlockPos o = helper.absolutePos(BlockPos.ZERO);
-		int cx = o.getX() >> 4, cz = o.getZ() >> 4;
-		for (int dx = -r; dx <= r; dx++) {
-			for (int dz = -r; dz <= r; dz++) {
-				level.setChunkForced(cx + dx, cz + dz, true);
-			}
-		}
-		return () -> {
-			for (int dx = -r; dx <= r; dx++) {
-				for (int dz = -r; dz <= r; dz++) {
-					level.setChunkForced(cx + dx, cz + dz, false);
-				}
-			}
-		};
 	}
 
 	@GameTest
@@ -123,7 +105,6 @@ public class ElderFightTests {
 	public void anEldersHealthFollowsThoseNearIt(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		stand(helper, p, 2, 2);
-		Runnable unforce = forceAround(helper, 3);
 		int range = Config.ELDER_FIGHTERS_RANGE;
 		Config.ELDER_FIGHTERS_RANGE = 8;
 		Ferryman f = ferryman(helper, p);
@@ -132,7 +113,6 @@ public class ElderFightTests {
 			if (f != null && f.isAlive()) {
 				FerrymanService.fade(f);
 			}
-			unforce.run();
 		};
 		if (f == null) {
 			done.run();
@@ -141,6 +121,7 @@ public class ElderFightTests {
 		FerrymanService.force(f, Ferryman.KNELL);
 		double base = f.getAttribute(Attributes.MAX_HEALTH).getBaseValue();
 		int[] counted = {0};
+		ServerPlayer[] second = {null};
 		helper.runAfterDelay(5, () -> {
 			counted[0] = near(f);
 			boolean one = Math.abs(f.getMaxHealth() - base * ElderPower.health(counted[0])) < 0.01;
@@ -151,9 +132,17 @@ public class ElderFightTests {
 			}
 			check(helper, one, "against %s it has %s health, not %s", counted[0], f.getMaxHealth(), base * ElderPower.health(counted[0]));
 			check(helper, hits, "against %s a blow of 10 deals %s", counted[0], dealt);
-			ServerPlayer second = TestPlayers.survivor(helper, "test-second");
-			stand(helper, second, 3, 2);
+			second[0] = TestPlayers.survivor(helper, "test-second");
 		});
+		// Both stay at his side (he sails about) so both are counted when he next counts, once a second
+		for (int t = 6; t <= 34; t += 2) {
+			helper.runAfterDelay(t, () -> {
+				if (f.isAlive() && second[0] != null) {
+					p.teleportTo(f.getX() + 2, f.getY(), f.getZ());
+					second[0].teleportTo(f.getX() - 2, f.getY(), f.getZ());
+				}
+			});
+		}
 		helper.runAfterDelay(35, () -> {
 			int now = near(f);
 			boolean grew = now > counted[0] && Math.abs(f.getMaxHealth() - base * ElderPower.health(now)) < 0.01;
@@ -196,19 +185,19 @@ public class ElderFightTests {
 		helper.succeed();
 	}
 
-	/** A flyer pulled down: hurt, wings bound (no gliding, no rockets), and free to fly again once they unbind. */
+	/**
+	 * A flyer pulled down: wings bound (no gliding, no rockets), and free to fly again once they unbind. (Its blow is not
+	 * looked at: a test player, whose client never finishes loading, takes no damage.)
+	 */
 	@GameTest(maxTicks = 60)
 	public void anElderPullsFlyersDownAndBindsTheirWings(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		stand(helper, p, 2, 2);
-		Runnable unforce = forceAround(helper, 3);
 		Ferryman f = ferryman(helper, p);
 		check(helper, f != null, "the Ferryman could not come");
 		p.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.ELYTRA));
-		float before = p.getHealth();
 		ElderSpells.snare(f, p);
 		boolean bound = p.hasEffect(ModEffects.BOUND_WINGS) && ElderSpells.grounded(p);
-		boolean hurt = p.getHealth() < before;
 		p.setOnGround(false);
 		boolean glides = p.tryToStartFallFlying();
 		InteractionResult rocket = ElderSpells.refuse(p, new ItemStack(Items.FIREWORK_ROCKET));
@@ -218,9 +207,7 @@ public class ElderFightTests {
 		p.stopFallFlying();
 		p.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
 		FerrymanService.fade(f);
-		unforce.run();
 		check(helper, bound, "the flyer's wings were not bound");
-		check(helper, hurt, "pulling the flyer down did not hurt them");
 		check(helper, !glides, "bound wings still glided");
 		check(helper, rocket == InteractionResult.FAIL, "a rocket could still be used with bound wings (%s)", rocket);
 		check(helper, free, "unbound wings would not glide again");
@@ -236,7 +223,6 @@ public class ElderFightTests {
 		ServerPlayer p = cursed(helper);
 		stand(helper, p, 2, 2);
 		p.getAbilities().invulnerable = true;
-		Runnable unforce = forceAround(helper, 3);
 		double hold = Config.FERRYMAN_GAOL_SECONDS;
 		int hits = Config.FERRYMAN_GAOL_HITS, range = Config.ELDER_FIGHTERS_RANGE;
 		Config.FERRYMAN_GAOL_SECONDS = 4;
@@ -252,7 +238,6 @@ public class ElderFightTests {
 			if (f != null && f.isAlive()) {
 				FerrymanService.fade(f);
 			}
-			unforce.run();
 		};
 		if (f == null) {
 			restore.run();
@@ -316,7 +301,6 @@ public class ElderFightTests {
 		ServerPlayer p = cursed(helper);
 		stand(helper, p, 2, 2);
 		p.getAbilities().invulnerable = true;
-		Runnable unforce = forceAround(helper, 3);
 		double back = Config.WEAVER_LANCE_RETURN;
 		int range = Config.ELDER_FIGHTERS_RANGE;
 		// Only its own player counts as fighting it (one beam), not those of the tests round this one
@@ -330,7 +314,6 @@ public class ElderFightTests {
 			if (weaver[0] != null && weaver[0].isAlive()) {
 				WeaverService.fade(weaver[0]);
 			}
-			unforce.run();
 		};
 		helper.runAfterDelay(5, () -> {
 			int arena = Config.ELDER_ARENA;
