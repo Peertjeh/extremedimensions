@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import net.battlehub.core.ai.CombatMind;
 import net.battlehub.core.ai.Situation;
+import net.battlehub.core.ai.Targeting;
 import net.battlehub.core.ai.Track;
 import net.battlehub.core.ai.V3;
 import net.battlehub.match.Match;
@@ -36,10 +37,13 @@ final class Perception {
 	/** What the bot knows about one enemy this tick. */
 	record Known(ServerPlayer player, boolean seen, boolean located) {}
 
-	/** Looks at every enemy in play: feeds the mind's memory and returns the best target (seen first, then nearest). */
-	static Known pickTarget(BotPlayer bot, Match m, CombatMind mind, int tick, UUID current) {
-		Known best = null;
-		double bestScore = Double.MAX_VALUE;
+	/**
+	 * Looks at every enemy in play: feeds the mind's memory and returns the target the core's {@link Targeting}
+	 * prefers (seen, close, weak, the one who just hit the bot, the current one).
+	 */
+	static Known pickTarget(BotPlayer bot, Match m, CombatMind mind, int tick, UUID current, java.util.function.ToIntFunction<UUID> hitAgo) {
+		java.util.List<Targeting.Candidate> candidates = new java.util.ArrayList<>();
+		java.util.Map<UUID, Known> known = new java.util.HashMap<>();
 		for (UUID id : m.participants()) {
 			if (id.equals(bot.getUUID()) || !m.inPlay(id) || !m.isEnemy(bot.getUUID(), id)) continue;
 			ServerPlayer p = m.player(id);
@@ -54,24 +58,25 @@ final class Perception {
 				mind.see(tick, id, new V3(p.getX(), p.getY(), p.getZ()), d, p.getDeltaMovement().y > 0.1);
 			}
 			Track t = mind.track(id);
-			double sure = t.confidence(tick, CombatMind.HALF_LIFE);
+			double sure = located ? 1 : t.confidence(tick, CombatMind.HALF_LIFE);
 			if (!located && sure < 0.15) continue;
-			// seen beats located beats remembered; the current target is kept a little longer (no flicking)
-			double score = d + (seen ? 0 : located ? 6 : 14) - (id.equals(current) ? 3 : 0);
-			if (score < bestScore) {
-				bestScore = score;
-				best = new Known(p, seen, located);
-			}
+			candidates.add(new Targeting.Candidate(id, d, seen, located, sure, seen ? p.getHealth() / Math.max(1, p.getMaxHealth()) : 1,
+					hitAgo.applyAsInt(id), id.equals(current)));
+			known.put(id, new Known(p, seen, located));
 		}
-		return best;
+		Targeting.Candidate best = Targeting.choose(candidates, mind.personality());
+		return best == null ? null : known.get(best.id());
 	}
 
 	/** The whole situation for the mind. {@code edges} may be reused from the last think (it is costly). */
 	static Situation situation(BotPlayer bot, Match m, CombatMind mind, Known k, int tick, int lastSwing, double[] edges) {
 		ServerLevel level = bot.level();
+		boolean bow = (has(bot, Items.BOW) || has(bot, Items.CROSSBOW)) && (bot.getInventory().countItem(Items.ARROW) > 0
+				|| bot.getInventory().countItem(Items.SPECTRAL_ARROW) > 0 || bot.getInventory().countItem(Items.TIPPED_ARROW) > 0);
+		boolean drawing = bot.isUsingItem() && (bot.getUseItem().is(Items.BOW) || bot.getUseItem().is(Items.CROSSBOW));
 		Situation.Self self = new Situation.Self(v(bot.position()), v(bot.getDeltaMovement()), bot.getHealth(), bot.getMaxHealth(), bot.onGround(),
 				bot.getAttackStrengthScale(0.5f), has(bot, Items.GOLDEN_APPLE) || has(bot, Items.ENCHANTED_GOLDEN_APPLE),
-				bot.getOffhandItem().is(Items.SHIELD), reach(bot));
+				bot.getOffhandItem().is(Items.SHIELD), reach(bot), hasMelee(bot), bow, drawing ? bot.getTicksUsingItem() : 0);
 		Situation.Target target = null;
 		if (k != null) {
 			ServerPlayer p = k.player();
@@ -136,6 +141,14 @@ final class Perception {
 
 	static double reach(BotPlayer bot) {
 		return Math.max(2.5, Math.min(6, bot.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE)));
+	}
+
+	private static boolean hasMelee(BotPlayer bot) {
+		for (int i = 0; i < 9; i++) {
+			net.minecraft.world.item.ItemStack s = bot.getInventory().getItem(i);
+			if (s.is(net.minecraft.tags.ItemTags.SWORDS) || s.is(net.minecraft.tags.ItemTags.AXES) || s.is(Items.MACE)) return true;
+		}
+		return false;
 	}
 
 	private static boolean has(BotPlayer bot, net.minecraft.world.item.Item item) {

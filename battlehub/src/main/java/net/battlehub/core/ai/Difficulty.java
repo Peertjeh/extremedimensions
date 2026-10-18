@@ -70,7 +70,16 @@ public enum Difficulty {
 		return name().toLowerCase(Locale.ROOT);
 	}
 
-	/** The level behind the three menu choices: easy, normal and hard. */
+	/** The old three-step level the other game styles (parkour, prop hunt) still read their numbers from. */
+	public BotLevel legacy() {
+		return switch (this) {
+			case BEGINNER, CASUAL -> BotLevel.EASY;
+			case INTERMEDIATE -> BotLevel.NORMAL;
+			case ADVANCED, EXPERT, MASTER -> BotLevel.HARD;
+		};
+	}
+
+	/** The level behind the three old choices: easy, normal and hard. */
 	public static Difficulty of(BotLevel level) {
 		return switch (level) {
 			case EASY -> CASUAL;

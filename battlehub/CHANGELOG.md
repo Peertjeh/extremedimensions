@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.23.0
+
+### Added
+* **Six bot levels to choose from** (beginner, casual, intermediate, advanced, expert, master) in the practice
+  menu, with `/practice <mode> <level>` and in `bots.fillLevel` (easy/normal/hard still work).
+* **Bows in the bot mind**: keeping a good distance, strafing while drawing, leading you by the arrow's real flight
+  time, backing away while drawing when you close in; bow plus sword: shoot from afar, fight up close.
+* **Smarter target choice**: bots fight back against whoever hit them, finish weak targets and stop flicking.
+* **A debrief after practice**: the bot tells you what it noticed about your play, how the damage went, its main
+  plan and one tip.
+
 ## 1.22.0
 
 ### Added

@@ -12,7 +12,6 @@ import net.battlehub.bot.BotPlayer;
 import net.battlehub.bot.Bots;
 import net.battlehub.config.ConfigManager;
 import net.battlehub.config.HubConfig;
-import net.battlehub.core.BotLevel;
 import net.battlehub.core.DuelFormat;
 import net.battlehub.core.GameMode;
 import net.battlehub.core.PlayerProfile;
@@ -180,7 +179,7 @@ final class BotTests {
 			VARS.put("botCoins", prof.coins);
 			VARS.put("botXp", prof.xp);
 			VARS.put("botPassXp", prof.passXp);
-			Bots.practice(p(A), GameMode.SWORD, BotLevel.HARD);
+			Bots.practice(p(A), GameMode.SWORD, net.battlehub.core.ai.Difficulty.EXPERT);
 		});
 		s.waitFor(tag + ": the duel runs with one bot", 600, () -> {
 			Match m = matchOfA();
@@ -237,6 +236,11 @@ final class BotTests {
 					&& prof.coins == (long) VARS.get("botCoins") && prof.xp == (long) VARS.get("botXp")
 					&& prof.passXp == (long) VARS.get("botPassXp");
 		});
+		s.check(tag + ": A got a debrief from the bot: damage, its plan, what it saw, a tip", () -> {
+			java.util.List<String> d = Bots.lastDebrief(p(A).getUUID());
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST debrief: {}", String.join(" | ", d));
+			return d.size() >= 3 && d.get(0).contains((String) VARS.get("botName"));
+		});
 		s.waitFor(tag + ": the bot leaves after the match", 400, () -> Bots.online() == 0);
 		s.check(tag + ": nothing saved for the bot", () -> {
 			UUID bot = (UUID) VARS.get("bot");
@@ -253,7 +257,7 @@ final class BotTests {
 		SelfTest.reset(s, tag);
 		s.run(tag + ": A starts a bow duel against a normal bot", () -> {
 			SelfTest.join(server, A);
-			Bots.practice(p(A), GameMode.BOW, BotLevel.NORMAL);
+			Bots.practice(p(A), GameMode.BOW, net.battlehub.core.ai.Difficulty.INTERMEDIATE);
 		});
 		s.waitFor(tag + ": running", 600, () -> matchOfA() != null && matchOfA().phase() == Match.Phase.RUNNING);
 		s.run(tag + ": watch", () -> VARS.put("bowPolls", 0));

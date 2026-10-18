@@ -40,6 +40,9 @@ public final class CombatMind {
 	private double taken;
 	/** The last tick anyone in this fight was hit (or the fight began). */
 	private int lastExchange = Integer.MIN_VALUE;
+	private double totalDealt;
+	private double totalTaken;
+	private final java.util.EnumMap<Tactic, Integer> tacticTicks = new java.util.EnumMap<>(Tactic.class);
 	private long thinkNanos;
 	private long thinkMax;
 	private int thinks;
@@ -117,11 +120,35 @@ public final class CombatMind {
 	/** Damage this NPC did (health points); counts for the tactic that was active. */
 	public void dealt(double hp) {
 		dealt += Math.max(0, hp);
+		totalDealt += Math.max(0, hp);
 	}
 
 	/** Damage this NPC took. */
 	public void taken(double hp) {
 		taken += Math.max(0, hp);
+		totalTaken += Math.max(0, hp);
+	}
+
+	public double totalDealt() {
+		return totalDealt;
+	}
+
+	public double totalTaken() {
+		return totalTaken;
+	}
+
+	/** Share of the fight spent in each tactic (0..1). */
+	public java.util.Map<Tactic, Double> tacticShares() {
+		int all = 0;
+		for (int n : tacticTicks.values()) all += n;
+		java.util.Map<Tactic, Double> out = new java.util.EnumMap<>(Tactic.class);
+		for (var e : tacticTicks.entrySet()) out.put(e.getKey(), all == 0 ? 0 : e.getValue() / (double) all);
+		return out;
+	}
+
+	/** What this NPC tells {@code player} after the fight. */
+	public List<Debrief.Line> debrief(String botName, UUID player) {
+		return Debrief.lines(botName, archetype.id(), difficulty.id(), models.get(player), totalDealt, totalTaken, tacticShares());
 	}
 
 	/** Decide (when it is time, or at once when something urgent happens) and steer for this tick. */
@@ -146,6 +173,7 @@ public final class CombatMind {
 			think(s);
 			nextThink = s.tick() + difficulty.thinkTicks;
 		}
+		tacticTicks.merge(decider.current(), 1, Integer::sum);
 		if (s.tick() < reactUntil && t != null) {
 			// still taking it in: look, do not act yet
 			return Intent.NOTHING.withLook(t.pos().add(new V3(0, 1.4, 0)));
@@ -190,6 +218,9 @@ public final class CombatMind {
 		outcomes.reset();
 		dealt = 0;
 		taken = 0;
+		totalDealt = 0;
+		totalTaken = 0;
+		tacticTicks.clear();
 		lastExchange = Integer.MIN_VALUE;
 	}
 

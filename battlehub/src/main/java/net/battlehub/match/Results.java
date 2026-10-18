@@ -39,6 +39,7 @@ public final class Results {
 	public static void apply(Match m) {
 		try {
 			applyAll(m);
+			net.battlehub.bot.Bots.debrief(m);
 		} finally {
 			Clans.save();
 		}

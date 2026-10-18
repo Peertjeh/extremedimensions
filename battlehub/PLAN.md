@@ -458,3 +458,12 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | 5 – Adaptief | Opslaan van leren over sessies (instelbaar, uit te zetten en te wissen), adaptieve moeilijkheid (transparant, uit te zetten). |
 | 6 – Meer modi | KOTH, CTF, Bed Wars en Bridge via dezelfde mind met eigen doelen en rollen. |
 | 7 – Release | Profilering met veel bots, lastgrenzen, in-game visualisatie van paden en doelen. |
+
+## Versie 1.23 – AI mijlpaal 2: niveaus, boog, doelwit, nabespreking
+
+| Onderdeel | Keuze en controle |
+|---|---|
+| Zes niveaus kiesbaar | De bot draagt nu een `Difficulty` (beginner .. master); het oude `BotLevel` volgt eruit voor de stijlen die nog niet via de mind lopen. Oefenmenu: zes knoppen; `/practice <modus> <niveau>` met de zes namen (en nog steeds easy/normal/hard); `bots.fillLevel` accepteert ze ook. JUnit: elk oud niveau komt terug via `legacy()`. |
+| Boog in de mind | Nieuwe tactiek SHOOT. Alleen een boog: melee scoort laag, schieten hoog, dichtbij achteruit lopen terwijl hij spant (kiten). Boog en zwaard: schieten op afstand, slaan dichtbij; een rusher komt vanaf middenafstand toch naar je toe. Mikken: borst, vooruit over de echte vliegtijd van de pijl (`BotMath.arrowTicks`), zo ver als het niveau kan inschatten (beginner niet, master tot 22 ticks); de wereldlaag voegt de boog en de richtfout toe. Zonder zichtlijn zoekt hij eerst (geen pijlen in dekking). Boog-modi lopen nu volledig via de mind. |
+| Doelwit kiezen | `core/ai/Targeting`: afstand, zicht (gezien beter dan naamlabel beter dan herinnering), wie je net raakte (terugvechten), zwak doelwit afmaken (vooral agressieve en opportunistische stijlen), huidig doelwit iets voorrang (niet wisselen om niets). JUnit voor elk van die regels. |
+| Nabespreking | Na een match met bots krijgt elke speler van de bot met wie hij het meest uitwisselde: schade over en weer, het hoofdplan van de bot (aandeel per tactiek), wat de bot van jou zag (agressie, afstand, strafe-wissels) en één tip (vaker van richting wisselen, geduld, druk zetten, afstand, volgend niveau, of ruilen met volle lading). `core/ai/Debrief` geeft taalsleutels terug (en/nl), JUnit; zelftest: na het oefenduel ontvangt A de nabespreking. |

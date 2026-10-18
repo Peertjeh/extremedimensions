@@ -60,8 +60,16 @@ and they come in three levels: **easy** walks and swings late, **normal** sprint
   outside reach and punishes you for stepping in, but loses its patience against someone who only stands there.
 * *It learns during the fight*: it predicts where you move, notices how aggressive you are and how often you
   change strafe direction, and drops a tactic that keeps costing it more than it brings.
-* *Its level* (easy, normal, hard behind the scenes casual, intermediate, expert of six levels) sets reaction time,
-  how often it thinks, aim, prediction, techniques (crits, w-tap, shield) and how often it misjudges.
+* *Its level* (six: beginner, casual, intermediate, advanced, expert, master; pick one in the practice menu or with
+  `/practice <mode> <level>`, `bots.fillLevel` for bots that fill in) sets reaction time, how often it thinks,
+  aim, prediction, techniques (crits, w-tap, shield) and how often it misjudges.
+* *Bow and blade*: with a bow it keeps a distance the arrow likes, strafes while drawing, leads you by the arrow's
+  real flight time (as far ahead as its level can judge) and backs away while drawing when you come close; with
+  a sword too it shoots from afar and fights up close. It moves until it can see you instead of shooting cover.
+* *Choosing whom to fight*: it fights back against whoever just hit it, finishes weak targets (aggressive and
+  opportunist styles more), prefers what it can see and does not flick between two targets.
+* *After the fight* it tells you what it noticed (how aggressive you were, the distance you like, how often you
+  change strafe direction), how the damage went, what its main plan was, and one tip to work on.
 * Admins can look inside: `/battlehub bots inspect <bot>` shows its style, current tactic, the best-scored options
   with their reasons, what it learned about its opponent, its last switches and how long its thinking takes;
   `/battlehub bots profile <bot> <style>` gives it another style; `/battlehub bots debug <bot>` writes its

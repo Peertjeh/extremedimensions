@@ -16,13 +16,17 @@ import net.minecraft.server.level.ServerPlayer;
  * physics, like a connected player's client would.
  */
 public final class BotPlayer extends ServerPlayer {
+	/** How well it plays (one of six levels). */
+	public final net.battlehub.core.ai.Difficulty difficulty;
+	/** The old three-step level the non-fighting game styles still read. */
 	public final BotLevel skill;
 	final BotBrain brain;
 	private boolean warned;
 
-	BotPlayer(MinecraftServer server, ServerLevel level, GameProfile profile, BotLevel skill) {
+	BotPlayer(MinecraftServer server, ServerLevel level, GameProfile profile, net.battlehub.core.ai.Difficulty difficulty) {
 		super(server, level, profile, ClientInformation.createDefault());
-		this.skill = skill;
+		this.difficulty = difficulty;
+		this.skill = difficulty.legacy();
 		this.brain = new BotBrain(this);
 	}
 

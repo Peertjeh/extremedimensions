@@ -45,6 +45,13 @@ public final class CombatSteering {
 				boolean block = !hit && me.hasShield() && me.attackReady() < 0.5 && dist < reach + 0.5 && rng.nextDouble() < d.shieldSkill * 0.3;
 				yield new Intent(fwd, str, dist > 2.0 && wTap == 0, crit, aim, null, hit, block, false);
 			}
+			case SHOOT -> {
+				// keep a distance the arrow likes; strafe so they have to aim too
+				double hold = Math.max(9, Math.min(24, p.range() * 4));
+				double fwd = dist < hold - 3 ? -0.7 : dist > hold + 8 ? 0.7 : 0;
+				double str = strafe(s, facing, d, rng) * 0.8;
+				yield new Intent(fwd, str, false, false, arrowAim(s, track, d), null, false, false, false, true);
+			}
 			case SPACE -> {
 				double hold = Math.max(reach + 0.25, Math.min(6, p.range()));
 				double fwd = dist > hold + 0.4 ? 0.8 : dist < hold - 0.3 ? -0.8 : 0;
@@ -89,6 +96,27 @@ public final class CombatSteering {
 			if (p != null) at = p;
 		}
 		return at.add(new V3(0, 1.2, 0));
+	}
+
+	/** The speed of an arrow from a fully drawn bow (blocks per tick). */
+	static final double ARROW_SPEED = 3.0;
+
+	/**
+	 * Where to aim an arrow: their chest where they will be when it arrives (its flight time from the real arrow
+	 * physics), as far ahead as the level can judge. The world layer adds the arc and the aim wobble.
+	 */
+	static V3 arrowAim(Situation s, Track track, Difficulty d) {
+		Situation.Target t = s.target();
+		V3 eye = s.self().pos().add(new V3(0, 1.6, 0));
+		double h = t.pos().flatDistance(eye);
+		int flight = net.battlehub.core.BotMath.arrowTicks(h, ARROW_SPEED);
+		int ahead = Math.min(flight, d.predictTicks * 2 + (d.predictTicks > 0 ? 2 : 0));
+		V3 at = t.pos();
+		if (track != null && !track.empty() && ahead > 0) {
+			V3 p = track.predict(s.tick(), ahead);
+			if (p != null) at = new V3(p.x(), t.pos().y(), p.z());
+		}
+		return at.add(new V3(0, 1.1, 0));
 	}
 
 	/** Sideways movement: more and smarter at higher levels; never towards an edge. */

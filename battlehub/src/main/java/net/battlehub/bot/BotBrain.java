@@ -101,6 +101,18 @@ final class BotBrain {
 		mind.taken(hp);
 	}
 
+	/** Who last hurt this bot, and when (for choosing whom to fight). */
+	private final java.util.Map<UUID, Integer> hitBy = new java.util.HashMap<>();
+
+	void hitBy(UUID attacker) {
+		hitBy.put(attacker, ticks);
+	}
+
+	int hitAgo(UUID id) {
+		Integer t = hitBy.get(id);
+		return t == null ? 100_000 : ticks - t;
+	}
+
 	void tick() {
 		ticks++;
 		if (detour > 0) {
@@ -127,7 +139,8 @@ final class BotBrain {
 		}
 		switch (m.botStyle()) {
 			case MELEE -> melee(m);
-			case RANGED -> ranged(m);
+			// the mind picks bow or blade by distance and what the bot carries
+			case RANGED -> melee(m);
 			case RUNNER -> runner(m, false);
 			case PARKOUR -> parkour(m);
 			case BOW_SPLEEF -> runner(m, true);
@@ -420,7 +433,7 @@ final class BotBrain {
 	 */
 	private void melee(Match m) {
 		fighting = true;
-		Perception.Known k = Perception.pickTarget(bot, m, mind, ticks, target);
+		Perception.Known k = Perception.pickTarget(bot, m, mind, ticks, target, this::hitAgo);
 		ServerPlayer t = k == null ? null : k.player();
 		target = t == null ? null : t.getUUID();
 		// a swing everyone can see resets the swinger's attack charge: a sudden drop means they just attacked
@@ -447,7 +460,11 @@ final class BotBrain {
 		ServerPlayer t = k == null ? null : k.player();
 		if (in.heal() || eating > 0) {
 			eat();
+		} else if (in.bow() && t != null) {
+			// shoot() selects the bow or crossbow, draws, aims along the arc and lets go when charged
+			shoot(Perception.v(in.look()), Vec3.ZERO);
 		} else {
+			if (bot.isUsingItem() && bot.getUsedItemHand() == InteractionHand.MAIN_HAND) stopUsing();
 			select(BotBrain::isMelee);
 		}
 		if (in.moveTo() != null) {
@@ -457,12 +474,12 @@ final class BotBrain {
 				lookAt(Perception.v(in.look()), true);
 			}
 		} else {
-			if (in.look() != null) {
+			if (in.look() != null && !in.bow()) {
 				lookAt(Perception.v(in.look()), true);
 			}
 			bot.zza = (float) in.forward();
 			bot.xxa = (float) in.strafe();
-			bot.setSprinting(in.sprint() && in.forward() > 0 && mind.difficulty() != Difficulty.BEGINNER);
+			bot.setSprinting(in.sprint() && in.forward() > 0 && !bot.isUsingItem() && mind.difficulty() != Difficulty.BEGINNER);
 			if (bot.onGround() && bot.horizontalCollision && in.forward() > 0) {
 				bot.setJumping(true);
 			}
@@ -489,50 +506,6 @@ final class BotBrain {
 		} else if (!up && blocking) {
 			bot.stopUsingItem();
 		}
-	}
-
-	private void ranged(Match m) {
-		ServerPlayer t = target(m, 80);
-		if (t == null) {
-			stopUsing();
-			Vec3 goal = m.botObjective(bot);
-			if (goal != null) {
-				goTo(goal, true);
-			} else {
-				wanderAbout(bot.position(), 8);
-			}
-			return;
-		}
-		double dist = t.distanceTo(bot);
-		if (dist < 3.5 && find(BotBrain::isMelee) >= 0) {
-			// close by: sword fighting, through the mind
-			melee(m);
-			return;
-		}
-		if (seen < skill.reactionTicks) {
-			lookAt(t.getEyePosition(), false);
-			return;
-		}
-		if (!bot.hasLineOfSight(t)) {
-			// cover in the way (an arch, a pillar, the stands): an arrow would only hit that, so move until they show
-			stopUsing();
-			goTo(t.position(), true);
-			return;
-		}
-		// Keep some distance and move sideways so the other one has to aim
-		if (dist < 9) {
-			bot.zza = -1f;
-		} else if (dist > 24) {
-			bot.zza = 1f;
-			bot.setSprinting(skill.sprints);
-		}
-		if (skill.strafe > 0) {
-			if (rnd.nextDouble() < skill.strafe / 15) {
-				strafe = -strafe;
-			}
-			bot.xxa = strafe;
-		}
-		shoot(t.position().add(0, t.getBbHeight() * 0.55, 0), t.getDeltaMovement());
 	}
 
 	/** Draws and lets go of the bow (or charges and fires the crossbow) at a point, leading a moving target. */

@@ -12,9 +12,19 @@ import java.util.UUID;
 public record Situation(int tick, Self self, Target target, V3 objective, double[] edge, Threat threat) {
 	public static final double SAFE = 4;
 
-	/** The NPC itself. {@code attackReady}: 0..1 like the attack strength meter. {@code reach}: how far it can hit. */
+	/**
+	 * The NPC itself. {@code attackReady}: 0..1 like the attack strength meter. {@code reach}: how far it can hit.
+	 * {@code hasMelee}: a sword, axe or mace on the hotbar. {@code hasBow}: a bow or crossbow and arrows.
+	 * {@code drawTicks}: how long it has been drawing the bow (0 when not).
+	 */
 	public record Self(V3 pos, V3 vel, double health, double maxHealth, boolean onGround, double attackReady, boolean canHeal,
-			boolean hasShield, double reach) {
+			boolean hasShield, double reach, boolean hasMelee, boolean hasBow, int drawTicks) {
+		/** A melee fighter without a bow (most tests and most modes). */
+		public Self(V3 pos, V3 vel, double health, double maxHealth, boolean onGround, double attackReady, boolean canHeal, boolean hasShield,
+				double reach) {
+			this(pos, vel, health, maxHealth, onGround, attackReady, canHeal, hasShield, reach, true, false, 0);
+		}
+
 		public double healthShare() {
 			return maxHealth <= 0 ? 0 : health / maxHealth;
 		}

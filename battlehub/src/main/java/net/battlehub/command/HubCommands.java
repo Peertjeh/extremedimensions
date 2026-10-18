@@ -165,7 +165,8 @@ public final class HubCommands {
 						.suggests((c, b) -> SharedSuggestionProvider.suggest(practiceModes(), b))
 						.executes(c -> practice(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode"), null))
 						.then(Commands.argument("level", StringArgumentType.word())
-								.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.List.of("easy", "normal", "hard"), b))
+								.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.Arrays.stream(net.battlehub.core.ai.Difficulty.values())
+										.map(net.battlehub.core.ai.Difficulty::id).toList(), b))
 								.executes(c -> practice(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode"),
 										StringArgumentType.getString(c, "level"))))));
 
@@ -427,7 +428,7 @@ public final class HubCommands {
 	/** /practice sword hard: a duel against a bot right away (or 1v2 / 1v3 against bots). */
 	private static int practice(ServerPlayer p, String modeId, String level) {
 		GameMode mode = GameMode.byId(modeId);
-		net.battlehub.core.BotLevel l = net.battlehub.core.BotLevel.parse(level, net.battlehub.gui.PracticeMenu.level(p.getUUID()));
+		net.battlehub.core.ai.Difficulty l = net.battlehub.core.ai.Difficulty.parse(level, net.battlehub.gui.PracticeMenu.level(p.getUUID()));
 		if (mode != null && mode.isDuel()) {
 			return net.battlehub.bot.Bots.practice(p, mode, l) ? 1 : 0;
 		}

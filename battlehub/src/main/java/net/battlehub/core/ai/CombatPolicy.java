@@ -63,16 +63,38 @@ public final class CombatPolicy {
 			out.add(new Score(Tactic.HEAL, v, false, why));
 		}
 
+		// a bow without a sword: melee is a poor idea, distance is everything
+		double noBlade = me.hasMelee() ? 0 : 0.5;
+		if (seen && me.hasBow() && dist > 3.5 && dist < 45) {
+			double v = 0.35 + 0.4 * (p.range() / 6) + (dist >= 8 && dist <= 28 ? 0.25 : 0) + noBlade * 0.6;
+			List<String> why = new ArrayList<>(List.of(String.format(java.util.Locale.ROOT, "%.0f blocks", dist)));
+			if (dist < 6 && me.hasMelee()) {
+				v -= 0.45;
+				why.add("too close for the bow");
+			}
+			if (me.drawTicks() > 0) {
+				v += 0.15;
+				why.add("already drawing");
+			}
+			double trend = mem.trend(Tactic.SHOOT);
+			if (trend != 0) {
+				v += 0.3 * p.adaptability() * trend;
+				why.add(trend < 0 ? "arrows miss" : "arrows land");
+			}
+			out.add(new Score(Tactic.SHOOT, v, false, why));
+		}
+
 		if (seen) {
-			// ---- back off when losing
+			// ---- back off when losing (or, with only a bow, when they get close)
 			if (dist < 8) {
 				double v = 0.15 + (1 - hp) * (0.9 - 0.7 * p.risk()) + 0.25 * p.defensive() * Math.max(0, thp - hp);
+				if (me.hasBow() && !me.hasMelee() && dist < 7) v += 0.45;
 				v += 0.3 * p.adaptability() * Math.min(0, mem.trend(Tactic.STRIKE)) * -1 * (1 - hp);
 				out.add(new Score(Tactic.RETREAT, v, false, List.of(String.format(java.util.Locale.ROOT, "health %.0f%% vs %.0f%%", hp * 100, thp * 100))));
 			}
 			// ---- close in
 			if (dist > reach + 0.25) {
-				double v = 0.35 + 0.45 * p.aggression() + 0.25 * (hp - thp);
+				double v = 0.35 + 0.45 * p.aggression() + 0.25 * (hp - thp) - noBlade;
 				List<String> why = new ArrayList<>(List.of(String.format(java.util.Locale.ROOT, "%.1f away", dist)));
 				if (dist < p.range() + 1) {
 					v -= 0.3 * p.patience();
@@ -86,7 +108,7 @@ public final class CombatPolicy {
 			}
 			// ---- trade hits
 			if (dist <= reach + 0.8) {
-				double v = 0.45 + 0.35 * p.aggression() + 0.25 * ready + 0.2 * (hp - thp) - 0.25 * p.patience() * (1 - ready);
+				double v = 0.45 + 0.35 * p.aggression() + 0.25 * ready + 0.2 * (hp - thp) - 0.25 * p.patience() * (1 - ready) - noBlade;
 				List<String> why = new ArrayList<>(List.of(String.format(java.util.Locale.ROOT, "charge %.0f%%", ready * 100)));
 				if (dist > reach) {
 					// just outside reach: hitting means stepping in, which patient styles leave to the other
@@ -114,7 +136,7 @@ public final class CombatPolicy {
 			}
 			// ---- hold just outside their reach and punish
 			if (dist <= p.range() + 2.5) {
-				double v = 0.25 + 0.45 * p.patience() + 0.25 * p.defensive() + 0.3 * (1 - ready) - 0.35 * p.aggression();
+				double v = 0.25 + 0.45 * p.patience() + 0.25 * p.defensive() + 0.3 * (1 - ready) - 0.35 * p.aggression() - noBlade;
 				List<String> why = new ArrayList<>();
 				if (om.known() && om.aggression() > 0.5) {
 					v += 0.3 * om.aggression() * p.patience();

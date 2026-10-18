@@ -14,7 +14,6 @@ import com.mojang.authlib.GameProfile;
 import net.battlehub.BattleHub;
 import net.battlehub.config.ConfigManager;
 import net.battlehub.config.HubConfig;
-import net.battlehub.core.BotLevel;
 import net.battlehub.core.DuelFormat;
 import net.battlehub.core.GameMode;
 import net.battlehub.core.SideQueue;
@@ -88,7 +87,7 @@ public final class Bots {
 	}
 
 	/** A new bot in the lobby, or null (bots off, too many, or the server is nearly full). */
-	public static BotPlayer spawn(MinecraftServer server, BotLevel skill) {
+	public static BotPlayer spawn(MinecraftServer server, net.battlehub.core.ai.Difficulty skill) {
 		HubConfig.Bots c = cfg();
 		if (!c.enabled || ONLINE.size() >= c.maxBots || server.getPlayerCount() >= server.getMaxPlayers() - 1) {
 			return null;
@@ -149,7 +148,7 @@ public final class Bots {
 	// ------------------------------------------------------------------ practice
 
 	/** A duel against a bot right now. */
-	public static boolean practice(ServerPlayer p, GameMode mode, BotLevel skill) {
+	public static boolean practice(ServerPlayer p, GameMode mode, net.battlehub.core.ai.Difficulty skill) {
 		if (!mode.isDuel() || !Queues.canQueue(p, mode)) {
 			return false;
 		}
@@ -170,7 +169,7 @@ public final class Bots {
 	}
 
 	/** 1v2 or 1v3 alone against a team of bots. */
-	public static boolean practiceTeam(ServerPlayer p, GameMode mode, GameMode kit, BotLevel skill) {
+	public static boolean practiceTeam(ServerPlayer p, GameMode mode, GameMode kit, net.battlehub.core.ai.Difficulty skill) {
 		if (!mode.isTeamFight() || !Queues.canQueue(p, mode)) {
 			return false;
 		}
@@ -231,8 +230,8 @@ public final class Bots {
 		}
 	}
 
-	private static BotLevel fillLevel() {
-		return BotLevel.parse(cfg().fillLevel, BotLevel.NORMAL);
+	private static net.battlehub.core.ai.Difficulty fillLevel() {
+		return net.battlehub.core.ai.Difficulty.parse(cfg().fillLevel, net.battlehub.core.ai.Difficulty.INTERMEDIATE);
 	}
 
 	/** Bots may fill a queue or lobby this player waits in (players can say no: /bots, the hotbar button). */
@@ -420,13 +419,57 @@ public final class Bots {
 		}
 		net.battlehub.core.ai.Archetype a = archetype != null ? archetype : net.battlehub.core.ai.Archetype.forSeed(seed, pool);
 		return new net.battlehub.core.ai.CombatMind(a, a.base.individual(seed, cfg().personalityVariation),
-				net.battlehub.core.ai.Difficulty.of(bot.skill), seed ^ System.nanoTime());
+				bot.difficulty, seed ^ System.nanoTime());
 	}
 
 	/** Damage between players: a bot's mind learns from what it dealt and what it took. */
 	public static void onDamage(ServerPlayer victim, net.minecraft.world.damagesource.DamageSource source, float amount) {
-		if (victim instanceof BotPlayer b) b.brain.taken(amount);
+		if (victim instanceof BotPlayer b) {
+			b.brain.taken(amount);
+			if (source.getEntity() instanceof ServerPlayer from && from != victim) b.brain.hitBy(from.getUUID());
+		}
 		if (source.getEntity() instanceof BotPlayer a && a != victim) a.brain.dealt(amount);
+	}
+
+	private static final Map<UUID, List<String>> LAST_DEBRIEF = new HashMap<>();
+
+	/**
+	 * After a match with bots: every player who fought one hears from the bot they traded the most with what it
+	 * noticed about their play, how the fight went and one tip.
+	 */
+	public static void debrief(net.battlehub.match.Match m) {
+		for (UUID id : m.participants()) {
+			if (isBot(id) || m.leftPlayers().contains(id)) continue;
+			ServerPlayer p = m.player(id);
+			if (p == null) continue;
+			BotPlayer best = null;
+			double most = -1;
+			for (UUID other : m.participants()) {
+				if (!(m.player(other) instanceof BotPlayer b) || !m.isEnemy(id, other)) continue;
+				double traded = b.brain.mind().totalDealt() + b.brain.mind().totalTaken();
+				if (traded > most) {
+					most = traded;
+					best = b;
+				}
+			}
+			if (best == null || most <= 0) continue;
+			List<String> sent = new ArrayList<>();
+			for (net.battlehub.core.ai.Debrief.Line line : best.brain.mind().debrief(best.getGameProfile().name(), id)) {
+				Object[] args = line.args().clone();
+				for (int i = 0; i < args.length; i++) {
+					if (args[i] instanceof String s && s.startsWith("debrief.")) args[i] = Lang.tr(p, s);
+				}
+				net.minecraft.network.chat.Component c = Lang.tr(p, line.key(), args);
+				Msg.raw(p, c);
+				sent.add(c.getString());
+			}
+			LAST_DEBRIEF.put(id, sent);
+		}
+	}
+
+	/** The last debrief a player got (self-test). */
+	public static List<String> lastDebrief(UUID player) {
+		return LAST_DEBRIEF.getOrDefault(player, List.of());
 	}
 
 	public static BotPlayer byName(String name) {
@@ -446,7 +489,7 @@ public final class Bots {
 	public static List<String> inspect(BotPlayer b) {
 		List<String> out = new ArrayList<>();
 		net.battlehub.match.Match m = Matches.of(b.getUUID());
-		out.add(b.getGameProfile().name() + " (" + b.skill.id() + ")" + (m == null ? ", not in a match" : ", match #" + m.id + " " + m.mode.id()));
+		out.add(b.getGameProfile().name() + " (" + b.difficulty.id() + ")" + (m == null ? ", not in a match" : ", match #" + m.id + " " + m.mode.id()));
 		out.addAll(b.brain.mind().report().lines());
 		return out;
 	}
@@ -480,6 +523,7 @@ public final class Bots {
 		ONLINE.clear();
 		IDLE.clear();
 		DEBUG.clear();
+		LAST_DEBRIEF.clear();
 		PARTY_SINCE.clear();
 		SIDE_SINCE.clear();
 	}

@@ -6,6 +6,8 @@ public enum Tactic {
 	APPROACH(false),
 	/** Fight in reach: hit when the attack is charged, strafe, crit, w-tap. */
 	STRIKE(false),
+	/** Bow or crossbow: keep a good distance, draw, lead the target and let go. */
+	SHOOT(false),
 	/** Hold just outside the other's reach and punish them when they step in. */
 	SPACE(false),
 	/** Back off (low health, losing the trade). */

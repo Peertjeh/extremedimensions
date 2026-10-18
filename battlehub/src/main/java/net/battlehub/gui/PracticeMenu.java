@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import net.battlehub.bot.Bots;
-import net.battlehub.core.BotLevel;
+import net.battlehub.core.ai.Difficulty;
 import net.battlehub.core.GameMode;
 import net.battlehub.lang.Lang;
 import net.battlehub.util.Icon;
@@ -17,14 +17,14 @@ import net.minecraft.world.item.Items;
 
 /** Practice against bots: pick how good they are, then a duel, 1v2 or 1v3. Starts right away. */
 public final class PracticeMenu extends Screen {
-	private static final Map<UUID, BotLevel> LEVEL = new HashMap<>();
+	private static final Map<UUID, Difficulty> LEVEL = new HashMap<>();
 
 	public PracticeMenu(ServerPlayer viewer) {
 		super(viewer);
 	}
 
-	public static BotLevel level(UUID id) {
-		return LEVEL.getOrDefault(id, BotLevel.NORMAL);
+	public static Difficulty level(UUID id) {
+		return LEVEL.getOrDefault(id, Difficulty.INTERMEDIATE);
 	}
 
 	@Override
@@ -39,12 +39,13 @@ public final class PracticeMenu extends Screen {
 
 	@Override
 	public void draw(Canvas c) {
-		BotLevel chosen = level(viewer.getUUID());
+		Difficulty chosen = level(viewer.getUUID());
 		c.set(4, Icon.of(Items.TARGET).name(Lang.item(viewer, "menu.practice.info"))
 				.lore(Lang.loreLines(viewer, "menu.practice.info.lore")).build());
-		Item[] dyes = {Ids.item("minecraft:lime_dye"), Ids.item("minecraft:yellow_dye"), Ids.item("minecraft:red_dye")};
-		int slot = 11;
-		for (BotLevel l : BotLevel.values()) {
+		Item[] dyes = {Ids.item("minecraft:lime_dye"), Ids.item("minecraft:green_dye"), Ids.item("minecraft:yellow_dye"),
+				Ids.item("minecraft:orange_dye"), Ids.item("minecraft:red_dye"), Ids.item("minecraft:purple_dye")};
+		int slot = 10;
+		for (Difficulty l : Difficulty.values()) {
 			boolean on = l == chosen;
 			c.set(slot, Icon.of(dyes[l.ordinal()]).name(Lang.item(viewer, "bots.level_button", Lang.tr(viewer, "bots.level." + l.id())))
 					.lore(Lang.loreLines(viewer, "bots.level." + l.id() + ".lore"))
@@ -54,7 +55,8 @@ public final class PracticeMenu extends Screen {
 						LEVEL.put(viewer.getUUID(), l);
 						new PracticeMenu(viewer).open();
 					});
-			slot += 2;
+			// six levels in the row, the middle slot left free
+			slot += slot == 12 ? 2 : 1;
 		}
 		java.util.List<GameMode> all = new java.util.ArrayList<>(java.util.List.of(GameMode.duels()));
 		all.addAll(java.util.List.of(GameMode.teamFights()));
