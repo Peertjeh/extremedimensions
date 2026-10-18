@@ -513,6 +513,12 @@ final class BotBrain {
 			lookAt(t.getEyePosition(), false);
 			return;
 		}
+		if (!bot.hasLineOfSight(t)) {
+			// cover in the way (an arch, a pillar, the stands): an arrow would only hit that, so move until they show
+			stopUsing();
+			goTo(t.position(), true);
+			return;
+		}
 		// Keep some distance and move sideways so the other one has to aim
 		if (dist < 9) {
 			bot.zza = -1f;

@@ -256,7 +256,19 @@ final class BotTests {
 			Bots.practice(p(A), GameMode.BOW, BotLevel.NORMAL);
 		});
 		s.waitFor(tag + ": running", 600, () -> matchOfA() != null && matchOfA().phase() == Match.Phase.RUNNING);
-		s.waitFor(tag + ": the bot's arrows hit A", 600, () -> p(A).getHealth() < p(A).getMaxHealth());
+		s.run(tag + ": watch", () -> VARS.put("bowPolls", 0));
+		s.waitFor(tag + ": the bot's arrows hit A", 600, () -> {
+			boolean hit = p(A).getHealth() < p(A).getMaxHealth();
+			int polls = (int) VARS.get("bowPolls") + 1;
+			VARS.put("bowPolls", polls);
+			if (!hit && polls % 100 == 0 && matchOfA() != null && !botsIn(matchOfA()).isEmpty()) {
+				BotPlayer b = botsIn(matchOfA()).get(0);
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST bow bot after {} ticks: {} blocks from A, sees A {}, drawing {}, holds {}, bot at {}",
+						polls, String.format(java.util.Locale.ROOT, "%.1f", b.distanceTo(p(A))), b.hasLineOfSight(p(A)), b.isUsingItem(),
+						b.getMainHandItem().getItem(), b.position());
+			}
+			return hit;
+		});
 		endAndClean(s, tag);
 	}
 
