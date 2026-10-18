@@ -208,6 +208,10 @@ public class VeilRay extends PathfinderMob {
 		} else if (pos.y > hy + 26) {
 			lift -= 0.35;
 		}
+		if (isFrayed() && pos.y > Config.SEAM_FRAY_TOP - 3) {
+			// the Frayed never leave the dark under the islands
+			lift -= 0.5;
+		}
 		Vec3 goal = new Vec3(to.x, 0, to.z).normalize().add(0, Mth.clamp(to.y / Math.max(8, to.horizontalDistance()), -0.4, 0.5) + lift, 0).normalize();
 		if (desired == null || this.tickCount % 2 == 0) {
 			steer(level, pos, goal);
@@ -330,6 +334,10 @@ public class VeilRay extends PathfinderMob {
 					rest = Math.max(1, Config.SEAM_FRAY_RAY_COOLDOWN) * 20 + this.getRandom().nextInt(60);
 					waypoint = null;
 					desired = null;
+					if (target != null) {
+						// it circles over its prey, to come again
+						anchor(target.getX(), Mth.clamp(target.getY() + 9, 14, Config.SEAM_FRAY_TOP - 4), target.getZ(), Math.min(roam, 30));
+					}
 				}
 			}
 		}
