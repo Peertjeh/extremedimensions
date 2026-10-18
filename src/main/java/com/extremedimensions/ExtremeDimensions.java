@@ -42,6 +42,7 @@ public class ExtremeDimensions implements ModInitializer {
 		ModBlocks.init();
 		ModItems.init();
 		ModSounds.init();
+		com.extremedimensions.registry.ModEffects.init();
 		ModParticles.init();
 		WorldLoot.register();
 		ModEntities.init();

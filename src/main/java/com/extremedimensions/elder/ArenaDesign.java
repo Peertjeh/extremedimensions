@@ -37,7 +37,9 @@ import net.minecraft.world.level.block.state.properties.SlabType;
  * rods, and threads of light run from spire to spire and down to the heart of the web.</li>
  * </ul>
  *
- * Sizes scale with {@code elder_arena_size}. Towers, rim pillars and islands are all or nothing: one that would not
+ * Sizes scale with {@code elder_arena_size}: the sigil's rings and spokes spread out with it (and grow broader, more
+ * slowly), the towers grow taller, a second ring of towers stands beyond the first, and the islands grow in number, in
+ * size, in height and in how far out they hang. Towers, rim pillars and islands are all or nothing: one that would not
  * fit in the air there is left out, and so is a tower or pillar that would rise right beside a player.
  */
 final class ArenaDesign {
@@ -346,36 +348,53 @@ final class ArenaDesign {
 
 	static Blueprint design(ServerLevel level, int style, BlockPos centre, boolean grief, long seed) {
 		Plan plan = new Plan(level, grief, seed);
+		double size = Math.max(0.5, Math.min(5.0, Config.ELDER_ARENA_SIZE));
+		// Where things are spreads with the size; how broad they are grows only with its root
+		double wide = Math.sqrt(Math.max(1, size));
+		int floorR = (int) Math.round(12 * size);
+		int rimR = floorR + 1;
+		int towerR = (int) Math.round(18 * size);
+		int outerR = (int) Math.round(23.5 * size);
 		for (net.minecraft.server.level.ServerPlayer q : level.players()) {
-			if (!q.isSpectator() && q.distanceToSqr(centre.getX() + 0.5, centre.getY(), centre.getZ() + 0.5) < 64 * 64) {
+			double near = Math.max(64, outerR + 16);
+			if (!q.isSpectator() && q.distanceToSqr(centre.getX() + 0.5, centre.getY(), centre.getZ() + 0.5) < near * near) {
 				plan.people.add(new double[] {q.getX(), q.getZ()});
 			}
 		}
 		Palette pal = palette(style);
-		double size = Math.max(0.5, Math.min(2.0, Config.ELDER_ARENA_SIZE));
 		int cx = centre.getX(), cz = centre.getZ();
 		BlockPos g0 = plan.ground(cx, centre.getY(), cz);
 		int gy = g0 != null ? g0.getY() : centre.getY() - 1;
-		int floorR = (int) Math.round(12 * size);
-		int rimR = floorR + 1;
-		int towerR = (int) Math.round(18 * size);
+		// Taller towers in a larger arena (the lesser ones half as much)
+		int lift = (int) Math.round(5 * Math.max(0, size - 1));
 		double turn = plan.rnd.nextDouble() * TAU / 8;
 		Blueprint bp = new Blueprint();
 
-		floor(plan, pal, style, cx, gy, cz, floorR, turn);
-		rim(plan, pal, cx, gy, cz, rimR, turn);
+		floor(plan, pal, style, cx, gy, cz, floorR, turn, size, wide);
+		rim(plan, pal, cx, gy, cz, rimR, turn, wide);
 		List<double[]> tops = new ArrayList<>();
 		for (int k = 0; k < 8; k++) {
 			double a = turn + TAU * k / 8;
-			path(plan, pal, cx, gy, cz, a, rimR + 1, towerR - 2);
-			double[] top = tower(plan, pal, style, cx + Math.cos(a) * towerR, gy, cz + Math.sin(a) * towerR, a, k % 2 == 0);
+			path(plan, pal, cx, gy, cz, a, rimR + 1, towerR - 2, (int) Math.round(wide));
+			double[] top = tower(plan, pal, style, cx + Math.cos(a) * towerR, gy, cz + Math.sin(a) * towerR, a, k % 2 == 0, k % 2 == 0 ? lift : lift / 2);
 			tops.add(top);
 		}
-		int isles = (int) Math.round(7 * size);
+		if (size >= 2) {
+			// A second ring beyond the first, between them, the great ones where the lesser stand within
+			for (int k = 0; k < 8; k++) {
+				double a = turn + TAU * (k + 0.5) / 8;
+				tower(plan, pal, style, cx + Math.cos(a) * outerR, gy, cz + Math.sin(a) * outerR, a, k % 2 != 0, k % 2 != 0 ? lift : lift / 2);
+			}
+		}
+		// More islands in a larger arena, larger, higher and further out
+		int isles = (int) Math.round(Math.max(7 * size, 3.75 * size * size));
+		int high = (int) Math.round(9 + 34 * Math.max(0, size - 1) / 3);
 		for (int i = 0; i < isles; i++) {
 			double a = turn + TAU * (i + 0.5) / isles + (plan.rnd.nextDouble() - 0.5) * 0.4;
-			double r = (7 + plan.rnd.nextDouble() * (towerR - 4)) * Math.min(1.0, size);
-			isle(plan, pal, style, (int) Math.round(cx + Math.cos(a) * r), gy + 13 + plan.rnd.nextInt(9), (int) Math.round(cz + Math.sin(a) * r));
+			double r = size <= 1 ? (7 + plan.rnd.nextDouble() * (towerR - 4)) * size
+					: floorR * 0.5 + plan.rnd.nextDouble() * (towerR * 1.55 - floorR * 0.5);
+			double grow = 1 + plan.rnd.nextDouble() * Math.max(0, size - 1) * 0.8;
+			isle(plan, pal, style, (int) Math.round(cx + Math.cos(a) * r), gy + 12 + plan.rnd.nextInt(high + 1), (int) Math.round(cz + Math.sin(a) * r), grow);
 		}
 		// Chains between the towers that stand (the Matriarch's between her great lantern towers only), and the
 		// Weaver's threads from every spire down to the heart of its web
@@ -389,10 +408,10 @@ final class ArenaDesign {
 			}
 			double[] b = tops.get((k + (style == 0 ? 2 : 1)) % 8);
 			if (b != null) {
-				bp.lines.add(new Line(a[0], a[1], a[2], b[0], b[1], b[2], style == 2 ? 1.6 : 3.0));
+				bp.lines.add(new Line(a[0], a[1], a[2], b[0], b[1], b[2], (style == 2 ? 1.6 : 3.0) * wide));
 			}
 			if (style == 2) {
-				bp.lines.add(new Line(a[0], a[1], a[2], cx + 0.5, gy + 1.15, cz + 0.5, 1.2));
+				bp.lines.add(new Line(a[0], a[1], a[2], cx + 0.5, gy + 1.15, cz + 0.5, 1.2 * wide));
 			}
 		}
 		bp.pieces.addAll(plan.pieces.values());
@@ -407,7 +426,7 @@ final class ArenaDesign {
 	}
 
 	/** The sigil, inlaid from the middle outwards, its edge ragged where it meets the land. */
-	private static void floor(Plan plan, Palette pal, int style, int cx, int gy, int cz, int r, double turn) {
+	private static void floor(Plan plan, Palette pal, int style, int cx, int gy, int cz, int r, double turn, double k, double w) {
 		List<int[]> cols = new ArrayList<>();
 		for (int dx = -r; dx <= r; dx++) {
 			for (int dz = -r; dz <= r; dz++) {
@@ -428,9 +447,9 @@ final class ArenaDesign {
 			}
 			double theta = Math.atan2(c[1], c[0]) - turn;
 			BlockState s = switch (style) {
-				case 0 -> matriarchFloor(plan, pal, d, theta, r, c);
-				case 1 -> ferrymanFloor(plan, pal, d, theta, r, c);
-				default -> weaverFloor(plan, pal, d, theta, r, c);
+				case 0 -> matriarchFloor(plan, pal, d, theta, r, c, k, w);
+				case 1 -> ferrymanFloor(plan, pal, d, theta, r, c, k, w);
+				default -> weaverFloor(plan, pal, d, theta, r, c, k, w);
 			};
 			plan.begin();
 			plan.inlay(g, s);
@@ -443,69 +462,76 @@ final class ArenaDesign {
 		return n < 0.6 ? pal.floor[0] : n < 0.8 ? pal.floor[1] : pal.floor[2];
 	}
 
-	private static BlockState matriarchFloor(Plan plan, Palette pal, double d, double theta, int r, int[] c) {
-		if (d < 1.6) {
+	/**
+	 * The floors are drawn at their own size (a radius of 12) and spread out by {@code k}; their lines grow broader by
+	 * {@code w}.
+	 */
+	private static BlockState matriarchFloor(Plan plan, Palette pal, double d, double theta, int r, int[] c, double k, double w) {
+		if (d < 1.6 * w) {
 			return pal.gem;
 		}
-		if (Math.abs(d - 3) < 0.6) {
+		if (Math.abs(d - 3 * k) < 0.6 * w) {
 			return pal.glow;
 		}
-		if (d < 6 && spoke(theta, d, 8) < 0.6) {
+		if (d < 6 * k && spoke(theta, d, 8) < 0.6 * w) {
 			return pal.line;
 		}
-		if (Math.abs(d - 6.5) < 0.55) {
+		if (Math.abs(d - 6.5 * k) < 0.55 * w) {
 			return pal.line;
 		}
-		if (Math.abs(d - 9.5) < 0.55) {
-			return Math.sin(theta * 12) > 0 ? pal.glow : pal.line;
+		if (Math.abs(d - 9.5 * k) < 0.55 * w) {
+			return Math.sin(theta * 12 * w) > 0 ? pal.glow : pal.line;
 		}
-		if (d > 6.5 && spoke(theta, d, 8) < 0.5) {
+		if (d > 6.5 * k && spoke(theta, d, 8) < 0.5 * w) {
 			return pal.floor[2];
 		}
-		if (Math.abs(d - (r - 0.5)) < 0.6) {
+		if (Math.abs(d - (r - 0.5)) < 0.6 * w) {
 			return pal.border;
 		}
-		if (d > r - 2.5 && noise(c[0] * 3 + 7, c[1] * 3) > 0.72) {
+		if (d > r - 2.5 * w && noise(c[0] * 3 + 7, c[1] * 3) > 0.72) {
 			// Her roots and moss creep in at the edge
 			return noise(c[0], c[1] + 11) > 0.5 ? mc("moss_block") : mc("rooted_dirt");
 		}
 		return base(plan, pal, c);
 	}
 
-	private static BlockState ferrymanFloor(Plan plan, Palette pal, double d, double theta, int r, int[] c) {
-		if (d < 1.6) {
+	private static BlockState ferrymanFloor(Plan plan, Palette pal, double d, double theta, int r, int[] c, double k, double w) {
+		if (d < 1.6 * w) {
 			return pal.glow;
 		}
-		if (d < 7.5) {
+		if (d < 7.5 * k) {
 			// The whirlpool: five arms winding in
-			double phi = theta + d * 0.55;
+			double phi = theta + d * 0.55 / k;
 			double arm = ((phi % (TAU / 5)) + TAU / 5) % (TAU / 5) / (TAU / 5);
 			if (arm < 0.28) {
 				return Math.abs(arm - 0.14) < 0.05 && ((int) Math.round(d)) % 3 == 0 ? pal.glow : pal.line;
 			}
 			return arm < 0.4 ? pal.gem : mc("blackstone");
 		}
-		if (Math.abs(d - 8) < 0.6) {
+		if (Math.abs(d - 8 * k) < 0.6 * w) {
 			return mc("polished_blackstone");
 		}
-		if (d >= 8.6 && d < r - 1) {
-			return spoke(theta, d, 8) < 0.6 ? pal.deckLine : pal.deck;
+		if (d >= 8 * k + 0.6 * w && d < r - w) {
+			return spoke(theta, d, 8) < 0.6 * w ? pal.deckLine : pal.deck;
 		}
-		if (Math.abs(d - (r - 0.5)) < 0.7) {
+		if (Math.abs(d - (r - 0.5)) < 0.7 * w) {
 			return pal.border;
 		}
 		return base(plan, pal, c);
 	}
 
-	private static BlockState weaverFloor(Plan plan, Palette pal, double d, double theta, int r, int[] c) {
-		if (d < 0.8) {
+	private static BlockState weaverFloor(Plan plan, Palette pal, double d, double theta, int r, int[] c, double k, double w) {
+		if (d < 0.8 * w) {
 			return pal.glow;
 		}
-		if (d < 1.6) {
+		if (d < 1.6 * w) {
 			return mc("chiseled_deepslate");
 		}
-		boolean ring = Math.abs(d - 3) < 0.5 || Math.abs(d - 6) < 0.5 || Math.abs(d - 9) < 0.5;
-		boolean sp = spoke(theta, d, 8) < 0.5;
+		// A web: a ring every few blocks and more spokes the larger it is
+		double step = 3 * k / w;
+		double m = d % step;
+		boolean ring = d < r - 2 && d > step * 0.5 && Math.min(m, step - m) < 0.5;
+		boolean sp = spoke(theta, d, 8 * (int) Math.round(w)) < 0.5;
 		if (ring && sp) {
 			return pal.glow;
 		}
@@ -515,16 +541,18 @@ final class ArenaDesign {
 		if (ring) {
 			return pal.gem;
 		}
-		if (Math.abs(d - (r - 0.5)) < 0.6) {
+		if (Math.abs(d - (r - 0.5)) < 0.6 * w) {
 			return ((int) Math.round(theta * 8 / TAU * 6)) % 6 == 0 ? mc("chiseled_deepslate") : pal.border;
 		}
 		return base(plan, pal, c);
 	}
 
 	/** The rim: a low edge of slabs with gaps for the paths, and eight lit pillars between them. */
-	private static void rim(Plan plan, Palette pal, int cx, int gy, int cz, int r, double turn) {
-		for (int k = 0; k < 8; k++) {
-			double a = turn + TAU * (k + 0.5) / 8;
+	private static void rim(Plan plan, Palette pal, int cx, int gy, int cz, int r, double turn, double w) {
+		int pillars = 8 * (int) Math.round(w);
+		int tall = (int) Math.round(3 * w);
+		for (int k = 0; k < pillars; k++) {
+			double a = turn + TAU * (k + 0.5) / pillars;
 			int x = (int) Math.round(cx + Math.cos(a) * r), z = (int) Math.round(cz + Math.sin(a) * r);
 			BlockPos g = plan.ground(x, gy, z);
 			if (g == null || Math.abs(g.getY() - gy) > 3 || plan.crowded(x, z, 2.5)) {
@@ -532,11 +560,12 @@ final class ArenaDesign {
 			}
 			int y = g.getY() + 1;
 			plan.begin();
-			plan.air(x, y, z, pal.pillar);
-			plan.air(x, y + 1, z, pal.pillar);
-			plan.air(x, y + 2, z, pal.pillarTop);
+			for (int i = 0; i < tall - 1; i++) {
+				plan.air(x, y + i, z, pal.pillar);
+			}
+			plan.air(x, y + tall - 1, z, pal.pillarTop);
 			if (!pal.pillarTop.hasProperty(BlockStateProperties.FACING)) {
-				plan.air(x, y + 3, z, mc("lantern", Blocks.SOUL_LANTERN.defaultBlockState()));
+				plan.air(x, y + tall, z, mc("lantern", Blocks.SOUL_LANTERN.defaultBlockState()));
 			}
 			plan.commit(0.99);
 		}
@@ -547,7 +576,7 @@ final class ArenaDesign {
 					continue;
 				}
 				double theta = Math.atan2(dz, dx) - turn;
-				if (spoke(theta, d, 8) < 1.6) {
+				if (spoke(theta, d, 8) < 1.6 * w) {
 					continue;
 				}
 				BlockPos g = plan.ground(cx + dx, gy, cz + dz);
@@ -561,14 +590,14 @@ final class ArenaDesign {
 		}
 	}
 
-	/** A path three wide out to a tower, inlaid where the ground is level with it and bridged where it falls away. */
-	private static void path(Plan plan, Palette pal, int cx, int gy, int cz, double a, int from, int to) {
+	/** A path out to a tower ({@code half} blocks either side of its line), inlaid where the ground is level with it and bridged where it falls away. */
+	private static void path(Plan plan, Palette pal, int cx, int gy, int cz, double a, int from, int to, int half) {
 		double ux = Math.cos(a), uz = Math.sin(a);
 		int h = gy;
 		for (int t = from; t <= to; t++) {
 			plan.begin();
 			boolean bridge = false;
-			for (int w = -1; w <= 1; w++) {
+			for (int w = -half; w <= half; w++) {
 				int x = (int) Math.round(cx + ux * t - uz * w), z = (int) Math.round(cz + uz * t + ux * w);
 				BlockState s = w == 0 ? pal.deckLine : pal.deck;
 				BlockPos g = plan.ground(x, h, z);
@@ -597,7 +626,7 @@ final class ArenaDesign {
 	 * A tower at (x, z), on the ground if there is ground near the arena's height, else on a platform of its own
 	 * hanging in the air; null if there was no room for it, else the top (where its chains are hung).
 	 */
-	private static double[] tower(Plan plan, Palette pal, int style, double fx, int gy, double fz, double a, boolean great) {
+	private static double[] tower(Plan plan, Palette pal, int style, double fx, int gy, double fz, double a, boolean great, int lift) {
 		int x = (int) Math.round(fx), z = (int) Math.round(fz);
 		BlockPos g = plan.ground(x, gy, z);
 		if (g != null && g.getY() > gy + 6 || plan.crowded(x, z, great ? 5.5 : 3.5)) {
@@ -633,22 +662,23 @@ final class ArenaDesign {
 			}
 		}
 		double[] top = switch (style) {
-			case 0 -> lanternTower(plan, pal, x, y0, z, great);
-			case 1 -> gallows(plan, pal, x, y0, z, a, great);
-			default -> spire(plan, pal, x, y0, z, great);
+			case 0 -> lanternTower(plan, pal, x, y0, z, great, lift);
+			case 1 -> gallows(plan, pal, x, y0, z, a, great, lift);
+			default -> spire(plan, pal, x, y0, z, great, lift);
 		};
 		return plan.commit(0.85) ? top : null;
 	}
 
 	/** The Matriarch's lantern tower: a base, an obsidian shaft, a cage round a burning core, a crystal spire, lanterns hung off its corners. */
-	private static double[] lanternTower(Plan plan, Palette pal, int x, int y, int z, boolean great) {
+	private static double[] lanternTower(Plan plan, Palette pal, int x, int y, int z, boolean great, int lift) {
 		if (!great) {
 			plan.air(x, y, z, pal.base);
-			plan.air(x, y + 1, z, pal.wall);
-			plan.air(x, y + 2, z, pal.wall);
-			plan.air(x, y + 3, z, pal.core);
-			plan.air(x, y + 4, z, pal.tip);
-			return new double[] {x + 0.5, y + 3.5, z + 0.5};
+			for (int i = 1; i <= 2 + lift; i++) {
+				plan.air(x, y + i, z, pal.wall);
+			}
+			plan.air(x, y + 3 + lift, z, pal.core);
+			plan.air(x, y + 4 + lift, z, pal.tip);
+			return new double[] {x + 0.5, y + 3.5 + lift, z + 0.5};
 		}
 		for (int dx = -1; dx <= 1; dx++) {
 			for (int dz = -1; dz <= 1; dz++) {
@@ -657,13 +687,13 @@ final class ArenaDesign {
 				plan.air(x + dx, y + 1, z + dz, corner ? pal.corner : pal.base);
 			}
 		}
-		for (int i = 2; i <= 5; i++) {
+		for (int i = 2; i <= 5 + lift; i++) {
 			plan.air(x, y + i, z, pal.shaft);
 		}
 		for (Direction d : Direction.Plane.HORIZONTAL) {
 			plan.air(x + d.getStepX(), y + 2, z + d.getStepZ(), stairs(mc("polished_blackstone_brick_stairs"), d.getOpposite(), false));
 		}
-		int c = y + 6;
+		int c = y + 6 + lift;
 		for (int dx = -1; dx <= 1; dx++) {
 			for (int dz = -1; dz <= 1; dz++) {
 				plan.air(x + dx, c, z + dz, pal.base);
@@ -692,27 +722,28 @@ final class ArenaDesign {
 	}
 
 	/** The Ferryman's gallows post: a lantern on a chain from a beam; the great ones hang a boat between two posts. */
-	private static double[] gallows(Plan plan, Palette pal, int x, int y, int z, double a, boolean great) {
+	private static double[] gallows(Plan plan, Palette pal, int x, int y, int z, double a, boolean great, int lift) {
 		// The beam points in, towards the arena
 		double ix = -Math.cos(a), iz = -Math.sin(a);
 		Direction in = Math.abs(ix) > Math.abs(iz) ? (ix > 0 ? Direction.EAST : Direction.WEST) : (iz > 0 ? Direction.SOUTH : Direction.NORTH);
 		Direction side = in.getClockWise();
 		Direction.Axis beamAxis = in.getAxis();
 		if (!great) {
+			int t = y + 6 + lift;
 			plan.air(x, y, z, pal.base);
-			for (int i = 1; i <= 6; i++) {
-				plan.air(x, y + i, z, pal.shaft);
+			for (int i = y + 1; i <= t; i++) {
+				plan.air(x, i, z, pal.shaft);
 			}
 			for (int i = 1; i <= 2; i++) {
-				plan.air(x + in.getStepX() * i, y + 6, z + in.getStepZ() * i, axis(mc("stripped_crimson_stem"), beamAxis));
+				plan.air(x + in.getStepX() * i, t, z + in.getStepZ() * i, axis(mc("stripped_crimson_stem"), beamAxis));
 			}
 			int lx = x + in.getStepX() * 2, lz = z + in.getStepZ() * 2;
-			plan.air(lx, y + 5, lz, axis(chain(), Direction.Axis.Y));
-			plan.air(lx, y + 4, lz, lantern());
-			plan.air(x, y + 7, z, pal.tip);
-			return new double[] {x + 0.5, y + 6.5, z + 0.5};
+			plan.air(lx, t - 1, lz, axis(chain(), Direction.Axis.Y));
+			plan.air(lx, t - 2, lz, lantern());
+			plan.air(x, t + 1, z, pal.tip);
+			return new double[] {x + 0.5, t + 0.5, z + 0.5};
 		}
-		int h = 8;
+		int h = 8 + lift;
 		for (int s = -3; s <= 3; s += 6) {
 			int px = x + side.getStepX() * s, pz = z + side.getStepZ() * s;
 			plan.air(px, y, pz, pal.base);
@@ -747,15 +778,15 @@ final class ArenaDesign {
 	}
 
 	/** The Weaver's spire: a base, a tall shaft with a lit cage, cobwebs, an end-rod point. */
-	private static double[] spire(Plan plan, Palette pal, int x, int y, int z, boolean great) {
+	private static double[] spire(Plan plan, Palette pal, int x, int y, int z, boolean great, int lift) {
 		if (!great) {
 			plan.air(x, y, z, pal.base);
-			for (int i = 1; i <= 4; i++) {
+			for (int i = 1; i <= 4 + lift; i++) {
 				plan.air(x, y + i, z, pal.wall);
 			}
-			plan.air(x, y + 5, z, pal.core);
-			plan.air(x, y + 6, z, pal.tip);
-			return new double[] {x + 0.5, y + 5.5, z + 0.5};
+			plan.air(x, y + 5 + lift, z, pal.core);
+			plan.air(x, y + 6 + lift, z, pal.tip);
+			return new double[] {x + 0.5, y + 5.5 + lift, z + 0.5};
 		}
 		for (int dx = -1; dx <= 1; dx++) {
 			for (int dz = -1; dz <= 1; dz++) {
@@ -765,10 +796,10 @@ final class ArenaDesign {
 				}
 			}
 		}
-		for (int i = 1; i <= 12; i++) {
+		for (int i = 1; i <= 12 + lift; i++) {
 			plan.air(x, y + i, z, pal.shaft);
 		}
-		int c = y + 8;
+		int c = y + 8 + lift;
 		for (Direction d : Direction.Plane.HORIZONTAL) {
 			int ax = x + d.getStepX(), az = z + d.getStepZ();
 			plan.air(ax, c, az, slab(mc("deepslate_tile_slab"), true));
@@ -778,18 +809,22 @@ final class ArenaDesign {
 			plan.air(ax, y + 4, az, mc("cobweb"));
 			plan.air(x + d.getStepX() * 2, c + 2, z + d.getStepZ() * 2, facing(mc("end_rod"), d));
 		}
-		plan.air(x, y + 13, z, pal.wall);
-		plan.air(x, y + 14, z, pal.wall);
-		plan.air(x, y + 15, z, pal.tip);
-		plan.air(x, y + 16, z, facing(mc("end_rod"), Direction.UP));
-		return new double[] {x + 0.5, y + 12.5, z + 0.5};
+		int top = y + 12 + lift;
+		plan.air(x, top + 1, z, pal.wall);
+		plan.air(x, top + 2, z, pal.wall);
+		plan.air(x, top + 3, z, pal.tip);
+		plan.air(x, top + 4, z, facing(mc("end_rod"), Direction.UP));
+		return new double[] {x + 0.5, top + 0.5, z + 0.5};
 	}
 
-	/** A broken island hanging over the arena: a flat top, a cone of stone narrowing to a spike, lanterns on chains. */
-	private static void isle(Plan plan, Palette pal, int style, int x, int top, int z) {
+	/**
+	 * A broken island hanging over the arena: a flat top, a cone of stone narrowing to a spike, lanterns on chains;
+	 * {@code grow} times its usual breadth (and deeper, a little less).
+	 */
+	private static void isle(Plan plan, Palette pal, int style, int x, int top, int z, double grow) {
 		Random rnd = plan.rnd;
-		double r0 = 1.8 + rnd.nextDouble() * 1.6;
-		int depth = 4 + rnd.nextInt(3);
+		double r0 = (1.8 + rnd.nextDouble() * 1.6) * grow;
+		int depth = (int) Math.round((4 + rnd.nextInt(3)) * Math.pow(grow, 0.8));
 		plan.begin();
 		for (int i = 0; i < depth; i++) {
 			double ri = r0 * Math.pow(1 - i / (double) depth, 0.9) + 0.35;
@@ -805,7 +840,7 @@ final class ArenaDesign {
 				}
 			}
 		}
-		int spike = 2 + rnd.nextInt(3);
+		int spike = (int) Math.round((2 + rnd.nextInt(3)) * Math.sqrt(grow));
 		for (int i = 0; i < spike; i++) {
 			plan.air(x, top - depth - i, z, i == spike - 1 ? pal.isleTip : style == 1 && i % 2 == 0 ? pal.isleVein : pal.isle);
 		}
@@ -818,7 +853,7 @@ final class ArenaDesign {
 				continue;
 			}
 			if (hung < 2 && rnd.nextBoolean()) {
-				int len = 1 + rnd.nextInt(3);
+				int len = 1 + rnd.nextInt(3 + (int) Math.round(2 * (grow - 1)));
 				for (int i = 0; i < len; i++) {
 					plan.air(hx, under - i, hz, axis(chain(), Direction.Axis.Y));
 				}

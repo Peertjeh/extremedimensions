@@ -84,6 +84,8 @@ public final class ElderStrikes {
 		double cx, cz, a0, a1, r0, r1;
 		int age, duration;
 		float damage;
+		/** A great blow: through armour (see {@link ElderPower#great}). */
+		boolean pierce;
 		final Set<UUID> hit = new HashSet<>();
 	}
 
@@ -211,7 +213,14 @@ public final class ElderStrikes {
 	 */
 	static void beam(ElderBoss source, double fx, double fy, double fz, double cx, double cz, double a0, double a1, double r0, double r1,
 			int duration, float damage) {
+		beam(source, fx, fy, fz, cx, cz, a0, a1, r0, r1, duration, damage, false);
+	}
+
+	/** A beam as above; {@code pierce} for a great blow, which goes through armour. */
+	static void beam(ElderBoss source, double fx, double fy, double fz, double cx, double cz, double a0, double a1, double r0, double r1,
+			int duration, float damage, boolean pierce) {
 		Beam b = new Beam();
+		b.pierce = pierce;
 		b.level = (ServerLevel) source.level();
 		b.source = source.getUUID();
 		b.fx = fx;
@@ -495,7 +504,7 @@ public final class ElderStrikes {
 				}
 				if (segmentDistance(p.getX(), p.getY() + 1, p.getZ(), b.fx, b.fy, b.fz, gx, gy, gz) < 1.6) {
 					b.hit.add(p.getUUID());
-					p.hurtServer(b.level, from(b.level, b.source), b.damage);
+					p.hurtServer(b.level, b.pierce ? ElderPower.great(b.level, boss) : from(b.level, b.source), b.damage);
 					p.setRemainingFireTicks(100);
 					ElderFx.knock(p, gx, gz, 0.7, 0.5);
 				}

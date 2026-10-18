@@ -32,6 +32,15 @@ abstract class ElderFight {
 	/** Distance walked since the last heavy step. */
 	double stride;
 	final Beat beat = new Beat();
+	/** Players fighting it (counted once a second; at least one). See {@link ElderPower}. */
+	int fighters;
+	/** A great blow coming again at the next player: how many more times, and at whom this time (null = its prey). */
+	int repeats;
+	UUID aim;
+	/** Who a great blow has fallen on since it began, so the next one goes to someone else. */
+	final java.util.Set<UUID> aimed = new java.util.HashSet<>();
+	/** Its next blow repeats the one under way at the next player, rather than starting afresh. */
+	private boolean chaining;
 
 	void makeBar(String key, BossEvent.BossBarColor color, BossEvent.BossBarOverlay overlay, ServerPlayer first) {
 		bar = new ServerBossEvent(UUID.randomUUID(), Component.translatable(key), color, overlay);
@@ -39,21 +48,30 @@ abstract class ElderFight {
 		bar.addPlayer(first);
 	}
 
-	/** Its bar follows its health (filling while it forms), and everyone who comes near sees it. */
+	/**
+	 * Every tick of its fight: its bar follows its health (filling while it forms), and everyone who comes near sees it;
+	 * its health, damage and pace follow those fighting it; its spell lies on everyone in its reach, and it pulls down
+	 * anyone gliding near it.
+	 */
 	void keepBar(ElderBoss b) {
+		ElderPower.tick(b, this);
 		bar.setProgress(action == ElderBoss.SPAWN ? (float) Math.min(1, beat.t / ElderSpawn.length()) : b.getHealth() / b.getMaxHealth());
 		if (ticks % 20 == 0) {
+			double near = ElderPower.reach(64), far = ElderPower.reach(96);
 			for (ServerPlayer q : level.players()) {
-				if (q.distanceToSqr(b) < 64 * 64) {
+				if (q.distanceToSqr(b) < near * near) {
 					bar.addPlayer(q);
 				}
 			}
 			// ... and lets go of those who left (another world, far off): the sky lifts for them
 			for (ServerPlayer q : List.copyOf(bar.getPlayers())) {
-				if (q.level() != level || q.distanceToSqr(b) > 96 * 96) {
+				if (q.level() != level || q.distanceToSqr(b) > far * far) {
 					bar.removePlayer(q);
 				}
 			}
+		}
+		if (action != ElderBoss.SPAWN) {
+			ElderSpells.tick(b, this);
 		}
 	}
 
@@ -74,14 +92,22 @@ abstract class ElderFight {
 
 	/** Counts the pause down; true when the next blow may come. */
 	boolean ready() {
-		cooldown -= Math.max(0.1, Config.ELDER_ATTACK_SPEED) * (enraged ? 1.25 : 1.0);
+		cooldown -= Math.max(0.1, Config.ELDER_ATTACK_SPEED) * (enraged ? 1.25 : 1.0) * ElderPower.pace(Math.max(1, fighters));
 		return cooldown <= 0;
 	}
 
 	void start(ElderBoss b, int a) {
+		if (!chaining) {
+			repeats = ElderPower.splits(Math.max(1, fighters)) - 1;
+			aim = null;
+			aimed.clear();
+		}
+		chaining = false;
 		action = a;
 		beat.reset();
 		b.setAction(a);
+		// No name is called: the Elder gives the blow away by its voice, the sound of the blow, its body and its light
+		ElderTells.begin(b, a);
 		// The client plays the ultimate on a 200-tick timeline and the forming on a 140-tick one, whatever their length
 		b.setTempo(a == ElderBoss.ULTIMATE ? 200.0F / ElderUltimate.length() : a == ElderBoss.SPAWN ? 140.0F / ElderSpawn.length() : (float) tempo());
 	}
@@ -89,6 +115,58 @@ abstract class ElderFight {
 	/** Advances the action's clock (the ultimate and the forming always take their full time). */
 	void step() {
 		beat.step(action == ElderBoss.ULTIMATE || action == ElderBoss.SPAWN ? 1.0 : tempo());
+	}
+
+	/** Who a great blow falls on this time: the player it came again for, or its prey. */
+	ServerPlayer aimed(ServerPlayer prey) {
+		if (aim != null && level.getPlayerByUUID(aim) instanceof ServerPlayer q && q.isAlive() && !q.isSpectator() && !q.isCreative()) {
+			return q;
+		}
+		return prey;
+	}
+
+	/**
+	 * At the end of a great blow: when more players fight it, the blow comes again at the nearest one it has not yet
+	 * fallen on (true), or the blow is over (false).
+	 */
+	boolean again(ElderBoss b, ServerPlayer prey) {
+		aimed.add(aimed(prey).getUUID());
+		if (repeats <= 0) {
+			return false;
+		}
+		ServerPlayer next = null;
+		double best = Double.MAX_VALUE;
+		for (ServerPlayer q : ElderFx.targets(b, ElderPower.reach(48))) {
+			double d = q.distanceToSqr(b);
+			if (!aimed.contains(q.getUUID()) && d < best) {
+				best = d;
+				next = q;
+			}
+		}
+		if (next == null) {
+			return false;
+		}
+		repeats--;
+		aim = next.getUUID();
+		chaining = true;
+		start(b, action);
+		return true;
+	}
+
+	/** The players a great blow falls on at once: its prey first, then the nearest others, as many as it splits over. */
+	List<ServerPlayer> split(ElderBoss b, ServerPlayer prey, double radius) {
+		java.util.List<ServerPlayer> out = new java.util.ArrayList<>();
+		out.add(prey);
+		java.util.List<ServerPlayer> rest = ElderFx.targets(b, radius);
+		rest.remove(prey);
+		rest.sort(java.util.Comparator.comparingDouble(q -> q.distanceToSqr(b)));
+		for (ServerPlayer q : rest) {
+			if (out.size() >= ElderPower.splits(Math.max(1, fighters))) {
+				break;
+			}
+			out.add(q);
+		}
+		return out;
 	}
 
 	void end(ElderBoss b, double pause) {
@@ -126,7 +204,7 @@ abstract class ElderFight {
 		return weighted[0];
 	}
 
-	/** The ultimate begins: black bars and its name for everyone in reach, the world fog closing in. */
+	/** The ultimate begins: black bars for everyone in reach, the world fog closing in. */
 	void beginUltimate(ElderBoss b, String nameKey) {
 		ultimateSpent = true;
 		doomed.clear();
@@ -142,8 +220,8 @@ abstract class ElderFight {
 		ElderFx.cinema(b, Math.max(64, Config.ELDER_ULTIMATE_RADIUS + 16), ModPackets.BossFxPayload.ULTIMATE, ElderUltimate.length(), 1, nameKey);
 		for (ServerPlayer q : level.players()) {
 			if (q.distanceToSqr(b) < Math.pow(Math.max(64, Config.ELDER_ULTIMATE_RADIUS), 2)) {
-				q.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.ultimate_warn", Component.translatable(nameKey),
-						Math.max(0, Config.ELDER_ULTIMATE_RADIUS)), true);
+				// Unnamed: what it is, is read from the dark, the fog, its music and the Elder swelling
+				q.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.ultimate_warn", Math.max(0, Config.ELDER_ULTIMATE_RADIUS)), true);
 			}
 		}
 	}

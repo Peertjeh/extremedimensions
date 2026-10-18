@@ -56,6 +56,17 @@ public final class WeaverService {
 		double rise;
 		/** Whether this Lance sweeps back once more after its first pass. */
 		boolean back;
+
+		/** Its blows land sooner than the other Elders' (the time saved goes into its pause; see {@link WeaverService#end}). */
+		@Override
+		double tempo() {
+			return steady() * Math.max(0.5, Config.WEAVER_WINDUP_SPEED);
+		}
+
+		/** The pace its blows would have at the other Elders' speed. */
+		double steady() {
+			return super.tempo();
+		}
 	}
 
 	private static final Map<UUID, Unweaving> WEAVERS = new HashMap<>();
@@ -186,9 +197,9 @@ public final class WeaverService {
 			}
 			u.ticks++;
 			ServerPlayer p = s.getPlayerList().getPlayer(u.target);
-			if (p == null || !p.isAlive() || p.level() != w.level() || w.distanceToSqr(p) > 80 * 80) {
+			if (p == null || !p.isAlive() || p.level() != w.level() || w.distanceToSqr(p) > ElderPower.reach(80) * ElderPower.reach(80)) {
 				// Its prey gone: it turns on another near it, if there is one, and only leaves when there is none
-				p = u.successor(w, 48);
+				p = u.successor(w, ElderPower.reach(48));
 				if (p == null) {
 					later.add(() -> fade(w));
 					continue;
@@ -229,7 +240,7 @@ public final class WeaverService {
 				u.enraged = true;
 			}
 			later.add(() -> {
-				kin(w);
+				kin(w, 3 + ElderPower.brood(u.fighters));
 				ElderFx.shake(w, w.getX(), w.getZ(), 40, 0.6f, 20);
 				ElderStrikes.wave(w, w.getX(), w.getY() - HOVER, w.getZ(), 0.8, 16, 4f, "minecraft:end_rod", null);
 			});
@@ -275,8 +286,8 @@ public final class WeaverService {
 				if (b.at(15)) {
 					int side = 1;
 					int n = 0;
-					for (ServerPlayer q : ElderFx.targets(w, 36)) {
-						if (n >= 2) {
+					for (ServerPlayer q : ElderFx.targets(w, ElderPower.reach(36))) {
+						if (n >= 1 + ElderPower.splits(u.fighters)) {
 							break;
 						}
 						ElderStrikes.tether(w, q, side, 90);
@@ -292,7 +303,7 @@ public final class WeaverService {
 			case Weaver.NEEDLES -> {
 				if (b.at(20)) {
 					ThreadLocalRandom rnd = ThreadLocalRandom.current();
-					for (ServerPlayer q : ElderFx.targets(w, 40)) {
+					for (ServerPlayer q : ElderFx.targets(w, ElderPower.reach(40))) {
 						ElderStrikes.strike(w, q.getX(), q.getY(), q.getZ(), 2.2, 7f, u.delay(28), ElderStrikes.NEEDLE);
 					}
 					for (int i = 0; i < 6; i++) {
@@ -328,7 +339,9 @@ public final class WeaverService {
 	}
 
 	private static void end(Weaver w, Unweaving u, double pause) {
-		u.end(w, pause);
+		// Its blows land sooner, but come no more often: the time a blow saved is added to the pause after it
+		double saved = u.action == ElderBoss.ULTIMATE ? 0 : u.beat.t / u.steady() - u.beat.t / u.tempo();
+		u.end(w, pause + Math.max(0, saved));
 		if (ThreadLocalRandom.current().nextInt(3) == 0) {
 			u.drift = -u.drift;
 		}
@@ -348,7 +361,6 @@ public final class WeaverService {
 		String dim = ElderFx.dim(w);
 		double[] h = halo(w);
 		if (b.at(1)) {
-			ElderFx.call(w, "seraphic_lance");
 			WorldFx.soundIn(dim, "minecraft:block.beacon.activate", "hostile", h[0], h[1], h[2], 5f, 0.5f);
 			u.back = u.enraged || ThreadLocalRandom.current().nextDouble() < Config.WEAVER_LANCE_RETURN;
 		}
@@ -359,23 +371,32 @@ public final class WeaverService {
 			}
 		}
 		if (b.at(22)) {
-			sweep(w, u, p, h, u.drift > 0 ? 1 : -1);
+			// A beam for its prey, and with more of them against it one for each of the nearest others
+			for (ServerPlayer q : u.split(w, p, ElderPower.reach(44))) {
+				sweep(w, u, q, h, u.drift > 0 ? 1 : -1);
+			}
 		}
 		if (u.back && b.at(56)) {
-			// Back the other way, at where its prey went
-			sweep(w, u, p, h, u.drift > 0 ? -1 : 1);
+			// Back the other way, at where they went
+			for (ServerPlayer q : u.split(w, p, ElderPower.reach(44))) {
+				sweep(w, u, q, h, u.drift > 0 ? -1 : 1);
+			}
 		}
-		if (b.past(u.back ? 96 : 62)) {
+		// It holds still until its beams have burnt out (they come from its halo)
+		if (b.past(u.back ? 96 : 62) && ElderStrikes.beamsOf(w) == 0) {
 			end(w, u, 40);
 		}
 	}
 
 	private static void sweep(Weaver w, Unweaving u, ServerPlayer p, double[] h, int way) {
 		double dx = p.getX() - w.getX(), dz = p.getZ() - w.getZ();
-		double r = Math.max(8, Math.min(28, Math.sqrt(dx * dx + dz * dz)));
+		double r = Math.max(8, Math.min(ElderPower.reach(28), Math.sqrt(dx * dx + dz * dz)));
 		double a = Math.atan2(dz, dx);
-		double sweep = 0.75 * way;
-		ElderStrikes.beam(w, h[0], h[1], h[2], w.getX(), w.getZ(), a - sweep, a + sweep, r - 2, r + 2, u.delay(34), (float) Config.WEAVER_LANCE_DAMAGE);
+		// It burns longer than it used to, over a wider arc at the same speed (whatever the pace its blows land at)
+		double length = Math.max(0.5, Config.WEAVER_LANCE_LENGTH);
+		double sweep = Math.min(1.6, 0.75 * length) * way;
+		int burn = Math.max(8, (int) Math.round(34 / u.steady() * length));
+		ElderStrikes.beam(w, h[0], h[1], h[2], w.getX(), w.getZ(), a - sweep, a + sweep, r - 2, r + 2, burn, (float) Config.WEAVER_LANCE_DAMAGE, true);
 		WorldFx.soundIn(ElderFx.dim(w), "minecraft:entity.warden.sonic_boom", "hostile", h[0], h[1], h[2], 4f, 1.2f);
 		ElderFx.shake(w, p.getX(), p.getZ(), 30, 0.5f, 30);
 	}
@@ -384,52 +405,62 @@ public final class WeaverService {
 	private static void cradle(Weaver w, Unweaving u, ServerPlayer p, Beat b) {
 		String dim = ElderFx.dim(w);
 		if (b.at(1)) {
-			ElderFx.call(w, "cats_cradle");
 			WorldFx.soundIn(dim, "minecraft:entity.leash_knot.place", "hostile", w.getX(), w.getY() + 12, w.getZ(), 5f, 0.4f);
 		}
 		if (b.at(14)) {
-			List<double[]> lines = new ArrayList<>();
-			double[][] anchors = new double[7][];
-			double base = ThreadLocalRandom.current().nextDouble() * Math.PI;
-			for (int i = 0; i < 7; i++) {
-				double a = base + 2 * Math.PI * i / 7;
-				double x = p.getX() + Math.cos(a) * 10, z = p.getZ() + Math.sin(a) * 10;
-				double y = ElderFx.surface(u.level, x, p.getY() + 4, z, 6, 12);
-				anchors[i] = new double[] {x, (Double.isNaN(y) ? p.getY() : y) + 1.0, z};
+			// A cradle round its prey, and with more of them against it round each of the nearest others
+			boolean first = true;
+			for (ServerPlayer q : u.split(w, p, ElderPower.reach(36))) {
+				ElderStrikes.web(w, cradleAround(w, u, q, first), u.delay(50), 14f);
+				WorldFx.soundIn(dim, "minecraft:block.tripwire.attach", "hostile", q.getX(), q.getY(), q.getZ(), 4f, 0.5f);
+				first = false;
 			}
-			for (int i = 0; i < 7; i++) {
-				double[] a0 = anchors[i], a1 = anchors[(i + 3) % 7];
-				lines.add(new double[] {a0[0], a0[1], a0[2], a1[0], a1[1], a1[2]});
-			}
-			// One thread runs right through where its prey stands (standing still is no shelter)
-			double through = base + Math.PI / 7;
-			lines.add(new double[] {p.getX() + Math.cos(through) * 10, p.getY() + 1.0, p.getZ() + Math.sin(through) * 10,
-					p.getX() - Math.cos(through) * 10, p.getY() + 1.0, p.getZ() - Math.sin(through) * 10});
-			double yaw = Math.toRadians(w.getYRot());
-			for (int side = -1; side <= 1; side += 2) {
-				double hx = w.getX() - Math.cos(yaw) * 9.5 * side, hz = w.getZ() - Math.sin(yaw) * 9.5 * side;
-				double[] a = anchors[side < 0 ? 0 : 3];
-				lines.add(new double[] {hx, w.getY() + 13.5, hz, a[0], a[1], a[2]});
-			}
-			ElderStrikes.web(w, lines, u.delay(50), 14f);
-			WorldFx.soundIn(dim, "minecraft:block.tripwire.attach", "hostile", p.getX(), p.getY(), p.getZ(), 4f, 0.5f);
 		}
 		if (b.past(74)) {
 			end(w, u, 55);
 		}
 	}
 
+	/** The threads of a cradle round {@code p}: a star of seven, one right through them, and (for the first) two from its hands. */
+	private static List<double[]> cradleAround(Weaver w, Unweaving u, ServerPlayer p, boolean hands) {
+		List<double[]> lines = new ArrayList<>();
+		double[][] anchors = new double[7][];
+		double base = ThreadLocalRandom.current().nextDouble() * Math.PI;
+		for (int i = 0; i < 7; i++) {
+			double a = base + 2 * Math.PI * i / 7;
+			double x = p.getX() + Math.cos(a) * 10, z = p.getZ() + Math.sin(a) * 10;
+			double y = ElderFx.surface(u.level, x, p.getY() + 4, z, 6, 12);
+			anchors[i] = new double[] {x, (Double.isNaN(y) ? p.getY() : y) + 1.0, z};
+		}
+		for (int i = 0; i < 7; i++) {
+			double[] a0 = anchors[i], a1 = anchors[(i + 3) % 7];
+			lines.add(new double[] {a0[0], a0[1], a0[2], a1[0], a1[1], a1[2]});
+		}
+		// One thread runs right through where they stand (standing still is no shelter)
+		double through = base + Math.PI / 7;
+		lines.add(new double[] {p.getX() + Math.cos(through) * 10, p.getY() + 1.0, p.getZ() + Math.sin(through) * 10,
+				p.getX() - Math.cos(through) * 10, p.getY() + 1.0, p.getZ() - Math.sin(through) * 10});
+		if (hands) {
+			double yaw = Math.toRadians(w.getYRot());
+			for (int side = -1; side <= 1; side += 2) {
+				double hx = w.getX() - Math.cos(yaw) * 9.5 * side, hz = w.getZ() - Math.sin(yaw) * 9.5 * side;
+				double[] a = anchors[side < 0 ? 0 : 3];
+				lines.add(new double[] {hx, w.getY() + 13.5, hz, a[0], a[1], a[2]});
+			}
+		}
+		return lines;
+	}
+
 	/** A Thousand Needles: it rises, rings of needles spiral down onto its prey, and a great needle falls last of all. */
 	private static void thousand(Weaver w, Unweaving u, ServerPlayer p, Beat b) {
 		String dim = ElderFx.dim(w);
 		if (b.at(1)) {
-			ElderFx.call(w, "thousand_needles");
 			WorldFx.soundIn(dim, "minecraft:block.amethyst_block.resonate", "hostile", w.getX(), w.getY() + 14, w.getZ(), 5f, 0.4f);
 		}
 		if (b.every(5, 16) && b.t < 58) {
 			double turn = b.t * 0.6;
 			double r = Math.max(2.5, 12 - (b.t - 16) * 0.25);
-			for (ServerPlayer q : ElderFx.targets(w, 44)) {
+			for (ServerPlayer q : ElderFx.targets(w, ElderPower.reach(44))) {
 				for (int i = 0; i < 3; i++) {
 					double a = turn + 2 * Math.PI * i / 3;
 					double x = q.getX() + Math.cos(a) * r, z = q.getZ() + Math.sin(a) * r;
@@ -440,8 +471,11 @@ public final class WeaverService {
 			WorldFx.soundIn(dim, "minecraft:block.amethyst_cluster.break", "hostile", w.getX(), w.getY() + 14, w.getZ(), 3f, 0.8f);
 		}
 		if (b.at(60)) {
-			ElderStrikes.strike(w, p.getX(), p.getY(), p.getZ(), 4.2, 16f, u.delay(20), ElderStrikes.SPEAR);
-			WorldFx.soundIn(dim, "minecraft:item.trident.thunder", "hostile", p.getX(), p.getY() + 10, p.getZ(), 4f, 0.6f);
+			// The great needle, on its prey and with more of them against it on the nearest others too
+			for (ServerPlayer q : u.split(w, p, ElderPower.reach(44))) {
+				ElderStrikes.strike(w, q.getX(), q.getY(), q.getZ(), 4.2, 16f, u.delay(20), ElderStrikes.SPEAR);
+				WorldFx.soundIn(dim, "minecraft:item.trident.thunder", "hostile", q.getX(), q.getY() + 10, q.getZ(), 4f, 0.6f);
+			}
 		}
 		if (b.past(86)) {
 			end(w, u, 65);
@@ -565,13 +599,13 @@ public final class WeaverService {
 	}
 
 	/** Its kin come: Thinned from the village (only in the Seam, where they belong). */
-	private static void kin(Weaver w) {
+	private static void kin(Weaver w, int count) {
 		ServerLevel level = (ServerLevel) w.level();
 		if (!Dims.SEAM.equals(Dims.of(level))) {
 			return;
 		}
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		for (int i = 0; i < 3; i++) {
+		for (int i = 0; i < count; i++) {
 			BlockPos spot = ElderFx.ground(level, (int) Math.floor(w.getX()) + rnd.nextInt(-7, 8), (int) w.getY() + 2, (int) Math.floor(w.getZ()) + rnd.nextInt(-7, 8), 10);
 			if (spot != null) {
 				SeamFauna.summonThinned(level, spot);

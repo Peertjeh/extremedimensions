@@ -216,9 +216,11 @@ public class BossTests {
 		for (BlockPos q : BlockPos.betweenClosed(centre.offset(-28, -10, -28), centre.offset(28, 32, 28))) {
 			before.put(q.immutable(), level.getBlockState(q));
 		}
-		double build = Config.ELDER_ARENA_BUILD_SECONDS, dissolve = Config.ELDER_ARENA_DISSOLVE_SECONDS;
+		double build = Config.ELDER_ARENA_BUILD_SECONDS, dissolve = Config.ELDER_ARENA_DISSOLVE_SECONDS, size = Config.ELDER_ARENA_SIZE;
 		int flight = Config.ELDER_ARENA_FLIGHT_TICKS, linger = Config.ELDER_ARENA_LINGER_SECONDS, on = Config.ELDER_ARENA;
 		Config.ELDER_ARENA = 1;
+		// At its own size, so all of it stands within the forced chunks and the ground looked at
+		Config.ELDER_ARENA_SIZE = 1.0;
 		Config.ELDER_ARENA_BUILD_SECONDS = 1;
 		Config.ELDER_ARENA_FLIGHT_TICKS = 10;
 		Config.ELDER_ARENA_LINGER_SECONDS = 1;
@@ -235,6 +237,7 @@ public class BossTests {
 			Config.ELDER_ARENA_FLIGHT_TICKS = flight;
 			Config.ELDER_ARENA_LINGER_SECONDS = linger;
 			Config.ELDER_ARENA_DISSOLVE_SECONDS = dissolve;
+			Config.ELDER_ARENA_SIZE = size;
 			for (int x = -3; x <= 3; x++) {
 				for (int z = -3; z <= 3; z++) {
 					level.setChunkForced((cx >> 4) + x, (cz >> 4) + z, false);

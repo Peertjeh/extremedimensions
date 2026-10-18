@@ -19,12 +19,14 @@ import net.minecraft.world.phys.AABB;
 
 /**
  * Renders an Elder at its colossal scale, with a second, full-bright pass for everything that burns: lanterns, eyes,
- * cracks, threads and halos. The light breathes slowly and flares while a blow is being made.
+ * cracks, threads and halos. The light breathes slowly and flares while a blow is being made, and turns the colour of
+ * that blow as it begins (or goes out), fading back after: see {@link ElderTints}.
  */
 public class ElderRenderer<T extends ElderBoss> extends MobRenderer<T, ElderRenderState, EntityModel<ElderRenderState>> {
 	private final Identifier texture;
 	private final float scale;
-	/** Per entity: the last action seen and when (client ticks) it began. */
+	private final String name;
+	/** Per entity: the last action begun (its count), when (client ticks) it began, the tell of the one before, the action. */
 	private final Map<T, float[]> actions = new WeakHashMap<>();
 
 	public ElderRenderer(EntityRendererProvider.Context context, EntityModel<ElderRenderState> model, EntityModel<ElderRenderState> glowModel,
@@ -32,9 +34,18 @@ public class ElderRenderer<T extends ElderBoss> extends MobRenderer<T, ElderRend
 		super(context, model, shadow);
 		this.texture = ExtremeDimensions.id("textures/entity/elder/" + name + ".png");
 		this.scale = scale;
+		this.name = name;
 		Identifier glowTex = ExtremeDimensions.id("textures/entity/elder/" + name + "_glow.png");
-		this.addLayer(new LivingEntityEmissiveLayer<>(this, state -> glowTex, (state, age) -> state.glow, glowModel,
+		String[] names = ElderTints.names(name);
+		Identifier[] tints = new Identifier[names.length];
+		for (int i = 0; i < names.length; i++) {
+			tints[i] = ExtremeDimensions.id("textures/entity/elder/" + name + "_glow_" + names[i] + ".png");
+		}
+		// Its own light, and over it the light of a blow fading in as its own fades out
+		this.addLayer(new LivingEntityEmissiveLayer<>(this, state -> glowTex, (state, age) -> state.glow * (1 - state.tintMix), glowModel,
 				RenderTypes::entityTranslucentEmissive, false));
+		this.addLayer(new LivingEntityEmissiveLayer<>(this, state -> tints[Math.max(0, Math.min(tints.length - 1, state.tint))],
+				(state, age) -> state.tint < 0 ? 0 : state.glow * state.tintMix, glowModel, RenderTypes::entityTranslucentEmissive, false));
 	}
 
 	@Override
@@ -46,11 +57,14 @@ public class ElderRenderer<T extends ElderBoss> extends MobRenderer<T, ElderRend
 	public void extractRenderState(T boss, ElderRenderState state, float partialTick) {
 		super.extractRenderState(boss, state, partialTick);
 		float now = boss.tickCount + partialTick;
-		float[] a = actions.computeIfAbsent(boss, k -> new float[] {-1, now});
 		int action = boss.getAction();
-		if (action != (int) a[0]) {
-			a[0] = action;
+		float[] a = actions.computeIfAbsent(boss, k -> new float[] {-1, now, ElderTints.NONE, action});
+		int take = boss.getTake();
+		if (take != (int) a[0]) {
+			a[2] = (int) a[0] < 0 ? ElderTints.NONE : ElderTints.of(name, (int) a[3]);
+			a[0] = take;
 			a[1] = now;
+			a[3] = action;
 		}
 		state.action = action;
 		// The action plays at the tempo the server runs it at
@@ -66,10 +80,34 @@ public class ElderRenderer<T extends ElderBoss> extends MobRenderer<T, ElderRend
 		}
 		boolean calm = com.extremedimensions.client.ui.Ui.calm();
 		state.glow = Math.min(1.0F, calm ? 0.9F : breathe + flare);
+		tell(state, now - a[1], ElderTints.of(name, action), (int) a[2], now);
 		if (state.deathTime > 0) {
 			// Dying, it burns at full light until it breaks apart, without the red of a wound
 			state.glow = 1.0F;
+			state.tintMix = 0;
 			state.hasRedOverlay = false;
+		}
+	}
+
+	/**
+	 * The colour of a blow: it comes into its light over a few ticks as the blow begins, and fades back to its own as the
+	 * blow ends; a dark blow puts its light out (flickering) and lets it come back after.
+	 */
+	private static void tell(ElderRenderState state, float since, int now, int before, float t) {
+		float in = ElderAnim.smooth(since / 4F), out = 1 - ElderAnim.smooth(since / 8F);
+		state.tint = ElderTints.NONE;
+		state.tintMix = 0;
+		if (now >= 0) {
+			state.tint = now;
+			// The same colour again (a blow struck twice) does not fade out and in between
+			state.tintMix = before == now ? 1 : in;
+		} else if (before >= 0 && out > 0) {
+			state.tint = before;
+			state.tintMix = out;
+		}
+		float dark = now == ElderTints.DARK ? in : before == ElderTints.DARK ? out : 0;
+		if (dark > 0) {
+			state.glow *= 1 - dark * (0.85F - 0.1F * Mth.sin(t * 1.7F));
 		}
 	}
 

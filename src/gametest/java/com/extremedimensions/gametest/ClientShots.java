@@ -45,10 +45,10 @@ public class ClientShots implements FabricClientGameTest {
 	private static void liveFight(ClientGameTestContext ctx, TestSingleplayerContext sp, String name, int settle,
 			java.util.function.Consumer<MinecraftServer> summon, java.util.function.BiPredicate<net.minecraft.world.entity.Entity, Integer> force,
 			int[] blows, String[] blowNames) {
-		// Each fight on untouched ground, away from the last one's craters and fires (on top of it, not inside a hill)
+		// Each fight on untouched ground, away from the last one's craters, fires and arena (on top of it, not inside a hill)
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
-			double nx = p.getX() + 120, nz = p.getZ();
+			double nx = p.getX() + 260, nz = p.getZ();
 			int bx = (int) Math.floor(nx), bz = (int) Math.floor(nz);
 			// load the chunk first: an unloaded one has no ground to stand on
 			p.level().getChunk(bx >> 4, bz >> 4);
@@ -77,6 +77,13 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("12_fight_" + name + "_" + blowNames[i]);
 			ctx.waitTicks(45);
 		}
+		// The whole arena from high over it, by now built
+		double[] stood = sp.getServer().computeOnServer(s -> new double[] {player(s).getX(), player(s).getY(), player(s).getZ()});
+		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~70 ~ 0 70");
+		ctx.waitTicks(12);
+		ctx.takeScreenshot("12_fight_" + name + "_arena");
+		sp.getServer().runOnServer(s -> player(s).teleportTo(stood[0], stood[1], stood[2]));
+		ctx.waitTicks(10);
 		sp.getServer().runOnServer(s -> elders(s).forEach(e -> force.test(e, com.extremedimensions.elder.ElderBoss.ULTIMATE)));
 		ctx.waitTicks(38);
 		face(sp, name);

@@ -419,8 +419,8 @@ public final class ModPackets {
 
 	/**
 	 * Server -> client: the cinema of an Elder's fight. {@code kind}: 0 = its title card as it arrives, 1 = the screen
-	 * shakes ({@code strength}, for {@code value} ticks), 2 = the name of a great blow ({@code key}), 3 = its ultimate
-	 * begins ({@code key} its name, {@code value} ticks long: black bars, its name, a gathering dark), 4 = a flash of
+	 * shakes ({@code strength}, for {@code value} ticks), 2 = no longer sent (blows went unnamed in 2.30), 3 = its
+	 * ultimate begins ({@code key} its name, {@code value} ticks long: black bars, unnamed, a gathering dark), 4 = a flash of
 	 * light ({@code strength}), 5 = the ultimate breaks (the bars lift), 6 = it dies ({@code value} its entity id,
 	 * {@code strength} the ticks its death takes, {@code key} its title: the bars close in and the view is held on it),
 	 * 7 = it forms ({@code value} its entity id, {@code strength} the ticks it takes, negative to leave the view free,
@@ -429,7 +429,6 @@ public final class ModPackets {
 	public record BossFxPayload(int kind, int boss, int value, float strength, String key) implements CustomPacketPayload {
 		public static final int INTRO = 0;
 		public static final int SHAKE = 1;
-		public static final int MOVE = 2;
 		public static final int ULTIMATE = 3;
 		public static final int FLASH = 4;
 		public static final int ULTIMATE_END = 5;

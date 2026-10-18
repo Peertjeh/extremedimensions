@@ -93,9 +93,13 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 			lanterns[i].xRot += Mth.cos(t * 0.041F + i * 1.1F) * 0.07F + 0.6F * rush + Mth.cos(t * 0.35F + i * 0.8F) * 0.6F * spin;
 		}
 		float spread = action == Matriarch.BARRAGE ? ElderAnim.env(at, 16, 30, 12) : ultimate ? ElderAnim.env(at - 30, 60, 100, 10) : 0;
+		// As she rears for her charge her branches stand on end, quivering: the sign of what comes
+		float bristle = action == Matriarch.RUSH ? ElderAnim.env(at, 8, 12, 6) : 0;
 		for (int i = 0; i < branches.length; i++) {
 			float side = (i % 2 == 0) ? 1 : -1;
-			branches[i].zRot += Mth.sin(t * 0.025F + i) * 0.015F + Mth.sin(t * 1.3F + i) * 0.07F * shake - side * 0.25F * spread;
+			branches[i].zRot += Mth.sin(t * 0.025F + i) * 0.015F + Mth.sin(t * 1.3F + i) * 0.07F * shake - side * 0.25F * spread
+					+ side * 0.3F * bristle + Mth.sin(t * 2.2F + i * 1.9F) * 0.06F * bristle;
+			branches[i].xRot -= 0.3F * bristle;
 			branches[i].xRot += Mth.cos(t * 0.02F + i * 0.7F) * 0.01F + 0.35F * rush + 0.2F * spread;
 		}
 		armL.xRot += Mth.sin(t * 0.045F) * 0.04F;

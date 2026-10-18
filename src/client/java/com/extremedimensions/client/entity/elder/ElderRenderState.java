@@ -9,4 +9,7 @@ public class ElderRenderState extends LivingEntityRenderState {
 	public float actionTime;
 	/** Brightness of the lanterns, eyes and threads (0..1). */
 	public float glow = 1.0F;
+	/** The colour its light is turning for the blow (see {@link ElderTints}; negative for none), and how far (0..1). */
+	public int tint = -1;
+	public float tintMix;
 }

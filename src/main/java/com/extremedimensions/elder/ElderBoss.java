@@ -36,9 +36,13 @@ public abstract class ElderBoss extends Monster {
 
 	private static final EntityDataAccessor<Integer> ACTION = SynchedEntityData.defineId(ElderBoss.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Float> TEMPO = SynchedEntityData.defineId(ElderBoss.class, EntityDataSerializers.FLOAT);
+	/** Counts every action begun, so the client also sees a blow struck twice in a row begin again. */
+	private static final EntityDataAccessor<Integer> TAKE = SynchedEntityData.defineId(ElderBoss.class, EntityDataSerializers.INT);
 
 	/** How it moves (server only). */
 	final ElderMotion motion = new ElderMotion();
+	/** The damage of its blows, as a multiple (how hard it fights, with the players fighting it; see {@link ElderPower}). */
+	float damageFactor = 1;
 
 	protected ElderBoss(EntityType<? extends Monster> type, Level level) {
 		super(type, level);
@@ -62,6 +66,7 @@ public abstract class ElderBoss extends Monster {
 		super.defineSynchedData(builder);
 		builder.define(ACTION, IDLE);
 		builder.define(TEMPO, 1.0F);
+		builder.define(TAKE, 0);
 	}
 
 	public int getAction() {
@@ -70,6 +75,12 @@ public abstract class ElderBoss extends Monster {
 
 	public void setAction(int action) {
 		this.entityData.set(ACTION, action);
+		this.entityData.set(TAKE, getTake() + 1);
+	}
+
+	/** How many actions it has begun (see {@link #TAKE}). */
+	public int getTake() {
+		return this.entityData.get(TAKE);
 	}
 
 	/** How fast its actions run (1 = their own pace); the client plays them at the same pace. */

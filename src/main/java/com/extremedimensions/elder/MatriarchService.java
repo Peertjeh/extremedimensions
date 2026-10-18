@@ -173,9 +173,9 @@ public final class MatriarchService {
 			f.ticks++;
 			ServerPlayer p = s.getPlayerList().getPlayer(f.target);
 			double hx = f.hx - (p == null ? 0 : p.getX()), hz = f.hz - (p == null ? 0 : p.getZ());
-			if (p == null || !p.isAlive() || p.level() != m.level() || hx * hx + hz * hz > 80 * 80) {
+			if (p == null || !p.isAlive() || p.level() != m.level() || hx * hx + hz * hz > ElderPower.reach(80) * ElderPower.reach(80)) {
 				// Her prey gone: she turns on another near her, if there is one, and only sinks back when there is none
-				p = f.successor(m, 48);
+				p = f.successor(m, ElderPower.reach(48));
 				if (p == null) {
 					later.add(() -> fade(m));
 					continue;
@@ -222,7 +222,7 @@ public final class MatriarchService {
 		if ((f.brood == 0 && frac <= 0.7f) || (f.brood == 1 && frac <= 0.35f)) {
 			f.brood++;
 			later.add(() -> {
-				HollowService.brood((ServerLevel) m.level(), m.blockPosition(), f.hoard, Math.max(0, Config.MATRIARCH_BROOD));
+				HollowService.brood((ServerLevel) m.level(), m.blockPosition(), f.hoard, Math.max(0, Config.MATRIARCH_BROOD) + ElderPower.brood(f.fighters));
 				ElderFx.roar(m, 5f, 0.55f);
 				ElderFx.shake(m, m.getX(), m.getZ(), 48, 0.9f, 25);
 				ElderStrikes.wave(m, m.getX(), m.getY(), m.getZ(), 0.8, 18, 4f, "extremedimensions:lurker_wisp", null);
@@ -250,7 +250,7 @@ public final class MatriarchService {
 			}
 			f.walk(m, 3.4, 2.5f);
 			// Out of her reach high above her (a pillar, a tower): roots lash up and drag them down
-			if (p.getY() - m.getY() > 9 && dist < 24 && !p.isCreative() && !p.isSpectator()) {
+			if (p.getY() - m.getY() > 9 && dist < ElderPower.reach(24) && !p.isCreative() && !p.isSpectator()) {
 				if (++f.perched >= 40) {
 					f.perched = 0;
 					lash(m, p);
@@ -291,7 +291,7 @@ public final class MatriarchService {
 			}
 			case Matriarch.ROOTS -> {
 				if (b.at(20)) {
-					for (ServerPlayer q : ElderFx.targets(m, 28)) {
+					for (ServerPlayer q : ElderFx.targets(m, ElderPower.reach(28))) {
 						ElderStrikes.strike(m, q.getX(), q.getY(), q.getZ(), 2.8, 6f, f.delay(16), ElderStrikes.ROOTS);
 					}
 					WorldFx.soundIn(dim, "minecraft:block.rooted_dirt.break", "hostile", m.getX(), m.getY(), m.getZ(), 4f, 0.4f);
@@ -346,7 +346,7 @@ public final class MatriarchService {
 	private static void lanterns(Matriarch m, Fight f, ServerPlayer p) {
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		WorldFx.soundIn(ElderFx.dim(m), "minecraft:block.chain.break", "hostile", m.getX(), m.getY() + 10, m.getZ(), 4f, 0.5f);
-		for (ServerPlayer q : ElderFx.targets(m, 40)) {
+		for (ServerPlayer q : ElderFx.targets(m, ElderPower.reach(40))) {
 			ElderStrikes.strike(m, q.getX(), q.getY(), q.getZ(), 3.2, 9f, f.delay(30), ElderStrikes.LANTERN);
 		}
 		for (int i = 0; i < 4; i++) {
@@ -373,11 +373,12 @@ public final class MatriarchService {
 	}
 
 	/** Thornbound Charge: she rears back, then hurls herself through the ground at her prey. */
-	private static void rush(Matriarch m, Fight f, ServerPlayer p, Beat b) {
+	private static void rush(Matriarch m, Fight f, ServerPlayer prey, Beat b) {
 		ServerLevel level = (ServerLevel) m.level();
+		// With more of them against her she turns and charges again, at the next one each time
+		ServerPlayer p = f.aimed(prey);
 		String dim = ElderFx.dim(m);
 		if (b.at(1)) {
-			ElderFx.call(m, "thornbound_charge");
 			ElderFx.roar(m, 5f, 0.5f);
 		}
 		if (b.between(0, 18)) {
@@ -420,7 +421,7 @@ public final class MatriarchService {
 					continue;
 				}
 				f.struck.add(q.getUUID());
-				q.hurtServer(level, level.damageSources().mobAttack(m), 16f);
+				q.hurtServer(level, ElderPower.great(level, m), 16f);
 				ElderFx.knock(q, m.getX() - f.dirX * 2, m.getZ() - f.dirZ * 2, 1.5, 0.85);
 			}
 		}
@@ -433,7 +434,7 @@ public final class MatriarchService {
 		if (b.past(44)) {
 			m.motion.brake(m, 0.06, 0);
 		}
-		if (b.past(58)) {
+		if (b.past(58) && !f.again(m, prey)) {
 			f.end(m, 55);
 		}
 	}
@@ -442,9 +443,6 @@ public final class MatriarchService {
 	private static void cathedral(Matriarch m, Fight f, Beat b) {
 		ServerLevel level = (ServerLevel) m.level();
 		String dim = ElderFx.dim(m);
-		if (b.at(1)) {
-			ElderFx.call(m, "cathedral_of_thorns");
-		}
 		double[] radius = {7, 13, 19};
 		for (int k = 0; k < 3; k++) {
 			double mark = 20 + k * 10;
@@ -482,11 +480,10 @@ public final class MatriarchService {
 	/** A Hundred Lanterns: her branches thrown wide, her lanterns hurled one after another as burning bombs. */
 	private static void barrage(Matriarch m, Fight f, Beat b) {
 		if (b.at(1)) {
-			ElderFx.call(m, "hundred_lanterns");
 			WorldFx.soundIn(ElderFx.dim(m), "minecraft:block.chain.break", "hostile", m.getX(), m.getY() + 10, m.getZ(), 5f, 0.4f);
 		}
 		if (b.every(4, 18) && b.t < 48) {
-			List<ServerPlayer> targets = ElderFx.targets(m, 44);
+			List<ServerPlayer> targets = ElderFx.targets(m, ElderPower.reach(44));
 			if (!targets.isEmpty()) {
 				int shot = (int) (b.t / 4);
 				ServerPlayer q = targets.get(shot % targets.size());
@@ -539,7 +536,7 @@ public final class MatriarchService {
 				}
 			}
 			if (b.every(20, 0)) {
-				ElderFight.markPlayers(m, ElderFx.targets(m, 64), "minecraft:end_rod");
+				ElderFight.markPlayers(m, ElderFx.targets(m, ElderPower.reach(64)), "minecraft:end_rod");
 			}
 		}
 		if (b.at(length * 0.75)) {

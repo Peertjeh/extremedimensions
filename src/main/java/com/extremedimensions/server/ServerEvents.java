@@ -85,6 +85,7 @@ public final class ServerEvents {
 			// Thorns and chains an Elder raised sink back, and its arena comes down, before the world is saved
 			com.extremedimensions.elder.ElderTerrain.clear();
 			com.extremedimensions.elder.ElderArena.clear();
+			com.extremedimensions.elder.ElderGaol.clear();
 			// Blocks of the Seam in the air land, and islands not yet finished are built again on the next visit
 			SeamService.stopping();
 			DataStore.markDirty();
@@ -101,6 +102,7 @@ public final class ServerEvents {
 			com.extremedimensions.elder.FerrymanService.clear();
 			com.extremedimensions.elder.MatriarchService.clear();
 			com.extremedimensions.elder.ElderStrikes.clear();
+			com.extremedimensions.elder.ElderSpells.clear();
 			com.extremedimensions.elder.AttackFx.clear();
 			com.extremedimensions.elder.WeaverService.clear();
 			com.extremedimensions.coop.FallenService.clear();
@@ -115,7 +117,10 @@ public final class ServerEvents {
 		});
 		ServerTickEvents.END_SERVER_TICK.register(ServerEvents::tick);
 		// A flying block's display that nothing is using (left over from a crash) is removed as it loads
-		net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> BlockFlight.loaded(entity));
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
+			BlockFlight.loaded(entity);
+			com.extremedimensions.elder.ElderGaol.loaded(entity);
+		});
 		// A block of an Elder's arena broken by a player drops nothing
 		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, blockEntity) ->
 				com.extremedimensions.elder.ElderArena.broken(level, pos));
@@ -132,6 +137,7 @@ public final class ServerEvents {
 			// A fallen player who leaves bleeds out
 			com.extremedimensions.coop.FallenService.onLeave(handler.getPlayer());
 			Requests.forget(handler.getPlayer());
+			com.extremedimensions.elder.ElderSpells.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.expedition.ExpeditionBar.forget(handler.getPlayer().getUUID());
 			DataStore.flush();
 		});
@@ -250,6 +256,12 @@ public final class ServerEvents {
 		});
 
 		UseItemCallback.EVENT.register((player, level, hand) -> {
+			// The Elders' spells forbid some things outright, on both sides (milk under the Matriarch's hex, rockets
+			// with bound wings)
+			InteractionResult forbidden = com.extremedimensions.elder.ElderSpells.refuse(player, player.getItemInHand(hand));
+			if (forbidden != InteractionResult.PASS) {
+				return forbidden;
+			}
 			if (player instanceof ServerPlayer fallen && com.extremedimensions.coop.FallenService.fallen(fallen)) {
 				return InteractionResult.FAIL;
 			}
@@ -303,6 +315,13 @@ public final class ServerEvents {
 
 		AttackEntityCallback.EVENT.register((player, level, hand, entity, hit) ->
 				player instanceof ServerPlayer fallen && com.extremedimensions.coop.FallenService.fallen(fallen) ? InteractionResult.FAIL : InteractionResult.PASS);
+		// A bar of the Ferryman's gaol struck from inside: enough blows break it (the blow itself does nothing more)
+		AttackEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
+			if (player instanceof ServerPlayer sp) {
+				com.extremedimensions.elder.ElderGaol.struck(sp, entity);
+			}
+			return InteractionResult.PASS;
+		});
 		AttackEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
 			if (player instanceof ServerPlayer sp && entity instanceof net.minecraft.world.entity.LivingEntity) {
 				CurseEffects.wear(sp);
@@ -483,6 +502,8 @@ public final class ServerEvents {
 		com.extremedimensions.elder.FerrymanService.tick(s);
 		com.extremedimensions.elder.MatriarchService.tick(s);
 		com.extremedimensions.elder.ElderStrikes.tick(s);
+		com.extremedimensions.elder.ElderSpells.sweep(s);
+		com.extremedimensions.elder.ElderGaol.tick(s);
 		com.extremedimensions.elder.ElderTerrain.tick(s);
 		com.extremedimensions.elder.WeaverService.tick(s);
 		com.extremedimensions.elder.ElderArena.tick(s);

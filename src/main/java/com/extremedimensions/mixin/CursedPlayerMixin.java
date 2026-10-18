@@ -18,7 +18,8 @@ import net.minecraft.world.entity.LivingEntity;
 
 /**
  * Everywhere curses that change numbers vanilla computes: the damage a cursed player takes (Kindling, Frostbitten,
- * Volatile, Glass Jaw) and how long effects last on them (Fading Brews, Lingering Ills).
+ * Volatile, Glass Jaw) and how long effects last on them (Fading Brews, Lingering Ills); and how hard an Elder's blows
+ * hit (see ElderPower).
  */
 @Mixin(LivingEntity.class)
 public abstract class CursedPlayerMixin {
@@ -36,7 +37,8 @@ public abstract class CursedPlayerMixin {
 		DamageSource source = extremedimensions$source;
 		extremedimensions$source = null;
 		if (source != null && (Object) this instanceof ServerPlayer player) {
-			return CurseEffects.damageTaken(player, source, amount);
+			// an Elder's blows hit as hard as it fights (see ElderPower), then the curses add their share
+			return CurseEffects.damageTaken(player, source, com.extremedimensions.elder.ElderPower.scale(source, amount));
 		}
 		return amount;
 	}

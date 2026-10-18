@@ -34,7 +34,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Blocks;
 
 /**
  * The Ferryman: on a long Nether expedition he may come to collect. His boat sails over lava and stone alike,
@@ -57,7 +56,7 @@ public final class FerrymanService {
 		boolean doubled;
 		double dirX, dirZ, lift;
 		final Set<UUID> struck = new HashSet<>();
-		final List<double[]> cages = new ArrayList<>();
+		final List<ElderGaol.Cage> gaols = new ArrayList<>();
 	}
 
 	private static final Map<UUID, Fare> FARES = new HashMap<>();
@@ -192,11 +191,12 @@ public final class FerrymanService {
 			if (!(ent instanceof Ferryman f) || !f.isAlive()) {
 				fare.bar.removeAllPlayers();
 				FARES.remove(e.getKey());
+				ElderGaol.forget(e.getKey());
 				continue;
 			}
 			fare.ticks++;
 			ServerPlayer p = s.getPlayerList().getPlayer(fare.target);
-			if (p == null || !p.isAlive() || p.level() != f.level() || f.distanceToSqr(p) > 80 * 80) {
+			if (p == null || !p.isAlive() || p.level() != f.level() || f.distanceToSqr(p) > ElderPower.reach(80) * ElderPower.reach(80)) {
 				// Gone home, outrun or slipped away with him still sailing: he collects his fare all the same (a death is
 				// paid for enough). One who left the game pays when they come back.
 				if (p == null) {
@@ -295,12 +295,14 @@ public final class FerrymanService {
 			}
 			case Ferryman.CHAIN -> {
 				if (b.at(10) && !p.isCreative() && !p.isSpectator()) {
-					// A chain of soul fire lashes out from the boat and hauls its passenger in
-					AttackFx.line((ServerLevel) f.level(), 1, AttackFx.LINE_CHAIN, f.getX(), f.getY() + 9, f.getZ(), p.getX(), p.getY() + 1, p.getZ(), 6);
-					AttackFx.impact((ServerLevel) f.level(), 1, AttackFx.IMPACT_WISP, p.getX(), p.getY() + 1, p.getZ(), 1);
-					WorldFx.soundIn(dim, "minecraft:block.chain.break", "hostile", p.getX(), p.getY(), p.getZ(), 3f, 0.5f);
-					ElderFx.pull(f, p, 9);
-					WorldFx.effect(p, MobEffects.SLOWNESS, 2, 1);
+					// A chain of soul fire lashes out from the boat and hauls its passenger in (more passengers, more chains)
+					for (ServerPlayer q : fare.split(f, p, ElderPower.reach(36))) {
+						AttackFx.line((ServerLevel) f.level(), 1, AttackFx.LINE_CHAIN, f.getX(), f.getY() + 9, f.getZ(), q.getX(), q.getY() + 1, q.getZ(), 6);
+						AttackFx.impact((ServerLevel) f.level(), 1, AttackFx.IMPACT_WISP, q.getX(), q.getY() + 1, q.getZ(), 1);
+						WorldFx.soundIn(dim, "minecraft:block.chain.break", "hostile", q.getX(), q.getY(), q.getZ(), 3f, 0.5f);
+						ElderFx.pull(f, q, 9);
+						WorldFx.effect(q, MobEffects.SLOWNESS, 2, 1);
+					}
 				}
 				if (b.past(24)) {
 					end(f, fare, 50);
@@ -310,8 +312,8 @@ public final class FerrymanService {
 				if (b.at(16)) {
 					double yaw = Math.toRadians(f.getYRot());
 					int n = 0;
-					for (ServerPlayer q : ElderFx.targets(f, 48)) {
-						if (n >= 4) {
+					for (ServerPlayer q : ElderFx.targets(f, ElderPower.reach(48))) {
+						if (n >= Math.min(8, 3 + fare.fighters)) {
 							break;
 						}
 						for (int i = 0; i < (q == p ? 3 : 1); i++) {
@@ -341,7 +343,7 @@ public final class FerrymanService {
 				}
 			}
 			case Ferryman.CROSSING -> crossing(f, fare, p, b);
-			case Ferryman.GAOL -> gaol(f, fare, b);
+			case Ferryman.GAOL -> gaol(f, fare, p, b);
 			case Ferryman.TIDE -> tide(f, fare, b);
 			case ElderBoss.ULTIMATE -> finalToll(f, fare, b);
 			default -> end(f, fare, 40);
@@ -381,11 +383,12 @@ public final class FerrymanService {
 	}
 
 	/** Crossing of the Dead: the boat backs off, then charges straight through its passenger, splitting the ground. */
-	private static void crossing(Ferryman f, Fare fare, ServerPlayer p, Beat b) {
+	private static void crossing(Ferryman f, Fare fare, ServerPlayer prey, Beat b) {
 		ServerLevel level = fare.level;
 		String dim = ElderFx.dim(f);
+		// With more passengers aboard it comes about and crosses again, at the next one each time
+		ServerPlayer p = fare.aimed(prey);
 		if (b.at(1)) {
-			ElderFx.call(f, "crossing_of_the_dead");
 			WorldFx.soundIn(dim, "minecraft:block.bell.use", "hostile", f.getX(), f.getY() + 8, f.getZ(), 5f, 0.7f);
 		}
 		if (b.between(0, 20)) {
@@ -431,7 +434,7 @@ public final class FerrymanService {
 					continue;
 				}
 				fare.struck.add(q.getUUID());
-				q.hurtServer(level, level.damageSources().mobAttack(f), 14f);
+				q.hurtServer(level, ElderPower.great(level, f), 14f);
 				double side = (-qx * fare.dirZ + qz * fare.dirX) >= 0 ? 1 : -1;
 				q.setDeltaMovement(-fare.dirZ * side * 1.3 + fare.dirX * 0.5, 0.7, fare.dirX * side * 1.3 + fare.dirZ * 0.5);
 				q.needsSync = true;
@@ -443,59 +446,51 @@ public final class FerrymanService {
 		if (b.past(46)) {
 			f.motion.brake(f, 0.08, 0.1);
 		}
-		if (b.past(60)) {
+		if (b.past(60) && !fare.again(f, prey)) {
 			end(f, fare, 55);
 		}
 	}
 
-	/** Gaol of Chains: a cage of chains bursts out of the ground round each passenger, then crushes inwards. */
-	private static void gaol(Ferryman f, Fare fare, Beat b) {
+	/**
+	 * Gaol of Chains: a closed cage of iron bars rises round each passenger it falls on, chains drawn over it for a roof,
+	 * and after a moment it crushes inwards. No one walks, jumps or pearls out; whoever breaks a bar gets out through the
+	 * gap, and whoever stays takes the blow.
+	 */
+	private static void gaol(Ferryman f, Fare fare, ServerPlayer p, Beat b) {
 		ServerLevel level = fare.level;
 		String dim = ElderFx.dim(f);
+		int hold = (int) Math.round(Math.max(0.5, Config.FERRYMAN_GAOL_SECONDS) * 20);
 		if (b.at(1)) {
-			ElderFx.call(f, "gaol_of_chains");
 			WorldFx.soundIn(dim, "minecraft:block.chain.break", "hostile", f.getX(), f.getY() + 8, f.getZ(), 5f, 0.4f);
 		}
 		if (b.at(12)) {
-			fare.cages.clear();
-			int n = 0;
-			for (ServerPlayer q : ElderFx.targets(f, 40)) {
-				if (n++ >= 3) {
-					break;
-				}
-				double cx = q.getX(), cy = q.getY(), cz = q.getZ();
-				fare.cages.add(new double[] {cx, cy, cz});
-				for (int i = 0; i < 14; i++) {
-					double a = 2 * Math.PI * i / 14;
-					ElderTerrain.column(level, cx + Math.cos(a) * 3.2, cy, cz + Math.sin(a) * 3.2, 4, Blocks.IRON_BARS, 90);
-				}
-				AttackFx.ring(level, 1, cx, cy, cz, 3.2, (int) (26 / Math.max(0.5, f.getTempo())));
-				WorldFx.effect(q, MobEffects.SLOWNESS, 4, 1);
-				WorldFx.soundIn(dim, "minecraft:block.chain.place", "hostile", cx, cy, cz, 3f, 0.5f);
+			fare.gaols.clear();
+			for (ServerPlayer q : fare.split(f, p, ElderPower.reach(40))) {
+				ElderGaol.Cage c = ElderGaol.raise(f, q);
+				fare.gaols.add(c);
+				// The ring fills as the time runs out
+				AttackFx.ring(level, 1, c.x, c.y, c.z, ElderGaol.RADIUS, hold);
 			}
 		}
-		if (b.between(12, 36) && fare.ticks % 3 == 0) {
-			// Chains of soul fire from the bars to a point overhead, drawing in as the cage crushes
-			for (double[] c : fare.cages) {
-				double r = 3.2 - 2.2 * (b.t - 12) / 24.0;
-				for (int i = 0; i < 7; i++) {
-					double a = 2 * Math.PI * i / 7 + b.t * 0.05;
-					AttackFx.line(level, 1, AttackFx.LINE_CHAIN, c[0] + Math.cos(a) * r, c[1], c[2] + Math.sin(a) * r, c[0], c[1] + 5.5, c[2], 3);
+		if (!b.past(12)) {
+			return;
+		}
+		boolean done = true;
+		for (ElderGaol.Cage c : fare.gaols) {
+			if (!c.crushed && c.age >= hold) {
+				ElderGaol.crush(f, c);
+			}
+			if (!c.crushed && fare.ticks % 4 == 0) {
+				// Its roof: chains of soul fire from the tops of the bars to a point overhead
+				for (int i = 0; i < 8; i++) {
+					double a = 2 * Math.PI * i / 8;
+					AttackFx.line(level, 1, AttackFx.LINE_CHAIN, c.x + Math.cos(a) * ElderGaol.RADIUS, c.y + ElderGaol.HEIGHT, c.z + Math.sin(a) * ElderGaol.RADIUS,
+							c.x, c.y + ElderGaol.HEIGHT + 1.5, c.z, 4);
 				}
 			}
+			done &= c.crushed && c.age - c.crushedAt >= 10;
 		}
-		if (b.at(36)) {
-			for (double[] c : fare.cages) {
-				AttackFx.impact(level, 1, ElderStrikes.SOULFALL, c[0], c[1], c[2], 3.6);
-				WorldFx.soundIn(dim, "minecraft:entity.iron_golem.damage", "hostile", c[0], c[1], c[2], 3f, 0.4f);
-				for (ServerPlayer q : ElderFx.targets(f, 60)) {
-					if (q.distanceToSqr(c[0], c[1], c[2]) < 3.6 * 3.6) {
-						q.hurtServer(level, level.damageSources().mobAttack(f), 14f);
-					}
-				}
-			}
-		}
-		if (b.past(48)) {
+		if (done || b.past(400)) {
 			end(f, fare, 55);
 		}
 	}
@@ -503,9 +498,6 @@ public final class FerrymanService {
 	/** Tide of the Styx: the pole planted in the boat, two tides of soul fire roll out over the ground. */
 	private static void tide(Ferryman f, Fare fare, Beat b) {
 		String dim = ElderFx.dim(f);
-		if (b.at(1)) {
-			ElderFx.call(f, "tide_of_the_styx");
-		}
 		if (b.between(0, 18)) {
 			WorldFx.particleIn(fare.level, "minecraft:soul", f.getX(), f.getY() + 6, f.getZ(), 4, 3, 4, 0.05, 4);
 		}
@@ -554,14 +546,14 @@ public final class FerrymanService {
 		}
 		if (b.between(20, length - 20) && b.every(5, 20)) {
 			ThreadLocalRandom rnd = ThreadLocalRandom.current();
-			List<ServerPlayer> targets = ElderFx.targets(f, 48);
+			List<ServerPlayer> targets = ElderFx.targets(f, ElderPower.reach(48));
 			double x, z;
 			if (!targets.isEmpty() && rnd.nextInt(3) == 0) {
 				ServerPlayer q = targets.get(rnd.nextInt(targets.size()));
 				x = q.getX() + rnd.nextDouble(-2, 2);
 				z = q.getZ() + rnd.nextDouble(-2, 2);
 			} else {
-				double a = rnd.nextDouble() * Math.PI * 2, r = 6 + rnd.nextDouble(24);
+				double a = rnd.nextDouble() * Math.PI * 2, r = 6 + rnd.nextDouble(ElderPower.reach(24));
 				x = f.getX() + Math.cos(a) * r;
 				z = f.getZ() + Math.sin(a) * r;
 			}
@@ -569,7 +561,7 @@ public final class FerrymanService {
 			ElderStrikes.strike(f, x, Double.isNaN(y) ? f.getY() - fare.lift : y, z, 2.6, 7f, 16, ElderStrikes.SOULFALL);
 		}
 		if (b.every(20, 0)) {
-			ElderFight.markPlayers(f, ElderFx.targets(f, 64), "minecraft:soul_fire_flame");
+			ElderFight.markPlayers(f, ElderFx.targets(f, ElderPower.reach(64)), "minecraft:soul_fire_flame");
 		}
 		if (b.at(length - 10)) {
 			// The boat comes down
@@ -627,6 +619,7 @@ public final class FerrymanService {
 	public static void onDefeat(Ferryman f, Entity killer) {
 		Fare fare = FARES.remove(f.getUUID());
 		ElderArena.release(f);
+		ElderGaol.forget(f.getUUID());
 		ElderStrikes.forget(f);
 		ElderFx.silence(f, ElderFx.MUSIC_FERRYMAN);
 		if (fare == null) {
@@ -660,6 +653,7 @@ public final class FerrymanService {
 	public static void fade(Ferryman f) {
 		Fare fare = FARES.remove(f.getUUID());
 		ElderArena.release(f);
+		ElderGaol.forget(f.getUUID());
 		if (fare != null) {
 			fare.abandonUltimate(BOSS);
 			fare.bar.removeAllPlayers();

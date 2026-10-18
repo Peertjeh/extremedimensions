@@ -1,5 +1,58 @@
 # Changelog
 
+## 2.30.0: The Elders' Wrath
+
+### Changed
+- **The Elders fight harder, and harder still against more.** Each Elder has half as much health again and its blows
+  hit half as hard again. For every player fighting it beyond the first it gains half its health once more, its blows
+  a tenth more damage, and its pause between blows shrinks by a tenth (to no less than six tenths). Its great blows fall
+  on up to three players at once: the Matriarch's charge and the Ferryman's crossing come about and come again at the
+  next player, the Weaver's Lance splits into a beam for each, and spears, webs, chains and cages fall on each. More
+  players also bring more brood (Hollowlings, Thinned).
+- **Each Elder's great blow goes through armour,** as the Warden's sonic boom does: the Matriarch's Thornbound Charge,
+  the Ferryman's Crossing of the Dead and the Weaver's Seraphic Lance. Netherite and Protection IV no longer shrug them
+  off.
+- **No names on the screen.** The names of the Elders' blows and of their ultimates are gone. Each blow is read from the
+  Elder itself: its light turns the colour of the blow as it begins (the Matriarch red for her charge, green for thorns
+  out of the ground, amber for her lanterns, white for her wail; the Ferryman red for his crossing, sea-green for the
+  tide, gold for the knell, white for the pole, soul-blue for his lanterns, and his light goes out as the gaol closes;
+  the Weaver blue-white for the Lance, crimson for the thousand needles, silver for needles, and dark as it unravels),
+  its body moves into it (the Matriarch's branches stand on end before she charges), and each blow has a sound of its
+  own, with subtitles. The ultimate is known by the black bars, the fog, the music and the swelling Elder; its warning
+  says only how far its curse reaches. The title card as an Elder arrives and the messages over the hotbar stay.
+- **The Ferryman's Gaol of Chains is a closed cage.** Sixteen bars of iron stand round each passenger it falls on, chains
+  drawn over them for a roof, whatever the rules on griefing. No one walks, jumps or pearls out. Strike one bar three
+  times and it breaks; through that gap you get out. After a second and a half the cage crushes inwards on whoever is
+  still inside.
+- **The Weaver's blows land sooner.** Once it starts a blow, the blow comes down sooner than it did; it strikes no more
+  often, the time saved goes into the pause after. The Seraphic Lance burns half as long again, over a wider arc at the
+  same speed, and the Weaver holds still until its beams have burnt out.
+- **Arenas four times the size.** The sigil is 97 blocks across, its rings and spokes spread out with it; eight towers
+  stand 72 blocks out, taller, with eight more in a ring at 94; sixty broken islands hang over it, larger, from 12 to 55
+  blocks up and up to 110 blocks out. The Elders' ranged blows reach twice as far to match. An arena still builds and
+  comes apart block by block: blocks fly where a player is near enough to see them (at most 700 in the air at once),
+  the rest appear in their places. It takes 18 seconds to build and 10 to come apart.
+
+### Added
+- **The Matriarch's hex.** Everyone within her reach walks at three quarters of their speed, and no milk will go down
+  while the hex lies on them. It shows as an effect with its own icon for as long as you stay in reach of her.
+- **The Ferryman's weight.** Everyone within his reach jumps only seven tenths as high (with a curse on top, all the
+  worse). It shows as an effect with its own icon.
+- **No gliding near an Elder.** Glide on elytra near one for a second and it pulls you out of the air (the Matriarch
+  with roots, the Ferryman with a chain, the Weaver with a thread): a hard drag down, 6 damage, and your wings are
+  bound for 10 seconds, shown as an effect. Bound wings will not open and no rocket will lift you.
+- A death message for a great blow that went through armour.
+- Settings for all of it: the Elders' health and damage and how they grow per player, the shortest pause, how many
+  players a great blow falls on, the armour-piercing blow, the range within which players count as fighting, the
+  reach of ranged blows, extra brood per player, the reach of the spells, the elytra snare (after how long, its damage,
+  how long wings stay bound), the hex's slowness and whether it sours milk, the weight's lower jump, the gaol's blows to
+  break a bar, its time and its damage, how much sooner the Weaver's blows land, how long its Lance burns, and how many
+  arena blocks fly at once and from how far off they fly. The arena size goes up to 5.
+- Gametests: the Elders' growth with the players fighting them, their health following the players near them in a
+  fight, the hex (slowness, sour milk), the weight, a flyer pulled down with wings bound (no gliding, no rockets), the
+  gaol holding its passenger until a bar breaks and letting them out through the gap, and the longer Lance. The client
+  test photographs each arena from high over it.
+
 ## 2.29.0: Vanilla Pixels
 
 ### Changed

@@ -12,11 +12,11 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 
 /**
  * The cinema of an Elder's fight, drawn over the game. As an Elder arrives its name is struck across the screen with
- * its title beneath; the names of its great blows flash up under the health bars as it calls them; when it unleashes
- * its ultimate black bars close in from above and below, the ultimate's name is slashed across the middle, the edges
- * of the screen darken in its colour and a thin line in the lower bar runs out with its time; when it breaks, a flash,
- * and the bars lift. As an Elder forms the bars close in the same way, with a line for it in the upper bar, until its
- * name is struck. Calm mode keeps the bars and names but drops the flashes and the pulsing.
+ * its title beneath. Its blows are not named: they are read from the Elder itself (its light, its body, its sounds).
+ * When it unleashes its ultimate black bars close in from above and below, unnamed, the edges of the screen darken in
+ * its colour and a thin line in the lower bar runs out with its time; when it breaks, a flash, and the bars lift. As an
+ * Elder forms the bars close in the same way, with a line for it in the upper bar, until its name is struck; as it
+ * dies they close in on its name. Calm mode keeps the bars and names but drops the flashes and the pulsing.
  */
 public class BossCinema implements HudElement {
 	private static final String[] NAMES = {"matriarch", "ferryman", "weaver"};
@@ -24,14 +24,13 @@ public class BossCinema implements HudElement {
 
 	private static long introAt = -1;
 	private static int introBoss;
-	private static long moveAt = -1;
-	private static String moveKey = "";
-	private static int moveBoss;
 	private static long ultAt = -1, ultEnd = -1, ultLength = 1;
 	private static String ultKey = "";
 	private static String ultLabel = "gui.extremedimensions.elder.ultimate_label";
-	/** Whether the ultimate's name is slashed across the middle as the bars close (not as an Elder forms). */
+	/** Whether its line is slashed across the middle as the bars close (as it dies; not as an Elder forms). */
 	private static boolean ultSlash = true;
+	/** Whether the bars carry a line at all (not for an ultimate, which goes unnamed). */
+	private static boolean ultNamed;
 	private static int ultBoss;
 	private static long flashAt = -1;
 	private static float flashStrength;
@@ -46,37 +45,28 @@ public class BossCinema implements HudElement {
 				introBoss = boss;
 			}
 			case ModPackets.BossFxPayload.SHAKE -> CameraShake.add(fx.strength(), fx.value());
-			case ModPackets.BossFxPayload.MOVE -> {
-				// A blow called while the title card still shows: the card makes way
-				if (introAt >= 0 && now - introAt < 4100) {
-					introAt = now - 4100;
-				}
-				moveAt = now;
-				moveKey = fx.key();
-				moveBoss = boss;
-			}
 			case ModPackets.BossFxPayload.ULTIMATE -> {
-				// The ultimate takes the whole screen: a title card or a called blow still showing makes way
+				// The ultimate takes the whole screen: a title card still showing makes way
 				introAt = -1;
-				moveAt = -1;
 				ultAt = now;
 				ultEnd = -1;
 				ultLength = Math.max(1, fx.value()) * 50L;
 				ultKey = fx.key();
 				ultLabel = "gui.extremedimensions.elder.ultimate_label";
 				ultSlash = true;
+				ultNamed = false;
 				ultBoss = boss;
 			}
 			case ModPackets.BossFxPayload.SPAWN -> {
 				// It forms: the bars close in, a line for it in the upper bar, and perhaps the view is held on it
 				introAt = -1;
-				moveAt = -1;
 				ultAt = now;
 				ultEnd = -1;
 				ultLength = (long) (Math.max(1, Math.abs(fx.strength())) * 50L);
 				ultKey = fx.key();
 				ultLabel = "gui.extremedimensions.elder.forming_label";
 				ultSlash = false;
+				ultNamed = true;
 				ultBoss = boss;
 				if (fx.strength() > 0) {
 					CameraLock.lock(fx.value(), ultLength);
@@ -85,13 +75,13 @@ public class BossCinema implements HudElement {
 			case ModPackets.BossFxPayload.DEATH -> {
 				// It dies as it fought its ultimate: the bars close in on its name, and the view is held on it
 				introAt = -1;
-				moveAt = -1;
 				ultAt = now;
 				ultEnd = -1;
 				ultLength = (long) (Math.max(1, fx.strength()) * 50L);
 				ultKey = fx.key();
 				ultLabel = "gui.extremedimensions.elder.vanquished_label";
 				ultSlash = true;
+				ultNamed = true;
 				ultBoss = boss;
 				CameraLock.lock(fx.value(), ultLength);
 			}
@@ -120,7 +110,6 @@ public class BossCinema implements HudElement {
 
 	public static void reset() {
 		introAt = -1;
-		moveAt = -1;
 		ultAt = -1;
 		ultEnd = -1;
 		flashAt = -1;
@@ -139,7 +128,6 @@ public class BossCinema implements HudElement {
 		boolean calm = Ui.calm();
 		ultimate(g, font, w, h, now, calm);
 		intro(g, font, w, h, now);
-		move(g, font, w, now);
 		if (flashAt >= 0 && !calm) {
 			double t = (now - flashAt) / 700.0;
 			if (t >= 1) {
@@ -182,26 +170,6 @@ public class BossCinema implements HudElement {
 		scaled(g, font, sub, w / 2, cy + 30, 1.25F, Ui.mix(Ui.TEXT, colour, 0.4), alpha * Math.min(1, Math.max(0, (t - 0.5) / 0.6)));
 	}
 
-	private static void move(GuiGraphicsExtractor g, Font font, int w, long now) {
-		if (moveAt < 0) {
-			return;
-		}
-		double t = (now - moveAt) / 1000.0;
-		if (t > 2.2) {
-			moveAt = -1;
-			return;
-		}
-		double alpha = Math.min(Ui.ease(Math.min(1, t / 0.25)), Ui.ease(Math.min(1, (2.2 - t) / 0.5)));
-		int slide = (int) ((1 - Ui.ease(Math.min(1, t / 0.35))) * 40);
-		String name = "« " + Ui.tr(moveKey) + " »";
-		int y = 58;
-		int colour = COLOURS[moveBoss];
-		int tw = (int) (font.width(name) * 1.6F);
-		g.fill(w / 2 - tw / 2 - 10 + slide, y - 4, w / 2 + tw / 2 + 10 + slide, y + 17, Ui.argb(alpha * 0.55, Ui.INK));
-		g.fill(w / 2 - tw / 2 - 10 + slide, y + 17, w / 2 + tw / 2 + 10 + slide, y + 18, Ui.argb(alpha * 0.9, colour));
-		scaled(g, font, name, w / 2 + slide, y, 1.6F, Ui.mix(0xFFFFFF, colour, 0.35), alpha);
-	}
-
 	private static void ultimate(GuiGraphicsExtractor g, Font font, int w, int h, long now, boolean calm) {
 		if (ultAt < 0) {
 			return;
@@ -235,12 +203,12 @@ public class BossCinema implements HudElement {
 		g.fill(w / 2 - line / 2, h - bar / 2, w / 2 + line / 2, h - bar / 2 + 1, Ui.argb(0.9 * k, colour));
 		String label = Ui.tr(ultLabel);
 		String name = Ui.tr(ultKey);
-		if (bar > 12) {
+		if (bar > 12 && ultNamed) {
 			Ui.centered(g, font, label + "  —  " + name, w / 2, bar / 2 - 4, Ui.mix(0xFFFFFF, colour, 0.3), k);
 		}
 		// Its name slashed across the middle as it begins
 		double t = (now - ultAt) / 1000.0;
-		if (t < 3.2 && ultEnd < 0 && ultSlash) {
+		if (t < 3.2 && ultEnd < 0 && ultSlash && ultNamed) {
 			double a = Math.min(Ui.ease(Math.min(1, t / 0.3)), Ui.ease(Math.min(1, (3.2 - t) / 0.8)));
 			int cy = (int) (h * 0.42);
 			int half = (int) (w * 0.45 * Ui.ease(Math.min(1, t / 0.4)));

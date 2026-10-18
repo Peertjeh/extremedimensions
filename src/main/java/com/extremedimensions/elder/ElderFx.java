@@ -167,11 +167,6 @@ final class ElderFx {
 		}
 	}
 
-	/** The name of a great blow, called out on the screens of everyone near. */
-	static void call(ElderBoss b, String move) {
-		cinema(b, 64, ModPackets.BossFxPayload.MOVE, 0, 0, "gui.extremedimensions.elder.move." + move);
-	}
-
 	/** A ring of particles on the ground. */
 	static void ring(Level level, String particle, double x, double y, double z, double r, int n, double phase) {
 		for (int i = 0; i < n; i++) {

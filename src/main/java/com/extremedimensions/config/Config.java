@@ -457,10 +457,14 @@ public final class Config {
 	public static int ELDER_SPAWN_CAMERA = 1;
 	/** Whether an Elder raises its arena round it as it forms (blocks flying in to build it): 1 = on, 0 = off. */
 	public static int ELDER_ARENA = 1;
-	/** Size of the arenas, as a multiple (0.5 to 2). */
-	public static double ELDER_ARENA_SIZE = 1.0;
+	/** Size of the arenas, as a multiple (0.5 to 5). */
+	public static double ELDER_ARENA_SIZE = 4.0;
 	/** Seconds an arena takes to build. */
-	public static double ELDER_ARENA_BUILD_SECONDS = 6.0;
+	public static double ELDER_ARENA_BUILD_SECONDS = 18.0;
+	/** Most blocks of an arena in flight at once; the rest simply appear in their places. */
+	public static int ELDER_ARENA_FLY_MAX = 700;
+	/** Blocks from the nearest player within which a block of an arena flies to its place; further off it simply appears. */
+	public static int ELDER_ARENA_FLY_RANGE = 48;
 	/** Nearest a block of an arena appears from its place, in blocks. */
 	public static int ELDER_ARENA_FLIGHT_MIN = 10;
 	/** Furthest a block of an arena appears from its place, in blocks. */
@@ -470,9 +474,55 @@ public final class Config {
 	/** Seconds an arena stands after its fight before it comes apart (-1 = it stays for good). */
 	public static int ELDER_ARENA_LINGER_SECONDS = 30;
 	/** Seconds an arena takes to come apart (the ground is put back as it was). */
-	public static double ELDER_ARENA_DISSOLVE_SECONDS = 5.0;
+	public static double ELDER_ARENA_DISSOLVE_SECONDS = 10.0;
 	/** How much debris the Elders' blows throw, as a multiple (0.25 to 2); their sigils, rings and threads are always drawn. */
 	public static double ELDER_ATTACK_FX_DETAIL = 1.0;
+	/** An Elder's health, as a multiple of its own (before the players fighting it are counted). */
+	public static double ELDER_HEALTH_SCALE = 1.5;
+	/** An Elder's health grows by this share for every player fighting it beyond the first. */
+	public static double ELDER_HEALTH_PER_PLAYER = 0.5;
+	/** The damage of the Elders' blows, as a multiple. */
+	public static double ELDER_DAMAGE_SCALE = 1.5;
+	/** The damage of an Elder's blows grows by this share for every player fighting it beyond the first. */
+	public static double ELDER_DAMAGE_PER_PLAYER = 0.1;
+	/** The pause between an Elder's blows shrinks by this share for every player fighting it beyond the first. */
+	public static double ELDER_REST_PER_PLAYER = 0.1;
+	/** The pause between an Elder's blows never shrinks below this share of its own. */
+	public static double ELDER_REST_MIN = 0.6;
+	/** Most players an Elder's great blows fall on at once: its charges come again at the next, its Lance splits, its spears, webs and cages fall on each. */
+	public static int ELDER_SPLIT_MAX = 3;
+	/** Whether each Elder's great blow (the Thornbound Charge, the Crossing of the Dead, the Seraphic Lance) goes through armour: 1 = on, 0 = off. */
+	public static int ELDER_PIERCE = 1;
+	/** Blocks from an Elder within which a player counts as fighting it (for its health, damage and pace). */
+	public static int ELDER_FIGHTERS_RANGE = 96;
+	/** How far the Elders' ranged blows reach and how far they follow their prey, as a multiple (for the larger arenas). */
+	public static double ELDER_REACH = 2.0;
+	/** Extra brood an Elder calls (the Matriarch's Hollowlings, the Weaver's Thinned) for every player fighting it beyond the first. */
+	public static int ELDER_BROOD_PER_PLAYER = 1;
+	/** Blocks round an Elder its spell reaches (the Matriarch's hex, the Ferryman's weight) while it fights. */
+	public static int ELDER_SPELL_RANGE = 120;
+	/** Seconds of gliding on elytra near an Elder before it pulls the flyer down (0 = it never does). */
+	public static double ELDER_SNARE_SECONDS = 1.0;
+	/** Damage of an Elder pulling a flyer down. */
+	public static double ELDER_SNARE_DAMAGE = 6.0;
+	/** Seconds a flyer's wings stay bound after an Elder pulls them down: no gliding and no rockets. */
+	public static int ELDER_BIND_SECONDS = 10;
+	/** How much slower the Matriarch's hex makes everyone in her reach walk (0.25 = at 75% of their speed; 0 = no hex). */
+	public static double MATRIARCH_HEX_SLOW = 0.25;
+	/** Whether the Matriarch's hex keeps milk from being drunk: 1 = on, 0 = off. */
+	public static int MATRIARCH_HEX_MILK = 1;
+	/** How much lower the Ferryman's weight makes everyone in his reach jump (0.3 = at 70% of their jump; 0 = no weight). */
+	public static double FERRYMAN_WEIGHT_JUMP = 0.3;
+	/** Blows on one bar of the Ferryman's gaol that break it open. */
+	public static int FERRYMAN_GAOL_HITS = 3;
+	/** Seconds the Ferryman's gaol stands before it closes. */
+	public static double FERRYMAN_GAOL_SECONDS = 1.5;
+	/** Damage of the Ferryman's gaol closing on those still inside it. */
+	public static double FERRYMAN_GAOL_DAMAGE = 14.0;
+	/** How much sooner the Weaver's blows land once it starts them, as a multiple (the rhythm between its blows stays). */
+	public static double WEAVER_WINDUP_SPEED = 1.6;
+	/** How long the Seraphic Lance's beam burns, as a multiple. */
+	public static double WEAVER_LANCE_LENGTH = 1.5;
 	/** The Starved One's health grows by this share for every player at the Heart beyond the first. */
 	public static double STARVED_HEALTH_PER_PLAYER = 0.5;
 	/** Below this share of its health the Starved One turns ravenous: faster, quicker tricks, and famine. */
@@ -725,7 +775,13 @@ public final class Config {
 			{"seam_fly_from", 2, 64}, {"seam_damage", 0, 100},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},
 			{"seam_fray_ray_cooldown", 1, 120}, {"seam_fray_gloom", 0, 30}, {"seam_fray_gloom_every", 10, 3600}, {"seam_fray_unravel", 0, 1},
-			{"seam_briefing", 0, 100}, {"hud_boss_bar", 0, 1}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
+			{"seam_briefing", 0, 100}, {"hud_boss_bar", 0, 1},
+			{"elder_health_scale", 0.1, 20}, {"elder_health_per_player", 0, 5}, {"elder_damage_scale", 0, 20}, {"elder_damage_per_player", 0, 2},
+			{"elder_rest_per_player", 0, 0.5}, {"elder_rest_min", 0.1, 1}, {"elder_split_max", 1, 8}, {"elder_fighters_range", 8, 256},
+			{"elder_reach", 1, 5}, {"elder_brood_per_player", 0, 10}, {"elder_spell_range", 16, 256}, {"elder_snare_seconds", 0, 30},
+			{"elder_snare_damage", 0, 100}, {"elder_bind_seconds", 0, 120}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
+			{"ferryman_gaol_hits", 1, 20}, {"ferryman_gaol_seconds", 0.5, 6}, {"ferryman_gaol_damage", 0, 100}, {"weaver_windup_speed", 0.5, 4}, {"weaver_lance_length", 0.5, 4},
+			{"elder_arena_size", 0.5, 5}, {"elder_arena_fly_max", 50, 5000}, {"elder_arena_fly_range", 8, 256}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
 			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600}, {"coop_burden_relief_per_day", 0, 100}};
 
 	/** Brings a setting back within its bounds, if it has any. */

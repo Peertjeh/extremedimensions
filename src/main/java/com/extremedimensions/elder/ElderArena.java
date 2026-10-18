@@ -45,7 +45,8 @@ import net.minecraft.world.phys.AABB;
  * <p>Blocks are only built into air and plants; the ground is only inlaid where the world may be torn up
  * ({@code elder_griefing} and the mobGriefing rule), and never where a block holds data. A block of an arena a player
  * breaks drops nothing, and nothing an Elder tears out of one is thrown about. On stopping, everything is put back at
- * once. The blocks fly as {@link BlockFlight}s.
+ * once. The blocks fly as {@link BlockFlight}s, as many at once as {@code elder_arena_fly_max} allows and only where a
+ * player is near enough to see them; the rest simply appear (and vanish) in their places.
  */
 public final class ElderArena {
 	private ElderArena() {}
@@ -278,10 +279,20 @@ public final class ElderArena {
 
 	// ------------------------------------------------------------------ flights
 
-	/** A block appears out of nothing ten to fifteen blocks away and sets off towards its place. */
+	/**
+	 * A block appears out of nothing ten to fifteen blocks away and sets off towards its place; or, with as many in the
+	 * air as the settings allow ({@code elder_arena_fly_max}) or no one near enough to see it fly
+	 * ({@code elder_arena_fly_range}), it simply appears in its place.
+	 */
 	private static void launch(Arena a, Piece p) {
 		ServerLevel level = a.level;
 		if (!level.isLoaded(p.pos) || !fits(level, p)) {
+			return;
+		}
+		if (a.flights.size() >= Math.max(1, Config.ELDER_ARENA_FLY_MAX) || !watched(level, p.pos)) {
+			if (!blocked(level, p.pos)) {
+				place(a, p, true);
+			}
 			return;
 		}
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
@@ -299,7 +310,7 @@ public final class ElderArena {
 
 					@Override
 					public void land() {
-						place(a, p);
+						place(a, p, false);
 					}
 				});
 		if (f == null) {
@@ -330,7 +341,7 @@ public final class ElderArena {
 		if (m != null) {
 			m.remove(p.pos.asLong());
 		}
-		if (!whole || !level.isLoaded(p.pos)) {
+		if (!whole || !level.isLoaded(p.pos) || a.flights.size() >= Math.max(1, Config.ELDER_ARENA_FLY_MAX) || !watched(level, p.pos)) {
 			return;
 		}
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
@@ -344,8 +355,19 @@ public final class ElderArena {
 		}
 	}
 
-	/** The block lands: it is put down for real. */
-	private static void place(Arena a, Piece p) {
+	/** Whether a player is near enough to a block to see it fly. */
+	private static boolean watched(ServerLevel level, BlockPos pos) {
+		double r = Math.max(8, Config.ELDER_ARENA_FLY_RANGE);
+		for (net.minecraft.server.level.ServerPlayer q : level.players()) {
+			if (!q.isSpectator() && q.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) < r * r) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** The block lands (or, {@code quiet}, simply appears): it is put down for real. */
+	private static void place(Arena a, Piece p, boolean quiet) {
 		ServerLevel level = a.level;
 		BlockState was = level.getBlockState(p.pos);
 		p.original = p.kind == GROUND ? was : was.isAir() ? was : Blocks.AIR.defaultBlockState();
@@ -366,6 +388,13 @@ public final class ElderArena {
 		STANDING.computeIfAbsent(level, k -> new HashMap<>()).put(p.pos.asLong(), p);
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		double x = p.pos.getX() + 0.5, y = p.pos.getY() + 0.6, z = p.pos.getZ() + 0.5;
+		if (quiet) {
+			// A glint where it appears, now and then, and no sound (many appear at once)
+			if (rnd.nextInt(4) == 0) {
+				WorldFx.particleIn(level, ArenaDesign.spark(a.style), x, y, z, 0.3, 0.2, 0.3, 0.02, 1);
+			}
+			return;
+		}
 		WorldFx.particleIn(level, ArenaDesign.spark(a.style), x, y, z, 0.35, 0.2, 0.35, 0.03, 3);
 		if (rnd.nextInt(3) == 0) {
 			level.playSound(null, x, y, z, p.state.getSoundType().getPlaceSound(), SoundSource.BLOCKS, 0.6f, (float) rnd.nextDouble(0.7, 1.1));

@@ -37,6 +37,21 @@ public final class ModSounds {
 	public static final SoundEvent MUSIC_BOSS_FERRYMAN = register("music.boss_ferryman");
 	public static final SoundEvent MUSIC_BOSS_WEAVER = register("music.boss_weaver");
 
+	/** The Elders' voices and the sounds that give their blows away (see ElderTells), "elder.<elder>.<blow>". */
+	private static final String[] ELDER_TELLS = {
+			"matriarch.voice", "matriarch.sweep", "matriarch.lanterns", "matriarch.roots", "matriarch.wail", "matriarch.rush",
+			"matriarch.cathedral", "matriarch.barrage", "matriarch.snare",
+			"ferryman.voice", "ferryman.slam", "ferryman.chain", "ferryman.lantern", "ferryman.knell", "ferryman.crossing",
+			"ferryman.gaol", "ferryman.tide", "ferryman.snare",
+			"weaver.voice", "weaver.thread", "weaver.needles", "weaver.unravel", "weaver.lance", "weaver.cradle",
+			"weaver.thousand", "weaver.snare"};
+
+	static {
+		for (String tell : ELDER_TELLS) {
+			register("elder." + tell);
+		}
+	}
+
 	private static SoundEvent register(String path) {
 		var id = ExtremeDimensions.id(path);
 		return Registry.register(BuiltInRegistries.SOUND_EVENT, id, SoundEvent.createVariableRangeEvent(id));
