@@ -1040,16 +1040,17 @@ public class ClientShots implements FabricClientGameTest {
 			// The Frayed: a Veil Ray of the Fray beside one of the islands (the same model and texture layout, painted
 			// sick green with red eyes), across the view; then folded into its dive; then the two side by side
 			int kx = well[0], ky = well[3], kz = well[2];
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "summon extremedimensions:veil_ray %d %d %d {NoAI:1b,Rotation:[45f,0f]}", kx - 6, ky + 7, kz - 6));
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run summon extremedimensions:veil_ray %d %d %d {NoAI:1b,Rotation:[45f,0f]}", kx - 6, ky + 7, kz - 6));
 			ctx.waitTicks(2);
 			sp.getServer().runOnServer(s -> mobs(s).forEach(m -> {
 				if (m instanceof com.extremedimensions.seam.VeilRay ray) {
 					ray.setFrayed(true);
 				}
 			}));
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s %.2f %d %.2f -45 -20", kx - 13.5, ky + 3, kz - 13.5));
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f -45 -20", kx - 13.5, ky + 3, kz - 13.5));
 			sp.getConnection().waitForChunksRender();
 			ctx.waitTicks(20);
+			sp.getServer().runOnServer(s -> check(com.extremedimensions.seam.SeamService.inSeam(player(s)), "the Frayed Ray is shot outside the Seam"));
 			ctx.takeScreenshot("26_frayed_ray");
 			sp.getServer().runOnServer(s -> mobs(s).forEach(m -> {
 				if (m instanceof com.extremedimensions.seam.VeilRay ray) {
@@ -1066,8 +1067,8 @@ public class ClientShots implements FabricClientGameTest {
 				}
 			}));
 			// a calm ray beside it, for the two to be compared (from below, where their lights show)
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "summon extremedimensions:veil_ray %d %d %d {NoAI:1b,Rotation:[45f,0f]}", kx - 14, ky + 7, kz + 2));
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s %.2f %d %.2f -45 -38", kx - 17.5, ky + 1, kz - 9.5));
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run summon extremedimensions:veil_ray %d %d %d {NoAI:1b,Rotation:[45f,0f]}", kx - 14, ky + 7, kz + 2));
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f -45 -38", kx - 17.5, ky + 1, kz - 9.5));
 			ctx.waitTicks(25);
 			ctx.takeScreenshot("26_rays_compared");
 			sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));

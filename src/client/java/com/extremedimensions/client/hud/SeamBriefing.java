@@ -22,7 +22,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 public class SeamBriefing implements HudElement {
 	/** When it starts to show after it came, how long it shows (fades included), and its fades. */
 	static final long DELAY_MS = 1200, SHOW_MS = 13000, FADE_IN_MS = 450, FADE_OUT_MS = 900;
-	private static final int W = 270;
+	private static final int W = 340;
 
 	private record Row(int colour, String label, String text) {}
 
@@ -81,9 +81,11 @@ public class SeamBriefing implements HudElement {
 		}
 		h += 12;
 		// Under the crosshair, clear of the hotbar (and of the timer when it sits above the hotbar); on a short screen as
-		// high as it must go
-		int floor = sh - (ClientOptions.timer() == ClientOptions.TimerPlace.TOP ? 64 : 64 + 40);
-		int y = Math.max(6, Math.min(sh / 2 + 14, floor - h));
+		// high as it must go, but never over the timer at the top (the hotbar gives way first)
+		boolean top = ClientOptions.timer() == ClientOptions.TimerPlace.TOP;
+		int floor = sh - (top ? 64 : 64 + 40);
+		int ceiling = top ? 5 + 36 + (ClientState.trial.isEmpty() ? 0 : 12) + 4 : 6;
+		int y = Math.max(ceiling, Math.min(sh / 2 + 14, floor - h));
 		int x = (sw - w) / 2;
 		Ui.panel(g, x, y, w, h, accent, alpha * 0.96);
 		int cx = sw / 2;
