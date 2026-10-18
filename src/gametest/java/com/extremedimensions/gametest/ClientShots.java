@@ -924,7 +924,14 @@ public class ClientShots implements FabricClientGameTest {
 				ClientOptions.setGuidance(true);
 				mc.options.renderDistance().set(5);
 			});
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 0", home[0], home[1], home[2]));
+			// Back home, on top of the ground there (the last fight may have left the player in a crater, since filled)
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				p.level().getChunk(home[0] >> 4, home[2] >> 4);
+				int top = p.level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, home[0], home[2]);
+				p.teleportTo(home[0] + 0.5, Math.max(home[1], top), home[2] + 0.5);
+			});
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
 			sp.getServer().runCommand("execute as @a run gamemode survival @s");
 			sp.getConnection().waitForChunksRender();
 			ctx.waitTicks(20);
