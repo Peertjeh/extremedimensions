@@ -69,6 +69,8 @@ public class VeilRay extends PathfinderMob {
 	private int flee, stuck;
 	private int phase = CIRCLE, phaseTicks, rest = 60, strikes;
 	private UUID prey;
+	/** Hunts only its prey, never another (for the tests, whose players stand side by side). */
+	private boolean only;
 	private final BlockPos.MutableBlockPos probe = new BlockPos.MutableBlockPos();
 
 	public VeilRay(EntityType<? extends PathfinderMob> type, Level level) {
@@ -113,6 +115,12 @@ public class VeilRay extends PathfinderMob {
 	/** Ready to hunt at once (for the tests and a fresh grudge). */
 	public void rouse() {
 		rest = 0;
+	}
+
+	/** Hunts this one and no other (for the tests). */
+	public void huntOnly(ServerPlayer p) {
+		prey = p.getUUID();
+		only = true;
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
@@ -235,7 +243,7 @@ public class VeilRay extends PathfinderMob {
 		if (phase == CIRCLE) {
 			setDiving(false);
 			if (rest <= 0 && (this.tickCount + this.getId()) % 10 == 0) {
-				target = target != null && this.hasLineOfSight(target) ? target : pick(level, pos);
+				target = target != null && this.hasLineOfSight(target) ? target : only ? null : pick(level, pos);
 				if (target != null) {
 					prey = target.getUUID();
 					begin(CLIMB);

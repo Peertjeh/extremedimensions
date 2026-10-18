@@ -97,6 +97,8 @@ public class FrayTests {
 		ray.setFrayed(true);
 		ray.anchor(p.getX(), p.getY() + 9, p.getZ(), 24);
 		ray.rouse();
+		// (the players of other tests stand close by: it hunts this one only)
+		ray.huntOnly(p);
 		SeamFauna.drive(ray);
 		check(helper, com.extremedimensions.journal.Bestiary.of(ray) == com.extremedimensions.journal.Bestiary.Beast.FRAYED_RAY,
 				"a Frayed Ray is not in the bestiary as one");
