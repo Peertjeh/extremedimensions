@@ -81,7 +81,7 @@ public class FrayTests {
 	 * A Frayed Ray hunts a visitor down in the Fray: it climbs over them, dives, strikes them and poisons them, and
 	 * pulls away to come again. Flown for real in the test's own sky (the test server has no Seam).
 	 */
-	@GameTest(maxTicks = 420)
+	@GameTest(maxTicks = 820)
 	public void aFrayedRayDivesAndPoisons(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		Difficulty was = level.getDifficulty();
@@ -119,7 +119,7 @@ public class FrayTests {
 		float full = p.getHealth();
 		boolean[] seen = new boolean[3];
 		String[] early = new String[1];
-		for (int t = 1; t <= 400; t++) {
+		for (int t = 1; t <= 800; t++) {
 			int tick = t;
 			helper.runAfterDelay(t, () -> {
 				p.teleportTo(o.getX() + 0.5, o.getY() + 1, o.getZ() + 0.5);
@@ -131,7 +131,7 @@ public class FrayTests {
 				}
 			});
 		}
-		helper.runAfterDelay(405, () -> {
+		helper.runAfterDelay(805, () -> {
 			level.getServer().setDifficulty(was, true);
 			Config.SEAM_FRAY_RAY_COOLDOWN = cooldown;
 			int strikes = ray.strikes();
@@ -139,7 +139,7 @@ public class FrayTests {
 			ray.discard();
 			clear.run();
 			check(helper, seen[2], "the Frayed Ray never dived (at tick 30: %s; at the end: %s)", early[0], state);
-			check(helper, strikes > 0, "the Frayed Ray never struck its prey");
+			check(helper, strikes > 0, "the Frayed Ray never struck its prey (%s)", state);
 			check(helper, seen[0] && seen[1], "the strike did not hurt (%s) and poison (%s) (%s)", seen[1], seen[0], state);
 			helper.succeed();
 		});

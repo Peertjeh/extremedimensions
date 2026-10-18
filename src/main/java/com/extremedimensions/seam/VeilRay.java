@@ -48,8 +48,8 @@ public class VeilRay extends PathfinderMob {
 	private static final byte FRAYED = 1, DIVING = 2;
 	/** The hunt of the Frayed: circling, climbing over its prey, diving at it, pulling away after. */
 	private static final int CIRCLE = 0, CLIMB = 1, DIVE = 2, AWAY = 3;
-	/** How far the Frayed look for prey, and how close a dive must pass to strike (from its middle to the prey). */
-	private static final double SIGHT = 36, STRIKE = 2.1;
+	/** How far the Frayed look for prey, and how close a dive must pass to strike (from its middle to the prey; its wings reach further). */
+	private static final double SIGHT = 36, STRIKE = 2.8;
 
 	/** How far ahead it looks for obstacles, in blocks. */
 	private static final double LOOK = 28;
@@ -68,6 +68,8 @@ public class VeilRay extends PathfinderMob {
 	private double speed = 0.28;
 	private int flee, stuck;
 	private int phase = CIRCLE, phaseTicks, rest = 60, strikes;
+	/** How close the dive under way has come to its prey. */
+	private double closest;
 	private UUID prey;
 	/** Hunts only its prey, never another (for the tests, whose players stand side by side). */
 	private boolean only;
@@ -301,14 +303,17 @@ public class VeilRay extends PathfinderMob {
 					return true;
 				}
 				goal = to.scale(1 / Math.max(1e-4, dist));
-				// Missed (gone past, or too long at it), or about to fly into the knot it stands on
-				boolean past = goal.dot(heading) < 0 && dist > STRIKE + 1;
+				closest = Math.min(closest, dist);
+				// Missed (it came close and is drawing off again, or was too long at it), or about to fly into the knot
+				// its prey stands on
+				boolean past = closest < 8 && dist > closest + 2;
 				Vec3 nose = pos.add(heading.scale(2.6));
-				if (past || phaseTicks > 60 || dist > STRIKE + 2 && solid(level, nose.x, nose.y, nose.z)) {
+				if (past || phaseTicks > 70 || dist > STRIKE + 2 && solid(level, nose.x, nose.y, nose.z)) {
 					begin(AWAY);
 					return true;
 				}
-				turn(goal, 0.17, -0.95, 0.8);
+				// it turns harder the closer it comes
+				turn(goal, dist < 10 ? 0.28 : 0.18, -0.95, 0.8);
 				speed += (Math.min(1.4, 0.42 * pace() + 0.2) - speed) * 0.2;
 				fly(14.0F, 1.0F);
 			}
@@ -334,6 +339,7 @@ public class VeilRay extends PathfinderMob {
 	private void begin(int next) {
 		phase = next;
 		phaseTicks = 0;
+		closest = Double.MAX_VALUE;
 	}
 
 	/** Prey it may hunt: a visitor down in the Fray, alive, in survival, not fallen, and the world not at peace. */
