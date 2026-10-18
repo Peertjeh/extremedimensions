@@ -317,7 +317,7 @@ public final class ChaosDirector {
 			case "chickens" -> {
 				for (ServerPlayer p : players) {
 					for (int i = 0; i < 3; i++) {
-						Entity c = EntityType.CHICKEN.create(level, EntitySpawnReason.COMMAND);
+						Entity c = type("minecraft:chicken").create(level, EntitySpawnReason.COMMAND);
 						if (c == null) continue;
 						c.snapTo(p.getX() + match.rng().nextInt(7) - 3, p.getY() + 8 + i * 2, p.getZ() + match.rng().nextInt(7) - 3);
 						level.addFreshEntity(c);
@@ -354,17 +354,16 @@ public final class ChaosDirector {
 			if (!act.verb().equals("do")) continue;
 			switch (act.arg(0)) {
 				case "snowstorm" -> {
-					if (age % 3 == 0) rain(a, EntityType.SNOWBALL, 2, -0.6);
+					if (age % 3 == 0) rain(a, type("minecraft:snowball"), 2, -0.6);
 				}
 				case "arrow_rain" -> {
-					if (age % 4 == 0) rain(a, EntityType.ARROW, 2, -1.4);
+					if (age % 4 == 0) rain(a, type("minecraft:arrow"), 2, -1.4);
 				}
 				case "lightning" -> {
 					if (age % 25 != 0) break;
 					ServerLevel level = match.level();
 					for (ServerPlayer p : match.inPlay()) {
-						LightningBolt bolt = EntityType.LIGHTNING_BOLT.create(level, EntitySpawnReason.COMMAND);
-						if (bolt == null) continue;
+						if (!(type("minecraft:lightning_bolt").create(level, EntitySpawnReason.COMMAND) instanceof LightningBolt bolt)) continue;
 						double ang = match.rng().nextDouble() * Math.PI * 2, r = 3 + match.rng().nextInt(4);
 						bolt.setVisualOnly(true);
 						bolt.snapTo(p.getX() + Math.cos(ang) * r, p.getY(), p.getZ() + Math.sin(ang) * r);
@@ -446,6 +445,11 @@ public final class ChaosDirector {
 	}
 
 	// ------------------------------------------------------------------ helpers
+
+	/** Entity types by id (26.x has no constants for most of them). */
+	private static EntityType<?> type(String id) {
+		return net.battlehub.hub.ClientEntities.type(id);
+	}
 
 	private static void push(ServerPlayer p, Vec3 v) {
 		p.setDeltaMovement(v);

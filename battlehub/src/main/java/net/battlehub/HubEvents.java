@@ -340,8 +340,8 @@ public final class HubEvents {
 	/** The damage a snowball or egg does to this player in their match, or 0 (not thrown, not in a match). */
 	private static float throwableDamage(ServerPlayer p, net.minecraft.world.damagesource.DamageSource source) {
 		net.minecraft.world.entity.Entity direct = source.getDirectEntity();
-		if (direct == null || (direct.getType() != net.minecraft.world.entity.EntityType.SNOWBALL
-				&& direct.getType() != net.minecraft.world.entity.EntityType.EGG)) {
+		String type = direct == null ? "" : net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(direct.getType()).toString();
+		if (!type.equals("minecraft:snowball") && !type.equals("minecraft:egg")) {
 			return 0;
 		}
 		if (!net.battlehub.hub.HubWorld.isBattleHub(p.level()) || Sessions.state(p.getUUID()) != Sessions.State.MATCH) {

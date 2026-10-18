@@ -381,7 +381,7 @@ final class NewModeTests {
 			net.minecraft.world.phys.AABB box = match().arena().bounds().inflate(16);
 			return chaos().chaos().running() == 0 && !chaos().doubleGoal()
 					&& match().arena().level().getEntitiesOfClass(net.minecraft.world.entity.Entity.class, box,
-							e -> e.getType() == net.minecraft.world.entity.EntityType.CHICKEN).isEmpty();
+							e -> net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).getPath().equals("chicken")).isEmpty();
 		});
 		s.run(tag + ": A healed; B throws a snowball at A", () -> {
 			p(A).removeAllEffects();
@@ -391,7 +391,7 @@ final class NewModeTests {
 		s.pause(20);
 		s.run(tag + ": the snowball falls onto A", () -> {
 			net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) p(A).level();
-			net.minecraft.world.entity.Entity ball = net.minecraft.world.entity.EntityType.SNOWBALL.create(level, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+			net.minecraft.world.entity.Entity ball = net.battlehub.hub.ClientEntities.type("minecraft:snowball").create(level, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
 			((net.minecraft.world.entity.projectile.Projectile) ball).setOwner(p(B));
 			ball.snapTo(p(A).getX(), p(A).getY() + 3.2, p(A).getZ());
 			ball.setDeltaMovement(0, -1.0, 0);

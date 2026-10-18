@@ -126,12 +126,12 @@ final class BotTests {
 			net.minecraft.core.BlockPos at = p(A).blockPosition().offset(2, 0, 0);
 			VARS.put("bedAt", at);
 			VARS.put("bedWas", hub.getBlockState(at));
-			hub.setBlock(at, net.minecraft.world.level.block.Blocks.RED_BED.defaultBlockState(), 3);
+			hub.setBlock(at, net.battlehub.util.Ids.state("minecraft:red_bed"), 3);
 			p(A).gameMode.useItemOn(p(A), hub, net.minecraft.world.item.ItemStack.EMPTY, net.minecraft.world.InteractionHand.MAIN_HAND,
 					new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(at), net.minecraft.core.Direction.UP, at, false));
 		});
 		s.check(tag + ": the bed is still there and nothing exploded", () -> p(A).level()
-				.getBlockState((net.minecraft.core.BlockPos) VARS.get("bedAt")).is(net.minecraft.world.level.block.Blocks.RED_BED) && !p(A).isSleeping());
+				.getBlockState((net.minecraft.core.BlockPos) VARS.get("bedAt")).is(net.battlehub.util.Ids.block("minecraft:red_bed")) && !p(A).isSleeping());
 		s.run(tag + ": the bed goes again", () -> p(A).level().setBlock((net.minecraft.core.BlockPos) VARS.get("bedAt"),
 				(net.minecraft.world.level.block.state.BlockState) VARS.get("bedWas"), 3));
 		s.run(tag + ": A clicks the practice character", () -> HubNpcs.click(p(A), HubNpcs.hitbox("practice")));
