@@ -42,14 +42,13 @@ public class ClientShots implements FabricClientGameTest {
 	 * A live fight with one Elder: two shots as it forms and its arena flies together, one as it arrives, one at each
 	 * blow, two in its ultimate, and two as it dies (its arena coming apart after).
 	 */
-	private static void liveFight(ClientGameTestContext ctx, TestSingleplayerContext sp, String name, int shift, int settle,
+	private static void liveFight(ClientGameTestContext ctx, TestSingleplayerContext sp, String name, int settle,
 			java.util.function.Consumer<MinecraftServer> summon, java.util.function.BiPredicate<net.minecraft.world.entity.Entity, Integer> force,
 			int[] blows, String[] blowNames) {
-		// Each fight away from the last one's craters and fires (on top of the ground, not inside a hill): far off for the
-		// first, near for the next, so the world already loaded and drawn round the last serves the next
+		// Each fight on untouched ground, away from the last one's craters, fires and arena (on top of it, not inside a hill)
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
-			double nx = p.getX() + shift, nz = p.getZ();
+			double nx = p.getX() + 400, nz = p.getZ();
 			int bx = (int) Math.floor(nx), bz = (int) Math.floor(nz);
 			// load the chunk first: an unloaded one has no ground to stand on
 			p.level().getChunk(bx >> 4, bz >> 4);
@@ -143,17 +142,8 @@ public class ClientShots implements FabricClientGameTest {
 		ctx.waitTicks(66);
 		ctx.takeScreenshot("12_fight_" + name + "_death_bloom");
 		ctx.waitTicks(30);
-		// Its arena is taken down at once, and the fires it left put out, so the next fight builds on bare ground
-		sp.getServer().runOnServer(s -> {
-			com.extremedimensions.elder.ElderArena.clear();
-			ServerPlayer p = player(s);
-			BlockPos at = p.blockPosition();
-			for (BlockPos q : BlockPos.betweenClosed(at.offset(-96, -12, -96), at.offset(96, 12, 96))) {
-				if (p.level().getBlockState(q).is(net.minecraft.tags.BlockTags.FIRE)) {
-					p.level().setBlock(q, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
-				}
-			}
-		});
+		// Its arena is taken down at once, so the next fight builds on untouched ground
+		sp.getServer().runOnServer(s -> com.extremedimensions.elder.ElderArena.clear());
 		ctx.waitTicks(10);
 	}
 
@@ -759,15 +749,15 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("effect give @a minecraft:saturation infinite 10 true");
 			sp.getServer().runCommand("effect give @a minecraft:fire_resistance infinite 0 true");
 			ctx.waitTicks(10);
-			liveFight(ctx, sp, "matriarch", 400, 75, s -> com.extremedimensions.elder.MatriarchService.summon(player(s), "shots", player(s).blockPosition()),
+			liveFight(ctx, sp, "matriarch", 75, s -> com.extremedimensions.elder.MatriarchService.summon(player(s), "shots", player(s).blockPosition()),
 					com.extremedimensions.elder.MatriarchService::force, new int[] {com.extremedimensions.elder.Matriarch.RUSH,
 							com.extremedimensions.elder.Matriarch.CATHEDRAL, com.extremedimensions.elder.Matriarch.BARRAGE},
 					new String[] {"rush", "cathedral", "barrage"});
-			liveFight(ctx, sp, "ferryman", 64, 40, s -> com.extremedimensions.elder.FerrymanService.summonAt(player(s), player(s).blockPosition().offset(0, 0, 20)),
+			liveFight(ctx, sp, "ferryman", 40, s -> com.extremedimensions.elder.FerrymanService.summonAt(player(s), player(s).blockPosition().offset(0, 0, 20)),
 					com.extremedimensions.elder.FerrymanService::force, new int[] {com.extremedimensions.elder.Ferryman.CROSSING,
 							com.extremedimensions.elder.Ferryman.GAOL, com.extremedimensions.elder.Ferryman.TIDE},
 					new String[] {"crossing", "gaol", "tide"});
-			liveFight(ctx, sp, "weaver", 64, 40, s -> com.extremedimensions.elder.WeaverService.summon(player(s), player(s).blockPosition().offset(0, 0, 20)),
+			liveFight(ctx, sp, "weaver", 40, s -> com.extremedimensions.elder.WeaverService.summon(player(s), player(s).blockPosition().offset(0, 0, 20)),
 					com.extremedimensions.elder.WeaverService::force, new int[] {com.extremedimensions.elder.Weaver.LANCE,
 							com.extremedimensions.elder.Weaver.CRADLE, com.extremedimensions.elder.Weaver.THOUSAND},
 					new String[] {"lance", "cradle", "thousand"});
