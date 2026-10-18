@@ -117,6 +117,16 @@ public class VeilRay extends PathfinderMob {
 		rest = 0;
 	}
 
+	/** What it makes of a player as prey, and where its hunt stands (for the tests, when one fails). */
+	public String huntState(ServerPlayer p) {
+		ServerLevel level = (ServerLevel) this.level();
+		return String.format(java.util.Locale.ROOT,
+				"phase %s rest %s strikes %s alive %s at %.1f,%.1f,%.1f; prey at %.1f,%.1f,%.1f same level %s listed %s fair %s sight %s difficulty %s fallen %s",
+				phase, rest, strikes, isAlive(), getX(), getY(), getZ(), p.getX(), p.getY(), p.getZ(), p.level() == level,
+				level.getPlayerByUUID(p.getUUID()) == p, fair(level, p), this.hasLineOfSight(p), level.getDifficulty(),
+				com.extremedimensions.coop.FallenService.fallen(p));
+	}
+
 	/** Hunts this one and no other (for the tests). */
 	public void huntOnly(ServerPlayer p) {
 		prey = p.getUUID();

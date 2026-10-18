@@ -104,22 +104,28 @@ public class FrayTests {
 				"a Frayed Ray is not in the bestiary as one");
 		float full = p.getHealth();
 		boolean[] seen = new boolean[3];
+		String[] early = new String[1];
 		for (int t = 1; t <= 400; t++) {
+			int tick = t;
 			helper.runAfterDelay(t, () -> {
 				p.teleportTo(o.getX() + 1.5, o.getY() + 1, o.getZ() + 1.5);
 				seen[0] |= p.hasEffect(MobEffects.POISON);
 				seen[1] |= p.getHealth() < full;
 				seen[2] |= ray.isDiving();
+				if (tick == 30) {
+					early[0] = ray.huntState(p);
+				}
 			});
 		}
 		helper.runAfterDelay(405, () -> {
 			level.getServer().setDifficulty(was, true);
 			Config.SEAM_FRAY_RAY_COOLDOWN = cooldown;
 			int strikes = ray.strikes();
+			String state = ray.huntState(p);
 			ray.discard();
-			check(helper, seen[2], "the Frayed Ray never dived");
+			check(helper, seen[2], "the Frayed Ray never dived (at tick 30: %s; at the end: %s)", early[0], state);
 			check(helper, strikes > 0, "the Frayed Ray never struck its prey");
-			check(helper, seen[0] && seen[1], "the strike did not hurt (%s) and poison (%s)", seen[1], seen[0]);
+			check(helper, seen[0] && seen[1], "the strike did not hurt (%s) and poison (%s) (%s)", seen[1], seen[0], state);
 			helper.succeed();
 		});
 	}
