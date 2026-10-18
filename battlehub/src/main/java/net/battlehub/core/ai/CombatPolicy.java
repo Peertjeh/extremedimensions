@@ -31,6 +31,10 @@ public final class CombatPolicy {
 		double ready = me.attackReady();
 		boolean seen = t != null && t.visible();
 		double thp = t == null ? 1 : t.healthShare();
+		Objective g = s.goal();
+		boolean carrying = g != null && g.kind() == Objective.Kind.CARRY;
+		// enemies far from the hill or the post are left alone
+		boolean leashed = g != null && t != null && g.beyondLeash(t.pos());
 
 		// ---- safety first: a hit from the target would push us off a deadly edge
 		if (seen && dist < reach + 2) {
@@ -81,6 +85,10 @@ public final class CombatPolicy {
 				v += 0.3 * p.adaptability() * trend;
 				why.add(trend < 0 ? "arrows miss" : "arrows land");
 			}
+			if (carrying) {
+				v -= 0.5;
+				why.add("carrying " + g.what());
+			}
 			out.add(new Score(Tactic.SHOOT, v, false, why));
 		}
 
@@ -104,6 +112,7 @@ public final class CombatPolicy {
 					v += impatience;
 					why.add("nothing happens");
 				}
+				v -= leashPenalty(g, carrying, leashed, why);
 				out.add(new Score(Tactic.APPROACH, v, false, why));
 			}
 			// ---- trade hits
@@ -132,6 +141,11 @@ public final class CombatPolicy {
 					v += impatience;
 					why.add("nothing happens");
 				}
+				if (carrying) {
+					// only who blocks the way
+					v -= 0.15;
+					why.add("carrying " + g.what());
+				}
 				out.add(new Score(Tactic.STRIKE, v, false, why));
 			}
 			// ---- hold just outside their reach and punish
@@ -151,18 +165,81 @@ public final class CombatPolicy {
 					v -= impatience;
 					why.add("waited long enough");
 				}
+				if (carrying) {
+					v -= 0.4;
+					why.add("carrying " + g.what());
+				}
 				out.add(new Score(Tactic.SPACE, v, false, why));
 			}
 		} else if (t != null && t.confidence() > 0.15) {
-			out.add(new Score(Tactic.SEARCH, 0.3 + 0.4 * t.confidence() * (0.5 + 0.5 * p.aggression()), false,
-					List.of(String.format(java.util.Locale.ROOT, "last seen, %.0f%% sure", t.confidence() * 100))));
+			List<String> why = new ArrayList<>(List.of(String.format(java.util.Locale.ROOT, "last seen, %.0f%% sure", t.confidence() * 100)));
+			double v = 0.3 + 0.4 * t.confidence() * (0.5 + 0.5 * p.aggression());
+			v -= leashPenalty(g, carrying, leashed, why);
+			out.add(new Score(Tactic.SEARCH, v, false, why));
 		}
 
-		if (s.objective() != null) {
-			double v = 0.25 + 0.55 * p.objective() + (t == null || (!seen && t.confidence() < 0.15) ? 0.4 : dist > 12 ? 0.25 : -0.2);
-			out.add(new Score(Tactic.OBJECTIVE, v, false, List.of("objective")));
-		}
+		if (g != null) out.add(objective(s, g, p, seen, dist, reach));
 		out.add(new Score(Tactic.IDLE, 0.05, false, List.of()));
 		return out;
+	}
+
+	/** Going after someone costs more while carrying a flag, or when they are far from the hill or the post. */
+	private static double leashPenalty(Objective g, boolean carrying, boolean leashed, List<String> why) {
+		double v = 0;
+		if (carrying) {
+			v += 0.6;
+			why.add("carrying " + g.what());
+		}
+		if (leashed) {
+			v += 0.5;
+			why.add("too far from " + g.what());
+		}
+		return v;
+	}
+
+	/** How much the game's objective counts now, by its kind. */
+	static Score objective(Situation s, Objective g, Personality p, boolean seen, double dist, double reach) {
+		Situation.Target t = s.target();
+		boolean nobody = t == null || (!seen && t.confidence() < 0.15);
+		List<String> why = new ArrayList<>();
+		double v;
+		switch (g.kind()) {
+			case CARRY -> {
+				v = 1.0 + 0.3 * p.objective();
+				why.add("carrying " + g.what() + " home");
+				if (seen && dist < reach) {
+					v -= 0.35;
+					why.add("someone in the way");
+				}
+			}
+			case HOLD -> {
+				if (!g.contains(s.self().pos())) {
+					v = 0.75 + 0.5 * p.objective() + (nobody ? 0.2 : 0);
+					why.add("off " + g.what());
+				} else {
+					v = 0.35 + 0.3 * p.objective() + (nobody || g.beyondLeash(t.pos()) ? 0.35 : 0);
+					why.add("on " + g.what());
+				}
+			}
+			case DEFEND -> {
+				double away = s.self().pos().flatDistance(g.point());
+				boolean threat = t != null && !g.beyondLeash(t.pos()) && (seen || t.confidence() > 0.3);
+				if (threat) {
+					v = 0.1 + (away > g.leash() ? 0.5 : 0);
+					why.add("someone near " + g.what());
+				} else if (away > g.radius()) {
+					v = 0.6 + 0.4 * p.objective();
+					why.add("back to " + g.what());
+				} else {
+					v = 0.5 + 0.3 * p.objective();
+					why.add("guarding " + g.what());
+				}
+			}
+			default -> {
+				v = 0.25 + 0.55 * p.objective() + (nobody ? 0.4 : dist > 12 ? 0.25 : -0.2);
+				why.add("going for " + g.what());
+			}
+		}
+		return new Score(Tactic.OBJECTIVE, v, false, why);
 	}
 }

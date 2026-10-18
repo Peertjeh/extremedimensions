@@ -8,6 +8,7 @@ import net.battlehub.core.BotLevel;
 import net.battlehub.core.BotMath;
 import net.battlehub.core.ParkourCourse;
 import net.battlehub.core.ai.Archetype;
+import net.battlehub.core.ai.Bridging;
 import net.battlehub.core.ai.CombatMind;
 import net.battlehub.core.ai.Difficulty;
 import net.battlehub.core.ai.Intent;
@@ -126,6 +127,8 @@ final class BotBrain {
 		bot.zza = 0;
 		bot.xxa = 0;
 		bot.setJumping(false);
+		building = false;
+		if (bot.isShiftKeyDown()) bot.setShiftKeyDown(false);
 		Match m = Matches.of(bot.getUUID());
 		if (m == null || Sessions.state(bot.getUUID()) != Sessions.State.MATCH) {
 			forget();
@@ -137,6 +140,7 @@ final class BotBrain {
 			pkStage = 0;
 			return;
 		}
+		m.botTick(bot);
 		if (ticks % 30 == 0) {
 			double err = mind.difficulty().aimError;
 			yawError = (float) ((rnd.nextDouble() * 2 - 1) * err);
@@ -152,7 +156,7 @@ final class BotBrain {
 			case PROP_HUNT -> propHunt(m);
 			case SPLEEF -> spleef(m);
 		}
-		if (m.botStyle() != net.battlehub.core.BotStyle.PARKOUR) {
+		if (m.botStyle() != net.battlehub.core.BotStyle.PARKOUR && !building) {
 			// What the bot wanted, before an edge held it back: standing still at an edge is being stuck too
 			boolean wanted = bot.zza != 0 || bot.xxa != 0;
 			keepSafe();
@@ -175,6 +179,8 @@ final class BotBrain {
 		pkPlan = null;
 		pkStage = 0;
 		pkFailed.clear();
+		placedBlocks = 0;
+		mining = null;
 		eating = 0;
 		runYaw = Float.NaN;
 		stopUsing();
@@ -465,11 +471,11 @@ final class BotBrain {
 			wanderAbout(bot.position(), 8);
 			return;
 		}
-		execute(in, k);
+		execute(m, in, k);
 	}
 
 	/** Carries out one intent of the mind. */
-	private void execute(Intent in, Perception.Known k) {
+	private void execute(Match m, Intent in, Perception.Known k) {
 		ServerPlayer t = k == null ? null : k.player();
 		if (in.heal() || eating > 0) {
 			eat();
@@ -481,10 +487,12 @@ final class BotBrain {
 			select(BotBrain::isMelee);
 		}
 		if (in.moveTo() != null) {
-			goTo(Perception.v(in.moveTo()), in.sprint());
-			// close by and in sight: face them while getting there
-			if (in.look() != null && t != null && k.seen() && t.distanceTo(bot) < 6) {
-				lookAt(Perception.v(in.look()), true);
+			if (!bridge(m, Perception.v(in.moveTo()))) {
+				goTo(Perception.v(in.moveTo()), in.sprint());
+				// close by and in sight: face them while getting there
+				if (in.look() != null && t != null && k.seen() && t.distanceTo(bot) < 6) {
+					lookAt(Perception.v(in.look()), true);
+				}
 			}
 		} else {
 			if (in.look() != null && !in.bow()) {
@@ -505,7 +513,160 @@ final class BotBrain {
 			shield(false);
 			BotActions.attack(bot, t);
 			bot.resetAttackStrengthTicker();
+			mining = null;
+		} else if (!building && (mind.tactic() == Tactic.OBJECTIVE || t == null)) {
+			breakThrough(m);
 		}
+	}
+
+	// ------------------------------------------------------------------ building across gaps, breaking through
+
+	private int lastPlace = -100;
+	private int placedBlocks;
+	/** This tick the bot builds: keeping it from edges is its own job then. */
+	private boolean building;
+	private BlockPos mining;
+	private int mineTicks;
+
+	/** Blocks placed in the current match. */
+	int placed() {
+		return placedBlocks;
+	}
+
+	private static boolean isBuildBlock(ItemStack s) {
+		return s.getItem() instanceof net.minecraft.world.item.BlockItem && !s.is(Items.TNT);
+	}
+
+	/**
+	 * Building across a gap on the way to {@code to} ({@link Bridging}): onto the last floor block before the gap,
+	 * sneaking to its edge (the edge holds a sneaking player, its middle a little past it, so the side below can be
+	 * seen), looking at that side and placing a block against it through the normal rules, no faster than the level
+	 * allows; then onto the new block and on. True while it builds (it moves the bot itself then).
+	 */
+	private boolean bridge(Match m, Vec3 to) {
+		if (!bot.onGround() || find(BotBrain::isBuildBlock) < 0) return false;
+		BlockPos stand = support();
+		if (stand == null) return false;
+		int y = stand.getY();
+		ServerLevel level = level();
+		Bridging.Floor floor = new Bridging.Floor() {
+			@Override
+			public boolean solid(int x, int z) {
+				return BotActions.groundBelow(level, x + 0.5, y + 1, z + 0.5, 4);
+			}
+
+			@Override
+			public boolean buildable(int x, int z) {
+				return m.botMayBuild(new BlockPos(x, y, z));
+			}
+		};
+		Bridging.Step st = Bridging.next(Bridging.line(stand.getX(), stand.getZ(), (int) Math.floor(to.x), (int) Math.floor(to.z), 48), floor);
+		if (st == null || st.index() > 2) return false;
+		building = true;
+		bot.setSprinting(false);
+		bot.setShiftKeyDown(true);
+		BlockPos from = new BlockPos(st.fromX(), y, st.fromZ());
+		Vec3 face = new Vec3(st.fromX() + 0.5 + st.dx() * 0.5, y + 0.5, st.fromZ() + 0.5 + st.dz() * 0.5);
+		lookAt(face, false);
+		if (!from.equals(stand)) {
+			// first onto the last floor block before the gap
+			moveToward(new Vec3(st.fromX() + 0.5, bot.getY(), st.fromZ() + 0.5), SNEAK);
+			return true;
+		}
+		double past = (bot.getX() - (st.fromX() + 0.5)) * st.dx() + (bot.getZ() - (st.fromZ() + 0.5)) * st.dz() - 0.5;
+		if (past < 0.25) moveToward(new Vec3(face.x + st.dx() * 0.4, bot.getY(), face.z + st.dz() * 0.4), SNEAK);
+		if (ticks - lastPlace < Math.max(4, mind.difficulty().reactionTicks)) return true;
+		select(BotBrain::isBuildBlock);
+		// the click: what the bot really looks at, within reach
+		double reach = bot.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE);
+		Vec3 eye = bot.getEyePosition();
+		net.minecraft.world.phys.BlockHitResult hit = level.clip(new net.minecraft.world.level.ClipContext(eye, eye.add(bot.getLookAngle().scale(reach)),
+				net.minecraft.world.level.ClipContext.Block.OUTLINE, net.minecraft.world.level.ClipContext.Fluid.NONE, bot));
+		net.minecraft.core.Direction side = st.dx() > 0 ? net.minecraft.core.Direction.EAST : st.dx() < 0 ? net.minecraft.core.Direction.WEST
+				: st.dz() > 0 ? net.minecraft.core.Direction.SOUTH : net.minecraft.core.Direction.NORTH;
+		if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK || !hit.getBlockPos().equals(from) || hit.getDirection() != side) {
+			return true;
+		}
+		BlockPos target = from.relative(side);
+		bot.gameMode.useItemOn(bot, level, bot.getMainHandItem(), InteractionHand.MAIN_HAND, hit);
+		BotActions.swing(bot);
+		lastPlace = ticks;
+		if (!level.getBlockState(target).isAir()) placedBlocks++;
+		return true;
+	}
+
+	/** How fast a sneaking player walks (the client slows the keys; for a bot that is done here). */
+	private static final float SNEAK = 0.3f;
+
+	/** The block holding the bot up: under its middle, or (hanging over an edge) under one of its corners. */
+	private BlockPos support() {
+		double y = bot.getY() - 0.5;
+		BlockPos c = BlockPos.containing(bot.getX(), y, bot.getZ());
+		if (!level().getBlockState(c).getCollisionShape(level(), c).isEmpty()) return c;
+		for (double[] o : new double[][] {{0.29, 0.29}, {-0.29, 0.29}, {0.29, -0.29}, {-0.29, -0.29}}) {
+			BlockPos p = BlockPos.containing(bot.getX() + o[0], y, bot.getZ() + o[1]);
+			if (!level().getBlockState(p).getCollisionShape(level(), p).isEmpty()) return p;
+		}
+		return null;
+	}
+
+	/** Walks towards a point whichever way the bot looks (the keys, relative to its facing). */
+	private void moveToward(Vec3 at, float speed) {
+		double dx = at.x - bot.getX(), dz = at.z - bot.getZ();
+		double d = Math.hypot(dx, dz);
+		if (d < 0.05) return;
+		double yaw = Math.toRadians(bot.getYRot());
+		// forward is (-sin, cos) of the yaw, left (cos, sin)
+		bot.zza = (float) ((-Math.sin(yaw) * dx + Math.cos(yaw) * dz) / d * speed);
+		bot.xxa = (float) ((Math.cos(yaw) * dx + Math.sin(yaw) * dz) / d * speed);
+	}
+
+	/**
+	 * Breaking through to the game's target block (an enemy bed): looking at what is really in the way (the bed, or a
+	 * block a player put round it), within reach, for as long as mining it takes with what the bot holds (the
+	 * player's formula); then the game's own rule for breaking decides.
+	 */
+	private void breakThrough(Match m) {
+		BlockPos goal = m.botBreakTarget(bot);
+		double reach = bot.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE);
+		Vec3 eye = bot.getEyePosition();
+		if (goal == null || eye.distanceTo(Vec3.atCenterOf(goal)) > reach + 0.5) {
+			mining = null;
+			return;
+		}
+		ServerLevel level = level();
+		net.minecraft.world.phys.BlockHitResult hit = level.clip(new net.minecraft.world.level.ClipContext(eye, Vec3.atCenterOf(goal),
+				net.minecraft.world.level.ClipContext.Block.OUTLINE, net.minecraft.world.level.ClipContext.Fluid.NONE, bot));
+		BlockPos at = hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK ? hit.getBlockPos() : goal;
+		BlockState st = level.getBlockState(at);
+		boolean bed = st.getBlock() instanceof net.minecraft.world.level.block.BedBlock;
+		if (!at.equals(goal) && !bed && !m.botMayBreak(at)) {
+			// something of the map in the way: walking round it is the way
+			mining = null;
+			return;
+		}
+		lookAt(Vec3.atCenterOf(at), false);
+		if (!at.equals(mining)) {
+			mining = at;
+			mineTicks = 0;
+		}
+		net.minecraft.world.phys.BlockHitResult aimed = level.clip(new net.minecraft.world.level.ClipContext(eye, eye.add(bot.getLookAngle().scale(reach)),
+				net.minecraft.world.level.ClipContext.Block.OUTLINE, net.minecraft.world.level.ClipContext.Fluid.NONE, bot));
+		if (aimed.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK || !aimed.getBlockPos().equals(at)) return;
+		mineTicks++;
+		if (mineTicks % 4 == 1) BotActions.swing(bot);
+		if (mineTicks < breakTicks(at, st)) return;
+		if (m.onBreakBlock(bot, at, st)) level.destroyBlock(at, false, bot);
+		mining = null;
+	}
+
+	/** Ticks it takes a player to mine this block with what the bot holds (the game's formula). */
+	private int breakTicks(BlockPos pos, BlockState st) {
+		float hardness = st.getDestroySpeed(level(), pos);
+		if (hardness < 0) return Integer.MAX_VALUE;
+		if (hardness == 0) return 1;
+		float speed = bot.getDestroySpeed(st);
+		return (int) Math.ceil(hardness * (bot.hasCorrectToolForDrops(st) ? 30 : 100) / Math.max(0.01f, speed));
 	}
 
 	/** Raise or lower the shield in the off hand (the mind decides when). */

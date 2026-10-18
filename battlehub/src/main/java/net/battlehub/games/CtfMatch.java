@@ -182,6 +182,25 @@ public final class CtfMatch extends PartyMatch {
 		};
 	}
 
+	/**
+	 * Carrying the enemy flag: home, avoiding fights. With the own flag at home and a team of two or more, one bot
+	 * guards it; the others go for the enemy flag (or after whoever has ours).
+	 */
+	@Override
+	public net.battlehub.core.ai.Objective botGoal(ServerPlayer bot) {
+		Team mine = ctf.teamOf(bot.getUUID());
+		if (mine == null) return null;
+		if (bot.getUUID().equals(ctf.carrier(mine.other()))) {
+			return net.battlehub.core.ai.Objective.carry(v3(center(home(mine))), "the flag");
+		}
+		boolean home = ctf.state(mine) == CtfGame.FlagState.HOME;
+		if (home && botRole(bot, true, center(home(mine))) == net.battlehub.core.ai.Roles.Role.DEFENDER) {
+			return net.battlehub.core.ai.Objective.defend(v3(center(home(mine))), 3, 12, "our flag");
+		}
+		net.minecraft.world.phys.Vec3 p = botObjective(bot);
+		return p == null ? null : net.battlehub.core.ai.Objective.attack(v3(p), "the enemy flag");
+	}
+
 	private static net.minecraft.world.phys.Vec3 center(BlockPos p) {
 		return new net.minecraft.world.phys.Vec3(p.getX() + 0.5, p.getY(), p.getZ() + 0.5);
 	}

@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.25.0
+
+### Added
+* **Bots play the objective.** KOTH: they hold the hill and fight on it instead of chasing people off. CTF: the
+  flag carrier runs home and avoids fights, one bot guards the own flag. Bed Wars: they fetch iron, buy wool at
+  their shop, one guards the bed, the others bridge to the nearest enemy bed and break it. The Bridge: one keeps
+  the own goal in 2v2, the others go for a goal.
+* **Bots build bridges** where there is no way across (Bed Wars islands, a crumbled Bridge path): sneaking to
+  the edge, looking at the side of the block and placing it through the normal building rules, no faster than
+  their level allows.
+* **Bots break through to a bed**: mining takes as long as it would for a player with the same item, and blocks
+  players put round the bed are mined first.
+* `/battlehub bots inspect` shows the bot's objective (and how many blocks it placed).
+
 ## 1.24.0
 
 ### Added

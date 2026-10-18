@@ -97,9 +97,17 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   someone who said no gets no bots at all.
 * **Practice**: `/practice [mode] [level|adaptive]` or the **Practice** item in the menu (and the
   character on the plaza): a duel, 1v2 or 1v3 against bots, right away.
-* They know every game: they fight in duels, Free for All, Sumo, LMS, KOTH (they go for the hill), CTF (they
-  take the flag home), Bed Wars (they guard their bed), shoot in Bow and Crossbow PvP, run in TNT Run, shoot the
-  floor in Bow Spleef, jump the Parkour Race and hide or hunt in Prop Hunt.
+* They know every game: they fight in duels, Free for All, Sumo and LMS, shoot in Bow and Crossbow PvP, run in
+  TNT Run, shoot the floor in Bow Spleef, dig in Spleef, jump the Parkour Race and hide or hunt in Prop Hunt. In
+  the games with an objective the same mind weighs the objective against fighting:
+  * **KOTH**: they go up the hill and hold it; on it they fight whoever comes up, they don't chase anyone off it.
+  * **CTF**: a bot with the flag runs home and only hits who blocks the way; with a team of two or more one bot
+    guards the own flag, the others go for the enemy's.
+  * **Bed Wars**: they fetch iron from their generator, buy wool at their own shop (same price as a player), one
+    of a team guards the bed while it stands, the others build a bridge to the nearest enemy bed and break it
+    (mining takes as long as for a player; blocks put round a bed are mined first).
+  * **The Bridge**: they head for the other goal, in 2v2 one keeps the own goal, and where the path is gone they
+    build their own: sneaking to the edge, looking at the side of the block and placing clay like a player.
 * Their names start with `Bot_`. Nothing about them is saved (no player files, no profiles), they never show
   up on a leaderboard, and their join and leave messages stay out of chat.
 * **One real player with bots earns nothing**: no coins, no XP, no quest, pass or achievement progress, and

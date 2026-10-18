@@ -60,6 +60,13 @@ public final class KothMatch extends PartyMatch {
 		return new net.minecraft.world.phys.Vec3(z.getX() + 0.5, z.getY(), z.getZ() + 0.5);
 	}
 
+	/** Bots hold the hill: on it they fight who comes up, they do not chase anyone off it. */
+	@Override
+	public net.battlehub.core.ai.Objective botGoal(ServerPlayer bot) {
+		BlockPos z = arena.mark("zone");
+		return net.battlehub.core.ai.Objective.hold(new net.battlehub.core.ai.V3(z.getX() + 0.5, z.getY(), z.getZ() + 0.5), 2.4, "the hill");
+	}
+
 	public boolean inZone(ServerPlayer p) {
 		BlockPos z = arena.mark("zone");
 		return Math.abs(p.getX() - (z.getX() + 0.5)) <= 2.6 && Math.abs(p.getZ() - (z.getZ() + 0.5)) <= 2.6

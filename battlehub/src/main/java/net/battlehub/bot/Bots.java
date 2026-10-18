@@ -512,6 +512,17 @@ public final class Bots {
 		return LAST_DEBRIEF.getOrDefault(player, List.of());
 	}
 
+	/** The personality of a bot that is online, or null (people have none). */
+	public static net.battlehub.core.ai.Personality personality(UUID id) {
+		BotPlayer b = ONLINE.get(id);
+		return b == null ? null : b.brain.mind().personality();
+	}
+
+	/** Blocks a bot placed in its current match (building across gaps). */
+	public static int placed(BotPlayer b) {
+		return b.brain.placed();
+	}
+
 	public static BotPlayer byName(String name) {
 		for (BotPlayer b : ONLINE.values()) {
 			if (b.getGameProfile().name().equalsIgnoreCase(name)) return b;
@@ -532,6 +543,11 @@ public final class Bots {
 		out.add(b.getGameProfile().name() + " (" + b.difficulty.id() + ")" + (m == null ? ", not in a match" : ", match #" + m.id + " " + m.mode.id()));
 		out.addAll(b.brain.mind().report().lines());
 		if (!b.brain.parkourNote().isEmpty()) out.add("parkour: " + b.brain.parkourNote());
+		net.battlehub.core.ai.Objective g = m == null ? null : m.botGoal(b);
+		if (g != null) {
+			out.add("goal: " + g.kind().name().toLowerCase(java.util.Locale.ROOT) + " " + g.what() + String.format(java.util.Locale.ROOT, " (%.0f blocks away)",
+					Math.hypot(g.point().x() - b.getX(), g.point().z() - b.getZ())) + (b.brain.placed() > 0 ? ", placed " + b.brain.placed() + " blocks" : ""));
+		}
 		return out;
 	}
 

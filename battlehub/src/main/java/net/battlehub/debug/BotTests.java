@@ -76,6 +76,9 @@ final class BotTests {
 		partyFill(server, s);
 		spleefBots(server, s);
 		parkour(server, s);
+		kothBots(server, s);
+		bridgeBot(server, s);
+		bedWarsBot(server, s);
 		s.run("bots: filling off again for the other tests", () -> {
 			cfg().fillQueues = false;
 			cfg().fillAfterSeconds = 15;
@@ -431,5 +434,139 @@ final class BotTests {
 			return ok;
 		});
 		endAndClean(s, tag);
+	}
+
+	/** Logs what a bot is doing every 15 seconds while a test waits (to see why, when it fails). */
+	private static void logBot(String what, Match m, BotPlayer b, String key) {
+		if (m.runSeconds() > 0 && m.runSeconds() % 15 == 0 && !Integer.valueOf(m.runSeconds()).equals(VARS.put(key, m.runSeconds()))) {
+			net.battlehub.BattleHub.LOGGER.warn("SELFTEST {} after {}s: at {} | {}", what, m.runSeconds(), b.position(), String.join(" | ", Bots.inspect(b)));
+		}
+	}
+
+	/** King of the Hill with bots: they go up the hill and stay on it. */
+	private static void kothBots(MinecraftServer server, Script s) {
+		String tag = "bots koth";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": A joins KOTH alone; bots fill in", () -> {
+			VARS.put("partyCountdown", ConfigManager.config().timings.partyCountdownSeconds);
+			VARS.put("partyFull", ConfigManager.config().timings.partyFullCountdownSeconds);
+			ConfigManager.config().timings.partyCountdownSeconds = 4;
+			ConfigManager.config().timings.partyFullCountdownSeconds = 2;
+			cfg().fillQueues = true;
+			cfg().fillAfterSeconds = 1;
+			cfg().partyFillTo = 3;
+			SelfTest.join(server, A);
+			Parties.join(p(A), GameMode.KOTH);
+		});
+		s.waitFor(tag + ": the match runs with bots", 600, () -> {
+			Match m = matchOfA();
+			return m instanceof net.battlehub.games.KothMatch && m.phase() == Match.Phase.RUNNING && !botsIn(m).isEmpty();
+		});
+		s.run(tag + ": no more bots", () -> cfg().fillQueues = false);
+		s.waitFor(tag + ": a bot stands on the hill, holding it", 1200, () -> {
+			if (!(matchOfA() instanceof net.battlehub.games.KothMatch km)) return false;
+			for (BotPlayer b : botsIn(km)) {
+				if (km.inZone(b)) {
+					net.battlehub.BattleHub.LOGGER.info("SELFTEST koth bot: {}", String.join(" | ", Bots.inspect(b)));
+					return Bots.inspect(b).stream().anyMatch(l -> l.startsWith("goal: hold the hill"));
+				}
+				logBot("koth bot", km, b, "kothLogged");
+			}
+			return false;
+		});
+		endAndClean(s, tag);
+		s.run(tag + ": countdown as before", () -> {
+			cfg().partyFillTo = 4;
+			ConfigManager.config().timings.partyCountdownSeconds = (int) VARS.get("partyCountdown");
+			ConfigManager.config().timings.partyFullCountdownSeconds = (int) VARS.get("partyFull");
+		});
+	}
+
+	/** The Bridge against a bot, with the path between the islands gone: the bot builds its own way across. */
+	private static void bridgeBot(MinecraftServer server, Script s) {
+		String tag = "bots bridge";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": A queues for casual Bridge; a bot fills in", () -> {
+			cfg().fillQueues = true;
+			cfg().fillAfterSeconds = 1;
+			SelfTest.join(server, A);
+			Queues.join(p(A), GameMode.BRIDGE, false, DuelFormat.BO1);
+		});
+		s.waitFor(tag + ": the match runs against a bot", 600, () -> {
+			Match m = matchOfA();
+			return m instanceof net.battlehub.games.duel.BridgeMatch && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
+		});
+		s.run(tag + ": no more bots; the path between the islands is taken away", () -> {
+			cfg().fillQueues = false;
+			Match m = matchOfA();
+			net.minecraft.core.BlockPos o = m.arena().origin();
+			int reach = net.battlehub.arena.layout.NewLayouts.BRIDGE_ISLAND - 6;
+			for (int x = -reach; x <= reach; x++) {
+				for (int z = -3; z <= 3; z++) {
+					m.arena().level().setBlock(o.offset(x, 0, z), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				}
+			}
+		});
+		s.waitFor(tag + ": the bot sneaks to the edge and builds across with its clay", 1800, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			if (Bots.placed(b) >= 3) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST bridge bot: {}", String.join(" | ", Bots.inspect(b)));
+				return true;
+			}
+			logBot("bridge bot", m, b, "bridgeLogged");
+			return false;
+		});
+		endAndClean(s, tag);
+	}
+
+	/** Bed Wars against a bot: it fetches iron, buys wool at its shop and builds towards the other island. */
+	private static void bedWarsBot(MinecraftServer server, Script s) {
+		String tag = "bots bed wars";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": A joins solo Bed Wars; one bot fills in", () -> {
+			VARS.put("partyCountdown", ConfigManager.config().timings.partyCountdownSeconds);
+			VARS.put("partyFull", ConfigManager.config().timings.partyFullCountdownSeconds);
+			ConfigManager.config().timings.partyCountdownSeconds = 4;
+			ConfigManager.config().timings.partyFullCountdownSeconds = 2;
+			cfg().fillQueues = true;
+			cfg().fillAfterSeconds = 1;
+			cfg().partyFillTo = 2;
+			SelfTest.join(server, A);
+			Parties.join(p(A), GameMode.BED_WARS, "format:solo");
+		});
+		s.waitFor(tag + ": the match runs with a bot", 900, () -> {
+			Match m = matchOfA();
+			return m instanceof net.battlehub.games.bedwars.BedWarsMatch && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
+		});
+		s.run(tag + ": no more bots", () -> cfg().fillQueues = false);
+		s.waitFor(tag + ": the bot bought wool at its shop with iron from its generator", 2400, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			for (int i = 0; i < b.getInventory().getContainerSize(); i++) {
+				if (b.getInventory().getItem(i).is(net.minecraft.tags.ItemTags.WOOL)) return true;
+			}
+			logBot("bed wars bot", m, b, "bwLogged");
+			return false;
+		});
+		s.waitFor(tag + ": it builds towards the other island", 1800, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			if (Bots.placed(b) >= 3) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST bed wars bot: {}", String.join(" | ", Bots.inspect(b)));
+				return true;
+			}
+			logBot("bed wars bot", m, b, "bwLogged2");
+			return false;
+		});
+		endAndClean(s, tag);
+		s.run(tag + ": countdown as before", () -> {
+			cfg().partyFillTo = 4;
+			ConfigManager.config().timings.partyCountdownSeconds = (int) VARS.get("partyCountdown");
+			ConfigManager.config().timings.partyFullCountdownSeconds = (int) VARS.get("partyFull");
+		});
 	}
 }

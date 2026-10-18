@@ -82,9 +82,25 @@ public final class CombatSteering {
 				yield new Intent(0, 0, false, false, aim, to, canHit, false, false);
 			}
 			case SEARCH -> new Intent(1, 0, p.aggression() > 0.5, false, null, t.pos(), false, false, false);
-			case OBJECTIVE -> new Intent(1, 0, true, false, null, s.objective(), canHit, false, false);
+			case OBJECTIVE -> objective(s, aim, canHit);
 			case IDLE -> aim == null ? Intent.NOTHING : Intent.NOTHING.withLook(aim);
 		};
+	}
+
+	/**
+	 * Towards the objective; on the hill or at the post: stay there, facing whoever is about (a little to and fro on
+	 * a hill, so standing on it is not standing still).
+	 */
+	static Intent objective(Situation s, V3 aim, boolean canHit) {
+		Objective g = s.goal();
+		if (g == null) return Intent.NOTHING;
+		boolean stay = (g.kind() == Objective.Kind.HOLD || g.kind() == Objective.Kind.DEFEND)
+				&& s.self().pos().flatDistance(g.point()) <= Math.max(0.8, g.radius() * 0.6);
+		if (stay) {
+			double str = g.kind() == Objective.Kind.HOLD ? ((s.tick() / 20) % 2 == 0 ? 0.4 : -0.4) : 0;
+			return new Intent(0, str, false, false, aim, null, canHit, false, false);
+		}
+		return new Intent(1, 0, true, false, null, g.point(), canHit, false, false);
 	}
 
 	/** Where to aim: the chest, a few ticks ahead along their path (as far ahead as the level can judge). */

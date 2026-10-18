@@ -6,11 +6,17 @@ import java.util.UUID;
  * What an NPC knows right now: about itself, its target (as seen, or as remembered), the ground round it, incoming
  * danger and the game's objective. Built from the world every think; the decisions only use this.
  *
+ * @param goal    what the game wants besides fighting (see {@link Objective}), or null
  * @param edge    for eight directions (0 = +z, going round via -x like Minecraft yaw), how far the ground reaches
  *                before a deadly drop, in blocks (capped at {@link #SAFE}); {@code null} means no edges known
  */
-public record Situation(int tick, Self self, Target target, V3 objective, double[] edge, Threat threat) {
+public record Situation(int tick, Self self, Target target, Objective goal, double[] edge, Threat threat) {
 	public static final double SAFE = 4;
+
+	/** The objective's point, or null. */
+	public V3 objective() {
+		return goal == null ? null : goal.point();
+	}
 
 	/**
 	 * The NPC itself. {@code attackReady}: 0..1 like the attack strength meter. {@code reach}: how far it can hit.

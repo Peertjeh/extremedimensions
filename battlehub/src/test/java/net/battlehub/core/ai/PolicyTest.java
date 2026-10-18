@@ -112,7 +112,7 @@ class PolicyTest {
 
 	@Test
 	void theObjectiveWinsWhenNobodyIsAround() {
-		Situation s = new Situation(0, me(O, 20, 1), null, new V3(20, 64, 0), open(), Situation.Threat.NONE);
+		Situation s = new Situation(0, me(O, 20, 1), null, Objective.attack(new V3(20, 64, 0), "the goal"), open(), Situation.Threat.NONE);
 		assertEquals(Tactic.OBJECTIVE, best(score(s, Archetype.BALANCED)));
 	}
 

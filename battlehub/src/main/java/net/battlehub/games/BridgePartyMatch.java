@@ -295,6 +295,31 @@ public final class BridgePartyMatch extends PartyMatch {
 		finish(best < 0 || tie ? List.of() : new ArrayList<>(teams.get(best)));
 	}
 
+	@Override
+	public boolean botMayBuild(BlockPos pos) {
+		return build != null && build.mayPlace(pos) == BuildRules.Verdict.OK;
+	}
+
+	@Override
+	public boolean botMayBreak(BlockPos pos) {
+		return build != null && build.isPlaced(pos);
+	}
+
+	/** In a team of two or more one bot keeps the own goal; the others go for the nearest goal of another team. */
+	@Override
+	public net.battlehub.core.ai.Objective botGoal(ServerPlayer bot) {
+		if (arena == null) return null;
+		int own = team(bot.getUUID());
+		if (own >= 0) {
+			Vec3 home = Vec3.atBottomCenterOf(arena.mark("goal_" + own));
+			if (botRole(bot, true, home) == net.battlehub.core.ai.Roles.Role.DEFENDER) {
+				return net.battlehub.core.ai.Objective.defend(v3(home), 2.5, 9, "our goal");
+			}
+		}
+		Vec3 g = botObjective(bot);
+		return g == null ? null : net.battlehub.core.ai.Objective.attack(v3(g), "their goal");
+	}
+
 	/** Bots head for the nearest goal of another team. */
 	@Override
 	public Vec3 botObjective(ServerPlayer bot) {

@@ -205,6 +205,22 @@ public class BridgeMatch extends DuelMatch {
 		}
 	}
 
+	@Override
+	public boolean botMayBuild(BlockPos pos) {
+		return build != null && build.mayPlace(pos) == BuildRules.Verdict.OK;
+	}
+
+	@Override
+	public boolean botMayBreak(BlockPos pos) {
+		return build != null && build.isPlaced(pos);
+	}
+
+	@Override
+	public net.battlehub.core.ai.Objective botGoal(ServerPlayer bot) {
+		Vec3 g = botObjective(bot);
+		return g == null ? null : net.battlehub.core.ai.Objective.attack(v3(g), "their goal");
+	}
+
 	/** Bots head for the other goal. */
 	@Override
 	public Vec3 botObjective(ServerPlayer bot) {

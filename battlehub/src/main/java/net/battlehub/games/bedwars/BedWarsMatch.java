@@ -221,6 +221,85 @@ public final class BedWarsMatch extends PartyMatch implements BedWarsShop.Teams 
 		return new net.minecraft.world.phys.Vec3(b.getX() + 0.5, b.getY(), b.getZ() + 0.5);
 	}
 
+	/**
+	 * Bots first get blocks (iron from their generator, wool from their shop, at the shop's price), then one of a
+	 * team keeps home while the bed stands and the others go for the nearest enemy bed; with no beds left they hunt.
+	 */
+	@Override
+	public net.battlehub.core.ai.Objective botGoal(ServerPlayer bot) {
+		TeamState t = team(bot.getUUID());
+		if (t == null || arena == null) return null;
+		BlockPos shopAt = arena.mark("shop_" + t.index), gen = arena.mark("gen_" + t.index);
+		if (botBlocks(bot) < 8 && shopAt != null && gen != null) {
+			Shop.Offer wool = shop.offer("wool");
+			if (wool != null && shop.check(bot, wool) == Shop.Result.BOUGHT) {
+				return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(shopAt)), "the shop");
+			}
+			return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(gen)), "our generator");
+		}
+		BlockPos own = bed(t.index);
+		if (t.bedAlive() && own != null && botRole(bot, true, Vec3.atCenterOf(own)) == net.battlehub.core.ai.Roles.Role.DEFENDER) {
+			return net.battlehub.core.ai.Objective.defend(v3(Vec3.atBottomCenterOf(own)), 3, 10, "our bed");
+		}
+		TeamState target = botTargetTeam(bot);
+		if (target == null) return null;
+		return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(bed(target.index))), "the " + color(target.index) + " bed");
+	}
+
+	/** The nearest other team whose bed still stands, or null. */
+	private TeamState botTargetTeam(ServerPlayer bot) {
+		TeamState mine = team(bot.getUUID());
+		TeamState best = null;
+		double bestD = Double.MAX_VALUE;
+		for (TeamState o : teams) {
+			if (o == mine || !o.bedAlive() || bed(o.index) == null) continue;
+			double d = bot.position().distanceToSqr(Vec3.atCenterOf(bed(o.index)));
+			if (d < bestD) {
+				bestD = d;
+				best = o;
+			}
+		}
+		return best;
+	}
+
+	@Override
+	public BlockPos botBreakTarget(ServerPlayer bot) {
+		TeamState target = botTargetTeam(bot);
+		return target == null ? null : bed(target.index);
+	}
+
+	@Override
+	public boolean botMayBuild(BlockPos pos) {
+		return build != null && build.mayPlace(pos) == BuildRules.Verdict.OK;
+	}
+
+	@Override
+	public boolean botMayBreak(BlockPos pos) {
+		return build != null && build.isPlaced(pos);
+	}
+
+	/** At its own shop with iron to spare and few blocks: a bot buys wool, as a player would through the menu. */
+	@Override
+	public void botTick(ServerPlayer bot) {
+		if (runTicks % 10 != 0 || arena == null) return;
+		TeamState t = team(bot.getUUID());
+		if (t == null || botBlocks(bot) >= 16) return;
+		BlockPos at = arena.mark("shop_" + t.index);
+		if (at != null && bot.position().distanceTo(Vec3.atBottomCenterOf(at)) < 3.5) {
+			shop.buy(bot, "wool");
+		}
+	}
+
+	/** Blocks a player carries that may be placed here. */
+	private int botBlocks(ServerPlayer p) {
+		int n = 0;
+		for (int i = 0; i < p.getInventory().getContainerSize(); i++) {
+			ItemStack s = p.getInventory().getItem(i);
+			if (s.getItem() instanceof BlockItem && placeable.contains(Ids.key(s.getItem()))) n += s.getCount();
+		}
+		return n;
+	}
+
 	public boolean isActive(UUID id) {
 		return active(id);
 	}

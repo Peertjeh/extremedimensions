@@ -319,6 +319,56 @@ public abstract class Match {
 		return null;
 	}
 
+	/**
+	 * What a bot should do besides fighting ({@link net.battlehub.core.ai.Objective}): hold a hill, guard a post, carry
+	 * a flag home or go somewhere. By default: go to {@link #botObjective}.
+	 */
+	public net.battlehub.core.ai.Objective botGoal(ServerPlayer bot) {
+		Vec3 p = botObjective(bot);
+		return p == null ? null : net.battlehub.core.ai.Objective.attack(v3(p), "the objective");
+	}
+
+	/** May a bot build here (games where players build: inside their build area)? */
+	public boolean botMayBuild(BlockPos pos) {
+		return false;
+	}
+
+	/** May a bot break this block on its way (a block a player placed, in games that allow it)? */
+	public boolean botMayBreak(BlockPos pos) {
+		return false;
+	}
+
+	/** A block a bot should break when it gets there (an enemy bed), or null. */
+	public BlockPos botBreakTarget(ServerPlayer bot) {
+		return null;
+	}
+
+	/** Every tick, for each bot in play: game chores (buying blocks at the shop, ...). */
+	public void botTick(ServerPlayer bot) {}
+
+	/**
+	 * The role of a bot in its team ({@link net.battlehub.core.ai.Roles}): who of the team's bots keeps {@code home}
+	 * when there is something to defend there.
+	 */
+	protected net.battlehub.core.ai.Roles.Role botRole(ServerPlayer bot, boolean somethingToDefend, Vec3 home) {
+		List<net.battlehub.core.ai.Roles.Member> npcs = new ArrayList<>();
+		int size = 0;
+		for (UUID id : participants) {
+			if (!inPlay(id) && !id.equals(bot.getUUID())) continue;
+			if (!id.equals(bot.getUUID()) && isEnemy(bot.getUUID(), id)) continue;
+			size++;
+			ServerPlayer p = player(id);
+			net.battlehub.core.ai.Personality pers = net.battlehub.bot.Bots.personality(id);
+			if (p != null && pers != null) npcs.add(new net.battlehub.core.ai.Roles.Member(id, pers, home == null ? 0 : p.position().distanceTo(home)));
+		}
+		return net.battlehub.core.ai.Roles.assign(npcs, size, somethingToDefend).getOrDefault(bot.getUUID(),
+				net.battlehub.core.ai.Roles.Role.ATTACKER);
+	}
+
+	protected static net.battlehub.core.ai.V3 v3(Vec3 p) {
+		return new net.battlehub.core.ai.V3(p.x, p.y, p.z);
+	}
+
 	/** True while this participant can act: the match is running and they are not out or waiting to respawn. */
 	public boolean inPlay(UUID id) {
 		return phase == Phase.RUNNING && active(id) && !left.contains(id);

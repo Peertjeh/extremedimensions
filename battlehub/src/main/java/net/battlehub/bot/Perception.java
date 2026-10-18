@@ -91,8 +91,7 @@ final class Perception {
 			target = new Situation.Target(p.getUUID(), pos, k.seen() ? v(p.getDeltaMovement()) : V3.ZERO, hp, p.getMaxHealth(), k.seen(), sure,
 					k.seen() ? Math.max(0, tick - lastSwing) : 100, k.seen() && facing);
 		}
-		Vec3 goal = m.botObjective(bot);
-		return new Situation(tick, self, target, goal == null ? null : v(goal), edges, threat(bot, level));
+		return new Situation(tick, self, target, m.botGoal(bot), edges, threat(bot, level));
 	}
 
 	/**
