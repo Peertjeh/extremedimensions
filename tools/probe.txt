@@ -1,6 +1,7 @@
-net.minecraft.client.Minecraft
-net.minecraft.client.gui.Gui
-net.minecraft.client.gui.components.toasts.SystemToast
-net.minecraft.client.gui.components.toasts.SystemToast$SystemToastId
-net.minecraft.client.gui.components.toasts.ToastManager
-#toasts/
+net.minecraft.client.renderer.SubmitNodeCollector
+net.minecraft.client.renderer.OrderedSubmitNodeCollector
+net.minecraft.client.renderer.SubmitNodeCollector$CustomGeometryRenderer
+net.minecraft.client.renderer.state.level.CameraRenderState
+net.minecraft.world.entity.Entity
+net.minecraft.client.renderer.entity.EntityRendererProvider$Context
+com.mojang.blaze3d.vertex.PoseStack$Pose

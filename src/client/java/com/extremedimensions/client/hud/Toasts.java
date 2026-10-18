@@ -29,6 +29,6 @@ public final class Toasts {
 
 	private static void show(Component title, Component text) {
 		Minecraft mc = Minecraft.getInstance();
-		SystemToast.add(mc.getToastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION, title, text);
+		SystemToast.add(mc.gui.toastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION, title, text);
 	}
 }
