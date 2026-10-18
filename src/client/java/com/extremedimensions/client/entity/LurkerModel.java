@@ -14,7 +14,8 @@ import net.minecraft.util.Mth;
  * cloth, a knuckle walk, the reach of a theft and the raised, trembling arms of a drain.
  *
  * <p>The geometry and the five textures that share it (Lurker, Hollowling, Keeper, Starved One, Thinned) are generated
- * together by {@code tools/lurker/build.py}; the mask, eyes, brows, the hood's fringe and the claws are fine parts.
+ * together by {@code tools/lurker/build.py}; the claws are fine parts, the mask and what is round it are at
+ * Minecraft's own size.
  */
 public class LurkerModel extends EntityModel<LurkerRenderState> {
 	public static final ModelLayerLocation LAYER = new ModelLayerLocation(ExtremeDimensions.id("lurker"), "main");
@@ -83,7 +84,7 @@ public class LurkerModel extends EntityModel<LurkerRenderState> {
 	@Override
 	public void setupAnim(LurkerRenderState s) {
 		super.setupAnim(s);
-		// The mask, eyes, brows, fringe and claws are fine parts, built four times larger for finer pixels
+		// The claws are fine parts, built four times larger for finer pixels
 		for (ModelPart f : fine) {
 			f.xScale = LurkerGeometry.FINE_SCALE;
 			f.yScale = LurkerGeometry.FINE_SCALE;

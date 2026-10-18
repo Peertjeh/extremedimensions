@@ -53,8 +53,8 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 		ElderAnim.reset(boat, figure, hood);
 		ElderAnim.reset(robe);
 		ElderAnim.reset(lanterns);
-		// His skull, its eyes, coin and jaw, the hood's frayed edge and the prow's eyes are fine parts, built four times
-		// larger for finer pixels and shrunk to size here
+		// The prow's eyes are fine parts, built four times larger for finer pixels and shrunk to size here (his own skull
+		// is at Minecraft's own size)
 		for (ModelPart f : fine) {
 			f.xScale = FerrymanGeometry.FINE_SCALE;
 			f.yScale = FerrymanGeometry.FINE_SCALE;

@@ -2,7 +2,7 @@
 beneath a violet over-robe hemmed in gilt and open at the front on an embroidered tabard; a cape falls from its
 shoulders under a mantle and lacquered pauldrons, and a high pointed collar frames its head: a mask of dark carved stone
 coming to a point at the chin, a tall diamond of an eye cut like a gem and set in gilt, brows swept up from it and
-plates over the cheeks (fine parts, four pixels to a model pixel), under a gothic mitre and a fan of spires and needles,
+plates over the cheeks (at Minecraft's own size, painted finer and brought down), under a gothic mitre and a fan of spires and needles,
 veiled. A spindle burns at its breast where the mantle is clasped. Glowing threads run from its long, ringed fingers,
 sagging into loops, back to its heart and down to hanging lanterns; spools turn at its hips, a ring of great needles
 circles it, and a halo of runes and needles turns behind its head."""
@@ -191,9 +191,9 @@ def _head(m, head):
     chin. On it a tall diamond of an eye cut like a gem and set in gilt, brows swept up from it, plates laid over the
     cheeks, a ridge lit by a thread of light; a slit of light runs up from the eye to the crown. Over the gilt band of
     the crown a fan of gothic spires and needles, the middle one tallest; a veil of gauze and thread falls from it.
-    The mask, the eye and the spires are fine parts (four pixels to a model pixel). Everything here is in the head's
-    core."""
-    F = 0.25
+    The mask, the eye and the spires are painted four times finer and brought down to Minecraft's own size.
+    Everything here is in the head's core."""
+    F = 4  # the face is designed this many times finer than it is worn
     m.box(head, -8.5, -22, -5, 17, 22, 13, "weave")
     for sx in (1, -1):
         m.box(head, 7.0 if sx > 0 else -9.4, -21.6, -6.8, 2.4, 21.6, 2.4, "weave_lacquer")
@@ -201,36 +201,36 @@ def _head(m, head):
     # the dark inside of the hood round the mask
     m.box(head, -7.0, -19.6, -5.7, 14, 19.4, 0.7, "socket")
     # the mask
-    mask = m.part("mask", head, (0, 0, 0), scale=F)
-    m.box(mask, -6.6, -19.4, -6.6, 13.2, 19.2, 0.75, "mask_carved")
+    mask = m.part("mask", head, (0, 0, 0), detail=1)
+    m.box(mask, -6.6, -19.4, -6.6, 13.2, 19.2, 0.75, "mask_carved_px")
     # brows swept up and out from the eye
     for side, sx in (("l", 1), ("r", -1)):
-        br = m.part(f"brow_{side}", head, (sx * 4.1, -16.0, -6.95), (0, 0.18 * sx, -0.42 * sx), scale=F)
+        br = m.part(f"brow_{side}", head, (sx * 4.1, -16.0, -6.95), (0, 0.18 * sx, -0.42 * sx), detail=F)
         m.box(br, -3.3, -0.75, -0.45, 6.6, 1.5, 0.9, "mask_ridge")
-        br2 = m.part(f"browh_{side}", head, (sx * 5.6, -17.6, -6.85), (0, 0.24 * sx, -0.62 * sx), scale=F)
+        br2 = m.part(f"browh_{side}", head, (sx * 5.6, -17.6, -6.85), (0, 0.24 * sx, -0.62 * sx), detail=F)
         m.box(br2, -1.9, -0.5, -0.35, 3.8, 1.0, 0.7, "mask_ridge")
         # plates over the cheeks, one under another, turned back along the face
         for j in range(3):
             cl = m.part(f"cheekl_{side}{j}", head, (sx * (4.4 - 0.35 * j), -8.4 + 2.4 * j, -6.75 + 0.12 * j),
-                        (0, -0.38 * sx, 0.2 * sx), scale=F)
+                        (0, -0.38 * sx, 0.2 * sx), detail=F)
             m.box(cl, -2.2 + 0.2 * j, -0.85, -0.4, 4.4 - 0.4 * j, 1.7, 0.8, "mask_ridge")
         # a fang of carved stone at each side of the chin
-        fg = m.part(f"fang_{side}", head, (sx * 2.2, -3.2, -6.6), (0, -0.2 * sx, 0.3 * sx), scale=F)
+        fg = m.part(f"fang_{side}", head, (sx * 2.2, -3.2, -6.6), (0, -0.2 * sx, 0.3 * sx), detail=F)
         m.box(fg, -0.45, -1.6, -0.4, 0.9, 3.6, 0.8, "mask_ridge")
     # a ridge lit by a thread of light, from under the eye to the chin
-    rd = m.part("ridge", head, (0, -2.9, -6.85), scale=F)
+    rd = m.part("ridge", head, (0, -2.9, -6.85), detail=F)
     m.box(rd, -0.5, -2.6, -0.4, 1.0, 5.0, 0.8, "mask_ridge_lit")
     # the eye, in a gilt frame along the diamond's edges
-    ey = m.part("eye", head, (0, -10.4, -6.95), scale=F)
-    m.box(ey, -3.0, -4.8, -0.35, 6.0, 9.6, 0.4, "eye_lozenge")
+    ey = m.part("eye", head, (0, -10.4, -6.95), detail=1)
+    m.box(ey, -3.0, -4.8, -0.35, 6.0, 9.6, 0.4, "eye_lozenge_px")
     a, b = 3.25, 5.2
     side_len = math.hypot(a, b)
     tilt = math.atan2(a, b)
     for k, (sx, sy) in enumerate(((1, 1), (1, -1), (-1, 1), (-1, -1))):
-        fr = m.part(f"eyeframe_{k}", head, (sx * a / 2, -10.4 + sy * b / 2, -7.0), (0, 0, sx * sy * tilt), scale=F)
+        fr = m.part(f"eyeframe_{k}", head, (sx * a / 2, -10.4 + sy * b / 2, -7.0), (0, 0, sx * sy * tilt), detail=F)
         m.box(fr, -0.3, -side_len / 2 - 0.2, -0.35, 0.6, side_len + 0.4, 0.7, "gild")
     # a slit of light from the eye up to the crown
-    ray = m.part("eyeray", head, (0, 0, 0), scale=F)
+    ray = m.part("eyeray", head, (0, 0, 0), detail=F)
     m.box(ray, -0.25, -19.4, -6.95, 0.5, 3.6, 0.35, "eye")
     m.box(ray, -0.6, -19.8, -7.05, 1.2, 0.6, 0.5, "gild")
     # the crown: a gilt band with gems, then a fan of gothic spires with needles between them
@@ -240,12 +240,12 @@ def _head(m, head):
     for sx in (1, -1):
         m.box(head, sx * 5 - 0.7, -23.9, -6.5, 1.4, 1.4, 0.8, "glass")
     # a tall pointed mitre of carved stone behind the spires, a slit of light up its middle
-    mitre = m.part("mitre", head, (0, -24.0, 2.6), (-0.1, 0, 0), scale=F)
+    mitre = m.part("mitre", head, (0, -24.0, 2.6), (-0.1, 0, 0), detail=F)
     m.box(mitre, -7.5, -24, -0.4, 15, 24, 0.8, "mitre")
     for k in range(9):
         a = -1.2 + 2.4 * k / 8
         h = 30 - abs(k - 4) * 4.6
-        sp = m.part(f"spire_{k}", head, (8.2 * math.sin(a), -24.2, 0.5 + 5.4 * (1 - math.cos(a))), (-0.14, 0, a * 0.42), scale=F)
+        sp = m.part(f"spire_{k}", head, (8.2 * math.sin(a), -24.2, 0.5 + 5.4 * (1 - math.cos(a))), (-0.14, 0, a * 0.42), detail=F)
         w = 3.5 - abs(k - 4) * 0.24
         y = 0.0
         for frac, ww in ((0.16, 1.0), (0.42, 0.72), (0.26, 0.48), (0.16, 0.22)):
@@ -258,7 +258,7 @@ def _head(m, head):
         m.box(sp, -w * 0.75, -h * 0.1, -w * 0.3, w * 1.5, h * 0.1, w * 0.6, "spire")
         if k % 2 == 1:
             nd = m.part(f"crownneedle_{k}", head, (8.6 * math.sin(a + 0.15), -23.6, 1.5 + 5.6 * (1 - math.cos(a + 0.15))),
-                        (-0.22, 0, (a + 0.15) * 0.55), scale=F)
+                        (-0.22, 0, (a + 0.15) * 0.55), detail=F)
             _needle(m, nd, 0, h * 0.8, 0.9)
     # the veil: gauze and glowing thread from the band round the sides and back (group veil)
     pts = [(9.0 * sx, -4.2 + 10.2 * j / 7) for sx in (1, -1) for j in range(8)] + [(-7.6 + 15.2 * j / 9, 8.6) for j in range(10)]

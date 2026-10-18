@@ -18,13 +18,13 @@ import net.minecraft.util.Mth;
  * ultimate it rises with its arms spread wide while its halo and its needles swell and whirl, until everything snaps.
  * Dying, its halo falls and it sinks. As it forms, its halo comes first, then its needles are drawn in round it, and it
  * is woven from the hem up: its robe unrolling, its body, its arms unfolding, its head, its veil, its lanterns last.
- * Its face and crown are fine parts, shrunk to size here (see {@link WeaverGeometry#FINE_SCALE}).
+ * Its face and crown are at Minecraft's own size, one texture pixel to a model pixel.
  */
 public class WeaverModel extends EntityModel<ElderRenderState> {
 	public static final ModelLayerLocation LAYER = new ModelLayerLocation(ExtremeDimensions.id("weaver"), "main");
 
 	private final ModelPart root, body, head, halo, armL, armR, handL, handR, needles, spoolL, spoolR, bodyCore, torsoCore, headCore;
-	private final ModelPart[] robe, mantle, strands, lanterns, veil, fine;
+	private final ModelPart[] robe, mantle, strands, lanterns, veil;
 
 	public WeaverModel(ModelPart model) {
 		super(model);
@@ -44,7 +44,6 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 		this.strands = ElderAnim.parts(model, WeaverGeometry.STRAND, WeaverGeometry::find);
 		this.lanterns = ElderAnim.parts(model, WeaverGeometry.LANTERN, WeaverGeometry::find);
 		this.veil = ElderAnim.parts(model, WeaverGeometry.VEIL, WeaverGeometry::find);
-		this.fine = ElderAnim.parts(model, WeaverGeometry.FINE, WeaverGeometry::find);
 		this.bodyCore = WeaverGeometry.find(model, "bodycore");
 		this.torsoCore = WeaverGeometry.find(model, "torsocore");
 		this.headCore = WeaverGeometry.find(model, "headcore");
@@ -58,11 +57,6 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 		ElderAnim.reset(mantle);
 		ElderAnim.reset(veil);
 		ElderAnim.reset(lanterns);
-		for (ModelPart f : fine) {
-			f.xScale = WeaverGeometry.FINE_SCALE;
-			f.yScale = WeaverGeometry.FINE_SCALE;
-			f.zScale = WeaverGeometry.FINE_SCALE;
-		}
 		float t = s.ageInTicks;
 		// Dying, it plays its ultimate once more, ending in the bloom as it breaks apart
 		boolean dying = s.deathTime > 0;

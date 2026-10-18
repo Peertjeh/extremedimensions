@@ -109,24 +109,40 @@ class Model:
         self.rnd = random.Random(seed)
         self.seed = seed
 
-    def part(self, name, parent, pivot, rot=(0, 0, 0), anim=False, group=None, scale=None):
+    def part(self, name, parent, pivot, rot=(0, 0, 0), anim=False, group=None, scale=None, detail=None):
         """A part. With {@code scale} (say 0.25) it is a fine part: its boxes are given in model pixels as usual but
         built that many times larger and shrunk back by the model at run time, so their textures have that many times
-        more pixels (group "fine"; it may have no children)."""
+        more pixels (group "fine"; it may have no children).
+
+        With {@code detail} (say 4) it is an ordinary part at Minecraft's own size, one pixel to a model pixel, whose
+        texture is painted that many times finer and brought down to that size (see {@link #paint}): a face designed
+        in fine pixels, worn at the game's. Its boxes are snapped to whole pixels of its parent, so what lies on it
+        (an eye on a mask) falls on the same pixels."""
         assert name not in self.idx, name
         assert parent is None or parent in self.idx, (name, parent)
         assert parent is None or not self.idx[parent].get("scale"), (name, "a fine part has no children")
+        assert not (scale and detail), (name, "a part is fine or detailed, not both")
         if scale:
             assert group is None, (name, "a fine part is in the group fine")
             group = "fine"
         p = dict(name=name, parent=parent, pivot=[float(c) for c in pivot], rot=[float(c) for c in rot], boxes=[],
-                 anim=anim or group is not None, group=group, scale=scale)
+                 anim=anim or group is not None or bool(detail), group=group, scale=scale, detail=detail)
         self.idx[name] = p
         self.parts.append(p)
         return name
 
     def box(self, part, x, y, z, w, h, d, mat, inflate=0.0, tag=None):
-        self.idx[part]["boxes"].append(dict(b=(x, y, z, w, h, d), mat=mat, inflate=inflate, tag=tag))
+        p = self.idx[part]
+        if p.get("detail"):
+            # whole pixels of the parent: the edges across the face land on its grid, the front stays where it was
+            px, py = p["pivot"][0], p["pivot"][1]
+            x0, x1 = round(px + x), round(px + x + w)
+            y0, y1 = round(py + y), round(py + y + h)
+            x1, y1 = max(x1, x0 + 1), max(y1, y0 + 1)
+            x, w = x0 - px, x1 - x0
+            y, h = y0 - py, y1 - y0
+            d = max(1, round(d))
+        p["boxes"].append(dict(b=(x, y, z, w, h, d), mat=mat, inflate=inflate, tag=tag))
 
     def xf(self, name):
         chain = []
@@ -1131,6 +1147,146 @@ MATS.update({
     "spire": m_spire,
 })
 
+# ----------------------------------------------------------------------------- hand-drawn pixels
+
+
+def pixmap(rows, colours, grain=6):
+    """A material drawn by hand, pixel for pixel, on the front of a part at Minecraft's own size: {@code rows} are
+    the front face from the top (one character a pixel, "." for none), {@code colours} map each character to
+    (base, glow) with glow None for a pixel that does not shine. Base colours vary a little from pixel to pixel, as
+    the game's own textures do ({@code grain}); the sides take the colour of the front's edge they meet."""
+    for r in rows:
+        assert len(r) == len(rows[0]), ("ragged pixel rows", rows)
+
+    def paint(ctx):
+        fw, fh, px, py, face = ctx["fw"], ctx["fh"], ctx["px"], ctx["py"], ctx["face"]
+        assert (fw, fh) == (len(rows[0]), len(rows)) or face != "north", ("pixel rows do not fit the front", fw, fh)
+        W, H = len(rows[0]), len(rows)
+        if face == "north":
+            x, y = px, py
+        elif face == "top":
+            x, y = min(px, W - 1), 0
+        elif face == "bottom":
+            x, y = min(px, W - 1), H - 1
+        elif face == "east":
+            x, y = 0, min(py, H - 1)
+        elif face == "west":
+            x, y = W - 1, min(py, H - 1)
+        else:
+            x, y = W - 1 - min(px, W - 1), min(py, H - 1)
+        ch = rows[y][x]
+        if ch == ".":
+            return (0, 0, 0, 0), None
+        base, glow = colours[ch]
+        if grain and glow is None:
+            k = 1 + grain / 100.0 * (2 * _h(ctx["gx"], ctx["gy"], ctx["seed"] + 77) - 1)
+            base = shade(base[:3], k)
+        if face != "north" and glow is None:
+            base = shade(base[:3], 0.7)
+        return tuple(base[:3]) + (255,), glow
+    return paint
+
+
+# ----------------------------------------------------------------------------- the Elders' faces, drawn by hand
+# At Minecraft's own size, one pixel to a model pixel (see pixmap). Each lies where the painter it replaces painted the
+# fine face: the Matriarch's eyes (7 by 2) over rows 7-8, the Ferryman's soul lights (2 by 2) over rows 7-8, the
+# Weaver's gem (6 by 9) over rows 4-12 of its mask.
+
+MOTHER_MASK = [
+    "..pbbbbbbbbbbbbp..",
+    ".pbcbbbbrrbbbbcbp.",
+    "pbcbbbbrssrbbbbcbp",
+    "pbbcbbbbrrbbbbcbbp",
+    "pbbbbbbbbbbbbbbbbp",
+    "pbgbbbbbbbbbbbbgbp",
+    "pbkkkkbbbbbbkkkkbp",
+    "pkkkkkkkbbkkkkkkkp",
+    "pkkkkkkkbbkkkkkkkp",
+    "pbkktkkbbbbkktkkbp",
+    "pbbbtbbcbbcbbtbbbp",
+    "pabbtbbcbbcbbtbbap",
+    "paabbtbcbbcbtbbaap",
+    "paabbtbcbbcbtbbaap",
+    "pabbbtbcbbcbtbbbap",
+    "pbbbtbbcbbcbbtbbbp",
+    "pbbbtbbbbbbbbtbbbp",
+    ".pbbbbbbbbbbbbbbp.",
+    ".pbbbbbbbbbbbbbbp.",
+    ".pbmmmmmmmmmmmmbp.",
+    "..pbbbbbbbbbbbbp..",
+    "..pbbbbbbbbbbbbp..",
+    "...pbbbbbbbbbbp...",
+    "....ppbbbbbbpp....",
+]
+MOTHER_EYE = ["ovwPVvo", ".ovPvo."]
+SKULL_FACE = [
+    "...ssss...",
+    "..sbBBbs..",
+    ".sbBBBBbs.",
+    ".sBBBBcBs.",
+    "sbBBBBBBbs",
+    "sbBcBBBBbs",
+    "sbkkbbkkbs",
+    "skkkbbkkks",
+    "skkkbbkkks",
+    ".sbbnnbbs.",
+    ".sbbbbbbs.",
+    "..sbbbbs..",
+    "..tgtgtg..",
+    "...ssss...",
+]
+SOUL_EYE = ["Ee", "ee"]
+WEAVER_MASK = [
+    ".GGGGGGGGGGGG.",
+    "GXXXXXXXXXXXXG",
+    "GXqXXXXXXXXqXG",
+    "GXXXXXXXXXXXXG",
+    "GxXXzzzzzzXXxG",
+    "GxXXzzzzzzXXxG",
+    "GxlXzzzzzzXlxG",
+    "GlxXzzzzzzXxlG",
+    "GxXXzzzzzzXXxG",
+    "GxXXzzzzzzXXxG",
+    "GxXlzzzzzzlXxG",
+    "GxXXzzzzzzXXxG",
+    "GxXXzzzzzzXXxG",
+    ".GxXXXXXXXXxG.",
+    "..GxXXXXXXxG..",
+    "...GxXXXXxG...",
+    "....GxXXxG....",
+    ".....GXXG.....",
+    "......GG......",
+]
+WEAVER_EYE = ["..vv..", ".vVVv.", ".vVWv.", "vVWWVv", "vWWWWv", "vVWWVv", ".vVWv.", ".vVVv.", "..vv.."]
+
+
+def _lit(c, a=255):
+    return (c, tuple(c) + (a,))
+
+
+MATS.update({
+    "mother_mask_px": pixmap(MOTHER_MASK, {
+        "a": ((112, 76, 50), None), "b": ((168, 128, 88), None), "c": ((204, 166, 120), None),
+        "g": ((96, 64, 44), None), "p": ((78, 52, 38), None), "k": ((24, 12, 20), None),
+        "t": ((170, 90, 230), (214, 140, 255, 220)), "s": ((200, 120, 255), (235, 180, 255, 255)),
+        "r": ((100, 68, 48), None), "m": ((30, 18, 22), None)}),
+    "mother_eye_px": pixmap(MOTHER_EYE, {
+        "o": ((40, 16, 40), None), "v": _lit((120, 40, 190), 200), "V": _lit((238, 196, 255)),
+        "P": ((50, 10, 70), (120, 40, 180, 200)), "w": _lit((255, 245, 255))}, grain=0),
+    "skull_face_px": pixmap(SKULL_FACE, {
+        "h": ((20, 18, 30), None), "s": ((98, 90, 76), None), "b": ((188, 178, 150), None),
+        "B": ((222, 212, 186), None), "c": ((112, 102, 86), None), "k": ((6, 4, 12), None),
+        "n": ((14, 10, 18), None), "t": ((224, 214, 182), None), "g": ((40, 32, 34), None)}),
+    "soul_eye_px": pixmap(SOUL_EYE, {"E": _lit((245, 255, 252)), "e": _lit((120, 230, 220), 210)}, grain=0),
+    "mask_carved_px": pixmap(WEAVER_MASK, {
+        "G": ((196, 150, 70), None), "x": ((36, 26, 52), None), "X": ((58, 44, 80), None),
+        "q": ((92, 74, 120), None), "z": ((20, 14, 30), None), "l": ((150, 100, 210), (220, 170, 255, 200))}),
+    "eye_lozenge_px": pixmap(WEAVER_EYE, {
+        "v": ((100, 40, 170), (140, 70, 220, 210)), "V": ((170, 100, 240), (190, 130, 255, 235)),
+        "W": ((240, 210, 255), (250, 230, 255, 255))}, grain=0),
+})
+
+
 # ----------------------------------------------------------------------------- packing, painting, writing
 
 
@@ -1163,11 +1319,63 @@ def pack(model):
     return uv, used
 
 
+def _lum(c):
+    return 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2]
+
+
+def _palette(colours, n):
+    """The few colours a face is painted in (median cut), to bring its pixels back to after averaging."""
+    colours = [c[:3] for c in colours]
+    if not colours:
+        return []
+    distinct = len(set(colours))
+    if distinct <= n:
+        return sorted(set(colours))
+    strip = Image.new("RGB", (len(colours), 1))
+    strip.putdata(colours)
+    pal = strip.quantize(colors=n, method=Image.Quantize.MEDIANCUT).getpalette()[:3 * n]
+    return [tuple(pal[i:i + 3]) for i in range(0, len(pal), 3)]
+
+
+def _nearest(pal, c):
+    return min(pal, key=lambda q: (q[0] - c[0]) ** 2 + (q[1] - c[1]) ** 2 + (q[2] - c[2]) ** 2)
+
+
+def _bring_down(hb, hg, fw, fh, k):
+    """A face painted k times finer, brought down to one pixel to a model pixel the way a pixel artist would: each
+    pixel the average of what it covers, put back on the face's own colours (no new in-between shades); a dark line
+    (a mouth, a lid, a crack) that crosses a pixel keeps it dark, so a face keeps its features; the light keeps its
+    glow where a quarter or more of the pixel glowed."""
+    base_pal = _palette([c for row in hb for c in row if c[3] >= 128], 10)
+    glow_pal = _palette([c for row in hg for c in row if c is not None and c[3] > 0], 6)
+    out_b = [[(0, 0, 0, 0)] * fw for _ in range(fh)]
+    out_g = [[None] * fw for _ in range(fh)]
+    for y in range(fh):
+        for x in range(fw):
+            cell = [hb[y * k + j][x * k + i] for j in range(k) for i in range(k)]
+            op = [c for c in cell if c[3] >= 128]
+            if len(op) * 2 >= len(cell) and base_pal:
+                avg = tuple(sum(c[i] for c in op) / len(op) for i in range(3))
+                dark = [c for c in op if _lum(c) < _lum(avg) - 55]
+                if len(dark) * 4 >= len(op):
+                    pick = tuple(sum(c[i] for c in dark) / len(dark) for i in range(3))
+                else:
+                    pick = avg
+                out_b[y][x] = _nearest(base_pal, pick) + (255,)
+            lit = [hg[y * k + j][x * k + i] for j in range(k) for i in range(k)]
+            lit = [c for c in lit if c is not None and c[3] > 0]
+            if glow_pal and len(lit) * 4 >= len(cell):
+                avg = tuple(sum(c[i] for c in lit) / len(lit) for i in range(3))
+                out_g[y][x] = _nearest(glow_pal, avg) + (int(sum(c[3] for c in lit) / len(lit)),)
+    return out_b, out_g
+
+
 def paint(model, uv):
     img = Image.new("RGBA", (model.tw, model.th), (0, 0, 0, 0))
     glow = Image.new("RGBA", (model.tw, model.th), (0, 0, 0, 0))
     pi, pg = img.load(), glow.load()
     for p in model.parts:
+        k = p.get("detail") or 1
         for bi, bx in enumerate(p["boxes"]):
             u, v, (W, H, D) = uv[(p["name"], bi)]
             f = MATS[bx["mat"]]
@@ -1178,13 +1386,29 @@ def paint(model, uv):
                 "west": (u + D + W, v + D, D, H), "south": (u + 2 * D + W, v + D, W, H),
             }
             for face, (x0, y0, fw, fh) in faces.items():
+                if k == 1:
+                    for py in range(fh):
+                        for px in range(fw):
+                            ctx = dict(face=face, px=px, py=py, fw=fw, fh=fh, gx=x0 + px, gy=y0 + py, seed=seed & 0xFFFF)
+                            b, g = f(ctx)
+                            pi[x0 + px, y0 + py] = b
+                            if g is not None:
+                                pg[x0 + px, y0 + py] = g
+                    continue
+                # a detailed part: painted k times finer, then brought down
+                hb = [[None] * (fw * k) for _ in range(fh * k)]
+                hg = [[None] * (fw * k) for _ in range(fh * k)]
+                for py in range(fh * k):
+                    for px in range(fw * k):
+                        ctx = dict(face=face, px=px, py=py, fw=fw * k, fh=fh * k, gx=x0 * k + px, gy=y0 * k + py,
+                                   seed=seed & 0xFFFF)
+                        hb[py][px], hg[py][px] = f(ctx)
+                ob, og = _bring_down(hb, hg, fw, fh, k)
                 for py in range(fh):
                     for px in range(fw):
-                        ctx = dict(face=face, px=px, py=py, fw=fw, fh=fh, gx=x0 + px, gy=y0 + py, seed=seed & 0xFFFF)
-                        b, g = f(ctx)
-                        pi[x0 + px, y0 + py] = b
-                        if g is not None:
-                            pg[x0 + px, y0 + py] = g
+                        pi[x0 + px, y0 + py] = ob[py][px]
+                        if og[py][px] is not None:
+                            pg[x0 + px, y0 + py] = og[py][px]
     return img, glow
 
 

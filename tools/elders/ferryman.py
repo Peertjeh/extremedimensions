@@ -95,23 +95,23 @@ def build():
     m.box(hood, -10.5, -22, -9, 3.6, 21, 6, "robe")
     m.box(hood, 6.9, -22, -9, 3.6, 21, 6, "robe")
     m.box(hood, -7, -20.5, -6, 14, 19, 1, "socket")
-    # deep in the hood, a skull in fine pixels (four to a model pixel): bone darkening into the shadow, soul light
-    # in its sockets, and the fare he was paid held in its teeth
-    F = 0.25
-    face = m.part("hskull", hood, (0, -11.5, -6.2), scale=F)
-    m.box(face, -5.2, -7.5, -0.4, 10.4, 14, 0.5, "skull_face")
-    jaw = m.part("hjaw", hood, (0, -4.9, -6.3), (0.18, 0, 0), scale=F)
+    # deep in the hood, a skull painted four times finer and brought down to Minecraft's own size: bone darkening
+    # into the shadow, soul light in its sockets, and the fare he was paid held in its teeth
+    F = 4  # the face is designed this many times finer than it is worn
+    face = m.part("hskull", hood, (0, -11.5, -6.2), detail=1)
+    m.box(face, -5.2, -7.5, -0.4, 10.4, 14, 0.5, "skull_face_px")
+    jaw = m.part("hjaw", hood, (0, -4.9, -6.3), (0.18, 0, 0), detail=F)
     m.box(jaw, -2.9, -0.5, -0.25, 5.8, 1.3, 0.45, "skull")
     m.box(jaw, -2.0, 0.8, -0.25, 4.0, 0.7, 0.45, "skull")
     for side, sx in (("l", 1), ("r", -1)):
-        e = m.part(f"heye_{side}", hood, (2.2 * sx, -11.0, -6.5), scale=F)
-        m.box(e, -0.9, -0.9, -0.2, 1.8, 1.8, 0.3, "soul_eye")
-    coin = m.part("hcoin", hood, (0.9, -7.6, -6.75), (0, 0, 0.2), scale=F)
+        e = m.part(f"heye_{side}", hood, (2.2 * sx, -11.0, -6.5), detail=1)
+        m.box(e, -0.9, -0.9, -0.2, 1.8, 1.8, 0.3, "soul_eye_px")
+    coin = m.part("hcoin", hood, (0.9, -7.6, -6.75), (0, 0, 0.2), detail=F)
     m.box(coin, -1.0, -1.0, -0.15, 2.0, 2.0, 0.3, "coin")
     # the frayed edge of the hood round the face
     for k in range(9):
         x = -6.4 + 1.6 * k
-        tt = m.part(f"hfray_{k}", hood, (x, -20.4, -6.6), (0.1, 0, 0.08 * (k - 4)), scale=F)
+        tt = m.part(f"hfray_{k}", hood, (x, -20.4, -6.6), (0.1, 0, 0.08 * (k - 4)), detail=F)
         m.box(tt, -0.45, 0, -0.2, 0.9, 1.6 + (k * 7) % 5 * 0.5, 0.4, "robe")
     for k, (x, z) in enumerate([(-10, -6), (-10, 0), (-10, 6), (10, -6), (10, 0), (10, 6)]):
         d = m.part(f"hdrape{k}", hood, (x * 1.02, -6, z), (0, 0, -0.25 if x > 0 else 0.25), group="mantle")

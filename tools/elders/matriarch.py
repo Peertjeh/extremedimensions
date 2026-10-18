@@ -68,28 +68,28 @@ def build():
     head = m.part("head", neck, (0, -10, -1), anim=True)
     m.box(head, -10, -25, -3, 20, 25, 13, "bark")
     mask = m.part("mask", head, (0, -12.5, -3))
-    # the face itself is carved in fine pixels (four to a model pixel): pale wood with sockets, tears of light and a
-    # sigil on the brow (m_mother_mask paints them where the parts below put the eyes and the mouth)
-    F = 0.25
+    # the face itself is carved four times finer and brought down to Minecraft's own size: pale wood with sockets,
+    # tears of light and a sigil on the brow (m_mother_mask paints them where the parts below put the eyes and the mouth)
+    F = 4  # the face is designed this many times finer than it is worn
     m.box(mask, -8.6, -12, -1.6, 17.2, 24, 1.6, "bark")
-    face = m.part("mface", mask, (0, 0, 0), scale=F)
-    m.box(face, -9, -12.5, -2.5, 18, 25, 0.9, "mother_mask")
-    nose = m.part("mnose", mask, (0, 0.6, -2.45), scale=F)
+    face = m.part("mface", mask, (0, 0, 0), detail=1)
+    m.box(face, -9, -12.5, -2.5, 18, 25, 0.9, "mother_mask_px")
+    nose = m.part("mnose", mask, (0, 0.6, -2.45), detail=F)
     m.box(nose, -1.0, -5.2, -1.2, 2.0, 10, 1.2, "mask")
     for side, sx in (("l", 1), ("r", -1)):
         ch = m.part(f"cheek_{side}", mask, (8.5 * sx, 1, -1), (0, 0.55 * sx, 0))
         m.box(ch, -2.5, -8, -1, 5, 17, 2, "mask")
         # a sorrowing brow, raised where it meets the nose, over an almond of violet light
-        br = m.part(f"mbrow_{side}", mask, (4.5 * sx, -6.9, -2.55), (0, 0, 0.26 * sx), scale=F)
+        br = m.part(f"mbrow_{side}", mask, (4.5 * sx, -6.9, -2.55), (0, 0, 0.26 * sx), detail=F)
         m.box(br, -4.4, -0.9, -0.75, 8.8, 1.8, 1.5, "mask")
-        ey = m.part(f"meye_{side}", mask, (4.6 * sx, -4.0, -2.55), (0, 0, -0.1 * sx), scale=F)
-        m.box(ey, -3.3, -1.1, -0.2, 6.6, 2.2, 0.3, "mother_eye")
+        ey = m.part(f"meye_{side}", mask, (4.6 * sx, -4.0, -2.55), (0, 0, -0.1 * sx), detail=1)
+        m.box(ey, -3.3, -1.1, -0.2, 6.6, 2.2, 0.3, "mother_eye_px")
         hs = m.part(f"mhorn_{side}", mask, (9 * sx, -8, -1), (0.2, 0, -1.0 * sx))
         m.box(hs, -1.2, -9, -1.2, 2.4, 9, 2.4, "mask")
         m.box(hs, -0.6, -14, -0.6, 1.2, 5, 1.2, "bone_dark")
     # roots and moss trailing from the carved mouth
     for k, (x, length) in enumerate([(-3.2, 3.0), (-1.9, 5.2), (-0.6, 3.6), (0.7, 6.0), (2.0, 4.0), (3.3, 2.6)]):
-        rt = m.part(f"mroot_{k}", mask, (x, 7.6, -2.3), (0.08 * (1 if k % 2 else -1), 0, 0.06 * (k - 2.5)), scale=F)
+        rt = m.part(f"mroot_{k}", mask, (x, 7.6, -2.3), (0.08 * (1 if k % 2 else -1), 0, 0.06 * (k - 2.5)), detail=F)
         m.box(rt, -0.25, 0, -0.25, 0.5, length, 0.5, "bark" if k % 2 else "moss")
     chin = m.part("chin", mask, (0, 13, -3), (0, 0, math.pi / 4))
     m.box(chin, -3.8, -3.8, -1, 7.6, 7.6, 2.2, "mask")

@@ -1,6 +1,7 @@
 """The tribe's body: the Lurker, the Hollowling, the Keeper, the Starved One and the Thinned all wear it, each with its
 own texture. A hunched, cloaked giant on long knuckle-walking arms, ragged strips of cloak, strands dripping from a
-mask. The mask, its eyes, its brow, the fringe of the hood and the claws are fine parts (four pixels to a model pixel);
+mask. The claws are fine parts (four pixels to a model pixel); the mask, its eyes, its brow and the fringe of the hood
+are at Minecraft's own size, painted finer and brought down;
 the part names and poses are the ones LurkerModel animates.
 
 usage: python3 tools/lurker/build.py [preview-json-dir]
@@ -19,6 +20,8 @@ JAVA = os.path.join(ROOT, "src/client/java/com/extremedimensions/client/entity")
 TEX = os.path.join(ROOT, "src/client/resources/assets/extremedimensions/textures/entity")
 
 F = 0.25
+# the mask is designed this many times finer than it is worn
+DETAIL = 4
 
 
 def build():
@@ -77,23 +80,23 @@ def build():
 
 
 def _mask_parts(m, head):
-    """The mask and what is round it, as fine parts on the front of the head (shared by all five; each one's
-    texture paints its own face on it)."""
-    face = m.part("tmask", head, (0, 0, 0), scale=F)
-    m.box(face, -5.4, -10.4, -10.45, 10.8, 10.8, 0.5, "t_face")
+    """The mask and what is round it on the front of the head, at Minecraft's own size: painted in fine pixels and
+    brought down to one pixel to a model pixel (shared by all five; each one's texture paints its own face on it)."""
+    face = m.part("tmask", head, (0, 0, 0), detail=1)
+    m.box(face, -5.4, -10.4, -10.45, 10.8, 10.8, 0.5, "t_face_px")
     for side, sx in (("l", 1), ("r", -1)):
         # a heavy brow, low over the eye where it meets the nose
-        brow = m.part(f"tbrow_{side}", head, (2.45 * sx, -6.75, -10.5), (0, 0, -0.22 * sx), scale=F)
+        brow = m.part(f"tbrow_{side}", head, (2.45 * sx, -6.75, -10.5), (0, 0, -0.22 * sx), detail=DETAIL)
         m.box(brow, -1.9, -0.45, -0.3, 3.8, 0.9, 0.6, "t_brow")
-        ey = m.part(f"teye_{side}", head, (2.35 * sx, -5.05, -10.55), scale=F)
-        m.box(ey, -1.3, -0.9, -0.15, 2.6, 1.8, 0.3, "t_eye")
+        ey = m.part(f"teye_{side}", head, (2.35 * sx, -5.05, -10.55), detail=1)
+        m.box(ey, -1.3, -0.9, -0.15, 2.6, 1.8, 0.3, "t_eye_px")
         # the hood's frayed edge hanging down beside the mask
         for j in range(3):
-            fr = m.part(f"tfray_{side}{j}", head, (sx * (5.7 + 0.45 * j), -10.9, -9.6 + 0.9 * j), (0.05, 0, -0.08 * sx), scale=F)
+            fr = m.part(f"tfray_{side}{j}", head, (sx * (5.7 + 0.45 * j), -10.9, -9.6 + 0.9 * j), (0.05, 0, -0.08 * sx), detail=DETAIL)
             m.box(fr, -0.3, 0, -0.3, 0.6, 3.6 + 1.3 * ((j * 2 + (sx > 0)) % 3), 0.6, "t_fray")
     for k in range(7):
         x = -4.2 + 1.4 * k
-        fr = m.part(f"tfringe_{k}", head, (x, -11.15, -10.5), (0.15, 0, 0), scale=F)
+        fr = m.part(f"tfringe_{k}", head, (x, -11.15, -10.5), (0.15, 0, 0), detail=DETAIL)
         m.box(fr, -0.35, 0, -0.25, 0.7, 0.9 + 0.5 * ((k * 3) % 4), 0.5, "t_fray")
 
 
@@ -323,6 +326,97 @@ def _eye(ctx):
     return c + (255,), c + (int(170 + 85 * k),)
 
 
+# The masks and eyes at Minecraft's own size, drawn pixel for pixel: the mask is 10 by 10, the eyes (laid over it,
+# columns 1-3 and 6-8 of rows 4-5) 3 by 2. M mask, L light, S shade, D socket, d half-shadow, K mouth, C crack of
+# light, T tooth, R maw; on the eyes E the hot middle, e the light, W a catchlight, K dark.
+FACE_PX = {
+    "lurker": ["SMMMMCMMMS",
+               "MMLMCMMLMM",
+               "MLMMCMMMLM",
+               "MMMCMMMMMM",
+               "MDDDMMDDDM",
+               "MDDDMMDDDM",
+               "MMdMMMMdCM",
+               "SMMMMMMMCS",
+               "SMMKKKKMMS",
+               ".SMMMMMMS."],
+    "hollowling": [".SLLLLLLS.",
+                   "SLLMLLMLLS",
+                   "LMMMMMMMML",
+                   "MMMMMMMMMM",
+                   "MDDDMMDDDM",
+                   "MDDDMMDDDM",
+                   "SdDdMMdDdS",
+                   "SMMMMMMMMS",
+                   ".SMMKKMMS.",
+                   "..SSMMSS.."],
+    "keeper": [".SLLLLLLS.",
+               "SLLMLLMLLS",
+               "LLMMLLMMLL",
+               "MMMMMMMMMM",
+               "MDDDMMDDDM",
+               "MDDDMMDDDM",
+               "SMdMKKMdMS",
+               "SMMMKKMMMS",
+               ".KTKTKTKT.",
+               ".SMSMSMSS."],
+    "starved": ["SMMMMMMMMS",
+                "MMCMMMMLMM",
+                "MLMCMMMMCM",
+                "MMMMMMMMMM",
+                "MDDDMMDDDM",
+                "MDDDMMDDDM",
+                "SdMdMMdMCS",
+                "STRTRTRTRS",
+                "SRRRRRRRRS",
+                ".SRTRTRTS."],
+    "thinned": ["SLLLLLLLLS",
+                "LLLLLLLLLL",
+                "LLMLLLLMLL",
+                "LMMLLLLMML",
+                "LSSSLLSSSL",
+                "LSSSLLSSSL",
+                "LLSLLLLSLL",
+                "LLLLLLLLLL",
+                "SLLLSSLLLS",
+                ".SLLLLLLS."],
+}
+EYE_PX = {
+    "lurker": ["eEe", ".e."],
+    "hollowling": ["WEe", "eee"],
+    "keeper": ["eEe", "KeK"],
+    "starved": ["eEe", "eee"],
+    "thinned": ["eEe", "..."],
+}
+_PX = {}
+
+
+def _px_colours():
+    lo, hi = P["mask"]
+    shine = lambda c, a=255: (c, tuple(c) + (a,))  # noqa: E731
+    return {
+        "M": (mix(lo, hi, 0.62), None), "L": (mix(lo, hi, 0.88), None), "S": (mix(lo, hi, 0.36), None),
+        "D": ((12, 10, 16), None), "d": (mix((12, 10, 16), lo, 0.55), None), "K": ((20, 16, 22), None),
+        "C": (shade(P["crack"], 0.6), tuple(P["crack"]) + (230,)), "T": ((226, 218, 200), None),
+        "R": ((60, 14, 10), tuple(P["crack"]) + (120,)),
+        "E": shine(P["eye_hot"]), "e": shine(P["eye"], 220), "W": shine((255, 255, 255)),
+    }
+
+
+def _face_px(ctx):
+    key = ("face", P["face"])
+    if key not in _PX:
+        _PX[key] = elderlib.pixmap(FACE_PX[P["face"]], _px_colours())
+    return _PX[key](ctx)
+
+
+def _eye_px(ctx):
+    key = ("eye", P["face"])
+    if key not in _PX:
+        _PX[key] = elderlib.pixmap(EYE_PX[P["face"]], _px_colours(), grain=0)
+    return _PX[key](ctx)
+
+
 MATERIALS = {
     "t_cloak": lambda c: _cloth(c),
     "t_cloak_ragged": lambda c: _cloth(c, ragged=True),
@@ -335,6 +429,8 @@ MATERIALS = {
     "t_fray": _fray,
     "t_brow": _brow,
     "t_face": _face_paint,
+    "t_face_px": _face_px,
+    "t_eye_px": _eye_px,
     "t_eye": _eye,
 }
 

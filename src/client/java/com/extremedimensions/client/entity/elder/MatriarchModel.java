@@ -51,7 +51,7 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 		ElderAnim.reset(branches);
 		ElderAnim.reset(moss);
 		ElderAnim.reset(lanterns);
-		// Her face and heart are fine parts, built four times larger for finer pixels and shrunk to size here
+		// Her heart is a fine part, built four times larger for finer pixels and shrunk to size here
 		for (ModelPart f : fine) {
 			f.xScale = MatriarchGeometry.FINE_SCALE;
 			f.yScale = MatriarchGeometry.FINE_SCALE;

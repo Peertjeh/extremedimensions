@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.29.0: Vanilla Pixels
+
+### Changed
+- **The tribe's masks at Minecraft's own pixel size.** The Lurker, the Hollowling, the Keeper, the Starved One and the
+  Thinned wore masks of pixels four times finer than the rest of their bodies. Each mask is now drawn by hand at the
+  game's own size, 10 by 10 pixels, with its eyes laid over it at 3 by 2: the Lurker's crack of light and slanted
+  violet eyes, the Hollowling's round face and ice-blue lamps, the Keeper's skull and its row of teeth, the Starved
+  One's burning eyes and toothed maw, the Thinned's pale slits. The brows and the frayed edge of the hood come down
+  to the same size.
+- **The Elders' faces at Minecraft's own pixel size.** The Matriarch's carved mask (18 by 24, with almond eyes of
+  violet light, tears of light and the sigil on her brow), the Ferryman's skull in its hood (10 by 14, soul light in
+  its sockets, the coin in its teeth) and the Last Weaver's shield of a mask (14 by 19, gilt-rimmed, with its gem of
+  an eye) are drawn by hand at the game's size; their brows, cheek plates, roots, crowns and spires come down to it
+  too. Their bodies were already at it.
+- What stays finer, by choice: the Veil Ray and the Frayed Ray, the sky of the Seam and the Elders' attack effects.
+  The Lurkers' claws, the Matriarch's heart and the eyes on the Ferryman's prow keep their fine pixels too.
+
+### Added
+- The model generator can draw a part by hand, pixel for pixel, at the game's size, or paint it finer and bring it
+  down, snapped to the pixels of the part it lies on.
+
 ## 2.28.0: Vanilla Look
 
 ### Changed
