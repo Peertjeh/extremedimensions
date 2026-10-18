@@ -109,10 +109,10 @@ public class FrayTests {
 		// is marked loaded by hand, as the game does when that word comes (found by name, whatever this version calls it)
 		String how = markLoaded(p);
 		float before = p.getHealth();
-		boolean took = p.hurtServer(level, level.damageSources().generic(), 1.0F);
+		// (a small knock: a harder blow while the player is still flinching from it still lands, the difference)
+		boolean took = p.hurtServer(level, level.damageSources().generic(), 0.5F);
 		check(helper, took && p.getHealth() < before, "the test player cannot be hurt at all (marked loaded: %s; took: %s)", how, took);
 		p.setHealth(before);
-		p.invulnerableTime = 0;
 		check(helper, p.getY() < Config.SEAM_FRAY_TOP, "the test's ground (%s) is above the Fray", p.getY());
 		VeilRay ray = ModEntities.VEIL_RAY.spawn(level, BlockPos.containing(p.getX() + 16, p.getY() + 9, p.getZ() + 4), EntitySpawnReason.EVENT);
 		check(helper, ray != null, "no ray could be made");
