@@ -57,8 +57,12 @@ public class ClientShots implements FabricClientGameTest {
 		});
 		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
 		ctx.waitTicks(20);
-		// The world round it loaded first: its arena is raised only where the world is loaded
-		sp.getConnection().waitForChunksRender();
+		// The world round it loaded first: its arena is raised only where the world is loaded (on the server; the
+		// client may still be drawing the far chunks, which a software renderer does slowly)
+		for (int i = 0; i < 60 && !sp.getServer().computeOnServer(s -> loadedRound(s, 160)); i++) {
+			ctx.waitTicks(10);
+		}
+		ctx.waitTicks(40);
 		sp.getServer().runOnServer(summon::accept);
 		ctx.waitTicks(30);
 		ctx.runOnClient(mc -> check(com.extremedimensions.client.fx.CameraLock.locked(), "the view is not held on the forming " + name));
@@ -111,6 +115,18 @@ public class ClientShots implements FabricClientGameTest {
 		// Its arena is taken down at once, so the next fight builds on untouched ground
 		sp.getServer().runOnServer(s -> com.extremedimensions.elder.ElderArena.clear());
 		ctx.waitTicks(10);
+	}
+
+	/** Whether the world is loaded on the server in a ring this far round the player. */
+	private static boolean loadedRound(MinecraftServer s, int r) {
+		ServerPlayer p = player(s);
+		for (int a = 0; a < 8; a++) {
+			double t = a * Math.PI / 4;
+			if (!p.level().isLoaded(net.minecraft.core.BlockPos.containing(p.getX() + r * Math.cos(t), p.getY(), p.getZ() + r * Math.sin(t)))) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
