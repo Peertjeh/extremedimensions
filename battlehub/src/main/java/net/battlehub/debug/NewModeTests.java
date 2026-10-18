@@ -393,9 +393,15 @@ final class NewModeTests {
 				p(A).getInventory().getSelectedSlot() == 0 && p(A).clientSlot() == 0 && p(B).getInventory().getSelectedSlot() == 0 && p(B).clientSlot() == 0);
 		s.check(tag + ": the arena's chunks stay loaded while it is in use", () -> {
 			net.battlehub.arena.Arena a = match().arena();
-			BlockPos far = a.origin().offset(a.blueprint().maxX(), 0, a.blueprint().maxZ());
+			// the far corner of where play happens (plus room for arrows); landmarks further out load as usual
+			net.minecraft.world.phys.AABB held = a.held();
+			BlockPos far = BlockPos.containing(held.maxX - 1, 0, held.maxZ - 1);
+			int[] core = a.blueprint().core();
+			BlockPos edge = core == null ? far : a.origin().offset(core[3], 0, core[5]);
 			long key = (far.getX() >> 4 & 0xFFFFFFFFL) | ((long) (far.getZ() >> 4) << 32);
-			return net.battlehub.arena.ArenaChunks.held() > 0 && a.level().getForceLoadedChunks().contains(key);
+			long edgeKey = (edge.getX() >> 4 & 0xFFFFFFFFL) | ((long) (edge.getZ() >> 4) << 32);
+			return net.battlehub.arena.ArenaChunks.held() > 0 && a.level().getForceLoadedChunks().contains(key)
+					&& a.level().getForceLoadedChunks().contains(edgeKey);
 		});
 		s.check(tag + ": building stops at the walls and below the top", () -> {
 			net.battlehub.arena.Arena a = match().arena();
