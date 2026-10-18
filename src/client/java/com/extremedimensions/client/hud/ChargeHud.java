@@ -90,9 +90,10 @@ public class ChargeHud implements HudElement {
 			int gy = corner.bottom() ? y : y + count * 26;
 			int gx = right ? w - 6 - GUIDE_W : 6;
 			// On a narrow screen the card would reach under the expedition timer: then it waits below it
-			boolean timerTop = ClientState.dimCode != 0 && ClientOptions.timer() == ClientOptions.TimerPlace.TOP;
-			if (timerTop && !corner.bottom() && (right ? gx < (w + TIMER_W) / 2 : gx + GUIDE_W > (w - TIMER_W) / 2)) {
-				gy = Math.max(gy, 5 + TIMER_H + (ClientState.dimCode == 3 && !ClientState.trial.isEmpty() ? TRIAL_H : 0) + 4);
+			boolean timerTop = ClientState.dimCode != 0 && (bossBar() || ClientOptions.timer() == ClientOptions.TimerPlace.TOP);
+			int tw = bossBar() ? 182 : TIMER_W;
+			if (timerTop && !corner.bottom() && (right ? gx < (w + tw) / 2 : gx + GUIDE_W > (w - tw) / 2)) {
+				gy = Math.max(gy, timerBottom() + 4);
 			}
 			guideCard(g, font, gx, gy, guide, guideH);
 			if (corner.bottom()) {
@@ -193,8 +194,20 @@ public class ChargeHud implements HudElement {
 		return ClientOptions.timer() == ClientOptions.TimerPlace.TOP ? 5 : h - 64 - TIMER_H;
 	}
 
+	/** Whether the expedition timer is the server's boss bar (as Minecraft shows such things) instead of this panel. */
+	public static boolean bossBar() {
+		return Config.HUD_BOSS_BAR > 0;
+	}
+
+	/** How far down the screen the timer reaches (GUI pixels at the HUD's size), for what must sit below it. */
+	public static int timerBottom() {
+		boolean trial = ClientState.dimCode == 3 && !ClientState.trial.isEmpty();
+		// a boss bar is 19 pixels of name and bar from 3 down (one more for a trial), drawn at the game's own size
+		return bossBar() ? Math.round((3 + 19 * (trial ? 2 : 1) + 2) / (ClientOptions.hudScale() / 100f)) : 5 + TIMER_H + (trial ? TRIAL_H : 0);
+	}
+
 	private static void timer(GuiGraphicsExtractor g, Font font, int w, int h, long now) {
-		if (ClientState.dimCode == 0 || (ClientState.collapseAt > 0 && now - ClientState.collapseAt < HOLD_MAX_MS)) {
+		if (ClientState.dimCode == 0 || bossBar() || (ClientState.collapseAt > 0 && now - ClientState.collapseAt < HOLD_MAX_MS)) {
 			return;
 		}
 		double remaining = ClientState.liveRun();
@@ -407,13 +420,14 @@ public class ChargeHud implements HudElement {
 			}
 		}
 
-		// The timer bar snaps in two and falls away, where the player keeps their timer
+		// The timer bar snaps in two and falls away, where the player keeps their timer (the boss bar's place at the
+		// top of the screen, or their own panel's)
 		if (ct < 1300) {
 			double t = ct / 1300.0;
-			float scale = ClientOptions.hudScale() / 100f;
+			float scale = bossBar() ? 1f : ClientOptions.hudScale() / 100f;
 			int barW = (int) (182 * scale);
-			int barH = Math.max(2, (int) (6 * scale));
-			int barY = (int) ((timerTop(Math.round(h / scale)) + 17) * scale);
+			int barH = Math.max(2, (int) ((bossBar() ? 5 : 6) * scale));
+			int barY = bossBar() ? 12 : (int) ((timerTop(Math.round(h / scale)) + 17) * scale);
 			int bx = (w - barW) / 2;
 			int half = barW / 2;
 			int dx = (int) (t * 200);

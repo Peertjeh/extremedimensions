@@ -23,4 +23,8 @@ public final class Fx {
 	public static final int SEAM_BRIEF = 14;
 	/** Down in the Fray (the first few descents): what it is. Value: ten times how much faster time runs out there. */
 	public static final int FRAY_BRIEF = 15;
+	/** A page of the Tether Journal was written: a toast, as the game shows such news. Value: the page's ordinal. */
+	public static final int JOURNAL_PAGE = 16;
+	/** A creature was written into the bestiary: a toast. Value: the creature's ordinal. */
+	public static final int BESTIARY = 17;
 }

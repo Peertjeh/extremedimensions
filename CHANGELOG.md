@@ -1,5 +1,35 @@
 # Changelog
 
+## 2.28.0: Vanilla Look
+
+### Changed
+- **The expedition timer is a boss bar.** The time left on an expedition now shows as Minecraft shows such things: a
+  boss bar at the top of the screen, stacked with an Elder's or a raid's as the game stacks them. Its name says where
+  you are, the time left (red in the last half minute), the way home (in the Seam an arrow and the distance to the rift,
+  elsewhere the stretch of the Tether) and the drain when it runs faster. The bar empties as the time runs out, in the
+  colour of the world (purple in the Seam, yellow in the Nether, pink in the End), and turns red in the last minute. A
+  Rift Trial under way has a green bar of its own under it, filling towards the next medal. A setting brings back the
+  mod's own timer panel.
+- **Screens and panels in Minecraft's style.** Every panel of the mod is now drawn as Minecraft draws a tooltip: the
+  near-black ground with its violet edge. Titles are plain white text, meters are flat bars like the boss bar, and the
+  colours are the game's own text colours (aqua, gold, red, yellow, green, grey). The Tether Journal keeps its
+  parchment.
+- **News as toasts.** A new page in the Tether Journal, or a creature written into the bestiary, comes up as a toast in
+  the corner, as the game shows a recipe or an advancement, instead of a line over the hotbar.
+- **Sounds on the game's sliders.** Every sound of the mod plays on the volume slider Minecraft would put it on: music
+  on Music, the hum of the Seam and other surroundings on Ambient/Environment, the tribe and the Elders on Hostile
+  Creatures, blocks on Blocks, the Tether and the rifts on Players. Nothing plays on Master alone any more.
+- The briefing cards and the guide card make room for the boss bars.
+
+### Fixed
+- A shield now stops a Frayed Ray's sting: blocked, it neither poisons nor throws you.
+
+### Added
+- Setting: the expedition timer as a boss bar or as the mod's own panel.
+- Gametests: the timer is a boss bar on an expedition and goes when it ends or the setting is off; the arrow home turns
+  with the player; no sound of the mod plays on Master. The client test photographs the boss bars, the panel for
+  whoever switches them off, and a toast.
+
 ## 2.27.0: The Frayed
 
 ### Added

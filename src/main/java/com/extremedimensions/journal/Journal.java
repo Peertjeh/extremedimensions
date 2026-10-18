@@ -21,6 +21,7 @@ public final class Journal {
 		if (!d.journal.add(e.id)) {
 			return;
 		}
+		WorldFx.fx(p, com.extremedimensions.network.Fx.JOURNAL_PAGE, e.ordinal());
 		WorldFx.soundSelf(p, "minecraft:item.book.page_turn", 1.0f, 0.7f);
 		WorldFx.soundSelf(p, "minecraft:block.sculk_shrieker.shriek", 0.15f, 1.6f);
 		WorldFx.particles(p, "extremedimensions:soul_mote", 1.2, 0.4, 0.0, 10);

@@ -473,7 +473,7 @@ public final class ExpeditionService {
 		double x = mob.getX(), y = mob.getY() + 0.5, z = mob.getZ();
 		mob.level().addFreshEntity(new ItemEntity(mob.level(), x, y, z, new ItemStack(ModItems.TETHER_FRAGMENT), 0, 0, 0));
 		WorldFx.particleIn(where, "minecraft:soul", x, y, z, 0.3, 0.4, 0.3, 0.04, 25);
-		WorldFx.soundIn(where, "minecraft:particle.soul_escape", "master", x, y, z, 1.5f, 0.7f);
+		WorldFx.soundIn(where, "minecraft:particle.soul_escape", "player", x, y, z, 1.5f, 0.7f);
 		Journal.unlock(killer, d, JournalEntry.FRAGMENT);
 	}
 }

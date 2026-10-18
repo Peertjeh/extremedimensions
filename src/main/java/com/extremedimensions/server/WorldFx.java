@@ -159,15 +159,42 @@ public final class WorldFx {
 
 	// ------------------------------------------------------------------ sounds
 
-	/** A sound at the player, audible to everyone nearby. */
+	/** A sound at the player, audible to everyone nearby, on the volume slider Minecraft would put it on. */
 	public static void sound(ServerPlayer p, String id, float vol, float pitch) {
-		p.level().playSound(null, p.getX(), p.getY(), p.getZ(), sound(id), SoundSource.MASTER, vol, pitch);
+		p.level().playSound(null, p.getX(), p.getY(), p.getZ(), sound(id), category(id), vol, pitch);
 	}
 
-	/** A sound only this player hears. */
+	/** A sound only this player hears, on the volume slider Minecraft would put it on. */
 	public static void soundSelf(ServerPlayer p, String id, float vol, float pitch) {
-		p.connection.send(new ClientboundSoundPacket(sound(id), SoundSource.MASTER, p.getX(), p.getY(), p.getZ(), vol, pitch,
+		p.connection.send(new ClientboundSoundPacket(sound(id), category(id), p.getX(), p.getY(), p.getZ(), vol, pitch,
 				ThreadLocalRandom.current().nextLong()));
+	}
+
+	/**
+	 * The volume slider a sound belongs on, as Minecraft sorts its own: the tribe and the Elders on Hostile Creatures,
+	 * the hum of the Seam on Ambient/Environment, blocks on Blocks, music on Music, and whatever happens to the player
+	 * (the Tether, rifts, curses, pages) on Players. Never Master, which no slider but the first can turn down.
+	 */
+	public static SoundSource category(String id) {
+		String n = id.substring(id.indexOf(':') + 1);
+		if (n.startsWith("music")) {
+			return SoundSource.MUSIC;
+		}
+		if (n.startsWith("block.") || n.startsWith("particle.")) {
+			return SoundSource.BLOCKS;
+		}
+		if (n.contains("ambient") || n.startsWith("ambient.") || n.startsWith("event.raid") || n.startsWith("entity.lightning_bolt")) {
+			return n.startsWith("lurker") || n.startsWith("hollowling") || n.startsWith("hoard") ? SoundSource.HOSTILE : n.startsWith("entity.lightning_bolt") ? SoundSource.WEATHER
+					: n.startsWith("event.raid") ? SoundSource.HOSTILE : SoundSource.AMBIENT;
+		}
+		if (n.startsWith("lurker") || n.startsWith("hollowling") || n.startsWith("keeper") || n.startsWith("hoard") || n.startsWith("entity.warden")
+				|| n.startsWith("entity.phantom") || n.startsWith("entity.vex")) {
+			return SoundSource.HOSTILE;
+		}
+		if (n.startsWith("entity.villager")) {
+			return SoundSource.NEUTRAL;
+		}
+		return SoundSource.PLAYERS;
 	}
 
 	/** A sound from a position that only this player hears (a whisper meant for one). */

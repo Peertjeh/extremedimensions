@@ -82,9 +82,9 @@ public class SeamBriefing implements HudElement {
 		h += 12;
 		// Under the crosshair, clear of the hotbar (and of the timer when it sits above the hotbar); on a short screen as
 		// high as it must go, but never over the timer at the top (the hotbar gives way first)
-		boolean top = ClientOptions.timer() == ClientOptions.TimerPlace.TOP;
+		boolean top = ChargeHud.bossBar() || ClientOptions.timer() == ClientOptions.TimerPlace.TOP;
 		int floor = sh - (top ? 64 : 64 + 40);
-		int ceiling = top ? 5 + 36 + (ClientState.trial.isEmpty() ? 0 : 12) + 4 : 6;
+		int ceiling = top ? ChargeHud.timerBottom() + 4 : 6;
 		int y = Math.max(ceiling, Math.min(sh / 2 + 14, floor - h));
 		int x = (sw - w) / 2;
 		// On a screen too short for it even so, it is drawn smaller, hanging from under the timer

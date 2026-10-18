@@ -913,6 +913,15 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.runOnClient(mc -> ClientState.briefAt = 0);
 			ctx.waitTicks(2);
 			ctx.takeScreenshot("09_trial_hud");
+			// The timer as the mod's own panel, for whoever switches the boss bar off
+			sp.getServer().runOnServer(s -> com.extremedimensions.config.Config.HUD_BOSS_BAR = 0);
+			ctx.waitTicks(8);
+			ctx.takeScreenshot("09_trial_hud_panel");
+			sp.getServer().runOnServer(s -> com.extremedimensions.config.Config.HUD_BOSS_BAR = 1);
+			// News as Minecraft gives it: a toast in the corner for a new journal page
+			ctx.runOnClient(mc -> com.extremedimensions.client.hud.Toasts.journal(0));
+			ctx.waitTicks(24);
+			ctx.takeScreenshot("27_toast");
 
 			// The Seam builds itself before your eyes: an arch ten blocks ahead flies in out of the nothing
 			sp.getServer().runOnServer(s -> {

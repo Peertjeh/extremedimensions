@@ -95,6 +95,7 @@ public final class ServerEvents {
 			HollowService.clear();
 			SeamService.clear();
 			com.extremedimensions.seam.SeamFauna.clear();
+			com.extremedimensions.expedition.ExpeditionBar.clear();
 			WorldService.clear();
 			MendingService.clear();
 			com.extremedimensions.elder.FerrymanService.clear();
@@ -131,6 +132,7 @@ public final class ServerEvents {
 			// A fallen player who leaves bleeds out
 			com.extremedimensions.coop.FallenService.onLeave(handler.getPlayer());
 			Requests.forget(handler.getPlayer());
+			com.extremedimensions.expedition.ExpeditionBar.forget(handler.getPlayer().getUUID());
 			DataStore.flush();
 		});
 		// Every player plays by the server's numbers: the HUD and screens get the world's settings on joining
@@ -467,6 +469,7 @@ public final class ServerEvents {
 		}
 
 		TetherService.sweep(s);
+		com.extremedimensions.expedition.ExpeditionBar.tick(s);
 		if (s.getTickCount() % 1200 == 0) {
 			AtonementGuard.sweep(s);
 		}

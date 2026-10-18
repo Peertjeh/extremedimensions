@@ -379,10 +379,14 @@ public class VeilRay extends PathfinderMob {
 		return Math.sqrt(dx * dx + dy * dy + dz * dz);
 	}
 
-	/** The sting: a blow, poison, and a shove along the line of the dive. */
+	/** The sting: a blow, poison, and a shove along the line of the dive; a shield raised against it stops all three. */
 	private void strike(ServerLevel level, ServerPlayer p) {
 		strikes++;
-		p.hurtServer(level, this.damageSources().mobAttack(this), (float) Math.max(0, Config.SEAM_FRAY_RAY_DAMAGE));
+		boolean landed = p.hurtServer(level, this.damageSources().mobAttack(this), (float) Math.max(0, Config.SEAM_FRAY_RAY_DAMAGE));
+		if (!landed && Config.SEAM_FRAY_RAY_DAMAGE > 0) {
+			// blocked (the game plays the shield's sound itself), or the player is still reeling from the last blow
+			return;
+		}
 		if (Config.SEAM_FRAY_RAY_POISON > 0) {
 			WorldFx.effect(p, MobEffects.POISON, Config.SEAM_FRAY_RAY_POISON, 0);
 		}

@@ -232,6 +232,8 @@ public final class ClientState {
 			case 12 -> sealAt = now;
 			case 13 -> stormAt = now;
 			case 14, 15 -> { briefAt = now; briefKind = type == 14 ? 1 : 2; briefValue = value; }
+			case 16 -> com.extremedimensions.client.hud.Toasts.journal(value);
+			case 17 -> com.extremedimensions.client.hud.Toasts.bestiary(value);
 			default -> { }
 		}
 	}

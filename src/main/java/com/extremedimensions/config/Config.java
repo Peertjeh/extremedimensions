@@ -62,6 +62,8 @@ public final class Config {
 	public static int BOUNCE_GRACE_TICKS = 40;
 	/** 1 = a big title ("The Tether Tightens", "Expedition Ended") on respawn after a death that costs a curse; 0 = none. */
 	public static int RESPAWN_TITLE = 0;
+	/** 1 = the expedition timer is a boss bar at the top of the screen, as Minecraft shows such things; 0 = the mod's own panel. */
+	public static int HUD_BOSS_BAR = 1;
 	/**
 	 * 1 = the mod acts only in its own worlds: the Overworld, the Nether, the End and the Seam. In another mod's world its
 	 * curses sleep, an expedition waits, and nothing of it spawns or strikes. 0 = it acts in every world.
@@ -723,7 +725,7 @@ public final class Config {
 			{"seam_fly_from", 2, 64}, {"seam_damage", 0, 100},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},
 			{"seam_fray_ray_cooldown", 1, 120}, {"seam_fray_gloom", 0, 30}, {"seam_fray_gloom_every", 10, 3600}, {"seam_fray_unravel", 0, 1},
-			{"seam_briefing", 0, 100}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
+			{"seam_briefing", 0, 100}, {"hud_boss_bar", 0, 1}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
 			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600}, {"coop_burden_relief_per_day", 0, 100}};
 
 	/** Brings a setting back within its bounds, if it has any. */

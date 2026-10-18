@@ -99,8 +99,8 @@ public final class Bestiary {
 	public static void seen(ServerPlayer p, Beast b) {
 		PlayerData d = DataStore.get(p.getUUID());
 		if (d.seen.add(b.id)) {
-			p.sendSystemMessage(Component.translatable("gui.extremedimensions.bestiary.seen", Component.translatable(b.nameKey()))
-					.withStyle(ChatFormatting.DARK_AQUA), true);
+			// a toast, as the game shows such news
+			com.extremedimensions.server.WorldFx.fx(p, com.extremedimensions.network.Fx.BESTIARY, b.ordinal());
 			DataStore.markDirty();
 		}
 	}

@@ -23,7 +23,8 @@
 			"com.extremedimensions.gametest.GateTests",
 			"com.extremedimensions.gametest.ArchitectureTests",
 			"com.extremedimensions.gametest.ResetTests",
-			"com.extremedimensions.gametest.GroundTests"
+			"com.extremedimensions.gametest.GroundTests",
+			"com.extremedimensions.gametest.VanillaTests"
 		],
 		"fabric-client-gametest": [
 			"com.extremedimensions.gametest.ClientShots"

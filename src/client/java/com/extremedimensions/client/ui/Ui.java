@@ -8,35 +8,45 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.resources.language.I18n;
 
 /**
- * The mod's visual language. Every HUD element, screen and panel draws through these helpers, so colours,
- * borders and spacing stay identical everywhere.
+ * The mod's visual language: Minecraft's own. Every HUD element, screen and panel draws through these helpers, so
+ * they all look like the game around them.
  *
- * <p>Style: dark soot-black panels with a hairline accent border and small corner rivets, parchment text, and
- * one accent colour per context (soul teal for the Tether, ember for the Nether, violet for the End).
+ * <p>Panels are the game's tooltip box (near-black violet with its fading violet frame), text is the game's white
+ * and grey with its drop shadow, colours are the sixteen of Minecraft's chat (aqua for the Tether, gold for the
+ * Nether, light purple for the End and the Seam, red for danger), titles are plain like a vanilla screen's, and
+ * meters are flat like a boss bar.
  */
 public final class Ui {
 	private Ui() {}
 
-	// --- Palette ---------------------------------------------------------------------------------
-	public static final int INK = 0x0C0A10;
-	public static final int INK_RAISED = 0x16121C;
+	// --- Palette (Minecraft's chat colours) ------------------------------------------------------
+	/** The tooltip box's ground. */
+	public static final int INK = 0x100010;
+	public static final int INK_RAISED = 0x1C0C1C;
 	public static final int SHADOW = 0x000000;
-	public static final int TRACK = 0x231D2A;
+	public static final int TRACK = 0x2C2C2C;
 
-	public static final int SOUL = 0x6FE3D0;
-	public static final int SOUL_DIM = 0x2E7F78;
-	public static final int EMBER = 0xFF7A1A;
-	public static final int EMBER_DEEP = 0xC0462E;
-	public static final int VOID = 0xB66BFF;
-	/** The Extreme curses. */
-	public static final int BLOOD = 0xD0203A;
+	/** Aqua and dark aqua. */
+	public static final int SOUL = 0x55FFFF;
+	public static final int SOUL_DIM = 0x00AAAA;
+	/** Gold and red. */
+	public static final int EMBER = 0xFFAA00;
+	public static final int EMBER_DEEP = 0xFF5555;
+	/** Light purple. */
+	public static final int VOID = 0xFF55FF;
+	/** Dark red: the Extreme curses. */
+	public static final int BLOOD = 0xAA0000;
 
-	public static final int PARCHMENT = 0xEADFC6;
-	public static final int TEXT = 0xCFC3AE;
-	public static final int MUTED = 0x8A7F70;
-	public static final int DANGER = 0xFF5A4E;
-	public static final int WARN = 0xFFB347;
-	public static final int OK = 0x8FDB8A;
+	/** White for names and what must be read, grey for what is said beside it. */
+	public static final int PARCHMENT = 0xFFFFFF;
+	public static final int TEXT = 0xFFFFFF;
+	public static final int MUTED = 0xAAAAAA;
+	public static final int DANGER = 0xFF5555;
+	public static final int WARN = 0xFFFF55;
+	public static final int OK = 0x55FF55;
+
+	/** The tooltip frame's violet, at its top and its foot (as argb, with the game's own alpha). */
+	private static final int FRAME_TOP = 0x505000FF, FRAME_FOOT = 0x5028007F;
 
 	// --- Accessibility ---------------------------------------------------------------------------
 
@@ -162,79 +172,75 @@ public final class Ui {
 		text(g, font, s, cx - font.width(s) / 2, y, rgb, alpha);
 	}
 
-	/** A spaced, upper-case heading flanked by thin accent rules: "—— TITLE ——". */
+	/** A title as a vanilla screen has one: plain white words, centred, with the game's drop shadow. */
 	public static void heading(GuiGraphicsExtractor g, Font font, String s, int cx, int y, int accent, double alpha) {
-		String t = s.toUpperCase();
-		int w = font.width(t);
-		centered(g, font, t, cx, y, PARCHMENT, alpha);
-		int ry = y + font.lineHeight / 2 - 1;
-		int len = 18;
-		g.fill(cx - w / 2 - 6 - len, ry, cx - w / 2 - 6, ry + 1, argb(alpha * 0.8, accent));
-		g.fill(cx + w / 2 + 6, ry, cx + w / 2 + 6 + len, ry + 1, argb(alpha * 0.8, accent));
-		g.fill(cx - w / 2 - 6 - len - 3, ry - 1, cx - w / 2 - 6 - len, ry + 2, argb(alpha, accent));
-		g.fill(cx + w / 2 + 6 + len, ry - 1, cx + w / 2 + 6 + len + 3, ry + 2, argb(alpha, accent));
+		centered(g, font, s, cx, y, PARCHMENT, alpha);
 	}
 
 	// --- Shapes ----------------------------------------------------------------------------------
 
 	/**
-	 * The standard panel: soft shadow, black outline, accent hairline, raised inner face and corner rivets.
+	 * The standard panel: the game's tooltip box, its ground reaching a pixel past its frame except at the corners,
+	 * and its violet frame fading from top to foot. (Minecraft draws every box this way, whatever it holds, so the
+	 * accent is not used for the frame.)
 	 */
 	public static void panel(GuiGraphicsExtractor g, int x, int y, int w, int h, int accent, double alpha) {
-		g.fill(x + 2, y + 2, x + w + 2, y + h + 2, argb(alpha * 0.35, SHADOW));
-		g.fill(x - 1, y - 1, x + w + 1, y + h + 1, argb(alpha, SHADOW));
-		g.fill(x, y, x + w, y + h, argb(alpha * 0.85, accent));
-		g.fill(x + 1, y + 1, x + w - 1, y + h - 1, argb(alpha * 0.96, INK));
-		g.fill(x + 2, y + 2, x + w - 2, y + h / 2, argb(alpha * 0.5, INK_RAISED));
-		g.fill(x + 2, y + 1, x + w - 2, y + 2, argb(alpha * 0.25, 0xFFFFFF));
-		rivet(g, x, y, accent, alpha);
-		rivet(g, x + w - 3, y, accent, alpha);
-		rivet(g, x, y + h - 3, accent, alpha);
-		rivet(g, x + w - 3, y + h - 3, accent, alpha);
+		int ground = argb(alpha * 0.94, INK);
+		g.fill(x + 1, y, x + w - 1, y + h, ground);
+		g.fill(x, y + 1, x + 1, y + h - 1, ground);
+		g.fill(x + w - 1, y + 1, x + w, y + h - 1, ground);
+		frame(g, x + 1, y + 1, w - 2, h - 2, alpha);
 	}
 
-	private static void rivet(GuiGraphicsExtractor g, int x, int y, int accent, double alpha) {
-		g.fill(x, y, x + 3, y + 3, argb(alpha, mix(accent, 0xFFFFFF, 0.35)));
-		g.fill(x + 1, y + 1, x + 2, y + 2, argb(alpha, SHADOW));
+	/** The tooltip box's frame: a pixel wide, violet at the top fading darker to the foot. */
+	private static void frame(GuiGraphicsExtractor g, int x, int y, int w, int h, double alpha) {
+		g.fill(x, y, x + w, y + 1, fade(FRAME_TOP, alpha));
+		g.fill(x, y + h - 1, x + w, y + h, fade(FRAME_FOOT, alpha));
+		int steps = Math.max(1, Math.min(8, (h - 2) / 3));
+		for (int i = 0; i < steps; i++) {
+			int y0 = y + 1 + (h - 2) * i / steps, y1 = y + 1 + (h - 2) * (i + 1) / steps;
+			int c = blend(FRAME_TOP, FRAME_FOOT, (i + 0.5) / steps);
+			g.fill(x, y0, x + 1, y1, fade(c, alpha));
+			g.fill(x + w - 1, y0, x + w, y1, fade(c, alpha));
+		}
 	}
 
-	/** A small panel for HUD chips: no shadow block, lighter border. */
+	/** An argb colour with its alpha scaled. */
+	private static int fade(int argb, double alpha) {
+		return argb((int) Math.round(((argb >>> 24) & 255) * clamp01(alpha)), argb & 0xFFFFFF);
+	}
+
+	/** Two argb colours mixed, alpha too. */
+	private static int blend(int a, int b, double t) {
+		int alpha = (int) Math.round(((a >>> 24) & 255) * (1 - t) + ((b >>> 24) & 255) * t);
+		return argb(alpha, mix(a & 0xFFFFFF, b & 0xFFFFFF, t));
+	}
+
+	/** A small panel for the HUD: the same tooltip box. */
 	public static void chip(GuiGraphicsExtractor g, int x, int y, int w, int h, int accent, double alpha) {
-		g.fill(x - 1, y - 1, x + w + 1, y + h + 1, argb(alpha * 0.8, SHADOW));
-		g.fill(x, y, x + w, y + h, argb(alpha * 0.75, INK));
-		g.fill(x, y, x + 1, y + h, argb(alpha, accent));
+		panel(g, x, y, w, h, accent, alpha);
 	}
 
+	/** A rule between parts of a panel, as the game draws one under a screen's header: light over dark. */
 	public static void divider(GuiGraphicsExtractor g, int x, int y, int w, int accent, double alpha) {
-		g.fill(x, y, x + w, y + 1, argb(alpha * 0.35, accent));
-		int cx = x + w / 2;
-		g.fill(cx - 2, y - 1, cx + 2, y + 2, argb(alpha * 0.9, accent));
+		g.fill(x, y, x + w, y + 1, argb(alpha * 0.22, 0xFFFFFF));
+		g.fill(x, y + 1, x + w, y + 2, argb(alpha * 0.5, SHADOW));
 	}
 
 	/**
-	 * A meter with a dark track, tick marks every 10 %, a fill with a top highlight, and an optional sweep shine.
+	 * A meter as flat as a boss bar: the bar's colour darkened for what is empty, its colour for what is full, a
+	 * lighter pixel along its top.
 	 */
 	public static void meter(GuiGraphicsExtractor g, int x, int y, int w, int h, double frac, int color, double alpha, boolean shine) {
 		frac = clamp01(frac);
-		g.fill(x - 1, y - 1, x + w + 1, y + h + 1, argb(alpha, SHADOW));
-		g.fill(x, y, x + w, y + h, argb(alpha, TRACK));
+		g.fill(x, y, x + w, y + h, argb(alpha, mix(color, SHADOW, 0.7)));
 		int fw = (int) Math.round(w * frac);
 		if (fw > 0) {
 			g.fill(x, y, x + fw, y + h, argb(alpha, color));
-			g.fill(x, y, x + fw, y + 1, argb(alpha * 0.6, mix(color, 0xFFFFFF, 0.6)));
-			g.fill(x, y + h - 1, x + fw, y + h, argb(alpha * 0.5, mix(color, SHADOW, 0.5)));
-			if (shine) {
-				int sweep = (int) ((System.currentTimeMillis() / 12) % (w + 40)) - 20;
-				int s0 = Math.max(x, x + sweep);
-				int s1 = Math.min(x + fw, x + sweep + 12);
-				if (s1 > s0) {
-					g.fill(s0, y, s1, y + h, argb(alpha * 0.28, 0xFFFFFF));
-				}
-			}
+			g.fill(x, y, x + fw, y + 1, argb(alpha * 0.7, mix(color, 0xFFFFFF, 0.45)));
 		}
-		for (int i = 1; i < 10; i++) {
-			int tx = x + w * i / 10;
-			g.fill(tx, y + h - 2, tx + 1, y + h, argb(alpha * 0.45, SHADOW));
+		if (h > 2) {
+			g.fill(x, y + h - 1, x + w, y + h, argb(alpha * 0.4, SHADOW));
 		}
 	}
 
