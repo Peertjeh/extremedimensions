@@ -75,7 +75,7 @@ final class BotBrain {
 	private double[] edges;
 	private int edgesAt;
 	private int lastSwing = -1000;
-	private boolean wasSwinging;
+	private float lastCharge = 1f;
 	private boolean fighting;
 
 	BotBrain(BotPlayer bot) {
@@ -423,9 +423,10 @@ final class BotBrain {
 		Perception.Known k = Perception.pickTarget(bot, m, mind, ticks, target);
 		ServerPlayer t = k == null ? null : k.player();
 		target = t == null ? null : t.getUUID();
-		boolean swinging = t != null && k.seen() && t.getAttackAnim(1f) > 0;
-		if (swinging && !wasSwinging) lastSwing = ticks;
-		wasSwinging = swinging;
+		// a swing everyone can see resets the swinger's attack charge: a sudden drop means they just attacked
+		float charge = t != null && k.seen() ? t.getAttackStrengthScale(0.5f) : 1f;
+		if (charge < lastCharge - 0.3f) lastSwing = ticks;
+		lastCharge = charge;
 		if (edges == null || ticks - edgesAt >= mind.difficulty().thinkTicks) {
 			edges = Perception.edges(bot);
 			edgesAt = ticks;
