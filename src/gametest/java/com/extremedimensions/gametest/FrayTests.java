@@ -105,33 +105,36 @@ public class FrayTests {
 		};
 		ServerPlayer p = TestPlayers.survivor(helper, "test-prey");
 		p.teleportTo(o.getX() + 0.5, o.getY() + 1, o.getZ() + 0.5);
-		// A test player is never ticked, so it would keep for good the three seconds (60 ticks) of safety every player
-		// has on joining: that count is found by its value, whatever this version names it, and ended
-		StringBuilder counts = new StringBuilder();
-		int lifted = 0;
-		for (java.lang.reflect.Field f : ServerPlayer.class.getDeclaredFields()) {
-			if (f.getType() != int.class || java.lang.reflect.Modifier.isStatic(f.getModifiers())) {
-				continue;
-			}
-			try {
-				f.setAccessible(true);
-				counts.append(f.getName()).append('=').append(f.getInt(p)).append(' ');
-				if (f.getInt(p) == 60) {
-					f.setInt(p, 0);
-					lifted++;
+		// A player cannot be hurt until their client says it has loaded the world, and a test player has no client: it
+		// is marked loaded by hand (found by name, whatever this version's signature)
+		boolean loaded = false;
+		StringBuilder near = new StringBuilder();
+		for (Class<?> c = p.getClass(); c != null && !loaded; c = c.getSuperclass()) {
+			for (java.lang.reflect.Method m : c.getDeclaredMethods()) {
+				String n = m.getName().toLowerCase(java.util.Locale.ROOT);
+				if (n.contains("loaded")) {
+					near.append(c.getSimpleName()).append('.').append(m.getName()).append(' ');
 				}
-			} catch (ReflectiveOperationException | RuntimeException e) {
-				counts.append(f.getName()).append("=? ");
+				if (n.equals("setclientloaded") && m.getParameterCount() == 1 && m.getParameterTypes()[0] == boolean.class) {
+					try {
+						m.setAccessible(true);
+						m.invoke(p, true);
+						loaded = true;
+						break;
+					} catch (ReflectiveOperationException | RuntimeException e) {
+						near.append("(failed: ").append(e).append(") ");
+					}
+				}
 			}
 		}
-		check(helper, lifted == 1, "the test player's safety on joining was not found once (%s): %s", lifted, counts);
+		check(helper, loaded, "the test player could not be marked as loaded: %s", near);
 		check(helper, p.getY() < Config.SEAM_FRAY_TOP, "the test's ground (%s) is above the Fray", p.getY());
 		VeilRay ray = ModEntities.VEIL_RAY.spawn(level, BlockPos.containing(p.getX() + 16, p.getY() + 9, p.getZ() + 4), EntitySpawnReason.EVENT);
 		check(helper, ray != null, "no ray could be made");
 		ray.setFrayed(true);
 		ray.anchor(p.getX(), p.getY() + 9, p.getZ(), 24);
 		ray.rouse();
-		// (the players of other tests stand close by: it hunts this one only)
+		// (it hunts this one only, never the player of another test)
 		ray.huntOnly(p);
 		SeamFauna.drive(ray);
 		check(helper, com.extremedimensions.journal.Bestiary.of(ray) == com.extremedimensions.journal.Bestiary.Beast.FRAYED_RAY,
