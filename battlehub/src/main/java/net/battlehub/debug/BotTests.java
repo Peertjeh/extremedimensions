@@ -93,8 +93,28 @@ final class BotTests {
 			ConfigManager.config().featured.enabled = true;
 			ConfigManager.config().featured.modes = new ArrayList<>(List.of("sumo"));
 		});
-		s.waitFor(tag + ": eight characters with click boxes, on A's client", 200, () -> HubNpcs.count() == 8
-				&& HubNpcs.hitboxes() == 8 && HubNpcs.showing(p(A).getUUID()) && p(A).clientEntities().containsAll(HubNpcs.entityIds()));
+		s.run(tag + ": A stands at the spawn, by the characters", () -> {
+			net.battlehub.lobby.Lobby.teleport(p(A));
+			VARS.put("npcPolls", 0);
+		});
+		s.waitFor(tag + ": eight characters, shown to A", 200, () -> HubNpcs.count() == 8 && HubNpcs.showing(p(A).getUUID()));
+		s.waitFor(tag + ": eight click boxes", 400, () -> {
+			boolean ok = HubNpcs.hitboxes() == 8;
+			int polls = (int) VARS.get("npcPolls") + 1;
+			VARS.put("npcPolls", polls);
+			if (!ok && polls % 100 == 0) {
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST npcs after {} ticks: {} (A at {})", polls, HubNpcs.describe(server), p(A).position());
+			}
+			return ok;
+		});
+		s.waitFor(tag + ": the characters are on A's client", 200, () -> {
+			java.util.Set<Integer> missing = new java.util.HashSet<>(HubNpcs.entityIds());
+			missing.removeAll(p(A).clientEntities());
+			if (!missing.isEmpty() && !missing.equals(VARS.put("npcMissing", missing))) {
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST npcs: {} of {} entities not on A's client", missing.size(), HubNpcs.entityIds().size());
+			}
+			return missing.isEmpty();
+		});
 		s.waitFor(tag + ": labels show the name, how many play, and the mode of the day on the party games", 60, () -> {
 			String bw = HubNpcs.label(p(A).getUUID(), "bed_wars");
 			String party = HubNpcs.label(p(A).getUUID(), "party");

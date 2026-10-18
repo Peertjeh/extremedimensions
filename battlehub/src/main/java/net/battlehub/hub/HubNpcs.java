@@ -429,6 +429,19 @@ public final class HubNpcs {
 		return "";
 	}
 
+	/** For the self-test log: every character, whether its spot is loaded and how its click box stands. */
+	public static String describe(MinecraftServer server) {
+		ServerLevel hub = server.getLevel(HubWorld.KEY);
+		StringBuilder b = new StringBuilder("ready=" + HubWorld.ready() + " viewers=" + VIEWERS.all().size() + " boxes=" + hitboxes() + "/" + NPCS.size());
+		for (Npc n : NPCS) {
+			Interaction box = HITBOXES.get(n);
+			boolean loaded = hub != null && hub.isLoaded(BlockPos.containing(n.pos));
+			b.append(" | ").append(n.id).append(loaded ? " loaded" : " NOT loaded")
+					.append(box == null ? " no box" : box.isRemoved() ? " box removed (" + box.getRemovalReason() + ")" : " box ok");
+		}
+		return b.toString();
+	}
+
 	public static java.util.Set<Integer> entityIds() {
 		java.util.Set<Integer> s = new java.util.HashSet<>();
 		for (Npc n : NPCS) {
