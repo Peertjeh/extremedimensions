@@ -1,5 +1,6 @@
 package com.extremedimensions.elder;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,7 +47,10 @@ import net.minecraft.world.phys.AABB;
  * ({@code elder_griefing} and the mobGriefing rule), and never where a block holds data. A block of an arena a player
  * breaks drops nothing, and nothing an Elder tears out of one is thrown about. On stopping, everything is put back at
  * once. The blocks fly as {@link BlockFlight}s, as many at once as {@code elder_arena_fly_max} allows and only where a
- * player is near enough to see them; the rest simply appear (and vanish) in their places.
+ * player is near enough to see them; the rest simply appear (and vanish) in their places. A block whose part of the
+ * world is not loaded when its turn comes (no one near; a great arena reaches past the view) waits until it is, so the
+ * far towers and islands go up as someone comes near them; the world is never loaded just to put a block up or take
+ * one down.
  */
 public final class ElderArena {
 	private ElderArena() {}
@@ -97,6 +101,11 @@ public final class ElderArena {
 		final List<Strand> strands = new ArrayList<>();
 		/** Every block it means to build, so a second arena near never builds over it. */
 		final Set<Long> claimed = new HashSet<>();
+		/** Blocks whose part of the world was not loaded when their turn came, by chunk: built once it is. */
+		final Map<Long, ArrayDeque<Piece>> waiting = new HashMap<>();
+		/** Blocks it put down whose part of the world was not loaded when they were to come down, by chunk: taken down once it is. */
+		final Map<Long, ArrayDeque<Piece>> leftover = new HashMap<>();
+		int clock;
 	}
 
 	private static final List<Arena> ARENAS = new ArrayList<>();
@@ -153,6 +162,17 @@ public final class ElderArena {
 		return n;
 	}
 
+	/** Blocks of every arena waiting for their part of the world to be loaded (for tests). */
+	public static int waiting() {
+		int n = 0;
+		for (Arena a : ARENAS) {
+			for (ArrayDeque<Piece> q : a.waiting.values()) {
+				n += q.size();
+			}
+		}
+		return n;
+	}
+
 	// ------------------------------------------------------------------ the arena rises and falls
 
 	/** The Elder's arena begins to rise round {@code centre} (the first air above the ground under the Elder). */
@@ -194,8 +214,9 @@ public final class ElderArena {
 		if (a.linger >= 0 || a.dissolving) {
 			return;
 		}
-		// Nothing more comes in; what is in the air still lands
+		// Nothing more comes in (nor what waits for its part of the world); what is in the air still lands
 		a.next = a.pieces.size();
+		a.waiting.clear();
 		a.linger = Config.ELDER_ARENA_LINGER_SECONDS < 0 ? Integer.MAX_VALUE : Config.ELDER_ARENA_LINGER_SECONDS * 20;
 	}
 
@@ -221,12 +242,22 @@ public final class ElderArena {
 			// Slain, or gone for three seconds (not merely not yet found in a chunk that is still loading)
 			end(a);
 		}
+		double rate = a.pieces.size() / Math.max(1.0, Config.ELDER_ARENA_BUILD_SECONDS * 20);
 		if (!a.dissolving && a.next < a.pieces.size()) {
-			a.credit += a.pieces.size() / Math.max(1.0, Config.ELDER_ARENA_BUILD_SECONDS * 20);
+			a.credit += rate;
 			while (a.credit >= 1 && a.next < a.pieces.size()) {
 				a.credit--;
 				launch(a, a.pieces.get(a.next++));
 			}
+		}
+		// Twice a second, what waited for its part of the world goes up where that has come into the world (someone
+		// came near), at the pace the arena is built at
+		if (++a.clock % 10 == 0) {
+			if (!a.dissolving) {
+				settle(a, a.waiting, (int) Math.ceil(rate * 10), p -> launch(a, p));
+			}
+			settle(a, a.leftover, (int) Math.ceil(a.pieces.size() / Math.max(1.0, Config.ELDER_ARENA_DISSOLVE_SECONDS * 20) * 10),
+					p -> unbuild(a, p));
 		}
 		a.flights.removeIf(BlockFlight::step);
 		if (!a.strung && !a.dissolving && a.next >= a.pieces.size() && a.flights.isEmpty()) {
@@ -272,9 +303,31 @@ public final class ElderArena {
 					unbuild(a, p);
 				}
 			}
-			return a.out <= 0 && a.flights.isEmpty();
+			return a.out <= 0 && a.flights.isEmpty() && a.leftover.isEmpty();
 		}
 		return false;
+	}
+
+	/** Up to {@code budget} blocks held back by chunk, taken from the chunks now loaded (in the order they were held back). */
+	private static void settle(Arena a, Map<Long, ArrayDeque<Piece>> held, int budget, java.util.function.Consumer<Piece> act) {
+		Iterator<ArrayDeque<Piece>> it = held.values().iterator();
+		while (it.hasNext() && budget > 0) {
+			ArrayDeque<Piece> q = it.next();
+			if (!q.isEmpty() && !a.level.isLoaded(q.peekFirst().pos)) {
+				continue;
+			}
+			while (!q.isEmpty() && budget-- > 0) {
+				act.accept(q.pollFirst());
+			}
+			if (q.isEmpty()) {
+				it.remove();
+			}
+		}
+	}
+
+	/** Holds a block back until its part of the world is loaded. */
+	private static void hold(Map<Long, ArrayDeque<Piece>> held, Piece p) {
+		held.computeIfAbsent(((long) (p.pos.getX() >> 4) << 32) | ((p.pos.getZ() >> 4) & 0xFFFFFFFFL), k -> new ArrayDeque<>()).add(p);
 	}
 
 	// ------------------------------------------------------------------ flights
@@ -286,7 +339,12 @@ public final class ElderArena {
 	 */
 	private static void launch(Arena a, Piece p) {
 		ServerLevel level = a.level;
-		if (!level.isLoaded(p.pos) || !fits(level, p)) {
+		if (!level.isLoaded(p.pos)) {
+			// Its part of the world is not loaded (no one near): it goes up once it is
+			hold(a.waiting, p);
+			return;
+		}
+		if (!fits(level, p)) {
 			return;
 		}
 		if (a.flights.size() >= Math.max(1, Config.ELDER_ARENA_FLY_MAX) || !watched(level, p.pos)) {
@@ -331,6 +389,11 @@ public final class ElderArena {
 	/** A block taken back: the ground is put back as it was and the block flies off into nothing. */
 	private static void unbuild(Arena a, Piece p) {
 		ServerLevel level = a.level;
+		if (!level.isLoaded(p.pos)) {
+			// Its part of the world is not loaded: it comes down once it is (the world is never loaded just to take it down)
+			hold(a.leftover, p);
+			return;
+		}
 		BlockState now = level.getBlockState(p.pos);
 		boolean whole = now == p.state;
 		if (whole || now.isAir()) {
@@ -457,6 +520,10 @@ public final class ElderArena {
 		BlockState look = ArenaDesign.strand(a.style);
 		float thick = a.style == 2 ? 0.07F : 0.6F;
 		for (ArenaDesign.Line line : a.lines) {
+			// Only between towers whose part of the world is loaded (one still waiting for it may never stand)
+			if (!a.level.isLoaded(BlockPos.containing(line.x0(), line.y0(), line.z0())) || !a.level.isLoaded(BlockPos.containing(line.x1(), line.y1(), line.z1()))) {
+				continue;
+			}
 			double dx = line.x1() - line.x0(), dy = line.y1() - line.y0(), dz = line.z1() - line.z0();
 			double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
 			// A straight thread is one piece; a sagging chain is drawn in pieces, never more than 24 (they are long in a large arena)

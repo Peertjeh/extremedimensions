@@ -309,10 +309,13 @@ final class ArenaDesign {
 			return hard >= 0 && hard < 30;
 		}
 
-		/** Whether a piece has room now. */
+		/** Whether a piece has room now (beyond the world loaded now, it is kept: it waits for its part of the world, and is looked at then). */
 		boolean room(ElderArena.Piece p) {
-			if (!level.isLoaded(p.pos) || level.isOutsideBuildHeight(p.pos) || !ElderArena.free(level, p.pos)) {
+			if (level.isOutsideBuildHeight(p.pos) || !ElderArena.free(level, p.pos)) {
 				return false;
+			}
+			if (!level.isLoaded(p.pos)) {
+				return true;
 			}
 			if (p.kind == ElderArena.GROUND) {
 				return true;

@@ -8,8 +8,10 @@
   Eight towers stand 216 blocks out and eight more at 282, up to 30 blocks taller than before. Nearly 190 islands hang
   in three layers: many small ones low over the ground, larger ones above them, and the greatest highest of all, up to
   145 blocks up and 345 blocks out. The Elders' ranged blows reach three times as far, their spells 250 blocks, and
-  everyone within 200 blocks counts as fighting them. An arena now takes 40 seconds to build and 25 to come apart;
-  it is raised only where the world is loaded (what lies beyond everyone's view is left out).
+  everyone within 200 blocks counts as fighting them. An arena now takes 40 seconds to build and 25 to come apart.
+  What lies beyond the loaded world (past everyone's view: the far towers and islands, at most settings) waits for it
+  and goes up as someone comes near; the world is never loaded just to put a block up or take one down. The sigil and
+  the ring wall are laid only where the world is loaded when the arena rises.
 - **Islands with relief.** A larger island's top swells into a low hill, and its top is of more than one stone (moss,
   mossy cobblestone and rooted dirt for the Matriarch; nylium, netherrack and wart for the Ferryman; polished
   deepslate, tiles and calcite for the Weaver), with moss carpet, crimson roots or amethyst buds growing on it.

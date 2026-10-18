@@ -42,13 +42,14 @@ public class ClientShots implements FabricClientGameTest {
 	 * A live fight with one Elder: two shots as it forms and its arena flies together, one as it arrives, one at each
 	 * blow, two in its ultimate, and two as it dies (its arena coming apart after).
 	 */
-	private static void liveFight(ClientGameTestContext ctx, TestSingleplayerContext sp, String name, int settle,
+	private static void liveFight(ClientGameTestContext ctx, TestSingleplayerContext sp, String name, int shift, int settle,
 			java.util.function.Consumer<MinecraftServer> summon, java.util.function.BiPredicate<net.minecraft.world.entity.Entity, Integer> force,
 			int[] blows, String[] blowNames) {
-		// Each fight on untouched ground, away from the last one's craters, fires and arena (on top of it, not inside a hill)
+		// Each fight away from the last one's craters and fires (on top of the ground, not inside a hill): far off for the
+		// first, near for the next, so the world already loaded and drawn round the last serves the next
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
-			double nx = p.getX() + 400, nz = p.getZ();
+			double nx = p.getX() + shift, nz = p.getZ();
 			int bx = (int) Math.floor(nx), bz = (int) Math.floor(nz);
 			// load the chunk first: an unloaded one has no ground to stand on
 			p.level().getChunk(bx >> 4, bz >> 4);
@@ -62,6 +63,13 @@ public class ClientShots implements FabricClientGameTest {
 		for (int i = 0; i < 60 && !sp.getServer().computeOnServer(s -> loadedRound(s, 160)); i++) {
 			ctx.waitTicks(10);
 		}
+		// and on the client, so the shots from high up have it (the server sends a slow client its chunks slowly)
+		int waited = 0;
+		while (waited < 2400 && !ctx.computeOnClient(mc -> clientRound(mc, 150))) {
+			ctx.waitTicks(20);
+			waited += 20;
+		}
+		System.out.println("[arena] " + name + ": the world round it reached the client after " + waited + " ticks");
 		ctx.waitTicks(40);
 		sp.getServer().runOnServer(summon::accept);
 		ctx.waitTicks(30);
@@ -85,12 +93,26 @@ public class ClientShots implements FabricClientGameTest {
 		}
 		// The whole arena from high over it, by now built: from straight above, then from the side and high up
 		double[] stood = sp.getServer().computeOnServer(s -> new double[] {player(s).getX(), player(s).getY(), player(s).getZ()});
+		// Its far reaches (beyond the world loaded round the player) wait for their part of the world
+		int held = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting());
+		int standing = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.standing());
+		System.out.println("[arena] " + name + ": " + standing + " blocks standing, " + held + " waiting for their part of the world");
+		check(held > 0, "nothing of the " + name + "'s arena waits for its part of the world (its far towers and islands are left out)");
 		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~170 ~ 0 90");
-		ctx.waitTicks(20);
+		sp.getServer().runOnServer(s -> player(s).setRemainingFireTicks(0));
+		ctx.waitTicks(40);
 		ctx.takeScreenshot("12_fight_" + name + "_arena");
+		// From the side, out past its edge: the world comes in round there, and what waited for it goes up
 		sp.getServer().runOnServer(s -> elders(s).stream().findFirst().ifPresent(e -> player(s).teleportTo(e.getX() - 170, e.getY() + 70, e.getZ())));
 		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ -90 18");
-		ctx.waitTicks(20);
+		sp.getServer().runOnServer(s -> player(s).setRemainingFireTicks(0));
+		for (int i = 0; i < 30 && sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting()) >= held; i++) {
+			ctx.waitTicks(10);
+		}
+		ctx.waitTicks(40);
+		int left = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting());
+		System.out.println("[arena] " + name + ": " + left + " still waiting once the world came in round its side");
+		check(left < held, "nothing of the " + name + "'s arena went up as the world came in round its side (" + left + " of " + held + " still waiting)");
 		ctx.takeScreenshot("12_fight_" + name + "_arena_side");
 		sp.getServer().runOnServer(s -> player(s).teleportTo(stood[0], stood[1], stood[2]));
 		ctx.waitTicks(10);
@@ -112,9 +134,29 @@ public class ClientShots implements FabricClientGameTest {
 		ctx.waitTicks(66);
 		ctx.takeScreenshot("12_fight_" + name + "_death_bloom");
 		ctx.waitTicks(30);
-		// Its arena is taken down at once, so the next fight builds on untouched ground
-		sp.getServer().runOnServer(s -> com.extremedimensions.elder.ElderArena.clear());
+		// Its arena is taken down at once, and the fires it left put out, so the next fight builds on bare ground
+		sp.getServer().runOnServer(s -> {
+			com.extremedimensions.elder.ElderArena.clear();
+			ServerPlayer p = player(s);
+			BlockPos at = p.blockPosition();
+			for (BlockPos q : BlockPos.betweenClosed(at.offset(-96, -12, -96), at.offset(96, 12, 96))) {
+				if (p.level().getBlockState(q).is(net.minecraft.tags.BlockTags.FIRE)) {
+					p.level().setBlock(q, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+				}
+			}
+		});
 		ctx.waitTicks(10);
+	}
+
+	/** Whether the client has the world in a ring this far round its player. */
+	private static boolean clientRound(net.minecraft.client.Minecraft mc, int r) {
+		for (int a = 0; a < 8; a++) {
+			double t = a * Math.PI / 4;
+			if (!mc.level.isLoaded(BlockPos.containing(mc.player.getX() + r * Math.cos(t), mc.player.getY(), mc.player.getZ() + r * Math.sin(t)))) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/** Whether the world is loaded on the server in a ring this far round the player. */
@@ -215,7 +257,16 @@ public class ClientShots implements FabricClientGameTest {
 	}
 
 	private static void face(TestSingleplayerContext sp, String name) {
-		sp.getServer().runOnServer(s -> player(s).setRemainingFireTicks(0));
+		sp.getServer().runOnServer(s -> {
+			// Nothing burning at their feet: its flames would fill the shot
+			ServerPlayer p = player(s);
+			for (BlockPos q : BlockPos.betweenClosed(p.blockPosition().offset(-3, -1, -3), p.blockPosition().offset(3, 3, 3))) {
+				if (p.level().getBlockState(q).is(net.minecraft.tags.BlockTags.FIRE)) {
+					p.level().setBlock(q, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+				}
+			}
+			p.setRemainingFireTicks(0);
+		});
 		sp.getServer().runCommand("execute as @a at @s facing entity @e[type=extremedimensions:" + name + ",limit=1,sort=nearest] feet run tp @s ~ ~ ~ ~ ~");
 		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ ~ -16");
 	}
@@ -710,15 +761,15 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("effect give @a minecraft:saturation infinite 10 true");
 			sp.getServer().runCommand("effect give @a minecraft:fire_resistance infinite 0 true");
 			ctx.waitTicks(10);
-			liveFight(ctx, sp, "matriarch", 75, s -> com.extremedimensions.elder.MatriarchService.summon(player(s), "shots", player(s).blockPosition()),
+			liveFight(ctx, sp, "matriarch", 400, 75, s -> com.extremedimensions.elder.MatriarchService.summon(player(s), "shots", player(s).blockPosition()),
 					com.extremedimensions.elder.MatriarchService::force, new int[] {com.extremedimensions.elder.Matriarch.RUSH,
 							com.extremedimensions.elder.Matriarch.CATHEDRAL, com.extremedimensions.elder.Matriarch.BARRAGE},
 					new String[] {"rush", "cathedral", "barrage"});
-			liveFight(ctx, sp, "ferryman", 40, s -> com.extremedimensions.elder.FerrymanService.summonAt(player(s), player(s).blockPosition().offset(0, 0, 20)),
+			liveFight(ctx, sp, "ferryman", 64, 40, s -> com.extremedimensions.elder.FerrymanService.summonAt(player(s), player(s).blockPosition().offset(0, 0, 20)),
 					com.extremedimensions.elder.FerrymanService::force, new int[] {com.extremedimensions.elder.Ferryman.CROSSING,
 							com.extremedimensions.elder.Ferryman.GAOL, com.extremedimensions.elder.Ferryman.TIDE},
 					new String[] {"crossing", "gaol", "tide"});
-			liveFight(ctx, sp, "weaver", 40, s -> com.extremedimensions.elder.WeaverService.summon(player(s), player(s).blockPosition().offset(0, 0, 20)),
+			liveFight(ctx, sp, "weaver", 64, 40, s -> com.extremedimensions.elder.WeaverService.summon(player(s), player(s).blockPosition().offset(0, 0, 20)),
 					com.extremedimensions.elder.WeaverService::force, new int[] {com.extremedimensions.elder.Weaver.LANCE,
 							com.extremedimensions.elder.Weaver.CRADLE, com.extremedimensions.elder.Weaver.THOUSAND},
 					new String[] {"lance", "cradle", "thousand"});
