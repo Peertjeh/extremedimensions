@@ -93,7 +93,12 @@ final class LayoutTests {
 		s.check("layouts: every layout in every theme is sound", () -> {
 			List<String> problems = new ArrayList<>();
 			RandomSource rnd = RandomSource.create(1234);
+			// hundreds of arenas in one tick: the first round with the engine's stands and islands (without the
+			// landmarks in the distance, which have their own test), the other rounds with the simple scenery
+			boolean architecture = net.battlehub.config.ConfigManager.config().arenas.architecture;
+			net.battlehub.arena.ArchArenas.landmarks = false;
 			for (int round = 0; round < 6; round++) {
+				net.battlehub.config.ConfigManager.config().arenas.architecture = architecture && round == 0;
 				for (Map.Entry<String, Function<Theme, Blueprint>> e : layouts(rnd).entrySet()) {
 					// the Bed Wars maps come from the architecture engine, which has its own checks: one round is enough here
 					if (round > 0 && e.getKey().startsWith("bedwars")) continue;
@@ -107,6 +112,8 @@ final class LayoutTests {
 					}
 				}
 			}
+			net.battlehub.config.ConfigManager.config().arenas.architecture = architecture;
+			net.battlehub.arena.ArchArenas.landmarks = true;
 			for (String p : problems.subList(0, Math.min(20, problems.size()))) {
 				net.battlehub.BattleHub.LOGGER.error("SELFTEST layout problem: {}", p);
 			}

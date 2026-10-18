@@ -63,6 +63,8 @@ public final class Resolver {
 		String id = m.id(shape);
 		if (id == null) id = fallback(shape);
 		if (m.is("leaves")) return id + "[persistent=true]";
+		// a "log" of a family without a pillar block is its plain block, which has no axis
+		if (shape == Shape.LOG && m.pillar() == null) return id;
 		return withProps(id, c);
 	}
 

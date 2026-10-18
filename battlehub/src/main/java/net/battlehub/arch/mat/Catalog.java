@@ -217,8 +217,8 @@ public final class Catalog {
 			soul_soil 4b3a2f c ground dark
 			soul_sand 51402f c ground dark
 			magma_block 8e3f20 c ground warm
-			nether_wart_block 732a1e c leaves organic red
-			warped_wart_block 167e86 c leaves organic cool
+			nether_wart_block 732a1e c organic red
+			warped_wart_block 167e86 c organic cool
 			crimson_stem 5c1d2a -l wood timber dark red l=crimson_stem
 			warped_stem 3a3b4e -l wood timber cool l=warped_stem
 			packed_ice 8db4fe c ice light cool

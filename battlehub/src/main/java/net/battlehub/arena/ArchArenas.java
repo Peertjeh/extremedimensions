@@ -20,6 +20,9 @@ public final class ArchArenas {
 
 	private static Library library;
 
+	/** Landmarks in the distance (the self-test switches them off while it builds hundreds of arenas in one tick). */
+	public static volatile boolean landmarks = true;
+
 	static synchronized Library library() {
 		if (library == null) {
 			ArchMaterials.prepare(ConfigManager.config().lobby.discoverModBlocks);
@@ -41,7 +44,7 @@ public final class ArchArenas {
 	}
 
 	public static Blueprint bedwars(Theme t, long seed, int teams, int buildHeight, int buildDepth) {
-		return blueprint(bedwarsPlan(t, seed, teams, buildHeight, buildDepth, true));
+		return blueprint(bedwarsPlan(t, seed, teams, buildHeight, buildDepth, landmarks));
 	}
 
 	/**
@@ -65,6 +68,7 @@ public final class ArchArenas {
 		s.groundY = y;
 		s.reach = reach;
 		s.reserved = (x, z) -> used.contains(Blueprint.column(x, z));
+		s.landmarks = landmarks;
 		ArenaPlan p = Surroundings.generate(s, library());
 		p.voxels.forEach((x, yy, z, id) -> {
 			if (!id.equals("air")) bp.setIfEmpty(x, yy, z, Build.s(id));

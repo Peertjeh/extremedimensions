@@ -139,6 +139,32 @@ class ArenaTest {
 		assertTrue(unknown.isEmpty(), "not in Minecraft 26.3: " + unknown);
 	}
 
+	/** Block-state properties a block really has: an axis only on pillars and logs, persistence only on leaves. */
+	static void propertiesFit(Voxels v, Set<String> bad) {
+		v.forEach((x, y, z, id) -> {
+			String base = Props.base(id);
+			if (Props.get(id, "axis") != null) {
+				net.battlehub.arch.mat.Material m = net.battlehub.arch.mat.Catalog.ofBlock(base);
+				if (m == null || !base.equals(m.pillar())) bad.add(id);
+			}
+			if (Props.get(id, "persistent") != null && !base.endsWith("_leaves")) bad.add(id);
+		});
+	}
+
+	@Test
+	void blocksOnlyGetPropertiesTheyHave() {
+		Set<String> bad = new HashSet<>();
+		for (String t : Dress.ids()) {
+			propertiesFit(map(t, 4, 3, true).voxels, bad);
+			for (net.battlehub.arch.arena.Cover.Kind k : net.battlehub.arch.arena.Cover.Kind.values()) {
+				propertiesFit(net.battlehub.arch.arena.Cover.piece(t, 5, k, Xform.ID, LIB), bad);
+			}
+			net.battlehub.arch.arena.Surroundings.Settings s = SurroundingsTest.walled(t, 18, 0);
+			propertiesFit(net.battlehub.arch.arena.Surroundings.generate(s, LIB).voxels, bad);
+		}
+		assertTrue(bad.isEmpty(), "properties the block does not have: " + bad);
+	}
+
 	@Test
 	void themesHaveTheirOwnMaterialsAndVariants() {
 		Set<String> grounds = new HashSet<>();

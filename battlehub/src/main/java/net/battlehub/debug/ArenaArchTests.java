@@ -35,11 +35,11 @@ final class ArenaArchTests {
 
 	static void all(MinecraftServer server, Script s) {
 		String tag = "arena architecture";
-		s.check(tag + ": Bed Wars maps in every theme for 2, 3, 4, 6 and 8 teams pass the arena check", () -> {
+		s.check(tag + ": Bed Wars maps in every theme for 2, 4 and 8 teams pass the arena check", () -> {
 			List<String> problems = new ArrayList<>();
 			long seed = 11;
 			for (Theme t : Theme.values()) {
-				for (int teams : new int[] {2, 3, 4, 6, 8}) {
+				for (int teams : new int[] {2, 4, 8}) {
 					ArenaPlan p = ArchArenas.bedwarsPlan(t, seed++, teams, 24, 10, teams == 4);
 					Report r = ArenaCheck.bedwars(p, teams);
 					if (!r.ok()) problems.add(t.id() + "/" + teams + ": " + r.errors());

@@ -78,21 +78,15 @@ public final class Backdrop {
 	}
 
 	/**
-	 * A landmark on its own rock, facing the arena: built once to learn its size, moved out (whole) until its rock
-	 * is clear of the play area, the rock drawn under its whole footprint.
+	 * A landmark on its own rock, facing the arena: built at the origin (or taken from the cache), moved out until
+	 * its rock is clear of the play area, the rock drawn under its whole footprint.
 	 */
 	static void landmark(ArenaPlan out, Dress d, Library lib, String arch, long seed, double angle, double keep, boolean square, int y, int detail,
 			List<Taken> taken) {
 		if (Architect.get(arch) == null) return;
-		double scale = arch.equals("castle") ? 0.8 : arch.equals("watchtower") ? 1.1 : 0.9;
-		Brief br = Architect.brief(arch, seed, d.palette, scale);
-		br.palette = d.palette.child("landmark:" + arch);
-		br.paletteRecipe = null;
-		br.detail = Math.min(detail, 1);
-		if (!arch.equals("temple_ruin")) br.condition = d.condition;
 		Dir face = Dir.of((int) Math.round(-Math.cos(angle) * 10), (int) Math.round(-Math.sin(angle) * 10));
-		Building b = Architect.build(br, lib, Xform.facing(face, 0, y, 0), null);
-		int[] box = b.worldBox();
+		Built built = built(d, lib, arch, Math.floorMod(seed, VARIETY), face, Math.min(detail, 1));
+		int[] box = built.box;
 		double ox = (box[0] + box[3]) / 2.0, oz = (box[2] + box[5]) / 2.0;
 		double half = Math.hypot(box[3] - box[0], box[5] - box[2]) / 2.0 + 2;
 		double dist = square ? past(angle, keep, half) : keep + half;
@@ -106,12 +100,46 @@ public final class Backdrop {
 		land.draw(c, BedWars.hanging(d));
 		BedWars.earth(rock, seed);
 		rock.emit(out.voxels);
+		built.voxels.forEach((x, yy, z, id) -> out.voxels.set(x + dx, yy + y, z + dz, id));
+		out.backdrop.add(rock);
+		out.log.add("landmark " + arch + " at " + Math.round(cx) + "," + y + "," + Math.round(cz) + " (" + built.brief + ")");
+	}
+
+	/** How many different landmarks of one archetype a theme variant has (the rest of the variety is placement). */
+	static final int VARIETY = 6;
+
+	/** A landmark built at the origin (floor at y = 0), as finished blocks with its box and brief. */
+	private record Built(Voxels voxels, int[] box, String brief) {}
+
+	/** Landmarks built recently: building one costs tens of milliseconds, copying it almost nothing. */
+	private static final java.util.Map<String, Built> CACHE = new java.util.LinkedHashMap<>(32, 0.75f, true) {
+		@Override
+		protected boolean removeEldestEntry(java.util.Map.Entry<String, Built> e) {
+			return size() > 24;
+		}
+	};
+
+	private static Built built(Dress d, Library lib, String arch, int variety, Dir face, int detail) {
+		String key = arch + "|" + d + "|" + variety + "|" + face + "|" + detail;
+		synchronized (CACHE) {
+			Built b = CACHE.get(key);
+			if (b != null) return b;
+		}
+		long seed = Rng.mix((arch + "|" + d).hashCode() * 31L + variety);
+		double scale = arch.equals("castle") ? 0.8 : arch.equals("watchtower") ? 1.1 : 0.9;
+		Brief br = Architect.brief(arch, seed, d.palette, scale);
+		br.palette = d.palette.child("landmark:" + arch);
+		br.paletteRecipe = null;
+		br.detail = detail;
+		if (!arch.equals("temple_ruin")) br.condition = d.condition;
+		Building b = Architect.build(br, lib, Xform.facing(face, 0, 0, 0), null);
 		Voxels v = new Voxels(1 << 15);
 		b.emit(v);
-		v.forEach((x, yy, z, id) -> out.voxels.set(x + dx, yy, z + dz, id));
-		out.backdrop.add(rock);
-		out.backdrop.add(b);
-		out.log.add("landmark " + arch + " at " + Math.round(cx) + "," + y + "," + Math.round(cz) + " (" + br + ")");
+		Built out = new Built(v, b.worldBox(), br.toString());
+		synchronized (CACHE) {
+			CACHE.put(key, out);
+		}
+		return out;
 	}
 
 	/** A small island with a tree or the theme's scenery, a lamp now and then and some plants. */
