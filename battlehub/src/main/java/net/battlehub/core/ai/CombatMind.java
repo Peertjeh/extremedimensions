@@ -1,0 +1,232 @@
+package net.battlehub.core.ai;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+import java.util.function.Consumer;
+
+/**
+ * The fighting mind of one NPC, without Minecraft: it keeps a track and an opponent model per player it has seen,
+ * decides on a tactic every few ticks (sooner when something urgent happens), steers every tick, learns which
+ * tactics work, and can explain itself ({@link #report()}). The world layer feeds it {@link Situation}s and
+ * carries out its {@link Intent}s.
+ */
+public final class CombatMind {
+	/** Ticks after which an unseen player is half forgotten. */
+	public static final int HALF_LIFE = 60;
+	private static final int MAX_TRACKED = 8;
+
+	private final Archetype archetype;
+	private final Personality personality;
+	private final Difficulty difficulty;
+	private final Random rng;
+	private final Decider decider = new Decider();
+	private final CombatSteering steering = new CombatSteering();
+	private final OutcomeMemory outcomes = new OutcomeMemory();
+	private final Map<UUID, Track> tracks = new LinkedHashMap<>(16, 0.75f, true);
+	private final Map<UUID, OpponentModel> models = new LinkedHashMap<>(16, 0.75f, true);
+
+	private Decider.Decision last;
+	private int nextThink = Integer.MIN_VALUE;
+	private UUID targetId;
+	private int reactUntil = Integer.MIN_VALUE;
+	private int lastVisibleTick = Integer.MIN_VALUE;
+	private Tactic outcomeTactic = Tactic.IDLE;
+	private double dealt;
+	private double taken;
+	/** The last tick anyone in this fight was hit (or the fight began). */
+	private int lastExchange = Integer.MIN_VALUE;
+	private long thinkNanos;
+	private long thinkMax;
+	private int thinks;
+	private Consumer<String> debug;
+
+	public CombatMind(Archetype archetype, Personality personality, Difficulty difficulty, long seed) {
+		this.archetype = archetype;
+		this.personality = personality.clamped();
+		this.difficulty = difficulty;
+		this.rng = new Random(seed);
+		// spread the thinking of many NPCs over different ticks
+		this.nextThink = Math.floorMod(seed, Math.max(1, difficulty.thinkTicks));
+	}
+
+	public Personality personality() {
+		return personality;
+	}
+
+	public Difficulty difficulty() {
+		return difficulty;
+	}
+
+	public Archetype archetype() {
+		return archetype;
+	}
+
+	public Tactic tactic() {
+		return decider.current();
+	}
+
+	/** Log every switch (one NPC at a time, from the debug command); null stops it. */
+	public void debug(Consumer<String> log) {
+		this.debug = log;
+	}
+
+	/** A sighting of a player (only for players really seen). */
+	public void see(int tick, UUID id, V3 pos, double dist, boolean rising) {
+		Track t = track(id);
+		boolean wasLost = t.empty() || tick - t.lastSeen() > 10;
+		t.observe(tick, pos);
+		OpponentModel m = model(id);
+		if (wasLost) m.lostSight();
+		m.observe(dist, 0, rising);
+	}
+
+	/** The strafe habit needs the observer; called once per think with the NPC's position. */
+	private void studyStrafe(UUID id, V3 me) {
+		Track t = tracks.get(id);
+		OpponentModel m = models.get(id);
+		if (t == null || m == null) return;
+		// direction changes in the last second, folded into the model through a zero-distance-change look
+		m.observe(t.last() == null ? 4 : t.last().distance(me), t.strafeChanges(me, 20), false);
+	}
+
+	public Track track(UUID id) {
+		Track t = tracks.get(id);
+		if (t == null) {
+			t = new Track();
+			tracks.put(id, t);
+			while (tracks.size() > MAX_TRACKED) tracks.remove(tracks.keySet().iterator().next());
+		}
+		return t;
+	}
+
+	public OpponentModel model(UUID id) {
+		OpponentModel m = models.get(id);
+		if (m == null) {
+			m = new OpponentModel();
+			models.put(id, m);
+			while (models.size() > MAX_TRACKED) models.remove(models.keySet().iterator().next());
+		}
+		return m;
+	}
+
+	/** Damage this NPC did (health points); counts for the tactic that was active. */
+	public void dealt(double hp) {
+		dealt += Math.max(0, hp);
+	}
+
+	/** Damage this NPC took. */
+	public void taken(double hp) {
+		taken += Math.max(0, hp);
+	}
+
+	/** Decide (when it is time, or at once when something urgent happens) and steer for this tick. */
+	public Intent tick(Situation s) {
+		Situation.Target t = s.target();
+		UUID id = t == null ? null : t.id();
+		boolean newTarget = id != null && !id.equals(targetId);
+		boolean reappeared = t != null && t.visible() && s.tick() - lastVisibleTick > 20;
+		if (newTarget || reappeared) {
+			// a human needs a moment to react to something new
+			reactUntil = s.tick() + difficulty.reactionTicks;
+		}
+		if (newTarget) {
+			targetId = id;
+			lastExchange = s.tick();
+		}
+		if (t != null && t.visible()) lastVisibleTick = s.tick();
+		boolean urgent = newTarget || (s.threat() != null && s.threat().incoming() > 0 && decider.current() != Tactic.EVADE)
+				|| (t != null && t.visible() && s.distance() < s.self().reach() + 2 && s.ground(s.self().pos().sub(t.pos()).flat().unit()) < 1.0
+						&& decider.current() != Tactic.RECOVER);
+		if (last == null || s.tick() >= nextThink || urgent) {
+			think(s);
+			nextThink = s.tick() + difficulty.thinkTicks;
+		}
+		if (s.tick() < reactUntil && t != null) {
+			// still taking it in: look, do not act yet
+			return Intent.NOTHING.withLook(t.pos().add(new V3(0, 1.4, 0)));
+		}
+		return steering.steer(decider.current(), s, id == null ? null : tracks.get(id), personality, difficulty, rng);
+	}
+
+	private void think(Situation s) {
+		long t0 = System.nanoTime();
+		// credit what happened since the last think to the tactic that was active
+		if (dealt > 0 || taken > 0) {
+			outcomes.record(outcomeTactic, dealt, taken);
+			dealt = 0;
+			taken = 0;
+			lastExchange = s.tick();
+		}
+		int quiet = lastExchange == Integer.MIN_VALUE ? 0 : s.tick() - lastExchange;
+		Situation.Target t = s.target();
+		OpponentModel om = t == null ? new OpponentModel() : model(t.id());
+		if (t != null && t.visible()) studyStrafe(t.id(), s.self().pos());
+		List<Score> scores = CombatPolicy.score(s, om, outcomes, personality, difficulty, quiet);
+		Tactic before = decider.current();
+		last = decider.decide(s.tick(), scores, personality, difficulty, rng);
+		outcomeTactic = last.tactic();
+		if (last.changed() && debug != null) {
+			debug.accept(String.format(Locale.ROOT, "%s -> %s: %s", name(before), name(last.tactic()), last.reason()));
+		}
+		long dt = System.nanoTime() - t0;
+		thinkNanos += dt;
+		thinkMax = Math.max(thinkMax, dt);
+		thinks++;
+	}
+
+	/** Forget the fight (a new round or match): tactic, tracks and what worked; the personality stays. */
+	public void reset(int tick) {
+		decider.reset(tick);
+		last = null;
+		targetId = null;
+		tracks.clear();
+		models.clear();
+		outcomes.reset();
+		dealt = 0;
+		taken = 0;
+		lastExchange = Integer.MIN_VALUE;
+	}
+
+	public OutcomeMemory outcomes() {
+		return outcomes;
+	}
+
+	/** Everything worth knowing about this mind right now, for the inspect command and the self-test. */
+	public Report report() {
+		List<Score> top = last == null ? List.of() : last.ranked().subList(0, Math.min(4, last.ranked().size()));
+		OpponentModel om = targetId == null ? null : models.get(targetId);
+		return new Report(archetype, difficulty, personality, decider.current(), last == null ? "" : last.reason(), top,
+				decider.transitions(), thinks, thinks == 0 ? 0 : thinkNanos / thinks / 1000.0, thinkMax / 1000.0,
+				om == null ? null : String.format(Locale.ROOT, "aggression %.2f, likes %.1f blocks, strafe changes %.1f/s, jumps %.1f/s",
+						om.aggression(), om.preferredDistance(), om.strafeRate(), om.jumpRate()));
+	}
+
+	public record Report(Archetype archetype, Difficulty difficulty, Personality personality, Tactic tactic, String reason, List<Score> top,
+			List<Decider.Transition> transitions, int thinks, double avgMicros, double maxMicros, String opponent) {
+		/** Readable lines for chat or a log. */
+		public List<String> lines() {
+			List<String> out = new ArrayList<>();
+			out.add(String.format(Locale.ROOT, "%s, %s: %s (%s)", archetype.id(), difficulty.id(), name(tactic), reason));
+			Personality p = personality;
+			out.add(String.format(Locale.ROOT, "aggression %.2f risk %.2f patience %.2f range %.1f adapt %.2f vary %.2f defence %.2f objective %.2f",
+					p.aggression(), p.risk(), p.patience(), p.range(), p.adaptability(), p.variability(), p.defensive(), p.objective()));
+			for (Score s : top) out.add("  " + s);
+			if (opponent != null) out.add("opponent: " + opponent);
+			int from = Math.max(0, transitions.size() - 4);
+			for (Decider.Transition tr : transitions.subList(from, transitions.size())) {
+				out.add(String.format(Locale.ROOT, "  @%d %s -> %s: %s", tr.tick(), name(tr.from()), name(tr.to()), tr.why()));
+			}
+			out.add(String.format(Locale.ROOT, "%d thinks, %.1f us average, %.1f us max", thinks, avgMicros, maxMicros));
+			return out;
+		}
+	}
+
+	private static String name(Tactic t) {
+		return t.name().toLowerCase(Locale.ROOT);
+	}
+}

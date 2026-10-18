@@ -1309,5 +1309,10 @@
 	"menu.mode.fan_favorite": "&6&l★ Fan favourite",
 	"bridge_chaos.event_line": "&d⚡ {0}&7: {1} &8(event {2} of {3})",
 	"bridge_chaos.no_build": "&cNo building right now (Hands off the clay!)",
-	"lobby.no_sleep": "&7No sleeping in BattleHub: the beds are only for show."
+	"lobby.no_sleep": "&7No sleeping in BattleHub: the beds are only for show.",
+	"bots.unknown": "&cNo bot called {0} is online.",
+	"bots.unknown_style": "&cUnknown style {0}. Known: rusher, duelist, counter, evasive, opportunist, balanced, improviser, archer.",
+	"bots.profiled": "&a{0} now fights as {1}.",
+	"bots.debug_on": "&7The decisions of {0} are now written to the server log.",
+	"bots.debug_off": "&7No longer logging the decisions of {0}."
 }

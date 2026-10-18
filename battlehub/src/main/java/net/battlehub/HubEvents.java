@@ -386,6 +386,7 @@ public final class HubEvents {
 			return;
 		}
 		ServerPlayer attacker = source.getEntity() instanceof ServerPlayer a ? a : null;
+		net.battlehub.bot.Bots.onDamage(victim, source, taken);
 		boolean arrow = source.getDirectEntity() instanceof Projectile;
 		m.recordHit(attacker, victim, taken, arrow);
 		if (attacker != null && !arrow && source.getDirectEntity() == attacker) {

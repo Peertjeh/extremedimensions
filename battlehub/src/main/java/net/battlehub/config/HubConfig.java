@@ -419,6 +419,13 @@ public final class HubConfig {
 		public double rewardFactor = 0.5;
 		/** A bot leaves this many seconds after it is back in the lobby. */
 		public int idleSeconds = 4;
+		/**
+		 * Fighting styles handed out to bots (by name, so a bot keeps its style): rusher, duelist, counter, evasive,
+		 * opportunist, balanced, improviser, archer. Unknown names are left out; an empty list means balanced.
+		 */
+		public List<String> archetypes = new ArrayList<>(List.of("rusher", "duelist", "counter", "evasive", "opportunist", "balanced", "improviser"));
+		/** How much each bot's personality may differ from its style (0 = clones, at most 0.2). */
+		public double personalityVariation = 0.08;
 	}
 
 	/** The mode of the day: another mode every day, with more coins. */
@@ -653,6 +660,14 @@ public final class HubConfig {
 		bots.maxBots = Math.max(0, Math.min(64, bots.maxBots));
 		bots.idleSeconds = Math.max(1, bots.idleSeconds);
 		if (bots.fillLevel == null) bots.fillLevel = "normal";
+		if (bots.archetypes == null) bots.archetypes = new Bots().archetypes;
+		bots.archetypes.removeIf(a -> {
+			boolean bad = a == null || net.battlehub.core.ai.Archetype.parse(a, null) == null;
+			if (bad) net.battlehub.BattleHub.LOGGER.warn("BattleHub config: unknown bot style '{}' left out (known: {})", a,
+					java.util.Arrays.stream(net.battlehub.core.ai.Archetype.values()).map(net.battlehub.core.ai.Archetype::id).toList());
+			return bad;
+		});
+		bots.personalityVariation = Double.isNaN(bots.personalityVariation) ? 0.08 : Math.max(0, Math.min(0.2, bots.personalityVariation));
 		if (featured == null) featured = new FeaturedMode();
 		if (featured.modes == null) featured.modes = new FeaturedMode().modes;
 		if (from < 4 && !featured.modes.contains("bridge_chaos") && featured.modes.contains("murder_mystery")) {

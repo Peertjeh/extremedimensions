@@ -405,3 +405,55 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Planning per match | Bij de start: minstens 20 willekeurige events (gewogen: zeldzaam 1, gewoon 3, zonder terugleggen), plus de vaste vijf (parel, lage zwaartekracht, afbrokkelen, spinnenweb, dubbele punten), één in elk vijfde deel van de eerste 15 beurten. Twee events van dezelfde soort volgen elkaar niet op als het anders kan. Elke 10 seconden een event (het eerste na 6 s), dus 25 events in ongeveer 4 minuten spel. Duurt een potje langer, dan volgen events die nog niet geweest zijn; pas na alle 100 begint het opnieuw. Instellingen: `eventSeconds`, `firstEventSeconds`, `randomEvents`. |
 | Afwijking | "Minimaal 20 per match" geldt voor de planning: hoeveel je er ziet hangt af van de duur, zoals gevraagd. Een doelpunt beëindigt alle lopende events, zodat elk punt schoon begint. Wie doodgaat krijgt de lopende effecten en lichaamswijzigingen terug voor de resterende tijd. Alle attribuutwijzigingen zijn tijdelijk en worden weggehaald bij het einde van het event, bij een nieuw punt, bij verlaten en bij het einde van de match. |
 | Controle | JUnit: 100 geldige events, ze hebben allemaal titels in beide talen, een plan heeft 25 verschillende events met de vaste vijf in de eerste 15, de soorten zijn gemengd, zeldzame events komen minder vaak, en een lang potje herhaalt pas na alle 100. Zelftest: alle ID's bestaan in het spel, Piepklein halveert de grootte, het bouwverbod werkt, alle 100 events tegelijk lopen zonder fouten, en daarna is alles weer normaal (grootte, zwaartekracht, vleugels, kippen). |
+
+## Versie 1.22 – AI-trainingsframework: fase 0 en mijlpaal 1
+
+### Fase 0 – Inventarisatie (wat er al was)
+
+| Onderwerp | Bevinding |
+|---|---|
+| Platform | Fabric-mod voor Minecraft 26.3 (Java 25 in CI, Mojang-namen), server-side. Bots zijn echte `ServerPlayer`s zonder client (`BotPlayer`): ze zetten dezelfde invoer als een client (zza/xxa, springen, kijken, slaan via het attack-event) en draaien hun eigen physics. Daardoor gelden reikwijdte, cooldown, botsing en alle spelregels vanzelf. |
+| Brein | Eén klasse `BotBrain` (761 regels) met per speltype een procedure (`BotStyle`: melee, ranged, runner, parkour, bow spleef, prop hunt). Drie niveaus (`BotLevel`): reactie, richtfout, strafe, w-tap, crits, schild, eten. Doelen per spel via `Match.botObjective`. |
+| Navigatie | Eigen A* over blokken (`GridPath`, puur, getest) met stappen op/af en hoeken; `BotPath` koppelt het aan de wereld. Randbeveiliging (`keepSafe`) en losraken (`unstick`). |
+| Wiskunde | `BotMath`: kijkhoeken, pijlbaan, spronghoogte en -afstand met de echte zwaartekracht en luchtweerstand (gebruikt door parkour en boog). |
+| Gaten | Geen wereldmodel of geheugen (de bot "wist" altijd waar iedereen was, ook achter muren); geen afweging tussen opties (vaste if-ketens); geen persoonlijkheden; geen voorspelling van beweging in melee; geen leren; geen diagnose; Spleef-bots rennen alleen rond (graven niet); parkour faalt willekeurig in plaats van te leren. |
+
+### Architectuur
+
+| Laag | Waar | Inhoud |
+|---|---|---|
+| Kern (zonder Minecraft, JUnit) | `core/ai` | `Personality` + `Archetype` (8 stijlen), `Difficulty` (6 niveaus), `Track` (waarnemingen per speler: snelheid, voorspelling, vervagende zekerheid, strafe-wissels), `OpponentModel` (sessie: agressie, voorkeursafstand, strafe- en springgedrag; begrensde lopende gemiddelden), `OutcomeMemory` (wat werkte per tactiek), `Situation` (de waarneming), `CombatPolicy` (utility-scores met redenen), `Decider` (hysterese, onderbrekingen, bewuste fouten, overgangen), `CombatSteering` (tactiek → invoer), `CombatMind` (alles samen, reactietijd, denkritme, prestatiemeting, rapport). |
+| Waarneming | `bot/Perception` | Bouwt de `Situation` uit de wereld met eerlijke regels (zie hieronder), randen in 8 richtingen, inkomende projectielen, reikwijdte uit het echte attribuut. |
+| Uitvoering | `bot/BotBrain` | Eén intentie per tick, uitgevoerd met de bestaande primitieven (route, kijken met richtfout, slaan via het attack-event, schild, eten); `keepSafe` houdt het laatste woord bij randen. |
+| Beheer | `/battlehub bots inspect/profile/debug` | Diagnose per bot, stijl wisselen, beslissingen loggen voor één bot. |
+
+### Eerlijkheid (wat een bot mag weten)
+
+| Regel | Waarom |
+|---|---|
+| In zicht (zichtlijn, binnen 48 blokken, niet onzichtbaar): positie, beweging, levens, zwaaien | Wat een speler ziet. |
+| Buiten zicht maar niet sluipend en niet onzichtbaar: alleen de positie (naamlabel) | Vanilla tekent naamlabels door muren, behalve bij sluipen. |
+| Gloeiend: altijd te zien | Zo werkt het effect. |
+| Anders: alleen geheugen, met zekerheid die elke 3 s halveert | Laatst gezien. |
+| Levens buiten zicht: onbekend (aangenomen vol) | Niet te zien. |
+| Geen extra levens, schade of bereik; slaan alleen binnen het echte reikwijdte-attribuut en met zichtlijn | De moeilijkheid zit in beslissingen. |
+
+### Mijlpaal 1 (deze versie) – wat gebouwd en hoe geverifieerd
+
+| Onderdeel | Status |
+|---|---|
+| Kern `core/ai` | Gebouwd. 37 JUnit-tests: configuratie en validatie, voorspelling en geheugen, scores per scenario (rand achter je = noodgeval, genezen of terugtrekken bij weinig levens, counter wacht en straft, gemiste zwaai bestraffen, mislukte tactiek laten vallen, geduld raakt op tegen een passieve speler), beslisser (geen dithering, veiligheid onderbreekt, fouten nooit boven veiligheid, lagere niveaus vergissen zich vaker), sturing (alleen slaan in bereik/zicht/opgeladen, nooit naar een rand strafen, terugtrekken, vooruit mikken). |
+| Duelsimulatie | Een vereenvoudigd duel op een lijn tegen een gescripte tegenstander: rusher drukt aantoonbaar meer, counter houdt aantoonbaar meer afstand; expert ruilt beter dan beginner; zelfde seed = zelfde gevecht; denken kost warm ~3 tot 7 µs (test: onder 100 µs). |
+| MC-integratie | Melee (ook dichtbij in boog-modi) loopt via de mind. Schade gaat terug naar de mind (leren). Zelftest op een echte server: de mind beslist en legt uit, wisselt van tactiek, het profiel-commando maakt er een rusher van, inspect toont het, debug schakelt aan en uit; de bestaande tests (bot komt naar je toe, raakt je, ranked zonder bots, party-fill) blijven gelden. |
+| Afwijking | `BotLevel` (makkelijk/normaal/moeilijk) blijft de keuze in menu's en config; daarachter liggen casual/intermediate/expert. Beginner, advanced en master bestaan in de kern maar zijn nog niet kiesbaar in menu's. Andere stijlen (parkour, runner, prop hunt, boog op afstand) gebruiken nog het oude brein. |
+
+### Volgende fasen (nog niet gebouwd)
+
+| Fase | Inhoud |
+|---|---|
+| 2 – Combat verdiepen | Boog en kruisboog in de mind (afstand kiezen, dekking, trekken op het juiste moment), wapenkeuze, doelwisseling met meer tegenstanders, gevechtsstatistieken na afloop voor training. |
+| 3 – Spleef | Speelveld-topologie (welke blokken er nog zijn), veilig staan, blokken kiezen onder de tegenstander op basis van voorspelling, eigen ontsnappingsroute bewaren. |
+| 4 – Parkour | Sprongplanner met `BotMath`-simulatie over kandidaat-sprongen, landingskeuze, mislukte sprongen onthouden en een alternatief kiezen. |
+| 5 – Adaptief | Opslaan van leren over sessies (instelbaar, uit te zetten en te wissen), adaptieve moeilijkheid (transparant, uit te zetten). |
+| 6 – Meer modi | KOTH, CTF, Bed Wars en Bridge via dezelfde mind met eigen doelen en rollen. |
+| 7 – Release | Profilering met veel bots, lastgrenzen, in-game visualisatie van paden en doelen. |

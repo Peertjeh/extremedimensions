@@ -47,6 +47,26 @@ Not enough people online? Bots play along. They are real (simulated) players, so
 and they come in three levels: **easy** walks and swings late, **normal** sprints, strafes and jump-crits,
 **hard** reacts fast, aims well, w-taps, blocks with a shield and eats golden apples when low.
 
+**How a bot fights (the AI framework).** In close combat a bot runs a small mind of its own:
+* *It only knows what a player could know*: an enemy in sight, an enemy's name tag through a wall (vanilla shows
+  those unless someone sneaks), a glowing enemy, or where it last saw someone, with fading certainty. Health is
+  only known from sight. It never reads anyone's inputs and gets no extra health or damage.
+* *It decides between tactics* (approach, strike, hold distance and punish, back off, heal, dodge arrows, get away
+  from an edge, search, the game's objective) by scoring each one with reasons, keeps a choice instead of
+  dithering, and lets safety (an edge behind it) interrupt at once.
+* *It has a personality*: rusher, duelist, counter, evasive, opportunist, balanced, improviser or archer, each a
+  set of numbers (aggression, risk, patience, preferred distance, adaptability, variability, defence, objective)
+  the decisions really use, with a small personal variation per bot. A rusher presses; a counter waits just
+  outside reach and punishes you for stepping in, but loses its patience against someone who only stands there.
+* *It learns during the fight*: it predicts where you move, notices how aggressive you are and how often you
+  change strafe direction, and drops a tactic that keeps costing it more than it brings.
+* *Its level* (easy, normal, hard behind the scenes casual, intermediate, expert of six levels) sets reaction time,
+  how often it thinks, aim, prediction, techniques (crits, w-tap, shield) and how often it misjudges.
+* Admins can look inside: `/battlehub bots inspect <bot>` shows its style, current tactic, the best-scored options
+  with their reasons, what it learned about its opponent, its last switches and how long its thinking takes;
+  `/battlehub bots profile <bot> <style>` gives it another style; `/battlehub bots debug <bot>` writes its
+  decisions to the server log.
+
 * **Filling in**: someone alone in a casual duel queue, a party lobby, 1v2 or 1v3 for 15 seconds gets bots
   (party lobbies up to 4 players). When a second person joins, the bots step out. Never in ranked.
 * **No bots, thanks**: joining a queue bots may fill shows one line in chat with a **[No bots]** button, and
@@ -477,6 +497,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/battlehub reload` | admin | Reload the config, kits, titles and language files |
 | `/battlehub reports` | admin | The latest reports since the server started |
 | `/battlehub bots` / `/battlehub bots clear` | admin | How many bots are on; take them all off |
+| `/battlehub bots inspect\|debug <bot>` / `/battlehub bots profile <bot> <style>` | admin | What a bot thinks and why; log its decisions; give it another fighting style |
 | `/battlehub matches` | admin | List running matches |
 | `/battlehub endmatch <id>` | admin | Stop a match without results and restore its players |
 | `/battlehub arena list` | admin | Arena themes, which modes use them, slots in use |
@@ -525,7 +546,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
     time between reports
   * `bots`: on/off, filling queues on/off, after how many seconds, party lobbies up to how many players, the
     level of bots that fill in, the most bots at once, the share of rewards in matches with bots and other
-    people (alone with bots always pays nothing), and how soon
+    people (alone with bots always pays nothing), the fighting styles handed out (`archetypes`), how much each
+    bot differs from its style (`personalityVariation`, 0 .. 0.2), and how soon
     a bot leaves after its match
   * `effects`: the match intro on/off and its seconds, the victory shot, the killfeed and its number of lines
   * `lobbyExtras`: double jump on/off, its push forward and up and its cooldown; the training dummy on/off and

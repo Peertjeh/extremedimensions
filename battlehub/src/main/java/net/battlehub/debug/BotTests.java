@@ -199,6 +199,31 @@ final class BotTests {
 			return ok;
 		});
 		s.waitFor(tag + ": the bot hits A", 200, () -> p(A).getHealth() < p(A).getMaxHealth());
+		s.check(tag + ": the bot's mind decides, keeps its reasons and switched tactics on the way", () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			net.battlehub.core.ai.CombatMind.Report r = Bots.report(b);
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST bot mind: {}", String.join(" | ", r.lines()));
+			return r.thinks() > 5 && !r.top().isEmpty() && r.difficulty() == net.battlehub.core.ai.Difficulty.EXPERT
+					&& r.transitions().stream().anyMatch(t -> t.to() == net.battlehub.core.ai.Tactic.STRIKE
+							|| t.to() == net.battlehub.core.ai.Tactic.SPACE || t.to() == net.battlehub.core.ai.Tactic.APPROACH)
+					&& r.transitions().stream().allMatch(t -> !t.why().isEmpty());
+		});
+		s.run(tag + ": an admin makes the bot a rusher and logs its decisions", () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			VARS.put("botName", b.getGameProfile().name());
+			server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "battlehub bots profile " + b.getGameProfile().name() + " rusher");
+			server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "battlehub bots debug " + b.getGameProfile().name());
+			server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "battlehub bots inspect " + b.getGameProfile().name());
+		});
+		s.waitFor(tag + ": the bot fights as a rusher now, and inspect explains it", 100, () -> {
+			BotPlayer b = Bots.byName((String) VARS.get("botName"));
+			if (b == null) return false;
+			java.util.List<String> lines = Bots.inspect(b);
+			return Bots.report(b).archetype() == net.battlehub.core.ai.Archetype.RUSHER && Bots.report(b).thinks() > 0
+					&& lines.size() >= 4 && lines.get(1).startsWith("rusher, expert");
+		});
+		s.run(tag + ": debug log off again", () -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(),
+				"battlehub bots debug " + VARS.get("botName")));
 		s.run(tag + ": A wins", () -> {
 			BotPlayer bot = botsIn(matchOfA()).get(0);
 			VARS.put("bot", bot.getUUID());

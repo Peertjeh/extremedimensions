@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.22.0
+
+### Added
+* **An AI framework for the bots, first milestone.** In close combat a bot now runs a mind of its own: it only
+  knows what a player could (sight, name tags through walls, glowing, memory with fading certainty), scores its
+  options (approach, strike, hold distance and punish, back off, heal, dodge arrows, get away from an edge, search,
+  the objective) with reasons, keeps a choice instead of dithering, predicts your movement, notices how you
+  fight and drops tactics that keep failing.
+* **Fighting styles**: rusher, duelist, counter, evasive, opportunist, balanced, improviser and archer, each a set
+  of personality numbers the decisions use, with a personal variation per bot (the same bot keeps its style).
+* **Six levels behind the scenes** (easy, normal and hard map to casual, intermediate and expert): reaction,
+  thinking rate, aim, prediction, techniques and mistakes; never more health or damage.
+* Admin commands `/battlehub bots inspect|debug <bot>` and `/battlehub bots profile <bot> <style>`.
+* Config: `bots.archetypes`, `bots.personalityVariation`.
+
+### Changed
+* Bots no longer know where everyone is: hidden, sneaking players are only found by sight or memory.
+
 ## 1.21.0
 
 ### Added

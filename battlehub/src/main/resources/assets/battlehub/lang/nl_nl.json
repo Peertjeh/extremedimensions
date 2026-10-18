@@ -1309,5 +1309,10 @@
 	"menu.mode.fan_favorite": "&6&l★ Favoriet van de spelers",
 	"bridge_chaos.event_line": "&d⚡ {0}&7: {1} &8(event {2} van {3})",
 	"bridge_chaos.no_build": "&cNu even niet bouwen (Handen van de klei!)",
-	"lobby.no_sleep": "&7In BattleHub slaap je niet: de bedden zijn alleen voor de sier."
+	"lobby.no_sleep": "&7In BattleHub slaap je niet: de bedden zijn alleen voor de sier.",
+	"bots.unknown": "&cEr is geen bot met de naam {0} online.",
+	"bots.unknown_style": "&cOnbekende stijl {0}. Bekend: rusher, duelist, counter, evasive, opportunist, balanced, improviser, archer.",
+	"bots.profiled": "&a{0} vecht nu als {1}.",
+	"bots.debug_on": "&7De beslissingen van {0} komen nu in het serverlog.",
+	"bots.debug_off": "&7De beslissingen van {0} worden niet meer gelogd."
 }

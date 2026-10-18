@@ -199,7 +199,49 @@ public final class HubCommands {
 							}
 							c.getSource().sendSuccess(() -> Lang.tr("bots.cleared", n), true);
 							return n;
-						})))
+						}))
+						// The fighting minds: what a bot thinks and why, its style, and a decision log
+						.then(Commands.literal("inspect").then(Commands.argument("bot", StringArgumentType.word())
+								.suggests((c, b) -> SharedSuggestionProvider.suggest(net.battlehub.bot.Bots.names(), b))
+								.executes(c -> {
+									net.battlehub.bot.BotPlayer bot = net.battlehub.bot.Bots.byName(StringArgumentType.getString(c, "bot"));
+									if (bot == null) {
+										c.getSource().sendFailure(Lang.tr("bots.unknown", StringArgumentType.getString(c, "bot")));
+										return 0;
+									}
+									for (String line : net.battlehub.bot.Bots.inspect(bot)) {
+										c.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal(line), false);
+									}
+									return 1;
+								})))
+						.then(Commands.literal("profile").then(Commands.argument("bot", StringArgumentType.word())
+								.suggests((c, b) -> SharedSuggestionProvider.suggest(net.battlehub.bot.Bots.names(), b))
+								.then(Commands.argument("style", StringArgumentType.word())
+										.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.Arrays.stream(net.battlehub.core.ai.Archetype.values())
+												.map(net.battlehub.core.ai.Archetype::id).toList(), b))
+										.executes(c -> {
+											net.battlehub.bot.BotPlayer bot = net.battlehub.bot.Bots.byName(StringArgumentType.getString(c, "bot"));
+											String style = StringArgumentType.getString(c, "style");
+											if (bot == null || !net.battlehub.bot.Bots.profile(bot, style)) {
+												c.getSource().sendFailure(Lang.tr(bot == null ? "bots.unknown" : "bots.unknown_style",
+														bot == null ? StringArgumentType.getString(c, "bot") : style));
+												return 0;
+											}
+											c.getSource().sendSuccess(() -> Lang.tr("bots.profiled", bot.getGameProfile().name(), style), true);
+											return 1;
+										}))))
+						.then(Commands.literal("debug").then(Commands.argument("bot", StringArgumentType.word())
+								.suggests((c, b) -> SharedSuggestionProvider.suggest(net.battlehub.bot.Bots.names(), b))
+								.executes(c -> {
+									net.battlehub.bot.BotPlayer bot = net.battlehub.bot.Bots.byName(StringArgumentType.getString(c, "bot"));
+									if (bot == null) {
+										c.getSource().sendFailure(Lang.tr("bots.unknown", StringArgumentType.getString(c, "bot")));
+										return 0;
+									}
+									boolean on = net.battlehub.bot.Bots.toggleDebug(bot);
+									c.getSource().sendSuccess(() -> Lang.tr(on ? "bots.debug_on" : "bots.debug_off", bot.getGameProfile().name()), true);
+									return 1;
+								}))))
 				.then(Commands.literal("join").then(Commands.argument("mode", StringArgumentType.word())
 						.suggests((c, b) -> SharedSuggestionProvider.suggest(allModeIds(), b))
 						.executes(c -> joinMode(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode")))))

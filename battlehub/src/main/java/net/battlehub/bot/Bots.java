@@ -405,10 +405,81 @@ public final class Bots {
 		}
 	}
 
+	// ------------------------------------------------------------------ the fighting mind
+
+	/**
+	 * A fighting mind for a bot: its archetype (given, or picked from {@code bots.archetypes} by its name, the same
+	 * every time), a personal variation of that personality, and the level behind its easy/normal/hard skill.
+	 */
+	static net.battlehub.core.ai.CombatMind newMind(BotPlayer bot, net.battlehub.core.ai.Archetype archetype) {
+		long seed = bot.getUUID().getMostSignificantBits() ^ bot.getUUID().getLeastSignificantBits();
+		java.util.List<net.battlehub.core.ai.Archetype> pool = new ArrayList<>();
+		for (String id : cfg().archetypes) {
+			net.battlehub.core.ai.Archetype a = net.battlehub.core.ai.Archetype.parse(id, null);
+			if (a != null && !pool.contains(a)) pool.add(a);
+		}
+		net.battlehub.core.ai.Archetype a = archetype != null ? archetype : net.battlehub.core.ai.Archetype.forSeed(seed, pool);
+		return new net.battlehub.core.ai.CombatMind(a, a.base.individual(seed, cfg().personalityVariation),
+				net.battlehub.core.ai.Difficulty.of(bot.skill), seed ^ System.nanoTime());
+	}
+
+	/** Damage between players: a bot's mind learns from what it dealt and what it took. */
+	public static void onDamage(ServerPlayer victim, net.minecraft.world.damagesource.DamageSource source, float amount) {
+		if (victim instanceof BotPlayer b) b.brain.taken(amount);
+		if (source.getEntity() instanceof BotPlayer a && a != victim) a.brain.dealt(amount);
+	}
+
+	public static BotPlayer byName(String name) {
+		for (BotPlayer b : ONLINE.values()) {
+			if (b.getGameProfile().name().equalsIgnoreCase(name)) return b;
+		}
+		return null;
+	}
+
+	public static List<String> names() {
+		List<String> out = new ArrayList<>();
+		for (BotPlayer b : ONLINE.values()) out.add(b.getGameProfile().name());
+		return out;
+	}
+
+	/** What the bot's mind is doing and why (the inspect command). */
+	public static List<String> inspect(BotPlayer b) {
+		List<String> out = new ArrayList<>();
+		net.battlehub.match.Match m = Matches.of(b.getUUID());
+		out.add(b.getGameProfile().name() + " (" + b.skill.id() + ")" + (m == null ? ", not in a match" : ", match #" + m.id + " " + m.mode.id()));
+		out.addAll(b.brain.mind().report().lines());
+		return out;
+	}
+
+	/** The bot's mind, explained (self-test, inspect). */
+	public static net.battlehub.core.ai.CombatMind.Report report(BotPlayer b) {
+		return b.brain.mind().report();
+	}
+
+	/** Gives a bot another fighting style; false for an unknown one. */
+	public static boolean profile(BotPlayer b, String archetype) {
+		net.battlehub.core.ai.Archetype a = net.battlehub.core.ai.Archetype.parse(archetype, null);
+		if (a == null) return false;
+		b.brain.profile(a);
+		return true;
+	}
+
+	/** Logs this bot's decisions (every switch with its reason) until called again; true when now on. */
+	public static boolean toggleDebug(BotPlayer b) {
+		boolean on = DEBUG.add(b.getUUID());
+		if (!on) DEBUG.remove(b.getUUID());
+		String name = b.getGameProfile().name();
+		b.brain.mind().debug(on ? line -> BattleHub.LOGGER.info("[AI {}] {}", name, line) : null);
+		return on;
+	}
+
+	private static final java.util.Set<UUID> DEBUG = new java.util.HashSet<>();
+
 	/** Server stopping: forget everything (the players list disconnects the bots itself). */
 	public static void clear() {
 		ONLINE.clear();
 		IDLE.clear();
+		DEBUG.clear();
 		PARTY_SINCE.clear();
 		SIDE_SINCE.clear();
 	}

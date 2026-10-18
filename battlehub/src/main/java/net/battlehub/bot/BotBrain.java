@@ -7,6 +7,12 @@ import java.util.function.Predicate;
 import net.battlehub.core.BotLevel;
 import net.battlehub.core.BotMath;
 import net.battlehub.core.ParkourCourse;
+import net.battlehub.core.ai.Archetype;
+import net.battlehub.core.ai.CombatMind;
+import net.battlehub.core.ai.Difficulty;
+import net.battlehub.core.ai.Intent;
+import net.battlehub.core.ai.Situation;
+import net.battlehub.core.ai.Tactic;
 import net.battlehub.games.ParkourMatch;
 import net.battlehub.games.prophunt.Disguise;
 import net.battlehub.games.prophunt.PropHuntMatch;
@@ -42,7 +48,6 @@ final class BotBrain {
 	private UUID target;
 	private int seen;
 	private int strafe = 1;
-	private int wTap;
 	private float yawError;
 	private float pitchError;
 	private Vec3 wander;
@@ -65,10 +70,35 @@ final class BotBrain {
 	// Prop Hunt
 	private Vec3 hideSpot;
 	private int hideTicks;
+	// The fighting mind (see core.ai): perception goes in, one intent per tick comes out
+	private CombatMind mind;
+	private double[] edges;
+	private int edgesAt;
+	private int lastSwing = -1000;
+	private boolean wasSwinging;
+	private boolean fighting;
 
 	BotBrain(BotPlayer bot) {
 		this.bot = bot;
 		this.skill = bot.skill;
+		this.mind = Bots.newMind(bot, null);
+	}
+
+	CombatMind mind() {
+		return mind;
+	}
+
+	/** A new fighting style (the profile command); the level stays. */
+	void profile(Archetype archetype) {
+		mind = Bots.newMind(bot, archetype);
+	}
+
+	void dealt(double hp) {
+		mind.dealt(hp);
+	}
+
+	void taken(double hp) {
+		mind.taken(hp);
 	}
 
 	void tick() {
@@ -91,8 +121,9 @@ final class BotBrain {
 			return;
 		}
 		if (ticks % 30 == 0) {
-			yawError = (float) ((rnd.nextDouble() * 2 - 1) * skill.aimError);
-			pitchError = (float) ((rnd.nextDouble() * 2 - 1) * skill.aimError * 0.5);
+			double err = mind.difficulty().aimError;
+			yawError = (float) ((rnd.nextDouble() * 2 - 1) * err);
+			pitchError = (float) ((rnd.nextDouble() * 2 - 1) * err * 0.5);
 		}
 		switch (m.botStyle()) {
 			case MELEE -> melee(m);
@@ -108,12 +139,15 @@ final class BotBrain {
 			keepSafe();
 			unstick(wanted);
 		}
-		if (wTap > 0) {
-			wTap--;
-		}
 	}
 
 	private void forget() {
+		if (fighting) {
+			// a new match starts with a clear head (the personality stays)
+			mind.reset(ticks);
+			fighting = false;
+			edges = null;
+		}
 		target = null;
 		wander = null;
 		path = null;
@@ -161,11 +195,7 @@ final class BotBrain {
 	// ------------------------------------------------------------------ looking and moving
 
 	private float turnSpeed() {
-		return switch (skill) {
-			case EASY -> 12f;
-			case NORMAL -> 25f;
-			case HARD -> 45f;
-		};
+		return mind.difficulty().turnSpeed;
 	}
 
 	private void look(float yaw, float pitch) {
@@ -234,7 +264,7 @@ final class BotBrain {
 		double nz = next.z - pos.z;
 		look(BotMath.yaw(nx, nz), 0f);
 		bot.zza = 1f;
-		bot.setSprinting(sprint && skill.sprints && d > 3 && wTap == 0);
+		bot.setSprinting(sprint && skill.sprints && d > 3);
 		sidestep();
 		if (bot.onGround() && (bot.horizontalCollision || (next.y - pos.y > 0.5 && Math.sqrt(nx * nx + nz * nz) < 2.0)
 				|| (dest.y - pos.y > 0.6 && d < 2.5))) {
@@ -366,7 +396,8 @@ final class BotBrain {
 			}
 			return eating > 0;
 		}
-		if (skill.eatBelow <= 0 || bot.getHealth() >= skill.eatBelow) {
+		double below = mind.difficulty().healBelow;
+		if (below <= 0 || bot.getHealth() >= below) {
 			return false;
 		}
 		int slot = find(s -> s.is(Items.GOLDEN_APPLE) || s.is(Items.ENCHANTED_GOLDEN_APPLE));
@@ -382,98 +413,77 @@ final class BotBrain {
 
 	// ------------------------------------------------------------------ fighting
 
-	private float hitAt() {
-		return switch (skill) {
-			case EASY -> 1.0f;
-			case NORMAL -> 0.93f;
-			case HARD -> 0.9f;
-		};
-	}
-
+	/**
+	 * Fighting through the mind: what the bot can perceive becomes a situation, the mind turns it into one intent,
+	 * and the intent is carried out with the same inputs a client sends. The edge check afterwards
+	 * ({@link #keepSafe()}) still has the last word.
+	 */
 	private void melee(Match m) {
-		ServerPlayer t = target(m, 64);
-		Vec3 goal = m.botObjective(bot);
-		if (t == null || (goal != null && t.distanceTo(bot) > 12 && bot.position().distanceTo(goal) > 2.5)) {
+		fighting = true;
+		Perception.Known k = Perception.pickTarget(bot, m, mind, ticks, target);
+		ServerPlayer t = k == null ? null : k.player();
+		target = t == null ? null : t.getUUID();
+		boolean swinging = t != null && k.seen() && t.getAttackAnim(1f) > 0;
+		if (swinging && !wasSwinging) lastSwing = ticks;
+		wasSwinging = swinging;
+		if (edges == null || ticks - edgesAt >= mind.difficulty().thinkTicks) {
+			edges = Perception.edges(bot);
+			edgesAt = ticks;
+		}
+		Situation s = Perception.situation(bot, m, mind, k, ticks, lastSwing, edges);
+		Intent in = mind.tick(s);
+		if (t == null && in.moveTo() == null && mind.tactic() == Tactic.IDLE) {
+			// nobody to be seen and nothing to do: look round the arena
 			stopUsing();
-			if (goal != null) {
-				goTo(goal, true);
-			} else {
-				wanderAbout(bot.position(), 8);
-			}
+			wanderAbout(bot.position(), 8);
 			return;
 		}
-		fight(t);
+		execute(in, k);
 	}
 
-	/** Close combat with one enemy. */
-	private void fight(ServerPlayer t) {
-		double dist = t.distanceTo(bot);
-		if (seen < skill.reactionTicks) {
-			lookAt(t.getEyePosition(), false);
-			return;
+	/** Carries out one intent of the mind. */
+	private void execute(Intent in, Perception.Known k) {
+		ServerPlayer t = k == null ? null : k.player();
+		if (in.heal() || eating > 0) {
+			eat();
+		} else {
+			select(BotBrain::isMelee);
 		}
-		if (eat()) {
-			lookAt(t.getEyePosition(), false);
-			bot.zza = -1f;
-			bot.xxa = strafe;
-			return;
-		}
-		select(BotBrain::isMelee);
-		lookAt(t.position().add(0, t.getBbHeight() * 0.6, 0), true);
-		if (dist > 3.2) {
-			shield(false);
-			Vec3 to = t.position();
-			Vec3 pos = bot.position();
-			// Far off: follow the route round walls and cover; close by and in sight: straight at them
-			Vec3 next = dist > 5 || !bot.hasLineOfSight(t) ? waypoint(to) : to;
-			if (next != to) {
-				look(BotMath.yaw(next.x - pos.x, next.z - pos.z), 0f);
+		if (in.moveTo() != null) {
+			goTo(Perception.v(in.moveTo()), in.sprint());
+			// close by and in sight: face them while getting there
+			if (in.look() != null && t != null && k.seen() && t.distanceTo(bot) < 6) {
+				lookAt(Perception.v(in.look()), true);
 			}
-			bot.zza = 1f;
-			bot.setSprinting(skill.sprints && wTap == 0);
-			if (bot.onGround() && (bot.horizontalCollision || (next.y - pos.y > 0.5 && next.distanceToSqr(pos) < 4)
-					|| (to.y - pos.y > 0.6 && dist < 4))) {
+		} else {
+			if (in.look() != null) {
+				lookAt(Perception.v(in.look()), true);
+			}
+			bot.zza = (float) in.forward();
+			bot.xxa = (float) in.strafe();
+			bot.setSprinting(in.sprint() && in.forward() > 0 && mind.difficulty() != Difficulty.BEGINNER);
+			if (bot.onGround() && bot.horizontalCollision && in.forward() > 0) {
 				bot.setJumping(true);
 			}
-			sidestep();
-			// A jump while closing in lands a critical hit
-			if (bot.onGround() && dist < 4.5 && rnd.nextDouble() < skill.critChance / 10) {
-				bot.setJumping(true);
-			}
-			return;
 		}
-		bot.zza = wTap > 0 ? 0f : (dist > 2.6 ? 1f : (dist < 1.6 ? -0.6f : 0.25f));
-		bot.setSprinting(skill.sprints && wTap == 0 && dist > 2.0);
-		if (skill.strafe > 0) {
-			if (rnd.nextDouble() < skill.strafe / 20) {
-				strafe = -strafe;
-			}
-			bot.xxa = strafe * 0.8f;
+		if (in.jump() && bot.onGround()) {
+			bot.setJumping(true);
 		}
-		float strength = bot.getAttackStrengthScale(0.5f);
-		boolean falling = !bot.onGround() && bot.getDeltaMovement().y < 0;
-		boolean ready = strength >= hitAt() || (skill == BotLevel.HARD && falling && strength >= 0.85f);
-		if (skill == BotLevel.EASY && rnd.nextFloat() < 0.5f) {
-			ready = false;
-		}
-		shield(strength < 0.6f);
-		if (ready && dist <= 3.0 && bot.hasLineOfSight(t)) {
+		shield(in.block());
+		if (in.attack() && t != null && k.seen() && t.distanceTo(bot) <= Perception.reach(bot) && bot.hasLineOfSight(t)) {
 			shield(false);
 			BotActions.attack(bot, t);
 			bot.resetAttackStrengthTicker();
-			if (skill.wTap) {
-				wTap = 2;
-			}
 		}
 	}
 
-	/** Raise the shield in the off hand while the attack recharges. */
+	/** Raise or lower the shield in the off hand (the mind decides when). */
 	private void shield(boolean up) {
-		if (skill.shield <= 0 || !bot.getOffhandItem().is(Items.SHIELD)) {
+		if (!bot.getOffhandItem().is(Items.SHIELD)) {
 			return;
 		}
 		boolean blocking = bot.isUsingItem() && bot.getUsedItemHand() == InteractionHand.OFF_HAND;
-		if (up && !blocking && !bot.isUsingItem() && rnd.nextDouble() < skill.shield / 4) {
+		if (up && !blocking && !bot.isUsingItem()) {
 			BotActions.use(bot, InteractionHand.OFF_HAND);
 		} else if (!up && blocking) {
 			bot.stopUsingItem();
@@ -494,7 +504,8 @@ final class BotBrain {
 		}
 		double dist = t.distanceTo(bot);
 		if (dist < 3.5 && find(BotBrain::isMelee) >= 0) {
-			fight(t);
+			// close by: sword fighting, through the mind
+			melee(m);
 			return;
 		}
 		if (seen < skill.reactionTicks) {
@@ -753,7 +764,7 @@ final class BotBrain {
 			return;
 		}
 		lookAt(center, false);
-		if (bot.getAttackStrengthScale(0.5f) >= hitAt()) {
+		if (bot.getAttackStrengthScale(0.5f) >= mind.difficulty().readyToHit) {
 			ph.hitProp(bot, prop);
 			BotActions.swing(bot);
 		}
