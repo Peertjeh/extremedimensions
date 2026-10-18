@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.26.0
+
+### Added
+* **A think budget for all bots**: when server ticks get slow (config `bots.slowAboveMspt`, default 35 ms) bots
+  think less often, up to four times, and step back once there is room again; dangers still make them think at
+  once. A crowd of bots wanting to think in the same tick is spread over the next ticks.
+* **Metrics** in `/battlehub bots`: bots online and in a match, thinks a second, average and longest think, thinks
+  put off, tick time and the current slow-down.
+* **`/battlehub bots show <bot>`**: particles only the admin sees for the bot's route, where it is heading, what it
+  acts on (its target, the block it digs, mines or builds, a parkour take-off) and its objective, with its tactic
+  and reason above the hotbar.
+
 ## 1.25.0
 
 ### Added

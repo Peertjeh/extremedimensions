@@ -199,9 +199,15 @@ public final class Bots {
 
 	public static void tick(MinecraftServer server) {
 		tick++;
+		if (tickStart > 0) budget().tick((System.nanoTime() - tickStart) / 1e6, ONLINE.size());
 		if (tick % 20 != 0) {
 			return;
 		}
+		long thinks = 0;
+		for (BotPlayer b : ONLINE.values()) thinks += b.brain.mind().thinks();
+		thinkRate = Math.max(0, thinks - lastThinks);
+		lastThinks = thinks;
+		SHOW.entrySet().removeIf(e -> !ONLINE.containsKey(e.getValue()) || server.getPlayerList().getPlayer(e.getKey()) == null);
 		for (BotPlayer b : List.copyOf(ONLINE.values())) {
 			if (b.hasDisconnected() || server.getPlayerList().getPlayer(b.getUUID()) != b) {
 				ONLINE.remove(b.getUUID());
@@ -418,8 +424,94 @@ public final class Bots {
 			if (a != null && !pool.contains(a)) pool.add(a);
 		}
 		net.battlehub.core.ai.Archetype a = archetype != null ? archetype : net.battlehub.core.ai.Archetype.forSeed(seed, pool);
-		return new net.battlehub.core.ai.CombatMind(a, a.base.individual(seed, cfg().personalityVariation),
+		net.battlehub.core.ai.CombatMind mind = new net.battlehub.core.ai.CombatMind(a, a.base.individual(seed, cfg().personalityVariation),
 				bot.difficulty, seed ^ System.nanoTime());
+		mind.gate(Bots::allowThink);
+		return mind;
+	}
+
+	// ------------------------------------------------------------------ load: think budget and metrics
+
+	private static net.battlehub.core.ai.ThinkBudget budget;
+	private static long tickStart;
+	private static long lastThinks;
+	private static long thinkRate;
+
+	private static net.battlehub.core.ai.ThinkBudget budget() {
+		if (budget == null) budget = new net.battlehub.core.ai.ThinkBudget(cfg().slowAboveMspt);
+		return budget;
+	}
+
+	/** The start of a server tick (to measure how long ticks take). */
+	public static void tickStart() {
+		tickStart = System.nanoTime();
+	}
+
+	/** May a bot think this tick (the server's budget)? */
+	static boolean allowThink() {
+		return budget().allow();
+	}
+
+	/** How many times less often bots think right now (1 = normal). */
+	static int thinkStretch() {
+		return budget().stretch();
+	}
+
+	/** Thinks of all bots together in the last second. */
+	public static long thinksPerSecond() {
+		return thinkRate;
+	}
+
+	/** The load bots put on the server, for {@code /battlehub bots}. */
+	public static List<Component> metrics() {
+		int inMatch = 0;
+		long thinks = 0, nanos = 0, deferred = 0;
+		double max = 0;
+		for (BotPlayer b : ONLINE.values()) {
+			if (Matches.of(b.getUUID()) != null) inMatch++;
+			net.battlehub.core.ai.CombatMind m = b.brain.mind();
+			thinks += m.thinks();
+			nanos += m.thinkNanos();
+			deferred += m.deferred();
+			max = Math.max(max, m.maxMicros());
+		}
+		List<Component> out = new ArrayList<>();
+		out.add(Lang.tr("bots.metrics.count", ONLINE.size(), inMatch));
+		out.add(Lang.tr("bots.metrics.thinking", thinkRate, String.format(java.util.Locale.ROOT, "%.1f", thinks == 0 ? 0 : nanos / 1000.0 / thinks),
+				String.format(java.util.Locale.ROOT, "%.0f", max), deferred));
+		out.add(Lang.tr("bots.metrics.server", String.format(java.util.Locale.ROOT, "%.1f", budget().mspt()), budget().stretch()));
+		return out;
+	}
+
+	// ------------------------------------------------------------------ seeing what a bot thinks
+
+	/** Admin -> the bot whose route, target and plans they see as particles. */
+	private static final Map<UUID, UUID> SHOW = new HashMap<>();
+
+	/** Shows (or stops showing) {@code viewer} what this bot is doing; true when now on. */
+	public static boolean toggleShow(ServerPlayer viewer, BotPlayer b) {
+		if (b.getUUID().equals(SHOW.get(viewer.getUUID()))) {
+			SHOW.remove(viewer.getUUID());
+			return false;
+		}
+		SHOW.put(viewer.getUUID(), b.getUUID());
+		return true;
+	}
+
+	/** The admins watching this bot. */
+	static List<ServerPlayer> watchers(BotPlayer b) {
+		List<ServerPlayer> out = new ArrayList<>();
+		for (Map.Entry<UUID, UUID> e : SHOW.entrySet()) {
+			if (!e.getValue().equals(b.getUUID())) continue;
+			ServerPlayer p = b.level().getServer().getPlayerList().getPlayer(e.getKey());
+			if (p != null && p.level() == b.level()) out.add(p);
+		}
+		return out;
+	}
+
+	/** The bot a player is watching, or null. */
+	public static UUID showing(UUID viewer) {
+		return SHOW.get(viewer);
 	}
 
 	/** Damage between players: a bot's mind learns from what it dealt and what it took. */
@@ -584,5 +676,10 @@ public final class Bots {
 		LAST_DEBRIEF.clear();
 		PARTY_SINCE.clear();
 		SIDE_SINCE.clear();
+		SHOW.clear();
+		budget = null;
+		tickStart = 0;
+		lastThinks = 0;
+		thinkRate = 0;
 	}
 }

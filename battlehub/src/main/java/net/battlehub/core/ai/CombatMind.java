@@ -47,6 +47,11 @@ public final class CombatMind {
 	private long thinkMax;
 	private int thinks;
 	private Consumer<String> debug;
+	/** Asked before each planned think (the server's budget); null: always yes. Dangers do not ask. */
+	private java.util.function.BooleanSupplier gate;
+	/** The time between thinks is multiplied by this while the server is busy. */
+	private int stretch = 1;
+	private long deferred;
 
 	public CombatMind(Archetype archetype, Personality personality, Difficulty difficulty, long seed) {
 		this.archetype = archetype;
@@ -71,6 +76,34 @@ public final class CombatMind {
 
 	public Tactic tactic() {
 		return decider.current();
+	}
+
+	/** The server's think budget: asked before every planned think. */
+	public void gate(java.util.function.BooleanSupplier gate) {
+		this.gate = gate;
+	}
+
+	/** While the server is busy: think this many times less often (1 = normal). */
+	public void stretch(int stretch) {
+		this.stretch = Math.max(1, stretch);
+	}
+
+	/** How often it thought so far, and how long that took (cheap, for the server's metrics). */
+	public int thinks() {
+		return thinks;
+	}
+
+	public long thinkNanos() {
+		return thinkNanos;
+	}
+
+	public double maxMicros() {
+		return thinkMax / 1000.0;
+	}
+
+	/** Planned thinks put off because the server had none to spare. */
+	public long deferred() {
+		return deferred;
 	}
 
 	/** Log every switch (one NPC at a time, from the debug command); null stops it. */
@@ -169,9 +202,15 @@ public final class CombatMind {
 		boolean urgent = newTarget || (s.threat() != null && s.threat().incoming() > 0 && decider.current() != Tactic.EVADE)
 				|| (t != null && t.visible() && s.distance() < s.self().reach() + 2 && s.ground(s.self().pos().sub(t.pos()).flat().unit()) < 1.0
 						&& decider.current() != Tactic.RECOVER);
-		if (last == null || s.tick() >= nextThink || urgent) {
+		boolean due = s.tick() >= nextThink;
+		if (due && !urgent && last != null && gate != null && !gate.getAsBoolean()) {
+			// the server has no think to spare this tick: keep the current plan a tick longer
+			due = false;
+			deferred++;
+		}
+		if (last == null || due || urgent) {
 			think(s);
-			nextThink = s.tick() + difficulty.thinkTicks;
+			nextThink = s.tick() + difficulty.thinkTicks * stretch;
 		}
 		tacticTicks.merge(decider.current(), 1, Integer::sum);
 		if (s.tick() < reactUntil && t != null) {

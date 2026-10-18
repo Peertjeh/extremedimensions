@@ -141,6 +141,9 @@ final class BotBrain {
 			return;
 		}
 		m.botTick(bot);
+		// a busy server: everyone thinks a little less often
+		mind.stretch(Bots.thinkStretch());
+		if (ticks % 5 == 0) show(m);
 		if (ticks % 30 == 0) {
 			double err = mind.difficulty().aimError;
 			yawError = (float) ((rnd.nextDouble() * 2 - 1) * err);
@@ -181,6 +184,8 @@ final class BotBrain {
 		pkFailed.clear();
 		placedBlocks = 0;
 		mining = null;
+		bridgeAt = null;
+		lastIntent = null;
 		eating = 0;
 		runYaw = Float.NaN;
 		stopUsing();
@@ -459,12 +464,13 @@ final class BotBrain {
 		float charge = t != null && k.seen() ? t.getAttackStrengthScale(0.5f) : 1f;
 		if (charge < lastCharge - 0.3f) lastSwing = ticks;
 		lastCharge = charge;
-		if (edges == null || ticks - edgesAt >= mind.difficulty().thinkTicks) {
+		if (edges == null || ticks - edgesAt >= mind.difficulty().thinkTicks * Bots.thinkStretch()) {
 			edges = Perception.edges(bot);
 			edgesAt = ticks;
 		}
 		Situation s = Perception.situation(bot, m, mind, k, ticks, lastSwing, edges);
 		Intent in = mind.tick(s);
+		lastIntent = in;
 		if (t == null && in.moveTo() == null && mind.tactic() == Tactic.IDLE) {
 			// nobody to be seen and nothing to do: look round the arena
 			stopUsing();
@@ -523,6 +529,9 @@ final class BotBrain {
 
 	private int lastPlace = -100;
 	private int placedBlocks;
+	/** The next block of a bridge (shown to admins watching). */
+	private BlockPos bridgeAt;
+	private Intent lastIntent;
 	/** This tick the bot builds: keeping it from edges is its own job then. */
 	private boolean building;
 	private BlockPos mining;
@@ -566,6 +575,7 @@ final class BotBrain {
 		bot.setSprinting(false);
 		bot.setShiftKeyDown(true);
 		BlockPos from = new BlockPos(st.fromX(), y, st.fromZ());
+		bridgeAt = new BlockPos(st.x(), y, st.z());
 		Vec3 face = new Vec3(st.fromX() + 0.5 + st.dx() * 0.5, y + 0.5, st.fromZ() + 0.5 + st.dz() * 0.5);
 		lookAt(face, false);
 		if (!from.equals(stand)) {
@@ -660,6 +670,56 @@ final class BotBrain {
 		mining = null;
 	}
 
+	// ------------------------------------------------------------------ showing an admin what the bot does
+
+	/**
+	 * For admins watching this bot ({@code /battlehub bots show}), as particles only they see: the route (end rods),
+	 * where it is heading (green sparks), what it acts on (crits: the target, the block to dig, mine or build) and the
+	 * objective (flames round it); its tactic and main reason above the hotbar.
+	 */
+	private void show(Match m) {
+		List<ServerPlayer> watchers = Bots.watchers(bot);
+		if (watchers.isEmpty()) return;
+		List<Vec3> route = new java.util.ArrayList<>();
+		List<Vec3> heading = new java.util.ArrayList<>();
+		List<Vec3> acts = new java.util.ArrayList<>();
+		List<Vec3> goal = new java.util.ArrayList<>();
+		if (path != null) {
+			for (int i = 0; i < path.size() && i < 16; i++) route.add(path.get(i).add(0, 0.2, 0));
+		}
+		if (lastIntent != null && lastIntent.moveTo() != null) heading.add(Perception.v(lastIntent.moveTo()).add(0, 0.3, 0));
+		ServerPlayer t = target == null ? null : m.player(target);
+		if (t != null) {
+			Vec3 from = bot.getEyePosition(), to = t.getEyePosition();
+			for (int i = 1; i <= 6; i++) acts.add(from.lerp(to, i / 7.0));
+		}
+		if (pkPlan != null) {
+			heading.add(Perception.v(pkPlan.landing()).add(0, 0.2, 0));
+			acts.add(Perception.v(pkPlan.takeoff()).add(0, 0.2, 0));
+		}
+		if (spleefPlan != null && spleefPlan.dig() != null) acts.add(new Vec3(spleefPlan.dig()[0] + 0.5, bot.getY() + 0.1, spleefPlan.dig()[1] + 0.5));
+		if (spleefPlan != null && spleefPlan.stand() != null) heading.add(new Vec3(spleefPlan.stand()[0] + 0.5, bot.getY() + 0.3, spleefPlan.stand()[1] + 0.5));
+		if (building && bridgeAt != null) acts.add(Vec3.atCenterOf(bridgeAt));
+		if (mining != null) acts.add(Vec3.atCenterOf(mining));
+		net.battlehub.core.ai.Objective g = m.botGoal(bot);
+		if (g != null) {
+			double r = Math.max(0.6, Math.min(4, g.radius()));
+			for (int i = 0; i < 8; i++) {
+				double a = i * Math.PI / 4;
+				goal.add(new Vec3(g.point().x() + Math.cos(a) * r, g.point().y() + 0.3, g.point().z() + Math.sin(a) * r));
+			}
+		}
+		CombatMind.Report r = mind.report();
+		for (ServerPlayer w : watchers) {
+			for (Vec3 p : route) BotActions.particle(w, net.minecraft.core.particles.ParticleTypes.END_ROD, p);
+			for (Vec3 p : heading) BotActions.particle(w, net.minecraft.core.particles.ParticleTypes.HAPPY_VILLAGER, p);
+			for (Vec3 p : acts) BotActions.particle(w, net.minecraft.core.particles.ParticleTypes.CRIT, p);
+			for (Vec3 p : goal) BotActions.particle(w, net.minecraft.core.particles.ParticleTypes.FLAME, p);
+			net.battlehub.util.Msg.actionBar(w, "bots.show.bar", bot.getGameProfile().name(), r.tactic().name().toLowerCase(java.util.Locale.ROOT),
+					r.reason().isEmpty() ? "-" : r.reason());
+		}
+	}
+
 	/** Ticks it takes a player to mine this block with what the bot holds (the game's formula). */
 	private int breakTicks(BlockPos pos, BlockState st) {
 		float hardness = st.getDestroySpeed(level(), pos);
@@ -740,7 +800,7 @@ final class BotBrain {
 		fighting = true;
 		BlockPos under = BlockPos.containing(bot.getX(), bot.getY() - 0.5, bot.getZ());
 		ServerLevel level = level();
-		if (spleefPlan == null || ticks - spleefAt >= mind.difficulty().thinkTicks) {
+		if (spleefPlan == null || ticks - spleefAt >= mind.difficulty().thinkTicks * Bots.thinkStretch()) {
 			int size = 25, x0 = under.getX() - 12, z0 = under.getZ() - 12;
 			boolean[] present = new boolean[size * size];
 			for (int k = 0; k < size; k++) {

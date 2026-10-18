@@ -74,6 +74,35 @@ final class BotActions {
 		}
 	}
 
+	private static Method particleTo;
+	private static boolean particleLooked;
+
+	/**
+	 * One particle only this player sees (for admins watching a bot). The method's arguments differ between versions
+	 * (one flag more or less), so it is looked up once; without it nothing is shown.
+	 */
+	static void particle(ServerPlayer viewer, net.minecraft.core.particles.ParticleOptions type, Vec3 at) {
+		if (!particleLooked) {
+			particleLooked = true;
+			for (Method m : ServerLevel.class.getMethods()) {
+				if (m.getName().equals("sendParticles") && (m.getParameterCount() == 11 || m.getParameterCount() == 12)
+						&& m.getParameterTypes()[0] == ServerPlayer.class) {
+					particleTo = m;
+					break;
+				}
+			}
+		}
+		if (particleTo == null) return;
+		try {
+			Object[] args = particleTo.getParameterCount() == 12
+					? new Object[] {viewer, type, true, true, at.x, at.y, at.z, 1, 0.0, 0.0, 0.0, 0.0}
+					: new Object[] {viewer, type, true, at.x, at.y, at.z, 1, 0.0, 0.0, 0.0, 0.0};
+			particleTo.invoke(viewer.level(), args);
+		} catch (ReflectiveOperationException | IllegalArgumentException e) {
+			particleTo = null;
+		}
+	}
+
 	/** Is there something to stand on within a few blocks below this spot? Water does not count as a hole; lava does. */
 	static boolean groundBelow(ServerLevel level, double x, double y, double z, int depth) {
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(Math.floor(x), Math.floor(y) - 1, Math.floor(z));

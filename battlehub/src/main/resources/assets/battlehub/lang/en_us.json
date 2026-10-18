@@ -1363,5 +1363,11 @@
 	"bots.memory.forget_hint": "&8Wipe all of it with /bots forget.",
 	"bots.forgot": "&aBots have forgotten everything about you.",
 	"bots.forgot_all": "&aBots have forgotten everyone ({0} files removed).",
-	"bots.forgot_other": "&aBots have forgotten everything about {0}."
+	"bots.forgot_other": "&aBots have forgotten everything about {0}.",
+	"bots.metrics.count": "&7Bots: &f{0}&7 online, &f{1}&7 in a match.",
+	"bots.metrics.thinking": "&7Thinking: &f{0}&7 thinks a second, &f{1}&7 µs on average, at most &f{2}&7 µs; &f{3}&7 put off for the budget.",
+	"bots.metrics.server": "&7Server: &f{0}&7 ms a tick; bots think &f{1}&7× less often than normal.",
+	"bots.show_on": "&aYou now see what {0} does: route (end rods), where it heads (green), what it acts on (crits), its objective (flames).",
+	"bots.show_off": "&7No longer showing {0}.",
+	"bots.show.bar": "&e{0}&7: &f{1} &8({2})"
 }

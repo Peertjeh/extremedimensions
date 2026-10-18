@@ -201,8 +201,25 @@ public final class HubCommands {
 				.then(Commands.literal("bots").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(c -> {
 							c.getSource().sendSuccess(() -> Lang.tr("bots.count", net.battlehub.bot.Bots.online()), false);
+							// what the bots cost the server: thinks, think time, tick time and how much they slowed down
+							for (net.minecraft.network.chat.Component line : net.battlehub.bot.Bots.metrics()) {
+								c.getSource().sendSuccess(() -> line, false);
+							}
 							return 1;
 						})
+						.then(Commands.literal("show").then(Commands.argument("bot", StringArgumentType.word())
+								.suggests((c, b) -> SharedSuggestionProvider.suggest(net.battlehub.bot.Bots.names(), b))
+								.executes(c -> {
+									ServerPlayer viewer = c.getSource().getPlayerOrException();
+									net.battlehub.bot.BotPlayer bot = net.battlehub.bot.Bots.byName(StringArgumentType.getString(c, "bot"));
+									if (bot == null) {
+										c.getSource().sendFailure(Lang.tr("bots.unknown", StringArgumentType.getString(c, "bot")));
+										return 0;
+									}
+									boolean on = net.battlehub.bot.Bots.toggleShow(viewer, bot);
+									c.getSource().sendSuccess(() -> Lang.tr(on ? "bots.show_on" : "bots.show_off", bot.getGameProfile().name()), false);
+									return 1;
+								})))
 						.then(Commands.literal("clear").executes(c -> {
 							int n = net.battlehub.bot.Bots.online();
 							for (net.battlehub.bot.BotPlayer b : net.battlehub.bot.Bots.all()) {

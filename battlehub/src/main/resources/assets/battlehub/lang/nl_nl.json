@@ -1363,5 +1363,11 @@
 	"bots.memory.forget_hint": "&8Wis alles met /bots forget.",
 	"bots.forgot": "&aBots zijn alles over je vergeten.",
 	"bots.forgot_all": "&aBots zijn iedereen vergeten ({0} bestanden verwijderd).",
-	"bots.forgot_other": "&aBots zijn alles over {0} vergeten."
+	"bots.forgot_other": "&aBots zijn alles over {0} vergeten.",
+	"bots.metrics.count": "&7Bots: &f{0}&7 online, &f{1}&7 in een match.",
+	"bots.metrics.thinking": "&7Denken: &f{0}&7 denkbeurten per seconde, gemiddeld &f{1}&7 µs, hoogstens &f{2}&7 µs; &f{3}&7 uitgesteld voor het budget.",
+	"bots.metrics.server": "&7Server: &f{0}&7 ms per tick; bots denken &f{1}&7× minder vaak dan normaal.",
+	"bots.show_on": "&aJe ziet nu wat {0} doet: route (end rods), waar hij heen gaat (groen), waar hij op inwerkt (crits), zijn doel (vlammen).",
+	"bots.show_off": "&7{0} wordt niet meer getoond.",
+	"bots.show.bar": "&e{0}&7: &f{1} &8({2})"
 }

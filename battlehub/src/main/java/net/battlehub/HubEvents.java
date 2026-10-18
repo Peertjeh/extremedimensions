@@ -78,6 +78,7 @@ public final class HubEvents {
 			PlayerStore.unload();
 			BattleHub.setServer(null);
 		});
+		ServerTickEvents.START_SERVER_TICK.register(server -> net.battlehub.bot.Bots.tickStart());
 		ServerTickEvents.END_SERVER_TICK.register(HubEvents::tick);
 		CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> HubCommands.register(dispatcher));
 

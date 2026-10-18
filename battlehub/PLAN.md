@@ -514,3 +514,21 @@ schuift naar 1.25, bij de objectmodi waar het nodig is (Bridge, Bed Wars).
 | Doorbreken naar het bed | Een bot die bij het doelbed is, mijnt wat echt in de weg zit: het bed, of een door spelers geplaatst blok eromheen (`botMayBreak`). Dat duurt even lang als voor een speler met hetzelfde item (`hardheid × 30 / snelheid`, of `× 100` zonder het juiste gereedschap). Daarna beslist de eigen breekregel van het spel. Kaartblokken worden niet gebroken: dan loopt hij eromheen. |
 | Zelftests | KOTH: een bot staat op de heuvel en `inspect` zegt "goal: hold the hill". Bridge: het pad tussen de eilanden wordt weggehaald en de bot bouwt zelf over (minstens 3 blokken). Bed Wars solo tegen een bot: hij koopt wol met ijzer van zijn generator en bouwt richting het andere eiland. Elke 15 seconden logt de test wat de bot doet, zodat een fout te volgen is. |
 | JUnit | `ObjectiveTest`, 12 tests: vlagdrager (naar huis, toch slaan wie blokkeert), heuvel (erop, vechten op de heuvel, niet eraf jagen), wacht (op post blijven, terug naar post), aanvallen zonder tegenstand, rollen (meest defensieve blijft thuis, onafhankelijk van volgorde, teamgrootte, niets te verdedigen, twee verdedigers vanaf vier), en bruggen bouwen. |
+
+## Versie 1.26 – AI mijlpaal 7: denkbudget, metrics, visualisatie
+
+| Onderdeel | Keuze en controle |
+|---|---|
+| Denkbudget | `core/ai/ThinkBudget`: hoort elke tick hoe lang ticks duren (gemiddeld) en hoeveel bots er zijn. Boven `bots.slowAboveMspt` (35 ms) gaat de tijd tussen denkbeurten ×2, ×3, ×4 (per 5 ms één stap). Omhoog gaat dat meteen, omlaag stap voor stap en pas met 2 ms marge, zodat het rond de grens niet heen en weer springt. Daarnaast een maximum aantal denkbeurten per tick voor alle bots samen (minstens 3, anders de helft van het aantal bots gedeeld door de rek): wat er niet meer in past, wacht een tick en houdt zolang zijn plan. Gevaar (een rand achter je met de tegenstander dichtbij, een pijl, een nieuw doelwit) vraagt niets en denkt altijd meteen. De Spleef-scan en de randmeting rekken mee. |
+| Tickmeting | Zonder versie-afhankelijke API: het begin van de servertick (Fabric START) en het moment dat de bots aan de beurt zijn in END. Dat is vrijwel de hele tick. |
+| Metrics | `/battlehub bots`: bots online en in een match, denkbeurten per seconde (alle bots samen), gemiddelde en langste denkbeurt in µs, uitgestelde denkbeurten, tickduur en de huidige rek. Uit goedkope tellers in de mind (geen volledig rapport per bot). |
+| Visualisatie | `/battlehub bots show <bot>`: elke 5 ticks deeltjes die alleen die beheerder ziet. End rods voor de route, groen voor waar hij heen gaat (ook de geplande landing van een sprong, de plek in Spleef), crits voor waar hij op inwerkt (lijn naar het doelwit, het blok dat hij graaft, mijnt of bouwt, het afzetpunt), vlammen in een ring om het doel. Tactiek en reden staan boven de hotbar. De methode om deeltjes naar één speler te sturen verschilt per versie (één vlag meer of minder) en wordt daarom één keer opgezocht. Zonder die methode wordt niets getoond, en er verandert niets voor anderen. |
+| JUnit | `ThinkBudgetTest`, 6 tests: snelle ticks normaal; trage ticks rekken tot het maximum; stapsgewijs herstel zonder heen-en-weer (wisselend 33/39 ms: hoogstens 2 wissels); maximum per tick en tellers; een mind houdt zijn plan als het budget nee zegt, maar denkt bij gevaar toch; rek 3 denkt minder dan half zo vaak. |
+| Zelftest | Party-fill (drie bots in Sumo): de metrics tellen denkbeurten en `/battlehub bots` geeft drie regels (gelogd). Oefenduel: A kijkt mee met de bot, de bot blijft denken, en meekijken gaat weer uit. Of de deeltjes er echt zijn kan de server niet zien (dat is client-kant); wel dat het meekijken de bot niet stoort. |
+
+### Status van de fasen (bijgewerkt)
+
+| Fase | Status |
+|---|---|
+| 6 – Objectmodi en bruggen bouwen | Gebouwd, JUnit, zelftests KOTH, Bridge (bouwen) en Bed Wars (wol kopen, bouwen) (1.25). CTF-dragers en verdedigers: JUnit voor het beleid, geen eigen zelftest. |
+| 7 – Budget, metrics, visualisatie | Gebouwd, JUnit, zelftest (1.26). Belastingtest met veel bots: niet als zelftest. Party-lobby's vullen tot 4. Het denken kost in de duelsimulatie ~3 tot 7 µs per beurt, dus 20 bots die elke 3 ticks denken kosten samen minder dan 0,1 ms per tick. |

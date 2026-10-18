@@ -83,8 +83,14 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   the last four go a level up, three losses one down, and the chat says why after each step.
 * *After the fight* it tells you what it noticed (how aggressive you were, the distance you like, how often you
   change strafe direction), how the damage went, what its main plan was, and one tip to work on.
+* *Kind to the server*: all bots share a think budget. When ticks get slow (from `bots.slowAboveMspt`, 35 ms by
+  default) they think less often, up to four times; dangers (an edge behind them, an arrow) still make them think
+  at once, and a crowd of bots wanting to think in the same tick is spread over the next ticks.
+  `/battlehub bots` shows how many bots there are, how often and how long they think and the tick time.
 * Admins can look inside: `/battlehub bots inspect <bot>` shows its style, current tactic, the best-scored options
-  with their reasons, what it learned about its opponent, its last switches and how long its thinking takes;
+  with their reasons, what it learned about its opponent, its objective, its last switches and how long its thinking takes;
+  `/battlehub bots show <bot>` draws what it does as particles only you see (its route, where it heads, what it
+  acts on, its objective) with its tactic above the hotbar;
   `/battlehub bots profile <bot> <style>` gives it another style; `/battlehub bots debug <bot>` writes its
   decisions to the server log.
 
@@ -526,7 +532,8 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/battlehub lobby rebuild` | admin | Build the hub again (after it was damaged or changed) |
 | `/battlehub reload` | admin | Reload the config, kits, titles and language files |
 | `/battlehub reports` | admin | The latest reports since the server started |
-| `/battlehub bots` / `/battlehub bots clear` | admin | How many bots are on; take them all off |
+| `/battlehub bots` / `/battlehub bots clear` | admin | How many bots are on and what they cost the server (thinks, think time, tick time, slow-down); take them all off |
+| `/battlehub bots show <bot>` | admin | See what a bot does as particles only you see (again: off) |
 | `/battlehub bots inspect\|debug <bot>` / `/battlehub bots profile <bot> <style>` | admin | What a bot thinks and why; log its decisions; give it another fighting style |
 | `/battlehub bots forget <player\|all>` | admin | Wipe what bots remember about a player, or about everyone |
 | `/battlehub matches` | admin | List running matches |
@@ -579,7 +586,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
     level of bots that fill in, the most bots at once, the share of rewards in matches with bots and other
     people (alone with bots always pays nothing), the fighting styles handed out (`archetypes`), how much each
     bot differs from its style (`personalityVariation`, 0 .. 0.2), whether bots remember players between fights
-    (`learning`) and across restarts (`learningPersistent`, in `battlehub/ai/`), and how soon
+    (`learning`) and across restarts (`learningPersistent`, in `battlehub/ai/`), from what tick time bots think
+    less often (`slowAboveMspt`), and how soon
     a bot leaves after its match
   * `effects`: the match intro on/off and its seconds, the victory shot, the killfeed and its number of lines
   * `lobbyExtras`: double jump on/off, its push forward and up and its cooldown; the training dummy on/off and

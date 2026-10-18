@@ -226,8 +226,19 @@ final class BotTests {
 			return Bots.report(b).archetype() == net.battlehub.core.ai.Archetype.RUSHER && Bots.report(b).thinks() > 0
 					&& lines.size() >= 4 && lines.get(1).startsWith("rusher, expert");
 		});
-		s.run(tag + ": debug log off again", () -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(),
-				"battlehub bots debug " + VARS.get("botName")));
+		s.run(tag + ": debug log off again; A watches the bot (particles only A sees)", () -> {
+			server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "battlehub bots debug " + VARS.get("botName"));
+			BotPlayer b = Bots.byName((String) VARS.get("botName"));
+			VARS.put("showThinks", Bots.report(b).thinks());
+			Bots.toggleShow(p(A), b);
+		});
+		s.pause(30);
+		s.check(tag + ": while watched the bot keeps thinking; watching stops again", () -> {
+			BotPlayer b = Bots.byName((String) VARS.get("botName"));
+			boolean watched = b != null && b.getUUID().equals(Bots.showing(p(A).getUUID())) && Bots.report(b).thinks() > (int) VARS.get("showThinks");
+			if (b != null) Bots.toggleShow(p(A), b);
+			return watched && Bots.showing(p(A).getUUID()) == null;
+		});
 		s.run(tag + ": A wins", () -> {
 			BotPlayer bot = botsIn(matchOfA()).get(0);
 			VARS.put("bot", bot.getUUID());
@@ -347,6 +358,12 @@ final class BotTests {
 				if (b.getLastHurtByMob() != null) return true;
 			}
 			return p(A).getLastHurtByMob() != null;
+		});
+		s.waitFor(tag + ": the metrics count the bots' thinking", 100, () -> Bots.thinksPerSecond() > 0);
+		s.check(tag + ": /battlehub bots reports bots, thinking and tick time", () -> {
+			List<Component> lines = Bots.metrics();
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST metrics: {}", lines.stream().map(Component::getString).toList());
+			return lines.size() == 3 && lines.get(0).getString().contains("3");
 		});
 		endAndClean(s, tag);
 		s.run(tag + ": filling off, countdown as before", () -> {

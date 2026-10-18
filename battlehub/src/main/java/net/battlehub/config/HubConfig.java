@@ -433,6 +433,11 @@ public final class HubConfig {
 		public boolean learning = true;
 		/** Keep what bots learned across restarts (battlehub/ai/<uuid>.json). */
 		public boolean learningPersistent = true;
+		/**
+		 * From how long a server tick (milliseconds, smoothed; 50 is the limit) bots think less often: one step slower
+		 * for every 5 ms above this, at most four times as slow. Dangers still make them think at once.
+		 */
+		public double slowAboveMspt = 35;
 	}
 
 	/** The mode of the day: another mode every day, with more coins. */
