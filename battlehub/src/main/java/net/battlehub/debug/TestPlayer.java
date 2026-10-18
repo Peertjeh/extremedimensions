@@ -39,6 +39,11 @@ public final class TestPlayer extends ServerPlayer {
 		return link.entities;
 	}
 
+	/** The brightness override this player's client got for a display entity, or null. */
+	public Integer clientBrightness(int entityId) {
+		return link.brightness.get(entityId);
+	}
+
 	/** The hotbar slot this player's client holds. */
 	public int clientSlot() {
 		return link.heldSlot;

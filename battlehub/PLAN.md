@@ -372,3 +372,12 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Instellingen | `bedwars.json` `mapStyle` (`arch` of `classic`), `arenas.architecture` en `arenas.ambience`. |
 | Controle | `ArenaCheck`: punten, vrije zones, looproutes, lanen, eerlijkheid, niets zwevend. 14 nieuwe JUnit-tests (`ArenaTest`, `SurroundingsTest`), en in de echte server: alle thema's en teamaantallen, een geplaatste map die te voet wordt nagelopen, duelarena's met tribune en symmetrische dekking, plaatjes in het log. |
 | Beperkingen | Geen echte screenshots (de renderer gebruikt gemiddelde blokkleuren). De tribune is rond; vierkante arena's krijgen een geplaveid voorplein. Capture the Flag (lang veld) en de handgebouwde maps blijven zoals ze waren. |
+
+## Versie 1.19.1 – Leaderboards 's nachts leesbaar
+
+| Onderwerp | Keuze |
+|---|---|
+| Oorzaak | Tekst-displays nemen het licht van de wereld over (blok- en hemellicht op hun plek). Na zonsondergang zakt het hemellicht en worden de borden donker. |
+| Oplossing | Elke tekst-display van BattleHub (borden, namen van de lobbyfiguren, oefenpop) krijgt een vaste helderheid (blok- en hemellicht 15, de "brightness override" van displays), dus altijd zo licht als overdag. De donkere achtergrond van de borden gaat van 44 % naar 50 % dekking, voor contrast tegen de nachtlucht. De dag-nachtcyclus van de hub zelf blijft zoals hij is. |
+| Controle | De testverbinding onthoudt welke helderheid elke display krijgt; een zelftest kijkt of alle borden bij elke testspeler volledig verlicht zijn. |
+

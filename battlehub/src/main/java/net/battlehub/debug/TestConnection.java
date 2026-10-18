@@ -27,6 +27,8 @@ import net.minecraft.network.protocol.game.ClientboundRespawnPacket;
  */
 final class TestConnection extends Connection {
 	final Set<Integer> entities = ConcurrentHashMap.newKeySet();
+	/** The brightness override each display entity got (absent: never set). */
+	final java.util.Map<Integer, Integer> brightness = new ConcurrentHashMap<>();
 	/** The hotbar slot the client holds, as far as the server told it (-1: never told). */
 	volatile int heldSlot = -1;
 
@@ -59,6 +61,11 @@ final class TestConnection extends Connection {
 			entities.clear();
 		} else if (msg instanceof net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket held) {
 			heldSlot = held.slot();
+		} else if (msg instanceof net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket data) {
+			int brightnessId = net.battlehub.mixin.DisplayAccessor.battlehub$brightness().id();
+			for (net.minecraft.network.syncher.SynchedEntityData.DataValue<?> v : data.packedItems()) {
+				if (v.id() == brightnessId && v.value() instanceof Integer b) brightness.put(data.id(), b);
+			}
 		}
 	}
 

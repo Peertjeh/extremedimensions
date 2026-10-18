@@ -34,6 +34,11 @@ public final class ClientEntities {
 	public static final byte SHADOW = 1;
 	public static final byte BILLBOARD_FIXED = 0;
 	public static final byte BILLBOARD_CENTER = 3;
+	/**
+	 * Block and sky light both at 15, packed as the game packs a display's brightness override: texts are lit as at
+	 * noon whatever the time of day, so the leaderboards and name tags stay readable at night.
+	 */
+	public static final int FULL_BRIGHT = (15 << 4) | (15 << 20);
 
 	/** An id and uuid no real entity uses: from an entity that is created but never added to the world. */
 	public record Handle(int id, UUID uuid, Entity entity) {}
@@ -85,13 +90,14 @@ public final class ClientEntities {
 		}
 	}
 
-	/** Look of a text display: line width, background colour, flags (shadow), size and billboard. */
+	/** Look of a text display: line width, background colour, flags (shadow), size, billboard; always fully lit. */
 	public static void textStyle(ServerPlayer p, int id, int lineWidth, int background, byte flags, float scale, byte billboard) {
 		List<SynchedEntityData.DataValue<?>> data = new ArrayList<>();
 		data.add(SynchedEntityData.DataValue.create(TextDisplayAccessor.battlehub$lineWidth(), lineWidth));
 		data.add(SynchedEntityData.DataValue.create(TextDisplayAccessor.battlehub$background(), background));
 		data.add(SynchedEntityData.DataValue.create(TextDisplayAccessor.battlehub$styleFlags(), flags));
 		data.add(SynchedEntityData.DataValue.create(DisplayAccessor.battlehub$scale(), new Vector3f(scale, scale, scale)));
+		data.add(SynchedEntityData.DataValue.create(DisplayAccessor.battlehub$brightness(), FULL_BRIGHT));
 		if (billboard != BILLBOARD_FIXED) {
 			data.add(SynchedEntityData.DataValue.create(DisplayAccessor.battlehub$billboard(), billboard));
 		}

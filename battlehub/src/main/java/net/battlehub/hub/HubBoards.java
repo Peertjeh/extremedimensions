@@ -46,7 +46,8 @@ public final class HubBoards {
 	private static final double MARGIN = 14;
 	private static final int MAX_BOARDS = 8;
 	private static final int LINE_WIDTH = 260;
-	private static final int BACKGROUND = 0x70000000;
+	/** A dark backing behind the text (alpha 0x80): enough contrast against a night sky, light enough by day. */
+	private static final int BACKGROUND = 0x80000000;
 	/** Stats change after matches; the order is worked out again this often. */
 	private static final int RANK_TICKS = 100;
 

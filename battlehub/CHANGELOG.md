@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.19.1
+
+### Fixed
+* The lobby leaderboards were hard to read at night: like every text display they took the light of the world,
+  so after sunset they turned dark. They are now always fully lit, on a slightly darker backing for contrast
+  against the night sky. The name tags of the lobby characters and the training dummy are fully lit too.
+
 ## 1.19.0
 
 ### Added

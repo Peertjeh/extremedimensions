@@ -81,6 +81,15 @@ final class BoardTests {
 			}
 			return HubBoards.boardCount() == 3;
 		});
+		s.check(tag + ": the boards are fully lit, so they read as well at night as by day", () -> {
+			for (String n : L) {
+				for (int id : HubBoards.entityIds()) {
+					Integer b = p(n).clientBrightness(id);
+					if (b == null || b != net.battlehub.hub.ClientEntities.FULL_BRIGHT) return false;
+				}
+			}
+			return true;
+		});
 		s.check(tag + ": kills and deaths hang above the north-west wall, kills on the west side, facing the fountain", () -> {
 			if (!hangsWell(server, 0, 0, -1, -1) || !hangsWell(server, 0, 1, -1, -1)) return false;
 			Vec3 kills = HubBoards.position(0, 0);

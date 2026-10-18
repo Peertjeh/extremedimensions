@@ -148,8 +148,9 @@ on the north-west wall (between the ice and castle bridges), and the **best park
 races won) in the middle of the south-west wall (between the nether and ice bridges). Top 10 each.
 
 Each player sees the boards in their own language, with their own row highlighted and their own place
-at the bottom. The boards are sent to the players' clients only: nothing is placed in the world, and
-nothing is left behind when the mod is removed. Other boards (K/D, coins earned, wins, ELO, per mode or
+at the bottom. The boards (and the name tags of the lobby characters) are lit as at noon whatever the time of
+day, on a dark backing, so they read as well at night as by day. The boards are sent to the players' clients
+only: nothing is placed in the world, and nothing is left behind when the mod is removed. Other boards (K/D, coins earned, wins, ELO, per mode or
 ranked, switching modes every few seconds) can be set in `config.json` (`leaderboards`).
 
 ### One compass, seven menus
