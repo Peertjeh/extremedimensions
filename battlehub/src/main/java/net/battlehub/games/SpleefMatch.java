@@ -51,6 +51,12 @@ public final class SpleefMatch extends PartyMatch {
 		p.setGameMode(GameType.SURVIVAL);
 	}
 
+	/** Snowballs only push here. */
+	@Override
+	public float throwableDamage() {
+		return 0;
+	}
+
 	/** Snowballs push, nothing else touches you. */
 	@Override
 	protected boolean damageAllowed(ServerPlayer victim, DamageSource source, ServerPlayer attacker) {

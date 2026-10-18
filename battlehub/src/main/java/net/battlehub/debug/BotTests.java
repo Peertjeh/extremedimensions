@@ -121,6 +121,19 @@ final class BotTests {
 			return bw.contains("Bed Wars") && bw.contains("playing") && party.contains("★") && !bw.contains("★")
 					&& FeaturedMode.is(GameMode.SUMO);
 		});
+		s.run(tag + ": A right-clicks a bed in the lobby", () -> {
+			net.minecraft.server.level.ServerLevel hub = (net.minecraft.server.level.ServerLevel) p(A).level();
+			net.minecraft.core.BlockPos at = p(A).blockPosition().offset(2, 0, 0);
+			VARS.put("bedAt", at);
+			VARS.put("bedWas", hub.getBlockState(at));
+			hub.setBlock(at, net.minecraft.world.level.block.Blocks.RED_BED.defaultBlockState(), 3);
+			p(A).gameMode.useItemOn(p(A), hub, net.minecraft.world.item.ItemStack.EMPTY, net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(at), net.minecraft.core.Direction.UP, at, false));
+		});
+		s.check(tag + ": the bed is still there and nothing exploded", () -> p(A).level()
+				.getBlockState((net.minecraft.core.BlockPos) VARS.get("bedAt")).is(net.minecraft.world.level.block.Blocks.RED_BED) && !p(A).isSleeping());
+		s.run(tag + ": the bed goes again", () -> p(A).level().setBlock((net.minecraft.core.BlockPos) VARS.get("bedAt"),
+				(net.minecraft.world.level.block.state.BlockState) VARS.get("bedWas"), 3));
 		s.run(tag + ": A clicks the practice character", () -> HubNpcs.click(p(A), HubNpcs.hitbox("practice")));
 		s.check(tag + ": the practice menu opens", () -> p(A).containerMenu instanceof HubMenu);
 		s.run(tag + ": close it; no mode of the day for the other tests", () -> {

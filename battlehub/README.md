@@ -141,8 +141,8 @@ new place). Used every time that kit is handed out.
   shown to online admins; `/battlehub reports` lists the latest.
 
 ### Lobby characters and the mode of the day
-Eight characters stand around the fountain: PvP, Free for All, Ranked, Practice, Bed Wars, Prop Hunt, Party
-Games and Parkour. Above each: its name, how many people play it right now and a click hint; their heads turn
+Eight characters stand in a ring around the fountain, halfway to the planters (16 blocks out, so the plaza stays
+easy to walk through): PvP, Free for All, Ranked, Practice, Bed Wars, Prop Hunt, Party Games and Parkour. Above each: its name, how many people play it right now and a click hint; their heads turn
 towards you when you come close. Click one to go to that game.
 
 Every day another mode is the **mode of the day** with **double coins**: announced when you enter the hub,
@@ -198,10 +198,28 @@ series counts as one match for stats, coins and ELO. Queues are separate per for
 In their own menu (Duel Games), with queues, challenges, ranked, practice against bots and their own ELO:
 * **The Bridge**: red against blue, each on an island with a goal. Build across with clay and jump into the
   other goal to score; dying only sends you home. First to five goals wins.
-* **The Bridge: Chaos** *(test mode, never ranked)*: the Bridge with a glowing power-up falling onto the middle
-  every few seconds (wind charges, an ender pearl, a golden apple, snowballs, cobwebs, arrows, extra clay or a
-  knockback stick) and a wild event every half minute: low gravity, a speed rush, a double goal, the middle of
-  the bridge crumbling, or wind charges for everyone. The normal Bridge stays as it is.
+* **The Bridge: Chaos** *(★ fan favourite, never ranked)*: the Bridge with a glowing power-up falling onto the
+  middle every few seconds (wind charges, an ender pearl, a golden apple, snowballs, cobwebs, arrows, extra clay
+  or a knockback stick) and **an event every ten seconds**, from a pool of **a hundred**. Every match plans at
+  least twenty of them, drawn at random (rare ones less often), plus five that are in every match, all within
+  the first fifteen: **a pearl for everyone, low gravity, the bridge crumbling, cobwebs and double points**.
+  How many you see depends on how long the match lasts; a long match goes on with events it has not had yet.
+  The events are of six kinds, and two of the same kind never follow each other when it can be avoided:
+  * *items*: wind charges, snowballs and eggs (they hurt), golden and Notch apples, a fishing rod, a knockback
+    stick, a Punch bow, a mace, a loyal trident, a multishot crossbow, chorus fruit, slime, honey, ice, glass
+    and scaffolding to build with, a totem, potions to throw or drink, a lucky draw, wings with rockets;
+  * *effects*: speed rush, slow motion, haste, strength, weakness, regeneration, super jump, blindness,
+    darkness, ghosts (invisible), spotlight (glowing), lift off, golden hearts, berserk, tanks and more;
+  * *body*: tiny, giants, moon walk, heavy, long arms, long reach, knockback frenzy, anchored, springs, glass
+    cannon, juggernaut, spam click, mice, slow giants, trampoline, freeze and more;
+  * *the world*: launch, swap places, magnet, shockwave, a glass bridge that shatters, an ice bridge, a
+    snowstorm, arrow rain, erosion, bombs, a thunderstorm;
+  * *rules*: double and triple points, hands off the clay (no building), truce (no hitting), full heal, back
+    home, restock, danger zone (three hearts);
+  * *just for fun*: fireworks, chicken rain, butterfingers (hotbar shuffled), hot feet.
+  Each event shows as a title and a line in chat ("event 7 of 25"). A goal ends every running event; a player
+  who dies gets the running effects back when they return. In the Duel Games menu Chaos has a glint and a
+  *Fan favourite* badge, and it is in the mode-of-the-day rotation. The normal Bridge stays as it is.
 * **Boxing**: no damage, only knockback; the first to land 100 hits wins the round. Combos are shown.
 * **Build UHC**: blocks, lava and water buckets, a rod, a bow and golden apples. No natural healing: only
   golden apples heal. Only blocks players placed can be broken. You build inside the walls, up to the build
@@ -487,7 +505,10 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
     (0-1) and `discoverModBlocks` (let palettes use block families from other mods). Changing them rebuilds the
     lobby at the next start (or `/battlehub lobby rebuild`).
   * `compass`: hotbar slot, item, glint
-  * `protection`: no damage or death outside matches, lobby block protection, no item drops
+  * `protection`: no damage or death outside matches, lobby block protection, no item drops. Beds and respawn
+    anchors in BattleHub's worlds do nothing when used (they would explode there).
+  * `combat`: `snowballDamage`, the damage of a snowball or egg hitting another player in a match (2 = one
+    heart; vanilla only pushes). Spleef keeps the push only.
   * `timings`: countdowns (also between best-of-3 rounds), end delay, play-again time, challenge expiry,
     duel time limit, respawn delay
   * `rewards`: coins and XP for duels, ranked and party games (win, participation, per kill)

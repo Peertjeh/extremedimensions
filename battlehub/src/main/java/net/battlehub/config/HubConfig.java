@@ -11,7 +11,7 @@ import net.battlehub.core.RewardSettings;
 
 /** {@code config/battlehub/config.json}. Every field has a default; missing keys are filled in on load. */
 public final class HubConfig {
-	public static final int CURRENT_VERSION = 3;
+	public static final int CURRENT_VERSION = 4;
 
 	public int configVersion = CURRENT_VERSION;
 
@@ -43,6 +43,7 @@ public final class HubConfig {
 	public ResourcePack resourcePack = new ResourcePack();
 	public WeeklyTournament weekly = new WeeklyTournament();
 	public Export export = new Export();
+	public Combat combat = new Combat();
 	public Map<String, Game> games = defaultGames();
 
 	/** BattleHub's own world. Every other dimension is normal gameplay that BattleHub leaves alone. */
@@ -97,6 +98,12 @@ public final class HubConfig {
 		public int slot = 4;
 		public String item = "minecraft:compass";
 		public boolean glint = true;
+	}
+
+	/** Fighting rules shared by all modes. */
+	public static final class Combat {
+		/** Damage of a snowball or egg thrown at another player in a match (vanilla: 0, only a push). Spleef keeps the push only. */
+		public double snowballDamage = 2.0;
 	}
 
 	public static final class Protection {
@@ -419,14 +426,14 @@ public final class HubConfig {
 		public boolean enabled = true;
 		public double coinMultiplier = 2.0;
 		public List<String> modes = new ArrayList<>(List.of("ffa", "bed_wars", "prop_hunt", "sumo", "tnt_run", "bow_spleef",
-				"koth", "ctf", "lms", "parkour", "1v2", "1v3", "spleef", "skywars", "murder_mystery"));
+				"koth", "ctf", "lms", "parkour", "1v2", "1v3", "spleef", "skywars", "murder_mystery", "bridge_chaos"));
 	}
 
 	/** Characters on the lobby plaza that take you to a game. */
 	public static final class Npcs {
 		public boolean enabled = true;
-		/** Distance from the fountain. */
-		public double radius = 10.5;
+		/** Distance from the fountain (16: between the fountain and the planters, room to walk round them). */
+		public double radius = 16;
 		public List<Npc> list = defaultNpcs();
 	}
 
@@ -532,7 +539,8 @@ public final class HubConfig {
 		m.put("prop_hunt", new Game(3, 16, 0, "prophunt_hunter"));
 		// Phase 6 modes
 		m.put("bridge", new Game(2, 2, 900, "bridge").with("goalsToWin", 5));
-		m.put("bridge_chaos", new Game(2, 2, 900, "bridge").with("goalsToWin", 5).with("powerupSeconds", 12).with("eventSeconds", 35));
+		m.put("bridge_chaos", new Game(2, 2, 900, "bridge").with("goalsToWin", 5).with("powerupSeconds", 12).with("eventSeconds", 10)
+				.with("firstEventSeconds", 6).with("randomEvents", 20));
 		m.put("bridge_2v2", new Game(4, 4, 900, "bridge").with("goalsToWin", 5));
 		m.put("bridge_1v1v1v1", new Game(2, 4, 900, "bridge").with("goalsToWin", 4));
 		m.put("boxing", new Game(2, 2, 300, "boxing").with("hitsToWin", 100));
@@ -647,8 +655,18 @@ public final class HubConfig {
 		if (bots.fillLevel == null) bots.fillLevel = "normal";
 		if (featured == null) featured = new FeaturedMode();
 		if (featured.modes == null) featured.modes = new FeaturedMode().modes;
+		if (from < 4 && !featured.modes.contains("bridge_chaos") && featured.modes.contains("murder_mystery")) {
+			// 1.21: Chaos is a normal mode now, and in the mode-of-the-day rotation
+			featured.modes.add("bridge_chaos");
+		}
+		if (combat == null) combat = new Combat();
+		combat.snowballDamage = Math.max(0, Math.min(20, combat.snowballDamage));
 		if (npcs == null) npcs = new Npcs();
 		if (npcs.list == null) npcs.list = defaultNpcs();
+		if (from < 4 && npcs.radius == 10.5) {
+			// 1.21: the characters stand further from the fountain (the old default only)
+			npcs.radius = new Npcs().radius;
+		}
 		npcs.list.removeIf(n -> n == null || n.id == null || n.action == null);
 		if (leaderboards == null) leaderboards = new Leaderboards();
 		if (from < 3 && sameWalls(leaderboards.walls, wallsOf160())) {
@@ -687,6 +705,11 @@ public final class HubConfig {
 				e.getValue().settings.forEach(g.settings::putIfAbsent);
 				if (g.kit == null || g.kit.isBlank()) g.kit = e.getValue().kit;
 			}
+		}
+		Game chaos = games.get("bridge_chaos");
+		if (from < 4 && chaos != null && Double.valueOf(35).equals(chaos.settings.get("eventSeconds"))) {
+			// 1.21: a hundred events, one every ten seconds instead of five every thirty-five
+			chaos.settings.put("eventSeconds", 10.0);
 		}
 		for (GameMode mode : GameMode.values()) {
 			Game g = games.get(mode.id());

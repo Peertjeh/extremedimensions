@@ -94,8 +94,13 @@ public enum GameMode {
 		return ranged;
 	}
 
-	/** A test mode: playable, but not ranked and marked as a test in the menus. */
-	public boolean isTest() {
+	/** Never ranked: chance (power-ups, events) plays too big a part for ELO. */
+	public boolean isUnranked() {
+		return this == BRIDGE_CHAOS;
+	}
+
+	/** Highlighted in the menus as the players' favourite. */
+	public boolean isFanFavorite() {
 		return this == BRIDGE_CHAOS;
 	}
 
@@ -125,12 +130,12 @@ public enum GameMode {
 	}
 
 	public static GameMode[] duels() {
-		return new GameMode[] {SWORD, AXE, MACE, BOW, CROSSBOW, BRIDGE, BOXING, BUILD_UHC, BRIDGE_CHAOS};
+		return new GameMode[] {SWORD, AXE, MACE, BOW, CROSSBOW, BRIDGE, BRIDGE_CHAOS, BOXING, BUILD_UHC};
 	}
 
-	/** Duels with ranked queues (all but the test modes). */
+	/** Duels with ranked queues (all but the unranked ones). */
 	public static GameMode[] rankedDuels() {
-		return java.util.Arrays.stream(duels()).filter(m -> !m.isTest()).toArray(GameMode[]::new);
+		return java.util.Arrays.stream(duels()).filter(m -> !m.isUnranked()).toArray(GameMode[]::new);
 	}
 
 	/** Duels that are only a kit (no rules of their own): these can be tournament kits. */
@@ -147,7 +152,7 @@ public enum GameMode {
 
 	/** Duels with rules of their own (the Duel Games menu). */
 	public static GameMode[] duelGames() {
-		return new GameMode[] {BRIDGE, BOXING, BUILD_UHC, BRIDGE_CHAOS};
+		return new GameMode[] {BRIDGE, BRIDGE_CHAOS, BOXING, BUILD_UHC};
 	}
 
 	public static GameMode[] parties() {

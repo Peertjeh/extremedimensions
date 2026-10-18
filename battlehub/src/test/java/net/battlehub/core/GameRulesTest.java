@@ -160,8 +160,10 @@ class GameRulesTest {
 		}
 		assertNull(GameMode.byId("nope"));
 		assertEquals(9, GameMode.duels().length);
-		assertEquals(8, GameMode.rankedDuels().length, "the test mode is never ranked");
-		assertTrue(GameMode.BRIDGE_CHAOS.isTest() && GameMode.BRIDGE_CHAOS.isDuel() && !GameMode.BRIDGE.isTest());
+		assertEquals(8, GameMode.rankedDuels().length, "Chaos is never ranked");
+		assertTrue(GameMode.BRIDGE_CHAOS.isUnranked() && GameMode.BRIDGE_CHAOS.isDuel() && !GameMode.BRIDGE.isUnranked());
+		assertTrue(GameMode.BRIDGE_CHAOS.isFanFavorite() && !GameMode.BRIDGE.isFanFavorite());
+		assertEquals(GameMode.BRIDGE_CHAOS, GameMode.duelGames()[1], "the fan favourite right after the normal Bridge");
 		assertEquals(5, GameMode.kitDuels().length);
 		assertEquals(16, GameMode.parties().length);
 		assertEquals(GameMode.BRIDGE_DUOS, GameMode.byId("bridge_2v2"));

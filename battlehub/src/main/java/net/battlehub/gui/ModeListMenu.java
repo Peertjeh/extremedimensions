@@ -55,14 +55,15 @@ public final class ModeListMenu extends Screen {
 				: net.battlehub.core.MenuSlots.centered(modes.size(), 1, 7);
 		for (int i = 0; i < modes.size(); i++) {
 			GameMode m = modes.get(i);
-			Icon icon = Icon.of(Icons.mode(m)).name(Lang.item(viewer, Icons.modeKey(m)))
-					.lore(Lang.loreLines(viewer, "mode." + m.id() + ".desc"))
+			Icon icon = Icon.of(Icons.mode(m)).name(Lang.item(viewer, Icons.modeKey(m)));
+			if (m.isFanFavorite()) icon.lore(Lang.lore(viewer, "menu.mode.fan_favorite"));
+			icon.lore(Lang.loreLines(viewer, "mode." + m.id() + ".desc"))
 					.lore(Component.empty())
 					.lore(Lang.lore(viewer, "menu.mode.queued", Queues.waiting(m, false, Queues.formatOf(viewer))))
 					.lore(Lang.lore(viewer, "menu.mode.playing", Matches.playing(m)))
 					.lore(Component.empty())
 					.lore(Lang.lore(viewer, "menu.click_to_open"))
-					.glint(Queues.isQueued(viewer.getUUID(), m, false))
+					.glint(Queues.isQueued(viewer.getUUID(), m, false) || m.isFanFavorite())
 					.clean();
 			c.set(slots[i], icon.build(), click -> new ModeMenu(viewer, m, this).open());
 		}

@@ -58,6 +58,7 @@ final class NewModeTests {
 			c.game(GameMode.BRIDGE_CHAOS).settings.put("goalsToWin", 3.0);
 			c.game(GameMode.BRIDGE_CHAOS).settings.put("powerupSeconds", 600.0);
 			c.game(GameMode.BRIDGE_CHAOS).settings.put("eventSeconds", 600.0);
+			c.game(GameMode.BRIDGE_CHAOS).settings.put("firstEventSeconds", 600.0);
 			c.arenas.customMapChance = 0.0;
 		});
 		PartyTests.party(server, s, GameMode.SPLEEF, NewModeTests::spleef);
@@ -318,6 +319,10 @@ final class NewModeTests {
 				&& match().outcome(p(A).getUUID()) == Outcome.WIN && match().outcome(p(B).getUUID()) != Outcome.WIN);
 	}
 
+	private static net.battlehub.games.duel.BridgeChaosMatch chaos() {
+		return (net.battlehub.games.duel.BridgeChaosMatch) match();
+	}
+
 	private static void bridgeChaos(MinecraftServer server, Script s) {
 		String tag = "bridge chaos";
 		duel(server, s, GameMode.BRIDGE_CHAOS);
@@ -342,7 +347,59 @@ final class NewModeTests {
 		s.run(tag + ": low gravity for everyone", () -> ((net.battlehub.games.duel.BridgeChaosMatch) match()).event("low_gravity"));
 		s.check(tag + ": A jumps higher and floats", () -> p(A).hasEffect(net.battlehub.util.Ids.effect("minecraft:jump_boost").orElseThrow())
 				&& p(A).hasEffect(net.battlehub.util.Ids.effect("minecraft:slow_falling").orElseThrow()));
-		s.run(tag + ": the next goal counts double", () -> ((net.battlehub.games.duel.BridgeChaosMatch) match()).event("double_goal"));
+		s.check(tag + ": every effect, attribute, item, potion and special of the hundred events exists", () -> {
+			java.util.List<String> unknown = net.battlehub.games.duel.ChaosDirector.unknown(server);
+			if (!unknown.isEmpty()) net.battlehub.BattleHub.LOGGER.warn("SELFTEST chaos: unknown {}", unknown);
+			return unknown.isEmpty() && net.battlehub.core.chaos.ChaosCatalog.problems().isEmpty();
+		});
+		s.check(tag + ": the match plans at least 25 events, the five fixed ones among the first 15", () -> {
+			java.util.List<String> order = chaos().chaos().plan().order();
+			for (String f : net.battlehub.core.chaos.ChaosCatalog.FIXED) {
+				int at = order.indexOf(f);
+				if (at < 0 || at >= net.battlehub.core.chaos.ChaosPlan.FIXED_WITHIN) return false;
+			}
+			return order.size() >= 25 && new java.util.HashSet<>(order).size() == order.size();
+		});
+		s.run(tag + ": tiny!", () -> chaos().event("tiny"));
+		s.check(tag + ": A is half as big", () -> Math.abs(p(A).getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.SCALE) - 0.5) < 1e-6);
+		s.run(tag + ": hands off the clay", () -> chaos().event("hands_off"));
+		s.check(tag + ": nobody can build", () -> !match().onPlaceBlock(p(A), match().arena().origin().offset(1, 0, 2),
+				new ItemStack(net.battlehub.util.Ids.item("minecraft:red_terracotta"))));
+		s.run(tag + ": all hundred events at once", () -> {
+			for (net.battlehub.core.chaos.ChaosEvent e : net.battlehub.core.chaos.ChaosCatalog.all()) chaos().event(e.id());
+		});
+		s.pause(40);
+		s.check(tag + ": both still play, events are running", () -> match().phase() == Match.Phase.RUNNING
+				&& match().alive().size() == 2 && chaos().chaos().running() > 0);
+		s.run(tag + ": every event ends", () -> chaos().chaos().finishAll(true));
+		s.check(tag + ": everything taken back: size, gravity, wings, chickens, no-build", () -> {
+			for (ServerPlayer pl : java.util.List.of(p(A), p(B))) {
+				if (net.battlehub.games.duel.ChaosDirector.changed(pl)) return false;
+				if (pl.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).is(Items.ELYTRA)) return false;
+				if (Math.abs(pl.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.SCALE) - 1.0) > 1e-6) return false;
+			}
+			net.minecraft.world.phys.AABB box = match().arena().bounds().inflate(16);
+			return chaos().chaos().running() == 0 && !chaos().doubleGoal()
+					&& match().arena().level().getEntitiesOfClass(net.minecraft.world.entity.Entity.class, box,
+							e -> e.getType() == net.minecraft.world.entity.EntityType.CHICKEN).isEmpty();
+		});
+		s.run(tag + ": A healed; B throws a snowball at A", () -> {
+			p(A).removeAllEffects();
+			p(A).setHealth(p(A).getMaxHealth());
+			p(A).setRemainingFireTicks(0);
+		});
+		s.pause(20);
+		s.run(tag + ": the snowball falls onto A", () -> {
+			net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) p(A).level();
+			net.minecraft.world.entity.Entity ball = net.minecraft.world.entity.EntityType.SNOWBALL.create(level, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+			((net.minecraft.world.entity.projectile.Projectile) ball).setOwner(p(B));
+			ball.snapTo(p(A).getX(), p(A).getY() + 3.2, p(A).getZ());
+			ball.setDeltaMovement(0, -1.0, 0);
+			level.addFreshEntity(ball);
+			VARS.put("snowHealth", p(A).getHealth());
+		});
+		s.waitFor(tag + ": the snowball hurts A", 40, () -> p(A).getHealth() < (float) VARS.get("snowHealth"));
+		s.run(tag + ": the next goal counts double", () -> chaos().event("double_points"));
 		s.run(tag + ": A jumps into the blue goal", () -> {
 			BlockPos g = match().arena().mark("goal_blue");
 			PartyTests.tp(p(A), g.getX() + 0.5, g.getY() - 1, g.getZ() + 0.5);

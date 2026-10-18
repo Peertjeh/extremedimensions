@@ -8,7 +8,7 @@ import net.battlehub.arch.Rng;
  * The lobby's heart, an authored module (hand-designed, drawn with exact blocks) placed by the same assembly as
  * the generated architecture: a marble plaza with a compass rose, a tiered fountain under a beacon, a balustrade
  * that carries the leaderboards, four gateways with towers, arches and coloured beacons, and low planters.
- * The lobby characters stand on its inner circle; players arrive south of the fountain.
+ * The lobby characters stand in a ring between the fountain and the planters; players arrive south of the fountain.
  */
 public final class Plaza {
 	private Plaza() {}

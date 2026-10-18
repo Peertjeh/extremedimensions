@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.21.0
+
+### Added
+* **The Bridge: Chaos is a normal mode now, the fan favourite**: no longer marked as a test, right after The
+  Bridge in Duel Games with a glint and a *Fan favourite* badge, and in the mode-of-the-day rotation. Still
+  never ranked.
+* **A hundred Chaos events**: one every ten seconds. Every match plans at least twenty random ones (rare ones
+  less often) plus five that are always there in the first fifteen: a pearl for everyone, low gravity, the
+  bridge crumbling, cobwebs and double points. Items, potions, effects, body changes (tiny, giants, moon walk,
+  knockback frenzy, freeze, ...), the world (swap, magnet, shockwave, glass and ice bridges, snowstorm, arrow
+  rain, bombs), rules (triple points, no building, truce, back home) and fun ones (chicken rain,
+  butterfingers). Each event shows as a title and a chat line with its number.
+* Config: `combat.snowballDamage`; Chaos settings `eventSeconds` (now 10), `firstEventSeconds`, `randomEvents`.
+
+### Fixed
+* Beds in the lobby exploded when you tried to sleep: beds and respawn anchors now do nothing in BattleHub's
+  worlds.
+* Snowballs (and eggs) did no damage to other players: in matches they now hurt (one heart by default).
+  Spleef keeps the push only.
+
+### Changed
+* The lobby characters stand further from the fountain (16 blocks instead of 10.5), so the plaza is clearer.
+
 ## 1.20.0
 
 ### Changed

@@ -115,6 +115,13 @@ public final class BuildRules {
 		placed.add(p.asLong());
 	}
 
+	/** Where players built (a copy). */
+	public List<BlockPos> placedPositions() {
+		List<BlockPos> out = new ArrayList<>();
+		for (long l : placed) out.add(BlockPos.of(l));
+		return out;
+	}
+
 	public int placedCount() {
 		return placed.size();
 	}

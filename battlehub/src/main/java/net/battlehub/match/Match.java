@@ -167,6 +167,11 @@ public abstract class Match {
 	/** Game rules, every tick while RUNNING. */
 	protected void tickGame() {}
 
+	/** Damage of a snowball or egg hitting a player of this match (vanilla gives none, only a push). */
+	public float throwableDamage() {
+		return (float) net.battlehub.config.ConfigManager.config().combat.snowballDamage;
+	}
+
 	/** Extra damage rules on top of "only while running, only between players of this match". */
 	protected boolean damageAllowed(ServerPlayer victim, DamageSource source, ServerPlayer attacker) {
 		return true;

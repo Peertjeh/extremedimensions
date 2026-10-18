@@ -86,6 +86,14 @@ public final class HubEvents {
 
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
 			if (entity instanceof ServerPlayer p) {
+				float thrown = amount <= 0 ? throwableDamage(p, source) : 0;
+				if (thrown > 0) {
+					// Vanilla snowballs and eggs only push players; in BattleHub fights they hurt as well
+					if (allowDamage(p, source)) {
+						p.hurtServer(p.level(), source, thrown);
+					}
+					return false;
+				}
 				return allowDamage(p, source);
 			}
 			// Shopkeepers and other game NPCs cannot be hurt
@@ -121,6 +129,10 @@ public final class HubEvents {
 		UseItemCallback.EVENT.register((player, level, hand) -> useItem(player, player.getItemInHand(hand)));
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
 			ItemStack held = player.getItemInHand(hand);
+			if (player instanceof ServerPlayer sleeper && net.battlehub.hub.HubWorld.isBattleHub(level)
+					&& Protection.blocksSleep(sleeper, level.getBlockState(hit.getBlockPos()), held)) {
+				return InteractionResult.FAIL;
+			}
 			Match m = player instanceof ServerPlayer sp ? matchOf(sp) : null;
 			if (m != null) {
 				InteractionResult r = m.onUseBlock((ServerPlayer) player, hit, held);
@@ -323,6 +335,20 @@ public final class HubEvents {
 		net.battlehub.social.CustomGames.forget(p);
 		PlayerStore.save(p.getUUID());
 		Sessions.remove(p.getUUID());
+	}
+
+	/** The damage a snowball or egg does to this player in their match, or 0 (not thrown, not in a match). */
+	private static float throwableDamage(ServerPlayer p, net.minecraft.world.damagesource.DamageSource source) {
+		net.minecraft.world.entity.Entity direct = source.getDirectEntity();
+		if (direct == null || (direct.getType() != net.minecraft.world.entity.EntityType.SNOWBALL
+				&& direct.getType() != net.minecraft.world.entity.EntityType.EGG)) {
+			return 0;
+		}
+		if (!net.battlehub.hub.HubWorld.isBattleHub(p.level()) || Sessions.state(p.getUUID()) != Sessions.State.MATCH) {
+			return 0;
+		}
+		Match m = Matches.of(p.getUUID());
+		return m == null ? 0 : m.throwableDamage();
 	}
 
 	private static boolean allowDamage(ServerPlayer p, net.minecraft.world.damagesource.DamageSource source) {

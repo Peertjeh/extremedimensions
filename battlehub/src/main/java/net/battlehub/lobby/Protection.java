@@ -31,6 +31,24 @@ public final class Protection {
 		return !ConfigManager.config().protection.protectLobbyBlocks || canBuild(p) || !Lobby.inArea(p);
 	}
 
+	/**
+	 * Beds and respawn anchors explode in BattleHub's worlds (they only work in the overworld and the nether), so using
+	 * one does nothing at all. Sneaking with an item still places it against the block.
+	 */
+	public static boolean blocksSleep(ServerPlayer p, net.minecraft.world.level.block.state.BlockState state, ItemStack held) {
+		net.minecraft.world.level.block.Block b = state.getBlock();
+		if (!(b instanceof net.minecraft.world.level.block.BedBlock) && !(b instanceof net.minecraft.world.level.block.RespawnAnchorBlock)) {
+			return false;
+		}
+		if (p.isSecondaryUseActive() && !held.isEmpty()) {
+			return false;
+		}
+		if (Sessions.state(p.getUUID()) != Sessions.State.MATCH) {
+			net.battlehub.util.Msg.actionBar(p, "lobby.no_sleep");
+		}
+		return true;
+	}
+
 	/** Placing blocks or emptying buckets. */
 	public static boolean mayPlace(ServerPlayer p, ItemStack held) {
 		if (!(held.getItem() instanceof BlockItem) && !(held.getItem() instanceof BucketItem)) {
