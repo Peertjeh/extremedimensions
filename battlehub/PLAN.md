@@ -467,3 +467,37 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Boog in de mind | Nieuwe tactiek SHOOT. Alleen een boog: melee scoort laag, schieten hoog, dichtbij achteruit lopen terwijl hij spant (kiten). Boog en zwaard: schieten op afstand, slaan dichtbij; een rusher komt vanaf middenafstand toch naar je toe. Mikken: borst, vooruit over de echte vliegtijd van de pijl (`BotMath.arrowTicks`), zo ver als het niveau kan inschatten (beginner niet, master tot 22 ticks); de wereldlaag voegt de boog en de richtfout toe. Zonder zichtlijn zoekt hij eerst (geen pijlen in dekking). Boog-modi lopen nu volledig via de mind. |
 | Doelwit kiezen | `core/ai/Targeting`: afstand, zicht (gezien beter dan naamlabel beter dan herinnering), wie je net raakte (terugvechten), zwak doelwit afmaken (vooral agressieve en opportunistische stijlen), huidig doelwit iets voorrang (niet wisselen om niets). JUnit voor elk van die regels. |
 | Nabespreking | Na een match met bots krijgt elke speler van de bot met wie hij het meest uitwisselde: schade over en weer, het hoofdplan van de bot (aandeel per tactiek), wat de bot van jou zag (agressie, afstand, strafe-wissels) en één tip (vaker van richting wisselen, geduld, druk zetten, afstand, volgend niveau, of ruilen met volle lading). `core/ai/Debrief` geeft taalsleutels terug (en/nl), JUnit; zelftest: na het oefenduel ontvangt A de nabespreking. |
+
+## Versie 1.24 – AI mijlpalen 3, 4 en 5: Spleef, parkour, leren over sessies
+
+Afwijking van het faseplan: mijlpaal 3, 4 en 5 komen samen in één release (1.24) in plaats van drie (1.24, 1.25,
+1.26), omdat ze in hetzelfde brein-bestand zitten en één CI-ronde (bouwen plus zelftest op een echte server) een
+half uur kost. Objectmodi worden 1.25, budget en visualisatie 1.26. Het bruggenbouwen (oorspronkelijk mijlpaal 3)
+schuift naar 1.25, bij de objectmodi waar het nodig is (Bridge, Bed Wars).
+
+| Onderdeel | Keuze en controle |
+|---|---|
+| Spleef-planner | `core/ai/SpleefPlanner`: het veld als raster (sneeuw of gat) rond de bot, tegenstanders op hetzelfde veld, bereik uit `BLOCK_INTERACTION_RANGE`. Graven: het laatste blok onder iemand die stilstaat, waar iemand naartoe loopt als hij rent (zo ver vooruit als het niveau kan voorspellen). Nooit de eigen steunblokken, niet direct naast zichzelf, en nooit een blok waardoor de bot op een eilandje van minder dan acht blokken komt te staan. Staan: stevige grond, op graafafstand, niet naast iemand die onder je kan graven; de stijl bepaalt hoe dicht (agressie) en hoeveel risico. JUnit: 6 tests. |
+| Spleef in de wereld | Nieuwe botstijl `SPLEEF`: het veld wordt elke denkbeurt opnieuw gelezen (25×25), alleen zichtbare of niet-sluipende tegenstanders tellen, de bot kijkt naar de bovenkant van het blok, graaft pas als hij er op een paar graden na op richt en het blok echt kan zien (dezelfde clip als een klik), met een tempo dat bij het niveau hoort, via dezelfde regel als een speler (`onBreakBlock`: sneeuwbal erbij). Sneeuwballen naar iemand die naast een gat staat. Zelftest: drie spelers (een echte, twee bots), een bot krijgt sneeuwballen (heeft dus gegraven) en geen bot valt. |
+| Spelerbeweging | `core/ai/PlayerSim`: de beweging van een speler met de formules van het spel (versnelling `0,98 × 0,216 / wrijving³`, behoud `wrijving × 0,91`, in de lucht 0,02/0,026 en 0,91, sprong 0,42 plus 0,2 met sprinten, zwaartekracht 0,08, 0,98). JUnit: lopen 0,216 en sprinten 0,281 blok per tick, een sprintsprong vliegt ongeveer 3,6 blokken. |
+| Sprongplanner | `core/ai/JumpPlanner`: per sprong vijf manieren (sprint lang/kort, lopen lang/kort, sprint uit stand), elk gesimuleerd van aanloop tot landing; de manier met de meeste ruimte op de landing wint. Mislukte manieren worden per sprong onthouden en overgeslagen; als alles een keer mislukte, begint hij opnieuw. JUnit: gat 1 tot 4 haalbaar, 5 niet; één omhoog met gat 2 wel, met gat 4 niet; anderhalf omhoog niet; faalgeheugen; landingsmarge. |
+| Parkour in de wereld | De bot loopt naar het startpunt van de aanloop (eerst draaien, dan lopen: op een platform van één blok is een zijstap een val), staat stil, kijkt de sprongrichting in, rent en springt op de tick die het plan zegt (lagere niveaus soms een tick te vroeg of te laat), stuurt in de lucht bij naar de landing en remt na de landing met de bewegingstoetsen (ijs). Geen `setDeltaMovement` meer: alleen invoer zoals een speler. Een gemiste sprong wordt onthouden (`inspect` toont het). De bestaande zelftest (bot haalt platform 3) blijft. |
+| Leren over sessies | `core/ai/PlayerKnowledge`: per speler een paar voortschrijdende gemiddelden van het tegenstandermodel (naderen, afstand, strafe- en springfrequentie), welke tactieken tegen hem werkten, en de laatste acht resultaten tegen bots. Een nieuwe bot begint daarmee (als bekend, met een gewicht dat met het aantal gevechten groeit). `bot/AiMemory` houdt het in het geheugen en in `battlehub/ai/<uuid>.json` (config `bots.learning`, `bots.learningPersistent`; uit = elk gevecht begint blanco). Waarden uit een met de hand bewerkt bestand worden begrensd. |
+| Transparant en terug te draaien | `/bots memory` laat zien wat bots over je onthouden (stijl, resultaten per niveau, het adaptieve niveau); `/bots forget` wist het (geheugen en bestand); admins: `/battlehub bots forget <speler\|all>`. |
+| Adaptief niveau | Knop *Adaptief* in het oefenmenu (middelste vak) of `/practice <modus> adaptive`: drie van de laatste vier gevechten op het huidige niveau gewonnen is een niveau omhoog, drie verloren een omlaag; na elke stap een chatregel met de reden. Een vast niveau kiezen zet het weer uit. JUnit: omhoog, omlaag, alleen resultaten op het huidige niveau tellen, begrenzen. |
+| Gevonden in de CI van 1.23 | (1) De nabespreking bleef leeg: de zelftest geeft de bot halverwege een andere stijl, en dat maakte een nieuwe mind zonder de schade tot dan toe. Nu neemt een stijlwissel alles over (`CombatMind.inherit`): wat hij zag, leerde en hoe het gevecht ging. Ook de dodelijke klap telt nu mee (die slaat de after-damage-gebeurtenis over). (2) De oude parkour-bot (snelheid zetten op een berekende sprong) kwam in die run niet van de start; vervangen door de sprongplanner. |
+| Zelftest | Oefenduel: na de overwinning staat `W:expert` in het geheugen, het bestand bestaat, `/bots memory` toont het; `/bots forget` wist geheugen en bestand. |
+| Testinfrastructuur (sinds 1.21) | De testspelers zijn nep-verbindingen zonder client; de server laadt daarom geen chunks rond ze. `debug/TestPlayer` verplaatst ze elke tick in de chunk-administratie, zodat chunks rond ze geladen blijven (anders zien bots en NPC-hitboxen de wereld niet). De NPC-test gebruikt bovendien geforceerde chunks als terugvaloptie en logt wat hij vond. |
+
+### Status van de fasen
+
+| Fase | Status |
+|---|---|
+| 0 – Inventarisatie | Klaar (1.22). |
+| 1 – Kern en melee | Gebouwd, JUnit, zelftest (1.22). |
+| 2 – Niveaus, boog, doelwit, nabespreking | Gebouwd, JUnit, zelftest (1.23; nabespreking gerepareerd in 1.24). |
+| 3 – Spleef | Gebouwd, JUnit, zelftest (1.24). |
+| 4 – Parkour | Gebouwd, JUnit, zelftest (1.24). |
+| 5 – Leren en adaptief | Gebouwd, JUnit, zelftest voor geheugen en wissen (1.24); de adaptieve stap zelf alleen in JUnit. |
+| 6 – Objectmodi en bruggen bouwen | Gepland voor 1.25. |
+| 7 – Budget, metrics, visualisatie | Gepland voor 1.26. |

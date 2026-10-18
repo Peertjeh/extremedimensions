@@ -11,7 +11,9 @@ import net.battlehub.core.ai.Archetype;
 import net.battlehub.core.ai.CombatMind;
 import net.battlehub.core.ai.Difficulty;
 import net.battlehub.core.ai.Intent;
+import net.battlehub.core.ai.JumpPlanner;
 import net.battlehub.core.ai.Situation;
+import net.battlehub.core.ai.SpleefPlanner;
 import net.battlehub.core.ai.Tactic;
 import net.battlehub.games.ParkourMatch;
 import net.battlehub.games.prophunt.Disguise;
@@ -20,6 +22,7 @@ import net.battlehub.match.Match;
 import net.battlehub.match.Matches;
 import net.battlehub.session.Sessions;
 import net.battlehub.util.Ids;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
@@ -64,9 +67,7 @@ final class BotBrain {
 	private int eating;
 	private float runYaw = Float.NaN;
 	// Parkour: the platform the bot last stood on and the pause before the next jump
-	private int pkOn = -2;
 	private int pkWait;
-	private int pkAirTicks;
 	// Prop Hunt
 	private Vec3 hideSpot;
 	private int hideTicks;
@@ -77,6 +78,8 @@ final class BotBrain {
 	private int lastSwing = -1000;
 	private float lastCharge = 1f;
 	private boolean fighting;
+	/** Players whose remembered habits were given to this fight's models already. */
+	private final java.util.Set<UUID> seeded = new java.util.HashSet<>();
 
 	BotBrain(BotPlayer bot) {
 		this.bot = bot;
@@ -90,7 +93,9 @@ final class BotBrain {
 
 	/** A new fighting style (the profile command); the level stays. */
 	void profile(Archetype archetype) {
+		CombatMind old = mind;
 		mind = Bots.newMind(bot, archetype);
+		mind.inherit(old);
 	}
 
 	void dealt(double hp) {
@@ -129,7 +134,7 @@ final class BotBrain {
 		if (!m.inPlay(bot.getUUID()) || bot.isSpectator()) {
 			stopUsing();
 			bot.setSprinting(false);
-			pkOn = -2;
+			pkStage = 0;
 			return;
 		}
 		if (ticks % 30 == 0) {
@@ -145,6 +150,7 @@ final class BotBrain {
 			case PARKOUR -> parkour(m);
 			case BOW_SPLEEF -> runner(m, true);
 			case PROP_HUNT -> propHunt(m);
+			case SPLEEF -> spleef(m);
 		}
 		if (m.botStyle() != net.battlehub.core.BotStyle.PARKOUR) {
 			// What the bot wanted, before an edge held it back: standing still at an edge is being stuck too
@@ -160,12 +166,15 @@ final class BotBrain {
 			mind.reset(ticks);
 			fighting = false;
 			edges = null;
+			seeded.clear();
 		}
 		target = null;
 		wander = null;
 		path = null;
 		hideSpot = null;
-		pkOn = -2;
+		pkPlan = null;
+		pkStage = 0;
+		pkFailed.clear();
 		eating = 0;
 		runYaw = Float.NaN;
 		stopUsing();
@@ -436,6 +445,10 @@ final class BotBrain {
 		Perception.Known k = Perception.pickTarget(bot, m, mind, ticks, target, this::hitAgo);
 		ServerPlayer t = k == null ? null : k.player();
 		target = t == null ? null : t.getUUID();
+		if (t != null && !Bots.isBot(t.getUUID()) && AiMemory.learning() && seeded.add(t.getUUID())) {
+			// what bots learned about this player before gives this fight a head start
+			AiMemory.get(bot.level().getServer(), t.getUUID()).seed(mind.model(t.getUUID()), mind.outcomes());
+		}
 		// a swing everyone can see resets the swinger's attack charge: a sudden drop means they just attacked
 		float charge = t != null && k.seen() ? t.getAttackStrengthScale(0.5f) : 1f;
 		if (charge < lastCharge - 0.3f) lastSwing = ticks;
@@ -549,6 +562,101 @@ final class BotBrain {
 		}
 	}
 
+	// ------------------------------------------------------------------ Spleef
+
+	private SpleefPlanner.Plan spleefPlan;
+	private int spleefAt = -100;
+	private int lastDig = -100;
+	private int lastThrow = -100;
+
+	/**
+	 * Spleef through the planner: the floor under the bot as a grid, the opponents it can see or locate on that
+	 * floor; dig what the planner picks (looking at it, in reach and in sight, as fast as the level allows; the
+	 * kit's shovel breaks snow at once, as for a player), stand where it says, and throw snowballs at someone near
+	 * a hole.
+	 */
+	private void spleef(Match m) {
+		fighting = true;
+		BlockPos under = BlockPos.containing(bot.getX(), bot.getY() - 0.5, bot.getZ());
+		ServerLevel level = level();
+		if (spleefPlan == null || ticks - spleefAt >= mind.difficulty().thinkTicks) {
+			int size = 25, x0 = under.getX() - 12, z0 = under.getZ() - 12;
+			boolean[] present = new boolean[size * size];
+			for (int k = 0; k < size; k++) {
+				for (int i = 0; i < size; i++) {
+					present[k * size + i] = level.getBlockState(new BlockPos(x0 + i, under.getY(), z0 + k)).is(net.minecraft.world.level.block.Blocks.SNOW_BLOCK);
+				}
+			}
+			List<SpleefPlanner.Foe> foes = new java.util.ArrayList<>();
+			for (UUID id : m.participants()) {
+				if (id.equals(bot.getUUID()) || !m.inPlay(id) || !m.isEnemy(bot.getUUID(), id)) continue;
+				ServerPlayer p = m.player(id);
+				if (p == null || p.level() != level || Math.abs(p.getY() - (under.getY() + 1)) > 1.5) continue;
+				if (!bot.hasLineOfSight(p) && (p.isShiftKeyDown() || p.isInvisible())) continue;
+				foes.add(new SpleefPlanner.Foe(p.getX(), p.getZ(), p.getDeltaMovement().x, p.getDeltaMovement().z));
+			}
+			double reach = bot.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE);
+			spleefPlan = SpleefPlanner.plan(new SpleefPlanner.Floor(x0, z0, size, present), bot.getX(), bot.getZ(), foes, reach,
+					mind.personality(), mind.difficulty());
+			spleefAt = ticks;
+			throwSnowball(m, foes);
+		}
+		SpleefPlanner.Plan plan = spleefPlan;
+		if (plan.stand() != null) {
+			goTo(new Vec3(plan.stand()[0] + 0.5, under.getY() + 1, plan.stand()[1] + 0.5), false);
+		}
+		if (plan.dig() != null && bot.isUsingItem() == false) {
+			select(s -> s.is(ItemTags.SHOVELS));
+			BlockPos target = new BlockPos(plan.dig()[0], under.getY(), plan.dig()[1]);
+			Vec3 top = new Vec3(target.getX() + 0.5, target.getY() + 0.95, target.getZ() + 0.5);
+			lookAt(top, false);
+			Vec3 eye = bot.getEyePosition();
+			float want = BotMath.yaw(top.x - eye.x, top.z - eye.z);
+			boolean aimed = Math.abs(BotMath.wrap(bot.getYRot() - want)) < 12;
+			BlockState st = level.getBlockState(target);
+			if (aimed && st.is(net.minecraft.world.level.block.Blocks.SNOW_BLOCK) && ticks - lastDig >= Math.max(2, mind.difficulty().reactionTicks)
+					&& eye.distanceTo(top) <= bot.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE) + 0.5
+					&& sees(target, eye, top)) {
+				m.onBreakBlock(bot, target, st);
+				BotActions.swing(bot);
+				lastDig = ticks;
+				spleefPlan = null;
+			}
+		}
+	}
+
+	/** Nothing between the eye and the top of this block (the same check a player's click passes). */
+	private boolean sees(BlockPos target, Vec3 eye, Vec3 point) {
+		net.minecraft.world.phys.BlockHitResult hit = level().clip(new net.minecraft.world.level.ClipContext(eye, point,
+				net.minecraft.world.level.ClipContext.Block.OUTLINE, net.minecraft.world.level.ClipContext.Fluid.NONE, bot));
+		return hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK && hit.getBlockPos().equals(target);
+	}
+
+	/** A snowball at someone standing near a hole (a push can finish them), now and then. */
+	private void throwSnowball(Match m, List<SpleefPlanner.Foe> foes) {
+		if (ticks - lastThrow < 30 - mind.difficulty().thinkTicks * 2 || foes.isEmpty() || find(s -> s.is(Items.SNOWBALL)) < 0) return;
+		for (UUID id : m.participants()) {
+			ServerPlayer p = m.player(id);
+			if (p == null || id.equals(bot.getUUID()) || !m.inPlay(id) || !m.isEnemy(bot.getUUID(), id) || !bot.hasLineOfSight(p)) continue;
+			double d = p.distanceTo(bot);
+			if (d < 3 || d > 12) continue;
+			// standing near a hole: a block within a step of them is gone
+			BlockPos feet = BlockPos.containing(p.getX(), p.getY() - 0.5, p.getZ());
+			boolean edge = false;
+			for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+				edge |= level().getBlockState(feet.relative(dir)).isAir();
+			}
+			if (!edge) continue;
+			int slot = find(s -> s.is(Items.SNOWBALL));
+			bot.getInventory().setSelectedSlot(slot);
+			Vec3 at = p.position().add(p.getDeltaMovement().scale(Math.min(8, d / 1.5))).add(0, 1.0, 0);
+			lookAt(at.add(0, d * 0.06, 0), true);
+			BotActions.use(bot, InteractionHand.MAIN_HAND);
+			lastThrow = ticks;
+			return;
+		}
+	}
+
 	// ------------------------------------------------------------------ TNT Run and Bow Spleef
 
 	/** Keeps running over the floor that is left, now and then turning to where there is most of it. */
@@ -610,60 +718,150 @@ final class BotBrain {
 
 	// ------------------------------------------------------------------ parkour
 
-	/** From platform to platform: a short look, then a jump with just enough speed (sometimes misjudged). */
+	// Parkour: the planned jump and what failed before
+	private JumpPlanner.Plan pkPlan;
+	private int pkFrom = -2;
+	private int pkTo = -2;
+	/** 0: walking to the start of the run-up, 1: running up, 2: in the air. */
+	private int pkStage;
+	private int pkJumpLate;
+	private final java.util.Map<String, java.util.Set<String>> pkFailed = new java.util.HashMap<>();
+	private String pkNote = "";
+
+	/**
+	 * From platform to platform with player movement only: the planner ({@link JumpPlanner}) picks how to make the
+	 * jump (walk or sprint, run-up length) by simulating it; the bot walks to the start of the run-up, runs, jumps
+	 * on the tick the planner says (a little early or late at lower levels) and keeps pushing towards the landing
+	 * in the air. A missed jump is remembered with the way it was tried, and the next try uses another way.
+	 */
 	private void parkour(Match m) {
 		ParkourMatch pm = (ParkourMatch) m;
 		List<ParkourCourse.Platform> course = pm.course();
 		if (course == null || course.isEmpty()) {
 			return;
 		}
-		bot.setSprinting(false);
-		if (!bot.onGround()) {
-			pkAirTicks++;
-			return;
-		}
 		int on = pm.platformIndex(bot);
-		int next = (on >= 0 ? on : Math.max(-1, pm.lastPlatform(bot.getUUID()))) + 1;
-		if (next >= course.size()) {
+		if (!bot.onGround()) {
+			if (pkStage == 2 && pkPlan != null) {
+				// steer in the air towards the landing (a player can, a little)
+				look(BotMath.yaw(pkPlan.landing().x() - bot.getX(), pkPlan.landing().z() - bot.getZ()), 15f);
+				bot.zza = 1f;
+				bot.setSprinting(pkPlan.sprint());
+			}
 			return;
 		}
-		Vec3 to = pm.platformTop(next);
-		Vec3 pos = bot.position();
-		double dx = to.x - pos.x;
-		double dz = to.z - pos.z;
-		look(BotMath.yaw(dx, dz), 15f);
-		if (on != pkOn || pkAirTicks > 0) {
-			pkOn = on;
-			pkAirTicks = 0;
-			pkWait = switch (skill) {
-				case EASY -> 14 + rnd.nextInt(12);
-				case NORMAL -> 6 + rnd.nextInt(8);
-				case HARD -> 2 + rnd.nextInt(4);
-			};
+		if (pkStage == 2) {
+			// down again: on the target, or back where it came from (the course puts a fallen player on a checkpoint)
+			if (on != pkTo && pkPlan != null) {
+				pkFailed.computeIfAbsent(pkFrom + ">" + pkTo, k -> new java.util.HashSet<>()).add(pkPlan.variant());
+				pkNote = "missed " + pkFrom + ">" + pkTo + " (" + pkPlan.variant() + ")";
+			}
+			pkStage = 0;
+			pkPlan = null;
+			pkWait = Math.max(2, mind.difficulty().reactionTicks + rnd.nextInt(Math.max(1, mind.difficulty().thinkTicks * 2)));
+		}
+		int from = on >= 0 ? on : Math.max(-1, pm.lastPlatform(bot.getUUID()));
+		int next = from + 1;
+		if (next >= course.size()) {
+			bot.setSprinting(false);
+			return;
+		}
+		if (from < 0 || course.get(next).style() == ParkourCourse.Style.LADDER) {
+			// the start, or a ladder: walk to it (into a ladder, holding forward climbs)
+			Vec3 to = pm.platformTop(Math.max(0, next));
+			goTo(to, false);
+			if (bot.horizontalCollision) bot.setJumping(true);
+			return;
+		}
+		if (pkPlan == null || pkFrom != from || pkTo != next) {
+			pkFrom = from;
+			pkTo = next;
+			pkStage = 0;
+			String key = from + ">" + next;
+			java.util.Set<String> failed = pkFailed.computeIfAbsent(key, k -> new java.util.HashSet<>());
+			pkPlan = JumpPlanner.plan(pad(pm, from), pad(pm, next), failed);
+			if (pkPlan == null && !failed.isEmpty()) {
+				// every way failed once: start over rather than give up
+				failed.clear();
+				pkPlan = JumpPlanner.plan(pad(pm, from), pad(pm, next), failed);
+			}
+			pkNote = pkPlan == null ? "no way to make " + key : String.format(java.util.Locale.ROOT, "jump %s: %s, %.2f to spare", key, pkPlan.variant(), pkPlan.margin());
+			// lower levels sometimes jump a tick early or late
+			pkJumpLate = rnd.nextDouble() < mind.difficulty().mistakeRate ? (rnd.nextBoolean() ? 1 : -1) : 0;
+		}
+		if (pkPlan == null) {
+			// not possible with a straight jump (should not happen on a generated course): walk towards it
+			goTo(pm.platformTop(next), true);
+			return;
 		}
 		if (pkWait-- > 0) {
+			bot.setSprinting(false);
+			brake();
 			return;
 		}
-		if (Math.hypot(dx, dz) < 0.8 && Math.abs(to.y - pos.y) < 0.6) {
-			bot.zza = 1f;
+		Vec3 start = Perception.v(pkPlan.start());
+		float yaw = BotMath.yaw(pkPlan.dirX(), pkPlan.dirZ()) + (float) ((rnd.nextDouble() * 2 - 1) * mind.difficulty().aimError * 0.2);
+		if (pkStage == 0) {
+			double d = Math.hypot(start.x - bot.getX(), start.z - bot.getZ());
+			if (d > 0.3) {
+				float toStart = BotMath.yaw(start.x - bot.getX(), start.z - bot.getZ());
+				look(toStart, 0f);
+				// turn before walking: on a one-block platform a step sideways is a fall
+				bot.zza = Math.abs(BotMath.wrap(bot.getYRot() - toStart)) > 30 ? 0f : d > 0.8 ? 1f : 0.3f;
+				bot.setSprinting(false);
+				return;
+			}
+			if (bot.getDeltaMovement().horizontalDistanceSqr() > 0.002) {
+				// stand still first: the plan starts from a stop
+				brake();
+				return;
+			}
+			pkStage = 1;
+		}
+		// running up: face the jump first, then jump on the tick whose step would carry the bot past the take-off point
+		look(yaw, 0f);
+		if (pkStage == 1 && bot.getDeltaMovement().horizontalDistanceSqr() < 0.002 && Math.abs(BotMath.wrap(bot.getYRot() - yaw)) > 5) {
 			return;
 		}
-		BotMath.Jump j = BotMath.jump(dx, to.y - pos.y, dz, groundFriction());
-		double factor = 1.0;
-		if (rnd.nextDouble() < skill.parkourFail) {
-			factor = rnd.nextBoolean() ? 0.7 + rnd.nextDouble() * 0.15 : 1.2 + rnd.nextDouble() * 0.15;
+		bot.zza = 1f;
+		bot.setSprinting(pkPlan.sprint());
+		double along = (bot.getX() - start.x) * pkPlan.dirX() + (bot.getZ() - start.z) * pkPlan.dirZ();
+		double takeoffAlong = (pkPlan.takeoff().x() - start.x) * pkPlan.dirX() + (pkPlan.takeoff().z() - start.z) * pkPlan.dirZ();
+		Vec3 v = bot.getDeltaMovement();
+		double step = (v.x * pkPlan.dirX() + v.z * pkPlan.dirZ()) + (pkPlan.sprint() ? 0.13 : 0.1) * 0.98;
+		double late = pkJumpLate * step;
+		if (along + step - late >= takeoffAlong) {
+			bot.setJumping(true);
+			pkStage = 2;
 		}
-		bot.setDeltaMovement(j.vx() * factor, j.vy(), j.vz() * factor);
-		pkWait = 1000;
 	}
 
-	/** How much the block under the bot slows it on the first tick of a jump (ice and slime less). */
-	private double groundFriction() {
-		BlockState st = level().getBlockState(bot.blockPosition().below());
-		return st.getBlock().getFriction() * BotMath.PLAYER_DRAG_XZ;
+	/** Holds the movement keys against the bot's own sliding (a player stops on ice the same way). */
+	private void brake() {
+		Vec3 v = bot.getDeltaMovement();
+		double speed = v.horizontalDistance();
+		if (speed < 0.03) return;
+		double yaw = Math.toRadians(bot.getYRot());
+		// forward is (-sin, cos) of the yaw, left (cos, sin)
+		double forward = (-Math.sin(yaw) * v.x + Math.cos(yaw) * v.z) / speed;
+		double left = (Math.cos(yaw) * v.x + Math.sin(yaw) * v.z) / speed;
+		bot.zza = (float) -forward;
+		bot.xxa = (float) -left;
 	}
 
-	// ------------------------------------------------------------------ Prop Hunt
+	/** A course platform as the planner sees it: its top in world blocks, how high one stands on it, its friction. */
+	private static JumpPlanner.Pad pad(ParkourMatch pm, int index) {
+		ParkourCourse.Platform pl = pm.course().get(index);
+		Vec3 top = pm.platformTop(index);
+		double r = pl.style() == ParkourCourse.Style.FENCE ? 0.1875 : 0.5 + pl.half();
+		double friction = pl.style() == ParkourCourse.Style.ICE ? 0.98 : 0.6;
+		return new JumpPlanner.Pad(top.x - r, top.z - r, top.x + r, top.z + r, top.y, friction);
+	}
+
+	/** What the parkour planner is doing (inspect). */
+	String parkourNote() {
+		return pkNote;
+	}
 
 	private void propHunt(Match m) {
 		PropHuntMatch ph = (PropHuntMatch) m;

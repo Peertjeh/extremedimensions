@@ -60,6 +60,24 @@ public final class OpponentModel {
 		return jumpRate;
 	}
 
+	/** The rolling approach speed (for saving). */
+	public double closing() {
+		return closing;
+	}
+
+	public int samples() {
+		return samples;
+	}
+
+	/** Starts from what was learned before (another session), counted as a few looks so new ones still matter. */
+	public void seed(double closing, double distance, double strafeRate, double jumpRate, int samples) {
+		this.closing = closing;
+		this.distance = distance;
+		this.strafeRate = strafeRate;
+		this.jumpRate = jumpRate;
+		this.samples = Math.min(samples, 40);
+	}
+
 	/** Enough looks to trust the averages. */
 	public boolean known() {
 		return samples >= 20;

@@ -35,7 +35,7 @@ public final class SpleefMatch extends PartyMatch {
 
 	@Override
 	public net.battlehub.core.BotStyle botStyle() {
-		return net.battlehub.core.BotStyle.RUNNER;
+		return net.battlehub.core.BotStyle.SPLEEF;
 	}
 
 	@Override

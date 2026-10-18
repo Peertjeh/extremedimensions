@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.24.0
+
+### Added
+* **Spleef bots dig.** They read the floor, dig the last block under someone standing still or where someone is
+  running to (as far ahead as their level can judge), never dig their own ground or cut themselves off on a
+  small island, keep digging distance and throw snowballs at players next to a hole. Digging goes through the
+  same rule as a player's (looking at the block, within reach, in sight).
+* **Parkour bots plan their jumps** with real player movement: five ways per jump (walk or sprint, short or long
+  run-up) simulated tick by tick, the one with the most room on landing wins. They walk to the start, run, jump
+  on the right tick, steer in the air and brake on ice, only pressing keys like a player. A failed way is
+  remembered and the next try is different.
+* **Bots remember how you fight** across fights and restarts (how you move, which of their tactics worked) and
+  the next bot starts from that. `/bots memory` shows it, `/bots forget` wipes it, admins have
+  `/battlehub bots forget <player|all>`. Config: `bots.learning`, `bots.learningPersistent`.
+* **Adaptive level** in the practice menu and `/practice <mode> adaptive`: three wins out of four go up a level,
+  three losses go down, always with a chat line saying why.
+
+### Fixed
+* The debrief after practice could be empty when an admin changed the bot's style during the fight; a new style
+  now keeps what the bot saw and how the fight went. The killing blow now counts in the debrief too.
+* Parkour bots could get stuck at the start.
+
 ## 1.23.0
 
 ### Added

@@ -426,6 +426,13 @@ public final class HubConfig {
 		public List<String> archetypes = new ArrayList<>(List.of("rusher", "duelist", "counter", "evasive", "opportunist", "balanced", "improviser"));
 		/** How much each bot's personality may differ from its style (0 = clones, at most 0.2). */
 		public double personalityVariation = 0.08;
+		/**
+		 * Bots remember how each player fights and which tactics worked against them, and the next bot starts from
+		 * that (players see it with /bots memory and wipe it with /bots forget). Off: every fight starts fresh.
+		 */
+		public boolean learning = true;
+		/** Keep what bots learned across restarts (battlehub/ai/<uuid>.json). */
+		public boolean learningPersistent = true;
 	}
 
 	/** The mode of the day: another mode every day, with more coins. */

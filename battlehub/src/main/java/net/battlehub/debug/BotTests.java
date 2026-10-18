@@ -74,6 +74,7 @@ final class BotTests {
 		practiceBow(server, s);
 		queueFill(server, s);
 		partyFill(server, s);
+		spleefBots(server, s);
 		parkour(server, s);
 		s.run("bots: filling off again for the other tests", () -> {
 			cfg().fillQueues = false;
@@ -179,6 +180,7 @@ final class BotTests {
 			VARS.put("botCoins", prof.coins);
 			VARS.put("botXp", prof.xp);
 			VARS.put("botPassXp", prof.passXp);
+			net.battlehub.bot.AiMemory.forget(server, p(A).getUUID());
 			Bots.practice(p(A), GameMode.SWORD, net.battlehub.core.ai.Difficulty.EXPERT);
 		});
 		s.waitFor(tag + ": the duel runs with one bot", 600, () -> {
@@ -241,6 +243,16 @@ final class BotTests {
 			net.battlehub.BattleHub.LOGGER.info("SELFTEST debrief: {}", String.join(" | ", d));
 			return d.size() >= 3 && d.get(0).contains((String) VARS.get("botName"));
 		});
+		s.check(tag + ": the bots remember the fight: the result, on disk, and /bots memory shows it", () -> {
+			net.battlehub.core.ai.PlayerKnowledge k = net.battlehub.bot.AiMemory.get(server, p(A).getUUID());
+			java.nio.file.Path f = net.battlehub.data.PlayerStore.worldDir(server).resolve("ai").resolve(p(A).getUUID() + ".json");
+			java.util.List<Component> lines = Bots.memory(p(A));
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST memory: {} | {}", k.results, lines.stream().map(Component::getString).toList());
+			return k.results.contains("W:expert") && java.nio.file.Files.exists(f) && lines.size() >= 4;
+		});
+		s.run(tag + ": A wipes it with /bots forget", () -> server.getCommands().performPrefixedCommand(p(A).createCommandSourceStack(), "bots forget"));
+		s.check(tag + ": the bots forgot A (memory and file)", () -> net.battlehub.bot.AiMemory.get(server, p(A).getUUID()).results.isEmpty()
+				&& !java.nio.file.Files.exists(net.battlehub.data.PlayerStore.worldDir(server).resolve("ai").resolve(p(A).getUUID() + ".json")));
 		s.waitFor(tag + ": the bot leaves after the match", 400, () -> Bots.online() == 0);
 		s.check(tag + ": nothing saved for the bot", () -> {
 			UUID bot = (UUID) VARS.get("bot");
@@ -336,6 +348,50 @@ final class BotTests {
 		endAndClean(s, tag);
 		s.run(tag + ": filling off, countdown as before", () -> {
 			cfg().fillQueues = false;
+			ConfigManager.config().timings.partyCountdownSeconds = (int) VARS.get("partyCountdown");
+			ConfigManager.config().timings.partyFullCountdownSeconds = (int) VARS.get("partyFull");
+		});
+	}
+
+	/** Spleef with bots: they dig the snow (every dug block gives a snowball), never the block they stand on. */
+	private static void spleefBots(MinecraftServer server, Script s) {
+		String tag = "bots spleef";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": A joins Spleef alone; bots fill in", () -> {
+			VARS.put("partyCountdown", ConfigManager.config().timings.partyCountdownSeconds);
+			VARS.put("partyFull", ConfigManager.config().timings.partyFullCountdownSeconds);
+			ConfigManager.config().timings.partyCountdownSeconds = 4;
+			ConfigManager.config().timings.partyFullCountdownSeconds = 2;
+			cfg().fillQueues = true;
+			cfg().fillAfterSeconds = 1;
+			cfg().partyFillTo = 3;
+			SelfTest.join(server, A);
+			Parties.join(p(A), GameMode.SPLEEF);
+		});
+		s.waitFor(tag + ": the match runs with bots", 600, () -> {
+			Match m = matchOfA();
+			return m != null && m.mode == GameMode.SPLEEF && m.phase() == Match.Phase.RUNNING && !botsIn(m).isEmpty();
+		});
+		s.waitFor(tag + ": a bot digs snow (it got snowballs for it)", 600, () -> {
+			Match m = matchOfA();
+			if (m == null) return false;
+			for (BotPlayer b : botsIn(m)) {
+				if (b.getInventory().countItem(net.minecraft.world.item.Items.SNOWBALL) > 0) return true;
+			}
+			return false;
+		});
+		s.check(tag + ": the bots still stand (none dug its own floor away)", () -> {
+			Match m = matchOfA();
+			if (m == null) return true;
+			for (BotPlayer b : botsIn(m)) {
+				if (m.inPlay(b.getUUID()) && b.getDeltaMovement().y < -0.6) return false;
+			}
+			return true;
+		});
+		endAndClean(s, tag);
+		s.run(tag + ": filling off, countdown as before", () -> {
+			cfg().fillQueues = false;
+			cfg().partyFillTo = 4;
 			ConfigManager.config().timings.partyCountdownSeconds = (int) VARS.get("partyCountdown");
 			ConfigManager.config().timings.partyFullCountdownSeconds = (int) VARS.get("partyFull");
 		});

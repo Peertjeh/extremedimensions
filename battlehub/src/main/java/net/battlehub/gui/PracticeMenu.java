@@ -27,6 +27,24 @@ public final class PracticeMenu extends Screen {
 		return LEVEL.getOrDefault(id, Difficulty.INTERMEDIATE);
 	}
 
+	private static final java.util.Set<UUID> ADAPTIVE = new java.util.HashSet<>();
+
+	/** The player lets the level follow their results (shown and explained after each fight). */
+	public static boolean adaptive(UUID id) {
+		return ADAPTIVE.contains(id);
+	}
+
+	public static void adaptive(UUID id, boolean on) {
+		if (on) ADAPTIVE.add(id);
+		else ADAPTIVE.remove(id);
+	}
+
+	/** The level a practice fight starts at: the chosen one, or the adaptive one. */
+	public static Difficulty practiceLevel(ServerPlayer p) {
+		if (!adaptive(p.getUUID())) return level(p.getUUID());
+		return Difficulty.parse(net.battlehub.bot.AiMemory.get(p.level().getServer(), p.getUUID()).adaptiveLevel, Difficulty.INTERMEDIATE);
+	}
+
 	@Override
 	public Component title() {
 		return Lang.tr(viewer, "menu.practice.title");
@@ -39,25 +57,36 @@ public final class PracticeMenu extends Screen {
 
 	@Override
 	public void draw(Canvas c) {
-		Difficulty chosen = level(viewer.getUUID());
+		Difficulty chosen = practiceLevel(viewer);
+		boolean adaptive = adaptive(viewer.getUUID());
 		c.set(4, Icon.of(Items.TARGET).name(Lang.item(viewer, "menu.practice.info"))
 				.lore(Lang.loreLines(viewer, "menu.practice.info.lore")).build());
 		Item[] dyes = {Ids.item("minecraft:lime_dye"), Ids.item("minecraft:green_dye"), Ids.item("minecraft:yellow_dye"),
 				Ids.item("minecraft:orange_dye"), Ids.item("minecraft:red_dye"), Ids.item("minecraft:purple_dye")};
 		int slot = 10;
 		for (Difficulty l : Difficulty.values()) {
-			boolean on = l == chosen;
+			boolean on = l == chosen && !adaptive;
 			c.set(slot, Icon.of(dyes[l.ordinal()]).name(Lang.item(viewer, "bots.level_button", Lang.tr(viewer, "bots.level." + l.id())))
 					.lore(Lang.loreLines(viewer, "bots.level." + l.id() + ".lore"))
 					.lore(Component.empty())
 					.lore(Lang.lore(viewer, on ? "menu.practice.chosen" : "menu.practice.choose")).glint(on).build(),
 					click -> {
 						LEVEL.put(viewer.getUUID(), l);
+						adaptive(viewer.getUUID(), false);
 						new PracticeMenu(viewer).open();
 					});
 			// six levels in the row, the middle slot left free
 			slot += slot == 12 ? 2 : 1;
 		}
+		// the free middle slot: let the level follow your results
+		c.set(13, Icon.of(Items.COMPASS).name(Lang.item(viewer, "bots.level_button", Lang.tr(viewer, "bots.level.adaptive")))
+				.lore(Lang.loreLines(viewer, "bots.level.adaptive.lore", Lang.tr(viewer, "bots.level." + practiceLevel(viewer).id())))
+				.lore(Component.empty())
+				.lore(Lang.lore(viewer, adaptive ? "menu.practice.chosen" : "menu.practice.choose")).glint(adaptive).build(),
+				click -> {
+					adaptive(viewer.getUUID(), true);
+					new PracticeMenu(viewer).open();
+				});
 		java.util.List<GameMode> all = new java.util.ArrayList<>(java.util.List.of(GameMode.duels()));
 		all.addAll(java.util.List.of(GameMode.teamFights()));
 		int[] slots = net.battlehub.core.MenuSlots.centered(all.size(), 2, 7);
@@ -68,7 +97,7 @@ public final class PracticeMenu extends Screen {
 					.lore(Lang.lore(viewer, "menu.practice.click")).clean().build(),
 					click -> {
 						viewer.closeContainer();
-						Bots.practice(viewer, m, level(viewer.getUUID()));
+						Bots.practice(viewer, m, practiceLevel(viewer));
 					});
 		}
 		for (GameMode m : GameMode.teamFights()) {
@@ -77,7 +106,7 @@ public final class PracticeMenu extends Screen {
 					.lore(Lang.lore(viewer, "menu.practice.click")).clean().build(),
 					click -> {
 						viewer.closeContainer();
-						Bots.practiceTeam(viewer, m, GameMode.SWORD, level(viewer.getUUID()));
+						Bots.practiceTeam(viewer, m, GameMode.SWORD, practiceLevel(viewer));
 					});
 		}
 		c.back(() -> new MainMenu(viewer).open());

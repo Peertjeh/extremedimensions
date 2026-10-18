@@ -13,5 +13,7 @@ public enum BotStyle {
 	/** Shoot the floor under the others and stay on your own (Bow Spleef). */
 	BOW_SPLEEF,
 	/** Hide as a block, or hunt for blocks (Prop Hunt). */
-	PROP_HUNT
+	PROP_HUNT,
+	/** Dig the floor away under the others, keep your own (Spleef). */
+	SPLEEF
 }

@@ -208,6 +208,20 @@ public final class CombatMind {
 	}
 
 	/** Forget the fight (a new round or match): tactic, tracks and what worked; the personality stays. */
+	/**
+	 * Another style for the same NPC in the middle of a fight (an admin command): what it saw, what it learned and
+	 * how the fight went so far carry over; only the personality changes.
+	 */
+	public void inherit(CombatMind old) {
+		tracks.putAll(old.tracks);
+		models.putAll(old.models);
+		outcomes.copyFrom(old.outcomes);
+		totalDealt = old.totalDealt;
+		totalTaken = old.totalTaken;
+		tacticTicks.putAll(old.tacticTicks);
+		lastExchange = old.lastExchange;
+	}
+
 	public void reset(int tick) {
 		decider.reset(tick);
 		last = null;

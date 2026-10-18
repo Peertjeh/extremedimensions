@@ -30,6 +30,25 @@ public final class OutcomeMemory {
 		return count.getOrDefault(t, 0);
 	}
 
+	/** Starts from what worked before against this player (another session), as at most a few samples. */
+	public void seed(Tactic t, double v, int samples) {
+		this.value.put(t, v);
+		count.put(t, Math.min(samples, 5));
+	}
+
+	/** The raw rolling value (for saving). */
+	public double value(Tactic t) {
+		return value.getOrDefault(t, 0.0);
+	}
+
+	/** Takes over everything another memory holds. */
+	public void copyFrom(OutcomeMemory other) {
+		value.clear();
+		count.clear();
+		value.putAll(other.value);
+		count.putAll(other.count);
+	}
+
 	public void reset() {
 		value.clear();
 		count.clear();

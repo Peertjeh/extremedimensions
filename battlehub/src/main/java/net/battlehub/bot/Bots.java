@@ -464,7 +464,47 @@ public final class Bots {
 				sent.add(c.getString());
 			}
 			LAST_DEBRIEF.put(id, sent);
+			learn(m, p, best);
 		}
+	}
+
+	/** After a fight: what the bot saw is remembered for next time, and the adaptive level takes a step if earned. */
+	private static void learn(net.battlehub.match.Match m, ServerPlayer p, BotPlayer bot) {
+		if (!AiMemory.learning()) return;
+		MinecraftServer server = p.level().getServer();
+		net.battlehub.core.ai.PlayerKnowledge k = AiMemory.get(server, p.getUUID());
+		k.learn(bot.brain.mind().model(p.getUUID()), bot.brain.mind().outcomes());
+		net.battlehub.core.ai.PlayerKnowledge.Change c = k.result(m.outcome(p.getUUID()) == net.battlehub.core.Outcome.WIN, bot.difficulty);
+		if (c != null && net.battlehub.gui.PracticeMenu.adaptive(p.getUUID())) {
+			Msg.send(p, c.to().ordinal() > c.from().ordinal() ? "bots.adaptive_up" : "bots.adaptive_down",
+					Lang.tr(p, "bots.level." + c.to().id()), c.to().ordinal() > c.from().ordinal() ? c.wins() : c.losses(), c.of());
+		}
+		AiMemory.save(server, p.getUUID());
+	}
+
+	/** What bots know about a player, as chat lines (/bots memory). */
+	public static List<net.minecraft.network.chat.Component> memory(ServerPlayer p) {
+		List<net.minecraft.network.chat.Component> out = new ArrayList<>();
+		if (!AiMemory.learning()) {
+			out.add(Lang.tr(p, "bots.memory.off"));
+			return out;
+		}
+		net.battlehub.core.ai.PlayerKnowledge k = AiMemory.get(p.level().getServer(), p.getUUID());
+		out.add(Lang.tr(p, "bots.memory.header"));
+		if (k.fights == 0 && k.results.isEmpty()) {
+			out.add(Lang.tr(p, "bots.memory.none"));
+			return out;
+		}
+		net.battlehub.core.ai.OpponentModel m = new net.battlehub.core.ai.OpponentModel();
+		k.seed(m, null);
+		out.add(Lang.tr(p, "bots.memory.style", k.fights, Math.round(m.aggression() * 100), String.format(java.util.Locale.ROOT, "%.1f", k.distance),
+				String.format(java.util.Locale.ROOT, "%.1f", k.strafeRate)));
+		for (Map.Entry<String, int[]> e : k.record().entrySet()) {
+			out.add(Lang.tr(p, "bots.memory.record", Lang.tr(p, "bots.level." + e.getKey()), e.getValue()[0], e.getValue()[1]));
+		}
+		out.add(Lang.tr(p, "bots.memory.adaptive", Lang.tr(p, "bots.level." + k.adaptiveLevel)));
+		out.add(Lang.tr(p, "bots.memory.forget_hint"));
+		return out;
 	}
 
 	/** The last debrief a player got (self-test). */
@@ -491,6 +531,7 @@ public final class Bots {
 		net.battlehub.match.Match m = Matches.of(b.getUUID());
 		out.add(b.getGameProfile().name() + " (" + b.difficulty.id() + ")" + (m == null ? ", not in a match" : ", match #" + m.id + " " + m.mode.id()));
 		out.addAll(b.brain.mind().report().lines());
+		if (!b.brain.parkourNote().isEmpty()) out.add("parkour: " + b.brain.parkourNote());
 		return out;
 	}
 
@@ -523,6 +564,7 @@ public final class Bots {
 		ONLINE.clear();
 		IDLE.clear();
 		DEBUG.clear();
+		AiMemory.clear();
 		LAST_DEBRIEF.clear();
 		PARTY_SINCE.clear();
 		SIDE_SINCE.clear();

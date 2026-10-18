@@ -150,6 +150,18 @@ public final class HubCommands {
 				.then(Commands.literal("off").executes(c -> {
 					net.battlehub.bot.Bots.choose(c.getSource().getPlayerOrException(), false);
 					return 1;
+				}))
+				// what bots learned about you, and wiping it
+				.then(Commands.literal("memory").executes(c -> {
+					ServerPlayer p = c.getSource().getPlayerOrException();
+					for (net.minecraft.network.chat.Component line : net.battlehub.bot.Bots.memory(p)) p.sendSystemMessage(line);
+					return 1;
+				}))
+				.then(Commands.literal("forget").executes(c -> {
+					ServerPlayer p = c.getSource().getPlayerOrException();
+					net.battlehub.bot.AiMemory.forget(p.level().getServer(), p.getUUID());
+					Msg.send(p, "bots.forgot");
+					return 1;
 				})));
 		d.register(Commands.literal("kits").executes(c -> {
 			new net.battlehub.gui.KitListMenu(c.getSource().getPlayerOrException()).open();
@@ -165,8 +177,8 @@ public final class HubCommands {
 						.suggests((c, b) -> SharedSuggestionProvider.suggest(practiceModes(), b))
 						.executes(c -> practice(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode"), null))
 						.then(Commands.argument("level", StringArgumentType.word())
-								.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.Arrays.stream(net.battlehub.core.ai.Difficulty.values())
-										.map(net.battlehub.core.ai.Difficulty::id).toList(), b))
+								.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.stream.Stream.concat(java.util.Arrays.stream(net.battlehub.core.ai.Difficulty.values())
+										.map(net.battlehub.core.ai.Difficulty::id), java.util.stream.Stream.of("adaptive")).toList(), b))
 								.executes(c -> practice(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode"),
 										StringArgumentType.getString(c, "level"))))));
 
@@ -231,6 +243,25 @@ public final class HubCommands {
 											c.getSource().sendSuccess(() -> Lang.tr("bots.profiled", bot.getGameProfile().name(), style), true);
 											return 1;
 										}))))
+						.then(Commands.literal("forget").then(Commands.argument("player", StringArgumentType.word())
+								.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.stream.Stream.concat(c.getSource().getOnlinePlayerNames().stream(),
+										java.util.stream.Stream.of("all")).toList(), b))
+								.executes(c -> {
+									String who = StringArgumentType.getString(c, "player");
+									if (who.equalsIgnoreCase("all")) {
+										int n = net.battlehub.bot.AiMemory.forgetAll(c.getSource().getServer());
+										c.getSource().sendSuccess(() -> Lang.tr("bots.forgot_all", n), true);
+										return n;
+									}
+									ServerPlayer target = c.getSource().getServer().getPlayerList().getPlayerByName(who);
+									if (target == null) {
+										c.getSource().sendFailure(Lang.tr("admin.unknown_player", who));
+										return 0;
+									}
+									net.battlehub.bot.AiMemory.forget(c.getSource().getServer(), target.getUUID());
+									c.getSource().sendSuccess(() -> Lang.tr("bots.forgot_other", who), true);
+									return 1;
+								})))
 						.then(Commands.literal("debug").then(Commands.argument("bot", StringArgumentType.word())
 								.suggests((c, b) -> SharedSuggestionProvider.suggest(net.battlehub.bot.Bots.names(), b))
 								.executes(c -> {
@@ -428,7 +459,9 @@ public final class HubCommands {
 	/** /practice sword hard: a duel against a bot right away (or 1v2 / 1v3 against bots). */
 	private static int practice(ServerPlayer p, String modeId, String level) {
 		GameMode mode = GameMode.byId(modeId);
-		net.battlehub.core.ai.Difficulty l = net.battlehub.core.ai.Difficulty.parse(level, net.battlehub.gui.PracticeMenu.level(p.getUUID()));
+		if ("adaptive".equalsIgnoreCase(level)) net.battlehub.gui.PracticeMenu.adaptive(p.getUUID(), true);
+		net.battlehub.core.ai.Difficulty l = level == null || "adaptive".equalsIgnoreCase(level) ? net.battlehub.gui.PracticeMenu.practiceLevel(p)
+				: net.battlehub.core.ai.Difficulty.parse(level, net.battlehub.gui.PracticeMenu.practiceLevel(p));
 		if (mode != null && mode.isDuel()) {
 			return net.battlehub.bot.Bots.practice(p, mode, l) ? 1 : 0;
 		}

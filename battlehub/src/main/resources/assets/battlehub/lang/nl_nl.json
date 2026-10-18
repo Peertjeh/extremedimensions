@@ -1348,5 +1348,20 @@
 	"debrief.tip.spacing": "&eTip: je vocht heel dichtbij; iets meer afstand geeft jou de eerste klap.",
 	"debrief.tip.next_level": "&aGoed gedaan. Probeer de volgende keer een hoger niveau (/practice).",
 	"debrief.tip.trade": "&eTip: sla alleen met een volle aanval en wijk terug terwijl de jouwe oplaadt.",
-	"debrief.tip.short": "&7Te kort gevecht om veel over je spel te zeggen."
+	"debrief.tip.short": "&7Te kort gevecht om veel over je spel te zeggen.",
+	"admin.unknown_player": "&c{0} is niet online.",
+	"bots.level.adaptive": "&bAdaptief",
+	"bots.level.adaptive.lore": "&7Volgt je resultaten: drie van de vier\n&7gewonnen is een niveau omhoog, drie verloren omlaag.\n&7Nu: {0}",
+	"bots.adaptive_up": "&bAdaptief niveau omhoog naar {0}&b: je won {1} van de laatste {2} op het oude niveau.",
+	"bots.adaptive_down": "&bAdaptief niveau omlaag naar {0}&b: je verloor {1} van de laatste {2} op het oude niveau.",
+	"bots.memory.off": "&7Bots onthouden op deze server niets tussen gevechten.",
+	"bots.memory.header": "&6&lWat bots over je onthouden",
+	"bots.memory.none": "&7Nog niets: vecht eerst tegen een bot (/practice).",
+	"bots.memory.style": "&7Uit {0} gevechten: agressie &f{1}%&7, je houdt van &f{2}&7 blokken, strafe-wissels &f{3}&7x per seconde.",
+	"bots.memory.record": "&7Tegen {0}&7: &a{1}&7 gewonnen, &c{2}&7 verloren (laatste acht gevechten).",
+	"bots.memory.adaptive": "&7Het adaptieve niveau zou {0}&7 kiezen.",
+	"bots.memory.forget_hint": "&8Wis alles met /bots forget.",
+	"bots.forgot": "&aBots zijn alles over je vergeten.",
+	"bots.forgot_all": "&aBots zijn iedereen vergeten ({0} bestanden verwijderd).",
+	"bots.forgot_other": "&aBots zijn alles over {0} vergeten."
 }

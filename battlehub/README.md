@@ -44,8 +44,8 @@ left alone: no compass, no protection, no changed damage rules there.
 
 ### Bots: never wait alone
 Not enough people online? Bots play along. They are real (simulated) players, so every game works with them,
-and they come in three levels: **easy** walks and swings late, **normal** sprints, strafes and jump-crits,
-**hard** reacts fast, aims well, w-taps, blocks with a shield and eats golden apples when low.
+and they come in six levels, from **beginner** (slow, misses a lot) to **master** (as quick as a fast human,
+hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, intermediate and expert.
 
 **How a bot fights (the AI framework).** In close combat a bot runs a small mind of its own:
 * *It only knows what a player could know*: an enemy in sight, an enemy's name tag through a wall (vanilla shows
@@ -68,6 +68,19 @@ and they come in three levels: **easy** walks and swings late, **normal** sprint
   a sword too it shoots from afar and fights up close. It moves until it can see you instead of shooting cover.
 * *Choosing whom to fight*: it fights back against whoever just hit it, finishes weak targets (aggressive and
   opportunist styles more), prefers what it can see and does not flick between two targets.
+* *Spleef*: a bot reads the floor round it, digs the last block under someone standing still or where someone is
+  running to, keeps its own ground and never digs itself onto a small island, stays at digging distance but not
+  next to someone who can dig under it, and throws snowballs at whoever stands next to a hole. It digs like a
+  player: looking at the block, within reach, only what it can see.
+* *Parkour*: for every jump it simulates a few ways with real player movement (walk or sprint, short or long
+  run-up), picks the one that lands with the most room, walks to the start, runs and jumps on the right tick,
+  steers in the air and brakes after landing (ice). It only presses keys like a player. A jump that failed is
+  remembered and the next try uses another way.
+* *It remembers you* (if the server allows it): how you fight and which of its tactics worked against you, so
+  the next bot starts from that; and your last results against each level. `/bots memory` shows what bots
+  remember about you, `/bots forget` wipes it.
+* *Adaptive level*: pick **Adaptive** in the practice menu (or `/practice <mode> adaptive`): three wins out of
+  the last four go a level up, three losses one down, and the chat says why after each step.
 * *After the fight* it tells you what it noticed (how aggressive you were, the distance you like, how often you
   change strafe direction), how the damage went, what its main plan was, and one tip to work on.
 * Admins can look inside: `/battlehub bots inspect <bot>` shows its style, current tactic, the best-scored options
@@ -82,7 +95,7 @@ and they come in three levels: **easy** walks and swings late, **normal** sprint
   `/bots off`, `/bots on` or just `/bots` (switch) do the same. The choice is remembered. With bots off you
   only wait for real players, bots already waiting with you step out, and a party lobby or 1v2/1v3 queue with
   someone who said no gets no bots at all.
-* **Practice**: `/practice [mode] [easy|normal|hard]` or the **Practice** item in the menu (and the
+* **Practice**: `/practice [mode] [level|adaptive]` or the **Practice** item in the menu (and the
   character on the plaza): a duel, 1v2 or 1v3 against bots, right away.
 * They know every game: they fight in duels, Free for All, Sumo, LMS, KOTH (they go for the hill), CTF (they
   take the flag home), Bed Wars (they guard their bed), shoot in Bow and Crossbow PvP, run in TNT Run, shoot the
@@ -494,8 +507,9 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/party invite\|accept\|kick <player>` / `/party leave\|disband` / `/pc <message>` | everyone | A party that plays together, and party chat |
 | `/clan` / `/clan create <name> <tag>` / `/clan invite\|kick <player>` / `/clan join <clan>` / `/clan leave\|disband` / `/cc <message>` | everyone | Clans and clan chat |
 | `/custom` / `/custom create <mode>` / `/custom join <code>` / `/custom start\|leave` | everyone | Private games with a code |
-| `/practice [mode] [easy\|normal\|hard]` | everyone | Practice against bots (sword, axe, mace, bow, crossbow, 1v2, 1v3); without a mode: the practice menu |
+| `/practice [mode] [level\|adaptive]` | everyone | Practice against bots (sword, axe, mace, bow, crossbow, 1v2, 1v3) at a level (beginner .. master) or adaptive; without a mode: the practice menu |
 | `/bots` / `/bots on\|off` | everyone | May bots fill in the queues you wait in? Without on/off: switch |
+| `/bots memory` / `/bots forget` | everyone | What bots remember about how you fight and your results against them; wipe it |
 | `/battlehub` | everyone | Open the main menu |
 | `/battlehub join <mode>` | everyone | Join a party lobby or duel queue (used by invites) |
 | `/battlehub again` | everyone | Play again (same as the chat button or the lime dye) |
@@ -506,6 +520,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/battlehub reports` | admin | The latest reports since the server started |
 | `/battlehub bots` / `/battlehub bots clear` | admin | How many bots are on; take them all off |
 | `/battlehub bots inspect\|debug <bot>` / `/battlehub bots profile <bot> <style>` | admin | What a bot thinks and why; log its decisions; give it another fighting style |
+| `/battlehub bots forget <player\|all>` | admin | Wipe what bots remember about a player, or about everyone |
 | `/battlehub matches` | admin | List running matches |
 | `/battlehub endmatch <id>` | admin | Stop a match without results and restore its players |
 | `/battlehub arena list` | admin | Arena themes, which modes use them, slots in use |
@@ -555,7 +570,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   * `bots`: on/off, filling queues on/off, after how many seconds, party lobbies up to how many players, the
     level of bots that fill in, the most bots at once, the share of rewards in matches with bots and other
     people (alone with bots always pays nothing), the fighting styles handed out (`archetypes`), how much each
-    bot differs from its style (`personalityVariation`, 0 .. 0.2), and how soon
+    bot differs from its style (`personalityVariation`, 0 .. 0.2), whether bots remember players between fights
+    (`learning`) and across restarts (`learningPersistent`, in `battlehub/ai/`), and how soon
     a bot leaves after its match
   * `effects`: the match intro on/off and its seconds, the victory shot, the killfeed and its number of lines
   * `lobbyExtras`: double jump on/off, its push forward and up and its cooldown; the training dummy on/off and

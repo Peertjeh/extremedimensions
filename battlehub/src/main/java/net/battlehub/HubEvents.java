@@ -92,7 +92,7 @@ public final class HubEvents {
 			return !net.battlehub.games.Visibility.isProtectedNpc(entity);
 		});
 		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) ->
-				!(entity instanceof ServerPlayer p) || allowDeath(p, source));
+				!(entity instanceof ServerPlayer p) || allowDeath(p, source, amount));
 		// Damage in matches feeds the recap, the teaming check and the reach check
 		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, base, taken, blocked) -> {
 			if (entity instanceof ServerPlayer victim) {
@@ -343,7 +343,7 @@ public final class HubEvents {
 		return !ConfigManager.config().protection.noDamageOutsideMatches;
 	}
 
-	private static boolean allowDeath(ServerPlayer p, net.minecraft.world.damagesource.DamageSource source) {
+	private static boolean allowDeath(ServerPlayer p, net.minecraft.world.damagesource.DamageSource source, float amount) {
 		if (!net.battlehub.hub.HubWorld.isBattleHub(p.level())) {
 			return true;
 		}
@@ -354,6 +354,8 @@ public final class HubEvents {
 					// Vanilla uses the totem of undying (it comes after this event)
 					return true;
 				}
+				// the killing blow skips the after-damage event; bots still count it (at most a full health bar)
+				net.battlehub.bot.Bots.onDamage(p, source, Math.min(amount, p.getMaxHealth()));
 				m.handleDeath(p, source);
 				return false;
 			}

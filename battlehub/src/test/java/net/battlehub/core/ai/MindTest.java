@@ -178,4 +178,20 @@ class MindTest {
 		assertTrue(mind.track(Fixtures.FOE).empty());
 		assertEquals(Archetype.RUSHER.base, mind.personality());
 	}
+
+	@Test
+	void anotherStyleMidFightKeepsWhatTheMindSawAndHowTheFightWent() {
+		CombatMind old = new CombatMind(Archetype.COUNTER, Archetype.COUNTER.base, Difficulty.EXPERT, 3);
+		new Duel(Difficulty.EXPERT, 3).run(old, 300);
+		old.dealt(4);
+		old.taken(2);
+		CombatMind rusher = new CombatMind(Archetype.RUSHER, Archetype.RUSHER.base, Difficulty.EXPERT, 4);
+		rusher.inherit(old);
+		assertEquals(old.totalDealt(), rusher.totalDealt(), 1e-9);
+		assertEquals(old.totalTaken(), rusher.totalTaken(), 1e-9);
+		assertFalse(rusher.track(Fixtures.FOE).empty());
+		assertEquals(old.model(Fixtures.FOE).samples(), rusher.model(Fixtures.FOE).samples());
+		assertEquals(Archetype.RUSHER, rusher.archetype());
+		assertFalse(rusher.debrief("Bot_Test", Fixtures.FOE).isEmpty());
+	}
 }
