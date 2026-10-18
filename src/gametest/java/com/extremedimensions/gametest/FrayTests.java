@@ -127,23 +127,24 @@ public class FrayTests {
 	public void aStrandGivesWayAndIsWovenBack(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		BlockPos at = helper.absolutePos(new BlockPos(2, 3, 2));
+		net.minecraft.world.level.block.state.BlockState white = SeamDepth.threadBlock("white_wool"), purple = SeamDepth.threadBlock("purple_wool");
+		check(helper, SeamDepth.thread(white) && SeamDepth.thread(purple), "the strand's wool is not taken for thread");
 		for (int dx = -1; dx <= 1; dx++) {
 			for (int dz = -1; dz <= 1; dz++) {
-				level.setBlock(at.offset(dx, 0, dz), Blocks.WHITE_WOOL.defaultBlockState(), 2);
-				level.setBlock(at.offset(dx, -1, dz), Blocks.PURPLE_WOOL.defaultBlockState(), 2);
+				level.setBlock(at.offset(dx, 0, dz), white, 2);
+				level.setBlock(at.offset(dx, -1, dz), purple, 2);
 			}
 		}
 		SeamDepth.reweave(null);
 		SeamDepth.giveWayAt(at, level.getGameTime() + 2);
 		SeamDepth.tickWorld(level);
-		check(helper, level.getBlockState(at).is(Blocks.WHITE_WOOL), "the strand gave way before it creaked");
+		check(helper, level.getBlockState(at) == white, "the strand gave way before it creaked");
 		helper.runAfterDelay(4, () -> {
 			SeamDepth.tickWorld(level);
 			check(helper, level.getBlockState(at).isAir() && level.getBlockState(at.below()).isAir(), "the strand did not give way under the feet");
 			check(helper, SeamDepth.gaps() >= 2, "what gave way is not remembered to be woven back (%s)", SeamDepth.gaps());
 			SeamDepth.reweave(level);
-			check(helper, level.getBlockState(at).is(Blocks.WHITE_WOOL) && level.getBlockState(at.below()).is(Blocks.PURPLE_WOOL),
-					"the strand was not woven back as it was");
+			check(helper, level.getBlockState(at) == white && level.getBlockState(at.below()) == purple, "the strand was not woven back as it was");
 			check(helper, SeamDepth.gaps() == 0, "gaps are left after weaving back");
 			helper.succeed();
 		});

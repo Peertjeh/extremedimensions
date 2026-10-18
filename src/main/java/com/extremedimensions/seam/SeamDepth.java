@@ -371,9 +371,16 @@ public final class SeamDepth {
 		return false;
 	}
 
-	/** The thread strands are woven of. */
-	static boolean thread(BlockState s) {
-		return s.is(Blocks.WHITE_WOOL) || s.is(Blocks.LIGHT_GRAY_WOOL) || s.is(Blocks.PURPLE_WOOL) || s.is(Blocks.MAGENTA_WOOL);
+	/** The thread strands are woven of (the wools of {@link #thread(Random)}, by name). */
+	private static final Set<String> THREADS = Set.of("white_wool", "light_gray_wool", "purple_wool", "magenta_wool");
+
+	public static boolean thread(BlockState s) {
+		return THREADS.contains(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(s.getBlock()).getPath());
+	}
+
+	/** A block of thread, as a strand is woven of (for the tests). */
+	public static BlockState threadBlock(String wool) {
+		return SeamArchitect.mc(wool, Blocks.COBWEB.defaultBlockState());
 	}
 
 	public static List<Well> wells() {
