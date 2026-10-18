@@ -99,7 +99,10 @@ final class ElderFx {
 	}
 
 	static void roar(Entity e, float volume, float pitch) {
-		WorldFx.soundIn(dim(e), "extremedimensions:keeper_roar", "hostile", e.getX(), e.getY() + 6, e.getZ(), volume, pitch);
+		// Each Elder roars with its own voice (pitched about its own, not the Keeper's)
+		String voice = e instanceof ElderBoss b ? "extremedimensions:elder." + NAMES[index(b)] + ".roar" : "extremedimensions:keeper_roar";
+		float tuned = e instanceof ElderBoss ? 0.75f + 0.5f * pitch : pitch;
+		WorldFx.soundIn(dim(e), voice, "hostile", e.getX(), e.getY() + 6, e.getZ(), volume, tuned);
 		WorldFx.particleIn(dim(e), "extremedimensions:lurker_wisp", e.getX(), e.getY() + 7, e.getZ(), 2.5, 4.0, 2.5, 0.0, 80);
 	}
 
@@ -141,6 +144,9 @@ final class ElderFx {
 	}
 
 	/** Which Elder this is, for the client's cinema and music: 0 the Matriarch, 1 the Ferryman, 2 the Last Weaver. */
+	/** The Elders' names in their sounds, by {@link #index}. */
+	static final String[] NAMES = {"matriarch", "ferryman", "weaver"};
+
 	static int index(ElderBoss b) {
 		return b instanceof Matriarch ? 0 : b instanceof Ferryman ? 1 : 2;
 	}
@@ -178,8 +184,8 @@ final class ElderFx {
 	/** A heavy step: the ground thuds and dusts up under a walking giant, and shakes a little for those close. */
 	static void step(ElderBoss b, float volume) {
 		Level level = b.level();
-		WorldFx.soundIn(dim(b), "minecraft:entity.ravager.step", "hostile", b.getX(), b.getY(), b.getZ(), volume, 0.45f);
-		WorldFx.soundIn(dim(b), "minecraft:block.rooted_dirt.break", "hostile", b.getX(), b.getY(), b.getZ(), volume * 0.6f, 0.5f);
+		WorldFx.soundIn(dim(b), "extremedimensions:elder." + NAMES[index(b)] + ".step", "hostile", b.getX(), b.getY(), b.getZ(), volume,
+				(float) (0.9 + ThreadLocalRandom.current().nextDouble(0.2)));
 		WorldFx.particleIn(level, "minecraft:campfire_cosy_smoke", b.getX(), b.getY() + 0.3, b.getZ(), b.getBbWidth() * 0.5, 0.1, b.getBbWidth() * 0.5, 0.01, 4);
 		WorldFx.particleIn(level, "minecraft:poof", b.getX(), b.getY() + 0.2, b.getZ(), b.getBbWidth() * 0.6, 0.1, b.getBbWidth() * 0.6, 0.03, 12);
 		shake(b, b.getX(), b.getZ(), 26, 0.22f, 6);

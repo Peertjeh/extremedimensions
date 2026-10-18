@@ -457,10 +457,14 @@ public final class Config {
 	public static int ELDER_SPAWN_CAMERA = 1;
 	/** Whether an Elder raises its arena round it as it forms (blocks flying in to build it): 1 = on, 0 = off. */
 	public static int ELDER_ARENA = 1;
-	/** Size of the arenas, as a multiple (0.5 to 5). */
-	public static double ELDER_ARENA_SIZE = 4.0;
+	/** Size of the arenas, as a multiple (0.5 to 12). */
+	public static double ELDER_ARENA_SIZE = 12.0;
+	/** Whether an arena of size 3 or more gets a ring wall round its floor: 1 = on, 0 = off. */
+	public static int ELDER_ARENA_WALL = 1;
+	/** Whether an arena of size 3 or more gets its Elder's great piece (the Matriarch's root arches, the Ferryman's wreck, the Weaver's loom): 1 = on, 0 = off. */
+	public static int ELDER_ARENA_LANDMARK = 1;
 	/** Seconds an arena takes to build. */
-	public static double ELDER_ARENA_BUILD_SECONDS = 18.0;
+	public static double ELDER_ARENA_BUILD_SECONDS = 40.0;
 	/** Most blocks of an arena in flight at once; the rest simply appear in their places. */
 	public static int ELDER_ARENA_FLY_MAX = 700;
 	/** Blocks from the nearest player within which a block of an arena flies to its place; further off it simply appears. */
@@ -474,7 +478,7 @@ public final class Config {
 	/** Seconds an arena stands after its fight before it comes apart (-1 = it stays for good). */
 	public static int ELDER_ARENA_LINGER_SECONDS = 30;
 	/** Seconds an arena takes to come apart (the ground is put back as it was). */
-	public static double ELDER_ARENA_DISSOLVE_SECONDS = 10.0;
+	public static double ELDER_ARENA_DISSOLVE_SECONDS = 25.0;
 	/** How much debris the Elders' blows throw, as a multiple (0.25 to 2); their sigils, rings and threads are always drawn. */
 	public static double ELDER_ATTACK_FX_DETAIL = 1.0;
 	/** An Elder's health, as a multiple of its own (before the players fighting it are counted). */
@@ -494,13 +498,13 @@ public final class Config {
 	/** Whether each Elder's great blow (the Thornbound Charge, the Crossing of the Dead, the Seraphic Lance) goes through armour: 1 = on, 0 = off. */
 	public static int ELDER_PIERCE = 1;
 	/** Blocks from an Elder within which a player counts as fighting it (for its health, damage and pace). */
-	public static int ELDER_FIGHTERS_RANGE = 96;
+	public static int ELDER_FIGHTERS_RANGE = 200;
 	/** How far the Elders' ranged blows reach and how far they follow their prey, as a multiple (for the larger arenas). */
-	public static double ELDER_REACH = 2.0;
+	public static double ELDER_REACH = 3.0;
 	/** Extra brood an Elder calls (the Matriarch's Hollowlings, the Weaver's Thinned) for every player fighting it beyond the first. */
 	public static int ELDER_BROOD_PER_PLAYER = 1;
 	/** Blocks round an Elder its spell reaches (the Matriarch's hex, the Ferryman's weight) while it fights. */
-	public static int ELDER_SPELL_RANGE = 120;
+	public static int ELDER_SPELL_RANGE = 250;
 	/** Seconds of gliding on elytra near an Elder before it pulls the flyer down (0 = it never does). */
 	public static double ELDER_SNARE_SECONDS = 1.0;
 	/** Damage of an Elder pulling a flyer down. */
@@ -781,7 +785,7 @@ public final class Config {
 			{"elder_reach", 1, 5}, {"elder_brood_per_player", 0, 10}, {"elder_spell_range", 16, 256}, {"elder_snare_seconds", 0, 30},
 			{"elder_snare_damage", 0, 100}, {"elder_bind_seconds", 0, 120}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
 			{"ferryman_gaol_hits", 1, 20}, {"ferryman_gaol_seconds", 0.5, 6}, {"ferryman_gaol_damage", 0, 100}, {"weaver_windup_speed", 0.5, 4}, {"weaver_lance_length", 0.5, 4},
-			{"elder_arena_size", 0.5, 5}, {"elder_arena_fly_max", 50, 5000}, {"elder_arena_fly_range", 8, 256}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
+			{"elder_arena_size", 0.5, 12}, {"elder_arena_wall", 0, 1}, {"elder_arena_landmark", 0, 1}, {"elder_arena_fly_max", 50, 5000}, {"elder_arena_fly_range", 8, 256}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
 			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600}, {"coop_burden_relief_per_day", 0, 100}};
 
 	/** Brings a setting back within its bounds, if it has any. */

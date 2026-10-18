@@ -1,5 +1,34 @@
 # Changelog
 
+## 2.31.0: The Elders' Domains
+
+### Changed
+- **Arenas twelve times their old size, three times 2.30's.** The sigil is 289 blocks across, its rings and spokes
+  spread over it; where the ground falls away (a valley, water, the void of the Seam) it floats on at its own height.
+  Eight towers stand 216 blocks out and eight more at 282, up to 30 blocks taller than before. Nearly 190 islands hang
+  in three layers: many small ones low over the ground, larger ones above them, and the greatest highest of all, up to
+  145 blocks up and 345 blocks out. The Elders' ranged blows reach three times as far, their spells 250 blocks, and
+  everyone within 200 blocks counts as fighting them. An arena now takes 40 seconds to build and 25 to come apart;
+  it is raised only where the world is loaded (what lies beyond everyone's view is left out).
+- **Islands with relief.** A larger island's top swells into a low hill, and its top is of more than one stone (moss,
+  mossy cobblestone and rooted dirt for the Matriarch; nylium, netherrack and wart for the Ferryman; polished
+  deepslate, tiles and calcite for the Weaver), with moss carpet, crimson roots or amethyst buds growing on it.
+- **The Elders sound like themselves.** Each has its own sounds, with subtitles, where they used the Lurker's: three
+  for being hit, two at rest, its death, its steps and its roar. The Matriarch is splitting wood, a deep groan through
+  her mask and shaken leaves; the Ferryman a cracked bell, rattling chains, the river under his boat and a hollow
+  moan; the Last Weaver shattering glass, snapping threads, an airy breath and a chorus of thin high voices.
+
+### Added
+- **A ring wall round each arena:** 20 blocks high and three thick in the Elder's own stone, crumbled here and there,
+  slit with windows, lit along its inner face, crenellated, with an arch over each path.
+- **A great piece for each Elder:** four arches of root and bark that rise from the edge of the Matriarch's floor and
+  meet 65 blocks over its heart, lanterns and hanging roots beneath them; a great boat lying broken in two on the
+  Ferryman's deck, keeled over and half sunk, ribs showing, soul lanterns burning in it, its mast rigged with chains;
+  the Weaver's loom, two posts 72 blocks high either side of its web, beams across, the warp strung between them in
+  threads of light and the first threads of weft woven in.
+- Settings: the ring wall and the great piece can each be switched off; the arena size goes up to 12.
+- Tools: a generator for the Elders' sounds.
+
 ## 2.30.0: The Elders' Wrath
 
 ### Changed

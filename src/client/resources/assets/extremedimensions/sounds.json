@@ -489,5 +489,161 @@
         "volume": 1.0
       }
     ]
+  },
+  "elder.matriarch.hurt": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.hurt",
+    "sounds": [
+      "extremedimensions:elder/matriarch_hurt1",
+      "extremedimensions:elder/matriarch_hurt2",
+      "extremedimensions:elder/matriarch_hurt3"
+    ]
+  },
+  "elder.matriarch.ambient": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.ambient",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/matriarch_ambient1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "extremedimensions:elder/matriarch_ambient2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.matriarch.death": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.death",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/matriarch_death",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "elder.matriarch.step": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.step",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/matriarch_step1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "extremedimensions:elder/matriarch_step2",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.matriarch.roar": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.roar",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/matriarch_roar",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "elder.ferryman.hurt": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.hurt",
+    "sounds": [
+      "extremedimensions:elder/ferryman_hurt1",
+      "extremedimensions:elder/ferryman_hurt2",
+      "extremedimensions:elder/ferryman_hurt3"
+    ]
+  },
+  "elder.ferryman.ambient": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.ambient",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/ferryman_ambient1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "extremedimensions:elder/ferryman_ambient2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.ferryman.death": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.death",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/ferryman_death",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "elder.ferryman.step": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.step",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/ferryman_step1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "extremedimensions:elder/ferryman_step2",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.ferryman.roar": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.roar",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/ferryman_roar",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "elder.weaver.hurt": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.hurt",
+    "sounds": [
+      "extremedimensions:elder/weaver_hurt1",
+      "extremedimensions:elder/weaver_hurt2",
+      "extremedimensions:elder/weaver_hurt3"
+    ]
+  },
+  "elder.weaver.ambient": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.ambient",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/weaver_ambient1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "extremedimensions:elder/weaver_ambient2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.weaver.death": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.death",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/weaver_death",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "elder.weaver.step": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.step",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/weaver_step1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "extremedimensions:elder/weaver_step2",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.weaver.roar": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.roar",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/weaver_roar",
+        "attenuation_distance": 64
+      }
+    ]
   }
 }

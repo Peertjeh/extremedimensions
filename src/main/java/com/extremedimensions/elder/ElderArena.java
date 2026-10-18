@@ -459,7 +459,8 @@ public final class ElderArena {
 		for (ArenaDesign.Line line : a.lines) {
 			double dx = line.x1() - line.x0(), dy = line.y1() - line.y0(), dz = line.z1() - line.z0();
 			double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-			int n = Math.max(2, (int) Math.ceil(len / 1.6));
+			// A straight thread is one piece; a sagging chain is drawn in pieces, never more than 24 (they are long in a large arena)
+			int n = line.sag() < 0.01 ? 1 : Math.min(24, Math.max(2, (int) Math.ceil(len / 1.6)));
 			double[] prev = null;
 			for (int i = 0; i <= n; i++) {
 				double k = i / (double) n;

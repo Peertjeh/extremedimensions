@@ -48,7 +48,7 @@ public class ClientShots implements FabricClientGameTest {
 		// Each fight on untouched ground, away from the last one's craters, fires and arena (on top of it, not inside a hill)
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
-			double nx = p.getX() + 260, nz = p.getZ();
+			double nx = p.getX() + 400, nz = p.getZ();
 			int bx = (int) Math.floor(nx), bz = (int) Math.floor(nz);
 			// load the chunk first: an unloaded one has no ground to stand on
 			p.level().getChunk(bx >> 4, bz >> 4);
@@ -57,6 +57,8 @@ public class ClientShots implements FabricClientGameTest {
 		});
 		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
 		ctx.waitTicks(20);
+		// The world round it loaded first: its arena is raised only where the world is loaded
+		sp.getConnection().waitForChunksRender();
 		sp.getServer().runOnServer(summon::accept);
 		ctx.waitTicks(30);
 		ctx.runOnClient(mc -> check(com.extremedimensions.client.fx.CameraLock.locked(), "the view is not held on the forming " + name));
@@ -77,11 +79,15 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("12_fight_" + name + "_" + blowNames[i]);
 			ctx.waitTicks(45);
 		}
-		// The whole arena from high over it, by now built
+		// The whole arena from high over it, by now built: from straight above, then from the side and high up
 		double[] stood = sp.getServer().computeOnServer(s -> new double[] {player(s).getX(), player(s).getY(), player(s).getZ()});
-		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~70 ~ 0 70");
-		ctx.waitTicks(12);
+		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~170 ~ 0 90");
+		ctx.waitTicks(20);
 		ctx.takeScreenshot("12_fight_" + name + "_arena");
+		sp.getServer().runOnServer(s -> elders(s).stream().findFirst().ifPresent(e -> player(s).teleportTo(e.getX() - 170, e.getY() + 70, e.getZ())));
+		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ -90 18");
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("12_fight_" + name + "_arena_side");
 		sp.getServer().runOnServer(s -> player(s).teleportTo(stood[0], stood[1], stood[2]));
 		ctx.waitTicks(10);
 		sp.getServer().runOnServer(s -> elders(s).forEach(e -> force.test(e, com.extremedimensions.elder.ElderBoss.ULTIMATE)));
@@ -102,6 +108,9 @@ public class ClientShots implements FabricClientGameTest {
 		ctx.waitTicks(66);
 		ctx.takeScreenshot("12_fight_" + name + "_death_bloom");
 		ctx.waitTicks(30);
+		// Its arena is taken down at once, so the next fight builds on untouched ground
+		sp.getServer().runOnServer(s -> com.extremedimensions.elder.ElderArena.clear());
+		ctx.waitTicks(10);
 	}
 
 	/**
@@ -676,6 +685,11 @@ public class ClientShots implements FabricClientGameTest {
 			// The arena comes apart soon after each death, so the last shots of a fight catch it
 			int linger = com.extremedimensions.config.Config.ELDER_ARENA_LINGER_SECONDS;
 			com.extremedimensions.config.Config.ELDER_ARENA_LINGER_SECONDS = 3;
+			// Built sooner than in a game, so the shots of each fight catch the whole arena
+			double build = com.extremedimensions.config.Config.ELDER_ARENA_BUILD_SECONDS;
+			com.extremedimensions.config.Config.ELDER_ARENA_BUILD_SECONDS = 14;
+			// A view far enough for the whole arena (it is only raised where the world is loaded)
+			ctx.runOnClient(mc -> mc.options.renderDistance().set(12));
 			sp.getServer().runCommand("effect give @a minecraft:resistance infinite 255 true");
 			sp.getServer().runCommand("effect give @a minecraft:saturation infinite 10 true");
 			sp.getServer().runCommand("effect give @a minecraft:fire_resistance infinite 0 true");
@@ -694,6 +708,8 @@ public class ClientShots implements FabricClientGameTest {
 					new String[] {"lance", "cradle", "thousand"});
 			com.extremedimensions.config.Config.ELDER_ULTIMATE_CURSES = ultimateCurses;
 			com.extremedimensions.config.Config.ELDER_ARENA_LINGER_SECONDS = linger;
+			com.extremedimensions.config.Config.ELDER_ARENA_BUILD_SECONDS = build;
+			ctx.runOnClient(mc -> mc.options.renderDistance().set(5));
 			sp.getServer().runCommand("effect clear @a");
 			sp.getServer().runCommand("kill @e[type=minecraft:item]");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
