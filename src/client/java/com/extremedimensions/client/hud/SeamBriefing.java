@@ -26,6 +26,15 @@ public class SeamBriefing implements HudElement {
 
 	private record Row(int colour, String label, String text) {}
 
+	/** Whether a briefing is on the screen now (the guide card steps aside for it). */
+	public static boolean showing() {
+		if (ClientState.briefAt <= 0 || ClientState.away()) {
+			return false;
+		}
+		long t = System.currentTimeMillis() - ClientState.briefAt - (ClientState.briefKind == 1 ? DELAY_MS : 0);
+		return t >= 0 && t <= SHOW_MS;
+	}
+
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor g, DeltaTracker deltaTracker) {
 		if (ClientState.briefAt <= 0 || ClientState.away()) {

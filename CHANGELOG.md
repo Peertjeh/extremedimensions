@@ -19,7 +19,9 @@
 - **Sounds on the game's sliders.** Every sound of the mod plays on the volume slider Minecraft would put it on: music
   on Music, the hum of the Seam and other surroundings on Ambient/Environment, the tribe and the Elders on Hostile
   Creatures, blocks on Blocks, the Tether and the rifts on Players. Nothing plays on Master alone any more.
-- The briefing cards and the guide card make room for the boss bars.
+- The briefing cards and the guide card make room for the boss bars, and the guide card steps aside while a briefing
+  is up instead of showing through it. The Display option for the timer is now called Timer panel: it places the mod's
+  own panel, for when the boss bar is off.
 
 ### Fixed
 - A shield now stops a Frayed Ray's sting: blocked, it neither poisons nor throws you.

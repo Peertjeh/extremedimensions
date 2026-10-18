@@ -95,7 +95,12 @@ public class ChargeHud implements HudElement {
 			if (timerTop && !corner.bottom() && (right ? gx < (w + tw) / 2 : gx + GUIDE_W > (w - tw) / 2)) {
 				gy = Math.max(gy, timerBottom() + 4);
 			}
-			guideCard(g, font, gx, gy, guide, guideH);
+			// while a briefing on the Seam or the Fray is up, the card steps aside rather than show through it
+			if (SeamBriefing.showing()) {
+				guideClose = null;
+			} else {
+				guideCard(g, font, gx, gy, guide, guideH);
+			}
 			if (corner.bottom()) {
 				y += guideH + 5;
 			}
