@@ -106,28 +106,13 @@ public class FrayTests {
 		ServerPlayer p = TestPlayers.survivor(helper, "test-prey");
 		p.teleportTo(o.getX() + 0.5, o.getY() + 1, o.getZ() + 0.5);
 		// A player cannot be hurt until their client says it has loaded the world, and a test player has no client: it
-		// is marked loaded by hand (found by name, whatever this version's signature)
-		boolean loaded = false;
-		StringBuilder near = new StringBuilder();
-		for (Class<?> c = p.getClass(); c != null && !loaded; c = c.getSuperclass()) {
-			for (java.lang.reflect.Method m : c.getDeclaredMethods()) {
-				String n = m.getName().toLowerCase(java.util.Locale.ROOT);
-				if (n.contains("loaded")) {
-					near.append(c.getSimpleName()).append('.').append(m.getName()).append(' ');
-				}
-				if (n.equals("setclientloaded") && m.getParameterCount() == 1 && m.getParameterTypes()[0] == boolean.class) {
-					try {
-						m.setAccessible(true);
-						m.invoke(p, true);
-						loaded = true;
-						break;
-					} catch (ReflectiveOperationException | RuntimeException e) {
-						near.append("(failed: ").append(e).append(") ");
-					}
-				}
-			}
-		}
-		check(helper, loaded, "the test player could not be marked as loaded: %s", near);
+		// is marked loaded by hand, as the game does when that word comes (found by name, whatever this version calls it)
+		String how = markLoaded(p);
+		float before = p.getHealth();
+		boolean took = p.hurtServer(level, level.damageSources().generic(), 1.0F);
+		check(helper, took && p.getHealth() < before, "the test player cannot be hurt at all (marked loaded: %s; took: %s)", how, took);
+		p.setHealth(before);
+		p.invulnerableTime = 0;
 		check(helper, p.getY() < Config.SEAM_FRAY_TOP, "the test's ground (%s) is above the Fray", p.getY());
 		VeilRay ray = ModEntities.VEIL_RAY.spawn(level, BlockPos.containing(p.getX() + 16, p.getY() + 9, p.getZ() + 4), EntitySpawnReason.EVENT);
 		check(helper, ray != null, "no ray could be made");
@@ -166,6 +151,43 @@ public class FrayTests {
 			check(helper, seen[0] && seen[1], "the strike did not hurt (%s) and poison (%s) (%s)", seen[1], seen[0], state);
 			helper.succeed();
 		});
+	}
+
+	/**
+	 * Tells the game a test player's client has loaded the world (a real client says so in a packet), so the player can
+	 * be hurt; returns how it was done, or what was found when it could not be.
+	 */
+	private static String markLoaded(ServerPlayer p) {
+		StringBuilder near = new StringBuilder();
+		Object[] owners = {p, p.connection};
+		for (Object owner : owners) {
+			for (Class<?> c = owner.getClass(); c != null && c != Object.class; c = c.getSuperclass()) {
+				for (java.lang.reflect.Method m : c.getDeclaredMethods()) {
+					String n = m.getName().toLowerCase(java.util.Locale.ROOT);
+					Class<?>[] args = m.getParameterTypes();
+					try {
+						if (args.length == 1 && args[0] == boolean.class && n.contains("loaded") && n.startsWith("set")) {
+							m.setAccessible(true);
+							m.invoke(owner, true);
+							return c.getSimpleName() + "." + m.getName() + "(true)";
+						}
+						if (args.length == 1 && args[0].getSimpleName().equals("ServerboundPlayerLoadedPacket")) {
+							java.lang.reflect.Constructor<?> make = args[0].getDeclaredConstructor();
+							make.setAccessible(true);
+							m.setAccessible(true);
+							m.invoke(owner, make.newInstance());
+							return c.getSimpleName() + "." + m.getName() + "(packet)";
+						}
+					} catch (ReflectiveOperationException | RuntimeException e) {
+						near.append("(").append(m.getName()).append(" failed: ").append(e).append(") ");
+					}
+					if (n.contains("load")) {
+						near.append(c.getSimpleName()).append('.').append(m.getName()).append(' ');
+					}
+				}
+			}
+		}
+		return "not found: " + near;
 	}
 
 	/** A strand gives way under a visitor (after it creaks), and is woven back: nothing stays holed for good. */
