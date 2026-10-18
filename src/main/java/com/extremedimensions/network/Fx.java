@@ -19,4 +19,8 @@ public final class Fx {
 	public static final int SEAL = 12;
 	/** A Wound Storm begins nearby. */
 	public static final int STORM = 13;
+	/** Arrived in the Seam (the first few visits): what to do there, on the screen. Value: seconds the visit lasts. */
+	public static final int SEAM_BRIEF = 14;
+	/** Down in the Fray (the first few descents): what it is. Value: ten times how much faster time runs out there. */
+	public static final int FRAY_BRIEF = 15;
 }

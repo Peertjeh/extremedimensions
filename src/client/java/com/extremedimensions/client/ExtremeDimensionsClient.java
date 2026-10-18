@@ -123,6 +123,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		HudElementRegistry.addLast(ExtremeDimensions.id("charge_hud"), new ChargeHud());
 		HudElementRegistry.addLast(ExtremeDimensions.id("stomach_hud"), new StomachHud());
 		HudElementRegistry.addLast(ExtremeDimensions.id("boss_cinema"), new com.extremedimensions.client.fx.BossCinema());
+		HudElementRegistry.addLast(ExtremeDimensions.id("seam_briefing"), new com.extremedimensions.client.hud.SeamBriefing());
 		Tooltips.register();
 		MoteParticle.register();
 		com.extremedimensions.client.fx.AttackFx.register();

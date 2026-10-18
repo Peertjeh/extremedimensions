@@ -21,6 +21,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.LivingEntity;
@@ -33,7 +34,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * The life of the Seam. Veil Rays circle the islands around every visitor; the Thinned walk their villages. When a
  * visitor's thread runs thin (under a third of their time left, or while the Seam pulls them out) the Thinned near
- * them turn and follow, moving only while nobody looks at them.
+ * them turn and follow, moving only while nobody looks at them. Down in the Fray the rays are the Frayed, and hunt.
  *
  * <p>Like the rest of the mod's creatures they are driven from here and never saved: whatever this service does not
  * drive dissolves, and comes back when someone returns.
@@ -41,7 +42,7 @@ import net.minecraft.world.phys.Vec3;
 public final class SeamFauna {
 	private SeamFauna() {}
 
-	private static final int RAY = 0, THINNED = 1;
+	private static final int RAY = 0, THINNED = 1, FRAYED = 2;
 	private static final int RAYS_PER_PLAYER = 3;
 	private static final int THINNED_PER_VILLAGE = 4;
 
@@ -90,6 +91,12 @@ public final class SeamFauna {
 		// Forget the dead and the far away
 		Iterator<Map.Entry<UUID, Driven>> it = DRIVEN.entrySet().iterator();
 		List<Mob> far = new ArrayList<>();
+		List<ServerPlayer> below = new ArrayList<>();
+		for (ServerPlayer p : players) {
+			if (SeamDepth.inFray(p.getY())) {
+				below.add(p);
+			}
+		}
 		while (it.hasNext()) {
 			Map.Entry<UUID, Driven> e = it.next();
 			Entity ent = seam.getEntity(e.getKey());
@@ -97,26 +104,34 @@ public final class SeamFauna {
 				it.remove();
 				continue;
 			}
-			ServerPlayer near = nearest(players, m.position(), 128);
+			boolean frayed = e.getValue().kind == FRAYED;
+			// The Frayed stay with whoever is down in the Fray, and sink back into the dark when nobody is
+			ServerPlayer near = nearest(frayed ? below : players, m.position(), 128);
 			if (near == null) {
 				far.add(m);
 			} else if (m instanceof VeilRay ray && ray.farFromHome(near.getX(), near.getZ())) {
 				// The rays drift along with the visitor, over whatever islands they walk to
-				ray.anchor(near.getX(), cruise(near, ThreadLocalRandom.current()), near.getZ(), ray.roam());
+				ThreadLocalRandom r = ThreadLocalRandom.current();
+				ray.anchor(near.getX(), frayed ? frayCruise(near, r) : cruise(near, r), near.getZ(), ray.roam());
 			}
 		}
 		far.forEach(SeamFauna::fade);
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		for (ServerPlayer p : players) {
-			// Veil Rays about every visitor
+			boolean deep = SeamDepth.inFray(p.getY());
+			// Veil Rays about every visitor on the islands; the Frayed about every visitor in the Fray
 			int rays = 0;
 			for (Map.Entry<UUID, Driven> e : DRIVEN.entrySet()) {
 				Entity ent = seam.getEntity(e.getKey());
-				if (e.getValue().kind == RAY && ent != null && ent.distanceToSqr(p) < 96 * 96) {
+				if (e.getValue().kind == (deep ? FRAYED : RAY) && ent != null && ent.distanceToSqr(p) < 96 * 96) {
 					rays++;
 				}
 			}
-			if (rays < RAYS_PER_PLAYER && rnd.nextInt(3) == 0) {
+			if (deep) {
+				if (rays < Math.max(0, com.extremedimensions.config.Config.SEAM_FRAY_RAYS) && rnd.nextInt(3) == 0) {
+					frayedRay(seam, p, rnd);
+				}
+			} else if (rays < RAYS_PER_PLAYER && rnd.nextInt(3) == 0) {
 				// They come out of the fog high overhead, in open sky with room for their wings
 				double cruise = cruise(p, rnd);
 				for (int tries = 0; tries < 4; tries++) {
@@ -167,6 +182,49 @@ public final class SeamFauna {
 				}
 			}
 		}
+	}
+
+	/** A Frayed Ray rises out of the dark below a visitor in the Fray, some way off, in air open enough for its wings. */
+	private static void frayedRay(ServerLevel seam, ServerPlayer p, ThreadLocalRandom rnd) {
+		double cruise = frayCruise(p, rnd);
+		for (int tries = 0; tries < 4; tries++) {
+			double a = rnd.nextDouble() * Math.PI * 2, d = 30 + rnd.nextDouble() * 24;
+			Vec3 at = new Vec3(p.getX() + Math.cos(a) * d, cruise - tries * 3, p.getZ() + Math.sin(a) * d);
+			if (at.y < 12 || !VeilRay.open(seam, at, 6)) {
+				continue;
+			}
+			VeilRay ray = ModEntities.VEIL_RAY.spawn(seam, BlockPos.containing(at), EntitySpawnReason.EVENT);
+			if (ray != null) {
+				ray.setFrayed(true);
+				ray.setYRot((float) Math.toDegrees(a) + 90 + rnd.nextFloat() * 60 - 30);
+				ray.anchor(p.getX() + rnd.nextDouble(-12, 12), cruise, p.getZ() + rnd.nextDouble(-12, 12), 34 + rnd.nextDouble() * 16);
+				DRIVEN.put(ray.getUUID(), new Driven(FRAYED));
+				WorldFx.particleIn(SeamService.SEAM.identifier().toString(), "extremedimensions:void_mote", at.x, at.y, at.z, 2.0, 0.6, 2.0, 0.0, 24);
+			}
+			return;
+		}
+	}
+
+	/** The height the Frayed fly at around a visitor in the Fray: a little over them, never out of the dark. */
+	private static double frayCruise(ServerPlayer p, ThreadLocalRandom rnd) {
+		return Mth.clamp(p.getY() + 6 + rnd.nextDouble() * 8, 14, com.extremedimensions.config.Config.SEAM_FRAY_TOP - 4);
+	}
+
+	/** The dark closed in on a visitor in the Fray: every Frayed Ray near them is ready to dive at once. */
+	public static void rouse(ServerPlayer p) {
+		if (!(p.level() instanceof ServerLevel level)) {
+			return;
+		}
+		for (Map.Entry<UUID, Driven> e : DRIVEN.entrySet()) {
+			if (e.getValue().kind == FRAYED && level.getEntity(e.getKey()) instanceof VeilRay ray && ray.distanceToSqr(p) < 64 * 64) {
+				ray.rouse();
+			}
+		}
+	}
+
+	/** Drives a ray the tests have made, as if the Seam had spawned it (one of the Frayed if it is). */
+	public static void drive(VeilRay ray) {
+		DRIVEN.put(ray.getUUID(), new Driven(ray.isFrayed() ? FRAYED : RAY));
 	}
 
 	/** Thinned walk the knots of the Fray, up to {@code seam_fray_thinned} on each knot near the visitor. */
@@ -299,8 +357,9 @@ public final class SeamFauna {
 		DRIVEN.remove(e.getUUID());
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		BlockPos at = e.blockPosition();
-		if (e instanceof VeilRay) {
-			Block.popResource(level, at, new ItemStack(ModItems.SEAM_SILK, 1 + rnd.nextInt(2)));
+		if (e instanceof VeilRay ray) {
+			// the Frayed carry more of the Seam in them
+			Block.popResource(level, at, new ItemStack(ModItems.SEAM_SILK, 1 + rnd.nextInt(2) + (ray.isFrayed() ? 1 + rnd.nextInt(2) : 0)));
 			Block.popResource(level, at, new ItemStack(Items.GLOW_INK_SAC, 1 + rnd.nextInt(2)));
 			Block.popResource(level, at, new ItemStack(ModItems.VEIL_WING, rnd.nextDouble() < com.extremedimensions.config.Config.VEIL_WING_EXTRA_CHANCE ? 2 : 1));
 		} else if (e instanceof Thinned) {

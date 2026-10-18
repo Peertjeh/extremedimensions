@@ -348,12 +348,15 @@ public final class SeamService {
 		// Out of the gate, facing away from it, the way home at their back
 		WorldFx.tp(p, SEAM_ID, landX, landY, landZ, yaw, 0);
 		WorldFx.sound(p, "extremedimensions:rift_open", 1.0f, 0.8f);
-		if (gate && d.seamVisits <= 3) {
-			// The first few times, a word on where home is
+		WorldFx.fx(p, Fx.START_END, 0);
+		if (d.seamVisits <= Config.SEAM_BRIEFING) {
+			// The first few times: what the Seam is for and how to get home, on the screen
+			WorldFx.fx(p, Fx.SEAM_BRIEF, (int) Math.round(d.seamMax));
+		} else if (gate && d.seamVisits <= 3) {
+			// (with the briefing turned off, still a word on where home is)
 			p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.seam.gate_hint")
 					.withStyle(net.minecraft.ChatFormatting.GOLD), true);
 		}
-		WorldFx.fx(p, Fx.START_END, 0);
 		Advancements.grant(p, Advancements.SEAM_ENTERED);
 		Journal.unlock(p, d, JournalEntry.SEAM);
 		DataStore.markDirty();
@@ -372,6 +375,7 @@ public final class SeamService {
 				forgetFar(level);
 			}
 			lights(level, s.getTickCount());
+			SeamDepth.tickWorld(level);
 		}
 		boolean slow = s.getTickCount() % 20 == 0;
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
@@ -701,6 +705,38 @@ public final class SeamService {
 		return new Approach(best, to);
 	}
 
+	/**
+	 * The sides of a cell's island an arrival island's bridge comes in on (bits as a plan's mask: 1 east, 2 west, 4
+	 * south, 8 north), read on the server thread: the island is given a level way in there too, so the bridge lands on
+	 * it as on any other.
+	 */
+	public static int inbound(int cx, int cz) {
+		int mask = 0;
+		String tail = "," + cx + "," + cz + ",";
+		for (String key : DataStore.seamCells()) {
+			int eq = key.indexOf('=');
+			if (!key.startsWith("g@") || eq < 0 || !key.substring(eq).contains(tail)) {
+				continue;
+			}
+			String[] v = key.substring(eq + 1).split(",");
+			if (v.length < 4 || !v[1].equals(String.valueOf(cx)) || !v[2].equals(String.valueOf(cz))) {
+				continue;
+			}
+			try {
+				// The arrival looks out this way; its bridge comes in on this island's opposite side
+				mask |= switch (Direction.from2DDataValue(Integer.parseInt(v[0]))) {
+					case EAST -> 2;
+					case WEST -> 1;
+					case SOUTH -> 8;
+					default -> 4;
+				};
+			} catch (NumberFormatException e) {
+				// not a way
+			}
+		}
+		return mask;
+	}
+
 	/** Every rift's arrival island (x, z), copied on the server thread so a design can read it on its own. */
 	private static List<int[]> arrivals() {
 		List<int[]> out = new ArrayList<>();
@@ -810,12 +846,13 @@ public final class SeamService {
 	private static void designLater(MinecraftServer s, int cx, int cz) {
 		long seed = seed();
 		List<int[]> arrivals = arrivals();
+		int inbound = inbound(cx, cz);
 		int gen = generation;
 		designing = true;
 		DESIGNER.execute(() -> {
 			SeamArchitect.Plan plan = null;
 			try {
-				plan = plan(cx, cz, arrivals);
+				plan = plan(cx, cz, arrivals, inbound);
 			} catch (Throwable e) {
 				// Whatever goes wrong, the result is still handed back below, or the Seam would never design again
 				ExtremeDimensions.LOGGER.error("Could not design Seam cell {},{} (seed {})", cx, cz, seed, e);
@@ -883,6 +920,8 @@ public final class SeamService {
 	 * they are designed and built again (whole) when someone comes back instead of staying half built for good.
 	 */
 	public static void stopping() {
+		// Strands that gave way in the Fray are woven back before the world is saved
+		SeamDepth.reweave(seam());
 		List<SeamArchitect.Meta> left = SeamArchitect.stop(seam());
 		forget(left);
 		if (!left.isEmpty()) {
@@ -929,7 +968,7 @@ public final class SeamService {
 	}
 
 	/** The plan of a cell, ready to queue, or null where the Heart's crown stands. Touches no world. */
-	private static SeamArchitect.Plan plan(int cx, int cz, List<int[]> arrivals) {
+	private static SeamArchitect.Plan plan(int cx, int cz, List<int[]> arrivals, int inbound) {
 		int[] c = center(cx, cz);
 		if (nearHeart(c)) {
 			return null;
@@ -946,7 +985,8 @@ public final class SeamService {
 		boolean toSouth = south != null && (hash(cx, cz, seed() + 13) & 3) != 0 && SeamArchitect.canBridge(shape, south, false);
 		boolean fromWest = west != null && (hash(cx - 1, cz, seed() + 11) & 3) != 0 && SeamArchitect.canBridge(west, shape, true);
 		boolean fromNorth = north != null && (hash(cx, cz - 1, seed() + 13) & 3) != 0 && SeamArchitect.canBridge(north, shape, false);
-		int mask = (toEast ? 1 : 0) | (fromWest ? 2 : 0) | (toSouth ? 4 : 0) | (fromNorth ? 8 : 0);
+		// (and the sides an arrival island's bridge comes in on)
+		int mask = (toEast ? 1 : 0) | (fromWest ? 2 : 0) | (toSouth ? 4 : 0) | (fromNorth ? 8 : 0) | inbound;
 		Terrain ground = Terrain.of(rnd, shape, mask);
 		int depth = ground.emit(plan);
 		build(plan, rnd, kind, shape, depth, mask, ground);

@@ -53,6 +53,9 @@ public final class ClientState {
 	/** The seal broke (or the world was severed), and a Wound Storm began. */
 	public static long sealAt = 0;
 	public static long stormAt = 0;
+	/** The briefing on the screen: when it came (0 = none), which (1 the Seam, 2 the Fray) and the number it carries. */
+	public static long briefAt = 0;
+	public static int briefKind = 0, briefValue = 0;
 	public static long bounceAt = 0;
 	public static long penaltyAt = 0;
 	public static long endedAt = 0;
@@ -228,6 +231,7 @@ public final class ClientState {
 			case 11 -> takenAt = now;
 			case 12 -> sealAt = now;
 			case 13 -> stormAt = now;
+			case 14, 15 -> { briefAt = now; briefKind = type == 14 ? 1 : 2; briefValue = value; }
 			default -> { }
 		}
 	}
@@ -271,7 +275,7 @@ public final class ClientState {
 		trial = "";
 		shownNether = 0;
 		shownEnd = 0;
-		startAt = safeAt = collapseAt = bounceAt = penaltyAt = endedAt = homeAt = takenAt = sealAt = stormAt = 0;
+		startAt = safeAt = collapseAt = bounceAt = penaltyAt = endedAt = homeAt = takenAt = sealAt = stormAt = briefAt = 0;
 		netherFlashAt = endFlashAt = netherGainAt = endGainAt = depositAt = 0;
 	}
 }

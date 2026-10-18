@@ -134,8 +134,8 @@ The client test photographs every plan of colossal building (`18_colossus_*`), a
 
 - **The rift's view is painted, not live** (a second world renderer is not something a mod can add safely).
 - Terrain is one surface per column: no caves, arches of rock or overhangs within an island.
-- Bridges and streets meet islands at their height; an arrival bridge lands on its far island without that island's
-  corridor (a step of a block can show there).
+- Bridges and streets meet islands at their height; an arrival bridge lands on its far island on a corridor of its
+  own (2.27) only when that island was designed after the arrival (one built before keeps the step of a block).
 - Damage is geometric (it knows blocks and height, not which part is a pier or an ornament).
 - Only the colossal buildings use the building-wide material plan.
 

@@ -19,6 +19,8 @@ public class PlayerData {
 	public Set<String> seen = new LinkedHashSet<>();
 	public Map<String, Integer> kills = new HashMap<>();
 	public int deaths = 0, seamVisits = 0, frayDescents = 0, lifted = 0;
+	/** Times the Seam has said what a well is for, as the player came near one. */
+	public int wellHints = 0;
 	/** Standing with the tribe (-100 to 100), gifts given today and wares bought today (offer index:times). */
 	public int tribeRep = 0;
 	public long tribeDay = -1;

@@ -901,6 +901,17 @@ public class ClientShots implements FabricClientGameTest {
 			});
 			sp.getConnection().waitForChunksRender();
 			ctx.waitTicks(40);
+			// The first visits: what the Seam is for, on the screen (the server says so; held in full view for the shot)
+			sp.getServer().runOnServer(s -> check(DataStore.get(player(s).getUUID()).seamVisits <= com.extremedimensions.config.Config.SEAM_BRIEFING,
+					"the first visit is not one the Seam explains itself on"));
+			ctx.runOnClient(mc -> {
+				check(ClientState.briefKind == 1, "no briefing came on arrival in the Seam");
+				ClientState.briefAt = System.currentTimeMillis() - 3000;
+			});
+			ctx.waitTicks(2);
+			ctx.takeScreenshot("26_seam_briefing");
+			ctx.runOnClient(mc -> ClientState.briefAt = 0);
+			ctx.waitTicks(2);
 			ctx.takeScreenshot("09_trial_hud");
 
 			// The Seam builds itself before your eyes: an arch ten blocks ahead flies in out of the nothing
@@ -1014,8 +1025,52 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f -45 30", well[0] - 9.5, well[3] + 8, well[2] - 9.5));
 			sp.getConnection().waitForChunksRender();
 			ctx.waitTicks(40);
+			// The first time down: what the Fray is, on the screen (held in full view for the shot)
+			ctx.runOnClient(mc -> {
+				check(ClientState.briefKind == 2, "no briefing came on the first descent into the Fray");
+				ClientState.briefAt = System.currentTimeMillis() - 2000;
+			});
+			ctx.waitTicks(2);
+			ctx.takeScreenshot("26_fray_briefing");
+			ctx.runOnClient(mc -> ClientState.briefAt = 0);
+			ctx.waitTicks(2);
 			ctx.takeScreenshot("15_fray_knot");
 			sp.getServer().runOnServer(s -> check(com.extremedimensions.seam.SeamDepth.inFray(player(s)), "above the knot, the player is not in the Fray"));
+
+			// The Frayed: a Veil Ray of the Fray beside one of the islands (the same model and texture layout, painted
+			// sick green with red eyes), across the view; then folded into its dive; then the two side by side
+			int kx = well[0], ky = well[3], kz = well[2];
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "summon extremedimensions:veil_ray %d %d %d {NoAI:1b,Rotation:[45f,0f]}", kx - 6, ky + 7, kz - 6));
+			ctx.waitTicks(2);
+			sp.getServer().runOnServer(s -> mobs(s).forEach(m -> {
+				if (m instanceof com.extremedimensions.seam.VeilRay ray) {
+					ray.setFrayed(true);
+				}
+			}));
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s %.2f %d %.2f -45 -20", kx - 13.5, ky + 3, kz - 13.5));
+			sp.getConnection().waitForChunksRender();
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("26_frayed_ray");
+			sp.getServer().runOnServer(s -> mobs(s).forEach(m -> {
+				if (m instanceof com.extremedimensions.seam.VeilRay ray) {
+					ray.setDiving(true);
+					ray.setXRot(50);
+				}
+			}));
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("26_frayed_ray_dive");
+			sp.getServer().runOnServer(s -> mobs(s).forEach(m -> {
+				if (m instanceof com.extremedimensions.seam.VeilRay ray) {
+					ray.setDiving(false);
+					ray.setXRot(0);
+				}
+			}));
+			// a calm ray beside it, for the two to be compared (from below, where their lights show)
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "summon extremedimensions:veil_ray %d %d %d {NoAI:1b,Rotation:[45f,0f]}", kx - 14, ky + 7, kz + 2));
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s %.2f %d %.2f -45 -38", kx - 17.5, ky + 1, kz - 9.5));
+			ctx.waitTicks(25);
+			ctx.takeScreenshot("26_rays_compared");
+			sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));
 		}
 	}
 }

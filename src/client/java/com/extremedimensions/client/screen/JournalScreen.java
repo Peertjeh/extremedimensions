@@ -343,7 +343,7 @@ public class JournalScreen extends Screen {
 			case KEEPER -> ModEntities.KEEPER;
 			case STARVED_ONE -> ModEntities.STARVED_ONE;
 			case THINNED -> ModEntities.THINNED;
-			case VEIL_RAY -> ModEntities.VEIL_RAY;
+			case VEIL_RAY, FRAYED_RAY -> ModEntities.VEIL_RAY;
 			case MATRIARCH -> ModEntities.MATRIARCH;
 			case FERRYMAN -> ModEntities.FERRYMAN;
 			case LAST_WEAVER -> ModEntities.WEAVER;
@@ -364,6 +364,9 @@ public class JournalScreen extends Screen {
 				} else {
 					// Never added to the world, so it is given an id of its own, one no real creature has
 					e.setId(-7300 - b.ordinal());
+					if (b == Bestiary.Beast.FRAYED_RAY && e instanceof com.extremedimensions.seam.VeilRay ray) {
+						ray.setFrayed(true);
+					}
 				}
 			} catch (RuntimeException ex) {
 				e = null;

@@ -2,21 +2,32 @@ package com.extremedimensions.seam;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
+import com.extremedimensions.config.Config;
 import com.extremedimensions.registry.ModSounds;
+import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -27,8 +38,19 @@ import net.minecraft.world.phys.Vec3;
  * place {@link SeamFauna} gives it, turning no faster than a glider can, and it looks ahead along its whole wingspan:
  * when a spire, an island or a chain lies on its line it picks the clearest way around, preferring to climb over
  * rather than dive under, and banks hard only when it must.
+ *
+ * <p>Down in the Fray they are not the same. The Frayed fly faster, their light gone sick and green, and they hunt:
+ * one climbs over a visitor, folds its wings and dives, and its sting poisons. Then it pulls away, circles, and comes
+ * again. Struck, a Frayed Ray does not flee; it turns on whoever struck it.
  */
 public class VeilRay extends PathfinderMob {
+	private static final EntityDataAccessor<Byte> MODE = SynchedEntityData.defineId(VeilRay.class, EntityDataSerializers.BYTE);
+	private static final byte FRAYED = 1, DIVING = 2;
+	/** The hunt of the Frayed: circling, climbing over its prey, diving at it, pulling away after. */
+	private static final int CIRCLE = 0, CLIMB = 1, DIVE = 2, AWAY = 3;
+	/** How far the Frayed look for prey, and how close a dive must pass to strike (from its middle to the prey). */
+	private static final double SIGHT = 36, STRIKE = 2.1;
+
 	/** How far ahead it looks for obstacles, in blocks. */
 	private static final double LOOK = 28;
 	/** Probe points across the body, as (sideways, up) offsets: the nose, both wings to the tips, above and below. */
@@ -45,11 +67,52 @@ public class VeilRay extends PathfinderMob {
 	private boolean urgent;
 	private double speed = 0.28;
 	private int flee, stuck;
+	private int phase = CIRCLE, phaseTicks, rest = 60, strikes;
+	private UUID prey;
 	private final BlockPos.MutableBlockPos probe = new BlockPos.MutableBlockPos();
 
 	public VeilRay(EntityType<? extends PathfinderMob> type, Level level) {
 		super(type, level);
 		this.setNoGravity(true);
+	}
+
+	@Override
+	protected void defineSynchedData(SynchedEntityData.Builder builder) {
+		super.defineSynchedData(builder);
+		builder.define(MODE, (byte) 0);
+	}
+
+	/** One of the Frayed: a ray of the Fray, that hunts. */
+	public boolean isFrayed() {
+		return (this.entityData.get(MODE) & FRAYED) != 0;
+	}
+
+	public void setFrayed(boolean frayed) {
+		byte m = this.entityData.get(MODE);
+		this.entityData.set(MODE, (byte) (frayed ? m | FRAYED : m & ~FRAYED));
+	}
+
+	/** Diving at its prey (the client folds its wings). */
+	public boolean isDiving() {
+		return (this.entityData.get(MODE) & DIVING) != 0;
+	}
+
+	/** Set by its hunt (and by the screenshots, to see the dive). */
+	public void setDiving(boolean diving) {
+		byte m = this.entityData.get(MODE);
+		if (diving != ((m & DIVING) != 0)) {
+			this.entityData.set(MODE, (byte) (diving ? m | DIVING : m & ~DIVING));
+		}
+	}
+
+	/** How many times it has struck a visitor (for the tests). */
+	public int strikes() {
+		return strikes;
+	}
+
+	/** Ready to hunt at once (for the tests and a fresh grudge). */
+	public void rouse() {
+		rest = 0;
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
@@ -110,6 +173,9 @@ public class VeilRay extends PathfinderMob {
 			SeamFauna.fade(this);
 			return;
 		}
+		if (isFrayed() && hunt(level, pos)) {
+			return;
+		}
 		if (waypoint == null || --waypointAge <= 0 || waypoint.distanceToSqr(pos) < 14 * 14) {
 			waypoint = pickWaypoint(level, pos);
 			waypointAge = 500;
@@ -126,21 +192,178 @@ public class VeilRay extends PathfinderMob {
 		if (desired == null || this.tickCount % 2 == 0) {
 			steer(level, pos, goal);
 		}
-		turn(desired, urgent ? TURN_HARD : TURN);
-		// cruising speed swells with the wingbeat; it slows into a hard turn
-		double target = flee > 0 ? 0.62 : urgent ? 0.2 : 0.27 + 0.04 * Math.sin(this.tickCount * 0.09);
+		turn(desired, urgent ? TURN_HARD : TURN, -0.5, 0.62);
+		// cruising speed swells with the wingbeat; it slows into a hard turn (the Frayed fly faster in everything)
+		double target = (flee > 0 ? 0.62 : urgent ? 0.2 : 0.27 + 0.04 * Math.sin(this.tickCount * 0.09)) * pace();
 		speed += (target - speed) * (urgent ? 0.12 : 0.05);
-		Vec3 v = heading.scale(speed);
-		this.setDeltaMovement(v);
-		float yaw = (float) (Mth.atan2(v.z, v.x) * Mth.RAD_TO_DEG) - 90.0F;
-		float turned = Mth.approachDegrees(this.getYRot(), yaw, urgent ? 7.0F : 4.0F);
-		this.setYRot(turned);
-		this.yBodyRot = turned;
-		this.yHeadRot = turned;
-		this.setXRot((float) (-Mth.atan2(v.y, v.horizontalDistance()) * Mth.RAD_TO_DEG) * 0.6F);
+		fly(urgent ? 7.0F : 4.0F, 0.6F);
 		if (flee > 0) {
 			flee--;
 		}
+	}
+
+	/** How much faster than a calm ray it flies. */
+	private double pace() {
+		return isFrayed() ? Mth.clamp(Config.SEAM_FRAY_RAY_SPEED, 0.5, 4.0) : 1.0;
+	}
+
+	/** Moves along its heading at its speed, and turns its body (and its nose, by {@code pitch}) to match. */
+	private void fly(float yawRate, float pitch) {
+		Vec3 v = heading.scale(speed);
+		this.setDeltaMovement(v);
+		float yaw = (float) (Mth.atan2(v.z, v.x) * Mth.RAD_TO_DEG) - 90.0F;
+		float turned = Mth.approachDegrees(this.getYRot(), yaw, yawRate);
+		this.setYRot(turned);
+		this.yBodyRot = turned;
+		this.yHeadRot = turned;
+		this.setXRot((float) (-Mth.atan2(v.y, v.horizontalDistance()) * Mth.RAD_TO_DEG) * pitch);
+	}
+
+	// ------------------------------------------------------------------ the hunt of the Frayed
+
+	/**
+	 * A Frayed Ray's hunt, each tick: false while it only circles (and looks for prey), true while it climbs, dives or
+	 * pulls away, flying itself.
+	 */
+	private boolean hunt(ServerLevel level, Vec3 pos) {
+		if (rest > 0) {
+			rest--;
+		}
+		phaseTicks++;
+		Player found = prey == null ? null : level.getPlayerByUUID(prey);
+		ServerPlayer target = found instanceof ServerPlayer sp && fair(level, sp) ? sp : null;
+		if (phase == CIRCLE) {
+			setDiving(false);
+			if (rest <= 0 && (this.tickCount + this.getId()) % 10 == 0) {
+				target = target != null && this.hasLineOfSight(target) ? target : pick(level, pos);
+				if (target != null) {
+					prey = target.getUUID();
+					begin(CLIMB);
+					// a cry before it climbs: the warning
+					WorldFx.soundIn(level.dimension().identifier().toString(), "minecraft:entity.phantom.swoop", "hostile", getX(), getY(), getZ(), 2.2F, 0.55F);
+				}
+			}
+			return false;
+		}
+		if (target == null && phase != AWAY) {
+			begin(AWAY);
+		}
+		Vec3 goal;
+		switch (phase) {
+			case CLIMB -> {
+				// Up and over its prey, a little to the side it came from, to fall on it
+				Vec3 at = target.position();
+				Vec3 from = new Vec3(pos.x - at.x, 0, pos.z - at.z);
+				from = from.lengthSqr() < 1e-4 ? heading.multiply(-1, 0, -1) : from.normalize();
+				Vec3 over = at.add(from.scale(9)).add(0, 9, 0);
+				goal = over.subtract(pos);
+				if (goal.length() < 4 || phaseTicks > 50) {
+					begin(DIVE);
+					WorldFx.soundIn(level.dimension().identifier().toString(), "minecraft:entity.phantom.swoop", "hostile", getX(), getY(), getZ(), 2.6F, 0.75F);
+					return true;
+				}
+				goal = goal.normalize();
+				if (clearance(level, pos, goal, 8) < 3) {
+					begin(AWAY);
+					return true;
+				}
+				turn(goal, TURN_HARD * 1.3, -0.5, 0.8);
+				speed += (0.36 * pace() - speed) * 0.12;
+				fly(9.0F, 0.7F);
+			}
+			case DIVE -> {
+				setDiving(true);
+				// Straight at it, leading it a little
+				Vec3 at = target.getBoundingBox().getCenter().add(target.getDeltaMovement().scale(5));
+				Vec3 to = at.subtract(pos);
+				double dist = to.length();
+				if (reach(target.getBoundingBox(), pos) < STRIKE) {
+					strike(level, target);
+					begin(AWAY);
+					return true;
+				}
+				goal = to.scale(1 / Math.max(1e-4, dist));
+				// Missed (gone past, or too long at it), or about to fly into the knot it stands on
+				boolean past = goal.dot(heading) < 0 && dist > STRIKE + 1;
+				Vec3 nose = pos.add(heading.scale(2.6));
+				if (past || phaseTicks > 60 || dist > STRIKE + 2 && solid(level, nose.x, nose.y, nose.z)) {
+					begin(AWAY);
+					return true;
+				}
+				turn(goal, 0.17, -0.95, 0.8);
+				speed += (Math.min(1.4, 0.42 * pace() + 0.2) - speed) * 0.2;
+				fly(14.0F, 1.0F);
+			}
+			default -> {
+				// Pulling away: up and on, then it circles until it is ready again
+				setDiving(false);
+				goal = new Vec3(heading.x, 0, heading.z);
+				goal = (goal.lengthSqr() < 1e-4 ? new Vec3(1, 0, 0) : goal.normalize()).add(0, 0.75, 0).normalize();
+				turn(goal, TURN_HARD, -0.5, 0.75);
+				speed += (0.32 * pace() - speed) * 0.1;
+				fly(8.0F, 0.6F);
+				if (phaseTicks > 30) {
+					begin(CIRCLE);
+					rest = Math.max(1, Config.SEAM_FRAY_RAY_COOLDOWN) * 20 + this.getRandom().nextInt(60);
+					waypoint = null;
+					desired = null;
+				}
+			}
+		}
+		return true;
+	}
+
+	private void begin(int next) {
+		phase = next;
+		phaseTicks = 0;
+	}
+
+	/** Prey it may hunt: a visitor down in the Fray, alive, in survival, not fallen, and the world not at peace. */
+	private boolean fair(ServerLevel level, ServerPlayer p) {
+		return p.isAlive() && !p.isSpectator() && !p.isCreative() && p.level() == level && level.getDifficulty() != Difficulty.PEACEFUL
+				&& p.getY() < Config.SEAM_FRAY_TOP + 6 && p.distanceToSqr(this) < (SIGHT + 16) * (SIGHT + 16)
+				&& !com.extremedimensions.coop.FallenService.fallen(p);
+	}
+
+	/** The nearest fair prey it can see. */
+	private ServerPlayer pick(ServerLevel level, Vec3 pos) {
+		ServerPlayer best = null;
+		double bd = SIGHT * SIGHT;
+		for (ServerPlayer p : level.players()) {
+			double d = p.distanceToSqr(pos);
+			if (d < bd && fair(level, p) && this.hasLineOfSight(p)) {
+				bd = d;
+				best = p;
+			}
+		}
+		return best;
+	}
+
+	/** How far a point is from a box (0 inside it). */
+	private static double reach(AABB box, Vec3 p) {
+		double dx = Math.max(0, Math.max(box.minX - p.x, p.x - box.maxX));
+		double dy = Math.max(0, Math.max(box.minY - p.y, p.y - box.maxY));
+		double dz = Math.max(0, Math.max(box.minZ - p.z, p.z - box.maxZ));
+		return Math.sqrt(dx * dx + dy * dy + dz * dz);
+	}
+
+	/** The sting: a blow, poison, and a shove along the line of the dive. */
+	private void strike(ServerLevel level, ServerPlayer p) {
+		strikes++;
+		p.hurtServer(level, this.damageSources().mobAttack(this), (float) Math.max(0, Config.SEAM_FRAY_RAY_DAMAGE));
+		if (Config.SEAM_FRAY_RAY_POISON > 0) {
+			WorldFx.effect(p, MobEffects.POISON, Config.SEAM_FRAY_RAY_POISON, 0);
+		}
+		Vec3 along = new Vec3(heading.x, 0, heading.z);
+		along = along.lengthSqr() < 1e-4 ? Vec3.ZERO : along.normalize();
+		p.setDeltaMovement(p.getDeltaMovement().add(along.x * 0.55, 0.32, along.z * 0.55));
+		p.needsSync = true;
+		String dim = level.dimension().identifier().toString();
+		WorldFx.soundIn(dim, "minecraft:entity.phantom.bite", "hostile", p.getX(), p.getY() + 1, p.getZ(), 1.4F, 0.6F);
+		WorldFx.particleIn(dim, "minecraft:item_slime", p.getX(), p.getY() + 1, p.getZ(), 0.4, 0.5, 0.4, 0.05, 14);
+		com.extremedimensions.journal.Journal.unlock(p, com.extremedimensions.data.DataStore.get(p.getUUID()),
+				com.extremedimensions.journal.JournalEntry.FRAYED_RAY);
+		com.extremedimensions.journal.Bestiary.seen(p, com.extremedimensions.journal.Bestiary.Beast.FRAYED_RAY);
 	}
 
 	private Vec3 centre() {
@@ -239,19 +462,24 @@ public class VeilRay extends PathfinderMob {
 	/** A point in open sky somewhere over its stretch of the Seam, far enough away for a long glide. */
 	private Vec3 pickWaypoint(ServerLevel level, Vec3 pos) {
 		RandomSource r = this.getRandom();
+		boolean frayed = isFrayed();
 		for (int i = 0; i < 16; i++) {
 			double a = r.nextDouble() * Math.PI * 2, d = roam * (0.35 + 0.65 * r.nextDouble());
 			double y = Math.min(232, hy - 6 + r.nextDouble() * 16 + (i / 4) * 10);
+			if (frayed) {
+				// the Frayed keep to the dark under the islands
+				y = Mth.clamp(y, 12, Config.SEAM_FRAY_TOP - 3);
+			}
 			Vec3 w = new Vec3(hx + Math.cos(a) * d, y, hz + Math.sin(a) * d);
 			if (w.distanceToSqr(pos) > 26 * 26 && open(level, w, 6)) {
 				return w;
 			}
 		}
-		return pos.add(heading.x * 24, 16, heading.z * 24);
+		return pos.add(heading.x * 24, frayed ? 2 : 16, heading.z * 24);
 	}
 
-	/** Turns the heading towards a direction, no faster than the given rate. */
-	private void turn(Vec3 to, double rate) {
+	/** Turns the heading towards a direction, no faster than the given rate, its slope kept between lo and hi. */
+	private void turn(Vec3 to, double rate, double lo, double hi) {
 		double ang = Math.acos(Mth.clamp(heading.dot(to), -1, 1));
 		if (ang < 1e-4) {
 			heading = to;
@@ -260,9 +488,9 @@ public class VeilRay extends PathfinderMob {
 			Vec3 h = heading.scale(1 - t).add(to.scale(t));
 			heading = h.lengthSqr() < 1e-6 ? heading.add(0, 0.3, 0).normalize() : h.normalize();
 		}
-		// never a nose-dive or a stall
-		if (heading.y < -0.5 || heading.y > 0.62) {
-			double y = Mth.clamp(heading.y, -0.5, 0.62);
+		// never a nose-dive or a stall (but a dive at prey)
+		if (heading.y < lo || heading.y > hi) {
+			double y = Mth.clamp(heading.y, lo, hi);
 			double hor = Math.sqrt(1 - y * y);
 			double h = heading.horizontalDistance();
 			heading = h < 1e-4 ? new Vec3(hor, y, 0) : new Vec3(heading.x / h * hor, y, heading.z / h * hor);
@@ -272,7 +500,13 @@ public class VeilRay extends PathfinderMob {
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		boolean hurt = super.hurtServer(level, source, amount);
-		if (hurt) {
+		if (hurt && isFrayed()) {
+			// The Frayed do not flee: they turn on whoever struck them
+			if (source.getEntity() instanceof ServerPlayer p && phase == CIRCLE) {
+				prey = p.getUUID();
+				rest = Math.min(rest, 10);
+			}
+		} else if (hurt) {
 			this.flee = 80;
 			Entity from = source.getEntity();
 			Vec3 away = from == null ? heading : centre().subtract(from.position()).multiply(1, 0, 1);
@@ -282,6 +516,11 @@ public class VeilRay extends PathfinderMob {
 			this.desired = null;
 		}
 		return hurt;
+	}
+
+	@Override
+	protected net.minecraft.network.chat.Component getTypeName() {
+		return isFrayed() ? net.minecraft.network.chat.Component.translatable("entity.extremedimensions.frayed_ray") : super.getTypeName();
 	}
 
 	@Override
@@ -312,5 +551,11 @@ public class VeilRay extends PathfinderMob {
 	@Override
 	protected float getSoundVolume() {
 		return 2.5F;
+	}
+
+	@Override
+	public float getVoicePitch() {
+		// the Frayed sing lower
+		return super.getVoicePitch() * (isFrayed() ? 0.7F : 1.0F);
 	}
 }

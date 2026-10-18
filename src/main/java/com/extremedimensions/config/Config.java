@@ -240,6 +240,24 @@ public final class Config {
 	public static int SEAM_FRAY_THINNED = 2;
 	/** Chance a Thinned slain in the Fray leaves a Tether Fragment. */
 	public static double SEAM_FRAY_FRAGMENT_CHANCE = 0.12;
+	/** Frayed Rays about each visitor in the Fray: Veil Rays gone wrong down there, that dive at visitors (0 = none). */
+	public static int SEAM_FRAY_RAYS = 2;
+	/** How much faster a Frayed Ray flies than a Veil Ray over the islands. */
+	public static double SEAM_FRAY_RAY_SPEED = 1.6;
+	/** Damage a Frayed Ray's dive does when it strikes (2 = one heart; the world's difficulty scales it). */
+	public static double SEAM_FRAY_RAY_DAMAGE = 6.0;
+	/** Seconds of poison a Frayed Ray's strike leaves (0 = none). */
+	public static int SEAM_FRAY_RAY_POISON = 6;
+	/** Seconds a Frayed Ray circles between one dive and the next, at the least. */
+	public static int SEAM_FRAY_RAY_COOLDOWN = 7;
+	/** Seconds the dark of the Fray closes in on a visitor when it does (0 = never). */
+	public static int SEAM_FRAY_GLOOM = 5;
+	/** About how many seconds pass between the times the dark of the Fray closes in. */
+	public static int SEAM_FRAY_GLOOM_EVERY = 70;
+	/** Chance each second that the strand under a visitor's feet starts to give way (0 = never; it is woven back later). */
+	public static double SEAM_FRAY_UNRAVEL = 0.12;
+	/** On how many of a visitor's first visits the Seam says on arrival what to do there, and the Fray on the first descents (0 = never). */
+	public static int SEAM_BRIEFING = 3;
 	/**
 	 * Whether a Return Gate stands where visitors arrive in the Seam, its rift between its pylons and a bridge from
 	 * its island to the nearest one (1 = on, 0 = off: a bare island and the rift beside the landing).
@@ -702,7 +720,10 @@ public final class Config {
 			{"elder_speed", 0.1, 10}, {"elder_attack_speed", 0.1, 10}, {"elder_windup_speed", 0.2, 10},
 			{"elder_ultimate_seconds", 2, 120}, {"elder_arena_linger_seconds", -1, 86400},
 			{"seam_build_budget_ms", 1, 50}, {"seam_fly_range", 0, 128}, {"seam_fly_max", 1, 5000}, {"seam_fly_ticks", 10, 200},
-			{"seam_fly_from", 2, 64}, {"seam_damage", 0, 100}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
+			{"seam_fly_from", 2, 64}, {"seam_damage", 0, 100},
+			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},
+			{"seam_fray_ray_cooldown", 1, 120}, {"seam_fray_gloom", 0, 30}, {"seam_fray_gloom_every", 10, 3600}, {"seam_fray_unravel", 0, 1},
+			{"seam_briefing", 0, 100}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
 			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600}, {"coop_burden_relief_per_day", 0, 100}};
 
 	/** Brings a setting back within its bounds, if it has any. */

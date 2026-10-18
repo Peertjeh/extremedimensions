@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.27.0: The Frayed
+
+### Added
+- **The Seam says what it is for.** On a visitor's first visits a card comes up a moment after arrival: the aim in one
+  line (take what the Seam has swallowed, and get home before your thread runs out), then what matters, each in its
+  colour: your thread and what happens when it runs out, what to take and what it is good for, the way home, and the
+  Fray below. The first times down into the Fray it says what the Fray is in the same way. Coming up to a well, the
+  first few times, a line says what a well is for and how to come back up. A setting says on how many visits.
+- **Frayed Rays.** Down in the Fray the Veil Rays have gone wrong: they fly faster, their light gone sick green and
+  their eyes red (the same model and texture layout, painted over), and they hunt. One cries out, climbs over whoever
+  came down, folds its wings back into a dart and dives; its sting hurts, poisons and throws you along the line of the
+  dive. Then it pulls away, circles, and comes again. Struck, a Frayed Ray turns on whoever struck it. They sink back
+  into the dark when nobody is down there, and carry more silk than the rays above. Their own page in the journal and
+  in the bestiary.
+- **The Fray is deadlier.** Now and then the dark closes in on a visitor (a heartbeat in it), and every Frayed Ray near
+  comes at once. The strands between the knots give way under feet that stay: a strand creaks for a second, then a
+  stretch of it falls away (it is woven back a few minutes later, and at once when the world closes).
+- Settings for all of it: how many Frayed Rays, how fast, how hard they strike, how long they poison and how long they
+  circle between dives; how long and how often the dark closes in; how often strands give way.
+- Gametests: a Frayed Ray dives, strikes and poisons; a strand gives way and is woven back; an arrival's bridge lands
+  on a level way. The client test photographs both briefings, a Frayed Ray, its dive, and a calm ray beside a Frayed one.
+
+### Changed
+- An island the bridge from an arrival island reaches is given a level way in on that side, as for any other bridge (no
+  step at the bridge's end), when it is built after the arrival.
+- Coming down into the Fray now says that everything there is hunting.
+
 ## 2.26.0: Ground and Ruin
 
 ### Changed

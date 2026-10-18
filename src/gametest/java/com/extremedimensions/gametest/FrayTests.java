@@ -3,14 +3,21 @@ package com.extremedimensions.gametest;
 import static com.extremedimensions.gametest.CurseTests.check;
 
 import com.extremedimensions.config.Config;
+import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.seam.SeamArchitect;
 import com.extremedimensions.seam.SeamDepth;
+import com.extremedimensions.seam.SeamFauna;
+import com.extremedimensions.seam.SeamService;
+import com.extremedimensions.seam.VeilRay;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Difficulty;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.block.Blocks;
 
 /**
@@ -66,6 +73,98 @@ public class FrayTests {
 		} finally {
 			cells.remove("w@123,456");
 			SeamDepth.forget();
+		}
+		helper.succeed();
+	}
+
+	/**
+	 * A Frayed Ray hunts a visitor down in the Fray: it climbs over them, dives, strikes them and poisons them, and
+	 * pulls away to come again. Flown for real in the test's own sky (the test server has no Seam).
+	 */
+	@GameTest(maxTicks = 420)
+	public void aFrayedRayDivesAndPoisons(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Difficulty was = level.getDifficulty();
+		int cooldown = Config.SEAM_FRAY_RAY_COOLDOWN;
+		level.getServer().setDifficulty(Difficulty.NORMAL, true);
+		Config.SEAM_FRAY_RAY_COOLDOWN = 1;
+		BlockPos o = helper.absolutePos(BlockPos.ZERO);
+		ServerPlayer p = TestPlayers.survivor(helper, "test-prey");
+		p.teleportTo(o.getX() + 1.5, o.getY() + 1, o.getZ() + 1.5);
+		check(helper, p.getY() < Config.SEAM_FRAY_TOP, "the test's ground (%s) is above the Fray", p.getY());
+		VeilRay ray = ModEntities.VEIL_RAY.spawn(level, BlockPos.containing(p.getX() + 16, p.getY() + 9, p.getZ() + 4), EntitySpawnReason.EVENT);
+		check(helper, ray != null, "no ray could be made");
+		ray.setFrayed(true);
+		ray.anchor(p.getX(), p.getY() + 9, p.getZ(), 24);
+		ray.rouse();
+		SeamFauna.drive(ray);
+		check(helper, com.extremedimensions.journal.Bestiary.of(ray) == com.extremedimensions.journal.Bestiary.Beast.FRAYED_RAY,
+				"a Frayed Ray is not in the bestiary as one");
+		float full = p.getHealth();
+		boolean[] seen = new boolean[3];
+		for (int t = 1; t <= 400; t++) {
+			helper.runAfterDelay(t, () -> {
+				p.teleportTo(o.getX() + 1.5, o.getY() + 1, o.getZ() + 1.5);
+				seen[0] |= p.hasEffect(MobEffects.POISON);
+				seen[1] |= p.getHealth() < full;
+				seen[2] |= ray.isDiving();
+			});
+		}
+		helper.runAfterDelay(405, () -> {
+			level.getServer().setDifficulty(was, true);
+			Config.SEAM_FRAY_RAY_COOLDOWN = cooldown;
+			int strikes = ray.strikes();
+			ray.discard();
+			check(helper, seen[2], "the Frayed Ray never dived");
+			check(helper, strikes > 0, "the Frayed Ray never struck its prey");
+			check(helper, seen[0] && seen[1], "the strike did not hurt (%s) and poison (%s)", seen[1], seen[0]);
+			helper.succeed();
+		});
+	}
+
+	/** A strand gives way under a visitor (after it creaks), and is woven back: nothing stays holed for good. */
+	@GameTest
+	public void aStrandGivesWayAndIsWovenBack(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos at = helper.absolutePos(new BlockPos(2, 3, 2));
+		for (int dx = -1; dx <= 1; dx++) {
+			for (int dz = -1; dz <= 1; dz++) {
+				level.setBlock(at.offset(dx, 0, dz), Blocks.WHITE_WOOL.defaultBlockState(), 2);
+				level.setBlock(at.offset(dx, -1, dz), Blocks.PURPLE_WOOL.defaultBlockState(), 2);
+			}
+		}
+		SeamDepth.reweave(null);
+		SeamDepth.giveWayAt(at, level.getGameTime() + 2);
+		SeamDepth.tickWorld(level);
+		check(helper, level.getBlockState(at).is(Blocks.WHITE_WOOL), "the strand gave way before it creaked");
+		helper.runAfterDelay(4, () -> {
+			SeamDepth.tickWorld(level);
+			check(helper, level.getBlockState(at).isAir() && level.getBlockState(at.below()).isAir(), "the strand did not give way under the feet");
+			check(helper, SeamDepth.gaps() >= 2, "what gave way is not remembered to be woven back (%s)", SeamDepth.gaps());
+			SeamDepth.reweave(level);
+			check(helper, level.getBlockState(at).is(Blocks.WHITE_WOOL) && level.getBlockState(at.below()).is(Blocks.PURPLE_WOOL),
+					"the strand was not woven back as it was");
+			check(helper, SeamDepth.gaps() == 0, "gaps are left after weaving back");
+			helper.succeed();
+		});
+	}
+
+	/** An island whose cell an arrival's bridge reaches is given a level way in on the side the bridge comes in on. */
+	@GameTest
+	public void anArrivalBridgeLandsOnALevelWay(GameTestHelper helper) {
+		java.util.Set<String> cells = com.extremedimensions.data.DataStore.seamCells();
+		String east = "g@9000,9000=" + net.minecraft.core.Direction.EAST.get2DDataValue() + ",77,78,14";
+		String north = "g@9100,9000=" + net.minecraft.core.Direction.NORTH.get2DDataValue() + ",77,78,12";
+		cells.add(east);
+		cells.add(north);
+		try {
+			int mask = SeamService.inbound(77, 78);
+			// looking east, its bridge comes in on the west; looking north, on the south
+			check(helper, mask == (2 | 4), "the way in is on sides %s", mask);
+			check(helper, SeamService.inbound(78, 77) == 0, "a cell no bridge reaches has a way in (%s)", SeamService.inbound(78, 77));
+		} finally {
+			cells.remove(east);
+			cells.remove(north);
 		}
 		helper.succeed();
 	}

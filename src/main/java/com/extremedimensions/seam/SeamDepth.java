@@ -32,8 +32,10 @@ import net.minecraft.world.level.block.state.BlockState;
  * islands have a well at their edge, a ring of stone over the drop: jump in and the Seam lets you down gently onto
  * the knot below; crouch on the knot's glowing pad and its updraft carries you back up.
  *
- * <p>Time runs out faster in the Fray, the Thinned that walk its knots hunt from the start, and its snarls (barrels
- * of what the Seam has swallowed) are richer than anything above.
+ * <p>Time runs out faster in the Fray, the Thinned that walk its knots hunt from the start, the Frayed Rays dive at
+ * whoever comes down, and its snarls (barrels of what the Seam has swallowed) are richer than anything above. Now and
+ * then the dark closes in, and the Frayed come with it; and the strands between the knots give way under a visitor who
+ * stands still on them (they are woven back a few minutes later).
  */
 public final class SeamDepth {
 	private SeamDepth() {}
@@ -308,20 +310,70 @@ public final class SeamDepth {
 	// ------------------------------------------------------------------ in the Fray
 
 	private static List<Well> wells;
+	private static List<int[]> knots;
 	private static final Set<UUID> SEEN = new HashSet<>();
 	private static final Map<UUID, Integer> CROUCH = new HashMap<>();
 	private static final Map<UUID, Well> RISING = new HashMap<>();
+	/** When (game time) the dark next closes in on each visitor in the Fray, and when each was last told of a well. */
+	private static final Map<UUID, Long> GLOOM = new HashMap<>(), HINTED = new HashMap<>();
+	/** Strands giving way: where, and when (game time) they go. */
+	private static final Map<Long, Long> GIVING = new HashMap<>();
+	/** Strands that gave way: where, what was there, and when (game time) it is woven back. */
+	private static final List<Object[]> GONE = new ArrayList<>();
+	/** Ticks a strand creaks before it gives way, and ticks before what gave way is woven back. */
+	static final int GIVE_TICKS = 20, REWEAVE_TICKS = 20 * 180;
 
 	public static void clear() {
 		wells = null;
+		knots = null;
 		SEEN.clear();
 		CROUCH.clear();
 		RISING.clear();
+		GLOOM.clear();
+		HINTED.clear();
+		GIVING.clear();
+		GONE.clear();
 	}
 
 	/** New wells were planned: read them again. */
 	public static void forget() {
 		wells = null;
+		knots = null;
+	}
+
+	/** The knots of the Fray, as the world data remembers them: (x, y, z) of each one's surface. */
+	public static List<int[]> knots() {
+		if (knots == null) {
+			List<int[]> out = new ArrayList<>();
+			for (String key : DataStore.seamCells()) {
+				if (key.startsWith("k@")) {
+					String[] v = key.substring(2).split(",");
+					try {
+						out.add(new int[] {Integer.parseInt(v[0]), Integer.parseInt(v[1]), Integer.parseInt(v[2])});
+					} catch (RuntimeException e) {
+						// not a knot
+					}
+				}
+			}
+			knots = out;
+		}
+		return knots;
+	}
+
+	/** Whether a block is part of a knot (not of a strand between knots). */
+	static boolean onKnot(BlockPos at) {
+		for (int[] k : knots()) {
+			double dx = at.getX() - k[0], dz = at.getZ() - k[2];
+			if (dx * dx + dz * dz <= 9.5 * 9.5 && at.getY() <= k[1] + 1 && at.getY() >= k[1] - 8) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** The thread strands are woven of. */
+	static boolean thread(BlockState s) {
+		return s.is(Blocks.WHITE_WOOL) || s.is(Blocks.LIGHT_GRAY_WOOL) || s.is(Blocks.PURPLE_WOOL) || s.is(Blocks.MAGENTA_WOOL);
 	}
 
 	public static List<Well> wells() {
@@ -376,8 +428,16 @@ public final class SeamDepth {
 			rise(p, rising);
 			return;
 		}
+		long now = p.level().getGameTime();
 		for (Well w : wells()) {
 			double dx = p.getX() - (w.x() + 0.5), dz = p.getZ() - (w.z() + 0.5);
+			// Come up to a well the first few times: what it is for
+			if (dx * dx + dz * dz < 8 * 8 && Math.abs(p.getY() - w.top()) < 4 && d.wellHints < Config.SEAM_BRIEFING
+					&& now - HINTED.getOrDefault(id, -100_000L) > 20 * 120) {
+				HINTED.put(id, now);
+				d.wellHints++;
+				p.sendSystemMessage(Component.translatable("gui.extremedimensions.fray.well_hint").withStyle(ChatFormatting.LIGHT_PURPLE), true);
+			}
 			if (dx * dx + dz * dz > 16) {
 				continue;
 			}
@@ -414,6 +474,17 @@ public final class SeamDepth {
 			Advancements.grant(p, Advancements.FRAY_ENTERED);
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.fray.entered").withStyle(ChatFormatting.DARK_PURPLE));
 			WorldFx.soundSelf(p, "extremedimensions:seam_ambient", 0.8f, 0.6f);
+			if (d.frayDescents <= Config.SEAM_BRIEFING) {
+				// The first few descents: what the Fray is, on the screen
+				WorldFx.fx(p, com.extremedimensions.network.Fx.FRAY_BRIEF, (int) Math.round(Math.max(1, Config.SEAM_FRAY_DRAIN) * 10));
+			}
+			GLOOM.put(id, now + nextGloom(p));
+		}
+		if (inFray(p.getY()) && !p.isCreative() && !p.isSpectator()) {
+			gloom(p, now);
+			if (tick % 20 == 0) {
+				fraying(p, now);
+			}
 		}
 		if (inFray(p.getY()) && tick % 120 == 0) {
 			WorldFx.particles(p, "extremedimensions:void_mote", 6.0, 3.0, 0.0, 10);
@@ -421,6 +492,131 @@ public final class SeamDepth {
 		if (!inFray(p.getY()) && p.getY() > Config.SEAM_FRAY_TOP + 20) {
 			SEEN.remove(id);
 		}
+	}
+
+	private static long nextGloom(ServerPlayer p) {
+		int every = Math.max(10, Config.SEAM_FRAY_GLOOM_EVERY) * 20;
+		return every / 2 + p.getRandom().nextInt(every);
+	}
+
+	/** Now and then the dark of the Fray closes in on a visitor, a heartbeat in it, and the Frayed come out of it. */
+	private static void gloom(ServerPlayer p, long now) {
+		Long at = GLOOM.get(p.getUUID());
+		if (at == null) {
+			GLOOM.put(p.getUUID(), now + nextGloom(p));
+			return;
+		}
+		if (now < at) {
+			return;
+		}
+		GLOOM.put(p.getUUID(), now + nextGloom(p));
+		if (Config.SEAM_FRAY_GLOOM <= 0) {
+			return;
+		}
+		WorldFx.effect(p, MobEffects.DARKNESS, Config.SEAM_FRAY_GLOOM + 1, 0);
+		WorldFx.soundSelf(p, "minecraft:entity.warden.heartbeat", 1.0f, 0.7f);
+		WorldFx.soundSelf(p, "extremedimensions:lurker_whisper", 0.7f, 0.6f);
+		SeamFauna.rouse(p);
+	}
+
+	/**
+	 * Each second, for a visitor on a strand (not on a knot): it may begin to give way under them. It creaks for a
+	 * second, then that stretch of thread falls away; whoever is still on it falls with it.
+	 */
+	private static void fraying(ServerPlayer p, long now) {
+		if (!p.onGround() || Config.SEAM_FRAY_UNRAVEL <= 0 || p.getRandom().nextDouble() >= Config.SEAM_FRAY_UNRAVEL) {
+			return;
+		}
+		BlockPos under = BlockPos.containing(p.getX(), p.getY() - 0.2, p.getZ());
+		if (!thread(p.level().getBlockState(under)) || onKnot(under) || GIVING.containsKey(under.asLong())) {
+			return;
+		}
+		GIVING.put(under.asLong(), now + GIVE_TICKS);
+		WorldFx.sound(p, "minecraft:block.wool.break", 1.2f, 0.5f);
+	}
+
+	/** Each tick, for the Seam: strands creak and give way, and what gave way is woven back when nobody is on it. */
+	public static void tickWorld(net.minecraft.server.level.ServerLevel level) {
+		if (GIVING.isEmpty() && GONE.isEmpty()) {
+			return;
+		}
+		long now = level.getGameTime();
+		String dim = level.dimension().identifier().toString();
+		java.util.Iterator<Map.Entry<Long, Long>> it = GIVING.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry<Long, Long> e = it.next();
+			BlockPos at = BlockPos.of(e.getKey());
+			if (now % 5 == 0) {
+				WorldFx.particleIn(dim, "extremedimensions:void_mote", at.getX() + 0.5, at.getY() + 1, at.getZ() + 0.5, 0.8, 0.1, 0.8, 0.0, 4);
+			}
+			if (now < e.getValue()) {
+				continue;
+			}
+			it.remove();
+			giveWay(level, at);
+		}
+		java.util.Iterator<Object[]> back = GONE.iterator();
+		while (back.hasNext()) {
+			Object[] g = back.next();
+			BlockPos at = (BlockPos) g[0];
+			if (now < (Long) g[2]) {
+				continue;
+			}
+			if (level.getNearestPlayer(at.getX() + 0.5, at.getY() + 0.5, at.getZ() + 0.5, 2.5, false) != null) {
+				continue; // someone stands in the gap: it waits
+			}
+			if (level.isLoaded(at) && level.getBlockState(at).isAir()) {
+				level.setBlock(at, (BlockState) g[1], 2);
+			}
+			back.remove();
+		}
+	}
+
+	/** A stretch of strand falls away: the thread under the feet, the thread under that, and a little round it. */
+	private static void giveWay(net.minecraft.server.level.ServerLevel level, BlockPos at) {
+		List<BlockPos> patch = new ArrayList<>();
+		patch.add(at);
+		patch.add(at.below());
+		for (int dx = -1; dx <= 1; dx++) {
+			for (int dz = -1; dz <= 1; dz++) {
+				if ((dx != 0 || dz != 0) && level.getRandom().nextInt(3) > 0) {
+					patch.add(at.offset(dx, 0, dz));
+				}
+			}
+		}
+		long back = level.getGameTime() + REWEAVE_TICKS;
+		for (BlockPos b : patch) {
+			BlockState s = level.getBlockState(b);
+			if (!thread(s) || onKnot(b)) {
+				continue;
+			}
+			GONE.add(new Object[] {b.immutable(), s, back});
+			level.destroyBlock(b, false);
+		}
+	}
+
+	/** Weaves back at once every strand that gave way (before the world is saved, so no hole stays for good). */
+	public static void reweave(net.minecraft.server.level.ServerLevel level) {
+		if (level != null) {
+			for (Object[] g : GONE) {
+				BlockPos at = (BlockPos) g[0];
+				if (level.isLoaded(at) && level.getBlockState(at).isAir()) {
+					level.setBlock(at, (BlockState) g[1], 2);
+				}
+			}
+		}
+		GONE.clear();
+		GIVING.clear();
+	}
+
+	/** How many stretches of strand are waiting to be woven back (for the tests). */
+	public static int gaps() {
+		return GONE.size();
+	}
+
+	/** Starts a strand giving way at a spot (for the tests). */
+	public static void giveWayAt(BlockPos at, long when) {
+		GIVING.put(at.asLong(), when);
 	}
 
 	/** Carried up the shaft by the updraft, and set down on the walk out to the island. */

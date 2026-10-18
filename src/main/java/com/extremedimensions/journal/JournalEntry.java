@@ -42,7 +42,8 @@ public enum JournalEntry {
 	LAST_WEAVER("last_weaver"),
 	BARTER("barter"),
 	RAID("raid"),
-	FRAY("fray");
+	FRAY("fray"),
+	FRAYED_RAY("frayed_ray");
 
 	public final String id;
 

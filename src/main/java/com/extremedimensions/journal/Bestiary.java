@@ -26,7 +26,7 @@ public final class Bestiary {
 
 	public enum Beast {
 		LURKER("lurker", 3), HOLLOWLING("hollowling", 3), KEEPER("keeper", 1), STARVED_ONE("starved_one", 1),
-		THINNED("thinned", 3), VEIL_RAY("veil_ray", 3), MATRIARCH("matriarch", 1), FERRYMAN("ferryman", 1), LAST_WEAVER("weaver", 1);
+		THINNED("thinned", 3), VEIL_RAY("veil_ray", 3), FRAYED_RAY("frayed_ray", 3), MATRIARCH("matriarch", 1), FERRYMAN("ferryman", 1), LAST_WEAVER("weaver", 1);
 
 		public final String id;
 		/** Slain this many times, the journal notes how to face it. */
@@ -80,8 +80,8 @@ public final class Bestiary {
 		if (e instanceof Thinned) {
 			return Beast.THINNED;
 		}
-		if (e instanceof VeilRay) {
-			return Beast.VEIL_RAY;
+		if (e instanceof VeilRay ray) {
+			return ray.isFrayed() ? Beast.FRAYED_RAY : Beast.VEIL_RAY;
 		}
 		if (e instanceof com.extremedimensions.elder.Matriarch) {
 			return Beast.MATRIARCH;

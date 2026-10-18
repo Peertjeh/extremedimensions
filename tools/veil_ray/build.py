@@ -338,6 +338,46 @@ for _k in range(3):
         MATERIALS[f"r_wing{_k}_{_s}"] = wing(_k, _s)
 
 
+# ----------------------------------------------------------------------------- the Frayed
+
+def _hsv(c):
+    import colorsys
+    return colorsys.rgb_to_hsv(c[0] / 255, c[1] / 255, c[2] / 255)
+
+
+def _rgb(h, s, v):
+    import colorsys
+    r, g, b = colorsys.hsv_to_rgb(h % 1.0, max(0.0, min(1.0, s)), max(0.0, min(1.0, v)))
+    return (round(r * 255), round(g * 255), round(b * 255))
+
+
+def _venom(c, eye):
+    """A light of the ray's, turned: the eyes to embers, every other light to a sick green."""
+    h, s, v = _hsv(c)
+    if eye:
+        return _rgb(0.99, 0.6 + 0.4 * s, v)
+    return _rgb(0.24, 0.15 + 0.9 * s, v * 0.95)
+
+
+def _bruise(c):
+    """Its skin, darker and drawn toward plum."""
+    h, s, v = _hsv(c)
+    return _rgb(h + 0.05 if h > 0.5 else h, s * 1.08, v * 0.78)
+
+
+def frayed(f, eye=False):
+    """The same material, painted as one of the Frayed: every pixel where it was (so the texture maps onto the
+    model exactly as the calm ray's does), only its colours turned."""
+    def paint(ctx):
+        b, g = f(ctx)
+        if b[3] == 0:
+            return b, g
+        if g is not None:
+            return _venom(b[:3], eye) + (b[3],), _venom(g[:3], eye) + (g[3],)
+        return _bruise(b[:3]) + (b[3],), None
+    return paint
+
+
 if __name__ == "__main__":
     preview = sys.argv[1] if len(sys.argv) > 1 else None
     elderlib.MATS.update(MATERIALS)
@@ -346,6 +386,14 @@ if __name__ == "__main__":
     img, glow = elderlib.paint(model, uv)
     img.save(os.path.join(TEX, "veil_ray.png"))
     glow.save(os.path.join(TEX, "veil_ray_glow.png"))
+    # The Frayed: the same model and the same layout, painted again with its colours turned
+    elderlib.MATS.update({k: frayed(f, eye=(k == "r_eye")) for k, f in MATERIALS.items()})
+    img_f, glow_f = elderlib.paint(model, uv)
+    img_f.save(os.path.join(TEX, "veil_ray_frayed.png"))
+    glow_f.save(os.path.join(TEX, "veil_ray_frayed_glow.png"))
+    # (the layouts must cover the very same pixels, or the Frayed would not sit on the model)
+    assert [p[3] > 0 for p in img.get_flattened_data()] == [p[3] > 0 for p in img_f.get_flattened_data()]
+    assert [p[3] > 0 for p in glow.get_flattened_data()] == [p[3] > 0 for p in glow_f.get_flattened_data()]
     elderlib.write_java(model, uv, "com.extremedimensions.client.entity", os.path.join(JAVA, "VeilRayGeometry.java"))
     if preview:
         elderlib.export_preview(model, uv, os.path.join(preview, "veil_ray.json"))
