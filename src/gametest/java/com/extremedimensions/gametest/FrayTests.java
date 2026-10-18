@@ -88,9 +88,23 @@ public class FrayTests {
 		int cooldown = Config.SEAM_FRAY_RAY_COOLDOWN;
 		level.getServer().setDifficulty(Difficulty.NORMAL, true);
 		Config.SEAM_FRAY_RAY_COOLDOWN = 1;
-		BlockPos o = helper.absolutePos(BlockPos.ZERO);
+		// Up in open sky over the test's own space (which is walled in, so nothing outside could see in): a small
+		// platform for the prey to stand on
+		BlockPos o = helper.absolutePos(BlockPos.ZERO).above(24);
+		for (int dx = -2; dx <= 2; dx++) {
+			for (int dz = -2; dz <= 2; dz++) {
+				level.setBlock(o.offset(dx, 0, dz), Blocks.STONE.defaultBlockState(), 2);
+			}
+		}
+		Runnable clear = () -> {
+			for (int dx = -2; dx <= 2; dx++) {
+				for (int dz = -2; dz <= 2; dz++) {
+					level.setBlock(o.offset(dx, 0, dz), Blocks.AIR.defaultBlockState(), 2);
+				}
+			}
+		};
 		ServerPlayer p = TestPlayers.survivor(helper, "test-prey");
-		p.teleportTo(o.getX() + 1.5, o.getY() + 1, o.getZ() + 1.5);
+		p.teleportTo(o.getX() + 0.5, o.getY() + 1, o.getZ() + 0.5);
 		check(helper, p.getY() < Config.SEAM_FRAY_TOP, "the test's ground (%s) is above the Fray", p.getY());
 		VeilRay ray = ModEntities.VEIL_RAY.spawn(level, BlockPos.containing(p.getX() + 16, p.getY() + 9, p.getZ() + 4), EntitySpawnReason.EVENT);
 		check(helper, ray != null, "no ray could be made");
@@ -108,7 +122,7 @@ public class FrayTests {
 		for (int t = 1; t <= 400; t++) {
 			int tick = t;
 			helper.runAfterDelay(t, () -> {
-				p.teleportTo(o.getX() + 1.5, o.getY() + 1, o.getZ() + 1.5);
+				p.teleportTo(o.getX() + 0.5, o.getY() + 1, o.getZ() + 0.5);
 				seen[0] |= p.hasEffect(MobEffects.POISON);
 				seen[1] |= p.getHealth() < full;
 				seen[2] |= ray.isDiving();
@@ -123,6 +137,7 @@ public class FrayTests {
 			int strikes = ray.strikes();
 			String state = ray.huntState(p);
 			ray.discard();
+			clear.run();
 			check(helper, seen[2], "the Frayed Ray never dived (at tick 30: %s; at the end: %s)", early[0], state);
 			check(helper, strikes > 0, "the Frayed Ray never struck its prey");
 			check(helper, seen[0] && seen[1], "the strike did not hurt (%s) and poison (%s) (%s)", seen[1], seen[0], state);

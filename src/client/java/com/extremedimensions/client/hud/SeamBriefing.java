@@ -87,6 +87,15 @@ public class SeamBriefing implements HudElement {
 		int ceiling = top ? 5 + 36 + (ClientState.trial.isEmpty() ? 0 : 12) + 4 : 6;
 		int y = Math.max(ceiling, Math.min(sh / 2 + 14, floor - h));
 		int x = (sw - w) / 2;
+		// On a screen too short for it even so, it is drawn smaller, hanging from under the timer
+		float fit = Math.max(0.6F, Math.min(1.0F, (sh - 4 - ceiling) / (float) h));
+		g.pose().pushMatrix();
+		if (fit < 1.0F) {
+			y = ceiling;
+			g.pose().translate(sw / 2.0F, ceiling);
+			g.pose().scale(fit, fit);
+			g.pose().translate(-sw / 2.0F, -ceiling);
+		}
 		Ui.panel(g, x, y, w, h, accent, alpha * 0.96);
 		int cx = sw / 2;
 		Ui.heading(g, font, head, cx, y + 7, accent, alpha);
@@ -113,5 +122,6 @@ public class SeamBriefing implements HudElement {
 		}
 		String foot = Ui.tr("gui.extremedimensions.brief.footer");
 		Ui.centered(g, font, Ui.ellipsize(font, foot, w - 16), cx, y + h - 11, Ui.MUTED, alpha * 0.9);
+		g.pose().popMatrix();
 	}
 }
