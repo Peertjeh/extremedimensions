@@ -331,10 +331,13 @@ public class BossTests {
 			Config.ELDER_ARENA = 0;
 			Config.WEAVER_ULTIMATE_RINGS = 2;
 			Config.ELDER_ULTIMATE_SECONDS = 6;
+			// Its own Weaver, the one this summons: a test beside it may raise one in the same tick
+			java.util.List<com.extremedimensions.elder.Weaver> had = helper.getLevel().getEntitiesOfClass(com.extremedimensions.elder.Weaver.class,
+					p.getBoundingBox().inflate(64));
 			boolean came = WeaverService.summon(p, at.offset(12, 0, 0));
 			Config.ELDER_ARENA = arena;
-			weaver[0] = helper.getLevel().getEntitiesOfClass(com.extremedimensions.elder.Weaver.class, p.getBoundingBox().inflate(48))
-					.stream().findFirst().orElse(null);
+			weaver[0] = helper.getLevel().getEntitiesOfClass(com.extremedimensions.elder.Weaver.class, p.getBoundingBox().inflate(64))
+					.stream().filter(w -> !had.contains(w)).findFirst().orElse(null);
 			if (!came || weaver[0] == null) {
 				restore.run();
 			}

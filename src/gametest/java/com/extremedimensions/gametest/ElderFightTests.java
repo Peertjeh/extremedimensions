@@ -319,9 +319,12 @@ public class ElderFightTests {
 			Config.ELDER_ARENA = 0;
 			Config.WEAVER_LANCE_RETURN = 0;
 			BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+			// Its own Weaver, the one this summons: a test beside it may raise one in the same tick
+			java.util.List<Weaver> had = helper.getLevel().getEntitiesOfClass(Weaver.class, p.getBoundingBox().inflate(64));
 			boolean came = WeaverService.summon(p, at.offset(12, 0, 0));
 			Config.ELDER_ARENA = arena;
-			weaver[0] = helper.getLevel().getEntitiesOfClass(Weaver.class, p.getBoundingBox().inflate(48)).stream().findFirst().orElse(null);
+			weaver[0] = helper.getLevel().getEntitiesOfClass(Weaver.class, p.getBoundingBox().inflate(64)).stream()
+					.filter(w -> !had.contains(w)).findFirst().orElse(null);
 			if (!came || weaver[0] == null) {
 				restore.run();
 			}
