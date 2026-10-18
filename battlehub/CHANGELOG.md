@@ -6,6 +6,8 @@
 * The lobby leaderboards were hard to read at night: like every text display they took the light of the world,
   so after sunset they turned dark. They are now always fully lit, on a slightly darker backing for contrast
   against the night sky. The name tags of the lobby characters and the training dummy are fully lit too.
+* The lobby characters can be clicked right after joining: missing click boxes are made again within half a
+  second instead of at the next five-second sweep.
 
 ## 1.19.0
 

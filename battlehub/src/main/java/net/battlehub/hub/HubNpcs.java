@@ -83,7 +83,9 @@ public final class HubNpcs {
 		}
 		boolean active = hub != null && HubWorld.ready() && !NPCS.isEmpty();
 		List<HubViewers.Viewer> fresh = VIEWERS.update(server, hub, active, HubNpcs::remove);
-		if (hub != null && ticks % 100 == 0) {
+		// strays every five seconds; missing click boxes (a new viewer, chunks that were not loaded yet) every half second
+		boolean missing = active && !VIEWERS.isEmpty() && hitboxes() < NPCS.size();
+		if (hub != null && (ticks % 100 == 0 || missing && ticks % 10 == 0)) {
 			sweep(hub, active);
 		}
 		if (!active || VIEWERS.isEmpty()) {
