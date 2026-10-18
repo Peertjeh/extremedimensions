@@ -648,7 +648,7 @@ public final class Config {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	/** Layout version of the config file; files from before a version are brought up to date on loading. */
-	private static final int VERSION = 2;
+	private static final int VERSION = 3;
 
 	/**
 	 * Defaults that changed, by the version that changed them: {key, old default, new default}. A file still holding
@@ -659,6 +659,12 @@ public final class Config {
 		{},
 		// 2.7.0: curses take longer to atone for (balance model, option C)
 		{{"atone_base", "100", "120"}, {"atone_per_stack", "50", "60"}},
+		// 2.30.0 and 2.31.0: the Elders' arenas twelve times their old size (and slower to build and come down), their
+		// blows and spells reaching further; the Seam's blocks seen flying from further off
+		{{"elder_arena_size", "1", "12"}, {"elder_arena_size", "4", "12"}, {"elder_arena_build_seconds", "6", "40"},
+				{"elder_arena_build_seconds", "18", "40"}, {"elder_arena_dissolve_seconds", "5", "25"},
+				{"elder_arena_dissolve_seconds", "10", "25"}, {"elder_fighters_range", "96", "200"}, {"elder_reach", "2", "3"},
+				{"elder_spell_range", "120", "250"}, {"seam_fly_range", "48", "96"}},
 	};
 
 	/**
@@ -756,11 +762,26 @@ public final class Config {
 		}
 		for (int v = from + 1; v <= VERSION && v < MIGRATIONS.length; v++) {
 			for (String[] m : MIGRATIONS[v]) {
-				if (json.has(m[0]) && json.get(m[0]).getAsString().equals(m[1])) {
-					json.addProperty(m[0], Integer.parseInt(m[2]));
+				// By value, not by text: a file holds 1.0 where the old default reads 1
+				if (json.has(m[0]) && held(json, m[0]) == Double.parseDouble(m[1])) {
+					double now = Double.parseDouble(m[2]);
+					if (now == Math.rint(now)) {
+						json.addProperty(m[0], (long) now);
+					} else {
+						json.addProperty(m[0], now);
+					}
 					ExtremeDimensions.LOGGER.info("Config: {} follows its new default {} (was the old default {})", m[0], m[2], m[1]);
 				}
 			}
+		}
+	}
+
+	/** A value a file holds, as a number (NaN if it is none). */
+	private static double held(JsonObject json, String key) {
+		try {
+			return json.get(key).getAsDouble();
+		} catch (Exception e) {
+			return Double.NaN;
 		}
 	}
 

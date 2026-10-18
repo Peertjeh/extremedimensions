@@ -64,10 +64,44 @@ public class SettingsTests {
 		check(helper, old.get("atone_base").getAsInt() == 120, "an old default was not brought up to the new one (%s)", old.get("atone_base"));
 		check(helper, old.get("atone_per_stack").getAsInt() == 75, "a chosen value was overwritten (%s)", old.get("atone_per_stack"));
 		JsonObject current = new JsonObject();
-		current.addProperty("config_version", 2);
+		current.addProperty("config_version", 3);
 		current.addProperty("atone_base", 100);
+		current.addProperty("elder_arena_size", 1.0);
 		Config.migrate(current);
 		check(helper, current.get("atone_base").getAsInt() == 100, "a value chosen in an up-to-date file was changed (%s)", current.get("atone_base"));
+		check(helper, current.get("elder_arena_size").getAsDouble() == 1.0, "an arena size chosen in an up-to-date file was changed (%s)",
+				current.get("elder_arena_size"));
+		helper.succeed();
+	}
+
+	/** A file from 2.29 or 2.30 (as the game wrote it: 1.0, not 1) gets 2.31's arenas; sizes someone chose stay. */
+	@GameTest
+	public void olderConfigsGetTheGreatArenas(GameTestHelper helper) {
+		JsonObject from229 = new JsonObject();
+		from229.addProperty("config_version", 2);
+		from229.addProperty("elder_arena_size", 1.0);
+		from229.addProperty("elder_arena_build_seconds", 6.0);
+		from229.addProperty("seam_fly_range", 48);
+		Config.migrate(from229);
+		check(helper, from229.get("elder_arena_size").getAsDouble() == 12, "2.29's arena size did not follow the new default (%s)", from229.get("elder_arena_size"));
+		check(helper, from229.get("elder_arena_build_seconds").getAsDouble() == 40, "2.29's build time did not follow the new default (%s)",
+				from229.get("elder_arena_build_seconds"));
+		check(helper, from229.get("seam_fly_range").getAsInt() == 96, "2.29's Seam flight range did not follow the new default (%s)", from229.get("seam_fly_range"));
+		JsonObject from230 = new JsonObject();
+		from230.addProperty("config_version", 2);
+		from230.addProperty("elder_arena_size", 4.0);
+		from230.addProperty("elder_reach", 2.0);
+		from230.addProperty("elder_fighters_range", 96);
+		Config.migrate(from230);
+		check(helper, from230.get("elder_arena_size").getAsDouble() == 12, "2.30's arena size did not follow the new default (%s)", from230.get("elder_arena_size"));
+		check(helper, from230.get("elder_reach").getAsDouble() == 3, "2.30's reach did not follow the new default (%s)", from230.get("elder_reach"));
+		check(helper, from230.get("elder_fighters_range").getAsInt() == 200, "2.30's fighters range did not follow the new default (%s)",
+				from230.get("elder_fighters_range"));
+		JsonObject chosen = new JsonObject();
+		chosen.addProperty("config_version", 2);
+		chosen.addProperty("elder_arena_size", 2.5);
+		Config.migrate(chosen);
+		check(helper, chosen.get("elder_arena_size").getAsDouble() == 2.5, "a chosen arena size was overwritten (%s)", chosen.get("elder_arena_size"));
 		helper.succeed();
 	}
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.31.1
+
+### Fixed
+- **A world from before 2.31 kept its old, small arenas.** The settings file keeps every value, so a world that already
+  had one went on using the old defaults (an arena of size 1 or 4). Files still holding the old defaults now follow the
+  new ones: the arena size (12), its time to build (40 seconds) and to come apart (25), how far the Elders' blows
+  (three times) and spells (250 blocks) reach, who counts as fighting them (200 blocks), and how far off the Seam's
+  blocks are seen flying (96). A value someone chose stays as it is.
+
 ## 2.31.0: The Elders' Domains
 
 ### Changed
