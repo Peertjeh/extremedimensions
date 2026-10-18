@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.20.0
+
+### Changed
+* **A game with one real player and bots pays nothing**: no coins, no XP, no quest, season pass or achievement
+  progress. A tournament won against bots only pays no prize money and counts no (weekly) tournament win.
+  `bots.rewardFactor` now only applies when other people play too.
+
+### Added
+* **Bots off, the easy way**: joining a queue bots may fill shows a chat line with a **[No bots]** button; while
+  waiting the hotbar has a switch next to the leave item (name tag: on, grey dye: off); and `/bots`,
+  `/bots on`, `/bots off`. The choice is remembered. With bots off nobody fills in for you, bots already
+  waiting with you step out, and a party lobby or 1v2/1v3 queue with someone who said no gets no bots.
+
 ## 1.19.1
 
 ### Fixed

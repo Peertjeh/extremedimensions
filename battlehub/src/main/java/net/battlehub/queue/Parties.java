@@ -121,6 +121,7 @@ public final class Parties {
 			}
 		}
 		Msg.sound(p, SoundEvents.NOTE_BLOCK_PLING, 0.6f, 1.2f);
+		if (!net.battlehub.bot.Bots.isBot(p)) net.battlehub.bot.Bots.hint(p);
 		Menus.refreshAll(server);
 		// Friends in the leader's party come along
 		for (ServerPlayer f : net.battlehub.social.Groups.followers(p)) {

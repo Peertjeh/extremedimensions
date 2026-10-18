@@ -49,6 +49,11 @@ and they come in three levels: **easy** walks and swings late, **normal** sprint
 
 * **Filling in**: someone alone in a casual duel queue, a party lobby, 1v2 or 1v3 for 15 seconds gets bots
   (party lobbies up to 4 players). When a second person joins, the bots step out. Never in ranked.
+* **No bots, thanks**: joining a queue bots may fill shows one line in chat with a **[No bots]** button, and
+  while you wait the hotbar has a switch next to the leave item (a name tag: bots on, grey dye: bots off).
+  `/bots off`, `/bots on` or just `/bots` (switch) do the same. The choice is remembered. With bots off you
+  only wait for real players, bots already waiting with you step out, and a party lobby or 1v2/1v3 queue with
+  someone who said no gets no bots at all.
 * **Practice**: `/practice [mode] [easy|normal|hard]` or the **Practice** item in the menu (and the
   character on the plaza): a duel, 1v2 or 1v3 against bots, right away.
 * They know every game: they fight in duels, Free for All, Sumo, LMS, KOTH (they go for the hill), CTF (they
@@ -56,8 +61,9 @@ and they come in three levels: **easy** walks and swings late, **normal** sprint
   floor in Bow Spleef, jump the Parkour Race and hide or hunt in Prop Hunt.
 * Their names start with `Bot_`. Nothing about them is saved (no player files, no profiles), they never show
   up on a leaderboard, and their join and leave messages stay out of chat.
-* A match with bots pays half the coins and XP and never counts for stats, streaks or ELO, so they cannot be
-  farmed.
+* **One real player with bots earns nothing**: no coins, no XP, no quest, pass or achievement progress, and
+  a tournament won against bots only pays no prize. With other people and bots in the game everyone gets half
+  the coins and XP. Matches with bots never count for stats, streaks or ELO, so they cannot be farmed.
 
 ### Quests, season pass, achievements, prestige
 * **Quests**: three new ones every day and three every week (`/quests`), different for every player: play,
@@ -443,6 +449,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/clan` / `/clan create <name> <tag>` / `/clan invite\|kick <player>` / `/clan join <clan>` / `/clan leave\|disband` / `/cc <message>` | everyone | Clans and clan chat |
 | `/custom` / `/custom create <mode>` / `/custom join <code>` / `/custom start\|leave` | everyone | Private games with a code |
 | `/practice [mode] [easy\|normal\|hard]` | everyone | Practice against bots (sword, axe, mace, bow, crossbow, 1v2, 1v3); without a mode: the practice menu |
+| `/bots` / `/bots on\|off` | everyone | May bots fill in the queues you wait in? Without on/off: switch |
 | `/battlehub` | everyone | Open the main menu |
 | `/battlehub join <mode>` | everyone | Join a party lobby or duel queue (used by invites) |
 | `/battlehub again` | everyone | Play again (same as the chat button or the lime dye) |
@@ -496,7 +503,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
     check and its time, the admin alerts and their limits (reach, clicks per second, hovering, speed), the
     time between reports
   * `bots`: on/off, filling queues on/off, after how many seconds, party lobbies up to how many players, the
-    level of bots that fill in, the most bots at once, the share of rewards in matches with bots, and how soon
+    level of bots that fill in, the most bots at once, the share of rewards in matches with bots and other
+    people (alone with bots always pays nothing), and how soon
     a bot leaves after its match
   * `effects`: the match intro on/off and its seconds, the victory shot, the killfeed and its number of lines
   * `lobbyExtras`: double jump on/off, its push forward and up and its cooldown; the training dummy on/off and

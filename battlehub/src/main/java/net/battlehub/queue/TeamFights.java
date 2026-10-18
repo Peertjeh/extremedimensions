@@ -77,6 +77,7 @@ public final class TeamFights {
 		HubItems.ensure(p, true);
 		Msg.send(p, "teamfight.joined", label(p, mode, kit), Lang.tr(p, "teamfight.side." + side.id()));
 		Msg.sound(p, SoundEvents.NOTE_BLOCK_PLING, 0.6f, 1.2f);
+		if (!net.battlehub.bot.Bots.isBot(p)) net.battlehub.bot.Bots.hint(p);
 		Menus.refreshAll(p.level().getServer());
 		// The leader's party comes along on the team side (never against each other)
 		if (side != SideQueue.Side.SOLO) {

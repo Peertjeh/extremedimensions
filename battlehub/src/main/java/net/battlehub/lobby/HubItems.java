@@ -17,6 +17,11 @@ public final class HubItems {
 	public static final String LEAVE_QUEUE = "leave_queue";
 	public static final String EXIT = "exit";
 	public static final String AGAIN = "again";
+	/** The bots switch while queued: bots welcome, or not. */
+	public static final String BOTS_ON = "bots_on";
+	public static final String BOTS_OFF = "bots_off";
+	/** Hotbar slot of the bots switch while queued (next to the "leave queue" item). */
+	public static final int BOTS_SLOT = 7;
 	/** Hotbar slot of the "play again" item after a match. */
 	public static final int AGAIN_SLOT = 0;
 	/** Hotbar slot of the door back to the normal world, or the "leave queue" item while queued. */
@@ -31,6 +36,14 @@ public final class HubItems {
 	public static ItemStack leaveQueue(ServerPlayer p) {
 		return Icon.of("minecraft:red_dye").name(Lang.item(p, "item.leave_queue.name"))
 				.lore(Lang.loreLines(p, "item.leave_queue.lore")).tag(LEAVE_QUEUE).build();
+	}
+
+	/** The bots switch: a name tag while bots may fill the queue, grey dye while they may not. */
+	public static ItemStack bots(ServerPlayer p) {
+		boolean on = !net.battlehub.data.PlayerStore.get(p).noBots;
+		int seconds = ConfigManager.config().bots.fillAfterSeconds;
+		return Icon.of(on ? "minecraft:name_tag" : "minecraft:gray_dye").name(Lang.item(p, on ? "item.bots_on.name" : "item.bots_off.name"))
+				.lore(Lang.loreLines(p, on ? "item.bots_on.lore" : "item.bots_off.lore", seconds)).tag(on ? BOTS_ON : BOTS_OFF).build();
 	}
 
 	public static ItemStack again(ServerPlayer p) {
@@ -54,6 +67,8 @@ public final class HubItems {
 		String lastItem = queued ? LEAVE_QUEUE : (ConfigManager.config().hub.exitItem ? EXIT : "");
 		int leaveSlot = !lastItem.isEmpty() && compassSlot != LEAVE_SLOT ? LEAVE_SLOT : -1;
 		boolean again = !queued && compassSlot != AGAIN_SLOT && net.battlehub.queue.PlayAgain.active(p.getUUID());
+		String botsItem = queued && net.battlehub.bot.Bots.mayFill(p.getUUID()) ? (net.battlehub.data.PlayerStore.get(p).noBots ? BOTS_OFF : BOTS_ON) : "";
+		int botsSlot = !botsItem.isEmpty() && compassSlot != BOTS_SLOT ? BOTS_SLOT : -1;
 		if (Icon.isHubItem(p.containerMenu.getCarried())) {
 			p.containerMenu.setCarried(ItemStack.EMPTY);
 		}
@@ -63,7 +78,7 @@ public final class HubItems {
 				continue;
 			}
 			boolean keep = (i == compassSlot && tag.equals(COMPASS)) || (i == leaveSlot && tag.equals(lastItem))
-					|| (again && i == AGAIN_SLOT && tag.equals(AGAIN));
+					|| (again && i == AGAIN_SLOT && tag.equals(AGAIN)) || (i == botsSlot && tag.equals(botsItem));
 			if (!keep) {
 				inv.setItem(i, ItemStack.EMPTY);
 			}
@@ -74,6 +89,9 @@ public final class HubItems {
 		}
 		if (again) {
 			place(p, AGAIN_SLOT, AGAIN);
+		}
+		if (botsSlot >= 0) {
+			place(p, botsSlot, botsItem);
 		}
 	}
 
@@ -97,6 +115,7 @@ public final class HubItems {
 			case COMPASS -> compass(p);
 			case LEAVE_QUEUE -> leaveQueue(p);
 			case AGAIN -> again(p);
+			case BOTS_ON, BOTS_OFF -> bots(p);
 			default -> exit(p);
 		});
 	}

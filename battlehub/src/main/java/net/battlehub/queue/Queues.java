@@ -130,6 +130,7 @@ public final class Queues {
 		HubItems.ensure(p, true);
 		Msg.send(p, ranked ? "queue.joined_ranked" : "queue.joined", modeLabel(p, mode, format), waiting(mode, ranked, format));
 		Msg.sound(p, SoundEvents.NOTE_BLOCK_PLING, 0.6f, 1.2f);
+		if (!net.battlehub.bot.Bots.isBot(p)) net.battlehub.bot.Bots.hint(p);
 		Menus.refreshAll(p.level().getServer());
 		return true;
 	}

@@ -394,13 +394,24 @@ public final class Tournament {
 				Msg.send(p, "tournament.won", champion.name(p), champion.memberNames(), Lang.tr(p, Icons.modeKey(kit)));
 			}
 		}
+		// prizes only for beating other people: a player alone with bots wins nothing
+		java.util.List<UUID> everyone = new ArrayList<>();
+		for (Team t : teams) everyone.addAll(t.members());
+		boolean prizes = net.battlehub.core.BotRules.paysPrizes(net.battlehub.core.BotRules.count(everyone, net.battlehub.bot.Bots::isBot));
+		if (!prizes) {
+			winnerCoins = 0;
+			finalistCoins = 0;
+		}
 		for (UUID id : champion.present) {
 			PlayerProfile prof = PlayerStore.get(id);
-			prof.tournamentsWon++;
-			Progression.addCoins(prof, winnerCoins);
+			if (prizes) {
+				prof.tournamentsWon++;
+				Progression.addCoins(prof, winnerCoins);
+			}
 			PlayerStore.save(id);
 			ServerPlayer p = player(id);
 			if (p != null) {
+				if (!prizes) Msg.send(p, "tournament.no_prize_bots");
 				Msg.title(p, Lang.tr(p, "tournament.champion_title"), Lang.tr(p, "tournament.champion_sub", winnerCoins), 10, 70, 20);
 				Msg.sound(p, SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, 1f, 1f);
 				Cosmetics.winEffect("fireworks", p.level(), p.position(), 0);
@@ -408,14 +419,14 @@ public final class Tournament {
 		}
 		if (weekly) {
 			WeeklyTournament.finished(this, new ArrayList<>(champion.present),
-					finalist == null ? List.of() : new ArrayList<>(finalist.present), champion.memberNames());
+					finalist == null ? List.of() : new ArrayList<>(finalist.present), champion.memberNames(), prizes);
 		}
 		if (finalist != null) {
 			for (UUID id : finalist.present) {
-				Progression.addCoins(PlayerStore.get(id), finalistCoins);
+				if (prizes) Progression.addCoins(PlayerStore.get(id), finalistCoins);
 				PlayerStore.save(id);
 				ServerPlayer p = player(id);
-				if (p != null) Msg.send(p, "tournament.finalist", finalistCoins);
+				if (p != null && prizes) Msg.send(p, "tournament.finalist", finalistCoins);
 			}
 			finalist.present.clear();
 		}

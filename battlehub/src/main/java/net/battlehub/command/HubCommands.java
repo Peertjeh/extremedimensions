@@ -136,6 +136,21 @@ public final class HubCommands {
 			new net.battlehub.gui.AchievementsMenu(c.getSource().getPlayerOrException(), false).open();
 			return 1;
 		}));
+		// Bots filling your queues: /bots toggles, /bots on|off sets it
+		d.register(Commands.literal("bots")
+				.executes(c -> {
+					ServerPlayer p = c.getSource().getPlayerOrException();
+					net.battlehub.bot.Bots.choose(p, net.battlehub.data.PlayerStore.get(p).noBots);
+					return 1;
+				})
+				.then(Commands.literal("on").executes(c -> {
+					net.battlehub.bot.Bots.choose(c.getSource().getPlayerOrException(), true);
+					return 1;
+				}))
+				.then(Commands.literal("off").executes(c -> {
+					net.battlehub.bot.Bots.choose(c.getSource().getPlayerOrException(), false);
+					return 1;
+				})));
 		d.register(Commands.literal("kits").executes(c -> {
 			new net.battlehub.gui.KitListMenu(c.getSource().getPlayerOrException()).open();
 			return 1;

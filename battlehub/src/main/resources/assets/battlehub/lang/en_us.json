@@ -1101,5 +1101,19 @@
 	"bridge_chaos.event.crumble": "&c&lThe bridge crumbles!",
 	"bridge_chaos.event.crumble.sub": "&7Everything built over the middle falls apart",
 	"bridge_chaos.event.gift": "&a&lGift!",
-	"bridge_chaos.event.gift.sub": "&7Two wind charges for everyone"
+	"bridge_chaos.event.gift.sub": "&7Two wind charges for everyone",
+	"item.bots_on.name": "&a&lBots: on &7(Right-click)",
+	"item.bots_on.lore": "&7Nobody there after &e{0} seconds&7?\n&7A bot joins so you can play.\n&8Bot games give no coins or XP\n&8when you are the only player.\n&eClick: no bots",
+	"item.bots_off.name": "&7&lBots: off &7(Right-click)",
+	"item.bots_off.lore": "&7You only wait for real players.\n&eClick: let bots fill in",
+	"bots.choice_on": "&aBots on: &7nobody there after &e{0} seconds&7? A bot fills in. &8(/bots off)",
+	"bots.choice_off": "&7Bots off: you only play against real players. &8(/bots on)",
+	"bots.hint_on": "&7Nobody there after &e{0}s&7? A bot fills in &8(no coins or XP when you are the only player)&7.",
+	"bots.hint_off": "&7Bots are off: you wait for real players.",
+	"bots.off_button": "&c&l[No bots]",
+	"bots.off_hover": "&7Only play against real players (/bots off)",
+	"bots.on_button": "&a&l[Bots on]",
+	"bots.on_hover": "&7Let bots fill in when nobody is there (/bots on)",
+	"result.bots_alone": "&8Practice against bots: no coins, XP or progress &8({0} kills).",
+	"tournament.no_prize_bots": "&8Only one real player: no prize money in a tournament with bots."
 }

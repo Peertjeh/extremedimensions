@@ -381,3 +381,14 @@ Elke fase: compileert, unit tests groen, zelftest op een echte server in CI groe
 | Oplossing | Elke tekst-display van BattleHub (borden, namen van de lobbyfiguren, oefenpop) krijgt een vaste helderheid (blok- en hemellicht 15, de "brightness override" van displays), dus altijd zo licht als overdag. De donkere achtergrond van de borden gaat van 44 % naar 50 % dekking, voor contrast tegen de nachtlucht. De dag-nachtcyclus van de hub zelf blijft zoals hij is. |
 | Controle | De testverbinding onthoudt welke helderheid elke display krijgt; een zelftest kijkt of alle borden bij elke testspeler volledig verlicht zijn. |
 
+## Versie 1.20 – Bots verdienen niets, en bots uit bij de wachtrij
+
+| Onderwerp | Keuze |
+|---|---|
+| Regel | Eén echte speler (of geen) en minstens één bot in een potje: geen coins, geen XP, geen quest-, pas- of achievementvoortgang. De regel staat los van Minecraft in `core/BotRules` (JUnit) en overschrijft `bots.rewardFactor`; die geldt alleen nog als er ook andere mensen meedoen. |
+| Toernooien | Een toernooi waarin naast de winnaar alleen bots zaten betaalt geen prijzengeld (winnaar en finalisten), telt geen toernooiwinst en geen weekwinst. De geschiedenis van het weektoernooi noteert het wel. |
+| Bots uit: waar | Drie wegen, alle drie dezelfde keuze: een regel in de chat bij het joinen met een klikbare knop **[Geen bots]** / **[Bots aan]**; een schakelaar op de hotbar naast "wachtrij verlaten" (slot 8, naamkaartje = aan, grijze kleurstof = uit) zolang je wacht; `/bots`, `/bots on`, `/bots off`. De keuze staat in het profiel (`noBots`) en blijft bewaard. |
+| Bots uit: wat | Duelwachtrij: geen bot erbij. Partylobby en 1v2/1v3: als iemand in de lobby of wachtrij nee zegt komt er geen bot, staan er al bots dan stappen die uit, en de wachttijd begint opnieuw zodra die speler weg is. |
+| Waar niet | Ranked en een lopend toernooi vullen nooit met bots; daar verschijnen geen knop en geen chatregel. Oefenen (`/practice`) blijft gewoon werken, dat kies je zelf. |
+| Afwijking | De hotbarschakelaar komt in slot 8 (index 7, naast het verlaat-item), behalve als het kompas daar is ingesteld; dan blijft hij weg en zijn chatknop en `/bots` er nog. |
+| Controle | JUnit voor de regel (alleen met bots = 0, met andere mensen = het aandeel, zonder bots = alles). Zelftest: een oefenduel tegen een bot geeft 0 coins, 0 XP en geen pas-XP; in ranked geen schakelaar; `/bots off` wordt onthouden, de schakelaar toont "uit" en er valt geen bot in; na de klik op de schakelaar valt de bot wel in. |

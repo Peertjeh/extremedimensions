@@ -228,29 +228,32 @@ public final class WeeklyTournament {
 	}
 
 	/** From the tournament: the weekly prizes and the history. */
-	static void finished(Tournament t, List<UUID> champions, List<UUID> finalists, String championNames) {
+	static void finished(Tournament t, List<UUID> champions, List<UUID> finalists, String championNames, boolean prizes) {
 		MinecraftServer server = BattleHub.server();
 		Result r = new Result();
 		r.week = WeeklySchedule.weekKey(ZonedDateTime.now(zone()));
 		r.time = System.currentTimeMillis();
 		r.kit = t.kit.id();
 		r.players = t.size();
+		// a champion who only beat bots gets no prize (and no weekly win)
 		for (UUID id : champions) {
 			PlayerProfile prof = PlayerStore.get(id);
-			prof.weeklyWins++;
-			Progression.addCoins(prof, cfg().winnerCoins);
+			if (prizes) {
+				prof.weeklyWins++;
+				Progression.addCoins(prof, cfg().winnerCoins);
+			}
 			PlayerStore.save(id);
 			r.winners.add(prof.name);
 			ServerPlayer p = server == null ? null : server.getPlayerList().getPlayer(id);
-			if (p != null) Msg.send(p, "weekly.prize", cfg().winnerCoins);
+			if (p != null && prizes) Msg.send(p, "weekly.prize", cfg().winnerCoins);
 		}
 		for (UUID id : finalists) {
 			PlayerProfile prof = PlayerStore.get(id);
-			Progression.addCoins(prof, cfg().finalistCoins);
+			if (prizes) Progression.addCoins(prof, cfg().finalistCoins);
 			PlayerStore.save(id);
 			r.finalists.add(prof.name);
 			ServerPlayer p = server == null ? null : server.getPlayerList().getPlayer(id);
-			if (p != null) Msg.send(p, "weekly.prize", cfg().finalistCoins);
+			if (p != null && prizes) Msg.send(p, "weekly.prize", cfg().finalistCoins);
 		}
 		state.history.add(r);
 		while (state.history.size() > 104) {

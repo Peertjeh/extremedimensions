@@ -1101,5 +1101,19 @@
 	"bridge_chaos.event.crumble": "&c&lDe brug stort in!",
 	"bridge_chaos.event.crumble.sub": "&7Alles boven het midden valt uit elkaar",
 	"bridge_chaos.event.gift": "&a&lCadeautje!",
-	"bridge_chaos.event.gift.sub": "&7Twee windcharges voor iedereen"
+	"bridge_chaos.event.gift.sub": "&7Twee windcharges voor iedereen",
+	"item.bots_on.name": "&a&lBots: aan &7(Rechtsklik)",
+	"item.bots_on.lore": "&7Na &e{0} seconden&7 niemand?\n&7Dan doet er een bot mee.\n&8Potjes met bots geven geen coins of XP\n&8als je de enige speler bent.\n&eKlik: geen bots",
+	"item.bots_off.name": "&7&lBots: uit &7(Rechtsklik)",
+	"item.bots_off.lore": "&7Je wacht alleen op echte spelers.\n&eKlik: bots mogen invallen",
+	"bots.choice_on": "&aBots aan: &7na &e{0} seconden&7 niemand? Dan valt een bot in. &8(/bots off)",
+	"bots.choice_off": "&7Bots uit: je speelt alleen tegen echte spelers. &8(/bots on)",
+	"bots.hint_on": "&7Na &e{0}s&7 niemand? Dan valt een bot in &8(geen coins of XP als je de enige speler bent)&7.",
+	"bots.hint_off": "&7Bots staan uit: je wacht op echte spelers.",
+	"bots.off_button": "&c&l[Geen bots]",
+	"bots.off_hover": "&7Alleen tegen echte spelers (/bots off)",
+	"bots.on_button": "&a&l[Bots aan]",
+	"bots.on_hover": "&7Bots laten invallen als er niemand is (/bots on)",
+	"result.bots_alone": "&8Oefenen tegen bots: geen coins, XP of voortgang &8({0} kills).",
+	"tournament.no_prize_bots": "&8Maar één echte speler: geen prijzengeld in een toernooi met bots."
 }

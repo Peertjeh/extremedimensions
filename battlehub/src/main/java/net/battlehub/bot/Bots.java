@@ -235,6 +235,76 @@ public final class Bots {
 		return BotLevel.parse(cfg().fillLevel, BotLevel.NORMAL);
 	}
 
+	/** Bots may fill a queue or lobby this player waits in (players can say no: /bots, the hotbar button). */
+	public static boolean welcome(UUID id) {
+		return isBot(id) || !net.battlehub.data.PlayerStore.get(id).noBots;
+	}
+
+	/** Can bots ever fill the queue this player waits in now? (Never ranked, never a running tournament.) */
+	public static boolean mayFill(UUID id) {
+		HubConfig.Bots c = cfg();
+		String q = net.battlehub.session.Sessions.get(id).queue;
+		return c.enabled && c.fillQueues && !q.startsWith("ranked:") && !q.equals(net.battlehub.tournament.Tournament.QUEUE);
+	}
+
+	/** A player says yes or no to bots: remembered, confirmed in chat, the hotbar button swapped. */
+	public static void choose(ServerPlayer p, boolean wanted) {
+		net.battlehub.core.PlayerProfile prof = net.battlehub.data.PlayerStore.get(p);
+		prof.noBots = !wanted;
+		net.battlehub.data.PlayerStore.save(p.getUUID());
+		Msg.send(p, wanted ? "bots.choice_on" : "bots.choice_off", cfg().fillAfterSeconds);
+		Msg.sound(p, net.minecraft.sounds.SoundEvents.NOTE_BLOCK_PLING, 0.5f, wanted ? 1.4f : 0.9f);
+		net.battlehub.lobby.HubItems.ensure(p, net.battlehub.session.Sessions.state(p.getUUID()) == net.battlehub.session.Sessions.State.QUEUED);
+		if (!wanted) {
+			// bots already waiting with this player step out at once
+			MinecraftServer server = p.level().getServer();
+			for (List<UUID> group : groupsOf(p.getUUID())) {
+				for (UUID id : group) leaveQueues(server, id);
+			}
+		}
+	}
+
+	/** Right after joining a queue bots may fill: one line on how it works, with a button to switch. */
+	public static void hint(ServerPlayer p) {
+		if (!mayFill(p.getUUID()) || net.battlehub.session.Sessions.state(p.getUUID()) != net.battlehub.session.Sessions.State.QUEUED) return;
+		boolean on = welcome(p.getUUID());
+		net.minecraft.network.chat.MutableComponent line = net.minecraft.network.chat.Component.empty()
+				.append(net.battlehub.lang.Lang.tr(p, Msg.PREFIX_KEY))
+				.append(net.battlehub.lang.Lang.tr(p, on ? "bots.hint_on" : "bots.hint_off", cfg().fillAfterSeconds)).append(" ")
+				.append(Msg.button(p, on ? "bots.off_button" : "bots.on_button", on ? "bots.off_hover" : "bots.on_hover",
+						on ? "/bots off" : "/bots on"));
+		Msg.raw(p, line);
+	}
+
+	/** The queues and lobbies this player waits in, with everyone in them. */
+	private static List<List<UUID>> groupsOf(UUID id) {
+		List<List<UUID>> out = new ArrayList<>();
+		for (GameMode mode : GameMode.duels()) {
+			for (DuelFormat f : DuelFormat.values()) {
+				List<UUID> w = Queues.waitingIds(mode, false, f);
+				if (w.contains(id)) out.add(w);
+			}
+		}
+		for (GameMode mode : GameMode.parties()) {
+			List<UUID> m = new ArrayList<>(Parties.members(mode));
+			if (m.contains(id)) out.add(m);
+		}
+		for (GameMode mode : GameMode.teamFights()) {
+			for (GameMode kit : GameMode.meleeKits()) {
+				List<UUID> w = TeamFights.waitingIds(mode, kit);
+				if (w.contains(id)) out.add(w);
+			}
+		}
+		return out;
+	}
+
+	private static boolean anyoneRefuses(List<UUID> group) {
+		for (UUID id : group) {
+			if (!welcome(id)) return true;
+		}
+		return false;
+	}
+
 	private static long waitTicks() {
 		return Math.max(0, cfg().fillAfterSeconds) * 20L;
 	}
@@ -249,8 +319,8 @@ public final class Bots {
 				for (UUID id : waiting) {
 					(isBot(id) ? bots : humans).add(id);
 				}
-				if (humans.size() != 1) {
-					// Nobody to play with, or enough people: no bots needed
+				if (humans.size() != 1 || !welcome(humans.get(0))) {
+					// Nobody to play with, enough people, or someone who wants no bots: no bots needed
 					for (UUID b : bots) leaveQueues(server, b);
 					continue;
 				}
@@ -274,6 +344,14 @@ public final class Bots {
 				if (!isBot(id)) humans++;
 			}
 			if (humans == 0) {
+				PARTY_SINCE.remove(mode);
+				for (UUID id : members) {
+					if (isBot(id)) leaveQueues(server, id);
+				}
+				continue;
+			}
+			if (anyoneRefuses(members)) {
+				// someone in the lobby wants no bots: they wait for people, and bots already there leave
 				PARTY_SINCE.remove(mode);
 				for (UUID id : members) {
 					if (isBot(id)) leaveQueues(server, id);
@@ -305,7 +383,7 @@ public final class Bots {
 				for (UUID id : waiting) {
 					if (!isBot(id)) human = true;
 				}
-				if (!human) {
+				if (!human || anyoneRefuses(waiting)) {
 					SIDE_SINCE.remove(key);
 					for (UUID id : waiting) leaveQueues(server, id);
 					continue;

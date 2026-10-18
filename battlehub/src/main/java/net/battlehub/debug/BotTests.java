@@ -20,11 +20,14 @@ import net.battlehub.data.PlayerStore;
 import net.battlehub.games.ParkourMatch;
 import net.battlehub.gui.HubMenu;
 import net.battlehub.hub.HubNpcs;
+import net.battlehub.lobby.HubItems;
 import net.battlehub.match.Match;
 import net.battlehub.match.Matches;
 import net.battlehub.progression.FeaturedMode;
 import net.battlehub.queue.Parties;
 import net.battlehub.queue.Queues;
+import net.battlehub.session.Sessions;
+import net.battlehub.util.Icon;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -113,7 +116,7 @@ final class BotTests {
 						&& Bots.isBot(Bots.uuid("Bot_Nova")) && !Bots.isBot(p(A).getUUID()));
 	}
 
-	/** A sword duel against a hard bot: it walks up and hits; A wins; no stats for anyone, half the coins, nothing saved. */
+	/** A sword duel against a hard bot: it walks up and hits; A wins; alone with a bot: no stats, coins, XP or pass progress; nothing saved. */
 	private static void practiceSword(MinecraftServer server, Script s) {
 		String tag = "bots sword";
 		SelfTest.reset(s, tag);
@@ -123,6 +126,8 @@ final class BotTests {
 			VARS.put("botWins", prof.overall.wins);
 			VARS.put("botPlayed", prof.overall.played);
 			VARS.put("botCoins", prof.coins);
+			VARS.put("botXp", prof.xp);
+			VARS.put("botPassXp", prof.passXp);
 			Bots.practice(p(A), GameMode.SWORD, BotLevel.HARD);
 		});
 		s.waitFor(tag + ": the duel runs with one bot", 600, () -> {
@@ -149,10 +154,11 @@ final class BotTests {
 		});
 		s.waitFor(tag + ": match over", 200, () -> matchOfA() == null || matchOfA().phase() == Match.Phase.ENDING
 				|| matchOfA().phase() == Match.Phase.CLOSED);
-		s.check(tag + ": no stats from a bot match, but some coins", () -> {
+		s.check(tag + ": one real player with a bot: no stats, no coins, no XP, no pass progress", () -> {
 			PlayerProfile prof = PlayerStore.get(p(A).getUUID());
 			return prof.overall.wins == (int) VARS.get("botWins") && prof.overall.played == (int) VARS.get("botPlayed")
-					&& prof.coins > (long) VARS.get("botCoins");
+					&& prof.coins == (long) VARS.get("botCoins") && prof.xp == (long) VARS.get("botXp")
+					&& prof.passXp == (long) VARS.get("botPassXp");
 		});
 		s.waitFor(tag + ": the bot leaves after the match", 400, () -> Bots.online() == 0);
 		s.check(tag + ": nothing saved for the bot", () -> {
@@ -177,7 +183,7 @@ final class BotTests {
 		endAndClean(s, tag);
 	}
 
-	/** Alone in a casual queue: a bot joins after a while. Ranked: never. */
+	/** Alone in a casual queue: a bot joins after a while, unless the player said no (/bots off, the hotbar switch). Ranked: never. */
 	private static void queueFill(MinecraftServer server, Script s) {
 		String tag = "bots queue";
 		SelfTest.reset(s, tag);
@@ -188,11 +194,21 @@ final class BotTests {
 			Queues.join(p(A), GameMode.SWORD, true, DuelFormat.BO1);
 		});
 		s.pause(80);
-		s.check(tag + ": no bot in ranked", () -> matchOfA() == null && Bots.online() == 0);
-		s.run(tag + ": A queues for casual axe", () -> {
+		s.check(tag + ": no bot in ranked, and no bots switch on the hotbar", () -> matchOfA() == null && Bots.online() == 0
+				&& !Icon.tagOf(p(A).getInventory().getItem(HubItems.BOTS_SLOT)).startsWith("bots_"));
+		s.run(tag + ": A types /bots off and queues for casual axe", () -> {
 			Queues.leaveAll(p(A));
+			p(A).level().getServer().getCommands().performPrefixedCommand(p(A).createCommandSourceStack(), "bots off");
 			Queues.join(p(A), GameMode.AXE, false, DuelFormat.BO1);
 		});
+		s.check(tag + ": remembered, and the hotbar switch shows bots off", () -> PlayerStore.get(p(A)).noBots
+				&& HubItems.BOTS_OFF.equals(Icon.tagOf(p(A).getInventory().getItem(HubItems.BOTS_SLOT))));
+		s.pause(80);
+		s.check(tag + ": with bots off nobody fills in; A still waits", () -> matchOfA() == null && Bots.online() == 0
+				&& Sessions.state(p(A).getUUID()) == Sessions.State.QUEUED);
+		s.run(tag + ": A clicks the switch (bots on again)", () -> Bots.choose(p(A), true));
+		s.check(tag + ": the switch shows bots on", () -> !PlayerStore.get(p(A)).noBots
+				&& HubItems.BOTS_ON.equals(Icon.tagOf(p(A).getInventory().getItem(HubItems.BOTS_SLOT))));
 		s.waitFor(tag + ": a duel against a bot starts", 400, () -> botsIn(matchOfA()).size() == 1 && matchOfA().mode == GameMode.AXE);
 		endAndClean(s, tag);
 	}

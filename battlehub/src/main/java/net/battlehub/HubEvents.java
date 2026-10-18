@@ -415,6 +415,8 @@ public final class HubEvents {
 				}
 				case HubItems.EXIT -> net.battlehub.hub.Travel.leave(sp);
 				case HubItems.AGAIN -> net.battlehub.queue.PlayAgain.accept(sp);
+				case HubItems.BOTS_ON -> net.battlehub.bot.Bots.choose(sp, false);
+				case HubItems.BOTS_OFF -> net.battlehub.bot.Bots.choose(sp, true);
 				default -> { }
 			}
 		}

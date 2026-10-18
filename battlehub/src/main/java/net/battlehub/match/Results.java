@@ -54,17 +54,18 @@ public final class Results {
 			}
 			return;
 		}
-		boolean withBots = false;
-		for (UUID id : m.participants()) {
-			withBots |= Bots.isBot(id);
-		}
+		net.battlehub.core.BotRules.Count people = net.battlehub.core.BotRules.count(m.participants(), Bots::isBot);
+		boolean withBots = people.bots() > 0;
+		// alone against bots: nothing at all (no coins, no XP, no quest, pass or achievement progress)
+		boolean alone = people.alone();
 		Map<UUID, int[]> elo = new HashMap<>();
 		if (m.ranked && !withBots && m.mode.isDuel() && m.participants().size() == 2) {
 			elo = rankedElo(m, cfg);
 		}
 		RewardSettings settings = m.ranked ? cfg.rewards.ranked : (m.mode.isDuel() ? cfg.rewards.duel : cfg.rewards.party);
-		// Matches with bots pay part of the reward and leave the stats alone; the mode of the day pays more
-		double botFactor = withBots ? Math.max(0, Math.min(1, cfg.bots.rewardFactor)) : 1.0;
+		// Matches with bots pay part of the reward (or nothing to a player alone with them) and leave the stats alone;
+		// the mode of the day pays more
+		double botFactor = net.battlehub.core.BotRules.rewardFactor(people, cfg.bots.rewardFactor);
 		boolean featured = FeaturedMode.is(m.mode);
 		double coinBonus = featured ? FeaturedMode.multiplier() : 1.0;
 		for (UUID id : m.participants()) {
@@ -89,11 +90,13 @@ public final class Results {
 				prof.setElo(m.mode, e[1]);
 				Seasons.played(prof, m.mode, e[1]);
 			}
-			// Quests, the season pass and achievements (bot matches count, at the bot share)
+			// Quests, the season pass and achievements (bot matches count at the bot share, never for a player alone with bots)
 			ServerPlayer online = m.player(id);
 			UUID mvp = m.participants().size() >= 2 ? m.recap().mvp(m.participants()) : null;
-			Retention.matchPlayed(online, prof, new Quests.Match(m.mode, o == Outcome.WIN, m.ranked, kills,
-					m.recap().line(id).dealt / 2, featured, id.equals(mvp)), botFactor);
+			if (!alone) {
+				Retention.matchPlayed(online, prof, new Quests.Match(m.mode, o == Outcome.WIN, m.ranked, kills,
+						m.recap().line(id).dealt / 2, featured, id.equals(mvp)), botFactor);
+			}
 			List<TitleDef> unlocked = TitleRules.newlyUnlocked(ConfigManager.titles().titles, prof, Ranks.startElo());
 			PlayerStore.save(id);
 
@@ -107,14 +110,18 @@ public final class Results {
 			}
 			Msg.raw(p, Lang.tr(p, "result.header", Lang.tr(p, Icons.modeKey(m.mode))));
 			Msg.raw(p, Lang.tr(p, "result." + o.name().toLowerCase(java.util.Locale.ROOT)));
-			Msg.raw(p, Lang.tr(p, "result.rewards", reward.coins(), reward.xp(), kills));
-			if (m.coinFactor() < 1 && m.noCoinsKey() != null) {
-				Msg.raw(p, Lang.tr(p, m.noCoinsKey()));
+			if (alone) {
+				Msg.raw(p, Lang.tr(p, "result.bots_alone", kills));
+			} else {
+				Msg.raw(p, Lang.tr(p, "result.rewards", reward.coins(), reward.xp(), kills));
+				if (m.coinFactor() < 1 && m.noCoinsKey() != null) {
+					Msg.raw(p, Lang.tr(p, m.noCoinsKey()));
+				}
+				if (withBots) {
+					Msg.raw(p, Lang.tr(p, "result.bots", Math.round(botFactor * 100)));
+				}
 			}
-			if (withBots) {
-				Msg.raw(p, Lang.tr(p, "result.bots", Math.round(botFactor * 100)));
-			}
-			if (featured && reward.coins() > 0) {
+			if (featured && reward.coins() > 0 && !alone) {
 				Msg.raw(p, Lang.tr(p, "result.featured", FeaturedMode.multiplierText()));
 			}
 			if (e != null) {

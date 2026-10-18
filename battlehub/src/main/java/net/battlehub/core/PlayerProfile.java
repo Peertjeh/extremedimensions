@@ -35,6 +35,8 @@ public final class PlayerProfile {
 	public long lastSeen;
 	/** Preferred duel format: "bo1" or "bo3". */
 	public String duelFormat = "bo1";
+	/** The player does not want bots to fill the queues and lobbies they wait in (/bots, the hotbar button). */
+	public boolean noBots;
 	public int tournamentsWon;
 	/** Weekly tournaments won. */
 	public int weeklyWins;
