@@ -77,5 +77,8 @@ public final class TestPlayer extends ServerPlayer {
 		} catch (RuntimeException ignored) {
 			// Some client-driven state is missing for simulated players; physics still runs.
 		}
+		// The server moves a player's loaded chunks along when the client reports a move; this player has no
+		// client, so after a teleport within a world it would keep loading the chunks round the old spot.
+		level().getChunkSource().move(this);
 	}
 }
