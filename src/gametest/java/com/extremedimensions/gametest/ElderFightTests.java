@@ -119,18 +119,17 @@ public class ElderFightTests {
 		}
 		check(helper, f != null, "the Ferryman could not come");
 		FerrymanService.force(f, Ferryman.KNELL);
-		double base = f.getAttribute(Attributes.MAX_HEALTH).getBaseValue();
 		int[] counted = {0};
 		ServerPlayer[] second = {null};
 		helper.runAfterDelay(5, () -> {
 			counted[0] = near(f);
-			boolean one = Math.abs(f.getMaxHealth() - base * ElderPower.health(counted[0])) < 0.01;
+			boolean one = Math.abs(f.toughness() - ElderPower.health(counted[0])) < 0.001;
 			float dealt = ElderPower.scale(helper.getLevel().damageSources().mobAttack(f), 10f);
 			boolean hits = Math.abs(dealt - 10 * ElderPower.damage(counted[0])) < 0.01;
 			if (!one || !hits) {
 				done.run();
 			}
-			check(helper, one, "against %s it has %s health, not %s", counted[0], f.getMaxHealth(), base * ElderPower.health(counted[0]));
+			check(helper, one, "against %s it has x%s health, not x%s", counted[0], f.toughness(), ElderPower.health(counted[0]));
 			check(helper, hits, "against %s a blow of 10 deals %s", counted[0], dealt);
 			second[0] = TestPlayers.survivor(helper, "test-second");
 		});
@@ -145,11 +144,11 @@ public class ElderFightTests {
 		}
 		helper.runAfterDelay(35, () -> {
 			int now = near(f);
-			boolean grew = now > counted[0] && Math.abs(f.getMaxHealth() - base * ElderPower.health(now)) < 0.01;
+			boolean grew = now > counted[0] && Math.abs(f.toughness() - ElderPower.health(now)) < 0.001;
 			boolean share = Math.abs(f.getHealth() / f.getMaxHealth() - 1.0) < 0.01;
 			done.run();
-			check(helper, grew, "against %s (from %s) it has %s health, not %s", now, counted[0], f.getMaxHealth(), base * ElderPower.health(now));
-			check(helper, share, "its health did not keep its share (%s of %s)", f.getHealth(), f.getMaxHealth());
+			check(helper, grew, "against %s (from %s) it has x%s health, not x%s", now, counted[0], f.toughness(), ElderPower.health(now));
+			check(helper, share, "its health bar did not keep its share (%s of %s)", f.getHealth(), f.getMaxHealth());
 			helper.succeed();
 		});
 	}

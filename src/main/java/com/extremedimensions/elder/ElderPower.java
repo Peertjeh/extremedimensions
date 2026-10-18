@@ -6,15 +6,11 @@ import com.extremedimensions.ExtremeDimensions;
 import com.extremedimensions.config.Config;
 
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 
 /**
  * How hard an Elder fights, and how it grows with those who come against it. Its health and the damage of its blows
@@ -25,7 +21,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 public final class ElderPower {
 	private ElderPower() {}
 
-	private static final Identifier HEALTH = ExtremeDimensions.id("elder_health");
 	/** The damage type of the blows that go through armour. */
 	public static final ResourceKey<DamageType> PIERCE = ResourceKey.create(Registries.DAMAGE_TYPE, ExtremeDimensions.id("elder_pierce"));
 
@@ -34,26 +29,17 @@ public final class ElderPower {
 		return ElderFx.targets(b, Math.max(8, Config.ELDER_FIGHTERS_RANGE));
 	}
 
-	/** Once a second: counts who fights it, and its health, damage and pace follow (its health keeps its share). */
+	/**
+	 * Once a second: counts who fights it, and its health (as how much of every blow it shrugs off), damage and pace
+	 * follow. Its health bar keeps its share whatever the count.
+	 */
 	static void tick(ElderBoss b, ElderFight f) {
 		if (f.ticks % 20 != 0 && f.fighters > 0) {
 			return;
 		}
 		f.fighters = Math.max(1, fighters(b).size());
 		b.damageFactor = (float) damage(f.fighters);
-		AttributeInstance max = b.getAttribute(Attributes.MAX_HEALTH);
-		if (max == null) {
-			return;
-		}
-		double scale = health(f.fighters) - 1;
-		AttributeModifier now = max.getModifier(HEALTH);
-		if (now != null && Math.abs(now.amount() - scale) < 1e-6) {
-			return;
-		}
-		float share = b.getMaxHealth() > 0 ? b.getHealth() / b.getMaxHealth() : 1;
-		max.removeModifier(HEALTH);
-		max.addPermanentModifier(new AttributeModifier(HEALTH, scale, AttributeModifier.Operation.ADD_MULTIPLIED_BASE));
-		b.setHealth(Math.max(1, share * b.getMaxHealth()));
+		b.toughness = (float) health(f.fighters);
 	}
 
 	/** Its health, as a multiple of its own, with {@code n} players fighting it. */

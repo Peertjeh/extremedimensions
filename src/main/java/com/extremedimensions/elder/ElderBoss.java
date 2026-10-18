@@ -43,6 +43,11 @@ public abstract class ElderBoss extends Monster {
 	final ElderMotion motion = new ElderMotion();
 	/** The damage of its blows, as a multiple (how hard it fights, with the players fighting it; see {@link ElderPower}). */
 	float damageFactor = 1;
+	/**
+	 * How many times its own health it has, as it fights (see {@link ElderPower}): every blow on it is divided by this.
+	 * Its health itself is not raised, as the game holds any creature's health to 1024 at most.
+	 */
+	float toughness = 1;
 
 	protected ElderBoss(EntityType<? extends Monster> type, Level level) {
 		super(type, level);
@@ -108,7 +113,12 @@ public abstract class ElderBoss extends Monster {
 			WorldFx.particleIn(level, "minecraft:enchanted_hit", getX(), getY() + getBbHeight() * 0.5, getZ(), getBbWidth() * 0.5, getBbHeight() * 0.3,
 					getBbWidth() * 0.5, 0.2, 12);
 		}
-		return super.hurtServer(level, source, amount);
+		return super.hurtServer(level, source, amount / Math.max(0.1F, toughness));
+	}
+
+	/** How many times its own health it has, as it fights (for tests). */
+	public float toughness() {
+		return toughness;
 	}
 
 	@Override
