@@ -105,14 +105,26 @@ public class FrayTests {
 		};
 		ServerPlayer p = TestPlayers.survivor(helper, "test-prey");
 		p.teleportTo(o.getX() + 0.5, o.getY() + 1, o.getZ() + 0.5);
-		// A test player is never ticked, so it would keep for good the few seconds of safety every player has on joining
-		try {
-			java.lang.reflect.Field safe = ServerPlayer.class.getDeclaredField("spawnInvulnerableTime");
-			safe.setAccessible(true);
-			safe.setInt(p, 0);
-		} catch (ReflectiveOperationException e) {
-			throw helper.assertionException("the test player's safety on joining could not be lifted: %s", e);
+		// A test player is never ticked, so it would keep for good the three seconds (60 ticks) of safety every player
+		// has on joining: that count is found by its value, whatever this version names it, and ended
+		StringBuilder counts = new StringBuilder();
+		int lifted = 0;
+		for (java.lang.reflect.Field f : ServerPlayer.class.getDeclaredFields()) {
+			if (f.getType() != int.class || java.lang.reflect.Modifier.isStatic(f.getModifiers())) {
+				continue;
+			}
+			try {
+				f.setAccessible(true);
+				counts.append(f.getName()).append('=').append(f.getInt(p)).append(' ');
+				if (f.getInt(p) == 60) {
+					f.setInt(p, 0);
+					lifted++;
+				}
+			} catch (ReflectiveOperationException | RuntimeException e) {
+				counts.append(f.getName()).append("=? ");
+			}
 		}
+		check(helper, lifted == 1, "the test player's safety on joining was not found once (%s): %s", lifted, counts);
 		check(helper, p.getY() < Config.SEAM_FRAY_TOP, "the test's ground (%s) is above the Fray", p.getY());
 		VeilRay ray = ModEntities.VEIL_RAY.spawn(level, BlockPos.containing(p.getX() + 16, p.getY() + 9, p.getZ() + 4), EntitySpawnReason.EVENT);
 		check(helper, ray != null, "no ray could be made");
