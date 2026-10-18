@@ -167,7 +167,7 @@ public abstract class Match {
 	/** Game rules, every tick while RUNNING. */
 	protected void tickGame() {}
 
-	/** Damage of a snowball or egg hitting a player of this match (vanilla gives none, only a push). */
+	/** Damage of a snowball or egg hitting a player of this match (vanilla: none at all); 0 here means only a push. */
 	public float throwableDamage() {
 		return (float) net.battlehub.config.ConfigManager.config().combat.snowballDamage;
 	}

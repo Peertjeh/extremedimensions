@@ -91,6 +91,18 @@ final class NewModeTests {
 						&& p(A).getInventory().getItem(0).is(Items.DIAMOND_SHOVEL));
 		s.check("spleef: other blocks cannot be dug", () -> !match().onBreakBlock(p(A), match().arena().origin().offset(0, -1, 0),
 				Blocks.STONE.defaultBlockState()));
+		s.run("spleef: B's snowball flies into A from the west", () -> {
+			p(A).setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+			net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) p(A).level();
+			net.minecraft.world.entity.Entity ball = net.battlehub.hub.ClientEntities.type("minecraft:snowball").create(level, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+			((net.minecraft.world.entity.projectile.Projectile) ball).setOwner(p(B));
+			ball.snapTo(p(A).getX() - 1.6, p(A).getY() + 1.2, p(A).getZ());
+			ball.setDeltaMovement(1.2, 0, 0);
+			level.addFreshEntity(ball);
+			VARS.put("spleefX", p(A).getX());
+		});
+		s.waitFor("spleef: the snowball pushes A east and does no damage", 20, () -> (p(A).getX() > (double) VARS.get("spleefX") + 0.15
+				|| p(A).getDeltaMovement().x > 0.1) && p(A).getHealth() == p(A).getMaxHealth());
 		PartyTests.fallOff(s);
 	}
 
@@ -383,22 +395,37 @@ final class NewModeTests {
 					&& match().arena().level().getEntitiesOfClass(net.minecraft.world.entity.Entity.class, box,
 							e -> net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).getPath().equals("chicken")).isEmpty();
 		});
-		s.run(tag + ": A healed; B throws a snowball at A", () -> {
+		s.run(tag + ": A healed, standing still on their island", () -> {
 			p(A).removeAllEffects();
 			p(A).setHealth(p(A).getMaxHealth());
 			p(A).setRemainingFireTicks(0);
+			net.minecraft.world.phys.Vec3 home = match().arena().spawn(0).pos();
+			PartyTests.tp(p(A), home.x, home.y, home.z);
+			p(A).setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
 		});
 		s.pause(20);
-		s.run(tag + ": the snowball falls onto A", () -> {
+		s.run(tag + ": B's snowball falls onto A", () -> {
 			net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) p(A).level();
 			net.minecraft.world.entity.Entity ball = net.battlehub.hub.ClientEntities.type("minecraft:snowball").create(level, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
 			((net.minecraft.world.entity.projectile.Projectile) ball).setOwner(p(B));
-			ball.snapTo(p(A).getX(), p(A).getY() + 3.2, p(A).getZ());
-			ball.setDeltaMovement(0, -1.0, 0);
+			ball.snapTo(p(A).getX(), p(A).getY() + 2.6, p(A).getZ());
+			ball.setDeltaMovement(0, -0.8, 0);
 			level.addFreshEntity(ball);
+			VARS.put("snowBall", ball);
 			VARS.put("snowHealth", p(A).getHealth());
+			VARS.put("snowPolls", 0);
 		});
-		s.waitFor(tag + ": the snowball hurts A", 40, () -> p(A).getHealth() < (float) VARS.get("snowHealth"));
+		s.waitFor(tag + ": the snowball hurts A", 40, () -> {
+			boolean hurt = p(A).getHealth() < (float) VARS.get("snowHealth");
+			int polls = (int) VARS.get("snowPolls") + 1;
+			VARS.put("snowPolls", polls);
+			if (!hurt && polls % 10 == 0) {
+				net.minecraft.world.entity.Entity ball = (net.minecraft.world.entity.Entity) VARS.get("snowBall");
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST snowball after {} ticks: A at {} health {}, ball {} at {}, phase {}", polls,
+						p(A).position(), p(A).getHealth(), ball.isRemoved() ? "gone" : "flying", ball.position(), match().phase());
+			}
+			return hurt;
+		});
 		s.run(tag + ": the next goal counts double", () -> chaos().event("double_points"));
 		s.run(tag + ": A jumps into the blue goal", () -> {
 			BlockPos g = match().arena().mark("goal_blue");

@@ -6,6 +6,7 @@
 	"mixins": [
 		"AbstractContainerMenuMixin",
 		"ServerPlayerMixin",
+		"PlayerHurtMixin",
 		"ConnectionAccessor",
 		"ArrowAccessor",
 		"PlayerListMixin",

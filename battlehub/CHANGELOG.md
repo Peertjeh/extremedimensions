@@ -17,8 +17,9 @@
 ### Fixed
 * Beds in the lobby exploded when you tried to sleep: beds and respawn anchors now do nothing in BattleHub's
   worlds.
-* Snowballs (and eggs) did no damage to other players: in matches they now hurt (one heart by default).
-  Spleef keeps the push only.
+* Snowballs (and eggs) did nothing to other players: vanilla throws them for 0 damage and a player ignores a
+  0-damage hit entirely. In matches they now hurt (one heart by default) with knockback; in Spleef they push,
+  as they were always meant to.
 
 ### Changed
 * The lobby characters stand further from the fountain (16 blocks instead of 10.5), so the plaza is clearer.
