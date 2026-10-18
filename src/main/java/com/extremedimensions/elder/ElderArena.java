@@ -162,6 +162,15 @@ public final class ElderArena {
 		return n;
 	}
 
+	/** The middle of the arena raised last (for tests), or null if none stands. */
+	public static double[] lastCentre() {
+		if (ARENAS.isEmpty()) {
+			return null;
+		}
+		Arena a = ARENAS.get(ARENAS.size() - 1);
+		return new double[] {a.cx, a.cy, a.cz};
+	}
+
 	/** Blocks of every arena waiting for their part of the world to be loaded (for tests). */
 	public static int waiting() {
 		int n = 0;

@@ -63,13 +63,6 @@ public class ClientShots implements FabricClientGameTest {
 		for (int i = 0; i < 60 && !sp.getServer().computeOnServer(s -> loadedRound(s, 160)); i++) {
 			ctx.waitTicks(10);
 		}
-		// and on the client, so the shots from high up have it (the server sends a slow client its chunks slowly)
-		int waited = 0;
-		while (waited < 2400 && !ctx.computeOnClient(mc -> clientRound(mc, 150))) {
-			ctx.waitTicks(20);
-			waited += 20;
-		}
-		System.out.println("[arena] " + name + ": the world round it reached the client after " + waited + " ticks");
 		ctx.waitTicks(40);
 		sp.getServer().runOnServer(summon::accept);
 		ctx.waitTicks(30);
@@ -91,21 +84,31 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("12_fight_" + name + "_" + blowNames[i]);
 			ctx.waitTicks(45);
 		}
-		// The whole arena from high over it, by now built: from straight above, then from the side and high up
+		// The whole arena from high over its middle, by now built, then from out past its edge, looking along its towers
 		double[] stood = sp.getServer().computeOnServer(s -> new double[] {player(s).getX(), player(s).getY(), player(s).getZ()});
+		double[] mid = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.lastCentre());
+		check(mid != null, "the " + name + " raised no arena");
 		// Its far reaches (beyond the world loaded round the player) wait for their part of the world
 		int held = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting());
 		int standing = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.standing());
 		System.out.println("[arena] " + name + ": " + standing + " blocks standing, " + held + " waiting for their part of the world");
 		check(held > 0, "nothing of the " + name + "'s arena waits for its part of the world (its far towers and islands are left out)");
-		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~170 ~ 0 90");
-		sp.getServer().runOnServer(s -> player(s).setRemainingFireTicks(0));
+		// Flying, so the view holds where it is put
+		sp.getServer().runOnServer(s -> {
+			ServerPlayer p = player(s);
+			p.getAbilities().mayfly = true;
+			p.getAbilities().flying = true;
+			p.onUpdateAbilities();
+			p.setRemainingFireTicks(0);
+			p.teleportTo(mid[0], mid[1] + 170, mid[2]);
+		});
+		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 90");
 		ctx.waitTicks(40);
 		ctx.takeScreenshot("12_fight_" + name + "_arena");
-		// From the side, out past its edge: the world comes in round there, and what waited for it goes up
-		sp.getServer().runOnServer(s -> elders(s).stream().findFirst().ifPresent(e -> player(s).teleportTo(e.getX() - 170, e.getY() + 70, e.getZ())));
-		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ -90 18");
-		sp.getServer().runOnServer(s -> player(s).setRemainingFireTicks(0));
+		// Out past its west wall (near enough that the Elder keeps to its prey), looking north along its towers: the
+		// world comes in round there, and what waited for it goes up
+		sp.getServer().runOnServer(s -> player(s).teleportTo(mid[0] - 190, mid[1] + 40, mid[2]));
+		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 180 15");
 		for (int i = 0; i < 30 && sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting()) >= held; i++) {
 			ctx.waitTicks(10);
 		}
@@ -114,6 +117,12 @@ public class ClientShots implements FabricClientGameTest {
 		System.out.println("[arena] " + name + ": " + left + " still waiting once the world came in round its side");
 		check(left < held, "nothing of the " + name + "'s arena went up as the world came in round its side (" + left + " of " + held + " still waiting)");
 		ctx.takeScreenshot("12_fight_" + name + "_arena_side");
+		sp.getServer().runOnServer(s -> {
+			ServerPlayer p = player(s);
+			p.getAbilities().flying = false;
+			p.getAbilities().mayfly = false;
+			p.onUpdateAbilities();
+		});
 		sp.getServer().runOnServer(s -> player(s).teleportTo(stood[0], stood[1], stood[2]));
 		ctx.waitTicks(10);
 		sp.getServer().runOnServer(s -> elders(s).forEach(e -> force.test(e, com.extremedimensions.elder.ElderBoss.ULTIMATE)));
@@ -146,17 +155,6 @@ public class ClientShots implements FabricClientGameTest {
 			}
 		});
 		ctx.waitTicks(10);
-	}
-
-	/** Whether the client has the world in a ring this far round its player. */
-	private static boolean clientRound(net.minecraft.client.Minecraft mc, int r) {
-		for (int a = 0; a < 8; a++) {
-			double t = a * Math.PI / 4;
-			if (!mc.level.isLoaded(BlockPos.containing(mc.player.getX() + r * Math.cos(t), mc.player.getY(), mc.player.getZ() + r * Math.sin(t)))) {
-				return false;
-			}
-		}
-		return true;
 	}
 
 	/** Whether the world is loaded on the server in a ring this far round the player. */
