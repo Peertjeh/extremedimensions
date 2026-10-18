@@ -43,8 +43,10 @@ public final class Thrown {
 		Vec3 flat = new Vec3(v.x, 0, v.z);
 		if (flat.lengthSqr() < 1e-6) flat = new Vec3(p.getX() - ball.getX(), 0, p.getZ() - ball.getZ());
 		if (flat.lengthSqr() < 1e-6) return false;
-		flat = flat.normalize();
-		p.knockback(0.5, -flat.x, -flat.z);
+		// a push away from the throw, like a light hit
+		Vec3 now = p.getDeltaMovement();
+		Vec3 push = flat.normalize().scale(0.45);
+		p.setDeltaMovement(now.x / 2 + push.x, Math.max(now.y, 0) / 2 + 0.3, now.z / 2 + push.z);
 		p.connection.send(new ClientboundSetEntityMotionPacket(p));
 		return false;
 	}
