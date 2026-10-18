@@ -14,15 +14,16 @@ public final class OpponentModel {
 	private double strafeRate;
 	private double jumpRate;
 	private int samples;
-	private double lastDistance = Double.NaN;
 	private boolean wasRising;
 
-	/** One look at the opponent: the distance now, their sideways changes in the last second and whether they rise. */
-	public void observe(double dist, int strafeChangesPerSecond, boolean rising) {
-		if (!Double.isNaN(lastDistance)) {
-			closing += W * ((lastDistance - dist) - closing);
-		}
-		lastDistance = dist;
+	/**
+	 * One look at the opponent, once per think: the distance, how fast they themselves move towards the NPC (their
+	 * own speed along the line to it, in blocks per tick; the NPC walking up to them does not count), their sideways
+	 * direction changes in the last second and whether they rise (a jump).
+	 */
+	public void observe(double dist, double approachSpeed, int strafeChangesPerSecond, boolean rising) {
+		// pushing forward only shows while there is room to come closer; standing in sword range says nothing
+		if (dist > 3.5) closing += W * (approachSpeed - closing);
 		if (dist < 8) distance += W * (dist - distance);
 		strafeRate += W * (strafeChangesPerSecond - strafeRate);
 		jumpRate += W * (((rising && !wasRising) ? 1 : 0) * 20 - jumpRate) * 0.2;
@@ -30,14 +31,14 @@ public final class OpponentModel {
 		samples++;
 	}
 
-	/** Lost sight: the next distance should not count as closing in. */
-	public void lostSight() {
-		lastDistance = Double.NaN;
-	}
-
-	/** How strongly they push forward, 0..1 (closing about 0.15 blocks per think counts as fully aggressive). */
+	/**
+	 * How strongly they push forward, 0..1: half from walking at the NPC (0.1 blocks a tick, a normal walk, counts
+	 * fully), half from how close they like to fight.
+	 */
 	public double aggression() {
-		return Math.max(0, Math.min(1, closing / 0.15 * 0.5 + 0.5 * (samples > 20 ? Math.max(0, (4.5 - distance) / 3) : 0.3)));
+		double pushing = Math.max(0, Math.min(1, closing / 0.1));
+		double close = samples > 20 ? Math.max(0, Math.min(1, (4.5 - distance) / 3)) : 0.3;
+		return 0.5 * pushing + 0.5 * close;
 	}
 
 	/** The distance they like to fight at (blocks). */
@@ -70,7 +71,6 @@ public final class OpponentModel {
 		strafeRate = 0;
 		jumpRate = 0;
 		samples = 0;
-		lastDistance = Double.NaN;
 		wasRising = false;
 	}
 }

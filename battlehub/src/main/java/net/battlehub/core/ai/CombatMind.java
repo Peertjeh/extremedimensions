@@ -75,23 +75,23 @@ public final class CombatMind {
 		this.debug = log;
 	}
 
-	/** A sighting of a player (only for players really seen). */
+	/** A sighting of a player (only for players located by sight or name tag); {@code rising}: going up (a jump). */
 	public void see(int tick, UUID id, V3 pos, double dist, boolean rising) {
-		Track t = track(id);
-		boolean wasLost = t.empty() || tick - t.lastSeen() > 10;
-		t.observe(tick, pos);
-		OpponentModel m = model(id);
-		if (wasLost) m.lostSight();
-		m.observe(dist, 0, rising);
+		track(id).observe(tick, pos);
+		if (rising) risingNow.add(id);
 	}
 
-	/** The strafe habit needs the observer; called once per think with the NPC's position. */
-	private void studyStrafe(UUID id, V3 me) {
+	private final java.util.Set<UUID> risingNow = new java.util.HashSet<>();
+
+	/** Once per think: what the opponent's own movement says about them (seen from the NPC's position). */
+	private void study(UUID id, V3 me, int tick) {
 		Track t = tracks.get(id);
-		OpponentModel m = models.get(id);
-		if (t == null || m == null) return;
-		// direction changes in the last second, folded into the model through a zero-distance-change look
-		m.observe(t.last() == null ? 4 : t.last().distance(me), t.strafeChanges(me, 20), false);
+		if (t == null || t.empty() || tick - t.lastSeen() > 2) return;
+		V3 last = t.last();
+		V3 toMe = me.sub(last).flat().unit();
+		// their own speed towards the NPC: the NPC walking up to them changes the distance, not this
+		double approach = t.velocity().flat().dot(toMe);
+		model(id).observe(last.distance(me), approach, t.strafeChanges(me, 20), risingNow.remove(id));
 	}
 
 	public Track track(UUID id) {
@@ -165,7 +165,7 @@ public final class CombatMind {
 		int quiet = lastExchange == Integer.MIN_VALUE ? 0 : s.tick() - lastExchange;
 		Situation.Target t = s.target();
 		OpponentModel om = t == null ? new OpponentModel() : model(t.id());
-		if (t != null && t.visible()) studyStrafe(t.id(), s.self().pos());
+		if (t != null && t.visible()) study(t.id(), s.self().pos(), s.tick());
 		List<Score> scores = CombatPolicy.score(s, om, outcomes, personality, difficulty, quiet);
 		Tactic before = decider.current();
 		last = decider.decide(s.tick(), scores, personality, difficulty, rng);
@@ -186,6 +186,7 @@ public final class CombatMind {
 		targetId = null;
 		tracks.clear();
 		models.clear();
+		risingNow.clear();
 		outcomes.reset();
 		dealt = 0;
 		taken = 0;
