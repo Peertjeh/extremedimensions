@@ -103,7 +103,19 @@ final class BotTests {
 			int polls = (int) VARS.get("npcPolls") + 1;
 			VARS.put("npcPolls", polls);
 			if (!ok && polls % 100 == 0) {
-				net.battlehub.BattleHub.LOGGER.warn("SELFTEST npcs after {} ticks: {} (A at {})", polls, HubNpcs.describe(server), p(A).position());
+				net.minecraft.server.level.ServerLevel hub = (net.minecraft.server.level.ServerLevel) p(A).level();
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST npcs after {} ticks: {} (A at {}, mode {}, chunk loaded {}, client loaded {}, {} chunks loaded in the hub)",
+						polls, HubNpcs.describe(server), p(A).position(), p(A).gameMode(), hub.isLoaded(p(A).blockPosition()),
+						p(A).connection.hasClientLoaded(), hub.getChunkSource().getLoadedChunksCount());
+			}
+			if (!ok && polls == 100) {
+				// Test players have no client; if the plaza is still not loaded round them, load it the way a client would
+				net.minecraft.server.level.ServerLevel hub = (net.minecraft.server.level.ServerLevel) p(A).level();
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST npcs: plaza chunks not loaded round the test player, forcing them for this test");
+				for (int cx = -2; cx <= 1; cx++) {
+					for (int cz = -2; cz <= 1; cz++) hub.setChunkForced(cx, cz, true);
+				}
+				VARS.put("npcForced", true);
 			}
 			return ok;
 		});
@@ -136,6 +148,13 @@ final class BotTests {
 				(net.minecraft.world.level.block.state.BlockState) VARS.get("bedWas"), 3));
 		s.run(tag + ": A clicks the practice character", () -> HubNpcs.click(p(A), HubNpcs.hitbox("practice")));
 		s.check(tag + ": the practice menu opens", () -> p(A).containerMenu instanceof HubMenu);
+		s.run(tag + ": chunks forced for the test are released", () -> {
+			if (VARS.remove("npcForced") == null) return;
+			net.minecraft.server.level.ServerLevel hub = (net.minecraft.server.level.ServerLevel) p(A).level();
+			for (int cx = -2; cx <= 1; cx++) {
+				for (int cz = -2; cz <= 1; cz++) hub.setChunkForced(cx, cz, false);
+			}
+		});
 		s.run(tag + ": close it; no mode of the day for the other tests", () -> {
 			p(A).closeContainer();
 			@SuppressWarnings("unchecked")
