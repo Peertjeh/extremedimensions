@@ -81,6 +81,17 @@ final class BotBrain {
 	private boolean fighting;
 	/** Players whose remembered habits were given to this fight's models already. */
 	private final java.util.Set<UUID> seeded = new java.util.HashSet<>();
+	/** The hand on the mouse: where the crosshair really points while fighting (see core.ai.AimModel). */
+	private net.battlehub.core.ai.AimModel aim;
+	private UUID aimingAt;
+	/** Where each player was last tick (to hear who walks or runs). */
+	private final java.util.Map<UUID, Vec3> heardAt = new java.util.HashMap<>();
+	private UUID chargeOf;
+	private int lookingAround;
+	// Edges: the last place with ground under the bot, and what it does in the air after a knock
+	private Vec3 lastGround;
+	private int airTicks;
+	private int recoverChoice;
 
 	BotBrain(BotPlayer bot) {
 		this.bot = bot;
@@ -105,6 +116,8 @@ final class BotBrain {
 
 	void taken(double hp) {
 		mind.taken(hp);
+		// a hit throws the aim off a little, as for anyone
+		if (aim != null) aim.disturb(1.5 + hp * 0.8);
 	}
 
 	/** Who last hurt this bot, and when (for choosing whom to fight). */
@@ -112,6 +125,7 @@ final class BotBrain {
 
 	void hitBy(UUID attacker) {
 		hitBy.put(attacker, ticks);
+		mind.hitBy(attacker);
 	}
 
 	int hitAgo(UUID id) {
@@ -164,6 +178,7 @@ final class BotBrain {
 			boolean wanted = bot.zza != 0 || bot.xxa != 0;
 			keepSafe();
 			unstick(wanted);
+			recover();
 		}
 	}
 
@@ -182,6 +197,8 @@ final class BotBrain {
 		pkPlan = null;
 		pkStage = 0;
 		pkFailed.clear();
+		heardAt.clear();
+		aimingAt = null;
 		placedBlocks = 0;
 		mining = null;
 		bridgeAt = null;
@@ -250,6 +267,37 @@ final class BotBrain {
 	}
 
 	/**
+	 * Aims at a point the way a hand on a mouse does ({@link net.battlehub.core.ai.AimModel}): with a moment's lag,
+	 * a capped turn, a wobble and an overshoot on big turns. Where the crosshair ends up decides whether a swing lands.
+	 */
+	private void aimAt(Vec3 at) {
+		if (aim == null) {
+			aim = new net.battlehub.core.ai.AimModel(net.battlehub.core.ai.AimModel.Params.of(mind.difficulty()), bot.getUUID().getLeastSignificantBits());
+		}
+		Vec3 eye = bot.getEyePosition();
+		double dx = at.x - eye.x, dz = at.z - eye.z;
+		aim.sync(bot.getYRot(), bot.getXRot());
+		float[] a = aim.step(BotMath.yaw(dx, dz), BotMath.pitch(Math.sqrt(dx * dx + dz * dz), at.y - eye.y));
+		bot.setYRot(a[0]);
+		bot.setYHeadRot(a[0]);
+		bot.yBodyRot = a[0];
+		bot.setXRot(a[1]);
+	}
+
+	/** Is the crosshair on this player: the look ray hits their hitbox within reach, with no block in front? */
+	private boolean onCrosshair(ServerPlayer t) {
+		double range = bot.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ENTITY_INTERACTION_RANGE);
+		Vec3 eye = bot.getEyePosition();
+		net.minecraft.world.phys.AABB box = t.getBoundingBox().inflate(t.getPickRadius());
+		if (box.contains(eye)) return true;
+		java.util.Optional<Vec3> hit = box.clip(eye, eye.add(bot.getLookAngle().scale(range)));
+		if (hit.isEmpty()) return false;
+		net.minecraft.world.phys.BlockHitResult wall = level().clip(new net.minecraft.world.level.ClipContext(eye, hit.get(),
+				net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, bot));
+		return wall.getType() == net.minecraft.world.phys.HitResult.Type.MISS;
+	}
+
+	/**
 	 * The next point on the way to {@code dest}: a corner of the route round walls and cover, or {@code dest}
 	 * itself when the way is straight or no route was found. The route is worked out again every second, or
 	 * sooner when the goal moved.
@@ -301,7 +349,7 @@ final class BotBrain {
 		sidestep();
 		if (bot.onGround() && (bot.horizontalCollision || (next.y - pos.y > 0.5 && Math.sqrt(nx * nx + nz * nz) < 2.0)
 				|| (dest.y - pos.y > 0.6 && d < 2.5))) {
-			bot.setJumping(true);
+			jump();
 		}
 	}
 
@@ -325,9 +373,22 @@ final class BotBrain {
 		goTo(wander, false);
 	}
 
-	/** Never walks off an edge into the void or a hole. */
+	/**
+	 * Never walks off an edge into the void or a hole: it looks further ahead the faster it goes, and when it slides
+	 * towards an edge (after a knock) it holds the keys against the slide.
+	 */
 	private void keepSafe() {
-		if (!bot.onGround() || (bot.zza == 0 && bot.xxa == 0)) {
+		if (!bot.onGround()) {
+			return;
+		}
+		Vec3 v = bot.getDeltaMovement();
+		double speed = v.horizontalDistance();
+		if (speed > 0.12 && !safe(new Vec3(v.x, 0, v.z).normalize(), 0.6 + speed * 3)) {
+			brake();
+			bot.setSprinting(false);
+			return;
+		}
+		if (bot.zza == 0 && bot.xxa == 0) {
 			return;
 		}
 		Vec3 fwd = BotActions.dir(bot.getYRot());
@@ -351,8 +412,80 @@ final class BotBrain {
 	}
 
 	private boolean safe(Vec3 dir) {
-		Vec3 p = bot.position().add(dir.scale(1.1));
+		double speed = bot.getDeltaMovement().horizontalDistance();
+		return safe(dir, 1.1 + Math.max(0, speed - 0.15) * 3);
+	}
+
+	private boolean safe(Vec3 dir, double distance) {
+		Vec3 p = bot.position().add(dir.scale(distance));
 		return BotActions.groundBelow(level(), p.x, p.y, p.z, 4);
+	}
+
+	// ------------------------------------------------------------------ jumping and falling
+
+	/**
+	 * Jumps, unless the jump would end in the void: the player's movement is carried on from here (with the keys
+	 * pressed now) to where it comes down. Lower levels do not always look first.
+	 */
+	private void jump() {
+		if (!bot.onGround()) return;
+		if (rnd.nextDouble() < mind.difficulty().edgeCare) {
+			Vec3 v = bot.getDeltaMovement();
+			double[] dir = keysDirection();
+			if (!net.battlehub.core.ai.Falls.landsSafely(bot.getX(), bot.getY(), bot.getZ(), v.x, 0, v.z, dir[0], dir[1], bot.isSprinting(), true,
+					this::surface, 1.5)) {
+				return;
+			}
+		}
+		bot.setJumping(true);
+	}
+
+	/**
+	 * In the air, knocked or fallen off: when the flight would end in the void, it holds the keys back towards the
+	 * last ground (a player does, after a moment to notice; lower levels not always).
+	 */
+	private void recover() {
+		if (bot.onGround()) {
+			airTicks = 0;
+			recoverChoice = 0;
+			BlockPos under = support();
+			if (under != null) lastGround = Vec3.atBottomCenterOf(under).add(0, 1, 0);
+			return;
+		}
+		airTicks++;
+		if (lastGround == null || airTicks < 1 + mind.difficulty().reactionTicks / 3) return;
+		if (recoverChoice == 0) recoverChoice = rnd.nextDouble() < mind.difficulty().edgeCare ? 1 : -1;
+		if (recoverChoice < 0) return;
+		Vec3 v = bot.getDeltaMovement();
+		if (net.battlehub.core.ai.Falls.landsSafely(bot.getX(), bot.getY(), bot.getZ(), v.x, v.y, v.z, 0, 0, false, false, this::surface, 3)) {
+			return;
+		}
+		moveToward(lastGround, 1f);
+		bot.setSprinting(false);
+	}
+
+	/** The world direction of the keys pressed now (forward and strafe, relative to where the bot faces). */
+	private double[] keysDirection() {
+		double yaw = Math.toRadians(bot.getYRot());
+		double x = -Math.sin(yaw) * bot.zza + Math.cos(yaw) * bot.xxa;
+		double z = Math.cos(yaw) * bot.zza + Math.sin(yaw) * bot.xxa;
+		double len = Math.hypot(x, z);
+		return len < 1e-6 ? new double[] {0, 0} : new double[] {x / len, z / len};
+	}
+
+	/** The top of the highest block under (x, z) at or below y, within a few blocks (water is a soft landing); NaN for a drop. */
+	private double surface(double x, double y, double z) {
+		BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos(Math.floor(x), Math.floor(y), Math.floor(z));
+		for (int i = 0; i < 7; i++) {
+			BlockState st = level().getBlockState(p);
+			if (!st.getFluidState().isEmpty()) {
+				return st.is(net.minecraft.world.level.block.Blocks.WATER) ? p.getY() + 0.9 : Double.NaN;
+			}
+			net.minecraft.world.phys.shapes.VoxelShape shape = st.getCollisionShape(level(), p);
+			if (!shape.isEmpty()) return p.getY() + shape.max(net.minecraft.core.Direction.Axis.Y);
+			p.move(0, -1, 0);
+		}
+		return Double.NaN;
 	}
 
 	/** While going round something: mostly sideways, a little forward. */
@@ -373,7 +506,7 @@ final class BotBrain {
 		if (trying && pos.distanceToSqr(lastPos) < 0.04) {
 			stuck++;
 			if (stuck >= 2) {
-				bot.setJumping(true);
+				jump();
 				strafe = -strafe;
 				wander = null;
 				// The route may be out of date (a block placed, a player in the way): work it out again
@@ -453,7 +586,7 @@ final class BotBrain {
 	 */
 	private void melee(Match m) {
 		fighting = true;
-		Perception.Known k = Perception.pickTarget(bot, m, mind, ticks, target, this::hitAgo);
+		Perception.Known k = Perception.pickTarget(bot, m, mind, ticks, target, this::hitAgo, heardAt);
 		ServerPlayer t = k == null ? null : k.player();
 		target = t == null ? null : t.getUUID();
 		if (t != null && !Bots.isBot(t.getUUID()) && AiMemory.learning() && seeded.add(t.getUUID())) {
@@ -462,9 +595,28 @@ final class BotBrain {
 		}
 		// a swing everyone can see resets the swinger's attack charge: a sudden drop means they just attacked
 		float charge = t != null && k.seen() ? t.getAttackStrengthScale(0.5f) : 1f;
-		if (charge < lastCharge - 0.3f) lastSwing = ticks;
+		UUID of = t != null && k.seen() ? t.getUUID() : null;
+		if (of == null || !of.equals(chargeOf)) lastCharge = charge;
+		chargeOf = of;
+		if (charge < lastCharge - 0.3f) {
+			lastSwing = ticks;
+			mind.opponentSwing(t.getUUID(), ticks);
+		}
 		lastCharge = charge;
-		if (edges == null || ticks - edgesAt >= mind.difficulty().thinkTicks * Bots.thinkStretch()) {
+		if (t != null) {
+			if (aim == null) aim = new net.battlehub.core.ai.AimModel(net.battlehub.core.ai.AimModel.Params.of(mind.difficulty()),
+					bot.getUUID().getLeastSignificantBits());
+			if (!t.getUUID().equals(aimingAt)) {
+				aim.retarget();
+				aimingAt = t.getUUID();
+			}
+			// how predictable this player has proved: steady strafers are led all the way, erratic ones less
+			net.battlehub.core.ai.OpponentModel om = mind.model(t.getUUID());
+			aim.adapt(om.known() ? om.predictability() : -1);
+		}
+		// near an edge the ground round the bot is measured every tick (it changes with every step)
+		boolean nearEdge = edges != null && java.util.Arrays.stream(edges).min().orElse(Situation.SAFE) < 2.5;
+		if (edges == null || nearEdge || ticks - edgesAt >= mind.difficulty().thinkTicks * Bots.thinkStretch()) {
 			edges = Perception.edges(bot);
 			edgesAt = ticks;
 		}
@@ -472,11 +624,16 @@ final class BotBrain {
 		Intent in = mind.tick(s);
 		lastIntent = in;
 		if (t == null && in.moveTo() == null && mind.tactic() == Tactic.IDLE) {
-			// nobody to be seen and nothing to do: look round the arena
+			// nobody to be seen and nothing to do: look round first (someone may be behind), then walk about
 			stopUsing();
-			wanderAbout(bot.position(), 8);
+			if (lookingAround++ % 120 < 50) {
+				look(bot.getYRot() + Math.min(12f, turnSpeed() * 0.5f), 0f);
+			} else {
+				wanderAbout(bot.position(), 8);
+			}
 			return;
 		}
+		lookingAround = 0;
 		execute(m, in, k);
 	}
 
@@ -494,30 +651,43 @@ final class BotBrain {
 		}
 		if (in.moveTo() != null) {
 			if (!bridge(m, Perception.v(in.moveTo()))) {
-				goTo(Perception.v(in.moveTo()), in.sprint());
-				// close by and in sight: face them while getting there
+				Vec3 dest = Perception.v(in.moveTo());
 				if (in.look() != null && t != null && k.seen() && t.distanceTo(bot) < 6) {
-					lookAt(Perception.v(in.look()), true);
+					// close by and in sight: the eyes stay on them, the keys take the bot where it wants to go
+					aimAt(Perception.v(in.look()));
+					moveToward(waypoint(dest), 1f);
+					bot.setSprinting(in.sprint() && skill.sprints && bot.zza > 0.5f);
+					if (bot.onGround() && bot.horizontalCollision) jump();
+				} else {
+					goTo(dest, in.sprint());
 				}
 			}
 		} else {
 			if (in.look() != null && !in.bow()) {
-				lookAt(Perception.v(in.look()), true);
+				aimAt(Perception.v(in.look()));
 			}
 			bot.zza = (float) in.forward();
 			bot.xxa = (float) in.strafe();
 			bot.setSprinting(in.sprint() && in.forward() > 0 && !bot.isUsingItem() && mind.difficulty() != Difficulty.BEGINNER);
 			if (bot.onGround() && bot.horizontalCollision && in.forward() > 0) {
-				bot.setJumping(true);
+				jump();
 			}
 		}
 		if (in.jump() && bot.onGround()) {
-			bot.setJumping(true);
+			jump();
 		}
 		shield(in.block());
-		if (in.attack() && t != null && k.seen() && t.distanceTo(bot) <= Perception.reach(bot) && bot.hasLineOfSight(t)) {
+		if (in.attack() && t != null && k.seen()) {
+			// the click: it lands only when the crosshair is really on them, within reach, with nothing in between
 			shield(false);
-			BotActions.attack(bot, t);
+			boolean landed = onCrosshair(t);
+			if (landed) {
+				BotActions.attack(bot, t);
+			} else {
+				BotActions.swing(bot);
+			}
+			mind.swung(landed);
+			// a swing at the air costs the charge as well (the attack meter starts again for a player too)
 			bot.resetAttackStrengthTicker();
 			mining = null;
 		} else if (!building && (mind.tactic() == Tactic.OBJECTIVE || t == null)) {

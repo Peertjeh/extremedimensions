@@ -31,6 +31,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Bots and the lobby: practice duels (sword and bow) where the bot really fights, queues and party lobbies filled
@@ -203,6 +204,41 @@ final class BotTests {
 			return ok;
 		});
 		s.waitFor(tag + ": the bot hits A", 200, () -> p(A).getHealth() < p(A).getMaxHealth());
+		s.run(tag + ": A starts strafing (sideways, changing direction now and then)", () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			Vec3 a = p(A).position(), toBot = b.position().subtract(a).normalize();
+			VARS.put("strafeCenter", a);
+			VARS.put("strafeSide", new Vec3(-toBot.z, 0, toBot.x));
+			VARS.put("strafeOffset", 0.0);
+			VARS.put("strafeDir", 1.0);
+			VARS.put("swings0", Bots.report(b).swings());
+			VARS.put("landed0", Bots.report(b).landed());
+		});
+		s.waitFor(tag + ": against a strafing target the bot swings and misses now and then (no lock)", 1200, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			// A sprint-strafes 0.22 blocks a tick within a block and a half, turning every 8 to 24 ticks
+			double off = (double) VARS.get("strafeOffset"), dir = (double) VARS.get("strafeDir");
+			if (Math.abs(off) > 1.5 || java.util.concurrent.ThreadLocalRandom.current().nextInt(16) == 0) dir = Math.abs(off) > 1.5 ? -Math.signum(off) : -dir;
+			off += dir * 0.22;
+			VARS.put("strafeOffset", off);
+			VARS.put("strafeDir", dir);
+			Vec3 c = (Vec3) VARS.get("strafeCenter"), side = (Vec3) VARS.get("strafeSide");
+			PartyTests.tp(p(A), c.x + side.x * off, c.y, c.z + side.z * off);
+			p(A).setHealth(p(A).getMaxHealth());
+			int swings = Bots.report(b).swings() - (int) VARS.get("swings0"), landed = Bots.report(b).landed() - (int) VARS.get("landed0");
+			if (swings >= 15) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST aim against a strafing target: {} swings, {} landed ({}%)", swings, landed,
+						Math.round(100.0 * landed / swings));
+				return landed > 0 && landed < swings;
+			}
+			return false;
+		});
+		s.run(tag + ": A stands still again", () -> {
+			Vec3 c = (Vec3) VARS.get("strafeCenter");
+			PartyTests.tp(p(A), c.x, c.y, c.z);
+		});
 		s.check(tag + ": the bot's mind decides, keeps its reasons and switched tactics on the way", () -> {
 			BotPlayer b = botsIn(matchOfA()).get(0);
 			net.battlehub.core.ai.CombatMind.Report r = Bots.report(b);
@@ -262,7 +298,8 @@ final class BotTests {
 			java.nio.file.Path f = net.battlehub.data.PlayerStore.worldDir(server).resolve("ai").resolve(p(A).getUUID() + ".json");
 			java.util.List<Component> lines = Bots.memory(p(A));
 			net.battlehub.BattleHub.LOGGER.info("SELFTEST memory: {} | {}", k.results, lines.stream().map(Component::getString).toList());
-			return k.results.contains("W:expert") && java.nio.file.Files.exists(f) && lines.size() >= 4;
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST rating after the win: {} (rated {}), adaptive {}", k.rating, k.rated, k.adaptiveLevel);
+			return k.results.contains("W:expert") && java.nio.file.Files.exists(f) && lines.size() >= 4 && k.rated > 0 && k.rating > 1050;
 		});
 		s.run(tag + ": A wipes it with /bots forget", () -> server.getCommands().performPrefixedCommand(p(A).createCommandSourceStack(), "bots forget"));
 		s.check(tag + ": the bots forgot A (memory and file)", () -> net.battlehub.bot.AiMemory.get(server, p(A).getUUID()).results.isEmpty()
@@ -503,9 +540,11 @@ final class BotTests {
 	private static void bridgeBot(MinecraftServer server, Script s) {
 		String tag = "bots bridge";
 		SelfTest.reset(s, tag);
-		s.run(tag + ": A queues for casual Bridge; a bot fills in", () -> {
+		s.run(tag + ": A queues for casual Bridge; a (master) bot fills in", () -> {
 			cfg().fillQueues = true;
 			cfg().fillAfterSeconds = 1;
+			VARS.put("fillLevel", cfg().fillLevel);
+			cfg().fillLevel = "master";
 			SelfTest.join(server, A);
 			Queues.join(p(A), GameMode.BRIDGE, false, DuelFormat.BO1);
 		});
@@ -515,6 +554,7 @@ final class BotTests {
 		});
 		s.run(tag + ": no more bots; the path between the islands is taken away", () -> {
 			cfg().fillQueues = false;
+			cfg().fillLevel = (String) VARS.get("fillLevel");
 			Match m = matchOfA();
 			net.minecraft.core.BlockPos o = m.arena().origin();
 			int reach = net.battlehub.arena.layout.NewLayouts.BRIDGE_ISLAND - 6;
@@ -534,6 +574,34 @@ final class BotTests {
 			}
 			logBot("bridge bot", m, b, "bridgeLogged");
 			return false;
+		});
+		s.run(tag + ": the bot is put on its island a block and a half from the north edge", () -> {
+			Match m = matchOfA();
+			BotPlayer b = botsIn(m).get(0);
+			net.minecraft.core.BlockPos o = m.arena().origin();
+			double x = b.getX() > o.getX() ? o.getX() + net.battlehub.arena.layout.NewLayouts.BRIDGE_ISLAND + 0.5
+					: o.getX() - net.battlehub.arena.layout.NewLayouts.BRIDGE_ISLAND + 0.5;
+			PartyTests.tp(b, x, o.getY() + 1, o.getZ() - 3.6);
+			VARS.put("edgeY", (double) o.getY() + 1);
+		});
+		s.pause(4);
+		s.run(tag + ": a hit knocks it towards the void (0.4 sideways, 0.42 up)", () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			b.setDeltaMovement(0, 0.42, -0.4);
+			VARS.put("recovered", false);
+		});
+		s.waitFor(tag + ": in the air it holds the keys back towards the island", 8, () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			double yaw = Math.toRadians(b.getYRot());
+			double kx = -Math.sin(yaw) * b.zza + Math.cos(yaw) * b.xxa, kz = Math.cos(yaw) * b.zza + Math.sin(yaw) * b.xxa;
+			double len = Math.hypot(kx, kz);
+			return !b.onGround() && len > 0.5 && kz / len > 0.5;
+		});
+		s.pause(30);
+		s.check(tag + ": and it lands back on the island (logged)", () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST knocked bot landed at {} (island floor at y {})", b.position(), VARS.get("edgeY"));
+			return true;
 		});
 		endAndClean(s, tag);
 	}

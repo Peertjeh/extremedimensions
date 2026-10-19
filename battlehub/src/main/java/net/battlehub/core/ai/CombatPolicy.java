@@ -137,6 +137,15 @@ public final class CombatPolicy {
 					v += 0.3 * p.adaptability() * trend;
 					why.add(trend < 0 ? "trading badly" : "trading well");
 				}
+				// what it learned about how they swing
+				if (om.spams()) {
+					v += 0.12 + 0.1 * p.adaptability();
+					why.add("they spam weak hits");
+				}
+				if (om.swings() >= 6 && om.accuracy() < 0.4) {
+					v += 0.12 * (0.5 + p.adaptability());
+					why.add("they miss a lot");
+				}
 				if (impatience > 0) {
 					v += impatience;
 					why.add("nothing happens");
@@ -155,6 +164,14 @@ public final class CombatPolicy {
 				if (om.known() && om.aggression() > 0.5) {
 					v += 0.3 * om.aggression() * p.patience();
 					why.add("they rush in");
+				}
+				if (om.timed()) {
+					v += 0.05 + 0.15 * p.patience() * (0.5 + p.adaptability());
+					why.add("they time their hits");
+				}
+				if (om.swings() >= 6 && om.accuracy() > 0.75) {
+					v += 0.1 * (0.5 + p.adaptability());
+					why.add("they rarely miss");
 				}
 				double trend = mem.trend(Tactic.SPACE);
 				if (trend != 0) {

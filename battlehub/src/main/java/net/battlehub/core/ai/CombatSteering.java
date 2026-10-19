@@ -10,13 +10,23 @@ import java.util.Random;
  */
 public final class CombatSteering {
 	private int strafeDir = 1;
+	/** Ticks until the strafe changes direction (a human holds a key for a while, not one tick). */
+	private int strafeHold;
 	private int wTap;
+	private Clicker clicker;
 
 	public int strafeDir() {
 		return strafeDir;
 	}
 
 	public Intent steer(Tactic tactic, Situation s, Track track, Personality p, Difficulty d, Random rng) {
+		if (clicker == null) clicker = new Clicker(d, rng);
+		Intent in = intent(tactic, s, track, p, d, rng);
+		if (in.attack()) clicker.clicked();
+		return in;
+	}
+
+	private Intent intent(Tactic tactic, Situation s, Track track, Personality p, Difficulty d, Random rng) {
 		Situation.Self me = s.self();
 		Situation.Target t = s.target();
 		if (wTap > 0) wTap--;
@@ -27,9 +37,10 @@ public final class CombatSteering {
 		double reach = me.reach();
 		V3 aim = t == null ? null : aimPoint(s, track, d);
 		V3 facing = t == null ? V3.ZERO : t.pos().sub(me.pos()).flat().unit();
-		boolean canHit = t != null && t.visible() && dist <= reach && me.attackReady() >= d.readyToHit;
+		// a click when the finger is ready: the charge it waits for this time, a little late, sometimes from too far
+		boolean canHit = t != null && clicker.wants(me.attackReady(), dist, reach, t.visible());
 		boolean fallingCrit = t != null && t.visible() && dist <= reach && !me.onGround() && me.vel().y() < -0.05
-				&& me.attackReady() >= 0.85 && d.critSkill >= 0.5;
+				&& me.attackReady() >= 0.85 && d.critSkill >= 0.5 && canHit;
 		return switch (tactic) {
 			case APPROACH -> {
 				V3 to = track != null && !track.empty() ? track.predict(s.tick(), d.predictTicks) : t.pos();
@@ -57,7 +68,7 @@ public final class CombatSteering {
 				double fwd = dist > hold + 0.4 ? 0.8 : dist < hold - 0.3 ? -0.8 : 0;
 				double str = strafe(s, facing, d, rng);
 				// they stepped into reach: punish
-				boolean hit = t.visible() && dist <= reach - 0.1 && me.attackReady() >= d.readyToHit;
+				boolean hit = dist <= reach - 0.1 && canHit;
 				boolean block = !hit && me.hasShield() && dist < reach + 0.3 && me.attackReady() < 0.6 && rng.nextDouble() < d.shieldSkill * 0.4;
 				yield new Intent(fwd, str, false, false, aim, null, hit, block, false);
 			}
@@ -138,10 +149,15 @@ public final class CombatSteering {
 	/** Sideways movement: more and smarter at higher levels; never towards an edge. */
 	private double strafe(Situation s, V3 facing, Difficulty d, Random rng) {
 		if (d.strafeSkill <= 0) return 0;
-		if (rng.nextDouble() < 0.02 + d.strafeSkill * 0.04) strafeDir = -strafeDir;
+		if (strafeHold-- <= 0) {
+			// a key is held for a while: shorter and less regular at higher levels
+			strafeDir = -strafeDir;
+			strafeHold = (int) (5 + 13 * (1 - d.strafeSkill)) + rng.nextInt((int) (10 + 15 * (1 - d.strafeSkill)));
+		}
 		V3 side = facing.left().scale(strafeDir);
 		if (s.ground(side) < 1.5) {
 			strafeDir = -strafeDir;
+			strafeHold = 6 + rng.nextInt(8);
 			side = side.scale(-1);
 			if (s.ground(side) < 1.5) return 0;
 		}

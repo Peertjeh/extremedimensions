@@ -1351,9 +1351,9 @@
 	"debrief.tip.short": "&7Te kort gevecht om veel over je spel te zeggen.",
 	"admin.unknown_player": "&c{0} is niet online.",
 	"bots.level.adaptive": "&bAdaptief",
-	"bots.level.adaptive.lore": "&7Volgt je resultaten: drie van de vier\n&7gewonnen is een niveau omhoog, drie verloren omlaag.\n&7Nu: {0}",
-	"bots.adaptive_up": "&bAdaptief niveau omhoog naar {0}&b: je won {1} van de laatste {2} op het oude niveau.",
-	"bots.adaptive_down": "&bAdaptief niveau omlaag naar {0}&b: je verloor {1} van de laatste {2} op het oude niveau.",
+	"bots.level.adaptive.lore": "&7Volgt hoe sterk je bent tegen bots,\n&7uit elk gevecht met ze, en kiest een\n&7niveau waar je iets vaker wint dan verliest.\n&7Nu: {0}",
+	"bots.adaptive_up": "&bAdaptief niveau omhoog naar {0}&b: je sterkte tegen bots ging van {1} naar {2}; daar win je naar verwachting zo'n {3}%.",
+	"bots.adaptive_down": "&bAdaptief niveau omlaag naar {0}&b: je sterkte tegen bots ging van {1} naar {2}; daar win je naar verwachting zo'n {3}%.",
 	"bots.memory.off": "&7Bots onthouden op deze server niets tussen gevechten.",
 	"bots.memory.header": "&6&lWat bots over je onthouden",
 	"bots.memory.none": "&7Nog niets: vecht eerst tegen een bot (/practice).",
@@ -1369,5 +1369,8 @@
 	"bots.metrics.server": "&7Server: &f{0}&7 ms per tick; bots denken &f{1}&7× minder vaak dan normaal.",
 	"bots.show_on": "&aJe ziet nu wat {0} doet: route (end rods), waar hij heen gaat (groen), waar hij op inwerkt (crits), zijn doel (vlammen).",
 	"bots.show_off": "&7{0} wordt niet meer getoond.",
-	"bots.show.bar": "&e{0}&7: &f{1} &8({2})"
+	"bots.show.bar": "&e{0}&7: &f{1} &8({2})",
+	"bots.memory.swings": "&7Je slaat gemiddeld elke &f{0}&7 ticks en raakt bots met &f{1}%&7 van je slagen.",
+	"bots.memory.rating": "&7Je sterkte tegen bots: &f{0}&7 (uit {1} gevechten); het adaptieve niveau kiest {2}&7, waar je naar verwachting zo'n {3}% wint.",
+	"debrief.bot_aim": "&7Hij raakte &f{0}&7 van zijn &f{1}&7 slagen ({2}%)."
 }

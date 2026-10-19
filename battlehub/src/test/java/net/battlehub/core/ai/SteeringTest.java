@@ -18,18 +18,24 @@ class SteeringTest {
 
 	@Test
 	void itOnlySwingsInReachInSightAndCharged() {
-		CombatSteering st = new CombatSteering();
-		Random r = new Random(1);
 		Personality p = Archetype.BALANCED.base;
-		assertTrue(st.steer(Tactic.STRIKE, at(0, me(O, 20, 1), foe(new V3(2.8, 64, 0), 20), open()), null, p, Difficulty.EXPERT, r).attack());
-		assertFalse(st.steer(Tactic.STRIKE, at(0, me(O, 20, 0.5), foe(new V3(2.8, 64, 0), 20), open()), null, p, Difficulty.EXPERT, r).attack(),
-				"not charged");
-		assertFalse(st.steer(Tactic.STRIKE, at(0, me(O, 20, 1), foe(new V3(3.6, 64, 0), 20), open()), null, p, Difficulty.EXPERT, r).attack(),
-				"out of reach");
-		Situation.Target hidden = new Situation.Target(Fixtures.FOE, new V3(2.5, 64, 0), V3.ZERO, 20, 20, false, 0.9, 100, false);
-		assertFalse(st.steer(Tactic.STRIKE, at(0, me(O, 20, 1), hidden, open()), null, p, Difficulty.EXPERT, r).attack(), "not in sight");
-		// a beginner waits for a fully charged swing
-		assertFalse(st.steer(Tactic.STRIKE, at(0, me(O, 20, 0.95), foe(new V3(2.8, 64, 0), 20), open()), null, p, Difficulty.BEGINNER, r).attack());
+		Random r = new Random(1);
+		int hits = 0;
+		for (int i = 0; i < 200; i++) {
+			CombatSteering st = new CombatSteering();
+			if (st.steer(Tactic.STRIKE, at(0, me(O, 20, 1), foe(new V3(2.8, 64, 0), 20), open()), null, p, Difficulty.EXPERT, r).attack()) hits++;
+		}
+		// charged and in reach: the finger presses soon, but not on every single tick
+		assertTrue(hits > 120 && hits < 200, hits + " of 200");
+		for (int i = 0; i < 200; i++) {
+			CombatSteering st = new CombatSteering();
+			assertFalse(st.steer(Tactic.STRIKE, at(0, me(O, 20, 0.2), foe(new V3(2.8, 64, 0), 20), open()), null, p, Difficulty.EXPERT, r).attack(),
+					"not charged");
+			assertFalse(st.steer(Tactic.STRIKE, at(0, me(O, 20, 1), foe(new V3(3.6, 64, 0), 20), open()), null, p, Difficulty.EXPERT, r).attack(),
+					"out of reach");
+			Situation.Target hidden = new Situation.Target(Fixtures.FOE, new V3(2.5, 64, 0), V3.ZERO, 20, 20, false, 0.9, 100, false);
+			assertFalse(st.steer(Tactic.STRIKE, at(0, me(O, 20, 1), hidden, open()), null, p, Difficulty.EXPERT, r).attack(), "not in sight");
+		}
 	}
 
 	@Test

@@ -15,6 +15,13 @@ public final class OpponentModel {
 	private double jumpRate;
 	private int samples;
 	private boolean wasRising;
+	/** Ticks between their swings (rolling): spam is short, timed hits are long. */
+	private double swingGap = 12;
+	private int swings;
+	private int lastSwing = Integer.MIN_VALUE;
+	/** Their swings and their hits on this NPC, both fading, for how often they land. */
+	private double swingWeight;
+	private double hitWeight;
 
 	/**
 	 * One look at the opponent, once per think: the distance, how fast they themselves move towards the NPC (their
@@ -60,6 +67,46 @@ public final class OpponentModel {
 		return jumpRate;
 	}
 
+	/** They were seen swinging (their attack charge dropped). */
+	public void swing(int tick) {
+		if (lastSwing != Integer.MIN_VALUE && tick - lastSwing > 0 && tick - lastSwing < 40) {
+			swingGap += 0.15 * ((tick - lastSwing) - swingGap);
+		}
+		lastSwing = tick;
+		swings++;
+		swingWeight = swingWeight * 0.95 + 1;
+		hitWeight *= 0.95;
+	}
+
+	/** One of their hits landed on this NPC. */
+	public void hit() {
+		hitWeight = Math.min(swingWeight, hitWeight + 1);
+	}
+
+	/** Ticks between their swings, on average. */
+	public double swingGap() {
+		return swingGap;
+	}
+
+	public int swings() {
+		return swings;
+	}
+
+	/** How often their swings land on this NPC, 0..1 (0.6 until a few swings were seen). */
+	public double accuracy() {
+		return swingWeight < 3 ? 0.6 : Math.min(1, hitWeight / swingWeight);
+	}
+
+	/** They click as fast as they can (weak hits): out-trading them with full ones pays. */
+	public boolean spams() {
+		return swings >= 5 && swingGap < 8.5;
+	}
+
+	/** They wait for full hits: spacing and stepping in after their swing pays. */
+	public boolean timed() {
+		return swings >= 5 && swingGap >= 11;
+	}
+
 	/** The rolling approach speed (for saving). */
 	public double closing() {
 		return closing;
@@ -78,6 +125,15 @@ public final class OpponentModel {
 		this.samples = Math.min(samples, 40);
 	}
 
+	/** Also how they swing and how often they land (from earlier fights), counted as a handful of swings. */
+	public void seedSwings(double swingGap, double accuracy, int swings) {
+		if (swings <= 0) return;
+		this.swingGap = swingGap;
+		this.swings = Math.min(swings, 12);
+		this.swingWeight = Math.min(swings, 8);
+		this.hitWeight = this.swingWeight * Math.max(0, Math.min(1, accuracy));
+	}
+
 	/** Enough looks to trust the averages. */
 	public boolean known() {
 		return samples >= 20;
@@ -90,5 +146,10 @@ public final class OpponentModel {
 		jumpRate = 0;
 		samples = 0;
 		wasRising = false;
+		swingGap = 12;
+		swings = 0;
+		lastSwing = Integer.MIN_VALUE;
+		swingWeight = 0;
+		hitWeight = 0;
 	}
 }

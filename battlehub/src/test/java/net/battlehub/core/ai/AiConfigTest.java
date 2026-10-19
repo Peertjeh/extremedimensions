@@ -53,7 +53,14 @@ class AiConfigTest {
 			assertTrue(hi.reactionTicks <= lo.reactionTicks && hi.thinkTicks <= lo.thinkTicks, hi.id());
 			assertTrue(hi.aimError < lo.aimError && hi.mistakeRate < lo.mistakeRate, hi.id());
 			assertTrue(hi.predictTicks >= lo.predictTicks && hi.strafeSkill >= lo.strafeSkill, hi.id());
+			// clicking and edges: higher levels wait for fuller hits, press more promptly, swing less from too far,
+			// spread less and mind the edges more; nobody is perfect
+			assertTrue(hi.readyToHit > lo.readyToHit && hi.clickRate > lo.clickRate && hi.earlyReach < lo.earlyReach, hi.id());
+			assertTrue(hi.readyJitter < lo.readyJitter && hi.edgeCare > lo.edgeCare, hi.id());
+			AimModel.Params ap = AimModel.Params.of(hi), lp = AimModel.Params.of(lo);
+			assertTrue(ap.lagTicks() <= lp.lagTicks() && ap.wobble() < lp.wobble() && ap.maxTurn() > lp.maxTurn(), hi.id());
 		}
+		assertTrue(Difficulty.MASTER.clickRate < 1 && Difficulty.MASTER.edgeCare < 1 && Difficulty.MASTER.readyJitter > 0);
 		assertTrue(Difficulty.MASTER.reactionTicks >= 2, "never faster than a quick human");
 		assertEquals(Difficulty.CASUAL, Difficulty.of(BotLevel.EASY));
 		assertEquals(Difficulty.EXPERT, Difficulty.of(BotLevel.HARD));

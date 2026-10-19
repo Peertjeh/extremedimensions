@@ -23,9 +23,16 @@ public final class Debrief {
 	 */
 	public static List<Line> lines(String botName, String style, String level, OpponentModel model, double dealtByBot, double takenByBot,
 			java.util.Map<Tactic, Double> tactics) {
+		return lines(botName, style, level, model, dealtByBot, takenByBot, tactics, 0, 0);
+	}
+
+	/** With how many of its swings the bot landed (shown when it swung at all). */
+	public static List<Line> lines(String botName, String style, String level, OpponentModel model, double dealtByBot, double takenByBot,
+			java.util.Map<Tactic, Double> tactics, int botSwings, int botLanded) {
 		List<Line> out = new ArrayList<>();
 		out.add(new Line("debrief.header", botName, style, level));
 		out.add(new Line("debrief.damage", Math.round(takenByBot), Math.round(dealtByBot)));
+		if (botSwings > 0) out.add(new Line("debrief.bot_aim", botLanded, botSwings, Math.round(100.0 * botLanded / botSwings)));
 		Tactic main = Tactic.IDLE;
 		double mainShare = 0;
 		for (var e : tactics.entrySet()) {

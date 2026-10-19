@@ -48,9 +48,20 @@ and they come in six levels, from **beginner** (slow, misses a lot) to **master*
 hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, intermediate and expert.
 
 **How a bot fights (the AI framework).** In close combat a bot runs a small mind of its own:
-* *It only knows what a player could know*: an enemy in sight, an enemy's name tag through a wall (vanilla shows
-  those unless someone sneaks), a glowing enemy, or where it last saw someone, with fading certainty. Health is
-  only known from sight. It never reads anyone's inputs and gets no extra health or damage.
+* *It only knows what a player could know*: an enemy on screen (within its field of view) in sight, an enemy's name
+  tag through a wall (also only on screen, and not while someone sneaks), a glowing enemy, footsteps of someone
+  close who walks or runs, who just hit it, or where it last saw someone, with fading certainty. Turn behind it and
+  it loses you until it turns round. Health is only known from sight. It never reads anyone's inputs and gets no
+  extra health or damage.
+* *It aims like a hand on a mouse, not a lock*: the crosshair follows you with a moment's delay, turns no faster
+  than a hand, wobbles a little, overshoots a big turn and is thrown off by a hit. A swing only lands when the
+  crosshair is really on your hitbox, within reach and with nothing in between; otherwise it whiffs (and loses its
+  charge, as a player does). Beginners spam weak clicks and sometimes swing from too far, experts wait for full
+  hits but still react a little late. Against someone sprint-strafing a beginner lands about one swing in five, a
+  master about four in five; against someone standing still nearly all.
+* *It minds the edges*: it looks before it jumps (the jump is simulated with the player's own movement and skipped
+  when it would end in the void), slows down when it slides towards an edge, and in the air after a knock it holds
+  the keys back towards the last ground, as a player does. Lower levels do not always remember to.
 * *It decides between tactics* (approach, strike, hold distance and punish, back off, heal, dodge arrows, get away
   from an edge, search, the game's objective) by scoring each one with reasons, keeps a choice instead of
   dithering, and lets safety (an edge behind it) interrupt at once.
@@ -58,8 +69,11 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   set of numbers (aggression, risk, patience, preferred distance, adaptability, variability, defence, objective)
   the decisions really use, with a small personal variation per bot. A rusher presses; a counter waits just
   outside reach and punishes you for stepping in, but loses its patience against someone who only stands there.
-* *It learns during the fight*: it predicts where you move, notices how aggressive you are and how often you
-  change strafe direction, and drops a tactic that keeps costing it more than it brings.
+* *It learns during the fight*: it predicts where you move, notices how aggressive you are, how often you change
+  strafe direction, how you click (spamming weak hits or timing full ones) and how often you land, and uses it:
+  it out-trades a spammer with full hits, keeps its distance from someone who times their hits, presses someone who
+  misses a lot, leads a steady strafer all the way and an erratic one less. It drops a tactic that keeps costing it
+  more than it brings.
 * *Its level* (six: beginner, casual, intermediate, advanced, expert, master; pick one in the practice menu or with
   `/practice <mode> <level>`, `bots.fillLevel` for bots that fill in) sets reaction time, how often it thinks,
   aim, prediction, techniques (crits, w-tap, shield) and how often it misjudges.
@@ -76,11 +90,15 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   run-up), picks the one that lands with the most room, walks to the start, runs and jumps on the right tick,
   steers in the air and brakes after landing (ice). It only presses keys like a player. A jump that failed is
   remembered and the next try uses another way.
-* *It remembers you* (if the server allows it): how you fight and which of its tactics worked against you, so
-  the next bot starts from that; and your last results against each level. `/bots memory` shows what bots
-  remember about you, `/bots forget` wipes it.
-* *Adaptive level*: pick **Adaptive** in the practice menu (or `/practice <mode> adaptive`): three wins out of
-  the last four go a level up, three losses one down, and the chat says why after each step.
+* *It remembers you* (if the server allows it): how you move, click and land and which of its tactics worked
+  against you, so the next bot starts from that; and how strong you are against bots. `/bots memory` shows what
+  bots remember about you, `/bots forget` wipes it.
+* *Adaptive level*: pick **Adaptive** in the practice menu (or `/practice <mode> adaptive`). It follows your
+  strength against bots, a rating from **every** fight with them (practice, bots filling a queue, party games;
+  a duel against one bot counts fully, a fight with more people half), with the damage share as extra signal next
+  to winning, and picks the level where you should win a little more than half your fights. Someone new starts
+  from their ranked rating when they have one. The chat says after each step why (your rating before and after,
+  and your expected chance at the new level).
 * *After the fight* it tells you what it noticed (how aggressive you were, the distance you like, how often you
   change strafe direction), how the damage went, what its main plan was, and one tip to work on.
 * *Kind to the server*: all bots share a think budget. When ticks get slow (from `bots.slowAboveMspt`, 35 ms by

@@ -10,13 +10,13 @@ import net.battlehub.core.BotLevel;
  * more damage or more information than a player.
  */
 public enum Difficulty {
-	//          react think  aim  mistake predict crit  strafe wtap   shield heal  turn  commit margin ready
-	BEGINNER(14, 10, 14.0, 0.35, 0, 0.00, 0.10, false, 0.00, 0, 10, 30, 0.25, 1.00),
-	CASUAL(10, 8, 9.0, 0.22, 2, 0.10, 0.30, false, 0.10, 5, 15, 24, 0.20, 0.97),
-	INTERMEDIATE(6, 5, 5.0, 0.12, 4, 0.30, 0.60, false, 0.30, 8, 25, 16, 0.15, 0.93),
-	ADVANCED(4, 4, 3.0, 0.06, 6, 0.50, 0.80, true, 0.50, 9, 35, 12, 0.12, 0.92),
-	EXPERT(3, 3, 2.0, 0.03, 8, 0.70, 0.90, true, 0.60, 10, 45, 10, 0.10, 0.90),
-	MASTER(2, 2, 1.2, 0.01, 10, 0.85, 1.00, true, 0.70, 11, 60, 8, 0.08, 0.90);
+	//          react think  aim  mistake predict crit  strafe wtap   shield heal  turn  commit margin ready jitter early click edge
+	BEGINNER(14, 10, 14.0, 0.35, 0, 0.00, 0.10, false, 0.00, 0, 10, 30, 0.25, 0.55, 0.20, 0.70, 0.30, 0.45),
+	CASUAL(10, 8, 9.0, 0.22, 2, 0.10, 0.30, false, 0.10, 5, 15, 24, 0.20, 0.70, 0.15, 0.50, 0.40, 0.65),
+	INTERMEDIATE(6, 5, 5.0, 0.12, 4, 0.30, 0.60, false, 0.30, 8, 25, 16, 0.15, 0.85, 0.10, 0.35, 0.55, 0.80),
+	ADVANCED(4, 4, 3.0, 0.06, 6, 0.50, 0.80, true, 0.50, 9, 35, 12, 0.12, 0.90, 0.07, 0.25, 0.70, 0.90),
+	EXPERT(3, 3, 2.0, 0.03, 8, 0.70, 0.90, true, 0.60, 10, 45, 10, 0.10, 0.92, 0.05, 0.15, 0.80, 0.95),
+	MASTER(2, 2, 1.2, 0.01, 10, 0.85, 1.00, true, 0.70, 11, 60, 8, 0.08, 0.94, 0.04, 0.10, 0.88, 0.98);
 
 	/** Ticks before reacting to something new (a target that appears); 2 ticks is about the fastest human. */
 	public final int reactionTicks;
@@ -44,12 +44,20 @@ public enum Difficulty {
 	public final int commitTicks;
 	/** How much better another option must be to switch (stops dithering). */
 	public final double switchMargin;
-	/** Attack strength (0..1) it waits for before swinging. */
+	/** Attack strength (0..1) it waits for before swinging, on average (beginners spam, experts wait). */
 	public final double readyToHit;
+	/** How much the charge it waits for differs from click to click. */
+	public final double readyJitter;
+	/** How far past its reach a swing may start (whiffing at the edge of reach). */
+	public final double earlyReach;
+	/** Chance per tick to press once everything is right (the finger is a little late). */
+	public final double clickRate;
+	/** Chance to catch itself at an edge: to hold back after a knock, to see a jump would end in the void. */
+	public final double edgeCare;
 
 	Difficulty(int reactionTicks, int thinkTicks, double aimError, double mistakeRate, int predictTicks, double critSkill,
 			double strafeSkill, boolean wTap, double shieldSkill, double healBelow, float turnSpeed, int commitTicks,
-			double switchMargin, double readyToHit) {
+			double switchMargin, double readyToHit, double readyJitter, double earlyReach, double clickRate, double edgeCare) {
 		this.reactionTicks = reactionTicks;
 		this.thinkTicks = thinkTicks;
 		this.aimError = aimError;
@@ -64,6 +72,10 @@ public enum Difficulty {
 		this.commitTicks = commitTicks;
 		this.switchMargin = switchMargin;
 		this.readyToHit = readyToHit;
+		this.readyJitter = readyJitter;
+		this.earlyReach = earlyReach;
+		this.clickRate = clickRate;
+		this.edgeCare = edgeCare;
 	}
 
 	public String id() {

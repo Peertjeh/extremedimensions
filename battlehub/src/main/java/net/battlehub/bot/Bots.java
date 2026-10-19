@@ -565,13 +565,30 @@ public final class Bots {
 		if (!AiMemory.learning()) return;
 		MinecraftServer server = p.level().getServer();
 		net.battlehub.core.ai.PlayerKnowledge k = AiMemory.get(server, p.getUUID());
-		k.learn(bot.brain.mind().model(p.getUUID()), bot.brain.mind().outcomes());
-		net.battlehub.core.ai.PlayerKnowledge.Change c = k.result(m.outcome(p.getUUID()) == net.battlehub.core.Outcome.WIN, bot.difficulty);
+		net.battlehub.core.ai.CombatMind mind = bot.brain.mind();
+		k.learn(mind.model(p.getUUID()), mind.outcomes());
+		// every fight against a bot counts for the rating: a duel against one bot fully, a fight with more people half
+		double byPlayer = mind.totalTaken(), byBot = mind.totalDealt();
+		double share = byPlayer + byBot <= 0 ? 0.5 : byPlayer / (byPlayer + byBot);
+		double weight = m.participants().size() <= 2 ? 1 : 0.5;
+		net.battlehub.core.ai.PlayerKnowledge.Change c = k.result(m.outcome(p.getUUID()) == net.battlehub.core.Outcome.WIN, share, bot.difficulty,
+				weight, ratingPrior(p));
 		if (c != null && net.battlehub.gui.PracticeMenu.adaptive(p.getUUID())) {
 			Msg.send(p, c.to().ordinal() > c.from().ordinal() ? "bots.adaptive_up" : "bots.adaptive_down",
-					Lang.tr(p, "bots.level." + c.to().id()), c.to().ordinal() > c.from().ordinal() ? c.wins() : c.losses(), c.of());
+					Lang.tr(p, "bots.level." + c.to().id()), Math.round(c.before()), Math.round(c.after()), Math.round(c.chance() * 100));
 		}
 		AiMemory.save(server, p.getUUID());
+	}
+
+	/**
+	 * Where someone never rated against bots starts: from their ranked rating against people when they have one (a
+	 * hint, not more: half of how far it is from the start rating), otherwise in the middle (intermediate).
+	 */
+	private static double ratingPrior(ServerPlayer p) {
+		net.battlehub.core.PlayerProfile prof = net.battlehub.data.PlayerStore.get(p.getUUID());
+		if (prof == null || prof.elo.isEmpty()) return 1050;
+		double avg = prof.elo.values().stream().mapToInt(Integer::intValue).average().orElse(net.battlehub.progression.Ranks.startElo());
+		return Math.max(800, Math.min(1500, 1050 + (avg - net.battlehub.progression.Ranks.startElo()) * 0.5));
 	}
 
 	/** What bots know about a player, as chat lines (/bots memory). */
@@ -594,7 +611,16 @@ public final class Bots {
 		for (Map.Entry<String, int[]> e : k.record().entrySet()) {
 			out.add(Lang.tr(p, "bots.memory.record", Lang.tr(p, "bots.level." + e.getKey()), e.getValue()[0], e.getValue()[1]));
 		}
-		out.add(Lang.tr(p, "bots.memory.adaptive", Lang.tr(p, "bots.level." + k.adaptiveLevel)));
+		if (k.swingFights > 0) {
+			out.add(Lang.tr(p, "bots.memory.swings", Math.round(k.swingGap), Math.round(k.accuracy * 100)));
+		}
+		net.battlehub.core.ai.Difficulty adaptive = net.battlehub.core.ai.Difficulty.parse(k.adaptiveLevel, net.battlehub.core.ai.Difficulty.INTERMEDIATE);
+		if (k.rated > 0) {
+			out.add(Lang.tr(p, "bots.memory.rating", Math.round(k.rating), String.format(java.util.Locale.ROOT, "%.1f", k.rated),
+					Lang.tr(p, "bots.level." + adaptive.id()), Math.round(net.battlehub.core.ai.PlayerKnowledge.expected(k.rating, adaptive) * 100)));
+		} else {
+			out.add(Lang.tr(p, "bots.memory.adaptive", Lang.tr(p, "bots.level." + adaptive.id())));
+		}
 		out.add(Lang.tr(p, "bots.memory.forget_hint"));
 		return out;
 	}

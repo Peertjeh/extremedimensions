@@ -150,6 +150,33 @@ public final class CombatMind {
 		return m;
 	}
 
+	/** A target was seen swinging. */
+	public void opponentSwing(UUID id, int tick) {
+		model(id).swing(tick);
+	}
+
+	/** A player's hit landed on this NPC. */
+	public void hitBy(UUID id) {
+		model(id).hit();
+	}
+
+	private int swingsMade;
+	private int swingsLanded;
+
+	/** This NPC swung: did the crosshair find the target? */
+	public void swung(boolean landed) {
+		swingsMade++;
+		if (landed) swingsLanded++;
+	}
+
+	public int swingsMade() {
+		return swingsMade;
+	}
+
+	public int swingsLanded() {
+		return swingsLanded;
+	}
+
 	/** Damage this NPC did (health points); counts for the tactic that was active. */
 	public void dealt(double hp) {
 		dealt += Math.max(0, hp);
@@ -181,7 +208,8 @@ public final class CombatMind {
 
 	/** What this NPC tells {@code player} after the fight. */
 	public List<Debrief.Line> debrief(String botName, UUID player) {
-		return Debrief.lines(botName, archetype.id(), difficulty.id(), models.get(player), totalDealt, totalTaken, tacticShares());
+		return Debrief.lines(botName, archetype.id(), difficulty.id(), models.get(player), totalDealt, totalTaken, tacticShares(), swingsMade,
+				swingsLanded);
 	}
 
 	/** Decide (when it is time, or at once when something urgent happens) and steer for this tick. */
@@ -257,6 +285,8 @@ public final class CombatMind {
 		outcomes.copyFrom(old.outcomes);
 		totalDealt = old.totalDealt;
 		totalTaken = old.totalTaken;
+		swingsMade = old.swingsMade;
+		swingsLanded = old.swingsLanded;
 		tacticTicks.putAll(old.tacticTicks);
 		lastExchange = old.lastExchange;
 	}
@@ -273,6 +303,8 @@ public final class CombatMind {
 		taken = 0;
 		totalDealt = 0;
 		totalTaken = 0;
+		swingsMade = 0;
+		swingsLanded = 0;
 		tacticTicks.clear();
 		lastExchange = Integer.MIN_VALUE;
 	}
@@ -287,12 +319,12 @@ public final class CombatMind {
 		OpponentModel om = targetId == null ? null : models.get(targetId);
 		return new Report(archetype, difficulty, personality, decider.current(), last == null ? "" : last.reason(), top,
 				decider.transitions(), thinks, thinks == 0 ? 0 : thinkNanos / thinks / 1000.0, thinkMax / 1000.0,
-				om == null ? null : String.format(Locale.ROOT, "aggression %.2f, likes %.1f blocks, strafe changes %.1f/s, jumps %.1f/s",
-						om.aggression(), om.preferredDistance(), om.strafeRate(), om.jumpRate()));
+				om == null ? null : String.format(Locale.ROOT, "aggression %.2f, likes %.1f blocks, strafe changes %.1f/s, jumps %.1f/s, swings every %.0f ticks, lands %.0f%%",
+						om.aggression(), om.preferredDistance(), om.strafeRate(), om.jumpRate(), om.swingGap(), om.accuracy() * 100), swingsMade, swingsLanded);
 	}
 
 	public record Report(Archetype archetype, Difficulty difficulty, Personality personality, Tactic tactic, String reason, List<Score> top,
-			List<Decider.Transition> transitions, int thinks, double avgMicros, double maxMicros, String opponent) {
+			List<Decider.Transition> transitions, int thinks, double avgMicros, double maxMicros, String opponent, int swings, int landed) {
 		/** Readable lines for chat or a log. */
 		public List<String> lines() {
 			List<String> out = new ArrayList<>();
@@ -307,6 +339,7 @@ public final class CombatMind {
 				out.add(String.format(Locale.ROOT, "  @%d %s -> %s: %s", tr.tick(), name(tr.from()), name(tr.to()), tr.why()));
 			}
 			out.add(String.format(Locale.ROOT, "%d thinks, %.1f us average, %.1f us max", thinks, avgMicros, maxMicros));
+			if (swings > 0) out.add(String.format(Locale.ROOT, "swings %d, landed %d (%.0f%%)", swings, landed, 100.0 * landed / swings));
 			return out;
 		}
 	}

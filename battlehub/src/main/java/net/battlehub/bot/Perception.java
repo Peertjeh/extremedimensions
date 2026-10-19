@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import net.battlehub.core.ai.CombatMind;
+import net.battlehub.core.ai.Senses;
 import net.battlehub.core.ai.Situation;
 import net.battlehub.core.ai.Targeting;
 import net.battlehub.core.ai.Track;
@@ -19,13 +20,15 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * What a bot can know, turned into a {@link Situation}. It only knows what a player in its place could know:
+ * What a bot can know, turned into a {@link Situation}. It only knows what a player in its place could know
+ * ({@link Senses}):
  * <ul>
- * <li>an enemy in plain sight (line of sight, within {@link #SIGHT} blocks, not invisible) is seen exactly;</li>
- * <li>an enemy out of sight but not sneaking and not invisible is located by their name tag, which vanilla draws
- * through walls (position only, never health or what they hold);</li>
- * <li>sneaking or invisible enemies are only known from sight (glowing ones always show);</li>
- * <li>anything else is memory: where they were last seen, with fading certainty.</li>
+ * <li>an enemy in front of it (within the field of view), in plain sight (line of sight, within {@link #SIGHT}
+ * blocks, not invisible) is seen exactly; glowing ones show through walls, but also only on screen;</li>
+ * <li>an enemy on screen behind a wall, not sneaking and not invisible, is located by their name tag, which vanilla
+ * draws through walls (position only, never health or what they hold);</li>
+ * <li>an enemy close by who walks or runs is heard, and one who just hit the bot is known to be there;</li>
+ * <li>anything else is memory: where they were last seen, with fading certainty. Turning its back loses you.</li>
  * </ul>
  */
 final class Perception {
@@ -41,9 +44,11 @@ final class Perception {
 	 * Looks at every enemy in play: feeds the mind's memory and returns the target the core's {@link Targeting}
 	 * prefers (seen, close, weak, the one who just hit the bot, the current one).
 	 */
-	static Known pickTarget(BotPlayer bot, Match m, CombatMind mind, int tick, UUID current, java.util.function.ToIntFunction<UUID> hitAgo) {
+	static Known pickTarget(BotPlayer bot, Match m, CombatMind mind, int tick, UUID current, java.util.function.ToIntFunction<UUID> hitAgo,
+			java.util.Map<UUID, Vec3> lastPositions) {
 		java.util.List<Targeting.Candidate> candidates = new java.util.ArrayList<>();
 		java.util.Map<UUID, Known> known = new java.util.HashMap<>();
+		V3 eye = v(bot.getEyePosition());
 		for (UUID id : m.participants()) {
 			if (id.equals(bot.getUUID()) || !m.inPlay(id) || !m.isEnemy(bot.getUUID(), id)) continue;
 			ServerPlayer p = m.player(id);
@@ -52,8 +57,15 @@ final class Perception {
 			if (d > SIGHT) continue;
 			boolean glowing = p.hasGlowingTag() || Ids.effect("minecraft:glowing").map(p::hasEffect).orElse(false);
 			boolean hidden = p.isInvisible() && !glowing;
-			boolean seen = !hidden && (glowing || bot.hasLineOfSight(p));
-			boolean located = seen || (!hidden && !p.isShiftKeyDown());
+			// on screen: the head, the middle or the feet within the field of view
+			boolean onScreen = Senses.inView(eye, bot.getYRot(), bot.getXRot(), v(p.getEyePosition()))
+					|| Senses.inView(eye, bot.getYRot(), bot.getXRot(), v(p.position().add(0, 0.9, 0)))
+					|| Senses.inView(eye, bot.getYRot(), bot.getXRot(), v(p.position()));
+			boolean seen = !hidden && onScreen && (glowing || bot.hasLineOfSight(p));
+			Vec3 before = lastPositions.put(id, p.position());
+			double speed = before == null ? 0 : Math.hypot(p.getX() - before.x, p.getZ() - before.z);
+			boolean heard = Senses.heard(d, p.isShiftKeyDown(), speed, hitAgo.applyAsInt(id));
+			boolean located = seen || (!hidden && !p.isShiftKeyDown() && onScreen) || heard;
 			if (located) {
 				mind.see(tick, id, new V3(p.getX(), p.getY(), p.getZ()), d, p.getDeltaMovement().y > 0.1);
 			}

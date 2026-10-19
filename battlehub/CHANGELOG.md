@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.27.0
+
+### Changed
+* **Bots aim like people, no more lock.** The crosshair follows you with a moment's delay, a limited turning
+  speed, a little wobble and an overshoot on big turns, and a hit throws it off. A swing only lands when the
+  crosshair is on your hitbox within reach; otherwise it whiffs and the charge is gone. Beginners spam and swing
+  from too far, experts wait for full hits; nobody clicks on the exact tick. Against a sprint-strafing player a
+  beginner lands about 20%, a master about 80%.
+* **Bots see what is on their screen**: behind their back you are gone until they turn round; they hear you walk
+  or run close by (not when you sneak) and know who just hit them; name tags through walls only count on screen.
+* **Bots fall into the void far less often**: every jump is simulated first and skipped when it would end in the
+  void, they slow down when sliding towards an edge, look further ahead at speed, and in the air after a knock
+  they hold the keys back towards the ground. Lower levels still forget sometimes.
+* **Learning that matters**: bots notice how you click (spam or timed) and how often you land, and fight
+  accordingly; they aim better at you once they know how you strafe. All of it is remembered between fights.
+* **The adaptive level is a rating from every fight against bots** (practice, filled queues, party games;
+  weighted, with the damage share), starting from your ranked rating, aimed at fights you win a little more than
+  half the time. In a simulation it finds the right level for far more players than the old "three of four"
+  rule (after twenty fights 76 to 100% against 43 to 79%).
+* The debrief says how many of its swings the bot landed; `/bots memory` shows your rating and how you click.
+
 ## 1.26.0
 
 ### Added
