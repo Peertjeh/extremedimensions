@@ -98,7 +98,7 @@ public class ClientShots implements FabricClientGameTest {
 		// The arena fights back, seen while its Elder is near (from far off its part of the world unloads with it). Its
 		// domain changes twice as the Elder weakens, seen from over the edge of its heart
 		sp.getServer().runOnServer(s -> player(s).teleportTo(mid[0], mid[1] + 16, mid[2] - 40));
-		sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s ~ ~ ~ facing %.1f %.1f %.1f", mid[0], mid[1], mid[2] + 8));
+		sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s ~ ~ ~ facing %.1f %.1f %.1f", mid[0], mid[1], mid[2] + 8));
 		sp.getServer().runOnServer(s -> elders(s, 400).forEach(e -> System.out.println("[domain] " + name + ": " + e.getHealth() + " of " + e.getMaxHealth()
 				+ " health before the domain changes")));
 		sp.getServer().runOnServer(s -> elders(s, 400).forEach(e -> e.setHealth(e.getMaxHealth() * 0.5F)));
@@ -131,7 +131,7 @@ public class ClientShots implements FabricClientGameTest {
 		});
 		if (core != null) {
 			sp.getServer().runOnServer(s -> player(s).teleportTo(core[0], core[1], core[2]));
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s ~ ~ ~ facing %.1f %.1f %.1f", core[3], core[4], core[5]));
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s ~ ~ ~ facing %.1f %.1f %.1f", core[3], core[4], core[5]));
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("12_fight_" + name + "_core");
 		} else {
@@ -144,7 +144,7 @@ public class ClientShots implements FabricClientGameTest {
 		System.out.println("[domain] " + name + ": island " + (isle == null ? "none near" : java.util.Arrays.toString(isle)));
 		if (isle != null) {
 			sp.getServer().runOnServer(s -> player(s).teleportTo(isle[0] - 22, isle[1] + 8, isle[2] - 22));
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s ~ ~ ~ facing %.1f %.1f %.1f", isle[0], (isle[1] + isle[3]) / 2,
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s ~ ~ ~ facing %.1f %.1f %.1f", isle[0], (isle[1] + isle[3]) / 2,
 					isle[2]));
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("12_fight_" + name + "_isle_shadow");
