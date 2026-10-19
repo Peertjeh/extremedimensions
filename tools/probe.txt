@@ -1,7 +1,5 @@
-net.minecraft.client.renderer.SubmitNodeCollector
-net.minecraft.client.renderer.OrderedSubmitNodeCollector
-net.minecraft.client.renderer.SubmitNodeCollector$CustomGeometryRenderer
-net.minecraft.client.renderer.state.level.CameraRenderState
-net.minecraft.world.entity.Entity
-net.minecraft.client.renderer.entity.EntityRendererProvider$Context
-com.mojang.blaze3d.vertex.PoseStack$Pose
+net.minecraft.world.level.ExplosionDamageCalculator
+net.minecraft.world.level.EntityBasedExplosionDamageCalculator
+net.minecraft.world.level.ServerExplosion
+net.minecraft.world.level.Explosion
+net.minecraft.world.entity.item.FallingBlockEntity
