@@ -14,6 +14,7 @@ public final class CombatSteering {
 	private int strafeHold;
 	private int wTap;
 	private Clicker clicker;
+	private int lastLaunch = Integer.MIN_VALUE / 2;
 
 	public int strafeDir() {
 		return strafeDir;
@@ -23,7 +24,25 @@ public final class CombatSteering {
 		if (clicker == null) clicker = new Clicker(d, rng);
 		Intent in = intent(tactic, s, track, p, d, rng);
 		if (in.attack()) clicker.clicked();
+		if (launch(tactic, s, d, rng)) {
+			lastLaunch = s.tick();
+			in = in.withLaunch();
+		}
 		return in;
+	}
+
+	/**
+	 * A mace fight with a wind charge at hand: now and then, close to the target, charged, on the ground and far from
+	 * an edge, a wind charge at its own feet sends it up, so the mace comes down on them with the smash bonus.
+	 */
+	boolean launch(Tactic tactic, Situation s, Difficulty d, Random rng) {
+		Situation.Self me = s.self();
+		Situation.Target t = s.target();
+		if (me.focus() != Weapon.MACE || !me.canLaunch() || !me.onGround() || t == null || !t.visible()) return false;
+		if (tactic != Tactic.STRIKE && tactic != Tactic.APPROACH && tactic != Tactic.SPACE) return false;
+		double dist = s.distance();
+		if (dist < 2 || dist > 5.5 || me.attackReady() < 0.8 || s.nearestEdge() < 2.5 || s.tick() - lastLaunch < 60) return false;
+		return rng.nextDouble() < 0.02 + 0.08 * d.critSkill;
 	}
 
 	private Intent intent(Tactic tactic, Situation s, Track track, Personality p, Difficulty d, Random rng) {
@@ -44,13 +63,13 @@ public final class CombatSteering {
 		return switch (tactic) {
 			case APPROACH -> {
 				V3 to = track != null && !track.empty() ? track.predict(s.tick(), d.predictTicks) : t.pos();
-				boolean crit = critJump(me, dist, reach, d, rng);
+				boolean crit = critJump(me, dist, reach, d, rng, s);
 				yield new Intent(1, 0, true, crit, dist < 6 ? aim : null, to, canHit || fallingCrit, false, false);
 			}
 			case STRIKE -> {
 				double fwd = wTap > 0 ? 0 : dist > reach - 0.3 ? 1 : dist < 1.4 ? -0.6 : 0.25;
 				double str = strafe(s, facing, d, rng);
-				boolean crit = critJump(me, dist, reach, d, rng);
+				boolean crit = critJump(me, dist, reach, d, rng, s);
 				boolean hit = canHit || fallingCrit;
 				if (hit && d.wTap) wTap = 2;
 				boolean block = !hit && me.hasShield() && me.attackReady() < 0.5 && dist < reach + 0.5 && rng.nextDouble() < d.shieldSkill * 0.3;
@@ -170,7 +189,9 @@ public final class CombatSteering {
 		return s.ground(left) >= s.ground(left.scale(-1)) ? 1 : -1;
 	}
 
-	private static boolean critJump(Situation.Self me, double dist, double reach, Difficulty d, Random rng) {
-		return me.onGround() && dist > reach - 0.5 && dist < reach + 1.5 && me.attackReady() > 0.85 && rng.nextDouble() < d.critSkill * 0.15;
+	/** A jump for a falling hit (a crit; with a mace also the smash, so mace fights jump more often). */
+	private static boolean critJump(Situation.Self me, double dist, double reach, Difficulty d, Random rng, Situation s) {
+		double chance = d.critSkill * (me.focus() == Weapon.MACE ? 0.35 : 0.15);
+		return me.onGround() && dist > reach - 0.5 && dist < reach + 1.5 && me.attackReady() > 0.85 && rng.nextDouble() < chance;
 	}
 }

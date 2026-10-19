@@ -94,19 +94,10 @@ public class BridgeMatch extends DuelMatch {
 		}
 	}
 
-	/** Two stacks of clay in the team colour. */
+	/** The kit's clay comes in the team colour (and follows the player's own kit layout). */
 	@Override
-	protected void afterKit(ServerPlayer p) {
-		String clay = red(p.getUUID()) ? "minecraft:red_terracotta" : "minecraft:blue_terracotta";
-		for (int slot : new int[] {3, 4}) {
-			ItemStack stack = new ItemStack(Ids.item(clay), 64);
-			if (p.getInventory().getItem(slot).isEmpty()) {
-				p.getInventory().setItem(slot, stack);
-			} else {
-				p.getInventory().add(stack);
-			}
-		}
-		p.inventoryMenu.sendAllDataToRemote();
+	protected String kitTeam(UUID id) {
+		return red(id) ? "red" : "blue";
 	}
 
 	@Override
@@ -151,7 +142,7 @@ public class BridgeMatch extends DuelMatch {
 		if (sp != null) {
 			teleport(victim, sp);
 		}
-		Kits.give(victim, kit(), leatherColor(victim.getUUID()));
+		Kits.give(victim, kit(), leatherColor(victim.getUUID()), kitTeam(victim.getUUID()));
 		afterKit(victim);
 	}
 

@@ -100,8 +100,27 @@ class CompetitiveTest {
 		assertEquals(5, KitLayout.slotFor(8, kit, l));
 		assertFalse(KitLayout.valid(kit, List.of(0, 0, 2, 8)));
 		assertTrue(KitLayout.valid(kit, l));
-		assertEquals(2, KitLayout.slotFor(2, kit, List.of(1, 2)));
 		assertEquals(8, (int) KitLayout.bySlot(kit, l).get(5));
+		// more entries than the kit has items: ignored
+		assertEquals(2, KitLayout.slotFor(2, kit, List.of(1, 2, 0, 8, 7)));
+	}
+
+	@Test
+	void aLayoutKeepsWorkingWhenTheKitGetsMoreItems() {
+		// made for a kit of sword (0), bow (1), pickaxe (2): bow and sword swapped, pickaxe moved to 7
+		List<Integer> old = List.of(1, 0, 7);
+		// the kit now also has clay in 3 and 4 (added at the end)
+		List<Integer> kit = List.of(0, 1, 2, 3, 4);
+		assertEquals(1, KitLayout.slotFor(0, kit, old));
+		assertEquals(7, KitLayout.slotFor(2, kit, old));
+		assertEquals(3, KitLayout.slotFor(3, kit, old));
+		assertEquals(4, KitLayout.slotFor(4, kit, old));
+		// a new item whose own slot the player already uses goes to the first free one
+		List<Integer> kit2 = List.of(0, 1, 2, 7);
+		assertEquals(2, KitLayout.slotFor(7, kit2, old));
+		// swapping in the editor writes the full layout from then on
+		List<Integer> swapped = KitLayout.swap(kit, old, 3, 8);
+		assertEquals(List.of(1, 0, 7, 8, 4), swapped);
 	}
 
 	@Test

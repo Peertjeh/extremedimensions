@@ -275,7 +275,7 @@ public final class BridgeChaosMatch extends BridgeMatch {
 	}
 
 	void restock(ServerPlayer p) {
-		Kits.give(p, kit(), leatherColor(p.getUUID()));
+		Kits.give(p, kit(), leatherColor(p.getUUID()), kitTeam(p.getUUID()));
 		afterKit(p);
 	}
 }

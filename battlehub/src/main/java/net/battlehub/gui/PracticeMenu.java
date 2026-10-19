@@ -104,10 +104,8 @@ public final class PracticeMenu extends Screen {
 			c.set(slots[at++], Icon.of(Items.PLAYER_HEAD).count(m.opponents()).name(Lang.item(viewer, Icons.modeKey(m)))
 					.lore(Lang.lore(viewer, "menu.practice.team", m.opponents(), Lang.tr(viewer, "bots.level." + chosen.id())))
 					.lore(Lang.lore(viewer, "menu.practice.click")).clean().build(),
-					click -> {
-						viewer.closeContainer();
-						Bots.practiceTeam(viewer, m, GameMode.SWORD, practiceLevel(viewer));
-					});
+					// first the kit: sword, axe or mace, as in the PvP tab
+					click -> new PracticeKitMenu(viewer, m).open());
 		}
 		c.back(() -> new MainMenu(viewer).open());
 		c.fill();

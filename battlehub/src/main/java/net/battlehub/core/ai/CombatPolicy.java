@@ -69,10 +69,16 @@ public final class CombatPolicy {
 
 		// a bow without a sword: melee is a poor idea, distance is everything
 		double noBlade = me.hasMelee() ? 0 : 0.5;
-		if (seen && me.hasBow() && dist > 3.5 && dist < 45) {
+		// a bow fight (the bow kit): the bow is the weapon, the sword only for when they are right on top
+		boolean bowFight = me.focus().ranged() && me.hasBow();
+		if (seen && me.hasBow() && dist > (bowFight ? 2.5 : 3.5) && dist < 45) {
 			double v = 0.35 + 0.4 * (p.range() / 6) + (dist >= 8 && dist <= 28 ? 0.25 : 0) + noBlade * 0.6;
 			List<String> why = new ArrayList<>(List.of(String.format(java.util.Locale.ROOT, "%.0f blocks", dist)));
-			if (dist < 6 && me.hasMelee()) {
+			if (bowFight) {
+				v += 0.35;
+				why.add("a bow fight");
+			}
+			if (dist < (bowFight ? 3.2 : 6) && me.hasMelee()) {
 				v -= 0.45;
 				why.add("too close for the bow");
 			}
@@ -97,6 +103,8 @@ public final class CombatPolicy {
 			if (dist < 8) {
 				double v = 0.15 + (1 - hp) * (0.9 - 0.7 * p.risk()) + 0.25 * p.defensive() * Math.max(0, thp - hp);
 				if (me.hasBow() && !me.hasMelee() && dist < 7) v += 0.45;
+				// in a bow fight: back off to make room for the bow
+				if (bowFight && dist < 6) v += 0.2;
 				v += 0.3 * p.adaptability() * Math.min(0, mem.trend(Tactic.STRIKE)) * -1 * (1 - hp);
 				out.add(new Score(Tactic.RETREAT, v, false, List.of(String.format(java.util.Locale.ROOT, "health %.0f%% vs %.0f%%", hp * 100, thp * 100))));
 			}
@@ -111,6 +119,10 @@ public final class CombatPolicy {
 				if (impatience > 0) {
 					v += impatience;
 					why.add("nothing happens");
+				}
+				if (bowFight && dist > 6) {
+					v -= 0.3;
+					why.add("a bow fight: no need to close in");
 				}
 				v -= leashPenalty(g, carrying, leashed, why);
 				out.add(new Score(Tactic.APPROACH, v, false, why));
@@ -154,6 +166,10 @@ public final class CombatPolicy {
 					// only who blocks the way
 					v -= 0.15;
 					why.add("carrying " + g.what());
+				}
+				if (bowFight && dist > 2.5) {
+					v -= 0.15;
+					why.add("rather the bow");
 				}
 				out.add(new Score(Tactic.STRIKE, v, false, why));
 			}

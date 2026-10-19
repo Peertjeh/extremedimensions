@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.28.0
+
+### Fixed
+* **1v2 and 1v3 practice always used the sword kit**, whatever was chosen. The practice menu now asks for the kit
+  (sword, axe or mace, as in the PvP tab), and `/practice 1v2 <level> <kit>` (or `/practice 1v2 mace`) takes it.
+* **The Bridge's clay ignored your kit layout**: it was put in slots 4 and 5 after the kit. It is now part of the
+  kit (in the team colour), so the kit editor shows it and places it where you want. Layouts made before keep
+  working; kits.json gets the clay added automatically.
+* A kit layout no longer resets when a kit gets more items: the new items go to their own slot (or the first free
+  one) and the rest stays where you put it.
+* **Bots built their own path where there already was one** (the path in The Bridge, a bridge in Bed Wars). They
+  now walk any way there is and only build where there is none. A failed route search is no longer repeated
+  every tick (lighter on the server).
+
+### Changed
+* **Bots fight with the weapon of the fight**: the bow in a bow fight (keeping their distance, the sword only when
+  you are right on top), the mace in a mace fight with more jump attacks and, now and then, a wind charge at their
+  feet to smash down on you; the sword or axe in those fights. `/battlehub bots inspect` shows the weapon, what the
+  bot holds, the arrows it shot and the wind charges it threw.
+
 ## 1.27.1
 
 ### Fixed

@@ -304,12 +304,7 @@ final class BotBrain {
 	 */
 	private Vec3 waypoint(Vec3 dest) {
 		pathAge++;
-		if (path == null || pathAge > 20 || pathGoal == null || pathGoal.distanceToSqr(dest) > 4) {
-			path = BotPath.find(level(), bot.position(), dest);
-			pathIndex = 0;
-			pathAge = 0;
-			pathGoal = dest;
-		}
+		refreshRoute(dest);
 		if (path == null) {
 			return dest;
 		}
@@ -328,6 +323,25 @@ final class BotBrain {
 			if (Math.abs(a.y - b.y) < 0.1 && a.distanceToSqr(pos) < 1.2) return b;
 		}
 		return pathIndex < path.size() ? path.get(pathIndex) : dest;
+	}
+
+	/** When the last route search ran: one that found no way is not tried again every tick. */
+	private int routeAt = -100;
+
+	/**
+	 * Works the route out again when it is old (a second) or the goal moved; when there was no way, it tries again
+	 * after a second (a quarter of a second when the goal moved), since a search that finds nothing is the costly one.
+	 */
+	private void refreshRoute(Vec3 dest) {
+		boolean moved = pathGoal == null || pathGoal.distanceToSqr(dest) > 4;
+		boolean due = path != null ? pathAge > 20 || moved : ticks - routeAt >= (moved ? 5 : 20);
+		if (due) {
+			path = BotPath.find(level(), bot.position(), dest);
+			pathIndex = 0;
+			pathAge = 0;
+			pathGoal = dest;
+			routeAt = ticks;
+		}
 	}
 
 	/** Walks (and sprints) towards a spot along a route round obstacles; jumps over steps. */
@@ -530,6 +544,41 @@ final class BotBrain {
 		return -1;
 	}
 
+	/** The melee weapon of this fight first (the mace in a mace fight, the axe in an axe fight), else any. */
+	private void selectMelee(net.battlehub.core.ai.Weapon focus) {
+		Predicate<ItemStack> want = switch (focus) {
+			case MACE -> s -> s.is(Items.MACE);
+			case AXE -> s -> s.is(ItemTags.AXES);
+			case SWORD -> s -> s.is(ItemTags.SWORDS);
+			default -> null;
+		};
+		if (want != null && select(want)) return;
+		select(BotBrain::isMelee);
+	}
+
+	/**
+	 * A wind charge thrown straight down at its own feet: the burst sends the bot up, and the mace comes down on the
+	 * target with the smash bonus (the steering keeps it moving to the target and swings on the way down).
+	 */
+	private void launch() {
+		if (!bot.onGround()) return;
+		int slot = find(s -> s.is(Ids.item("minecraft:wind_charge")));
+		if (slot < 0) return;
+		stopUsing();
+		bot.getInventory().setSelectedSlot(slot);
+		bot.setXRot(90f);
+		BotActions.use(bot, InteractionHand.MAIN_HAND);
+		BotActions.swing(bot);
+		launches++;
+	}
+
+	private int launches;
+
+	/** Wind charges thrown to fly up (mace fights). */
+	int launches() {
+		return launches;
+	}
+
 	private static boolean isMelee(ItemStack s) {
 		return s.is(ItemTags.SWORDS) || s.is(ItemTags.AXES) || s.is(Items.MACE);
 	}
@@ -647,7 +696,7 @@ final class BotBrain {
 			shoot(Perception.v(in.look()), Vec3.ZERO);
 		} else {
 			if (bot.isUsingItem() && bot.getUsedItemHand() == InteractionHand.MAIN_HAND) stopUsing();
-			select(BotBrain::isMelee);
+			selectMelee(m.botWeapon());
 		}
 		if (in.moveTo() != null) {
 			if (!bridge(m, Perception.v(in.moveTo()))) {
@@ -675,6 +724,9 @@ final class BotBrain {
 		}
 		if (in.jump() && bot.onGround()) {
 			jump();
+		}
+		if (in.launch()) {
+			launch();
 		}
 		shield(in.block());
 		if (in.attack() && t != null && k.seen()) {
@@ -724,6 +776,9 @@ final class BotBrain {
 	 */
 	private boolean bridge(Match m, Vec3 to) {
 		if (!bot.onGround() || find(BotBrain::isBuildBlock) < 0) return false;
+		// a way to walk there (the path, a bridge someone built): walk it, building is for where there is none
+		refreshRoute(to);
+		if (path != null) return false;
 		BlockPos stand = support();
 		if (stand == null) return false;
 		int y = stand.getY();
@@ -938,6 +993,7 @@ final class BotBrain {
 			if (CrossbowItem.isCharged(held)) {
 				if (aimed) {
 					BotActions.use(bot, InteractionHand.MAIN_HAND);
+					shots++;
 				}
 			} else if (!bot.isUsingItem()) {
 				BotActions.use(bot, InteractionHand.MAIN_HAND);
@@ -950,7 +1006,15 @@ final class BotBrain {
 			BotActions.use(bot, InteractionHand.MAIN_HAND);
 		} else if (bot.getTicksUsingItem() >= 20 + (skill == BotLevel.EASY ? 10 : 0) && aimed) {
 			bot.releaseUsingItem();
+			shots++;
 		}
+	}
+
+	private int shots;
+
+	/** Arrows and bolts fired. */
+	int shots() {
+		return shots;
 	}
 
 	// ------------------------------------------------------------------ Spleef

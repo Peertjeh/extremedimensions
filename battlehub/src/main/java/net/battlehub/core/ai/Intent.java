@@ -11,17 +11,27 @@ package net.battlehub.core.ai;
  * @param moveTo   walk there along a route, or null to use forward/strafe
  * @param attack   swing at the target now (the world layer still checks reach and sight)
  * @param bow      use the bow or crossbow on the target: {@code look} is already led for the arrow's flight
+ * @param launch   throw a wind charge at its own feet to fly up (a mace smash from above)
  */
 public record Intent(double forward, double strafe, boolean sprint, boolean jump, V3 look, V3 moveTo, boolean attack, boolean block,
-		boolean heal, boolean bow) {
-	public static final Intent NOTHING = new Intent(0, 0, false, false, null, null, false, false, false, false);
+		boolean heal, boolean bow, boolean launch) {
+	public static final Intent NOTHING = new Intent(0, 0, false, false, null, null, false, false, false, false, false);
 
 	/** Without the bow ({@code bow}: aim at {@code look} as an arrow flies, draw and let go when charged). */
 	public Intent(double forward, double strafe, boolean sprint, boolean jump, V3 look, V3 moveTo, boolean attack, boolean block, boolean heal) {
-		this(forward, strafe, sprint, jump, look, moveTo, attack, block, heal, false);
+		this(forward, strafe, sprint, jump, look, moveTo, attack, block, heal, false, false);
+	}
+
+	public Intent(double forward, double strafe, boolean sprint, boolean jump, V3 look, V3 moveTo, boolean attack, boolean block, boolean heal,
+			boolean bow) {
+		this(forward, strafe, sprint, jump, look, moveTo, attack, block, heal, bow, false);
 	}
 
 	public Intent withLook(V3 at) {
-		return new Intent(forward, strafe, sprint, jump, at, moveTo, attack, block, heal, bow);
+		return new Intent(forward, strafe, sprint, jump, at, moveTo, attack, block, heal, bow, launch);
+	}
+
+	public Intent withLaunch() {
+		return new Intent(forward, strafe, sprint, jump, look, moveTo, attack, block, heal, bow, true);
 	}
 }

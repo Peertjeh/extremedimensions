@@ -54,6 +54,9 @@ public final class KitConfig {
 		}
 	}
 
+	/** Team-coloured clay for The Bridge ("{team}" is filled in per player). */
+	static final String CLAY = "{team}_terracotta";
+
 	private static KitItem i(String item, int count, String slot) {
 		return new KitItem("minecraft:" + item, count, slot);
 	}
@@ -90,9 +93,11 @@ public final class KitConfig {
 		m.put("prophunt_hunter", armor(new Kit().add(i("iron_sword", 1, "0")).add(i("bow", 1, "1")), "chainmail")
 				.effect("minecraft:saturation", 0));
 		m.put("prophunt_prop", new Kit().effect("minecraft:saturation", 0));
-		// The Bridge: clay in the team colour is handed out by the game
+		// The Bridge: clay in the team colour ({team} becomes red, blue, lime or yellow), part of the kit so the kit
+		// editor can place it too
 		m.put("bridge", armor(new Kit().add(i("iron_sword", 1, "0")).add(i("bow", 1, "1")).add(i("diamond_pickaxe", 1, "2")
-				.ench("minecraft:efficiency", 2)).add(i("golden_apple", 8, "5")).add(i("arrow", 1, "8")), "leather"));
+				.ench("minecraft:efficiency", 2)).add(i("golden_apple", 8, "5")).add(i("arrow", 1, "8"))
+				.add(i(CLAY, 64, "3")).add(i(CLAY, 64, "4")), "leather"));
 		m.put("boxing", new Kit().add(i("diamond_sword", 1, "0").ench("minecraft:sharpness", 1)).effect("minecraft:speed", 1)
 				.effect("minecraft:resistance", 4).effect("minecraft:saturation", 0));
 		m.put("build_uhc", armor(new Kit().add(i("diamond_sword", 1, "0").ench("minecraft:sharpness", 2))
@@ -110,6 +115,13 @@ public final class KitConfig {
 	public KitConfig normalize() {
 		if (kits == null) kits = new LinkedHashMap<>();
 		defaults().forEach(kits::putIfAbsent);
+		// kits.json from before 1.28: The Bridge handed its clay out apart from the kit; now it is part of it (added
+		// at the end, so layouts players made earlier keep working)
+		Kit bridge = kits.get("bridge");
+		if (bridge != null && bridge.items != null && bridge.items.stream().noneMatch(it -> it.item != null && it.item.contains("terracotta"))) {
+			bridge.items.add(i(CLAY, 64, "3"));
+			bridge.items.add(i(CLAY, 64, "4"));
+		}
 		for (Kit k : kits.values()) {
 			if (k.items == null) k.items = new ArrayList<>();
 			if (k.effects == null) k.effects = new LinkedHashMap<>();

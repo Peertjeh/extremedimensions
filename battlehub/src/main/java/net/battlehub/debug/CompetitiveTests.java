@@ -100,6 +100,24 @@ final class CompetitiveTests {
 		});
 		s.run(tag + ": A's layout back to standard", () -> PlayerStore.get(p(A)).kitLayouts.clear());
 		s.waitFor(tag + ": arena free", 600, () -> ArenaSlots.busy() == 0 && Sessions.isFree(p(A).getUUID()));
+		s.check(tag + ": The Bridge's clay is part of its kit and follows A's layout (an old one, made before the clay)", () -> {
+			KitConfig.Kit k = ConfigManager.kits().kits.get("bridge");
+			List<Integer> slots = Kits.numericSlots(k);
+			// a layout from before: only the first five items (sword and bow swapped)
+			PlayerStore.get(p(A)).kitLayouts.put("bridge", List.of(1, 0, 2, 5, 8));
+			Kits.give(p(A), "bridge", -1, "red");
+			boolean ok = p(A).getInventory().getItem(0).is(Items.BOW) && p(A).getInventory().getItem(1).is(Items.IRON_SWORD)
+					&& p(A).getInventory().countItem(net.battlehub.util.Ids.item("minecraft:red_terracotta")) == 128
+					&& p(A).getInventory().getItem(3).is(net.battlehub.util.Ids.item("minecraft:red_terracotta")) && slots.size() == 7;
+			// moving the clay in the editor moves it in the match
+			PlayerStore.get(p(A)).kitLayouts.put("bridge", KitLayout.swap(slots, PlayerStore.get(p(A)).kitLayouts.get("bridge"), 3, 6));
+			Kits.give(p(A), "bridge", -1, "blue");
+			ok &= p(A).getInventory().getItem(6).is(net.battlehub.util.Ids.item("minecraft:blue_terracotta"));
+			PlayerStore.get(p(A)).kitLayouts.clear();
+			p(A).getInventory().clearContent();
+			net.battlehub.lobby.HubItems.ensure(p(A), false);
+			return ok;
+		});
 	}
 
 	/** Leaving a duel early blocks queueing for a while; matches with bots do not count. */

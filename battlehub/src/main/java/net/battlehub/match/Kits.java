@@ -58,6 +58,14 @@ public final class Kits {
 	}
 
 	public static void give(ServerPlayer p, String kitName, int leatherColor) {
+		give(p, kitName, leatherColor, null);
+	}
+
+	/**
+	 * Clears the player and gives the kit, with the player's own layout. {@code team}: the colour name that fills in
+	 * "{team}" in item ids (The Bridge's clay), or null for white.
+	 */
+	public static void give(ServerPlayer p, String kitName, int leatherColor, String team) {
 		Inventory inv = p.getInventory();
 		inv.clearContent();
 		p.removeAllEffects();
@@ -71,7 +79,7 @@ public final class Kits {
 		List<Integer> kitSlots = numericSlots(kit);
 		List<Integer> layout = PlayerStore.get(p).kitLayouts.get(kitName);
 		for (KitConfig.KitItem ki : kit.items) {
-			ItemStack stack = stack(p, ki, leatherColor);
+			ItemStack stack = stack(p, ki, leatherColor, team);
 			if (stack.isEmpty()) {
 				continue;
 			}
@@ -109,9 +117,14 @@ public final class Kits {
 	}
 
 	public static ItemStack stack(ServerPlayer p, KitConfig.KitItem ki, int leatherColor) {
-		Item item = Ids.item(ki.item);
+		return stack(p, ki, leatherColor, null);
+	}
+
+	public static ItemStack stack(ServerPlayer p, KitConfig.KitItem ki, int leatherColor, String team) {
+		String id = ki.item == null ? "minecraft:air" : ki.item.replace("{team}", team == null ? "white" : team);
+		Item item = Ids.item(id);
 		if (item == Items.AIR) {
-			BattleHub.LOGGER.warn("Unknown kit item '{}'", ki.item);
+			BattleHub.LOGGER.warn("Unknown kit item '{}'", id);
 			return ItemStack.EMPTY;
 		}
 		ItemStack stack = new ItemStack(item, Math.max(1, Math.min(item.getDefaultMaxStackSize(), ki.count)));

@@ -123,6 +123,11 @@ public abstract class Match {
 		return -1;
 	}
 
+	/** The colour name that fills in "{team}" in kit items (The Bridge's clay), or null for white. */
+	protected String kitTeam(UUID id) {
+		return null;
+	}
+
 	protected int countdownSeconds() {
 		HubConfig.Timings t = ConfigManager.config().timings;
 		return mode.isDuel() ? t.duelCountdownSeconds : t.matchStartCountdownSeconds;
@@ -328,6 +333,11 @@ public abstract class Match {
 		return p == null ? null : net.battlehub.core.ai.Objective.attack(v3(p), "the objective");
 	}
 
+	/** The weapon this fight is about, from its kit (a bow fight, a mace fight), or ANY for mixed kits. */
+	public net.battlehub.core.ai.Weapon botWeapon() {
+		return net.battlehub.core.ai.Weapon.ofKit(kit());
+	}
+
 	/** May a bot build here (games where players build: inside their build area)? */
 	public boolean botMayBuild(BlockPos pos) {
 		return false;
@@ -515,7 +525,7 @@ public abstract class Match {
 		Arena.Point sp = spawnPoint(p.getUUID(), index);
 		spawnOf.put(p.getUUID(), sp);
 		teleport(p, sp);
-		Kits.give(p, kit(), leatherColor(p.getUUID()));
+		Kits.give(p, kit(), leatherColor(p.getUUID()), kitTeam(p.getUUID()));
 		afterKit(p);
 		onArrived(p, index);
 	}
@@ -545,7 +555,7 @@ public abstract class Match {
 			p.closeContainer();
 			resetForPlay(p);
 			teleport(p, sp);
-			Kits.give(p, kit(), leatherColor(id));
+			Kits.give(p, kit(), leatherColor(id), kitTeam(id));
 			afterKit(p);
 		}
 		runTicks = 0;

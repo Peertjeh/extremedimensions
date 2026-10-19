@@ -336,6 +336,74 @@ final class BotTests {
 			}
 			return hit;
 		});
+		s.check(tag + ": in a bow fight the bow is its weapon (it shot more than once)", () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST bow fight: {} arrows | {}", Bots.shots(b), String.join(" | ", Bots.inspect(b)));
+			return Bots.shots(b) >= 2;
+		});
+		endAndClean(s, tag);
+		maceFight(server, s);
+		teamPracticeKit(server, s);
+	}
+
+	/** A mace duel: the bot fights with the mace and now and then flies up on a wind charge to smash down. */
+	private static void maceFight(MinecraftServer server, Script s) {
+		String tag = "bots mace";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": A starts a mace duel against an expert bot", () -> {
+			SelfTest.join(server, A);
+			Bots.practice(p(A), GameMode.MACE, net.battlehub.core.ai.Difficulty.EXPERT);
+		});
+		s.waitFor(tag + ": running", 600, () -> matchOfA() != null && matchOfA().phase() == Match.Phase.RUNNING && botsIn(matchOfA()).size() == 1);
+		s.waitFor(tag + ": it throws a wind charge at its feet", 1200, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			p(A).setHealth(p(A).getMaxHealth());
+			if (Bots.launches(b) >= 1) {
+				VARS.put("launchY", b.getY());
+				VARS.put("launchTop", b.getY());
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST mace bot launched {} time(s) | {}", Bots.launches(b), String.join(" | ", Bots.inspect(b)));
+				return true;
+			}
+			logBot("mace bot", m, b, "maceLogged");
+			return false;
+		});
+		s.waitFor(tag + ": and goes up (more than a jump)", 40, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			double y = botsIn(m).get(0).getY(), top = Math.max((double) VARS.get("launchTop"), y);
+			VARS.put("launchTop", top);
+			boolean up = top > (double) VARS.get("launchY") + 1.4;
+			if (up) net.battlehub.BattleHub.LOGGER.info("SELFTEST mace bot flew {} blocks up", String.format(java.util.Locale.ROOT, "%.1f", top - (double) VARS.get("launchY")));
+			return up;
+		});
+		s.waitFor(tag + ": and fights with the mace in hand", 200, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			p(A).setHealth(p(A).getMaxHealth());
+			return botsIn(m).get(0).getMainHandItem().is(net.minecraft.world.item.Items.MACE);
+		});
+		endAndClean(s, tag);
+	}
+
+	/** 1v2 practice with the mace kit: everybody gets the mace kit (it used to be the sword kit, whatever was chosen). */
+	private static void teamPracticeKit(MinecraftServer server, Script s) {
+		String tag = "bots team kit";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": A practises 1v2 with the mace kit", () -> {
+			SelfTest.join(server, A);
+			Bots.practiceTeam(p(A), GameMode.ONE_V_TWO, GameMode.MACE, net.battlehub.core.ai.Difficulty.CASUAL);
+		});
+		s.waitFor(tag + ": the fight runs with two bots", 600, () -> matchOfA() != null && botsIn(matchOfA()).size() == 2
+				&& matchOfA().phase() != Match.Phase.CLOSED);
+		s.waitFor(tag + ": A and both bots carry the mace kit", 200, () -> {
+			Match m = matchOfA();
+			if (m == null) return false;
+			boolean ok = p(A).getInventory().countItem(net.minecraft.world.item.Items.MACE) == 1;
+			for (BotPlayer b : botsIn(m)) ok &= b.getInventory().countItem(net.minecraft.world.item.Items.MACE) == 1;
+			return ok;
+		});
 		endAndClean(s, tag);
 	}
 
@@ -551,6 +619,14 @@ final class BotTests {
 		s.waitFor(tag + ": the match runs against a bot", 600, () -> {
 			Match m = matchOfA();
 			return m instanceof net.battlehub.games.duel.BridgeMatch && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
+		});
+		s.run(tag + ": no more bots for now", () -> VARS.put("pathPlaced", -1));
+		s.pause(200);
+		s.check(tag + ": while the path is there the bot walks it and builds nothing", () -> {
+			Match m = matchOfA();
+			BotPlayer b = botsIn(m).get(0);
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST bridge bot with the path: placed {} | {}", Bots.placed(b), String.join(" | ", Bots.inspect(b)));
+			return Bots.placed(b) == 0;
 		});
 		s.run(tag + ": no more bots; the path between the islands is taken away", () -> {
 			cfg().fillQueues = false;

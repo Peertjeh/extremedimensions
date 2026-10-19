@@ -59,6 +59,10 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   charge, as a player does). Beginners spam weak clicks and sometimes swing from too far, experts wait for full
   hits but still react a little late. Against someone sprint-strafing a beginner lands about one swing in five, a
   master about four in five; against someone standing still nearly all.
+* *The weapon of the fight*: in a bow fight the bow is its weapon (it keeps its distance and only draws the
+  sword when you are right on top of it), in a mace fight it fights with the mace, jumps for falling hits and now
+  and then throws a wind charge at its feet to come down on you with the smash; in a sword or axe fight it holds
+  that weapon. Mixed kits (Free for All, CTF, The Bridge) leave the choice to the situation.
 * *It minds the edges*: it looks before it jumps (the jump is simulated with the player's own movement and skipped
   when it would end in the void), slows down when it slides towards an edge, and in the air after a knock it holds
   the keys back towards the last ground, as a player does. Lower levels do not always remember to.
@@ -130,8 +134,9 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   * **Bed Wars**: they fetch iron from their generator, buy wool at their own shop (same price as a player), one
     of a team guards the bed while it stands, the others build a bridge to the nearest enemy bed and break it
     (mining takes as long as for a player; blocks put round a bed are mined first).
-  * **The Bridge**: they head for the other goal, in 2v2 one keeps the own goal, and where the path is gone they
-    build their own: sneaking to the edge, looking at the side of the block and placing clay like a player.
+  * **The Bridge**: they head for the other goal, in 2v2 one keeps the own goal. They walk the path (or a bridge
+    someone built) and only build their own where there is no way across: sneaking to the edge, looking at the side
+    of the block and placing clay like a player.
 * Their names start with `Bot_`. Nothing about them is saved (no player files, no profiles), they never show
   up on a leaderboard, and their join and leave messages stay out of chat.
 * **One real player with bots earns nothing**: no coins, no XP, no quest, pass or achievement progress, and
@@ -539,7 +544,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/party invite\|accept\|kick <player>` / `/party leave\|disband` / `/pc <message>` | everyone | A party that plays together, and party chat |
 | `/clan` / `/clan create <name> <tag>` / `/clan invite\|kick <player>` / `/clan join <clan>` / `/clan leave\|disband` / `/cc <message>` | everyone | Clans and clan chat |
 | `/custom` / `/custom create <mode>` / `/custom join <code>` / `/custom start\|leave` | everyone | Private games with a code |
-| `/practice [mode] [level\|adaptive]` | everyone | Practice against bots (sword, axe, mace, bow, crossbow, 1v2, 1v3) at a level (beginner .. master) or adaptive; without a mode: the practice menu |
+| `/practice [mode] [level\|adaptive] [kit]` | everyone | Practice against bots (sword, axe, mace, bow, crossbow, 1v2, 1v3) at a level (beginner .. master) or adaptive; 1v2 and 1v3 with a kit (sword, axe or mace; without one the kit choice opens); without a mode: the practice menu |
 | `/bots` / `/bots on\|off` | everyone | May bots fill in the queues you wait in? Without on/off: switch |
 | `/bots memory` / `/bots forget` | everyone | What bots remember about how you fight and your results against them; wipe it |
 | `/battlehub` | everyone | Open the main menu |

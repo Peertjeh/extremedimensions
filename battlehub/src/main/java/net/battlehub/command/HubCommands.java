@@ -175,12 +175,17 @@ public final class HubCommands {
 				})
 				.then(Commands.argument("mode", StringArgumentType.word())
 						.suggests((c, b) -> SharedSuggestionProvider.suggest(practiceModes(), b))
-						.executes(c -> practice(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode"), null))
+						.executes(c -> practice(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode"), null, null))
 						.then(Commands.argument("level", StringArgumentType.word())
 								.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.stream.Stream.concat(java.util.Arrays.stream(net.battlehub.core.ai.Difficulty.values())
 										.map(net.battlehub.core.ai.Difficulty::id), java.util.stream.Stream.of("adaptive")).toList(), b))
 								.executes(c -> practice(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode"),
-										StringArgumentType.getString(c, "level"))))));
+										StringArgumentType.getString(c, "level"), null))
+								// 1v2 / 1v3: the kit (sword, axe or mace)
+								.then(Commands.argument("kit", StringArgumentType.word())
+										.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.Arrays.stream(GameMode.meleeKits()).map(GameMode::id).toList(), b))
+										.executes(c -> practice(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode"),
+												StringArgumentType.getString(c, "level"), StringArgumentType.getString(c, "kit")))))));
 
 		d.register(Commands.literal("battlehub")
 				.executes(c -> {
@@ -473,9 +478,15 @@ public final class HubCommands {
 		return out;
 	}
 
-	/** /practice sword hard: a duel against a bot right away (or 1v2 / 1v3 against bots). */
-	private static int practice(ServerPlayer p, String modeId, String level) {
+	/** /practice sword hard: a duel against a bot right away (or 1v2 / 1v3 against bots, with a kit: /practice 1v2 hard mace). */
+	private static int practice(ServerPlayer p, String modeId, String level, String kitId) {
 		GameMode mode = GameMode.byId(modeId);
+		// "/practice 1v2 mace": the kit in the place of the level
+		GameMode asKit = level == null ? null : GameMode.byId(level);
+		if (asKit != null && java.util.Arrays.asList(GameMode.meleeKits()).contains(asKit)) {
+			kitId = level;
+			level = null;
+		}
 		if ("adaptive".equalsIgnoreCase(level)) net.battlehub.gui.PracticeMenu.adaptive(p.getUUID(), true);
 		net.battlehub.core.ai.Difficulty l = level == null || "adaptive".equalsIgnoreCase(level) ? net.battlehub.gui.PracticeMenu.practiceLevel(p)
 				: net.battlehub.core.ai.Difficulty.parse(level, net.battlehub.gui.PracticeMenu.practiceLevel(p));
@@ -483,7 +494,13 @@ public final class HubCommands {
 			return net.battlehub.bot.Bots.practice(p, mode, l) ? 1 : 0;
 		}
 		if (mode != null && mode.isTeamFight()) {
-			return net.battlehub.bot.Bots.practiceTeam(p, mode, GameMode.SWORD, l) ? 1 : 0;
+			GameMode kit = kitId == null ? null : GameMode.byId(kitId);
+			if (kit == null && kitId == null) {
+				// no kit given: the choice of kit first
+				new net.battlehub.gui.PracticeKitMenu(p, mode).open();
+				return 1;
+			}
+			return net.battlehub.bot.Bots.practiceTeam(p, mode, kit == null ? GameMode.SWORD : kit, l) ? 1 : 0;
 		}
 		Msg.send(p, "bots.practice_modes");
 		return 0;

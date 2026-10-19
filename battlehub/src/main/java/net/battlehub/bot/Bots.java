@@ -636,6 +636,15 @@ public final class Bots {
 		return b == null ? null : b.brain.mind().personality();
 	}
 
+	/** Arrows a bot fired, and wind charges it threw to fly up (for the self-test and inspect). */
+	public static int shots(BotPlayer b) {
+		return b.brain.shots();
+	}
+
+	public static int launches(BotPlayer b) {
+		return b.brain.launches();
+	}
+
 	/** Blocks a bot placed in its current match (building across gaps). */
 	public static int placed(BotPlayer b) {
 		return b.brain.placed();
@@ -661,6 +670,11 @@ public final class Bots {
 		out.add(b.getGameProfile().name() + " (" + b.difficulty.id() + ")" + (m == null ? ", not in a match" : ", match #" + m.id + " " + m.mode.id()));
 		out.addAll(b.brain.mind().report().lines());
 		if (!b.brain.parkourNote().isEmpty()) out.add("parkour: " + b.brain.parkourNote());
+		if (m != null && m.botWeapon() != net.battlehub.core.ai.Weapon.ANY) {
+			out.add("weapon of this fight: " + m.botWeapon().name().toLowerCase(java.util.Locale.ROOT) + ", holds "
+					+ net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(b.getMainHandItem().getItem()).getPath() + ", arrows shot "
+					+ b.brain.shots() + ", wind charges " + b.brain.launches());
+		}
 		net.battlehub.core.ai.Objective g = m == null ? null : m.botGoal(b);
 		if (g != null) {
 			out.add("goal: " + g.kind().name().toLowerCase(java.util.Locale.ROOT) + " " + g.what() + String.format(java.util.Locale.ROOT, " (%.0f blocks away)",
