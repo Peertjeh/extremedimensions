@@ -99,6 +99,28 @@ public class ArenaTests {
 		});
 	}
 
+	/** The rubble of its arena glances off an Elder: a falling island is what hurts it. */
+	@GameTest(maxTicks = 60)
+	public void rubbleGlancesOffAnElder(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ground(helper, 3, 3, 3, 3);
+		Weaver w = weaver(helper, 3, 1, 3);
+		float health = w.getHealth();
+		BlockPos lands = helper.absolutePos(new BlockPos(3, 1, 3));
+		FallingBlockEntity rubble = FallingBlockEntity.fall(level, helper.absolutePos(new BlockPos(3, 7, 3)), Blocks.STONE_BRICKS.defaultBlockState());
+		rubble.dropItem = false;
+		rubble.setHurtsEntities(2.0F, 40);
+		helper.runAfterDelay(50, () -> {
+			boolean landed = rubble.isRemoved();
+			float now = w.getHealth();
+			level.setBlock(lands, Blocks.AIR.defaultBlockState(), 3);
+			w.discard();
+			check(helper, landed, "the rubble did not land");
+			check(helper, now == health, "rubble falling on the Weaver took it from %s to %s health", health, now);
+			helper.succeed();
+		});
+	}
+
 	/** A blast breaks an arena's obsidian like stone (elder_arena_blast_resistance), unless the settings keep it whole. */
 	@GameTest(maxTicks = 20)
 	public void anArenaGivesWayToABlast(GameTestHelper helper) {

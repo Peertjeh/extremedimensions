@@ -99,6 +99,8 @@ public class ClientShots implements FabricClientGameTest {
 		// domain changes twice as the Elder weakens, seen from over the edge of its heart
 		sp.getServer().runOnServer(s -> player(s).teleportTo(mid[0], mid[1] + 16, mid[2] - 40));
 		sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s ~ ~ ~ facing %.1f %.1f %.1f", mid[0], mid[1], mid[2] + 8));
+		sp.getServer().runOnServer(s -> elders(s, 400).forEach(e -> System.out.println("[domain] " + name + ": " + e.getHealth() + " of " + e.getMaxHealth()
+				+ " health before the domain changes")));
 		sp.getServer().runOnServer(s -> elders(s, 400).forEach(e -> e.setHealth(e.getMaxHealth() * 0.5F)));
 		ctx.waitTicks(10);
 		sp.getServer().runOnServer(s -> elders(s, 400).forEach(e -> e.setHealth(e.getMaxHealth() * 0.28F)));

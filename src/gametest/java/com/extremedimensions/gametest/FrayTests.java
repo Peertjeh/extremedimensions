@@ -91,6 +91,13 @@ public class FrayTests {
 		// Up in open sky over the test's own space (which is walled in, so nothing outside could see in): a small
 		// platform for the prey to stand on
 		BlockPos o = helper.absolutePos(BlockPos.ZERO).above(24);
+		// The ray flies out past the test's own space, where only a test beside it would keep the world going: the
+		// chunks round it are forced (and, as in BossTests, never let go: a neighbouring test may stand in them)
+		for (int dx = -2; dx <= 2; dx++) {
+			for (int dz = -2; dz <= 2; dz++) {
+				level.setChunkForced((o.getX() >> 4) + dx, (o.getZ() >> 4) + dz, true);
+			}
+		}
 		for (int dx = -2; dx <= 2; dx++) {
 			for (int dz = -2; dz <= 2; dz++) {
 				level.setBlock(o.offset(dx, 0, dz), Blocks.STONE.defaultBlockState(), 2);

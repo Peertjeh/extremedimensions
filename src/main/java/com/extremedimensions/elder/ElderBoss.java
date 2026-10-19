@@ -101,6 +101,10 @@ public abstract class ElderBoss extends Monster {
 
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+		if (source.getDirectEntity() instanceof net.minecraft.world.entity.item.FallingBlockEntity) {
+			// The rubble of its arena glances off it (a falling island is what hurts it, see ElderDomain)
+			return false;
+		}
 		if (getAction() == SPAWN && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) {
 			// Still forming: blows pass through the light it is made of
 			WorldFx.particleIn(level, "minecraft:enchanted_hit", getX(), getY() + getBbHeight() * 0.5, getZ(), getBbWidth() * 0.5, getBbHeight() * 0.3,

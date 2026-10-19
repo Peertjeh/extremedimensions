@@ -6,8 +6,8 @@
 - **An arena breaks like the rest of the world.** The Elders' blows, creepers and TNT tear into its blocks as they do
   into the ground, and a blast breaks its obsidian and blackstone as easily as stone. It still drops nothing. What
   something breaks into is looked at again a moment later: whatever no longer rests on anything (the world, or
-  another part of the arena) comes down as rubble that hurts whoever it lands on (4 damage), and lies where it comes
-  to rest until the arena goes. The floor never comes down this way, and the ground under the arena is put back as it
+  another part of the arena) comes down as rubble that hurts whoever it lands on (4 damage; the Elders shrug it off),
+  and lies where it comes to rest until the arena goes. The floor never comes down this way, and the ground under the arena is put back as it
   was when the arena goes.
 
 ### Added
