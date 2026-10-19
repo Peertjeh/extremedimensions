@@ -145,6 +145,11 @@ public abstract class Match {
 	/** Called for each player after they were teleported and got their kit. */
 	protected void onArrived(ServerPlayer p, int index) {}
 
+	/** Where a player (re)spawns in this match, or null before the start. */
+	public Arena.Point home(UUID id) {
+		return spawnOf.get(id);
+	}
+
 	/** Where a player starts (teams can override this). */
 	protected Arena.Point spawnPoint(UUID id, int index) {
 		return arena.spawn(index);

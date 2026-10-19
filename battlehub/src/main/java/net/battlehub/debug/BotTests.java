@@ -336,10 +336,15 @@ final class BotTests {
 			}
 			return hit;
 		});
-		s.check(tag + ": in a bow fight the bow is its weapon (it shot more than once)", () -> {
-			BotPlayer b = botsIn(matchOfA()).get(0);
+		s.waitFor(tag + ": in a bow fight the bow is its weapon (it shoots again)", 400, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			// A stays in the fight: the test is about the bot's choice of weapon, not about who wins
+			p(A).setHealth(p(A).getMaxHealth());
+			if (Bots.shots(b) < 2) return false;
 			net.battlehub.BattleHub.LOGGER.info("SELFTEST bow fight: {} arrows | {}", Bots.shots(b), String.join(" | ", Bots.inspect(b)));
-			return Bots.shots(b) >= 2;
+			return true;
 		});
 		endAndClean(s, tag);
 		maceFight(server, s);
@@ -550,8 +555,13 @@ final class BotTests {
 			BotPlayer b = botsIn(m).get(0);
 			boolean ok = pm.platformIndex(b) >= 3 || pm.lastPlatform(b.getUUID()) >= 3;
 			if (!ok && m.runSeconds() > 0 && m.runSeconds() % 15 == 0 && !Integer.valueOf(m.runSeconds()).equals(VARS.put("pkLogged", m.runSeconds()))) {
-				net.battlehub.BattleHub.LOGGER.warn("SELFTEST parkour bot after {}s: on platform {}, best {}, at {}", m.runSeconds(),
-						pm.platformIndex(b), pm.lastPlatform(b.getUUID()), b.position());
+				StringBuilder first = new StringBuilder();
+				for (int i = 0; i < Math.min(5, pm.course().size()); i++) {
+					net.battlehub.core.ParkourCourse.Platform pl = pm.course().get(i);
+					first.append(i == 0 ? "" : ", ").append(i).append(' ').append(pl.style()).append(" at ").append(pm.platformTop(i));
+				}
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST parkour bot after {}s: on platform {}, best {}, at {} | course {} | {}", m.runSeconds(),
+						pm.platformIndex(b), pm.lastPlatform(b.getUUID()), b.position(), first, String.join(" | ", Bots.inspect(b)));
 			}
 			return ok;
 		});
@@ -628,10 +638,14 @@ final class BotTests {
 			net.battlehub.BattleHub.LOGGER.info("SELFTEST bridge bot with the path: placed {} | {}", Bots.placed(b), String.join(" | ", Bots.inspect(b)));
 			return Bots.placed(b) == 0;
 		});
-		s.run(tag + ": no more bots; the path between the islands is taken away", () -> {
+		s.run(tag + ": no more bots; the bot is sent home and the path between the islands is taken away", () -> {
 			cfg().fillQueues = false;
 			cfg().fillLevel = (String) VARS.get("fillLevel");
 			Match m = matchOfA();
+			BotPlayer b = botsIn(m).get(0);
+			// it may have walked across already: from its own island it has to build to get anywhere
+			net.battlehub.arena.Arena.Point home = m.home(b.getUUID());
+			if (home != null) PartyTests.tp(b, home.pos().x, home.pos().y, home.pos().z);
 			net.minecraft.core.BlockPos o = m.arena().origin();
 			int reach = net.battlehub.arena.layout.NewLayouts.BRIDGE_ISLAND - 6;
 			for (int x = -reach; x <= reach; x++) {

@@ -92,8 +92,8 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   player: looking at the block, within reach, only what it can see.
 * *Parkour*: for every jump it simulates a few ways with real player movement (walk or sprint, short or long
   run-up), picks the one that lands with the most room, walks to the start, runs and jumps on the right tick,
-  steers in the air and brakes after landing (ice). It only presses keys like a player. A jump that failed is
-  remembered and the next try uses another way.
+  steers in the air and brakes after landing (ice). Ladders it climbs by pushing into them and holding jump.
+  It only presses keys like a player. A jump that failed is remembered and the next try uses another way.
 * *It remembers you* (if the server allows it): how you move, click and land and which of its tactics worked
   against you, so the next bot starts from that; and how strong you are against bots. `/bots memory` shows what
   bots remember about you, `/bots forget` wipes it.

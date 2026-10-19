@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.28.1
+
+### Fixed
+* **Parkour bots could not climb ladders**: in the air they let go of the keys, so on a ladder they slid down
+  into the void. They now push into the ladder and hold jump until they step onto the platform at the top.
+* A parkour bot could stay stuck before a jump: its brake pushed full against a slow slide, overshot, pushed back
+  and never came to a stop. It now brakes only as hard as the slide needs (also when it stops at an edge).
+
 ## 1.28.0
 
 ### Fixed

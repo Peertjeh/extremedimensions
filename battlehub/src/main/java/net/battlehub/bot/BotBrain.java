@@ -196,6 +196,7 @@ final class BotBrain {
 		hideSpot = null;
 		pkPlan = null;
 		pkStage = 0;
+		pkLadder = -1;
 		pkFailed.clear();
 		heardAt.clear();
 		aimingAt = null;
@@ -1182,6 +1183,8 @@ final class BotBrain {
 	private int pkJumpLate;
 	private final java.util.Map<String, java.util.Set<String>> pkFailed = new java.util.HashMap<>();
 	private String pkNote = "";
+	/** The ladder platform it is going up to, or -1. */
+	private int pkLadder = -1;
 
 	/**
 	 * From platform to platform with player movement only: the planner ({@link JumpPlanner}) picks how to make the
@@ -1197,6 +1200,9 @@ final class BotBrain {
 		}
 		int on = pm.platformIndex(bot);
 		if (!bot.onGround()) {
+			if (pkLadder >= 0 && pkLadder < course.size() && climb(pm.platformTop(pkLadder))) {
+				return;
+			}
 			if (pkStage == 2 && pkPlan != null) {
 				// steer in the air towards the landing (a player can, a little)
 				look(BotMath.yaw(pkPlan.landing().x() - bot.getX(), pkPlan.landing().z() - bot.getZ()), 15f);
@@ -1221,9 +1227,12 @@ final class BotBrain {
 			bot.setSprinting(false);
 			return;
 		}
-		if (from < 0 || course.get(next).style() == ParkourCourse.Style.LADDER) {
-			// the start, or a ladder: walk to it (into a ladder, holding forward climbs)
+		boolean ladder = course.get(next).style() == ParkourCourse.Style.LADDER;
+		pkLadder = ladder ? next : -1;
+		if (from < 0 || ladder) {
+			// the start, or a ladder: walk to it (into a ladder; on it, climb() takes over)
 			Vec3 to = pm.platformTop(Math.max(0, next));
+			if (ladder) pkNote = "to the ladder " + next;
 			goTo(to, false);
 			if (bot.horizontalCollision) bot.setJumping(true);
 			return;
@@ -1291,15 +1300,37 @@ final class BotBrain {
 		}
 	}
 
-	/** Holds the movement keys against the bot's own sliding (a player stops on ice the same way). */
+	/**
+	 * On a ladder: pushing into it and holding jump climbs it (letting go slides down, and below a parkour ladder
+	 * is the void), and at the top, still pushing forward steps onto the platform. False when not at the ladder.
+	 */
+	private boolean climb(Vec3 top) {
+		double dx = top.x - bot.getX(), dz = top.z - bot.getZ();
+		boolean near = dx * dx + dz * dz < 1.8 * 1.8 && bot.getY() < top.y + 0.5;
+		if (!bot.onClimbable() && !near) return false;
+		look(BotMath.yaw(dx, dz), 0f);
+		bot.zza = 1f;
+		bot.setSprinting(false);
+		if (bot.onClimbable()) {
+			bot.setJumping(true);
+			pkNote = "climbing to " + pkLadder;
+		}
+		return true;
+	}
+
+	/**
+	 * Holds the movement keys against the bot's own sliding (a player stops on ice the same way), only as hard as
+	 * the slide needs: full keys against a slow slide would push it the other way, and back, and never let it stop.
+	 */
 	private void brake() {
 		Vec3 v = bot.getDeltaMovement();
 		double speed = v.horizontalDistance();
 		if (speed < 0.03) return;
 		double yaw = Math.toRadians(bot.getYRot());
-		// forward is (-sin, cos) of the yaw, left (cos, sin)
-		double forward = (-Math.sin(yaw) * v.x + Math.cos(yaw) * v.z) / speed;
-		double left = (Math.cos(yaw) * v.x + Math.sin(yaw) * v.z) / speed;
+		// forward is (-sin, cos) of the yaw, left (cos, sin); a walking key adds about 0.13 a tick on normal ground
+		double k = Math.min(1, speed / 0.13) / speed;
+		double forward = (-Math.sin(yaw) * v.x + Math.cos(yaw) * v.z) * k;
+		double left = (Math.cos(yaw) * v.x + Math.sin(yaw) * v.z) * k;
 		bot.zza = (float) -forward;
 		bot.xxa = (float) -left;
 	}
