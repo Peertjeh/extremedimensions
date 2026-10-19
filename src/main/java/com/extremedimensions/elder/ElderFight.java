@@ -41,6 +41,43 @@ abstract class ElderFight {
 	final java.util.Set<UUID> aimed = new java.util.HashSet<>();
 	/** Its next blow repeats the one under way at the next player, rather than starting afresh. */
 	private boolean chaining;
+	/** Ticks it stands dazed (an island fell on it, a core of its arena broke). */
+	int dazed;
+
+	/** The fight of an Elder, whichever it is, or null if it is not fighting. */
+	static ElderFight of(net.minecraft.world.entity.Entity e) {
+		ElderFight f = MatriarchService.fight(e);
+		if (f == null) {
+			f = FerrymanService.fight(e);
+		}
+		return f != null ? f : WeaverService.fight(e);
+	}
+
+	/** Dazes an Elder for a while (it shrugs it off in its ultimate and as it forms). */
+	static void daze(net.minecraft.world.entity.Entity e, int ticks) {
+		ElderFight f = of(e);
+		if (f != null) {
+			f.dazed = Math.max(f.dazed, ticks);
+		}
+	}
+
+	/** Dazed: it stands still, its blow cut short, stars about its head; false once it has its wits again. */
+	boolean dazed(ElderBoss b) {
+		if (dazed <= 0 || action == ElderBoss.ULTIMATE || action == ElderBoss.SPAWN) {
+			return false;
+		}
+		dazed--;
+		if (action != ElderBoss.IDLE) {
+			action = ElderBoss.IDLE;
+			beat.reset();
+			b.setAction(ElderBoss.IDLE);
+		}
+		cooldown = Math.max(cooldown, 10);
+		if (ticks % 4 == 0) {
+			WorldFx.particleIn(level, "minecraft:crit", b.getX(), b.getY() + b.getBbHeight() * 0.9, b.getZ(), 1.5, 0.4, 1.5, 0.05, 6);
+		}
+		return true;
+	}
 
 	void makeBar(String key, BossEvent.BossBarColor color, BossEvent.BossBarOverlay overlay, ServerPlayer first) {
 		bar = new ServerBossEvent(UUID.randomUUID(), Component.translatable(key), color, overlay);

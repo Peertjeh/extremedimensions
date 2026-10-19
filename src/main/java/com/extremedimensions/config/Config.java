@@ -479,6 +479,66 @@ public final class Config {
 	public static int ELDER_ARENA_LINGER_SECONDS = 30;
 	/** Seconds an arena takes to come apart (the ground is put back as it was). */
 	public static double ELDER_ARENA_DISSOLVE_SECONDS = 25.0;
+	/** Whether an arena's blocks break like the rest of the world (the Elders' blows, creepers, TNT), dropping nothing: 1 = on, 0 = off. */
+	public static int ELDER_ARENA_BREAKABLE = 1;
+	/** Highest blast resistance of an arena's blocks, whatever they are made of (6 = stone; obsidian is 1200). */
+	public static double ELDER_ARENA_BLAST_RESISTANCE = 6.0;
+	/** Whether what is left of an arena without support comes down as rubble: 1 = on, 0 = off. */
+	public static int ELDER_ARENA_COLLAPSE = 1;
+	/** Damage a block of an arena's rubble does to whoever it lands on (once it has fallen four blocks or more). */
+	public static int ELDER_ARENA_RUBBLE_DAMAGE = 4;
+	/** Most blocks that fall at once when part of an arena comes down; the rest crumble where they are. */
+	public static int ELDER_ARENA_RUBBLE_MAX = 240;
+	/** Whether an Elder's domain changes as it weakens (its roots, burning lanes and threads): 1 = on, 0 = off. */
+	public static int ELDER_ARENA_PHASES = 1;
+	/** Share of its health at which an Elder's domain first changes. */
+	public static double ELDER_ARENA_PHASE_ONE = 0.6;
+	/** Share of its health at which an Elder's domain changes again. */
+	public static double ELDER_ARENA_PHASE_TWO = 0.3;
+	/** Ridges of root the Matriarch's floor throws up when her domain first changes (cover to hide behind). */
+	public static int MATRIARCH_RIDGES = 6;
+	/** How hard the roots hanging under her arches slow whoever walks through them, when her domain changes again (1 = Slowness I). */
+	public static int MATRIARCH_ROOTS_SLOW = 2;
+	/** Seconds between the waves of soul fire down the lanes of the Ferryman's whirlpool once his domain changes. */
+	public static double FERRYMAN_LANE_SECONDS = 6.0;
+	/** Seconds between the waves once his domain changes again (two lanes burn at once then). */
+	public static double FERRYMAN_LANE_SECONDS_LATE = 4.0;
+	/** Seconds a lane glows before it burns. */
+	public static double FERRYMAN_LANE_WARN_SECONDS = 1.5;
+	/** Damage a burning lane does to whoever stands on it (and it sets them alight). */
+	public static double FERRYMAN_LANE_DAMAGE = 4.0;
+	/** Seconds a thread of the Weaver's web holds whoever steps on it, once its domain changes. */
+	public static double WEAVER_THREAD_SECONDS = 2.0;
+	/** Seconds before the same player can be held by a thread again. */
+	public static double WEAVER_THREAD_COOLDOWN = 5.0;
+	/** Seconds between the patches of the Weaver's floor that fall away, once its domain changes again. */
+	public static double WEAVER_DROP_SECONDS = 8.0;
+	/** Radius of a patch of floor that falls away, in blocks. */
+	public static int WEAVER_DROP_RADIUS = 3;
+	/** Whether glowing cores in each Elder's great piece shield it until they are broken: 1 = on, 0 = off. */
+	public static int ELDER_CORES = 1;
+	/** Share of the damage an Elder shrugs off while all its cores stand (each broken core takes away its part). */
+	public static double ELDER_CORE_WARD = 0.3;
+	/** Hits it takes to break a core. */
+	public static int ELDER_CORE_HITS = 3;
+	/** Seconds an Elder reels when one of its cores breaks. */
+	public static double ELDER_CORE_DAZE_SECONDS = 1.5;
+	/** Whether the arena's islands break loose and fall during a fight: 1 = on, 0 = off. */
+	public static int ELDER_ISLE_FALL = 1;
+	/** Fewest seconds between falling islands. */
+	public static double ELDER_ISLE_MIN_SECONDS = 20.0;
+	/** Most seconds between falling islands. */
+	public static double ELDER_ISLE_MAX_SECONDS = 30.0;
+	/** Seconds the shadow of a loosening island shows on the ground before it falls. */
+	public static double ELDER_ISLE_WARN_SECONDS = 3.0;
+	/** Damage a fallen island does to everyone within its reach. */
+	public static double ELDER_ISLE_DAMAGE = 8.0;
+	/** Blocks from where a fallen island strikes that it hurts. */
+	public static double ELDER_ISLE_RADIUS = 5.0;
+	/** Share of its health an Elder loses when an island falls on it. */
+	public static double ELDER_ISLE_BOSS_SHARE = 0.1;
+	/** Seconds an Elder is stunned when an island falls on it. */
+	public static double ELDER_ISLE_DAZE_SECONDS = 2.0;
 	/** How much debris the Elders' blows throw, as a multiple (0.25 to 2); their sigils, rings and threads are always drawn. */
 	public static double ELDER_ATTACK_FX_DETAIL = 1.0;
 	/** An Elder's health, as a multiple of its own (before the players fighting it are counted). */
@@ -806,7 +866,16 @@ public final class Config {
 			{"elder_reach", 1, 5}, {"elder_brood_per_player", 0, 10}, {"elder_spell_range", 16, 256}, {"elder_snare_seconds", 0, 30},
 			{"elder_snare_damage", 0, 100}, {"elder_bind_seconds", 0, 120}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
 			{"ferryman_gaol_hits", 1, 20}, {"ferryman_gaol_seconds", 0.5, 6}, {"ferryman_gaol_damage", 0, 100}, {"weaver_windup_speed", 0.5, 4}, {"weaver_lance_length", 0.5, 4},
-			{"elder_arena_size", 0.5, 12}, {"elder_arena_wall", 0, 1}, {"elder_arena_landmark", 0, 1}, {"elder_arena_fly_max", 50, 5000}, {"elder_arena_fly_range", 8, 256}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
+			{"elder_arena_size", 0.5, 12}, {"elder_arena_wall", 0, 1}, {"elder_arena_landmark", 0, 1},
+			{"elder_arena_breakable", 0, 1}, {"elder_arena_blast_resistance", 0, 1200}, {"elder_arena_collapse", 0, 1},
+			{"elder_arena_rubble_damage", 0, 40}, {"elder_arena_rubble_max", 0, 2000}, {"elder_arena_phases", 0, 1},
+			{"elder_arena_phase_one", 0, 1}, {"elder_arena_phase_two", 0, 1}, {"matriarch_ridges", 0, 24}, {"matriarch_roots_slow", 0, 5},
+			{"ferryman_lane_seconds", 1, 60}, {"ferryman_lane_seconds_late", 1, 60}, {"ferryman_lane_warn_seconds", 0.25, 10},
+			{"ferryman_lane_damage", 0, 100}, {"weaver_thread_seconds", 0, 10}, {"weaver_thread_cooldown", 0, 60},
+			{"weaver_drop_seconds", 1, 120}, {"weaver_drop_radius", 1, 8}, {"elder_cores", 0, 1}, {"elder_core_ward", 0, 0.9},
+			{"elder_core_hits", 1, 50}, {"elder_core_daze_seconds", 0, 10}, {"elder_isle_fall", 0, 1}, {"elder_isle_min_seconds", 3, 600},
+			{"elder_isle_max_seconds", 3, 600}, {"elder_isle_warn_seconds", 0.5, 10}, {"elder_isle_damage", 0, 100},
+			{"elder_isle_radius", 1, 16}, {"elder_isle_boss_share", 0, 0.5}, {"elder_isle_daze_seconds", 0, 10}, {"elder_arena_fly_max", 50, 5000}, {"elder_arena_fly_range", 8, 256}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
 			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600}, {"coop_burden_relief_per_day", 0, 100}};
 
 	/** Brings a setting back within its bounds, if it has any. */

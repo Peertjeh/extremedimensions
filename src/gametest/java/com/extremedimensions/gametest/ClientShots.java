@@ -116,6 +116,58 @@ public class ClientShots implements FabricClientGameTest {
 		System.out.println("[arena] " + name + ": " + left + " still waiting once the world came in round its side");
 		check(left < held, "nothing of the " + name + "'s arena went up as the world came in round its side (" + left + " of " + held + " still waiting)");
 		ctx.takeScreenshot("12_fight_" + name + "_arena_side");
+		// The arena fights back. Its domain changes twice as the Elder weakens, seen from over the edge of its heart
+		sp.getServer().runOnServer(s -> elders(s).forEach(e -> e.setHealth(e.getMaxHealth() * 0.5F)));
+		ctx.waitTicks(10);
+		sp.getServer().runOnServer(s -> elders(s).forEach(e -> e.setHealth(e.getMaxHealth() * 0.28F)));
+		sp.getServer().runOnServer(s -> player(s).teleportTo(mid[0], mid[1] + 16, mid[2] - 40));
+		sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s ~ ~ ~ facing %.1f %.1f %.1f", mid[0], mid[1], mid[2] + 8));
+		ctx.waitTicks(52);
+		int phase = sp.getServer().computeOnServer(s -> elders(s).stream().mapToInt(com.extremedimensions.elder.ElderDomain::phase).max().orElse(-1));
+		System.out.println("[domain] " + name + ": phase " + phase);
+		check(phase == 2, "the " + name + "'s domain is in phase " + phase + " at 28% of its health, expected 2");
+		ctx.takeScreenshot("12_fight_" + name + "_domain");
+		// A core of its great piece, from a few blocks off, tied to its Elder by a thread of light
+		double[] core = sp.getServer().computeOnServer(s -> {
+			com.extremedimensions.elder.ElderBoss e = elders(s).stream().findFirst().orElse(null);
+			if (e == null) {
+				return null;
+			}
+			int[] cores = com.extremedimensions.elder.ElderDomain.cores(e);
+			System.out.println("[domain] " + name + ": " + cores[1] + " of " + cores[0] + " cores stand, shield " + com.extremedimensions.elder.ElderDomain.ward(e));
+			for (net.minecraft.core.BlockPos c : com.extremedimensions.elder.ElderDomain.coreBlocks(e)) {
+				for (int k = 0; k < 16; k++) {
+					double t = k * Math.PI / 8;
+					net.minecraft.core.BlockPos at = net.minecraft.core.BlockPos.containing(c.getX() + 1 + Math.cos(t) * 7, c.getY() + 1, c.getZ() + 1 + Math.sin(t) * 7);
+					if (e.level().getBlockState(at).isAir() && e.level().getBlockState(at.above()).isAir()) {
+						return new double[] {at.getX() + 0.5, at.getY(), at.getZ() + 0.5, c.getX() + 1, c.getY() + 1, c.getZ() + 1};
+					}
+				}
+			}
+			return null;
+		});
+		if (core != null) {
+			sp.getServer().runOnServer(s -> player(s).teleportTo(core[0], core[1], core[2]));
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s ~ ~ ~ facing %.1f %.1f %.1f", core[3], core[4], core[5]));
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("12_fight_" + name + "_core");
+		} else {
+			System.out.println("[domain] " + name + ": no core standing in the open");
+		}
+		// An island over its Elder comes loose: its shadow gathers on the ground, then it comes down
+		double[] isle = sp.getServer().computeOnServer(s -> elders(s).stream()
+				.map(e -> com.extremedimensions.elder.ElderDomain.loosenOver(e, e.getX(), e.getY(), e.getZ())).filter(java.util.Objects::nonNull).findFirst()
+				.orElse(null));
+		System.out.println("[domain] " + name + ": island " + (isle == null ? "none near" : java.util.Arrays.toString(isle)));
+		if (isle != null) {
+			sp.getServer().runOnServer(s -> player(s).teleportTo(isle[0] - 22, isle[1] + 8, isle[2] - 22));
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s ~ ~ ~ facing %.1f %.1f %.1f", isle[0], (isle[1] + isle[3]) / 2,
+					isle[2]));
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("12_fight_" + name + "_isle_shadow");
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("12_fight_" + name + "_isle_fall");
+		}
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
 			p.getAbilities().flying = false;

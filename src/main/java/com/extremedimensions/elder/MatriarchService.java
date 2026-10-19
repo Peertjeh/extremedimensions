@@ -64,6 +64,11 @@ public final class MatriarchService {
 
 	private static final Map<UUID, Fight> FIGHTS = new HashMap<>();
 
+	/** Her fight, if she is fighting. */
+	static ElderFight fight(Entity e) {
+		return FIGHTS.get(e.getUUID());
+	}
+
 	public static boolean isDriven(Entity e) {
 		return FIGHTS.containsKey(e.getUUID());
 	}
@@ -216,6 +221,10 @@ public final class MatriarchService {
 				m.motion.heave(m, f.sunk - f.risen);
 				f.risen = f.sunk;
 			}
+			return;
+		}
+		if (f.dazed(m)) {
+			m.motion.brake(m, 0.05, 0);
 			return;
 		}
 		float frac = m.getHealth() / m.getMaxHealth();

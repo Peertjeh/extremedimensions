@@ -66,8 +66,9 @@ public final class ElderTerrain {
 		if (s.isAir() || s.hasBlockEntity() || s.is(BlockTags.WITHER_IMMUNE) || s.is(Blocks.NETHER_PORTAL) || s.is(Blocks.END_PORTAL)) {
 			return false;
 		}
-		// An arena's blocks are not torn up or changed (it puts the ground back itself, and what it built drops nothing)
-		if (ElderArena.holds(level, pos) || temporary(level, pos)) {
+		// What an Elder raised for a while is not torn up (it sinks back itself); an arena's blocks break like the rest of
+		// the world unless the settings keep them whole (they drop nothing either way, and what is left comes down)
+		if (temporary(level, pos) || Config.ELDER_ARENA_BREAKABLE <= 0 && ElderArena.holds(level, pos)) {
 			return false;
 		}
 		float hard = s.getDestroySpeed(level, pos);
@@ -85,6 +86,8 @@ public final class ElderTerrain {
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		int r = (int) Math.ceil(radius);
 		int cx = (int) Math.floor(x), cy = (int) Math.floor(y), cz = (int) Math.floor(z);
+		boolean arena = false;
+		dig:
 		for (int dx = -r; dx <= r; dx++) {
 			for (int dz = -r; dz <= r; dz++) {
 				double d2 = dx * dx + dz * dz;
@@ -95,7 +98,7 @@ public final class ElderTerrain {
 				int deep = (int) Math.round(depth * (1 - Math.sqrt(d2) / (radius + 0.5)));
 				for (int dy = up; dy >= -deep; dy--) {
 					if (budget >= BUDGET_PER_TICK) {
-						return;
+						break dig;
 					}
 					BlockPos pos = new BlockPos(cx + dx, cy + dy, cz + dz);
 					BlockState s = level.getBlockState(pos);
@@ -106,6 +109,7 @@ public final class ElderTerrain {
 					if (ElderArena.holds(level, pos)) {
 						// An arena's block is torn out but neither thrown nor dropped
 						level.destroyBlock(pos, false, null, 512);
+						arena = true;
 					} else if (flingOneIn > 0 && s.isSolid() && rnd.nextInt(flingOneIn) == 0) {
 						fling(level, pos, s, dx, dz);
 					} else {
@@ -113,6 +117,10 @@ public final class ElderTerrain {
 					}
 				}
 			}
+		}
+		if (arena) {
+			// What is left of the arena round it may have lost its support
+			ArenaRuin.struck(level, x, y, z, radius + 1);
 		}
 	}
 

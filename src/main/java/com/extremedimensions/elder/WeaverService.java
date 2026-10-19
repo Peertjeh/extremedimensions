@@ -71,6 +71,11 @@ public final class WeaverService {
 
 	private static final Map<UUID, Unweaving> WEAVERS = new HashMap<>();
 
+	/** Its fight, if it is fighting. */
+	static ElderFight fight(Entity e) {
+		return WEAVERS.get(e.getUUID());
+	}
+
 	public static boolean isDriven(Entity e) {
 		return WEAVERS.containsKey(e.getUUID());
 	}
@@ -231,6 +236,10 @@ public final class WeaverService {
 			w.motion.brake(w, 0.015, HOVER);
 			w.motion.turn(w, ElderFx.yawTo(w, p.getX(), p.getZ()), 1.5f);
 			ElderSpawn.tick(w, u);
+			return;
+		}
+		if (u.dazed(w)) {
+			w.motion.brake(w, 0.03, HOVER);
 			return;
 		}
 		float frac = w.getHealth() / w.getMaxHealth();

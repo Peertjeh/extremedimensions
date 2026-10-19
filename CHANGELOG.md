@@ -1,5 +1,37 @@
 # Changelog
 
+## 2.32.0: The Arena Fights Back
+
+### Changed
+- **An arena breaks like the rest of the world.** The Elders' blows, creepers and TNT tear into its blocks as they do
+  into the ground, and a blast breaks its obsidian and blackstone as easily as stone. It still drops nothing. What
+  something breaks into is looked at again a moment later: whatever no longer rests on anything (the world, or
+  another part of the arena) comes down as rubble that hurts whoever it lands on (4 damage), and lies where it comes
+  to rest until the arena goes. The floor never comes down this way, and the ground under the arena is put back as it
+  was when the arena goes.
+
+### Added
+- **The domain changes as its Elder weakens,** at 60% and again at 30% of its health, with a roar and a shudder
+  through the ground:
+  - The Matriarch's floor throws up six ridges of root, low walls to hide behind (never over anyone's head). Later,
+    roots hang down in curtains under her arches and slow whoever walks through them.
+  - The lanes of the Ferryman's whirlpool burn in waves of soul fire: a lane glows for a second and a half, then
+    burns whoever stands on it (4 damage and fire), every six seconds. Later, every four, two lanes at once.
+  - A thread of the Weaver's web holds whoever steps on it for two seconds (then lets them be for five). Later,
+    patches of its floor near the fighters crack, then fall away into the deep, every eight seconds.
+- **Four cores in each Elder's great piece:** cubes of its own light (green, sea-blue, pale violet) set at the foot of
+  the root arches, along the wreck and at the posts of the loom, each tied to its Elder by a thread of light. While
+  all four stand the Elder shrugs off 30% of every blow, a quarter of that for each. Three hits break a core (a blast
+  or a blow breaks it too), and its Elder reels for a second and a half.
+- **Islands fall.** Every 20 to 30 seconds an island over someone (or over the Elder) breaks loose: for three seconds
+  its shadow gathers on the ground and ash drifts from its underside, then it comes down, tearing out a crater and
+  hurting everyone within five blocks (8 damage). An Elder caught under one loses a tenth of its health and is
+  stunned for two seconds.
+- Settings for all of it: whether the arena breaks and collapses, how hard it stands up to a blast, the rubble's
+  damage and how much falls at once; the phases and when they come; the ridges, the slowness of the roots, the
+  lanes' pace, warning and damage, how long a thread holds, how often and how wide the floor falls; the cores, their
+  shield, hits and stun; how often the islands fall, the warning, damage, reach, and what they take from an Elder.
+
 ## 2.31.1
 
 ### Fixed

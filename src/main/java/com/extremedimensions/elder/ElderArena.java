@@ -68,6 +68,8 @@ public final class ElderArena {
 		final BlockState expect;
 		BlockState original;
 		boolean placed;
+		/** The structure it belongs to (a tower, an island, a core...), or -1. */
+		int group = -1;
 
 		Piece(BlockPos pos, BlockState state, int kind, BlockState expect) {
 			this.pos = pos;
@@ -84,7 +86,7 @@ public final class ElderArena {
 		int age;
 	}
 
-	private static final class Arena {
+	static final class Arena {
 		UUID boss;
 		ServerLevel level;
 		int style;
@@ -101,6 +103,14 @@ public final class ElderArena {
 		final List<Strand> strands = new ArrayList<>();
 		/** Every block it means to build, so a second arena near never builds over it. */
 		final Set<Long> claimed = new HashSet<>();
+		/** Its design: the lie of its floor, what each group of blocks is, its islands and cores. */
+		ArenaDesign.Blueprint bp;
+		/** Its blocks by group. */
+		final List<List<Piece>> groups = new ArrayList<>();
+		/** Groups something has broken into, to see whether what is left still stands. */
+		final Set<Integer> damaged = new HashSet<>();
+		/** What happens in its fight: its phases, cores and falling islands. */
+		final ElderDomain.State domain = new ElderDomain.State();
 		/** Blocks whose part of the world was not loaded when their turn came, by chunk: built once it is. */
 		final Map<Long, ArrayDeque<Piece>> waiting = new HashMap<>();
 		/** Blocks it put down whose part of the world was not loaded when they were to come down, by chunk: taken down once it is. */
@@ -110,7 +120,88 @@ public final class ElderArena {
 
 	private static final List<Arena> ARENAS = new ArrayList<>();
 	/** Every block an arena has put down, by level and position. */
-	private static final Map<ServerLevel, Map<Long, Piece>> STANDING = new HashMap<>();
+	static final Map<ServerLevel, Map<Long, Piece>> STANDING = new HashMap<>();
+
+	/** The arenas standing or on their way. */
+	static List<Arena> arenas() {
+		return ARENAS;
+	}
+
+	/** The arena of an Elder, or null. */
+	static Arena of(Entity boss) {
+		for (Arena a : ARENAS) {
+			if (a.boss.equals(boss.getUUID())) {
+				return a;
+			}
+		}
+		return null;
+	}
+
+	/** The block an arena put down here, or null. */
+	static Piece standing(ServerLevel level, BlockPos pos) {
+		Map<Long, Piece> m = STANDING.get(level);
+		return m == null ? null : m.get(pos.asLong());
+	}
+
+	/** The arena that means to build (or built) this block, or null. */
+	static Arena owner(ServerLevel level, BlockPos pos) {
+		long k = pos.asLong();
+		for (Arena a : ARENAS) {
+			if (a.level == level && a.claimed.contains(k)) {
+				return a;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * More blocks for an arena in its fight (roots its floor throws up, roots hung under its arches): they go up the way
+	 * its own did, as a group of their own, and come down with it.
+	 */
+	static void grow(Arena a, List<Piece> more) {
+		if (more.isEmpty() || a.dissolving || a.linger >= 0) {
+			return;
+		}
+		int group = a.groups.size();
+		a.bp.kinds.add(ArenaDesign.GROWN);
+		List<Piece> mine = new ArrayList<>();
+		for (Piece p : more) {
+			if (free(a.level, p.pos) && a.claimed.add(p.pos.asLong())) {
+				p.group = group;
+				a.pieces.add(p);
+				mine.add(p);
+			}
+		}
+		a.groups.add(mine);
+	}
+
+	/** Rubble of an arena has come down here and lies as a block: it is the arena's now, and goes when it goes. */
+	static void landed(Arena a, BlockPos pos, BlockState state) {
+		if (a.dissolving || ARENAS.indexOf(a) < 0) {
+			a.level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2 | 16);
+			return;
+		}
+		// Where a block of its own was broken out, the rubble takes its place (and puts back what that one would have)
+		Piece was = standing(a.level, pos);
+		Piece p = new Piece(pos.immutable(), state, AIR, null);
+		p.original = was != null && was.placed && was.original != null ? was.original : Blocks.AIR.defaultBlockState();
+		if (was != null) {
+			was.placed = false;
+		}
+		p.placed = true;
+		a.claimed.add(p.pos.asLong());
+		a.pieces.add(p);
+		STANDING.computeIfAbsent(a.level, k -> new HashMap<>()).put(p.pos.asLong(), p);
+	}
+
+	/** A block of an arena that came down (fell as rubble or crumbled): it no longer stands. */
+	static void fell(Arena a, Piece p) {
+		p.placed = false;
+		Map<Long, Piece> m = STANDING.get(a.level);
+		if (m != null) {
+			m.remove(p.pos.asLong());
+		}
+	}
 
 	// ------------------------------------------------------------------ queries
 
@@ -195,6 +286,11 @@ public final class ElderArena {
 		if (bp.pieces.isEmpty()) {
 			return;
 		}
+		open(b, level, style, centre, bp);
+	}
+
+	/** An arena of a design begins: it is the Elder's, and claims every block it means to build. */
+	private static Arena open(ElderBoss b, ServerLevel level, int style, BlockPos centre, ArenaDesign.Blueprint bp) {
 		Arena a = new Arena();
 		a.boss = b.getUUID();
 		a.level = level;
@@ -204,10 +300,81 @@ public final class ElderArena {
 		a.cz = centre.getZ() + 0.5;
 		a.pieces = bp.pieces;
 		a.lines = bp.lines;
+		a.bp = bp;
+		for (int i = 0; i < bp.kinds.size(); i++) {
+			a.groups.add(new ArrayList<>());
+		}
 		for (Piece p : bp.pieces) {
 			a.claimed.add(p.pos.asLong());
+			if (p.group >= 0 && p.group < a.groups.size()) {
+				a.groups.get(p.group).add(p);
+			}
 		}
 		ARENAS.add(a);
+		return a;
+	}
+
+	/**
+	 * An arena of a few given structures for an Elder, standing at once (for tests). Each structure is a list of blocks
+	 * of one kind: 1 a building, 2 an island (its middle and top taken from its blocks), 3 a core (made of its Elder's
+	 * light); the rest are made of {@code state}. Its floor is {@code floorR} round {@code centre}.
+	 */
+	public static void rig(ElderBoss b, BlockPos centre, int floorR, List<List<BlockPos>> structures, int[] kinds, BlockState state) {
+		ServerLevel level = (ServerLevel) b.level();
+		ArenaDesign.Blueprint bp = new ArenaDesign.Blueprint();
+		bp.style = ElderFx.index(b);
+		bp.cx = centre.getX();
+		bp.gy = centre.getY() - 1;
+		bp.cz = centre.getZ();
+		bp.floorR = floorR;
+		for (int g = 0; g < structures.size(); g++) {
+			List<BlockPos> blocks = new ArrayList<>();
+			structures.get(g).forEach(q -> blocks.add(q.immutable()));
+			bp.kinds.add(kinds[g]);
+			BlockState s = kinds[g] == ArenaDesign.CORE ? ArenaDesign.coreBlock(bp.style) : state;
+			double x = 0, z = 0;
+			int top = Integer.MIN_VALUE;
+			for (BlockPos q : blocks) {
+				Piece p = new Piece(q, s, AIR, null);
+				p.group = g;
+				bp.pieces.add(p);
+				x += q.getX();
+				z += q.getZ();
+				top = Math.max(top, q.getY());
+			}
+			if (kinds[g] == ArenaDesign.CORE) {
+				bp.cores.add(blocks);
+			}
+			if (kinds[g] == ArenaDesign.ISLE && !blocks.isEmpty()) {
+				int mx = (int) Math.round(x / blocks.size()), mz = (int) Math.round(z / blocks.size());
+				double r = 0;
+				for (BlockPos q : blocks) {
+					r = Math.max(r, Math.hypot(q.getX() - mx, q.getZ() - mz));
+				}
+				bp.isles.add(new ArenaDesign.Isle(mx, top, mz, r, g));
+			}
+		}
+		Arena a = open(b, level, bp.style, centre, bp);
+		for (Piece p : a.pieces) {
+			p.original = level.getBlockState(p.pos);
+			level.setBlock(p.pos, p.state, 2 | 16);
+			p.placed = true;
+			STANDING.computeIfAbsent(level, k -> new HashMap<>()).put(p.pos.asLong(), p);
+		}
+		a.next = a.pieces.size();
+		a.strung = true;
+	}
+
+	/** An Elder's arena is taken down at once and the ground put back (for tests). */
+	public static void unrig(Entity boss) {
+		Iterator<Arena> it = ARENAS.iterator();
+		while (it.hasNext()) {
+			Arena a = it.next();
+			if (a.boss.equals(boss.getUUID())) {
+				takeDown(a);
+				it.remove();
+			}
+		}
 	}
 
 	/** This Elder's fight is over (slain or gone): its arena stands a while, then comes apart. */
@@ -230,6 +397,7 @@ public final class ElderArena {
 	}
 
 	public static void tick(MinecraftServer s) {
+		ArenaRuin.tick();
 		if (ARENAS.isEmpty()) {
 			return;
 		}
@@ -269,6 +437,14 @@ public final class ElderArena {
 					p -> unbuild(a, p));
 		}
 		a.flights.removeIf(BlockFlight::step);
+		// What something broke into is looked at a few times a second: whatever is left without support comes down
+		if (!a.damaged.isEmpty() && a.clock % 5 == 0) {
+			ArenaRuin.settle(a);
+		}
+		// The fight on it: its domain changing, its cores, its islands falling
+		if (!a.dissolving && a.linger < 0 && boss instanceof ElderBoss fighting && fighting.isAlive()) {
+			ElderDomain.tick(a, fighting);
+		}
 		if (!a.strung && !a.dissolving && a.next >= a.pieces.size() && a.flights.isEmpty()) {
 			a.strung = true;
 			if (a.linger < 0) {
@@ -600,27 +776,40 @@ public final class ElderArena {
 			return true;
 		}
 		level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+		if (level instanceof ServerLevel sl) {
+			ArenaRuin.struck(sl, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 1);
+		}
 		return false;
 	}
 
 	/** On stopping: every arena is taken down at once and the ground put back, before the world is saved. */
 	public static void clear() {
+		ArenaRuin.clear();
 		for (Arena a : ARENAS) {
-			a.flights.forEach(BlockFlight::cancel);
-			a.strands.forEach(s -> BlockFlight.drop(s.display));
-			for (int i = a.pieces.size() - 1; i >= 0; i--) {
-				Piece p = a.pieces.get(i);
-				if (!p.placed) {
-					continue;
-				}
-				BlockState now = a.level.getBlockState(p.pos);
-				if (now == p.state || now.isAir()) {
-					a.level.setBlock(p.pos, p.original == null ? Blocks.AIR.defaultBlockState() : p.original, 2 | 16);
-				}
-				p.placed = false;
-			}
+			takeDown(a);
 		}
 		ARENAS.clear();
 		STANDING.clear();
+	}
+
+	/** An arena is taken down at once, the ground put back. */
+	private static void takeDown(Arena a) {
+		a.flights.forEach(BlockFlight::cancel);
+		a.strands.forEach(s -> BlockFlight.drop(s.display));
+		Map<Long, Piece> m = STANDING.get(a.level);
+		for (int i = a.pieces.size() - 1; i >= 0; i--) {
+			Piece p = a.pieces.get(i);
+			if (!p.placed) {
+				continue;
+			}
+			BlockState now = a.level.getBlockState(p.pos);
+			if (now == p.state || now.isAir()) {
+				a.level.setBlock(p.pos, p.original == null ? Blocks.AIR.defaultBlockState() : p.original, 2 | 16);
+			}
+			p.placed = false;
+			if (m != null) {
+				m.remove(p.pos.asLong());
+			}
+		}
 	}
 }

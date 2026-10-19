@@ -50,6 +50,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
@@ -124,6 +125,10 @@ public final class ServerEvents {
 		// A block of an Elder's arena broken by a player drops nothing
 		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, blockEntity) ->
 				com.extremedimensions.elder.ElderArena.broken(level, pos));
+		// A core of an Elder's arena takes hits rather than being mined
+		AttackBlockCallback.EVENT.register((player, level, hand, pos, direction) ->
+				level instanceof net.minecraft.server.level.ServerLevel sl && !player.isSpectator()
+						&& com.extremedimensions.elder.ElderDomain.hit(player, sl, pos) ? InteractionResult.FAIL : InteractionResult.PASS);
 		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, blockEntity) ->
 				!(player instanceof ServerPlayer fallen && com.extremedimensions.coop.FallenService.fallen(fallen)));
 		// An anchor that keeps someone else's charge cannot be broken out from under them

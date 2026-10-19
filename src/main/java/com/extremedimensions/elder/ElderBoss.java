@@ -113,6 +113,13 @@ public abstract class ElderBoss extends Monster {
 			WorldFx.particleIn(level, "minecraft:enchanted_hit", getX(), getY() + getBbHeight() * 0.5, getZ(), getBbWidth() * 0.5, getBbHeight() * 0.3,
 					getBbWidth() * 0.5, 0.2, 12);
 		}
+		// The cores of its arena still standing shield it
+		float ward = ElderDomain.ward(this);
+		if (ward > 0) {
+			amount *= 1 - ward;
+			WorldFx.particleIn(level, "minecraft:enchanted_hit", getX(), getY() + getBbHeight() * 0.5, getZ(), getBbWidth() * 0.4, getBbHeight() * 0.3,
+					getBbWidth() * 0.4, 0.1, 3);
+		}
 		return super.hurtServer(level, source, amount / Math.max(0.1F, toughness));
 	}
 

@@ -61,6 +61,11 @@ public final class FerrymanService {
 
 	private static final Map<UUID, Fare> FARES = new HashMap<>();
 
+	/** His fight, if he is fighting. */
+	static ElderFight fight(Entity e) {
+		return FARES.get(e.getUUID());
+	}
+
 	public static boolean isDriven(Entity e) {
 		return FARES.containsKey(e.getUUID());
 	}
@@ -232,6 +237,10 @@ public final class FerrymanService {
 			f.motion.brake(f, 0.02, 0.1);
 			ElderFx.look(f, p);
 			ElderSpawn.tick(f, fare);
+			return;
+		}
+		if (fare.dazed(f)) {
+			f.motion.brake(f, 0.04, 0.1);
 			return;
 		}
 		if (!fare.doubled && f.getHealth() <= f.getMaxHealth() / 2) {

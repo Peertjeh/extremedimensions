@@ -48,10 +48,25 @@ final class ArenaDesign {
 	/** A chain or thread from one point to another, sagging by {@code sag} at its middle. */
 	record Line(double x0, double y0, double z0, double x1, double y1, double z1, double sag) {}
 
-	/** An arena's blocks in the order they come, and its chains. */
+	/** An island hung over an arena: its middle, the top of it, its breadth and its group. */
+	record Isle(int x, int top, int z, double r, int group) {}
+
+	/** What a group of an arena's blocks is: the floor (it never comes down), a building, an island, a core, grown later. */
+	static final int FLOOR = 0, BUILT = 1, ISLE = 2, CORE = 3, GROWN = 4;
+
+	/**
+	 * An arena's blocks in the order they come, and its chains; what each group of them is; its islands and cores; and
+	 * the lie of its floor (its Elder, middle, height, radius, turn, size and breadth), for what happens on it in a fight.
+	 */
 	static final class Blueprint {
 		final List<ElderArena.Piece> pieces = new ArrayList<>();
 		final List<Line> lines = new ArrayList<>();
+		final List<Integer> kinds = new ArrayList<>();
+		final List<Isle> isles = new ArrayList<>();
+		final List<List<BlockPos>> cores = new ArrayList<>();
+		final java.util.Set<Integer> arches = new java.util.HashSet<>();
+		int style, cx, gy, cz, floorR;
+		double turn, size = 1, wide = 1;
 	}
 
 	private static final double TAU = Math.PI * 2;
@@ -238,6 +253,14 @@ final class ArenaDesign {
 		/** Where the players near stand (x, z): no tower or pillar rises right beside one of them. */
 		final List<double[]> people = new ArrayList<>();
 		LinkedHashMap<Long, ElderArena.Piece> group;
+		/** What the structure in progress is (see {@link #FLOOR}), and what each kept one was, by group. */
+		int kind = BUILT;
+		final List<Integer> kinds = new ArrayList<>();
+		/** The group the last structure kept became, or -1 if it was left out. */
+		int lastGroup = -1;
+		final List<Isle> isles = new ArrayList<>();
+		final List<List<BlockPos>> cores = new ArrayList<>();
+		final java.util.Set<Integer> arches = new java.util.HashSet<>();
 
 		Plan(ServerLevel level, boolean grief, long seed) {
 			this.level = level;
@@ -247,6 +270,7 @@ final class ArenaDesign {
 
 		void begin() {
 			group = new LinkedHashMap<>();
+			kind = BUILT;
 		}
 
 		/** Whether the chunk of (x, z) is loaded (a design never loads one to look at it). */
@@ -329,6 +353,7 @@ final class ArenaDesign {
 			LinkedHashMap<Long, ElderArena.Piece> g = group;
 			group = null;
 			if (g == null || g.isEmpty()) {
+				lastGroup = -1;
 				return false;
 			}
 			int ok = 0;
@@ -336,10 +361,14 @@ final class ArenaDesign {
 				ok += room(p) ? 1 : 0;
 			}
 			if (ok < share * g.size()) {
+				lastGroup = -1;
 				return false;
 			}
+			lastGroup = kinds.size();
+			kinds.add(kind);
 			for (Map.Entry<Long, ElderArena.Piece> e : g.entrySet()) {
 				if (room(e.getValue())) {
+					e.getValue().group = lastGroup;
 					pieces.put(e.getKey(), e.getValue());
 				}
 			}
@@ -412,10 +441,15 @@ final class ArenaDesign {
 			}
 		}
 		if (size >= 3 && Config.ELDER_ARENA_LANDMARK > 0) {
-			switch (style) {
+			List<int[]> origins = switch (style) {
 				case 0 -> rootArches(plan, cx, gy, cz, floorR, turn, wide);
 				case 1 -> wreck(plan, bp, cx, gy, cz, floorR, turn);
 				default -> loom(plan, bp, pal, cx, gy, cz, floorR, turn, wide);
+			};
+			if (Config.ELDER_CORES > 0) {
+				for (int[] o : origins) {
+					core(plan, coreBlock(style), o[0], o[1], o[2]);
+				}
 			}
 		}
 		// More islands in a larger arena, larger, higher and further out, hung in three layers: many small ones low
@@ -461,7 +495,88 @@ final class ArenaDesign {
 			}
 		}
 		bp.pieces.addAll(plan.pieces.values());
+		bp.kinds.addAll(plan.kinds);
+		bp.isles.addAll(plan.isles);
+		bp.cores.addAll(plan.cores);
+		bp.arches.addAll(plan.arches);
+		bp.style = style;
+		bp.cx = cx;
+		bp.gy = gy;
+		bp.cz = cz;
+		bp.floorR = floorR;
+		bp.turn = turn;
+		bp.size = size;
+		bp.wide = wide;
 		return bp;
+	}
+
+	// ------------------------------------------------------------------ cores, lanes and threads
+
+	/** What an Elder's cores are made of: a green, a sea-blue and a pale violet light. */
+	static BlockState coreBlock(int style) {
+		return switch (style) {
+			case 0 -> mc("verdant_froglight", mc("shroomlight"));
+			case 1 -> mc("sea_lantern");
+			default -> mc("pearlescent_froglight", mc("amethyst_block"));
+		};
+	}
+
+	/** A core: a cube of light two blocks a side, set into the great piece (what was there gives way to it). */
+	private static void core(Plan plan, BlockState light, int x, int y, int z) {
+		plan.begin();
+		plan.kind = CORE;
+		List<BlockPos> blocks = new ArrayList<>();
+		for (int dx = 0; dx <= 1; dx++) {
+			for (int dy = 0; dy <= 1; dy++) {
+				for (int dz = 0; dz <= 1; dz++) {
+					BlockPos pos = new BlockPos(x + dx, y + dy, z + dz);
+					plan.pieces.remove(pos.asLong());
+					plan.group.put(pos.asLong(), new ElderArena.Piece(pos, light, ElderArena.AIR, null));
+					blocks.add(pos);
+				}
+			}
+		}
+		if (plan.commit(0.5)) {
+			plan.cores.add(blocks);
+		}
+	}
+
+	/** Which lane of the Ferryman's whirlpool (0 to 4) a spot lies on, or -1 if it is on none (or off the whirlpool). */
+	static int lane(Blueprint bp, double x, double z) {
+		int c0 = (int) Math.floor(x) - bp.cx, c1 = (int) Math.floor(z) - bp.cz;
+		double d = Math.sqrt(c0 * c0 + c1 * c1), k = bp.size;
+		if (d < 1.6 * bp.wide || d >= 7.5 * k) {
+			return -1;
+		}
+		double phi = Math.atan2(c1, c0) - bp.turn + d * 0.55 / k;
+		double seg = TAU / 5;
+		double arm = (((phi % seg) + seg) % seg) / seg;
+		return arm < 0.4 ? Math.floorMod((int) Math.floor(phi / seg), 5) : -1;
+	}
+
+	/** A spot down the middle of a lane of the Ferryman's whirlpool, {@code d} blocks from its heart: {x, z}. */
+	static double[] laneAt(Blueprint bp, int lane, double d) {
+		double theta = (lane + 0.2) * TAU / 5 - d * 0.55 / bp.size + bp.turn;
+		return new double[] {bp.cx + 0.5 + Math.cos(theta) * d, bp.cz + 0.5 + Math.sin(theta) * d};
+	}
+
+	/** How far out the lanes of the Ferryman's whirlpool run. */
+	static double laneReach(Blueprint bp) {
+		return 7.5 * bp.size;
+	}
+
+	/** Whether a spot lies on a thread of the Weaver's web (a ring or a spoke). */
+	static boolean thread(Blueprint bp, double x, double z) {
+		int c0 = (int) Math.floor(x) - bp.cx, c1 = (int) Math.floor(z) - bp.cz;
+		double d = Math.sqrt(c0 * c0 + c1 * c1), k = bp.size, w = bp.wide;
+		int r = bp.floorR;
+		if (d < 1.6 * w || d > r - 1) {
+			return false;
+		}
+		double step = 3 * k / w;
+		double m = d % step;
+		boolean ring = d < r - 2 && d > step * 0.5 && Math.min(m, step - m) < 0.5;
+		return ring || spoke(Math.atan2(c1, c0) - bp.turn, d, 8 * (int) Math.round(w)) < 0.5;
 	}
 
 	// ------------------------------------------------------------------ the wall and the great pieces
@@ -565,7 +680,8 @@ final class ArenaDesign {
 	 * The Matriarch's roots: four great arches of root and bark rise from the edge of her floor and meet high over its
 	 * heart, thinner roots winding round each, moss on their backs, lanterns and hanging roots beneath.
 	 */
-	private static void rootArches(Plan plan, int cx, int gy, int cz, int floorR, double turn, double wide) {
+	private static List<int[]> rootArches(Plan plan, int cx, int gy, int cz, int floorR, double turn, double wide) {
+		List<int[]> cores = new ArrayList<>();
 		BlockState bark = mc("dark_oak_wood"), root = mc("mangrove_roots", mc("dark_oak_wood")), moss = mc("moss_block");
 		BlockState hanging = mc("hanging_roots", mc("mangrove_roots"));
 		double foot = floorR * 0.8, apex = floorR * 0.45;
@@ -602,15 +718,21 @@ final class ArenaDesign {
 				}
 				t += Math.max(0.35, rr * 0.45) / (2 * foot + apex);
 			}
-			plan.commit(0.0);
+			if (plan.commit(0.0)) {
+				plan.arches.add(plan.lastGroup);
+			}
+			// A core in the inner face of one of its feet (each arch the other one, so they stand all round)
+			double at = (i % 2 == 0 ? 1 : -1) * (foot - rb);
+			cores.add(new int[] {(int) Math.floor(cx + 0.5 + ux * at - 0.5), gy + 1, (int) Math.floor(cz + 0.5 + uz * at - 0.5)});
 		}
+		return cores;
 	}
 
 	/**
 	 * The Ferryman's wreck: a great boat lies broken in two on the deck of his whirlpool, keeled over and half sunk, its
 	 * ribs showing, its deck holed, soul lanterns burning in it, and the stump of its mast rigged with chains.
 	 */
-	private static void wreck(Plan plan, Blueprint bp, int cx, int gy, int cz, int floorR, double turn) {
+	private static List<int[]> wreck(Plan plan, Blueprint bp, int cx, int gy, int cz, int floorR, double turn) {
 		BlockState plank = mc("dark_oak_planks"), rib = mc("stripped_dark_oak_wood", plank), keel = mc("dark_oak_wood", plank);
 		BlockState deck = mc("spruce_planks"), soul = hanging(mc("soul_lantern", Blocks.SOUL_LANTERN.defaultBlockState()));
 		double len = floorR * 0.5, beam = len * 0.24, depth = len * 0.2;
@@ -674,13 +796,21 @@ final class ArenaDesign {
 			double bx = ox + ux * len / 2 * end, bz = oz + uz * len / 2 * end;
 			bp.lines.add(new Line(tx + ux * yard * end, ty - 2, tz + uz * yard * end, bx, base + 1, bz, 2.5));
 		}
+		// Four cores along its side towards the heart of the whirlpool, clear of the break
+		List<int[]> cores = new ArrayList<>();
+		for (double f : new double[] {-0.38, -0.18, 0.26, 0.42}) {
+			double u = f * len, off = beam / 2 + 2;
+			cores.add(new int[] {(int) Math.floor(ox + ux * u - vx * off - 0.5), gy + 1, (int) Math.floor(oz + uz * u - vz * off - 0.5)});
+		}
+		return cores;
 	}
 
 	/**
 	 * The Weaver's loom: two great posts either side of the heart of its web, a beam across their tops and another
 	 * low down, the warp strung between them in threads of light and the first few threads of weft woven in.
 	 */
-	private static void loom(Plan plan, Blueprint bp, Palette pal, int cx, int gy, int cz, int floorR, double turn, double wide) {
+	private static List<int[]> loom(Plan plan, Blueprint bp, Palette pal, int cx, int gy, int cz, int floorR, double turn, double wide) {
+		List<int[]> cores = new ArrayList<>();
 		double half = floorR * 0.55;
 		int high = (int) Math.round(floorR * 0.5);
 		int t = Math.max(2, (int) Math.round(wide * 0.7));
@@ -707,6 +837,11 @@ final class ArenaDesign {
 			}
 			plan.air(px, gy + high + 2, pz, pal.tip);
 			plan.commit(0.0);
+			// A core standing against each face of the post, across the loom
+			for (int face = -1; face <= 1; face += 2) {
+				double off = (t + 1.5) * face;
+				cores.add(new int[] {(int) Math.floor(px + 0.5 - uz * off - 0.5), gy + 1, (int) Math.floor(pz + 0.5 + ux * off - 0.5)});
+			}
 		}
 		// The beams, post to post
 		plan.begin();
@@ -734,6 +869,7 @@ final class ArenaDesign {
 			double y = gy + breast + bh + 1 + k * 2.5;
 			bp.lines.add(new Line(cx + 0.5 - ux * inner, y, cz + 0.5 - uz * inner, cx + 0.5 + ux * inner, y, cz + 0.5 + uz * inner, 0));
 		}
+		return cores;
 	}
 
 	/** Angular distance from the nearest of {@code n} spokes, as blocks across at distance {@code d}. */
@@ -778,6 +914,7 @@ final class ArenaDesign {
 				default -> weaverFloor(plan, pal, d, theta, r, c, k, w);
 			};
 			plan.begin();
+			plan.kind = FLOOR;
 			if (g == null || g.getY() < gy - 4) {
 				// No ground near its height (a valley, water, the void): the sigil floats on there
 				plan.air(x, gy, z, s);
@@ -1158,6 +1295,7 @@ final class ArenaDesign {
 		double r0 = (1.8 + rnd.nextDouble() * 1.6) * grow;
 		int depth = (int) Math.round((4 + rnd.nextInt(3)) * Math.pow(grow, 0.8));
 		plan.begin();
+		plan.kind = ISLE;
 		// A larger island's top swells into a low hill
 		int dome = (int) Math.min(4, Math.floor(r0 / 4));
 		for (int i = 0; i < depth; i++) {
@@ -1209,7 +1347,9 @@ final class ArenaDesign {
 				plan.air(hx, under, hz, pal.under);
 			}
 		}
-		plan.commit(0.9);
+		if (plan.commit(0.9)) {
+			plan.isles.add(new Isle(x, top, z, r0, plan.lastGroup));
+		}
 	}
 
 	/** Smooth-ish value noise in [0, 1) for patterns (deterministic by position). */
