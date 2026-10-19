@@ -721,8 +721,9 @@ final class ArenaDesign {
 			if (plan.commit(0.0)) {
 				plan.arches.add(plan.lastGroup);
 			}
-			// A core in the inner face of one of its feet (each arch the other one, so they stand all round)
-			double at = (i % 2 == 0 ? 1 : -1) * (foot - rb);
+			// A core on the floor just in front of one of its feet (each arch the other one, so they stand all round),
+			// clear of the bark so it can be seen and struck
+			double at = (i % 2 == 0 ? 1 : -1) * (foot - rb - 3);
 			cores.add(new int[] {(int) Math.floor(cx + 0.5 + ux * at - 0.5), gy + 1, (int) Math.floor(cz + 0.5 + uz * at - 0.5)});
 		}
 		return cores;

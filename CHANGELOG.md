@@ -23,10 +23,10 @@
   the root arches, along the wreck and at the posts of the loom, each tied to its Elder by a thread of light. While
   all four stand the Elder shrugs off 30% of every blow, a quarter of that for each. Three hits break a core (a blast
   or a blow breaks it too), and its Elder reels for a second and a half.
-- **Islands fall.** Every 20 to 30 seconds an island over someone (or over the Elder) breaks loose: for three seconds
-  its shadow gathers on the ground and ash drifts from its underside, then it comes down, tearing out a crater and
-  hurting everyone within five blocks (8 damage). An Elder caught under one loses a tenth of its health and is
-  stunned for two seconds.
+- **Islands fall.** Every 20 to 30 seconds an island over someone (or over the Elder; with none overhead, the one
+  nearest) breaks loose: for three seconds its shadow gathers on the ground and ash drifts from its underside, then
+  it comes down, tearing out a crater and hurting everyone within five blocks (8 damage). An Elder caught under one
+  loses a tenth of its health and is stunned for two seconds.
 - Settings for all of it: whether the arena breaks and collapses, how hard it stands up to a blast, the rubble's
   damage and how much falls at once; the phases and when they come; the ridges, the slowness of the roots, the
   lanes' pace, warning and damage, how long a thread holds, how often and how wide the floor falls; the cores, their

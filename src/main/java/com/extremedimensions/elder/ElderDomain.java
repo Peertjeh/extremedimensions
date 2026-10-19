@@ -611,7 +611,8 @@ public final class ElderDomain {
 
 	/**
 	 * An island over someone (a fighter at random, or the Elder) starts to come loose; with {@code over} given, the one
-	 * nearest over that spot. False if none hangs near enough.
+	 * nearest over that spot. With none hanging over any of them, the one nearest the first comes down instead (in the
+	 * open heart of a great arena no island hangs overhead). False if no island is left to fall.
 	 */
 	static boolean loosen(ElderArena.Arena a, ElderBoss b, State st, double[] over) {
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
@@ -626,21 +627,12 @@ public final class ElderDomain {
 			}
 			spots.add(new double[] {b.getX(), b.getY(), b.getZ()});
 		}
-		for (double[] at : spots) {
-			ArenaDesign.Isle best = null;
-			double bestD = 32 * 32;
-			for (ArenaDesign.Isle isle : a.bp.isles) {
-				if (st.fallen.contains(isle.group()) || isle.top() - at[1] < 8) {
+		for (int pass = 0; pass < 2; pass++) {
+			for (double[] at : pass == 0 ? spots : spots.subList(0, Math.min(1, spots.size()))) {
+				ArenaDesign.Isle best = nearest(a, st, at, pass == 0 ? 32 : Double.MAX_VALUE);
+				if (best == null) {
 					continue;
 				}
-				double dx = isle.x() + 0.5 - at[0], dz = isle.z() + 0.5 - at[2];
-				double d = dx * dx + dz * dz;
-				if (d < bestD && standing(a, isle) >= 0.6) {
-					best = isle;
-					bestD = d;
-				}
-			}
-			if (best != null) {
 				st.fallen.add(best.group());
 				st.fall = new Fall(best, ground(a, best), Math.max(10, (int) Math.round(Config.ELDER_ISLE_WARN_SECONDS * 20)));
 				WorldFx.soundIn(a.level.dimension().identifier().toString(), "minecraft:block.deepslate.break", "hostile", best.x() + 0.5, best.top(),
@@ -649,6 +641,24 @@ public final class ElderDomain {
 			}
 		}
 		return false;
+	}
+
+	/** The standing island nearest a spot (within {@code reach} across) that hangs well over it, or null. */
+	private static ArenaDesign.Isle nearest(ElderArena.Arena a, State st, double[] at, double reach) {
+		ArenaDesign.Isle best = null;
+		double bestD = reach == Double.MAX_VALUE ? Double.MAX_VALUE : reach * reach;
+		for (ArenaDesign.Isle isle : a.bp.isles) {
+			if (st.fallen.contains(isle.group()) || isle.top() - at[1] < 8) {
+				continue;
+			}
+			double dx = isle.x() + 0.5 - at[0], dz = isle.z() + 0.5 - at[2];
+			double d = dx * dx + dz * dz;
+			if (d < bestD && standing(a, isle) >= 0.6) {
+				best = isle;
+				bestD = d;
+			}
+		}
+		return best;
 	}
 
 	/** Share of an island's blocks still standing (a sample of them). */
