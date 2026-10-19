@@ -82,7 +82,8 @@ public class ArenaTests {
 		helper.runAfterDelay(70, () -> {
 			boolean lies = level.getBlockState(under).is(Blocks.STONE_BRICKS) && ElderArena.holds(level, under);
 			int falling = level.getEntitiesOfClass(FallingBlockEntity.class, round).size();
-			int items = level.getEntitiesOfClass(ItemEntity.class, round).size();
+			// (only its own: a blast in a test beside it may scatter loot of the world)
+			int items = level.getEntitiesOfClass(ItemEntity.class, round, i -> i.getItem().is(Blocks.STONE_BRICKS.asItem())).size();
 			done(w);
 			int left = 0;
 			for (BlockPos q : blocks(helper, 2, 1, 2, 5, 4, 2)) {
@@ -102,9 +103,9 @@ public class ArenaTests {
 	@GameTest(maxTicks = 20)
 	public void anArenaGivesWayToABlast(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		ground(helper, 0, 0, 7, 7);
 		Weaver w = weaver(helper, 3, 1, 3);
-		BlockPos kept = helper.absolutePos(new BlockPos(0, 1, 0)), blown = helper.absolutePos(new BlockPos(7, 1, 7));
+		// High in the air, so the blasts break nothing of the world (nor scatter its loot into the tests round this one)
+		BlockPos kept = helper.absolutePos(new BlockPos(0, 12, 0)), blown = helper.absolutePos(new BlockPos(7, 12, 7));
 		ElderArena.rig(w, helper.absolutePos(new BlockPos(3, 1, 3)), 4, List.of(List.of(kept), List.of(blown)), new int[] {BUILT, BUILT},
 				Blocks.OBSIDIAN.defaultBlockState());
 		int breakable = Config.ELDER_ARENA_BREAKABLE;
