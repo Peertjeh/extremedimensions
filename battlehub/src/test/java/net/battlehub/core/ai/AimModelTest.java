@@ -142,4 +142,32 @@ class AimModelTest {
 		// a steady strafer (long holds) is led all the way: a big help for the lower levels
 		assertTrue(versus(Difficulty.CASUAL, 0.8, 25, 15) > versus(Difficulty.CASUAL, -1, 25, 15) + 0.08);
 	}
+
+	@Test
+	void itsOwnMovementDoesNotThrowItOff() {
+		// the NPC strafes round a target that stands still: a player knows how they move themselves, so the
+		// crosshair stays on (aiming from positions); only the target's own movement is followed with a lag
+		for (Difficulty d : new Difficulty[] {Difficulty.INTERMEDIATE, Difficulty.EXPERT}) {
+			AimModel aim = new AimModel(AimModel.Params.of(d), 3);
+			Random r = new Random(5);
+			double x = 0, dir = 1;
+			int hold = 10, on = 0, n = 0;
+			aim.sync(0, 0);
+			for (int t = 0; t < 600; t++) {
+				if (--hold <= 0 || Math.abs(x) > 1.5) {
+					dir = Math.abs(x) > 1.5 ? -Math.signum(x) : -dir;
+					hold = 6 + r.nextInt(14);
+				}
+				x += dir * 0.22;
+				// eye at (x, 1.62, 0), target chest at (0, 1.2, 2.8)
+				float[] a = aim.stepAt(x, 1.62, 0, 0, 1.2, 2.8);
+				float want = (float) Math.toDegrees(Math.atan2(x, 2.8));
+				if (t > 40) {
+					n++;
+					if (Math.abs(AimModel.wrap(a[0] - want)) < halfWidth(Math.hypot(2.8, x))) on++;
+				}
+			}
+			assertTrue(on / (double) n > 0.85, d.id() + ": on target " + on / (double) n);
+		}
+	}
 }

@@ -37,6 +37,14 @@ public final class AimModel {
 	}
 
 	private static final int HISTORY = 16;
+	/** Where the target was (world positions), for aiming from a moving eye: see {@link #stepAt}. */
+	private final double[] seenX = new double[HISTORY];
+	private final double[] seenY = new double[HISTORY];
+	private final double[] seenZ = new double[HISTORY];
+	private int posCount;
+	private int posHead;
+	private float lastWantYaw = Float.NaN;
+	private float lastWantPitch;
 
 	private final Params p;
 	private final Random rng;
@@ -90,6 +98,8 @@ public final class AimModel {
 	/** Another target (or one seen again): where the old one was says nothing about the new one. */
 	public void retarget() {
 		count = 0;
+		posCount = 0;
+		lastWantYaw = Float.NaN;
 	}
 
 	/** Knocked about (a hit taken): the aim is thrown off by about this many degrees. */
@@ -111,10 +121,56 @@ public final class AimModel {
 		double spinYaw = span <= 0 ? 0 : wrap(lagYaw - back(seenYaw, lag + span)) / span;
 		double spinPitch = span <= 0 ? 0 : (lagPitch - back(seenPitch, lag + span)) / span;
 		// a steady target is led all the way (the lag fully made up), an erratic one half as far as the level would
-		double lead = predictability < 0 ? p.lead() : predictability + (1 - predictability) * p.lead() * 0.5;
+		double lead = lead();
 		double wantYaw = lagYaw + spinYaw * lag * lead;
 		double wantPitch = lagPitch + spinPitch * lag * lead;
+		return control(wantYaw, wantPitch, spinYaw, spinPitch);
+	}
 
+	/**
+	 * One tick, from positions: the eye now and the target point now. The lag is the target's only: where the target
+	 * was a moment ago (carried on by its own speed as far as the level leads) is looked at from where the eye is
+	 * <i>now</i>, since a player always knows how they move themselves. Out: {yaw, pitch} of the crosshair.
+	 */
+	public float[] stepAt(double eyeX, double eyeY, double eyeZ, double tx, double ty, double tz) {
+		seenX[posHead] = tx;
+		seenY[posHead] = ty;
+		seenZ[posHead] = tz;
+		posHead = (posHead + 1) % HISTORY;
+		posCount = Math.min(HISTORY, posCount + 1);
+		int lag = Math.min(p.lagTicks(), posCount - 1);
+		int span = Math.min(2, posCount - 1 - lag);
+		double lx = backPos(seenX, lag), ly = backPos(seenY, lag), lz = backPos(seenZ, lag);
+		double vx = 0, vy = 0, vz = 0;
+		if (span > 0) {
+			vx = (lx - backPos(seenX, lag + span)) / span;
+			vy = (ly - backPos(seenY, lag + span)) / span;
+			vz = (lz - backPos(seenZ, lag + span)) / span;
+		}
+		double ahead = lag * lead();
+		double ax = lx + vx * ahead, ay = ly + vy * Math.min(ahead, 2), az = lz + vz * ahead;
+		double dx = ax - eyeX, dz = az - eyeZ;
+		float wantYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+		float wantPitch = (float) -Math.toDegrees(Math.atan2(ay - eyeY, Math.max(1e-6, Math.hypot(dx, dz))));
+		// how fast that direction turns (the target moving and the NPC moving itself): the hand follows it
+		double spinYaw = Float.isNaN(lastWantYaw) ? 0 : wrap(wantYaw - lastWantYaw);
+		double spinPitch = Float.isNaN(lastWantYaw) ? 0 : wantPitch - lastWantPitch;
+		lastWantYaw = wantYaw;
+		lastWantPitch = wantPitch;
+		return control(wantYaw, wantPitch, spinYaw, spinPitch);
+	}
+
+	private double backPos(double[] ring, int ticks) {
+		return ring[Math.floorMod(posHead - 1 - ticks, HISTORY)];
+	}
+
+	/** A steady target is led all the way (the lag fully made up), an erratic one half as far as the level would. */
+	private double lead() {
+		return predictability < 0 ? p.lead() : predictability + (1 - predictability) * p.lead() * 0.5;
+	}
+
+	/** The hand: pulls towards where it wants to be, turns along with it, overshoots big turns, wobbles. */
+	private float[] control(double wantYaw, double wantPitch, double spinYaw, double spinPitch) {
 		double errYaw = wrap((float) (wantYaw - yaw));
 		if (Math.abs(errYaw) > 25 && Math.abs(turnYaw) < 3) {
 			// a big turn from (nearly) still: a flick, which goes too far and comes back

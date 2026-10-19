@@ -319,8 +319,10 @@ public final class CombatMind {
 		OpponentModel om = targetId == null ? null : models.get(targetId);
 		return new Report(archetype, difficulty, personality, decider.current(), last == null ? "" : last.reason(), top,
 				decider.transitions(), thinks, thinks == 0 ? 0 : thinkNanos / thinks / 1000.0, thinkMax / 1000.0,
-				om == null ? null : String.format(Locale.ROOT, "aggression %.2f, likes %.1f blocks, strafe changes %.1f/s, jumps %.1f/s, swings every %.0f ticks, lands %.0f%%",
-						om.aggression(), om.preferredDistance(), om.strafeRate(), om.jumpRate(), om.swingGap(), om.accuracy() * 100), swingsMade, swingsLanded);
+				om == null ? null : String.format(Locale.ROOT, "aggression %.2f, likes %.1f blocks, strafe changes %.1f/s, jumps %.1f/s", om.aggression(),
+						om.preferredDistance(), om.strafeRate(), om.jumpRate()) + (om.swings() < 3 ? ", swings not seen yet"
+								: String.format(Locale.ROOT, ", swings every %.0f ticks, lands %.0f%%", om.swingGap(), om.accuracy() * 100)),
+				swingsMade, swingsLanded);
 	}
 
 	public record Report(Archetype archetype, Difficulty difficulty, Personality personality, Tactic tactic, String reason, List<Score> top,

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.27.1
+
+### Fixed
+* Bots aimed worse than intended while moving themselves (strafing, w-tapping): their own movement was followed
+  with the same delay as the target's. They now aim from where their eye is now and only follow the target's
+  movement with a delay, as a player who knows how they move.
+* "Holding distance" was sometimes chosen without a reason in `/battlehub bots inspect`; every option has one now.
+* Inspect no longer shows guessed click habits for an opponent whose swings it has not seen yet.
+
 ## 1.27.0
 
 ### Changed

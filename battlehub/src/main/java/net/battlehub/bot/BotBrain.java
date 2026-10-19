@@ -275,9 +275,9 @@ final class BotBrain {
 			aim = new net.battlehub.core.ai.AimModel(net.battlehub.core.ai.AimModel.Params.of(mind.difficulty()), bot.getUUID().getLeastSignificantBits());
 		}
 		Vec3 eye = bot.getEyePosition();
-		double dx = at.x - eye.x, dz = at.z - eye.z;
 		aim.sync(bot.getYRot(), bot.getXRot());
-		float[] a = aim.step(BotMath.yaw(dx, dz), BotMath.pitch(Math.sqrt(dx * dx + dz * dz), at.y - eye.y));
+		// from positions: the target's movement is followed with a lag, the bot's own is known at once
+		float[] a = aim.stepAt(eye.x, eye.y, eye.z, at.x, at.y, at.z);
 		bot.setYRot(a[0]);
 		bot.setYHeadRot(a[0]);
 		bot.yBodyRot = a[0];

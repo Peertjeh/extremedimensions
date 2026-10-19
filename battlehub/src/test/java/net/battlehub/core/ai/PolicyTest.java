@@ -120,7 +120,7 @@ class PolicyTest {
 	void everyScoreExplainsItself() {
 		Situation s = at(0, me(O, 12, 0.5), foe(new V3(3, 64, 0), 15), open());
 		for (Score x : score(s, Archetype.DUELIST)) {
-			if (x.tactic() != Tactic.IDLE) assertFalse(x.why().isEmpty() && x.tactic() != Tactic.SPACE, x.toString());
+			if (x.tactic() != Tactic.IDLE) assertFalse(x.why().isEmpty(), x.toString());
 		}
 	}
 }

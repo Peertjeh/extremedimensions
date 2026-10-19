@@ -160,7 +160,9 @@ public final class CombatPolicy {
 			// ---- hold just outside their reach and punish
 			if (dist <= p.range() + 2.5) {
 				double v = 0.25 + 0.45 * p.patience() + 0.25 * p.defensive() + 0.3 * (1 - ready) - 0.35 * p.aggression() - noBlade;
-				List<String> why = new ArrayList<>();
+				// always a reason: recharging out of their reach, or holding the range it likes
+				List<String> why = new ArrayList<>(List.of(ready < 0.9 ? String.format(java.util.Locale.ROOT, "recharging (%.0f%%)", ready * 100)
+						: String.format(java.util.Locale.ROOT, "holding %.1f blocks", p.range())));
 				if (om.known() && om.aggression() > 0.5) {
 					v += 0.3 * om.aggression() * p.patience();
 					why.add("they rush in");
