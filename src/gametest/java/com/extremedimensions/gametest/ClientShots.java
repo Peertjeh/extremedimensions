@@ -87,11 +87,6 @@ public class ClientShots implements FabricClientGameTest {
 		double[] stood = sp.getServer().computeOnServer(s -> new double[] {player(s).getX(), player(s).getY(), player(s).getZ()});
 		double[] mid = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.lastCentre());
 		check(mid != null, "the " + name + " raised no arena");
-		// Its far reaches (beyond the world loaded round the player) wait for their part of the world
-		int held = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting());
-		int standing = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.standing());
-		System.out.println("[arena] " + name + ": " + standing + " blocks standing, " + held + " waiting for their part of the world");
-		check(held > 0, "nothing of the " + name + "'s arena waits for its part of the world (its far towers and islands are left out)");
 		// Flying, so the view holds where it is put
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
@@ -99,24 +94,9 @@ public class ClientShots implements FabricClientGameTest {
 			p.getAbilities().flying = true;
 			p.onUpdateAbilities();
 			p.setRemainingFireTicks(0);
-			p.teleportTo(mid[0], mid[1] + 170, mid[2]);
 		});
-		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 90");
-		ctx.waitTicks(40);
-		ctx.takeScreenshot("12_fight_" + name + "_arena");
-		// Out past its west wall (near enough that the Elder keeps to its prey), looking north along its towers: the
-		// world comes in round there, and what waited for it goes up
-		sp.getServer().runOnServer(s -> player(s).teleportTo(mid[0] - 190, mid[1] + 40, mid[2]));
-		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 180 15");
-		for (int i = 0; i < 30 && sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting()) >= held; i++) {
-			ctx.waitTicks(10);
-		}
-		ctx.waitTicks(40);
-		int left = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting());
-		System.out.println("[arena] " + name + ": " + left + " still waiting once the world came in round its side");
-		check(left < held, "nothing of the " + name + "'s arena went up as the world came in round its side (" + left + " of " + held + " still waiting)");
-		ctx.takeScreenshot("12_fight_" + name + "_arena_side");
-		// The arena fights back. Its domain changes twice as the Elder weakens, seen from over the edge of its heart
+		// The arena fights back, seen while its Elder is near (from far off its part of the world unloads with it). Its
+		// domain changes twice as the Elder weakens, seen from over the edge of its heart
 		sp.getServer().runOnServer(s -> player(s).teleportTo(mid[0], mid[1] + 16, mid[2] - 40));
 		sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s ~ ~ ~ facing %.1f %.1f %.1f", mid[0], mid[1], mid[2] + 8));
 		sp.getServer().runOnServer(s -> elders(s, 400).forEach(e -> e.setHealth(e.getMaxHealth() * 0.5F)));
@@ -124,7 +104,8 @@ public class ClientShots implements FabricClientGameTest {
 		sp.getServer().runOnServer(s -> elders(s, 400).forEach(e -> e.setHealth(e.getMaxHealth() * 0.28F)));
 		ctx.waitTicks(52);
 		int phase = sp.getServer().computeOnServer(s -> elders(s, 400).stream().mapToInt(com.extremedimensions.elder.ElderDomain::phase).max().orElse(-1));
-		System.out.println("[domain] " + name + ": phase " + phase);
+		int found = sp.getServer().computeOnServer(s -> elders(s, 400).size());
+		System.out.println("[domain] " + name + ": phase " + phase + " (" + found + " Elders near, " + com.extremedimensions.elder.ElderArena.count() + " arenas)");
 		check(phase == 2, "the " + name + "'s domain is in phase " + phase + " at 28% of its health, expected 2");
 		ctx.takeScreenshot("12_fight_" + name + "_domain");
 		// A core of its great piece, from a few blocks off, tied to its Elder by a thread of light
@@ -168,6 +149,27 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("12_fight_" + name + "_isle_fall");
 		}
+		// Its far reaches (beyond the world loaded round the player) wait for their part of the world
+		int held = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting());
+		int standing = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.standing());
+		System.out.println("[arena] " + name + ": " + standing + " blocks standing, " + held + " waiting for their part of the world");
+		check(held > 0, "nothing of the " + name + "'s arena waits for its part of the world (its far towers and islands are left out)");
+		sp.getServer().runOnServer(s -> player(s).teleportTo(mid[0], mid[1] + 170, mid[2]));
+		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 90");
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("12_fight_" + name + "_arena");
+		// Out past its west wall (near enough that the Elder keeps to its prey), looking north along its towers: the
+		// world comes in round there, and what waited for it goes up
+		sp.getServer().runOnServer(s -> player(s).teleportTo(mid[0] - 190, mid[1] + 40, mid[2]));
+		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 180 15");
+		for (int i = 0; i < 30 && sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting()) >= held; i++) {
+			ctx.waitTicks(10);
+		}
+		ctx.waitTicks(40);
+		int left = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting());
+		System.out.println("[arena] " + name + ": " + left + " still waiting once the world came in round its side");
+		check(left < held, "nothing of the " + name + "'s arena went up as the world came in round its side (" + left + " of " + held + " still waiting)");
+		ctx.takeScreenshot("12_fight_" + name + "_arena_side");
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
 			p.getAbilities().flying = false;
