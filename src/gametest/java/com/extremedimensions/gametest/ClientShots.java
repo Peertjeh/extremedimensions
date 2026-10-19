@@ -117,19 +117,19 @@ public class ClientShots implements FabricClientGameTest {
 		check(left < held, "nothing of the " + name + "'s arena went up as the world came in round its side (" + left + " of " + held + " still waiting)");
 		ctx.takeScreenshot("12_fight_" + name + "_arena_side");
 		// The arena fights back. Its domain changes twice as the Elder weakens, seen from over the edge of its heart
-		sp.getServer().runOnServer(s -> elders(s).forEach(e -> e.setHealth(e.getMaxHealth() * 0.5F)));
-		ctx.waitTicks(10);
-		sp.getServer().runOnServer(s -> elders(s).forEach(e -> e.setHealth(e.getMaxHealth() * 0.28F)));
 		sp.getServer().runOnServer(s -> player(s).teleportTo(mid[0], mid[1] + 16, mid[2] - 40));
 		sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s ~ ~ ~ facing %.1f %.1f %.1f", mid[0], mid[1], mid[2] + 8));
+		sp.getServer().runOnServer(s -> elders(s, 400).forEach(e -> e.setHealth(e.getMaxHealth() * 0.5F)));
+		ctx.waitTicks(10);
+		sp.getServer().runOnServer(s -> elders(s, 400).forEach(e -> e.setHealth(e.getMaxHealth() * 0.28F)));
 		ctx.waitTicks(52);
-		int phase = sp.getServer().computeOnServer(s -> elders(s).stream().mapToInt(com.extremedimensions.elder.ElderDomain::phase).max().orElse(-1));
+		int phase = sp.getServer().computeOnServer(s -> elders(s, 400).stream().mapToInt(com.extremedimensions.elder.ElderDomain::phase).max().orElse(-1));
 		System.out.println("[domain] " + name + ": phase " + phase);
 		check(phase == 2, "the " + name + "'s domain is in phase " + phase + " at 28% of its health, expected 2");
 		ctx.takeScreenshot("12_fight_" + name + "_domain");
 		// A core of its great piece, from a few blocks off, tied to its Elder by a thread of light
 		double[] core = sp.getServer().computeOnServer(s -> {
-			com.extremedimensions.elder.ElderBoss e = elders(s).stream().findFirst().orElse(null);
+			com.extremedimensions.elder.ElderBoss e = elders(s, 400).stream().findFirst().orElse(null);
 			if (e == null) {
 				return null;
 			}
@@ -155,7 +155,7 @@ public class ClientShots implements FabricClientGameTest {
 			System.out.println("[domain] " + name + ": no core standing in the open");
 		}
 		// An island over its Elder comes loose: its shadow gathers on the ground, then it comes down
-		double[] isle = sp.getServer().computeOnServer(s -> elders(s).stream()
+		double[] isle = sp.getServer().computeOnServer(s -> elders(s, 400).stream()
 				.map(e -> com.extremedimensions.elder.ElderDomain.loosenOver(e, e.getX(), e.getY(), e.getZ())).filter(java.util.Objects::nonNull).findFirst()
 				.orElse(null));
 		System.out.println("[domain] " + name + ": island " + (isle == null ? "none near" : java.util.Arrays.toString(isle)));
@@ -246,8 +246,12 @@ public class ClientShots implements FabricClientGameTest {
 	}
 
 	private static java.util.List<com.extremedimensions.elder.ElderBoss> elders(MinecraftServer s) {
+		return elders(s, 96);
+	}
+
+	private static java.util.List<com.extremedimensions.elder.ElderBoss> elders(MinecraftServer s, double r) {
 		ServerPlayer p = player(s);
-		return p.level().getEntitiesOfClass(com.extremedimensions.elder.ElderBoss.class, p.getBoundingBox().inflate(96));
+		return p.level().getEntitiesOfClass(com.extremedimensions.elder.ElderBoss.class, p.getBoundingBox().inflate(r));
 	}
 
 	/**
