@@ -96,6 +96,10 @@ public class ClientPath implements FabricClientGameTest {
 
 	@Override
 	public void runTest(ClientGameTestContext ctx) {
+		// (the compatibility job runs ClientCompat alone)
+		if (ClientCompat.on()) {
+			return;
+		}
 		try (TestSingleplayerContext sp = ctx.worldBuilder().create()) {
 			sp.getConnection().waitForChunksRender();
 			sp.getServer().runCommand("gamemode survival @a");

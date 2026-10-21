@@ -318,6 +318,18 @@ with the slope) moves to 3.0-beta's polish, where it is measured against the scr
 
 Frozen: no new features. Polish, bugs and text. A migration test opens a world saved by 2.32 and plays it on.
 
+*Status:* built in 3.0.0-beta. A migration test reads a world data file shaped exactly as 2.32.1 wrote it in place of
+the test world's for one tick: nothing it knew is lost, every collection added since is there and empty, its path and
+hints pick up where it stands, and it is written back whole. The finish of the world moved here from 2.39: damage
+follows each part's role (ornaments go first, piers and corners last), plain islands carry arches of rock and terraced
+hills (`Landforms`), and villages step with the slope (each house settled at its own ground). The Seam's island mix,
+sizes and land shapes are data (`data/extremedimensions/seam/briefs.json`), which brings the norm's "Data" line to
+"meets it". The compatibility pass runs in CI: a third job fetches the newest Sodium, Iris and Mod Menu for the game
+version and runs `ClientCompat` with them. The relic review raised the Tithe Bell's gift to +75% (its price at high
+levels outweighed it); the other relics stand. The two balance targets that need a played session (a first Nether
+expedition of 8 to 12 minutes, and that no relic is never worth binding) are judged by the model in section 9.2 and
+remain open for a playtest.
+
 #### 3.0 The Unfinished World
 
 *Fantasy: the story goes on in your hand. Entry: the ending (and, for the loom, the first Elder). Narrative: "Now it

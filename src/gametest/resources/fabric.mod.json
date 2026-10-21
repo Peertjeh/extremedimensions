@@ -31,11 +31,13 @@
 			"com.extremedimensions.gametest.BindingTests",
 			"com.extremedimensions.gametest.EventTests",
 			"com.extremedimensions.gametest.PathTests",
-			"com.extremedimensions.gametest.FirstWeaverTests"
+			"com.extremedimensions.gametest.FirstWeaverTests",
+			"com.extremedimensions.gametest.MigrationTests"
 		],
 		"fabric-client-gametest": [
 			"com.extremedimensions.gametest.ClientShots",
-			"com.extremedimensions.gametest.ClientPath"
+			"com.extremedimensions.gametest.ClientPath",
+			"com.extremedimensions.gametest.ClientCompat"
 		]
 	},
 	"depends": {

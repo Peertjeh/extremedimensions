@@ -67,12 +67,30 @@ public final class DataStore {
 	private static boolean dirty = false;
 
 	public static void load(MinecraftServer server) {
-		data = new WorldData();
 		dirty = false;
 		file = server.getWorldPath(LevelResource.ROOT).resolve(ExtremeDimensions.MOD_ID + ".json");
-		WorldData loaded = readWithFallback(file, TYPE);
+		data = filled(readWithFallback(file, TYPE));
+	}
+
+	/**
+	 * Reads world data written by any version (as a 2.32 world wrote it, say) in place of this world's, and returns this
+	 * world's, to be put back with {@link #putBack} before anything else runs (for the migration test).
+	 */
+	public static Object adopt(String json) {
+		WorldData was = data;
+		data = filled(GSON.fromJson(json, TYPE));
+		return was;
+	}
+
+	public static void putBack(Object was) {
+		data = (WorldData) was;
+	}
+
+	/** World data as a file held it, with whatever the version that wrote it did not know of filled in. */
+	private static WorldData filled(WorldData loaded) {
+		WorldData data = new WorldData();
 		if (loaded == null) {
-			return;
+			return data;
 		}
 		if (loaded.players != null) {
 			data.players = loaded.players;
@@ -116,6 +134,7 @@ public final class DataStore {
 				data.trials.lastTop = new ArrayList<>();
 			}
 		}
+		return data;
 	}
 
 	/**

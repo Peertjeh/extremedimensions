@@ -1,5 +1,32 @@
 # Changelog
 
+## 3.0.0-beta: Frozen
+
+No new systems: polish, the last of the world's finish, and proof that what came before still plays.
+
+### Changed
+- **Damage follows what each part does.** A building's ornaments (pinnacles, copings, parapet walls, lanterns) go
+  before its walls, and the piers and corners that carry it stand longest: what is left of a ruin is its bones. Up
+  high, loose ornaments come down even where no blow landed.
+- **The land has shapes of its own.** Plain islands can carry an arch of rock the weather wore through (both feet on
+  the turf, moss on its back, vines below) and, on the larger ones, a hill cut into three terraces with retaining walls
+  of worn stone and a flight of steps up one side.
+- **Villages step with the slope.** Each house of a Thinned village stands on the ground where it is, up to two blocks
+  above or below the plaza, instead of on one levelled shelf.
+- **The Seam's island mix is data.** Which kinds of island the Seam raises, how often and how big, and how often the
+  land's shapes turn up, are read from `data/extremedimensions/seam/briefs.json`; a datapack can replace it (on `/reload`
+  too). The file the mod ships is the mix the Seam always had.
+- Tithe Bell: +75% experience (was +50%). At high levels the level it takes on every return outweighed what it gave.
+
+### Tests
+- A world saved by 2.32 plays on: its data file is read as that version wrote it, nothing it knew is lost, everything
+  added since is there and empty, its path and hints pick up where it stands, and it is written back whole.
+- The compatibility job: CI fetches the newest Sodium, Iris and Mod Menu for this game version and runs a client test
+  with them (the journal, the settings through Mod Menu's Configure, the Seam's sky, fog and bar under Sodium).
+- GroundTests: damage by role, the land's shapes stand and can be climbed, villages step, the briefs are data.
+- FrayTests: a Frayed Ray that drifts out of the test's reach is brought back over the player and roused again, so the
+  dive is tested rather than the ray's wandering.
+
 ## 2.39.0: The First Weaver
 
 If there was a last Weaver, there was a first. An investigation across every world, from the frame at the heart of an

@@ -616,27 +616,16 @@ public final class SeamService {
 
 	private static final int PLAIN = 0, LOOM = 1, VILLAGE = 2, SPIRE = 3, HANGING = 4, HALO = 5;
 
-	private static int kind(int type) {
-		return type < 7 ? PLAIN : type < 10 ? LOOM : type < 13 ? VILLAGE : type < 16 ? SPIRE : type < 18 ? HANGING : HALO;
-	}
-
-	/** The island of a cell: x, top, z, radius, type. */
+	/** The island of a cell: x, top, z, radius, kind (its kind and size from the Seam's briefs, see {@link Briefs}). */
 	private static int[] center(int cx, int cz) {
 		long h = hash(cx, cz, seed());
-		int type = (int) ((h >> 32) % 20);
+		Briefs.Brief brief = Briefs.current();
+		int kind = brief.kind(h >> 32);
 		int x = cx * CELL + CELL / 2 + (int) (h % 13) - 6;
 		int z = cz * CELL + CELL / 2 + (int) ((h >> 8) % 13) - 6;
 		int top = 80 + (int) ((h >> 16) % 20);
-		int v = (int) ((h >> 24) % 5);
-		int r = switch (kind(type)) {
-			case SPIRE -> 34 + v;
-			case VILLAGE -> 26 + v;
-			case LOOM -> 22 + v;
-			case HANGING -> 14 + v;
-			case HALO -> 16 + v;
-			default -> 11 + (int) ((h >> 24) % 9);
-		};
-		return new int[] {x, top, z, r, type};
+		int r = brief.radius(kind, h >> 24);
+		return new int[] {x, top, z, r, kind};
 	}
 
 	/** Cells around the Heart are left to its crown (and no island may reach into it). */
@@ -1006,7 +995,7 @@ public final class SeamService {
 		SeamArchitect.Shape shape = shapeOf(cx, cz, rnd, arrivals);
 		SeamArchitect.Plan plan = new SeamArchitect.Plan();
 		int x = shape.x(), top = shape.top(), z = shape.z(), r = shape.r();
-		int kind = nearArrival(x, z, r + 30, arrivals) ? PLAIN : kind(c[4]);
+		int kind = nearArrival(x, z, r + 30, arrivals) ? PLAIN : c[4];
 		// Which sides get a bridge: this cell strings them east and south, its neighbours west and north
 		SeamArchitect.Shape east = neighbour(cx + 1, cz, arrivals), west = neighbour(cx - 1, cz, arrivals);
 		SeamArchitect.Shape south = neighbour(cx, cz + 1, arrivals), north = neighbour(cx, cz - 1, arrivals);
@@ -1070,11 +1059,21 @@ public final class SeamService {
 			}
 			case VILLAGE -> {
 				SeamArchitect.Plan b = new SeamArchitect.Plan();
-				// laid out for the room the island has (its houses stay clear of the coast where it comes in nearest)
-				SeamArchitect.village(b, rnd, x, top, z, Math.min(r, (int) Math.round(s.nearest()) + 3));
+				// laid out for the room the island has (its houses stay clear of the coast where it comes in nearest), each
+				// house on the ground where it stands, so the village steps with the slope
+				List<Object[]> houses = new ArrayList<>();
+				SeamArchitect.village(b, rnd, x, top, z, Math.min(r, (int) Math.round(s.nearest()) + 3), (hx, hz) -> ground.surface(hx, hz, top),
+						(hp, hy) -> houses.add(new Object[] {hp, hy}));
 				// the Thinned live in it: worn, broken here and there, never a ruin
 				age(b, rnd, top, Ruin.DAMAGED);
 				standOn(plan, b, ground, top);
+				// the houses after the plaza, so the ground under each is its own
+				for (Object[] h : houses) {
+					SeamArchitect.Plan hp = (SeamArchitect.Plan) h[0];
+					int hy = (int) h[1];
+					age(hp, rnd, hy, Ruin.DAMAGED);
+					standOn(plan, hp, ground, hy);
+				}
 				SeamArchitect.streets(plan, rnd, s, mask, r >= 24 ? 9 : 7, false);
 				SeamArchitect.grounds(plan, rnd, s, 3, SeamArchitect.TREE, SeamArchitect.LAMP);
 				plan.marks.add("v@" + x + "," + top + "," + z);

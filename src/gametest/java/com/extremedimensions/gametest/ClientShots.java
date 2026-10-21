@@ -420,6 +420,10 @@ public class ClientShots implements FabricClientGameTest {
 
 	@Override
 	public void runTest(ClientGameTestContext ctx) {
+		// (the compatibility job runs ClientCompat alone)
+		if (ClientCompat.on()) {
+			return;
+		}
 		try (TestSingleplayerContext sp = ctx.worldBuilder().create()) {
 			sp.getConnection().waitForChunksRender();
 			sp.getServer().runCommand("tether overworld_penalties on");
@@ -1049,6 +1053,30 @@ public class ClientShots implements FabricClientGameTest {
 					ctx.takeScreenshot("20_island_plain_under");
 				}
 			}
+			// The land's own shapes: an arch of rock and a hill cut into terraces on a large plain island
+			int lx = home[0] + 700 + 10 * 300, lz = home[2] + 300;
+			String shapes = sp.getServer().computeOnServer(s -> {
+				com.extremedimensions.seam.SeamArchitect.Shape shape = com.extremedimensions.seam.SeamArchitect.Shape.of(new java.util.Random(77), lx, skyTop, lz, 28);
+				com.extremedimensions.seam.SeamArchitect.Plan plan = new com.extremedimensions.seam.SeamArchitect.Plan();
+				com.extremedimensions.seam.Terrain.of(new java.util.Random(78), shape, 0).emit(plan);
+				boolean arch = false;
+				for (int t = 0; t < 12 && !arch; t++) {
+					arch = com.extremedimensions.seam.Landforms.rockArch(plan, new java.util.Random(79 + t), lx - 11, plan.ground(lx - 11, lz, skyTop) + 1, lz);
+				}
+				com.extremedimensions.seam.Landforms.terraces(plan, new java.util.Random(80), lx + 11, plan.ground(lx + 11, lz, skyTop) + 1, lz);
+				plan.placeNow((net.minecraft.server.level.ServerLevel) player(s).level());
+				return (arch ? "an arch and " : "no arch, ") + "terraces";
+			});
+			com.extremedimensions.ExtremeDimensions.LOGGER.info("The land's shapes: {}", shapes);
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 -30 18", lx - 26, skyTop + 16, lz - 40));
+			ctx.waitTicks(160);
+			ctx.takeScreenshot("40_land_shapes");
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 6", lx - 11, skyTop + 3, lz - 16));
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("40_rock_arch");
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 -20 20", lx + 3, skyTop + 9, lz - 14));
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("40_terraces");
 			// The Warm Chain: a ruined gate with its chain lying into it, warm (embers rise from it)
 			int[] warm = sp.getServer().computeOnServer(s -> {
 				net.minecraft.server.level.ServerLevel lvl = (net.minecraft.server.level.ServerLevel) player(s).level();

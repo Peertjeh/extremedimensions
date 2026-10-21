@@ -375,7 +375,7 @@ public final class Config {
 	public static double RELIC_KEEPERS_EYE_FRAGMENTS = 2.0;
 	public static double RELIC_KEEPERS_EYE_ATONEMENT = 0.5;
 	/** Tithe Bell: extra share of the experience you gain (0.5 = half again); levels it takes on every safe return. */
-	public static double RELIC_TITHE_BELL_XP = 0.5;
+	public static double RELIC_TITHE_BELL_XP = 0.75;
 	public static int RELIC_TITHE_BELL_LEVELS = 1;
 	/** Lurker's Tooth: Lurkers cannot take your items or armour; how many times as often they come for you. */
 	public static double RELIC_LURKERS_TOOTH_OFTEN = 2.0;

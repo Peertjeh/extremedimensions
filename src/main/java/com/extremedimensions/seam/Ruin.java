@@ -160,6 +160,8 @@ public final class Ruin {
 			int cut = (int) peak[1] - 4 - rnd.nextInt(Math.max(1, (int) ((peak[1] - base) * 0.25)));
 			fell(p, gone, keep, base, (int) peak[0], cut, (int) peak[2], 5 + rnd.nextInt(4), noiseSeed + 100 + k);
 		}
+		// The ornaments high up loosen on their own
+		shed(p, rnd, gone, keep, base, height, condition);
 		// The broken edges wear (and glass beside a break shatters) before what is left hanging is found
 		weather(p, rnd, gone, base, keep);
 		// What was left hanging falls too (not what was built to float, which never stood on the ground)
@@ -178,9 +180,43 @@ public final class Ruin {
 		rubble(p, rnd, gone, base, condition);
 	}
 
+	/** Whether a block is an ornament: anything short of a whole block (a stair, a slab, a wall, a fence, a lantern...). */
+	static boolean ornament(BlockState s) {
+		return s != null && !s.isAir() && !s.isCollisionShapeFullBlock(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, BlockPos.ZERO);
+	}
+
+	/**
+	 * Whether a block of a plan is a pier: a whole block carrying what is above it, on what is below it, with open air
+	 * on at least two sides (a column, a buttress, the corner of a wall), rather than a block in the middle of a wall.
+	 */
+	static boolean pier(Plan p, int x, int y, int z) {
+		BlockState s = p.get(x, y, z), above = p.get(x, y + 1, z), below = p.get(x, y - 1, z);
+		if (s == null || ornament(s) || above == null || below == null || ornament(below)) {
+			return false;
+		}
+		boolean e = p.has(x + 1, y, z), w = p.has(x - 1, y, z), so = p.has(x, y, z + 1), n = p.has(x, y, z - 1);
+		int sides = (e ? 1 : 0) + (w ? 1 : 0) + (so ? 1 : 0) + (n ? 1 : 0);
+		// alone, or at a corner (two neighbours that are not across from each other)
+		return sides <= 1 || sides == 2 && !(e && w) && !(so && n);
+	}
+
+	/**
+	 * How readily a block goes when a blow lands near it (scales the bite's reach): the ornaments first, the piers that
+	 * carry the building last, so what is left of a ruin is its bones.
+	 */
+	static double frailty(Plan p, int x, int y, int z) {
+		BlockState s = p.get(x, y, z);
+		if (ornament(s)) {
+			return 1.4;
+		}
+		return pier(p, x, y, z) ? 0.55 : 1.0;
+	}
+
 	/** A ragged bite out of the masonry round a point: an uneven ball, a little taller than wide. */
 	private static void bite(Plan p, Set<Long> gone, Set<Long> keep, int base, int cx, int cy, int cz, double rad, long seed) {
-		int r = (int) Math.ceil(rad * 1.6) + 1;
+		int r = (int) Math.ceil(rad * 1.6 * 1.4) + 1;
+		// What the blow takes is judged on the building as it stood, before any of this bite is gone
+		List<Long> taken = new ArrayList<>();
 		for (int dx = -r; dx <= r; dx++) {
 			for (int dy = -r; dy <= r; dy++) {
 				for (int dz = -r; dz <= r; dz++) {
@@ -190,13 +226,41 @@ public final class Ruin {
 						continue;
 					}
 					double d = Math.sqrt(dx * dx + dy * dy / 1.6 + dz * dz);
-					double edge = rad * (0.7 + 0.6 * noise(seed, (x + y * 0.7) / 2.3, (z - y * 0.5) / 2.3));
+					double edge = rad * (0.7 + 0.6 * noise(seed, (x + y * 0.7) / 2.3, (z - y * 0.5) / 2.3)) * frailty(p, x, y, z);
 					if (d < edge) {
-						p.blocks.remove(k);
-						gone.add(k);
+						taken.add(k);
 					}
 				}
 			}
+		}
+		for (long k : taken) {
+			p.blocks.remove(k);
+			gone.add(k);
+		}
+	}
+
+	/**
+	 * The ornaments of the upper reaches loosened by the weather (a pinnacle, a parapet's coping, a lantern on its
+	 * bracket): some come down even where no blow landed, more the worse the building's condition.
+	 */
+	private static void shed(Plan p, Random rnd, Set<Long> gone, Set<Long> keep, int base, int height, int condition) {
+		double chance = condition == WEATHERED ? 0.06 : condition == DAMAGED ? 0.2 : 0.35;
+		List<Long> loose = new ArrayList<>();
+		for (Map.Entry<Long, BlockState> e : p.blocks.entrySet()) {
+			long k = e.getKey();
+			int x = BlockPos.getX(k), y = BlockPos.getY(k), z = BlockPos.getZ(k);
+			if (y <= base + 3 || keep.contains(k) || (y - base) < height * 0.4 || !ornament(e.getValue())) {
+				continue;
+			}
+			// only what the weather reaches: open to the sky or to the side
+			boolean open = !p.has(x, y + 1, z) || !p.has(x + 1, y, z) || !p.has(x - 1, y, z) || !p.has(x, y, z + 1) || !p.has(x, y, z - 1);
+			if (open && rnd.nextDouble() < chance) {
+				loose.add(k);
+			}
+		}
+		for (long k : loose) {
+			p.blocks.remove(k);
+			gone.add(k);
 		}
 	}
 

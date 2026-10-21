@@ -134,6 +134,13 @@ public class FrayTests {
 			int tick = t;
 			helper.runAfterDelay(t, () -> {
 				p.teleportTo(o.getX() + 0.5, o.getY() + 1, o.getZ() + 0.5);
+				// A ray that swung out past where it can still see its prey (the test's world is narrow, and a wide turn
+				// can carry it off before it comes round) is set back where it began: this is about the dive, not the turn
+				if (tick % 100 == 0 && !ray.isDiving() && ray.distanceToSqr(p) > 28 * 28) {
+					ray.teleportTo(p.getX() + 16, p.getY() + 9, p.getZ() + 4);
+					ray.anchor(p.getX(), p.getY() + 9, p.getZ(), 24);
+					ray.rouse();
+				}
 				seen[0] |= p.hasEffect(MobEffects.POISON);
 				seen[1] |= p.getHealth() < full;
 				seen[2] |= ray.isDiving();

@@ -88,3 +88,57 @@ jobs:
               for i in range(0, len(s), 3000):
                   print(f"IMG|{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
           PY
+
+  compat:
+    name: client test with Sodium, Iris and Mod Menu
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: virtual display
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri mesa-vulkan-drivers libegl1
+      # The newest Fabric builds for this game version from Modrinth; none yet for any of them leaves nothing to test
+      - name: fetch Sodium, Iris and Mod Menu
+        id: fetch
+        run: |
+          set +e
+          python3 tools/compat/fetch.py build/compat-mods
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          if [ $code -eq 3 ]; then echo "None of them has a build for this game version yet: nothing to test with"; exit 0; fi
+          exit $code
+      - name: client game test with them
+        if: steps.fetch.outputs.code == '0'
+        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClientGameTest --no-configuration-cache -Pcompat
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        timeout-minutes: 20
+      - name: capture screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Compat screenshots
+          path: build/run/clientGameTest/screenshots/
+          if-no-files-found: warn
+      - name: screenshots in the log
+        if: always() && contains(github.event.head_commit.message, '[shots]')
+        run: |
+          python3 -m pip install -q --break-system-packages pillow >/dev/null 2>&1 || pip install -q pillow
+          python3 - <<'PY'
+          import glob, base64, io, os
+          from PIL import Image
+          for f in sorted(glob.glob("build/run/clientGameTest/screenshots/*.png")):
+              im = Image.open(f).convert("RGB")
+              im.thumbnail((800, 450))
+              b = io.BytesIO(); im.save(b, "JPEG", quality=72)
+              s = base64.b64encode(b.getvalue()).decode()
+              for i in range(0, len(s), 3000):
+                  print(f"IMG|{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
+          PY

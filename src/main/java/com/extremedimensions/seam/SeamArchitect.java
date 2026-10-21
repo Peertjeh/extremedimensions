@@ -1484,6 +1484,16 @@ public final class SeamArchitect {
 	 * plaza, each with a path from its door, and a walled graveyard in one quarter.
 	 */
 	public static void village(Plan p, Random rnd, int cx, int top, int cz, int r) {
+		village(p, rnd, cx, top, cz, r, null, null);
+	}
+
+	/**
+	 * As {@link #village(Plan, Random, int, int, int, int)}, on ground that rolls: {@code ground} gives the island's
+	 * surface under a column, and each house is planned apart at the ground where it stands (within two blocks of the
+	 * plaza's) and handed to {@code house} with that height, to be set down on its own, so the houses step with the slope.
+	 */
+	public static void village(Plan p, Random rnd, int cx, int top, int cz, int r, java.util.function.IntBinaryOperator ground,
+			java.util.function.BiConsumer<Plan, Integer> house) {
 		int plaza = r >= 24 ? 8 : 6;
 		// houses stand about 22 degrees off the streets: room to the street, to each other and to the rim
 		int ring = (int) Math.round(r * 0.68);
@@ -1500,7 +1510,12 @@ public final class SeamArchitect {
 				int hx = cx + (int) Math.round(Math.cos(a) * ring), hz = cz + (int) Math.round(Math.sin(a) * ring);
 				double back = Math.atan2(cz - hz, cx - hx);
 				int rot = Math.floorMod((int) Math.round((back - Math.PI / 2) / (Math.PI / 2)), 4);
-				house(p, rnd, hx, top + 1, hz, rot, lore);
+				int hy = ground == null ? top : Math.max(top - 2, Math.min(top + 2, ground.applyAsInt(hx, hz)));
+				Plan hp = house == null ? p : new Plan();
+				house(hp, rnd, hx, hy + 1, hz, rot, lore);
+				if (house != null) {
+					house.accept(hp, hy);
+				}
 				lore = false;
 				// A path from the door step to the plaza
 				Frame f = new Frame(p, hx, top + 1, hz, rot);
@@ -1839,10 +1854,18 @@ public final class SeamArchitect {
 
 	/** An ordinary island: ruins, dead trees, lamps, standing stones, crystals, spread over its open ground. */
 	public static void plain(Plan p, Random rnd, Shape s) {
+		// The land's own shapes first, while the open ground is widest: an arch of rock, a terraced hill on a large island
+		Briefs.Brief brief = Briefs.current();
+		if (rnd.nextDouble() < brief.arches()) {
+			grounds(p, rnd, s, 1, ROCK_ARCH);
+		}
+		if (s.r >= 18 && rnd.nextDouble() < brief.terraces()) {
+			grounds(p, rnd, s, 1, TERRACES);
+		}
 		grounds(p, rnd, s, 1 + s.r / 6 + rnd.nextInt(2), ARCH, ARCH, TREE, LAMP, STONES, CLUSTER, FLOATING, OUTCROP, OUTCROP);
 	}
 
-	static final int ARCH = 0, TREE = 1, LAMP = 2, STONES = 3, CLUSTER = 4, FLOATING = 5, OUTCROP = 6;
+	static final int ARCH = 0, TREE = 1, LAMP = 2, STONES = 3, CLUSTER = 4, FLOATING = 5, OUTCROP = 6, ROCK_ARCH = 7, TERRACES = 8;
 
 	/**
 	 * Dresses the open ground of an island with the given kinds of things: never on a building, a floor, a street
@@ -1858,8 +1881,14 @@ public final class SeamArchitect {
 			}
 			int kind = kinds[rnd.nextInt(kinds.length)];
 			int scale = 9 + rnd.nextInt(8);
-			int room = switch (kind) { case ARCH -> 6; case STONES -> 5; case CLUSTER, OUTCROP -> 4; case TREE -> 3; default -> 2; };
-			int tall = switch (kind) { case ARCH -> 14; case TREE -> 11; case CLUSTER -> scale + 2; case FLOATING -> 30; default -> 6; };
+			int room = switch (kind) {
+				case ARCH -> 6; case STONES -> 5; case CLUSTER, OUTCROP -> 4; case TREE -> 3;
+				case ROCK_ARCH -> Landforms.ARCH_ROOM; case TERRACES -> Landforms.TERRACE_ROOM; default -> 2;
+			};
+			int tall = switch (kind) {
+				case ARCH -> 14; case TREE -> 11; case CLUSTER -> scale + 2; case FLOATING -> 30;
+				case ROCK_ARCH -> Landforms.ARCH_TALL; case TERRACES -> Landforms.TERRACE_TALL; default -> 6;
+			};
 			if (!free(p, x, s.top, z, room, tall)) {
 				continue;
 			}
@@ -1871,6 +1900,12 @@ public final class SeamArchitect {
 				case STONES -> stones(p, rnd, x, y, z);
 				case CLUSTER -> cluster(p, rnd, x, y, z, scale);
 				case OUTCROP -> outcrop(p, rnd, x, y, z);
+				case ROCK_ARCH -> {
+					if (!Landforms.rockArch(p, rnd, x, y, z)) {
+						continue;
+					}
+				}
+				case TERRACES -> Landforms.terraces(p, rnd, x, y, z);
 				default -> crystal(p, rnd, x, y + 12 + rnd.nextInt(7), z, 2 + rnd.nextInt(2));
 			}
 			placed++;

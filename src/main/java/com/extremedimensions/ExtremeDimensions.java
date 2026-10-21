@@ -45,6 +45,8 @@ public class ExtremeDimensions implements ModInitializer {
 		com.extremedimensions.registry.ModEffects.init();
 		ModParticles.init();
 		WorldLoot.register();
+		// What kinds of island the Seam raises, and how big, as data (data/extremedimensions/seam/briefs.json)
+		com.extremedimensions.seam.Briefs.register();
 		ModEntities.init();
 		ModItemGroups.init();
 

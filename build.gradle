@@ -143,3 +143,20 @@ fabricApi {
 		eula = true
 	}
 }
+
+// The compatibility job (CI, -Pcompat): the client test runs with the newest Sodium, Iris and Mod Menu for this game
+// version (fetched into build/compat-mods by tools/compat/fetch.py), ClientCompat alone takes its turn, and the Mod Menu
+// stand-ins are left out of the classes it runs, so the real Mod Menu's API is the one loaded.
+if (project.hasProperty("compat")) {
+	def compatMods = layout.buildDirectory.dir("compat-mods").get().asFile
+	loom.runs.matching { it.name == "clientGameTest" }.configureEach {
+		vmArg "-Dextremedimensions.compat=true"
+		vmArg "-Dfabric.addMods=${compatMods}"
+	}
+	// (after everything is compiled against them, before the game starts)
+	tasks.matching { it.name == "runClientGameTest" }.configureEach {
+		doFirst {
+			delete fileTree(sourceSets.client.java.destinationDirectory) { include "com/terraformersmc/**" }
+		}
+	}
+}
