@@ -70,6 +70,8 @@ public final class SeamService {
 		int ticks;
 		/** How it is seen, when tears are on (null otherwise). */
 		RiftPortal portal;
+		/** The way it faces, out from the obsidian it was torn on (null for one opened at someone's feet). */
+		Direction face;
 	}
 
 	/** Ticks a rift a Seam Needle tears stays open. */
@@ -209,6 +211,7 @@ public final class SeamService {
 		r.y = at.getY() + 0.1;
 		r.z = at.getZ() + 0.5;
 		r.portal = RiftPortals.entry(level, p, r.x, at.getY(), r.z, face, RIFT_TICKS);
+		r.face = face;
 		RIFTS.add(r);
 		String dim = level.dimension().identifier().toString();
 		WorldFx.soundIn(dim, "extremedimensions:rift_open", "player", r.x, r.y + 1, r.z, 1.5f, 1f);
@@ -249,6 +252,35 @@ public final class SeamService {
 		later.forEach(Runnable::run);
 	}
 
+	/**
+	 * Home is a step out in front of a tear, on the side the player came from, not in it: a tear stays open a while, and
+	 * one coming straight back would otherwise be pulled through it again.
+	 */
+	private static void home(ServerPlayer p, PlayerData d, Rift from) {
+		if (from.face == null) {
+			return;
+		}
+		double ox = from.face.getStepX(), oz = from.face.getStepZ();
+		if (from.face.getAxis().isVertical()) {
+			// torn in a floor or a ceiling: the way they walked in
+			ox = p.xo - from.x;
+			oz = p.zo - from.z;
+			double len = Math.sqrt(ox * ox + oz * oz);
+			if (len < 0.1) {
+				return;
+			}
+			ox /= len;
+			oz /= len;
+		}
+		double hx = from.x + ox * 1.6, hz = from.z + oz * 1.6;
+		BlockPos at = BlockPos.containing(hx, from.y, hz);
+		if (from.level.getBlockState(at).getCollisionShape(from.level, at).isEmpty()
+				&& from.level.getBlockState(at.above()).getCollisionShape(from.level, at.above()).isEmpty()) {
+			d.homeX = hx;
+			d.homeZ = hz;
+		}
+	}
+
 	/** Through the rift: an island is built where the player lands, with the return rift beside it. */
 	private static void enter(ServerPlayer p, Rift from) {
 		ServerLevel seam = seam();
@@ -262,6 +294,7 @@ public final class SeamService {
 		d.homeX = from.x;
 		d.homeY = from.y;
 		d.homeZ = from.z;
+		home(p, d, from);
 		int x = (int) Math.floor(from.x);
 		int z = (int) Math.floor(from.z);
 		if (MendingService.opensNearHeart()) {
