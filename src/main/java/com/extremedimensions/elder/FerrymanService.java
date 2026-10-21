@@ -676,6 +676,7 @@ public final class FerrymanService {
 			PlayerData d = DataStore.get(p.getUUID());
 			Advancements.grant(p, Advancements.FERRYMAN_SLAIN);
 			Journal.unlock(p, d, JournalEntry.FERRYMAN);
+			com.extremedimensions.tapestry.Tapestry.earn(p, com.extremedimensions.tapestry.Tapestry.Panel.TOLL);
 			if ((p.getUUID().equals(fare.target) || p == killer) && d.owned(Penalty.FERRYMANS_FEE) > 0) {
 				PenaltyService.lift(p, d, Penalty.FERRYMANS_FEE, "gui.extremedimensions.elder.ferryman_waived");
 			}

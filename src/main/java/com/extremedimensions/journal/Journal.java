@@ -25,9 +25,26 @@ public final class Journal {
 		WorldFx.soundSelf(p, "minecraft:item.book.page_turn", 1.0f, 0.7f);
 		WorldFx.soundSelf(p, "minecraft:block.sculk_shrieker.shriek", 0.15f, 1.6f);
 		WorldFx.particles(p, "extremedimensions:soul_mote", 1.2, 0.4, 0.0, 10);
-		if (d.journal.size() >= JournalEntry.values().length) {
+		if (complete(d)) {
 			Advancements.grant(p, Advancements.JOURNAL_COMPLETE);
 		}
+	}
+
+	/**
+	 * Whether a player's journal holds every page it can: a world has one ending, so only that ending's page in the
+	 * player's own hand is asked for (and neither before the ending, when the journal cannot yet be complete).
+	 */
+	public static boolean complete(PlayerData d) {
+		String ending = DataStore.ending();
+		if (ending.isEmpty()) {
+			return false;
+		}
+		for (JournalEntry e : JournalEntry.values()) {
+			if (e.possible(ending) && !d.journal.contains(e.id)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**

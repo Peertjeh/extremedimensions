@@ -60,6 +60,10 @@ public final class Advancements {
 	public static final String FRAME_STRUNG = "frame_strung";
 	public static final String FIRST_KNOT = "first_knot";
 	public static final String KNOT_MOTHER = "knot_mother";
+	public static final String TAPESTRY = "tapestry";
+	public static final String NEW_THREAD = "new_thread";
+	/** Not one shown in the tab: the recipe book's way of learning the Weaver's Loom, given when an Elder falls. */
+	public static final String LOOM_RECIPE = "recipes/misc/weavers_loom";
 
 	/** Expeditions needed for {@link #VETERAN}. */
 	public static final int VETERAN_EXPEDITIONS = 10;

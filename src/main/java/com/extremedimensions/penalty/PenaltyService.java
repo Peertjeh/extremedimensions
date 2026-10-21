@@ -226,7 +226,9 @@ public final class PenaltyService {
 
 	/** Atonement points needed to take the next stack of a curse off: more for every stack above the last. */
 	public static int cost(PlayerData d, Penalty p) {
-		int base = Math.max(1, Config.ATONE_BASE + Config.ATONE_PER_STACK * Math.max(0, d.owned(p) - 1));
+		// (dearer with every thread New Thread+ took up)
+		int base = (int) Math.ceil(Math.max(1, Config.ATONE_BASE + Config.ATONE_PER_STACK * Math.max(0, d.owned(p) - 1))
+				* com.extremedimensions.tapestry.Tapestry.threadFactor(Config.NEW_THREAD_ATONEMENT));
 		return p.extreme ? (int) Math.ceil(base * Math.max(1, Config.EXTREME_ATONE_FACTOR)) : base;
 	}
 

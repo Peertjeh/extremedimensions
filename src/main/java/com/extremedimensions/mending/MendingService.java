@@ -521,6 +521,8 @@ public final class MendingService {
 			Journal.unlock(q, DataStore.get(q.getUUID()), JournalEntry.ENDING);
 		}
 		Advancements.grant(p, mend ? Advancements.ENDING_MENDED : Advancements.ENDING_SEVERED);
+		// The one who chose takes the thread of the Heart: the story goes on in their hand
+		com.extremedimensions.tapestry.Tapestry.earn(p, com.extremedimensions.tapestry.Tapestry.Panel.HEART);
 		return InteractionResult.SUCCESS;
 	}
 

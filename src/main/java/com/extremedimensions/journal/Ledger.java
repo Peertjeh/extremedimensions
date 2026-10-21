@@ -32,7 +32,7 @@ public final class Ledger {
 		add(out, "burden", "curses", stacks + "/" + curses);
 		add(out, "burden", "lifted", d.lifted);
 		add(out, "burden", "scars", d.scars);
-		add(out, "burden", "pages", d.journal.size() + "/" + JournalEntry.values().length);
+		add(out, "burden", "pages", d.journal.size() + "/" + JournalEntry.total());
 		add(out, "burden", "relic", d.relic == null ? "" : d.relic);
 		add(out, "burden", "seen", d.seen.size() + "/" + Bestiary.Beast.values().length);
 		add(out, "others", "standing", Standing.level(d.tribeRep).name().toLowerCase(java.util.Locale.ROOT) + "/" + d.tribeRep);

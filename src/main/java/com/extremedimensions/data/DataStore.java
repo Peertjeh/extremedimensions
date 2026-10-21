@@ -57,6 +57,16 @@ public final class DataStore {
 		Set<String> gatesLooked = new HashSet<>();
 		List<WarmGate> warmGates = new ArrayList<>();
 		List<Echo> echoes = new ArrayList<>();
+		/** The Weaver's Loom the tapestry hangs on ("dim|x|y|z", "" until one is used), and the panels woven into it. */
+		String loom = "";
+		Set<String> panels = new HashSet<>();
+		/** The panel woven last (the one a failed Weaving unravels), and when (system time) the loom takes it again. */
+		String lastPanel = "";
+		long weaveAgainAt = 0;
+		/** The Weaving was held: the tapestry is finished. */
+		boolean tapestryDone = false;
+		/** New Thread+: how many times the world took up a harder thread (0 = never). */
+		int newThread = 0;
 	}
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -125,6 +135,14 @@ public final class DataStore {
 		if (loaded.warmGates != null) {
 			data.warmGates = loaded.warmGates;
 		}
+		data.loom = loaded.loom == null ? "" : loaded.loom;
+		if (loaded.panels != null) {
+			data.panels = loaded.panels;
+		}
+		data.lastPanel = loaded.lastPanel == null ? "" : loaded.lastPanel;
+		data.weaveAgainAt = loaded.weaveAgainAt;
+		data.tapestryDone = loaded.tapestryDone;
+		data.newThread = Math.max(0, loaded.newThread);
 		if (loaded.trials != null) {
 			data.trials = loaded.trials;
 			if (data.trials.scores == null) {
@@ -244,6 +262,56 @@ public final class DataStore {
 
 	public static void setEnding(String ending) {
 		data.ending = ending;
+		markDirty();
+	}
+
+	public static String loom() {
+		return data.loom;
+	}
+
+	public static void setLoom(String loom) {
+		data.loom = loom == null ? "" : loom;
+		markDirty();
+	}
+
+	/** The tapestry's woven panels (by id), to be changed through {@code Tapestry}. */
+	public static Set<String> panels() {
+		return data.panels;
+	}
+
+	public static String lastPanel() {
+		return data.lastPanel;
+	}
+
+	public static void setLastPanel(String panel) {
+		data.lastPanel = panel == null ? "" : panel;
+		markDirty();
+	}
+
+	public static long weaveAgainAt() {
+		return data.weaveAgainAt;
+	}
+
+	public static void setWeaveAgainAt(long at) {
+		data.weaveAgainAt = at;
+		markDirty();
+	}
+
+	public static boolean tapestryDone() {
+		return data.tapestryDone;
+	}
+
+	public static void setTapestryDone(boolean done) {
+		data.tapestryDone = done;
+		markDirty();
+	}
+
+	public static int newThread() {
+		return data.newThread;
+	}
+
+	public static void setNewThread(int tier) {
+		data.newThread = Math.max(0, tier);
 		markDirty();
 	}
 

@@ -76,6 +76,19 @@ public final class Tooltips {
 			key = "silk_thread";
 		} else if (item == ModItems.PLUMB_LINE) {
 			key = "plumb_line";
+		} else if (item == ModItems.WEAVERS_LOOM) {
+			key = "weavers_loom";
+		}
+		com.extremedimensions.tapestry.Tapestry.Panel panel = com.extremedimensions.tapestry.Tapestry.Panel.of(stack);
+		if (panel != null) {
+			// A thread of the Tapestry: the deed that earned it, and its panel's boon in either world
+			lines.add(Component.translatable(panel.deedKey()).withStyle(ChatFormatting.GRAY));
+			lines.add(Component.translatable("tooltip.extremedimensions.tapestry_thread.mended", Component.translatable(panel.boonKey("mended"), panel.boonArgs("mended")))
+					.withStyle(ChatFormatting.AQUA));
+			lines.add(Component.translatable("tooltip.extremedimensions.tapestry_thread.severed", Component.translatable(panel.boonKey("severed"), panel.boonArgs("severed")))
+					.withStyle(ChatFormatting.RED));
+			lines.add(Component.translatable("tooltip.extremedimensions.tapestry_thread.weave").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+			return;
 		}
 		charms(stack, lines);
 		com.extremedimensions.relic.Relic relic = com.extremedimensions.relic.RelicService.of(stack);

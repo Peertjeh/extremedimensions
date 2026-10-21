@@ -28,7 +28,7 @@ public final class UnstableAnchors {
 
 	/** Whether anchors can crack in this world now. */
 	public static boolean allowed() {
-		return Config.UNSTABLE_ANCHORS > 0 && DataStore.sealBroken() && !"mended".equals(DataStore.ending());
+		return Config.UNSTABLE_ANCHORS > 0 && DataStore.sealBroken() && !"mended".equals(DataStore.ending()) && !com.extremedimensions.tapestry.Tapestry.steadyAnchors();
 	}
 
 	/** Cracks an anchor (unless it is warded, empty or already cracked). True when it cracked. */

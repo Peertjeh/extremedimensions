@@ -1,5 +1,60 @@
 # Changelog
 
+## 3.0.0: The Unfinished World
+
+The story goes on in your hand. After the ending the Wanderer's journal stops, and yours begins.
+
+### Added
+- **The Weaver's Loom**, built after the looms in the Seam: 4 Hush Pillars, 2 Seam Silk, a Loom and 2 Tether
+  Fragments. The recipe is learned when an Elder falls. The first loom used holds the world's **tapestry** (every
+  player's threads go into the same one); any other is only a loom until that one is gone.
+- **Six threads**, each earned by a great deed and woven into its panel once the world has its ending: the **Thread of
+  Roots** (the Matriarch), **of Toll** (the Ferryman), **of Unravelling** (the Last Weaver), **of the Chain** (the
+  Held's chamber), **of the Knot** (the Knot Mother) and **of the Heart** (to the one who chooses the ending). A thread
+  comes to whoever did the deed or stood by, unless they carry it or its panel is woven; a lost one is spun back on the
+  loom from 8 Seam Silk (`tapestry_respin_silk`) by anyone whose deed it was. Before the ending the loom says only:
+  "Not yet. It is not finished."
+- **The tapestry's boons**, a different one in each world:
+
+  | Panel | Mended world | Severed world |
+  | --- | --- | --- |
+  | Roots | A bound Hollowling brings gifts twice as often | The tribe sends no Keeper after anyone |
+  | Toll | Nether drain 10% lower | 1 level back on every safe return |
+  | Unravelling | +60 s in the Seam | The Thinned hunt only in your last sixth of Seam time |
+  | Chain | Anchors hold 5 minutes more | Anchors no longer turn unstable |
+  | Knot | Fray time runs 1.5x, not 2x | Strands give way half as often |
+  | Heart | An echo of a Collapse gives back all it cost | Once an hour, a fall beyond the wound keeps what you carried |
+
+  Every number is a setting (`tapestry_*`). Three of the planned severed boons were changed because they did nothing in
+  a severed world, which has no timer beyond the wound: the Thinned already freeze when watched, the Held's Chain only
+  holds when a timer runs out, and Homebound drains nothing where nothing drains.
+- **The tapestry screen**: six panels in a frame of three by two. A woven panel shows its picture and its boon here; one
+  not yet woven shows the bare warp, the deed that earns it and where you stand with it.
+- **The Weaving**. The sixth panel set, the wounds converge on the loom: for five minutes (`weaving_seconds`) the
+  Thinned and the Lurkers come out of rifts torn round it, a wave every 25 seconds, more for every player. Each one at
+  the loom tears at its ward of 100, and strikes whoever stands in its way. Held, the tapestry is finished: the
+  advancement *The Unfinished World*, soul light round the loom for good, and New Thread+. Broken, the last panel
+  unravels, its thread falls at the loom, and the loom takes it again after 20 minutes. Interrupted by a restart, the
+  loom begins it again when used.
+- **New Thread+**. At the finished tapestry the world can take up a harder thread, as often as it likes: the Elders
+  +50% health and damage per thread, atonement +25% dearer, the Matriarch comes again for those she fell to, and the
+  Rift Trials go on past gold (every further quarter of gold's mark is a thread, a Tether Fragment each, once a week).
+  The tapestry's boons stay. The advancement *A New Thread*.
+- **XLIII. In My Own Hand**: the first time at the loom after the ending, the journal goes on in the player's own hand,
+  in an ink of its own, different in a mended and a severed world. A world has one ending, so a journal holds one of
+  the two pages and is complete without the other.
+- The Tapestry beside the path in the journal, and the path's last line points to the loom.
+
+### Changed
+- README rewritten for 3.0: what the mod is, how to start, the worlds, the story, the tapestry, compatibility,
+  settings, datapacks and building.
+
+### Tests
+- TapestryTests: threads from deeds (once, not while carried or woven), weaving only after the ending, every panel's
+  boon in either world, one loom for the world, a lost thread spun back, the Weaving held and broken, New Thread+.
+- The client test walks on past the Knot Mother to the loom: the tapestry, the page in the player's own hand, the
+  Weaving's first wave, the finished tapestry and New Thread+.
+
 ## 3.0.0-beta: Frozen
 
 No new systems: polish, the last of the world's finish, and proof that what came before still plays.

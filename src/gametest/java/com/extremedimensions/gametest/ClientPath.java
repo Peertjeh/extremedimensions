@@ -289,6 +289,90 @@ public class ClientPath implements FabricClientGameTest {
 				}
 				player(s).getAbilities().invulnerable = false;
 			});
+
+			// 8. Now it is yours to finish: a Weaver's Loom on a floor over the Fray, its tapestry five panels woven; the page
+			// in the player's own hand; the sixth panel set, the Weaving held, and New Thread+ offered
+			BlockPos loomAt = sp.getServer().computeOnServer(s -> {
+				ServerPlayer p = player(s);
+				ServerLevel level = (ServerLevel) p.level();
+				p.getAbilities().invulnerable = true;
+				DataStore.get(p.getUUID()).seamLeft = 9999;
+				DataStore.setEnding("mended");
+				DataStore.setLoom("");
+				DataStore.setTapestryDone(false);
+				DataStore.panels().clear();
+				for (com.extremedimensions.tapestry.Tapestry.Panel panel : com.extremedimensions.tapestry.Tapestry.Panel.values()) {
+					if (panel != com.extremedimensions.tapestry.Tapestry.Panel.HEART) {
+						DataStore.panels().add(panel.id);
+					}
+				}
+				BlockPos c = p.blockPosition().above(28);
+				for (int dx = -7; dx <= 7; dx++) {
+					for (int dz = -7; dz <= 7; dz++) {
+						level.setBlockAndUpdate(c.offset(dx, -1, dz), com.extremedimensions.registry.ModBlocks.POLISHED_HUSH_STONE.defaultBlockState());
+						for (int dy = 0; dy < 5; dy++) {
+							level.setBlockAndUpdate(c.offset(dx, dy, dz), Blocks.AIR.defaultBlockState());
+						}
+					}
+				}
+				BlockPos at = c.offset(0, 0, -3);
+				level.setBlockAndUpdate(at, com.extremedimensions.registry.ModBlocks.WEAVERS_LOOM.defaultBlockState());
+				return at;
+			});
+			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f 180 24", loomAt.getX() + 0.5, loomAt.getY(), loomAt.getZ() + 4.5));
+			ctx.waitTicks(40);
+			unbrief(ctx);
+			ctx.takeScreenshot("41_weavers_loom");
+			sp.getServer().runOnServer(s -> com.extremedimensions.tapestry.Tapestry.use(player(s), loomAt, ItemStack.EMPTY));
+			ctx.waitTicks(20);
+			ctx.runOnClient(mc -> check(com.extremedimensions.client.screen.TapestryScreen.shown() != null, "the loom showed no tapestry"));
+			ctx.takeScreenshot("41_tapestry");
+			check(sp.getServer().computeOnServer(s -> DataStore.get(player(s).getUUID()).journal.contains(com.extremedimensions.journal.JournalEntry.CONTINUED_MENDED.id)),
+					"the loom after the ending gave no page in the player's own hand");
+			sp.getServer().runOnServer(s -> Journal.open(player(s), DataStore.get(player(s).getUUID())));
+			ctx.waitTicks(10);
+			ctx.runOnClient(mc -> {
+				if (mc.screen instanceof JournalScreen j) {
+					j.toLastPage();
+				}
+			});
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("41_own_hand");
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			// The sixth panel: the Weaving begins; its first wave comes out of the rifts round the loom
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				ItemStack heart = new ItemStack(ModItems.THREAD_OF_THE_HEART);
+				p.setItemInHand(InteractionHand.MAIN_HAND, heart);
+				com.extremedimensions.tapestry.Tapestry.use(p, loomAt, heart);
+			});
+			check(sp.getServer().computeOnServer(s -> com.extremedimensions.tapestry.Weaving.active()), "the sixth panel did not begin the Weaving");
+			ctx.waitTicks(100);
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			ctx.waitTicks(2);
+			ctx.takeScreenshot("42_weaving");
+			sp.getServer().runOnServer(s -> com.extremedimensions.tapestry.Weaving.finishNow(true));
+			ctx.waitTicks(10);
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("42_weaving_held");
+			check(sp.getServer().computeOnServer(s -> DataStore.tapestryDone()), "the held Weaving did not finish the tapestry");
+			sp.getServer().runOnServer(s -> com.extremedimensions.tapestry.Tapestry.open(player(s)));
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("43_tapestry_finished");
+			ctx.runOnClient(mc -> check(mc.screen != null && pressOnce(mc.screen, I18n.get("gui.extremedimensions.tapestry.new_thread_button")),
+					"the finished tapestry offers no New Thread+"));
+			ctx.waitTicks(5);
+			ctx.takeScreenshot("43_new_thread");
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			sp.getServer().runOnServer(s -> {
+				player(s).getAbilities().invulnerable = false;
+				DataStore.setEnding("");
+				DataStore.panels().clear();
+				DataStore.setTapestryDone(false);
+				DataStore.setLoom("");
+				DataStore.setLastPanel("");
+			});
 		}
 	}
 }

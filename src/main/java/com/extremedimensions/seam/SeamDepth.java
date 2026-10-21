@@ -415,7 +415,7 @@ public final class SeamDepth {
 
 	/** How fast a visitor's time runs out at this height. */
 	public static double drain(double y) {
-		return inFray(y) ? Math.max(0, Config.SEAM_FRAY_DRAIN) : 1.0;
+		return inFray(y) ? com.extremedimensions.tapestry.Tapestry.frayDrain(Math.max(0, Config.SEAM_FRAY_DRAIN)) : 1.0;
 	}
 
 	/** Whether a point is in a well's shaft (over the knot, under the balcony). */
@@ -531,7 +531,7 @@ public final class SeamDepth {
 	 * second, then that stretch of thread falls away; whoever is still on it falls with it.
 	 */
 	private static void fraying(ServerPlayer p, long now) {
-		if (!p.onGround() || Config.SEAM_FRAY_UNRAVEL <= 0 || p.getRandom().nextDouble() >= Config.SEAM_FRAY_UNRAVEL) {
+		if (!p.onGround() || Config.SEAM_FRAY_UNRAVEL <= 0 || p.getRandom().nextDouble() >= Config.SEAM_FRAY_UNRAVEL * com.extremedimensions.tapestry.Tapestry.strandChance()) {
 			return;
 		}
 		BlockPos under = BlockPos.containing(p.getX(), p.getY() - 0.2, p.getZ());

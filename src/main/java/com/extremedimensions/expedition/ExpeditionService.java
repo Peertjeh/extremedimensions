@@ -162,6 +162,10 @@ public final class ExpeditionService {
 		if (fee > 0 && p.experienceLevel > 0) {
 			p.giveExperienceLevels(-Math.min(fee, p.experienceLevel));
 		}
+		// The Toll panel of a severed world: every crossing home gives something back
+		if (com.extremedimensions.tapestry.Tapestry.levelsBack() > 0) {
+			p.giveExperienceLevels(com.extremedimensions.tapestry.Tapestry.levelsBack());
+		}
 		if (real) {
 			PenaltyService.atone(p, d, false, Config.ATONE_PER_RETURN);
 		}
@@ -252,7 +256,8 @@ public final class ExpeditionService {
 			double world = WorldService.drainFactor(dim), relic = com.extremedimensions.relic.RelicService.drainFactor(d, dim);
 			d.currentDrain = (world <= 0 ? 0 : d.drainMultiplier(Math.min(1, world) * Math.min(1, relic)) * Math.max(1, world) * Math.max(1, relic))
 					* (seam ? 1.0 : TetherService.distanceFactor(p, d)) * com.extremedimensions.elder.FerrymanService.drainFactor(p)
-					* com.extremedimensions.binding.Homebound.drainFactor(p) * com.extremedimensions.events.WorldEvents.drainFactor(p);
+					* com.extremedimensions.binding.Homebound.drainFactor(p) * com.extremedimensions.events.WorldEvents.drainFactor(p)
+					* com.extremedimensions.tapestry.Tapestry.drain(dim);
 			double left = AnchorService.drainLinked(p, d, d.currentDrain / 20.0);
 			d.runTime += 1.0 / 20.0;
 			double far = seam ? 0 : TetherService.arrivalDistance(p, d);

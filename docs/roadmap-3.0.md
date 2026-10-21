@@ -347,6 +347,14 @@ The old 3.0 plan said: "the finale at the Heart: weave the wound shut". That can
 no longer open at the Heart, and the ending is irreversible. The finale moves to the player's own loom, and it works
 the same way in both worlds.
 
+*Status:* built in 3.0.0. The Weaver's Loom (its recipe learned when an Elder falls; the first loom used holds the
+world's tapestry), six threads from six deeds (spun back from Seam Silk when lost), twelve boons (section 8.6; three
+severed ones changed because they did nothing in a severed world), the tapestry screen, the Weaving (five minutes of
+waves at the loom, a ward of 100; broken, the last panel unravels for 20 minutes), New Thread+ (Elders +50%, atonement
++25%, the Matriarch again, trials past gold), and XLIII *In My Own Hand* in an ink of its own, one page per ending.
+TapestryTests cover threads, weaving, boons, the loom, the Weaving and New Thread+; the client test walks on from the
+Knot Mother to the loom, the Weaving and New Thread+. README rewritten.
+
 ### 3.2 Dependencies
 
 ```
@@ -569,12 +577,12 @@ Mended world: the frame shows the weave closing. Severed world: it shows it fray
 
 | Panel | Thread from | Mended boon | Severed boon |
 | --- | --- | --- | --- |
-| Roots | The Matriarch | Hollowlings bring gifts twice as often | Keepers no longer hunt you when the Tribe hates you |
+| Roots | The Matriarch | Hollowlings bring gifts twice as often | The tribe sends no Keeper after anyone |
 | Toll | The Ferryman | Nether drain −10% | One level back per safe return |
-| Unravelling | The Last Weaver | +1 min in the Seam | The Thinned no longer move while any player looks at them, even late |
-| Chain | The Held | Anchors hold 5 min more | Held's Chain grace +10 s |
+| Unravelling | The Last Weaver | +1 min in the Seam | The Thinned hunt only in the last sixth of Seam time (was: "no longer move while looked at", which they already do) |
+| Chain | The Held's chamber | Anchors hold 5 min more | Anchors no longer turn unstable (was: Held's Chain grace +10 s, which never comes where no timer runs out) |
 | Knot | The Knot Mother | The Fray's time runs 1.5× instead of 2× | Strands crumble half as often |
-| Heart | The ending itself | Echoes of Collapse return all, not half | Homebound costs no drain |
+| Heart | The ending itself | Echoes of Collapse return all, not half | Once an hour a fall beyond the wound keeps what was carried (was: Homebound costs no drain, which costs none there) |
 
 ---
 

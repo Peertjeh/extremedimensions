@@ -192,6 +192,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				}));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.TrialsPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.screen.TrialsScreen.receive(payload.data())));
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.TapestryPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> com.extremedimensions.client.screen.TapestryScreen.receive(payload.data())));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.SettingsPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> ClientState.applySettings(payload)));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenStatusPayload.TYPE, (payload, context) ->

@@ -155,7 +155,8 @@ public final class Standing {
 				DataStore.markDirty();
 			}
 		}
-		if (level(d.tribeRep) == Level.HUNTED && Config.TRIBE_HUNT_MINUTES > 0) {
+		// (in a severed world with the Roots panel woven, the tribe sends no Keeper after anyone)
+		if (level(d.tribeRep) == Level.HUNTED && Config.TRIBE_HUNT_MINUTES > 0 && com.extremedimensions.tapestry.Tapestry.keepersHunt()) {
 			if (d.tribeHuntIn <= 0) {
 				d.tribeHuntIn = Config.TRIBE_HUNT_MINUTES * 60;
 			} else if (--d.tribeHuntIn == 0) {

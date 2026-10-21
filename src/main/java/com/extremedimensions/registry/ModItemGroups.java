@@ -44,6 +44,13 @@ public final class ModItemGroups {
 					out.accept(ModItems.PALE_THREAD);
 					out.accept(ModItems.SILK_THREAD);
 					out.accept(ModItems.PLUMB_LINE);
+					out.accept(ModItems.WEAVERS_LOOM);
+					out.accept(ModItems.THREAD_OF_ROOTS);
+					out.accept(ModItems.THREAD_OF_TOLL);
+					out.accept(ModItems.THREAD_OF_UNRAVELLING);
+					out.accept(ModItems.THREAD_OF_THE_CHAIN);
+					out.accept(ModItems.THREAD_OF_THE_KNOT);
+					out.accept(ModItems.THREAD_OF_THE_HEART);
 					ModItems.RELICS.values().forEach(out::accept);
 					ModItems.HUSH.forEach(out::accept);
 					out.accept(Items.LODESTONE);

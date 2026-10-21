@@ -67,7 +67,8 @@ public class Thinned extends PathfinderMob implements LurkerBody {
 	@Override
 	protected void customServerAiStep(ServerLevel level) {
 		super.customServerAiStep(level);
-		if (this.tickCount > 40 && !SeamFauna.isDriven(this)) {
+		// (the Weaving drives its own: they make for the loom)
+		if (this.tickCount > 40 && !SeamFauna.isDriven(this) && !com.extremedimensions.tapestry.Weaving.drives(this.getUUID())) {
 			SeamFauna.fade(this);
 		}
 	}

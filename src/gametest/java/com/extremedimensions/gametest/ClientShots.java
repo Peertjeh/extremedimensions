@@ -1085,7 +1085,10 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 -30 18", lx - 26, skyTop + 16, lz - 40));
 			ctx.waitTicks(160);
 			ctx.takeScreenshot("40_land_shapes");
-			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 6", lx - 11, skyTop + 3, lz - 16));
+			// (over the grass and flowers at its foot, which would fill the shot from eye height)
+			int archEye = sp.getServer().computeOnServer(s -> player(s).level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+					lx - 11, lz - 18)) + 4;
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 12", lx - 11, archEye, lz - 18));
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("40_rock_arch");
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 -20 20", lx + 3, skyTop + 9, lz - 14));

@@ -221,6 +221,7 @@ public final class TrialService {
 		if (d.trialClaimWeek != run.week) {
 			d.trialClaimWeek = run.week;
 			d.trialClaimMedal = 0;
+			d.trialClaimThreads = 0;
 		}
 		int fragments = 0, points = 0, relics = 0;
 		boolean gold = false;
@@ -233,6 +234,15 @@ public final class TrialService {
 			}
 		}
 		d.trialClaimMedal = Math.max(d.trialClaimMedal, medal);
+		// New Thread+: no top. Every further quarter of gold's mark is a thread, each paid once a week
+		int threads = medal == 3 ? threads(kind, run.score) : 0;
+		if (threads > d.trialClaimThreads) {
+			fragments += (threads - d.trialClaimThreads) * Math.max(0, Config.NEW_THREAD_TRIAL_FRAGMENTS);
+			d.trialClaimThreads = threads;
+		}
+		if (threads > 0) {
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.trial.threads", threads));
+		}
 		if (fragments > 0) {
 			WorldFx.give(p, new ItemStack(ModItems.TETHER_FRAGMENT, fragments));
 		}
@@ -263,6 +273,18 @@ public final class TrialService {
 		}
 		WorldFx.soundSelf(p, medal > 0 ? "minecraft:ui.toast.challenge_complete" : "minecraft:block.beacon.deactivate", 0.6f, 1.0f);
 		DataStore.markDirty();
+	}
+
+	/**
+	 * New Thread+: how many threads a score reaches beyond gold (every further quarter of gold's mark is one); none
+	 * before the world takes up a new thread.
+	 */
+	public static int threads(Trial.Kind kind, int score) {
+		int gold = kind.thresholds()[2];
+		if (DataStore.newThread() <= 0 || gold <= 0 || score <= gold) {
+			return 0;
+		}
+		return (score - gold) / Math.max(1, gold / 4);
 	}
 
 	/** Pulled out, fallen or gone some other way: the trial is lost (the curse for a Collapse stands as ever). */

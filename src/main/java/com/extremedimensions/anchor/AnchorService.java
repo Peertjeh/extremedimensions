@@ -161,7 +161,7 @@ public final class AnchorService {
 	 * Chain allows while it is bound.
 	 */
 	public static double cap(PlayerData d) {
-		double cap = Math.max(60, Config.MAX_CHARGE - 60 * Penalty.DIM_ANCHORS.value * d.stacks(Penalty.DIM_ANCHORS));
+		double cap = Math.max(60, Config.MAX_CHARGE + com.extremedimensions.tapestry.Tapestry.anchorSeconds() - 60 * Penalty.DIM_ANCHORS.value * d.stacks(Penalty.DIM_ANCHORS));
 		if (RelicService.has(d, Relic.HELDS_CHAIN)) {
 			cap = Math.min(cap, Math.max(60, Config.RELIC_HELDS_CHAIN_CAP));
 		}

@@ -638,4 +638,41 @@ public final class ModPackets {
 			return TYPE;
 		}
 	}
+
+	/** Server -> client: the tapestry on the Weaver's Loom (see Tapestry.data); opens its screen or refreshes it. */
+	public record TapestryPayload(String data) implements CustomPacketPayload {
+		public static final Type<TapestryPayload> TYPE = new Type<>(ExtremeDimensions.id("tapestry"));
+		public static final StreamCodec<FriendlyByteBuf, TapestryPayload> CODEC = StreamCodec.ofMember(TapestryPayload::write, TapestryPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(data);
+		}
+
+		private static TapestryPayload read(FriendlyByteBuf buf) {
+			return new TapestryPayload(buf.readUtf());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: take up a new thread (New Thread+) at the finished tapestry. */
+	public record NewThreadPayload() implements CustomPacketPayload {
+		public static final Type<NewThreadPayload> TYPE = new Type<>(ExtremeDimensions.id("new_thread"));
+		public static final StreamCodec<FriendlyByteBuf, NewThreadPayload> CODEC = StreamCodec.ofMember(NewThreadPayload::write, NewThreadPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+		}
+
+		private static NewThreadPayload read(FriendlyByteBuf buf) {
+			return new NewThreadPayload();
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
 }

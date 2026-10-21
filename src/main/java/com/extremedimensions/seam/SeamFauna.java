@@ -320,7 +320,7 @@ public final class SeamFauna {
 	/** A visitor's thread runs thin: under a third of their time, or already being pulled out. */
 	private static boolean thin(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
-		return d.inSeam && !p.isCreative() && (d.seamPull > 0 || (d.seamMax > 0 && d.seamLeft < d.seamMax / 3) || SeamDepth.inFray(p.getY())
+		return d.inSeam && !p.isCreative() && (d.seamPull > 0 || (d.seamMax > 0 && d.seamLeft < d.seamMax / com.extremedimensions.tapestry.Tapestry.thinShare()) || SeamDepth.inFray(p.getY())
 				|| com.extremedimensions.trial.TrialService.hunted(d) || com.extremedimensions.elder.WeaverService.hunting(p)
 				|| com.extremedimensions.events.FrayedSeam.on(p) != null);
 	}

@@ -51,7 +51,9 @@ public final class Path {
 		MATRIARCH(JournalEntry.MATRIARCH),
 		FERRYMAN(JournalEntry.FERRYMAN),
 		LAST_WEAVER(JournalEntry.LAST_WEAVER),
-		FIRST_WEAVER(JournalEntry.FRAME);
+		FIRST_WEAVER(JournalEntry.FRAME),
+		/** Known once the world has its ending; done when the tapestry on the loom is finished. */
+		TAPESTRY(JournalEntry.ENDING);
 
 		public final JournalEntry page;
 
@@ -85,6 +87,7 @@ public final class Path {
 			case FERRYMAN -> WorldFx.hasAdvancement(p, Advancements.FERRYMAN_SLAIN);
 			case LAST_WEAVER -> WorldFx.hasAdvancement(p, Advancements.WEAVER_SLAIN);
 			case FIRST_WEAVER -> d.knotReached;
+			case TAPESTRY -> DataStore.tapestryDone();
 		};
 	}
 

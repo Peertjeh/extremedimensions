@@ -38,13 +38,22 @@ public class JournalScreen extends Screen {
 	private static final int INK = 0x4A3526, INK_DARK = 0x3B2416, INK_FAINT = 0x7A6650, INK_TEAL = 0x1F5F5A;
 	/** The second hand: rust-brown ink, set in from the Wanderer's lines. */
 	private static final int INK_RUST = 0x6B2A1A, NOTE_INDENT = 8;
+	/** The player's own hand, after the ending: a deep blue-black ink, neither the Wanderer's nor the other's. */
+	private static final int INK_OWN = 0x1E2F5C;
 
 	private enum Part { PAGES, PATH, BEASTS, LEDGER }
 
-	/** One line on a page: the Wanderer's, a note in another hand beside them, or a page wholly in that hand (rust). */
-	private record Line(String text, boolean note, boolean rust) {
+	/**
+	 * One line on a page: the Wanderer's, a note in another hand beside them, a page wholly in that hand (rust), or a
+	 * page in the player's own hand.
+	 */
+	private record Line(String text, boolean note, boolean rust, boolean own) {
 		Line(String text, boolean note) {
-			this(text, note, note);
+			this(text, note, note, false);
+		}
+
+		Line(String text, boolean note, boolean rust) {
+			this(text, note, rust, false);
 		}
 	}
 
@@ -193,8 +202,8 @@ public class JournalScreen extends Screen {
 			// Each block is kept on one page where it fits: a line of the text alone, a note with its lines together
 			List<List<Line>> blocks = new ArrayList<>();
 			for (String l : Ui.wrap(this.font, Ui.tr(e.textKey()), TEXT_W)) {
-				// a page not in the Wanderer's hand is written all in the other ink
-				blocks.add(List.of(new Line(l, false, !e.wanderer)));
+				// a page not in the Wanderer's hand is written all in the other ink (or in the player's own)
+				blocks.add(List.of(new Line(l, false, !e.wanderer && !e.own, e.own)));
 			}
 			// Under the Wanderer's words, the notes another hand left beside them
 			for (MarginNote n : MarginNote.values()) {
@@ -277,6 +286,16 @@ public class JournalScreen extends Screen {
 		this.init();
 	}
 
+	/** Turns to the last spread of the found pages (for the tests: the newest page is there). */
+	public void toLastPage() {
+		if (part != Part.PAGES) {
+			show(Part.PAGES);
+		}
+		spread = Math.max(0, (count() - 1) & ~1);
+		flipAt = 0;
+		updateButtons();
+	}
+
 	private void flip(int dir) {
 		int np = spread + dir;
 		if (np >= 0 && np < count()) {
@@ -347,7 +366,7 @@ public class JournalScreen extends Screen {
 					writePage(g, spread, bx, by, pe * fe);
 					writePage(g, spread + 1, bx + PAGE_W + SPINE, by, pe * fe);
 				}
-				counter = Ui.tr("gui.extremedimensions.journal.found", unlocked.size(), JournalEntry.values().length);
+				counter = Ui.tr("gui.extremedimensions.journal.found", unlocked.size(), JournalEntry.total());
 			}
 		}
 		if (by - 20 >= 0) {
@@ -387,7 +406,7 @@ public class JournalScreen extends Screen {
 				// a thin stroke down the margin, as a hand marks what it wrote beside a page
 				g.fill(x + 13, ty - 1, x + 14, ty + 9, Ui.argb(alpha * 0.55, INK_RUST));
 			}
-			Ui.ink(g, this.font, line.text(), x + 12 + (line.note() ? NOTE_INDENT : 0), ty, line.rust() ? INK_RUST : INK, alpha);
+			Ui.ink(g, this.font, line.text(), x + 12 + (line.note() ? NOTE_INDENT : 0), ty, line.own() ? INK_OWN : line.rust() ? INK_RUST : INK, alpha);
 			ty += 11;
 		}
 		number(g, index, x, y, alpha);

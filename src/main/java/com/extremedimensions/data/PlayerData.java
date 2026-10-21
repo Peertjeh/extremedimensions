@@ -63,6 +63,8 @@ public class PlayerData {
 	public com.extremedimensions.trial.TrialRun trial = null;
 	public int trialClaimWeek = Integer.MIN_VALUE;
 	public int trialClaimMedal = 0;
+	/** New Thread+: the threads beyond gold already paid for that week. */
+	public int trialClaimThreads = 0;
 	/** Curse id -> atonement points gathered towards taking its next stack off. */
 	public Map<String, Integer> atonement = new HashMap<>();
 	/** The curse the player chose to atone for (and to mend first); null = the heaviest one. */
@@ -92,6 +94,8 @@ public class PlayerData {
 	public boolean heldFound = false;
 	/** The First Weaver's trail: the frame of an Ancient City strung, the First Knot reached. */
 	public boolean frameStrung = false, knotReached = false;
+	/** When (system time) the Heart panel of a severed world last spared what this player carried in a fall beyond the wound. */
+	public long heartSparedAt = 0;
 	/** This expedition, the Held's Chain already held the player once (kept, so leaving the game during it is no way out). */
 	public boolean heldSpent = false;
 	/** Ticks the Held's Chain still holds the player after the charge ran out. */

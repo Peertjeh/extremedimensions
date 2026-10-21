@@ -650,6 +650,7 @@ public final class MatriarchService {
 				d.matriarchSlain = true;
 				Advancements.grant(p, Advancements.MATRIARCH_SLAIN);
 				Journal.unlock(p, d, JournalEntry.MATRIARCH);
+				com.extremedimensions.tapestry.Tapestry.earn(p, com.extremedimensions.tapestry.Tapestry.Panel.ROOTS);
 				p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.matriarch_falls"));
 			}
 		}

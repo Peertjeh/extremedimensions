@@ -1053,7 +1053,8 @@ public final class HollowService {
 			}
 			return;
 		}
-		if (--d.companionGiftIn <= 0) {
+		// (sooner where the Roots panel is woven in a mended world)
+		if ((d.companionGiftIn -= com.extremedimensions.tapestry.Tapestry.giftStep()) <= 0) {
 			d.companionGiftIn = Math.max(60, Config.COMPANION_GIFT_MINUTES * 60);
 			gift(p, h);
 		}

@@ -81,6 +81,13 @@ public final class ModBlocks {
 	public static final Block VEIL_LANTERN = Registry.register(BuiltInRegistries.BLOCK, key("veil_lantern"),
 			new LanternBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.SOUL_LANTERN).setId(key("veil_lantern"))));
 
+	/**
+	 * The Weaver's Loom, built after the looms in the Seam: a frame of hush pillars strung with silk. The first one used
+	 * holds the world's tapestry (see Tapestry); any other is only a loom.
+	 */
+	public static final Block WEAVERS_LOOM = Registry.register(BuiltInRegistries.BLOCK, key("weavers_loom"),
+			new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.DEEPSLATE).sound(SoundType.WOOL).lightLevel(state -> 4).setId(key("weavers_loom"))));
+
 	private static ResourceKey<Block> key(String id) {
 		return ResourceKey.create(Registries.BLOCK, ExtremeDimensions.id(id));
 	}

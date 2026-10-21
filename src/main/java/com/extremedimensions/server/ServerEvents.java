@@ -99,6 +99,7 @@ public final class ServerEvents {
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
 			STRAYS.clear();
 			com.extremedimensions.lore.FirstWeaver.clear();
+			com.extremedimensions.tapestry.Tapestry.clear();
 			com.extremedimensions.seam.FirstKnot.clear();
 			LurkerService.clear();
 			HollowService.clear();
@@ -217,7 +218,9 @@ public final class ServerEvents {
 			if (entity instanceof ServerPlayer p) {
 				// Homebound things are taken up first: nothing, not even a severed world, keeps them
 				com.extremedimensions.binding.Homebound.gather(p);
-				if ("severed".equals(DataStore.ending()) && Dims.isBeyond(Dims.of(p))) {
+				// (the Heart panel of a severed world spares one fall in a while)
+				if ("severed".equals(DataStore.ending()) && Dims.isBeyond(Dims.of(p))
+						&& !com.extremedimensions.tapestry.Tapestry.spares(p, DataStore.get(p.getUUID()))) {
 					// A severed world keeps nothing of those who fall beyond the wound
 					boolean collapsing = DataStore.get(p.getUUID()).collapsing;
 					// (only what this death dropped: another's things lying near are left alone)
@@ -290,6 +293,12 @@ public final class ServerEvents {
 			if (player instanceof ServerPlayer sp && hand == InteractionHand.MAIN_HAND && player.getItemInHand(hand).is(ModItems.PLUMB_LINE)
 					&& SeamService.inSeam(sp) && com.extremedimensions.seam.FirstKnot.isHeart(hit.getBlockPos())) {
 				return com.extremedimensions.seam.FirstKnot.wake(sp);
+			}
+			// The Weaver's Loom: the world's tapestry (sneaking with something in hand places or uses that instead)
+			if (hand == InteractionHand.MAIN_HAND && level.getBlockState(hit.getBlockPos()).is(com.extremedimensions.registry.ModBlocks.WEAVERS_LOOM)
+					&& !(player.isSecondaryUseActive() && !player.getMainHandItem().isEmpty())) {
+				return player instanceof ServerPlayer sp ? com.extremedimensions.tapestry.Tapestry.use(sp, hit.getBlockPos(), player.getItemInHand(hand))
+						: InteractionResult.SUCCESS;
 			}
 			if (player.getItemInHand(hand).is(ModItems.SEAM_NEEDLE) && level.getBlockState(hit.getBlockPos()).is(Blocks.CRYING_OBSIDIAN)) {
 				return player instanceof ServerPlayer sp
@@ -479,6 +488,7 @@ public final class ServerEvents {
 
 	private static void tick(MinecraftServer s) {
 		com.extremedimensions.lore.FirstWeaver.tick(s);
+		com.extremedimensions.tapestry.Tapestry.tick(s);
 		if (!STRAYS.isEmpty()) {
 			for (net.minecraft.world.entity.Entity e : STRAYS) {
 				if (!e.isRemoved()) {

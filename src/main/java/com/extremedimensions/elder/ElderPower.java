@@ -44,12 +44,14 @@ public final class ElderPower {
 
 	/** Its health, as a multiple of its own, with {@code n} players fighting it. */
 	public static double health(int n) {
-		return Math.max(0.1, Config.ELDER_HEALTH_SCALE) * (1 + Math.max(0, Config.ELDER_HEALTH_PER_PLAYER) * Math.max(0, n - 1));
+		return Math.max(0.1, Config.ELDER_HEALTH_SCALE) * (1 + Math.max(0, Config.ELDER_HEALTH_PER_PLAYER) * Math.max(0, n - 1))
+				* com.extremedimensions.tapestry.Tapestry.threadFactor(Config.NEW_THREAD_ELDER);
 	}
 
 	/** The damage of its blows, as a multiple, with {@code n} players fighting it. */
 	public static double damage(int n) {
-		return Math.max(0, Config.ELDER_DAMAGE_SCALE) * (1 + Math.max(0, Config.ELDER_DAMAGE_PER_PLAYER) * Math.max(0, n - 1));
+		return Math.max(0, Config.ELDER_DAMAGE_SCALE) * (1 + Math.max(0, Config.ELDER_DAMAGE_PER_PLAYER) * Math.max(0, n - 1))
+				* com.extremedimensions.tapestry.Tapestry.threadFactor(Config.NEW_THREAD_ELDER);
 	}
 
 	/** How much faster its pause between blows runs out, with {@code n} players fighting it. */

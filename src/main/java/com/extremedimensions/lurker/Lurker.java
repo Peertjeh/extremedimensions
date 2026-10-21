@@ -68,8 +68,8 @@ public class Lurker extends Monster implements LurkerBody {
 	@Override
 	protected void customServerAiStep(ServerLevel level) {
 		super.customServerAiStep(level);
-		// Lurkers not driven by the service (left over after a restart) dissolve
-		if (this.tickCount > 40 && !LurkerService.isDriven(this)) {
+		// Lurkers driven by neither the service nor the Weaving (left over after a restart) dissolve
+		if (this.tickCount > 40 && !LurkerService.isDriven(this) && !com.extremedimensions.tapestry.Weaving.drives(this.getUUID())) {
 			LurkerService.vanish(this);
 		}
 	}

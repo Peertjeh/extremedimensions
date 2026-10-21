@@ -324,6 +324,8 @@ public final class WarmChains {
 		}
 		d.heldFound = true;
 		Advancements.grant(p, Advancements.HELD_FOUND);
+		// Beside the letter, a thread: the Chain's panel of the tapestry
+		com.extremedimensions.tapestry.Tapestry.earn(p, com.extremedimensions.tapestry.Tapestry.Panel.CHAIN);
 		WorldFx.soundSelf(p, "minecraft:block.chain.break", 0.7f, 0.5f);
 		DataStore.markDirty();
 	}

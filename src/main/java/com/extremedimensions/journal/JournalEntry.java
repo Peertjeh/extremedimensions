@@ -51,19 +51,40 @@ public enum JournalEntry {
 	/** In the other hand: what the frame of an Ancient City shows once strung with silk. */
 	FRAME("frame", false),
 	/** In the other hand: the First Knot, deep in the Fray. */
-	FIRST_KNOT("first_knot", false);
+	FIRST_KNOT("first_knot", false),
+	/** In the player's own hand, after the ending, at the loom: a mended world's page... */
+	CONTINUED_MENDED("continued_mended", false, true),
+	/** ...and a severed world's (a world has one ending, so a journal holds one of the two). */
+	CONTINUED_SEVERED("continued_severed", false, true);
 
 	public final String id;
 	/** Written by the Wanderer (and so to be found on a Wanderer's Page). */
 	public final boolean wanderer;
+	/** Written in the player's own hand (the journal shows it in an ink of its own). */
+	public final boolean own;
 
 	JournalEntry(String id) {
-		this(id, true);
+		this(id, true, false);
 	}
 
 	JournalEntry(String id, boolean wanderer) {
+		this(id, wanderer, false);
+	}
+
+	JournalEntry(String id, boolean wanderer, boolean own) {
 		this.id = id;
 		this.wanderer = wanderer;
+		this.own = own;
+	}
+
+	/** Whether a journal can hold this page at all, in a world of this ending ("" before it: both are still to come). */
+	public boolean possible(String ending) {
+		return this == CONTINUED_MENDED ? !"severed".equals(ending) : this != CONTINUED_SEVERED || !"mended".equals(ending);
+	}
+
+	/** How many pages one journal can hold: all but one of the two in the player's own hand (a world has one ending). */
+	public static int total() {
+		return values().length - 1;
 	}
 
 	public String titleKey() {

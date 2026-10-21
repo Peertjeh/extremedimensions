@@ -736,6 +736,8 @@ public final class WeaverService {
 				Advancements.grant(p, Advancements.WEAVER_SLAIN);
 				Journal.unlock(p, d, JournalEntry.LAST_WEAVER);
 			}
+			com.extremedimensions.tapestry.Tapestry.earn(p, knot ? com.extremedimensions.tapestry.Tapestry.Panel.KNOT
+					: com.extremedimensions.tapestry.Tapestry.Panel.UNRAVELLING);
 			if (d.inSeam && gift > 0) {
 				d.seamLeft += gift;
 				d.seamMax = Math.max(d.seamMax, d.seamLeft);

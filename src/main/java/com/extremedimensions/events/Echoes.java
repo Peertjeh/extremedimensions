@@ -231,8 +231,10 @@ public final class Echoes {
 		// (in the chat, where an atonement's own message does not wipe it out)
 		listener.sendSystemMessage(pays ? Component.translatable("gui.extremedimensions.echo.released_paid", e.name, Math.max(0, Config.ECHO_ATONE))
 				.withStyle(ChatFormatting.AQUA) : Component.translatable("gui.extremedimensions.echo.released", e.name).withStyle(ChatFormatting.AQUA));
-		// To the one who collapsed: half of what that death cost them, and in a severed world one thing it destroyed
-		int back = (int) Math.round(Math.max(0, e.toll) * Math.max(0, Math.min(1, Config.ECHO_RETURN)));
+		// To the one who collapsed: half of what that death cost them (all of it where the Heart panel is woven in a mended
+		// world), and in a severed world one thing it destroyed
+		int back = (int) Math.round(Math.max(0, e.toll)
+				* com.extremedimensions.tapestry.Tapestry.echoShare(Math.max(0, Math.min(1, Config.ECHO_RETURN))));
 		UUID ownerId;
 		try {
 			ownerId = UUID.fromString(e.owner);

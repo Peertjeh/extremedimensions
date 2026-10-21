@@ -61,6 +61,17 @@ public final class ModItems {
 	/** The four threads twisted round a weight: held in the Seam it points the way down to the First Knot. */
 	public static final Item PLUMB_LINE = register("plumb_line", 1, Rarity.EPIC);
 
+	/**
+	 * The Tapestry's threads, each earned by a great deed and woven into its panel on the Weaver's Loom once the world
+	 * has its ending (see Tapestry).
+	 */
+	public static final Item THREAD_OF_ROOTS = register("thread_of_roots", 1, Rarity.EPIC);
+	public static final Item THREAD_OF_TOLL = register("thread_of_toll", 1, Rarity.EPIC);
+	public static final Item THREAD_OF_UNRAVELLING = register("thread_of_unravelling", 1, Rarity.EPIC);
+	public static final Item THREAD_OF_THE_CHAIN = register("thread_of_the_chain", 1, Rarity.EPIC);
+	public static final Item THREAD_OF_THE_KNOT = register("thread_of_the_knot", 1, Rarity.EPIC);
+	public static final Item THREAD_OF_THE_HEART = register("thread_of_the_heart", 1, Rarity.EPIC);
+
 	/** The relics: bound to the Tether one at a time, each with a gift and a price (see Relic). */
 	public static final java.util.Map<com.extremedimensions.relic.Relic, Item> RELICS = relics();
 
@@ -68,6 +79,8 @@ public final class ModItems {
 	public static final java.util.List<Item> HUSH = ModBlocks.HUSH.stream().map(ModItems::block).toList();
 	/** The Veil Lantern's item: placed like any lantern, standing or hanging. */
 	public static final Item VEIL_LANTERN = block(ModBlocks.VEIL_LANTERN);
+	/** The Weaver's Loom as an item. */
+	public static final Item WEAVERS_LOOM = block(ModBlocks.WEAVERS_LOOM);
 
 	private static Item block(Block block) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, BuiltInRegistries.BLOCK.getKey(block));

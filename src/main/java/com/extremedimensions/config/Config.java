@@ -767,6 +767,51 @@ public final class Config {
 	/** Chance the spoils of a raid hold a relic. */
 	public static double TRIBE_RAID_RELIC_CHANCE = 0.15;
 
+	// --- The Tapestry: the loom, its panels' boons, the Weaving and New Thread+ ----------------
+
+	/** Seam Silk the loom takes to spin a lost thread back, for a deed already done (0 = for nothing). */
+	public static int TAPESTRY_RESPIN_SILK = 8;
+	/** Roots, mended: how much more often a bound Hollowling brings a gift (2 = twice as often). */
+	public static int TAPESTRY_ROOTS_GIFTS = 2;
+	/** Roots, severed: the tribe sends no Keeper to hunt anyone, however it hates them (1 = on, 0 = off). */
+	public static int TAPESTRY_ROOTS_PEACE = 1;
+	/** Toll, mended: Nether drain multiplier. */
+	public static double TAPESTRY_TOLL_DRAIN = 0.9;
+	/** Toll, severed: levels given back on every safe return. */
+	public static int TAPESTRY_TOLL_LEVELS = 1;
+	/** Unravelling, mended: seconds more in the Seam. */
+	public static int TAPESTRY_UNRAVELLING_SECONDS = 60;
+	/** Unravelling, severed: the Thinned hunt only in this last part of a visitor's Seam time (6 = the last sixth; 3 = as without it). */
+	public static int TAPESTRY_UNRAVELLING_SHARE = 6;
+	/** Chain, mended: seconds more charge each anchor holds. */
+	public static int TAPESTRY_CHAIN_SECONDS = 300;
+	/** Chain, severed: anchors no longer turn unstable (1 = on, 0 = off). */
+	public static int TAPESTRY_CHAIN_STEADY = 1;
+	/** Knot, mended: how fast Seam time runs out in the Fray, in place of seam_fray_drain. */
+	public static double TAPESTRY_KNOT_FRAY = 1.5;
+	/** Knot, severed: share of the chance that a strand gives way under a visitor. */
+	public static double TAPESTRY_KNOT_STRANDS = 0.5;
+	/** Heart, mended: share of what a Collapse cost that its echo gives back (in place of half). */
+	public static double TAPESTRY_HEART_ECHO = 1.0;
+	/** Heart, severed: minutes between two falls beyond the wound that keep what was carried (0 = never). */
+	public static int TAPESTRY_HEART_SPARE_MINUTES = 60;
+	/** The Weaving: seconds the loom must be held, its ward, seconds between waves, foes in a wave (and more for each player). */
+	public static int WEAVING_SECONDS = 300;
+	public static int WEAVING_WARD = 100;
+	public static int WEAVING_WAVE_SECONDS = 25;
+	public static int WEAVING_WAVE = 4;
+	public static int WEAVING_WAVE_PER_PLAYER = 2;
+	/** Ward each foe at the loom tears away every second, and the damage of its blow on a defender. */
+	public static int WEAVING_BITE = 2;
+	public static double WEAVING_DAMAGE = 5.0;
+	/** Minutes before the loom takes the unravelled panel again after a Weaving that failed. */
+	public static int WEAVING_RETRY_MINUTES = 20;
+	/** New Thread+: Elder health and damage more for each thread taken up (0.5 = half again), and atonement asked more. */
+	public static double NEW_THREAD_ELDER = 0.5;
+	public static double NEW_THREAD_ATONEMENT = 0.25;
+	/** New Thread+: Tether Fragments for each thread a Rift Trial reaches beyond gold (each paid once a week). */
+	public static int NEW_THREAD_TRIAL_FRAGMENTS = 1;
+
 	// --- Technical -------------------------------------------------------------------------------
 
 	/** Milliseconds per tick the Seam may spend building islands (blocks in chunks nobody has loaded wait). */
@@ -816,7 +861,8 @@ public final class Config {
 			Map.entry("hoard_wild_chance", "hollow"), Map.entry("soul_woven_drain", "weaving"), Map.entry("seam_seconds", "seam"),
 			Map.entry("storm_chance", "dragon"), Map.entry("event_spacing", "events"), Map.entry("relic_ember_heart_nether", "relics"), Map.entry("ench_thrift_drain", "enchantments"), Map.entry("pact_unlock", "pacts"),
 			Map.entry("trial_unlock", "trials"), Map.entry("matriarch_after_keepers", "elders"),
-			Map.entry("coop_revive", "coop"), Map.entry("tribe_enabled", "tribe"), Map.entry("seam_build_budget_ms", "technical"));
+			Map.entry("coop_revive", "coop"), Map.entry("tribe_enabled", "tribe"), Map.entry("tapestry_respin_silk", "tapestry"),
+			Map.entry("seam_build_budget_ms", "technical"));
 
 	/** One setting: its key in the file, its section, the field behind it and its default (as text). */
 	public record Setting(String key, String section, Field field, String fallback) {
@@ -955,7 +1001,11 @@ public final class Config {
 			{"elder_core_hits", 1, 50}, {"elder_core_daze_seconds", 0, 10}, {"elder_isle_fall", 0, 1}, {"elder_isle_min_seconds", 3, 600},
 			{"elder_isle_max_seconds", 3, 600}, {"elder_isle_warn_seconds", 0.5, 10}, {"elder_isle_damage", 0, 100},
 			{"elder_isle_radius", 1, 16}, {"elder_isle_boss_share", 0, 0.5}, {"elder_isle_daze_seconds", 0, 10}, {"elder_arena_fly_max", 50, 5000}, {"elder_arena_fly_range", 8, 256}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
-			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600}, {"coop_burden_relief_per_day", 0, 100}};
+			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600}, {"coop_burden_relief_per_day", 0, 100},
+			{"tapestry_respin_silk", 0, 64}, {"tapestry_roots_gifts", 1, 10}, {"tapestry_toll_drain", 0, 1}, {"tapestry_unravelling_share", 3, 20},
+			{"tapestry_knot_fray", 0, 10}, {"tapestry_knot_strands", 0, 1}, {"tapestry_heart_echo", 0, 1}, {"weaving_seconds", 30, 3600},
+			{"weaving_ward", 1, 10000}, {"weaving_wave_seconds", 5, 600}, {"weaving_wave", 0, 40}, {"weaving_wave_per_player", 0, 20},
+			{"weaving_bite", 0, 1000}, {"weaving_damage", 0, 100}, {"new_thread_elder", 0, 5}, {"new_thread_atonement", 0, 5}};
 
 	/** Brings a setting back within its bounds, if it has any. */
 	private static void bound(Setting st) {

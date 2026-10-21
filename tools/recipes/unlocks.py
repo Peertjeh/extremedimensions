@@ -16,6 +16,9 @@ DATA = "src/main/resources/data"
 RECIPES = os.path.join(DATA, "extremedimensions", "recipe")
 OUT = os.path.join(DATA, "extremedimensions", "advancement", "recipes")
 FOLDER = {"building": "building_blocks", "blocks": "building_blocks", "misc": "misc"}
+# Recipes learned by a deed rather than by holding an ingredient: the game grants them (the Weaver's Loom, when an
+# Elder falls; see Tapestry.earn).
+GRANTED = {"weavers_loom"}
 
 
 def ingredients(recipe):
@@ -37,6 +40,15 @@ def keys(recipe):
             found.append(item)
     own = [i for i in found if i.startswith("extremedimensions:")]
     return own or found
+
+
+def granted(recipe_id):
+    return {
+        "parent": "minecraft:recipes/root",
+        "criteria": {"granted": {"trigger": "minecraft:impossible"}},
+        "requirements": [["granted"]],
+        "rewards": {"recipes": [recipe_id]},
+    }
 
 
 def advancement(recipe_id, items):
@@ -69,7 +81,8 @@ def main():
         recipe = json.load(open(os.path.join(RECIPES, name)))
         stem = name[:-5]
         folder = FOLDER.get(recipe.get("category", "misc"), "misc")
-        write(os.path.join(OUT, folder, stem + ".json"), advancement("extremedimensions:" + stem, keys(recipe)))
+        body = granted("extremedimensions:" + stem) if stem in GRANTED else advancement("extremedimensions:" + stem, keys(recipe))
+        write(os.path.join(OUT, folder, stem + ".json"), body)
         count += 1
     lodestone = json.load(open(os.path.join(DATA, "minecraft", "recipe", "lodestone.json")))
     write(os.path.join(DATA, "minecraft", "advancement", "recipes", "misc", "lodestone.json"),

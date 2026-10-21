@@ -177,6 +177,14 @@ public class ExtremeDimensions implements ModInitializer {
 			}
 			ServerPlayNetworking.send(context.player(), new ModPackets.TrialsPayload(com.extremedimensions.trial.TrialService.data(context.player())));
 		});
+		// The Tapestry: its screen, and New Thread+ taken up at the finished loom
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.TapestryPayload.TYPE, ModPackets.TapestryPayload.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.NewThreadPayload.TYPE, ModPackets.NewThreadPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.NewThreadPayload.TYPE, (payload, context) -> {
+			if (Requests.allow(context.player(), "new_thread", 2)) {
+				com.extremedimensions.tapestry.Tapestry.newThread(context.player());
+			}
+		});
 
 		ServerEvents.register();
 		LOGGER.info("Extreme Dimensions initialised");
