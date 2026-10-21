@@ -360,11 +360,18 @@ final class BotTests {
 			Bots.practice(p(A), GameMode.MACE, net.battlehub.core.ai.Difficulty.EXPERT);
 		});
 		s.waitFor(tag + ": running", 600, () -> matchOfA() != null && matchOfA().phase() == Match.Phase.RUNNING && botsIn(matchOfA()).size() == 1);
+		s.run(tag + ": watch", () -> VARS.put("macePolls", 0));
 		s.waitFor(tag + ": it throws a wind charge at its feet", 1200, () -> {
 			Match m = matchOfA();
 			if (m == null || botsIn(m).isEmpty()) return false;
 			BotPlayer b = botsIn(m).get(0);
 			p(A).setHealth(p(A).getMaxHealth());
+			int polls = (int) VARS.get("macePolls") + 1;
+			VARS.put("macePolls", polls);
+			if (polls % 80 == 0 && Bots.launches(b) == 0) {
+				// A steps back now and then, as a player does: a wind charge is for a few blocks out, not point-blank
+				backOff(b, 4.5);
+			}
 			if (Bots.launches(b) >= 1) {
 				VARS.put("launchY", b.getY());
 				VARS.put("launchTop", b.getY());
@@ -390,6 +397,21 @@ final class BotTests {
 			return botsIn(m).get(0).getMainHandItem().is(net.minecraft.world.item.Items.MACE);
 		});
 		endAndClean(s, tag);
+	}
+
+	/** A steps away from the bot to about {@code distance} blocks, onto floor (the other way when that is the void or a wall). */
+	private static void backOff(BotPlayer b, double distance) {
+		ServerPlayer a = p(A);
+		double dx = a.getX() - b.getX(), dz = a.getZ() - b.getZ();
+		double len = Math.max(0.01, Math.hypot(dx, dz));
+		for (int side = 1; side >= -1; side -= 2) {
+			double x = b.getX() + side * dx / len * distance, z = b.getZ() + side * dz / len * distance;
+			net.minecraft.core.BlockPos feet = net.minecraft.core.BlockPos.containing(x, a.getY(), z);
+			if (!a.level().getBlockState(feet.below()).isAir() && a.level().getBlockState(feet).isAir() && a.level().getBlockState(feet.above()).isAir()) {
+				PartyTests.tp(a, x, a.getY(), z);
+				return;
+			}
+		}
 	}
 
 	/** 1v2 practice with the mace kit: everybody gets the mace kit (it used to be the sword kit, whatever was chosen). */
