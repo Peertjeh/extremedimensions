@@ -355,7 +355,7 @@ public class ClientPath implements FabricClientGameTest {
 				p.getAbilities().flying = true;
 				p.onUpdateAbilities();
 			});
-			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a run tp @s %.2f %d %.2f 180 38", loomAt.getX() + 0.5, loomAt.getY() + 7, loomAt.getZ() + 11.5));
+			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f 180 38", loomAt.getX() + 0.5, loomAt.getY() + 7, loomAt.getZ() + 11.5));
 			ctx.waitTicks(100);
 			int foes = sp.getServer().computeOnServer(s -> com.extremedimensions.tapestry.Weaving.foes());
 			System.out.println("[weaving] " + foes + " foes out of the rifts after five seconds");
