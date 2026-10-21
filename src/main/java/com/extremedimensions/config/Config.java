@@ -88,6 +88,11 @@ public final class Config {
 	public static int OFFER_COUNT = 3;
 	/** Ticks after respawning before the curse screen opens. */
 	public static int OFFER_DELAY_TICKS = 70;
+	/**
+	 * 1 = the Overworld set of curses is offered and acts in the Overworld, in every world whose operators have not turned
+	 * it off with /tether overworld_penalties; 0 = it waits until they turn it on.
+	 */
+	public static int OVERWORLD_CURSES = 1;
 	/** Seconds an offer of curse cards may stand unanswered before the Tether chooses one itself (0 = never). */
 	public static int OFFER_TIMEOUT_SECONDS = 120;
 	/** Chance that an offer is multiplied: then every card carries its own multiplier between the two values below. */

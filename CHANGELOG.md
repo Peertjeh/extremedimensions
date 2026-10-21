@@ -1,5 +1,24 @@
 # Changelog
 
+## 3.0.1: Plain Numbers
+
+### Changed
+- **Journal pages are numbered 1 to 43**, in plain numbers, not Roman ones (in English and Dutch).
+- **The tapestry's panels are redrawn**: each a 40x40 piece of pixel art drawn one texel to a pixel of the screen (it
+  was a 64x64 picture squeezed into 40, which blurred it), on a woven twill ground in a braided gold frame. Roots: a
+  sapling over the ground line, its roots spreading beneath. Toll: the Ferryman's boat on a river of soul fire, a
+  lantern on its pole, the fare hung above. Unravelling: a spool of silk, its thread running loose and fraying. Chain:
+  links hanging from the top, the lowest one broken open. Knot: a true trefoil knot of sea-green cord, over and under
+  itself. Heart: a heart split down its middle and sewn shut with pale thread. A panel not yet woven is the bare warp in
+  a grey frame.
+- **The Overworld set of curses is on by default.** A new setting, `overworld_curses` (1), decides in every world whose
+  operators have not chosen; `/tether overworld_penalties on|off` still sets it for a world, and that choice stays. A
+  world saved before 3.0.1 with the set turned on keeps it on; one where it was simply never turned on now has it.
+
+### Tests
+- MigrationTests: the Overworld curses follow the setting until an operator chooses, keep the operator's choice, and
+  stay on in a world that had them on.
+
 ## 3.0.0: The Unfinished World
 
 The story goes on in your hand. After the ending the Wanderer's journal stops, and yours begins.

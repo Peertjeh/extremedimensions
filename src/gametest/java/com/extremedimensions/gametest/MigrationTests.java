@@ -7,6 +7,7 @@ import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Map;
 
+import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.guide.Guide;
@@ -103,6 +104,34 @@ public class MigrationTests {
 		} catch (IllegalAccessException e) {
 			throw new AssertionError(e);
 		} finally {
+			DataStore.putBack(ours);
+		}
+		helper.succeed();
+	}
+
+	/**
+	 * The Overworld set of curses is on wherever no operator has chosen (the setting decides), stays as an operator set it,
+	 * and a world saved before 3.0.1 with the set turned on keeps it on.
+	 */
+	@GameTest
+	public void overworldCursesFollowTheSettingUntilChosen(GameTestHelper helper) {
+		int setting = Config.OVERWORLD_CURSES;
+		Object ours = DataStore.adopt("{\"overworldPenalties\": false}");
+		try {
+			Config.OVERWORLD_CURSES = 1;
+			check(helper, DataStore.overworldPenalties(), "a world nobody chose for has the Overworld curses off");
+			Config.OVERWORLD_CURSES = 0;
+			check(helper, !DataStore.overworldPenalties(), "the setting does not turn the Overworld curses off");
+			DataStore.setOverworldPenalties(true);
+			check(helper, DataStore.overworldPenalties(), "an operator could not turn them on against the setting");
+			Config.OVERWORLD_CURSES = 1;
+			DataStore.setOverworldPenalties(false);
+			check(helper, !DataStore.overworldPenalties(), "an operator's choice gave way to the setting");
+			DataStore.adopt("{\"overworldPenalties\": true}");
+			Config.OVERWORLD_CURSES = 0;
+			check(helper, DataStore.overworldPenalties(), "a world that had them on before 3.0.1 lost them");
+		} finally {
+			Config.OVERWORLD_CURSES = setting;
 			DataStore.putBack(ours);
 		}
 		helper.succeed();

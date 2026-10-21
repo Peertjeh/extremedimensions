@@ -45,7 +45,7 @@ Fuel values show in item tooltips.
 ## Curses, and lifting them
 
 **68 curses in four sets**, each permanent and stacking to its own maximum: *Beyond the wound* (26, in the Nether, the
-End and the Seam), *Overworld* (17, only when an operator turns them on), *Everywhere* (16) and *Extreme* (9, cryptic,
+End and the Seam), *Overworld* (17, on unless an operator turns them off), *Everywhere* (16) and *Extreme* (9, cryptic,
 heavy, and dearer to atone). Sometimes the offer is multiplied (2x to 4x); stacks that do not fit spill onto other
 curses. The **Curses** screen (the button beside the journal in your inventory) shows them all.
 

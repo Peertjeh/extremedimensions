@@ -20,6 +20,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
 import com.extremedimensions.ExtremeDimensions;
+import com.extremedimensions.config.Config;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.storage.LevelResource;
@@ -36,6 +37,9 @@ public final class DataStore {
 		Map<String, PlayerData> players = new HashMap<>();
 		/** Field keeps its historic name so older saves still load. */
 		Map<String, Anchor> altars = new HashMap<>();
+		/** The Overworld set of curses as an operator last set it for this world; null until one does (overworld_curses decides). */
+		Boolean overworldChosen = null;
+		/** As saved before 3.0.1, when the set was off unless an operator turned it on: read to keep that choice, kept for older versions. */
 		boolean overworldPenalties = false;
 		List<Hoard> hoards = new ArrayList<>();
 		/** Seam cells (island grid) that were already built. */
@@ -109,6 +113,8 @@ public final class DataStore {
 			data.altars = loaded.altars;
 		}
 		data.overworldPenalties = loaded.overworldPenalties;
+		// (a world saved before 3.0.1 with the set turned on keeps it on; one where it was simply never turned on follows the setting)
+		data.overworldChosen = loaded.overworldChosen != null ? loaded.overworldChosen : loaded.overworldPenalties ? Boolean.TRUE : null;
 		if (loaded.hoards != null) {
 			data.hoards = loaded.hoards;
 		}
@@ -418,11 +424,13 @@ public final class DataStore {
 		return data.altars;
 	}
 
+	/** Whether the Overworld set of curses is on in this world: as its operators set it, or else as the setting says. */
 	public static boolean overworldPenalties() {
-		return data.overworldPenalties;
+		return data.overworldChosen != null ? data.overworldChosen : Config.OVERWORLD_CURSES > 0;
 	}
 
 	public static void setOverworldPenalties(boolean on) {
+		data.overworldChosen = on;
 		data.overworldPenalties = on;
 		markDirty();
 	}

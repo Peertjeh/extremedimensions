@@ -178,12 +178,8 @@ public class TapestryScreen extends Screen {
 		g.fill(x, y, x + CELL_W, y + CELL_H, Ui.argb(fade * 0.35, isWoven ? 0x2A2238 : 0x14101C));
 		g.fill(x, y, x + CELL_W, y + 1, Ui.argb(fade * 0.6, isWoven ? ACCENT : Ui.TRACK));
 		int tile = isWoven ? p.ordinal() : Tapestry.Panel.values().length;
-		// (the sheet's tiles are 64 wide, drawn at the cell's size)
-		g.pose().pushMatrix();
-		g.pose().translate(x + 4, y + 5);
-		g.pose().scale(ART / 64f, ART / 64f);
-		g.blit(RenderPipelines.GUI_TEXTURED, SHEET, 0, 0, tile * 64f, 0f, 64, 64, 448, 64);
-		g.pose().popMatrix();
+		// (the sheet's tiles are drawn at their own size, one texel to a pixel of the screen, so they stay sharp)
+		g.blit(RenderPipelines.GUI_TEXTURED, SHEET, x + 4, y + 5, tile * (float) ART, 0f, ART, ART, ART * (Tapestry.Panel.values().length + 1), ART);
 		int tx = x + ART + 9, tw = CELL_W - ART - 13;
 		String name = Ui.tr(p.nameKey());
 		g.text(this.font, Ui.ellipsize(this.font, name, tw), tx, y + 6, Ui.argb(fade, isWoven ? Ui.PARCHMENT : Ui.MUTED));
