@@ -102,6 +102,16 @@ public class TribeTests {
 		return h;
 	}
 
+	/**
+	 * The Keepers woken for this player: one wakes 10 to 16 blocks behind them on whatever ground is highest there (a
+	 * tower of a test beside this one, perhaps), so they are looked for the whole height of the world, and only those
+	 * hunting this player (a test beside this one may have woken its own).
+	 */
+	private static java.util.List<Keeper> ownKeepers(ServerLevel level, ServerPlayer p) {
+		AABB column = new AABB(p.getX() - 24, level.getMinY(), p.getZ() - 24, p.getX() + 24, level.getMaxY(), p.getZ() + 24);
+		return level.getEntitiesOfClass(Keeper.class, column, k -> k.getTarget() == p);
+	}
+
 	private static void standBeside(GameTestHelper helper, ServerPlayer p) {
 		BlockPos at = helper.absolutePos(new BlockPos(1, 2, 1));
 		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
@@ -126,7 +136,7 @@ public class TribeTests {
 		});
 		helper.runAfterDelay(15, () -> {
 			check(helper, "keeper".equals(RaidService.wave(h.key())), "with the young gone the raid is in %s", RaidService.wave(h.key()));
-			var keepers = level.getEntitiesOfClass(Keeper.class, p.getBoundingBox().inflate(40));
+			var keepers = ownKeepers(level, p);
 			check(helper, !keepers.isEmpty(), "no Keeper woke");
 			keepers.forEach(k -> k.kill(level));
 		});
@@ -160,7 +170,7 @@ public class TribeTests {
 		check(helper, HollowService.keeperAwake(h.key()), "the Keeper slept on for a stranger to the tribe");
 		check(helper, !RaidService.raiding(h.key()), "opening one's own hoard started a raid");
 		helper.runAfterDelay(2, () -> {
-			helper.getLevel().getEntitiesOfClass(Keeper.class, p.getBoundingBox().inflate(40)).forEach(HollowService::fade);
+			ownKeepers(helper.getLevel(), p).forEach(HollowService::fade);
 			DataStore.hoards().remove(h);
 			helper.succeed();
 		});

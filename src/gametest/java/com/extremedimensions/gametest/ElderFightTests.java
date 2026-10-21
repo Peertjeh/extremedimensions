@@ -332,10 +332,14 @@ public class ElderFightTests {
 			check(helper, came && weaver[0] != null, "the Weaver did not come");
 			WeaverService.force(weaver[0], Weaver.LANCE);
 		});
+		// Only its first Lance is measured: the blows it chooses for itself afterwards are none of this test's business
 		for (int t = 6; t <= 200; t++) {
 			int now = t;
 			helper.runAfterDelay(t, () -> {
 				int beams = weaver[0] == null ? 0 : ElderStrikes.beamsOf(weaver[0]);
+				if (first[0] >= 0 && last[0] < now - 1) {
+					return;
+				}
 				most[0] = Math.max(most[0], beams);
 				if (beams > 0) {
 					if (first[0] < 0) {
