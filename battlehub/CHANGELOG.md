@@ -27,9 +27,12 @@
 * **Bots walked or jumped off the SkyWars map.**
   * They walked into the chest at the edge of their island, climbed onto it and went over; now they stop in
     front of it.
-  * Held back at an edge, they jumped to get unstuck, with the keys still pointing out; now they only turn away.
+  * Held back at an edge, they jumped to get unstuck, with the keys still pointing out; now such a jump always
+    looks first and never ends in the void.
   * After a jump of their own they did not always steer back. Only after a hit do they still sometimes freeze,
     as players do.
+* Mace bots stand, jump and throw the wind charge straight down, so it really sends them up (it went off behind
+  them while they walked).
 * A chapel or tower in the lobby could reach past its plot into a house next to it. Buildings are now checked
   against each other before they are placed.
 

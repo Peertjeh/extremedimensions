@@ -456,6 +456,17 @@ final class BotBrain {
 		bot.setJumping(true);
 	}
 
+	/** A jump only when its landing is on ground (with the keys pressed now). */
+	private void jumpLooking() {
+		if (!bot.onGround()) return;
+		Vec3 v = bot.getDeltaMovement();
+		double[] dir = keysDirection();
+		if (net.battlehub.core.ai.Falls.landsSafely(bot.getX(), bot.getY(), bot.getZ(), v.x, 0, v.z, dir[0], dir[1], bot.isSprinting(), true,
+				this::surface, 1.5)) {
+			bot.setJumping(true);
+		}
+	}
+
 	/**
 	 * In the air, knocked or fallen off: when the flight would end in the void, it holds the keys back towards the
 	 * last ground (a player does, after a moment to notice; lower levels not always).
@@ -519,8 +530,8 @@ final class BotBrain {
 	}
 
 	/**
-	 * Pushing against something (or held back at an edge) for a second: jump and change direction. At an edge it
-	 * only turns away: a jump there, with the keys still pointing out, is how a bot walks off into the void.
+	 * Pushing against something (or held back at an edge) for a second: jump and change direction. At an edge the
+	 * jump always looks first (never one that ends in the void, whatever the level), and in the air it steers back.
 	 */
 	private void unstick(boolean trying, boolean atEdge) {
 		if (ticks % 20 != 0) {
@@ -530,7 +541,8 @@ final class BotBrain {
 		if (trying && pos.distanceToSqr(lastPos) < 0.04) {
 			stuck++;
 			if (stuck >= 2) {
-				if (!atEdge) jump();
+				if (atEdge) jumpLooking();
+				else jump();
 				strafe = -strafe;
 				wander = null;
 				// The route may be out of date (a block placed, a player in the way): work it out again
@@ -575,6 +587,11 @@ final class BotBrain {
 		int slot = find(s -> s.is(Ids.item("minecraft:wind_charge")));
 		if (slot < 0) return;
 		stopUsing();
+		// as a player does it: standing, jump and throw it straight down; the burst comes under the rising feet
+		bot.zza = 0;
+		bot.xxa = 0;
+		bot.setSprinting(false);
+		bot.setJumping(true);
 		bot.getInventory().setSelectedSlot(slot);
 		bot.setXRot(90f);
 		BotActions.use(bot, InteractionHand.MAIN_HAND);
