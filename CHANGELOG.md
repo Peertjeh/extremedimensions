@@ -37,7 +37,7 @@ anything new is added. No new systems.
   could lose its prey that way. Its legs now fit its sky, and with nowhere open to go it heads back to the middle.
 - **A Frayed Ray could dive at nothing.** It began a hunt as soon as it saw its prey, from as far as it could see, and
   after its climb dived wherever it was, falling short and drawing off farther each time. It now comes back over its
-  prey before it hunts again (within 28 blocks), and dives only once it is close; a climb that gets nowhere is given up.
+  prey before it hunts again (within 28 blocks), and a climb that swung too wide ends in another round, not a dive.
 
 ### Under the hood
 - Gametests: every recipe reaches the book; Seam Silk opens its recipes; binding a relic is marked; a barrel is filled

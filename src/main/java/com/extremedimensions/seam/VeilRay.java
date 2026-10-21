@@ -284,12 +284,12 @@ public class VeilRay extends PathfinderMob {
 				from = from.lengthSqr() < 1e-4 ? heading.multiply(-1, 0, -1) : from.normalize();
 				Vec3 over = at.add(from.scale(9)).add(0, 9, 0);
 				goal = over.subtract(pos);
-				if (phaseTicks > 130) {
-					// could not get over it: it gives up for now
-					begin(AWAY);
-					return true;
-				}
-				if (goal.length() < 4 || phaseTicks > 50 && pos.distanceTo(at) < 20) {
+				if (goal.length() < 4 || phaseTicks > 50) {
+					if (pos.distanceTo(at) > HUNT + 8) {
+						// swung too wide on the climb to fall on it from here: round again
+						begin(AWAY);
+						return true;
+					}
 					begin(DIVE);
 					WorldFx.soundIn(level.dimension().identifier().toString(), "minecraft:entity.phantom.swoop", "hostile", getX(), getY(), getZ(), 2.6F, 0.75F);
 					return true;
