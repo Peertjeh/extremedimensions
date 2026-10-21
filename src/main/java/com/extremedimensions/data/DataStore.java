@@ -257,7 +257,8 @@ public final class DataStore {
 	}
 
 	public static String ending() {
-		return data.ending;
+		// (never null: "" until the world has its ending, whatever was set)
+		return data.ending == null ? "" : data.ending;
 	}
 
 	public static void setEnding(String ending) {
