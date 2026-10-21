@@ -1,0 +1,36 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_soul_woven_tether": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:soul_woven_tether"
+          }
+        ]
+      }
+    },
+    "has_seam_silk": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:seam_silk"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_soul_woven_tether",
+      "has_seam_silk"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:seam_woven_tether"
+    ]
+  }
+}

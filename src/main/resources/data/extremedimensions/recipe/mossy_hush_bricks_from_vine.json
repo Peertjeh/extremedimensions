@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "ingredients": [
+    "extremedimensions:hush_bricks",
+    "minecraft:vine"
+  ],
+  "result": {
+    "id": "extremedimensions:mossy_hush_bricks",
+    "count": 1
+  }
+}

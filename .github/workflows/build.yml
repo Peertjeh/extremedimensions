@@ -3,6 +3,7 @@ on: [pull_request, push, workflow_dispatch]
 
 jobs:
   build:
+    name: build and server tests
     runs-on: ubuntu-24.04
     steps:
       - name: checkout repository
@@ -16,10 +17,139 @@ jobs:
           distribution: 'microsoft'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: build
+      # Building also runs the server game tests on a headless dedicated server; a failing test fails the build
+      - name: build and server game tests
         run: ./gradlew build
+        timeout-minutes: 20
+      # The Mod Menu stand-ins are only for compiling: the jar must not ship them
+      - name: check the mod jar
+        run: |
+          jar=$(ls build/libs/*.jar | grep -v sources | head -1)
+          if unzip -l "$jar" | grep -q "com/terraformersmc/"; then echo "Mod Menu stand-ins in $jar"; exit 1; fi
+          unzip -l "$jar" | grep -q "assets/extremedimensions/lang/nl_nl.json" || { echo "nl_nl.json missing from $jar"; exit 1; }
+      # Development aid: a commit message with [probe] prints the signatures of the classes in tools/probe.txt (and
+      # finds classes by the patterns after a # in that file) from the game jar the build used
+      - name: api probe
+        if: always() && contains(github.event.head_commit.message, '[probe]')
+        run: |
+          find ~/.gradle/caches/fabric-loom .gradle/loom-cache -name "*.jar" 2>/dev/null | grep -i minecraft | grep -v sources | xargs ls -la 2>/dev/null | sed "s/^/APIJAR|/"
+          cp=$(find ~/.gradle/caches/fabric-loom .gradle/loom-cache -name "*.jar" 2>/dev/null | grep -i minecraft | grep -v -e sources -e "minecraft-server.jar" -e "minecraft-client.jar" | paste -sd:)
+          grep -v -e '^#' -e '^@' tools/probe.txt | while read -r c; do [ -n "$c" ] && javap -cp "$cp" -p "$c" 2>&1 | sed "s/^/API|/"; done
+          for j in $(echo "$cp" | tr ':' ' '); do unzip -l "$j" | awk '{print $4}'; done | sort -u | grep -E "$(grep '^#' tools/probe.txt | sed 's/^#//' | paste -sd'|')" | sed "s/^/APICLASS|/" | head -300
+          # lines with an @ print a file from the game jars (a vanilla loot table, a recipe, ...)
+          grep '^@' tools/probe.txt | sed 's/^@//' | while read -r f; do for j in $(echo "$cp" | tr ':' ' '); do unzip -p "$j" "$f" 2>/dev/null | sed "s/^/APIFILE|/"; done; done
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
           name: Artifacts
           path: build/libs/
+
+  client:
+    name: client test and screenshots
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: virtual display
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri mesa-vulkan-drivers libegl1
+      - name: client game test
+        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClientGameTest --no-configuration-cache
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        timeout-minutes: 25
+      - name: capture screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Screenshots
+          path: build/run/clientGameTest/screenshots/
+          if-no-files-found: warn
+      # For reviewing from where artifacts cannot be downloaded: a commit message with [shots] prints the screenshots
+      # into the log as small JPEGs (base64, one IMG| line per chunk)
+      - name: screenshots in the log
+        if: always() && contains(github.event.head_commit.message, '[shots]')
+        run: |
+          python3 -m pip install -q --break-system-packages pillow >/dev/null 2>&1 || pip install -q pillow
+          python3 - <<'PY'
+          import glob, base64, io, os
+          from PIL import Image
+          for f in sorted(glob.glob("build/run/clientGameTest/screenshots/*.png")):
+              im = Image.open(f).convert("RGB")
+              im.thumbnail((800, 450))
+              b = io.BytesIO(); im.save(b, "JPEG", quality=72)
+              s = base64.b64encode(b.getvalue()).decode()
+              for i in range(0, len(s), 3000):
+                  print(f"IMG|{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
+          PY
+
+  compat:
+    name: client test with Sodium, Iris and Mod Menu
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      # Sodium and Iris draw with OpenGL (the game alone falls back to Vulkan): the display needs GLX, in software
+      - name: virtual display with OpenGL
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libgl1 libegl1 mesa-utils mesa-vulkan-drivers
+          xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" glxinfo -B || echo "no GLX on the virtual display"
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+      # The newest Fabric builds for this game version from Modrinth; none yet for any of them leaves nothing to test
+      - name: fetch Sodium, Iris and Mod Menu
+        id: fetch
+        run: |
+          set +e
+          python3 tools/compat/fetch.py build/compat-mods
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          if [ $code -eq 3 ]; then echo "None of them has a build for this game version yet: nothing to test with"; exit 0; fi
+          exit $code
+      - name: client game test with them
+        if: steps.fetch.outputs.code == '0'
+        run: xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" ./gradlew runClientGameTest --no-configuration-cache -Pcompat
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+          MESA_GL_VERSION_OVERRIDE: '4.6'
+          # (the virtual display has no GLX visual of the kind the game asks for; through EGL Mesa makes one)
+          SDL_VIDEO_FORCE_EGL: '1'
+          SDL_VIDEO_X11_FORCE_EGL: '1'
+        timeout-minutes: 20
+      - name: capture screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Compat screenshots
+          path: build/run/clientGameTest/screenshots/
+          if-no-files-found: warn
+      - name: screenshots in the log
+        if: always() && contains(github.event.head_commit.message, '[shots]')
+        run: |
+          python3 -m pip install -q --break-system-packages pillow >/dev/null 2>&1 || pip install -q pillow
+          python3 - <<'PY'
+          import glob, base64, io, os
+          from PIL import Image
+          for f in sorted(glob.glob("build/run/clientGameTest/screenshots/*.png")):
+              im = Image.open(f).convert("RGB")
+              im.thumbnail((800, 450))
+              b = io.BytesIO(); im.save(b, "JPEG", quality=72)
+              s = base64.b64encode(b.getvalue()).decode()
+              for i in range(0, len(s), 3000):
+                  print(f"IMG|{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
+          PY

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "S": "extremedimensions:seam_silk",
+    "W": "extremedimensions:veil_wing",
+    "L": "minecraft:soul_lantern"
+  },
+  "pattern": [
+    " W ",
+    "SLS"
+  ],
+  "result": {
+    "id": "extremedimensions:veil_lantern",
+    "count": 1
+  }
+}

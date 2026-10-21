@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:starved_slain",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:seam_silk"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.weaver_slain.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.weaver_slain.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

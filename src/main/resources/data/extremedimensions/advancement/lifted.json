@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:first_expedition",
+  "display": {
+    "icon": {
+      "id": "minecraft:totem_of_undying"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.lifted.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.lifted.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

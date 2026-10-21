@@ -1,0 +1,7 @@
+# gradle
+.gradle/
+build/
+run/
+
+# python
+__pycache__/

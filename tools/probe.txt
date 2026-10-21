@@ -1,0 +1,15 @@
+net.minecraft.client.gui.screens.LevelLoadingScreen
+net.minecraft.client.gui.screens.GenericMessageScreen
+net.minecraft.client.gui.screens.ConnectScreen
+net.minecraft.client.gui.screens.ProgressScreen
+net.minecraft.client.gui.screens.TitleScreen
+net.minecraft.client.gui.components.LogoRenderer
+net.minecraft.client.gui.components.SplashRenderer
+net.minecraft.client.sounds.MusicManager
+net.minecraft.client.sounds.MusicInfo
+net.minecraft.sounds.Music
+net.minecraft.sounds.Musics
+net.minecraft.client.gui.screens.Screen
+#screens/[A-Za-z]*(Loading|Connect|Message|Progress|Waiting)[A-Za-z]*\.class
+#gui/components/(Logo|Splash)
+#sounds/Music

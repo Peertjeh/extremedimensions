@@ -1,0 +1,32 @@
+{
+	"required": false,
+	"minVersion": "0.8",
+	"package": "com.extremedimensions.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"ActionBarMixin",
+		"ArenaBlastMixin",
+		"ArenaExplosionMixin",
+		"BlockDisplayAccess",
+		"BoundWingsMixin",
+		"BoundWingsPlayerMixin",
+		"CursedPlayerMixin",
+		"DisplayAccess",
+		"ElderDropsMixin",
+		"FallenCommandsMixin",
+		"FallenPoseMixin",
+		"FallenTravelMixin",
+		"InteractionAccess",
+		"NaturalSpawnMixin",
+		"SealedInventoryMixin",
+		"SealedSlotMixin",
+		"TetherAnvilMixin",
+		"TetherEnchantMixin",
+		"UnhealingMixin",
+		"VillagerPricesMixin",
+		"WoundLensMixin"
+	],
+	"injectors": {
+		"defaultRequire": 0
+	}
+}

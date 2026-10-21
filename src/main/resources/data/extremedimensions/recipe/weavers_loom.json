@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PSP",
+    "FLF",
+    "PSP"
+  ],
+  "key": {
+    "P": "extremedimensions:hush_pillar",
+    "S": "extremedimensions:seam_silk",
+    "L": "minecraft:loom",
+    "F": "extremedimensions:tether_fragment"
+  },
+  "result": {
+    "id": "extremedimensions:weavers_loom",
+    "count": 1
+  }
+}

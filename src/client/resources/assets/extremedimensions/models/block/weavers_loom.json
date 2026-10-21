@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "extremedimensions:block/weavers_loom_side",
+    "down": "extremedimensions:block/weavers_loom_bottom",
+    "up": "extremedimensions:block/weavers_loom_top",
+    "north": "extremedimensions:block/weavers_loom_front",
+    "south": "extremedimensions:block/weavers_loom_front",
+    "east": "extremedimensions:block/weavers_loom_side",
+    "west": "extremedimensions:block/weavers_loom_side"
+  }
+}

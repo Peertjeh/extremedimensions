@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_hush_tiles": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:hush_tiles"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_hush_tiles"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:hush_tile_wall"
+    ]
+  }
+}

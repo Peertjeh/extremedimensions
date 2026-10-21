@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:root",
+  "display": {
+    "icon": {
+      "id": "minecraft:writable_book"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.journal_complete.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.journal_complete.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

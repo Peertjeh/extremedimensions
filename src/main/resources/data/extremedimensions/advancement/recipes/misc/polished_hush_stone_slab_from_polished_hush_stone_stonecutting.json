@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_polished_hush_stone": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:polished_hush_stone"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_polished_hush_stone"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:polished_hush_stone_slab_from_polished_hush_stone_stonecutting"
+    ]
+  }
+}

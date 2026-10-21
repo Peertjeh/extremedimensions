@@ -1,0 +1,36 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_seam_silk": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:seam_silk"
+          }
+        ]
+      }
+    },
+    "has_veil_wing": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:veil_wing"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_seam_silk",
+      "has_veil_wing"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:veil_lantern"
+    ]
+  }
+}

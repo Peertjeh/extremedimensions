@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:cobbled_hush_stone_slab",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": 2,
+            "add": false,
+            "conditions": [
+              {
+                "condition": "minecraft:block_state_property",
+                "block": "extremedimensions:cobbled_hush_stone_slab",
+                "properties": {
+                  "type": "double"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
+    }
+  ],
+  "random_sequence": "extremedimensions:blocks/cobbled_hush_stone_slab"
+}

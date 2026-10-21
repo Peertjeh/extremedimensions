@@ -1,0 +1,22 @@
+{
+  "kinds": {
+    "plain": 7,
+    "loom": 3,
+    "village": 3,
+    "spire": 3,
+    "hanging": 2,
+    "halo": 2
+  },
+  "radius": {
+    "plain": [11, 19],
+    "loom": [22, 26],
+    "village": [26, 30],
+    "spire": [34, 38],
+    "hanging": [14, 18],
+    "halo": [16, 20]
+  },
+  "landforms": {
+    "rock_arch": 0.25,
+    "terraces": 0.2
+  }
+}

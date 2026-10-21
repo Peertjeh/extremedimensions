@@ -1,0 +1,146 @@
+package com.extremedimensions.client.tooltip;
+
+import java.util.List;
+
+import com.extremedimensions.ExtremeDimensions;
+import com.extremedimensions.anchor.FuelValues;
+import com.extremedimensions.config.Config;
+import com.extremedimensions.client.ui.Ui;
+import com.extremedimensions.registry.ModItems;
+import com.extremedimensions.server.Dims;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+
+import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
+
+/** Item tooltips: what every mod item does, and how much anchor charge a fuel item is worth. */
+public final class Tooltips {
+	private Tooltips() {}
+
+	public static void register() {
+		ItemTooltipCallback.EVENT.register((stack, context, flag, lines) -> append(stack, lines));
+	}
+
+	private static void append(ItemStack stack, List<Component> lines) {
+		Item item = stack.getItem();
+		String key = null;
+		if (item == ModItems.TETHER) {
+			key = "tether";
+		} else if (item == ModItems.EMBER_TETHER) {
+			key = "ember_tether";
+		} else if (item == ModItems.VOID_TETHER) {
+			key = "void_tether";
+		} else if (item == ModItems.TETHER_JOURNAL) {
+			key = "tether_journal";
+		} else if (item == ModItems.TETHER_FRAGMENT) {
+			key = "tether_fragment";
+		} else if (item == ModItems.WANDERERS_PAGE) {
+			key = "wanderers_page";
+		} else if (item == ModItems.LOOSE_LEAF) {
+			key = "loose_leaf";
+		} else if (item == ModItems.SOUL_WOVEN_TETHER) {
+			key = "soul_woven_tether";
+		} else if (item == ModItems.SEAM_WOVEN_TETHER) {
+			key = "seam_woven_tether";
+		} else if (item == ModItems.MENDING_THREAD) {
+			key = "mending_thread";
+		} else if (item == ModItems.SEVERING_SHEARS) {
+			key = "severing_shears";
+		} else if (item == ModItems.SEAM_NEEDLE) {
+			key = "seam_needle";
+		} else if (item == ModItems.VEIL_WING) {
+			key = "veil_wing";
+		} else if (item == ModItems.MENDING_CLOTH) {
+			key = "mending_cloth";
+		} else if (item == ModItems.SEAM_SILK) {
+			key = "seam_silk";
+		} else if (item == ModItems.WOUND_LENS) {
+			key = "wound_lens";
+		} else if (item == ModItems.VEIL_LANTERN) {
+			key = "veil_lantern";
+		} else if (item == ModItems.ECHO_THREAD) {
+			key = "echo_thread";
+		} else if (item == ModItems.EMBER_THREAD) {
+			key = "ember_thread";
+		} else if (item == ModItems.PALE_THREAD) {
+			key = "pale_thread";
+		} else if (item == ModItems.SILK_THREAD) {
+			key = "silk_thread";
+		} else if (item == ModItems.PLUMB_LINE) {
+			key = "plumb_line";
+		} else if (item == ModItems.WEAVERS_LOOM) {
+			key = "weavers_loom";
+		}
+		com.extremedimensions.tapestry.Tapestry.Panel panel = com.extremedimensions.tapestry.Tapestry.Panel.of(stack);
+		if (panel != null) {
+			// A thread of the Tapestry: the deed that earned it, and its panel's boon in either world
+			lines.add(Component.translatable(panel.deedKey()).withStyle(ChatFormatting.GRAY));
+			lines.add(Component.translatable("tooltip.extremedimensions.tapestry_thread.mended", Component.translatable(panel.boonKey("mended"), panel.boonArgs("mended")))
+					.withStyle(ChatFormatting.AQUA));
+			lines.add(Component.translatable("tooltip.extremedimensions.tapestry_thread.severed", Component.translatable(panel.boonKey("severed"), panel.boonArgs("severed")))
+					.withStyle(ChatFormatting.RED));
+			lines.add(Component.translatable("tooltip.extremedimensions.tapestry_thread.weave").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+			return;
+		}
+		charms(stack, lines);
+		com.extremedimensions.relic.Relic relic = com.extremedimensions.relic.RelicService.of(stack);
+		if (relic != null) {
+			// A relic: its gift, its price (both with the server's numbers) and how to bind it
+			lines.add(Component.literal("+ ").append(Component.translatable(relic.giftKey(), relic.giftArgs())).withStyle(ChatFormatting.GREEN));
+			lines.add(Component.literal("- ").append(Component.translatable(relic.priceKey(), relic.priceArgs())).withStyle(ChatFormatting.RED));
+			lines.add(Component.translatable("tooltip.extremedimensions.relic.bind").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+			return;
+		}
+		if (key != null) {
+			lines.add(Component.translatable("tooltip.extremedimensions." + key + ".1").withStyle(ChatFormatting.GRAY));
+			lines.add(Component.translatable("tooltip.extremedimensions." + key + ".2").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+			return;
+		}
+		if (stack.is(Items.SOUL_LANTERN) || stack.is(Items.SOUL_TORCH) || stack.is(Items.SOUL_CAMPFIRE)) {
+			lines.add(Component.translatable("tooltip.extremedimensions.soul_ward", (int) Config.LURKER_WARD_RANGE).withStyle(ChatFormatting.DARK_AQUA));
+		}
+		double nether = FuelValues.of(Dims.NETHER, item);
+		double end = FuelValues.of(Dims.END, item);
+		if (nether > 0) {
+			lines.add(Component.translatable("tooltip.extremedimensions.fuel.nether", Ui.time(nether)).withStyle(ChatFormatting.GOLD));
+		} else if (end > 0) {
+			lines.add(Component.translatable("tooltip.extremedimensions.fuel.end", Ui.time(end)).withStyle(ChatFormatting.LIGHT_PURPLE));
+		}
+	}
+
+	/**
+	 * What the mod's enchantments do, one dark line each under the item's own (on books too): unlike vanilla's, their
+	 * names alone do not say it.
+	 */
+	private static void charms(ItemStack stack, List<Component> lines) {
+		for (ItemEnchantments set : List.of(stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY),
+				stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY))) {
+			for (Holder<Enchantment> h : set.keySet()) {
+				h.unwrapKey().map(k -> k.identifier()).filter(id -> ExtremeDimensions.MOD_ID.equals(id.getNamespace())).ifPresent(id -> {
+					Component desc = Component.translatable("enchantment." + id.getNamespace() + "." + id.getPath() + ".desc").withStyle(ChatFormatting.DARK_GRAY);
+					// right under the enchantment's own line, where there is one
+					String name = Enchantment.getFullname(h, set.getLevel(h)).getString();
+					int at = -1;
+					for (int i = 0; i < lines.size() && at < 0; i++) {
+						if (lines.get(i).getString().equals(name)) {
+							at = i + 1;
+						}
+					}
+					if (at < 0) {
+						lines.add(desc);
+					} else {
+						lines.add(at, desc);
+					}
+				});
+			}
+		}
+	}
+}

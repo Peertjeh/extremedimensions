@@ -1,0 +1,649 @@
+{
+  "penalty": {
+    "subtitle": "subtitles.extremedimensions.penalty",
+    "sounds": [
+      "extremedimensions:penalty"
+    ]
+  },
+  "expedition_ended": {
+    "subtitle": "subtitles.extremedimensions.expedition_ended",
+    "sounds": [
+      "extremedimensions:expedition_ended"
+    ]
+  },
+  "music.menu_title": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/menu_title",
+        "stream": true
+      }
+    ]
+  },
+  "music.menu_loading": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/menu_loading",
+        "stream": true
+      }
+    ]
+  },
+  "portal_beyond": {
+    "subtitle": "subtitles.extremedimensions.portal_beyond",
+    "sounds": [
+      "extremedimensions:portal_beyond"
+    ]
+  },
+  "portal_home": {
+    "subtitle": "subtitles.extremedimensions.portal_home",
+    "sounds": [
+      "extremedimensions:portal_home"
+    ]
+  },
+  "collapse": {
+    "subtitle": "subtitles.extremedimensions.collapse",
+    "sounds": [
+      "extremedimensions:collapse"
+    ]
+  },
+  "lurker_whisper": {
+    "subtitle": "subtitles.extremedimensions.lurker_whisper",
+    "sounds": [
+      "extremedimensions:lurker_whisper"
+    ]
+  },
+  "lurker_take": {
+    "subtitle": "subtitles.extremedimensions.lurker_take",
+    "sounds": [
+      "extremedimensions:lurker_take"
+    ]
+  },
+  "lurker_drain": {
+    "subtitle": "subtitles.extremedimensions.lurker_drain",
+    "sounds": [
+      "extremedimensions:lurker_drain"
+    ]
+  },
+  "lurker_vanish": {
+    "subtitle": "subtitles.extremedimensions.lurker_vanish",
+    "sounds": [
+      "extremedimensions:lurker_vanish"
+    ]
+  },
+  "lurker_ambient": {
+    "subtitle": "subtitles.extremedimensions.lurker_ambient",
+    "sounds": [
+      "extremedimensions:lurker_breath1",
+      "extremedimensions:lurker_breath2",
+      {
+        "name": "extremedimensions:lurker_whisper",
+        "weight": 2
+      }
+    ]
+  },
+  "lurker_step": {
+    "subtitle": "subtitles.extremedimensions.lurker_step",
+    "sounds": [
+      "extremedimensions:lurker_step1",
+      "extremedimensions:lurker_step2",
+      "extremedimensions:lurker_step3"
+    ]
+  },
+  "lurker_hurt": {
+    "subtitle": "subtitles.extremedimensions.lurker_hurt",
+    "sounds": [
+      "extremedimensions:lurker_hurt1",
+      "extremedimensions:lurker_hurt2",
+      "extremedimensions:lurker_hurt3"
+    ]
+  },
+  "lurker_death": {
+    "subtitle": "subtitles.extremedimensions.lurker_death",
+    "sounds": [
+      "extremedimensions:lurker_death"
+    ]
+  },
+  "lurker_shriek": {
+    "subtitle": "subtitles.extremedimensions.lurker_shriek",
+    "sounds": [
+      "extremedimensions:lurker_shriek"
+    ]
+  },
+  "lurker_flee": {
+    "subtitle": "subtitles.extremedimensions.lurker_flee",
+    "sounds": [
+      "extremedimensions:lurker_flee"
+    ]
+  },
+  "hollowling_ambient": {
+    "subtitle": "subtitles.extremedimensions.hollowling_ambient",
+    "sounds": [
+      "extremedimensions:hollowling_chitter1",
+      "extremedimensions:hollowling_chitter2",
+      "extremedimensions:hollowling_chitter3"
+    ]
+  },
+  "hollowling_giggle": {
+    "subtitle": "subtitles.extremedimensions.hollowling_giggle",
+    "sounds": [
+      "extremedimensions:hollowling_giggle"
+    ]
+  },
+  "hollowling_hurt": {
+    "subtitle": "subtitles.extremedimensions.hollowling_hurt",
+    "sounds": [
+      "extremedimensions:hollowling_hurt1",
+      "extremedimensions:hollowling_hurt2"
+    ]
+  },
+  "hollowling_death": {
+    "subtitle": "subtitles.extremedimensions.hollowling_death",
+    "sounds": [
+      "extremedimensions:hollowling_death"
+    ]
+  },
+  "hollowling_bond": {
+    "subtitle": "subtitles.extremedimensions.hollowling_bond",
+    "sounds": [
+      "extremedimensions:hollowling_bond"
+    ]
+  },
+  "keeper_roar": {
+    "subtitle": "subtitles.extremedimensions.keeper_roar",
+    "sounds": [
+      "extremedimensions:keeper_roar"
+    ]
+  },
+  "hoard_ambient": {
+    "subtitle": "subtitles.extremedimensions.hoard_ambient",
+    "sounds": [
+      "extremedimensions:hoard_ambient"
+    ]
+  },
+  "rift_open": {
+    "subtitle": "subtitles.extremedimensions.rift_open",
+    "sounds": [
+      "extremedimensions:rift_open"
+    ]
+  },
+  "seam_ambient": {
+    "subtitle": "subtitles.extremedimensions.seam_ambient",
+    "sounds": [
+      "extremedimensions:seam_ambient"
+    ]
+  },
+  "veil_ray_song": {
+    "subtitle": "subtitles.extremedimensions.veil_ray_song",
+    "sounds": [
+      {
+        "name": "extremedimensions:veil_ray_song",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "music.boss_matriarch": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/boss_matriarch",
+        "stream": true
+      }
+    ]
+  },
+  "music.boss_ferryman": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/boss_ferryman",
+        "stream": true
+      }
+    ]
+  },
+  "music.boss_weaver": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/boss_weaver",
+        "stream": true
+      }
+    ]
+  },
+  "elder.matriarch.voice": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.voice",
+    "sounds": [
+      {
+        "name": "minecraft:entity.ravager.ambient",
+        "type": "event",
+        "pitch": 0.5,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.matriarch.sweep": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.sweep",
+    "sounds": [
+      {
+        "name": "minecraft:entity.player.attack.sweep",
+        "type": "event",
+        "pitch": 0.5,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.matriarch.lanterns": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.lanterns",
+    "sounds": [
+      {
+        "name": "minecraft:block.chain.break",
+        "type": "event",
+        "pitch": 0.6,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.matriarch.roots": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.roots",
+    "sounds": [
+      {
+        "name": "minecraft:entity.evoker.prepare_attack",
+        "type": "event",
+        "pitch": 0.6,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.matriarch.wail": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.wail",
+    "sounds": [
+      {
+        "name": "minecraft:entity.ghast.warn",
+        "type": "event",
+        "pitch": 0.5,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.matriarch.rush": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.rush",
+    "sounds": [
+      {
+        "name": "minecraft:entity.ravager.roar",
+        "type": "event",
+        "pitch": 0.7,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.matriarch.cathedral": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.cathedral",
+    "sounds": [
+      {
+        "name": "minecraft:entity.warden.dig",
+        "type": "event",
+        "pitch": 0.8,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.matriarch.barrage": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.barrage",
+    "sounds": [
+      {
+        "name": "minecraft:entity.blaze.shoot",
+        "type": "event",
+        "pitch": 0.5,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.matriarch.snare": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.snare",
+    "sounds": [
+      {
+        "name": "minecraft:block.hanging_roots.break",
+        "type": "event",
+        "pitch": 0.5,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.ferryman.voice": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.voice",
+    "sounds": [
+      {
+        "name": "minecraft:block.bell.resonate",
+        "type": "event",
+        "pitch": 0.5,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.ferryman.slam": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.slam",
+    "sounds": [
+      {
+        "name": "minecraft:entity.zombie.attack_iron_door",
+        "type": "event",
+        "pitch": 0.6,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.ferryman.chain": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.chain",
+    "sounds": [
+      {
+        "name": "minecraft:block.chain.place",
+        "type": "event",
+        "pitch": 0.5,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.ferryman.lantern": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.lantern",
+    "sounds": [
+      {
+        "name": "minecraft:particle.soul_escape",
+        "type": "event",
+        "pitch": 0.6,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.ferryman.knell": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.knell",
+    "sounds": [
+      {
+        "name": "minecraft:block.bell.use",
+        "type": "event",
+        "pitch": 0.5,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.ferryman.crossing": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.crossing",
+    "sounds": [
+      {
+        "name": "minecraft:entity.elder_guardian.curse",
+        "type": "event",
+        "pitch": 0.6,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.ferryman.gaol": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.gaol",
+    "sounds": [
+      {
+        "name": "minecraft:block.iron_door.close",
+        "type": "event",
+        "pitch": 0.5,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.ferryman.tide": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.tide",
+    "sounds": [
+      {
+        "name": "minecraft:entity.generic.splash",
+        "type": "event",
+        "pitch": 0.5,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.ferryman.snare": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.snare",
+    "sounds": [
+      {
+        "name": "minecraft:block.chain.hit",
+        "type": "event",
+        "pitch": 0.6,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.weaver.voice": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.voice",
+    "sounds": [
+      {
+        "name": "minecraft:block.amethyst_block.resonate",
+        "type": "event",
+        "pitch": 0.7,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.weaver.thread": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.thread",
+    "sounds": [
+      {
+        "name": "minecraft:block.tripwire.attach",
+        "type": "event",
+        "pitch": 0.6,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.weaver.needles": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.needles",
+    "sounds": [
+      {
+        "name": "minecraft:block.pointed_dripstone.fall",
+        "type": "event",
+        "pitch": 1.4,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.weaver.unravel": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.unravel",
+    "sounds": [
+      {
+        "name": "minecraft:entity.illusioner.mirror_move",
+        "type": "event",
+        "pitch": 0.8,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.weaver.lance": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.lance",
+    "sounds": [
+      {
+        "name": "minecraft:block.beacon.power_select",
+        "type": "event",
+        "pitch": 1.5,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.weaver.cradle": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.cradle",
+    "sounds": [
+      {
+        "name": "minecraft:entity.spider.ambient",
+        "type": "event",
+        "pitch": 0.5,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.weaver.thousand": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.thousand",
+    "sounds": [
+      {
+        "name": "minecraft:entity.illusioner.cast_spell",
+        "type": "event",
+        "pitch": 0.7,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.weaver.snare": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.snare",
+    "sounds": [
+      {
+        "name": "minecraft:block.tripwire.click_on",
+        "type": "event",
+        "pitch": 0.5,
+        "volume": 1.0
+      }
+    ]
+  },
+  "elder.matriarch.hurt": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.hurt",
+    "sounds": [
+      "extremedimensions:elder/matriarch_hurt1",
+      "extremedimensions:elder/matriarch_hurt2",
+      "extremedimensions:elder/matriarch_hurt3"
+    ]
+  },
+  "elder.matriarch.ambient": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.ambient",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/matriarch_ambient1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "extremedimensions:elder/matriarch_ambient2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.matriarch.death": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.death",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/matriarch_death",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "elder.matriarch.step": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.step",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/matriarch_step1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "extremedimensions:elder/matriarch_step2",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.matriarch.roar": {
+    "subtitle": "subtitles.extremedimensions.elder.matriarch.roar",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/matriarch_roar",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "elder.ferryman.hurt": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.hurt",
+    "sounds": [
+      "extremedimensions:elder/ferryman_hurt1",
+      "extremedimensions:elder/ferryman_hurt2",
+      "extremedimensions:elder/ferryman_hurt3"
+    ]
+  },
+  "elder.ferryman.ambient": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.ambient",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/ferryman_ambient1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "extremedimensions:elder/ferryman_ambient2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.ferryman.death": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.death",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/ferryman_death",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "elder.ferryman.step": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.step",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/ferryman_step1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "extremedimensions:elder/ferryman_step2",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.ferryman.roar": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.roar",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/ferryman_roar",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "elder.weaver.hurt": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.hurt",
+    "sounds": [
+      "extremedimensions:elder/weaver_hurt1",
+      "extremedimensions:elder/weaver_hurt2",
+      "extremedimensions:elder/weaver_hurt3"
+    ]
+  },
+  "elder.weaver.ambient": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.ambient",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/weaver_ambient1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "extremedimensions:elder/weaver_ambient2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.weaver.death": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.death",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/weaver_death",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "elder.weaver.step": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.step",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/weaver_step1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "extremedimensions:elder/weaver_step2",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.weaver.roar": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.roar",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/weaver_roar",
+        "attenuation_distance": 64
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "#  ",
+    "## ",
+    "###"
+  ],
+  "key": {
+    "#": "extremedimensions:pale_hush_bricks"
+  },
+  "result": {
+    "id": "extremedimensions:pale_hush_brick_stairs",
+    "count": 4
+  }
+}

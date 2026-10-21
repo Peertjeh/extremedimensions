@@ -1,0 +1,69 @@
+package com.extremedimensions.client.entity;
+
+import java.util.Map;
+import java.util.WeakHashMap;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+
+import com.extremedimensions.ExtremeDimensions;
+import com.extremedimensions.seam.VeilRay;
+
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.MobRenderer;
+import net.minecraft.client.renderer.entity.layers.LivingEntityEmissiveLayer;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
+
+/**
+ * Renders a Veil Ray large, with its seams of light full-bright, banking with how fast it turns. The Frayed wear the same
+ * textures painted over again (the very same layout, so they sit on the model the same), their light gone sick green
+ * and their eyes red, and fold their wings back when they dive.
+ */
+public class VeilRayRenderer extends MobRenderer<VeilRay, VeilRayRenderState, VeilRayModel> {
+	private static final Identifier TEXTURE = ExtremeDimensions.id("textures/entity/veil_ray.png");
+	private static final Identifier GLOW = ExtremeDimensions.id("textures/entity/veil_ray_glow.png");
+	private static final Identifier FRAYED = ExtremeDimensions.id("textures/entity/veil_ray_frayed.png");
+	private static final Identifier FRAYED_GLOW = ExtremeDimensions.id("textures/entity/veil_ray_frayed_glow.png");
+	private static final float SCALE = 2.4F;
+
+	private final Map<VeilRay, float[]> turn = new WeakHashMap<>();
+
+	public VeilRayRenderer(EntityRendererProvider.Context context) {
+		super(context, new VeilRayModel(context.bakeLayer(VeilRayModel.LAYER)), 1.6F);
+		this.addLayer(new LivingEntityEmissiveLayer<>(this, state -> state.frayed ? FRAYED_GLOW : GLOW, (state, age) -> 1.0F,
+				new VeilRayModel(context.bakeLayer(VeilRayModel.LAYER)), RenderTypes::eyes, false));
+	}
+
+	@Override
+	public VeilRayRenderState createRenderState() {
+		return new VeilRayRenderState();
+	}
+
+	@Override
+	public void extractRenderState(VeilRay ray, VeilRayRenderState state, float partialTick) {
+		super.extractRenderState(ray, state, partialTick);
+		// Bank by how fast it turns per tick (not per frame, so it banks the same at any frame rate)
+		float[] t = turn.computeIfAbsent(ray, k -> new float[] {0, 0, 0});
+		float rate = Mth.clamp(Mth.wrapDegrees(ray.getYRot() - ray.yRotO) * 0.3F, -1, 1);
+		float now = ray.tickCount + partialTick;
+		float dt = Mth.clamp(now - t[0], 0, 4);
+		t[0] = now;
+		t[1] += (rate - t[1]) * (1 - (float) Math.pow(0.88, dt));
+		state.bank = t[1];
+		// The wings fold back over a few ticks as it dives, and open again as it pulls out
+		t[2] += ((ray.isDiving() ? 1 : 0) - t[2]) * (1 - (float) Math.pow(0.7, dt));
+		state.dive = t[2];
+		state.frayed = ray.isFrayed();
+	}
+
+	@Override
+	public Identifier getTextureLocation(VeilRayRenderState state) {
+		return state.frayed ? FRAYED : TEXTURE;
+	}
+
+	@Override
+	protected void scale(VeilRayRenderState state, PoseStack pose) {
+		pose.scale(SCALE, SCALE, SCALE);
+	}
+}

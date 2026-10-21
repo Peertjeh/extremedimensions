@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:bound",
+  "display": {
+    "icon": {
+      "id": "minecraft:obsidian"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.first_expedition.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.first_expedition.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

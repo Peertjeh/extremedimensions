@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    " # ",
+    "#S#",
+    " # "
+  ],
+  "key": {
+    "#": "extremedimensions:hush_bricks",
+    "S": "extremedimensions:seam_silk"
+  },
+  "result": {
+    "id": "extremedimensions:silked_hush_bricks",
+    "count": 4
+  }
+}

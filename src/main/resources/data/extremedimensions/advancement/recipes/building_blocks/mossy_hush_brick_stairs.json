@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_mossy_hush_bricks": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:mossy_hush_bricks"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_mossy_hush_bricks"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:mossy_hush_brick_stairs"
+    ]
+  }
+}

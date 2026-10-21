@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "extremedimensions:block/hush_pillar_top",
+    "side": "extremedimensions:block/hush_pillar"
+  }
+}

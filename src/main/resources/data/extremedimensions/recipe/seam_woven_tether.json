@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "extremedimensions:soul_woven_tether",
+    "extremedimensions:seam_silk",
+    "extremedimensions:seam_silk",
+    "extremedimensions:seam_silk",
+    "extremedimensions:seam_silk",
+    "minecraft:echo_shard",
+    "minecraft:breeze_rod"
+  ],
+  "result": {
+    "id": "extremedimensions:seam_woven_tether",
+    "count": 1
+  }
+}

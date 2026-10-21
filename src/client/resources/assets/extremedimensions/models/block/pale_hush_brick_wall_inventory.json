@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/wall_inventory",
+  "textures": {
+    "wall": "extremedimensions:block/pale_hush_bricks"
+  }
+}

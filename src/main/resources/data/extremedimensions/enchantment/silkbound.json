@@ -1,0 +1,22 @@
+{
+  "anvil_cost": 2,
+  "description": {
+    "translate": "enchantment.extremedimensions.silkbound"
+  },
+  "effects": {},
+  "exclusive_set": "#extremedimensions:exclusive_set/tether",
+  "max_cost": {
+    "base": 35,
+    "per_level_above_first": 12
+  },
+  "max_level": 2,
+  "min_cost": {
+    "base": 8,
+    "per_level_above_first": 12
+  },
+  "slots": [
+    "any"
+  ],
+  "supported_items": "#extremedimensions:enchantable/tether",
+  "weight": 4
+}

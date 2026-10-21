@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "hanging=false": {
+      "model": "extremedimensions:block/veil_lantern"
+    },
+    "hanging=true": {
+      "model": "extremedimensions:block/veil_lantern_hanging"
+    }
+  }
+}

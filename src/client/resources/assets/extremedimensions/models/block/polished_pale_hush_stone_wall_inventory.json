@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/wall_inventory",
+  "textures": {
+    "wall": "extremedimensions:block/polished_pale_hush_stone"
+  }
+}

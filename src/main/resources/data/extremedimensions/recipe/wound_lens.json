@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:spyglass",
+    "minecraft:echo_shard",
+    "extremedimensions:seam_silk",
+    "extremedimensions:seam_silk"
+  ],
+  "result": {
+    "id": "extremedimensions:wound_lens",
+    "count": 1
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "#",
+    "#"
+  ],
+  "key": {
+    "#": "extremedimensions:hush_brick_slab"
+  },
+  "result": {
+    "id": "extremedimensions:chiseled_hush_bricks",
+    "count": 1
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_hush_brick_slab": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:hush_brick_slab"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_hush_brick_slab"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:chiseled_hush_bricks"
+    ]
+  }
+}

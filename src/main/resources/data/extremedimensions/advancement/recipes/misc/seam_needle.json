@@ -1,0 +1,36 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_tether_fragment": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:tether_fragment"
+          }
+        ]
+      }
+    },
+    "has_wanderers_page": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:wanderers_page"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_tether_fragment",
+      "has_wanderers_page"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:seam_needle"
+    ]
+  }
+}

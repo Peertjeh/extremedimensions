@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:first_expedition",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:seam_needle"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.seam_entered.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.seam_entered.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

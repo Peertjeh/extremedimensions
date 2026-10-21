@@ -1,0 +1,47 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_seam_silk": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:seam_silk"
+          }
+        ]
+      }
+    },
+    "has_tether_fragment": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:tether_fragment"
+          }
+        ]
+      }
+    },
+    "has_veil_wing": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:veil_wing"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_seam_silk",
+      "has_tether_fragment",
+      "has_veil_wing"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:mending_cloth"
+    ]
+  }
+}

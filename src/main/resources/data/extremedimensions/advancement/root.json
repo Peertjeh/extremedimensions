@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "id": "extremedimensions:tether_journal"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.root.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.root.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false,
+    "background": "minecraft:block/polished_blackstone_bricks"
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

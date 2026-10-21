@@ -1,0 +1,36 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_hush_bricks": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:hush_bricks"
+          }
+        ]
+      }
+    },
+    "has_seam_silk": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:seam_silk"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_hush_bricks",
+      "has_seam_silk"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:silked_hush_bricks"
+    ]
+  }
+}

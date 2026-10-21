@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:tapestry",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:thread_of_the_heart"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.new_thread.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.new_thread.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

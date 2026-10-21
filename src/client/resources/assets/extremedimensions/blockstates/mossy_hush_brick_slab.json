@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "extremedimensions:block/mossy_hush_brick_slab"
+    },
+    "type=top": {
+      "model": "extremedimensions:block/mossy_hush_brick_slab_top"
+    },
+    "type=double": {
+      "model": "extremedimensions:block/mossy_hush_bricks"
+    }
+  }
+}

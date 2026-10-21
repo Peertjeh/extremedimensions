@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_hush_bricks": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:hush_bricks"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_hush_bricks"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:hush_brick_stairs_from_hush_bricks_stonecutting"
+    ]
+  }
+}

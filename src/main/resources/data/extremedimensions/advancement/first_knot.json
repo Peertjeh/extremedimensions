@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:fray_risen",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:plumb_line"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.first_knot.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.first_knot.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

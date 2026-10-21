@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/outer_stairs",
+  "textures": {
+    "bottom": "extremedimensions:block/cobbled_hush_stone",
+    "top": "extremedimensions:block/cobbled_hush_stone",
+    "side": "extremedimensions:block/cobbled_hush_stone"
+  }
+}

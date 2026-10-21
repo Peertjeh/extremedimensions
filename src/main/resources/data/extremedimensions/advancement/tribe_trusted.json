@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:first_barter",
+  "display": {
+    "icon": {
+      "id": "minecraft:soul_lantern"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.tribe_trusted.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.tribe_trusted.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": "extremedimensions:hush_stone",
+  "result": {
+    "id": "extremedimensions:chiseled_hush_bricks",
+    "count": 1
+  }
+}

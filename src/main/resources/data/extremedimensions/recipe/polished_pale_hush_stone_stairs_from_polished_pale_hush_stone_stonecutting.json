@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:stonecutting",
+  "ingredient": "extremedimensions:polished_pale_hush_stone",
+  "result": {
+    "id": "extremedimensions:polished_pale_hush_stone_stairs",
+    "count": 1
+  }
+}
