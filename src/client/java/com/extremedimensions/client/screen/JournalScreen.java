@@ -10,6 +10,7 @@ import java.util.Set;
 import com.extremedimensions.client.ui.Ui;
 import com.extremedimensions.journal.Bestiary;
 import com.extremedimensions.journal.JournalEntry;
+import com.extremedimensions.journal.MarginNote;
 import com.extremedimensions.registry.ModEntities;
 
 import net.minecraft.client.Minecraft;
@@ -34,15 +35,22 @@ public class JournalScreen extends Screen {
 	private static final int TEXT_W = PAGE_W - 24;
 	private static final int LINES_PER_PAGE = 14;
 	private static final int INK = 0x4A3526, INK_DARK = 0x3B2416, INK_FAINT = 0x7A6650, INK_TEAL = 0x1F5F5A;
+	/** The second hand: rust-brown ink, set in from the Wanderer's lines. */
+	private static final int INK_RUST = 0x6B2A1A, NOTE_INDENT = 8;
 
 	private enum Part { PAGES, BEASTS, LEDGER }
 
+	/** One line on a page: the Wanderer's, or a note in another hand. */
+	private record Line(String text, boolean note) {}
+
 	/** One page: optional title (first page of an entry only) and lines. */
-	private record Page(String title, List<String> lines) {}
+	private record Page(String title, List<Line> lines) {}
 
 	private record Beast(Bestiary.Beast beast, boolean seen, int slain) {}
 
 	private final Set<String> unlocked;
+	/** Notes in another hand the player has found (shown beside their pages). */
+	private final Set<String> notes;
 	private final List<Page> pages = new ArrayList<>();
 	private final List<Beast> beasts = new ArrayList<>();
 	/** The ledger: page name to its lines (key, value) in order. */
@@ -69,12 +77,13 @@ public class JournalScreen extends Screen {
 	}
 
 	public JournalScreen(Set<String> unlocked, Screen parent) {
-		this(unlocked, "", "", parent);
+		this(unlocked, "", "", Set.of(), parent);
 	}
 
-	public JournalScreen(Set<String> unlocked, String beastData, String ledgerData, Screen parent) {
+	public JournalScreen(Set<String> unlocked, String beastData, String ledgerData, Set<String> notes, Screen parent) {
 		super(Component.translatable("item.extremedimensions.tether_journal"));
 		this.unlocked = unlocked;
+		this.notes = notes;
 		this.parent = parent;
 		Map<String, int[]> known = new LinkedHashMap<>();
 		for (String entry : beastData.split(";")) {
@@ -134,7 +143,19 @@ public class JournalScreen extends Screen {
 			if (!unlocked.contains(e.id)) {
 				continue;
 			}
-			List<String> lines = Ui.wrap(this.font, Ui.tr(e.textKey()), TEXT_W);
+			List<Line> lines = new ArrayList<>();
+			for (String l : Ui.wrap(this.font, Ui.tr(e.textKey()), TEXT_W)) {
+				lines.add(new Line(l, false));
+			}
+			// Under the Wanderer's words, the notes another hand left beside them
+			for (MarginNote n : MarginNote.values()) {
+				if (n.page == e && notes.contains(n.id)) {
+					lines.add(new Line("", true));
+					for (String l : Ui.wrap(this.font, Ui.tr(n.textKey()), TEXT_W - NOTE_INDENT)) {
+						lines.add(new Line(l, true));
+					}
+				}
+			}
 			int first = LINES_PER_PAGE - 2; // the title takes room on the first page
 			pages.add(new Page(Ui.tr(e.titleKey()), lines.subList(0, Math.min(lines.size(), first))));
 			for (int i = first; i < lines.size(); i += LINES_PER_PAGE) {
@@ -267,8 +288,12 @@ public class JournalScreen extends Screen {
 			title(g, p.title(), x, y, alpha);
 			ty += 22;
 		}
-		for (String line : p.lines()) {
-			Ui.ink(g, this.font, line, x + 12, ty, INK, alpha);
+		for (Line line : p.lines()) {
+			if (line.note() && !line.text().isEmpty()) {
+				// a thin stroke down the margin, as a hand marks what it wrote beside a page
+				g.fill(x + 13, ty - 1, x + 14, ty + 9, Ui.argb(alpha * 0.55, INK_RUST));
+			}
+			Ui.ink(g, this.font, line.text(), x + 12 + (line.note() ? NOTE_INDENT : 0), ty, line.note() ? INK_RUST : INK, alpha);
 			ty += 11;
 		}
 		number(g, index, x, y, alpha);

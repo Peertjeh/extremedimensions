@@ -124,9 +124,9 @@ public final class RelicService {
 		return 1.0;
 	}
 
-	/** A random relic, as found. */
+	/** A random relic, as found (never the Held's Chain: that one lies only where the Held left it). */
 	public static ItemStack random() {
-		Relic[] all = Relic.values();
+		Relic[] all = java.util.Arrays.stream(Relic.values()).filter(r -> r != Relic.HELDS_CHAIN).toArray(Relic[]::new);
 		return new ItemStack(item(all[ThreadLocalRandom.current().nextInt(all.length)]));
 	}
 }

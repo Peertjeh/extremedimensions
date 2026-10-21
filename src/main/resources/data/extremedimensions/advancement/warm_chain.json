@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:first_expedition",
+  "display": {
+    "icon": {
+      "id": "minecraft:iron_chain"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.warm_chain.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.warm_chain.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

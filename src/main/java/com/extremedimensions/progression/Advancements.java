@@ -52,6 +52,8 @@ public final class Advancements {
 	public static final String RELIC_BOUND = "relic_bound";
 	public static final String PACT_KEPT = "pact_kept";
 	public static final String ISLAND_FELL = "island_fell";
+	public static final String WARM_CHAIN = "warm_chain";
+	public static final String HELD_FOUND = "held_found";
 
 	/** Expeditions needed for {@link #VETERAN}. */
 	public static final int VETERAN_EXPEDITIONS = 10;

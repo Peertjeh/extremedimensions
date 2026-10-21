@@ -212,6 +212,9 @@ the Wanderer saw a chain and walked away; on the other side, someone was still h
 grace is tested on both sides of the portal; the margin notes survive a relog; screenshots of the chain, the chamber
 and the journal margin.
 
+*Status:* built in 2.34.0. One change from the plan: each warm gate has its own chamber, and only the first chamber a
+player raises holds the Held's letter and chain (so the Held stays one person, and every player can find them).
+
 #### 2.35 The Art of Binding
 
 *Fantasy: prepare differently, not just harder. Entry: enchanting table (Woundbane, Thrift, Silkbound) and the Seam
@@ -318,7 +321,7 @@ stolen by Hollowlings (existing rule); a Lurker can take one like any item.
 | Field | Value |
 | --- | --- |
 | Narrative | The chain the Held kept hold of for longer than anyone should. "It will hold you as it held me: a little longer than it should." |
-| Acquisition | The barrel in the Held's chamber (one per chamber, first to open it). Not craftable |
+| Acquisition | The barrel in the first Held's chamber a player raises (later chambers hold another's remains: fragments, a page). Not craftable, never a random relic |
 | Stage | First Nether expedition onwards |
 | Primary | **Gives:** when your charge runs out beyond the wound, the chain holds you for 15 s before the Collapse begins. Reach your arrival portal in that time and you come home without a curse |
 | Secondary | Reads in the Curses screen as a relic. Order with a Seam-Woven Tether: the chain's grace comes first; the tether's escape only if you do not make it |
@@ -334,7 +337,7 @@ stolen by Hollowlings (existing rule); a Lurker can take one like any item.
 | Field | Value |
 | --- | --- |
 | Narrative | A page in a hand that is not the Wanderer's, signed with a knot drawn in soot |
-| Acquisition | The lectern in the Held's chamber |
+| Acquisition | The barrel in the first Held's chamber a player raises (a lectern only holds books; the barrel keeps it with the Held's Chain) |
 | Primary | Use: opens journal page XXXIX *The Held* and the margin notes that belong to it, **for the reader**. Not consumed, so friends can read the same leaf |
 | Limits | One per chamber. A second read does nothing |
 | Multiplayer | World-level item, per-player journal state |

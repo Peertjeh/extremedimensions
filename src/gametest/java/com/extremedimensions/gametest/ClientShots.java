@@ -420,7 +420,7 @@ public class ClientShots implements FabricClientGameTest {
 						"road:expeditions=12;road:collapses=3;road:longest=1834;road:furthest=742;road:deaths=5;road:seam_visits=4;road:fray_descents=2;"
 								+ "burden:curses=19/8;burden:lifted=6;burden:scars=4;burden:pages=21/37;burden:relic=ember_heart;burden:seen=6/9;"
 								+ "others:standing=trusted/47;others:bartered=9;others:raids=1;others:keepers=3;others:great=0;others:lifts_given=2;"
-								+ "others:lifts_taken=1;others:burdens=1", null);
+								+ "others:lifts_taken=1;others:burdens=1", java.util.Set.of(), null);
 				mc.gui.setScreen(journal[0]);
 				check(pressOnce(journal[0], net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.journal.tab.beasts")), "the journal has no bestiary tab");
 			});
@@ -458,7 +458,7 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(10);
 			ctx.runOnClient(mc -> check(mc.player.getPose() != net.minecraft.world.entity.Pose.SWIMMING, "back on their feet, the player still crawls"));
 
-			// Relics: all nine in the hotbar, and the Ember Heart bound to the Tether (shown in the Curses screen)
+			// Relics: all ten (the tenth in the bag), and the Ember Heart bound to the Tether (shown in the Curses screen)
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
 				int i = 0;
@@ -989,6 +989,69 @@ public class ClientShots implements FabricClientGameTest {
 					ctx.takeScreenshot("20_island_plain_under");
 				}
 			}
+			// The Warm Chain: a ruined gate with its chain lying into it, warm (embers rise from it)
+			int[] warm = sp.getServer().computeOnServer(s -> {
+				net.minecraft.server.level.ServerLevel lvl = (net.minecraft.server.level.ServerLevel) player(s).level();
+				int x0 = home[0] + 292, y = 110, z0 = home[2] + 60;
+				for (int x = x0 - 10; x <= x0 + 10; x++) {
+					for (int z = z0 - 10; z <= z0 + 14; z++) {
+						lvl.setBlock(new BlockPos(x, y - 2, z), net.minecraft.world.level.block.Blocks.DIRT.defaultBlockState(), 3);
+						lvl.setBlock(new BlockPos(x, y - 1, z), (x + z) % 7 == 0 ? net.minecraft.world.level.block.Blocks.NETHERRACK.defaultBlockState()
+								: net.minecraft.world.level.block.Blocks.GRASS_BLOCK.defaultBlockState(), 3);
+					}
+				}
+				// a broken frame, four wide and five tall, with a block or two fallen out and crying obsidian in it
+				for (int x = 0; x < 4; x++) {
+					for (int k = 0; k < 5; k++) {
+						boolean edge = x == 0 || x == 3 || k == 0 || k == 4;
+						if (edge && !(x == 3 && k == 3) && !(x == 2 && k == 4)) {
+							lvl.setBlock(new BlockPos(x0 - 1 + x, y + k, z0), (x + k) % 4 == 1 ? net.minecraft.world.level.block.Blocks.CRYING_OBSIDIAN.defaultBlockState()
+									: net.minecraft.world.level.block.Blocks.OBSIDIAN.defaultBlockState(), 3);
+						}
+					}
+				}
+				lvl.setBlock(new BlockPos(x0 + 3, y, z0 + 1), net.minecraft.world.level.block.Blocks.OBSIDIAN.defaultBlockState(), 3);
+				lvl.setBlock(new BlockPos(x0 - 2, y - 1, z0 - 1), net.minecraft.world.level.block.Blocks.MAGMA_BLOCK.defaultBlockState(), 3);
+				com.extremedimensions.data.WarmGate g = com.extremedimensions.lore.WarmChains.warm(lvl, "shot-gate",
+						new net.minecraft.world.level.levelgen.structure.BoundingBox(x0 - 6, y - 1, z0 - 6, x0 + 6, y + 6, z0 + 6));
+				net.minecraft.core.Direction f = net.minecraft.core.Direction.byName(g.facing);
+				return new int[] {g.x, g.y, g.z, f.getStepX(), f.getStepZ(), (int) f.getOpposite().toYRot()};
+			});
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f %d 18", warm[0] + 0.5 + warm[3] * 11, warm[1] + 2.6,
+					warm[2] + 0.5 + warm[4] * 11, warm[5]));
+			ctx.waitTicks(60);
+			ctx.takeScreenshot("29_warm_chain");
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f %d 45", warm[0] + 0.5 + warm[3] * 4 + warm[4] * 2, warm[1] + 2.2,
+					warm[2] + 0.5 + warm[4] * 4 + warm[3] * 2, warm[5] + 20));
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("29_warm_chain_close");
+			sp.getServer().runOnServer(s -> DataStore.warmGates().removeIf(g -> "shot-gate".equals(g.key)));
+			// The Held's chamber, raised in a block of netherrack as it would be carved into the Nether
+			int[] held = sp.getServer().computeOnServer(s -> {
+				net.minecraft.server.level.ServerLevel lvl = (net.minecraft.server.level.ServerLevel) player(s).level();
+				int cx = home[0] + 330, cy = 104, cz = home[2] + 60;
+				for (BlockPos q : BlockPos.betweenClosed(cx - 7, cy - 3, cz - 7, cx + 7, cy + 7, cz + 16)) {
+					lvl.setBlock(q, net.minecraft.world.level.block.Blocks.NETHERRACK.defaultBlockState(), 2);
+				}
+				com.extremedimensions.lore.HeldChamber.Site site = new com.extremedimensions.lore.HeldChamber.Site(new BlockPos(cx, cy, cz),
+						net.minecraft.core.Direction.SOUTH);
+				com.extremedimensions.lore.HeldChamber.build(lvl, site, com.extremedimensions.lore.Loot.HELDS_CHAMBER, 34L);
+				com.extremedimensions.lore.HeldChamber.passage(lvl, site, 16);
+				return new int[] {cx, cy, cz};
+			});
+			// From just inside the door, looking at the Held
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f 180 16", held[0] + 0.5, held[1] + 1.2, held[2] + 3.4));
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("29_held_chamber");
+			// The journal: the ruined gates with the note beside them, and the Held's letter
+			ctx.runOnClient(mc -> mc.gui.setScreen(new com.extremedimensions.client.screen.JournalScreen(java.util.Set.of("ruined_gate", "first_wound"), "", "",
+					java.util.Set.of("ruined_gate", "first_wound", "wanderer"), null)));
+			ctx.waitTicks(12);
+			ctx.takeScreenshot("29_journal_margin");
+			ctx.runOnClient(mc -> mc.gui.setScreen(new com.extremedimensions.client.screen.JournalScreen(java.util.Set.of("held"), "", "", java.util.Set.of(), null)));
+			ctx.waitTicks(12);
+			ctx.takeScreenshot("29_journal_held");
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			ctx.runOnClient(mc -> {
 				ClientOptions.setGuidance(true);
 				mc.options.renderDistance().set(5);

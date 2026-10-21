@@ -1,5 +1,44 @@
 # Changelog
 
+## 2.34.0: The Warm Chain
+
+*"I found a chain in the obsidian of one, still warm. I did not follow where it led."* (XVIII, The Ruined Gates)
+
+The first chapter of new content on the road to 3.0: the thread the Wanderer would not follow.
+
+### Added
+- **Warm chains.** Each ruined portal in the Overworld is looked at once, the first time a player comes near it. About
+  one in three has a chain lying over the ground into the foot of its frame, a link or two lost along the way, and
+  embers rise from it: it is still warm. Coming to it writes page XVIII if you have not found it yet, and a note in
+  another hand beside it.
+- **The Held's chamber.** Repair a warm gate and go through it bound, and somewhere close in the Nether a chain can be
+  heard. A sealed room of blackstone has been carved there, with a short way in from your side: at the back the Held
+  still sits, holding the chain up, beside a lodestone they never bound and a barrel of what they kept. Each warm gate
+  has one chamber, raised the first time anyone crosses. The first one a player raises holds the Held's letter and
+  their chain; any later one only what another of the held left (loot tables `chests/helds_chamber` and
+  `chests/held_remains`).
+- **The Held's Chain, the tenth relic.** Gift: when your charge runs out beyond the wound, the chain holds you for
+  15 seconds before the Collapse; reach your portal in that time and you come home without a curse. The boss bar
+  counts the grace down. Once an expedition, and not in the Seam; leaving the game during it does not grant it again.
+  It comes before a Seam-Woven Tether's escape. Price: an anchor holds at most 20 minutes for you instead of 30 (charge
+  laid in before the chain was bound is cut down at the next expedition). Found only in the Held's chamber.
+- **The Loose Leaf and page XXXIX, The Held.** A page in a hand that is not the Wanderer's. Reading it writes the
+  Held's letter into the journal; it is not used up, so friends can read the same leaf. A Wanderer's Page never turns
+  out to be it.
+- **The second hand.** Notes in another hand turn up in the margins of the journal, in rust-brown ink set in from the
+  Wanderer's lines, once you have found what they answer: beside XVIII at a warm chain, beside XIX and XXX from the
+  Loose Leaf. The Wanderer's words are never changed. A toast says when a note appears beside a page you have.
+- **Two advancements:** *Still Warm* (find a warm chain) and *What the Chain Held* (find the chamber at its other end).
+- Settings: `warm_chain_chance` (0.35), `relic_helds_chain_grace` (15 s), `relic_helds_chain_cap` (1200 s).
+
+### Under the hood
+- Gametests: a ruined portal is looked at once and its chain lies in front of the frame, never in the opening; the
+  chain writes the page and the note once; a crossing through a warm gate raises one chamber with the letter and the
+  chain, and a second crossing raises nothing more; the Held's Chain holds at zero charge, home in time costs nothing,
+  the grace run out is a Collapse, a spent grace does not come back, and without the relic there is none; the chain's
+  cap per anchor, and no random relic is ever the Held's Chain; the Loose Leaf reads once and survives a restart. The
+  client test photographs the warm chain, the chamber and the journal's margin.
+
 ## 2.33.0: Rooted in Vanilla
 
 The first step on the road to 3.0 (`docs/roadmap-3.0.md`): the mod as part of Minecraft's own progression, before

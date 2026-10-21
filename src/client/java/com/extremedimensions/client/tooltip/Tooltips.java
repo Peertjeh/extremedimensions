@@ -39,6 +39,8 @@ public final class Tooltips {
 			key = "tether_fragment";
 		} else if (item == ModItems.WANDERERS_PAGE) {
 			key = "wanderers_page";
+		} else if (item == ModItems.LOOSE_LEAF) {
+			key = "loose_leaf";
 		} else if (item == ModItems.SOUL_WOVEN_TETHER) {
 			key = "soul_woven_tether";
 		} else if (item == ModItems.SEAM_WOVEN_TETHER) {

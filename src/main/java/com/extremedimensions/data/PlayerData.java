@@ -83,6 +83,14 @@ public class PlayerData {
 	public double runMax = 0;
 	/** Unlocked Tether Journal pages. */
 	public Set<String> journal = new LinkedHashSet<>();
+	/** Notes in another hand found in the journal's margins (see {@code MarginNote}). */
+	public Set<String> notes = new LinkedHashSet<>();
+	/** Has found a Held's chamber of their own (the first one they come to holds the Held's letter and chain). */
+	public boolean heldFound = false;
+	/** This expedition, the Held's Chain already held the player once (kept, so leaving the game during it is no way out). */
+	public boolean heldSpent = false;
+	/** Ticks the Held's Chain still holds the player after the charge ran out. */
+	public transient int heldTicks = 0;
 	public boolean journalDelivered = false;
 	/** In the Seam: time left, the rift home (in the Seam) and where the player came from. */
 	public boolean inSeam = false;

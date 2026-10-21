@@ -145,6 +145,8 @@ public final class Config {
 	public static double FRAGMENT_CHANCE = 0.04;
 	/** Fragment chance for Wither Skeletons, Endermen, Blazes, Ghasts and Shulkers. */
 	public static double FRAGMENT_CHANCE_ELITE = 0.12;
+	/** Chance a ruined portal in the Overworld has a warm chain lying into it (each one is looked at once). */
+	public static double WARM_CHAIN_CHANCE = 0.35;
 
 	// --- The Lurker ------------------------------------------------------------------------------
 
@@ -330,6 +332,9 @@ public final class Config {
 	/** Kindred Knot: the wait before you can fall again, as a multiple (0.5 = halved); how long you last fallen, as a multiple (0.67 = a third shorter). */
 	public static double RELIC_KINDRED_KNOT_COOLDOWN = 0.5;
 	public static double RELIC_KINDRED_KNOT_BLEED = 0.67;
+	/** Held's Chain: seconds the chain holds you once your charge runs out beyond the wound; most charge (seconds) an anchor holds for you. */
+	public static int RELIC_HELDS_CHAIN_GRACE = 15;
+	public static double RELIC_HELDS_CHAIN_CAP = 1200.0;
 	/** Chance a slain Keeper leaves a relic; relics the Starved One leaves every player who fought it; chance a Seam chest holds one. */
 	public static double RELIC_KEEPER_CHANCE = 0.35;
 	public static int RELIC_STARVED_ONE = 1;

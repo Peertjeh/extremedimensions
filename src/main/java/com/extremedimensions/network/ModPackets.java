@@ -122,7 +122,7 @@ public final class ModPackets {
 	 * Server -> client: open the Tether Journal with these unlocked pages (comma separated), the bestiary
 	 * ("id:seen:slain;...") and the ledger ("page:key=value;...").
 	 */
-	public record OpenJournalPayload(String ids, String beasts, String ledger) implements CustomPacketPayload {
+	public record OpenJournalPayload(String ids, String beasts, String ledger, String notes) implements CustomPacketPayload {
 		public static final Type<OpenJournalPayload> TYPE = new Type<>(ExtremeDimensions.id("open_journal"));
 		public static final StreamCodec<FriendlyByteBuf, OpenJournalPayload> CODEC = StreamCodec.ofMember(OpenJournalPayload::write, OpenJournalPayload::read);
 
@@ -130,10 +130,11 @@ public final class ModPackets {
 			buf.writeUtf(ids);
 			buf.writeUtf(beasts);
 			buf.writeUtf(ledger);
+			buf.writeUtf(notes);
 		}
 
 		private static OpenJournalPayload read(FriendlyByteBuf buf) {
-			return new OpenJournalPayload(buf.readUtf(), buf.readUtf(), buf.readUtf());
+			return new OpenJournalPayload(buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf());
 		}
 
 		@Override

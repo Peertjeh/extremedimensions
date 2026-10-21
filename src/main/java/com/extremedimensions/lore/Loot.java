@@ -33,6 +33,9 @@ public final class Loot {
 	public static final String FRAY_TANGLE = "chests/fray_tangle";
 	public static final String OLD_HOARD = "chests/old_hoard";
 	public static final String RAIDED_HOARD = "chests/raided_hoard";
+	/** The barrel in the first Held's chamber a player raises (the letter and the chain), and in any later one. */
+	public static final String HELDS_CHAMBER = "chests/helds_chamber";
+	public static final String HELD_REMAINS = "chests/held_remains";
 	public static final String KEEPER = "gameplay/keeper_spoils";
 	public static final String MATRIARCH = "gameplay/matriarch_spoils";
 	public static final String FERRYMAN = "gameplay/ferryman_spoils";

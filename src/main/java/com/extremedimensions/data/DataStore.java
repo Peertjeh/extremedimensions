@@ -53,6 +53,9 @@ public final class DataStore {
 		List<String> wrecks = new ArrayList<>();
 		/** The Rift Trials scoreboard. */
 		com.extremedimensions.trial.TrialBoard trials = new com.extremedimensions.trial.TrialBoard();
+		/** Ruined portals already looked at for a warm chain (their structure starts), and the warm ones. */
+		Set<String> gatesLooked = new HashSet<>();
+		List<WarmGate> warmGates = new ArrayList<>();
 	}
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -90,6 +93,12 @@ public final class DataStore {
 		}
 		if (loaded.seamCells != null) {
 			data.seamCells = loaded.seamCells;
+		}
+		if (loaded.gatesLooked != null) {
+			data.gatesLooked = loaded.gatesLooked;
+		}
+		if (loaded.warmGates != null) {
+			data.warmGates = loaded.warmGates;
 		}
 		if (loaded.trials != null) {
 			data.trials = loaded.trials;
@@ -244,6 +253,20 @@ public final class DataStore {
 		dirty = true;
 	}
 
+	/** Ruined portals already looked at for a warm chain (their structure starts). */
+	public static Set<String> gatesLooked() {
+		return data.gatesLooked;
+	}
+
+	public static List<WarmGate> warmGates() {
+		return data.warmGates;
+	}
+
+	/** A player's data as it would come back after a restart: written out and read in again (for the tests). */
+	public static PlayerData reread(PlayerData d) {
+		return GSON.fromJson(GSON.toJson(d), PlayerData.class);
+	}
+
 	public static Set<String> seamCells() {
 		return data.seamCells;
 	}
@@ -273,6 +296,9 @@ public final class DataStore {
 		}
 		if (d.pact == null) {
 			d.pact = new java.util.HashMap<>();
+		}
+		if (d.notes == null) {
+			d.notes = new java.util.LinkedHashSet<>();
 		}
 		return d;
 	}

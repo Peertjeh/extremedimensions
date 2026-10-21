@@ -288,6 +288,9 @@ public final class ServerEvents {
 			if (player instanceof ServerPlayer sp && (player.getItemInHand(hand).is(ModItems.MENDING_THREAD) || player.getItemInHand(hand).is(ModItems.SEVERING_SHEARS))) {
 				return MendingService.useEnding(sp, player.getItemInHand(hand));
 			}
+			if (player instanceof ServerPlayer sp && player.getItemInHand(hand).is(ModItems.LOOSE_LEAF)) {
+				return Journal.readLeaf(sp, DataStore.get(sp.getUUID()));
+			}
 			if (player instanceof ServerPlayer sp && player.getItemInHand(hand).is(ModItems.WANDERERS_PAGE)) {
 				if (!sp.isCreative()) {
 					player.getItemInHand(hand).shrink(1);
@@ -494,6 +497,7 @@ public final class ServerEvents {
 
 		TetherService.sweep(s);
 		com.extremedimensions.expedition.ExpeditionBar.tick(s);
+		com.extremedimensions.lore.WarmChains.tick(s);
 		if (s.getTickCount() % 1200 == 0) {
 			AtonementGuard.sweep(s);
 		}

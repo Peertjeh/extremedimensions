@@ -43,12 +43,21 @@ public enum JournalEntry {
 	BARTER("barter"),
 	RAID("raid"),
 	FRAY("fray"),
-	FRAYED_RAY("frayed_ray");
+	FRAYED_RAY("frayed_ray"),
+	/** Not the Wanderer's: the Held's letter, read from a Loose Leaf (a Wanderer's Page never turns out to be it). */
+	HELD("held", false);
 
 	public final String id;
+	/** Written by the Wanderer (and so to be found on a Wanderer's Page). */
+	public final boolean wanderer;
 
 	JournalEntry(String id) {
+		this(id, true);
+	}
+
+	JournalEntry(String id, boolean wanderer) {
 		this.id = id;
+		this.wanderer = wanderer;
 	}
 
 	public String titleKey() {

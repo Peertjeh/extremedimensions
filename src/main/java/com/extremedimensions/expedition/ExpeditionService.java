@@ -17,6 +17,8 @@ import com.extremedimensions.penalty.AtonementGuard;
 import com.extremedimensions.penalty.CurseEffects;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
+import com.extremedimensions.relic.Relic;
+import com.extremedimensions.relic.RelicService;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 import com.extremedimensions.tether.TetherService;
@@ -92,7 +94,20 @@ public final class ExpeditionService {
 			}
 			total = AnchorService.linkedCharge(p, d);
 		}
+		// Held's Chain: no anchor holds more for the player than the chain allows (charge laid in before it was bound too)
+		if (RelicService.has(d, Relic.HELDS_CHAIN)) {
+			double cap = AnchorService.cap(d);
+			for (Anchor a : AnchorService.linked(d)) {
+				double own = a.own(uid);
+				if (own > cap) {
+					a.scale(uid, cap / own);
+				}
+			}
+			total = AnchorService.linkedCharge(p, d);
+		}
 		d.inRun = true;
+		d.heldSpent = false;
+		d.heldTicks = 0;
 		d.runActive = 0;
 		d.ferrymanRolled = false;
 		com.extremedimensions.pact.PactService.begin(p, d);
@@ -112,11 +127,20 @@ public final class ExpeditionService {
 			WorldFx.particles(p, "minecraft:reverse_portal", 1.0, 0.6, 0.2, 80);
 			WorldFx.particles(p, "minecraft:end_rod", 1.0, 1.2, 0.03, 20);
 		}
+		if (nether) {
+			// Through a warm gate: the chain's other end is near
+			com.extremedimensions.lore.WarmChains.crossed(p, d, (ServerLevel) p.level(), p.blockPosition());
+		}
 	}
 
 	/** Safe return: the chain disappears entirely and the Tether comes back. */
 	private static void complete(ServerPlayer p, PlayerData d) {
 		TetherService.clear(p, d, true);
+		if (d.heldTicks > 0) {
+			// Home while the Held's Chain still held them: made it
+			d.heldTicks = 0;
+			WorldFx.soundSelf(p, "minecraft:block.chain.break", 0.8f, 1.2f);
+		}
 		// Ferryman's Fee: every crossing home is paid for in levels (counted while still on the expedition: a pact's too)
 		int fee = (int) Math.round(Penalty.FERRYMANS_FEE.value) * d.stacks(Penalty.FERRYMANS_FEE);
 		d.inRun = false;
@@ -163,6 +187,7 @@ public final class ExpeditionService {
 	 */
 	private static void unravel(ServerPlayer p, PlayerData d) {
 		TetherService.clear(p, d, false);
+		d.heldTicks = 0;
 		d.tetherTier = 0;
 		// Saved from the Collapse, not returned: the expedition ends here, without the reward of a safe return
 		com.extremedimensions.pact.PactService.broken(p, d);
@@ -231,7 +256,10 @@ public final class ExpeditionService {
 					Advancements.grant(p, Advancements.LONG_TETHER);
 				}
 			}
-			if (left <= 0 && d.tetherTier == 2 && d.tetherAnchor != null) {
+			if (left <= 0 && holds(p, d, seam)) {
+				// The Held's Chain holds them a little longer: home before it lets go, and no Collapse
+				changed = d.heldTicks % 20 == 0;
+			} else if (left <= 0 && d.tetherTier == 2 && d.tetherAnchor != null) {
 				unravel(p, d);
 				changed = true;
 			} else if (left <= 0) {
@@ -255,6 +283,34 @@ public final class ExpeditionService {
 			d.currentDrain = d.drainMultiplier();
 		}
 		return changed;
+	}
+
+	/**
+	 * The Held's Chain: once an expedition, when the charge runs out beyond the wound (not in the Seam), the chain holds
+	 * the player for {@link Config#RELIC_HELDS_CHAIN_GRACE} seconds before the Collapse. True while it holds.
+	 */
+	private static boolean holds(ServerPlayer p, PlayerData d, boolean seam) {
+		if (d.heldTicks > 0) {
+			d.heldTicks--;
+			if (d.heldTicks % 20 == 0 && d.heldTicks > 0) {
+				int secs = d.heldTicks / 20;
+				WorldFx.soundSelf(p, "minecraft:block.chain.step", 1.0f, 0.6f + 0.04f * Math.max(0, 10 - secs));
+				WorldFx.particles(p, "minecraft:small_flame", 1.0, 0.5, 0.01, 6);
+			}
+			return d.heldTicks > 0;
+		}
+		if (d.heldSpent || seam || Config.RELIC_HELDS_CHAIN_GRACE <= 0 || !RelicService.has(d, Relic.HELDS_CHAIN)) {
+			return false;
+		}
+		d.heldSpent = true;
+		d.heldTicks = Config.RELIC_HELDS_CHAIN_GRACE * 20;
+		DataStore.markDirty();
+		WorldFx.sound(p, "minecraft:block.chain.place", 1.2f, 0.5f);
+		WorldFx.soundSelf(p, "minecraft:entity.warden.heartbeat", 1.3f, 0.8f);
+		WorldFx.particles(p, "minecraft:small_flame", 1.0, 0.8, 0.02, 30);
+		p.sendSystemMessage(Component.translatable("gui.extremedimensions.relic.helds_chain.holds",
+				Config.RELIC_HELDS_CHAIN_GRACE), true);
+		return true;
 	}
 
 	private static void warn(ServerPlayer p, PlayerData d, int secs) {
@@ -289,6 +345,7 @@ public final class ExpeditionService {
 	 */
 	private static void collapse(ServerPlayer p, PlayerData d) {
 		TetherService.clear(p, d, false);
+		d.heldTicks = 0;
 		com.extremedimensions.pact.PactService.broken(p, d);
 		d.collapsing = true;
 		d.collapseOwed = true;

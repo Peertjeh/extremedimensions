@@ -19,6 +19,8 @@ import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModBlocks;
 import com.extremedimensions.registry.ModItems;
+import com.extremedimensions.relic.Relic;
+import com.extremedimensions.relic.RelicService;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 import com.extremedimensions.tether.TetherService;
@@ -147,6 +149,18 @@ public final class AnchorService {
 		return deposit(p, d, pos, stack, type);
 	}
 
+	/**
+	 * The most charge one anchor holds for a player: less for every stack of Dim Anchors, and no more than the Held's
+	 * Chain allows while it is bound.
+	 */
+	public static double cap(PlayerData d) {
+		double cap = Math.max(60, Config.MAX_CHARGE - 60 * Penalty.DIM_ANCHORS.value * d.stacks(Penalty.DIM_ANCHORS));
+		if (RelicService.has(d, Relic.HELDS_CHAIN)) {
+			cap = Math.min(cap, Math.max(60, Config.RELIC_HELDS_CHAIN_CAP));
+		}
+		return cap;
+	}
+
 	private static InteractionResult deposit(ServerPlayer p, PlayerData d, BlockPos pos, ItemStack stack, String type) {
 		if (!Dims.OVERWORLD.equals(Dims.of(p))) {
 			return InteractionResult.SUCCESS;
@@ -164,8 +178,7 @@ public final class AnchorService {
 		}
 
 		String uid = p.getStringUUID();
-		// Dim Anchors: each anchor holds less of this player's time
-		double cap = Math.max(60, Config.MAX_CHARGE - 60 * Penalty.DIM_ANCHORS.value * d.stacks(Penalty.DIM_ANCHORS));
+		double cap = cap(d);
 		double space = cap - (anchor != null ? anchor.own(uid) : 0);
 		if (space < 1) {
 			return InteractionResult.SUCCESS;

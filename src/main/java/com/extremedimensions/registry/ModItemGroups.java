@@ -30,6 +30,7 @@ public final class ModItemGroups {
 					out.accept(ModItems.VOID_TETHER);
 					out.accept(ModItems.TETHER_FRAGMENT);
 					out.accept(ModItems.WANDERERS_PAGE);
+					out.accept(ModItems.LOOSE_LEAF);
 					out.accept(ModItems.SEAM_NEEDLE);
 					out.accept(ModItems.SEAM_SILK);
 					out.accept(ModItems.VEIL_WING);

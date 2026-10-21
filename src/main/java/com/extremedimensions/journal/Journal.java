@@ -31,6 +31,21 @@ public final class Journal {
 	}
 
 	/**
+	 * A note in another hand turns up in the margin, once per player. The toast comes only when its page is already in
+	 * the journal (otherwise the note waits there, unseen, for the page).
+	 */
+	public static void note(ServerPlayer p, PlayerData d, MarginNote n) {
+		if (!d.notes.add(n.id)) {
+			return;
+		}
+		DataStore.markDirty();
+		if (d.journal.contains(n.page.id)) {
+			WorldFx.fx(p, com.extremedimensions.network.Fx.JOURNAL_NOTE, n.ordinal());
+			WorldFx.soundSelf(p, "minecraft:item.book.page_turn", 1.0f, 0.55f);
+		}
+	}
+
+	/**
 	 * Reads a Wanderer's Page found in the world: the pages that can only be found come first, then any page the
 	 * player has not reached yet. A page they already know crumbles into a little experience.
 	 */
@@ -44,7 +59,7 @@ public final class Journal {
 		}
 		if (next == null) {
 			for (JournalEntry e : JournalEntry.values()) {
-				if (!d.journal.contains(e.id)) {
+				if (e.wanderer && !d.journal.contains(e.id)) {
 					next = e;
 					break;
 				}
@@ -60,8 +75,27 @@ public final class Journal {
 		DataStore.markDirty();
 	}
 
+	/**
+	 * Reads a Loose Leaf: the Held's letter goes into the journal, with the notes in the same hand beside the pages it
+	 * answers. The leaf is not used up; read a second time it has nothing more to say.
+	 */
+	public static net.minecraft.world.InteractionResult readLeaf(ServerPlayer p, PlayerData d) {
+		if (d.journal.contains(JournalEntry.HELD.id)) {
+			p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.loose_leaf.known"), true);
+			WorldFx.soundSelf(p, "minecraft:item.book.page_turn", 0.6f, 1.3f);
+			return net.minecraft.world.InteractionResult.SUCCESS;
+		}
+		unlock(p, d, JournalEntry.HELD);
+		note(p, d, MarginNote.WANDERER);
+		note(p, d, MarginNote.FIRST_WOUND);
+		WorldFx.soundSelf(p, "minecraft:block.chain.step", 0.8f, 0.6f);
+		DataStore.markDirty();
+		return net.minecraft.world.InteractionResult.SUCCESS;
+	}
+
 	public static void open(ServerPlayer p, PlayerData d) {
-		ServerPlayNetworking.send(p, new ModPackets.OpenJournalPayload(String.join(",", d.journal), Bestiary.encode(d), Ledger.encode(d)));
+		ServerPlayNetworking.send(p, new ModPackets.OpenJournalPayload(String.join(",", d.journal), Bestiary.encode(d), Ledger.encode(d),
+				String.join(",", d.notes)));
 		WorldFx.soundSelf(p, "minecraft:item.book.page_turn", 1.0f, 0.9f);
 	}
 

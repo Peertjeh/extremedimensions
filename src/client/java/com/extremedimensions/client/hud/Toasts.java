@@ -2,6 +2,7 @@ package com.extremedimensions.client.hud;
 
 import com.extremedimensions.journal.Bestiary;
 import com.extremedimensions.journal.JournalEntry;
+import com.extremedimensions.journal.MarginNote;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.toasts.SystemToast;
@@ -16,6 +17,14 @@ public final class Toasts {
 		JournalEntry[] pages = JournalEntry.values();
 		if (ordinal >= 0 && ordinal < pages.length) {
 			show(Component.translatable("gui.extremedimensions.toast.journal"), Component.translatable(pages[ordinal].titleKey()));
+		}
+	}
+
+	/** A note in another hand turned up beside a page (by the note's ordinal): the toast names the page. */
+	public static void note(int ordinal) {
+		MarginNote[] notes = MarginNote.values();
+		if (ordinal >= 0 && ordinal < notes.length) {
+			show(Component.translatable("gui.extremedimensions.toast.note"), Component.translatable(notes[ordinal].page.titleKey()));
 		}
 	}
 

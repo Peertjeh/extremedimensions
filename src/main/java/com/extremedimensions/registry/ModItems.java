@@ -27,6 +27,8 @@ public final class ModItems {
 
 	/** A torn journal page found in ruins and strongholds; using it unlocks a page of the Tether Journal. */
 	public static final Item WANDERERS_PAGE = register("wanderers_page", 16, Rarity.UNCOMMON);
+	/** A page in a hand that is not the Wanderer's: the Held's letter. Read, not used up (friends can read the same one). */
+	public static final Item LOOSE_LEAF = register("loose_leaf", 1, Rarity.RARE);
 
 	/** Thread spun from the Seam itself, mined from seam veins. */
 	public static final Item SEAM_SILK = register("seam_silk", 64, Rarity.UNCOMMON);

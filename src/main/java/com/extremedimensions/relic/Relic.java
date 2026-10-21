@@ -26,7 +26,9 @@ public enum Relic {
 	/** More time in the Seam, monsters notice you from farther at night. */
 	SEAM_LANTERN("seam_lantern"),
 	/** Fall again sooner after an ally lifts you, bleed out sooner while fallen. */
-	KINDRED_KNOT("kindred_knot");
+	KINDRED_KNOT("kindred_knot"),
+	/** A few seconds' grace when the charge runs out beyond the wound; each anchor holds less for you. Only found. */
+	HELDS_CHAIN("helds_chain");
 
 	public final String id;
 
@@ -62,6 +64,7 @@ public enum Relic {
 			case LURKERS_TOOTH -> new Object[] {};
 			case SEAM_LANTERN -> new Object[] {Config.RELIC_SEAM_LANTERN_SECONDS};
 			case KINDRED_KNOT -> new Object[] {pct(Config.RELIC_KINDRED_KNOT_COOLDOWN)};
+			case HELDS_CHAIN -> new Object[] {Config.RELIC_HELDS_CHAIN_GRACE};
 		};
 	}
 
@@ -77,6 +80,7 @@ public enum Relic {
 			case LURKERS_TOOTH -> new Object[] {Penalty.display(Config.RELIC_LURKERS_TOOTH_OFTEN)};
 			case SEAM_LANTERN -> new Object[] {Penalty.display(Math.round(Config.RELIC_SEAM_LANTERN_NOTICE * 100))};
 			case KINDRED_KNOT -> new Object[] {pct(Config.RELIC_KINDRED_KNOT_BLEED)};
+			case HELDS_CHAIN -> new Object[] {Penalty.display(Config.RELIC_HELDS_CHAIN_CAP / 60.0)};
 		};
 	}
 

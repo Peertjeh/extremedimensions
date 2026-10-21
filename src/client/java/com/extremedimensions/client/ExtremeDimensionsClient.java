@@ -172,7 +172,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenJournalPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(
 						new JournalScreen(new HashSet<>(Arrays.asList(payload.ids().split(","))), payload.beasts(), payload.ledger(),
-								JournalButton.takeReturn()))));
+								new HashSet<>(Arrays.asList(payload.notes().split(","))), JournalButton.takeReturn()))));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BossFxPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.fx.BossCinema.handle(payload)));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.AttackFxPayload.TYPE, (payload, context) ->
