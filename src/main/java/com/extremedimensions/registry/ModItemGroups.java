@@ -39,6 +39,11 @@ public final class ModItemGroups {
 					out.accept(ModItems.MENDING_CLOTH);
 					out.accept(ModItems.MENDING_THREAD);
 					out.accept(ModItems.SEVERING_SHEARS);
+					out.accept(ModItems.ECHO_THREAD);
+					out.accept(ModItems.EMBER_THREAD);
+					out.accept(ModItems.PALE_THREAD);
+					out.accept(ModItems.SILK_THREAD);
+					out.accept(ModItems.PLUMB_LINE);
 					ModItems.RELICS.values().forEach(out::accept);
 					ModItems.HUSH.forEach(out::accept);
 					out.accept(Items.LODESTONE);

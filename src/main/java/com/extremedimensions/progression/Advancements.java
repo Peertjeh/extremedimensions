@@ -57,6 +57,9 @@ public final class Advancements {
 	public static final String ECHO_HEARD = "echo_heard";
 	public static final String UNANCHORED = "unanchored";
 	public static final String HEART_REACHED = "heart_reached";
+	public static final String FRAME_STRUNG = "frame_strung";
+	public static final String FIRST_KNOT = "first_knot";
+	public static final String KNOT_MOTHER = "knot_mother";
 
 	/** Expeditions needed for {@link #VETERAN}. */
 	public static final int VETERAN_EXPEDITIONS = 10;

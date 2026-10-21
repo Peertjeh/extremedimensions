@@ -98,6 +98,8 @@ public final class ServerEvents {
 		});
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
 			STRAYS.clear();
+			com.extremedimensions.lore.FirstWeaver.clear();
+			com.extremedimensions.seam.FirstKnot.clear();
 			LurkerService.clear();
 			HollowService.clear();
 			SeamService.clear();
@@ -271,6 +273,23 @@ public final class ServerEvents {
 				if (r != InteractionResult.PASS) {
 					return r;
 				}
+			}
+			// The First Weaver's trail: silk on the frame of an Ancient City, a loom in the Seam, the line on the First Knot's heart
+			if (hand == InteractionHand.MAIN_HAND && player.getItemInHand(hand).is(ModItems.SEAM_SILK)
+					&& level.getBlockState(hit.getBlockPos()).is(Blocks.REINFORCED_DEEPSLATE) && Dims.OVERWORLD.equals(Dims.of(level))) {
+				return player instanceof ServerPlayer sp ? com.extremedimensions.lore.FirstWeaver.string(sp, hit.getBlockPos(), player.getItemInHand(hand))
+						: InteractionResult.SUCCESS;
+			}
+			if (player instanceof ServerPlayer sp && hand == InteractionHand.MAIN_HAND && level.getBlockState(hit.getBlockPos()).is(Blocks.LOOM)
+					&& SeamService.inSeam(sp) && !sp.isSecondaryUseActive()) {
+				InteractionResult r = com.extremedimensions.lore.FirstWeaver.loom(sp, hit.getBlockPos());
+				if (r != InteractionResult.PASS) {
+					return r;
+				}
+			}
+			if (player instanceof ServerPlayer sp && hand == InteractionHand.MAIN_HAND && player.getItemInHand(hand).is(ModItems.PLUMB_LINE)
+					&& SeamService.inSeam(sp) && com.extremedimensions.seam.FirstKnot.isHeart(hit.getBlockPos())) {
+				return com.extremedimensions.seam.FirstKnot.wake(sp);
 			}
 			if (player.getItemInHand(hand).is(ModItems.SEAM_NEEDLE) && level.getBlockState(hit.getBlockPos()).is(Blocks.CRYING_OBSIDIAN)) {
 				return player instanceof ServerPlayer sp
@@ -459,6 +478,7 @@ public final class ServerEvents {
 	}
 
 	private static void tick(MinecraftServer s) {
+		com.extremedimensions.lore.FirstWeaver.tick(s);
 		if (!STRAYS.isEmpty()) {
 			for (net.minecraft.world.entity.Entity e : STRAYS) {
 				if (!e.isRemoved()) {
@@ -483,6 +503,10 @@ public final class ServerEvents {
 			if ((s.getTickCount() + p.getId()) % 40 == 0 && !d.away) {
 				// Something in hand for the first time: its hint
 				com.extremedimensions.guide.Hints.look(p, d);
+			}
+			if ((s.getTickCount() + p.getId()) % 10 == 0) {
+				// A Plumb Line in hand: which way it pulls
+				com.extremedimensions.seam.FirstKnot.point(p);
 			}
 			if (!d.joinDone && ++d.ticksOnline >= Config.JOIN_DELAY_TICKS) {
 				d.joinDone = true;
@@ -560,6 +584,7 @@ public final class ServerEvents {
 		LurkerService.tick(s);
 		HollowService.tick(s);
 		SeamService.tick(s);
+		com.extremedimensions.seam.FirstKnot.tick(s);
 		com.extremedimensions.seam.SeamFauna.tick(s);
 		WorldService.tick(s);
 		MendingService.tick(s);

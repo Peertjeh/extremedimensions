@@ -40,6 +40,7 @@ public final class Loot {
 	public static final String MATRIARCH = "gameplay/matriarch_spoils";
 	public static final String FERRYMAN = "gameplay/ferryman_spoils";
 	public static final String WEAVER = "gameplay/weaver_spoils";
+	public static final String KNOT_MOTHER = "gameplay/knot_mother_spoils";
 	public static final String LURKER_OFFERING = "gameplay/lurker_offering";
 	public static final String HOLLOWLING_GIFT = "gameplay/hollowling_gift";
 	public static final String VEIL_RAY = "gameplay/veil_ray";

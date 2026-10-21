@@ -115,6 +115,18 @@ public final class ModEntities {
 					.updateInterval(1)
 					.build(WEAVER_KEY));
 
+	private static final ResourceKey<EntityType<?>> KNOT_MOTHER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("knot_mother"));
+
+	/** The Knot Mother, tied into the First Knot deep in the Fray; woken only by {@code FirstKnot.wake}. */
+	public static final EntityType<com.extremedimensions.elder.KnotMother> KNOT_MOTHER = Registry.register(BuiltInRegistries.ENTITY_TYPE, KNOT_MOTHER_KEY,
+			EntityType.Builder.<com.extremedimensions.elder.KnotMother>of(com.extremedimensions.elder.KnotMother::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(4.0f, 15.0f)
+					.eyeHeight(13.5f)
+					.clientTrackingRange(16)
+					.updateInterval(1)
+					.build(KNOT_MOTHER_KEY));
+
 	private static final ResourceKey<EntityType<?>> RIFT_PORTAL_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("rift_portal"));
 
 	/** A rift as it is seen (a sight only, never saved); put where each rift stands by {@code SeamService}. */
@@ -128,6 +140,7 @@ public final class ModEntities {
 		FabricDefaultAttributeRegistry.register(MATRIARCH, com.extremedimensions.elder.Matriarch.createAttributes());
 		FabricDefaultAttributeRegistry.register(FERRYMAN, com.extremedimensions.elder.Ferryman.createAttributes());
 		FabricDefaultAttributeRegistry.register(WEAVER, com.extremedimensions.elder.Weaver.createAttributes());
+		FabricDefaultAttributeRegistry.register(KNOT_MOTHER, com.extremedimensions.elder.KnotMother.createAttributes());
 		FabricDefaultAttributeRegistry.register(VEIL_RAY, VeilRay.createAttributes());
 		FabricDefaultAttributeRegistry.register(THINNED, Thinned.createAttributes());
 		FabricDefaultAttributeRegistry.register(LURKER, Lurker.createAttributes());

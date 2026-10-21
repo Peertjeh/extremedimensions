@@ -28,8 +28,6 @@ import net.minecraft.world.level.block.Blocks;
 final class ElderSpawn {
 	private ElderSpawn() {}
 
-	private static final String[] NAMES = {"matriarch", "ferryman", "weaver"};
-
 	/** Ticks an Elder takes to form. */
 	static int length() {
 		return Math.max(40, (int) Math.round(Config.ELDER_SPAWN_SECONDS * 20));
@@ -43,7 +41,7 @@ final class ElderSpawn {
 		int length = length();
 		// The bars and the held view (a negative length leaves the view free)
 		ElderFx.cinema(b, 96, ModPackets.BossFxPayload.SPAWN, b.getId(), Config.ELDER_SPAWN_CAMERA > 0 ? length : -length,
-				"gui.extremedimensions.elder.forming." + NAMES[ElderFx.index(b)]);
+				"gui.extremedimensions.elder.forming." + ElderFx.name(b));
 		ElderFx.shake(b, b.getX(), b.getZ(), 48, 0.25f, length);
 		// The first Elder someone sees forming: a word on what to do with these seconds
 		if (b.level() instanceof net.minecraft.server.level.ServerLevel level) {

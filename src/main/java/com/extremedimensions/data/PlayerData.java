@@ -90,6 +90,8 @@ public class PlayerData {
 	public Set<String> notes = new LinkedHashSet<>();
 	/** Has found a Held's chamber of their own (the first one they come to holds the Held's letter and chain). */
 	public boolean heldFound = false;
+	/** The First Weaver's trail: the frame of an Ancient City strung, the First Knot reached. */
+	public boolean frameStrung = false, knotReached = false;
 	/** This expedition, the Held's Chain already held the player once (kept, so leaving the game during it is no way out). */
 	public boolean heldSpent = false;
 	/** Ticks the Held's Chain still holds the player after the charge ran out. */

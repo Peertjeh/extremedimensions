@@ -50,6 +50,15 @@ public final class WeaverService {
 	private static final String BOSS = "boss.extremedimensions.weaver";
 	private static final String ULT = "gui.extremedimensions.elder.ultimate.weaver";
 
+	/** Its name on the boss bar and its ultimate's: the Knot Mother has her own. */
+	private static String boss(Weaver w) {
+		return w instanceof KnotMother ? "boss.extremedimensions.knot_mother" : BOSS;
+	}
+
+	private static String ult(Weaver w) {
+		return w instanceof KnotMother ? "gui.extremedimensions.elder.ultimate.knot_mother" : ULT;
+	}
+
 	private static final class Unweaving extends ElderFight {
 		/** How many times it has called its kin (at 60% and 30% health). */
 		int kin;
@@ -92,7 +101,7 @@ public final class WeaverService {
 			fight.rise = 0;
 		}
 		if (action == ElderBoss.ULTIMATE) {
-			fight.beginUltimate(w, ULT);
+			fight.beginUltimate(w, ult(w));
 		} else {
 			fight.start(w, action);
 		}
@@ -184,6 +193,45 @@ public final class WeaverService {
 		return true;
 	}
 
+	/** Whether the Knot Mother is awake (she is one of a kind). */
+	public static boolean knotMotherAwake() {
+		for (Map.Entry<UUID, Unweaving> e : WEAVERS.entrySet()) {
+			if (e.getValue().level.getEntity(e.getKey()) instanceof KnotMother) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** The Knot Mother pulled loose from the First Knot's heart: she rises over it and turns on whoever pulled. */
+	public static boolean summonKnotMother(ServerPlayer p, BlockPos heart) {
+		if (!Dims.ours(p) || knotMotherAwake()) {
+			return false;
+		}
+		ServerLevel level = (ServerLevel) p.level();
+		KnotMother w = ModEntities.KNOT_MOTHER.spawn(level, heart.above(2), EntitySpawnReason.EVENT);
+		if (w == null) {
+			return false;
+		}
+		w.setPersistenceRequired();
+		w.setTarget(p);
+		float yaw = ElderFx.yawTo(w, p.getX(), p.getZ());
+		w.setYRot(yaw);
+		w.setYBodyRot(yaw);
+		w.setYHeadRot(yaw);
+		Unweaving u = new Unweaving();
+		u.target = p.getUUID();
+		u.level = level;
+		u.drift = ThreadLocalRandom.current().nextBoolean() ? 1 : -1;
+		u.makeBar(boss(w), BossEvent.BossBarColor.PURPLE, BossEvent.BossBarOverlay.NOTCHED_10, p);
+		WEAVERS.put(w.getUUID(), u);
+		ElderSpawn.begin(w, u, heart);
+		WorldFx.soundIn(ElderFx.dim(w), "minecraft:block.sculk_shrieker.shriek", "hostile", w.getX(), w.getY() + 8, w.getZ(), 5f, 0.5f);
+		p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.knot_mother_wakes"));
+		ElderFx.music(w, ElderFx.MUSIC_WEAVER);
+		return true;
+	}
+
 	public static void tick(MinecraftServer s) {
 		if (WEAVERS.isEmpty()) {
 			return;
@@ -264,7 +312,7 @@ public final class WeaverService {
 		if (u.action == ElderBoss.IDLE) {
 			if (ElderUltimate.due(w, u.ultimateSpent)) {
 				u.rise = 0;
-				u.beginUltimate(w, ULT);
+				u.beginUltimate(w, ult(w));
 				WorldFx.soundIn(dim, "extremedimensions:lurker_shriek", "hostile", w.getX(), w.getY() + 12, w.getZ(), 6f, 0.8f);
 				WorldFx.soundIn(dim, "minecraft:block.amethyst_block.resonate", "hostile", w.getX(), w.getY() + 14, w.getZ(), 6f, 0.4f);
 				return;
@@ -573,7 +621,7 @@ public final class WeaverService {
 			ElderStrikes.wave(w, w.getX(), gy, w.getZ(), 1.2, 34, 9f, "minecraft:end_rod", ElderTerrain.Mark.SCORCH);
 			ElderTerrain.mark(level, w.getX(), gy, w.getZ(), 14, 0.5, ElderTerrain.Mark.SCORCH);
 			AttackFx.burst(level, 2, w.getX(), gy + 1, w.getZ(), 8);
-			u.breakUltimate(w, BOSS);
+			u.breakUltimate(w, boss(w));
 		}
 		if (b.past(length)) {
 			u.closeUltimate(w);
@@ -665,11 +713,15 @@ public final class WeaverService {
 		ElderFx.burst(w, "minecraft:end_rod", 60);
 		AttackFx.burst(level, 2, w.getX(), w.getY() + 2, w.getZ(), 9);
 		ElderFx.cinema(w, 160, ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");
-		for (ItemStack s : Loot.roll((ServerLevel) w.level(), Loot.WEAVER, w.position())) {
+		boolean knot = w instanceof KnotMother;
+		for (ItemStack s : Loot.roll((ServerLevel) w.level(), knot ? Loot.KNOT_MOTHER : Loot.WEAVER, w.position())) {
 			ElderFx.loot(w, u.target, s);
 		}
-		for (int i = 0; i < Math.max(0, Config.WEAVER_RELICS); i++) {
+		for (int i = 0; i < Math.max(0, knot ? Config.KNOT_MOTHER_RELICS : Config.WEAVER_RELICS); i++) {
 			ElderFx.loot(w, u.target, RelicService.random());
+		}
+		if (knot) {
+			com.extremedimensions.seam.FirstKnot.slain(level.getServer().overworld().getGameTime());
 		}
 		int gift = Math.max(0, Config.WEAVER_TIME_GIFT);
 		for (ServerPlayer p : level.players()) {
@@ -677,8 +729,13 @@ public final class WeaverService {
 				continue;
 			}
 			PlayerData d = DataStore.get(p.getUUID());
-			Advancements.grant(p, Advancements.WEAVER_SLAIN);
-			Journal.unlock(p, d, JournalEntry.LAST_WEAVER);
+			if (knot) {
+				Advancements.grant(p, Advancements.KNOT_MOTHER);
+				Journal.unlock(p, d, JournalEntry.FIRST_KNOT);
+			} else {
+				Advancements.grant(p, Advancements.WEAVER_SLAIN);
+				Journal.unlock(p, d, JournalEntry.LAST_WEAVER);
+			}
 			if (d.inSeam && gift > 0) {
 				d.seamLeft += gift;
 				d.seamMax = Math.max(d.seamMax, d.seamLeft);
@@ -693,7 +750,7 @@ public final class WeaverService {
 		Unweaving u = WEAVERS.remove(w.getUUID());
 		ElderArena.release(w);
 		if (u != null) {
-			u.abandonUltimate(BOSS);
+			u.abandonUltimate(boss(w));
 			u.bar.removeAllPlayers();
 			if (u.action == ElderBoss.ULTIMATE) {
 				ElderFx.cinema(w, 160, ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");

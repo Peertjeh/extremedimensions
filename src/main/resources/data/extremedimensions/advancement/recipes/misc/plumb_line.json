@@ -1,0 +1,58 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_echo_thread": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:echo_thread"
+          }
+        ]
+      }
+    },
+    "has_ember_thread": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:ember_thread"
+          }
+        ]
+      }
+    },
+    "has_pale_thread": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:pale_thread"
+          }
+        ]
+      }
+    },
+    "has_silk_thread": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:silk_thread"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_echo_thread",
+      "has_ember_thread",
+      "has_pale_thread",
+      "has_silk_thread"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:plumb_line"
+    ]
+  }
+}

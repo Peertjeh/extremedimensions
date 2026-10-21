@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:first_knot",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:silk_thread"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.knot_mother.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.knot_mother.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

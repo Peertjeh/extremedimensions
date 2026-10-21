@@ -360,6 +360,70 @@ public class BossTests {
 		});
 	}
 
+	/**
+	 * The Knot Mother, pulled loose from the First Knot's heart, fights on the Last Weaver's lines: her own name on the bar,
+	 * no arena raised (the Knot is hers), one awake at a time, her ultimate's rings of light; slain, she rests, and those
+	 * near her are told the First Knot's page and earn her advancement.
+	 */
+	@GameTest(maxTicks = 200)
+	public void theKnotMotherFightsOnTheWeaversLines(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper);
+		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		p.getAbilities().invulnerable = true;
+		Runnable unforce = forceAround(helper, 3);
+		com.extremedimensions.elder.KnotMother[] mother = {null};
+		int[] most = {0};
+		int rings = Config.WEAVER_ULTIMATE_RINGS, seconds = Config.ELDER_ULTIMATE_SECONDS;
+		Runnable restore = () -> {
+			Config.WEAVER_ULTIMATE_RINGS = rings;
+			Config.ELDER_ULTIMATE_SECONDS = seconds;
+			p.getAbilities().invulnerable = false;
+			if (mother[0] != null && mother[0].isAlive()) {
+				WeaverService.fade(mother[0]);
+			}
+			com.extremedimensions.data.DataStore.seamCells().removeIf(k -> k.startsWith("km@"));
+			unforce.run();
+		};
+		helper.runAfterDelay(5, () -> {
+			Config.WEAVER_ULTIMATE_RINGS = 2;
+			Config.ELDER_ULTIMATE_SECONDS = 6;
+			int arenas = com.extremedimensions.elder.ElderArena.count();
+			boolean came = WeaverService.summonKnotMother(p, at.offset(12, 0, 0));
+			mother[0] = helper.getLevel().getEntitiesOfClass(com.extremedimensions.elder.KnotMother.class, p.getBoundingBox().inflate(64))
+					.stream().findFirst().orElse(null);
+			if (!came || mother[0] == null) {
+				restore.run();
+			}
+			check(helper, came && mother[0] != null, "the Knot Mother did not come");
+			check(helper, WeaverService.knotMotherAwake(), "the Knot Mother is not counted awake");
+			check(helper, !WeaverService.summonKnotMother(p, at.offset(-12, 0, 0)), "a second Knot Mother came while one was awake");
+			check(helper, com.extremedimensions.elder.ElderArena.count() == arenas, "an arena was raised for the Knot Mother");
+			WeaverService.force(mother[0], ElderBoss.ULTIMATE);
+		});
+		for (int t = 15; t <= 110; t += 2) {
+			helper.runAfterDelay(t, () -> {
+				if (mother[0] != null) {
+					most[0] = Math.max(most[0], com.extremedimensions.elder.ElderStrikes.beamsOf(mother[0]));
+				}
+			});
+		}
+		helper.runAfterDelay(115, () -> {
+			check(helper, most[0] == 2, "her ultimate swept at most %s beams at once, not two rings", most[0]);
+			// Slain: she rests, and those near her earn her advancement and the Knot's page
+			WeaverService.onDefeat(mother[0], p);
+			boolean earned = com.extremedimensions.server.WorldFx.hasAdvancement(p, com.extremedimensions.progression.Advancements.KNOT_MOTHER);
+			boolean page = com.extremedimensions.data.DataStore.get(p.getUUID()).journal.contains(com.extremedimensions.journal.JournalEntry.FIRST_KNOT.id);
+			boolean resting = com.extremedimensions.data.DataStore.seamCells().stream().anyMatch(k -> k.startsWith("km@"));
+			mother[0].discard();
+			restore.run();
+			check(helper, earned && page, "slaying the Knot Mother gave no advancement (%s) or page (%s)", earned, page);
+			check(helper, resting, "the Knot Mother does not rest once slain");
+			check(helper, !WeaverService.knotMotherAwake(), "the Knot Mother is still counted awake once slain");
+			helper.succeed();
+		});
+	}
+
 	@GameTest
 	public void theWeaverUnpicksSeamTime(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);

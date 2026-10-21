@@ -214,6 +214,67 @@ public class ClientPath implements FabricClientGameTest {
 					"home from the Seam without its advancement");
 			settle(sp);
 			path(ctx, sp, Path.Step.SEAL, "gui.extremedimensions.path.seal", "36_path_seal");
+
+			// 6. The First Weaver's trail begins: a frame of Reinforced Deepslate ahead, strung with silk, shows what it held
+			int fx = x - 1, fz = z - 6;
+			sp.getServer().runOnServer(s -> {
+				ServerLevel level = (ServerLevel) player(s).level();
+				for (int dx = -3; dx <= 3; dx++) {
+					for (int dy = 0; dy <= 5; dy++) {
+						BlockPos q = new BlockPos(fx + dx, y + dy, fz);
+						level.setBlockAndUpdate(q, Math.abs(dx) == 3 || dy == 5 ? Blocks.REINFORCED_DEEPSLATE.defaultBlockState() : Blocks.AIR.defaultBlockState());
+					}
+				}
+			});
+			sp.getServer().runCommand(String.format(Locale.ROOT, "tp @a %d.5 %d %d.5 180 -8", fx, y, fz + 7));
+			ctx.waitTicks(10);
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				ItemStack silk = new ItemStack(ModItems.SEAM_SILK, 4);
+				p.setItemInHand(InteractionHand.MAIN_HAND, silk);
+				com.extremedimensions.lore.FirstWeaver.string(p, new BlockPos(fx - 3, y + 2, fz), silk);
+			});
+			check(sp.getServer().computeOnServer(s -> DataStore.get(player(s).getUUID()).frameStrung), "the silk did not string the frame");
+			ctx.waitTicks(60);
+			ctx.takeScreenshot("37_frame_vision");
+			ctx.waitTicks(75);
+			ctx.takeScreenshot("37_frame_weave");
+
+			// 7. The First Knot, built at once out in the Seam's dark, from outside and from its chamber, and the Knot Mother
+			// pulled loose from its heart (kept from harm meanwhile: the Seam's Thinned do not wait for the shots)
+			sp.getServer().runCommand("effect give @a minecraft:resistance infinite 255 true");
+			sp.getServer().runOnServer(s -> com.extremedimensions.seam.SeamService.summon(player(s)));
+			ctx.waitTicks(40);
+			BlockPos heart = sp.getServer().computeOnServer(s -> {
+				ServerPlayer p = player(s);
+				return com.extremedimensions.seam.FirstKnot.showcase((ServerLevel) p.level(), p.getBlockX() + 260, 40, p.getBlockZ());
+			});
+			sp.getServer().runCommand("gamemode spectator @a");
+			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %d.5 %d %d.5 -90 4", heart.getX() - 40, heart.getY() + 12, heart.getZ()));
+			ctx.waitTicks(60);
+			settle(sp);
+			ctx.takeScreenshot("38_first_knot");
+			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %d.5 %d %d.5 -90 10", heart.getX() - 12, heart.getY() + 3, heart.getZ()));
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("38_first_knot_chamber");
+			sp.getServer().runCommand("gamemode survival @a");
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				p.getAbilities().invulnerable = true;
+				com.extremedimensions.elder.WeaverService.summonKnotMother(p, heart);
+			});
+			ctx.waitTicks(50);
+			ctx.takeScreenshot("39_knot_mother_forming");
+			ctx.waitTicks(140);
+			check(sp.getServer().computeOnServer(s -> com.extremedimensions.elder.WeaverService.knotMotherAwake()), "the Knot Mother did not wake");
+			ctx.takeScreenshot("39_knot_mother");
+			sp.getServer().runOnServer(s -> {
+				for (com.extremedimensions.elder.KnotMother m : player(s).level().getEntitiesOfClass(com.extremedimensions.elder.KnotMother.class,
+						player(s).getBoundingBox().inflate(96))) {
+					com.extremedimensions.elder.WeaverService.fade(m);
+				}
+				player(s).getAbilities().invulnerable = false;
+			});
 		}
 	}
 }

@@ -147,6 +147,7 @@ public final class SeamService {
 	private static void forget() {
 		DataStore.seamCells().clear();
 		DataStore.setHeartBuilt(false);
+		FirstKnot.forget();
 		for (PlayerData d : DataStore.players()) {
 			if (d.inSeam) {
 				d.inSeam = false;
@@ -1027,6 +1028,16 @@ public final class SeamService {
 		plan.cell = "c@" + cx + "," + cz;
 		plan.prepare();
 		return plan;
+	}
+
+	/** The island of a cell as it is (or will be) built, or null where there is none (for the First Knot). */
+	static SeamArchitect.Shape islandOf(int cx, int cz) {
+		return neighbour(cx, cz, arrivals());
+	}
+
+	/** The Seam's own seed (for the First Knot). */
+	static long seedOf() {
+		return seed();
 	}
 
 	/** The island of a neighbouring cell as it is (or will be) built, or null if the Heart's crown has that cell. */

@@ -466,6 +466,7 @@ public class JournalScreen extends Screen {
 			case MATRIARCH -> ModEntities.MATRIARCH;
 			case FERRYMAN -> ModEntities.FERRYMAN;
 			case LAST_WEAVER -> ModEntities.WEAVER;
+			case KNOT_MOTHER -> ModEntities.KNOT_MOTHER;
 		};
 	}
 
@@ -534,7 +535,7 @@ public class JournalScreen extends Screen {
 			String mark = done ? "\u2714 " : s == next ? "\u00bb " : "\u00b7 ";
 			Ui.ink(g, this.font, mark + Ui.tr("gui.extremedimensions.path.step." + s.key()), x + 12, ty,
 					done ? INK : s == next ? INK_DARK : INK_FAINT, alpha);
-			ty += 10;
+			ty += 9;
 		}
 		ty += 4;
 		String beside = Ui.tr("gui.extremedimensions.path.beside");
@@ -550,7 +551,7 @@ public class JournalScreen extends Screen {
 			boolean done = (sideDone & 1 << s.ordinal()) != 0;
 			Ui.ink(g, this.font, (done ? "\u2714 " : "\u00b7 ") + Ui.tr("gui.extremedimensions.path.side." + s.key()), x + 12, ty,
 					done ? INK : INK_DARK, alpha);
-			ty += 10;
+			ty += 9;
 		}
 		if (seen < all) {
 			Ui.ink(g, this.font, Ui.tr(seen == 0 ? "gui.extremedimensions.path.beside_none" : "gui.extremedimensions.path.beside_more"),

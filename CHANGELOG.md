@@ -1,5 +1,41 @@
 # Changelog
 
+## 2.39.0: The First Weaver
+
+If there was a last Weaver, there was a first. An investigation across every world, from the frame at the heart of an
+Ancient City down to a knot the size of a hall deep in the Fray, and something tied into it.
+
+### Added
+- **The unstrung frame.** Use 4 Seam Silk (`frame_silk`) on the great frame of Reinforced Deepslate at the heart of an
+  Ancient City. Strung, it shows what it held: strings drawn up across it and three figures walking out of the dark to
+  step into the weave (in a mended world the weave closes; in a severed one it frays). It leaves an **Echo Thread**,
+  journal page XLI *The Frame*, a note in the margin of *The Weavers* ("Not nothing. Unstrung.") and the advancement
+  *Unstrung*.
+- **Three more threads in three more worlds**, for a player on the trail: an **Ember Thread** tied round a ledger in a
+  bastion's chest (any bastion chest), a **Pale Thread** in an End city's chest, and a **Silk Thread** from the
+  half-woven tapestry on a loom in the Seam (the loom islands now have a loom). A thread comes to one who carries none
+  of it and has not yet twisted the line or reached the Knot, so a lost one can be found again and none can be farmed.
+- **The Plumb Line**: the four threads round an iron chain. Held in the Seam it says which way it pulls: straight down
+  on the islands (to the Fray, by a well), and in the Fray towards the First Knot, with the compass point and the
+  distance, motes running off ahead.
+- **The First Knot**: a knot the size of a hall in the Fray, beside one island about 700 blocks out from the Heart
+  (`first_knot_distance`; the same one for the whole world), joined by a strand to that island's knot and built when
+  someone comes near. Inside is a chamber lit by soul lanterns, and at its heart a pillar of crying obsidian bound in
+  thread. Reaching it gives page XLII *The First Knot* and the advancement *The First Knot*, and ends the trail.
+- **The Knot Mother**, an optional Elder of the Fray. Use the Plumb Line on the Knot's heart and she is pulled loose: a
+  Weaver's shape frayed to the colours of the deep, with her own name, title card and ultimate (*The First Knot*). She
+  fights on the Last Weaver's lines in the Knot's own chamber (no arena is raised), her blows unpick Seam time, and she
+  calls the Thinned at 60% and 30%. Slain, she leaves silk, fragments, Veil Wings and a relic (`knot_mother_relics`),
+  the advancement *Loose End* and a place in the bestiary; she can be woken again after 40 minutes
+  (`knot_mother_rest`).
+- The journal's Path tab lists *The First Weaver's trail* beside the path once the frame's page is in the journal.
+
+### Changed
+- The Knot Mother counts among the Elders for Woundbane.
+
+### Fixed
+- The Dutch bestiary note on the Thinned named Seam Silk in English.
+
 ## 2.38.0: The Path
 
 No new systems. The journal now says where the road goes next, and the game says a word the first time you meet each

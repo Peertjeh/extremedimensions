@@ -222,9 +222,18 @@ final class ElderFx {
 		return b instanceof Matriarch ? 0 : b instanceof Ferryman ? 1 : 2;
 	}
 
+	/**
+	 * Its name in texts: as {@link #index}, but the Knot Mother is her own (she has the Last Weaver's shape, voice and
+	 * blows, and her own name, title and ultimate).
+	 */
+	static String name(ElderBoss b) {
+		return b instanceof KnotMother ? "knot_mother" : NAMES[index(b)];
+	}
+
 	/** Sends a piece of the fight's cinema to everyone within {@code radius} blocks (see BossFxPayload). */
 	static void cinema(ElderBoss b, double radius, int kind, int value, float strength, String key) {
-		ModPackets.BossFxPayload fx = new ModPackets.BossFxPayload(kind, index(b), value, strength, key);
+		// (the client's cinema knows the Knot Mother as a fourth, for her own title card)
+		ModPackets.BossFxPayload fx = new ModPackets.BossFxPayload(kind, b instanceof KnotMother ? 3 : index(b), value, strength, key);
 		for (ServerPlayer p : ((ServerLevel) b.level()).players()) {
 			if (p.distanceToSqr(b) <= radius * radius) {
 				ServerPlayNetworking.send(p, fx);

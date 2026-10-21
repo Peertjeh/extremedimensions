@@ -159,6 +159,11 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				new com.extremedimensions.client.entity.elder.WeaverModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.WeaverModel.LAYER)),
 				new com.extremedimensions.client.entity.elder.WeaverModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.WeaverModel.LAYER)),
 				"weaver", 1.5F, 3.0F));
+		// The Knot Mother: the Weaver's shape, frayed to the colours of the deep
+		EntityRendererRegistry.register(ModEntities.KNOT_MOTHER, ctx -> new com.extremedimensions.client.entity.elder.ElderRenderer<>(ctx,
+				new com.extremedimensions.client.entity.elder.WeaverModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.WeaverModel.LAYER)),
+				new com.extremedimensions.client.entity.elder.WeaverModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.WeaverModel.LAYER)),
+				"knot_mother", 1.5F, 3.0F));
 
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.StatePayload.TYPE, (payload, context) ->
 				context.client().execute(() -> ClientState.apply(payload)));

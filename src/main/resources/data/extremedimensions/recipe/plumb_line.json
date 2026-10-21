@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "extremedimensions:echo_thread",
+    "extremedimensions:ember_thread",
+    "extremedimensions:pale_thread",
+    "extremedimensions:silk_thread",
+    "minecraft:iron_chain"
+  ],
+  "result": {
+    "id": "extremedimensions:plumb_line",
+    "count": 1
+  }
+}

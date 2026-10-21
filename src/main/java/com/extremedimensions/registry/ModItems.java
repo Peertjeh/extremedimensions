@@ -50,6 +50,17 @@ public final class ModItems {
 	/** Dropped by the Starved One: use them to sever the Tether from the world for good. */
 	public static final Item SEVERING_SHEARS = register("severing_shears", 1, Rarity.EPIC);
 
+	/** The First Weaver's trail: a thread left in the frame of an Ancient City once it is strung with silk. */
+	public static final Item ECHO_THREAD = register("echo_thread", 1, Rarity.RARE);
+	/** ... tied round a ledger in a bastion's chest. */
+	public static final Item EMBER_THREAD = register("ember_thread", 1, Rarity.RARE);
+	/** ... in an empty socket in an End city's chest. */
+	public static final Item PALE_THREAD = register("pale_thread", 1, Rarity.RARE);
+	/** ... pulled from a half-woven tapestry on a loom in the Seam. */
+	public static final Item SILK_THREAD = register("silk_thread", 1, Rarity.RARE);
+	/** The four threads twisted round a weight: held in the Seam it points the way down to the First Knot. */
+	public static final Item PLUMB_LINE = register("plumb_line", 1, Rarity.EPIC);
+
 	/** The relics: bound to the Tether one at a time, each with a gift and a price (see Relic). */
 	public static final java.util.Map<com.extremedimensions.relic.Relic, Item> RELICS = relics();
 

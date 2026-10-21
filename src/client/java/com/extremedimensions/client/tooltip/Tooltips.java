@@ -66,6 +66,16 @@ public final class Tooltips {
 			key = "wound_lens";
 		} else if (item == ModItems.VEIL_LANTERN) {
 			key = "veil_lantern";
+		} else if (item == ModItems.ECHO_THREAD) {
+			key = "echo_thread";
+		} else if (item == ModItems.EMBER_THREAD) {
+			key = "ember_thread";
+		} else if (item == ModItems.PALE_THREAD) {
+			key = "pale_thread";
+		} else if (item == ModItems.SILK_THREAD) {
+			key = "silk_thread";
+		} else if (item == ModItems.PLUMB_LINE) {
+			key = "plumb_line";
 		}
 		charms(stack, lines);
 		com.extremedimensions.relic.Relic relic = com.extremedimensions.relic.RelicService.of(stack);

@@ -1472,6 +1472,8 @@ public final class SeamArchitect {
 			f.soft(rnd.nextInt(-sx, sx + 1), 0, rnd.nextInt(-3, 9), Blocks.COBWEB.defaultBlockState());
 		}
 		f.then(sx - 3, 0, -3, loot(f.pos(sx - 3, 0, -3), 1));
+		// and a loom the Thinned left, its half-woven tapestry still on it (the First Weaver's trail runs through here)
+		f.set(-(sx - 3), 0, -3, Blocks.LOOM.defaultBlockState());
 	}
 
 	// ------------------------------------------------------------------ villages

@@ -50,7 +50,8 @@ public final class Path {
 		HELD(JournalEntry.RUINED_GATE),
 		MATRIARCH(JournalEntry.MATRIARCH),
 		FERRYMAN(JournalEntry.FERRYMAN),
-		LAST_WEAVER(JournalEntry.LAST_WEAVER);
+		LAST_WEAVER(JournalEntry.LAST_WEAVER),
+		FIRST_WEAVER(JournalEntry.FRAME);
 
 		public final JournalEntry page;
 
@@ -83,6 +84,7 @@ public final class Path {
 			case MATRIARCH -> d.matriarchSlain || WorldFx.hasAdvancement(p, Advancements.MATRIARCH_SLAIN);
 			case FERRYMAN -> WorldFx.hasAdvancement(p, Advancements.FERRYMAN_SLAIN);
 			case LAST_WEAVER -> WorldFx.hasAdvancement(p, Advancements.WEAVER_SLAIN);
+			case FIRST_WEAVER -> d.knotReached;
 		};
 	}
 

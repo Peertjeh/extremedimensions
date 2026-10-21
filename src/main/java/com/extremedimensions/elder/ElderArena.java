@@ -277,7 +277,8 @@ public final class ElderArena {
 
 	/** The Elder's arena begins to rise round {@code centre} (the first air above the ground under the Elder). */
 	public static void raise(ElderBoss b, BlockPos centre) {
-		if (Config.ELDER_ARENA <= 0) {
+		// (the Knot Mother fights in the First Knot's own chamber)
+		if (Config.ELDER_ARENA <= 0 || b instanceof KnotMother) {
 			return;
 		}
 		ServerLevel level = (ServerLevel) b.level();

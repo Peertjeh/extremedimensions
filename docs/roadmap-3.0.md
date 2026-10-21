@@ -305,6 +305,15 @@ Fray. Narrative: if there was a last Weaver, there was a first.*
 *Done when:* the investigation can be completed from start to end in a gametest chain; the Knot Mother has BossTests;
 no point in the norm goes to "afwijking".
 
+*Status:* built in 2.39.0. The frame (4 Seam Silk on Reinforced Deepslate in the Overworld) shows its vision and leaves
+the Echo Thread, page XLI and the margin note on XII; the Ember and Pale Threads come from bastion and End city chests to
+a player on the trail, the Silk Thread from a loom in the Seam (loom islands now carry one). The Plumb Line points the
+way in the Fray to the First Knot (page XLII), built beside an island about 700 blocks out. The Knot Mother is an
+optional Elder on the Last Weaver's lines (her own textures, name, title card and ultimate; no arena, the Knot's chamber
+is hers), with a rest of 40 minutes between fights. FirstWeaverTests walk the trail from the frame to the Knot;
+BossTests fight the Knot Mother. **Finishing the world** (damage by role, rock arches, terraces, villages that step
+with the slope) moves to 3.0-beta's polish, where it is measured against the screenshots rather than built blind.
+
 #### 3.0-beta
 
 Frozen: no new features. Polish, bugs and text. A migration test opens a world saved by 2.32 and plays it on.

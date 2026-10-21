@@ -30,7 +30,8 @@
 			"com.extremedimensions.gametest.WarmChainTests",
 			"com.extremedimensions.gametest.BindingTests",
 			"com.extremedimensions.gametest.EventTests",
-			"com.extremedimensions.gametest.PathTests"
+			"com.extremedimensions.gametest.PathTests",
+			"com.extremedimensions.gametest.FirstWeaverTests"
 		],
 		"fabric-client-gametest": [
 			"com.extremedimensions.gametest.ClientShots",

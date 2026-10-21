@@ -31,9 +31,6 @@ public abstract class ElderBoss extends Monster {
 	public static final int SPAWN = 21;
 	/** Ticks its death takes (it dies as it fought its ultimate, ending in the bloom). */
 	public static final int DEATH_TICKS = 100;
-	private static final String[] TITLES = {"gui.extremedimensions.elder.title.matriarch", "gui.extremedimensions.elder.title.ferryman",
-			"gui.extremedimensions.elder.title.weaver"};
-
 	private static final EntityDataAccessor<Integer> ACTION = SynchedEntityData.defineId(ElderBoss.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Float> TEMPO = SynchedEntityData.defineId(ElderBoss.class, EntityDataSerializers.FLOAT);
 	/** Counts every action begun, so the client also sees a blow struck twice in a row begin again. */
@@ -156,7 +153,7 @@ public abstract class ElderBoss extends Monster {
 			double k = this.deathTime / (double) DEATH_TICKS;
 			if (this.deathTime == 1) {
 				// The bars close in on its name, and everyone near is made to watch
-				ElderFx.cinema(this, 96, com.extremedimensions.network.ModPackets.BossFxPayload.DEATH, getId(), DEATH_TICKS, TITLES[ElderFx.index(this)]);
+				ElderFx.cinema(this, 96, com.extremedimensions.network.ModPackets.BossFxPayload.DEATH, getId(), DEATH_TICKS, "gui.extremedimensions.elder.title." + ElderFx.name(this));
 				WorldFx.soundIn(dim, "minecraft:block.beacon.deactivate", "hostile", getX(), getY() + h * 0.6, getZ(), 5f, 0.5f);
 				ElderFx.roar(this, 6f, 0.35f);
 			}

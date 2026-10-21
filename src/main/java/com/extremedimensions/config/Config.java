@@ -149,6 +149,8 @@ public final class Config {
 	public static double WARM_CHAIN_CHANCE = 0.35;
 	/** A short hint as a toast the first time a player meets each part of the mod (1 on, 0 off; each player can also turn them off for themselves). */
 	public static int HINTS = 1;
+	/** Seam Silk it takes to string the frame of an Ancient City (the start of the First Weaver's trail). */
+	public static int FRAME_SILK = 4;
 
 	// --- The Lurker ------------------------------------------------------------------------------
 
@@ -244,6 +246,8 @@ public final class Config {
 	public static double SEAM_SNARL_CHANCE = 0.6;
 	/** Thinned that walk each knot of the Fray near a visitor (they hunt there from the start). */
 	public static int SEAM_FRAY_THINNED = 2;
+	/** About how far (blocks) from the Heart the First Knot hangs in the Fray (under the first island found there). */
+	public static int FIRST_KNOT_DISTANCE = 700;
 	/** Chance a Thinned slain in the Fray leaves a Tether Fragment. */
 	public static double SEAM_FRAY_FRAGMENT_CHANCE = 0.12;
 	/** Frayed Rays about each visitor in the Fray: Veil Rays gone wrong down there, that dive at visitors (0 = none). */
@@ -493,6 +497,9 @@ public final class Config {
 	public static int WEAVER_TIME_GIFT = 60;
 	/** Relics the Last Weaver always leaves. */
 	public static int WEAVER_RELICS = 1;
+	/** Relics the Knot Mother always leaves, and minutes before she can be woken again once slain (0 = at once). */
+	public static int KNOT_MOTHER_RELICS = 1;
+	public static int KNOT_MOTHER_REST = 40;
 	/** How readily the Weaver fires its Seraphic Lance: its weight against its other blows (which weigh 1 to 4 each). */
 	public static int WEAVER_LANCE_WEIGHT = 8;
 	/** Chance the Lance sweeps back once more after its first pass (always, once the Weaver is enraged). */
@@ -932,7 +939,7 @@ public final class Config {
 			{"seam_fly_from", 2, 64}, {"seam_damage", 0, 100},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},
 			{"seam_fray_ray_cooldown", 1, 120}, {"seam_fray_gloom", 0, 30}, {"seam_fray_gloom_every", 10, 3600}, {"seam_fray_unravel", 0, 1},
-			{"seam_briefing", 0, 100}, {"hud_boss_bar", 0, 1}, {"hints", 0, 1},
+			{"seam_briefing", 0, 100}, {"hud_boss_bar", 0, 1}, {"hints", 0, 1}, {"frame_silk", 0, 64}, {"first_knot_distance", 200, 5000}, {"knot_mother_rest", 0, 100000},
 			{"elder_health_scale", 0.1, 20}, {"elder_health_per_player", 0, 5}, {"elder_damage_scale", 0, 20}, {"elder_damage_per_player", 0, 2},
 			{"elder_rest_per_player", 0, 0.5}, {"elder_rest_min", 0.1, 1}, {"elder_split_max", 1, 8}, {"elder_fighters_range", 8, 256},
 			{"elder_reach", 1, 5}, {"elder_brood_per_player", 0, 10}, {"elder_spell_range", 16, 256}, {"elder_snare_seconds", 0, 30},

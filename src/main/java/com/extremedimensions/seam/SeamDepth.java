@@ -70,21 +70,21 @@ public final class SeamDepth {
 		return new Knot(x, top, z, rx, well, island.top(), ang);
 	}
 
-	private static BlockState thread(Random rnd) {
+	static BlockState thread(Random rnd) {
 		int k = rnd.nextInt(100);
 		BlockState white = SeamArchitect.mc("white_wool", Blocks.COBWEB.defaultBlockState());
 		return k < 50 ? white : k < 75 ? SeamArchitect.mc("light_gray_wool", white) : k < 88 ? SeamArchitect.mc("purple_wool", white)
 				: k < 95 ? SeamArchitect.mc("magenta_wool", white) : ModBlocks.SEAM_VEIN.defaultBlockState();
 	}
 
-	private static BlockState core(Random rnd) {
+	static BlockState core(Random rnd) {
 		int k = rnd.nextInt(100);
 		BlockState stone = ModBlocks.HUSH_STONE.defaultBlockState();
 		return k < 45 ? stone : k < 70 ? SeamArchitect.mc("deepslate", stone) : k < 85 ? SeamArchitect.mc("tuff", stone)
 				: k < 95 ? ModBlocks.SEAM_VEIN.defaultBlockState() : SeamArchitect.mc("crying_obsidian", stone);
 	}
 
-	private static BlockState floor(Random rnd) {
+	static BlockState floor(Random rnd) {
 		int k = rnd.nextInt(100);
 		BlockState bricks = ModBlocks.HUSH_BRICKS.defaultBlockState();
 		return k < 45 ? bricks : k < 70 ? ModBlocks.HUSH_STONE.defaultBlockState() : k < 88 ? SeamArchitect.mc("deepslate_tiles", bricks)
@@ -192,7 +192,7 @@ public final class SeamDepth {
 	}
 
 	/** A strand: a sagging ribbon of thread three wide from one knot's edge to the other's, fringed with webs. */
-	private static void strand(SeamArchitect.Plan p, Random rnd, Knot a, Knot b) {
+	static void strand(SeamArchitect.Plan p, Random rnd, Knot a, Knot b) {
 		double dx = b.x() - a.x(), dz = b.z() - a.z();
 		double flat = Math.sqrt(dx * dx + dz * dz);
 		if (flat < 4) {

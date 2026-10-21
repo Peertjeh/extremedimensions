@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:seam_returned",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:echo_thread"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.frame_strung.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.frame_strung.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

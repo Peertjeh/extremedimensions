@@ -5,6 +5,7 @@ import java.util.Map;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 
@@ -30,6 +31,8 @@ public final class WorldLoot {
 			if (leavings != null) {
 				context.getLevel().getServer().reloadableRegistries().getLootTable(Loot.key(leavings)).getRandomItemsRaw(context, drops::add);
 			}
+			// A player on the First Weaver's trail finds its thread here (whoever opened the chest, if anyone did)
+			FirstWeaver.chest(key, context.getOptionalParameter(LootContextParams.THIS_ENTITY), drops::add);
 		}));
 	}
 }

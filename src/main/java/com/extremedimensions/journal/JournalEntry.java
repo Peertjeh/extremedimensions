@@ -47,7 +47,11 @@ public enum JournalEntry {
 	/** Not the Wanderer's: the Held's letter, read from a Loose Leaf (a Wanderer's Page never turns out to be it). */
 	HELD("held", false),
 	/** Hearing an echo of a Collapse out. */
-	ECHOES("echoes");
+	ECHOES("echoes"),
+	/** In the other hand: what the frame of an Ancient City shows once strung with silk. */
+	FRAME("frame", false),
+	/** In the other hand: the First Knot, deep in the Fray. */
+	FIRST_KNOT("first_knot", false);
 
 	public final String id;
 	/** Written by the Wanderer (and so to be found on a Wanderer's Page). */

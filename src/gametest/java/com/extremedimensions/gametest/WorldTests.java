@@ -144,10 +144,11 @@ public class WorldTests {
 	@GameTest(maxTicks = 40)
 	public void everyCreatureSpawnsAndTicks(GameTestHelper helper) {
 		EntityType<?>[] types = {ModEntities.LURKER, ModEntities.HOLLOWLING, ModEntities.KEEPER, ModEntities.STARVED_ONE,
-				ModEntities.VEIL_RAY, ModEntities.THINNED, ModEntities.MATRIARCH, ModEntities.FERRYMAN, ModEntities.WEAVER};
+				ModEntities.VEIL_RAY, ModEntities.THINNED, ModEntities.MATRIARCH, ModEntities.FERRYMAN, ModEntities.WEAVER,
+				ModEntities.KNOT_MOTHER};
 		Mob[] spawned = new Mob[types.length];
 		for (int i = 0; i < types.length; i++) {
-			spawned[i] = (Mob) helper.spawn(types[i], new BlockPos(1 + (i % 3) * 2, 2, 1 + (i / 3) * 3));
+			spawned[i] = (Mob) helper.spawn(types[i], new BlockPos(1 + (i % 4) * 2, 2, 1 + (i / 4) * 3));
 		}
 		helper.runAfterDelay(10, () -> {
 			for (int i = 0; i < types.length; i++) {
