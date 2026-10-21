@@ -1377,7 +1377,11 @@ public class ClientShots implements FabricClientGameTest {
 				// Ahead of the islands still being built around: it is what the camera looks at
 				arch.queue(true);
 			});
+			// (a beat or two late on a busy server: it is looked for over two seconds)
 			ctx.waitTicks(9);
+			for (int i = 0; i < 8 && sp.getServer().computeOnServer(s -> com.extremedimensions.seam.SeamArchitect.flying() == 0); i++) {
+				ctx.waitTicks(5);
+			}
 			check(sp.getServer().computeOnServer(s -> com.extremedimensions.seam.SeamArchitect.flying() > 0), "nothing flies in as the Seam builds itself");
 			ctx.takeScreenshot("17_seam_rising");
 			ctx.waitTicks(40);
