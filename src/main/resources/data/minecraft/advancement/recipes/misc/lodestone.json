@@ -1,12 +1,6 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_the_recipe": {
-      "trigger": "minecraft:recipe_unlocked",
-      "conditions": {
-        "recipe": "minecraft:lodestone"
-      }
-    },
     "has_chiseled_stone_bricks": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
@@ -30,7 +24,6 @@
   },
   "requirements": [
     [
-      "has_the_recipe",
       "has_chiseled_stone_bricks",
       "has_diamond"
     ]

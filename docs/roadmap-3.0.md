@@ -87,8 +87,7 @@ The full inventory produced by the audit is appended as section 13.
 | Appendix Q: 28 advancements | 36 (`burden_carried`, `first_barter`, `fray_entered`, `fray_risen`, `hunted`, `lifted`, `raider`, `tribe_kin`, `tribe_trusted` and others missing) | Rewrite the appendix with the 2.33 tree |
 | Chapter 10, the ultimate: "de naam van de aanval wordt eroverheen geslagen" | Since 2.30 blows and ultimates are no longer named on screen | Fix in 2.33 |
 | Roadmap document: "Advancements bestaan los van elkaar, nog niet als één boom" | They already form one tree under `root`. What is missing is that they unlock recipes | Correct the roadmap |
-| Chapters 5 and 12: pacts open once the Starved One is defeated | `pact_unlock` 2 means "the ending is chosen" | Align the code with the text in 2.33: the switch gains a step, 2 = the Starved One defeated, 3 = the ending chosen (config migration) |
-| Chapter 10 and journal XXXIV: the Last Weaver wakes once the hunger at the Heart has ended | `weaver_unlock` 2 means "the ending is chosen" | As above |
+| Chapters 5, 10 and 12, journal XXXIV and the settings' own descriptions: pacts open and the Last Weaver wakes once the Starved One falls | The unlock switches (`pact_unlock`, `weaver_unlock`, and the same switch for trials and the Ferryman) treated 2 as "the ending is chosen" | Fixed in 2.33: 2 means the Starved One has fallen, as the settings always said |
 
 ---
 

@@ -24,6 +24,7 @@ import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 import com.extremedimensions.world.WorldService;
 
@@ -113,7 +114,7 @@ public final class LurkerService {
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
 			String dim = Dims.of(p);
-			if (p.isSpectator() || p.isCreative() || !(Dims.OVERWORLD.equals(dim) || Dims.NETHER.equals(dim)) || hunting(p)) {
+			if (p.isSpectator() || p.isCreative() || !(Dims.OVERWORLD.equals(dim) || Dims.NETHER.equals(dim)) || hunting(p) || Rules.peaceful(p.level())) {
 				continue;
 			}
 			// Rare by design: a base chance, and never again soon after the last encounter

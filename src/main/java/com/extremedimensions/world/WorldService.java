@@ -1,7 +1,6 @@
 package com.extremedimensions.world;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -11,10 +10,11 @@ import com.extremedimensions.data.Anchor;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
+import com.extremedimensions.lore.Loot;
 import com.extremedimensions.network.Fx;
 import com.extremedimensions.progression.Advancements;
-import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
@@ -24,6 +24,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * The world after the Dragon. The Ender Dragon was no enemy but a seal on the first wound; when it dies the seal
@@ -91,13 +92,9 @@ public final class WorldService {
 		if (tribeSteals() || ThreadLocalRandom.current().nextDouble() >= Config.LURKER_OFFERING_CHANCE) {
 			return;
 		}
-		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		double r = rnd.nextDouble();
-		ItemStack s = r < 0.3 ? new ItemStack(ModItems.TETHER_FRAGMENT)
-				: r < 0.55 ? new ItemStack(ModItems.WANDERERS_PAGE)
-				: r < 0.85 ? new ItemStack(ModItems.SEAM_SILK, 1 + rnd.nextInt(3))
-				: new ItemStack(net.minecraft.world.item.Items.ECHO_SHARD);
-		net.minecraft.world.level.block.Block.popResource(level, BlockPos.containing(x, y + 0.5, z), s);
+		for (ItemStack s : Loot.roll(level, Loot.LURKER_OFFERING, new Vec3(x, y + 0.5, z))) {
+			net.minecraft.world.level.block.Block.popResource(level, BlockPos.containing(x, y + 0.5, z), s);
+		}
 		WorldFx.particleIn(level.dimension().identifier().toString(), "extremedimensions:soul_mote", x, y + 0.8, z, 0.3, 0.3, 0.3, 0.0, 8);
 	}
 
@@ -169,6 +166,9 @@ public final class WorldService {
 
 	/** Something from beyond slips through the tear, out of sight. */
 	private static void leak(ServerLevel level, ServerPlayer p) {
+		if (Rules.peaceful(level)) {
+			return;
+		}
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		String[] beyond = {"minecraft:blaze", "minecraft:magma_cube", "minecraft:enderman", "minecraft:wither_skeleton",
 				"minecraft:endermite", "minecraft:ghast", "minecraft:piglin_brute"};

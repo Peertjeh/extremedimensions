@@ -16,10 +16,10 @@ import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.hollow.HollowService;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
+import com.extremedimensions.lore.Loot;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEntities;
-import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.relic.RelicService;
 import com.extremedimensions.server.WorldFx;
 
@@ -636,8 +636,9 @@ public final class MatriarchService {
 		ElderFx.burst(m, "minecraft:soul_fire_flame", 60);
 		AttackFx.burst(level, 0, m.getX(), m.getY() + 2, m.getZ(), 9);
 		ElderFx.cinema(m, 160, ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");
-		ElderFx.loot(m, f.target, new ItemStack(ModItems.TETHER_FRAGMENT, 4));
-		ElderFx.loot(m, f.target, new ItemStack(ModItems.WANDERERS_PAGE, 2));
+		for (ItemStack s : Loot.roll((ServerLevel) m.level(), Loot.MATRIARCH, m.position())) {
+			ElderFx.loot(m, f.target, s);
+		}
 		for (int i = 0; i < Math.max(0, Config.MATRIARCH_RELICS); i++) {
 			ElderFx.loot(m, f.target, RelicService.random());
 		}

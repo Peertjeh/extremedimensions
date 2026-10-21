@@ -15,10 +15,11 @@ import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.hollow.HollowService;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
+import com.extremedimensions.lore.Loot;
 import com.extremedimensions.progression.Advancements;
-import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.relic.RelicService;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.ChatFormatting;
@@ -29,9 +30,8 @@ import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.BossEvent;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * Raids. Opening a hoard that is not the player's own is a raid on it: first its young swarm out and steal all they
@@ -81,7 +81,7 @@ public final class RaidService {
 	/** Whether opening this hoard is a raid for this player (and starts it); false when it is not. */
 	public static boolean start(ServerPlayer p, Hoard h) {
 		if (Config.TRIBE_RAID <= 0 || h.keeperSlain || h.raided || p.isCreative() || p.isSpectator()
-				|| p.getStringUUID().equals(h.owner) || Dims.END.equals(h.dim)) {
+				|| p.getStringUUID().equals(h.owner) || Dims.END.equals(h.dim) || Rules.peaceful(p.level())) {
 			return false;
 		}
 		if (RAIDS.containsKey(h.key())) {
@@ -204,7 +204,7 @@ public final class RaidService {
 		r.bar.removeAllPlayers();
 		HollowService.releaseYoung(r.young, null);
 		h.raided = true;
-		HollowService.deposit(h, spoils());
+		HollowService.deposit(h, spoils((ServerLevel) p.level(), h));
 		PlayerData d = DataStore.get(p.getUUID());
 		d.raidsWon++;
 		Advancements.grant(p, Advancements.RAIDER);
@@ -217,20 +217,10 @@ public final class RaidService {
 		DataStore.markDirty();
 	}
 
-	/** What a raided hoard spills: what the tribe hid away, more than any hoard found in the wild. */
-	public static List<ItemStack> spoils() {
-		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		List<ItemStack> out = new ArrayList<>();
-		out.add(new ItemStack(ModItems.TETHER_FRAGMENT, 1 + rnd.nextInt(2)));
-		out.add(new ItemStack(ModItems.WANDERERS_PAGE, 1 + rnd.nextInt(2)));
-		out.add(new ItemStack(Items.EMERALD, 2 + rnd.nextInt(5)));
-		Item[] hidden = {Items.ECHO_SHARD, Items.GOLDEN_APPLE, Items.ENDER_PEARL, Items.NAME_TAG, Items.EXPERIENCE_BOTTLE,
-				Items.AMETHYST_SHARD, Items.GOLD_INGOT, Items.DIAMOND, Items.GLOW_INK_SAC, Items.SOUL_LANTERN};
-		for (int i = 0; i < 3 + rnd.nextInt(3); i++) {
-			Item it = hidden[rnd.nextInt(hidden.length)];
-			out.add(new ItemStack(it, new ItemStack(it).getMaxStackSize() == 1 ? 1 : 1 + rnd.nextInt(4)));
-		}
-		if (rnd.nextDouble() < Config.TRIBE_RAID_RELIC_CHANCE) {
+	/** What a raided hoard spills: what the tribe hid away, more than any hoard found in the wild (raided_hoard). */
+	public static List<ItemStack> spoils(ServerLevel level, Hoard h) {
+		List<ItemStack> out = new ArrayList<>(Loot.roll(level, Loot.RAIDED_HOARD, new Vec3(h.x + 0.5, h.y + 0.5, h.z + 0.5)));
+		if (ThreadLocalRandom.current().nextDouble() < Config.TRIBE_RAID_RELIC_CHANCE) {
 			out.add(RelicService.random());
 		}
 		return out;

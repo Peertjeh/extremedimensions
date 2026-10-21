@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -16,11 +15,13 @@ import com.extremedimensions.data.Hoard;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
+import com.extremedimensions.lore.Loot;
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 import com.extremedimensions.tribe.BarterService;
 import com.extremedimensions.tribe.RaidService;
@@ -48,7 +49,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -375,27 +375,9 @@ public final class HollowService {
 		deposit(h, items);
 	}
 
-	/** Trinkets in an old hoard found in the wild. */
-	private static List<ItemStack> trinkets() {
-		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		List<ItemStack> out = new ArrayList<>();
-		Item[] small = {Items.IRON_NUGGET, Items.GOLD_NUGGET, Items.STRING, Items.BONE, Items.FEATHER, Items.AMETHYST_SHARD,
-				Items.TORCH, Items.SOUL_TORCH, Items.FLINT, Items.LEATHER, Items.COPPER_INGOT};
-		for (int i = 0; i < 4 + rnd.nextInt(4); i++) {
-			out.add(new ItemStack(small[rnd.nextInt(small.length)], 1 + rnd.nextInt(6)));
-		}
-		Item[] rare = {Items.COMPASS, Items.CLOCK, Items.NAME_TAG, Items.LEAD, Items.SADDLE, Items.SPYGLASS, Items.EMERALD,
-				Items.ECHO_SHARD, Items.MUSIC_DISC_13, Items.GOLDEN_APPLE};
-		for (int i = 0; i < 1 + rnd.nextInt(2); i++) {
-			out.add(new ItemStack(rare[rnd.nextInt(rare.length)]));
-		}
-		if (rnd.nextDouble() < 0.6) {
-			out.add(new ItemStack(ModItems.WANDERERS_PAGE));
-		}
-		if (rnd.nextDouble() < 0.4) {
-			out.add(new ItemStack(ModItems.TETHER_FRAGMENT));
-		}
-		return out;
+	/** Trinkets in an old hoard found in the wild (the old_hoard loot table). */
+	private static List<ItemStack> trinkets(ServerLevel level, Hoard h) {
+		return Loot.roll(level, Loot.OLD_HOARD, new Vec3(h.x + 0.5, h.y + 0.5, h.z + 0.5));
 	}
 
 	/** Opened by a player: the hoard is found, and its Keeper wakes. */
@@ -645,7 +627,7 @@ public final class HollowService {
 		double behind = Math.toRadians(p.getYRot()) - Math.PI / 2;
 		Hoard h = create(level, p.position(), behind, 2.0, "");
 		if (h != null) {
-			deposit(h, trinkets());
+			deposit(h, trinkets(level, h));
 		}
 	}
 
@@ -1078,19 +1060,10 @@ public final class HollowService {
 	}
 
 	private static void gift(ServerPlayer p, Hollowling h) {
-		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		double r = rnd.nextDouble();
-		ItemStack s;
-		if (r < 0.12) {
-			s = new ItemStack(ModItems.WANDERERS_PAGE);
-		} else if (r < 0.24) {
-			s = new ItemStack(ModItems.TETHER_FRAGMENT);
-		} else {
-			Item[] finds = {Items.IRON_NUGGET, Items.GOLD_NUGGET, Items.AMETHYST_SHARD, Items.STRING, Items.SOUL_TORCH,
-					Items.GLOW_BERRIES, Items.FLINT, Items.COPPER_INGOT, Items.EMERALD, Items.LAPIS_LAZULI};
-			s = new ItemStack(finds[rnd.nextInt(finds.length)], 1 + rnd.nextInt(3));
+		ServerLevel level = (ServerLevel) h.level();
+		for (ItemStack s : Loot.roll(level, Loot.HOLLOWLING_GIFT, h.position())) {
+			h.spawnAtLocation(level, s);
 		}
-		h.spawnAtLocation((ServerLevel) h.level(), s);
 		WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_bond", "neutral", h.getX(), h.getY() + 0.8, h.getZ(), 0.7f, 1.3f);
 	}
 
@@ -1173,6 +1146,10 @@ public final class HollowService {
 		if (!forceMatriarch && (h.keeperSlain || Config.KEEPER_ENABLED == 0 || p.isCreative() || p.isSpectator())) {
 			return false;
 		}
+		if (Rules.peaceful(p.level())) {
+			// Nothing wakes to fight on peaceful: the hoard is simply open
+			return false;
+		}
 		for (Guard g : KEEPERS.values()) {
 			if (h.key().equals(g.hoard)) {
 				return false;
@@ -1212,6 +1189,9 @@ public final class HollowService {
 
 	/** The tribe hunts this player: a Keeper of no hoard comes for them out of the dark, behind them. */
 	public static boolean hunt(ServerPlayer p) {
+		if (Rules.peaceful(p.level())) {
+			return false;
+		}
 		String dim = Dims.of(p);
 		if (Config.KEEPER_ENABLED == 0 || p.isCreative() || p.isSpectator() || Dims.END.equals(dim) || Dims.SEAM.equals(dim)) {
 			return false;
@@ -1481,8 +1461,9 @@ public final class HollowService {
 			DataStore.markDirty();
 			return;
 		}
-		k.spawnAtLocation(level, new ItemStack(ModItems.TETHER_FRAGMENT, 2));
-		k.spawnAtLocation(level, new ItemStack(ModItems.WANDERERS_PAGE));
+		for (ItemStack s : Loot.roll(level, Loot.KEEPER, k.position())) {
+			k.spawnAtLocation(level, s);
+		}
 		if (ThreadLocalRandom.current().nextDouble() < Config.RELIC_KEEPER_CHANCE) {
 			// What the Keeper guarded most of all
 			k.spawnAtLocation(level, com.extremedimensions.relic.RelicService.random());
@@ -1532,7 +1513,7 @@ public final class HollowService {
 		Hoard h = new Hoard(Dims.of(level), spot.getX(), spot.getY(), spot.getZ(), "");
 		build(level, spot, nether);
 		DataStore.hoards().add(h);
-		deposit(h, trinkets());
+		deposit(h, trinkets(level, h));
 		DataStore.markDirty();
 		return true;
 	}

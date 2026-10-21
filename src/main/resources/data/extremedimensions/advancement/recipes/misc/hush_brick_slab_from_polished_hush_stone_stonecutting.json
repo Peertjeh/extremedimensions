@@ -1,12 +1,6 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_the_recipe": {
-      "trigger": "minecraft:recipe_unlocked",
-      "conditions": {
-        "recipe": "extremedimensions:hush_brick_slab_from_polished_hush_stone_stonecutting"
-      }
-    },
     "has_polished_hush_stone": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
@@ -20,7 +14,6 @@
   },
   "requirements": [
     [
-      "has_the_recipe",
       "has_polished_hush_stone"
     ]
   ],

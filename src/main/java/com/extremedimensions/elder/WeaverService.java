@@ -12,13 +12,14 @@ import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
+import com.extremedimensions.lore.Loot;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEntities;
-import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.relic.RelicService;
 import com.extremedimensions.seam.SeamFauna;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
@@ -129,7 +130,7 @@ public final class WeaverService {
 
 	/** A visitor stands in a village of the Thinned: on its first visit, the village's Weaver may wake. */
 	public static void nearVillage(ServerPlayer p, int vx, int vy, int vz) {
-		if (!unlocked() || p.isCreative() || p.isSpectator()) {
+		if (!unlocked() || p.isCreative() || p.isSpectator() || Rules.peaceful(p.level())) {
 			return;
 		}
 		// Each village rolls once ("wv@"; before 2.22 the roll was kept as "w@x,z", which wells also use)
@@ -664,8 +665,9 @@ public final class WeaverService {
 		ElderFx.burst(w, "minecraft:end_rod", 60);
 		AttackFx.burst(level, 2, w.getX(), w.getY() + 2, w.getZ(), 9);
 		ElderFx.cinema(w, 160, ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");
-		ElderFx.loot(w, u.target, new ItemStack(ModItems.SEAM_SILK, 8));
-		ElderFx.loot(w, u.target, new ItemStack(ModItems.TETHER_FRAGMENT, 3));
+		for (ItemStack s : Loot.roll((ServerLevel) w.level(), Loot.WEAVER, w.position())) {
+			ElderFx.loot(w, u.target, s);
+		}
 		for (int i = 0; i < Math.max(0, Config.WEAVER_RELICS); i++) {
 			ElderFx.loot(w, u.target, RelicService.random());
 		}

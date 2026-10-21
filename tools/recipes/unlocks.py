@@ -1,8 +1,9 @@
 """Writes the advancements that put the mod's recipes in the recipe book.
 
-Each recipe is unlocked the way vanilla unlocks its own: by holding one of its ingredients. A recipe that uses the mod's
-own materials is unlocked by any of those; one made only of vanilla things by any of its ingredients. The lodestone
-(the mod's own recipe for it) replaces vanilla's advancement for it. Run from the repository root:
+Each recipe is unlocked the way vanilla unlocks its own: by holding one of its ingredients (a recipe already known is
+simply given again, which changes nothing). A recipe that uses the mod's own materials is unlocked by any of those; one
+made only of vanilla things by any of its ingredients. The lodestone (the mod's own recipe for it) replaces vanilla's
+advancement for it. Run from the repository root:
 
     python3 tools/recipes/unlocks.py
 """
@@ -39,7 +40,7 @@ def keys(recipe):
 
 
 def advancement(recipe_id, items):
-    criteria = {"has_the_recipe": {"trigger": "minecraft:recipe_unlocked", "conditions": {"recipe": recipe_id}}}
+    criteria = {}
     for item in items:
         criteria["has_" + item.split(":")[1]] = {
             "trigger": "minecraft:inventory_changed",

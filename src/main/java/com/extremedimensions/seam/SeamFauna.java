@@ -12,6 +12,7 @@ import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
+import com.extremedimensions.lore.Loot;
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.registry.ModItems;
@@ -27,7 +28,6 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
 
@@ -359,23 +359,25 @@ public final class SeamFauna {
 		BlockPos at = e.blockPosition();
 		if (e instanceof VeilRay ray) {
 			// the Frayed carry more of the Seam in them
-			Block.popResource(level, at, new ItemStack(ModItems.SEAM_SILK, 1 + rnd.nextInt(2) + (ray.isFrayed() ? 1 + rnd.nextInt(2) : 0)));
-			Block.popResource(level, at, new ItemStack(Items.GLOW_INK_SAC, 1 + rnd.nextInt(2)));
-			Block.popResource(level, at, new ItemStack(ModItems.VEIL_WING, rnd.nextDouble() < com.extremedimensions.config.Config.VEIL_WING_EXTRA_CHANCE ? 2 : 1));
-		} else if (e instanceof Thinned) {
-			if (rnd.nextInt(3) > 0) {
-				Block.popResource(level, at, new ItemStack(ModItems.SEAM_SILK, 1 + rnd.nextInt(2)));
+			drop(level, at, ray.isFrayed() ? Loot.FRAYED_RAY : Loot.VEIL_RAY);
+			if (rnd.nextDouble() < com.extremedimensions.config.Config.VEIL_WING_EXTRA_CHANCE) {
+				Block.popResource(level, at, new ItemStack(ModItems.VEIL_WING));
 			}
+		} else if (e instanceof Thinned) {
+			drop(level, at, Loot.THINNED);
 			if (SeamDepth.inFray(e.getY())) {
 				// The Frayed carry more of what the Seam swallowed
-				Block.popResource(level, at, new ItemStack(ModItems.SEAM_SILK, 1 + rnd.nextInt(3)));
+				drop(level, at, Loot.THINNED_FRAY);
 				if (rnd.nextDouble() < com.extremedimensions.config.Config.SEAM_FRAY_FRAGMENT_CHANCE) {
 					Block.popResource(level, at, new ItemStack(ModItems.TETHER_FRAGMENT));
 				}
 			}
-			if (rnd.nextDouble() < 0.06) {
-				Block.popResource(level, at, new ItemStack(ModItems.WANDERERS_PAGE));
-			}
+		}
+	}
+
+	private static void drop(ServerLevel level, BlockPos at, String table) {
+		for (ItemStack s : Loot.roll(level, table, Vec3.atCenterOf(at))) {
+			Block.popResource(level, at, s);
 		}
 	}
 }

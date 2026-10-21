@@ -1,12 +1,6 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_the_recipe": {
-      "trigger": "minecraft:recipe_unlocked",
-      "conditions": {
-        "recipe": "extremedimensions:void_tether"
-      }
-    },
     "has_ender_pearl": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
@@ -40,7 +34,6 @@
   },
   "requirements": [
     [
-      "has_the_recipe",
       "has_ender_pearl",
       "has_ender_eye",
       "has_lodestone"

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
@@ -15,21 +14,19 @@ import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
+import com.extremedimensions.lore.Loot;
 import com.extremedimensions.lurker.LurkerService;
 import com.extremedimensions.mending.MendingService;
 import com.extremedimensions.network.Fx;
 import com.extremedimensions.network.Sync;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
-import com.extremedimensions.registry.ModBlocks;
-import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 import com.extremedimensions.tether.TetherService;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -38,11 +35,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BarrelBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.effect.MobEffects;
@@ -1221,29 +1215,24 @@ public final class SeamService {
 		}
 	}
 
-	/** Barrels of the Thinned: silk, pages, fragments and old things; richer the harder they are to reach. */
+	/**
+	 * Barrels of the Thinned: silk, pages, fragments and old things; richer the harder they are to reach (1 a loom, 2 a
+	 * village, 3 a colossus's reliquary, 4 a tangle in the Fray). What is in them comes from the loot tables.
+	 */
 	public static void fillLoot(ServerLevel level, BlockPos b, int richness) {
 		if (!(level.getBlockEntity(b) instanceof Container c)) {
 			return;
 		}
-		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		int slot = 0;
-		c.setItem(slot++, new ItemStack(ModItems.SEAM_SILK, 2 + rnd.nextInt(3 + 2 * richness)));
-		if (rnd.nextDouble() < 0.35 + 0.2 * richness) {
-			c.setItem(slot++, new ItemStack(ModItems.WANDERERS_PAGE));
-		}
-		if (rnd.nextDouble() < 0.15 + 0.15 * richness) {
-			c.setItem(slot++, new ItemStack(ModItems.TETHER_FRAGMENT));
-		}
-		if (rnd.nextDouble() < Config.RELIC_SEAM_CHEST_CHANCE * (1 + richness)) {
+		Loot.fill(level, b, c, richness >= 4 ? Loot.FRAY_TANGLE : richness == 3 ? Loot.SEAM_RELIQUARY : richness == 2 ? Loot.SEAM_VILLAGE : Loot.SEAM_LOOM);
+		if (ThreadLocalRandom.current().nextDouble() < Config.RELIC_SEAM_CHEST_CHANCE * (1 + richness)) {
 			// Sometimes a relic lies among the Weavers' leavings
-			c.setItem(slot++, com.extremedimensions.relic.RelicService.random());
+			for (int slot = 0; slot < c.getContainerSize(); slot++) {
+				if (c.getItem(slot).isEmpty()) {
+					c.setItem(slot, com.extremedimensions.relic.RelicService.random());
+					break;
+				}
+			}
 		}
-		if (richness >= 3) {
-			c.setItem(slot++, new ItemStack(Items.ECHO_SHARD, 1 + rnd.nextInt(3)));
-		}
-		Item[] old = {Items.ECHO_SHARD, Items.AMETHYST_SHARD, Items.BONE, Items.STRING, Items.SOUL_TORCH, Items.CANDLE};
-		c.setItem(slot, new ItemStack(old[rnd.nextInt(old.length)], 1 + rnd.nextInt(3)));
 		c.setChanged();
 		// a fresh barrel: the plundering trial counts it once, whoever opens it first
 		com.extremedimensions.trial.TrialService.stocked(b);

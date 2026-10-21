@@ -14,14 +14,15 @@ import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
+import com.extremedimensions.lore.Loot;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEntities;
-import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.relic.RelicService;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
@@ -131,7 +132,7 @@ public final class FerrymanService {
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
 			PlayerData d = DataStore.get(p.getUUID());
 			if (!d.inRun || d.ferrymanRolled || d.runActive < Config.FERRYMAN_AFTER_SECONDS || p.isCreative() || p.isSpectator()
-					|| !Dims.NETHER.equals(Dims.of(p))) {
+					|| !Dims.NETHER.equals(Dims.of(p)) || Rules.peaceful(p.level())) {
 				continue;
 			}
 			// One chance per expedition; the Fee he is owed makes him likelier
@@ -662,7 +663,9 @@ public final class FerrymanService {
 		ElderFx.burst(f, "minecraft:soul", 80);
 		AttackFx.burst(level, 1, f.getX(), f.getY() + 2, f.getZ(), 9);
 		ElderFx.cinema(f, 160, ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");
-		ElderFx.loot(f, fare.target, new ItemStack(ModItems.TETHER_FRAGMENT, 3));
+		for (ItemStack s : Loot.roll((ServerLevel) f.level(), Loot.FERRYMAN, f.position())) {
+			ElderFx.loot(f, fare.target, s);
+		}
 		if (ThreadLocalRandom.current().nextDouble() < Config.FERRYMAN_RELIC_CHANCE) {
 			ElderFx.loot(f, fare.target, RelicService.random());
 		}

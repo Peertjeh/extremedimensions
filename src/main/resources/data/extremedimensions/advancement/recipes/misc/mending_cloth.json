@@ -1,12 +1,6 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_the_recipe": {
-      "trigger": "minecraft:recipe_unlocked",
-      "conditions": {
-        "recipe": "extremedimensions:mending_cloth"
-      }
-    },
     "has_seam_silk": {
       "trigger": "minecraft:inventory_changed",
       "conditions": {
@@ -40,7 +34,6 @@
   },
   "requirements": [
     [
-      "has_the_recipe",
       "has_seam_silk",
       "has_tether_fragment",
       "has_veil_wing"
