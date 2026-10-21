@@ -104,7 +104,7 @@ public final class Bots {
 		GameProfile profile = new GameProfile(uuid(name), name);
 		BotPlayer p = new BotPlayer(server, server.overworld(), profile, skill);
 		try {
-			server.getPlayerList().placeNewPlayer(new BotConnection(), p, new CommonListenerCookie(profile, 0, p.clientInformation(), false));
+			server.getPlayerList().placeNewPlayer(new BotConnection(p), p, new CommonListenerCookie(profile, 0, p.clientInformation(), false));
 		} catch (RuntimeException e) {
 			BattleHub.LOGGER.warn("Could not add a bot: {}", e.toString());
 			return null;

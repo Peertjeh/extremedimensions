@@ -562,6 +562,8 @@ public final class HubConfig {
 				.with("firstEventSeconds", 6).with("randomEvents", 20));
 		m.put("bridge_2v2", new Game(4, 4, 900, "bridge").with("goalsToWin", 5));
 		m.put("bridge_1v1v1v1", new Game(2, 4, 900, "bridge").with("goalsToWin", 4));
+		m.put("bridge_chaos_1v1v1v1", new Game(2, 4, 900, "bridge").with("goalsToWin", 4).with("powerupSeconds", 12).with("eventSeconds", 10)
+				.with("firstEventSeconds", 6).with("randomEvents", 20));
 		m.put("boxing", new Game(2, 2, 300, "boxing").with("hitsToWin", 100));
 		m.put("build_uhc", new Game(2, 2, 900, "build_uhc").with("buildHeight", 20));
 		m.put("spleef", new Game(2, 16, 300, "spleef").with("layers", 2));

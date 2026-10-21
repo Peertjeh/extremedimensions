@@ -273,6 +273,12 @@ public final class CombatPolicy {
 			default -> {
 				v = 0.25 + 0.55 * p.objective() + (nobody ? 0.4 : dist > 12 ? 0.25 : -0.2);
 				why.add("going for " + g.what());
+				// nearly there (an enemy bed in reach, their goal a step away): finish it before anything else
+				double there = s.self().pos().flatDistance(g.point());
+				if (there < 6) {
+					v += 0.2 + 0.6 * (1 - there / 6);
+					why.add("nearly at " + g.what());
+				}
 			}
 		}
 		return new Score(Tactic.OBJECTIVE, v, false, why);

@@ -30,7 +30,7 @@ import net.minecraft.world.phys.Vec3;
  * events (and always a pearl, low gravity, the bridge crumbling, cobwebs and double points); how many you see
  * depends on how long the match lasts. Never ranked: chance plays too big a part.
  */
-public final class BridgeChaosMatch extends BridgeMatch {
+public final class BridgeChaosMatch extends BridgeMatch implements ChaosHost {
 	public static final List<String> POWERUPS = List.of("wind", "pearl", "apple", "snowballs", "cobweb", "arrows", "clay", "stick");
 
 	/** Ticks of play until the next power-up and the next event (they keep counting over goals). */
@@ -143,7 +143,8 @@ public final class BridgeChaosMatch extends BridgeMatch {
 		}
 		if (--eventIn <= 0) {
 			eventIn = eventTicks();
-			start(chaos().next());
+			net.battlehub.core.chaos.ChaosPlan.Turn turn = chaos().next();
+			start(net.battlehub.core.chaos.ChaosCatalog.get(turn.id()), turn.level());
 		}
 		if (runTicks % 10 == 0) {
 			Vec3 mid = Vec3.atBottomCenterOf(arena.origin()).add(0, 1.2, 0);
@@ -152,7 +153,7 @@ public final class BridgeChaosMatch extends BridgeMatch {
 	}
 
 	/** The item of a power-up. */
-	ItemStack powerupItem(String kind) {
+	public static ItemStack powerupItem(String kind, MinecraftServer server) {
 		return switch (kind) {
 			case "wind" -> new ItemStack(Ids.item("minecraft:wind_charge"), 2);
 			case "pearl" -> new ItemStack(Ids.item("minecraft:ender_pearl"), 1);
@@ -171,14 +172,19 @@ public final class BridgeChaosMatch extends BridgeMatch {
 
 	/** A power-up falls onto the middle of the bridge, glowing. */
 	public void dropPowerup(String kind) {
-		ServerLevel level = arena.level();
-		Vec3 mid = Vec3.atBottomCenterOf(arena.origin()).add(0, 3, 0);
-		ItemEntity item = new ItemEntity(level, mid.x, mid.y, mid.z, powerupItem(kind));
+		dropPowerup(this, kind);
+	}
+
+	/** A power-up falls onto the middle of a Chaos map, glowing (shared with the 1v1v1v1). */
+	public static void dropPowerup(ChaosHost host, String kind) {
+		ServerLevel level = host.level();
+		Vec3 mid = Vec3.atBottomCenterOf(host.middle()).add(0, 3, 0);
+		ItemEntity item = new ItemEntity(level, mid.x, mid.y, mid.z, powerupItem(kind, host.srv()));
 		item.setDeltaMovement(Vec3.ZERO);
 		item.setGlowingTag(true);
 		level.addFreshEntity(item);
 		level.sendParticles(ParticleTypes.FIREWORK, mid.x, mid.y, mid.z, 20, 0.3, 0.3, 0.3, 0.1);
-		forEveryone(o -> {
+		host.everyone(o -> {
 			Msg.actionBar(o, "bridge_chaos.powerup", Lang.tr(o, "bridge_chaos.powerup." + kind));
 			Msg.sound(o, SoundEvents.NOTE_BLOCK_PLING, 0.6f, 1.6f);
 		});
@@ -186,26 +192,25 @@ public final class BridgeChaosMatch extends BridgeMatch {
 
 	/** An event by id, right now (tests, admins). */
 	public void event(String id) {
-		start(net.battlehub.core.chaos.ChaosCatalog.get(id));
+		event(id, 0);
+	}
+
+	/** An event by id, {@code level} times round worse (tests, admins). */
+	public void event(String id, int level) {
+		start(net.battlehub.core.chaos.ChaosCatalog.get(id), level);
 	}
 
 	/** Something happens to everyone: shown as a title and a line in chat with how many events this match had. */
-	private void start(ChaosEvent e) {
+	private void start(ChaosEvent e, int level) {
 		lastEvent = e.id();
-		chaos().start(e);
-		int n = chaos().plan().count();
-		int planned = chaos().plan().planned();
-		forEveryone(o -> {
-			Msg.title(o, Lang.tr(o, e.langKey()), Lang.tr(o, e.langKey() + ".sub", e.seconds()), 5, 35, 10);
-			Msg.send(o, "bridge_chaos.event_line", Lang.tr(o, e.langKey()), Lang.tr(o, e.langKey() + ".sub", e.seconds()),
-					Math.max(1, n), Math.max(n, planned));
-			Msg.sound(o, SoundEvents.FIRECHARGE_USE, 0.7f, 1.4f);
-		});
+		chaos().start(e, level);
+		ChaosAnnounce.event(this::forEveryone, e, level, chaos().plan().count(), chaos().plan().planned());
 	}
 
 	// ------------------------------------------------------------------ for the director
 
-	List<ServerPlayer> inPlay() {
+	@Override
+	public List<ServerPlayer> inPlay() {
 		List<ServerPlayer> out = new ArrayList<>();
 		for (UUID id : alive) {
 			ServerPlayer p = player(id);
@@ -214,27 +219,33 @@ public final class BridgeChaosMatch extends BridgeMatch {
 		return out;
 	}
 
-	ServerLevel level() {
+	@Override
+	public ServerLevel level() {
 		return arena.level();
 	}
 
-	BuildRules buildRules() {
+	@Override
+	public BuildRules buildRules() {
 		return build;
 	}
 
-	BlockPos middle() {
+	@Override
+	public BlockPos middle() {
 		return arena.origin();
 	}
 
-	RandomSource rng() {
+	@Override
+	public RandomSource rng() {
 		return random;
 	}
 
-	MinecraftServer srv() {
+	@Override
+	public MinecraftServer srv() {
 		return server;
 	}
 
-	void everyone(java.util.function.Consumer<ServerPlayer> action) {
+	@Override
+	public void everyone(java.util.function.Consumer<ServerPlayer> action) {
 		forEveryone(action);
 	}
 
@@ -245,13 +256,15 @@ public final class BridgeChaosMatch extends BridgeMatch {
 	}
 
 	/** How far a spot is from the middle, along the bridge. */
-	int fromMiddle(BlockPos p) {
+	@Override
+	public int fromMiddle(BlockPos p) {
 		BlockPos o = arena.origin();
 		return alongX() ? Math.abs(p.getX() - o.getX()) : Math.abs(p.getZ() - o.getZ());
 	}
 
 	/** The straight line from goal to goal at the height of the islands (where a glass or ice bridge goes). */
-	List<BlockPos> bridgeLine() {
+	@Override
+	public List<BlockPos> bridgeLine() {
 		List<BlockPos> out = new ArrayList<>();
 		if (arena.spawnCount() == 0) return out;
 		BlockPos r = arena.mark("goal_red"), b = arena.mark("goal_blue");
@@ -269,12 +282,14 @@ public final class BridgeChaosMatch extends BridgeMatch {
 		return out;
 	}
 
-	void sendHome(ServerPlayer p) {
+	@Override
+	public void sendHome(ServerPlayer p) {
 		Arena.Point sp = spawnOf.get(p.getUUID());
 		if (sp != null) teleport(p, sp);
 	}
 
-	void restock(ServerPlayer p) {
+	@Override
+	public void restock(ServerPlayer p) {
 		Kits.give(p, kit(), leatherColor(p.getUUID()), kitTeam(p.getUUID()));
 		afterKit(p);
 	}

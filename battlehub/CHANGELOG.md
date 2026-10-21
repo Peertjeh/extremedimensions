@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.31.0
+
+### Added
+* **The Bridge 1v1v1v1: Chaos** (party, 2–4, never ranked): the 1v1v1v1 map with everything of The Bridge:
+  Chaos: a power-up on the middle platform, an event every ten seconds, the same pool and the same escalation.
+* **72 more Chaos events, 172 in all.** New items (flint and steel, fire charges, ladders, sand that falls,
+  a netherite sword, a flame bow, a piercing crossbow, cookies, honey), potions to throw (poison, weakness,
+  lingering harm, wind, weaving), effects (nausea, starving, withering, adrenaline, oozing), body changes (short
+  arms, heavy weapons, rabbits, tall ones, brittle, armored, flat footed) and match events (storm, earthquake,
+  pull, switcheroo, sudden death, fresh start, peace talks, brawl, rocket jump, ice age, chicken army, jackpot).
+
+### Changed
+* **Chaos events come back worse.** A match plans 25 events; after them the same 25 come again, twice as bad,
+  after 50 four times as bad, after 75 eight times, and so on.
+  * Longer (up to 45 seconds), stronger effects (up to level 6), twice as many items and potions, body changes
+    twice as big but never past what a body can take (a tenth to three times the size, gravity never upside down,
+    health never gone), twice as many bombs, arrows, cobwebs and chickens, harder pushes, faster lightning.
+  * The title shows "x2", "x4", ...; the chat line says "event 31, 2x as bad".
+
+### Fixed
+* **Bots had no knockback.** A hit player is pushed by a packet to their own client, and a bot has no client;
+  the bot now takes that push itself and flies back like a player.
+* **Some bots showed no arm swing** when they hit or mined (Spleef). The swing now always reaches everyone near.
+* **Bed Wars bots walked past a bed they could break.** A bot within reach of an enemy bed breaks it first, and
+  the last few blocks to a bed weigh more than a fight.
+
 ## 1.30.0
 
 ### Added

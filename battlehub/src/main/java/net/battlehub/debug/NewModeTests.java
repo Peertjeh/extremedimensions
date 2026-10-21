@@ -59,6 +59,10 @@ final class NewModeTests {
 			c.game(GameMode.BRIDGE_CHAOS).settings.put("powerupSeconds", 600.0);
 			c.game(GameMode.BRIDGE_CHAOS).settings.put("eventSeconds", 600.0);
 			c.game(GameMode.BRIDGE_CHAOS).settings.put("firstEventSeconds", 600.0);
+			c.game(GameMode.BRIDGE_FOUR_CHAOS).settings.put("goalsToWin", 2.0);
+			c.game(GameMode.BRIDGE_FOUR_CHAOS).settings.put("powerupSeconds", 600.0);
+			c.game(GameMode.BRIDGE_FOUR_CHAOS).settings.put("eventSeconds", 600.0);
+			c.game(GameMode.BRIDGE_FOUR_CHAOS).settings.put("firstEventSeconds", 600.0);
 			c.arenas.customMapChance = 0.0;
 		});
 		PartyTests.party(server, s, GameMode.SPLEEF, NewModeTests::spleef);
@@ -68,6 +72,7 @@ final class NewModeTests {
 				new String[] {"map:theme:ice", "map:theme:ice", "map:theme:ice", "map:theme:desert"});
 		PartyTests.party(server, s, GameMode.BRIDGE_DUOS, NewModeTests::bridgeDuos);
 		PartyTests.party(server, s, GameMode.BRIDGE_FOUR, NewModeTests::bridgeFour);
+		PartyTests.party(server, s, GameMode.BRIDGE_FOUR_CHAOS, NewModeTests::bridgeFourChaos);
 		bridge(server, s);
 		bridgeChaos(server, s);
 		boxing(server, s);
@@ -363,6 +368,35 @@ final class NewModeTests {
 				&& match().outcome(p(A).getUUID()) == Outcome.WIN && match().outcome(p(B).getUUID()) != Outcome.WIN);
 	}
 
+	/**
+	 * The Bridge 1v1v1v1: Chaos: four islands, a wind charge in the kit, a power-up on the middle; an event the
+	 * second time round is twice as bad (tiny: a tenth of the size instead of half), and double points count.
+	 */
+	private static void bridgeFourChaos(Script s) {
+		String tag = "bridge 1v1v1v1 chaos";
+		s.check(tag + ": four islands, Chaos, a wind charge in the kit", () -> match() instanceof net.battlehub.games.BridgeChaosPartyMatch m
+				&& m.teamCount() == 4 && !match().ranked && p(A).getInventory().countItem(net.battlehub.util.Ids.item("minecraft:wind_charge")) >= 1);
+		s.run(tag + ": a power-up falls onto the middle", () -> ((net.battlehub.games.BridgeChaosPartyMatch) match()).dropPowerup("pearl"));
+		s.check(tag + ": a glowing ender pearl lies in the middle", () -> {
+			net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(match().arena().origin()).inflate(3, 5, 3);
+			return !match().arena().level().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, box,
+					e -> e.getItem().is(Items.ENDER_PEARL) && e.hasGlowingTag()).isEmpty();
+		});
+		s.run(tag + ": tiny, the second time round", () -> ((net.battlehub.games.BridgeChaosPartyMatch) match()).event("tiny", 1));
+		s.check(tag + ": twice as bad: A shrinks to a tenth (not to half)", () -> {
+			double scale = p(A).getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.SCALE);
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST chaos tiny x2: scale {}", scale);
+			return Math.abs(scale - 0.1) < 1e-3;
+		});
+		s.run(tag + ": everything ends", () -> ((net.battlehub.games.BridgeChaosPartyMatch) match()).chaos().finishAll(true));
+		s.check(tag + ": A has their own size again", () -> Math.abs(p(A).getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.SCALE) - 1) < 1e-6
+				&& !net.battlehub.games.duel.ChaosDirector.changed(p(A)));
+		s.run(tag + ": the next goal counts double", () -> ((net.battlehub.games.BridgeChaosPartyMatch) match()).event("double_points", 0));
+		intoEnemyGoal(s, tag);
+		s.waitFor(tag + ": one double goal: A wins (two to win)", 20, () -> match().phase() != Match.Phase.RUNNING
+				&& match().outcome(p(A).getUUID()) == Outcome.WIN);
+	}
+
 	private static net.battlehub.games.duel.BridgeChaosMatch chaos() {
 		return (net.battlehub.games.duel.BridgeChaosMatch) match();
 	}
@@ -409,7 +443,7 @@ final class NewModeTests {
 		s.run(tag + ": hands off the clay", () -> chaos().event("hands_off"));
 		s.check(tag + ": nobody can build", () -> !match().onPlaceBlock(p(A), match().arena().origin().offset(1, 0, 2),
 				new ItemStack(net.battlehub.util.Ids.item("minecraft:red_terracotta"))));
-		s.run(tag + ": all hundred events at once", () -> {
+		s.run(tag + ": all events at once", () -> {
 			for (net.battlehub.core.chaos.ChaosEvent e : net.battlehub.core.chaos.ChaosCatalog.all()) chaos().event(e.id());
 		});
 		s.pause(40);

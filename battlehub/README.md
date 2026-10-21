@@ -58,7 +58,8 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   crosshair is really on your hitbox, within reach and with nothing in between; otherwise it whiffs (and loses its
   charge, as a player does). Beginners spam weak clicks and sometimes swing from too far, experts wait for full
   hits but still react a little late. Against someone sprint-strafing a beginner lands about one swing in five, a
-  master about four in five; against someone standing still nearly all.
+  master about four in five; against someone standing still nearly all. It flies back from a hit like a player
+  and everyone sees its arm swing, for every hit and every block it mines.
 * *The weapon of the fight*: in a bow fight the bow is its weapon (it keeps its distance and only draws the
   sword when you are right on top of it), in a mace fight it fights with the mace, jumps for falling hits and now
   and then throws a wind charge at its feet to come down on you with the smash; in a sword or axe fight it holds
@@ -133,7 +134,8 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
     guards the own flag, the others go for the enemy's.
   * **Bed Wars**: they fetch iron from their generator, buy wool at their own shop (same price as a player), one
     of a team guards the bed while it stands, the others build a bridge to the nearest enemy bed and break it
-    (mining takes as long as for a player; blocks put round a bed are mined first).
+    (mining takes as long as for a player; blocks put round a bed are mined first). A bot that gets within
+    reach of an enemy bed breaks it before anything else, even with someone hitting it.
   * **The Bridge**: they head for the other goal, in 2v2 one keeps the own goal. They walk the path (or a bridge
     someone built) and only build their own where there is no way across: sneaking to the edge, looking at the side
     of the block and placing clay like a player.
@@ -278,10 +280,12 @@ In their own menu (Duel Games), with queues, challenges, ranked, practice agains
   other goal to score; dying only sends you home. First to five goals wins.
 * **The Bridge: Chaos** *(★ fan favourite, never ranked)*: the Bridge with a glowing power-up falling onto the
   middle every few seconds (wind charges, an ender pearl, a golden apple, snowballs, cobwebs, arrows, extra clay
-  or a knockback stick) and **an event every ten seconds**, from a pool of **a hundred**. Every match plans at
-  least twenty of them, drawn at random (rare ones less often), plus five that are in every match, all within
-  the first fifteen: **a pearl for everyone, low gravity, the bridge crumbling, cobwebs and double points**.
-  How many you see depends on how long the match lasts; a long match goes on with events it has not had yet.
+  or a knockback stick) and **an event every ten seconds**, from a pool of **172**. Every match plans 25
+  of them: twenty drawn at random (rare ones less often), plus five that are in every match, all within the
+  first fifteen: **a pearl for everyone, low gravity, the bridge crumbling, cobwebs and double points**.
+  After those 25 **the same events come again, twice as bad**: they last longer, effects are stronger, you get
+  twice as many items, body changes are twice as big (within what a body can take), there are twice as many
+  bombs, arrows and chickens, pushes are harder. After 50 events four times as bad, after 75 eight times, and so on.
   The events are of six kinds, and two of the same kind never follow each other when it can be avoided:
   * *items*: wind charges, snowballs and eggs (they hurt), golden and Notch apples, a fishing rod, a knockback
     stick, a Punch bow, a mace, a loyal trident, a multishot crossbow, chorus fruit, slime, honey, ice, glass
@@ -295,7 +299,8 @@ In their own menu (Duel Games), with queues, challenges, ranked, practice agains
   * *rules*: double and triple points, hands off the clay (no building), truce (no hitting), full heal, back
     home, restock, danger zone (three hearts);
   * *just for fun*: fireworks, chicken rain, butterfingers (hotbar shuffled), hot feet.
-  Each event shows as a title and a line in chat ("event 7 of 25"). A goal ends every running event; a player
+  Each event shows as a title and a line in chat ("event 7 of 25"; later "event 31, 2x as bad", with "x2" in
+  the title). A goal ends every running event; a player
   who dies gets the running effects back when they return. In the Duel Games menu Chaos has a glint and a
   *Fan favourite* badge, and it is in the mode-of-the-day rotation. The normal Bridge stays as it is.
 * **Boxing**: no damage, only knockback; the first to land 100 hits wins the round. Combos are shown.
@@ -329,6 +334,9 @@ for 30 seconds. It queues you for the same mode, format and ranked setting, asks
 * **The Bridge 2v2**: red against blue with two on each island; score together, no friendly fire.
 * **The Bridge 1v1v1v1** (2–4): everyone on their own island (red, blue, green, yellow) round a middle platform;
   jump into anyone else's goal to score. First to four goals wins.
+* **The Bridge 1v1v1v1: Chaos** (2–4, never ranked): the 1v1v1v1 with everything of The Bridge: Chaos: a
+  power-up on the middle platform every few seconds and an event every ten seconds, the same 172 events, which
+  come back worse every round.
 * **Murder Mystery** (4–16): one murderer (a sword after ten seconds, one hit kills), one detective (a bow
   with an arrow back after every shot), the rest innocent. Gold lies around: ten gold buys a bow. Shoot an
   innocent and you die too. The innocents win when the murderer is shot or time runs out.

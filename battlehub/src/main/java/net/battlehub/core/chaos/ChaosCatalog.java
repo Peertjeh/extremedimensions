@@ -14,8 +14,9 @@ import static net.battlehub.core.chaos.ChaosEvent.Category.RULE;
 import static net.battlehub.core.chaos.ChaosEvent.Category.WORLD;
 
 /**
- * The hundred events of The Bridge: Chaos. Every match plans at least twenty of them plus the five in {@link #FIXED};
- * how many a match really sees depends on how long it lasts. The weight (1 rare .. 3 common) sets how often an
+ * The events of The Bridge: Chaos (172). Every match plans at least twenty of them plus the five in {@link #FIXED};
+ * how many a match really sees depends on how long it lasts, and after the plan they come again, worse
+ * ({@link ChaosIntensity}). The weight (1 rare .. 3 common) sets how often an
  * event is drawn. Titles and subtitles live in the language files ({@code bridge_chaos.event.<id>} and {@code .sub}).
  */
 public final class ChaosCatalog {
@@ -133,6 +134,79 @@ public final class ChaosCatalog {
 		e(l, "chicken_rain", FUN, 10, 1, "do chickens");
 		e(l, "butterfingers", FUN, 0, 1, "do shuffle_hotbar");
 		e(l, "hot_feet", FUN, 0, 1, "do ignite");
+		// 1.31: seventy-two more
+		e(l, "flint_and_steel", ITEM, 0, 1, "give minecraft:flint_and_steel 1");
+		e(l, "fire_charges", ITEM, 0, 2, "give minecraft:fire_charge 3");
+		e(l, "water_bucket", ITEM, 0, 2, "give minecraft:water_bucket 1");
+		e(l, "stone_supply", ITEM, 0, 2, "give minecraft:cobblestone 32");
+		e(l, "ladders", ITEM, 0, 2, "give minecraft:ladder 16");
+		e(l, "sand_drop", ITEM, 0, 2, "give minecraft:sand 16");
+		e(l, "gravel_gift", ITEM, 0, 2, "give minecraft:gravel 16");
+		e(l, "soul_sand", ITEM, 0, 1, "give minecraft:soul_sand 8");
+		e(l, "netherite_sword", ITEM, 0, 1, "give minecraft:netherite_sword 1");
+		e(l, "battle_axe", ITEM, 0, 2, "give minecraft:iron_axe 1 minecraft:sharpness 1");
+		e(l, "flame_bow", ITEM, 0, 1, "give minecraft:bow 1 minecraft:flame 1; give minecraft:arrow 8");
+		e(l, "spectral_arrows", ITEM, 0, 2, "give minecraft:spectral_arrow 8");
+		e(l, "quick_crossbow", ITEM, 0, 2, "give minecraft:crossbow 1 minecraft:quick_charge 3; give minecraft:arrow 6");
+		e(l, "piercing_crossbow", ITEM, 0, 1, "give minecraft:crossbow 1 minecraft:piercing 4; give minecraft:arrow 6");
+		e(l, "wind_storm", ITEM, 0, 1, "give minecraft:wind_charge 6");
+		e(l, "cookies", ITEM, 0, 2, "give minecraft:cookie 16");
+		e(l, "golden_carrots", ITEM, 0, 2, "give minecraft:golden_carrot 8");
+		e(l, "honey_bottles", ITEM, 0, 1, "give minecraft:honey_bottle 3");
+		e(l, "magma_blocks", ITEM, 0, 1, "give minecraft:magma_block 8");
+		e(l, "dripstone", ITEM, 0, 1, "give minecraft:pointed_dripstone 8");
+		e(l, "shield_wall", ITEM, 0, 1, "give minecraft:shield 1; give minecraft:oak_planks 32");
+		e(l, "poison_potions", ITEM, 0, 1, "potion splash minecraft:poison 2");
+		e(l, "regen_potion", ITEM, 0, 2, "potion drink minecraft:regeneration 1");
+		e(l, "strength_potion", ITEM, 0, 2, "potion drink minecraft:strength 1");
+		e(l, "weakness_potions", ITEM, 0, 2, "potion splash minecraft:weakness 2");
+		e(l, "lingering_harm", ITEM, 0, 1, "potion lingering minecraft:harming 1");
+		e(l, "lingering_heal", ITEM, 0, 1, "potion lingering minecraft:healing 1");
+		e(l, "fire_res_potion", ITEM, 0, 1, "potion drink minecraft:fire_resistance 1");
+		e(l, "wind_potions", ITEM, 0, 1, "potion splash minecraft:wind_charged 2");
+		e(l, "weaving_potions", ITEM, 0, 1, "potion splash minecraft:weaving 2");
+		e(l, "nausea", EFFECT, 8, 1, "effect minecraft:nausea 0");
+		e(l, "starving", EFFECT, 10, 1, "effect minecraft:hunger 2");
+		e(l, "poisoned", EFFECT, 6, 1, "effect minecraft:poison 0");
+		e(l, "withering", EFFECT, 5, 1, "effect minecraft:wither 0");
+		e(l, "tired_hands", EFFECT, 10, 2, "effect minecraft:mining_fatigue 1");
+		e(l, "adrenaline", EFFECT, 8, 2, "effect minecraft:speed 1; effect minecraft:strength 0; effect minecraft:haste 1");
+		e(l, "sluggish", EFFECT, 8, 2, "effect minecraft:slowness 2; effect minecraft:mining_fatigue 0");
+		e(l, "fortress", EFFECT, 10, 1, "effect minecraft:resistance 3; effect minecraft:slowness 2");
+		e(l, "glow_party", EFFECT, 12, 2, "effect minecraft:glowing 0; effect minecraft:speed 0");
+		e(l, "oozing", EFFECT, 12, 1, "effect minecraft:oozing 0");
+		e(l, "weaving", EFFECT, 12, 1, "effect minecraft:weaving 0");
+		e(l, "gliders", EFFECT, 10, 2, "effect minecraft:slow_falling 0; effect minecraft:speed 2");
+		e(l, "regen_burst", EFFECT, 4, 2, "effect minecraft:regeneration 3");
+		e(l, "short_arms", BODY, 12, 2, "attr minecraft:entity_interaction_range add -1.5");
+		e(l, "short_reach", BODY, 12, 1, "attr minecraft:block_interaction_range add -2.5");
+		e(l, "home_run", BODY, 6, 1, "attr minecraft:attack_knockback add 4");
+		e(l, "heavy_weapons", BODY, 12, 2, "attr minecraft:attack_speed total -0.5");
+		e(l, "rabbits", BODY, 10, 2, "attr minecraft:jump_strength total 0.4; attr minecraft:scale total -0.3");
+		e(l, "tall_ones", BODY, 12, 2, "attr minecraft:scale total 0.3; attr minecraft:entity_interaction_range add 1");
+		e(l, "brittle", BODY, 10, 2, "attr minecraft:armor total -1");
+		e(l, "armored", BODY, 12, 2, "attr minecraft:armor add 10; attr minecraft:armor_toughness add 4");
+		e(l, "lightweight", BODY, 10, 2, "attr minecraft:gravity total -0.4; attr minecraft:movement_speed total 0.2");
+		e(l, "flat_footed", BODY, 8, 2, "attr minecraft:jump_strength total -0.6");
+		e(l, "sweeper", BODY, 12, 1, "attr minecraft:sweeping_damage_ratio add 1");
+		e(l, "planted", BODY, 12, 1, "attr minecraft:explosion_knockback_resistance add 1");
+		e(l, "kindling", FUN, 10, 1, "attr minecraft:burning_time total 2; do ignite");
+		e(l, "carpet_bombing", WORLD, 0, 1, "do bombs; do bombs");
+		e(l, "storm", WORLD, 8, 1, "do snowstorm; do arrow_rain");
+		e(l, "earthquake", WORLD, 0, 1, "do erode; do shockwave");
+		e(l, "pull", WORLD, 0, 2, "do magnet; effect minecraft:slow_falling 0 3");
+		e(l, "switcheroo", RULE, 0, 1, "do swap; do heal");
+		e(l, "sudden_death", RULE, 0, 1, "do danger; do double_points");
+		e(l, "fresh_start", RULE, 0, 1, "do home; do heal; do restock");
+		e(l, "peace_talks", RULE, 10, 1, "do no_pvp; effect minecraft:regeneration 1");
+		e(l, "brawl", RULE, 8, 1, "do no_build; effect minecraft:strength 0");
+		e(l, "rocket_jump", WORLD, 0, 1, "do launch; give minecraft:wind_charge 2");
+		e(l, "ice_age", WORLD, 10, 1, "do ice_bridge; do snowstorm; effect minecraft:slowness 0");
+		e(l, "glass_sprint", WORLD, 15, 1, "do glass_bridge; effect minecraft:speed 1");
+		e(l, "dark_storm", WORLD, 8, 1, "do lightning; effect minecraft:darkness 0");
+		e(l, "chicken_army", FUN, 12, 1, "do chickens; do fireworks");
+		e(l, "scramble", FUN, 0, 1, "do shuffle_hotbar; do swap");
+		e(l, "jackpot", FUN, 0, 1, "do lucky; do lucky");
 		for (ChaosEvent ev : l) BY_ID.put(ev.id(), ev);
 	}
 
@@ -170,7 +244,7 @@ public final class ChaosCatalog {
 	/** What is wrong with the catalogue (empty when it is fine); the tests check this. */
 	public static List<String> problems() {
 		List<String> out = new ArrayList<>();
-		if (BY_ID.size() != 100) out.add("there are " + BY_ID.size() + " events, not 100");
+		if (BY_ID.size() < 150) out.add("there are " + BY_ID.size() + " events, fewer than 150");
 		for (String f : FIXED) {
 			if (!BY_ID.containsKey(f)) out.add("fixed event " + f + " is missing");
 		}

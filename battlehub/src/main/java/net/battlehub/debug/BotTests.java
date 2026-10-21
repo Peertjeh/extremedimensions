@@ -349,6 +349,42 @@ final class BotTests {
 		endAndClean(s, tag);
 		maceFight(server, s);
 		teamPracticeKit(server, s);
+		knockback(server, s);
+	}
+
+	/** A hits a bot: it is knocked back as a player would be (the knockback used to reach only a client it does not have). */
+	private static void knockback(MinecraftServer server, Script s) {
+		String tag = "bots knockback";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": A starts a sword duel against a beginner bot", () -> {
+			SelfTest.join(server, A);
+			Bots.practice(p(A), GameMode.SWORD, net.battlehub.core.ai.Difficulty.BEGINNER);
+		});
+		s.waitFor(tag + ": running", 600, () -> matchOfA() != null && matchOfA().phase() == Match.Phase.RUNNING && botsIn(matchOfA()).size() == 1);
+		s.run(tag + ": A faces the bot two blocks away and hits it", () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			ServerPlayer a = p(A);
+			double yaw = Math.toRadians(a.getYRot());
+			double fx = -Math.sin(yaw), fz = Math.cos(yaw);
+			PartyTests.tp(b, a.getX() + fx * 2, a.getY(), a.getZ() + fz * 2);
+			b.setDeltaMovement(Vec3.ZERO);
+			b.invulnerableTime = 0;
+			a.attack(b);
+			Vec3 v = b.getDeltaMovement();
+			VARS.put("kbPush", v.x * fx + v.z * fz);
+			VARS.put("kbFrom", b.position());
+			VARS.put("kbDir", new Vec3(fx, 0, fz));
+		});
+		s.pause(4);
+		s.check(tag + ": the bot was knocked away from A", () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			Vec3 from = (Vec3) VARS.get("kbFrom"), dir = (Vec3) VARS.get("kbDir");
+			double moved = b.position().subtract(from).dot(dir);
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST knockback: speed away from A {} right after the hit, {} blocks away 4 ticks later",
+					String.format(java.util.Locale.ROOT, "%.2f", (double) VARS.get("kbPush")), String.format(java.util.Locale.ROOT, "%.2f", moved));
+			return (double) VARS.get("kbPush") > 0.25 && moved > 0.4;
+		});
+		endAndClean(s, tag);
 	}
 
 	/** A mace duel: the bot fights with the mace and now and then flies up on a wind charge to smash down. */
@@ -758,6 +794,30 @@ final class BotTests {
 			}
 			logBot("bed wars bot", m, b, "bwLogged2");
 			return false;
+		});
+		s.run(tag + ": the bot is put next to A's bed, with A standing right there", () -> {
+			net.battlehub.games.bedwars.BedWarsMatch bw = (net.battlehub.games.bedwars.BedWarsMatch) matchOfA();
+			BotPlayer b = botsIn(bw).get(0);
+			net.minecraft.core.BlockPos bed = bw.bed(bw.teamOf(p(A).getUUID()));
+			VARS.put("bwBed", bed);
+			// on the floor two blocks from the bed, A one block further
+			for (int[] d : new int[][] {{2, 0}, {-2, 0}, {0, 2}, {0, -2}}) {
+				net.minecraft.core.BlockPos at = bed.offset(d[0], 0, d[1]);
+				if (bw.arena().level().getBlockState(at).isAir() && !bw.arena().level().getBlockState(at.below()).isAir()) {
+					PartyTests.tp(b, at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+					PartyTests.tp(p(A), at.getX() + 0.5 + d[0] / 2.0, at.getY(), at.getZ() + 0.5 + d[1] / 2.0);
+					break;
+				}
+			}
+		});
+		s.waitFor(tag + ": it breaks the bed rather than fight A", 200, () -> {
+			Match m = matchOfA();
+			if (!(m instanceof net.battlehub.games.bedwars.BedWarsMatch bw)) return false;
+			p(A).setHealth(p(A).getMaxHealth());
+			net.minecraft.core.BlockPos bed = (net.minecraft.core.BlockPos) VARS.get("bwBed");
+			boolean gone = !(bw.arena().level().getBlockState(bed).getBlock() instanceof net.minecraft.world.level.block.BedBlock);
+			if (gone) net.battlehub.BattleHub.LOGGER.info("SELFTEST bed wars bot broke A's bed | {}", String.join(" | ", Bots.inspect(botsIn(m).get(0))));
+			return gone;
 		});
 		endAndClean(s, tag);
 		s.run(tag + ": countdown as before", () -> {

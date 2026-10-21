@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import net.battlehub.core.chaos.ChaosCatalog;
 import net.battlehub.core.chaos.ChaosEvent;
+import net.battlehub.core.chaos.ChaosIntensity;
 import net.battlehub.core.chaos.ChaosPlan;
 import net.battlehub.games.bedwars.BuildRules;
 import net.battlehub.util.Ids;
@@ -42,14 +43,15 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Runs the events of one Chaos match: plans them at the start ({@link ChaosPlan}), starts one every few seconds,
  * applies its actions to everyone in play and takes everything back when it ends (attribute changes, glass
- * bridges, chickens, elytra). A goal ends every running event. Effects and attribute changes of running events
- * are given again to a player who comes back after dying.
+ * bridges, chickens, elytra). Once the plan is done the events come again, worse each time round
+ * ({@link ChaosIntensity}). A goal ends every running event. Effects and attribute changes of running events are
+ * given again to a player who comes back after dying.
  */
 public final class ChaosDirector {
 	private static final String MODIFIER = "chaos_";
 	private static final Set<String> INSTANT = Set.of("minecraft:instant_health", "minecraft:instant_damage", "minecraft:saturation");
 
-	private final BridgeChaosMatch match;
+	private final ChaosHost match;
 	private final ChaosPlan plan;
 	private final List<Active> active = new ArrayList<>();
 	/** Ticks of play (the chaos clock); events end on this clock. */
@@ -61,18 +63,22 @@ public final class ChaosDirector {
 	/** A running event and what it left in the world. */
 	private static final class Active {
 		final ChaosEvent event;
+		final int level;
+		final int ticks;
 		final int end;
 		final List<Entity> entities = new ArrayList<>();
 		final List<BlockPos> blocks = new ArrayList<>();
 		final Map<UUID, ItemStack> chest = new HashMap<>();
 
-		Active(ChaosEvent event, int end) {
+		Active(ChaosEvent event, int level, int ticks, int end) {
 			this.event = event;
+			this.level = level;
+			this.ticks = ticks;
 			this.end = end;
 		}
 	}
 
-	ChaosDirector(BridgeChaosMatch match, long seed, int randomCount) {
+	public ChaosDirector(ChaosHost match, long seed, int randomCount) {
 		this.match = match;
 		this.plan = ChaosPlan.create(seed, randomCount);
 	}
@@ -86,25 +92,25 @@ public final class ChaosDirector {
 		return active.size();
 	}
 
-	int goalMultiplier() {
+	public int goalMultiplier() {
 		return goalMultiplier;
 	}
 
-	boolean noBuild() {
+	public boolean noBuild() {
 		return clock < noBuildUntil;
 	}
 
-	boolean noPvp() {
+	public boolean noPvp() {
 		return clock < noPvpUntil;
 	}
 
-	/** The next planned event. */
-	ChaosEvent next() {
-		return ChaosCatalog.get(plan.next());
+	/** The next planned event and how bad it is this time round. */
+	public ChaosPlan.Turn next() {
+		return plan.nextTurn();
 	}
 
 	/** One tick of play: events with something to do every tick, and events that are over. */
-	void tick() {
+	public void tick() {
 		clock++;
 		for (Active a : List.copyOf(active)) {
 			during(a);
@@ -117,18 +123,24 @@ public final class ChaosDirector {
 
 	// ------------------------------------------------------------------ starting an event
 
-	/** Starts an event for everyone in play. */
-	void start(ChaosEvent e) {
-		Active a = new Active(e, clock + Math.max(1, e.ticks()));
+	/** Starts an event for everyone in play, as written. */
+	public void start(ChaosEvent e) {
+		start(e, 0);
+	}
+
+	/** Starts an event for everyone in play, {@code level} times round worse (0: as written). */
+	public void start(ChaosEvent e, int level) {
+		int ticks = ChaosIntensity.seconds(e.seconds(), level) * 20;
+		Active a = new Active(e, level, ticks, clock + Math.max(1, ticks));
 		active.add(a);
 		for (ServerPlayer p : match.inPlay()) {
 			int n = 0;
 			for (ChaosEvent.Action act : e.actions()) {
 				switch (act.verb()) {
-					case "effect" -> effect(p, act, e.ticks());
-					case "attr" -> attribute(p, e, act, n++);
-					case "give" -> give(p, act);
-					case "potion" -> potion(p, act);
+					case "effect" -> effect(p, act, ticks, level);
+					case "attr" -> attribute(p, e, act, n++, level);
+					case "give" -> give(p, act, level);
+					case "potion" -> potion(p, act, level);
 					default -> { }
 				}
 			}
@@ -139,14 +151,14 @@ public final class ChaosDirector {
 		}
 	}
 
-	private static void effect(ServerPlayer p, ChaosEvent.Action act, int eventTicks) {
-		int ticks = act.args().size() > 2 ? Integer.parseInt(act.arg(2)) * 20 : eventTicks;
-		int amp = Integer.parseInt(act.arg(1));
+	private static void effect(ServerPlayer p, ChaosEvent.Action act, int eventTicks, int level) {
+		int ticks = act.args().size() > 2 ? ChaosIntensity.seconds(Integer.parseInt(act.arg(2)), level) * 20 : eventTicks;
+		int amp = ChaosIntensity.amplifier(Integer.parseInt(act.arg(1)), level);
 		boolean instant = INSTANT.contains(act.arg(0));
 		effectHolder(act.arg(0)).ifPresent(h -> p.addEffect(new MobEffectInstance(h, instant ? 1 : Math.max(1, ticks), amp, false, true, true)));
 	}
 
-	private static void attribute(ServerPlayer p, ChaosEvent e, ChaosEvent.Action act, int n) {
+	private static void attribute(ServerPlayer p, ChaosEvent e, ChaosEvent.Action act, int n, int level) {
 		AttributeInstance inst = instance(p, act.arg(0));
 		if (inst == null) return;
 		AttributeModifier.Operation op = switch (act.arg(1)) {
@@ -154,20 +166,27 @@ public final class ChaosDirector {
 			case "total" -> AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL;
 			default -> AttributeModifier.Operation.ADD_VALUE;
 		};
-		inst.addOrUpdateTransientModifier(new AttributeModifier(modifierId(e, n), Double.parseDouble(act.arg(2)), op));
+		double amount = ChaosIntensity.attribute(act.arg(0), act.arg(1), Double.parseDouble(act.arg(2)), level);
+		inst.addOrUpdateTransientModifier(new AttributeModifier(modifierId(e, n), amount, op));
 		if (p.getHealth() > p.getMaxHealth()) p.setHealth(p.getMaxHealth());
 	}
 
-	private void give(ServerPlayer p, ChaosEvent.Action act) {
-		ItemStack stack = new ItemStack(Ids.item(act.arg(0)), Integer.parseInt(act.arg(1)));
-		if (act.args().size() > 3) {
-			int level = Integer.parseInt(act.arg(3));
-			Ids.enchantment(match.srv(), act.arg(2)).ifPresent(h -> stack.enchant(h, level));
+	private void give(ServerPlayer p, ChaosEvent.Action act, int level) {
+		Item item = Ids.item(act.arg(0));
+		int left = ChaosIntensity.count(Integer.parseInt(act.arg(1)), level, 64);
+		// in stacks: twice a totem is two totems, not one stack of two
+		while (left > 0) {
+			ItemStack stack = new ItemStack(item, Math.min(left, Math.max(1, item.getDefaultMaxStackSize())));
+			left -= stack.getCount();
+			if (act.args().size() > 3) {
+				int enchant = ChaosIntensity.enchantment(Integer.parseInt(act.arg(3)), level);
+				Ids.enchantment(match.srv(), act.arg(2)).ifPresent(h -> stack.enchant(h, enchant));
+			}
+			if (!p.getInventory().add(stack)) break;
 		}
-		p.getInventory().add(stack);
 	}
 
-	private static void potion(ServerPlayer p, ChaosEvent.Action act) {
+	private static void potion(ServerPlayer p, ChaosEvent.Action act, int level) {
 		Item item = switch (act.arg(0)) {
 			case "splash" -> Items.SPLASH_POTION;
 			case "lingering" -> Items.LINGERING_POTION;
@@ -175,7 +194,7 @@ public final class ChaosDirector {
 		};
 		Optional<Holder<Potion>> potion = potionHolder(act.arg(1));
 		if (potion.isEmpty()) return;
-		for (int i = 0; i < Integer.parseInt(act.arg(2)); i++) {
+		for (int i = 0; i < ChaosIntensity.count(Integer.parseInt(act.arg(2)), level, 8); i++) {
 			p.getInventory().add(PotionContents.createItemStack(item, potion.get()));
 		}
 	}
@@ -196,10 +215,12 @@ public final class ChaosDirector {
 		ServerLevel level = match.level();
 		BuildRules build = match.buildRules();
 		List<ServerPlayer> players = match.inPlay();
+		int lv = a.level;
 		switch (what) {
 			case "crumble" -> {
-				// Everything built over the middle of the gap falls apart
-				if (build != null) build.crumble(p -> match.fromMiddle(p) <= 7);
+				// Everything built over the middle of the gap falls apart (a wider middle each time round)
+				int reach = Math.min(40, 7 * ChaosIntensity.factor(lv));
+				if (build != null) build.crumble(p -> match.fromMiddle(p) <= reach);
 			}
 			case "webs" -> {
 				if (build == null) break;
@@ -208,14 +229,14 @@ public final class ChaosDirector {
 					BlockPos up = p.above();
 					if (level.getBlockState(up).isAir() && build.mayPlace(up) == BuildRules.Verdict.OK) tops.add(up);
 				}
-				for (int i = 0; i < 6 && !tops.isEmpty(); i++) {
+				for (int i = 0; i < ChaosIntensity.times(6, lv, 48) && !tops.isEmpty(); i++) {
 					BlockPos at = tops.remove(match.rng().nextInt(tops.size()));
 					level.setBlock(at, Ids.state("minecraft:cobweb"), 3);
 					build.markPlaced(at);
 				}
 			}
-			case "double_points" -> goalMultiplier = Math.max(goalMultiplier, 2);
-			case "triple_points" -> goalMultiplier = 3;
+			case "double_points" -> goalMultiplier = Math.max(goalMultiplier, Math.min(16, 2 * ChaosIntensity.factor(lv)));
+			case "triple_points" -> goalMultiplier = Math.max(goalMultiplier, Math.min(24, 3 * ChaosIntensity.factor(lv)));
 			case "no_build" -> noBuildUntil = a.end;
 			case "no_pvp" -> noPvpUntil = a.end;
 			case "lucky" -> {
@@ -223,7 +244,9 @@ public final class ChaosDirector {
 						"minecraft:slime_block 16", "minecraft:enchanted_golden_apple 1", "minecraft:cobweb 4", "minecraft:snowball 16",
 						"minecraft:mace 1", "minecraft:trident 1"};
 				for (ServerPlayer p : players) {
-					give(p, ChaosEvent.Action.parse("give " + goodies[match.rng().nextInt(goodies.length)]));
+					for (int g = 0; g < ChaosIntensity.times(1, lv, 8); g++) {
+						give(p, ChaosEvent.Action.parse("give " + goodies[match.rng().nextInt(goodies.length)]), 0);
+					}
 					p.inventoryMenu.sendAllDataToRemote();
 				}
 			}
@@ -234,14 +257,15 @@ public final class ChaosDirector {
 				}
 			}
 			case "launch" -> {
-				for (ServerPlayer p : players) push(p, new Vec3(p.getDeltaMovement().x, 1.25, p.getDeltaMovement().z));
+				for (ServerPlayer p : players) push(p, new Vec3(p.getDeltaMovement().x, ChaosIntensity.push(1.25, lv, 3), p.getDeltaMovement().z));
 			}
 			case "magnet", "shockwave" -> {
 				Vec3 mid = Vec3.atBottomCenterOf(match.middle());
 				for (ServerPlayer p : players) {
 					Vec3 d = new Vec3(mid.x - p.getX(), 0, mid.z - p.getZ());
 					d = d.lengthSqr() < 1e-4 ? new Vec3(1, 0, 0) : d.normalize();
-					push(p, what.equals("magnet") ? d.scale(1.1).add(0, 0.4, 0) : d.scale(-1.0).add(0, 0.5, 0));
+					double k = ChaosIntensity.push(1, lv, 2.5);
+					push(p, what.equals("magnet") ? d.scale(1.1 * k).add(0, 0.4 * k, 0) : d.scale(-1.0 * k).add(0, 0.5 * k, 0));
 				}
 				level.sendParticles(ParticleTypes.EXPLOSION, mid.x, mid.y + 1, mid.z, 3, 1, 0.5, 1, 0);
 			}
@@ -271,21 +295,23 @@ public final class ChaosDirector {
 				}
 			}
 			case "erode" -> {
-				if (build != null) build.crumble(p -> match.rng().nextInt(3) == 0);
+				double chance = ChaosIntensity.chance(1 / 3.0, lv);
+				if (build != null) build.crumble(p -> match.rng().nextDouble() < chance);
 			}
 			case "bombs" -> {
 				List<BlockPos> spots = build == null ? new ArrayList<>() : build.placedPositions();
 				if (spots.isEmpty()) spots = new ArrayList<>(match.bridgeLine());
-				for (int i = 0; i < 3 && !spots.isEmpty(); i++) {
+				double radius = Math.min(5, 2.5 + 0.5 * lv), blast = ChaosIntensity.push(0.9, lv, 2.5);
+				for (int i = 0; i < ChaosIntensity.times(3, lv, 24) && !spots.isEmpty(); i++) {
 					BlockPos c = spots.remove(match.rng().nextInt(spots.size()));
-					if (build != null) build.explode(c, 2.5);
+					if (build != null) build.explode(c, radius);
 					level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, c.getX() + 0.5, c.getY() + 0.5, c.getZ() + 0.5, 1, 0, 0, 0, 0);
 					Vec3 cv = Vec3.atCenterOf(c);
 					for (ServerPlayer p : players) {
 						Vec3 d = p.position().subtract(cv);
 						if (d.lengthSqr() > 25) continue;
 						d = d.lengthSqr() < 1e-4 ? new Vec3(0, 1, 0) : d.normalize();
-						push(p, d.scale(0.9).add(0, 0.45, 0));
+						push(p, d.scale(blast).add(0, blast / 2, 0));
 					}
 				}
 				match.everyone(o -> net.battlehub.util.Msg.sound(o, SoundEvents.GENERIC_EXPLODE, 0.8f, 1.1f));
@@ -297,7 +323,8 @@ public final class ChaosDirector {
 				}
 			}
 			case "danger" -> {
-				for (ServerPlayer p : players) p.setHealth(Math.min(p.getHealth(), 6f));
+				float left = Math.max(1f, 6f / ChaosIntensity.factor(lv));
+				for (ServerPlayer p : players) p.setHealth(Math.min(p.getHealth(), left));
 			}
 			case "home" -> {
 				for (ServerPlayer p : players) match.sendHome(p);
@@ -307,7 +334,7 @@ public final class ChaosDirector {
 			}
 			case "fireworks" -> {
 				for (ServerPlayer p : players) {
-					for (int i = 0; i < 4; i++) {
+					for (int i = 0; i < ChaosIntensity.times(4, lv, 32); i++) {
 						double x = p.getX() + match.rng().nextInt(9) - 4, z = p.getZ() + match.rng().nextInt(9) - 4;
 						level.sendParticles(ParticleTypes.FIREWORK, x, p.getY() + 6 + match.rng().nextInt(4), z, 40, 0.4, 0.4, 0.4, 0.15);
 					}
@@ -316,7 +343,7 @@ public final class ChaosDirector {
 			}
 			case "chickens" -> {
 				for (ServerPlayer p : players) {
-					for (int i = 0; i < 3; i++) {
+					for (int i = 0; i < ChaosIntensity.times(3, lv, 24); i++) {
 						Entity c = type("minecraft:chicken").create(level, EntitySpawnReason.COMMAND);
 						if (c == null) continue;
 						c.snapTo(p.getX() + match.rng().nextInt(7) - 3, p.getY() + 8 + i * 2, p.getZ() + match.rng().nextInt(7) - 3);
@@ -340,7 +367,8 @@ public final class ChaosDirector {
 				}
 			}
 			case "ignite" -> {
-				for (ServerPlayer p : players) p.setRemainingFireTicks(60);
+				int fire = Math.min(400, 60 * ChaosIntensity.factor(lv));
+				for (ServerPlayer p : players) p.setRemainingFireTicks(fire);
 			}
 			// snowstorm, arrow_rain and lightning work every few ticks (during)
 			default -> { }
@@ -349,18 +377,19 @@ public final class ChaosDirector {
 
 	/** Events that do something all the time they run. */
 	private void during(Active a) {
-		int age = clock - (a.end - Math.max(1, a.event.ticks()));
+		int age = clock - (a.end - Math.max(1, a.ticks));
+		int lv = a.level;
 		for (ChaosEvent.Action act : a.event.actions()) {
 			if (!act.verb().equals("do")) continue;
 			switch (act.arg(0)) {
 				case "snowstorm" -> {
-					if (age % 3 == 0) rain(a, type("minecraft:snowball"), 2, -0.6);
+					if (age % 3 == 0) rain(a, type("minecraft:snowball"), ChaosIntensity.times(2, lv, 16), -0.6);
 				}
 				case "arrow_rain" -> {
-					if (age % 4 == 0) rain(a, type("minecraft:arrow"), 2, -1.4);
+					if (age % 4 == 0) rain(a, type("minecraft:arrow"), ChaosIntensity.times(2, lv, 16), -1.4);
 				}
 				case "lightning" -> {
-					if (age % 25 != 0) break;
+					if (age % ChaosIntensity.every(25, lv, 5) != 0) break;
 					ServerLevel level = match.level();
 					for (ServerPlayer p : match.inPlay()) {
 						if (!(type("minecraft:lightning_bolt").create(level, EntitySpawnReason.COMMAND) instanceof LightningBolt bolt)) continue;
@@ -423,22 +452,22 @@ public final class ChaosDirector {
 	}
 
 	/** A goal was scored: the next one counts normally again, and a new point starts clean. */
-	void goalScored() {
+	public void goalScored() {
 		goalMultiplier = 1;
 		finishAll(false);
 	}
 
 	/** A player came back after dying: the effects and body changes of running events again, for what is left. */
-	void reapply(ServerPlayer p) {
+	public void reapply(ServerPlayer p) {
 		for (Active a : active) {
 			int left = a.end - clock;
 			if (left <= 0) continue;
 			int n = 0;
 			for (ChaosEvent.Action act : a.event.actions()) {
 				if (act.verb().equals("attr")) {
-					attribute(p, a.event, act, n++);
+					attribute(p, a.event, act, n++, a.level);
 				} else if (act.verb().equals("effect") && act.args().size() == 2) {
-					effect(p, act, left);
+					effect(p, act, left, a.level);
 				}
 			}
 		}

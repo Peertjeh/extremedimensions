@@ -12,20 +12,21 @@ import java.util.Set;
  * The events of one Chaos match, decided at the start: at least {@code randomCount} different events drawn from
  * the pool (rare ones less often), plus the five that are in every match, spread over the first
  * {@link #FIXED_WITHIN} turns so even a short match sees them. Two events of the same kind never follow each other
- * when it can be avoided. A match that lasts longer than the plan goes on with events it has not had yet, and only
- * after all hundred starts over.
+ * when it can be avoided. A match that lasts longer than the plan has them all again, in the same order, twice as
+ * bad ({@link ChaosIntensity}); after twice the plan four times as bad, and so on.
  */
 public final class ChaosPlan {
 	public static final int FIXED_WITHIN = 15;
 
-	private final Random random;
 	private final List<String> order;
 	private final Set<String> played = new HashSet<>();
-	private final List<String> extra = new ArrayList<>();
 	private int index;
+	private int level;
 
-	private ChaosPlan(Random random, List<String> order) {
-		this.random = random;
+	/** One turn: which event, and how bad (0 as written, 1 twice as bad, 2 four times, ...). */
+	public record Turn(String id, int level) {}
+
+	private ChaosPlan(List<String> order) {
 		this.order = order;
 	}
 
@@ -57,7 +58,7 @@ public final class ChaosPlan {
 		}
 		spread(slots, pinned);
 		List<String> order = new ArrayList<>(List.of(slots));
-		return new ChaosPlan(r, order);
+		return new ChaosPlan(order);
 	}
 
 	/** Weighted draw without putting back: each event's chance follows its weight. */
@@ -104,31 +105,29 @@ public final class ChaosPlan {
 		return ChaosCatalog.get(id).category();
 	}
 
-	/** The next event: the plan first, then events this match has not had, then everything again. */
+	/** The next event (see {@link #nextTurn()} for how bad it is). */
 	public String next() {
-		String id;
-		if (index < order.size()) {
-			id = order.get(index);
-		} else {
-			if (extra.isEmpty()) refill();
-			id = extra.remove(0);
-		}
-		index++;
-		played.add(id);
-		return id;
+		return nextTurn().id();
 	}
 
-	private void refill() {
-		List<String> fresh = new ArrayList<>();
-		for (ChaosEvent e : ChaosCatalog.all()) {
-			if (!played.contains(e.id())) fresh.add(e.id());
-		}
-		if (fresh.isEmpty()) {
-			played.clear();
-			for (ChaosEvent e : ChaosCatalog.all()) fresh.add(e.id());
-		}
-		Collections.shuffle(fresh, random);
-		extra.addAll(fresh);
+	/** The next turn: the plan, then the plan again one level worse each time round. */
+	public Turn nextTurn() {
+		if (order.isEmpty()) return new Turn(ChaosCatalog.FIXED.get(0), 0);
+		String id = order.get(index % order.size());
+		level = index / order.size();
+		index++;
+		played.add(id);
+		return new Turn(id, level);
+	}
+
+	/** How bad the last event was (0 the first time round). */
+	public int level() {
+		return level;
+	}
+
+	/** How bad the events are now, as a factor (1, 2, 4, ...). */
+	public int factor() {
+		return ChaosIntensity.factor(level);
 	}
 
 	/** The planned events, in order. */

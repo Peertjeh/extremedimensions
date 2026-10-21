@@ -35,13 +35,13 @@ import net.minecraft.world.phys.Vec3;
  * your team; after a goal everyone goes back home. Dying only sends you home. First team to the goal target wins;
  * when time is up, the team with the most goals.
  */
-public final class BridgePartyMatch extends PartyMatch {
+public class BridgePartyMatch extends PartyMatch {
 	private static final int[] COLORS = {0xB02E26, 0x3C44AA, 0x80C71F, 0xFED83D};
 
 	private final List<List<UUID>> teams = new ArrayList<>();
 	private final Map<UUID, Integer> teamOf = new HashMap<>();
 	private final int[] goals;
-	private BuildRules build;
+	protected BuildRules build;
 	private int goalsScored;
 
 	public BridgePartyMatch(int id, GameMode mode, MinecraftServer server, List<ServerPlayer> players) {
@@ -116,7 +116,7 @@ public final class BridgePartyMatch extends PartyMatch {
 			case 2 -> "&a";
 			default -> "&e";
 		};
-		if (mode == GameMode.BRIDGE_FOUR && !teams.get(team).isEmpty()) {
+		if (mode != GameMode.BRIDGE_DUOS && !teams.get(team).isEmpty()) {
 			return Lang.colored(code + name(teams.get(team).get(0)));
 		}
 		return Lang.colored(code).append(Lang.tr(viewer, "bridge.team." + color(team)));
@@ -239,9 +239,18 @@ public final class BridgePartyMatch extends PartyMatch {
 		}
 	}
 
+	/** What a goal counts (the Chaos version doubles it now and then). */
+	protected int goalValue() {
+		return 1;
+	}
+
+	/** After a goal, before the next point (the Chaos version ends its events). */
+	protected void afterGoal() {}
+
 	/** A goal for the scorer's team: everyone back home, or the match is won. */
 	void scored(UUID scorer, int team) {
-		goals[team]++;
+		goals[team] += goalValue();
+		afterGoal();
 		goalsScored++;
 		forEveryone(o -> {
 			Msg.send(o, "bridge.party_goal", name(scorer), teamName(o, team), score(o));

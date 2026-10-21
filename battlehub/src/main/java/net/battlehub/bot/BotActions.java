@@ -38,39 +38,38 @@ final class BotActions {
 		bot.gameMode.useItem(bot, bot.level(), bot.getItemInHand(hand), hand);
 	}
 
-	/** The arm swing everybody sees (its signature changed over versions, so it is looked up once). */
+	/**
+	 * The arm swing everybody sees. Its signature changed over versions, so it is looked up once: the simplest one
+	 * that takes the hand (newer ones also take the item's swing animation, which a bot cannot make up). When that
+	 * does not show it (it throws, or says it did not swing), the animation packet goes out directly.
+	 */
 	static void swing(LivingEntity e) {
 		if (!swingLooked) {
 			swingLooked = true;
 			for (Method m : LivingEntity.class.getDeclaredMethods()) {
-				if (m.getName().equals("swing") && m.getParameterCount() >= 1 && m.getParameterTypes()[0] == InteractionHand.class) {
-					m.setAccessible(true);
-					swing = m;
-					break;
-				}
+				if (!m.getName().equals("swing") || m.getParameterCount() < 1 || m.getParameterTypes()[0] != InteractionHand.class) continue;
+				boolean usable = true;
+				for (Class<?> t : m.getParameterTypes()) usable &= t == InteractionHand.class || t == boolean.class;
+				if (usable && (swing == null || m.getParameterCount() < swing.getParameterCount())) swing = m;
+			}
+			if (swing != null) swing.setAccessible(true);
+			net.battlehub.BattleHub.LOGGER.info("Bots swing their arm with {}", swing == null ? "the animation packet" : swing);
+		}
+		boolean shown = false;
+		if (swing != null) {
+			Class<?>[] types = swing.getParameterTypes();
+			Object[] args = new Object[types.length];
+			for (int i = 0; i < types.length; i++) args[i] = types[i] == InteractionHand.class ? InteractionHand.MAIN_HAND : Boolean.TRUE;
+			try {
+				Object r = swing.invoke(e, args);
+				shown = !(r instanceof Boolean b) || b;
+			} catch (ReflectiveOperationException | RuntimeException ignored) {
+				// the packet below shows it
 			}
 		}
-		if (swing == null) {
-			return;
-		}
-		Class<?>[] types = swing.getParameterTypes();
-		Object[] args = new Object[types.length];
-		for (int i = 0; i < types.length; i++) {
-			if (types[i] == InteractionHand.class) {
-				args[i] = InteractionHand.MAIN_HAND;
-			} else if (types[i] == boolean.class) {
-				args[i] = false;
-			} else if (types[i].isEnum()) {
-				Object[] values = types[i].getEnumConstants();
-				args[i] = values.length > 0 ? values[0] : null;
-			} else if (types[i].isPrimitive()) {
-				args[i] = types[i] == int.class ? 0 : types[i] == float.class ? 0f : types[i] == double.class ? 0d : null;
-			}
-		}
-		try {
-			swing.invoke(e, args);
-		} catch (ReflectiveOperationException | RuntimeException ignored) {
-			// Only the animation is lost
+		if (!shown && e.level() instanceof ServerLevel level) {
+			level.getServer().getPlayerList().broadcast(null, e.getX(), e.getY(), e.getZ(), 64, level.dimension(),
+					new net.minecraft.network.protocol.game.ClientboundAnimatePacket(e, net.minecraft.network.protocol.game.ClientboundAnimatePacket.SWING_MAIN_HAND));
 		}
 	}
 

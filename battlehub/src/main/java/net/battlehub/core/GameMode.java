@@ -41,6 +41,8 @@ public enum GameMode {
 	BRIDGE_DUOS("bridge_2v2", Category.PARTY, false, 4, 4),
 	/** The Bridge, everyone on their own island (up to four). */
 	BRIDGE_FOUR("bridge_1v1v1v1", Category.PARTY, false, 2, 4),
+	/** The Bridge 1v1v1v1 with the power-ups and events of The Bridge: Chaos. */
+	BRIDGE_FOUR_CHAOS("bridge_chaos_1v1v1v1", Category.PARTY, false, 2, 4),
 	/** One player against a team of two, with a sword, axe or mace kit. */
 	ONE_V_TWO("1v2", Category.TEAM, false, 3, 3),
 	/** One player against a team of three. */
@@ -96,7 +98,7 @@ public enum GameMode {
 
 	/** Never ranked: chance (power-ups, events) plays too big a part for ELO. */
 	public boolean isUnranked() {
-		return this == BRIDGE_CHAOS;
+		return this == BRIDGE_CHAOS || this == BRIDGE_FOUR_CHAOS;
 	}
 
 	/** Highlighted in the menus as the players' favourite. */
@@ -157,13 +159,13 @@ public enum GameMode {
 
 	public static GameMode[] parties() {
 		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, FFA, TOURNAMENT, BED_WARS, PROP_HUNT,
-				SPLEEF, SKYWARS, MURDER_MYSTERY, BRIDGE_DUOS, BRIDGE_FOUR};
+				SPLEEF, SKYWARS, MURDER_MYSTERY, BRIDGE_DUOS, BRIDGE_FOUR, BRIDGE_FOUR_CHAOS};
 	}
 
 	/** The Party Games menu (Free for All is under PvP). */
 	public static GameMode[] partyMenu() {
 		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, TOURNAMENT, BED_WARS, PROP_HUNT,
-				SPLEEF, SKYWARS, MURDER_MYSTERY, BRIDGE_DUOS, BRIDGE_FOUR};
+				SPLEEF, SKYWARS, MURDER_MYSTERY, BRIDGE_DUOS, BRIDGE_FOUR, BRIDGE_FOUR_CHAOS};
 	}
 
 	public static GameMode[] teamFights() {

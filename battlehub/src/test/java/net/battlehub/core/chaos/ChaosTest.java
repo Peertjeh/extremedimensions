@@ -16,9 +16,9 @@ import org.junit.jupiter.api.Test;
 
 class ChaosTest {
 	@Test
-	void aHundredValidEvents() {
+	void atLeastAHundredAndFiftyValidEvents() {
 		assertEquals(List.of(), ChaosCatalog.problems());
-		assertEquals(100, ChaosCatalog.all().size());
+		assertTrue(ChaosCatalog.all().size() >= 150, ChaosCatalog.all().size() + " events");
 		for (String f : ChaosCatalog.FIXED) assertTrue(ChaosCatalog.has(f), f);
 		assertTrue(ChaosCatalog.attributes().contains("minecraft:scale"));
 	}
@@ -82,15 +82,70 @@ class ChaosTest {
 	}
 
 	@Test
-	void aLongMatchGoesOnWithNewEventsBeforeRepeating() {
+	void afterThePlanTheSameEventsComeAgainTwiceAsBadThenFourTimes() {
 		ChaosPlan plan = ChaosPlan.create(7, 20);
-		List<String> seen = new ArrayList<>();
-		for (int i = 0; i < 100; i++) seen.add(plan.next());
-		assertEquals(100, new HashSet<>(seen).size(), "all hundred before anything comes back");
-		assertEquals(plan.order(), seen.subList(0, 25));
-		Set<String> next = new HashSet<>();
-		for (int i = 0; i < 100; i++) next.add(plan.next());
-		assertEquals(100, next.size());
-		assertEquals(200, plan.count());
+		List<String> order = plan.order();
+		for (int round = 0; round < 4; round++) {
+			for (int i = 0; i < order.size(); i++) {
+				ChaosPlan.Turn t = plan.nextTurn();
+				assertEquals(order.get(i), t.id(), "round " + round + ", turn " + i);
+				assertEquals(round, t.level());
+				assertEquals(1 << round, plan.factor());
+			}
+		}
+		assertEquals(100, plan.count());
+		assertEquals(new HashSet<>(order), plan.played(), "only the planned events, again and again");
+	}
+
+	@Test
+	void twiceAsBadMeansLongerStrongerMoreAndBigger() {
+		assertEquals(List.of(1, 2, 4, 8), List.of(ChaosIntensity.factor(0), ChaosIntensity.factor(1), ChaosIntensity.factor(2), ChaosIntensity.factor(3)));
+		// longer, but never past the limit, and instant stays instant
+		assertEquals(10, ChaosIntensity.seconds(10, 0));
+		assertEquals(20, ChaosIntensity.seconds(10, 1));
+		assertEquals(30, ChaosIntensity.seconds(10, 5));
+		assertEquals(ChaosIntensity.MAX_SECONDS, ChaosIntensity.seconds(20, 3));
+		assertEquals(0, ChaosIntensity.seconds(0, 4));
+		// stronger effects, more items (up to a stack), better enchantments (up to five)
+		assertEquals(1, ChaosIntensity.amplifier(1, 0));
+		assertEquals(3, ChaosIntensity.amplifier(1, 2));
+		assertEquals(ChaosIntensity.MAX_AMPLIFIER, ChaosIntensity.amplifier(2, 9));
+		assertEquals(32, ChaosIntensity.count(16, 1, 64));
+		assertEquals(64, ChaosIntensity.count(16, 4, 64));
+		assertEquals(2, ChaosIntensity.count(1, 1, 64));
+		assertEquals(5, ChaosIntensity.enchantment(2, 7));
+		// a body change twice as big, but a body that can still play
+		assertEquals(-0.9, ChaosIntensity.attribute("minecraft:scale", "total", -0.5, 1), 1e-9);
+		assertEquals(1.2, ChaosIntensity.attribute("minecraft:scale", "total", 0.6, 1), 1e-9);
+		assertEquals(-0.95, ChaosIntensity.attribute("minecraft:gravity", "total", -0.7, 1), 1e-9);
+		assertEquals(-0.8, ChaosIntensity.attribute("minecraft:max_health", "total", -0.5, 2), 1e-9);
+		assertEquals(4, ChaosIntensity.attribute("minecraft:attack_knockback", "add", 2, 1), 1e-9);
+		assertEquals(-1, ChaosIntensity.attribute("minecraft:movement_speed", "total", -1, 3), 1e-9);
+		// the match's own doings: more of them, harder, more often
+		assertEquals(6, ChaosIntensity.times(3, 1, 24));
+		assertEquals(24, ChaosIntensity.times(3, 5, 24));
+		assertEquals(1.875, ChaosIntensity.push(1.25, 1, 3), 1e-9);
+		assertEquals(3, ChaosIntensity.push(1.25, 9, 3), 1e-9);
+		assertEquals(12, ChaosIntensity.every(25, 1, 5));
+		assertEquals(5, ChaosIntensity.every(25, 6, 5));
+		assertEquals(5.0 / 9, ChaosIntensity.chance(1 / 3.0, 1), 1e-9);
+	}
+
+	@Test
+	void everyEventCanBeMadeWorseWithinTheLimits() {
+		for (ChaosEvent e : ChaosCatalog.all()) {
+			for (int level = 0; level <= 6; level++) {
+				int secs = ChaosIntensity.seconds(e.seconds(), level);
+				assertTrue(secs >= e.seconds() && secs <= Math.max(e.seconds(), ChaosIntensity.MAX_SECONDS), e.id());
+				for (ChaosEvent.Action a : e.actions()) {
+					if (a.verb().equals("attr")) {
+						double v = ChaosIntensity.attribute(a.arg(0), a.arg(1), Double.parseDouble(a.arg(2)), level);
+						if (!a.arg(1).equals("add")) assertTrue(v >= -1 && v <= 4, e.id() + " level " + level + ": " + v);
+						if (a.arg(0).equals("minecraft:scale")) assertTrue(1 + v >= 0.1 - 1e-9, e.id() + " shrinks to nothing");
+						if (a.arg(0).equals("minecraft:gravity")) assertTrue(1 + v > 0, e.id() + " turns gravity round");
+					}
+				}
+			}
+		}
 	}
 }

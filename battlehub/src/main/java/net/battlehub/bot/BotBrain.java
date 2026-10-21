@@ -756,7 +756,12 @@ final class BotBrain {
 			launch();
 		}
 		shield(in.block());
-		if (in.attack() && t != null && k.seen()) {
+		// an enemy bed (or what the game wants broken) within reach goes first: a fight can wait a second, the chance not
+		BlockPos breakable = building ? null : m.botBreakTarget(bot);
+		if (breakable != null && bot.getEyePosition().distanceTo(Vec3.atCenterOf(breakable))
+				<= bot.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE) + 0.5) {
+			breakThrough(m);
+		} else if (in.attack() && t != null && k.seen()) {
 			// the click: it lands only when the crosshair is really on them, within reach, with nothing in between
 			shield(false);
 			boolean landed = onCrosshair(t);
