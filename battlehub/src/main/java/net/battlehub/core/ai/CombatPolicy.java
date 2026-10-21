@@ -18,11 +18,12 @@ public final class CombatPolicy {
 	/**
 	 * {@code quiet}: ticks since anyone in this fight was hit. Waiting is a tactic, not a way of life: the longer
 	 * nothing happens, the more pressing in wins (how long it takes depends on patience), so even a counter-puncher
-	 * goes in against an opponent who only stands there.
+	 * goes in against an opponent who only stands there. It keeps growing for about fourteen seconds: the most
+	 * patient, most defensive style there is still goes in then (it once held four blocks off for half a minute).
 	 */
 	public static List<Score> score(Situation s, OpponentModel om, OutcomeMemory mem, Personality p, Difficulty d, int quiet) {
 		List<Score> out = new ArrayList<>();
-		double impatience = Math.max(0, Math.min(0.5, (quiet - 40) / 120.0)) * (1 - 0.6 * p.patience());
+		double impatience = Math.max(0, Math.min(2.0, (quiet - 40) / 120.0)) * (1 - 0.6 * p.patience());
 		Situation.Self me = s.self();
 		Situation.Target t = s.target();
 		double hp = me.healthShare();

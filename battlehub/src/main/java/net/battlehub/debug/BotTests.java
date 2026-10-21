@@ -889,10 +889,15 @@ final class BotTests {
 			return false;
 		});
 		endAndClean(s, tag);
-		s.run(tag + ": countdown as before", () -> {
+		s.run(tag + ": countdown and settings as before", () -> {
 			cfg().partyFillTo = 4;
 			ConfigManager.config().timings.partyCountdownSeconds = (int) VARS.get("partyCountdown");
 			ConfigManager.config().timings.partyFullCountdownSeconds = (int) VARS.get("partyFull");
+			java.util.Map<String, Double> hg = ConfigManager.config().game(GameMode.HUNGER_GAMES).settings;
+			hg.clear();
+			@SuppressWarnings("unchecked")
+			java.util.Map<String, Double> saved = (java.util.Map<String, Double>) VARS.get("hgSettings");
+			hg.putAll(saved);
 		});
 	}
 
@@ -966,15 +971,10 @@ final class BotTests {
 			return (int) VARS.get("swSelfFalls") == 0;
 		});
 		endAndClean(s, tag);
-		s.run(tag + ": countdown and settings as before", () -> {
+		s.run(tag + ": countdown as before", () -> {
 			cfg().partyFillTo = 4;
 			ConfigManager.config().timings.partyCountdownSeconds = (int) VARS.get("partyCountdown");
 			ConfigManager.config().timings.partyFullCountdownSeconds = (int) VARS.get("partyFull");
-			java.util.Map<String, Double> hg = ConfigManager.config().game(GameMode.HUNGER_GAMES).settings;
-			hg.clear();
-			@SuppressWarnings("unchecked")
-			java.util.Map<String, Double> saved = (java.util.Map<String, Double>) VARS.get("hgSettings");
-			hg.putAll(saved);
 		});
 	}
 

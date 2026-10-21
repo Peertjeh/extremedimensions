@@ -63,6 +63,18 @@ class PolicyTest {
 	}
 
 	@Test
+	void theMostPatientStyleThereIsStillGoesInWithinFifteenSeconds() {
+		// as patient and defensive as a bot can be, liking six blocks of room, against someone who only stands there
+		Personality waiter = new Personality(0, 0.5, 1, 6, 0.5, 0, 1, 0.5);
+		for (double dist : new double[] {3.6, 4.0, 5.5}) {
+			Situation s = at(0, me(O, 20, 1), foe(new V3(dist, 64, 0), 20), open());
+			assertEquals(Tactic.SPACE, best(CombatPolicy.score(s, calm, this.fresh, waiter, Difficulty.EXPERT, 0)), "at " + dist);
+			Tactic t = best(CombatPolicy.score(s, calm, this.fresh, waiter, Difficulty.EXPERT, 300));
+			assertTrue(t == Tactic.STRIKE || t == Tactic.APPROACH, dist + ": " + t);
+		}
+	}
+
+	@Test
 	void lowOnHealthItHealsWhenItCanOrBacksOff() {
 		Situation canHeal = at(0, meWith(O, 5, 0.5, true, false), foe(new V3(6, 64, 0), 18), open());
 		assertEquals(Tactic.HEAL, best(score(canHeal, Archetype.BALANCED)));
