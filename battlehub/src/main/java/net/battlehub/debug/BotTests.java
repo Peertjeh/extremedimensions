@@ -368,10 +368,7 @@ final class BotTests {
 			double fx = -Math.sin(yaw), fz = Math.cos(yaw);
 			PartyTests.tp(b, a.getX() + fx * 2, a.getY(), a.getZ() + fz * 2);
 			b.setDeltaMovement(Vec3.ZERO);
-			b.invulnerableTime = 0;
 			a.attack(b);
-			Vec3 v = b.getDeltaMovement();
-			VARS.put("kbPush", v.x * fx + v.z * fz);
 			VARS.put("kbFrom", b.position());
 			VARS.put("kbDir", new Vec3(fx, 0, fz));
 		});
@@ -380,9 +377,10 @@ final class BotTests {
 			BotPlayer b = botsIn(matchOfA()).get(0);
 			Vec3 from = (Vec3) VARS.get("kbFrom"), dir = (Vec3) VARS.get("kbDir");
 			double moved = b.position().subtract(from).dot(dir);
-			net.battlehub.BattleHub.LOGGER.info("SELFTEST knockback: speed away from A {} right after the hit, {} blocks away 4 ticks later",
-					String.format(java.util.Locale.ROOT, "%.2f", (double) VARS.get("kbPush")), String.format(java.util.Locale.ROOT, "%.2f", moved));
-			return (double) VARS.get("kbPush") > 0.25 && moved > 0.4;
+			double push = b.lastKnock().dot(dir);
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST knockback: speed away from A {} from the hit, {} blocks away 4 ticks later",
+					String.format(java.util.Locale.ROOT, "%.2f", push), String.format(java.util.Locale.ROOT, "%.2f", moved));
+			return push > 0.25 && moved > 0.4;
 		});
 		endAndClean(s, tag);
 	}

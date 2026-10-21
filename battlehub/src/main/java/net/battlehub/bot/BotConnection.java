@@ -73,8 +73,8 @@ final class BotConnection extends Connection {
 			} else {
 				return;
 			}
-			bot.setDeltaMovement(v);
-			bot.hurtMarked = false;
+			// the server puts the bot's own motion back right after sending this, so it is taken next tick
+			bot.knocked(v);
 		} catch (ReflectiveOperationException e) {
 			// only the knockback is lost
 		}

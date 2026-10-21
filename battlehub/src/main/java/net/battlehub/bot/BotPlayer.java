@@ -30,8 +30,27 @@ public final class BotPlayer extends ServerPlayer {
 		this.brain = new BotBrain(this);
 	}
 
+	/** A knockback the server sent to the bot's (missing) client, taken at the start of its next tick. */
+	private volatile net.minecraft.world.phys.Vec3 knock;
+	private net.minecraft.world.phys.Vec3 lastKnock = net.minecraft.world.phys.Vec3.ZERO;
+
+	void knocked(net.minecraft.world.phys.Vec3 motion) {
+		knock = motion;
+	}
+
+	/** The last knockback the bot took (for the self-test). */
+	public net.minecraft.world.phys.Vec3 lastKnock() {
+		return lastKnock;
+	}
+
 	@Override
 	public void tick() {
+		net.minecraft.world.phys.Vec3 k = knock;
+		if (k != null) {
+			knock = null;
+			lastKnock = k;
+			setDeltaMovement(k);
+		}
 		// A client confirms it finished loading after joining or changing dimension; until then a player is invulnerable
 		if (!connection.hasClientLoaded()) {
 			connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
