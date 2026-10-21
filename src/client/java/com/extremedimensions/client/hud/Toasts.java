@@ -44,12 +44,61 @@ public final class Toasts {
 			return;
 		}
 		Minecraft mc = Minecraft.getInstance();
-		// (as long as the game's own tutorial hints stay, so two lines can be read)
-		mc.gui.toastManager().addToast(SystemToast.multiline(mc, HINT, Component.translatable(hints[ordinal].titleKey()),
-				Component.translatable(hints[ordinal].textKey())));
+		Component title = Component.translatable(hints[ordinal].titleKey()), text = Component.translatable(hints[ordinal].textKey());
+		SystemToast toast = multiline(mc, title, text);
+		if (toast != null) {
+			mc.gui.toastManager().addToast(toast);
+		} else {
+			SystemToast.add(mc.gui.toastManager(), HINT, title, text);
+		}
 	}
 
+	/** Hints stay as long as the game's own tutorial hints, so their lines can be read. */
 	private static final SystemToast.SystemToastId HINT = new SystemToast.SystemToastId(10000L);
+	private static boolean warned;
+
+	/**
+	 * A toast with its text wrapped over lines, as the game makes them. Looked up by name, since what it takes has
+	 * changed between versions of the game (the game, its font, the toast's id and two texts, in some order); null if
+	 * there is no such toast here.
+	 */
+	private static SystemToast multiline(Minecraft mc, Component title, Component text) {
+		for (java.lang.reflect.Method m : SystemToast.class.getMethods()) {
+			if (!m.getName().equals("multiline") || !java.lang.reflect.Modifier.isStatic(m.getModifiers())
+					|| !SystemToast.class.isAssignableFrom(m.getReturnType())) {
+				continue;
+			}
+			Class<?>[] types = m.getParameterTypes();
+			Object[] args = new Object[types.length];
+			int texts = 0;
+			boolean fits = true;
+			for (int i = 0; i < types.length && fits; i++) {
+				if (types[i].isInstance(mc)) {
+					args[i] = mc;
+				} else if (types[i].isInstance(mc.font)) {
+					args[i] = mc.font;
+				} else if (types[i] == SystemToast.SystemToastId.class) {
+					args[i] = HINT;
+				} else if (types[i].isAssignableFrom(Component.class) && texts < 2) {
+					args[i] = texts++ == 0 ? title : text;
+				} else {
+					fits = false;
+				}
+			}
+			if (fits && texts == 2) {
+				try {
+					return (SystemToast) m.invoke(null, args);
+				} catch (ReflectiveOperationException | RuntimeException e) {
+					break;
+				}
+			}
+		}
+		if (!warned) {
+			warned = true;
+			com.extremedimensions.ExtremeDimensions.LOGGER.warn("No toast with wrapped text found; hints show on one line");
+		}
+		return null;
+	}
 
 	private static void show(Component title, Component text) {
 		Minecraft mc = Minecraft.getInstance();
