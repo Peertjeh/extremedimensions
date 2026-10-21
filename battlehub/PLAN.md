@@ -650,3 +650,9 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
 
 **CI, tweede run:** de mace-bot lanceerde nu wel, maar vloog niet hoger dan een sprong. Hij liep nog tijdens het gooien, waardoor de windlading achter hem ontplofte. Nu staat hij stil, springt en gooit recht naar beneden, zoals spelers dat doen, zodat de klap onder zijn opstijgende voeten komt. De Bridge-test faalde ook: de bot bleef bij zijn spawn staan (2 blokken van de rand, 3 van zijn eigen goal) en kwam niet meer los. De oorzaak was de nieuwe regel "aan een rand niet springen om los te komen". Die is vervangen door een sprong die altijd eerst kijkt (`jumpLooking`): nooit een sprong die in de leegte eindigt, op elk niveau. Na een eigen sprong stuurt de bot in de lucht toch al altijd terug.
 
+**CI, derde run:** mace en Bridge groen. Twee nieuwe meldingen.
+
+(1) In SkyWars viel één bot uit zichzelf. Hij had net één blok gelegd, dus het gebeurde tijdens het bruggen bouwen (de map was 2,19 keer zo breed, dus lange bruggen). Bij het bruggen schuifelde de bot hurkend naar de rand tot 0,25 voorbij de rand. Op hurksnelheid (ongeveer 0,047 per tick) gleed hij daarna nog zo'n 0,06 door, tot 0,31, terwijl je met een lichaam van 0,6 breed maar 0,3 kunt overhangen. Dat ging alleen goed zolang het hurken hem tegenhield, en daar reken ik niet meer op. Nu stopt hij op 0,18 en rekent hij zijn doorglijden mee (snelheid × 1,2): eerst minder hard lopen, daarna remmen.
+
+(2) De parkourtest liep vast. De bot stond op het startplatform op hoogte 100,5, terwijl de planner van 101 uitging. Het startplatform krijgt de `trim` van het thema, en dat is in sommige thema's (oceaan) een halve plaat. Een sprong van 1 omhoog werd zo 1,5 omhoog: onmogelijk. Dat verklaart ook de parkourfout van 1.28.0 (toen ook 100,5). Platformbovenkanten zijn nu altijd volle blokken (`fullBlock`), behalve de bewuste halve-plaatstappen.
+

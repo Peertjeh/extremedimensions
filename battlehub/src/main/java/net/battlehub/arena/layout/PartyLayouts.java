@@ -223,6 +223,18 @@ public final class PartyLayouts {
 		bp.set(cx + 4, 1, -4, t.light());
 	}
 
+	/**
+	 * A platform top a player stands on at the full block's height: some themes trim with slabs, and a start pad of
+	 * slabs puts everyone half a block lower than the course is planned for (a step up becomes one and a half).
+	 */
+	private static BlockState fullBlock(BlockState wanted, Theme t, RandomSource rnd) {
+		for (BlockState st : new BlockState[] {wanted, t.accent(), t.floor(rnd), t.under()}) {
+			net.minecraft.world.phys.shapes.VoxelShape shape = st.getCollisionShape(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, net.minecraft.core.BlockPos.ZERO);
+			if (!shape.isEmpty() && shape.max(net.minecraft.core.Direction.Axis.Y) >= 1.0) return st;
+		}
+		return Build.s("stone");
+	}
+
 	/** Slab used for half-block parkour steps in each theme. */
 	private static BlockState slab(Theme t) {
 		String id = switch (t) {
@@ -292,13 +304,13 @@ public final class PartyLayouts {
 				continue;
 			}
 			BlockState top = switch (p.kind()) {
-				case START -> t.trim();
+				case START -> fullBlock(t.trim(), t, rnd);
 				case CHECKPOINT -> Build.s("gold_block");
 				case FINISH -> Build.s("emerald_block");
 				default -> switch (p.style()) {
 					case SLAB -> slab(t);
 					case ICE -> Build.s(rnd.nextBoolean() ? "blue_ice" : "packed_ice");
-					default -> rnd.nextInt(4) == 0 ? t.accent() : t.floor(rnd);
+					default -> fullBlock(rnd.nextInt(4) == 0 ? t.accent() : t.floor(rnd), t, rnd);
 				};
 			};
 			for (int dx = -h; dx <= h; dx++) {

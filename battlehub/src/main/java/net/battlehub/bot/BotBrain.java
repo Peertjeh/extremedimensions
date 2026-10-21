@@ -839,7 +839,16 @@ final class BotBrain {
 			return true;
 		}
 		double past = (bot.getX() - (st.fromX() + 0.5)) * st.dx() + (bot.getZ() - (st.fromZ() + 0.5)) * st.dz() - 0.5;
-		if (past < 0.25) moveToward(new Vec3(face.x + st.dx() * 0.4, bot.getY(), face.z + st.dz() * 0.4), SNEAK);
+		// Out over the edge only as far as its feet still stand (0.3 each side; it stops at 0.18), and slowly enough
+		// that the slide does not carry it further: then it never slips off, even where sneaking would not hold it
+		Vec3 v = bot.getDeltaMovement();
+		double out = v.x * st.dx() + v.z * st.dz();
+		double coast = Math.max(0, out) * 1.2;
+		if (past + coast < 0.18) {
+			moveToward(new Vec3(face.x + st.dx() * 0.4, bot.getY(), face.z + st.dz() * 0.4), SNEAK * (float) Math.min(1, 0.3 + (0.18 - past - coast) * 3));
+		} else if (out > 0.005) {
+			brake();
+		}
 		if (ticks - lastPlace < Math.max(4, mind.difficulty().reactionTicks)) return true;
 		select(BotBrain::isBuildBlock);
 		// the click: what the bot really looks at, within reach

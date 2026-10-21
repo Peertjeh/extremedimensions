@@ -31,6 +31,10 @@
     looks first and never ends in the void.
   * After a jump of their own they did not always steer back. Only after a hit do they still sometimes freeze,
     as players do.
+* Bots bridging over the void went up to a quarter block past the edge, and their slide carried them over.
+  They now stop short and slow down in time.
+* The parkour start pad was made of slabs in some themes, half a block lower than the course was planned for,
+  so the first step up could not be made. Platform tops are always full blocks now.
 * Mace bots stand, jump and throw the wind charge straight down, so it really sends them up (it went off behind
   them while they walked).
 * A chapel or tower in the lobby could reach past its plot into a house next to it. Buildings are now checked
