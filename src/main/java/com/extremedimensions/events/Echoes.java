@@ -267,11 +267,11 @@ public final class Echoes {
 	 * by a stop, or by an echo that has since gone, and come down; the echo puts up its own when someone comes near).
 	 */
 	public static boolean stray(Entity entity) {
-		if (!entity.getTags().contains("ed_echo")) {
+		if (!entity.entityTags().contains("ed_echo")) {
 			return false;
 		}
 		for (Echo e : DataStore.echoes()) {
-			if (e.shown && entity.getTags().contains(e.tag())) {
+			if (e.shown && entity.entityTags().contains(e.tag())) {
 				return false;
 			}
 		}

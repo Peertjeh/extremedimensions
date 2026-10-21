@@ -58,21 +58,21 @@ public final class ExpeditionBar {
 		boolean nether = Dims.NETHER.equals(d.dim);
 		BossEvent.BossBarColor colour = left <= 60 ? BossEvent.BossBarColor.RED
 				: seam ? BossEvent.BossBarColor.PURPLE : nether ? BossEvent.BossBarColor.YELLOW : BossEvent.BossBarColor.PINK;
-		Component label;
+		Component title;
 		float progress;
 		if (!seam && d.heldTicks > 0) {
 			// The Held's Chain holds them: the bar counts down its grace instead
 			int s = (d.heldTicks + 19) / 20;
-			label = Component.translatable("hud.extremedimensions.held", String.format("%d:%02d", s / 60, s % 60)).withStyle(ChatFormatting.GOLD);
+			title = Component.translatable("hud.extremedimensions.held", String.format("%d:%02d", s / 60, s % 60)).withStyle(ChatFormatting.GOLD);
 			colour = BossEvent.BossBarColor.WHITE;
 			progress = (float) Math.max(0, Math.min(1, d.heldTicks / (20.0 * Math.max(1, Config.RELIC_HELDS_CHAIN_GRACE))));
 		} else {
-			label = name(p, d, seam, nether, left);
+			title = name(p, d, seam, nether, left);
 			progress = (float) Math.max(0, Math.min(1, left / max));
 		}
 		// (each set once: a bar told one thing and then another sends both, every time)
 		ServerBossEvent time = bar(TIME, p, colour, BossEvent.BossBarOverlay.NOTCHED_10);
-		time.setName(label);
+		time.setName(title);
 		time.setColor(colour);
 		time.setProgress(progress);
 		String trial = seam ? com.extremedimensions.trial.TrialService.hud(d) : "";

@@ -87,7 +87,8 @@ public final class HeldChamber {
 	/** Of the Nether's own making: its rock, sand, ores, fungus and growth, lava, air, and the portal the player came by. */
 	public static boolean natural(BlockState s) {
 		return s.isAir() || !s.getFluidState().isEmpty() || s.canBeReplaced() || s.is(BlockTags.BASE_STONE_NETHER) || s.is(BlockTags.NYLIUM)
-				|| s.is(BlockTags.SOUL_FIRE_BASE_BLOCKS) || s.is(BlockTags.CRIMSON_STEMS) || s.is(BlockTags.WARPED_STEMS)
+				|| s.is(BlockTags.SOUL_FIRE_BASE_BLOCKS) || s.is(Blocks.CRIMSON_STEM) || s.is(Blocks.WARPED_STEM) || s.is(Blocks.CRIMSON_HYPHAE)
+				|| s.is(Blocks.WARPED_HYPHAE)
 				|| s.is(Blocks.MAGMA_BLOCK) || s.is(Blocks.GRAVEL) || s.is(Blocks.GLOWSTONE) || s.is(Blocks.NETHER_GOLD_ORE)
 				|| s.is(Blocks.NETHER_QUARTZ_ORE) || s.is(Blocks.ANCIENT_DEBRIS) || s.is(Blocks.BONE_BLOCK) || s.is(Blocks.NETHER_WART_BLOCK)
 				|| s.is(Blocks.WARPED_WART_BLOCK) || s.is(Blocks.SHROOMLIGHT) || s.is(Blocks.OBSIDIAN) || s.is(Blocks.CRYING_OBSIDIAN)

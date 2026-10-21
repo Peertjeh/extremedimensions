@@ -275,7 +275,7 @@ public final class Unanchored {
 	 */
 	public static boolean stray(Entity e) {
 		boolean ours = false;
-		for (String t : e.getTags()) {
+		for (String t : e.entityTags()) {
 			if (t.startsWith(TAG)) {
 				ours = true;
 				for (Build b : BUILDS.values()) {
