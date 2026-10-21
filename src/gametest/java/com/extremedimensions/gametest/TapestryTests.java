@@ -173,8 +173,8 @@ public class TapestryTests {
 	@GameTest
 	public void oneLoomHoldsTheTapestry(GameTestHelper helper) {
 		Saved saved = Saved.take();
+		ServerPlayer p = TestPlayers.survivor(helper, "tapestry-looms");
 		try {
-			ServerPlayer p = TestPlayers.survivor(helper, "tapestry-looms");
 			DataStore.setLoom("");
 			BlockPos first = loom(helper, 1, 1), second = loom(helper, 3, 1);
 			Tapestry.use(p, first, ItemStack.EMPTY);
@@ -200,6 +200,8 @@ public class TapestryTests {
 			check(helper, count(p, ModItems.THREAD_OF_ROOTS) == 0, "a thread was spun for a deed this player never did");
 			helper.succeed();
 		} finally {
+			// (a thread left in hand would keep the loom from spinning it for anyone, in a test run again)
+			p.getInventory().clearContent();
 			saved.restore();
 		}
 	}
@@ -255,6 +257,11 @@ public class TapestryTests {
 	@GameTest
 	public void aNewThreadIsHarder(GameTestHelper helper) {
 		Saved saved = Saved.take();
+		// New Thread+ sends the Matriarch again for everyone: put back who had slain her
+		java.util.Map<PlayerData, Boolean> slain = new java.util.HashMap<>();
+		for (PlayerData each : DataStore.players()) {
+			slain.put(each, each.matriarchSlain);
+		}
 		try {
 			ServerPlayer p = TestPlayers.survivor(helper, "tapestry-thread");
 			PlayerData d = DataStore.get(p.getUUID());
@@ -286,6 +293,7 @@ public class TapestryTests {
 			check(helper, WorldFx.hasAdvancement(p, Advancements.NEW_THREAD), "taking up a new thread gave no advancement");
 			helper.succeed();
 		} finally {
+			slain.forEach((each, was) -> each.matriarchSlain = was);
 			saved.restore();
 		}
 	}

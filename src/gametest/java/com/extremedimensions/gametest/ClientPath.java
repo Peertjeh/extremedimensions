@@ -315,9 +315,9 @@ public class ClientPath implements FabricClientGameTest {
 						}
 					}
 				}
-				BlockPos at = c.offset(0, 0, -3);
-				level.setBlockAndUpdate(at, com.extremedimensions.registry.ModBlocks.WEAVERS_LOOM.defaultBlockState());
-				return at;
+				BlockPos spot = c.offset(0, 0, -3);
+				level.setBlockAndUpdate(spot, com.extremedimensions.registry.ModBlocks.WEAVERS_LOOM.defaultBlockState());
+				return spot;
 			});
 			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f 180 24", loomAt.getX() + 0.5, loomAt.getY(), loomAt.getZ() + 4.5));
 			ctx.waitTicks(40);
@@ -343,9 +343,9 @@ public class ClientPath implements FabricClientGameTest {
 			// The sixth panel: the Weaving begins; its first wave comes out of the rifts round the loom
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
-				ItemStack heart = new ItemStack(ModItems.THREAD_OF_THE_HEART);
-				p.setItemInHand(InteractionHand.MAIN_HAND, heart);
-				com.extremedimensions.tapestry.Tapestry.use(p, loomAt, heart);
+				ItemStack thread = new ItemStack(ModItems.THREAD_OF_THE_HEART);
+				p.setItemInHand(InteractionHand.MAIN_HAND, thread);
+				com.extremedimensions.tapestry.Tapestry.use(p, loomAt, thread);
 			});
 			check(sp.getServer().computeOnServer(s -> com.extremedimensions.tapestry.Weaving.active()), "the sixth panel did not begin the Weaving");
 			ctx.waitTicks(100);

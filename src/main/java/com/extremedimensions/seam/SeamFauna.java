@@ -380,6 +380,10 @@ public final class SeamFauna {
 			return;
 		}
 		DRIVEN.remove(e.getUUID());
+		// What the Weaving brings to the loom carries nothing: a Weaving let fail on purpose is no hunting ground
+		if (com.extremedimensions.tapestry.Weaving.drives(e.getUUID())) {
+			return;
+		}
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		BlockPos at = e.blockPosition();
 		if (e instanceof VeilRay ray) {

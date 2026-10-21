@@ -114,8 +114,16 @@ public final class Weaving {
 		if (r == null) {
 			return;
 		}
-		if (!r.level.isLoaded(r.loom) || !r.level.getBlockState(r.loom).is(com.extremedimensions.registry.ModBlocks.WEAVERS_LOOM)) {
-			// The loom itself was taken away (or nobody keeps its part of the world loaded): the weave cannot hold
+		if (!r.level.isLoaded(r.loom)) {
+			// Nobody keeps the loom's part of the world loaded: the Weaving is let go, not broken. Its last panel stays
+			// woven (a thread dropped where nobody is would be lost), and the loom begins it again once the wait is over
+			end(r);
+			DataStore.setWeaveAgainAt(System.currentTimeMillis() + Math.max(0, Config.WEAVING_RETRY_MINUTES) * 60_000L);
+			DataStore.markDirty();
+			return;
+		}
+		if (!r.level.getBlockState(r.loom).is(com.extremedimensions.registry.ModBlocks.WEAVERS_LOOM)) {
+			// The loom itself was taken away: the weave cannot hold
 			fail(r);
 			return;
 		}
@@ -217,7 +225,10 @@ public final class Weaving {
 				t.setLurkerPose(Lurker.POSE_STALK);
 			}
 			if (prey != null) {
-				m.getNavigation().moveTo(prey, 1.25);
+				// (a path is asked for a few times a second, not every tick)
+				if (m.tickCount % 8 == 0 || m.getNavigation().isDone()) {
+					m.getNavigation().moveTo(prey, 1.25);
+				}
 				if (best < 2.4 * 2.4 && cooldown == 0) {
 					cooldown = 24;
 					prey.hurtServer(r.level, m.damageSources().mobAttack(m), (float) Math.max(0, Config.WEAVING_DAMAGE));

@@ -19,7 +19,7 @@ The story goes on in your hand. After the ending the Wanderer's journal stops, a
   | Panel | Mended world | Severed world |
   | --- | --- | --- |
   | Roots | A bound Hollowling brings gifts twice as often | The tribe sends no Keeper after anyone |
-  | Toll | Nether drain 10% lower | 1 level back on every safe return |
+  | Toll | Nether drain 10% lower (held to the drain floor) | 1 level back on every safe return of an expedition |
   | Unravelling | +60 s in the Seam | The Thinned hunt only in your last sixth of Seam time |
   | Chain | Anchors hold 5 minutes more | Anchors no longer turn unstable |
   | Knot | Fray time runs 1.5x, not 2x | Strands give way half as often |
@@ -34,8 +34,10 @@ The story goes on in your hand. After the ending the Wanderer's journal stops, a
   Thinned and the Lurkers come out of rifts torn round it, a wave every 25 seconds, more for every player. Each one at
   the loom tears at its ward of 100, and strikes whoever stands in its way. Held, the tapestry is finished: the
   advancement *The Unfinished World*, soul light round the loom for good, and New Thread+. Broken, the last panel
-  unravels, its thread falls at the loom, and the loom takes it again after 20 minutes. Interrupted by a restart, the
-  loom begins it again when used.
+  unravels, its thread falls at the loom, and the loom takes it again after 20 minutes. Left behind (nobody keeps the
+  loom's part of the world loaded), it is let go rather than broken: nothing unravels, and the loom begins it again
+  after the same wait. Interrupted by a restart, the loom begins it again when used. What the Weaving brings to the
+  loom carries no loot and counts for no trial.
 - **New Thread+**. At the finished tapestry the world can take up a harder thread, as often as it likes: the Elders
   +50% health and damage per thread, atonement +25% dearer, the Matriarch comes again for those she fell to, and the
   Rift Trials go on past gold (every further quarter of gold's mark is a thread, a Tether Fragment each, once a week).

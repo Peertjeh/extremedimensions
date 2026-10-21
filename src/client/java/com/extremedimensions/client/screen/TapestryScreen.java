@@ -152,7 +152,9 @@ public class TapestryScreen extends Screen {
 		for (int i = 0; i < panels.length; i++) {
 			cell(g, panels[i], x0 + 14 + (i % 3) * (CELL_W + 3), y0 + 36 + (i / 3) * (CELL_H + 4), fade);
 		}
-		g.text(this.font, Ui.ellipsize(this.font, status(), PW - 14 - 200), x0 + 14 + (done ? 176 : 0), y0 + PH - 17,
+		// (between the New Thread+ button, when there is one, and the Done button)
+		int sx = x0 + 14 + (done ? 176 : 0);
+		g.text(this.font, Ui.ellipsize(this.font, status(), x0 + PW - 14 - 100 - 6 - sx), sx, y0 + PH - 17,
 				Ui.argb(fade, weaving ? Ui.DANGER : done ? Ui.OK : Ui.MUTED));
 	}
 

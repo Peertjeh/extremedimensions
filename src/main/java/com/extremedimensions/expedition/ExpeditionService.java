@@ -162,8 +162,9 @@ public final class ExpeditionService {
 		if (fee > 0 && p.experienceLevel > 0) {
 			p.giveExperienceLevels(-Math.min(fee, p.experienceLevel));
 		}
-		// The Toll panel of a severed world: every crossing home gives something back
-		if (com.extremedimensions.tapestry.Tapestry.levelsBack() > 0) {
+		// The Toll panel of a severed world: every crossing home gives something back (a real one: a step through and
+		// straight back is no crossing)
+		if (real && com.extremedimensions.tapestry.Tapestry.levelsBack() > 0) {
 			p.giveExperienceLevels(com.extremedimensions.tapestry.Tapestry.levelsBack());
 		}
 		if (real) {
@@ -253,11 +254,12 @@ public final class ExpeditionService {
 		if ((Dims.isBeyond(dim) || seam) && d.inRun && !d.collapsing) {
 			// What eases the drain here (a relic, a mended world) is held to the drain floor with the rest; what worsens it
 			// is not (and a severed world has none at all)
+			// (the Toll panel of a mended world eases it too)
 			double world = WorldService.drainFactor(dim), relic = com.extremedimensions.relic.RelicService.drainFactor(d, dim);
-			d.currentDrain = (world <= 0 ? 0 : d.drainMultiplier(Math.min(1, world) * Math.min(1, relic)) * Math.max(1, world) * Math.max(1, relic))
+			double toll = Math.min(1, com.extremedimensions.tapestry.Tapestry.drain(dim));
+			d.currentDrain = (world <= 0 ? 0 : d.drainMultiplier(Math.min(1, world) * Math.min(1, relic) * toll) * Math.max(1, world) * Math.max(1, relic))
 					* (seam ? 1.0 : TetherService.distanceFactor(p, d)) * com.extremedimensions.elder.FerrymanService.drainFactor(p)
-					* com.extremedimensions.binding.Homebound.drainFactor(p) * com.extremedimensions.events.WorldEvents.drainFactor(p)
-					* com.extremedimensions.tapestry.Tapestry.drain(dim);
+					* com.extremedimensions.binding.Homebound.drainFactor(p) * com.extremedimensions.events.WorldEvents.drainFactor(p);
 			double left = AnchorService.drainLinked(p, d, d.currentDrain / 20.0);
 			d.runTime += 1.0 / 20.0;
 			double far = seam ? 0 : TetherService.arrivalDistance(p, d);

@@ -251,8 +251,9 @@ public final class ServerEvents {
 			} else if (entity instanceof Lurker l) {
 				LurkerService.onDeath(l, HollowService.culprit(l, source.getEntity()));
 			} else if (entity instanceof com.extremedimensions.seam.VeilRay || entity instanceof com.extremedimensions.seam.Thinned) {
+				boolean weaving = com.extremedimensions.tapestry.Weaving.drives(entity.getUUID());
 				com.extremedimensions.seam.SeamFauna.onDeath(entity);
-				if (source.getEntity() instanceof ServerPlayer killer) {
+				if (source.getEntity() instanceof ServerPlayer killer && !weaving) {
 					com.extremedimensions.trial.TrialService.progress(killer, com.extremedimensions.trial.Trial.Kind.HUNT, 1);
 				}
 			} else if (source.getEntity() instanceof ServerPlayer killer && Dims.ours(entity.level())) {

@@ -93,7 +93,7 @@ public final class Tapestry {
 				case KNOT -> severed ? new Object[] {Math.round((1 - Math.max(0, Math.min(1, Config.TAPESTRY_KNOT_STRANDS))) * 100)}
 						: new Object[] {Config.TAPESTRY_KNOT_FRAY, Config.SEAM_FRAY_DRAIN};
 				case HEART -> severed ? new Object[] {Math.max(0, Config.TAPESTRY_HEART_SPARE_MINUTES)}
-						: new Object[] {Math.round(Math.max(0, Math.min(1, Config.TAPESTRY_HEART_ECHO)) * 100)};
+						: new Object[] {Math.round(Math.max(Math.max(0, Math.min(1, Config.ECHO_RETURN)), Math.min(1, Config.TAPESTRY_HEART_ECHO)) * 100)};
 			};
 		}
 
