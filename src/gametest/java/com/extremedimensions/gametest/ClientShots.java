@@ -1259,7 +1259,10 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("09_trials");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
-			// Into the Seam with the trial taken up: it begins, and the timer carries its line
+			// Into the Seam with the trial taken up: it begins, and the timer carries its line. (Kept from harm while the
+			// shots are taken: a Thinned that finds the visitor standing still would end the visit before the gate is seen.)
+			sp.getServer().runCommand("effect give @a minecraft:resistance infinite 255 true");
+			sp.getServer().runCommand("effect give @a minecraft:saturation infinite 10 true");
 			sp.getServer().runCommand("execute as @a run tether seam");
 			// On a busy machine the server can run seconds behind the client: wait until the visitor is in the Seam
 			for (int i = 0; i < 40 && !sp.getServer().computeOnServer(s -> com.extremedimensions.seam.SeamService.inSeam(player(s))); i++) {
