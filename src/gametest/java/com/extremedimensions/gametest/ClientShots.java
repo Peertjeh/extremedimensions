@@ -1108,10 +1108,11 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("30_binding_bag");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			// Through the Wound Lens: scoping as through a spyglass, at the Held's chamber
-			ctx.runOnClient(mc -> mc.options.keyUse.setDown(true));
+			ctx.getInput().holdKey(o -> o.keyUse);
 			ctx.waitTicks(30);
+			ctx.runOnClient(mc -> check(mc.player.isScoping(), "holding use with the Wound Lens, the player is not looking through it"));
 			ctx.takeScreenshot("30_wound_lens");
-			ctx.runOnClient(mc -> mc.options.keyUse.setDown(false));
+			ctx.getInput().releaseKey(o -> o.keyUse);
 			ctx.waitTicks(5);
 			ctx.runOnClient(mc -> {
 				ClientOptions.setGuidance(true);

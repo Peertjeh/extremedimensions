@@ -99,8 +99,22 @@ public final class Tooltips {
 		for (ItemEnchantments set : List.of(stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY),
 				stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY))) {
 			for (Holder<Enchantment> h : set.keySet()) {
-				h.unwrapKey().map(k -> k.identifier()).filter(id -> ExtremeDimensions.MOD_ID.equals(id.getNamespace()))
-						.ifPresent(id -> lines.add(Component.translatable("enchantment." + id.getNamespace() + "." + id.getPath() + ".desc").withStyle(ChatFormatting.DARK_GRAY)));
+				h.unwrapKey().map(k -> k.identifier()).filter(id -> ExtremeDimensions.MOD_ID.equals(id.getNamespace())).ifPresent(id -> {
+					Component desc = Component.translatable("enchantment." + id.getNamespace() + "." + id.getPath() + ".desc").withStyle(ChatFormatting.DARK_GRAY);
+					// right under the enchantment's own line, where there is one
+					String name = Enchantment.getFullname(h, set.getLevel(h)).getString();
+					int at = -1;
+					for (int i = 0; i < lines.size() && at < 0; i++) {
+						if (lines.get(i).getString().equals(name)) {
+							at = i + 1;
+						}
+					}
+					if (at < 0) {
+						lines.add(desc);
+					} else {
+						lines.add(at, desc);
+					}
+				});
 			}
 		}
 	}
