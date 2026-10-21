@@ -32,6 +32,9 @@ anything new is added. No new systems.
 - **Pacts and the Last Weaver opened too late.** The settings said they open once the Starved One falls, as the
   journal and the walkthrough do, but they waited until the ending was chosen. They open when the Starved One falls
   now. The same goes for the Rift Trials and the Ferryman when their setting is put on that step.
+- **A ray in a small stretch of sky could wander off.** A ray picks its next waypoint well away from where it is, but
+  in a stretch of sky narrower than that it found none, flew straight on and drifted out of its own sky; a Frayed Ray
+  could lose its prey that way. Its legs now fit its sky, and with nowhere open to go it heads back to the middle.
 
 ### Under the hood
 - Gametests: every recipe reaches the book; Seam Silk opens its recipes; binding a relic is marked; a barrel is filled

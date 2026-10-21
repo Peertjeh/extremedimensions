@@ -499,6 +499,8 @@ public class VeilRay extends PathfinderMob {
 	private Vec3 pickWaypoint(ServerLevel level, Vec3 pos) {
 		RandomSource r = this.getRandom();
 		boolean frayed = isFrayed();
+		// The next waypoint lies well away, but within its own sky: a small sky asks for shorter legs
+		double leg = Math.min(26, roam * 0.75);
 		for (int i = 0; i < 16; i++) {
 			double a = r.nextDouble() * Math.PI * 2, d = roam * (0.35 + 0.65 * r.nextDouble());
 			double y = Math.min(232, hy - 6 + r.nextDouble() * 16 + (i / 4) * 10);
@@ -507,9 +509,14 @@ public class VeilRay extends PathfinderMob {
 				y = Mth.clamp(y, 12, Config.SEAM_FRAY_TOP - 3);
 			}
 			Vec3 w = new Vec3(hx + Math.cos(a) * d, y, hz + Math.sin(a) * d);
-			if (w.distanceToSqr(pos) > 26 * 26 && open(level, w, 6)) {
+			if (w.distanceToSqr(pos) > leg * leg && open(level, w, 6)) {
 				return w;
 			}
+		}
+		// Nowhere open to go: back towards the middle of its sky if it strayed out of it, on along its way if not
+		double dx = hx - pos.x, dz = hz - pos.z;
+		if (dx * dx + dz * dz > roam * roam) {
+			return new Vec3(hx, frayed ? Mth.clamp(hy, 12, Config.SEAM_FRAY_TOP - 3) : hy, hz);
 		}
 		return pos.add(heading.x * 24, frayed ? 2 : 16, heading.z * 24);
 	}
