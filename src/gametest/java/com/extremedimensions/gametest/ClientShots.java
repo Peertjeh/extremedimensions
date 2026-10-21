@@ -233,15 +233,24 @@ public class ClientShots implements FabricClientGameTest {
 			});
 		});
 		ctx.waitTicks(60);
-		ctx.runOnClient(mc -> {
-			com.extremedimensions.elder.ElderBoss e = clientElder(mc).orElse(null);
-			check(e != null && !Float.isNaN(before[0]), "no " + name + " on the client to turn");
-			float lag = Math.abs(net.minecraft.util.Mth.wrapDegrees(e.yBodyRot - e.getYRot()));
-			float turned = Math.abs(net.minecraft.util.Mth.wrapDegrees(e.yBodyRot - before[0]));
-			System.out.println("[turn] " + name + " body " + e.yBodyRot + " yaw " + e.getYRot() + " before " + before[0]);
-			check(lag < 12 && turned > 20, "the " + name + " does not turn on the client: body " + e.yBodyRot + ", yaw " + e.getYRot()
-					+ ", body before " + before[0]);
-		});
+		// An Elder in the middle of a blow holds its facing until the blow is done: it is given a few more seconds
+		boolean[] ok = {false};
+		String[] seen = {""};
+		for (int i = 0; i < 6 && !ok[0]; i++) {
+			if (i > 0) {
+				ctx.waitTicks(20);
+			}
+			ctx.runOnClient(mc -> {
+				com.extremedimensions.elder.ElderBoss e = clientElder(mc).orElse(null);
+				check(e != null && !Float.isNaN(before[0]), "no " + name + " on the client to turn");
+				float lag = Math.abs(net.minecraft.util.Mth.wrapDegrees(e.yBodyRot - e.getYRot()));
+				float turned = Math.abs(net.minecraft.util.Mth.wrapDegrees(e.yBodyRot - before[0]));
+				seen[0] = "body " + e.yBodyRot + ", yaw " + e.getYRot() + ", body before " + before[0];
+				System.out.println("[turn] " + name + " " + seen[0]);
+				ok[0] = lag < 12 && turned > 20;
+			});
+		}
+		check(ok[0], "the " + name + " does not turn on the client: " + seen[0]);
 	}
 
 	private static java.util.Optional<com.extremedimensions.elder.ElderBoss> clientElder(net.minecraft.client.Minecraft mc) {
