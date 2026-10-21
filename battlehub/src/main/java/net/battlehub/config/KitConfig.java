@@ -108,6 +108,7 @@ public final class KitConfig {
 				.add(i("water_bucket", 1, "12")).add(i("cooked_beef", 16, "13")), "diamond"));
 		m.put("spleef", new Kit().add(i("diamond_shovel", 1, "0").ench("minecraft:efficiency", 5)).effect("minecraft:saturation", 0));
 		m.put("skywars", new Kit());
+		m.put("hunger_games", new Kit());
 		m.put("murder_mystery", new Kit().effect("minecraft:saturation", 0));
 		return m;
 	}

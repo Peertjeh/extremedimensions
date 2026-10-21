@@ -331,6 +331,18 @@ for 30 seconds. It queues you for the same mode, format and ranked setting, asks
   break, fight; whoever dies drops everything. You can bridge between the islands, but not far out into the
   void or high into the sky. Bots loot their island, put on the armor they find and bridge to the next chests;
   they do not walk off the edge.
+* **Hunger Games** (2–16): the lobby city is the map. Every week (Monday to Sunday) a new city is generated from
+  the lobby's plan: the same plaza, avenues, landmarks and town, but other houses and streets; every match dresses
+  it in another theme that suits a city (as built, a desert city, winter, cherry blossom, nether, badlands,
+  jungle, deep dark, End). The theme only changes the materials: every block stays where it is, so you learn
+  the city during the week. Everyone starts empty-handed on the dark ring of the plaza round the cornucopia (a
+  ring of twelve chests with the best loot). Every house has its chest and barrel, the castle, the cathedral, the
+  mage tower, the temple ruin, the chapels and the watchtowers have better chests inside. The doors are taken out,
+  so you (and the bots) walk in and out. The first thirty seconds nobody can hurt anyone; after ten minutes all
+  chests are filled again; after five minutes a border closes in on the plaza. The city cannot be broken (only
+  what you put down, leaves, cobwebs and plants); whoever dies drops everything and a cannon sounds. The last one
+  alive wins, when time is up the most kills. Bots loot the cornucopia and the houses near them, put on armor,
+  eat when hungry and head for the plaza. Loot lists in `hunger_games.json`.
 * **The Bridge 2v2**: red against blue with two on each island; score together, no friendly fire.
 * **The Bridge 1v1v1v1** (2–4): everyone on their own island (red, blue, green, yellow) round a middle platform;
   jump into anyone else's goal to score. First to four goals wins.
@@ -667,6 +679,12 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
 * **`progress.json`**: the number of daily and weekly quests, the quests (period, goal, mode, target, coins,
   XP, pass XP), the login streak coins, the season pass (tiers, XP per tier, per match and per win, coins per
   tier and every fifth tier, coins when the cosmetic is already owned), achievement coins and prestige on/off
+* **`hunger_games.json`**: the loot of the house chests and barrels (`houseLoot`), the chests in the landmarks
+  (`landmarkLoot`) and the cornucopia (`cornucopiaLoot`), as "item min-max xWeight" lines. How many items a chest
+  gets, the peace, the border and the refill are settings of the game `hunger_games` in `config.json`
+  (`houseChestRolls`, `landmarkChestRolls`, `cornucopiaChestRolls`, `graceSeconds`, `borderDelaySeconds`,
+  `borderShrinkSeconds`, `borderEnd`, `borderDamagePerSecond`, `refillSeconds`). The city comes from the lobby's
+  `seed`, `islandRadius`, `detail` and `townDensity` and the week; its themes are in `arenas.themes.hunger_games`.
 * **`skywars.json`**: the loot of the spawn island chests (`islandLoot`), the middle islands (`midLoot`) and
   the big middle (`centerLoot`), one line per item: `"minecraft:iron_sword 1 x3"` (item, count or `min-max`,
   `x` weight). How many items a chest gets: `islandChestRolls`, `midChestRolls`, `centerChestRolls` in

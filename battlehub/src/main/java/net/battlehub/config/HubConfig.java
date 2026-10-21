@@ -11,7 +11,7 @@ import net.battlehub.core.RewardSettings;
 
 /** {@code config/battlehub/config.json}. Every field has a default; missing keys are filled in on load. */
 public final class HubConfig {
-	public static final int CURRENT_VERSION = 6;
+	public static final int CURRENT_VERSION = 7;
 
 	public int configVersion = CURRENT_VERSION;
 
@@ -445,7 +445,7 @@ public final class HubConfig {
 		public boolean enabled = true;
 		public double coinMultiplier = 2.0;
 		public List<String> modes = new ArrayList<>(List.of("ffa", "bed_wars", "prop_hunt", "sumo", "tnt_run", "bow_spleef",
-				"koth", "ctf", "lms", "parkour", "1v2", "1v3", "spleef", "skywars", "murder_mystery", "bridge_chaos"));
+				"koth", "ctf", "lms", "parkour", "1v2", "1v3", "spleef", "skywars", "murder_mystery", "bridge_chaos", "hunger_games"));
 	}
 
 	/** Characters on the lobby plaza that take you to a game. */
@@ -568,6 +568,9 @@ public final class HubConfig {
 		m.put("build_uhc", new Game(2, 2, 900, "build_uhc").with("buildHeight", 20));
 		m.put("spleef", new Game(2, 16, 300, "spleef").with("layers", 2));
 		m.put("skywars", new Game(2, 12, 900, "skywars").with("islandChestRolls", 7).with("midChestRolls", 8).with("centerChestRolls", 9));
+		m.put("hunger_games", new Game(2, 16, 1200, "hunger_games").with("graceSeconds", 30).with("borderDelaySeconds", 300)
+				.with("borderShrinkSeconds", 600).with("borderEnd", 24).with("borderDamagePerSecond", 1).with("houseChestRolls", 4)
+				.with("landmarkChestRolls", 6).with("cornucopiaChestRolls", 7).with("refillSeconds", 600));
 		m.put("murder_mystery", new Game(4, 16, 300, "murder_mystery").with("goldToBow", 10).with("goldEverySeconds", 3)
 				.with("swordAfterSeconds", 10).with("arrowCooldownSeconds", 4));
 		return m;
@@ -584,6 +587,8 @@ public final class HubConfig {
 		}
 		// Mace needs height: the open themes (floating islands) suit it best.
 		m.put("mace", new ArrayList<>(List.of("sky", "end")));
+		// The Hunger Games city only wears themes that suit a city
+		m.put("hunger_games", new ArrayList<>(net.battlehub.arch.town.LobbyThemes.THEMES));
 		return m;
 	}
 
@@ -687,6 +692,10 @@ public final class HubConfig {
 		if (from < 4 && !featured.modes.contains("bridge_chaos") && featured.modes.contains("murder_mystery")) {
 			// 1.21: Chaos is a normal mode now, and in the mode-of-the-day rotation
 			featured.modes.add("bridge_chaos");
+		}
+		if (from < 7 && !featured.modes.contains("hunger_games")) {
+			// 1.32: Hunger Games joins the mode-of-the-day rotation
+			featured.modes.add("hunger_games");
 		}
 		if (combat == null) combat = new Combat();
 		combat.snowballDamage = Math.max(0, Math.min(20, combat.snowballDamage));

@@ -29,6 +29,7 @@ public final class ConfigManager {
 	private static PropHuntConfig prophunt = new PropHuntConfig().normalize();
 	private static ProgressConfig progress = new ProgressConfig().normalize();
 	private static SkyWarsConfig skywars = new SkyWarsConfig().normalize();
+	private static HungerGamesConfig hungerGames = new HungerGamesConfig().normalize();
 
 	public static Path dir() {
 		return FabricLoader.getInstance().getConfigDir().resolve(BattleHub.MOD_ID);
@@ -64,6 +65,10 @@ public final class ConfigManager {
 
 	public static SkyWarsConfig skywars() {
 		return skywars;
+	}
+
+	public static HungerGamesConfig hungerGames() {
+		return hungerGames;
 	}
 
 	/** (Re)loads every file. A broken file keeps the previous values and is reported in the log. */
@@ -127,6 +132,13 @@ public final class ConfigManager {
 		if (sw != null) {
 			skywars = sw.normalize();
 			write("skywars.json", skywars);
+		} else {
+			ok = false;
+		}
+		HungerGamesConfig hg = read("hunger_games.json", HungerGamesConfig.class, HungerGamesConfig::new);
+		if (hg != null) {
+			hungerGames = hg.normalize();
+			write("hunger_games.json", hungerGames);
 		} else {
 			ok = false;
 		}

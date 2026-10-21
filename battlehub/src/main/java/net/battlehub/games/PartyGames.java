@@ -45,6 +45,7 @@ public final class PartyGames {
 			case MURDER_MYSTERY -> new MurderMysteryMatch(id, server, players);
 			case BRIDGE_DUOS, BRIDGE_FOUR -> new BridgePartyMatch(id, mode, server, players);
 			case BRIDGE_FOUR_CHAOS -> new BridgeChaosPartyMatch(id, server, players);
+			case HUNGER_GAMES -> new HungerGamesMatch(id, server, players);
 			default -> null;
 		};
 		if (m != null) {

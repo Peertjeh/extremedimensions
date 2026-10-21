@@ -43,6 +43,8 @@ public enum GameMode {
 	BRIDGE_FOUR("bridge_1v1v1v1", Category.PARTY, false, 2, 4),
 	/** The Bridge 1v1v1v1 with the power-ups and events of The Bridge: Chaos. */
 	BRIDGE_FOUR_CHAOS("bridge_chaos_1v1v1v1", Category.PARTY, false, 2, 4),
+	/** The lobby city of the week as the map: loot the houses, the landmarks and the cornucopia, be the last one alive. */
+	HUNGER_GAMES(Category.PARTY, false, 2, 16),
 	/** One player against a team of two, with a sword, axe or mace kit. */
 	ONE_V_TWO("1v2", Category.TEAM, false, 3, 3),
 	/** One player against a team of three. */
@@ -159,13 +161,13 @@ public enum GameMode {
 
 	public static GameMode[] parties() {
 		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, FFA, TOURNAMENT, BED_WARS, PROP_HUNT,
-				SPLEEF, SKYWARS, MURDER_MYSTERY, BRIDGE_DUOS, BRIDGE_FOUR, BRIDGE_FOUR_CHAOS};
+				SPLEEF, SKYWARS, MURDER_MYSTERY, BRIDGE_DUOS, BRIDGE_FOUR, BRIDGE_FOUR_CHAOS, HUNGER_GAMES};
 	}
 
 	/** The Party Games menu (Free for All is under PvP). */
 	public static GameMode[] partyMenu() {
 		return new GameMode[] {BOW_SPLEEF, TNT_RUN, SUMO, KOTH, CTF, PARKOUR, LMS, TOURNAMENT, BED_WARS, PROP_HUNT,
-				SPLEEF, SKYWARS, MURDER_MYSTERY, BRIDGE_DUOS, BRIDGE_FOUR, BRIDGE_FOUR_CHAOS};
+				SPLEEF, SKYWARS, MURDER_MYSTERY, BRIDGE_DUOS, BRIDGE_FOUR, BRIDGE_FOUR_CHAOS, HUNGER_GAMES};
 	}
 
 	public static GameMode[] teamFights() {

@@ -255,7 +255,7 @@ public final class SkyWarsMatch extends PartyMatch {
 	}
 
 	/** Armor from the inventory into an empty armor slot, or over a weaker piece (leather to netherite). */
-	private static void wearArmor(ServerPlayer bot) {
+	static void wearArmor(ServerPlayer bot) {
 		net.minecraft.world.entity.player.Inventory inv = bot.getInventory();
 		for (int i = 0; i < inv.getContainerSize(); i++) {
 			ItemStack st = inv.getItem(i);

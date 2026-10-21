@@ -16,6 +16,7 @@ import net.battlehub.config.ConfigManager;
 import net.battlehub.core.GameMode;
 import net.battlehub.core.MurderRoles;
 import net.battlehub.core.Outcome;
+import net.battlehub.games.HungerGamesMatch;
 import net.battlehub.games.MurderMysteryMatch;
 import net.battlehub.games.SkyWarsMatch;
 import net.battlehub.games.duel.BoxingMatch;
@@ -64,6 +65,11 @@ final class NewModeTests {
 			c.game(GameMode.BRIDGE_FOUR_CHAOS).settings.put("eventSeconds", 600.0);
 			c.game(GameMode.BRIDGE_FOUR_CHAOS).settings.put("firstEventSeconds", 600.0);
 			c.arenas.customMapChance = 0.0;
+			c.game(GameMode.HUNGER_GAMES).settings.put("graceSeconds", 4.0);
+			c.game(GameMode.HUNGER_GAMES).settings.put("borderDelaySeconds", 6.0);
+			c.game(GameMode.HUNGER_GAMES).settings.put("borderShrinkSeconds", 12.0);
+			c.game(GameMode.HUNGER_GAMES).settings.put("borderEnd", 40.0);
+			c.game(GameMode.HUNGER_GAMES).settings.put("borderDamagePerSecond", 2.0);
 		});
 		PartyTests.party(server, s, GameMode.SPLEEF, NewModeTests::spleef);
 		PartyTests.party(server, s, GameMode.SKYWARS, NewModeTests::skywars);
@@ -73,6 +79,8 @@ final class NewModeTests {
 		PartyTests.party(server, s, GameMode.BRIDGE_DUOS, NewModeTests::bridgeDuos);
 		PartyTests.party(server, s, GameMode.BRIDGE_FOUR, NewModeTests::bridgeFour);
 		PartyTests.party(server, s, GameMode.BRIDGE_FOUR_CHAOS, NewModeTests::bridgeFourChaos);
+		PartyTests.party(server, s, GameMode.HUNGER_GAMES, NewModeTests::hungerGames,
+				new String[] {"map:theme:nether", "map:theme:nether", "map:theme:nether", "map:theme:desert"});
 		bridge(server, s);
 		bridgeChaos(server, s);
 		boxing(server, s);
@@ -165,6 +173,99 @@ final class NewModeTests {
 			}
 		});
 		s.waitFor("skywars: A is the last one and wins", 60, () -> match().phase() != Match.Phase.RUNNING
+				&& match().outcome(p(A).getUUID()) == Outcome.WIN);
+	}
+
+	/**
+	 * Hunger Games in nether dress: this week's city with nether materials in the same places, everyone on the
+	 * plaza round the cornucopia, every chest filled, nobody hurt during the peace, the city cannot be broken, the
+	 * border hurts, the last one alive wins.
+	 */
+	private static void hungerGames(Script s) {
+		s.check("hunger games: this week's city in the voted nether theme, everyone round the cornucopia", () -> {
+			HungerGamesMatch m = (HungerGamesMatch) match();
+			long week = net.battlehub.arch.town.HungerMap.weekSeed(ConfigManager.config().lobby.seed, java.time.LocalDate.now());
+			BlockPos o = m.arena().origin();
+			for (String n : new String[] {A, B, "BHTestC", "BHTestD"}) {
+				double d = Math.hypot(p(n).getX() - o.getX() - 0.5, p(n).getZ() - o.getZ() - 0.5);
+				if (d < 13 || d > 20) return false;
+			}
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST hunger games: week {} as {}, {} spawns", net.battlehub.hub.HungerMaps.week(), m.themeId(),
+					m.arena().spawnCount());
+			return m.map() != null && m.map().seed == week && m.themeId().equals("nether") && m.arena().spawnCount() == 16;
+		});
+		s.check("hunger games: the same blocks in the same places, in nether materials, and no doors", () -> {
+			HungerGamesMatch m = (HungerGamesMatch) match();
+			BlockPos o = m.arena().origin();
+			int[][] found = new int[3][];
+			m.map().voxels.forEach((x, y, z, id) -> {
+				if (found[0] == null && id.equals("grass_block")) found[0] = new int[] {x, y, z};
+				if (found[1] == null && id.equals("stone_bricks")) found[1] = new int[] {x, y, z};
+				if (found[2] == null && id.startsWith("spruce_planks")) found[2] = new int[] {x, y, z};
+			});
+			if (found[0] == null || found[1] == null || found[2] == null) return false;
+			net.minecraft.server.level.ServerLevel level = m.arena().level();
+			// nylium under a block turns into netherrack on a random tick, as grass turns into dirt
+			net.minecraft.world.level.block.state.BlockState g = level.getBlockState(o.offset(found[0][0], found[0][1], found[0][2]));
+			boolean grass = g.is(Blocks.CRIMSON_NYLIUM) || g.is(Blocks.NETHERRACK);
+			boolean bricks = level.getBlockState(o.offset(found[1][0], found[1][1], found[1][2])).is(Blocks.NETHER_BRICKS);
+			boolean wood = level.getBlockState(o.offset(found[2][0], found[2][1], found[2][2])).is(Blocks.CRIMSON_PLANKS);
+			int doors = 0;
+			for (BlockPos c : m.arena().marks("chest")) {
+				for (BlockPos q : BlockPos.betweenClosed(c.offset(-6, -1, -6), c.offset(6, 2, 6))) {
+					if (level.getBlockState(q).getBlock() instanceof net.minecraft.world.level.block.DoorBlock) doors++;
+				}
+				break;
+			}
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST hunger games blocks: grass -> nylium {}, stone bricks -> nether bricks {}, spruce -> crimson {}, doors near a house chest {}",
+					grass, bricks, wood, doors);
+			return grass && bricks && wood && doors == 0;
+		});
+		s.check("hunger games: chests in the houses, the landmarks and the cornucopia are filled", () -> {
+			HungerGamesMatch m = (HungerGamesMatch) match();
+			int houses = m.arena().marks("chest").size(), landmarks = m.arena().marks("landmark_chest").size(), corn = m.arena().marks("cornucopia").size();
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST hunger games chests: {} in the houses, {} in the landmarks, {} in the cornucopia, {} filled",
+					houses, landmarks, corn, m.chestsFilled());
+			return houses >= 60 && landmarks >= 8 && corn == 12 && m.chestsFilled() == houses + landmarks + corn
+					&& filled(m, m.arena().marks("cornucopia").get(0)) && filled(m, m.arena().marks("landmark_chest").get(0));
+		});
+		s.run("hunger games: during the peace A hits B", () -> PartyTests.hit(B, A, 5f));
+		s.check("hunger games: nobody is hurt during the peace", () -> ((HungerGamesMatch) match()).inGrace() && p(B).getHealth() == p(B).getMaxHealth());
+		s.check("hunger games: the city cannot be broken, what you put down can", () -> {
+			HungerGamesMatch m = (HungerGamesMatch) match();
+			BlockPos floor = m.arena().origin().offset(14, 0, 3);
+			BlockPos above = floor.above();
+			return !m.onBreakBlock(p(A), floor, m.arena().level().getBlockState(floor))
+					&& m.onPlaceBlock(p(A), above, new ItemStack(Items.OAK_PLANKS))
+					&& m.onBreakBlock(p(A), above, Blocks.OAK_PLANKS.defaultBlockState());
+		});
+		s.waitFor("hunger games: the peace ends", 200, () -> !((HungerGamesMatch) match()).inGrace());
+		s.run("hunger games: A hits B again", () -> PartyTests.hit(B, A, 5f));
+		s.check("hunger games: now it hurts", () -> p(B).getHealth() < p(B).getMaxHealth());
+		s.waitFor("hunger games: the border has closed in", 400, () -> ((HungerGamesMatch) match()).borderSize() < 120);
+		s.run("hunger games: C stands far out in the city", () -> {
+			HungerGamesMatch m = (HungerGamesMatch) match();
+			int y = 70;
+			while (y > -10 && !m.map().voxels.filled(0, y, -80)) y--;
+			BlockPos o = m.arena().origin();
+			PartyTests.tp(p("BHTestC"), o.getX() + 0.5, o.getY() + y + 1, o.getZ() - 79.5);
+			VARS.put("hgHealthC", p("BHTestC").getHealth());
+		});
+		s.waitFor("hunger games: outside the border C gets hurt", 80, () -> p("BHTestC").getHealth() < (float) VARS.get("hgHealthC"));
+		s.run("hunger games: D carries a diamond and is killed by A", () -> {
+			p("BHTestD").getInventory().setItem(5, new ItemStack(Items.DIAMOND));
+			PartyTests.hit("BHTestD", A, 1000f);
+		});
+		s.check("hunger games: D is out and the diamond lies on the ground", () -> !match().alive().contains(p("BHTestD").getUUID())
+				&& !match().arena().level().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, match().arena().bounds(),
+						e -> e.getItem().is(Items.DIAMOND)).isEmpty());
+		s.run("hunger games: B and C fall", () -> {
+			for (String n : new String[] {B, "BHTestC"}) {
+				ServerPlayer pl = p(n);
+				PartyTests.tp(pl, pl.getX(), match().arena().voidY() - 3, pl.getZ());
+			}
+		});
+		s.waitFor("hunger games: A is the last one and wins", 60, () -> match().phase() != Match.Phase.RUNNING
 				&& match().outcome(p(A).getUUID()) == Outcome.WIN);
 	}
 

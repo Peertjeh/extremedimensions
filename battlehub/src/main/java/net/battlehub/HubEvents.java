@@ -207,6 +207,10 @@ public final class HubEvents {
 		net.battlehub.fx.ResourcePack.start(server);
 		net.battlehub.arena.CustomMaps.load(server);
 		net.battlehub.tournament.WeeklyTournament.load(server);
+		if (ConfigManager.config().game(net.battlehub.core.GameMode.HUNGER_GAMES).enabled) {
+			// This week's Hunger Games city, ready before anyone queues (generating takes a second or two)
+			net.battlehub.util.Tasks.later(200, net.battlehub.hub.HungerMaps::warm);
+		}
 	}
 
 	private static void stopping(MinecraftServer server) {

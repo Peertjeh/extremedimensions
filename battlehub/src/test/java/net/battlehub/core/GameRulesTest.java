@@ -165,7 +165,10 @@ class GameRulesTest {
 		assertTrue(GameMode.BRIDGE_CHAOS.isFanFavorite() && !GameMode.BRIDGE.isFanFavorite());
 		assertEquals(GameMode.BRIDGE_CHAOS, GameMode.duelGames()[1], "the fan favourite right after the normal Bridge");
 		assertEquals(5, GameMode.kitDuels().length);
-		assertEquals(17, GameMode.parties().length);
+		assertEquals(18, GameMode.parties().length);
+		assertEquals(GameMode.HUNGER_GAMES, GameMode.byId("hunger_games"));
+		assertTrue(GameMode.HUNGER_GAMES.isParty() && GameMode.HUNGER_GAMES.defaultMaxPlayers() == 16);
+		assertTrue(java.util.Arrays.asList(GameMode.partyMenu()).contains(GameMode.HUNGER_GAMES));
 		assertEquals(GameMode.BRIDGE_DUOS, GameMode.byId("bridge_2v2"));
 		assertEquals(GameMode.BRIDGE_FOUR, GameMode.byId("bridge_1v1v1v1"));
 		assertEquals(GameMode.BRIDGE_FOUR_CHAOS, GameMode.byId("bridge_chaos_1v1v1v1"));

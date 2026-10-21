@@ -34,6 +34,7 @@ public final class Icons {
 			case BRIDGE_DUOS -> Ids.item("minecraft:red_terracotta");
 			case BRIDGE_FOUR -> Ids.item("minecraft:lime_terracotta");
 			case BRIDGE_FOUR_CHAOS -> Ids.item("minecraft:breeze_rod");
+			case HUNGER_GAMES -> Ids.item("minecraft:bow");
 			case BOXING -> Items.IRON_CHESTPLATE;
 			case BUILD_UHC -> Items.LAVA_BUCKET;
 			case SPLEEF -> Items.DIAMOND_SHOVEL;

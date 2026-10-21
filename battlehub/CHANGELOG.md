@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.32.0
+
+### Added
+* **Hunger Games** (party, 2–16): the lobby city is the map.
+  * A new city every week (Monday to Sunday), generated from the lobby's plan with a seed of the week: the same
+    plaza, avenues and landmarks, other houses and streets.
+  * Every match another theme that suits a city: as built, desert, winter, cherry blossom, nether, badlands,
+    jungle, deep dark or End. Only the materials change; every block stays where it is.
+  * Everyone starts empty-handed round the cornucopia on the plaza (twelve chests with the best loot). Every house
+    has its chest and barrel; the landmarks and watchtowers have better chests inside. Doors are taken out.
+  * Thirty seconds of peace, a refill of every chest after ten minutes, a border closing in on the plaza after five.
+  * The city cannot be broken (only what players put down, leaves, cobwebs and plants). Whoever dies drops
+    everything; a cannon sounds. Last one alive wins; when time is up, the most kills.
+  * Bots loot the chests near them, put on armor, eat and head for the plaza.
+  * Loot in `hunger_games.json`; settings under `hunger_games` in `config.json`; in the mode-of-the-day rotation.
+
 ## 1.31.0
 
 ### Added
