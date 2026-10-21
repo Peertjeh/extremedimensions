@@ -311,10 +311,9 @@ public final class ElderGaol {
 	}
 
 	/** A post of a cage left over from a crash is removed when it turns up. */
-	public static void loaded(Entity e) {
-		if (e instanceof Interaction && !POSTS.containsKey(e.getUUID()) && e.removeTag(TAG)) {
-			e.discard();
-		}
+	/** A post of a cage that is gone (left over from a crash), found as it loads: to be removed. */
+	public static boolean stray(Entity e) {
+		return e instanceof Interaction && !POSTS.containsKey(e.getUUID()) && e.removeTag(TAG);
 	}
 
 	public static void clear() {

@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.extremedimensions.client.ui.Ui;
+import com.extremedimensions.guide.Path;
 import com.extremedimensions.journal.Bestiary;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.journal.MarginNote;
@@ -38,7 +39,7 @@ public class JournalScreen extends Screen {
 	/** The second hand: rust-brown ink, set in from the Wanderer's lines. */
 	private static final int INK_RUST = 0x6B2A1A, NOTE_INDENT = 8;
 
-	private enum Part { PAGES, BEASTS, LEDGER }
+	private enum Part { PAGES, PATH, BEASTS, LEDGER }
 
 	/** One line on a page: the Wanderer's, a note in another hand beside them, or a page wholly in that hand (rust). */
 	private record Line(String text, boolean note, boolean rust) {
@@ -59,6 +60,9 @@ public class JournalScreen extends Screen {
 	private final List<Beast> beasts = new ArrayList<>();
 	/** The ledger: page name to its lines (key, value) in order. */
 	private final Map<String, List<String[]>> ledger = new LinkedHashMap<>();
+	/** The Wanderer's path: steps done, beside the path done and seen (bit masks), and the line on the next step. */
+	private int pathDone, sideDone, sideSeen;
+	private String pathHint = "";
 	private Part part = Part.PAGES;
 	/** Index of the left page of the current spread (always even). */
 	private int spread = 0;
@@ -85,7 +89,30 @@ public class JournalScreen extends Screen {
 	}
 
 	public JournalScreen(Set<String> unlocked, String beastData, String ledgerData, Set<String> notes, Screen parent) {
+		this(unlocked, beastData, ledgerData, notes, "", parent);
+	}
+
+	/** The journal opened last, for the tests (they read what it was sent). */
+	private static JournalScreen last;
+
+	public static JournalScreen last() {
+		return last;
+	}
+
+	public JournalScreen(Set<String> unlocked, String beastData, String ledgerData, Set<String> notes, String pathData, Screen parent) {
 		super(Component.translatable("item.extremedimensions.tether_journal"));
+		last = this;
+		String[] path = pathData.split(";", 4);
+		if (path.length == 4) {
+			try {
+				pathDone = Integer.parseInt(path[0]);
+				sideDone = Integer.parseInt(path[1]);
+				sideSeen = Integer.parseInt(path[2]);
+				pathHint = path[3];
+			} catch (NumberFormatException e) {
+				// a damaged path: the tab shows the path as not begun
+			}
+		}
 		this.unlocked = unlocked;
 		this.notes = notes;
 		this.parent = parent;
@@ -136,7 +163,23 @@ public class JournalScreen extends Screen {
 			case PAGES -> pages.size();
 			case BEASTS -> beasts.size() * 2;
 			case LEDGER -> ledger.isEmpty() ? 0 : 4;
+			case PATH -> 2;
 		};
+	}
+
+	/** The step the Path tab names as the next one (null when the whole path is walked), for the tests. */
+	public Path.Step nextStep() {
+		for (Path.Step s : Path.Step.values()) {
+			if ((pathDone & 1 << s.ordinal()) == 0) {
+				return s;
+			}
+		}
+		return null;
+	}
+
+	/** The line under the next step (a translation key), for the tests. */
+	public String pathHint() {
+		return pathHint;
 	}
 
 	@Override
@@ -171,18 +214,33 @@ public class JournalScreen extends Screen {
 		int bx = bookX(), y = bookY() + PAGE_H + 6;
 		prev = this.addRenderableWidget(Button.builder(Component.literal("◀"), b -> flip(-2)).pos(bx, y).size(24, 18).build());
 		next = this.addRenderableWidget(Button.builder(Component.literal("▶"), b -> flip(2)).pos(bx + PAGE_W * 2 + SPINE - 24, y).size(24, 18).build());
-		int tx = bx + 28;
+		int tx = bx + 28, right = bx + PAGE_W * 2 + SPINE - 28;
 		tabs.clear();
-		for (Part p : Part.values()) {
-			String key = "gui.extremedimensions.journal.tab." + p.name().toLowerCase(java.util.Locale.ROOT);
-			Button tab = Button.builder(Component.translatable(key), b -> show(p)).pos(tx, y).size(60, 18).build();
+		// Each tab as wide as its name (all narrower alike where a language's names do not fit), the rest for Done
+		Part[] parts = Part.values();
+		int[] widths = new int[parts.length];
+		int sum = 0, room = right - tx - Math.max(34, this.font.width(Component.translatable("gui.done")) + 12) - 2;
+		for (int i = 0; i < parts.length; i++) {
+			widths[i] = this.font.width(Component.translatable(tabKey(parts[i]))) + 12;
+			sum += widths[i] + 2;
+		}
+		for (int i = 0; i < parts.length; i++) {
+			if (sum > room) {
+				widths[i] = room / parts.length - 2;
+			}
+			Part p = parts[i];
+			Button tab = Button.builder(Component.translatable(tabKey(p)), b -> show(p)).pos(tx, y).size(widths[i], 18).build();
 			tab.active = part != p;
 			tabs.put(p, this.addRenderableWidget(tab));
-			tx += 62;
+			tx += widths[i] + 2;
 		}
 		this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> this.onClose())
-				.pos(tx + 2, y).size(bx + PAGE_W * 2 + SPINE - 28 - tx - 4, 18).build());
+				.pos(tx, y).size(right - tx, 18).build());
 		updateButtons();
+	}
+
+	private static String tabKey(Part p) {
+		return "gui.extremedimensions.journal.tab." + p.name().toLowerCase(java.util.Locale.ROOT);
 	}
 
 	/** Lays one entry's blocks out over pages: a block that would run over starts the next page, if it fits on one. */
@@ -275,6 +333,11 @@ public class JournalScreen extends Screen {
 			case LEDGER -> {
 				ledgerSpread(g, bx, by, pe * fe);
 				counter = Ui.tr("gui.extremedimensions.journal.tab.ledger");
+			}
+			case PATH -> {
+				pathSpread(g, bx, by, pe * fe);
+				counter = Ui.tr("gui.extremedimensions.path.walked", Integer.bitCount(pathDone & ((1 << Path.Step.values().length) - 1)),
+						Path.Step.values().length);
 			}
 			default -> {
 				if (pages.isEmpty()) {
@@ -432,6 +495,67 @@ public class JournalScreen extends Screen {
 		}
 		LIKENESS.put(b, e);
 		return e;
+	}
+
+	// ------------------------------------------------------------------ the path
+
+	/**
+	 * The left page: the next step and how to take it. The right page: the Wanderer's path, step by step (done, next,
+	 * to come), and beside it what has been found of the things that make it easier or stir along it.
+	 */
+	private void pathSpread(GuiGraphicsExtractor g, int bx, int by, double alpha) {
+		Path.Step next = nextStep();
+		title(g, Ui.tr("gui.extremedimensions.path.title"), bx, by, alpha);
+		int ty = by + 36;
+		String head = Ui.tr(next == null ? "gui.extremedimensions.path.walked_all" : "gui.extremedimensions.path.next");
+		Ui.ink(g, this.font, head, bx + 12, ty, INK_TEAL, alpha);
+		g.fill(bx + 12, ty + 9, bx + 12 + this.font.width(head), ty + 10, Ui.argb(alpha * 0.5, INK_TEAL));
+		ty += 14;
+		if (next != null) {
+			for (String line : Ui.wrap(this.font, Ui.tr("gui.extremedimensions.path.step." + next.key()), TEXT_W)) {
+				Ui.ink(g, this.font, line, bx + 12, ty, INK_DARK, alpha);
+				ty += 11;
+			}
+			ty += 4;
+		}
+		for (String line : Ui.wrap(this.font, Ui.tr(pathHint.isEmpty() ? "gui.extremedimensions.guide.1" : pathHint), TEXT_W)) {
+			if (ty > by + PAGE_H - 14) {
+				break;
+			}
+			Ui.ink(g, this.font, line, bx + 12, ty, INK, alpha);
+			ty += 11;
+		}
+
+		int x = bx + PAGE_W + SPINE;
+		title(g, Ui.tr("gui.extremedimensions.path.steps"), x, by, alpha);
+		ty = by + 34;
+		for (Path.Step s : Path.Step.values()) {
+			boolean done = (pathDone & 1 << s.ordinal()) != 0;
+			String mark = done ? "\u2714 " : s == next ? "\u00bb " : "\u00b7 ";
+			Ui.ink(g, this.font, mark + Ui.tr("gui.extremedimensions.path.step." + s.key()), x + 12, ty,
+					done ? INK : s == next ? INK_DARK : INK_FAINT, alpha);
+			ty += 10;
+		}
+		ty += 4;
+		String beside = Ui.tr("gui.extremedimensions.path.beside");
+		Ui.ink(g, this.font, beside, x + 12, ty, INK_TEAL, alpha);
+		g.fill(x + 12, ty + 9, x + 12 + this.font.width(beside), ty + 10, Ui.argb(alpha * 0.5, INK_TEAL));
+		ty += 13;
+		int seen = 0, all = Path.Side.values().length;
+		for (Path.Side s : Path.Side.values()) {
+			if ((sideSeen & 1 << s.ordinal()) == 0) {
+				continue;
+			}
+			seen++;
+			boolean done = (sideDone & 1 << s.ordinal()) != 0;
+			Ui.ink(g, this.font, (done ? "\u2714 " : "\u00b7 ") + Ui.tr("gui.extremedimensions.path.side." + s.key()), x + 12, ty,
+					done ? INK : INK_DARK, alpha);
+			ty += 10;
+		}
+		if (seen < all) {
+			Ui.ink(g, this.font, Ui.tr(seen == 0 ? "gui.extremedimensions.path.beside_none" : "gui.extremedimensions.path.beside_more"),
+					x + 12, ty, INK_FAINT, alpha);
+		}
 	}
 
 	// ------------------------------------------------------------------ the ledger

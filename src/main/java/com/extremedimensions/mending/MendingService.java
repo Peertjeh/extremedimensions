@@ -188,6 +188,7 @@ public final class MendingService {
 		for (ServerPlayer q : seam.players()) {
 			if (inArena(q)) {
 				Journal.unlock(q, DataStore.get(q.getUUID()), JournalEntry.HEART);
+				Advancements.grant(q, Advancements.HEART_REACHED);
 				WorldFx.effect(q, MobEffects.DARKNESS, 5, 0);
 			}
 		}

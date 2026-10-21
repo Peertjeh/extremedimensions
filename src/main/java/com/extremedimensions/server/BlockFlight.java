@@ -267,10 +267,9 @@ public final class BlockFlight {
 	}
 
 	/** A tagged block display turning up that nothing is using (left over from a crash) is removed. */
-	public static void loaded(Entity e) {
-		if (e instanceof Display.BlockDisplay && !LIVE.contains(e.getUUID()) && (e.removeTag(TAG) | e.removeTag(OLD_TAG))) {
-			e.discard();
-		}
+	/** A display that no flight is using (left over from a crash), found as it loads: to be removed. */
+	public static boolean stray(Entity e) {
+		return e instanceof Display.BlockDisplay && !LIVE.contains(e.getUUID()) && (e.removeTag(TAG) | e.removeTag(OLD_TAG));
 	}
 
 	/** On stopping, once every user of flights has taken its displays down. */

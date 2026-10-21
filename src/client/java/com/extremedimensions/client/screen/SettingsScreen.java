@@ -144,6 +144,7 @@ public class SettingsScreen extends Screen {
 			ClientOptions.setHudScale(s[(i + 1) % s.length]);
 		}, "hud_scale");
 		addChoice(cx, y + ROW * 5, () -> onOff(ClientOptions.guidance()), () -> ClientOptions.setGuidance(!ClientOptions.guidance()), "guidance");
+		addChoice(cx, y + ROW * 6, () -> onOff(ClientOptions.hints()), () -> ClientOptions.setHints(!ClientOptions.hints()), "hints");
 
 		// World rules: a difficulty preset at once, then every value
 		presetChoice = new Choice(x0 + 108, y0 + 44, 124, 16, () -> Ui.tr(target.nameKey()), () -> {
@@ -544,7 +545,7 @@ public class SettingsScreen extends Screen {
 		}
 	}
 
-	private static final String[] DISPLAY_KEYS = {"reduce_flashing", "colour_blind", "meters", "timer", "hud_scale", "guidance"};
+	private static final String[] DISPLAY_KEYS = {"reduce_flashing", "colour_blind", "meters", "timer", "hud_scale", "guidance", "hints"};
 
 	private void display(GuiGraphicsExtractor g, int x0, int y0, int mouseX, int mouseY, double fade) {
 		int y = y0 + 48;

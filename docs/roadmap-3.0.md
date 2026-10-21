@@ -279,6 +279,17 @@ explanation in vanilla style the first time a player meets each system.
 
 *Done when:* the client test walks the whole path from a fresh world to the Seam and back.
 
+*Status:* built in 2.38.0. The journal has a fourth tab, Path: the next of seven steps (bind and return, into the Seam,
+home from the Seam, break the seal, the Heart, the Starved One, mend or sever) with a line on how to take it, the steps
+done, and beside the path what has been found of the Hollowling companion, the woven Tether, the warm chain and the
+three Elders. A step counts however it was done, also before 2.38; the world's steps count for everyone. The
+advancement tree runs the same way (a new advancement, The Heart of the Seam, sits between the seal and the Starved
+One). Eleven first-meeting hints come as toasts (a Collapse, a curse, a Tether Fragment, the Lurker, a hoard, a relic,
+the Seam Needle, Seam Silk, an Elder forming, a Wound Storm, falling beside an ally), once per player, off for the
+world with `hints` and for a player under Display; a player from before 2.38 is not told what they already know. The
+new client test `ClientPath` walks a fresh world: a portal, an anchor fed and a Tether bound, through to the Nether and
+home, a needle on crying obsidian, into the Seam and home through the rift, reading the Path tab at every step.
+
 #### 2.39 The First Weaver
 
 *Fantasy: an investigation across every world. Entry: after the Seam (the frame needs Seam Silk); the end needs the

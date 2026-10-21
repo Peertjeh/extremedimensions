@@ -112,7 +112,8 @@ public final class WoundLens {
 	private static Entity looked(ServerPlayer p, Vec3 eye, Vec3 look, double reach) {
 		Entity best = null;
 		double bestDot = 0.995;
-		AABB along = new AABB(eye, eye).expandTowards(look.scale(reach)).inflate(2);
+		// (as wide as the cone at its far end)
+		AABB along = new AABB(eye, eye).expandTowards(look.scale(reach)).inflate(Math.max(2, reach * 0.1));
 		for (Entity e : p.level().getEntities(p, along, e -> e.isAlive() && !e.isSpectator())) {
 			Vec3 to = e.getBoundingBox().getCenter().subtract(eye);
 			double d = to.length();

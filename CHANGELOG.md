@@ -1,5 +1,37 @@
 # Changelog
 
+## 2.38.0: The Path
+
+No new systems. The journal now says where the road goes next, and the game says a word the first time you meet each
+part of the mod.
+
+### Added
+- **The Path.** A fourth tab in the Tether Journal. The left page names the next step of the Wanderer's path and how to
+  take it; the right page lists the seven steps (bind and return, into the Seam, home from the Seam, break the seal,
+  the Heart, the Starved One, mend or sever) and, beside the path, what you have found of the things that make it
+  easier or stir along it: a Hollowling at your side, a woven Tether, the warm chain and the three Elders, each once
+  its page is in the journal. The line under the next step follows what you have: the first expedition's steps as the
+  guide card gives them, how to make a Seam Needle until you hold one and how to use it once you do, what the Thread
+  and the Shears do once you carry one. A step counts however it was done, also before this version, and the world's
+  steps (the seal, the Starved One, the ending) count for everyone once anyone has done them.
+- **First-meeting hints.** A short toast the first time you meet each part of the mod: a Collapse, a curse, a Tether
+  Fragment, the Lurker, a hoard, a relic, the Seam Needle, Seam Silk, an Elder forming, a Wound Storm and falling beside
+  an ally. Each comes once. The world turns them off with `hints` (0); each player can turn them off for themselves
+  under Settings, Display. A player who walked part of the way before this version is not told what they already know.
+- **The Heart of the Seam**, an advancement for reaching the Heart, between breaking the seal and the Starved One. The
+  advancement tree now runs along the path: anchor, Tether, first expedition, the Seam, the seal, the Heart, the
+  Starved One, the ending.
+
+### Fixed
+- A player leaving no longer has every player's file saved while the server is stopping (it saves them all once
+  anyway); a busy server stopped quicker.
+- Leftovers found as their chunk loads (flying blocks, a gaol's posts, echo chains, the Unanchored's builders) are
+  taken away at the end of that tick, not while the world is still adding them.
+- The Wound Lens reads a creature anywhere in its cone again, also far off (its search had narrowed past 20 blocks).
+- The two 2.37 hooks into the game (the action bar and the anvil) now stop the game at start if they no longer fit
+  it, instead of quietly doing nothing.
+- A player coming back is looked for warm chains straight away, wherever they log in.
+
 ## 2.37.0: Refinement
 
 No new systems. Five reviews went through everything added since 2.33 (what it does, what it keeps across a restart

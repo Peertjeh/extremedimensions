@@ -13,7 +13,7 @@ import net.minecraft.world.item.ItemStack;
 /** The anvil, like the table, takes Tethers one at a time: a stack is renamed, but not enchanted or combined at once. */
 @Mixin(AnvilMenu.class)
 public abstract class TetherAnvilMixin {
-	@Inject(method = "createResult", at = @At("TAIL"))
+	@Inject(method = "createResult", at = @At("TAIL"), require = 1)
 	private void extremedimensions$oneAtATime(CallbackInfo ci) {
 		AnvilMenu self = (AnvilMenu) (Object) this;
 		ItemStack left = self.getSlot(0).getItem();

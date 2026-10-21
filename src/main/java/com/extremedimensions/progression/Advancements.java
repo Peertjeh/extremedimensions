@@ -56,6 +56,7 @@ public final class Advancements {
 	public static final String HELD_FOUND = "held_found";
 	public static final String ECHO_HEARD = "echo_heard";
 	public static final String UNANCHORED = "unanchored";
+	public static final String HEART_REACHED = "heart_reached";
 
 	/** Expeditions needed for {@link #VETERAN}. */
 	public static final int VETERAN_EXPEDITIONS = 10;
@@ -66,5 +67,6 @@ public final class Advancements {
 
 	public static void grant(ServerPlayer p, String id) {
 		WorldFx.grantAdvancement(p, id);
+		com.extremedimensions.guide.Hints.earned(p, id);
 	}
 }

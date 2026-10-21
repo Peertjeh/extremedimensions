@@ -45,6 +45,14 @@ final class ElderSpawn {
 		ElderFx.cinema(b, 96, ModPackets.BossFxPayload.SPAWN, b.getId(), Config.ELDER_SPAWN_CAMERA > 0 ? length : -length,
 				"gui.extremedimensions.elder.forming." + NAMES[ElderFx.index(b)]);
 		ElderFx.shake(b, b.getX(), b.getZ(), 48, 0.25f, length);
+		// The first Elder someone sees forming: a word on what to do with these seconds
+		if (b.level() instanceof net.minecraft.server.level.ServerLevel level) {
+			for (net.minecraft.server.level.ServerPlayer p : level.players()) {
+				if (p.distanceToSqr(b) < 96 * 96) {
+					com.extremedimensions.guide.Hints.meet(p, com.extremedimensions.guide.Hints.Hint.ELDER);
+				}
+			}
+		}
 	}
 
 	/** Its time to form is cut short (an operator or a test forces a blow): it is whole at once. */

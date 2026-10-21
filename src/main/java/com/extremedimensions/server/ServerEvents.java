@@ -67,6 +67,8 @@ public final class ServerEvents {
 			"extremedimensions:ember_tether", "extremedimensions:void_tether", "extremedimensions:mending_cloth"};
 
 	private static int effectTimer = 0;
+	/** Strays found as they loaded, removed at the end of the tick. */
+	private static final java.util.List<net.minecraft.world.entity.Entity> STRAYS = new java.util.ArrayList<>();
 
 	public static void register() {
 		// A reset of the Seam that an operator asked for is carried out before the worlds load
@@ -95,6 +97,7 @@ public final class ServerEvents {
 			DataStore.flush();
 		});
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
+			STRAYS.clear();
 			LurkerService.clear();
 			HollowService.clear();
 			SeamService.clear();
@@ -120,12 +123,13 @@ public final class ServerEvents {
 		});
 		ServerTickEvents.END_SERVER_TICK.register(ServerEvents::tick);
 		// A flying block's display that nothing is using (left over from a crash) is removed as it loads
+		// (at the end of the tick: the level is still adding the entity while the event runs)
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
-			BlockFlight.loaded(entity);
-			com.extremedimensions.elder.ElderGaol.loaded(entity);
-			// Echo chains and builders left behind by a stop, or by an echo or a build that is over
-			if (com.extremedimensions.events.Echoes.stray(entity) || com.extremedimensions.events.Unanchored.stray(entity)) {
-				entity.discard();
+			// ... and so are a gaol's posts, echo chains and builders left behind by a stop, or by an echo or a build
+			// that is over
+			if (BlockFlight.stray(entity) | com.extremedimensions.elder.ElderGaol.stray(entity)
+					| com.extremedimensions.events.Echoes.stray(entity) | com.extremedimensions.events.Unanchored.stray(entity)) {
+				STRAYS.add(entity);
 			}
 		});
 		// A block of an Elder's arena broken by a player drops nothing
@@ -154,7 +158,11 @@ public final class ServerEvents {
 			com.extremedimensions.expedition.ExpeditionBar.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.binding.WoundLens.forget(handler.getPlayer().getUUID());
 			// Every player's inventory is saved with the world's data, so neither can run ahead of the other after a crash
-			s.getPlayerList().saveAll();
+			// (a stopping server saves them all once itself)
+			if (s.isRunning()) {
+				s.getPlayerList().saveAll();
+			}
+			com.extremedimensions.lore.WarmChains.forget(handler.getPlayer().getUUID());
 			DataStore.markDirty();
 			DataStore.flush();
 		});
@@ -413,6 +421,8 @@ public final class ServerEvents {
 		d.joinDone = false;
 		d.ticksOnline = 0;
 		d.hasRopeEnd = false;
+		// What they knew before the first-meeting hints existed is not told again
+		com.extremedimensions.guide.Hints.known(p, d);
 		Sync.state(p, d);
 	}
 
@@ -448,6 +458,14 @@ public final class ServerEvents {
 	}
 
 	private static void tick(MinecraftServer s) {
+		if (!STRAYS.isEmpty()) {
+			for (net.minecraft.world.entity.Entity e : STRAYS) {
+				if (!e.isRemoved()) {
+					e.discard();
+				}
+			}
+			STRAYS.clear();
+		}
 		boolean slowTick = ++effectTimer >= 100;
 		if (slowTick) {
 			effectTimer = 0;
@@ -460,6 +478,10 @@ public final class ServerEvents {
 
 			if (d.grace > 0) {
 				d.grace--;
+			}
+			if ((s.getTickCount() + p.getId()) % 40 == 0 && !d.away) {
+				// Something in hand for the first time: its hint
+				com.extremedimensions.guide.Hints.look(p, d);
 			}
 			if (!d.joinDone && ++d.ticksOnline >= Config.JOIN_DELAY_TICKS) {
 				d.joinDone = true;

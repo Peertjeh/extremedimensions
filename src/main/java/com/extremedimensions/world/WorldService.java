@@ -132,6 +132,7 @@ public final class WorldService {
 		LAST_STORM.put(p.getUUID(), (long) now);
 		STORMS.put(p.getUUID(), Math.max(10, Config.STORM_SECONDS) * 20);
 		WorldFx.fx(p, Fx.STORM, 0);
+		com.extremedimensions.guide.Hints.meet(p, com.extremedimensions.guide.Hints.Hint.STORM);
 		WorldFx.sound(p, "minecraft:entity.lightning_bolt.thunder", 1.5f, 0.6f);
 		WorldFx.sound(p, "extremedimensions:rift_open", 1.5f, 0.6f);
 		Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.STORMS);

@@ -45,6 +45,7 @@ public final class ClientOptions {
 		TimerPlace timer = TimerPlace.TOP;
 		int hudScale = 100;
 		boolean guidance = true;
+		boolean hints = true;
 	}
 
 	/** HUD sizes to cycle through, in percent. */
@@ -108,6 +109,16 @@ public final class ClientOptions {
 	/** Hints for a first expedition (the guide) are shown. */
 	public static boolean guidance() {
 		return values.guidance;
+	}
+
+	/** A hint as a toast the first time the player meets each part of the mod. */
+	public static boolean hints() {
+		return values.hints;
+	}
+
+	public static void setHints(boolean on) {
+		values.hints = on;
+		save();
 	}
 
 	public static void setReduceFlashing(boolean on) {

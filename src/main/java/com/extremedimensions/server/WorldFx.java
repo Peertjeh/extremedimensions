@@ -282,6 +282,15 @@ public final class WorldFx {
 	}
 
 	/** Every criterion of one of this mod's advancements. */
+	/** Whether the player has this advancement of the mod (false while no server is bound, or if it did not load). */
+	public static boolean hasAdvancement(ServerPlayer p, String id) {
+		if (server == null) {
+			return false;
+		}
+		var holder = server.getAdvancements().get(ExtremeDimensions.id(id));
+		return holder != null && p.getAdvancements().getOrStartProgress(holder).isDone();
+	}
+
 	public static void grantAdvancement(ServerPlayer p, String id) {
 		if (server == null) {
 			return;

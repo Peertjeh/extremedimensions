@@ -29,10 +29,12 @@
 			"com.extremedimensions.gametest.VanillaTests",
 			"com.extremedimensions.gametest.WarmChainTests",
 			"com.extremedimensions.gametest.BindingTests",
-			"com.extremedimensions.gametest.EventTests"
+			"com.extremedimensions.gametest.EventTests",
+			"com.extremedimensions.gametest.PathTests"
 		],
 		"fabric-client-gametest": [
-			"com.extremedimensions.gametest.ClientShots"
+			"com.extremedimensions.gametest.ClientShots",
+			"com.extremedimensions.gametest.ClientPath"
 		]
 	},
 	"depends": {

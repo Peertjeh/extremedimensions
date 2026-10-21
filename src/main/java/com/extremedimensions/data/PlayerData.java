@@ -42,6 +42,9 @@ public class PlayerData {
 	public boolean fallenKnot = false;
 	/** Steps of the first-expedition guide done (see Guide). */
 	public int guide = 0;
+	/** First-meeting hints already given (see guide.Hints), and whether what they knew before hints existed was looked at. */
+	public Set<String> hints = new LinkedHashSet<>();
+	public boolean hintsChecked = false;
 	/** The relic bound to the Tether (its id), or null. */
 	public String relic = null;
 	public int collapses = 0;

@@ -216,6 +216,7 @@ public final class FallenService {
 		changed = true;
 		d.fallenAt = p.level().getServer().overworld().getGameTime();
 		DataStore.markDirty();
+		com.extremedimensions.guide.Hints.meet(p, com.extremedimensions.guide.Hints.Hint.FALLEN);
 		p.setHealth(1.0F);
 		p.stopRiding();
 		p.setSprinting(false);

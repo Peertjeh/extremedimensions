@@ -147,6 +147,8 @@ public final class Config {
 	public static double FRAGMENT_CHANCE_ELITE = 0.12;
 	/** Chance a ruined portal in the Overworld has a warm chain lying into it (each one is looked at once). */
 	public static double WARM_CHAIN_CHANCE = 0.35;
+	/** A short hint as a toast the first time a player meets each part of the mod (1 on, 0 off; each player can also turn them off for themselves). */
+	public static int HINTS = 1;
 
 	// --- The Lurker ------------------------------------------------------------------------------
 
@@ -930,7 +932,7 @@ public final class Config {
 			{"seam_fly_from", 2, 64}, {"seam_damage", 0, 100},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},
 			{"seam_fray_ray_cooldown", 1, 120}, {"seam_fray_gloom", 0, 30}, {"seam_fray_gloom_every", 10, 3600}, {"seam_fray_unravel", 0, 1},
-			{"seam_briefing", 0, 100}, {"hud_boss_bar", 0, 1},
+			{"seam_briefing", 0, 100}, {"hud_boss_bar", 0, 1}, {"hints", 0, 1},
 			{"elder_health_scale", 0.1, 20}, {"elder_health_per_player", 0, 5}, {"elder_damage_scale", 0, 20}, {"elder_damage_per_player", 0, 2},
 			{"elder_rest_per_player", 0, 0.5}, {"elder_rest_min", 0.1, 1}, {"elder_split_max", 1, 8}, {"elder_fighters_range", 8, 256},
 			{"elder_reach", 1, 5}, {"elder_brood_per_player", 0, 10}, {"elder_spell_range", 16, 256}, {"elder_snare_seconds", 0, 30},

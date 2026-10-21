@@ -31,4 +31,6 @@ public final class Fx {
 	public static final int JOURNAL_NOTE = 18;
 	/** The island the player stands on frays (value: seconds it lasts). */
 	public static final int FRAYED_SEAM = 19;
+	/** The first time a player meets a part of the mod: a hint as a toast. Value: the hint's ordinal. */
+	public static final int HINT = 20;
 }

@@ -56,6 +56,11 @@ public final class WarmChains {
 	/** The chunk each player was in when the ruined portals round them were last looked at. */
 	private static final Map<UUID, Long> LOOKED = new HashMap<>();
 
+	/** A player who leaves is looked for afresh when they come back (in whatever chunk). */
+	public static void forget(UUID player) {
+		LOOKED.remove(player);
+	}
+
 	public static void tick(MinecraftServer s) {
 		int t = s.getTickCount();
 		if (t % 20 != 11) {
