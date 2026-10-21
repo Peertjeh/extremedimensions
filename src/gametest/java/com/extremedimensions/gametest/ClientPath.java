@@ -206,7 +206,8 @@ public class ClientPath implements FabricClientGameTest {
 				PlayerData d = DataStore.get(player(s).getUUID());
 				return new double[] {d.riftX, d.riftY, d.riftZ};
 			});
-			sp.getServer().runCommand(String.format(Locale.ROOT, "tp @a %.2f %.2f %.2f", rift[0], rift[1], rift[2]));
+			// (as the visitor, so in the Seam: from the server's own seat a bare tp lands in the Overworld)
+			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %.2f %.2f %.2f", rift[0], rift[1], rift[2]));
 			ctx.waitTicks(30);
 			check(sp.getServer().computeOnServer(s -> !DataStore.get(player(s).getUUID()).inSeam), "stepping into the rift home did not lead home");
 			check(sp.getServer().computeOnServer(s -> WorldFx.hasAdvancement(player(s), Advancements.SEAM_RETURNED)),
