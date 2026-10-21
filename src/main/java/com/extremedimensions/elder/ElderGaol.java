@@ -77,10 +77,14 @@ public final class ElderGaol {
 	private static final Map<UUID, Cage> POSTS = new HashMap<>();
 	private static EntityType<?> interaction;
 
-	/** A cage rises round {@code q}: closed bars, and everyone within them shut in. */
+	/**
+	 * A cage rises round {@code q}: closed bars, and everyone within them shut in. It stands on the ground under them
+	 * (caught mid-jump, it rises from where they will land); only with no ground close under them does it hang in the air.
+	 */
 	static Cage raise(ElderBoss owner, ServerPlayer q) {
 		ServerLevel level = (ServerLevel) owner.level();
-		Cage c = new Cage(owner.getUUID(), level, q.getX(), q.getY(), q.getZ());
+		double ground = ElderFx.footing(q, 4);
+		Cage c = new Cage(owner.getUUID(), level, q.getX(), Double.isNaN(ground) ? q.getY() : Math.min(ground, q.getY()), q.getZ());
 		BlockState bar = Blocks.IRON_BARS.defaultBlockState().setValue(CrossCollisionBlock.EAST, true).setValue(CrossCollisionBlock.WEST, true);
 		for (int i = 0; i < BARS; i++) {
 			double a = c.angle(i);
@@ -196,7 +200,7 @@ public final class ElderGaol {
 		}
 		float damage = (float) Math.max(0, Config.FERRYMAN_GAOL_DAMAGE);
 		for (ServerPlayer p : c.level.players()) {
-			if (c.inside.containsKey(p.getUUID()) && within(c, p, RADIUS + 0.6) && damage > 0) {
+			if (c.inside.containsKey(p.getUUID()) && within(c, p, RADIUS + 0.6) && p.getY() > c.y - 2 && p.getY() < c.y + HEIGHT && damage > 0) {
 				p.hurtServer(c.level, c.level.damageSources().mobAttack(owner), damage);
 			}
 		}
@@ -237,10 +241,11 @@ public final class ElderGaol {
 				}
 				double limit = free ? RADIUS + 1.5 : RADIUS - 0.55;
 				double top = c.y + HEIGHT - 1.9;
-				if (d > limit || p.getY() > top) {
+				// Nor down out of it: no one digs or drops out under the bars
+				if (d > limit || p.getY() > top || p.getY() < c.y - 1.5) {
 					double r = Math.min(d, RADIUS - 0.7);
 					double nx = c.x + Math.cos(a) * r, nz = c.z + Math.sin(a) * r;
-					double ny = Math.min(p.getY(), top);
+					double ny = Math.max(c.y, Math.min(p.getY(), top));
 					p.teleportTo(nx, ny, nz);
 					p.setDeltaMovement(0, Math.min(0, p.getDeltaMovement().y), 0);
 					p.needsSync = true;

@@ -256,7 +256,8 @@ public final class WeaverService {
 		}
 		double dx = p.getX() - w.getX(), dz = p.getZ() - w.getZ();
 		double dist = Math.sqrt(dx * dx + dz * dz);
-		if (u.action != ElderBoss.ULTIMATE) {
+		// It turns to its prey, but not while its Lance burns (the beams come from its halo, where they were fired)
+		if (u.action != ElderBoss.ULTIMATE && !(u.action == Weaver.LANCE && ElderStrikes.beamsOf(w) > 0)) {
 			w.motion.turn(w, ElderFx.yawTo(w, p.getX(), p.getZ()), 3f);
 		}
 		if (u.action == ElderBoss.IDLE) {
@@ -277,9 +278,11 @@ public final class WeaverService {
 				w.motion.toward(w, p.getX() + Math.cos(a) * dist, p.getZ() + Math.sin(a) * dist, ElderFight.speed(0.07), 0.008, HOVER);
 			}
 			if (u.ready()) {
-				// The Lance is its favourite blow, near and far
+				// The Lance is its favourite blow, near and far; its unravelling reaches only those about it, not one high
+				// over it on a spire or far down under it
 				int lance = Math.max(0, Config.WEAVER_LANCE_WEIGHT);
-				int a = dist < 8 ? u.pick(Weaver.UNRAVEL, 4, Weaver.LANCE, (lance + 1) / 2, Weaver.CRADLE, 1)
+				double rise = p.getY() - (w.getY() - HOVER);
+				int a = dist < 8 && rise < 8 && rise > -4 ? u.pick(Weaver.UNRAVEL, 4, Weaver.LANCE, (lance + 1) / 2, Weaver.CRADLE, 1)
 						: u.pick(Weaver.THREAD, 2, Weaver.NEEDLES, 2, Weaver.LANCE, lance, Weaver.CRADLE, 2, Weaver.THOUSAND, 2);
 				u.start(w, a);
 			}
@@ -295,7 +298,7 @@ public final class WeaverService {
 				if (b.at(15)) {
 					int side = 1;
 					int n = 0;
-					for (ServerPlayer q : ElderFx.targets(w, ElderPower.reach(36))) {
+					for (ServerPlayer q : ElderFx.reachable(w, ElderPower.reach(36))) {
 						if (n >= 1 + ElderPower.splits(u.fighters)) {
 							break;
 						}
@@ -312,13 +315,16 @@ public final class WeaverService {
 			case Weaver.NEEDLES -> {
 				if (b.at(20)) {
 					ThreadLocalRandom rnd = ThreadLocalRandom.current();
-					for (ServerPlayer q : ElderFx.targets(w, ElderPower.reach(40))) {
-						ElderStrikes.strike(w, q.getX(), q.getY(), q.getZ(), 2.2, 7f, u.delay(28), ElderStrikes.NEEDLE);
+					for (ServerPlayer q : ElderFx.reachable(w, ElderPower.reach(40))) {
+						ElderStrikes.strike(w, q.getX(), ElderFx.groundUnder(q), q.getZ(), 2.2, 7f, u.delay(28), ElderStrikes.NEEDLE);
 					}
+					double py = ElderFx.groundUnder(p);
 					for (int i = 0; i < 6; i++) {
 						double x = p.getX() + rnd.nextDouble(-8, 8), z = p.getZ() + rnd.nextDouble(-8, 8);
-						double y = ElderFx.surface(u.level, x, p.getY() + 4, z, 4, 12);
-						ElderStrikes.strike(w, x, Double.isNaN(y) ? p.getY() : y, z, 2.2, 7f, u.delay(30 + i * 3), ElderStrikes.NEEDLE);
+						double y = ElderFx.surface(u.level, x, py + 4, z, 4, 12);
+						if (!Double.isNaN(y)) {
+							ElderStrikes.strike(w, x, y, z, 2.2, 7f, u.delay(30 + i * 3), ElderStrikes.NEEDLE);
+						}
 					}
 					WorldFx.soundIn(dim, "minecraft:block.amethyst_block.resonate", "hostile", w.getX(), w.getY() + 14, w.getZ(), 4f, 0.5f);
 				}
@@ -330,7 +336,8 @@ public final class WeaverService {
 				if (b.at(10)) {
 					WorldFx.soundIn(dim, "extremedimensions:lurker_shriek", "hostile", w.getX(), w.getY() + 12, w.getZ(), 4f, 1.3f);
 					ElderFx.shake(w, w.getX(), w.getZ(), 24, 0.5f, 10);
-					for (ServerPlayer q : ElderFx.targets(w, 11)) {
+					// Everyone about its body, from under its hem to over its halo
+					for (ServerPlayer q : ElderFx.targets(w, 11, HOVER + 4, w.getBbHeight() + 2)) {
 						ElderFx.shove(w, q, 1.8, 0.6);
 						WorldFx.effect(q, MobEffects.DARKNESS, 3, 0);
 					}
@@ -363,8 +370,9 @@ public final class WeaverService {
 	}
 
 	/**
-	 * Seraphic Lance: the halo spins up and fires a beam that sweeps across the ground through its prey, and often (always
-	 * once it is enraged) sweeps back again at where they fled to.
+	 * Seraphic Lance: the halo spins up and fires a beam that sweeps through its prey wherever they stand (on an island
+	 * high over it, down in a pit, far off), on past them to the ground behind, and often (always once it is enraged)
+	 * sweeps back again at where they fled to.
 	 */
 	private static void lance(Weaver w, Unweaving u, ServerPlayer p, Beat b) {
 		String dim = ElderFx.dim(w);
@@ -398,14 +406,16 @@ public final class WeaverService {
 	}
 
 	private static void sweep(Weaver w, Unweaving u, ServerPlayer p, double[] h, int way) {
-		double dx = p.getX() - w.getX(), dz = p.getZ() - w.getZ();
-		double r = Math.max(8, Math.min(ElderPower.reach(28), Math.sqrt(dx * dx + dz * dz)));
+		// Aimed at them: its arc runs round the halo at their own height, from just short of them to just past them
+		double dx = p.getX() - h[0], dz = p.getZ() - h[2];
+		double r = Math.max(1.5, Math.sqrt(dx * dx + dz * dz));
 		double a = Math.atan2(dz, dx);
 		// It burns longer than it used to, over a wider arc at the same speed (whatever the pace its blows land at)
 		double length = Math.max(0.5, Config.WEAVER_LANCE_LENGTH);
 		double sweep = Math.min(1.6, 0.75 * length) * way;
 		int burn = Math.max(8, (int) Math.round(34 / u.steady() * length));
-		ElderStrikes.beam(w, h[0], h[1], h[2], w.getX(), w.getZ(), a - sweep, a + sweep, r - 2, r + 2, burn, (float) Config.WEAVER_LANCE_DAMAGE, true);
+		ElderStrikes.lance(w, h[0], h[1], h[2], a - sweep, a + sweep, Math.max(0.5, r - 2), r + 2, p.getY() + p.getBbHeight() * 0.5, burn,
+				(float) Config.WEAVER_LANCE_DAMAGE, true);
 		WorldFx.soundIn(ElderFx.dim(w), "minecraft:entity.warden.sonic_boom", "hostile", h[0], h[1], h[2], 4f, 1.2f);
 		ElderFx.shake(w, p.getX(), p.getZ(), 30, 0.5f, 30);
 	}
@@ -469,7 +479,7 @@ public final class WeaverService {
 		if (b.every(5, 16) && b.t < 58) {
 			double turn = b.t * 0.6;
 			double r = Math.max(2.5, 12 - (b.t - 16) * 0.25);
-			for (ServerPlayer q : ElderFx.targets(w, ElderPower.reach(44))) {
+			for (ServerPlayer q : ElderFx.reachable(w, ElderPower.reach(44))) {
 				for (int i = 0; i < 3; i++) {
 					double a = turn + 2 * Math.PI * i / 3;
 					double x = q.getX() + Math.cos(a) * r, z = q.getZ() + Math.sin(a) * r;
@@ -482,7 +492,7 @@ public final class WeaverService {
 		if (b.at(60)) {
 			// The great needle, on its prey and with more of them against it on the nearest others too
 			for (ServerPlayer q : u.split(w, p, ElderPower.reach(44))) {
-				ElderStrikes.strike(w, q.getX(), q.getY(), q.getZ(), 4.2, 16f, u.delay(20), ElderStrikes.SPEAR);
+				ElderStrikes.strike(w, q.getX(), ElderFx.groundUnder(q), q.getZ(), 4.2, 16f, u.delay(20), ElderStrikes.SPEAR);
 				WorldFx.soundIn(dim, "minecraft:item.trident.thunder", "hostile", q.getX(), q.getY() + 10, q.getZ(), 4f, 0.6f);
 			}
 		}
@@ -513,7 +523,8 @@ public final class WeaverService {
 		if (b.every(2, 0)) {
 			ElderFx.shake(w, w.getX(), w.getZ(), 64, (float) (0.1 + 0.4 * k), 4);
 		}
-		List<ServerPlayer> near = ElderFx.targets(w, 64);
+		// Everyone its curse will fall on
+		List<ServerPlayer> near = ElderFx.reachable(w, Math.max(64, Config.ELDER_ULTIMATE_RADIUS));
 		if (b.between(30, length * 0.88) && b.every(3, 30)) {
 			double yaw = Math.toRadians(w.getYRot());
 			int i = 0;
@@ -541,7 +552,7 @@ public final class WeaverService {
 				AttackFx.line(level, 2, AttackFx.LINE_THREAD_TAUT, w.getX(), apexY, w.getZ(), gx, Double.isNaN(gy) ? w.getY() - u.rise - HOVER : gy, gz, 8);
 			}
 			for (ServerPlayer q : near) {
-				ElderStrikes.strike(w, q.getX(), q.getY(), q.getZ(), 2.0, 5f, 16, ElderStrikes.NEEDLE);
+				ElderStrikes.strike(w, q.getX(), ElderFx.groundUnder(q), q.getZ(), 2.0, 5f, 16, ElderStrikes.NEEDLE);
 			}
 		}
 		lanceRings(w, u, b, length);
@@ -594,7 +605,7 @@ public final class WeaverService {
 			double base = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
 			for (int i = 0; i < rings; i++) {
 				double r = ringRadius(i), a0 = base + Math.PI * i, way = i % 2 == 0 ? 1 : -1;
-				ElderStrikes.beam(w, h[0], h[1], h[2], w.getX(), w.getZ(), a0, a0 + way * Math.PI * 2, r, r, duration,
+				ElderStrikes.beam(w, h[0], h[1], h[2], w.getX(), w.getZ(), a0, a0 + way * Math.PI * 2, r, r, gy, duration,
 						(float) Config.WEAVER_ULTIMATE_RING_DAMAGE);
 			}
 			WorldFx.soundIn(ElderFx.dim(w), "minecraft:entity.warden.sonic_boom", "hostile", h[0], h[1], h[2], 6f, 0.9f);

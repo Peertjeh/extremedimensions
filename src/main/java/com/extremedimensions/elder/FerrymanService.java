@@ -278,9 +278,14 @@ public final class FerrymanService {
 			ElderFx.look(f, p);
 			wake(f);
 			if (fare.ready()) {
-				int a = dist <= 8 ? fare.pick(Ferryman.KNELL, 3, Ferryman.TIDE, 2, Ferryman.GAOL, 1)
+				// Up on a shore or a tower over the boat, or down in a pit, his tides and his crossing never reach them;
+				// his crossing goes no further than it can carry the boat
+				double rise = p.getY() - f.getY();
+				boolean cross = dist <= ElderPower.reach(30) - 6;
+				int a = rise > 3.5 || rise < -3 ? fare.pick(Ferryman.LANTERN, 3, Ferryman.GAOL, 2, Ferryman.SLAM, 2, Ferryman.CHAIN, 2)
+						: dist <= 8 ? fare.pick(Ferryman.KNELL, 3, Ferryman.TIDE, 2, Ferryman.GAOL, 1)
 						: dist <= 20 ? fare.pick(Ferryman.SLAM, 3, Ferryman.CROSSING, 3, Ferryman.TIDE, 2, Ferryman.GAOL, 2, Ferryman.LANTERN, 2, Ferryman.CHAIN, 1)
-						: fare.pick(Ferryman.CROSSING, 3, Ferryman.LANTERN, 3, Ferryman.CHAIN, 2, Ferryman.GAOL, 1);
+						: fare.pick(Ferryman.LANTERN, 3, Ferryman.CHAIN, 2, Ferryman.GAOL, 1, Ferryman.CROSSING, cross ? 3 : 0);
 				fare.start(f, a);
 			}
 			return;
@@ -321,7 +326,7 @@ public final class FerrymanService {
 				if (b.at(16)) {
 					double yaw = Math.toRadians(f.getYRot());
 					int n = 0;
-					for (ServerPlayer q : ElderFx.targets(f, ElderPower.reach(48))) {
+					for (ServerPlayer q : ElderFx.reachable(f, ElderPower.reach(48))) {
 						if (n >= Math.min(8, 3 + fare.fighters)) {
 							break;
 						}
@@ -342,7 +347,8 @@ public final class FerrymanService {
 					WorldFx.soundIn(dim, "minecraft:block.bell.use", "hostile", f.getX(), f.getY() + 8, f.getZ(), 5f, 0.55f);
 					ElderFx.shake(f, f.getX(), f.getZ(), 30, 0.6f, 12);
 					ElderStrikes.wave(f, f.getX(), f.getY(), f.getZ(), 0.6, 13, 5f, "minecraft:soul", ElderTerrain.Mark.SOUL);
-					for (ServerPlayer q : ElderFx.targets(f, 14)) {
+					// Everyone about the boat, as high as he stands in it
+					for (ServerPlayer q : ElderFx.targets(f, 14, 4, f.getBbHeight() + 2)) {
 						WorldFx.effect(q, MobEffects.WEAKNESS, 4, 1);
 						ElderFx.shove(f, q, 1.2, 0.35);
 					}
@@ -381,11 +387,18 @@ public final class FerrymanService {
 		double dx = p.getX() - f.getX(), dz = p.getZ() - f.getZ();
 		double d = Math.max(0.1, Math.sqrt(dx * dx + dz * dz));
 		ServerLevel level = (ServerLevel) f.level();
+		double py = ElderFx.groundUnder(p);
 		for (int i = 0; i < 7; i++) {
 			double k = 3 + i * 3;
 			double x = f.getX() + dx / d * k, z = f.getZ() + dz / d * k;
-			double y = ElderFx.surface(level, x, p.getY() + 4, z, 4, 12);
-			ElderStrikes.strike(f, x, Double.isNaN(y) ? p.getY() : y, z, 2.6, 10f, fare.delay(6 + i * 3), ElderStrikes.SLAM);
+			// The fire runs over the ground: about its passenger's, else about the boat's; none where neither is near
+			double y = ElderFx.surface(level, x, py + 4, z, 4, 12);
+			if (Double.isNaN(y)) {
+				y = ElderFx.surface(level, x, f.getY() + 4, z, 6, 16);
+			}
+			if (!Double.isNaN(y)) {
+				ElderStrikes.strike(f, x, y, z, 2.6, 10f, fare.delay(6 + i * 3), ElderStrikes.SLAM);
+			}
 		}
 		WorldFx.soundIn(ElderFx.dim(f), "minecraft:entity.iron_golem.attack", "hostile", f.getX(), f.getY() + 4, f.getZ(), 4f, 0.4f);
 		ElderFx.shake(f, f.getX(), f.getZ(), 30, 0.6f, 10);
@@ -406,10 +419,11 @@ public final class FerrymanService {
 			f.motion.drive(f, -dx / d * 0.18, -dz / d * 0.18, 0.03, 0.1);
 			f.motion.turn(f, ElderFx.yawTo(f, p.getX(), p.getZ()), 5f);
 			ElderFx.look(f, p);
-			// The way the boat will take, its sigils kindling along the ground
+			// The way the boat will take, its sigils kindling along the ground it sails over, as far as it will go
 			if (fare.ticks % 6 == 0) {
-				AttackFx.line(level, 1, AttackFx.LINE_PATH, f.getX() + dx / d * 4, p.getY(), f.getZ() + dz / d * 4,
-						f.getX() + dx / d * 40, p.getY(), f.getZ() + dz / d * 40, 7);
+				double run = Math.min(d + 6, ElderPower.reach(30));
+				AttackFx.line(level, 1, AttackFx.LINE_PATH, f.getX() + dx / d * 4, f.getY(), f.getZ() + dz / d * 4,
+						f.getX() + dx / d * run, f.getY(), f.getZ() + dz / d * run, 7);
 			}
 		}
 		if (b.at(20)) {
@@ -417,11 +431,13 @@ public final class FerrymanService {
 			double d = Math.max(0.1, Math.sqrt(dx * dx + dz * dz));
 			fare.dirX = dx / d;
 			fare.dirZ = dz / d;
+			// It crosses as far as its passenger stood, and on past them
+			fare.chargeEnd = 20 + fare.chargeBeats(d + 6, ElderFight.speed(0.85), 26, ElderPower.reach(30));
 			fare.struck.clear();
 			WorldFx.soundIn(dim, "minecraft:item.trident.riptide_3", "hostile", f.getX(), f.getY() + 4, f.getZ(), 5f, 0.5f);
 			ElderFx.shake(f, f.getX(), f.getZ(), 30, 0.6f, 10);
 		}
-		if (b.between(20, 46)) {
+		if (b.between(20, fare.chargeEnd)) {
 			double sp = ElderFight.speed(0.85);
 			f.motion.drive(f, fare.dirX * sp, fare.dirZ * sp, 0.3, 0.1);
 			f.motion.turn(f, (float) (Math.atan2(fare.dirZ, fare.dirX) * 180 / Math.PI) - 90f, 8f);
@@ -435,11 +451,12 @@ public final class FerrymanService {
 				AttackFx.impact(level, 1, AttackFx.IMPACT_CHARGE, fx, f.getY(), fz, 2.2);
 			}
 			WorldFx.particleIn(level, "minecraft:soul", f.getX(), f.getY() + 3, f.getZ(), 3, 2, 3, 0.02, 2);
-			for (ServerPlayer q : ElderFx.targets(f, 12)) {
+			// Along the hull (it is long) and within reach of it, from a little under the boat to the top of him (not
+			// through the ground under it)
+			for (ServerPlayer q : ElderFx.targets(f, 11, 2.5, f.getBbHeight())) {
 				double qx = q.getX() - f.getX(), qz = q.getZ() - f.getZ();
-				// Along the hull (it is long) and within reach of it
 				double along = qx * fare.dirX + qz * fare.dirZ, across = Math.abs(-qx * fare.dirZ + qz * fare.dirX);
-				if (fare.struck.contains(q.getUUID()) || Math.abs(along) > 10 || across > 3.6 || q.getY() > f.getY() + 8) {
+				if (fare.struck.contains(q.getUUID()) || Math.abs(along) > 10 || across > 3.6) {
 					continue;
 				}
 				fare.struck.add(q.getUUID());
@@ -449,13 +466,13 @@ public final class FerrymanService {
 				q.needsSync = true;
 			}
 		}
-		if (b.at(46)) {
+		if (b.at(fare.chargeEnd)) {
 			ElderStrikes.wave(f, f.getX() + fare.dirX * 8, f.getY(), f.getZ() + fare.dirZ * 8, 0.6, 9, 5f, "minecraft:soul_fire_flame", ElderTerrain.Mark.SOUL);
 		}
-		if (b.past(46)) {
+		if (b.past(fare.chargeEnd)) {
 			f.motion.brake(f, 0.08, 0.1);
 		}
-		if (b.past(60) && !fare.again(f, prey)) {
+		if (b.past(fare.chargeEnd + 14) && !fare.again(f, prey)) {
 			end(f, fare, 55);
 		}
 	}
@@ -555,22 +572,27 @@ public final class FerrymanService {
 		}
 		if (b.between(20, length - 20) && b.every(5, 20)) {
 			ThreadLocalRandom rnd = ThreadLocalRandom.current();
-			List<ServerPlayer> targets = ElderFx.targets(f, ElderPower.reach(48));
-			double x, z;
+			List<ServerPlayer> targets = ElderFx.reachable(f, ElderPower.reach(48));
+			double x, z, y;
 			if (!targets.isEmpty() && rnd.nextInt(3) == 0) {
+				// On one he marks: on the ground about them, wherever they stand (a tower top, the floor of a pit)
 				ServerPlayer q = targets.get(rnd.nextInt(targets.size()));
 				x = q.getX() + rnd.nextDouble(-2, 2);
 				z = q.getZ() + rnd.nextDouble(-2, 2);
+				double base = ElderFx.groundUnder(q);
+				y = ElderFx.surface(level, x, base + 2, z, 2, 6);
+				y = Double.isNaN(y) ? base : y;
 			} else {
 				double a = rnd.nextDouble() * Math.PI * 2, r = 6 + rnd.nextDouble(ElderPower.reach(24));
 				x = f.getX() + Math.cos(a) * r;
 				z = f.getZ() + Math.sin(a) * r;
+				y = ElderFx.surface(level, x, f.getY() - fare.lift + 4, z, 6, 16);
+				y = Double.isNaN(y) ? f.getY() - fare.lift : y;
 			}
-			double y = ElderFx.surface(level, x, f.getY() - fare.lift + 4, z, 6, 16);
-			ElderStrikes.strike(f, x, Double.isNaN(y) ? f.getY() - fare.lift : y, z, 2.6, 7f, 16, ElderStrikes.SOULFALL);
+			ElderStrikes.strike(f, x, y, z, 2.6, 7f, 16, ElderStrikes.SOULFALL);
 		}
 		if (b.every(20, 0)) {
-			ElderFight.markPlayers(f, ElderFx.targets(f, ElderPower.reach(64)), "minecraft:soul_fire_flame");
+			ElderFight.markPlayers(f, ElderFx.reachable(f, Math.max(0, Config.ELDER_ULTIMATE_RADIUS)), "minecraft:soul_fire_flame");
 		}
 		if (b.at(length - 10)) {
 			// The boat comes down

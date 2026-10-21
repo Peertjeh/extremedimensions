@@ -547,8 +547,10 @@ public final class AttackFx {
 				half = 0.26F;
 			}
 		}
-		float tile = half * 2;
-		int count = Math.min(160, Mth.ceil(len / tile));
+		// A long line (a beam aimed at someone on a far island) is laid with as many tiles as it takes, up to 240,
+		// stretched apart beyond that rather than cut short
+		float tile = Math.max(half * 2, (float) (len / 240));
+		int count = Math.min(240, Mth.ceil(len / tile));
 		float ux = (float) (dx / len), uy = (float) (dy / len), uz = (float) (dz / len);
 		int life = Math.max(2, f.ticks());
 		RandomSource r = level.getRandom();

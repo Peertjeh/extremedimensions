@@ -54,7 +54,8 @@ public final class ElderUltimate {
 		double r = Math.max(0, Config.ELDER_ULTIMATE_RADIUS);
 		java.util.Set<java.util.UUID> struck = new java.util.HashSet<>();
 		for (ServerPlayer p : List.copyOf(level.players())) {
-			if (p.isSpectator() || p.isCreative() || !p.isAlive() || p.distanceToSqr(b) > r * r) {
+			// Within reach across the ground, and as far up (an island) or down (a pit): no one hides from it overhead
+			if (p.isSpectator() || p.isCreative() || !p.isAlive() || !ElderFx.within(b, p, r)) {
 				continue;
 			}
 			strike(p, bossKey);

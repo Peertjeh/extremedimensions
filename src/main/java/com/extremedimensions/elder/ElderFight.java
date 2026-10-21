@@ -127,6 +127,17 @@ abstract class ElderFight {
 		return base * Math.max(0, Config.ELDER_SPEED);
 	}
 
+	/** Where a charge under way ends (in beats of its action): a charge runs as far as its prey stood. */
+	double chargeEnd = 44;
+
+	/**
+	 * How many beats a charge at {@code speed} blocks a tick must last to carry it {@code dist} blocks (at least
+	 * {@code least}, and no further than {@code reach}), at the pace its blows play out.
+	 */
+	double chargeBeats(double dist, double speed, double least, double reach) {
+		return Math.max(least, Math.min(dist, reach) * tempo() / Math.max(0.01, speed));
+	}
+
 	/** Counts the pause down; true when the next blow may come. */
 	boolean ready() {
 		cooldown -= Math.max(0.1, Config.ELDER_ATTACK_SPEED) * (enraged ? 1.25 : 1.0) * ElderPower.pace(Math.max(1, fighters));
@@ -247,7 +258,7 @@ abstract class ElderFight {
 		doomed.clear();
 		double r = Math.max(0, Config.ELDER_ULTIMATE_RADIUS);
 		for (ServerPlayer q : level.players()) {
-			if (!q.isSpectator() && !q.isCreative() && q.isAlive() && q.distanceToSqr(b) <= r * r) {
+			if (!q.isSpectator() && !q.isCreative() && q.isAlive() && ElderFx.within(b, q, r)) {
 				doomed.add(q.getUUID());
 			}
 		}

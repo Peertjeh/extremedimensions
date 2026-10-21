@@ -30,6 +30,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 
 /**
  * How hard the Elders fight (and how that grows with those who come against them), the spells they lay, how they keep
@@ -351,6 +352,111 @@ public class ElderFightTests {
 			check(helper, first[0] > 0, "the Lance never fired");
 			check(helper, most[0] == 1, "alone, the Lance fired %s beams at once", most[0]);
 			check(helper, burnt >= expected - 2, "the Lance burnt %s ticks, not %s", burnt, expected);
+			helper.succeed();
+		});
+	}
+
+	/**
+	 * The Lance finds whoever stands high over the Weaver (an island, a tower top): it is aimed at them, not swept over
+	 * the ground under them.
+	 */
+	@GameTest(maxTicks = 160)
+	public void theLanceFindsThoseHighOverIt(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer p = cursed(helper);
+		stand(helper, p, 2, 2);
+		p.getAbilities().invulnerable = true;
+		double back = Config.WEAVER_LANCE_RETURN;
+		int range = Config.ELDER_FIGHTERS_RANGE;
+		Config.ELDER_FIGHTERS_RANGE = 8;
+		BlockPos perch = helper.absolutePos(new BlockPos(2, 34, 2));
+		Weaver[] weaver = {null};
+		Runnable restore = () -> {
+			Config.WEAVER_LANCE_RETURN = back;
+			Config.ELDER_FIGHTERS_RANGE = range;
+			p.getAbilities().invulnerable = false;
+			level.setBlock(perch.below(), Blocks.AIR.defaultBlockState(), 3);
+			if (weaver[0] != null && weaver[0].isAlive()) {
+				WeaverService.fade(weaver[0]);
+			}
+		};
+		helper.runAfterDelay(5, () -> {
+			int arena = Config.ELDER_ARENA;
+			Config.ELDER_ARENA = 0;
+			Config.WEAVER_LANCE_RETURN = 0;
+			BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+			java.util.List<Weaver> had = level.getEntitiesOfClass(Weaver.class, p.getBoundingBox().inflate(64));
+			boolean came = WeaverService.summon(p, at.offset(12, 0, 0));
+			Config.ELDER_ARENA = arena;
+			weaver[0] = level.getEntitiesOfClass(Weaver.class, p.getBoundingBox().inflate(64)).stream().filter(w -> !had.contains(w)).findFirst()
+					.orElse(null);
+			if (!came || weaver[0] == null) {
+				restore.run();
+			}
+			check(helper, came && weaver[0] != null, "the Weaver did not come");
+			WeaverService.force(weaver[0], Weaver.LANCE);
+			level.setBlock(perch.below(), Blocks.STONE.defaultBlockState(), 3);
+		});
+		// Up on its perch, well over the Weaver's halo, all the while
+		for (int t = 6; t <= 140; t++) {
+			helper.runAfterDelay(t, () -> {
+				p.teleportTo(perch.getX() + 0.5, perch.getY(), perch.getZ() + 0.5);
+				p.setDeltaMovement(0, 0, 0);
+			});
+		}
+		helper.runAfterDelay(142, () -> {
+			int hits = weaver[0] == null ? 0 : ElderStrikes.hits(weaver[0], p);
+			double over = weaver[0] == null ? 0 : p.getY() - (weaver[0].getY() + 16.5);
+			restore.run();
+			check(helper, over > 5, "the perch is only %s blocks over the Weaver's halo", over);
+			check(helper, hits >= 1, "the Lance never found the player %s blocks over its halo", over);
+			helper.succeed();
+		});
+	}
+
+	/** A shockwave runs up a step after whoever stands on it (it used to pass under anyone a block over the Elder's feet). */
+	@GameTest(maxTicks = 80)
+	public void aShockwaveRunsUpAStep(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer p = cursed(helper);
+		p.getAbilities().invulnerable = true;
+		for (int x = 0; x <= 7; x++) {
+			for (int z = 0; z <= 7; z++) {
+				level.setBlock(helper.absolutePos(new BlockPos(x, 1, z)), Blocks.STONE.defaultBlockState(), 3);
+			}
+		}
+		BlockPos step = helper.absolutePos(new BlockPos(6, 2, 6));
+		level.setBlock(step, Blocks.STONE.defaultBlockState(), 3);
+		level.setBlock(step.above(), Blocks.STONE.defaultBlockState(), 3);
+		BlockPos on = step.above(2);
+		p.teleportTo(on.getX() + 0.5, on.getY(), on.getZ() + 0.5);
+		int arena = Config.ELDER_ARENA;
+		Ferryman f;
+		Config.ELDER_ARENA = 0;
+		try {
+			f = FerrymanService.summonAt(p, helper.absolutePos(new BlockPos(1, 2, 1)));
+		} finally {
+			Config.ELDER_ARENA = arena;
+		}
+		if (f == null) {
+			p.getAbilities().invulnerable = false;
+		}
+		check(helper, f != null, "the Ferryman could not come");
+		// His knell: a shockwave out over the ground from the boat
+		FerrymanService.force(f, Ferryman.KNELL);
+		for (int t = 1; t <= 40; t++) {
+			helper.runAfterDelay(t, () -> {
+				p.teleportTo(on.getX() + 0.5, on.getY(), on.getZ() + 0.5);
+				p.setDeltaMovement(0, 0, 0);
+			});
+		}
+		helper.runAfterDelay(42, () -> {
+			int hits = ElderStrikes.hits(f, p);
+			p.getAbilities().invulnerable = false;
+			if (f.isAlive()) {
+				FerrymanService.fade(f);
+			}
+			check(helper, hits >= 1, "the shockwave passed under the player standing on a step two blocks over the boat");
 			helper.succeed();
 		});
 	}

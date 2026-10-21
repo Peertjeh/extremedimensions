@@ -268,9 +268,14 @@ public final class MatriarchService {
 				f.perched = 0;
 			}
 			if (f.ready()) {
-				int a = dist <= 13 ? f.pick(Matriarch.SWEEP, 3, Matriarch.CATHEDRAL, 3, Matriarch.ROOTS, 2, Matriarch.WAIL, 1)
+				// High over her or far down under her, only what falls from above or is thrown reaches them; her charge
+				// goes no further than it can carry her
+				double rise = p.getY() - m.getY();
+				boolean charge = dist <= ElderPower.reach(30) - 6;
+				int a = rise > 8 || rise < -5 ? f.pick(Matriarch.ROOTS, 3, Matriarch.LANTERNS, 3, Matriarch.BARRAGE, 3)
+						: dist <= 13 ? f.pick(Matriarch.SWEEP, 3, Matriarch.CATHEDRAL, 3, Matriarch.ROOTS, 2, Matriarch.WAIL, 1)
 						: dist <= 30 ? f.pick(Matriarch.RUSH, 3, Matriarch.BARRAGE, 3, Matriarch.ROOTS, 2, Matriarch.LANTERNS, 2)
-						: f.pick(Matriarch.RUSH, 4, Matriarch.LANTERNS, 2, Matriarch.BARRAGE, 2);
+						: f.pick(Matriarch.LANTERNS, 3, Matriarch.BARRAGE, 3, Matriarch.RUSH, charge ? 4 : 0);
 				f.start(m, a);
 			}
 			return;
@@ -300,8 +305,8 @@ public final class MatriarchService {
 			}
 			case Matriarch.ROOTS -> {
 				if (b.at(20)) {
-					for (ServerPlayer q : ElderFx.targets(m, ElderPower.reach(28))) {
-						ElderStrikes.strike(m, q.getX(), q.getY(), q.getZ(), 2.8, 6f, f.delay(16), ElderStrikes.ROOTS);
+					for (ServerPlayer q : ElderFx.reachable(m, ElderPower.reach(28))) {
+						ElderStrikes.strike(m, q.getX(), ElderFx.groundUnder(q), q.getZ(), 2.8, 6f, f.delay(16), ElderStrikes.ROOTS);
 					}
 					WorldFx.soundIn(dim, "minecraft:block.rooted_dirt.break", "hostile", m.getX(), m.getY(), m.getZ(), 4f, 0.4f);
 					ElderFx.shake(m, m.getX(), m.getZ(), 30, 0.4f, 12);
@@ -340,10 +345,11 @@ public final class MatriarchService {
 		}
 		WorldFx.soundIn(dim, "minecraft:entity.player.attack.sweep", "hostile", m.getX(), m.getY() + 4, m.getZ(), 4f, 0.4f);
 		ElderFx.shake(m, m.getX(), m.getZ(), 24, 0.5f, 10);
-		for (ServerPlayer q : ElderFx.targets(m, 14)) {
+		// In front of her, from a little under her feet to as high as her talons reach (not through the ground under her)
+		for (ServerPlayer q : ElderFx.targets(m, 14, 3, 10)) {
 			double dx = q.getX() - m.getX(), dz = q.getZ() - m.getZ();
 			double d = Math.sqrt(dx * dx + dz * dz);
-			if ((d > 2 && (dx * fx + dz * fz) / d < 0.15) || q.getY() > m.getY() + 10) {
+			if (d > 2 && (dx * fx + dz * fz) / d < 0.15) {
 				continue;
 			}
 			q.hurtServer(level, m.level().damageSources().mobAttack(m), 15f);
@@ -355,13 +361,16 @@ public final class MatriarchService {
 	private static void lanterns(Matriarch m, Fight f, ServerPlayer p) {
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		WorldFx.soundIn(ElderFx.dim(m), "minecraft:block.chain.break", "hostile", m.getX(), m.getY() + 10, m.getZ(), 4f, 0.5f);
-		for (ServerPlayer q : ElderFx.targets(m, ElderPower.reach(40))) {
-			ElderStrikes.strike(m, q.getX(), q.getY(), q.getZ(), 3.2, 9f, f.delay(30), ElderStrikes.LANTERN);
+		for (ServerPlayer q : ElderFx.reachable(m, ElderPower.reach(40))) {
+			ElderStrikes.strike(m, q.getX(), ElderFx.groundUnder(q), q.getZ(), 3.2, 9f, f.delay(30), ElderStrikes.LANTERN);
 		}
+		double py = ElderFx.groundUnder(p);
 		for (int i = 0; i < 4; i++) {
 			double x = p.getX() + rnd.nextDouble(-8, 8), z = p.getZ() + rnd.nextDouble(-8, 8);
-			double y = ElderFx.surface((ServerLevel) m.level(), x, p.getY() + 4, z, 4, 12);
-			ElderStrikes.strike(m, x, Double.isNaN(y) ? p.getY() : y, z, 3.2, 9f, f.delay(34 + i * 4), ElderStrikes.LANTERN);
+			double y = ElderFx.surface((ServerLevel) m.level(), x, py + 4, z, 4, 12);
+			if (!Double.isNaN(y)) {
+				ElderStrikes.strike(m, x, y, z, 3.2, 9f, f.delay(34 + i * 4), ElderStrikes.LANTERN);
+			}
 		}
 	}
 
@@ -373,7 +382,11 @@ public final class MatriarchService {
 		WorldFx.particleIn(m.level(), "minecraft:sonic_boom", m.getX(), m.getY() + 11, m.getZ(), 0, 0, 0, 0, 1);
 		AttackFx.wave((ServerLevel) m.level(), 0, true, m.getX(), m.getY(), m.getZ(), 2, 1.3, 20);
 		ElderFx.shake(m, m.getX(), m.getZ(), 32, 0.8f, 20);
-		for (ServerPlayer q : ElderFx.targets(m, 20)) {
+		// It carries from her mouth, high on her: as far up her body as out along the ground
+		for (ServerPlayer q : ElderFx.targets(m, 31)) {
+			if (q.distanceToSqr(m.getX(), m.getY() + 11, m.getZ()) > 20 * 20) {
+				continue;
+			}
 			WorldFx.effect(q, MobEffects.DARKNESS, 5, 0);
 			WorldFx.effect(q, MobEffects.WEAKNESS, 5, 0);
 			WorldFx.effect(q, MobEffects.SLOWNESS, 3, 1);
@@ -397,8 +410,9 @@ public final class MatriarchService {
 			if (f.ticks % 6 == 0) {
 				double dx = p.getX() - m.getX(), dz = p.getZ() - m.getZ();
 				double d = Math.max(0.1, Math.sqrt(dx * dx + dz * dz));
+				double run = Math.min(d + 6, ElderPower.reach(30));
 				AttackFx.line(level, 0, AttackFx.LINE_PATH, m.getX() + dx / d * 3, m.getY(), m.getZ() + dz / d * 3,
-						m.getX() + dx / d * 30, m.getY(), m.getZ() + dz / d * 30, 7);
+						m.getX() + dx / d * run, m.getY(), m.getZ() + dz / d * run, 7);
 			}
 			WorldFx.particleIn(level, "minecraft:campfire_cosy_smoke", m.getX(), m.getY() + 0.5, m.getZ(), 3, 0.2, 3, 0.02, 2);
 		}
@@ -407,11 +421,13 @@ public final class MatriarchService {
 			double d = Math.max(0.1, Math.sqrt(dx * dx + dz * dz));
 			f.dirX = dx / d;
 			f.dirZ = dz / d;
+			// She charges as far as they stood, and on past them
+			f.chargeEnd = 18 + f.chargeBeats(d + 6, ElderFight.speed(0.62), 26, ElderPower.reach(30));
 			f.struck.clear();
 			ElderFx.shake(m, m.getX(), m.getZ(), 30, 0.6f, 10);
 			WorldFx.soundIn(dim, "minecraft:entity.ravager.roar", "hostile", m.getX(), m.getY() + 5, m.getZ(), 5f, 0.4f);
 		}
-		if (b.between(18, 44)) {
+		if (b.between(18, f.chargeEnd)) {
 			double sp = ElderFight.speed(0.62);
 			m.motion.drive(m, f.dirX * sp, f.dirZ * sp, 0.22, 0);
 			m.motion.turn(m, (float) (Math.atan2(f.dirZ, f.dirX) * 180 / Math.PI) - 90f, 8f);
@@ -424,9 +440,9 @@ public final class MatriarchService {
 			if (f.ticks % 3 == 0) {
 				ElderFx.step(m, 3f);
 			}
-			for (ServerPlayer q : ElderFx.targets(m, 7)) {
-				double dx = q.getX() - m.getX(), dz = q.getZ() - m.getZ();
-				if (f.struck.contains(q.getUUID()) || dx * dx + dz * dz > 4.8 * 4.8 || q.getY() > m.getY() + 10 || q.getY() < m.getY() - 3) {
+			// Everything her body runs through, from a little under her feet to her crown
+			for (ServerPlayer q : ElderFx.targets(m, 4.8, 3, m.getBbHeight())) {
+				if (f.struck.contains(q.getUUID())) {
 					continue;
 				}
 				f.struck.add(q.getUUID());
@@ -434,16 +450,16 @@ public final class MatriarchService {
 				ElderFx.knock(q, m.getX() - f.dirX * 2, m.getZ() - f.dirZ * 2, 1.5, 0.85);
 			}
 		}
-		if (b.at(44)) {
+		if (b.at(f.chargeEnd)) {
 			double fx = m.getX() + f.dirX * 4, fz = m.getZ() + f.dirZ * 4;
 			ElderTerrain.blast(m, fx, m.getY() + 0.5, fz, 2.4f, false);
 			ElderStrikes.wave(m, fx, m.getY(), fz, 0.7, 11, 6f, "minecraft:campfire_cosy_smoke", ElderTerrain.Mark.ROOT);
 			ElderFx.shake(m, fx, fz, 36, 0.9f, 16);
 		}
-		if (b.past(44)) {
+		if (b.past(f.chargeEnd)) {
 			m.motion.brake(m, 0.06, 0);
 		}
-		if (b.past(58) && !f.again(m, prey)) {
+		if (b.past(f.chargeEnd + 14) && !f.again(m, prey)) {
 			f.end(m, 55);
 		}
 	}
@@ -472,9 +488,11 @@ public final class MatriarchService {
 				WorldFx.soundIn(dim, "minecraft:block.rooted_dirt.break", "hostile", m.getX(), m.getY(), m.getZ(), 5f, 0.4f + k * 0.1f);
 				WorldFx.soundIn(dim, "minecraft:block.pointed_dripstone.fall", "hostile", m.getX(), m.getY(), m.getZ(), 4f, 0.5f);
 				ElderFx.shake(m, m.getX(), m.getZ(), 40, 0.7f, 12);
-				for (ServerPlayer q : ElderFx.targets(m, radius[k] + 3)) {
+				for (ServerPlayer q : ElderFx.targets(m, radius[k] + 3, 8, 8)) {
 					double d = Math.sqrt(q.distanceToSqr(m.getX(), q.getY(), m.getZ()));
-					if (Math.abs(d - radius[k]) < 1.9 && q.getY() < m.getY() + 4) {
+					// On the ring, standing on ground the thorns burst from (within five blocks of hers), within their height
+					double g = ElderFx.footing(q, 6);
+					if (Math.abs(d - radius[k]) < 1.9 && !Double.isNaN(g) && Math.abs(g - m.getY()) <= 5 && q.getY() - g < 4.5) {
 						q.hurtServer(level, level.damageSources().mobAttack(m), 12f);
 						ElderFx.knock(q, m.getX(), m.getZ(), 0.4, 1.0);
 					}
@@ -492,7 +510,7 @@ public final class MatriarchService {
 			WorldFx.soundIn(ElderFx.dim(m), "minecraft:block.chain.break", "hostile", m.getX(), m.getY() + 10, m.getZ(), 5f, 0.4f);
 		}
 		if (b.every(4, 18) && b.t < 48) {
-			List<ServerPlayer> targets = ElderFx.targets(m, ElderPower.reach(44));
+			List<ServerPlayer> targets = ElderFx.reachable(m, ElderPower.reach(44));
 			if (!targets.isEmpty()) {
 				int shot = (int) (b.t / 4);
 				ServerPlayer q = targets.get(shot % targets.size());
@@ -537,15 +555,17 @@ public final class MatriarchService {
 				AttackFx.impact(level, 0, ElderStrikes.ROOTS, x, m.getY(), z, 2.4);
 				WorldFx.soundIn(dim, "minecraft:block.rooted_dirt.place", "hostile", x, m.getY(), z, 3f, 0.4f);
 				ElderTerrain.mark(level, x, m.getY(), z, 2.5, 0.6, ElderTerrain.Mark.ROOT);
-				for (ServerPlayer q : ElderFx.targets(m, 40)) {
-					if (q.distanceToSqr(x, q.getY(), z) < 2.4 * 2.4) {
+				// Whoever stands where the roots burst: on that ground, up to the top of them (not over or under it)
+				double gy = ElderFx.surface(level, x, m.getY(), z, 5, 6);
+				for (ServerPlayer q : ElderFx.targets(m, 40, 12, 20)) {
+					if (q.distanceToSqr(x, q.getY(), z) < 2.4 * 2.4 && !Double.isNaN(gy) && q.getY() >= gy - 1 && q.getY() <= gy + 8) {
 						q.hurtServer(level, level.damageSources().mobAttack(m), 8f);
 						ElderFx.knock(q, x, z, 0.5, 1.0);
 					}
 				}
 			}
 			if (b.every(20, 0)) {
-				ElderFight.markPlayers(m, ElderFx.targets(m, ElderPower.reach(64)), "minecraft:end_rod");
+				ElderFight.markPlayers(m, ElderFx.reachable(m, Math.max(0, Config.ELDER_ULTIMATE_RADIUS)), "minecraft:end_rod");
 			}
 		}
 		if (b.at(length * 0.75)) {
@@ -593,7 +613,10 @@ public final class MatriarchService {
 		WorldFx.soundIn(dim, "minecraft:block.rooted_dirt.break", "hostile", p.getX(), p.getY(), p.getZ(), 3f, 0.5f);
 		WorldFx.soundIn(dim, "minecraft:entity.evoker_fangs.attack", "hostile", p.getX(), p.getY(), p.getZ(), 3f, 0.6f);
 		p.hurtServer(level, level.damageSources().mobAttack(m), 4f);
-		p.setDeltaMovement((m.getX() - p.getX()) * 0.06, -1.2, (m.getZ() - p.getZ()) * 0.06);
+		// Dragged down off their perch towards her, not flung across the arena
+		double dx = m.getX() - p.getX(), dz = m.getZ() - p.getZ();
+		double d = Math.max(0.1, Math.sqrt(dx * dx + dz * dz)), h = Math.min(1.5, d * 0.06);
+		p.setDeltaMovement(dx / d * h, -1.2, dz / d * h);
 		p.needsSync = true;
 		WorldFx.effect(p, MobEffects.SLOWNESS, 2, 1);
 	}

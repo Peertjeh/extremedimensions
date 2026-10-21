@@ -117,6 +117,77 @@ final class ElderFx {
 		return out;
 	}
 
+	/**
+	 * Everyone an Elder can hit within {@code across} blocks of it across the ground, from {@code below} blocks under
+	 * its feet to {@code above} over them: a blow of its body reaches as high as it stands, not as a ball round its feet.
+	 */
+	static List<ServerPlayer> targets(ElderBoss b, double across, double below, double above) {
+		List<ServerPlayer> out = new ArrayList<>();
+		for (ServerPlayer p : ((ServerLevel) b.level()).players()) {
+			double dx = p.getX() - b.getX(), dz = p.getZ() - b.getZ(), dy = p.getY() - b.getY();
+			if (p.isAlive() && !p.isSpectator() && !p.isCreative() && dx * dx + dz * dz <= across * across && dy >= -below && dy <= above) {
+				out.add(p);
+			}
+		}
+		return out;
+	}
+
+	/** Everyone a blow thrown from afar can reach: {@code r} blocks across, and as far up (a tower, an island) or down (a pit). */
+	static List<ServerPlayer> reachable(ElderBoss b, double r) {
+		return targets(b, r, r, r);
+	}
+
+	/** Whether {@code e} is within {@code r} blocks of {@code from} across, and as far above or below it. */
+	static boolean within(Entity from, Entity e, double r) {
+		double dx = e.getX() - from.getX(), dz = e.getZ() - from.getZ();
+		return dx * dx + dz * dz <= r * r && Math.abs(e.getY() - from.getY()) <= r;
+	}
+
+	/**
+	 * The ground a player stands on: the top of the highest block (or liquid) under any part of their feet, at most
+	 * {@code down} blocks below them; NaN with nothing that close under them (in the air).
+	 */
+	static double footing(ServerPlayer p, int down) {
+		Level level = p.level();
+		net.minecraft.world.phys.AABB box = p.getBoundingBox();
+		int x0 = Mth.floor(box.minX + 0.01), x1 = Mth.floor(box.maxX - 0.01), z0 = Mth.floor(box.minZ + 0.01), z1 = Mth.floor(box.maxZ - 0.01);
+		int top = Mth.floor(p.getY() + 0.5);
+		for (int by = top; by >= top - down; by--) {
+			double best = Double.NaN;
+			for (int bx = x0; bx <= x1; bx++) {
+				for (int bz = z0; bz <= z1; bz++) {
+					BlockPos pos = new BlockPos(bx, by, bz);
+					BlockState s = level.getBlockState(pos);
+					double y = Double.NaN;
+					if (!s.getFluidState().isEmpty()) {
+						y = by + s.getFluidState().getHeight(level, pos);
+					}
+					net.minecraft.world.phys.shapes.VoxelShape shape = s.getCollisionShape(level, pos);
+					if (!shape.isEmpty()) {
+						double t = by + shape.max(net.minecraft.core.Direction.Axis.Y);
+						y = Double.isNaN(y) ? t : Math.max(y, t);
+					}
+					if (!Double.isNaN(y) && y <= p.getY() + 0.51 && (Double.isNaN(best) || y > best)) {
+						best = y;
+					}
+				}
+			}
+			if (!Double.isNaN(best)) {
+				return best;
+			}
+		}
+		return Double.NaN;
+	}
+
+	/**
+	 * Where a blow that falls on a player lands: the ground under them, or where they will come down if they are in
+	 * the air (within 48 blocks); where they are, with no ground under them at all.
+	 */
+	static double groundUnder(ServerPlayer p) {
+		double g = footing(p, 48);
+		return Double.isNaN(g) ? p.getY() : Math.min(g, p.getY());
+	}
+
 	/** Throws a player away from a point ({@code horiz} blocks a tick outwards, {@code up} upwards); negative pulls. */
 	static void knock(ServerPlayer p, double fromX, double fromZ, double horiz, double up) {
 		double dx = p.getX() - fromX, dz = p.getZ() - fromZ;

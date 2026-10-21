@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.32.1
+
+### Fixed
+- **The Weaver's Lance missed anyone high up or low down.** It always swept the ground in a ring round the Weaver, so
+  someone on an island or a tower top, in a deep crater, mid-jump, on leaves, right under it or more than 84 blocks off
+  was never touched. It is aimed now: its arc runs through its prey at their own height, wherever they stand, and the
+  beam goes on past them to the ground behind. It sweeps the whole way between one moment and the next (far out it
+  used to skip over people), tests the whole body rather than one point, and the Weaver no longer turns away while it
+  burns, so the beam stays on its halo. Long beams are drawn to their end.
+- **Shockwaves passed under anyone a step up.** A wave was a flat band at the Elder's feet: a block up a slope, on a
+  path or a lava shore, and it could not touch you. It now runs over the ground people stand on: up steps and slopes
+  (four blocks) and down into hollows (six), not up towers. Jumping it still works.
+- **Some blows struck through the ground.** The Matriarch's sweep, her thorn rings and the roots of her ultimate, and
+  the Ferryman's crossing reached players in caves and pits many blocks under them; they reach only what they visibly
+  pass through now. Her charge and his crossing hit everything their bodies run through, as high as they stand.
+- **Sigils and cages in the air.** A blow cast at someone mid-jump or falling (lanterns, roots, needles, soul fire,
+  the Ferryman's gaol) lands on the ground under them; the crossing's path is drawn on the ground the boat sails over.
+  No one drops or digs out under a gaol, and only those still inside it are crushed.
+- **Blows that could not reach.** High over an Elder or far down under it, it now chooses what can reach you
+  (lanterns, needles, the gaol, the Lance) rather than slams that pass under you. The Matriarch's charge and the
+  Ferryman's crossing run as far as their prey stood (they used to stop after about 25 blocks); they are no longer
+  chosen against someone further off than they can go. Lantern bombs are lobbed over the rims of islands and fly far
+  enough to reach whoever they were thrown at, and soul wisps live long enough to arrive.
+- **Out of reach overhead.** Ranged blows, the ultimates' curse and their marks reach as high up and as far down as
+  they reach across: no hiding on a high island from a curse that falls on everyone within 150 blocks.
+
 ## 2.32.0: The Arena Fights Back
 
 ### Changed

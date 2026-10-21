@@ -21,12 +21,20 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
 
 /**
  * The Elders' blows that are not a hand on a body. Strikes are foretold by the Elder's sigil on the ground and land a
  * moment later where it was (step out of it). Soul wisps and lantern bombs drift after their prey (the bombs burst where they
- * hit). Shockwaves run out over the ground in a ring (jump them). A beam sweeps the ground and carves it. Threads hold
+ * hit). Shockwaves run out over the ground in a ring (jump them); they run over steps and slopes and down into hollows
+ * after whoever stands there, but not up a tower. A beam sweeps through its prey wherever they stand (high on an island,
+ * down in a pit) and carves the ground it ends on. Threads hold
  * a player to the spot they stood on, and a web of threads strung across the ground cuts whatever stands in it when it
  * is pulled taut.
  *
@@ -57,7 +65,8 @@ public final class ElderStrikes {
 		UUID source, target;
 		double x, y, z, vx, vy, vz;
 		float damage, blast;
-		int age, id, elder;
+		/** Ticks it drifts before it dies away: long enough to reach whoever it was sent after. */
+		int age, id, elder, life;
 	}
 
 	private static final class Tether {
@@ -82,6 +91,14 @@ public final class ElderStrikes {
 		UUID source;
 		double fx, fy, fz;
 		double cx, cz, a0, a1, r0, r1;
+		/**
+		 * Aimed (the Lance): its arc runs at height {@code ty} through its prey, and the beam goes on past them to the
+		 * first block behind; else it sweeps a ring on the ground ({@code floor} where none is found under it).
+		 */
+		boolean aimed;
+		double ty, floor;
+		/** Where it was last tick along its arc, to sweep the whole way between (a far beam moves fast). */
+		double lastA = Double.NaN, lastR;
 		int age, duration;
 		float damage;
 		/** A great blow: through armour (see {@link ElderPower#great}). */
@@ -104,6 +121,8 @@ public final class ElderStrikes {
 	private static final List<Wave> WAVES = new ArrayList<>();
 	private static final List<Beam> BEAMS = new ArrayList<>();
 	private static final List<Web> WEBS = new ArrayList<>();
+	/** How often each Elder's strikes, waves and beams have caught each player (for tests). */
+	private static final java.util.Map<String, Integer> HITS = new java.util.HashMap<>();
 
 	public static void clear() {
 		STRIKES.clear();
@@ -112,6 +131,7 @@ public final class ElderStrikes {
 		WAVES.clear();
 		BEAMS.clear();
 		WEBS.clear();
+		HITS.clear();
 	}
 
 	/** Everything an Elder set going ends with it. */
@@ -128,6 +148,15 @@ public final class ElderStrikes {
 	/** Whether anything an Elder set going is still under way (for tests). */
 	public static int active() {
 		return STRIKES.size() + WISPS.size() + TETHERS.size() + WAVES.size() + BEAMS.size() + WEBS.size();
+	}
+
+	/** How often this Elder's strikes, waves and beams have caught this player, hurt or not (for tests). */
+	public static int hits(Entity boss, Entity player) {
+		return HITS.getOrDefault(boss.getUUID() + "/" + player.getUUID(), 0);
+	}
+
+	private static void caught(UUID source, ServerPlayer p) {
+		HITS.merge(source + "/" + p.getUUID(), 1, Integer::sum);
 	}
 
 	/** How many beams this Elder is sweeping (for tests). */
@@ -166,9 +195,14 @@ public final class ElderStrikes {
 		w.x = x;
 		w.y = y;
 		w.z = z;
-		w.vy = 0.25;
+		// A bomb is lobbed: the higher its prey stands, the higher it is thrown, so it comes down on them over the edge
+		// of their island or tower rather than bursting on its underside
+		w.vy = blast > 0 ? 0.25 + Math.max(0, Math.min(1.0, (target.getY() - y) * 0.03)) : 0.25;
 		w.damage = damage;
 		w.blast = blast;
+		// It lives long enough to get there at its top speed (a soul wisp about 0.45 blocks a tick, a bomb 0.6)
+		double far = Math.sqrt(target.distanceToSqr(x, y, z));
+		w.life = (int) Math.min(900, 200 + far / (blast > 0 ? 0.6 : 0.45));
 		w.id = ++nextWisp;
 		w.elder = AttackFx.of(source);
 		WISPS.add(w);
@@ -188,11 +222,16 @@ public final class ElderStrikes {
 		TETHERS.add(t);
 	}
 
-	/** A shockwave running out over the ground from a point; anyone it passes on the ground is hit (jump it). */
+	/**
+	 * A shockwave running out over the ground from a point; anyone it passes on the ground is hit (jump it). It starts
+	 * on the ground under the point (an Elder's feet may hang a little over or in it).
+	 */
 	static void wave(ElderBoss source, double x, double y, double z, double speed, double max, float damage, String particle, ElderTerrain.Mark mark) {
 		Wave w = new Wave();
 		w.level = (ServerLevel) source.level();
 		w.source = source.getUUID();
+		double ground = ElderFx.surface(w.level, x, y + 1, z, 1, 8);
+		y = Double.isNaN(ground) ? y : ground;
 		w.x = x;
 		w.y = y;
 		w.z = z;
@@ -209,15 +248,29 @@ public final class ElderStrikes {
 
 	/**
 	 * A beam from a point in the air down to the ground, sweeping round a centre from angle {@code a0} to {@code a1}
-	 * (radians) and from radius {@code r0} to {@code r1} over {@code duration} ticks, carving the ground it touches.
+	 * (radians) and from radius {@code r0} to {@code r1} over {@code duration} ticks, carving the ground it touches
+	 * (at height {@code floor} where there is none under it).
 	 */
 	static void beam(ElderBoss source, double fx, double fy, double fz, double cx, double cz, double a0, double a1, double r0, double r1,
-			int duration, float damage) {
-		beam(source, fx, fy, fz, cx, cz, a0, a1, r0, r1, duration, damage, false);
+			double floor, int duration, float damage) {
+		Beam b = make(source, fx, fy, fz, cx, cz, a0, a1, r0, r1, duration, damage, false);
+		b.floor = floor;
 	}
 
-	/** A beam as above; {@code pierce} for a great blow, which goes through armour. */
-	static void beam(ElderBoss source, double fx, double fy, double fz, double cx, double cz, double a0, double a1, double r0, double r1,
+	/**
+	 * A beam aimed at whoever stands at height {@code ty}: from a point in the air it sweeps an arc at that height
+	 * round the point (from angle {@code a0} to {@code a1}, radius {@code r0} to {@code r1}, over {@code duration}
+	 * ticks), and goes on past it to the first block behind, carving the ground there. Wherever its prey stands (high on
+	 * an island, down in a pit, far off), the arc runs through them. {@code pierce} for a great blow, through armour.
+	 */
+	static void lance(ElderBoss source, double fx, double fy, double fz, double a0, double a1, double r0, double r1, double ty,
+			int duration, float damage, boolean pierce) {
+		Beam b = make(source, fx, fy, fz, fx, fz, a0, a1, r0, r1, duration, damage, pierce);
+		b.aimed = true;
+		b.ty = ty;
+	}
+
+	private static Beam make(ElderBoss source, double fx, double fy, double fz, double cx, double cz, double a0, double a1, double r0, double r1,
 			int duration, float damage, boolean pierce) {
 		Beam b = new Beam();
 		b.pierce = pierce;
@@ -232,9 +285,11 @@ public final class ElderStrikes {
 		b.a1 = a1;
 		b.r0 = r0;
 		b.r1 = r1;
+		b.floor = fy - 16;
 		b.duration = duration;
 		b.damage = damage;
 		BEAMS.add(b);
+		return b;
 	}
 
 	/** A web of threads strung over the ground (each line x0, y0, z0, x1, y1, z1); it is pulled taut and cuts at the end. */
@@ -345,11 +400,14 @@ public final class ElderStrikes {
 				ElderTerrain.mark(s.level, s.x, s.y, s.z, s.radius * 0.6, 0.3, ElderTerrain.Mark.SCORCH);
 			}
 		}
+		// A lantern falls from above: it finds whoever climbed up out of its circle on the way down
+		double over = s.kind == LANTERN ? 12 : 4;
 		for (ServerPlayer p : s.level.players()) {
 			double dx = p.getX() - s.x, dz = p.getZ() - s.z, dy = p.getY() - s.y;
-			if (!hittable(p) || dx * dx + dz * dz > s.radius * s.radius || dy < -2 || dy > 4) {
+			if (!hittable(p) || dx * dx + dz * dz > s.radius * s.radius || dy < -2 || dy > over) {
 				continue;
 			}
+			caught(s.source, p);
 			p.hurtServer(s.level, from(s.level, s.source), s.damage);
 			switch (s.kind) {
 				case LANTERN, SOULFALL -> p.setRemainingFireTicks(80);
@@ -369,7 +427,7 @@ public final class ElderStrikes {
 			Wisp w = it.next();
 			w.age++;
 			ServerPlayer p = s.getPlayerList().getPlayer(w.target);
-			if (p == null || !p.isAlive() || p.level() != w.level || w.age > 200) {
+			if (p == null || !p.isAlive() || p.level() != w.level || w.age > w.life) {
 				AttackFx.impact(w.level, w.elder, AttackFx.IMPACT_WISP, w.x, w.y, w.z, 1);
 				it.remove();
 				continue;
@@ -385,9 +443,9 @@ public final class ElderStrikes {
 			w.y += w.vy;
 			w.z += w.vz;
 			AttackFx.wisp(w.level, w.elder, w.blast > 0 ? AttackFx.WISP_BOMB : AttackFx.WISP_SOUL, w.id, w.x, w.y, w.z, w.vx, w.vy, w.vz);
-			// A bomb also bursts on the ground it flies into
+			// A bomb also bursts on the ground it flies into, once it comes down (or is all but on its prey)
 			boolean struck = d < 1.3;
-			if (w.blast > 0 && !struck && w.age > 10) {
+			if (w.blast > 0 && !struck && w.age > 10 && (w.vy < 0 || d < 4)) {
 				BlockState at = w.level.getBlockState(BlockPos.containing(w.x, w.y, w.z));
 				struck = !at.isAir() && !at.canBeReplaced();
 			}
@@ -400,6 +458,7 @@ public final class ElderStrikes {
 					if (w.blast > 0 && b != null) {
 						ElderTerrain.blast(b, w.x, w.y, w.z, w.blast, true);
 					} else if (hittable(p) && d < 1.6) {
+						caught(w.source, p);
 						p.hurtServer(w.level, from(w.level, w.source), w.damage);
 					}
 				});
@@ -461,9 +520,15 @@ public final class ElderStrikes {
 				}
 				double dx = p.getX() - w.x, dz = p.getZ() - w.z;
 				double d = Math.sqrt(dx * dx + dz * dz);
-				// On the ground as it passes: hit; in the air over it: spared
-				if (Math.abs(d - w.r) < 1.1 && p.getY() - w.y < 1.0 && p.getY() - w.y > -2.5) {
+				if (Math.abs(d - w.r) >= 1.1) {
+					continue;
+				}
+				// On the ground as it passes: hit; in the air over it: spared. It runs up steps and slopes (four blocks)
+				// and down into hollows (six), whatever ground they stand on, but not up a tower
+				double g = ElderFx.footing(p, 3);
+				if (!Double.isNaN(g) && p.getY() - g < 1.0 && g - w.y <= 4 && w.y - g <= 6) {
 					w.hit.add(p.getUUID());
+					caught(w.source, p);
 					p.hurtServer(w.level, from(w.level, w.source), w.damage);
 					ElderFx.knock(p, w.x, w.z, 0.9, 0.6);
 				}
@@ -483,36 +548,88 @@ public final class ElderStrikes {
 			}
 			double k = b.age / (double) b.duration;
 			double a = b.a0 + (b.a1 - b.a0) * k, r = b.r0 + (b.r1 - b.r0) * k;
-			double gx = b.cx + Math.cos(a) * r, gz = b.cz + Math.sin(a) * r;
-			double gy = ElderFx.surface(b.level, gx, b.fy - 4, gz, 6, 30);
-			if (Double.isNaN(gy)) {
-				gy = b.fy - 16;
-			}
+			double[] end = end(b, a, r);
+			boolean ground = end[3] > 0;
+			double ex = end[0], ey = end[1], ez = end[2];
 			String dim = b.level.dimension().identifier().toString();
 			int elder = AttackFx.of(boss);
-			AttackFx.line(b.level, elder, AttackFx.LINE_BEAM, b.fx, b.fy, b.fz, gx, gy + 0.2, gz, 2);
-			if (b.age % 3 == 0) {
-				AttackFx.impact(b.level, elder, AttackFx.IMPACT_SCORCH, gx, gy, gz, 1.4);
-				WorldFx.soundIn(dim, "minecraft:block.fire.extinguish", "hostile", gx, gy, gz, 1.2f, 0.6f);
+			AttackFx.line(b.level, elder, AttackFx.LINE_BEAM, b.fx, b.fy, b.fz, ex, ey + (ground ? 0.2 : 0), ez, 2);
+			if (ground) {
+				if (b.age % 3 == 0) {
+					AttackFx.impact(b.level, elder, AttackFx.IMPACT_SCORCH, ex, ey, ez, 1.4);
+					WorldFx.soundIn(dim, "minecraft:block.fire.extinguish", "hostile", ex, ey, ez, 1.2f, 0.6f);
+				}
+				// It carves a burning trench
+				ElderTerrain.furrow(b.level, ex, ey - 1, ez, 1.3, 1, 0, 6);
+				ElderTerrain.mark(b.level, ex, ey, ez, 2.2, 0.8, ElderTerrain.Mark.SCORCH);
+			} else if (b.age % 3 == 0) {
+				AttackFx.impact(b.level, elder, AttackFx.IMPACT_CUT, ex, ey, ez, 1.2);
 			}
-			// It carves a burning trench
-			ElderTerrain.furrow(b.level, gx, gy - 1, gz, 1.3, 1, 0, 6);
-			ElderTerrain.mark(b.level, gx, gy, gz, 2.2, 0.8, ElderTerrain.Mark.SCORCH);
+			// Swept the whole way from where it was last tick (far out it moves several blocks a tick)
+			double len = Math.sqrt((ex - b.fx) * (ex - b.fx) + (ey - b.fy) * (ey - b.fy) + (ez - b.fz) * (ez - b.fz));
+			double from = Double.isNaN(b.lastA) ? a : b.lastA, fromR = Double.isNaN(b.lastA) ? r : b.lastR;
+			int steps = Math.max(1, Math.min(8, (int) Math.ceil(Math.abs(a - from) * Math.max(len, r) / 0.8)));
+			Vec3 o = new Vec3(b.fx, b.fy, b.fz);
+			Vec3[] ends = new Vec3[steps];
+			for (int j = 1; j <= steps; j++) {
+				double t = j / (double) steps;
+				double[] e = j == steps ? end : end(b, from + (a - from) * t, fromR + (r - fromR) * t);
+				ends[j - 1] = new Vec3(e[0], e[1], e[2]);
+			}
 			for (ServerPlayer p : b.level.players()) {
 				if (!hittable(p) || b.hit.contains(p.getUUID())) {
 					continue;
 				}
-				if (segmentDistance(p.getX(), p.getY() + 1, p.getZ(), b.fx, b.fy, b.fz, gx, gy, gz) < 1.6) {
+				AABB box = p.getBoundingBox().inflate(0.6);
+				boolean struck = box.contains(o);
+				for (int j = 0; j < steps && !struck; j++) {
+					struck = box.clip(o, ends[j]).isPresent();
+				}
+				if (struck) {
 					b.hit.add(p.getUUID());
+					caught(b.source, p);
 					p.hurtServer(b.level, b.pierce ? ElderPower.great(b.level, boss) : from(b.level, b.source), b.damage);
 					p.setRemainingFireTicks(100);
-					ElderFx.knock(p, gx, gz, 0.7, 0.5);
+					// Thrown aside, away from the beam where it passed them
+					double[] c = closest(p.getX(), p.getY() + 0.9, p.getZ(), b.fx, b.fy, b.fz, ex, ey, ez);
+					double cx = c[0], cz = c[2];
+					if ((p.getX() - cx) * (p.getX() - cx) + (p.getZ() - cz) * (p.getZ() - cz) < 0.04) {
+						cx = b.fx;
+						cz = b.fz;
+					}
+					ElderFx.knock(p, cx, cz, 0.7, 0.5);
 				}
 			}
+			b.lastA = a;
+			b.lastR = r;
 			if (b.age % 12 == 0) {
 				b.hit.clear();
 			}
 		}
+	}
+
+	/**
+	 * Where a beam ends at angle {@code a} and radius {@code r} along its arc: {x, y, z, 1 if it ends on the ground
+	 * else 0}. Aimed, it passes through the point of its arc (and anything before it) and stops at the first block up
+	 * to 24 blocks beyond; else it comes down on the ground of its ring.
+	 */
+	private static double[] end(Beam b, double a, double r) {
+		double gx = b.cx + Math.cos(a) * r, gz = b.cz + Math.sin(a) * r;
+		if (!b.aimed) {
+			double gy = ElderFx.surface(b.level, gx, b.fy, gz, 0, 96);
+			return Double.isNaN(gy) ? new double[] {gx, b.floor, gz, 1} : new double[] {gx, gy, gz, 1};
+		}
+		Vec3 o = new Vec3(b.fx, b.fy, b.fz);
+		Vec3 mark = new Vec3(gx, b.ty, gz).subtract(o);
+		double d = mark.length();
+		Vec3 dir = d < 1e-6 ? new Vec3(0, -1, 0) : mark.scale(1 / d);
+		Vec3 start = o.add(dir.scale(Math.max(0, d - 2))), far = o.add(dir.scale(d + 24));
+		BlockHitResult hit = b.level.clip(new ClipContext(start, far, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, CollisionContext.empty()));
+		if (hit.getType() == HitResult.Type.BLOCK) {
+			Vec3 at = hit.getLocation();
+			return new double[] {at.x, at.y, at.z, 1};
+		}
+		return new double[] {far.x, far.y, far.z, 0};
 	}
 
 	private static void webs() {
@@ -540,6 +657,7 @@ public final class ElderStrikes {
 				for (double[] l : w.lines) {
 					if (segmentDistance(p.getX(), p.getY() + 0.9, p.getZ(), l[0], l[1], l[2], l[3], l[4], l[5]) < (taut ? 1.6 : 0.8)) {
 						if (taut) {
+							caught(w.source, p);
 							p.hurtServer(w.level, from(w.level, w.source), w.damage);
 							ElderFx.knock(p, (l[0] + l[3]) / 2, (l[2] + l[5]) / 2, 0.5, 0.5);
 						} else if (w.age % 10 == 0) {
@@ -577,6 +695,14 @@ public final class ElderStrikes {
 				AttackFx.impact(level, 2, AttackFx.IMPACT_CUT, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 0.6);
 			}
 		}
+	}
+
+	/** The point of a segment nearest a point. */
+	static double[] closest(double px, double py, double pz, double ax, double ay, double az, double bx, double by, double bz) {
+		double vx = bx - ax, vy = by - ay, vz = bz - az;
+		double len = vx * vx + vy * vy + vz * vz;
+		double t = len <= 1e-9 ? 0 : Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy + (pz - az) * vz) / len));
+		return new double[] {ax + vx * t, ay + vy * t, az + vz * t};
 	}
 
 	/** Distance from a point to a segment. */
