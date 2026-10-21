@@ -329,8 +329,8 @@ public final class HungerGamesMatch extends PartyMatch {
 
 	/**
 	 * A bot loots like a player: the nearest full chest it has not emptied (the cornucopia first, it starts next to
-	 * it), not too far and not up or down many floors. Outside the border, or with nothing left to loot, it heads for
-	 * the plaza, where the others end up as well.
+	 * it), not up or down many floors. Outside the border, or with nothing left to loot, it heads for the plaza,
+	 * where the others end up as well.
 	 */
 	@Override
 	public net.battlehub.core.ai.Objective botGoal(ServerPlayer bot) {
@@ -354,8 +354,9 @@ public final class HungerGamesMatch extends PartyMatch {
 	private BlockPos botChest(ServerPlayer bot, double size) {
 		Set<BlockPos> done = botLooted.getOrDefault(bot.getUUID(), Set.of());
 		double cx = arena.origin().getX() + 0.5, cz = arena.origin().getZ() + 0.5;
+		// the nearest one, on about its own level (a chest up many floors waits until it walks past)
 		BlockPos best = null;
-		double bestD = 48;
+		double bestD = Double.MAX_VALUE;
 		for (String mark : CHESTS) {
 			for (BlockPos pos : arena.marks(mark)) {
 				if (done.contains(pos) || Math.abs(pos.getY() - bot.getY()) > 6) continue;
