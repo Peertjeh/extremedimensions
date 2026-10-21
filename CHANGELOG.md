@@ -35,6 +35,9 @@ anything new is added. No new systems.
 - **A ray in a small stretch of sky could wander off.** A ray picks its next waypoint well away from where it is, but
   in a stretch of sky narrower than that it found none, flew straight on and drifted out of its own sky; a Frayed Ray
   could lose its prey that way. Its legs now fit its sky, and with nowhere open to go it heads back to the middle.
+- **A Frayed Ray could dive at nothing.** It began a hunt as soon as it saw its prey, from as far as it could see, and
+  after its climb dived wherever it was, falling short and drawing off farther each time. It now comes back over its
+  prey before it hunts again (within 28 blocks), and dives only once it is close; a climb that gets nowhere is given up.
 
 ### Under the hood
 - Gametests: every recipe reaches the book; Seam Silk opens its recipes; binding a relic is marked; a barrel is filled

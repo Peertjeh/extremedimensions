@@ -50,6 +50,8 @@ public class VeilRay extends PathfinderMob {
 	private static final int CIRCLE = 0, CLIMB = 1, DIVE = 2, AWAY = 3;
 	/** How far the Frayed look for prey, and how close a dive must pass to strike (from its middle to the prey; its wings reach further). */
 	private static final double SIGHT = 36, STRIKE = 2.8;
+	/** How near its prey a Frayed Ray must be to begin a hunt (it climbs, then dives, from there). */
+	private static final double HUNT = 28;
 
 	/** How far ahead it looks for obstacles, in blocks. */
 	private static final double LOOK = 28;
@@ -259,7 +261,8 @@ public class VeilRay extends PathfinderMob {
 		if (phase == CIRCLE) {
 			setDiving(false);
 			if (rest <= 0 && (this.tickCount + this.getId()) % 10 == 0) {
-				target = target != null && this.hasLineOfSight(target) ? target : only ? null : pick(level, pos);
+				// It comes back over its prey before it hunts again: a climb begun from far off would end in a dive at nothing
+				target = target != null && this.hasLineOfSight(target) && target.distanceToSqr(this) < HUNT * HUNT ? target : only ? null : pick(level, pos);
 				if (target != null) {
 					prey = target.getUUID();
 					begin(CLIMB);
@@ -281,7 +284,12 @@ public class VeilRay extends PathfinderMob {
 				from = from.lengthSqr() < 1e-4 ? heading.multiply(-1, 0, -1) : from.normalize();
 				Vec3 over = at.add(from.scale(9)).add(0, 9, 0);
 				goal = over.subtract(pos);
-				if (goal.length() < 4 || phaseTicks > 50) {
+				if (phaseTicks > 130) {
+					// could not get over it: it gives up for now
+					begin(AWAY);
+					return true;
+				}
+				if (goal.length() < 4 || phaseTicks > 50 && pos.distanceTo(at) < 20) {
 					begin(DIVE);
 					WorldFx.soundIn(level.dimension().identifier().toString(), "minecraft:entity.phantom.swoop", "hostile", getX(), getY(), getZ(), 2.6F, 0.75F);
 					return true;
@@ -360,7 +368,7 @@ public class VeilRay extends PathfinderMob {
 	/** The nearest fair prey it can see. */
 	private ServerPlayer pick(ServerLevel level, Vec3 pos) {
 		ServerPlayer best = null;
-		double bd = SIGHT * SIGHT;
+		double bd = HUNT * HUNT;
 		for (ServerPlayer p : level.players()) {
 			double d = p.distanceToSqr(pos);
 			if (d < bd && fair(level, p) && this.hasLineOfSight(p)) {
