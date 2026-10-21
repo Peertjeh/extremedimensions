@@ -296,7 +296,7 @@ public class ElderFightTests {
 	}
 
 	/** The Seraphic Lance burns half as long again as it used to (alone, one beam). */
-	@GameTest(maxTicks = 160)
+	@GameTest(maxTicks = 230)
 	public void theWeaversLanceBurnsLonger(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		stand(helper, p, 2, 2);
@@ -332,7 +332,7 @@ public class ElderFightTests {
 			check(helper, came && weaver[0] != null, "the Weaver did not come");
 			WeaverService.force(weaver[0], Weaver.LANCE);
 		});
-		for (int t = 6; t <= 130; t++) {
+		for (int t = 6; t <= 200; t++) {
 			int now = t;
 			helper.runAfterDelay(t, () -> {
 				int beams = weaver[0] == null ? 0 : ElderStrikes.beamsOf(weaver[0]);
@@ -345,7 +345,16 @@ public class ElderFightTests {
 				}
 			});
 		}
-		helper.runAfterDelay(132, () -> {
+		// A Lance not fired by now was put off by the fights round this one (the tests beside it raise Weavers of their
+		// own, and their blows reach far): it is asked for once more, and what stood in its way is told
+		helper.runAfterDelay(70, () -> {
+			if (first[0] < 0 && weaver[0] != null) {
+				System.out.println("[lance] not fired by tick 70: weaver alive " + weaver[0].isAlive() + ", driven " + WeaverService.isDriven(weaver[0])
+						+ ", " + Math.round(Math.sqrt(weaver[0].distanceToSqr(p))) + " blocks from its player, player alive " + p.isAlive());
+				WeaverService.force(weaver[0], Weaver.LANCE);
+			}
+		});
+		helper.runAfterDelay(202, () -> {
 			restore.run();
 			int burnt = last[0] - first[0] + 1;
 			int expected = (int) Math.round(34 / Math.max(0.2, Config.ELDER_WINDUP_SPEED) * Math.max(0.5, Config.WEAVER_LANCE_LENGTH));

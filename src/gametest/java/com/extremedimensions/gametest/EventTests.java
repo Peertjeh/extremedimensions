@@ -102,8 +102,9 @@ public class EventTests {
 			check(helper, DataStore.get(UUID.fromString(away.owner)).echoOwed == Math.round(30 * Config.ECHO_RETURN),
 					"an away player's atonement from their echo did not wait for them");
 
-			// One's own echo pays back the toll, never the listener's reward
-			own = new Echo(Dims.of(level), o.getX() - 40, o.getY(), o.getZ(), listener.getStringUUID(), "own", 0L, 0);
+			// One's own echo pays back the toll, never the listener's reward. (Where the first echo was: the test's own
+			// ground is loaded, a spot 40 blocks off may not be, and an echo there is never heard)
+			own = new Echo(Dims.of(level), o.getX(), o.getY(), o.getZ(), listener.getStringUUID(), "own", 0L, 0);
 			DataStore.echoes().add(own);
 			listener.teleportTo(own.x + 0.5, own.y, own.z + 1.5);
 			int fragments = count(listener, ModItems.TETHER_FRAGMENT);

@@ -160,14 +160,16 @@ public class ClientShots implements FabricClientGameTest {
 		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 90");
 		ctx.waitTicks(40);
 		ctx.takeScreenshot("12_fight_" + name + "_arena");
-		// Out past its west wall (near enough that the Elder keeps to its prey), looking at the nearest of its reaches
-		// still waiting: the world comes in round there, and what waited for it goes up. (Which way its far towers stand
-		// differs from arena to arena: the player goes 40 blocks short of the nearest, from the side of the middle.)
-		double[] far = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.nearestWaiting(mid[0] - 190, mid[2]));
+		// Out past its wall towards the nearest of its reaches still waiting, looking at it: the world comes in round
+		// there, and what waited for it goes up. (Which way its far towers stand differs from arena to arena. The player
+		// goes no further than 170 blocks from the middle and 40 above it, near enough that the Elder keeps to its prey:
+		// beyond its reach the Ferryman takes it that they went home.)
+		double[] far = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.nearestWaiting(mid[0], mid[2]));
 		double[] side = {mid[0] - 190, mid[1] + 40, mid[2]};
 		if (far != null) {
-			double dx = mid[0] - far[0], dz = mid[2] - far[2], len = Math.max(1, Math.sqrt(dx * dx + dz * dz));
-			side = new double[] {far[0] + dx / len * 40, Math.max(mid[1], far[1]) + 40, far[2] + dz / len * 40};
+			double dx = far[0] - mid[0], dz = far[2] - mid[2], len = Math.max(1, Math.sqrt(dx * dx + dz * dz));
+			double out = Math.max(0, Math.min(len - 40, 170));
+			side = new double[] {mid[0] + dx / len * out, mid[1] + 40, mid[2] + dz / len * out};
 		}
 		moveTo(ctx, sp, side);
 		if (far != null) {
