@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "extremedimensions:pale_hush_bricks_from_polished"
+      }
+    },
+    "has_polished_pale_hush_stone": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:polished_pale_hush_stone"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_polished_pale_hush_stone"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:pale_hush_bricks_from_polished"
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:starved_slain",
+  "display": {
+    "icon": {
+      "id": "minecraft:fire_charge"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.pact_kept.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.pact_kept.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "extremedimensions:hush_tile_slab"
+      }
+    },
+    "has_hush_tiles": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:hush_tiles"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_hush_tiles"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:hush_tile_slab"
+    ]
+  }
+}

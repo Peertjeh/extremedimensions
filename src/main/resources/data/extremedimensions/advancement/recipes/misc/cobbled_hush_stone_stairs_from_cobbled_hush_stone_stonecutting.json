@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "extremedimensions:cobbled_hush_stone_stairs_from_cobbled_hush_stone_stonecutting"
+      }
+    },
+    "has_cobbled_hush_stone": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:cobbled_hush_stone"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_cobbled_hush_stone"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:cobbled_hush_stone_stairs_from_cobbled_hush_stone_stonecutting"
+    ]
+  }
+}

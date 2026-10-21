@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "extremedimensions:pale_hush_brick_slab_from_pale_hush_bricks_stonecutting"
+      }
+    },
+    "has_pale_hush_bricks": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:pale_hush_bricks"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_pale_hush_bricks"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:pale_hush_brick_slab_from_pale_hush_bricks_stonecutting"
+    ]
+  }
+}

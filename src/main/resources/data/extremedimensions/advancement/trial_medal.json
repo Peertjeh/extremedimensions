@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:seam_returned",
+  "display": {
+    "icon": {
+      "id": "minecraft:clock"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.trial_medal.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.trial_medal.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

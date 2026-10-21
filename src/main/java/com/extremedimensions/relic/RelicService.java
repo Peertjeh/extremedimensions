@@ -7,6 +7,7 @@ import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.network.Sync;
 import com.extremedimensions.penalty.CurseEffects;
+import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
@@ -79,6 +80,7 @@ public final class RelicService {
 		WorldFx.soundSelf(p, "minecraft:block.amethyst_block.resonate", 0.8f, 0.8f);
 		WorldFx.particles(p, "extremedimensions:soul_mote", 1.0, 0.5, 0.0, 20);
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.relic.bound", Component.translatable(r.nameKey())), true);
+		Advancements.grant(p, Advancements.RELIC_BOUND);
 		return InteractionResult.SUCCESS;
 	}
 

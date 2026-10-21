@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "extremedimensions:mossy_hush_bricks_from_vine"
+      }
+    },
+    "has_hush_bricks": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:hush_bricks"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_hush_bricks"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:mossy_hush_bricks_from_vine"
+    ]
+  }
+}

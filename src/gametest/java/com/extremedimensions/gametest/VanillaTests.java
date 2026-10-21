@@ -2,21 +2,38 @@ package com.extremedimensions.gametest;
 
 import static com.extremedimensions.gametest.CurseTests.check;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.expedition.ExpeditionBar;
+import com.extremedimensions.progression.Advancements;
+import com.extremedimensions.registry.ModItems;
+import com.extremedimensions.relic.Relic;
+import com.extremedimensions.relic.RelicService;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
 
-/** The mod as part of Minecraft: its timer is a boss bar, its sounds sit on the game's volume sliders. */
+/**
+ * The mod as part of Minecraft: its timer is a boss bar, its sounds sit on the game's volume sliders, its recipes come
+ * into the recipe book the way vanilla's do.
+ */
 public class VanillaTests {
 	/** An expedition shows a boss bar named for where the player is; it goes when the expedition ends or the setting is off. */
 	@GameTest
@@ -80,6 +97,58 @@ public class VanillaTests {
 		check(helper, WorldFx.category("extremedimensions:music.boss_weaver") == SoundSource.MUSIC, "boss music is not music");
 		check(helper, WorldFx.category("minecraft:block.wool.break") == SoundSource.BLOCKS, "a block's sound is not on Blocks");
 		check(helper, WorldFx.category("extremedimensions:portal_home") == SoundSource.PLAYERS, "going home is not on Players");
+		helper.succeed();
+	}
+
+	/** Every recipe of the mod has an advancement that puts it in the recipe book, as vanilla's own recipes do. */
+	@GameTest
+	public void everyRecipeFindsItsWayIntoTheBook(GameTestHelper helper) {
+		MinecraftServer server = helper.getLevel().getServer();
+		Set<ResourceKey<Recipe<?>>> rewarded = new HashSet<>();
+		for (AdvancementHolder a : server.getAdvancements().getAllAdvancements()) {
+			rewarded.addAll(a.value().rewards().recipes());
+		}
+		int found = 0;
+		for (RecipeHolder<?> r : server.getRecipeManager().getRecipes()) {
+			Identifier id = r.id().identifier();
+			if (id.getNamespace().equals("extremedimensions") || id.equals(Identifier.withDefaultNamespace("lodestone"))) {
+				check(helper, rewarded.contains(r.id()), "no advancement puts %s in the recipe book", id);
+				found++;
+			}
+		}
+		check(helper, found >= 121, "only %s of the mod's recipes were found", found);
+		helper.succeed();
+	}
+
+	/** Seam Silk in the inventory opens what is woven from it. */
+	@GameTest
+	public void silkInHandOpensItsRecipes(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "test-book");
+		ResourceKey<Recipe<?>> woven = ResourceKey.create(Registries.RECIPE, WorldFx.id("extremedimensions:soul_woven_tether"));
+		check(helper, !p.getRecipeBook().contains(woven), "the Soul-Woven Tether was in the book before any silk");
+		p.getInventory().add(new ItemStack(ModItems.SEAM_SILK));
+		p.inventoryMenu.broadcastChanges();
+		helper.runAfterDelay(2, () -> {
+			check(helper, p.getRecipeBook().contains(woven), "holding Seam Silk did not put the Soul-Woven Tether in the book");
+			helper.succeed();
+		});
+	}
+
+	/** Binding a relic earns its advancement. */
+	@GameTest
+	public void bindingARelicIsMarked(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "test-relic-mark");
+		PlayerData d = DataStore.get(p.getUUID());
+		String before = d.relic;
+		try {
+			d.relic = null;
+			RelicService.bind(p, new ItemStack(RelicService.item(Relic.FEATHERBONE)));
+			AdvancementHolder a = helper.getLevel().getServer().getAdvancements().get(WorldFx.id("extremedimensions:" + Advancements.RELIC_BOUND));
+			check(helper, a != null, "the relic advancement did not load");
+			check(helper, p.getAdvancements().getOrStartProgress(a).isDone(), "binding a relic did not earn its advancement");
+		} finally {
+			d.relic = before;
+		}
 		helper.succeed();
 	}
 }

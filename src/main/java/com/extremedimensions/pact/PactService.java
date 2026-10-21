@@ -11,6 +11,7 @@ import com.extremedimensions.network.Sync;
 import com.extremedimensions.penalty.CurseEffects;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
+import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.relic.RelicService;
 import com.extremedimensions.seam.SeamService;
@@ -36,7 +37,7 @@ public final class PactService {
 		return switch (Config.PACT_UNLOCK) {
 			case 0 -> true;
 			case 1 -> DataStore.sealBroken();
-			default -> !DataStore.ending().isEmpty();
+			default -> DataStore.starvedSlain();
 		};
 	}
 
@@ -167,6 +168,9 @@ public final class PactService {
 		p.sendSystemMessage(Component.translatable(relic ? "gui.extremedimensions.pact.kept_relic" : "gui.extremedimensions.pact.kept",
 				heat, points, fragments));
 		WorldFx.soundSelf(p, "minecraft:ui.toast.challenge_complete", 0.6f, 0.8f);
+		if (heat >= Advancements.PACT_KEPT_HEAT && share >= 1) {
+			Advancements.grant(p, Advancements.PACT_KEPT);
+		}
 		DataStore.markDirty();
 	}
 

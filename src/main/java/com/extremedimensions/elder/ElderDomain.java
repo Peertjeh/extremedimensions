@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import com.extremedimensions.config.Config;
+import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.server.BlockFlight;
 import com.extremedimensions.server.WorldFx;
 
@@ -784,6 +785,9 @@ public final class ElderDomain {
 			ElderFight.daze(b, (int) Math.round(Config.ELDER_ISLE_DAZE_SECONDS * 20));
 			ElderFx.roar(b, 6f, 1.4f);
 			WorldFx.particleIn(level, "minecraft:damage_indicator", b.getX(), b.getY() + b.getBbHeight() * 0.7, b.getZ(), 1.5, 1.5, 1.5, 0.2, 20);
+			for (ServerPlayer p : fighters(b)) {
+				Advancements.grant(p, Advancements.ISLAND_FELL);
+			}
 		}
 	}
 

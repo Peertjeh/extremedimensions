@@ -54,8 +54,8 @@ public class PactTests {
 		int unlock = Config.PACT_UNLOCK, maxHeat = Config.PACT_MAX_HEAT;
 		try {
 			Config.PACT_UNLOCK = 2;
-			if (DataStore.ending().isEmpty()) {
-				check(helper, PactService.swear(p, Map.of(Penalty.GLASS_JAW.id, 1)) != null, "a pact was sworn before pacts open");
+			if (!DataStore.starvedSlain()) {
+				check(helper, PactService.swear(p, Map.of(Penalty.GLASS_JAW.id, 1)) != null, "a pact was sworn before the Starved One fell");
 			}
 			Config.PACT_UNLOCK = 0;
 			check(helper, PactService.swear(p, Map.of(Penalty.GLASS_JAW.id, 5, home.id, 1, Penalty.DWINDLING.id, 1)) == null, "a fair pact was refused");

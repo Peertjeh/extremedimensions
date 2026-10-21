@@ -7,6 +7,7 @@ import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.penalty.PenaltyService;
+import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.relic.RelicService;
 import com.extremedimensions.seam.SeamService;
@@ -62,7 +63,7 @@ public final class TrialService {
 		return switch (Config.TRIAL_UNLOCK) {
 			case 0 -> true;
 			case 1 -> DataStore.sealBroken();
-			default -> !DataStore.ending().isEmpty();
+			default -> DataStore.starvedSlain();
 		};
 	}
 
@@ -249,6 +250,9 @@ public final class TrialService {
 		}
 		if (best) {
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.trial.best", rank(p)));
+		}
+		if (medal > 0) {
+			Advancements.grant(p, Advancements.TRIAL_MEDAL);
 		}
 		WorldFx.soundSelf(p, medal > 0 ? "minecraft:ui.toast.challenge_complete" : "minecraft:block.beacon.deactivate", 0.6f, 1.0f);
 		DataStore.markDirty();

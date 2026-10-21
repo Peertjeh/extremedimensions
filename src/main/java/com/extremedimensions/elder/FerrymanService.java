@@ -99,7 +99,7 @@ public final class FerrymanService {
 		return switch (Config.FERRYMAN_UNLOCK) {
 			case 0 -> true;
 			case 1 -> DataStore.sealBroken();
-			default -> !DataStore.ending().isEmpty();
+			default -> DataStore.starvedSlain();
 		};
 	}
 

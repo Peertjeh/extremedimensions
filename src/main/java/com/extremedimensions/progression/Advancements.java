@@ -48,11 +48,17 @@ public final class Advancements {
 	public static final String RAIDER = "raider";
 	public static final String FRAY_ENTERED = "fray_entered";
 	public static final String FRAY_RISEN = "fray_risen";
+	public static final String TRIAL_MEDAL = "trial_medal";
+	public static final String RELIC_BOUND = "relic_bound";
+	public static final String PACT_KEPT = "pact_kept";
+	public static final String ISLAND_FELL = "island_fell";
 
 	/** Expeditions needed for {@link #VETERAN}. */
 	public static final int VETERAN_EXPEDITIONS = 10;
 	/** Blocks from the arrival portal needed for {@link #LONG_TETHER}. */
 	public static final double LONG_TETHER_BLOCKS = 300;
+	/** Heat of a pact kept in full needed for {@link #PACT_KEPT}. */
+	public static final int PACT_KEPT_HEAT = 10;
 
 	public static void grant(ServerPlayer p, String id) {
 		WorldFx.grantAdvancement(p, id);
