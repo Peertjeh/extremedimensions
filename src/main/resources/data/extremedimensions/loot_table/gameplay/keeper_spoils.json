@@ -7,12 +7,10 @@
         {
           "type": "minecraft:item",
           "name": "extremedimensions:tether_fragment",
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2
-            }
-          ]
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": 2
+          }
         }
       ]
     },

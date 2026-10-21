@@ -9,11 +9,9 @@
           "name": "extremedimensions:hush_tile_stairs"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "extremedimensions:blocks/hush_tile_stairs"

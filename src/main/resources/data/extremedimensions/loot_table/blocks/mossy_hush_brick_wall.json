@@ -9,11 +9,9 @@
           "name": "extremedimensions:mossy_hush_brick_wall"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "extremedimensions:blocks/mossy_hush_brick_wall"

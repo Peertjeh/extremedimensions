@@ -9,11 +9,9 @@
           "name": "extremedimensions:cracked_hush_bricks"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "extremedimensions:blocks/cracked_hush_bricks"

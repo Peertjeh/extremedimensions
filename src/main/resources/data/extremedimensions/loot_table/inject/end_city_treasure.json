@@ -9,12 +9,10 @@
           "name": "extremedimensions:wanderers_page"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:random_chance",
-          "chance": 0.2
-        }
-      ]
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.2
+      }
     },
     {
       "rolls": 1,
@@ -24,12 +22,10 @@
           "name": "extremedimensions:tether_fragment"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:random_chance",
-          "chance": 0.15
-        }
-      ]
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.15
+      }
     }
   ],
   "random_sequence": "extremedimensions:inject/end_city_treasure"

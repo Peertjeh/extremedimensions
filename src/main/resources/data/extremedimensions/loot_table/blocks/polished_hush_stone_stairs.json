@@ -9,11 +9,9 @@
           "name": "extremedimensions:polished_hush_stone_stairs"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "extremedimensions:blocks/polished_hush_stone_stairs"

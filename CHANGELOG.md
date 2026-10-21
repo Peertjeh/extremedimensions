@@ -26,6 +26,9 @@ anything new is added. No new systems.
   Stone* (bring a falling island down on an Elder).
 
 ### Fixed
+- **A Seam Vein gave one silk, not one to three.** The mod's block loot tables were still written the way older
+  versions of Minecraft read them, and 26.3 quietly skipped their counts and conditions. They are in 26.3's form now,
+  with the new tables.
 - **Pacts and the Last Weaver opened too late.** The settings said they open once the Starved One falls, as the
   journal and the walkthrough do, but they waited until the ending was chosen. They open when the Starved One falls
   now. The same goes for the Rift Trials and the Ferryman when their setting is put on that step.
@@ -35,7 +38,7 @@ anything new is added. No new systems.
   from its table, and from a stand-in table as a datapack would replace it; ruined portals hold the Wanderer's pages;
   peaceful; a shield stops a Keeper's blow; milk cures poison but not under the hex; mobGriefing keeps the Elders from
   the ground. The client test photographs the advancement tab and the recipe book.
-- `tools/recipes/unlocks.py` writes the recipe advancements.
+- `tools/recipes/unlocks.py` writes the recipe advancements; `tools/loot/loot26.py` brings loot tables to 26.3's form.
 - The design package for the road to 3.0: `docs/roadmap-3.0.md`, with the audit in `docs/inventory-2.32.md` and the
   brief in `docs/expansion-brief.md`.
 

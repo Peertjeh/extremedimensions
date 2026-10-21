@@ -9,12 +9,10 @@
           "name": "extremedimensions:wanderers_page"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:random_chance",
-          "chance": 0.35
-        }
-      ]
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.35
+      }
     }
   ],
   "random_sequence": "extremedimensions:inject/stronghold_library"

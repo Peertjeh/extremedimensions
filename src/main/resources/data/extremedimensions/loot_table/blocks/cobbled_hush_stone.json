@@ -9,11 +9,9 @@
           "name": "extremedimensions:cobbled_hush_stone"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "extremedimensions:blocks/cobbled_hush_stone"

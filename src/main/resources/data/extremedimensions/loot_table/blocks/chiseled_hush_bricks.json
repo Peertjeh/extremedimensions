@@ -9,11 +9,9 @@
           "name": "extremedimensions:chiseled_hush_bricks"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "extremedimensions:blocks/chiseled_hush_bricks"

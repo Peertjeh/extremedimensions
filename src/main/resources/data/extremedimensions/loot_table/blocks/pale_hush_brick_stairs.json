@@ -9,11 +9,9 @@
           "name": "extremedimensions:pale_hush_brick_stairs"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "extremedimensions:blocks/pale_hush_brick_stairs"

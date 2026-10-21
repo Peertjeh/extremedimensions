@@ -7,29 +7,25 @@
         {
           "type": "minecraft:item",
           "name": "extremedimensions:pale_hush_brick_slab",
-          "functions": [
-            {
-              "function": "minecraft:set_count",
-              "count": 2,
-              "add": false,
-              "conditions": [
-                {
-                  "condition": "minecraft:block_state_property",
-                  "block": "extremedimensions:pale_hush_brick_slab",
-                  "properties": {
-                    "type": "double"
-                  }
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": 2,
+            "add": false,
+            "conditions": [
+              {
+                "condition": "minecraft:block_state_property",
+                "block": "extremedimensions:pale_hush_brick_slab",
+                "properties": {
+                  "type": "double"
                 }
-              ]
-            }
-          ]
+              }
+            ]
+          }
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "extremedimensions:blocks/pale_hush_brick_slab"
