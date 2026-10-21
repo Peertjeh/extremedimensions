@@ -300,6 +300,12 @@ public final class DataStore {
 		if (d.notes == null) {
 			d.notes = new java.util.LinkedHashSet<>();
 		}
+		if (d.tetherCharms == null) {
+			d.tetherCharms = new java.util.HashMap<>();
+		}
+		if (d.homebound == null) {
+			d.homebound = new java.util.ArrayList<>();
+		}
 		return d;
 	}
 

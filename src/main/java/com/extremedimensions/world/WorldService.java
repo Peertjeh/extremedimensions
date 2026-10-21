@@ -151,6 +151,10 @@ public final class WorldService {
 			WorldFx.effect(p, MobEffects.DARKNESS, 3, 0);
 			WorldFx.sound(p, "minecraft:entity.lightning_bolt.thunder", 0.8f, 0.5f + rnd.nextFloat() * 0.3f);
 		}
+		if (left % 300 == 210) {
+			// where the next things will slip through is chosen three seconds before (a Wound Lens can see it)
+			BREACHES.put(p.getUUID(), breaches(level, p));
+		}
 		if (left % 300 == 150) {
 			leak(level, p);
 		}
@@ -164,23 +168,43 @@ public final class WorldService {
 		}
 	}
 
-	/** Something from beyond slips through the tear, out of sight. */
-	private static void leak(ServerLevel level, ServerPlayer p) {
-		if (Rules.peaceful(level)) {
-			return;
-		}
+	/** Where the next things from beyond will slip through around a player, chosen ahead (behind and beside them, out of sight). */
+	private static final java.util.Map<UUID, java.util.List<BlockPos>> BREACHES = new java.util.HashMap<>();
+
+	private static java.util.List<BlockPos> breaches(ServerLevel level, ServerPlayer p) {
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		String[] beyond = {"minecraft:blaze", "minecraft:magma_cube", "minecraft:enderman", "minecraft:wither_skeleton",
-				"minecraft:endermite", "minecraft:ghast", "minecraft:piglin_brute"};
+		java.util.List<BlockPos> out = new java.util.ArrayList<>();
 		int n = 1 + rnd.nextInt(2);
 		for (int i = 0; i < n; i++) {
 			double a = Math.toRadians(p.getYRot()) + Math.PI / 2 + (rnd.nextDouble() - 0.5) * 2.0;
 			int x = (int) Math.floor(p.getX() + Math.cos(a) * (14 + rnd.nextInt(8)));
 			int z = (int) Math.floor(p.getZ() + Math.sin(a) * (14 + rnd.nextInt(8)));
-			if (!level.isLoaded(new BlockPos(x, (int) p.getY(), z))) {
-				continue;
+			if (level.isLoaded(new BlockPos(x, (int) p.getY(), z))) {
+				out.add(new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z));
 			}
-			int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+		}
+		return out;
+	}
+
+	/** The breach points waiting around a player in a storm (empty when none), for the Wound Lens. */
+	public static java.util.List<BlockPos> breaches(UUID id) {
+		return STORMS.containsKey(id) ? BREACHES.getOrDefault(id, java.util.List.of()) : java.util.List.of();
+	}
+
+	/** Something from beyond slips through the tear, out of sight, where the breach was chosen. */
+	private static void leak(ServerLevel level, ServerPlayer p) {
+		java.util.List<BlockPos> at = BREACHES.remove(p.getUUID());
+		if (Rules.peaceful(level)) {
+			return;
+		}
+		if (at == null) {
+			at = breaches(level, p);
+		}
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		String[] beyond = {"minecraft:blaze", "minecraft:magma_cube", "minecraft:enderman", "minecraft:wither_skeleton",
+				"minecraft:endermite", "minecraft:ghast", "minecraft:piglin_brute"};
+		for (BlockPos b : at) {
+			int x = b.getX(), y = b.getY(), z = b.getZ();
 			String type = beyond[rnd.nextInt(beyond.length)];
 			if (type.endsWith("ghast")) {
 				y += 12;

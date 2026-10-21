@@ -46,6 +46,13 @@ public final class SeamFog {
 			end = (float) Mth.lerp(depth, end, 26 + 6 * (1 - density));
 			start = (float) Mth.lerp(depth, start, 2);
 		}
+		// Veilsight: the fog keeps farther off
+		if (com.extremedimensions.registry.ModEnchantments.level(mc.level.registryAccess(),
+				mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD), com.extremedimensions.registry.ModEnchantments.VEILSIGHT) > 0) {
+			float far = (float) Math.max(1, com.extremedimensions.config.Config.ENCH_VEILSIGHT_FOG);
+			end *= far;
+			start *= far;
+		}
 		data.environmentalStart = Math.min(data.environmentalStart, start);
 		data.environmentalEnd = Math.min(data.environmentalEnd, end);
 		lastEnd = data.environmentalEnd;

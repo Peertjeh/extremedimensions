@@ -155,6 +155,7 @@ public final class ServerEvents {
 			PlayerData d = DataStore.get(newPlayer.getUUID());
 			if (!alive) {
 				ExpeditionService.onRespawn(newPlayer, d);
+				com.extremedimensions.binding.Homebound.restore(newPlayer);
 			}
 			Sync.state(newPlayer, d);
 		});
@@ -183,6 +184,8 @@ public final class ServerEvents {
 				WorldService.onDragonDeath(WorldFx.server());
 			}
 			if (entity instanceof ServerPlayer p) {
+				// Homebound things are taken up first: nothing, not even a severed world, keeps them
+				com.extremedimensions.binding.Homebound.gather(p);
 				if ("severed".equals(DataStore.ending()) && Dims.isBeyond(Dims.of(p))) {
 					// A severed world keeps nothing of those who fall beyond the wound
 					for (ItemEntity item : p.level().getEntitiesOfClass(ItemEntity.class, p.getBoundingBox().inflate(8), i -> i.distanceToSqr(p) <= 64)) {
@@ -498,6 +501,8 @@ public final class ServerEvents {
 		TetherService.sweep(s);
 		com.extremedimensions.expedition.ExpeditionBar.tick(s);
 		com.extremedimensions.lore.WarmChains.tick(s);
+		com.extremedimensions.binding.Veilsight.tick(s);
+		com.extremedimensions.binding.WoundLens.tick(s);
 		if (s.getTickCount() % 1200 == 0) {
 			AtonementGuard.sweep(s);
 		}

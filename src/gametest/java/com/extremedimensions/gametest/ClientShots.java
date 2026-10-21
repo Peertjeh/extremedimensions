@@ -1052,6 +1052,67 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(12);
 			ctx.takeScreenshot("29_journal_held");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			// The Art of Binding: the enchanted Tethers, books and the Wound Lens in the bag, and what their lines say
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				net.minecraft.core.RegistryAccess ra = p.level().registryAccess();
+				java.util.function.Function<net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment>, net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment>> h =
+						k -> com.extremedimensions.registry.ModEnchantments.holder(ra, k).orElseThrow();
+				ItemStack thrift = new ItemStack(com.extremedimensions.registry.ModItems.TETHER);
+				thrift.enchant(h.apply(com.extremedimensions.registry.ModEnchantments.THRIFT), 3);
+				ItemStack silk = new ItemStack(com.extremedimensions.registry.ModItems.SOUL_WOVEN_TETHER);
+				silk.enchant(h.apply(com.extremedimensions.registry.ModEnchantments.SILKBOUND), 2);
+				ItemStack sword = new ItemStack(Items.IRON_SWORD);
+				sword.enchant(h.apply(com.extremedimensions.registry.ModEnchantments.WOUNDBANE), 5);
+				ItemStack helmet = new ItemStack(Items.IRON_HELMET);
+				helmet.enchant(h.apply(com.extremedimensions.registry.ModEnchantments.VEILSIGHT), 1);
+				ItemStack chest = new ItemStack(Items.IRON_CHESTPLATE);
+				chest.enchant(h.apply(com.extremedimensions.registry.ModEnchantments.HOMEBOUND), 1);
+				ItemStack[] bag = {ItemStack.EMPTY, thrift, silk, sword, helmet, chest};
+				for (int i = 0; i < 9; i++) {
+					p.getInventory().setItem(i, i < bag.length ? bag[i] : ItemStack.EMPTY);
+				}
+				// the lens in hand, wherever the hand is
+				p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(com.extremedimensions.registry.ModItems.WOUND_LENS));
+			});
+			ctx.waitTicks(10);
+			ctx.runOnClient(mc -> {
+				ItemStack tied = ItemStack.EMPTY;
+				for (int i = 0; i < 9; i++) {
+					ItemStack st = mc.player.getInventory().getItem(i);
+					if (st.isEmpty()) {
+						continue;
+					}
+					if (st.is(com.extremedimensions.registry.ModItems.TETHER)) {
+						tied = st;
+					}
+					java.util.List<net.minecraft.network.chat.Component> lines = st.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(mc.level), mc.player,
+							net.minecraft.world.item.TooltipFlag.NORMAL);
+					StringBuilder all = new StringBuilder();
+					for (net.minecraft.network.chat.Component c : lines) {
+						all.append(c.getString()).append(" | ");
+					}
+					System.out.println("[binding] " + all);
+				}
+				StringBuilder thriftLines = new StringBuilder();
+				check(!tied.isEmpty(), "the Thrift Tether is not in the bag");
+				for (net.minecraft.network.chat.Component c : tied.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(mc.level),
+						mc.player, net.minecraft.world.item.TooltipFlag.NORMAL)) {
+					thriftLines.append(c.getString()).append('\n');
+				}
+				check(thriftLines.toString().contains(net.minecraft.client.resources.language.I18n.get("enchantment.extremedimensions.thrift.desc")),
+						"the Thrift Tether's tooltip does not say what Thrift does: " + thriftLines);
+				mc.gui.setScreen(new InventoryScreen(mc.player));
+			});
+			ctx.waitTicks(8);
+			ctx.takeScreenshot("30_binding_bag");
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			// Through the Wound Lens: scoping as through a spyglass, at the Held's chamber
+			ctx.runOnClient(mc -> mc.options.keyUse.setDown(true));
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("30_wound_lens");
+			ctx.runOnClient(mc -> mc.options.keyUse.setDown(false));
+			ctx.waitTicks(5);
 			ctx.runOnClient(mc -> {
 				ClientOptions.setGuidance(true);
 				mc.options.renderDistance().set(5);

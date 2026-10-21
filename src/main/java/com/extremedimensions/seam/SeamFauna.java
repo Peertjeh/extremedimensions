@@ -276,7 +276,7 @@ public final class SeamFauna {
 			}
 			ServerPlayer prey = null;
 			if (seam.getGameTime() % 10 == 0 || d.hunting != null) {
-				ServerPlayer near = nearest(players, t.position(), 40);
+				ServerPlayer near = noticing(players, t.position(), 40);
 				prey = near != null && thin(near) ? near : null;
 				d.hunting = prey == null ? null : prey.getUUID();
 			}
@@ -326,6 +326,21 @@ public final class SeamFauna {
 			}
 		}
 		return false;
+	}
+
+	/** The nearest player a Thinned notices: within its range, twice as far for one who sees through the veil. */
+	private static ServerPlayer noticing(List<ServerPlayer> players, Vec3 at, double range) {
+		ServerPlayer best = null;
+		double bd = Double.MAX_VALUE;
+		for (ServerPlayer p : players) {
+			double r = range * com.extremedimensions.binding.Veilsight.noticed(p);
+			double d = p.distanceToSqr(at);
+			if (d < r * r && d < bd) {
+				bd = d;
+				best = p;
+			}
+		}
+		return best;
 	}
 
 	private static ServerPlayer nearest(List<ServerPlayer> players, Vec3 at, double max) {

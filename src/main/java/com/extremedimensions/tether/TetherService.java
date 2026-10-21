@@ -53,6 +53,7 @@ public final class TetherService {
 		// Already bound elsewhere? That tether comes back.
 		clear(p, d, d.tetherAnchor != null);
 		d.tetherTier = stack.is(ModItems.SEAM_WOVEN_TETHER) ? 2 : stack.is(ModItems.SOUL_WOVEN_TETHER) ? 1 : 0;
+		d.tetherCharms = charms(stack);
 		stack.shrink(1);
 		d.tetherAnchor = key;
 		d.hasRopeEnd = true;
@@ -135,11 +136,53 @@ public final class TetherService {
 	public static void clear(ServerPlayer p, PlayerData d, boolean returnItem) {
 		WorldFx.run("kill @e[type=minecraft:block_display,tag=" + tag(p) + "]");
 		if (returnItem && d.tetherAnchor != null) {
-			Item back = tierItem(d.tetherTier);
-			WorldFx.give(p, new ItemStack(back));
+			ItemStack back = new ItemStack(tierItem(d.tetherTier));
+			// it comes back with the enchantments it was tied with
+			enchant(back, d.tetherCharms, p.level().registryAccess());
+			WorldFx.give(p, back);
 		}
 		d.tetherAnchor = null;
 		d.hasRopeEnd = false;
+		if (d.tetherCharms != null) {
+			d.tetherCharms.clear();
+		}
+	}
+
+	/** A Tether item's enchantments, by id. */
+	public static java.util.Map<String, Integer> charms(ItemStack stack) {
+		java.util.Map<String, Integer> out = new java.util.HashMap<>();
+		for (var e : stack.getEnchantments().entrySet()) {
+			e.getKey().unwrapKey().ifPresent(k -> out.put(k.identifier().toString(), e.getIntValue()));
+		}
+		return out;
+	}
+
+	/** Puts kept enchantments back on a Tether item (any a datapack has taken out are left off). */
+	public static void enchant(ItemStack stack, java.util.Map<String, Integer> charms, net.minecraft.core.RegistryAccess access) {
+		if (charms == null) {
+			return;
+		}
+		var registry = access.lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+		for (java.util.Map.Entry<String, Integer> c : charms.entrySet()) {
+			net.minecraft.resources.Identifier id = net.minecraft.resources.Identifier.tryParse(c.getKey());
+			if (id != null) {
+				registry.get(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.ENCHANTMENT, id))
+						.ifPresent(h -> stack.enchant(h, c.getValue()));
+			}
+		}
+	}
+
+	/** The highest level of a Tether enchantment a player has with them: on the bound Tether or a Tether they carry. */
+	public static int charm(ServerPlayer p, PlayerData d, net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> k) {
+		int best = d.charm(k);
+		var inv = p.getInventory();
+		for (int i = 0; i < inv.getContainerSize(); i++) {
+			ItemStack s = inv.getItem(i);
+			if (isTether(s.getItem())) {
+				best = Math.max(best, com.extremedimensions.registry.ModEnchantments.level(p.level().registryAccess(), s, k));
+			}
+		}
+		return best;
 	}
 
 	/** Removes this player's chain (or thread home in the Seam) and nothing else: they stay bound. */

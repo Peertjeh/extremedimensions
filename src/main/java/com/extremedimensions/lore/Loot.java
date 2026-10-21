@@ -46,6 +46,8 @@ public final class Loot {
 	public static final String FRAYED_RAY = "gameplay/frayed_ray";
 	public static final String THINNED = "gameplay/thinned";
 	public static final String THINNED_FRAY = "gameplay/thinned_fray";
+	/** What a first gold medal of the week brings besides its fragments and relic (a Homebound book, sometimes). */
+	public static final String TRIAL_GOLD = "gameplay/trial_gold";
 
 	/** For tests: a table read in place of one of the mod's, as a datapack would replace it. */
 	private static final Map<String, Identifier> STANDINS = new HashMap<>();

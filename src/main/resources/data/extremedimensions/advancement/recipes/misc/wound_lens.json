@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_seam_silk": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:seam_silk"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_seam_silk"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:wound_lens"
+    ]
+  }
+}

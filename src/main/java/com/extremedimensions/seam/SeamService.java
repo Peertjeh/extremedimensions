@@ -333,7 +333,8 @@ public final class SeamService {
 		d.inSeam = true;
 		d.seamVisits++;
 		d.seamMax = Math.max(30, Config.SEAM_SECONDS) + Config.WOVEN_SEAM_SECONDS * TetherService.carriedTier(p, d)
-				+ (com.extremedimensions.relic.RelicService.has(d, com.extremedimensions.relic.Relic.SEAM_LANTERN) ? Math.max(0, Config.RELIC_SEAM_LANTERN_SECONDS) : 0);
+				+ (com.extremedimensions.relic.RelicService.has(d, com.extremedimensions.relic.Relic.SEAM_LANTERN) ? Math.max(0, Config.RELIC_SEAM_LANTERN_SECONDS) : 0)
+				+ Math.max(0, Config.ENCH_SILKBOUND_SECONDS) * TetherService.charm(p, d, com.extremedimensions.registry.ModEnchantments.SILKBOUND);
 		d.seamLeft = d.seamMax;
 		d.seamPull = 0;
 		// A Rift Trial taken up at home begins with this visit

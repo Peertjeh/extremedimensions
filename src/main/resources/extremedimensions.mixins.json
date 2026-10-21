@@ -19,8 +19,10 @@
 		"NaturalSpawnMixin",
 		"SealedInventoryMixin",
 		"SealedSlotMixin",
+		"TetherEnchantMixin",
 		"UnhealingMixin",
-		"VillagerPricesMixin"
+		"VillagerPricesMixin",
+		"WoundLensMixin"
 	],
 	"injectors": {
 		"defaultRequire": 0

@@ -2,6 +2,7 @@ package com.extremedimensions.client.tooltip;
 
 import java.util.List;
 
+import com.extremedimensions.ExtremeDimensions;
 import com.extremedimensions.anchor.FuelValues;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.client.ui.Ui;
@@ -9,10 +10,14 @@ import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.server.Dims;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 
@@ -57,7 +62,10 @@ public final class Tooltips {
 			key = "mending_cloth";
 		} else if (item == ModItems.SEAM_SILK) {
 			key = "seam_silk";
+		} else if (item == ModItems.WOUND_LENS) {
+			key = "wound_lens";
 		}
+		charms(stack, lines);
 		com.extremedimensions.relic.Relic relic = com.extremedimensions.relic.RelicService.of(stack);
 		if (relic != null) {
 			// A relic: its gift, its price (both with the server's numbers) and how to bind it
@@ -80,6 +88,20 @@ public final class Tooltips {
 			lines.add(Component.translatable("tooltip.extremedimensions.fuel.nether", Ui.time(nether)).withStyle(ChatFormatting.GOLD));
 		} else if (end > 0) {
 			lines.add(Component.translatable("tooltip.extremedimensions.fuel.end", Ui.time(end)).withStyle(ChatFormatting.LIGHT_PURPLE));
+		}
+	}
+
+	/**
+	 * What the mod's enchantments do, one dark line each under the item's own (on books too): unlike vanilla's, their
+	 * names alone do not say it.
+	 */
+	private static void charms(ItemStack stack, List<Component> lines) {
+		for (ItemEnchantments set : List.of(stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY),
+				stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY))) {
+			for (Holder<Enchantment> h : set.keySet()) {
+				h.unwrapKey().map(k -> k.identifier()).filter(id -> ExtremeDimensions.MOD_ID.equals(id.getNamespace()))
+						.ifPresent(id -> lines.add(Component.translatable("enchantment." + id.getNamespace() + "." + id.getPath() + ".desc").withStyle(ChatFormatting.DARK_GRAY)));
+			}
 		}
 	}
 }

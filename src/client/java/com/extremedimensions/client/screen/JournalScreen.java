@@ -40,8 +40,12 @@ public class JournalScreen extends Screen {
 
 	private enum Part { PAGES, BEASTS, LEDGER }
 
-	/** One line on a page: the Wanderer's, or a note in another hand. */
-	private record Line(String text, boolean note) {}
+	/** One line on a page: the Wanderer's, a note in another hand beside them, or a page wholly in that hand (rust). */
+	private record Line(String text, boolean note, boolean rust) {
+		Line(String text, boolean note) {
+			this(text, note, note);
+		}
+	}
 
 	/** One page: optional title (first page of an entry only) and lines. */
 	private record Page(String title, List<Line> lines) {}
@@ -143,24 +147,24 @@ public class JournalScreen extends Screen {
 			if (!unlocked.contains(e.id)) {
 				continue;
 			}
-			List<Line> lines = new ArrayList<>();
+			// Each block is kept on one page where it fits: a line of the text alone, a note with its lines together
+			List<List<Line>> blocks = new ArrayList<>();
 			for (String l : Ui.wrap(this.font, Ui.tr(e.textKey()), TEXT_W)) {
-				lines.add(new Line(l, false));
+				// a page not in the Wanderer's hand is written all in the other ink
+				blocks.add(List.of(new Line(l, false, !e.wanderer)));
 			}
 			// Under the Wanderer's words, the notes another hand left beside them
 			for (MarginNote n : MarginNote.values()) {
 				if (n.page == e && notes.contains(n.id)) {
-					lines.add(new Line("", true));
+					List<Line> note = new ArrayList<>();
+					note.add(new Line("", true));
 					for (String l : Ui.wrap(this.font, Ui.tr(n.textKey()), TEXT_W - NOTE_INDENT)) {
-						lines.add(new Line(l, true));
+						note.add(new Line(l, true));
 					}
+					blocks.add(note);
 				}
 			}
-			int first = LINES_PER_PAGE - 2; // the title takes room on the first page
-			pages.add(new Page(Ui.tr(e.titleKey()), lines.subList(0, Math.min(lines.size(), first))));
-			for (int i = first; i < lines.size(); i += LINES_PER_PAGE) {
-				pages.add(new Page(null, lines.subList(i, Math.min(lines.size(), i + LINES_PER_PAGE))));
-			}
+			paginate(Ui.tr(e.titleKey()), blocks);
 		}
 		spread = Math.max(0, Math.min(spread, (count() - 1) & ~1));
 
@@ -179,6 +183,33 @@ public class JournalScreen extends Screen {
 		this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> this.onClose())
 				.pos(tx + 2, y).size(bx + PAGE_W * 2 + SPINE - 28 - tx - 4, 18).build());
 		updateButtons();
+	}
+
+	/** Lays one entry's blocks out over pages: a block that would run over starts the next page, if it fits on one. */
+	private void paginate(String title, List<List<Line>> blocks) {
+		int cap = LINES_PER_PAGE - 2; // the title takes room on the first page
+		List<Line> cur = new ArrayList<>();
+		for (List<Line> b : blocks) {
+			if (!cur.isEmpty() && cur.size() + b.size() > cap && b.size() <= LINES_PER_PAGE) {
+				pages.add(new Page(title, cur));
+				title = null;
+				cur = new ArrayList<>();
+				cap = LINES_PER_PAGE;
+			}
+			for (Line l : b) {
+				if (cur.size() >= cap) {
+					pages.add(new Page(title, cur));
+					title = null;
+					cur = new ArrayList<>();
+					cap = LINES_PER_PAGE;
+				}
+				if (cur.isEmpty() && l.text().isEmpty()) {
+					continue; // no blank line at the head of a page
+				}
+				cur.add(l);
+			}
+		}
+		pages.add(new Page(title, cur));
 	}
 
 	private void show(Part p) {
@@ -293,7 +324,7 @@ public class JournalScreen extends Screen {
 				// a thin stroke down the margin, as a hand marks what it wrote beside a page
 				g.fill(x + 13, ty - 1, x + 14, ty + 9, Ui.argb(alpha * 0.55, INK_RUST));
 			}
-			Ui.ink(g, this.font, line.text(), x + 12 + (line.note() ? NOTE_INDENT : 0), ty, line.note() ? INK_RUST : INK, alpha);
+			Ui.ink(g, this.font, line.text(), x + 12 + (line.note() ? NOTE_INDENT : 0), ty, line.rust() ? INK_RUST : INK, alpha);
 			ty += 11;
 		}
 		number(g, index, x, y, alpha);

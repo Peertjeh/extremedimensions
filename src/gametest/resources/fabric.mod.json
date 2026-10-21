@@ -26,7 +26,9 @@
 			"com.extremedimensions.gametest.ArchitectureTests",
 			"com.extremedimensions.gametest.ResetTests",
 			"com.extremedimensions.gametest.GroundTests",
-			"com.extremedimensions.gametest.VanillaTests"
+			"com.extremedimensions.gametest.VanillaTests",
+			"com.extremedimensions.gametest.WarmChainTests",
+			"com.extremedimensions.gametest.BindingTests"
 		],
 		"fabric-client-gametest": [
 			"com.extremedimensions.gametest.ClientShots"

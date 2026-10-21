@@ -105,6 +105,10 @@ public class PlayerData {
 	public transient int seamPull = 0;
 	/** Tier of the bound Tether: 0 iron chain, 1 soul-woven, 2 seam-woven. */
 	public int tetherTier = 0;
+	/** The bound Tether's enchantments (id to level): the item is tied into the anchor, its charms are kept here. */
+	public Map<String, Integer> tetherCharms = new HashMap<>();
+	/** Homebound things taken up at a death beyond the wound, waiting for the respawn (each one an item stack as JSON). */
+	public List<String> homebound = new ArrayList<>();
 	/** Scars: curse stacks taken off again. Each one makes the drain a little weaker (up to five). */
 	public int scars = 0;
 	/** A Hollowling follows this player. */
@@ -269,7 +273,18 @@ public class PlayerData {
 	public double drainMultiplier() {
 		double tier = tetherTier == 2 ? Config.SEAM_WOVEN_DRAIN : tetherTier == 1 ? Config.SOUL_WOVEN_DRAIN : 1.0;
 		double scar = 1.0 - Config.SCAR_DRAIN_REDUCTION * Math.min(5, scars);
-		return Config.BASE_DRAIN * tier * scar * (1.0 + Penalty.ACCELERATED_DRAIN.frac() * stacks(Penalty.ACCELERATED_DRAIN));
+		// Thrift on the bound Tether drinks less; all of it together never below the drain floor
+		double thrift = 1.0 - Config.ENCH_THRIFT_DRAIN * charm(com.extremedimensions.registry.ModEnchantments.THRIFT);
+		double eased = Math.max(Config.ENCH_DRAIN_FLOOR, tier * scar * thrift);
+		return Config.BASE_DRAIN * eased * (1.0 + Penalty.ACCELERATED_DRAIN.frac() * stacks(Penalty.ACCELERATED_DRAIN));
+	}
+
+	/** The level of an enchantment on the bound Tether (0 when unbound or without it). */
+	public int charm(net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> k) {
+		if (tetherAnchor == null || tetherCharms == null) {
+			return 0;
+		}
+		return tetherCharms.getOrDefault(com.extremedimensions.registry.ModEnchantments.id(k), 0);
 	}
 
 	public double debtFactor() {

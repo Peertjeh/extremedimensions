@@ -19,7 +19,7 @@ public final class ModItems {
 	/** Instantly charges an End anchor. */
 	public static final Item VOID_TETHER = register("void_tether", 64, Rarity.UNCOMMON);
 	/** The physical tether: bind it to an anchor before stepping through the wound. */
-	public static final Item TETHER = register("tether", 16, Rarity.COMMON);
+	public static final Item TETHER = tether("tether", Rarity.COMMON);
 	/** A Wanderer's journal that fills as the player discovers the mod. */
 	public static final Item TETHER_JOURNAL = register("tether_journal", 1, Rarity.UNCOMMON);
 	/** A frayed piece of the Tether. Offered to an anchor it takes a curse stack off (one fragment per stack it has). */
@@ -36,9 +36,9 @@ public final class ModItems {
 	public static final Item SEAM_NEEDLE = register("seam_needle", 16, Rarity.RARE);
 
 	/** A Tether woven with Seam Silk and soul light: slower drain, a longer reach. */
-	public static final Item SOUL_WOVEN_TETHER = register("soul_woven_tether", 16, Rarity.UNCOMMON);
+	public static final Item SOUL_WOVEN_TETHER = tether("soul_woven_tether", Rarity.UNCOMMON);
 	/** The Weavers' own work: slowest drain, and once per expedition it unravels you home instead of collapsing. */
-	public static final Item SEAM_WOVEN_TETHER = register("seam_woven_tether", 16, Rarity.EPIC);
+	public static final Item SEAM_WOVEN_TETHER = tether("seam_woven_tether", Rarity.EPIC);
 
 	/** A wing of a Veil Ray, still glowing along its seams. */
 	public static final Item VEIL_WING = register("veil_wing", 16, Rarity.UNCOMMON);
@@ -61,6 +61,18 @@ public final class ModItems {
 		Item.Properties props = new Item.Properties().useBlockDescriptionPrefix().setId(key);
 		return Registry.register(BuiltInRegistries.ITEM, key, new BlockItem(block, props));
 	}
+
+	/** A Tether: stacks to 16 and takes the Tether enchantments (one at a time at the table, see the ItemStack mixin). */
+	private static Item tether(String id, Rarity rarity) {
+		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, ExtremeDimensions.id(id));
+		Item.Properties props = new Item.Properties().stacksTo(16).rarity(rarity).enchantable(10).setId(key);
+		return Registry.register(BuiltInRegistries.ITEM, key, new Item(props));
+	}
+
+	/** An echo shard set in a spyglass and bound with silk: it listens to wounds. Scopes like a spyglass. */
+	public static final Item WOUND_LENS = Registry.register(BuiltInRegistries.ITEM, ResourceKey.create(Registries.ITEM, ExtremeDimensions.id("wound_lens")),
+			new net.minecraft.world.item.SpyglassItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)
+					.setId(ResourceKey.create(Registries.ITEM, ExtremeDimensions.id("wound_lens")))));
 
 	private static Item register(String id, int maxStack, Rarity rarity) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, ExtremeDimensions.id(id));

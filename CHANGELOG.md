@@ -1,5 +1,60 @@
 # Changelog
 
+## 2.35.0: The Art of Binding
+
+Prepare differently, not just harder: five enchantments for the mod's own dangers, Tethers that take them, and a lens
+that listens to wounds.
+
+### Added
+- **Woundbane** (swords, axes, maces; I to V; from the table). +2.5 damage per level against the creatures of the
+  wound (Lurker, Hollowling, Keeper, Thinned, Veil and Frayed Rays), only +1 per level against the Elders and the
+  Starved One. It is a damage enchantment, so it does not go with Sharpness, Smite or Bane of Arthropods.
+- **Thrift** (Tethers; I to III; from the table). The bound Tether drinks 5% less charge per level. The price: a
+  Collapse while bound to it costs one curse stack more. Everything that eases the drain together (the woven tiers,
+  scars, Thrift) never goes below half the normal drain.
+- **Silkbound** (Tethers; I to II; from the table). 30 seconds more in the Seam per level, from the bound Tether or one
+  you carry. It does not go with Thrift: the Seam or the other worlds.
+- **Veilsight** (helmets; treasure, found in a colossus's reliquary and in the Fray's tangles). In the Seam and the Fray
+  the fog keeps twice as far off, and Seam Veins within 12 blocks shimmer for you while you sneak. The Thinned notice
+  you from twice as far.
+- **Homebound** (any gear; treasure, from the Keeper's spoils and a first gold medal in the Rift Trials). Die beyond
+  the wound or in the Seam and what you dropped with Homebound on it comes home with you at the respawn, even in a
+  severed world. It waits in your data, so a server stopped in between keeps it. Each Homebound piece you wear or
+  hold beyond the wound drains 5% more. It does not go with the Curse of Vanishing.
+- **Tethers take enchantments.** All three tiers, at the enchanting table and the anvil, one at a time (a stack of
+  them cannot be enchanted at once). A Tether keeps its enchantments while it is tied into an anchor and comes back
+  with them when you untie it. Under a mod enchantment's name its tooltip says what it does, on books too.
+- **The Wound Lens.** A Spyglass, an Echo Shard and two Seam Silk (shapeless; it comes into the recipe book when you
+  hold Seam Silk). It scopes like a spyglass, and what it looks at, it reads to you alone, on the action bar: a charged
+  anchor tells whose charge it keeps (names and time) and whether it is opened to allies; a Lurker shows what it is
+  about (watching, following, reaching for what you carry, drinking from an anchor, leaving). In a Wound Storm the
+  next breaches glow three seconds before something comes through them; in the Seam the rift home glints when you
+  look toward it. It only tells: it stops nothing, and it does not name the Elders' blows.
+- Settings (a new Enchantments section): `ench_thrift_drain` (0.05), `ench_thrift_collapse` (1), `ench_drain_floor`
+  (0.5), `ench_silkbound_seconds` (30), `ench_veilsight_fog` (2.0), `ench_veilsight_notice` (2.0),
+  `ench_veilsight_veins` (12), `ench_homebound_drain` (0.05), `wound_lens_range` (64). Woundbane's numbers are in its
+  data file, as vanilla's are; the books' chances are in the loot tables (`gameplay/trial_gold` is new).
+
+### Changed
+- **The journal keeps a note together.** A note in another hand that would run over the end of a page starts on the
+  next one, and no page begins with an empty line.
+- **Page XXXIX, The Held, is written in the other hand's rust-brown ink**, as its notes are.
+
+### Fixed
+- The Warm Chain's five gametests (2.34) were never registered with the test runner, so they did not run in 2.34's
+  CI (130 tests ran, not 134). They are registered now and run with the rest.
+
+### Under the hood
+- Gametests: Woundbane's damage against a Lurker and a zombie, and which creatures count as wound-born or Elder;
+  exclusivity, table or treasure, and what each enchantment goes on; a single Tether is enchantable and a stack is
+  not; a Tether's Thrift is kept while it is tied and comes back with it; Thrift eases the drain by its share and the
+  floor holds; a Collapse with Thrift costs the extra stack; Silkbound read from a carried Tether; Veilsight read from
+  the helmet and the veins shimmer; Homebound gear is taken up beyond the wound only, survives a restart and comes back
+  at the respawn, and drains when worn; the Lens reads every Lurker pose and an anchor's keeper and time. The client
+  test photographs the enchanted things in the bag and the view through the Lens, and checks the Thrift tooltip.
+- The Veil Lantern (a Veil Wing use) moves to 2.36, with the storms it wards against; the Echoing Journal is dropped
+  as purely cosmetic.
+
 ## 2.34.0: The Warm Chain
 
 *"I found a chain in the obsidian of one, still warm. I did not follow where it led."* (XVIII, The Ruined Gates)

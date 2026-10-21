@@ -213,7 +213,8 @@ grace is tested on both sides of the portal; the margin notes survive a relog; s
 and the journal margin.
 
 *Status:* built in 2.34.0. One change from the plan: each warm gate has its own chamber, and only the first chamber a
-player raises holds the Held's letter and chain (so the Held stays one person, and every player can find them).
+player raises holds the Held's letter and chain (so the Held stays one person, and every player can find them). Its
+gametests were not registered with the runner in 2.34.0; they run from 2.35.0.
 
 #### 2.35 The Art of Binding
 
@@ -229,6 +230,11 @@ player raises holds the Held's letter and chain (so the Held stays one person, a
 
 *Done when:* gametests per enchantment effect, table eligibility and exclusivity; the Lens's readings tested server-side;
 screenshots of the enchanting table, a tooltip and the Lens view.
+
+*Status:* built in 2.35.0. Homebound's kept gear waits in the player's data rather than in memory, so a restart between
+death and respawn keeps it. The client test checks the tooltip line and photographs the bag and the Lens view instead
+of the enchanting table (whose offers are random). The Veil Lantern moves to 2.36 with the storms it wards against; the
+Echoing Journal is dropped as purely cosmetic.
 
 #### 2.36 The Wounds Remember
 

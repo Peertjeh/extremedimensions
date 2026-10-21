@@ -223,11 +223,13 @@ public final class TrialService {
 			d.trialClaimMedal = 0;
 		}
 		int fragments = 0, points = 0, relics = 0;
+		boolean gold = false;
 		for (int m = d.trialClaimMedal + 1; m <= medal; m++) {
 			fragments += Math.max(0, m == 1 ? Config.TRIAL_BRONZE_FRAGMENTS : m == 2 ? Config.TRIAL_SILVER_FRAGMENTS : Config.TRIAL_GOLD_FRAGMENTS);
 			points += Math.max(0, m == 1 ? Config.TRIAL_BRONZE_ATONE : m == 2 ? Config.TRIAL_SILVER_ATONE : Config.TRIAL_GOLD_ATONE);
 			if (m == 3) {
 				relics += Math.max(0, Config.TRIAL_GOLD_RELICS);
+				gold = true;
 			}
 		}
 		d.trialClaimMedal = Math.max(d.trialClaimMedal, medal);
@@ -236,6 +238,11 @@ public final class TrialService {
 		}
 		for (int i = 0; i < relics; i++) {
 			WorldFx.give(p, RelicService.random());
+		}
+		if (gold) {
+			for (ItemStack extra : com.extremedimensions.lore.Loot.roll((net.minecraft.server.level.ServerLevel) p.level(), com.extremedimensions.lore.Loot.TRIAL_GOLD, p.position())) {
+				WorldFx.give(p, extra);
+			}
 		}
 		if (points > 0) {
 			PenaltyService.atone(p, d, false, points);

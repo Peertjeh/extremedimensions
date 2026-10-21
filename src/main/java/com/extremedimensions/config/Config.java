@@ -340,6 +340,24 @@ public final class Config {
 	public static int RELIC_STARVED_ONE = 1;
 	public static double RELIC_SEAM_CHEST_CHANCE = 0.05;
 
+	// --- Enchantments: the Art of Binding (Woundbane's numbers are in its data file) -----------
+
+	/** Thrift: drain taken off per level of the bound Tether (0.05 = 5%); curse stacks a Collapse with it costs on top. */
+	public static double ENCH_THRIFT_DRAIN = 0.05;
+	public static int ENCH_THRIFT_COLLAPSE = 1;
+	/** The lowest the drain goes for everything that eases it together (the woven tiers, scars, Thrift), as a multiple. */
+	public static double ENCH_DRAIN_FLOOR = 0.5;
+	/** Silkbound: extra seconds in the Seam per level. */
+	public static int ENCH_SILKBOUND_SECONDS = 30;
+	/** Veilsight: how many times as far the fog keeps in the Seam; how many times as far the Thinned notice you; how far (blocks) veins shimmer while you sneak. */
+	public static double ENCH_VEILSIGHT_FOG = 2.0;
+	public static double ENCH_VEILSIGHT_NOTICE = 2.0;
+	public static int ENCH_VEILSIGHT_VEINS = 12;
+	/** Homebound: drain added for each Homebound piece worn or held beyond the wound (0.05 = 5%). */
+	public static double ENCH_HOMEBOUND_DRAIN = 0.05;
+	/** Wound Lens: how far it reads (blocks). */
+	public static int WOUND_LENS_RANGE = 64;
+
 	// --- Pacts: curses taken on willingly for an expedition, for what a safe return brings -------
 
 	/** When pacts open: 0 = from the start, 1 = after the Ender Dragon falls, 2 = after the Starved One falls. */
@@ -740,7 +758,7 @@ public final class Config {
 			Map.entry("max_charge", "anchors"), Map.entry("base_drain", "expeditions"), Map.entry("rope_segment", "tether"),
 			Map.entry("offer_count", "curses"), Map.entry("fragment_chance", "lore"), Map.entry("lurker_enabled", "lurker"),
 			Map.entry("hoard_wild_chance", "hollow"), Map.entry("soul_woven_drain", "weaving"), Map.entry("seam_seconds", "seam"),
-			Map.entry("storm_chance", "dragon"), Map.entry("relic_ember_heart_nether", "relics"), Map.entry("pact_unlock", "pacts"),
+			Map.entry("storm_chance", "dragon"), Map.entry("relic_ember_heart_nether", "relics"), Map.entry("ench_thrift_drain", "enchantments"), Map.entry("pact_unlock", "pacts"),
 			Map.entry("trial_unlock", "trials"), Map.entry("matriarch_after_keepers", "elders"),
 			Map.entry("coop_revive", "coop"), Map.entry("tribe_enabled", "tribe"), Map.entry("seam_build_budget_ms", "technical"));
 

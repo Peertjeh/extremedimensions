@@ -246,7 +246,8 @@ public final class ExpeditionService {
 		boolean seam = Dims.SEAM.equals(dim);
 		if ((Dims.isBeyond(dim) || seam) && d.inRun && !d.collapsing) {
 			d.currentDrain = d.drainMultiplier() * (seam ? 1.0 : TetherService.distanceFactor(p, d)) * WorldService.drainFactor(dim)
-					* com.extremedimensions.relic.RelicService.drainFactor(d, dim) * com.extremedimensions.elder.FerrymanService.drainFactor(p);
+					* com.extremedimensions.relic.RelicService.drainFactor(d, dim) * com.extremedimensions.elder.FerrymanService.drainFactor(p)
+					* com.extremedimensions.binding.Homebound.drainFactor(p);
 			double left = AnchorService.drainLinked(p, d, d.currentDrain / 20.0);
 			d.runTime += 1.0 / 20.0;
 			double far = seam ? 0 : TetherService.arrivalDistance(p, d);
@@ -344,6 +345,8 @@ public final class ExpeditionService {
 	 * death screen, see the client's collapse sequence).
 	 */
 	private static void collapse(ServerPlayer p, PlayerData d) {
+		// Thrift: the Tether that drank less takes its due now (read before the Tether is lost)
+		boolean thrift = d.charm(com.extremedimensions.registry.ModEnchantments.THRIFT) > 0;
 		TetherService.clear(p, d, false);
 		d.heldTicks = 0;
 		com.extremedimensions.pact.PactService.broken(p, d);
@@ -352,6 +355,11 @@ public final class ExpeditionService {
 		d.collapseRetry = -Config.COLLAPSE_PULL_TICKS;
 		d.collapses++;
 		PenaltyService.owe(d, false);
+		if (thrift) {
+			for (int i = 0; i < Config.ENCH_THRIFT_COLLAPSE; i++) {
+				PenaltyService.owe(d, false);
+			}
+		}
 		Journal.unlock(p, d, JournalEntry.STARVED);
 		Advancements.grant(p, Advancements.COLLAPSE);
 		WorldFx.fx(p, Fx.COLLAPSE, 0);
