@@ -25,7 +25,7 @@ End's far islands, and the Seam's islands fray.
   let them finish unwatched and they step into the ring and are gone, leaving Ender Pearls, a Tether Fragment, a note
   in another hand beside XIII and the advancement *A Way Home* (loot table `gameplay/unanchored`).
 - **Frayed Seam.** Now and then, once a visit, the island a visitor stands on frays for three minutes: the fog closes
-  in as down in the Fray, green spores drift, strands snap somewhere out of sight, Frayed Rays rise to it and the
+  in and turns the green of the Fray, spores drift, strands snap somewhere out of sight, Frayed Rays rise to it and the
   Thinned hunt on it, and the Seam's time runs out half as fast again while you stay. Cross to another island, or
   stay: when it is over a tangle (Fray loot) surfaces on the island.
 - **The Veil Lantern.** A Soul Lantern under a Veil Wing between two Seam Silk. A soul ward like a soul lantern (the

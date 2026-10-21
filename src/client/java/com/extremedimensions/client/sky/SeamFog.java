@@ -24,6 +24,16 @@ public final class SeamFog {
 		return lastEnd;
 	}
 
+	/** The fog's colour over a frayed island: drawn toward the Fray's green as the fog closes in; null elsewhere. */
+	public static org.joml.Vector3fc tint(org.joml.Vector3fc base) {
+		Minecraft mc = Minecraft.getInstance();
+		if (base == null || frayedK < 0.01 || mc.player == null || !SeamAmbience.inSeam(mc)) {
+			return null;
+		}
+		float k = (float) (frayedK * 0.75);
+		return new org.joml.Vector3f(Mth.lerp(k, base.x(), 0.27f), Mth.lerp(k, base.y(), 0.45f), Mth.lerp(k, base.z(), 0.30f));
+	}
+
 	public static void apply(FogData data) {
 		Minecraft mc = Minecraft.getInstance();
 		if (!SeamAmbience.inSeam(mc) || mc.player == null) {

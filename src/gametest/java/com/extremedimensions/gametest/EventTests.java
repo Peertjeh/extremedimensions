@@ -20,7 +20,6 @@ import com.extremedimensions.journal.MarginNote;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.registry.ModBlocks;
 import com.extremedimensions.registry.ModItems;
-import com.extremedimensions.seam.SeamService;
 import com.extremedimensions.server.Dims;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -258,8 +257,8 @@ public class EventTests {
 	/** A frayed island: Frayed Rays rise to it, and when it is over a tangle surfaces on it and the rays sink back. */
 	@GameTest(maxTicks = 100)
 	public void anIslandFrays(GameTestHelper helper) {
-		ServerLevel seam = helper.getLevel().getServer().getLevel(SeamService.SEAM);
-		check(helper, seam != null, "no Seam");
+		// (the test server has no Seam: a fraying works on whatever world it is given, so it is tried here)
+		ServerLevel seam = helper.getLevel();
 		BlockPos origin = helper.absolutePos(BlockPos.ZERO);
 		int cx = (origin.getX() >> 4 << 4) + 40008, cz = (origin.getZ() >> 4 << 4) + 40008, y0 = 150;
 		for (int dx = -2; dx <= 2; dx++) {
