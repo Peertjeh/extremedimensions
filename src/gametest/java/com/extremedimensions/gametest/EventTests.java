@@ -273,6 +273,9 @@ public class EventTests {
 		FrayedSeam.Fraying f = FrayedSeam.start(seam, UUID.randomUUID(), cx + 0.5, y0, cz + 0.5, 0);
 		try {
 			check(helper, f.rays() > 0, "no Frayed Ray rose to the frayed island");
+			// (a ray the Seam does not drive fades after two seconds: these must stay over the island)
+			check(helper, f.rayIds().stream().allMatch(id -> seam.getEntity(id) != null && com.extremedimensions.seam.SeamFauna.isDriven(seam.getEntity(id))),
+					"the frayed island's rays are not held, and fade after two seconds");
 			check(helper, f.holds(cx + 20, cz) && !f.holds(cx + Config.FRAYED_SEAM_RADIUS + 9, cz), "the island's reach is wrong");
 			FrayedSeam.finishNow(seam, f);
 			boolean tangle = false;

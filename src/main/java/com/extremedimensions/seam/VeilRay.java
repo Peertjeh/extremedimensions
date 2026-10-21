@@ -62,6 +62,7 @@ public class VeilRay extends PathfinderMob {
 
 	private double hx, hy, hz, roam = 56;
 	private boolean homed;
+	private boolean risen;
 	private Vec3 waypoint;
 	private int waypointAge;
 	private Vec3 heading;
@@ -96,6 +97,16 @@ public class VeilRay extends PathfinderMob {
 	public void setFrayed(boolean frayed) {
 		byte m = this.entityData.get(MODE);
 		this.entityData.set(MODE, (byte) (frayed ? m | FRAYED : m & ~FRAYED));
+	}
+
+	/** One of the Frayed risen to a frayed island: it hunts up there, out of the dark it keeps to otherwise. */
+	public void rise() {
+		risen = true;
+	}
+
+	/** Kept to the dark under the islands: the Frayed, unless risen to a frayed island. */
+	private boolean deep() {
+		return isFrayed() && !risen;
 	}
 
 	/** Diving at its prey (the client folds its wings). */
@@ -210,7 +221,7 @@ public class VeilRay extends PathfinderMob {
 		} else if (pos.y > hy + 26) {
 			lift -= 0.35;
 		}
-		if (isFrayed() && pos.y > Config.SEAM_FRAY_TOP - 3) {
+		if (deep() && pos.y > Config.SEAM_FRAY_TOP - 3) {
 			// the Frayed never leave the dark under the islands
 			lift -= 0.5;
 		}
@@ -361,7 +372,7 @@ public class VeilRay extends PathfinderMob {
 	/** Prey it may hunt: a visitor down in the Fray, alive, in survival, not fallen, and the world not at peace. */
 	private boolean fair(ServerLevel level, ServerPlayer p) {
 		return p.isAlive() && !p.isSpectator() && !p.isCreative() && p.level() == level && level.getDifficulty() != Difficulty.PEACEFUL
-				&& p.getY() < Config.SEAM_FRAY_TOP + 6 && p.distanceToSqr(this) < (SIGHT + 16) * (SIGHT + 16)
+				&& (risen || p.getY() < Config.SEAM_FRAY_TOP + 6) && p.distanceToSqr(this) < (SIGHT + 16) * (SIGHT + 16)
 				&& !com.extremedimensions.coop.FallenService.fallen(p);
 	}
 
@@ -506,7 +517,7 @@ public class VeilRay extends PathfinderMob {
 	/** A point in open sky somewhere over its stretch of the Seam, far enough away for a long glide. */
 	private Vec3 pickWaypoint(ServerLevel level, Vec3 pos) {
 		RandomSource r = this.getRandom();
-		boolean frayed = isFrayed();
+		boolean frayed = deep();
 		// The next waypoint lies well away, but within its own sky: a small sky asks for shorter legs
 		double leg = Math.min(26, roam * 0.75);
 		for (int i = 0; i < 16; i++) {

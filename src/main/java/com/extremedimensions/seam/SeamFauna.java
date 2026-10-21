@@ -42,7 +42,7 @@ import net.minecraft.world.phys.Vec3;
 public final class SeamFauna {
 	private SeamFauna() {}
 
-	private static final int RAY = 0, THINNED = 1, FRAYED = 2;
+	private static final int RAY = 0, THINNED = 1, FRAYED = 2, HELD = 3;
 	private static final int RAYS_PER_PLAYER = 3;
 	private static final int THINNED_PER_VILLAGE = 4;
 
@@ -109,7 +109,7 @@ public final class SeamFauna {
 			ServerPlayer near = nearest(frayed ? below : players, m.position(), 128);
 			if (near == null) {
 				far.add(m);
-			} else if (m instanceof VeilRay ray && ray.farFromHome(near.getX(), near.getZ())) {
+			} else if (e.getValue().kind != HELD && m instanceof VeilRay ray && ray.farFromHome(near.getX(), near.getZ())) {
 				// The rays drift along with the visitor, over whatever islands they walk to
 				ThreadLocalRandom r = ThreadLocalRandom.current();
 				ray.anchor(near.getX(), frayed ? frayCruise(near, r) : cruise(near, r), near.getZ(), ray.roam());
@@ -220,6 +220,11 @@ public final class SeamFauna {
 				ray.rouse();
 			}
 		}
+	}
+
+	/** Holds a ray over a frayed island: it stays over the island, not with the visitor, until the fraying ends. */
+	public static void hold(VeilRay ray) {
+		DRIVEN.put(ray.getUUID(), new Driven(HELD));
 	}
 
 	/** Drives a ray the tests have made, as if the Seam had spawned it (one of the Frayed if it is). */

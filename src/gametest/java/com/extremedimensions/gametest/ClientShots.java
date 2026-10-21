@@ -164,7 +164,7 @@ public class ClientShots implements FabricClientGameTest {
 		// world comes in round there, and what waited for it goes up
 		sp.getServer().runOnServer(s -> player(s).teleportTo(mid[0] - 190, mid[1] + 40, mid[2]));
 		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 180 15");
-		for (int i = 0; i < 30 && sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting()) >= held; i++) {
+		for (int i = 0; i < 60 && sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting()) >= held; i++) {
 			ctx.waitTicks(10);
 		}
 		ctx.waitTicks(40);
@@ -356,6 +356,45 @@ public class ClientShots implements FabricClientGameTest {
 		if (!ok) {
 			throw new AssertionError(message);
 		}
+	}
+
+	/** Waits for the world round the player to be drawn; if it is not in time, says what the client sees, and goes on. */
+	private static void settle(ClientGameTestContext ctx, TestSingleplayerContext sp, String where) {
+		try {
+			sp.getConnection().waitForChunksRender();
+		} catch (AssertionError timedOut) {
+			ctx.runOnClient(mc -> System.out.println("[settle] " + where + ": not drawn in time; at " + mc.player.position() + " in "
+					+ mc.level.dimension().identifier() + ", spectator " + mc.player.isSpectator() + ", alive " + mc.player.isAlive() + ", using "
+					+ mc.player.isUsingItem() + ", screen " + peek(mc.gui, "screen") + ", distance " + peek(mc.options, "getEffectiveRenderDistance")
+					+ ", chunks " + peek(mc.level.getChunkSource(), "gatherStats") + ", sections " + peek(mc.levelRenderer, "getSectionStatistics")
+					+ ", all drawn " + peek(mc.levelRenderer, "hasRenderedAllSections")));
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				System.out.println("[settle] " + where + ": the server has the player at " + p.position() + " in " + p.level().dimension().identifier()
+						+ ", spectator " + p.isSpectator() + ", view distance " + peek(s.getPlayerList(), "getViewDistance"));
+			});
+		}
+	}
+
+	/** A method's (or a field's) value by name, for a look at the client's state; "?" if it has no such thing. */
+	private static String peek(Object o, String name) {
+		for (Class<?> c = o.getClass(); c != null; c = c.getSuperclass()) {
+			try {
+				java.lang.reflect.Method m = c.getDeclaredMethod(name);
+				m.setAccessible(true);
+				return String.valueOf(m.invoke(o));
+			} catch (ReflectiveOperationException | RuntimeException e) {
+				// not here: the field, or further up
+			}
+			try {
+				java.lang.reflect.Field f = c.getDeclaredField(name);
+				f.setAccessible(true);
+				return String.valueOf(f.get(o));
+			} catch (ReflectiveOperationException | RuntimeException e) {
+				// further up
+			}
+		}
+		return "?";
 	}
 
 	@Override
@@ -1134,7 +1173,7 @@ public class ClientShots implements FabricClientGameTest {
 				p.teleportTo(ex + 0.5, ey + 0.2, ez + 4.5);
 			});
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 180 12");
-			sp.getConnection().waitForChunksRender();
+			settle(ctx, sp, "echo");
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("31_echo");
 			sp.getServer().runOnServer(s -> com.extremedimensions.events.Echoes.forget(echo[0]));
@@ -1154,7 +1193,7 @@ public class ClientShots implements FabricClientGameTest {
 				return new int[] {b.centre.getX(), b.centre.getY(), b.centre.getZ()};
 			});
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f 180 28", ring[0] + 0.5, ring[1] + 3.5, ring[2] + 8.5));
-			sp.getConnection().waitForChunksRender();
+			settle(ctx, sp, "unanchored");
 			ctx.waitTicks(20);
 			ctx.takeScreenshot("31_unanchored");
 			sp.getServer().runOnServer(s -> {

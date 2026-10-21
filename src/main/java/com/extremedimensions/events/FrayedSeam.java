@@ -66,6 +66,11 @@ public final class FrayedSeam {
 			return rays.size();
 		}
 
+		/** The Frayed Rays that rose to it (for the tests). */
+		public List<UUID> rayIds() {
+			return List.copyOf(rays);
+		}
+
 		public boolean holds(double px, double pz) {
 			double r = Math.max(8, Config.FRAYED_SEAM_RADIUS);
 			return (px - x) * (px - x) + (pz - z) * (pz - z) <= r * r;
@@ -129,6 +134,8 @@ public final class FrayedSeam {
 				VeilRay ray = ModEntities.VEIL_RAY.spawn(seam, BlockPos.containing(at), EntitySpawnReason.EVENT);
 				if (ray != null) {
 					ray.setFrayed(true);
+					ray.rise();
+					SeamFauna.hold(ray);
 					ray.anchor(f.x, f.y + 16, f.z, Math.max(16, Config.FRAYED_SEAM_RADIUS * 0.8));
 					f.rays.add(ray.getUUID());
 					seam.sendParticles(ParticleTypes.WARPED_SPORE, at.x, at.y, at.z, 30, 1.5, 0.8, 1.5, 0.0);
