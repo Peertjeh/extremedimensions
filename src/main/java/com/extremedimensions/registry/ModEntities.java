@@ -25,6 +25,7 @@ public final class ModEntities {
 	/** A hunched giant, about three and a half blocks tall; spawned only by {@code LurkerService}. */
 	public static final EntityType<Lurker> LURKER = Registry.register(BuiltInRegistries.ENTITY_TYPE, LURKER_KEY,
 			EntityType.Builder.<Lurker>of(Lurker::new, MobCategory.MONSTER)
+					.notInPeaceful()
 					.sized(1.3f, 3.4f)
 					.eyeHeight(3.0f)
 					.clientTrackingRange(10)
@@ -44,6 +45,7 @@ public final class ModEntities {
 	/** A hoard's guardian, larger than a Lurker; spawned only by {@code HollowService}. */
 	public static final EntityType<Keeper> KEEPER = Registry.register(BuiltInRegistries.ENTITY_TYPE, KEEPER_KEY,
 			EntityType.Builder.<Keeper>of(Keeper::new, MobCategory.MONSTER)
+					.notInPeaceful()
 					.sized(1.6f, 4.2f)
 					.eyeHeight(3.7f)
 					.clientTrackingRange(10)
@@ -51,7 +53,7 @@ public final class ModEntities {
 
 	private static final ResourceKey<EntityType<?>> STARVED_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("starved_one"));
 
-	/** The last boss, at the Heart of the Seam; spawned only by {@code MendingService}. */
+	/** The last boss, at the Heart of the Seam; spawned only by {@code MendingService}. It stays on peaceful, as the Ender Dragon does. */
 	public static final EntityType<StarvedOne> STARVED_ONE = Registry.register(BuiltInRegistries.ENTITY_TYPE, STARVED_KEY,
 			EntityType.Builder.<StarvedOne>of(StarvedOne::new, MobCategory.MONSTER)
 					.sized(2.0f, 5.6f)
@@ -73,6 +75,7 @@ public final class ModEntities {
 	/** The worn-thin people of the Seam's villages; spawned only by {@code SeamFauna}. */
 	public static final EntityType<Thinned> THINNED = Registry.register(BuiltInRegistries.ENTITY_TYPE, THINNED_KEY,
 			EntityType.Builder.<Thinned>of(Thinned::new, MobCategory.MONSTER)
+					.notInPeaceful()
 					.sized(0.9f, 2.6f)
 					.eyeHeight(2.3f)
 					.clientTrackingRange(10)
@@ -85,6 +88,7 @@ public final class ModEntities {
 	/** The oldest Keeper, for those who slew enough of them; spawned only by {@code HollowService}. */
 	public static final EntityType<com.extremedimensions.elder.Matriarch> MATRIARCH = Registry.register(BuiltInRegistries.ENTITY_TYPE, MATRIARCH_KEY,
 			EntityType.Builder.<com.extremedimensions.elder.Matriarch>of(com.extremedimensions.elder.Matriarch::new, MobCategory.MONSTER)
+					.notInPeaceful()
 					.sized(5.0f, 14.0f)
 					.eyeHeight(12.5f)
 					.clientTrackingRange(16)
@@ -94,6 +98,7 @@ public final class ModEntities {
 	/** The one the Nether pays; spawned only by {@code FerrymanService}. */
 	public static final EntityType<com.extremedimensions.elder.Ferryman> FERRYMAN = Registry.register(BuiltInRegistries.ENTITY_TYPE, FERRYMAN_KEY,
 			EntityType.Builder.<com.extremedimensions.elder.Ferryman>of(com.extremedimensions.elder.Ferryman::new, MobCategory.MONSTER)
+					.notInPeaceful()
 					.sized(5.0f, 12.0f)
 					.eyeHeight(10.5f)
 					.clientTrackingRange(16)
@@ -103,6 +108,7 @@ public final class ModEntities {
 	/** The Last Weaver, in the villages of the Thinned; spawned only by {@code WeaverService}. */
 	public static final EntityType<com.extremedimensions.elder.Weaver> WEAVER = Registry.register(BuiltInRegistries.ENTITY_TYPE, WEAVER_KEY,
 			EntityType.Builder.<com.extremedimensions.elder.Weaver>of(com.extremedimensions.elder.Weaver::new, MobCategory.MONSTER)
+					.notInPeaceful()
 					.sized(4.0f, 15.0f)
 					.eyeHeight(13.5f)
 					.clientTrackingRange(16)

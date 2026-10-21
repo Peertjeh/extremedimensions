@@ -4,15 +4,13 @@ import java.util.Map;
 
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
-import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.entries.NestedLootTable;
 
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 
 /**
  * The Wanderer passed through the world before you: torn journal pages and Tether Fragments turn up in the chests of
- * ruined portals, fortresses, bastions, strongholds, ancient cities and end cities. Each of those chests draws once
+ * ruined portals, fortresses, bastions, strongholds, ancient cities and end cities. Each of those chests also draws
  * from one of the mod's tables (`loot_table/inject/`), so a datapack can change what the Wanderer left.
  */
 public final class WorldLoot {
@@ -27,11 +25,11 @@ public final class WorldLoot {
 			BuiltInLootTables.END_CITY_TREASURE, "inject/end_city_treasure");
 
 	public static void register() {
-		LootTableEvents.MODIFY.register((key, table, source, registries) -> {
+		LootTableEvents.MODIFY_DROPS.register((table, context, drops) -> table.unwrapKey().ifPresent(key -> {
 			String leavings = LEAVINGS.get(key);
 			if (leavings != null) {
-				table.withPool(LootPool.lootPool().add(NestedLootTable.lootTableReference(Loot.key(leavings))));
+				context.getLevel().getServer().reloadableRegistries().getLootTable(Loot.key(leavings)).getRandomItemsRaw(context, drops::add);
 			}
-		});
+		}));
 	}
 }

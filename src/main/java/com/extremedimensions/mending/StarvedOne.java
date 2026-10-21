@@ -41,12 +41,6 @@ public class StarvedOne extends Keeper {
 		}
 	}
 
-	/** It waits at the Heart on peaceful too, as the Ender Dragon waits in the End: the story can always be ended. */
-	@Override
-	protected boolean shouldDespawnInPeaceful() {
-		return false;
-	}
-
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
 		return super.hurtServer(level, source, amount * MendingService.damageFactor(this));
