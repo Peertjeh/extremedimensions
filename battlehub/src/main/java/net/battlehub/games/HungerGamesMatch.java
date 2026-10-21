@@ -244,6 +244,12 @@ public final class HungerGamesMatch extends PartyMatch {
 		});
 	}
 
+	/** During the peace nobody is anyone's enemy: bots loot instead of swinging at people they cannot hurt. */
+	@Override
+	public boolean isEnemy(UUID a, UUID b) {
+		return !inGrace() && super.isEnemy(a, b);
+	}
+
 	/** Nobody hurts anyone in the first half minute; the rest (falls, fire, the border) hurts from the start. */
 	@Override
 	protected boolean damageAllowed(ServerPlayer victim, DamageSource source, ServerPlayer attacker) {

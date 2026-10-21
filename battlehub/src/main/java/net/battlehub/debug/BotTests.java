@@ -867,7 +867,8 @@ final class BotTests {
 			java.util.Map<String, Double> hg = ConfigManager.config().game(GameMode.HUNGER_GAMES).settings;
 			VARS.put("hgSettings", new java.util.LinkedHashMap<>(hg));
 			hg.put("borderDelaySeconds", 600.0);
-			hg.put("graceSeconds", 30.0);
+			// a long peace: nobody is an enemy, so the bots only loot (after it they would fight A, who stays)
+			hg.put("graceSeconds", 600.0);
 			SelfTest.join(server, A);
 			Parties.join(p(A), GameMode.HUNGER_GAMES, "");
 		});
@@ -893,6 +894,7 @@ final class BotTests {
 			logBot("hunger games bot", m, botsIn(m).get(0), "hgLogged");
 			return false;
 		});
+		s.check(tag + ": during the peace nobody is anyone's enemy", () -> !matchOfA().isEnemy(p(A).getUUID(), botsIn(matchOfA()).get(0).getUUID()));
 		s.waitFor(tag + ": and walk into the town to the chests of the houses and landmarks", 3600, () -> {
 			Match m = matchOfA();
 			if (!(m instanceof net.battlehub.games.HungerGamesMatch hg) || botsIn(m).isEmpty()) return false;
