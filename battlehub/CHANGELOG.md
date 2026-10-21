@@ -33,6 +33,7 @@
     as players do.
 * Bots bridging over the void went up to a quarter block past the edge, and their slide carried them over.
   They now stop short and slow down in time.
+* Bots no longer start bridging over the gap they are heading for (The Bridge's goal, a few blocks away).
 * The parkour start pad was made of slabs in some themes, half a block lower than the course was planned for,
   so the first step up could not be made. Platform tops are always full blocks now.
 * Mace bots stand, jump and throw the wind charge straight down, so it really sends them up (it went off behind

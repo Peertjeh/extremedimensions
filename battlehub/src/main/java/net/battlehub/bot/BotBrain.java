@@ -806,6 +806,8 @@ final class BotBrain {
 	 */
 	private boolean bridge(Match m, Vec3 to) {
 		if (!bot.onGround() || find(BotBrain::isBuildBlock) < 0) return false;
+		// a few blocks from where it is going, the gap is the destination itself (a goal to drop into), not a crossing
+		if (Math.hypot(to.x - bot.getX(), to.z - bot.getZ()) < 4.5) return false;
 		// a way to walk there (the path, a bridge someone built): walk it, building is for where there is none
 		refreshRoute(to);
 		if (path != null) return false;

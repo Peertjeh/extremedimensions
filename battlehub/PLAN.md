@@ -656,3 +656,5 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
 
 (2) De parkourtest liep vast. De bot stond op het startplatform op hoogte 100,5, terwijl de planner van 101 uitging. Het startplatform krijgt de `trim` van het thema, en dat is in sommige thema's (oceaan) een halve plaat. Een sprong van 1 omhoog werd zo 1,5 omhoog: onmogelijk. Dat verklaart ook de parkourfout van 1.28.0 (toen ook 100,5). Platformbovenkanten zijn nu altijd volle blokken (`fullBlock`), behalve de bewuste halve-plaatstappen.
 
+**CI, vierde run:** parkour groen, SkyWars 0 keer gevallen (map 2,12 keer zo breed), mace vloog 1,5 blokken, Bridge bouwde over. Eén melding: in de Bridge-test legde de bot één blok terwijl het pad er nog was. Hij was al bij het eiland van A en stond 5 blokken van diens doel. Dat doel is een gat (3×3, de leegte in) waar je in moet springen, en de bot begon er een brug overheen te bouwen. Een bot bouwt nu niet meer als zijn bestemming minder dan 4,5 blokken weg is: het gat is dan de bestemming zelf, geen oversteek.
+
