@@ -824,6 +824,76 @@ final class BotTests {
 			ConfigManager.config().timings.partyFullCountdownSeconds = (int) VARS.get("partyFull");
 		});
 		skywarsBot(server, s);
+		hungerGamesBot(server, s);
+	}
+
+	/**
+	 * Hunger Games with three bots in the city: they empty the cornucopia next to their spawns, then walk into the
+	 * town (no doors in the way) to the chests of the houses and landmarks.
+	 */
+	private static void hungerGamesBot(MinecraftServer server, Script s) {
+		String tag = "bots hunger games";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": A joins the Hunger Games; three bots fill in", () -> {
+			VARS.put("partyCountdown", ConfigManager.config().timings.partyCountdownSeconds);
+			VARS.put("partyFull", ConfigManager.config().timings.partyFullCountdownSeconds);
+			ConfigManager.config().timings.partyCountdownSeconds = 4;
+			ConfigManager.config().timings.partyFullCountdownSeconds = 2;
+			cfg().fillQueues = true;
+			cfg().fillAfterSeconds = 1;
+			cfg().partyFillTo = 4;
+			VARS.put("swFalls", new java.util.HashMap<UUID, Integer>());
+			VARS.put("swHurt", new java.util.HashMap<UUID, Integer>());
+			VARS.put("swSelfFalls", 0);
+			// the border stays out of the way (other tests make it close in fast)
+			java.util.Map<String, Double> hg = ConfigManager.config().game(GameMode.HUNGER_GAMES).settings;
+			VARS.put("hgSettings", new java.util.LinkedHashMap<>(hg));
+			hg.put("borderDelaySeconds", 600.0);
+			hg.put("graceSeconds", 30.0);
+			SelfTest.join(server, A);
+			Parties.join(p(A), GameMode.HUNGER_GAMES, "");
+		});
+		s.waitFor(tag + ": the match runs with three bots", 900, () -> {
+			Match m = matchOfA();
+			return m instanceof net.battlehub.games.HungerGamesMatch && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 3;
+		});
+		s.run(tag + ": no more bots; A waits at the edge of the plaza", () -> {
+			cfg().fillQueues = false;
+			Match m = matchOfA();
+			PartyTests.tp(p(A), m.arena().origin().getX() + 0.5, m.arena().origin().getY() + 1, m.arena().origin().getZ() + 30.5);
+		});
+		s.waitFor(tag + ": the bots empty the cornucopia", 1200, () -> {
+			Match m = matchOfA();
+			if (!(m instanceof net.battlehub.games.HungerGamesMatch hg) || botsIn(m).isEmpty()) return false;
+			watchFalls(server, m);
+			if (hg.botLoots("cornucopia") >= 3) {
+				BotPlayer b = botsIn(m).get(0);
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST hunger games bots looted {} cornucopia chests, one wears {} | {}", hg.botLoots("cornucopia"),
+						b.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST), String.join(" | ", Bots.inspect(b)));
+				return true;
+			}
+			logBot("hunger games bot", m, botsIn(m).get(0), "hgLogged");
+			return false;
+		});
+		s.waitFor(tag + ": and walk into the town to the chests of the houses and landmarks", 3600, () -> {
+			Match m = matchOfA();
+			if (!(m instanceof net.battlehub.games.HungerGamesMatch hg) || botsIn(m).isEmpty()) return false;
+			watchFalls(server, m);
+			int town = hg.botLoots("chest") + hg.botLoots("landmark_chest");
+			if (town >= 1) {
+				BotPlayer b = botsIn(m).get(0);
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST hunger games bots looted {} chests in the town | {}", town, String.join(" | ", Bots.inspect(b)));
+				return true;
+			}
+			logBot("hunger games bot", m, botsIn(m).get(0), "hgLogged2");
+			return false;
+		});
+		endAndClean(s, tag);
+		s.run(tag + ": countdown as before", () -> {
+			cfg().partyFillTo = 4;
+			ConfigManager.config().timings.partyCountdownSeconds = (int) VARS.get("partyCountdown");
+			ConfigManager.config().timings.partyFullCountdownSeconds = (int) VARS.get("partyFull");
+		});
 	}
 
 	/**
@@ -896,10 +966,15 @@ final class BotTests {
 			return (int) VARS.get("swSelfFalls") == 0;
 		});
 		endAndClean(s, tag);
-		s.run(tag + ": countdown as before", () -> {
+		s.run(tag + ": countdown and settings as before", () -> {
 			cfg().partyFillTo = 4;
 			ConfigManager.config().timings.partyCountdownSeconds = (int) VARS.get("partyCountdown");
 			ConfigManager.config().timings.partyFullCountdownSeconds = (int) VARS.get("partyFull");
+			java.util.Map<String, Double> hg = ConfigManager.config().game(GameMode.HUNGER_GAMES).settings;
+			hg.clear();
+			@SuppressWarnings("unchecked")
+			java.util.Map<String, Double> saved = (java.util.Map<String, Double>) VARS.get("hgSettings");
+			hg.putAll(saved);
 		});
 	}
 

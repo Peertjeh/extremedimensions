@@ -310,9 +310,15 @@ public final class HungerGamesMatch extends PartyMatch {
 
 	private final Map<UUID, Set<BlockPos>> botLooted = new HashMap<>();
 	private int botLoots;
+	private final Map<String, Integer> botLootsBy = new HashMap<>();
 
 	public int botLoots() {
 		return botLoots;
+	}
+
+	/** Chests bots emptied of one kind ("cornucopia", "landmark_chest", "chest"), for the self-test. */
+	public int botLoots(String mark) {
+		return botLootsBy.getOrDefault(mark, 0);
 	}
 
 	/**
@@ -380,6 +386,7 @@ public final class HungerGamesMatch extends PartyMatch {
 				}
 				c.setChanged();
 				botLoots++;
+				botLootsBy.merge(mark, 1, Integer::sum);
 				arena.level().playSound(null, pos, SoundEvents.CHEST_OPEN, net.minecraft.sounds.SoundSource.BLOCKS, 0.5f, 1f);
 				SkyWarsMatch.wearArmor(bot);
 			}
