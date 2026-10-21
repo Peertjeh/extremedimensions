@@ -111,6 +111,8 @@ public class PlayerData {
 	public List<String> homebound = new ArrayList<>();
 	/** Atonement an echo of this player's Collapse gave back while they were away (granted when they are next in). */
 	public int echoOwed = 0;
+	/** When the Endermen last built for this player (ms since the epoch): the cooldown holds across restarts. */
+	public long lastUnanchored = 0;
 	/** Scars: curse stacks taken off again. Each one makes the drain a little weaker (up to five). */
 	public int scars = 0;
 	/** A Hollowling follows this player. */

@@ -40,7 +40,7 @@ public final class WorldEvents {
 
 	/** Whether a new event may begin for a player now. */
 	public static boolean free(ServerPlayer p, long now) {
-		if (ACTIVE.containsKey(p.getUUID()) || p.isSpectator() || inFight(p)) {
+		if (ACTIVE.containsKey(p.getUUID()) || p.isSpectator() || p.isCreative() || inFight(p)) {
 			return false;
 		}
 		Long last = LAST.get(p.getUUID());

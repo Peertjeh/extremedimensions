@@ -74,6 +74,7 @@ public class EventTests {
 		DataStore.setEnding(null);
 		Echo e = new Echo(Dims.of(level), o.getX(), o.getY(), o.getZ(), owner.getStringUUID(), "collapsed", 0L, 40);
 		Echo away = new Echo(Dims.of(level), o.getX() + 40, o.getY(), o.getZ(), UUID.randomUUID().toString(), "away", 0L, 30);
+		Echo own = null;
 		try {
 			DataStore.echoes().add(e);
 			Echoes.step(level.getServer());
@@ -98,9 +99,23 @@ public class EventTests {
 			}
 			check(helper, DataStore.get(UUID.fromString(away.owner)).echoOwed == Math.round(30 * Config.ECHO_RETURN),
 					"an away player's atonement from their echo did not wait for them");
+
+			// One's own echo pays back the toll, never the listener's reward
+			own = new Echo(Dims.of(level), o.getX() - 40, o.getY(), o.getZ(), listener.getStringUUID(), "own", 0L, 0);
+			DataStore.echoes().add(own);
+			listener.teleportTo(own.x + 0.5, own.y, own.z + 1.5);
+			int fragments = count(listener, ModItems.TETHER_FRAGMENT);
+			for (int i = 0; i < Config.ECHO_LISTEN_SECONDS * 2 + 2 && DataStore.echoes().contains(own); i++) {
+				Echoes.step(level.getServer());
+			}
+			check(helper, !DataStore.echoes().contains(own) && count(listener, ModItems.TETHER_FRAGMENT) == fragments,
+					"hearing one's own echo paid the listener's reward");
 		} finally {
 			DataStore.echoes().remove(e);
 			DataStore.echoes().remove(away);
+			if (own != null) {
+				DataStore.echoes().remove(own);
+			}
 			od.curses.remove(Penalty.DEBT.id);
 			od.atonement.remove(Penalty.DEBT.id);
 			DataStore.setEnding(ending);
@@ -293,6 +308,16 @@ public class EventTests {
 		check(helper, SoulWards.warded(level, at.getX() + 2, at.getY(), at.getZ()), "a Veil Lantern does not ward an anchor beside it");
 		level.setBlock(at, Blocks.AIR.defaultBlockState(), 3);
 		helper.succeed();
+	}
+
+	private static int count(ServerPlayer p, net.minecraft.world.item.Item item) {
+		int n = 0;
+		for (int i = 0; i < p.getInventory().getContainerSize(); i++) {
+			if (p.getInventory().getItem(i).is(item)) {
+				n += p.getInventory().getItem(i).getCount();
+			}
+		}
+		return n;
 	}
 
 	private static boolean carries(ServerPlayer p, net.minecraft.world.item.Item item) {

@@ -71,7 +71,6 @@ public final class Unanchored {
 	}
 
 	private static final Map<UUID, Build> BUILDS = new HashMap<>();
-	private static final Map<UUID, Long> LAST = new HashMap<>();
 	private static final String TAG = "ed_unanchored";
 
 	public static void tick(MinecraftServer s) {
@@ -79,9 +78,8 @@ public final class Unanchored {
 		if (now % 1200 == 600 && Config.UNANCHORED > 0) {
 			for (ServerPlayer p : s.getPlayerList().getPlayers()) {
 				PlayerData d = DataStore.get(p.getUUID());
-				Long last = LAST.get(p.getUUID());
 				if (d.inRun && Dims.END.equals(Dims.of(p)) && Math.hypot(p.getX(), p.getZ()) >= Config.UNANCHORED_FROM
-						&& !BUILDS.containsKey(p.getUUID()) && (last == null || now - last >= Math.max(0, Config.UNANCHORED_COOLDOWN) * 1200L)
+						&& !BUILDS.containsKey(p.getUUID()) && System.currentTimeMillis() - d.lastUnanchored >= Math.max(0, Config.UNANCHORED_COOLDOWN) * 60_000L
 						&& WorldEvents.free(p, now) && ThreadLocalRandom.current().nextDouble() < Config.UNANCHORED_CHANCE) {
 					start(p, now);
 				}
@@ -141,7 +139,8 @@ public final class Unanchored {
 				+ "transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.7f,0.7f,0.7f]}}",
 				level.dimension().identifier(), centre.getX() + 0.5, centre.getY() + 1.3, centre.getZ() + 0.5, TAG, b.tag()));
 		BUILDS.put(p.getUUID(), b);
-		LAST.put(p.getUUID(), now);
+		DataStore.get(p.getUUID()).lastUnanchored = System.currentTimeMillis();
+		DataStore.markDirty();
 		WorldEvents.begin(p, "unanchored", now);
 		for (ServerPlayer q : level.players()) {
 			if (q.distanceToSqr(Vec3.atCenterOf(centre)) < 64 * 64) {
@@ -340,7 +339,6 @@ public final class Unanchored {
 			}
 		}
 		BUILDS.clear();
-		LAST.clear();
 		WorldFx.run("kill @e[tag=" + TAG + "]");
 	}
 }

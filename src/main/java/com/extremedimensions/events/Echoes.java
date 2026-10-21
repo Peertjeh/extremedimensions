@@ -197,9 +197,12 @@ public final class Echoes {
 		PlayerData d = DataStore.get(listener.getUUID());
 		Journal.unlock(listener, d, JournalEntry.ECHOES);
 		Advancements.grant(listener, Advancements.ECHO_HEARD);
-		WorldFx.give(listener, new ItemStack(ModItems.TETHER_FRAGMENT));
-		if (Config.ECHO_ATONE > 0) {
-			PenaltyService.atone(listener, d, false, Config.ECHO_ATONE);
+		// Only another's echo pays the listener: collapsing on purpose to hear oneself brings back the toll, nothing more
+		if (!listener.getStringUUID().equals(e.owner)) {
+			WorldFx.give(listener, new ItemStack(ModItems.TETHER_FRAGMENT));
+			if (Config.ECHO_ATONE > 0) {
+				PenaltyService.atone(listener, d, false, Config.ECHO_ATONE);
+			}
 		}
 		level.sendParticles(ParticleTypes.SCULK_SOUL, e.x + 0.5, e.y + 1, e.z + 0.5, 30, 0.4, 0.8, 0.4, 0.04);
 		WorldFx.soundIn(Dims.fullIdOf(e.dim), "minecraft:block.chain.break", "ambient", e.x + 0.5, e.y + 1, e.z + 0.5, 1.0f, 0.6f);

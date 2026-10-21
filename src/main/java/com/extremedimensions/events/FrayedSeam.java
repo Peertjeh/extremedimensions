@@ -140,15 +140,15 @@ public final class FrayedSeam {
 		for (int i = 0; i < Math.max(0, Config.FRAYED_SEAM_THINNED); i++) {
 			for (int tries = 0; tries < 8; tries++) {
 				double a = rnd.nextDouble() * Math.PI * 2, d = 10 + rnd.nextDouble() * 14;
-				int x = (int) Math.floor(f.x + Math.cos(a) * d), z = (int) Math.floor(f.z + Math.sin(a) * d);
-				if (!seam.isLoaded(new BlockPos(x, f.y, z))) {
+				int tx = (int) Math.floor(f.x + Math.cos(a) * d), tz = (int) Math.floor(f.z + Math.sin(a) * d);
+				if (!seam.isLoaded(new BlockPos(tx, f.y, tz))) {
 					continue;
 				}
-				int top = seam.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
+				int top = seam.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, tx, tz);
 				if (top < f.y - 12 || top > f.y + 12) {
 					continue;
 				}
-				SeamFauna.summonThinned(seam, new BlockPos(x, top, z));
+				SeamFauna.summonThinned(seam, new BlockPos(tx, top, tz));
 				break;
 			}
 		}

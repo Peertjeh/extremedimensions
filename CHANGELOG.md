@@ -11,6 +11,7 @@ End's far islands, and the Seam's islands fray.
   their name over it; the chains rattle and something whispers. Stand within 4 blocks and listen for 15 seconds and the
   echo lets go: the listener gets a Tether Fragment, 30 atonement, journal page XL *Echoes* and the advancement *It
   Remembers*; the collapsed player gets half the atonement that death cost them (waiting for them if they are away).
+  Hearing your own echo gives back only that: the listener's fragment and atonement come from another's echo.
   While anyone listens, everyone within 16 blocks drains twice as fast; in a mended world it is softer, with no drain.
   In a severed world the echo gives back one of the things the death destroyed. One echo per Collapse.
 - **Unstable Anchors.** Once the seal is broken (in a severed world too, not in a mended one), an anchor without a soul
@@ -31,7 +32,8 @@ End's far islands, and the Seam's islands fray.
   tribe will not drink near it), and no Wound Storm breaks through within 8 blocks of it. Stands or hangs like any
   lantern.
 - **World events share their rules:** for one player, events (a storm, a build, a fraying) keep two minutes apart and
-  one at a time, and none starts during an Elder fight. Operators can start one with `/tether event <storm|echo|
+  one at a time; none starts during an Elder fight, in creative or in spectator mode. The Endermen's cooldown is kept
+  in the player's data, so a restart does not reset it. Operators can start one with `/tether event <storm|echo|
   unstable|unanchored|frayed>`.
 - Settings (a new World events section): `event_spacing`, `echoes`, `echo_delay`, `echo_range`, `echo_listen_range`,
   `echo_listen_seconds`, `echo_drain`, `echo_drain_range`, `echo_atone`, `echo_return`, `echo_max`,
@@ -46,7 +48,7 @@ End's far islands, and the Seam's islands fray.
 
 ### Under the hood
 - Gametests: events keep their distance; an echo shows, is heard out and gives back what it gives (to an away player
-  too), and drains those near while it is listened to; a Collapse is remembered where it fell; an anchor cracks only
+  too, and nothing to the listener from their own echo), and drains those near while it is listened to; a Collapse is remembered where it fell; an anchor cracks only
   after the seal and not when warded or mended, leaks everyone's charge, steadies with a shard and breaks after its
   time; the Endermen finish a ring unwatched and leave pearls and the note, and turn when stared at; a frayed island
   raises its rays and leaves a tangle; the Veil Lantern wards and holds storms off. The client test photographs an
