@@ -1067,6 +1067,37 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.runOnClient(mc -> com.extremedimensions.client.hud.Toasts.journal(0));
 			ctx.waitTicks(24);
 			ctx.takeScreenshot("27_toast");
+			// The mod in Minecraft's own progression: its advancement tab, and its recipes in the recipe book once their
+			// ingredients are held
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				p.getInventory().add(new ItemStack(com.extremedimensions.registry.ModItems.SEAM_SILK, 4));
+				p.getInventory().add(new ItemStack(com.extremedimensions.registry.ModItems.TETHER_FRAGMENT, 2));
+				p.getInventory().add(new ItemStack(ModBlocks.HUSH_STONE.asItem(), 8));
+				p.inventoryMenu.broadcastChanges();
+			});
+			ctx.waitTicks(30);
+			ctx.runOnClient(mc -> {
+				var advancements = mc.player.connection.getAdvancements();
+				var root = advancements.get(com.extremedimensions.ExtremeDimensions.id("root"));
+				if (root != null) {
+					advancements.setSelectedTab(root, true);
+				}
+				mc.gui.setScreen(new net.minecraft.client.gui.screens.advancements.AdvancementsScreen(advancements));
+			});
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("28_advancements");
+			ctx.runOnClient(mc -> {
+				mc.player.getRecipeBook().setOpen(net.minecraft.world.inventory.RecipeBookType.CRAFTING, true);
+				mc.gui.setScreen(new InventoryScreen(mc.player));
+			});
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("28_recipe_book");
+			ctx.runOnClient(mc -> {
+				mc.player.getRecipeBook().setOpen(net.minecraft.world.inventory.RecipeBookType.CRAFTING, false);
+				mc.gui.setScreen(null);
+			});
+			ctx.waitTicks(4);
 
 			// The Seam builds itself before your eyes: an arch ten blocks ahead flies in out of the nothing
 			sp.getServer().runOnServer(s -> {

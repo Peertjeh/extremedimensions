@@ -1,5 +1,44 @@
 # Changelog
 
+## 2.33.0: Rooted in Vanilla
+
+The first step on the road to 3.0 (`docs/roadmap-3.0.md`): the mod as part of Minecraft's own progression, before
+anything new is added. No new systems.
+
+### Changed
+- **The mod's recipes come into the recipe book.** Only six of its 121 recipes were ever in it. Now each comes in the
+  way vanilla's do, as soon as you hold one of its ingredients, with the usual "New Recipes Unlocked!" toast: Seam
+  Silk brings the woven Tethers, the cheaper Seam Needle and the Mending Cloth; Hush Stone brings the whole hush
+  family, in the crafting grid and the stonecutter. The six recipes for your first steps still come at the first join.
+- **The loot is in loot tables.** What lies in the Seam's barrels (a loom, a village, a colossus's reliquary, a tangle
+  in the Fray), in old and raided hoards, what the Keeper and the Elders leave, what Veil Rays, Frayed Rays and the
+  Thinned drop, the Lurkers' offerings and a Hollowling's gifts: all of it is read from
+  `data/extremedimensions/loot_table/`, so a datapack can change it. The Wanderer's pages and fragments in vanilla's
+  chests come from tables of their own too (`loot_table/inject/`). How often a relic turns up stays a world rule.
+- **Peaceful holds for the mod.** On peaceful no Lurker finds you, no Keeper wakes or hunts you, no raid starts, the
+  Ferryman and the Last Weaver do not come, and nothing slips out of a Wound Storm; a hoard simply opens. The
+  Lurker, the Keeper, the Thinned and the Elders leave on peaceful as vanilla's monsters do. The Starved One stays at
+  the Heart, as the Ender Dragon stays in the End, so the story can always be ended.
+
+### Added
+- **Four advancements** in the mod's tab: *Keeping Score* (come home from a Rift Trial with a medal), *Each Gives,
+  Each Takes* (bind a relic), *Ask for More* (keep a pact of heat 10 or more through a full expedition) and *Struck by
+  Stone* (bring a falling island down on an Elder).
+
+### Fixed
+- **Pacts and the Last Weaver opened too late.** The settings said they open once the Starved One falls, as the
+  journal and the walkthrough do, but they waited until the ending was chosen. They open when the Starved One falls
+  now. The same goes for the Rift Trials and the Ferryman when their setting is put on that step.
+
+### Under the hood
+- Gametests: every recipe reaches the book; Seam Silk opens its recipes; binding a relic is marked; a barrel is filled
+  from its table, and from a stand-in table as a datapack would replace it; ruined portals hold the Wanderer's pages;
+  peaceful; a shield stops a Keeper's blow; milk cures poison but not under the hex; mobGriefing keeps the Elders from
+  the ground. The client test photographs the advancement tab and the recipe book.
+- `tools/recipes/unlocks.py` writes the recipe advancements.
+- The design package for the road to 3.0: `docs/roadmap-3.0.md`, with the audit in `docs/inventory-2.32.md` and the
+  brief in `docs/expansion-brief.md`.
+
 ## 2.32.1
 
 ### Fixed

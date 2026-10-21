@@ -288,7 +288,7 @@ public class VanillaTests {
 			p.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
 			p.startUsingItem(InteractionHand.OFF_HAND);
 			for (int i = 0; i < 10; i++) {
-				p.tick();
+				p.doTick();
 			}
 			check(helper, p.isBlocking(), "the shield did not come up");
 			float health = p.getHealth();
