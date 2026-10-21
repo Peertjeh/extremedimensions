@@ -112,6 +112,9 @@ Trials past gold), and the tapestry's boons stay.
 - **Co-op**: fallen players can be revived, curses carried for a friend, anchors shared. Every player has their own
   time.
 - **50 advancements**, the recipe book through them, a bestiary and a ledger in the journal.
+- **Title and loading screens**: the picture of the Tether, with its own music (*Tick of the Boundary* on the menus,
+  *Ominous Loading Screen* while a world loads, until you stand in it). Under Display it can be the art only, the
+  music only, or Minecraft's own.
 
 ## Compatibility
 

@@ -1,5 +1,25 @@
 # Changelog
 
+## 3.0.2: The Boundary
+
+### Changed
+- **A new title screen**: the picture of the Tether (a hooded figure on a ledge, the chain running back into a portal,
+  the Seam's towers and the Elders above) in place of the panorama, breathing slowly and following the mouse a little,
+  with a glow pulsing in the portal and sparks drifting up. The picture carries its own title, so Minecraft's logo and
+  splash text stand aside while it shows; the rotating quote sits just under that title.
+- **The loading screens wear it too**: while a world loads or a server is reached (the world loading screen, the
+  connecting screen and the message screens), the same picture lies behind the progress, darker so it reads, with a
+  quote at the foot. A portal trip in a world keeps Minecraft's own portal screen.
+- **New menu music**: *Tick of the Boundary* plays on the title screen and the menus behind it; once a world starts to
+  load it gives way to *Ominous Loading Screen*, which plays until you stand in the world and then fades out over three
+  seconds. Both loop, follow the Music slider, and Minecraft's own music waits while they play. They take the place of
+  the two earlier menu tracks.
+- **Display: Title and loading screens**, a new choice: art and music, art only, music only, or off (Minecraft's own).
+
+### Tests
+- ClientShots: the title screen and a message screen before a world are photographed; the world's own loading screen
+  must show the picture and start the loading music, and in the world the menu music must have let go.
+
 ## 3.0.1: Plain Numbers
 
 ### Changed

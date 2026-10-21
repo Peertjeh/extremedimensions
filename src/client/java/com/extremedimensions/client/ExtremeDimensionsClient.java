@@ -25,6 +25,7 @@ import com.extremedimensions.client.screen.SettingsScreen;
 import com.extremedimensions.client.screen.StatusScreen;
 import com.extremedimensions.client.options.ClientOptions;
 import com.extremedimensions.client.state.ClientState;
+import com.extremedimensions.client.title.Menus;
 import com.extremedimensions.client.title.TitleArt;
 import com.extremedimensions.client.tooltip.Tooltips;
 import com.extremedimensions.network.ModPackets;
@@ -35,7 +36,9 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.DeathScreen;
+import net.minecraft.client.gui.screens.ProgressScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
@@ -88,9 +91,16 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 			}
 		});
 		ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
+			Menus.shown(screen);
+			ScreenEvents.remove(screen).register(Menus::gone);
 			if (screen instanceof TitleScreen) {
 				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
-						TitleArt.draw(graphics, s.width, s.height, mouseX, mouseY));
+						TitleArt.drawTitle(graphics, s.width, s.height, mouseX, mouseY));
+			}
+			// (the world loading screen and the message screens draw their own background: see LoadingArtMixin)
+			if (screen instanceof ConnectScreen || screen instanceof ProgressScreen) {
+				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
+						TitleArt.drawLoading(graphics, s.width, s.height));
 			}
 			if (screen instanceof DeathScreen && ClientState.inCollapse() && client.player != null) {
 				// The Collapse sequence carries the player home: no death screen in between
@@ -112,6 +122,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		});
 
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> ClientState.tick());
+		ClientTickEvents.END_CLIENT_TICK.register(Menus::tick);
 		ClientTickEvents.END_CLIENT_TICK.register(MenuMusic::tick);
 		ClientTickEvents.END_CLIENT_TICK.register(com.extremedimensions.client.audio.BossMusic::tick);
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> com.extremedimensions.client.fx.CameraShake.tick());

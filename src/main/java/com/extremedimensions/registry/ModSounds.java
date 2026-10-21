@@ -30,8 +30,9 @@ public final class ModSounds {
 	public static final SoundEvent HOLLOWLING_DEATH = register("hollowling_death");
 	public static final SoundEvent KEEPER_ROAR = register("keeper_roar");
 	public static final SoundEvent VEIL_RAY_SONG = register("veil_ray_song");
-	public static final SoundEvent MUSIC_MENU_1 = register("music.menu_1");
-	public static final SoundEvent MUSIC_MENU_2 = register("music.menu_2");
+	/** The menus' music: "Tick of the Boundary" on the title screen and the menus, "Ominous Loading Screen" while a world loads. */
+	public static final SoundEvent MUSIC_MENU_TITLE = register("music.menu_title");
+	public static final SoundEvent MUSIC_MENU_LOADING = register("music.menu_loading");
 	/** The Elders' fight music: "Cavernous Echoes", "Subterranean Pressure", "Final Collapse". */
 	public static final SoundEvent MUSIC_BOSS_MATRIARCH = register("music.boss_matriarch");
 	public static final SoundEvent MUSIC_BOSS_FERRYMAN = register("music.boss_ferryman");

@@ -7,7 +7,10 @@
 		"SkyRendererMixin",
 		"AtmosphericFogMixin",
 		"ContainerScreenAccess",
-		"CameraShakeMixin"
+		"CameraShakeMixin",
+		"LoadingArtMixin",
+		"TitleLogoMixin",
+		"MusicManagerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 0

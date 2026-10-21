@@ -48,7 +48,7 @@ import net.minecraft.network.chat.Component;
  */
 public class SettingsScreen extends Screen {
 	private static final int PW = 372, PH = 246;
-	private static final int ROW = 22, LIST_ROW = 16;
+	private static final int ROW = 19, LIST_ROW = 16;
 	private static final Gson GSON = new Gson();
 
 	private enum Tab {
@@ -145,6 +145,9 @@ public class SettingsScreen extends Screen {
 		}, "hud_scale");
 		addChoice(cx, y + ROW * 5, () -> onOff(ClientOptions.guidance()), () -> ClientOptions.setGuidance(!ClientOptions.guidance()), "guidance");
 		addChoice(cx, y + ROW * 6, () -> onOff(ClientOptions.hints()), () -> ClientOptions.setHints(!ClientOptions.hints()), "hints");
+		addChoice(cx, y + ROW * 7, () -> Ui.tr("gui.extremedimensions.settings.menu." + ClientOptions.menu().name().toLowerCase(Locale.ROOT)),
+				() -> ClientOptions.setMenu(ClientOptions.MenuStyle.values()[(ClientOptions.menu().ordinal() + 1) % ClientOptions.MenuStyle.values().length]),
+				"menu");
 
 		// World rules: a difficulty preset at once, then every value
 		presetChoice = new Choice(x0 + 108, y0 + 44, 124, 16, () -> Ui.tr(target.nameKey()), () -> {
@@ -545,7 +548,7 @@ public class SettingsScreen extends Screen {
 		}
 	}
 
-	private static final String[] DISPLAY_KEYS = {"reduce_flashing", "colour_blind", "meters", "timer", "hud_scale", "guidance", "hints"};
+	private static final String[] DISPLAY_KEYS = {"reduce_flashing", "colour_blind", "meters", "timer", "hud_scale", "guidance", "hints", "menu"};
 
 	private void display(GuiGraphicsExtractor g, int x0, int y0, int mouseX, int mouseY, double fade) {
 		int y = y0 + 48;
@@ -562,8 +565,8 @@ public class SettingsScreen extends Screen {
 				}
 			}
 		}
-		Ui.divider(g, x0 + 12, y0 + PH - 52, PW - 24, Ui.EMBER, fade);
-		Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.settings.display_note"), x0 + PW / 2, y0 + PH - 44, Ui.MUTED, fade);
+		Ui.divider(g, x0 + 12, y0 + PH - 46, PW - 24, Ui.EMBER, fade);
+		Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.settings.display_note"), x0 + PW / 2, y0 + PH - 40, Ui.MUTED, fade);
 	}
 
 	private void world(GuiGraphicsExtractor g, int x0, int y0, int mouseX, int mouseY, double fade, int accent) {

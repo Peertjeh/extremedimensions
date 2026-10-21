@@ -11,18 +11,18 @@
       "extremedimensions:expedition_ended"
     ]
   },
-  "music.menu_1": {
+  "music.menu_title": {
     "sounds": [
       {
-        "name": "extremedimensions:music/menu_1",
+        "name": "extremedimensions:music/menu_title",
         "stream": true
       }
     ]
   },
-  "music.menu_2": {
+  "music.menu_loading": {
     "sounds": [
       {
-        "name": "extremedimensions:music/menu_2",
+        "name": "extremedimensions:music/menu_loading",
         "stream": true
       }
     ]

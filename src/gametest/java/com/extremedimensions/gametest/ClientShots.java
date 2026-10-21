@@ -5,12 +5,15 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.extremedimensions.client.audio.MenuMusic;
 import com.extremedimensions.client.hud.ChargeHud;
 import com.extremedimensions.client.hud.GuideCloseButton;
 import com.extremedimensions.client.options.ClientOptions;
 import com.extremedimensions.client.screen.CursesScreen;
 import com.extremedimensions.client.screen.SettingsScreen;
 import com.extremedimensions.client.state.ClientState;
+import com.extremedimensions.client.title.Menus;
+import com.extremedimensions.client.title.TitleArt;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.registry.ModBlocks;
@@ -24,7 +27,10 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContex
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.GenericMessageScreen;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -438,8 +444,33 @@ public class ClientShots implements FabricClientGameTest {
 		if (ClientCompat.on()) {
 			return;
 		}
+		// The title screen: the Tether's picture in place of the panorama, its own title in place of the logo
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("00_title");
+		// A message screen before a world: the picture behind it, darker, with a quote at the foot
+		ctx.runOnClient(mc -> mc.gui.setScreen(new GenericMessageScreen(Component.translatable("connect.joining"))));
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("00_loading");
+		ctx.runOnClient(mc -> mc.gui.setScreen(new TitleScreen()));
+		ctx.waitTicks(10);
+		int[] before = new int[2];
+		ctx.runOnClient(mc -> {
+			check(Menus.phase() == Menus.Phase.MENU, "back on the title screen the menus are in phase " + Menus.phase());
+			before[0] = TitleArt.loadingFrames();
+			before[1] = MenuMusic.loadingStarts();
+		});
 		try (TestSingleplayerContext sp = ctx.worldBuilder().create()) {
 			sp.getConnection().waitForChunksRender();
+			// The world's own loading screen had the picture behind it and the loading music, which leaves once the player stands in the world
+			ctx.runOnClient(mc -> {
+				check(TitleArt.loadingFrames() > before[0], "the world loading screen showed no title art");
+				check(MenuMusic.loadingStarts() > before[1], "the loading music did not start while the world loaded");
+			});
+			ctx.waitTicks(10);
+			ctx.runOnClient(mc -> {
+				check(Menus.phase() == Menus.Phase.WORLD, "in the world the menus are in phase " + Menus.phase());
+				check(!MenuMusic.playing() && !MenuMusic.holdsVanilla(), "the menu music still holds on in the world");
+			});
 			sp.getServer().runCommand("tether overworld_penalties on");
 			sp.getServer().runCommand("gamemode survival @a");
 			sp.getServer().runCommand("time set noon");

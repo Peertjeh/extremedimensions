@@ -37,6 +37,19 @@ public final class ClientOptions {
 		TOP, ABOVE_HOTBAR
 	}
 
+	/** What the title screen and the loading screens bring: the art, the music, both, or Minecraft's own. */
+	public enum MenuStyle {
+		FULL, ART, MUSIC, PLAIN;
+
+		public boolean art() {
+			return this == FULL || this == ART;
+		}
+
+		public boolean music() {
+			return this == FULL || this == MUSIC;
+		}
+	}
+
 	/** What is stored. Every field has a safe default so a damaged or older file still loads. */
 	private static final class Values {
 		boolean reduceFlashing = false;
@@ -46,6 +59,7 @@ public final class ClientOptions {
 		int hudScale = 100;
 		boolean guidance = true;
 		boolean hints = true;
+		MenuStyle menu = MenuStyle.FULL;
 	}
 
 	/** HUD sizes to cycle through, in percent. */
@@ -66,6 +80,9 @@ public final class ClientOptions {
 		}
 		if (values.timer == null) {
 			values.timer = TimerPlace.TOP;
+		}
+		if (values.menu == null) {
+			values.menu = MenuStyle.FULL;
 		}
 		boolean known = false;
 		for (int s : HUD_SCALES) {
@@ -114,6 +131,15 @@ public final class ClientOptions {
 	/** A hint as a toast the first time the player meets each part of the mod. */
 	public static boolean hints() {
 		return values.hints;
+	}
+
+	public static MenuStyle menu() {
+		return values.menu;
+	}
+
+	public static void setMenu(MenuStyle m) {
+		values.menu = m;
+		save();
 	}
 
 	public static void setHints(boolean on) {
