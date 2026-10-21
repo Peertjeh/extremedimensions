@@ -1357,7 +1357,7 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(4);
 
 			// The Seam builds itself before your eyes: an arch ten blocks ahead flies in out of the nothing
-			sp.getServer().runOnServer(s -> {
+			int[] keystone = sp.getServer().computeOnServer(s -> {
 				ServerPlayer p = player(s);
 				net.minecraft.world.phys.Vec3 look = p.getLookAngle().multiply(1, 0, 1).normalize();
 				double sideX = -look.z, sideZ = look.x;
@@ -1376,13 +1376,18 @@ public class ClientShots implements FabricClientGameTest {
 				}
 				// Ahead of the islands still being built around: it is what the camera looks at
 				arch.queue(true);
+				return new int[] {bx, by + 6, bz};
 			});
-			// (a beat or two late on a busy server: it is looked for over two seconds)
+			// (late on a busy server, when the islands round it are still flying in: looked for over ten seconds, and
+			// an arch already standing has flown in too)
+			java.util.function.Predicate<MinecraftServer> rising = s -> com.extremedimensions.seam.SeamArchitect.flying() > 0
+					|| !player(s).level().getBlockState(new BlockPos(keystone[0], keystone[1], keystone[2])).isAir();
 			ctx.waitTicks(9);
-			for (int i = 0; i < 8 && sp.getServer().computeOnServer(s -> com.extremedimensions.seam.SeamArchitect.flying() == 0); i++) {
+			for (int i = 0; i < 40 && !sp.getServer().computeOnServer(rising::test); i++) {
 				ctx.waitTicks(5);
 			}
-			check(sp.getServer().computeOnServer(s -> com.extremedimensions.seam.SeamArchitect.flying() > 0), "nothing flies in as the Seam builds itself");
+			check(sp.getServer().computeOnServer(rising::test), "nothing flies in as the Seam builds itself (" + sp.getServer().computeOnServer(
+					s -> com.extremedimensions.seam.SeamArchitect.pending()) + " blocks still to build)");
 			ctx.takeScreenshot("17_seam_rising");
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("17_seam_risen");

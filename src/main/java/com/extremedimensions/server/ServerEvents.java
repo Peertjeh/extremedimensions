@@ -148,7 +148,8 @@ public final class ServerEvents {
 
 		ServerPlayerEvents.JOIN.register(ServerEvents::onJoin);
 		// A leaving player's inventory is saved now; their curses and progress go with it
-		ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> {
+		// (on the server's thread: a player in a single-player world leaves from the connection's own)
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> s.executeIfPossible(() -> {
 			// A fallen player who leaves bleeds out
 			com.extremedimensions.coop.FallenService.onLeave(handler.getPlayer());
 			// ... and one the Held's Chain holds collapses
@@ -165,7 +166,7 @@ public final class ServerEvents {
 			com.extremedimensions.lore.WarmChains.forget(handler.getPlayer().getUUID());
 			DataStore.markDirty();
 			DataStore.flush();
-		});
+		}));
 		// Every player plays by the server's numbers: the HUD and screens get the world's settings on joining
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> com.extremedimensions.config.SettingsService.send(handler.getPlayer()));
 		// ... and who is fallen, to draw them crawling

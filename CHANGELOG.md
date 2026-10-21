@@ -31,6 +31,8 @@ part of the mod.
 - The two 2.37 hooks into the game (the action bar and the anvil) now stop the game at start if they no longer fit
   it, instead of quietly doing nothing.
 - A player coming back is looked for warm chains straight away, wherever they log in.
+- What happens as a player leaves (a fallen player bleeding out, the Held's Chain's Collapse, the save) now runs on the
+  server's own thread; in a single-player world it ran on the connection's, and the save could trip over the game's.
 
 ## 2.37.0: Refinement
 
