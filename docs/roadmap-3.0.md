@@ -192,6 +192,9 @@ risk, **U**se of existing systems, **T**est cost, importance to **3.0**.
 *Done when:* every recipe has an unlocking advancement (gametest); one gametest per vanilla mechanic; a test datapack
 changes a Seam table and the barrel follows; the client test photographs the recipe book and the advancement tab.
 
+*Status:* released as 2.33.0. All five criteria met; it also fixed the 26.3 loot table format for the mod's own block
+drops (the Seam Vein's silk count), found while moving the loot into tables.
+
 #### 2.34 The Warm Chain (the vertical slice)
 
 *Fantasy: follow what the Wanderer would not. Entry: first Nether expedition (a ruined portal you can light). Narrative:
