@@ -123,6 +123,10 @@ public final class ServerEvents {
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
 			BlockFlight.loaded(entity);
 			com.extremedimensions.elder.ElderGaol.loaded(entity);
+			// Echo chains and builders left behind by a stop, or by an echo or a build that is over
+			if (com.extremedimensions.events.Echoes.stray(entity) || com.extremedimensions.events.Unanchored.stray(entity)) {
+				entity.discard();
+			}
 		});
 		// A block of an Elder's arena broken by a player drops nothing
 		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, blockEntity) ->
@@ -143,9 +147,15 @@ public final class ServerEvents {
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> {
 			// A fallen player who leaves bleeds out
 			com.extremedimensions.coop.FallenService.onLeave(handler.getPlayer());
+			// ... and one the Held's Chain holds collapses
+			ExpeditionService.leaving(handler.getPlayer(), DataStore.get(handler.getPlayer().getUUID()));
 			Requests.forget(handler.getPlayer());
 			com.extremedimensions.elder.ElderSpells.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.expedition.ExpeditionBar.forget(handler.getPlayer().getUUID());
+			com.extremedimensions.binding.WoundLens.forget(handler.getPlayer().getUUID());
+			// Every player's inventory is saved with the world's data, so neither can run ahead of the other after a crash
+			s.getPlayerList().saveAll();
+			DataStore.markDirty();
 			DataStore.flush();
 		});
 		// Every player plays by the server's numbers: the HUD and screens get the world's settings on joining
@@ -199,7 +209,8 @@ public final class ServerEvents {
 				if ("severed".equals(DataStore.ending()) && Dims.isBeyond(Dims.of(p))) {
 					// A severed world keeps nothing of those who fall beyond the wound
 					boolean collapsing = DataStore.get(p.getUUID()).collapsing;
-					for (ItemEntity item : p.level().getEntitiesOfClass(ItemEntity.class, p.getBoundingBox().inflate(8), i -> i.distanceToSqr(p) <= 64)) {
+					// (only what this death dropped: another's things lying near are left alone)
+					for (ItemEntity item : p.level().getEntitiesOfClass(ItemEntity.class, p.getBoundingBox().inflate(8), i -> i.tickCount <= 2 && i.distanceToSqr(p) <= 64)) {
 						if (collapsing) {
 							// the echo of this Collapse keeps one of the things
 							com.extremedimensions.events.Echoes.lost(p, item.getItem());

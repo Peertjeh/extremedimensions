@@ -23,6 +23,8 @@ public class Echo {
 	public transient boolean shown = false;
 	/** Ticks the one listening has stood by it. */
 	public transient java.util.Map<String, Integer> heard = new java.util.HashMap<>();
+	/** Who has heard its chains rattle since it showed (each is told once, whenever they come near). */
+	public transient java.util.Set<String> told = new java.util.HashSet<>();
 
 	public Echo() {}
 

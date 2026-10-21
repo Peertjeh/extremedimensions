@@ -1,5 +1,6 @@
 package com.extremedimensions.binding;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -11,6 +12,7 @@ import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.seam.SeamService;
+import com.extremedimensions.server.Dims;
 import com.extremedimensions.world.WorldService;
 
 import net.minecraft.ChatFormatting;
@@ -23,6 +25,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -36,6 +39,10 @@ import net.minecraft.world.phys.Vec3;
 public final class WoundLens {
 	private WoundLens() {}
 
+	/** When each player was last told something else on the action bar (game time): the readout waits for it to be read. */
+	private static final Map<UUID, Long> TOLD = new HashMap<>();
+	private static boolean reading;
+
 	/** Twice a second, for everyone looking through a lens. */
 	public static void tick(MinecraftServer s) {
 		if (s.getTickCount() % 10 != 5) {
@@ -46,11 +53,33 @@ public final class WoundLens {
 				continue;
 			}
 			Component r = reading(p);
-			if (r != null) {
-				p.sendSystemMessage(r, true);
+			if (r != null && !hushed(p)) {
+				reading = true;
+				try {
+					p.sendSystemMessage(r, true);
+				} finally {
+					reading = false;
+				}
 			}
 			glints(p);
 		}
+	}
+
+	/** Something else was said to the player on the action bar (not a reading). */
+	public static void told(ServerPlayer p) {
+		if (!reading) {
+			TOLD.put(p.getUUID(), p.level().getGameTime());
+		}
+	}
+
+	/** Whether the readout holds off, so that what the player was just told on the action bar can be read (two seconds). */
+	public static boolean hushed(ServerPlayer p) {
+		Long at = TOLD.get(p.getUUID());
+		return at != null && p.level().getGameTime() - at < 40;
+	}
+
+	public static void forget(UUID player) {
+		TOLD.remove(player);
 	}
 
 	public static boolean looking(ServerPlayer p) {
@@ -68,7 +97,8 @@ public final class WoundLens {
 		if (seen instanceof Lurker l) {
 			return lurker(l);
 		}
-		if (hit.getType() == HitResult.Type.BLOCK && AnchorService.isAnchorBlock(level.getBlockState(hit.getBlockPos()))) {
+		// (anchors are kept in the Overworld: a lodestone elsewhere at the same spot is no anchor)
+		if (hit.getType() == HitResult.Type.BLOCK && Dims.OVERWORLD.equals(Dims.of(level)) && AnchorService.isAnchorBlock(level.getBlockState(hit.getBlockPos()))) {
 			BlockPos b = hit.getBlockPos();
 			Anchor a = DataStore.anchors().get(Anchor.key(b.getX(), b.getY(), b.getZ()));
 			if (a != null) {
@@ -78,11 +108,12 @@ public final class WoundLens {
 		return null;
 	}
 
-	/** The creature nearest the middle of the view, nearer than the block looked at. */
+	/** The creature nearest the middle of the view, nearer than the block looked at (only along the line of sight). */
 	private static Entity looked(ServerPlayer p, Vec3 eye, Vec3 look, double reach) {
 		Entity best = null;
 		double bestDot = 0.995;
-		for (Entity e : p.level().getEntities(p, p.getBoundingBox().inflate(reach), e -> e.isAlive() && !e.isSpectator())) {
+		AABB along = new AABB(eye, eye).expandTowards(look.scale(reach)).inflate(2);
+		for (Entity e : p.level().getEntities(p, along, e -> e.isAlive() && !e.isSpectator())) {
 			Vec3 to = e.getBoundingBox().getCenter().subtract(eye);
 			double d = to.length();
 			if (d < 0.5 || d > reach) {
@@ -113,14 +144,14 @@ public final class WoundLens {
 			if (e.getValue() < 1 || shown >= 4) {
 				continue;
 			}
-			out.append("  ").append(Component.literal(name(p.level().getServer(), e.getKey()) + " " + time(e.getValue())).withStyle(ChatFormatting.WHITE));
+			out.append("  ").append(name(p.level().getServer(), e.getKey()).copy().append(" " + time(e.getValue())).withStyle(ChatFormatting.WHITE));
 			shown++;
 		}
 		if (shown == 0) {
 			out.append("  ").append(Component.translatable("gui.extremedimensions.lens.anchor.empty").withStyle(ChatFormatting.GRAY));
 		}
 		if (a.unstable > 0) {
-			out.append("  ").append(Component.translatable("gui.extremedimensions.lens.anchor.unstable", a.unstable).withStyle(ChatFormatting.RED));
+			out.append("  ").append(Component.translatable("gui.extremedimensions.lens.anchor.unstable", time(a.unstable)).withStyle(ChatFormatting.RED));
 		}
 		if (a.shared(p.getStringUUID()) > 0 || a.owners.containsKey("*")) {
 			out.append("  ").append(Component.translatable("gui.extremedimensions.lens.anchor.shared").withStyle(ChatFormatting.AQUA));
@@ -128,21 +159,25 @@ public final class WoundLens {
 		return out;
 	}
 
-	private static String name(MinecraftServer s, String uid) {
+	/** Whose charge it is: a name, "shared" for charge kept for everyone (old worlds), or "someone" if unknown. */
+	private static Component name(MinecraftServer s, String uid) {
 		if ("*".equals(uid)) {
-			return "*";
+			return Component.translatable("gui.extremedimensions.lens.anchor.everyone");
 		}
 		try {
 			UUID id = UUID.fromString(uid);
 			ServerPlayer q = s.getPlayerList().getPlayer(id);
 			if (q != null) {
-				return q.getName().getString();
+				return q.getName();
 			}
 			PlayerData d = DataStore.peek(id);
-			return d != null && d.name != null ? d.name : "?";
+			if (d != null && d.name != null) {
+				return Component.literal(d.name);
+			}
 		} catch (IllegalArgumentException e) {
-			return "?";
+			// not a player's id
 		}
+		return Component.translatable("gui.extremedimensions.lens.anchor.unknown");
 	}
 
 	private static String time(double secs) {

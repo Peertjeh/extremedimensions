@@ -61,6 +61,8 @@ public final class TetherService {
 		d.ropeX = pos.getX() + 0.5;
 		d.ropeY = pos.getY() + 1.02;
 		d.ropeZ = pos.getZ() + 0.5;
+		// (the Tether left the inventory for the anchor: both are saved together)
+		DataStore.markDirty();
 		Journal.unlock(p, d, JournalEntry.CORD);
 		Advancements.grant(p, Advancements.BOUND);
 		WorldFx.fx(p, Fx.TIE, 0);
@@ -146,6 +148,7 @@ public final class TetherService {
 		if (d.tetherCharms != null) {
 			d.tetherCharms.clear();
 		}
+		DataStore.markDirty();
 	}
 
 	/** A Tether item's enchantments, by id. */
@@ -172,9 +175,13 @@ public final class TetherService {
 		}
 	}
 
-	/** The highest level of a Tether enchantment a player has with them: on the bound Tether or a Tether they carry. */
+	/** The level of a Tether enchantment a player has with them: on the bound Tether if bound, else the best Tether they carry. */
 	public static int charm(ServerPlayer p, PlayerData d, net.minecraft.resources.ResourceKey<net.minecraft.world.item.enchantment.Enchantment> k) {
-		int best = d.charm(k);
+		// Bound, only the bound Tether counts: a second one in the bag would give Thrift and Silkbound at once
+		if (d.tetherAnchor != null) {
+			return d.charm(k);
+		}
+		int best = 0;
 		var inv = p.getInventory();
 		for (int i = 0; i < inv.getContainerSize(); i++) {
 			ItemStack s = inv.getItem(i);

@@ -122,7 +122,7 @@ public final class WorldService {
 				continue;
 			}
 			// Storms keep to the world events' rules: not in an Elder fight, not on the heels of another event
-			if (com.extremedimensions.events.WorldEvents.free(p, now) && ThreadLocalRandom.current().nextDouble() < Config.STORM_CHANCE) {
+			if (ThreadLocalRandom.current().nextDouble() < Config.STORM_CHANCE && com.extremedimensions.events.WorldEvents.free(p, now)) {
 				begin(p, now);
 			}
 		}

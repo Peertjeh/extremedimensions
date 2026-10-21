@@ -91,6 +91,9 @@ public class PlayerData {
 	public boolean heldSpent = false;
 	/** Ticks the Held's Chain still holds the player after the charge ran out. */
 	public transient int heldTicks = 0;
+	/** The Homebound pieces the player carries, as last counted, and when (game time): counted once a second. */
+	public transient int homeboundPieces = 0;
+	public transient long homeboundCounted = Long.MIN_VALUE / 2;
 	public boolean journalDelivered = false;
 	/** In the Seam: time left, the rift home (in the Seam) and where the player came from. */
 	public boolean inSeam = false;
@@ -113,6 +116,12 @@ public class PlayerData {
 	public int echoOwed = 0;
 	/** When the Endermen last built for this player (ms since the epoch): the cooldown holds across restarts. */
 	public long lastUnanchored = 0;
+	/** When another's echo last paid this player for hearing it out (ms since the epoch): it pays once in a while. */
+	public long echoPaidAt = 0;
+	/** When a world event last began for this player (ms since the epoch): the spacing holds across restarts. */
+	public long lastEventAt = 0;
+	/** The visit to the Seam (by its count) in which this player's island last frayed: once a visit, across restarts. */
+	public int frayedVisit = -1;
 	/** Scars: curse stacks taken off again. Each one makes the drain a little weaker (up to five). */
 	public int scars = 0;
 	/** A Hollowling follows this player. */
@@ -275,11 +284,18 @@ public class PlayerData {
 	}
 
 	public double drainMultiplier() {
+		return drainMultiplier(1.0);
+	}
+
+	/**
+	 * The drain, with whatever else eases it here ({@code ease}, at most 1: a relic, a mended world). The woven Tether,
+	 * scars, Thrift and that together never bring it below the drain floor.
+	 */
+	public double drainMultiplier(double ease) {
 		double tier = tetherTier == 2 ? Config.SEAM_WOVEN_DRAIN : tetherTier == 1 ? Config.SOUL_WOVEN_DRAIN : 1.0;
 		double scar = 1.0 - Config.SCAR_DRAIN_REDUCTION * Math.min(5, scars);
-		// Thrift on the bound Tether drinks less; all of it together never below the drain floor
 		double thrift = 1.0 - Config.ENCH_THRIFT_DRAIN * charm(com.extremedimensions.registry.ModEnchantments.THRIFT);
-		double eased = Math.max(Config.ENCH_DRAIN_FLOOR, tier * scar * thrift);
+		double eased = Math.max(Config.ENCH_DRAIN_FLOOR, tier * scar * thrift * Math.min(1.0, ease));
 		return Config.BASE_DRAIN * eased * (1.0 + Penalty.ACCELERATED_DRAIN.frac() * stacks(Penalty.ACCELERATED_DRAIN));
 	}
 

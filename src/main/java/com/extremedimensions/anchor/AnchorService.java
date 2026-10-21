@@ -132,7 +132,7 @@ public final class AnchorService {
 		}
 
 		Item item = stack.getItem();
-		if (item == net.minecraft.world.item.Items.AMETHYST_SHARD) {
+		if (item == net.minecraft.world.item.Items.AMETHYST_SHARD && Dims.OVERWORLD.equals(Dims.of(p))) {
 			// An Amethyst Shard steadies a cracked anchor (on a steady one it is End fuel, as ever)
 			Anchor cracked = DataStore.anchors().get(Anchor.key(pos.getX(), pos.getY(), pos.getZ()));
 			if (cracked != null && com.extremedimensions.events.UnstableAnchors.steady(p, cracked, stack)) {
@@ -315,6 +315,10 @@ public final class AnchorService {
 				WorldFx.soundAt("minecraft:block.respawn_anchor.deplete", a.x, a.y, a.z, 1.0f, 0.8f);
 				it.remove();
 				continue;
+			}
+			if (!a.checked && a.portalCheck == 0) {
+				// the first look spread over two seconds, so that a world of anchors is not all looked at in one tick
+				a.portalCheck = 1 + Math.floorMod(Anchor.key(a.x, a.y, a.z).hashCode(), 4);
 			}
 			if (--a.portalCheck <= 0) {
 				a.portalCheck = 4; // every 2 seconds

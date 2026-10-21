@@ -4,6 +4,7 @@
 	"package": "com.extremedimensions.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
+		"ActionBarMixin",
 		"ArenaBlastMixin",
 		"ArenaExplosionMixin",
 		"BlockDisplayAccess",
@@ -19,6 +20,7 @@
 		"NaturalSpawnMixin",
 		"SealedInventoryMixin",
 		"SealedSlotMixin",
+		"TetherAnvilMixin",
 		"TetherEnchantMixin",
 		"UnhealingMixin",
 		"VillagerPricesMixin",

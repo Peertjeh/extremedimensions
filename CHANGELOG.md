@@ -1,5 +1,74 @@
 # Changelog
 
+## 2.37.0: Refinement
+
+No new systems. Five reviews went through everything added since 2.33 (what it does, what it keeps across a restart
+and with more players, what can be abused, what it costs a server, and what it says); this release fixes what they
+found.
+
+### Fixed
+- **Echoes.** Only the players listening now count: one who walked off, left the game or lies dead no longer keeps
+  everyone near draining twice as fast, nor picks up where they left off. Spectators, creative players and the dead
+  do not listen. An echo's thing from a severed world, owed to someone on the death screen, waits for their respawn
+  instead of going into the inventory they are about to lose. A severed world now destroys only what the death itself
+  dropped, not other players' things lying near, and the echo keeps one of those. Echo chains and names left behind
+  by a stop, or by an echo that has since gone, are taken down when their chunk loads; the server takes them all down
+  when it stops. Once shown, an echo stays a little further out (no flickering at the edge of its reach), and its
+  shape is drawn once a second.
+- **Frayed islands.** The fog's middle is the island's, not wherever the player stood when it began. A fraying that
+  found no room for its tangle no longer says something surfaced.
+- **The Unanchored Build.** A build whose builders' part of the world unloads ends as if the player left, instead of
+  turning on nobody and leaving frozen Endermen behind; frozen builders and pearls left by a stop are taken away when
+  their chunk loads. Hurting or killing a builder now says so, rather than blaming a look.
+- **The Held's Chain.** Leaving the game while the chain holds you no longer pauses the grace: the Collapse comes
+  there and then, and the death follows when you are back. Reaching home in time now says so.
+- **The Held's chamber** is carved only into the Nether's own ground (its rock, sand, ores, fungus, lava): never
+  through someone's walls or chests, nor a fortress. The way in stops at anything built.
+- **Anchors** are kept in the Overworld, and only there: an Amethyst Shard on a lodestone elsewhere at the same spot
+  steadies nothing, the Wound Lens reads nothing there, and a storm elsewhere cracks none. A cracked anchor now tells
+  every player whose charge it keeps, wherever they are, where it is, how to steady it and how long it has; when it
+  breaks it tells them what was lost.
+- **Saving.** Tying and untying a Tether, and every logout, save the mod's data together with the players'
+  inventories, so a crash can neither lose nor double a Tether or what Homebound brings home.
+
+### Changed
+- **The drain floor holds for everything.** A relic's easing and a mended world's now count towards the floor together
+  with the woven Tether, scars and Thrift: with all of them the drain is half, never less (it went down to a third).
+- **Thrift and Silkbound are never had at once.** Bound to a Tether, only that Tether's enchantment counts; a Silkbound
+  Tether in the bag counts only while you are unbound.
+- **Homebound drains for every piece you carry**, worn or in the bag, since every piece would come home.
+- **Woundbane against the Elders**: +1 at I and +0.65 per level after (+3.6 at V, against Sharpness V's +3), so it kills
+  an Elder at most a tenth faster. Against the creatures of the wound it is unchanged.
+- **Echoes pay once in a while.** Another's echo gives its listener a fragment and atonement at most once an hour
+  (`echo_pay_cooldown`, 3600 seconds); heard out before then, it still lets go, for nothing. The collapsed player's
+  share comes back as before.
+- **Events keep their spacing across a restart**, and an island frays at most once a visit across one too.
+- **The anvil takes Tethers one at a time**, like the table: a stack of Tethers is renamed, but not enchanted at once.
+- **Messages.** Starting to listen to an echo says so, and so does a second player who comes near it later. Hearing
+  an echo out says, in the chat, what it left you. What Homebound brings home says it came. The Wound Lens holds its
+  readout for two seconds after anything else is said on the action bar, shows a cracked anchor's time as minutes and
+  seconds, and names charge kept for everyone as "shared" and an unknown owner as "someone".
+- **Dutch.** The 2.35 and 2.36 texts use the words the rest of the game uses (ineenstorting, vloekstapel, leegloop,
+  Scheurproef, relikwie, hitte, Veilvleugel, Seamzijde, Seamaders); the Lurker is "het" in the lens as in the bestiary.
+- **Settings texts.** Five settings showed "Format error" for a lone percent sign; they read properly again.
+
+### Performance
+- The Veilsight shimmer and the soul ward and Veil Lantern searches look only in loaded chunks and only in the parts
+  of them that may hold what they look for, and the shimmer runs for each player at their own moment of the second.
+- The Wound Lens looks for creatures only along the line of sight. Enchantments are read off the item itself; the
+  Homebound count is made once a second. The expedition bar is set once per update during the Held's Chain grace
+  (it sent everything twice). Anchors' first checks are spread over two seconds. A chance is rolled before the
+  dearer question of whether a player is free for an event. Ruined portals round a player are looked at again only
+  when the player comes into another chunk.
+
+### Tests
+- Gametests: two players by an echo (one walks off, one lies dead, one paid a moment ago); the fraying's place sent to
+  the client; leaving during the Held's Chain grace; the chamber's ground; the drain floor with a relic and a mended
+  world; Thrift with a Silkbound Tether in the bag; Homebound pieces in the bag; Woundbane against an Elder; the anvil
+  and a stack of Tethers; the lens's times and its readout holding off.
+- Performance tests: ten players carrying the bindings, and thirty-two echoes round one player (they must not run their
+  chains up and down again).
+
 ## 2.36.0: The Wounds Remember
 
 The world reacts to what was done in it: Collapses leave echoes, anchors crack in storms, the Endermen build on the

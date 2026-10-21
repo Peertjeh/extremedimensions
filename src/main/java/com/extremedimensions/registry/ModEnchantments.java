@@ -41,9 +41,17 @@ public final class ModEnchantments {
 		return access.lookupOrThrow(Registries.ENCHANTMENT).get(k);
 	}
 
-	/** Its level on one item stack. */
+	/** Its level on one item stack (read off the stack's own enchantments: nothing is looked up for a plain one). */
 	public static int level(RegistryAccess access, ItemStack stack, ResourceKey<Enchantment> k) {
-		return stack.isEmpty() ? 0 : holder(access, k).map(h -> EnchantmentHelper.getItemEnchantmentLevel(h, stack)).orElse(0);
+		if (stack.isEmpty() || stack.getEnchantments().isEmpty()) {
+			return 0;
+		}
+		for (var e : stack.getEnchantments().entrySet()) {
+			if (e.getKey().is(k)) {
+				return e.getIntValue();
+			}
+		}
+		return 0;
 	}
 
 	/** The highest level of it on what a creature wears and holds. */

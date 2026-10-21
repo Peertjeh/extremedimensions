@@ -321,6 +321,8 @@ public final class Config {
 	/** What hearing an echo out gives the listener (atonement points), and the share of the death's toll the collapsed get back. */
 	public static int ECHO_ATONE = 30;
 	public static double ECHO_RETURN = 0.5;
+	/** Seconds before another echo pays the same listener again (it still lets go before then, for nothing). */
+	public static int ECHO_PAY_COOLDOWN = 3600;
 	/** Most echoes a world keeps waiting (the oldest goes first). */
 	public static int ECHO_MAX = 32;
 	/** Unstable anchors (1 on, 0 off): chance for each anchor without a soul ward near the start of a storm; how near (blocks). */

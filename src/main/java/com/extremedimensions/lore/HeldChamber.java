@@ -7,6 +7,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.level.block.BarrelBlock;
 import net.minecraft.world.level.block.Blocks;
@@ -54,7 +55,10 @@ public final class HeldChamber {
 		return bestScore == Integer.MIN_VALUE ? null : best;
 	}
 
-	/** How well a room fits here: rock is good, lava and open air less so; unloaded chunks or bedrock rule it out. */
+	/**
+	 * How well a room fits here: rock is good, lava and open air less so; unloaded chunks, bedrock, or anything not of
+	 * the Nether's own making (someone's walls and chests, a fortress) rule it out.
+	 */
 	private static int score(ServerLevel level, BlockPos c) {
 		int score = 0;
 		BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
@@ -66,7 +70,7 @@ public final class HeldChamber {
 						return Integer.MIN_VALUE;
 					}
 					BlockState s = level.getBlockState(m);
-					if (s.is(Blocks.BEDROCK)) {
+					if (s.is(Blocks.BEDROCK) || !natural(s) || level.getBlockEntity(m) != null) {
 						return Integer.MIN_VALUE;
 					}
 					if (!s.getFluidState().isEmpty()) {
@@ -78,6 +82,18 @@ public final class HeldChamber {
 			}
 		}
 		return score;
+	}
+
+	/** Of the Nether's own making: its rock, sand, ores, fungus and growth, lava, air, and the portal the player came by. */
+	public static boolean natural(BlockState s) {
+		return s.isAir() || !s.getFluidState().isEmpty() || s.canBeReplaced() || s.is(BlockTags.BASE_STONE_NETHER) || s.is(BlockTags.NYLIUM)
+				|| s.is(BlockTags.SOUL_FIRE_BASE_BLOCKS) || s.is(BlockTags.CRIMSON_STEMS) || s.is(BlockTags.WARPED_STEMS)
+				|| s.is(Blocks.MAGMA_BLOCK) || s.is(Blocks.GRAVEL) || s.is(Blocks.GLOWSTONE) || s.is(Blocks.NETHER_GOLD_ORE)
+				|| s.is(Blocks.NETHER_QUARTZ_ORE) || s.is(Blocks.ANCIENT_DEBRIS) || s.is(Blocks.BONE_BLOCK) || s.is(Blocks.NETHER_WART_BLOCK)
+				|| s.is(Blocks.WARPED_WART_BLOCK) || s.is(Blocks.SHROOMLIGHT) || s.is(Blocks.OBSIDIAN) || s.is(Blocks.CRYING_OBSIDIAN)
+				|| s.is(Blocks.NETHER_PORTAL) || s.is(Blocks.WEEPING_VINES) || s.is(Blocks.WEEPING_VINES_PLANT) || s.is(Blocks.TWISTING_VINES)
+				|| s.is(Blocks.TWISTING_VINES_PLANT) || s.is(Blocks.CRIMSON_FUNGUS) || s.is(Blocks.WARPED_FUNGUS) || s.is(Blocks.CRIMSON_ROOTS)
+				|| s.is(Blocks.WARPED_ROOTS) || s.is(Blocks.NETHER_SPROUTS) || s.is(Blocks.BROWN_MUSHROOM) || s.is(Blocks.RED_MUSHROOM);
 	}
 
 	/** Raises the chamber at a site, the barrel filled from a loot table, and lays the chain from its door towards the arrival. */
@@ -151,8 +167,9 @@ public final class HeldChamber {
 		int links = 0, open = 0;
 		for (int u = HALF + 1; u <= dist - 4; u++) {
 			BlockPos foot = at(c, f, side, u, 0, 0), head = foot.above(), floor = foot.below();
-			// never into the player's own portal: the way in stops at its frame
-			if (!level.isLoaded(foot) || kept(level.getBlockState(foot)) || kept(level.getBlockState(head))) {
+			// never into the player's own portal (the way in stops at its frame), nor through anything someone built
+			if (!level.isLoaded(foot) || kept(level.getBlockState(foot)) || kept(level.getBlockState(head)) || !natural(level.getBlockState(foot))
+					|| !natural(level.getBlockState(head)) || level.getBlockEntity(foot) != null || level.getBlockEntity(head) != null) {
 				break;
 			}
 			boolean wasOpen = level.getBlockState(foot).isAir() && level.getBlockState(head).isAir() && level.getBlockState(floor).isSolid();

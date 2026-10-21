@@ -265,6 +265,13 @@ added since 2.33 (section 9). Game feel: animation, sound and feedback on every 
 
 *Done when:* the reviews find nothing new; PerfTests stay within budget; the balance targets in 9.2 hold.
 
+*Status:* built in 2.37.0. The five reviews (correctness, persistence and multiplayer, exploits and balance, per-tick
+cost, text) found 40-odd things; every one that held up is fixed, with a gametest where a test can hold it. Of the
+balance targets, the drain floor now holds with every easing (tested), Woundbane V kills an Elder about 7% faster than
+Sharpness V (Matriarch: 68 hits against 73), and an echo pays a listener at most once an hour. Two targets need a
+played session and move to 3.0-beta: the length of a first Nether expedition and the relic pick rate (with the relic
+review). Sodium, Iris and Mod Menu cannot be run in CI; they move to 3.0-beta's compatibility pass as well.
+
 #### 2.38 The Path
 
 *No new systems.* The Wanderer's path as vanilla advancements, with the current goal in the journal. A short
@@ -408,7 +415,7 @@ description line in its tooltip (the existing tooltip style).
 
 | Enchantment | Applies to | Max | Effect per level | Acquisition | Exclusive with | Decision it creates |
 | --- | --- | --- | --- | --- | --- | --- |
-| **Woundbane** `woundbane` | Swords, axes, maces | V | +2.5 damage against creatures of the wound (`#extremedimensions:wound_born`: Lurker, Hollowling, Keeper, Thinned, Frayed Ray); against the Elders and the Starved One only +1 | Table, books, loot | Sharpness, Smite, Bane of Arthropods (vanilla damage set) | A blade for the Tribe and the Seam, or one for everything |
+| **Woundbane** `woundbane` | Swords, axes, maces | V | +2.5 damage against creatures of the wound (`#extremedimensions:wound_born`: Lurker, Hollowling, Keeper, Thinned, Frayed Ray); against the Elders and the Starved One only +1 at I and +0.65 per level after (+3.6 at V, against Sharpness V's +3) | Table, books, loot | Sharpness, Smite, Bane of Arthropods (vanilla damage set) | A blade for the Tribe and the Seam, or one for everything |
 | **Thrift** `thrift` | Tethers | III | Drain −5% (−15% at III) | Table, books | Silkbound | Efficiency against safety: a Collapse with a Thrift tether takes **one extra curse stack** |
 | **Silkbound** `silkbound` | Tethers | II | +30 s in the Seam | Table, books | Thrift | The Seam or the other worlds |
 | **Veilsight** `veilsight` | Helmets | I | In the Seam and the Fray the fog keeps half as close; Seam Veins within 12 blocks shimmer while you sneak | Treasure: Seam barrels and Fray tangles only | none | Seeing further, but the Thinned notice you from twice as far |

@@ -13,9 +13,10 @@ import com.extremedimensions.server.WorldFx;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 
@@ -28,15 +29,30 @@ import net.minecraft.world.item.ItemStack;
 public final class Homebound {
 	private Homebound() {}
 
-	/** Drain multiplier for the Homebound pieces a player wears or holds. */
+	/**
+	 * Drain multiplier for the Homebound pieces a player carries, worn or in the bag (each one would come home: each one
+	 * drains). Counted once a second.
+	 */
 	public static double drainFactor(ServerPlayer p) {
+		PlayerData d = DataStore.get(p.getUUID());
+		long now = p.level().getGameTime();
+		if (now - d.homeboundCounted >= 20 || now < d.homeboundCounted) {
+			d.homeboundCounted = now;
+			d.homeboundPieces = pieces(p);
+		}
+		return 1.0 + Math.max(0, Config.ENCH_HOMEBOUND_DRAIN) * d.homeboundPieces;
+	}
+
+	/** How many Homebound pieces a player carries, worn, held or in the bag. */
+	public static int pieces(ServerPlayer p) {
 		int n = 0;
-		for (EquipmentSlot slot : EquipmentSlot.values()) {
-			if (ModEnchantments.level(p.level().registryAccess(), p.getItemBySlot(slot), ModEnchantments.HOMEBOUND) > 0) {
+		var inv = p.getInventory();
+		for (int i = 0; i < inv.getContainerSize(); i++) {
+			if (ModEnchantments.level(p.level().registryAccess(), inv.getItem(i), ModEnchantments.HOMEBOUND) > 0) {
 				n++;
 			}
 		}
-		return 1.0 + Math.max(0, Config.ENCH_HOMEBOUND_DRAIN) * n;
+		return n;
 	}
 
 	/**
@@ -82,6 +98,7 @@ public final class Homebound {
 		d.homebound.clear();
 		DataStore.markDirty();
 		WorldFx.soundSelf(p, "minecraft:item.armor.equip_chain", 1.0f, 0.8f);
+		p.sendSystemMessage(Component.translatable("gui.extremedimensions.homebound.restored").withStyle(ChatFormatting.AQUA));
 	}
 
 	/** What waits for a player's respawn. */

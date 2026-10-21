@@ -246,12 +246,12 @@ public final class ClientState {
 			case 17 -> com.extremedimensions.client.hud.Toasts.bestiary(value);
 			case 18 -> com.extremedimensions.client.hud.Toasts.note(value);
 			case 19 -> {
-				// The island underfoot frays: where the player stands now is its middle, as the server reckons it
+				// The island underfoot frays: for so many seconds, its middle so far from where the player stands
 				net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
 				if (mc.player != null) {
-					frayedUntil = now + value * 1000L;
-					frayedX = mc.player.getX();
-					frayedZ = mc.player.getZ();
+					frayedUntil = now + (value & 1023) * 1000L;
+					frayedX = mc.player.getX() + ((value >> 10 & 1023) - 512);
+					frayedZ = mc.player.getZ() + ((value >> 20 & 1023) - 512);
 				}
 			}
 			default -> { }

@@ -1,6 +1,7 @@
 package com.extremedimensions.lore;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -52,6 +53,9 @@ public final class WarmChains {
 	/** How close a player comes to a chain to find it warm, and to a chamber to have found it. */
 	static final double FOUND = 5, REACHED = 6;
 
+	/** The chunk each player was in when the ruined portals round them were last looked at. */
+	private static final Map<UUID, Long> LOOKED = new HashMap<>();
+
 	public static void tick(MinecraftServer s) {
 		int t = s.getTickCount();
 		if (t % 20 != 11) {
@@ -66,8 +70,13 @@ public final class WarmChains {
 			// (a spectator sees the embers too, but finds nothing)
 			boolean playing = !p.isSpectator();
 			if (p.level() == ow) {
+				// (looked again only when the player has come into another chunk, or now and then for a gate that was not all there)
 				if (t % 40 == 11 && Config.WARM_CHAIN_CHANCE > 0) {
-					look(ow, p.blockPosition());
+					long chunk = (long) (p.getBlockX() >> 4) << 32 | ((p.getBlockZ() >> 4) & 0xffffffffL);
+					Long was = LOOKED.put(p.getUUID(), chunk);
+					if (was == null || was != chunk || t % 600 == 11) {
+						look(ow, p.blockPosition());
+					}
 				}
 				for (WarmGate g : DataStore.warmGates()) {
 					double d2 = g.distSq(p.getX(), p.getY(), p.getZ());

@@ -184,6 +184,14 @@ public class WarmChainTests {
 			check(helper, d.collapsing, "the grace ran out without a Collapse");
 			reset(d, pending, owed);
 
+			// Leaving the game while it holds is no way out: the Collapse comes there and then, owed for the return
+			begin(d);
+			ExpeditionService.tick(p, d, Dims.NETHER);
+			check(helper, d.heldTicks > 0, "the chain did not hold before the player left");
+			ExpeditionService.leaving(p, d);
+			check(helper, d.collapsing && d.collapseOwed && d.heldTicks == 0, "leaving during the grace did not collapse the player");
+			reset(d, pending, owed);
+
 			// Once an expedition: logging out and back in during the grace does not grant it again
 			begin(d);
 			d.heldSpent = true;
@@ -257,6 +265,21 @@ public class WarmChainTests {
 	// ------------------------------------------------------------------ helpers
 
 	/** On an expedition in the Nether with no charge left, not yet held. */
+	/** The Held's chamber is carved only into the Nether's own ground: never through walls, chests or a fortress. */
+	@GameTest
+	public void theHeldDigsOnlyTheNether(GameTestHelper helper) {
+		for (net.minecraft.world.level.block.Block b : List.of(net.minecraft.world.level.block.Blocks.NETHERRACK, net.minecraft.world.level.block.Blocks.BASALT,
+				net.minecraft.world.level.block.Blocks.SOUL_SAND, net.minecraft.world.level.block.Blocks.LAVA, net.minecraft.world.level.block.Blocks.AIR,
+				net.minecraft.world.level.block.Blocks.CRIMSON_NYLIUM, net.minecraft.world.level.block.Blocks.NETHER_QUARTZ_ORE)) {
+			check(helper, HeldChamber.natural(b.defaultBlockState()), "%s is not counted as the Nether's own", b);
+		}
+		for (net.minecraft.world.level.block.Block b : List.of(net.minecraft.world.level.block.Blocks.OAK_PLANKS, net.minecraft.world.level.block.Blocks.CHEST,
+				net.minecraft.world.level.block.Blocks.NETHER_BRICKS, net.minecraft.world.level.block.Blocks.COBBLESTONE, net.minecraft.world.level.block.Blocks.GLASS)) {
+			check(helper, !HeldChamber.natural(b.defaultBlockState()), "%s would be carved through for a chamber", b);
+		}
+		helper.succeed();
+	}
+
 	private static void begin(PlayerData d) {
 		d.inRun = true;
 		d.collapsing = false;

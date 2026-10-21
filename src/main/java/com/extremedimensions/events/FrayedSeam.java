@@ -1,11 +1,9 @@
 package com.extremedimensions.events;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -53,7 +51,7 @@ public final class FrayedSeam {
 		final List<UUID> rays = new ArrayList<>();
 		final Set<UUID> told = new HashSet<>();
 
-		Fraying(UUID player, double x, int y, double z, long until) {
+		public Fraying(UUID player, double x, int y, double z, long until) {
 			this.player = player;
 			this.x = x;
 			this.y = y;
@@ -78,8 +76,6 @@ public final class FrayedSeam {
 	}
 
 	private static final List<Fraying> ACTIVE = new ArrayList<>();
-	/** The visit (by the player's count of visits) in which each player's island last frayed. */
-	private static final Map<UUID, Integer> VISIT = new HashMap<>();
 
 	public static void tick(MinecraftServer s) {
 		long now = s.getTickCount();
@@ -90,8 +86,9 @@ public final class FrayedSeam {
 		if (now % 1200 == 900 && Config.FRAYED_SEAM > 0) {
 			for (ServerPlayer p : seam.players()) {
 				PlayerData d = DataStore.get(p.getUUID());
-				if (d.inSeam && !p.isCreative() && !SeamDepth.inFray(p) && on(p) == null && !Integer.valueOf(d.seamVisits).equals(VISIT.get(p.getUUID()))
-						&& WorldEvents.free(p, now) && ThreadLocalRandom.current().nextDouble() < Config.FRAYED_SEAM_CHANCE) {
+				// (the chance first: whether the player is free is the dearer question)
+				if (d.inSeam && !p.isCreative() && !SeamDepth.inFray(p) && d.frayedVisit != d.seamVisits
+						&& ThreadLocalRandom.current().nextDouble() < Config.FRAYED_SEAM_CHANCE && on(p) == null && WorldEvents.free(p, now)) {
 					start(seam, p, now);
 				}
 			}
@@ -113,7 +110,9 @@ public final class FrayedSeam {
 
 	/** Frays the island under a player. */
 	public static Fraying start(ServerLevel seam, ServerPlayer p, long now) {
-		VISIT.put(p.getUUID(), DataStore.get(p.getUUID()).seamVisits);
+		PlayerData d = DataStore.get(p.getUUID());
+		d.frayedVisit = d.seamVisits;
+		DataStore.markDirty();
 		WorldEvents.begin(p, "frayed", now);
 		return start(seam, p.getUUID(), p.getX(), (int) p.getY(), p.getZ(), now);
 	}
@@ -185,11 +184,21 @@ public final class FrayedSeam {
 		long now = seam.getServer().getTickCount();
 		for (ServerPlayer p : seam.players()) {
 			if (f.holds(p.getX(), p.getZ()) && f.told.add(p.getUUID())) {
-				WorldFx.fx(p, Fx.FRAYED_SEAM, (int) Math.max(1, (f.until - now) / 20));
+				WorldFx.fx(p, Fx.FRAYED_SEAM, fx(f, p, now));
 				WorldFx.soundSelf(p, "minecraft:ambient.basalt_deltas.mood", 1.0f, 0.6f);
 				p.sendSystemMessage(Component.translatable("gui.extremedimensions.frayed_seam.begin").withStyle(ChatFormatting.DARK_GREEN, ChatFormatting.ITALIC), true);
 			}
 		}
+	}
+
+	/**
+	 * What the client is told: how long it lasts (seconds, up to 1023), and where the island's middle lies from where the
+	 * player stands (blocks east and south, each within 511), packed ten bits apiece.
+	 */
+	public static int fx(Fraying f, ServerPlayer p, long now) {
+		int secs = (int) Math.max(1, Math.min(1023, (f.until - now) / 20));
+		int dx = (int) Math.max(-511, Math.min(511, Math.round(f.x - p.getX()))), dz = (int) Math.max(-511, Math.min(511, Math.round(f.z - p.getZ())));
+		return secs | (dx + 512) << 10 | (dz + 512) << 20;
 	}
 
 	/** It is over: the rays sink back into the fog, and a tangle surfaces on the island. */
@@ -210,7 +219,9 @@ public final class FrayedSeam {
 		}
 		for (ServerPlayer p : seam.players()) {
 			if (f.holds(p.getX(), p.getZ())) {
-				p.sendSystemMessage(Component.translatable("gui.extremedimensions.frayed_seam.done").withStyle(ChatFormatting.GREEN), true);
+				// (something surfaced only if there was room for it)
+				p.sendSystemMessage(Component.translatable(at != null ? "gui.extremedimensions.frayed_seam.done" : "gui.extremedimensions.frayed_seam.done_empty")
+						.withStyle(ChatFormatting.GREEN), true);
 			}
 		}
 	}
@@ -281,6 +292,5 @@ public final class FrayedSeam {
 			}
 		}
 		ACTIVE.clear();
-		VISIT.clear();
 	}
 }

@@ -2,9 +2,11 @@ package com.extremedimensions.events;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import com.extremedimensions.binding.Homebound;
@@ -27,6 +29,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -93,13 +96,16 @@ public final class Echoes {
 	/** Half a second of every echo (for the tests too). */
 	public static void step(MinecraftServer s) {
 		long now = System.currentTimeMillis();
+		boolean draw = s.getTickCount() % 20 < 10;
 		for (Echo e : new ArrayList<>(DataStore.echoes())) {
 			ServerLevel level = WorldFx.level(Dims.fullIdOf(e.dim));
 			BlockPos at = new BlockPos(e.x, e.y, e.z);
 			if (level == null || !level.isLoaded(at)) {
 				continue;
 			}
-			List<ServerPlayer> near = near(level, e, Math.max(4, Config.ECHO_RANGE));
+			// (once shown, it stays a little further out: walking the edge of its reach does not flicker it)
+			double reach = Math.max(4, Config.ECHO_RANGE) + (e.shown ? 8 : 0);
+			List<ServerPlayer> near = near(level, e, reach);
 			if (Config.ECHOES <= 0 || now - e.at < Math.max(0, Config.ECHO_DELAY) * 1000L || near.isEmpty()) {
 				if (e.shown) {
 					hide(e);
@@ -108,35 +114,51 @@ public final class Echoes {
 				continue;
 			}
 			if (!e.shown) {
-				show(e, near);
+				show(e);
 			}
-			shape(level, e);
-			ServerPlayer done = null;
-			double listen = Math.max(1, Config.ECHO_LISTEN_RANGE);
 			for (ServerPlayer p : near) {
-				String id = p.getStringUUID();
-				if (e.distSq(p.getX(), p.getY(), p.getZ()) <= listen * listen) {
-					int heard = e.heard.merge(id, 10, Integer::sum);
-					if (heard % 60 == 0) {
-						WorldFx.soundFor(p, "minecraft:particle.soul_escape", "ambient", e.x + 0.5, e.y + 1, e.z + 0.5, 1.0f, 0.6f);
-					}
-					if (heard >= Math.max(1, Config.ECHO_LISTEN_SECONDS) * 20 && done == null) {
-						done = p;
-					}
-				} else {
-					e.heard.remove(id);
+				if (e.told.add(p.getStringUUID())) {
+					WorldFx.soundFor(p, "minecraft:block.chain.step", "ambient", e.x + 0.5, e.y + 1, e.z + 0.5, 1.0f, 0.5f);
+					WorldFx.soundFor(p, "extremedimensions:lurker_whisper", "ambient", e.x + 0.5, e.y + 1, e.z + 0.5, 0.7f, 0.5f);
+					p.sendSystemMessage(Component.translatable("gui.extremedimensions.echo.near").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC), true);
 				}
 			}
+			if (draw) {
+				shape(level, e);
+			}
+			ServerPlayer done = null;
+			double listen = Math.max(1, Config.ECHO_LISTEN_RANGE);
+			Set<String> listening = new HashSet<>();
+			for (ServerPlayer p : near) {
+				if (e.distSq(p.getX(), p.getY(), p.getZ()) > listen * listen) {
+					continue;
+				}
+				String id = p.getStringUUID();
+				listening.add(id);
+				int heard = e.heard.merge(id, 10, Integer::sum);
+				if (heard == 10) {
+					p.sendSystemMessage(Component.translatable("gui.extremedimensions.echo.listening").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC), true);
+				}
+				if (heard % 60 == 0) {
+					WorldFx.soundFor(p, "minecraft:particle.soul_escape", "ambient", e.x + 0.5, e.y + 1, e.z + 0.5, 1.0f, 0.6f);
+				}
+				if (heard >= Math.max(1, Config.ECHO_LISTEN_SECONDS) * 20 && done == null) {
+					done = p;
+				}
+			}
+			// Only those listening now count: whoever walked off, left the world or fell starts over when back
+			e.heard.keySet().retainAll(listening);
 			if (done != null) {
 				release(level, e, done);
 			}
 		}
 	}
 
+	/** Who an echo shows to: the living near it, not spectators or creative players. */
 	private static List<ServerPlayer> near(ServerLevel level, Echo e, double r) {
 		List<ServerPlayer> out = new ArrayList<>();
 		for (ServerPlayer p : level.players()) {
-			if (!p.isSpectator() && e.distSq(p.getX(), p.getY(), p.getZ()) <= r * r) {
+			if (p.isAlive() && !p.isSpectator() && !p.isCreative() && e.distSq(p.getX(), p.getY(), p.getZ()) <= r * r) {
 				out.add(p);
 			}
 		}
@@ -144,8 +166,7 @@ public final class Echoes {
 	}
 
 	/** The chains rattle and something whispers: the chains stand where the shape will kneel, with its name over it. */
-	private static void show(Echo e, List<ServerPlayer> near) {
-		e.shown = true;
+	private static void show(Echo e) {
 		hide(e);
 		e.shown = true;
 		String dim = Dims.fullIdOf(e.dim), tag = e.tag();
@@ -158,16 +179,12 @@ public final class Echoes {
 		WorldFx.run(String.format(Locale.ROOT, "execute in %s run summon minecraft:text_display %.2f %.2f %.2f "
 				+ "{Tags:[\"ed_echo\",\"%s\"],billboard:\"center\",text:\"%s\",background:0,text_opacity:150,see_through:0b}",
 				dim, e.x + 0.5, e.y + 2.4, e.z + 0.5, tag, e.name.replaceAll("[^A-Za-z0-9_]", "")));
-		for (ServerPlayer p : near) {
-			WorldFx.soundFor(p, "minecraft:block.chain.step", "ambient", e.x + 0.5, e.y + 1, e.z + 0.5, 1.0f, 0.5f);
-			WorldFx.soundFor(p, "extremedimensions:lurker_whisper", "ambient", e.x + 0.5, e.y + 1, e.z + 0.5, 0.7f, 0.5f);
-			p.sendSystemMessage(Component.translatable("gui.extremedimensions.echo.near").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC), true);
-		}
 	}
 
 	/** Takes down an echo's chains and name. */
-	private static void hide(Echo e) {
+	static void hide(Echo e) {
 		e.shown = false;
+		e.told.clear();
 		WorldFx.run("kill @e[type=minecraft:block_display,tag=" + e.tag() + "]");
 		WorldFx.run("kill @e[type=minecraft:text_display,tag=" + e.tag() + "]");
 	}
@@ -197,8 +214,12 @@ public final class Echoes {
 		PlayerData d = DataStore.get(listener.getUUID());
 		Journal.unlock(listener, d, JournalEntry.ECHOES);
 		Advancements.grant(listener, Advancements.ECHO_HEARD);
-		// Only another's echo pays the listener: collapsing on purpose to hear oneself brings back the toll, nothing more
-		if (!listener.getStringUUID().equals(e.owner)) {
+		// Only another's echo pays the listener, and only once in a while: collapsing on purpose to hear oneself brings
+		// back the toll, nothing more, and a row of echoes heard out together pays once
+		long now = System.currentTimeMillis();
+		boolean pays = !listener.getStringUUID().equals(e.owner) && now - d.echoPaidAt >= Math.max(0, Config.ECHO_PAY_COOLDOWN) * 1000L;
+		if (pays) {
+			d.echoPaidAt = now;
 			WorldFx.give(listener, new ItemStack(ModItems.TETHER_FRAGMENT));
 			if (Config.ECHO_ATONE > 0) {
 				PenaltyService.atone(listener, d, false, Config.ECHO_ATONE);
@@ -207,32 +228,63 @@ public final class Echoes {
 		level.sendParticles(ParticleTypes.SCULK_SOUL, e.x + 0.5, e.y + 1, e.z + 0.5, 30, 0.4, 0.8, 0.4, 0.04);
 		WorldFx.soundIn(Dims.fullIdOf(e.dim), "minecraft:block.chain.break", "ambient", e.x + 0.5, e.y + 1, e.z + 0.5, 1.0f, 0.6f);
 		WorldFx.soundIn(Dims.fullIdOf(e.dim), "minecraft:particle.soul_escape", "ambient", e.x + 0.5, e.y + 1, e.z + 0.5, 1.2f, 0.8f);
-		listener.sendSystemMessage(Component.translatable("gui.extremedimensions.echo.released", e.name).withStyle(ChatFormatting.AQUA), true);
+		// (in the chat, where an atonement's own message does not wipe it out)
+		listener.sendSystemMessage(pays ? Component.translatable("gui.extremedimensions.echo.released_paid", e.name, Math.max(0, Config.ECHO_ATONE))
+				.withStyle(ChatFormatting.AQUA) : Component.translatable("gui.extremedimensions.echo.released", e.name).withStyle(ChatFormatting.AQUA));
 		// To the one who collapsed: half of what that death cost them, and in a severed world one thing it destroyed
 		int back = (int) Math.round(Math.max(0, e.toll) * Math.max(0, Math.min(1, Config.ECHO_RETURN)));
-		ServerPlayer owner = null;
+		UUID ownerId;
 		try {
-			owner = level.getServer().getPlayerList().getPlayer(UUID.fromString(e.owner));
+			ownerId = UUID.fromString(e.owner);
 		} catch (IllegalArgumentException ignored) {
 			return;
 		}
-		PlayerData od = DataStore.get(UUID.fromString(e.owner));
+		ServerPlayer owner = level.getServer().getPlayerList().getPlayer(ownerId);
+		PlayerData od = DataStore.get(ownerId);
 		if (owner != null) {
 			if (back > 0) {
 				PenaltyService.atone(owner, od, false, back);
 				owner.sendSystemMessage(Component.translatable("gui.extremedimensions.echo.returned", back).withStyle(ChatFormatting.AQUA));
 			}
-			if (e.lost != null) {
-				ItemStack s = Homebound.decode(level.registryAccess(), e.lost);
-				if (!s.isEmpty()) {
-					WorldFx.give(owner, s);
-				}
-			}
 		} else {
 			od.echoOwed += back;
-			if (e.lost != null) {
+		}
+		if (e.lost != null) {
+			ItemStack s = Homebound.decode(level.registryAccess(), e.lost);
+			if (owner != null && owner.isAlive() && !s.isEmpty()) {
+				WorldFx.give(owner, s);
+				owner.sendSystemMessage(Component.translatable("gui.extremedimensions.homebound.restored").withStyle(ChatFormatting.AQUA));
+			} else {
+				// away, or on the death screen: it waits for them to be back on their feet
 				od.homebound.add(e.lost);
 			}
+		}
+		DataStore.markDirty();
+	}
+
+	/**
+	 * An echo's chains or name loaded with their chunk: kept only while that echo shows (otherwise they were left behind
+	 * by a stop, or by an echo that has since gone, and come down; the echo puts up its own when someone comes near).
+	 */
+	public static boolean stray(Entity entity) {
+		if (!entity.getTags().contains("ed_echo")) {
+			return false;
+		}
+		for (Echo e : DataStore.echoes()) {
+			if (e.shown && entity.getTags().contains(e.tag())) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/** The server stops: every echo's chains come down before the world is saved. */
+	public static void clear() {
+		for (Echo e : DataStore.echoes()) {
+			if (e.shown) {
+				hide(e);
+			}
+			e.heard.clear();
 		}
 	}
 

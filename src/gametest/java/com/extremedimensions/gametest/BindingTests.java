@@ -71,6 +71,12 @@ public class BindingTests {
 		float vsLurker = onLurker.floatValue(), vsZombie = onZombie.floatValue();
 		check(helper, Math.abs(vsLurker - 18.5f) < 0.01f, "Woundbane V against a Lurker: expected 18.5, got %s", vsLurker);
 		check(helper, Math.abs(vsZombie - 6.0f) < 0.01f, "Woundbane V against a zombie: expected 6, got %s", vsZombie);
+		// Against an Elder only a little more than Sharpness V gives (+3.6 against +3): within a tenth of its time to kill
+		Entity elder = ModEntities.MATRIARCH.create(level, EntitySpawnReason.COMMAND);
+		MutableFloat onElder = new MutableFloat(6.0f);
+		woundbane.value().modifyDamage(level, 5, sword, elder, hit, onElder);
+		check(helper, Math.abs(onElder.floatValue() - 9.6f) < 0.01f, "Woundbane V against an Elder: expected 9.6, got %s", onElder.floatValue());
+		elder.discard();
 		TagKey<EntityType<?>> elders = TagKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("wound_elders"));
 		TagKey<EntityType<?>> born = TagKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("wound_born"));
 		for (EntityType<?> t : List.of(ModEntities.MATRIARCH, ModEntities.FERRYMAN, ModEntities.WEAVER, ModEntities.STARVED_ONE)) {
@@ -158,7 +164,17 @@ public class BindingTests {
 			double floored = d.drainMultiplier();
 			check(helper, Math.abs(floored - Config.BASE_DRAIN * Config.ENCH_DRAIN_FLOOR) < 1e-6, "the eased drain went to %s, below the floor", floored);
 			Config.ENCH_THRIFT_DRAIN = drain;
+			// ... and so do a relic and a mended world on top: the woven Tether, five scars and Thrift III with the
+			// Ember Heart in a mended world is still only the floor
+			d.tetherTier = 2;
+			d.scars = 5;
+			double withAll = d.drainMultiplier(Config.RELIC_EMBER_HEART_NETHER * Config.MENDED_DRAIN);
+			check(helper, withAll >= Config.BASE_DRAIN * Config.ENCH_DRAIN_FLOOR - 1e-9, "a relic and a mended world took the drain to %s, below the floor",
+					withAll);
 			d.tetherTier = 0;
+			d.scars = 0;
+			double eased = d.drainMultiplier(0.8);
+			check(helper, Math.abs(eased - thrifty * 0.8) < 1e-6, "above the floor, an easing of 0.8 drains %s, not %s", eased, thrifty * 0.8);
 
 			TetherService.untie(p, d);
 			check(helper, d.tetherAnchor == null && d.charm(ModEnchantments.THRIFT) == 0, "untied, the player still has Thrift");
@@ -206,6 +222,29 @@ public class BindingTests {
 		helper.succeed();
 	}
 
+	/** The anvil enchants one Tether with a book, never a stack of them at once (it still renames a stack). */
+	@GameTest
+	public void anAnvilTakesOneTether(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer p = TestPlayers.survivor(helper, "test-anvil");
+		net.minecraft.world.inventory.AnvilMenu menu = new net.minecraft.world.inventory.AnvilMenu(0, p.getInventory(),
+				net.minecraft.world.inventory.ContainerLevelAccess.NULL);
+		ItemStack book = new ItemStack(Items.ENCHANTED_BOOK);
+		book.enchant(ench(level, ModEnchantments.THRIFT), 3);
+		menu.getSlot(0).set(new ItemStack(ModItems.TETHER));
+		menu.getSlot(1).set(book.copy());
+		menu.createResult();
+		check(helper, ModEnchantments.level(level.registryAccess(), menu.getSlot(2).getItem(), ModEnchantments.THRIFT) == 3,
+				"the anvil did not put Thrift III on one Tether (it gave %s)", menu.getSlot(2).getItem());
+		menu.getSlot(0).set(new ItemStack(ModItems.TETHER, 16));
+		menu.getSlot(1).set(book.copy());
+		menu.createResult();
+		check(helper, menu.getSlot(2).getItem().isEmpty(), "the anvil enchanted a stack of Tethers at once: %s", menu.getSlot(2).getItem());
+		menu.getSlot(0).set(ItemStack.EMPTY);
+		menu.getSlot(1).set(ItemStack.EMPTY);
+		helper.succeed();
+	}
+
 	/** Silkbound counts on the bound Tether and on one carried; Veilsight is read from the helmet. */
 	@GameTest
 	public void silkAndSightAreRead(GameTestHelper helper) {
@@ -218,6 +257,15 @@ public class BindingTests {
 		p.getInventory().add(carried);
 		check(helper, TetherService.charm(p, d, ModEnchantments.SILKBOUND) == 2, "a carried Tether's Silkbound II reads %s",
 				TetherService.charm(p, d, ModEnchantments.SILKBOUND));
+		// Bound to a Thrift Tether, the Silkbound one in the bag counts for nothing: the two are never had at once
+		d.tetherAnchor = "0,0,0";
+		d.tetherCharms = new java.util.HashMap<>(java.util.Map.of(ModEnchantments.id(ModEnchantments.THRIFT), 3));
+		try {
+			check(helper, TetherService.charm(p, d, ModEnchantments.SILKBOUND) == 0, "bound to a Thrift Tether, a carried one still gave Silkbound");
+		} finally {
+			d.tetherAnchor = null;
+			d.tetherCharms.clear();
+		}
 
 		check(helper, !Veilsight.has(p) && Veilsight.noticed(p) == 1.0, "a bare head has Veilsight");
 		ItemStack helmet = new ItemStack(Items.IRON_HELMET);
@@ -266,16 +314,22 @@ public class BindingTests {
 
 			// what came home lands in the hand, and held it counts: put it away first
 			p.getInventory().clearContent();
-			check(helper, Homebound.drainFactor(p) == 1.0, "no Homebound worn, yet the drain rose to %s", Homebound.drainFactor(p));
+			check(helper, Homebound.pieces(p) == 0, "no Homebound carried, yet %s pieces count", Homebound.pieces(p));
 			ItemStack chest = new ItemStack(Items.IRON_CHESTPLATE);
 			chest.enchant(ench(level, ModEnchantments.HOMEBOUND), 1);
 			p.setItemSlot(EquipmentSlot.CHEST, chest);
-			double worn = Homebound.drainFactor(p);
-			check(helper, Math.abs(worn - (1 + Config.ENCH_HOMEBOUND_DRAIN)) < 1e-9, "one Homebound piece worn drains %s", worn);
+			check(helper, Homebound.pieces(p) == 1, "one Homebound piece worn counts as %s", Homebound.pieces(p));
+			// one in the bag would come home too, so it drains too
+			p.getInventory().add(sword.copy());
+			check(helper, Homebound.pieces(p) == 2, "a Homebound sword in the bag did not count (%s pieces)", Homebound.pieces(p));
+			d.homeboundCounted = Long.MIN_VALUE / 2;
+			double carried = Homebound.drainFactor(p);
+			check(helper, Math.abs(carried - (1 + 2 * Config.ENCH_HOMEBOUND_DRAIN)) < 1e-9, "two Homebound pieces carried drain %s", carried);
 		} finally {
 			plain.discard();
 			kept.discard();
 			p.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
+			p.getInventory().clearContent();
 			d.homebound.clear();
 		}
 		helper.succeed();
@@ -304,6 +358,20 @@ public class BindingTests {
 		check(helper, read.contains(p.getName().getString()) && read.contains("2:05"), "the anchor read \"%s\", not the player's 2:05", read);
 		check(helper, "gui.extremedimensions.lens.anchor.nether".equals(key(WoundLens.anchor(p, a))), "an ember anchor read as %s", key(WoundLens.anchor(p, a)));
 		check(helper, "gui.extremedimensions.lens.anchor.end".equals(key(WoundLens.anchor(p, new Anchor(0, 0, 0, Dims.END)))), "a void anchor read as an ember one");
+		// A cracked anchor's time, as its charge is: minutes and seconds
+		a.unstable = 287;
+		String breaks = null;
+		for (net.minecraft.network.chat.Component c : WoundLens.anchor(p, a).getSiblings()) {
+			if (c.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents t && t.getKey().endsWith(".unstable") && t.getArgs().length == 1) {
+				breaks = String.valueOf(t.getArgs()[0]);
+			}
+		}
+		check(helper, "4:47".equals(breaks), "a cracked anchor read as breaking in %s, not 4:47", breaks);
+		// Told something else on the action bar, the lens holds its readout a moment, so that it can be read
+		check(helper, !WoundLens.hushed(p), "the lens holds its readout with nothing said");
+		p.sendSystemMessage(net.minecraft.network.chat.Component.literal("test"), true);
+		check(helper, WoundLens.hushed(p), "told something on the action bar, the lens did not hold its readout");
+		WoundLens.forget(p.getUUID());
 		helper.succeed();
 	}
 

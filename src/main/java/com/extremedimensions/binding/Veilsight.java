@@ -4,6 +4,7 @@ import com.extremedimensions.config.Config;
 import com.extremedimensions.registry.ModBlocks;
 import com.extremedimensions.registry.ModEnchantments;
 import com.extremedimensions.seam.SeamService;
+import com.extremedimensions.server.BlockScan;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -30,11 +31,9 @@ public final class Veilsight {
 
 	/** Every second: Seam Veins near a sneaking player with Veilsight shimmer, for their eyes only. */
 	public static void tick(MinecraftServer s) {
-		if (s.getTickCount() % 20 != 3) {
-			return;
-		}
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
-			if (p.isShiftKeyDown() && SeamService.inSeam(p) && has(p)) {
+			// each player at their own moment of the second, not all at once
+			if ((s.getTickCount() + p.getId()) % 20 == 3 && p.isShiftKeyDown() && SeamService.inSeam(p) && has(p)) {
 				shimmer(p);
 			}
 		}
@@ -43,14 +42,15 @@ public final class Veilsight {
 	/** Shows the veins within reach to one player; returns how many there were. */
 	public static int shimmer(ServerPlayer p) {
 		ServerLevel level = (ServerLevel) p.level();
-		int r = Math.max(1, Config.ENCH_VEILSIGHT_VEINS), n = 0;
+		int r = Math.max(1, Config.ENCH_VEILSIGHT_VEINS);
 		BlockPos at = p.blockPosition();
-		for (BlockPos q : BlockPos.betweenClosed(at.offset(-r, -r, -r), at.offset(r, r, r))) {
-			if (q.distSqr(at) <= r * r && level.getBlockState(q).is(ModBlocks.SEAM_VEIN)) {
+		int[] n = {0};
+		BlockScan.each(level, at.getX() - r, at.getY() - r, at.getZ() - r, at.getX() + r, at.getY() + r, at.getZ() + r, st -> st.is(ModBlocks.SEAM_VEIN), q -> {
+			if (q.distSqr(at) <= r * r) {
 				level.sendParticles(p, ParticleTypes.END_ROD, true, false, q.getX() + 0.5, q.getY() + 0.5, q.getZ() + 0.5, 3, 0.35, 0.35, 0.35, 0.0);
-				n++;
+				n[0]++;
 			}
-		}
-		return n;
+		});
+		return n[0];
 	}
 }

@@ -58,11 +58,15 @@ public final class WorldFx {
 		return server;
 	}
 
+	/** How many commands {@link #run} has run since the server started (the performance tests count them). */
+	public static int commandsRun;
+
 	/** Runs a command silently as the server. */
 	public static void run(String command) {
 		if (server == null) {
 			return;
 		}
+		commandsRun++;
 		try {
 			server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(), command);
 		} catch (Exception e) {

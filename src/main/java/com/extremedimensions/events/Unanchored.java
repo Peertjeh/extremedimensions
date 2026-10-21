@@ -80,7 +80,7 @@ public final class Unanchored {
 				PlayerData d = DataStore.get(p.getUUID());
 				if (d.inRun && Dims.END.equals(Dims.of(p)) && Math.hypot(p.getX(), p.getZ()) >= Config.UNANCHORED_FROM
 						&& !BUILDS.containsKey(p.getUUID()) && System.currentTimeMillis() - d.lastUnanchored >= Math.max(0, Config.UNANCHORED_COOLDOWN) * 60_000L
-						&& WorldEvents.free(p, now) && ThreadLocalRandom.current().nextDouble() < Config.UNANCHORED_CHANCE) {
+						&& ThreadLocalRandom.current().nextDouble() < Config.UNANCHORED_CHANCE && WorldEvents.free(p, now)) {
 					start(p, now);
 				}
 			}
@@ -133,12 +133,13 @@ public final class Unanchored {
 		if (b.builders.isEmpty()) {
 			return "commands.extremedimensions.event.no_room";
 		}
+		// (known before the pearl is put up: a pearl of no build under way is taken away as it loads)
+		BUILDS.put(p.getUUID(), b);
 		// The pearl they build round, hanging over the middle
 		WorldFx.run(String.format(Locale.ROOT, "execute in %s run summon minecraft:item_display %.2f %.2f %.2f "
 				+ "{Tags:[\"%s\",\"%s\"],item:{id:\"minecraft:ender_pearl\",count:1},billboard:\"center\",brightness:{sky:15,block:15},"
 				+ "transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],translation:[0f,0f,0f],scale:[0.7f,0.7f,0.7f]}}",
 				level.dimension().identifier(), centre.getX() + 0.5, centre.getY() + 1.3, centre.getZ() + 0.5, TAG, b.tag()));
-		BUILDS.put(p.getUUID(), b);
 		DataStore.get(p.getUUID()).lastUnanchored = System.currentTimeMillis();
 		DataStore.markDirty();
 		WorldEvents.begin(p, "unanchored", now);
@@ -183,23 +184,31 @@ public final class Unanchored {
 	/** One step of a build: anger, a stone laid, or the end. Returns why it ended, or null while it goes on. */
 	public static String step(Build b, long now) {
 		List<Mob> builders = new ArrayList<>();
+		boolean killed = false, unloaded = false;
 		for (UUID id : b.builders) {
-			if (b.level.getEntity(id) instanceof Mob m && m.isAlive()) {
+			Entity e = b.level.getEntity(id);
+			if (e instanceof Mob m && m.isAlive()) {
 				builders.add(m);
+			} else if (e != null) {
+				// (a killed one lies dying for a second: it is seen)
+				killed = true;
+			} else {
+				unloaded = true;
 			}
 		}
 		ServerPlayer owner = b.level.getServer().getPlayerList().getPlayer(b.player);
-		if (owner == null || owner.level() != b.level || owner.distanceToSqr(Vec3.atCenterOf(b.centre)) > 160 * 160) {
+		// Gone from the world, or out of it with their part of it unloaded: the builders go too
+		if (owner == null || owner.level() != b.level || owner.distanceToSqr(Vec3.atCenterOf(b.centre)) > 160 * 160 || (unloaded && !killed)) {
 			vanish(b, builders, false);
 			return "left";
 		}
-		if (builders.size() < b.builders.size()) {
-			anger(b, builders, owner);
+		if (killed) {
+			anger(b, builders, owner, false);
 			return "angered";
 		}
 		for (Mob m : builders) {
 			if (m.hurtTime > 0 && m.getLastHurtByMob() != null) {
-				anger(b, builders, m.getLastHurtByMob());
+				anger(b, builders, m.getLastHurtByMob(), false);
 				return "angered";
 			}
 		}
@@ -209,7 +218,7 @@ public final class Unanchored {
 			}
 			for (Mob m : builders) {
 				if (staring(q, m)) {
-					anger(b, builders, q);
+					anger(b, builders, q, true);
 					return "angered";
 				}
 			}
@@ -241,10 +250,12 @@ public final class Unanchored {
 	}
 
 	/** Looked at, hurt or one of them killed: they turn on whoever did it, and the ring stays as it is. */
-	private static void anger(Build b, List<Mob> builders, LivingEntity at) {
+	private static void anger(Build b, List<Mob> builders, LivingEntity at, boolean stared) {
 		for (Mob m : builders) {
+			// plain Endermen again, angry ones
 			m.setNoAi(false);
 			m.removeTag(TAG);
+			m.removeTag(b.tag());
 			if (at != null) {
 				m.setTarget(at);
 			}
@@ -252,9 +263,29 @@ public final class Unanchored {
 		kill(b, "item_display");
 		for (ServerPlayer q : b.level.players()) {
 			if (q.distanceToSqr(Vec3.atCenterOf(b.centre)) < 64 * 64) {
-				q.sendSystemMessage(Component.translatable("gui.extremedimensions.unanchored.seen").withStyle(ChatFormatting.DARK_PURPLE), true);
+				q.sendSystemMessage(Component.translatable(stared ? "gui.extremedimensions.unanchored.seen" : "gui.extremedimensions.unanchored.broken")
+						.withStyle(ChatFormatting.DARK_PURPLE), true);
 			}
 		}
+	}
+
+	/**
+	 * A builder or the pearl loaded with its chunk, but no build under way is theirs (a stop or an unloaded world ended
+	 * it without them): they are taken away, rather than stand frozen there for good.
+	 */
+	public static boolean stray(Entity e) {
+		boolean ours = false;
+		for (String t : e.getTags()) {
+			if (t.startsWith(TAG)) {
+				ours = true;
+				for (Build b : BUILDS.values()) {
+					if (t.equals(b.tag())) {
+						return false;
+					}
+				}
+			}
+		}
+		return ours;
 	}
 
 	/** Finished unwatched: they step into the ring and are gone, and leave what they leave. */

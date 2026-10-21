@@ -4,18 +4,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.extremedimensions.ExtremeDimensions;
+import com.extremedimensions.anchor.SoulWards;
+import com.extremedimensions.binding.Homebound;
+import com.extremedimensions.binding.Veilsight;
+import com.extremedimensions.binding.WoundLens;
 import com.extremedimensions.data.DataStore;
+import com.extremedimensions.data.Echo;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.events.Echoes;
 import com.extremedimensions.penalty.CurseEffects;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
+import com.extremedimensions.registry.ModEnchantments;
 import com.extremedimensions.seam.SeamArchitect;
 import com.extremedimensions.seam.SeamService;
+import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.WorldFx;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 /**
  * What the mod costs a server. Each test logs a {@code PERF} line and fails only far above any sane cost, so a slow
@@ -58,6 +70,113 @@ public class PerfTests {
 				"upkeep %.3f ms per server tick (%.1f%% of a 50 ms tick), attribute curses %.3f ms per player", tickMs, tickMs / 50 * 100, applyMs));
 		CurseTests.check(helper, tickMs < 10, "curse upkeep for 20 players takes %s ms per tick", tickMs);
 		CurseTests.check(helper, applyMs < 20, "setting the attribute curses takes %s ms per player", applyMs);
+		helper.succeed();
+	}
+
+	/**
+	 * Ten players carrying the bindings: the Homebound count, the Veilsight shimmer and the Wound Lens's reading, as
+	 * often as the game asks for them (each once or twice a second per player), and a soul ward looked for round fifty
+	 * anchors. Logged per second of play.
+	 */
+	@GameTest(maxTicks = 100)
+	public void bindingsForTenPlayers(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> homebound = ModEnchantments.holder(level.registryAccess(),
+				ModEnchantments.HOMEBOUND).orElseThrow(), veilsight = ModEnchantments.holder(level.registryAccess(), ModEnchantments.VEILSIGHT).orElseThrow();
+		List<ServerPlayer> players = new ArrayList<>();
+		net.minecraft.core.BlockPos o = helper.absolutePos(new net.minecraft.core.BlockPos(2, 1, 2));
+		for (int i = 0; i < 10; i++) {
+			ServerPlayer p = TestPlayers.survivor(helper);
+			p.teleportTo(o.getX() + 0.5 + i % 3, o.getY(), o.getZ() + 0.5 + i / 3);
+			ItemStack chest = new ItemStack(Items.IRON_CHESTPLATE), helmet = new ItemStack(Items.IRON_HELMET);
+			chest.enchant(homebound, 1);
+			helmet.enchant(veilsight, 1);
+			p.setItemSlot(EquipmentSlot.CHEST, chest);
+			p.setItemSlot(EquipmentSlot.HEAD, helmet);
+			for (int k = 0; k < 30; k++) {
+				p.getInventory().add(new ItemStack(Items.COBBLESTONE, 64));
+			}
+			players.add(p);
+		}
+		for (int warm = 0; warm < 20; warm++) {
+			bindings(players);
+		}
+		int rounds = 100;
+		long t0 = System.nanoTime();
+		for (int i = 0; i < rounds; i++) {
+			bindings(players);
+		}
+		double perSecond = (System.nanoTime() - t0) / 1e6 / rounds;
+		long t1 = System.nanoTime();
+		for (int i = 0; i < rounds; i++) {
+			for (int a = 0; a < 50; a++) {
+				SoulWards.warded(level, o.getX() + a * 7, o.getY(), o.getZ() - 40);
+			}
+		}
+		double wards = (System.nanoTime() - t1) / 1e6 / rounds;
+		report("bindings, 10 players carrying them", String.format(java.util.Locale.ROOT,
+				"%.3f ms per second of play (%.2f%% of a second's ticks), soul wards round 50 anchors %.3f ms", perSecond, perSecond / 1000 * 100, wards));
+		for (ServerPlayer p : players) {
+			p.getInventory().clearContent();
+		}
+		CurseTests.check(helper, perSecond < 20, "the bindings of 10 players take %s ms per second", perSecond);
+		CurseTests.check(helper, wards < 20, "looking for soul wards round 50 anchors takes %s ms", wards);
+		helper.succeed();
+	}
+
+	/** One second of the bindings for every player: the Homebound count, the shimmer, and two readings of the lens. */
+	private static void bindings(List<ServerPlayer> players) {
+		for (ServerPlayer p : players) {
+			Homebound.pieces(p);
+			Veilsight.shimmer(p);
+			WoundLens.reading(p);
+			WoundLens.reading(p);
+		}
+	}
+
+	/**
+	 * Thirty-two echoes round a player who does not listen: shown once, then only their shapes are drawn. Twenty
+	 * seconds of them must not run their chains up and down again (each show and hide runs commands).
+	 */
+	@GameTest(maxTicks = 200)
+	public void echoesStayPut(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer p = TestPlayers.survivor(helper);
+		net.minecraft.core.BlockPos o = helper.absolutePos(new net.minecraft.core.BlockPos(2, 1, 2));
+		p.teleportTo(o.getX() + 0.5, o.getY(), o.getZ() + 0.5);
+		List<Echo> made = new ArrayList<>();
+		String ending = DataStore.ending();
+		DataStore.setEnding(null);
+		try {
+			for (int i = 0; i < 32; i++) {
+				double a = i * Math.PI * 2 / 32, r = 10 + (i % 3) * 4;
+				Echo e = new Echo(Dims.of(level), o.getX() + (int) Math.round(Math.cos(a) * r), o.getY(), o.getZ() + (int) Math.round(Math.sin(a) * r),
+						java.util.UUID.randomUUID().toString(), "perf" + i, 0L, 10);
+				made.add(e);
+				DataStore.echoes().add(e);
+			}
+			net.minecraft.server.MinecraftServer s = level.getServer();
+			Echoes.step(s);
+			int shown = (int) made.stream().filter(e -> e.shown).count();
+			int before = WorldFx.commandsRun;
+			long t0 = System.nanoTime();
+			for (int i = 0; i < 40; i++) {
+				Echoes.step(s);
+			}
+			double stepMs = (System.nanoTime() - t0) / 1e6 / 40;
+			int commands = WorldFx.commandsRun - before;
+			report("echoes, 32 round one player", String.format(java.util.Locale.ROOT, "%d shown, %.3f ms per half second, %d commands in twenty seconds",
+					shown, stepMs, commands));
+			CurseTests.check(helper, shown == 32, "only %s of 32 echoes showed to the player near them", shown);
+			// (other tests run alongside and may run a few of their own)
+			CurseTests.check(helper, commands < 40, "the echoes ran %s commands in twenty seconds: they are put up and taken down again", commands);
+			CurseTests.check(helper, stepMs < 10, "a half second of 32 echoes takes %s ms", stepMs);
+		} finally {
+			for (Echo e : made) {
+				Echoes.forget(e);
+			}
+			DataStore.setEnding(ending);
+		}
 		helper.succeed();
 	}
 

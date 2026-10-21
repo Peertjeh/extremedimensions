@@ -122,6 +122,68 @@ public class EventTests {
 		helper.succeed();
 	}
 
+	/**
+	 * Two players by an echo: only whoever listens now counts (one who walked off or lies dead leaves nobody listening,
+	 * and nobody near draining faster), and a listener is paid once in a while, not by every echo in a row.
+	 */
+	@GameTest(maxTicks = 100)
+	public void anEchoForTwo(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer a = TestPlayers.survivor(helper, "test-echo-a"), b = TestPlayers.survivor(helper, "test-echo-b");
+		BlockPos o = helper.absolutePos(new BlockPos(2, 1, 2));
+		a.teleportTo(o.getX() + 0.5, o.getY(), o.getZ() + 1.5);
+		b.teleportTo(o.getX() + 0.5, o.getY(), o.getZ() + 8.5);
+		String ending = DataStore.ending();
+		DataStore.setEnding(null);
+		Echo e = new Echo(Dims.of(level), o.getX(), o.getY(), o.getZ(), UUID.randomUUID().toString(), "two", 0L, 10);
+		try {
+			DataStore.echoes().add(e);
+			for (int i = 0; i < 4; i++) {
+				Echoes.step(level.getServer());
+			}
+			check(helper, Echoes.drainFactor(b) == Math.max(1, Config.ECHO_DRAIN), "while A listened, B beside them did not drain faster");
+			a.teleportTo(o.getX() + 40.5, o.getY(), o.getZ() + 0.5);
+			Echoes.step(level.getServer());
+			check(helper, e.heard.isEmpty() && Echoes.drainFactor(b) == 1.0, "A walked off, yet the echo still counts them as listening (%s)", e.heard);
+			// Lying dead beside it is not listening
+			a.teleportTo(o.getX() + 0.5, o.getY(), o.getZ() + 1.5);
+			a.setHealth(0);
+			Echoes.step(level.getServer());
+			check(helper, e.heard.isEmpty(), "a dead player listens to the echo (%s)", e.heard);
+			a.setHealth(a.getMaxHealth());
+			// Paid by an echo a moment ago: heard out, this one lets go for nothing
+			PlayerData ad = DataStore.get(a.getUUID());
+			ad.echoPaidAt = System.currentTimeMillis();
+			int fragments = count(a, ModItems.TETHER_FRAGMENT);
+			for (int i = 0; i < Config.ECHO_LISTEN_SECONDS * 2 + 2 && DataStore.echoes().contains(e); i++) {
+				Echoes.step(level.getServer());
+			}
+			check(helper, !DataStore.echoes().contains(e), "the echo did not let go for a listener paid a moment ago");
+			check(helper, count(a, ModItems.TETHER_FRAGMENT) == fragments, "an echo paid a listener who was paid a moment ago");
+		} finally {
+			Echoes.forget(e);
+			DataStore.setEnding(ending);
+		}
+		helper.succeed();
+	}
+
+	/**
+	 * The frayed island's fog: the client is told how long and where the island's middle lies from the player, and
+	 * reads it back the same (ten bits apiece).
+	 */
+	@GameTest
+	public void aFrayingTellsWhere(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "test-fray-where");
+		BlockPos o = helper.absolutePos(new BlockPos(1, 1, 1));
+		p.teleportTo(o.getX() + 0.5, o.getY(), o.getZ() + 0.5);
+		FrayedSeam.Fraying f = new FrayedSeam.Fraying(p.getUUID(), p.getX() + 30, o.getY(), p.getZ() - 17, 100 + 20 * 90);
+		int v = FrayedSeam.fx(f, p, 100);
+		check(helper, (v & 1023) == 90, "the fraying's time read back as %s, not 90", v & 1023);
+		check(helper, (v >> 10 & 1023) - 512 == 30 && (v >> 20 & 1023) - 512 == -17, "the island's middle read back as %s, %s, not 30, -17",
+				(v >> 10 & 1023) - 512, (v >> 20 & 1023) - 512);
+		helper.succeed();
+	}
+
 	/** A Collapse that ends in death beyond the wound is remembered where it fell, with what it cost. */
 	@GameTest
 	public void aCollapseIsRemembered(GameTestHelper helper) {

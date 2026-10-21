@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.extremedimensions.config.Config;
+import com.extremedimensions.data.DataStore;
 import com.extremedimensions.elder.FerrymanService;
 import com.extremedimensions.elder.MatriarchService;
 import com.extremedimensions.elder.WeaverService;
@@ -40,22 +41,33 @@ public final class WorldEvents {
 
 	/** Whether a new event may begin for a player now. */
 	public static boolean free(ServerPlayer p, long now) {
-		if (ACTIVE.containsKey(p.getUUID()) || p.isSpectator() || p.isCreative() || inFight(p)) {
+		if (ACTIVE.containsKey(p.getUUID()) || p.isSpectator() || p.isCreative()) {
 			return false;
 		}
 		Long last = LAST.get(p.getUUID());
-		return last == null || now - last >= Math.max(0, Config.EVENT_SPACING) * 20L;
+		boolean spaced;
+		if (last != null) {
+			spaced = now - last >= Math.max(0, Config.EVENT_SPACING) * 20L;
+		} else {
+			// Not since the server started: the last one as kept with the player (a restart is no way round the spacing)
+			long at = DataStore.get(p.getUUID()).lastEventAt;
+			spaced = at <= 0 || System.currentTimeMillis() - at >= Math.max(0, Config.EVENT_SPACING) * 1000L;
+		}
+		// (the fight is looked for last: it is the dear part)
+		return spaced && !inFight(p);
 	}
 
 	/** An event begins for a player (it holds them until {@link #end}). */
 	public static void begin(ServerPlayer p, String id, long now) {
-		LAST.put(p.getUUID(), now);
+		mark(p, now);
 		ACTIVE.put(p.getUUID(), id);
 	}
 
 	/** A moment's event (a storm's start) counts for the spacing without holding the player. */
 	public static void mark(ServerPlayer p, long now) {
 		LAST.put(p.getUUID(), now);
+		DataStore.get(p.getUUID()).lastEventAt = System.currentTimeMillis();
+		DataStore.markDirty();
 	}
 
 	public static void end(UUID id, String event) {
@@ -105,5 +117,6 @@ public final class WorldEvents {
 		ACTIVE.clear();
 		Unanchored.clear();
 		FrayedSeam.clear();
+		Echoes.clear();
 	}
 }

@@ -25,6 +25,7 @@ import com.extremedimensions.tether.TetherService;
 import com.extremedimensions.world.WorldService;
 import com.extremedimensions.registry.ModItems;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -140,6 +141,7 @@ public final class ExpeditionService {
 			// Home while the Held's Chain still held them: made it
 			d.heldTicks = 0;
 			WorldFx.soundSelf(p, "minecraft:block.chain.break", 0.8f, 1.2f);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.relic.helds_chain.made_it").withStyle(ChatFormatting.GOLD));
 		}
 		// Ferryman's Fee: every crossing home is paid for in levels (counted while still on the expedition: a pact's too)
 		int fee = (int) Math.round(Penalty.FERRYMANS_FEE.value) * d.stacks(Penalty.FERRYMANS_FEE);
@@ -245,8 +247,11 @@ public final class ExpeditionService {
 		// A detour into the Seam does not stop the expedition's charge running out (its distance does not count there)
 		boolean seam = Dims.SEAM.equals(dim);
 		if ((Dims.isBeyond(dim) || seam) && d.inRun && !d.collapsing) {
-			d.currentDrain = d.drainMultiplier() * (seam ? 1.0 : TetherService.distanceFactor(p, d)) * WorldService.drainFactor(dim)
-					* com.extremedimensions.relic.RelicService.drainFactor(d, dim) * com.extremedimensions.elder.FerrymanService.drainFactor(p)
+			// What eases the drain here (a relic, a mended world) is held to the drain floor with the rest; what worsens it
+			// is not (and a severed world has none at all)
+			double world = WorldService.drainFactor(dim), relic = com.extremedimensions.relic.RelicService.drainFactor(d, dim);
+			d.currentDrain = (world <= 0 ? 0 : d.drainMultiplier(Math.min(1, world) * Math.min(1, relic)) * Math.max(1, world) * Math.max(1, relic))
+					* (seam ? 1.0 : TetherService.distanceFactor(p, d)) * com.extremedimensions.elder.FerrymanService.drainFactor(p)
 					* com.extremedimensions.binding.Homebound.drainFactor(p) * com.extremedimensions.events.WorldEvents.drainFactor(p);
 			double left = AnchorService.drainLinked(p, d, d.currentDrain / 20.0);
 			d.runTime += 1.0 / 20.0;
@@ -284,6 +289,19 @@ public final class ExpeditionService {
 			d.currentDrain = d.drainMultiplier();
 		}
 		return changed;
+	}
+
+	/** Leaving the game while the Held's Chain holds is no way out: the hold ends there, as if its time had run out. */
+	public static void leaving(ServerPlayer p, PlayerData d) {
+		if (d.heldTicks > 0 && d.inRun && !d.collapsing) {
+			d.heldTicks = 0;
+			if (d.tetherTier == 2 && d.tetherAnchor != null) {
+				unravel(p, d);
+			} else {
+				collapse(p, d);
+			}
+			DataStore.markDirty();
+		}
 	}
 
 	/**

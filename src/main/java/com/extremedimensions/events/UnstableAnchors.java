@@ -6,6 +6,7 @@ import com.extremedimensions.anchor.SoulWards;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.Anchor;
 import com.extremedimensions.data.DataStore;
+import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.ChatFormatting;
@@ -32,7 +33,8 @@ public final class UnstableAnchors {
 
 	/** Cracks an anchor (unless it is warded, empty or already cracked). True when it cracked. */
 	public static boolean unsettle(ServerLevel overworld, Anchor a) {
-		if (!allowed() || a.unstable > 0 || a.charge <= 0 || SoulWards.warded(overworld, a.x, a.y, a.z)) {
+		// (the ward as last looked at with the anchor's path, if it has been)
+		if (!allowed() || a.unstable > 0 || a.charge <= 0 || (a.checked ? a.warded : SoulWards.warded(overworld, a.x, a.y, a.z))) {
 			return false;
 		}
 		crack(a);
@@ -45,16 +47,22 @@ public final class UnstableAnchors {
 		WorldFx.soundAt("minecraft:block.basalt.break", a.x, a.y, a.z, 1.2f, 0.6f);
 		WorldFx.soundAt("minecraft:block.respawn_anchor.charge", a.x, a.y, a.z, 0.8f, 0.5f);
 		WorldFx.particleAt("minecraft:electric_spark", a.x + 0.5, a.y + 1.0, a.z + 0.5, 0.4, 0.4, 0.4, 0.2, 30);
+		// Everyone whose charge it keeps hears of it, wherever they are (most of them are out beyond the wound)
 		for (ServerPlayer p : WorldFx.server().getPlayerList().getPlayers()) {
-			if (owns(p, a) && p.distanceToSqr(a.x + 0.5, a.y, a.z + 0.5) < 64 * 64) {
-				p.sendSystemMessage(Component.translatable("gui.extremedimensions.anchor.cracked").withStyle(ChatFormatting.RED), true);
+			if (owns(p, a)) {
+				p.sendSystemMessage(Component.translatable("gui.extremedimensions.anchor.cracked", a.x, a.y, a.z, time(a.unstable)).withStyle(ChatFormatting.RED));
 			}
 		}
 	}
 
+	private static String time(int secs) {
+		return String.format(java.util.Locale.ROOT, "%d:%02d", secs / 60, secs % 60);
+	}
+
 	/** A storm breaks out around a player: unwarded anchors near may crack. Returns how many did. */
 	public static int storm(ServerPlayer p) {
-		if (!allowed() || !(p.level() instanceof ServerLevel level)) {
+		// (anchors are kept in the Overworld: a storm anywhere else cracks none)
+		if (!allowed() || !(p.level() instanceof ServerLevel level) || !Dims.OVERWORLD.equals(Dims.of(p))) {
 			return 0;
 		}
 		int n = 0;
@@ -97,6 +105,14 @@ public final class UnstableAnchors {
 				a.scaleAll(1 - Math.max(0, Math.min(1, Config.UNSTABLE_LOSS)));
 				WorldFx.soundAt("minecraft:block.respawn_anchor.deplete", a.x, a.y, a.z, 1.2f, 0.6f);
 				WorldFx.particleAt("minecraft:lava", a.x + 0.5, a.y + 1.0, a.z + 0.5, 0.3, 0.2, 0.3, 0.0, 10);
+				if (WorldFx.server() != null) {
+					int lost = (int) Math.round(Math.max(0, Math.min(1, Config.UNSTABLE_LOSS)) * 100);
+					for (ServerPlayer p : WorldFx.server().getPlayerList().getPlayers()) {
+						if (owns(p, a)) {
+							p.sendSystemMessage(Component.translatable("gui.extremedimensions.anchor.broke", a.x, a.y, a.z, lost).withStyle(ChatFormatting.RED));
+						}
+					}
+				}
 			}
 			a.unstable = 0;
 		}
