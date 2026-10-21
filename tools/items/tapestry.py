@@ -126,7 +126,7 @@ PALETTES = {
     "thread": {"k": (60, 40, 20), "d": (190, 160, 110), "m": (236, 220, 184), "l": (255, 248, 228), "h": (255, 255, 255)},
 }
 # the woven ground behind each panel's picture, from the deed's own colour
-GROUNDS = {"roots": (34, 44, 26), "toll": (20, 40, 44), "unravelling": (40, 32, 62), "chain": (36, 34, 42), "knot": (18, 42, 40),
+GROUNDS = {"roots": (34, 44, 26), "toll": (20, 40, 44), "unravelling": (40, 32, 62), "chain": (54, 32, 26), "knot": (18, 42, 40),
            "heart": (54, 22, 30)}
 FRAME_DARK, GOLD_D, GOLD_L = (14, 10, 20), (150, 112, 44), (226, 190, 104)
 
@@ -341,31 +341,42 @@ def unravelling_panel():
 def chain_panel():
     """The Held's chain: links hanging from the top, the lowest one broken open."""
     p = Panel(GROUNDS["chain"])
-    def link_front(box):
+    iron = PALETTES["iron"]
+    def ring(outer, inner):
         def f(d):
-            d.rounded_rectangle(box, radius=3, fill=1)
-            x0, y0, x1, y1 = box
-            d.rounded_rectangle([x0 + 2, y0 + 2, x1 - 2, y1 - 2], radius=1, fill=0)
+            d.ellipse(outer, fill=1)
+            d.ellipse(inner, fill=0)
         return f
-    def link_side(box):
-        # a link seen edge on: a narrow ring, its two sides with a slit of shadow between
-        def f(d):
-            x0, y0, x1, y1 = box
-            d.rounded_rectangle([x0 - 1, y0, x1 + 1, y1], radius=2, fill=1)
-            d.rectangle([x0 + 1, y0 + 2, x1 - 1, y1 - 2], fill=0)
-        return f
-    # top to bottom: a link face on, one edge on, one face on (broken)
-    p.layer(mask_of(link_side([18, 3, 21, 12])), PALETTES["iron"], sparkle=((18, 4),))
-    p.layer(mask_of(link_front([13, 9, 26, 22])), PALETTES["iron"], sparkle=((14, 11), (15, 10)))
-    p.layer(mask_of(link_side([18, 19, 21, 29])), PALETTES["iron"], sparkle=((18, 20),))
-    def broken(d):
-        d.rounded_rectangle([13, 26, 26, 37], radius=3, fill=1)
-        d.rounded_rectangle([15, 28, 24, 35], radius=1, fill=0)
-        d.rectangle([22, 30, 27, 33], fill=0)
-    p.layer(mask_of(broken), PALETTES["iron"], sparkle=((14, 28),))
-    # the break glints
-    for (x, y) in ((25, 29), (25, 34)):
+    top = mask_of(ring([14, 3, 25, 18], [17, 6, 22, 15]))
+    # the middle link seen edge on: a narrow ring, its two sides with a slit of the weave between
+    def edge(d):
+        d.rounded_rectangle([17, 13, 22, 28], radius=2, fill=1)
+        d.rectangle([19, 16, 20, 25], fill=0)
+    middle = mask_of(edge)
+    def gap(d):
+        d.rectangle([22, 27, 26, 31], fill=1)
+    low = minus(mask_of(ring([14, 22, 25, 36], [17, 25, 22, 33])), mask_of(gap))
+    # the Held's chain is warm: a glow of embers on the weave round it
+    for y in range(3, T - 3):
+        for x in range(3, T - 3):
+            r = math.hypot((x - 19.5) * 1.3, y - 20)
+            if r < 17:
+                p.px[y][x] = tuple(int(a + (b - a) * (0.32 * (1 - r / 17))) for a, b in zip(p.px[y][x], (255, 140, 60)))
+    # a shadow on the weave behind the whole chain, so it hangs in front of the hanging
+    whole = union(top, middle, low)
+    for y in range(3, T - 3):
+        for x in range(3, T - 3):
+            if whole[y - 2][x - 1] and not whole[y][x]:
+                p.px[y][x] = scale(p.px[y][x], 0.55)
+    # back to front, so the links lock: the edge link lies over the broken one's top and under the top one's bottom
+    p.layer(low, iron, sparkle=((16, 24), (15, 25)))
+    p.layer(middle, iron, sparkle=((17, 15), (17, 16)))
+    p.layer(top, iron, sparkle=((16, 5), (15, 6)))
+    # the broken ends glint, and a splinter falls away
+    for (x, y) in ((24, 26), (24, 32)):
         p.px[y][x] = (255, 244, 220)
+    for (x, y) in ((28, 33), (29, 35)):
+        p.px[y][x] = iron["l"]
     return p
 
 
