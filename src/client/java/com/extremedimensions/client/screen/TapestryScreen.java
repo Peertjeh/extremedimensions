@@ -42,7 +42,7 @@ public class TapestryScreen extends Screen {
 
 	/** The server sent the tapestry: show it, or refresh the one on show. */
 	public static void receive(String data) {
-		if (shown != null && Minecraft.getInstance().screen == shown) {
+		if (shown != null) {
 			shown.update(data);
 		} else {
 			Minecraft.getInstance().gui.setScreen(new TapestryScreen(data));
@@ -125,11 +125,11 @@ public class TapestryScreen extends Screen {
 	}
 
 	@Override
-	public void onClose() {
+	public void removed() {
+		super.removed();
 		if (shown == this) {
 			shown = null;
 		}
-		super.onClose();
 	}
 
 	@Override

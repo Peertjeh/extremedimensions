@@ -332,7 +332,8 @@ public class ClientPath implements FabricClientGameTest {
 			sp.getServer().runOnServer(s -> Journal.open(player(s), DataStore.get(player(s).getUUID())));
 			ctx.waitTicks(10);
 			ctx.runOnClient(mc -> {
-				if (mc.screen instanceof JournalScreen j) {
+				JournalScreen j = JournalScreen.last();
+				if (j != null) {
 					j.toLastPage();
 				}
 			});
@@ -360,7 +361,8 @@ public class ClientPath implements FabricClientGameTest {
 			sp.getServer().runOnServer(s -> com.extremedimensions.tapestry.Tapestry.open(player(s)));
 			ctx.waitTicks(10);
 			ctx.takeScreenshot("43_tapestry_finished");
-			ctx.runOnClient(mc -> check(mc.screen != null && pressOnce(mc.screen, I18n.get("gui.extremedimensions.tapestry.new_thread_button")),
+			ctx.runOnClient(mc -> check(com.extremedimensions.client.screen.TapestryScreen.shown() != null
+					&& pressOnce(com.extremedimensions.client.screen.TapestryScreen.shown(), I18n.get("gui.extremedimensions.tapestry.new_thread_button")),
 					"the finished tapestry offers no New Thread+"));
 			ctx.waitTicks(5);
 			ctx.takeScreenshot("43_new_thread");
