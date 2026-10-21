@@ -11,7 +11,7 @@ import net.battlehub.core.RewardSettings;
 
 /** {@code config/battlehub/config.json}. Every field has a default; missing keys are filled in on load. */
 public final class HubConfig {
-	public static final int CURRENT_VERSION = 5;
+	public static final int CURRENT_VERSION = 6;
 
 	public int configVersion = CURRENT_VERSION;
 
@@ -451,8 +451,8 @@ public final class HubConfig {
 	/** Characters on the lobby plaza that take you to a game. */
 	public static final class Npcs {
 		public boolean enabled = true;
-		/** Distance from the fountain (16: between the fountain and the planters, room to walk round them). */
-		public double radius = 16;
+		/** Distance from the fountain (22: between the fountain and the planters, room to walk round them). */
+		public double radius = 22;
 		public List<Npc> list = defaultNpcs();
 	}
 
@@ -690,8 +690,8 @@ public final class HubConfig {
 		combat.snowballDamage = Math.max(0, Math.min(20, combat.snowballDamage));
 		if (npcs == null) npcs = new Npcs();
 		if (npcs.list == null) npcs.list = defaultNpcs();
-		if (from < 4 && npcs.radius == 10.5) {
-			// 1.21: the characters stand further from the fountain (the old default only)
+		if ((from < 4 && npcs.radius == 10.5) || (from < 6 && npcs.radius == 16)) {
+			// 1.21 and 1.30 (a plaza ten blocks bigger): the characters stand further from the fountain (old defaults only)
 			npcs.radius = new Npcs().radius;
 		}
 		npcs.list.removeIf(n -> n == null || n.id == null || n.action == null);

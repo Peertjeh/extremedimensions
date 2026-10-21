@@ -176,8 +176,8 @@ final class BotBrain {
 		if (m.botStyle() != net.battlehub.core.BotStyle.PARKOUR && !building) {
 			// What the bot wanted, before an edge held it back: standing still at an edge is being stuck too
 			boolean wanted = bot.zza != 0 || bot.xxa != 0;
-			keepSafe();
-			unstick(wanted);
+			boolean heldBack = keepSafe();
+			unstick(wanted, heldBack);
 			recover();
 		}
 	}
@@ -392,25 +392,25 @@ final class BotBrain {
 	 * Never walks off an edge into the void or a hole: it looks further ahead the faster it goes, and when it slides
 	 * towards an edge (after a knock) it holds the keys against the slide.
 	 */
-	private void keepSafe() {
+	private boolean keepSafe() {
 		if (!bot.onGround()) {
-			return;
+			return false;
 		}
 		Vec3 v = bot.getDeltaMovement();
 		double speed = v.horizontalDistance();
 		if (speed > 0.12 && !safe(new Vec3(v.x, 0, v.z).normalize(), 0.6 + speed * 3)) {
 			brake();
 			bot.setSprinting(false);
-			return;
+			return true;
 		}
 		if (bot.zza == 0 && bot.xxa == 0) {
-			return;
+			return false;
 		}
 		Vec3 fwd = BotActions.dir(bot.getYRot());
 		Vec3 right = new Vec3(-fwd.z, 0, fwd.x);
 		Vec3 move = fwd.scale(bot.zza).add(right.scale(-bot.xxa));
 		if (move.lengthSqr() < 1e-4 || safe(move.normalize())) {
-			return;
+			return false;
 		}
 		// Try going only straight on, or only sideways
 		if (bot.zza != 0 && safe(fwd.scale(Math.signum(bot.zza)))) {
@@ -424,6 +424,7 @@ final class BotBrain {
 			bot.setSprinting(false);
 			strafe = -strafe;
 		}
+		return true;
 	}
 
 	private boolean safe(Vec3 dir) {
@@ -459,6 +460,9 @@ final class BotBrain {
 	 * In the air, knocked or fallen off: when the flight would end in the void, it holds the keys back towards the
 	 * last ground (a player does, after a moment to notice; lower levels not always).
 	 */
+	/** This flight began with a hit (knockback), not with a jump of its own. */
+	private boolean knocked;
+
 	private void recover() {
 		if (bot.onGround()) {
 			airTicks = 0;
@@ -468,8 +472,10 @@ final class BotBrain {
 			return;
 		}
 		airTicks++;
-		if (lastGround == null || airTicks < 1 + mind.difficulty().reactionTicks / 3) return;
-		if (recoverChoice == 0) recoverChoice = rnd.nextDouble() < mind.difficulty().edgeCare ? 1 : -1;
+		// knocked into the air, a player may freeze; off its own jump it always steers back
+		if (airTicks == 1) knocked = bot.hurtTime > 0;
+		if (lastGround == null || airTicks < 1 + (knocked ? mind.difficulty().reactionTicks / 3 : 0)) return;
+		if (recoverChoice == 0) recoverChoice = !knocked || rnd.nextDouble() < mind.difficulty().edgeCare ? 1 : -1;
 		if (recoverChoice < 0) return;
 		Vec3 v = bot.getDeltaMovement();
 		if (net.battlehub.core.ai.Falls.landsSafely(bot.getX(), bot.getY(), bot.getZ(), v.x, v.y, v.z, 0, 0, false, false, this::surface, 3)) {
@@ -512,8 +518,11 @@ final class BotBrain {
 		}
 	}
 
-	/** Pushing against something (or held back at an edge) for a second: jump and change direction. */
-	private void unstick(boolean trying) {
+	/**
+	 * Pushing against something (or held back at an edge) for a second: jump and change direction. At an edge it
+	 * only turns away: a jump there, with the keys still pointing out, is how a bot walks off into the void.
+	 */
+	private void unstick(boolean trying, boolean atEdge) {
 		if (ticks % 20 != 0) {
 			return;
 		}
@@ -521,7 +530,7 @@ final class BotBrain {
 		if (trying && pos.distanceToSqr(lastPos) < 0.04) {
 			stuck++;
 			if (stuck >= 2) {
-				jump();
+				if (!atEdge) jump();
 				strafe = -strafe;
 				wander = null;
 				// The route may be out of date (a block placed, a player in the way): work it out again

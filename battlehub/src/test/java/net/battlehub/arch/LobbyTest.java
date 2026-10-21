@@ -13,6 +13,7 @@ import net.battlehub.arch.check.Report;
 import net.battlehub.arch.check.Validator;
 import net.battlehub.arch.mod.Library;
 import net.battlehub.arch.town.Lobby;
+import net.battlehub.arch.town.Plaza;
 
 /** The lobby settlement: complete, inside its bounds, walkable, and different for every seed. */
 class LobbyTest {
@@ -53,8 +54,8 @@ class LobbyTest {
 	void thePlazaIsWhereTheGameExpectsIt() {
 		// beacon over the fountain, the four gate beacons, the floor under the spawn, the balustrade
 		assertEquals("beacon", lobby.voxels.get(0, 15, 0));
-		assertEquals("beacon", lobby.voxels.get(0, 13, -27));
-		assertEquals("beacon", lobby.voxels.get(27, 13, 0));
+		assertEquals("beacon", lobby.voxels.get(0, 13, -Plaza.RADIUS));
+		assertEquals("beacon", lobby.voxels.get(Plaza.RADIUS, 13, 0));
 		assertTrue(lobby.voxels.filled(0, 0, 9));
 		assertTrue(!lobby.voxels.filled(0, 1, 9) && !lobby.voxels.filled(0, 2, 9));
 	}

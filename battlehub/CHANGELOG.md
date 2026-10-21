@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.30.0
+
+### Added
+* **`/battlehub world reset [new]`** (admins): resets BattleHub's world.
+  * Everyone in the lobby goes back to the normal world with their things.
+  * The whole lobby area is emptied (the island, its sky islands, anything left round it) and the lobby built
+    again from scratch. With `new` it also gets a new seed: another city on the same plan.
+  * `/hub` waits until it is done; matches go on. Everybody hears when it is ready.
+
+### Changed
+* **The plaza at the heart of the lobby is ten blocks bigger** (radius 37, was 27).
+  * The compass rose, the light ring and the flower beds grow with it, and the lobby characters stand 22 blocks
+    from the fountain (16 before; changed only if it was the old default).
+  * The avenues, streets and landmarks of the city move out by ten.
+  * The lobby is rebuilt on the first start.
+* **SkyWars maps are 1.5 to 2.5 times as wide**, a different size every match. The islands, the middle and the
+  bridges all grow alike.
+  * The chests on a spawn island hold enough blocks for the longer bridge to the next island; those on a middle
+    island hold enough for the bridge to the middle.
+  * A very big middle gets four more chests.
+* **The middle islands of SkyWars never lie on the way from a spawn island to the middle.** They sit between
+  the spawn islands, also in small games.
+
+### Fixed
+* **Bots walked or jumped off the SkyWars map.**
+  * They walked into the chest at the edge of their island, climbed onto it and went over; now they stop in
+    front of it.
+  * Held back at an edge, they jumped to get unstuck, with the keys still pointing out; now they only turn away.
+  * After a jump of their own they did not always steer back. Only after a hit do they still sometimes freeze,
+    as players do.
+* A chapel or tower in the lobby could reach past its plot into a house next to it. Buildings are now checked
+  against each other before they are placed.
+
 ## 1.29.0
 
 ### Fixed

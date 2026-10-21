@@ -16,9 +16,9 @@ command, and **vanilla clients can join**: BattleHub runs on the server only.
 ### Its own world
 BattleHub lives in its own dimension, `battlehub:hub`, in a lobby the mod generates itself: **the Citadel**, a
 whole city on a floating island, designed by BattleHub's **procedural architecture engine** (see
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). At its heart lies the marble plaza (compass rose, three-tier
-fountain under a beacon, the leaderboards on its balustrade, the lobby characters) with four gateways and four
-avenues out to four districts, each anchored by a landmark that faces the plaza:
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). At its heart lies the marble plaza, 75 blocks across (compass rose,
+three-tier fountain under a beacon, the leaderboards on its balustrade, the lobby characters) with four gateways and
+four avenues out to four districts, each anchored by a landmark that faces the plaza:
 * a **gothic cathedral** to the north, framed by the north gate as you arrive: nave, aisles, transept, apse,
   flying buttresses, a west front with a portal, a rose window and towers, stained glass and pews inside;
 * a **castle** on a hill to the east: curtain walls with wall walks, round, square or octagonal towers
@@ -219,8 +219,8 @@ new place). Used every time that kit is handed out.
   shown to online admins; `/battlehub reports` lists the latest.
 
 ### Lobby characters and the mode of the day
-Eight characters stand in a ring around the fountain, halfway to the planters (16 blocks out, so the plaza stays
-easy to walk through): PvP, Free for All, Ranked, Practice, Bed Wars, Prop Hunt, Party Games and Parkour. Above each: its name, how many people play it right now and a click hint; their heads turn
+Eight characters stand in a ring around the fountain, between it and the planters (22 blocks out, so the plaza
+stays easy to walk through): PvP, Free for All, Ranked, Practice, Bed Wars, Prop Hunt, Party Games and Parkour. Above each: its name, how many people play it right now and a click hint; their heads turn
 towards you when you come close. Click one to go to that game.
 
 Every day another mode is the **mode of the day** with **double coins**: announced when you enter the hub,
@@ -317,12 +317,15 @@ for 30 seconds. It queues you for the same mode, format and ranked setting, asks
 * **Parkour Race**: a new course every race, with checkpoints and a timer; ranked by finish time.
 * **Last Man Standing**: free-for-all inside a shrinking border.
 * **Spleef**: dig the snow away under the others with a fast shovel; every block gives a snowball to push with.
-* **SkyWars** (2–12): a big map. Everyone starts on their own island with two chests (always some blocks to
-  bridge with). A ring of smaller middle islands with better loot lies about twelve blocks further in, and in the
-  middle a super big island rises in two terraces to a pavilion: eight chests with the best loot (diamond gear,
-  pearls, golden apples, a totem now and then). Each tier has its own list in `skywars.json`. Build, break,
-  fight; whoever dies drops everything. You can bridge between the islands, but not far out into the void or
-  high into the sky. Bots loot their island, put on the armor they find and bridge to the next chests.
+* **SkyWars** (2–12): a big map, every match a different size: 1.5 to 2.5 times as wide as in 1.29, the
+  islands, the middle and the bridges alike. Everyone starts on their own island with two chests (always enough
+  blocks to bridge to the next island). A ring of smaller middle islands with better loot lies beside the ways
+  in (never on the straight way from a spawn island to the middle), and in the middle a super big island rises
+  in two terraces to a pavilion: eight chests with the best loot, twelve when the middle is very big (diamond
+  gear, pearls, golden apples, a totem now and then). Each tier has its own list in `skywars.json`. Build,
+  break, fight; whoever dies drops everything. You can bridge between the islands, but not far out into the
+  void or high into the sky. Bots loot their island, put on the armor they find and bridge to the next chests;
+  they do not walk off the edge.
 * **The Bridge 2v2**: red against blue with two on each island; score together, no friendly fire.
 * **The Bridge 1v1v1v1** (2–4): everyone on their own island (red, blue, green, yellow) round a middle platform;
   jump into anyone else's goal to score. First to four goals wins.
@@ -557,6 +560,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/battlehub exit` | everyone | Same as `/survival` |
 | `/battlehub setlobby` | admin (level 2) | Set the hub spawn to your position (in the hub world) |
 | `/battlehub lobby rebuild` | admin | Build the hub again (after it was damaged or changed) |
+| `/battlehub world reset [new]` | admin | Reset BattleHub's world: everyone in the lobby goes back to the normal world, the whole lobby area is emptied and the lobby built again from scratch; `new` also gives it a new seed (another city on the same plan). Matches go on; everybody hears when it is ready |
 | `/battlehub reload` | admin | Reload the config, kits, titles and language files |
 | `/battlehub reports` | admin | The latest reports since the server started |
 | `/battlehub bots` / `/battlehub bots clear` | admin | How many bots are on and what they cost the server (thinks, think time, tick time, slow-down); take them all off |

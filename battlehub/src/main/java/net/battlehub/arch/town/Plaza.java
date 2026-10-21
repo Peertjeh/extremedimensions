@@ -13,8 +13,26 @@ import net.battlehub.arch.Rng;
 public final class Plaza {
 	private Plaza() {}
 
-	public static final int RADIUS = 27;
+	/** The plaza's radius to its balustrade (27 until 1.30: ten blocks more, so the heart of the island feels as big as the island). */
+	public static final int RADIUS = 37;
 	public static final int GATE = 3;
+	/** Where the long points of the compass rose end (just inside the dark rim). */
+	public static final double ARM = RADIUS - 3;
+	/** Where the four flower beds stand on the diagonals. */
+	public static final int PLANTERS = (int) Math.round(at(21));
+
+	/**
+	 * The floor pattern was drawn for a plaza of 27 with the points ending at 24; it grows with the plaza: the
+	 * fountain (7) stays, everything between it and the rim moves out in proportion.
+	 */
+	public static double at(double drawnAt) {
+		return 7 + (drawnAt - 7) * (ARM - 7) / 17;
+	}
+
+	/** How much wider the points of the rose are than they were drawn (they are longer too). */
+	public static double width() {
+		return Math.sqrt((ARM - 7) / 17);
+	}
 
 	private static final int[][] DIRS = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
 	private static final String[] BEAMS = {"red_stained_glass", "yellow_stained_glass", "lime_stained_glass", "light_blue_stained_glass"};
@@ -94,18 +112,18 @@ public final class Plaza {
 		double a = Math.atan2(z, x);
 		double toAxis = angleTo(a, 0, Math.PI / 2);
 		double toDiag = angleTo(a, Math.PI / 4, Math.PI / 2);
-		double wLong = 2.8 * (1 - (d - 7) / 17);
-		double wShort = 1.9 * (1 - (d - 7) / 10);
-		if (d > 7 && d < 24 && Math.abs(toAxis) * d < wLong) {
-			if (d > 21.5) return "gold_block";
+		double wLong = 2.8 * width() * (1 - (d - 7) / (ARM - 7));
+		double wShort = 1.9 * width() * (1 - (d - 7) / (at(17) - 7));
+		if (d > 7 && d < ARM && Math.abs(toAxis) * d < wLong) {
+			if (d > at(21.5)) return "gold_block";
 			return toAxis > 0 ? "polished_blackstone" : "polished_deepslate";
 		}
-		if (d > 7 && d < 17 && Math.abs(toDiag) * d < wShort) return toDiag > 0 ? "waxed_cut_copper" : "waxed_exposed_cut_copper";
-		if (Math.abs(d - 19) < 0.6 && Math.abs(angleTo(a, Math.PI / 8, Math.PI / 4)) * d < 0.6) return "sea_lantern";
-		if (Math.abs(d - 13) < 0.5) return "polished_blackstone_bricks";
-		if (Math.abs(d - 19) < 0.5) return "waxed_cut_copper";
+		if (d > 7 && d < at(17) && Math.abs(toDiag) * d < wShort) return toDiag > 0 ? "waxed_cut_copper" : "waxed_exposed_cut_copper";
+		if (Math.abs(d - at(19)) < 0.6 && Math.abs(angleTo(a, Math.PI / 8, Math.PI / 4)) * d < 0.6) return "sea_lantern";
+		if (Math.abs(d - at(13)) < 0.5) return "polished_blackstone_bricks";
+		if (Math.abs(d - at(19)) < 0.5) return "waxed_cut_copper";
 		if (Math.abs(d - 7.4) < 0.6) return "polished_blackstone_bricks";
-		double t = Math.max(0, (d - 7) / 17);
+		double t = Math.max(0, (d - 7) / (ARM - 7));
 		return k.grad(MARBLE, t, x, 0, z, 0.22);
 	}
 
@@ -210,7 +228,7 @@ public final class Plaza {
 	private static void planters(Pen k) {
 		for (int q = 0; q < 4; q++) {
 			double a = Math.PI / 4 + q * Math.PI / 2;
-			int cx = (int) Math.round(Math.cos(a) * 21), cz = (int) Math.round(Math.sin(a) * 21);
+			int cx = (int) Math.round(Math.cos(a) * PLANTERS), cz = (int) Math.round(Math.sin(a) * PLANTERS);
 			for (int x = -2; x <= 2; x++) {
 				for (int z = -2; z <= 2; z++) {
 					double d = Math.hypot(x, z);

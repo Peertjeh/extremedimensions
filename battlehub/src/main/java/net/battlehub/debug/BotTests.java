@@ -746,50 +746,74 @@ final class BotTests {
 		skywarsBot(server, s);
 	}
 
-	/** SkyWars against a bot: it empties the chests on its island and bridges off it to the next chests. */
+	/**
+	 * SkyWars with three bots on a big map: they empty the chests on their islands and bridge off them to the next
+	 * chests, and none walks or jumps off the map by itself (a fall within two seconds of a hit is a fight).
+	 */
 	private static void skywarsBot(MinecraftServer server, Script s) {
 		String tag = "bots skywars";
 		SelfTest.reset(s, tag);
-		s.run(tag + ": A joins SkyWars; one bot fills in", () -> {
+		s.run(tag + ": A joins SkyWars; three bots fill in", () -> {
 			VARS.put("partyCountdown", ConfigManager.config().timings.partyCountdownSeconds);
 			VARS.put("partyFull", ConfigManager.config().timings.partyFullCountdownSeconds);
 			ConfigManager.config().timings.partyCountdownSeconds = 4;
 			ConfigManager.config().timings.partyFullCountdownSeconds = 2;
 			cfg().fillQueues = true;
 			cfg().fillAfterSeconds = 1;
-			cfg().partyFillTo = 2;
+			cfg().partyFillTo = 4;
+			VARS.put("swFalls", new java.util.HashMap<UUID, Integer>());
+			VARS.put("swHurt", new java.util.HashMap<UUID, Integer>());
+			VARS.put("swSelfFalls", 0);
 			SelfTest.join(server, A);
 			Parties.join(p(A), GameMode.SKYWARS, "");
 		});
-		s.waitFor(tag + ": the match runs with a bot", 900, () -> {
+		s.waitFor(tag + ": the match runs with three bots", 900, () -> {
 			Match m = matchOfA();
-			return m instanceof net.battlehub.games.SkyWarsMatch && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
+			return m instanceof net.battlehub.games.SkyWarsMatch && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 3;
 		});
-		s.run(tag + ": no more bots", () -> cfg().fillQueues = false);
-		s.waitFor(tag + ": the bot empties the chests on its island", 1200, () -> {
+		s.run(tag + ": no more bots", () -> {
+			cfg().fillQueues = false;
+			net.battlehub.games.SkyWarsMatch sw = (net.battlehub.games.SkyWarsMatch) matchOfA();
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST skywars map: {} times as wide as in 1.29, {} blocks from the middle, middle island radius {}",
+					String.format(java.util.Locale.ROOT, "%.2f", sw.sizeFactor()), Math.round(sw.plan().outer), Math.round(sw.plan().center.r()));
+		});
+		s.waitFor(tag + ": the bots empty the chests on their islands", 1200, () -> {
 			Match m = matchOfA();
 			if (!(m instanceof net.battlehub.games.SkyWarsMatch sw) || botsIn(m).isEmpty()) return false;
-			BotPlayer b = botsIn(m).get(0);
-			p(A).setHealth(p(A).getMaxHealth());
-			if (sw.botLoots() >= 2) {
-				net.battlehub.BattleHub.LOGGER.info("SELFTEST skywars bot looted {} chests, wears {} | {}", sw.botLoots(), b.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST),
-						String.join(" | ", Bots.inspect(b)));
+			watchFalls(server, m);
+			if (sw.botLoots() >= 4) {
+				BotPlayer b = botsIn(m).get(0);
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST skywars bots looted {} chests, one wears {} | {}", sw.botLoots(),
+						b.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST), String.join(" | ", Bots.inspect(b)));
 				return true;
 			}
-			logBot("skywars bot", m, b, "swLogged");
+			logBot("skywars bot", m, botsIn(m).get(0), "swLogged");
 			return false;
 		});
-		s.waitFor(tag + ": and bridges off its island to the next chest", 2400, () -> {
+		s.waitFor(tag + ": and bridge off them to the next chest", 2400, () -> {
 			Match m = matchOfA();
 			if (m == null || botsIn(m).isEmpty()) return false;
-			BotPlayer b = botsIn(m).get(0);
-			p(A).setHealth(p(A).getMaxHealth());
-			if (Bots.placed(b) >= 3) {
-				net.battlehub.BattleHub.LOGGER.info("SELFTEST skywars bot built {} blocks | {}", Bots.placed(b), String.join(" | ", Bots.inspect(b)));
-				return true;
+			watchFalls(server, m);
+			for (BotPlayer b : botsIn(m)) {
+				if (Bots.placed(b) >= 3) {
+					net.battlehub.BattleHub.LOGGER.info("SELFTEST skywars bot built {} blocks | {}", Bots.placed(b), String.join(" | ", Bots.inspect(b)));
+					return true;
+				}
 			}
-			logBot("skywars bot", m, b, "swLogged2");
+			logBot("skywars bot", m, botsIn(m).get(0), "swLogged2");
 			return false;
+		});
+		s.run(tag + ": watch them for half a minute more", () -> VARS.put("swUntil", server.getTickCount() + 600));
+		s.waitFor(tag + ": (watching)", 700, () -> {
+			Match m = matchOfA();
+			if (m == null || m.phase() != Match.Phase.RUNNING) return true;
+			watchFalls(server, m);
+			return server.getTickCount() >= (int) VARS.get("swUntil");
+		});
+		s.check(tag + ": no bot walked or jumped off the map by itself", () -> {
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST skywars falls: {} in all, {} without a hit before", ((java.util.Map<?, ?>) VARS.get("swFalls")).size(),
+					VARS.get("swSelfFalls"));
+			return (int) VARS.get("swSelfFalls") == 0;
 		});
 		endAndClean(s, tag);
 		s.run(tag + ": countdown as before", () -> {
@@ -797,5 +821,26 @@ final class BotTests {
 			ConfigManager.config().timings.partyCountdownSeconds = (int) VARS.get("partyCountdown");
 			ConfigManager.config().timings.partyFullCountdownSeconds = (int) VARS.get("partyFull");
 		});
+	}
+
+	/** Keeps A alive, notes when each bot was last hit and counts falls below the islands (logged, with who fell how). */
+	@SuppressWarnings("unchecked")
+	private static void watchFalls(MinecraftServer server, Match m) {
+		p(A).setHealth(p(A).getMaxHealth());
+		java.util.Map<UUID, Integer> falls = (java.util.Map<UUID, Integer>) VARS.get("swFalls");
+		java.util.Map<UUID, Integer> hurt = (java.util.Map<UUID, Integer>) VARS.get("swHurt");
+		int now = server.getTickCount();
+		double floor = m.arena().origin().getY();
+		for (BotPlayer b : botsIn(m)) {
+			if (b.isSpectator()) continue;
+			if (b.hurtTime > 0) hurt.put(b.getUUID(), now);
+			if (b.getY() < floor - 6 && !falls.containsKey(b.getUUID())) {
+				falls.put(b.getUUID(), now);
+				boolean hit = now - hurt.getOrDefault(b.getUUID(), -1000) <= 40;
+				if (!hit) VARS.put("swSelfFalls", (int) VARS.get("swSelfFalls") + 1);
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST skywars bot fell {} at {} | {}", hit ? "after a hit" : "BY ITSELF", b.position(),
+						String.join(" | ", Bots.inspect(b)));
+			}
+		}
 	}
 }

@@ -59,6 +59,10 @@ public final class Travel {
 			Msg.send(p, "hub.missing");
 			return false;
 		}
+		if (HubWorld.resetting()) {
+			Msg.send(p, "hub.resetting");
+			return false;
+		}
 		if (p.isSleeping()) {
 			p.stopSleeping();
 		}

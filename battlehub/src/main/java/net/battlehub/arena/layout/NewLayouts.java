@@ -233,28 +233,35 @@ public final class NewLayouts {
 		return bp;
 	}
 
+	/** SkyWars at a random size (1.5 to 2.5 times as wide as the map of 1.29). */
+	public static Blueprint skywars(Theme t, RandomSource rnd, int players) {
+		return skywars(t, rnd, net.battlehub.core.SkyWarsPlan.of(players, net.battlehub.core.SkyWarsPlan.factor(rnd.nextDouble())));
+	}
+
 	/**
 	 * SkyWars ({@link net.battlehub.core.SkyWarsPlan}): one island per player on the outside, a ring of smaller middle
-	 * islands and a super big island in the middle with the best loot. Marks: chest (two on every spawn island),
-	 * mid_chest (two on every middle island, better), center_chest (eight in the middle, the best).
+	 * islands beside the ways in and a super big island in the middle with the best loot, all at the plan's size.
+	 * Marks: chest (two on every spawn island), mid_chest (two on every middle island, better), center_chest (eight
+	 * in the middle, twelve when it is very big; the best).
 	 */
-	public static Blueprint skywars(Theme t, RandomSource rnd, int players) {
+	public static Blueprint skywars(Theme t, RandomSource rnd, net.battlehub.core.SkyWarsPlan plan) {
 		Blueprint bp = new Blueprint();
-		net.battlehub.core.SkyWarsPlan plan = net.battlehub.core.SkyWarsPlan.of(players);
 		int outer = (int) Math.ceil(plan.outer);
+		double s = plan.scale;
 		net.battlehub.arena.gen.Style style = net.battlehub.arena.gen.Style.of(t, rnd, outer);
 		for (net.battlehub.core.SkyWarsPlan.Island i : plan.spawns) {
 			int cx = (int) Math.round(i.x()), cz = (int) Math.round(i.z());
-			double a = i.angle();
-			Build.island(bp, cx, 0, cz, i.r(), 5, (x, z) -> style.floor(x, z, rnd), t.under(), t.rough(), rnd);
+			double a = i.angle(), r = i.r();
+			Build.island(bp, cx, 0, cz, r, depth(r), (x, z) -> style.floor(x, z, rnd), t.under(), t.rough(), rnd);
 			// out (away from the middle) and to the side
 			double ox = Math.cos(a), oz = Math.sin(a);
-			int[] back = {(int) Math.round(ox * 3), (int) Math.round(oz * 3)};
-			int[] left = {(int) Math.round(-oz * 2.6), (int) Math.round(ox * 2.6)};
+			double out = Math.max(3, r * 0.65), aside = Math.max(2.6, r * 0.55);
+			int[] back = {(int) Math.round(ox * out), (int) Math.round(oz * out)};
+			int[] left = {(int) Math.round(-oz * aside), (int) Math.round(ox * aside)};
 			chest(bp, "chest", cx + back[0], 1, cz + back[1], cx, cz);
 			chest(bp, "chest", cx + left[0], 1, cz + left[1], cx, cz);
 			if (t.hasTrees() && rnd.nextBoolean()) {
-				Build.tree(bp, cx - left[0], 1, cz - left[1], 4, t.log(), t.leaves(), rnd);
+				Build.tree(bp, cx - left[0], 1, cz - left[1], 4 + (int) Math.round(s), t.log(), t.leaves(), rnd);
 			} else {
 				Build.pillar(bp, cx - left[0], 1, cz - left[1], 2, t.pillar());
 				bp.set(cx - left[0], 3, cz - left[1], t.light());
@@ -265,58 +272,73 @@ public final class NewLayouts {
 		}
 		for (net.battlehub.core.SkyWarsPlan.Island i : plan.mids) {
 			int cx = (int) Math.round(i.x()), cz = (int) Math.round(i.z());
-			double a = i.angle();
-			Build.island(bp, cx, -1, cz, i.r(), 4, (x, z) -> (x - cx) * (x - cx) + (z - cz) * (z - cz) <= 2 ? t.accent() : style.floor(x, z, rnd),
+			double a = i.angle(), r = i.r();
+			Build.island(bp, cx, -1, cz, r, depth(r), (x, z) -> (x - cx) * (x - cx) + (z - cz) * (z - cz) <= 2 ? t.accent() : style.floor(x, z, rnd),
 					t.under(), t.rough(), rnd);
 			// a lamp post in the middle, a chest on either side of it (along the ring)
 			Build.pillar(bp, cx, 0, cz, 2, t.pillar());
 			bp.set(cx, 2, cz, t.light());
-			int sx = (int) Math.round(-Math.sin(a) * 2), sz = (int) Math.round(Math.cos(a) * 2);
+			double along = Math.max(2, r * 0.45);
+			int sx = (int) Math.round(-Math.sin(a) * along), sz = (int) Math.round(Math.cos(a) * along);
 			chest(bp, "mid_chest", cx + sx, 0, cz + sz, cx, cz);
 			chest(bp, "mid_chest", cx - sx, 0, cz - sz, cx, cz);
 		}
-		centre(bp, t, style, rnd, plan.center.r());
-		bp.include(-outer - 10, -14, -outer - 10);
-		bp.include(outer + 10, 22, outer + 10);
+		int deepest = centre(bp, t, style, rnd, plan.center.r());
+		bp.include(-outer - 10, -deepest - 6, -outer - 10);
+		bp.include(outer + 10, 24, outer + 10);
 		// Bridging between the islands is fine; far out into the void or high up in the sky is not
-		bp.playArea(Blueprint.circle(outer + 10), 20);
-		bp.spectator(0.5, 34, -(outer + 12) + 0.5, 0, 35);
-		bp.voidY(-14);
+		bp.playArea(Blueprint.circle(outer + 10), 22);
+		bp.spectator(0.5, 20 + Math.round(outer * 0.35), -(outer + 12) + 0.5, 0, 35);
+		bp.voidY(-deepest - 6);
 		bp.radius(outer + 24);
 		return bp;
 	}
 
+	/** How deep the underside of an island of this radius hangs. */
+	private static int depth(double r) {
+		return (int) Math.min(20, Math.round(3 + r * 0.45));
+	}
+
 	/**
 	 * The middle of SkyWars: a super big island rising in two terraces to a pavilion with four chests under its roof,
-	 * four more chests round the foot of the terraces, trees (or lamp posts) between them.
+	 * four more chests round the foot of the terraces (and four on the outer ring when the island is very big), trees
+	 * (or lamp posts) between them. Returns how deep its underside hangs.
 	 */
-	private static void centre(Blueprint bp, Theme t, net.battlehub.arena.gen.Style style, RandomSource rnd, double r) {
-		Build.island(bp, 0, 0, 0, r, 9, (x, z) -> style.floor(x, z, rnd), t.under(), t.rough(), rnd);
+	private static int centre(Blueprint bp, Theme t, net.battlehub.arena.gen.Style style, RandomSource rnd, double r) {
+		int deep = depth(r);
+		Build.island(bp, 0, 0, 0, r, deep, (x, z) -> style.floor(x, z, rnd), t.under(), t.rough(), rnd);
 		double r1 = Math.round(r * 0.55), r2 = Math.max(4, Math.round(r * 0.28));
 		Build.island(bp, 0, 1, 0, r1, 0, (x, z) -> style.floor(x, z, rnd), t.under(), t.rough(), rnd);
 		Build.island(bp, 0, 2, 0, r2, 0, (x, z) -> style.floorAt(Math.min(1, Build.dist(x, z) / r2)), t.under(), t.rough(), rnd);
 		// the pavilion: four posts, a roof with a light under it, the best chests between the posts
+		int p = (int) Math.max(2, Math.round(r2 * 0.45));
+		int h = 4 + p / 2;
 		for (int sx = -1; sx <= 1; sx += 2) {
 			for (int sz = -1; sz <= 1; sz += 2) {
-				Build.pillar(bp, 2 * sx, 3, 2 * sz, 4, t.pillar());
+				Build.pillar(bp, p * sx, 3, p * sz, h, t.pillar());
 			}
 		}
-		Build.disc(bp, 0, 7, 0, 3, () -> t.trim());
+		Build.disc(bp, 0, 3 + h, 0, p + 1, () -> t.trim());
 		BlockState lamp = t.light();
 		if (lamp.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.HANGING)) {
 			lamp = lamp.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HANGING, true);
 		}
-		bp.set(0, 6, 0, lamp);
-		bp.set(0, 8, 0, t.light());
-		int[][] inner = {{2, 0}, {-2, 0}, {0, 2}, {0, -2}};
+		bp.set(0, 2 + h, 0, lamp);
+		bp.set(0, 4 + h, 0, t.light());
+		int[][] inner = {{p, 0}, {-p, 0}, {0, p}, {0, -p}};
 		for (int[] c : inner) chest(bp, "center_chest", c[0], 3, c[1], 0, 0);
 		// round the foot of the terraces: four chests on the diagonals, trees or lamp posts straight out
-		double ring = (r1 + r) / 2 + 0.5;
+		ring(bp, t, rnd, (r1 + r) / 2 + 0.5, Math.PI / 4, 0);
+		if (r >= 28) ring(bp, t, rnd, r * 0.85, Math.PI / 8, 3 * Math.PI / 8);
+		return deep;
+	}
+
+	/** Four chests at {@code chestAngle} + quarter turns on a ring round the middle, and four trees (or lamps) at {@code treeAngle}. */
+	private static void ring(Blueprint bp, Theme t, RandomSource rnd, double ring, double chestAngle, double treeAngle) {
 		for (int q = 0; q < 4; q++) {
-			double a = Math.PI / 4 + q * Math.PI / 2;
-			int x = (int) Math.round(Math.cos(a) * ring), z = (int) Math.round(Math.sin(a) * ring);
-			chest(bp, "center_chest", x, 1, z, 0, 0);
-			double b = q * Math.PI / 2;
+			double a = chestAngle + q * Math.PI / 2;
+			chest(bp, "center_chest", (int) Math.round(Math.cos(a) * ring), 1, (int) Math.round(Math.sin(a) * ring), 0, 0);
+			double b = treeAngle + q * Math.PI / 2;
 			int px = (int) Math.round(Math.cos(b) * ring), pz = (int) Math.round(Math.sin(b) * ring);
 			if (t.hasTrees()) {
 				Build.tree(bp, px, 1, pz, 5, t.log(), t.leaves(), rnd);

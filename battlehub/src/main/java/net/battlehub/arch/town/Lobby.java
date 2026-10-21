@@ -64,15 +64,16 @@ public final class Lobby {
 	static final int[][] DIRS = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
 	static final Dir[] FRONT = {Dir.SOUTH, Dir.WEST, Dir.NORTH, Dir.EAST};
 	static final int AVENUE = 3;
-	static final int[] STREETS = {40, 64, 88};
+	/** The town grid's streets, out from the plaza (ten further out since the plaza grew by ten). */
+	static final int[] STREETS = {50, 74, 98};
 
 	public static Result generate(Settings s, Library lib) {
 		Result out = new Result();
 		Rng root = new Rng(s.seed);
 		Palette dim = Regions.dimension();
 		Palette[] districts = Regions.districts(dim);
-		List<Site> sites = List.of(new Site("cathedral", 0, 62, 2, 1.0), new Site("castle", 1, 66, 7, 1.1), new Site("temple_ruin", 2, 58, 1, 1.0),
-				new Site("mage_tower", 3, 56, 4, 1.0));
+		List<Site> sites = List.of(new Site("cathedral", 0, 72, 2, 1.0), new Site("castle", 1, 76, 7, 1.1), new Site("temple_ruin", 2, 68, 1, 1.0),
+				new Site("mage_tower", 3, 66, 4, 1.0));
 		Terrain t = Terrain.island(s.seed, s.radius, 44, (x, z) -> lift(sites, x, z));
 		out.terrain = t;
 		Occupancy occ = new Occupancy(s.radius + 2);
@@ -321,9 +322,11 @@ public final class Lobby {
 		if (hi - lo > 5) return false;
 		int floor = streetHeight(t, fx, fz, front);
 		t.level(rect[0], rect[1], rect[2], rect[3], floor - 1, 2);
-		occ.rect(rect[0], rect[1], rect[2], rect[3]);
 		Xform frame = Xform.facing(front, fx, floor, fz);
 		Building b = Architect.build(br, lib, frame, t::height);
+		// a chapel's tower or a porch can reach past the plot: never into a neighbour
+		if (overlapsAny(b, out)) return false;
+		occ.rect(rect[0], rect[1], rect[2], rect[3]);
 		out.buildings.add(b);
 		out.houses++;
 		return true;
@@ -363,11 +366,22 @@ public final class Lobby {
 			br.detail = s.detail;
 			int h = t.height(x, z);
 			t.level(x - 5, z - 10, x + 5, z + 1, h, 3);
-			occ.rect(x - 6, z - 11, x + 6, z + 2);
 			Building b = Architect.build(br, lib, Xform.facing(Dir.of((int) -Math.signum(Math.round(Math.cos(a))), 0), x, h + 1, z), t::height);
+			if (overlapsAny(b, out)) continue;
+			occ.rect(x - 6, z - 11, x + 6, z + 2);
 			out.buildings.add(b);
 			return;
 		}
+	}
+
+	/** Does this building's box overlap one already placed (shrunk by one, as the validator counts: roofs may touch)? */
+	static boolean overlapsAny(Building b, Result out) {
+		int[] a = b.worldBox();
+		for (Building o : out.buildings) {
+			int[] c = o.worldBox();
+			if (a[0] + 1 <= c[3] - 1 && c[0] + 1 <= a[3] - 1 && a[2] + 1 <= c[5] - 1 && c[2] + 1 <= a[5] - 1) return true;
+		}
+		return false;
 	}
 
 	/** Trees, bushes and flowers on free land; denser towards the coast, gardens inside the town blocks. */

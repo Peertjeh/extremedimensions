@@ -1,5 +1,6 @@
 package net.battlehub.hub;
 
+import net.battlehub.arch.town.Plaza;
 import net.battlehub.arena.Blueprint;
 import net.battlehub.arena.Build;
 import net.minecraft.util.RandomSource;
@@ -17,7 +18,7 @@ final class HubLayout {
 	private HubLayout() {}
 
 	/** The plaza: the leaderboards hang above its balustrade. */
-	static final int RADIUS = 27;
+	static final int RADIUS = Plaza.RADIUS;
 	static final double SPAWN_X = 0.5;
 	static final double SPAWN_Y = 1;
 	static final double SPAWN_Z = 9.5;
@@ -25,7 +26,7 @@ final class HubLayout {
 	/** Half the width of a gateway. */
 	static final int GATE = 3;
 	/** Centre of the four district islands, and their radius. */
-	static final int DISTRICT = 64;
+	static final int DISTRICT = 74;
 	static final int ISLAND = 20;
 
 	/** North, east, south, west as (dx, dz); the lateral axis of a direction is (-dz, dx). */
@@ -134,23 +135,23 @@ final class HubLayout {
 		// Compass rose: four long points on the axes, four short ones on the diagonals
 		double toAxis = angleTo(a, 0, Math.PI / 2);
 		double toDiag = angleTo(a, Math.PI / 4, Math.PI / 2);
-		double wLong = 2.8 * (1 - (d - 7) / 17);
-		double wShort = 1.9 * (1 - (d - 7) / 10);
-		if (d > 7 && d < 24 && Math.abs(toAxis) * d < wLong) {
-			if (d > 21.5) return Build.s("gold_block");
+		double wLong = 2.8 * Plaza.width() * (1 - (d - 7) / (Plaza.ARM - 7));
+		double wShort = 1.9 * Plaza.width() * (1 - (d - 7) / (Plaza.at(17) - 7));
+		if (d > 7 && d < Plaza.ARM && Math.abs(toAxis) * d < wLong) {
+			if (d > Plaza.at(21.5)) return Build.s("gold_block");
 			return Build.s(toAxis > 0 ? "polished_blackstone" : "polished_deepslate");
 		}
-		if (d > 7 && d < 17 && Math.abs(toDiag) * d < wShort) {
+		if (d > 7 && d < Plaza.at(17) && Math.abs(toDiag) * d < wShort) {
 			return Build.s(toDiag > 0 ? "waxed_cut_copper" : "waxed_exposed_cut_copper");
 		}
 		// Lights between the points, in the outer ring
-		if (Math.abs(d - 19) < 0.6 && Math.abs(angleTo(a, Math.PI / 8, Math.PI / 4)) * d < 0.6) {
+		if (Math.abs(d - Plaza.at(19)) < 0.6 && Math.abs(angleTo(a, Math.PI / 8, Math.PI / 4)) * d < 0.6) {
 			return Build.s("sea_lantern");
 		}
-		if (Math.abs(d - 13) < 0.5) return Build.s("polished_blackstone_bricks");
-		if (Math.abs(d - 19) < 0.5) return Build.s("waxed_cut_copper");
+		if (Math.abs(d - Plaza.at(13)) < 0.5) return Build.s("polished_blackstone_bricks");
+		if (Math.abs(d - Plaza.at(19)) < 0.5) return Build.s("waxed_cut_copper");
 		if (Math.abs(d - 7.4) < 0.6) return Build.s("polished_blackstone_bricks");
-		double t = Math.max(0, (d - 7) / 17);
+		double t = Math.max(0, (d - 7) / (Plaza.ARM - 7));
 		return k.grad(MARBLE, t, x, 0, z, 0.22);
 	}
 
@@ -298,8 +299,8 @@ final class HubLayout {
 	private static void planters(HubKit k) {
 		for (int q = 0; q < 4; q++) {
 			double a = Math.PI / 4 + q * Math.PI / 2;
-			int cx = (int) Math.round(Math.cos(a) * 21);
-			int cz = (int) Math.round(Math.sin(a) * 21);
+			int cx = (int) Math.round(Math.cos(a) * Plaza.PLANTERS);
+			int cz = (int) Math.round(Math.sin(a) * Plaza.PLANTERS);
 			for (int x = -2; x <= 2; x++) {
 				for (int z = -2; z <= 2; z++) {
 					double d = HubKit.dist(x, z);

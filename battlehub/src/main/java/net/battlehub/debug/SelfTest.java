@@ -121,6 +121,7 @@ public final class SelfTest {
 		FxTests.all(server, s);
 		NewModeTests.all(server, s);
 		WeeklyExportTests.all(server, s);
+		HubWorldTests.reset(server, s);
 		s.check("coins earned are counted per mode, for ranked and in total", () -> {
 			PlayerProfile a = PlayerStore.get(p("BHTestA").getUUID());
 			PlayerProfile b = PlayerStore.get(p("BHTestB").getUUID());

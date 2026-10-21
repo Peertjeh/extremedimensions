@@ -30,6 +30,7 @@ final class HubWorldTests {
 	private HubWorldTests() {}
 
 	static final String S = "BHTestS";
+	static final String A = "BHTestA";
 
 	private static boolean hasHubItem(ServerPlayer p) {
 		Inventory inv = p.getInventory();
@@ -41,6 +42,30 @@ final class HubWorldTests {
 
 	private static int diamonds(ServerPlayer p) {
 		return p.getInventory().countItem(Items.DIAMOND);
+	}
+
+	/**
+	 * /battlehub world reset: A, in the lobby, is sent back to the normal world; /hub is refused while it runs; then
+	 * the lobby stands again (the plaza's beacons) and A can come in.
+	 */
+	static void reset(MinecraftServer server, Script s) {
+		String tag = "world reset";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": A is in the lobby; an admin resets BattleHub's world", () -> {
+			SelfTest.join(server, A);
+			server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), "battlehub world reset");
+		});
+		s.check(tag + ": A is back in the normal world and the reset runs", () -> HubWorld.resetting()
+				&& !HubWorld.isBattleHub(p(A).level()));
+		s.check(tag + ": /hub waits until it is done", () -> !Travel.enter(p(A)) && !HubWorld.isBattleHub(p(A).level()));
+		s.waitFor(tag + ": the lobby is built again", 6000, () -> !HubWorld.resetting() && HubWorld.ready());
+		s.check(tag + ": the plaza stands, beacons shining at its rim", () -> {
+			net.minecraft.server.level.ServerLevel hub = HubWorld.level(server);
+			int y = HubWorld.floorY(), r = HubWorld.plazaRadius();
+			return hub.getBlockState(new BlockPos(0, y + 15, 0)).is(net.minecraft.world.level.block.Blocks.BEACON)
+					&& hub.getBlockState(new BlockPos(0, y + 13, -r)).is(net.minecraft.world.level.block.Blocks.BEACON);
+		});
+		s.check(tag + ": and A comes in again", () -> Travel.enter(p(A)) && HubWorld.isBattleHub(p(A).level()));
 	}
 
 	static void all(MinecraftServer server, Script s) {

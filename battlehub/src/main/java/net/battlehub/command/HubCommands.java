@@ -311,6 +311,9 @@ public final class HubCommands {
 							c.getSource().sendSuccess(() -> Lang.tr(p, "admin.lobby_rebuilt"), true);
 							return 1;
 						})))
+				.then(Commands.literal("world").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.then(Commands.literal("reset").executes(c -> worldReset(c.getSource(), false))
+								.then(Commands.literal("new").executes(c -> worldReset(c.getSource(), true)))))
 				.then(Commands.literal("reload").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(c -> reload(c.getSource())))
 				.then(Commands.literal("matches").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
@@ -436,6 +439,17 @@ public final class HubCommands {
 		Lobby.teleport(p);
 		HubItems.ensure(p, false);
 		Msg.send(p, "hub.teleported");
+		return 1;
+	}
+
+	/** /battlehub world reset [new]: everyone out of the lobby, the whole lobby area emptied and built again. */
+	private static int worldReset(CommandSourceStack src, boolean newLook) {
+		ServerPlayer p = src.getPlayer();
+		if (!net.battlehub.hub.HubWorld.reset(src.getServer(), newLook)) {
+			src.sendFailure(Lang.tr(p, "admin.world_reset_busy"));
+			return 0;
+		}
+		src.sendSuccess(() -> Lang.tr(p, newLook ? "admin.world_reset_new" : "admin.world_reset"), true);
 		return 1;
 	}
 
