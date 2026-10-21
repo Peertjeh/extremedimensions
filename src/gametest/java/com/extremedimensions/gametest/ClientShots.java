@@ -1071,21 +1071,26 @@ public class ClientShots implements FabricClientGameTest {
 			// ingredients are held
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
-				p.getInventory().add(new ItemStack(com.extremedimensions.registry.ModItems.SEAM_SILK, 4));
-				p.getInventory().add(new ItemStack(com.extremedimensions.registry.ModItems.TETHER_FRAGMENT, 2));
-				p.getInventory().add(new ItemStack(ModBlocks.HUSH_STONE.asItem(), 8));
+				// (into slots of their own: the bag is full of the blocks earlier pictures were built from)
+				p.getInventory().setItem(9, new ItemStack(com.extremedimensions.registry.ModItems.SEAM_SILK, 4));
+				p.getInventory().setItem(10, new ItemStack(com.extremedimensions.registry.ModItems.TETHER_FRAGMENT, 2));
+				p.getInventory().setItem(11, new ItemStack(ModBlocks.HUSH_STONE.asItem(), 8));
 				p.inventoryMenu.broadcastChanges();
 			});
 			ctx.waitTicks(30);
+			AtomicReference<net.minecraft.client.gui.screens.advancements.AdvancementsScreen> tab = new AtomicReference<>();
 			ctx.runOnClient(mc -> {
-				var advancements = mc.player.connection.getAdvancements();
-				var root = advancements.get(com.extremedimensions.ExtremeDimensions.id("root"));
-				if (root != null) {
-					advancements.setSelectedTab(root, true);
-				}
-				mc.gui.setScreen(new net.minecraft.client.gui.screens.advancements.AdvancementsScreen(advancements));
+				tab.set(new net.minecraft.client.gui.screens.advancements.AdvancementsScreen(mc.player.connection.getAdvancements()));
+				mc.gui.setScreen(tab.get());
 			});
-			ctx.waitTicks(10);
+			ctx.waitTicks(3);
+			// The mod's own tab, chosen as a player would by clicking it
+			ctx.runOnClient(mc -> {
+				var root = mc.player.connection.getAdvancements().get(com.extremedimensions.ExtremeDimensions.id("root"));
+				check(root != null, "the mod's advancement tab has no root on the client");
+				tab.get().onSelectedTabChanged(root);
+			});
+			ctx.waitTicks(8);
 			ctx.takeScreenshot("28_advancements");
 			ctx.runOnClient(mc -> {
 				mc.player.getRecipeBook().setOpen(net.minecraft.world.inventory.RecipeBookType.CRAFTING, true);
