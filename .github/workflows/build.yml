@@ -127,6 +127,9 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: '1'
           GALLIUM_DRIVER: llvmpipe
           MESA_GL_VERSION_OVERRIDE: '4.6'
+          # (the virtual display has no GLX visual of the kind the game asks for; through EGL Mesa makes one)
+          SDL_VIDEO_FORCE_EGL: '1'
+          SDL_VIDEO_X11_FORCE_EGL: '1'
         timeout-minutes: 20
       - name: capture screenshots
         if: always()
