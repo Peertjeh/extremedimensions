@@ -364,7 +364,25 @@ final class BotTests {
 		s.run(tag + ": A faces the bot two blocks away and hits it", () -> {
 			BotPlayer b = botsIn(matchOfA()).get(0);
 			ServerPlayer a = p(A);
-			double yaw = Math.toRadians(a.getYRot());
+			// a direction with six blocks of room (arenas have cover), so the bot flies freely
+			net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) a.level();
+			float free = a.getYRot();
+			for (int k = 0; k < 16; k++) {
+				double r = Math.toRadians(k * 22.5);
+				boolean clear = true;
+				for (double t = 1; t <= 6 && clear; t += 0.5) {
+					net.minecraft.core.BlockPos q = net.minecraft.core.BlockPos.containing(a.getX() - Math.sin(r) * t, a.getY() + 0.1, a.getZ() + Math.cos(r) * t);
+					clear = level.getBlockState(q).getCollisionShape(level, q).isEmpty() && level.getBlockState(q.above()).getCollisionShape(level, q.above()).isEmpty()
+							&& !level.getBlockState(q.below()).getCollisionShape(level, q.below()).isEmpty();
+				}
+				if (clear) {
+					free = k * 22.5f;
+					break;
+				}
+			}
+			a.setYRot(free);
+			a.setYHeadRot(free);
+			double yaw = Math.toRadians(free);
 			double fx = -Math.sin(yaw), fz = Math.cos(yaw);
 			PartyTests.tp(b, a.getX() + fx * 2, a.getY(), a.getZ() + fz * 2);
 			b.setDeltaMovement(Vec3.ZERO);
