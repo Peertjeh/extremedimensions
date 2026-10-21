@@ -264,6 +264,8 @@ public class BindingTests {
 			check(helper, Homebound.waitingCount(p.getUUID()) == 0, "something still waits after the respawn");
 			check(helper, count(p, Items.IRON_SWORD, ModEnchantments.HOMEBOUND, 1) == 1, "the sword did not come home with its Homebound");
 
+			// what came home lands in the hand, and held it counts: put it away first
+			p.getInventory().clearContent();
 			check(helper, Homebound.drainFactor(p) == 1.0, "no Homebound worn, yet the drain rose to %s", Homebound.drainFactor(p));
 			ItemStack chest = new ItemStack(Items.IRON_CHESTPLATE);
 			chest.enchant(ench(level, ModEnchantments.HOMEBOUND), 1);
