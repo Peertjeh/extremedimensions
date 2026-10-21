@@ -17,7 +17,8 @@
   pass through now. Her charge and his crossing hit everything their bodies run through, as high as they stand.
 - **Sigils and cages in the air.** A blow cast at someone mid-jump or falling (lanterns, roots, needles, soul fire,
   the Ferryman's gaol) lands on the ground under them; the crossing's path is drawn on the ground the boat sails over.
-  No one drops or digs out under a gaol, and only those still inside it are crushed.
+  No one drops or digs out under a gaol, and only those still inside it are crushed. Its bars all take the light of
+  the cage's middle, so on uneven ground a bar whose foot stands in a block no longer turns black.
 - **Blows that could not reach.** High over an Elder or far down under it, it now chooses what can reach you
   (lanterns, needles, the gaol, the Lance) rather than slams that pass under you. The Matriarch's charge and the
   Ferryman's crossing run as far as their prey stood (they used to stop after about 25 blocks); they are no longer

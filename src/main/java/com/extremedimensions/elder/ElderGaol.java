@@ -16,15 +16,18 @@ import com.extremedimensions.server.BlockFlight;
 import com.extremedimensions.server.WorldFx;
 import com.mojang.math.Transformation;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Brightness;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Interaction;
+import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CrossCollisionBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -86,10 +89,16 @@ public final class ElderGaol {
 		double ground = ElderFx.footing(q, 4);
 		Cage c = new Cage(owner.getUUID(), level, q.getX(), Double.isNaN(ground) ? q.getY() : Math.min(ground, q.getY()), q.getZ());
 		BlockState bar = Blocks.IRON_BARS.defaultBlockState().setValue(CrossCollisionBlock.EAST, true).setValue(CrossCollisionBlock.WEST, true);
+		// Every bar lit as the middle of the cage is: on uneven ground a bar's foot sits in a block and would go black
+		BlockPos mid = BlockPos.containing(c.x, c.y + 1, c.z);
+		Brightness light = new Brightness(level.getBrightness(LightLayer.BLOCK, mid), level.getBrightness(LightLayer.SKY, mid));
 		for (int i = 0; i < BARS; i++) {
 			double a = c.angle(i);
 			double px = c.x + Math.cos(a) * RADIUS, pz = c.z + Math.sin(a) * RADIUS;
 			c.bars[i] = BlockFlight.spawn(level, px, c.y, pz, bar, look(a, 0));
+			if (c.bars[i] != null) {
+				((DisplayAccess) c.bars[i]).extremedimensions$setBrightnessOverride(light);
+			}
 			Interaction post = new Interaction(interactionType(), level);
 			post.setPos(px, c.y, pz);
 			((InteractionAccess) post).extremedimensions$setWidth(1.1F);
