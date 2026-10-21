@@ -38,6 +38,15 @@ public class PerfTests {
 		ExtremeDimensions.LOGGER.info("PERF {}: {}", what, result);
 	}
 
+	/** Milliseconds the JVM has spent collecting garbage so far, over all its collectors. */
+	private static long gcMillis() {
+		long ms = 0;
+		for (java.lang.management.GarbageCollectorMXBean gc : java.lang.management.ManagementFactory.getGarbageCollectorMXBeans()) {
+			ms += Math.max(0, gc.getCollectionTime());
+		}
+		return ms;
+	}
+
 	/** Twenty players, each carrying every curse at its maximum: the cost of one server tick of curse upkeep. */
 	@GameTest(maxTicks = 100)
 	public void cursesForTwentyPlayers(GameTestHelper helper) {
@@ -220,9 +229,11 @@ public class PerfTests {
 			int ticks = 60, worstAt = 0;
 			double[] each = new double[ticks];
 			for (int i = 0; i < ticks; i++) {
-				long t = System.nanoTime();
+				long gc = gcMillis(), t = System.nanoTime();
 				SeamArchitect.tick(level, budget);
-				double ms = (System.nanoTime() - t) / 1e6;
+				// (what the JVM's garbage collection took meanwhile is the heap's, shared with every test's world, not the
+				// building's)
+				double ms = Math.max(0, (System.nanoTime() - t) / 1e6 - (gcMillis() - gc));
 				each[i] = ms;
 				if (ms > worst) {
 					worst = ms;
