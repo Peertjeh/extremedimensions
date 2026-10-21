@@ -194,6 +194,25 @@ public class GroundTests {
 		helper.succeed();
 	}
 
+	/** A hall: walls round a square, roofed, a parapet of whole blocks and walls in turn round the roof. */
+	private static SeamArchitect.Plan hall(int top, int w, int h, BlockState body, BlockState whole, BlockState ornament) {
+		SeamArchitect.Plan p = new SeamArchitect.Plan();
+		for (int x = 0; x <= w; x++) {
+			for (int z = 0; z <= w; z++) {
+				boolean rim = x == 0 || z == 0 || x == w || z == w;
+				p.set(x, top, z, body);
+				p.set(x, top + h + 1, z, body);
+				for (int y = top + 1; rim && y <= top + h; y++) {
+					p.set(x, y, z, body);
+				}
+				if (rim) {
+					p.set(x, top + h + 2, z, (x + z) % 2 == 0 ? whole : ornament);
+				}
+			}
+		}
+		return p;
+	}
+
 	/**
 	 * Damage follows what each part does: the ornaments of a parapet go before its whole blocks, and the corners that
 	 * carry a hall stand longer than the middle of its walls.
@@ -205,22 +224,10 @@ public class GroundTests {
 				ornament = Blocks.DEEPSLATE_TILE_WALL.defaultBlockState();
 		int piers = 0, piersLost = 0, walls = 0, wallsLost = 0, wholes = 0, wholesLost = 0, ornaments = 0, ornamentsLost = 0;
 		for (int seed = 0; seed < 60; seed++) {
-			// A hall: walls round a square, roofed, a parapet of whole blocks and walls in turn round the roof
-			SeamArchitect.Plan p = new SeamArchitect.Plan();
-			for (int x = 0; x <= w; x++) {
-				for (int z = 0; z <= w; z++) {
-					boolean rim = x == 0 || z == 0 || x == w || z == w;
-					p.set(x, top, z, body);
-					p.set(x, top + h + 1, z, body);
-					for (int y = top + 1; rim && y <= top + h; y++) {
-						p.set(x, y, z, body);
-					}
-					if (rim) {
-						p.set(x, top + h + 2, z, (x + z) % 2 == 0 ? whole : ornament);
-					}
-				}
-			}
+			// The walls are read on a ruin; the parapet on a damaged hall (a ruin's crowns come down whole, ornaments and all)
+			SeamArchitect.Plan p = hall(top, w, h, body, whole, ornament), q = hall(top, w, h, body, whole, ornament);
 			Ruin.apply(p, new Random(seed), Ruin.RUINED, top);
+			Ruin.apply(q, new Random(seed), Ruin.DAMAGED, top);
 			for (int x = 0; x <= w; x++) {
 				for (int z = 0; z <= w; z++) {
 					boolean corner = (x == 0 || x == w) && (z == 0 || z == w), rim = x == 0 || z == 0 || x == w || z == w;
@@ -238,7 +245,7 @@ public class GroundTests {
 							wallsLost += kept ? 0 : 1;
 						}
 					}
-					BlockState was = (x + z) % 2 == 0 ? whole : ornament, now = p.at(x, top + h + 2, z);
+					BlockState was = (x + z) % 2 == 0 ? whole : ornament, now = q.at(x, top + h + 2, z);
 					boolean kept = now != null && now.getBlock() == was.getBlock();
 					if (was == whole) {
 						wholes++;

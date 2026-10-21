@@ -102,8 +102,14 @@ jobs:
           distribution: 'microsoft'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: virtual display
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri mesa-vulkan-drivers libegl1
+      # Sodium and Iris draw with OpenGL (the game alone falls back to Vulkan): the display needs GLX, in software
+      - name: virtual display with OpenGL
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libgl1 libegl1 mesa-utils mesa-vulkan-drivers
+          xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" glxinfo -B || echo "no GLX on the virtual display"
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
       # The newest Fabric builds for this game version from Modrinth; none yet for any of them leaves nothing to test
       - name: fetch Sodium, Iris and Mod Menu
         id: fetch
@@ -116,9 +122,11 @@ jobs:
           exit $code
       - name: client game test with them
         if: steps.fetch.outputs.code == '0'
-        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClientGameTest --no-configuration-cache -Pcompat
+        run: xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" ./gradlew runClientGameTest --no-configuration-cache -Pcompat
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+          MESA_GL_VERSION_OVERRIDE: '4.6'
         timeout-minutes: 20
       - name: capture screenshots
         if: always()

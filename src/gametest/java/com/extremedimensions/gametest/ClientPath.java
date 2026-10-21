@@ -38,6 +38,12 @@ import net.minecraft.world.level.block.NetherPortalBlock;
  * and the hints for what is met on the way must come. Every step is saved as a screenshot for review.
  */
 public class ClientPath implements FabricClientGameTest {
+	/** The Seam's and the Fray's briefings stay on the screen a while after the path's own steps: out of the shot. */
+	private static void unbrief(ClientGameTestContext ctx) {
+		ctx.runOnClient(mc -> com.extremedimensions.client.state.ClientState.briefAt = 0);
+		ctx.waitTicks(2);
+	}
+
 	private static ServerPlayer player(MinecraftServer s) {
 		return s.getPlayerList().getPlayers().get(0);
 	}
@@ -240,6 +246,7 @@ public class ClientPath implements FabricClientGameTest {
 			});
 			check(sp.getServer().computeOnServer(s -> DataStore.get(player(s).getUUID()).frameStrung), "the silk did not string the frame");
 			ctx.waitTicks(60);
+			unbrief(ctx);
 			ctx.takeScreenshot("37_frame_vision");
 			ctx.waitTicks(75);
 			ctx.takeScreenshot("37_frame_weave");
@@ -257,9 +264,11 @@ public class ClientPath implements FabricClientGameTest {
 			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %d.5 %d %d.5 -90 4", heart.getX() - 40, heart.getY() + 12, heart.getZ()));
 			ctx.waitTicks(60);
 			settle(sp);
+			unbrief(ctx);
 			ctx.takeScreenshot("38_first_knot");
 			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %d.5 %d %d.5 -90 10", heart.getX() - 12, heart.getY() + 3, heart.getZ()));
 			ctx.waitTicks(30);
+			unbrief(ctx);
 			ctx.takeScreenshot("38_first_knot_chamber");
 			sp.getServer().runCommand("gamemode survival @a");
 			sp.getServer().runOnServer(s -> {
@@ -268,6 +277,7 @@ public class ClientPath implements FabricClientGameTest {
 				com.extremedimensions.elder.WeaverService.summonKnotMother(p, heart);
 			});
 			ctx.waitTicks(50);
+			unbrief(ctx);
 			ctx.takeScreenshot("39_knot_mother_forming");
 			ctx.waitTicks(140);
 			check(sp.getServer().computeOnServer(s -> com.extremedimensions.elder.WeaverService.knotMotherAwake()), "the Knot Mother did not wake");
