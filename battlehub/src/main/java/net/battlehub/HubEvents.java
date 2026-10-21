@@ -121,6 +121,10 @@ public final class HubEvents {
 		});
 		UseItemCallback.EVENT.register((player, level, hand) -> useItem(player, player.getItemInHand(hand)));
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+			if (player instanceof ServerPlayer watcher && net.battlehub.lobby.Locks.spectatorBlocked(watcher, level)) {
+				// vanilla lets a spectator look into chests: here that would show (and hand out) the match's loot
+				return InteractionResult.FAIL;
+			}
 			ItemStack held = player.getItemInHand(hand);
 			if (player instanceof ServerPlayer sleeper && net.battlehub.hub.HubWorld.isBattleHub(level)
 					&& Protection.blocksSleep(sleeper, level.getBlockState(hit.getBlockPos()), held)) {

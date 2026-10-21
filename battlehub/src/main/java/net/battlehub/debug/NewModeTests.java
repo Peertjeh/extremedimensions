@@ -107,15 +107,14 @@ final class NewModeTests {
 	}
 
 	private static void skywars(Script s) {
-		s.check("skywars: the chests are filled", () -> {
+		s.check("skywars: the chests are filled (spawn islands, middle islands and the big middle)", () -> {
 			SkyWarsMatch m = (SkyWarsMatch) match();
-			if (m.chestsFilled() < 4) return false;
-			BlockPos chest = m.arena().marks("center_chest").get(0);
-			if (!(m.arena().level().getBlockEntity(chest) instanceof Container c)) return false;
-			for (int i = 0; i < c.getContainerSize(); i++) {
-				if (!c.getItem(i).isEmpty()) return true;
+			for (String mark : new String[] {"chest", "mid_chest", "center_chest"}) {
+				if (m.arena().marks(mark).isEmpty() || !filled(m, m.arena().marks(mark).get(0))) return false;
 			}
-			return false;
+			int islands = m.arena().marks("chest").size(), mids = m.arena().marks("mid_chest").size(), centre = m.arena().marks("center_chest").size();
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST skywars chests: {} on the spawn islands, {} on the middle islands, {} in the middle", islands, mids, centre);
+			return m.chestsFilled() == islands + mids + centre && centre >= 8 && mids >= 8;
 		});
 		s.check("skywars: building and breaking inside the arena", () -> {
 			BlockPos in = match().arena().origin().offset(0, 2, 0);
@@ -131,6 +130,29 @@ final class NewModeTests {
 				&& p(B).getInventory().countItem(Items.DIAMOND) == 0
 				&& !match().arena().level().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,
 						match().arena().bounds(), e -> e.getItem().is(Items.DIAMOND)).isEmpty());
+		s.run("skywars: B, now a spectator, right-clicks a chest in the middle", () -> {
+			BlockPos chest = match().arena().marks("center_chest").get(0);
+			p(B).gameMode.useItemOn(p(B), match().arena().level(), ItemStack.EMPTY, net.minecraft.world.InteractionHand.MAIN_HAND,
+					new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(chest), net.minecraft.core.Direction.UP, chest, false));
+		});
+		s.check("skywars: a spectator cannot open a chest", () -> p(B).isSpectator() && p(B).containerMenu == p(B).inventoryMenu);
+		s.check("skywars: and in a chest opened anyway a spectator takes nothing out", () -> {
+			BlockPos chest = match().arena().marks("center_chest").get(0);
+			if (!(match().arena().level().getBlockEntity(chest) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity box)) return false;
+			int before = count(box);
+			p(B).openMenu(box);
+			net.minecraft.world.inventory.AbstractContainerMenu menu = p(B).containerMenu;
+			boolean opened = menu != p(B).inventoryMenu;
+			for (int i = 0; i < box.getContainerSize(); i++) {
+				menu.clicked(i, 0, net.minecraft.world.inventory.ContainerInput.QUICK_MOVE, p(B));
+				menu.clicked(i, 0, net.minecraft.world.inventory.ContainerInput.PICKUP, p(B));
+			}
+			boolean kept = count(box) == before && menu.getCarried().isEmpty() && p(B).getInventory().isEmpty();
+			p(B).closeContainer();
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST skywars spectator in a chest: opened {}, items {} before and {} after, carrying {}",
+					opened, before, count(box), menu.getCarried());
+			return before > 0 && kept;
+		});
 		s.run("skywars: C and D fall", () -> {
 			for (String n : new String[] {"BHTestC", "BHTestD"}) {
 				ServerPlayer pl = p(n);
@@ -139,6 +161,16 @@ final class NewModeTests {
 		});
 		s.waitFor("skywars: A is the last one and wins", 60, () -> match().phase() != Match.Phase.RUNNING
 				&& match().outcome(p(A).getUUID()) == Outcome.WIN);
+	}
+
+	private static boolean filled(Match m, BlockPos pos) {
+		return m.arena().level().getBlockEntity(pos) instanceof Container c && count(c) > 0;
+	}
+
+	private static int count(Container c) {
+		int n = 0;
+		for (int i = 0; i < c.getContainerSize(); i++) n += c.getItem(i).getCount();
+		return n;
 	}
 
 	private static void murder(Script s) {

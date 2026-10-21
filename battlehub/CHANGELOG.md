@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.29.0
+
+### Fixed
+* **Spectators could open chests and take things out of them** (vanilla spectator mode lets you look into a
+  chest). In BattleHub's worlds a spectator no longer opens anything, and in a chest opened anyway nothing can be
+  taken out or put in. This also covers players who are out or waiting to respawn.
+
+### Changed
+* **SkyWars is a lot bigger.** The spawn islands are bigger and further out, with two chests each, and always
+  some blocks to bridge with. A ring of smaller middle islands sits round a **super big middle island**: two
+  terraces and a pavilion, eight chests with the best loot.
+  * Each middle island has two chests with better loot (a new `midLoot` list).
+  * Every spawn island has a middle island the same twelve blocks away.
+  * The middle loot is richer: more diamond gear, a diamond axe, crossbow, wind charges and now and then a totem.
+    An unchanged `centerLoot` from before is updated automatically.
+  * A round lasts fifteen minutes (it was ten). This only changes if the time was still the old default.
+* **SkyWars bots**: they empty the chests on their island, put on the armor they find, and bridge to the next
+  chests (a middle island, then the middle) before they go hunting. Bots no longer bridge with cobwebs or
+  other blocks you cannot stand on.
+
 ## 1.28.1
 
 ### Fixed

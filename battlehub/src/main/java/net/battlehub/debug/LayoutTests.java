@@ -66,7 +66,7 @@ final class LayoutTests {
 			case "bridge_ring3" -> List.of("goal_0", "goal_1", "goal_2", "build_min", "build_max");
 			case "bridge_ring4" -> List.of("goal_0", "goal_1", "goal_2", "goal_3", "build_min", "build_max");
 			case "build_uhc" -> List.of("build_min", "build_max");
-			case "skywars2", "skywars6", "skywars12" -> List.of("chest", "center_chest");
+			case "skywars2", "skywars6", "skywars12" -> List.of("chest", "mid_chest", "center_chest");
 			default -> {
 				if (!layout.startsWith("bedwars")) yield List.of();
 				List<String> marks = new ArrayList<>(List.of("gen_diamond", "gen_emerald", "build_min", "build_max", "podium"));
@@ -187,6 +187,19 @@ final class LayoutTests {
 			if (bp.marks(mark).isEmpty()) {
 				problems.add(where + ": mark " + mark + " missing");
 			}
+		}
+		if (layout.startsWith("skywars")) {
+			for (String mark : List.of("chest", "mid_chest", "center_chest")) {
+				for (net.minecraft.core.BlockPos c : bp.marks(mark)) {
+					net.minecraft.world.level.block.state.BlockState st = bp.get(c.getX(), c.getY(), c.getZ());
+					if (st == null || !st.is(net.minecraft.world.level.block.Blocks.CHEST)) {
+						problems.add(where + ": no chest at " + mark + " " + c.toShortString());
+					} else if (!solid(bp, c.getX(), c.getY() - 1, c.getZ())) {
+						problems.add(where + ": " + mark + " " + c.toShortString() + " floats");
+					}
+				}
+			}
+			if (bp.marks("center_chest").size() < 8) problems.add(where + ": only " + bp.marks("center_chest").size() + " chests in the middle");
 		}
 		if (layout.startsWith("bedwars")) {
 			int teams = Integer.parseInt(layout.substring(7));

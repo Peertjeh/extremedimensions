@@ -317,9 +317,12 @@ for 30 seconds. It queues you for the same mode, format and ranked setting, asks
 * **Parkour Race**: a new course every race, with checkpoints and a timer; ranked by finish time.
 * **Last Man Standing**: free-for-all inside a shrinking border.
 * **Spleef**: dig the snow away under the others with a fast shovel; every block gives a snowball to push with.
-* **SkyWars** (2–12): everyone on their own island with a chest, stepping-stone islands and a middle island
-  with the best loot (`skywars.json`). Build, break, fight; whoever dies drops everything. You can bridge
-  between the islands, but not far out into the void or high into the sky.
+* **SkyWars** (2–12): a big map. Everyone starts on their own island with two chests (always some blocks to
+  bridge with). A ring of smaller middle islands with better loot lies about twelve blocks further in, and in the
+  middle a super big island rises in two terraces to a pavilion: eight chests with the best loot (diamond gear,
+  pearls, golden apples, a totem now and then). Each tier has its own list in `skywars.json`. Build, break,
+  fight; whoever dies drops everything. You can bridge between the islands, but not far out into the void or
+  high into the sky. Bots loot their island, put on the armor they find and bridge to the next chests.
 * **The Bridge 2v2**: red against blue with two on each island; score together, no friendly fire.
 * **The Bridge 1v1v1v1** (2–4): everyone on their own island (red, blue, green, yellow) round a middle platform;
   jump into anyone else's goal to score. First to four goals wins.
@@ -343,7 +346,7 @@ structure blocks in **Data** mode: `spawn` (or `spawn:90` to face west; `0` face
 game's own spots. The markers are not built. Only blocks are taken over: what is inside chests or written
 on signs is not (SkyWars fills its chests itself).
 * Duels, Boxing, Build UHC, Free for All, Last Man Standing, Sumo, Spleef, SkyWars, Murder Mystery: spawns
-  (duels need two). SkyWars fills chests marked `chest` and `center_chest`; Murder Mystery drops gold on
+  (duels need two). SkyWars fills chests marked `chest`, `mid_chest` and `center_chest`; Murder Mystery drops gold on
   `gold` spots (anywhere on the floor without them); Build UHC builds inside `build_min`/`build_max` (the whole
   map without them).
 * The Bridge: two spawns (red first) plus `goal_red`, `goal_blue`, `build_min` and `build_max`.
@@ -496,7 +499,8 @@ players' screens, so they never hurt anyone. Prices and the list are in `cosmeti
 * **ELO** per ranked mode (start 1000, K-factor 32), with tiers and a top 10 per mode.
 
 ### Spectating
-Watch any running match in spectator mode, kept inside the arena. Leave with `/hub` or the clickable
+Watch any running match in spectator mode, kept inside the arena. Spectators (also players who are out or
+waiting to respawn) cannot open chests or take anything out of them. Leave with `/hub` or the clickable
 **[Leave]** in chat. When the match ends, spectators go back to the lobby automatically.
 
 ### Solid by design
@@ -651,8 +655,10 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
 * **`progress.json`**: the number of daily and weekly quests, the quests (period, goal, mode, target, coins,
   XP, pass XP), the login streak coins, the season pass (tiers, XP per tier, per match and per win, coins per
   tier and every fifth tier, coins when the cosmetic is already owned), achievement coins and prestige on/off
-* **`skywars.json`**: the loot of the island chests and of the middle chests, one line per item:
-  `"minecraft:iron_sword 1 x3"` (item, count or `min-max`, `x` weight)
+* **`skywars.json`**: the loot of the spawn island chests (`islandLoot`), the middle islands (`midLoot`) and
+  the big middle (`centerLoot`), one line per item: `"minecraft:iron_sword 1 x3"` (item, count or `min-max`,
+  `x` weight). How many items a chest gets: `islandChestRolls`, `midChestRolls`, `centerChestRolls` in
+  config.json (skywars)
 * **`kits.json`**: items per kit with slot (`0`–`35`, `head`, `chest`, `legs`, `feet`, `offhand`),
   count, enchantments, unbreakable, leather colour, plus potion effects
 * **`titles.json`**: titles with display text (`&` colour codes) and requirement:

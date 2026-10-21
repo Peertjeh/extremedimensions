@@ -11,7 +11,7 @@ import net.battlehub.core.RewardSettings;
 
 /** {@code config/battlehub/config.json}. Every field has a default; missing keys are filled in on load. */
 public final class HubConfig {
-	public static final int CURRENT_VERSION = 4;
+	public static final int CURRENT_VERSION = 5;
 
 	public int configVersion = CURRENT_VERSION;
 
@@ -565,7 +565,7 @@ public final class HubConfig {
 		m.put("boxing", new Game(2, 2, 300, "boxing").with("hitsToWin", 100));
 		m.put("build_uhc", new Game(2, 2, 900, "build_uhc").with("buildHeight", 20));
 		m.put("spleef", new Game(2, 16, 300, "spleef").with("layers", 2));
-		m.put("skywars", new Game(2, 12, 600, "skywars").with("islandChestRolls", 7).with("centerChestRolls", 9));
+		m.put("skywars", new Game(2, 12, 900, "skywars").with("islandChestRolls", 7).with("midChestRolls", 8).with("centerChestRolls", 9));
 		m.put("murder_mystery", new Game(4, 16, 300, "murder_mystery").with("goldToBow", 10).with("goldEverySeconds", 3)
 				.with("swordAfterSeconds", 10).with("arrowCooldownSeconds", 4));
 		return m;
@@ -737,6 +737,11 @@ public final class HubConfig {
 		if (from < 4 && chaos != null && Double.valueOf(35).equals(chaos.settings.get("eventSeconds"))) {
 			// 1.21: a hundred events, one every ten seconds instead of five every thirty-five
 			chaos.settings.put("eventSeconds", 10.0);
+		}
+		Game sky = games.get("skywars");
+		if (from < 5 && sky != null && sky.timeLimitSeconds == 600) {
+			// 1.29: the SkyWars map is a good deal bigger, so a round gets fifteen minutes instead of ten
+			sky.timeLimitSeconds = 900;
 		}
 		for (GameMode mode : GameMode.values()) {
 			Game g = games.get(mode.id());

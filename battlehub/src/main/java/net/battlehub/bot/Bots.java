@@ -645,6 +645,11 @@ public final class Bots {
 		return b.brain.launches();
 	}
 
+	/** Would a bot bridge with this (a full block to stand on)? */
+	public static boolean buildBlock(net.minecraft.world.item.ItemStack s) {
+		return BotBrain.isBuildBlock(s);
+	}
+
 	/** Blocks a bot placed in its current match (building across gaps). */
 	public static int placed(BotPlayer b) {
 		return b.brain.placed();

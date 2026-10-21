@@ -592,3 +592,41 @@ De zelftests van 1.28.0 vonden drie fouten. Twee zaten in de tests zelf. (1) De 
 De derde was een echte bug. Parkourbots konden geen ladders beklimmen: in de lucht lieten ze alle toetsen los, en een ladder zonder toetsen glij je af. In easy-banen zit in ongeveer een kwart van de runs een ladder in de eerste vier sprongen. Nu duwt de bot op een ladder vooruit en houdt hij springen ingedrukt (`climb`), en bovenaan stapt hij het platform op.
 
 Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tegen een trage glijbeweging in. Bij ongeveer 0,046 blokken per tick schoot hij dan steeds door naar de andere kant en terug, en kwam hij nooit onder de stilstandgrens: de bot bleef staan wachten op een sprong. De rem doseert nu naar de snelheid. De parkourlog in de zelftest toont voortaan de eerste vijf platforms (stijl, plek) en de inspect-regels van de bot.
+
+
+## Versie 1.29 – Toeschouwers en kisten, een grote SkyWars
+
+| Melding | Oorzaak | Oplossing |
+|---|---|---|
+| "Spectators kunnen in de kisten en dingen pakken" | Toeschouwers, uitgeschakelde spelers en wie wacht op respawn staan in de vanilla toeschouwermodus. Daarin mag je een kist openen om erin te kijken. Fabric roept `UseBlockCallback` aan vóór die toeschouwercontrole, en BattleHub hield toeschouwers daar niet tegen. | `Locks.spectatorBlocked`: een toeschouwer in de werelden van BattleHub gebruikt geen blokken (`UseBlockCallback` geeft FAIL). Opent er toch een kist (een ander pad, een mod), dan weigert `Locks.blocksClick` elke klik in dat menu, behalve in de eigen inventaris en de menu's van BattleHub. Zelftest in SkyWars: de uitgeschakelde B klikt rechts op een kist in het midden en krijgt geen menu. In een geforceerd geopende kist pakt hij niets en legt hij niets terug. |
+| "Maak SkyWars groter, met kleinere middeneilanden en een super groot middeneiland met de beste loot" | De oude map: een ring van max(20, 3,2 per speler) met eilandjes van 3,6, kleine stapstenen ertussen en een midden van 7,5 met vier kisten. | Een nieuwe indeling uit `core/SkyWarsPlan` (pure geometrie met JUnit), zie hieronder. |
+| Bots kwamen in SkyWars nooit van hun eiland | Ze openden geen kisten (dus geen blokken) en `botMayBuild` stond uit. | Zie hieronder. |
+
+**Indeling (`SkyWarsPlan`):**
+- **Midden:** straal 15 tot 18, groeit met het aantal spelers.
+- **Middeneilanden:** straal 4, in een ring op 6 blokken van het midden.
+  - Tot 5 spelers ligt er één recht voor elk spawn-eiland (anders lag een zijwaarts middeneiland verder weg dan het midden zelf).
+  - Bij meer spelers ligt er één tussen elke twee spawn-eilanden, of tussen elke twee buren als dat er minder dan vier zou geven, of bij een oneven aantal.
+- **Spawn-eilanden:** straal 4,5. Elk ligt precies 12 blokken van zijn dichtstbijzijnde middeneiland, minstens 12 van zijn buren en van het midden, en het midden altijd verder weg dan dat middeneiland. De buitenrand komt op 43 tot 51 blokken (was 24 tot 42).
+
+**Inrichting:**
+- **Midden:** twee terrassen, een paviljoen op vier palen met vier kisten eronder en een hangende lamp, plus vier kisten op de diagonalen aan de voet. Daartussen bomen, of lantaarnpalen als het thema geen bomen heeft.
+- **Middeneilanden:** een lantaarnpaal met twee kisten (`mid_chest`).
+- **Spawn-eilanden:** twee kisten (`chest`), een boom of paal. De kisten kijken naar het midden van hun eiland.
+
+**Loot:**
+- Drie lijsten in `skywars.json`: `islandLoot`, `midLoot` (nieuw, tussen eiland en midden) en `centerLoot`.
+- De nieuwe `centerLoot` is rijker: meer diamant, een diamanten bijl, kruisboog, windladingen en af en toe een totem.
+- Een `centerLoot` die nog gelijk is aan de oude standaard wordt vervangen.
+- Een kist op een spawn-eiland heeft altijd blokken. Geven de dobbelstenen er geen, dan komt er één regel blokken uit de lijst bij. De eilanden liggen ver uit elkaar: zonder blokken komt niemand weg.
+- Aantal trekkingen: `midChestRolls` 8.
+
+**Rondetijd:** 15 minuten. Config-versie 5 zet een ongewijzigde 600 seconden om naar 900.
+
+**Bots:**
+- `SkyWarsMatch.botGoal` stuurt een bot naar de dichtstbijzijnde volle kist die hij nog niet leeghaalde: eerst op zijn eigen eiland, en met 8 of meer blokken ook verder weg (een middeneiland, dan het midden).
+- `botTick` haalt binnen reikwijdte de kist leeg, zoals shift-klikken.
+- De bot trekt daarna bepantsering aan als het vak leeg is of het stuk beter (leer tot netheriet).
+- `botMayBuild` staat aan binnen het speelveld.
+- Een brugblok moet een botsvorm hebben: geen spinnenweb (dat zat in de loot) en geen bloemen.
+- Zelftest: een bot in SkyWars haalt twee kisten leeg en bouwt dan minstens drie blokken van zijn eiland af.

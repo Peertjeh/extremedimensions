@@ -743,5 +743,59 @@ final class BotTests {
 			ConfigManager.config().timings.partyCountdownSeconds = (int) VARS.get("partyCountdown");
 			ConfigManager.config().timings.partyFullCountdownSeconds = (int) VARS.get("partyFull");
 		});
+		skywarsBot(server, s);
+	}
+
+	/** SkyWars against a bot: it empties the chests on its island and bridges off it to the next chests. */
+	private static void skywarsBot(MinecraftServer server, Script s) {
+		String tag = "bots skywars";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": A joins SkyWars; one bot fills in", () -> {
+			VARS.put("partyCountdown", ConfigManager.config().timings.partyCountdownSeconds);
+			VARS.put("partyFull", ConfigManager.config().timings.partyFullCountdownSeconds);
+			ConfigManager.config().timings.partyCountdownSeconds = 4;
+			ConfigManager.config().timings.partyFullCountdownSeconds = 2;
+			cfg().fillQueues = true;
+			cfg().fillAfterSeconds = 1;
+			cfg().partyFillTo = 2;
+			SelfTest.join(server, A);
+			Parties.join(p(A), GameMode.SKYWARS, "");
+		});
+		s.waitFor(tag + ": the match runs with a bot", 900, () -> {
+			Match m = matchOfA();
+			return m instanceof net.battlehub.games.SkyWarsMatch && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
+		});
+		s.run(tag + ": no more bots", () -> cfg().fillQueues = false);
+		s.waitFor(tag + ": the bot empties the chests on its island", 1200, () -> {
+			Match m = matchOfA();
+			if (!(m instanceof net.battlehub.games.SkyWarsMatch sw) || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			p(A).setHealth(p(A).getMaxHealth());
+			if (sw.botLoots() >= 2) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST skywars bot looted {} chests, wears {} | {}", sw.botLoots(), b.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST),
+						String.join(" | ", Bots.inspect(b)));
+				return true;
+			}
+			logBot("skywars bot", m, b, "swLogged");
+			return false;
+		});
+		s.waitFor(tag + ": and bridges off its island to the next chest", 2400, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			p(A).setHealth(p(A).getMaxHealth());
+			if (Bots.placed(b) >= 3) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST skywars bot built {} blocks | {}", Bots.placed(b), String.join(" | ", Bots.inspect(b)));
+				return true;
+			}
+			logBot("skywars bot", m, b, "swLogged2");
+			return false;
+		});
+		endAndClean(s, tag);
+		s.run(tag + ": countdown as before", () -> {
+			cfg().partyFillTo = 4;
+			ConfigManager.config().timings.partyCountdownSeconds = (int) VARS.get("partyCountdown");
+			ConfigManager.config().timings.partyFullCountdownSeconds = (int) VARS.get("partyFull");
+		});
 	}
 }

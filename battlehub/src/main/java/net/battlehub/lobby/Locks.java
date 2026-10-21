@@ -34,7 +34,20 @@ public final class Locks {
 		return dropsLocked(p);
 	}
 
+	/**
+	 * A spectator in BattleHub's worlds (out of a match, waiting to respawn, or watching) uses no blocks: no opening
+	 * of chests, furnaces or anything else with an inventory.
+	 */
+	public static boolean spectatorBlocked(ServerPlayer p, net.minecraft.world.level.Level level) {
+		return p.isSpectator() && net.battlehub.hub.HubWorld.isBattleHub(level);
+	}
+
 	public static boolean blocksClick(AbstractContainerMenu menu, int slot, int button, ContainerInput input, ServerPlayer p) {
+		if (p.isSpectator() && menu != p.inventoryMenu && !(menu instanceof net.battlehub.gui.HubMenu)
+				&& spectatorBlocked(p, p.level())) {
+			// a chest that got opened anyway: a spectator takes nothing out of it and puts nothing in
+			return true;
+		}
 		ItemStack carried = menu.getCarried();
 		if (Icon.isHubItem(carried)) {
 			return true;

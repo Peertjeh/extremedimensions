@@ -765,8 +765,11 @@ final class BotBrain {
 		return placedBlocks;
 	}
 
-	private static boolean isBuildBlock(ItemStack s) {
-		return s.getItem() instanceof net.minecraft.world.item.BlockItem && !s.is(Items.TNT);
+	/** A block to bridge with: something to stand on (no TNT, and no cobweb or flower in a bridge). */
+	static boolean isBuildBlock(ItemStack s) {
+		if (!(s.getItem() instanceof net.minecraft.world.item.BlockItem bi) || s.is(Items.TNT)) return false;
+		BlockState st = bi.getBlock().defaultBlockState();
+		return !st.getCollisionShape(net.minecraft.world.level.EmptyBlockGetter.INSTANCE, BlockPos.ZERO).isEmpty();
 	}
 
 	/**
