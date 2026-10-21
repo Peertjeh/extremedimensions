@@ -100,8 +100,8 @@ public class TapestryScreen extends Screen {
 		shown = this;
 		int x0 = x0(), y0 = y0();
 		newThread = this.addRenderableWidget(Button.builder(Component.translatable("gui.extremedimensions.tapestry.new_thread_button"), b -> confirm())
-				.pos(x0 + 14, y0 + PH - 22).size(170, 18).build());
-		this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose()).pos(x0 + PW - 14 - 100, y0 + PH - 22).size(100, 18).build());
+				.pos(x0 + 14, y0 + PH - 22).size(150, 18).build());
+		this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose()).pos(x0 + PW - 14 - 70, y0 + PH - 22).size(70, 18).build());
 		refresh();
 	}
 
@@ -153,8 +153,8 @@ public class TapestryScreen extends Screen {
 			cell(g, panels[i], x0 + 14 + (i % 3) * (CELL_W + 3), y0 + 36 + (i / 3) * (CELL_H + 4), fade);
 		}
 		// (between the New Thread+ button, when there is one, and the Done button)
-		int sx = x0 + 14 + (done ? 176 : 0);
-		g.text(this.font, Ui.ellipsize(this.font, status(), x0 + PW - 14 - 100 - 6 - sx), sx, y0 + PH - 17,
+		int sx = x0 + 14 + (done ? 156 : 0);
+		g.text(this.font, Ui.ellipsize(this.font, status(), x0 + PW - 14 - 70 - 6 - sx), sx, y0 + PH - 17,
 				Ui.argb(fade, weaving ? Ui.DANGER : done ? Ui.OK : Ui.MUTED));
 	}
 

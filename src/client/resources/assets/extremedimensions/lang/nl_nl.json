@@ -2063,7 +2063,7 @@
   "gui.extremedimensions.tapestry.status_weaving": "Het Weven is begonnen. Houd het getouw!",
   "gui.extremedimensions.tapestry.status_done": "Het wandtapijt is af.",
   "gui.extremedimensions.tapestry.status_threads": "Af. Nieuwe Draad+ %s.",
-  "gui.extremedimensions.tapestry.status_again": "Het paneel %s rafelde uit. Het getouw neemt het over %s min. weer aan.",
+  "gui.extremedimensions.tapestry.status_again": "%s rafelde uit. Het getouw neemt het over %s min. weer aan.",
   "gui.extremedimensions.tapestry.state_carried": "Draad in handen: weef hem!",
   "gui.extremedimensions.tapestry.state_carried_wait": "Draad in handen. Hij wacht op het einde.",
   "gui.extremedimensions.tapestry.state_lost": "Draad kwijt: %s Seamzijde spint hem terug.",

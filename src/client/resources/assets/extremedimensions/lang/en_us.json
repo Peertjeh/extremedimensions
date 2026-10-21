@@ -2063,7 +2063,7 @@
   "gui.extremedimensions.tapestry.status_weaving": "The Weaving is under way. Hold the loom!",
   "gui.extremedimensions.tapestry.status_done": "The tapestry is finished.",
   "gui.extremedimensions.tapestry.status_threads": "Finished. New Thread+ %s.",
-  "gui.extremedimensions.tapestry.status_again": "The %s panel unravelled. The loom takes it again in %s min.",
+  "gui.extremedimensions.tapestry.status_again": "%s unravelled. The loom takes it again in %s min.",
   "gui.extremedimensions.tapestry.state_carried": "Thread in hand: weave it!",
   "gui.extremedimensions.tapestry.state_carried_wait": "Thread in hand. It waits for the ending.",
   "gui.extremedimensions.tapestry.state_lost": "Thread lost: %s Seam Silk spins it back.",
