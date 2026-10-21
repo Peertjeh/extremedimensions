@@ -164,7 +164,8 @@ public class ClientShots implements FabricClientGameTest {
 		// world comes in round there, and what waited for it goes up
 		sp.getServer().runOnServer(s -> player(s).teleportTo(mid[0] - 190, mid[1] + 40, mid[2]));
 		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 180 15");
-		for (int i = 0; i < 60 && sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting()) >= held; i++) {
+		// (under load the world there can be slow to come in: up to a minute)
+		for (int i = 0; i < 120 && sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting()) >= held; i++) {
 			ctx.waitTicks(10);
 		}
 		ctx.waitTicks(40);
@@ -177,8 +178,10 @@ public class ClientShots implements FabricClientGameTest {
 			p.getAbilities().flying = false;
 			p.getAbilities().mayfly = false;
 			p.onUpdateAbilities();
+			// (whole again for the ultimate: the fight so far has worn them down)
+			p.setHealth(p.getMaxHealth());
 		});
-		sp.getServer().runOnServer(s -> player(s).teleportTo(stood[0], stood[1], stood[2]));
+		moveTo(ctx, sp, stood);
 		ctx.waitTicks(10);
 		sp.getServer().runOnServer(s -> elders(s).forEach(e -> force.test(e, com.extremedimensions.elder.ElderBoss.ULTIMATE)));
 		ctx.waitTicks(38);
@@ -326,6 +329,21 @@ public class ClientShots implements FabricClientGameTest {
 		});
 		sp.getServer().runCommand("execute as @a at @s facing entity @e[type=extremedimensions:" + name + ",limit=1,sort=nearest] feet run tp @s ~ ~ ~ ~ ~");
 		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ ~ -16");
+	}
+
+	/**
+	 * Puts the player back where they stood, by command, and waits until they are there: under load a teleport made
+	 * while the client still settles the last one can be lost, and the rest of the fight would be watched from afar.
+	 */
+	private static void moveTo(ClientGameTestContext ctx, TestSingleplayerContext sp, double[] at) {
+		for (int tries = 0; tries < 5; tries++) {
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %.2f %.2f", at[0], at[1], at[2]));
+			ctx.waitTicks(5);
+			if (sp.getServer().computeOnServer(s -> player(s).distanceToSqr(at[0], at[1], at[2]) < 16)) {
+				return;
+			}
+		}
+		check(false, "the player could not be put back where they stood (" + at[0] + ", " + at[1] + ", " + at[2] + ")");
 	}
 
 	private static ServerPlayer player(MinecraftServer s) {
