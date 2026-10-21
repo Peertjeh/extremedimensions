@@ -1,3 +1,4 @@
-net.minecraft.world.level.storage.loot.functions.SetItemCountFunction
-@data/minecraft/loot_table/chests/simple_dungeon.json
-@data/minecraft/loot_table/chests/ruined_portal.json
+@data/minecraft/loot_table/entities/wither_skeleton.json
+@data/minecraft/loot_table/blocks/oak_leaves.json
+@data/minecraft/loot_table/chests/end_city_treasure.json
+@data/minecraft/loot_table/blocks/gravel.json
