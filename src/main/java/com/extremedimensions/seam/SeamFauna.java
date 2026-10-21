@@ -59,7 +59,11 @@ public final class SeamFauna {
 	private static final Map<UUID, Driven> DRIVEN = new HashMap<>();
 
 	public static boolean isDriven(Entity e) {
-		return DRIVEN.containsKey(e.getUUID());
+		return isDriven(e.getUUID());
+	}
+
+	public static boolean isDriven(UUID id) {
+		return DRIVEN.containsKey(id);
 	}
 
 	public static void clear() {

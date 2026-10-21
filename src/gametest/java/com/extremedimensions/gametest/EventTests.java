@@ -274,7 +274,8 @@ public class EventTests {
 		try {
 			check(helper, f.rays() > 0, "no Frayed Ray rose to the frayed island");
 			// (a ray the Seam does not drive fades after two seconds: these must stay over the island)
-			check(helper, f.rayIds().stream().allMatch(id -> seam.getEntity(id) != null && com.extremedimensions.seam.SeamFauna.isDriven(seam.getEntity(id))),
+			// (by their ids: in a chunk loaded this very tick they are not to be looked up yet)
+			check(helper, f.rayIds().stream().allMatch(com.extremedimensions.seam.SeamFauna::isDriven),
 					"the frayed island's rays are not held, and fade after two seconds");
 			check(helper, f.holds(cx + 20, cz) && !f.holds(cx + Config.FRAYED_SEAM_RADIUS + 9, cz), "the island's reach is wrong");
 			FrayedSeam.finishNow(seam, f);

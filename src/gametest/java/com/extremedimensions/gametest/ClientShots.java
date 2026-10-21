@@ -358,10 +358,13 @@ public class ClientShots implements FabricClientGameTest {
 		}
 	}
 
-	/** Waits for the world round the player to be drawn; if it is not in time, says what the client sees, and goes on. */
+	/**
+	 * Waits for the chunks the client has to be drawn (not for every chunk of the view to come in: out here some far
+	 * ones never did, and the scenes are close up); if even that is not in time, says what the client sees, and goes on.
+	 */
 	private static void settle(ClientGameTestContext ctx, TestSingleplayerContext sp, String where) {
 		try {
-			sp.getConnection().waitForChunksRender();
+			sp.getConnection().waitForChunksRender(false);
 		} catch (AssertionError timedOut) {
 			ctx.runOnClient(mc -> System.out.println("[settle] " + where + ": not drawn in time; at " + mc.player.position() + " in "
 					+ mc.level.dimension().identifier() + ", spectator " + mc.player.isSpectator() + ", alive " + mc.player.isAlive() + ", using "
