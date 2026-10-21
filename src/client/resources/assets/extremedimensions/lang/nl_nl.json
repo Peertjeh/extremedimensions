@@ -2066,7 +2066,7 @@
   "gui.extremedimensions.tapestry.status_again": "Het paneel %s rafelde uit. Het getouw neemt het over %s min. weer aan.",
   "gui.extremedimensions.tapestry.state_carried": "Draad in handen: weef hem!",
   "gui.extremedimensions.tapestry.state_carried_wait": "Draad in handen. Hij wacht op het einde.",
-  "gui.extremedimensions.tapestry.state_lost": "Daad gedaan, draad kwijt: %s Seamzijde spint hem terug.",
+  "gui.extremedimensions.tapestry.state_lost": "Draad kwijt: %s Seamzijde spint hem terug.",
   "gui.extremedimensions.tapestry.state_todo": "Nog niet verdiend.",
   "gui.extremedimensions.tapestry.new_thread_button": "Neem een nieuwe draad op",
   "gui.extremedimensions.tapestry.new_thread_title": "Nieuwe Draad+",

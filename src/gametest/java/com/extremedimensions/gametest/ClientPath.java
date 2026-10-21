@@ -348,7 +348,18 @@ public class ClientPath implements FabricClientGameTest {
 				com.extremedimensions.tapestry.Tapestry.use(p, loomAt, thread);
 			});
 			check(sp.getServer().computeOnServer(s -> com.extremedimensions.tapestry.Weaving.active()), "the sixth panel did not begin the Weaving");
+			// Up and back over the loom (held in the air), to see its first wave come at it from all round
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				p.getAbilities().mayfly = true;
+				p.getAbilities().flying = true;
+				p.onUpdateAbilities();
+			});
+			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a run tp @s %.2f %d %.2f 180 38", loomAt.getX() + 0.5, loomAt.getY() + 7, loomAt.getZ() + 11.5));
 			ctx.waitTicks(100);
+			int foes = sp.getServer().computeOnServer(s -> com.extremedimensions.tapestry.Weaving.foes());
+			System.out.println("[weaving] " + foes + " foes out of the rifts after five seconds");
+			check(foes > 0, "the Weaving's first wave brought no foes");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			ctx.waitTicks(2);
 			ctx.takeScreenshot("42_weaving");
@@ -368,7 +379,11 @@ public class ClientPath implements FabricClientGameTest {
 			ctx.takeScreenshot("43_new_thread");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			sp.getServer().runOnServer(s -> {
-				player(s).getAbilities().invulnerable = false;
+				ServerPlayer p = player(s);
+				p.getAbilities().invulnerable = false;
+				p.getAbilities().flying = false;
+				p.getAbilities().mayfly = false;
+				p.onUpdateAbilities();
 				DataStore.setEnding("");
 				DataStore.panels().clear();
 				DataStore.setTapestryDone(false);
