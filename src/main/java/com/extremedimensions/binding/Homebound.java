@@ -106,11 +106,11 @@ public final class Homebound {
 		return d == null || d.homebound == null ? 0 : d.homebound.size();
 	}
 
-	static String encode(HolderLookup.Provider access, ItemStack stack) {
+	public static String encode(HolderLookup.Provider access, ItemStack stack) {
 		return ItemStack.CODEC.encodeStart(access.createSerializationContext(JsonOps.INSTANCE), stack).result().map(Object::toString).orElse(null);
 	}
 
-	static ItemStack decode(HolderLookup.Provider access, String json) {
+	public static ItemStack decode(HolderLookup.Provider access, String json) {
 		try {
 			return ItemStack.CODEC.parse(access.createSerializationContext(JsonOps.INSTANCE), JsonParser.parseString(json)).result().orElse(ItemStack.EMPTY);
 		} catch (RuntimeException e) {

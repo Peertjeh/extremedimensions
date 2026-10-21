@@ -29,4 +29,6 @@ public final class Fx {
 	public static final int BESTIARY = 17;
 	/** A note in another hand turned up in the journal's margin: a toast. Value: the note's ordinal. */
 	public static final int JOURNAL_NOTE = 18;
+	/** The island the player stands on frays (value: seconds it lasts). */
+	public static final int FRAYED_SEAM = 19;
 }

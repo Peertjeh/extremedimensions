@@ -16,6 +16,8 @@ public final class SeamFog {
 	private static long last;
 	/** How far the fog let anyone see when it was last set up (blocks). */
 	private static float lastEnd = 75;
+	/** How far the fog of a frayed island has closed in (0 to 1), eased. */
+	private static double frayedK = 0;
 
 	/** How far the fog lets anyone see now (blocks), for what must show through it. */
 	public static float end() {
@@ -45,6 +47,12 @@ public final class SeamFog {
 			double depth = Mth.clamp((com.extremedimensions.config.Config.SEAM_FRAY_TOP + 10 - mc.player.getY()) / 20.0, 0, 1);
 			end = (float) Mth.lerp(depth, end, 26 + 6 * (1 - density));
 			start = (float) Mth.lerp(depth, start, 2);
+		}
+		// A frayed island: the fog closes in as down in the Fray, over the island only
+		frayedK += ((com.extremedimensions.client.state.ClientState.frayed(x, z) ? 1 : 0) - frayedK) * Math.min(1, dt * 0.5);
+		if (frayedK > 0.01) {
+			end = (float) Mth.lerp(frayedK, end, 34);
+			start = (float) Mth.lerp(frayedK, start, 3);
 		}
 		// Veilsight: the fog keeps farther off
 		if (com.extremedimensions.registry.ModEnchantments.level(mc.level.registryAccess(),

@@ -1108,12 +1108,75 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("30_binding_bag");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			// Through the Wound Lens: scoping as through a spyglass, at the Held's chamber
+			// (a spectator cannot use anything: in survival for the moment)
+			sp.getServer().runCommand("execute as @a run gamemode survival @s");
+			ctx.waitTicks(10);
 			ctx.getInput().holdKey(o -> o.keyUse);
 			ctx.waitTicks(30);
-			ctx.runOnClient(mc -> check(mc.player.isScoping(), "holding use with the Wound Lens, the player is not looking through it"));
+			ctx.runOnClient(mc -> {
+				System.out.println("[lens] using=" + mc.player.isUsingItem() + " item=" + mc.player.getUseItem().getItem() + " scoping=" + mc.player.isScoping());
+				check(mc.player.isScoping(), "holding use with the Wound Lens, the player is not looking through it");
+			});
 			ctx.takeScreenshot("30_wound_lens");
 			ctx.getInput().releaseKey(o -> o.keyUse);
+			sp.getServer().runCommand("execute as @a run gamemode spectator @s");
 			ctx.waitTicks(5);
+			// The wounds remember: an echo of a Collapse kneeling in its chains
+			com.extremedimensions.data.Echo[] echo = new com.extremedimensions.data.Echo[1];
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				net.minecraft.server.level.ServerLevel lvl = (net.minecraft.server.level.ServerLevel) p.level();
+				int ex = home[0] + 360, ez = home[2] + 60;
+				lvl.getChunk(ex >> 4, ez >> 4);
+				int ey = lvl.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, ex, ez);
+				echo[0] = new com.extremedimensions.data.Echo(com.extremedimensions.server.Dims.of(lvl), ex, ey, ez, p.getStringUUID(), p.getName().getString(), 0L, 10);
+				DataStore.echoes().add(echo[0]);
+				p.teleportTo(ex + 0.5, ey + 0.2, ez + 4.5);
+			});
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 180 12");
+			sp.getConnection().waitForChunksRender();
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("31_echo");
+			sp.getServer().runOnServer(s -> com.extremedimensions.events.Echoes.forget(echo[0]));
+			// The Unanchored Build: three Endermen laying a ring round a pearl, half done, watched without staring
+			int[] ring = sp.getServer().computeOnServer(s -> {
+				ServerPlayer p = player(s);
+				net.minecraft.server.level.ServerLevel lvl = (net.minecraft.server.level.ServerLevel) p.level();
+				int cx = home[0] + 420, cz = home[2] + 60, y0 = 210;
+				for (BlockPos q : BlockPos.betweenClosed(cx - 24, y0 - 1, cz - 24, cx + 24, y0 + 6, cz + 24)) {
+					lvl.setBlock(q, q.getY() == y0 - 1 ? net.minecraft.world.level.block.Blocks.END_STONE.defaultBlockState()
+							: net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+				}
+				p.teleportTo(cx + 0.5, y0, cz + 0.5);
+				check(com.extremedimensions.events.Unanchored.start(p, s.getTickCount()) == null, "the Endermen found no room on the platform");
+				com.extremedimensions.events.Unanchored.Build b = com.extremedimensions.events.Unanchored.of(p.getUUID());
+				com.extremedimensions.events.Unanchored.step(b, b.started + com.extremedimensions.config.Config.UNANCHORED_SECONDS * 10L);
+				return new int[] {b.centre.getX(), b.centre.getY(), b.centre.getZ()};
+			});
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f 180 28", ring[0] + 0.5, ring[1] + 3.5, ring[2] + 8.5));
+			sp.getConnection().waitForChunksRender();
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("31_unanchored");
+			sp.getServer().runOnServer(s -> {
+				com.extremedimensions.events.Unanchored.Build b = com.extremedimensions.events.Unanchored.of(player(s).getUUID());
+				check(b != null, "the build was broken off before it could finish (the player stared?)");
+				com.extremedimensions.events.Unanchored.step(b, b.started + com.extremedimensions.config.Config.UNANCHORED_SECONDS * 20L + 1);
+				com.extremedimensions.events.Unanchored.clear();
+			});
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("31_unanchored_done");
+			// The Veil Lantern, standing and hanging
+			sp.getServer().runOnServer(s -> {
+				net.minecraft.server.level.ServerLevel lvl = (net.minecraft.server.level.ServerLevel) player(s).level();
+				BlockPos c = new BlockPos(ring[0] + 6, ring[1], ring[2] + 3);
+				lvl.setBlock(c.above(2), net.minecraft.world.level.block.Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 3);
+				lvl.setBlock(c.above(1), ModBlocks.VEIL_LANTERN.defaultBlockState()
+						.setValue(net.minecraft.world.level.block.LanternBlock.HANGING, true), 3);
+				lvl.setBlock(c.east(), ModBlocks.VEIL_LANTERN.defaultBlockState(), 3);
+			});
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f 180 10", ring[0] + 6.9, ring[1] + 0.6, ring[2] + 6.2));
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("31_veil_lantern");
 			ctx.runOnClient(mc -> {
 				ClientOptions.setGuidance(true);
 				mc.options.renderDistance().set(5);
@@ -1197,6 +1260,19 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(8);
 			ctx.takeScreenshot("09_trial_hud_panel");
 			sp.getServer().runOnServer(s -> com.extremedimensions.config.Config.HUD_BOSS_BAR = 1);
+			// A frayed island: the fog closes in, green spores drift, Frayed Rays rise to it
+			sp.getServer().runOnServer(s -> com.extremedimensions.events.FrayedSeam.start((net.minecraft.server.level.ServerLevel) player(s).level(), player(s), s.getTickCount()));
+			ctx.waitTicks(60);
+			ctx.runOnClient(mc -> check(ClientState.frayed(mc.player.getX(), mc.player.getZ()), "the client did not hear its island was fraying"));
+			ctx.takeScreenshot("31_frayed_seam");
+			sp.getServer().runOnServer(s -> {
+				com.extremedimensions.events.FrayedSeam.Fraying f = com.extremedimensions.events.FrayedSeam.on(player(s));
+				if (f != null) {
+					com.extremedimensions.events.FrayedSeam.finishNow((net.minecraft.server.level.ServerLevel) player(s).level(), f);
+				}
+			});
+			ctx.runOnClient(mc -> ClientState.frayedUntil = 0);
+			ctx.waitTicks(5);
 			// News as Minecraft gives it: a toast in the corner for a new journal page
 			ctx.runOnClient(mc -> com.extremedimensions.client.hud.Toasts.journal(0));
 			ctx.waitTicks(24);

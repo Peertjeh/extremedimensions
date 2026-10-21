@@ -121,7 +121,8 @@ public final class WorldService {
 			if (last != null && now - last < Config.STORM_COOLDOWN_MINUTES * 1200L) {
 				continue;
 			}
-			if (ThreadLocalRandom.current().nextDouble() < Config.STORM_CHANCE) {
+			// Storms keep to the world events' rules: not in an Elder fight, not on the heels of another event
+			if (com.extremedimensions.events.WorldEvents.free(p, now) && ThreadLocalRandom.current().nextDouble() < Config.STORM_CHANCE) {
 				begin(p, now);
 			}
 		}
@@ -134,6 +135,9 @@ public final class WorldService {
 		WorldFx.sound(p, "minecraft:entity.lightning_bolt.thunder", 1.5f, 0.6f);
 		WorldFx.sound(p, "extremedimensions:rift_open", 1.5f, 0.6f);
 		Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.STORMS);
+		com.extremedimensions.events.WorldEvents.mark(p, now);
+		// Anchors without a soul ward near may crack
+		com.extremedimensions.events.UnstableAnchors.storm(p);
 	}
 
 	/** One tick of a storm around a player: tears in the air, darkness, leaking creatures, flickering anchors. */
@@ -180,7 +184,11 @@ public final class WorldService {
 			int x = (int) Math.floor(p.getX() + Math.cos(a) * (14 + rnd.nextInt(8)));
 			int z = (int) Math.floor(p.getZ() + Math.sin(a) * (14 + rnd.nextInt(8)));
 			if (level.isLoaded(new BlockPos(x, (int) p.getY(), z))) {
-				out.add(new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z));
+				BlockPos b = new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z);
+				// nothing breaks through near a Veil Lantern
+				if (!com.extremedimensions.anchor.SoulWards.veiled(level, b)) {
+					out.add(b);
+				}
 			}
 		}
 		return out;

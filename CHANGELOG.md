@@ -1,5 +1,57 @@
 # Changelog
 
+## 2.36.0: The Wounds Remember
+
+The world reacts to what was done in it: Collapses leave echoes, anchors crack in storms, the Endermen build on the
+End's far islands, and the Seam's islands fray.
+
+### Added
+- **Echoes of Collapse.** Where a Collapse ends in death beyond the wound, the place remembers. Twenty minutes later,
+  whoever comes within 24 blocks finds the collapsed player's shape kneeling there in chains, drawn in soul fire, with
+  their name over it; the chains rattle and something whispers. Stand within 4 blocks and listen for 15 seconds and the
+  echo lets go: the listener gets a Tether Fragment, 30 atonement, journal page XL *Echoes* and the advancement *It
+  Remembers*; the collapsed player gets half the atonement that death cost them (waiting for them if they are away).
+  While anyone listens, everyone within 16 blocks drains twice as fast; in a mended world it is softer, with no drain.
+  In a severed world the echo gives back one of the things the death destroyed. One echo per Collapse.
+- **Unstable Anchors.** Once the seal is broken (in a severed world too, not in a mended one), an anchor without a soul
+  ward near the start of a Wound Storm may crack, as may an anchor a Lurker drank its fill from. It spits sparks and
+  leaks 2 seconds of everyone's charge each second. Use an Amethyst Shard on it to steady it; left alone for five
+  minutes it breaks and loses a quarter of everyone's charge. A soul ward keeps it from cracking at all. The Wound
+  Lens shows when an anchor is cracked and how long it has.
+- **The Unanchored Build.** On an End expedition, more than 1000 blocks out, the Endermen sometimes stop and turn to
+  one spot (about once in a hundred minutes, at most once in thirty). Three of them lay a ring of end stone bricks round
+  a floating pearl, block by block, for a minute. Look one in the eye and they turn on you and the ring stays unfinished;
+  let them finish unwatched and they step into the ring and are gone, leaving Ender Pearls, a Tether Fragment, a note
+  in another hand beside XIII and the advancement *A Way Home* (loot table `gameplay/unanchored`).
+- **Frayed Seam.** Now and then, once a visit, the island a visitor stands on frays for three minutes: the fog closes
+  in as down in the Fray, green spores drift, strands snap somewhere out of sight, Frayed Rays rise to it and the
+  Thinned hunt on it, and the Seam's time runs out half as fast again while you stay. Cross to another island, or
+  stay: when it is over a tangle (Fray loot) surfaces on the island.
+- **The Veil Lantern.** A Soul Lantern under a Veil Wing between two Seam Silk. A soul ward like a soul lantern (the
+  tribe will not drink near it), and no Wound Storm breaks through within 8 blocks of it. Stands or hangs like any
+  lantern.
+- **World events share their rules:** for one player, events (a storm, a build, a fraying) keep two minutes apart and
+  one at a time, and none starts during an Elder fight. Operators can start one with `/tether event <storm|echo|
+  unstable|unanchored|frayed>`.
+- Settings (a new World events section): `event_spacing`, `echoes`, `echo_delay`, `echo_range`, `echo_listen_range`,
+  `echo_listen_seconds`, `echo_drain`, `echo_drain_range`, `echo_atone`, `echo_return`, `echo_max`,
+  `unstable_anchors`, `unstable_chance`, `unstable_range`, `unstable_leak`, `unstable_seconds`, `unstable_loss`,
+  `unanchored`, `unanchored_chance`, `unanchored_cooldown`, `unanchored_seconds`, `unanchored_from`, `frayed_seam`,
+  `frayed_seam_chance`, `frayed_seam_seconds`, `frayed_seam_radius`, `frayed_seam_drain`, `frayed_seam_rays`,
+  `frayed_seam_thinned`, `veil_lantern_range`.
+
+### Changed
+- Wound Storms follow the world events' rules (spacing, no storm in an Elder fight).
+- Wound Convergence, the fifth event of the plan, waits for 3.0, where the Weaving gives it its meaning.
+
+### Under the hood
+- Gametests: events keep their distance; an echo shows, is heard out and gives back what it gives (to an away player
+  too), and drains those near while it is listened to; a Collapse is remembered where it fell; an anchor cracks only
+  after the seal and not when warded or mended, leaks everyone's charge, steadies with a shard and breaks after its
+  time; the Endermen finish a ring unwatched and leave pearls and the note, and turn when stared at; a frayed island
+  raises its rays and leaves a tangle; the Veil Lantern wards and holds storms off. The client test photographs an
+  echo, the build half done and finished, the Veil Lantern and a frayed island.
+
 ## 2.35.0: The Art of Binding
 
 Prepare differently, not just harder: five enchantments for the mod's own dangers, Tethers that take them, and a lens

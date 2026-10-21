@@ -55,6 +55,8 @@ public final class ModItems {
 
 	/** Every block of the hush masonry family as an item, in creative-tab order (the vein last). */
 	public static final java.util.List<Item> HUSH = ModBlocks.HUSH.stream().map(ModItems::block).toList();
+	/** The Veil Lantern's item: placed like any lantern, standing or hanging. */
+	public static final Item VEIL_LANTERN = block(ModBlocks.VEIL_LANTERN);
 
 	private static Item block(Block block) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, BuiltInRegistries.BLOCK.getKey(block));

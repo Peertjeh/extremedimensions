@@ -82,6 +82,10 @@ public final class TetherCommand {
 					c.getSource().sendSuccess(() -> Component.literal("Designed " + n + " Seam structures; building " + SeamArchitect.pending() + " blocks"), false);
 					return n;
 				}))
+				.then(Commands.literal("event").requires(op)
+						.then(Commands.argument("id", StringArgumentType.word())
+								.suggests((c, b) -> SharedSuggestionProvider.suggest(com.extremedimensions.events.WorldEvents.IDS, b))
+								.executes(c -> event(c.getSource(), StringArgumentType.getString(c, "id")))))
 				.then(Commands.literal("storm").requires(op).executes(c -> {
 					WorldService.begin(c.getSource().getPlayerOrException(), c.getSource().getServer().getTickCount());
 					return 1;
@@ -93,6 +97,18 @@ public final class TetherCommand {
 								.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.Arrays.stream(Penalty.values()).map(p -> p.id), b))
 								.then(Commands.argument("stacks", IntegerArgumentType.integer(0, 99))
 										.executes(c -> setCurse(c.getSource(), StringArgumentType.getString(c, "id"), IntegerArgumentType.getInteger(c, "stacks")))))));
+	}
+
+	/** {@code /tether event <id>}: starts a world event for the player at once (storm, echo, unstable, unanchored, frayed). */
+	private static int event(CommandSourceStack src, String id) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+		net.minecraft.server.level.ServerPlayer p = src.getPlayerOrException();
+		String why = com.extremedimensions.events.WorldEvents.force(p, id);
+		if (why != null) {
+			src.sendFailure(Component.translatable(why));
+			return 0;
+		}
+		src.sendSuccess(() -> Component.translatable("commands.extremedimensions.event.started", id), true);
+		return 1;
 	}
 
 	/** {@code /tether where}: the world the player stands in, and whether the mod acts there (anyone may ask). */

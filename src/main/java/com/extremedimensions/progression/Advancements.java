@@ -54,6 +54,8 @@ public final class Advancements {
 	public static final String ISLAND_FELL = "island_fell";
 	public static final String WARM_CHAIN = "warm_chain";
 	public static final String HELD_FOUND = "held_found";
+	public static final String ECHO_HEARD = "echo_heard";
+	public static final String UNANCHORED = "unanchored";
 
 	/** Expeditions needed for {@link #VETERAN}. */
 	public static final int VETERAN_EXPEDITIONS = 10;

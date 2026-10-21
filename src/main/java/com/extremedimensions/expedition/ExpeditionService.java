@@ -247,7 +247,7 @@ public final class ExpeditionService {
 		if ((Dims.isBeyond(dim) || seam) && d.inRun && !d.collapsing) {
 			d.currentDrain = d.drainMultiplier() * (seam ? 1.0 : TetherService.distanceFactor(p, d)) * WorldService.drainFactor(dim)
 					* com.extremedimensions.relic.RelicService.drainFactor(d, dim) * com.extremedimensions.elder.FerrymanService.drainFactor(p)
-					* com.extremedimensions.binding.Homebound.drainFactor(p);
+					* com.extremedimensions.binding.Homebound.drainFactor(p) * com.extremedimensions.events.WorldEvents.drainFactor(p);
 			double left = AnchorService.drainLinked(p, d, d.currentDrain / 20.0);
 			d.runTime += 1.0 / 20.0;
 			double far = seam ? 0 : TetherService.arrivalDistance(p, d);
@@ -403,7 +403,12 @@ public final class ExpeditionService {
 		d.diedToday = true;
 		d.collapseOwed = false;
 		// Every death undoes part of the penance, wherever it happens
-		d.atonementLost += PenaltyService.deathToll(d);
+		int toll = PenaltyService.deathToll(d);
+		d.atonementLost += toll;
+		// A Collapse that ends in death beyond the wound leaves an echo there
+		if (d.collapsing && Dims.isBeyond(dim)) {
+			com.extremedimensions.events.Echoes.record(p, dim, toll);
+		}
 		// Death always costs the chain (and the Tether item)
 		if (d.tetherAnchor != null) {
 			TetherService.clear(p, d, false);

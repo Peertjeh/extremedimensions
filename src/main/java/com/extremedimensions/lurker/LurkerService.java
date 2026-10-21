@@ -642,6 +642,10 @@ public final class LurkerService {
 	private static void drain(Lurker l, State st, ServerPlayer p, List<Runnable> later) {
 		Anchor a = DataStore.anchors().get(st.anchor);
 		if (a == null || a.charge <= 0 || st.ticks > st.limit) {
+			if (a != null && a.charge > 0 && l.level() instanceof net.minecraft.server.level.ServerLevel level) {
+				// It drank its fill: the anchor it drank from may crack
+				com.extremedimensions.events.UnstableAnchors.unsettle(level, a);
+			}
 			later.add(() -> vanish(l));
 			return;
 		}

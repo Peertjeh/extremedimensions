@@ -253,6 +253,11 @@ echoes; anchors feel storms; the Endermen build.*
 *Done when:* every event can be started deterministically from a gametest and cleans up after itself; warnings, effects
 and rewards are tested; each event is photographed.
 
+*Status:* built in 2.36.0, with the Veil Lantern moved here from 2.35. Choices made on the way: an echo of a Collapse is
+a place rather than a happening, so it does not count against the spacing between events; the Unanchored Build lays
+end stone bricks (plain end stone would vanish into the island it stands on); the frayed island's fog closes in rather
+than turning green, with green spores drifting in it (a fog colour needs a renderer hook the next releases can add).
+
 #### 2.37 Refinement
 
 *No new systems.* Five independent reviews, as in 2.22. A balance pass of curses, atonement, the Fray and everything

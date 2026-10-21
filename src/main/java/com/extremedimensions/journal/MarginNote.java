@@ -11,7 +11,9 @@ public enum MarginNote {
 	/** Beside XXX, The Wanderer: found on the Loose Leaf. */
 	WANDERER("wanderer", JournalEntry.WANDERER),
 	/** Beside XIX, The First Wound: found on the Loose Leaf. */
-	FIRST_WOUND("first_wound", JournalEntry.FIRST_WOUND);
+	FIRST_WOUND("first_wound", JournalEntry.FIRST_WOUND),
+	/** Beside XIII, The Unanchored: found where the Endermen finished a ring unwatched. */
+	UNANCHORED("unanchored", JournalEntry.UNANCHORED);
 
 	public final String id;
 	public final JournalEntry page;

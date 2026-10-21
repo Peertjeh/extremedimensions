@@ -24,6 +24,8 @@ public class Anchor {
 	public double charge = 0;
 	/** Charge per player UUID. */
 	public Map<String, Double> owners = new HashMap<>();
+	/** Seconds left before an unstable anchor breaks (0: steady). It leaks charge meanwhile; an Amethyst Shard steadies it. */
+	public int unstable = 0;
 
 	// --- runtime only ---
 	/** Free path through the air from the anchor to its portal's centre; empty = no path. */
@@ -133,6 +135,21 @@ public class Anchor {
 		}
 		recalc();
 		return taken;
+	}
+
+	/** Every player's charge here loses up to {@code secs} seconds (an unstable anchor leaking). */
+	public void leakAll(double secs) {
+		fixLegacy();
+		owners.replaceAll((k, v) -> Math.max(0, v - secs));
+		owners.values().removeIf(v -> v <= 0);
+		recalc();
+	}
+
+	/** Every player's charge here multiplied by {@code k} (an unstable anchor breaking). */
+	public void scaleAll(double k) {
+		fixLegacy();
+		owners.replaceAll((key, v) -> v * k);
+		recalc();
 	}
 
 	/** Removes only this player's charge (on death). */

@@ -11,6 +11,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LanternBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
@@ -76,6 +77,9 @@ public final class ModBlocks {
 	public static final Block POLISHED_PALE_HUSH_STONE_WALL = wall("polished_pale_hush_stone_wall", POLISHED_PALE_HUSH_STONE);
 	/** Hush stone threaded with glowing silk; mined for Seam Silk. */
 	public static final Block SEAM_VEIN = simple("seam_vein", 6);
+	/** A soul lantern with a Veil Wing in its glass: a soul ward that also keeps a Wound Storm from breaking through near it. */
+	public static final Block VEIL_LANTERN = Registry.register(BuiltInRegistries.BLOCK, key("veil_lantern"),
+			new LanternBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.SOUL_LANTERN).setId(key("veil_lantern"))));
 
 	private static ResourceKey<Block> key(String id) {
 		return ResourceKey.create(Registries.BLOCK, ExtremeDimensions.id(id));

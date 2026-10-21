@@ -304,6 +304,51 @@ public final class Config {
 	/** Drain multiplier for everyone in a mended world. */
 	public static double MENDED_DRAIN = 0.8;
 
+	// --- World events: the wounds remember ----------------------------------------------------
+
+	/** Seconds between two events (a storm, a build, a fraying) for the same player; none starts during an Elder fight. */
+	public static int EVENT_SPACING = 120;
+	/** Echoes of Collapse (1 on, 0 off): seconds after a Collapse before its echo shows; how near (blocks) it shows. */
+	public static int ECHOES = 1;
+	public static int ECHO_DELAY = 1200;
+	public static int ECHO_RANGE = 24;
+	/** How near (blocks) and how long (seconds) one must stand by an echo to hear it out. */
+	public static int ECHO_LISTEN_RANGE = 4;
+	public static int ECHO_LISTEN_SECONDS = 15;
+	/** While someone listens: drain multiplier for everyone within {@code echo_drain_range} blocks (not in a mended world). */
+	public static double ECHO_DRAIN = 2.0;
+	public static int ECHO_DRAIN_RANGE = 16;
+	/** What hearing an echo out gives the listener (atonement points), and the share of the death's toll the collapsed get back. */
+	public static int ECHO_ATONE = 30;
+	public static double ECHO_RETURN = 0.5;
+	/** Most echoes a world keeps waiting (the oldest goes first). */
+	public static int ECHO_MAX = 32;
+	/** Unstable anchors (1 on, 0 off): chance for each anchor without a soul ward near the start of a storm; how near (blocks). */
+	public static int UNSTABLE_ANCHORS = 1;
+	public static double UNSTABLE_CHANCE = 0.5;
+	public static int UNSTABLE_RANGE = 32;
+	/** Seconds of charge an unstable anchor leaks per second, for each player; seconds before it breaks, and the share it then loses. */
+	public static double UNSTABLE_LEAK = 2.0;
+	public static int UNSTABLE_SECONDS = 300;
+	public static double UNSTABLE_LOSS = 0.25;
+	/** The Unanchored Build (1 on, 0 off): chance per minute on an End expedition; minutes between two; seconds it takes; how far out (blocks). */
+	public static int UNANCHORED = 1;
+	public static double UNANCHORED_CHANCE = 0.01;
+	public static int UNANCHORED_COOLDOWN = 30;
+	public static int UNANCHORED_SECONDS = 60;
+	public static int UNANCHORED_FROM = 1000;
+	/** Frayed Seam (1 on, 0 off): chance per minute in the Seam (once a visit); seconds it lasts; the island's reach (blocks). */
+	public static int FRAYED_SEAM = 1;
+	public static double FRAYED_SEAM_CHANCE = 0.005;
+	public static int FRAYED_SEAM_SECONDS = 180;
+	public static int FRAYED_SEAM_RADIUS = 40;
+	/** On a frayed island: how much faster the Seam's time runs out; how many Frayed Rays rise and Thinned come. */
+	public static double FRAYED_SEAM_DRAIN = 1.5;
+	public static int FRAYED_SEAM_RAYS = 2;
+	public static int FRAYED_SEAM_THINNED = 2;
+	/** Veil Lantern: how near (blocks) a storm cannot break through. */
+	public static int VEIL_LANTERN_RANGE = 8;
+
 	// --- Relics: one bound to the Tether, each with a gift and a price -------------------------
 
 	/** Ember Heart: drain multiplier in the Nether (the gift) and in the End (the price). */
@@ -758,7 +803,7 @@ public final class Config {
 			Map.entry("max_charge", "anchors"), Map.entry("base_drain", "expeditions"), Map.entry("rope_segment", "tether"),
 			Map.entry("offer_count", "curses"), Map.entry("fragment_chance", "lore"), Map.entry("lurker_enabled", "lurker"),
 			Map.entry("hoard_wild_chance", "hollow"), Map.entry("soul_woven_drain", "weaving"), Map.entry("seam_seconds", "seam"),
-			Map.entry("storm_chance", "dragon"), Map.entry("relic_ember_heart_nether", "relics"), Map.entry("ench_thrift_drain", "enchantments"), Map.entry("pact_unlock", "pacts"),
+			Map.entry("storm_chance", "dragon"), Map.entry("event_spacing", "events"), Map.entry("relic_ember_heart_nether", "relics"), Map.entry("ench_thrift_drain", "enchantments"), Map.entry("pact_unlock", "pacts"),
 			Map.entry("trial_unlock", "trials"), Map.entry("matriarch_after_keepers", "elders"),
 			Map.entry("coop_revive", "coop"), Map.entry("tribe_enabled", "tribe"), Map.entry("seam_build_budget_ms", "technical"));
 

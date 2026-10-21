@@ -56,6 +56,7 @@ public final class DataStore {
 		/** Ruined portals already looked at for a warm chain (their structure starts), and the warm ones. */
 		Set<String> gatesLooked = new HashSet<>();
 		List<WarmGate> warmGates = new ArrayList<>();
+		List<Echo> echoes = new ArrayList<>();
 	}
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -96,6 +97,12 @@ public final class DataStore {
 		}
 		if (loaded.gatesLooked != null) {
 			data.gatesLooked = loaded.gatesLooked;
+		}
+		if (loaded.echoes != null) {
+			data.echoes = loaded.echoes;
+			for (Echo e : data.echoes) {
+				e.heard = new java.util.HashMap<>();
+			}
 		}
 		if (loaded.warmGates != null) {
 			data.warmGates = loaded.warmGates;
@@ -256,6 +263,11 @@ public final class DataStore {
 	/** Ruined portals already looked at for a warm chain (their structure starts). */
 	public static Set<String> gatesLooked() {
 		return data.gatesLooked;
+	}
+
+	/** Where players collapsed beyond the wound, waiting to be heard. */
+	public static List<Echo> echoes() {
+		return data.echoes;
 	}
 
 	public static List<WarmGate> warmGates() {

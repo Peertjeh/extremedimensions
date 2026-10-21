@@ -216,6 +216,16 @@ public final class ClientState {
 	}
 
 	/** Handles an animation request from the server (see {@code Fx}). */
+	/** A frayed island: until when (ms) and its middle. */
+	public static long frayedUntil;
+	public static double frayedX, frayedZ;
+
+	/** Whether a point lies on a frayed island now. */
+	public static boolean frayed(double x, double z) {
+		double r = Math.max(8, com.extremedimensions.config.Config.FRAYED_SEAM_RADIUS);
+		return System.currentTimeMillis() < frayedUntil && (x - frayedX) * (x - frayedX) + (z - frayedZ) * (z - frayedZ) <= r * r;
+	}
+
 	public static void onFx(int type, int value) {
 		long now = System.currentTimeMillis();
 		switch (type) {
@@ -235,6 +245,15 @@ public final class ClientState {
 			case 16 -> com.extremedimensions.client.hud.Toasts.journal(value);
 			case 17 -> com.extremedimensions.client.hud.Toasts.bestiary(value);
 			case 18 -> com.extremedimensions.client.hud.Toasts.note(value);
+			case 19 -> {
+				// The island underfoot frays: where the player stands now is its middle, as the server reckons it
+				net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+				if (mc.player != null) {
+					frayedUntil = now + value * 1000L;
+					frayedX = mc.player.getX();
+					frayedZ = mc.player.getZ();
+				}
+			}
 			default -> { }
 		}
 	}
@@ -251,6 +270,7 @@ public final class ClientState {
 	/** Back to defaults when leaving a world. */
 	public static void reset() {
 		stateLevel = null;
+		frayedUntil = 0;
 		nearNether = -1;
 		nearEnd = -1;
 		runCharge = 0;

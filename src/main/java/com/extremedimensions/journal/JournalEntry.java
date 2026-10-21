@@ -45,7 +45,9 @@ public enum JournalEntry {
 	FRAY("fray"),
 	FRAYED_RAY("frayed_ray"),
 	/** Not the Wanderer's: the Held's letter, read from a Loose Leaf (a Wanderer's Page never turns out to be it). */
-	HELD("held", false);
+	HELD("held", false),
+	/** Hearing an echo of a Collapse out. */
+	ECHOES("echoes");
 
 	public final String id;
 	/** Written by the Wanderer (and so to be found on a Wanderer's Page). */

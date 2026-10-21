@@ -312,7 +312,8 @@ public final class SeamFauna {
 	private static boolean thin(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
 		return d.inSeam && !p.isCreative() && (d.seamPull > 0 || (d.seamMax > 0 && d.seamLeft < d.seamMax / 3) || SeamDepth.inFray(p.getY())
-				|| com.extremedimensions.trial.TrialService.hunted(d) || com.extremedimensions.elder.WeaverService.hunting(p));
+				|| com.extremedimensions.trial.TrialService.hunted(d) || com.extremedimensions.elder.WeaverService.hunting(p)
+				|| com.extremedimensions.events.FrayedSeam.on(p) != null);
 	}
 
 	/** True when any player close by is looking at it. */

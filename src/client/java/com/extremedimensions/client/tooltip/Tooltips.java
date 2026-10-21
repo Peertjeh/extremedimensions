@@ -64,6 +64,8 @@ public final class Tooltips {
 			key = "seam_silk";
 		} else if (item == ModItems.WOUND_LENS) {
 			key = "wound_lens";
+		} else if (item == ModItems.VEIL_LANTERN) {
+			key = "veil_lantern";
 		}
 		charms(stack, lines);
 		com.extremedimensions.relic.Relic relic = com.extremedimensions.relic.RelicService.of(stack);

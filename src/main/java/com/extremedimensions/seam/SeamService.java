@@ -410,7 +410,7 @@ public final class SeamService {
 		}
 		if (!p.isCreative() && !(MendingService.active() && MendingService.inArena(p))) {
 			// Time runs out faster in the Fray
-			d.seamLeft -= SeamDepth.drain(p.getY()) / 20.0;
+			d.seamLeft -= SeamDepth.drain(p.getY()) * com.extremedimensions.events.FrayedSeam.drain(p) / 20.0;
 		}
 		TetherService.lay(p, d);
 		SeamDepth.tick(p, d, tick);

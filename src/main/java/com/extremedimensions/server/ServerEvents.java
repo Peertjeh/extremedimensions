@@ -87,6 +87,8 @@ public final class ServerEvents {
 			com.extremedimensions.elder.ElderTerrain.clear();
 			com.extremedimensions.elder.ElderArena.clear();
 			com.extremedimensions.elder.ElderGaol.clear();
+			// Events under way stop: the Endermen building go, the rays of a frayed island sink back
+			com.extremedimensions.events.WorldEvents.clear();
 			// Blocks of the Seam in the air land, and islands not yet finished are built again on the next visit
 			SeamService.stopping();
 			DataStore.markDirty();
@@ -150,6 +152,14 @@ public final class ServerEvents {
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> com.extremedimensions.config.SettingsService.send(handler.getPlayer()));
 		// ... and who is fallen, to draw them crawling
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> com.extremedimensions.coop.FallenService.sync(s, handler.getPlayer()));
+		// What an echo gave back while they were away, and gear that came home and still waits
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> {
+			ServerPlayer p = handler.getPlayer();
+			com.extremedimensions.events.Echoes.welcome(p, DataStore.get(p.getUUID()));
+			if (p.isAlive()) {
+				com.extremedimensions.binding.Homebound.restore(p);
+			}
+		});
 		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
 			com.extremedimensions.coop.FallenService.forget(newPlayer);
 			PlayerData d = DataStore.get(newPlayer.getUUID());
@@ -188,7 +198,12 @@ public final class ServerEvents {
 				com.extremedimensions.binding.Homebound.gather(p);
 				if ("severed".equals(DataStore.ending()) && Dims.isBeyond(Dims.of(p))) {
 					// A severed world keeps nothing of those who fall beyond the wound
+					boolean collapsing = DataStore.get(p.getUUID()).collapsing;
 					for (ItemEntity item : p.level().getEntitiesOfClass(ItemEntity.class, p.getBoundingBox().inflate(8), i -> i.distanceToSqr(p) <= 64)) {
+						if (collapsing) {
+							// the echo of this Collapse keeps one of the things
+							com.extremedimensions.events.Echoes.lost(p, item.getItem());
+						}
 						item.discard();
 					}
 				}
@@ -503,6 +518,7 @@ public final class ServerEvents {
 		com.extremedimensions.lore.WarmChains.tick(s);
 		com.extremedimensions.binding.Veilsight.tick(s);
 		com.extremedimensions.binding.WoundLens.tick(s);
+		com.extremedimensions.events.WorldEvents.tick(s);
 		if (s.getTickCount() % 1200 == 0) {
 			AtonementGuard.sweep(s);
 		}

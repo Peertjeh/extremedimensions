@@ -28,7 +28,8 @@
 			"com.extremedimensions.gametest.GroundTests",
 			"com.extremedimensions.gametest.VanillaTests",
 			"com.extremedimensions.gametest.WarmChainTests",
-			"com.extremedimensions.gametest.BindingTests"
+			"com.extremedimensions.gametest.BindingTests",
+			"com.extremedimensions.gametest.EventTests"
 		],
 		"fabric-client-gametest": [
 			"com.extremedimensions.gametest.ClientShots"

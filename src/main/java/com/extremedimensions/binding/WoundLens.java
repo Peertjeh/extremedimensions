@@ -119,6 +119,9 @@ public final class WoundLens {
 		if (shown == 0) {
 			out.append("  ").append(Component.translatable("gui.extremedimensions.lens.anchor.empty").withStyle(ChatFormatting.GRAY));
 		}
+		if (a.unstable > 0) {
+			out.append("  ").append(Component.translatable("gui.extremedimensions.lens.anchor.unstable", a.unstable).withStyle(ChatFormatting.RED));
+		}
 		if (a.shared(p.getStringUUID()) > 0 || a.owners.containsKey("*")) {
 			out.append("  ").append(Component.translatable("gui.extremedimensions.lens.anchor.shared").withStyle(ChatFormatting.AQUA));
 		}

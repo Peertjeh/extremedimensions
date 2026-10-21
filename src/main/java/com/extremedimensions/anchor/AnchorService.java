@@ -132,6 +132,13 @@ public final class AnchorService {
 		}
 
 		Item item = stack.getItem();
+		if (item == net.minecraft.world.item.Items.AMETHYST_SHARD) {
+			// An Amethyst Shard steadies a cracked anchor (on a steady one it is End fuel, as ever)
+			Anchor cracked = DataStore.anchors().get(Anchor.key(pos.getX(), pos.getY(), pos.getZ()));
+			if (cracked != null && com.extremedimensions.events.UnstableAnchors.steady(p, cracked, stack)) {
+				return InteractionResult.SUCCESS;
+			}
+		}
 		if (item == ModItems.TETHER_FRAGMENT) {
 			return PenaltyService.mend(p, d, pos, stack);
 		}

@@ -109,6 +109,8 @@ public class PlayerData {
 	public Map<String, Integer> tetherCharms = new HashMap<>();
 	/** Homebound things taken up at a death beyond the wound, waiting for the respawn (each one an item stack as JSON). */
 	public List<String> homebound = new ArrayList<>();
+	/** Atonement an echo of this player's Collapse gave back while they were away (granted when they are next in). */
+	public int echoOwed = 0;
 	/** Scars: curse stacks taken off again. Each one makes the drain a little weaker (up to five). */
 	public int scars = 0;
 	/** A Hollowling follows this player. */
