@@ -160,10 +160,22 @@ public class ClientShots implements FabricClientGameTest {
 		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 90");
 		ctx.waitTicks(40);
 		ctx.takeScreenshot("12_fight_" + name + "_arena");
-		// Out past its west wall (near enough that the Elder keeps to its prey), looking north along its towers: the
-		// world comes in round there, and what waited for it goes up
-		sp.getServer().runOnServer(s -> player(s).teleportTo(mid[0] - 190, mid[1] + 40, mid[2]));
-		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 180 15");
+		// Out past its west wall (near enough that the Elder keeps to its prey), looking at the nearest of its reaches
+		// still waiting: the world comes in round there, and what waited for it goes up. (Which way its far towers stand
+		// differs from arena to arena: the player goes 40 blocks short of the nearest, from the side of the middle.)
+		double[] far = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.nearestWaiting(mid[0] - 190, mid[2]));
+		double[] side = {mid[0] - 190, mid[1] + 40, mid[2]};
+		if (far != null) {
+			double dx = mid[0] - far[0], dz = mid[2] - far[2], len = Math.max(1, Math.sqrt(dx * dx + dz * dz));
+			side = new double[] {far[0] + dx / len * 40, Math.max(mid[1], far[1]) + 40, far[2] + dz / len * 40};
+		}
+		moveTo(ctx, sp, side);
+		if (far != null) {
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s ~ ~ ~ facing %.1f %.1f %.1f", far[0], far[1], far[2]));
+		} else {
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 180 15");
+		}
+		System.out.println("[arena] " + name + ": nearest waiting block " + java.util.Arrays.toString(far) + ", watched from " + java.util.Arrays.toString(side));
 		// (under load the world there can be slow to come in: up to a minute)
 		for (int i = 0; i < 120 && sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting()) >= held; i++) {
 			ctx.waitTicks(10);

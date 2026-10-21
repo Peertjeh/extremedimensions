@@ -74,6 +74,9 @@ public class EventTests {
 		Echo e = new Echo(Dims.of(level), o.getX(), o.getY(), o.getZ(), owner.getStringUUID(), "collapsed", 0L, 40);
 		Echo away = new Echo(Dims.of(level), o.getX() + 40, o.getY(), o.getZ(), UUID.randomUUID().toString(), "away", 0L, 30);
 		Echo own = null;
+		// Alone with its own echoes: one left by a test nearby (a Collapse there) would pay its listener as well
+		java.util.List<Echo> others = new java.util.ArrayList<>(DataStore.echoes());
+		DataStore.echoes().clear();
 		try {
 			DataStore.echoes().add(e);
 			Echoes.step(level.getServer());
@@ -115,6 +118,7 @@ public class EventTests {
 			if (own != null) {
 				DataStore.echoes().remove(own);
 			}
+			DataStore.echoes().addAll(others);
 			od.curses.remove(Penalty.DEBT.id);
 			od.atonement.remove(Penalty.DEBT.id);
 			DataStore.setEnding(ending);

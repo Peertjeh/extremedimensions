@@ -273,6 +273,24 @@ public final class ElderArena {
 		return n;
 	}
 
+	/** The block waiting for its part of the world nearest to a point, as {x, y, z} (for tests), or null if none waits. */
+	public static double[] nearestWaiting(double x, double z) {
+		BlockPos best = null;
+		double bd = Double.MAX_VALUE;
+		for (Arena a : ARENAS) {
+			for (ArrayDeque<Piece> q : a.waiting.values()) {
+				for (Piece p : q) {
+					double d = (p.pos.getX() - x) * (p.pos.getX() - x) + (p.pos.getZ() - z) * (p.pos.getZ() - z);
+					if (d < bd) {
+						bd = d;
+						best = p.pos;
+					}
+				}
+			}
+		}
+		return best == null ? null : new double[] {best.getX() + 0.5, best.getY(), best.getZ() + 0.5};
+	}
+
 	// ------------------------------------------------------------------ the arena rises and falls
 
 	/** The Elder's arena begins to rise round {@code centre} (the first air above the ground under the Elder). */
