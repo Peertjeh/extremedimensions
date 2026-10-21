@@ -28,10 +28,12 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.EnchantmentTags;
@@ -61,7 +63,7 @@ public class BindingTests {
 		ItemStack sword = new ItemStack(Items.IRON_SWORD);
 		sword.enchant(woundbane, 5);
 		Lurker lurker = ModEntities.LURKER.create(level, EntitySpawnReason.COMMAND);
-		Entity zombie = EntityType.ZOMBIE.create(level, EntitySpawnReason.COMMAND);
+		Entity zombie = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.fromNamespaceAndPath("minecraft", "zombie")).create(level, EntitySpawnReason.COMMAND);
 		DamageSource hit = level.damageSources().playerAttack(p);
 		MutableFloat onLurker = new MutableFloat(6.0f), onZombie = new MutableFloat(6.0f);
 		woundbane.value().modifyDamage(level, 5, sword, lurker, hit, onLurker);
@@ -72,10 +74,10 @@ public class BindingTests {
 		TagKey<EntityType<?>> elders = TagKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("wound_elders"));
 		TagKey<EntityType<?>> born = TagKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("wound_born"));
 		for (EntityType<?> t : List.of(ModEntities.MATRIARCH, ModEntities.FERRYMAN, ModEntities.WEAVER, ModEntities.STARVED_ONE)) {
-			check(helper, t.is(elders) && !t.is(born), "%s is not counted among the Elders", t);
+			check(helper, tagged(t, elders) && !tagged(t, born), "%s is not counted among the Elders", t);
 		}
 		for (EntityType<?> t : List.of(ModEntities.LURKER, ModEntities.HOLLOWLING, ModEntities.KEEPER, ModEntities.THINNED, ModEntities.VEIL_RAY)) {
-			check(helper, t.is(born) && !t.is(elders), "%s is not counted among the wound-born", t);
+			check(helper, tagged(t, born) && !tagged(t, elders), "%s is not counted among the wound-born", t);
 		}
 		lurker.discard();
 		zombie.discard();
@@ -304,6 +306,10 @@ public class BindingTests {
 	}
 
 	// ------------------------------------------------------------------ helpers
+
+	private static boolean tagged(EntityType<?> t, TagKey<EntityType<?>> tag) {
+		return BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(t).is(tag);
+	}
 
 	private static Holder<Enchantment> ench(ServerLevel level, net.minecraft.resources.ResourceKey<Enchantment> k) {
 		return ModEnchantments.holder(level.registryAccess(), k).orElseThrow();
