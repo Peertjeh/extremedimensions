@@ -41,6 +41,10 @@ final class RetentionTests {
 		});
 		s.run(tag + ": today's first quest is 'play 3'; A plays three matches", () -> {
 			prof().dailyQuests.set(0, new QuestProgress("play_3"));
+			// today's pick may hold 'play 3' as well (it changes by date): only one quest may finish
+			for (int i = 1; i < prof().dailyQuests.size(); i++) {
+				if (prof().dailyQuests.get(i).id.equals("play_3")) prof().dailyQuests.set(i, new QuestProgress("win_2"));
+			}
 			VARS.put("rCoins", prof().coins);
 			VARS.put("rDone", prof().questsDone);
 			VARS.put("rPass", prof().passXp);

@@ -630,3 +630,5 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
 - `botMayBuild` staat aan binnen het speelveld.
 - Een brugblok moet een botsvorm hebben: geen spinnenweb (dat zat in de loot) en geen bloemen.
 - Zelftest: een bot in SkyWars haalt twee kisten leeg en bouwt dan minstens drie blokken van zijn eiland af.
+
+**CI:** de eerste run gaf 803 geslaagd, 1 mislukt. Alle nieuwe tests slaagden. De mislukte test was "retention: the quest is done and paid", een datumafhankelijke fout in een oude test. De dagquests worden per speler en per datum gekozen. Op 21 oktober kreeg testspeler A "play 3" als tweede quest, en de test zette diezelfde quest ook op de eerste plek. Na drie matches waren er dus twee klaar in plaats van één. De test vervangt een tweede "play 3" nu door een quest die niet afloopt.
