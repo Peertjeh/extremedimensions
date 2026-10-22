@@ -16,6 +16,11 @@ import org.joml.Vector3f;
 
 import com.mojang.math.Transformation;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
+
 import com.extremedimensions.config.Config;
 import com.extremedimensions.mixin.DisplayAccess;
 import com.extremedimensions.server.BlockFlight;
@@ -104,7 +109,7 @@ public final class ElderArena {
 		final List<BlockFlight.Flight> flights = new ArrayList<>();
 		final List<Strand> strands = new ArrayList<>();
 		/** Every block it means to build, so a second arena near never builds over it. */
-		final Set<Long> claimed = new HashSet<>();
+		final LongSet claimed = new LongOpenHashSet();
 		/** Its design: the lie of its floor, what each group of blocks is, its islands and cores. */
 		ArenaDesign.Blueprint bp;
 		/** Its blocks by group. */
@@ -145,7 +150,7 @@ public final class ElderArena {
 	/** What the longest step of the last arena's design drew up (for tests). */
 	private static String lastDesignStep = "";
 	/** Every block an arena has put down, by level and position. */
-	static final Map<ServerLevel, Map<Long, Piece>> STANDING = new HashMap<>();
+	static final Map<ServerLevel, Long2ObjectMap<Piece>> STANDING = new HashMap<>();
 
 	/** The arenas standing or on their way. */
 	static List<Arena> arenas() {
@@ -164,7 +169,7 @@ public final class ElderArena {
 
 	/** The block an arena put down here, or null. */
 	static Piece standing(ServerLevel level, BlockPos pos) {
-		Map<Long, Piece> m = STANDING.get(level);
+		Long2ObjectMap<Piece> m = STANDING.get(level);
 		return m == null ? null : m.get(pos.asLong());
 	}
 
@@ -216,13 +221,13 @@ public final class ElderArena {
 		p.placed = true;
 		a.claimed.add(p.pos.asLong());
 		a.pieces.add(p);
-		STANDING.computeIfAbsent(a.level, k -> new HashMap<>()).put(p.pos.asLong(), p);
+		STANDING.computeIfAbsent(a.level, k -> new Long2ObjectOpenHashMap<>()).put(p.pos.asLong(), p);
 	}
 
 	/** A block of an arena that came down (fell as rubble or crumbled): it no longer stands. */
 	static void fell(Arena a, Piece p) {
 		p.placed = false;
-		Map<Long, Piece> m = STANDING.get(a.level);
+		Long2ObjectMap<Piece> m = STANDING.get(a.level);
 		if (m != null) {
 			m.remove(p.pos.asLong());
 		}
@@ -232,7 +237,7 @@ public final class ElderArena {
 
 	/** Whether this block was put there by an arena that still stands. */
 	public static boolean holds(Level level, BlockPos pos) {
-		Map<Long, Piece> m = level instanceof ServerLevel sl ? STANDING.get(sl) : null;
+		Long2ObjectMap<Piece> m = level instanceof ServerLevel sl ? STANDING.get(sl) : null;
 		return m != null && m.containsKey(pos.asLong());
 	}
 
@@ -256,7 +261,7 @@ public final class ElderArena {
 
 	/** A block some arena has put down in this level (for tests), or null. */
 	public static BlockPos anyStanding(ServerLevel level) {
-		Map<Long, Piece> m = STANDING.get(level);
+		Long2ObjectMap<Piece> m = STANDING.get(level);
 		return m == null || m.isEmpty() ? null : m.values().iterator().next().pos;
 	}
 
@@ -281,7 +286,7 @@ public final class ElderArena {
 	/** Blocks put down by arenas, all told (for tests). */
 	public static int standing() {
 		int n = 0;
-		for (Map<Long, Piece> m : STANDING.values()) {
+		for (Long2ObjectMap<Piece> m : STANDING.values()) {
 			n += m.size();
 		}
 		return n;
@@ -488,7 +493,7 @@ public final class ElderArena {
 			p.original = level.getBlockState(p.pos);
 			level.setBlock(p.pos, p.state, 2 | 16);
 			p.placed = true;
-			STANDING.computeIfAbsent(level, k -> new HashMap<>()).put(p.pos.asLong(), p);
+			STANDING.computeIfAbsent(level, k -> new Long2ObjectOpenHashMap<>()).put(p.pos.asLong(), p);
 		}
 		a.next = a.pieces.size();
 		a.strung = true;
@@ -744,7 +749,7 @@ public final class ElderArena {
 			level.setBlock(p.pos, p.original == null ? Blocks.AIR.defaultBlockState() : p.original, 2 | 16);
 		}
 		p.placed = false;
-		Map<Long, Piece> m = STANDING.get(level);
+		Long2ObjectMap<Piece> m = STANDING.get(level);
 		if (m != null) {
 			m.remove(p.pos.asLong());
 		}
@@ -792,7 +797,7 @@ public final class ElderArena {
 		// No neighbour updates: a lantern hung before its chain, or a wall beside air, stays as designed
 		level.setBlock(p.pos, p.state, 2 | 16);
 		p.placed = true;
-		STANDING.computeIfAbsent(level, k -> new HashMap<>()).put(p.pos.asLong(), p);
+		STANDING.computeIfAbsent(level, k -> new Long2ObjectOpenHashMap<>()).put(p.pos.asLong(), p);
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		double x = p.pos.getX() + 0.5, y = p.pos.getY() + 0.6, z = p.pos.getZ() + 0.5;
 		if (quiet) {
@@ -919,7 +924,7 @@ public final class ElderArena {
 	/** An arena that stays for good: its blocks are the world's now. */
 	private static void keep(Arena a) {
 		unstring(a);
-		Map<Long, Piece> m = STANDING.get(a.level);
+		Long2ObjectMap<Piece> m = STANDING.get(a.level);
 		if (m != null) {
 			for (Piece p : a.pieces) {
 				m.remove(p.pos.asLong());
@@ -956,7 +961,7 @@ public final class ElderArena {
 	private static void takeDown(Arena a) {
 		a.flights.forEach(BlockFlight::cancel);
 		a.strands.forEach(s -> BlockFlight.drop(s.display));
-		Map<Long, Piece> m = STANDING.get(a.level);
+		Long2ObjectMap<Piece> m = STANDING.get(a.level);
 		for (int i = a.pieces.size() - 1; i >= 0; i--) {
 			Piece p = a.pieces.get(i);
 			if (!p.placed) {

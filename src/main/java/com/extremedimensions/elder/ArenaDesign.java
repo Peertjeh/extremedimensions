@@ -2,12 +2,13 @@ package com.extremedimensions.elder;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 import com.extremedimensions.config.Config;
+
+import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -250,10 +251,10 @@ final class ArenaDesign {
 		final ServerLevel level;
 		final boolean grief;
 		final Random rnd;
-		final LinkedHashMap<Long, ElderArena.Piece> pieces = new LinkedHashMap<>();
+		final Long2ObjectLinkedOpenHashMap<ElderArena.Piece> pieces = new Long2ObjectLinkedOpenHashMap<>();
 		/** Where the players near stand (x, z): no tower or pillar rises right beside one of them. */
 		final List<double[]> people = new ArrayList<>();
-		LinkedHashMap<Long, ElderArena.Piece> group;
+		Long2ObjectLinkedOpenHashMap<ElderArena.Piece> group;
 		/** What the structure in progress is (see {@link #FLOOR}), and what each kept one was, by group. */
 		int kind = BUILT;
 		final List<Integer> kinds = new ArrayList<>();
@@ -270,7 +271,7 @@ final class ArenaDesign {
 		}
 
 		void begin() {
-			group = new LinkedHashMap<>();
+			group = new Long2ObjectLinkedOpenHashMap<>();
 			kind = BUILT;
 		}
 
@@ -351,7 +352,7 @@ final class ArenaDesign {
 
 		/** Keeps the structure if at least {@code share} of it has room (the rest is left out); false if dropped. */
 		boolean commit(double share) {
-			LinkedHashMap<Long, ElderArena.Piece> g = group;
+			Long2ObjectLinkedOpenHashMap<ElderArena.Piece> g = group;
 			group = null;
 			if (g == null || g.isEmpty()) {
 				lastGroup = -1;
@@ -367,10 +368,10 @@ final class ArenaDesign {
 			}
 			lastGroup = kinds.size();
 			kinds.add(kind);
-			for (Map.Entry<Long, ElderArena.Piece> e : g.entrySet()) {
-				if (room(e.getValue())) {
-					e.getValue().group = lastGroup;
-					pieces.put(e.getKey(), e.getValue());
+			for (ElderArena.Piece p : g.values()) {
+				if (room(p)) {
+					p.group = lastGroup;
+					pieces.put(p.pos.asLong(), p);
 				}
 			}
 			return true;

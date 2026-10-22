@@ -13,6 +13,9 @@ the heavy parts cost, and makes the download lighter.
 - **No more slow tick every five seconds on a busy server**: each player's slower work (refreshing their curses'
   effects, looking for a portal near a newcomer, the bestiary's look round, the tribe's standing) came round on the same
   tick for everyone; it now comes round on a tick of each player's own, as often as before.
+- **Arenas weigh less on memory**: the blocks an arena means to build, has claimed and has put down are kept in
+  tables of plain numbers rather than one small object each, a great arena's few hundred thousand blocks no longer
+  leaving the JVM as much to clear away mid-fight.
 - **A lighter jar**: the five music tracks are encoded afresh from their originals, a little lighter (the menu tracks
   at Vorbis quality 2, the Elder fights' at quality 1, under the din of battle): 11.4 MB of music becomes 7.9 MB, and
   the jar about 20 MB instead of 24. The sky and the title picture stay as they were: squeezing them into fewer colours

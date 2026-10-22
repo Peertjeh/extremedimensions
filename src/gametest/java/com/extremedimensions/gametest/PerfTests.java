@@ -468,13 +468,26 @@ public class PerfTests {
 			longest[0] = ElderArena.lastDesignStep();
 			restore.run();
 			double[] calm = spread(heard.get(0), 0, true), whole = spread(fight, 0, true), mod = spread(fight, 1, false);
+			// The JVM's garbage collection in the fight's ticks (the heap is every world's), and the mod's worst tick
+			// among those it did not run in
+			double gcAll = 0, gcWorst = 0;
+			List<double[]> clean = new ArrayList<>();
+			for (double[] tick : fight) {
+				gcAll += tick[2];
+				gcWorst = Math.max(gcWorst, tick[2]);
+				if (tick[2] == 0) {
+					clean.add(tick);
+				}
+			}
+			double[] modClean = spread(clean, 1, false);
 			report(elder.name().toLowerCase(java.util.Locale.ROOT) + " fight with its arena", String.format(java.util.Locale.ROOT,
 					"called in %.1f ms (its arena of %d blocks designed in %.1f ms over %d ticks, its longest step %.1f ms, %s); %d ticks: the mod's own work %.2f ms a tick on average, "
 							+ "95%% within %.2f ms, worst %.2f ms; the whole server tick %.2f ms on average, 95%% within %.2f ms, worst %.2f ms "
 							+ "(quiet before it: %.2f, %.2f, %.2f ms); at most %d blocks in the air, %d standing at the end; still fighting %s; "
-							+ "%d of %d chunks loaded at the start; the worst ticks of the mod's parts: %s",
+							+ "%d of %d chunks loaded at the start; garbage collection %.0f ms in all, at most %.0f ms in a tick, and in the %d ticks "
+							+ "without it the mod's worst was %.2f ms; the worst ticks of the mod's parts: %s",
 					called[0], design[0][1], design[0][0] / 1e6, design[0][2], design[0][3] / 1e6, longest[0], fight.size(), mod[0], mod[1], mod[2], whole[0], whole[1], whole[2], calm[0], calm[1],
-					calm[2], flyingMost[0], standing, fought, loaded[0], (2 * r + 1) * (2 * r + 1), worst));
+					calm[2], flyingMost[0], standing, fought, loaded[0], (2 * r + 1) * (2 * r + 1), gcAll, gcWorst, clean.size(), modClean[2], worst));
 			CurseTests.check(helper, design[0][1] > 1000 && flyingMost[0] > 0, "no arena rose round the %s (%s blocks, %s at most in the air)",
 					elder.name(), design[0][1], flyingMost[0]);
 			// Far above any sane cost, as the other tests here: a slow runner never fails these, a real regression does
