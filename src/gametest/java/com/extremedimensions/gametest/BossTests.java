@@ -77,7 +77,7 @@ public class BossTests {
 	}
 
 	/** {@code /tether boss matriarch} brings her, even to an operator in creative mode (not only her nest). */
-	@GameTest(maxTicks = 60)
+	@GameTest(environment = Alone.MATRIARCH_CALLED, maxTicks = 60)
 	public void anOperatorCallsTheMatriarchInCreative(GameTestHelper helper) {
 		ServerPlayer p = TestPlayers.creative(helper, "test-operator");
 		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
@@ -128,7 +128,7 @@ public class BossTests {
 		return () -> {};
 	}
 
-	@GameTest
+	@GameTest(environment = Alone.FERRYMAN_TOLL)
 	public void theFerrymanTakesHisTollAndWaivesTheFee(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper, Penalty.FERRYMANS_FEE, 2);
 		PlayerData d = DataStore.get(p.getUUID());
@@ -171,7 +171,7 @@ public class BossTests {
 		helper.succeed();
 	}
 
-	@GameTest
+	@GameTest(environment = Alone.ELDER_FORMING)
 	public void anElderCannotBeHurtWhileItForms(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
@@ -195,7 +195,7 @@ public class BossTests {
 	 * A whole arena, far from the other tests so it touches nothing of theirs: it builds (blocks flying in as block
 	 * displays), its Elder leaves, it comes apart, and the ground is as it was (plants it was built over aside).
 	 */
-	@GameTest(maxTicks = 400)
+	@GameTest(environment = Alone.ARENA_RAISED, maxTicks = 400)
 	public void anElderRaisesItsArenaAndPutsTheGroundBack(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		BlockPos origin = helper.absolutePos(BlockPos.ZERO);
@@ -305,7 +305,7 @@ public class BossTests {
 	}
 
 	/** The Weaver's ultimate sweeps its Lance round in two full rings, each its own beam. */
-	@GameTest(maxTicks = 200)
+	@GameTest(environment = Alone.WEAVER_RINGS, maxTicks = 200)
 	public void theWeaversUltimateSweepsTwoRingsOfLight(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
@@ -365,7 +365,7 @@ public class BossTests {
 	 * no arena raised (the Knot is hers), one awake at a time, her ultimate's rings of light; slain, she rests, and those
 	 * near her are told the First Knot's page and earn her advancement.
 	 */
-	@GameTest(maxTicks = 200)
+	@GameTest(environment = Alone.KNOT_MOTHER, maxTicks = 200)
 	public void theKnotMotherFightsOnTheWeaversLines(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));

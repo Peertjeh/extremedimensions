@@ -81,7 +81,7 @@ public class FrayTests {
 	 * A Frayed Ray hunts a visitor down in the Fray: it climbs over them, dives, strikes them and poisons them, and
 	 * pulls away to come again. Flown for real in the test's own sky (the test server has no Seam).
 	 */
-	@GameTest(maxTicks = 820)
+	@GameTest(environment = Alone.FRAYED_RAY, maxTicks = 820)
 	public void aFrayedRayDivesAndPoisons(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		Difficulty was = level.getDifficulty();

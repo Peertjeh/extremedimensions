@@ -102,7 +102,7 @@ public class ElderFightTests {
 	 * In a fight its health and the damage of its blows follow the players near it: one, then one more. Only players
 	 * very near count here, so the players of the tests round this one do not.
 	 */
-	@GameTest(maxTicks = 80)
+	@GameTest(environment = Alone.ELDER_HEALTH, maxTicks = 80)
 	public void anEldersHealthFollowsThoseNearIt(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		stand(helper, p, 2, 2);
@@ -189,7 +189,7 @@ public class ElderFightTests {
 	 * A flyer pulled down: wings bound (no gliding, no rockets), and free to fly again once they unbind. (Its blow is not
 	 * looked at: a test player, whose client never finishes loading, takes no damage.)
 	 */
-	@GameTest(maxTicks = 60)
+	@GameTest(environment = Alone.FLYERS_PULLED, maxTicks = 60)
 	public void anElderPullsFlyersDownAndBindsTheirWings(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		stand(helper, p, 2, 2);
@@ -218,7 +218,7 @@ public class ElderFightTests {
 	 * The gaol shuts its passenger in: walking out is undone, a bar struck often enough breaks, and through that gap
 	 * they get out.
 	 */
-	@GameTest(maxTicks = 120)
+	@GameTest(environment = Alone.FERRYMAN_GAOL, maxTicks = 120)
 	public void theFerrymansGaolHoldsUntilABarBreaks(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		stand(helper, p, 2, 2);
@@ -296,7 +296,7 @@ public class ElderFightTests {
 	}
 
 	/** The Seraphic Lance burns half as long again as it used to (alone, one beam). */
-	@GameTest(maxTicks = 230)
+	@GameTest(environment = Alone.WEAVER_LANCE, maxTicks = 230)
 	public void theWeaversLanceBurnsLonger(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		stand(helper, p, 2, 2);
@@ -349,12 +349,13 @@ public class ElderFightTests {
 				}
 			});
 		}
-		// A Lance not fired by now was put off by the fights round this one (the tests beside it raise Weavers of their
-		// own, and their blows reach far): it is asked for once more, and what stood in its way is told
+		// A Lance not fired by now is asked for once more, and what stood in its way is told (this test runs alone, so
+		// no fight beside it can be the cause)
 		helper.runAfterDelay(70, () -> {
 			if (first[0] < 0 && weaver[0] != null) {
-				System.out.println("[lance] not fired by tick 70: weaver alive " + weaver[0].isAlive() + ", driven " + WeaverService.isDriven(weaver[0])
-						+ ", " + Math.round(Math.sqrt(weaver[0].distanceToSqr(p))) + " blocks from its player, player alive " + p.isAlive());
+				System.out.println("[lance] not fired by tick 70: weaver alive " + weaver[0].isAlive() + ", health " + weaver[0].getHealth()
+						+ ", removed " + weaver[0].getRemovalReason() + ", driven " + WeaverService.isDriven(weaver[0]) + ", "
+						+ Math.round(Math.sqrt(weaver[0].distanceToSqr(p))) + " blocks from its player, player alive " + p.isAlive());
 				WeaverService.force(weaver[0], Weaver.LANCE);
 			}
 		});
@@ -373,7 +374,7 @@ public class ElderFightTests {
 	 * The Lance finds whoever stands high over the Weaver (an island, a tower top): it is aimed at them, not swept over
 	 * the ground under them.
 	 */
-	@GameTest(maxTicks = 160)
+	@GameTest(environment = Alone.LANCE_HIGH, maxTicks = 160)
 	public void theLanceFindsThoseHighOverIt(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		ServerPlayer p = cursed(helper);
@@ -428,7 +429,7 @@ public class ElderFightTests {
 	}
 
 	/** A shockwave runs up a step after whoever stands on it (it used to pass under anyone a block over the Elder's feet). */
-	@GameTest(maxTicks = 80)
+	@GameTest(environment = Alone.SHOCKWAVE_STEP, maxTicks = 80)
 	public void aShockwaveRunsUpAStep(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		ServerPlayer p = cursed(helper);

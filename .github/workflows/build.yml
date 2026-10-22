@@ -15,6 +15,9 @@ jobs:
         with:
           java-version: '25'
           distribution: 'microsoft'
+          # Gradle, the game and its libraries are kept between runs (in every job): fewer downloads, so fewer chances
+          # for a server hiccup to fail the build, and a quicker start
+          cache: 'gradle'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
       # Building also runs the server game tests on a headless dedicated server; a failing test fails the build
@@ -55,6 +58,7 @@ jobs:
         with:
           java-version: '25'
           distribution: 'microsoft'
+          cache: 'gradle'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
       - name: virtual display
@@ -100,6 +104,7 @@ jobs:
         with:
           java-version: '25'
           distribution: 'microsoft'
+          cache: 'gradle'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
       # Sodium and Iris draw with OpenGL (the game alone falls back to Vulkan): the display needs GLX, in software

@@ -150,6 +150,9 @@ against English at build time (same keys, same placeholders).
 CI builds every push, runs the server tests, the client test with its screenshots, and the compatibility run; the jar
 is in the run's **Artifacts**.
 
+The server tests run side by side in batches. A test that wakes an Elder (or otherwise reaches past its own walls)
+gets an environment of its own from `Alone` in the test sources, so it runs in a batch by itself.
+
 ## Project layout
 
 | Package | What lives there |

@@ -1,5 +1,22 @@
 # Changelog
 
+## 3.0.3: Steady Ground
+
+Nothing changes in play: this release makes the builds trustworthy, so a red build means a real fault.
+
+### Tests
+- **Every test that wakes an Elder runs alone**, in a batch of its own (thirteen of them: the Matriarch, Ferryman,
+  Weaver and Knot Mother fights, the arena, the gaol, the Lance, the shockwave), and so does the Frayed Ray's hunt. The
+  game runs the tests of a batch side by side in one world, and a fight reached past its own walls: a Weaver's beams
+  killed the Frayed Ray test's prey, and the fights changed settings they all share. Two tests failed now and then
+  for it (*the Frayed Ray never struck its prey*, *the Lance never fired*), on commits where the same tests passed in
+  the next run.
+- When the Lance has not fired by its 70th tick, the test now also says the Weaver's health and why it left the world.
+
+### Build
+- Gradle, the game and its libraries are kept between CI runs, so a download that fails on the way (a server's 502)
+  is far less likely to fail the build, and every job starts sooner.
+
 ## 3.0.2: The Boundary
 
 ### Changed
