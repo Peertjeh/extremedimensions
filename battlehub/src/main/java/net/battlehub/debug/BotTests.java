@@ -201,7 +201,7 @@ final class BotTests {
 		s.run(tag + ": A goes over to the bot's island, three blocks in front of it", () -> {
 			Match m = matchOfA();
 			BotPlayer b = botsIn(m).get(0);
-			net.minecraft.world.phys.Vec3 look = b.getLookAngle();
+			Vec3 look = b.getLookAngle();
 			double ln = Math.max(1e-6, Math.hypot(look.x, look.z));
 			PartyTests.tp(p(A), b.getX() + look.x / ln * 3, b.getY(), b.getZ() + look.z / ln * 3);
 		});
