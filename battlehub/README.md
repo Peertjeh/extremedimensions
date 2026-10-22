@@ -139,12 +139,19 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   * **The Bridge**: they head for the other goal, in 2v2 one keeps the own goal. They walk the path (or a bridge
     someone built) and only build their own where there is no way across: sneaking to the edge, looking at the side
     of the block and placing clay like a player.
-* *A learned fight (sword duels and boxing)*: a neural network trained outside Minecraft (`battlehub/ml`: a fast
-  simulation of the game's melee, PPO with self-play) does the fighting itself: walking, strafing, sprinting,
-  jumping, turning and clicking, every two ticks, from what the bot can see. The mind still decides when to fight,
-  heal or go for something else; the crosshair check of every click stays. Each difficulty level has its own model,
-  picked by Elo rating (beginner about as strong as the scripted fight, master about 800 Elo above it), with a
-  little delay, aim noise and a turn limit on the lower levels. `bots.learnedCombat` turns it off.
+* *A learned fight in every melee mode*: a neural network trained outside Minecraft (`battlehub/ml`: a fast
+  simulation of the game, PPO with self-play) does the fighting itself: walking, strafing, sprinting, jumping,
+  turning and clicking, every two ticks, from what the bot can see. Model v2 knows the ground round it (edges, the
+  void, steps and walls, how much ground lies behind its target, to knock it off a bridge or an island), both
+  kits (damage per hit against the armor, the weapons' cooldown and knockback, speed, jump, size and the like from
+  The Bridge: Chaos' effects), what it carries, an arrow coming at it and a second enemy. It fights in SkyWars,
+  Bed Wars, the Hunger Games, The Bridge (also Chaos, duos and 1v1v1v1), FFA, 1v2 and 1v3, sumo, the sword, axe,
+  boxing and Build UHC duels, KOTH, CTF, LMS and the tournaments; mace and bow fights stay scripted. The mind still
+  decides when to fight, heal, shoot or go for the objective (near an objective the model takes over only for
+  enemies within 8 blocks); eating, the bow and wind charges stay the bot's own (`bots.learnedItems` lets the
+  model use them, experimental). The crosshair check of every click stays. Each difficulty level has its own
+  model, picked by Elo rating, with a little delay, aim noise and a turn limit on the lower levels.
+  `bots.learnedCombat` turns it off; model v1 (1.33, sword and boxing only) is still there (`bots.learnedSpec`).
 * Their names start with `Bot_`. Nothing about them is saved (no player files, no profiles), they never show
   up on a leaderboard, and their join and leave messages stay out of chat.
 * **One real player with bots earns nothing**: no coins, no XP, no quest, pass or achievement progress, and
@@ -644,7 +651,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
     people (alone with bots always pays nothing), the fighting styles handed out (`archetypes`), how much each
     bot differs from its style (`personalityVariation`, 0 .. 0.2), whether bots remember players between fights
     (`learning`) and across restarts (`learningPersistent`, in `battlehub/ai/`), whether the learned model fights
-    (`learnedCombat`) and in which modes (`learnedModes`, default sword and boxing), from what tick time bots think
+    (`learnedCombat`), in which modes (`learnedModes`, default every melee mode), with which model (`learnedSpec`,
+    2 or 1) and whether it uses the items itself (`learnedItems`, off), from what tick time bots think
     less often (`slowAboveMspt`), and how soon
     a bot leaves after its match
   * `effects`: the match intro on/off and its seconds, the victory shot, the killfeed and its number of lines
