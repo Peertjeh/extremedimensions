@@ -359,20 +359,28 @@ final class ArenaDesign {
 				lastGroup = -1;
 				return false;
 			}
+			ElderArena.Piece[] all = g.values().toArray(new ElderArena.Piece[0]);
+			boolean[] fits = new boolean[all.length];
 			int ok = 0;
-			for (ElderArena.Piece p : g.values()) {
-				ok += room(p) ? 1 : 0;
+			for (int i = 0; i < all.length; i++) {
+				fits[i] = room(all[i]);
+				ok += fits[i] ? 1 : 0;
 			}
-			if (ok < share * g.size()) {
+			return keep(all, fits, ok, share, kind);
+		}
+
+		/** Keeps a structure whose pieces were each looked at for room ({@code fits}), if enough of them had it. */
+		boolean keep(ElderArena.Piece[] all, boolean[] fits, int ok, double share, int kind) {
+			if (ok < share * all.length) {
 				lastGroup = -1;
 				return false;
 			}
 			lastGroup = kinds.size();
 			kinds.add(kind);
-			for (ElderArena.Piece p : g.values()) {
-				if (room(p)) {
-					p.group = lastGroup;
-					pieces.put(p.pos.asLong(), p);
+			for (int i = 0; i < all.length; i++) {
+				if (fits[i]) {
+					all[i].group = lastGroup;
+					pieces.put(all[i].pos.asLong(), all[i]);
 				}
 			}
 			return true;
@@ -417,6 +425,8 @@ final class ArenaDesign {
 		private static final int COLUMNS_STEP = 256;
 		/** Blocks of the finished design gathered up in one step. */
 		static final int PIECES_STEP = 25_000;
+		/** Blocks of a structure looked at for room in one step. */
+		private static final int JUDGE_STEP = 8_000;
 
 		private final Plan plan;
 		private final Blueprint bp = new Blueprint();
@@ -545,7 +555,22 @@ final class ArenaDesign {
 						grow = grows[layer * 2] + plan.rnd.nextDouble() * (grows[layer * 2 + 1] - grows[layer * 2]);
 						up = (int) Math.round(span * (heights[layer * 2] + plan.rnd.nextDouble() * (heights[layer * 2 + 1] - heights[layer * 2])));
 					}
-					isle(plan, pal, style, (int) Math.round(cx + Math.cos(a) * r), gy + 12 + up, (int) Math.round(cz + Math.sin(a) * r), grow);
+					// A great island is drawn up a layer a step, and judged a share at a time
+					Isling w = isleBegin(plan, (int) Math.round(cx + Math.cos(a) * r), gy + 12 + up, (int) Math.round(cz + Math.sin(a) * r), grow);
+					List<Step> parts = new ArrayList<>();
+					for (int k = 0; k < w.depth(); k++) {
+						int layer = k;
+						parts.add(new Step("island", () -> isleLayer(plan, pal, w, layer)));
+					}
+					parts.add(new Step("island", () -> {
+						isleUnder(plan, pal, style, w);
+						next(judge(0.9, kept -> {
+							if (kept) {
+								plan.isles.add(new Isle(w.x(), w.top(), w.z(), w.r0(), plan.lastGroup));
+							}
+						}));
+					}));
+					next(parts);
 				}));
 			}
 			steps.add(new Step("chains and the whole", () -> {
@@ -593,6 +618,36 @@ final class ArenaDesign {
 					}
 				})));
 			}));
+		}
+
+		/**
+		 * Steps that judge the structure under way: each of its pieces looked at for room, a share a step, then the
+		 * structure kept if at least {@code share} of it had room ({@code then} told which).
+		 */
+		private List<Step> judge(double share, java.util.function.Consumer<Boolean> then) {
+			Long2ObjectLinkedOpenHashMap<ElderArena.Piece> g = plan.group;
+			int kind = plan.kind;
+			plan.group = null;
+			if (g == null || g.isEmpty()) {
+				plan.lastGroup = -1;
+				then.accept(false);
+				return List.of();
+			}
+			ElderArena.Piece[] all = g.values().toArray(new ElderArena.Piece[0]);
+			boolean[] fits = new boolean[all.length];
+			int[] ok = {0};
+			List<Step> parts = new ArrayList<>();
+			for (int from = 0; from < all.length; from += JUDGE_STEP) {
+				int lo = from, hi = Math.min(all.length, from + JUDGE_STEP);
+				parts.add(new Step("island", () -> {
+					for (int i = lo; i < hi; i++) {
+						fits[i] = plan.room(all[i]);
+						ok[0] += fits[i] ? 1 : 0;
+					}
+				}));
+			}
+			parts.add(new Step("island", () -> then.accept(plan.keep(all, fits, ok[0], share, kind))));
+			return parts;
 		}
 
 		/** Steps that take the place of the one being done, in their order, before everything after it. */
@@ -1470,7 +1525,11 @@ final class ArenaDesign {
 	 * things growing on it, a cone of stone narrowing to a spike, lanterns on chains; {@code grow} times its usual
 	 * breadth (and deeper, a little less).
 	 */
-	private static void isle(Plan plan, Palette pal, int style, int x, int top, int z, double grow) {
+	/** An island under way: where it hangs, how broad and deep, as {@link #isleBegin} drew it. */
+	private record Isling(int x, int top, int z, double grow, double r0, int depth, int dome) {}
+
+	/** An island begins: how broad and deep it is (its group begun; its layers follow, see {@link #isleLayer}). */
+	private static Isling isleBegin(Plan plan, int x, int top, int z, double grow) {
 		Random rnd = plan.rnd;
 		double r0 = (1.8 + rnd.nextDouble() * 1.6) * grow;
 		int depth = (int) Math.round((4 + rnd.nextInt(3)) * Math.pow(grow, 0.8));
@@ -1478,32 +1537,43 @@ final class ArenaDesign {
 		plan.kind = ISLE;
 		// A larger island's top swells into a low hill
 		int dome = (int) Math.min(4, Math.floor(r0 / 4));
-		for (int i = 0; i < depth; i++) {
-			double ri = r0 * Math.pow(1 - i / (double) depth, 0.9) + 0.35;
-			int ir = (int) Math.ceil(ri);
-			for (int dx = -ir; dx <= ir; dx++) {
-				for (int dz = -ir; dz <= ir; dz++) {
-					double d = Math.sqrt(dx * dx + dz * dz) + (noise(x + dx, z + dz + i * 7) - 0.5) * 0.9;
-					if (d > ri) {
-						continue;
-					}
-					if (i > 0) {
-						plan.air(x + dx, top - i, z + dz, noise(x * 3 + dx, top - i + dz * 5) > 0.78 ? pal.isleVein : pal.isle);
-						continue;
-					}
-					int rise = dome <= 0 ? 0 : (int) Math.floor(dome * Math.max(0, 1 - (d / ri) * (d / ri)));
-					for (int k = 0; k < rise; k++) {
-						plan.air(x + dx, top + k, z + dz, pal.isle);
-					}
-					// Its top is of more than one stone, and things grow on it here and there
-					double n = noise(x * 5 + dx * 3 + 1, z * 5 + dz * 3 + 3);
-					plan.air(x + dx, top + rise, z + dz, n < 0.62 ? pal.isleTop : n < 0.82 ? pal.isleTop2 : pal.isleTop3);
-					if (noise(x + dx * 7 + 11, z + dz * 7 + 5) > 0.93) {
-						plan.air(x + dx, top + rise + 1, z + dz, pal.decor);
-					}
+		return new Isling(x, top, z, grow, r0, depth, dome);
+	}
+
+	/** Layer {@code i} of an island (its top at 0, narrowing as it goes down). */
+	private static void isleLayer(Plan plan, Palette pal, Isling w, int i) {
+		int x = w.x(), top = w.top(), z = w.z(), depth = w.depth(), dome = w.dome();
+		double ri = w.r0() * Math.pow(1 - i / (double) depth, 0.9) + 0.35;
+		int ir = (int) Math.ceil(ri);
+		for (int dx = -ir; dx <= ir; dx++) {
+			for (int dz = -ir; dz <= ir; dz++) {
+				double d = Math.sqrt(dx * dx + dz * dz) + (noise(x + dx, z + dz + i * 7) - 0.5) * 0.9;
+				if (d > ri) {
+					continue;
+				}
+				if (i > 0) {
+					plan.air(x + dx, top - i, z + dz, noise(x * 3 + dx, top - i + dz * 5) > 0.78 ? pal.isleVein : pal.isle);
+					continue;
+				}
+				int rise = dome <= 0 ? 0 : (int) Math.floor(dome * Math.max(0, 1 - (d / ri) * (d / ri)));
+				for (int k = 0; k < rise; k++) {
+					plan.air(x + dx, top + k, z + dz, pal.isle);
+				}
+				// Its top is of more than one stone, and things grow on it here and there
+				double n = noise(x * 5 + dx * 3 + 1, z * 5 + dz * 3 + 3);
+				plan.air(x + dx, top + rise, z + dz, n < 0.62 ? pal.isleTop : n < 0.82 ? pal.isleTop2 : pal.isleTop3);
+				if (noise(x + dx * 7 + 11, z + dz * 7 + 5) > 0.93) {
+					plan.air(x + dx, top + rise + 1, z + dz, pal.decor);
 				}
 			}
 		}
+	}
+
+	/** An island's spike below it and what hangs from under its edge (then it is judged, see {@link Draft}). */
+	private static void isleUnder(Plan plan, Palette pal, int style, Isling w) {
+		Random rnd = plan.rnd;
+		int x = w.x(), top = w.top(), z = w.z(), depth = w.depth();
+		double grow = w.grow(), r0 = w.r0();
 		int spike = (int) Math.round((2 + rnd.nextInt(3)) * Math.sqrt(grow));
 		for (int i = 0; i < spike; i++) {
 			plan.air(x, top - depth - i, z, i == spike - 1 ? pal.isleTip : style == 1 && i % 2 == 0 ? pal.isleVein : pal.isle);
@@ -1526,9 +1596,6 @@ final class ArenaDesign {
 			} else {
 				plan.air(hx, under, hz, pal.under);
 			}
-		}
-		if (plan.commit(0.9)) {
-			plan.isles.add(new Isle(x, top, z, r0, plan.lastGroup));
 		}
 	}
 
