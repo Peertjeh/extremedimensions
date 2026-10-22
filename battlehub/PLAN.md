@@ -983,3 +983,7 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
     - een doel waar niemand kan staan, wordt bereikt vanaf de rand: tot 2,5 blok;
     - "standing on an edge" telt alleen nog als de bot naar die rand toe beweegt, of als hij stilstaat zonder doel (met een test in `PolicyTest`);
     - `BotPath` zoekt het startblok onder elk deel van de voeten.
+  - **Bekend punt, nog open:** een rusher (veel sprinten, weinig voorzichtig) komt niet altijd goed de smalle brug op. Hij remt bij de ingang omdat zijn snelheid een beetje schuin staat, blijft dan hangen, stapt na twee seconden opzij en valt soms.
+    - Eerder bouwde hij daar naast de brug; dat is nu weg.
+    - De v2-Bridge-test zet A daarom op het eiland van de bot (het model vecht daar zoals bedoeld), zodat die test niet van het oversteken afhangt.
+    - Een oplossing voor het oversteken (bijvoorbeeld niet sprinten op smalle grond, of de rem langs het pad laten kijken in plaats van langs de snelheid) volgt apart.

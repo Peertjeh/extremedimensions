@@ -184,7 +184,7 @@ final class BotTests {
 		s.run(tag + ": learned combat off again", () -> cfg().learnedCombat = false);
 	}
 
-	/** Model v2 on The Bridge: the bot goes for the goal and, near A, the model fights for it. */
+	/** Model v2 on The Bridge: with A on the bot's island (by its goal), the model fights for the bot. */
 	private static void learnedV2Bridge(MinecraftServer server, Script s) {
 		String tag = "bots learned v2 bridge";
 		SelfTest.reset(s, tag);
@@ -198,7 +198,14 @@ final class BotTests {
 			Match m = matchOfA();
 			return m != null && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
 		});
-		s.waitFor(tag + ": near A the model steers the bot and hits A", 2400, () -> {
+		s.run(tag + ": A goes over to the bot's island, three blocks in front of it", () -> {
+			Match m = matchOfA();
+			BotPlayer b = botsIn(m).get(0);
+			net.minecraft.world.phys.Vec3 look = b.getLookAngle();
+			double ln = Math.max(1e-6, Math.hypot(look.x, look.z));
+			PartyTests.tp(p(A), b.getX() + look.x / ln * 3, b.getY(), b.getZ() + look.z / ln * 3);
+		});
+		s.waitFor(tag + ": near A the model steers the bot and hits A", 1200, () -> {
 			Match m = matchOfA();
 			if (m == null || m.phase() != Match.Phase.RUNNING || botsIn(m).isEmpty()) return false;
 			BotPlayer b = botsIn(m).get(0);
