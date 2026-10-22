@@ -453,6 +453,11 @@ public final class HubConfig {
 		/** 2: the v2 model where it is listed; 1: only v1, in sword and boxing. */
 		public int learnedSpec = 2;
 		/**
+		 * The v2 model also chooses what to hold and uses it (bow, food, golden apples, pearls, wind charges, shield).
+		 * Off: the model fights, the bot's own rules eat, shoot and throw (the model did not learn its items yet).
+		 */
+		public boolean learnedItems = false;
+		/**
 		 * From how long a server tick (milliseconds, smoothed; 50 is the limit) bots think less often: one step slower
 		 * for every 5 ms above this, at most four times as slow. Dangers still make them think at once.
 		 */

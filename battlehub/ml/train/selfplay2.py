@@ -9,7 +9,12 @@ dummy that only walks about. A curriculum widens three things over the first ste
 Checkpoints every --save-every steps; each one is evaluated in a separate, low-priority process (train/eval2.py) that
 writes <run>/eval.jsonl. --resume continues a run.
 
+A follow-up run (--init <checkpoint>) starts from a trained policy with every scenario and the pool from the start;
+--items deals mostly kits with items (bows, golden apples, food, pearls, wind charges, shields) and --ent raises the
+exploration, for learning to use them.
+
     python train/selfplay2.py --run runs/v2 --steps 60000000
+    python train/selfplay2.py --run runs/v2items --init runs/v2/ckpt_060000000.zip --pool-from runs/v2 --items --ent 0.02 --steps 20000000
 """
 import argparse
 import glob
@@ -31,8 +36,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 # ---------------------------------------------------------------------------------------------- arenas in workers
 
-def worker(conn, n, seed, max_ticks):
-    b = Batch2(n, seed=seed, max_ticks=max_ticks)
+ITEM_FAMILIES = {"sword": 0.6, "axe": 0.8, "mace": 0.8, "bow": 1.2, "koth": 0.2, "ctf": 0.6, "lms": 1.0, "ffa": 0.8, "bridge": 0.8,
+                 "boxing": 0.1, "build_uhc": 1.2, "sumo": 0.2, "bedwars": 1.0, "loot": 1.5}
+
+
+def worker(conn, n, seed, max_ticks, items=False):
+    from pvp_sim2.env import Scenario
+    sc = Scenario()
+    if items:
+        sc.families = dict(ITEM_FAMILIES)
+    b = Batch2(n, seed=seed, max_ticks=max_ticks, scenario=sc)
     while True:
         cmd, data = conn.recv()
         if cmd == "reset":
@@ -136,7 +149,7 @@ class OpponentPool2:
 
 # ---------------------------------------------------------------------------------------------- the VecEnv
 
-def make_vecenv(workers, per, seed, pool, cur, max_ticks):
+def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False):
     from gymnasium import spaces
     from stable_baselines3.common.vec_env import VecEnv
 
@@ -146,7 +159,7 @@ def make_vecenv(workers, per, seed, pool, cur, max_ticks):
             self.conns, self.procs = [], []
             for w in range(workers):
                 a, b = ctx.Pipe()
-                p = ctx.Process(target=worker, args=(b, per, seed * 100 + w, max_ticks), daemon=True)
+                p = ctx.Process(target=worker, args=(b, per, seed * 100 + w, max_ticks, items), daemon=True)
                 p.start()
                 self.conns.append(a)
                 self.procs.append(p)
@@ -248,6 +261,10 @@ def main():
     ap.add_argument("--max-ticks", type=int, default=1600)
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--no-eval", action="store_true")
+    ap.add_argument("--init", default=None, help="start from this checkpoint's policy, with the full curriculum")
+    ap.add_argument("--pool-from", default=None, help="fill the opponent pool with this run's checkpoints")
+    ap.add_argument("--items", action="store_true", help="mostly kits with items")
+    ap.add_argument("--ent", type=float, default=0.01)
     a = ap.parse_args()
     import torch
     from stable_baselines3 import PPO
@@ -257,9 +274,14 @@ def main():
     torch.set_num_threads(a.threads)
     os.makedirs(a.run, exist_ok=True)
     rng = np.random.default_rng(a.seed)
-    cur = Curriculum()
+    cur = Curriculum() if not a.init else Curriculum(warmup=0, widen=1, fade_from=0, fade_to=1)
     pool = OpponentPool2(rng, cur)
-    venv = make_vecenv(a.workers, a.per, a.seed, pool, cur, a.max_ticks)
+    venv = make_vecenv(a.workers, a.per, a.seed, pool, cur, a.max_ticks, a.items)
+    if a.pool_from:
+        for path in sorted(glob.glob(os.path.join(a.pool_from, "ckpt_*.zip")))[::2]:
+            m = PPO.load(path, device="cpu")
+            pool.add(FrozenPolicy(m.policy, int(os.path.basename(path)[5:14])))
+        print("pool from", a.pool_from, len(pool.frozen), flush=True)
     norm_path = os.path.join(a.run, "vecnormalize.pkl")
     ckpts = sorted(glob.glob(os.path.join(a.run, "ckpt_*.zip")))
     if a.resume and ckpts:
@@ -272,8 +294,12 @@ def main():
     else:
         env = VecNormalize(venv, norm_obs=False, norm_reward=True, gamma=0.99)
         model = PPO("MlpPolicy", env, n_steps=a.n_steps, batch_size=a.batch, n_epochs=4, learning_rate=3e-4, gamma=0.99,
-                    gae_lambda=0.95, clip_range=0.2, ent_coef=0.01, vf_coef=0.5, max_grad_norm=0.5,
+                    gae_lambda=0.95, clip_range=0.2, ent_coef=a.ent, vf_coef=0.5, max_grad_norm=0.5,
                     policy_kwargs=dict(net_arch=dict(pi=[256, 256], vf=[256, 256])), seed=a.seed, device="cpu", verbose=0)
+        if a.init:
+            src = PPO.load(a.init, device="cpu")
+            model.policy.load_state_dict(src.policy.state_dict())
+            print("policy from", a.init, flush=True)
     with open(os.path.join(a.run, "config.json"), "w") as f:
         json.dump(vars(a) | {"spec_sha256": SPEC2.sha256}, f, indent=1)
     log_path = os.path.join(a.run, "progress.jsonl")

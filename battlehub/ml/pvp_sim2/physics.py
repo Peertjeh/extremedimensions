@@ -12,8 +12,9 @@ after a hit and knockback, as the game computes them):
       bow       drawing while held, the arrow leaves on letting go: power ((t/20)^2 + 2 t/20) / 3, speed 3 * power, the
                 game's gravity 0.05 and drag 0.99, damage ceil(speed * (2 + power level bonus)), a full draw a
                 critical one (up to half of it more);
-      food      eaten after 32 ticks when not full: food and saturation;
-      golden    eaten after 32 ticks: 4 absorption, regeneration II for 5 seconds;
+      food      eaten after 32 ticks when not full: food and saturation; one press starts it and it goes on until
+                done (unless the hand changes);
+      golden    the same, 32 ticks: 4 absorption, regeneration II for 5 seconds;
       apple
       pearl     thrown at 1.5 (gravity 0.03): where it lands the thrower is put, with 5 damage; lost in the void;
                 20 ticks until the next;
@@ -249,17 +250,21 @@ class World:
         shoot = bow & release & f.using & (bow_power(f.use_ticks) >= 0.1) & (f.arrows > 0)
         if shoot.any():
             self._shoot(shoot)
-        # food and golden apples: eat after 32 ticks
+        # food and golden apples: eaten after 32 ticks; once started it goes on until done (one press, as a player who
+        # means to eat holds the button), unless the hand changes
         edible = ((h == 2) & (f.food_items > 0) & (f.food < 20)) | ((h == 3) & (f.gapples > 0))
+        eating = f.using & ((h == 2) | (h == 3)) & edible
         # the shield: up while held with the weapon in hand
         shield = (h == 0) & f.shield & (f.shield_cd == 0)
-        holding = use & ((bow & (f.arrows > 0)) | edible | shield)
+        holding = (use & ((bow & (f.arrows > 0)) | edible | shield)) | eating
         f.use_ticks = np.where(holding, np.where(f.using, f.use_ticks + 1, 1), 0)
         f.using = holding
         done = holding & ((h == 2) | (h == 3)) & (f.use_ticks >= EAT_TICKS)
         if done.any():
             self._eat(done)
             f.use_ticks = np.where(done, 0, f.use_ticks)
+            # the next only while the button is still down
+            f.using = np.where(done, use, f.using)
         # pearls and wind charges: thrown on pressing
         pearl = press & (h == 4) & (f.pearls > 0) & (f.pearl_cd == 0)
         wind = press & (h == 5) & (f.winds > 0) & (f.wind_cd == 0)

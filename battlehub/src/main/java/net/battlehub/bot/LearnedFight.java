@@ -43,8 +43,10 @@ import net.minecraft.world.phys.Vec3;
  * simulation (ml/pvp_sim2) was trained on from what the bot knows of the world (its kit and effects, what it carries,
  * what it sees of its target, a second enemy, a projectile coming at it, the ground round it and behind its target),
  * lets the model of the bot's level choose, and holds the choice: movement and jump, the click on the decision's first
- * tick, the turn spread over its ticks, and what to hold and whether to keep the right mouse button down (BotBrain
- * carries those out: drawing and loosing the bow, eating, blocking, throwing a pearl or a wind charge).
+ * tick, the turn spread over its ticks, and (with bots.learnedItems) what to hold and whether to keep the right mouse
+ * button down (BotBrain carries those out: drawing and loosing the bow, eating, blocking, throwing a pearl or a wind
+ * charge). Without it the bot holds its weapon and eats, shoots and throws by its own rules, as the scripted fight
+ * does.
  * <p>
  * The scripted mind still decides when to fight. With an objective (a bed, a goal, a hill) the model only fights
  * enemies within {@link #ENGAGE} blocks; the objective, healing at a distance, edge safety and building stay scripted.
@@ -94,6 +96,9 @@ final class LearnedFight implements MeleeController {
 		Match m = Matches.of(bot.getUUID());
 		if (!active(m) || s.target() == null) return null;
 		if (s.goal() != null && s.distance() > ENGAGE) return null;
+		boolean items = ConfigManager.config().bots.learnedItems;
+		// without the model's items the bow stays the bot's own (the mind's shooting)
+		if (tactic == Tactic.SHOOT && !items) return null;
 		ServerPlayer opp = bot.level().getServer().getPlayerList().getPlayer(s.target().id());
 		if (opp == null) return null;
 		CombatModels.Family fam = CombatModels.V2;
@@ -109,8 +114,10 @@ final class LearnedFight implements MeleeController {
 		boolean first = step == 0;
 		step++;
 		turn(spec, lv);
+		// the model's hand and right button only with bots.learnedItems; else the bot keeps to its weapon and its own
+		// rules for eating, the bow and wind charges
 		return new Intent(current.forward(), current.strafe(), current.sprint(), current.jump(), null, null, first && current.attack(), false,
-				false, false, false, current.hand(), current.use());
+				false, false, false, items ? current.hand() : -1, items && current.use());
 	}
 
 	// ------------------------------------------------------------------ what it knows

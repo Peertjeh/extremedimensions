@@ -1011,7 +1011,7 @@ final class BotBrain {
 
 	/**
 	 * What the learned model holds and does with the right mouse button: the weapon (with the shield up while held),
-	 * the bow (drawn while held, loosed on letting go), food and golden apples (eaten while held), pearls and wind
+	 * the bow (drawn while held, loosed on letting go), food and golden apples (one press eats one), pearls and wind
 	 * charges (thrown on pressing). Something it does not carry in the hotbar leaves the hand as it is.
 	 */
 	private void learnedHand(Match m, Intent in) {
@@ -1031,17 +1031,17 @@ final class BotBrain {
 		boolean usingMain = bot.isUsingItem() && bot.getUsedItemHand() == InteractionHand.MAIN_HAND;
 		switch (hand) {
 			case "weapon" -> shield(in.use());
-			case "bow", "food", "gapple" -> {
+			case "bow" -> {
 				if (in.use()) {
 					if (!bot.isUsingItem()) BotActions.use(bot, InteractionHand.MAIN_HAND);
 				} else if (usingMain) {
-					if (hand.equals("bow")) {
-						bot.releaseUsingItem();
-						shots++;
-					} else {
-						stopUsing();
-					}
+					bot.releaseUsingItem();
+					shots++;
 				}
+			}
+			// one press eats the whole thing (as in the simulation); switching the hand stops it
+			case "food", "gapple" -> {
+				if (in.use() && !bot.isUsingItem()) BotActions.use(bot, InteractionHand.MAIN_HAND);
 			}
 			default -> {
 				if (press) {

@@ -39,6 +39,24 @@ def play(policy, opponent, terrain, family, count, mode, episodes=48, n=32, seed
     return res
 
 
+def items(policy, terrain, family, decisions=4800, n=32, seed=0):
+    """How the policy uses its items against the scripted bot, per 100 of its decisions: arrows fired, things eaten,
+    pearls and wind charges thrown, decisions blocking with the shield."""
+    b = Batch2(n, seed=seed, fixed={"terrain": terrain, "family": family, "count": 2})
+    obs = b.reset()
+    opp = Scripted2(skill=0.8, seed=seed)
+    fired = ate = threw = block = 0
+    for _ in range(decisions // n):
+        obs, r, d, info = b.step(np.stack([policy(obs[:, 0]), opp(obs[:, 1]), opp(obs[:, 2])], axis=1))
+        w = b.w
+        fired += int(w.fired[:, 0].sum())
+        ate += int(w.ate[:, 0].sum())
+        threw += int(w.threw[:, 0].sum())
+        block += int(w.f.blocking()[:, 0].sum())
+    k = 100.0 / decisions
+    return {"arrows": round(fired * k, 2), "eaten": round(ate * k, 2), "thrown": round(threw * k, 2), "blocking": round(block * k, 2)}
+
+
 def evaluate(policy, episodes=48, seed=0):
     out = {}
     wins = total = 0
@@ -50,6 +68,8 @@ def evaluate(policy, episodes=48, seed=0):
     res = play(policy, Dummy2(seed=seed), "bridge", "bridge", 2, "1v1", episodes // 2, seed=seed + 99)
     out["dummy bridge"] = [int(v) for v in res]
     out["win_vs_scripted"] = round(wins / max(1, total), 3)
+    out["items"] = {"%s/%s" % (t, f): items(policy, t, f, seed=seed) for t, f in
+                    (("walled", "bow"), ("walled", "sword"), ("walled", "axe"), ("islands", "loot"), ("walled", "mace"))}
     return out
 
 

@@ -152,6 +152,23 @@ def test_a_golden_apple_gives_absorption_and_four_health_over_five_seconds():
     assert w.f.health[0, 0] == pytest.approx(14.0)
 
 
+def test_one_press_eats_a_whole_golden_apple_and_no_more():
+    w = world(kit=K.sword(None))
+    w.natural_regen[0] = False
+    w.f.health[0, 0] = 10.0
+    tick(w, 1, hand=3)
+    tick(w, 1, use=True, hand=3)
+    tick(w, 40, hand=3)
+    assert w.f.gapples[0, 0] == 2
+    assert w.f.absorption[0, 0] == pytest.approx(4.0)
+    assert not w.f.using[0, 0]
+    # switching away stops it
+    tick(w, 1, use=True, hand=3)
+    tick(w, 5, hand=3)
+    tick(w, 30, hand=0)
+    assert w.f.gapples[0, 0] == 2
+
+
 def test_food_is_only_eaten_when_not_full():
     kit = K.lms(None)
     w = world(kit=kit)
