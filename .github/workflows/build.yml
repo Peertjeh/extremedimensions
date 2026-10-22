@@ -30,6 +30,10 @@ jobs:
           jar=$(ls build/libs/*.jar | grep -v sources | head -1)
           if unzip -l "$jar" | grep -q "com/terraformersmc/"; then echo "Mod Menu stand-ins in $jar"; exit 1; fi
           unzip -l "$jar" | grep -q "assets/extremedimensions/lang/nl_nl.json" || { echo "nl_nl.json missing from $jar"; exit 1; }
+          # What a player downloads, and a tripwire for an asset added by mistake (the jar is about 20 MB)
+          ls -l build/libs/*.jar | awk '{printf "JAR %s %.1f MB\n", $NF, $5 / 1048576}'
+          size=$(stat -c %s "$jar")
+          if [ "$size" -gt 31457280 ]; then echo "$jar is $((size / 1048576)) MB, over the 30 MB this mod allows itself"; exit 1; fi
       # Development aid: a commit message with [probe] prints the signatures of the classes in tools/probe.txt (and
       # finds classes by the patterns after a # in that file) from the game jar the build used
       - name: api probe

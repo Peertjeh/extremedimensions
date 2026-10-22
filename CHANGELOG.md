@@ -2,7 +2,14 @@
 
 ## 3.0.3: Steady Ground
 
-Nothing changes in play: this release makes the builds trustworthy, so a red build means a real fault.
+Nothing changes in play: this release makes the builds trustworthy, so a red build means a real fault, measures what
+the heavy parts cost, and makes the download lighter.
+
+### Changed
+- **A lighter jar**: the five music tracks are encoded afresh from their originals, a little lighter (the menu tracks
+  at Vorbis quality 2, the Elder fights' at quality 1, under the din of battle): 11.4 MB of music becomes 7.9 MB, and
+  the jar about 20 MB instead of 24. The sky and the title picture stay as they were: squeezing them into fewer colours
+  showed bands and wrong hues in the Seam's vortex, and nothing lossless made them smaller.
 
 ### Tests
 - **Every test that wakes an Elder runs alone**, in a batch of its own (thirteen of them: the Matriarch, Ferryman,
@@ -25,6 +32,9 @@ Nothing changes in play: this release makes the builds trustworthy, so a red bui
 ### Build
 - Gradle, the game and its libraries are kept between CI runs, so a download that fails on the way (a server's 502)
   is far less likely to fail the build, and every job starts sooner.
+- The sources jar no longer carries the music and pictures (they are in the mod's jar), which halves the download of a
+  build's artifacts. CI prints both jars' sizes and fails a mod jar over 30 MB, a tripwire for an asset added by mistake.
+- The two mp3 files of the old menu music, left at the top of the repository, are gone.
 
 ## 3.0.2: The Boundary
 
