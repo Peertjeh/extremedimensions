@@ -49,14 +49,19 @@ final class LearnedMelee implements MeleeController {
 		return decisions;
 	}
 
+	/** The modes v1 was trained for: a duel on flat ground. */
+	static final java.util.Set<String> MODES = java.util.Set.of("sword", "boxing");
+
 	static boolean enabledFor(Match m) {
 		var cfg = ConfigManager.config().bots;
-		return m != null && cfg.learnedCombat && cfg.learnedModes.contains(m.mode.id());
+		return m != null && cfg.learnedCombat && MODES.contains(m.mode.id()) && cfg.learnedModes.contains(m.mode.id()) && !LearnedFight.active(m);
 	}
 
 	@Override
 	public Intent act(Tactic tactic, Situation s, Track track) {
 		Match m = Matches.of(bot.getUUID());
+		// v1 fights without an objective and not with the bow
+		if (s.goal() != null || tactic == Tactic.SHOOT) return null;
 		if (!enabledFor(m) || !CombatModels.ready() || s.target() == null) return null;
 		ServerPlayer opp = bot.level().getServer().getPlayerList().getPlayer(s.target().id());
 		if (opp == null) return null;

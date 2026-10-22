@@ -246,7 +246,7 @@ public final class CombatMind {
 			return Intent.NOTHING.withLook(t.pos().add(new V3(0, 1.4, 0)));
 		}
 		Tactic tactic = decider.current();
-		if (melee != null && s.goal() == null && FIGHTING.contains(tactic)) {
+		if (melee != null && (FIGHTING.contains(tactic) || tactic == Tactic.SHOOT)) {
 			Intent learned = melee.act(tactic, s, id == null ? null : tracks.get(id));
 			if (learned != null) {
 				learnedTicks++;

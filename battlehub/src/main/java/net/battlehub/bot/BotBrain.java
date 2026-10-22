@@ -716,7 +716,9 @@ final class BotBrain {
 	/** Carries out one intent of the mind. */
 	private void execute(Match m, Intent in, Perception.Known k) {
 		ServerPlayer t = k == null ? null : k.player();
-		if (in.heal() || eating > 0) {
+		if (in.handChosen()) {
+			learnedHand(m, in);
+		} else if (in.heal() || eating > 0) {
 			eat();
 		} else if (in.bow() && t != null) {
 			// shoot() selects the bow or crossbow, draws, aims along the arc and lets go when charged
@@ -744,6 +746,11 @@ final class BotBrain {
 			}
 			bot.zza = (float) in.forward();
 			bot.xxa = (float) in.strafe();
+			if (in.handChosen() && bot.isUsingItem()) {
+				// drawing, eating or blocking walks at a fifth, as for a player (the client does that for them)
+				bot.zza *= 0.2f;
+				bot.xxa *= 0.2f;
+			}
 			bot.setSprinting(in.sprint() && in.forward() > 0 && !bot.isUsingItem() && mind.difficulty() != Difficulty.BEGINNER);
 			if (bot.onGround() && bot.horizontalCollision && in.forward() > 0) {
 				jump();
@@ -755,7 +762,7 @@ final class BotBrain {
 		if (in.launch()) {
 			launch();
 		}
-		shield(in.block());
+		if (!in.handChosen()) shield(in.block());
 		// an enemy bed (or what the game wants broken) within reach goes first: a fight can wait a second, the chance not
 		BlockPos breakable = building ? null : m.botBreakTarget(bot);
 		if (breakable != null && bot.getEyePosition().distanceTo(Vec3.atCenterOf(breakable))
@@ -998,6 +1005,51 @@ final class BotBrain {
 		if (hardness == 0) return 1;
 		float speed = bot.getDestroySpeed(st);
 		return (int) Math.ceil(hardness * (bot.hasCorrectToolForDrops(st) ? 30 : 100) / Math.max(0.01f, speed));
+	}
+
+	private boolean learnedUse;
+
+	/**
+	 * What the learned model holds and does with the right mouse button: the weapon (with the shield up while held),
+	 * the bow (drawn while held, loosed on letting go), food and golden apples (eaten while held), pearls and wind
+	 * charges (thrown on pressing). Something it does not carry in the hotbar leaves the hand as it is.
+	 */
+	private void learnedHand(Match m, Intent in) {
+		String hand = LearnedFight.handName(in.hand());
+		boolean press = in.use() && !learnedUse;
+		learnedUse = in.use();
+		if (!hand.equals("weapon")) shield(false);
+		boolean held;
+		if (hand.equals("weapon")) {
+			if (bot.isUsingItem() && bot.getUsedItemHand() == InteractionHand.MAIN_HAND) stopUsing();
+			selectMelee(m.botWeapon());
+			held = true;
+		} else {
+			held = select(LearnedFight.wants(hand));
+		}
+		if (!held) return;
+		boolean usingMain = bot.isUsingItem() && bot.getUsedItemHand() == InteractionHand.MAIN_HAND;
+		switch (hand) {
+			case "weapon" -> shield(in.use());
+			case "bow", "food", "gapple" -> {
+				if (in.use()) {
+					if (!bot.isUsingItem()) BotActions.use(bot, InteractionHand.MAIN_HAND);
+				} else if (usingMain) {
+					if (hand.equals("bow")) {
+						bot.releaseUsingItem();
+						shots++;
+					} else {
+						stopUsing();
+					}
+				}
+			}
+			default -> {
+				if (press) {
+					BotActions.use(bot, InteractionHand.MAIN_HAND);
+					BotActions.swing(bot);
+				}
+			}
+		}
 	}
 
 	/** Raise or lower the shield in the off hand (the mind decides when). */

@@ -404,6 +404,11 @@ public final class HubConfig {
 		public int recentMatches = 100;
 	}
 
+	/** Every melee mode, where the learned model v2 fights (bots.learnedModes). */
+	public static final List<String> DEFAULT_LEARNED_MODES = List.of("sword", "axe", "boxing", "build_uhc", "bridge", "bridge_chaos",
+			"bridge_2v2", "bridge_1v1v1v1", "bridge_chaos_1v1v1v1", "sumo", "koth", "ctf", "lms", "ffa", "tournament", "bed_wars", "skywars",
+			"hunger_games", "1v2", "1v3");
+
 	/** Bots that play when there are not enough people, and for practice. */
 	public static final class Bots {
 		public boolean enabled = true;
@@ -439,8 +444,14 @@ public final class HubConfig {
 		 * objective. Off: always the scripted fight.
 		 */
 		public boolean learnedCombat = true;
-		/** The modes the learned model fights in (it was trained for a sword duel on flat ground; boxing works too). */
-		public List<String> learnedModes = new ArrayList<>(List.of("sword", "boxing"));
+		/**
+		 * The modes a learned model fights in. Model v2 (every melee mode: edges and the void, kits, items, more enemies)
+		 * fights in all of them; "mace" and "bow" let it fight with those kits too (else scripted). Model v1 (a duel on
+		 * flat ground) only ever fights in sword and boxing.
+		 */
+		public List<String> learnedModes = new ArrayList<>(DEFAULT_LEARNED_MODES);
+		/** 2: the v2 model where it is listed; 1: only v1, in sword and boxing. */
+		public int learnedSpec = 2;
 		/**
 		 * From how long a server tick (milliseconds, smoothed; 50 is the limit) bots think less often: one step slower
 		 * for every 5 ms above this, at most four times as slow. Dangers still make them think at once.
@@ -688,7 +699,8 @@ public final class HubConfig {
 		bots.idleSeconds = Math.max(1, bots.idleSeconds);
 		if (bots.fillLevel == null) bots.fillLevel = "normal";
 		if (bots.archetypes == null) bots.archetypes = new Bots().archetypes;
-		if (bots.learnedModes == null) bots.learnedModes = new Bots().learnedModes;
+		// the default of 1.33 (v1's two duels) grows with v2 to every melee mode
+		if (bots.learnedModes == null || bots.learnedModes.equals(List.of("sword", "boxing"))) bots.learnedModes = new ArrayList<>(DEFAULT_LEARNED_MODES);
 		bots.archetypes.removeIf(a -> {
 			boolean bad = a == null || net.battlehub.core.ai.Archetype.parse(a, null) == null;
 			if (bad) net.battlehub.BattleHub.LOGGER.warn("BattleHub config: unknown bot style '{}' left out (known: {})", a,

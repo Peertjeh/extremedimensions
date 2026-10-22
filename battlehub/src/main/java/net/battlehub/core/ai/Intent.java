@@ -12,10 +12,18 @@ package net.battlehub.core.ai;
  * @param attack   swing at the target now (the world layer still checks reach and sight)
  * @param bow      use the bow or crossbow on the target: {@code look} is already led for the arrow's flight
  * @param launch   throw a wind charge at its own feet to fly up (a mace smash from above)
+ * @param hand     the learned model's choice of what to hold (an index in its spec's hands; -1: the bot's own rules
+ *                 choose, as for every scripted intent)
+ * @param use      with a hand chosen: hold the right mouse button (draw, eat, block, throw on pressing)
  */
 public record Intent(double forward, double strafe, boolean sprint, boolean jump, V3 look, V3 moveTo, boolean attack, boolean block,
-		boolean heal, boolean bow, boolean launch) {
+		boolean heal, boolean bow, boolean launch, int hand, boolean use) {
 	public static final Intent NOTHING = new Intent(0, 0, false, false, null, null, false, false, false, false, false);
+
+	public Intent(double forward, double strafe, boolean sprint, boolean jump, V3 look, V3 moveTo, boolean attack, boolean block, boolean heal,
+			boolean bow, boolean launch) {
+		this(forward, strafe, sprint, jump, look, moveTo, attack, block, heal, bow, launch, -1, false);
+	}
 
 	/** Without the bow ({@code bow}: aim at {@code look} as an arrow flies, draw and let go when charged). */
 	public Intent(double forward, double strafe, boolean sprint, boolean jump, V3 look, V3 moveTo, boolean attack, boolean block, boolean heal) {
@@ -28,10 +36,15 @@ public record Intent(double forward, double strafe, boolean sprint, boolean jump
 	}
 
 	public Intent withLook(V3 at) {
-		return new Intent(forward, strafe, sprint, jump, at, moveTo, attack, block, heal, bow, launch);
+		return new Intent(forward, strafe, sprint, jump, at, moveTo, attack, block, heal, bow, launch, hand, use);
 	}
 
 	public Intent withLaunch() {
-		return new Intent(forward, strafe, sprint, jump, look, moveTo, attack, block, heal, bow, true);
+		return new Intent(forward, strafe, sprint, jump, look, moveTo, attack, block, heal, bow, true, hand, use);
+	}
+
+	/** The learned model chose what to hold and the right button. */
+	public boolean handChosen() {
+		return hand >= 0;
 	}
 }

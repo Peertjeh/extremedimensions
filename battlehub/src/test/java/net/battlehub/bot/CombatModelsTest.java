@@ -30,8 +30,16 @@ class CombatModelsTest {
 
 	@Test
 	void everyLevelHasAModelThatGivesWhatPyTorchGave() throws Exception {
-		CombatSpec spec = CombatSpec.shipped();
-		CombatLevels levels = CombatLevels.parse(new String(bytes("/assets/battlehub/ml/difficulties.json"), StandardCharsets.UTF_8));
+		check(CombatSpec.shipped(), "difficulties.json");
+	}
+
+	@Test
+	void everyLevelOfModelV2HasAModelThatGivesWhatPyTorchGave() throws Exception {
+		check(CombatSpec.shipped("combat_v2.json"), "difficulties_v2.json");
+	}
+
+	static void check(CombatSpec spec, String levelsFile) throws Exception {
+		CombatLevels levels = CombatLevels.parse(new String(bytes("/assets/battlehub/ml/" + levelsFile), StandardCharsets.UTF_8));
 		assertEquals(6, levels.all().size());
 		for (CombatLevels.Level lv : levels.all().values()) {
 			CombatModels.Model m = CombatModels.load(lv.model(), bytes("/assets/battlehub/ml/" + lv.model()), spec);

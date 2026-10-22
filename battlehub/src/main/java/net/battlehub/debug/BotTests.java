@@ -73,6 +73,9 @@ final class BotTests {
 		lobby(server, s);
 		practiceSword(server, s);
 		learnedSword(server, s);
+		learnedV2Sword(server, s);
+		learnedV2Bridge(server, s);
+		learnedV2Team(server, s);
 		practiceBow(server, s);
 		queueFill(server, s);
 		partyFill(server, s);
@@ -95,8 +98,9 @@ final class BotTests {
 	private static void learnedSword(MinecraftServer server, Script s) {
 		String tag = "bots learned";
 		SelfTest.reset(s, tag);
-		s.run(tag + ": learned combat on; A starts a sword practice duel against a master bot", () -> {
+		s.run(tag + ": learned combat on (model v1); A starts a sword practice duel against a master bot", () -> {
 			cfg().learnedCombat = true;
+			cfg().learnedSpec = 1;
 			cfg().learnedModes = new ArrayList<>(List.of("sword", "boxing"));
 			SelfTest.join(server, A);
 			Bots.practice(p(A), GameMode.SWORD, net.battlehub.core.ai.Difficulty.MASTER);
@@ -128,7 +132,116 @@ final class BotTests {
 			return m.outcome(p(A).getUUID()) == net.battlehub.core.Outcome.LOSS;
 		});
 		endAndClean(s, tag);
-		s.run(tag + ": learned combat off again for the other tests", () -> cfg().learnedCombat = false);
+		s.run(tag + ": learned combat off again for the other tests", () -> {
+			cfg().learnedCombat = false;
+			cfg().learnedSpec = 2;
+		});
+	}
+
+	/** Learned combat on with model v2 and every melee mode listed. */
+	private static void learnedV2On() {
+		cfg().learnedCombat = true;
+		cfg().learnedSpec = 2;
+		cfg().learnedModes = new ArrayList<>(net.battlehub.config.HubConfig.DEFAULT_LEARNED_MODES);
+	}
+
+	/** The bot's inspect lines say model v2 steered at least this many ticks. */
+	private static boolean v2Steered(BotPlayer b, int ticks) {
+		return Bots.learnedTicks(b) > ticks && Bots.inspect(b).stream().anyMatch(l -> l.startsWith("learned combat (v2)"));
+	}
+
+	/** Model v2 in a sword duel: it steers and beats A, who stands still. */
+	private static void learnedV2Sword(MinecraftServer server, Script s) {
+		String tag = "bots learned v2 sword";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": model v2 on; A starts a sword practice duel against a master bot", () -> {
+			learnedV2On();
+			SelfTest.join(server, A);
+			Bots.practice(p(A), GameMode.SWORD, net.battlehub.core.ai.Difficulty.MASTER);
+		});
+		s.waitFor(tag + ": the duel runs with one bot", 600, () -> {
+			Match m = matchOfA();
+			return m != null && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
+		});
+		s.waitFor(tag + ": model v2 steers the bot and lands hits", 600, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			if (v2Steered(b, 40) && p(A).getHealth() < p(A).getMaxHealth()) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v2 sword: {} | {}", p(A).getHealth(), String.join(" | ", Bots.inspect(b)));
+				return true;
+			}
+			logBot("learned v2 bot", m, b, "learnedV2Logged");
+			return false;
+		});
+		s.waitFor(tag + ": A, standing still, loses to it", 1200, () -> {
+			Match m = matchOfA();
+			if (m == null) return false;
+			if (m.phase() == Match.Phase.RUNNING) return false;
+			return m.outcome(p(A).getUUID()) == net.battlehub.core.Outcome.LOSS;
+		});
+		endAndClean(s, tag);
+		s.run(tag + ": learned combat off again", () -> cfg().learnedCombat = false);
+	}
+
+	/** Model v2 on The Bridge: the bot goes for the goal and, near A, the model fights for it. */
+	private static void learnedV2Bridge(MinecraftServer server, Script s) {
+		String tag = "bots learned v2 bridge";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": model v2 on; A starts a Bridge practice duel against a master bot", () -> {
+			learnedV2On();
+			VARS.put("v2BridgeHurt", false);
+			SelfTest.join(server, A);
+			Bots.practice(p(A), GameMode.BRIDGE, net.battlehub.core.ai.Difficulty.MASTER);
+		});
+		s.waitFor(tag + ": the duel runs with one bot", 600, () -> {
+			Match m = matchOfA();
+			return m != null && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
+		});
+		s.waitFor(tag + ": near A the model steers the bot and hits A", 2400, () -> {
+			Match m = matchOfA();
+			if (m == null || m.phase() != Match.Phase.RUNNING || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			if (p(A).getHealth() < p(A).getMaxHealth()) VARS.put("v2BridgeHurt", true);
+			if (v2Steered(b, 20) && (boolean) VARS.get("v2BridgeHurt")) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v2 bridge: {}", String.join(" | ", Bots.inspect(b)));
+				return true;
+			}
+			logBot("learned v2 bridge bot", m, b, "learnedV2BridgeLogged");
+			return false;
+		});
+		endAndClean(s, tag);
+		s.run(tag + ": learned combat off again", () -> cfg().learnedCombat = false);
+	}
+
+	/** Model v2 for two bots against A (1v2): both fight with it, and A, standing still, loses. */
+	private static void learnedV2Team(MinecraftServer server, Script s) {
+		String tag = "bots learned v2 1v2";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": model v2 on; A starts 1v2 with the sword kit against two intermediate bots", () -> {
+			learnedV2On();
+			SelfTest.join(server, A);
+			Bots.practiceTeam(p(A), GameMode.ONE_V_TWO, GameMode.SWORD, net.battlehub.core.ai.Difficulty.INTERMEDIATE);
+		});
+		s.waitFor(tag + ": the match runs with two bots", 600, () -> {
+			Match m = matchOfA();
+			return m != null && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 2;
+		});
+		s.waitFor(tag + ": model v2 steers both bots", 900, () -> {
+			Match m = matchOfA();
+			if (m == null || m.phase() != Match.Phase.RUNNING || botsIn(m).size() < 2) return false;
+			boolean both = botsIn(m).stream().allMatch(b -> v2Steered(b, 20));
+			if (both) net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v2 1v2: {}", String.join(" | ", Bots.inspect(botsIn(m).get(0))));
+			return both;
+		});
+		s.waitFor(tag + ": A, standing still, loses", 1200, () -> {
+			Match m = matchOfA();
+			if (m == null) return false;
+			if (m.phase() == Match.Phase.RUNNING) return false;
+			return m.outcome(p(A).getUUID()) == net.battlehub.core.Outcome.LOSS;
+		});
+		endAndClean(s, tag);
+		s.run(tag + ": learned combat off again", () -> cfg().learnedCombat = false);
 	}
 
 	/** The characters on the plaza and the mode of the day. */

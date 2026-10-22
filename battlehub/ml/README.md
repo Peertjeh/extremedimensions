@@ -28,6 +28,9 @@ the terrain and the void, kits and effects, the bow, food, pearls, wind charges 
 | `pvp_sim2/physics.py` | Up to three fighters per arena: moving against the terrain (step up, jump onto blocks, fall damage, the void), the hand and the right button (bow and arrows, eating, golden apples, pearls, wind charges, the shield), the mace's smash, hunger and regeneration, teams and kill credit. |
 | `pvp_sim2/env.py`, `obs.py`, `scripted.py` | `Batch2` (n arenas, a scenario per episode: map, kits, 1v1 / 1v2 / three-way / 2v1), what each fighter perceives (view, line of sight, hearing, its target and second enemy), rewards; `PvpEnv2` for Gymnasium; a scripted bot that uses its items. |
 | `tools/show_fight2.py` | v2 fights on their maps drawn to a PNG. |
+| `train/selfplay2.py` | PPO self-play on v2 with the arenas in worker processes (3 workers x 96 arenas): a pool of earlier versions, the scripted bot, random play and dummies as opponents per slot; a curriculum that widens the scenarios (flat sword duels to everything), moves from easy opponents to the pool and fades the shaping later on. Each checkpoint is evaluated by `train/eval2.py` in a low-priority process. |
+| `train/eval2.py` | A checkpoint against the scripted bot on eight fixed scenarios (sword, axe and bow duels, bridge, SkyWars loot, sumo, the town 1v2, Bed Wars three-way) and against a dummy on a bridge. |
+| `train/league2.py` | v2's league over a mix of the modes' 1v1 scenarios, Elo, the six levels, ONNX export; and v2's best against v1's best on flat ground (v1 through an adapter). |
 
 ## Run
 
@@ -41,6 +44,10 @@ python tools/show_fight.py fight.png 0.8 0.5
 pip install -r requirements-train.txt
 python train/selfplay.py --run runs/sword --steps 40000000      # --resume to continue
 python train/league.py runs/sword --out league                  # ratings, levels, ONNX files
+
+# v2 (every melee mode)
+python train/selfplay2.py --run runs/v2 --steps 60000000        # about 6500 steps a second on 4 cores
+python train/league2.py runs/v2 --out league_v2 --v1 runs/sword/ckpt_016000000.zip
 ```
 
 Rewards: damage done minus damage taken (per max health), +-10 for winning or losing, at the time limit the health

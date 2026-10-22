@@ -42,7 +42,7 @@ processResources {
 		expand "version": version
 	}
 	// one spec for the simulation and the mod: ml/spec is the source
-	from("ml/spec/combat_v1.json") {
+	from("ml/spec/combat_v1.json", "ml/spec/combat_v2.json") {
 		into "assets/battlehub/ml"
 	}
 }

@@ -427,8 +427,11 @@ public final class Bots {
 		net.battlehub.core.ai.CombatMind mind = new net.battlehub.core.ai.CombatMind(a, a.base.individual(seed, cfg().personalityVariation),
 				bot.difficulty, seed ^ System.nanoTime());
 		mind.gate(Bots::allowThink);
-		// the learned model fights in the modes of bots.learnedModes (it decides each tick, so a config change counts at once)
-		mind.melee(new LearnedMelee(bot));
+		// the learned models fight in the modes of bots.learnedModes (they decide each tick, so a config change counts at
+		// once): v2 where it is active, v1 in a sword duel or boxing otherwise
+		LearnedFight v2 = new LearnedFight(bot);
+		LearnedMelee v1 = new LearnedMelee(bot);
+		mind.melee((tactic, s, track) -> LearnedFight.active(net.battlehub.match.Matches.of(bot.getUUID())) ? v2.act(tactic, s, track) : v1.act(tactic, s, track));
 		return mind;
 	}
 
@@ -676,7 +679,10 @@ public final class Bots {
 		net.battlehub.match.Match m = Matches.of(b.getUUID());
 		out.add(b.getGameProfile().name() + " (" + b.difficulty.id() + ")" + (m == null ? ", not in a match" : ", match #" + m.id + " " + m.mode.id()));
 		out.addAll(b.brain.mind().report().lines());
-		if (b.brain.mind().learnedTicks() > 0) out.add("learned combat: steered " + b.brain.mind().learnedTicks() + " ticks");
+		if (b.brain.mind().learnedTicks() > 0) {
+			net.battlehub.match.Match lm = Matches.of(b.getUUID());
+			out.add("learned combat (" + (LearnedFight.active(lm) ? "v2" : "v1") + "): steered " + b.brain.mind().learnedTicks() + " ticks");
+		}
 		if (!b.brain.parkourNote().isEmpty()) out.add("parkour: " + b.brain.parkourNote());
 		if (m != null && m.botWeapon() != net.battlehub.core.ai.Weapon.ANY) {
 			out.add("weapon of this fight: " + m.botWeapon().name().toLowerCase(java.util.Locale.ROOT) + ", holds "
