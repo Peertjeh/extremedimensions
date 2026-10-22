@@ -461,8 +461,12 @@ public class PerfTests {
 			// The parts of the mod's tick with the worst single ticks, worst first
 			StringBuilder worst = new StringBuilder();
 			TickProfile.stop().entrySet().stream().sorted((a, b) -> Double.compare(b.getValue()[0], a.getValue()[0])).limit(6)
-					.forEach(e -> worst.append(worst.length() == 0 ? "" : ", ").append(String.format(java.util.Locale.ROOT, "%s %.1f ms (%.2f ms a tick)",
-							e.getKey(), e.getValue()[0], e.getValue()[1] / Math.max(1, e.getValue()[2]))));
+					.forEach(e -> worst.append(worst.length() == 0 ? "" : ", ").append(String.format(java.util.Locale.ROOT, "%s %.1f ms (CPU %.1f ms; %.2f ms a tick)",
+							e.getKey(), e.getValue()[0], e.getValue()[3], e.getValue()[1] / Math.max(1, e.getValue()[2]))));
+			// Where the server thread stood when a part ran long: by the clock but not in CPU time, it was waiting
+			for (String stall : TickProfile.stalls()) {
+				report(elder.name().toLowerCase(java.util.Locale.ROOT) + " fight, a part ran long", stall);
+			}
 			boolean fought = boss[0] != null && boss[0].isAlive();
 			int standing = ElderArena.standing();
 			// (its design is drawn up over the first ticks of the fight)

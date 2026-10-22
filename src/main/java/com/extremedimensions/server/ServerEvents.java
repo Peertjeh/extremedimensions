@@ -508,6 +508,7 @@ public final class ServerEvents {
 		} finally {
 			lastTickNanos = System.nanoTime() - t0;
 			lastTickCpuNanos = c0 == 0 ? 0 : TickProfile.cpu() - c0;
+			TickProfile.rest();
 		}
 	}
 

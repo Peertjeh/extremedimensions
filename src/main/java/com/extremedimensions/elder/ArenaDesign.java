@@ -529,9 +529,22 @@ final class ArenaDesign {
 						int arch = k;
 						steps.add(new Step("great piece", () -> origins.add(rootArch(plan, cx, gy, cz, floorR, turn, wide, arch))));
 					}
+				} else if (style == 1) {
+					// The Ferryman's wreck, some lengths of its hull a step, then its mast, then judged for room as a whole
+					Wreck wreck = new Wreck(cx, gy, cz, floorR, turn);
+					steps.add(new Step("great piece", new Runnable() {
+						@Override
+						public void run() {
+							if (wreck.hull(plan)) {
+								next(List.of(new Step("great piece", this)));
+							} else {
+								double[] top = wreck.mast(plan);
+								next(judge(0.0, kept -> origins.addAll(wreck.rig(bp, top))));
+							}
+						}
+					}));
 				} else {
-					steps.add(new Step("great piece", () -> origins.addAll(style == 1 ? wreck(plan, bp, cx, gy, cz, floorR, turn)
-							: loom(plan, bp, pal, cx, gy, cz, floorR, turn, wide))));
+					steps.add(new Step("great piece", () -> origins.addAll(loom(plan, bp, pal, cx, gy, cz, floorR, turn, wide))));
 				}
 				steps.add(new Step("cores", () -> {
 					if (cores) {
@@ -944,77 +957,111 @@ final class ArenaDesign {
 	 * The Ferryman's wreck: a great boat lies broken in two on the deck of his whirlpool, keeled over and half sunk, its
 	 * ribs showing, its deck holed, soul lanterns burning in it, and the stump of its mast rigged with chains.
 	 */
-	private static List<int[]> wreck(Plan plan, Blueprint bp, int cx, int gy, int cz, int floorR, double turn) {
-		BlockState plank = mc("dark_oak_planks"), rib = mc("stripped_dark_oak_wood", plank), keel = mc("dark_oak_wood", plank);
-		BlockState deck = mc("spruce_planks"), soul = hanging(mc("soul_lantern", Blocks.SOUL_LANTERN.defaultBlockState()));
-		double len = floorR * 0.5, beam = len * 0.24, depth = len * 0.2;
-		double a = turn + TAU / 16, ring = floorR * 0.55;
-		double ox = cx + 0.5 + Math.cos(a) * ring, oz = cz + 0.5 + Math.sin(a) * ring;
-		double ux = -Math.sin(a), uz = Math.cos(a), vx = Math.cos(a), vz = Math.sin(a);
-		double roll = Math.toRadians(24), cos = Math.cos(roll), sin = Math.sin(roll);
-		double base = gy + 1 + depth * 0.65;
-		double breakAt = len * 0.08;
-		plan.begin();
-		for (double u = -len / 2; u <= len / 2; u += 0.5) {
-			// Broken in two: a ragged gap across it
-			if (Math.abs(u - breakAt) < 2.5 + noise((int) (u * 4), 7) * 2) {
-				continue;
+	private static final class Wreck {
+		/** Lengths of hull (half a block each) drawn up in one step. */
+		static final int ROWS = 24;
+		final BlockState plank = mc("dark_oak_planks"), rib = mc("stripped_dark_oak_wood", plank), keel = mc("dark_oak_wood", plank);
+		final BlockState deck = mc("spruce_planks"), soul = hanging(mc("soul_lantern", Blocks.SOUL_LANTERN.defaultBlockState()));
+		final int gy;
+		final double len, beam, depth, ox, oz, ux, uz, vx, vz, cos, sin, base, breakAt;
+		/** How far along its length the hull has come; NaN before it is begun. */
+		double u = Double.NaN;
+
+		Wreck(int cx, int gy, int cz, int floorR, double turn) {
+			this.gy = gy;
+			len = floorR * 0.5;
+			beam = len * 0.24;
+			depth = len * 0.2;
+			double a = turn + TAU / 16, ring = floorR * 0.55;
+			ox = cx + 0.5 + Math.cos(a) * ring;
+			oz = cz + 0.5 + Math.sin(a) * ring;
+			ux = -Math.sin(a);
+			uz = Math.cos(a);
+			vx = Math.cos(a);
+			vz = Math.sin(a);
+			double roll = Math.toRadians(24);
+			cos = Math.cos(roll);
+			sin = Math.sin(roll);
+			base = gy + 1 + depth * 0.65;
+			breakAt = len * 0.08;
+		}
+
+		/** The next {@link #ROWS} lengths of the hull (the first begin the boat); true while more remain. */
+		boolean hull(Plan plan) {
+			if (Double.isNaN(u)) {
+				plan.begin();
+				u = -len / 2;
 			}
-			double f = 2 * u / len;
-			double half = beam / 2 * Math.sqrt(Math.max(0, 1 - Math.pow(f, 4)));
-			double deep = depth * Math.sqrt(Math.max(0, 1 - Math.pow(f, 6)));
-			if (half < 0.6 || deep < 0.6) {
-				continue;
-			}
-			boolean ribRow = Math.floorMod((int) Math.round(u), 5) == 0;
-			for (double v = -half - 0.5; v <= half + 0.5; v += 0.5) {
-				for (double h = -deep - 0.5; h <= 1.5; h += 0.5) {
-					double e = v * v / (half * half) + (h < 0 ? h * h / (deep * deep) : 0);
-					boolean shell = h < 0 ? e >= 0.74 && e <= 1.0 : Math.abs(Math.abs(v) - half) < 0.6;
-					boolean planked = h >= -0.25 && h < 0.25 && Math.abs(v) < half && noise((int) (u * 2), (int) (v * 2) + 40) > 0.3;
-					if (!shell && !planked) {
-						continue;
-					}
-					// Keeled over about its length, then set down half sunk
-					double rv = v * cos - h * sin, rh = v * sin + h * cos;
-					int wx = (int) Math.floor(ox + ux * u + vx * rv), wz = (int) Math.floor(oz + uz * u + vz * rv);
-					int wy = (int) Math.floor(base + rh);
-					BlockState st = planked && !shell ? deck : h <= -deep + 0.6 && Math.abs(v) < 1 ? keel : ribRow ? rib : plank;
-					plan.air(wx, wy, wz, st);
-					if (planked && !shell && noise(wx, wz + 9) > 0.96) {
-						plan.air(wx, wy - 1, wz, soul);
+			for (int n = 0; n < ROWS && u <= len / 2; n++, u += 0.5) {
+				// Broken in two: a ragged gap across it
+				if (Math.abs(u - breakAt) < 2.5 + noise((int) (u * 4), 7) * 2) {
+					continue;
+				}
+				double f = 2 * u / len;
+				double half = beam / 2 * Math.sqrt(Math.max(0, 1 - Math.pow(f, 4)));
+				double deep = depth * Math.sqrt(Math.max(0, 1 - Math.pow(f, 6)));
+				if (half < 0.6 || deep < 0.6) {
+					continue;
+				}
+				boolean ribRow = Math.floorMod((int) Math.round(u), 5) == 0;
+				for (double v = -half - 0.5; v <= half + 0.5; v += 0.5) {
+					for (double h = -deep - 0.5; h <= 1.5; h += 0.5) {
+						double e = v * v / (half * half) + (h < 0 ? h * h / (deep * deep) : 0);
+						boolean shell = h < 0 ? e >= 0.74 && e <= 1.0 : Math.abs(Math.abs(v) - half) < 0.6;
+						boolean planked = h >= -0.25 && h < 0.25 && Math.abs(v) < half && noise((int) (u * 2), (int) (v * 2) + 40) > 0.3;
+						if (!shell && !planked) {
+							continue;
+						}
+						// Keeled over about its length, then set down half sunk
+						double rv = v * cos - h * sin, rh = v * sin + h * cos;
+						int wx = (int) Math.floor(ox + ux * u + vx * rv), wz = (int) Math.floor(oz + uz * u + vz * rv);
+						int wy = (int) Math.floor(base + rh);
+						BlockState st = planked && !shell ? deck : h <= -deep + 0.6 && Math.abs(v) < 1 ? keel : ribRow ? rib : plank;
+						plan.air(wx, wy, wz, st);
+						if (planked && !shell && noise(wx, wz + 9) > 0.96) {
+							plan.air(wx, wy - 1, wz, soul);
+						}
 					}
 				}
 			}
+			return u <= len / 2;
 		}
-		// The stump of the mast, keeled over with the boat, a yard across it, chains from the yard to bow and stern
-		double mu = -len * 0.2, mast = len * 0.45;
-		double tx = 0, ty = 0, tz = 0;
-		for (double m = 0; m <= mast; m += 0.5) {
-			double rv = -m * sin, rh = m * cos;
-			tx = ox + ux * mu + vx * rv;
-			ty = base + 1 + rh;
-			tz = oz + uz * mu + vz * rv;
-			plan.air((int) Math.floor(tx), (int) Math.floor(ty), (int) Math.floor(tz), keel);
+
+		/** The stump of the mast, keeled over with the boat, a yard across it: where the yard's ends hang. */
+		double[] mast(Plan plan) {
+			double mu = -len * 0.2, mast = len * 0.45;
+			double tx = 0, ty = 0, tz = 0;
+			for (double m = 0; m <= mast; m += 0.5) {
+				double rv = -m * sin, rh = m * cos;
+				tx = ox + ux * mu + vx * rv;
+				ty = base + 1 + rh;
+				tz = oz + uz * mu + vz * rv;
+				plan.air((int) Math.floor(tx), (int) Math.floor(ty), (int) Math.floor(tz), keel);
+			}
+			double yard = beam * 0.6;
+			for (double w = -yard; w <= yard; w += 0.5) {
+				plan.air((int) Math.floor(tx + ux * w), (int) Math.floor(ty - 2), (int) Math.floor(tz + uz * w), plank);
+			}
+			plan.air((int) Math.floor(tx + ux * yard), (int) Math.floor(ty - 3), (int) Math.floor(tz + uz * yard), soul);
+			plan.air((int) Math.floor(tx - ux * yard), (int) Math.floor(ty - 3), (int) Math.floor(tz - uz * yard), soul);
+			return new double[] {tx, ty, tz, yard};
 		}
-		double yard = beam * 0.6;
-		for (double w = -yard; w <= yard; w += 0.5) {
-			plan.air((int) Math.floor(tx + ux * w), (int) Math.floor(ty - 2), (int) Math.floor(tz + uz * w), plank);
+
+		/** Chains from the yard to bow and stern, once the boat is kept; its four cores. */
+		List<int[]> rig(Blueprint bp, double[] top) {
+			double tx = top[0], ty = top[1], tz = top[2], yard = top[3];
+			for (int end = -1; end <= 1; end += 2) {
+				double bx = ox + ux * len / 2 * end, bz = oz + uz * len / 2 * end;
+				bp.lines.add(new Line(tx + ux * yard * end, ty - 2, tz + uz * yard * end, bx, base + 1, bz, 2.5));
+			}
+			// Four cores along its side towards the heart of the whirlpool, clear of the break
+			List<int[]> cores = new ArrayList<>();
+			for (double f : new double[] {-0.38, -0.18, 0.26, 0.42}) {
+				double at = f * len, off = beam / 2 + 2;
+				cores.add(new int[] {(int) Math.floor(ox + ux * at - vx * off - 0.5), gy + 1, (int) Math.floor(oz + uz * at - vz * off - 0.5)});
+			}
+			return cores;
 		}
-		plan.air((int) Math.floor(tx + ux * yard), (int) Math.floor(ty - 3), (int) Math.floor(tz + uz * yard), soul);
-		plan.air((int) Math.floor(tx - ux * yard), (int) Math.floor(ty - 3), (int) Math.floor(tz - uz * yard), soul);
-		plan.commit(0.0);
-		for (int end = -1; end <= 1; end += 2) {
-			double bx = ox + ux * len / 2 * end, bz = oz + uz * len / 2 * end;
-			bp.lines.add(new Line(tx + ux * yard * end, ty - 2, tz + uz * yard * end, bx, base + 1, bz, 2.5));
-		}
-		// Four cores along its side towards the heart of the whirlpool, clear of the break
-		List<int[]> cores = new ArrayList<>();
-		for (double f : new double[] {-0.38, -0.18, 0.26, 0.42}) {
-			double u = f * len, off = beam / 2 + 2;
-			cores.add(new int[] {(int) Math.floor(ox + ux * u - vx * off - 0.5), gy + 1, (int) Math.floor(oz + uz * u - vz * off - 0.5)});
-		}
-		return cores;
 	}
 
 	/**
