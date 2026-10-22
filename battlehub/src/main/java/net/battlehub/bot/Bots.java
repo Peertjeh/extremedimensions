@@ -240,6 +240,41 @@ public final class Bots {
 		return net.battlehub.core.ai.Difficulty.parse(cfg().fillLevel, net.battlehub.core.ai.Difficulty.INTERMEDIATE);
 	}
 
+	/** The level of bots that fill in (bots.fillLevel), also the first choice in a private game. */
+	public static net.battlehub.core.ai.Difficulty defaultLevel() {
+		return fillLevel();
+	}
+
+	/** Whether bots fill queues and lobbies on this server at all. */
+	public static boolean filling() {
+		return cfg().enabled && cfg().fillQueues;
+	}
+
+	/** How many bots this player wants in party lobbies. */
+	public static net.battlehub.core.BotFill.Wish wish(UUID id) {
+		return net.battlehub.core.BotFill.Wish.parse(net.battlehub.data.PlayerStore.get(id).botWish);
+	}
+
+	/** A player says how many bots they want in party lobbies (which also means: bots on). */
+	public static void wish(ServerPlayer p, net.battlehub.core.BotFill.Wish w) {
+		net.battlehub.core.PlayerProfile prof = net.battlehub.data.PlayerStore.get(p);
+		prof.botWish = w.kind() == net.battlehub.core.BotFill.Kind.NONE ? "" : w.id();
+		prof.noBots = w.kind() == net.battlehub.core.BotFill.Kind.NONE;
+		net.battlehub.data.PlayerStore.save(p.getUUID());
+		Msg.send(p, "bots.wish_set", wishText(p, wish(p.getUUID()), 0));
+		net.battlehub.lobby.HubItems.ensure(p, net.battlehub.session.Sessions.state(p.getUUID()) == net.battlehub.session.Sessions.State.QUEUED);
+	}
+
+	/** A wish in words: "standard (up to 4 players)", "3 bots", "fill the lobby (up to 8)"; {@code max} 0 when unknown. */
+	public static Component wishText(ServerPlayer p, net.battlehub.core.BotFill.Wish w, int max) {
+		return switch (w.kind()) {
+			case STANDARD -> Lang.tr(p, "bots.wish.standard", cfg().partyFillTo);
+			case FILL -> max > 0 ? Lang.tr(p, "bots.wish.fill_max", max) : Lang.tr(p, "bots.wish.fill");
+			case COUNT -> Lang.tr(p, w.count() == 1 ? "bots.wish.one" : "bots.wish.count", w.count());
+			case NONE -> Lang.tr(p, "bots.wish.none");
+		};
+	}
+
 	/** Bots may fill a queue or lobby this player waits in (players can say no: /bots, the hotbar button). */
 	public static boolean welcome(UUID id) {
 		return isBot(id) || !net.battlehub.data.PlayerStore.get(id).noBots;
@@ -364,13 +399,19 @@ public final class Bots {
 				continue;
 			}
 			long since = PARTY_SINCE.computeIfAbsent(mode, m -> Tasks.now());
-			if (Tasks.now() - since < waitTicks()) continue;
 			HubConfig.Game g = ConfigManager.config().game(mode);
-			int wanted = Math.min(g.maxPlayers, Math.max(g.minPlayers, cfg().partyFillTo));
+			int standard = Math.min(g.maxPlayers, Math.max(g.minPlayers, cfg().partyFillTo));
 			if (mode == GameMode.TOURNAMENT) {
-				wanted = Math.min(g.maxPlayers, Math.max(wanted, 4));
+				standard = Math.min(g.maxPlayers, Math.max(standard, 4));
 			}
-			if (members.size() >= wanted) continue;
+			// what the people in the lobby asked for: the standard after the wait, their own number or a full lobby at once
+			List<net.battlehub.core.BotFill.Wish> wishes = new ArrayList<>();
+			for (UUID id : members) {
+				if (!isBot(id)) wishes.add(wish(id));
+			}
+			net.battlehub.core.BotFill.Target target = net.battlehub.core.BotFill.party(wishes, humans, g.minPlayers, g.maxPlayers, standard);
+			if (!target.now() && Tasks.now() - since < waitTicks()) continue;
+			if (members.size() >= target.size()) continue;
 			BotPlayer bot = spawn(server, fillLevel());
 			if (bot != null) {
 				Parties.join(bot, mode);

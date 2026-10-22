@@ -124,6 +124,11 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   `/bots off`, `/bots on` or just `/bots` (switch) do the same. The choice is remembered. With bots off you
   only wait for real players, bots already waiting with you step out, and a party lobby or 1v2/1v3 queue with
   someone who said no gets no bots at all.
+* **How many bots**: in a party game's menu the **Bots** button (an armor stand) says how many bots you want in
+  its lobby: the server's standard (up to 4 players, after the wait), a number of bots (left-click more,
+  right-click fewer) or the lobby filled to the game's maximum. A number or a full lobby comes at once; the
+  biggest wish of the people in the lobby counts. `/bots standard`, `/bots fill` and `/bots <number>` do the
+  same. A private game's owner sets its bots and their level in the `/custom` menu; they join at the start.
 * **Practice**: `/practice [mode] [level|adaptive]` or the **Practice** item in the menu (and the
   character on the plaza): a duel, 1v2 or 1v3 against bots, right away.
 * They know every game: they fight in duels, Free for All, Sumo and LMS, shoot in Bow and Crossbow PvP, run in
@@ -213,7 +218,8 @@ a `pack.png` in `config/battlehub/resourcepack/overlay/` and they are added to t
   name, `/cc <message>` for clan chat, a point for every win of a member (three for a ranked win), a clan
   leaderboard, and a **weekly clan war**: the clan with the most points in a week gets coins for every member.
 * **Private games** (`/custom`): open a lobby for any duel or party game and get a four-letter code; friends
-  join with `/custom join <code>`, you start it. Private games never count for stats, rewards or ELO.
+  join with `/custom join <code>`, you start it. The owner can add bots (a number, or as many as fit) and pick
+  their level. Private games never count for stats, rewards or ELO.
 
 ### Ranked seasons
 Ranked runs in **seasons** of 8 weeks. Every rating has a **division** inside its tier (Gold III, Gold II,
@@ -596,6 +602,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/custom` / `/custom create <mode>` / `/custom join <code>` / `/custom start\|leave` | everyone | Private games with a code |
 | `/practice [mode] [level\|adaptive] [kit]` | everyone | Practice against bots (sword, axe, mace, bow, crossbow, 1v2, 1v3) at a level (beginner .. master) or adaptive; 1v2 and 1v3 with a kit (sword, axe or mace; without one the kit choice opens); without a mode: the practice menu |
 | `/bots` / `/bots on\|off` | everyone | May bots fill in the queues you wait in? Without on/off: switch |
+| `/bots standard\|fill\|<number>` | everyone | How many bots you want in party lobbies: the server's standard, a full lobby, or that many (at once) |
 | `/bots memory` / `/bots forget` | everyone | What bots remember about how you fight and your results against them; wipe it |
 | `/battlehub` | everyone | Open the main menu |
 | `/battlehub join <mode>` | everyone | Join a party lobby or duel queue (used by invites) |

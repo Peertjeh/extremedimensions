@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.36.0
+
+### Added
+* **How many bots.** Every player says how many bots they want in party lobbies: the server's standard (up to
+  `bots.partyFillTo` players, after `bots.fillAfterSeconds`), a number of bots, or the lobby filled to the game's
+  maximum.
+  * The **Bots** button in a party game's menu: left-click more, right-click fewer, shift-click bots off or on.
+    Or `/bots standard`, `/bots fill`, `/bots <number>` (1 to 15). The choice is remembered.
+  * A number or a full lobby comes at once, not after the wait; the biggest wish of the people in the lobby
+    counts (at least the game's minimum, so it can start). Someone who said no to bots still means no bots.
+* **Bots in private games.** In the `/custom` menu the owner sets the bots (none, a number, or as many as fit) and
+  their level; they join when the game starts. `bots.maxBots` still applies.
+
 ## 1.35.0
 
 ### Added

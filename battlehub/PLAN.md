@@ -1046,3 +1046,30 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
 - Het rapport in de zelftest: Bot_Mars (master, v2) in het bijlduel, 14 s gevecht, eigen model 100%, niets nieuws te leren.
 - In het v1-zwaardduel (6 s) waren `edge_4` tot `edge_6` (tot 23% van de beslissingen) en `opp_dist` (15%) nieuw voor v1. De arena van de mod heeft randen en een grotere startafstand dan de vlakke arena van de v1-simulatie. Lessen: ander terrein (33%) en grotere afstanden (15%).
 - Een reden of waarde die op 0% afrondt, noemt het rapport niet meer (de eerste versie zei "sprong geweigerd 0%").
+
+## Versie 1.36 – Zelf kiezen hoeveel bots er meedoen
+
+**Vraag.** Aangeven hoeveel bots er meedoen: de lobby vullen, of een eigen aantal.
+
+**Party-lobby's.**
+- Elke speler heeft een wens (`core/BotFill`, bewaard in het profiel als `botWish`):
+  - standaard: zoals voorheen, tot `bots.partyFillTo` spelers, na `bots.fillAfterSeconds`;
+  - een aantal bots (1 tot 15);
+  - de lobby vol, tot het maximum van de game.
+- Een aantal of een volle lobby komt meteen: wie erom vraagt, wil spelen. De standaard wacht eerst op mensen.
+- De grootste wens van de mensen in de lobby telt: vol gaat boven een aantal, het grootste aantal boven een kleiner. Minstens het minimum van de game, zodat hij kan starten; nooit meer dan het maximum.
+- Wie geen bots wil (`/bots off`), houdt ze nog steeds buiten de lobby.
+- Kiezen gaat met de knop **Bots** (een harnasstandaard) in het menu van een party-game: linksklik meer, rechtsklik minder, shift-klik bots uit of aan. Of met `/bots standard`, `/bots fill` en `/bots <aantal>`.
+- De knoppen in dat menu schoven daarvoor op: meedoen, mapstem, uitnodigen en bots staan nu op 10, 12, 14 en 16.
+
+**Privé-games (`/custom`).**
+- De eigenaar zet in het menu het aantal bots (geen, een aantal, of zoveel als er passen) en hun niveau (beginner tot meester). Bij de start doen ze mee.
+- Lukt het starten niet, dan gaan de bots weer weg. `bots.maxBots` blijft gelden: als de limiet bereikt is, zegt de game hoeveel bots er wel mee konden.
+
+**Dichtstbijzijnde alternatief.** In een gewone party-lobby met meer mensen telt de grootste wens. Een stemming zoals bij de map kan ook, maar is trager voor wie gewoon wil spelen.
+
+**Tests.**
+- JUnit `BotFillTest` (4): opslaan en teruglezen, de knop gaat rond, een party-lobby vult tot de grootste wens (meteen, binnen min en max), een privé-game krijgt de bots van de eigenaar.
+- Zelftests:
+  - A zegt `/bots 2` en gaat alleen Sumo in, met de standaardwachttijd op een minuut: twee bots komen meteen en de match start met hen.
+  - Een privé-Sumo met drie beginnerbots start met A en die drie, zonder dat iets telt.

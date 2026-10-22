@@ -79,6 +79,8 @@ final class BotTests {
 		practiceBow(server, s);
 		queueFill(server, s);
 		partyFill(server, s);
+		partyWish(server, s);
+		customBots(server, s);
 		spleefBots(server, s);
 		parkour(server, s);
 		kothBots(server, s);
@@ -743,6 +745,59 @@ final class BotTests {
 			ConfigManager.config().timings.partyCountdownSeconds = (int) VARS.get("partyCountdown");
 			ConfigManager.config().timings.partyFullCountdownSeconds = (int) VARS.get("partyFull");
 		});
+	}
+
+	/**
+	 * A player who asked for two bots joins Sumo alone: two bots come at once (long before the standard wait) and the
+	 * game starts with them.
+	 */
+	private static void partyWish(MinecraftServer server, Script s) {
+		String tag = "bots party wish";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": A wants two bots (/bots 2); the standard wait is a minute", () -> {
+			VARS.put("partyCountdown", ConfigManager.config().timings.partyCountdownSeconds);
+			ConfigManager.config().timings.partyCountdownSeconds = 4;
+			cfg().fillQueues = true;
+			VARS.put("fillAfter", cfg().fillAfterSeconds);
+			cfg().fillAfterSeconds = 60;
+			cfg().partyFillTo = 6;
+			SelfTest.join(server, A);
+			server.getCommands().performPrefixedCommand(p(A).createCommandSourceStack(), "bots 2");
+		});
+		s.check(tag + ": remembered, and bots are on", () -> net.battlehub.core.BotFill.Wish.count(2).equals(Bots.wish(p(A).getUUID()))
+				&& !PlayerStore.get(p(A)).noBots);
+		s.run(tag + ": A joins Sumo alone", () -> Parties.join(p(A), GameMode.SUMO));
+		s.waitFor(tag + ": two bots join at once and the match starts with them", 400, () -> {
+			Match m = matchOfA();
+			return m != null && m.mode == GameMode.SUMO && botsIn(m).size() == 2;
+		});
+		endAndClean(s, tag);
+		s.run(tag + ": A back to the standard; filling as before", () -> {
+			Bots.wish(p(A), net.battlehub.core.BotFill.Wish.STANDARD);
+			cfg().fillQueues = false;
+			cfg().fillAfterSeconds = (int) VARS.get("fillAfter");
+			cfg().partyFillTo = 4;
+			ConfigManager.config().timings.partyCountdownSeconds = (int) VARS.get("partyCountdown");
+		});
+	}
+
+	/** A private Sumo game whose owner set three beginner bots: they join at the start; nothing counts. */
+	private static void customBots(MinecraftServer server, Script s) {
+		String tag = "bots custom game";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": A opens a private Sumo game with three beginner bots and starts it", () -> {
+			SelfTest.join(server, A);
+			net.battlehub.social.CustomGames.Lobby l = net.battlehub.social.CustomGames.create(p(A), GameMode.SUMO);
+			l.bots = net.battlehub.core.BotFill.Wish.count(3);
+			l.botLevel = net.battlehub.core.ai.Difficulty.BEGINNER;
+			VARS.put("customStarted", net.battlehub.social.CustomGames.start(p(A)));
+		});
+		s.check(tag + ": it started with A and three beginner bots, unrated", () -> {
+			Match m = matchOfA();
+			return Boolean.TRUE.equals(VARS.get("customStarted")) && m != null && m.mode == GameMode.SUMO && m.unrated()
+					&& botsIn(m).size() == 3 && botsIn(m).stream().allMatch(b -> b.difficulty == net.battlehub.core.ai.Difficulty.BEGINNER);
+		});
+		endAndClean(s, tag);
 	}
 
 	/** Spleef with bots: they dig the snow (every dug block gives a snowball), never the block they stand on. */

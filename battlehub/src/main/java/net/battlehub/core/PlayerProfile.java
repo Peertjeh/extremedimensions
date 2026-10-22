@@ -39,6 +39,8 @@ public final class PlayerProfile {
 	public boolean noBots;
 	/** An operator who does not want the model reports after matches with bots in chat. */
 	public boolean modelReportsOff;
+	/** How many bots this player wants in party lobbies (core.BotFill.Wish: "" the standard, "fill", or a number). */
+	public String botWish = "";
 	public int tournamentsWon;
 	/** Weekly tournaments won. */
 	public int weeklyWins;
@@ -93,6 +95,7 @@ public final class PlayerProfile {
 		if (title == null) title = "";
 		if (ownedTitles == null) ownedTitles = new LinkedHashSet<>();
 		if (duelFormat == null) duelFormat = "bo1";
+		if (botWish == null) botWish = "";
 		if (ownedCosmetics == null) ownedCosmetics = new LinkedHashSet<>();
 		if (cosmetics == null) cosmetics = new LinkedHashMap<>();
 		if (knownTitles == null) knownTitles = new LinkedHashSet<>();

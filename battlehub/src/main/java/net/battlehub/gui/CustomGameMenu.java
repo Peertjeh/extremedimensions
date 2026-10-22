@@ -65,6 +65,7 @@ public final class CustomGameMenu extends Screen {
 					CustomGames.start(viewer);
 				});
 			}
+			bots(c, l, owner);
 			c.set(41, Icon.of(Items.BARRIER).name(Lang.item(viewer, "menu.custom.leave")).build(), click -> {
 				CustomGames.leave(viewer, false);
 				new CustomGameMenu(viewer).open();
@@ -72,5 +73,33 @@ public final class CustomGameMenu extends Screen {
 		}
 		c.back(() -> new MainMenu(viewer).open());
 		c.fill();
+	}
+
+	/**
+	 * The bots of a private game (the owner sets them; the others see them): none, a number or as many as fit
+	 * (left-click more, right-click fewer), and their level (a click: the next one).
+	 */
+	private void bots(Canvas c, CustomGames.Lobby l, boolean owner) {
+		int room = Math.max(1, CustomGames.maxPlayers(l) - l.members.size());
+		int adds = net.battlehub.core.BotFill.custom(l.bots, l.members.size(), CustomGames.maxPlayers(l));
+		Component now = l.bots.kind() == net.battlehub.core.BotFill.Kind.FILL ? Lang.tr(viewer, "bots.wish.fill_max", CustomGames.maxPlayers(l))
+				: net.battlehub.bot.Bots.wishText(viewer, l.bots, 0);
+		Icon bots = Icon.of(Items.ARMOR_STAND).name(Lang.item(viewer, "menu.custom.bots", now))
+				.lore(Lang.lore(viewer, "menu.custom.bots.adds", adds));
+		if (owner) bots = bots.lore(Lang.loreLines(viewer, "menu.custom.bots.lore"));
+		c.set(37, bots.glint(adds > 0).build(), owner ? click -> {
+			net.battlehub.core.BotFill.Wish w = click.right() ? l.bots.previous(room) : l.bots.next(room);
+			// in a private game the round goes none, 1, 2, ..., as many as fit, none
+			l.bots = w.kind() == net.battlehub.core.BotFill.Kind.STANDARD ? net.battlehub.core.BotFill.Wish.NONE : w;
+			new CustomGameMenu(viewer).open();
+		} : click -> {});
+		net.battlehub.core.ai.Difficulty[] levels = net.battlehub.core.ai.Difficulty.values();
+		Icon level = Icon.of(Items.EXPERIENCE_BOTTLE).name(Lang.item(viewer, "menu.custom.bot_level", Lang.tr(viewer, "bots.level." + l.botLevel.id())));
+		if (owner) level = level.lore(Lang.loreLines(viewer, "menu.custom.bot_level.lore"));
+		c.set(43, level.build(), owner ? click -> {
+			int i = l.botLevel.ordinal() + (click.right() ? levels.length - 1 : 1);
+			l.botLevel = levels[i % levels.length];
+			new CustomGameMenu(viewer).open();
+		} : click -> {});
 	}
 }

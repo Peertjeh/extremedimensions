@@ -41,6 +41,9 @@ public final class CustomGames {
 		public final Set<UUID> members = new LinkedHashSet<>();
 		/** Votes for the game (the kit in Free for All, the format in Bed Wars, the difficulty in parkour). */
 		public final Map<String, String> options = new HashMap<>();
+		/** Bots the owner adds at the start (none, a number, or as many as fit), and their level. */
+		public net.battlehub.core.BotFill.Wish bots = net.battlehub.core.BotFill.Wish.NONE;
+		public net.battlehub.core.ai.Difficulty botLevel = net.battlehub.bot.Bots.defaultLevel();
 
 		Lobby(String code, UUID owner, GameMode mode) {
 			this.code = code;
@@ -89,6 +92,11 @@ public final class CustomGames {
 		return l;
 	}
 
+	/** The most players this private game takes. */
+	public static int maxPlayers(Lobby l) {
+		return l.mode.isDuel() ? 2 : net.battlehub.config.ConfigManager.config().game(l.mode).maxPlayers;
+	}
+
 	public static boolean join(ServerPlayer p, String code) {
 		Lobby l = byCode(code);
 		if (l == null) {
@@ -98,8 +106,7 @@ public final class CustomGames {
 		if (l.members.contains(p.getUUID())) {
 			return true;
 		}
-		int max = l.mode.isDuel() ? 2 : net.battlehub.config.ConfigManager.config().game(l.mode).maxPlayers;
-		if (l.members.size() >= max) {
+		if (l.members.size() >= maxPlayers(l)) {
 			Msg.send(p, "custom.full");
 			return false;
 		}
@@ -144,8 +151,21 @@ public final class CustomGames {
 			ServerPlayer m = server.getPlayerList().getPlayer(id);
 			if (m != null && net.battlehub.hub.Travel.inBattleHub(m) && Sessions.inLobby(id)) players.add(m);
 		}
+		// the owner's bots take places nobody took
+		List<net.battlehub.bot.BotPlayer> bots = new ArrayList<>();
+		int wanted = net.battlehub.core.BotFill.custom(l.bots, players.size(), maxPlayers(l));
+		for (int i = 0; i < wanted; i++) {
+			net.battlehub.bot.BotPlayer bot = net.battlehub.bot.Bots.spawn(server, l.botLevel);
+			if (bot == null) {
+				Msg.send(p, "custom.bots_limit", bots.size());
+				break;
+			}
+			bots.add(bot);
+		}
+		players.addAll(bots);
 		int min = l.mode == GameMode.PARKOUR ? 1 : 2;
 		if (players.size() < min) {
+			for (net.battlehub.bot.BotPlayer b : bots) net.battlehub.bot.Bots.remove(b);
 			Msg.send(p, "custom.too_few", min);
 			return false;
 		}
@@ -156,6 +176,7 @@ public final class CustomGames {
 			m = PartyGames.create(l.mode, server, players, l.options);
 		}
 		if (m == null) {
+			for (net.battlehub.bot.BotPlayer b : bots) net.battlehub.bot.Bots.remove(b);
 			return false;
 		}
 		m.setUnrated(true);
@@ -163,11 +184,12 @@ public final class CustomGames {
 			Queues.leaveAll(pl);
 		}
 		if (!Matches.start(m)) {
+			for (net.battlehub.bot.BotPlayer b : bots) net.battlehub.bot.Bots.remove(b);
 			Msg.send(p, "queue.arenas_full");
 			return false;
 		}
 		for (ServerPlayer pl : players) {
-			HubItems.ensure(pl, false);
+			if (!net.battlehub.bot.Bots.isBot(pl)) HubItems.ensure(pl, false);
 		}
 		LOBBIES.remove(l.code);
 		return true;

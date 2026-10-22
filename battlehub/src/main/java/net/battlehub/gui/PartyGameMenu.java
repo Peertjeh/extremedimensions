@@ -8,7 +8,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Items;
 
-/** One party game: join or leave its lobby, or invite a friend. */
+/** One party game: join or leave its lobby, vote for the map, invite a friend, say how many bots you want. */
 public final class PartyGameMenu extends Screen {
 	private final GameMode mode;
 
@@ -123,6 +123,27 @@ public final class PartyGameMenu extends Screen {
 		}
 	}
 
+	/**
+	 * How many bots you want in party lobbies: the server's standard, a number or the lobby filled (left-click more,
+	 * right-click fewer, shift-click bots off or on again).
+	 */
+	private void bots(Canvas c) {
+		int max = net.battlehub.config.ConfigManager.config().game(mode).maxPlayers;
+		boolean off = net.battlehub.data.PlayerStore.get(viewer).noBots;
+		net.battlehub.core.BotFill.Wish w = net.battlehub.bot.Bots.wish(viewer.getUUID());
+		Component now = off ? Lang.tr(viewer, "bots.wish.none") : net.battlehub.bot.Bots.wishText(viewer, w, max);
+		c.set(16, Icon.of(Items.ARMOR_STAND).name(Lang.item(viewer, "menu.party.bots", now))
+				.lore(Lang.loreLines(viewer, "menu.party.bots.lore", max - 1)).glint(!off && w.kind() != net.battlehub.core.BotFill.Kind.STANDARD).build(),
+				click -> {
+					if (click.shift()) {
+						net.battlehub.bot.Bots.choose(viewer, off);
+					} else {
+						net.battlehub.bot.Bots.wish(viewer, off ? w : click.right() ? w.previous(max - 1) : w.next(max - 1));
+					}
+					new PartyGameMenu(viewer, mode).open();
+				});
+	}
+
 	@Override
 	public int refreshTicks() {
 		return 20;
@@ -133,14 +154,14 @@ public final class PartyGameMenu extends Screen {
 		c.set(4, PartyGamesMenu.icon(viewer, mode).build());
 		boolean in = Queues.inParty(viewer.getUUID(), mode);
 		if (in) {
-			c.set(11, Icon.of(Items.BARRIER).name(Lang.item(viewer, "menu.party.leave"))
+			c.set(10, Icon.of(Items.BARRIER).name(Lang.item(viewer, "menu.party.leave"))
 					.lore(Lang.loreLines(viewer, "menu.party.leave.lore")).build(),
 					click -> {
 						Queues.toggleParty(viewer, mode);
 						new PartyGameMenu(viewer, mode).open();
 					});
 		} else {
-			c.set(11, Icon.of("minecraft:lime_dye").name(Lang.item(viewer, "menu.party.join"))
+			c.set(10, Icon.of("minecraft:lime_dye").name(Lang.item(viewer, "menu.party.join"))
 					.lore(Lang.loreLines(viewer, "menu.party.join.lore")).build(),
 					click -> {
 						Queues.toggleParty(viewer, mode);
@@ -155,14 +176,15 @@ public final class PartyGameMenu extends Screen {
 			bedWarsFormat(c);
 		}
 		if (mode != GameMode.TOURNAMENT) {
-			c.set(13, Icon.of(Items.FILLED_MAP).name(Lang.item(viewer, "menu.mapvote.button"))
+			c.set(12, Icon.of(Items.FILLED_MAP).name(Lang.item(viewer, "menu.mapvote.button"))
 					.lore(Lang.lore(viewer, "menu.mapvote.leading", MapVoteMenu.leading(viewer, mode)))
 					.lore(Lang.loreLines(viewer, "menu.mapvote.button.lore")).clean().build(),
 					click -> new MapVoteMenu(viewer, mode).open());
 		}
-		c.set(15, Icon.of(Items.NAME_TAG).name(Lang.item(viewer, "menu.party.invite"))
+		c.set(14, Icon.of(Items.NAME_TAG).name(Lang.item(viewer, "menu.party.invite"))
 				.lore(Lang.loreLines(viewer, "menu.party.invite.lore")).build(),
 				click -> Queues.challengeMenu(viewer, mode));
+		if (net.battlehub.bot.Bots.filling()) bots(c);
 		c.back(() -> new PartyGamesMenu(viewer).open());
 		c.fill();
 	}

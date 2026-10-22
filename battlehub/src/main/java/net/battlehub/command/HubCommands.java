@@ -151,6 +151,21 @@ public final class HubCommands {
 					net.battlehub.bot.Bots.choose(c.getSource().getPlayerOrException(), false);
 					return 1;
 				}))
+				// how many bots you want in party lobbies: the server's standard, the lobby filled, or a number
+				.then(Commands.literal("standard").executes(c -> {
+					net.battlehub.bot.Bots.wish(c.getSource().getPlayerOrException(), net.battlehub.core.BotFill.Wish.STANDARD);
+					return 1;
+				}))
+				.then(Commands.literal("fill").executes(c -> {
+					net.battlehub.bot.Bots.wish(c.getSource().getPlayerOrException(), net.battlehub.core.BotFill.Wish.FILL);
+					return 1;
+				}))
+				.then(Commands.argument("count", IntegerArgumentType.integer(1, net.battlehub.core.BotFill.MAX_COUNT))
+						.executes(c -> {
+							net.battlehub.bot.Bots.wish(c.getSource().getPlayerOrException(),
+									net.battlehub.core.BotFill.Wish.count(IntegerArgumentType.getInteger(c, "count")));
+							return 1;
+						}))
 				// what bots learned about you, and wiping it
 				.then(Commands.literal("memory").executes(c -> {
 					ServerPlayer p = c.getSource().getPlayerOrException();
