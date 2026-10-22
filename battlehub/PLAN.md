@@ -748,3 +748,46 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
   - Skill 0,8 wint 69% van skill 0,5.
   - Een voorbeeldduel duurt 6,6 s met 6 tegen 5 treffers (`tools/show_fight.py`).
   - In CI draait een aparte job `ml` die de Python-tests uitvoert.
+
+**Stap 4–5 – training (`ml/train`).**
+- **Eerste runs leerden wegrennen.** Een geladen slag op de hitbox is te zeldzaam om toevallig te vinden, en de gescripte tegenstanders straften elke toenadering af. Na 2 miljoen stappen: 0 overwinningen, zelfs niet tegen een stilstaande pop. Het model hield ongeveer 16 blokken afstand en klikte in de lucht.
+- **Oplossing:**
+  - potentiaal-shaping: dichterbij komen en naar de tegenstander kijken (verandert niet wat de beste strategie is);
+  - −1 voor allebei bij een gelijkspel op tijd;
+  - geen straf meer per misser;
+  - een opbouw: 1,5 miljoen stappen alleen een pop (die nooit slaat), willekeurig spel en zwakke gescripte bots, dan tot 5 miljoen stappen steeds meer de pool van eerdere versies.
+- **Daarna leerde het snel:**
+  - na 0,5 miljoen stappen elke pop verslagen;
+  - na 1 miljoen 25–30% tegen de gescripte bot;
+  - na 4 miljoen 95%;
+  - na 8 miljoen 97% tegen de gescripte bot en 67% tegen eerdere versies.
+- **Snelheid en duur.** Ongeveer 4–5 duizend stappen per seconde op 4 kernen. Gestopt na 17 miljoen stappen (70 minuten): tegen de gescripte bot was het verzadigd (99,5%), en voor de andere modi komt er toch een uitgebreidere spec.
+- **League** (`train/league.py`, Elo; de gescripte bot met skill 0,5 = 1000; 200 potjes per paar, iedereen tegen iedereen):
+  - random 107, gescript 0,3: 929, gescript 1,0: 1099;
+  - checkpoint 1 miljoen 1044, 2 miljoen 1165, 4 miljoen 1461, 6 miljoen 1590, 9 miljoen 1739, 16 miljoen 1894 (het beste; 17 miljoen 1859).
+  - De niveaus zijn gelijk verdeeld tussen gescript 0,3 en het beste checkpoint:
+
+    | Niveau | Checkpoint | Extra vertraging | Mikruis | Draailimiet | Keuze |
+    |---|---|---|---|---|---|
+    | Beginner | 1 miljoen | 4 ticks | 2,5° per tick | 24° per beslissing | loten |
+    | Casual | 2 miljoen | 3 ticks | 1,8° | 30° | loten |
+    | Intermediate | 4 miljoen | 2 ticks | 1,2° | 36° | loten |
+    | Advanced | 6 miljoen | 1 tick | 0,8° | 45° | beste actie |
+    | Expert | 9 miljoen | 0 ticks | 0,5° | 54° | beste actie |
+    | Master | 16 miljoen | 0 ticks | 0,2° | 60° | beste actie |
+
+- **Export** (`train/export_onnx.py`): `obs` (n, 43) → `logits` (n, 26), ongeveer 100 KB per model. ONNX Runtime en PyTorch verschillen hooguit 1,2·10⁻⁷. De spec-sha256, het aantal stappen, het niveau en de Elo staan in de metadata. Per model schrijft de export ook een `.check.json` (8 observaties met logits) voor de Java-test.
+
+**Stap 6–7 – in de mod (1.33.0).**
+- **`net.battlehub.core.ml` (pure Java, JUnit zonder Minecraft):**
+  - `MiniJson`, `CombatSpec` (met sha256), `CombatState`, `CombatObservation`, `CombatAction` (beste of loten per kop) en `CombatLevels`.
+  - `CombatObservationTest` leest het gouden bestand uit `ml/spec` (Gradle-testresource). Alle 160 observaties komen op 1e-6 overeen, alle 64 acties hetzelfde. De sha256 van de spec in de mod is die van het gouden bestand.
+- **ONNX Runtime 1.31.0** (`implementation` + `include`, de jar wordt ongeveer 51 MB groter). `CombatModels` laadt de spec, `difficulties.json` en per niveau een sessie (1 thread), en weigert een model met een andere spec-sha256. Lukt laden niet (ook een `UnsatisfiedLinkError`), dan komt er één melding en vecht de bot gescript. `CombatModelsTest`: elk niveau geeft in Java de logits die PyTorch gaf (op 1e-4), en een model voor een andere spec wordt geweigerd.
+- **De naad.** `MeleeController` in `core/ai`. `CombatMind` laat hem sturen als de tactiek APPROACH, STRIKE, SPACE of RETREAT is en er geen doel is. Reactietijd, helen, randen, ontwijken en zoeken blijven gescript, net als de kruisdradencontrole bij elke klik in `BotBrain.execute`.
+- **`LearnedMelee`:**
+  - bouwt elke 2 ticks de `CombatState` uit wat de bot weet (dezelfde `Situation`: zicht, laatst bekende plek, health alleen als zichtbaar), plus 8 rand- en 8 muurstralen in de richtingen van de bot;
+  - neemt de tegenstander zoals hij `extra_delay` ticks eerder was;
+  - houdt de keuze 2 ticks vast: de klik alleen in de eerste tick, de draai over beide ticks verdeeld binnen de draailimiet, met mikruis;
+  - zet yaw en pitch zelf, zonder het AimModel.
+- **Config:** `bots.learnedCombat` (standaard aan) en `bots.learnedModes` (`sword`, `boxing`). `/bots inspect` toont hoeveel ticks het model stuurde.
+- **Zelftest.** De bestaande bot-tests draaien met het model uit (zij testen het gescripte gevecht). Een nieuwe test zet het aan: een practice-duel tegen MASTER, het model stuurt en raakt A, en A verliest terwijl hij stil staat.

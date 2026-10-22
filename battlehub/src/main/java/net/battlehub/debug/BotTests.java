@@ -72,6 +72,7 @@ final class BotTests {
 	static void all(MinecraftServer server, Script s) {
 		lobby(server, s);
 		practiceSword(server, s);
+		learnedSword(server, s);
 		practiceBow(server, s);
 		queueFill(server, s);
 		partyFill(server, s);
@@ -85,6 +86,49 @@ final class BotTests {
 			cfg().fillAfterSeconds = 15;
 			cfg().partyFillTo = 4;
 		});
+	}
+
+	/**
+	 * The learned combat model (battlehub/ml) in a real duel: the master level steers the bot to A, lands hits through
+	 * the real crosshair check, and beats A who only stands there.
+	 */
+	private static void learnedSword(MinecraftServer server, Script s) {
+		String tag = "bots learned";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": learned combat on; A starts a sword practice duel against a master bot", () -> {
+			cfg().learnedCombat = true;
+			cfg().learnedModes = new ArrayList<>(List.of("sword", "boxing"));
+			SelfTest.join(server, A);
+			Bots.practice(p(A), GameMode.SWORD, net.battlehub.core.ai.Difficulty.MASTER);
+		});
+		s.waitFor(tag + ": the duel runs with one bot", 600, () -> {
+			Match m = matchOfA();
+			return m != null && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
+		});
+		s.waitFor(tag + ": the model steers the bot to A and lands hits", 600, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			boolean hit = p(A).getHealth() < p(A).getMaxHealth();
+			if (Bots.learnedTicks(b) > 40 && hit) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned combat: {} ticks steered, A at {} health | {}", Bots.learnedTicks(b), p(A).getHealth(),
+						String.join(" | ", Bots.inspect(b)));
+				return true;
+			}
+			logBot("learned bot", m, b, "learnedLogged");
+			return false;
+		});
+		s.waitFor(tag + ": A, standing still, loses to it", 1200, () -> {
+			Match m = matchOfA();
+			if (m == null) return false;
+			if (m.phase() == Match.Phase.RUNNING) {
+				if (!botsIn(m).isEmpty()) logBot("learned bot", m, botsIn(m).get(0), "learnedLogged2");
+				return false;
+			}
+			return m.outcome(p(A).getUUID()) == net.battlehub.core.Outcome.LOSS;
+		});
+		endAndClean(s, tag);
+		s.run(tag + ": learned combat off again for the other tests", () -> cfg().learnedCombat = false);
 	}
 
 	/** The characters on the plaza and the mode of the day. */

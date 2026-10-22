@@ -245,7 +245,30 @@ public final class CombatMind {
 			// still taking it in: look, do not act yet
 			return Intent.NOTHING.withLook(t.pos().add(new V3(0, 1.4, 0)));
 		}
-		return steering.steer(decider.current(), s, id == null ? null : tracks.get(id), personality, difficulty, rng);
+		Tactic tactic = decider.current();
+		if (melee != null && s.goal() == null && FIGHTING.contains(tactic)) {
+			Intent learned = melee.act(tactic, s, id == null ? null : tracks.get(id));
+			if (learned != null) {
+				learnedTicks++;
+				return learned;
+			}
+		}
+		return steering.steer(tactic, s, id == null ? null : tracks.get(id), personality, difficulty, rng);
+	}
+
+	/** The tactics of the fight itself, which a {@link MeleeController} may steer (healing, edges, objectives stay scripted). */
+	private static final java.util.Set<Tactic> FIGHTING = java.util.EnumSet.of(Tactic.APPROACH, Tactic.STRIKE, Tactic.SPACE, Tactic.RETREAT);
+	private MeleeController melee;
+	private int learnedTicks;
+
+	/** Lets a controller (the learned model) fight for this mind; null: only the scripted steering. */
+	public void melee(MeleeController controller) {
+		this.melee = controller;
+	}
+
+	/** Ticks the learned controller steered (for the self-test and /bots inspect). */
+	public int learnedTicks() {
+		return learnedTicks;
 	}
 
 	private void think(Situation s) {

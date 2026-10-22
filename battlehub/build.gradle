@@ -15,6 +15,9 @@ dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	// The learned combat model (battlehub/ml) runs with ONNX Runtime, shipped inside the mod jar
+	implementation "com.microsoft.onnxruntime:onnxruntime:${project.onnxruntime_version}"
+	include "com.microsoft.onnxruntime:onnxruntime:${project.onnxruntime_version}"
 
 	// Pure game logic (net.battlehub.core) is tested without Minecraft on the classpath at runtime.
 	testImplementation platform("org.junit:junit-bom:${project.junit_version}")
@@ -37,6 +40,17 @@ processResources {
 
 	filesMatching("fabric.mod.json") {
 		expand "version": version
+	}
+	// one spec for the simulation and the mod: ml/spec is the source
+	from("ml/spec/combat_v1.json") {
+		into "assets/battlehub/ml"
+	}
+}
+
+sourceSets {
+	test {
+		// the golden file the simulation writes, checked by CombatObservationTest
+		resources.srcDir "ml/spec"
 	}
 }
 

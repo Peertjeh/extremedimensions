@@ -427,6 +427,8 @@ public final class Bots {
 		net.battlehub.core.ai.CombatMind mind = new net.battlehub.core.ai.CombatMind(a, a.base.individual(seed, cfg().personalityVariation),
 				bot.difficulty, seed ^ System.nanoTime());
 		mind.gate(Bots::allowThink);
+		// the learned model fights in the modes of bots.learnedModes (it decides each tick, so a config change counts at once)
+		mind.melee(new LearnedMelee(bot));
 		return mind;
 	}
 
@@ -674,6 +676,7 @@ public final class Bots {
 		net.battlehub.match.Match m = Matches.of(b.getUUID());
 		out.add(b.getGameProfile().name() + " (" + b.difficulty.id() + ")" + (m == null ? ", not in a match" : ", match #" + m.id + " " + m.mode.id()));
 		out.addAll(b.brain.mind().report().lines());
+		if (b.brain.mind().learnedTicks() > 0) out.add("learned combat: steered " + b.brain.mind().learnedTicks() + " ticks");
 		if (!b.brain.parkourNote().isEmpty()) out.add("parkour: " + b.brain.parkourNote());
 		if (m != null && m.botWeapon() != net.battlehub.core.ai.Weapon.ANY) {
 			out.add("weapon of this fight: " + m.botWeapon().name().toLowerCase(java.util.Locale.ROOT) + ", holds "
@@ -686,6 +689,11 @@ public final class Bots {
 					Math.hypot(g.point().x() - b.getX(), g.point().z() - b.getZ())) + (b.brain.placed() > 0 ? ", placed " + b.brain.placed() + " blocks" : ""));
 		}
 		return out;
+	}
+
+	/** Ticks the learned combat model steered this bot (self-test). */
+	public static int learnedTicks(BotPlayer b) {
+		return b.brain.mind().learnedTicks();
 	}
 
 	/** The bot's mind, explained (self-test, inspect). */

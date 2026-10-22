@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.33.0
+
+### Added
+* **A learned fight for bots in sword duels and boxing.** A neural network, trained outside Minecraft in a fast
+  simulation of the game's melee (battlehub/ml: movement, sprinting, knockback, attack charge, reach, armor) with PPO
+  and self-play, now does the fighting: walking, strafing, sprinting, jumping, turning and clicking, every two ticks,
+  from only what the bot can see.
+  * The scripted mind still decides when to fight, heal or go for an objective; edges and the crosshair check of
+    every click stay as they were.
+  * Six models, one per level, picked by Elo in a league against each other and the scripted bot (master about 800
+    Elo above the scripted fight); the lower levels see the opponent a few ticks late, aim less steadily, turn
+    slower and sample their moves.
+  * Runs with ONNX Runtime (shipped in the jar, which is why it is bigger now). When it cannot load on a platform,
+    the bots fight the scripted way.
+  * `bots.learnedCombat` (on) and `bots.learnedModes` (sword, boxing) in config.json.
+
 ## 1.32.1
 
 ### Fixed

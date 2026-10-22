@@ -59,7 +59,18 @@ def export(checkpoint, out, name="", meta=None):
     onnx.checker.check_model(m)
     onnx.save(m, out)
     check(net, out)
+    write_check(net, out)
     return out
+
+
+def write_check(net, path, n=8):
+    """<model>.check.json: a few observations with the logits PyTorch gives, for the mod's test of its own runtime."""
+    rng = np.random.default_rng(1)
+    obs = rng.uniform(-1, 1, size=(n, SPEC.obs_dim)).astype(np.float32)
+    with torch.no_grad():
+        logits = net(torch.as_tensor(obs)).numpy()
+    with open(path + ".check.json", "w") as f:
+        json.dump({"spec_sha256": SPEC.sha256, "obs": obs.tolist(), "logits": logits.tolist(), "tolerance": 1e-4}, f)
 
 
 def check(net, path, n=2000):

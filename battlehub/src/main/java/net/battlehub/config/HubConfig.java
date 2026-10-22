@@ -434,6 +434,14 @@ public final class HubConfig {
 		/** Keep what bots learned across restarts (battlehub/ai/<uuid>.json). */
 		public boolean learningPersistent = true;
 		/**
+		 * Fights in the modes below are fought by the learned combat model (trained in battlehub/ml, shipped in the
+		 * mod, one model per difficulty level); the scripted mind still decides when to fight, heal or go for an
+		 * objective. Off: always the scripted fight.
+		 */
+		public boolean learnedCombat = true;
+		/** The modes the learned model fights in (it was trained for a sword duel on flat ground; boxing works too). */
+		public List<String> learnedModes = new ArrayList<>(List.of("sword", "boxing"));
+		/**
 		 * From how long a server tick (milliseconds, smoothed; 50 is the limit) bots think less often: one step slower
 		 * for every 5 ms above this, at most four times as slow. Dangers still make them think at once.
 		 */
@@ -680,6 +688,7 @@ public final class HubConfig {
 		bots.idleSeconds = Math.max(1, bots.idleSeconds);
 		if (bots.fillLevel == null) bots.fillLevel = "normal";
 		if (bots.archetypes == null) bots.archetypes = new Bots().archetypes;
+		if (bots.learnedModes == null) bots.learnedModes = new Bots().learnedModes;
 		bots.archetypes.removeIf(a -> {
 			boolean bad = a == null || net.battlehub.core.ai.Archetype.parse(a, null) == null;
 			if (bad) net.battlehub.BattleHub.LOGGER.warn("BattleHub config: unknown bot style '{}' left out (known: {})", a,
