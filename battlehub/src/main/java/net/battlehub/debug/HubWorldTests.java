@@ -65,7 +65,17 @@ final class HubWorldTests {
 			return hub.getBlockState(new BlockPos(0, y + 15, 0)).is(net.minecraft.world.level.block.Blocks.BEACON)
 					&& hub.getBlockState(new BlockPos(0, y + 13, -r)).is(net.minecraft.world.level.block.Blocks.BEACON);
 		});
-		s.check(tag + ": and A comes in again", () -> Travel.enter(p(A)) && HubWorld.isBattleHub(p(A).level()));
+		s.check(tag + ": and A comes in again", () -> {
+			boolean before = Travel.inBattleHub(p(A));
+			boolean entered = Travel.enter(p(A));
+			boolean in = entered && HubWorld.isBattleHub(p(A).level());
+			if (!in) {
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST world reset: A was in BattleHub {}, entered {}, now in {}, resetting {}, ready {}, session {}, match {}",
+						before, entered, p(A).level().dimension().identifier(), HubWorld.resetting(), HubWorld.ready(), Sessions.state(p(A).getUUID()),
+						net.battlehub.match.Matches.of(p(A).getUUID()) == null ? "none" : net.battlehub.match.Matches.of(p(A).getUUID()).mode.id());
+			}
+			return in;
+		});
 	}
 
 	static void all(MinecraftServer server, Script s) {
