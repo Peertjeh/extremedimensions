@@ -1085,6 +1085,8 @@
   "config.extremedimensions.veil_lantern_range.desc": "Binnen hoeveel blokken van een Sluierlantaarn geen Wondstorm doorbreekt.",
   "config.extremedimensions.seam_build_budget_ms": "Bouwbudget Seam (ms/tick)",
   "config.extremedimensions.seam_build_budget_ms.desc": "Milliseconden per tick die de Seam mag besteden aan het bouwen van eilanden (blokken in chunks die niemand geladen heeft, wachten).",
+  "config.extremedimensions.elder_arena_design_budget_ms": "Ouden: ontwerpbudget arena (ms/tick)",
+  "config.extremedimensions.elder_arena_design_budget_ms.desc": "Milliseconden per tick die het ontwerp van de arena van een Oude mag kosten; het wordt opgesteld in de ticks waarin de Oude verschijnt, zodat het oproepen de server niet in één keer ophoudt.",
   "config.extremedimensions.seam_fly_range": "Seam: bouwt zich op binnen (blokken)",
   "config.extremedimensions.seam_fly_range.desc": "Binnen zoveel blokken van een speler bouwt de Seam zich voor hun ogen op: blokken vliegen uit het niets aan; verder weg staan ze er gewoon (0 = nooit).",
   "config.extremedimensions.seam_fly_max": "Seam: blokken tegelijk in de lucht",

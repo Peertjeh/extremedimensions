@@ -29,6 +29,7 @@ import com.extremedimensions.seam.SeamArchitect;
 import com.extremedimensions.seam.SeamService;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.ServerEvents;
+import com.extremedimensions.server.TickProfile;
 import com.extremedimensions.server.WorldFx;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -371,10 +372,11 @@ public class PerfTests {
 
 	/**
 	 * An Elder's whole fight as a player meets it: it forms while its arena rises round it at its full size (blocks
-	 * flying in for the one watching), then it fights, its ultimate forced partway. Logged: what calling it cost at once
-	 * (the arena's design is drawn up there and then), and every server tick of the fight against quiet ones before it,
-	 * the whole tick and the mod's own share. Far out from every other test (and alone in its batch), in chunks forced
-	 * round it as a player arriving there would load them; the arena is taken down and the ground put back afterwards.
+	 * flying in for the one watching), then it fights, its ultimate forced partway. Logged: what calling it cost at once,
+	 * what its arena's design cost in all and in its longest step (it is drawn up over the first ticks), and every server
+	 * tick of the fight against quiet ones before it, the whole tick and the mod's own share. Far out from every other
+	 * test (and alone in its batch), in chunks forced round it as a player arriving there would load them; the arena is
+	 * taken down and the ground put back afterwards.
 	 */
 	private static void elderFight(GameTestHelper helper, Elder elder, int east, Runnable tidy) {
 		ServerLevel level = helper.getLevel();
@@ -401,6 +403,7 @@ public class PerfTests {
 		List<List<double[]>> heard = new ArrayList<>();
 		Runnable restore = () -> {
 			TickClock.stop();
+			TickProfile.stop();
 			if (boss[0] != null && boss[0].isAlive()) {
 				elder.fade().accept(boss[0]);
 			}
@@ -428,10 +431,10 @@ public class PerfTests {
 			AABB near = new AABB(centre).inflate(64);
 			List<? extends ElderBoss> had = level.getEntitiesOfClass(elder.kind(), near);
 			TickClock.listen();
+			TickProfile.listen();
 			long t = System.nanoTime();
 			boolean came = elder.call().test(p);
 			called[0] = (System.nanoTime() - t) / 1e6;
-			design[0] = ElderArena.lastDesign();
 			boss[0] = level.getEntitiesOfClass(elder.kind(), near).stream().filter(b -> !had.contains(b)).findFirst().orElse(null);
 			if (!came || boss[0] == null) {
 				restore.run();
@@ -452,21 +455,30 @@ public class PerfTests {
 		}
 		helper.runAfterDelay(LOAD + CALM + FIGHT + 1, () -> {
 			List<double[]> fight = TickClock.stop();
+			// The parts of the mod's tick with the worst single ticks, worst first
+			StringBuilder worst = new StringBuilder();
+			TickProfile.stop().entrySet().stream().sorted((a, b) -> Double.compare(b.getValue()[0], a.getValue()[0])).limit(4)
+					.forEach(e -> worst.append(worst.length() == 0 ? "" : ", ").append(String.format(java.util.Locale.ROOT, "%s %.1f ms (%.2f ms a tick)",
+							e.getKey(), e.getValue()[0], e.getValue()[1] / Math.max(1, e.getValue()[2]))));
 			boolean fought = boss[0] != null && boss[0].isAlive();
 			int standing = ElderArena.standing();
+			// (its design is drawn up over the first ticks of the fight)
+			design[0] = ElderArena.lastDesign();
 			restore.run();
 			double[] calm = spread(heard.get(0), 0, true), whole = spread(fight, 0, true), mod = spread(fight, 1, false);
 			report(elder.name().toLowerCase(java.util.Locale.ROOT) + " fight with its arena", String.format(java.util.Locale.ROOT,
-					"called in %.1f ms (its arena of %d blocks designed in %.1f ms); %d ticks: the mod's own work %.2f ms a tick on average, "
+					"called in %.1f ms (its arena of %d blocks designed in %.1f ms over %d ticks, its longest step %.1f ms); %d ticks: the mod's own work %.2f ms a tick on average, "
 							+ "95%% within %.2f ms, worst %.2f ms; the whole server tick %.2f ms on average, 95%% within %.2f ms, worst %.2f ms "
 							+ "(quiet before it: %.2f, %.2f, %.2f ms); at most %d blocks in the air, %d standing at the end; still fighting %s; "
-							+ "%d of %d chunks loaded at the start",
-					called[0], design[0][1], design[0][0] / 1e6, fight.size(), mod[0], mod[1], mod[2], whole[0], whole[1], whole[2], calm[0], calm[1],
-					calm[2], flyingMost[0], standing, fought, loaded[0], (2 * r + 1) * (2 * r + 1)));
+							+ "%d of %d chunks loaded at the start; the worst ticks of the mod's parts: %s",
+					called[0], design[0][1], design[0][0] / 1e6, design[0][2], design[0][3] / 1e6, fight.size(), mod[0], mod[1], mod[2], whole[0], whole[1], whole[2], calm[0], calm[1],
+					calm[2], flyingMost[0], standing, fought, loaded[0], (2 * r + 1) * (2 * r + 1), worst));
 			CurseTests.check(helper, design[0][1] > 1000 && flyingMost[0] > 0, "no arena rose round the %s (%s blocks, %s at most in the air)",
 					elder.name(), design[0][1], flyingMost[0]);
 			// Far above any sane cost, as the other tests here: a slow runner never fails these, a real regression does
-			CurseTests.check(helper, called[0] < 2000, "calling the %s stalled the server for %s ms", elder.name(), called[0]);
+			// Its arena is designed a little each tick, never all at once when it is called
+			CurseTests.check(helper, called[0] < 150, "calling the %s stalled the server for %s ms", elder.name(), called[0]);
+			CurseTests.check(helper, design[0][3] < 60_000_000L, "one step of the %s's arena design took %s ms", elder.name(), design[0][3] / 1e6);
 			CurseTests.check(helper, mod[1] < 25, "95%% of the %s's fight ticks took the mod up to %s ms", elder.name(), mod[1]);
 			CurseTests.check(helper, mod[2] < 250, "a tick of the %s's fight stalled the mod for %s ms", elder.name(), mod[2]);
 			helper.succeed();

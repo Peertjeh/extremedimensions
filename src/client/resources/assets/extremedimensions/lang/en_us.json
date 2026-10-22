@@ -1085,6 +1085,8 @@
   "config.extremedimensions.veil_lantern_range.desc": "Within how many blocks of a Veil Lantern no Wound Storm breaks through.",
   "config.extremedimensions.seam_build_budget_ms": "Seam build budget (ms/tick)",
   "config.extremedimensions.seam_build_budget_ms.desc": "Milliseconds per tick the Seam may spend building islands (blocks in chunks nobody has loaded wait).",
+  "config.extremedimensions.elder_arena_design_budget_ms": "Elders: arena design budget (ms/tick)",
+  "config.extremedimensions.elder_arena_design_budget_ms.desc": "Milliseconds per tick an Elder's arena may spend being designed; it is drawn up over the ticks the Elder takes to form, so calling one does not hold the server up all at once.",
   "config.extremedimensions.seam_fly_range": "Seam: builds itself within (blocks)",
   "config.extremedimensions.seam_fly_range.desc": "Within this many blocks of a player the Seam builds itself before their eyes, blocks flying in out of the nothing; farther off they are simply there (0 = never).",
   "config.extremedimensions.seam_fly_max": "Seam: blocks in the air at once",

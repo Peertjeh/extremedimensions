@@ -245,4 +245,26 @@ public class ArenaTests {
 			helper.succeed();
 		});
 	}
+
+	/**
+	 * An arena's design drawn up a step at a time, as a great one is over the ticks its Elder takes to form, comes out the
+	 * same as one drawn up whole from the same seed, for each Elder's style (at size 3: with its wall, great piece and
+	 * cores).
+	 */
+	@GameTest
+	public void anArenaDrawnUpInStepsIsTheSameArena(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		double size = Config.ELDER_ARENA_SIZE;
+		Config.ELDER_ARENA_SIZE = 3.0;
+		try {
+			BlockPos centre = helper.absolutePos(new BlockPos(2, 2, 2));
+			for (int style = 0; style < 3; style++) {
+				String diff = ElderArena.draftDiffers(level, style, centre, 1234L + style);
+				check(helper, diff == null, "style %s drawn up in steps: %s", style, diff);
+			}
+		} finally {
+			Config.ELDER_ARENA_SIZE = size;
+		}
+		helper.succeed();
+	}
 }

@@ -6,6 +6,10 @@ Nothing changes in play: this release makes the builds trustworthy, so a red bui
 the heavy parts cost, and makes the download lighter.
 
 ### Changed
+- **Calling an Elder no longer stalls the server**: its arena (some 400,000 blocks at the default size) was designed all
+  at once the moment it was called, holding every player up for 0.2 to 0.85 seconds. The design is now drawn up a
+  little each tick (**Technical → Elders: arena design budget**, 8 ms a tick by default) while the Elder forms, and the
+  arena rises once it is whole: the same arena, block for block, a moment later.
 - **A lighter jar**: the five music tracks are encoded afresh from their originals, a little lighter (the menu tracks
   at Vorbis quality 2, the Elder fights' at quality 1, under the din of battle): 11.4 MB of music becomes 7.9 MB, and
   the jar about 20 MB instead of 24. The sky and the title picture stay as they were: squeezing them into fewer colours
@@ -23,6 +27,9 @@ the heavy parts cost, and makes the download lighter.
 - The echo test loads the spot of its away player's echo itself (40 blocks off): it counted on a neighbouring test to
   keep that chunk loaded, and with the Elder tests gone from the big batches that neighbour was not always there.
 - When the Lance has not fired by its 70th tick, the test now also says the Weaver's health and why it left the world.
+- An arena's design drawn up a step at a time must come out the same as one drawn up whole, for each Elder's style.
+- The fight measurements also log what each part of the mod's tick took at its worst (Elders, arena, strikes, the
+  Seam...), to find what makes a fight's occasional slow tick.
 - **The Elder fights are measured**: a fight with each of the Matriarch, the Ferryman and the Weaver, as a player meets
   it (its arena rising round it at its full size, blocks flying in, its ultimate partway), alone and far from every
   other test. Logged: what calling it costs at once (the arena is designed there and then), and every server tick of the

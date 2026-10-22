@@ -50,7 +50,8 @@ import net.minecraft.world.phys.AABB;
  * player is near enough to see them; the rest simply appear (and vanish) in their places. A block whose part of the
  * world is not loaded when its turn comes (no one near; a great arena reaches past the view) waits until it is, so the
  * far towers and islands go up as someone comes near them; the world is never loaded just to put a block up or take
- * one down.
+ * one down. A great arena's design is drawn up a little each tick ({@code elder_arena_design_budget_ms}) while its
+ * Elder forms, so calling an Elder never holds the server up; it rises once its design is whole.
  */
 public final class ElderArena {
 	private ElderArena() {}
@@ -119,8 +120,27 @@ public final class ElderArena {
 	}
 
 	private static final List<Arena> ARENAS = new ArrayList<>();
-	/** How long the last arena's design took (nanoseconds) and how many blocks it holds (for tests). */
-	private static long[] lastDesign = {0, 0};
+
+	/** An arena being designed, a little each tick within {@code elder_arena_design_budget_ms}, before it rises. */
+	private static final class Drafting {
+		UUID boss;
+		ServerLevel level;
+		int style;
+		BlockPos centre;
+		ArenaDesign.Draft draft;
+		/** Time spent on it so far (nanoseconds), and the ticks it was worked on in. */
+		long nanos;
+		int ticks;
+		/** Ticks its Elder has not been found (a chunk still loading, or gone). */
+		int missing;
+	}
+
+	private static final List<Drafting> DRAFTS = new ArrayList<>();
+	/**
+	 * The last arena's design (for tests): the time it took in all (nanoseconds), its blocks, the ticks it was spread
+	 * over, and the longest single step of it (nanoseconds).
+	 */
+	private static long[] lastDesign = {0, 0, 0, 0};
 	/** Every block an arena has put down, by level and position. */
 	static final Map<ServerLevel, Map<Long, Piece>> STANDING = new HashMap<>();
 
@@ -223,6 +243,11 @@ public final class ElderArena {
 				return false;
 			}
 		}
+		for (Drafting d : DRAFTS) {
+			if (d.level == level && d.draft.claims(pos)) {
+				return false;
+			}
+		}
 		return true;
 	}
 
@@ -232,14 +257,17 @@ public final class ElderArena {
 		return m == null || m.isEmpty() ? null : m.values().iterator().next().pos;
 	}
 
-	/** How long the last arena's design took, in nanoseconds, and how many blocks it holds (for tests). */
+	/**
+	 * The last arena's design (for tests): the time it took in all (nanoseconds), its blocks, the ticks it was spread
+	 * over, and the longest single step of it (nanoseconds).
+	 */
 	public static long[] lastDesign() {
 		return lastDesign.clone();
 	}
 
-	/** Arenas standing or on their way (for tests). */
+	/** Arenas standing or on their way, those still being designed among them (for tests). */
 	public static int count() {
-		return ARENAS.size();
+		return ARENAS.size() + DRAFTS.size();
 	}
 
 	/** Blocks put down by arenas, all told (for tests). */
@@ -315,21 +343,76 @@ public final class ElderArena {
 		if (Config.ELDER_ARENA <= 0 || b instanceof KnotMother) {
 			return;
 		}
-		ServerLevel level = (ServerLevel) b.level();
-		int style = ElderFx.index(b);
-		long t0 = System.nanoTime();
-		ArenaDesign.Blueprint bp = ArenaDesign.design(level, style, centre, ElderTerrain.griefing(level), ThreadLocalRandom.current().nextLong());
-		lastDesign = new long[] {System.nanoTime() - t0, bp.pieces.size()};
-		if (bp.pieces.isEmpty()) {
-			return;
+		long start = System.nanoTime();
+		Drafting d = new Drafting();
+		d.boss = b.getUUID();
+		d.level = (ServerLevel) b.level();
+		d.style = ElderFx.index(b);
+		d.centre = centre.immutable();
+		d.draft = new ArenaDesign.Draft(d.level, d.style, d.centre, ElderTerrain.griefing(d.level), ThreadLocalRandom.current().nextLong());
+		// As much of its design as this tick's budget allows (a small arena is drawn up whole here and rises at once);
+		// the rest over the next ticks, while its Elder forms
+		DRAFTS.add(d);
+		if (draw(d, start, start + designBudget())) {
+			DRAFTS.remove(d);
 		}
-		open(b, level, style, centre, bp);
+	}
+
+	/**
+	 * Whether an arena's design drawn up one step at a time comes out the same as the design drawn up whole, from the
+	 * same seed in the same world (for tests): null if it does, else the first difference.
+	 */
+	public static String draftDiffers(ServerLevel level, int style, BlockPos centre, long seed) {
+		boolean grief = ElderTerrain.griefing(level);
+		ArenaDesign.Blueprint whole = ArenaDesign.design(level, style, centre, grief, seed);
+		ArenaDesign.Draft d = new ArenaDesign.Draft(level, style, centre, grief, seed);
+		int steps = 1;
+		// (a deadline long past: one step a call)
+		while (!d.work(Long.MIN_VALUE)) {
+			steps++;
+		}
+		ArenaDesign.Blueprint bit = d.blueprint();
+		if (whole.pieces.size() != bit.pieces.size()) {
+			return whole.pieces.size() + " blocks whole, " + bit.pieces.size() + " in " + steps + " steps";
+		}
+		for (int i = 0; i < whole.pieces.size(); i++) {
+			Piece a = whole.pieces.get(i), b = bit.pieces.get(i);
+			if (!a.pos.equals(b.pos) || a.state != b.state || a.kind != b.kind || a.expect != b.expect || a.group != b.group) {
+				return "block " + i + " differs: " + a.pos + " " + a.state + " whole, " + b.pos + " " + b.state + " in steps";
+			}
+		}
+		if (!whole.kinds.equals(bit.kinds) || !whole.isles.equals(bit.isles) || !whole.cores.equals(bit.cores) || !whole.lines.equals(bit.lines)
+				|| !whole.arches.equals(bit.arches) || whole.gy != bit.gy) {
+			return "its structures differ (" + whole.kinds.size() + " and " + bit.kinds.size() + " groups, " + whole.isles.size() + " and "
+					+ bit.isles.size() + " islands, " + whole.lines.size() + " and " + bit.lines.size() + " lines)";
+		}
+		return whole.pieces.isEmpty() ? "no blocks were designed" : null;
+	}
+
+	private static long designBudget() {
+		return Math.max(1, Config.ELDER_ARENA_DESIGN_BUDGET_MS) * 1_000_000L;
+	}
+
+	/** Works on an arena's design until {@code deadline}; once it is whole, the arena rises. True once it is done with. */
+	private static boolean draw(Drafting d, long start, long deadline) {
+		boolean whole = d.draft.work(deadline);
+		d.nanos += System.nanoTime() - start;
+		d.ticks++;
+		if (!whole) {
+			return false;
+		}
+		ArenaDesign.Blueprint bp = d.draft.blueprint();
+		lastDesign = new long[] {d.nanos, bp.pieces.size(), d.ticks, d.draft.longest()};
+		if (!bp.pieces.isEmpty()) {
+			open(d.boss, d.level, d.style, d.centre, bp);
+		}
+		return true;
 	}
 
 	/** An arena of a design begins: it is the Elder's, and claims every block it means to build. */
-	private static Arena open(ElderBoss b, ServerLevel level, int style, BlockPos centre, ArenaDesign.Blueprint bp) {
+	private static Arena open(UUID boss, ServerLevel level, int style, BlockPos centre, ArenaDesign.Blueprint bp) {
 		Arena a = new Arena();
-		a.boss = b.getUUID();
+		a.boss = boss;
 		a.level = level;
 		a.style = style;
 		a.cx = centre.getX() + 0.5;
@@ -391,7 +474,7 @@ public final class ElderArena {
 				bp.isles.add(new ArenaDesign.Isle(mx, top, mz, r, g));
 			}
 		}
-		Arena a = open(b, level, bp.style, centre, bp);
+		Arena a = open(b.getUUID(), level, bp.style, centre, bp);
 		for (Piece p : a.pieces) {
 			p.original = level.getBlockState(p.pos);
 			level.setBlock(p.pos, p.state, 2 | 16);
@@ -404,6 +487,7 @@ public final class ElderArena {
 
 	/** An Elder's arena is taken down at once and the ground put back (for tests). */
 	public static void unrig(Entity boss) {
+		DRAFTS.removeIf(d -> d.boss.equals(boss.getUUID()));
 		Iterator<Arena> it = ARENAS.iterator();
 		while (it.hasNext()) {
 			Arena a = it.next();
@@ -416,6 +500,8 @@ public final class ElderArena {
 
 	/** This Elder's fight is over (slain or gone): its arena stands a while, then comes apart. */
 	public static void release(Entity boss) {
+		// (an arena still being designed never rises)
+		DRAFTS.removeIf(d -> d.boss.equals(boss.getUUID()));
 		for (Arena a : ARENAS) {
 			if (a.boss.equals(boss.getUUID())) {
 				end(a);
@@ -435,6 +521,25 @@ public final class ElderArena {
 
 	public static void tick(MinecraftServer s) {
 		ArenaRuin.tick();
+		if (!DRAFTS.isEmpty()) {
+			// The designs under way share one budget a tick, the oldest first
+			long start = System.nanoTime(), deadline = start + designBudget();
+			Iterator<Drafting> dit = DRAFTS.iterator();
+			while (dit.hasNext()) {
+				Drafting d = dit.next();
+				Entity boss = d.level.getEntity(d.boss);
+				if (boss instanceof ElderBoss e && e.isAlive()) {
+					d.missing = 0;
+				} else if (boss != null || ++d.missing > 60) {
+					// Slain or gone before its arena rose: it never does
+					dit.remove();
+					continue;
+				}
+				if (System.nanoTime() < deadline && draw(d, System.nanoTime(), deadline)) {
+					dit.remove();
+				}
+			}
+		}
 		if (ARENAS.isEmpty()) {
 			return;
 		}
@@ -821,6 +926,7 @@ public final class ElderArena {
 
 	/** On stopping: every arena is taken down at once and the ground put back, before the world is saved. */
 	public static void clear() {
+		DRAFTS.clear();
 		ArenaRuin.clear();
 		for (Arena a : ARENAS) {
 			takeDown(a);

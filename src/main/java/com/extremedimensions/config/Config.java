@@ -821,6 +821,8 @@ public final class Config {
 
 	/** Milliseconds per tick the Seam may spend building islands (blocks in chunks nobody has loaded wait). */
 	public static int SEAM_BUILD_BUDGET_MS = 5;
+	/** Milliseconds per tick an Elder's arena may spend being designed (it is drawn up over the ticks the Elder takes to form). */
+	public static int ELDER_ARENA_DESIGN_BUDGET_MS = 8;
 	/** Blocks from a player within which the Seam builds itself before their eyes, blocks flying in out of the nothing (0 = never: they are simply there). */
 	public static int SEAM_FLY_RANGE = 96;
 	/** Most blocks in the air at once while the Seam builds itself. */
@@ -986,7 +988,7 @@ public final class Config {
 			{"lurker_ward_range", 0, 16}, {"scar_drain_reduction", 0, 0.2}, {"pact_full_seconds", 0, 86400},
 			{"elder_speed", 0.1, 10}, {"elder_attack_speed", 0.1, 10}, {"elder_windup_speed", 0.2, 10},
 			{"elder_ultimate_seconds", 2, 120}, {"elder_arena_linger_seconds", -1, 86400},
-			{"seam_build_budget_ms", 1, 50}, {"seam_fly_range", 0, 128}, {"seam_fly_max", 1, 5000}, {"seam_fly_ticks", 10, 200},
+			{"seam_build_budget_ms", 1, 50}, {"elder_arena_design_budget_ms", 1, 50}, {"seam_fly_range", 0, 128}, {"seam_fly_max", 1, 5000}, {"seam_fly_ticks", 10, 200},
 			{"seam_fly_from", 2, 64}, {"seam_damage", 0, 100},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},
 			{"seam_fray_ray_cooldown", 1, 120}, {"seam_fray_gloom", 0, 30}, {"seam_fray_gloom_every", 10, 3600}, {"seam_fray_unravel", 0, 1},

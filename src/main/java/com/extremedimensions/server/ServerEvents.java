@@ -504,6 +504,8 @@ public final class ServerEvents {
 	}
 
 	private static void work(MinecraftServer s) {
+		// (each part timed while the performance tests listen; see TickProfile)
+		long lap = TickProfile.start();
 		com.extremedimensions.lore.FirstWeaver.tick(s);
 		com.extremedimensions.tapestry.Tapestry.tick(s);
 		if (!STRAYS.isEmpty()) {
@@ -598,6 +600,7 @@ public final class ServerEvents {
 			}
 		}
 
+		lap = TickProfile.lap("players", lap);
 		TetherService.sweep(s);
 		com.extremedimensions.expedition.ExpeditionBar.tick(s);
 		com.extremedimensions.lore.WarmChains.tick(s);
@@ -610,22 +613,32 @@ public final class ServerEvents {
 		AnchorService.tick(s);
 		LurkerService.tick(s);
 		HollowService.tick(s);
+		lap = TickProfile.lap("world", lap);
 		SeamService.tick(s);
 		com.extremedimensions.seam.FirstKnot.tick(s);
 		com.extremedimensions.seam.SeamFauna.tick(s);
 		WorldService.tick(s);
 		MendingService.tick(s);
+		lap = TickProfile.lap("seam", lap);
 		com.extremedimensions.elder.FerrymanService.tick(s);
+		lap = TickProfile.lap("ferryman", lap);
 		com.extremedimensions.elder.MatriarchService.tick(s);
+		lap = TickProfile.lap("matriarch", lap);
 		com.extremedimensions.elder.ElderStrikes.tick(s);
+		lap = TickProfile.lap("strikes", lap);
 		com.extremedimensions.elder.ElderSpells.sweep(s);
 		com.extremedimensions.elder.ElderGaol.tick(s);
+		lap = TickProfile.lap("spells and gaol", lap);
 		com.extremedimensions.elder.ElderTerrain.tick(s);
+		lap = TickProfile.lap("terrain", lap);
 		com.extremedimensions.elder.WeaverService.tick(s);
+		lap = TickProfile.lap("weaver", lap);
 		com.extremedimensions.elder.ElderArena.tick(s);
+		lap = TickProfile.lap("arena", lap);
 		com.extremedimensions.coop.FallenService.tick(s);
 		com.extremedimensions.tribe.RaidService.tick(s);
 		com.extremedimensions.elder.AttackFx.flush(s);
+		TickProfile.lap("fx and the rest", lap);
 	}
 
 	/** Journal pages found by exploring. */

@@ -1,5 +1,6 @@
 package com.extremedimensions.elder;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -397,117 +398,208 @@ final class ArenaDesign {
 
 	// ------------------------------------------------------------------ the design
 
+	/** An arena's whole design at once (see {@link Draft} for one drawn up a little at a time). */
 	static Blueprint design(ServerLevel level, int style, BlockPos centre, boolean grief, long seed) {
-		Plan plan = new Plan(level, grief, seed);
-		double size = Math.max(0.5, Math.min(12.0, Config.ELDER_ARENA_SIZE));
-		// Where things are spreads with the size; how broad they are grows only with its root
-		double wide = Math.sqrt(Math.max(1, size));
-		int floorR = (int) Math.round(12 * size);
-		int rimR = floorR + 1;
-		int towerR = (int) Math.round(18 * size);
-		int outerR = (int) Math.round(23.5 * size);
-		for (net.minecraft.server.level.ServerPlayer q : level.players()) {
-			double near = Math.max(64, outerR + 16);
-			if (!q.isSpectator() && q.distanceToSqr(centre.getX() + 0.5, centre.getY(), centre.getZ() + 0.5) < near * near) {
-				plan.people.add(new double[] {q.getX(), q.getZ()});
-			}
-		}
-		Palette pal = palette(style);
-		int cx = centre.getX(), cz = centre.getZ();
-		BlockPos g0 = plan.ground(cx, centre.getY(), cz);
-		int gy = g0 != null ? g0.getY() : centre.getY() - 1;
-		// Taller towers in a larger arena (the lesser ones half as much), up to 30 blocks taller
-		int lift = (int) Math.round(5 * Math.min(6, Math.max(0, size - 1)));
-		double turn = plan.rnd.nextDouble() * TAU / 8;
-		Blueprint bp = new Blueprint();
+		Draft d = new Draft(level, style, centre, grief, seed);
+		d.work(Long.MAX_VALUE);
+		return d.blueprint();
+	}
 
-		floor(plan, pal, style, cx, gy, cz, floorR, turn, size, wide);
-		rim(plan, pal, cx, gy, cz, rimR, turn, wide);
-		if (size >= 3 && Config.ELDER_ARENA_WALL > 0) {
-			wall(plan, pal, cx, gy, cz, floorR + 4, turn, size, wide);
-		}
-		List<double[]> tops = new ArrayList<>();
-		for (int k = 0; k < 8; k++) {
-			double a = turn + TAU * k / 8;
-			path(plan, pal, cx, gy, cz, a, rimR + 1, towerR - 2, (int) Math.round(wide));
-			double[] top = tower(plan, pal, style, cx + Math.cos(a) * towerR, gy, cz + Math.sin(a) * towerR, a, k % 2 == 0, k % 2 == 0 ? lift : lift / 2);
-			tops.add(top);
-		}
-		if (size >= 2) {
-			// A second ring beyond the first, between them, the great ones where the lesser stand within
-			for (int k = 0; k < 8; k++) {
-				double a = turn + TAU * (k + 0.5) / 8;
-				tower(plan, pal, style, cx + Math.cos(a) * outerR, gy, cz + Math.sin(a) * outerR, a, k % 2 != 0, k % 2 != 0 ? lift : lift / 2);
-			}
-		}
-		if (size >= 3 && Config.ELDER_ARENA_LANDMARK > 0) {
-			List<int[]> origins = switch (style) {
-				case 0 -> rootArches(plan, cx, gy, cz, floorR, turn, wide);
-				case 1 -> wreck(plan, bp, cx, gy, cz, floorR, turn);
-				default -> loom(plan, bp, pal, cx, gy, cz, floorR, turn, wide);
-			};
-			if (Config.ELDER_CORES > 0) {
-				for (int[] o : origins) {
-					core(plan, coreBlock(style), o[0], o[1], o[2]);
+	/**
+	 * An arena's design being drawn up: its floor a few hundred columns at a time, its wall a stretch at a time, then
+	 * each path and tower, its great piece and each island, in the order a whole design takes them (so one seed gives one
+	 * arena however the work is spread). Worked on within a time budget each tick, it never holds the server up for long.
+	 */
+	static final class Draft {
+		/** Floor columns drawn up in one step. */
+		private static final int FLOOR_STEP = 384;
+
+		private final Plan plan;
+		private final Blueprint bp = new Blueprint();
+		private final ArrayDeque<Runnable> steps = new ArrayDeque<>();
+		/** The longest one step took (nanoseconds), for the tests. */
+		private long longest = 0;
+
+		Draft(ServerLevel level, int style, BlockPos centre, boolean grief, long seed) {
+			Plan plan = new Plan(level, grief, seed);
+			this.plan = plan;
+			double size = Math.max(0.5, Math.min(12.0, Config.ELDER_ARENA_SIZE));
+			// Where things are spreads with the size; how broad they are grows only with its root
+			double wide = Math.sqrt(Math.max(1, size));
+			int floorR = (int) Math.round(12 * size);
+			int rimR = floorR + 1;
+			int towerR = (int) Math.round(18 * size);
+			int outerR = (int) Math.round(23.5 * size);
+			for (net.minecraft.server.level.ServerPlayer q : level.players()) {
+				double near = Math.max(64, outerR + 16);
+				if (!q.isSpectator() && q.distanceToSqr(centre.getX() + 0.5, centre.getY(), centre.getZ() + 0.5) < near * near) {
+					plan.people.add(new double[] {q.getX(), q.getZ()});
 				}
 			}
+			Palette pal = palette(style);
+			int cx = centre.getX(), cz = centre.getZ();
+			BlockPos g0 = plan.ground(cx, centre.getY(), cz);
+			int gy = g0 != null ? g0.getY() : centre.getY() - 1;
+			// Taller towers in a larger arena (the lesser ones half as much), up to 30 blocks taller
+			int lift = (int) Math.round(5 * Math.min(6, Math.max(0, size - 1)));
+			double turn = plan.rnd.nextDouble() * TAU / 8;
+
+			steps.add(() -> {
+				List<int[]> cols = floorColumns(floorR);
+				List<Runnable> parts = new ArrayList<>();
+				for (int from = 0; from < cols.size(); from += FLOOR_STEP) {
+					List<int[]> part = cols.subList(from, Math.min(cols.size(), from + FLOOR_STEP));
+					parts.add(() -> {
+						for (int[] c : part) {
+							floorColumn(plan, pal, style, cx, gy, cz, floorR, turn, size, wide, c);
+						}
+					});
+				}
+				next(parts);
+			});
+			steps.add(() -> rim(plan, pal, cx, gy, cz, rimR, turn, wide));
+			if (size >= 3 && Config.ELDER_ARENA_WALL > 0) {
+				steps.add(() -> {
+					List<Runnable> parts = new ArrayList<>();
+					for (List<int[]> slice : wallSlices(floorR + 4, turn, wide)) {
+						parts.add(() -> wallSlice(plan, pal, cx, gy, cz, floorR + 4, turn, size, wide, slice));
+					}
+					next(parts);
+				});
+			}
+			List<double[]> tops = new ArrayList<>();
+			for (int k = 0; k < 8; k++) {
+				double a = turn + TAU * k / 8;
+				boolean great = k % 2 == 0;
+				steps.add(() -> {
+					path(plan, pal, cx, gy, cz, a, rimR + 1, towerR - 2, (int) Math.round(wide));
+					tops.add(tower(plan, pal, style, cx + Math.cos(a) * towerR, gy, cz + Math.sin(a) * towerR, a, great, great ? lift : lift / 2));
+				});
+			}
+			if (size >= 2) {
+				// A second ring beyond the first, between them, the great ones where the lesser stand within
+				for (int k = 0; k < 8; k++) {
+					double a = turn + TAU * (k + 0.5) / 8;
+					boolean great = k % 2 != 0;
+					steps.add(() -> tower(plan, pal, style, cx + Math.cos(a) * outerR, gy, cz + Math.sin(a) * outerR, a, great, great ? lift : lift / 2));
+				}
+			}
+			if (size >= 3 && Config.ELDER_ARENA_LANDMARK > 0) {
+				boolean cores = Config.ELDER_CORES > 0;
+				steps.add(() -> {
+					List<int[]> origins = switch (style) {
+						case 0 -> rootArches(plan, cx, gy, cz, floorR, turn, wide);
+						case 1 -> wreck(plan, bp, cx, gy, cz, floorR, turn);
+						default -> loom(plan, bp, pal, cx, gy, cz, floorR, turn, wide);
+					};
+					if (cores) {
+						for (int[] o : origins) {
+							core(plan, coreBlock(style), o[0], o[1], o[2]);
+						}
+					}
+				});
+			}
+			// More islands in a larger arena, larger, higher and further out, hung in three layers: many small ones low
+			// over the ground, larger ones above them, and the greatest highest of all
+			int isles = (int) Math.round(size <= 4 ? Math.max(7 * size, 3.75 * size * size) : 60 + 16 * (size - 4));
+			int span = (int) Math.round(9 + 34 * Math.min(11, Math.max(0, size - 1)) / 3);
+			double big = Math.min(1, Math.max(0, size - 1) / 11);
+			for (int n = 0; n < isles; n++) {
+				int i = n;
+				steps.add(() -> {
+					double a = turn + TAU * (i + 0.5) / isles + (plan.rnd.nextDouble() - 0.5) * 0.4;
+					int layer = size < 3 ? -1 : i % 20 < 10 ? 0 : i % 20 < 17 ? 1 : 2;
+					double r, grow;
+					int up;
+					if (layer < 0) {
+						r = size <= 1 ? (7 + plan.rnd.nextDouble() * (towerR - 4)) * size : floorR * 0.5 + plan.rnd.nextDouble() * (towerR * 1.55 - floorR * 0.5);
+						grow = 1 + plan.rnd.nextDouble() * Math.max(0, size - 1) * 0.8;
+						up = plan.rnd.nextInt(span + 1);
+					} else {
+						double[] reach = {floorR * 0.4, towerR * 1.1, floorR * 0.6, towerR * 1.35, floorR * 0.8, towerR * 1.6};
+						double[] grows = {1, 1 + 1.5 * big, 1 + big, 1 + 3.5 * big, 1 + 2.5 * big, 1 + 5.5 * big};
+						double[] heights = {0, 0.3, 0.3, 0.65, 0.65, 1.0};
+						r = reach[layer * 2] + plan.rnd.nextDouble() * (reach[layer * 2 + 1] - reach[layer * 2]);
+						grow = grows[layer * 2] + plan.rnd.nextDouble() * (grows[layer * 2 + 1] - grows[layer * 2]);
+						up = (int) Math.round(span * (heights[layer * 2] + plan.rnd.nextDouble() * (heights[layer * 2 + 1] - heights[layer * 2])));
+					}
+					isle(plan, pal, style, (int) Math.round(cx + Math.cos(a) * r), gy + 12 + up, (int) Math.round(cz + Math.sin(a) * r), grow);
+				});
+			}
+			steps.add(() -> {
+				// Chains between the towers that stand (the Matriarch's between her great lantern towers only), and the
+				// Weaver's threads from every spire down to the heart of its web
+				for (int k = 0; k < 8; k++) {
+					double[] a = tops.get(k);
+					if (a == null) {
+						continue;
+					}
+					if (style == 0 && k % 2 != 0) {
+						continue;
+					}
+					double[] b = tops.get((k + (style == 0 ? 2 : 1)) % 8);
+					if (b != null) {
+						bp.lines.add(new Line(a[0], a[1], a[2], b[0], b[1], b[2], (style == 2 ? 1.6 : 3.0) * wide));
+					}
+					if (style == 2) {
+						bp.lines.add(new Line(a[0], a[1], a[2], cx + 0.5, gy + 1.15, cz + 0.5, 1.2 * wide));
+					}
+				}
+				bp.pieces.addAll(plan.pieces.values());
+				bp.kinds.addAll(plan.kinds);
+				bp.isles.addAll(plan.isles);
+				bp.cores.addAll(plan.cores);
+				bp.arches.addAll(plan.arches);
+				bp.style = style;
+				bp.cx = cx;
+				bp.gy = gy;
+				bp.cz = cz;
+				bp.floorR = floorR;
+				bp.turn = turn;
+				bp.size = size;
+				bp.wide = wide;
+			});
 		}
-		// More islands in a larger arena, larger, higher and further out, hung in three layers: many small ones low
-		// over the ground, larger ones above them, and the greatest highest of all
-		int isles = (int) Math.round(size <= 4 ? Math.max(7 * size, 3.75 * size * size) : 60 + 16 * (size - 4));
-		int span = (int) Math.round(9 + 34 * Math.min(11, Math.max(0, size - 1)) / 3);
-		double big = Math.min(1, Math.max(0, size - 1) / 11);
-		for (int i = 0; i < isles; i++) {
-			double a = turn + TAU * (i + 0.5) / isles + (plan.rnd.nextDouble() - 0.5) * 0.4;
-			int layer = size < 3 ? -1 : i % 20 < 10 ? 0 : i % 20 < 17 ? 1 : 2;
-			double r, grow;
-			int up;
-			if (layer < 0) {
-				r = size <= 1 ? (7 + plan.rnd.nextDouble() * (towerR - 4)) * size : floorR * 0.5 + plan.rnd.nextDouble() * (towerR * 1.55 - floorR * 0.5);
-				grow = 1 + plan.rnd.nextDouble() * Math.max(0, size - 1) * 0.8;
-				up = plan.rnd.nextInt(span + 1);
-			} else {
-				double[] reach = {floorR * 0.4, towerR * 1.1, floorR * 0.6, towerR * 1.35, floorR * 0.8, towerR * 1.6};
-				double[] grows = {1, 1 + 1.5 * big, 1 + big, 1 + 3.5 * big, 1 + 2.5 * big, 1 + 5.5 * big};
-				double[] heights = {0, 0.3, 0.3, 0.65, 0.65, 1.0};
-				r = reach[layer * 2] + plan.rnd.nextDouble() * (reach[layer * 2 + 1] - reach[layer * 2]);
-				grow = grows[layer * 2] + plan.rnd.nextDouble() * (grows[layer * 2 + 1] - grows[layer * 2]);
-				up = (int) Math.round(span * (heights[layer * 2] + plan.rnd.nextDouble() * (heights[layer * 2 + 1] - heights[layer * 2])));
-			}
-			isle(plan, pal, style, (int) Math.round(cx + Math.cos(a) * r), gy + 12 + up, (int) Math.round(cz + Math.sin(a) * r), grow);
-		}
-		// Chains between the towers that stand (the Matriarch's between her great lantern towers only), and the
-		// Weaver's threads from every spire down to the heart of its web
-		for (int k = 0; k < 8; k++) {
-			double[] a = tops.get(k);
-			if (a == null) {
-				continue;
-			}
-			if (style == 0 && k % 2 != 0) {
-				continue;
-			}
-			double[] b = tops.get((k + (style == 0 ? 2 : 1)) % 8);
-			if (b != null) {
-				bp.lines.add(new Line(a[0], a[1], a[2], b[0], b[1], b[2], (style == 2 ? 1.6 : 3.0) * wide));
-			}
-			if (style == 2) {
-				bp.lines.add(new Line(a[0], a[1], a[2], cx + 0.5, gy + 1.15, cz + 0.5, 1.2 * wide));
+
+		/** Steps that take the place of the one being done, in their order, before everything after it. */
+		private void next(List<Runnable> parts) {
+			for (int i = parts.size() - 1; i >= 0; i--) {
+				steps.addFirst(parts.get(i));
 			}
 		}
-		bp.pieces.addAll(plan.pieces.values());
-		bp.kinds.addAll(plan.kinds);
-		bp.isles.addAll(plan.isles);
-		bp.cores.addAll(plan.cores);
-		bp.arches.addAll(plan.arches);
-		bp.style = style;
-		bp.cx = cx;
-		bp.gy = gy;
-		bp.cz = cz;
-		bp.floorR = floorR;
-		bp.turn = turn;
-		bp.size = size;
-		bp.wide = wide;
-		return bp;
+
+		/** Works on the design until it is done or the clock passes {@code deadline} ({@link System#nanoTime}); true once done. */
+		boolean work(long deadline) {
+			while (!steps.isEmpty()) {
+				long t = System.nanoTime();
+				steps.poll().run();
+				long now = System.nanoTime();
+				longest = Math.max(longest, now - t);
+				if (now >= deadline) {
+					break;
+				}
+			}
+			return steps.isEmpty();
+		}
+
+		boolean done() {
+			return steps.isEmpty();
+		}
+
+		/** The design, whole once {@link #done}. */
+		Blueprint blueprint() {
+			return bp;
+		}
+
+		/** Whether the design so far means to build at {@code pos} (so a second arena near never builds over it). */
+		boolean claims(BlockPos pos) {
+			return plan.pieces.containsKey(pos.asLong());
+		}
+
+		/** The longest one step has taken so far, in nanoseconds. */
+		long longest() {
+			return longest;
+		}
 	}
 
 	// ------------------------------------------------------------------ cores, lanes and threads
@@ -586,10 +678,9 @@ final class ArenaDesign {
 	 * lit along its inner face, crenellated, with an arch over each path. Where the ground falls away it hangs on, where
 	 * a hill rises it stops.
 	 */
-	private static void wall(Plan plan, Palette pal, int cx, int gy, int cz, int r, double turn, double size, double wide) {
+	/** The columns of the ring wall at {@code r} (offsets from its middle), by stretch of the ring, going round. */
+	private static List<List<int[]>> wallSlices(int r, double turn, double wide) {
 		int thick = Math.max(2, (int) Math.round(wide));
-		int high = (int) Math.round(9 + 0.9 * size);
-		double gap = Math.round(wide) + 3.5;
 		int slices = Math.max(48, (int) Math.round(TAU * r / 6));
 		List<List<int[]>> bySlice = new ArrayList<>();
 		for (int i = 0; i < slices; i++) {
@@ -606,56 +697,62 @@ final class ArenaDesign {
 				bySlice.get(Math.min(slices - 1, (int) (ang / TAU * slices))).add(new int[] {dx, dz});
 			}
 		}
-		for (List<int[]> slice : bySlice) {
-			plan.begin();
-			for (int[] c : slice) {
-				int x = cx + c[0], z = cz + c[1];
-				if (!plan.loaded(x, gy, z)) {
-					continue;
-				}
-				double d = Math.sqrt(c[0] * c[0] + c[1] * c[1]);
-				double ang = ((Math.atan2(c[1], c[0]) - turn) % TAU + TAU) % TAU;
-				int along = (int) Math.floor(ang * r);
-				int layer = (int) (d - r);
-				boolean face = layer == 0 || layer == thick - 1;
-				BlockPos g = plan.ground(x, gy, z);
-				int bottom;
-				if (g == null || g.getY() < gy - 6) {
-					bottom = gy - 2;
-				} else if (g.getY() > gy + 6) {
-					continue;
-				} else {
-					bottom = g.getY() + 1;
-				}
-				// Broken stretches, where the top has fallen away
-				double worn = noise(along / 5, 91);
-				int top = gy + high - (worn > 0.8 ? 2 + (int) ((worn - 0.8) * 45) : 0);
-				// An arch over each path: open from the ground up to its curve
-				double off = spoke(ang, d, 8);
-				int open = -1;
-				if (off < gap) {
-					double k = off / gap;
-					open = gy + (int) Math.round((high - 4) * Math.sqrt(1 - k * k));
-				}
-				for (int y = bottom; y <= top; y++) {
-					if (open >= 0 && y <= open) {
-						continue;
-					}
-					// Windows through it, in its upper half
-					if (open < 0 && along % 11 < 2 && y >= gy + high / 2 && y < gy + high / 2 + 4) {
-						continue;
-					}
-					BlockState st = y <= gy + 1 ? pal.corner : y == top ? pal.cap
-							: layer == 0 && along % 12 == 6 && y == gy + high / 2 - 2 ? pal.core
-							: face && noise(x * 3 + y, z * 3 - y) > 0.82 ? pal.floor[1] : pal.base;
-					plan.air(x, y, z, st);
-				}
-				if (face && top == gy + high && open < 0 && (along & 1) == 0) {
-					plan.air(x, top + 1, z, pal.wall);
-				}
+		return bySlice;
+	}
+
+	/** One stretch of the ring wall (see {@link #wallSlices}), a group of its own. */
+	private static void wallSlice(Plan plan, Palette pal, int cx, int gy, int cz, int r, double turn, double size, double wide, List<int[]> slice) {
+		int thick = Math.max(2, (int) Math.round(wide));
+		int high = (int) Math.round(9 + 0.9 * size);
+		double gap = Math.round(wide) + 3.5;
+		plan.begin();
+		for (int[] c : slice) {
+			int x = cx + c[0], z = cz + c[1];
+			if (!plan.loaded(x, gy, z)) {
+				continue;
 			}
-			plan.commit(0.5);
+			double d = Math.sqrt(c[0] * c[0] + c[1] * c[1]);
+			double ang = ((Math.atan2(c[1], c[0]) - turn) % TAU + TAU) % TAU;
+			int along = (int) Math.floor(ang * r);
+			int layer = (int) (d - r);
+			boolean face = layer == 0 || layer == thick - 1;
+			BlockPos g = plan.ground(x, gy, z);
+			int bottom;
+			if (g == null || g.getY() < gy - 6) {
+				bottom = gy - 2;
+			} else if (g.getY() > gy + 6) {
+				continue;
+			} else {
+				bottom = g.getY() + 1;
+			}
+			// Broken stretches, where the top has fallen away
+			double worn = noise(along / 5, 91);
+			int top = gy + high - (worn > 0.8 ? 2 + (int) ((worn - 0.8) * 45) : 0);
+			// An arch over each path: open from the ground up to its curve
+			double off = spoke(ang, d, 8);
+			int open = -1;
+			if (off < gap) {
+				double k = off / gap;
+				open = gy + (int) Math.round((high - 4) * Math.sqrt(1 - k * k));
+			}
+			for (int y = bottom; y <= top; y++) {
+				if (open >= 0 && y <= open) {
+					continue;
+				}
+				// Windows through it, in its upper half
+				if (open < 0 && along % 11 < 2 && y >= gy + high / 2 && y < gy + high / 2 + 4) {
+					continue;
+				}
+				BlockState st = y <= gy + 1 ? pal.corner : y == top ? pal.cap
+						: layer == 0 && along % 12 == 6 && y == gy + high / 2 - 2 ? pal.core
+						: face && noise(x * 3 + y, z * 3 - y) > 0.82 ? pal.floor[1] : pal.base;
+				plan.air(x, y, z, st);
+			}
+			if (face && top == gy + high && open < 0 && (along & 1) == 0) {
+				plan.air(x, top + 1, z, pal.wall);
+			}
 		}
+		plan.commit(0.5);
 	}
 
 	/** A ball of blocks (a root's section), with moss on what faces the sky. */
@@ -884,7 +981,8 @@ final class ArenaDesign {
 	 * The sigil, inlaid from the middle outwards, its edge ragged where it meets the land; where the ground falls away
 	 * (or there is none) it floats on at its own height.
 	 */
-	private static void floor(Plan plan, Palette pal, int style, int cx, int gy, int cz, int r, double turn, double k, double w) {
+	/** The columns of a floor of radius {@code r} (offsets from its middle), nearest the middle first. */
+	private static List<int[]> floorColumns(int r) {
 		List<int[]> cols = new ArrayList<>();
 		for (int dx = -r; dx <= r; dx++) {
 			for (int dz = -r; dz <= r; dz++) {
@@ -894,36 +992,39 @@ final class ArenaDesign {
 			}
 		}
 		cols.sort((a, b) -> Integer.compare(a[0] * a[0] + a[1] * a[1], b[0] * b[0] + b[1] * b[1]));
-		for (int[] c : cols) {
-			double d = Math.sqrt(c[0] * c[0] + c[1] * c[1]);
-			if (d > r - 1.5 && plan.rnd.nextDouble() < (d - (r - 1.5)) * 0.35) {
-				continue;
-			}
-			int x = cx + c[0], z = cz + c[1];
-			if (!plan.loaded(x, gy, z)) {
-				continue;
-			}
-			BlockPos g = plan.ground(x, gy, z);
-			if (g != null && g.getY() > gy + 4) {
-				// A hill rises through it: the sigil stops at its foot
-				continue;
-			}
-			double theta = Math.atan2(c[1], c[0]) - turn;
-			BlockState s = switch (style) {
-				case 0 -> matriarchFloor(plan, pal, d, theta, r, c, k, w);
-				case 1 -> ferrymanFloor(plan, pal, d, theta, r, c, k, w);
-				default -> weaverFloor(plan, pal, d, theta, r, c, k, w);
-			};
-			plan.begin();
-			plan.kind = FLOOR;
-			if (g == null || g.getY() < gy - 4) {
-				// No ground near its height (a valley, water, the void): the sigil floats on there
-				plan.air(x, gy, z, s);
-			} else {
-				plan.inlay(g, s);
-			}
-			plan.commit(1.0);
+		return cols;
+	}
+
+	/** One column {@code c} of the floor's sigil, a group of its own. */
+	private static void floorColumn(Plan plan, Palette pal, int style, int cx, int gy, int cz, int r, double turn, double k, double w, int[] c) {
+		double d = Math.sqrt(c[0] * c[0] + c[1] * c[1]);
+		if (d > r - 1.5 && plan.rnd.nextDouble() < (d - (r - 1.5)) * 0.35) {
+			return;
 		}
+		int x = cx + c[0], z = cz + c[1];
+		if (!plan.loaded(x, gy, z)) {
+			return;
+		}
+		BlockPos g = plan.ground(x, gy, z);
+		if (g != null && g.getY() > gy + 4) {
+			// A hill rises through it: the sigil stops at its foot
+			return;
+		}
+		double theta = Math.atan2(c[1], c[0]) - turn;
+		BlockState s = switch (style) {
+			case 0 -> matriarchFloor(plan, pal, d, theta, r, c, k, w);
+			case 1 -> ferrymanFloor(plan, pal, d, theta, r, c, k, w);
+			default -> weaverFloor(plan, pal, d, theta, r, c, k, w);
+		};
+		plan.begin();
+		plan.kind = FLOOR;
+		if (g == null || g.getY() < gy - 4) {
+			// No ground near its height (a valley, water, the void): the sigil floats on there
+			plan.air(x, gy, z, s);
+		} else {
+			plan.inlay(g, s);
+		}
+		plan.commit(1.0);
 	}
 
 	private static BlockState base(Plan plan, Palette pal, int[] c) {
