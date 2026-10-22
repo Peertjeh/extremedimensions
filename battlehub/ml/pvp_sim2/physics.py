@@ -524,7 +524,7 @@ class World:
         rows = np.repeat(np.arange(self.n)[:, None], self.k, axis=1)
         hw = f.width() / 2
         # vertical
-        under = t.footprint(rows, f.x, f.z, hw)
+        under = t.support(rows, f.x, f.z, hw, f.y)
         ny = f.y + f.vy
         land = alive & (f.vy <= 0) & (ny <= under) & (f.y >= under - 1e-6)
         # standing inside ground (pushed into a step): up onto it
@@ -556,7 +556,7 @@ class World:
                 setattr(f, vel, np.where(blocked, 0.0, getattr(f, vel)))
         # landing: fall damage beyond the safe distance (3, and one more per jump boost level); after a wind charge
         # only what lies below the height it pushed from
-        under = t.footprint(rows, f.x, f.z, hw)
+        under = t.support(rows, f.x, f.z, hw, f.y)
         f.on_ground = alive & (np.abs(f.y - under) < 1e-6) & (f.vy <= 0)
         landed = f.on_ground & ~was_ground
         dist = np.where(f.ignore_fall, np.minimum(f.fall, f.impulse_y - f.y), f.fall)

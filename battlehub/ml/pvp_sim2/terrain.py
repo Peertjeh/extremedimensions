@@ -61,6 +61,17 @@ class Terrain:
         best = np.fmax.reduce(g, axis=-1)
         return np.where(np.isnan(best), -np.inf, best)  # -inf: nothing at all under it
 
+    def support(self, rows, x, z, hw, y, step=0.6):
+        """The highest ground under a body that holds it up: what is no more than `step` above its feet (a wall it
+        overlaps, after a teleport or at a size of 2, does not count)."""
+        rows, x, z, hw, y = np.broadcast_arrays(rows, x, z, hw, y)
+        o = np.array([-1.0, 0.0, 1.0])
+        e = (hw - 1e-7)[..., None]
+        g = self.column(rows[..., None], x[..., None] + np.repeat(o, 3) * e, z[..., None] + np.tile(o, 3) * e)
+        g = np.where(g <= y[..., None] + step + 1e-6, g, np.nan)
+        best = np.fmax.reduce(g, axis=-1)
+        return np.where(np.isnan(best), -np.inf, best)
+
     # ------------------------------------------------------------------ the spec's rays
 
     def _samples(self):

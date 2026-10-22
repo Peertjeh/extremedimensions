@@ -920,6 +920,6 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
   - Een rondlopende pop valt bijna nooit van een brug: de randstralen werken.
   - `tools/show_fight2.py` tekent gevechten op hun kaart.
 - **Tests:**
-  - Python: 52, waarvan 26 nieuw voor v2: terrein en stralen, opstappen, valschade, void met kill credit, boog, eten, gouden appel, pearl, wind charge, mace, schild en bijl, teams, honger, de muur-duw, resistance V, de observaties, de omgeving en `check_env`.
+  - Python: 53, waarvan 27 nieuw voor v2: terrein en stralen, opstappen, valschade, void met kill credit, boog, eten, gouden appel, pearl, wind charge, mace, schild en bijl, teams, honger, de muur-duw, resistance V, een grote vechter naast een muur, de observaties, de omgeving en `check_env`.
   - Java (`CombatObservationV2Test`): elke observatie uit het gouden bestand op 1e-6, de acties met hand en gebruiken, en de terreinstralen (`core.ml.TerrainRays`) op 6 kaarten met 72 posities gelijk aan Python. v1 blijft ongewijzigd slagen.
   - Lokaal slagen 266 core-tests.

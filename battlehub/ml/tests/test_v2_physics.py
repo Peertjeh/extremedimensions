@@ -274,3 +274,16 @@ def test_resistance_five_takes_no_damage_but_still_the_push():
     assert w.landed[0, 0]
     assert w.f.health[0, 1] == 20.0
     assert w.f.vz[0, 1] > 0.2
+
+
+def test_a_big_fighter_next_to_a_wall_stands_on_the_floor():
+    kit = K.sword(None)
+    kit["scale"] = 2.0
+
+    def nook(t):
+        t.fill_box(0, -30, -30, 30, 30, 0.0)
+        t.fill_box(0, 1, 1, 2, 2, WALL)  # a wall column diagonal to its cell, under its wide body
+    w = world(nook, kit=kit)
+    tick(w, 20)
+    assert w.f.alive[0, 0] and w.f.on_ground[0, 0]
+    assert w.f.y[0, 0] == pytest.approx(0.0)
