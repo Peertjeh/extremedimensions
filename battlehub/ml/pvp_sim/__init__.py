@@ -2,4 +2,4 @@
 from .spec import SPEC, Spec
 from .physics import BOXING, SWORD, Physics, Rules
 from .env import PvpBatch, PvpEnv, Randomize, Rewards
-from .scripted import RandomPolicy, ScriptedPolicy
+from .scripted import DummyPolicy, RandomPolicy, ScriptedPolicy

@@ -1,0 +1,6 @@
+# Training and export (on top of requirements-sim.txt). A GPU is not needed.
+torch>=2.4
+stable-baselines3>=2.4
+onnx>=1.16
+onnxruntime>=1.18
+onnxscript>=0.1

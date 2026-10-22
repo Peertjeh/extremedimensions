@@ -31,9 +31,15 @@ class Rewards:
     win: float = 10.0
     draw_health: float = 5.0     # at the time limit: times the health difference / max health
     draw_hits: float = 0.1       # at the time limit (boxing): per hit more, at most draw_health
-    whiff: float = 0.02          # per swing that missed (the charge is gone)
+    whiff: float = 0.0           # per swing that missed (losing the charge is cost enough)
     time: float = 0.001          # per decision
     unseen: float = 0.005        # per decision without the opponent in view
+    aim: float = 0.002           # per decision with the crosshair on the opponent
+    timeout: float = 1.0         # both lose this much when time runs out: running away is no way to win
+    # potential-based shaping (it does not change which play is best, it only shows the way): getting closer and
+    # turning towards the opponent pay, moving away and turning away cost the same
+    close: float = 0.5           # over the last 20 blocks
+    face: float = 0.2            # from looking away to looking straight at it
 
 
 @dataclass
@@ -69,6 +75,7 @@ class PvpBatch:
         self.known = np.zeros((n, 2, 3))     # where each fighter last located the other
         self.history = []
         self.episode_return = np.zeros((n, 2))
+        self.phi = np.zeros((n, 2))
 
     # ------------------------------------------------------------------ episodes
 
@@ -79,7 +86,9 @@ class PvpBatch:
             self.history = [self.ph.f.snapshot() for _ in range(HISTORY)]
         else:
             self._restart(np.asarray(idx))
-        return self.observe()
+        obs = self.observe()
+        self.phi = self.potential(obs)
+        return obs
 
     def _restart(self, idx):
         if idx.size == 0:
@@ -156,6 +165,13 @@ class PvpBatch:
     def observe(self):
         return np.stack([observe(self.state(s), self.spec) for s in (0, 1)], axis=1).astype(np.float32)
 
+    def potential(self, obs):
+        """The shaping potential of each fighter from its observation: near and facing the opponent is high."""
+        sp, rw = self.spec, self.rewards
+        dist = obs[:, :, sp.index("opp_dist")] * sp.obs_scale[sp.index("opp_dist")]
+        face = obs[:, :, sp.index("aim_yaw_cos")] * (obs[:, :, sp.index("opp_visible")] > 0.5)
+        return -rw.close * np.minimum(dist, 20.0) / 20.0 + rw.face * face
+
     # ------------------------------------------------------------------ one decision
 
     def step(self, actions):
@@ -185,7 +201,11 @@ class PvpBatch:
         visible = np.stack([obs[:, s, self.spec.index("opp_visible")] > 0.5 for s in (0, 1)], axis=1)
         mh = self.rules.max_health
         reward = rw.damage * (dealt - dealt[:, ::-1]) / mh + rw.hit * (landed - landed[:, ::-1]) * (0.0 if self.rules.damage else 1.0)
+        cross = np.stack([obs[:, s, self.spec.index("on_crosshair")] > 0.5 for s in (0, 1)], axis=1)
         reward -= rw.whiff * whiffs + rw.time + rw.unseen * (~visible)
+        reward += rw.aim * cross
+        phi = self.potential(obs)
+        reward += phi - self.phi
         # the end: dead, fallen, enough hits, or out of time
         dead = (f.health <= 0) | ph.fell
         if self.rules.hits_to_win > 0:
@@ -206,6 +226,7 @@ class PvpBatch:
         else:
             margin = np.clip(rw.draw_hits * (f.hits - f.hits[:, ::-1]), -rw.draw_health, rw.draw_health)
         reward += np.where(draw[:, None], margin, 0.0)
+        reward -= np.where((timeout & ~decided)[:, None], rw.timeout, 0.0)
         self.episode_return += reward
         info = {"winner": winner, "done": done, "ticks": self.ticks.copy(), "landed": landed, "dealt": dealt,
                 "episode_return": self.episode_return.copy()}
@@ -214,6 +235,8 @@ class PvpBatch:
             idx = np.nonzero(done)[0]
             self._restart(idx)
             obs[idx] = self.observe()[idx]
+            phi[idx] = self.potential(obs)[idx]
+        self.phi = phi
         return obs, reward.astype(np.float32), done, info
 
 

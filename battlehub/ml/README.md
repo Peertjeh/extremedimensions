@@ -16,6 +16,10 @@ boxing) on flat ground.
 | `pvp_sim/scripted.py` | The scripted bot (benchmark and early opponent) and random play. |
 | `tests/` | The simulation against the game's numbers, the observation geometry, the environments, the golden file. |
 | `tools/` | `make_golden.py`, `show_fight.py` (a fight drawn to a PNG). |
+| `train/selfplay.py` | PPO (Stable-Baselines3) with self-play: an opponent pool of earlier versions, the scripted bot, random play and a dummy target, with a curriculum from easy targets to the pool. Checkpoints with an evaluation every million steps; `--resume` continues a run. |
+| `train/league.py`, `ratings.py` | Everyone against everyone, Elo ratings, the checkpoints for the six difficulty levels picked by rating, exported to ONNX. |
+| `train/export_onnx.py` | A checkpoint to ONNX (`obs` -> `logits`), checked against PyTorch with ONNX Runtime; the spec's sha256 in the metadata. |
+| `INTEGRATIE.md` | How the model goes into the mod (in Dutch). |
 
 ## Run
 
@@ -24,7 +28,19 @@ python -m venv .venv && . .venv/bin/activate
 pip install -r requirements-sim.txt
 python -m pytest tests
 python tools/show_fight.py fight.png 0.8 0.5
+
+# training (a GPU is not needed; about 5000 steps a second on 4 cores)
+pip install -r requirements-train.txt
+python train/selfplay.py --run runs/sword --steps 40000000      # --resume to continue
+python train/league.py runs/sword --out league                  # ratings, levels, ONNX files
 ```
+
+Rewards: damage done minus damage taken (per max health), +-10 for winning or losing, at the time limit the health
+difference and -1 for both (running away does not pay), a little for the crosshair on the opponent, a little less
+for every decision and for not seeing the opponent, plus potential-based shaping for getting closer and turning
+towards it (it shows the way without changing what the best play is). Without shaping the first runs learned to keep
+away: hitting needs a charged swing on the hitbox, too rare to find by chance against opponents who punish coming
+close.
 
 ## The spec in short
 

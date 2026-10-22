@@ -19,10 +19,12 @@ class ScriptedPolicy:
         self.rng = np.random.default_rng(seed)
         self.strafe = None
 
-    def __call__(self, obs):
+    def __call__(self, obs, skill=None):
+        """Actions for each row of `obs`; `skill` may give a skill per row (else the policy's own)."""
         obs = np.asarray(obs, dtype=np.float64).reshape(-1, self.spec.obs_dim)
         m = obs.shape[0]
-        sp, rng, sk = self.spec, self.rng, self.skill
+        sp, rng = self.spec, self.rng
+        sk = self.skill if skill is None else np.asarray(skill, dtype=np.float64)
         if self.strafe is None or self.strafe.shape[0] != m:
             self.strafe = rng.choice([-1.0, 1.0], size=m)
         g = lambda name: obs[:, sp.index(name)] * sp.obs_scale[sp.index(name)]
@@ -58,3 +60,21 @@ class RandomPolicy:
     def __call__(self, obs):
         m = np.asarray(obs).reshape(-1, self.spec.obs_dim).shape[0]
         return self.rng.integers(0, self.spec.action_nvec, size=(m, len(self.spec.action_nvec)))
+
+
+class DummyPolicy:
+    """A target to learn on: walks about (changing direction now and then, turning a little) and never swings."""
+
+    def __init__(self, seed=None, spec=SPEC):
+        self.rng = np.random.default_rng(seed)
+        self.spec = spec
+        self.move = None
+
+    def __call__(self, obs):
+        m = np.asarray(obs).reshape(-1, self.spec.obs_dim).shape[0]
+        rng = self.rng
+        if self.move is None or self.move.shape[0] != m:
+            self.move = rng.integers(0, 3, size=(m, 2)) - 1
+        change = rng.random(m) < 0.05
+        self.move[change] = rng.integers(0, 3, size=(int(change.sum()), 2)) - 1
+        return encode(self.spec, forward=self.move[:, 0], strafe=self.move[:, 1], yaw=rng.choice([-4.0, 0.0, 0.0, 4.0], size=m))

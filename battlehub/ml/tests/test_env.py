@@ -27,7 +27,7 @@ def test_the_same_seed_gives_the_same_fight():
 
 
 def test_without_penalties_the_rewards_are_zero_sum():
-    b = PvpBatch(64, seed=2, rewards=Rewards(whiff=0, time=0, unseen=0))
+    b = PvpBatch(64, seed=2, rewards=Rewards(whiff=0, time=0, unseen=0, aim=0, timeout=0, close=0, face=0))
     obs = b.reset()
     p0, p1 = ScriptedPolicy(seed=1), ScriptedPolicy(seed=2)
     for _ in range(300):
