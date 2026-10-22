@@ -22,6 +22,8 @@ final class BotActions {
 	private BotActions() {}
 
 	private static Method swing;
+	private static Object[] swingArgs;
+	private static java.lang.reflect.Field swinging;
 	private static boolean swingLooked;
 
 	/** A left-click on an entity. */
@@ -39,40 +41,95 @@ final class BotActions {
 	}
 
 	/**
-	 * The arm swing everybody sees. Its signature changed over versions, so it is looked up once: the simplest one
-	 * that takes the hand (newer ones also take the item's swing animation, which a bot cannot make up). It keeps
-	 * the server's swing state; the animation packet goes out directly as well.
+	 * The arm swing everybody sees. Its signature changed over versions (the hand; then also a flag; in 26 also the
+	 * item's swing animation), so it is looked up once: the fullest one whose arguments can be filled (the hand, true,
+	 * and for anything else that type's default). A swing the server still counts as running would make the next one
+	 * silent (and for a bot it is not always ended), so that state is cleared first; the animation packet goes out
+	 * directly as well.
 	 */
 	static void swing(LivingEntity e) {
 		if (!swingLooked) {
 			swingLooked = true;
 			for (Method m : LivingEntity.class.getDeclaredMethods()) {
 				if (!m.getName().equals("swing") || m.getParameterCount() < 1 || m.getParameterTypes()[0] != InteractionHand.class) continue;
-				boolean usable = true;
-				for (Class<?> t : m.getParameterTypes()) usable &= t == InteractionHand.class || t == boolean.class;
-				if (usable && (swing == null || m.getParameterCount() < swing.getParameterCount())) swing = m;
+				Object[] args = swingArgs(m.getParameterTypes());
+				if (args != null && (swing == null || m.getParameterCount() > swing.getParameterCount())) {
+					swing = m;
+					swingArgs = args;
+				}
 			}
 			if (swing != null) swing.setAccessible(true);
-			net.battlehub.BattleHub.LOGGER.info("Bots swing their arm with {}", swing == null ? "the animation packet" : swing);
-		}
-		if (swing != null) {
-			Class<?>[] types = swing.getParameterTypes();
-			Object[] args = new Object[types.length];
-			for (int i = 0; i < types.length; i++) args[i] = types[i] == InteractionHand.class ? InteractionHand.MAIN_HAND : Boolean.TRUE;
 			try {
-				swing.invoke(e, args);
+				swinging = LivingEntity.class.getDeclaredField("swinging");
+				swinging.setAccessible(true);
+			} catch (ReflectiveOperationException | RuntimeException ex) {
+				swinging = null;
+			}
+			net.battlehub.BattleHub.LOGGER.info("Bots swing their arm with {}", swingHow());
+		}
+		if (swinging != null) {
+			try {
+				swinging.setBoolean(e, false);
 			} catch (ReflectiveOperationException | RuntimeException ignored) {
 				// the packet below shows it
 			}
 		}
-		// The vanilla swing skips a swing while the last one is half done (and its state is not always kept for a
-		// bot), so the animation always goes out as well: twice in a tick looks like once.
+		if (swing != null) {
+			try {
+				swing.invoke(e, swingArgs);
+			} catch (ReflectiveOperationException | RuntimeException ignored) {
+				// the packet below shows it
+			}
+		}
+		// the animation always goes out as well: twice in a tick looks like once
 		if (e.level() instanceof ServerLevel level) {
 			net.minecraft.network.protocol.Packet<?> packet = swingPacket(e);
 			if (packet != null) {
 				level.getServer().getPlayerList().broadcast(null, e.getX(), e.getY(), e.getZ(), 64, level.dimension(), packet);
 			}
 		}
+	}
+
+	/** The arguments for a swing method: the main hand, true, and each other type's default; null when one has none. */
+	private static Object[] swingArgs(Class<?>[] types) {
+		Object[] args = new Object[types.length];
+		for (int i = 0; i < types.length; i++) {
+			if (types[i] == InteractionHand.class) {
+				args[i] = InteractionHand.MAIN_HAND;
+			} else if (types[i] == boolean.class) {
+				args[i] = Boolean.TRUE;
+			} else {
+				args[i] = defaultOf(types[i]);
+				if (args[i] == null) return null;
+			}
+		}
+		return args;
+	}
+
+	/** A type's default: an enum's first constant, or a static field of its own type (DEFAULT and the like). */
+	private static Object defaultOf(Class<?> type) {
+		if (type.isEnum()) {
+			Object[] all = type.getEnumConstants();
+			return all.length == 0 ? null : all[0];
+		}
+		for (java.lang.reflect.Field f : type.getDeclaredFields()) {
+			if (!java.lang.reflect.Modifier.isStatic(f.getModifiers()) || f.getType() != type) continue;
+			try {
+				f.setAccessible(true);
+				Object v = f.get(null);
+				if (v != null) return v;
+			} catch (ReflectiveOperationException | RuntimeException ignored) {
+				// the next one
+			}
+		}
+		return null;
+	}
+
+	/** How bots swing in this version: the method, the packet's constructor and its action (self-test, log). */
+	static String swingHow() {
+		if (!animateLooked) swingPacket(null);
+		return (swing == null ? "no swing method" : swing.toString()) + ", swinging field " + (swinging != null) + ", packet "
+				+ (animate == null ? "none" : animate.toString()) + " action " + swingAction;
 	}
 
 	private static java.lang.reflect.Constructor<?> animate;
@@ -116,7 +173,7 @@ final class BotActions {
 			}
 			net.battlehub.BattleHub.LOGGER.info("Bots show their swing with {} ({})", animate, swingAction);
 		}
-		if (animate == null || swingAction == null) return null;
+		if (animate == null || swingAction == null || e == null) return null;
 		try {
 			return (net.minecraft.network.protocol.Packet<?>) animate.newInstance(e, swingAction);
 		} catch (ReflectiveOperationException | RuntimeException ex) {

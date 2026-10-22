@@ -119,6 +119,7 @@ public final class Bots {
 
 	/** Takes a bot off the server. */
 	public static void remove(BotPlayer p) {
+		Looting.forget(p);
 		ONLINE.remove(p.getUUID());
 		IDLE.remove(p.getUUID());
 		if (p.hasDisconnected()) {
@@ -682,6 +683,11 @@ public final class Bots {
 		return b == null ? null : b.brain.mind().personality();
 	}
 
+	/** How bots swing their arm in this version (self-test). */
+	public static String swingHow() {
+		return BotActions.swingHow();
+	}
+
 	/** Arrows a bot fired, and wind charges it threw to fly up (for the self-test and inspect). */
 	public static int shots(BotPlayer b) {
 		return b.brain.shots();
@@ -788,6 +794,7 @@ public final class Bots {
 		AiMemory.clear();
 		LAST_DEBRIEF.clear();
 		ModelReports.clear();
+		Looting.clear();
 		PARTY_SINCE.clear();
 		SIDE_SINCE.clear();
 		SHOW.clear();

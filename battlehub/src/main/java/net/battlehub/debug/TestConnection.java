@@ -31,6 +31,8 @@ final class TestConnection extends Connection {
 	final java.util.Map<Integer, Integer> brightness = new ConcurrentHashMap<>();
 	/** The hotbar slot the client holds, as far as the server told it (-1: never told). */
 	volatile int heldSlot = -1;
+	/** Arm swings (main hand) the client was shown, per entity id. */
+	final java.util.Map<Integer, Integer> swings = new ConcurrentHashMap<>();
 
 	TestConnection() {
 		super(PacketFlow.SERVERBOUND);
@@ -61,12 +63,31 @@ final class TestConnection extends Connection {
 			entities.clear();
 		} else if (msg instanceof net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket held) {
 			heldSlot = held.slot();
+		} else if (msg instanceof net.minecraft.network.protocol.game.ClientboundAnimatePacket anim) {
+			int[] ia = idAndAction(anim);
+			if (ia != null && ia[1] == 0) swings.merge(ia[0], 1, Integer::sum);
 		} else if (msg instanceof net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket data) {
 			int brightnessId = net.battlehub.mixin.DisplayAccessor.battlehub$brightness().id();
 			for (net.minecraft.network.syncher.SynchedEntityData.DataValue<?> v : data.packedItems()) {
 				if (v.id() == brightnessId && v.value() instanceof Integer b) brightness.put(data.id(), b);
 			}
 		}
+	}
+
+	/** The entity id and the action (0: swing the main hand) of an animation packet, whatever their getters are called. */
+	private static int[] idAndAction(Object packet) {
+		Integer id = null, action = null;
+		for (Method m : packet.getClass().getMethods()) {
+			if (m.getParameterCount() != 0 || m.getReturnType() != int.class) continue;
+			String n = m.getName().toLowerCase(java.util.Locale.ROOT);
+			try {
+				if (n.contains("action")) action = (Integer) m.invoke(packet);
+				else if (n.contains("id")) id = (Integer) m.invoke(packet);
+			} catch (ReflectiveOperationException e) {
+				return null;
+			}
+		}
+		return id == null || action == null ? null : new int[] {id, action};
 	}
 
 	/** The ids in a remove packet, whatever its getter is called in this version. */

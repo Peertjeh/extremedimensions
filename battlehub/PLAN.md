@@ -1073,3 +1073,25 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
 - Zelftests:
   - A zegt `/bots 2` en gaat alleen Sumo in, met de standaardwachttijd op een minuut: twee bots komen meteen en de match start met hen.
   - Een privé-Sumo met drie beginnerbots start met A en die drie, zonder dat iets telt.
+
+## Versie 1.36.1 – Bots die zich menselijker gedragen
+
+**Feedback.** Bots hebben geen sla-animatie. Bij een kist pakken ze alles bizar snel en trekken ze het meteen aan.
+
+**De sla-animatie.**
+- `BotActions.swing` zocht een `swing`-methode met alleen een hand en een vlag. In 26.3 neemt de swing van de server ook de swing-animatie van het item (de prop-hunt-test roept hem al zo aan). Er werd dus geen methode gevonden.
+- Daarnaast eindigt de swing-status van een bot niet altijd. Dan blijft elke volgende swing stil.
+- Nu:
+  - de vollediste `swing` waarvan alle argumenten te vullen zijn: de hand, `true`, en voor de rest de standaard van dat type (een enum-constante of een statisch veld zoals `DEFAULT`);
+  - `swinging` wordt voor elke swing gewist;
+  - het animatiepakket gaat er altijd ook uit.
+- Zelftest: de testverbinding telt de swing-pakketten die een speler krijgt, en A moet de bot in het zwaardduel zien slaan. Het log noemt welke methode en welk pakket gebruikt worden.
+
+**Kisten (SkyWars, Hunger Games), `bot/Looting` en `core/LootPace`.**
+- De bot opent de kist: het deksel gaat open voor iedereen, je hoort het, en zijn arm zwaait (de rechtsklik).
+- Hij staat stil, kijkt naar de kist en pakt na een moment (7 tot 14 ticks) één stapel per keer: 4 ticks per stapel op master, 10 op beginner, steeds een kwart meer of minder.
+- Is de kist leeg, of past er niets meer bij, dan gaat het deksel dicht.
+- Daarna trekt hij betere harnasdelen één voor één aan: 12 tot 30 ticks per stuk, en niet zolang hij geraakt wordt of er een vijand binnen 5 blokken is.
+- Een treffer of een vijand dichtbij laat hem de kist sluiten. Drie seconden laat hij kisten met rust, daarna komt hij terug voor de rest.
+- JUnit `LootPaceTest`: een kist van acht stapels kost een beginner ongeveer vier seconden en een master ongeveer twee; elke stap varieert.
+- Zelftest SkyWars: een geleegde kist kostte minstens 6 ticks plus 3 per stapel.

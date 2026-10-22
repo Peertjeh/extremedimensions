@@ -394,6 +394,12 @@ final class BotTests {
 			return ok;
 		});
 		s.waitFor(tag + ": the bot hits A", 200, () -> p(A).getHealth() < p(A).getMaxHealth());
+		s.check(tag + ": A's client saw the bot swing its arm", () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			int seen = p(A).clientSwings(b.getId());
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST bot swings seen by A: {} ({})", seen, Bots.swingHow());
+			return seen > 0;
+		});
 		s.run(tag + ": A starts strafing (sideways, changing direction now and then)", () -> {
 			BotPlayer b = botsIn(matchOfA()).get(0);
 			Vec3 a = p(A).position(), toBot = b.position().subtract(a).normalize();
@@ -1203,10 +1209,20 @@ final class BotTests {
 				BotPlayer b = botsIn(m).get(0);
 				net.battlehub.BattleHub.LOGGER.info("SELFTEST skywars bots looted {} chests, one wears {} | {}", sw.botLoots(),
 						b.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST), String.join(" | ", Bots.inspect(b)));
+				for (BotPlayer x : botsIn(m)) {
+					int[] last = net.battlehub.bot.Looting.lastChest(x);
+					if (last != null) VARS.put("swLastChest", last);
+				}
 				return true;
 			}
 			logBot("skywars bot", m, botsIn(m).get(0), "swLogged");
 			return false;
+		});
+		s.check(tag + ": a chest took a player's time: a moment to open, then a stack at a time", () -> {
+			int[] last = (int[]) VARS.get("swLastChest");
+			if (last == null) return false;
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST skywars bot emptied a chest of {} stacks in {} ticks", last[1], last[0]);
+			return last[1] > 0 && last[0] >= 6 + 3 * last[1];
 		});
 		s.waitFor(tag + ": and bridge off them to the next chest", 2400, () -> {
 			Match m = matchOfA();

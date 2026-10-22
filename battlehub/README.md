@@ -144,6 +144,10 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   * **The Bridge**: they head for the other goal, in 2v2 one keeps the own goal. They walk the path (or a bridge
     someone built) and only build their own where there is no way across: sneaking to the edge, looking at the side
     of the block and placing clay like a player.
+* **Like a player at a chest** (SkyWars, Hunger Games): a bot opens the chest (the lid opens, you hear it), stands
+  still looking at it and takes one stack at a time, closes it, and then puts on better armor one piece at a time;
+  lower levels are slower. A hit or an enemy close by makes it close the chest and fight; it comes back later. Its
+  arm swings for every hit, every miss and every chest it opens.
 * *A learned fight in every melee mode*: a neural network trained outside Minecraft (`battlehub/ml`: a fast
   simulation of the game, PPO with self-play) does the fighting itself: walking, strafing, sprinting, jumping,
   turning and clicking, every two ticks, from what the bot can see. Model v2 knows the ground round it (edges, the

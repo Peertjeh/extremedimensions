@@ -375,30 +375,31 @@ public final class HungerGamesMatch extends PartyMatch {
 		return arena.level().getBlockEntity(pos) instanceof Container c && !c.isEmpty();
 	}
 
-	/** At a chest (within reach) it takes everything it can carry and puts on better armor; hungry, it eats. */
+	/**
+	 * At a chest (within reach) it opens it and loots it as a player does, a stack at a time, and puts on better
+	 * armor afterwards (bot/Looting); hungry, it eats.
+	 */
 	@Override
 	public void botTick(ServerPlayer bot) {
 		if (runTicks % 5 != 0 || arena == null || phase != Phase.RUNNING) return;
+		if (runTicks % 40 == 0 && bot.getFoodData().getFoodLevel() < 14) eat(bot);
+		if (net.battlehub.bot.Looting.busy(bot)) return;
+		Set<BlockPos> done = botLooted.computeIfAbsent(bot.getUUID(), k -> new HashSet<>());
 		for (String mark : CHESTS) {
 			for (BlockPos pos : arena.marks(mark)) {
-				if (bot.getEyePosition().distanceToSqr(Vec3.atCenterOf(pos)) > 3.5 * 3.5) continue;
-				botLooted.computeIfAbsent(bot.getUUID(), k -> new HashSet<>()).add(pos);
-				if (!(arena.level().getBlockEntity(pos) instanceof Container c) || c.isEmpty()) continue;
-				for (int i = 0; i < c.getContainerSize(); i++) {
-					ItemStack st = c.getItem(i);
-					if (st.isEmpty()) continue;
-					ItemStack rest = st.copy();
-					bot.getInventory().add(rest);
-					c.setItem(i, rest.isEmpty() ? ItemStack.EMPTY : rest);
+				if (done.contains(pos) || bot.getEyePosition().distanceToSqr(Vec3.atCenterOf(pos)) > 3.5 * 3.5) continue;
+				if (!hasLoot(pos)) {
+					done.add(pos);
+					continue;
 				}
-				c.setChanged();
-				botLoots++;
-				botLootsBy.merge(mark, 1, Integer::sum);
-				arena.level().playSound(null, pos, SoundEvents.CHEST_OPEN, net.minecraft.sounds.SoundSource.BLOCKS, 0.5f, 1f);
-				SkyWarsMatch.wearArmor(bot);
+				net.battlehub.bot.Looting.start(bot, pos, () -> {
+					done.add(pos);
+					botLoots++;
+					botLootsBy.merge(mark, 1, Integer::sum);
+				});
+				return;
 			}
 		}
-		if (runTicks % 40 == 0 && bot.getFoodData().getFoodLevel() < 14) eat(bot);
 	}
 
 	private static void eat(ServerPlayer bot) {

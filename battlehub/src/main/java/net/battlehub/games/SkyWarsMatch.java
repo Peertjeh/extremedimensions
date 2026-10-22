@@ -230,52 +230,28 @@ public final class SkyWarsMatch extends PartyMatch {
 		return n;
 	}
 
-	/** At a chest (within reach): it takes everything it can carry and puts on armor it is not wearing yet. */
+	/**
+	 * At a chest (within reach) it opens it and loots it as a player does, a stack at a time, and puts on better
+	 * armor afterwards (bot/Looting).
+	 */
 	@Override
 	public void botTick(ServerPlayer bot) {
-		if (runTicks % 5 != 0 || arena == null || phase != Phase.RUNNING) return;
+		if (runTicks % 5 != 0 || arena == null || phase != Phase.RUNNING || net.battlehub.bot.Looting.busy(bot)) return;
+		java.util.Set<BlockPos> done = botLooted.computeIfAbsent(bot.getUUID(), k -> new java.util.HashSet<>());
 		for (String mark : CHESTS) {
 			for (BlockPos pos : arena.marks(mark)) {
-				if (bot.getEyePosition().distanceToSqr(Vec3.atCenterOf(pos)) > 3.5 * 3.5) continue;
-				botLooted.computeIfAbsent(bot.getUUID(), k -> new java.util.HashSet<>()).add(pos);
-				if (!(arena.level().getBlockEntity(pos) instanceof Container c) || c.isEmpty()) continue;
-				for (int i = 0; i < c.getContainerSize(); i++) {
-					ItemStack st = c.getItem(i);
-					if (st.isEmpty()) continue;
-					ItemStack rest = st.copy();
-					bot.getInventory().add(rest);
-					c.setItem(i, rest.isEmpty() ? ItemStack.EMPTY : rest);
+				if (done.contains(pos) || bot.getEyePosition().distanceToSqr(Vec3.atCenterOf(pos)) > 3.5 * 3.5) continue;
+				if (!hasLoot(pos)) {
+					done.add(pos);
+					continue;
 				}
-				c.setChanged();
-				botLoots++;
-				arena.level().playSound(null, pos, net.minecraft.sounds.SoundEvents.CHEST_OPEN, net.minecraft.sounds.SoundSource.BLOCKS, 0.5f, 1f);
-				wearArmor(bot);
+				net.battlehub.bot.Looting.start(bot, pos, () -> {
+					done.add(pos);
+					botLoots++;
+				});
+				return;
 			}
 		}
-	}
-
-	/** Armor from the inventory into an empty armor slot, or over a weaker piece (leather to netherite). */
-	static void wearArmor(ServerPlayer bot) {
-		net.minecraft.world.entity.player.Inventory inv = bot.getInventory();
-		for (int i = 0; i < inv.getContainerSize(); i++) {
-			ItemStack st = inv.getItem(i);
-			if (st.isEmpty()) continue;
-			net.minecraft.world.entity.EquipmentSlot slot = bot.getEquipmentSlotForItem(st);
-			if (!slot.isArmor()) continue;
-			ItemStack worn = bot.getItemBySlot(slot);
-			if (!worn.isEmpty() && armorRank(worn) >= armorRank(st)) continue;
-			bot.setItemSlot(slot, st.copy());
-			inv.setItem(i, worn.isEmpty() ? ItemStack.EMPTY : worn.copy());
-		}
-	}
-
-	private static int armorRank(ItemStack st) {
-		String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(st.getItem()).getPath();
-		String[] order = {"leather", "golden", "chainmail", "iron", "diamond", "netherite"};
-		for (int i = order.length - 1; i >= 0; i--) {
-			if (id.startsWith(order[i])) return i + 1;
-		}
-		return 0;
 	}
 
 	/** Chests emptied by bots this match (self-test, inspect). */

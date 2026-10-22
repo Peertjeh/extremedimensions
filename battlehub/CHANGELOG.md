@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.36.1
+
+### Fixed
+* **Bots swing their arm again.** In 26.3 the server's swing also takes the item's swing animation, so the bots'
+  swing call no longer matched and the swing state of a bot was never ended; now the swing is found for any
+  signature, its state is cleared before every swing and the animation packet goes out as well. A self-test checks
+  that a player next to a bot sees its swings.
+* **Bots loot like players.** They no longer empty a chest and put on all its armor in the same tick: they open
+  the chest (lid and sound), stand still looking at it, take one stack at a time (0.2 to 0.5 seconds each, slower
+  on the lower levels), close it, and put on better armor one piece at a time afterwards (0.6 to 1.5 seconds each,
+  never in the middle of a fight). A hit or an enemy close by makes them close the chest; they come back for the
+  rest later.
+
 ## 1.36.0
 
 ### Added

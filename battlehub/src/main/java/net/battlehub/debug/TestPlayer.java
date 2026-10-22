@@ -44,6 +44,11 @@ public final class TestPlayer extends ServerPlayer {
 		return link.brightness.get(entityId);
 	}
 
+	/** How many arm swings of this entity this player's client was shown. */
+	public int clientSwings(int entityId) {
+		return link.swings.getOrDefault(entityId, 0);
+	}
+
 	/** The hotbar slot this player's client holds. */
 	public int clientSlot() {
 		return link.heldSlot;

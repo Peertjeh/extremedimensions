@@ -155,12 +155,28 @@ final class BotBrain {
 			return;
 		}
 		if (!m.inPlay(bot.getUUID()) || bot.isSpectator()) {
+			Looting.stop(bot, 0);
 			stopUsing();
 			bot.setSprinting(false);
 			pkStage = 0;
 			return;
 		}
 		m.botTick(bot);
+		boolean threatened = bot.hurtTime > 0 || enemyNear(m, 5);
+		Looting.tick(bot, !threatened);
+		if (Looting.busy(bot)) {
+			if (threatened) {
+				// a hit or someone close: the chest can wait
+				Looting.stop(bot, Looting.PAUSE);
+			} else {
+				// in the chest's screen: standing still, eyes on it
+				BlockPos chest = Looting.chest(bot);
+				if (chest != null) lookAt(Vec3.atCenterOf(chest), false);
+				bot.setSprinting(false);
+				stopUsing();
+				return;
+			}
+		}
 		// a busy server: everyone thinks a little less often
 		mind.stretch(Bots.thinkStretch());
 		if (ticks % 5 == 0) show(m);
@@ -226,7 +242,18 @@ final class BotBrain {
 		report = new ModelReport();
 	}
 
+	/** An enemy in play within {@code r} blocks. */
+	private boolean enemyNear(Match m, double r) {
+		for (UUID id : m.participants()) {
+			if (id.equals(bot.getUUID()) || !m.inPlay(id) || !m.isEnemy(bot.getUUID(), id)) continue;
+			ServerPlayer p = m.player(id);
+			if (p != null && p.level() == bot.level() && p.distanceToSqr(bot) < r * r) return true;
+		}
+		return false;
+	}
+
 	private void forget() {
+		Looting.forget(bot);
 		if (fighting) {
 			// a new match starts with a clear head (the personality stays)
 			mind.reset(ticks);
