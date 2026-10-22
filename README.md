@@ -153,6 +153,12 @@ is in the run's **Artifacts**.
 The server tests run side by side in batches. A test that wakes an Elder (or otherwise reaches past its own walls)
 gets an environment of its own from `Alone` in the test sources, so it runs in a batch by itself.
 
+The performance tests (`PerfTests`) log a `PERF` line each: the Seam's building, curses, bindings and echoes, and a
+fight with each Elder at its arena's full size. A fight's line gives the mod's tick by the clock and in CPU time, the
+worst tick of each part of it (`TickProfile`) and the garbage collection in those ticks; a part that runs past 40 ms
+also logs where the server thread stood, so a tick slow by the clock but not in CPU time shows what it waited on. The
+tests judge the mod by its CPU time, and fail a fight in which the mod waited on a chunk to load.
+
 ## Project layout
 
 | Package | What lives there |
