@@ -952,7 +952,15 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
   - De hand-kop kiest vooral iets dat het niet bij zich heeft, en dat doet niets. Zo houdt het model gewoon zijn wapen vast, want wisselen kost de lading.
   - Eten vroeg 16 beslissingen achter elkaar de knop vasthouden; zo'n reeks vindt PPO niet door te verkennen.
   - Daarom in 1.34.0: het model vecht, en eten, de boog en wind charges blijven de regels van de bot. Met `bots.learnedItems` mag het model zijn spullen zelf gebruiken.
-  - Eten is nu één druk die doorgaat tot het klaar is (simulatie en mod). Een vervolgtraining (`--init` vanaf 40 miljoen stappen, `--items`, entropie 0,02) moet het gebruik van spullen leren; die loopt.
+  - Eten is nu één druk die doorgaat tot het klaar is (simulatie en mod).
+- **Vervolgtraining voor spullen:** `--init` vanaf 40 miljoen stappen, `--items`, entropie 0,02, 16 miljoen stappen (62 minuten).
+  - Het schild leerde het model wel: 9–25% van de beslissingen blokken in bijlduels, 4–13% in loot-gevechten.
+  - Pijlen, eten en gooien bleven ook nu 0.
+  - Tegen het hoofdmodel wint het niet: 41–50% over de mix (120 gevechten per checkpoint). 1.34.0 houdt daarom de modellen van de hoofdtraining.
+  - Het schild mag het model in de mod wel zelf opsteken (de rechterknop met het wapen), los van `learnedItems`.
+  - Voor de spullen is een andere aanpak nodig:
+    - actiemaskers, zodat "iets kiezen wat je niet hebt" geen veilige niets-doen-keuze meer is;
+    - of eerst nadoen (imitatie van de gescripte bot, die zijn spullen wel gebruikt) en daarna PPO.
 
 **Mijlpaal 2c – in de mod (1.34.0).**
 - **`LearnedFight` (v2):** bouwt de 118 waarden uit de wereld:
