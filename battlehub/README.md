@@ -145,13 +145,14 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   void, steps and walls, how much ground lies behind its target, to knock it off a bridge or an island), both
   kits (damage per hit against the armor, the weapons' cooldown and knockback, speed, jump, size and the like from
   The Bridge: Chaos' effects), what it carries, an arrow coming at it and a second enemy. It fights in SkyWars,
-  Bed Wars, the Hunger Games, The Bridge (also Chaos, duos and 1v1v1v1), FFA, 1v2 and 1v3, sumo, the sword, axe,
-  boxing and Build UHC duels, KOTH, CTF, LMS and the tournaments; mace and bow fights stay scripted. The mind still
+  Bed Wars, the Hunger Games, The Bridge (also Chaos, duos and 1v1v1v1), FFA, 1v2 and 1v3, sumo, the axe and
+  Build UHC duels, KOTH, CTF, LMS and the tournaments; sword duels and boxing keep model v1 (1.33, trained only
+  there and still the stronger on flat ground), mace and bow fights stay scripted. The mind still
   decides when to fight, heal, shoot or go for the objective (near an objective the model takes over only for
   enemies within 8 blocks); eating, the bow and wind charges stay the bot's own (`bots.learnedItems` lets the
   model use them, experimental). The crosshair check of every click stays. Each difficulty level has its own
   model, picked by Elo rating, with a little delay, aim noise and a turn limit on the lower levels.
-  `bots.learnedCombat` turns it off; model v1 (1.33, sword and boxing only) is still there (`bots.learnedSpec`).
+  `bots.learnedCombat` turns it off; `bots.learnedSpec` 1 uses only v1, `bots.learnedV1Modes` says where v1 fights.
 * Their names start with `Bot_`. Nothing about them is saved (no player files, no profiles), they never show
   up on a leaderboard, and their join and leave messages stay out of chat.
 * **One real player with bots earns nothing**: no coins, no XP, no quest, pass or achievement progress, and
@@ -652,7 +653,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
     bot differs from its style (`personalityVariation`, 0 .. 0.2), whether bots remember players between fights
     (`learning`) and across restarts (`learningPersistent`, in `battlehub/ai/`), whether the learned model fights
     (`learnedCombat`), in which modes (`learnedModes`, default every melee mode), with which model (`learnedSpec`,
-    2 or 1) and whether it uses the items itself (`learnedItems`, off), from what tick time bots think
+    2 or 1; `learnedV1Modes`, default sword and boxing, keep v1) and whether it uses the items itself
+    (`learnedItems`, off), from what tick time bots think
     less often (`slowAboveMspt`), and how soon
     a bot leaves after its match
   * `effects`: the match intro on/off and its seconds, the victory shot, the killfeed and its number of lines

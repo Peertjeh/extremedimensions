@@ -150,14 +150,14 @@ final class BotTests {
 		return Bots.learnedTicks(b) > ticks && Bots.inspect(b).stream().anyMatch(l -> l.startsWith("learned combat (v2)"));
 	}
 
-	/** Model v2 in a sword duel: it steers and beats A, who stands still. */
+	/** Model v2 in an axe duel: it steers and beats A, who stands still. */
 	private static void learnedV2Sword(MinecraftServer server, Script s) {
-		String tag = "bots learned v2 sword";
+		String tag = "bots learned v2 axe";
 		SelfTest.reset(s, tag);
-		s.run(tag + ": model v2 on; A starts a sword practice duel against a master bot", () -> {
+		s.run(tag + ": model v2 on; A starts an axe practice duel against a master bot", () -> {
 			learnedV2On();
 			SelfTest.join(server, A);
-			Bots.practice(p(A), GameMode.SWORD, net.battlehub.core.ai.Difficulty.MASTER);
+			Bots.practice(p(A), GameMode.AXE, net.battlehub.core.ai.Difficulty.MASTER);
 		});
 		s.waitFor(tag + ": the duel runs with one bot", 600, () -> {
 			Match m = matchOfA();
@@ -168,7 +168,7 @@ final class BotTests {
 			if (m == null || botsIn(m).isEmpty()) return false;
 			BotPlayer b = botsIn(m).get(0);
 			if (v2Steered(b, 40) && p(A).getHealth() < p(A).getMaxHealth()) {
-				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v2 sword: {} | {}", p(A).getHealth(), String.join(" | ", Bots.inspect(b)));
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v2 axe: {} | {}", p(A).getHealth(), String.join(" | ", Bots.inspect(b)));
 				return true;
 			}
 			logBot("learned v2 bot", m, b, "learnedV2Logged");

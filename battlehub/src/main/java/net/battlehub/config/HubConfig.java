@@ -452,6 +452,8 @@ public final class HubConfig {
 		public List<String> learnedModes = new ArrayList<>(DEFAULT_LEARNED_MODES);
 		/** 2: the v2 model where it is listed; 1: only v1, in sword and boxing. */
 		public int learnedSpec = 2;
+		/** Modes where model v1 fights instead of v2: on flat ground with the sword kit v1 is still the stronger. */
+		public List<String> learnedV1Modes = new ArrayList<>(List.of("sword", "boxing"));
 		/**
 		 * The v2 model also chooses what to hold and uses it (bow, food, golden apples, pearls, wind charges, shield).
 		 * Off: the model fights, the bot's own rules eat, shoot and throw (the model did not learn its items yet).
@@ -706,6 +708,7 @@ public final class HubConfig {
 		if (bots.archetypes == null) bots.archetypes = new Bots().archetypes;
 		// the default of 1.33 (v1's two duels) grows with v2 to every melee mode
 		if (bots.learnedModes == null || bots.learnedModes.equals(List.of("sword", "boxing"))) bots.learnedModes = new ArrayList<>(DEFAULT_LEARNED_MODES);
+		if (bots.learnedV1Modes == null) bots.learnedV1Modes = new Bots().learnedV1Modes;
 		bots.archetypes.removeIf(a -> {
 			boolean bad = a == null || net.battlehub.core.ai.Archetype.parse(a, null) == null;
 			if (bad) net.battlehub.BattleHub.LOGGER.warn("BattleHub config: unknown bot style '{}' left out (known: {})", a,

@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.34.0
+
+### Added
+* **The learned fight in every melee mode (model v2).** A new network, trained in a simulation of every melee mode
+  (battlehub/ml/pvp_sim2: maps with edges and the void, the mod's kits, Chaos' effects, the bow, food, pearls, wind
+  charges, the shield, the mace, up to three fighters), now fights for bots in SkyWars, Bed Wars, the Hunger Games,
+  The Bridge (also Chaos, duos and 1v1v1v1), FFA, 1v2 and 1v3, sumo, the axe and Build UHC duels, KOTH, CTF, LMS and
+  the tournaments.
+  * It sees the ground round it (edges, the void, steps and walls) and how much ground lies behind its target, both
+    kits (damage per hit against the armor, cooldowns, knockback, speed, jump, size), what it carries, an arrow
+    coming at it and a second enemy.
+  * Near an objective (a bed, a goal, the hill) the model only fights enemies within 8 blocks; the objective,
+    edge safety, healing at a distance and building stay with the scripted mind.
+  * Six models by Elo, from a league over ten kinds of fights: the best about 460 Elo above the scripted bot
+    (which it beats in 81% of the fights in the evaluation, 48 of 48 on a bridge, 48 of 48 in sumo).
+  * Sword duels and boxing keep model v1: on flat ground with the sword it is still the stronger (it beat v2 121 to
+    79).
+  * Eating, the bow and wind charges stay the bot's own for now: the model did not learn to use its items yet
+    (`bots.learnedItems` lets it try).
+  * New options: `bots.learnedSpec` (2: v2 where listed; 1: v1 only), `bots.learnedV1Modes`,
+    `bots.learnedItems`; `bots.learnedModes` now lists every melee mode (a config with 1.33's default gets the new
+    one).
+
 ## 1.33.0
 
 ### Added

@@ -923,3 +923,48 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
   - Python: 53, waarvan 27 nieuw voor v2: terrein en stralen, opstappen, valschade, void met kill credit, boog, eten, gouden appel, pearl, wind charge, mace, schild en bijl, teams, honger, de muur-duw, resistance V, een grote vechter naast een muur, de observaties, de omgeving en `check_env`.
   - Java (`CombatObservationV2Test`): elke observatie uit het gouden bestand op 1e-6, de acties met hand en gebruiken, en de terreinstralen (`core.ml.TerrainRays`) op 6 kaarten met 72 posities gelijk aan Python. v1 blijft ongewijzigd slagen.
   - Lokaal slagen 266 core-tests.
+
+**Mijlpaal 2b – training en league (1.34.0).**
+- **`train/selfplay2.py`:** de arena's in 3 workerprocessen (3 × 96), het hoofdproces doet PPO (MLP 256×256) en de tegenstanders.
+  - Tegenstanders per arena en per plek: de pool van eerdere versies, de gescripte bot, willekeurig spel en poppen.
+  - De opbouw over de eerste 12 miljoen stappen: van vlakke zwaardduels naar alle kaarten, kits, 1v2 en drie tegen elkaar, en van poppen naar de pool. De shaping zakt tussen 15 en 35 miljoen stappen naar de helft.
+  - Elke 2 miljoen stappen een checkpoint met een evaluatie in een apart proces (`train/eval2.py`).
+- **Verloop** (winst tegen de gescripte bot met skill 0,8, over acht vaste scenario's):
+
+  | Stappen | Winst |
+  |---|---|
+  | 2 miljoen | 20% |
+  | 8 miljoen | 55% |
+  | 12 miljoen | 67% |
+  | 20 miljoen | 75% |
+  | 28 miljoen | 82% |
+  | 32 miljoen | 84% |
+  | 40 miljoen | 81% (afgevlakt) |
+
+  - Op 40 miljoen stappen: sumo 48 van 48, Bridge 48 van 48, zwaard 46/48, bijl 43/48, boog 39/48, SkyWars-loot 40/48, Bed Wars drie tegen elkaar 36/48.
+  - Het zwakste punt is 1 tegen 2 in de stad: 11/48 (de gescripte bots doen het daar niet beter).
+  - Gestopt op 40 miljoen stappen (170 minuten, gemiddeld ongeveer 4.000 stappen per seconde; de pool van bevroren versies kost steeds meer tijd).
+- **League** (`train/league2.py`): 11 checkpoints, de gescripte bot met 4 skills en willekeurig spel, iedereen tegen iedereen over 10 soorten 1v1-gevechten (arena met zwaard, bijl, boog en mace, brug, SkyWars-loot, stad, sumo, Bed Wars, heuvels met Build UHC), met 120 gevechten per paar.
+  - Elo (gescript 0,5 = 1000): 40 miljoen stappen 1463, 34 miljoen 1453, 30 miljoen 1413, 22 miljoen 1311, 18 miljoen 1241, 10 miljoen 1099, 6 miljoen 1050; gescript 0,8 1054, 1,0 1044, 0,3 978; willekeurig 277.
+  - De niveaus: beginner 6 miljoen (1050), casual 10 miljoen (1099), intermediate 18 miljoen (1241), advanced 22 miljoen (1311), expert 30 miljoen (1413), master 40 miljoen (1463), met dezelfde extra's per niveau als v1.
+- **De eis tegenover v1:** in het zwaardduel op een vlakke vloer verliest v2 van v1 (79 tegen 121; v1 via een adapter in de v2-simulatie). Daarom houden sword en boxing v1 (`bots.learnedV1Modes`).
+- **Spullen: niet geleerd.** Bij 20 miljoen stappen (en later): 0 pijlen, 0 keer eten, 0 pearls of wind charges, 0 keer blokken.
+  - De hand-kop kiest vooral iets dat het niet bij zich heeft, en dat doet niets. Zo houdt het model gewoon zijn wapen vast, want wisselen kost de lading.
+  - Eten vroeg 16 beslissingen achter elkaar de knop vasthouden; zo'n reeks vindt PPO niet door te verkennen.
+  - Daarom in 1.34.0: het model vecht, en eten, de boog en wind charges blijven de regels van de bot. Met `bots.learnedItems` mag het model zijn spullen zelf gebruiken.
+  - Eten is nu één druk die doorgaat tot het klaar is (simulatie en mod). Een vervolgtraining (`--init` vanaf 40 miljoen stappen, `--items`, entropie 0,02) moet het gebruik van spullen leren; die loopt.
+
+**Mijlpaal 2c – in de mod (1.34.0).**
+- **`LearnedFight` (v2):** bouwt de 118 waarden uit de wereld:
+  - kit en effecten: wapentabel `core.ml.Gear` gelijk aan de simulatie, plus enchantments, attributen en effecten;
+  - wat de bot bij zich heeft, de cooldowns en wat hij vasthoudt;
+  - het doelwit, zoals waargenomen, een paar ticks vertraagd op lage niveaus;
+  - de dichtstbijzijnde andere vijand die hij ziet of hoort, en een vijandig projectiel op hem af;
+  - terrein via `TerrainRays` over de blokken (`WorldColumns`, met een cache per beslissing).
+- **De naad:** `CombatMind` laat de controller ook beslissen bij SHOOT en bij een doel. v1 weigert dan, zoals voorheen. v2 vecht bij een doel alleen binnen 8 blokken, en schiet alleen met `learnedItems`.
+- **`Intent` krijgt `hand` en `use`.** `BotBrain.learnedHand` voert ze uit: wapen met schild, boog spannen en loslaten, één druk eten, pearl of wind charge gooien. Bij gebruik loopt de bot op 20%, zoals een speler.
+- **Config:** `learnedModes` met alle melee-modi (een config met de standaard van 1.33 krijgt de nieuwe), `learnedSpec`, `learnedV1Modes` en `learnedItems`.
+- **Tests:**
+  - `CombatModelsTest` controleert ook de v2-modellen in ONNX Runtime;
+  - zelftests met model v2: een bijlduel (het model stuurt en A verliest), The Bridge (bij A neemt het model het over en raakt A) en 1v2 (beide bots, A verliest).
+- **CI-notitie:** in de run van 2a faalde één keer de bestaande Bridge-bottest ("while the path is there the bot walks it and builds nothing": de gescripte bot zette 1 blok). De volgende run met dezelfde code slaagde; die code is niet veranderd. Genoteerd als wisselvallig.
