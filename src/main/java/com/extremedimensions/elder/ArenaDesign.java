@@ -522,12 +522,18 @@ final class ArenaDesign {
 			}
 			if (size >= 3 && Config.ELDER_ARENA_LANDMARK > 0) {
 				boolean cores = Config.ELDER_CORES > 0;
-				steps.add(new Step("great piece", () -> {
-					List<int[]> origins = switch (style) {
-						case 0 -> rootArches(plan, cx, gy, cz, floorR, turn, wide);
-						case 1 -> wreck(plan, bp, cx, gy, cz, floorR, turn);
-						default -> loom(plan, bp, pal, cx, gy, cz, floorR, turn, wide);
-					};
+				List<int[]> origins = new ArrayList<>();
+				if (style == 0) {
+					// The Matriarch's four root arches, an arch a step
+					for (int k = 0; k < 4; k++) {
+						int arch = k;
+						steps.add(new Step("great piece", () -> origins.add(rootArch(plan, cx, gy, cz, floorR, turn, wide, arch))));
+					}
+				} else {
+					steps.add(new Step("great piece", () -> origins.addAll(style == 1 ? wreck(plan, bp, cx, gy, cz, floorR, turn)
+							: loom(plan, bp, pal, cx, gy, cz, floorR, turn, wide))));
+				}
+				steps.add(new Step("cores", () -> {
 					if (cores) {
 						for (int[] o : origins) {
 							core(plan, coreBlock(style), o[0], o[1], o[2]);
@@ -888,53 +894,50 @@ final class ArenaDesign {
 	 * The Matriarch's roots: four great arches of root and bark rise from the edge of her floor and meet high over its
 	 * heart, thinner roots winding round each, moss on their backs, lanterns and hanging roots beneath.
 	 */
-	private static List<int[]> rootArches(Plan plan, int cx, int gy, int cz, int floorR, double turn, double wide) {
-		List<int[]> cores = new ArrayList<>();
+	/** Root arch {@code i} of the Matriarch's four (a group of its own); where its core stands, on the floor before one foot. */
+	private static int[] rootArch(Plan plan, int cx, int gy, int cz, int floorR, double turn, double wide, int i) {
 		BlockState bark = mc("dark_oak_wood"), root = mc("mangrove_roots", mc("dark_oak_wood")), moss = mc("moss_block");
 		BlockState hanging = mc("hanging_roots", mc("mangrove_roots"));
 		double foot = floorR * 0.8, apex = floorR * 0.45;
 		double rb = 1.2 * wide + 1, rt = 0.5 * wide + 1;
-		for (int i = 0; i < 4; i++) {
-			double a = turn + TAU * (i + 0.5) / 8;
-			double ux = Math.cos(a), uz = Math.sin(a);
-			plan.begin();
-			double t = 0;
-			double lastLantern = -Double.MAX_VALUE;
-			while (t <= 1) {
-				double along = (2 * t - 1) * foot;
-				double h = apex * Math.pow(Math.sin(Math.PI * t), 0.75);
-				double rr = rt + (rb - rt) * Math.pow(Math.abs(2 * t - 1), 1.5);
-				double px = cx + 0.5 + ux * along, py = gy + 0.5 + h, pz = cz + 0.5 + uz * along;
-				blob(plan, px, py, pz, rr, bark, moss);
-				for (int k = 0; k < 2; k++) {
-					double ph = t * 16 + k * Math.PI;
-					double sx = -uz * Math.cos(ph) * rr * 1.05, sz = ux * Math.cos(ph) * rr * 1.05, sy = Math.sin(ph) * rr * 1.05;
-					blob(plan, px + sx, py + sy, pz + sz, Math.max(0.9, rr * 0.32), root, null);
-				}
-				// Lanterns on chains and hanging roots beneath it, where it is high enough
-				if (h > 12 && along - lastLantern > 9 + rr) {
-					lastLantern = along;
-					int bx = (int) Math.floor(px), bz = (int) Math.floor(pz);
-					int under = (int) Math.floor(py - rr) - 1;
-					int len = 2 + (int) (noise(bx, bz) * 6);
-					for (int c = 0; c < len; c++) {
-						plan.air(bx, under - c, bz, axis(chain(), Direction.Axis.Y));
-					}
-					plan.air(bx, under - len, bz, lantern());
-					plan.air(bx + 1, under, bz, hanging);
-					plan.air(bx - 1, under, bz + 1, hanging);
-				}
-				t += Math.max(0.35, rr * 0.45) / (2 * foot + apex);
+		double a = turn + TAU * (i + 0.5) / 8;
+		double ux = Math.cos(a), uz = Math.sin(a);
+		plan.begin();
+		double t = 0;
+		double lastLantern = -Double.MAX_VALUE;
+		while (t <= 1) {
+			double along = (2 * t - 1) * foot;
+			double h = apex * Math.pow(Math.sin(Math.PI * t), 0.75);
+			double rr = rt + (rb - rt) * Math.pow(Math.abs(2 * t - 1), 1.5);
+			double px = cx + 0.5 + ux * along, py = gy + 0.5 + h, pz = cz + 0.5 + uz * along;
+			blob(plan, px, py, pz, rr, bark, moss);
+			for (int k = 0; k < 2; k++) {
+				double ph = t * 16 + k * Math.PI;
+				double sx = -uz * Math.cos(ph) * rr * 1.05, sz = ux * Math.cos(ph) * rr * 1.05, sy = Math.sin(ph) * rr * 1.05;
+				blob(plan, px + sx, py + sy, pz + sz, Math.max(0.9, rr * 0.32), root, null);
 			}
-			if (plan.commit(0.0)) {
-				plan.arches.add(plan.lastGroup);
+			// Lanterns on chains and hanging roots beneath it, where it is high enough
+			if (h > 12 && along - lastLantern > 9 + rr) {
+				lastLantern = along;
+				int bx = (int) Math.floor(px), bz = (int) Math.floor(pz);
+				int under = (int) Math.floor(py - rr) - 1;
+				int len = 2 + (int) (noise(bx, bz) * 6);
+				for (int c = 0; c < len; c++) {
+					plan.air(bx, under - c, bz, axis(chain(), Direction.Axis.Y));
+				}
+				plan.air(bx, under - len, bz, lantern());
+				plan.air(bx + 1, under, bz, hanging);
+				plan.air(bx - 1, under, bz + 1, hanging);
 			}
-			// A core on the floor just in front of one of its feet (each arch the other one, so they stand all round),
-			// clear of the bark so it can be seen and struck
-			double at = (i % 2 == 0 ? 1 : -1) * (foot - rb - 3);
-			cores.add(new int[] {(int) Math.floor(cx + 0.5 + ux * at - 0.5), gy + 1, (int) Math.floor(cz + 0.5 + uz * at - 0.5)});
+			t += Math.max(0.35, rr * 0.45) / (2 * foot + apex);
 		}
-		return cores;
+		if (plan.commit(0.0)) {
+			plan.arches.add(plan.lastGroup);
+		}
+		// A core on the floor just in front of one of its feet (each arch the other one, so they stand all round),
+		// clear of the bark so it can be seen and struck
+		double at = (i % 2 == 0 ? 1 : -1) * (foot - rb - 3);
+		return new int[] {(int) Math.floor(cx + 0.5 + ux * at - 0.5), gy + 1, (int) Math.floor(cz + 0.5 + uz * at - 0.5)};
 	}
 
 	/**

@@ -96,6 +96,8 @@ public class FrayTests {
 		for (int dx = -2; dx <= 2; dx++) {
 			for (int dz = -2; dz <= 2; dz++) {
 				level.setChunkForced((o.getX() >> 4) + dx, (o.getZ() >> 4) + dz, true);
+				// (loaded here and now: the test server can run its ticks faster than chunks load in their own time)
+				level.getChunk((o.getX() >> 4) + dx, (o.getZ() >> 4) + dz);
 			}
 		}
 		for (int dx = -2; dx <= 2; dx++) {
