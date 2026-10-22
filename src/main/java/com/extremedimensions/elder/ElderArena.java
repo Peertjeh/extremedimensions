@@ -111,7 +111,7 @@ public final class ElderArena {
 		int bornThisTick;
 		final List<Strand> strands = new ArrayList<>();
 		/** Every block it means to build, so a second arena near never builds over it. */
-		final LongSet claimed = new LongOpenHashSet();
+		LongSet claimed = new LongOpenHashSet();
 		/** Its design: the lie of its floor, what each group of blocks is, its islands and cores. */
 		ArenaDesign.Blueprint bp;
 		/** Its blocks by group. */
@@ -459,6 +459,8 @@ public final class ElderArena {
 		a.pieces = bp.pieces;
 		a.lines = bp.lines;
 		a.bp = bp;
+		// (sized for all its blocks at once: grown as they come, it would be rehashed whole partway)
+		a.claimed = new LongOpenHashSet(bp.pieces.size());
 		for (int i = 0; i < bp.kinds.size(); i++) {
 			a.groups.add(new ArrayList<>());
 		}

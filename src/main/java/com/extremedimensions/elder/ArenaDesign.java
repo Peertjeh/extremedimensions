@@ -252,7 +252,7 @@ final class ArenaDesign {
 		final ServerLevel level;
 		final boolean grief;
 		final Random rnd;
-		final Long2ObjectLinkedOpenHashMap<ElderArena.Piece> pieces = new Long2ObjectLinkedOpenHashMap<>();
+		final Long2ObjectLinkedOpenHashMap<ElderArena.Piece> pieces;
 		/** Where the players near stand (x, z): no tower or pillar rises right beside one of them. */
 		final List<double[]> people = new ArrayList<>();
 		Long2ObjectLinkedOpenHashMap<ElderArena.Piece> group;
@@ -269,6 +269,10 @@ final class ArenaDesign {
 			this.level = level;
 			this.grief = grief;
 			this.rnd = new Random(seed);
+			// Room for about as many blocks as an arena of this size holds (some 3,000 a square of its size), so the
+			// table is not grown, and rehashed whole, partway through a great one
+			double size = Math.max(0.5, Math.min(12.0, Config.ELDER_ARENA_SIZE));
+			this.pieces = new Long2ObjectLinkedOpenHashMap<>((int) (3000 * size * size) + 1024);
 		}
 
 		void begin() {
@@ -560,9 +564,9 @@ final class ArenaDesign {
 					List<Step> parts = new ArrayList<>();
 					for (int k = 0; k < w.depth(); k++) {
 						int below = k;
-						parts.add(new Step("island", () -> isleLayer(plan, pal, w, below)));
+						parts.add(new Step("island layer", () -> isleLayer(plan, pal, w, below)));
 					}
-					parts.add(new Step("island", () -> {
+					parts.add(new Step("island underside", () -> {
 						isleUnder(plan, pal, style, w);
 						next(judge(0.9, kept -> {
 							if (kept) {
@@ -605,6 +609,7 @@ final class ArenaDesign {
 				bp.size = size;
 				bp.wide = wide;
 				// Then its blocks, in order, a share at a time
+				((ArrayList<ElderArena.Piece>) bp.pieces).ensureCapacity(plan.pieces.size());
 				Iterator<ElderArena.Piece> all = plan.pieces.values().iterator();
 				next(List.of(new Step("the blocks", new Runnable() {
 					@Override
@@ -639,14 +644,14 @@ final class ArenaDesign {
 			List<Step> parts = new ArrayList<>();
 			for (int from = 0; from < all.length; from += JUDGE_STEP) {
 				int lo = from, hi = Math.min(all.length, from + JUDGE_STEP);
-				parts.add(new Step("island", () -> {
+				parts.add(new Step("judging room", () -> {
 					for (int i = lo; i < hi; i++) {
 						fits[i] = plan.room(all[i]);
 						ok[0] += fits[i] ? 1 : 0;
 					}
 				}));
 			}
-			parts.add(new Step("island", () -> then.accept(plan.keep(all, fits, ok[0], share, kind))));
+			parts.add(new Step("keeping", () -> then.accept(plan.keep(all, fits, ok[0], share, kind))));
 			return parts;
 		}
 
