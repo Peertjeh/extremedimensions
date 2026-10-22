@@ -1,8 +1,9 @@
 # BattleHub combat model (machine learning)
 
 The bots' strategy stays scripted (looting, beds, bridges, parkour); only the melee fight is learned: one model,
-trained here outside Minecraft, used by the mod in every game where a bot fights. Phase 1: a 1v1 sword duel (and
-boxing) on flat ground.
+trained here outside Minecraft, used by the mod in every game where a bot fights. Phase 1 (spec v1, `pvp_sim`, in the
+mod since 1.33): a 1v1 sword duel (and boxing) on flat ground. Phase 2 (spec v2, `pvp_sim2`): every melee mode, with
+the terrain and the void, kits and effects, the bow, food, pearls, wind charges and the shield, and up to two enemies.
 
 ## Layout
 
@@ -20,6 +21,13 @@ boxing) on flat ground.
 | `train/league.py`, `ratings.py` | Everyone against everyone, Elo ratings, the checkpoints for the six difficulty levels picked by rating, exported to ONNX. |
 | `train/export_onnx.py` | A checkpoint to ONNX (`obs` -> `logits`), checked against PyTorch with ONNX Runtime; the spec's sha256 in the metadata. |
 | `INTEGRATIE.md` | How the model goes into the mod (in Dutch). |
+| `spec/combat_v2.json` | Spec v2: 118 observations (the target, me, what I see of it, kit and effects, what I carry and hold, an incoming projectile, a second enemy, terrain rays) and 9 action heads (v1's plus what to hold and the right mouse button). |
+| `spec/combat_v2_golden.json` | v2's golden file: states, actions and small heightmaps with their terrain rays (`tools/make_golden2.py`). |
+| `pvp_sim2/terrain.py` | Heightmaps (columns of 1x1, NaN the void), the spec's terrain rays, line of sight, and the maps of the modes: walled arena, sumo platform, bridge, islands, town, hills. |
+| `pvp_sim2/kits.py` | The mod's kits (weapons, armor, effects, items), the Bed Wars shop, SkyWars and Hunger Games loot, The Bridge: Chaos' effects. |
+| `pvp_sim2/physics.py` | Up to three fighters per arena: moving against the terrain (step up, jump onto blocks, fall damage, the void), the hand and the right button (bow and arrows, eating, golden apples, pearls, wind charges, the shield), the mace's smash, hunger and regeneration, teams and kill credit. |
+| `pvp_sim2/env.py`, `obs.py`, `scripted.py` | `Batch2` (n arenas, a scenario per episode: map, kits, 1v1 / 1v2 / three-way / 2v1), what each fighter perceives (view, line of sight, hearing, its target and second enemy), rewards; `PvpEnv2` for Gymnasium; a scripted bot that uses its items. |
+| `tools/show_fight2.py` | v2 fights on their maps drawn to a PNG. |
 
 ## Run
 

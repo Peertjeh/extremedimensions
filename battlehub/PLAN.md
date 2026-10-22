@@ -797,7 +797,7 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
 **Doel.** Hetzelfde idee als fase 1: de strategie blijft gescript (looten, bed, bruggen bouwen, de goal), alleen het gevecht zelf is het model. Nu voor alle modi waarin met zwaard, bijl of vuist gevochten wordt.
 - **Modi:** SkyWars, Bed Wars, Hunger Games, The Bridge (ook Chaos, duos en 1v1v1v1), FFA, 1v2/1v3, Sumo, Axe, KOTH, CTF, LMS, Build UHC en de toernooien.
 - **Blijft gescript:**
-  - mace en boog/kruisboog: een smash en schieten zijn een ander vak;
+  - de kruisboog; de mace en het boogduel alleen tot het model ze aantoonbaar beter doet;
   - Spleef, TNT Run en Parkour: daar wordt niet gevochten.
 
 **Wat er per modus anders is dan een zwaardduel.** Het model van fase 1 heeft alleen een vlakke vloer met muren gezien, één tegenstander en één kit. In een modus met een afgrond zou het er gewoon af lopen. Nu vangt de gescripte RECOVER dat op, maar duwen naar de rand kent het model niet.
@@ -831,6 +831,19 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
   - voor de tegenstander: hoeveel grond er achter hem ligt in de richting waarin ik duw, en of hij boven de void hangt. Daarmee kan het model leren iemand van een brug of eiland te slaan.
 - **Een tweede tegenstander:** de dichtstbijzijnde andere zichtbare vijand (vooruit, links, op, afstand, of hij naar mij kijkt, wanneer hij sloeg) en het aantal vijanden binnen 6 blokken. Zo leert het model niet tussen twee man in te gaan staan.
 - **Teamgenoten** blijven buiten de observatie: het gescripte brein kiest het doelwit, en friendly fire staat uit.
+- **Spullen** (toegevoegd na de bevestiging, op verzoek). Het model weet wat het bij zich heeft en kan het zelf gebruiken in het gevecht.
+  - Bij zich: boog en pijlen, eten, gouden appels, ender pearls, wind charges en een schild, plus de cooldowns ervan.
+  - Wat het nu in de hand heeft, en hoe lang het al spant of eet.
+  - Van de tegenstander alleen wat je ziet: een boog, eten of iets om te gooien in de hand, of hij spant, eet of blokt.
+  - Een pijl, pearl of wind charge die op mij afkomt.
+  - Twee actiekoppen erbij: **hand** (wapen, boog, eten, gouden appel, pearl, wind charge) en **gebruiken** (rechtermuisknop vasthouden). Dat werkt zoals in de game:
+    - de boog spant zolang je vasthoudt en schiet bij loslaten;
+    - eten duurt 32 ticks;
+    - een pearl of wind charge gaat bij het indrukken;
+    - met wapen en schild blok je.
+  - Wisselen kost de lading, en tijdens gebruik loop je op 20%.
+  - De draai- en kijkstappen krijgen ±1° erbij om met de boog te mikken.
+  - Blokken plaatsen blijft gescript (bruggen bouwen hoort bij de strategie).
 
 **Simulatie v2.**
 - **Een hoogtekaart per arena** (cellen van 1×1, hoogtes in halve blokken, void). Generatoren voor:
@@ -846,6 +859,14 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
   - vallen, met valschade;
   - onder de void dood.
 - **1–3 vechters per arena:** 1v1, 1v2 (twee tegen het model) en drie tegen elkaar.
+- **Spullen in de simulatie:**
+  - pijlen: spankracht, zwaartekracht, schade naar snelheid, de crit bij volle spanning;
+  - eten en gouden appels: absorption en regeneration;
+  - honger en natuurlijke regeneratie;
+  - ender pearls: teleport met 5 schade, kwijt in de void;
+  - wind charges: de explosie duwt iedereen in de buurt en lanceert jezelf, zonder valschade daarna;
+  - het schild: blokt van voren na 5 ticks; een bijl schakelt het 5 s uit;
+  - de mace: extra schade naar de valhoogte, zodat mace-gevechten later ook geleerd kunnen worden.
 - **Kits en effecten** per vechter en per episode, gekozen uit de tabellen van de mod:
   - vuist, houten tot netherite zwaard, bijlen, de knockback-stick, sharpness;
   - harnas 0–20 met toughness;
@@ -883,3 +904,22 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
 - **2a** – spec v2, simulatie (terrein, kits, 3 vechters), tests, gouden bestand en Java-pariteit. Daarna bevestiging vragen, zoals afgesproken na de simulatie.
 - **2b** – training en league.
 - **2c** – integratie, zelftests per modus, docs, versie 1.34.0.
+
+**Mijlpaal 2a – spec v2 en simulatie (klaar, wacht op bevestiging).**
+- **Spec v2** (`ml/spec/combat_v2.json`): 118 observaties en 9 actiekoppen (de 7 van v1 met fijnere draai- en kijkstappen van ±1°, plus hand en gebruiken).
+  - De observaties: het doelwit, ikzelf (ook absorption, honger, regeneratie en valhoogte), wat ik van het doelwit zie (ook schild, spannen, eten en wat het vasthoudt), kit en effecten, wat ik bij me heb en vasthoud, een projectiel op mij af, een tweede vijand, en terrein: 4×8 stralen plus onder mij, onder het doelwit en achter het doelwit.
+  - Waar een vaste waarde niet klopte met de modi, is die nu een veld: bereik, grootte en ooghoogte per vechter.
+- **`ml/pvp_sim2`**: terrein (hoogtekaarten met zes soorten kaarten), kits (alle kits van de mod, de Bed Wars-shop, loot en Chaos), physics (alles uit het plan), omgevingen en een gescripte bot die zijn spullen gebruikt.
+  - **Fout gevonden en opgelost:** een harde duw (knockback II uit Chaos plus een sprint-hit, ruim 1,6 blok per tick) schoot door een muur heen. Horizontale beweging gaat nu in stapjes van hoogstens 0,45 blok.
+- **Snelheid:** ongeveer 5.400 beslissingen per seconde met 256 arena's en 3 vechters op één kern. v1 haalde 30.000 met 2 vechters op een vlakke vloer. De dure delen zijn zicht over het terrein, de stralen en botsingen; die zijn gevectoriseerd.
+- **Gedrag van de gescripte bots tegen elkaar** (diagnose):
+  - Zwaard in de arena: ongeveer 15 s per gevecht, nooit meer door de muur.
+  - Op de brug: ongeveer 5,5 s; bijna alle doden zijn van de brug geslagen (279 van 280 na een klap).
+  - Loot in de stad: ongeveer 6,5 s.
+  - Sumo: ongeveer 10 s, alleen door eraf duwen.
+  - Een rondlopende pop valt bijna nooit van een brug: de randstralen werken.
+  - `tools/show_fight2.py` tekent gevechten op hun kaart.
+- **Tests:**
+  - Python: 52, waarvan 26 nieuw voor v2: terrein en stralen, opstappen, valschade, void met kill credit, boog, eten, gouden appel, pearl, wind charge, mace, schild en bijl, teams, honger, de muur-duw, resistance V, de observaties, de omgeving en `check_env`.
+  - Java (`CombatObservationV2Test`): elke observatie uit het gouden bestand op 1e-6, de acties met hand en gebruiken, en de terreinstralen (`core.ml.TerrainRays`) op 6 kaarten met 72 posities gelijk aan Python. v1 blijft ongewijzigd slagen.
+  - Lokaal slagen 266 core-tests.
