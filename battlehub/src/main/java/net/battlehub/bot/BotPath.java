@@ -44,8 +44,10 @@ final class BotPath {
 			return null;
 		}
 		BlockPos end = BlockPos.containing(goal.x, goal.y + 0.01, goal.z);
+		// a goal nobody can stand on (The Bridge's goal is a 3x3 hole) is reached at its rim, 2 blocks from its middle
+		double reach = w.stand(end.getX(), end.getY(), end.getZ()) ? 1.5 : 2.5;
 		List<GridPath.Node> nodes = GridPath.find(w, new GridPath.Node(start.getX(), start.getY(), start.getZ()),
-				new GridPath.Node(end.getX(), end.getY(), end.getZ()), 1.5, 2500);
+				new GridPath.Node(end.getX(), end.getY(), end.getZ()), reach, 2500);
 		if (nodes == null) {
 			return null;
 		}

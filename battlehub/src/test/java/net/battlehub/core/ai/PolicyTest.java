@@ -97,6 +97,27 @@ class PolicyTest {
 	}
 
 	@Test
+	void walkingAlongANarrowBridgeTheEdgesAtItsSidesAreNoReason() {
+		// a one-block bridge along x: the ground ends half a block away north and south, far ahead and behind
+		double[] bridge = new double[8];
+		for (int i = 0; i < 8; i++) {
+			V3 d = Situation.direction(i);
+			bridge[i] = Math.abs(d.x()) > 0.9 ? Situation.SAFE : 0.3;
+		}
+		Objective goal = Objective.attack(new V3(40, 64, 0), "their goal");
+		Situation.Self walking = new Situation.Self(O, new V3(0.2, 0, 0), 20, 20, true, 1, false, false, 3.0);
+		Situation along = new Situation(0, walking, null, goal, bridge, Situation.Threat.NONE);
+		assertFalse(score(along, Archetype.RUSHER).stream().anyMatch(x -> x.tactic() == Tactic.RECOVER));
+		// walking off its side is
+		Situation.Self sideways = new Situation.Self(O, new V3(0, 0, 0.2), 20, 20, true, 1, false, false, 3.0);
+		Situation off = new Situation(0, sideways, null, goal, bridge, Situation.Threat.NONE);
+		assertTrue(score(off, Archetype.RUSHER).stream().anyMatch(x -> x.tactic() == Tactic.RECOVER));
+		// and standing on an edge with nothing to do, as before
+		Situation idle = new Situation(0, me(O, 20, 1), null, null, bridge, Situation.Threat.NONE);
+		assertTrue(score(idle, Archetype.RUSHER).stream().anyMatch(x -> x.tactic() == Tactic.RECOVER));
+	}
+
+	@Test
 	void anUnseenTargetIsSearchedWhereItWasLastSeen() {
 		Situation.Target lost = new Situation.Target(Fixtures.FOE, new V3(12, 64, 3), V3.ZERO, 20, 20, false, 0.7, 100, false);
 		List<Score> sc = score(at(0, me(O, 20, 1), lost, open()), Archetype.BALANCED);

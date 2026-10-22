@@ -11,6 +11,12 @@ import java.util.List;
 public final class CombatPolicy {
 	private CombatPolicy() {}
 
+	/** Moving towards an edge that is near: less than a block of ground along its motion. */
+	static boolean heading(Situation s) {
+		V3 v = s.self().vel();
+		return v.flatLength() >= 0.03 && s.ground(v) < 1.0;
+	}
+
 	public static List<Score> score(Situation s, OpponentModel om, OutcomeMemory mem, Personality p, Difficulty d) {
 		return score(s, om, mem, p, d, 0);
 	}
@@ -49,7 +55,9 @@ public final class CombatPolicy {
 				why.add(String.format(java.util.Locale.ROOT, "edge %.1f behind", behind));
 				out.add(new Score(Tactic.RECOVER, 1.2 + (limit - behind) * 0.5, behind < 1.0, why));
 			}
-		} else if (s.nearestEdge() < 0.5) {
+		} else if (s.nearestEdge() < 0.5 && (heading(s) || (g == null && me.vel().flatLength() < 0.03))) {
+			// walking along a narrow bridge the edges are at its sides: only an edge it is heading for counts (or,
+			// standing about with nothing to do, any)
 			out.add(new Score(Tactic.RECOVER, 0.7, false, List.of("standing on an edge")));
 		}
 

@@ -24,8 +24,9 @@
     one).
 
 ### Fixed
-* A bot on a one-block bridge with its middle just past the edge no longer thinks there is no way across and builds
-  next to the bridge (its route now starts under any part of its feet).
+* Bots on The Bridge no longer build next to the path when they come at it at an angle: their route now reaches a
+  goal nobody can stand on (the goal hole) from its rim, starts under any part of their feet, and walking along a
+  narrow bridge no longer counts as "standing on an edge" (only an edge they are heading for does).
 
 ## 1.33.0
 

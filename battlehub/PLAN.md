@@ -969,4 +969,9 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
   - zelftests met model v2: een bijlduel (het model stuurt en A verliest), The Bridge (bij A neemt het model het over en raakt A) en 1v2 (beide bots, A verliest).
 - **De Bridge-bottest** ("while the path is there the bot walks it and builds nothing") faalde in 2 van de 3 runs; de bot zette 1–3 blokken bij een rand.
   - Oorzaak: de padzoeker nam als start alleen het blok onder het midden van de bot. Op de brug van 1 blok breed hangt dat midden soms net naast de brug, terwijl de voeten (0,6 breed) er nog op staan. Dan was er "geen route", en dan bouwt de bot.
-  - Opgelost: `BotPath` zoekt het startblok onder elk deel van de voeten.
+  - Dat was niet genoeg (in de volgende run zette hij er weer 2). De echte oorzaak: het doel van The Bridge is een gat van 3×3, en de padzoeker moest tot 1,5 blok van het midden komen. Daar ligt alleen gat; de rand ligt op 2 blokken. Er was dus nooit een route naar het doel. Op één lijn met de brug liep de bot er gewoon recht naartoe; kwam hij er schuin aan, dan "bouwde" hij recht naar het doel.
+  - Dat schuin aankomen kwam door het wisselen met RECOVER ("standing on an edge"). Op een brug van 1 blok staat de bot altijd naast een rand, en bij een karakter met weinig "objective" (rusher) won RECOVER om de paar ticks (0,70 tegen 0,71).
+  - Opgelost:
+    - een doel waar niemand kan staan, wordt bereikt vanaf de rand: tot 2,5 blok;
+    - "standing on an edge" telt alleen nog als de bot naar die rand toe beweegt, of als hij stilstaat zonder doel (met een test in `PolicyTest`);
+    - `BotPath` zoekt het startblok onder elk deel van de voeten.
