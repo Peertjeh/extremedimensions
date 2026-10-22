@@ -35,7 +35,8 @@ the heavy parts cost, and makes the download lighter.
 - When the Lance has not fired by its 70th tick, the test now also says the Weaver's health and why it left the world.
 - An arena's design drawn up a step at a time must come out the same as one drawn up whole, for each Elder's style.
 - The fight measurements also log what each part of the mod's tick took at its worst (Elders, arena, strikes, the
-  Seam...), to find what makes a fight's occasional slow tick.
+  Seam...), the garbage collection in those ticks, and the mod's CPU time beside the clock. They judge the mod by its
+  CPU time: on a shared machine its thread can wait its turn far longer than it works.
 - **The Elder fights are measured**: a fight with each of the Matriarch, the Ferryman and the Weaver, as a player meets
   it (its arena rising round it at its full size, blocks flying in, its ultimate partway), alone and far from every
   other test. Logged: what calling it costs at once (the arena is designed there and then), and every server tick of the

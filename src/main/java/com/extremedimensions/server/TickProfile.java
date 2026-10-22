@@ -13,6 +13,20 @@ public final class TickProfile {
 	private static boolean on = false;
 	/** Per part: {worst nanoseconds in one tick, nanoseconds in all, ticks}. */
 	private static final Map<String, long[]> PARTS = new LinkedHashMap<>();
+	private static final java.lang.management.ThreadMXBean THREADS = java.lang.management.ManagementFactory.getThreadMXBean();
+
+	/** Whether the tests are listening. */
+	public static boolean on() {
+		return on;
+	}
+
+	/**
+	 * The CPU time this thread has had, in nanoseconds (0 if the JVM cannot tell): set against the clock, it shows
+	 * whether a slow stretch was work, or the thread waiting its turn on a busy machine.
+	 */
+	public static long cpu() {
+		return THREADS.isCurrentThreadCpuTimeSupported() ? THREADS.getCurrentThreadCpuTime() : 0;
+	}
 
 	/** Starts listening afresh. */
 	public static void listen() {

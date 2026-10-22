@@ -418,8 +418,9 @@ final class ArenaDesign {
 		private final Plan plan;
 		private final Blueprint bp = new Blueprint();
 		private final ArrayDeque<Step> steps = new ArrayDeque<>();
-		/** The longest one step took (nanoseconds), and what it was, for the tests. */
+		/** The longest one step took on the clock and in CPU time (nanoseconds), and what that step was, for the tests. */
 		private long longest = 0;
+		private long longestCpu = 0;
 		private String longestStep = "";
 
 		/** One step of the design, by what it draws up. */
@@ -588,13 +589,16 @@ final class ArenaDesign {
 
 		/** Works on the design until it is done or the clock passes {@code deadline} ({@link System#nanoTime}); true once done. */
 		boolean work(long deadline) {
+			boolean timed = com.extremedimensions.server.TickProfile.on();
 			while (!steps.isEmpty()) {
-				long t = System.nanoTime();
+				long t = System.nanoTime(), c = timed ? com.extremedimensions.server.TickProfile.cpu() : 0;
 				Step step = steps.poll();
 				step.run().run();
 				long now = System.nanoTime();
-				if (now - t > longest) {
-					longest = now - t;
+				longest = Math.max(longest, now - t);
+				long spent = timed ? com.extremedimensions.server.TickProfile.cpu() - c : 0;
+				if (spent > longestCpu) {
+					longestCpu = spent;
 					longestStep = step.name();
 				}
 				if (now >= deadline) {
@@ -623,7 +627,12 @@ final class ArenaDesign {
 			return longest;
 		}
 
-		/** What that longest step drew up. */
+		/** The most CPU time one step has taken (while the performance tests listen), in nanoseconds. */
+		long longestCpu() {
+			return longestCpu;
+		}
+
+		/** What that step drew up. */
 		String longestStep() {
 			return longestStep;
 		}

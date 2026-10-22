@@ -144,9 +144,9 @@ public final class ElderArena {
 	private static final List<Drafting> DRAFTS = new ArrayList<>();
 	/**
 	 * The last arena's design (for tests): the time it took in all (nanoseconds), its blocks, the ticks it was spread
-	 * over, and the longest single step of it (nanoseconds).
+	 * over, the longest single step of it on the clock and the most CPU time one step took (nanoseconds).
 	 */
-	private static long[] lastDesign = {0, 0, 0, 0};
+	private static long[] lastDesign = {0, 0, 0, 0, 0};
 	/** What the longest step of the last arena's design drew up (for tests). */
 	private static String lastDesignStep = "";
 	/** Every block an arena has put down, by level and position. */
@@ -267,7 +267,7 @@ public final class ElderArena {
 
 	/**
 	 * The last arena's design (for tests): the time it took in all (nanoseconds), its blocks, the ticks it was spread
-	 * over, and the longest single step of it (nanoseconds).
+	 * over, the longest single step of it on the clock and the most CPU time one step took (nanoseconds).
 	 */
 	public static long[] lastDesign() {
 		return lastDesign.clone();
@@ -415,7 +415,7 @@ public final class ElderArena {
 			return false;
 		}
 		ArenaDesign.Blueprint bp = d.draft.blueprint();
-		lastDesign = new long[] {d.nanos, bp.pieces.size(), d.ticks, d.draft.longest()};
+		lastDesign = new long[] {d.nanos, bp.pieces.size(), d.ticks, d.draft.longest(), d.draft.longestCpu()};
 		lastDesignStep = d.draft.longestStep();
 		if (!bp.pieces.isEmpty()) {
 			open(d.boss, d.level, d.style, d.centre, bp);

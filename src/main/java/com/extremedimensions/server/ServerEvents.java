@@ -70,6 +70,8 @@ public final class ServerEvents {
 	private static final java.util.List<net.minecraft.world.entity.Entity> STRAYS = new java.util.ArrayList<>();
 	/** How long the mod's own work took in the last server tick, in nanoseconds (read by the performance tests). */
 	private static long lastTickNanos = 0;
+	/** The CPU time of that work, while the performance tests listen (see TickProfile). */
+	private static long lastTickCpuNanos = 0;
 
 	public static void register() {
 		// A reset of the Seam that an operator asked for is carried out before the worlds load
@@ -493,12 +495,19 @@ public final class ServerEvents {
 		return lastTickNanos;
 	}
 
+	/** The CPU time of the mod's own work in the last server tick, while the performance tests listen. */
+	public static long lastTickCpuNanos() {
+		return lastTickCpuNanos;
+	}
+
 	private static void tick(MinecraftServer s) {
 		long t0 = System.nanoTime();
+		long c0 = TickProfile.on() ? TickProfile.cpu() : 0;
 		try {
 			work(s);
 		} finally {
 			lastTickNanos = System.nanoTime() - t0;
+			lastTickCpuNanos = c0 == 0 ? 0 : TickProfile.cpu() - c0;
 		}
 	}
 

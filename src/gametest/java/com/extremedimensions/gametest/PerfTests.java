@@ -285,7 +285,8 @@ public class PerfTests {
 
 	/**
 	 * Server ticks timed while a test listens: for each, the whole tick (the worlds, their creatures, the mod), the mod's
-	 * own share of it, and what the JVM's garbage collection took meanwhile, all in milliseconds.
+	 * own share of it, what the JVM's garbage collection took meanwhile, and the CPU time of the mod's share (while the
+	 * profile listens), all in milliseconds.
 	 */
 	private static final class TickClock {
 		private TickClock() {}
@@ -306,7 +307,8 @@ public class PerfTests {
 				// (hooked after the mod's own handler: it hears each tick once the mod's work is done)
 				ServerTickEvents.END_SERVER_TICK.register(s -> {
 					if (heard != null && start != 0) {
-						heard.add(new double[] {(System.nanoTime() - start) / 1e6, ServerEvents.lastTickNanos() / 1e6, gcMillis() - gcAtStart});
+						heard.add(new double[] {(System.nanoTime() - start) / 1e6, ServerEvents.lastTickNanos() / 1e6, gcMillis() - gcAtStart,
+								ServerEvents.lastTickCpuNanos() / 1e6});
 					}
 				});
 			}
@@ -480,23 +482,34 @@ public class PerfTests {
 				}
 			}
 			double[] modClean = spread(clean, 1, false);
+			// The CPU time of the mod's work: what the mod costs, apart from its thread waiting its turn on a busy machine
+			double[] cpu = spread(fight, 3, false);
+			double slowestCpu = 0, slowest = -1;
+			for (double[] tick : fight) {
+				if (tick[1] > slowest) {
+					slowest = tick[1];
+					slowestCpu = tick[3];
+				}
+			}
 			report(elder.name().toLowerCase(java.util.Locale.ROOT) + " fight with its arena", String.format(java.util.Locale.ROOT,
-					"called in %.1f ms (its arena of %d blocks designed in %.1f ms over %d ticks, its longest step %.1f ms, %s); %d ticks: the mod's own work %.2f ms a tick on average, "
+					"called in %.1f ms (its arena of %d blocks designed in %.1f ms over %d ticks, its longest step %.1f ms, the most CPU one took %.1f ms, %s); %d ticks: the mod's own work %.2f ms a tick on average, "
 							+ "95%% within %.2f ms, worst %.2f ms; the whole server tick %.2f ms on average, 95%% within %.2f ms, worst %.2f ms "
 							+ "(quiet before it: %.2f, %.2f, %.2f ms); at most %d blocks in the air, %d standing at the end; still fighting %s; "
 							+ "%d of %d chunks loaded at the start; garbage collection %.0f ms in all, at most %.0f ms in a tick, and in the %d ticks "
-							+ "without it the mod's worst was %.2f ms; the worst ticks of the mod's parts: %s",
-					called[0], design[0][1], design[0][0] / 1e6, design[0][2], design[0][3] / 1e6, longest[0], fight.size(), mod[0], mod[1], mod[2], whole[0], whole[1], whole[2], calm[0], calm[1],
-					calm[2], flyingMost[0], standing, fought, loaded[0], (2 * r + 1) * (2 * r + 1), gcAll, gcWorst, clean.size(), modClean[2], worst));
+							+ "without it the mod's worst was %.2f ms; the mod's CPU time %.2f ms a tick on average, 95%% within %.2f ms, worst %.2f ms, "
+							+ "and %.2f ms in its slowest tick; the worst ticks of the mod's parts: %s",
+					called[0], design[0][1], design[0][0] / 1e6, design[0][2], design[0][3] / 1e6, design[0][4] / 1e6, longest[0], fight.size(), mod[0], mod[1], mod[2], whole[0], whole[1], whole[2], calm[0], calm[1],
+					calm[2], flyingMost[0], standing, fought, loaded[0], (2 * r + 1) * (2 * r + 1), gcAll, gcWorst, clean.size(), modClean[2], cpu[0], cpu[1], cpu[2], slowestCpu, worst));
 			CurseTests.check(helper, design[0][1] > 1000 && flyingMost[0] > 0, "no arena rose round the %s (%s blocks, %s at most in the air)",
 					elder.name(), design[0][1], flyingMost[0]);
 			// Far above any sane cost, as the other tests here: a slow runner never fails these, a real regression does
 			// Its arena is designed a little each tick, never all at once when it is called
 			CurseTests.check(helper, called[0] < 150, "calling the %s stalled the server for %s ms", elder.name(), called[0]);
-			CurseTests.check(helper, design[0][3] < 60_000_000L, "one step of the %s's arena design (%s) took %s ms", elder.name(), longest[0],
-					design[0][3] / 1e6);
-			CurseTests.check(helper, mod[1] < 25, "95%% of the %s's fight ticks took the mod up to %s ms", elder.name(), mod[1]);
-			CurseTests.check(helper, mod[2] < 250, "a tick of the %s's fight stalled the mod for %s ms", elder.name(), mod[2]);
+			// What the mod costs is judged by its CPU time: on a shared machine its thread can wait its turn for far longer
+			CurseTests.check(helper, design[0][4] < 60_000_000L, "one step of the %s's arena design (%s) took %s ms of CPU time", elder.name(), longest[0],
+					design[0][4] / 1e6);
+			CurseTests.check(helper, cpu[1] < 25, "95%% of the %s's fight ticks took the mod up to %s ms of CPU time", elder.name(), cpu[1]);
+			CurseTests.check(helper, cpu[2] < 250, "a tick of the %s's fight took the mod %s ms of CPU time", elder.name(), cpu[2]);
 			helper.succeed();
 		});
 	}
