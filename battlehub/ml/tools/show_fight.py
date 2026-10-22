@@ -1,6 +1,6 @@
 """Draws one simulated fight (top view, health, distance) to a PNG, to see what the simulation does.
 
-    python tools/show_fight.py out.png [skill0] [skill1] [seed]
+    python tools/show_fight.py out.png [skill0 or checkpoint.zip] [skill1] [seed]
 """
 import os
 import sys
@@ -18,12 +18,20 @@ from pvp_sim import PvpBatch, ScriptedPolicy  # noqa: E402
 
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else "fight.png"
-    s0 = float(sys.argv[2]) if len(sys.argv) > 2 else 0.8
+    arg0 = sys.argv[2] if len(sys.argv) > 2 else "0.8"
     s1 = float(sys.argv[3]) if len(sys.argv) > 3 else 0.5
     seed = int(sys.argv[4]) if len(sys.argv) > 4 else 11
     b = PvpBatch(1, seed=seed, auto_reset=False)
     obs = b.reset()
-    p0, p1 = ScriptedPolicy(s0, seed=seed + 1), ScriptedPolicy(s1, seed=seed + 2)
+    if arg0.endswith(".zip"):
+        from stable_baselines3 import PPO
+        model = PPO.load(arg0, device="cpu")
+        p0 = lambda o: model.predict(o, deterministic=True)[0]
+        label0 = "model (%s steps)" % os.path.basename(arg0)[5:14].lstrip("0")
+    else:
+        p0 = ScriptedPolicy(float(arg0), seed=seed + 1)
+        label0 = "bot A (skill %.1f)" % float(arg0)
+    p1 = ScriptedPolicy(s1, seed=seed + 2)
     pos, hp, hits, yaw = [], [], [], []
     while True:
         obs, r, d, info = b.step(np.stack([p0(obs[:, 0]), p1(obs[:, 1])], axis=1))
@@ -43,7 +51,7 @@ def main():
     half = b.ph.half[0]
     ax[0].add_patch(plt.Rectangle((-half, -half), 2 * half, 2 * half, fill=False, lw=2, color="#555"))
     colours = ["#d62728", "#1f77b4"]
-    names = ["bot A (skill %.1f)" % s0, "bot B (skill %.1f)" % s1]
+    names = [label0, "scripted (skill %.1f)" % s1]
     for s in (0, 1):
         ax[0].plot(pos[:, 0, s], pos[:, 1, s], color=colours[s], lw=1.2, label=names[s])
         ax[0].scatter(pos[0, 0, s], pos[0, 1, s], color=colours[s], marker="o", s=40)
