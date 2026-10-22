@@ -157,13 +157,16 @@ public final class ModelReports {
 		List<Component> out = new ArrayList<>();
 		out.add(tr(p, "bots.report.split", pct(r.keptShare()), pct(r.changedShare()), pct(r.replacedShare())));
 		List<String> why = new ArrayList<>();
+		// biggest first; what rounds to 0% is not worth a word
 		for (ModelReport.Reason reason : r.reasons()) {
-			if (why.size() == 4) break;
+			if (why.size() == 4 || pct(reason.share()) < 1) break;
 			why.add(tr(p, "bots.report.why." + reason.why().id()).getString() + " " + pct(reason.share()) + "%");
 		}
 		if (!why.isEmpty()) out.add(tr(p, "bots.report.why", String.join(", ", why)));
 		List<String> fresh = new ArrayList<>();
-		for (ModelReport.Feature f : r.outsideTop(4)) fresh.add(f.name() + " " + pct(f.share()) + "%");
+		for (ModelReport.Feature f : r.outsideTop(4)) {
+			if (pct(f.share()) >= 1) fresh.add(f.name() + " " + pct(f.share()) + "%");
+		}
 		if (!fresh.isEmpty()) out.add(tr(p, "bots.report.new", String.join(", ", fresh)));
 		List<String> learn = new ArrayList<>();
 		for (ModelReport.Lesson lesson : r.lessons(l, MIN_LESSON, MAX_LESSONS)) {

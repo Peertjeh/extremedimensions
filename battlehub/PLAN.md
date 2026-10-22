@@ -1037,3 +1037,12 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
 - JUnit `ModelReportTest` (7): de tabel dekt elke observatie van v1 en v2 precies één keer, en elke reden; de bereiken horen bij hun spec; de telling en de verdeling; een gewoon duel is niets nieuws, creative-reach en slowness zijn "effecten"; lessen wegen redenen en nieuwe waarden samen; optellen en het feedbackbestand.
 - pytest `test_lessons.py` (7): dezelfde dekking, elke focus bestaat in `Scenario`, de bereiken passen bij hun spec, en een feedbackbestand verschuift de scenario's zoals bedoeld.
 - Zelftest in het v2-bijlduel: A telt als OP en krijgt na de match het rapport van de bot, en de totalen tellen de match (met het bestand).
+
+**CI 1.35.0.**
+- Eerste run: 874 geslaagd, 2 mislukt. De nieuwe tests slaagden.
+  - De wereld-reset ("A komt er weer in") faalde zonder iets in het log. De server-stop-test daarna volgde daaruit: A stond nog buiten de lobby en kon geen duel starten.
+  - De check logt nu bij een fout waar A is (al in BattleHub, enter gelukt, dimensie, resetstatus, sessie, match).
+- Tweede run: 876 geslaagd, 0 mislukt; de reset slaagde. Het was dus een timingfout, die niet terugkwam.
+- Het rapport in de zelftest: Bot_Mars (master, v2) in het bijlduel, 14 s gevecht, eigen model 100%, niets nieuws te leren.
+- In het v1-zwaardduel (6 s) waren `edge_4` tot `edge_6` (tot 23% van de beslissingen) en `opp_dist` (15%) nieuw voor v1. De arena van de mod heeft randen en een grotere startafstand dan de vlakke arena van de v1-simulatie. Lessen: ander terrein (33%) en grotere afstanden (15%).
+- Een reden of waarde die op 0% afrondt, noemt het rapport niet meer (de eerste versie zei "sprong geweigerd 0%").
