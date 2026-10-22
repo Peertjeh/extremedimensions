@@ -791,3 +791,95 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
   - zet yaw en pitch zelf, zonder het AimModel.
 - **Config:** `bots.learnedCombat` (standaard aan) en `bots.learnedModes` (`sword`, `boxing`). `/bots inspect` toont hoeveel ticks het model stuurde.
 - **Zelftest.** De bestaande bot-tests draaien met het model uit (zij testen het gescripte gevecht). Een nieuwe test zet het aan: een practice-duel tegen MASTER, het model stuurt en raakt A, en A verliest terwijl hij stil staat.
+
+## ML fase 2 – Het geleerde gevecht in alle melee-modi (plan)
+
+**Doel.** Hetzelfde idee als fase 1: de strategie blijft gescript (looten, bed, bruggen bouwen, de goal), alleen het gevecht zelf is het model. Nu voor alle modi waarin met zwaard, bijl of vuist gevochten wordt.
+- **Modi:** SkyWars, Bed Wars, Hunger Games, The Bridge (ook Chaos, duos en 1v1v1v1), FFA, 1v2/1v3, Sumo, Axe, KOTH, CTF, LMS, Build UHC en de toernooien.
+- **Blijft gescript:**
+  - mace en boog/kruisboog: een smash en schieten zijn een ander vak;
+  - Spleef, TNT Run en Parkour: daar wordt niet gevochten.
+
+**Wat er per modus anders is dan een zwaardduel.** Het model van fase 1 heeft alleen een vlakke vloer met muren gezien, één tegenstander en één kit. In een modus met een afgrond zou het er gewoon af lopen. Nu vangt de gescripte RECOVER dat op, maar duwen naar de rand kent het model niet.
+
+| Modus | Wapen en kit | Terrein | Tegenstanders |
+|---|---|---|---|
+| SkyWars | loot: vuist tot diamanten zwaard of bijl, losse stukken harnas | eilanden en bruggen boven de void | tot 11, derde partijen |
+| Bed Wars | houten zwaard en leer, uit de shop steen/ijzer/diamant en de knockback-stick | eilanden en bruggen boven de void | teams |
+| Hunger Games | loot | de lobbystad: huizen, muren, trappen, halve blokken | tot 15 |
+| The Bridge (+ duos, 1v1v1v1) | ijzeren zwaard, leer | een smalle brug boven de void | 1–3 |
+| Bridge Chaos | idem, plus speed, slowness, strength, jump boost, grootte (scale), zwaartekracht en knockback uit de events | idem | 1–3 |
+| Sumo | vuist, geen schade | een platform boven de void: eraf duwen wint | 1 of meer |
+| FFA, 1v2, 1v3 | diamanten zwaard of bijl, ijzer | arena | 2–3 tegelijk |
+| Axe | diamanten bijl en schild, ijzer | arena | 1 |
+
+**Spec v2 (`spec/combat_v2.json`).** Eén spec voor alle modi. Dezelfde 7 actiekoppen, ongeveer 90 observaties:
+- **Uit fase 1:** tegenstander, richten, eigen status en wat zichtbaar is.
+- **Kit en effecten, van beide kanten** (wapen en harnas zie je in de game ook):
+  - de schade van een volle klap op de ander, na diens harnas, als deel van zijn maximale health, en andersom;
+  - de cooldown van beide wapens en de knockback-bonus van beide;
+  - mijn loopsnelheid, sprongkracht en zwaartekracht;
+  - de grootte van beiden;
+  - of schade telt (sumo en boxing niet).
+- **Terrein**, in 8 richtingen vanuit de bot, afstanden tot 4 blokken:
+  - void (een dodelijke val);
+  - richel (lager dan 1,25: eraf vallen);
+  - opstap (springen nodig);
+  - muur (kan er niet over).
+- **Onder en achter:**
+  - hoe ver de grond onder mij is (in de lucht boven de void na een klap);
+  - voor de tegenstander: hoeveel grond er achter hem ligt in de richting waarin ik duw, en of hij boven de void hangt. Daarmee kan het model leren iemand van een brug of eiland te slaan.
+- **Een tweede tegenstander:** de dichtstbijzijnde andere zichtbare vijand (vooruit, links, op, afstand, of hij naar mij kijkt, wanneer hij sloeg) en het aantal vijanden binnen 6 blokken. Zo leert het model niet tussen twee man in te gaan staan.
+- **Teamgenoten** blijven buiten de observatie: het gescripte brein kiest het doelwit, en friendly fire staat uit.
+
+**Simulatie v2.**
+- **Een hoogtekaart per arena** (cellen van 1×1, hoogtes in halve blokken, void). Generatoren voor:
+  - de arena met muren (fase 1);
+  - het sumoplatform;
+  - een brug van 1–3 breed tussen twee eilanden (Bridge, Bed Wars);
+  - eilanden met bruggen (SkyWars);
+  - een stadje met huizen, muren, trappen en halve blokken (HG);
+  - heuvels.
+- **Botsing per as:**
+  - automatisch opstappen tot 0,6;
+  - op 1 blok springen;
+  - vallen, met valschade;
+  - onder de void dood.
+- **1–3 vechters per arena:** 1v1, 1v2 (twee tegen het model) en drie tegen elkaar.
+- **Kits en effecten** per vechter en per episode, gekozen uit de tabellen van de mod:
+  - vuist, houten tot netherite zwaard, bijlen, de knockback-stick, sharpness;
+  - harnas 0–20 met toughness;
+  - de effecten van Chaos.
+- **Rewards:** als fase 1. Daarbij is in de void vallen verliezen (−10), met +10 voor wie hem als laatste raakte. Bij sumo telt alleen eraf duwen.
+- **Gelijkheid tussen Python en Java** komt er dubbel:
+  - het gouden bestand v2 bevat ook kits en terrein;
+  - de stralen worden in pure Java berekend (`core.ml`, over een interface die per kolom de hoogte van de grond geeft) en in JUnit vergeleken met Python op dezelfde hoogtekaarten. In de mod leest die interface de wereld, met een cache per beslissing.
+
+**Training.**
+- Een nieuw netwerk, omdat de observatie anders is.
+- De opbouw:
+  - eerst vlak 1v1 met de kit van fase 1;
+  - dan terrein en void;
+  - dan kits en effecten;
+  - dan 1v2 en drie tegen elkaar.
+- Geschat 50–80 miljoen stappen: enkele uren op 4 kernen.
+- Een league per soort terrein. De niveaus worden gekozen zoals in fase 1.
+- **Eis:** v2 moet op de vlakke arena minstens zo goed zijn als v1. Anders houden sword en boxing v1.
+
+**In de mod.**
+- **De naad:** het model vecht ook als er een doel is, zolang de Decider voor gevechten kiest: STRIKE, SPACE, RETREAT, en APPROACH tot ongeveer 8 blokken. RECOVER, EVADE, HEAL, OBJECTIVE, SEARCH en het bruggen bouwen blijven gescript.
+- **`LearnedMelee` v2:**
+  - de kit uit items, attributen en effecten;
+  - het terrein uit de wereld;
+  - de tweede vijand uit `Perception`.
+- **`bots.learnedModes`** krijgt standaard alle melee-modi.
+- **Zelftests per modus:**
+  - SkyWars: vechten op een eiland zonder eraf te lopen, en A eraf slaan;
+  - Bridge: vechten op de brug;
+  - HG: vechten in de stad;
+  - 1v2.
+
+**Mijlpalen.**
+- **2a** – spec v2, simulatie (terrein, kits, 3 vechters), tests, gouden bestand en Java-pariteit. Daarna bevestiging vragen, zoals afgesproken na de simulatie.
+- **2b** – training en league.
+- **2c** – integratie, zelftests per modus, docs, versie 1.34.0.
