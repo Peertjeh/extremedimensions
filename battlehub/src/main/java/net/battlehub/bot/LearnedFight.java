@@ -119,8 +119,10 @@ final class LearnedFight implements MeleeController {
 		step++;
 		turn(spec, lv);
 		// the model's hand and right button only with bots.learnedItems; else the bot keeps to its weapon and its own
-		// rules for eating, the bow and wind charges
-		return new Intent(current.forward(), current.strafe(), current.sprint(), current.jump(), null, null, first && current.attack(), false,
+		// rules for eating, the bow and wind charges, and the model only raises the shield (the right button with the
+		// weapon in hand, as in the simulation, where choosing something it does not carry keeps the weapon)
+		boolean block = !items && current.use() && blocksWith(handName(current.hand()));
+		return new Intent(current.forward(), current.strafe(), current.sprint(), current.jump(), null, null, first && current.attack(), block,
 				false, false, false, items ? current.hand() : -1, items && current.use());
 	}
 
@@ -338,6 +340,16 @@ final class LearnedFight implements MeleeController {
 		if (s.is(WIND)) return "wind";
 		if (s.has(DataComponents.FOOD)) return "food";
 		return "weapon";
+	}
+
+	/** The right button with this hand chosen means the shield: the weapon, or something not in the hotbar. */
+	private boolean blocksWith(String hand) {
+		if (hand.equals("weapon")) return true;
+		Predicate<ItemStack> p = wants(hand);
+		for (int i = 0; i < 9; i++) {
+			if (p.test(bot.getInventory().getItem(i))) return false;
+		}
+		return true;
 	}
 
 	/** The spec's name of a hand index (weapon when unknown). */
