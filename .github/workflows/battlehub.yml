@@ -13,6 +13,20 @@ on:
   workflow_dispatch:
 
 jobs:
+  ml:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: battlehub/ml
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: setup python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: simulation tests (physics, spec, golden file)
+        run: pip install numpy gymnasium pytest && python -m pytest -q tests
   build:
     runs-on: ubuntu-24.04
     defaults:

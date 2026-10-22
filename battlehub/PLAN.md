@@ -691,3 +691,57 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
 - In de tweede run stond het terugzetten van de Hunger Games-instellingen per ongeluk in de SkyWars-bot-test (een NullPointerException). Die staat nu in de Hunger Games-bot-test.
 - In de derde run faalde de knockback-test één keer: de bot kreeg wel 0,40 snelheid, maar kwam maar 0,20 blokken ver. De test duwde in de richting waarin A keek, en daar stond deze keer dekking van de arena. De test zoekt nu eerst een richting met 6 blokken vrije ruimte en vaste grond, en draait A daarheen.
 - In de vierde run was de knockback-test goed (1,31 blokken), maar liepen de Hunger Games-bots niet de stad in. Na de cornucopia hakten ze tijdens de vrede al op elkaar en op A in (zonder schade), en na de vrede vochten ze elkaar dood. De gelogde bot was al toeschouwer. Een bot wist niet dat er een vredesperiode is. Nu is in Hunger Games tijdens de vrede niemand iemands vijand (`isEnemy`), dus plunderen de bots. De bot-test zet de vrede op 10 minuten, zodat hij alleen het plunderen en lopen meet en niet een gevecht met A.
+
+
+## ML fase 1 – Een geleerd PvP-gevecht (1v1, platte arena)
+
+**Doel.** De strategie van de bots blijft gescript: looten, bed verdedigen, bruggen en parkour. Alleen het melee-gevecht wordt een getraind model, dat later in alle games wordt hergebruikt. Fase 1 is een 1v1 zwaardduel (en boxing) op een vlakke vloer. Sumo volgt als 1b.
+
+**Stap 1 – overzicht (bevestigd).**
+- Een bot is een echte `ServerPlayer`, dus Minecraft rekent zelf de physics. Het brein zet alleen de invoer: `zza`, `xxa`, sprinten, springen, kijkrichting en klikken.
+- `CombatMind` kiest een tactiek met `CombatPolicy` en `Decider`. `CombatSteering` maakt daar elke tick een `Intent` van.
+- De naad voor het model is `CombatMind.tick` (`steering.steer(...)`): het model levert dezelfde `Intent`. Reactietijd, strategie (`botGoal`), randveiligheid en de eerlijke kruisdradencontrole bij het slaan blijven gewoon werken.
+- Keuzes:
+  - eerst het zwaardduel, met boxing meteen mee;
+  - ONNX Runtime for Java;
+  - observaties, acties en rewards zoals voorgesteld;
+  - trainen in de container.
+
+**Stap 2 – simulatie (`battlehub/ml`).**
+- **Eén spec als bron van waarheid.** `spec/combat_v1.json` definieert 43 observaties en 7 actiekoppen (MultiDiscrete [3,3,2,2,2,9,5], elke 2 ticks een beslissing).
+  - De observaties staan in het assenstelsel van de bot (vooruit, links, op) en worden geschaald en afgekapt.
+  - Ze gaan over tegenstander, richten, eigen status, wat zichtbaar is van de tegenstander, en 8 rand- en muurafstanden. Die afstanden zitten er nu al in, zodat sumo en arena's met dekking later hetzelfde model kunnen gebruiken.
+  - `tools/make_golden.py` maakt `spec/combat_v1_golden.json`: 160 toestanden met hun observatie en 64 acties met hun decodering. Bij de integratie moet de JUnit-test in Java daar op 1e-6 mee overeenkomen. Een Python-test faalt zodra het gouden bestand niet meer bij de spec past (via de sha256 van de spec).
+- **Physics** (`pvp_sim/physics.py`, numpy, veel arena's tegelijk). Dezelfde formules als de game en als `core/ai/PlayerSim.java`.
+  - Gecontroleerd tegen de echte waarden (`tests/test_physics.py`):
+    - lopen 4,317 m/s, sprinten 5,612 m/s, Speed II 40% sneller;
+    - sprong 1,2522 hoog en 12 ticks in de lucht; sprint-springen ongeveer 7,1 m/s;
+    - een diamanten zwaard op vol ijzer doet 3,78 schade;
+    - aanvalskracht (t + 0,5) / 12,5 met schade × (0,2 + 0,8·kracht²);
+    - knockback 0,4 met omhoog min(0,4, vy/2 + 0,4); op de grond is vy −0,0784, zoals in de game;
+    - 10 ticks bescherming (sterkere schade telt alleen het verschil, zonder duw);
+    - een crit doet × 1,5; een sprint-hit duwt 0,5 extra, remt de aanvaller tot 0,6 en stopt zijn sprint;
+    - bereik 3 op een hitbox van 0,6 × 1,8 (ook een misser kost de lading);
+    - muren, de rand van een platform en health-regeneratie.
+- **Wat een bot weet.** Dit volgt de zintuigen uit de mod:
+  - zichtbaar binnen 65° (hoofd, midden of voeten);
+  - anders alleen de laatst bekende plek: gezien, gehoord binnen 12 blokken terwijl hij beweegt, of net door hem geraakt;
+  - snelheid, health en dergelijke alleen als de tegenstander zichtbaar is.
+- **Willekeur per episode.** Zodat het model daar niet van afhangt:
+  - arena 7–14 blokken van het midden tot de muur (14–28 breed);
+  - start op 5–10 blokken van elkaar, kijkrichting ±60°;
+  - waarnemingsvertraging 0–2 ticks, mikruis en een draailimiet van 30–60° per beslissing.
+- **Rewards.**
+  - Schade ±/20.
+  - Winst of verlies ±10; gelijkspel op tijd naar health-verschil.
+  - Misser −0,02, per beslissing −0,001, tegenstander uit beeld −0,005.
+  - Boxing: ±0,05 per treffer meer dan de tegenstander.
+  - Zonder de kleine straffen is het zero-sum; dat wordt getest.
+- **Omgevingen.** `PvpBatch` (n arena's, beide vechters handelen, met auto-reset, voor self-play) en `PvpEnv` (Gymnasium; slaagt voor `check_env`).
+- **Gescripte tegenstander.** Werkt alleen op de observatie, dus hij weet niet meer dan het model. Hij dient als meetlat en als eerste tegenstander.
+- **Snelheid.** Ongeveer 30.000 beslissingen per seconde, met beide vechters, op één kern.
+- **Tests en metingen.** 24 tests slagen.
+  - De gescripte bot wint meer dan 90% van willekeurig spel.
+  - Skill 0,8 wint 69% van skill 0,5.
+  - Een voorbeeldduel duurt 6,6 s met 6 tegen 5 treffers (`tools/show_fight.py`).
+  - In CI draait een aparte job `ml` die de Python-tests uitvoert.

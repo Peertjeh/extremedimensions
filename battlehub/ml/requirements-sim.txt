@@ -1,0 +1,6 @@
+# The simulation and its tests (no training)
+numpy>=2.0
+gymnasium>=1.0
+pytest>=8.0
+# only for tools/show_fight.py
+matplotlib>=3.8
