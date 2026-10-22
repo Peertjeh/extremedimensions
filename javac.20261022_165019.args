@@ -1,0 +1,8 @@
+-proc:none
+-d
+/tmp/claude-0/-home-user-extremedimensions/24ff3034-868a-5e54-a266-2d8c9b486dcd/scratchpad/jc
+-Xmaxerrs
+100000
+-sourcepath
+src/main/java:src/gametest/java
+src/gametest/java/com/extremedimensions/gametest/PerfTests.java

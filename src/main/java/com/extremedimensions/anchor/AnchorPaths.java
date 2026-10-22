@@ -16,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 /** Portal lookup and the free-air path from an anchor to its portal, used for streams and blocking. */
 public final class AnchorPaths {
@@ -30,7 +31,11 @@ public final class AnchorPaths {
 		return s.is(Blocks.END_PORTAL) || s.is(Blocks.END_PORTAL_FRAME);
 	}
 
-	/** Nearest portal block within {@link Config#PORTAL_RANGE}, or null. */
+	/**
+	 * Nearest portal block within {@link Config#PORTAL_RANGE}, or null. It looks only into chunks loaded now: one still
+	 * loading (round a player just arrived) is passed over, never waited on, for the server thread would stand still
+	 * until it was.
+	 */
 	public static BlockPos findPortal(ServerLevel level, BlockPos center, String type) {
 		int r = Config.PORTAL_RANGE;
 		BlockPos best = null;
@@ -43,7 +48,8 @@ public final class AnchorPaths {
 						continue;
 					}
 					BlockPos q = center.offset(dx, dy, dz);
-					if (isPortalFor(level.getBlockState(q), type)) {
+					LevelChunk chunk = level.getChunkSource().getChunkNow(q.getX() >> 4, q.getZ() >> 4);
+					if (chunk != null && isPortalFor(chunk.getBlockState(q), type)) {
 						best = q;
 						bestDist = dist;
 					}

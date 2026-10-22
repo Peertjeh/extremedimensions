@@ -197,6 +197,32 @@ public class WorldTests {
 		helper.succeed();
 	}
 
+	/**
+	 * Looking round a player for a portal never loads a chunk: one not loaded is passed over (as one still loading is),
+	 * for the server thread would stand waiting on it. Before, a player beside chunks still loading held every tick up
+	 * until they were.
+	 */
+	@GameTest
+	public void aPortalSearchLoadsNoChunk(GameTestHelper helper) {
+		net.minecraft.server.level.ServerLevel level = helper.getLevel();
+		// The corner of four chunks far from anything loaded
+		BlockPos at = new BlockPos(1_048_576, 64, 1_048_576);
+		int cx = at.getX() >> 4, cz = at.getZ() >> 4;
+		for (int x = cx - 1; x <= cx; x++) {
+			for (int z = cz - 1; z <= cz; z++) {
+				CurseTests.check(helper, !level.hasChunk(x, z), "chunk %s, %s far out was loaded already", x, z);
+			}
+		}
+		CurseTests.check(helper, com.extremedimensions.anchor.AnchorPaths.findPortal(level, at, Dims.NETHER) == null
+				&& com.extremedimensions.anchor.AnchorPaths.findPortal(level, at, Dims.END) == null, "a portal was found where no chunk is loaded");
+		for (int x = cx - 1; x <= cx; x++) {
+			for (int z = cz - 1; z <= cz; z++) {
+				CurseTests.check(helper, !level.hasChunk(x, z), "looking for a portal loaded chunk %s, %s", x, z);
+			}
+		}
+		helper.succeed();
+	}
+
 	/** A curse offer left unanswered (a client that never shows it) is chosen by the Tether after the set time. */
 	@GameTest(maxTicks = 100)
 	public void anUnansweredCurseOfferIsChosenForThePlayer(GameTestHelper helper) {

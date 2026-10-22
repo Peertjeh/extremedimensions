@@ -464,8 +464,10 @@ public class PerfTests {
 					.forEach(e -> worst.append(worst.length() == 0 ? "" : ", ").append(String.format(java.util.Locale.ROOT, "%s %.1f ms (CPU %.1f ms; %.2f ms a tick)",
 							e.getKey(), e.getValue()[0], e.getValue()[3], e.getValue()[1] / Math.max(1, e.getValue()[2]))));
 			// Where the server thread stood when a part ran long: by the clock but not in CPU time, it was waiting
+			String waited = null;
 			for (String stall : TickProfile.stalls()) {
 				report(elder.name().toLowerCase(java.util.Locale.ROOT) + " fight, a part ran long", stall);
+				waited = waited == null && stall.contains("ServerChunkCache.getChunk") ? stall : waited;
 			}
 			boolean fought = boss[0] != null && boss[0].isAlive();
 			int standing = ElderArena.standing();
@@ -514,6 +516,8 @@ public class PerfTests {
 					design[0][4] / 1e6);
 			CurseTests.check(helper, cpu[1] < 25, "95%% of the %s's fight ticks took the mod up to %s ms of CPU time", elder.name(), cpu[1]);
 			CurseTests.check(helper, cpu[2] < 250, "a tick of the %s's fight took the mod %s ms of CPU time", elder.name(), cpu[2]);
+			// Whatever the machine, the mod must never hold the server up waiting for a chunk to load
+			CurseTests.check(helper, waited == null, "in the %s's fight the mod waited on a chunk: %s", elder.name(), waited);
 			helper.succeed();
 		});
 	}

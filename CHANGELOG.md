@@ -15,6 +15,11 @@ the heavy parts cost, and makes the download lighter.
 - **No more slow tick every five seconds on a busy server**: each player's slower work (refreshing their curses'
   effects, looking for a portal near a newcomer, the bestiary's look round, the tribe's standing) came round on the same
   tick for everyone; it now comes round on a tick of each player's own, as often as before.
+- **No more hitch beside chunks still loading**: in the Overworld, for a player who had yet to learn of anchors, the mod
+  looked round them for a portal every five seconds, and a block of that look lying in a chunk still loading (just after
+  a teleport, a respawn or a trip through a portal) made the whole server wait until that chunk had loaded: 0.2 seconds
+  at a time in the measurements, in every Elder fight. The look now passes such a chunk over, and finds the portal once
+  it has loaded.
 - **Arenas weigh less on memory**: the blocks an arena means to build, has claimed and has put down are kept in
   tables of plain numbers rather than one small object each, a great arena's few hundred thousand blocks no longer
   leaving the JVM as much to clear away mid-fight.
@@ -38,7 +43,11 @@ the heavy parts cost, and makes the download lighter.
 - An arena's design drawn up a step at a time must come out the same as one drawn up whole, for each Elder's style.
 - The fight measurements also log what each part of the mod's tick took at its worst (Elders, arena, strikes, the
   Seam...), the garbage collection in those ticks, and the mod's CPU time beside the clock. They judge the mod by its
-  CPU time: on a shared machine its thread can wait its turn far longer than it works.
+  CPU time: on a shared machine its thread can wait its turn far longer than it works. Each part is timed in CPU time
+  as well, and whenever one runs past 40 ms the log shows where the server thread stood: a part slow by the clock but
+  not in CPU time was waiting on something, and the stack says on what (that is how the portal look above was found).
+  A fight in which the mod held the server up waiting for a chunk to load fails, however busy the machine.
+- Looking for a portal beside chunks not loaded must load none of them.
 - **The Elder fights are measured**: a fight with each of the Matriarch, the Ferryman and the Weaver, as a player meets
   it (its arena rising round it at its full size, blocks flying in, its ultimate partway), alone and far from every
   other test. Logged: what calling it costs at once (the arena is designed there and then), and every server tick of the
