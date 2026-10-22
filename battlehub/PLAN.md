@@ -967,4 +967,6 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
 - **Tests:**
   - `CombatModelsTest` controleert ook de v2-modellen in ONNX Runtime;
   - zelftests met model v2: een bijlduel (het model stuurt en A verliest), The Bridge (bij A neemt het model het over en raakt A) en 1v2 (beide bots, A verliest).
-- **CI-notitie:** in de run van 2a faalde één keer de bestaande Bridge-bottest ("while the path is there the bot walks it and builds nothing": de gescripte bot zette 1 blok). De volgende run met dezelfde code slaagde; die code is niet veranderd. Genoteerd als wisselvallig.
+- **De Bridge-bottest** ("while the path is there the bot walks it and builds nothing") faalde in 2 van de 3 runs; de bot zette 1–3 blokken bij een rand.
+  - Oorzaak: de padzoeker nam als start alleen het blok onder het midden van de bot. Op de brug van 1 blok breed hangt dat midden soms net naast de brug, terwijl de voeten (0,6 breed) er nog op staan. Dan was er "geen route", en dan bouwt de bot.
+  - Opgelost: `BotPath` zoekt het startblok onder elk deel van de voeten.

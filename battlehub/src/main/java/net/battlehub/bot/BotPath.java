@@ -39,10 +39,9 @@ final class BotPath {
 	/** Points to walk through from where the bot stands to near {@code goal}, or null when there is no way. */
 	static List<Vec3> find(ServerLevel level, Vec3 from, Vec3 goal) {
 		World w = new World(level);
-		BlockPos start = BlockPos.containing(from.x, from.y + 0.01, from.z);
-		// Mid-jump or on a slab edge: the standing spot just below
-		for (int i = 0; i < 3 && !w.stand(start.getX(), start.getY(), start.getZ()); i++) {
-			start = start.below();
+		BlockPos start = standing(w, from);
+		if (start == null) {
+			return null;
 		}
 		BlockPos end = BlockPos.containing(goal.x, goal.y + 0.01, goal.z);
 		List<GridPath.Node> nodes = GridPath.find(w, new GridPath.Node(start.getX(), start.getY(), start.getZ()),
@@ -55,5 +54,20 @@ final class BotPath {
 			out.add(new Vec3(n.x() + 0.5, n.y(), n.z() + 0.5));
 		}
 		return out;
+	}
+
+	/**
+	 * The block it stands on: under its middle, or (on a one-block bridge, with the middle just past the edge) under
+	 * another part of its feet, which are 0.6 wide; mid-jump or on a slab edge the spot just below.
+	 */
+	private static BlockPos standing(World w, Vec3 from) {
+		double[][] feet = {{0, 0}, {0.29, 0}, {-0.29, 0}, {0, 0.29}, {0, -0.29}, {0.29, 0.29}, {0.29, -0.29}, {-0.29, 0.29}, {-0.29, -0.29}};
+		for (int down = 0; down < 4; down++) {
+			for (double[] f : feet) {
+				BlockPos p = BlockPos.containing(from.x + f[0], from.y + 0.01 - down, from.z + f[1]);
+				if (w.stand(p.getX(), p.getY(), p.getZ())) return p;
+			}
+		}
+		return null;
 	}
 }

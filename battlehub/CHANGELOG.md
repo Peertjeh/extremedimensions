@@ -23,6 +23,10 @@
     `bots.learnedItems`; `bots.learnedModes` now lists every melee mode (a config with 1.33's default gets the new
     one).
 
+### Fixed
+* A bot on a one-block bridge with its middle just past the edge no longer thinks there is no way across and builds
+  next to the bridge (its route now starts under any part of its feet).
+
 ## 1.33.0
 
 ### Added
