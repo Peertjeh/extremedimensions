@@ -144,12 +144,38 @@ public class FrayTests {
 				start[0] = now;
 			});
 		}
-		for (int t = 1; t <= READY_WITHIN + 800; t++) {
+		boolean[] done = {false};
+		Runnable judge = () -> {
+			level.getServer().setDifficulty(was, true);
+			Config.SEAM_FRAY_RAY_COOLDOWN = cooldown;
+			done[0] = true;
+			if (ray[0] == null) {
+				clear.run();
+			}
+			check(helper, ray[0] != null, "the sky round the prey never came to life in %s ticks", READY_WITHIN);
+			int strikes = ray[0].strikes();
+			String state = ray[0].huntState(p);
+			ray[0].discard();
+			clear.run();
+			check(helper, seen[2], "the Frayed Ray never dived (at tick 30: %s; at the end: %s)", early[0], state);
+			check(helper, strikes > 0, "the Frayed Ray never struck its prey (%s)", state);
+			check(helper, seen[0] && seen[1], "the strike did not hurt (%s) and poison (%s) (%s)", seen[1], seen[0], state);
+			helper.succeed();
+		};
+		for (int t = 1; t <= READY_WITHIN + 805; t++) {
 			int now = t;
 			helper.runAfterDelay(t, () -> {
-				p.teleportTo(o.getX() + 0.5, o.getY() + 1, o.getZ() + 0.5);
 				int tick = now - start[0];
-				if (start[0] < 0 || tick < 1 || tick > 800) {
+				if (done[0] || start[0] < 0 || tick < 1) {
+					return;
+				}
+				if (tick == 805) {
+					// The hunt is over: judged at once, not after the longest wait the sky could have needed
+					judge.run();
+					return;
+				}
+				p.teleportTo(o.getX() + 0.5, o.getY() + 1, o.getZ() + 0.5);
+				if (tick > 800) {
 					return;
 				}
 				VeilRay r = ray[0];
@@ -168,21 +194,11 @@ public class FrayTests {
 				}
 			});
 		}
-		helper.runAfterDelay(READY_WITHIN + 805, () -> {
-			level.getServer().setDifficulty(was, true);
-			Config.SEAM_FRAY_RAY_COOLDOWN = cooldown;
-			if (ray[0] == null) {
-				clear.run();
+		// The sky never came to life: judged (and failed) once the longest wait is over
+		helper.runAfterDelay(READY_WITHIN + 806, () -> {
+			if (!done[0]) {
+				judge.run();
 			}
-			check(helper, ray[0] != null, "the sky round the prey never came to life in %s ticks", READY_WITHIN);
-			int strikes = ray[0].strikes();
-			String state = ray[0].huntState(p);
-			ray[0].discard();
-			clear.run();
-			check(helper, seen[2], "the Frayed Ray never dived (at tick 30: %s; at the end: %s)", early[0], state);
-			check(helper, strikes > 0, "the Frayed Ray never struck its prey (%s)", state);
-			check(helper, seen[0] && seen[1], "the strike did not hurt (%s) and poison (%s) (%s)", seen[1], seen[0], state);
-			helper.succeed();
 		});
 	}
 
