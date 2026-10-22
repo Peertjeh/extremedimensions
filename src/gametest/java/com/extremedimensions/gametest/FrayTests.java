@@ -123,12 +123,23 @@ public class FrayTests {
 		int[] start = {-1};
 		boolean[] seen = new boolean[3];
 		String[] early = new String[1];
-		// The ray is let loose once the sky round the prey is alive (its creatures move): alone in its batch, the test
-		// server runs this test's ticks faster than the forced chunks come to life, and a ray in a still chunk never moves
+		// The ray is let loose once the sky round the prey is alive (its creatures move), every forced chunk it may fly
+		// through: alone in its batch, the test server runs this test's ticks faster than those chunks come to life, and
+		// a ray that flies into a still one stops there
+		java.util.function.BooleanSupplier alive = () -> {
+			for (int dx = -2; dx <= 2; dx++) {
+				for (int dz = -2; dz <= 2; dz++) {
+					if (!level.isPositionEntityTicking(new BlockPos(((o.getX() >> 4) + dx) * 16 + 8, o.getY(), ((o.getZ() >> 4) + dz) * 16 + 8))) {
+						return false;
+					}
+				}
+			}
+			return true;
+		};
 		for (int t = 1; t <= READY_WITHIN; t++) {
 			int now = t;
 			helper.runAfterDelay(t, () -> {
-				if (start[0] >= 0 || !level.isPositionEntityTicking(from) || !level.isPositionEntityTicking(o)) {
+				if (start[0] >= 0 || !alive.getAsBoolean()) {
 					return;
 				}
 				ray[0] = ModEntities.VEIL_RAY.spawn(level, from, EntitySpawnReason.EVENT);
@@ -154,7 +165,9 @@ public class FrayTests {
 			}
 			check(helper, ray[0] != null, "the sky round the prey never came to life in %s ticks", READY_WITHIN);
 			int strikes = ray[0].strikes();
-			String state = ray[0].huntState(p);
+			// (where it ended, and whether its chunk was alive there: a still chunk holds a ray where it is)
+			String state = ray[0].huntState(p) + "; let loose on tick " + start[0] + ", its chunk alive "
+					+ level.isPositionEntityTicking(ray[0].blockPosition());
 			ray[0].discard();
 			clear.run();
 			check(helper, seen[2], "the Frayed Ray never dived (at tick 30: %s; at the end: %s)", early[0], state);
