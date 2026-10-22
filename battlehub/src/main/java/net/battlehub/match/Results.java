@@ -40,6 +40,7 @@ public final class Results {
 		try {
 			applyAll(m);
 			net.battlehub.bot.Bots.debrief(m);
+			net.battlehub.bot.ModelReports.matchEnd(m);
 		} finally {
 			Clans.save();
 		}

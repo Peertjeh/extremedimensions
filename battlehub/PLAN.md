@@ -987,3 +987,53 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
     - Eerder bouwde hij daar naast de brug; dat is nu weg.
     - De v2-Bridge-test zet A daarom op het eiland van de bot (het model vecht daar zoals bedoeld), zodat die test niet van het oversteken afhangt.
     - Een oplossing voor het oversteken (bijvoorbeeld niet sprinten op smalle grond, of de rem langs het pad laten kijken in plaats van langs de snelheid) volgt apart.
+
+## Versie 1.35 – Modelrapporten: hoeveel een bot afwijkt van zijn model, en wat hij moet leren
+
+**Vraag.** Een OP krijgt na een match in de chat van elke bot te horen hoeveel hij moest afwijken van zijn model, en wat hij dan moet leren in de testomgeving (de simulatie).
+
+**Wat telt als afwijken.** Elke tick van een gevecht waarin een geleerd model meedoet, valt in één van drie bakken. Zo'n tick is er als het model stuurde, of als het doelwit binnen 8 blokken is (dan zou het model sturen).
+- **Eigen model:** het model koos en de bot deed dat.
+- **Aangepast:** het model koos, maar de eigen regels van de bot veranderden het:
+  - afgeremd bij een rand (`edge`);
+  - een sprong geweigerd die in de leegte zou eindigen (`jump`);
+  - in de lucht teruggestuurd na knockback (`air`);
+  - vastgelopen, waarna de bot sprong of opzij stapte (`stuck`);
+  - gegeten volgens de regels (`heal`);
+  - het bed of doel gesloopt in plaats van geslagen (`objective`).
+- **Overgenomen:** de gescripte mind vocht zelf:
+  - weg van een rand (`recover`), ontwijken (`evade`), eten (`heal`), de boog (`shoot`);
+  - het doel (`objective`), zoeken (`search`), nog reageren (`react`), of iets anders (`other`).
+
+**Nieuw voor het model.** Bij elke beslissing kijkt de mod welke waarden buiten wat de simulatie in de training liet zien liggen.
+- `tools/make_ranges.py` speelt daarvoor ongeveer 400.000 beslissingen per spec, op volle breedte: de meegeleverde modellen (master en intermediate), de gescripte bot en willekeurig spel.
+- Per waarde gaan het 0,1%- en het 99,9%-kwantiel naar `combat_v1_ranges.json` en `combat_v2_ranges.json`, met de sha256 van de spec.
+- Een waarde die er meer dan 0,05 buiten ligt, is nieuw. Voorbeelden: creative-reach, slowness, meer dan drie vechters.
+
+**Lessen (`ml/spec/lessons.json`).** Eén tabel voor de mod en de training.
+- Elke reden heeft een les (of `null`: reageren, het doel en "anders" zijn zo bedoeld).
+- Elke observatie hoort bij precies één groep met een les: afstand, hoogte, snelheid, richten, timing, honger, kits, effecten, spullen, projectielen, meer vijanden of terrein.
+- Per les staat er welke scenario's van de simulatie vaker moeten. Voorbeeld: randen geeft bridge ×2, platform ×2 en islands ×1,5.
+- Het gewicht van een les is het deel van de ticks dat zijn redenen verklaren, plus het deel van de beslissingen met een nieuwe waarde uit zijn groep.
+- De bot noemt de grootste drie, vanaf 3%.
+
+**De melding.**
+- Na elke match krijgt elke OP online van elke bot die minstens 3 seconden met zijn model vocht vijf regels: wie (niveau, model, modus, seconden), de verdeling eigen/aangepast/overgenomen, de grootste redenen, de waarden die nieuw waren, en wat hij moet oefenen in de simulatie.
+- `/battlehub bots report off` zet het uit voor jezelf (onthouden in het profiel); `bots.modelReport` zet het voor iedereen uit.
+- `/battlehub bots report` toont de totalen sinds het begin, per spec en per modus. `reset` begint opnieuw.
+- `/battlehub bots inspect` toont het rapport tot nu toe.
+
+**Terug naar de training.**
+- De totalen staan in `config/battlehub/ml_feedback.json`, met de lessen en hun focus.
+- `train/focus.py` maakt daar scenario-gewichten van. Een les die een vijfde van de gevechten verklaart (of meer) krijgt zijn hele focus, een kleinere een deel.
+- `train/selfplay2.py --focus <bestand>` traint daarmee, bijvoorbeeld vanaf het huidige model (`--init`).
+- Een les met spullen (eten, de boog) heeft ook `--items` nodig. De training zegt dat erbij.
+
+**Dichtstbijzijnde alternatief.**
+- Wat het model gedaan zou hebben op een overgenomen tick wordt niet gevraagd: het model draait alleen bij gevechtstactieken, en een extra beslissing per tick kost rekentijd. De afwijking wordt dus geteld, met de reden, maar niet als ander gekozen actie.
+- `aim` en `timing` hebben geen scenario-focus. Als die vaak nieuw zijn, wijkt de simulatie zelf af van het spel, en moet de simulatie worden aangepast in plaats van vaker getraind.
+
+**Tests.**
+- JUnit `ModelReportTest` (7): de tabel dekt elke observatie van v1 en v2 precies één keer, en elke reden; de bereiken horen bij hun spec; de telling en de verdeling; een gewoon duel is niets nieuws, creative-reach en slowness zijn "effecten"; lessen wegen redenen en nieuwe waarden samen; optellen en het feedbackbestand.
+- pytest `test_lessons.py` (7): dezelfde dekking, elke focus bestaat in `Scenario`, de bereiken passen bij hun spec, en een feedbackbestand verschuift de scenario's zoals bedoeld.
+- Zelftest in het v2-bijlduel: A telt als OP en krijgt na de match het rapport van de bot, en de totalen tellen de match (met het bestand).

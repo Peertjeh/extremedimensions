@@ -284,6 +284,30 @@ public final class HubCommands {
 									c.getSource().sendSuccess(() -> Lang.tr("bots.forgot_other", who), true);
 									return 1;
 								})))
+						// How the learned bots kept to their models, and what to practise in the simulation
+						.then(Commands.literal("report")
+								.executes(c -> {
+									ServerPlayer viewer = c.getSource().getPlayer();
+									for (net.minecraft.network.chat.Component line : net.battlehub.bot.ModelReports.summary(viewer)) {
+										c.getSource().sendSuccess(() -> line, false);
+									}
+									return 1;
+								})
+								.then(Commands.literal("on").executes(c -> {
+									net.battlehub.bot.ModelReports.toggle(c.getSource().getPlayerOrException(), true);
+									c.getSource().sendSuccess(() -> Lang.tr("bots.report.on"), false);
+									return 1;
+								}))
+								.then(Commands.literal("off").executes(c -> {
+									net.battlehub.bot.ModelReports.toggle(c.getSource().getPlayerOrException(), false);
+									c.getSource().sendSuccess(() -> Lang.tr("bots.report.off"), false);
+									return 1;
+								}))
+								.then(Commands.literal("reset").executes(c -> {
+									net.battlehub.bot.ModelReports.reset();
+									c.getSource().sendSuccess(() -> Lang.tr("bots.report.reset"), true);
+									return 1;
+								})))
 						.then(Commands.literal("debug").then(Commands.argument("bot", StringArgumentType.word())
 								.suggests((c, b) -> SharedSuggestionProvider.suggest(net.battlehub.bot.Bots.names(), b))
 								.executes(c -> {

@@ -31,6 +31,9 @@ the terrain and the void, kits and effects, the bow, food, pearls, wind charges 
 | `train/selfplay2.py` | PPO self-play on v2 with the arenas in worker processes (3 workers x 96 arenas): a pool of earlier versions, the scripted bot, random play and dummies as opponents per slot; a curriculum that widens the scenarios (flat sword duels to everything), moves from easy opponents to the pool and fades the shaping later on. Each checkpoint is evaluated by `train/eval2.py` in a low-priority process. |
 | `train/eval2.py` | A checkpoint against the scripted bot on eight fixed scenarios (sword, axe and bow duels, bridge, SkyWars loot, sumo, the town 1v2, Bed Wars three-way) and against a dummy on a bridge. |
 | `train/league2.py` | v2's league over a mix of the modes' 1v1 scenarios, Elo, the six levels, ONNX export; and v2's best against v1's best on flat ground (v1 through an adapter). |
+| `spec/combat_v1_ranges.json`, `combat_v2_ranges.json` | What each model saw in training: per observation value the range the simulation produced (0.1% and 99.9% quantiles over about 400,000 decisions between the shipped models, the scripted bot and random play; `tools/make_ranges.py`). The mod counts a value outside it (by more than 0.05) as new to the model. |
+| `spec/lessons.json` | **The** table of what a bot should practise, read by the mod and by `train/focus.py`: the lesson behind each reason a fight left the model's choice and behind each observation value, and per lesson the scenario weights it raises. |
+| `train/focus.py` | Reads the mod's `config/battlehub/ml_feedback.json` and turns its lessons into the scenario weights of `pvp_sim2` (`selfplay2.py --focus`). |
 
 ## Run
 
@@ -48,7 +51,22 @@ python train/league.py runs/sword --out league                  # ratings, level
 # v2 (every melee mode)
 python train/selfplay2.py --run runs/v2 --steps 60000000        # about 6500 steps a second on 4 cores
 python train/league2.py runs/v2 --out league_v2 --v1 runs/sword/ckpt_016000000.zip
+
+# what the bots lacked on the server: practise more of it
+python train/focus.py ml_feedback.json                           # shows what it would change
+python train/selfplay2.py --run runs/v2focus --init runs/v2/ckpt_040000032.zip --pool-from runs/v2 --focus ml_feedback.json --steps 16000000
+python tools/make_ranges.py                                      # after a new model: what it saw in training
 ```
+
+From the mod back to training: after every match with learned bots the mod counts per bot how many fight ticks went
+as the model chose (kept), how many its own rules changed (an edge, a jump into the void, steering back in the air,
+being stuck, eating, the objective) and how many the scripted mind fought instead (away from an edge, dodging,
+healing, the bow, searching, reacting), and which observation values were new to the model. Operators get that in
+chat with the lessons that follow (`spec/lessons.json`); the totals per spec and mode go to
+`config/battlehub/ml_feedback.json` on the server. Copy that file here and pass it to `--focus`: each lesson multiplies
+the scenario weights it names (a lesson explaining a fifth of the fights or more fully, a smaller one partly). A lesson
+marked `items` (eating, the bow) needs `--items` as well; `aim` and `timing` have no focus, they mean the simulation
+itself differs from the game there.
 
 Rewards: damage done minus damage taken (per max health), +-10 for winning or losing, at the time limit the health
 difference and -1 for both (running away does not pay), a little for the crosshair on the opponent, a little less

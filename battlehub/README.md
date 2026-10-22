@@ -153,6 +153,15 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   model use them, experimental). The crosshair check of every click stays. Each difficulty level has its own
   model, picked by Elo rating, with a little delay, aim noise and a turn limit on the lower levels.
   `bots.learnedCombat` turns it off; `bots.learnedSpec` 1 uses only v1, `bots.learnedV1Modes` says where v1 fights.
+* *Model reports for operators*: after every match with a learned model, each bot tells the operators online how
+  much of its fight went as its model chose, how much its own rules changed (it would walk off an edge or jump into
+  the void, it was steered back in the air, it was stuck, it ate) and how much the scripted mind took over (away
+  from an edge, dodging, healing, the bow, the objective), which of the model's inputs were new to it (outside
+  what the simulation produced in training: creative reach, effects, more enemies, other terrain) and what it
+  should practise in the simulation (for example fights at edges on bridges and islands, or effects from Chaos).
+  The totals go to `config/battlehub/ml_feedback.json`; `battlehub/ml/train/selfplay2.py --focus` trains on them.
+  `/battlehub bots report` shows the totals, `/battlehub bots report off` stops them in your chat,
+  `bots.modelReport` turns them off for everyone.
 * Their names start with `Bot_`. Nothing about them is saved (no player files, no profiles), they never show
   up on a leaderboard, and their join and leave messages stay out of chat.
 * **One real player with bots earns nothing**: no coins, no XP, no quest, pass or achievement progress, and
@@ -601,6 +610,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/battlehub bots show <bot>` | admin | See what a bot does as particles only you see (again: off) |
 | `/battlehub bots inspect\|debug <bot>` / `/battlehub bots profile <bot> <style>` | admin | What a bot thinks and why; log its decisions; give it another fighting style |
 | `/battlehub bots forget <player\|all>` | admin | Wipe what bots remember about a player, or about everyone |
+| `/battlehub bots report [on\|off\|reset]` | admin | How the learned bots kept to their models since the totals began, per spec and mode, and what to practise; your chat reports after matches on or off; start the totals again |
 | `/battlehub matches` | admin | List running matches |
 | `/battlehub endmatch <id>` | admin | Stop a match without results and restore its players |
 | `/battlehub arena list` | admin | Arena themes, which modes use them, slots in use |
@@ -654,7 +664,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
     (`learning`) and across restarts (`learningPersistent`, in `battlehub/ai/`), whether the learned model fights
     (`learnedCombat`), in which modes (`learnedModes`, default every melee mode), with which model (`learnedSpec`,
     2 or 1; `learnedV1Modes`, default sword and boxing, keep v1) and whether it uses the items itself
-    (`learnedItems`, off), from what tick time bots think
+    (`learnedItems`, off), whether operators get the model reports after matches (`modelReport`, on), from what
+    tick time bots think
     less often (`slowAboveMspt`), and how soon
     a bot leaves after its match
   * `effects`: the match intro on/off and its seconds, the victory shot, the killfeed and its number of lines

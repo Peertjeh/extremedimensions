@@ -124,7 +124,9 @@ final class LearnedMelee implements MeleeController {
 		st.oppMaxHealth = o[12];
 		st.oppVisible = o[13] > 0.5;
 		rays(st, spec);
-		float[] logits = model.logits(CombatObservation.build(spec, st));
+		float[] obs = CombatObservation.build(spec, st);
+		float[] logits = model.logits(obs);
+		bot.brain.decided(CombatModels.V1, obs);
 		int[] idx = lv.sample() ? CombatAction.sample(spec, logits, 1.0, rng) : CombatAction.best(spec, logits);
 		current = CombatAction.decode(spec, idx);
 		decisions++;

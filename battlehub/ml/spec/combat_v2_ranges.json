@@ -1,0 +1,486 @@
+{
+ "spec": "combat_v2",
+ "spec_version": 2,
+ "spec_sha256": "4ef935b80bcf0870ddf25dc32b6a8b79d9dd17ec32baeb51e4e039b68b2ddb87",
+ "tolerance": 0.05,
+ "quantiles": [
+  0.001,
+  0.999
+ ],
+ "samples": 417957,
+ "doc": "per observation value (scaled and clipped, as the model takes it) the range the simulation produced in training; written by tools/make_ranges.py",
+ "ranges": {
+  "opp_fwd": [
+   -1.0,
+   1.0
+  ],
+  "opp_left": [
+   -1.0,
+   1.0
+  ],
+  "opp_up": [
+   -1.0,
+   1.0
+  ],
+  "opp_dist": [
+   0.0145,
+   1.0
+  ],
+  "opp_vel_fwd": [
+   -0.2469,
+   0.6333
+  ],
+  "opp_vel_left": [
+   -0.2763,
+   0.2752
+  ],
+  "opp_vel_up": [
+   -0.9804,
+   0.5316
+  ],
+  "aim_yaw_sin": [
+   -0.9975,
+   0.9975
+  ],
+  "aim_yaw_cos": [
+   -0.9973,
+   1.0
+  ],
+  "aim_pitch": [
+   -0.9614,
+   1.0
+  ],
+  "opp_look_sin": [
+   -0.9998,
+   0.9995
+  ],
+  "opp_look_cos": [
+   -0.9993,
+   1.0
+  ],
+  "on_crosshair": [
+   0.0,
+   1.0
+  ],
+  "self_vel_fwd": [
+   -0.5879,
+   0.2741
+  ],
+  "self_vel_left": [
+   -0.2762,
+   0.2755
+  ],
+  "self_vel_up": [
+   -1.0,
+   0.5363
+  ],
+  "self_ground": [
+   0.0,
+   1.0
+  ],
+  "self_sprint": [
+   0.0,
+   1.0
+  ],
+  "self_charge": [
+   0.045,
+   1.0
+  ],
+  "self_hurt": [
+   0.0,
+   0.9
+  ],
+  "self_health": [
+   0.0118,
+   1.0
+  ],
+  "self_absorption": [
+   0.0,
+   0.2
+  ],
+  "self_food": [
+   0.6,
+   1.0
+  ],
+  "self_saturation": [
+   0.0,
+   1.0
+  ],
+  "self_regen": [
+   0.0,
+   1.0
+  ],
+  "self_fall": [
+   0.0,
+   1.0
+  ],
+  "opp_visible": [
+   0.0,
+   1.0
+  ],
+  "opp_ground": [
+   0.0,
+   1.0
+  ],
+  "opp_sprint": [
+   0.0,
+   1.0
+  ],
+  "opp_since_swing": [
+   0.0,
+   1.0
+  ],
+  "opp_hurt": [
+   0.0,
+   1.0
+  ],
+  "opp_health": [
+   0.0115,
+   1.0
+  ],
+  "opp_absorption": [
+   0.0,
+   0.2
+  ],
+  "opp_blocking": [
+   0.0,
+   1.0
+  ],
+  "opp_draw": [
+   0.0,
+   1.0
+  ],
+  "opp_eating": [
+   0.0,
+   1.0
+  ],
+  "opp_holds_bow": [
+   0.0,
+   1.0
+  ],
+  "opp_holds_food": [
+   0.0,
+   1.0
+  ],
+  "opp_holds_throwable": [
+   0.0,
+   1.0
+  ],
+  "self_dmg": [
+   0.0,
+   0.5664
+  ],
+  "opp_dmg": [
+   0.0,
+   0.552
+  ],
+  "self_cooldown": [
+   0.125,
+   0.8333
+  ],
+  "opp_cooldown": [
+   0.125,
+   0.8333
+  ],
+  "self_kb": [
+   0.0,
+   1.0
+  ],
+  "opp_kb": [
+   0.0,
+   1.0
+  ],
+  "self_speed": [
+   -0.3,
+   0.96
+  ],
+  "self_jump": [
+   0.0,
+   0.7143
+  ],
+  "self_gravity": [
+   -0.5,
+   0.5
+  ],
+  "self_scale": [
+   -0.5,
+   1.0
+  ],
+  "opp_scale": [
+   -0.5,
+   1.0
+  ],
+  "self_reach": [
+   0.0,
+   0.0
+  ],
+  "damage_on": [
+   0.0,
+   1.0
+  ],
+  "self_arrows": [
+   0.0,
+   1.0
+  ],
+  "self_food_items": [
+   0.0,
+   1.0
+  ],
+  "self_gapples": [
+   0.0,
+   1.0
+  ],
+  "self_pearls": [
+   0.0,
+   0.5
+  ],
+  "self_winds": [
+   0.0,
+   1.0
+  ],
+  "self_shield": [
+   0.0,
+   1.0
+  ],
+  "pearl_cooldown": [
+   0.0,
+   0.65
+  ],
+  "wind_cooldown": [
+   0.0,
+   0.9
+  ],
+  "shield_cooldown": [
+   0.0,
+   0.91
+  ],
+  "hand_weapon": [
+   0.0,
+   1.0
+  ],
+  "hand_bow": [
+   0.0,
+   1.0
+  ],
+  "hand_food": [
+   0.0,
+   1.0
+  ],
+  "hand_gapple": [
+   0.0,
+   1.0
+  ],
+  "hand_pearl": [
+   0.0,
+   1.0
+  ],
+  "hand_wind": [
+   0.0,
+   1.0
+  ],
+  "self_use": [
+   0.0,
+   1.0
+  ],
+  "self_blocking": [
+   0.0,
+   1.0
+  ],
+  "threat_time": [
+   0.0411,
+   1.0
+  ],
+  "threat_miss": [
+   0.4059,
+   1.0
+  ],
+  "threat_fwd": [
+   0.0,
+   0.9991
+  ],
+  "threat_left": [
+   -0.0655,
+   0.1371
+  ],
+  "e2_fwd": [
+   -1.0,
+   1.0
+  ],
+  "e2_left": [
+   -1.0,
+   1.0
+  ],
+  "e2_up": [
+   -0.4557,
+   0.8242
+  ],
+  "e2_dist": [
+   0.0242,
+   1.0
+  ],
+  "e2_visible": [
+   0.0,
+   1.0
+  ],
+  "e2_look": [
+   -0.98,
+   1.0
+  ],
+  "e2_since_swing": [
+   0.0,
+   1.0
+  ],
+  "e2_holds_bow": [
+   0.0,
+   1.0
+  ],
+  "enemies_near": [
+   0.0,
+   0.6667
+  ],
+  "self_below": [
+   0.0,
+   1.0
+  ],
+  "opp_below": [
+   0.0,
+   1.0
+  ],
+  "opp_drop_behind": [
+   0.0,
+   1.0
+  ],
+  "opp_void_behind": [
+   0.0,
+   1.0
+  ],
+  "void_0": [
+   0.0,
+   1.0
+  ],
+  "void_1": [
+   0.0,
+   1.0
+  ],
+  "void_2": [
+   0.0,
+   1.0
+  ],
+  "void_3": [
+   0.0,
+   1.0
+  ],
+  "void_4": [
+   0.0,
+   1.0
+  ],
+  "void_5": [
+   0.0,
+   1.0
+  ],
+  "void_6": [
+   0.0,
+   1.0
+  ],
+  "void_7": [
+   0.0,
+   1.0
+  ],
+  "drop_0": [
+   0.0,
+   1.0
+  ],
+  "drop_1": [
+   0.0,
+   1.0
+  ],
+  "drop_2": [
+   0.0,
+   1.0
+  ],
+  "drop_3": [
+   0.0,
+   1.0
+  ],
+  "drop_4": [
+   0.0,
+   1.0
+  ],
+  "drop_5": [
+   0.0,
+   1.0
+  ],
+  "drop_6": [
+   0.0,
+   1.0
+  ],
+  "drop_7": [
+   0.0,
+   1.0
+  ],
+  "step_0": [
+   0.0625,
+   1.0
+  ],
+  "step_1": [
+   0.0625,
+   1.0
+  ],
+  "step_2": [
+   0.0625,
+   1.0
+  ],
+  "step_3": [
+   0.0625,
+   1.0
+  ],
+  "step_4": [
+   0.0625,
+   1.0
+  ],
+  "step_5": [
+   0.0625,
+   1.0
+  ],
+  "step_6": [
+   0.0625,
+   1.0
+  ],
+  "step_7": [
+   0.0625,
+   1.0
+  ],
+  "wall_0": [
+   0.0625,
+   1.0
+  ],
+  "wall_1": [
+   0.0625,
+   1.0
+  ],
+  "wall_2": [
+   0.0625,
+   1.0
+  ],
+  "wall_3": [
+   0.0625,
+   1.0
+  ],
+  "wall_4": [
+   0.0625,
+   1.0
+  ],
+  "wall_5": [
+   0.0625,
+   1.0
+  ],
+  "wall_6": [
+   0.0625,
+   1.0
+  ],
+  "wall_7": [
+   0.0625,
+   1.0
+  ]
+ }
+}

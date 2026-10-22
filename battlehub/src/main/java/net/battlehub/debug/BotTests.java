@@ -150,13 +150,18 @@ final class BotTests {
 		return Bots.learnedTicks(b) > ticks && Bots.inspect(b).stream().anyMatch(l -> l.startsWith("learned combat (v2)"));
 	}
 
-	/** Model v2 in an axe duel: it steers and beats A, who stands still. */
+	/**
+	 * Model v2 in an axe duel: it steers and beats A, who stands still; afterwards the bot tells A (an operator for the
+	 * test) how much of the fight went as its model chose and what to practise.
+	 */
 	private static void learnedV2Sword(MinecraftServer server, Script s) {
 		String tag = "bots learned v2 axe";
 		SelfTest.reset(s, tag);
 		s.run(tag + ": model v2 on; A starts an axe practice duel against a master bot", () -> {
 			learnedV2On();
 			SelfTest.join(server, A);
+			net.battlehub.bot.ModelReports.operatorsForTest(who -> who.getUUID().equals(p(A).getUUID()));
+			PlayerStore.get(p(A)).modelReportsOff = false;
 			Bots.practice(p(A), GameMode.AXE, net.battlehub.core.ai.Difficulty.MASTER);
 		});
 		s.waitFor(tag + ": the duel runs with one bot", 600, () -> {
@@ -169,6 +174,7 @@ final class BotTests {
 			BotPlayer b = botsIn(m).get(0);
 			if (v2Steered(b, 40) && p(A).getHealth() < p(A).getMaxHealth()) {
 				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v2 axe: {} | {}", p(A).getHealth(), String.join(" | ", Bots.inspect(b)));
+				VARS.put("v2AxeBot", b.getGameProfile().name());
 				return true;
 			}
 			logBot("learned v2 bot", m, b, "learnedV2Logged");
@@ -180,8 +186,26 @@ final class BotTests {
 			if (m.phase() == Match.Phase.RUNNING) return false;
 			return m.outcome(p(A).getUUID()) == net.battlehub.core.Outcome.LOSS;
 		});
+		s.waitFor(tag + ": A, as an operator, got the bot's model report: who, how much was its model, what to practise", 100, () -> {
+			List<String> r = net.battlehub.bot.ModelReports.sentTo(p(A).getUUID());
+			if (r.size() < 3) return false;
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST model report: {}", String.join(" | ", r));
+			String bot = (String) VARS.get("v2AxeBot");
+			return r.get(0).contains(bot) && r.get(0).contains("v2") && r.get(1).contains("%")
+					&& net.battlehub.bot.ModelReports.last(bot).size() == r.size();
+		});
+		s.check(tag + ": the totals count the match (and are in config/battlehub/ml_feedback.json)", () -> {
+			List<String> lines = new ArrayList<>();
+			for (Component c : net.battlehub.bot.ModelReports.summary(p(A))) lines.add(c.getString());
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST model report totals: {}", String.join(" | ", lines));
+			return lines.size() >= 3 && lines.stream().anyMatch(l -> l.contains("axe"))
+					&& java.nio.file.Files.exists(ConfigManager.dir().resolve("ml_feedback.json"));
+		});
 		endAndClean(s, tag);
-		s.run(tag + ": learned combat off again", () -> cfg().learnedCombat = false);
+		s.run(tag + ": learned combat off again; operators are the gamemasters again", () -> {
+			cfg().learnedCombat = false;
+			net.battlehub.bot.ModelReports.operatorsForTest(null);
+		});
 	}
 
 	/** Model v2 on The Bridge: with A on the bot's island (by its goal), the model fights for the bot. */

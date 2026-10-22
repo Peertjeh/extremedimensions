@@ -460,6 +460,13 @@ public final class HubConfig {
 		 */
 		public boolean learnedItems = false;
 		/**
+		 * After every match with a learned model, operators get a short report per bot in chat: how much of the fight
+		 * went as the model chose, why the rest did not (an edge, eating by the bot's rules, ...), which values were new
+		 * to the model, and what to practise in the simulation. The totals go to config/battlehub/ml_feedback.json, which
+		 * ml/train/selfplay2.py --focus reads. Each operator can switch the chat off: /battlehub bots report off.
+		 */
+		public boolean modelReport = true;
+		/**
 		 * From how long a server tick (milliseconds, smoothed; 50 is the limit) bots think less often: one step slower
 		 * for every 5 ms above this, at most four times as slow. Dangers still make them think at once.
 		 */

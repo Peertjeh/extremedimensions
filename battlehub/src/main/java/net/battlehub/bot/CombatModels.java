@@ -83,6 +83,11 @@ final class CombatModels {
 			return spec;
 		}
 
+		/** "v1" or "v2". */
+		String id() {
+			return specFile.replace("combat_", "").replace(".json", "");
+		}
+
 		CombatLevels.Level level(Difficulty d) {
 			return levels.of(d.id());
 		}

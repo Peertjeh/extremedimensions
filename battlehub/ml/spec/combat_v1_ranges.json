@@ -1,0 +1,186 @@
+{
+ "spec": "combat_v1",
+ "spec_version": 1,
+ "spec_sha256": "90fbd592ac42c6e6d5583dcbe2efc06dfb1eadae451f39dd60618f27087e4486",
+ "tolerance": 0.05,
+ "quantiles": [
+  0.001,
+  0.999
+ ],
+ "samples": 384000,
+ "doc": "per observation value (scaled and clipped, as the model takes it) the range the simulation produced in training; written by tools/make_ranges.py",
+ "ranges": {
+  "opp_fwd": [
+   -0.5917,
+   1.0
+  ],
+  "opp_left": [
+   -0.883,
+   0.9052
+  ],
+  "opp_up": [
+   -0.3131,
+   0.3131
+  ],
+  "opp_dist": [
+   0.0154,
+   0.3044
+  ],
+  "opp_vel_fwd": [
+   -0.2535,
+   0.5891
+  ],
+  "opp_vel_left": [
+   -0.2088,
+   0.2539
+  ],
+  "opp_vel_up": [
+   -0.4448,
+   0.3332
+  ],
+  "self_vel_fwd": [
+   -0.5637,
+   0.3251
+  ],
+  "self_vel_left": [
+   -0.3158,
+   0.3098
+  ],
+  "self_vel_up": [
+   -0.4448,
+   0.3332
+  ],
+  "aim_yaw_sin": [
+   -0.9996,
+   0.9997
+  ],
+  "aim_yaw_cos": [
+   -0.9996,
+   1.0
+  ],
+  "aim_pitch": [
+   -1.0,
+   1.0
+  ],
+  "opp_look_sin": [
+   -0.9996,
+   0.9997
+  ],
+  "opp_look_cos": [
+   -0.9996,
+   1.0
+  ],
+  "on_crosshair": [
+   0.0,
+   1.0
+  ],
+  "self_ground": [
+   0.0,
+   1.0
+  ],
+  "self_sprint": [
+   0.0,
+   1.0
+  ],
+  "self_charge": [
+   0.12,
+   1.0
+  ],
+  "self_hurt": [
+   0.0,
+   0.9
+  ],
+  "self_health": [
+   0.0075,
+   1.0
+  ],
+  "opp_visible": [
+   0.0,
+   1.0
+  ],
+  "opp_ground": [
+   0.0,
+   1.0
+  ],
+  "opp_sprint": [
+   0.0,
+   1.0
+  ],
+  "opp_since_swing": [
+   0.0,
+   1.0
+  ],
+  "opp_hurt": [
+   0.0,
+   1.0
+  ],
+  "opp_health": [
+   0.0075,
+   1.0
+  ],
+  "edge_0": [
+   1.0,
+   1.0
+  ],
+  "edge_1": [
+   1.0,
+   1.0
+  ],
+  "edge_2": [
+   1.0,
+   1.0
+  ],
+  "edge_3": [
+   1.0,
+   1.0
+  ],
+  "edge_4": [
+   1.0,
+   1.0
+  ],
+  "edge_5": [
+   1.0,
+   1.0
+  ],
+  "edge_6": [
+   1.0,
+   1.0
+  ],
+  "edge_7": [
+   1.0,
+   1.0
+  ],
+  "wall_0": [
+   0.0,
+   1.0
+  ],
+  "wall_1": [
+   0.0,
+   1.0
+  ],
+  "wall_2": [
+   0.0,
+   1.0
+  ],
+  "wall_3": [
+   -0.0,
+   1.0
+  ],
+  "wall_4": [
+   0.0,
+   1.0
+  ],
+  "wall_5": [
+   0.0,
+   1.0
+  ],
+  "wall_6": [
+   -0.0,
+   1.0
+  ],
+  "wall_7": [
+   0.0,
+   1.0
+  ]
+ }
+}

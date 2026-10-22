@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.35.0
+
+### Added
+* **Model reports for operators.** After every match with a learned model, each bot that fought with it for a few
+  seconds tells the operators online, in a few chat lines:
+  * how much of its fight went as its model chose, how much its own rules changed (braking at an edge, a jump that
+    would land in the void, steering back in the air, being stuck, eating, breaking the objective instead of
+    swinging) and how much the scripted mind took over (away from an edge, dodging, healing, the bow, the objective,
+    searching, still reacting), with the biggest reasons;
+  * which of the model's inputs were new to it: outside the range the simulation produced in training (shipped as
+    `combat_v1_ranges.json` and `combat_v2_ranges.json`, made by `ml/tools/make_ranges.py`), for example creative
+    reach, slowness or more enemies at once;
+  * what to practise in the simulation, from `ml/spec/lessons.json` (one table for the mod and the training): for
+    example fights at edges (bridge, platform, islands), effects (Chaos) or eating (with items).
+* `/battlehub bots report` shows the totals since they began, per spec and mode; `on` / `off` switches the chat
+  reports for yourself, `reset` starts the totals again. `/battlehub bots inspect` shows the bot's report so far.
+* The totals are kept in `config/battlehub/ml_feedback.json` with the lessons and their scenario focus.
+  `ml/train/selfplay2.py --focus <that file>` deals more of those scenarios (`ml/train/focus.py`).
+* New option: `bots.modelReport` (on).
+
 ## 1.34.0
 
 ### Added

@@ -16,6 +16,7 @@ import net.battlehub.core.ai.JumpPlanner;
 import net.battlehub.core.ai.Situation;
 import net.battlehub.core.ai.SpleefPlanner;
 import net.battlehub.core.ai.Tactic;
+import net.battlehub.core.ml.ModelReport;
 import net.battlehub.games.ParkourMatch;
 import net.battlehub.games.prophunt.Disguise;
 import net.battlehub.games.prophunt.PropHuntMatch;
@@ -92,6 +93,10 @@ final class BotBrain {
 	private Vec3 lastGround;
 	private int airTicks;
 	private int recoverChoice;
+	// How this match's fight kept to the learned model (bot/ModelReports), and what changed the model's choice this tick
+	private ModelReport report = new ModelReport();
+	private String reportSpec = "";
+	private boolean fightTick, heldBackNow, jumpRefused, airTook, unstuck, ateByRules, broke;
 
 	BotBrain(BotPlayer bot) {
 		this.bot = bot;
@@ -142,6 +147,7 @@ final class BotBrain {
 		bot.xxa = 0;
 		bot.setJumping(false);
 		building = false;
+		fightTick = heldBackNow = jumpRefused = airTook = unstuck = ateByRules = broke = false;
 		if (bot.isShiftKeyDown()) bot.setShiftKeyDown(false);
 		Match m = Matches.of(bot.getUUID());
 		if (m == null || Sessions.state(bot.getUUID()) != Sessions.State.MATCH) {
@@ -177,9 +183,47 @@ final class BotBrain {
 			// What the bot wanted, before an edge held it back: standing still at an edge is being stuck too
 			boolean wanted = bot.zza != 0 || bot.xxa != 0;
 			boolean heldBack = keepSafe();
+			heldBackNow = heldBack;
 			unstick(wanted, heldBack);
 			recover();
 		}
+		account();
+	}
+
+	/**
+	 * This tick into the report on the learned model: kept (the model chose and the bot did it), changed (the bot's own
+	 * rules changed the model's choice) or replaced (the scripted mind fought instead).
+	 */
+	private void account() {
+		if (!fightTick) return;
+		if (mind.learnedNow()) {
+			ModelReport.Why why = airTook ? ModelReport.Why.AIR : jumpRefused ? ModelReport.Why.JUMP : heldBackNow ? ModelReport.Why.EDGE
+					: unstuck ? ModelReport.Why.STUCK : ateByRules ? ModelReport.Why.HEAL : broke ? ModelReport.Why.OBJECTIVE : null;
+			if (why == null) report.kept();
+			else report.changed(why);
+		} else {
+			report.replaced(mind.reactingNow() ? ModelReport.Why.REACT : ModelReport.Why.of(mind.tactic()));
+		}
+	}
+
+	/** A decision of a learned model: which of the values it got were new to it. */
+	void decided(CombatModels.Family fam, float[] obs) {
+		report.decision(fam.spec(), obs, ModelReports.ranges(fam), ModelReports.lessons());
+		reportSpec = fam.id();
+	}
+
+	/** How this match's fight kept to the learned model so far, and with which spec ("" before its first decision). */
+	ModelReport report() {
+		return report;
+	}
+
+	String reportSpec() {
+		return reportSpec;
+	}
+
+	/** Told: the next report starts from nothing (a series goes on in the same match). */
+	void resetReport() {
+		report = new ModelReport();
 	}
 
 	private void forget() {
@@ -205,6 +249,8 @@ final class BotBrain {
 		bridgeAt = null;
 		lastIntent = null;
 		eating = 0;
+		report = new ModelReport();
+		reportSpec = "";
 		runYaw = Float.NaN;
 		stopUsing();
 		bot.setSprinting(false);
@@ -450,6 +496,7 @@ final class BotBrain {
 			double[] dir = keysDirection();
 			if (!net.battlehub.core.ai.Falls.landsSafely(bot.getX(), bot.getY(), bot.getZ(), v.x, 0, v.z, dir[0], dir[1], bot.isSprinting(), true,
 					this::surface, 1.5)) {
+				jumpRefused = true;
 				return;
 			}
 		}
@@ -494,6 +541,7 @@ final class BotBrain {
 		}
 		moveToward(lastGround, 1f);
 		bot.setSprinting(false);
+		airTook = true;
 	}
 
 	/** The world direction of the keys pressed now (forward and strafe, relative to where the bot faces). */
@@ -541,6 +589,7 @@ final class BotBrain {
 		if (trying && pos.distanceToSqr(lastPos) < 0.04) {
 			stuck++;
 			if (stuck >= 2) {
+				unstuck = true;
 				if (atEdge) jumpLooking();
 				else jump();
 				strafe = -strafe;
@@ -699,6 +748,8 @@ final class BotBrain {
 		Situation s = Perception.situation(bot, m, mind, k, ticks, lastSwing, edges);
 		Intent in = mind.tick(s);
 		lastIntent = in;
+		// a tick of a fight a learned model is in on: the model steered, or the target is close enough that it would
+		fightTick = t != null && ModelReports.inPlay(m) && (mind.learnedNow() || s.distance() <= LearnedFight.ENGAGE);
 		if (t == null && in.moveTo() == null && mind.tactic() == Tactic.IDLE) {
 			// nobody to be seen and nothing to do: look round first (someone may be behind), then walk about
 			stopUsing();
@@ -720,6 +771,7 @@ final class BotBrain {
 			learnedHand(m, in);
 		} else if (in.heal() || eating > 0) {
 			eat();
+			if (mind.learnedNow() && eating > 0) ateByRules = true;
 		} else if (in.bow() && t != null) {
 			// shoot() selects the bow or crossbow, draws, aims along the arc and lets go when charged
 			shoot(Perception.v(in.look()), Vec3.ZERO);
@@ -767,6 +819,7 @@ final class BotBrain {
 		BlockPos breakable = building ? null : m.botBreakTarget(bot);
 		if (breakable != null && bot.getEyePosition().distanceTo(Vec3.atCenterOf(breakable))
 				<= bot.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE) + 0.5) {
+			if (in.attack() && mind.learnedNow()) broke = true;
 			breakThrough(m);
 		} else if (in.attack() && t != null && k.seen()) {
 			// the click: it lands only when the crosshair is really on them, within reach, with nothing in between

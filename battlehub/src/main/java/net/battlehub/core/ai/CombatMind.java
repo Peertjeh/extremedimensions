@@ -241,7 +241,9 @@ public final class CombatMind {
 			nextThink = s.tick() + difficulty.thinkTicks * stretch;
 		}
 		tacticTicks.merge(decider.current(), 1, Integer::sum);
-		if (s.tick() < reactUntil && t != null) {
+		learnedNow = false;
+		reactingNow = s.tick() < reactUntil && t != null;
+		if (reactingNow) {
 			// still taking it in: look, do not act yet
 			return Intent.NOTHING.withLook(t.pos().add(new V3(0, 1.4, 0)));
 		}
@@ -250,6 +252,7 @@ public final class CombatMind {
 			Intent learned = melee.act(tactic, s, id == null ? null : tracks.get(id));
 			if (learned != null) {
 				learnedTicks++;
+				learnedNow = true;
 				return learned;
 			}
 		}
@@ -269,6 +272,18 @@ public final class CombatMind {
 	/** Ticks the learned controller steered (for the self-test and /bots inspect). */
 	public int learnedTicks() {
 		return learnedTicks;
+	}
+
+	private boolean learnedNow, reactingNow;
+
+	/** Whether this tick's intent came from the learned controller. */
+	public boolean learnedNow() {
+		return learnedNow;
+	}
+
+	/** Whether this tick it was still taking in a new or returning target (looking, not acting). */
+	public boolean reactingNow() {
+		return reactingNow;
 	}
 
 	private void think(Situation s) {

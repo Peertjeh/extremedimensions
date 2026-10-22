@@ -37,6 +37,8 @@ public final class PlayerProfile {
 	public String duelFormat = "bo1";
 	/** The player does not want bots to fill the queues and lobbies they wait in (/bots, the hotbar button). */
 	public boolean noBots;
+	/** An operator who does not want the model reports after matches with bots in chat. */
+	public boolean modelReportsOff;
 	public int tournamentsWon;
 	/** Weekly tournaments won. */
 	public int weeklyWins;

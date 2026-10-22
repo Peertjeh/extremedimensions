@@ -192,7 +192,9 @@ final class LearnedFight implements MeleeController {
 		double[] behind = TerrainRays.behind(spec, cols, o.x, o.y, o.z, dx / ln, dz / ln);
 		st.oppDropBehind = behind[0];
 		st.oppVoidBehind = behind[1];
-		float[] logits = model.logits(CombatObservation.build(spec, st));
+		float[] obs = CombatObservation.build(spec, st);
+		float[] logits = model.logits(obs);
+		bot.brain.decided(CombatModels.V2, obs);
 		int[] idx = lv.sample() ? CombatAction.sample(spec, logits, 1.0, rng) : CombatAction.best(spec, logits);
 		current = CombatAction.decode(spec, idx);
 		decisions++;

@@ -11,7 +11,8 @@ writes <run>/eval.jsonl. --resume continues a run.
 
 A follow-up run (--init <checkpoint>) starts from a trained policy with every scenario and the pool from the start;
 --items deals mostly kits with items (bows, golden apples, food, pearls, wind charges, shields) and --ent raises the
-exploration, for learning to use them.
+exploration, for learning to use them. --focus <ml_feedback.json> (written by the mod after matches with learned
+bots) deals more of what they lacked there: the lessons of the model reports (train/focus.py).
 
     python train/selfplay2.py --run runs/v2 --steps 60000000
     python train/selfplay2.py --run runs/v2items --init runs/v2/ckpt_060000000.zip --pool-from runs/v2 --items --ent 0.02 --steps 20000000
@@ -40,11 +41,14 @@ ITEM_FAMILIES = {"sword": 0.6, "axe": 0.8, "mace": 0.8, "bow": 1.2, "koth": 0.2,
                  "boxing": 0.1, "build_uhc": 1.2, "sumo": 0.2, "bedwars": 1.0, "loot": 1.5}
 
 
-def worker(conn, n, seed, max_ticks, items=False):
+def worker(conn, n, seed, max_ticks, items=False, lessons=None):
     from pvp_sim2.env import Scenario
     sc = Scenario()
     if items:
         sc.families = dict(ITEM_FAMILIES)
+    if lessons:
+        from train.focus import apply
+        sc, _ = apply(sc, lessons)
     b = Batch2(n, seed=seed, max_ticks=max_ticks, scenario=sc)
     while True:
         cmd, data = conn.recv()
@@ -149,7 +153,7 @@ class OpponentPool2:
 
 # ---------------------------------------------------------------------------------------------- the VecEnv
 
-def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False):
+def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=None):
     from gymnasium import spaces
     from stable_baselines3.common.vec_env import VecEnv
 
@@ -159,7 +163,7 @@ def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False):
             self.conns, self.procs = [], []
             for w in range(workers):
                 a, b = ctx.Pipe()
-                p = ctx.Process(target=worker, args=(b, per, seed * 100 + w, max_ticks, items), daemon=True)
+                p = ctx.Process(target=worker, args=(b, per, seed * 100 + w, max_ticks, items, lessons), daemon=True)
                 p.start()
                 self.conns.append(a)
                 self.procs.append(p)
@@ -265,6 +269,7 @@ def main():
     ap.add_argument("--pool-from", default=None, help="fill the opponent pool with this run's checkpoints")
     ap.add_argument("--items", action="store_true", help="mostly kits with items")
     ap.add_argument("--ent", type=float, default=0.01)
+    ap.add_argument("--focus", default=None, help="the mod's ml_feedback.json: deal more of what the bots lacked in its fights")
     a = ap.parse_args()
     import torch
     from stable_baselines3 import PPO
@@ -276,7 +281,16 @@ def main():
     rng = np.random.default_rng(a.seed)
     cur = Curriculum() if not a.init else Curriculum(warmup=0, widen=1, fade_from=0, fade_to=1)
     pool = OpponentPool2(rng, cur)
-    venv = make_vecenv(a.workers, a.per, a.seed, pool, cur, a.max_ticks, a.items)
+    lessons = None
+    if a.focus:
+        from train.focus import apply, load
+        from pvp_sim2.env import Scenario
+        lessons = load(a.focus, "v2")
+        for note in apply(Scenario(), lessons)[1]:
+            print("focus:", note, flush=True)
+        if any(x["items"] for x in lessons) and not a.items:
+            print("focus: some lessons need the items; add --items to practise them", flush=True)
+    venv = make_vecenv(a.workers, a.per, a.seed, pool, cur, a.max_ticks, a.items, lessons)
     if a.pool_from:
         for path in sorted(glob.glob(os.path.join(a.pool_from, "ckpt_*.zip")))[::2]:
             m = PPO.load(path, device="cpu")

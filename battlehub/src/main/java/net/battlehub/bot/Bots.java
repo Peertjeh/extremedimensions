@@ -683,6 +683,19 @@ public final class Bots {
 			net.battlehub.match.Match lm = Matches.of(b.getUUID());
 			out.add("learned combat (" + (LearnedFight.active(lm) ? "v2" : "v1") + "): steered " + b.brain.mind().learnedTicks() + " ticks");
 		}
+		net.battlehub.core.ml.ModelReport r = b.brain.report();
+		if (r.ticks() > 0) {
+			StringBuilder why = new StringBuilder();
+			for (net.battlehub.core.ml.ModelReport.Reason reason : r.reasons()) {
+				if (why.length() > 0) why.append(", ");
+				why.append(reason.why().id()).append(' ').append(Math.round(reason.share() * 100)).append('%');
+			}
+			out.add(String.format(java.util.Locale.ROOT, "model report: %d fight ticks, kept %.0f%%, changed %.0f%%, replaced %.0f%%%s", r.ticks(),
+					r.keptShare() * 100, r.changedShare() * 100, r.replacedShare() * 100, why.length() == 0 ? "" : " (" + why + ")"));
+			for (net.battlehub.core.ml.ModelReport.Feature f : r.outsideTop(3)) {
+				out.add(String.format(java.util.Locale.ROOT, "  new to the model: %s in %.0f%% of %d decisions", f.name(), f.share() * 100, r.decisions()));
+			}
+		}
 		if (!b.brain.parkourNote().isEmpty()) out.add("parkour: " + b.brain.parkourNote());
 		if (m != null && m.botWeapon() != net.battlehub.core.ai.Weapon.ANY) {
 			out.add("weapon of this fight: " + m.botWeapon().name().toLowerCase(java.util.Locale.ROOT) + ", holds "
@@ -733,6 +746,7 @@ public final class Bots {
 		DEBUG.clear();
 		AiMemory.clear();
 		LAST_DEBRIEF.clear();
+		ModelReports.clear();
 		PARTY_SINCE.clear();
 		SIDE_SINCE.clear();
 		SHOW.clear();
