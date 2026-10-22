@@ -693,6 +693,9 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
 - In de vierde run was de knockback-test goed (1,31 blokken), maar liepen de Hunger Games-bots niet de stad in. Na de cornucopia hakten ze tijdens de vrede al op elkaar en op A in (zonder schade), en na de vrede vochten ze elkaar dood. De gelogde bot was al toeschouwer. Een bot wist niet dat er een vredesperiode is. Nu is in Hunger Games tijdens de vrede niemand iemands vijand (`isEnemy`), dus plunderen de bots. De bot-test zet de vrede op 10 minuten, zodat hij alleen het plunderen en lopen meet en niet een gevecht met A.
 
 
+**1.32.1 (gevonden in de CI van de ML-commit):** de zelftest "de bot bouwt over met zijn klei" in The Bridge faalde. De bot was een rusher met geduld 0,05. Het ongeduld uit 1.32 groeide ook voor een tegenstander op 37 blokken, aan de andere kant van de leegte: naderen scoorde 2,69 tegen 0,69 voor het doel. De bot bleef daardoor aan de rand heen en weer gaan tussen naderen en de randbeveiliging. Ook met de oude grens (0,5) won naderen bij zo'n agressieve bot nog steeds (1,25 tegen 0,72). Daarom twee aanpassingen: ongeduld telt alleen bij een patstelling dichtbij (binnen voorkeursafstand + 3 blokken), en met een doel in de game is een tegenstander op meer dan 12 blokken minder waard (tot −0,6). JUnit: een ongeduldige rusher (MASTER) kiest na lange stilte het doel en niet de tegenstander op 37 blokken.
+
+
 ## ML fase 1 – Een geleerd PvP-gevecht (1v1, platte arena)
 
 **Doel.** De strategie van de bots blijft gescript: looten, bed verdedigen, bruggen en parkour. Alleen het melee-gevecht wordt een getraind model, dat later in alle games wordt hergebruikt. Fase 1 is een 1v1 zwaardduel (en boxing) op een vlakke vloer. Sumo volgt als 1b.

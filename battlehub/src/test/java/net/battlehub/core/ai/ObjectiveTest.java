@@ -188,4 +188,12 @@ class ObjectiveTest {
 		assertNull(Bridging.next(Bridging.line(0, 0, 10, 0, 64), walled));
 		assertFalse(floor.solid(4, 0));
 	}
+
+	@Test
+	void anImpatientBotStillGoesForTheGoalWhenTheOpponentIsFarAcrossTheVoid() {
+		// The Bridge: the goal ahead, the opponent 37 blocks away, nobody hit for a long time
+		Situation s = with(Objective.attack(new V3(40, 64, 0), "their goal"), me(O, 20, 1), foe(new V3(0, 64, 37), 20));
+		List<Score> later = CombatPolicy.score(s, new OpponentModel(), new OutcomeMemory(), Archetype.RUSHER.base, Difficulty.MASTER, 2000);
+		assertEquals(Tactic.OBJECTIVE, best(later), later.toString());
+	}
 }

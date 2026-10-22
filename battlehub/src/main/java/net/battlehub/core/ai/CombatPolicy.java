@@ -18,16 +18,18 @@ public final class CombatPolicy {
 	/**
 	 * {@code quiet}: ticks since anyone in this fight was hit. Waiting is a tactic, not a way of life: the longer
 	 * nothing happens, the more pressing in wins (how long it takes depends on patience), so even a counter-puncher
-	 * goes in against an opponent who only stands there. It keeps growing for about fourteen seconds: the most
+	 * goes in against an opponent who only stands there. Close by it keeps growing for about fourteen seconds: the most
 	 * patient, most defensive style there is still goes in then (it once held four blocks off for half a minute).
+	 * Far away there is no stand-off: an impatient bot would only head for an opponent across the void.
 	 */
 	public static List<Score> score(Situation s, OpponentModel om, OutcomeMemory mem, Personality p, Difficulty d, int quiet) {
 		List<Score> out = new ArrayList<>();
-		double impatience = Math.max(0, Math.min(2.0, (quiet - 40) / 120.0)) * (1 - 0.6 * p.patience());
 		Situation.Self me = s.self();
 		Situation.Target t = s.target();
 		double hp = me.healthShare();
 		double dist = s.distance();
+		// only a stand-off close by: far away (across a gap, on the way to the objective) nobody is waiting for anything
+		double impatience = dist <= p.range() + 3 ? Math.max(0, Math.min(2.0, (quiet - 40) / 120.0)) * (1 - 0.6 * p.patience()) : 0;
 		double reach = me.reach();
 		double ready = me.attackReady();
 		boolean seen = t != null && t.visible();
@@ -124,6 +126,11 @@ public final class CombatPolicy {
 				if (bowFight && dist > 6) {
 					v -= 0.3;
 					why.add("a bow fight: no need to close in");
+				}
+				if (g != null && dist > 12) {
+					// someone far off (across the void in The Bridge) is not worth leaving the objective for
+					v -= Math.min(0.6, 0.2 + 0.02 * (dist - 12));
+					why.add("far, the objective first");
 				}
 				v -= leashPenalty(g, carrying, leashed, why);
 				out.add(new Score(Tactic.APPROACH, v, false, why));

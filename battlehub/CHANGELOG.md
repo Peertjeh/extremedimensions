@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.32.1
+
+### Fixed
+* **An impatient bot in The Bridge only headed for its opponent across the void** and stayed at the edge instead of
+  going for the goal. Since 1.32 a bot grows impatient when nothing happens, so that it goes in against someone who
+  only stands there; that now only counts in a stand-off close by. An opponent far away (more than 12 blocks) is also
+  worth less than the objective of the game.
+
 ## 1.32.0
 
 ### Added
