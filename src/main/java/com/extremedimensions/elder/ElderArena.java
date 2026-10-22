@@ -107,6 +107,8 @@ public final class ElderArena {
 		/** Ticks the boss has not been found (a chunk still loading, or gone). */
 		int missing;
 		final List<BlockFlight.Flight> flights = new ArrayList<>();
+		/** Flights set off this tick (see {@link #roomToFly}). */
+		int bornThisTick;
 		final List<Strand> strands = new ArrayList<>();
 		/** Every block it means to build, so a second arena near never builds over it. */
 		final LongSet claimed = new LongOpenHashSet();
@@ -139,6 +141,9 @@ public final class ElderArena {
 		int ticks;
 		/** Ticks its Elder has not been found (a chunk still loading, or gone). */
 		int missing;
+		/** Once its design is whole: the arena taking up its blocks (claims and groups), a share a step, before it rises. */
+		Arena opening;
+		int admitted;
 	}
 
 	private static final List<Drafting> DRAFTS = new ArrayList<>();
@@ -406,25 +411,44 @@ public final class ElderArena {
 		return Math.max(1, Config.ELDER_ARENA_DESIGN_BUDGET_MS) * 1_000_000L;
 	}
 
-	/** Works on an arena's design until {@code deadline}; once it is whole, the arena rises. True once it is done with. */
+	/**
+	 * Works on an arena's design until {@code deadline}; once it is whole, the arena takes up its blocks, a share at a
+	 * time, and rises. True once it is done with.
+	 */
 	private static boolean draw(Drafting d, long start, long deadline) {
-		boolean whole = d.draft.work(deadline);
-		d.nanos += System.nanoTime() - start;
-		d.ticks++;
-		if (!whole) {
-			return false;
+		try {
+			if (d.opening == null) {
+				if (!d.draft.work(deadline)) {
+					return false;
+				}
+				ArenaDesign.Blueprint bp = d.draft.blueprint();
+				lastDesignStep = d.draft.longestStep();
+				if (bp.pieces.isEmpty()) {
+					lastDesign = new long[] {d.nanos + System.nanoTime() - start, 0, d.ticks + 1, d.draft.longest(), d.draft.longestCpu()};
+					return true;
+				}
+				d.opening = arena(d.boss, d.level, d.style, d.centre, bp);
+			}
+			// (the draft keeps its claims meanwhile, see free)
+			Arena a = d.opening;
+			while (d.admitted < a.pieces.size() && System.nanoTime() < deadline) {
+				admit(a, d.admitted, Math.min(a.pieces.size(), d.admitted + ArenaDesign.Draft.PIECES_STEP));
+				d.admitted = Math.min(a.pieces.size(), d.admitted + ArenaDesign.Draft.PIECES_STEP);
+			}
+			if (d.admitted < a.pieces.size()) {
+				return false;
+			}
+			ARENAS.add(a);
+			lastDesign = new long[] {d.nanos + System.nanoTime() - start, a.pieces.size(), d.ticks + 1, d.draft.longest(), d.draft.longestCpu()};
+			return true;
+		} finally {
+			d.nanos += System.nanoTime() - start;
+			d.ticks++;
 		}
-		ArenaDesign.Blueprint bp = d.draft.blueprint();
-		lastDesign = new long[] {d.nanos, bp.pieces.size(), d.ticks, d.draft.longest(), d.draft.longestCpu()};
-		lastDesignStep = d.draft.longestStep();
-		if (!bp.pieces.isEmpty()) {
-			open(d.boss, d.level, d.style, d.centre, bp);
-		}
-		return true;
 	}
 
-	/** An arena of a design begins: it is the Elder's, and claims every block it means to build. */
-	private static Arena open(UUID boss, ServerLevel level, int style, BlockPos centre, ArenaDesign.Blueprint bp) {
+	/** An arena of a design, the Elder's, before it takes up its blocks (see {@link #admit}). */
+	private static Arena arena(UUID boss, ServerLevel level, int style, BlockPos centre, ArenaDesign.Blueprint bp) {
 		Arena a = new Arena();
 		a.boss = boss;
 		a.level = level;
@@ -438,12 +462,24 @@ public final class ElderArena {
 		for (int i = 0; i < bp.kinds.size(); i++) {
 			a.groups.add(new ArrayList<>());
 		}
-		for (Piece p : bp.pieces) {
+		return a;
+	}
+
+	/** The arena takes up its blocks {@code from} up to {@code to}: claims them, and files them by group. */
+	private static void admit(Arena a, int from, int to) {
+		for (int i = from; i < to; i++) {
+			Piece p = a.pieces.get(i);
 			a.claimed.add(p.pos.asLong());
 			if (p.group >= 0 && p.group < a.groups.size()) {
 				a.groups.get(p.group).add(p);
 			}
 		}
+	}
+
+	/** An arena of a design begins: it is the Elder's, and claims every block it means to build. */
+	private static Arena open(UUID boss, ServerLevel level, int style, BlockPos centre, ArenaDesign.Blueprint bp) {
+		Arena a = arena(boss, level, style, centre, bp);
+		admit(a, 0, a.pieces.size());
 		ARENAS.add(a);
 		return a;
 	}
@@ -571,6 +607,7 @@ public final class ElderArena {
 	/** One tick of an arena; true once it is gone. */
 	private static boolean step(Arena a) {
 		long lap = TickProfile.start();
+		a.bornThisTick = 0;
 		Entity boss = a.level.getEntity(a.boss);
 		if (boss instanceof ElderBoss e && e.isAlive()) {
 			a.missing = 0;
@@ -696,7 +733,7 @@ public final class ElderArena {
 		if (!fits(level, p)) {
 			return;
 		}
-		if (a.flights.size() >= Math.max(1, Config.ELDER_ARENA_FLY_MAX) || !watched(level, p.pos)) {
+		if (!roomToFly(a) || !watched(level, p.pos)) {
 			if (!blocked(level, p.pos)) {
 				place(a, p, true);
 			}
@@ -724,6 +761,7 @@ public final class ElderArena {
 			return;
 		}
 		a.flights.add(f);
+		a.bornThisTick++;
 		WorldFx.particleIn(level, ArenaDesign.spark(a.style), f.x(), f.y(), f.z(), 0.15, 0.15, 0.15, 0.02, 3);
 		if (a.next % 7 == 0) {
 			WorldFx.soundIn(level.dimension().identifier().toString(), ArenaDesign.whoosh(a.style), "hostile", f.x(), f.y(), f.z(), 0.7f,
@@ -733,6 +771,16 @@ public final class ElderArena {
 
 	private static int flightTicks() {
 		return Math.max(10, Config.ELDER_ARENA_FLIGHT_TICKS);
+	}
+
+	/**
+	 * Whether another block may set off flying: fewer than {@code elder_arena_fly_max} in the air, and no more set off
+	 * this tick than keep that many aloft in a steady stream. (All of them at once, in the first tick or two, spawned
+	 * hundreds of displays in one go; the rest of those blocks simply appear in their places.)
+	 */
+	private static boolean roomToFly(Arena a) {
+		int most = Math.max(1, Config.ELDER_ARENA_FLY_MAX);
+		return a.flights.size() < most && a.bornThisTick < Math.max(1, (most + flightTicks() - 1) / flightTicks());
 	}
 
 	/** A block taken back: the ground is put back as it was and the block flies off into nothing. */
@@ -753,13 +801,14 @@ public final class ElderArena {
 		if (m != null) {
 			m.remove(p.pos.asLong());
 		}
-		if (!whole || !level.isLoaded(p.pos) || a.flights.size() >= Math.max(1, Config.ELDER_ARENA_FLY_MAX) || !watched(level, p.pos)) {
+		if (!whole || !level.isLoaded(p.pos) || !roomToFly(a) || !watched(level, p.pos)) {
 			return;
 		}
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		BlockFlight.Flight f = BlockFlight.out(level, p.pos, p.state, offset(a, p, rnd, true), flightTicks(), ArenaDesign.spark(a.style), 3);
 		if (f != null) {
 			a.flights.add(f);
+			a.bornThisTick++;
 		}
 		if (a.out % 6 == 0) {
 			WorldFx.soundIn(level.dimension().identifier().toString(), ArenaDesign.whoosh(a.style), "hostile", p.pos.getX() + 0.5, p.pos.getY() + 0.5, p.pos.getZ() + 0.5,

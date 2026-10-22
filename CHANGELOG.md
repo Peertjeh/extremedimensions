@@ -9,7 +9,9 @@ the heavy parts cost, and makes the download lighter.
 - **Calling an Elder no longer stalls the server**: its arena (some 400,000 blocks at the default size) was designed all
   at once the moment it was called, holding every player up for 0.2 to 0.85 seconds. The design is now drawn up a
   little each tick (**Technical → Elders: arena design budget**, 8 ms a tick by default) while the Elder forms, and the
-  arena rises once it is whole: the same arena, block for block, a moment later.
+  arena rises once it is whole: the same arena, block for block, a moment later. Gathering up the finished design and
+  claiming its blocks are spread the same way, and an arena's blocks set off flying in a steady stream (as many a tick
+  as keep `elder_arena_fly_max` aloft) instead of hundreds of them in its first tick.
 - **No more slow tick every five seconds on a busy server**: each player's slower work (refreshing their curses'
   effects, looking for a portal near a newcomer, the bestiary's look round, the tribe's standing) came round on the same
   tick for everyone; it now comes round on a tick of each player's own, as often as before.

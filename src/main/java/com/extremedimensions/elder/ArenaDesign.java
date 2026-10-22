@@ -2,6 +2,7 @@ package com.extremedimensions.elder;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -414,6 +415,8 @@ final class ArenaDesign {
 	static final class Draft {
 		/** Columns of the floor (or of the rim) drawn up in one step. */
 		private static final int COLUMNS_STEP = 256;
+		/** Blocks of the finished design gathered up in one step. */
+		static final int PIECES_STEP = 25_000;
 
 		private final Plan plan;
 		private final Blueprint bp = new Blueprint();
@@ -564,7 +567,6 @@ final class ArenaDesign {
 						bp.lines.add(new Line(a[0], a[1], a[2], cx + 0.5, gy + 1.15, cz + 0.5, 1.2 * wide));
 					}
 				}
-				bp.pieces.addAll(plan.pieces.values());
 				bp.kinds.addAll(plan.kinds);
 				bp.isles.addAll(plan.isles);
 				bp.cores.addAll(plan.cores);
@@ -577,6 +579,19 @@ final class ArenaDesign {
 				bp.turn = turn;
 				bp.size = size;
 				bp.wide = wide;
+				// Then its blocks, in order, a share at a time
+				Iterator<ElderArena.Piece> all = plan.pieces.values().iterator();
+				next(List.of(new Step("the blocks", new Runnable() {
+					@Override
+					public void run() {
+						for (int i = 0; i < PIECES_STEP && all.hasNext(); i++) {
+							bp.pieces.add(all.next());
+						}
+						if (all.hasNext()) {
+							next(List.of(new Step("the blocks", this)));
+						}
+					}
+				})));
 			}));
 		}
 
