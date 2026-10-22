@@ -559,8 +559,8 @@ final class ArenaDesign {
 					Isling w = isleBegin(plan, (int) Math.round(cx + Math.cos(a) * r), gy + 12 + up, (int) Math.round(cz + Math.sin(a) * r), grow);
 					List<Step> parts = new ArrayList<>();
 					for (int k = 0; k < w.depth(); k++) {
-						int layer = k;
-						parts.add(new Step("island", () -> isleLayer(plan, pal, w, layer)));
+						int below = k;
+						parts.add(new Step("island", () -> isleLayer(plan, pal, w, below)));
 					}
 					parts.add(new Step("island", () -> {
 						isleUnder(plan, pal, style, w);
