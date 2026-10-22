@@ -11,6 +11,8 @@ Nothing changes in play: this release makes the builds trustworthy, so a red bui
   killed the Frayed Ray test's prey, and the fights changed settings they all share. Two tests failed now and then
   for it (*the Frayed Ray never struck its prey*, *the Lance never fired*), on commits where the same tests passed in
   the next run.
+- The Frayed Ray's test lets its ray loose only once the sky round its prey is alive: alone in its batch, the test
+  server ran its ticks faster than the forced chunks came to life, and a ray in a still chunk never moved.
 - When the Lance has not fired by its 70th tick, the test now also says the Weaver's health and why it left the world.
 - **The Elder fights are measured**: a fight with each of the Matriarch, the Ferryman and the Weaver, as a player meets
   it (its arena rising round it at its full size, blocks flying in, its ultimate partway), alone and far from every

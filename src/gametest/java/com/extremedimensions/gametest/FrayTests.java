@@ -81,7 +81,7 @@ public class FrayTests {
 	 * A Frayed Ray hunts a visitor down in the Fray: it climbs over them, dives, strikes them and poisons them, and
 	 * pulls away to come again. Flown for real in the test's own sky (the test server has no Seam).
 	 */
-	@GameTest(environment = Alone.FRAYED_RAY, maxTicks = 820)
+	@GameTest(environment = Alone.FRAYED_RAY, maxTicks = 820 + READY_WITHIN)
 	public void aFrayedRayDivesAndPoisons(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		Difficulty was = level.getDifficulty();
@@ -117,44 +117,67 @@ public class FrayTests {
 		String how = markLoaded(p);
 		check(helper, !how.startsWith("not found"), "the test player could not be marked as loaded: %s", how);
 		check(helper, p.getY() < Config.SEAM_FRAY_TOP, "the test's ground (%s) is above the Fray", p.getY());
-		VeilRay ray = ModEntities.VEIL_RAY.spawn(level, BlockPos.containing(p.getX() + 16, p.getY() + 9, p.getZ() + 4), EntitySpawnReason.EVENT);
-		check(helper, ray != null, "no ray could be made");
-		ray.setFrayed(true);
-		ray.anchor(p.getX(), p.getY() + 9, p.getZ(), 24);
-		ray.rouse();
-		// (it hunts this one only, never the player of another test)
-		ray.huntOnly(p);
-		SeamFauna.drive(ray);
-		check(helper, com.extremedimensions.journal.Bestiary.of(ray) == com.extremedimensions.journal.Bestiary.Beast.FRAYED_RAY,
-				"a Frayed Ray is not in the bestiary as one");
+		BlockPos from = BlockPos.containing(p.getX() + 16, p.getY() + 9, p.getZ() + 4);
 		float full = p.getHealth();
+		VeilRay[] ray = {null};
+		int[] start = {-1};
 		boolean[] seen = new boolean[3];
 		String[] early = new String[1];
-		for (int t = 1; t <= 800; t++) {
-			int tick = t;
+		// The ray is let loose once the sky round the prey is alive (its creatures move): alone in its batch, the test
+		// server runs this test's ticks faster than the forced chunks come to life, and a ray in a still chunk never moves
+		for (int t = 1; t <= READY_WITHIN; t++) {
+			int now = t;
+			helper.runAfterDelay(t, () -> {
+				if (start[0] >= 0 || !level.isPositionEntityTicking(from) || !level.isPositionEntityTicking(o)) {
+					return;
+				}
+				ray[0] = ModEntities.VEIL_RAY.spawn(level, from, EntitySpawnReason.EVENT);
+				check(helper, ray[0] != null, "no ray could be made");
+				ray[0].setFrayed(true);
+				ray[0].anchor(p.getX(), p.getY() + 9, p.getZ(), 24);
+				ray[0].rouse();
+				// (it hunts this one only, never the player of another test)
+				ray[0].huntOnly(p);
+				SeamFauna.drive(ray[0]);
+				check(helper, com.extremedimensions.journal.Bestiary.of(ray[0]) == com.extremedimensions.journal.Bestiary.Beast.FRAYED_RAY,
+						"a Frayed Ray is not in the bestiary as one");
+				start[0] = now;
+			});
+		}
+		for (int t = 1; t <= READY_WITHIN + 800; t++) {
+			int now = t;
 			helper.runAfterDelay(t, () -> {
 				p.teleportTo(o.getX() + 0.5, o.getY() + 1, o.getZ() + 0.5);
+				int tick = now - start[0];
+				if (start[0] < 0 || tick < 1 || tick > 800) {
+					return;
+				}
+				VeilRay r = ray[0];
 				// A ray that swung out past where it can still see its prey (the test's world is narrow, and a wide turn
 				// can carry it off before it comes round) is set back where it began: this is about the dive, not the turn
-				if (tick % 100 == 0 && !ray.isDiving() && ray.distanceToSqr(p) > 28 * 28) {
-					ray.teleportTo(p.getX() + 16, p.getY() + 9, p.getZ() + 4);
-					ray.anchor(p.getX(), p.getY() + 9, p.getZ(), 24);
-					ray.rouse();
+				if (tick % 100 == 0 && !r.isDiving() && r.distanceToSqr(p) > 28 * 28) {
+					r.teleportTo(p.getX() + 16, p.getY() + 9, p.getZ() + 4);
+					r.anchor(p.getX(), p.getY() + 9, p.getZ(), 24);
+					r.rouse();
 				}
 				seen[0] |= p.hasEffect(MobEffects.POISON);
 				seen[1] |= p.getHealth() < full;
-				seen[2] |= ray.isDiving();
+				seen[2] |= r.isDiving();
 				if (tick == 30) {
-					early[0] = ray.huntState(p);
+					early[0] = r.huntState(p);
 				}
 			});
 		}
-		helper.runAfterDelay(805, () -> {
+		helper.runAfterDelay(READY_WITHIN + 805, () -> {
 			level.getServer().setDifficulty(was, true);
 			Config.SEAM_FRAY_RAY_COOLDOWN = cooldown;
-			int strikes = ray.strikes();
-			String state = ray.huntState(p);
-			ray.discard();
+			if (ray[0] == null) {
+				clear.run();
+			}
+			check(helper, ray[0] != null, "the sky round the prey never came to life in %s ticks", READY_WITHIN);
+			int strikes = ray[0].strikes();
+			String state = ray[0].huntState(p);
+			ray[0].discard();
 			clear.run();
 			check(helper, seen[2], "the Frayed Ray never dived (at tick 30: %s; at the end: %s)", early[0], state);
 			check(helper, strikes > 0, "the Frayed Ray never struck its prey (%s)", state);
@@ -162,6 +185,12 @@ public class FrayTests {
 			helper.succeed();
 		});
 	}
+
+	/**
+	 * Ticks the Frayed Ray's test waits at most for the sky round its prey to come to life (chunks load in their own time,
+	 * and the test server's ticks can each take far under a millisecond).
+	 */
+	private static final int READY_WITHIN = 2000;
 
 	/**
 	 * Tells the game a test player's client has loaded the world (a real client says so in a packet), so the player can
