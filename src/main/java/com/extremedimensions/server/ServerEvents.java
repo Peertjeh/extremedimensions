@@ -69,6 +69,8 @@ public final class ServerEvents {
 	private static int effectTimer = 0;
 	/** Strays found as they loaded, removed at the end of the tick. */
 	private static final java.util.List<net.minecraft.world.entity.Entity> STRAYS = new java.util.ArrayList<>();
+	/** How long the mod's own work took in the last server tick, in nanoseconds (read by the performance tests). */
+	private static long lastTickNanos = 0;
 
 	public static void register() {
 		// A reset of the Seam that an operator asked for is carried out before the worlds load
@@ -487,7 +489,21 @@ public final class ServerEvents {
 		Advancements.grant(p, Advancements.ROOT);
 	}
 
+	/** How long the mod's own work took in the last server tick, in nanoseconds. */
+	public static long lastTickNanos() {
+		return lastTickNanos;
+	}
+
 	private static void tick(MinecraftServer s) {
+		long t0 = System.nanoTime();
+		try {
+			work(s);
+		} finally {
+			lastTickNanos = System.nanoTime() - t0;
+		}
+	}
+
+	private static void work(MinecraftServer s) {
 		com.extremedimensions.lore.FirstWeaver.tick(s);
 		com.extremedimensions.tapestry.Tapestry.tick(s);
 		if (!STRAYS.isEmpty()) {

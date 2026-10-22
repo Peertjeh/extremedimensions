@@ -23,4 +23,7 @@ final class Alone {
 	static final String WEAVER_LANCE = "extremedimensions_test:alone/weaver_lance";
 	static final String LANCE_HIGH = "extremedimensions_test:alone/lance_high";
 	static final String SHOCKWAVE_STEP = "extremedimensions_test:alone/shockwave_step";
+	static final String PERF_MATRIARCH = "extremedimensions_test:alone/perf_matriarch";
+	static final String PERF_FERRYMAN = "extremedimensions_test:alone/perf_ferryman";
+	static final String PERF_WEAVER = "extremedimensions_test:alone/perf_weaver";
 }

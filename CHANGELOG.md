@@ -12,6 +12,11 @@ Nothing changes in play: this release makes the builds trustworthy, so a red bui
   for it (*the Frayed Ray never struck its prey*, *the Lance never fired*), on commits where the same tests passed in
   the next run.
 - When the Lance has not fired by its 70th tick, the test now also says the Weaver's health and why it left the world.
+- **The Elder fights are measured**: a fight with each of the Matriarch, the Ferryman and the Weaver, as a player meets
+  it (its arena rising round it at its full size, blocks flying in, its ultimate partway), alone and far from every
+  other test. Logged: what calling it costs at once (the arena is designed there and then), and every server tick of the
+  fight against quiet ones before it, the whole tick and the mod's own share; the test fails only far above any sane
+  cost, as the other performance tests do.
 
 ### Build
 - Gradle, the game and its libraries are kept between CI runs, so a download that fails on the way (a server's 502)

@@ -119,6 +119,8 @@ public final class ElderArena {
 	}
 
 	private static final List<Arena> ARENAS = new ArrayList<>();
+	/** How long the last arena's design took (nanoseconds) and how many blocks it holds (for tests). */
+	private static long[] lastDesign = {0, 0};
 	/** Every block an arena has put down, by level and position. */
 	static final Map<ServerLevel, Map<Long, Piece>> STANDING = new HashMap<>();
 
@@ -230,6 +232,11 @@ public final class ElderArena {
 		return m == null || m.isEmpty() ? null : m.values().iterator().next().pos;
 	}
 
+	/** How long the last arena's design took, in nanoseconds, and how many blocks it holds (for tests). */
+	public static long[] lastDesign() {
+		return lastDesign.clone();
+	}
+
 	/** Arenas standing or on their way (for tests). */
 	public static int count() {
 		return ARENAS.size();
@@ -260,6 +267,15 @@ public final class ElderArena {
 		}
 		Arena a = ARENAS.get(ARENAS.size() - 1);
 		return new double[] {a.cx, a.cy, a.cz};
+	}
+
+	/** Blocks of every arena in the air right now, flying in or out (for tests). */
+	public static int flying() {
+		int n = 0;
+		for (Arena a : ARENAS) {
+			n += a.flights.size();
+		}
+		return n;
 	}
 
 	/** Blocks of every arena waiting for their part of the world to be loaded (for tests). */
@@ -301,7 +317,9 @@ public final class ElderArena {
 		}
 		ServerLevel level = (ServerLevel) b.level();
 		int style = ElderFx.index(b);
+		long t0 = System.nanoTime();
 		ArenaDesign.Blueprint bp = ArenaDesign.design(level, style, centre, ElderTerrain.griefing(level), ThreadLocalRandom.current().nextLong());
+		lastDesign = new long[] {System.nanoTime() - t0, bp.pieces.size()};
 		if (bp.pieces.isEmpty()) {
 			return;
 		}
