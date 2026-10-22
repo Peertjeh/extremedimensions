@@ -411,14 +411,18 @@ final class ArenaDesign {
 	 * arena however the work is spread). Worked on within a time budget each tick, it never holds the server up for long.
 	 */
 	static final class Draft {
-		/** Floor columns drawn up in one step. */
-		private static final int FLOOR_STEP = 384;
+		/** Columns of the floor (or of the rim) drawn up in one step. */
+		private static final int COLUMNS_STEP = 256;
 
 		private final Plan plan;
 		private final Blueprint bp = new Blueprint();
-		private final ArrayDeque<Runnable> steps = new ArrayDeque<>();
-		/** The longest one step took (nanoseconds), for the tests. */
+		private final ArrayDeque<Step> steps = new ArrayDeque<>();
+		/** The longest one step took (nanoseconds), and what it was, for the tests. */
 		private long longest = 0;
+		private String longestStep = "";
+
+		/** One step of the design, by what it draws up. */
+		private record Step(String name, Runnable run) {}
 
 		Draft(ServerLevel level, int style, BlockPos centre, boolean grief, long seed) {
 			Plan plan = new Plan(level, grief, seed);
@@ -444,49 +448,62 @@ final class ArenaDesign {
 			int lift = (int) Math.round(5 * Math.min(6, Math.max(0, size - 1)));
 			double turn = plan.rnd.nextDouble() * TAU / 8;
 
-			steps.add(() -> {
+			steps.add(new Step("floor layout", () -> {
 				List<int[]> cols = floorColumns(floorR);
-				List<Runnable> parts = new ArrayList<>();
-				for (int from = 0; from < cols.size(); from += FLOOR_STEP) {
-					List<int[]> part = cols.subList(from, Math.min(cols.size(), from + FLOOR_STEP));
-					parts.add(() -> {
+				List<Step> parts = new ArrayList<>();
+				for (int from = 0; from < cols.size(); from += COLUMNS_STEP) {
+					List<int[]> part = cols.subList(from, Math.min(cols.size(), from + COLUMNS_STEP));
+					parts.add(new Step("floor", () -> {
 						for (int[] c : part) {
 							floorColumn(plan, pal, style, cx, gy, cz, floorR, turn, size, wide, c);
 						}
-					});
+					}));
 				}
 				next(parts);
-			});
-			steps.add(() -> rim(plan, pal, cx, gy, cz, rimR, turn, wide));
+			}));
+			steps.add(new Step("rim pillars", () -> rimPillars(plan, pal, cx, gy, cz, rimR, turn, wide)));
+			steps.add(new Step("rim layout", () -> {
+				List<int[]> cols = rimColumns(rimR, turn, wide);
+				List<Step> parts = new ArrayList<>();
+				for (int from = 0; from < cols.size(); from += COLUMNS_STEP) {
+					List<int[]> part = cols.subList(from, Math.min(cols.size(), from + COLUMNS_STEP));
+					parts.add(new Step("rim", () -> {
+						for (int[] c : part) {
+							rimColumn(plan, pal, cx, gy, cz, c);
+						}
+					}));
+				}
+				next(parts);
+			}));
 			if (size >= 3 && Config.ELDER_ARENA_WALL > 0) {
-				steps.add(() -> {
-					List<Runnable> parts = new ArrayList<>();
+				steps.add(new Step("wall layout", () -> {
+					List<Step> parts = new ArrayList<>();
 					for (List<int[]> slice : wallSlices(floorR + 4, turn, wide)) {
-						parts.add(() -> wallSlice(plan, pal, cx, gy, cz, floorR + 4, turn, size, wide, slice));
+						parts.add(new Step("wall", () -> wallSlice(plan, pal, cx, gy, cz, floorR + 4, turn, size, wide, slice)));
 					}
 					next(parts);
-				});
+				}));
 			}
 			List<double[]> tops = new ArrayList<>();
 			for (int k = 0; k < 8; k++) {
 				double a = turn + TAU * k / 8;
 				boolean great = k % 2 == 0;
-				steps.add(() -> {
-					path(plan, pal, cx, gy, cz, a, rimR + 1, towerR - 2, (int) Math.round(wide));
-					tops.add(tower(plan, pal, style, cx + Math.cos(a) * towerR, gy, cz + Math.sin(a) * towerR, a, great, great ? lift : lift / 2));
-				});
+				steps.add(new Step("path", () -> path(plan, pal, cx, gy, cz, a, rimR + 1, towerR - 2, (int) Math.round(wide))));
+				steps.add(new Step("tower", () -> tops.add(tower(plan, pal, style, cx + Math.cos(a) * towerR, gy, cz + Math.sin(a) * towerR, a, great,
+						great ? lift : lift / 2))));
 			}
 			if (size >= 2) {
 				// A second ring beyond the first, between them, the great ones where the lesser stand within
 				for (int k = 0; k < 8; k++) {
 					double a = turn + TAU * (k + 0.5) / 8;
 					boolean great = k % 2 != 0;
-					steps.add(() -> tower(plan, pal, style, cx + Math.cos(a) * outerR, gy, cz + Math.sin(a) * outerR, a, great, great ? lift : lift / 2));
+					steps.add(new Step("outer tower", () -> tower(plan, pal, style, cx + Math.cos(a) * outerR, gy, cz + Math.sin(a) * outerR, a, great,
+							great ? lift : lift / 2)));
 				}
 			}
 			if (size >= 3 && Config.ELDER_ARENA_LANDMARK > 0) {
 				boolean cores = Config.ELDER_CORES > 0;
-				steps.add(() -> {
+				steps.add(new Step("great piece", () -> {
 					List<int[]> origins = switch (style) {
 						case 0 -> rootArches(plan, cx, gy, cz, floorR, turn, wide);
 						case 1 -> wreck(plan, bp, cx, gy, cz, floorR, turn);
@@ -497,7 +514,7 @@ final class ArenaDesign {
 							core(plan, coreBlock(style), o[0], o[1], o[2]);
 						}
 					}
-				});
+				}));
 			}
 			// More islands in a larger arena, larger, higher and further out, hung in three layers: many small ones low
 			// over the ground, larger ones above them, and the greatest highest of all
@@ -506,7 +523,7 @@ final class ArenaDesign {
 			double big = Math.min(1, Math.max(0, size - 1) / 11);
 			for (int n = 0; n < isles; n++) {
 				int i = n;
-				steps.add(() -> {
+				steps.add(new Step("island", () -> {
 					double a = turn + TAU * (i + 0.5) / isles + (plan.rnd.nextDouble() - 0.5) * 0.4;
 					int layer = size < 3 ? -1 : i % 20 < 10 ? 0 : i % 20 < 17 ? 1 : 2;
 					double r, grow;
@@ -524,9 +541,9 @@ final class ArenaDesign {
 						up = (int) Math.round(span * (heights[layer * 2] + plan.rnd.nextDouble() * (heights[layer * 2 + 1] - heights[layer * 2])));
 					}
 					isle(plan, pal, style, (int) Math.round(cx + Math.cos(a) * r), gy + 12 + up, (int) Math.round(cz + Math.sin(a) * r), grow);
-				});
+				}));
 			}
-			steps.add(() -> {
+			steps.add(new Step("chains and the whole", () -> {
 				// Chains between the towers that stand (the Matriarch's between her great lantern towers only), and the
 				// Weaver's threads from every spire down to the heart of its web
 				for (int k = 0; k < 8; k++) {
@@ -558,11 +575,11 @@ final class ArenaDesign {
 				bp.turn = turn;
 				bp.size = size;
 				bp.wide = wide;
-			});
+			}));
 		}
 
 		/** Steps that take the place of the one being done, in their order, before everything after it. */
-		private void next(List<Runnable> parts) {
+		private void next(List<Step> parts) {
 			for (int i = parts.size() - 1; i >= 0; i--) {
 				steps.addFirst(parts.get(i));
 			}
@@ -572,9 +589,13 @@ final class ArenaDesign {
 		boolean work(long deadline) {
 			while (!steps.isEmpty()) {
 				long t = System.nanoTime();
-				steps.poll().run();
+				Step step = steps.poll();
+				step.run().run();
 				long now = System.nanoTime();
-				longest = Math.max(longest, now - t);
+				if (now - t > longest) {
+					longest = now - t;
+					longestStep = step.name();
+				}
 				if (now >= deadline) {
 					break;
 				}
@@ -599,6 +620,11 @@ final class ArenaDesign {
 		/** The longest one step has taken so far, in nanoseconds. */
 		long longest() {
 			return longest;
+		}
+
+		/** What that longest step drew up. */
+		String longestStep() {
+			return longestStep;
 		}
 	}
 
@@ -983,16 +1009,31 @@ final class ArenaDesign {
 	 */
 	/** The columns of a floor of radius {@code r} (offsets from its middle), nearest the middle first. */
 	private static List<int[]> floorColumns(int r) {
-		List<int[]> cols = new ArrayList<>();
+		// Counted out by distance (squared), so each ring keeps the order its columns were met in, as a stable sort
+		// would, without sorting tens of thousands of them
+		double reach = (r + 0.5) * (r + 0.5);
+		int[] start = new int[(int) Math.floor(reach) + 2];
 		for (int dx = -r; dx <= r; dx++) {
 			for (int dz = -r; dz <= r; dz++) {
-				if (dx * dx + dz * dz <= (r + 0.5) * (r + 0.5)) {
-					cols.add(new int[] {dx, dz});
+				int d2 = dx * dx + dz * dz;
+				if (d2 <= reach) {
+					start[d2 + 1]++;
 				}
 			}
 		}
-		cols.sort((a, b) -> Integer.compare(a[0] * a[0] + a[1] * a[1], b[0] * b[0] + b[1] * b[1]));
-		return cols;
+		for (int i = 1; i < start.length; i++) {
+			start[i] += start[i - 1];
+		}
+		int[][] cols = new int[start[start.length - 1]][];
+		for (int dx = -r; dx <= r; dx++) {
+			for (int dz = -r; dz <= r; dz++) {
+				int d2 = dx * dx + dz * dz;
+				if (d2 <= reach) {
+					cols[start[d2]++] = new int[] {dx, dz};
+				}
+			}
+		}
+		return java.util.Arrays.asList(cols);
 	}
 
 	/** One column {@code c} of the floor's sigil, a group of its own. */
@@ -1118,7 +1159,8 @@ final class ArenaDesign {
 	}
 
 	/** The rim: a low edge of slabs with gaps for the paths, and eight lit pillars between them. */
-	private static void rim(Plan plan, Palette pal, int cx, int gy, int cz, int r, double turn, double w) {
+	/** The rim's pillars, round the floor's edge between the paths. */
+	private static void rimPillars(Plan plan, Palette pal, int cx, int gy, int cz, int r, double turn, double w) {
 		int pillars = 8 * (int) Math.round(w);
 		int tall = (int) Math.round(3 * w);
 		for (int k = 0; k < pillars; k++) {
@@ -1139,6 +1181,11 @@ final class ArenaDesign {
 			}
 			plan.commit(0.99);
 		}
+	}
+
+	/** The columns of the rim's ring of slabs at {@code r} (offsets from its middle), leaving gaps where the paths go out. */
+	private static List<int[]> rimColumns(int r, double turn, double w) {
+		List<int[]> cols = new ArrayList<>();
 		for (int dx = -r - 1; dx <= r + 1; dx++) {
 			for (int dz = -r - 1; dz <= r + 1; dz++) {
 				double d = Math.sqrt(dx * dx + dz * dz);
@@ -1149,15 +1196,21 @@ final class ArenaDesign {
 				if (spoke(theta, d, 8) < 1.6 * w) {
 					continue;
 				}
-				BlockPos g = plan.ground(cx + dx, gy, cz + dz);
-				if (g == null || Math.abs(g.getY() - gy) > 3) {
-					continue;
-				}
-				plan.begin();
-				plan.air(cx + dx, g.getY() + 1, cz + dz, pal.rimSlab);
-				plan.commit(1.0);
+				cols.add(new int[] {dx, dz});
 			}
 		}
+		return cols;
+	}
+
+	/** One slab of the rim, at column {@code c} (see {@link #rimColumns}), a group of its own. */
+	private static void rimColumn(Plan plan, Palette pal, int cx, int gy, int cz, int[] c) {
+		BlockPos g = plan.ground(cx + c[0], gy, cz + c[1]);
+		if (g == null || Math.abs(g.getY() - gy) > 3) {
+			return;
+		}
+		plan.begin();
+		plan.air(cx + c[0], g.getY() + 1, cz + c[1], pal.rimSlab);
+		plan.commit(1.0);
 	}
 
 	/** A path out to a tower ({@code half} blocks either side of its line), inlaid where the ground is level with it and bridged where it falls away. */

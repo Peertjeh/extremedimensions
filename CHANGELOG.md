@@ -10,6 +10,9 @@ the heavy parts cost, and makes the download lighter.
   at once the moment it was called, holding every player up for 0.2 to 0.85 seconds. The design is now drawn up a
   little each tick (**Technical → Elders: arena design budget**, 8 ms a tick by default) while the Elder forms, and the
   arena rises once it is whole: the same arena, block for block, a moment later.
+- **No more slow tick every five seconds on a busy server**: each player's slower work (refreshing their curses'
+  effects, looking for a portal near a newcomer, the bestiary's look round, the tribe's standing) came round on the same
+  tick for everyone; it now comes round on a tick of each player's own, as often as before.
 - **A lighter jar**: the five music tracks are encoded afresh from their originals, a little lighter (the menu tracks
   at Vorbis quality 2, the Elder fights' at quality 1, under the din of battle): 11.4 MB of music becomes 7.9 MB, and
   the jar about 20 MB instead of 24. The sky and the title picture stay as they were: squeezing them into fewer colours

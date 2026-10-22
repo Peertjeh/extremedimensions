@@ -399,6 +399,7 @@ public class PerfTests {
 		ElderBoss[] boss = {null};
 		double[] called = {0};
 		long[][] design = {{0, 0}};
+		String[] longest = {""};
 		int[] flyingMost = {0}, loaded = {0};
 		List<List<double[]>> heard = new ArrayList<>();
 		Runnable restore = () -> {
@@ -457,28 +458,30 @@ public class PerfTests {
 			List<double[]> fight = TickClock.stop();
 			// The parts of the mod's tick with the worst single ticks, worst first
 			StringBuilder worst = new StringBuilder();
-			TickProfile.stop().entrySet().stream().sorted((a, b) -> Double.compare(b.getValue()[0], a.getValue()[0])).limit(4)
+			TickProfile.stop().entrySet().stream().sorted((a, b) -> Double.compare(b.getValue()[0], a.getValue()[0])).limit(6)
 					.forEach(e -> worst.append(worst.length() == 0 ? "" : ", ").append(String.format(java.util.Locale.ROOT, "%s %.1f ms (%.2f ms a tick)",
 							e.getKey(), e.getValue()[0], e.getValue()[1] / Math.max(1, e.getValue()[2]))));
 			boolean fought = boss[0] != null && boss[0].isAlive();
 			int standing = ElderArena.standing();
 			// (its design is drawn up over the first ticks of the fight)
 			design[0] = ElderArena.lastDesign();
+			longest[0] = ElderArena.lastDesignStep();
 			restore.run();
 			double[] calm = spread(heard.get(0), 0, true), whole = spread(fight, 0, true), mod = spread(fight, 1, false);
 			report(elder.name().toLowerCase(java.util.Locale.ROOT) + " fight with its arena", String.format(java.util.Locale.ROOT,
-					"called in %.1f ms (its arena of %d blocks designed in %.1f ms over %d ticks, its longest step %.1f ms); %d ticks: the mod's own work %.2f ms a tick on average, "
+					"called in %.1f ms (its arena of %d blocks designed in %.1f ms over %d ticks, its longest step %.1f ms, %s); %d ticks: the mod's own work %.2f ms a tick on average, "
 							+ "95%% within %.2f ms, worst %.2f ms; the whole server tick %.2f ms on average, 95%% within %.2f ms, worst %.2f ms "
 							+ "(quiet before it: %.2f, %.2f, %.2f ms); at most %d blocks in the air, %d standing at the end; still fighting %s; "
 							+ "%d of %d chunks loaded at the start; the worst ticks of the mod's parts: %s",
-					called[0], design[0][1], design[0][0] / 1e6, design[0][2], design[0][3] / 1e6, fight.size(), mod[0], mod[1], mod[2], whole[0], whole[1], whole[2], calm[0], calm[1],
+					called[0], design[0][1], design[0][0] / 1e6, design[0][2], design[0][3] / 1e6, longest[0], fight.size(), mod[0], mod[1], mod[2], whole[0], whole[1], whole[2], calm[0], calm[1],
 					calm[2], flyingMost[0], standing, fought, loaded[0], (2 * r + 1) * (2 * r + 1), worst));
 			CurseTests.check(helper, design[0][1] > 1000 && flyingMost[0] > 0, "no arena rose round the %s (%s blocks, %s at most in the air)",
 					elder.name(), design[0][1], flyingMost[0]);
 			// Far above any sane cost, as the other tests here: a slow runner never fails these, a real regression does
 			// Its arena is designed a little each tick, never all at once when it is called
 			CurseTests.check(helper, called[0] < 150, "calling the %s stalled the server for %s ms", elder.name(), called[0]);
-			CurseTests.check(helper, design[0][3] < 60_000_000L, "one step of the %s's arena design took %s ms", elder.name(), design[0][3] / 1e6);
+			CurseTests.check(helper, design[0][3] < 60_000_000L, "one step of the %s's arena design (%s) took %s ms", elder.name(), longest[0],
+					design[0][3] / 1e6);
 			CurseTests.check(helper, mod[1] < 25, "95%% of the %s's fight ticks took the mod up to %s ms", elder.name(), mod[1]);
 			CurseTests.check(helper, mod[2] < 250, "a tick of the %s's fight stalled the mod for %s ms", elder.name(), mod[2]);
 			helper.succeed();

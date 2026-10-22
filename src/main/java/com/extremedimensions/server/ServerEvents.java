@@ -66,7 +66,6 @@ public final class ServerEvents {
 			"minecraft:lodestone", "extremedimensions:tether_journal", "extremedimensions:tether",
 			"extremedimensions:ember_tether", "extremedimensions:void_tether", "extremedimensions:mending_cloth"};
 
-	private static int effectTimer = 0;
 	/** Strays found as they loaded, removed at the end of the tick. */
 	private static final java.util.List<net.minecraft.world.entity.Entity> STRAYS = new java.util.ArrayList<>();
 	/** How long the mod's own work took in the last server tick, in nanoseconds (read by the performance tests). */
@@ -516,24 +515,21 @@ public final class ServerEvents {
 			}
 			STRAYS.clear();
 		}
-		boolean slowTick = ++effectTimer >= 100;
-		if (slowTick) {
-			effectTimer = 0;
-		}
-
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
 			PlayerData d = DataStore.get(p.getUUID());
 			String dim = Dims.of(p);
 			boolean sync = false;
+			// Each player's slower work comes round on a tick of its own (by their id), never everyone's in one tick
+			int beat = s.getTickCount() + p.getId();
 
 			if (d.grace > 0) {
 				d.grace--;
 			}
-			if ((s.getTickCount() + p.getId()) % 40 == 0 && !d.away) {
+			if (beat % 40 == 0 && !d.away) {
 				// Something in hand for the first time: its hint
 				com.extremedimensions.guide.Hints.look(p, d);
 			}
-			if ((s.getTickCount() + p.getId()) % 10 == 0) {
+			if (beat % 10 == 0) {
 				// A Plumb Line in hand: which way it pulls
 				com.extremedimensions.seam.FirstKnot.point(p);
 			}
@@ -583,14 +579,14 @@ public final class ServerEvents {
 			boolean onExpedition = Dims.isBeyond(dim) && d.inRun && !d.collapsing;
 			sync |= PenaltyService.tick(p, d, onExpedition, Dims.OVERWORLD.equals(dim) && !d.collapsing);
 
-			if (slowTick) {
+			if (beat % 100 == 0) {
 				CurseEffects.refreshEffects(p, d);
 				discover(p, d, dim);
 			}
-			if (d.tickCounter % 20 == 0) {
+			if (beat % 20 == 0) {
 				com.extremedimensions.tribe.Standing.second(p, d);
 			}
-			if (d.tickCounter % 40 == 7) {
+			if (beat % 40 == 7) {
 				com.extremedimensions.journal.Bestiary.scan(p);
 			}
 

@@ -19,6 +19,7 @@ import com.mojang.math.Transformation;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.mixin.DisplayAccess;
 import com.extremedimensions.server.BlockFlight;
+import com.extremedimensions.server.TickProfile;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
@@ -141,6 +142,8 @@ public final class ElderArena {
 	 * over, and the longest single step of it (nanoseconds).
 	 */
 	private static long[] lastDesign = {0, 0, 0, 0};
+	/** What the longest step of the last arena's design drew up (for tests). */
+	private static String lastDesignStep = "";
 	/** Every block an arena has put down, by level and position. */
 	static final Map<ServerLevel, Map<Long, Piece>> STANDING = new HashMap<>();
 
@@ -263,6 +266,11 @@ public final class ElderArena {
 	 */
 	public static long[] lastDesign() {
 		return lastDesign.clone();
+	}
+
+	/** What the longest step of the last arena's design drew up (for tests). */
+	public static String lastDesignStep() {
+		return lastDesignStep;
 	}
 
 	/** Arenas standing or on their way, those still being designed among them (for tests). */
@@ -403,6 +411,7 @@ public final class ElderArena {
 		}
 		ArenaDesign.Blueprint bp = d.draft.blueprint();
 		lastDesign = new long[] {d.nanos, bp.pieces.size(), d.ticks, d.draft.longest()};
+		lastDesignStep = d.draft.longestStep();
 		if (!bp.pieces.isEmpty()) {
 			open(d.boss, d.level, d.style, d.centre, bp);
 		}
@@ -522,6 +531,7 @@ public final class ElderArena {
 	public static void tick(MinecraftServer s) {
 		ArenaRuin.tick();
 		if (!DRAFTS.isEmpty()) {
+			long lap = TickProfile.start();
 			// The designs under way share one budget a tick, the oldest first
 			long start = System.nanoTime(), deadline = start + designBudget();
 			Iterator<Drafting> dit = DRAFTS.iterator();
@@ -539,6 +549,7 @@ public final class ElderArena {
 					dit.remove();
 				}
 			}
+			TickProfile.lap("arena: design", lap);
 		}
 		if (ARENAS.isEmpty()) {
 			return;
@@ -554,6 +565,7 @@ public final class ElderArena {
 
 	/** One tick of an arena; true once it is gone. */
 	private static boolean step(Arena a) {
+		long lap = TickProfile.start();
 		Entity boss = a.level.getEntity(a.boss);
 		if (boss instanceof ElderBoss e && e.isAlive()) {
 			a.missing = 0;
@@ -578,21 +590,26 @@ public final class ElderArena {
 			settle(a, a.leftover, (int) Math.ceil(a.pieces.size() / Math.max(1.0, Config.ELDER_ARENA_DISSOLVE_SECONDS * 20) * 10),
 					p -> unbuild(a, p));
 		}
+		lap = TickProfile.lap("arena: launch", lap);
 		a.flights.removeIf(BlockFlight::step);
+		lap = TickProfile.lap("arena: flights", lap);
 		// What something broke into is looked at a few times a second: whatever is left without support comes down
 		if (!a.damaged.isEmpty() && a.clock % 5 == 0) {
 			ArenaRuin.settle(a);
 		}
+		lap = TickProfile.lap("arena: ruin", lap);
 		// The fight on it: its domain changing, its cores, its islands falling
 		if (!a.dissolving && a.linger < 0 && boss instanceof ElderBoss fighting && fighting.isAlive()) {
 			ElderDomain.tick(a, fighting);
 		}
+		lap = TickProfile.lap("arena: domain", lap);
 		if (!a.strung && !a.dissolving && a.next >= a.pieces.size() && a.flights.isEmpty()) {
 			a.strung = true;
 			if (a.linger < 0) {
 				string(a);
 			}
 		}
+		TickProfile.lap("arena: chains", lap);
 		Iterator<Strand> st = a.strands.iterator();
 		while (st.hasNext()) {
 			Strand s = st.next();
