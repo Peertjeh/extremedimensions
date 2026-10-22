@@ -13,6 +13,8 @@ Nothing changes in play: this release makes the builds trustworthy, so a red bui
   the next run.
 - The Frayed Ray's test lets its ray loose only once the sky round its prey is alive: alone in its batch, the test
   server ran its ticks faster than the forced chunks came to life, and a ray in a still chunk never moved.
+- The echo test loads the spot of its away player's echo itself (40 blocks off): it counted on a neighbouring test to
+  keep that chunk loaded, and with the Elder tests gone from the big batches that neighbour was not always there.
 - When the Lance has not fired by its 70th tick, the test now also says the Weaver's health and why it left the world.
 - **The Elder fights are measured**: a fight with each of the Matriarch, the Ferryman and the Weaver, as a player meets
   it (its arena rising round it at its full size, blocks flying in, its ultimate partway), alone and far from every

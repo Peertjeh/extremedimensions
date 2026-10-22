@@ -93,7 +93,9 @@ public class EventTests {
 			check(helper, back == Math.round(40 * Config.ECHO_RETURN), "the collapsed player got %s atonement back, not half the toll", back);
 			check(helper, Echoes.drainFactor(owner) == 1.0, "the drain stayed raised after the echo let go");
 
-			// The collapsed player away: what comes back waits for them
+			// The collapsed player away: what comes back waits for them. (Its spot, 40 blocks off, may lie in a chunk no
+			// test keeps loaded, and an echo there is never heard: it is loaded here and now, as by a player walking there)
+			level.getChunk(away.x >> 4, away.z >> 4);
 			DataStore.echoes().add(away);
 			listener.teleportTo(away.x + 0.5, away.y, away.z + 1.5);
 			for (int i = 0; i < Config.ECHO_LISTEN_SECONDS * 2 + 2 && DataStore.echoes().contains(away); i++) {
