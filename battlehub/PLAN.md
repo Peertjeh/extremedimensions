@@ -1125,3 +1125,151 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
 - JUnit `FightLogTest` (4): de sleutels zijn die van de simulatie en een toestand komt hetzelfde terug; regels zijn één JSON-object; de draai naar links; het voorbeeldbestand.
 - pytest `test_fights.py` (5): de kop, de observatie, de acties, mensen en bots en winnaars uit een zip met gzip-bestanden, en imitatie leert een regel (overgeslagen zonder PyTorch).
 - Zelftest in het v2-bijlduel: het gevecht is opgenomen (A en de bot elk meer dan 20 beslissingen, een treffer, de bot won) en `/battlehub fights export` zet het in een zip.
+
+## ML fase 3 – Het geleerde gevecht verder verbeteren (plan)
+
+**Volgorde.** Na elke fase stoppen voor akkoord, met de cijfers.
+- **A** – spullen leren (eten, boog, pearls, wind charges).
+- **B** – één model in plaats van v1 + v2.
+- **C** – spec v3: teamgenoten, een derde vijand, geheugen, teamgevechten.
+- **D** – een simulatie die dichter bij de game ligt (gefit op de gevechtsverslagen).
+- **E** – niveaus afgestemd op echte spelers.
+- **F** (optioneel) – exploiters.
+
+**Algemeen, voor elke fase.**
+- De spec is de enige bron; golden-tests aan beide kanten (Python en Java).
+- Na elke wijziging aan het netwerk of de keuze: de tijd per beslissing in de mod meten en hier noteren.
+- De gescripte strategie (looten, bedden, bruggen) blijft zoals ze is, tenzij een fase het nodig heeft. Zo'n punt staat apart vermeld onder "Gescripte punten".
+
+### Fase A – Spullen leren (plan, wacht op akkoord)
+
+**Waarom het nu niet lukt.**
+- De hand-kop kiest vaak iets dat de bot niet bij zich heeft. Dat doet niets (`physics._hand` houdt dan de hand die hij had), dus het is een veilige niets-doen-keuze.
+- Wisselen naar iets dat hij wel heeft, kost de lading van de aanval (de ticker gaat naar 0). PPO leert dus "wapen houden".
+- Eten, de boog en gooien zijn reeksen: eerst wisselen, dan drukken of vasthouden, dan loslaten. Zo'n reeks vindt PPO moeilijk door te verkennen.
+
+**Nulmeting (eerst de meting zelf gerepareerd).**
+- **Meetfout gevonden.** De tellers `fired`, `ate` en `threw` van de wereld gaan elke tick terug naar 0. Een beslissing duurt 2 ticks, en `env.step` telt ze niet op (`landed` en `died` wel). `eval2.items` zag dus alleen de laatste tick van elke beslissing en telde te weinig.
+  - "0 pearls of wind charges" in 2b klopte daardoor niet.
+- Nieuwe meting: tellen aan wat er opraakt (pijlen, eten, gouden appels, pearls, wind charges), met het blokken uit de toestand.
+  - Opzet: model op plek 0 tegen de gescripte bot (skill 0,8), 64 gevechten per scenario.
+  - In de tabel: het aandeel gevechten (met dat spul bij zich) waarin het minstens één keer gebruikt werd, en tussen haakjes het aantal per 100 beslissingen.
+
+| Scenario | Master (40M) | Gescript 0,8 |
+|---|---|---|
+| arena, boog | pijlen 0/64 | pijlen 28/64 (6,2) |
+| arena, zwaard | eten 0/64 | eten 34/64 (0,94) |
+| arena, bijl | blokken 13,9% van de beslissingen | blokken 5,4% |
+| arena, mace | wind 65/65 (2,78); eten 0/65 | wind 0/65; eten 58/65 |
+| eilanden, loot | pijlen 0/13, eten 0/38, pearl 8/9 (0,23), wind 9/9 (0,32); blokken 12,0% | pijlen 2/14, eten 5/39, pearl 0/6, wind 0/7 |
+| heuvels, Build UHC | pijlen 0/64, eten 0/64 | pijlen 51/64 (6,1), eten 38/64 |
+
+- **Conclusies:**
+  - Het master-model eet nooit en schiet nooit. Het gooit wel pearls en wind charges en blokt met het schild.
+  - De gescripte bot schiet en eet, maar gooit in de simulatie nooit pearls of wind charges.
+  - De oorzaak ligt in de gescripte bot van de simulatie, niet in de mod:
+    - Wind: de regel eist een volle lading (`charge > 0.9`), maar het wisselen naar de wind charge zet die lading op 0. In de beslissing erna geldt de regel dus niet meer, en hij wisselt terug.
+    - Pearl: de kans van 5% moet twee beslissingen achter elkaar uitkomen, plus 50% voor de druk.
+    - Bij allebei mag de kijkhoek maar 15° per beslissing veranderen (omhoog richten voor de pearl, recht naar beneden voor wind).
+  - Nadoen van deze gescripte bot leert dus wel eten en de boog, maar geen pearls of wind charges. Zie A2.
+- **Hoeveel het model nadoen kan, is beperkt**: er zijn nog geen gevechtsverslagen van mensen (`ml/data` is leeg).
+
+**A1 – Actiemaskers.**
+- **Regels** (alleen uit de observatie, dus Python en Java rekenen precies hetzelfde):
+
+  | Kop en keuze | Mag als |
+  |---|---|
+  | hand: wapen | altijd |
+  | hand: boog | `self_arrows > 0` (is 0 zonder boog) |
+  | hand: eten | `self_food_items > 0` en `self_food < 1` (honger onder 20) |
+  | hand: gouden appel | `self_gapples > 0` |
+  | hand: pearl | `self_pearls > 0` |
+  | hand: wind charge | `self_winds > 0` |
+  | use: 1 | er mag een andere hand dan het wapen, of er is een schild met `shield_cooldown == 0` |
+
+  - Cooldowns van pearl en wind maskeer ik niet. Op tijd wisselen en wachten is een keuze van het model.
+  - De andere koppen (lopen, draaien, slaan, ...) krijgen geen masker.
+- **Waar de regels staan:** in `ml/spec/combat_v2_masks.json`, aan de sha van de spec gebonden zoals de ranges.
+  - De spec zelf verandert niet. De meegeleverde modellen en golden-bestanden blijven dus geldig, en vergelijken met het master-model blijft eerlijk.
+  - Het alternatief (de spec ophogen) kost een nieuwe sha zonder winst; dat bewaar ik voor v3.
+- **Python:** `pvp_sim2/masks.py` (masker per rij uit een observatie) en `Batch2.action_masks()`.
+- **Java:** `core.ml.CombatMasks` leest hetzelfde bestand. `CombatAction.best` en `sample` krijgen een masker: logits van wat niet mag worden -oneindig.
+- **Golden:** `make_golden2.py` schrijft de maskers van alle golden-gevallen in een eigen bestand. Java vergelijkt die, en ook de gemaskeerde keuze op vaste logits.
+- **Training:**
+  - MaskablePPO uit `sb3-contrib` (in `requirements-train.txt`). De gewichten van een PPO-checkpoint passen erin (zelfde netwerk), dus starten vanaf 40M kan.
+  - Lukt de installatie niet, dan een eigen gemaskeerde verdeling in een PPO-subklasse (logits plus log van het masker).
+- **Overal waar een model kiest:** het model dat leert, de bevroren tegenstanders uit de pool, `eval2` en `league2`.
+- **Eerste meting:** het master-model met maskers maar zonder training (`eval2` en de nulmeting hierboven). Dan weten we wat de maskers alleen al doen.
+
+**A2 – Nadoen (behavior cloning).**
+- **Leraar:** `pvp_sim2/scripted.py` krijgt een optie `latch`, alleen voor de data en als extra tegenstander:
+  - pearl en wind charge: houd het spul vast tot het gegooid is (zoals al bij eten en de boog);
+  - de wind-regel kijkt naar de lading van voor het wisselen, en richten mag in stappen over een paar beslissingen;
+  - de standaard (`latch=False`) blijft precies zoals hij is, zodat de 81% van eval2 vergelijkbaar blijft.
+  - Dit verandert niets in de mod. In de mod gooien de bots al wel (1.28). Het brengt de simulatie dichter bij de mod.
+- **Data** (`tools/make_bc_data.py`, ongeveer 1 miljoen beslissingen):
+  - de helft uit gevechten van de leraar zelf;
+  - de helft uit gevechten van het master-model, waarbij de leraar zegt wat hij met hand en use zou doen (de toestanden die het model zelf bereikt);
+  - alleen scenario's met spullen: boog, Build UHC, loot, mace en Bed Wars-shop.
+- **Welke koppen nadoen:**
+  - van de leraar alleen hand en use, en pitch in de beslissingen waarin hij de boog of een gooi richt;
+  - lopen, draaien en slaan doet de leraar slechter dan het master-model (81% winst voor master). Die koppen blijven daarom dicht bij master, met een KL-term naar master.
+- **Stappen:**
+  1. Vanaf master 40M alleen de hand- en use-kop trainen, met de rest van het netwerk vast.
+  2. Alles los, met de KL-term naar master op de andere koppen.
+- **Verslagen van mensen**, zodra die er zijn: op alle koppen, alleen de winnaars, met gewicht 0,3 (`train/fights.py`).
+
+**A3 – PPO met de maskers.**
+- MaskablePPO vanaf het BC-checkpoint, ongeveer 20 miljoen stappen (ruim 80 minuten).
+- De helft van de arena's krijgt spullen (`--items-share 0.5`).
+- **Vergeten tegengaan:** een BC-term op minibatches uit de data van A2, met een gewicht dat van 0,5 naar 0 zakt over de eerste 8 miljoen stappen (`--bc-data`, `--bc-weight`, `--bc-decay`).
+  - Werkt dat niet goed, dan een KL-term naar het BC-checkpoint als alternatief.
+- De pool van tegenstanders krijgt de gescripte bot met `latch`, zodat het model ook leert tegen pearls en wind charges.
+
+**A4 – Meten.**
+- `env.step` telt `fired`, `ate` en `threw` op over de ticks van een beslissing, en `eval2.items` telt per gevecht. Een test controleert dat dit klopt met wat er opraakt.
+- Per scenario komt ook mee wanneer een spul nuttig was, en wat de gescripte bot doet:
+  - boog: de afstand en hoe vaak een pijl raakt;
+  - eten: wanneer de health lager was dan 45%;
+  - pearl: of hij dichter bij het doelwit landt, of van boven de void op grond;
+  - wind: of er binnen een seconde een treffer volgt.
+- `league2`: de kandidaat tegen het master-model, allebei met maskers.
+- **Geslaagd als** (de drempels zijn een voorstel):
+
+  | Wat | Drempel | Over welke gevechten |
+  |---|---|---|
+  | pijlen | minstens 50% | met boog en pijlen, doelwit minstens 2 s zichtbaar op 9 blokken of meer |
+  | eten | minstens 40% | onder 45% health, met eten of een gouden appel |
+  | pearls | minstens 20%, waarvan minstens de helft nuttig | met een pearl, doelwit verder dan 18 blokken, of boven de void |
+  | wind charges (bonus) | minstens 20% | met wind charges |
+  | tegen master | minstens 50% | minstens 1.200 gevechten over de 10 soorten in league2 |
+  | eval2 tegen gescript | minstens 81% (de winst van master) | de mix van eval2 |
+
+- **Geslaagd:**
+  - nieuwe league;
+  - de kandidaat wordt master, met een vlag "items" in de gegevens van het model;
+  - `bots.learnedItems` gaat standaard aan via een nieuwe configversie: modellen met de vlag gebruiken hun eigen hand en use, oudere niveaus houden de regels van de bot voor hun spullen.
+- **Niet geslaagd binnen dit budget:** de maskers, de meting en de tools gaan wel mee, `learnedItems` blijft uit, en ik meld de cijfers met een voorstel.
+
+**A5 – In de mod.**
+- De maskers staan altijd aan in `LearnedFight`.
+- De tijd per beslissing (observatie, ONNX en masker; gemiddeld, p99 en maximum) komt in `/battlehub bots inspect` en in het log van de zelftest. Gemeten op 1.37.0 en daarna, en hier genoteerd.
+- **Zelftest:** een Build UHC-duel met `learnedItems`, waarin het model schiet of eet. Daarnaast een test dat een gemaskeerde keuze nooit iets kiest wat de bot niet heeft.
+- `ml/INTEGRATIE.md` bijwerken: die beschrijft nog v1, met 43 observaties.
+- CHANGELOG, README en versie 1.38.0.
+
+**Blokken.** Spec v2 heeft geen actie om een blok te zetten, en geen observatie voor de blokken die de bot bij zich heeft. Blokken in het gevecht (een muurtje, omhoog bouwen, een val opvangen) vragen dus een nieuwe spec.
+- Dichtstbijzijnde werkende alternatief: blokken gaan mee in fase C (spec v3).
+- In fase A blijven blokken de gescripte regels (bruggen bouwen).
+
+**Gescripte punten.**
+- Alleen in de simulatie: de optie `latch` voor de gescripte bot (A2). De standaard verandert niet.
+- In de mod verandert er niets aan looten, bedden, bruggen of de itemregels van de bot.
+
+**Beslispunten.**
+- Een maskerbestand naast spec v2, in plaats van de spec op te hogen.
+- Blokken naar fase C.
+- `sb3-contrib` als nieuwe afhankelijkheid voor de training (niet in de mod).
+- De drempels in de tabel hierboven.
+- Van de leraar alleen hand, use en het richten nadoen, met een KL-term naar master voor de rest.
+- Items per model, met een vlag, in plaats van één schakelaar voor alle niveaus.
