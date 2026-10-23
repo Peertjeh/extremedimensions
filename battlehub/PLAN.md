@@ -1687,3 +1687,150 @@ met een teamgenoot, Bed Wars in teams.
 
 **Gescripte punten.** Geen: wie het doelwit is, wanneer er gevochten wordt en het teamspel buiten het gevecht (bedden,
 bruggen, rollen) blijven gescript.
+
+### Fase C – Uitvoering en resultaten
+
+**C1 en C2 – spec v3, simulatie, pariteit.**
+- `ml/spec/combat_v3.json`: 169 observaties, zoals gepland. De eerste 118 zijn die van v2, byte voor byte gelijk
+  (gecontroleerd in de tests aan beide kanten).
+- **Simulatie:**
+  - `Batch2` met 4 plekken en de modi 2v2, 3v1 en vier tegen elkaar;
+  - teamgenoten starten 1,5 tot 5 blokken van elkaar;
+  - `team_spirit` 0,3;
+  - een gevecht met teamgenoten loopt door tot er één team over is;
+  - een dood model mag alleen "niets" (`masks.dead_mask`).
+- **Geschiedenis:** `obs.history`. Aan het begin van een gevecht staat de eerste observatie voor alle eerdere
+  beslissingen, zoals `ObsHistory` in de mod.
+- **Tests:**
+  - Python: 13 nieuw (`test_v3_env.py`, `test_upgrade_v3.py`, `test_golden3.py`, v3 in `test_lessons.py` en
+    `test_fights.py`); 93 in totaal;
+  - Java: `CombatObservationV3Test` (golden met geschiedenis, maskers, `ObsHistory`), v3 in `ModelReportTest` en
+    `FightLogTest`; 294 core-tests.
+- **Snelheid:** 2.680 beslissingen per seconde per kern met 4 plekken, tegen 3.750 met 3. De training haalt ongeveer
+  3.250 stappen per seconde (fase B: 3.800). Het hoofdproces is de rem: het kiest voor 3 tegenstanders per arena.
+- **Warme start** (`train/upgrade_v3.py`): de nieuwe ingangen krijgen gewicht 0. Een getest model geeft dezelfde
+  logits en dezelfde keuzes. Alle zes niveaus van 1.39 zijn zo v3-modellen geworden; de lagere niveaus spelen precies
+  als voorheen.
+
+**Gescripte tegenstander in de evaluatie: één per plek.**
+- eval2 gaf één gescripte bot alle tegenstanderplekken. Die bot houdt per rij een toestand bij (de richting waarin hij
+  opzij stapt, zijn schild) en veranderde die bij elke aanroep.
+  - Met 4 plekken gebeurde dat 3 keer per stap in plaats van 2. De gescripte bots werden daardoor anders, niet de
+    simulatie.
+  - Met één kopie per plek (`eval2.per_slot`, ook in de league) geven 3 en 4 plekken hetzelfde: 37,4% tegen 36,5% voor
+    de master in de stad 1v2, over 384 gevechten.
+  - De nulmeting van het plan (45,3%) was met de oude manier gemeten.
+- **Nulmeting, opnieuw** (eval2, teamblok):
+
+  | Scenario | Master 1.39 | Gescript (referentie) |
+  |---|---|---|
+  | Stad 1v2 (192) | 34,9% | 8,3% |
+  | Stad 1v2 (480, 10 seeds) | 42,5% | – |
+  | 2v2 zwaard, model + model tegen 2 gescript | 99,0% | 46,9% |
+  | Bed Wars in teams, idem | 99,0% | 42,7% |
+  | 2v2, model + gescripte teamgenoot | 94,8% | 55,7% |
+
+  - 2v2 tegen gescripte bots wint de master dus al. De echte teamtoets wordt een rechtstreeks teamduel tegen de
+    master (`league2.py --versus-team`).
+  - De stad 1v2 hangt sterk af van de seed (kaart en loot): 192 gevechten schommelen tussen 37% en 49% voor
+    hetzelfde model. Daarom telt voor de eis de meting over 480 gevechten (10 seeds).
+
+**C3 – Training.**
+- **Run `v3c`** (algemeen):
+  - vanaf de omgezette master van 1.39, met maskers, extra spullen en de leraar als gescripte tegenstander;
+  - v1 in 10% van de plekken, zwaard 1,5×;
+  - 25% van de arena's met 4 vechters, 30% met 3;
+  - 3.250 stappen per seconde; gestopt na 12 miljoen stappen.
+
+  | Checkpoint | eval2 | Stad 1v2 (192) | Stad 1v2 (480) | 2v2 zwaard | Bed Wars teams |
+  |---|---|---|---|---|---|
+  | 2M | 84,2% | 44,8% | – | 96,9% | 93,8% |
+  | 4M | 87,1% | 40,9% | – | 96,9% | 93,8% |
+  | 6M | 85,5% | 49,2% | – | 100% | 95,8% |
+  | 8M | 89,6% | 47,4% | 48,7% | 99,0% | 97,9% |
+  | 10M | 86,3% | 37,3% | – | 97,9% | 94,8% |
+  | 12M | – | – | 41,2% | – | – |
+
+  - 8M tegen de master van 1.39:
+    - 58,5% van de beslisten gevechten over de 1v1-mix (601–427, 183 gelijk);
+    - 60,4% in het teamduel (290–190).
+  - In de stad 1v2 kwam het algemene trainen niet verder dan ongeveer 45%: in de mix is dat maar een klein deel van
+    de gevechten.
+- **Run `v3d`** (gericht op 1v2), vanaf `v3c` 8M:
+  - 45% van de arena's met 3 vechters, waarvan 70% 1v2; 20% met 4;
+  - de stad 2×, loot 2,5× en meestal in de stad, het zwaard 1,5× in de arena;
+  - 10 miljoen stappen.
+
+  | Checkpoint | eval2 | Stad 1v2 (192) | Stad 1v2 (480) | Stad 1v2 (960) |
+  |---|---|---|---|---|
+  | 2M | 88,2% | 51,3% | – | – |
+  | 4M | 86,5% | 54,7% | 47,0% | – |
+  | **6M** | **86,2%** | 54,7% | 54,7% | **53,6%** |
+  | 8M | 89,4% | 49,5% | 47,5% | – |
+  | 10M | 89,4% | 50,5% | 50,8% | 50,7% |
+
+  - De master van 1.39 op dezelfde 960 gevechten: 40,6%.
+- **Gekozen: `v3d` 6M.**
+  - Tegen de master van 1.39 (de mix, 120 per scenario, beide kanten):
+    - 1v1: **60,4%** (629–412, 175 gelijk, 1.216 gevechten). Zwaard 83–37, boog 72–49, Bridge 71–49, loot op de eilanden
+      68–52, stad 68–52, Bed Wars 69–51, Build UHC 69–51, sumo 67–33, mace 61–38. De bijl eindigt tussen twee
+      modellen altijd gelijk (127 van 128), zoals in fase B: beide houden hun schild op.
+    - Teamduel: **60,0%** (288–192, 480 gevechten). 2v2 zwaard 83–13, Bridge 53–43, stad 2v2 51–45, stad 1v2 51–45,
+      Bed Wars in teams 50–46.
+  - eval2 86,2%. Per scenario (van 48): zwaard 48, bijl 47, boog 43, Bridge 47, loot 45, sumo 47, stad 1v2 21,
+    Bed Wars drie tegen elkaar 34.
+  - Spullen (zoals in de mod: eten, appels en wind naast het wapen): eten in 9 van 38 gevechten waar het zin had
+    (master 1.39: 17 van 50), wind charges 82/82 (52% nuttig), schild 14% in het bijlduel.
+- **De eisen:**
+  - **Stad 1v2: 53,6% over 960 gevechten, net niet de 55%.** Wel 13 punten boven de master van 1.39 (40,6%) en ruim
+    boven de 11/48 (23%) uit de opdracht.
+    - Dichtstbijzijnde alternatief: het checkpoint met de beste 1v2 dat alle andere eisen haalt.
+    - Verder omhoog zou een andere aanpak vragen (zie hieronder); de tijd ging naar de rest van de fase.
+  - **2v2 tegen twee gescripte bots:** gehaald (zwaard 99%, Bed Wars in teams 92,7%). De master van 1.39 haalde dat ook
+    al (99%), dus "beter dan de master" toont het rechtstreekse teamduel: 60,0%.
+  - **1v1:** eval2 86,2% (≥ 85%) en 60,4% tegen de master van 1.39 (≥ 50%).
+- **Wat de stad 1v2 nog tegenhoudt:**
+  - van de verloren gevechten eindigt ongeveer driekwart zonder dat het model iemand doodde: het vecht met twee
+    tegelijk;
+  - een LSTM (in eigen Java-code) of een langere gerichte training zijn de volgende stappen. Ze passen beter bij fase
+    D, die de simulatie toch opnieuw fit.
+- **League** (`ml/spec/league_v3_fase3c.json`, de 1v1-mix):
+  - Elo: nieuwe master 1581, master 1.39 1518, expert 1380, advanced 1295, intermediate 1233, casual 1110,
+    beginner 1019; gescript 0,8 1061, 1,0 1053, 0,5 1000, 0,3 960; willekeurig 303;
+  - alleen master is vervangen.
+
+**C4 – In de mod (1.40.0).**
+- Familie v3 (`combat_v3.json`, `combat_v3_masks.json`, `combat_v3_ranges.json`, `difficulties_v3.json`, zes
+  `combat_v3_*.onnx`); spec v2 en zijn modellen zijn uit de jar.
+  - De lagere niveaus zijn de omgezette v2-modellen. `CombatModelsTest` controleert dat ze in ONNX Runtime geven wat
+    PyTorch gaf.
+- **`FightState`:** de teamgenoot, de derde vijand en het geheugen.
+  - Het geheugen komt uit het nieuwe `CombatMemory`: het slaan van elke speler (mensen via het netwerk, bots via hun
+    eigen slag), wie wie het laatst raakte, en wanneer een vechter zijn doelwit het laatst zag (bots in elke tick van
+    het gevecht, mensen bij de beslissingen van de gevechtsverslagen).
+  - Daarmee is ook de "wanneer sloeg hij" van de tweede vijand nu echt. Die was in de mod altijd "niet gezien".
+  - Het slaan van bots staat nu ook in de gevechtsverslagen. Daar stond het niet: `FightRecorder` kreeg alleen het
+    slaan van mensen.
+- **`LearnedFight`:** houdt `ObsHistory` bij. Die begint opnieuw na een pauze van meer dan 2 beslissingen.
+- **Gevechtsverslagen:** slaan de toestand van v3 op (19 waarden meer). `train/fights.py` leest ook die van 1.37 tot
+  1.39, en vult de geschiedenis uit de eerdere rijen van dezelfde vechter.
+- **Zelftest:** in plaats van een nieuwe 2v2 is de bestaande test met twee geleerde bots tegen A (1v2) uitgebreid.
+  - Die twee bots zijn teamgenoten. De test eist dat beide modellen hun teamgenoot in hun observatie hebben en de
+    geschiedenis gebruiken, en dat A verliest.
+  - In de CI van `abf0d61`, met de omgezette modellen: 11 van 11 en 14 van 14 beslissingen met een teamgenoot, 10 en
+    12 met geschiedenis.
+  - Een 2v2 met een gescripte teamgenoot van A vraagt een teammodus met bots aan beide kanten. Dat valt buiten deze
+    fase.
+- **Tijd per beslissing** (de zelftests):
+
+  | Zelftest | Beslissingen | Gemiddeld | p99 | Maximum | Maskers |
+  |---|---|---|---|---|---|
+  | bijlduel (omgezette master, `abf0d61`) | 187 | 0,479 ms | 0,755 ms | 5,1 ms | 0,0069 ms |
+  | 1v2 met twee bots (idem) | 280 | 0,453 ms | 0,731 ms | 5,1 ms | 0,0066 ms |
+  | items, Build UHC (idem) | 583 | 0,402 ms | 0,621 ms | 5,1 ms | 0,0049 ms |
+
+  - Ongeveer 0,05 ms meer dan in 1.39. Het netwerk heeft 51 ingangen meer (ruim 13.000 vermenigvuldigingen
+    erbij), en de mod zoekt nu ook teamgenoten en een derde vijand.
+  - Het maximum is weer het laden van het model.
+
+**Gescripte punten.** Geen.

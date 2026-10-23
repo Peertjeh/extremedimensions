@@ -1,0 +1,391 @@
+{
+ "ratings": {
+  "v3d:ckpt_6000192": 1581.0251127607407,
+  "v3b:ckpt_4000032": 1518.4041978414562,
+  "expert:ckpt_30000096": 1380.49321064298,
+  "advanced:ckpt_22000032": 1294.9407222788036,
+  "intermediate:ckpt_18000000": 1232.5846433648362,
+  "casual:ckpt_10000224": 1110.4415598479882,
+  "scripted_0.8": 1061.284873366998,
+  "scripted_1.0": 1053.0424752388308,
+  "beginner:ckpt_6000192": 1018.9143729559729,
+  "scripted_0.5": 1000.0,
+  "scripted_0.3": 959.6157953846179,
+  "random": 303.0970883895322
+ },
+ "results": {
+  "beginner:ckpt_6000192|casual:ckpt_10000224": [
+   57,
+   68,
+   0
+  ],
+  "beginner:ckpt_6000192|advanced:ckpt_22000032": [
+   22,
+   100,
+   0
+  ],
+  "beginner:ckpt_6000192|intermediate:ckpt_18000000": [
+   28,
+   93,
+   0
+  ],
+  "beginner:ckpt_6000192|expert:ckpt_30000096": [
+   14,
+   109,
+   13
+  ],
+  "beginner:ckpt_6000192|scripted_0.3": [
+   57,
+   65,
+   0
+  ],
+  "beginner:ckpt_6000192|scripted_0.5": [
+   53,
+   70,
+   0
+  ],
+  "beginner:ckpt_6000192|v3b:ckpt_4000032": [
+   11,
+   113,
+   0
+  ],
+  "beginner:ckpt_6000192|v3d:ckpt_6000192": [
+   10,
+   113,
+   0
+  ],
+  "beginner:ckpt_6000192|scripted_0.8": [
+   53,
+   68,
+   0
+  ],
+  "beginner:ckpt_6000192|scripted_1.0": [
+   57,
+   65,
+   0
+  ],
+  "casual:ckpt_10000224|intermediate:ckpt_18000000": [
+   40,
+   84,
+   0
+  ],
+  "beginner:ckpt_6000192|random": [
+   127,
+   0,
+   11
+  ],
+  "casual:ckpt_10000224|expert:ckpt_30000096": [
+   19,
+   104,
+   0
+  ],
+  "casual:ckpt_10000224|advanced:ckpt_22000032": [
+   39,
+   82,
+   0
+  ],
+  "casual:ckpt_10000224|v3d:ckpt_6000192": [
+   8,
+   114,
+   0
+  ],
+  "casual:ckpt_10000224|scripted_0.3": [
+   79,
+   44,
+   0
+  ],
+  "casual:ckpt_10000224|v3b:ckpt_4000032": [
+   8,
+   110,
+   13
+  ],
+  "casual:ckpt_10000224|scripted_0.5": [
+   76,
+   46,
+   0
+  ],
+  "casual:ckpt_10000224|scripted_0.8": [
+   78,
+   43,
+   0
+  ],
+  "casual:ckpt_10000224|scripted_1.0": [
+   76,
+   46,
+   0
+  ],
+  "casual:ckpt_10000224|random": [
+   123,
+   1,
+   0
+  ],
+  "intermediate:ckpt_18000000|advanced:ckpt_22000032": [
+   52,
+   69,
+   0
+  ],
+  "intermediate:ckpt_18000000|expert:ckpt_30000096": [
+   19,
+   106,
+   0
+  ],
+  "intermediate:ckpt_18000000|v3d:ckpt_6000192": [
+   16,
+   106,
+   0
+  ],
+  "intermediate:ckpt_18000000|v3b:ckpt_4000032": [
+   10,
+   112,
+   0
+  ],
+  "intermediate:ckpt_18000000|scripted_0.3": [
+   103,
+   20,
+   0
+  ],
+  "intermediate:ckpt_18000000|scripted_0.5": [
+   107,
+   15,
+   0
+  ],
+  "intermediate:ckpt_18000000|scripted_0.8": [
+   97,
+   24,
+   0
+  ],
+  "intermediate:ckpt_18000000|scripted_1.0": [
+   93,
+   29,
+   0
+  ],
+  "intermediate:ckpt_18000000|random": [
+   125,
+   0,
+   0
+  ],
+  "advanced:ckpt_22000032|expert:ckpt_30000096": [
+   41,
+   80,
+   0
+  ],
+  "advanced:ckpt_22000032|v3b:ckpt_4000032": [
+   31,
+   90,
+   0
+  ],
+  "advanced:ckpt_22000032|v3d:ckpt_6000192": [
+   17,
+   106,
+   0
+  ],
+  "advanced:ckpt_22000032|scripted_0.3": [
+   111,
+   11,
+   0
+  ],
+  "advanced:ckpt_22000032|scripted_0.5": [
+   105,
+   16,
+   0
+  ],
+  "advanced:ckpt_22000032|random": [
+   126,
+   0,
+   0
+  ],
+  "advanced:ckpt_22000032|scripted_0.8": [
+   100,
+   21,
+   0
+  ],
+  "advanced:ckpt_22000032|scripted_1.0": [
+   103,
+   22,
+   0
+  ],
+  "expert:ckpt_30000096|scripted_0.3": [
+   113,
+   7,
+   23
+  ],
+  "expert:ckpt_30000096|scripted_0.5": [
+   112,
+   1,
+   28
+  ],
+  "expert:ckpt_30000096|v3b:ckpt_4000032": [
+   23,
+   87,
+   31
+  ],
+  "expert:ckpt_30000096|v3d:ckpt_6000192": [
+   17,
+   94,
+   32
+  ],
+  "expert:ckpt_30000096|scripted_0.8": [
+   110,
+   6,
+   25
+  ],
+  "expert:ckpt_30000096|random": [
+   121,
+   1,
+   0
+  ],
+  "expert:ckpt_30000096|scripted_1.0": [
+   103,
+   12,
+   25
+  ],
+  "v3b:ckpt_4000032|scripted_0.3": [
+   118,
+   6,
+   0
+  ],
+  "v3b:ckpt_4000032|scripted_0.5": [
+   119,
+   3,
+   0
+  ],
+  "v3b:ckpt_4000032|v3d:ckpt_6000192": [
+   45,
+   66,
+   30
+  ],
+  "v3b:ckpt_4000032|scripted_0.8": [
+   116,
+   3,
+   12
+  ],
+  "v3b:ckpt_4000032|random": [
+   125,
+   2,
+   0
+  ],
+  "v3d:ckpt_6000192|scripted_0.3": [
+   122,
+   1,
+   0
+  ],
+  "v3b:ckpt_4000032|scripted_1.0": [
+   115,
+   1,
+   25
+  ],
+  "v3d:ckpt_6000192|scripted_0.5": [
+   119,
+   8,
+   0
+  ],
+  "v3d:ckpt_6000192|scripted_0.8": [
+   119,
+   2,
+   0
+  ],
+  "v3d:ckpt_6000192|random": [
+   123,
+   1,
+   0
+  ],
+  "v3d:ckpt_6000192|scripted_1.0": [
+   123,
+   2,
+   0
+  ],
+  "scripted_0.3|scripted_0.5": [
+   44,
+   78,
+   0
+  ],
+  "scripted_0.3|random": [
+   125,
+   1,
+   0
+  ],
+  "scripted_0.3|scripted_0.8": [
+   36,
+   86,
+   0
+  ],
+  "scripted_0.3|scripted_1.0": [
+   38,
+   82,
+   0
+  ],
+  "scripted_0.5|random": [
+   125,
+   0,
+   0
+  ],
+  "scripted_0.5|scripted_0.8": [
+   33,
+   88,
+   0
+  ],
+  "scripted_0.5|scripted_1.0": [
+   52,
+   69,
+   0
+  ],
+  "scripted_0.8|random": [
+   125,
+   0,
+   0
+  ],
+  "scripted_1.0|random": [
+   123,
+   1,
+   0
+  ],
+  "scripted_0.8|scripted_1.0": [
+   62,
+   59,
+   0
+  ]
+ },
+ "flat_vs_v1": null,
+ "mix": [
+  [
+   "walled",
+   "sword"
+  ],
+  [
+   "walled",
+   "axe"
+  ],
+  [
+   "walled",
+   "bow"
+  ],
+  [
+   "bridge",
+   "bridge"
+  ],
+  [
+   "islands",
+   "loot"
+  ],
+  [
+   "town",
+   "loot"
+  ],
+  [
+   "platform",
+   "sumo"
+  ],
+  [
+   "islands",
+   "bedwars"
+  ],
+  [
+   "hills",
+   "build_uhc"
+  ],
+  [
+   "walled",
+   "mace"
+  ]
+ ]
+}

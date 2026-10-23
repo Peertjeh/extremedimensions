@@ -1,58 +1,63 @@
 {
  "beginner": {
   "checkpoint": "ckpt_6000192",
-  "elo": 1003,
-  "target_elo": 1029,
+  "elo": 1019,
+  "target_elo": 1063,
   "extra_delay": 4,
   "aim_noise": 2.5,
   "turn_cap": 24,
   "sample": true,
-  "model": "combat_v3_beginner.onnx"
+  "model": "combat_v3_beginner.onnx",
+  "kept": true
  },
  "casual": {
   "checkpoint": "ckpt_10000224",
-  "elo": 1089,
-  "target_elo": 1119,
+  "elo": 1110,
+  "target_elo": 1167,
   "extra_delay": 3,
   "aim_noise": 1.8,
   "turn_cap": 30,
   "sample": true,
-  "model": "combat_v3_casual.onnx"
+  "model": "combat_v3_casual.onnx",
+  "kept": true
  },
  "intermediate": {
   "checkpoint": "ckpt_18000000",
-  "elo": 1210,
-  "target_elo": 1210,
+  "elo": 1233,
+  "target_elo": 1270,
   "extra_delay": 2,
   "aim_noise": 1.2,
   "turn_cap": 36,
   "sample": true,
-  "model": "combat_v3_intermediate.onnx"
+  "model": "combat_v3_intermediate.onnx",
+  "kept": true
  },
  "advanced": {
   "checkpoint": "ckpt_22000032",
-  "elo": 1260,
-  "target_elo": 1300,
+  "elo": 1295,
+  "target_elo": 1374,
   "extra_delay": 1,
   "aim_noise": 0.8,
   "turn_cap": 45,
   "sample": false,
-  "model": "combat_v3_advanced.onnx"
+  "model": "combat_v3_advanced.onnx",
+  "kept": true
  },
  "expert": {
   "checkpoint": "ckpt_30000096",
-  "elo": 1371,
-  "target_elo": 1391,
+  "elo": 1380,
+  "target_elo": 1477,
   "extra_delay": 0,
   "aim_noise": 0.5,
   "turn_cap": 54,
   "sample": false,
-  "model": "combat_v3_expert.onnx"
+  "model": "combat_v3_expert.onnx",
+  "kept": true
  },
  "master": {
-  "checkpoint": "v3b:ckpt_4000032",
-  "elo": 1481,
-  "target_elo": 1481,
+  "checkpoint": "v3d:ckpt_6000192",
+  "elo": 1581,
+  "target_elo": 1581,
   "extra_delay": 0,
   "aim_noise": 0.2,
   "turn_cap": 60,

@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.40.0
+
+### Added
+* **The learned fight knows its team.** Spec v3 (`ml/spec/combat_v3.json`) keeps the 118 values of v2 and adds the
+  nearest team mate (where it is, its health when seen, how far it is from the bot's target), a third enemy, memory
+  (since the bot last saw its target, since it was hurt, since it hurt its target) and the last decisions (16 values
+  of 1 and 3 decisions ago). The simulation now has up to four fighters per arena, with two against two, a bot with
+  one or two team mates, four against each other, a shared team reward, and fights that go on until a team is left.
+* **A new master model**, trained on all of that (Elo 1581 against 1518 for the master of 1.39). Against
+  the master of 1.39 in the simulation it wins 60.4% of 1,216 fights over the 1v1 mix and 60.0% of 480 team fights
+  (two against two with the sword 83 to 13). Alone against two in the town it wins 53.6% of 960 fights (the master
+  of 1.39: 40.6%), and 86.2% against the scripted bot over the eight fixed scenarios. The other levels play as before:
+  their v2 models became v3 models with the new inputs at zero (`ml/train/upgrade_v3.py`).
+* `/battlehub bots inspect <bot>` shows how many of a bot's model decisions had a team mate and a history.
+* Training (`battlehub/ml`): four slots and team modes in `pvp_sim2`, `eval2.py`'s team block (the town 1v2 over 192
+  fights, 2v2 with the sword and Bed Wars in teams, a scripted team mate), `league2.py --versus-team`,
+  `selfplay2.py --spec 3`, `--three`, `--four`, `--mode-weight`, `--terrain-weight`, golden files, masks, ranges and
+  lessons for v3 (`tools/make_golden3.py`), and fight logs read with v3's history (`train/fights.py`).
+
+### Changed
+* Spec v2 left the mod: its models, level table and files are no longer in the jar (they stay in `ml/` as history).
+* The fight logs store spec v3's state; logs of 1.37 to 1.39 still load (no team mate, nothing remembered).
+* A decision of the model costs about 0.4 to 0.5 ms in the self-tests (1.39: 0.35 to 0.44 ms): 51 more inputs, and
+  the bot looks for team mates and a third enemy.
+
+### Fixed
+* The second enemy's last swing was never known in the mod (the model always saw "not seen"); the swings of every
+  player are now remembered, a bot's own included (`bot/CombatMemory`).
+* A bot's swings were missing from the fight logs.
+* The evaluation gave one scripted bot all opponent slots; its strafe and shield state changed with every call. Each
+  slot now has its own (`eval2.per_slot`).
+* The server stop self-test queued a player who was not yet back in the lobby after the world reset.
+
 ## 1.39.0
 
 ### Changed
