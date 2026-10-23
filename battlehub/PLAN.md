@@ -1841,6 +1841,95 @@ bruggen, rollen) blijven gescript.
 
 **Gescripte punten.** Geen.
 
+### Fase D – Een simulatie die dichter bij de game ligt (plan)
+
+**Doel.** Wat het model in de game ziet en meemaakt, ziet en maakt het ook mee in de simulatie: dezelfde waarden, dezelfde
+natuurkunde, dezelfde soort situaties en tegenstanders die zich als mensen gedragen. De gevechtsverslagen zijn de maat.
+
+**Nulmeting** (`ml/data/export-20261023-191417.zip`: 11 gevechten van 1.40.0, 34.706 beslissingen, waarvan 10.778 van
+mensen; Bridge Chaos 1v1v1v1, Hunger Games en een mace-duel; de bots waren intermediate):
+- **Snelheden van mensen.** De verslagen slaan de snelheid van een mens op als zijn verplaatsing per tick. Bij bots, en
+  in de simulatie, is het de snelheid van de game ná de wrijving (op de grond 0,546 keer de verplaatsing). Een
+  sprintende mens loopt daardoor 74% van wat de simulatie uit zijn opgeslagen snelheid voorspelt; bij bots 100%.
+  - Het model zelf ziet de snelheid van zijn doelwit uit `getDeltaMovement()`. Op de server is dat voor een echte speler
+    niet zijn beweging (die komt van zijn client): het model ziet mensen waarschijnlijk vrijwel stilstaan.
+- **Beweging over één beslissing** (op de grond, geen treffer, geen terrein in de buurt): de fout van de voorspelling
+  is bij bots mediaan 0,030 blok, bij mensen 0,104 (vooral het verschil hierboven).
+- **Treffers met het zwaard of de bijl:** de afstand van oog tot hitbox is bij bots en mensen gelijk (mediaan 1,8 en
+  1,6; p90 2,7 en 2,9). Geen teken van een voordeel door ping. De schade is mediaan precies de formule van de
+  simulatie (vóór harnas), voor bots en voor mensen.
+  - De bots sloegen met een lading van mediaan 0,12 (mensen 0,60): intermediate klikt veel te vroeg.
+- **Wat het model nooit zag:** in 19,0% van de beslissingen van het model in de game valt minstens één waarde buiten wat
+  de simulatie in de training gaf (`combat_v3_ranges.json`). Het meest: de sprongkracht (9,1%), de schade van het wapen
+  (7,2% bij beide), de grootte en de snelheid. Dat zijn de Chaos-events, die de simulatie niet zo vaak of zo sterk
+  geeft.
+- **Hoe vaak het model stuurt:** in 19% van de beslissingen van bots. In 67% had de gescripte mind het gevecht niet aan
+  het model gegeven (doel, navigatie), in 9% "recover" en in 4% hield de randbeveiliging het model tegen. Dat is het
+  gescripte deel; het blijft buiten deze fase.
+- **De verslagen missen:** wat voor treffer het was (zwaard, pijl, iets anders) en, in Hunger Games, de teams: door de
+  wachttijd aan het begin staat iedereen in de kop als team 0.
+
+**Eisen.**
+- **Natuurkunde** op verslagen die niet voor het fitten gebruikt zijn: de fout van de simulatie over één beslissing,
+  - beweging: mediaan ≤ 0,03 blok, voor bots én mensen;
+  - knockback (de snelheid na een treffer): de helft van de nulmeting, of al binnen 0,03;
+  - schade per treffer: mediaan precies (± 2%).
+- **Dekking:** de beslissingen van het model in de game met een waarde buiten de training: van 19,0% naar ≤ 5%.
+- **Menselijke tegenstander:** een policy die nadoet wat mensen deden. Op gevechten die hij niet zag voorspelt hij de
+  keuze van de mens per kop beter dan de master van 1.40. Zijn gedrag in de simulatie ligt binnen 25% van dat van de
+  mensen in de verslagen: aandeel sprinten, wissels van strafe per seconde, sprongen per seconde, klikken per seconde,
+  lading bij een treffer, afstand tot het doelwit.
+- **Het model:**
+  - in de gefitte simulatie minstens 55% tegen de master van 1.40 (1v1-mix en teams);
+  - tegen de menselijke tegenstander vaker winnen dan de master van 1.40;
+  - geen achteruitgang: eval2 minstens 85%, en minstens 50% tegen de master van 1.40 in de simulatie van nu.
+- **Tijd per beslissing:** onder 1 ms gemiddeld in de zelftests.
+
+**D1 – Meten, en de bekende verschillen aan de bron.**
+- `ml/train/simfit.py`: zet de simulatie op de opgeslagen toestand van een vechter, speelt zijn opgeslagen actie twee
+  ticks af en vergelijkt met zijn volgende rij.
+  - Voor beweging, sprong, knockback (na een treffer), schade en bereik.
+  - Per soort vechter (bot, mens), per modus, met een vaste verdeling in fit- en testgevechten.
+  - Daarnaast de dekking (per groep observaties) en het gedrag (de getallen van de eis hierboven).
+  - Schrijft een rapport (JSON en tekst); de cijfers komen hier in het plan.
+- **In de mod:**
+  - de snelheid van een mens: uit zijn posities, omgerekend naar die van de game na de wrijving (zoals bij bots en in de
+    simulatie), voor het model (`FightState`, `Perception`) en in de verslagen;
+  - een treffer krijgt zijn soort in het verslag (`melee`, `arrow`, `other`);
+  - de teams in de kop zijn die van na de wachttijd (Hunger Games).
+- `train/fights.py` rekent de snelheden van mensen in verslagen van 1.37 tot 1.40 om, zodat oude en nieuwe verslagen
+  hetzelfde zeggen.
+
+**D2 – De simulatie fitten.**
+- **Natuurkunde:** waar `simfit` een verschil laat zien, krijgt de simulatie de waarde van de game (een constante, een
+  regel). Elke wijziging met een test, en de golden-bestanden opnieuw.
+- **Chaos en andere effecten:** de verdeling van sprongkracht, grootte, snelheid, zwaartekracht en wapenschade in de
+  verslagen wordt de verdeling in een deel van de arena's (`Scenario`). De ranges worden opnieuw gemeten.
+- **Menselijke tegenstander** (`train/people.py`):
+  - behavior cloning op de rijen van mensen die echt vochten (doelwit binnen 8 blokken en in zicht);
+  - vanaf de master van 1.40 met een rem naar die master, zodat hij met weinig data niet ontspoort;
+  - als tegenstander in de pool (ongeveer 15% van de gevechten) en in een nieuw blok van eval2.
+  - Met 18 minuten van mensen wordt dit een ruwe schets. Hij wordt beter met elke export.
+
+**D3 – Trainen.**
+- Warme start vanaf de master van 1.40, MaskablePPO in de gefitte simulatie, ongeveer 12 tot 20 miljoen stappen.
+- Elke 2 miljoen stappen: eval2 (met het blok tegen de menselijke tegenstander) en, voor de kandidaten, `--versus`
+  tegen de master van 1.40 in de gefitte en in de huidige simulatie.
+- League; master (en zo nodig expert) worden vervangen.
+
+**D4 – In de mod.**
+- De nieuwe master en `difficulties_v3.json`; de spec blijft v3 (de observaties veranderen niet, alleen wat erin komt).
+- Zelftest: in het bijlduel ziet het model de snelheid van A (de testspeler loopt) zoals de simulatie die geeft, en het
+  verslag heeft de soort van elke treffer.
+- Tijd per beslissing, docs, versie 1.41.0, CI groen.
+
+**Niet in deze fase.**
+- **De boog:** de verslagen hebben geen schoten, alleen treffers; te weinig om het schieten te fitten.
+- **Ping:** de treffers van mensen komen van dezelfde afstand als die van bots, dus de simulatie krijgt geen vertraging.
+- **Hoe vaak het model mag sturen:** dat beslist de gescripte mind (zie de nulmeting).
+
+**Gescripte punten.** Geen.
+
 ## Versie 1.40.1 – Bots lopen weer over halve slabs (The Bridge)
 
 **Feedback.** In The Bridge 1v1v1v1 waren de bots in 1.36.0 beter. Vooral het pathfinding is in 1.40.0 minder, en
