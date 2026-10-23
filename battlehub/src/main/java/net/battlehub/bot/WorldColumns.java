@@ -12,7 +12,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * The world's blocks as spec v2's terrain columns ({@link TerrainRays}): the top of the highest block with a collision
+ * The world's blocks as the spec's terrain columns ({@link TerrainRays}): the top of the highest block with a collision
  * shape from scan_from above the feet down to depth below them (NaN: none). One per decision: columns asked for twice
  * (the rays cross) are looked at once.
  */

@@ -1,7 +1,7 @@
 {
  "name": "battlehub-combat-lessons",
  "version": 1,
- "doc": "What a learned bot should practise in the simulation, from how its fights in the mod went. The mod (core/ml/Lessons, bot/ModelReports) counts per fight why the bot did not do what its model chose (reasons) and which observation values were new to the model (features, against combat_v*_ranges.json), weighs each lesson by the share of the fight it explains, tells the operators the biggest ones and writes them with their focus to config/battlehub/ml_feedback.json. train/focus.py reads that file and multiplies the scenario weights of ml/pvp_sim2 (Scenario) by the focus of each lesson: terrains, families and modes3 by key, three and chaos as numbers. A lesson with items needs the training with items (selfplay2.py --items). Every observation of every spec belongs to exactly one feature group (tests: ml/tests/test_lessons.py, LessonsTest).",
+ "doc": "What a learned bot should practise in the simulation, from how its fights in the mod went. The mod (core/ml/Lessons, bot/ModelReports) counts per fight why the bot did not do what its model chose (reasons) and which observation values were new to the model (features, against combat_v*_ranges.json), weighs each lesson by the share of the fight it explains, tells the operators the biggest ones and writes them with their focus to config/battlehub/ml_feedback.json. train/focus.py reads that file and multiplies the scenario weights of ml/pvp_sim2 (Scenario) by the focus of each lesson: terrains, families and modes3 by key, three and chaos as numbers. A lesson with items needs the training with items (selfplay2.py --items). Every observation of every spec belongs to exactly one feature group (tests: ml/tests/test_lessons.py, LessonsTest); an observation of an earlier decision (spec v3's name@ago) belongs to the group of the observation it was. modes4 and four (spec v3's fights with four fighters) work like modes3 and three.",
  "reasons": {
   "edge": "edges",
   "jump": "edges",
@@ -31,7 +31,9 @@
                                                       "self_shield", "pearl_cooldown", "wind_cooldown", "shield_cooldown", "self_use",
                                                       "self_blocking", "opp_eating", "opp_holds_food", "opp_holds_throwable"]},
   {"lesson": "projectiles", "prefixes": ["threat_"], "names": ["opp_draw", "opp_holds_bow"]},
-  {"lesson": "crowds", "prefixes": ["e2_"], "names": ["enemies_near"]},
+  {"lesson": "crowds", "prefixes": ["e2_", "e3_"], "names": ["enemies_near"]},
+  {"lesson": "team", "prefixes": ["ally_"], "names": ["allies_near"]},
+  {"lesson": "memory", "names": ["opp_unseen", "self_since_hit", "opp_since_hit"]},
   {"lesson": "terrain", "prefixes": ["void_", "drop_", "edge_", "step_", "wall_"], "names": ["opp_drop_behind", "opp_void_behind"]}
  ],
  "lessons": {
@@ -51,7 +53,9 @@
   "kits": {"focus": {"chaos": 2.0, "families": {"loot": 1.5, "bedwars": 1.5}}},
   "effects": {"focus": {"chaos": 3.0}},
   "items": {"focus": {"families": {"loot": 1.5, "bedwars": 1.5}}},
-  "crowds": {"focus": {"three": 2.0, "modes3": {"ffa": 1.5, "1v2": 1.5}}},
+  "crowds": {"focus": {"three": 2.0, "modes3": {"ffa": 1.5, "1v2": 1.5}, "four": 1.5, "modes4": {"ffa4": 1.5}}},
+  "team": {"focus": {"four": 2.0, "modes4": {"2v2": 1.5, "3v1": 1.5}, "modes3": {"2v1": 2.0}}},
+  "memory": {"focus": {"terrains": {"town": 1.5, "hills": 1.5}}},
   "terrain": {"focus": {"terrains": {"town": 1.5, "hills": 1.5, "islands": 1.5, "bridge": 1.5}}}
  }
 }

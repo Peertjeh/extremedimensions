@@ -48,6 +48,7 @@ final class BotActions {
 	 * directly as well.
 	 */
 	static void swing(LivingEntity e) {
+		if (e instanceof net.minecraft.server.level.ServerPlayer p) CombatMemory.swung(p);
 		if (!swingLooked) {
 			swingLooked = true;
 			for (Method m : LivingEntity.class.getDeclaredMethods()) {

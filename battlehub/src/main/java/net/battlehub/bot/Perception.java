@@ -62,6 +62,7 @@ final class Perception {
 					|| Senses.inView(eye, bot.getYRot(), bot.getXRot(), v(p.position().add(0, 0.9, 0)))
 					|| Senses.inView(eye, bot.getYRot(), bot.getXRot(), v(p.position()));
 			boolean seen = !hidden && onScreen && (glowing || bot.hasLineOfSight(p));
+			if (seen) CombatMemory.saw(bot.getUUID(), id);
 			Vec3 before = lastPositions.put(id, p.position());
 			double speed = before == null ? 0 : Math.hypot(p.getX() - before.x, p.getZ() - before.z);
 			boolean heard = Senses.heard(d, p.isShiftKeyDown(), speed, hitAgo.applyAsInt(id));

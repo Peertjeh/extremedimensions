@@ -77,7 +77,7 @@ public final class SelfTest {
 			ConfigManager.config().weekly.enabled = false;
 			// Quest, pass and achievement coins would show up in the coin checks of other tests
 			net.battlehub.progression.Retention.pausedForTest = true;
-			// The bot tests check the scripted fight; the learned model has its own tests (BotTests.learnedV2Sword and on)
+			// The bot tests check the scripted fight; the learned model has its own tests (BotTests.learnedV3Sword and on)
 			ConfigManager.config().bots.learnedCombat = false;
 		});
 		HubWorldTests.all(server, s);

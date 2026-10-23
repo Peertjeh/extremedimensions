@@ -24,11 +24,12 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * The combat state of spec v2 (core.ml.CombatState, the simulation's state) of one fighter against its target, from
- * the world: its kit and effects, what it carries, cooldowns and what it holds; what it saw of its target; the
- * nearest other enemy it sees or hears and a projectile coming at it; the ground round it and behind its target. The
- * learned fight decides on it (LearnedFight), the fight logs record it (FightRecorder): the same for a bot as for a
- * person.
+ * The combat state of spec v3 (core.ml.CombatState, the simulation's state) of one fighter against its target, from
+ * the world: its kit and effects, what it carries, cooldowns and what it holds; what it saw of its target; the two
+ * nearest other enemies it sees or hears, its nearest team mate and a projectile coming at it; what it remembers
+ * (CombatMemory: since it saw its target, since it was hurt, since it hurt its target); the ground round it and behind
+ * its target. The learned fight decides on it (LearnedFight), the fight logs record it (FightRecorder): the same for a
+ * bot as for a person.
  */
 final class FightState {
 	private FightState() {}
@@ -89,6 +90,10 @@ final class FightState {
 		st.oppScale = opp.getScale();
 		st.damageOn = m.mode != GameMode.SUMO && m.mode != GameMode.BOXING && st.oppResistance < 5 && st.selfResistance < 5;
 		others(st, spec, m, self, opp);
+		allies(st, spec, m, self, opp);
+		st.oppUnseen = o.visible() ? 0 : CombatMemory.unseen(self.getUUID(), opp.getUUID());
+		st.selfSinceHit = CombatMemory.sinceHurt(self.getUUID());
+		st.oppSinceHit = CombatMemory.sinceHit(self.getUUID(), opp.getUUID());
 		threat(st, spec, m, self);
 		WorldColumns cols = new WorldColumns(self.level(), spec);
 		double[][] rays = TerrainRays.rays(spec, cols, self.getX(), self.getY(), self.getZ(), self.getYRot());
@@ -158,12 +163,12 @@ final class FightState {
 		st.selfBlocking = p.isBlocking();
 	}
 
-	/** The nearest other enemy it sees or hears, and how many enemies are near. */
+	/** The two nearest other enemies it sees or hears (when it sees them: when they swung), and how many enemies are near. */
 	private static void others(CombatState st, CombatSpec spec, Match m, ServerPlayer self, ServerPlayer target) {
 		V3 eye = new V3(self.getX(), self.getEyeY(), self.getZ());
-		ServerPlayer best = null;
-		double bestD = Double.MAX_VALUE;
-		boolean bestSeen = false;
+		ServerPlayer best = null, next = null;
+		double bestD = Double.MAX_VALUE, nextD = Double.MAX_VALUE;
+		boolean bestSeen = false, nextSeen = false;
 		int near = 0;
 		for (UUID id : m.participants()) {
 			if (id.equals(self.getUUID()) || !m.inPlay(id) || !m.isEnemy(self.getUUID(), id)) continue;
@@ -176,9 +181,16 @@ final class FightState {
 			if (d <= spec.nearEnemies) near++;
 			if (id.equals(target.getUUID())) continue;
 			if (d < bestD) {
+				next = best;
+				nextD = bestD;
+				nextSeen = bestSeen;
 				best = p;
 				bestD = d;
 				bestSeen = visible;
+			} else if (d < nextD) {
+				next = p;
+				nextD = d;
+				nextSeen = visible;
 			}
 		}
 		st.enemiesNear = near;
@@ -189,9 +201,49 @@ final class FightState {
 			st.e2Z = best.getZ();
 			st.e2Yaw = best.getYRot();
 			st.e2Visible = bestSeen;
-			st.e2SinceSwing = 100;
+			st.e2SinceSwing = CombatMemory.sinceSwing(best.getUUID());
 			st.e2HoldsBow = best.getMainHandItem().is(Items.BOW);
 		}
+		if (next != null) {
+			st.e3Present = true;
+			st.e3X = next.getX();
+			st.e3Y = next.getY();
+			st.e3Z = next.getZ();
+			st.e3Yaw = next.getYRot();
+			st.e3Visible = nextSeen;
+			st.e3SinceSwing = CombatMemory.sinceSwing(next.getUUID());
+			st.e3HoldsBow = next.getMainHandItem().is(Items.BOW);
+		}
+	}
+
+	/**
+	 * Its nearest team mate (always known where it is: team mates' name tags show through walls; its health only when
+	 * seen) and how many are near.
+	 */
+	private static void allies(CombatState st, CombatSpec spec, Match m, ServerPlayer self, ServerPlayer target) {
+		ServerPlayer best = null;
+		double bestD = Double.MAX_VALUE;
+		int near = 0;
+		for (UUID id : m.participants()) {
+			if (id.equals(self.getUUID()) || !m.inPlay(id) || m.isEnemy(self.getUUID(), id)) continue;
+			ServerPlayer p = m.player(id);
+			if (p == null || p.level() != self.level() || p.isSpectator()) continue;
+			double d = Math.hypot(p.getX() - self.getX(), p.getZ() - self.getZ());
+			if (d <= spec.nearAllies) near++;
+			if (d < bestD) {
+				best = p;
+				bestD = d;
+			}
+		}
+		st.alliesNear = near;
+		if (best == null) return;
+		st.allyPresent = true;
+		st.allyX = best.getX();
+		st.allyY = best.getY();
+		st.allyZ = best.getZ();
+		st.allyVisible = sees(self, new V3(self.getX(), self.getEyeY(), self.getZ()), best);
+		st.allyHealth = best.getHealth();
+		st.allyMaxHealth = best.getMaxHealth();
 	}
 
 	/** On screen (feet, chest or eyes in view), not invisible, nothing in between. */

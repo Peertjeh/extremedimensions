@@ -2,7 +2,8 @@ package net.battlehub.core.ml;
 
 /**
  * What a bot knows at one moment, as the melee model needs it: the same fields as a CombatState in the Python
- * simulation (ml/pvp_sim/obs.py, and for spec v2 ml/pvp_sim2/obs.py; the v2 fields' defaults leave v1 as it was). Minecraft's angles: yaw 0 looks along +z, 90 along -x; pitch positive looks down.
+ * simulation (ml/pvp_sim/obs.py, and for specs v2 and v3 ml/pvp_sim2/obs.py; the defaults of the newer fields leave the
+ * older specs as they were). Minecraft's angles: yaw 0 looks along +z, 90 along -x; pitch positive looks down.
  * The opponent's position is where the bot last knew it; what it can only see (velocity, health, ground, sprint,
  * hurt, swing) may be filled in anyway, the observation masks it when {@code oppVisible} is false.
  * Rays: index 0 straight ahead, then every 45 degrees to the left (counter-clockwise seen from above).
@@ -69,6 +70,18 @@ public final class CombatState {
 	public final double[] drops = new double[8];
 	public final double[] steps = new double[8];
 
+	// ---- spec v3 ----
+	/** The nearest team mate, if any (always known where it is; its health only when seen), and team mates near. */
+	public boolean allyPresent, allyVisible;
+	public double allyX, allyY, allyZ, allyHealth = 20, allyMaxHealth = 20, alliesNear;
+
+	/** The next nearest enemy after the second, if any. */
+	public boolean e3Present, e3Visible, e3HoldsBow;
+	public double e3X, e3Y, e3Z, e3Yaw, e3SinceSwing = 100;
+
+	/** Memory, in ticks: since it last saw its target, since an enemy last hurt it, since it last hurt its target. */
+	public double oppUnseen = 100, selfSinceHit = 100, oppSinceHit = 100;
+
 	public CombatState() {
 		java.util.Arrays.fill(edges, 4.0);
 		java.util.Arrays.fill(walls, 4.0);
@@ -97,10 +110,15 @@ public final class CombatState {
 			"e2_since_swing", "e2_holds_bow", "threat_present", "threat_x", "threat_y", "threat_z",
 			"threat_vx", "threat_vy", "threat_vz", "damage_on", "enemies_near", "self_below",
 			"opp_below", "opp_drop_behind", "opp_void_behind",
+			"ally_present", "ally_x", "ally_y", "ally_z", "ally_visible", "ally_health", "ally_max_health",
+			"e3_present", "e3_x", "e3_y", "e3_z", "e3_yaw", "e3_visible", "e3_since_swing", "e3_holds_bow",
+			"allies_near", "opp_unseen", "self_since_hit", "opp_since_hit",
 			"voids", "drops", "steps", "walls");
 	public static final java.util.List<String> RAYS = java.util.List.of("voids", "drops", "steps", "walls");
+	/** Where the rays start in {@link #values()}: after one value per other key. */
+	public static final int RAYS_AT = 112;
 	/** How many values {@link #values()} gives: one per key, eight per ray. */
-	public static final int SIZE = 93 + 4 * 8;
+	public static final int SIZE = RAYS_AT + 4 * 8;
 
 	/** The state as numbers in {@link #KEYS} order (true 1, false 0; each ray its eight values). */
 	public double[] values() {
@@ -198,14 +216,17 @@ public final class CombatState {
 		v[90] = oppBelow;
 		v[91] = oppDropBehind;
 		v[92] = oppVoidBehind;
-		System.arraycopy(voids, 0, v, 93, 8);
-		System.arraycopy(drops, 0, v, 93 + 8, 8);
-		System.arraycopy(steps, 0, v, 93 + 16, 8);
-		System.arraycopy(walls, 0, v, 93 + 24, 8);
+		double[] v3 = {allyPresent ? 1 : 0, allyX, allyY, allyZ, allyVisible ? 1 : 0, allyHealth, allyMaxHealth, e3Present ? 1 : 0, e3X, e3Y, e3Z,
+				e3Yaw, e3Visible ? 1 : 0, e3SinceSwing, e3HoldsBow ? 1 : 0, alliesNear, oppUnseen, selfSinceHit, oppSinceHit};
+		System.arraycopy(v3, 0, v, 93, v3.length);
+		System.arraycopy(voids, 0, v, RAYS_AT, 8);
+		System.arraycopy(drops, 0, v, RAYS_AT + 8, 8);
+		System.arraycopy(steps, 0, v, RAYS_AT + 16, 8);
+		System.arraycopy(walls, 0, v, RAYS_AT + 24, 8);
 		return v;
 	}
 
-	/** A state from {@link #values()}. */
+	/** A state from {@link #values()}; the {@code SIZE} values of 1.37 to 1.39 (spec v2's, 125) are read as well. */
 	public static CombatState of(double[] v) {
 		CombatState s = new CombatState();
 		s.selfX = v[0];
@@ -301,10 +322,33 @@ public final class CombatState {
 		s.oppBelow = v[90];
 		s.oppDropBehind = v[91];
 		s.oppVoidBehind = v[92];
-		System.arraycopy(v, 93, s.voids, 0, 8);
-		System.arraycopy(v, 93 + 8, s.drops, 0, 8);
-		System.arraycopy(v, 93 + 16, s.steps, 0, 8);
-		System.arraycopy(v, 93 + 24, s.walls, 0, 8);
+		int rays = 93;
+		if (v.length >= SIZE) {
+			s.allyPresent = v[93] > 0.5;
+			s.allyX = v[94];
+			s.allyY = v[95];
+			s.allyZ = v[96];
+			s.allyVisible = v[97] > 0.5;
+			s.allyHealth = v[98];
+			s.allyMaxHealth = v[99];
+			s.e3Present = v[100] > 0.5;
+			s.e3X = v[101];
+			s.e3Y = v[102];
+			s.e3Z = v[103];
+			s.e3Yaw = v[104];
+			s.e3Visible = v[105] > 0.5;
+			s.e3SinceSwing = v[106];
+			s.e3HoldsBow = v[107] > 0.5;
+			s.alliesNear = v[108];
+			s.oppUnseen = v[109];
+			s.selfSinceHit = v[110];
+			s.oppSinceHit = v[111];
+			rays = RAYS_AT;
+		}
+		System.arraycopy(v, rays, s.voids, 0, 8);
+		System.arraycopy(v, rays + 8, s.drops, 0, 8);
+		System.arraycopy(v, rays + 16, s.steps, 0, 8);
+		System.arraycopy(v, rays + 24, s.walls, 0, 8);
 		return s;
 	}
 }

@@ -269,6 +269,11 @@ public final class CombatMind {
 		this.melee = controller;
 	}
 
+	/** The controller that may fight for this mind, or null. */
+	public MeleeController melee() {
+		return melee;
+	}
+
 	/** Ticks the learned controller steered (for the self-test and /bots inspect). */
 	public int learnedTicks() {
 		return learnedTicks;

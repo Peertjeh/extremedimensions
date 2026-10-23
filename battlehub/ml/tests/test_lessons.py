@@ -9,7 +9,7 @@ import pytest
 
 from pvp_sim.spec import SPEC
 from pvp_sim2.env import Scenario
-from pvp_sim2.spec import SPEC2
+from pvp_sim2.spec import SPEC2, SPEC3
 from train import focus
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,6 +19,7 @@ REASONS = ["edge", "jump", "air", "stuck", "recover", "evade", "heal", "shoot", 
 
 
 def claims(name):
+    name = name.split("@")[0]   # an observation of an earlier decision: the group of the observation it was
     n = 0
     for g in TABLE["features"]:
         n += name in g.get("names", [])
@@ -26,7 +27,7 @@ def claims(name):
     return n
 
 
-@pytest.mark.parametrize("spec", [SPEC, SPEC2], ids=["v1", "v2"])
+@pytest.mark.parametrize("spec", [SPEC, SPEC2, SPEC3], ids=["v1", "v2", "v3"])
 def test_every_observation_belongs_to_exactly_one_lesson(spec):
     for name in spec.obs_names:
         assert claims(name) == 1, name
@@ -49,7 +50,7 @@ def test_every_focus_names_what_the_simulation_has():
                 assert key in focus.NUMBERS, (lesson, key)
 
 
-@pytest.mark.parametrize("spec,v", [(SPEC, "v1"), (SPEC2, "v2")])
+@pytest.mark.parametrize("spec,v", [(SPEC, "v1"), (SPEC2, "v2"), (SPEC3, "v3")])
 def test_the_ranges_fit_their_spec(spec, v):
     with open(os.path.join(HERE, "spec", "combat_%s_ranges.json" % v)) as f:
         d = json.load(f)

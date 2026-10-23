@@ -18,15 +18,17 @@ import net.battlehub.core.ml.CombatSpec;
 import net.battlehub.core.ml.DecisionTimer;
 
 /**
- * The learned combat models shipped in {@code assets/battlehub/ml}: spec v2 (every melee mode; combat_v2.json,
- * difficulties_v2.json, combat_v2_*.onnx; model v1 of 1.33, the sword duel only, left the mod in 1.39). Each is a spec, a level table and one ONNX model per level, run with ONNX Runtime, loaded the first
- * time a bot needs it. Anything wrong (ONNX Runtime missing on this platform, a model made for another spec, files not
- * shipped) is logged once and the bots fight the scripted way (or with v1) instead.
+ * The learned combat models shipped in {@code assets/battlehub/ml}: spec v3 (every melee mode, with team mates, a third
+ * enemy, memory and the history; combat_v3.json, difficulties_v3.json, combat_v3_*.onnx). Model v1 of 1.33 (the sword
+ * duel only) left the mod in 1.39, spec v2 in 1.40 (its levels became v3 models that play the same). The family is a
+ * spec, a level table and one ONNX model per level, run with ONNX Runtime, loaded the first time a bot needs it.
+ * Anything wrong (ONNX Runtime missing on this platform, a model made for another spec, files not shipped) is logged
+ * once and the bots fight the scripted way instead.
  */
 final class CombatModels {
 	private CombatModels() {}
 
-	static final Family V2 = new Family("combat_v2.json", "difficulties_v2.json");
+	static final Family V3 = new Family("combat_v3.json", "difficulties_v3.json");
 
 	/** One model: obs (1, obs_dim) -> logits (1, all heads' choices). */
 	static final class Model {
@@ -109,7 +111,7 @@ final class CombatModels {
 			return masks;
 		}
 
-		/** "v1" or "v2". */
+		/** "v3" (the spec's version, as the model reports name it). */
 		String id() {
 			return specFile.replace("combat_", "").replace(".json", "");
 		}

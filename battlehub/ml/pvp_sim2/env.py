@@ -1,4 +1,4 @@
-"""The v2 environments: n arenas with 2 or 3 fighters each, on the maps of the modes, with their kits and items.
+"""The v2/v3 environments: n arenas with 2 to 4 fighters each, on the maps of the modes, with their kits and items.
 
 Every decision lasts spec.decision_ticks ticks: movement, jump, the hand and the right button are held, the click
 happens on the first tick, the turn is spread over the ticks.
@@ -6,14 +6,22 @@ happens on the first tick, the turn is spread over the ticks.
 What a fighter knows follows the mod's senses, for every other fighter: visible within the view half-angle (head,
 middle or feet) with nothing of the terrain in between; otherwise known where it was last located (seen, heard within
 12 blocks while it moved, or just hit me). Its target is the nearest enemy it knows of (it sticks to it unless another
-is clearly nearer, as the mod's targeting does); the next nearest is the second enemy of the observation.
+is clearly nearer, as the mod's targeting does); the next nearest is the second enemy of the observation, the one
+after that the third (v3). Team mates are always known where they are (their name tags show through walls); the
+nearest is the team mate of the observation (v3).
 
 Per episode a scenario is drawn (Scenario): the map (terrain.GENERATORS), the kits (kits.FAMILIES) with now and then
-Chaos' effects, and who fights: 1v1, the learner against two, three against each other, or the learner with a team
-mate against one. `breadth` (0..1) widens it from flat duels to everything, for a curriculum. Also per fighter: a
-perception delay of the others (0..2 ticks), aim noise and a turn limit.
+Chaos' effects, and who fights (TEAMS): 1v1, the learner against two, three against each other, the learner with a
+team mate against one, and with four fighters (k=4) two against two, the learner in a team of three against one, or
+four against each other. Team mates start close together. `breadth` (0..1) widens it from flat duels to everything,
+for a curriculum. Also per fighter: a perception delay of the others (0..2 ticks), aim noise and a turn limit.
 
-Slot 0 is the learner; an arena's episode ends when it dies, when its enemies are all dead, or at the time limit.
+Slot 0 is the learner; an arena's episode ends when its team is dead (with team mates it goes on after the learner's
+death: a dead fighter's choices do nothing and its masks allow only "nothing"), when its enemies are all dead, or at
+the time limit. Rewards are shared within a team (Rewards2.team_spirit).
+
+With a history in the spec (v3), the observations of earlier decisions come from the observations this Batch2 gave
+before (the same fighter); at the start of a fight they are the values now.
 """
 from dataclasses import dataclass, field
 
@@ -32,6 +40,10 @@ from .terrain import generate
 HEARING = 12.0
 HIT_MEMORY = 30
 HISTORY = 6
+MEMORY_CAP = 1000
+# who is in which team, per mode (slot 0 is the learner); the number of fighters is the length
+TEAMS = {"1v1": [0, 1], "1v2": [0, 1, 1], "ffa": [0, 1, 2], "2v1": [0, 1, 0],
+         "2v2": [0, 1, 0, 1], "3v1": [0, 1, 0, 0], "ffa4": [0, 1, 2, 3]}
 
 
 @dataclass
@@ -48,6 +60,7 @@ class Rewards2:
     aim: float = 0.002
     close: float = 0.5        # potential-based shaping: getting closer to the target ...
     face: float = 0.2         # ... and turning towards it
+    team_spirit: float = 0.3  # share of a fighter's reward that is its team's average (alone: its own)
 
 
 @dataclass
@@ -58,6 +71,8 @@ class Scenario:
                                                     "sumo": 0.4, "bedwars": 0.9, "loot": 1.5})
     three: float = 0.3         # share of arenas with three fighters (at full breadth)
     modes3: dict = field(default_factory=lambda: {"1v2": 0.4, "ffa": 0.4, "2v1": 0.2})
+    four: float = 0.25         # share of arenas with four fighters (at full breadth, k >= 4)
+    modes4: dict = field(default_factory=lambda: {"2v2": 0.6, "ffa4": 0.25, "3v1": 0.15})
     chaos: float = 0.12
     opp_delay: tuple = (0, 2)
     aim_noise: tuple = (0.0, 1.5)
@@ -106,6 +121,11 @@ class Batch2:
         self.visible = np.zeros((n, k, k), dtype=bool)
         self.target = np.full((n, k), -1, dtype=np.int64)
         self.second = np.full((n, k), -1, dtype=np.int64)
+        self.third = np.full((n, k), -1, dtype=np.int64)
+        self.ally = np.full((n, k), -1, dtype=np.int64)
+        self.unseen = np.full((n, k, k), 100, dtype=np.int64)   # ticks since i last saw j
+        self.v3 = "ally_fwd" in spec.obs_names
+        self.hist = []      # the observations of the last decisions (newest first), for the spec's history
         self.history = []
         self.episode_return = np.zeros((n, k))
         self.phi = np.zeros((n, k))
@@ -117,23 +137,48 @@ class Batch2:
     # ------------------------------------------------------------------ episodes
 
     def reset(self, idx=None):
+        start = np.ones(self.n, dtype=bool)
         if idx is None or not self.history:
             for a in range(self.n):
                 self._start(a)
             self.history = [self.w.f.snapshot() for _ in range(HISTORY)]
             self.ticks[:] = 0
+            self.hist = []
         else:
+            start = np.zeros(self.n, dtype=bool)
+            start[np.asarray(idx)] = True
             self._restart(np.asarray(idx))
         self._perceive()
-        obs = self.observe()
+        obs = self.observe(start)
+        self._remember(obs, start, push=False)
         self.phi = self.potential(obs)
         self.last_obs = obs
         return obs
 
     def action_masks(self, obs=None):
-        """Which choices each fighter may make now (pvp_sim2/masks.py): booleans (n, K, sum of the heads' sizes)."""
-        from .masks import MASKS2
-        return MASKS2(self.last_obs if obs is None else obs)
+        """Which choices each fighter may make now (pvp_sim2/masks.py): booleans (n, K, sum of the heads' sizes); a
+        dead fighter (whose team fights on) may only do nothing."""
+        from .masks import MASKS2, dead_mask
+        obs = self.last_obs if obs is None else obs
+        m = MASKS2(obs[..., :MASKS2.spec.obs_dim])
+        dead = self.w.f.active & ~self.w.f.alive
+        if dead.any():
+            m[dead] = dead_mask()
+        return m
+
+    def _remember(self, obs, start, push=True):
+        """The spec's history: this decision's observations become the earlier ones (push); where `start` (arenas) a
+        fight starts, and every earlier one is the observation now."""
+        ago = self.spec.max_ago
+        if not ago:
+            return
+        if not self.hist:
+            self.hist = [obs.copy() for _ in range(ago)]
+            return
+        if push:
+            self.hist = [obs.copy()] + self.hist[:-1]
+        for h in self.hist:
+            h[start] = obs[start]
 
     def _restart(self, idx):
         if idx.size == 0:
@@ -156,22 +201,29 @@ class Batch2:
             terrain = str(rng.choice(sc.paired[family]))
         else:
             terrain = _pick(rng, {k: (v if k == "walled" else v * b) for k, v in sc.terrains.items()})
-        count = self.fixed.get("count") or (3 if (self.k >= 3 and rng.random() < sc.three * b) else 2)
-        mode = "1v1" if count == 2 else (self.fixed.get("mode") or _pick(rng, sc.modes3))
-        teams = {"1v1": [0, 1], "1v2": [0, 1, 1], "ffa": [0, 1, 2], "2v1": [0, 1, 0]}[mode]
+        count = self.fixed.get("count")
+        if not count:
+            u = rng.random()
+            four = sc.four * b if self.k >= 4 else 0.0
+            count = 4 if u < four else 3 if (self.k >= 3 and u < four + sc.three * b) else 2
+        mode = "1v1" if count == 2 else (self.fixed.get("mode") or _pick(rng, sc.modes3 if count == 3 else sc.modes4))
+        teams = TEAMS[mode]
         kits = K.deal(family, count, rng, chaos_p=sc.chaos * b)
         if sc.extra_items > 0 and family in K.ITEM_KITS and rng.random() < sc.extra_items:
             kits = [K.extra_items(dict(k), rng) for k in kits]
         far = family in ("bow", "lms", "ctf", "build_uhc", "ffa")
+        # team mates start together (the old way for the modes without them, so their fights stay as they were)
+        together = mode in ("2v1", "2v2", "3v1", "ffa4")
+        spawns = (lambda d: self._team_spawns(a, teams, d)) if together else (lambda d: self._spawns(a, count, d))
         for attempt in range(40):
             generate(w.terrain, a, terrain, rng)
-            spots = self._spawns(a, count, (6.0, 24.0) if far else (4.0, 14.0))
+            spots = spawns((6.0, 24.0) if far else (4.0, 14.0))
             if spots is not None:
                 break
         else:
             generate(w.terrain, a, "walled", rng)
             terrain = "walled"
-            spots = self._spawns(a, count, (4.0, 10.0))
+            spots = spawns((4.0, 10.0))
         w.clear_projectiles(a)
         for slot in range(self.k):
             if slot < count:
@@ -198,6 +250,9 @@ class Batch2:
         self.located[a] = True
         self.target[a] = -1
         self.second[a] = -1
+        self.third[a] = -1
+        self.ally[a] = -1
+        self.unseen[a] = 100
         self.episode_return[a] = 0.0
         self.info_terrain[a], self.info_family[a], self.info_mode[a] = terrain, family, mode
 
@@ -219,6 +274,47 @@ class Batch2:
                 if min(d) < 4.0 or min(d) > dist[1] + 6:
                     continue
             return pts
+        return None
+
+    def _team_spawns(self, a, teams, dist):
+        """Spots for fighters in teams: each team's first fighter apart from the others (the learner's nearest enemy
+        `dist` away, the rest at least 4 blocks from each other), its team mates 1.5 to 5 blocks from it."""
+        t, rng = self.w.terrain, self.rng
+        cells = np.argwhere(t.standable(a))
+        count = len(teams)
+        if len(cells) < count * 4:
+            return None
+        hs = t.size // 2
+        xz = cells[:, [0, 1]].astype(np.float64) - hs + 0.5
+        for _ in range(80):
+            at = [None] * count
+            lead = {}
+            ok = True
+            for slot, tm in enumerate(teams):
+                if tm in lead:
+                    d = np.hypot(*(xz - xz[at[lead[tm]]]).T)
+                    near = (d >= 1.5) & (d <= 5.0)
+                    for o in at:
+                        if o is not None:
+                            near &= np.hypot(*(xz - xz[o]).T) >= 1.0
+                    pick = np.nonzero(near)[0]
+                    if pick.size == 0:
+                        ok = False
+                        break
+                    at[slot] = int(rng.choice(pick))
+                    continue
+                c = int(rng.integers(len(cells)))
+                others = [at[lead[o]] for o in lead]
+                if others:
+                    d = [np.hypot(*(xz[c] - xz[o])) for o in others]
+                    first_enemy = len(lead) == 1
+                    if min(d) < 4.0 or d[0] > dist[1] + 6 or (first_enemy and not dist[0] <= d[0] <= dist[1]):
+                        ok = False
+                        break
+                lead[tm] = slot
+                at[slot] = c
+            if ok:
+                return [(xz[c][0], t.ground[a, cells[c][0], cells[c][1]], xz[c][1]) for c in at]
         return None
 
     # ------------------------------------------------------------------ what each fighter knows
@@ -260,6 +356,7 @@ class Batch2:
                 self.known[:, i, j] = np.where(loc[:, None], pos, self.known[:, i, j])
                 self.visible[:, i, j] = vis
                 self.located[:, i, j] = loc
+                self.unseen[:, i, j] = np.where(vis, 0, self.unseen[:, i, j])
         # targets
         for i in range(self.k):
             score = np.full((self.n, self.k), np.inf)
@@ -279,6 +376,17 @@ class Batch2:
             sc2[rows, np.maximum(tgt, 0)] = np.inf
             sec = np.argmin(sc2, axis=1)
             self.second[:, i] = np.where(np.isfinite(sc2[rows, sec]), sec, -1)
+            sc2[rows, sec] = np.inf
+            third = np.argmin(sc2, axis=1)
+            self.third[:, i] = np.where(np.isfinite(sc2[rows, third]), third, -1)
+            # the nearest team mate (always known where it is)
+            mate = np.full((self.n, self.k), np.inf)
+            for j in range(self.k):
+                if j != i:
+                    there = f.active[:, j] & f.alive[:, j] & (f.team[:, j] == f.team[:, i])
+                    mate[:, j] = np.where(there, np.hypot(f.x[:, j] - f.x[:, i], f.z[:, j] - f.z[:, i]), np.inf)
+            best_mate = np.argmin(mate, axis=1)
+            self.ally[:, i] = np.where(np.isfinite(mate[rows, best_mate]), best_mate, -1)
 
     def state(self, i):
         """The CombatState (v2) of fighter i in every arena (the mod builds the same from its senses)."""
@@ -344,6 +452,8 @@ class Batch2:
             near += enemy & (d <= sp.near_enemies)
         st["enemies_near"] = near
         st.update(self._threat(i))
+        if self.v3:
+            st.update(self._v3_state(i, st))
         # terrain
         t = w.terrain
         voids, drops, steps, walls = t.rays(rows, f.x[:, i], f.y[:, i], f.z[:, i], f.yaw[:, i])
@@ -355,6 +465,36 @@ class Batch2:
                    "self_below": t.below(rows, f.x[:, i], f.y[:, i], f.z[:, i]), "opp_below": t.below(rows, ox, oy, oz),
                    "opp_drop_behind": drop_b, "opp_void_behind": void_b})
         return st
+
+    def _v3_state(self, i, st):
+        """v3's part of fighter i's state: its nearest team mate, the third enemy and its memory."""
+        f, sp = self.w.f, self.spec
+        rows = np.arange(self.n)
+        s = self.seen[i]
+        al = self.ally[:, i]
+        a = np.maximum(al, 0)
+        mates = np.zeros(self.n)
+        for j in range(self.k):
+            if j != i:
+                there = f.active[:, j] & f.alive[:, j] & (f.team[:, j] == f.team[:, i])
+                mates += there & (np.hypot(f.x[:, j] - f.x[:, i], f.z[:, j] - f.z[:, i]) <= sp.near_allies)
+        th = self.third[:, i]
+        e = np.maximum(th, 0)
+        tg = self.target[:, i]
+        enemy = f.active & (f.team != f.team[:, i:i + 1])
+        enemy[:, i] = False
+        hurt_me = np.where(enemy, self.w.hit_by_age[:, i, :], MEMORY_CAP).min(axis=1)
+        return {
+            "ally_present": al >= 0, "ally_x": f.x[rows, a], "ally_y": f.y[rows, a], "ally_z": f.z[rows, a],
+            "ally_visible": self.visible[rows, i, a] & (al >= 0), "ally_health": f.health[rows, a],
+            "ally_max_health": np.full(self.n, 20.0), "allies_near": mates,
+            "e3_present": th >= 0, "e3_x": self.known[rows, i, e, 0], "e3_y": self.known[rows, i, e, 1],
+            "e3_z": self.known[rows, i, e, 2], "e3_yaw": s["yaw"][rows, e], "e3_visible": self.visible[rows, i, e] & (th >= 0),
+            "e3_since_swing": s["swing_age"][rows, e].astype(np.float64), "e3_holds_bow": s["hand"][rows, e] == 1,
+            "opp_unseen": np.where(tg >= 0, self.unseen[rows, i, np.maximum(tg, 0)], 100).astype(np.float64),
+            "self_since_hit": np.minimum(hurt_me, 100).astype(np.float64),
+            "opp_since_hit": np.where(tg >= 0, np.minimum(self.w.hit_by_age[rows, np.maximum(tg, 0), i], 100), 100).astype(np.float64),
+        }
 
     def regen_rate(self, i):
         """Health a second fighter i gets back now: natural regeneration and regeneration II."""
@@ -383,10 +523,13 @@ class Batch2:
         return {"threat_present": has, "threat_x": p.x[rows, j], "threat_y": p.y[rows, j], "threat_z": p.z[rows, j],
                 "threat_vx": p.vx[rows, j], "threat_vy": p.vy[rows, j], "threat_vz": p.vz[rows, j]}
 
-    def observe(self):
+    def observe(self, start=None):
+        """Every fighter's observation (n, K, obs_dim); the earlier decisions' from the history, except in the arenas
+        where `start` (a fight starts: the values now)."""
         out = np.zeros((self.n, self.k, self.spec.obs_dim), dtype=np.float32)
         for i in range(self.k):
-            out[:, i] = observe(self.state(i), self.spec)
+            past = [h[:, i] for h in self.hist] if self.hist else None
+            out[:, i] = observe(self.state(i), self.spec, past, start)
         return out
 
     def potential(self, obs):
@@ -435,6 +578,7 @@ class Batch2:
             if len(self.history) > HISTORY:
                 self.history.pop(0)
         self.ticks += T
+        self.unseen = np.minimum(self.unseen + T, MEMORY_CAP)
         self._perceive()
         obs = self.observe()
         # rewards, for every slot (the learner is slot 0)
@@ -451,7 +595,8 @@ class Batch2:
         reward += rw.kill * kills - rw.death * died
         vis = obs[:, :, sp.index("opp_visible")] > 0.5
         cross = obs[:, :, sp.index("on_crosshair")] > 0.5
-        reward += -rw.time - rw.unseen * ~vis + rw.aim * cross
+        # what a fighter does each decision counts while it lives (a dead one whose team fights on does nothing)
+        reward += np.where(alive0, -rw.time - rw.unseen * ~vis + rw.aim * cross, 0.0)
         phi = self.potential(obs)
         reward += np.where(f.alive, phi - self.phi, 0.0)
         # the end of an episode: the learner is dead, its enemies are, or the time is up
@@ -461,38 +606,54 @@ class Batch2:
             f.alive &= ~lost_box
             died |= lost_box
             reward -= rw.death * lost_box
-        teams_alive = [(f.alive & f.active & (team == tm)).any(axis=1) for tm in range(3)]
-        left = np.stack(teams_alive, axis=1).sum(axis=1)
+        teams_alive = np.stack([(f.alive & f.active & (team == tm)).any(axis=1) for tm in range(self.k)], axis=1)
+        left = teams_alive.sum(axis=1)
         my_team_alive = (f.alive & f.active & (team == team[:, :1])).any(axis=1)
         enemies_alive = (f.alive & f.active & (team != team[:, :1])).any(axis=1)
         timeout = self.ticks >= self.max_ticks
-        done = ~f.alive[:, 0] | ~enemies_alive | timeout
+        done = ~my_team_alive | ~enemies_alive | timeout
         # the team left wins
-        winners = f.active & (left[:, None] == 1) & np.stack([teams_alive[0], teams_alive[1], teams_alive[2]], axis=1)[np.arange(self.n)[:, None], team]
+        winners = f.active & (left[:, None] == 1) & teams_alive[np.arange(self.n)[:, None], team]
         reward += rw.win * (done[:, None] & winners)
         draw = done & (left > 1)
         hp = f.health + f.absorption
         enemy_hp = (hp[:, None, :] * enemy).sum(axis=2) / n_enemies
         margin = rw.draw_health * (hp - enemy_hp) / 20.0
         reward += np.where((draw & timeout)[:, None] & f.alive, margin - rw.timeout, 0.0)
+        reward = self._share(reward)
         self.episode_return += reward
-        winner = np.where(done & ~f.alive[:, 0], 1, np.where(done & ~enemies_alive & my_team_alive, 0, -1))
+        # the learner's team: 0 won, 1 lost (also when the time ran out with only the enemies' team alive), -1 a draw
+        winner = np.where(done & ~my_team_alive, 1, np.where(done & ~enemies_alive & my_team_alive, 0, -1))
         info = {"winner": winner, "done": done, "ticks": self.ticks.copy(), "landed": landed, "dealt": dealt,
                 "episode_return": self.episode_return.copy(), "kills": kills, "died": died, **used}
+        start = np.zeros(self.n, dtype=bool)
         if self.auto_reset and done.any():
             info["terminal_obs"] = obs.copy()
             info["terrain"] = [self.info_terrain[a] for a in np.nonzero(done)[0]]
             info["family"] = [self.info_family[a] for a in np.nonzero(done)[0]]
             info["mode"] = [self.info_mode[a] for a in np.nonzero(done)[0]]
             idx = np.nonzero(done)[0]
+            start[idx] = True
             self._restart(idx)
             self._perceive()
-            fresh = self.observe()
+            fresh = self.observe(start)
             obs[idx] = fresh[idx]
             phi[idx] = self.potential(obs)[idx]
+        self._remember(obs, start)
+        info["alive"] = f.alive & f.active
         self.phi = phi
         self.last_obs = obs
         return obs, reward.astype(np.float32), done, info
+
+    def _share(self, reward):
+        """Each fighter's reward: (1 - team_spirit) its own plus team_spirit its team's average (itself included)."""
+        tau = self.rewards.team_spirit
+        if tau <= 0:
+            return reward
+        f = self.w.f
+        same = (f.team[:, :, None] == f.team[:, None, :]) & f.active[:, None, :] & f.active[:, :, None]
+        mean = (same * reward[:, None, :]).sum(axis=2) / np.maximum(1, same.sum(axis=2))
+        return (1 - tau) * reward + tau * mean
 
 
 class PvpEnv2(gym.Env):

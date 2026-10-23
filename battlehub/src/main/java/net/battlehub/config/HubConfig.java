@@ -405,7 +405,7 @@ public final class HubConfig {
 		public int recentMatches = 100;
 	}
 
-	/** Every melee mode, where the learned model v2 fights (bots.learnedModes). */
+	/** Every melee mode, where the learned model fights (bots.learnedModes). */
 	public static final List<String> DEFAULT_LEARNED_MODES = List.of("sword", "axe", "boxing", "build_uhc", "bridge", "bridge_chaos",
 			"bridge_2v2", "bridge_1v1v1v1", "bridge_chaos_1v1v1v1", "sumo", "koth", "ctf", "lms", "ffa", "tournament", "bed_wars", "skywars",
 			"hunger_games", "1v2", "1v3");
@@ -452,7 +452,7 @@ public final class HubConfig {
 		 */
 		public List<String> learnedModes = new ArrayList<>(DEFAULT_LEARNED_MODES);
 		/**
-		 * A v2 model that learned items (its metadata lists them; the master model: food, golden apples, wind charges)
+		 * A model that learned items (its metadata lists them; the master model: food, golden apples, wind charges)
 		 * chooses those itself in the fight. Off, or for items a model did not learn (the bow, pearls), the bot's own
 		 * rules eat, shoot and throw; healing at a distance always stays the bot's own.
 		 */

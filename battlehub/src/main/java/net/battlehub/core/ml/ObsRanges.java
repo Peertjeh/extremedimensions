@@ -41,7 +41,7 @@ public final class ObsRanges {
 		return out;
 	}
 
-	/** The ranges shipped with the mod for a spec file ("combat_v2.json" -> "combat_v2_ranges.json"). */
+	/** The ranges shipped with the mod for a spec file ("combat_v3.json" -> "combat_v3_ranges.json"). */
 	public static ObsRanges shipped(String specFile, CombatSpec spec) throws IOException {
 		String file = specFile.replace(".json", "_ranges.json");
 		InputStream in = ObsRanges.class.getResourceAsStream("/assets/battlehub/ml/" + file);

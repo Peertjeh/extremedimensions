@@ -3,8 +3,11 @@ mod's fight logs did in the same situations (train/fights.py), and is saved as a
 from (selfplay2.py --init). Copying gets the model the people's habits, items included (eating, the bow, pearls), which
 self-play alone did not find; self-play afterwards keeps what works and sharpens it.
 
-    python train/imitate.py exports/ --init runs/v2/ckpt_040000032.zip --out runs/v2bc [--epochs 8] [--winners-only]
-    python train/selfplay2.py --run runs/v2bc_sp --init runs/v2bc/ckpt_bc.zip --pool-from runs/v2 --items --steps 16000000
+    python train/imitate.py exports/ --init runs/v3c/ckpt_016000000.zip --out runs/v3bc [--epochs 8] [--winners-only]
+    python train/selfplay2.py --run runs/v3bc_sp --init runs/v3bc/ckpt_bc.zip --pool-from runs/v3c --masks --steps 16000000
+
+The observations are spec v3's (with the history from the fighter's earlier decisions); a v2 checkpoint learns from
+their first 118 values.
 
 Writes <out>/ckpt_bc.zip and <out>/imitate.json (per epoch: loss, and on a held-out tenth how often each action head
 chose what the person did).
@@ -76,14 +79,15 @@ def main():
     ap.add_argument("--lr", type=float, default=3e-4)
     a = ap.parse_args()
     import torch
-    from stable_baselines3 import PPO
+    from train.policies import load
     torch.set_num_threads(2)
     fights = [f for p in a.paths for f in F.read(p)]
     obs, act, info = F.arrays(fights, who=a.who, winners_only=a.winners_only)
     if len(obs) < 100:
         sys.exit("only %d decisions of %s in %d fights: record more first" % (len(obs), a.who, len(fights)))
     print("%d fights, %d decisions (%.0f minutes) of %s" % (len(fights), len(obs), len(obs) / 600.0, a.who), flush=True)
-    model = PPO.load(a.init, device="cpu")
+    model = load(a.init)
+    obs = obs[:, :model.observation_space.shape[0]]
     history = clone(model, obs, act, a.epochs, a.batch, a.lr)
     os.makedirs(a.out, exist_ok=True)
     model.save(os.path.join(a.out, "ckpt_bc.zip"))

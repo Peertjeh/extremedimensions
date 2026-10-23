@@ -3,8 +3,10 @@ quantiles over many fights at full breadth, between the shipped master and inter
 random play). The mod counts a decision's value as new to the model when it lies outside that range by more than the
 file's tolerance, and tells the operators which values those were (bot/ModelReports, core/ml/ModelReport).
 
-    python tools/make_ranges.py            # writes spec/combat_v1_ranges.json and spec/combat_v2_ranges.json
-    python tools/make_ranges.py --steps 4000 --spec v2
+    python tools/make_ranges.py            # writes spec/combat_v3_ranges.json (v1, v2: their models are no longer shipped)
+    python tools/make_ranges.py --steps 4000 --spec v3 [--models <dir with combat_v3_master.onnx and _intermediate.onnx>]
+
+v3 is collected with four fighters per arena (team mates, a third enemy) and its history.
 """
 import argparse
 import json
@@ -62,6 +64,25 @@ def collect_v2(steps, n, seed):
     return SPEC2, np.concatenate(rows)
 
 
+def collect_v3(steps, n, seed, models=MODELS):
+    from pvp_sim2 import Batch2, Random2, Scripted2
+    from pvp_sim2.spec import SPEC3
+    master = Onnx(os.path.join(models, "combat_v3_master.onnx"), SPEC3)
+    mid = Onnx(os.path.join(models, "combat_v3_intermediate.onnx"), SPEC3, sample=True, seed=seed)
+    scripted, rnd = Scripted2(skill=0.8, seed=seed), Random2(seed=seed)
+    lineups = [(master, scripted, scripted, scripted), (master, master, master, master), (mid, scripted, rnd, scripted),
+               (scripted, scripted, scripted, scripted), (master, mid, rnd, master)]
+    rows = []
+    for k, lineup in enumerate(lineups):
+        b = Batch2(n, k=4, seed=seed + k, breadth=1.0, spec=SPEC3)
+        obs = b.reset()
+        for _ in range(steps // len(lineups)):
+            alive = b.w.f.alive & b.w.f.active
+            rows.append(obs[alive])
+            obs, _, _, _ = b.step(np.stack([lineup[i](obs[:, i]) for i in range(4)], axis=1))
+    return SPEC3, np.concatenate(rows)
+
+
 def collect_v1(steps, n, seed):
     from pvp_sim.env import PvpBatch
     from pvp_sim.physics import SWORD
@@ -93,13 +114,14 @@ def ranges(spec, rows):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--spec", choices=["v1", "v2", "both"], default="both")
+    ap.add_argument("--spec", choices=["v1", "v2", "v3", "all"], default="v3", help="v1 and v2 need their old models (--models)")
+    ap.add_argument("--models", default=MODELS, help="where the v3 models are (default: the mod's)")
     ap.add_argument("--steps", type=int, default=3000, help="decisions per spec")
     ap.add_argument("--n", type=int, default=64, help="arenas")
     ap.add_argument("--seed", type=int, default=11)
     a = ap.parse_args()
-    for v, collect in (("v1", collect_v1), ("v2", collect_v2)):
-        if a.spec not in (v, "both"):
+    for v, collect in (("v1", collect_v1), ("v2", collect_v2), ("v3", lambda *x: collect_v3(*x, models=a.models))):
+        if a.spec not in (v, "all"):
             continue
         spec, rows = collect(a.steps, a.n, a.seed)
         out = os.path.join(HERE, "spec", "combat_%s_ranges.json" % v)

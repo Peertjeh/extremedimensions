@@ -1,4 +1,5 @@
-"""Opponents without learning for v2, on the observation only (they know no more than the model):
+"""Opponents without learning for v2 (and v3, whose observation starts with v2's), on the observation only (they know no
+more than the model):
 
   Scripted2  v1's scripted bot (turn to the chest, sprint in, strafe, swing charged, back off when too close) with what
              the modes add: it keeps off drops and the void, shoots its bow from afar (leading the pitch for the drop of
@@ -19,6 +20,12 @@ from .spec import SPEC2
 WEAPON, BOW, FOOD, GAPPLE, PEARL, WIND = range(6)
 
 
+def view(obs, spec):
+    """Observations as rows of spec v2's values: a v3 observation starts with v2's 118, which is all these bots read."""
+    obs = np.asarray(obs, dtype=np.float64)
+    return obs.reshape(-1, obs.shape[-1])[:, :spec.obs_dim]
+
+
 class Scripted2:
     def __init__(self, skill=0.7, seed=None, spec=SPEC2, latch=False):
         self.skill = skill
@@ -29,7 +36,7 @@ class Scripted2:
         self.block = None
 
     def __call__(self, obs, skill=None):
-        obs = np.asarray(obs, dtype=np.float64).reshape(-1, self.spec.obs_dim)
+        obs = view(obs, self.spec)
         m = obs.shape[0]
         sp, rng = self.spec, self.rng
         sk = self.skill if skill is None else np.asarray(skill, dtype=np.float64)
@@ -123,7 +130,7 @@ class Random2:
         self.spec = spec
 
     def __call__(self, obs):
-        m = np.asarray(obs).reshape(-1, self.spec.obs_dim).shape[0]
+        m = view(obs, self.spec).shape[0]
         return self.rng.integers(0, self.spec.action_nvec, size=(m, len(self.spec.action_nvec)))
 
 
@@ -136,7 +143,7 @@ class Dummy2:
         self.move = None
 
     def __call__(self, obs):
-        obs = np.asarray(obs, dtype=np.float64).reshape(-1, self.spec.obs_dim)
+        obs = view(obs, self.spec)
         m = obs.shape[0]
         sp, rng = self.spec, self.rng
         if self.move is None or self.move.shape[0] != m:

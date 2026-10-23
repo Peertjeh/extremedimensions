@@ -1,7 +1,8 @@
-"""Trained v2 policies as players: load a checkpoint (PPO, or MaskablePPO from sb3-contrib) and choose actions from
-its logits with the action masks of ml/spec/combat_v2_masks.json, as the mod does (core/ml/CombatMasks). Used by the
-evaluation, the league, the opponent pool and behavior cloning, so every place that lets a model choose does it the
-same way.
+"""Trained v2 and v3 policies as players: load a checkpoint (PPO, or MaskablePPO from sb3-contrib) and choose actions
+from its logits with the action masks of ml/spec/combat_v2_masks.json (v3's are the same rules on the same first
+values), as the mod does (core/ml/CombatMasks). A v2 policy plays in the v3 simulation on the first 118 values. Used
+by the evaluation, the league, the opponent pool and behavior cloning, so every place that lets a model choose does it
+the same way.
 
     from train.policies import load, Chooser
     model = load("runs/v2/ckpt_040000032.zip")
@@ -57,6 +58,8 @@ class Chooser:
         import torch
         self.torch = torch
         self.policy = policy
+        # a v2 policy reads the first 118 values of a v3 observation (v3 keeps v2's in their place)
+        self.dim = int(policy.observation_space.shape[0])
         self.masks = masks
         hand = MASKS2.spec.action_index("hand")
         at = int(MASKS2.offsets[hand])
@@ -67,12 +70,12 @@ class Chooser:
 
     def __call__(self, obs):
         torch = self.torch
-        obs = np.asarray(obs, dtype=np.float32)
+        obs = np.asarray(obs, dtype=np.float32)[:, :self.dim]
         with torch.no_grad():
             t = torch.as_tensor(obs)
             z = logits(self.policy, t)
             if self.masks:
-                m = MASKS2(obs)
+                m = MASKS2(obs[:, :MASKS2.spec.obs_dim])
                 if self.off:
                     m[:, self.off] = False
                 z = z.masked_fill(~torch.as_tensor(m), -torch.inf)

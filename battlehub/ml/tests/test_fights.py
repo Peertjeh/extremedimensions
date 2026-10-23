@@ -8,8 +8,8 @@ import zipfile
 
 import numpy as np
 
-from pvp_sim2.obs import STATE2_KEYS, observe
-from pvp_sim2.spec import SPEC2
+from pvp_sim2.obs import STATE2_KEYS, STATE3_KEYS, observe
+from pvp_sim2.spec import SPEC2, SPEC3
 from train import fights
 
 SAMPLE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "spec", "fightlog_sample.jsonl")
@@ -22,25 +22,54 @@ def sample():
 def test_the_header_names_the_simulations_state_and_the_specs_actions():
     f = sample()
     h = f.header
-    assert h["spec_sha256"] == SPEC2.sha256
-    assert [k for k in h["state_keys"] if k not in h["rays"]] + list(h["rays"]) == STATE2_KEYS
-    assert h["action_names"] == SPEC2.action_names
+    assert h["spec_sha256"] == SPEC3.sha256
+    assert h["state_keys"] == STATE3_KEYS
+    assert h["action_names"] == SPEC3.action_names
     assert [x["kind"] for x in h["fighters"]] == ["human", "bot"]
     assert len(f.rows) == 20 and len(f.hits) == 1 and f.end["winners"] == [1]
 
 
 def test_the_simulations_observation_of_a_stored_state_is_the_mods():
     f = sample()
-    obs = observe(fights.states(f))
+    obs = observe(fights.states(f), SPEC3)
     want = np.array([r["obs"] for r in f.rows])
-    assert obs.shape == want.shape == (20, SPEC2.obs_dim)
+    assert obs.shape == want.shape == (20, SPEC3.obs_dim)
     np.testing.assert_allclose(obs, want, atol=2e-5)
+
+
+def test_the_history_comes_from_the_fighters_earlier_rows_and_starts_again_after_a_pause():
+    f = sample()
+    obs = fights.observations(f)
+    now = observe(fights.states(f), SPEC3)
+    one = [(k, of) for k, of, ago in SPEC3.history if ago == 1]
+    for who in (0, 1):
+        rows = [i for i, r in enumerate(f.rows) if r["f"] == who]
+        k, of = one[0]
+        assert obs[rows[0], k] == now[rows[0], of]          # the first row: the value now
+        for a, b in zip(rows, rows[1:]):                     # every 4 ticks: the row before
+            assert all(obs[b, k] == obs[a, of] for k, of in one)
+    # a pause of more than two decisions starts it again
+    late = fights.Fight(f.name, f.header, [dict(r) for r in f.rows[:2]] + [dict(f.rows[2], t=f.rows[0]["t"] + 40)])
+    o2 = fights.observations(late)
+    assert all(o2[2, k] == o2[2, of] for k, of in one)
+
+
+def test_a_log_of_spec_v2_reads_with_nobody_else_and_nothing_remembered():
+    f = sample()
+    keys = [k for k in f.header["state_keys"] if k in STATE2_KEYS]
+    idx = [f.header["state_keys"].index(k) for k in keys if k not in f.header["rays"]]
+    rays_at = len([k for k in f.header["state_keys"] if k not in f.header["rays"]])
+    old = fights.Fight(f.name, dict(f.header, state_keys=keys, spec_sha256=SPEC2.sha256),
+                       [dict(r, s=[r["s"][i] for i in idx] + r["s"][rays_at:]) for r in f.rows])
+    s = fights.states(old)
+    assert not s["ally_present"].any() and (s["opp_unseen"] == 100).all()
+    assert fights.observations(old).shape == (20, SPEC3.obs_dim)
 
 
 def test_actions_become_the_nearest_choice_of_each_head():
     f = sample()
     act = fights.actions(f)
-    assert act.shape == (20, len(SPEC2.action_nvec))
+    assert act.shape == (20, len(SPEC3.action_nvec))
     yaw = SPEC2.action_names.index("yaw")
     for r, a in zip(f.rows, act):
         values = np.array(SPEC2.action_values[yaw], dtype=float)

@@ -1,9 +1,10 @@
 """The mod's fight logs, for training. BattleHub records every fight in config/battlehub/fights (a .jsonl.gz per
 fight; /battlehub fights export zips the new ones): every decision (two ticks), for every fighter with a target, the
-state it was in (the simulation's state values, ml/pvp_sim2/obs.py STATE2_KEYS) and what it did over the decision in
-the spec's action terms; for a bot also what its model chose and how the tick went against it; hits; and the result.
-The observation is computed here from the stored state with the simulation's own code, so the logs stay useful when
-the spec changes.
+state it was in (the simulation's state values, ml/pvp_sim2/obs.py STATE3_KEYS; logs of 1.37 to 1.39 have spec v2's,
+STATE2_KEYS, and get v3's values as "nobody else, nothing remembered") and what it did over the decision in the spec's
+action terms; for a bot also what its model chose and how the tick went against it; hits; and the result. The
+observation is computed here from the stored state with the simulation's own code, so the logs stay useful when the
+spec changes; v3's history comes from the same fighter's earlier rows of the fight (observations()).
 
     python train/fights.py export-2026-10-23.zip            # what is in it
     python train/fights.py fights/ --who human              # only people
@@ -23,8 +24,14 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pvp_sim.actions import encode  # noqa: E402
-from pvp_sim2.obs import BOOLS, INTS, STATE2_KEYS, observe  # noqa: E402
-from pvp_sim2.spec import SPEC2  # noqa: E402
+from pvp_sim2.obs import BOOLS, INTS, STATE2_KEYS, history, observe  # noqa: E402
+from pvp_sim2.spec import SPEC3  # noqa: E402
+
+# v3's values in a log of spec v2: no team mate, no third enemy, nothing remembered
+DEFAULTS3 = {"ally_present": False, "ally_x": 0.0, "ally_y": 0.0, "ally_z": 0.0, "ally_visible": False, "ally_health": 20.0,
+             "ally_max_health": 20.0, "e3_present": False, "e3_x": 0.0, "e3_y": 0.0, "e3_z": 0.0, "e3_yaw": 0.0, "e3_visible": False,
+             "e3_since_swing": 100.0, "e3_holds_bow": False, "allies_near": 0.0, "opp_unseen": 100.0, "self_since_hit": 100.0,
+             "opp_since_hit": 100.0}
 
 FORMAT = "battlehub-fights"
 
@@ -103,10 +110,35 @@ def states(fight, rows=None):
     missing = [k for k in STATE2_KEYS if k not in s]
     if missing:
         raise ValueError("%s lacks %s" % (fight.name, ", ".join(missing)))
+    for k, v in DEFAULTS3.items():
+        if k not in s:
+            s[k] = np.full(len(rows), v)
     return s
 
 
-def actions(fight, rows=None, spec=SPEC2):
+def observations(fight, rows=None, spec=SPEC3):
+    """The rows' observations (n, obs_dim), with v3's history from the same fighter's earlier rows of the fight, as the
+    mod kept it (core/ml/ObsHistory): the first row of a fighter, or one after a pause of more than the spec's pause
+    decisions, starts the history again."""
+    rows = fight.rows if rows is None else rows
+    obs = observe(states(fight, rows), spec)
+    if not spec.history or not rows:
+        return obs
+    gap = (spec.pause + 1) * fight.header.get("decision_ticks", spec.decision_ticks)
+    last = {}   # fighter -> (tick, earlier observations, newest first)
+    for i, r in enumerate(rows):
+        f, t = r["f"], r["t"]
+        seen = last.get(f)
+        if seen is None or t - seen[0] > gap:
+            past = [obs[i]] * spec.max_ago
+        else:
+            history(obs[i:i + 1], spec, [p[None] for p in seen[1]])
+            past = ([obs[i]] + seen[1])[:spec.max_ago]
+        last[f] = (t, past)
+    return obs
+
+
+def actions(fight, rows=None, spec=SPEC3):
     """What the fighters did, as the spec's action indices (n, heads): the nearest value of each head."""
     rows = fight.rows if rows is None else rows
     names = fight.header["action_names"]
@@ -114,7 +146,7 @@ def actions(fight, rows=None, spec=SPEC2):
     return encode(spec, **{n: a[:, k] for k, n in enumerate(names) if n in spec.action_names})
 
 
-def arrays(fights, who="human", winners_only=False, spec=SPEC2):
+def arrays(fights, who="human", winners_only=False, spec=SPEC3):
     """Observations (n, obs_dim) and action indices (n, heads) of the chosen fighters ("human", "bot" or "all") over
     many fights, with per row the mode, whether the fighter won and the fight's name."""
     obs, act, mode, won, name = [], [], [], [], []
@@ -123,7 +155,7 @@ def arrays(fights, who="human", winners_only=False, spec=SPEC2):
         rows = [r for r in f.rows if (who == "all" or f.kind(r["f"]) == who) and (not winners_only or r["f"] in win)]
         if not rows:
             continue
-        obs.append(observe(states(f, rows), spec).astype(np.float32))
+        obs.append(observations(f, rows, spec).astype(np.float32))
         act.append(actions(f, rows, spec))
         mode += [f.header["mode"]] * len(rows)
         won += [r["f"] in win for r in rows]

@@ -101,7 +101,6 @@ public final class FightRecorder {
 		return t;
 	});
 	private static long now;
-	private static final Map<UUID, Long> SWUNG = new HashMap<>();
 	private static final Map<UUID, Vec3> POS = new HashMap<>();
 	private static final Map<UUID, Vec3> VEL = new HashMap<>();
 	private static final Map<UUID, Boolean> GROUND = new HashMap<>();
@@ -120,11 +119,6 @@ public final class FightRecorder {
 	}
 
 	// ------------------------------------------------------------------ events
-
-	/** An arm swing of anyone (HubEvents). */
-	public static void swung(ServerPlayer p) {
-		SWUNG.put(p.getUUID(), now);
-	}
 
 	/** A hit between players (HubEvents): a line in the fight's log, and the two count as fighting each other. */
 	public static void hit(ServerPlayer victim, DamageSource source, float amount) {
@@ -177,7 +171,6 @@ public final class FightRecorder {
 			r.tick++;
 		}
 		if (now % 200 == 0) {
-			SWUNG.keySet().removeIf(id -> server.getPlayerList().getPlayer(id) == null);
 			POS.keySet().removeIf(id -> server.getPlayerList().getPlayer(id) == null);
 			VEL.keySet().retainAll(POS.keySet());
 			GROUND.keySet().retainAll(POS.keySet());
@@ -192,9 +185,9 @@ public final class FightRecorder {
 	}
 
 	private static void open(Match m) {
-		CombatSpec spec = CombatModels.V2.ready() ? CombatModels.V2.spec() : null;
+		CombatSpec spec = CombatModels.V3.ready() ? CombatModels.V3.spec() : null;
 		if (spec == null) {
-			if (!warned) BattleHub.LOGGER.warn("Fight logs are off: spec v2 could not be loaded");
+			if (!warned) BattleHub.LOGGER.warn("Fight logs are off: spec v3 could not be loaded");
 			warned = true;
 			return;
 		}
@@ -218,7 +211,7 @@ public final class FightRecorder {
 			}
 			ServerPlayer p = m.player(id);
 			String name = cfg().names && p != null ? p.getGameProfile().name() : null;
-			String model = LearnedFight.active(m) ? "v2" : "none";
+			String model = LearnedFight.active(m) ? "v3" : "none";
 			fs.add(p instanceof BotPlayer b ? new FightLog.Fighter("bot", b.difficulty.id(), model, team, name)
 					: new FightLog.Fighter("human", null, null, team, name));
 		}
@@ -245,7 +238,7 @@ public final class FightRecorder {
 	/** One tick of a recorded match: jumps are noted; every second tick each fighter's last decision is written and a new one begins. */
 	private static void step(Rec r) {
 		Match m = r.match;
-		CombatSpec spec = CombatModels.V2.spec();
+		CombatSpec spec = CombatModels.V3.spec();
 		for (int i = 0; i < r.fighters.size(); i++) {
 			UUID id = r.fighters.get(i);
 			ServerPlayer p = m.player(id);
@@ -301,8 +294,8 @@ public final class FightRecorder {
 			forward = f > 0.03 ? 1 : f < -0.03 ? -1 : 0;
 			strafe = l > 0.03 ? 1 : l < -0.03 ? -1 : 0;
 		}
-		boolean swung = SWUNG.getOrDefault(p.getUUID(), Long.MIN_VALUE) > now - CombatModels.V2.spec().decisionTicks;
-		int hand = Math.max(0, CombatModels.V2.spec().hands.indexOf(LearnedFight.handOf(p.getMainHandItem())));
+		boolean swung = CombatMemory.sinceSwing(p.getUUID()) < CombatModels.V3.spec().decisionTicks;
+		int hand = Math.max(0, CombatModels.V3.spec().hands.indexOf(LearnedFight.handOf(p.getMainHandItem())));
 		return FightLog.action(forward, strafe, jump, p.isSprinting(), swung, FightLog.turnLeft(d.yaw0, p.getYRot()), p.getXRot() - d.pitch0, hand,
 				p.isUsingItem());
 	}
@@ -319,6 +312,7 @@ public final class FightRecorder {
 			charge = Math.max(0, Math.min(1, (sinceSwing(p.getUUID()) + 0.5) / cd));
 		}
 		boolean visible = FightState.sees(p, new V3(p.getX(), p.getEyeY(), p.getZ()), opp);
+		if (visible) CombatMemory.saw(p.getUUID(), opp.getUUID());
 		Vec3 oppVel = opp instanceof BotPlayer ? opp.getDeltaMovement() : VEL.getOrDefault(opp.getUUID(), Vec3.ZERO);
 		FightState.Seen seen = FightState.Seen.of(opp, opp.position(), visible ? oppVel : Vec3.ZERO, visible ? (int) Math.min(100, sinceSwing(opp.getUUID())) : 100,
 				visible);
@@ -328,8 +322,7 @@ public final class FightRecorder {
 	}
 
 	private static long sinceSwing(UUID id) {
-		Long t = SWUNG.get(id);
-		return t == null ? 100 : Math.min(100, now - t);
+		return (long) CombatMemory.sinceSwing(id);
 	}
 
 	/**
@@ -573,7 +566,7 @@ public final class FightRecorder {
 		} catch (Exception e) {
 			BattleHub.LOGGER.warn("The fight logs were not all written: {}", e.toString());
 		}
-		SWUNG.clear();
+		CombatMemory.clear();
 		POS.clear();
 		VEL.clear();
 		GROUND.clear();

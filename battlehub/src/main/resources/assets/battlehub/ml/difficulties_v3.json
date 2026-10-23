@@ -7,7 +7,7 @@
   "aim_noise": 2.5,
   "turn_cap": 24,
   "sample": true,
-  "model": "combat_v2_beginner.onnx"
+  "model": "combat_v3_beginner.onnx"
  },
  "casual": {
   "checkpoint": "ckpt_10000224",
@@ -17,7 +17,7 @@
   "aim_noise": 1.8,
   "turn_cap": 30,
   "sample": true,
-  "model": "combat_v2_casual.onnx"
+  "model": "combat_v3_casual.onnx"
  },
  "intermediate": {
   "checkpoint": "ckpt_18000000",
@@ -27,7 +27,7 @@
   "aim_noise": 1.2,
   "turn_cap": 36,
   "sample": true,
-  "model": "combat_v2_intermediate.onnx"
+  "model": "combat_v3_intermediate.onnx"
  },
  "advanced": {
   "checkpoint": "ckpt_22000032",
@@ -37,7 +37,7 @@
   "aim_noise": 0.8,
   "turn_cap": 45,
   "sample": false,
-  "model": "combat_v2_advanced.onnx"
+  "model": "combat_v3_advanced.onnx"
  },
  "expert": {
   "checkpoint": "ckpt_30000096",
@@ -47,7 +47,7 @@
   "aim_noise": 0.5,
   "turn_cap": 54,
   "sample": false,
-  "model": "combat_v2_expert.onnx"
+  "model": "combat_v3_expert.onnx"
  },
  "master": {
   "checkpoint": "v3b:ckpt_4000032",
@@ -57,7 +57,7 @@
   "aim_noise": 0.2,
   "turn_cap": 60,
   "sample": false,
-  "model": "combat_v2_master.onnx",
+  "model": "combat_v3_master.onnx",
   "items": "food,gapple,wind"
  }
 }

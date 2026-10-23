@@ -73,10 +73,10 @@ final class BotTests {
 		lobby(server, s);
 		practiceSword(server, s);
 		learnedSword(server, s);
-		learnedV2Sword(server, s);
-		learnedV2Bridge(server, s);
-		learnedV2Team(server, s);
-		learnedV2Items(server, s);
+		learnedV3Sword(server, s);
+		learnedV3Bridge(server, s);
+		learnedV3Team(server, s);
+		learnedV3Items(server, s);
 		practiceBow(server, s);
 		queueFill(server, s);
 		partyFill(server, s);
@@ -102,7 +102,7 @@ final class BotTests {
 		String tag = "bots learned";
 		SelfTest.reset(s, tag);
 		s.run(tag + ": learned combat on; A starts a sword practice duel against a master bot", () -> {
-			learnedV2On();
+			learnedV3On();
 			SelfTest.join(server, A);
 			Bots.practice(p(A), GameMode.SWORD, net.battlehub.core.ai.Difficulty.MASTER);
 		});
@@ -115,7 +115,7 @@ final class BotTests {
 			if (m == null || botsIn(m).isEmpty()) return false;
 			BotPlayer b = botsIn(m).get(0);
 			boolean hit = p(A).getHealth() < p(A).getMaxHealth();
-			if (v2Steered(b, 40) && hit) {
+			if (v3Steered(b, 40) && hit) {
 				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned combat: {} ticks steered, A at {} health | {}", Bots.learnedTicks(b), p(A).getHealth(),
 						String.join(" | ", Bots.inspect(b)));
 				return true;
@@ -136,26 +136,26 @@ final class BotTests {
 		s.run(tag + ": learned combat off again for the other tests", () -> cfg().learnedCombat = false);
 	}
 
-	/** Learned combat on with model v2 and every melee mode listed. */
-	private static void learnedV2On() {
+	/** Learned combat on with model v3 and every melee mode listed. */
+	private static void learnedV3On() {
 		cfg().learnedCombat = true;
 		cfg().learnedModes = new ArrayList<>(net.battlehub.config.HubConfig.DEFAULT_LEARNED_MODES);
 	}
 
-	/** The bot's inspect lines say model v2 steered at least this many ticks. */
-	private static boolean v2Steered(BotPlayer b, int ticks) {
-		return Bots.learnedTicks(b) > ticks && Bots.inspect(b).stream().anyMatch(l -> l.startsWith("learned combat (v2)"));
+	/** The bot's inspect lines say model v3 steered at least this many ticks. */
+	private static boolean v3Steered(BotPlayer b, int ticks) {
+		return Bots.learnedTicks(b) > ticks && Bots.inspect(b).stream().anyMatch(l -> l.startsWith("learned combat (v3)"));
 	}
 
 	/**
-	 * Model v2 in an axe duel: it steers and beats A, who stands still; afterwards the bot tells A (an operator for the
+	 * Model v3 in an axe duel: it steers and beats A, who stands still; afterwards the bot tells A (an operator for the
 	 * test) how much of the fight went as its model chose and what to practise.
 	 */
-	private static void learnedV2Sword(MinecraftServer server, Script s) {
-		String tag = "bots learned v2 axe";
+	private static void learnedV3Sword(MinecraftServer server, Script s) {
+		String tag = "bots learned v3 axe";
 		SelfTest.reset(s, tag);
-		s.run(tag + ": model v2 on; A starts an axe practice duel against a master bot", () -> {
-			learnedV2On();
+		s.run(tag + ": model v3 on; A starts an axe practice duel against a master bot", () -> {
+			learnedV3On();
 			SelfTest.join(server, A);
 			net.battlehub.bot.ModelReports.operatorsForTest(who -> who.getUUID().equals(p(A).getUUID()));
 			PlayerStore.get(p(A)).modelReportsOff = false;
@@ -164,20 +164,20 @@ final class BotTests {
 		s.waitFor(tag + ": the duel runs with one bot", 600, () -> {
 			Match m = matchOfA();
 			boolean ok = m != null && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
-			if (ok) VARS.put("v2AxeMatch", m.id);
+			if (ok) VARS.put("v3AxeMatch", m.id);
 			return ok;
 		});
-		s.waitFor(tag + ": model v2 steers the bot and lands hits", 600, () -> {
+		s.waitFor(tag + ": model v3 steers the bot and lands hits", 600, () -> {
 			Match m = matchOfA();
 			if (m == null || botsIn(m).isEmpty()) return false;
 			BotPlayer b = botsIn(m).get(0);
-			if (v2Steered(b, 40) && p(A).getHealth() < p(A).getMaxHealth()) {
-				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v2 axe: {} | {}", p(A).getHealth(), String.join(" | ", Bots.inspect(b)));
+			if (v3Steered(b, 40) && p(A).getHealth() < p(A).getMaxHealth()) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v3 axe: {} | {}", p(A).getHealth(), String.join(" | ", Bots.inspect(b)));
 				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned decision cost: {}", Bots.learnedTiming());
-				VARS.put("v2AxeBot", b.getGameProfile().name());
+				VARS.put("v3AxeBot", b.getGameProfile().name());
 				return true;
 			}
-			logBot("learned v2 bot", m, b, "learnedV2Logged");
+			logBot("learned v3 bot", m, b, "learnedV3Logged");
 			return false;
 		});
 		s.waitFor(tag + ": A, standing still, loses to it", 1200, () -> {
@@ -190,13 +190,13 @@ final class BotTests {
 			List<String> r = net.battlehub.bot.ModelReports.sentTo(p(A).getUUID());
 			if (r.size() < 3) return false;
 			net.battlehub.BattleHub.LOGGER.info("SELFTEST model report: {}", String.join(" | ", r));
-			String bot = (String) VARS.get("v2AxeBot");
-			return r.get(0).contains(bot) && r.get(0).contains("v2") && r.get(1).contains("%")
+			String bot = (String) VARS.get("v3AxeBot");
+			return r.get(0).contains(bot) && r.get(0).contains("v3") && r.get(1).contains("%")
 					&& net.battlehub.bot.ModelReports.last(bot).size() == r.size();
 		});
 		s.waitFor(tag + ": the fight was recorded: A's and the bot's decisions, a hit, the bot won", 200, () -> {
 			java.nio.file.Path f = net.battlehub.bot.FightRecorder.lastClosed();
-			if (f == null || net.battlehub.bot.FightRecorder.lastClosedMatch() != (int) VARS.get("v2AxeMatch")) return false;
+			if (f == null || net.battlehub.bot.FightRecorder.lastClosedMatch() != (int) VARS.get("v3AxeMatch")) return false;
 			List<String> lines;
 			try (java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(
 					new java.util.zip.GZIPInputStream(java.nio.file.Files.newInputStream(f)), java.nio.charset.StandardCharsets.UTF_8))) {
@@ -227,7 +227,7 @@ final class BotTests {
 			}
 			net.battlehub.BattleHub.LOGGER.info("SELFTEST fight log {}: {} lines, A {} decisions, the bot {}, {} hits, end {}", f.getFileName(),
 					lines.size(), humanRows, botRows, hits, end);
-			VARS.put("v2AxeLog", f.getFileName().toString());
+			VARS.put("v3AxeLog", f.getFileName().toString());
 			return "axe".equals(head.get("mode")) && human >= 0 && bot >= 0 && humanRows > 20 && botRows > 20 && hits > 0 && end != null
 					&& net.battlehub.core.ml.MiniJson.doubles(end.get("winners")).length == 1
 					&& net.battlehub.core.ml.MiniJson.doubles(end.get("winners"))[0] == bot;
@@ -239,7 +239,7 @@ final class BotTests {
 			try (java.util.stream.Stream<java.nio.file.Path> files = java.nio.file.Files.list(dir)) {
 				for (java.nio.file.Path z : files.filter(x -> x.getFileName().toString().startsWith("export-")).toList()) {
 					try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(z.toFile())) {
-						if (zip.getEntry((String) VARS.get("v2AxeLog")) != null) return true;
+						if (zip.getEntry((String) VARS.get("v3AxeLog")) != null) return true;
 					}
 				}
 			} catch (java.io.IOException e) {
@@ -261,12 +261,12 @@ final class BotTests {
 		});
 	}
 
-	/** Model v2 on The Bridge: with A on the bot's island (by its goal), the model fights for the bot. */
-	private static void learnedV2Bridge(MinecraftServer server, Script s) {
-		String tag = "bots learned v2 bridge";
+	/** Model v3 on The Bridge: with A on the bot's island (by its goal), the model fights for the bot. */
+	private static void learnedV3Bridge(MinecraftServer server, Script s) {
+		String tag = "bots learned v3 bridge";
 		SelfTest.reset(s, tag);
-		s.run(tag + ": model v2 on; A starts a Bridge practice duel against a master bot", () -> {
-			learnedV2On();
+		s.run(tag + ": model v3 on; A starts a Bridge practice duel against a master bot", () -> {
+			learnedV3On();
 			VARS.put("v2BridgeHurt", false);
 			SelfTest.join(server, A);
 			Bots.practice(p(A), GameMode.BRIDGE, net.battlehub.core.ai.Difficulty.MASTER);
@@ -287,11 +287,11 @@ final class BotTests {
 			if (m == null || m.phase() != Match.Phase.RUNNING || botsIn(m).isEmpty()) return false;
 			BotPlayer b = botsIn(m).get(0);
 			if (p(A).getHealth() < p(A).getMaxHealth()) VARS.put("v2BridgeHurt", true);
-			if (v2Steered(b, 20) && (boolean) VARS.get("v2BridgeHurt")) {
-				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v2 bridge: {}", String.join(" | ", Bots.inspect(b)));
+			if (v3Steered(b, 20) && (boolean) VARS.get("v2BridgeHurt")) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v3 bridge: {}", String.join(" | ", Bots.inspect(b)));
 				return true;
 			}
-			logBot("learned v2 bridge bot", m, b, "learnedV2BridgeLogged");
+			logBot("learned v3 bridge bot", m, b, "learnedV3BridgeLogged");
 			return false;
 		});
 		endAndClean(s, tag);
@@ -299,14 +299,14 @@ final class BotTests {
 	}
 
 	/**
-	 * Model v2 with its items (bots.learnedItems) in a Build UHC duel: the bot, hurt and next to A, eats (by its model's
+	 * Model v3 with its items (bots.learnedItems) in a Build UHC duel: the bot, hurt and next to A, eats (by its model's
 	 * choice or its own rules) and its model never chooses a hand the bot cannot take (the masks count the hotbar).
 	 */
-	private static void learnedV2Items(MinecraftServer server, Script s) {
-		String tag = "bots learned v2 items";
+	private static void learnedV3Items(MinecraftServer server, Script s) {
+		String tag = "bots learned v3 items";
 		SelfTest.reset(s, tag);
-		s.run(tag + ": model v2 with its items; A starts a Build UHC practice duel against a master bot", () -> {
-			learnedV2On();
+		s.run(tag + ": model v3 with its items; A starts a Build UHC practice duel against a master bot", () -> {
+			learnedV3On();
 			cfg().learnedItems = true;
 			SelfTest.join(server, A);
 			Bots.practice(p(A), GameMode.BUILD_UHC, net.battlehub.core.ai.Difficulty.MASTER);
@@ -338,7 +338,7 @@ final class BotTests {
 			// the mind heals and shoots by its own rules much of the time (A takes no damage, so it may keep shooting
 			// from afar); the model's choices, whenever it steered, must all be hands the bot could take
 			if (ate) {
-				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v2 items: model used {} items, {} hands not in the hotbar | {}", items[0], items[1],
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v3 items: model used {} items, {} hands not in the hotbar | {}", items[0], items[1],
 						String.join(" | ", Bots.inspect(b)));
 				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned decision cost: {}", Bots.learnedTiming());
 				return items[1] == 0;
@@ -346,10 +346,10 @@ final class BotTests {
 			int every = (int) (b.level().getGameTime() / 100);
 			if (!VARS.containsKey("itemsLogged") || (int) VARS.get("itemsLogged") != every) {
 				VARS.put("itemsLogged", every);
-				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v2 items: ate {} (food {} of {}, absorption {}, health {}), model steered {} ticks",
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v3 items: ate {} (food {} of {}, absorption {}, health {}), model steered {} ticks",
 						ate, foodOf(b), VARS.get("itemsFood"), b.getAbsorptionAmount(), b.getHealth(), Bots.learnedTicks(b));
 			}
-			logBot("learned v2 items bot", m, b, "learnedV2ItemsLogged");
+			logBot("learned v3 items bot", m, b, "learnedV3ItemsLogged");
 			return false;
 		});
 		endAndClean(s, tag);
@@ -370,12 +370,15 @@ final class BotTests {
 		return n;
 	}
 
-	/** Model v2 for two bots against A (1v2): both fight with it, and A, standing still, loses. */
-	private static void learnedV2Team(MinecraftServer server, Script s) {
-		String tag = "bots learned v2 1v2";
+	/**
+	 * Model v3 for two bots against A (1v2): both fight with it, each with its team mate in its observation and its
+	 * last decisions in the history (spec v3), and A, standing still, loses.
+	 */
+	private static void learnedV3Team(MinecraftServer server, Script s) {
+		String tag = "bots learned v3 1v2";
 		SelfTest.reset(s, tag);
-		s.run(tag + ": model v2 on; A starts 1v2 with the sword kit against two intermediate bots", () -> {
-			learnedV2On();
+		s.run(tag + ": model v3 on; A starts 1v2 with the sword kit against two intermediate bots", () -> {
+			learnedV3On();
 			SelfTest.join(server, A);
 			Bots.practiceTeam(p(A), GameMode.ONE_V_TWO, GameMode.SWORD, net.battlehub.core.ai.Difficulty.INTERMEDIATE);
 		});
@@ -383,12 +386,28 @@ final class BotTests {
 			Match m = matchOfA();
 			return m != null && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 2;
 		});
-		s.waitFor(tag + ": model v2 steers both bots", 900, () -> {
+		s.waitFor(tag + ": model v3 steers both bots", 900, () -> {
 			Match m = matchOfA();
 			if (m == null || m.phase() != Match.Phase.RUNNING || botsIn(m).size() < 2) return false;
-			boolean both = botsIn(m).stream().allMatch(b -> v2Steered(b, 20));
-			if (both) net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v2 1v2: {}", String.join(" | ", Bots.inspect(botsIn(m).get(0))));
+			boolean both = botsIn(m).stream().allMatch(b -> v3Steered(b, 20));
+			if (both) net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v3 1v2: {}", String.join(" | ", Bots.inspect(botsIn(m).get(0))));
 			return both;
+		});
+		s.waitFor(tag + ": each bot's model sees its team mate and uses its history", 400, () -> {
+			Match m = matchOfA();
+			if (m == null || m.phase() != Match.Phase.RUNNING || botsIn(m).size() < 2) return false;
+			boolean ok = botsIn(m).stream().allMatch(b -> {
+				int[] t = Bots.learnedTeam(b);
+				return t[1] >= 10 && t[2] >= 10;
+			});
+			if (ok) {
+				for (BotPlayer b : botsIn(m)) {
+					int[] t = Bots.learnedTeam(b);
+					net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v3 team {}: {} decisions, {} with a team mate, {} with history; {}", b.getGameProfile().name(),
+							t[0], t[1], t[2], Bots.learnedTiming());
+				}
+			}
+			return ok;
 		});
 		s.waitFor(tag + ": A, standing still, loses", 1200, () -> {
 			Match m = matchOfA();

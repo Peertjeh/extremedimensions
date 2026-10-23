@@ -1,8 +1,8 @@
 """What the mod's model reports say to practise. BattleHub writes config/battlehub/ml_feedback.json after every match
 with learned bots: per spec how much of their fights went as the model chose, why the rest did not, which values were
 new to the model, and the lessons that follow (ml/spec/lessons.json). This turns those lessons into the scenario
-weights of the v2 simulation (pvp_sim2.Scenario): each lesson's focus multiplies terrains, families and modes3 by key,
-and three and chaos as numbers; a lesson that explains a fifth of the fights or more gets its whole focus, a smaller
+weights of the v2/v3 simulation (pvp_sim2.Scenario): each lesson's focus multiplies terrains, families, modes3 and
+modes4 by key, and three, four and chaos as numbers; a lesson that explains a fifth of the fights or more gets its whole focus, a smaller
 one part of it.
 
     python train/focus.py ml_feedback.json        # what the next training would practise more
@@ -19,8 +19,8 @@ from pvp_sim2.env import Scenario  # noqa: E402
 
 LESSONS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "spec", "lessons.json")
 FULL = 0.2           # a lesson explaining this share of the fights (or more) gets its whole focus
-MAPS = ("terrains", "families", "modes3")
-NUMBERS = {"three": 0.9, "chaos": 0.9}   # scalar weights, with the most they may become
+MAPS = ("terrains", "families", "modes3", "modes4")
+NUMBERS = {"three": 0.9, "four": 0.6, "chaos": 0.9}   # scalar weights, with the most they may become
 
 
 def lessons_table(path=LESSONS_PATH):

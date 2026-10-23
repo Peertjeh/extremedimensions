@@ -726,9 +726,12 @@ public final class Bots {
 		out.addAll(b.brain.mind().report().lines());
 		if (b.brain.mind().learnedTicks() > 0) {
 			net.battlehub.match.Match lm = Matches.of(b.getUUID());
-			out.add("learned combat (v2): steered " + b.brain.mind().learnedTicks() + " ticks");
+			out.add("learned combat (v3): steered " + b.brain.mind().learnedTicks() + " ticks");
 			if (LearnedFight.active(lm)) {
 				out.add("learned decisions: " + LearnedFight.timing());
+				if (b.brain.mind().melee() instanceof LearnedFight lf) {
+					out.add("learned team: " + lf.decisions() + " decisions, " + lf.withAlly() + " with a team mate, " + lf.withHistory() + " with history");
+				}
 				out.add("learned items: " + b.brain.learnedUses() + " used, " + b.brain.learnedMissing() + " chosen but not in the hotbar");
 			}
 		}
@@ -764,9 +767,14 @@ public final class Bots {
 		return new int[] {b.brain.learnedUses(), b.brain.learnedMissing()};
 	}
 
-	/** What a learned v2 decision costs the tick, over all bots (self-test). */
+	/** What a learned decision costs the tick, over all bots (self-test). */
 	public static String learnedTiming() {
 		return LearnedFight.timing();
+	}
+
+	/** The bot's model decisions, those with a team mate in the observation, those with history (self-test). */
+	public static int[] learnedTeam(BotPlayer b) {
+		return b.brain.mind().melee() instanceof LearnedFight lf ? new int[] {lf.decisions(), lf.withAlly(), lf.withHistory()} : new int[3];
 	}
 
 	/** Ticks the learned combat model steered this bot (self-test). */

@@ -10,8 +10,9 @@ import java.util.Map;
 /**
  * What a learned bot should practise in the simulation ({@code ml/spec/lessons.json}, shipped in
  * {@code assets/battlehub/ml}; train/focus.py reads the same file): the lesson behind each reason a fight left the
- * model's choice ({@link ModelReport.Why}), the lesson behind each observation value (by name or prefix), and per
- * lesson the scenario weights it raises in the simulation and whether it needs the training with items.
+ * model's choice ({@link ModelReport.Why}), the lesson behind each observation value (by name or prefix; an
+ * observation of an earlier decision, v3's {@code name@ago}, has the lesson of the observation it was), and per lesson
+ * the scenario weights it raises in the simulation and whether it needs the training with items.
  */
 public final class Lessons {
 	private final Map<String, String> reasons = new LinkedHashMap<>();
@@ -67,6 +68,7 @@ public final class Lessons {
 
 	/** The lesson behind an observation value, or null when the file does not know it. */
 	public String ofFeature(String name) {
+		name = now(name);
 		String l = names.get(name);
 		if (l != null) return l;
 		for (Map.Entry<String, String> e : prefixes.entrySet()) {
@@ -77,6 +79,7 @@ public final class Lessons {
 
 	/** How many feature groups claim this name (by name and by prefix): exactly one for every observation. */
 	public int claims(String name) {
+		name = now(name);
 		int n = names.containsKey(name) ? 1 : 0;
 		for (String p : prefixes.keySet()) {
 			if (name.startsWith(p)) n++;
@@ -84,7 +87,13 @@ public final class Lessons {
 		return n;
 	}
 
-	/** The scenario weights this lesson raises (terrains, families, modes3 as maps; three, chaos as numbers). */
+	/** The observation an observation of an earlier decision was ({@code opp_fwd@3}: {@code opp_fwd}). */
+	private static String now(String name) {
+		int at = name.indexOf('@');
+		return at < 0 ? name : name.substring(0, at);
+	}
+
+	/** The scenario weights this lesson raises (terrains, families, modes3, modes4 as maps; three, four, chaos as numbers). */
 	public Map<String, Object> focus(String lesson) {
 		return focus.getOrDefault(lesson, Map.of());
 	}

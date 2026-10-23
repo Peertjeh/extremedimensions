@@ -1585,3 +1585,105 @@ master:
   - Het maximum van 5,4 ms is één beslissing in het eerste duel: het laden van het model (ONNX Runtime) valt in die
     eerste beslissing.
 - **Het zwaardduel met v2** (de vroegere v1-test): het model stuurde, raakte A en won.
+
+### Fase C – Spec v3: teamgenoten, een derde vijand, geheugen, teamgevechten (plan)
+
+**Doel.** Het model weet wie er met hem meevecht en wat er net gebeurde, en het leert in teams te vechten: 2v2, 2v1
+met een teamgenoot, Bed Wars in teams.
+- **Eisen:**
+  - de stad 1 tegen 2 duidelijk beter: minstens 55% over 192 gevechten;
+  - een 2v2-scenario dat het model wint: twee keer het model tegen twee gescripte bots wint meer dan het verliest,
+    met het zwaard in de arena en in Bed Wars in teams, en beter dan de master van 1.39 in hetzelfde scenario.
+- **Bewaken:** geen achteruitgang in 1v1:
+  - eval2 over de acht vaste scenario's minstens 85%;
+  - minstens 50% tegen de master van 1.39 over de 1v1-mix (minstens 1.200 gevechten).
+- **Tijd per beslissing:** onder 1 ms gemiddeld in de zelftests.
+
+**Nulmeting.**
+- Master van 1.39 in de stad 1 tegen 2 (loot, twee gescripte bots met skill 0,8): **87–105 (45,3%)** over 192
+  gevechten.
+  - Het getal 11/48 uit 2b was van het model op 40 miljoen stappen; fase A en B brachten het al naar 45%.
+- 2v2 bestaat nog niet in de simulatie. De nulmeting daarvan volgt in C1 met de master (die nog geen teamgenoten ziet).
+
+**Spec v3 (`ml/spec/combat_v3.json`).** De 118 observaties van v2 blijven precies gelijk en op hun plek. Erachter komt
+51 nieuwe:
+- **Teamgenoot** (8): de dichtstbijzijnde teamgenoot. Vooruit, links, op en afstand (geen: afstand 1, de rest 0),
+  of ik hem zie, zijn levens als ik hem zie, zijn afstand tot mijn doelwit (vecht hij al met mijn doelwit?) en het
+  aantal teamgenoten binnen 6 blokken.
+  - Een teamgenoot is altijd te vinden: zijn naamlabel staat in de game door muren, en een team weet van elkaar waar
+    het is. Zijn levens alleen in zicht, zoals bij vijanden.
+- **Derde vijand** (8): net als de tweede vijand. Vooruit, links, op, afstand, of ik hem zie, of hij naar me kijkt,
+  wanneer hij sloeg en of hij een boog vasthoudt.
+- **Geheugen** (3): hoe lang ik mijn doelwit niet meer zie, hoe lang geleden een vijand mij raakte, en hoe lang
+  geleden ik mijn doelwit raakte (in ticks, tot 5 s).
+- **Geschiedenis** (32, "frame stacking"): 16 waarden van 1 en 3 beslissingen geleden (0,1 en 0,3 s).
+  - De 16: waar het doelwit is (vooruit, links, op), of ik het zie, de richting om te mikken (sin, cos), de levens
+    van het doelwit en die van mij, mijn snelheid (3), mijn lading, en waar de tweede vijand en de teamgenoot zijn
+    (vooruit, links).
+  - Elke waarde staat in de spec als een gewone observatie (bijvoorbeeld `opp_fwd@1`, met `of` en `ago`). Zo
+    werken de maskers, de ranges en de modelrapporten er vanzelf mee.
+  - Aan het begin van een gevecht is de geschiedenis gelijk aan nu. In de mod ook na een pauze van meer dan 2
+    beslissingen zonder het model (de gescripte mind had het gevecht, of de bot was dood).
+- **Een LSTM** komt er alleen als de geschiedenis de eisen niet haalt. Dan wordt het een GRU in eigen Java-code.
+- Totaal 169 observaties, dezelfde 9 actiekoppen, dezelfde maskers (`combat_v3_masks.json`, aan de sha van v3
+  gebonden).
+- **Gelijk in de mod:** in de mod was de "wanneer sloeg hij" van de tweede vijand altijd "niet gezien". Alleen het
+  doelwit werd gevolgd; de simulatie gaf wel een waarde. Nu volgt de mod het slaan van elke vijand die de bot ziet
+  (de lading die plots zakt, zoals bij het doelwit).
+
+**Simulatie.**
+- **Tot 4 vechters per arena**, met de modi:
+  - 1v1, 1v2 en drie tegen elkaar (zoals nu);
+  - 2v1: het model met een teamgenoot tegen één;
+  - **2v2** (Bridge duo's, Bed Wars in teams, CTF en KOTH in teams);
+  - 3v1: het model in het team van drie (1v3 in de mod);
+  - vier tegen elkaar (Bridge 1v1v1v1, SkyWars, HG).
+- Teamgenoten verschijnen dicht bij elkaar, de teams uit elkaar.
+- **Teambeloning:** de beloning van elke vechter is 70% de zijne en 30% het gemiddelde van zijn team (`team_spirit`).
+  Winnen geldt al voor het hele team.
+- **Een gevecht met teamgenoten loopt door tot er één team over is**, ook als het model al dood is.
+  - Een dood model kiest niets meer: elke kop heeft dan één toegestane keuze, dus er is geen gradiënt.
+  - Het krijgt wel zijn deel van de teambeloning. Zo leert het dat het team kan winnen na zijn dood, en dat zijn
+    klappen daaraan meetellen.
+- **De teamgenoot** in de training komt uit dezelfde pool als de tegenstanders: meestal een recente versie van het
+  model, soms de gescripte bot of een zwakke speler. In de mod kan een teamgenoot ook iedereen zijn.
+
+**Training.**
+- **Warme start in plaats van opnieuw beginnen.** Het netwerk van de master van 1.39 krijgt de 51 nieuwe ingangen
+  met gewicht 0. Het begint dus precies als de master en leert de nieuwe waarden te gebruiken.
+  - Opnieuw beginnen zou de 40 miljoen stappen van 2b plus fase A en B kosten.
+  - Dezelfde omzetting geeft de lagere niveaus een v3-model dat precies speelt als hun v2-model. Zo kan v2 helemaal
+    uit de jar, en is er één familie.
+- MaskablePPO, met de extra spullen en de leraar als gescripte tegenstander zoals in fase B. Ongeveer 25% van de
+  arena's met 4 vechters en 30% met 3, de rest 1v1. Ongeveer 16 tot 24 miljoen stappen.
+- Elke 2 miljoen stappen:
+  - eval2 met een nieuw teamblok: de stad 1v2 over 192, 2v2 zwaard en Bed Wars in teams (model + model tegen twee
+    gescripte, 96 elk), en 2v2 gemengd (model + gescripte teamgenoot tegen twee gescripte: maakt het model zijn team
+    beter?);
+  - voor de kandidaten `--versus` tegen de master van 1.39 over de 1v1-mix.
+- League met de omgezette lagere niveaus en de nieuwe checkpoints; master (en zo nodig expert) worden vervangen.
+
+**In de mod.**
+- **`FightState`:** de teamgenoot (een deelnemer die geen vijand is), de derde vijand, de tijden voor het geheugen, en
+  het slaan van alle vijanden die de bot ziet.
+- **`LearnedFight`:** houdt de geschiedenis bij (de observaties van de laatste 3 beslissingen) en begint opnieuw na
+  een pauze.
+- **`CombatModels`:** familie v3 (`combat_v3.json`, `combat_v3_masks.json`, `combat_v3_<niveau>.onnx`,
+  `difficulties_v3.json`). De v2-bestanden gaan uit de jar.
+- **Gevechtsverslagen:** nemen de toestand van v3 op (een uitbreiding van v2). `train/fights.py` leest beide.
+- **Modelrapporten:** `combat_v3_ranges.json`, en `lessons.json` krijgt groepen voor teamgenoot, derde vijand,
+  geheugen en geschiedenis.
+- **Zelftest:** een 2v2 met twee geleerde bots tegen A en een gescripte bot. Het model ziet zijn teamgenoot, stuurt,
+  en het team van A verliest.
+- De tijd per beslissing opnieuw gemeten: het netwerk heeft 51 ingangen meer, en de mod zoekt teamgenoten en een derde
+  vijand.
+
+**Mijlpalen.**
+- **C1** – spec v3, simulatie (4 vechters, teammodi, teambeloning, geschiedenis), tests, golden-bestand, ranges,
+  lessons.json; de nulmeting van 2v2.
+- **C2** – Java-pariteit: `CombatState`, `CombatObservation` met de geschiedenis, golden-tests.
+- **C3** – warme start, training, eval2 en league.
+- **C4** – in de mod, zelftest, tijd per beslissing, docs, versie 1.40.0, CI groen.
+
+**Gescripte punten.** Geen: wie het doelwit is, wanneer er gevochten wordt en het teamspel buiten het gevecht (bedden,
+bruggen, rollen) blijven gescript.

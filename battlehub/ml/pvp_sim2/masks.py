@@ -1,4 +1,4 @@
-"""Action masks (ml/spec/combat_v2_masks.json): which choices of each action head a fighter may make, from its
+"""Action masks (ml/spec/combat_v2_masks.json, combat_v3_masks.json: the same rules): which choices of each action head a fighter may make, from its
 observation alone. A masked choice gets minus infinity as its logit, so the hand head no longer picks something the
 fighter does not carry (which did nothing, and was therefore a safe choice that taught the model to keep its weapon).
 
@@ -10,9 +10,10 @@ import os
 
 import numpy as np
 
-from .spec import SPEC2
+from .spec import SPEC2, SPEC3
 
 MASKS2_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "spec", "combat_v2_masks.json")
+MASKS3_PATH = os.path.join(os.path.dirname(MASKS2_PATH), "combat_v3_masks.json")
 OPS = {">": np.greater, "<": np.less, ">=": np.greater_equal, "<=": np.less_equal}
 
 
@@ -69,3 +70,15 @@ class Masks:
 
 
 MASKS2 = Masks()
+MASKS3 = Masks(SPEC3, MASKS3_PATH)
+
+
+def dead_mask(spec=SPEC2):
+    """The mask of a dead fighter whose team fights on: in every head only the value 0 (no movement, no click or turn,
+    the weapon, no use), so its choice is certain and teaches the policy nothing."""
+    out = np.zeros(int(spec.action_nvec.sum()), dtype=bool)
+    at = 0
+    for values in spec.action_values:
+        out[at + list(values).index(0)] = True
+        at += len(values)
+    return out

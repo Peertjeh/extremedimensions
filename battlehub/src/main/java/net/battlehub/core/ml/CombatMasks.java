@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Which choices of each action head a fighter may make ({@code ml/spec/combat_v2_masks.json}, the rules
+ * Which choices of each action head a fighter may make ({@code ml/spec/combat_v3_masks.json}, the rules
  * ml/pvp_sim2/masks.py applies in training), from its observation alone: a choice listed in the file is allowed when
  * any of its alternatives holds (all conditions of it), a choice not listed always is. The model's choice skips what
  * is not allowed (CombatAction.best and sample with a mask), so a bot never picks something it does not carry.
@@ -84,7 +84,7 @@ public final class CombatMasks {
 		return new CombatMasks(spec.logitCount(), rules.toArray(new Rule[0]));
 	}
 
-	/** The masks shipped with the mod for a spec file ("combat_v2.json" -> "combat_v2_masks.json"), or null when it has none (v1). */
+	/** The masks shipped with the mod for a spec file ("combat_v3.json" -> "combat_v3_masks.json"), or null when it has none (v1). */
 	public static CombatMasks shipped(String specFile, CombatSpec spec) throws IOException {
 		String file = specFile.replace(".json", "_masks.json");
 		InputStream in = CombatMasks.class.getResourceAsStream("/assets/battlehub/ml/" + file);

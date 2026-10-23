@@ -23,7 +23,7 @@ import net.battlehub.core.ai.Tactic;
  * file train/focus.py reads).
  */
 class ModelReportTest {
-	static CombatSpec v1, v2;
+	static CombatSpec v1, v2, v3;
 	static Lessons lessons;
 	static ObsRanges ranges2;
 
@@ -31,6 +31,7 @@ class ModelReportTest {
 	static void load() throws IOException {
 		v1 = CombatSpec.load(CombatObservationTest.resource("/combat_v1.json"));
 		v2 = CombatSpec.load(CombatObservationTest.resource("/combat_v2.json"));
+		v3 = CombatSpec.load(CombatObservationTest.resource("/combat_v3.json"));
 		lessons = Lessons.parse(text("/lessons.json"));
 		ranges2 = ObsRanges.parse(text("/combat_v2_ranges.json"), v2);
 	}
@@ -41,7 +42,7 @@ class ModelReportTest {
 
 	@Test
 	void everyObservationOfEverySpecBelongsToExactlyOneLesson() {
-		for (CombatSpec spec : List.of(v1, v2)) {
+		for (CombatSpec spec : List.of(v1, v2, v3)) {
 			for (String name : spec.obsNames) {
 				assertEquals(1, lessons.claims(name), name + " (spec " + spec.version + ") must be in exactly one feature group of lessons.json");
 				assertNotNull(lessons.ofFeature(name));
@@ -71,6 +72,15 @@ class ModelReportTest {
 		}
 		ObsRanges.parse(text("/combat_v1_ranges.json"), v1);
 		assertThrows(IllegalArgumentException.class, () -> ObsRanges.parse(text("/combat_v1_ranges.json"), v2));
+		// v3's: every observation, its history too
+		Map<String, Object> d3 = MiniJson.object(MiniJson.parse(text("/combat_v3_ranges.json")));
+		assertEquals(v3.obsNames, List.copyOf(MiniJson.object(d3.get("ranges")).keySet()));
+		ObsRanges.parse(text("/combat_v3_ranges.json"), v3);
+		// an earlier decision's value has the lesson of the value it was; a team mate's its own
+		assertEquals(lessons.ofFeature("opp_fwd"), lessons.ofFeature("opp_fwd@3"));
+		assertEquals("team", lessons.ofFeature("ally_dist"));
+		assertEquals("crowds", lessons.ofFeature("e3_dist"));
+		assertEquals("memory", lessons.ofFeature("opp_unseen"));
 	}
 
 	@Test

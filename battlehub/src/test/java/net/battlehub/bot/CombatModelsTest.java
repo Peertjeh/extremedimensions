@@ -19,7 +19,7 @@ import net.battlehub.core.ml.MiniJson;
 
 /**
  * The shipped models run in ONNX Runtime for Java and give the logits PyTorch gave when they were exported (the
- * .check.json files the export writes); every level of difficulties_v2.json has its model, made for the shipped spec.
+ * .check.json files the export writes); every level of difficulties_v3.json has its model, made for the shipped spec.
  */
 class CombatModelsTest {
 	static byte[] bytes(String name) throws Exception {
@@ -30,8 +30,8 @@ class CombatModelsTest {
 	}
 
 	@Test
-	void everyLevelOfModelV2HasAModelThatGivesWhatPyTorchGave() throws Exception {
-		check(CombatSpec.shipped("combat_v2.json"), "difficulties_v2.json");
+	void everyLevelOfModelV3HasAModelThatGivesWhatPyTorchGave() throws Exception {
+		check(CombatSpec.shipped("combat_v3.json"), "difficulties_v3.json");
 	}
 
 	static void check(CombatSpec spec, String levelsFile) throws Exception {
@@ -63,13 +63,13 @@ class CombatModelsTest {
 
 	@Test
 	void aModelForAnotherSpecIsRefused() throws Exception {
-		CombatSpec spec = CombatSpec.shipped("combat_v2.json");
-		byte[] raw = bytes("/assets/battlehub/ml/combat_v2.json");
-		byte[] other = new String(raw, StandardCharsets.UTF_8).replace("\"version\": 2", "\"version\": 3").getBytes(StandardCharsets.UTF_8);
+		CombatSpec spec = CombatSpec.shipped("combat_v3.json");
+		byte[] raw = bytes("/assets/battlehub/ml/combat_v3.json");
+		byte[] other = new String(raw, StandardCharsets.UTF_8).replace("\"version\": 3", "\"version\": 4").getBytes(StandardCharsets.UTF_8);
 		CombatSpec changed = CombatSpec.parse(other);
 		assertTrue(!changed.sha256.equals(spec.sha256));
-		byte[] model = bytes("/assets/battlehub/ml/combat_v2_master.onnx");
-		assertNotNull(CombatModels.load("combat_v2_master.onnx", model, spec));
-		assertThrows(IllegalStateException.class, () -> CombatModels.load("combat_v2_master.onnx", model, changed));
+		byte[] model = bytes("/assets/battlehub/ml/combat_v3_master.onnx");
+		assertNotNull(CombatModels.load("combat_v3_master.onnx", model, spec));
+		assertThrows(IllegalStateException.class, () -> CombatModels.load("combat_v3_master.onnx", model, changed));
 	}
 }

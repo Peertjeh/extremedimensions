@@ -2,31 +2,60 @@ package net.battlehub.core.ml;
 
 /**
  * The model's observation from a {@link CombatState}: the same formulas as ml/pvp_sim/obs.py (spec v1) and
- * ml/pvp_sim2/obs.py (v2), checked number for number against the golden files the simulation writes
- * (CombatObservationTest). Each value is (raw / scale), clipped. The spec says which values, in which order.
+ * ml/pvp_sim2/obs.py (v2, v3), checked number for number against the golden files the simulation writes
+ * (CombatObservationTest, CombatObservationV2Test, CombatObservationV3Test). Each value is (raw / scale), clipped. The
+ * spec says which values, in which order. An observation of an earlier decision (v3's history) is that decision's
+ * value of the observation it names, from {@code past}; without it (the start of a fight) the value now.
  */
 public final class CombatObservation {
 	private CombatObservation() {}
 
-	/** The scaled, clipped observation, as the model takes it. */
+	/** The scaled, clipped observation, as the model takes it (a spec without a history, or the start of a fight). */
 	public static float[] build(CombatSpec spec, CombatState s) {
-		double[] raw = raw(spec, s);
-		float[] out = new float[raw.length];
-		for (int k = 0; k < raw.length; k++) {
-			double v = raw[k] / spec.obsScale[k];
-			out[k] = (float) Math.max(-spec.obsClip[k], Math.min(spec.obsClip[k], v));
+		return build(spec, s, null);
+	}
+
+	/**
+	 * The same with the history: {@code past[a]} is the observation of a + 1 decisions earlier (null, or shorter than
+	 * the spec's history reaches: the value now).
+	 */
+	public static float[] build(CombatSpec spec, CombatState s, float[][] past) {
+		double[][] p = null;
+		if (past != null) {
+			p = new double[past.length][];
+			for (int a = 0; a < past.length; a++) {
+				if (past[a] == null) continue;
+				p[a] = new double[past[a].length];
+				for (int k = 0; k < past[a].length; k++) p[a][k] = past[a][k];
+			}
 		}
+		double[] v = scaled(spec, s, p);
+		float[] out = new float[v.length];
+		for (int k = 0; k < v.length; k++) out[k] = (float) v[k];
 		return out;
 	}
 
 	/** The same, in doubles (for the test against the golden file). */
 	public static double[] scaled(CombatSpec spec, CombatState s) {
+		return scaled(spec, s, null);
+	}
+
+	/** The same, in doubles, with the history (see {@link #build(CombatSpec, CombatState, float[][])}). */
+	public static double[] scaled(CombatSpec spec, CombatState s, double[][] past) {
 		double[] raw = raw(spec, s);
-		for (int k = 0; k < raw.length; k++) raw[k] = Math.max(-spec.obsClip[k], Math.min(spec.obsClip[k], raw[k] / spec.obsScale[k]));
+		for (int k = 0; k < raw.length; k++) {
+			if (!spec.isHistory(k)) raw[k] = Math.max(-spec.obsClip[k], Math.min(spec.obsClip[k], raw[k] / spec.obsScale[k]));
+		}
+		for (int k = 0; k < raw.length; k++) {
+			if (!spec.isHistory(k)) continue;
+			int a = spec.historyAgo[k] - 1, of = spec.historyOf[k];
+			double then = past == null || a >= past.length || past[a] == null ? raw[of] : past[a][of];
+			raw[k] = Math.max(-spec.obsClip[k], Math.min(spec.obsClip[k], then / spec.obsScale[k]));
+		}
 		return raw;
 	}
 
-	/** The unscaled values in spec order. */
+	/** The unscaled values in spec order (0 for the observations of earlier decisions). */
 	public static double[] raw(CombatSpec spec, CombatState s) {
 		double ry = Math.toRadians(s.selfYaw);
 		double fx = -Math.sin(ry), fz = Math.cos(ry);
@@ -58,6 +87,7 @@ public final class CombatObservation {
 		double[] threat = threat(spec, s);
 		double[] out = new double[spec.obsDim()];
 		for (int k = 0; k < out.length; k++) {
+			if (spec.isHistory(k)) continue;
 			String n = spec.obsNames.get(k);
 			out[k] = switch (n) {
 				case "opp_fwd" -> aFwd;
@@ -140,10 +170,42 @@ public final class CombatObservation {
 				case "opp_below" -> s.oppBelow;
 				case "opp_drop_behind" -> s.oppDropBehind;
 				case "opp_void_behind" -> s.oppVoidBehind;
-				default -> other(spec, n, s);
+				default -> other(spec, k, n, s, fx, fz, lx, lz);
 			};
 		}
 		return out;
+	}
+
+	/** v3's team mate, third enemy and memory, the hand one-hot and the rays. */
+	private static double other(CombatSpec spec, int k, String name, CombatState s, double fx, double fz, double lx, double lz) {
+		boolean al = s.allyPresent, alv = al && s.allyVisible;
+		double ax = al ? s.allyX - s.selfX : 0, az = al ? s.allyZ - s.selfZ : 0, ay = al ? s.allyY - s.selfY : 0;
+		boolean e3 = s.e3Present, e3v = e3 && s.e3Visible;
+		double ex = e3 ? s.e3X - s.selfX : 0, ez = e3 ? s.e3Z - s.selfZ : 0, ey = e3 ? s.e3Y - s.selfY : 0;
+		double edist = Math.hypot(ex, ez);
+		double ery = Math.toRadians(s.e3Yaw);
+		return switch (name) {
+			case "ally_fwd" -> ax * fx + az * fz;
+			case "ally_left" -> ax * lx + az * lz;
+			case "ally_up" -> ay;
+			case "ally_dist" -> al ? Math.hypot(ax, az) : spec.obsScale[k];
+			case "ally_visible" -> alv ? 1 : 0;
+			case "ally_health" -> alv ? s.allyHealth / Math.max(1e-9, s.allyMaxHealth) : 1;
+			case "ally_opp_dist" -> al ? Math.hypot(s.oppX - s.allyX, s.oppZ - s.allyZ) : spec.obsScale[k];
+			case "allies_near" -> s.alliesNear;
+			case "e3_fwd" -> ex * fx + ez * fz;
+			case "e3_left" -> ex * lx + ez * lz;
+			case "e3_up" -> ey;
+			case "e3_dist" -> e3 ? edist : spec.obsScale[k];
+			case "e3_visible" -> e3v ? 1 : 0;
+			case "e3_look" -> e3v ? (edist < 1e-9 ? 1 : (-ex * -Math.sin(ery) - ez * Math.cos(ery)) / edist) : 0;
+			case "e3_since_swing" -> e3v ? s.e3SinceSwing : spec.obsScale[k];
+			case "e3_holds_bow" -> e3v && s.e3HoldsBow ? 1 : 0;
+			case "opp_unseen" -> s.oppUnseen;
+			case "self_since_hit" -> s.selfSinceHit;
+			case "opp_since_hit" -> s.oppSinceHit;
+			default -> other(spec, name, s);
+		};
 	}
 
 	/** The hand one-hot and the rays. */

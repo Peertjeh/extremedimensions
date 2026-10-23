@@ -47,7 +47,7 @@ public final class ModelReports {
 	private static boolean lessonsTried;
 	private static final Map<CombatModels.Family, ObsRanges> RANGES = new HashMap<>();
 	private static final java.util.Set<CombatModels.Family> RANGES_TRIED = new java.util.HashSet<>();
-	/** The totals: per spec ("v1", "v2") over everything, and per spec and mode. */
+	/** The totals: per spec ("v1", "v2", "v3") over everything, and per spec and mode. */
 	private static Map<String, ModelReport> totals;
 	private static Map<String, Map<String, ModelReport>> byMode;
 	private static String since;

@@ -1,4 +1,4 @@
-"""Observations of spec v2 from a CombatState: the same formulas as net.battlehub.core.ml in the mod.
+"""Observations of specs v2 and v3 from a CombatState: the same formulas as net.battlehub.core.ml in the mod.
 
 A CombatState (v2) is a dict of numpy arrays, one entry per bot, with what it knows at one moment (STATE2_KEYS):
   self_*   where it is and how it moves, its charge, protection, health and absorption, food and saturation, the health
@@ -9,6 +9,12 @@ A CombatState (v2) is a dict of numpy arrays, one entry per bot, with what it kn
   e2_*     the nearest other enemy, if any (e2_present)
   threat_* the projectile coming at it, if any (threat_present)
   terrain  voids, drops, steps, walls (n, 8), self_below, opp_below, opp_drop_behind, opp_void_behind (terrain.py)
+and for v3 (STATE3_KEYS):
+  ally_*   the nearest team mate, if any (ally_present), and allies_near
+  e3_*     the next nearest enemy after the second, if any (e3_present)
+  memory   opp_unseen (ticks since the target was last seen), self_since_hit (since an enemy last hurt it),
+           opp_since_hit (since it last hurt its target)
+v3's history (an observation `of` an earlier decision) is not in the state: observe() takes the earlier observations.
 Angles are Minecraft's: yaw 0 looks along +z, 90 along -x; pitch positive looks down.
 """
 import numpy as np
@@ -29,13 +35,18 @@ THREAT = ["present", "x", "y", "z", "vx", "vy", "vz"]
 STATE2_KEYS = (["self_" + k for k in SELF2] + ["opp_" + k for k in OPP2] + ["e2_" + k for k in E2] + ["threat_" + k for k in THREAT]
                + ["damage_on", "enemies_near", "self_below", "opp_below", "opp_drop_behind", "opp_void_behind",
                   "voids", "drops", "steps", "walls"])
+ALLY = ["present", "x", "y", "z", "visible", "health", "max_health"]
+MEMORY = ["opp_unseen", "self_since_hit", "opp_since_hit"]
+RAYS = ("voids", "drops", "steps", "walls")
+# v2's values, v3's, then the rays (the order of the mod's CombatState.KEYS, which the fight logs store)
+STATE3_KEYS = ([k for k in STATE2_KEYS if k not in RAYS] + ["ally_" + k for k in ALLY] + ["e3_" + k for k in E2] + ["allies_near"]
+               + MEMORY + list(RAYS))
 HANDS = ["weapon", "bow", "food", "gapple", "pearl", "wind"]
 # the kinds of the values (the rest are floats): the golden file and the mod's fight logs type them this way
 BOOLS = {"self_on_ground", "self_sprinting", "self_shield", "self_blocking", "opp_on_ground", "opp_sprinting", "opp_visible",
          "opp_blocking", "opp_eating", "opp_holds_bow", "opp_holds_food", "opp_holds_throwable", "e2_present", "e2_visible",
-         "e2_holds_bow", "threat_present", "damage_on"}
+         "e2_holds_bow", "threat_present", "damage_on", "ally_present", "ally_visible", "e3_present", "e3_visible", "e3_holds_bow"}
 INTS = {"self_hand"}
-RAYS = ("voids", "drops", "steps", "walls")
 
 
 def armor_reduce(damage, armor, toughness):
@@ -81,7 +92,8 @@ def threat(s, spec=SPEC2):
 
 
 def raw_features(s, spec=SPEC2):
-    """The unscaled observation values, shape (n, obs_dim), in spec order."""
+    """The unscaled observation values, shape (n, obs_dim), in spec order (0 for the observations of earlier decisions:
+    observe() fills them in)."""
     (fx, fz), (lx, lz) = frame(s["self_yaw"])
     dx = s["opp_x"] - s["self_x"]
     dz = s["opp_z"] - s["self_z"]
@@ -200,14 +212,74 @@ def raw_features(s, spec=SPEC2):
         cols["drop_%d" % k] = s["drops"][:, k]
         cols["step_%d" % k] = s["steps"][:, k]
         cols["wall_%d" % k] = s["walls"][:, k]
+    if "ally_fwd" in spec.obs_names:
+        cols.update(v3_features(s, spec, fx, fz, lx, lz))
     m = np.shape(s["self_x"])[0]
-    out = np.empty((m, len(spec.obs_names)))
-    for k, name in enumerate(spec.obs_names):
-        out[:, k] = cols[name]
+    out = np.zeros((m, len(spec.obs_names)))
+    for k in spec.current:
+        out[:, k] = cols[spec.obs_names[k]]
     return out
 
 
-def observe(s, spec=SPEC2):
-    """The observation vectors, shape (n, obs_dim): raw / scale, clipped to [-clip, clip]."""
+def v3_features(s, spec, fx, fz, lx, lz):
+    """v3's team mate, third enemy and memory (unscaled)."""
+    one = lambda b: np.asarray(b, dtype=np.float64)
+    al = s["ally_present"] > 0.5
+    alv = al & (s["ally_visible"] > 0.5)
+    ax = np.where(al, s["ally_x"] - s["self_x"], 0.0)
+    az = np.where(al, s["ally_z"] - s["self_z"], 0.0)
+    ay = np.where(al, s["ally_y"] - s["self_y"], 0.0)
+    e3 = s["e3_present"] > 0.5
+    e3v = e3 & (s["e3_visible"] > 0.5)
+    ex = np.where(e3, s["e3_x"] - s["self_x"], 0.0)
+    ez = np.where(e3, s["e3_z"] - s["self_z"], 0.0)
+    ey = np.where(e3, s["e3_y"] - s["self_y"], 0.0)
+    edist = np.hypot(ex, ez)
+    (efx, efz), _ = frame(s["e3_yaw"])
+    elook = np.where(edist < 1e-9, 1.0, (-ex * efx - ez * efz) / np.where(edist < 1e-9, 1.0, edist))
+    scale = lambda name: spec.obs_scale[spec.index(name)]
+    return {
+        "ally_fwd": ax * fx + az * fz,
+        "ally_left": ax * lx + az * lz,
+        "ally_up": ay,
+        "ally_dist": np.where(al, np.hypot(ax, az), scale("ally_dist")),
+        "ally_visible": one(alv),
+        "ally_health": np.where(alv, s["ally_health"] / np.maximum(1e-9, s["ally_max_health"]), 1.0),
+        "ally_opp_dist": np.where(al, np.hypot(s["opp_x"] - s["ally_x"], s["opp_z"] - s["ally_z"]), scale("ally_opp_dist")),
+        "allies_near": s["allies_near"],
+        "e3_fwd": ex * fx + ez * fz,
+        "e3_left": ex * lx + ez * lz,
+        "e3_up": ey,
+        "e3_dist": np.where(e3, edist, scale("e3_dist")),
+        "e3_visible": one(e3v),
+        "e3_look": np.where(e3v, elook, 0.0),
+        "e3_since_swing": np.where(e3v, s["e3_since_swing"], scale("e3_since_swing")),
+        "e3_holds_bow": np.where(e3v, one(s["e3_holds_bow"]), 0.0),
+        "opp_unseen": s["opp_unseen"],
+        "self_since_hit": s["self_since_hit"],
+        "opp_since_hit": s["opp_since_hit"],
+    }
+
+
+def observe(s, spec=SPEC2, past=None, start=None):
+    """The observation vectors, shape (n, obs_dim): raw / scale, clipped to [-clip, clip]. With a history (v3): past[a]
+    is the observation of a + 1 decisions earlier (n, obs_dim); without it (the start of a fight), or where `start`
+    (n,) is true, an observation of an earlier decision is the value now."""
     raw = raw_features(s, spec)
-    return np.clip(raw / spec.obs_scale, -spec.obs_clip, spec.obs_clip)
+    out = np.clip(raw / spec.obs_scale, -spec.obs_clip, spec.obs_clip)
+    return history(out, spec, past, start)
+
+
+def history(obs, spec, past=None, start=None):
+    """Fills the observations of earlier decisions in obs (n, obs_dim): from past (see observe), else the value now."""
+    if not spec.history:
+        return obs
+    ks, ofs, agos = (np.array(v) for v in zip(*spec.history))
+    now = obs[:, ofs]
+    if past is None:
+        obs[:, ks] = now
+        return obs
+    then = np.stack([past[a - 1][:, o] for o, a in zip(ofs, agos)], axis=1)
+    then = np.clip(then / spec.obs_scale[ks], -spec.obs_clip[ks], spec.obs_clip[ks])
+    obs[:, ks] = then if start is None else np.where(np.asarray(start)[:, None], now, then)
+    return obs

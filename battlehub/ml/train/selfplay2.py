@@ -24,10 +24,20 @@ One model instead of v1 and v2 (phase 3B): --v1 lets model v1 play a share of th
 adapter), --family-weight and --pair deal more of a kit and the maps that go with it (sword=3, sword=walled: the flat
 sword duel where v1 still fought).
 
+Spec v3 (phase 3C, the default; --spec 2 trains as before): four slots per arena, so besides 1v1, 1v2 and three
+against each other there are two against two, the learner with one or two team mates, and four against each other
+(Scenario.four, modes4). The other slots, team mates included, are drawn from the pool. A fight with team mates goes on
+until a team is left, also after the learner died; a dead learner's masks allow only "nothing", and it keeps its share
+of the team's reward (Rewards2.team_spirit). --init takes a v3 checkpoint, e.g. a v2 one made into v3 by
+train/upgrade_v3.py, which starts exactly as the v2 model plays.
+
     python train/selfplay2.py --run runs/v2 --steps 60000000
     python train/selfplay2.py --run runs/v2items --init runs/v2/ckpt_060000000.zip --pool-from runs/v2 --items --ent 0.02 --steps 20000000
     python train/selfplay2.py --run runs/v3a --init runs/v2bc/ckpt_bc.zip --pool-from runs/v2 --masks --extra-items 1.0 \
-        --scripted-latch --bc-data bc.npz --bc-weight 0.5 --bc-decay 8000000 --steps 20000000
+        --scripted-latch --bc-data bc.npz --bc-weight 0.5 --bc-decay 8000000 --steps 20000000 --spec 2
+    python train/upgrade_v3.py runs/v3b/ckpt_004000032.zip runs/v3c/start.zip
+    python train/selfplay2.py --run runs/v3c --init runs/v3c/start.zip --pool-from runs/v3b --masks --extra-items 1.0 \
+        --scripted-latch --steps 20000000
 """
 import argparse
 import glob
@@ -42,7 +52,9 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pvp_sim2 import Batch2, Dummy2, Random2, Scripted2  # noqa: E402
-from pvp_sim2.spec import SPEC2  # noqa: E402
+from pvp_sim2.spec import SPEC2, SPEC3  # noqa: E402
+
+SPECS = {2: (SPEC2, 3), 3: (SPEC3, 4)}   # the spec and the slots per arena
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -53,9 +65,12 @@ ITEM_FAMILIES = {"sword": 0.6, "axe": 0.8, "mace": 0.8, "bow": 1.2, "koth": 0.2,
                  "boxing": 0.1, "build_uhc": 1.2, "sumo": 0.2, "bedwars": 1.0, "loot": 1.5}
 
 
-def worker(conn, n, seed, max_ticks, items=False, lessons=None, extra_items=0.0, family_weight=None, pairs=None):
+def worker(conn, n, seed, max_ticks, items=False, lessons=None, extra_items=0.0, family_weight=None, pairs=None, spec_version=3,
+           shares=None):
     from pvp_sim2.env import Scenario
     sc = Scenario(extra_items=extra_items)
+    for name, v in (shares or {}).items():
+        setattr(sc, name, v)
     if items:
         sc.families = dict(ITEM_FAMILIES)
     for fam, w in (family_weight or {}).items():
@@ -65,7 +80,8 @@ def worker(conn, n, seed, max_ticks, items=False, lessons=None, extra_items=0.0,
     if lessons:
         from train.focus import apply
         sc, _ = apply(sc, lessons)
-    b = Batch2(n, seed=seed, max_ticks=max_ticks, scenario=sc)
+    spec, k = SPECS[spec_version]
+    b = Batch2(n, k=k, seed=seed, max_ticks=max_ticks, scenario=sc, spec=spec)
     while True:
         cmd, data = conn.recv()
         if cmd == "reset":
@@ -74,7 +90,7 @@ def worker(conn, n, seed, max_ticks, items=False, lessons=None, extra_items=0.0,
             actions, breadth, shaping = data
             b.breadth, b.shaping = breadth, shaping
             obs, r, d, info = b.step(actions)
-            lite = {"winner": info["winner"], "ticks": info["ticks"], "return": info["episode_return"][:, 0]}
+            lite = {"winner": info["winner"], "ticks": info["ticks"], "return": info["episode_return"][:, 0], "alive": info["alive"][:, 0]}
             if d.any():
                 lite.update(terminal=info["terminal_obs"][d, 0], terrain=info["terrain"], family=info["family"], mode=info["mode"])
             conn.send((obs, r, d, lite))
@@ -118,7 +134,7 @@ class FrozenPolicy:
         if self.masks and not deterministic:
             return self.chooser(obs)
         with self.torch.no_grad():
-            t = self.torch.as_tensor(np.asarray(obs, dtype=np.float32))
+            t = self.torch.as_tensor(np.asarray(obs, dtype=np.float32)[:, :self.policy.observation_space.shape[0]])
             return self.policy._predict(t, deterministic=deterministic).cpu().numpy()
 
 
@@ -184,7 +200,8 @@ class OpponentPool2:
 
 # ---------------------------------------------------------------------------------------------- the VecEnv
 
-def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=None, extra_items=0.0, family_weight=None, pairs=None):
+def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=None, extra_items=0.0, family_weight=None, pairs=None,
+                spec_version=3, shares=None):
     from gymnasium import spaces
     from stable_baselines3.common.vec_env import VecEnv
 
@@ -194,15 +211,19 @@ def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=N
             self.conns, self.procs = [], []
             for w in range(workers):
                 a, b = ctx.Pipe()
-                p = ctx.Process(target=worker, args=(b, per, seed * 100 + w, max_ticks, items, lessons, extra_items, family_weight, pairs), daemon=True)
+                p = ctx.Process(target=worker, args=(b, per, seed * 100 + w, max_ticks, items, lessons, extra_items, family_weight, pairs,
+                                                     spec_version, shares), daemon=True)
                 p.start()
                 self.conns.append(a)
                 self.procs.append(p)
             n = workers * per
-            super().__init__(n, spaces.Box(-1.0, 1.0, shape=(SPEC2.obs_dim,), dtype=np.float32), spaces.MultiDiscrete(SPEC2.action_nvec))
+            spec, self.k = SPECS[spec_version]
+            super().__init__(n, spaces.Box(-1.0, 1.0, shape=(spec.obs_dim,), dtype=np.float32), spaces.MultiDiscrete(spec.action_nvec))
             self.pool, self.cur = pool, cur
-            self.kind, self.skill = pool.draw(n * 2)
-            self.kind, self.skill = self.kind.reshape(n, 2), self.skill.reshape(n, 2)
+            others = self.k - 1
+            self.kind, self.skill = pool.draw(n * others)
+            self.kind, self.skill = self.kind.reshape(n, others), self.skill.reshape(n, others)
+            self.alive = np.ones(n, dtype=bool)
             self.obs = None
             self.actions = None
             self.results_by = {}
@@ -212,14 +233,15 @@ def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=N
             for c in self.conns:
                 c.send(("reset", None))
             self.obs = np.concatenate([c.recv() for c in self.conns], axis=0)
+            self.alive[:] = True
             return self.obs[:, 0].copy()
 
         def step_async(self, actions):
             self.actions = np.asarray(actions, dtype=np.int64)
 
         def step_wait(self):
-            n = self.num_envs
-            opp = self.pool.act(self.obs[:, 1:].reshape(n * 2, -1), self.kind.reshape(-1), self.skill.reshape(-1)).reshape(n, 2, -1)
+            n, others = self.num_envs, self.k - 1
+            opp = self.pool.act(self.obs[:, 1:].reshape(n * others, -1), self.kind.reshape(-1), self.skill.reshape(-1)).reshape(n, others, -1)
             acts = np.concatenate([self.actions[:, None, :], opp], axis=1)
             br, sh = self.cur.breadth(), self.cur.shaping()
             for w, c in enumerate(self.conns):
@@ -228,6 +250,7 @@ def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=N
             obs = np.concatenate([p[0] for p in parts], axis=0)
             reward = np.concatenate([p[1] for p in parts], axis=0)
             done = np.concatenate([p[2] for p in parts], axis=0)
+            self.alive = np.concatenate([p[3]["alive"] for p in parts], axis=0)
             infos = [{} for _ in range(n)]
             for w, (o, r, d, lite) in enumerate(parts):
                 if not d.any():
@@ -243,9 +266,9 @@ def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=N
                     self.scenarios.setdefault(sc, {"win": 0, "loss": 0, "draw": 0})[res] += 1
                     infos[g] = {"terminal_observation": lite["terminal"][j].copy(),
                                 "episode": {"r": float(lite["return"][i]), "l": int(lite["ticks"][i])}}
-                k, s = self.pool.draw(idx.size * 2)
-                self.kind[w * per + idx] = k.reshape(-1, 2)
-                self.skill[w * per + idx] = s.reshape(-1, 2)
+                k, s = self.pool.draw(idx.size * others)
+                self.kind[w * per + idx] = k.reshape(-1, others)
+                self.skill[w * per + idx] = s.reshape(-1, others)
             self.obs = obs
             return obs[:, 0].copy(), reward[:, 0].copy(), done.copy(), infos
 
@@ -263,9 +286,12 @@ def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=N
             setattr(self, attr_name, value)
 
         def action_masks(self):
-            """The learner's action masks (MaskablePPO): what it may choose now in every arena."""
-            from pvp_sim2.masks import MASKS2
-            return MASKS2(self.obs[:, 0])
+            """The learner's action masks (MaskablePPO): what it may choose now in every arena; a dead learner whose
+            team fights on may only do nothing."""
+            from pvp_sim2.masks import MASKS2, dead_mask
+            m = MASKS2(self.obs[:, 0, :MASKS2.spec.obs_dim])
+            m[~self.alive] = dead_mask()
+            return m
 
         def env_method(self, method_name, *args, indices=None, **kwargs):
             if method_name == "action_masks":
@@ -371,7 +397,7 @@ def main():
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--no-eval", action="store_true")
     ap.add_argument("--init", default=None, help="start from this checkpoint's policy, with the full curriculum")
-    ap.add_argument("--pool-from", default=None, help="fill the opponent pool with this run's checkpoints")
+    ap.add_argument("--pool-from", nargs="*", default=[], help="fill the opponent pool with these runs' checkpoints")
     ap.add_argument("--items", action="store_true", help="mostly kits with items")
     ap.add_argument("--ent", type=float, default=0.01)
     ap.add_argument("--focus", default=None, help="the mod's ml_feedback.json: deal more of what the bots lacked in its fights")
@@ -389,6 +415,10 @@ def main():
     ap.add_argument("--v1-share", type=float, default=0.2, help="share of the opponent slots v1 plays (with --v1)")
     ap.add_argument("--family-weight", nargs="*", default=[], help="kit weights over the default, e.g. sword=3 boxing=0.6")
     ap.add_argument("--pair", nargs="*", default=[], help="maps that go with a kit most of the time, e.g. sword=walled")
+    ap.add_argument("--spec", type=int, default=3, choices=[2, 3], help="3: team mates, a third enemy, memory, four slots")
+    ap.add_argument("--eval-hands", default=None, help="the hands the evaluation lets the model choose (eval2.py --hands), as the mod will")
+    ap.add_argument("--three", type=float, default=None, help="share of arenas with three fighters (default: the Scenario's)")
+    ap.add_argument("--four", type=float, default=None, help="share of arenas with four fighters (spec 3; default: the Scenario's)")
     a = ap.parse_args()
     if a.bc_data and not a.masks:
         sys.exit("--bc-data needs --masks")
@@ -413,18 +443,19 @@ def main():
     if a.focus:
         from train.focus import apply, load
         from pvp_sim2.env import Scenario
-        lessons = load(a.focus, "v2")
+        lessons = load(a.focus, "v%d" % a.spec)
         for note in apply(Scenario(), lessons)[1]:
             print("focus:", note, flush=True)
         if any(x["items"] for x in lessons) and not a.items:
             print("focus: some lessons need the items; add --items to practise them", flush=True)
-    venv = make_vecenv(a.workers, a.per, a.seed, pool, cur, a.max_ticks, a.items, lessons, a.extra_items, family_weight, pairs)
+    shares = {k: v for k, v in (("three", a.three), ("four", a.four)) if v is not None}
+    venv = make_vecenv(a.workers, a.per, a.seed, pool, cur, a.max_ticks, a.items, lessons, a.extra_items, family_weight, pairs, a.spec, shares)
     from train.policies import load
-    if a.pool_from:
-        for path in sorted(glob.glob(os.path.join(a.pool_from, "ckpt_*.zip")))[::2]:
+    for run in a.pool_from:
+        for path in sorted(glob.glob(os.path.join(run, "ckpt_*.zip")))[::2]:
             m = load(path)
             pool.add(FrozenPolicy(m.policy, int(os.path.basename(path)[5:14]), masks=a.masks))
-        print("pool from", a.pool_from, len(pool.frozen), flush=True)
+        print("pool from", run, len(pool.frozen), flush=True)
     Algo = ppo_bc_class() if a.masks else PPO
     norm_path = os.path.join(a.run, "vecnormalize.pkl")
     ckpts = sorted(glob.glob(os.path.join(a.run, "ckpt_*.zip")))
@@ -453,7 +484,7 @@ def main():
                           pitch=a.bc_full, readout=not a.bc_full, mode=a.bc_mode, ref=ref, aim=a.bc_aim)
         print("copying term from", a.bc_data, "weight", a.bc_weight, "to 0 over", a.bc_decay, "steps", flush=True)
     with open(os.path.join(a.run, "config.json"), "w") as f:
-        json.dump(vars(a) | {"spec_sha256": SPEC2.sha256}, f, indent=1)
+        json.dump(vars(a) | {"spec_sha256": SPECS[a.spec][0].sha256}, f, indent=1)
     log_path = os.path.join(a.run, "progress.jsonl")
 
     class Checkpoints(BaseCallback):
@@ -498,8 +529,9 @@ def main():
             print(json.dumps({k: v for k, v in row.items() if k != "scenarios"}), flush=True)
             venv.results_by, venv.scenarios = {}, {}
             if not a.no_eval and (self.eval_proc is None or self.eval_proc.poll() is not None):
+                hands = ["--hands", a.eval_hands] if a.eval_hands else []
                 self.eval_proc = subprocess.Popen(["nice", "-n", "15", sys.executable, os.path.join(HERE, "eval2.py"), path,
-                                                   "--out", os.path.join(a.run, "eval.jsonl")],
+                                                   "--out", os.path.join(a.run, "eval.jsonl")] + hands,
                                                   stdout=subprocess.DEVNULL, stderr=open(os.path.join(a.run, "eval.err"), "a"))
 
     cb = Checkpoints()

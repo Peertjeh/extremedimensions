@@ -28,8 +28,8 @@ class FightLogTest {
 
 	@BeforeAll
 	static void load() throws IOException {
-		spec = CombatSpec.load(CombatObservationTest.resource("/combat_v2.json"));
-		Map<String, Object> golden = MiniJson.object(MiniJson.parse(new String(CombatObservationTest.resource("/combat_v2_golden.json").readAllBytes(),
+		spec = CombatSpec.load(CombatObservationTest.resource("/combat_v3.json"));
+		Map<String, Object> golden = MiniJson.object(MiniJson.parse(new String(CombatObservationTest.resource("/combat_v3_golden.json").readAllBytes(),
 				StandardCharsets.UTF_8)));
 		cases = MiniJson.array(golden.get("cases"));
 	}
@@ -40,7 +40,7 @@ class FightLogTest {
 		assertEquals(st.keySet(), new java.util.HashSet<>(CombatState.KEYS), "the golden file's state keys");
 		assertEquals(CombatState.KEYS.size() - 4 + 4 * 8, CombatState.SIZE);
 		for (Object c : cases) {
-			CombatState s = CombatObservationV2Test.state(MiniJson.object(MiniJson.object(c).get("state")));
+			CombatState s = CombatObservationV3Test.state(MiniJson.object(MiniJson.object(c).get("state")));
 			double[] v = s.values();
 			assertEquals(CombatState.SIZE, v.length);
 			assertArrayEquals(v, CombatState.of(v).values());
@@ -50,7 +50,7 @@ class FightLogTest {
 
 	@Test
 	void linesAreOneJsonObjectEach() {
-		CombatState s = CombatObservationV2Test.state(MiniJson.object(MiniJson.object(cases.get(3)).get("state")));
+		CombatState s = CombatObservationV3Test.state(MiniJson.object(MiniJson.object(cases.get(3)).get("state")));
 		String row = FightLog.row(40, 1, 0, s, FightLog.action(1, -1, true, false, true, 12.5, -3.25, 2, false), new int[] {2, 0, 1, 1, 1, 5, 3, 0, 0},
 				"edge", null);
 		Map<String, Object> r = MiniJson.object(MiniJson.parse(row));
@@ -84,13 +84,16 @@ class FightLogTest {
 		assertEquals(lines, have, "the sample file is out of date: write it again (see the class comment)");
 	}
 
-	/** A short fight of a person and a master bot over twenty states of the golden file. */
+	/**
+	 * A short fight of a person and a master bot over twenty states of the golden file (each observation as at a
+	 * fight's start: the history is the values now).
+	 */
 	static List<String> sample() {
 		List<String> out = new ArrayList<>();
 		out.add(FightLog.header(spec, "test", 1, "axe", "castle", "axe", "2026-10-23T00:00:00Z",
-				List.of(new FightLog.Fighter("human", null, null, 0, null), new FightLog.Fighter("bot", "master", "v2", 1, null))));
+				List.of(new FightLog.Fighter("human", null, null, 0, null), new FightLog.Fighter("bot", "master", "v3", 1, null))));
 		for (int i = 0; i < 20; i++) {
-			CombatState s = CombatObservationV2Test.state(MiniJson.object(MiniJson.object(cases.get(i)).get("state")));
+			CombatState s = CombatObservationV3Test.state(MiniJson.object(MiniJson.object(cases.get(i)).get("state")));
 			double[] v = s.values();
 			for (int k = 0; k < v.length; k++) v[k] = FightLog.round(v[k]);
 			CombatState stored = CombatState.of(v);

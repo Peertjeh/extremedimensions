@@ -150,12 +150,15 @@ def build():
             "tolerance": 1e-6, "cases": cases, "actions": actions, "terrain": heightmaps()}
 
 
-def masks_golden(obs):
+def masks_golden(obs, masks=None, path=None):
     """The golden cases' observations and copies of 60 of them with the item values at the edges of the rules (none,
-    one, full hunger, a shield with and without its cooldown), plus one with nothing at all; with random logits."""
+    one, full hunger, a shield with and without its cooldown), plus one with nothing at all; with random logits. The
+    masks of spec v2 unless others are given (tools/make_golden3.py)."""
     import hashlib
     from pvp_sim2.masks import MASKS2, MASKS2_PATH
-    sp = SPEC2
+    if masks is None:
+        masks, path = MASKS2, MASKS2_PATH
+    sp = masks.spec
     rng = np.random.default_rng(31)
     edge = obs[:60].copy()
     choices = {"self_arrows": [0.0, 1 / 16, 1.0], "self_food_items": [0.0, 0.125, 1.0], "self_food": [0.0, 0.95, 1.0, 1.0],
@@ -168,9 +171,9 @@ def masks_golden(obs):
         nothing[:, sp.index(name)] = 1.0 if name == "self_food" else 0.0
     all_obs = np.concatenate([obs, edge, nothing]).astype(np.float32)
     logits = np.round(rng.normal(0, 2, (all_obs.shape[0], int(sp.action_nvec.sum()))), 4)
-    mask = MASKS2(all_obs)
-    best = MASKS2.best(logits, mask)
-    with open(MASKS2_PATH, "rb") as f:
+    mask = masks(all_obs)
+    best = masks.best(logits, mask)
+    with open(path, "rb") as f:
         masks_sha = hashlib.sha256(f.read()).hexdigest()
     cases = [{"observation": [float(v) for v in all_obs[i]], "mask": "".join("1" if m else "0" for m in mask[i]),
               "logits": [float(v) for v in logits[i]], "best": [int(v) for v in best[i]]} for i in range(all_obs.shape[0])]

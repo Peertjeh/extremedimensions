@@ -1,12 +1,21 @@
-"""Evaluates a v2 checkpoint (or a policy) on a fixed set of scenarios against the scripted bot, and against a dummy on
-a bridge; appends one JSON line to --out.
+"""Evaluates a v2 or v3 checkpoint (or a policy) on a fixed set of scenarios against the scripted bot, and against a
+dummy on a bridge; appends one JSON line to --out.
 
-    python train/eval2.py runs/v2/ckpt_010000000.zip --out runs/v2/eval.jsonl [--episodes 48] [--no-masks] [--items-only]
+    python train/eval2.py runs/v3/ckpt_010000000.zip --out runs/v3/eval.jsonl [--episodes 48] [--no-masks] [--items-only]
+    python train/eval2.py runs/v3/ckpt_010000000.zip --team-only   # only the team block
     python train/eval2.py scripted --items-only        # the scripted bot's own item use, for reference
 
-The model chooses with the action masks (train/policies.py), as in the mod; --no-masks chooses as before them.
+Every fight is played in the v3 simulation (four slots); a v2 model reads the first 118 values (spec v3 keeps v2's in
+their place), so v2 and v3 models are measured alike. The model chooses with the action masks (train/policies.py), as
+in the mod; --no-masks chooses as before them.
+
+The team block (phase 3C): the town 1 against 2 over 192 fights, and two against two (two of the model against two
+scripted bots, with the sword in the arena and in Bed Wars in teams; and the model with a scripted team mate against
+two scripted bots, which shows whether the model makes its team better than a scripted bot would: that team wins
+about half). A team's result counts: it wins when the other team is dead, also when the model died first.
 """
 import argparse
+import copy
 import json
 import os
 import sys
@@ -15,7 +24,10 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pvp_sim2 import Batch2, Dummy2, Scripted2  # noqa: E402
-from pvp_sim2.spec import SPEC2  # noqa: E402
+from pvp_sim2.spec import SPEC3  # noqa: E402
+
+SPEC = SPEC3
+K = 4
 
 # map, kit, fighters, who against whom
 SCENARIOS = [
@@ -30,17 +42,52 @@ SCENARIOS = [
 ]
 
 
-def play(policy, opponent, terrain, family, count, mode, episodes=48, n=32, seed=0, max_ticks=1600):
-    """Win, loss, draw of `policy` as slot 0 against `opponent` in the other slots."""
-    b = Batch2(n, seed=seed, max_ticks=max_ticks, fixed={"terrain": terrain, "family": family, "count": count, "mode": mode})
+def play(policy, opponent, terrain, family, count, mode, episodes=48, n=32, seed=0, max_ticks=1600, mate=None):
+    """Win, loss, draw of `policy`'s team (slot 0, and its team mates played by `mate`, by default itself) against
+    `opponent` in the other slots."""
+    from pvp_sim2.env import TEAMS
+    b = Batch2(n, k=K, seed=seed, max_ticks=max_ticks, spec=SPEC, fixed={"terrain": terrain, "family": family, "count": count, "mode": mode})
     obs = b.reset()
+    teams = TEAMS[mode] + [1] * (K - count)
+    players = [policy] + [per_slot(mate or policy, i) if teams[i] == 0 else per_slot(opponent, i) for i in range(1, K)]
     res = np.zeros(3, dtype=np.int64)
     while res.sum() < episodes:
-        acts = np.stack([policy(obs[:, 0]), opponent(obs[:, 1]), opponent(obs[:, 2])], axis=1)
+        acts = np.stack([players[i](obs[:, i]) for i in range(K)], axis=1)
         obs, r, d, info = b.step(acts)
         for w in info["winner"][d]:
             res[0 if w == 0 else 1 if w == 1 else 2] += 1
     return res
+
+
+def per_slot(player, slot):
+    """A bot that keeps a state per row (the scripted bot's strafe and shield) gets its own copy for each slot: one
+    copy for several slots would see its state changed by every call (with four slots it then changed direction three
+    times as often, which made the scripted bots harder to beat than with three)."""
+    if not hasattr(player, "rng"):
+        return player
+    p = copy.deepcopy(player)
+    p.rng = np.random.default_rng(int(player.rng.integers(1 << 30)) + slot)
+    return p
+
+
+# the team block: (map, kit, fighters, mode, the team mate, fights)
+TEAM = [("town", "loot", 3, "1v2", None, 192), ("walled", "sword", 4, "2v2", "model", 96),
+        ("islands", "bedwars", 4, "2v2", "model", 96), ("walled", "sword", 4, "2v2", "scripted", 96)]
+
+
+def team(policy, seed=0):
+    """The team block: per scenario win, loss, draw of the model's team, in parts of 48 fights with their own seeds."""
+    out = {}
+    for k, (terrain, family, count, mode, mate, episodes) in enumerate(TEAM):
+        res = np.zeros(3, dtype=np.int64)
+        for part in range(episodes // 48):
+            s = seed + 1000 * part + 50 + k
+            m = Scripted2(skill=0.8, seed=s + 500) if mate == "scripted" else None
+            res += play(policy, Scripted2(skill=0.8, seed=s), terrain, family, count, mode, 48, seed=s, mate=m)
+        key = "%s/%s/%s%s" % (terrain, family, mode, "" if mate in (None, "model") else " with " + mate)
+        out[key] = [int(v) for v in res]
+    out["share"] = {k: round(v[0] / max(1, sum(v)), 3) for k, v in out.items()}
+    return out
 
 
 # where item use is measured, against the scripted bot (map, kit)
@@ -65,11 +112,12 @@ def items(policy, terrain, family, episodes=64, n=32, seed=0, opponent=None):
     used at least once of those that counted, uses per 100 decisions, and how much of it helped (arrows that hit;
     pearls that brought it 3 blocks closer to the target or out of the void onto ground; wind charges followed by a
     hit within two seconds; eating has no such measure). Plus the share of decisions blocking with the shield."""
-    sp = SPEC2
+    sp = SPEC
     g = lambda o, name: o[:, sp.index(name)] * sp.obs_scale[sp.index(name)]
-    b = Batch2(n, seed=seed, fixed={"terrain": terrain, "family": family, "count": 2})
+    b = Batch2(n, k=K, seed=seed, spec=SPEC, fixed={"terrain": terrain, "family": family, "count": 2})
     obs = b.reset()
     opp = opponent or Scripted2(skill=0.8, seed=seed + 1)
+    opps = [per_slot(opp, i) for i in range(1, K)]
     f = b.w.f
     used = {k: np.zeros(n, dtype=bool) for k in ITEMS}
     counts = {k: np.zeros(n, dtype=bool) for k in ITEMS}
@@ -92,7 +140,7 @@ def items(policy, terrain, family, episodes=64, n=32, seed=0, opponent=None):
         counts["pearl"] |= (g(o, "self_pearls") > 0) & ((seen & (dist > FAR_PEARL)) | void)
         counts["wind"] |= g(o, "self_winds") > 0
         pearls, winds = f.pearls[:, 0].copy(), f.winds[:, 0].copy()
-        obs, r, d, info = b.step(np.stack([policy(o), opp(obs[:, 1]), opp(obs[:, 2])], axis=1))
+        obs, r, d, info = b.step(np.stack([policy(o)] + [opps[i - 1](obs[:, i]) for i in range(1, K)], axis=1))
         decisions += n
         blocking += int(f.blocking()[:, 0].sum())
         live = ~d
@@ -160,6 +208,7 @@ def evaluate(policy, episodes=48, seed=0):
     out["win_vs_scripted"] = round(wins / max(1, total), 3)
     out["items"] = {"%s/%s" % (t, f): items(policy, t, f, ITEM_EPISODES.get("%s/%s" % (t, f), 64), seed=seed) for t, f in ITEM_SCENARIOS}
     out["items_total"] = item_summary(out["items"])
+    out["team"] = team(policy, seed)
     return out
 
 
@@ -171,6 +220,7 @@ def main():
     ap.add_argument("--no-masks", action="store_true", help="choose as before the action masks")
     ap.add_argument("--items-only", action="store_true", help="only how the items are used")
     ap.add_argument("--hands", default=None, help="the hands the model may choose besides the weapon, as in the mod (e.g. food,gapple,pearl,wind)")
+    ap.add_argument("--team-only", action="store_true", help="only the team block")
     a = ap.parse_args()
     if a.checkpoint.startswith("scripted"):
         # the scripted bot itself as the player, for reference ("scripted" or "scripted_latch")
@@ -184,7 +234,9 @@ def main():
         hands = a.hands.split(",") if a.hands else None
         policy = Chooser(model.policy, masks=not a.no_masks, hands=hands)
         row = {"checkpoint": os.path.basename(a.checkpoint), "steps": int(model.num_timesteps), "masks": not a.no_masks, "hands": a.hands}
-    if a.items_only:
+    if a.team_only:
+        row["team"] = team(policy)
+    elif a.items_only:
         row["items"] = {"%s/%s" % (t, f): items(policy, t, f, ITEM_EPISODES.get("%s/%s" % (t, f), 64)) for t, f in ITEM_SCENARIOS}
         row["items_total"] = item_summary(row["items"])
     else:

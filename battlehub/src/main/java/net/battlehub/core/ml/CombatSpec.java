@@ -11,11 +11,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The combat spec ({@code ml/spec/combat_v2.json}, shipped in {@code assets/battlehub/ml}; {@code combat_v1.json} of
- * 1.33 to 1.38 stays in ml/spec for the tests):
+ * The combat spec ({@code ml/spec/combat_v3.json}, shipped in {@code assets/battlehub/ml}; {@code combat_v1.json} and
+ * {@code combat_v2.json} of earlier versions stay in ml/spec for the tests):
  * what the melee model sees and does. The Python simulation reads the same file; its sha256 travels with every
  * exported model and with the golden test file, so a model or a test made for another spec is noticed. Version 2 adds
- * the terrain rules of the rays ({@link TerrainRays}), the hands and the radius that counts as near.
+ * the terrain rules of the rays ({@link TerrainRays}), the hands and the radius that counts as near; version 3 keeps
+ * v2's observations in their place and adds the team mate, a third enemy, memory and the history (observations of
+ * earlier decisions, {@link #historyOf}).
  */
 public final class CombatSpec {
 	public final String name;
@@ -40,6 +42,17 @@ public final class CombatSpec {
 	/** v2: what the hand head chooses between ("weapon", "bow", ...), and how close an enemy counts as near. */
 	public final List<String> hands = new ArrayList<>();
 	public final double nearEnemies;
+	/** v3: how close a team mate counts as near. */
+	public final double nearAllies;
+	/**
+	 * v3's history: per observation the index of the observation it was earlier ({@code of}, -1 for an observation of
+	 * now) and how many decisions earlier ({@code ago}); the most decisions back, and after how many decisions without
+	 * one of the model's the mod starts the history again ({@code pause}).
+	 */
+	public final int[] historyOf;
+	public final int[] historyAgo;
+	public final int maxAgo;
+	public final int pause;
 
 	private CombatSpec(byte[] raw) {
 		this.sha256 = sha256(raw);
@@ -59,12 +72,24 @@ public final class CombatSpec {
 		List<Object> obs = MiniJson.array(d.get("observation"));
 		obsScale = new double[obs.size()];
 		obsClip = new double[obs.size()];
+		historyOf = new int[obs.size()];
+		historyAgo = new int[obs.size()];
+		String[] of = new String[obs.size()];
+		int most = 0;
 		for (int k = 0; k < obs.size(); k++) {
 			Map<String, Object> o = MiniJson.object(obs.get(k));
 			obsNames.add((String) o.get("name"));
 			obsScale[k] = num(o, "scale");
 			obsClip[k] = num(o, "clip");
+			of[k] = (String) o.get("of");
+			historyAgo[k] = o.get("ago") == null ? 0 : ((Number) o.get("ago")).intValue();
+			most = Math.max(most, historyAgo[k]);
 		}
+		for (int k = 0; k < obs.size(); k++) {
+			historyOf[k] = of[k] == null ? -1 : obsNames.indexOf(of[k]);
+			if (of[k] != null && (historyOf[k] < 0 || historyAgo[k] < 1)) throw new IllegalArgumentException("bad history entry " + obsNames.get(k));
+		}
+		maxAgo = most;
 		List<Object> acts = MiniJson.array(d.get("actions"));
 		actionValues = new double[acts.size()][];
 		for (int k = 0; k < acts.size(); k++) {
@@ -83,6 +108,14 @@ public final class CombatSpec {
 			for (Object h : MiniJson.array(d.get("hands"))) hands.add((String) h);
 		}
 		nearEnemies = d.get("near_enemies") == null ? 6 : num(d, "near_enemies");
+		nearAllies = d.get("near_allies") == null ? nearEnemies : num(d, "near_allies");
+		Map<String, Object> h = d.get("history") == null ? Map.of() : MiniJson.object(d.get("history"));
+		pause = h.get("pause") == null ? 0 : ((Number) h.get("pause")).intValue();
+	}
+
+	/** Whether observation k is the value of another one earlier (v3's history). */
+	public boolean isHistory(int k) {
+		return historyOf[k] >= 0;
 	}
 
 	public static CombatSpec parse(byte[] raw) {
