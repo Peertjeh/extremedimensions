@@ -285,7 +285,8 @@ public class BossTests {
 			check(helper, ElderArena.pending() == 0, "%s blocks of the arena are still on their way", ElderArena.pending());
 			check(helper, ElderArena.standing() == 0, "%s blocks of the arena still stand", ElderArena.standing());
 			int wrong = 0;
-			BlockPos first = null;
+			// (the first few told in full, from the arena's middle: what stood there, and what stands there now)
+			java.util.List<String> told = new java.util.ArrayList<>();
 			for (java.util.Map.Entry<BlockPos, net.minecraft.world.level.block.state.BlockState> e : before.entrySet()) {
 				net.minecraft.world.level.block.state.BlockState now = level.getBlockState(e.getKey());
 				// Plants built over are gone, and grass covered for a while may have died back to dirt
@@ -294,10 +295,14 @@ public class BossTests {
 						&& (now.is(Blocks.DIRT) || now.is(e.getValue().getBlock()));
 				if (now != e.getValue() && !plant && !grass) {
 					wrong++;
-					first = first == null ? e.getKey() : first;
+					if (told.size() < 4) {
+						BlockPos d = e.getKey().subtract(centre);
+						told.add(String.format(java.util.Locale.ROOT, "(%d, %d, %d): %s, now %s", d.getX(), d.getY(), d.getZ(),
+								e.getValue().getBlock().getDescriptionId(), now.getBlock().getDescriptionId()));
+					}
 				}
 			}
-			check(helper, wrong == 0, "%s blocks were not put back (first at %s)", wrong, first);
+			check(helper, wrong == 0, "%s blocks were not put back, from the middle: %s", wrong, String.join("; ", told));
 			int left = level.getEntitiesOfClass(net.minecraft.world.entity.Display.BlockDisplay.class, new AABB(centre).inflate(48)).size();
 			check(helper, left == 0, "%s block displays of the arena were left behind", left);
 			helper.succeed();
