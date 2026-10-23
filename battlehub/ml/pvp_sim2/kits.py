@@ -224,13 +224,14 @@ def _draw(rng, items, key):
     return items[int(rng.choice(len(items), p=w / w.sum()))]
 
 
-def chaos(k, rng):
+def chaos(k, rng, game=True):
     """The Bridge: Chaos' effects on one fighter. Half the time a profile the game's fight logs had on
     (spec/effects_game.json, by how long each was on: a jump boost of four, a fast tiny player, slowness with strength);
     else one to three events of the mod's own catalog at once (spec/chaos_effects.json: speed, slowness, jump boost,
     size, gravity, strength, resistance, attack speed, reach, a freeze), as events overlap in a match. Without those
-    files: speed or slowness, strength, jump boost, size, gravity, knockback, resistance at random."""
-    if GAME_EFFECTS is not None and rng.random() < GAME_SHARE:
+    files (or with game=False, the simulation of 1.40): speed or slowness, strength, jump boost, size, gravity,
+    knockback, resistance at random."""
+    if game and GAME_EFFECTS is not None and rng.random() < GAME_SHARE:
         p = _draw(rng, GAME_EFFECTS, "weight")
         k["walk_speed"] *= p["walk_speed"]
         k["jump_power"] = p["jump_power"]
@@ -238,7 +239,7 @@ def chaos(k, rng):
         k["gravity"] = p["gravity"]
         k["strength"] += p["strength"]
         return k
-    if CATALOG is not None:
+    if game and CATALOG is not None:
         count = 1 + int(rng.random() < 0.35) + int(rng.random() < 0.1)
         jump_mult, jump_add = 1.0, 0.0
         for _ in range(count):
@@ -305,15 +306,15 @@ def extra_items(k, rng):
     return k
 
 
-def deal(family, count, rng, chaos_p=0.0):
+def deal(family, count, rng, chaos_p=0.0, game=True):
     """Kits for `count` fighters of one arena. A fighter with Chaos effects also has the pearls of the Chaos event that
-    every match plans (one a time, often more than once)."""
+    every match plans (one a time, often more than once). game=False: the Chaos of the simulation of 1.40."""
     make, same = FAMILIES[family]
     first = make(rng)
     kits = [dict(first) if same else (first if i == 0 else make(rng)) for i in range(count)]
     for k in kits:
         if rng.random() < chaos_p:
-            chaos(k, rng)
-            if rng.random() < 0.6:
+            chaos(k, rng, game)
+            if game and rng.random() < 0.6:
                 k["pearls"] = max(k["pearls"], int(rng.integers(1, 4)))
     return kits

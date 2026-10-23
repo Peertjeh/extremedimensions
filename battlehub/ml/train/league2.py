@@ -105,12 +105,12 @@ class V1Adapter:
         return out
 
 
-def fight(first, second, terrain, family, episodes, n=32, seed=0, mode="1v1"):
+def fight(first, second, terrain, family, episodes, n=32, seed=0, mode="1v1", scenario=None):
     """Wins, losses, draws of `first`'s team (slot 0's) against `second`'s in the v3 simulation; a bot that keeps a
     state per row plays each slot with its own copy (eval2.per_slot)."""
     teams = TEAMS[mode] + [1] * (K - len(TEAMS[mode]))
     players = [first] + [per_slot(first if teams[i] == 0 else second, i) for i in range(1, K)]
-    bt = Batch2(n, k=K, seed=seed, spec=SPEC, fixed={"terrain": terrain, "family": family, "count": len(TEAMS[mode]), "mode": mode})
+    bt = Batch2(n, k=K, seed=seed, spec=SPEC, scenario=scenario, fixed={"terrain": terrain, "family": family, "count": len(TEAMS[mode]), "mode": mode})
     obs = bt.reset()
     got = np.zeros(3, dtype=np.int64)
     while got.sum() < episodes:
@@ -120,10 +120,10 @@ def fight(first, second, terrain, family, episodes, n=32, seed=0, mode="1v1"):
     return got
 
 
-def both_ways(a, b, terrain, family, episodes, n, seed, mode="1v1"):
+def both_ways(a, b, terrain, family, episodes, n, seed, mode="1v1", scenario=None):
     """a against b, each side slot 0's team for half the episodes: wins, losses, draws of a."""
-    res = fight(a, b, terrain, family, episodes // 2, n, seed, mode)
-    return res + fight(b, a, terrain, family, episodes // 2, n, seed + 1, mode)[[1, 0, 2]]
+    res = fight(a, b, terrain, family, episodes // 2, n, seed, mode, scenario)
+    return res + fight(b, a, terrain, family, episodes // 2, n, seed + 1, mode, scenario)[[1, 0, 2]]
 
 
 def duel(args):
@@ -148,16 +148,20 @@ def scenario_duel(args):
     episodes."""
     x, px, y, py, terrain, family, episodes, seed = args[:8]
     mode = args[8] if len(args) > 8 else "1v1"
-    res = both_ways(make_player(x, px), make_player(y, py), terrain, family, episodes, 32, seed, mode)
+    sim = args[9] if len(args) > 9 else "fitted"
+    from pvp_sim2.env import scenario_1_40
+    res = both_ways(make_player(x, px), make_player(y, py), terrain, family, episodes, 32, seed, mode,
+                    scenario_1_40() if sim == "1.40" else None)
     return "%s/%s" % (terrain, family) + ("" if mode == "1v1" else "/" + mode), res
 
 
-def versus(a_path, b_path, episodes, procs, seed=11, team=False):
-    """Two checkpoints over the mix (team: TEAM_MIX): per scenario and in total (wins, losses, draws of the first)."""
+def versus(a_path, b_path, episodes, procs, seed=11, team=False, sim="fitted"):
+    """Two checkpoints over the mix (team: TEAM_MIX): per scenario and in total (wins, losses, draws of the first). sim
+    "1.40": in the simulation as it was in 1.40 (pvp_sim2.env.scenario_1_40), else the fitted one of phase 3D."""
     if team:
-        jobs = [("a", a_path, "b", b_path, t, f, episodes, seed + 10 * k, m) for k, (t, f, m) in enumerate(TEAM_MIX)]
+        jobs = [("a", a_path, "b", b_path, t, f, episodes, seed + 10 * k, m, sim) for k, (t, f, m) in enumerate(TEAM_MIX)]
     else:
-        jobs = [("a", a_path, "b", b_path, t, f, episodes, seed + 10 * k) for k, (t, f) in enumerate(MIX)]
+        jobs = [("a", a_path, "b", b_path, t, f, episodes, seed + 10 * k, "1v1", sim) for k, (t, f) in enumerate(MIX)]
     out, total = {}, np.zeros(3, dtype=np.int64)
     with mp.get_context("spawn").Pool(procs) as pool:
         for sc, res in pool.imap_unordered(scenario_duel, jobs):
@@ -165,7 +169,7 @@ def versus(a_path, b_path, episodes, procs, seed=11, team=False):
             total += res
             print("%-22s %s" % (sc, out[sc]), flush=True)
     decided = max(1, total[0] + total[1])
-    row = {"a": a_path, "b": b_path, "per_scenario": out, "total": [int(v) for v in total],
+    row = {"a": a_path, "b": b_path, "sim": sim, "per_scenario": out, "total": [int(v) for v in total],
            "win_share": round(float(total[0] / decided), 3), "fights": int(total.sum())}
     print(json.dumps(row))
     return row
@@ -199,6 +203,7 @@ def main():
     ap.add_argument("--keep", default=None, help="difficulties_v3.json with the levels that stay")
     ap.add_argument("--versus", nargs=2, default=None, help="two checkpoints against each other over the mix, then stop")
     ap.add_argument("--versus-team", nargs=2, default=None, help="two checkpoints against each other in team fights, then stop")
+    ap.add_argument("--sim", default="fitted", choices=["fitted", "1.40"], help="--versus in the fitted simulation or in 1.40's")
     ap.add_argument("--versus-v1", default=None, help="this checkpoint against --v1 in sword and boxing on flat ground, then stop")
     ap.add_argument("--out", default="league_v3")
     ap.add_argument("--every", type=int, default=3)
@@ -215,7 +220,7 @@ def main():
         return
     if a.versus or a.versus_team:
         pair = a.versus or a.versus_team
-        row = versus(pair[0], pair[1], a.episodes, a.procs, team=bool(a.versus_team))
+        row = versus(pair[0], pair[1], a.episodes, a.procs, team=bool(a.versus_team), sim=a.sim)
         if a.out:
             os.makedirs(a.out, exist_ok=True)
             with open(os.path.join(a.out, "versus.jsonl"), "a") as f:

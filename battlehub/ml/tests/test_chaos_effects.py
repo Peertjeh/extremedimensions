@@ -33,3 +33,13 @@ def test_chaos_draws_the_games_profiles_and_the_catalogs_events():
     assert (np.abs(jump - 0.82) < 1e-9).any() and (jump > 0.9).any() and (jump == 0).any()   # super jump, stacked, frozen
     assert (walk == 0).any() and walk.max() >= 0.2 and (scale <= 0.35).any() and scale.max() <= 3.0
     assert any(k["reach"] > 3.0 for k in seen) and any(k["strength"] >= 9 for k in seen)
+
+
+def test_the_simulation_of_1_40_deals_its_own_chaos():
+    from pvp_sim2.env import scenario_1_40
+    sc = scenario_1_40()
+    assert sc.chaos == 0.12 and not sc.game_effects and sc.late_click == 0.0
+    rng = np.random.default_rng(6)
+    kits_ = [k for _ in range(800) for k in kits.deal("sword", 2, rng, chaos_p=1.0, game=False)]
+    assert max(k["jump_power"] for k in kits_) <= 0.72 + 1e-9 and min(k["scale"] for k in kits_) >= 0.5
+    assert all(k["pearls"] == 0 for k in kits_) and all(k["walk_speed"] > 0 for k in kits_)

@@ -75,6 +75,7 @@ class Scenario:
     four: float = 0.25         # share of arenas with four fighters (at full breadth, k >= 4)
     modes4: dict = field(default_factory=lambda: {"2v2": 0.6, "ffa4": 0.25, "3v1": 0.15})
     chaos: float = 0.2         # share of fighters with Chaos effects (kits.chaos: the game's own events and profiles)
+    game_effects: bool = True  # False: Chaos as the simulation of 1.40 dealt it (scenario_1_40)
     opp_delay: tuple = (0, 2)
     # share of the other fighters' clicks (slots 1..) that fall on a later tick of the decision, as a person's click can
     # (the model's own, as the mod does it, is on the first)
@@ -90,6 +91,12 @@ class Scenario:
     # share of the arenas with a kit from chests or the shop (kits.ITEM_KITS) in which everyone gets more items on top
     # (kits.extra_items), for learning to use them; 0 deals the mod's kits only
     extra_items: float = 0.0
+
+
+def scenario_1_40():
+    """The simulation as it was in 1.40 (before ML phase 3D): Chaos for an eighth of the fighters with its own random
+    effects, and every click on a decision's first tick. For comparing models in the simulation they trained in."""
+    return Scenario(chaos=0.12, game_effects=False, late_click=0.0)
 
 
 def _pick(rng, weights):
@@ -212,7 +219,7 @@ class Batch2:
             count = 4 if u < four else 3 if (self.k >= 3 and u < four + sc.three * b) else 2
         mode = "1v1" if count == 2 else (self.fixed.get("mode") or _pick(rng, sc.modes3 if count == 3 else sc.modes4))
         teams = TEAMS[mode]
-        kits = K.deal(family, count, rng, chaos_p=sc.chaos * b)
+        kits = K.deal(family, count, rng, chaos_p=sc.chaos * b, game=sc.game_effects)
         if sc.extra_items > 0 and family in K.ITEM_KITS and rng.random() < sc.extra_items:
             kits = [K.extra_items(dict(k), rng) for k in kits]
         far = family in ("bow", "lms", "ctf", "build_uhc", "ffa")
