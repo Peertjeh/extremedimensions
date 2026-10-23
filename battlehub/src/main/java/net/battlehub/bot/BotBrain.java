@@ -498,7 +498,10 @@ final class BotBrain {
 		}
 		Vec3 v = bot.getDeltaMovement();
 		double speed = v.horizontalDistance();
-		if (speed > 0.12 && !safe(new Vec3(v.x, 0, v.z).normalize(), 0.6 + speed * 3)) {
+		// its own walk or sprint may keep a corner of the feet over the edge; a knock (or anything faster) brakes as soon
+		// as the middle of the feet would leave the ground
+		boolean ownPace = bot.hurtTime == 0 && speed < 0.3;
+		if (speed > 0.12 && !safe(new Vec3(v.x, 0, v.z).normalize(), 0.6 + speed * 3, ownPace)) {
 			brake();
 			bot.setSprinting(false);
 			return true;
@@ -529,16 +532,18 @@ final class BotBrain {
 
 	private boolean safe(Vec3 dir) {
 		double speed = bot.getDeltaMovement().horizontalDistance();
-		return safe(dir, 1.1 + Math.max(0, speed - 0.15) * 3);
+		return safe(dir, 1.1 + Math.max(0, speed - 0.15) * 3, true);
 	}
 
 	/**
-	 * There is ground under the feet {@code distance} out this way: under their middle, or under a corner of them
-	 * ({@link net.battlehub.core.ai.Footing}: a narrow bridge walked at an angle, the corner of a built staircase).
+	 * There is ground under the feet {@code distance} out this way: under their middle, or (with {@code corners}) under
+	 * a corner of them ({@link net.battlehub.core.ai.Footing}: a narrow bridge walked at an angle, the corner of a built
+	 * staircase).
 	 */
-	private boolean safe(Vec3 dir, double distance) {
+	private boolean safe(Vec3 dir, double distance, boolean corners) {
 		Vec3 p = bot.position().add(dir.scale(distance));
-		return net.battlehub.core.ai.Footing.holds((x, z) -> BotActions.groundBelow(level(), x, p.y, z, 4), p.x, p.z);
+		net.battlehub.core.ai.Footing.Ground ground = (x, z) -> BotActions.groundBelow(level(), x, p.y, z, 4);
+		return corners ? net.battlehub.core.ai.Footing.holds(ground, p.x, p.z) : ground.at(p.x, p.z);
 	}
 
 	// ------------------------------------------------------------------ jumping and falling

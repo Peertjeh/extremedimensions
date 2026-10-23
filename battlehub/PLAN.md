@@ -1873,7 +1873,12 @@ de maps End en Sky):
   zelf bouwde. `Bridging` bouwt een trap van blokken die met een zijde aan elkaar liggen. Schuin lopen raakt het
   punt 1,1 blok voor het midden van de voeten bij bijna elke stap de leegte naast de trap. Daar remde de bot.
   - Nu houdt een plek de voeten ook als een hoek ervan (0,25 uit het midden, 0,05 voor het punt waar de voeten zouden
-    wegglijden) nog boven grond is (`core/ai/Footing`). Dat geldt ook voor het remmen na een duw.
+    wegglijden) nog boven grond is (`core/ai/Footing`). Dat geldt voor de toetsen en voor het remmen op eigen loop- of
+    sprintsnelheid (onder 0,3 per tick, niet geraakt).
+  - Na een duw, of sneller dan 0,3 per tick, remt de bot zoals in 1.40.0 zodra het midden van zijn voeten van de
+    grond zou gaan. In de eerste CI-run gold de hoekregel ook daar: de bot remde na de duw van de zelftest (0,4 naar de
+    rand, 1,4 blok ervan) niet meer op de grond. Hij landde wel op het eiland, maar de test eist terecht dat hij de
+    toetsen terughoudt.
   - Recht op een rand af stopt de bot nu 0,85 blok ervoor (was 1,1). Zijn voeten staan dan nog helemaal op de grond.
 
 **Tests.**

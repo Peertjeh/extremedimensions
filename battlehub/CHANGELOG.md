@@ -13,6 +13,8 @@
 * **Bots crept along a bridge they built at an angle.** The edge safety looked at one point ahead of the middle of
   the feet; walking the staircase `Bridging` builds diagonally, that point is over the void at nearly every step. A
   spot now holds when a corner of the 0.6 wide feet is still on the ground (`core/ai/Footing`, 0.05 short of slipping).
+  After a knock (or faster than its own sprint) a bot still brakes as soon as the middle of its feet would leave the
+  ground.
 
 ## 1.40.0
 
