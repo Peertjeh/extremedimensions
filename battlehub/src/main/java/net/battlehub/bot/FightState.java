@@ -176,7 +176,8 @@ final class FightState {
 			if (p == null || p.level() != self.level() || p.isSpectator()) continue;
 			double d = Math.hypot(p.getX() - self.getX(), p.getZ() - self.getZ());
 			boolean visible = sees(self, eye, p);
-			boolean heard = d <= 12 && Math.hypot(p.getDeltaMovement().x, p.getDeltaMovement().z) > 0.01 && !p.isShiftKeyDown();
+			Vec3 pv = Motion.velocity(p);
+			boolean heard = d <= 12 && Math.hypot(pv.x, pv.z) > 0.01 && !p.isShiftKeyDown();
 			if (!visible && !heard && !id.equals(target.getUUID())) continue;
 			if (d <= spec.nearEnemies) near++;
 			if (id.equals(target.getUUID())) continue;

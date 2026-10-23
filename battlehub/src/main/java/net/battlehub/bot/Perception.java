@@ -68,7 +68,7 @@ final class Perception {
 			boolean heard = Senses.heard(d, p.isShiftKeyDown(), speed, hitAgo.applyAsInt(id));
 			boolean located = seen || (!hidden && !p.isShiftKeyDown() && onScreen) || heard;
 			if (located) {
-				mind.see(tick, id, new V3(p.getX(), p.getY(), p.getZ()), d, p.getDeltaMovement().y > 0.1);
+				mind.see(tick, id, new V3(p.getX(), p.getY(), p.getZ()), d, Motion.velocity(p).y > 0.1);
 			}
 			Track t = mind.track(id);
 			double sure = located ? 1 : t.confidence(tick, CombatMind.HALF_LIFE);
@@ -102,7 +102,7 @@ final class Perception {
 			boolean facing = look.x * toBot.x + look.z * toBot.z > 0.8;
 			// health is only known from what can be seen: in sight, or the last time it was
 			double hp = k.seen() ? p.getHealth() : p.getMaxHealth();
-			target = new Situation.Target(p.getUUID(), pos, k.seen() ? v(p.getDeltaMovement()) : V3.ZERO, hp, p.getMaxHealth(), k.seen(), sure,
+			target = new Situation.Target(p.getUUID(), pos, k.seen() ? v(Motion.velocity(p)) : V3.ZERO, hp, p.getMaxHealth(), k.seen(), sure,
 					k.seen() ? Math.max(0, tick - lastSwing) : 100, k.seen() && facing);
 		}
 		return new Situation(tick, self, target, m.botGoal(bot), edges, threat(bot, level));

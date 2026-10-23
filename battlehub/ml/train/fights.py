@@ -2,7 +2,8 @@
 fight; /battlehub fights export zips the new ones): every decision (two ticks), for every fighter with a target, the
 state it was in (the simulation's state values, ml/pvp_sim2/obs.py STATE3_KEYS; logs of 1.37 to 1.39 have spec v2's,
 STATE2_KEYS, and get v3's values as "nobody else, nothing remembered") and what it did over the decision in the spec's
-action terms; for a bot also what its model chose and how the tick went against it; hits; and the result. The
+action terms; for a bot also what its model chose and how the tick went against it; hits (from 1.41 with their kind:
+melee, arrow, other); and the result. The
 observation is computed here from the stored state with the simulation's own code, so the logs stay useful when the
 spec changes; v3's history comes from the same fighter's earlier rows of the fight (observations()).
 
@@ -94,8 +95,37 @@ def read(path):
             yield _parse(os.path.basename(path), _text(f.read(), path))
 
 
+# what the game keeps of a velocity after a tick (core/ml/Velocity in the mod)
+FRICTION, AIR, DRAG_Y, GRAVITY = 0.6, 0.91, 0.98, 0.08
+
+
+def game_velocity(dx, dy, dz, ground, gravity=GRAVITY, friction=FRICTION):
+    """A step of a tick as the velocity the game keeps (a bot's getDeltaMovement(), the simulation's vx, vy, vz): the
+    friction off the horizontal (the block's 0.6 times 0.91 on the ground, 0.91 in the air), the gravity off the
+    vertical, times 0.98. The mod does the same for people from 1.41 on (core/ml/Velocity)."""
+    keep = np.where(ground, friction * AIR, AIR)
+    return dx * keep, (dy - gravity) * DRAG_Y, dz * keep
+
+
+def _people_steps_to_velocities(fight, rows, s):
+    """Logs of 1.37 to 1.40 store a person's velocity as their step of a tick (bots' are the game's velocity): turned
+    into the game's velocity here, for a person's own rows and for every row whose target is a person (when seen)."""
+    kinds = [x["kind"] for x in fight.header["fighters"]]
+    me = np.array([kinds[r["f"]] == "human" for r in rows])
+    them = np.array([r.get("o") is not None and 0 <= r["o"] < len(kinds) and kinds[r["o"]] == "human" for r in rows]) & s["opp_visible"]
+    if me.any():
+        vx, vy, vz = game_velocity(s["self_vx"], s["self_vy"], s["self_vz"], s["self_on_ground"], s["self_gravity"])
+        for k, v in (("self_vx", vx), ("self_vy", vy), ("self_vz", vz)):
+            s[k] = np.where(me, v, s[k])
+    if them.any():
+        vx, vy, vz = game_velocity(s["opp_vx"], s["opp_vy"], s["opp_vz"], s["opp_on_ground"])
+        for k, v in (("opp_vx", vx), ("opp_vy", vy), ("opp_vz", vz)):
+            s[k] = np.where(them, v, s[k])
+
+
 def states(fight, rows=None):
-    """The rows' states as the simulation keeps them: a dict of arrays (n,), the terrain rays (n, 8)."""
+    """The rows' states as the simulation keeps them: a dict of arrays (n,), the terrain rays (n, 8). People's
+    velocities are the game's (in logs before 1.41 they are turned from their steps into that)."""
     rows = fight.rows if rows is None else rows
     keys, rays, ln = fight.header["state_keys"], fight.header["rays"], fight.header["ray_length"]
     v = np.array([r["s"] for r in rows], dtype=np.float64).reshape(len(rows), -1)
@@ -113,6 +143,8 @@ def states(fight, rows=None):
     for k, v in DEFAULTS3.items():
         if k not in s:
             s[k] = np.full(len(rows), v)
+    if fight.header.get("velocities") != "game" and rows:
+        _people_steps_to_velocities(fight, rows, s)
     return s
 
 

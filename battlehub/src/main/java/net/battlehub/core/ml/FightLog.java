@@ -39,6 +39,8 @@ public final class FightLog {
 		h.put("ray_length", 8);
 		h.put("action_names", ACTIONS);
 		h.put("hands", spec.hands);
+		// people's velocities as the game keeps them (Velocity), not their steps (1.37 to 1.40)
+		h.put("velocities", "game");
 		h.put("match", match);
 		h.put("mode", mode);
 		h.put("map", map);
@@ -86,12 +88,16 @@ public final class FightLog {
 		return MiniJson.write(r);
 	}
 
-	/** A hit: who (-1 when not a fighter of the match) hit whom, for how much health. */
-	public static String hit(int tick, int attacker, int victim, double damage) {
+	/**
+	 * A hit: who (-1 when not a fighter of the match) hit whom, for how much health (before armor), and with what
+	 * ("melee": a click, "arrow", "other": a thrown thing, an explosion; 1.41 on).
+	 */
+	public static String hit(int tick, int attacker, int victim, double damage, String kind) {
 		Map<String, Object> r = new LinkedHashMap<>();
 		r.put("t", tick);
 		r.put("hit", new int[] {attacker, victim});
 		r.put("dmg", round(damage));
+		if (kind != null) r.put("kind", kind);
 		return MiniJson.write(r);
 	}
 

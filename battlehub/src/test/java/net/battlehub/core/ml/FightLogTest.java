@@ -61,8 +61,11 @@ class FightLogTest {
 		assertEquals(9, MiniJson.doubles(r.get("m")).length);
 		Map<String, Object> e = MiniJson.object(MiniJson.parse(FightLog.end(1200, List.of(1), "done")));
 		assertEquals(Boolean.TRUE, e.get("end"));
-		Map<String, Object> h = MiniJson.object(MiniJson.parse(FightLog.hit(41, 1, 0, 4.123456)));
+		Map<String, Object> h = MiniJson.object(MiniJson.parse(FightLog.hit(41, 1, 0, 4.123456, "arrow")));
 		assertEquals(4.123, h.get("dmg"));
+		assertEquals("arrow", h.get("kind"));
+		Map<String, Object> head = MiniJson.object(MiniJson.parse(sample().get(0)));
+		assertEquals("game", head.get("velocities"), "people's velocities as the game keeps them (1.41 on)");
 		assertEquals("\"a\\\"b\\\\c\"", MiniJson.write("a\"b\\c"));
 	}
 
@@ -102,7 +105,7 @@ class FightLogTest {
 					i % 5 == 0);
 			out.add(FightLog.row(2 * i, bot ? 1 : 0, bot ? 0 : 1, stored, a, bot ? new int[] {i % 3, 1, 0, 1, i % 2, i % 11, i % 7, 0, 0} : null,
 					bot ? (i % 4 == 1 ? "kept" : "edge") : null, CombatObservation.build(spec, stored)));
-			if (i == 10) out.add(FightLog.hit(2 * i, 1, 0, 6.5));
+			if (i == 10) out.add(FightLog.hit(2 * i, 1, 0, 6.5, "melee"));
 		}
 		out.add(FightLog.end(40, List.of(1), "done"));
 		return out;

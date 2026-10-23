@@ -324,6 +324,11 @@ public abstract class Match {
 		return !a.equals(b);
 	}
 
+	/** Are {@code a} and {@code b} on different sides of this match, a moment of peace (a grace period) aside? */
+	public boolean isRival(UUID a, UUID b) {
+		return isEnemy(a, b);
+	}
+
 	/** Where a bot goes when nobody is close to fight (a hill, a flag, its bed); null: after the nearest enemy. */
 	public Vec3 botObjective(ServerPlayer bot) {
 		return null;

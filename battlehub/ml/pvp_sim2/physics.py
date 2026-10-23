@@ -450,26 +450,42 @@ class World:
                 land = enemy & ~blocked
                 if not land.any():
                     continue
-                dmg = np.where(weapon[:, a], f.atk_damage[:, a], 1.0) + f.strength[:, a]
-                dmg = np.maximum(0.0, dmg) * (0.2 + 0.8 * c * c) * np.where(crit, 1.5, 1.0)
-                dmg += np.where(weapon[:, a], f.sharp[:, a], 0.0) * c
-                dmg += np.where(smash, mace_bonus(f.fall[:, a]), 0.0)
-                full, partial = self.hurt(b, land, dmg, a, knock=(-dx, -dz), strength=0.4)
-                hurt = full | partial
-                self.landed[:, a] |= land
-                f.hits[:, a] += land
-                # the knockback enchantment and a charged sprint hit push along the attacker's look
-                extra = np.where(weapon[:, a], f.kb_level[:, a], 0) + (f.sprinting[:, a] & (c > 0.9))
-                push = hurt & (extra > 0)
-                ry = np.radians(f.yaw[:, a])
-                self.knockback(b, push, 0.5 * extra, -np.sin(ry), np.cos(ry))
-                f.vx[:, a] = np.where(push, f.vx[:, a] * 0.6, f.vx[:, a])
-                f.vz[:, a] = np.where(push, f.vz[:, a] * 0.6, f.vz[:, a])
-                f.sprinting[:, a] &= ~push
-                # after a smash the mace wielder stops falling
-                sm = land & smash
-                f.vy[:, a] = np.where(sm, 0.01, f.vy[:, a])
-                f.fall[:, a] = np.where(sm, 0.0, f.fall[:, a])
+                self.land(a, b, land, c, crit, smash)
+
+    def melee_damage(self, a, charge, crit, smash):
+        """What a click of slot a does before armor (the game's formula): the weapon (1 with anything else in hand) and
+        strength by the charge, half again for a critical hit, sharpness by the charge, and the mace's fall bonus."""
+        f = self.f
+        weapon = f.hand[:, a] == 0
+        dmg = np.where(weapon, f.atk_damage[:, a], 1.0) + f.strength[:, a]
+        dmg = np.maximum(0.0, dmg) * (0.2 + 0.8 * charge * charge) * np.where(crit, 1.5, 1.0)
+        dmg += np.where(weapon, f.sharp[:, a], 0.0) * charge
+        return dmg + np.where(smash, mace_bonus(f.fall[:, a]), 0.0)
+
+    def land(self, a, b, land, charge, crit, smash):
+        """A click of slot a lands on slot b in the arenas of `land`: the damage, the push away from a, and the knockback
+        enchantment and a charged sprint hit pushing along a's look (which slows a and ends its sprint); after a smash
+        the mace wielder stops falling. tools: train/simfit.py replays the game's hits through this."""
+        f = self.f
+        weapon = f.hand[:, a] == 0
+        dx, dz = f.x[:, a] - f.x[:, b], f.z[:, a] - f.z[:, b]
+        dmg = self.melee_damage(a, charge, crit, smash)
+        full, partial = self.hurt(b, land, dmg, a, knock=(-dx, -dz), strength=0.4)
+        hurt = full | partial
+        self.landed[:, a] |= land
+        f.hits[:, a] += land
+        # the knockback enchantment and a charged sprint hit push along the attacker's look
+        extra = np.where(weapon, f.kb_level[:, a], 0) + (f.sprinting[:, a] & (charge > 0.9))
+        push = hurt & (extra > 0)
+        ry = np.radians(f.yaw[:, a])
+        self.knockback(b, push, 0.5 * extra, -np.sin(ry), np.cos(ry))
+        f.vx[:, a] = np.where(push, f.vx[:, a] * 0.6, f.vx[:, a])
+        f.vz[:, a] = np.where(push, f.vz[:, a] * 0.6, f.vz[:, a])
+        f.sprinting[:, a] &= ~push
+        # after a smash the mace wielder stops falling
+        sm = land & smash
+        f.vy[:, a] = np.where(sm, 0.01, f.vy[:, a])
+        f.fall[:, a] = np.where(sm, 0.0, f.fall[:, a])
 
     # ------------------------------------------------------------------ moving
 

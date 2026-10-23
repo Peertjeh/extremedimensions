@@ -233,6 +233,7 @@ public final class HubEvents {
 		Tasks.tick();
 		ArenaBuilder.tick();
 		Matches.tick();
+		net.battlehub.bot.Motion.tick(server);
 		net.battlehub.bot.Bots.tick(server);
 		net.battlehub.bot.CombatMemory.tick(server);
 		net.battlehub.bot.FightRecorder.tick(server);

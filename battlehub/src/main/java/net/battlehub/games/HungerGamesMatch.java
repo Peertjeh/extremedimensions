@@ -250,6 +250,11 @@ public final class HungerGamesMatch extends PartyMatch {
 		return !inGrace() && super.isEnemy(a, b);
 	}
 
+	@Override
+	public boolean isRival(UUID a, UUID b) {
+		return super.isEnemy(a, b);
+	}
+
 	/** Nobody hurts anyone in the first half minute; the rest (falls, fire, the border) hurts from the start. */
 	@Override
 	protected boolean damageAllowed(ServerPlayer victim, DamageSource source, ServerPlayer attacker) {

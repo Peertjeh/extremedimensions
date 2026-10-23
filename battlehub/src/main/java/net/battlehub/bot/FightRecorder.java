@@ -101,8 +101,6 @@ public final class FightRecorder {
 		return t;
 	});
 	private static long now;
-	private static final Map<UUID, Vec3> POS = new HashMap<>();
-	private static final Map<UUID, Vec3> VEL = new HashMap<>();
 	private static final Map<UUID, Boolean> GROUND = new HashMap<>();
 	/** Who traded hits with whom, and when: player -> (other, tick). */
 	private static final Map<UUID, Object[]> ENGAGED_WITH = new HashMap<>();
@@ -123,12 +121,14 @@ public final class FightRecorder {
 	/** A hit between players (HubEvents): a line in the fight's log, and the two count as fighting each other. */
 	public static void hit(ServerPlayer victim, DamageSource source, float amount) {
 		if (!(source.getEntity() instanceof ServerPlayer attacker) || attacker == victim) return;
+		net.minecraft.world.entity.Entity direct = source.getDirectEntity();
+		String kind = direct == attacker ? "melee" : direct instanceof net.minecraft.world.entity.projectile.arrow.AbstractArrow ? "arrow" : "other";
 		ENGAGED_WITH.put(victim.getUUID(), new Object[] {attacker.getUUID(), now});
 		ENGAGED_WITH.put(attacker.getUUID(), new Object[] {victim.getUUID(), now});
 		for (Rec r : RECS.values()) {
 			Integer v = r.index.get(victim.getUUID());
 			if (v == null) continue;
-			write(r, FightLog.hit(r.tick, r.index.getOrDefault(attacker.getUUID(), -1), v, amount));
+			write(r, FightLog.hit(r.tick, r.index.getOrDefault(attacker.getUUID(), -1), v, amount, kind));
 		}
 	}
 
@@ -147,15 +147,6 @@ public final class FightRecorder {
 
 	public static void tick(MinecraftServer server) {
 		now++;
-		// where everyone in a match is and how fast they go (people's movement is the client's: from their positions)
-		for (Match m : Matches.all()) {
-			for (UUID id : m.participants()) {
-				ServerPlayer p = m.player(id);
-				if (p == null) continue;
-				Vec3 pos = p.position(), last = POS.put(id, pos);
-				VEL.put(id, last == null || last.distanceToSqr(pos) > 16 ? Vec3.ZERO : pos.subtract(last));
-			}
-		}
 		for (Rec r : List.copyOf(RECS.values())) {
 			if (Matches.get(r.match.id) != r.match || r.match.phase() != Match.Phase.RUNNING || !cfg().record) {
 				RECS.remove(r.match.id);
@@ -171,10 +162,8 @@ public final class FightRecorder {
 			r.tick++;
 		}
 		if (now % 200 == 0) {
-			POS.keySet().removeIf(id -> server.getPlayerList().getPlayer(id) == null);
-			VEL.keySet().retainAll(POS.keySet());
-			GROUND.keySet().retainAll(POS.keySet());
-			ENGAGED_WITH.keySet().retainAll(POS.keySet());
+			GROUND.keySet().removeIf(id -> server.getPlayerList().getPlayer(id) == null);
+			ENGAGED_WITH.keySet().removeIf(id -> server.getPlayerList().getPlayer(id) == null);
 		}
 	}
 
@@ -204,7 +193,8 @@ public final class FightRecorder {
 			UUID id = r.fighters.get(i);
 			int team = i;
 			for (int j = 0; j < i; j++) {
-				if (!m.isEnemy(r.fighters.get(j), id)) {
+				// the sides of the match, not who may hurt whom now (in Hunger Games nobody may at the start)
+				if (!m.isRival(r.fighters.get(j), id)) {
 					team = j;
 					break;
 				}
@@ -249,7 +239,7 @@ public final class FightRecorder {
 			Pending last = r.pending.get(id);
 			boolean ground = p.onGround();
 			Boolean was = GROUND.put(id, ground);
-			if (last != null && Boolean.TRUE.equals(was) && !ground && VEL.getOrDefault(id, Vec3.ZERO).y > 0.2) last.jumped = true;
+			if (last != null && Boolean.TRUE.equals(was) && !ground && Motion.step(p).y > 0.2) last.jumped = true;
 			if (r.tick % spec.decisionTicks != 0) continue;
 			if (last != null) {
 				write(r, FightLog.row(last.tick, i, last.target, last.state, did(p, last), last.model, last.reason, null));
@@ -288,7 +278,7 @@ public final class FightRecorder {
 			strafe = (int) Math.signum(p.xxa);
 		} else {
 			// no keys from the client: the direction it moves in, relative to where it looks
-			Vec3 v = VEL.getOrDefault(p.getUUID(), Vec3.ZERO);
+			Vec3 v = Motion.step(p);
 			double r = Math.toRadians(p.getYRot());
 			double f = -Math.sin(r) * v.x + Math.cos(r) * v.z, l = Math.cos(r) * v.x + Math.sin(r) * v.z;
 			forward = f > 0.03 ? 1 : f < -0.03 ? -1 : 0;
@@ -302,7 +292,7 @@ public final class FightRecorder {
 
 	/** The state of {@code p} against {@code opp} now, from what the server knows of both. */
 	private static CombatState state(CombatSpec spec, Match m, ServerPlayer p, ServerPlayer opp) {
-		Vec3 vel = p instanceof BotPlayer ? p.getDeltaMovement() : VEL.getOrDefault(p.getUUID(), Vec3.ZERO);
+		Vec3 vel = Motion.velocity(p);
 		double charge;
 		if (p instanceof BotPlayer) {
 			charge = p.getAttackStrengthScale(0.5f);
@@ -313,7 +303,7 @@ public final class FightRecorder {
 		}
 		boolean visible = FightState.sees(p, new V3(p.getX(), p.getEyeY(), p.getZ()), opp);
 		if (visible) CombatMemory.saw(p.getUUID(), opp.getUUID());
-		Vec3 oppVel = opp instanceof BotPlayer ? opp.getDeltaMovement() : VEL.getOrDefault(opp.getUUID(), Vec3.ZERO);
+		Vec3 oppVel = Motion.velocity(opp);
 		FightState.Seen seen = FightState.Seen.of(opp, opp.position(), visible ? oppVel : Vec3.ZERO, visible ? (int) Math.min(100, sinceSwing(opp.getUUID())) : 100,
 				visible);
 		ItemStack held = opp.getMainHandItem();
@@ -567,8 +557,7 @@ public final class FightRecorder {
 			BattleHub.LOGGER.warn("The fight logs were not all written: {}", e.toString());
 		}
 		CombatMemory.clear();
-		POS.clear();
-		VEL.clear();
+		Motion.clear();
 		GROUND.clear();
 		ENGAGED_WITH.clear();
 	}

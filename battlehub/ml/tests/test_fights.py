@@ -95,6 +95,37 @@ def test_people_bots_and_winners_and_zips_of_gzip_files(tmp_path):
     assert json.dumps(rows)
 
 
+def test_people_s_steps_in_logs_before_1_41_become_the_game_s_velocities(tmp_path):
+    """Logs of 1.37 to 1.40 store a person's velocity as their step of a tick: read as the velocity the game keeps (the
+    mod's core/ml/Velocity, VelocityTest's numbers), for the person's own rows and for rows whose target is a person
+    and is seen; a bot's velocities stay as they are, and logs of 1.41 on are read as stored."""
+    # VelocityTest's numbers: a steady sprint step, standing still, a jump's first tick, the air
+    step = 0.13 / (1 - 0.546)
+    vx, vy, _ = fights.game_velocity(np.array([step, 0.0, 0.0, 0.3]), np.array([0.0, 0.0, 0.42, 0.0]), np.zeros(4),
+                                     np.array([True, True, False, False]))
+    np.testing.assert_allclose(vx, [step * 0.546, 0.0, 0.0, 0.91 * 0.3], atol=1e-12)
+    np.testing.assert_allclose(vy[:3], [-0.0784, -0.0784, (0.42 - 0.08) * 0.98], atol=1e-12)
+    with open(SAMPLE, encoding="utf-8") as src:
+        lines = src.read().splitlines()
+    head = json.loads(lines[0])
+    assert head["velocities"] == "game"
+    del head["velocities"]
+    old = tmp_path / "old.jsonl"
+    old.write_text("\n".join([json.dumps(head)] + lines[1:]) + "\n", encoding="utf-8")
+    new, was = sample(), next(fights.read(str(old)))
+    a, b = fights.states(new), fights.states(was)
+    person = np.array([r["f"] == 0 for r in new.rows])
+    sees_person = np.array([r["o"] == 0 for r in new.rows]) & a["opp_visible"]
+    ex, ey, ez = fights.game_velocity(a["self_vx"], a["self_vy"], a["self_vz"], a["self_on_ground"], a["self_gravity"])
+    np.testing.assert_allclose(b["self_vx"], np.where(person, ex, a["self_vx"]))
+    np.testing.assert_allclose(b["self_vy"], np.where(person, ey, a["self_vy"]))
+    np.testing.assert_allclose(b["self_vz"], np.where(person, ez, a["self_vz"]))
+    ox, oy, oz = fights.game_velocity(a["opp_vx"], a["opp_vy"], a["opp_vz"], a["opp_on_ground"])
+    np.testing.assert_allclose(b["opp_vx"], np.where(sees_person, ox, a["opp_vx"]))
+    np.testing.assert_allclose(b["opp_vy"], np.where(sees_person, oy, a["opp_vy"]))
+    assert person.any() and (~person).any() and sees_person.any()
+
+
 def test_imitation_learns_what_was_done():
     """Behavior cloning on made-up decisions (attack exactly when the target is in front) learns that rule."""
     import pytest
