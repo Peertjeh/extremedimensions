@@ -159,6 +159,15 @@ worst tick of each part of it (`TickProfile`) and the garbage collection in thos
 also logs where the server thread stood, so a tick slow by the clock but not in CPU time shows what it waited on. The
 tests judge the mod by its CPU time, and fail a fight in which the mod waited on a chunk to load.
 
+What the mod costs a server, set against the same server without it, is the benchmark's to say (CI job *performance with
+and without the mod*; the table is on the run's summary page). `tools/bench/run.py` runs a real Fabric dedicated server
+on a fresh world from one seed, in turn without the mod and with it (Fabric API both times), twice each, and a little
+mod of its own (`src/bench`, never shipped, built by `./gradlew benchJar`) takes it through the same play: the server
+alone, four players standing about, the players sprinting outwards over new land, and with the mod the players in the
+Seam. Per phase: MSPT, the server thread's and every thread's CPU time, memory, entities, and where the server thread
+stood in any tick over 100 ms. To run it yourself: `./gradlew assemble benchJar` and `python3 tools/bench/run.py <dir>`
+(Java 25 on the path; it fetches the Fabric server and Fabric API).
+
 ## Project layout
 
 | Package | What lives there |

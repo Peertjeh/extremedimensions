@@ -54,6 +54,12 @@ the heavy parts cost, and makes the download lighter.
   fight against quiet ones before it, the whole tick and the mod's own share; the test fails only far above any sane
   cost, as the other performance tests do.
 
+- **A benchmark, with and without the mod**: a real Fabric dedicated server runs the same play on a fresh world from
+  one seed, without the mod and with it in turn, twice each: the server alone, four players standing about, the players
+  sprinting outwards over new land, and (only with the mod) the players in the Seam. A new CI job runs it on every push
+  and puts the table on the run's summary page: start-up, memory, and per phase MSPT, CPU time, entities, and where the
+  server thread stood in any tick over 100 ms, whether the mod's code was running or not.
+
 ### Build
 - Gradle, the game and its libraries are kept between CI runs, so a download that fails on the way (a server's 502)
   is far less likely to fail the build, and every job starts sooner.
