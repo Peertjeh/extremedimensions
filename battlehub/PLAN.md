@@ -1568,3 +1568,20 @@ master:
 - **"bots skywars: no bot walked or jumped off the map by itself"**: een gescripte bot viel tijdens het bruggen bouwen
   naar een kist van de rand ("standing on an edge", 41 blokken geplaatst). Die test zet het geleerde gevecht uit,
   dus dit staat los van deze fase. Het is de eerste keer in deze reeks runs; bij herhaling zoek ik het uit.
+
+**CI van 375db9d: 891 geslaagd, 0 gefaald.**
+- De wereldreset en SkyWars slaagden.
+- De items-test faalde één keer: de bot bleef op 19 blokken op A schieten en at niet; de start van het duel kan zijn
+  health hebben teruggezet. Nu zet de test de health opnieuw op 5 zolang de bot niet heeft gegeten, en logt hij de
+  health.
+- **Tijd per beslissing met de nieuwe master:**
+
+  | Zelftest | Beslissingen | Gemiddeld | p99 | Maximum | Maskers |
+  |---|---|---|---|---|---|
+  | v2-bijlduel (na het zwaardduel) | 183 | 0,442 ms | 0,649 ms | 5,4 ms | 0,0077 ms |
+  | v2-items (Build UHC) | 535 | 0,351 ms | 0,606 ms | 5,4 ms | 0,0051 ms |
+
+  - Gelijk aan 1.38: het netwerk is even groot.
+  - Het maximum van 5,4 ms is één beslissing in het eerste duel: het laden van het model (ONNX Runtime) valt in die
+    eerste beslissing.
+- **Het zwaardduel met v2** (de vroegere v1-test): het model stuurde, raakte A en won.
