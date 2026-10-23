@@ -194,13 +194,13 @@ def main():
         picked = ckpts[::a.every] + ([ckpts[-1]] if ckpts and ckpts[-1] not in ckpts[::a.every] else [])
         tag = "" if len(a.runs) == 1 else os.path.basename(os.path.normpath(run)) + ":"
         players.update({"%sckpt_%d" % (tag, int(os.path.basename(p)[5:14])): p for p in picked})
+    for p in a.include:
+        players["%s:ckpt_%d" % (os.path.basename(os.path.dirname(os.path.abspath(p))), int(os.path.basename(p)[5:14]))] = p
     items_dir = os.path.abspath(a.items_from) if a.items_from else None
     if items_dir and a.item_hands != "true":
         for n, p in list(players.items()):
             if os.path.dirname(os.path.abspath(p)) == items_dir:
                 players[n] = p + "#hands=" + a.item_hands
-    for p in a.include:
-        players["%s:ckpt_%d" % (os.path.basename(os.path.dirname(os.path.abspath(p))), int(os.path.basename(p)[5:14]))] = p
     for skill in ("0.3", "0.5", "0.8", "1.0"):
         players["scripted_" + skill] = None
     players["random"] = None

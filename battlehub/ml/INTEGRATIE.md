@@ -26,12 +26,14 @@ Elke 2 ticks doet `LearnedFight` dit:
 4. `CombatMasks` zet wat niet mag op min oneindig: geen hand die de bot niet bij zich heeft, geen eten bij volle honger,
    geen rechtermuisknop als er niets te gebruiken is (`ml/spec/combat_v2_masks.json`).
 5. Per kop de hoogste toegestane logit, of op lage niveaus een trekking (`CombatAction.best` en `sample` met masker).
-6. De actie geldt 2 ticks: slaan in de eerste tick, de draai verdeeld over beide. Hand en rechtermuisknop alleen bij een
-   model met de vlag "items" en `bots.learnedItems` aan; anders eet, schiet en gooit de bot met zijn eigen regels en mag
-   het model alleen het schild opsteken.
+6. De actie geldt 2 ticks: slaan in de eerste tick, de draai verdeeld over beide. Hand en rechtermuisknop alleen voor
+   de spullen die het model geleerd heeft (de lijst "items" in zijn metadata; de master van 1.38: food, gapple, wind)
+   en met `bots.learnedItems` aan. Een hand die niet op de lijst staat, maskeert de mod. Anders eet, schiet en gooit
+   de bot met zijn eigen regels, en mag het model alleen het schild opsteken.
 
 De strategie blijft gescript: looten, bedden, bruggen en de goal. Het model neemt alleen het gevecht over. Met een doel
-vecht het alleen binnen 8 blokken.
+vecht het alleen binnen 8 blokken, en een vijand die de bot niet ziet ook alleen binnen 8 blokken (verder weg zoekt de
+mind een pad om dekking heen).
 
 ## Bestanden
 
@@ -67,14 +69,17 @@ pip install -r requirements-sim.txt -r requirements-train.txt
 python tools/make_bc_data.py --model <checkpoint> --out bc.npz                 # wat de leraar met zijn spullen doet
 python train/bc.py --data bc.npz --init <checkpoint> --out runs/bc --epochs2 0 # nadoen: alleen hand en use
 python train/selfplay2.py --run runs/v3a --init runs/bc/ckpt_bc.zip --pool-from runs/v2 --masks --extra-items 1.0 \
-    --scripted-latch --bc-data bc.npz --bc-weight 0.5 --bc-decay 8000000 --steps 20000000
-python train/eval2.py runs/v3a/ckpt_020000000.zip                              # winst en spullen per gevecht
-python train/league2.py --versus runs/v3a/ckpt_020000000.zip <master> --episodes 120
-python train/league2.py runs/v3a --include <checkpoints van de huidige niveaus> --items-from runs/v3a \
-    --levels master --keep ../src/main/resources/assets/battlehub/ml/difficulties_v2.json --out league_v3a
+    --scripted-latch --steps 14000000                                          # zo is de master van 1.38 gemaakt
+python train/eval2.py runs/v3a/ckpt_012000000.zip --hands food,gapple,wind      # winst en spullen per gevecht
+python train/league2.py --versus "runs/v3a/ckpt_012000000.zip#hands=food,gapple,wind" <master> --episodes 120
+python train/league2.py --include <checkpoints van de huidige niveaus> runs/v3a/ckpt_012000000.zip \
+    --items-from runs/v3a --item-hands food,gapple,wind --levels master \
+    --keep ../src/main/resources/assets/battlehub/ml/difficulties_v2.json --out league_v3a
 ```
 
-Daarna de `.onnx`-bestanden en `difficulties_v2.json` uit de league-map naar `src/main/resources/assets/battlehub/ml/`.
+Daarna de `.onnx`-bestanden en `difficulties_v2.json` uit de league-map naar `src/main/resources/assets/battlehub/ml/`,
+en de `.check.json` van elk nieuw model naar `src/test/resources/net/battlehub/ml/`. De BC-term naast PPO
+(`--bc-data`) is er nog, maar haalde in fase 3A het gevecht onderuit (zie `PLAN.md`).
 Een model met de vlag "items" kiest zijn spullen zelf (met `bots.learnedItems`); andere modellen laten de spullen aan de
 regels van de bot.
 

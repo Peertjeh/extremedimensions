@@ -1415,3 +1415,68 @@ bot zag A niet en het model liep 30 seconden tegen de dekking op: het is getrain
 - Nu stuurt de gescripte mind (die paden om dekking heen zoekt) als het doelwit niet zichtbaar is en verder dan
   8 blokken weg. In zicht of dichtbij vecht het model.
 - Dit is geen wijziging van de strategie (looten, bedden, bruggen), alleen van wanneer het model stuurt.
+
+**A4 – Uitslag en keuze.** B doorgetraind van 6 naar 14 miljoen stappen; elke 2 miljoen eval2, de kandidaten tegen
+master:
+
+| B | Winst (eval2) | Eten | Wind | Tegen master (1.208 gevechten) |
+|---|---|---|---|---|
+| 6M | 82,1% | 35/87 (40%) | 100% | 50,0% |
+| 8M | 81,1% | 25/88 | 100% | |
+| 10M | 85,4% | 15/77 | 100% | 56,2% |
+| 12M | 82,9% | 29/67 (43%) | 100% | **54,6%** |
+| 14M | 86,6% | 11/61 | 100% | |
+
+- **Gekozen: B na 12M.** Dit is het enige checkpoint dat alle haalbare drempels haalt.
+- **De nieuwe master, gespeeld zoals in de mod** (alleen eten, gouden appels en wind charges naast het wapen):
+
+  | Drempel | Doel | Uitslag | |
+  |---|---|---|---|
+  | pijlen | minstens 50% | 0/23 | niet gehaald |
+  | eten | minstens 40% | 29/67 = 43% | gehaald |
+  | pearls | minstens 20%, de helft nuttig | 0/3 | niet gehaald |
+  | wind charges (bonus) | minstens 20% | 92/92, 48% nuttig | gehaald |
+  | tegen master | minstens 50% over 1.200 | 54,6% (568–473, 167 gelijk) | gehaald |
+  | eval2 tegen gescript | minstens 81% | 83,9% | gehaald |
+
+  - Per scenario (gewonnen van 48): zwaard 48, bijl 46, boog 38, Bridge 41, SkyWars-loot 47, sumo 47, stad 1v2 17
+    (oude master 11), Bed Wars drie tegen elkaar 39.
+  - Schild in het bijlduel: 16% van de beslissingen.
+- **League** (`ml/spec/league_v2_fase3a.json`; de zes niveaus van 1.34, de nieuwe master, de gescripte bot met 4
+  skills en willekeurig spel; 120 gevechten per paar):
+  - Elo: nieuwe master 1480, oude master 1448, expert 1374, advanced 1283, intermediate 1214, casual 1089,
+    beginner 1003; gescript 0,8 1040, 1,0 1032, 0,5 1000, 0,3 938; willekeurig 220.
+  - Onderling 58–50 (32 gelijk) tegen de oude master.
+  - Alleen master is vervangen (`--levels master --keep`). De andere niveaus houden hun model, met hun Elo uit deze
+    league.
+
+**Wat er in 1.38.0 zit.**
+- Maskers altijd aan in de mod. De tijd per beslissing staat in `inspect` en in de log van de zelftest: in de laatste
+  CI-run 0,21 tot 0,26 ms gemiddeld, p99 0,46 tot 0,50 ms, waarvan de maskers minder dan 0,01 ms.
+- Een nieuwe master met de lijst `items: food,gapple,wind`.
+- **`bots.learnedItems` blijft standaard uit.** De eis was pijlen, eten en pearls; pijlen en pearls zijn niet geleerd.
+  - Wie het aanzet, laat de master zelf eten, appels eten en wind charges gooien in het gevecht.
+  - De boog, pearls en het helen op afstand blijven altijd de regels van de bot.
+- Zelftests:
+  - het v2-bijlduel logt de kosten per beslissing;
+  - de nieuwe Build UHC-test met spullen: de bot eet, en het model kiest nooit een hand die de bot niet kan pakken.
+- CI van b554827: 891 zelftests geslaagd, 0 gefaald.
+- Bekende flake (los van deze fase): de parkour-zelftest faalde één keer. Een bot bleef bij platform 1 staan met
+  0 denkstappen. In de runs ervoor en erna slaagde die test.
+
+**Gescripte punten (samengevat).**
+- Simulatie: de gescripte bot kreeg de optie `latch` (de leraar). De standaard is ongewijzigd.
+- Mod: geen wijziging aan looten, bedden, bruggen of de itemregels van de bot. Wel in de naad: een vijand buiten
+  zicht en verder dan 8 blokken laat het model aan de mind over.
+
+**Lessen voor later.**
+- De BC-term naast PPO trekt het gevecht uit elkaar zodra hij in het netwerk komt. Zelfs alleen op de laatste laag
+  kost hij winst, en zware gewichten voor zeldzame spullen maken er spam van.
+- Een KL-anker naar het BC-start houdt de spullen vast, maar kost het mace-spel van master (40,5% onderling).
+- PPO zonder term vanaf BC stap 1 werkt het best. Het gevecht wordt sterker dan master, en eten en wind charges
+  blijven voor een deel: het eten schommelt per checkpoint tussen 18% en 43%.
+- **De boog** loont niet in de simulatie: zelfs de pijlen van de leraar raken maar 11%, en het model wint door erop af
+  te gaan. Voor de boog is waarschijnlijk iets anders nodig: een simulatie die het schieten beter nabootst (fase D),
+  of een boogduel-training met afstand houden als doel.
+- **Pearls** zijn zeldzaam in de kits en kaarten van de simulatie: weinig gevechten met een pearl en een doelwit verder
+  dan 18 blokken.

@@ -1,8 +1,8 @@
 {
  "beginner": {
   "checkpoint": "ckpt_6000192",
-  "elo": 1050,
-  "target_elo": 1058,
+  "elo": 1003,
+  "target_elo": 1028,
   "extra_delay": 4,
   "aim_noise": 2.5,
   "turn_cap": 24,
@@ -11,8 +11,8 @@
  },
  "casual": {
   "checkpoint": "ckpt_10000224",
-  "elo": 1099,
-  "target_elo": 1139,
+  "elo": 1089,
+  "target_elo": 1118,
   "extra_delay": 3,
   "aim_noise": 1.8,
   "turn_cap": 30,
@@ -21,8 +21,8 @@
  },
  "intermediate": {
   "checkpoint": "ckpt_18000000",
-  "elo": 1241,
-  "target_elo": 1220,
+  "elo": 1214,
+  "target_elo": 1209,
   "extra_delay": 2,
   "aim_noise": 1.2,
   "turn_cap": 36,
@@ -31,8 +31,8 @@
  },
  "advanced": {
   "checkpoint": "ckpt_22000032",
-  "elo": 1311,
-  "target_elo": 1301,
+  "elo": 1283,
+  "target_elo": 1299,
   "extra_delay": 1,
   "aim_noise": 0.8,
   "turn_cap": 45,
@@ -41,8 +41,8 @@
  },
  "expert": {
   "checkpoint": "ckpt_30000096",
-  "elo": 1413,
-  "target_elo": 1382,
+  "elo": 1374,
+  "target_elo": 1389,
   "extra_delay": 0,
   "aim_noise": 0.5,
   "turn_cap": 54,
@@ -50,13 +50,14 @@
   "model": "combat_v2_expert.onnx"
  },
  "master": {
-  "checkpoint": "ckpt_40000032",
-  "elo": 1463,
-  "target_elo": 1463,
+  "checkpoint": "ab_nobc:ckpt_12000000",
+  "elo": 1480,
+  "target_elo": 1480,
   "extra_delay": 0,
   "aim_noise": 0.2,
   "turn_cap": 60,
   "sample": false,
-  "model": "combat_v2_master.onnx"
+  "model": "combat_v2_master.onnx",
+  "items": "food,gapple,wind"
  }
 }

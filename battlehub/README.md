@@ -685,8 +685,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
     bot differs from its style (`personalityVariation`, 0 .. 0.2), whether bots remember players between fights
     (`learning`) and across restarts (`learningPersistent`, in `battlehub/ai/`), whether the learned model fights
     (`learnedCombat`), in which modes (`learnedModes`, default every melee mode), with which model (`learnedSpec`,
-    2 or 1; `learnedV1Modes`, default sword and boxing, keep v1) and whether it uses the items itself
-    (`learnedItems`, off), whether operators get the model reports after matches (`modelReport`, on), from what
+    2 or 1; `learnedV1Modes`, default sword and boxing, keep v1) and whether a model that learned items uses
+    them itself (`learnedItems`, off; the master model knows food, golden apples and wind charges), whether operators get the model reports after matches (`modelReport`, on), from what
     tick time bots think
     less often (`slowAboveMspt`), and how soon
     a bot leaves after its match

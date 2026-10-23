@@ -456,8 +456,9 @@ public final class HubConfig {
 		/** Modes where model v1 fights instead of v2: on flat ground with the sword kit v1 is still the stronger. */
 		public List<String> learnedV1Modes = new ArrayList<>(List.of("sword", "boxing"));
 		/**
-		 * The v2 model also chooses what to hold and uses it (bow, food, golden apples, pearls, wind charges, shield).
-		 * Off: the model fights, the bot's own rules eat, shoot and throw (the model did not learn its items yet).
+		 * A v2 model that learned items (its metadata lists them; the master model: food, golden apples, wind charges)
+		 * chooses those itself in the fight. Off, or for items a model did not learn (the bow, pearls), the bot's own
+		 * rules eat, shoot and throw; healing at a distance always stays the bot's own.
 		 */
 		public boolean learnedItems = false;
 		/**

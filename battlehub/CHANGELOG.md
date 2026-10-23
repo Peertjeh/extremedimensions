@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.38.0
+
+### Added
+* **Action masks for the learned fight.** The v2 model now chooses only what is allowed: never a hand the bot
+  does not have in its hotbar, never food at full hunger, never the right mouse button with nothing to use
+  (`ml/spec/combat_v2_masks.json`, bound to spec v2, so the shipped models stay valid). The simulation and the
+  mod (`core.ml.CombatMasks`) give exactly the same masks, checked by a golden file on both sides.
+* **A new master model** (level master of model v2), trained with the masks: it wins 54.6% of 1,208 fights
+  against the previous master and 82.9% against the scripted bot in the simulation, and in the simulation it eats
+  when hurt in 43% of the fights where that made sense and uses its wind charges. The other levels are
+  unchanged.
+* **Models say which items they learned.** A model's metadata lists its hands (the new master: food, golden
+  apples and wind charges). With `bots.learnedItems` on, the model uses those itself in the fight; the bow, pearls
+  and everything else stay the bot's own rules, as does healing at a distance. `bots.learnedItems` stays off by
+  default: the bow and pearls were not learned (see `PLAN.md`, ML fase 3).
+* **What a model decision costs.** `/battlehub bots inspect <bot>` shows the average, 99th percentile and maximum
+  time per decision over all bots, and how much of it the masks take (about 0.2 to 0.5 ms per decision, every
+  two ticks; the masks under 0.01 ms). It also counts the items the model used.
+* Training (`battlehub/ml`): item use measured per fight (`train/eval2.py`), the scripted bot as a teacher that
+  throws pearls and wind charges (`latch`), copying it (`tools/make_bc_data.py`, `train/bc.py`), PPO with masks
+  (`selfplay2.py --masks`, sb3-contrib) and more items in loot and the shop, `league2.py --versus` and
+  `--levels master --keep`, and `ml/INTEGRATIE.md` rewritten for the model as it is in the mod now.
+
+### Fixed
+* The learned model's view of the bot's items counted the whole inventory, but a bot can only take what is in its
+  hotbar in hand (in Build UHC the food sits in slot 13): it now counts the hotbar (arrows anywhere, with a bow in
+  the hotbar).
+* With an enemy out of sight and farther than 8 blocks, the scripted mind now steers (its paths lead round cover)
+  instead of the model, which walked into the cover for as long as the enemy stayed hidden.
+* The simulation counted arrows, food and throws only in the last tick of a decision, so the item numbers of the
+  1.34 training were too low; they now count every tick.
+* The world reset self-test waits for the player to arrive in BattleHub instead of checking in the same tick.
+
 ## 1.37.0
 
 ### Added
