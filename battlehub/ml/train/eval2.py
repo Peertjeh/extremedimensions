@@ -13,6 +13,9 @@ The team block (phase 3C): the town 1 against 2 over 192 fights, and two against
 scripted bots, with the sword in the arena and in Bed Wars in teams; and the model with a scripted team mate against
 two scripted bots, which shows whether the model makes its team better than a scripted bot would: that team wins
 about half). A team's result counts: it wins when the other team is dead, also when the model died first.
+
+The people block (phase 3D, --people <run of train/people.py>): alone against two of the policy that fights like the
+people in the fight logs, on the maps and kits of the scenarios.
 """
 import argparse
 import copy
@@ -195,7 +198,24 @@ def item_summary(per_scenario):
     return out
 
 
-def evaluate(policy, episodes=48, seed=0):
+def against_people(policy, people, episodes=48, seed=0):
+    """The people block (phase 3D): alone against two of the people policy (train/people.py) on the maps and kits of the
+    scenarios (one on one, the master of 1.40 wins nearly all), win, loss, draw each, and the share won over all."""
+    out, wins, total = {}, 0, 0
+    seen = set()
+    for k, (terrain, family, count, mode) in enumerate(SCENARIOS):
+        if (terrain, family) in seen:
+            continue
+        seen.add((terrain, family))
+        res = play(policy, people, terrain, family, 3, "1v2", episodes, seed=seed + 700 + k)
+        out["%s/%s/1v2" % (terrain, family)] = [int(v) for v in res]
+        wins += res[0]
+        total += res.sum()
+    out["share"] = round(wins / max(1, total), 3)
+    return out
+
+
+def evaluate(policy, episodes=48, seed=0, people=None):
     out = {}
     wins = total = 0
     for k, (terrain, family, count, mode) in enumerate(SCENARIOS):
@@ -209,6 +229,8 @@ def evaluate(policy, episodes=48, seed=0):
     out["items"] = {"%s/%s" % (t, f): items(policy, t, f, ITEM_EPISODES.get("%s/%s" % (t, f), 64), seed=seed) for t, f in ITEM_SCENARIOS}
     out["items_total"] = item_summary(out["items"])
     out["team"] = team(policy, seed)
+    if people is not None:
+        out["people"] = against_people(policy, people, episodes, seed)
     return out
 
 
@@ -221,6 +243,8 @@ def main():
     ap.add_argument("--items-only", action="store_true", help="only how the items are used")
     ap.add_argument("--hands", default=None, help="the hands the model may choose besides the weapon, as in the mod (e.g. food,gapple,pearl,wind)")
     ap.add_argument("--team-only", action="store_true", help="only the team block")
+    ap.add_argument("--people", default=None, help="train/people.py's run: also the block against the people policy")
+    ap.add_argument("--people-only", action="store_true", help="only the people block (with --people)")
     a = ap.parse_args()
     if a.checkpoint.startswith("scripted"):
         # the scripted bot itself as the player, for reference ("scripted" or "scripted_latch")
@@ -234,13 +258,19 @@ def main():
         hands = a.hands.split(",") if a.hands else None
         policy = Chooser(model.policy, masks=not a.no_masks, hands=hands)
         row = {"checkpoint": os.path.basename(a.checkpoint), "steps": int(model.num_timesteps), "masks": not a.no_masks, "hands": a.hands}
-    if a.team_only:
+    people = None
+    if a.people:
+        from train.people import People
+        people = People.load(a.people, seed=7)
+    if a.people_only:
+        row["people"] = against_people(policy, people, a.episodes)
+    elif a.team_only:
         row["team"] = team(policy)
     elif a.items_only:
         row["items"] = {"%s/%s" % (t, f): items(policy, t, f, ITEM_EPISODES.get("%s/%s" % (t, f), 64)) for t, f in ITEM_SCENARIOS}
         row["items_total"] = item_summary(row["items"])
     else:
-        row.update(evaluate(policy, a.episodes))
+        row.update(evaluate(policy, a.episodes, people=people))
     line = json.dumps(row)
     print(line)
     if a.out:

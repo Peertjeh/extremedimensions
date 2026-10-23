@@ -43,6 +43,13 @@ public final class BotPlayer extends ServerPlayer {
 		return lastKnock;
 	}
 
+	/** Ticks the bot does not think (no keys, no turning): only the game moves it (self-test). */
+	private int held;
+
+	public void hold(int ticks) {
+		held = ticks;
+	}
+
 	@Override
 	public void tick() {
 		net.minecraft.world.phys.Vec3 k = knock;
@@ -59,7 +66,14 @@ public final class BotPlayer extends ServerPlayer {
 			hasChangedDimension();
 		}
 		try {
-			brain.tick();
+			if (held > 0) {
+				held--;
+				zza = xxa = 0;
+				setJumping(false);
+				setSprinting(false);
+			} else {
+				brain.tick();
+			}
 		} catch (RuntimeException e) {
 			if (!warned) {
 				warned = true;

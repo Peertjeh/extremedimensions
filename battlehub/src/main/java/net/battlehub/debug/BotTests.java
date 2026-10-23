@@ -738,6 +738,42 @@ final class BotTests {
 					String.format(java.util.Locale.ROOT, "%.2f", push), String.format(java.util.Locale.ROOT, "%.2f", moved));
 			return push > 0.25 && moved > 0.4;
 		});
+		// The push of a hit as the game moves the bot, tick by tick, without the bot doing anything (ML phase 3D: the fight
+		// logs showed bots going less far after a hit than the simulation; ml/train/simfit.py replays this trace)
+		s.run(tag + ": the bot stands still two blocks in front of A, not thinking", () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			ServerPlayer a = p(A);
+			Vec3 dir = (Vec3) VARS.get("kbDir");
+			PartyTests.tp(a, ((Vec3) VARS.get("kbFrom")).x - dir.x * 2, a.getY(), ((Vec3) VARS.get("kbFrom")).z - dir.z * 2);
+			PartyTests.tp(b, a.getX() + dir.x * 2, a.getY(), a.getZ() + dir.z * 2);
+			b.setDeltaMovement(Vec3.ZERO);
+			b.hold(60);
+			a.setSprinting(false);
+		});
+		s.pause(15);
+		s.run(tag + ": A hits it once (not sprinting: one push)", () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			ServerPlayer a = p(A);
+			VARS.put("traceFrom", b.position());
+			VARS.put("traceGround", b.onGround());
+			VARS.put("trace", new ArrayList<double[]>());
+			a.attack(b);
+		});
+		s.waitFor(tag + ": its velocity tick by tick for 6 ticks (logged)", 6, () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			@SuppressWarnings("unchecked")
+			List<double[]> trace = (List<double[]>) VARS.get("trace");
+			Vec3 from = (Vec3) VARS.get("traceFrom"), dir = (Vec3) VARS.get("kbDir");
+			Vec3 v = b.getDeltaMovement();
+			trace.add(new double[] {b.position().subtract(from).dot(dir), b.getY() - from.y, v.x * dir.x + v.z * dir.z, v.y, b.onGround() ? 1 : 0});
+			if (trace.size() < 6) return false;
+			StringBuilder sb = new StringBuilder();
+			for (double[] t : trace) {
+				sb.append(String.format(java.util.Locale.ROOT, " [away %.4f up %.4f v %.4f vy %.4f ground %d]", t[0], t[1], t[2], t[3], (int) t[4]));
+			}
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST knock trace (on the ground before: {}):{}", VARS.get("traceGround"), sb);
+			return trace.get(5)[0] > 0.6;
+		});
 		endAndClean(s, tag);
 	}
 

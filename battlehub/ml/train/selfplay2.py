@@ -146,14 +146,16 @@ class FrozenPolicy:
 
 class OpponentPool2:
     """Who plays each opponent slot: -3 dummy, -1 random, -2 scripted (a skill per slot), -4 model v1 (through the
-    league's adapter, with --v1), k >= 0 frozen policy k."""
+    league's adapter, with --v1), -5 the people policy (train/people.py, with --people), k >= 0 frozen policy k."""
 
     START = {"pool": 0.0, "random": 0.2, "dummy": 0.5}
     END = {"pool": 0.5, "random": 0.04, "dummy": 0.08}
 
-    def __init__(self, rng, curriculum, max_size=24, newest_share=0.5, latch=False, v1=None, v1_share=0.0):
+    def __init__(self, rng, curriculum, max_size=24, newest_share=0.5, latch=False, v1=None, v1_share=0.0, people=None, people_share=0.0):
         self.v1 = v1
         self.v1_share = v1_share if v1 is not None else 0.0
+        self.people = people
+        self.people_share = people_share if people is not None else 0.0
         self.rng = rng
         self.cur = curriculum
         self.frozen = []
@@ -188,6 +190,8 @@ class OpponentPool2:
             kind = np.where(use, pick, kind)
         if self.v1_share > 0:
             kind = np.where(self.rng.random(m) < self.v1_share, -4, kind)
+        if self.people_share > 0:
+            kind = np.where(self.rng.random(m) < self.people_share, -5, kind)
         return kind, skill
 
     def act(self, obs, kind, skill):
@@ -198,6 +202,9 @@ class OpponentPool2:
             out[kind == -3] = self.dummy(obs[kind == -3])
         if (kind == -4).any():
             out[kind == -4] = self.v1(obs[kind == -4])
+        if (kind == -5).any():
+            rows = np.nonzero(kind == -5)[0]
+            out[rows] = self.people.rows(obs[rows], rows, len(kind))
         for k in np.unique(kind[kind >= 0]):
             rows = kind == k
             out[rows] = self.frozen[int(k)](obs[rows])
@@ -266,7 +273,7 @@ def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=N
                     g = w * per + i
                     win = int(lite["winner"][i])
                     res = "win" if win == 0 else "loss" if win == 1 else "draw"
-                    who = {-1: "random", -2: "scripted", -3: "dummy", -4: "v1"}.get(int(self.kind[g, 0]), "pool")
+                    who = {-1: "random", -2: "scripted", -3: "dummy", -4: "v1", -5: "people"}.get(int(self.kind[g, 0]), "pool")
                     self.results_by.setdefault(who, {"win": 0, "loss": 0, "draw": 0})[res] += 1
                     sc = "%s/%s/%s" % (lite["terrain"][j], lite["family"][j], lite["mode"][j])
                     self.scenarios.setdefault(sc, {"win": 0, "loss": 0, "draw": 0})[res] += 1
@@ -419,6 +426,8 @@ def main():
     ap.add_argument("--bc-aim", action="store_true", help="with --bc-mode kl: also the teacher's aim with bow and throws (action layer only)")
     ap.add_argument("--v1", default=None, help="model v1's checkpoint as an opponent (phase 3B: v2 learns to beat it)")
     ap.add_argument("--v1-share", type=float, default=0.2, help="share of the opponent slots v1 plays (with --v1)")
+    ap.add_argument("--people", default=None, help="train/people.py's run: the people policy as an opponent (phase 3D)")
+    ap.add_argument("--people-share", type=float, default=0.15, help="share of the opponent slots it plays (with --people)")
     ap.add_argument("--family-weight", nargs="*", default=[], help="kit weights over the default, e.g. sword=3 boxing=0.6")
     ap.add_argument("--pair", nargs="*", default=[], help="maps that go with a kit most of the time, e.g. sword=walled")
     ap.add_argument("--spec", type=int, default=3, choices=[2, 3], help="3: team mates, a third enemy, memory, four slots")
@@ -446,7 +455,12 @@ def main():
         print("v1 from", a.v1, "in", a.v1_share, "of the opponent slots", flush=True)
     family_weight = {kv.split("=")[0]: float(kv.split("=")[1]) for kv in a.family_weight}
     pairs = {kv.split("=")[0]: kv.split("=")[1].split(",") for kv in a.pair}
-    pool = OpponentPool2(rng, cur, latch=a.scripted_latch, v1=v1, v1_share=a.v1_share)
+    people = None
+    if a.people:
+        from train.people import People
+        people = People.load(a.people, seed=a.seed)
+        print("people from", a.people, "in", a.people_share, "of the opponent slots", flush=True)
+    pool = OpponentPool2(rng, cur, latch=a.scripted_latch, v1=v1, v1_share=a.v1_share, people=people, people_share=a.people_share)
     lessons = None
     if a.focus:
         from train.focus import apply, load
@@ -545,7 +559,7 @@ def main():
             print(json.dumps({k: v for k, v in row.items() if k != "scenarios"}), flush=True)
             venv.results_by, venv.scenarios = {}, {}
             if not a.no_eval and (self.eval_proc is None or self.eval_proc.poll() is not None):
-                hands = ["--hands", a.eval_hands] if a.eval_hands else []
+                hands = (["--hands", a.eval_hands] if a.eval_hands else []) + (["--people", a.people] if a.people else [])
                 self.eval_proc = subprocess.Popen(["nice", "-n", "15", sys.executable, os.path.join(HERE, "eval2.py"), path,
                                                    "--out", os.path.join(a.run, "eval.jsonl")] + hands,
                                                   stdout=subprocess.DEVNULL, stderr=open(os.path.join(a.run, "eval.err"), "a"))

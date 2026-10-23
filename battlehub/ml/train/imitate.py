@@ -24,12 +24,17 @@ from pvp_sim2.spec import SPEC2  # noqa: E402
 from train import fights as F  # noqa: E402
 
 
+def heads(dist):
+    """The per-head categorical distributions of a policy's distribution (PPO's or MaskablePPO's)."""
+    return dist.distribution if hasattr(dist, "distribution") else dist.distributions
+
+
 def heads_accuracy(policy, obs, act):
     """How often the policy's most likely choice is what was done, per action head."""
     import torch
     with torch.no_grad():
         dist = policy.get_distribution(torch.as_tensor(obs))
-        best = np.stack([d.probs.argmax(dim=1).numpy() for d in dist.distribution], axis=1)
+        best = np.stack([d.probs.argmax(dim=1).numpy() for d in heads(dist)], axis=1)
     return (best == act).mean(axis=0)
 
 
