@@ -1,0 +1,392 @@
+{
+ "ratings": {
+  "v3b:ckpt_4000032": 1481.2284071252884,
+  "ab_nobc:ckpt_12000000": 1463.2474386996182,
+  "v2:ckpt_30000096": 1371.0022884251161,
+  "v2:ckpt_22000032": 1260.049661938816,
+  "v2:ckpt_18000000": 1210.373877429447,
+  "v2:ckpt_10000224": 1088.9322620552175,
+  "scripted_1.0": 1036.1480873583323,
+  "scripted_0.8": 1034.9261242786183,
+  "v2:ckpt_6000192": 1003.0382080960107,
+  "scripted_0.5": 1000.0,
+  "scripted_0.3": 938.2520145380414,
+  "random": 225.84206690672096
+ },
+ "results": {
+  "v2:ckpt_6000192|v2:ckpt_18000000": [
+   29,
+   97,
+   0
+  ],
+  "v2:ckpt_6000192|v2:ckpt_10000224": [
+   52,
+   72,
+   0
+  ],
+  "v2:ckpt_6000192|v2:ckpt_30000096": [
+   22,
+   100,
+   0
+  ],
+  "v2:ckpt_6000192|v2:ckpt_22000032": [
+   25,
+   101,
+   0
+  ],
+  "v2:ckpt_6000192|scripted_0.5": [
+   50,
+   76,
+   0
+  ],
+  "v2:ckpt_6000192|scripted_0.3": [
+   66,
+   56,
+   0
+  ],
+  "v2:ckpt_6000192|v3b:ckpt_4000032": [
+   8,
+   113,
+   0
+  ],
+  "v2:ckpt_6000192|ab_nobc:ckpt_12000000": [
+   15,
+   107,
+   0
+  ],
+  "v2:ckpt_6000192|scripted_0.8": [
+   61,
+   61,
+   0
+  ],
+  "v2:ckpt_6000192|scripted_1.0": [
+   54,
+   71,
+   0
+  ],
+  "v2:ckpt_6000192|random": [
+   118,
+   1,
+   13
+  ],
+  "v2:ckpt_10000224|v2:ckpt_18000000": [
+   34,
+   88,
+   0
+  ],
+  "v2:ckpt_10000224|v2:ckpt_30000096": [
+   20,
+   102,
+   0
+  ],
+  "v2:ckpt_10000224|v2:ckpt_22000032": [
+   35,
+   89,
+   0
+  ],
+  "v2:ckpt_10000224|ab_nobc:ckpt_12000000": [
+   7,
+   118,
+   0
+  ],
+  "v2:ckpt_10000224|scripted_0.5": [
+   83,
+   41,
+   0
+  ],
+  "v2:ckpt_10000224|scripted_0.3": [
+   86,
+   37,
+   0
+  ],
+  "v2:ckpt_10000224|v3b:ckpt_4000032": [
+   21,
+   102,
+   0
+  ],
+  "v2:ckpt_10000224|scripted_0.8": [
+   69,
+   54,
+   0
+  ],
+  "v2:ckpt_10000224|random": [
+   126,
+   0,
+   0
+  ],
+  "v2:ckpt_10000224|scripted_1.0": [
+   73,
+   48,
+   0
+  ],
+  "v2:ckpt_18000000|v2:ckpt_22000032": [
+   47,
+   77,
+   0
+  ],
+  "v2:ckpt_18000000|v2:ckpt_30000096": [
+   25,
+   97,
+   0
+  ],
+  "v2:ckpt_18000000|ab_nobc:ckpt_12000000": [
+   19,
+   104,
+   0
+  ],
+  "v2:ckpt_18000000|v3b:ckpt_4000032": [
+   14,
+   108,
+   0
+  ],
+  "v2:ckpt_18000000|scripted_0.8": [
+   98,
+   24,
+   0
+  ],
+  "v2:ckpt_18000000|scripted_0.3": [
+   102,
+   19,
+   0
+  ],
+  "v2:ckpt_18000000|scripted_0.5": [
+   97,
+   25,
+   0
+  ],
+  "v2:ckpt_18000000|scripted_1.0": [
+   96,
+   26,
+   0
+  ],
+  "v2:ckpt_18000000|random": [
+   126,
+   0,
+   0
+  ],
+  "v2:ckpt_22000032|v2:ckpt_30000096": [
+   38,
+   85,
+   0
+  ],
+  "v2:ckpt_22000032|ab_nobc:ckpt_12000000": [
+   24,
+   99,
+   0
+  ],
+  "v2:ckpt_22000032|v3b:ckpt_4000032": [
+   19,
+   102,
+   0
+  ],
+  "v2:ckpt_22000032|scripted_0.3": [
+   107,
+   17,
+   0
+  ],
+  "v2:ckpt_22000032|scripted_0.5": [
+   106,
+   20,
+   0
+  ],
+  "v2:ckpt_22000032|scripted_0.8": [
+   100,
+   21,
+   0
+  ],
+  "v2:ckpt_22000032|scripted_1.0": [
+   103,
+   21,
+   0
+  ],
+  "v2:ckpt_22000032|random": [
+   131,
+   0,
+   0
+  ],
+  "v2:ckpt_30000096|scripted_0.3": [
+   117,
+   1,
+   25
+  ],
+  "v2:ckpt_30000096|v3b:ckpt_4000032": [
+   33,
+   77,
+   32
+  ],
+  "v2:ckpt_30000096|scripted_0.5": [
+   111,
+   7,
+   24
+  ],
+  "v2:ckpt_30000096|ab_nobc:ckpt_12000000": [
+   42,
+   65,
+   44
+  ],
+  "v2:ckpt_30000096|scripted_0.8": [
+   111,
+   8,
+   27
+  ],
+  "v2:ckpt_30000096|random": [
+   125,
+   0,
+   0
+  ],
+  "v2:ckpt_30000096|scripted_1.0": [
+   106,
+   14,
+   13
+  ],
+  "ab_nobc:ckpt_12000000|scripted_0.3": [
+   124,
+   0,
+   0
+  ],
+  "ab_nobc:ckpt_12000000|scripted_0.5": [
+   121,
+   1,
+   12
+  ],
+  "ab_nobc:ckpt_12000000|v3b:ckpt_4000032": [
+   39,
+   63,
+   59
+  ],
+  "ab_nobc:ckpt_12000000|scripted_0.8": [
+   117,
+   3,
+   12
+  ],
+  "ab_nobc:ckpt_12000000|random": [
+   126,
+   0,
+   0
+  ],
+  "ab_nobc:ckpt_12000000|scripted_1.0": [
+   113,
+   6,
+   11
+  ],
+  "v3b:ckpt_4000032|scripted_0.3": [
+   116,
+   2,
+   23
+  ],
+  "v3b:ckpt_4000032|scripted_0.5": [
+   116,
+   5,
+   0
+  ],
+  "v3b:ckpt_4000032|scripted_0.8": [
+   117,
+   1,
+   14
+  ],
+  "v3b:ckpt_4000032|random": [
+   125,
+   0,
+   0
+  ],
+  "v3b:ckpt_4000032|scripted_1.0": [
+   108,
+   5,
+   27
+  ],
+  "scripted_0.3|scripted_0.5": [
+   47,
+   76,
+   0
+  ],
+  "scripted_0.3|scripted_0.8": [
+   42,
+   78,
+   0
+  ],
+  "scripted_0.3|random": [
+   123,
+   0,
+   0
+  ],
+  "scripted_0.3|scripted_1.0": [
+   39,
+   85,
+   0
+  ],
+  "scripted_0.5|scripted_0.8": [
+   52,
+   70,
+   0
+  ],
+  "scripted_0.5|random": [
+   121,
+   0,
+   0
+  ],
+  "scripted_0.5|scripted_1.0": [
+   50,
+   71,
+   0
+  ],
+  "scripted_0.8|scripted_1.0": [
+   71,
+   49,
+   0
+  ],
+  "scripted_0.8|random": [
+   123,
+   0,
+   0
+  ],
+  "scripted_1.0|random": [
+   125,
+   0,
+   0
+  ]
+ },
+ "flat_vs_v1": null,
+ "mix": [
+  [
+   "walled",
+   "sword"
+  ],
+  [
+   "walled",
+   "axe"
+  ],
+  [
+   "walled",
+   "bow"
+  ],
+  [
+   "bridge",
+   "bridge"
+  ],
+  [
+   "islands",
+   "loot"
+  ],
+  [
+   "town",
+   "loot"
+  ],
+  [
+   "platform",
+   "sumo"
+  ],
+  [
+   "islands",
+   "bedwars"
+  ],
+  [
+   "hills",
+   "build_uhc"
+  ],
+  [
+   "walled",
+   "mace"
+  ]
+ ],
+ "note": "ML fase 3B: the levels of 1.38 and the new master (v3b, 4 million steps from the 1.38 master with model v1 as an opponent and more flat sword duels), 120 fights per pair over the mix"
+}

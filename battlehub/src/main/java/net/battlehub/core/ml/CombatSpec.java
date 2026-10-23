@@ -11,7 +11,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The combat spec ({@code ml/spec/combat_v1.json} or {@code combat_v2.json}, shipped in {@code assets/battlehub/ml}):
+ * The combat spec ({@code ml/spec/combat_v2.json}, shipped in {@code assets/battlehub/ml}; {@code combat_v1.json} of
+ * 1.33 to 1.38 stays in ml/spec for the tests):
  * what the melee model sees and does. The Python simulation reads the same file; its sha256 travels with every
  * exported model and with the golden test file, so a model or a test made for another spec is noticed. Version 2 adds
  * the terrain rules of the rays ({@link TerrainRays}), the hands and the radius that counts as near.
@@ -92,11 +93,6 @@ public final class CombatSpec {
 		try (in) {
 			return new CombatSpec(in.readAllBytes());
 		}
-	}
-
-	/** The v1 spec shipped with the mod. */
-	public static CombatSpec shipped() throws IOException {
-		return shipped("combat_v1.json");
 	}
 
 	/** A spec shipped with the mod, by file name. */

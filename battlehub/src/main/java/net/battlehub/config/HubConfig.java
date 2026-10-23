@@ -446,15 +446,11 @@ public final class HubConfig {
 		 */
 		public boolean learnedCombat = true;
 		/**
-		 * The modes a learned model fights in. Model v2 (every melee mode: edges and the void, kits, items, more enemies)
-		 * fights in all of them; "mace" and "bow" let it fight with those kits too (else scripted). Model v1 (a duel on
-		 * flat ground) only ever fights in sword and boxing.
+		 * The modes the learned model fights in (every melee mode: edges and the void, kits, items, more enemies);
+		 * "mace" and "bow" let it fight with those kits too (else scripted). The settings learnedSpec and
+		 * learnedV1Modes of 1.33 to 1.38 are gone with model v1 and ignored in an old config.
 		 */
 		public List<String> learnedModes = new ArrayList<>(DEFAULT_LEARNED_MODES);
-		/** 2: the v2 model where it is listed; 1: only v1, in sword and boxing. */
-		public int learnedSpec = 2;
-		/** Modes where model v1 fights instead of v2: on flat ground with the sword kit v1 is still the stronger. */
-		public List<String> learnedV1Modes = new ArrayList<>(List.of("sword", "boxing"));
 		/**
 		 * A v2 model that learned items (its metadata lists them; the master model: food, golden apples, wind charges)
 		 * chooses those itself in the fight. Off, or for items a model did not learn (the bow, pearls), the bot's own
@@ -730,7 +726,6 @@ public final class HubConfig {
 		if (bots.archetypes == null) bots.archetypes = new Bots().archetypes;
 		// the default of 1.33 (v1's two duels) grows with v2 to every melee mode
 		if (bots.learnedModes == null || bots.learnedModes.equals(List.of("sword", "boxing"))) bots.learnedModes = new ArrayList<>(DEFAULT_LEARNED_MODES);
-		if (bots.learnedV1Modes == null) bots.learnedV1Modes = new Bots().learnedV1Modes;
 		if (fights == null) fights = new Fights();
 		bots.archetypes.removeIf(a -> {
 			boolean bad = a == null || net.battlehub.core.ai.Archetype.parse(a, null) == null;

@@ -218,7 +218,7 @@ public final class FightRecorder {
 			}
 			ServerPlayer p = m.player(id);
 			String name = cfg().names && p != null ? p.getGameProfile().name() : null;
-			String model = LearnedFight.active(m) ? "v2" : LearnedMelee.enabledFor(m) ? "v1" : "none";
+			String model = LearnedFight.active(m) ? "v2" : "none";
 			fs.add(p instanceof BotPlayer b ? new FightLog.Fighter("bot", b.difficulty.id(), model, team, name)
 					: new FightLog.Fighter("human", null, null, team, name));
 		}

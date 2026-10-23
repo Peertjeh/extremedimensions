@@ -19,7 +19,7 @@ import net.battlehub.core.ml.MiniJson;
 
 /**
  * The shipped models run in ONNX Runtime for Java and give the logits PyTorch gave when they were exported (the
- * .check.json files the export writes); every level of difficulties.json has its model, made for the shipped spec.
+ * .check.json files the export writes); every level of difficulties_v2.json has its model, made for the shipped spec.
  */
 class CombatModelsTest {
 	static byte[] bytes(String name) throws Exception {
@@ -27,11 +27,6 @@ class CombatModelsTest {
 			assertNotNull(in, name + " is missing");
 			return in.readAllBytes();
 		}
-	}
-
-	@Test
-	void everyLevelHasAModelThatGivesWhatPyTorchGave() throws Exception {
-		check(CombatSpec.shipped(), "difficulties.json");
 	}
 
 	@Test
@@ -68,12 +63,13 @@ class CombatModelsTest {
 
 	@Test
 	void aModelForAnotherSpecIsRefused() throws Exception {
-		CombatSpec spec = CombatSpec.shipped();
-		byte[] raw = bytes("/assets/battlehub/ml/combat_v1.json");
-		byte[] other = new String(raw, StandardCharsets.UTF_8).replace("\"version\": 1", "\"version\": 2").getBytes(StandardCharsets.UTF_8);
+		CombatSpec spec = CombatSpec.shipped("combat_v2.json");
+		byte[] raw = bytes("/assets/battlehub/ml/combat_v2.json");
+		byte[] other = new String(raw, StandardCharsets.UTF_8).replace("\"version\": 2", "\"version\": 3").getBytes(StandardCharsets.UTF_8);
 		CombatSpec changed = CombatSpec.parse(other);
-		byte[] model = bytes("/assets/battlehub/ml/combat_v1_master.onnx");
-		assertNotNull(CombatModels.load("combat_v1_master.onnx", model, spec));
-		assertThrows(IllegalStateException.class, () -> CombatModels.load("combat_v1_master.onnx", model, changed));
+		assertTrue(!changed.sha256.equals(spec.sha256));
+		byte[] model = bytes("/assets/battlehub/ml/combat_v2_master.onnx");
+		assertNotNull(CombatModels.load("combat_v2_master.onnx", model, spec));
+		assertThrows(IllegalStateException.class, () -> CombatModels.load("combat_v2_master.onnx", model, changed));
 	}
 }

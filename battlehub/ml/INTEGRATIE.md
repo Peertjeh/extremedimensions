@@ -1,6 +1,6 @@
 # Het gevechtsmodel in de mod
 
-Hoe het geleerde gevecht in BattleHub zit (stand van 1.38, spec v2 met actiemaskers), en wat je moet doen als je opnieuw
+Hoe het geleerde gevecht in BattleHub zit (stand van 1.39: één model, spec v2 met actiemaskers), en wat je moet doen als je opnieuw
 traint of de spec verandert. De simulatie en de training staan in `battlehub/ml`, de mod in `battlehub/src`.
 
 ## Hoe het werkt
@@ -11,7 +11,7 @@ BotBrain.melee()                         elke tick
   CombatMind.tick(s)
      Decider kiest een tactiek           gescript: vechten, helen, schieten, het doel van de game
      de controller mag beslissen?
-        ja  -> LearnedFight.act(...)     model v2 (of LearnedMelee: v1 in sword en boxing)  -> Intent
+        ja  -> LearnedFight.act(...)     model v2, in elke melee-modus (v1 is sinds 1.39 weg)  -> Intent
         nee -> CombatSteering.steer      gescript  -> Intent
   execute(Intent)                        invoer, kruisdraadcontrole, randveiligheid, hand en rechtermuisknop
 ```

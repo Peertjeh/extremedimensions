@@ -81,9 +81,9 @@ public final class ModelReports {
 		return RANGES.get(fam);
 	}
 
-	/** Whether a learned model fights in this match (v2, or v1 in its modes). */
+	/** Whether the learned model fights in this match. */
 	static boolean inPlay(Match m) {
-		return LearnedFight.active(m) || (LearnedMelee.enabledFor(m) && CombatModels.ready());
+		return LearnedFight.active(m);
 	}
 
 	// ------------------------------------------------------------------ after a match

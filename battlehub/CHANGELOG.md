@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.39.0
+
+### Changed
+* **One learned model for every melee mode.** Model v2 now also fights the sword duel and boxing, where model v1
+  (1.33, trained only for the flat sword duel) fought until now: a new master, trained against v1 itself and with
+  more flat sword duels, wins 84% of 400 sword duels against v1 and 97% in boxing, 56.1% of 1,217 fights against
+  the master of 1.38 (Elo 1481 against 1463), and 87.5% against the scripted bot in the simulation.
+* Model v1 left the mod: its models, level table and spec are no longer in the jar, and the settings
+  `bots.learnedSpec` and `bots.learnedV1Modes` are gone (an old config still loads; they are ignored). Six models
+  (about 0.6 MB) fewer in the jar.
+
 ## 1.38.0
 
 ### Added

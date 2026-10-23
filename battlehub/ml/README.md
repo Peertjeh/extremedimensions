@@ -2,8 +2,10 @@
 
 The bots' strategy stays scripted (looting, beds, bridges, parkour); only the melee fight is learned: one model,
 trained here outside Minecraft, used by the mod in every game where a bot fights. Phase 1 (spec v1, `pvp_sim`, in the
-mod since 1.33): a 1v1 sword duel (and boxing) on flat ground. Phase 2 (spec v2, `pvp_sim2`): every melee mode, with
-the terrain and the void, kits and effects, the bow, food, pearls, wind charges and the shield, and up to two enemies.
+mod from 1.33 to 1.38): a 1v1 sword duel (and boxing) on flat ground. Phase 2 (spec v2, `pvp_sim2`): every melee mode,
+with the terrain and the void, kits and effects, the bow, food, pearls, wind charges and the shield, and up to two
+enemies. Phase 3: action masks, learning items (1.38), and one model for every mode (1.39: v2 now beats v1 in its own
+sword duel, so v1 left the mod; its spec, golden file and simulation stay here).
 
 ## Layout
 
@@ -30,7 +32,10 @@ the terrain and the void, kits and effects, the bow, food, pearls, wind charges 
 | `tools/show_fight2.py` | v2 fights on their maps drawn to a PNG. |
 | `train/selfplay2.py` | PPO self-play on v2 with the arenas in worker processes (3 workers x 96 arenas): a pool of earlier versions, the scripted bot, random play and dummies as opponents per slot; a curriculum that widens the scenarios (flat sword duels to everything), moves from easy opponents to the pool and fades the shaping later on. Each checkpoint is evaluated by `train/eval2.py` in a low-priority process. |
 | `train/eval2.py` | A checkpoint against the scripted bot on eight fixed scenarios (sword, axe and bow duels, bridge, SkyWars loot, sumo, the town 1v2, Bed Wars three-way) and against a dummy on a bridge. |
-| `train/league2.py` | v2's league over a mix of the modes' 1v1 scenarios, Elo, the six levels, ONNX export; and v2's best against v1's best on flat ground (v1 through an adapter). |
+| `train/league2.py` | v2's league over a mix of the modes' 1v1 scenarios, Elo, the six levels, ONNX export (`--levels`/`--keep`: only some levels anew); `--versus` two checkpoints over the mix; `--versus-v1` a checkpoint against v1's best in sword and boxing on flat ground (v1 through an adapter). |
+| `train/policies.py` | Loading a checkpoint (PPO or MaskablePPO) and choosing with the action masks, as the mod does; used by eval, league, pool and copying. |
+| `pvp_sim2/masks.py`, `spec/combat_v2_masks.json` | The action masks: which choices of each head a fighter may make, from its observation (golden: `spec/combat_v2_masks_golden.json`). |
+| `tools/make_bc_data.py`, `train/bc.py` | Copying the scripted teacher's item choices (behavior cloning) before PPO. |
 | `spec/combat_v1_ranges.json`, `combat_v2_ranges.json` | What each model saw in training: per observation value the range the simulation produced (0.1% and 99.9% quantiles over about 400,000 decisions between the shipped models, the scripted bot and random play; `tools/make_ranges.py`). The mod counts a value outside it (by more than 0.05) as new to the model. |
 | `spec/lessons.json` | **The** table of what a bot should practise, read by the mod and by `train/focus.py`: the lesson behind each reason a fight left the model's choice and behind each observation value, and per lesson the scenario weights it raises. |
 | `train/fights.py` | Reads the mod's fight logs (`config/battlehub/fights`, `/battlehub fights export` zips): per decision and fighter the stored state (the observation is computed here) and what it did as action indices; a summary per fight. |
@@ -54,6 +59,11 @@ python train/league.py runs/sword --out league                  # ratings, level
 # v2 (every melee mode)
 python train/selfplay2.py --run runs/v2 --steps 60000000        # about 6500 steps a second on 4 cores
 python train/league2.py runs/v2 --out league_v2 --v1 runs/sword/ckpt_016000000.zip
+python train/league2.py --versus-v1 runs/v3b/ckpt_002000160.zip --v1 runs/sword/ckpt_016000000.zip --episodes 400
+
+# phase 3 (see PLAN.md, ML fase 3): masks, more items, v1 as an opponent in the pool
+python train/selfplay2.py --run runs/v3b --init <master> --pool-from <its run> --masks --extra-items 1.0 \
+    --scripted-latch --v1 runs/sword/ckpt_016000000.zip --v1-share 0.25 --family-weight sword=3 --pair sword=walled
 
 # what the bots lacked on the server: practise more of it
 python train/focus.py ml_feedback.json                           # shows what it would change

@@ -68,14 +68,10 @@ final class LearnedFight implements MeleeController {
 		return decisions;
 	}
 
-	/**
-	 * Whether the v2 model fights in this match: on, the mode in bots.learnedModes and not left to v1
-	 * (bots.learnedV1Modes), a melee kit, the models there.
-	 */
+	/** Whether the model fights in this match: on, the mode in bots.learnedModes, a melee kit, the models there. */
 	static boolean active(Match m) {
 		var cfg = ConfigManager.config().bots;
-		if (m == null || !cfg.learnedCombat || cfg.learnedSpec < 2 || !cfg.learnedModes.contains(m.mode.id())) return false;
-		if (cfg.learnedV1Modes.contains(m.mode.id()) && LearnedMelee.MODES.contains(m.mode.id())) return false;
+		if (m == null || !cfg.learnedCombat || !cfg.learnedModes.contains(m.mode.id())) return false;
 		Weapon w = m.botWeapon();
 		if (w == Weapon.CROSSBOW) return false;
 		if (w == Weapon.MACE && !cfg.learnedModes.contains("mace")) return false;

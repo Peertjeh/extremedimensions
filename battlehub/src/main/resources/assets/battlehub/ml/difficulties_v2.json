@@ -2,7 +2,7 @@
  "beginner": {
   "checkpoint": "ckpt_6000192",
   "elo": 1003,
-  "target_elo": 1028,
+  "target_elo": 1029,
   "extra_delay": 4,
   "aim_noise": 2.5,
   "turn_cap": 24,
@@ -12,7 +12,7 @@
  "casual": {
   "checkpoint": "ckpt_10000224",
   "elo": 1089,
-  "target_elo": 1118,
+  "target_elo": 1119,
   "extra_delay": 3,
   "aim_noise": 1.8,
   "turn_cap": 30,
@@ -21,8 +21,8 @@
  },
  "intermediate": {
   "checkpoint": "ckpt_18000000",
-  "elo": 1214,
-  "target_elo": 1209,
+  "elo": 1210,
+  "target_elo": 1210,
   "extra_delay": 2,
   "aim_noise": 1.2,
   "turn_cap": 36,
@@ -31,8 +31,8 @@
  },
  "advanced": {
   "checkpoint": "ckpt_22000032",
-  "elo": 1283,
-  "target_elo": 1299,
+  "elo": 1260,
+  "target_elo": 1300,
   "extra_delay": 1,
   "aim_noise": 0.8,
   "turn_cap": 45,
@@ -41,8 +41,8 @@
  },
  "expert": {
   "checkpoint": "ckpt_30000096",
-  "elo": 1374,
-  "target_elo": 1389,
+  "elo": 1371,
+  "target_elo": 1391,
   "extra_delay": 0,
   "aim_noise": 0.5,
   "turn_cap": 54,
@@ -50,9 +50,9 @@
   "model": "combat_v2_expert.onnx"
  },
  "master": {
-  "checkpoint": "ab_nobc:ckpt_12000000",
-  "elo": 1480,
-  "target_elo": 1480,
+  "checkpoint": "v3b:ckpt_4000032",
+  "elo": 1481,
+  "target_elo": 1481,
   "extra_delay": 0,
   "aim_noise": 0.2,
   "turn_cap": 60,

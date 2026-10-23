@@ -95,16 +95,14 @@ final class BotTests {
 	}
 
 	/**
-	 * The learned combat model (battlehub/ml) in a real duel: the master level steers the bot to A, lands hits through
-	 * the real crosshair check, and beats A who only stands there.
+	 * The learned combat model (battlehub/ml) in a sword duel, where model v1 fought until 1.38: the master level steers
+	 * the bot to A, lands hits through the real crosshair check, and beats A who only stands there.
 	 */
 	private static void learnedSword(MinecraftServer server, Script s) {
 		String tag = "bots learned";
 		SelfTest.reset(s, tag);
-		s.run(tag + ": learned combat on (model v1); A starts a sword practice duel against a master bot", () -> {
-			cfg().learnedCombat = true;
-			cfg().learnedSpec = 1;
-			cfg().learnedModes = new ArrayList<>(List.of("sword", "boxing"));
+		s.run(tag + ": learned combat on; A starts a sword practice duel against a master bot", () -> {
+			learnedV2On();
 			SelfTest.join(server, A);
 			Bots.practice(p(A), GameMode.SWORD, net.battlehub.core.ai.Difficulty.MASTER);
 		});
@@ -117,7 +115,7 @@ final class BotTests {
 			if (m == null || botsIn(m).isEmpty()) return false;
 			BotPlayer b = botsIn(m).get(0);
 			boolean hit = p(A).getHealth() < p(A).getMaxHealth();
-			if (Bots.learnedTicks(b) > 40 && hit) {
+			if (v2Steered(b, 40) && hit) {
 				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned combat: {} ticks steered, A at {} health | {}", Bots.learnedTicks(b), p(A).getHealth(),
 						String.join(" | ", Bots.inspect(b)));
 				return true;
@@ -135,16 +133,12 @@ final class BotTests {
 			return m.outcome(p(A).getUUID()) == net.battlehub.core.Outcome.LOSS;
 		});
 		endAndClean(s, tag);
-		s.run(tag + ": learned combat off again for the other tests", () -> {
-			cfg().learnedCombat = false;
-			cfg().learnedSpec = 2;
-		});
+		s.run(tag + ": learned combat off again for the other tests", () -> cfg().learnedCombat = false);
 	}
 
 	/** Learned combat on with model v2 and every melee mode listed. */
 	private static void learnedV2On() {
 		cfg().learnedCombat = true;
-		cfg().learnedSpec = 2;
 		cfg().learnedModes = new ArrayList<>(net.battlehub.config.HubConfig.DEFAULT_LEARNED_MODES);
 	}
 

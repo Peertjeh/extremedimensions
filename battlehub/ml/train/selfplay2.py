@@ -20,6 +20,10 @@ that share of the loot and shop arenas; --scripted-latch makes the scripted oppo
 --bc-data adds a copying term (train/bc.py: the teacher's item choices and its aim) after every PPO update, its weight
 falling from --bc-weight to 0 over --bc-decay steps.
 
+One model instead of v1 and v2 (phase 3B): --v1 lets model v1 play a share of the opponent slots (through the league's
+adapter), --family-weight and --pair deal more of a kit and the maps that go with it (sword=3, sword=walled: the flat
+sword duel where v1 still fought).
+
     python train/selfplay2.py --run runs/v2 --steps 60000000
     python train/selfplay2.py --run runs/v2items --init runs/v2/ckpt_060000000.zip --pool-from runs/v2 --items --ent 0.02 --steps 20000000
     python train/selfplay2.py --run runs/v3a --init runs/v2bc/ckpt_bc.zip --pool-from runs/v2 --masks --extra-items 1.0 \
@@ -49,11 +53,15 @@ ITEM_FAMILIES = {"sword": 0.6, "axe": 0.8, "mace": 0.8, "bow": 1.2, "koth": 0.2,
                  "boxing": 0.1, "build_uhc": 1.2, "sumo": 0.2, "bedwars": 1.0, "loot": 1.5}
 
 
-def worker(conn, n, seed, max_ticks, items=False, lessons=None, extra_items=0.0):
+def worker(conn, n, seed, max_ticks, items=False, lessons=None, extra_items=0.0, family_weight=None, pairs=None):
     from pvp_sim2.env import Scenario
     sc = Scenario(extra_items=extra_items)
     if items:
         sc.families = dict(ITEM_FAMILIES)
+    for fam, w in (family_weight or {}).items():
+        sc.families[fam] = w
+    for fam, maps in (pairs or {}).items():
+        sc.paired[fam] = list(maps)
     if lessons:
         from train.focus import apply
         sc, _ = apply(sc, lessons)
@@ -115,12 +123,15 @@ class FrozenPolicy:
 
 
 class OpponentPool2:
-    """Who plays each opponent slot: -3 dummy, -1 random, -2 scripted (a skill per slot), k >= 0 frozen policy k."""
+    """Who plays each opponent slot: -3 dummy, -1 random, -2 scripted (a skill per slot), -4 model v1 (through the
+    league's adapter, with --v1), k >= 0 frozen policy k."""
 
     START = {"pool": 0.0, "random": 0.2, "dummy": 0.5}
     END = {"pool": 0.5, "random": 0.04, "dummy": 0.08}
 
-    def __init__(self, rng, curriculum, max_size=24, newest_share=0.5, latch=False):
+    def __init__(self, rng, curriculum, max_size=24, newest_share=0.5, latch=False, v1=None, v1_share=0.0):
+        self.v1 = v1
+        self.v1_share = v1_share if v1 is not None else 0.0
         self.rng = rng
         self.cur = curriculum
         self.frozen = []
@@ -153,6 +164,8 @@ class OpponentPool2:
             newest = self.rng.random(m) < self.newest_share
             pick = np.where(newest, len(self.frozen) - 1, self.rng.integers(0, len(self.frozen), size=m))
             kind = np.where(use, pick, kind)
+        if self.v1_share > 0:
+            kind = np.where(self.rng.random(m) < self.v1_share, -4, kind)
         return kind, skill
 
     def act(self, obs, kind, skill):
@@ -161,6 +174,8 @@ class OpponentPool2:
             out[kind == -1] = self.random(obs[kind == -1])
         if (kind == -3).any():
             out[kind == -3] = self.dummy(obs[kind == -3])
+        if (kind == -4).any():
+            out[kind == -4] = self.v1(obs[kind == -4])
         for k in np.unique(kind[kind >= 0]):
             rows = kind == k
             out[rows] = self.frozen[int(k)](obs[rows])
@@ -169,7 +184,7 @@ class OpponentPool2:
 
 # ---------------------------------------------------------------------------------------------- the VecEnv
 
-def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=None, extra_items=0.0):
+def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=None, extra_items=0.0, family_weight=None, pairs=None):
     from gymnasium import spaces
     from stable_baselines3.common.vec_env import VecEnv
 
@@ -179,7 +194,7 @@ def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=N
             self.conns, self.procs = [], []
             for w in range(workers):
                 a, b = ctx.Pipe()
-                p = ctx.Process(target=worker, args=(b, per, seed * 100 + w, max_ticks, items, lessons, extra_items), daemon=True)
+                p = ctx.Process(target=worker, args=(b, per, seed * 100 + w, max_ticks, items, lessons, extra_items, family_weight, pairs), daemon=True)
                 p.start()
                 self.conns.append(a)
                 self.procs.append(p)
@@ -222,7 +237,7 @@ def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=N
                     g = w * per + i
                     win = int(lite["winner"][i])
                     res = "win" if win == 0 else "loss" if win == 1 else "draw"
-                    who = {-1: "random", -2: "scripted", -3: "dummy"}.get(int(self.kind[g, 0]), "pool")
+                    who = {-1: "random", -2: "scripted", -3: "dummy", -4: "v1"}.get(int(self.kind[g, 0]), "pool")
                     self.results_by.setdefault(who, {"win": 0, "loss": 0, "draw": 0})[res] += 1
                     sc = "%s/%s/%s" % (lite["terrain"][j], lite["family"][j], lite["mode"][j])
                     self.scenarios.setdefault(sc, {"win": 0, "loss": 0, "draw": 0})[res] += 1
@@ -370,6 +385,10 @@ def main():
     ap.add_argument("--bc-full", action="store_true", help="the copying term reaches the whole network and copies the aim")
     ap.add_argument("--bc-mode", default="ce", choices=["ce", "kl"], help="ce: the teacher's item choices; kl: hand and use near --init")
     ap.add_argument("--bc-aim", action="store_true", help="with --bc-mode kl: also the teacher's aim with bow and throws (action layer only)")
+    ap.add_argument("--v1", default=None, help="model v1's checkpoint as an opponent (phase 3B: v2 learns to beat it)")
+    ap.add_argument("--v1-share", type=float, default=0.2, help="share of the opponent slots v1 plays (with --v1)")
+    ap.add_argument("--family-weight", nargs="*", default=[], help="kit weights over the default, e.g. sword=3 boxing=0.6")
+    ap.add_argument("--pair", nargs="*", default=[], help="maps that go with a kit most of the time, e.g. sword=walled")
     a = ap.parse_args()
     if a.bc_data and not a.masks:
         sys.exit("--bc-data needs --masks")
@@ -382,7 +401,14 @@ def main():
     os.makedirs(a.run, exist_ok=True)
     rng = np.random.default_rng(a.seed)
     cur = Curriculum() if not a.init else Curriculum(warmup=0, widen=1, fade_from=0, fade_to=1)
-    pool = OpponentPool2(rng, cur, latch=a.scripted_latch)
+    v1 = None
+    if a.v1:
+        from train.league2 import V1Adapter
+        v1 = V1Adapter(a.v1)
+        print("v1 from", a.v1, "in", a.v1_share, "of the opponent slots", flush=True)
+    family_weight = {kv.split("=")[0]: float(kv.split("=")[1]) for kv in a.family_weight}
+    pairs = {kv.split("=")[0]: kv.split("=")[1].split(",") for kv in a.pair}
+    pool = OpponentPool2(rng, cur, latch=a.scripted_latch, v1=v1, v1_share=a.v1_share)
     lessons = None
     if a.focus:
         from train.focus import apply, load
@@ -392,7 +418,7 @@ def main():
             print("focus:", note, flush=True)
         if any(x["items"] for x in lessons) and not a.items:
             print("focus: some lessons need the items; add --items to practise them", flush=True)
-    venv = make_vecenv(a.workers, a.per, a.seed, pool, cur, a.max_ticks, a.items, lessons, a.extra_items)
+    venv = make_vecenv(a.workers, a.per, a.seed, pool, cur, a.max_ticks, a.items, lessons, a.extra_items, family_weight, pairs)
     from train.policies import load
     if a.pool_from:
         for path in sorted(glob.glob(os.path.join(a.pool_from, "ckpt_*.zip")))[::2]:

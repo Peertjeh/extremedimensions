@@ -1480,3 +1480,80 @@ master:
   of een boogduel-training met afstand houden als doel.
 - **Pearls** zijn zeldzaam in de kits en kaarten van de simulatie: weinig gevechten met een pearl en een doelwit verder
   dan 18 blokken.
+
+### Fase B – Eén model in plaats van v1 + v2 (plan)
+
+**Doel.** Model v2 neemt ook het zwaardduel en boxing over (nu `bots.learnedV1Modes`). Daarna gaat v1 uit de jar.
+- **Eis:** meer dan 55% tegen v1, over minstens 200 gevechten per kit, op vlakke grond.
+- **Bewaken:** geen achteruitgang elders: eval2 minstens 81%, en minstens 50% tegen de master van 1.38 over 1.200
+  gevechten.
+
+**Nulmeting** (`league2.py --versus-v1`, nieuw; 400 gevechten per kit, de walled-arena, v1 via de adapter van 2b):
+
+| Kit | Master van 1.38 tegen v1 |
+|---|---|
+| zwaard | **42,0%** (168–232) |
+| boxing | 97,8% (392–9) |
+
+- Boxing is dus al van v2. Het werk zit in het zwaardduel op vlakke grond: daar is v1 (alleen daarop getraind, 16
+  miljoen stappen) nog beter.
+
+**Aanpak.**
+1. **v1 als tegenstander in de pool** (`selfplay2.py --v1 <checkpoint> --v1-share`). De master leert tegen de
+   speelstijl die hij moet verslaan, zoals een exploiter, maar dan van de hoofd-run.
+2. **Meer zwaardduels op vlakke grond** (`--family-weight sword=3`), met de rest van de mix erbij, zodat hij elders
+   niets verleert.
+3. Verder vanaf de master van 1.38, met maskers, ongeveer 10 tot 16 miljoen stappen. Elke 2 miljoen eval2, en voor
+   de kandidaten `--versus-v1` en `--versus` tegen de master van 1.38.
+4. **Geslaagd:**
+   - `learnedV1Modes` wordt standaard leeg; een nieuwe configversie maakt de oude standaard (`sword`, `boxing`) leeg;
+   - de v1-modellen, `difficulties.json` en `combat_v1.json` gaan uit de jar;
+   - de v1-besturing (`LearnedMelee`) en `learnedSpec` 1 verdwijnen uit de mod;
+   - spec v1, het golden-bestand en de Python-code van v1 blijven in `ml/` als geschiedenis (de core-tests van v1
+     blijven draaien);
+   - de nieuwe master en een league voor de niveaus.
+5. **Niet geslaagd:** v2 neemt alleen boxing over (`learnedV1Modes` wordt `sword`), en v1 blijft in de jar voor het
+   zwaardduel.
+
+**Tijd per beslissing.** Het netwerk blijft even groot. Na de wissel wordt de tijd opnieuw gemeten in de zelftests.
+
+**Gescripte punten.** Geen.
+
+### Fase B – Uitvoering en resultaten
+
+**Run `v3b`:**
+- vanaf de master van 1.38, met maskers, extra spullen en de leraar als gescripte tegenstander;
+- v1 speelt 25% van de tegenstanders (`--v1`);
+- het zwaard telt 3× (`--family-weight sword=3`), meestal in de walled-arena (`--pair sword=walled`);
+- gestopt na 6 miljoen stappen (ongeveer 3.800 stappen per seconde), omdat het doel al bereikt was.
+
+| Checkpoint | Zwaard tegen v1 (400) | Boxing tegen v1 (400) | Tegen master 1.38 (~1.220) | eval2 |
+|---|---|---|---|---|
+| master 1.38 (start) | 42,0% | 97,8% | – | 83,9% |
+| 2M | 65,0% | 98,8% | 54,5% | 81,5% |
+| **4M** | **84,0%** (335–64) | 97,0% | **56,1%** (545–426, 246 gelijk) | **85,2%** |
+| 6M | 73,3% | 97,3% | 54,7% | 83,7% |
+
+- In de training won het leerlingmodel tegen v1 1.600–1.412 in de eerste 2 miljoen stappen en 1.853–1.048 tussen
+  4 en 6 miljoen.
+- **Gekozen: 4M.** Het is het beste op alle drie de punten; alle eisen ruim gehaald.
+- **Gespeeld zoals in de mod** (alleen eten, appels en wind naast het wapen):
+  - 87,5% tegen de gescripte bot;
+  - per scenario (van 48): zwaard 49, bijl 47, boog 45, Bridge 48, loot 45, sumo 48, stad 1v2 21, Bed Wars 34;
+  - eten 17/50 (34%), wind charges 91/91 (58% nuttig), schild 13,5% in het bijlduel.
+- **League** (`ml/spec/league_v2_fase3b.json`):
+  - Elo: nieuwe master 1481, master 1.38 1463 (onderling 63–39, 59 gelijk), expert 1371, advanced 1260,
+    intermediate 1210, casual 1089, beginner 1003; gescript 0,8 1035;
+  - alleen master is vervangen.
+
+**In de mod (1.39.0).**
+- **v1 is weg:**
+  - `LearnedMelee`, de v1-modellen, `difficulties.json`, `combat_v1.json` en `combat_v1_ranges.json` zijn uit de jar;
+  - `bots.learnedSpec` en `bots.learnedV1Modes` zijn weg (een oude config wordt gewoon geladen; de velden worden
+    genegeerd);
+  - v2 vecht nu ook in het zwaardduel en boxing (die stonden al in `learnedModes`).
+- In `ml/` blijven spec v1, het golden-bestand, `pvp_sim` en de core-tests van v1, als geschiedenis en voor de adapter
+  van `--versus-v1`.
+- **Zelftest:** de oude v1-test ("bots learned") is nu een zwaardduel met v2. Het model stuurt, raakt en wint.
+- `CombatModelsTest` controleert alleen v2. De weigering van een model voor een andere spec test nu op v2.
+- **Tijd per beslissing:** het netwerk is even groot; de zelftests van 1.39 meten het opnieuw (zie hieronder).

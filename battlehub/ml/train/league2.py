@@ -114,13 +114,14 @@ def duel(args):
 
 
 def flat(args):
-    """x against y with the sword kit in the walled arena only."""
-    x, px, y, py, episodes, seed = args
+    """x against y on flat ground in the walled arena, with the sword kit (or another of v1's: boxing)."""
+    x, px, y, py, episodes, seed = args[:6]
+    family = args[6] if len(args) > 6 else "sword"
     a, b = make_player(x, px), make_player(y, py)
     res = np.zeros(3, dtype=np.int64)
     for swap in (False, True):
         first, second = (b, a) if swap else (a, b)
-        bt = Batch2(32, seed=seed + swap, fixed={"terrain": "walled", "family": "sword", "count": 2})
+        bt = Batch2(32, seed=seed + swap, fixed={"terrain": "walled", "family": family, "count": 2})
         obs = bt.reset()
         got = np.zeros(3, dtype=np.int64)
         while got.sum() < episodes // 2:
@@ -165,6 +166,24 @@ def versus(a_path, b_path, episodes, procs, seed=11):
     return row
 
 
+V1_FAMILIES = ("sword", "boxing")
+
+
+def versus_v1(path, v1, episodes, procs, seed=5):
+    """A v2 checkpoint against v1's model where v1 still fights (bots.learnedV1Modes: sword and boxing), on flat ground:
+    per kit wins, losses and draws of the v2 model and its share of the decided fights."""
+    jobs = [("v2", path, "v1", v1, episodes, seed + 100 * k, f) for k, f in enumerate(V1_FAMILIES)]
+    out = {}
+    with mp.get_context("spawn").Pool(min(procs, len(jobs))) as pool:
+        for f, (_, _, res) in zip(V1_FAMILIES, pool.map(flat, jobs)):
+            decided = max(1, res[0] + res[1])
+            out[f] = {"wins_losses_draws": [int(v) for v in res], "share": round(float(res[0] / decided), 3)}
+            print("%-8s %s %.1f%%" % (f, out[f]["wins_losses_draws"], 100 * out[f]["share"]), flush=True)
+    row = {"v2": path, "v1": v1, "per_kit": out}
+    print(json.dumps(row))
+    return row
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("runs", nargs="*")
@@ -174,12 +193,20 @@ def main():
     ap.add_argument("--levels", default=None, help="comma list: pick only these levels anew (the rest from --keep)")
     ap.add_argument("--keep", default=None, help="difficulties_v2.json with the levels that stay")
     ap.add_argument("--versus", nargs=2, default=None, help="two checkpoints against each other over the mix, then stop")
+    ap.add_argument("--versus-v1", default=None, help="this checkpoint against --v1 in sword and boxing on flat ground, then stop")
     ap.add_argument("--out", default="league_v2")
     ap.add_argument("--every", type=int, default=3)
     ap.add_argument("--episodes", type=int, default=12, help="per scenario and pair")
     ap.add_argument("--v1", default=None, help="v1's best checkpoint, for the comparison on flat ground")
     ap.add_argument("--procs", type=int, default=4)
     a = ap.parse_args()
+    if a.versus_v1:
+        row = versus_v1(a.versus_v1, a.v1, a.episodes, a.procs)
+        if a.out:
+            os.makedirs(a.out, exist_ok=True)
+            with open(os.path.join(a.out, "versus_v1.jsonl"), "a") as f:
+                f.write(json.dumps(row) + "\n")
+        return
     if a.versus:
         row = versus(a.versus[0], a.versus[1], a.episodes, a.procs)
         if a.out:
