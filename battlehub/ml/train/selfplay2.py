@@ -70,7 +70,13 @@ def worker(conn, n, seed, max_ticks, items=False, lessons=None, extra_items=0.0,
     from pvp_sim2.env import Scenario
     sc = Scenario(extra_items=extra_items)
     for name, v in (shares or {}).items():
-        setattr(sc, name, v)
+        if isinstance(v, dict):
+            for key, w in v.items():
+                if key not in getattr(sc, name):
+                    raise KeyError("%s has no %r" % (name, key))
+                getattr(sc, name)[key] = w
+        else:
+            setattr(sc, name, v)
     if items:
         sc.families = dict(ITEM_FAMILIES)
     for fam, w in (family_weight or {}).items():
@@ -419,6 +425,8 @@ def main():
     ap.add_argument("--eval-hands", default=None, help="the hands the evaluation lets the model choose (eval2.py --hands), as the mod will")
     ap.add_argument("--three", type=float, default=None, help="share of arenas with three fighters (default: the Scenario's)")
     ap.add_argument("--four", type=float, default=None, help="share of arenas with four fighters (spec 3; default: the Scenario's)")
+    ap.add_argument("--mode-weight", nargs="*", default=[], help="weights of who fights whom, e.g. 1v2=0.7 ffa=0.2 (modes3 and modes4)")
+    ap.add_argument("--terrain-weight", nargs="*", default=[], help="map weights instead of the default, e.g. town=2.5")
     a = ap.parse_args()
     if a.bc_data and not a.masks:
         sys.exit("--bc-data needs --masks")
@@ -449,6 +457,14 @@ def main():
         if any(x["items"] for x in lessons) and not a.items:
             print("focus: some lessons need the items; add --items to practise them", flush=True)
     shares = {k: v for k, v in (("three", a.three), ("four", a.four)) if v is not None}
+    from pvp_sim2.env import Scenario
+    modes = {kv.split("=")[0]: float(kv.split("=")[1]) for kv in a.mode_weight}
+    for name in ("modes3", "modes4"):
+        part = {k: v for k, v in modes.items() if k in getattr(Scenario(), name)}
+        if part:
+            shares[name] = part
+    if a.terrain_weight:
+        shares["terrains"] = {kv.split("=")[0]: float(kv.split("=")[1]) for kv in a.terrain_weight}
     venv = make_vecenv(a.workers, a.per, a.seed, pool, cur, a.max_ticks, a.items, lessons, a.extra_items, family_weight, pairs, a.spec, shares)
     from train.policies import load
     for run in a.pool_from:
