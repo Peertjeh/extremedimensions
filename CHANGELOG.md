@@ -36,7 +36,9 @@ the heavy parts cost, and makes the download lighter.
   for it (*the Frayed Ray never struck its prey*, *the Lance never fired*), on commits where the same tests passed in
   the next run.
 - The Frayed Ray's test lets its ray loose only once the sky round its prey is alive: alone in its batch, the test
-  server ran its ticks faster than the forced chunks came to life, and a ray in a still chunk never moved.
+  server ran its ticks faster than the forced chunks came to life, and a ray in a still chunk never moved. It loads
+  those chunks itself, and the two rings round them a chunk needs whole before it comes to life: waiting a number of
+  ticks for fresh land was no wait at all on a busy runner, where the test server runs 2000 ticks in seconds.
 - The echo test loads the spot of its away player's echo itself (40 blocks off): it counted on a neighbouring test to
   keep that chunk loaded, and with the Elder tests gone from the big batches that neighbour was not always there.
 - When the Lance has not fired by its 70th tick, the test now also says the Weaver's health and why it left the world.

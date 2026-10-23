@@ -96,7 +96,13 @@ public class FrayTests {
 		for (int dx = -2; dx <= 2; dx++) {
 			for (int dz = -2; dz <= 2; dz++) {
 				level.setChunkForced((o.getX() >> 4) + dx, (o.getZ() >> 4) + dz, true);
-				// (loaded here and now: the test server can run its ticks faster than chunks load in their own time)
+			}
+		}
+		// Loaded here and now, and the two rings round them as well (which the forced ones hold): a chunk only comes to
+		// life once every chunk within two of it is whole, and the test server runs its ticks faster than fresh land is
+		// made out here, so waiting a number of ticks for it was no wait at all on a busy machine
+		for (int dx = -4; dx <= 4; dx++) {
+			for (int dz = -4; dz <= 4; dz++) {
 				level.getChunk((o.getX() >> 4) + dx, (o.getZ() >> 4) + dz);
 			}
 		}
