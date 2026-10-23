@@ -1963,9 +1963,15 @@ mensen; Bridge Chaos 1v1v1v1, Hunger Games en een mace-duel; de bots waren inter
   - De natuurkunde van de simulatie is die van de game. Het grote verschil was de snelheid van mensen, niet de
     simulatie.
   - **De duw op mensen** klopt (0,049; bij treffers van bots zelfs 0,027).
-  - **De duw op bots** is in het spel kleiner dan in de simulatie: 0,238 tegen 0,296, ook op open grond. De verticale
-    snelheid klopt wel precies (zo zijn ze gevonden), dus de duw zelf komt aan. Een zelftest legt de baan van een bot na
-    één treffer vast, per tick, terwijl de bot niet denkt.
+  - **De duw op bots** is in de verslagen kleiner dan in de simulatie: 0,238 tegen 0,296, ook op open grond. De verticale
+    snelheid klopt wel precies (zo zijn ze gevonden), dus de duw zelf komt aan.
+    - De knockback-zelftest legt nu de baan van een bot vast die niet denkt (`BotPlayer.hold`), per tick na één treffer
+      zonder sprint: weg 0,4000, 0,6184, 0,8171, 0,9980, 1,1626, 1,3123; snelheid 0,2184, 0,1987, 0,1809, 0,1646, 0,1498,
+      0,1363; omhoog 0,3608, 0,6360 ... (CI van `2f00dde`).
+    - Dat is tot op 0,001 wat de simulatie rekent (`test_simfit.py` speelt het na). De natuurkunde van de duw is dus die
+      van de game. Het verschil in de verslagen komt van wat de bot zelf doet in de ticks na een treffer: zijn toetsen
+      (naar zijn doelwit, sprinten) en de randbeveiliging. In de simulatie doet het model dat zelf, dus daar verandert
+      niets.
   - Een langer venster (acht ticks) zegt weinig: muren, randen en andere spelers houden het slachtoffer tegen, en die
     kent de vlakke grond van de meting niet.
 

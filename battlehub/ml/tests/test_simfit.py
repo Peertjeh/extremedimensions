@@ -97,3 +97,24 @@ def test_the_report_has_every_measure_and_a_fixed_test_part():
     assert r["behaviour"]["bot"]["sprint_share"] > 0.5 and r["behaviour"]["human"]["jumps_per_s"] > 0
     assert "move bot" in simfit.text(r)
     assert simfit.part_of("a.jsonl.gz") == simfit.part_of("dir/a.jsonl.gz") and {simfit.part_of("f%d" % i) for i in range(20)} == {"fit", "test"}
+
+
+# The game's push on a bot that does not think, tick by tick after one hit that was not a sprint hit (the mod's knockback
+# self-test, CI of commit 2f00dde): how far away, how high, the velocity away and up, after each tick
+GAME_KNOCK_TRACE = [(0.4000, 0.3608, 0.2184, 0.2752), (0.6184, 0.6360, 0.1987, 0.1913), (0.8171, 0.8273, 0.1809, 0.1091),
+                    (0.9980, 0.9363, 0.1646, 0.0285), (1.1626, 0.9648, 0.1498, -0.0505), (1.3123, 0.9143, 0.1363, -0.1279)]
+
+
+def test_the_simulations_push_is_the_games_tick_by_tick():
+    w = World(1, 2, spec=SPEC3, rng=np.random.default_rng(0))
+    w.terrain.ground[0] = 64.0
+    w.terrain.floor[0] = 64.0
+    w.place(0, 0, -2.0, 64.0, 0.0, -90.0, weapon(base(), "diamond_sword"), 0)
+    w.place(0, 1, 0.0, 64.0, 0.0, 90.0, base(), 1)
+    w.land(0, 1, np.array([True]), np.array([1.0]), np.array([False]), np.array([False]))
+    z = np.zeros((1, 2))
+    off = np.zeros((1, 2), dtype=bool)
+    for away, up, v, vy in GAME_KNOCK_TRACE:
+        w.tick(z, z, off, off, off, off, z, z, np.zeros((1, 2), dtype=np.int64))
+        assert abs(w.f.x[0, 1] - away) < 1e-3 and abs(w.f.y[0, 1] - 64.0 - up) < 1e-3
+        assert abs(w.f.vx[0, 1] - v) < 1e-3 and abs(w.f.vy[0, 1] - vy) < 1e-3
