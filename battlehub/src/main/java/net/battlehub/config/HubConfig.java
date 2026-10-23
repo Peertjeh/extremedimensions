@@ -33,6 +33,7 @@ public final class HubConfig {
 	public Arenas arenas = new Arenas();
 	public Leaderboards leaderboards = new Leaderboards();
 	public Bots bots = new Bots();
+	public Fights fights = new Fights();
 	public FeaturedMode featured = new FeaturedMode();
 	public Npcs npcs = new Npcs();
 	public Seasons seasons = new Seasons();
@@ -473,6 +474,19 @@ public final class HubConfig {
 		public double slowAboveMspt = 35;
 	}
 
+	/**
+	 * Fight logs for training the combat model (config/battlehub/fights, a gzip file per fight): every decision of
+	 * every fighter, people and bots, with what it saw and did; /battlehub fights export zips them to hand over.
+	 */
+	public static final class Fights {
+		/** Record every fight (melee and bow games). */
+		public boolean record = true;
+		/** Keep the players' names in the logs (off: people are only numbered; the model needs no names). */
+		public boolean names = false;
+		/** The folder holds at most this much; the oldest logs and exports go first. */
+		public int maxMegabytes = 500;
+	}
+
 	/** The mode of the day: another mode every day, with more coins. */
 	public static final class FeaturedMode {
 		public boolean enabled = true;
@@ -716,6 +730,7 @@ public final class HubConfig {
 		// the default of 1.33 (v1's two duels) grows with v2 to every melee mode
 		if (bots.learnedModes == null || bots.learnedModes.equals(List.of("sword", "boxing"))) bots.learnedModes = new ArrayList<>(DEFAULT_LEARNED_MODES);
 		if (bots.learnedV1Modes == null) bots.learnedV1Modes = new Bots().learnedV1Modes;
+		if (fights == null) fights = new Fights();
 		bots.archetypes.removeIf(a -> {
 			boolean bad = a == null || net.battlehub.core.ai.Archetype.parse(a, null) == null;
 			if (bad) net.battlehub.BattleHub.LOGGER.warn("BattleHub config: unknown bot style '{}' left out (known: {})", a,

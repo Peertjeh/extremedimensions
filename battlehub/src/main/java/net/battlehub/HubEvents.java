@@ -53,6 +53,7 @@ public final class HubEvents {
 		ServerLifecycleEvents.SERVER_STOPPING.register(HubEvents::stopping);
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
 			Queues.clear();
+			net.battlehub.bot.FightRecorder.clear();
 			net.battlehub.bot.Bots.clear();
 			net.battlehub.hub.HubNpcs.clear();
 			net.battlehub.hub.HubDummy.clear();
@@ -233,6 +234,7 @@ public final class HubEvents {
 		ArenaBuilder.tick();
 		Matches.tick();
 		net.battlehub.bot.Bots.tick(server);
+		net.battlehub.bot.FightRecorder.tick(server);
 		Queues.tick(server);
 		net.battlehub.spectate.Spectators.tick(server);
 		Menus.tick(server);
@@ -365,6 +367,7 @@ public final class HubEvents {
 				}
 				// the killing blow skips the after-damage event; bots still count it (at most a full health bar)
 				net.battlehub.bot.Bots.onDamage(p, source, Math.min(amount, p.getMaxHealth()));
+				net.battlehub.bot.FightRecorder.hit(p, source, Math.min(amount, p.getMaxHealth()));
 				m.handleDeath(p, source);
 				return false;
 			}
@@ -383,6 +386,7 @@ public final class HubEvents {
 	public static void swung(ServerPlayer p) {
 		net.battlehub.fair.Afk.active(p.getUUID());
 		net.battlehub.fair.AntiCheat.swing(p);
+		net.battlehub.bot.FightRecorder.swung(p);
 		net.battlehub.hub.HubDummy.swing(p);
 		Match m = matchOf(p);
 		if (m != null && !p.hasDisconnected()) {
@@ -398,6 +402,7 @@ public final class HubEvents {
 		}
 		ServerPlayer attacker = source.getEntity() instanceof ServerPlayer a ? a : null;
 		net.battlehub.bot.Bots.onDamage(victim, source, taken);
+		net.battlehub.bot.FightRecorder.hit(victim, source, taken);
 		boolean arrow = source.getDirectEntity() instanceof Projectile;
 		m.recordHit(attacker, victim, taken, arrow);
 		if (attacker != null && !arrow && source.getDirectEntity() == attacker) {

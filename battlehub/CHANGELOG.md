@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.37.0
+
+### Added
+* **Fight logs for training.** Every fight (melee and bow games) is recorded in `config/battlehub/fights`, a gzip
+  file per fight, for people and bots alike:
+  * every decision (ten a second), per fighter with a target: the state it was in, as the combat model sees it
+    (the simulation's own values, so the observation is computed again in training and the logs survive a new spec),
+    and what it did over the decision: keys, jump, sprint, a swing, the turn left and down, what it held, the right
+    button; for bots also what their model chose and how the tick went against it;
+  * the hits, and the result (who won, or "stopped").
+  * Names are left out (`fights.names`); the folder keeps at most `fights.maxMegabytes` (500 MB), oldest first.
+* `/battlehub fights` shows how many fights wait; `export` zips them into one file to hand over (they move to
+  `fights/exported`); `clear` deletes them.
+* `ml/train/fights.py` reads the logs (files, zips, folders) into observations and actions; `ml/train/imitate.py`
+  teaches a checkpoint's policy to do what the people in them did (behavior cloning) and saves a checkpoint that
+  self-play continues from (`selfplay2.py --init`). A sample file written by the mod's test
+  (`ml/spec/fightlog_sample.jsonl`) checks that the simulation computes the mod's observation from a stored state.
+
 ## 1.36.1
 
 ### Fixed

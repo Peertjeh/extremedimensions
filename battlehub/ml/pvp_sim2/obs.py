@@ -30,6 +30,12 @@ STATE2_KEYS = (["self_" + k for k in SELF2] + ["opp_" + k for k in OPP2] + ["e2_
                + ["damage_on", "enemies_near", "self_below", "opp_below", "opp_drop_behind", "opp_void_behind",
                   "voids", "drops", "steps", "walls"])
 HANDS = ["weapon", "bow", "food", "gapple", "pearl", "wind"]
+# the kinds of the values (the rest are floats): the golden file and the mod's fight logs type them this way
+BOOLS = {"self_on_ground", "self_sprinting", "self_shield", "self_blocking", "opp_on_ground", "opp_sprinting", "opp_visible",
+         "opp_blocking", "opp_eating", "opp_holds_bow", "opp_holds_food", "opp_holds_throwable", "e2_present", "e2_visible",
+         "e2_holds_bow", "threat_present", "damage_on"}
+INTS = {"self_hand"}
+RAYS = ("voids", "drops", "steps", "walls")
 
 
 def armor_reduce(damage, armor, toughness):

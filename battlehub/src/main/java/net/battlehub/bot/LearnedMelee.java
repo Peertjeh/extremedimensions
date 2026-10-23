@@ -126,8 +126,8 @@ final class LearnedMelee implements MeleeController {
 		rays(st, spec);
 		float[] obs = CombatObservation.build(spec, st);
 		float[] logits = model.logits(obs);
-		bot.brain.decided(CombatModels.V1, obs);
 		int[] idx = lv.sample() ? CombatAction.sample(spec, logits, 1.0, rng) : CombatAction.best(spec, logits);
+		bot.brain.decided(CombatModels.V1, obs, idx);
 		current = CombatAction.decode(spec, idx);
 		decisions++;
 	}

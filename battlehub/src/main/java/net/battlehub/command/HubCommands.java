@@ -207,6 +207,30 @@ public final class HubCommands {
 					new MainMenu(c.getSource().getPlayerOrException()).open();
 					return 1;
 				})
+				// the fight logs for training the combat model
+				.then(Commands.literal("fights").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.executes(c -> {
+							int[] st = net.battlehub.bot.FightRecorder.status();
+							c.getSource().sendSuccess(() -> ConfigManager.config().fights.record ? Lang.tr("fights.status", st[0], st[1], st[2])
+									: Lang.tr("fights.off"), false);
+							return st[0];
+						})
+						.then(Commands.literal("export").executes(c -> {
+							net.minecraft.commands.CommandSourceStack src = c.getSource();
+							src.sendSuccess(() -> Lang.tr("fights.exporting"), false);
+							net.battlehub.bot.FightRecorder.export(src.getServer(), r -> {
+								int n = (int) r[1];
+								if (n < 0) src.sendFailure(Lang.tr("fights.export_failed"));
+								else if (n == 0) src.sendSuccess(() -> Lang.tr("fights.export_none"), false);
+								else src.sendSuccess(() -> Lang.tr("fights.exported", n, Math.round((long) r[2] / 1024.0), r[0].toString()), true);
+							});
+							return 1;
+						}))
+						.then(Commands.literal("clear").executes(c -> {
+							int n = net.battlehub.bot.FightRecorder.clearFiles();
+							c.getSource().sendSuccess(() -> Lang.tr("fights.cleared", n), true);
+							return n;
+						})))
 				.then(Commands.literal("reports").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(c -> {
 							java.util.List<String> recent = net.battlehub.fair.Reports.recent();

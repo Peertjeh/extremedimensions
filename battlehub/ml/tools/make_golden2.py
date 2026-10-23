@@ -14,16 +14,11 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pvp_sim.actions import decode  # noqa: E402
-from pvp_sim2.obs import E2, OPP2, SELF2, THREAT, observe  # noqa: E402
+from pvp_sim2.obs import BOOLS, E2, INTS, OPP2, RAYS, SELF2, THREAT, observe  # noqa: E402
 from pvp_sim2.spec import SPEC2  # noqa: E402
 from pvp_sim2.terrain import Terrain  # noqa: E402
 
 OUT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "spec", "combat_v2_golden.json"))
-BOOLS = {"self_on_ground", "self_sprinting", "self_shield", "self_blocking", "opp_on_ground", "opp_sprinting", "opp_visible",
-         "opp_blocking", "opp_eating", "opp_holds_bow", "opp_holds_food", "opp_holds_throwable", "e2_present", "e2_visible",
-         "e2_holds_bow", "threat_present", "damage_on"}
-INTS = {"self_hand"}
-RAYS = ("voids", "drops", "steps", "walls")
 
 
 def states(n=150, seed=20261022):

@@ -162,6 +162,12 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   model use them, experimental). The crosshair check of every click stays. Each difficulty level has its own
   model, picked by Elo rating, with a little delay, aim noise and a turn limit on the lower levels.
   `bots.learnedCombat` turns it off; `bots.learnedSpec` 1 uses only v1, `bots.learnedV1Modes` says where v1 fights.
+* *Fight logs*: every fight (melee and bow games, people and bots) is recorded for training in
+  `config/battlehub/fights`, a gzip file per fight: ten times a second, for every fighter, what the model would see
+  and what the fighter did (keys, jump, sprint, swings, turning, what they held, the right button), for bots also
+  what their model chose, plus the hits and the result. Names are left out unless `fights.names` is on; the folder
+  keeps at most `fights.maxMegabytes` (500). `/battlehub fights export` zips the new fights into one file to hand
+  over; `battlehub/ml/train/imitate.py` teaches the model what the people in them did.
 * *Model reports for operators*: after every match with a learned model, each bot tells the operators online how
   much of its fight went as its model chose, how much its own rules changed (it would walk off an edge or jump into
   the void, it was steered back in the air, it was stuck, it ate) and how much the scripted mind took over (away
@@ -621,6 +627,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/battlehub bots show <bot>` | admin | See what a bot does as particles only you see (again: off) |
 | `/battlehub bots inspect\|debug <bot>` / `/battlehub bots profile <bot> <style>` | admin | What a bot thinks and why; log its decisions; give it another fighting style |
 | `/battlehub bots forget <player\|all>` | admin | Wipe what bots remember about a player, or about everyone |
+| `/battlehub fights [export\|clear]` | admin | The fight logs for training: how many wait; zip the new ones into one file (`config/battlehub/fights/export-<time>.zip`); delete them all |
 | `/battlehub bots report [on\|off\|reset]` | admin | How the learned bots kept to their models since the totals began, per spec and mode, and what to practise; your chat reports after matches on or off; start the totals again |
 | `/battlehub matches` | admin | List running matches |
 | `/battlehub endmatch <id>` | admin | Stop a match without results and restore its players |
@@ -679,6 +686,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
     tick time bots think
     less often (`slowAboveMspt`), and how soon
     a bot leaves after its match
+  * `fights`: recording fights for training on/off (`record`), names in the logs (`names`, off), the most the folder
+    holds (`maxMegabytes`)
   * `effects`: the match intro on/off and its seconds, the victory shot, the killfeed and its number of lines
   * `lobbyExtras`: double jump on/off, its push forward and up and its cooldown; the training dummy on/off and
     where it stands (angle around the fountain and distance)

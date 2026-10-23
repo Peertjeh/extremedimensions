@@ -7,7 +7,8 @@ import java.util.Map;
 
 /**
  * A small JSON reader for the combat spec and its test files (the core has no library for it): objects become
- * {@link Map}s, arrays {@link List}s, numbers {@link Double}s, plus strings, booleans and null.
+ * {@link Map}s, arrays {@link List}s, numbers {@link Double}s, plus strings, booleans and null. {@link #write} goes the
+ * other way, on one line (the fight logs).
  */
 public final class MiniJson {
 	private final String s;
@@ -156,5 +157,87 @@ public final class MiniJson {
 
 	private IllegalArgumentException error(String what) {
 		return new IllegalArgumentException("JSON: " + what + " at " + i);
+	}
+
+	/** One line of JSON: maps, lists, double and int arrays, strings, numbers (whole ones without ".0"), booleans, null. */
+	public static String write(Object o) {
+		StringBuilder sb = new StringBuilder();
+		write(sb, o);
+		return sb.toString();
+	}
+
+	private static void write(StringBuilder sb, Object o) {
+		if (o == null) {
+			sb.append("null");
+		} else if (o instanceof Map<?, ?> m) {
+			sb.append('{');
+			boolean first = true;
+			for (Map.Entry<?, ?> e : m.entrySet()) {
+				if (!first) sb.append(',');
+				first = false;
+				string(sb, String.valueOf(e.getKey()));
+				sb.append(':');
+				write(sb, e.getValue());
+			}
+			sb.append('}');
+		} else if (o instanceof List<?> l) {
+			sb.append('[');
+			for (int k = 0; k < l.size(); k++) {
+				if (k > 0) sb.append(',');
+				write(sb, l.get(k));
+			}
+			sb.append(']');
+		} else if (o instanceof double[] a) {
+			sb.append('[');
+			for (int k = 0; k < a.length; k++) {
+				if (k > 0) sb.append(',');
+				number(sb, a[k]);
+			}
+			sb.append(']');
+		} else if (o instanceof int[] a) {
+			sb.append('[');
+			for (int k = 0; k < a.length; k++) {
+				if (k > 0) sb.append(',');
+				sb.append(a[k]);
+			}
+			sb.append(']');
+		} else if (o instanceof String str) {
+			string(sb, str);
+		} else if (o instanceof Number n) {
+			number(sb, n.doubleValue());
+		} else if (o instanceof Boolean b) {
+			sb.append(b);
+		} else {
+			string(sb, o.toString());
+		}
+	}
+
+	private static void number(StringBuilder sb, double v) {
+		if (Double.isNaN(v) || Double.isInfinite(v)) {
+			sb.append("null");
+		} else if (v == Math.rint(v) && Math.abs(v) < 1e15) {
+			sb.append((long) v);
+		} else {
+			sb.append(v);
+		}
+	}
+
+	private static void string(StringBuilder sb, String s) {
+		sb.append('"');
+		for (int k = 0; k < s.length(); k++) {
+			char c = s.charAt(k);
+			switch (c) {
+				case '"' -> sb.append("\\\"");
+				case '\\' -> sb.append("\\\\");
+				case '\n' -> sb.append("\\n");
+				case '\r' -> sb.append("\\r");
+				case '\t' -> sb.append("\\t");
+				default -> {
+					if (c < 0x20) sb.append(String.format("\\u%04x", (int) c));
+					else sb.append(c);
+				}
+			}
+		}
+		sb.append('"');
 	}
 }

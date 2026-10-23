@@ -33,6 +33,9 @@ the terrain and the void, kits and effects, the bow, food, pearls, wind charges 
 | `train/league2.py` | v2's league over a mix of the modes' 1v1 scenarios, Elo, the six levels, ONNX export; and v2's best against v1's best on flat ground (v1 through an adapter). |
 | `spec/combat_v1_ranges.json`, `combat_v2_ranges.json` | What each model saw in training: per observation value the range the simulation produced (0.1% and 99.9% quantiles over about 400,000 decisions between the shipped models, the scripted bot and random play; `tools/make_ranges.py`). The mod counts a value outside it (by more than 0.05) as new to the model. |
 | `spec/lessons.json` | **The** table of what a bot should practise, read by the mod and by `train/focus.py`: the lesson behind each reason a fight left the model's choice and behind each observation value, and per lesson the scenario weights it raises. |
+| `train/fights.py` | Reads the mod's fight logs (`config/battlehub/fights`, `/battlehub fights export` zips): per decision and fighter the stored state (the observation is computed here) and what it did as action indices; a summary per fight. |
+| `train/imitate.py` | Behavior cloning: a checkpoint's policy learns to do what the people in the fight logs did; saves `ckpt_bc.zip` for `selfplay2.py --init`. |
+| `spec/fightlog_sample.jsonl` | A short fight log written by the mod's `FightLogTest` from golden states, with the observation the mod computed; `tests/test_fights.py` checks the simulation's observation of each stored state is the same. |
 | `train/focus.py` | Reads the mod's `config/battlehub/ml_feedback.json` and turns its lessons into the scenario weights of `pvp_sim2` (`selfplay2.py --focus`). |
 
 ## Run
@@ -56,6 +59,11 @@ python train/league2.py runs/v2 --out league_v2 --v1 runs/sword/ckpt_016000000.z
 python train/focus.py ml_feedback.json                           # shows what it would change
 python train/selfplay2.py --run runs/v2focus --init runs/v2/ckpt_040000032.zip --pool-from runs/v2 --focus ml_feedback.json --steps 16000000
 python tools/make_ranges.py                                      # after a new model: what it saw in training
+
+# learn from recorded fights (the mod: /battlehub fights export)
+python train/fights.py export-20261023-201500.zip                # what is in it
+python train/imitate.py exports/ --init runs/v2/ckpt_040000032.zip --out runs/v2bc
+python train/selfplay2.py --run runs/v2bc_sp --init runs/v2bc/ckpt_bc.zip --pool-from runs/v2 --items --steps 16000000
 ```
 
 From the mod back to training: after every match with learned bots the mod counts per bot how many fight ticks went

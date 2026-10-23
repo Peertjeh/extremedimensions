@@ -1095,3 +1095,33 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
 - Een treffer of een vijand dichtbij laat hem de kist sluiten. Drie seconden laat hij kisten met rust, daarna komt hij terug voor de rest.
 - JUnit `LootPaceTest`: een kist van acht stapels kost een beginner ongeveer vier seconden en een master ongeveer twee; elke stap varieert.
 - Zelftest SkyWars: een geleegde kist kostte minstens 6 ticks plus 3 per stapel.
+
+## Versie 1.37 – Gevechtsverslagen om het model van te leren
+
+**Vraag.** Van elk gevecht een verslag dat de gebruiker makkelijk kan doorgeven, met data die het model beter maakt.
+
+**Wat er wordt opgenomen (`bot/FightRecorder`, `core/ml/FightLog`).**
+- Elk gevecht in een melee- of boogspel, van mensen en bots: een gzip-bestand per match in `config/battlehub/fights`.
+- Per beslissing (twee ticks) en per vechter met een doelwit:
+  - de toestand waarin hij was: precies wat het model zou zien (`bot/FightState`, uit `LearnedFight` gehaald zodat het model en de opname hetzelfde gebruiken);
+  - wat hij deed in die twee ticks, in de termen van de acties van het model: toetsen (bij mensen wat hun client de server vertelt), springen, sprinten, een slag, de draai naar links en naar beneden, wat hij vasthield en de rechtermuisknop;
+  - bij bots ook wat het model koos en hoe de tick tegenover het model ging ("kept" of de reden).
+- Daarnaast de treffers en de uitslag (wie won, of "stopped").
+- Het doelwit van een mens: met wie hij de laatste 3 seconden klappen uitwisselde, anders de dichtstbijzijnde vijand die hij ziet (tot 24 blokken), anders de dichtstbijzijnde binnen 8 blokken.
+- Snelheden komen bij mensen uit hun posities (hun beweging is van de client), de lading van hun aanval uit de ticks sinds hun laatste slag.
+- De toestand wordt opgeslagen als de waarden van de simulatie (`STATE2_KEYS`), afgerond op drie decimalen. De observatie rekent de training er zelf uit, zodat de verslagen ook na een nieuwe spec bruikbaar blijven. Ongeveer 100 KB per speler per minuut.
+- Schrijven gebeurt op een eigen thread. Namen staan er niet in, tenzij `fights.names` aan staat. De map houdt hoogstens `fights.maxMegabytes` (500); de oudste gaan eerst.
+
+**Doorgeven.** `/battlehub fights export` pakt alle nieuwe gevechten in één zip (`fights/export-<tijd>.zip`) en zet ze daarna in `fights/exported`. `/battlehub fights` laat zien hoeveel er wachten; `clear` gooit alles weg.
+
+**Leren (`ml/train/fights.py`, `ml/train/imitate.py`).**
+- `fights.py` leest bestanden, zips en mappen in tot observaties (met de eigen code van de simulatie) en actie-indices (de dichtstbijzijnde keuze per kop).
+- `imitate.py` laat de policy van een checkpoint doen wat de mensen deden (behavior cloning), met per epoch hoe vaak elke kop op een apart tiende kiest wat de mens deed. Het resultaat is een checkpoint waar zelf trainen op verdergaat (`selfplay2.py --init`).
+- Dit is de route voor de spullen (eten, de boog, pearls) die zelf trainen niet vond: eerst nadoen, dan zelf verder.
+
+**Pariteit.** `FightLogTest` schrijft `ml/spec/fightlog_sample.jsonl`: twintig toestanden uit het golden-bestand, opgeslagen zoals de mod dat doet, met de observatie die de mod berekent. `test_fights.py` rekent de observatie opnieuw uit met de simulatie: hetzelfde tot op 0,00002.
+
+**Tests.**
+- JUnit `FightLogTest` (4): de sleutels zijn die van de simulatie en een toestand komt hetzelfde terug; regels zijn één JSON-object; de draai naar links; het voorbeeldbestand.
+- pytest `test_fights.py` (5): de kop, de observatie, de acties, mensen en bots en winnaars uit een zip met gzip-bestanden, en imitatie leert een regel (overgeslagen zonder PyTorch).
+- Zelftest in het v2-bijlduel: het gevecht is opgenomen (A en de bot elk meer dan 20 beslissingen, een treffer, de bot won) en `/battlehub fights export` zet het in een zip.

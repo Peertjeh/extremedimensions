@@ -41,6 +41,7 @@ public final class Results {
 			applyAll(m);
 			net.battlehub.bot.Bots.debrief(m);
 			net.battlehub.bot.ModelReports.matchEnd(m);
+			net.battlehub.bot.FightRecorder.end(m);
 		} finally {
 			Clans.save();
 		}

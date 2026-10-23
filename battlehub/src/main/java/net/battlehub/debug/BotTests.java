@@ -168,7 +168,9 @@ final class BotTests {
 		});
 		s.waitFor(tag + ": the duel runs with one bot", 600, () -> {
 			Match m = matchOfA();
-			return m != null && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
+			boolean ok = m != null && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
+			if (ok) VARS.put("v2AxeMatch", m.id);
+			return ok;
 		});
 		s.waitFor(tag + ": model v2 steers the bot and lands hits", 600, () -> {
 			Match m = matchOfA();
@@ -195,6 +197,59 @@ final class BotTests {
 			String bot = (String) VARS.get("v2AxeBot");
 			return r.get(0).contains(bot) && r.get(0).contains("v2") && r.get(1).contains("%")
 					&& net.battlehub.bot.ModelReports.last(bot).size() == r.size();
+		});
+		s.waitFor(tag + ": the fight was recorded: A's and the bot's decisions, a hit, the bot won", 200, () -> {
+			java.nio.file.Path f = net.battlehub.bot.FightRecorder.lastClosed();
+			if (f == null || net.battlehub.bot.FightRecorder.lastClosedMatch() != (int) VARS.get("v2AxeMatch")) return false;
+			List<String> lines;
+			try (java.io.BufferedReader in = new java.io.BufferedReader(new java.io.InputStreamReader(
+					new java.util.zip.GZIPInputStream(java.nio.file.Files.newInputStream(f)), java.nio.charset.StandardCharsets.UTF_8))) {
+				lines = in.lines().toList();
+			} catch (java.io.IOException e) {
+				return false;
+			}
+			java.util.Map<String, Object> head = net.battlehub.core.ml.MiniJson.object(net.battlehub.core.ml.MiniJson.parse(lines.get(0)));
+			List<Object> fighters = net.battlehub.core.ml.MiniJson.array(head.get("fighters"));
+			int human = -1, bot = -1, humanRows = 0, botRows = 0, hits = 0;
+			for (int i = 0; i < fighters.size(); i++) {
+				String kind = (String) net.battlehub.core.ml.MiniJson.object(fighters.get(i)).get("kind");
+				if (kind.equals("human")) human = i;
+				else bot = i;
+			}
+			java.util.Map<String, Object> end = null;
+			for (String line : lines.subList(1, lines.size())) {
+				java.util.Map<String, Object> r = net.battlehub.core.ml.MiniJson.object(net.battlehub.core.ml.MiniJson.parse(line));
+				if (r.containsKey("s")) {
+					if (net.battlehub.core.ml.MiniJson.doubles(r.get("s")).length != net.battlehub.core.ml.CombatState.SIZE) return false;
+					if (((Number) r.get("f")).intValue() == human) humanRows++;
+					else botRows++;
+				} else if (r.containsKey("hit")) {
+					hits++;
+				} else if (r.containsKey("end")) {
+					end = r;
+				}
+			}
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST fight log {}: {} lines, A {} decisions, the bot {}, {} hits, end {}", f.getFileName(),
+					lines.size(), humanRows, botRows, hits, end);
+			VARS.put("v2AxeLog", f.getFileName().toString());
+			return "axe".equals(head.get("mode")) && human >= 0 && bot >= 0 && humanRows > 20 && botRows > 20 && hits > 0 && end != null
+					&& net.battlehub.core.ml.MiniJson.doubles(end.get("winners")).length == 1
+					&& net.battlehub.core.ml.MiniJson.doubles(end.get("winners"))[0] == bot;
+		});
+		s.run(tag + ": /battlehub fights export", () -> server.getCommands().performPrefixedCommand(server.createCommandSourceStack(),
+				"battlehub fights export"));
+		s.waitFor(tag + ": the export zip holds that fight", 200, () -> {
+			java.nio.file.Path dir = ConfigManager.dir().resolve("fights");
+			try (java.util.stream.Stream<java.nio.file.Path> files = java.nio.file.Files.list(dir)) {
+				for (java.nio.file.Path z : files.filter(x -> x.getFileName().toString().startsWith("export-")).toList()) {
+					try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(z.toFile())) {
+						if (zip.getEntry((String) VARS.get("v2AxeLog")) != null) return true;
+					}
+				}
+			} catch (java.io.IOException e) {
+				return false;
+			}
+			return false;
 		});
 		s.check(tag + ": the totals count the match (and are in config/battlehub/ml_feedback.json)", () -> {
 			List<String> lines = new ArrayList<>();

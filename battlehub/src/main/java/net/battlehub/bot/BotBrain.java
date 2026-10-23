@@ -148,6 +148,7 @@ final class BotBrain {
 		bot.setJumping(false);
 		building = false;
 		fightTick = heldBackNow = jumpRefused = airTook = unstuck = ateByRules = broke = false;
+		accounted = "";
 		if (bot.isShiftKeyDown()) bot.setShiftKeyDown(false);
 		Match m = Matches.of(bot.getUUID());
 		if (m == null || Sessions.state(bot.getUUID()) != Sessions.State.MATCH) {
@@ -211,21 +212,47 @@ final class BotBrain {
 	 * rules changed the model's choice) or replaced (the scripted mind fought instead).
 	 */
 	private void account() {
+		accounted = "";
 		if (!fightTick) return;
 		if (mind.learnedNow()) {
 			ModelReport.Why why = airTook ? ModelReport.Why.AIR : jumpRefused ? ModelReport.Why.JUMP : heldBackNow ? ModelReport.Why.EDGE
 					: unstuck ? ModelReport.Why.STUCK : ateByRules ? ModelReport.Why.HEAL : broke ? ModelReport.Why.OBJECTIVE : null;
 			if (why == null) report.kept();
 			else report.changed(why);
+			accounted = why == null ? "kept" : why.id();
 		} else {
-			report.replaced(mind.reactingNow() ? ModelReport.Why.REACT : ModelReport.Why.of(mind.tactic()));
+			ModelReport.Why why = mind.reactingNow() ? ModelReport.Why.REACT : ModelReport.Why.of(mind.tactic());
+			report.replaced(why);
+			accounted = why.id();
 		}
 	}
 
-	/** A decision of a learned model: which of the values it got were new to it. */
-	void decided(CombatModels.Family fam, float[] obs) {
+	/** A decision of a learned model: which of the values it got were new to it, and what it chose (the fight logs). */
+	void decided(CombatModels.Family fam, float[] obs, int[] choice) {
 		report.decision(fam.spec(), obs, ModelReports.ranges(fam), ModelReports.lessons());
 		reportSpec = fam.id();
+		modelChoice = choice;
+		modelChoiceTick = ticks;
+	}
+
+	private int[] modelChoice;
+	private int modelChoiceTick = -100;
+	/** This tick in the report: "kept", a reason, or "" when it was no tick of a learned fight. */
+	private String accounted = "";
+
+	/** The learned model's last choice (its action heads) while it is recent (this decision), else null. */
+	int[] modelChoice() {
+		return ticks - modelChoiceTick <= 2 ? modelChoice : null;
+	}
+
+	/** How the last tick went against the model: "kept", why not, or "" (FightRecorder). */
+	String accounted() {
+		return accounted;
+	}
+
+	/** The player this bot fights now, or null. */
+	UUID targetId() {
+		return target;
 	}
 
 	/** How this match's fight kept to the learned model so far, and with which spec ("" before its first decision). */
