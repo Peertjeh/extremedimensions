@@ -1893,3 +1893,9 @@ de maps End en Sky):
 
 **Niet veranderd.** Het geleerde gevecht (het model, de maskers, de observatie: `WorldColumns` gebruikte al de
 botsvorm en zag slabs goed).
+
+**CI.**
+- Eerste run (`846b99f`): 894 geslaagd, 1 gefaald. De slab-stappen slaagden (de bot was in 5 seconden zes blokken
+  voorbij het midden, op y 100,5, zonder te bouwen). Gefaald: "in the air it holds the keys back towards the island",
+  door de hoekregel bij het remmen na een duw (zie boven).
+- Tweede run (`a6bc121`), de hoekregel bij het remmen alleen op eigen tempo: **895 geslaagd, 0 gefaald.**
