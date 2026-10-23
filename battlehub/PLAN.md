@@ -1377,3 +1377,41 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
   hotbar zit. Een voorbeeld: in Build UHC zit het vlees in slot 13. Het masker zou eten dan toestaan, terwijl het niet
   kan. Nu telt de observatie de hotbar (pijlen overal, zolang de boog in de hotbar zit). `/battlehub bots inspect` telt
   gekozen handen die de bot niet kon pakken.
+
+**A5 – Tijd per beslissing in de mod** (CI-zelftest van commit 3d28b08; per beslissing van een bot: de toestand
+opbouwen, de observatie, ONNX en de keuze, over alle bots):
+
+| Zelftest | Beslissingen | Gemiddeld | p99 | Maximum | Waarvan maskers |
+|---|---|---|---|---|---|
+| v2-bijlduel | 41 | 0,514 ms | 0,683 ms | 0,683 ms | 0,0092 ms |
+| v2-items (Build UHC) | 243 | 0,463 ms | 0,752 ms | 1,014 ms | 0,0069 ms |
+
+- 1.37.0 had nog geen timer. Zonder maskers kost een beslissing ongeveer 0,01 ms minder, dus 0,45 tot 0,50 ms.
+- Een beslissing valt elke 2 ticks (100 ms). Per bot is dat gemiddeld minder dan 0,3 ms per tick: ruim binnen het
+  denkbudget.
+- **Zelftest-fout (niet van deze fase):** "world reset: and A comes in again" faalde opnieuw, net als bij 1.35.0. De
+  diagnose-log uit 1.35.0 liet het nu zien: `Travel.enter` gaf `true`, maar A zat nog in de overworld. De wissel van
+  dimensie valt pas na de check in dezelfde tick. De test gaat nu eerst naar binnen en wacht daarna tot 5 seconden tot
+  A er is.
+
+**A3 – De echte run met C (`runs3/v3a`), gestopt bij 10 miljoen stappen:**
+
+| Stappen | Winst (eval2) | Pijlen | Eten | Pearls | Wind |
+|---|---|---|---|---|---|
+| 2M | 75% | 23/45 (0% raak) | 54/115 | 1/6 | 85/87 |
+| 4M | 69% | 1/38 | 38/130 | 4/5 | 78/78 |
+| 6M | 71% | 1/29 | 30/161 | 4/4 | 79/79 |
+| 8M (KL op 0) | 78% | 0/19 | 39/162 | 1/1 | 92/92 |
+| 10M | 82% | 0/23 | 14/147 | 3/6 | 79/81 |
+
+- Tegen master (`league2.py --versus`, 1.212 gevechten, model met alleen eten, appels, pearls en wind) won v3a bij
+  10M **maar 40,5%**. In het mace-duel verloor het 5 tegen 114: het anker heeft het mace-spel van master gekost. Gestopt.
+- **B bij 6M tegen master: 531 gewonnen, 530 verloren, 151 gelijk, precies 50%** (1.212 gevechten). Het bijlduel
+  eindigt bijna altijd gelijk, omdat beide blijven blokken.
+- Daarom gaat B door van 6 naar 14 miljoen stappen. Het beste checkpoint wordt gekozen op de criteria.
+
+**Naad in de mod (apart vermeld):** de tweede CI-run liet de v2-bijlduel-zelftest falen. A stond achter dekking, de
+bot zag A niet en het model liep 30 seconden tegen de dekking op: het is getraind op open terrein en zoekt geen pad.
+- Nu stuurt de gescripte mind (die paden om dekking heen zoekt) als het doelwit niet zichtbaar is en verder dan
+  8 blokken weg. In zicht of dichtbij vecht het model.
+- Dit is geen wijziging van de strategie (looten, bedden, bruggen), alleen van wanneer het model stuurt.

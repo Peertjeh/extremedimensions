@@ -50,13 +50,17 @@ def masked_logits(policy, obs, mask):
 
 class Chooser:
     """obs (m, obs_dim) -> action indices (m, heads): per head the highest allowed logit, or a sample of the allowed
-    choices. masks=False chooses as before the masks (something not carried can be chosen; it does nothing)."""
+    choices. masks=False chooses as before the masks (something not carried can be chosen; it does nothing). hands: the
+    hands the model may choose besides the weapon (as the mod does with a model's "items" list); None: all."""
 
-    def __init__(self, policy, masks=True, deterministic=True, seed=0):
+    def __init__(self, policy, masks=True, deterministic=True, seed=0, hands=None):
         import torch
         self.torch = torch
         self.policy = policy
         self.masks = masks
+        hand = MASKS2.spec.action_index("hand")
+        at = int(MASKS2.offsets[hand])
+        self.off = [at + k for k, name in enumerate(MASKS2.spec.hands) if k > 0 and hands is not None and name not in hands]
         self.deterministic = deterministic
         self.gen = torch.Generator().manual_seed(seed)
         policy.set_training_mode(False)
@@ -68,7 +72,10 @@ class Chooser:
             t = torch.as_tensor(obs)
             z = logits(self.policy, t)
             if self.masks:
-                z = z.masked_fill(~torch.as_tensor(MASKS2(obs)), -torch.inf)
+                m = MASKS2(obs)
+                if self.off:
+                    m[:, self.off] = False
+                z = z.masked_fill(~torch.as_tensor(m), -torch.inf)
             out = []
             for part in torch.split(z, [int(k) for k in MASKS2.spec.action_nvec], dim=1):
                 if self.deterministic:

@@ -170,6 +170,7 @@ def main():
     ap.add_argument("--episodes", type=int, default=48)
     ap.add_argument("--no-masks", action="store_true", help="choose as before the action masks")
     ap.add_argument("--items-only", action="store_true", help="only how the items are used")
+    ap.add_argument("--hands", default=None, help="the hands the model may choose besides the weapon, as in the mod (e.g. food,gapple,pearl,wind)")
     a = ap.parse_args()
     if a.checkpoint.startswith("scripted"):
         # the scripted bot itself as the player, for reference ("scripted" or "scripted_latch")
@@ -180,8 +181,9 @@ def main():
         from train.policies import Chooser, load
         torch.set_num_threads(1)
         model = load(a.checkpoint)
-        policy = Chooser(model.policy, masks=not a.no_masks)
-        row = {"checkpoint": os.path.basename(a.checkpoint), "steps": int(model.num_timesteps), "masks": not a.no_masks}
+        hands = a.hands.split(",") if a.hands else None
+        policy = Chooser(model.policy, masks=not a.no_masks, hands=hands)
+        row = {"checkpoint": os.path.basename(a.checkpoint), "steps": int(model.num_timesteps), "masks": not a.no_masks, "hands": a.hands}
     if a.items_only:
         row["items"] = {"%s/%s" % (t, f): items(policy, t, f, ITEM_EPISODES.get("%s/%s" % (t, f), 64)) for t, f in ITEM_SCENARIOS}
         row["items_total"] = item_summary(row["items"])

@@ -15,7 +15,9 @@ those levels anew and keeps the others of --keep (a difficulties_v2.json), with 
         --levels master --keep ../src/main/resources/assets/battlehub/ml/difficulties_v2.json --out league_v3a
     python train/league2.py --versus runs/v3a/ckpt_020000000.zip runs/v2/ckpt_040000032.zip --episodes 120
 
---versus plays two checkpoints against each other over the mix (episodes per scenario, both sides) and stops.
+--versus plays two checkpoints against each other over the mix (episodes per scenario, both sides) and stops. A
+checkpoint written as "ckpt.zip#hands=food,gapple,pearl,wind" chooses only those hands besides the weapon, as the mod
+plays a model with that "items" list.
 """
 import argparse
 import glob
@@ -38,8 +40,17 @@ MIX = [("walled", "sword"), ("walled", "axe"), ("walled", "bow"), ("bridge", "br
        ("platform", "sumo"), ("islands", "bedwars"), ("hills", "build_uhc"), ("walled", "mace")]
 
 
+def split_path(path):
+    """A player's checkpoint and the hands it may choose besides the weapon: "ckpt.zip#hands=food,gapple" (None: all)."""
+    if path and "#hands=" in path:
+        path, hands = path.split("#hands=", 1)
+        return path, hands.split(",")
+    return path, None
+
+
 def make_player(name, path=None):
     """A callable obs -> actions for a league entry (made in the process that plays it)."""
+    path, hands = split_path(path)
     if name.startswith("scripted_"):
         return Scripted2(skill=float(name.split("_")[1]), seed=7)
     if name == "random":
@@ -49,7 +60,7 @@ def make_player(name, path=None):
     torch.set_num_threads(1)
     if name == "v1":
         return V1Adapter(path)
-    return Chooser(load(path).policy, masks=True)
+    return Chooser(load(path).policy, masks=True, hands=hands)
 
 
 class V1Adapter:
@@ -183,6 +194,11 @@ def main():
         picked = ckpts[::a.every] + ([ckpts[-1]] if ckpts and ckpts[-1] not in ckpts[::a.every] else [])
         tag = "" if len(a.runs) == 1 else os.path.basename(os.path.normpath(run)) + ":"
         players.update({"%sckpt_%d" % (tag, int(os.path.basename(p)[5:14])): p for p in picked})
+    items_dir = os.path.abspath(a.items_from) if a.items_from else None
+    if items_dir and a.item_hands != "true":
+        for n, p in list(players.items()):
+            if os.path.dirname(os.path.abspath(p)) == items_dir:
+                players[n] = p + "#hands=" + a.item_hands
     for p in a.include:
         players["%s:ckpt_%d" % (os.path.basename(os.path.dirname(os.path.abspath(p))), int(os.path.basename(p)[5:14]))] = p
     for skill in ("0.3", "0.5", "0.8", "1.0"):
@@ -229,11 +245,10 @@ def main():
         picks[level] = {"checkpoint": pick, "elo": round(cks[pick]), "target_elo": round(target), **EXTRA[level],
                         "model": "combat_v2_%s.onnx" % level}
     from train.export_onnx import export
-    items_dir = os.path.abspath(a.items_from) if a.items_from else None
     for level, p in picks.items():
         if p.get("kept"):
             continue
-        path = players[p["checkpoint"]]
+        path = split_path(players[p["checkpoint"]])[0]
         meta = {"elo": str(p["elo"]), "level": level}
         if items_dir and os.path.dirname(os.path.abspath(path)) == items_dir:
             meta["items"] = a.item_hands

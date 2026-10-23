@@ -40,7 +40,8 @@ import net.minecraft.world.item.Items;
  * something the bot does not carry.
  * <p>
  * The scripted mind still decides when to fight. With an objective (a bed, a goal, a hill) the model only fights
- * enemies within {@link #ENGAGE} blocks; the objective, healing at a distance, edge safety and building stay scripted.
+ * enemies within {@link #ENGAGE} blocks, and an enemy out of sight only within that distance (farther, the mind's
+ * paths lead round cover); the objective, healing at a distance, edge safety and building stay scripted.
  */
 final class LearnedFight implements MeleeController {
 	/** With an objective the model fights only enemies this close. */
@@ -87,6 +88,9 @@ final class LearnedFight implements MeleeController {
 		Match m = Matches.of(bot.getUUID());
 		if (!active(m) || s.target() == null) return null;
 		if (s.goal() != null && s.distance() > ENGAGE) return null;
+		// an enemy it does not see, and not near: the scripted mind finds the way round cover (the model learned on
+		// open ground and walks into the wall); in sight or near, the model fights
+		if (!s.target().visible() && s.distance() > ENGAGE) return null;
 		CombatModels.Family fam = CombatModels.V2;
 		CombatLevels.Level lv = fam.level(bot.difficulty);
 		CombatModels.Model model = lv == null ? null : fam.model(lv.model());
