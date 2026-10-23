@@ -162,3 +162,33 @@ jobs:
               for i in range(0, len(s), 3000):
                   print(f"IMG|{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
           PY
+
+  bench:
+    name: performance with and without the mod
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+          cache: 'gradle'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: build the mod and the benchmark
+        run: ./gradlew assemble benchJar
+        timeout-minutes: 15
+      # A real Fabric dedicated server, the same play on the same seed without the mod and with it, in turn, twice each
+      # (tools/bench/run.py); the table lands on the run's summary page
+      - name: benchmark
+        run: python3 tools/bench/run.py build/bench/results 2
+        timeout-minutes: 45
+      - name: capture benchmark results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Benchmark
+          path: build/bench/results/
+          if-no-files-found: warn

@@ -162,3 +162,19 @@ if (project.hasProperty("compat")) {
 		}
 	}
 }
+
+// The benchmark (CI, tools/bench/run.py): a little mod of its own, built apart from Extreme Dimensions and never shipped,
+// that takes a real dedicated server through the same play with and without the mod and writes what it measured. It
+// compiles against the game and Fabric API only, so it runs on a server without the mod as well.
+sourceSets {
+	bench {
+		compileClasspath += sourceSets.main.compileClasspath
+	}
+}
+tasks.register("benchJar", Jar) {
+	description = "Builds the benchmark mod into build/bench (see tools/bench)"
+	group = "build"
+	from sourceSets.bench.output
+	archiveFileName = "extremedimensions-bench.jar"
+	destinationDirectory = layout.buildDirectory.dir("bench")
+}

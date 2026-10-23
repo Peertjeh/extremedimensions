@@ -1,0 +1,20 @@
+{
+	"schemaVersion": 1,
+	"id": "extremedimensions-bench",
+	"version": "1.0.0",
+	"name": "Extreme Dimensions benchmark",
+	"description": "Takes a dedicated server through the same play with and without Extreme Dimensions and writes what it measured. For CI only (tools/bench).",
+	"license": "CC0-1.0",
+	"environment": "server",
+	"entrypoints": {
+		"server": [
+			"com.extremedimensions.bench.Bench"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
