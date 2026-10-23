@@ -1930,6 +1930,89 @@ mensen; Bridge Chaos 1v1v1v1, Hunger Games en een mace-duel; de bots waren inter
 
 **Gescripte punten.** Geen.
 
+### Fase D – Uitvoering en resultaten
+
+**D1 – Meten, en de bekende verschillen aan de bron.**
+- **`ml/train/simfit.py`** speelt de verslagen af in de simulatie en meet:
+  - **beweging:** de toestand van een rij, de opgeslagen actie twee ticks op vlakke grond (waar de stralen niets zien
+    binnen 2 blokken), tegen de volgende rij;
+  - **duw:** een treffer op iemand die op de grond stond, getimed door hoe hij omhoog ging (0,3608 of 0,4, dan elke tick
+    `(vy - 0,08) · 0,98`), via de eigen `World.land` van de simulatie;
+  - **schade** tegen `World.melee_damage`, en het **bereik**;
+  - **dekking** per groep observaties, en **gedrag** per soort vechter.
+  - Gevechten zijn vast verdeeld in fit (driekwart) en test, op hun naam.
+- **`World.land` en `World.melee_damage`:** het landen van een klik is nu één methode van de simulatie. De simulatie zelf
+  en `simfit` gebruiken dezelfde code. De physics- en golden-tests zijn ongewijzigd groen.
+- **In de mod:**
+  - `bot/Motion` werkt elke tick de snelheid van iedere speler in een match uit. Bij een mens komt die uit zijn posities,
+    omgerekend naar die van de game na de wrijving (`core/ml/Velocity`).
+  - Het model, de gescripte mind (`Perception`) en de verslagen gebruiken die snelheid.
+  - Een treffer krijgt zijn soort (`melee`, `arrow`, `other`). De teams in de kop van Hunger Games zijn die van de match,
+    niet van de wachttijd (`Match.isRival`).
+  - De kop van een verslag zegt `"velocities": "game"`. `train/fights.py` rekent de stappen in oudere verslagen om.
+- **Wat het oplevert** (alle verslagen; test-deel tussen haakjes waar het verschilt):
+
+  | Meting | Bots | Mensen |
+  |---|---|---|
+  | beweging, fout positie (mediaan, p90) | 0,004, 0,15 | 0,001, 0,15 (was 0,104, 0,22) |
+  | beweging, afstand spel/simulatie | 1,000 | 1,000 (was 0,743) |
+  | schade per treffer, spel/simulatie (mediaan) | 1,000 | 1,018 |
+  | bereik van treffers (mediaan, p90) | 1,81, 2,72 | 1,62, 2,76 |
+  | duw, fout snelheid (mediaan) | 0,102 | 0,049 |
+
+  - De natuurkunde van de simulatie is die van de game. Het grote verschil was de snelheid van mensen, niet de
+    simulatie.
+  - **De duw op mensen** klopt (0,049; bij treffers van bots zelfs 0,027).
+  - **De duw op bots** is in het spel kleiner dan in de simulatie: 0,238 tegen 0,296, ook op open grond. De verticale
+    snelheid klopt wel precies (zo zijn ze gevonden), dus de duw zelf komt aan. Een zelftest legt de baan van een bot na
+    één treffer vast, per tick, terwijl de bot niet denkt.
+  - Een langer venster (acht ticks) zegt weinig: muren, randen en andere spelers houden het slachtoffer tegen, en die
+    kent de vlakke grond van de meting niet.
+
+**D2 – De simulatie fitten.**
+- **Chaos uit de game zelf.**
+  - `tools/chaos_effects.py` leest uit `ChaosCatalog.java` welke events een lichaam veranderen, zoals de game de
+    attributen rekent: snelheid, traagheid, springkracht, grootte, zwaartekracht, kracht, resistance, aanvalssnelheid,
+    bereik, bevriezen. Dat zijn 37 events in `spec/chaos_effects.json`; een test houdt het bestand bij de catalogus.
+  - `simfit.py --effects` schrijft de profielen die in de verslagen aan stonden naar `spec/effects_game.json`. Op het
+    fit-deel zijn het er 7, samen 23% van de tijd in Chaos-modi.
+  - `kits.chaos`: de helft van de keren een profiel uit de verslagen, anders één tot drie events van de catalogus tegelijk
+    (zoals events in een match overlappen). Een Chaos-vechter heeft ook de pearls van het vaste pearl-event.
+  - Het aandeel Chaos-vechters gaat van 0,12 naar 0,2.
+- **Een klik op elke tick.** In de simulatie klikte iedereen op de eerste tick van een beslissing, in de game klikt een mens
+  wanneer hij wil. Een tegenstander klikt nu de helft van de keren op een latere tick (`Scenario.late_click`). Het model
+  zelf klikt zoals de mod het doet op de eerste.
+- **Dekking** (ranges opnieuw gemeten in deze simulatie, met de modellen van 1.40): **3,5%** van de beslissingen van het
+  model valt nog buiten de training, **2,5%** in de testgevechten (was 18,8%). De rest is klein: de blik van de derde
+  vijand (1,5%), pijlen van opzij, snelheden van het doelwit.
+- **De menselijke tegenstander** (`train/people.py`):
+  - behavior cloning op de 3.650 beslissingen van mensen die echt vochten (fit-deel), vanaf de master van 1.40, met een
+    KL-term van 0,5 naar die master;
+  - op de 784 beslissingen van het test-deel voorspelt hij de keuze van de mens beter dan de master, per kop:
+
+    | | vooruit | strafe | springen | sprint | klik | draaien | kijken | hand | gebruiken |
+    |---|---|---|---|---|---|---|---|---|---|
+    | master 1.40 | 43% | 52% | 74% | 16% | 88% | 12% | 23% | 11% | 65% |
+    | mensen-policy | 43% | 65% | 93% | 76% | 97% | 44% | 57% | 78% | 79% |
+
+  - Als tegenstander (`People`): hij trekt zijn keuzes (met de maskers), houdt per kop zijn vorige keuze vast met een kans
+    die zo is gefit dat hij even vaak wisselt als mensen, en sprinten, springen en klikken zijn met een verschuiving van
+    de logits op het tempo van mensen gebracht.
+  - Zijn gedrag in de simulatie tegen de master, naast dat van mensen in de verslagen (terwijl ze vochten):
+
+    | | sprinten | strafe-wissels/s | sprongen/s | klikken/s | lading bij treffer | afstand |
+    |---|---|---|---|---|---|---|
+    | mensen (verslagen) | 0,21 | 0,88 | 1,21 | 0,66 | 0,56 | 3,96 |
+    | mensen-policy (simulatie) | 0,23 | 0,85 | 1,26 | 0,78 | 0,74 | 3,57 |
+    | zonder plakken en verschuiven | 0,15 | 4,46 | 1,63 | 1,25 | 1,00 | 3,59 |
+
+    Vijf van de zes binnen 25%. De lading bij een treffer niet: mensen klikken vaker in salvo's dan een plakkerige klik
+    nabootst.
+  - Hij is zwak: de master van 1.40 wint 99,4% één tegen één en 93,8% alleen tegen twee. Met 18 minuten van mensen is
+    het een ruwe schets van hun stijl, geen tegenstander die goed vecht. Het mikken (44% goed voorspeld) is het zwakst.
+  - In de pool (`selfplay2.py --people`, 15% van de tegenstanders) en in een blok van eval2 (alleen tegen twee).
+- **Vergelijken in de simulatie van 1.40:** `pvp_sim2.env.scenario_1_40` en `league2.py --versus ... --sim 1.40`.
+
 ## Versie 1.40.1 – Bots lopen weer over halve slabs (The Bridge)
 
 **Feedback.** In The Bridge 1v1v1v1 waren de bots in 1.36.0 beter. Vooral het pathfinding is in 1.40.0 minder, en
