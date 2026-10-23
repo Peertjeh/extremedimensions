@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -34,7 +35,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.Level;
 
 /**
  * The benchmark: a mod of its own, built apart from Extreme Dimensions, that takes a dedicated server through the same
@@ -42,28 +42,34 @@ import net.minecraft.world.level.Level;
  * both ways and sets the two side by side). It does nothing unless {@code -Dextremedimensions.bench.out} names the file
  * to write.
  *
- * <p>The play, in phases: the server alone; players standing about near spawn; the players travelling outwards (new
- * land generated all the way); the players in the Nether. The players are joined the way the game tests join theirs (a
- * real server-side connection to nowhere), in survival, unharmed by anything. For each phase: the server tick by the
- * clock (what the game calls MSPT) and in the server thread's CPU time, how busy the server thread was in all (with the
- * work it does between ticks), the CPU time of every thread (world generation included), garbage collection, the memory
- * still in use after it, the entities and the loaded chunks.
+ * <p>The play, in phases: the server alone; players standing about near spawn; the players travelling outwards at a
+ * sprint (new land generated all the way); and, only where the mod is installed, the players in the Seam (each taken
+ * there by the mod's own {@code /tether seam}, as through a rift). The players are joined the way the game tests join
+ * theirs (a real server-side connection to nowhere), in survival, unharmed by anything. For each phase: the server tick
+ * by the clock (what the game calls MSPT) and in the server thread's CPU time, how busy the server thread was in all
+ * (with the work it does between ticks), the CPU time of every thread (world generation included), garbage collection,
+ * the memory still in use after it, the entities, the loaded chunks, where the players were, and where the server
+ * thread stood in the slowest ticks (a watcher looks whenever a tick runs past {@link #SLOW_NANOS}).
  */
 public final class Bench implements DedicatedServerModInitializer {
 	static final Logger LOG = LoggerFactory.getLogger("extremedimensions-bench");
 
 	/** The phases, in order, and how many ticks each lasts. */
-	private static final String[] PHASES = {"idle", "players", "exploring", "nether"};
-	private static final int[] TICKS = {400, 600, 1000, 400};
-	/** How far a travelling player goes in a tick (8 blocks a second, a little faster than sprinting). */
-	private static final double SPEED = 0.4;
+	private static final String[] PHASES = {"idle", "players", "exploring", "seam"};
+	private static final int[] TICKS = {400, 600, 1000, 800};
+	/** How far a travelling player goes in a tick (5.6 blocks a second, a sprint). */
+	private static final double SPEED = 0.28;
+	/** A tick this long has the watcher note where the server thread stands. */
+	private static final long SLOW_NANOS = 100_000_000L;
+	/** The slowest ticks kept per phase. */
+	private static final int SLOW_KEPT = 4;
 	/** Where the players stand: this far from the middle of the world, each in a direction of their own, this high up. */
 	private static final double SPREAD = 32, HEIGHT = 120;
 
 	private static final ThreadMXBean THREADS = ManagementFactory.getThreadMXBean();
 
 	private Path out;
-	private boolean warmup;
+	private boolean warmup, mod;
 	private int count;
 	private final Map<String, Object> result = new LinkedHashMap<>();
 	private final List<Map<String, Object>> done = new ArrayList<>();
@@ -71,9 +77,16 @@ public final class Bench implements DedicatedServerModInitializer {
 	private final List<EmbeddedChannel> channels = new ArrayList<>();
 
 	/** The phase under way (-1 before the first, PHASES.length once all are done) and its tick. */
-	private int phase = -1, tick = 0;
+	private volatile int phase = -1;
+	private int tick = 0;
 	/** This tick's start, by the clock and in the server thread's CPU time (0 outside a measured tick). */
-	private long tickStart = 0, tickCpu = 0;
+	private volatile long tickStart = 0;
+	private long tickCpu = 0;
+	/** What the watcher saw of the tick that began at {@link #seenAt}: where the server thread stood. */
+	private volatile long seenAt = 0;
+	private volatile String[] seen = null;
+	private final List<Map<String, Object>> slow = new ArrayList<>();
+	private volatile Thread serverThread;
 	private long[] wall = new long[0], cpu = new long[0];
 	/** The phase's start: clock, server thread CPU, every thread's CPU, garbage collection (ms, count). */
 	private long phaseStart, phaseCpu, phaseProcessCpu, phaseGcMs, phaseGcCount;
@@ -93,7 +106,7 @@ public final class Bench implements DedicatedServerModInitializer {
 	}
 
 	private void started(MinecraftServer server) {
-		boolean mod = FabricLoader.getInstance().isModLoaded("extremedimensions");
+		mod = FabricLoader.getInstance().isModLoaded("extremedimensions");
 		result.put("mod", mod);
 		result.put("mod_version", FabricLoader.getInstance().getModContainer("extremedimensions")
 				.map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse(null));
@@ -107,7 +120,45 @@ public final class Bench implements DedicatedServerModInitializer {
 			finish(server);
 			return;
 		}
+		serverThread = Thread.currentThread();
+		Thread watcher = new Thread(this::watch, "extremedimensions-bench watcher");
+		watcher.setDaemon(true);
+		watcher.start();
 		begin(server, 0);
+	}
+
+	/** Looks in on the server thread every few milliseconds; in a tick running long, notes where it stands. */
+	private void watch() {
+		while (phase < PHASES.length) {
+			long at = tickStart;
+			Thread t = serverThread;
+			if (at != 0 && t != null && at != seenAt && System.nanoTime() - at > SLOW_NANOS) {
+				seen = where(t.getStackTrace());
+				seenAt = at;
+			}
+			try {
+				Thread.sleep(5);
+			} catch (InterruptedException e) {
+				return;
+			}
+		}
+	}
+
+	/** The top of a stack, down to the first few frames of Extreme Dimensions' own; and the first of those, if any. */
+	private static String[] where(StackTraceElement[] stack) {
+		StringBuilder at = new StringBuilder();
+		String first = null;
+		int ours = 0;
+		for (int i = 0; i < stack.length && i < 40 && ours < 3; i++) {
+			StackTraceElement f = stack[i];
+			String frame = f.getClassName().substring(f.getClassName().lastIndexOf('.') + 1) + "." + f.getMethodName() + ":" + f.getLineNumber();
+			if (f.getClassName().startsWith("com.extremedimensions.") && !f.getClassName().startsWith("com.extremedimensions.bench.")) {
+				ours++;
+				first = first == null ? frame : first;
+			}
+			at.append(i == 0 ? "" : " < ").append(frame);
+		}
+		return new String[] {at.toString(), first};
 	}
 
 	private void before(MinecraftServer server) {
@@ -121,9 +172,22 @@ public final class Bench implements DedicatedServerModInitializer {
 		if (tickStart == 0) {
 			return;
 		}
-		wall[tick] = System.nanoTime() - tickStart;
+		long began = tickStart;
+		wall[tick] = System.nanoTime() - began;
 		cpu[tick] = THREADS.getCurrentThreadCpuTime() - tickCpu;
 		tickStart = 0;
+		if (seenAt == began && seen != null) {
+			Map<String, Object> s = new LinkedHashMap<>();
+			s.put("ms", round(wall[tick] / 1e6));
+			s.put("tick", tick);
+			s.put("mod_frame", seen[1]);
+			s.put("at", seen[0]);
+			slow.add(s);
+			slow.sort((a, b) -> Double.compare((double) b.get("ms"), (double) a.get("ms")));
+			while (slow.size() > SLOW_KEPT) {
+				slow.remove(slow.size() - 1);
+			}
+		}
 		tick++;
 		// What the server sends the players goes nowhere: let it go, or it piles up in memory
 		for (EmbeddedChannel c : channels) {
@@ -142,7 +206,8 @@ public final class Bench implements DedicatedServerModInitializer {
 		}
 		done.add(stats(server));
 		LOG.info("BENCH phase {} done: {}", PHASES[phase], done.get(done.size() - 1));
-		if (phase + 1 < PHASES.length) {
+		// (the Seam is the mod's own world: without the mod there is no such phase)
+		if (phase + 1 < PHASES.length && (mod || !PHASES[phase + 1].equals("seam"))) {
 			begin(server, phase + 1);
 		} else {
 			phase = PHASES.length;
@@ -154,6 +219,7 @@ public final class Bench implements DedicatedServerModInitializer {
 	private void begin(MinecraftServer server, int next) {
 		phase = next;
 		tick = 0;
+		slow.clear();
 		wall = new long[TICKS[next]];
 		cpu = new long[TICKS[next]];
 		switch (PHASES[next]) {
@@ -166,10 +232,11 @@ public final class Bench implements DedicatedServerModInitializer {
 					move(players.get(i), level, Math.cos(angle(i)) * SPREAD, HEIGHT, Math.sin(angle(i)) * SPREAD);
 				}
 			}
-			case "nether" -> {
-				ServerLevel nether = server.getLevel(Level.NETHER);
-				for (int i = 0; i < players.size(); i++) {
-					move(players.get(i), nether, Math.cos(angle(i)) * SPREAD, 70, Math.sin(angle(i)) * SPREAD);
+			case "seam" -> {
+				// The mod's own way in, for an operator: a rift opens where the player is and takes them through
+				for (ServerPlayer p : players) {
+					server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSuppressedOutput(),
+							"execute as " + p.getStringUUID() + " run tether seam");
 				}
 			}
 			default -> {
@@ -243,6 +310,12 @@ public final class Bench implements DedicatedServerModInitializer {
 		s.put("entities", entities);
 		s.put("loaded_chunks", chunks);
 		s.put("online", server.getPlayerList().getPlayerCount());
+		Map<String, Integer> where = new TreeMap<>();
+		for (ServerPlayer p : players) {
+			where.merge(p.level().dimension().identifier().toString(), 1, Integer::sum);
+		}
+		s.put("players_in", where);
+		s.put("slowest", new ArrayList<>(slow));
 		s.put("heap_after_mb", heapAfterGc());
 		return s;
 	}
