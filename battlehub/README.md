@@ -66,7 +66,9 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   that weapon. Mixed kits (Free for All, CTF, The Bridge) leave the choice to the situation.
 * *It minds the edges*: it looks before it jumps (the jump is simulated with the player's own movement and skipped
   when it would end in the void), slows down when it slides towards an edge, and in the air after a knock it holds
-  the keys back towards the last ground, as a player does. Lower levels do not always remember to.
+  the keys back towards the last ground, as a player does. Lower levels do not always remember to. Half slabs are
+  ground like any block (the paths of The Bridge in the End, Castle or Nether theme), and like a player it walks a
+  narrow bridge at an angle as long as its feet are on it.
 * *It decides between tactics* (approach, strike, hold distance and punish, back off, heal, dodge arrows, get away
   from an edge, search, the game's objective) by scoring each one with reasons, keeps a choice instead of
   dithering, and lets safety (an edge behind it) interrupt at once.

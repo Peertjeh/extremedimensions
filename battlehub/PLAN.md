@@ -1840,3 +1840,51 @@ bruggen, rollen) blijven gescript.
     geschiedenis.
 
 **Gescripte punten.** Geen.
+
+## Versie 1.40.1 – Bots lopen weer over halve slabs (The Bridge)
+
+**Feedback.** In The Bridge 1v1v1v1 waren de bots in 1.36.0 beter. Vooral het pathfinding is in 1.40.0 minder, en
+het leek alsof ze niet over halve slabs konden lopen.
+
+**Wat de gevechtsverslagen laten zien** (`ml/data/export-20261023-191417.zip`, negen Bridge Chaos 1v1v1v1-potjes,
+de maps End en Sky):
+- Op slab-hoogte (voeten op y = x,5) stonden de bots in 96% van hun beslissingen stil (3772 van 3930); mensen op
+  dezelfde paden in 34%. Op volle blokken stonden bots 35% stil, mensen 39%.
+- Bijna al die beslissingen waren geen modelbeslissingen: de gescripte navigatie liep vast, niet het geleerde gevecht.
+- In het End-thema is het pad tussen de eilanden van `end_stone_brick_slab`. Dat geldt voor zeven van de dertien
+  thema's (de `trim` van Castle, Nether, Desert, End, Badlands, Deep Dark en Ocean is een slab), in elke Bridge-modus.
+- De fout zat al in 1.36.0 (`groundBelow`, `BotPath` en de thema's zijn sindsdien niet veranderd). Het verschil met
+  toen is waarschijnlijk het thema: op Sky of Forest zie je het niet.
+
+**De oorzaak, twee keer dezelfde.**
+- `BotActions.groundBelow` zocht grond vanaf het blok onder de voeten. Op een slab (voeten op 100,5) is dat het blok
+  onder de slab: daar is de leegte. De randbeveiliging (`keepSafe`) hield de bot dus bij elke stap tegen, en
+  `Perception.edges` meldde in alle richtingen een rand.
+- `BotPath.standing` zocht het startpunt van de route in het blok waar de voeten in staan. Op een slab is dat de slab
+  zelf, waar geen speler in past. Er kwam geen route, dus dacht de bot dat er geen weg was. Dan gaat hij sluipend naar
+  de rand om een brug te bouwen (`bridge`), wat het kruipen in de verslagen verklaart.
+
+**De oplossing.**
+- `groundBelow`: staan de voeten tussen twee hele hoogtes, dan telt eerst het blok waar ze in staan. Heeft dat een
+  botsvorm, dan is het grond (of een opstapje).
+- `BotPath.standing`: staan de voeten in de ruimte van een blok waarvan de bovenkant op of onder de voeten ligt
+  (een slab), dan begint de route op dat blok.
+- Het tweede, kleinere patroon (7% van de vastgelopen beslissingen): een bot die schuin over een brug loopt die hij
+  zelf bouwde. `Bridging` bouwt een trap van blokken die met een zijde aan elkaar liggen. Schuin lopen raakt het
+  punt 1,1 blok voor het midden van de voeten bij bijna elke stap de leegte naast de trap. Daar remde de bot.
+  - Nu houdt een plek de voeten ook als een hoek ervan (0,25 uit het midden, 0,05 voor het punt waar de voeten zouden
+    wegglijden) nog boven grond is (`core/ai/Footing`). Dat geldt ook voor het remmen na een duw.
+  - Recht op een rand af stopt de bot nu 0,85 blok ervoor (was 1,1). Zijn voeten staan dan nog helemaal op de grond.
+
+**Tests.**
+- JUnit `FootingTest`:
+  - een brug van één blok houdt de voeten zolang een hoek erop staat (0,1 erop wel, alleen de rand niet);
+  - de trap die `Bridging.line` bouwt houdt de schuine wandeling tot 0,34 opzij van de inkepingen, waar het midden
+    van de voeten alleen al boven de leegte komt;
+  - een gat van één blok en een rand houden de voeten niet.
+- Zelftest "bots bridge": het pad tussen de eilanden wordt `end_stone_brick_slab` (het platform in het midden blijft
+  heel: een halve stap op en af). De master-bot moet binnen 45 seconden zes blokken voorbij het midden zijn, zonder
+  één blok te zetten.
+
+**Niet veranderd.** Het geleerde gevecht (het model, de maskers, de observatie: `WorldColumns` gebruikte al de
+botsvorm en zag slabs goed).

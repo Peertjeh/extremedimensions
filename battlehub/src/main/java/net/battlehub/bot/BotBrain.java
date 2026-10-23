@@ -532,9 +532,13 @@ final class BotBrain {
 		return safe(dir, 1.1 + Math.max(0, speed - 0.15) * 3);
 	}
 
+	/**
+	 * There is ground under the feet {@code distance} out this way: under their middle, or under a corner of them
+	 * ({@link net.battlehub.core.ai.Footing}: a narrow bridge walked at an angle, the corner of a built staircase).
+	 */
 	private boolean safe(Vec3 dir, double distance) {
 		Vec3 p = bot.position().add(dir.scale(distance));
-		return BotActions.groundBelow(level(), p.x, p.y, p.z, 4);
+		return net.battlehub.core.ai.Footing.holds((x, z) -> BotActions.groundBelow(level(), x, p.y, z, 4), p.x, p.z);
 	}
 
 	// ------------------------------------------------------------------ jumping and falling

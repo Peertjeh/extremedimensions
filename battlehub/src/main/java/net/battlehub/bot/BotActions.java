@@ -211,8 +211,16 @@ final class BotActions {
 		}
 	}
 
-	/** Is there something to stand on within a few blocks below this spot? Water does not count as a hole; lava does. */
+	/**
+	 * Is there something to stand on within a few blocks below this spot? Water does not count as a hole; lava does.
+	 * Feet between whole heights stand in the space of the block that holds them (y 100.5 on a slab at 100, a path
+	 * of slabs in the End, Castle or Nether theme): a block there with a collision shape is ground (or a step up).
+	 */
 	static boolean groundBelow(ServerLevel level, double x, double y, double z, int depth) {
+		if (y - Math.floor(y) > 1.0e-3) {
+			BlockPos feet = BlockPos.containing(x, y, z);
+			if (!level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()) return true;
+		}
 		BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos(Math.floor(x), Math.floor(y) - 1, Math.floor(z));
 		for (int i = 0; i < depth; i++) {
 			BlockState st = level.getBlockState(pos);

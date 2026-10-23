@@ -1103,6 +1103,45 @@ final class BotTests {
 			net.battlehub.BattleHub.LOGGER.info("SELFTEST bridge bot with the path: placed {} | {}", Bots.placed(b), String.join(" | ", Bots.inspect(b)));
 			return Bots.placed(b) == 0;
 		});
+		s.run(tag + ": the path becomes bottom slabs (as in the End, Castle or Nether theme) and both are sent home", () -> {
+			Match m = matchOfA();
+			BotPlayer b = botsIn(m).get(0);
+			net.minecraft.core.BlockPos o = m.arena().origin();
+			int reach = net.battlehub.arena.layout.NewLayouts.BRIDGE_ISLAND - 6;
+			for (int x = -reach; x <= reach; x++) {
+				// the platform in the middle stays whole: half a block up onto it and down again
+				if (Math.abs(x) <= 2) continue;
+				m.arena().level().setBlock(o.offset(x, 0, 0), net.minecraft.world.level.block.Blocks.END_STONE_BRICK_SLAB.defaultBlockState(), 3);
+			}
+			for (ServerPlayer pl : List.of(b, p(A))) {
+				net.battlehub.arena.Arena.Point home = m.home(pl.getUUID());
+				if (home != null) PartyTests.tp(pl, home.pos().x, home.pos().y, home.pos().z);
+			}
+			VARS.put("slabSide", Math.signum(b.getX() - o.getX()));
+			VARS.put("slabPlaced", Bots.placed(b));
+			VARS.put("slabFar", 0.0);
+		});
+		s.waitFor(tag + ": the bot walks over the slabs past the middle to A's side", 900, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			double dx = b.getX() - m.arena().origin().getX();
+			double far = -dx * (double) VARS.get("slabSide");
+			VARS.put("slabFar", Math.max(far, (double) VARS.get("slabFar")));
+			if (far >= 6) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST bridge bot over slabs at {}: {}", b.position(), String.join(" | ", Bots.inspect(b)));
+				return true;
+			}
+			if (b.tickCount % 100 == 0) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST bridge bot over slabs: at {}, furthest {} past the middle | {}", b.position(), VARS.get("slabFar"),
+						String.join(" | ", Bots.inspect(b)));
+			}
+			return false;
+		});
+		s.check(tag + ": and built nothing on the way (it found the path over the slabs)", () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			return Bots.placed(b) == (int) VARS.get("slabPlaced");
+		});
 		s.run(tag + ": no more bots; the bot is sent home and the path between the islands is taken away", () -> {
 			cfg().fillQueues = false;
 			cfg().fillLevel = (String) VARS.get("fillLevel");

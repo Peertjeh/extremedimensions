@@ -5,10 +5,12 @@ import java.util.List;
 
 import net.battlehub.core.GridPath;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /** Routes for bots through the real blocks of an arena (see {@link GridPath}). */
 final class BotPath {
@@ -33,6 +35,12 @@ final class BotPath {
 			BlockPos below = new BlockPos(x, y - 1, z);
 			BlockState st = level.getBlockState(below);
 			return !st.getCollisionShape(level, below).isEmpty() && !st.is(Blocks.MAGMA_BLOCK) && !st.is(Blocks.CACTUS);
+		}
+
+		/** The block at {@code p} has a collision shape whose top is at or below feet at {@code feetY}: they stand on it. */
+		boolean under(BlockPos p, double feetY) {
+			VoxelShape shape = level.getBlockState(p).getCollisionShape(level, p);
+			return !shape.isEmpty() && p.getY() + shape.max(Direction.Axis.Y) <= feetY + 0.01;
 		}
 	}
 
@@ -60,7 +68,8 @@ final class BotPath {
 
 	/**
 	 * The block it stands on: under its middle, or (on a one-block bridge, with the middle just past the edge) under
-	 * another part of its feet, which are 0.6 wide; mid-jump or on a slab edge the spot just below.
+	 * another part of its feet, which are 0.6 wide; mid-jump or on a slab edge the spot just below. On a slab (or
+	 * another block lower than a full one) the feet are in that block's space, standing on its top: the spot above it.
 	 */
 	private static BlockPos standing(World w, Vec3 from) {
 		double[][] feet = {{0, 0}, {0.29, 0}, {-0.29, 0}, {0, 0.29}, {0, -0.29}, {0.29, 0.29}, {0.29, -0.29}, {-0.29, 0.29}, {-0.29, -0.29}};
@@ -68,6 +77,7 @@ final class BotPath {
 			for (double[] f : feet) {
 				BlockPos p = BlockPos.containing(from.x + f[0], from.y + 0.01 - down, from.z + f[1]);
 				if (w.stand(p.getX(), p.getY(), p.getZ())) return p;
+				if (down == 0 && w.under(p, from.y) && w.stand(p.getX(), p.getY() + 1, p.getZ())) return p.above();
 			}
 		}
 		return null;

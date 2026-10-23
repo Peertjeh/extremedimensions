@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.40.1
+
+### Fixed
+* **Bots stood still on half slabs.** The paths of The Bridge (every mode) are slabs in seven of the thirteen
+  themes (Castle, Nether, Desert, End, Badlands, Deep Dark, Ocean). A bot standing on one (feet at y 100.5) looked
+  for ground from the block under the slab, found the void, and its edge safety stopped it at every step; its route
+  search found no starting point, so it thought there was no way across and sneaked to "build a bridge". In the
+  fight logs of 1.40.0 (End theme) the bots stood still in 96% of their decisions on slabs (people: 34%). The ground
+  checks now count the block the feet are in when they stand between whole heights (`BotActions.groundBelow`), and
+  the route starts on top of the slab (`BotPath`). This was not new in 1.40: it only shows on maps with slab paths.
+* **Bots crept along a bridge they built at an angle.** The edge safety looked at one point ahead of the middle of
+  the feet; walking the staircase `Bridging` builds diagonally, that point is over the void at nearly every step. A
+  spot now holds when a corner of the 0.6 wide feet is still on the ground (`core/ai/Footing`, 0.05 short of slipping).
+
 ## 1.40.0
 
 ### Added
