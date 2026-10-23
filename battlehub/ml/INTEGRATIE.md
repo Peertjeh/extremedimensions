@@ -1,117 +1,87 @@
-# Het gevechtsmodel in de mod inbouwen
+# Het gevechtsmodel in de mod
 
-Deze handleiding beschrijft wat er moet gebeuren om het getrainde model in BattleHub te laten vechten, en wat je zelf
-moet beslissen of doen. Alles wat al klaar is staat in `battlehub/ml`; de stappen hieronder gaan over de mod
-(`battlehub/src`).
+Hoe het geleerde gevecht in BattleHub zit (stand van 1.38, spec v2 met actiemaskers), en wat je moet doen als je opnieuw
+traint of de spec verandert. De simulatie en de training staan in `battlehub/ml`, de mod in `battlehub/src`.
 
-## Hoe het straks werkt
+## Hoe het werkt
 
 ```
-BotBrain.melee()                      (elke tick, bestaat al)
-  Perception  ->  Situation           (wat de bot weet, bestaat al)
+BotBrain.melee()                         elke tick
+  Perception  ->  Situation              wat de bot weet (zicht, gehoor, geheugen)
   CombatMind.tick(s)
-     Decider kiest een tactiek        (gescript, bestaat al: vechten, helen, doel van de game)
-     tactiek is vechten en er is geen doel?
-        ja  -> LearnedCombat.act(...) (nieuw)  -> Intent
-        nee -> CombatSteering.steer   (zoals nu)  -> Intent
-  execute(Intent)                     (bestaat al: invoer, kruisdraadcontrole, randveiligheid)
+     Decider kiest een tactiek           gescript: vechten, helen, schieten, het doel van de game
+     de controller mag beslissen?
+        ja  -> LearnedFight.act(...)     model v2 (of LearnedMelee: v1 in sword en boxing)  -> Intent
+        nee -> CombatSteering.steer      gescript  -> Intent
+  execute(Intent)                        invoer, kruisdraadcontrole, randveiligheid, hand en rechtermuisknop
 ```
 
-`LearnedCombat` doet elke 2 ticks dit:
-1. Bouw een `CombatState` uit wat de bot weet (velden hieronder).
-2. Reken de 43 observaties uit, met precies dezelfde formules als `ml/pvp_sim/obs.py`.
-3. Laat het model de logits geven (26 getallen) en kies per actiekop de hoogste. Op lage niveaus wordt er geloot.
-4. Zet de actie om in een `Intent`: vooruit/strafe/sprint/sprong, een kijkpunt (huidige yaw/pitch plus de draai) en
-   slaan.
+Elke 2 ticks doet `LearnedFight` dit:
+1. `FightState.build` maakt een `CombatState` uit wat de bot weet: kit en effecten, wat hij bij zich heeft en vasthoudt,
+   het doelwit zoals waargenomen (op lage niveaus een paar ticks vertraagd), een tweede vijand, een projectiel op hem af,
+   en het terrein in 8 richtingen (`TerrainRays` over `WorldColumns`).
+2. `CombatObservation.build` rekent de 118 observaties uit, met precies dezelfde formules als `ml/pvp_sim2/obs.py`.
+3. Het model (ONNX Runtime) geeft 38 logits: 9 koppen (vooruit, opzij, springen, sprinten, slaan, draaien, kijken, hand,
+   rechtermuisknop).
+4. `CombatMasks` zet wat niet mag op min oneindig: geen hand die de bot niet bij zich heeft, geen eten bij volle honger,
+   geen rechtermuisknop als er niets te gebruiken is (`ml/spec/combat_v2_masks.json`).
+5. Per kop de hoogste toegestane logit, of op lage niveaus een trekking (`CombatAction.best` en `sample` met masker).
+6. De actie geldt 2 ticks: slaan in de eerste tick, de draai verdeeld over beide. Hand en rechtermuisknop alleen bij een
+   model met de vlag "items" en `bots.learnedItems` aan; anders eet, schiet en gooit de bot met zijn eigen regels en mag
+   het model alleen het schild opsteken.
 
-De strategie blijft gescript: looten, bedden, bruggen en helen kiest de `Decider` zoals nu. Het model neemt alleen
-het gevecht over. Daarom werkt het straks in elke game zonder per game iets te veranderen.
+De strategie blijft gescript: looten, bedden, bruggen en de goal. Het model neemt alleen het gevecht over. Met een doel
+vecht het alleen binnen 8 blokken.
 
-## Eerst een keuze: hoe het model rekent
+## Bestanden
 
-| | ONNX Runtime for Java | Eigen Java-code (aanbevolen) |
+| Bestand | Waar | Wat |
 |---|---|---|
-| Wat | De officiële bibliotheek leest het `.onnx`-bestand | Het netwerk (43 → 128 → 128 → 26, tanh) in ~60 regels Java; de gewichten worden naast de `.onnx` geëxporteerd |
-| Grootte mod-jar | +51 MB (native libraries voor Windows, Linux en macOS) | +ongeveer 100 KB per model |
-| Native code | Ja, uitgepakt bij het starten | Nee |
-| Zekerheid | Leest elk ONNX-model | Een test vergelijkt de Java-uitkomst met ONNX Runtime (alleen in de test, niet in de mod) |
-| Later grotere modellen | Zonder codewijziging | Alleen zolang het een gewoon MLP blijft |
+| `ml/spec/combat_v2.json` | gekopieerd naar `assets/battlehub/ml` | de spec: observaties, schalen, acties (sha256 in elk model) |
+| `ml/spec/combat_v2_masks.json` | idem | de maskers, aan de sha van de spec gebonden |
+| `ml/spec/combat_v2_ranges.json`, `lessons.json` | idem | wat het model in training zag, en wat het moet oefenen (modelrapporten) |
+| `combat_v2_<niveau>.onnx`, `difficulties_v2.json` | `src/main/resources/assets/battlehub/ml` | één model per niveau en de extra's per niveau |
+| `ml/spec/combat_v2_golden.json`, `combat_v2_masks_golden.json` | testresource | golden-gevallen voor de Java-tests |
 
-Bij een netwerk van deze grootte kost een beslissing in Java minder dan 0,05 ms, dus snelheid maakt geen verschil.
-De vraag is vooral of 51 MB extra in de mod-jar acceptabel is. Kies je ONNX Runtime, dan blijft de rest van de
-stappen gelijk; alleen stap 4 verandert.
+## Wat de tests bewaken
 
-## Stappen
+- `CombatObservationV2Test`: elke observatie van de golden-gevallen op 1e-6, de acties en de terreinstralen, gelijk
+  aan Python.
+- `CombatMasksTest`: het masker en de beste toegestane keuze van 211 gevallen gelijk aan Python, ook aan de randen
+  (volle honger, een schild met cooldown, niets bij zich); trekken kiest nooit iets wat niet mag.
+- `CombatModelsTest`: de meegeleverde modellen geven in ONNX Runtime wat PyTorch gaf.
+- `DecisionTimerTest`: de tijdmeting per beslissing.
+- Python: `test_golden2.py` en `test_masks.py` controleren dezelfde bestanden vanaf de kant van de simulatie.
 
-### 1. Eén bron voor de spec
-- Laat Gradle `ml/spec/combat_v1.json` meekopiëren naar `assets/battlehub/ml/` in de mod (een `processResources`-
-  regel), zodat er nooit twee versies van de spec bestaan.
-- Kopieer de gekozen modellen (`combat_v1_<niveau>.onnx`, of de gewichten-bestanden) en `difficulties.json` uit de
-  league-map naar `src/main/resources/assets/battlehub/ml/`.
+## Wat een beslissing kost
 
-### 2. Pure Java: `net.battlehub.core.ml` (geen Minecraft, testbaar met JUnit)
-- `CombatSpec`: leest de JSON (namen, schalen, afkapping, actiewaarden, sha256).
-- `CombatState`: een record met precies de velden van `ml/pvp_sim/obs.py` (`self_x` ... `walls`).
-- `CombatObservation.build(CombatState)`: de 43 getallen. Let op de hoekafspraken van Minecraft: yaw 0 kijkt naar +z,
-  links draaien verlaagt de yaw, pitch positief kijkt omlaag. "Links" is `(cos yaw, sin yaw)`.
-- `CombatAction.decode(logits)`: per kop de hoogste logit (of loten met een temperatuur) naar de waarden uit de spec.
-- **De test die alles bewaakt:** `CombatObservationTest` leest `ml/spec/combat_v1_golden.json` (via een
-  Gradle-testresource), rekent elke toestand na en vergelijkt op 1e-6; ook de 64 acties. Hij controleert ook dat de
-  sha256 in het gouden bestand die van de meegekopieerde spec is. Verandert iemand de spec aan één kant, dan faalt
-  deze test (of de Python-test).
+`/battlehub bots inspect <bot>` toont het gemiddelde, de p99 en het maximum per beslissing over alle bots, en hoeveel
+daarvan de maskers kosten. De zelftest van het v2-bijlduel zet dezelfde regel in de log. De gemeten waarden staan in
+`PLAN.md` onder ML fase 3.
 
-### 3. Waar de velden vandaan komen (in `Perception`)
-| Veld | In de mod |
-|---|---|
-| eigen positie, snelheid, yaw, pitch | `bot.getX()`, `getDeltaMovement()`, `getYRot()`, `getXRot()` |
-| op de grond, sprinten | `onGround()`, `isSprinting()` |
-| aanvalskracht | `bot.getAttackStrengthScale(0.5f)` (gebruikt `Perception` al) |
-| beschermingsticks | `bot.hurtTime` (10 na een volle treffer, telt af; komt overeen met de simulatie) |
-| health | `getHealth()`, `getMaxHealth()` |
-| positie tegenstander | de laatst bekende plek uit `Track` (zoals nu) |
-| zichtbaar | `Known.seen()` (zelfde regels als de simulatie: 65 graden, hoofd/midden/voeten) |
-| snelheid, grond, sprint, health, `hurtTime` van de tegenstander | alleen als zichtbaar (de formules maskeren de rest) |
-| ticks sinds hij sloeg | `BotBrain` ziet al een slag aan de daling van zijn aanvalskracht; bijhouden per doel |
-| randen (8) | nieuw: grond voor een afgrond, in de eigen richtingen van de bot (0 = vooruit, tegen de klok in per 45 graden), max 4 |
-| muren (8) | nieuw: vrije ruimte op lichaamshoogte in dezelfde richtingen, max 4 |
+## Opnieuw trainen
 
-### 4. `net.battlehub.bot.LearnedCombat`
-- Laadt per moeilijkheidsgraad het model uit `difficulties.json` (eigen Java-code: de gewichten; of ONNX Runtime: een
-  `OrtSession` per model, één keer geladen).
-- Beslist elke 2 ticks en houdt de actie 2 ticks vast; slaan alleen in de eerste tick, draaien verdeeld over beide.
-- Voegt per niveau toe wat `difficulties.json` zegt: extra waarnemingsvertraging (de tegenstander zoals hij k ticks
-  eerder was, uit `Track`), mikruis per tick, een maximale draai per beslissing, en loten in plaats van de beste actie.
-- Controleert bij het laden de metadata (`spec_sha256`): een model voor een andere spec wordt niet gebruikt en de bot
-  valt terug op de gescripte besturing, met een melding in de log.
+```
+cd battlehub/ml
+pip install -r requirements-sim.txt -r requirements-train.txt
+python tools/make_bc_data.py --model <checkpoint> --out bc.npz                 # wat de leraar met zijn spullen doet
+python train/bc.py --data bc.npz --init <checkpoint> --out runs/bc --epochs2 0 # nadoen: alleen hand en use
+python train/selfplay2.py --run runs/v3a --init runs/bc/ckpt_bc.zip --pool-from runs/v2 --masks --extra-items 1.0 \
+    --scripted-latch --bc-data bc.npz --bc-weight 0.5 --bc-decay 8000000 --steps 20000000
+python train/eval2.py runs/v3a/ckpt_020000000.zip                              # winst en spullen per gevecht
+python train/league2.py --versus runs/v3a/ckpt_020000000.zip <master> --episodes 120
+python train/league2.py runs/v3a --include <checkpoints van de huidige niveaus> --items-from runs/v3a \
+    --levels master --keep ../src/main/resources/assets/battlehub/ml/difficulties_v2.json --out league_v3a
+```
 
-### 5. De naad in `CombatMind`
-- Een interface `MeleeController` met `Intent act(Situation, CombatState, Track, Difficulty)`.
-- In `CombatMind.tick`: is de gekozen tactiek APPROACH, STRIKE, SPACE of RETREAT, is er geen doel (`s.goal() == null`)
-  en staat het model aan voor deze game, dan levert `LearnedCombat` de `Intent`; anders `CombatSteering` zoals nu.
-  Reactietijd bij een nieuw doel, helen, randveiligheid (`keepSafe`, `recover`) en de kruisdraadcontrole bij het slaan
-  blijven werken zoals nu.
+Daarna de `.onnx`-bestanden en `difficulties_v2.json` uit de league-map naar `src/main/resources/assets/battlehub/ml/`.
+Een model met de vlag "items" kiest zijn spullen zelf (met `bots.learnedItems`); andere modellen laten de spullen aan de
+regels van de bot.
 
-### 6. Configuratie
-- `bots.learnedCombat`: `off` (zoals nu), `practice` (alleen practice-duels) of `all`.
-- `bots.learnedModes`: in welke games, voorlopig `["sword", "boxing"]`. Sumo pas na fase 1b (randen in de training).
+## Als je de spec verandert
 
-### 7. Testen in de echte server
-- JUnit: de gouden test (stap 2), het laden van de modellen en de metadata-check.
-- Zelftest: een practice-duel tegen het model raakt een stilstaande A en wint; tegen de gescripte bot een paar
-  potjes met de score in de log; geen vallen bij randen.
-
-## Wat jij moet doen of beslissen
-1. **Kies hoe het model rekent:** ONNX Runtime (+51 MB) of eigen Java-code (aanbevolen).
-2. **Zeg of ik stap 6 en 7 mag bouwen** (ik volg deze handleiding), of dat je het zelf wilt doen.
-3. **Speel tegen de bot zodra hij in de mod zit** en vertel wat er raar voelt. De simulatie benadert Minecraft;
-   verschillen (knockback-gevoel, randen, dekking) zie je pas in het echt en kunnen terug de training in.
-4. **Opnieuw trainen** kan altijd, ook op je eigen pc (een GPU is niet nodig):
-   ```
-   cd battlehub/ml
-   pip install -r requirements-sim.txt -r requirements-train.txt
-   python train/selfplay.py --run runs/sword --steps 30000000     # hervat met --resume
-   python train/league.py runs/sword --out league                 # Elo-ranglijst, niveaus, ONNX-export
-   ```
-   Daarna de bestanden uit `league/` naar `src/main/resources/assets/battlehub/ml/` kopiëren.
-5. **Verander je de observaties of acties,** dan: `version` in de spec verhogen, `python tools/make_golden.py`
-   draaien, opnieuw trainen, en de Java-kant bijwerken tot de gouden test weer slaagt.
+1. `version` in de spec ophogen; de maskers en ranges horen bij de sha, dus die bestanden ook opnieuw maken
+   (`tools/make_ranges.py`, en de `spec_sha256` in `combat_v2_masks.json` nalopen).
+2. `python tools/make_golden2.py`: schrijft beide golden-bestanden.
+3. Opnieuw trainen en exporteren.
+4. De Java-kant bijwerken tot de golden-tests weer slagen.

@@ -4,3 +4,4 @@ stable-baselines3>=2.4
 onnx>=1.16
 onnxruntime>=1.18
 onnxscript>=0.1
+sb3-contrib>=2.4

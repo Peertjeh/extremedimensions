@@ -729,6 +729,10 @@ public final class Bots {
 		if (b.brain.mind().learnedTicks() > 0) {
 			net.battlehub.match.Match lm = Matches.of(b.getUUID());
 			out.add("learned combat (" + (LearnedFight.active(lm) ? "v2" : "v1") + "): steered " + b.brain.mind().learnedTicks() + " ticks");
+			if (LearnedFight.active(lm)) {
+				out.add("learned decisions: " + LearnedFight.timing());
+				out.add("learned items: " + b.brain.learnedUses() + " used, " + b.brain.learnedMissing() + " chosen but not in the hotbar");
+			}
 		}
 		net.battlehub.core.ml.ModelReport r = b.brain.report();
 		if (r.ticks() > 0) {
@@ -755,6 +759,16 @@ public final class Bots {
 					Math.hypot(g.point().x() - b.getX(), g.point().z() - b.getZ())) + (b.brain.placed() > 0 ? ", placed " + b.brain.placed() + " blocks" : ""));
 		}
 		return out;
+	}
+
+	/** Items this bot's model started to use, and hands it chose the bot could not take in hand (self-test). */
+	public static int[] learnedItems(BotPlayer b) {
+		return new int[] {b.brain.learnedUses(), b.brain.learnedMissing()};
+	}
+
+	/** What a learned v2 decision costs the tick, over all bots (self-test). */
+	public static String learnedTiming() {
+		return LearnedFight.timing();
 	}
 
 	/** Ticks the learned combat model steered this bot (self-test). */

@@ -2,6 +2,10 @@
 what they decode to, and small heightmaps with the terrain rays they must give. The mod's JUnit test computes the same
 in Java (net.battlehub.core.ml: CombatObservation, CombatAction, TerrainRays) and must match.
 
+Also ml/spec/combat_v2_masks_golden.json: observations (the golden cases' and some at the edges of the item rules)
+with the action masks they must give (spec/combat_v2_masks.json) and, for given logits, the best allowed choice per
+head; the mod's CombatMasks must give the same.
+
     python tools/make_golden2.py          # write the file
     python tools/make_golden2.py --check  # fail when the file is not what the spec gives now
 """
@@ -19,6 +23,7 @@ from pvp_sim2.spec import SPEC2  # noqa: E402
 from pvp_sim2.terrain import Terrain  # noqa: E402
 
 OUT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "spec", "combat_v2_golden.json"))
+OUT_MASKS = os.path.join(os.path.dirname(OUT), "combat_v2_masks_golden.json")
 
 
 def states(n=150, seed=20261022):
@@ -145,6 +150,33 @@ def build():
             "tolerance": 1e-6, "cases": cases, "actions": actions, "terrain": heightmaps()}
 
 
+def masks_golden(obs):
+    """The golden cases' observations and copies of 60 of them with the item values at the edges of the rules (none,
+    one, full hunger, a shield with and without its cooldown), plus one with nothing at all; with random logits."""
+    import hashlib
+    from pvp_sim2.masks import MASKS2, MASKS2_PATH
+    sp = SPEC2
+    rng = np.random.default_rng(31)
+    edge = obs[:60].copy()
+    choices = {"self_arrows": [0.0, 1 / 16, 1.0], "self_food_items": [0.0, 0.125, 1.0], "self_food": [0.0, 0.95, 1.0, 1.0],
+               "self_gapples": [0.0, 0.25], "self_pearls": [0.0, 0.25, 1.0], "self_winds": [0.0, 0.125],
+               "self_shield": [0.0, 1.0], "shield_cooldown": [0.0, 0.0, 0.01, 1.0]}
+    for name, vals in choices.items():
+        edge[:, sp.index(name)] = rng.choice(vals, edge.shape[0])
+    nothing = obs[:1].copy()
+    for name in choices:
+        nothing[:, sp.index(name)] = 1.0 if name == "self_food" else 0.0
+    all_obs = np.concatenate([obs, edge, nothing]).astype(np.float32)
+    logits = np.round(rng.normal(0, 2, (all_obs.shape[0], int(sp.action_nvec.sum()))), 4)
+    mask = MASKS2(all_obs)
+    best = MASKS2.best(logits, mask)
+    with open(MASKS2_PATH, "rb") as f:
+        masks_sha = hashlib.sha256(f.read()).hexdigest()
+    cases = [{"observation": [float(v) for v in all_obs[i]], "mask": "".join("1" if m else "0" for m in mask[i]),
+              "logits": [float(v) for v in logits[i]], "best": [int(v) for v in best[i]]} for i in range(all_obs.shape[0])]
+    return {"spec": sp.name, "spec_sha256": sp.sha256, "masks_sha256": masks_sha, "cases": cases}
+
+
 def dump(data):
     """One case, action or map per line."""
     lines = ["{"]
@@ -152,7 +184,7 @@ def dump(data):
     for n, k in enumerate(keys):
         end = "," if n < len(keys) - 1 else ""
         v = data[k]
-        if k in ("cases", "actions", "terrain"):
+        if k in ("cases", "actions", "terrain") and isinstance(v, list):
             lines.append('  "%s": [' % k)
             lines += ["    " + json.dumps(e, separators=(",", ":")) + ("," if i < len(v) - 1 else "") for i, e in enumerate(v)]
             lines.append("  ]" + end)
@@ -175,10 +207,20 @@ def main():
         if json.dumps(old["terrain"]) != json.dumps(data["terrain"]):
             sys.exit("golden terrain rays differ from the simulation: run tools/make_golden2.py")
         print("golden file is up to date (%d cases, %d actions, %d maps)" % (len(old["cases"]), len(old["actions"]), len(old["terrain"])))
+        with open(OUT_MASKS, encoding="utf-8") as f:
+            old_m = json.load(f)
+        new_m = masks_golden(np.array([c["observation"] for c in data["cases"]]))
+        if json.dumps(old_m, sort_keys=True) != json.dumps(json.loads(dump(new_m)), sort_keys=True):
+            sys.exit("golden masks differ from spec/combat_v2_masks.json: run tools/make_golden2.py")
+        print("golden masks are up to date (%d cases)" % len(old_m["cases"]))
         return
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(dump(data))
     print("wrote", OUT, len(data["cases"]), "cases")
+    masks = masks_golden(np.array([c["observation"] for c in data["cases"]]))
+    with open(OUT_MASKS, "w", encoding="utf-8") as f:
+        f.write(dump(masks))
+    print("wrote", OUT_MASKS, len(masks["cases"]), "cases")
 
 
 if __name__ == "__main__":

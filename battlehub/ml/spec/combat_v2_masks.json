@@ -1,0 +1,23 @@
+{
+ "name": "battlehub-combat-masks",
+ "version": 1,
+ "spec": "combat_v2",
+ "spec_version": 2,
+ "spec_sha256": "4ef935b80bcf0870ddf25dc32b6a8b79d9dd17ec32baeb51e4e039b68b2ddb87",
+ "doc": "Which choices of an action head a fighter may make, from its observation alone (the values as the model takes them: scaled and clipped). A choice listed here is allowed when any of its alternatives holds, an alternative being a list of conditions that must all hold; a choice not listed is always allowed. The training (ml/pvp_sim2/masks.py, MaskablePPO), the evaluation and the mod (core/ml/CombatMasks, bot/LearnedFight) set the logits of a choice that is not allowed to minus infinity before choosing. So choosing something the fighter does not carry is no longer a choice that does nothing. Every head keeps at least one choice that is always allowed (the weapon, not using).",
+ "rules": [
+  {"head": "hand", "choice": 1, "name": "bow", "any": [[["self_arrows", ">", 0]]]},
+  {"head": "hand", "choice": 2, "name": "food", "any": [[["self_food_items", ">", 0], ["self_food", "<", 1]]]},
+  {"head": "hand", "choice": 3, "name": "gapple", "any": [[["self_gapples", ">", 0]]]},
+  {"head": "hand", "choice": 4, "name": "pearl", "any": [[["self_pearls", ">", 0]]]},
+  {"head": "hand", "choice": 5, "name": "wind", "any": [[["self_winds", ">", 0]]]},
+  {"head": "use", "choice": 1, "name": "use", "any": [
+   [["self_arrows", ">", 0]],
+   [["self_food_items", ">", 0], ["self_food", "<", 1]],
+   [["self_gapples", ">", 0]],
+   [["self_pearls", ">", 0]],
+   [["self_winds", ">", 0]],
+   [["self_shield", ">", 0.5], ["shield_cooldown", "<=", 0]]
+  ]}
+ ]
+}

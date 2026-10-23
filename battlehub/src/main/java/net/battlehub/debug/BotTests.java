@@ -76,6 +76,7 @@ final class BotTests {
 		learnedV2Sword(server, s);
 		learnedV2Bridge(server, s);
 		learnedV2Team(server, s);
+		learnedV2Items(server, s);
 		practiceBow(server, s);
 		queueFill(server, s);
 		partyFill(server, s);
@@ -178,6 +179,7 @@ final class BotTests {
 			BotPlayer b = botsIn(m).get(0);
 			if (v2Steered(b, 40) && p(A).getHealth() < p(A).getMaxHealth()) {
 				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v2 axe: {} | {}", p(A).getHealth(), String.join(" | ", Bots.inspect(b)));
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned decision cost: {}", Bots.learnedTiming());
 				VARS.put("v2AxeBot", b.getGameProfile().name());
 				return true;
 			}
@@ -300,6 +302,68 @@ final class BotTests {
 		});
 		endAndClean(s, tag);
 		s.run(tag + ": learned combat off again", () -> cfg().learnedCombat = false);
+	}
+
+	/**
+	 * Model v2 with its items (bots.learnedItems) in a Build UHC duel: the bot, hurt and next to A, eats (by its model's
+	 * choice or its own rules) and its model never chooses a hand the bot cannot take (the masks count the hotbar).
+	 */
+	private static void learnedV2Items(MinecraftServer server, Script s) {
+		String tag = "bots learned v2 items";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": model v2 with its items; A starts a Build UHC practice duel against a master bot", () -> {
+			learnedV2On();
+			cfg().learnedItems = true;
+			SelfTest.join(server, A);
+			Bots.practice(p(A), GameMode.BUILD_UHC, net.battlehub.core.ai.Difficulty.MASTER);
+		});
+		s.waitFor(tag + ": the duel runs with one bot", 600, () -> {
+			Match m = matchOfA();
+			return m != null && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
+		});
+		s.run(tag + ": the bot is hurt (5 health) and A stands three blocks in front of it", () -> {
+			Match m = matchOfA();
+			BotPlayer b = botsIn(m).get(0);
+			b.setHealth(5f);
+			VARS.put("itemsFood", foodOf(b));
+			// A takes no damage, so the fight goes on until the bot has eaten
+			net.battlehub.util.Ids.effect("minecraft:resistance").ifPresent(h -> p(A).addEffect(
+					new net.minecraft.world.effect.MobEffectInstance(h, 1200, 4, false, false, false)));
+			Vec3 look = b.getLookAngle();
+			double ln = Math.max(1e-6, Math.hypot(look.x, look.z));
+			PartyTests.tp(p(A), b.getX() + look.x / ln * 3, b.getY(), b.getZ() + look.z / ln * 3);
+		});
+		s.waitFor(tag + ": the bot eats, and its model chose no hand it cannot take", 900, () -> {
+			Match m = matchOfA();
+			if (m == null || m.phase() != Match.Phase.RUNNING || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			int[] items = Bots.learnedItems(b);
+			boolean ate = foodOf(b) < (int) VARS.get("itemsFood") || b.getAbsorptionAmount() > 0;
+			if (ate && v2Steered(b, 10)) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v2 items: model used {} items, {} hands not in the hotbar | {}", items[0], items[1],
+						String.join(" | ", Bots.inspect(b)));
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned decision cost: {}", Bots.learnedTiming());
+				return items[1] == 0;
+			}
+			logBot("learned v2 items bot", m, b, "learnedV2ItemsLogged");
+			return false;
+		});
+		endAndClean(s, tag);
+		s.run(tag + ": items and learned combat off again; A loses the resistance", () -> {
+			cfg().learnedItems = new net.battlehub.config.HubConfig.Bots().learnedItems;
+			cfg().learnedCombat = false;
+			if (p(A) != null) p(A).removeAllEffects();
+		});
+	}
+
+	/** Golden apples and food in a player's inventory. */
+	private static int foodOf(BotPlayer b) {
+		int n = 0;
+		for (int i = 0; i < b.getInventory().getContainerSize(); i++) {
+			net.minecraft.world.item.ItemStack st = b.getInventory().getItem(i);
+			if (!st.isEmpty() && st.has(net.minecraft.core.component.DataComponents.FOOD)) n += st.getCount();
+		}
+		return n;
 	}
 
 	/** Model v2 for two bots against A (1v2): both fight with it, and A, standing still, loses. */

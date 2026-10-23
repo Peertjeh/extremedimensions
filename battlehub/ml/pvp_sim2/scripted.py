@@ -3,7 +3,10 @@
   Scripted2  v1's scripted bot (turn to the chest, sprint in, strafe, swing charged, back off when too close) with what
              the modes add: it keeps off drops and the void, shoots its bow from afar (leading the pitch for the drop of
              the arrow), eats a golden apple or food when hurt, holds its shield up now and then when the target is
-             charged and close, throws a pearl at a far target, and with a mace sends itself up with a wind charge;
+             charged and close, throws a pearl at a far target, and with a mace sends itself up with a wind charge.
+             With latch=True (the teacher for behavior cloning, train/bc.py) it keeps a pearl or wind charge in hand
+             until it is thrown, aiming first: without it, switching to one costs the charge the wind charge rule
+             asks for and the pearl's chance must come up twice in a row, so it hardly ever throws either;
   Random2    random actions;
   Dummy2     walks about without swinging, and stays on its ground.
 """
@@ -17,9 +20,10 @@ WEAPON, BOW, FOOD, GAPPLE, PEARL, WIND = range(6)
 
 
 class Scripted2:
-    def __init__(self, skill=0.7, seed=None, spec=SPEC2):
+    def __init__(self, skill=0.7, seed=None, spec=SPEC2, latch=False):
         self.skill = skill
         self.spec = spec
+        self.latch = latch
         self.rng = np.random.default_rng(seed)
         self.strafe = None
         self.block = None
@@ -48,13 +52,20 @@ class Scripted2:
         want = np.where(bow_ok, BOW, want)
         hurt = (health < 0.45) & (dist > 3.5)
         want = np.where(hurt & (g("self_gapples") > 0), GAPPLE, np.where(hurt & (g("self_food_items") > 0) & (g("self_food") < 20), FOOD, want))
-        pearl = (g("self_pearls") > 0) & (dist > 18) & visible & (g("pearl_cooldown") <= 0) & (rng.random(m) < 0.05)
+        # the teacher (latch) goes for the throw more often: it is there to show it
+        pearl = (g("self_pearls") > 0) & (dist > 18) & visible & (g("pearl_cooldown") <= 0) & (rng.random(m) < (0.25 if self.latch else 0.05))
         want = np.where(pearl, PEARL, want)
         launch = (g("self_winds") > 0) & (g("self_cooldown") > 30) & (dist < 4) & (charge > 0.9) & (g("self_ground") > 0.5) & (rng.random(m) < 0.15)
         want = np.where(launch, WIND, want)
         # keep eating or drawing what was started
         busy = ((hand == FOOD) | (hand == GAPPLE) | (hand == BOW)) & (use_ticks > 0)
         want = np.where(busy, hand, want)
+        if self.latch:
+            # what it holds to throw it stays in hand until thrown, while the reason still holds (all from the
+            # observation: the same bot plays several slots); a pearl it decided on goes before a drawn bow
+            keep_pearl = (hand == PEARL) & (g("self_pearls") > 0) & (g("pearl_cooldown") <= 0) & visible & (dist > 12)
+            keep_wind = (hand == WIND) & (g("self_winds") > 0) & (g("wind_cooldown") <= 0) & (dist < 6) & (g("self_ground") > 0.5)
+            want = np.where(pearl | keep_pearl, PEARL, np.where(keep_wind, WIND, want))
         # aim
         yaw = angle * (0.6 + 0.35 * sk) + rng.normal(size=m) * (1 - sk) * 6
         pitch = g("aim_pitch") * 0.7
@@ -62,6 +73,8 @@ class Scripted2:
         pitch = np.where(hand == BOW, g("aim_pitch") + lead, pitch)
         pitch = np.where(want == PEARL, g("aim_pitch") - 6 - dist * 0.6, pitch)
         pitch = np.where(want == WIND, 90.0, pitch)
+        # my own pitch, from the target's: the pitch to its chest minus what is left to turn (positive: down)
+        my_pitch = np.degrees(np.arctan2(sp.eye_height - (g("opp_up") + sp.chest_height), np.maximum(dist, 0.3))) - g("aim_pitch")
         # movement
         forward = np.where(dist > reach - 0.3, 1.0, np.where(dist < 1.3, -1.0, np.where(rng.random(m) < 0.5, 1.0, 0.0)))
         forward = np.where(hand == BOW, 0.0, forward)
@@ -89,7 +102,11 @@ class Scripted2:
         use = np.zeros(m, dtype=bool)
         use |= (hand == BOW) & (want == BOW) & ~draw_done
         use |= ((hand == FOOD) | (hand == GAPPLE)) & (want == hand)
-        use |= (hand == want) & ((want == PEARL) | (want == WIND)) & (use_ticks <= 0) & (rng.random(m) < 0.5)
+        if self.latch:
+            use |= (hand == PEARL) & (want == PEARL) & (np.abs(pitch) < 5) & (np.abs(angle) < 8)
+            use |= (hand == WIND) & (want == WIND) & (my_pitch > 55)
+        else:
+            use |= (hand == want) & ((want == PEARL) | (want == WIND)) & (use_ticks <= 0) & (rng.random(m) < 0.5)
         shield = (g("self_shield") > 0.5) & (g("shield_cooldown") <= 0) & (hand == WEAPON)
         self.block = np.where(shield & (dist < 3.5) & visible & (g("opp_since_swing") > 10) & (charge < 0.6) & (rng.random(m) < 0.15 * sk), 8, np.maximum(0, self.block - 1))
         use |= shield & (self.block > 0)

@@ -14,8 +14,16 @@ A follow-up run (--init <checkpoint>) starts from a trained policy with every sc
 exploration, for learning to use them. --focus <ml_feedback.json> (written by the mod after matches with learned
 bots) deals more of what they lacked there: the lessons of the model reports (train/focus.py).
 
+Learning items (phase 3A): --masks trains with MaskablePPO (sb3-contrib) and the action masks of
+spec/combat_v2_masks.json, for the learner and its frozen opponents alike; --extra-items gives everyone more items in
+that share of the loot and shop arenas; --scripted-latch makes the scripted opponents throw pearls and wind charges;
+--bc-data adds a copying term (train/bc.py: the teacher's item choices and its aim) after every PPO update, its weight
+falling from --bc-weight to 0 over --bc-decay steps.
+
     python train/selfplay2.py --run runs/v2 --steps 60000000
     python train/selfplay2.py --run runs/v2items --init runs/v2/ckpt_060000000.zip --pool-from runs/v2 --items --ent 0.02 --steps 20000000
+    python train/selfplay2.py --run runs/v3a --init runs/v2bc/ckpt_bc.zip --pool-from runs/v2 --masks --extra-items 1.0 \
+        --scripted-latch --bc-data bc.npz --bc-weight 0.5 --bc-decay 8000000 --steps 20000000
 """
 import argparse
 import glob
@@ -41,9 +49,9 @@ ITEM_FAMILIES = {"sword": 0.6, "axe": 0.8, "mace": 0.8, "bow": 1.2, "koth": 0.2,
                  "boxing": 0.1, "build_uhc": 1.2, "sumo": 0.2, "bedwars": 1.0, "loot": 1.5}
 
 
-def worker(conn, n, seed, max_ticks, items=False, lessons=None):
+def worker(conn, n, seed, max_ticks, items=False, lessons=None, extra_items=0.0):
     from pvp_sim2.env import Scenario
-    sc = Scenario()
+    sc = Scenario(extra_items=extra_items)
     if items:
         sc.families = dict(ITEM_FAMILIES)
     if lessons:
@@ -85,14 +93,22 @@ class Curriculum:
 # ---------------------------------------------------------------------------------------------- opponents
 
 class FrozenPolicy:
-    def __init__(self, policy, steps):
+    """An earlier version of the learner as an opponent; with masks it samples among the allowed choices only."""
+
+    def __init__(self, policy, steps, masks=False):
         import torch
         self.torch = torch
         self.policy = policy
         self.steps = steps
+        self.masks = masks
         self.policy.set_training_mode(False)
+        if masks:
+            from train.policies import Chooser
+            self.chooser = Chooser(policy, masks=True, deterministic=False, seed=int(steps) % (1 << 30))
 
     def __call__(self, obs, deterministic=False):
+        if self.masks and not deterministic:
+            return self.chooser(obs)
         with self.torch.no_grad():
             t = self.torch.as_tensor(np.asarray(obs, dtype=np.float32))
             return self.policy._predict(t, deterministic=deterministic).cpu().numpy()
@@ -104,13 +120,13 @@ class OpponentPool2:
     START = {"pool": 0.0, "random": 0.2, "dummy": 0.5}
     END = {"pool": 0.5, "random": 0.04, "dummy": 0.08}
 
-    def __init__(self, rng, curriculum, max_size=24, newest_share=0.5):
+    def __init__(self, rng, curriculum, max_size=24, newest_share=0.5, latch=False):
         self.rng = rng
         self.cur = curriculum
         self.frozen = []
         self.max_size = max_size
         self.newest_share = newest_share
-        self.scripted = Scripted2(seed=int(rng.integers(1 << 30)))
+        self.scripted = Scripted2(seed=int(rng.integers(1 << 30)), latch=latch)
         self.random = Random2(seed=int(rng.integers(1 << 30)))
         self.dummy = Dummy2(seed=int(rng.integers(1 << 30)))
 
@@ -153,7 +169,7 @@ class OpponentPool2:
 
 # ---------------------------------------------------------------------------------------------- the VecEnv
 
-def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=None):
+def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=None, extra_items=0.0):
     from gymnasium import spaces
     from stable_baselines3.common.vec_env import VecEnv
 
@@ -163,7 +179,7 @@ def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=N
             self.conns, self.procs = [], []
             for w in range(workers):
                 a, b = ctx.Pipe()
-                p = ctx.Process(target=worker, args=(b, per, seed * 100 + w, max_ticks, items, lessons), daemon=True)
+                p = ctx.Process(target=worker, args=(b, per, seed * 100 + w, max_ticks, items, lessons, extra_items), daemon=True)
                 p.start()
                 self.conns.append(a)
                 self.procs.append(p)
@@ -231,7 +247,15 @@ def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=N
         def set_attr(self, attr_name, value, indices=None):
             setattr(self, attr_name, value)
 
+        def action_masks(self):
+            """The learner's action masks (MaskablePPO): what it may choose now in every arena."""
+            from pvp_sim2.masks import MASKS2
+            return MASKS2(self.obs[:, 0])
+
         def env_method(self, method_name, *args, indices=None, **kwargs):
+            if method_name == "action_masks":
+                m = self.action_masks()
+                return [m[i] for i in self._idx(indices)]
             return [None] * len(self._idx(indices))
 
         def env_is_wrapped(self, wrapper_class, indices=None):
@@ -246,6 +270,72 @@ def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=N
             return [indices] if isinstance(indices, int) else indices
 
     return SelfPlay2VecEnv()
+
+
+# ---------------------------------------------------------------------------------------------- copying next to PPO
+
+class BCTerm:
+    """train/bc.py's copying loss after every PPO update: `steps` minibatches of the teacher's data, weighted from
+    `weight` down to 0 over `decay` steps. mode "kl": instead of the teacher's choices, the KL of hand and use to a
+    reference policy (the copying start), which keeps its item habits without pushing rare items up."""
+
+    def __init__(self, path, weight=0.5, decay=8_000_000, steps=8, batch=4096, start=0, pitch=False, readout=True,
+                 mode="ce", ref=None, aim=False):
+        from train.bc import BCData
+        self.data = BCData(path)
+        self.mode, self.ref, self.aim = mode, ref, aim
+        self.weight0, self.decay, self.steps, self.batch, self.start = weight, decay, steps, batch, start
+        # by default only the hand and use rows of the action layer: a copying term that reaches into the network
+        # (and copies the aim) pulled the fight apart within 2 million steps (43% against the scripted bot, from 77%)
+        self.pitch, self.readout = pitch, readout
+
+    def weight(self, steps):
+        return self.weight0 * max(0.0, 1.0 - (steps - self.start) / max(1, self.decay))
+
+
+_PPO_BC = None
+
+
+def ppo_bc_class():
+    """MaskablePPO with the copying term (the class is made when needed: sb3-contrib is only needed with --masks)."""
+    global _PPO_BC
+    if _PPO_BC is None:
+        import torch
+        from sb3_contrib import MaskablePPO
+        from train.bc import aim_loss, bc_loss, kl_hand_use
+
+        class MaskablePPOBC(MaskablePPO):
+            bc = None
+
+            def _excluded_save_params(self):
+                return super()._excluded_save_params() + ["bc"]
+
+            def train(self):
+                super().train()
+                w = self.bc.weight(self.num_timesteps) if self.bc is not None else 0.0
+                if w <= 0:
+                    return
+                self.policy.set_training_mode(True)
+                losses = []
+                for _ in range(self.bc.steps):
+                    b = self.bc.data.batch(self.bc.batch)
+                    if self.bc.mode == "kl":
+                        loss = w * kl_hand_use(self.policy, self.bc.ref, b, readout=self.bc.readout)
+                        if self.bc.aim:
+                            loss = loss + w * aim_loss(self.policy, self.bc.ref, b)
+                    else:
+                        loss = w * bc_loss(self.policy, b, self.bc.data.hand_weight, pitch=self.bc.pitch, readout=self.bc.readout)
+                    self.policy.optimizer.zero_grad()
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self.max_grad_norm)
+                    self.policy.optimizer.step()
+                    losses.append(float(loss.detach()))
+                self.policy.set_training_mode(False)
+                self.logger.record("train/bc_weight", w)
+                self.logger.record("train/bc_loss", float(np.mean(losses)))
+
+        _PPO_BC = MaskablePPOBC
+    return _PPO_BC
 
 
 # ---------------------------------------------------------------------------------------------- main
@@ -270,7 +360,19 @@ def main():
     ap.add_argument("--items", action="store_true", help="mostly kits with items")
     ap.add_argument("--ent", type=float, default=0.01)
     ap.add_argument("--focus", default=None, help="the mod's ml_feedback.json: deal more of what the bots lacked in its fights")
+    ap.add_argument("--masks", action="store_true", help="MaskablePPO with the action masks (learner and pool)")
+    ap.add_argument("--extra-items", type=float, default=0.0, help="share of loot and shop arenas with extra items")
+    ap.add_argument("--scripted-latch", action="store_true", help="scripted opponents throw pearls and wind charges")
+    ap.add_argument("--bc-data", default=None, help="tools/make_bc_data.py's data: a copying term next to PPO (needs --masks)")
+    ap.add_argument("--bc-weight", type=float, default=0.5)
+    ap.add_argument("--bc-decay", type=int, default=8_000_000)
+    ap.add_argument("--bc-steps", type=int, default=8, help="copying minibatches after every PPO update")
+    ap.add_argument("--bc-full", action="store_true", help="the copying term reaches the whole network and copies the aim")
+    ap.add_argument("--bc-mode", default="ce", choices=["ce", "kl"], help="ce: the teacher's item choices; kl: hand and use near --init")
+    ap.add_argument("--bc-aim", action="store_true", help="with --bc-mode kl: also the teacher's aim with bow and throws (action layer only)")
     a = ap.parse_args()
+    if a.bc_data and not a.masks:
+        sys.exit("--bc-data needs --masks")
     import torch
     from stable_baselines3 import PPO
     from stable_baselines3.common.callbacks import BaseCallback
@@ -280,7 +382,7 @@ def main():
     os.makedirs(a.run, exist_ok=True)
     rng = np.random.default_rng(a.seed)
     cur = Curriculum() if not a.init else Curriculum(warmup=0, widen=1, fade_from=0, fade_to=1)
-    pool = OpponentPool2(rng, cur)
+    pool = OpponentPool2(rng, cur, latch=a.scripted_latch)
     lessons = None
     if a.focus:
         from train.focus import apply, load
@@ -290,30 +392,40 @@ def main():
             print("focus:", note, flush=True)
         if any(x["items"] for x in lessons) and not a.items:
             print("focus: some lessons need the items; add --items to practise them", flush=True)
-    venv = make_vecenv(a.workers, a.per, a.seed, pool, cur, a.max_ticks, a.items, lessons)
+    venv = make_vecenv(a.workers, a.per, a.seed, pool, cur, a.max_ticks, a.items, lessons, a.extra_items)
+    from train.policies import load
     if a.pool_from:
         for path in sorted(glob.glob(os.path.join(a.pool_from, "ckpt_*.zip")))[::2]:
-            m = PPO.load(path, device="cpu")
-            pool.add(FrozenPolicy(m.policy, int(os.path.basename(path)[5:14])))
+            m = load(path)
+            pool.add(FrozenPolicy(m.policy, int(os.path.basename(path)[5:14]), masks=a.masks))
         print("pool from", a.pool_from, len(pool.frozen), flush=True)
+    Algo = ppo_bc_class() if a.masks else PPO
     norm_path = os.path.join(a.run, "vecnormalize.pkl")
     ckpts = sorted(glob.glob(os.path.join(a.run, "ckpt_*.zip")))
     if a.resume and ckpts:
         env = VecNormalize.load(norm_path, venv) if os.path.exists(norm_path) else VecNormalize(venv, norm_obs=False, norm_reward=True)
-        model = PPO.load(ckpts[-1], env=env, device="cpu")
+        model = Algo.load(ckpts[-1], env=env, device="cpu")
         for path in ckpts:
-            m = PPO.load(path, device="cpu")
-            pool.add(FrozenPolicy(m.policy, int(os.path.basename(path)[5:14])))
+            m = load(path)
+            pool.add(FrozenPolicy(m.policy, int(os.path.basename(path)[5:14]), masks=a.masks))
         print("resumed from", ckpts[-1], "at", model.num_timesteps, "steps, pool", len(pool.frozen), flush=True)
     else:
         env = VecNormalize(venv, norm_obs=False, norm_reward=True, gamma=0.99)
-        model = PPO("MlpPolicy", env, n_steps=a.n_steps, batch_size=a.batch, n_epochs=4, learning_rate=3e-4, gamma=0.99,
+        model = Algo("MlpPolicy", env, n_steps=a.n_steps, batch_size=a.batch, n_epochs=4, learning_rate=3e-4, gamma=0.99,
                     gae_lambda=0.95, clip_range=0.2, ent_coef=a.ent, vf_coef=0.5, max_grad_norm=0.5,
                     policy_kwargs=dict(net_arch=dict(pi=[256, 256], vf=[256, 256])), seed=a.seed, device="cpu", verbose=0)
         if a.init:
-            src = PPO.load(a.init, device="cpu")
+            src = load(a.init)
             model.policy.load_state_dict(src.policy.state_dict())
             print("policy from", a.init, flush=True)
+    if a.bc_data:
+        ref = None
+        if a.bc_mode == "kl":
+            ref = load(a.init).policy
+            ref.set_training_mode(False)
+        model.bc = BCTerm(a.bc_data, a.bc_weight, a.bc_decay, a.bc_steps, start=0 if a.resume else model.num_timesteps,
+                          pitch=a.bc_full, readout=not a.bc_full, mode=a.bc_mode, ref=ref, aim=a.bc_aim)
+        print("copying term from", a.bc_data, "weight", a.bc_weight, "to 0 over", a.bc_decay, "steps", flush=True)
     with open(os.path.join(a.run, "config.json"), "w") as f:
         json.dump(vars(a) | {"spec_sha256": SPEC2.sha256}, f, indent=1)
     log_path = os.path.join(a.run, "progress.jsonl")
@@ -338,7 +450,7 @@ def main():
                 self.next_pool += a.pool_every
                 policy = self.model.policy.__class__(self.model.observation_space, self.model.action_space, self.model.lr_schedule, **self.model.policy_kwargs)
                 policy.load_state_dict(self.model.policy.state_dict())
-                pool.add(FrozenPolicy(policy.to("cpu"), steps))
+                pool.add(FrozenPolicy(policy.to("cpu"), steps, masks=a.masks))
             if steps >= self.next_save:
                 self.next_save += a.save_every
                 self.save(steps)
@@ -353,6 +465,7 @@ def main():
             minutes = (time.time() - self.t0) / 60
             row = {"steps": int(steps), "minutes": round(minutes, 1), "fps": round((steps - self.s0) / max(1.0, time.time() - self.t0)),
                    "breadth": round(cur.breadth(), 2), "shaping": round(cur.shaping(), 2), "pool": len(pool.frozen),
+                   "bc_weight": round(model.bc.weight(steps), 3) if getattr(model, "bc", None) is not None else None,
                    "by_opponent": venv.results_by, "scenarios": venv.scenarios}
             with open(log_path, "a") as f:
                 f.write(json.dumps(row) + "\n")

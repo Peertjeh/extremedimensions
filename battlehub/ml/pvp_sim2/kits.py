@@ -226,6 +226,28 @@ FAMILIES = {
 }
 
 
+# where the chests or the shop can give any item: only there Scenario.extra_items deals more of them
+ITEM_KITS = ("loot", "bedwars")
+
+
+def extra_items(k, rng):
+    """More of what chests and the shop can give, on top of a kit, for learning to use items (Scenario.extra_items):
+    a bow with arrows, food, golden apples, pearls, wind charges, a shield, each with its own chance."""
+    if k["bow_power"] < 0 and rng.random() < 0.6:
+        bow(k, int(rng.integers(8, 25)))
+    if rng.random() < 0.7:
+        k["food_items"] = max(k["food_items"], int(rng.integers(4, 17)))
+    if rng.random() < 0.5:
+        k["gapples"] = max(k["gapples"], int(rng.integers(1, 5)))
+    if rng.random() < 0.6:
+        k["pearls"] = max(k["pearls"], int(rng.integers(1, 5)))
+    if rng.random() < 0.4:
+        k["winds"] = max(k["winds"], int(rng.integers(2, 9)))
+    if rng.random() < 0.2:
+        k["shield"] = True
+    return k
+
+
 def deal(family, count, rng, chaos_p=0.0):
     """Kits for `count` fighters of one arena."""
     make, same = FAMILIES[family]

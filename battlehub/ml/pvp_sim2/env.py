@@ -68,6 +68,9 @@ class Scenario:
                                                   "bedwars": ["bridge", "islands"], "loot": ["islands", "town"],
                                                   "mace": ["walled", "hills"], "build_uhc": ["walled", "hills"]})
     paired_share: float = 0.6
+    # share of the arenas with a kit from chests or the shop (kits.ITEM_KITS) in which everyone gets more items on top
+    # (kits.extra_items), for learning to use them; 0 deals the mod's kits only
+    extra_items: float = 0.0
 
 
 def _pick(rng, weights):
@@ -124,7 +127,13 @@ class Batch2:
         self._perceive()
         obs = self.observe()
         self.phi = self.potential(obs)
+        self.last_obs = obs
         return obs
+
+    def action_masks(self, obs=None):
+        """Which choices each fighter may make now (pvp_sim2/masks.py): booleans (n, K, sum of the heads' sizes)."""
+        from .masks import MASKS2
+        return MASKS2(self.last_obs if obs is None else obs)
 
     def _restart(self, idx):
         if idx.size == 0:
@@ -151,6 +160,8 @@ class Batch2:
         mode = "1v1" if count == 2 else (self.fixed.get("mode") or _pick(rng, sc.modes3))
         teams = {"1v1": [0, 1], "1v2": [0, 1, 1], "ffa": [0, 1, 2], "2v1": [0, 1, 0]}[mode]
         kits = K.deal(family, count, rng, chaos_p=sc.chaos * b)
+        if sc.extra_items > 0 and family in K.ITEM_KITS and rng.random() < sc.extra_items:
+            kits = [K.extra_items(dict(k), rng) for k in kits]
         far = family in ("bow", "lms", "ctf", "build_uhc", "ffa")
         for attempt in range(40):
             generate(w.terrain, a, terrain, rng)
@@ -403,6 +414,8 @@ class Batch2:
         landed = np.zeros((self.n, self.k))
         kills = np.zeros((self.n, self.k))
         died = np.zeros((self.n, self.k), dtype=bool)
+        # items over the decision's ticks (the world's flags are per tick)
+        used = {name: np.zeros((self.n, self.k), dtype=np.int64) for name in ("fired", "ate", "threw", "arrow_hit", "pearled")}
         alive0 = f.alive.copy()
         for t in range(T):
             noise = self.rng.normal(size=(self.n, self.k, 2)) * self.aim_noise[:, :, None]
@@ -412,6 +425,8 @@ class Batch2:
             healed += w.healed
             landed += w.landed
             died |= w.died
+            for name, v in used.items():
+                v += getattr(w, name)
             for j in range(self.k):
                 kj = w.killer[:, j]
                 for i in range(self.k):
@@ -463,7 +478,7 @@ class Batch2:
         self.episode_return += reward
         winner = np.where(done & ~f.alive[:, 0], 1, np.where(done & ~enemies_alive & my_team_alive, 0, -1))
         info = {"winner": winner, "done": done, "ticks": self.ticks.copy(), "landed": landed, "dealt": dealt,
-                "episode_return": self.episode_return.copy(), "kills": kills, "died": died}
+                "episode_return": self.episode_return.copy(), "kills": kills, "died": died, **used}
         if self.auto_reset and done.any():
             info["terminal_obs"] = obs.copy()
             info["terrain"] = [self.info_terrain[a] for a in np.nonzero(done)[0]]
@@ -476,6 +491,7 @@ class Batch2:
             obs[idx] = fresh[idx]
             phi[idx] = self.potential(obs)[idx]
         self.phi = phi
+        self.last_obs = obs
         return obs, reward.astype(np.float32), done, info
 
 

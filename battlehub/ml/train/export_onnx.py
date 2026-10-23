@@ -3,10 +3,11 @@
 The ONNX model takes "obs" (batch, obs_dim) float32 and gives "logits" (batch, all heads' choices): the action heads one
 after the other in spec order (v1: 43 -> 26: 3 forward, 3 strafe, 2 jump, 2 sprint, 2 attack, 9 yaw, 5 pitch; v2:
 118 -> 38, with 11 yaw, 7 pitch, 6 hand, 2 use). The mod takes the highest logit of each head (or samples them with a
-temperature). The spec's sha256, the training steps and the heads are stored in the model's metadata, so the mod can
-refuse a model made for another spec.
+temperature) among the choices the action masks allow. The spec's sha256, the training steps and the heads are stored
+in the model's metadata, so the mod can refuse a model made for another spec; "items" marks a model that learned to use
+its items: "true" for all hands, or a list of them (the mod then lets it choose those, with bots.learnedItems).
 
-    python train/export_onnx.py runs/sword/ckpt_030000000.zip out.onnx [--name expert] [--spec 2]
+    python train/export_onnx.py runs/sword/ckpt_030000000.zip out.onnx [--name expert] [--spec 2] [--items [food,gapple,...]]
 """
 import argparse
 import json
@@ -17,7 +18,6 @@ import numpy as np
 import onnx
 import onnxruntime as ort
 import torch
-from stable_baselines3 import PPO
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pvp_sim.spec import SPEC  # noqa: E402
@@ -40,7 +40,8 @@ class Logits(torch.nn.Module):
 
 
 def export(checkpoint, out, name="", meta=None, spec=SPEC):
-    model = PPO.load(checkpoint, device="cpu")
+    from train.policies import load
+    model = load(checkpoint)
     net = Logits(model.policy).eval()
     dummy = torch.zeros((1, spec.obs_dim), dtype=torch.float32)
     try:
@@ -100,8 +101,10 @@ def main():
     ap.add_argument("out")
     ap.add_argument("--name", default="")
     ap.add_argument("--spec", type=int, default=1, choices=[1, 2])
+    ap.add_argument("--items", nargs="?", const="true", default=None,
+                    help="the model learned to use its items: all (no value) or a list of hands, e.g. food,gapple,pearl,wind")
     a = ap.parse_args()
-    export(a.checkpoint, a.out, a.name, spec=SPEC2 if a.spec == 2 else SPEC)
+    export(a.checkpoint, a.out, a.name, meta={"items": a.items} if a.items else None, spec=SPEC2 if a.spec == 2 else SPEC)
 
 
 if __name__ == "__main__":

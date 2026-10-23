@@ -33,10 +33,11 @@ import net.minecraft.world.item.Items;
  * simulation (ml/pvp_sim2) was trained on from what the bot knows of the world (its kit and effects, what it carries,
  * what it sees of its target, a second enemy, a projectile coming at it, the ground round it and behind its target),
  * lets the model of the bot's level choose, and holds the choice: movement and jump, the click on the decision's first
- * tick, the turn spread over its ticks, and (with bots.learnedItems) what to hold and whether to keep the right mouse
- * button down (BotBrain carries those out: drawing and loosing the bow, eating, blocking, throwing a pearl or a wind
- * charge). Without it the bot holds its weapon and eats, shoots and throws by its own rules, as the scripted fight
- * does.
+ * tick, the turn spread over its ticks, and (with bots.learnedItems, for a model that learned its items) what to hold
+ * and whether to keep the right mouse button down (BotBrain carries those out: drawing and loosing the bow, eating,
+ * blocking, throwing a pearl or a wind charge). Otherwise the bot holds its weapon and eats, shoots and throws by its
+ * own rules, as the scripted fight does. The model chooses with the action masks (core.ml.CombatMasks): never
+ * something the bot does not carry.
  * <p>
  * The scripted mind still decides when to fight. With an objective (a bed, a goal, a hill) the model only fights
  * enemies within {@link #ENGAGE} blocks; the objective, healing at a distance, edge safety and building stay scripted.
@@ -86,19 +87,20 @@ final class LearnedFight implements MeleeController {
 		Match m = Matches.of(bot.getUUID());
 		if (!active(m) || s.target() == null) return null;
 		if (s.goal() != null && s.distance() > ENGAGE) return null;
-		boolean items = ConfigManager.config().bots.learnedItems;
-		// without the model's items the bow stays the bot's own (the mind's shooting)
-		if (tactic == Tactic.SHOOT && !items) return null;
-		ServerPlayer opp = bot.level().getServer().getPlayerList().getPlayer(s.target().id());
-		if (opp == null) return null;
 		CombatModels.Family fam = CombatModels.V2;
 		CombatLevels.Level lv = fam.level(bot.difficulty);
 		CombatModels.Model model = lv == null ? null : fam.model(lv.model());
 		if (model == null) return null;
+		java.util.Set<String> hands = handsOf(model);
+		boolean items = !hands.isEmpty();
+		// a bow the model did not learn stays the bot's own (the mind's shooting)
+		if (tactic == Tactic.SHOOT && !hands.contains("bow")) return null;
+		ServerPlayer opp = bot.level().getServer().getPlayerList().getPlayer(s.target().id());
+		if (opp == null) return null;
 		CombatSpec spec = fam.spec();
 		remember(s.target(), opp);
 		if (step % spec.decisionTicks == 0) {
-			decide(spec, model, lv, m, s, opp);
+			decide(spec, model, lv, m, s, opp, hands);
 			step = 0;
 		}
 		boolean first = step == 0;
@@ -128,16 +130,48 @@ final class LearnedFight implements MeleeController {
 		while (seen.size() > 12) seen.removeLast();
 	}
 
-	private void decide(CombatSpec spec, CombatModels.Model model, CombatLevels.Level lv, Match m, Situation sit, ServerPlayer opp) {
+	private void decide(CombatSpec spec, CombatModels.Model model, CombatLevels.Level lv, Match m, Situation sit, ServerPlayer opp,
+			java.util.Set<String> hands) {
+		long t0 = System.nanoTime();
 		FightState.Seen o = (FightState.Seen) seen.toArray()[Math.min(seen.size() - 1, Math.max(0, lv.extraDelay()))];
 		CombatState st = FightState.build(spec, m, bot, bot.getDeltaMovement(), bot.getAttackStrengthScale(0.5f), opp, o,
 				weaponOf.getOrDefault(opp.getUUID(), ItemStack.EMPTY));
 		float[] obs = CombatObservation.build(spec, st);
 		float[] logits = model.logits(obs);
-		int[] idx = lv.sample() ? CombatAction.sample(spec, logits, 1.0, rng) : CombatAction.best(spec, logits);
+		long tm = System.nanoTime();
+		boolean[] mask = CombatModels.V2.masks() == null ? null : CombatModels.V2.masks().mask(obs);
+		if (mask != null && !hands.isEmpty()) {
+			// a hand the model did not learn is left to the bot's own rules: the model does not choose it
+			int at = handOffset(spec);
+			for (int k = 1; k < spec.hands.size(); k++) {
+				if (!hands.contains(spec.hands.get(k))) mask[at + k] = false;
+			}
+		}
+		long maskNanos = System.nanoTime() - tm;
+		int[] idx = lv.sample() ? CombatAction.sample(spec, logits, 1.0, rng, mask) : CombatAction.best(spec, logits, mask);
+		CombatModels.V2.timer.record(System.nanoTime() - t0, maskNanos);
 		bot.brain.decided(CombatModels.V2, obs, idx);
 		current = CombatAction.decode(spec, idx);
 		decisions++;
+	}
+
+	/** The hands the bot uses as its model chooses: with bots.learnedItems, those the model learned (else none). */
+	static java.util.Set<String> handsOf(CombatModels.Model model) {
+		if (!ConfigManager.config().bots.learnedItems || model == null) return java.util.Set.of();
+		return model.items(CombatModels.V2.spec());
+	}
+
+	/** Where the hand head's logits start. */
+	private static int handOffset(CombatSpec spec) {
+		int[] heads = spec.actionHeads();
+		int at = 0;
+		for (int h = 0; h < spec.actionNames.indexOf("hand"); h++) at += heads[h];
+		return at;
+	}
+
+	/** What a learned decision costs, over all bots (inspect, self-test). */
+	static String timing() {
+		return CombatModels.V2.timer.summary();
 	}
 
 	/** This tick's share of the decision's turn, within the level's turn limit, with its aim noise. */

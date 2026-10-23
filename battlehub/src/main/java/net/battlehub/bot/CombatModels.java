@@ -13,7 +13,9 @@ import ai.onnxruntime.OrtSession;
 import net.battlehub.BattleHub;
 import net.battlehub.core.ai.Difficulty;
 import net.battlehub.core.ml.CombatLevels;
+import net.battlehub.core.ml.CombatMasks;
 import net.battlehub.core.ml.CombatSpec;
+import net.battlehub.core.ml.DecisionTimer;
 
 /**
  * The learned combat models shipped in {@code assets/battlehub/ml}, per spec: v1 (the sword duel; combat_v1.json,
@@ -40,6 +42,22 @@ final class CombatModels {
 			this.meta = meta;
 		}
 
+		/**
+		 * The hands this model learned to use (ml/train/export_onnx.py --items): "true" for all of the spec's hands, or a
+		 * list such as "food,gapple,pearl,wind"; empty when it learned none (the bot's own rules use them).
+		 */
+		java.util.Set<String> items(CombatSpec spec) {
+			String v = meta.getOrDefault("items", "");
+			java.util.Set<String> out = new java.util.HashSet<>();
+			if (v.equals("true")) {
+				if (spec != null) out.addAll(spec.hands);
+			} else if (!v.isBlank()) {
+				for (String h : v.split(",")) out.add(h.trim());
+			}
+			out.remove("weapon");
+			return out;
+		}
+
 		float[] logits(float[] obs) {
 			try (OnnxTensor t = OnnxTensor.createTensor(OrtEnvironment.getEnvironment(), new float[][] {obs});
 					OrtSession.Result r = session.run(Map.of("obs", t))) {
@@ -56,6 +74,9 @@ final class CombatModels {
 		private boolean tried;
 		private CombatSpec spec;
 		private CombatLevels levels;
+		private CombatMasks masks;
+		/** What a decision of this family costs (all bots together). */
+		final DecisionTimer timer = new DecisionTimer();
 		private final Map<String, Model> models = new HashMap<>();
 		private final Map<String, Boolean> failed = new HashMap<>();
 
@@ -70,7 +91,9 @@ final class CombatModels {
 				try {
 					spec = CombatSpec.shipped(specFile);
 					levels = CombatLevels.parse(text(levelsFile));
-					BattleHub.LOGGER.info("Learned combat: spec {} v{} ({} observations), {} levels", spec.name, spec.version, spec.obsDim(), levels.all().size());
+					masks = CombatMasks.shipped(specFile, spec);
+					BattleHub.LOGGER.info("Learned combat: spec {} v{} ({} observations), {} levels{}", spec.name, spec.version, spec.obsDim(),
+							levels.all().size(), masks == null ? "" : ", action masks");
 				} catch (IOException | RuntimeException e) {
 					BattleHub.LOGGER.warn("Learned combat ({}) is off: {}", specFile, e.toString());
 					spec = null;
@@ -81,6 +104,11 @@ final class CombatModels {
 
 		CombatSpec spec() {
 			return spec;
+		}
+
+		/** The action masks of this spec (null for v1, which has none). */
+		CombatMasks masks() {
+			return masks;
 		}
 
 		/** "v1" or "v2". */

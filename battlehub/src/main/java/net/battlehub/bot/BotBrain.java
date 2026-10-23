@@ -1115,6 +1115,16 @@ final class BotBrain {
 	}
 
 	private boolean learnedUse;
+	/** Items the model started to use (a bow drawn, something eaten, a throw), and hands it chose the bot could not take. */
+	private int learnedUses, learnedMissing;
+
+	int learnedUses() {
+		return learnedUses;
+	}
+
+	int learnedMissing() {
+		return learnedMissing;
+	}
 
 	/**
 	 * What the learned model holds and does with the right mouse button: the weapon (with the shield up while held),
@@ -1133,6 +1143,7 @@ final class BotBrain {
 			held = true;
 		} else {
 			held = select(LearnedFight.wants(hand));
+			if (!held) learnedMissing++;
 		}
 		if (!held) return;
 		boolean usingMain = bot.isUsingItem() && bot.getUsedItemHand() == InteractionHand.MAIN_HAND;
@@ -1140,7 +1151,10 @@ final class BotBrain {
 			case "weapon" -> shield(in.use());
 			case "bow" -> {
 				if (in.use()) {
-					if (!bot.isUsingItem()) BotActions.use(bot, InteractionHand.MAIN_HAND);
+					if (!bot.isUsingItem()) {
+						BotActions.use(bot, InteractionHand.MAIN_HAND);
+						learnedUses++;
+					}
 				} else if (usingMain) {
 					bot.releaseUsingItem();
 					shots++;
@@ -1148,12 +1162,16 @@ final class BotBrain {
 			}
 			// one press eats the whole thing (as in the simulation); switching the hand stops it
 			case "food", "gapple" -> {
-				if (in.use() && !bot.isUsingItem()) BotActions.use(bot, InteractionHand.MAIN_HAND);
+				if (in.use() && !bot.isUsingItem()) {
+					BotActions.use(bot, InteractionHand.MAIN_HAND);
+					learnedUses++;
+				}
 			}
 			default -> {
 				if (press) {
 					BotActions.use(bot, InteractionHand.MAIN_HAND);
 					BotActions.swing(bot);
+					learnedUses++;
 				}
 			}
 		}

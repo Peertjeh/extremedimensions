@@ -1273,3 +1273,107 @@ Bij het zoeken kwam nog een latente fout boven. `brake()` gaf volle toetsen tege
 - De drempels in de tabel hierboven.
 - Van de leraar alleen hand, use en het richten nadoen, met een KL-term naar master voor de rest.
 - Items per model, met een vlag, in plaats van één schakelaar voor alle niveaus.
+- Akkoord gegeven op alle punten; bouwen gestart.
+
+### Fase A – Uitvoering en resultaten
+
+**A1 – Maskers (klaar).**
+- `ml/spec/combat_v2_masks.json`, `pvp_sim2/masks.py`, `Batch2.action_masks()`, `core.ml.CombatMasks` en
+  `CombatAction.best/sample` met masker.
+- Golden: `combat_v2_masks_golden.json` (211 gevallen: de 150 golden-toestanden, 60 aan de randen van de regels, één met
+  niets bij zich), gelijk in Python en Java.
+- `train/policies.py`: laden (PPO of MaskablePPO) en kiezen met maskers. Gebruikt door eval2, league2, de pool en BC.
+- De tellers van de spullen tellen nu over beide ticks van een beslissing (`info["fired"/"ate"/"threw"]`, plus
+  `arrow_hit` en `pearled` voor "nuttig"). Een test controleert dat dit klopt met wat er opraakt.
+- `eval2` meet de spullen per gevecht (zie de drempels).
+  - "Nuttig" voor wind charges: een treffer binnen twee seconden. Eén seconde bleek te kort, want een mace laadt 1,7 s.
+  - Loot en Bed Wars tellen over 192 gevechten, de rest over 64: pearls en wind charges komen daar maar bij weinig
+    vechters voor.
+- **Meting met en zonder maskers** (master, tegen de gescripte bot 0,8):
+
+  | | Zonder maskers | Met maskers |
+  |---|---|---|
+  | winst over de mix van eval2 | 81,0% | 81,2% |
+  | pijlen (gevechten waar het telde) | 0/18 | 0/17 |
+  | eten | 0/81 | 0/63 |
+  | pearls gegooid (per gevecht telde er geen) | 28, nuttig 25% | 23, nuttig 13% |
+  | wind charges | 74/74, nuttig 52% | 71/72, nuttig 46% |
+  | blokken in het bijlduel | 13,9% | 10,6% |
+
+  - De maskers alleen veranderen bijna niets: master kiest gewoon zijn wapen. Nadoen is nodig.
+- **Referentie, de gescripte bot zelf** (64 tot 192 gevechten per scenario):
+  - pijlen 69/69 gevechten, 11% raak;
+  - eten 133/161;
+  - pearls 0/6;
+  - wind charges 0/72.
+- **De leraar (`latch`)**: pijlen 76/76 (12% raak), eten 141/167, wind charges 65/73 (47% nuttig).
+  - Pearls bleven eerst 0. Oorzaak: een gespannen boog ging voor de pearl. In de leraar gaat een gekozen pearl nu voor,
+    en hij gaat er vaker voor (25% per beslissing in plaats van 5%).
+  - Toch blijven pearl-kansen zeldzaam in de simulatie: een doelwit verder dan 18 blokken dat je ziet, komt weinig voor.
+
+**A2 – Nadoen (klaar).**
+- `tools/make_bc_data.py`: 1,2 miljoen beslissingen.
+  - 3 van de 4 stappen in arena's met spullen (loot en shop met `extra_items`, Build UHC, boog, mace, LMS, FFA), 1 van de
+    4 in alle modi.
+  - 44% uit de toestanden die master zelf bereikt.
+  - Bewaard: de beslissingen met iets om te gebruiken, plus een kwart van de andere.
+  - Wat de leraar kiest: wapen 803.811, boog 294.374, eten 4.889, gouden appel 82.885, pearl 1.070, wind 14.442.
+- `train/bc.py`: stap 1 (alleen de rijen voor hand en use van de laatste laag) en stap 2 (alles, met een KL-term naar
+  master), met een gewicht per hand (1 gedeeld door de wortel van hoe vaak hij gekozen wordt).
+- **Wat de varianten deden** (eval2 tegen de gescripte bot 0,8):
+
+  | Variant | Winst | Pijlen | Eten | Pearls | Wind | Schild (bijl) | Bridge |
+  |---|---|---|---|---|---|---|---|
+  | master | 81% | 0% | 0% | – | 99% | 11% | 48/48 |
+  | alles nadoen (ook waar de leraar het wapen houdt) | 79% | 28% | 71% | 0/4 | 30% | 0% | 39/48 |
+  | alleen spullen nadoen, KL 1, met richten | 72% | 0% | 66% | 3/8 | 97% | 13% | 38/48 |
+  | idem, KL 3, zonder richten | 71% | 95% (1% raak) | 78% | 10/17 | 91% | 13% | 41/48 |
+  | **alleen stap 1** (netwerk vast) | **77%** | 17% (0% raak) | 57% | 19/22 | 100% | 11% | 45/48 |
+
+  - Waar de leraar het wapen houdt, blijven hand en use nu bij master. Zo blijven het schild en de wind charges van
+    master, die die beter doet dan de leraar.
+  - Het richten nadoen trekt via het gedeelde netwerk ook de kijkhoek buiten het richten weg (KL tot 0,4), en dat kost
+    het melee-gevecht.
+  - Gekozen als start voor PPO: alleen stap 1.
+  - Pijlen raken dan nog niet: het model spant de boog maar richt zoals master. Dat moet PPO leren.
+
+**A3 – PPO met maskers (bezig).**
+- **Eerste poging:** de BC-term over het hele netwerk, met het richten, 0,5 aflopend naar 0 over 8 miljoen stappen.
+  - Na 2 miljoen stappen ingestort: 43% tegen de gescripte bot, Bridge 7/48, het schild weg. Spullen wel volop: pijlen
+    100%, eten 78%.
+  - Oorzaak: dezelfde als in A2. De BC-term trekt via het gedeelde netwerk het gevecht uit elkaar, nu zonder anker.
+  - Gestopt.
+- **Daarna een A/B-test van 2 miljoen stappen elk:**
+  - A: de BC-term alleen op de laatste laag, voor hand en use (geen gradiënt in het netwerk, geen richten);
+  - B: geen BC-term.
+
+  | Na 2 miljoen stappen | Winst | Bridge | Boogduel | Pijlen | Eten | Pearls | Wind | Schild (bijl) |
+  |---|---|---|---|---|---|---|---|---|
+  | start (BC stap 1) | 77% | 45/48 | 29/48 | 17% | 57% | 19/22 | 100% | 11% |
+  | volledige BC-term (eerste poging) | 43% | 7/48 | 15/48 | 100% (9% raak) | 78% | 6/18 | 96% | 0% |
+  | A: BC-term alleen laatste laag | 57% | 21/48 | 0/48 | 25% | 87% (veel te vaak) | 3/7 | 95% | 2% |
+  | B: geen BC-term | 79% | 43/48 | 35/48 | 10% | 28% | 0/4 | 100% | 6% |
+  | B na 4 miljoen | **83%** | | | 0% | 28% | 0/2 | 100% | |
+  | C: KL van hand en use naar de start (laatste laag) | 76% | 40/48 | 31/48 | 0% | 46% | 8/9 | 100% | 17% |
+
+  - A: de gewichten voor zeldzame spullen (tot 20×) blijven in een doorlopende term duwen: eten en pearls worden spam.
+  - B: PPO alleen maakt het gevecht sterker dan master, maar de spullen zakken weg.
+  - C: de zachte KL houdt eten, pearls, wind en het schild. De boog verdwijnt: pijlen die niet raken kosten beloning.
+- **D: C plus het richten nadoen**, alleen via de laatste laag: de pitch van de leraar tijdens het richten, en daarbuiten
+  de pitch van de start (KL).
+
+  | Na 2 miljoen stappen | Winst | Bridge | Boogduel | Pijlen | Eten | Pearls | Wind | Schild (bijl) |
+  |---|---|---|---|---|---|---|---|---|
+  | D: C plus het richten (laatste laag) | 76% | 46/48 | 27/48 | 0% | 44% | 4/5 | 100% | 15% |
+  | B na 6 miljoen | 82% | | | 0% | 40% | 0/1 | 100% | |
+
+  - Ook D leert de boog niet: het model kiest hem niet meer. De boog loont niet in de simulatie voor een model dat wint
+    door erop af te gaan, en zelfs de pijlen van de leraar raken maar 11%.
+  - **Besluit:** de echte run met C (KL van 1,0 naar 0 over 8 miljoen stappen, daarna gewoon PPO), 20 miljoen stappen.
+    De boog blijft bij de regels van de bot: het model krijgt in de mod een lijst met de spullen die het geleerd heeft
+    (`items`: bijvoorbeeld `food,gapple,pearl,wind`). Wat er niet op staat, maskeert de mod, en de SHOOT-tactiek van de
+    mind blijft dan gescript. Dat is het dichtstbijzijnde werkende alternatief voor "learnedItems standaard aan".
+- **Mod-fout gevonden:** `FightState` telde spullen in de hele inventory, maar de bot kan alleen wisselen naar wat in de
+  hotbar zit. Een voorbeeld: in Build UHC zit het vlees in slot 13. Het masker zou eten dan toestaan, terwijl het niet
+  kan. Nu telt de observatie de hotbar (pijlen overal, zolang de boog in de hotbar zit). `/battlehub bots inspect` telt
+  gekozen handen die de bot niet kon pakken.

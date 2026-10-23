@@ -147,6 +147,8 @@ class World:
         self.fired = np.zeros((n, k), dtype=bool)
         self.ate = np.zeros((n, k), dtype=bool)
         self.threw = np.zeros((n, k), dtype=bool)
+        self.arrow_hit = np.zeros((n, k), dtype=bool)   # an arrow of mine hit an enemy (not on its shield)
+        self.pearled = np.zeros((n, k), dtype=bool)     # my pearl landed and took me there
 
     # ------------------------------------------------------------------ setup
 
@@ -196,7 +198,7 @@ class World:
         self.dealt[:] = 0.0
         self.taken[:] = 0.0
         self.healed[:] = 0.0
-        for name in ("landed", "whiffed", "died", "fired", "ate", "threw"):
+        for name in ("landed", "whiffed", "died", "fired", "ate", "threw", "arrow_hit", "pearled"):
             getattr(self, name)[:] = False
         self.killer[:] = -1
         alive = f.alive.copy()
@@ -643,6 +645,7 @@ class World:
             kx, kz = np.zeros(self.n), np.zeros(self.n)
             kx[a], kz[a] = p.vx[a, j], p.vz[a, j]
             self.hurt(k, mask, amount, owner, knock=(kx, kz), strength=0.4)
+            self.arrow_hit[a, owner] = True
         elif kind == PEARL:
             if not f.alive[a, owner]:
                 return
@@ -656,6 +659,7 @@ class World:
                     break
                 x, y, z = x + back[0], y + back[1], z + back[2]
             f.x[a, owner], f.y[a, owner], f.z[a, owner] = x, y, z
+            self.pearled[a, owner] = True
             f.vx[a, owner] = f.vy[a, owner] = f.vz[a, owner] = 0.0
             f.fall[a, owner] = 0.0
             f.on_ground[a, owner] = False

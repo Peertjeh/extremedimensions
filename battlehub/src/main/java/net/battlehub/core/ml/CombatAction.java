@@ -33,15 +33,24 @@ public record CombatAction(int forward, int strafe, boolean jump, boolean sprint
 
 	/** The highest logit of each head (what the model thinks best). */
 	public static int[] best(CombatSpec spec, float[] logits) {
+		return best(spec, logits, null);
+	}
+
+	/**
+	 * The highest logit of each head among the choices the mask allows (CombatMasks; null allows all). Every head
+	 * keeps a choice that is always allowed, so there is always one.
+	 */
+	public static int[] best(CombatSpec spec, float[] logits, boolean[] mask) {
 		int[] heads = spec.actionHeads();
 		int[] out = new int[heads.length];
 		int o = 0;
 		for (int h = 0; h < heads.length; h++) {
-			int arg = 0;
-			for (int k = 1; k < heads[h]; k++) {
-				if (logits[o + k] > logits[o + arg]) arg = k;
+			int arg = -1;
+			for (int k = 0; k < heads[h]; k++) {
+				if (mask != null && !mask[o + k]) continue;
+				if (arg < 0 || logits[o + k] > logits[o + arg]) arg = k;
 			}
-			out[h] = arg;
+			out[h] = Math.max(0, arg);
 			o += heads[h];
 		}
 		return out;
@@ -49,26 +58,34 @@ public record CombatAction(int forward, int strafe, boolean jump, boolean sprint
 
 	/** One choice per head drawn from softmax(logits / temperature): less sharp play for the lower levels. */
 	public static int[] sample(CombatSpec spec, float[] logits, double temperature, Random rng) {
+		return sample(spec, logits, temperature, rng, null);
+	}
+
+	/** As {@link #sample(CombatSpec, float[], double, Random)}, among the choices the mask allows (null allows all). */
+	public static int[] sample(CombatSpec spec, float[] logits, double temperature, Random rng, boolean[] mask) {
 		int[] heads = spec.actionHeads();
 		int[] out = new int[heads.length];
 		double t = Math.max(1e-3, temperature);
 		int o = 0;
 		for (int h = 0; h < heads.length; h++) {
 			double max = Double.NEGATIVE_INFINITY;
-			for (int k = 0; k < heads[h]; k++) max = Math.max(max, logits[o + k] / t);
+			for (int k = 0; k < heads[h]; k++) {
+				if (mask == null || mask[o + k]) max = Math.max(max, logits[o + k] / t);
+			}
 			double[] p = new double[heads[h]];
 			double sum = 0;
-			for (int k = 0; k < heads[h]; k++) sum += p[k] = Math.exp(logits[o + k] / t - max);
-			double u = rng.nextDouble() * sum;
-			int pick = heads[h] - 1;
 			for (int k = 0; k < heads[h]; k++) {
-				u -= p[k];
-				if (u <= 0) {
-					pick = k;
-					break;
-				}
+				if (mask == null || mask[o + k]) sum += p[k] = Math.exp(logits[o + k] / t - max);
 			}
-			out[h] = pick;
+			double u = rng.nextDouble() * sum;
+			int pick = -1;
+			for (int k = 0; k < heads[h]; k++) {
+				if (p[k] <= 0) continue;
+				pick = k;
+				u -= p[k];
+				if (u <= 0) break;
+			}
+			out[h] = Math.max(0, pick);
 			o += heads[h];
 		}
 		return out;
