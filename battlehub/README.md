@@ -158,10 +158,14 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   Build UHC duels, KOTH, CTF, LMS and the tournaments; sword duels and boxing keep model v1 (1.33, trained only
   there and still the stronger on flat ground), mace and bow fights stay scripted. The mind still
   decides when to fight, heal, shoot or go for the objective (near an objective the model takes over only for
-  enemies within 8 blocks); eating, the bow and wind charges stay the bot's own (`bots.learnedItems` lets the
-  model use them, experimental). The crosshair check of every click stays. Each difficulty level has its own
-  model, picked by Elo rating, with a little delay, aim noise and a turn limit on the lower levels.
-  `bots.learnedCombat` turns it off; `bots.learnedSpec` 1 uses only v1, `bots.learnedV1Modes` says where v1 fights.
+  enemies within 8 blocks). The model chooses with action masks: never something the bot does not have in its
+  hotbar, never food at full hunger. A model that learned its items says which (golden apples and food, pearls,
+  wind charges; the bow so far stays the bot's own) and, with `bots.learnedItems`, uses those itself in the fight;
+  everything else stays the bot's own rules, as does healing at a distance. The crosshair check of every click
+  stays. Each difficulty level has its own model, picked by Elo rating, with a little delay, aim noise and a turn
+  limit on the lower levels. `/battlehub bots inspect <bot>` shows what a model decision costs the tick (average,
+  99th percentile, maximum). `bots.learnedCombat` turns it off; `bots.learnedSpec` 1 uses only v1,
+  `bots.learnedV1Modes` says where v1 fights.
 * *Fight logs*: every fight (melee and bow games, people and bots) is recorded for training in
   `config/battlehub/fights`, a gzip file per fight: ten times a second, for every fighter, what the model would see
   and what the fighter did (keys, jump, sprint, swings, turning, what they held, the right button), for bots also

@@ -31,6 +31,9 @@ final class HubWorldTests {
 
 	static final String S = "BHTestS";
 	static final String A = "BHTestA";
+	/** Whether the last Travel.enter of the reset test was accepted. */
+	private static final boolean[] VARS_ENTERED = new boolean[1];
+	private static final int[] WAITED = new int[1];
 
 	private static boolean hasHubItem(ServerPlayer p) {
 		Inventory inv = p.getInventory();
@@ -65,11 +68,16 @@ final class HubWorldTests {
 			return hub.getBlockState(new BlockPos(0, y + 15, 0)).is(net.minecraft.world.level.block.Blocks.BEACON)
 					&& hub.getBlockState(new BlockPos(0, y + 13, -r)).is(net.minecraft.world.level.block.Blocks.BEACON);
 		});
-		s.check(tag + ": and A comes in again", () -> {
+		// the change of dimension can land a tick or more after the call: enter, then wait for A to arrive
+		s.run(tag + ": A goes in again", () -> {
+			VARS_ENTERED[0] = Travel.enter(p(A));
+			WAITED[0] = 0;
+		});
+		s.waitFor(tag + ": and A comes in again", 100, () -> {
 			boolean before = Travel.inBattleHub(p(A));
-			boolean entered = Travel.enter(p(A));
+			boolean entered = VARS_ENTERED[0];
 			boolean in = entered && HubWorld.isBattleHub(p(A).level());
-			if (!in) {
+			if (!in && ++WAITED[0] % 50 == 0) {
 				net.battlehub.BattleHub.LOGGER.warn("SELFTEST world reset: A was in BattleHub {}, entered {}, now in {}, resetting {}, ready {}, session {}, match {}",
 						before, entered, p(A).level().dimension().identifier(), HubWorld.resetting(), HubWorld.ready(), Sessions.state(p(A).getUUID()),
 						net.battlehub.match.Matches.of(p(A).getUUID()) == null ? "none" : net.battlehub.match.Matches.of(p(A).getUUID()).mode.id());
