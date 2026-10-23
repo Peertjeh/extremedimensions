@@ -32,12 +32,14 @@ public final class Lobby {
 		return new Spot(level, HubWorld.defaultSpawn(), HubWorld.defaultYaw(), 0);
 	}
 
-	public static void teleport(ServerPlayer p) {
+	/** Sends the player to the lobby spot; false when the server refused the teleport (the player stays where it is). */
+	public static boolean teleport(ServerPlayer p) {
 		Spot s = spot(p.level().getServer());
 		p.stopRiding();
-		p.teleportTo(s.level(), s.pos().x, s.pos().y, s.pos().z, Set.of(), s.yaw(), s.pitch(), true);
+		boolean moved = p.teleportTo(s.level(), s.pos().x, s.pos().y, s.pos().z, Set.of(), s.yaw(), s.pitch(), true);
 		p.setDeltaMovement(Vec3.ZERO);
 		p.resetFallDistance();
+		return moved && HubWorld.is(p.level());
 	}
 
 	/** Anywhere in the hub world (the whole world is the lobby). */

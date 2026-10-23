@@ -70,7 +70,10 @@ public final class Travel {
 		HubItems.strip(p);
 		SURVIVAL.take(p, false);
 		resetForHub(p);
-		Lobby.teleport(p);
+		if (!Lobby.teleport(p)) {
+			net.battlehub.BattleHub.LOGGER.warn("BattleHub: {} could not be sent into the lobby yet; trying again", p.getGameProfile().name());
+			retryLobby(p, 100);
+		}
 		Sessions.toLobby(p.getUUID());
 		HubItems.ensure(p, false);
 		showLevel(p);
@@ -82,6 +85,23 @@ public final class Travel {
 		net.battlehub.fx.ResourcePack.offer(p);
 		Msg.sound(p, net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP, 0.5f, 1.4f);
 		return true;
+	}
+
+	/**
+	 * The server can refuse a change of dimension right after another one (a reset of BattleHub's world had just
+	 * sent the player out): try again every tick for up to five seconds, as long as the player still means to be in the lobby.
+	 */
+	private static void retryLobby(ServerPlayer p, int tries) {
+		net.battlehub.util.Tasks.next(() -> {
+			if (p.isRemoved() || inBattleHub(p) || Sessions.state(p.getUUID()) != Sessions.State.LOBBY) return;
+			if (Lobby.teleport(p)) {
+				net.battlehub.BattleHub.LOGGER.info("BattleHub: {} is in the lobby now", p.getGameProfile().name());
+			} else if (tries > 1) {
+				retryLobby(p, tries - 1);
+			} else {
+				net.battlehub.BattleHub.LOGGER.warn("BattleHub: {} still could not be sent into the lobby", p.getGameProfile().name());
+			}
+		});
 	}
 
 	/** Back to the normal world, with everything the player had there. */

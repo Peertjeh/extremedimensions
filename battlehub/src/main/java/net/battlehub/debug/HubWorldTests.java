@@ -73,7 +73,7 @@ final class HubWorldTests {
 			VARS_ENTERED[0] = Travel.enter(p(A));
 			WAITED[0] = 0;
 		});
-		s.waitFor(tag + ": and A comes in again", 100, () -> {
+		s.waitFor(tag + ": and A comes in again", 200, () -> {
 			boolean before = Travel.inBattleHub(p(A));
 			boolean entered = VARS_ENTERED[0];
 			boolean in = entered && HubWorld.isBattleHub(p(A).level());

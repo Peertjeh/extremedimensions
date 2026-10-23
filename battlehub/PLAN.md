@@ -1557,3 +1557,14 @@ master:
 - **Zelftest:** de oude v1-test ("bots learned") is nu een zwaardduel met v2. Het model stuurt, raakt en wint.
 - `CombatModelsTest` controleert alleen v2. De weigering van een model voor een andere spec test nu op v2.
 - **Tijd per beslissing:** het netwerk is even groot; de zelftests van 1.39 meten het opnieuw (zie hieronder).
+
+**CI van 1.39.0 (40ef6a8): 888 geslaagd, 3 gefaald.**
+- **"world reset: and A comes in again"** faalde ook met 5 seconden wachten. De diagnose: `Travel.enter` gaf `true`
+  en de sessie stond op LOBBY, maar A bleef in de overworld. `Lobby.teleport` keek niet of de teleport lukte.
+  - De server weigert een wissel van dimensie soms vlak na een vorige; hier had de reset A net naar buiten gestuurd.
+  - Nu meldt `Lobby.teleport` of het gelukt is, en `Travel.enter` probeert het dan elke tick opnieuw, tot 5 seconden
+    lang (met een regel in de log). De test wacht tot 10 seconden.
+  - "server stop" faalde als gevolg (A zat niet in de lobby).
+- **"bots skywars: no bot walked or jumped off the map by itself"**: een gescripte bot viel tijdens het bruggen bouwen
+  naar een kist van de rand ("standing on an edge", 41 blokken geplaatst). Die test zet het geleerde gevecht uit,
+  dus dit staat los van deze fase. Het is de eerste keer in deze reeks runs; bij herhaling zoek ik het uit.
