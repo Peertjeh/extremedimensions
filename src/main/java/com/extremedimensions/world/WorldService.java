@@ -14,6 +14,7 @@ import com.extremedimensions.lore.Loot;
 import com.extremedimensions.network.Fx;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 
@@ -184,7 +185,7 @@ public final class WorldService {
 			double a = Math.toRadians(p.getYRot()) + Math.PI / 2 + (rnd.nextDouble() - 0.5) * 2.0;
 			int x = (int) Math.floor(p.getX() + Math.cos(a) * (14 + rnd.nextInt(8)));
 			int z = (int) Math.floor(p.getZ() + Math.sin(a) * (14 + rnd.nextInt(8)));
-			if (level.isLoaded(new BlockPos(x, (int) p.getY(), z))) {
+			if (Loaded.ready(level, new BlockPos(x, (int) p.getY(), z))) {
 				BlockPos b = new BlockPos(x, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z), z);
 				// nothing breaks through near a Veil Lantern
 				if (!com.extremedimensions.anchor.SoulWards.veiled(level, b)) {

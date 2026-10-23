@@ -16,6 +16,7 @@ import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModBlocks;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.ChatFormatting;
@@ -572,7 +573,7 @@ public final class SeamDepth {
 			if (level.getNearestPlayer(at.getX() + 0.5, at.getY() + 0.5, at.getZ() + 0.5, 2.5, false) != null) {
 				continue; // someone stands in the gap: it waits
 			}
-			if (level.isLoaded(at) && level.getBlockState(at).isAir()) {
+			if (Loaded.ready(level, at) && level.getBlockState(at).isAir()) {
 				level.setBlock(at, (BlockState) g[1], 2);
 			}
 			back.remove();
@@ -607,7 +608,7 @@ public final class SeamDepth {
 		if (level != null) {
 			for (Object[] g : GONE) {
 				BlockPos at = (BlockPos) g[0];
-				if (level.isLoaded(at) && level.getBlockState(at).isAir()) {
+				if (Loaded.ready(level, at) && level.getBlockState(at).isAir()) {
 					level.setBlock(at, (BlockState) g[1], 2);
 				}
 			}

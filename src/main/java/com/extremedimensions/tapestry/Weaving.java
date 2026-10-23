@@ -13,6 +13,7 @@ import com.extremedimensions.data.DataStore;
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEntities;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 
@@ -114,7 +115,7 @@ public final class Weaving {
 		if (r == null) {
 			return;
 		}
-		if (!r.level.isLoaded(r.loom)) {
+		if (!Loaded.ready(r.level, r.loom)) {
 			// Nobody keeps the loom's part of the world loaded: the Weaving is let go, not broken. Its last panel stays
 			// woven (a thread dropped where nobody is would be lost), and the loom begins it again once the wait is over
 			end(r);
@@ -190,7 +191,7 @@ public final class Weaving {
 		BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
 		for (int y = r.loom.getY() + 6; y >= r.loom.getY() - 12; y--) {
 			m.set(x, y, z);
-			if (!r.level.isLoaded(m)) {
+			if (!Loaded.ready(r.level, m)) {
 				return null;
 			}
 			if (r.level.getBlockState(m.below()).isSolid() && r.level.getBlockState(m).isAir() && r.level.getBlockState(m.above()).isAir()) {

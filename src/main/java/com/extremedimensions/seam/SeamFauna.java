@@ -16,6 +16,7 @@ import com.extremedimensions.lore.Loot;
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.registry.ModItems;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
@@ -177,7 +178,7 @@ public final class SeamFauna {
 				}
 				if (count < THINNED_PER_VILLAGE) {
 					BlockPos at = new BlockPos(vx + rnd.nextInt(-4, 5), vy + 1, vz + rnd.nextInt(-4, 5));
-					if (seam.isLoaded(at) && seam.getBlockState(at).isAir() && !seam.getBlockState(at.below()).isAir()) {
+					if (Loaded.ready(seam, at) && seam.getBlockState(at).isAir() && !seam.getBlockState(at.below()).isAir()) {
 						Thinned t = ModEntities.THINNED.spawn(seam, at, EntitySpawnReason.EVENT);
 						if (t != null) {
 							DRIVEN.put(t.getUUID(), new Driven(THINNED));
@@ -259,7 +260,7 @@ public final class SeamFauna {
 				continue;
 			}
 			BlockPos at = new BlockPos(kx + rnd.nextInt(-3, 4), ky + 1, kz + rnd.nextInt(-3, 4));
-			if (seam.isLoaded(at) && seam.getBlockState(at).isAir() && seam.getBlockState(at.above()).isAir() && !seam.getBlockState(at.below()).isAir()
+			if (Loaded.ready(seam, at) && seam.getBlockState(at).isAir() && seam.getBlockState(at.above()).isAir() && !seam.getBlockState(at.below()).isAir()
 					&& p.distanceToSqr(at.getX(), at.getY(), at.getZ()) > 10 * 10) {
 				Thinned t = ModEntities.THINNED.spawn(seam, at, EntitySpawnReason.EVENT);
 				if (t != null) {

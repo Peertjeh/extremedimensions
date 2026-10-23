@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Random;
 
 import com.extremedimensions.config.Config;
+import com.extremedimensions.server.Loaded;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 
@@ -282,7 +283,7 @@ final class ArenaDesign {
 
 		/** Whether the chunk of (x, z) is loaded (a design never loads one to look at it). */
 		boolean loaded(int x, int y, int z) {
-			return level.isLoaded(new BlockPos(x, y, z));
+			return Loaded.ready(level, new BlockPos(x, y, z));
 		}
 
 		/** Whether someone stands within {@code r} blocks (across the ground) of the middle of block column (x, z). */
@@ -345,7 +346,7 @@ final class ArenaDesign {
 			if (level.isOutsideBuildHeight(p.pos) || !ElderArena.free(level, p.pos)) {
 				return false;
 			}
-			if (!level.isLoaded(p.pos)) {
+			if (!Loaded.ready(level, p.pos)) {
 				return true;
 			}
 			if (p.kind == ElderArena.GROUND) {

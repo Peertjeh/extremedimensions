@@ -22,6 +22,7 @@ import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.relic.Relic;
 import com.extremedimensions.relic.RelicService;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 import com.extremedimensions.tether.TetherService;
 
@@ -297,7 +298,7 @@ public final class AnchorService {
 				continue;
 			}
 			BlockPos pos = new BlockPos(a.x, a.y, a.z);
-			if (!ow.isLoaded(pos)) {
+			if (!Loaded.ready(ow, pos)) {
 				continue;
 			}
 			BlockState state = ow.getBlockState(pos);

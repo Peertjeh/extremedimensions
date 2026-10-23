@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.extremedimensions.config.Config;
 import com.extremedimensions.registry.ModSounds;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
@@ -495,7 +496,7 @@ public class VeilRay extends PathfinderMob {
 		if (y < 0 || y >= 256) {
 			return false; // above and below the Seam's islands there is only sky
 		}
-		return !level.isLoaded(probe) || !level.getBlockState(probe).isAir();
+		return !Loaded.ready(level, probe) || !level.getBlockState(probe).isAir();
 	}
 
 	/** True when a box of open air (a ray's wingspan and more) surrounds the point. */
@@ -505,7 +506,7 @@ public class VeilRay extends PathfinderMob {
 			for (int dz = -rad; dz <= rad; dz += rad) {
 				for (int dy = -3; dy <= 3; dy += 3) {
 					m.set(Mth.floor(c.x) + dx, Mth.floor(c.y) + dy, Mth.floor(c.z) + dz);
-					if (!level.isLoaded(m) || !level.getBlockState(m).isAir()) {
+					if (!Loaded.ready(level, m) || !level.getBlockState(m).isAir()) {
 						return false;
 					}
 				}

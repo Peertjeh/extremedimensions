@@ -18,6 +18,7 @@ import com.extremedimensions.seam.SeamDepth;
 import com.extremedimensions.seam.SeamFauna;
 import com.extremedimensions.seam.SeamService;
 import com.extremedimensions.seam.VeilRay;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.ChatFormatting;
@@ -147,7 +148,7 @@ public final class FrayedSeam {
 			for (int tries = 0; tries < 8; tries++) {
 				double a = rnd.nextDouble() * Math.PI * 2, d = 10 + rnd.nextDouble() * 14;
 				int tx = (int) Math.floor(f.x + Math.cos(a) * d), tz = (int) Math.floor(f.z + Math.sin(a) * d);
-				if (!seam.isLoaded(new BlockPos(tx, f.y, tz))) {
+				if (!Loaded.ready(seam, new BlockPos(tx, f.y, tz))) {
 					continue;
 				}
 				int top = seam.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, tx, tz);
@@ -232,7 +233,7 @@ public final class FrayedSeam {
 		for (int tries = 0; tries < 24; tries++) {
 			int x = (int) Math.floor(f.x) + rnd.nextInt(-6, 7), z = (int) Math.floor(f.z) + rnd.nextInt(-6, 7);
 			BlockPos probe = new BlockPos(x, f.y, z);
-			if (!seam.isLoaded(probe)) {
+			if (!Loaded.ready(seam, probe)) {
 				continue;
 			}
 			int top = seam.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);

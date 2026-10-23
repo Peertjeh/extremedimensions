@@ -12,6 +12,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.server.BlockFlight;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
@@ -55,7 +56,7 @@ public final class ElderDomain {
 
 		boolean stands(ServerLevel level) {
 			for (BlockPos p : blocks) {
-				if (level.isLoaded(p) && level.getBlockState(p) == light) {
+				if (Loaded.ready(level, p) && level.getBlockState(p) == light) {
 					return true;
 				}
 			}
@@ -250,7 +251,7 @@ public final class ElderDomain {
 					break;
 				}
 				int x = p.pos.getX(), y = p.pos.getY(), z = p.pos.getZ();
-				if (!p.placed || y - bp.gy < 6 || Math.floorMod(x * 7 + z * 13, 4) != 0 || !level.isLoaded(p.pos)
+				if (!p.placed || y - bp.gy < 6 || Math.floorMod(x * 7 + z * 13, 4) != 0 || !Loaded.ready(level, p.pos)
 						|| !level.getBlockState(p.pos.below()).isAir()) {
 					continue;
 				}
@@ -547,7 +548,7 @@ public final class ElderDomain {
 		c.broken = true;
 		ServerLevel level = a.level;
 		for (BlockPos p : c.blocks) {
-			if (level.isLoaded(p) && level.getBlockState(p) == c.light) {
+			if (Loaded.ready(level, p) && level.getBlockState(p) == c.light) {
 				level.setBlock(p, Blocks.AIR.defaultBlockState(), 2 | 16);
 			}
 		}
@@ -675,7 +676,7 @@ public final class ElderDomain {
 		for (int i = 0; i < group.size(); i += step) {
 			ElderArena.Piece p = group.get(i);
 			seen++;
-			if (p.placed && a.level.isLoaded(p.pos) && a.level.getBlockState(p.pos) == p.state) {
+			if (p.placed && Loaded.ready(a.level, p.pos) && a.level.getBlockState(p.pos) == p.state) {
 				up++;
 			}
 		}
@@ -688,7 +689,7 @@ public final class ElderDomain {
 		int x = isle.x(), z = isle.z();
 		for (int y = isle.top() - 2; y > level.getMinY(); y--) {
 			BlockPos pos = new BlockPos(x, y, z);
-			if (!level.isLoaded(pos)) {
+			if (!Loaded.ready(level, pos)) {
 				break;
 			}
 			ElderArena.Piece p = ElderArena.standing(level, pos);
@@ -729,7 +730,7 @@ public final class ElderDomain {
 			f.loose = true;
 			List<ElderArena.Piece> pieces = new ArrayList<>();
 			for (ElderArena.Piece p : a.groups.get(f.isle.group())) {
-				if (p.placed && level.isLoaded(p.pos) && level.getBlockState(p.pos) == p.state) {
+				if (p.placed && Loaded.ready(level, p.pos) && level.getBlockState(p.pos) == p.state) {
 					pieces.add(p);
 				}
 			}

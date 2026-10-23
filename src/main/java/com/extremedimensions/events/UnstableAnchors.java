@@ -7,6 +7,7 @@ import com.extremedimensions.config.Config;
 import com.extremedimensions.data.Anchor;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.ChatFormatting;
@@ -93,7 +94,7 @@ public final class UnstableAnchors {
 	public static void step(Anchor a) {
 		a.leakAll(Math.max(0, Config.UNSTABLE_LEAK));
 		a.unstable--;
-		if (WorldFx.server() != null && WorldFx.server().overworld().isLoaded(new BlockPos(a.x, a.y, a.z))) {
+		if (WorldFx.server() != null && Loaded.ready(WorldFx.server().overworld(), new BlockPos(a.x, a.y, a.z))) {
 			WorldFx.particleAt("minecraft:electric_spark", a.x + 0.5, a.y + 1.0, a.z + 0.5, 0.35, 0.3, 0.35, 0.15, 6);
 			if (a.unstable % 4 == 0) {
 				WorldFx.soundAt("minecraft:block.amethyst_block.resonate", a.x, a.y, a.z, 0.5f, 0.5f);

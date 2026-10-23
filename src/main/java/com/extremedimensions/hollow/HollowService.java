@@ -21,6 +21,7 @@ import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 import com.extremedimensions.tribe.BarterService;
@@ -195,7 +196,7 @@ public final class HollowService {
 			double dist = 40 + rnd.nextDouble() * 30;
 			int x = (int) Math.floor(from.x + Math.cos(a) * dist);
 			int z = (int) Math.floor(from.z + Math.sin(a) * dist);
-			if (!level.isLoaded(new BlockPos(x, (int) from.y, z))) {
+			if (!Loaded.ready(level, new BlockPos(x, (int) from.y, z))) {
 				continue;
 			}
 			BlockPos spot = nether ? standable(level, x, (int) from.y + 10, z, 30) : surface(level, x, z);
@@ -478,7 +479,7 @@ public final class HollowService {
 	private static void unhook(Hoard h) {
 		ServerLevel level = levelOf(h.dim);
 		BlockPos below = new BlockPos(h.x, h.y - 1, h.z);
-		if (level == null || !level.isLoaded(below)) {
+		if (level == null || !Loaded.ready(level, below)) {
 			return;
 		}
 		if (level.getBlockState(below).is(Blocks.HOPPER)) {
@@ -548,7 +549,7 @@ public final class HollowService {
 	public static boolean intact(Hoard h) {
 		ServerLevel level = levelOf(h.dim);
 		BlockPos core = new BlockPos(h.x, h.y, h.z);
-		return level == null || !level.isLoaded(core) || level.getBlockState(core).is(Blocks.BARREL);
+		return level == null || !Loaded.ready(level, core) || level.getBlockState(core).is(Blocks.BARREL);
 	}
 
 	/** The nest is no more: the hoard is struck off and its young scatter into the dark (a companion stays). */

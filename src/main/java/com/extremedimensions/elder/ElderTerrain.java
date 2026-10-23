@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import com.extremedimensions.config.Config;
+import com.extremedimensions.server.Loaded;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
@@ -280,10 +281,10 @@ public final class ElderTerrain {
 	public static String describe(Level level, BlockPos pos) {
 		for (Temporary t : TEMPORARY) {
 			if (t.level == level && t.pos.equals(pos)) {
-				return "ticked " + ticked + ", left " + t.left + ", tries " + t.tries + ", loaded " + level.isLoaded(pos) + ", last look: " + t.seen;
+				return "ticked " + ticked + ", left " + t.left + ", tries " + t.tries + ", loaded " + Loaded.ready(level, pos) + ", last look: " + t.seen;
 			}
 		}
-		return "ticked " + ticked + ", not held, loaded " + level.isLoaded(pos);
+		return "ticked " + ticked + ", not held, loaded " + Loaded.ready(level, pos);
 	}
 
 	public static void tick(MinecraftServer s) {
@@ -335,7 +336,7 @@ public final class ElderTerrain {
 	/** Whether a raised block's ground is in memory (asked two ways: the chunk itself, and the level's own answer). */
 	private static boolean loaded(Temporary t) {
 		boolean chunk = t.level.getChunkSource().getChunkNow(t.pos.getX() >> 4, t.pos.getZ() >> 4) != null;
-		boolean level = t.level.isLoaded(t.pos);
+		boolean level = Loaded.ready(t.level, t.pos);
 		t.seen = "at " + ticked + " chunk " + chunk + ", level " + level + ", on " + Thread.currentThread().getName();
 		return chunk || level;
 	}

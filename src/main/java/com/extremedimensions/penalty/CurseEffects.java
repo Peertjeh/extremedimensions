@@ -19,6 +19,7 @@ import com.extremedimensions.network.Sync;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
@@ -141,7 +142,7 @@ public final class CurseEffects {
 		ServerLevel level = (ServerLevel) p.level();
 		double a = rnd.nextDouble() * Math.PI * 2, r = 14 + rnd.nextDouble() * 8;
 		int x = (int) Math.floor(p.getX() + Math.cos(a) * r), z = (int) Math.floor(p.getZ() + Math.sin(a) * r);
-		if (!level.isLoaded(new BlockPos(x, (int) p.getY(), z))) {
+		if (!Loaded.ready(level, new BlockPos(x, (int) p.getY(), z))) {
 			return;
 		}
 		int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);

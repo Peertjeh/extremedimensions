@@ -19,7 +19,11 @@ the heavy parts cost, and makes the download lighter.
   looked round them for a portal every five seconds, and a block of that look lying in a chunk still loading (just after
   a teleport, a respawn or a trip through a portal) made the whole server wait until that chunk had loaded: 0.2 seconds
   at a time in the measurements, in every Elder fight. The look now passes such a chunk over, and finds the portal once
-  it has loaded.
+  it has loaded. The new benchmark (below) then caught three more of the kind, 150 to 260 ms each: the look for ruined
+  portals with a warm chain, a block of the Seam put down at the edge of a chunk (its neighbours' updates reached into the
+  next one, still loading), and a Veil Ray looking for open air. The game's own "is this loaded?" says yes to a chunk
+  still on its way in, so every such look in the mod (some fifty) now asks whether the chunk is there right now, and the
+  Seam's builder holds a block at a chunk's edge until the chunk beside it has come.
 - **Arenas weigh less on memory**: the blocks an arena means to build, has claimed and has put down are kept in
   tables of plain numbers rather than one small object each, a great arena's few hundred thousand blocks no longer
   leaving the JVM as much to clear away mid-fight.

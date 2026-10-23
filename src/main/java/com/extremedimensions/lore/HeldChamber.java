@@ -2,6 +2,8 @@ package com.extremedimensions.lore;
 
 import java.util.Random;
 
+import com.extremedimensions.server.Loaded;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -66,7 +68,7 @@ public final class HeldChamber {
 			for (int v = -HALF; v <= HALF; v++) {
 				for (int y = -1; y <= TALL; y++) {
 					m.set(c.getX() + u, c.getY() + y, c.getZ() + v);
-					if (!level.isLoaded(m)) {
+					if (!Loaded.ready(level, m)) {
 						return Integer.MIN_VALUE;
 					}
 					BlockState s = level.getBlockState(m);
@@ -169,7 +171,7 @@ public final class HeldChamber {
 		for (int u = HALF + 1; u <= dist - 4; u++) {
 			BlockPos foot = at(c, f, side, u, 0, 0), head = foot.above(), floor = foot.below();
 			// never into the player's own portal (the way in stops at its frame), nor through anything someone built
-			if (!level.isLoaded(foot) || kept(level.getBlockState(foot)) || kept(level.getBlockState(head)) || !natural(level.getBlockState(foot))
+			if (!Loaded.ready(level, foot) || kept(level.getBlockState(foot)) || kept(level.getBlockState(head)) || !natural(level.getBlockState(foot))
 					|| !natural(level.getBlockState(head)) || level.getBlockEntity(foot) != null || level.getBlockEntity(head) != null) {
 				break;
 			}

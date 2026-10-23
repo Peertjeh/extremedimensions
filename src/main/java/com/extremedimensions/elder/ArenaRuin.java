@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.extremedimensions.config.Config;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
@@ -114,7 +115,7 @@ public final class ArenaRuin {
 			if (!p.placed) {
 				continue;
 			}
-			if (!level.isLoaded(p.pos)) {
+			if (!Loaded.ready(level, p.pos)) {
 				// Part of it is out of the loaded world: it is looked at again once all of it is in
 				return;
 			}

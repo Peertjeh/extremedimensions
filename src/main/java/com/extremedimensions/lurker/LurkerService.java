@@ -24,6 +24,7 @@ import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 import com.extremedimensions.world.WorldService;
@@ -234,7 +235,7 @@ public final class LurkerService {
 			double dist = min + rnd.nextDouble() * (max - min);
 			int x = (int) Math.floor(p.getX() + Math.cos(ang) * dist);
 			int z = (int) Math.floor(p.getZ() + Math.sin(ang) * dist);
-			if (!level.isLoaded(new BlockPos(x, (int) p.getY(), z))) {
+			if (!Loaded.ready(level, new BlockPos(x, (int) p.getY(), z))) {
 				continue;
 			}
 			BlockPos c;

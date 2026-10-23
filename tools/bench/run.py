@@ -202,7 +202,8 @@ def summary(without, with_, rounds, version, notes):
         lines.append("Slow ticks (over 100 ms) in which the mod's code was running, and where:")
         lines.append("")
         for phase, t in sorted(slow, key=lambda x: -x[1]["ms"])[:5]:
-            lines.append(f"- {phase}: {t['ms']:.0f} ms, in `{t['mod_frame']}`")
+            wait = ", **waiting for a chunk to load**" if "ServerChunkCache.getChunk" in t["at"] else ""
+            lines.append(f"- {phase}: {t['ms']:.0f} ms, in `{t['mod_frame']}`{wait}")
         lines.append("")
     else:
         lines.append("No slow tick (over 100 ms) found the mod's code running.")

@@ -24,6 +24,7 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.mixin.DisplayAccess;
 import com.extremedimensions.server.BlockFlight;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.TickProfile;
 import com.extremedimensions.server.WorldFx;
 
@@ -701,7 +702,7 @@ public final class ElderArena {
 		Iterator<ArrayDeque<Piece>> it = held.values().iterator();
 		while (it.hasNext() && budget > 0) {
 			ArrayDeque<Piece> q = it.next();
-			if (!q.isEmpty() && !a.level.isLoaded(q.peekFirst().pos)) {
+			if (!q.isEmpty() && !Loaded.ready(a.level, q.peekFirst().pos)) {
 				continue;
 			}
 			while (!q.isEmpty() && budget-- > 0) {
@@ -727,7 +728,7 @@ public final class ElderArena {
 	 */
 	private static void launch(Arena a, Piece p) {
 		ServerLevel level = a.level;
-		if (!level.isLoaded(p.pos)) {
+		if (!Loaded.ready(level, p.pos)) {
 			// Its part of the world is not loaded (no one near): it goes up once it is
 			hold(a.waiting, p);
 			return;
@@ -788,7 +789,7 @@ public final class ElderArena {
 	/** A block taken back: the ground is put back as it was and the block flies off into nothing. */
 	private static void unbuild(Arena a, Piece p) {
 		ServerLevel level = a.level;
-		if (!level.isLoaded(p.pos)) {
+		if (!Loaded.ready(level, p.pos)) {
 			// Its part of the world is not loaded: it comes down once it is (the world is never loaded just to take it down)
 			hold(a.leftover, p);
 			return;
@@ -803,7 +804,7 @@ public final class ElderArena {
 		if (m != null) {
 			m.remove(p.pos.asLong());
 		}
-		if (!whole || !level.isLoaded(p.pos) || !roomToFly(a) || !watched(level, p.pos)) {
+		if (!whole || !Loaded.ready(level, p.pos) || !roomToFly(a) || !watched(level, p.pos)) {
 			return;
 		}
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
@@ -921,7 +922,7 @@ public final class ElderArena {
 		float thick = a.style == 2 ? 0.07F : 0.6F;
 		for (ArenaDesign.Line line : a.lines) {
 			// Only between towers whose part of the world is loaded (one still waiting for it may never stand)
-			if (!a.level.isLoaded(BlockPos.containing(line.x0(), line.y0(), line.z0())) || !a.level.isLoaded(BlockPos.containing(line.x1(), line.y1(), line.z1()))) {
+			if (!Loaded.ready(a.level, BlockPos.containing(line.x0(), line.y0(), line.z0())) || !Loaded.ready(a.level, BlockPos.containing(line.x1(), line.y1(), line.z1()))) {
 				continue;
 			}
 			double dx = line.x1() - line.x0(), dy = line.y1() - line.y0(), dz = line.z1() - line.z0();
@@ -943,7 +944,7 @@ public final class ElderArena {
 	private static void segment(Arena a, BlockState look, float thick, double[] from, double[] to) {
 		double dx = to[0] - from[0], dy = to[1] - from[1], dz = to[2] - from[2];
 		float len = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-		if (len < 1e-3 || !a.level.isLoaded(BlockPos.containing(from[0], from[1], from[2]))) {
+		if (len < 1e-3 || !Loaded.ready(a.level, BlockPos.containing(from[0], from[1], from[2]))) {
 			return;
 		}
 		// Turns the block's +Y onto the segment; the centre of its (scaled) bottom face sits on the start

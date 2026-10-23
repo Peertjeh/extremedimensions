@@ -20,6 +20,7 @@ import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.ChatFormatting;
@@ -100,7 +101,7 @@ public final class Echoes {
 		for (Echo e : new ArrayList<>(DataStore.echoes())) {
 			ServerLevel level = WorldFx.level(Dims.fullIdOf(e.dim));
 			BlockPos at = new BlockPos(e.x, e.y, e.z);
-			if (level == null || !level.isLoaded(at)) {
+			if (level == null || !Loaded.ready(level, at)) {
 				continue;
 			}
 			// (once shown, it stays a little further out: walking the edge of its reach does not flicker it)

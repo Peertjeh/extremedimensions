@@ -8,6 +8,7 @@ import com.extremedimensions.config.Config;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Loaded;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -57,7 +58,7 @@ public final class RiftPortals {
 		}
 		RiftPortal portal = HOME.get(p.getUUID());
 		if (portal == null || portal.isRemoved() || portal.level() != seam || portal.closing() >= 0) {
-			if (!seam.isLoaded(BlockPos.containing(d.riftX, d.riftY, d.riftZ))) {
+			if (!Loaded.ready(seam, BlockPos.containing(d.riftX, d.riftY, d.riftZ))) {
 				return;
 			}
 			portal = new RiftPortal(ModEntities.RIFT_PORTAL, seam);

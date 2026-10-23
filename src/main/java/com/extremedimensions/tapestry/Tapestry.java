@@ -10,6 +10,7 @@ import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModBlocks;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.ChatFormatting;
@@ -298,7 +299,7 @@ public final class Tapestry {
 		ServerLevel level = WorldFx.level((String) l[0]);
 		BlockPos pos = new BlockPos((int) l[1], (int) l[2], (int) l[3]);
 		// (a loom in a part of the world nobody has loaded is taken to stand)
-		return level == null || level.isLoaded(pos) && !level.getBlockState(pos).is(ModBlocks.WEAVERS_LOOM);
+		return level == null || Loaded.ready(level, pos) && !level.getBlockState(pos).is(ModBlocks.WEAVERS_LOOM);
 	}
 
 	/**

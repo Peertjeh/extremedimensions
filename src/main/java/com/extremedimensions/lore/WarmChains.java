@@ -14,6 +14,7 @@ import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.journal.MarginNote;
 import com.extremedimensions.progression.Advancements;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import it.unimi.dsi.fastutil.longs.LongSet;
@@ -118,7 +119,7 @@ public final class WarmChains {
 		for (int dx = -1; dx <= 1; dx++) {
 			for (int dz = -1; dz <= 1; dz++) {
 				BlockPos q = at.offset(dx * 16, 0, dz * 16);
-				if (!level.isLoaded(q)) {
+				if (!Loaded.ready(level, q)) {
 					continue;
 				}
 				for (Map.Entry<Structure, LongSet> e : level.structureManager().getAllStructuresAt(q).entrySet()) {
@@ -146,7 +147,7 @@ public final class WarmChains {
 		}
 		for (BlockPos corner : new BlockPos[] {new BlockPos(box.minX(), box.minY(), box.minZ()), new BlockPos(box.maxX(), box.minY(), box.maxZ()),
 				new BlockPos(box.minX(), box.minY(), box.maxZ()), new BlockPos(box.maxX(), box.minY(), box.minZ())}) {
-			if (!level.isLoaded(corner)) {
+			if (!Loaded.ready(level, corner)) {
 				return null; // looked at again once all of it is there
 			}
 		}

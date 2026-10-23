@@ -18,6 +18,7 @@ import com.extremedimensions.journal.MarginNote;
 import com.extremedimensions.lore.Loot;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.ChatFormatting;
@@ -159,7 +160,7 @@ public final class Unanchored {
 		for (int i = 0; i < 12; i++) {
 			double a = a0 + i * Math.PI / 6, d = 10 + rnd.nextInt(7);
 			int x = (int) Math.floor(p.getX() + Math.cos(a) * d), z = (int) Math.floor(p.getZ() + Math.sin(a) * d);
-			if (!level.isLoaded(new BlockPos(x, (int) p.getY(), z))) {
+			if (!Loaded.ready(level, new BlockPos(x, (int) p.getY(), z))) {
 				continue;
 			}
 			int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);

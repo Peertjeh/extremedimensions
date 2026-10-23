@@ -13,6 +13,7 @@ import java.util.function.Consumer;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.registry.ModBlocks;
 import com.extremedimensions.server.BlockFlight;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
@@ -611,7 +612,7 @@ public final class SeamArchitect {
 		while (level != null && !NEAR.isEmpty()) {
 			Job j = NEAR.poll();
 			BlockPos pos = BlockPos.of(j.pos());
-			if (level.isLoaded(pos) && !settle(level, j, pos)) {
+			if (Loaded.ready(level, pos) && !settle(level, j, pos)) {
 				stood(j);
 			}
 		}
@@ -671,7 +672,7 @@ public final class SeamArchitect {
 			for (var it = WAITING.entrySet().iterator(); it.hasNext();) {
 				var e = it.next();
 				long key = e.getKey();
-				if (level.hasChunk((int) (key >> 32), (int) key)) {
+				if (Loaded.chunk(level, (int) (key >> 32), (int) key)) {
 					READY.addAll(e.getValue());
 					waiting -= e.getValue().size();
 					it.remove();
@@ -700,8 +701,9 @@ public final class SeamArchitect {
 	 */
 	private static void run(ServerLevel level, Job j, double[] watchers) {
 		BlockPos pos = BlockPos.of(j.pos());
-		if (!level.isLoaded(pos)) {
-			park(j);
+		long wait = unready(level, pos);
+		if (wait != NONE) {
+			park(j, wait);
 			return;
 		}
 		if (j.action() != null) {
@@ -738,9 +740,32 @@ public final class SeamArchitect {
 		return false;
 	}
 
-	private static void park(Job j) {
-		WAITING.computeIfAbsent(chunkOf(j.pos()), k -> new ArrayDeque<>()).add(j);
+	private static void park(Job j, long chunk) {
+		WAITING.computeIfAbsent(chunk, k -> new ArrayDeque<>()).add(j);
 		waiting++;
+	}
+
+	/** No chunk is missing (see {@link #unready}). */
+	private static final long NONE = Long.MIN_VALUE;
+
+	/**
+	 * The chunk a block put down at {@code pos} would reach into that is not loaded now, as {@link #chunkOf} keys it, or
+	 * {@link #NONE}: its own, and at a chunk's edge the one beside it, where its neighbours' updates land (put down beside
+	 * a chunk still loading, the server thread stood and waited for it).
+	 */
+	private static long unready(ServerLevel level, BlockPos pos) {
+		int cx = pos.getX() >> 4, cz = pos.getZ() >> 4, lx = pos.getX() & 15, lz = pos.getZ() & 15;
+		if (!Loaded.ready(level, pos)) {
+			return chunkOf(pos.asLong());
+		}
+		int nx = lx == 0 ? cx - 1 : lx == 15 ? cx + 1 : cx, nz = lz == 0 ? cz - 1 : lz == 15 ? cz + 1 : cz;
+		if (nx != cx && !Loaded.chunk(level, nx, cz)) {
+			return (long) nx << 32 | (cz & 0xFFFFFFFFL);
+		}
+		if (nz != cz && !Loaded.chunk(level, cx, nz)) {
+			return (long) cx << 32 | (nz & 0xFFFFFFFFL);
+		}
+		return NONE;
 	}
 
 	/** A block of a plan is put down; once its plan's blocks all stand, its actions follow. */
@@ -850,8 +875,9 @@ public final class SeamArchitect {
 		while (flyCredit >= 1 && FLIGHTS.size() < max && !NEAR.isEmpty() && direct < 512) {
 			Job j = NEAR.poll();
 			BlockPos pos = BlockPos.of(j.pos());
-			if (!level.isLoaded(pos)) {
-				park(j);
+			long wait = unready(level, pos);
+			if (wait != NONE) {
+				park(j, wait);
 				continue;
 			}
 			if (!flies(level, j, pos, watchers)) {
@@ -894,7 +920,7 @@ public final class SeamArchitect {
 				double dx = watchers[i] - bx, dy = watchers[i + 1] - by, dz = watchers[i + 2] - bz;
 				if (dx * dx + dz * dz < 2.5 * 2.5 && dy >= 0.5 && dy < 5) {
 					BlockPos pos = BlockPos.of(k);
-					if (level.isLoaded(pos) && settle(level, j, pos)) {
+					if (unready(level, pos) == NONE && settle(level, j, pos)) {
 						it.remove();
 					}
 					break;
@@ -986,8 +1012,9 @@ public final class SeamArchitect {
 
 		@Override
 		public void lost() {
-			if (!level.isLoaded(pos)) {
-				park(job);
+			long wait = unready(level, pos);
+			if (wait != NONE) {
+				park(job, wait);
 			} else if (!settle(level, job, pos)) {
 				NEAR.add(job);
 			}

@@ -18,6 +18,7 @@ import com.extremedimensions.registry.ModBlocks;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.seam.SeamService;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
@@ -126,7 +127,7 @@ public final class MendingService {
 				if (p.distanceToSqr(HX, HY, HZ) < 120 * 120) {
 					// Build it the first time, and again if the Seam was regenerated and the altar is gone
 					BlockPos altar = new BlockPos(HX, HY, HZ);
-					if (!DataStore.heartBuilt() || (seam.isLoaded(altar) && seam.getBlockState(altar).isAir())) {
+					if (!DataStore.heartBuilt() || (Loaded.ready(seam, altar) && seam.getBlockState(altar).isAir())) {
 						buildHeart(seam);
 					}
 					break;
