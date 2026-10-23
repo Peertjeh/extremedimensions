@@ -772,6 +772,11 @@ public final class Bots {
 		return LearnedFight.timing();
 	}
 
+	/** The velocity of the bot's target as its model takes it in, or null (self-test). */
+	public static double[] learnedTargetVelocity(BotPlayer b) {
+		return b.brain.mind().melee() instanceof LearnedFight lf ? lf.seenVelocity() : null;
+	}
+
 	/** The bot's model decisions, those with a team mate in the observation, those with history (self-test). */
 	public static int[] learnedTeam(BotPlayer b) {
 		return b.brain.mind().melee() instanceof LearnedFight lf ? new int[] {lf.decisions(), lf.withAlly(), lf.withHistory()} : new int[3];

@@ -180,6 +180,28 @@ final class BotTests {
 			logBot("learned v3 bot", m, b, "learnedV3Logged");
 			return false;
 		});
+		s.run(tag + ": A walks sideways, 0.2 blocks a tick", () -> VARS.put("walkTicks", 0));
+		s.waitFor(tag + ": the model takes in A's velocity as the game keeps it (0.2 x 0.546 on the ground, as in the simulation)", 60, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			ServerPlayer a = p(A);
+			int k = (int) VARS.get("walkTicks");
+			VARS.put("walkTicks", k + 1);
+			// across the line to the bot, back and forth, so it stays in sight
+			double dx = b.getX() - a.getX(), dz = b.getZ() - a.getZ(), ln = Math.max(1e-6, Math.hypot(dx, dz));
+			double side = (k / 10) % 2 == 0 ? 0.2 : -0.2;
+			PartyTests.tp(a, a.getX() - dz / ln * side, a.getY(), a.getZ() + dx / ln * side);
+			if (k % 10 < 5) return false;
+			double[] v = Bots.learnedTargetVelocity(b);
+			double want = 0.2 * (a.onGround() ? 0.6 * 0.91 : 0.91);
+			double got = v == null ? 0 : Math.hypot(v[0], v[2]);
+			if (k % 10 == 9) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v3 axe: A's velocity as the model took it in {} (the game's {})",
+						String.format(java.util.Locale.ROOT, "%.4f", got), String.format(java.util.Locale.ROOT, "%.4f", want));
+			}
+			return Math.abs(got - want) < 0.01;
+		});
 		s.waitFor(tag + ": A, standing still, loses to it", 1200, () -> {
 			Match m = matchOfA();
 			if (m == null) return false;
@@ -194,7 +216,7 @@ final class BotTests {
 			return r.get(0).contains(bot) && r.get(0).contains("v3") && r.get(1).contains("%")
 					&& net.battlehub.bot.ModelReports.last(bot).size() == r.size();
 		});
-		s.waitFor(tag + ": the fight was recorded: A's and the bot's decisions, a hit, the bot won", 200, () -> {
+		s.waitFor(tag + ": the fight was recorded: A's and the bot's decisions, its hits (clicks), the bot won", 200, () -> {
 			java.nio.file.Path f = net.battlehub.bot.FightRecorder.lastClosed();
 			if (f == null || net.battlehub.bot.FightRecorder.lastClosedMatch() != (int) VARS.get("v3AxeMatch")) return false;
 			List<String> lines;
@@ -206,7 +228,7 @@ final class BotTests {
 			}
 			java.util.Map<String, Object> head = net.battlehub.core.ml.MiniJson.object(net.battlehub.core.ml.MiniJson.parse(lines.get(0)));
 			List<Object> fighters = net.battlehub.core.ml.MiniJson.array(head.get("fighters"));
-			int human = -1, bot = -1, humanRows = 0, botRows = 0, hits = 0;
+			int human = -1, bot = -1, humanRows = 0, botRows = 0, hits = 0, kinds = 0;
 			for (int i = 0; i < fighters.size(); i++) {
 				String kind = (String) net.battlehub.core.ml.MiniJson.object(fighters.get(i)).get("kind");
 				if (kind.equals("human")) human = i;
@@ -221,6 +243,7 @@ final class BotTests {
 					else botRows++;
 				} else if (r.containsKey("hit")) {
 					hits++;
+					if ("melee".equals(r.get("kind"))) kinds++;
 				} else if (r.containsKey("end")) {
 					end = r;
 				}
@@ -228,7 +251,8 @@ final class BotTests {
 			net.battlehub.BattleHub.LOGGER.info("SELFTEST fight log {}: {} lines, A {} decisions, the bot {}, {} hits, end {}", f.getFileName(),
 					lines.size(), humanRows, botRows, hits, end);
 			VARS.put("v3AxeLog", f.getFileName().toString());
-			return "axe".equals(head.get("mode")) && human >= 0 && bot >= 0 && humanRows > 20 && botRows > 20 && hits > 0 && end != null
+			return "axe".equals(head.get("mode")) && "game".equals(head.get("velocities")) && human >= 0 && bot >= 0 && humanRows > 20 && botRows > 20
+					&& hits > 0 && kinds == hits && end != null
 					&& net.battlehub.core.ml.MiniJson.doubles(end.get("winners")).length == 1
 					&& net.battlehub.core.ml.MiniJson.doubles(end.get("winners"))[0] == bot;
 		});

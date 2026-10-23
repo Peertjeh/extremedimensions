@@ -83,6 +83,12 @@ final class LearnedFight implements MeleeController {
 		return withHistory;
 	}
 
+	/** The velocity of the target as the bot last took it in (per tick, as the game keeps it), or null (self-test). */
+	double[] seenVelocity() {
+		FightState.Seen o = seen.peekFirst();
+		return o == null ? null : new double[] {o.vx(), o.vy(), o.vz()};
+	}
+
 	/** Whether the model fights in this match: on, the mode in bots.learnedModes, a melee kit, the models there. */
 	static boolean active(Match m) {
 		var cfg = ConfigManager.config().bots;
