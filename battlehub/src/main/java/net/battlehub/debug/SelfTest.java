@@ -250,9 +250,15 @@ public final class SelfTest {
 	private static void runningAtStop(MinecraftServer server, Script s) {
 		String tag = "server stop";
 		reset(s, tag);
-		s.run(tag + ": A and B start a duel", () -> {
+		s.run(tag + ": A and B come into BattleHub", () -> {
 			join(server, "BHTestA");
 			join(server, "BHTestB");
+		});
+		// right after the world reset the server may refuse a teleport for a moment (Travel.enter tries again): queue only
+		// once both are in the lobby
+		s.waitFor(tag + ": A and B in the lobby", 200, () -> net.battlehub.hub.Travel.inBattleHub(p("BHTestA"))
+				&& net.battlehub.hub.Travel.inBattleHub(p("BHTestB")));
+		s.run(tag + ": A and B start a duel", () -> {
 			Queues.join(p("BHTestA"), GameMode.SWORD, false);
 			Queues.join(p("BHTestB"), GameMode.SWORD, false);
 		});
