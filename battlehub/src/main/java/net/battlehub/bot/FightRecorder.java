@@ -396,7 +396,7 @@ public final class FightRecorder {
 				out[k] = (Boolean) m.invoke(in);
 			}
 			return out;
-		} catch (ReflectiveOperationException | RuntimeException | ClassCastException e) {
+		} catch (ReflectiveOperationException | RuntimeException e) {
 			lastInput = null;
 			return null;
 		}
