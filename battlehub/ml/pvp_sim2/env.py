@@ -1,7 +1,8 @@
 """The v2/v3 environments: n arenas with 2 to 4 fighters each, on the maps of the modes, with their kits and items.
 
 Every decision lasts spec.decision_ticks ticks: movement, jump, the hand and the right button are held, the click
-happens on the first tick, the turn is spread over the ticks.
+happens on the first tick (an opponent's, now and then, on a later one: Scenario.late_click), the turn is spread over
+the ticks.
 
 What a fighter knows follows the mod's senses, for every other fighter: visible within the view half-angle (head,
 middle or feet) with nothing of the terrain in between; otherwise known where it was last located (seen, heard within
@@ -73,8 +74,11 @@ class Scenario:
     modes3: dict = field(default_factory=lambda: {"1v2": 0.4, "ffa": 0.4, "2v1": 0.2})
     four: float = 0.25         # share of arenas with four fighters (at full breadth, k >= 4)
     modes4: dict = field(default_factory=lambda: {"2v2": 0.6, "ffa4": 0.25, "3v1": 0.15})
-    chaos: float = 0.12
+    chaos: float = 0.2         # share of fighters with Chaos effects (kits.chaos: the game's own events and profiles)
     opp_delay: tuple = (0, 2)
+    # share of the other fighters' clicks (slots 1..) that fall on a later tick of the decision, as a person's click can
+    # (the model's own, as the mod does it, is on the first)
+    late_click: float = 0.5
     aim_noise: tuple = (0.0, 1.5)
     turn_cap: tuple = (30.0, 60.0)
     yaw_noise: float = 60.0
@@ -560,9 +564,11 @@ class Batch2:
         # items over the decision's ticks (the world's flags are per tick)
         used = {name: np.zeros((self.n, self.k), dtype=np.int64) for name in ("fired", "ate", "threw", "arrow_hit", "pearled")}
         alive0 = f.alive.copy()
+        late = (self.rng.random((self.n, self.k)) < self.scenario.late_click) & (np.arange(self.k) >= 1)[None, :]
+        click_tick = np.where(late, self.rng.integers(0, T, size=(self.n, self.k)), 0)
         for t in range(T):
             noise = self.rng.normal(size=(self.n, self.k, 2)) * self.aim_noise[:, :, None]
-            w.tick(forward, strafe, jump, sprint, attack & (t == 0), use, yaw / T + noise[:, :, 0], pitch / T + noise[:, :, 1], hand)
+            w.tick(forward, strafe, jump, sprint, attack & (click_tick == t), use, yaw / T + noise[:, :, 0], pitch / T + noise[:, :, 1], hand)
             dealt += w.dealt
             taken += w.taken
             healed += w.healed

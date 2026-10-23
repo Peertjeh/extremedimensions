@@ -20,6 +20,7 @@ fights it was not fitted on.
 
     python train/simfit.py data/                     # every measure, every fight
     python train/simfit.py data/ --part test --json report.json
+    python train/simfit.py data/ --effects spec/effects_game.json   # the Chaos effects, for pvp_sim2/kits
 """
 import argparse
 import collections
@@ -427,6 +428,34 @@ def measure_behaviour(logs):
     return out
 
 
+NORMAL = {"walk_speed": 1.0, "jump_power": 0.42, "scale": 1.0, "gravity": 0.08, "strength": 0.0}
+
+
+def effect_profiles(fights):
+    """The effects fighters had in the Chaos modes (Chaos events: speed, slowness, jump boost, size, gravity, strength,
+    a freeze), as the simulation's kits.chaos takes them: per profile (walk speed as a factor of 0.1, jump power, size,
+    gravity, strength as damage on top of the fight's usual weapon) the share of the time it was on, and the share of
+    the time any was on."""
+    weights, total = collections.Counter(), 0
+    for f in fights:
+        if "chaos" not in f.header.get("mode", ""):
+            continue
+        s = F.states(f)
+        usual = collections.Counter(np.round(s["self_melee_damage"], 2)).most_common(1)[0][0]
+        for i in range(len(f.rows)):
+            p = (round(float(s["self_walk_speed"][i]) / 0.1, 2), round(float(s["self_jump_power"][i]), 2), round(float(s["self_scale"][i]), 2),
+                 round(float(s["self_gravity"][i]), 3), round(float(s["self_melee_damage"][i]) - usual, 1))
+            total += 1
+            if p != (1.0, 0.42, 1.0, 0.08, 0.0):
+                weights[p] += 1
+    on = sum(weights.values())
+    return {"doc": "Effects of the Chaos modes in the game's fight logs (train/simfit.py --effects); pvp_sim2/kits.chaos draws "
+                   "from them. share: the part of the time any effect was on.",
+            "decisions": total, "share": on / total if total else 0.0,
+            "profiles": [{"walk_speed": p[0], "jump_power": p[1], "scale": p[2], "gravity": p[3], "strength": p[4], "weight": w / on}
+                         for p, w in weights.most_common()]}
+
+
 def report(fights, part="all"):
     logs = [Log(f) for f in fights if part == "all" or part_of(f.name) == part]
     return {"part": part, "fights": len(logs), "decisions": int(sum(len(l.rows) for l in logs)),
@@ -466,8 +495,14 @@ def main():
     ap.add_argument("paths", nargs="+")
     ap.add_argument("--part", default="all", choices=["all", "fit", "test"])
     ap.add_argument("--json")
+    ap.add_argument("--effects", help="write the Chaos effects of the fights' fit part here (spec/effects_game.json)")
     a = ap.parse_args()
     fights = [f for p in a.paths for f in F.read(p)]
+    if a.effects:
+        e = effect_profiles([f for f in fights if part_of(f.name) == "fit"])
+        with open(a.effects, "w", encoding="utf-8") as fh:
+            json.dump(e, fh, indent=1)
+        print("%d profiles, on %.1f%% of %d decisions in Chaos modes -> %s" % (len(e["profiles"]), 100 * e["share"], e["decisions"], a.effects))
     r = report(fights, a.part)
     print(text(r))
     if a.json:

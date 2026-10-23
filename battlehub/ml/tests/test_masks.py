@@ -140,8 +140,9 @@ def test_extra_items_only_where_chests_or_the_shop_give_them():
     b, _ = _items_batch(seed=9)
     f = b.w.f
     assert (f.pearls[:, :3] > 0).mean() > 0.4
-    # a duel kit gets nothing more, and without extra_items the stream of random numbers is the one it was
-    d1 = Batch2(8, seed=4, scenario=Scenario(extra_items=1.0), fixed={"terrain": "walled", "family": "sword", "count": 2})
+    # a duel kit gets nothing more (without Chaos, whose pearl event gives pearls), and without extra_items the stream of
+    # random numbers is the one it was
+    d1 = Batch2(8, seed=4, scenario=Scenario(extra_items=1.0, chaos=0.0), fixed={"terrain": "walled", "family": "sword", "count": 2})
     d1.reset()
     assert (d1.w.f.pearls == 0).all()
     a, c = Batch2(8, seed=4), Batch2(8, seed=4, scenario=Scenario(extra_items=0.0))

@@ -3,6 +3,9 @@
 
 A kit is a dict of plain numbers (see FIELDS); Fighters keeps them as arrays (n, K).
 """
+import json
+import os
+
 import numpy as np
 
 # attack damage (with the player's 1), attack speed, axe (disables shields), mace (smash); strength adds 3 a level
@@ -195,9 +198,63 @@ def loot(rng):
     return k
 
 
+SPEC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "spec")
+
+
+def _load(name, key):
+    path = os.path.join(SPEC_DIR, name)
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as fh:
+        items = json.load(fh).get(key) or []
+    if not items:
+        return None
+    return items
+
+
+# the profiles that were on in the game's Chaos fights (train/simfit.py --effects), by how long each was on
+GAME_EFFECTS = _load("effects_game.json", "profiles")
+# the Chaos events of the mod's catalog that change a body (tools/chaos_effects.py), by weight times seconds
+CATALOG = _load("chaos_effects.json", "events")
+GAME_SHARE = 0.5     # of the Chaos fighters, this many get a profile seen in the game; the rest events of the catalog
+
+
+def _draw(rng, items, key):
+    w = np.array([x[key] if key else x["weight"] * x["seconds"] for x in items], dtype=np.float64)
+    return items[int(rng.choice(len(items), p=w / w.sum()))]
+
+
 def chaos(k, rng):
-    """The Bridge: Chaos' effects on one fighter: speed or slowness, strength, jump boost, size, gravity, knockback,
-    resistance."""
+    """The Bridge: Chaos' effects on one fighter. Half the time a profile the game's fight logs had on
+    (spec/effects_game.json, by how long each was on: a jump boost of four, a fast tiny player, slowness with strength);
+    else one to three events of the mod's own catalog at once (spec/chaos_effects.json: speed, slowness, jump boost,
+    size, gravity, strength, resistance, attack speed, reach, a freeze), as events overlap in a match. Without those
+    files: speed or slowness, strength, jump boost, size, gravity, knockback, resistance at random."""
+    if GAME_EFFECTS is not None and rng.random() < GAME_SHARE:
+        p = _draw(rng, GAME_EFFECTS, "weight")
+        k["walk_speed"] *= p["walk_speed"]
+        k["jump_power"] = p["jump_power"]
+        k["scale"] = p["scale"]
+        k["gravity"] = p["gravity"]
+        k["strength"] += p["strength"]
+        return k
+    if CATALOG is not None:
+        count = 1 + int(rng.random() < 0.35) + int(rng.random() < 0.1)
+        jump_mult, jump_add = 1.0, 0.0
+        for _ in range(count):
+            e = _draw(rng, CATALOG, None)
+            k["walk_speed"] *= e["walk_speed"]
+            jump_mult *= e["jump_mult"]
+            jump_add += e["jump_add"]
+            k["scale"] *= e["scale"]
+            k["gravity"] *= e["gravity"]
+            k["strength"] += e["strength"]
+            k["resistance"] = max(k["resistance"], e["resistance"])
+            k["atk_speed"] *= e["attack_speed"]
+            k["reach"] += e["reach"]
+        k["jump_power"] = k["jump_power"] * jump_mult + jump_add
+        k["scale"] = min(3.0, max(0.1, k["scale"]))
+        return k
     if rng.random() < 0.35:
         lvl = int(rng.integers(1, 3))
         k["walk_speed"] *= 1 + 0.2 * lvl
@@ -249,11 +306,14 @@ def extra_items(k, rng):
 
 
 def deal(family, count, rng, chaos_p=0.0):
-    """Kits for `count` fighters of one arena."""
+    """Kits for `count` fighters of one arena. A fighter with Chaos effects also has the pearls of the Chaos event that
+    every match plans (one a time, often more than once)."""
     make, same = FAMILIES[family]
     first = make(rng)
     kits = [dict(first) if same else (first if i == 0 else make(rng)) for i in range(count)]
     for k in kits:
         if rng.random() < chaos_p:
             chaos(k, rng)
+            if rng.random() < 0.6:
+                k["pearls"] = max(k["pearls"], int(rng.integers(1, 4)))
     return kits

@@ -119,12 +119,13 @@ def main():
     ap.add_argument("--steps", type=int, default=3000, help="decisions per spec")
     ap.add_argument("--n", type=int, default=64, help="arenas")
     ap.add_argument("--seed", type=int, default=11)
+    ap.add_argument("--out", help="write here instead of spec/combat_<v>_ranges.json (one spec)")
     a = ap.parse_args()
     for v, collect in (("v1", collect_v1), ("v2", collect_v2), ("v3", lambda *x: collect_v3(*x, models=a.models))):
         if a.spec not in (v, "all"):
             continue
         spec, rows = collect(a.steps, a.n, a.seed)
-        out = os.path.join(HERE, "spec", "combat_%s_ranges.json" % v)
+        out = a.out or os.path.join(HERE, "spec", "combat_%s_ranges.json" % v)
         with open(out, "w") as f:
             json.dump(ranges(spec, rows), f, indent=1)
         print("%s: %d samples -> %s" % (v, rows.shape[0], out))
