@@ -1828,9 +1828,15 @@ bruggen, rollen) blijven gescript.
   | bijlduel (omgezette master, `abf0d61`) | 187 | 0,479 ms | 0,755 ms | 5,1 ms | 0,0069 ms |
   | 1v2 met twee bots (idem) | 280 | 0,453 ms | 0,731 ms | 5,1 ms | 0,0066 ms |
   | items, Build UHC (idem) | 583 | 0,402 ms | 0,621 ms | 5,1 ms | 0,0049 ms |
+  | bijlduel (nieuwe master, 1.40.0 `18e5aa2`) | 123 | 0,494 ms | 0,658 ms | 4,0 ms | 0,0070 ms |
+  | 1v2 met twee bots (idem) | 224 | 0,479 ms | 0,873 ms | 4,0 ms | 0,0067 ms |
+  | items, Build UHC (idem) | 362 | 0,465 ms | 0,658 ms | 4,0 ms | 0,0061 ms |
 
   - Ongeveer 0,05 ms meer dan in 1.39. Het netwerk heeft 51 ingangen meer (ruim 13.000 vermenigvuldigingen
     erbij), en de mod zoekt nu ook teamgenoten en een derde vijand.
   - Het maximum is weer het laden van het model.
+- **CI van 1.40.0 (`18e5aa2`): 893 geslaagd, 0 gefaald.**
+  - In de teamtest hadden de twee bots 11 van 11 en 19 van 19 beslissingen met hun teamgenoot, en 10 en 18 met
+    geschiedenis.
 
 **Gescripte punten.** Geen.
