@@ -150,13 +150,16 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   arm swings for every hit, every miss and every chest it opens.
 * *A learned fight in every melee mode*: a neural network trained outside Minecraft (`battlehub/ml`: a fast
   simulation of the game, PPO with self-play) does the fighting itself: walking, strafing, sprinting, jumping,
-  turning and clicking, every two ticks, from what the bot can see. Model v2 knows the ground round it (edges, the
-  void, steps and walls, how much ground lies behind its target, to knock it off a bridge or an island), both
-  kits (damage per hit against the armor, the weapons' cooldown and knockback, speed, jump, size and the like from
-  The Bridge: Chaos' effects), what it carries, an arrow coming at it and a second enemy. It fights in SkyWars,
-  Bed Wars, the Hunger Games, The Bridge (also Chaos, duos and 1v1v1v1), FFA, 1v2 and 1v3, sumo, the axe and
-  Build UHC duels, sword duels and boxing, KOTH, CTF, LMS and the tournaments (model v1 of 1.33, trained only
-  for the sword duel, left the mod in 1.39: v2 now beats it there); mace and bow fights stay scripted. The mind still
+  turning and clicking, every two ticks, from what the bot can see. The model (spec v3) knows the ground round it
+  (edges, the void, steps and walls, how much ground lies behind its target, to knock it off a bridge or an
+  island), both kits (damage per hit against the armor, the weapons' cooldown and knockback, speed, jump, size and
+  the like from The Bridge: Chaos' effects), what it carries, an arrow coming at it, a second and a third enemy,
+  its nearest team mate (where it is, its health when seen, how far it is from the bot's target), what it remembers
+  (since it last saw its target, since it was hurt, since it hurt its target) and its last decisions. It was
+  trained in 1v1, against two, three or four at once and in teams of two and three with a shared reward. It fights
+  in SkyWars, Bed Wars, the Hunger Games, The Bridge (also Chaos, duos and 1v1v1v1), FFA, 1v2 and 1v3, sumo, the
+  axe and Build UHC duels, sword duels and boxing, KOTH, CTF, LMS and the tournaments; mace and bow fights stay
+  scripted. The mind still
   decides when to fight, heal, shoot or go for the objective (near an objective the model takes over only for
   enemies within 8 blocks). The model chooses with action masks: never something the bot does not have in its
   hotbar, never food at full hunger. A model that learned its items says which (golden apples and food, pearls,
@@ -164,7 +167,7 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   everything else stays the bot's own rules, as does healing at a distance. The crosshair check of every click
   stays. Each difficulty level has its own model, picked by Elo rating, with a little delay, aim noise and a turn
   limit on the lower levels. `/battlehub bots inspect <bot>` shows what a model decision costs the tick (average,
-  99th percentile, maximum). `bots.learnedCombat` turns it off.
+  99th percentile, maximum) and how many decisions had a team mate and a history. `bots.learnedCombat` turns it off.
 * *Fight logs*: every fight (melee and bow games, people and bots) is recorded for training in
   `config/battlehub/fights`, a gzip file per fight: ten times a second, for every fighter, what the model would see
   and what the fighter did (keys, jump, sprint, swings, turning, what they held, the right button), for bots also
