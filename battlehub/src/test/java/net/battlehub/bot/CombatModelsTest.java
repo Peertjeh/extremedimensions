@@ -3,6 +3,7 @@ package net.battlehub.bot;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -59,6 +60,8 @@ class CombatModelsTest {
 				// a decision comes out of it
 				assertNotNull(CombatAction.decode(spec, CombatAction.best(spec, got)));
 			}
+			// the hands a model learned (its "items" mark) are hands of the spec, never the weapon
+			for (String h : m.items(spec)) assertTrue(spec.hands.contains(h) && !h.equals("weapon"), lv.name() + " learned " + h);
 			m.session.close();
 		}
 	}

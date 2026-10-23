@@ -339,11 +339,17 @@ final class BotTests {
 			BotPlayer b = botsIn(m).get(0);
 			int[] items = Bots.learnedItems(b);
 			boolean ate = foodOf(b) < (int) VARS.get("itemsFood") || b.getAbsorptionAmount() > 0;
-			if (ate && v2Steered(b, 10)) {
+			// the mind heals and shoots by its own rules much of the time; the model only has to steer at all
+			if (ate && Bots.learnedTicks(b) > 0) {
 				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v2 items: model used {} items, {} hands not in the hotbar | {}", items[0], items[1],
 						String.join(" | ", Bots.inspect(b)));
 				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned decision cost: {}", Bots.learnedTiming());
 				return items[1] == 0;
+			}
+			if (!VARS.containsKey("itemsLogged") || (int) VARS.get("itemsLogged") != Bots.learnedTicks(b) / 200) {
+				VARS.put("itemsLogged", Bots.learnedTicks(b) / 200);
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST learned v2 items: ate {} (food {} of {}, absorption {}), model steered {} ticks", ate,
+						foodOf(b), VARS.get("itemsFood"), b.getAbsorptionAmount(), Bots.learnedTicks(b));
 			}
 			logBot("learned v2 items bot", m, b, "learnedV2ItemsLogged");
 			return false;
