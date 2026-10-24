@@ -146,16 +146,20 @@ class FrozenPolicy:
 
 class OpponentPool2:
     """Who plays each opponent slot: -3 dummy, -1 random, -2 scripted (a skill per slot), -4 model v1 (through the
-    league's adapter, with --v1), -5 the people policy (train/people.py, with --people), k >= 0 frozen policy k."""
+    league's adapter, with --v1), -5 the people policy (train/people.py, with --people), -6 the rival (a fixed checkpoint
+    to beat, with --rival), k >= 0 frozen policy k."""
 
     START = {"pool": 0.0, "random": 0.2, "dummy": 0.5}
     END = {"pool": 0.5, "random": 0.04, "dummy": 0.08}
 
-    def __init__(self, rng, curriculum, max_size=24, newest_share=0.5, latch=False, v1=None, v1_share=0.0, people=None, people_share=0.0):
+    def __init__(self, rng, curriculum, max_size=24, newest_share=0.5, latch=False, v1=None, v1_share=0.0, people=None, people_share=0.0,
+                 rival=None, rival_share=0.0):
         self.v1 = v1
         self.v1_share = v1_share if v1 is not None else 0.0
         self.people = people
         self.people_share = people_share if people is not None else 0.0
+        self.rival = rival
+        self.rival_share = rival_share if rival is not None else 0.0
         self.rng = rng
         self.cur = curriculum
         self.frozen = []
@@ -192,6 +196,8 @@ class OpponentPool2:
             kind = np.where(self.rng.random(m) < self.v1_share, -4, kind)
         if self.people_share > 0:
             kind = np.where(self.rng.random(m) < self.people_share, -5, kind)
+        if self.rival_share > 0:
+            kind = np.where(self.rng.random(m) < self.rival_share, -6, kind)
         return kind, skill
 
     def act(self, obs, kind, skill):
@@ -205,6 +211,8 @@ class OpponentPool2:
         if (kind == -5).any():
             rows = np.nonzero(kind == -5)[0]
             out[rows] = self.people.rows(obs[rows], rows, len(kind))
+        if (kind == -6).any():
+            out[kind == -6] = self.rival(obs[kind == -6])
         for k in np.unique(kind[kind >= 0]):
             rows = kind == k
             out[rows] = self.frozen[int(k)](obs[rows])
@@ -428,6 +436,8 @@ def main():
     ap.add_argument("--v1-share", type=float, default=0.2, help="share of the opponent slots v1 plays (with --v1)")
     ap.add_argument("--people", default=None, help="train/people.py's run: the people policy as an opponent (phase 3D)")
     ap.add_argument("--people-share", type=float, default=0.15, help="share of the opponent slots it plays (with --people)")
+    ap.add_argument("--rival", default=None, help="a checkpoint to beat as a fixed opponent (phase 3D: the master of 1.40), e.g. ckpt.zip#hands=food,gapple,wind")
+    ap.add_argument("--rival-share", type=float, default=0.3, help="share of the opponent slots it plays (with --rival)")
     ap.add_argument("--family-weight", nargs="*", default=[], help="kit weights over the default, e.g. sword=3 boxing=0.6")
     ap.add_argument("--pair", nargs="*", default=[], help="maps that go with a kit most of the time, e.g. sword=walled")
     ap.add_argument("--spec", type=int, default=3, choices=[2, 3], help="3: team mates, a third enemy, memory, four slots")
@@ -460,7 +470,14 @@ def main():
         from train.people import People
         people = People.load(a.people, seed=a.seed)
         print("people from", a.people, "in", a.people_share, "of the opponent slots", flush=True)
-    pool = OpponentPool2(rng, cur, latch=a.scripted_latch, v1=v1, v1_share=a.v1_share, people=people, people_share=a.people_share)
+    rival = None
+    if a.rival:
+        from train.league2 import make_player
+        rival = make_player("rival", a.rival)  # as the league and the mod play it: its best choice, only its hands
+        torch.set_num_threads(a.threads)  # make_player keeps a league process to one thread
+        print("rival from", a.rival, "in", a.rival_share, "of the opponent slots", flush=True)
+    pool = OpponentPool2(rng, cur, latch=a.scripted_latch, v1=v1, v1_share=a.v1_share, people=people, people_share=a.people_share,
+                         rival=rival, rival_share=a.rival_share)
     lessons = None
     if a.focus:
         from train.focus import apply, load

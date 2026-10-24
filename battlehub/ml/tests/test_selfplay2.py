@@ -1,4 +1,5 @@
-"""The opponent pool of selfplay2.py: model v1 as an opponent (phase 3B) takes its share of the slots and plays them."""
+"""The opponent pool of selfplay2.py: model v1 as an opponent (phase 3B) and the rival (phase 3D) take their share of the
+slots and play them."""
 import numpy as np
 
 from pvp_sim2.spec import SPEC2
@@ -37,3 +38,15 @@ def test_without_v1_no_slot_is_its():
     pool = OpponentPool2(np.random.default_rng(1), cur, v1=None, v1_share=0.5)
     kind, _ = pool.draw(1000)
     assert not (kind == -4).any()
+
+
+def test_the_rival_plays_its_share_of_the_slots():
+    cur = Curriculum(warmup=0, widen=1, fade_from=0, fade_to=1)
+    cur.steps = 10
+    rival = FakeV1()
+    pool = OpponentPool2(np.random.default_rng(2), cur, rival=rival, rival_share=0.3)
+    kind, skill = pool.draw(4000)
+    assert 0.27 < (kind == -6).mean() < 0.33
+    acts = pool.act(np.zeros((4000, SPEC2.obs_dim), dtype=np.float32), kind, skill)
+    assert rival.rows == int((kind == -6).sum())
+    assert (acts[kind == -6, SPEC2.action_index("attack")] == 1).all()
