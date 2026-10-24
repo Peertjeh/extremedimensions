@@ -34,14 +34,20 @@ jobs:
           ls -l build/libs/*.jar | awk '{printf "JAR %s %.1f MB\n", $NF, $5 / 1048576}'
           size=$(stat -c %s "$jar")
           if [ "$size" -gt 31457280 ]; then echo "$jar is $((size / 1048576)) MB, over the 30 MB this mod allows itself"; exit 1; fi
-      # Development aid: a commit message with [probe] prints the signatures of the classes in tools/probe.txt (and
-      # finds classes by the patterns after a # in that file) from the game jar the build used
+      # Development aid: a commit message with [probe] prints the signatures of the classes in tools/probe.txt (a class
+      # after a ! with its code as well), and finds classes by the patterns after a # in that file, from the game jar the
+      # build used
       - name: api probe
         if: always() && contains(github.event.head_commit.message, '[probe]')
         run: |
           find ~/.gradle/caches/fabric-loom .gradle/loom-cache -name "*.jar" 2>/dev/null | grep -i minecraft | grep -v sources | xargs ls -la 2>/dev/null | sed "s/^/APIJAR|/"
           cp=$(find ~/.gradle/caches/fabric-loom .gradle/loom-cache -name "*.jar" 2>/dev/null | grep -i minecraft | grep -v -e sources -e "minecraft-server.jar" -e "minecraft-client.jar" | paste -sd:)
-          grep -v -e '^#' -e '^@' tools/probe.txt | while read -r c; do [ -n "$c" ] && javap -cp "$cp" -p "$c" 2>&1 | sed "s/^/API|/"; done
+          grep -v -e '^#' -e '^@' tools/probe.txt | while read -r c; do
+            case "$c" in
+              '!'*) javap -cp "$cp" -p -c "${c#!}" 2>&1 | sed "s/^/APIC|/" ;;
+              ?*) javap -cp "$cp" -p "$c" 2>&1 | sed "s/^/API|/" ;;
+            esac
+          done
           for j in $(echo "$cp" | tr ':' ' '); do unzip -l "$j" | awk '{print $4}'; done | sort -u | grep -E "$(grep '^#' tools/probe.txt | sed 's/^#//' | paste -sd'|')" | sed "s/^/APICLASS|/" | head -300
           # lines with an @ print a file from the game jars (a vanilla loot table, a recipe, ...)
           grep '^@' tools/probe.txt | sed 's/^@//' | while read -r f; do for j in $(echo "$cp" | tr ':' ' '); do unzip -p "$j" "$f" 2>/dev/null | sed "s/^/APIFILE|/"; done; done
