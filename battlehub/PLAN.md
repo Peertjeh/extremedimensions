@@ -2221,6 +2221,9 @@ is daar bruikbaar voor (`ml/train/fights.py`, `people.py`).
   het oog. Nu gaat de duik bij een eigen launch (binnen 60 ticks) voor op dat terugzetten; de landingscontrole
   van `BotBrain.recover()` blijft. JUnit: ook met "recover" duikt hij na een launch; zonder launch (weggeslagen)
   blijft recover recover. De zelftest logt elke vlucht (hoe dicht boven A, hoe ver gevallen, welk wapen).
+- *Tweede run (083d924): groen, 955 van 955* (run 40118207995). De expert-bot vloog bij zijn eerste launch 10,8
+  blokken hoog met de mace en smashte A voor 12,3 levenspunten door diamanten harnas heen; op de grond weer het
+  zwaard. De runs daarna lieten zien dat dat nog niet altijd lukte (hieronder).
 - *Derde run (81d17ba, alleen PLAN gewijzigd): 952 van 955.* De smash bleef uit: de bot kwam tot 0,4 blok boven A,
   maar stuurde met "vooruit" langs zijn blik; recht boven A draait de blik rond en duwde "vooruit" hem de verkeerde
   kant op, tot van het eiland af. Nu zijn de toetsen in de lucht in de wereld gericht (`MaceFight.airPush`, met
@@ -2237,12 +2240,12 @@ is daar bruikbaar voor (`ml/train/fights.py`, `people.py`).
   blokken van A". Hij smashte wel: van 10 blokken met een crit is dat zo'n 45 schade voor het harnas (bij mensen in
   de data 37 tot 53), door diamant heen genoeg om A met 20 levenspunten in één klap te doden; A kwam vol terug (geen
   daling te meten) en de match was voorbij. A krijgt in deze test nu 100 levenspunten, zodat de klap te meten is.
+- *Zesde run (a124017): groen, 955 van 955* (run 40126202621). Bij de eerste launch 7,3 blokken hoog en een smash
+  op A van 7,5 door diamant. Over alle runs: vluchten van 7,3 tot 11,6 blokken (mensen 9 tot 12), en in elke run
+  waarin de klap te meten was een smash (7,5 tot 12,3 door diamant, twee keer dodelijk).
 - *Flaky zelftest Hunger Games* (de run van ab053d6, alleen PLAN gewijzigd): "na vijf seconden sluipen breekt het
   zegel" liep af na 160 ticks. Oorzaak niet uit de log te halen; de test houdt B nu sluipend naast de krat, geeft
   240 ticks en logt waardoor het kraken stokt (geraakt, verplaatst, geen zicht, opgestaan).
-- *CI groen op 083d924: 955 van 955* (run 40118207995). In de zelftest vloog de expert-bot bij zijn eerste launch
-  10,8 blokken hoog met de mace en smashte A voor 12,3 levenspunten door diamanten harnas heen; op de grond weer
-  het zwaard. De Hunger Games-test slaagde (alleen de bedoelde klap stokte het kraken even).
 
 ## Versie 1.45.0 – Een overzichtelijke UI (plan)
 
