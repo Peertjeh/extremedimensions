@@ -281,7 +281,7 @@ def make_vecenv(workers, per, seed, pool, cur, max_ticks, items=False, lessons=N
                     g = w * per + i
                     win = int(lite["winner"][i])
                     res = "win" if win == 0 else "loss" if win == 1 else "draw"
-                    who = {-1: "random", -2: "scripted", -3: "dummy", -4: "v1", -5: "people"}.get(int(self.kind[g, 0]), "pool")
+                    who = {-1: "random", -2: "scripted", -3: "dummy", -4: "v1", -5: "people", -6: "rival"}.get(int(self.kind[g, 0]), "pool")
                     self.results_by.setdefault(who, {"win": 0, "loss": 0, "draw": 0})[res] += 1
                     sc = "%s/%s/%s" % (lite["terrain"][j], lite["family"][j], lite["mode"][j])
                     self.scenarios.setdefault(sc, {"win": 0, "loss": 0, "draw": 0})[res] += 1
