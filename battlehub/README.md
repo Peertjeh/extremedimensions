@@ -301,7 +301,7 @@ ranked, switching modes every few seconds) can be set in `config.json` (`leaderb
 | ⚔ **PvP** | Free for All, 1v1, 1v2 and 1v3, each with the sword, axe or mace kit |
 | 🏹 **Ranged** | Bow PvP, Crossbow PvP |
 | 🎮 **Party Games** | Bow Spleef, TNT Run, Sumo, King of the Hill, Capture The Flag, Parkour Race, Last Man Standing, **Tournament** |
-| ✨ **Cosmetics** | Almost 250: trails, auras (wings, halos, clouds), kill and win effects with real fireworks and lightning, death cries, weapon skins, pets, hats, outfits and name colours, bought with coins |
+| ✨ **Cosmetics** | Over 360 in 16 kinds: trails, auras (wings, halos, clouds), kill and win effects with real fireworks and lightning, kill messages, death cries, weapon skins, pets, hats, 3D **toppers** over your head, **balloons**, outfits, name colours, **badges** and lobby **gadgets**, bought with coins |
 | 🏆 **Ranked** | Duels that change your ELO, from Bronze to Netherite |
 | 👁 **Spectate** | Every running match, live, with a **Join Spectator** button |
 | 📊 **Stats** | Wins, losses, kills, deaths, streaks, level, coins, title, ELO per mode, parkour records, leaderboards (also on the lobby wall) |
@@ -599,8 +599,26 @@ Spend your coins in the **Cosmetics** shop (compass menu or `/cosmetics`):
   in the lobby
 * **Hats** and **outfits** (the wardrobe), outfits also fading from top to bottom (Sunset, Ocean, Fire, …)
 * **Name colours**: on your nametag, in chat and in the tab list while you're in BattleHub
+* Since 1.44, made by BattleHub itself out of vanilla blocks, items, particles and text (no resource pack
+  needed, everyone sees them):
+  * **Toppers**: little 3D models over your head in the lobby, built from block and item displays that move
+    with you: a golden crown with gems, a turning halo, devil horns, a rain cloud that drips, a propeller cap
+    that spins, gems circling your head, a wizard's hat, a flower crown, a ring of fire, an ice crystal, a
+    birthday cake, a pirate's hat, a top hat and a chef's hat.
+  * **Balloons** on a string by your hand that float after you: coloured, gold, slime, TNT, a pumpkin, the
+    moon, a disco ball, a beacon, …
+  * **Badges**: a sign after your name in chat, the tab list and over your head (★ ✦ ❤ ⚔ ☠ ⚡ ♛ ☀ ☾ ✿ ♪ ❄ ☯ ∞ Ω,
+    some in a fading colour).
+  * **Kill messages**: your own line in the chat and the killfeed when you defeat someone ("B got BONKED by
+    A!", "B was sent to the shadow realm by A", fifteen in all).
+  * **Gadgets**: a lobby toy in your hotbar (slot 3) with a short cooldown: a confetti cannon, a firework
+    launcher, a rainbow beam, a disco ball, a bubble blower, a magic wand, a thunder clap, a snow globe, a smoke
+    bomb, a party popper, a blown kiss and a boombox. They hurt nobody and do nothing in matches.
+  * Five new kill effects: a gravestone, an anvil drop, an ice prison, a black hole and shatter; and more
+    trails, pets, hats, death cries, weapon skins and auras.
 
-One cosmetic per category is active; click to buy, use or turn it off. Everything is vanilla particles,
+One cosmetic per category is active; click to buy, use or turn it off. Toppers, balloons, gadgets, badges, kill
+messages, kill and win effects, auras and death cries can be tried with a right-click before you buy them. Everything is vanilla particles,
 models and sounds, purely visual, and only in BattleHub's worlds; fireworks and lightning are only drawn on the
 players' screens, so they never hurt anyone. Prices and the list are in `cosmetics.json`.
 
@@ -798,21 +816,30 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   count, enchantments, unbreakable, leather colour, plus potion effects
 * **`titles.json`**: titles with display text (`&` colour codes) and requirement:
   `default`, `level`, `wins`, `duel_wins`, `mode_wins`, `streak`, `mode_streak`, `kills`, `elo` or `coins` (price)
-* **`cosmetics.json`**: the shop: per cosmetic an id, category (`trail`, `aura`, `arrow`, `kill`, `win`, `cry`,
-  `skin`, `pet`, `hat`, `outfit`, `color`), display text, icon item, price and effect:
+* **`cosmetics.json`**: the shop: per cosmetic an id, category (`trail`, `aura`, `arrow`, `kill`, `killmsg`, `win`,
+  `cry`, `skin`, `pet`, `hat`, `topper`, `balloon`, `outfit`, `color`, `badge`, `gadget`), display text, icon item,
+  price and effect:
   * trails and arrows: a particle: an id (`flame`), `dust:#RRGGBB` (optionally `:size`), `dust:#RRGGBB>#RRGGBB`
     (fading), `rainbow`, `trail:#RRGGBB` (a streak of light), `block:<block>`, `item:<item>` or
     `tint:entity_effect:#RRGGBB`; join several with `+`
   * auras: `shape:particle`, with shape `halo`, `crown`, `wings`, `orbit`, `helix`, `cloud`, `spiral`, `galaxy`,
     `heart`, `ring`, `tornado` or `cape` (for example `wings:dust:#FFFFFF`)
   * kills: `lightning`, `explosion`, `hearts`, `flames`, `souls`, `blood`, `firework`, `totem`, `smite`, `rocket`,
-    `frost`, `sculk`, `gust`, `confetti`, `ender`, `cherry`, `sonic`, `squid`, `bubbles`, `skull`, `gold`, `notes`
+    `frost`, `sculk`, `gust`, `confetti`, `ender`, `cherry`, `sonic`, `squid`, `bubbles`, `skull`, `gold`, `notes`,
+    `grave`, `anvil`, `ice_prison`, `black_hole`, `shatter`
   * wins: `fireworks`, `totem`, `hearts`, `notes`, `flames`, `sparks`, `rockets`, `storm`, `rainbow`, `dragon`,
     `galaxy`, `snow`, `confetti`, `aurora`, `sakura`, `souls`, `gold_rain`
   * death cries: a sound id, optionally `;pitch` (`entity.goat.screaming.death;1.2`)
   * weapon skins: the item whose look swords take, optionally `;glint` (`minecraft:trident`)
   * pets and hats: an item id; outfits: `#RRGGBB`, `#RRGGBB>#RRGGBB` (fading) or three colours `#..,#..,#..`
   * name colours: a chat colour
+  * toppers: a model (`crown`, `halo`, `horns`, `raincloud`, `propeller`, `gems`, `wizard`, `flowers`,
+    `firering`, `ice`, `cake`, `pirate`, `tophat`, `chef`); balloons: a block id
+  * badges: one to three signs and a colour, `★ #FFD700` or fading `✦✦✦ #FF4F8B>#4F8BFF`
+  * kill messages: `bonk`, `shadow`, `yeet`, `roast`, `pixel`, `frozen`, `storm`, `royal`, `cookie`, `deleted`,
+    `launched`, `spooky`, `tea`, `dragon`, `glitch` (the lines are in the language files, `killmsg.<id>`)
+  * gadgets: `confetti`, `firework`, `rainbow`, `disco`, `bubbles`, `wand`, `thunder`, `snowglobe`, `smoke`,
+    `popper`, `kiss`, `boombox`
 
   plus `trailsInMatches`. New cosmetics are added to an existing file when BattleHub updates.
 * **`lang/`**: every text players see. **English and Dutch are built in**: players see BattleHub in

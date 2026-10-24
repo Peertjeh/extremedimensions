@@ -26,6 +26,23 @@ public final class HubItems {
 	public static final int AGAIN_SLOT = 0;
 	/** Hotbar slot of the door back to the normal world, or the "leave queue" item while queued. */
 	public static final int LEAVE_SLOT = 8;
+	/** The gadget you wear (a cosmetic), "gadget:<id>", and its hotbar slot. */
+	public static final String GADGET = "gadget:";
+	public static final int GADGET_SLOT = 2;
+
+	/** The gadget item of the cosmetic {@code c}. */
+	public static ItemStack gadget(ServerPlayer p, net.battlehub.core.CosmeticDef c) {
+		return Icon.of(Ids.item(c.icon)).name(Lang.item(p, "item.gadget.name", Lang.colored(c.display)))
+				.lore(Lang.loreLines(p, "gadget." + c.effect + ".lore"))
+				.lore(Lang.lore(p, "item.gadget.cooldown", net.battlehub.core.Gadgets.COOLDOWN.getOrDefault(c.effect, 5)))
+				.tag(GADGET + c.effect).clean().build();
+	}
+
+	/** The tag of the gadget item {@code p} should have, or "" (none worn). */
+	private static String gadgetTag(ServerPlayer p) {
+		net.battlehub.core.CosmeticDef c = net.battlehub.progression.Cosmetics.active(p, "gadget");
+		return c == null || !net.battlehub.core.Gadgets.known(c.effect) ? "" : GADGET + c.effect;
+	}
 
 	public static ItemStack compass(ServerPlayer p) {
 		HubConfig.Compass c = ConfigManager.config().compass;
@@ -69,6 +86,8 @@ public final class HubItems {
 		boolean again = !queued && compassSlot != AGAIN_SLOT && net.battlehub.queue.PlayAgain.active(p.getUUID());
 		String botsItem = queued && net.battlehub.bot.Bots.mayFill(p.getUUID()) ? (net.battlehub.data.PlayerStore.get(p).noBots ? BOTS_OFF : BOTS_ON) : "";
 		int botsSlot = !botsItem.isEmpty() && compassSlot != BOTS_SLOT ? BOTS_SLOT : -1;
+		String gadgetItem = gadgetTag(p);
+		int gadgetSlot = !gadgetItem.isEmpty() && compassSlot != GADGET_SLOT ? GADGET_SLOT : -1;
 		if (Icon.isHubItem(p.containerMenu.getCarried())) {
 			p.containerMenu.setCarried(ItemStack.EMPTY);
 		}
@@ -78,7 +97,8 @@ public final class HubItems {
 				continue;
 			}
 			boolean keep = (i == compassSlot && tag.equals(COMPASS)) || (i == leaveSlot && tag.equals(lastItem))
-					|| (again && i == AGAIN_SLOT && tag.equals(AGAIN)) || (i == botsSlot && tag.equals(botsItem));
+					|| (again && i == AGAIN_SLOT && tag.equals(AGAIN)) || (i == botsSlot && tag.equals(botsItem))
+					|| (i == gadgetSlot && tag.equals(gadgetItem));
 			if (!keep) {
 				inv.setItem(i, ItemStack.EMPTY);
 			}
@@ -92,6 +112,9 @@ public final class HubItems {
 		}
 		if (botsSlot >= 0) {
 			place(p, botsSlot, botsItem);
+		}
+		if (gadgetSlot >= 0) {
+			place(p, gadgetSlot, gadgetItem);
 		}
 	}
 
@@ -110,6 +133,11 @@ public final class HubItems {
 				inv.setItem(slot, current);
 				return;
 			}
+		}
+		if (tag.startsWith(GADGET)) {
+			net.battlehub.core.CosmeticDef c = net.battlehub.progression.Cosmetics.active(p, "gadget");
+			if (c != null) inv.setItem(slot, gadget(p, c));
+			return;
 		}
 		inv.setItem(slot, switch (tag) {
 			case COMPASS -> compass(p);

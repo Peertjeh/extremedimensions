@@ -162,12 +162,16 @@ final class FxTests {
 		s.waitFor(tag + ": the fight starts, the camera is back with the player", 300, () -> match().phase() == Match.Phase.RUNNING
 				&& !Cinematics.active(p(A).getUUID()) && !p(A).clientEntities().contains((int) VARS.get("camera")));
 		s.pause(12);
-		s.run(tag + ": A kills B", () -> {
+		s.run(tag + ": A wears the kill message Bonk! and kills B", () -> {
+			var prof = net.battlehub.data.PlayerStore.get(p(A));
+			prof.ownedCosmetics.add("killmsg_bonk");
+			prof.cosmetics.put("killmsg", "killmsg_bonk");
 			ServerPlayer b = p(B);
 			b.hurtServer(b.level(), b.damageSources().playerAttack(p(A)), 1000f);
 		});
-		s.check(tag + ": the killfeed has the kill with a sword and shows it on the right", () ->
-				Killfeed.lines(match().id).equals(java.util.List.of("BHTestA sword BHTestB")) && Killfeed.showing(match().id, p(A).getUUID()));
+		s.check(tag + ": the killfeed has the kill with a sword and A's kill message, and shows it on the right", () ->
+				Killfeed.lines(match().id).equals(java.util.List.of("BHTestA sword BHTestB [bonk]")) && Killfeed.showing(match().id, p(A).getUUID()));
+		s.run(tag + ": A takes the kill message off", () -> net.battlehub.data.PlayerStore.get(p(A)).cosmetics.remove("killmsg"));
 		s.check(tag + ": the victory shot circles A", () -> match().phase() == Match.Phase.ENDING && Cinematics.active(p(A).getUUID())
 				&& Cinematics.active(p(B).getUUID()));
 		s.waitFor(tag + ": match closed", 400, () -> match().phase() == Match.Phase.CLOSED && Sessions.isFree(p(A).getUUID())

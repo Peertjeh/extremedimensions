@@ -22,7 +22,8 @@ import net.minecraft.server.level.ServerPlayer;
 public final class Killfeed {
 	private Killfeed() {}
 
-	private record Entry(String killer, String victim, String icon) {}
+	/** A line: who, whom, the icon of how, and the killer's own kill message ("" none). */
+	private record Entry(String killer, String victim, String icon, String message) {}
 
 	private static final class Feed {
 		final Sidebar sidebar;
@@ -46,11 +47,16 @@ public final class Killfeed {
 	}
 
 	public static void kill(Match m, UUID victim, UUID killer, String cause) {
+		kill(m, victim, killer, cause, "");
+	}
+
+	/** A kill in the feed; {@code message} is the killer's kill message cosmetic ("" none). */
+	public static void kill(Match m, UUID victim, UUID killer, String cause, String message) {
 		if (!ConfigManager.config().effects.killfeed) {
 			return;
 		}
 		Feed f = FEEDS.computeIfAbsent(m.id, Feed::new);
-		f.lines.addFirst(new Entry(killer == null ? "" : m.name(killer), m.name(victim), icon(cause)));
+		f.lines.addFirst(new Entry(killer == null ? "" : m.name(killer), m.name(victim), icon(cause), killer == null || message == null ? "" : message));
 		while (f.lines.size() > ConfigManager.config().effects.killfeedLines) {
 			f.lines.removeLast();
 		}
@@ -72,6 +78,7 @@ public final class Killfeed {
 		for (Entry e : f.lines) {
 			Component icon = Glyphs.icon(p, e.icon());
 			lines.add(e.killer().isEmpty() ? Lang.tr(p, "killfeed.line_alone", icon, e.victim())
+					: !e.message().isEmpty() ? Lang.tr(p, "killmsg." + e.message() + ".feed", e.victim(), e.killer())
 					: Lang.tr(p, "killfeed.line", e.killer(), icon, e.victim()));
 		}
 		lines.add(Component.empty());
@@ -115,7 +122,7 @@ public final class Killfeed {
 		Feed f = FEEDS.get(matchId);
 		List<String> out = new ArrayList<>();
 		if (f != null) {
-			for (Entry e : f.lines) out.add(e.killer() + " " + e.icon() + " " + e.victim());
+			for (Entry e : f.lines) out.add(e.killer() + " " + e.icon() + " " + e.victim() + (e.message().isEmpty() ? "" : " [" + e.message() + "]"));
 		}
 		return out;
 	}

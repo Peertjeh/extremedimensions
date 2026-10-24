@@ -76,7 +76,8 @@ public final class TitleService {
 		TeamColor color = override == null && inBattleHub ? Cosmetics.nameColor(prof) : null;
 		String stars = inBattleHub ? net.battlehub.core.Daily.prestigeStars(prof.prestige) : "";
 		net.battlehub.social.Clans.Clan clan = inBattleHub ? net.battlehub.social.Clans.of(p.getUUID()) : null;
-		boolean wanted = override != null || ((title != null || color != null || !stars.isEmpty() || clan != null)
+		net.battlehub.core.Badges.Badge badge = inBattleHub ? Cosmetics.badgeOf(prof) : null;
+		boolean wanted = override != null || ((title != null || color != null || !stars.isEmpty() || clan != null || badge != null)
 				&& ConfigManager.config().titles.useScoreboardTeams);
 		PlayerTeam team = board.getPlayerTeam(teamName);
 		if (!wanted) {
@@ -108,6 +109,7 @@ public final class TitleService {
 					.append(Component.literal("] ").withStyle(s -> s.withColor(0x555555)));
 		}
 		team.setPlayerPrefix(prefix);
+		team.setPlayerSuffix(badge == null ? Component.empty() : Cosmetics.badge(badge));
 		team.setColor(Optional.ofNullable(color));
 		if (current == null || !current.getName().equals(teamName)) {
 			board.addPlayerToTeam(name, team);

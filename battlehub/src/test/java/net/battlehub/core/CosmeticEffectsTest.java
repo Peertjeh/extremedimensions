@@ -96,6 +96,6 @@ class CosmeticEffectsTest {
 		assertEquals("minecraft:entity.goat.screaming.death", CosmeticRules.crySound("entity.goat.screaming.death;1.3"));
 		assertEquals(1.3f, CosmeticRules.cryPitch("entity.goat.screaming.death;1.3"));
 		assertEquals(1f, CosmeticRules.cryPitch("minecraft:entity.wither.death"));
-		assertEquals(11, CosmeticRules.CATEGORIES.size());
+		assertEquals(16, CosmeticRules.CATEGORIES.size());
 	}
 }

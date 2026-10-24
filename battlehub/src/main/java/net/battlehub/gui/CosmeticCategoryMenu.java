@@ -18,6 +18,8 @@ import net.minecraft.world.item.Items;
 public final class CosmeticCategoryMenu extends Screen {
 	private final String category;
 	private final int page;
+	/** Categories you can try on with a right-click before buying. */
+	private static final java.util.Set<String> TRY_ON = java.util.Set.of("topper", "balloon", "gadget", "killmsg", "badge", "kill", "win", "aura", "cry");
 
 	public CosmeticCategoryMenu(ServerPlayer viewer, String category, int page) {
 		super(viewer);
@@ -61,7 +63,15 @@ public final class CosmeticCategoryMenu extends Screen {
 				icon.lore(Lang.lore(viewer, "menu.cosmetics.price", d.price))
 						.lore(Lang.lore(viewer, prof.coins >= d.price ? "menu.cosmetics.click_buy" : "menu.cosmetics.too_expensive", d.price - prof.coins));
 			}
+			boolean tryOn = TRY_ON.contains(category);
+			if (tryOn) icon.lore(Lang.lore(viewer, "menu.cosmetics.right_preview"));
 			c.set(slots[i], icon.build(), click -> {
+				if (tryOn && click.right()) {
+					// a look first, bought or not
+					viewer.closeContainer();
+					Cosmetics.preview(viewer, d);
+					return;
+				}
 				Cosmetics.click(viewer, d);
 				new CosmeticCategoryMenu(viewer, category, p).open();
 			});

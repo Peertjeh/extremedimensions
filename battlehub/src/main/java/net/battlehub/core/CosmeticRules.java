@@ -6,8 +6,8 @@ import java.util.List;
 public final class CosmeticRules {
 	private CosmeticRules() {}
 
-	public static final List<String> CATEGORIES = List.of("trail", "aura", "arrow", "kill", "win", "cry", "skin", "pet",
-			"hat", "outfit", "color");
+	public static final List<String> CATEGORIES = List.of("trail", "aura", "arrow", "kill", "killmsg", "win", "cry", "skin",
+			"pet", "hat", "topper", "balloon", "outfit", "color", "badge", "gadget");
 	/** Categories worn in the lobby (the wardrobe). */
 	public static final List<String> WARDROBE = List.of("hat", "outfit");
 

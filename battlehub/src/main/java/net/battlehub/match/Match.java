@@ -820,12 +820,15 @@ public abstract class Match {
 		final ServerPlayer k = credited ? killer : null;
 		String cause = fell ? "fall" : nextCause.isEmpty() ? "melee" : nextCause;
 		nextCause = "";
-		net.battlehub.fx.Killfeed.kill(this, v, k == null ? null : k.getUUID(), cause);
+		String message = k == null ? "" : Cosmetics.killMessage(k);
+		net.battlehub.fx.Killfeed.kill(this, v, k == null ? null : k.getUUID(), cause, message);
 		if (k != null) {
 			net.battlehub.fx.Sounds.play(k, net.battlehub.fx.Sounds.KILL);
 		}
 		forEveryone(p -> {
-			if (k != null) {
+			if (k != null && !message.isEmpty()) {
+				Msg.send(p, "killmsg." + message, name(v), name(k.getUUID()));
+			} else if (k != null) {
 				Msg.send(p, fell ? "match.knocked_off" : "match.killed", name(v), name(k.getUUID()));
 			} else {
 				Msg.send(p, fell ? "match.fell" : "match.died", name(v));

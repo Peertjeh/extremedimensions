@@ -38,6 +38,10 @@ public final class Ids {
 		return BuiltInRegistries.BLOCK.containsKey(id) ? BuiltInRegistries.BLOCK.getValue(id) : Blocks.AIR;
 	}
 
+	public static boolean isBlock(String s) {
+		return BuiltInRegistries.BLOCK.containsKey(id(s)) && block(s) != Blocks.AIR;
+	}
+
 	public static BlockState state(String s) {
 		return block(s).defaultBlockState();
 	}

@@ -54,6 +54,66 @@ final class CosmeticsTests {
 		coinsCommand(server, s);
 		shop(server, s);
 		more(server, s);
+		custom(server, s);
+	}
+
+	/** 1.44: a topper and a balloon go with A, a badge after A's name, a gadget in the hotbar with a cooldown. */
+	private static void custom(MinecraftServer server, Script s) {
+		String tag = "cosmetics custom";
+		s.run(tag + ": A buys a crown, a red balloon, a star badge and a confetti cannon", () -> {
+			prof("BHTestA").coins += 50000;
+			for (String id : List.of("topper_crown", "balloon_red", "badge_star", "gadget_confetti")) {
+				Cosmetics.click(p("BHTestA"), Cosmetics.byId(id));
+			}
+			p("BHTestA").closeContainer();
+		});
+		s.waitFor(tag + ": the crown sits on A's head, every part of it", 40, () -> {
+			ServerPlayer a = p("BHTestA");
+			int parts = net.battlehub.core.Toppers.MODELS.get("crown").parts().size();
+			if (net.battlehub.progression.Wearables.parts(a.getUUID()) != parts) return false;
+			net.minecraft.world.phys.Vec3 head = a.position().add(0, a.getBbHeight(), 0);
+			return a.level().getEntitiesOfClass(net.minecraft.world.entity.Display.class, a.getBoundingBox().inflate(2),
+					e -> Boolean.TRUE.equals(net.battlehub.util.Tags.has(e, net.battlehub.progression.Wearables.TAG)) && e.position().distanceTo(head) < 1.0).size() >= parts;
+		});
+		s.waitFor(tag + ": the balloon floats over A on its string", 60, () -> {
+			net.minecraft.world.entity.Entity b = net.battlehub.progression.Wearables.balloon(p("BHTestA").getUUID());
+			return b != null && b.position().distanceTo(p("BHTestA").position()) < net.battlehub.core.Balloons.STRING + 1.5
+					&& b.getY() > p("BHTestA").getY() + 1.5;
+		});
+		s.check(tag + ": a star after A's name (team suffix)", () -> {
+			var team = server.getScoreboard().getPlayersTeam(p("BHTestA").getScoreboardName());
+			return team != null && team.getPlayerSuffix().getString().contains("★");
+		});
+		s.waitFor(tag + ": the confetti cannon is in A's hotbar", 100, () ->
+				net.battlehub.util.Icon.tagOf(p("BHTestA").getInventory().getItem(net.battlehub.lobby.HubItems.GADGET_SLOT)).equals(net.battlehub.lobby.HubItems.GADGET + "confetti"));
+		s.run(tag + ": A fires it twice in a row", () -> {
+			VARS().put("gadgets", net.battlehub.progression.GadgetFx.used());
+			net.battlehub.progression.GadgetFx.use(p("BHTestA"));
+			net.battlehub.progression.GadgetFx.use(p("BHTestA"));
+		});
+		s.check(tag + ": once fired, then it waits", () -> net.battlehub.progression.GadgetFx.used() == (int) VARS().get("gadgets") + 1
+				&& net.battlehub.progression.GadgetFx.ticksLeft(p("BHTestA"), "confetti") > 0);
+		s.run(tag + ": every gadget plays once", () -> {
+			for (String g : net.battlehub.core.Gadgets.COOLDOWN.keySet()) net.battlehub.progression.GadgetFx.play(p("BHTestA"), g);
+		});
+		s.pause(110);
+		s.check(tag + ": every particle and sound of the gadgets exists, every new cosmetic is valid", () -> {
+			List<String> problems = Cosmetics.problems();
+			if (!problems.isEmpty()) BattleHub.LOGGER.warn("SELFTEST cosmetics problems: {}", problems);
+			return problems.isEmpty();
+		});
+		s.run(tag + ": A goes back to survival", () -> net.battlehub.hub.Travel.leave(p("BHTestA")));
+		s.waitFor(tag + ": the crown and the balloon stay behind and go", 10, () -> net.battlehub.progression.Wearables.parts(p("BHTestA").getUUID()) == 0
+				&& net.battlehub.progression.Wearables.balloon(p("BHTestA").getUUID()) == null);
+		s.run(tag + ": A comes back and takes everything off", () -> {
+			net.battlehub.hub.Travel.enter(p("BHTestA"));
+			for (String c : List.of("topper", "balloon", "badge", "gadget")) Cosmetics.clear(p("BHTestA"), c);
+		});
+		s.waitFor(tag + ": nothing left on A, no star", 40, () -> {
+			var team = server.getScoreboard().getPlayersTeam(p("BHTestA").getScoreboardName());
+			return net.battlehub.progression.Wearables.parts(p("BHTestA").getUUID()) == 0
+					&& (team == null || !team.getPlayerSuffix().getString().contains("★"));
+		});
 	}
 
 	/** Auras, pets, weapon skins, death cries, fading outfits and the firework and lightning effects. */
@@ -144,9 +204,9 @@ final class CosmeticsTests {
 		s.check(tag + ": the compass menu has a cosmetics button", () -> p("BHTestA").containerMenu instanceof HubMenu m
 				&& m.getSlot(13).getItem().is(Items.FIREWORK_ROCKET));
 		s.run(tag + ": A opens the shop", () -> click("BHTestA", "Cosmetics"));
-		s.waitFor(tag + ": eleven categories (trails to name colours)", 5, () -> {
+		s.waitFor(tag + ": sixteen categories (trails to gadgets)", 5, () -> {
 			if (!(p("BHTestA").containerMenu instanceof HubMenu m) || !(m.screen() instanceof CosmeticsMenu)) return false;
-			for (int slot : net.battlehub.core.MenuSlots.centered(11, 1, 6)) {
+			for (int slot : net.battlehub.core.MenuSlots.centered(16, 1, 6)) {
 				ItemStack it = m.getSlot(slot).getItem();
 				if (it.isEmpty() || it.is(net.battlehub.util.Ids.item("minecraft:black_stained_glass_pane"))) return false;
 			}

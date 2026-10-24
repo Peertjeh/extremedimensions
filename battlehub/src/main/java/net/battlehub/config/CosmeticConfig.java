@@ -9,10 +9,14 @@ import net.battlehub.core.CosmeticDef;
  * {@code config/battlehub/cosmetics.json}. Trails and arrow trails take a particle text (see ParticleSpec: a
  * particle id, {@code dust:#RRGGBB}, {@code rainbow}, ...); auras "shape:particle"; kill and win effects a name
  * (see Cosmetics); death cries a sound id (optionally ";pitch"); weapon skins the item whose look the sword takes
- * (optionally ";glint"); pets and hats an item; outfits colours; name colours a chat colour name.
+ * (optionally ";glint"); pets and hats an item; outfits colours; name colours a chat colour name; toppers a model
+ * (see core/Toppers); balloons a block; badges "sign colour" (see core/Badges); kill messages and gadgets an id.
  */
 public final class CosmeticConfig {
-	/** 2: the wardrobe (hats and outfits) was added. 3: auras, death cries, weapon skins, pets and many more. */
+	/**
+	 * 2: the wardrobe (hats and outfits) was added. 3: auras, death cries, weapon skins, pets and many more. 4: toppers,
+	 * balloons, badges, kill messages, gadgets and more of the rest.
+	 */
 	public int configVersion;
 	/** Show trails during matches too (not only in the hub). */
 	public boolean trailsInMatches = true;
@@ -301,6 +305,143 @@ public final class CosmeticConfig {
 		return l;
 	}
 
+	/** Everything added in configVersion 4 (1.44): toppers, balloons, badges, kill messages, gadgets and more. */
+	static List<CosmeticDef> v4() {
+		List<CosmeticDef> l = new ArrayList<>();
+		// Toppers: small models over your head (core/Toppers)
+		l.add(c("topper_crown", "topper", "&6&lGolden Crown", "golden_helmet", 1500, "crown"));
+		l.add(c("topper_halo", "topper", "&eHalo", "glowstone", 1400, "halo"));
+		l.add(c("topper_horns", "topper", "&4Devil Horns", "red_nether_bricks", 1200, "horns"));
+		l.add(c("topper_raincloud", "topper", "&7Rain Cloud", "white_wool", 1300, "raincloud"));
+		l.add(c("topper_propeller", "topper", "&ePropeller Cap", "red_wool", 1100, "propeller"));
+		l.add(c("topper_gems", "topper", "&b&lOrbiting Gems", "diamond", 1800, "gems"));
+		l.add(c("topper_wizard", "topper", "&5Wizard's Hat", "purple_wool", 1300, "wizard"));
+		l.add(c("topper_flowers", "topper", "&dFlower Crown", "poppy", 1000, "flowers"));
+		l.add(c("topper_firering", "topper", "&6Ring of Fire", "magma_block", 1600, "firering"));
+		l.add(c("topper_ice", "topper", "&bIce Crystal", "blue_ice", 1500, "ice"));
+		l.add(c("topper_cake", "topper", "&dBirthday Cake", "cake", 1200, "cake"));
+		l.add(c("topper_pirate", "topper", "&8Pirate's Hat", "black_wool", 1300, "pirate"));
+		l.add(c("topper_tophat", "topper", "&8Top Hat", "black_wool", 1000, "tophat"));
+		l.add(c("topper_chef", "topper", "&fChef's Hat", "white_wool", 900, "chef"));
+		// Balloons: a block on a string by your hand
+		l.add(c("balloon_red", "balloon", "&cRed Balloon", "red_concrete", 500, "minecraft:red_concrete"));
+		l.add(c("balloon_blue", "balloon", "&9Blue Balloon", "blue_concrete", 500, "minecraft:blue_concrete"));
+		l.add(c("balloon_lime", "balloon", "&aLime Balloon", "lime_concrete", 500, "minecraft:lime_concrete"));
+		l.add(c("balloon_gold", "balloon", "&6Golden Balloon", "gold_block", 900, "minecraft:gold_block"));
+		l.add(c("balloon_slime", "balloon", "&aSlime Balloon", "slime_block", 800, "minecraft:slime_block"));
+		l.add(c("balloon_tnt", "balloon", "&cTNT Balloon", "tnt", 900, "minecraft:tnt"));
+		l.add(c("balloon_target", "balloon", "&cTarget Balloon", "target", 700, "minecraft:target"));
+		l.add(c("balloon_pumpkin", "balloon", "&6Jack o'Balloon", "jack_o_lantern", 900, "minecraft:jack_o_lantern"));
+		l.add(c("balloon_moon", "balloon", "&fFull Moon", "pearlescent_froglight", 1000, "minecraft:pearlescent_froglight"));
+		l.add(c("balloon_disco", "balloon", "&bDisco Ball", "sea_lantern", 1000, "minecraft:sea_lantern"));
+		l.add(c("balloon_honey", "balloon", "&6Honey Balloon", "honey_block", 800, "minecraft:honey_block"));
+		l.add(c("balloon_melon", "balloon", "&aMelon Balloon", "melon", 600, "minecraft:melon"));
+		l.add(c("balloon_ender", "balloon", "&5Crying Balloon", "crying_obsidian", 1000, "minecraft:crying_obsidian"));
+		l.add(c("balloon_beacon", "balloon", "&b&lBeacon Balloon", "beacon", 2000, "minecraft:beacon"));
+		// Badges: a sign after your name
+		l.add(c("badge_star", "badge", "&6★ Star", "nether_star", 300, "★ #FFD700"));
+		l.add(c("badge_sparkle", "badge", "&b✦ Sparkle", "amethyst_shard", 300, "✦ #55FFFF"));
+		l.add(c("badge_heart", "badge", "&c❤ Heart", "red_dye", 300, "❤ #FF5555"));
+		l.add(c("badge_swords", "badge", "&7⚔ Swords", "iron_sword", 400, "⚔ #C0C0C0"));
+		l.add(c("badge_skull", "badge", "&f☠ Skull", "skeleton_skull", 400, "☠ #E0E0E0"));
+		l.add(c("badge_bolt", "badge", "&e⚡ Lightning", "lightning_rod", 400, "⚡ #FFFF55"));
+		l.add(c("badge_crown", "badge", "&6♛ Crown", "gold_ingot", 600, "♛ #FFAA00"));
+		l.add(c("badge_sun", "badge", "&e☀ Sun", "sunflower", 400, "☀ #FFD24F"));
+		l.add(c("badge_moon", "badge", "&9☾ Moon", "clock", 400, "☾ #AAB4FF"));
+		l.add(c("badge_flower", "badge", "&d✿ Blossom", "pink_tulip", 400, "✿ #FF8AD8"));
+		l.add(c("badge_note", "badge", "&a♪ Note", "note_block", 300, "♪ #55FF55"));
+		l.add(c("badge_snow", "badge", "&b❄ Snowflake", "snowball", 400, "❄ #AEEBFF"));
+		l.add(c("badge_yinyang", "badge", "&f☯ Balance", "white_wool", 500, "☯ #FFFFFF"));
+		l.add(c("badge_infinity", "badge", "&5∞ Infinity", "ender_pearl", 600, "∞ #C44FFF"));
+		l.add(c("badge_omega", "badge", "&3Ω Omega", "heart_of_the_sea", 700, "Ω #00E5FF"));
+		l.add(c("badge_radioactive", "badge", "&a☢ Radioactive", "slime_ball", 600, "☢ #7CFC00"));
+		l.add(c("badge_two_stars", "badge", "&6★★ Rising Star", "glowstone_dust", 800, "★★ #FFD700>#FF6A00"));
+		l.add(c("badge_three_sparks", "badge", "&d✦✦✦ Starlight", "end_crystal", 900, "✦✦✦ #FF4F8B>#4F8BFF"));
+		l.add(c("badge_hearts", "badge", "&c♥♥♥ Sweetheart", "pink_dye", 900, "♥♥♥ #FF0000>#FF9EC4"));
+		l.add(c("badge_fire", "badge", "&6✪ Champion", "blaze_powder", 1200, "✪✪✪ #FFE000>#FF2000"));
+		// Kill messages: your own line in the chat and the killfeed
+		l.add(c("killmsg_bonk", "killmsg", "&eBonk!", "wooden_shovel", 400, "bonk"));
+		l.add(c("killmsg_shadow", "killmsg", "&8Shadow Realm", "black_dye", 600, "shadow"));
+		l.add(c("killmsg_yeet", "killmsg", "&bYeet", "feather", 500, "yeet"));
+		l.add(c("killmsg_roast", "killmsg", "&6Roasted", "cooked_chicken", 500, "roast"));
+		l.add(c("killmsg_pixel", "killmsg", "&aPixelated", "map", 600, "pixel"));
+		l.add(c("killmsg_frozen", "killmsg", "&bFrozen Solid", "packed_ice", 600, "frozen"));
+		l.add(c("killmsg_storm", "killmsg", "&eThunderstruck", "lightning_rod", 700, "storm"));
+		l.add(c("killmsg_royal", "killmsg", "&6Royal Decree", "gold_ingot", 800, "royal"));
+		l.add(c("killmsg_cookie", "killmsg", "&6Crumbled", "cookie", 400, "cookie"));
+		l.add(c("killmsg_deleted", "killmsg", "&cDeleted", "barrier", 700, "deleted"));
+		l.add(c("killmsg_launched", "killmsg", "&fLaunched", "firework_rocket", 700, "launched"));
+		l.add(c("killmsg_spooky", "killmsg", "&5Spooked", "carved_pumpkin", 600, "spooky"));
+		l.add(c("killmsg_tea", "killmsg", "&aTea Time", "flower_pot", 500, "tea"));
+		l.add(c("killmsg_dragon", "killmsg", "&5Dragon's Breath", "dragon_breath", 900, "dragon"));
+		l.add(c("killmsg_glitch", "killmsg", "&dGlitched", "command_block", 900, "glitch"));
+		// Gadgets: lobby toys in your hotbar
+		l.add(c("gadget_confetti", "gadget", "&dConfetti Cannon", "pink_dye", 600, "confetti"));
+		l.add(c("gadget_firework", "gadget", "&cFirework Launcher", "firework_rocket", 900, "firework"));
+		l.add(c("gadget_rainbow", "gadget", "&aRainbow Beam", "prismarine_crystals", 1100, "rainbow"));
+		l.add(c("gadget_disco", "gadget", "&bDisco Ball", "sea_lantern", 1500, "disco"));
+		l.add(c("gadget_bubbles", "gadget", "&3Bubble Blower", "glass_bottle", 600, "bubbles"));
+		l.add(c("gadget_wand", "gadget", "&5Magic Wand", "blaze_rod", 1000, "wand"));
+		l.add(c("gadget_thunder", "gadget", "&eThunder Clap", "lightning_rod", 1200, "thunder"));
+		l.add(c("gadget_snowglobe", "gadget", "&fSnow Globe", "snow_block", 900, "snowglobe"));
+		l.add(c("gadget_smoke", "gadget", "&7Smoke Bomb", "gunpowder", 700, "smoke"));
+		l.add(c("gadget_popper", "gadget", "&eParty Popper", "firework_star", 500, "popper"));
+		l.add(c("gadget_kiss", "gadget", "&cBlow a Kiss", "poppy", 600, "kiss"));
+		l.add(c("gadget_boombox", "gadget", "&6Boombox", "jukebox", 1300, "boombox"));
+		// More kill effects
+		l.add(c("kill_grave", "kill", "&7Gravestone", "polished_andesite", 1000, "grave"));
+		l.add(c("kill_anvil", "kill", "&8Anvil Drop", "anvil", 1100, "anvil"));
+		l.add(c("kill_ice_prison", "kill", "&bIce Prison", "ice", 1200, "ice_prison"));
+		l.add(c("kill_black_hole", "kill", "&5&lBlack Hole", "ender_eye", 1600, "black_hole"));
+		l.add(c("kill_shatter", "kill", "&fShatter", "glass", 900, "shatter"));
+		// More trails
+		l.add(c("trail_bubblegum", "trail", "&dBubblegum", "pink_dye", 600, "dust:#FF9EC4>#FF4F8B:1.2"));
+		l.add(c("trail_mint", "trail", "&aMint", "lime_dye", 600, "dust:#B6FFDB>#2EC27E:1.2"));
+		l.add(c("trail_lava_drip", "trail", "&6Lava Drip", "lava_bucket", 900, "dripping_lava+dust:#FF5A00:0.8"));
+		l.add(c("trail_ocean", "trail", "&3Ocean Spray", "prismarine_shard", 900, "dust:#00E5FF>#003E8A:1.2+splash"));
+		l.add(c("trail_starlight", "trail", "&eStarlight", "nether_star", 1200, "end_rod+dust:#FFF6B0:0.7"));
+		l.add(c("trail_shadow", "trail", "&8Shadow", "black_dye", 1000, "dust:#202020>#000000:1.6+smoke"));
+		l.add(c("trail_amethyst", "trail", "&5Amethyst", "amethyst_shard", 900, "block:amethyst_block+dust:#B37CFF:0.9"));
+		l.add(c("trail_witch", "trail", "&5Witchcraft", "cauldron", 900, "witch+dust:#7B2FBE:1.0"));
+		l.add(c("trail_cupid", "trail", "&cCupid's Path", "pink_tulip", 1000, "heart+dust:#FF7AA2:1.0"));
+		l.add(c("trail_galaxy", "trail", "&5&lGalaxy", "end_crystal", 1600, "dust:#4B0082>#00E5FF:1.4+end_rod"));
+		// More pets
+		l.add(c("pet_axolotl", "pet", "&dAxolotl in a Bucket", "axolotl_bucket", 900, "minecraft:axolotl_bucket"));
+		l.add(c("pet_parrot", "pet", "&aParrot Feather", "feather", 600, "minecraft:feather"));
+		l.add(c("pet_cookie", "pet", "&6Cookie", "cookie", 400, "minecraft:cookie"));
+		l.add(c("pet_lantern", "pet", "&bSoul Lantern", "soul_lantern", 800, "minecraft:soul_lantern"));
+		l.add(c("pet_bell", "pet", "&6Bell", "bell", 700, "minecraft:bell"));
+		l.add(c("pet_spyglass", "pet", "&6Spyglass", "spyglass", 600, "minecraft:spyglass"));
+		l.add(c("pet_trident", "pet", "&3Mini Trident", "trident", 1200, "minecraft:trident"));
+		l.add(c("pet_shell", "pet", "&bNautilus Shell", "nautilus_shell", 900, "minecraft:nautilus_shell"));
+		// More hats
+		l.add(c("hat_bookshelf", "hat", "&6Bookshelf", "bookshelf", 500, "minecraft:bookshelf"));
+		l.add(c("hat_furnace", "hat", "&7Furnace", "furnace", 500, "minecraft:furnace"));
+		l.add(c("hat_jukebox", "hat", "&6Jukebox", "jukebox", 700, "minecraft:jukebox"));
+		l.add(c("hat_hay", "hat", "&eHay Bale", "hay_block", 400, "minecraft:hay_block"));
+		l.add(c("hat_sponge", "hat", "&eSponge", "sponge", 500, "minecraft:sponge"));
+		l.add(c("hat_froglight", "hat", "&dFroglight", "pearlescent_froglight", 800, "minecraft:pearlescent_froglight"));
+		// More death cries
+		l.add(c("cry_cat", "cry", "&eSad Cat", "string", 400, "entity.cat.hurt;1.2"));
+		l.add(c("cry_chicken", "cry", "&fChicken", "feather", 300, "entity.chicken.hurt"));
+		l.add(c("cry_elder", "cry", "&3Elder Curse", "prismarine_crystals", 900, "entity.elder_guardian.curse"));
+		l.add(c("cry_shulker", "cry", "&5Shulker", "shulker_shell", 600, "entity.shulker.hurt"));
+		l.add(c("cry_fox", "cry", "&6Fox Scream", "sweet_berries", 600, "entity.fox.screech"));
+		l.add(c("cry_level", "cry", "&aLevel Down", "experience_bottle", 700, "entity.player.levelup;0.5"));
+		// More weapon skins
+		l.add(c("skin_bamboo", "skin", "&aBamboo Stick", "bamboo", 500, "bamboo"));
+		l.add(c("skin_fishing_rod", "skin", "&3Fishing Rod", "fishing_rod", 600, "fishing_rod"));
+		l.add(c("skin_torch", "skin", "&6Torch", "torch", 700, "torch"));
+		l.add(c("skin_end_rod", "skin", "&fLight Wand", "end_rod", 1200, "end_rod;glint"));
+		l.add(c("skin_brush", "skin", "&6Brush", "brush", 600, "brush"));
+		// More auras
+		l.add(c("aura_cherry_cape", "aura", "&dBlossom Cape", "cherry_leaves", 1200, "cape:cherry_leaves"));
+		l.add(c("aura_love", "aura", "&cLove Aura", "pink_tulip", 1100, "heart:heart"));
+		l.add(c("aura_frost_ring", "aura", "&bFrost Ring", "packed_ice", 1100, "ring:snowflake"));
+		l.add(c("aura_gold_tornado", "aura", "&6Golden Tornado", "gold_block", 1500, "tornado:dust:#FFD700"));
+		return l;
+	}
+
 	public CosmeticConfig normalize() {
 		if (cosmetics == null) {
 			cosmetics = defaults();
@@ -316,6 +457,12 @@ public final class CosmeticConfig {
 				if (cosmetics.stream().noneMatch(o -> o != null && w.id.equals(o.id))) cosmetics.add(w);
 			}
 			configVersion = 3;
+		}
+		if (configVersion < 4) {
+			for (CosmeticDef w : v4()) {
+				if (cosmetics.stream().noneMatch(o -> o != null && w.id.equals(o.id))) cosmetics.add(w);
+			}
+			configVersion = 4;
 		}
 		cosmetics.removeIf(c -> c == null || c.id == null || c.id.isBlank());
 		for (CosmeticDef c : cosmetics) {

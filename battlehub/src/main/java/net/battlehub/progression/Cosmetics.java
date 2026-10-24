@@ -24,6 +24,7 @@ import net.battlehub.util.Msg;
 import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -31,6 +32,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.TeamColor;
@@ -45,7 +47,10 @@ public final class Cosmetics {
 	public enum ClickResult { SELECTED, DESELECTED, BOUGHT, TOO_EXPENSIVE }
 
 	public static final List<String> KILL_EFFECTS = List.of("lightning", "explosion", "hearts", "flames", "souls", "blood", "firework", "totem",
-			"smite", "rocket", "frost", "sculk", "gust", "confetti", "ender", "cherry", "sonic", "squid", "bubbles", "skull", "gold", "notes");
+			"smite", "rocket", "frost", "sculk", "gust", "confetti", "ender", "cherry", "sonic", "squid", "bubbles", "skull", "gold", "notes",
+			"grave", "anvil", "ice_prison", "black_hole", "shatter");
+	/** The tag of the blocks shown by kill effects and gadgets for a moment. */
+	public static final String FX_TAG = "battlehub_fx";
 	public static final List<String> WIN_EFFECTS = List.of("fireworks", "totem", "hearts", "notes", "flames", "sparks",
 			"rockets", "storm", "rainbow", "dragon", "galaxy", "snow", "confetti", "aurora", "sakura", "souls", "gold_rain");
 	/** Sounds the effects play by id (checked by the self-test). */
@@ -106,11 +111,14 @@ public final class Cosmetics {
 			return ClickResult.TOO_EXPENSIVE;
 		}
 		PlayerStore.save(p.getUUID());
-		if (c.category().equals("color")) {
+		if (c.category().equals("color") || c.category().equals("badge")) {
 			TitleService.apply(p);
 		}
 		if (CosmeticRules.WARDROBE.contains(c.category())) {
 			Wardrobe.apply(p);
+		}
+		if (c.category().equals("gadget")) {
+			net.battlehub.lobby.HubItems.ensure(p, net.battlehub.session.Sessions.state(p.getUUID()) == net.battlehub.session.Sessions.State.QUEUED);
 		}
 		if (result != ClickResult.DESELECTED && !c.category().equals("color")) {
 			preview(p, c);
@@ -121,7 +129,7 @@ public final class Cosmetics {
 	public static void clear(ServerPlayer p, String category) {
 		CosmeticRules.clear(PlayerStore.get(p), category);
 		PlayerStore.save(p.getUUID());
-		if (category.equals("color")) {
+		if (category.equals("color") || category.equals("badge")) {
 			TitleService.apply(p);
 		}
 		if (CosmeticRules.WARDROBE.contains(category)) {
@@ -129,8 +137,8 @@ public final class Cosmetics {
 		}
 	}
 
-	/** A short look at the effect right after choosing it. */
-	private static void preview(ServerPlayer p, CosmeticDef c) {
+	/** A short look at the effect right after choosing it (and a right-click in the shop, bought or not). */
+	public static void preview(ServerPlayer p, CosmeticDef c) {
 		ServerLevel level = p.level();
 		if (!HubWorld.isBattleHub(level)) {
 			return;
@@ -145,8 +153,41 @@ public final class Cosmetics {
 			case "win" -> winEffect(c.effect, level, p.position(), 0);
 			case "cry" -> cry(level, c.effect, p.position());
 			case "skin" -> Msg.send(p, "cosmetics.skin_preview", Lang.colored(c.display));
+			case "topper", "balloon" -> Wearables.preview(p, c);
+			case "gadget" -> GadgetFx.play(p, c.effect);
+			case "killmsg" -> Msg.send(p, "killmsg." + c.effect, Lang.tr(p, "cosmetics.killmsg_victim"), p.getGameProfile().name());
+			case "badge" -> {
+				net.battlehub.core.Badges.Badge b = net.battlehub.core.Badges.parse(c.effect);
+				if (b != null) Msg.raw(p, Lang.tr(p, "cosmetics.badge_preview", Component.literal(p.getGameProfile().name()).append(badge(b))));
+			}
 			default -> { }
 		}
+	}
+
+	/** A badge as text: a space, then its signs in their colours. */
+	public static net.minecraft.network.chat.MutableComponent badge(net.battlehub.core.Badges.Badge b) {
+		net.minecraft.network.chat.MutableComponent out = Component.literal(" ");
+		int n = b.sign().codePointCount(0, b.sign().length());
+		int i = 0;
+		for (int off = 0; off < b.sign().length(); i++) {
+			int cp = b.sign().codePointAt(off);
+			int color = b.color(i, n);
+			out.append(Component.literal(new String(Character.toChars(cp))).withStyle(s -> s.withColor(color)));
+			off += Character.charCount(cp);
+		}
+		return out;
+	}
+
+	/** The badge {@code prof} wears, or null. */
+	public static net.battlehub.core.Badges.Badge badgeOf(PlayerProfile prof) {
+		CosmeticDef c = CosmeticRules.active(prof, "badge", all());
+		return c == null ? null : net.battlehub.core.Badges.parse(c.effect);
+	}
+
+	/** The kill message the killer wears ("" none). */
+	public static String killMessage(ServerPlayer killer) {
+		CosmeticDef c = active(killer, "killmsg");
+		return c != null && net.battlehub.core.KillMessages.known(c.effect) ? c.effect : "";
 	}
 
 	// ------------------------------------------------------------------ name colour
@@ -178,22 +219,22 @@ public final class Cosmetics {
 	}
 
 	/** A particle text (see {@link net.battlehub.core.ParticleSpec}) at one spot. */
-	private static void burst(ServerLevel level, String particle, double x, double y, double z, int count, double dx, double dy, double dz, double speed) {
+	static void burst(ServerLevel level, String particle, double x, double y, double z, int count, double dx, double dy, double dz, double speed) {
 		USED.add(particle);
 		Particles.emit(level, particle, x, y, z, count, dx, dy, dz, speed, level.getGameTime());
 	}
 
 	/** Coloured dust (RGB) at one spot. */
-	private static void dust(ServerLevel level, int rgb, float scale, double x, double y, double z, int count, double spread) {
+	static void dust(ServerLevel level, int rgb, float scale, double x, double y, double z, int count, double spread) {
 		level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(rgb, scale), x, y, z, count, spread, spread, spread, 0);
 	}
 
-	private static int hue(double h) {
+	static int hue(double h) {
 		return net.battlehub.core.ParticleSpec.hsb((float) h, 0.85f, 1f);
 	}
 
 	/** A sound by id ("entity.enderman.teleport"), if this version has it. */
-	private static void sound(ServerLevel level, Vec3 at, String id, float volume, float pitch) {
+	static void sound(ServerLevel level, Vec3 at, String id, float volume, float pitch) {
 		USED_SOUNDS.add(id);
 		Identifier rl = Ids.id(id);
 		if (BuiltInRegistries.SOUND_EVENT.containsKey(rl)) {
@@ -236,6 +277,13 @@ public final class Cosmetics {
 				case "pet", "hat" -> Ids.isItem(c.effect);
 				case "color" -> teamColor(c.effect) != null;
 				case "outfit" -> CosmeticRules.outfitColors(c.effect) != null;
+				case "topper" -> net.battlehub.core.Toppers.known(c.effect) && net.battlehub.core.Toppers.MODELS.get(c.effect).parts().stream()
+						.allMatch(pt -> pt.kind() == net.battlehub.core.Toppers.Kind.BLOCK ? Ids.isBlock(pt.id()) : Ids.isItem(pt.id()))
+						&& (net.battlehub.core.Toppers.MODELS.get(c.effect).particle().isEmpty() || Particles.valid(net.battlehub.core.Toppers.MODELS.get(c.effect).particle()));
+				case "balloon" -> Ids.isBlock(c.effect);
+				case "badge" -> net.battlehub.core.Badges.parse(c.effect) != null;
+				case "killmsg" -> net.battlehub.core.KillMessages.known(c.effect);
+				case "gadget" -> net.battlehub.core.Gadgets.known(c.effect);
 				default -> false;
 			};
 			if (!ok) out.add(c.id + " effect " + c.effect);
@@ -376,8 +424,92 @@ public final class Cosmetics {
 				sound(level, at, "block.note_block.harp", 1.0f, 0.7f);
 				sound(level, at, "block.note_block.harp", 1.0f, 0.5f);
 			}
+			case "grave" -> {
+				// a gravestone with a skull on it, for five seconds
+				fxBlock(level, "minecraft:polished_andesite", new Vec3(x, y, z), 0.7f, 0.95f, 0.18f, 100);
+				fxBlock(level, "minecraft:skeleton_skull", new Vec3(x, y + 0.95, z), 0.45f, 0.45f, 0.45f, 100);
+				fxBlock(level, "minecraft:coarse_dirt", new Vec3(x, y - 0.02, z + 0.45), 0.8f, 0.1f, 0.8f, 100);
+				burst(level, "minecraft:soul", x, y + 1, z, 12, 0.3, 0.4, 0.3, 0.03);
+				sound(level, at, "block.stone.place", 1.0f, 0.6f);
+				sound(level, at, "block.bell.resonate", 0.6f, 0.6f);
+			}
+			case "anvil" -> {
+				// an anvil falls from the sky
+				Display.BlockDisplay anvil = fxBlock(level, "minecraft:anvil", new Vec3(x, y + 6, z), 0.9f, 0.9f, 0.9f, 40);
+				for (int t = 1; t <= 10; t++) {
+					double h = 6 - 6 * (t / 10.0) * (t / 10.0);
+					int step = t;
+					net.battlehub.util.Tasks.later(t, () -> {
+						if (anvil != null && !anvil.isRemoved()) anvil.teleportTo(x, y + h, z);
+						if (step == 10) {
+							burst(level, "block:minecraft:anvil", x, y + 0.2, z, 30, 0.4, 0.1, 0.4, 0.1);
+							burst(level, "minecraft:crit", x, y + 0.5, z, 20, 0.5, 0.2, 0.5, 0.3);
+							sound(level, at, "block.anvil.land", 1.0f, 0.9f);
+						}
+					});
+				}
+			}
+			case "ice_prison" -> {
+				// walls of ice round the spot, that shatter after three seconds
+				for (int side = 0; side < 4; side++) {
+					double a = side * Math.PI / 2;
+					boolean alongX = side % 2 == 1;
+					fxBlock(level, "minecraft:ice", new Vec3(x + Math.sin(a) * 0.6, y, z + Math.cos(a) * 0.6),
+							alongX ? 0.12f : 1.3f, 2.1f, alongX ? 1.3f : 0.12f, 60);
+				}
+				fxBlock(level, "minecraft:packed_ice", new Vec3(x, y + 2.1, z), 1.3f, 0.12f, 1.3f, 60);
+				burst(level, "minecraft:snowflake", x, y + 1, z, 30, 0.5, 0.8, 0.5, 0.02);
+				sound(level, at, "block.glass.place", 1.0f, 0.8f);
+				net.battlehub.util.Tasks.later(60, () -> {
+					burst(level, "block:minecraft:ice", x, y + 1, z, 50, 0.5, 0.8, 0.5, 0.1);
+					sound(level, at, "block.glass.break", 1.0f, 0.9f);
+				});
+			}
+			case "black_hole" -> {
+				// a swirl that pulls everything in, and a pop
+				for (int t = 0; t < 40; t += 2) {
+					int tick = t;
+					net.battlehub.util.Tasks.later(t, () -> {
+						double r = 2.2 * (1 - tick / 40.0);
+						for (int k = 0; k < 10; k++) {
+							double a = tick * 0.4 + k * Math.PI / 5;
+							burst(level, "minecraft:reverse_portal", x + Math.cos(a) * r, y + 1 + Math.sin(a * 0.5) * 0.3, z + Math.sin(a) * r, 1, 0, 0, 0, 0);
+						}
+						burst(level, "minecraft:squid_ink", x, y + 1, z, 2, 0.1, 0.1, 0.1, 0.01);
+					});
+				}
+				sound(level, at, "entity.enderman.teleport", 1.0f, 0.5f);
+				net.battlehub.util.Tasks.later(40, () -> {
+					burst(level, "minecraft:portal", x, y + 1, z, 60, 0.2, 0.2, 0.2, 1.2);
+					sound(level, at, "entity.shulker.shoot", 1.0f, 0.6f);
+				});
+			}
+			case "shatter" -> {
+				// the defeated breaks like glass into coloured bits
+				for (int i = 0; i < 6; i++) dust(level, hue(i / 6.0), 1.5f, x, y + 1, z, 8, 0.5);
+				burst(level, "block:minecraft:glass", x, y + 1, z, 40, 0.3, 0.6, 0.3, 0.2);
+				burst(level, "block:minecraft:tinted_glass", x, y + 1, z, 20, 0.3, 0.6, 0.3, 0.2);
+				sound(level, at, "block.glass.break", 1.0f, 0.7f);
+				sound(level, at, "block.amethyst_cluster.break", 1.0f, 1.2f);
+			}
 			default -> { }
 		}
+	}
+
+	/** A block shown at {@code at} (the middle of its bottom) for {@code ticks}, sized (sx, sy, sz); null if it cannot. */
+	static Display.BlockDisplay fxBlock(ServerLevel level, String block, Vec3 at, float sx, float sy, float sz, int ticks) {
+		var type = BuiltInRegistries.ENTITY_TYPE.getValue(Ids.id("minecraft:block_display"));
+		var e = type == null ? null : type.create(level, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+		if (!(e instanceof Display.BlockDisplay d)) return null;
+		((net.battlehub.mixin.BlockDisplayAccessor) d).battlehub$setBlockState(Ids.state(block));
+		d.getEntityData().set(net.battlehub.mixin.DisplayAccessor.battlehub$translation(), new org.joml.Vector3f(-sx / 2, 0f, -sz / 2));
+		d.getEntityData().set(net.battlehub.mixin.DisplayAccessor.battlehub$scale(), new org.joml.Vector3f(sx, sy, sz));
+		d.getEntityData().set(net.battlehub.mixin.DisplayAccessor.battlehub$posRotDuration(), 1);
+		d.snapTo(at.x, at.y, at.z);
+		d.addTag(FX_TAG);
+		level.addFreshEntity(d);
+		net.battlehub.util.Tasks.later(ticks, d::discard);
+		return d;
 	}
 
 	/** Every 10 ticks while a match ends: the winners celebrate with their win effect. */
@@ -549,6 +681,7 @@ public final class Cosmetics {
 		try {
 			Pets.tick(server, tick);
 			Auras.tick(server, tick);
+			Wearables.tick(server, tick);
 		} catch (RuntimeException e) {
 			if (!failed) {
 				failed = true;
@@ -616,5 +749,7 @@ public final class Cosmetics {
 	public static void forget(UUID id) {
 		LAST_POS.remove(id);
 		Pets.remove(id);
+		Wearables.remove(id);
+		GadgetFx.forget(id);
 	}
 }

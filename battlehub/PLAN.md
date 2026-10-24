@@ -2235,6 +2235,43 @@ huisdieren, hoeden, doodskreten, wapenskins en aura's.
   staat in het team-achtervoegsel; een killbericht komt in de killfeed; een gadget werkt en heeft daarna een
   cooldown.
 
+### Versie 1.44.0 – Uitvoering
+
+**Gebouwd.**
+- Kern zonder Minecraft (JUnit): `core/Toppers` (veertien modellen: delen, animaties draaien/deinen/cirkelen,
+  draaien met het lichaam), `core/Balloons` (de ballon volgt laat en blijft binnen de touwlengte), `core/Badges`
+  (één tot drie tekens met een kleur of kleurverloop), `core/Gadgets` (cooldowns), `core/KillMessages`.
+- `progression/Wearables`: toppers en ballonnen als displays die in de lobby meegaan; weg bij een match, terug
+  daarna; een voorvertoning van vijf seconden uit de winkel. Achtergebleven displays ruimt een sweep op.
+- `progression/GadgetFx`: twaalf gadgets met deeltjes, geluid en soms een display of bliksem om te zien;
+  cooldown per speler; alleen in de lobby. Het gadget staat in hotbar-slot 3 (`HubItems.GADGET_SLOT`, 2 geteld
+  vanaf 0) als je er een draagt.
+- Badges als achtervoegsel van het scoreboard-team (chat, tablijst, boven het hoofd), naast titel en naamkleur.
+- Killberichten in de chat (in plaats van "werd verslagen door") en in de killfeed (de korte vorm).
+- Vijf kill-effecten met displays die even blijven (graf, aambeeld, ijsgevangenis) of alleen deeltjes (zwart gat,
+  scherven). Ze hebben de tag `battlehub_fx`, los van de tag van toppers en ballonnen, zodat de sweep ze laat
+  staan.
+- 119 nieuwe cosmetics (366 in totaal) via configversie 4; in de winkel zestien categorieën en rechtsklik om te
+  proberen.
+
+**Afwijkingen van het plan.**
+- De ballon heeft geen touw van kettingdelen maar een touw van kleine witte stofdeeltjes: een display van een
+  ketting moet daarvoor schuin gedraaid worden (een quaternion op de display), en dat veld is in 26.3 niet
+  gegarandeerd bereikbaar.
+- De creeperballon werd een ballon van een doelwitblok: een block-display van een hoofd tekent niets (hoofden
+  worden als block entity getekend).
+- Geen vleermuizenzwerm als kill-effect: vleermuizen hebben AI nodig om weg te vliegen; in de plaats kwamen
+  scherven.
+
+**Testen.**
+- JUnit `ToppersTest` (elk model blijft rond het hoofd bij elke draaiing en tick, draait mee met het lichaam,
+  animaties bewegen) en `CosmeticExtrasTest` (de ballon blijft aan zijn touw en hangt achter als je rent, badges,
+  cooldowns, killberichten); `CosmeticEffectsTest`: zestien categorieën.
+- Zelftest "cosmetics custom": een kroon met al zijn delen op het hoofd van A, een ballon boven A, een ster na A's
+  naam, het confettikanon in de hotbar, twee keer vuren geeft één keer effect en daarna een cooldown, elk gadget
+  speelt één keer en alle deeltjes en geluiden bestaan, weg in de normale wereld, alles uit.
+- Zelftest "fx": A draagt het killbericht Bonk! en de killfeed toont het bij de kill.
+
 ## Versie 1.43.0 – De echte Hunger Games (plan)
 
 **Vraag.** Hunger Games veel specialer maken met events, power-ups en loot die je moet vrijspelen, alsof het de echte

@@ -217,6 +217,7 @@ public final class HubEvents {
 
 	private static void stopping(MinecraftServer server) {
 		net.battlehub.progression.Pets.removeAll();
+		net.battlehub.progression.Wearables.removeAll();
 		Matches.shutdown(server);
 		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
 			Queues.leaveAll(p);
@@ -446,7 +447,9 @@ public final class HubEvents {
 				case HubItems.AGAIN -> net.battlehub.queue.PlayAgain.accept(sp);
 				case HubItems.BOTS_ON -> net.battlehub.bot.Bots.choose(sp, false);
 				case HubItems.BOTS_OFF -> net.battlehub.bot.Bots.choose(sp, true);
-				default -> { }
+				default -> {
+					if (tag.startsWith(HubItems.GADGET)) net.battlehub.progression.GadgetFx.use(sp);
+				}
 			}
 		}
 		return InteractionResult.SUCCESS;

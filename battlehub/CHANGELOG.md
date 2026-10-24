@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.44.0
+
+### Added
+* **Many more cosmetics, 366 in 16 kinds**, and five kinds BattleHub makes itself out of vanilla blocks, items,
+  particles and text (no resource pack needed, everyone sees them):
+  * **Toppers**: fourteen little 3D models over your head in the lobby, built from block and item displays that
+    move with you (a crown with gems, a turning halo, devil horns, a dripping rain cloud, a spinning propeller cap,
+    circling gems, a wizard's hat, a flower crown, a ring of fire, an ice crystal, a birthday cake, a pirate's
+    hat, a top hat, a chef's hat).
+  * **Balloons**: fourteen balloons on a string by your hand that float after you.
+  * **Badges**: twenty signs after your name in the chat, the tab list and over your head, some in a fading
+    colour.
+  * **Kill messages**: fifteen lines of your own in the chat and the killfeed when you defeat someone.
+  * **Gadgets**: twelve lobby toys in hotbar slot 3, each with a short cooldown (confetti cannon, firework
+    launcher, rainbow beam, disco ball, bubble blower, magic wand, thunder clap, snow globe, smoke bomb, party
+    popper, blown kiss, boombox). They hurt nobody and do nothing in matches.
+  * Five new kill effects (gravestone, anvil drop, ice prison, black hole, shatter) and more trails, pets, hats,
+    death cries, weapon skins and auras.
+* **Try before you buy**: right-click a topper, balloon, gadget, badge, kill message, kill or win effect, aura or
+  death cry in the shop to see or hear it first.
+* An existing `cosmetics.json` gets the new cosmetics added (config version 4); your own changes stay.
+
 ## 1.43.0
 
 ### Added

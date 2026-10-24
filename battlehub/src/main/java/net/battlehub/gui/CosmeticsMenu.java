@@ -41,8 +41,13 @@ public final class CosmeticsMenu extends Screen {
 			case "cry" -> Ids.item("minecraft:goat_horn");
 			case "skin" -> Ids.item("minecraft:blaze_rod");
 			case "pet" -> Ids.item("minecraft:dragon_head");
-			case "hat" -> Ids.item("minecraft:golden_helmet");
+			case "hat" -> Ids.item("minecraft:carved_pumpkin");
 			case "outfit" -> Ids.item("minecraft:leather_chestplate");
+			case "topper" -> Ids.item("minecraft:golden_helmet");
+			case "balloon" -> Ids.item("minecraft:lead");
+			case "badge" -> Items.NAME_TAG;
+			case "killmsg" -> Ids.item("minecraft:writable_book");
+			case "gadget" -> Ids.item("minecraft:firework_star");
 			default -> Ids.item("minecraft:magenta_dye");
 		};
 	}
