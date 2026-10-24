@@ -1453,7 +1453,7 @@ final class BotTests {
 			net.battlehub.games.HungerGamesMatch hg = (net.battlehub.games.HungerGamesMatch) matchOfA();
 			BotPlayer b = botsIn(hg).get(0);
 			VARS.put("hgGiftBot", b.getUUID());
-			hg.capitol().sponsors().favour(b.getUUID(), net.battlehub.core.hunger.Favour.threshold(0));
+			hg.capitol().sponsors().favourToNext(b.getUUID());
 		});
 		s.waitFor(tag + ": the bot goes to its parachute and empties the barrel", 1600, () -> {
 			Match m = matchOfA();

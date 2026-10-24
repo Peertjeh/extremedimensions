@@ -81,6 +81,12 @@ public final class Sponsors {
 		}
 	}
 
+	/** Just enough favour for the next parachute (admins and the self-test). */
+	public void favourToNext(UUID id) {
+		int now = points(id);
+		favour(id, Math.max(1, Favour.threshold(Favour.giftsEarned(now)) - now));
+	}
+
 	public int points(UUID id) {
 		return points.getOrDefault(id, 0);
 	}

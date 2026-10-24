@@ -2225,6 +2225,9 @@ sprong er telkens naast. Een kist achter een muur of zonder pad ernaartoe bleef 
   de tribute waar je kunt staan, liefst onder de open hemel, en anders vlak naast hem.
 - De zelftest "real hunger games" zette B bovenop een krat; stond daar iets boven, dan zat B in een blok en
   begon het kraken telkens opnieuw. Nu staat B naast de krat en kijkt ernaar.
+- De zelftests gaven een tribute de gunst voor de eerste parachute (80 punten). Had hij door de events al meer,
+  dan kwam er niets bij. Nu krijgt hij precies genoeg voor de volgende (`Sponsors.favourToNext`), en de test wacht
+  op een nieuwe ton.
 - De zelftest "bots mace" wacht twee minuten in plaats van één op een windlading van de expert-bot: het model
   kiest zelf wanneer, en deed er in één run langer over. Een mislukte eerste stap geeft geen NPE meer in de
   volgende.

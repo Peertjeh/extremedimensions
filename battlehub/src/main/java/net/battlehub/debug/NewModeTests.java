@@ -366,11 +366,18 @@ final class NewModeTests {
 		s.run(t + ": the sponsors like A (enough favour for a parachute)", () -> {
 			shield(A, B, C, D);
 			VARS.put("hgChutes", hg().capitol().sponsors().parachutes());
-			hg().capitol().sponsors().favour(p(A).getUUID(), net.battlehub.core.hunger.Favour.threshold(0));
+			VARS.put("hgBarrels", new java.util.HashSet<>(hg().capitol().sponsors().landed().keySet()));
+			hg().capitol().sponsors().favourToNext(p(A).getUUID());
 		});
 		s.waitFor(t + ": a silver parachute lands next to A, a barrel with a gift", 400, () -> {
+			@SuppressWarnings("unchecked")
+			java.util.Set<BlockPos> before = (java.util.Set<BlockPos>) VARS.get("hgBarrels");
 			for (var e : hg().capitol().sponsors().landed().entrySet()) {
-				if (p(A).getUUID().equals(e.getValue()) && Math.sqrt(e.getKey().distToCenterSqr(p(A).position())) < 9) return true;
+				if (before.contains(e.getKey()) || !p(A).getUUID().equals(e.getValue())) continue;
+				double d = Math.sqrt(e.getKey().distToCenterSqr(p(A).position()));
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST real hunger games: A's parachute landed at {}, {} blocks away", e.getKey(),
+						String.format(java.util.Locale.ROOT, "%.1f", d));
+				return d < 9;
 			}
 			return false;
 		});
