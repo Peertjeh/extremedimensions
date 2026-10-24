@@ -32,6 +32,7 @@
 * Fight logs: every hit has its kind (`melee`, `arrow`, `other`), the Hunger Games' header has the teams of the
   match (not the waiting time, where everyone was team 0), and the header says `"velocities": "game"`; older logs
   still load (`train/fights.py` converts their velocities).
+* A decision of the model costs about 0.35 to 0.55 ms in the self-tests, as in 1.40.
 
 ### Fixed
 * **The learned model saw people nearly standing still.** It read a player's velocity from the server, which for
@@ -39,6 +40,9 @@
   same. A person's velocity now comes from their positions, as the game keeps it after friction (`bot/Motion`,
   `core/ml/Velocity`), like a bot's. In the logs of 1.40 a sprinting person moved 74% of what their stored velocity
   said; now 100%, and the simulation's error over one decision dropped from 0.104 to 0.001 blocks (median).
+* Going into the lobby again after the server refused the teleport (right after a reset of BattleHub's world)
+  could stop trying without a word; it now takes the player as the server knows them each tick and logs why the
+  teleport was refused.
 
 ## 1.40.1
 

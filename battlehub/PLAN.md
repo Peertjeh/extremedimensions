@@ -2108,7 +2108,38 @@ mensen; Bridge Chaos 1v1v1v1, Hunger Games en een mace-duel; de bots waren inter
 | Tegen de menselijke tegenstander | vaker dan de master | 98,7% tegen 95,9% | gehaald |
 | eval2 | ≥ 85% | 88,1% | gehaald |
 | Tegen de master van 1.40 in de simulatie van 1.40 | ≥ 50% | 56,1% (1.293 gevechten) | gehaald |
-| Tijd per beslissing | < 1 ms gemiddeld | zie de CI hieronder | |
+| Tijd per beslissing | < 1 ms gemiddeld | 0,34–0,54 ms (zie hieronder) | gehaald |
+
+- **Tijd per beslissing** (de zelftests, de nieuwe master):
+
+  | Zelftest | Beslissingen | Gemiddeld | p99 | Maximum | Maskers |
+  |---|---|---|---|---|---|
+  | bijlduel (`b734e85`, eerste poging) | 145 | 0,538 ms | 0,800 ms | 6,4 ms | 0,0070 ms |
+  | 1v2 met twee bots (idem) | 228 | 0,495 ms | 0,794 ms | 6,4 ms | 0,0064 ms |
+  | items, Build UHC (idem) | 377 | 0,425 ms | 0,773 ms | 6,4 ms | 0,0053 ms |
+  | bijlduel (`b734e85`, tweede poging) | 99 | 0,485 ms | 5,1 ms | 5,1 ms | 0,0077 ms |
+  | 1v2 met twee bots (idem) | 185 | 0,438 ms | 0,726 ms | 5,1 ms | 0,0068 ms |
+  | items, Build UHC (idem) | 475 | 0,342 ms | 0,591 ms | 5,1 ms | 0,0047 ms |
+
+  - Hetzelfde als in 1.40 (0,47–0,49 ms): het netwerk is even groot. Het maximum is weer het laden van het model.
+  - In de teamtest hadden beide bots 11 van 11 beslissingen met hun teamgenoot, en 10 met geschiedenis.
+- **CI van 1.41.0.**
+  - `b691f00`: 893 geslaagd, 4 gefaald, geen ervan over het model.
+    - "world reset: and A comes in again" en de twee "server stop"-stappen erna. Die faalden ook bij `3ff1b33` en
+      `603e0fb`, commits met alleen PLAN.md en Python. Na de reset weigerde de server de teleport naar de lobby, en het
+      opnieuw proberen hield op zonder iets te zeggen.
+    - "bots mace: and goes up": een gescripte bot ging na zijn windlading niet hoog genoeg. De mace blijft gescript;
+      het is de enige keer in deze reeks.
+  - `b734e85`: `Travel.retryLobby` zoekt de speler elke tick opnieuw op (geen object van eerder), zegt waarom het
+    stopt, en logt wat de server weet van een speler die hij weigert (verwijderd, levend, wisselt van dimensie,
+    slaapt, rijdt). De reset-test slaagde: de eerste teleport lukte meteen, dus de nieuwe regels kwamen nog niet in
+    beeld. Valt hij weer, dan zegt de log waarom.
+    - Eerste poging: 896 geslaagd, 1 gefaald: "bots skywars: no bot walked or jumped off the map by itself". Een
+      gescripte bot (intermediate, het geleerde gevecht staat in die test uit) viel tijdens het bruggen bouwen naar
+      een kist ("standing on an edge", 27 blokken gezet). Dat gebeurde eerder één keer, in de CI van 1.39.0 (41
+      blokken), vóór de hoekregel van 1.40.1. Het staat los van deze fase. Het is een echte fout die zelden
+      optreedt, en het eerstvolgende werk aan de bots begint ermee.
+    - **Tweede poging van de gefaalde job: 897 geslaagd, 0 gefaald.**
 
 ## Versie 1.40.1 – Bots lopen weer over halve slabs (The Bridge)
 
