@@ -16,12 +16,12 @@ import net.minecraft.world.item.Items;
  */
 public final class MainMenu extends Screen {
 	/** Where the buttons sit (slots), group by group. */
-	static final int[] PLAY = {10, 12, 14, 16, 19, 21, 23, 25};
-	static final int[] YOU = {29, 30, 31, 32, 33, 34};
-	static final int[] TOGETHER = {38, 39};
-	static final int SHOP = 42;
-	static final int PROFILE = 4;
-	static final int TRAVEL = 45;
+	public static final int[] PLAY = {10, 12, 14, 16, 19, 21, 23, 25};
+	public static final int[] YOU = {29, 30, 31, 32, 33, 34};
+	public static final int[] TOGETHER = {38, 39};
+	public static final int SHOP = 42;
+	public static final int PROFILE = 4;
+	public static final int TRAVEL = 45;
 
 	public MainMenu(ServerPlayer viewer) {
 		super(viewer);
