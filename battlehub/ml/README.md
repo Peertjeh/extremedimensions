@@ -47,6 +47,10 @@ models that play the same (`train/upgrade_v3.py`), so v2 left the mod as well.
 | `train/fights.py` | Reads the mod's fight logs (`config/battlehub/fights`, `/battlehub fights export` zips): per decision and fighter the stored state (the observation is computed here, v3's history from the fighter's earlier decisions; logs of spec v2 read with nobody else and nothing remembered) and what it did as action indices; a summary per fight. |
 | `train/imitate.py` | Behavior cloning: a checkpoint's policy learns to do what the people in the fight logs did; saves `ckpt_bc.zip` for `selfplay2.py --init`. |
 | `spec/fightlog_sample.jsonl` | A short fight log written by the mod's `FightLogTest` from golden states, with the observation the mod computed; `tests/test_fights.py` checks the simulation's observation of each stored state is the same. |
+| `train/simfit.py` | Plays the fight logs back in the simulation (phase 3D): a fighter's stored state and action two ticks on flat ground against its next decision (movement), the push of a hit timed by how the victim rose, damage against `World.melee_damage`, the reach of hits, which observation values were outside the training ranges (coverage), and how bots and people behave (sprinting, strafe changes, jumps, clicks, charge at a hit, distance). Fights split fixed into fit and test by name; `--effects` writes the Chaos profiles of the logs. |
+| `tools/chaos_effects.py`, `spec/chaos_effects.json` | The Chaos events that change a body (speed, jump strength, size, gravity, strength, resistance, attack speed, reach, freezing), read from the mod's `ChaosCatalog.java` with the game's attribute rules; `--check` keeps the file in step with the catalogue. `pvp_sim2/kits.py` deals them in Chaos arenas. |
+| `spec/effects_game.json` | The effect profiles that were on in the fight logs (`simfit.py --effects`); half of the Chaos arenas take one of these instead of drawing from the catalogue. |
+| `train/people.py` | An opponent that fights like people: behavior cloning on the decisions where people really fought (target in sight within 8 blocks), starting from the master with a pull back to it (KL), and per head as sticky as the people were (they change their keys less often than they decide) with offsets so sprinting, jumping and clicking come as often as in the logs. `selfplay2.py --people` puts it in the pool, `eval2.py --people` adds a block against it. |
 | `train/focus.py` | Reads the mod's `config/battlehub/ml_feedback.json` and turns its lessons into the scenario weights of `pvp_sim2` (`selfplay2.py --focus`). |
 
 ## Run
@@ -86,6 +90,16 @@ python tools/make_ranges.py                                      # after a new m
 python train/fights.py export-20261023-201500.zip                # what is in it
 python train/imitate.py exports/ --init runs/v2/ckpt_040000032.zip --out runs/v2bc
 python train/selfplay2.py --run runs/v2bc_sp --init runs/v2bc/ckpt_bc.zip --pool-from runs/v2 --items --steps 16000000
+
+# phase 3D: a simulation fitted on the fight logs (see PLAN.md, Fase D)
+python train/simfit.py exports/ --part test                       # sim against game; --json report.json
+python train/simfit.py exports/ --part fit --effects spec/effects_game.json
+python tools/chaos_effects.py --check                            # Chaos events from the catalogue
+python train/people.py exports/ --init runs/v3d/ckpt_006000192.zip --out runs/people
+python train/selfplay2.py --run runs/v3e --init runs/v3d/ckpt_006000192.zip --pool-from runs/v3d runs/v3c --masks \
+    --extra-items 1.0 --scripted-latch --people runs/people --people-share 0.15 --eval-hands food,gapple,wind --steps 16000000
+python train/league2.py --versus "runs/v3e/ckpt_010000224.zip#hands=food,gapple,wind" \
+    "runs/v3d/ckpt_006000192.zip#hands=food,gapple,wind" --episodes 128 --sim 1.40     # or the fitted sim (default)
 ```
 
 From the mod back to training: after every match with learned bots the mod counts per bot how many fight ticks went
