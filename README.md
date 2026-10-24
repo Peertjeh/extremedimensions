@@ -112,6 +112,8 @@ Trials past gold), and the tapestry's boons stay.
 - **Co-op**: fallen players can be revived, curses carried for a friend, anchors shared. Every player has their own
   time.
 - **50 advancements**, the recipe book through them, a bestiary and a ledger in the journal.
+- **A music disc**: *Tick of the Boundary* on a record of its own, now and then in a barrel of the Thinned in the Seam
+  (the richer the barrel, the likelier); it plays in any jukebox.
 - **Title and loading screens**: the picture of the Tether, with its own music (*Tick of the Boundary* on the menus,
   *Ominous Loading Screen* while a world loads, until you stand in it). Under Display it can be the art only, the
   music only, or Minecraft's own.
@@ -131,8 +133,8 @@ screen. Presets set many at once. Curses have their own `penalties` section.
 
 The mod's loot (the Elders' spoils, hoards, the Wanderer's leavings in structures) is in loot tables under
 `data/extremedimensions/loot_table/`; the Seam's island mix, sizes and land shapes in
-`data/extremedimensions/seam/briefs.json`; recipes, advancements and enchantments are data as well. A datapack can
-replace any of them (on `/reload` too).
+`data/extremedimensions/seam/briefs.json`; recipes, advancements, enchantments and the music disc's song
+(`data/extremedimensions/jukebox_song/`) are data as well. A datapack can replace any of them (on `/reload` too).
 
 ## Languages
 

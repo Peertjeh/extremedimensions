@@ -16,6 +16,7 @@ import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEffects;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.registry.ModItems;
+import com.extremedimensions.registry.ModSounds;
 import com.extremedimensions.relic.Relic;
 import com.extremedimensions.relic.RelicService;
 import com.extremedimensions.seam.SeamService;
@@ -43,10 +44,13 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.JukeboxSong;
+import net.minecraft.world.item.JukeboxSongPlayer;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.JukeboxBlockEntity;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootParams;
@@ -119,6 +123,7 @@ public class VanillaTests {
 		check(helper, WorldFx.category("extremedimensions:seam_ambient") == SoundSource.AMBIENT, "the hum of the Seam is not ambient");
 		check(helper, WorldFx.category("extremedimensions:lurker_whisper") == SoundSource.HOSTILE, "a Lurker's whisper is not hostile");
 		check(helper, WorldFx.category("extremedimensions:music.boss_weaver") == SoundSource.MUSIC, "boss music is not music");
+		check(helper, WorldFx.category("extremedimensions:music_disc.tick_of_the_boundary") == SoundSource.RECORDS, "the music disc is not on Jukebox/Note Blocks");
 		check(helper, WorldFx.category("minecraft:block.wool.break") == SoundSource.BLOCKS, "a block's sound is not on Blocks");
 		check(helper, WorldFx.category("extremedimensions:portal_home") == SoundSource.PLAYERS, "going home is not on Players");
 		helper.succeed();
@@ -189,6 +194,39 @@ public class VanillaTests {
 		} finally {
 			Config.RELIC_SEAM_CHEST_CHANCE = relic;
 		}
+		helper.succeed();
+	}
+
+	/** The Seam's music disc: now and then in a barrel of the Thinned, and played in a jukebox as Minecraft's own are. */
+	@GameTest
+	public void theSeamsDiscPlaysInAJukebox(GameTestHelper helper) {
+		double relic = Config.RELIC_SEAM_CHEST_CHANCE;
+		double disc = Config.SEAM_MUSIC_DISC_CHANCE;
+		try {
+			Config.RELIC_SEAM_CHEST_CHANCE = 0;
+			Config.SEAM_MUSIC_DISC_CHANCE = 1;
+			Container found = barrel(helper, new BlockPos(1, 1, 1));
+			SeamService.fillLoot(helper.getLevel(), helper.absolutePos(new BlockPos(1, 1, 1)), 1);
+			check(helper, count(found, ModItems.MUSIC_DISC_TICK_OF_THE_BOUNDARY) == 1, "a loom's barrel, at a chance of 1, held %s discs, not one",
+					count(found, ModItems.MUSIC_DISC_TICK_OF_THE_BOUNDARY));
+			Config.SEAM_MUSIC_DISC_CHANCE = 0;
+			Container none = barrel(helper, new BlockPos(3, 1, 1));
+			SeamService.fillLoot(helper.getLevel(), helper.absolutePos(new BlockPos(3, 1, 1)), 4);
+			check(helper, count(none, ModItems.MUSIC_DISC_TICK_OF_THE_BOUNDARY) == 0, "a barrel held the disc at a chance of 0");
+		} finally {
+			Config.RELIC_SEAM_CHEST_CHANCE = relic;
+			Config.SEAM_MUSIC_DISC_CHANCE = disc;
+		}
+		BlockPos at = helper.absolutePos(new BlockPos(2, 1, 3));
+		helper.getLevel().setBlock(at, Blocks.JUKEBOX.defaultBlockState(), 3);
+		JukeboxBlockEntity jukebox = (JukeboxBlockEntity) helper.getLevel().getBlockEntity(at);
+		jukebox.setTheItem(new ItemStack(ModItems.MUSIC_DISC_TICK_OF_THE_BOUNDARY));
+		JukeboxSongPlayer playing = jukebox.getSongPlayer();
+		check(helper, playing.isPlaying(), "the jukebox does not play the disc");
+		check(helper, playing.getSong() != null && playing.getSong().is(ModItems.TICK_OF_THE_BOUNDARY), "the jukebox plays %s", playing.getSong());
+		JukeboxSong song = playing.getSong().value();
+		check(helper, song.soundEvent().value() == ModSounds.MUSIC_DISC_TICK_OF_THE_BOUNDARY, "the song sounds %s", song.soundEvent());
+		check(helper, song.lengthInSeconds() > 160, "the song lasts %s seconds, not the track's 164", song.lengthInSeconds());
 		helper.succeed();
 	}
 

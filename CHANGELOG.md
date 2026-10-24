@@ -1,5 +1,22 @@
 # Changelog
 
+## 3.0.4: A Song from the Seam
+
+### New
+- **A music disc, found in the Seam**: *Tick of the Boundary*, the title screen's track, pressed on a record of its own,
+  like Minecraft's discs. Now and then a barrel of the Thinned holds one: 2% of those by a loom, 4% in a village, 6% in a
+  great building and 8% in a snarl down in the Fray (**The Seam → music disc in a barrel**; 0 for never). It plays in
+  any jukebox the way vanilla's discs do: "Now Playing" over the hotbar, on the Jukebox/Note Blocks slider, a signal of
+  9 for a comparator beside the jukebox, and the song's name under the disc's in its tooltip. Its label is the Seam's:
+  violet silk above, the deep of the Fray below, and a bright tear between them.
+- The disc weighs nothing in the download: it plays the very file the title screen does. Its song (sound, length,
+  comparator signal) is a data file, `data/extremedimensions/jukebox_song/tick_of_the_boundary.json`, that a datapack
+  can change.
+
+### Tests
+- A barrel of the Thinned holds the disc at a chance of 1 and never at 0, and a jukebox given the disc plays the Seam's
+  song, with its own sound and the track's length; the disc's sound sits on the Jukebox/Note Blocks slider.
+
 ## 3.0.3: Steady Ground
 
 Nothing changes in play: this release makes the builds trustworthy, so a red build means a real fault, measures what

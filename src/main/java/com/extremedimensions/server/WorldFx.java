@@ -181,6 +181,9 @@ public final class WorldFx {
 	 */
 	public static SoundSource category(String id) {
 		String n = id.substring(id.indexOf(':') + 1);
+		if (n.startsWith("music_disc.")) {
+			return SoundSource.RECORDS;
+		}
 		if (n.startsWith("music")) {
 			return SoundSource.MUSIC;
 		}

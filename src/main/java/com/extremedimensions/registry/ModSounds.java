@@ -37,6 +37,8 @@ public final class ModSounds {
 	public static final SoundEvent MUSIC_BOSS_MATRIARCH = register("music.boss_matriarch");
 	public static final SoundEvent MUSIC_BOSS_FERRYMAN = register("music.boss_ferryman");
 	public static final SoundEvent MUSIC_BOSS_WEAVER = register("music.boss_weaver");
+	/** The Seam's music disc: "Tick of the Boundary", the menus' track, as a jukebox plays it. */
+	public static final SoundEvent MUSIC_DISC_TICK_OF_THE_BOUNDARY = register("music_disc.tick_of_the_boundary");
 
 	/** The Elders' voices and the sounds that give their blows away (see ElderTells), "elder.<elder>.<blow>". */
 	private static final String[] ELDER_TELLS = {

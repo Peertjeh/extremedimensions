@@ -1,1 +1,9 @@
-!net.minecraft.client.gui.screens.Screen
+net.minecraft.world.item.JukeboxSong
+net.minecraft.world.item.JukeboxSongPlayer
+net.minecraft.world.item.JukeboxPlayable
+net.minecraft.world.level.block.entity.JukeboxBlockEntity
+@data/minecraft/jukebox_song/pigstep.json
+@assets/minecraft/items/music_disc_pigstep.json
+@assets/minecraft/models/item/music_disc_pigstep.json
+@data/minecraft/tags/item/creeper_drop_music_discs.json
+#jukebox_song/

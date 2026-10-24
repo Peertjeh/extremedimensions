@@ -1,0 +1,8 @@
+{
+  "comparator_output": 9,
+  "description": {
+    "translate": "jukebox_song.extremedimensions.tick_of_the_boundary"
+  },
+  "length_in_seconds": 164.0,
+  "sound_event": "extremedimensions:music_disc.tick_of_the_boundary"
+}

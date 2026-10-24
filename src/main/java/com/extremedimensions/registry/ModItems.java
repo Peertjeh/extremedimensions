@@ -8,6 +8,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.JukeboxSong;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Block;
 
@@ -72,6 +73,11 @@ public final class ModItems {
 	public static final Item THREAD_OF_THE_KNOT = register("thread_of_the_knot", 1, Rarity.EPIC);
 	public static final Item THREAD_OF_THE_HEART = register("thread_of_the_heart", 1, Rarity.EPIC);
 
+	/** The Seam's song (its jukebox_song data file: the sound, length and comparator signal) and the disc that plays it. */
+	public static final ResourceKey<JukeboxSong> TICK_OF_THE_BOUNDARY = ResourceKey.create(Registries.JUKEBOX_SONG, ExtremeDimensions.id("tick_of_the_boundary"));
+	/** A music disc like Minecraft's own, found now and then in the barrels of the Thinned. */
+	public static final Item MUSIC_DISC_TICK_OF_THE_BOUNDARY = disc("music_disc_tick_of_the_boundary", TICK_OF_THE_BOUNDARY);
+
 	/** The relics: bound to the Tether one at a time, each with a gift and a price (see Relic). */
 	public static final java.util.Map<com.extremedimensions.relic.Relic, Item> RELICS = relics();
 
@@ -99,6 +105,13 @@ public final class ModItems {
 	public static final Item WOUND_LENS = Registry.register(BuiltInRegistries.ITEM, ResourceKey.create(Registries.ITEM, ExtremeDimensions.id("wound_lens")),
 			new net.minecraft.world.item.SpyglassItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)
 					.setId(ResourceKey.create(Registries.ITEM, ExtremeDimensions.id("wound_lens")))));
+
+	/** A music disc: one to a stack and rare, as vanilla's are, and played in a jukebox. */
+	private static Item disc(String id, ResourceKey<JukeboxSong> song) {
+		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, ExtremeDimensions.id(id));
+		Item.Properties props = new Item.Properties().stacksTo(1).rarity(Rarity.RARE).jukeboxPlayable(song).setId(key);
+		return Registry.register(BuiltInRegistries.ITEM, key, new Item(props));
+	}
 
 	private static Item register(String id, int maxStack, Rarity rarity) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, ExtremeDimensions.id(id));

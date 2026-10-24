@@ -204,6 +204,14 @@
       }
     ]
   },
+  "music_disc.tick_of_the_boundary": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/menu_title",
+        "stream": true
+      }
+    ]
+  },
   "elder.matriarch.voice": {
     "subtitle": "subtitles.extremedimensions.elder.matriarch.voice",
     "sounds": [

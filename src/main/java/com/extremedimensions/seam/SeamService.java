@@ -1262,7 +1262,8 @@ public final class SeamService {
 
 	/**
 	 * Barrels of the Thinned: silk, pages, fragments and old things; richer the harder they are to reach (1 a loom, 2 a
-	 * village, 3 a colossus's reliquary, 4 a tangle in the Fray). What is in them comes from the loot tables.
+	 * village, 3 a colossus's reliquary, 4 a tangle in the Fray). What is in them comes from the loot tables; a relic and
+	 * the Seam's music disc, now and then, by the config's chances.
 	 */
 	public static void fillLoot(ServerLevel level, BlockPos b, int richness) {
 		if (!(level.getBlockEntity(b) instanceof Container c)) {
@@ -1274,6 +1275,15 @@ public final class SeamService {
 			for (int slot = 0; slot < c.getContainerSize(); slot++) {
 				if (c.getItem(slot).isEmpty()) {
 					c.setItem(slot, com.extremedimensions.relic.RelicService.random());
+					break;
+				}
+			}
+		}
+		if (ThreadLocalRandom.current().nextDouble() < Config.SEAM_MUSIC_DISC_CHANCE * richness) {
+			// and now and then a record: the Seam's own song
+			for (int slot = 0; slot < c.getContainerSize(); slot++) {
+				if (c.getItem(slot).isEmpty()) {
+					c.setItem(slot, new net.minecraft.world.item.ItemStack(com.extremedimensions.registry.ModItems.MUSIC_DISC_TICK_OF_THE_BOUNDARY));
 					break;
 				}
 			}

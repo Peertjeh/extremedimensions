@@ -300,6 +300,11 @@ public final class Config {
 	 * walls broken open); the rest are only weathered, or now and then intact. 0: none damaged.
 	 */
 	public static int SEAM_DAMAGE = 45;
+	/**
+	 * Chance a barrel of the Thinned holds the music disc "Tick of the Boundary", times how rich the barrel is (1 a loom's,
+	 * 2 a village's, 3 a colossus's reliquary, 4 a tangle in the Fray): 0.02 is 2% to 8%. 0: never.
+	 */
+	public static double SEAM_MUSIC_DISC_CHANCE = 0.02;
 
 	// --- After the Dragon and the Mending --------------------------------------------------------
 

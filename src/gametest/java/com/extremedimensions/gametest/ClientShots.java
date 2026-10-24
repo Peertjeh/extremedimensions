@@ -589,6 +589,27 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(5);
 			ctx.takeScreenshot("02_relics_hotbar");
 
+			// The Seam's music disc: in hand (its name over the hotbar) and in a jukebox before the player ("Now Playing")
+			net.minecraft.core.BlockPos jukebox = sp.getServer().computeOnServer(s -> {
+				ServerPlayer p = player(s);
+				p.getInventory().setItem(0, new ItemStack(com.extremedimensions.registry.ModItems.MUSIC_DISC_TICK_OF_THE_BOUNDARY));
+				net.minecraft.core.BlockPos at = p.blockPosition().relative(p.getDirection(), 2);
+				p.level().setBlock(at, net.minecraft.world.level.block.Blocks.JUKEBOX.defaultBlockState(), 3);
+				if (p.level().getBlockEntity(at) instanceof net.minecraft.world.level.block.entity.JukeboxBlockEntity box) {
+					box.setTheItem(new ItemStack(com.extremedimensions.registry.ModItems.MUSIC_DISC_TICK_OF_THE_BOUNDARY));
+				}
+				return at;
+			});
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("02_music_disc");
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				if (p.level().getBlockEntity(jukebox) instanceof net.minecraft.world.level.block.entity.JukeboxBlockEntity box) {
+					box.setTheItem(ItemStack.EMPTY);
+				}
+				p.level().setBlock(jukebox, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			});
+
 			// The Curses screen: all four tabs, with players nearby
 			String data = sp.getServer().computeOnServer(s -> Sync.cursesData(player(s), DataStore.get(player(s).getUUID())));
 			AtomicReference<CursesScreen> screen = new AtomicReference<>();

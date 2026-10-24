@@ -44,6 +44,7 @@ public final class ModItemGroups {
 					out.accept(ModItems.PALE_THREAD);
 					out.accept(ModItems.SILK_THREAD);
 					out.accept(ModItems.PLUMB_LINE);
+					out.accept(ModItems.MUSIC_DISC_TICK_OF_THE_BOUNDARY);
 					out.accept(ModItems.WEAVERS_LOOM);
 					out.accept(ModItems.THREAD_OF_ROOTS);
 					out.accept(ModItems.THREAD_OF_TOLL);
