@@ -2227,6 +2227,11 @@ is daar bruikbaar voor (`ml/train/fights.py`, `people.py`).
   remafstand; JUnit: vanuit stilstand en vanuit een aanloop komt hij binnen 0,6 blok boven het doel tot rust), en
   houdt hij bij de worp zijn aanloop naar de speler. Daarnaast faalde de bekende wisselvallige Bridge-test (de bot
   bleef staan voor een gat in het slabpad); die slaagde in de andere runs met deze code.
+- *Vierde run (1a12b66): 952 van 955.* De mace-test slaagde (9,7 blokken hoog, smash op A van 11,8 door diamant).
+  Faalden: "world reset" en de twee "server stop"-tests erna. Tijdens de reset wachten de testspelers in de gewone
+  wereld; het was daar nacht en zombies doodden ze ("BHTestD was slain by Zombie"), en een dode A kan de lobby
+  niet in. De test houdt de wachtende testspelers nu heel en ruimt monsters rond ze op; het bouwen en weer binnenkomen
+  wordt nog steeds getest.
 - *Flaky zelftest Hunger Games* (de run van ab053d6, alleen PLAN gewijzigd): "na vijf seconden sluipen breekt het
   zegel" liep af na 160 ticks. Oorzaak niet uit de log te halen; de test houdt B nu sluipend naast de krat, geeft
   240 ticks en logt waardoor het kraken stokt (geraakt, verplaatst, geen zicht, opgestaan).

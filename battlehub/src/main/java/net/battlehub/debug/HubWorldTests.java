@@ -61,7 +61,10 @@ final class HubWorldTests {
 		s.check(tag + ": A is back in the normal world and the reset runs", () -> HubWorld.resetting()
 				&& !HubWorld.isBattleHub(p(A).level()));
 		s.check(tag + ": /hub waits until it is done", () -> !Travel.enter(p(A)) && !HubWorld.isBattleHub(p(A).level()));
-		s.waitFor(tag + ": the lobby is built again", 6000, () -> !HubWorld.resetting() && HubWorld.ready());
+		s.waitFor(tag + ": the lobby is built again", 6000, () -> {
+			keepSafe(server);
+			return !HubWorld.resetting() && HubWorld.ready();
+		});
 		s.check(tag + ": the plaza stands, beacons shining at its rim", () -> {
 			net.minecraft.server.level.ServerLevel hub = HubWorld.level(server);
 			int y = HubWorld.floorY(), r = HubWorld.plazaRadius();
@@ -74,6 +77,7 @@ final class HubWorldTests {
 			WAITED[0] = 0;
 		});
 		s.waitFor(tag + ": and A comes in again", 200, () -> {
+			keepSafe(server);
 			boolean before = Travel.inBattleHub(p(A));
 			boolean entered = VARS_ENTERED[0];
 			boolean in = entered && HubWorld.isBattleHub(p(A).level());
@@ -84,6 +88,21 @@ final class HubWorldTests {
 			}
 			return in;
 		});
+	}
+
+	/**
+	 * The test players wait in the normal world while the lobby is built again: standing still in the open, at night the
+	 * monsters there killed them (a dead player cannot come back in), which is no part of what is tested.
+	 */
+	private static void keepSafe(MinecraftServer server) {
+		for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+			if (HubWorld.isBattleHub(p.level()) || !p.isAlive() || !p.getGameProfile().name().startsWith("BHTest")) continue;
+			p.setHealth(p.getMaxHealth());
+			for (net.minecraft.world.entity.Entity e : p.level().getEntities((net.minecraft.world.entity.Entity) null, p.getBoundingBox().inflate(24),
+					e -> e.getType().getCategory() == net.minecraft.world.entity.MobCategory.MONSTER)) {
+				e.discard();
+			}
+		}
 	}
 
 	static void all(MinecraftServer server, Script s) {
