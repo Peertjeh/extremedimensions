@@ -329,12 +329,18 @@ final class NewModeTests {
 		});
 		s.check(t + ": the Capitol's chest stays shut until the Feast", () -> click(p(A), hg().capitol().vaults().capitolChest(), ItemStack.EMPTY)
 				== net.minecraft.world.InteractionResult.FAIL);
-		s.run(t + ": B stands on a sealed crate, sneaking", () -> {
+		s.run(t + ": B stands beside a sealed crate, sneaking", () -> {
 			var v = hg().capitol().vaults();
 			BlockPos crate = v.nearestCrate(hg().plaza(), 500);
 			VARS.put("hgCrate", crate);
-			PartyTests.tp(p(B), crate.getX() + 0.5, crate.getY() + 1, crate.getZ() + 0.5);
+			BlockPos at = beside(crate);
+			PartyTests.tp(p(B), at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+			// facing the crate
+			p(B).setYRot((float) Math.toDegrees(Math.atan2(-(crate.getX() - at.getX()), crate.getZ() - at.getZ())));
+			p(B).setXRot(35f);
 			p(B).setShiftKeyDown(true);
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST real hunger games: crate {} ({}), B beside it at {}", crate,
+					hg().level().getBlockState(crate).getBlock(), at);
 		});
 		s.check(t + ": a click on it says it is sealed", () -> click(p(B), (BlockPos) VARS.get("hgCrate"), ItemStack.EMPTY) == net.minecraft.world.InteractionResult.FAIL);
 		s.waitFor(t + ": the seal is half broken", 80, () -> hg().capitol().vaults().crateShare((BlockPos) VARS.get("hgCrate")) >= 0.5);
@@ -432,6 +438,18 @@ final class NewModeTests {
 	private static long entities(net.minecraft.server.level.ServerLevel level, net.minecraft.world.phys.AABB box, String type) {
 		return level.getEntitiesOfClass(net.minecraft.world.entity.Entity.class, box,
 				e -> type.equals(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).toString())).size();
+	}
+
+	/** A spot to stand on next to {@code pos} (a free block with a free one over it and floor under it), else on top. */
+	private static BlockPos beside(BlockPos pos) {
+		var level = hg().level();
+		for (net.minecraft.core.Direction d : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+			BlockPos at = pos.relative(d);
+			boolean free = level.getBlockState(at).getCollisionShape(level, at).isEmpty()
+					&& level.getBlockState(at.above()).getCollisionShape(level, at.above()).isEmpty();
+			if (free && !level.getBlockState(at.below()).getCollisionShape(level, at.below()).isEmpty()) return at;
+		}
+		return pos.above();
 	}
 
 	private static int countKeys(ServerPlayer p) {

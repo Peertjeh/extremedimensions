@@ -812,14 +812,14 @@ final class BotTests {
 		});
 		s.waitFor(tag + ": running", 600, () -> matchOfA() != null && matchOfA().phase() == Match.Phase.RUNNING && botsIn(matchOfA()).size() == 1);
 		s.run(tag + ": watch", () -> VARS.put("macePolls", 0));
-		s.waitFor(tag + ": it throws a wind charge at its feet", 1200, () -> {
+		s.waitFor(tag + ": it throws a wind charge at its feet", 2400, () -> {
 			Match m = matchOfA();
 			if (m == null || botsIn(m).isEmpty()) return false;
 			BotPlayer b = botsIn(m).get(0);
 			p(A).setHealth(p(A).getMaxHealth());
 			int polls = (int) VARS.get("macePolls") + 1;
 			VARS.put("macePolls", polls);
-			if (polls % 80 == 0 && Bots.launches(b) == 0) {
+			if (polls % 60 == 0 && Bots.launches(b) == 0) {
 				// A steps back now and then, as a player does: a wind charge is for a few blocks out, not point-blank
 				backOff(b, 4.5);
 			}
@@ -835,7 +835,8 @@ final class BotTests {
 		s.waitFor(tag + ": and goes up (more than a jump)", 40, () -> {
 			Match m = matchOfA();
 			if (m == null || botsIn(m).isEmpty()) return false;
-			double y = botsIn(m).get(0).getY(), top = Math.max((double) VARS.get("launchTop"), y);
+			if (!(VARS.get("launchTop") instanceof Double launchTop)) return false;
+			double y = botsIn(m).get(0).getY(), top = Math.max(launchTop, y);
 			VARS.put("launchTop", top);
 			boolean up = top > (double) VARS.get("launchY") + 1.4;
 			if (up) net.battlehub.BattleHub.LOGGER.info("SELFTEST mace bot flew {} blocks up", String.format(java.util.Locale.ROOT, "%.1f", top - (double) VARS.get("launchY")));

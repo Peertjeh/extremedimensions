@@ -122,22 +122,40 @@ public final class Sponsors {
 
 	/** A parachute with {@code kind} for {@code p}, landing a few blocks from it; {@code byWatcher}: a watcher paid. */
 	private void gift(ServerPlayer p, GiftPick.Kind kind, boolean byWatcher) {
-		double ang = host.rng().nextDouble() * Math.PI * 2, r = 3 + host.rng().nextInt(3);
-		Vec3 at = capitolGround(p.getX() + Math.cos(ang) * r, p.getZ() + Math.sin(ang) * r, p.getY());
-		drop(at, "gift:" + kind.name().toLowerCase(java.util.Locale.ROOT), p.getUUID());
+		drop(landingNear(p), "gift:" + kind.name().toLowerCase(java.util.Locale.ROOT), p.getUUID());
 		for (ServerPlayer o : host.audience()) {
 			Msg.send(o, o == p ? "hg.sponsor.yours" : "hg.sponsor.other", host.name(p.getUUID()), Lang.tr(o, "hg.gift." + kind.name().toLowerCase(java.util.Locale.ROOT)));
 		}
 		Msg.sound(p, SoundEvents.NOTE_BLOCK_CHIME, 1f, 1.6f);
 	}
 
-	private Vec3 capitolGround(double x, double z, double nearY) {
+	/**
+	 * Where a parachute for {@code p} comes down: a few blocks away on about the tribute's own height, where one can
+	 * stand, under the open sky when there is such a spot (not on a roof, not in a closed room), else beside it.
+	 */
+	private Vec3 landingNear(ServerPlayer p) {
+		for (int pass = 0; pass < 2; pass++) {
+			for (int attempt = 0; attempt < 24; attempt++) {
+				double ang = host.rng().nextDouble() * Math.PI * 2, r = pass == 0 ? 2.5 + host.rng().nextDouble() * 3 : 1.5 + host.rng().nextDouble();
+				BlockPos spot = standable(BlockPos.containing(p.getX() + Math.cos(ang) * r, p.getY(), p.getZ() + Math.sin(ang) * r));
+				if (spot != null && (pass == 1 || host.level().canSeeSky(spot))) return Vec3.atBottomCenterOf(spot);
+			}
+		}
+		return p.position();
+	}
+
+	/** A spot to stand on in the column of {@code near}, at most two blocks up or down from it, or null. */
+	private BlockPos standable(BlockPos near) {
 		ServerLevel level = host.level();
-		BlockPos at = BlockPos.containing(x, nearY + 1, z);
-		// the ground near the tribute's height: down to something to stand on, up out of walls
-		for (int i = 0; i < 6 && level.getBlockState(at.below()).isAir(); i++) at = at.below();
-		for (int i = 0; i < 6 && !level.getBlockState(at).isAir(); i++) at = at.above();
-		return Vec3.atBottomCenterOf(at);
+		for (int dy : new int[] {0, 1, -1, 2, -2}) {
+			BlockPos at = near.above(dy);
+			if (free(level, at) && free(level, at.above()) && !free(level, at.below())) return at;
+		}
+		return null;
+	}
+
+	private static boolean free(ServerLevel level, BlockPos pos) {
+		return level.getBlockState(pos).getCollisionShape(level, pos).isEmpty();
 	}
 
 	// ------------------------------------------------------------------ watchers sponsor
@@ -232,7 +250,7 @@ public final class Sponsors {
 			Holo.remove(crate);
 			Holo.remove(canopy);
 			BlockPos pos = BlockPos.containing(land);
-			for (int i = 0; i < 4 && !level.getBlockState(pos).isAir(); i++) pos = pos.above();
+			for (int i = 0; i < 4 && !free(level, pos); i++) pos = pos.above();
 			level.setBlockAndUpdate(pos, Blocks.BARREL.defaultBlockState());
 			if (level.getBlockEntity(pos) instanceof Container c) {
 				fill(c);

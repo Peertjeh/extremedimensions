@@ -21,6 +21,8 @@
   wall, no path to it) kept walking at it for minutes. After twenty seconds it now leaves that chest for a minute
   and a half and goes for the next one.
 * **A sealed crate can no longer be cracked through a wall**: you have to see it while you sneak beside it.
+* **Silver parachutes land where you can get them**: on about your own height, under the open sky when there is
+  such a spot near you (no longer on a roof or in a closed room).
 
 1.43.0 and 1.44.0 were not released on their own: they come with 1.45.0.
 
