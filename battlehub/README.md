@@ -61,9 +61,11 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   master about four in five; against someone standing still nearly all. It flies back from a hit like a player
   and everyone sees its arm swing, for every hit and every block it mines.
 * *The weapon of the fight*: in a bow fight the bow is its weapon (it keeps its distance and only draws the
-  sword when you are right on top of it), in a mace fight it fights with the mace, jumps for falling hits and now
-  and then throws a wind charge at its feet to come down on you with the smash; in a sword or axe fight it holds
-  that weapon. Mixed kits (Free for All, CTF, The Bridge) leave the choice to the situation.
+  sword when you are right on top of it). In a mace fight it fights like a player: the sword on the ground, and
+  every few seconds, a few blocks from you, a wind charge at its feet that sends it 9 to 12 blocks up; it takes the
+  mace on the way up, drifts over you and smashes as soon as you are within reach on the way down. In a sword or
+  axe fight it holds that weapon. Mixed kits (Free for All, CTF, The Bridge) leave the choice to the situation.
+  Like a player it falls: hits on the way down are crits, and a fall hurts.
 * *It minds the edges*: it looks before it jumps (the jump is simulated with the player's own movement and skipped
   when it would end in the void), slows down when it slides towards an edge, and in the air after a knock it holds
   the keys back towards the last ground, as a player does. Lower levels do not always remember to. Half slabs are
@@ -333,7 +335,7 @@ The **PvP** button opens four choices, and after that the kit (sword, axe or mac
   friendly fire and loses when everyone in it is down; the arena grows with the number of players.
 
 ### Duels: best of 1 or best of 3
-1v1 with fixed kits (editable): sword with golden apples, axe and shield, mace with wind charges
+1v1 with fixed kits (editable): sword with golden apples, axe and shield, mace with a sword and wind charges
 (on extra large floating islands), bow with a back-up sword, and crossbow. Five-second countdown, then
 fight. A totem of undying in a kit works as in vanilla.
 Dying doesn't show a death screen: you're out, and afterwards everyone gets their own inventory,

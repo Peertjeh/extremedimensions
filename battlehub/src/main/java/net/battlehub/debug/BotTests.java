@@ -811,6 +811,13 @@ final class BotTests {
 			Bots.practice(p(A), GameMode.MACE, net.battlehub.core.ai.Difficulty.EXPERT);
 		});
 		s.waitFor(tag + ": running", 600, () -> matchOfA() != null && matchOfA().phase() == Match.Phase.RUNNING && botsIn(matchOfA()).size() == 1);
+		s.waitFor(tag + ": on the ground it fights with the sword (1.46: the mace kit has one)", 400, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			p(A).setHealth(p(A).getMaxHealth());
+			BotPlayer b = botsIn(m).get(0);
+			return b.onGround() && b.getMainHandItem().is(net.minecraft.tags.ItemTags.SWORDS);
+		});
 		s.run(tag + ": watch", () -> VARS.put("macePolls", 0));
 		s.waitFor(tag + ": it throws a wind charge at its feet", 2400, () -> {
 			Match m = matchOfA();
@@ -826,27 +833,55 @@ final class BotTests {
 			if (Bots.launches(b) >= 1) {
 				VARS.put("launchY", b.getY());
 				VARS.put("launchTop", b.getY());
+				VARS.put("maceUp", false);
 				net.battlehub.BattleHub.LOGGER.info("SELFTEST mace bot launched {} time(s) | {}", Bots.launches(b), String.join(" | ", Bots.inspect(b)));
 				return true;
 			}
 			logBot("mace bot", m, b, "maceLogged");
 			return false;
 		});
-		s.waitFor(tag + ": and goes up (more than a jump)", 40, () -> {
+		s.waitFor(tag + ": and flies up as people do (more than 7 blocks; a jump and a throw on one tick gave 6.5), the mace in hand", 80, () -> {
 			Match m = matchOfA();
 			if (m == null || botsIn(m).isEmpty()) return false;
 			if (!(VARS.get("launchTop") instanceof Double launchTop)) return false;
-			double y = botsIn(m).get(0).getY(), top = Math.max(launchTop, y);
+			BotPlayer b = botsIn(m).get(0);
+			p(A).setHealth(p(A).getMaxHealth());
+			double top = Math.max(launchTop, b.getY());
 			VARS.put("launchTop", top);
-			boolean up = top > (double) VARS.get("launchY") + 1.4;
-			if (up) net.battlehub.BattleHub.LOGGER.info("SELFTEST mace bot flew {} blocks up", String.format(java.util.Locale.ROOT, "%.1f", top - (double) VARS.get("launchY")));
-			return up;
+			if (!b.onGround() && b.getMainHandItem().is(net.minecraft.world.item.Items.MACE)) VARS.put("maceUp", true);
+			double rise = top - (double) VARS.get("launchY");
+			// the top is past once it comes down again
+			boolean past = b.getDeltaMovement().y < -0.3 || (b.onGround() && rise > 1);
+			if (past) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST mace bot flew {} blocks up, mace in hand up there: {}",
+						String.format(java.util.Locale.ROOT, "%.1f", rise), VARS.get("maceUp"));
+			}
+			return past && rise > 7 && Boolean.TRUE.equals(VARS.get("maceUp"));
 		});
-		s.waitFor(tag + ": and fights with the mace in hand", 200, () -> {
+		s.run(tag + ": watch A", () -> VARS.put("aHealth", (double) p(A).getHealth()));
+		s.waitFor(tag + ": and comes down on A with the mace smash (more than 6 hearts through diamond armour at once)", 2400, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			double before = (double) VARS.get("aHealth"), drop = before - p(A).getHealth();
+			if (drop > 0.5) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST mace bot hit A for {} (holding {}, fall {}, launches {})",
+						String.format(java.util.Locale.ROOT, "%.1f", drop), b.getMainHandItem().getItem(), b.fallDistance, Bots.launches(b));
+			}
+			p(A).setHealth(p(A).getMaxHealth());
+			VARS.put("aHealth", (double) p(A).getHealth());
+			int polls = (int) VARS.get("macePolls") + 1;
+			VARS.put("macePolls", polls);
+			if (polls % 200 == 0 && b.onGround() && b.distanceTo(p(A)) < 1.5) backOff(b, 4.5);
+			logBot("mace bot (smash)", m, b, "maceLogged");
+			return drop >= 6;
+		});
+		s.waitFor(tag + ": back on the ground the sword again", 200, () -> {
 			Match m = matchOfA();
 			if (m == null || botsIn(m).isEmpty()) return false;
 			p(A).setHealth(p(A).getMaxHealth());
-			return botsIn(m).get(0).getMainHandItem().is(net.minecraft.world.item.Items.MACE);
+			BotPlayer b = botsIn(m).get(0);
+			return b.onGround() && b.getMainHandItem().is(net.minecraft.tags.ItemTags.SWORDS);
 		});
 		endAndClean(s, tag);
 	}

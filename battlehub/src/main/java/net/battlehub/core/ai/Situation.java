@@ -23,20 +23,26 @@ public record Situation(int tick, Self self, Target target, Objective goal, doub
 	 * {@code hasMelee}: a sword, axe or mace on the hotbar. {@code hasBow}: a bow or crossbow and arrows.
 	 * {@code drawTicks}: how long it has been drawing the bow (0 when not). {@code focus}: the weapon the fight is
 	 * about (a bow fight, a mace fight; ANY for mixed kits). {@code canLaunch}: it carries a wind charge (for a mace
-	 * smash from above).
+	 * smash from above). {@code fall}: how far it has fallen so far (the mace smashes after more than 1.5 blocks).
 	 */
 	public record Self(V3 pos, V3 vel, double health, double maxHealth, boolean onGround, double attackReady, boolean canHeal,
-			boolean hasShield, double reach, boolean hasMelee, boolean hasBow, int drawTicks, Weapon focus, boolean canLaunch) {
+			boolean hasShield, double reach, boolean hasMelee, boolean hasBow, int drawTicks, Weapon focus, boolean canLaunch, double fall) {
+		/** Not falling. */
+		public Self(V3 pos, V3 vel, double health, double maxHealth, boolean onGround, double attackReady, boolean canHeal, boolean hasShield,
+				double reach, boolean hasMelee, boolean hasBow, int drawTicks, Weapon focus, boolean canLaunch) {
+			this(pos, vel, health, maxHealth, onGround, attackReady, canHeal, hasShield, reach, hasMelee, hasBow, drawTicks, focus, canLaunch, 0);
+		}
+
 		/** A melee fighter without a bow (most tests and most modes). */
 		public Self(V3 pos, V3 vel, double health, double maxHealth, boolean onGround, double attackReady, boolean canHeal, boolean hasShield,
 				double reach) {
-			this(pos, vel, health, maxHealth, onGround, attackReady, canHeal, hasShield, reach, true, false, 0, Weapon.ANY, false);
+			this(pos, vel, health, maxHealth, onGround, attackReady, canHeal, hasShield, reach, true, false, 0, Weapon.ANY, false, 0);
 		}
 
 		/** Without a fight weapon and wind charges. */
 		public Self(V3 pos, V3 vel, double health, double maxHealth, boolean onGround, double attackReady, boolean canHeal, boolean hasShield,
 				double reach, boolean hasMelee, boolean hasBow, int drawTicks) {
-			this(pos, vel, health, maxHealth, onGround, attackReady, canHeal, hasShield, reach, hasMelee, hasBow, drawTicks, Weapon.ANY, false);
+			this(pos, vel, health, maxHealth, onGround, attackReady, canHeal, hasShield, reach, hasMelee, hasBow, drawTicks, Weapon.ANY, false, 0);
 		}
 
 		public double healthShare() {

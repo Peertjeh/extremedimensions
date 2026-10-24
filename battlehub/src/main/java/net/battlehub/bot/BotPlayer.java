@@ -81,10 +81,27 @@ public final class BotPlayer extends ServerPlayer {
 			}
 		}
 		super.tick();
+		double x0 = getX(), y0 = getY(), z0 = getZ();
 		try {
 			doTick();
 		} catch (RuntimeException ignored) {
 			// Some client-driven state is missing for bots; physics still runs.
 		}
+		fall(x0, y0, z0);
+	}
+
+	/** Where the bot was at the end of its last tick (more than a few blocks from there at the start of the next: a teleport). */
+	private net.minecraft.world.phys.Vec3 lastEnd;
+
+	/**
+	 * A client tells the server how its player moved, and the server counts the fall from that: a fall hurts, a hit on
+	 * the way down is a crit, the mace smashes. The server's own physics of a player leave the fall alone, so a bot never
+	 * fell (no crits, no smash, no fall damage) until 1.46. Its physics run here, so its fall is counted here, the way
+	 * the server counts a client's move. A teleport (a respawn, the start of a round) is no fall.
+	 */
+	private void fall(double x0, double y0, double z0) {
+		if (lastEnd != null && lastEnd.distanceToSqr(x0, y0, z0) > 16) resetFallDistance();
+		doCheckFallDamage(getX() - x0, getY() - y0, getZ() - z0, onGround());
+		lastEnd = position();
 	}
 }

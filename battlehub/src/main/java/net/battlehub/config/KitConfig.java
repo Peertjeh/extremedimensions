@@ -8,6 +8,8 @@ import java.util.Map;
 /** {@code config/battlehub/kits.json}: the fixed loadout per mode. */
 public final class KitConfig {
 	public Map<String, Kit> kits = defaults();
+	/** What the file has been brought up to (2: the mace kit has a sword, 1.46). */
+	public int configVersion;
 
 	public static final class Kit {
 		public List<KitItem> items = new ArrayList<>();
@@ -70,7 +72,10 @@ public final class KitConfig {
 		Map<String, Kit> m = new LinkedHashMap<>();
 		m.put("sword", armor(new Kit().add(i("diamond_sword", 1, "0")).add(i("golden_apple", 3, "1")), "iron"));
 		m.put("axe", armor(new Kit().add(i("diamond_axe", 1, "0")).add(i("shield", 1, "offhand")), "iron"));
-		m.put("mace", armor(new Kit().add(i("mace", 1, "0")).add(i("wind_charge", 16, "1")).add(i("golden_apple", 2, "2")), "diamond"));
+		// the sword for the ground, the mace for coming down from a wind charge (the sword is last in the list, so
+		// layouts players made before it was there keep working)
+		m.put("mace", armor(new Kit().add(i("mace", 1, "1")).add(i("wind_charge", 16, "2")).add(i("golden_apple", 2, "3"))
+				.add(i("diamond_sword", 1, "0")), "diamond"));
 		m.put("bow", armor(new Kit().add(i("bow", 1, "0").ench("minecraft:power", 1)).add(i("iron_sword", 1, "1"))
 				.add(i("arrow", 32, "8")), "chainmail"));
 		m.put("crossbow", armor(new Kit().add(i("crossbow", 1, "0").ench("minecraft:quick_charge", 1)).add(i("iron_sword", 1, "1"))
@@ -123,6 +128,10 @@ public final class KitConfig {
 			bridge.items.add(i(CLAY, 64, "3"));
 			bridge.items.add(i(CLAY, 64, "4"));
 		}
+		if (configVersion < 2) {
+			maceSword(kits.get("mace"));
+			configVersion = 2;
+		}
 		for (Kit k : kits.values()) {
 			if (k.items == null) k.items = new ArrayList<>();
 			if (k.effects == null) k.effects = new LinkedHashMap<>();
@@ -132,5 +141,45 @@ public final class KitConfig {
 			}
 		}
 		return this;
+	}
+
+	/**
+	 * kits.json from before 1.46: the mace kit gets a sword, which people fight with on the ground (the mace is for
+	 * coming down from a wind charge). The kit as it came out of the box gets the new one (sword first); a kit someone
+	 * changed keeps everything and gets the sword in the first free hotbar slot.
+	 */
+	static void maceSword(Kit mace) {
+		if (mace == null) return;
+		if (mace.items == null) mace.items = new ArrayList<>();
+		if (mace.items.stream().anyMatch(it -> it != null && it.item != null && it.item.endsWith("_sword"))) return;
+		if (oldMace(mace)) {
+			mace.items.get(0).slot = "1";
+			mace.items.get(1).slot = "2";
+			mace.items.get(2).slot = "3";
+			mace.items.add(3, i("diamond_sword", 1, "0"));
+			return;
+		}
+		java.util.Set<String> used = new java.util.HashSet<>();
+		for (KitItem it : mace.items) {
+			if (it != null && it.slot != null) used.add(it.slot);
+		}
+		for (int slot = 0; slot < 36; slot++) {
+			if (!used.contains(String.valueOf(slot))) {
+				mace.items.add(i("diamond_sword", 1, String.valueOf(slot)));
+				return;
+			}
+		}
+	}
+
+	/** The mace kit as BattleHub made it before 1.46 (mace, 16 wind charges, 2 golden apples, then the armour). */
+	private static boolean oldMace(Kit k) {
+		List<KitItem> l = k.items;
+		return l.size() >= 3 && same(l.get(0), "minecraft:mace", 1, "0") && same(l.get(1), "minecraft:wind_charge", 16, "1")
+				&& same(l.get(2), "minecraft:golden_apple", 2, "2")
+				&& l.subList(3, l.size()).stream().allMatch(it -> it != null && it.slot != null && !it.slot.matches("\\d+"));
+	}
+
+	private static boolean same(KitItem it, String item, int count, String slot) {
+		return it != null && item.equals(it.item) && it.count == count && slot.equals(it.slot) && (it.enchantments == null || it.enchantments.isEmpty());
 	}
 }

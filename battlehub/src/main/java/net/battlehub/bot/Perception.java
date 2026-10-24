@@ -90,7 +90,7 @@ final class Perception {
 		Situation.Self self = new Situation.Self(v(bot.position()), v(bot.getDeltaMovement()), bot.getHealth(), bot.getMaxHealth(), bot.onGround(),
 				bot.getAttackStrengthScale(0.5f), has(bot, Items.GOLDEN_APPLE) || has(bot, Items.ENCHANTED_GOLDEN_APPLE),
 				bot.getOffhandItem().is(Items.SHIELD), reach(bot), hasMelee(bot), bow, drawing ? bot.getTicksUsingItem() : 0, m.botWeapon(),
-				has(bot, Ids.item("minecraft:wind_charge")));
+				has(bot, Ids.item("minecraft:wind_charge")), bot.fallDistance);
 		Situation.Target target = null;
 		if (k != null) {
 			ServerPlayer p = k.player();

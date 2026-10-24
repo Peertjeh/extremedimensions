@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.46.0
+
+### Changed
+* **Mace bots fight like a player.** In a mace fight (practice, duels, 1v2 and 1v3 with the mace kit) a bot now:
+  * fights with the **sword on the ground**;
+  * throws a **wind charge at its feet** every few seconds when it is 1.5 to 5.5 blocks from you, and jumps just
+    as it bursts, so it flies **9 to 12 blocks up** like a player (it used to get 6.5);
+  * takes the **mace on the way up**, drifts over you and **smashes** as soon as you are within reach on the way
+    down; back on the ground it takes the sword again.
+  The timings come from people's mace fights in a fight log export: where they throw the wind charge, how high they
+  fly, when they take the mace and when they hit.
+* **The mace kit has a diamond sword** (slot 1; mace 2, wind charges 3, golden apples 4). A kits.json from before
+  gets it once: the kit as it came gets the new one, a changed kit keeps everything and gets the sword in the first
+  free slot. Layouts made in the kit editor keep working.
+
+### Fixed
+* **Bots never fell.** The server counts a player's fall from what its client reports; bots have no client, so
+  their fall stayed 0: the mace never smashed for them, their jump hits were never crits and they took no fall
+  damage. They now fall like players (crits, the smash and fall damage; a flight on their own wind charge does not
+  hurt, as in vanilla).
+* **A bot high in the air no longer steers away from you.** It took any landing more than 3 blocks below it for a
+  fall into the void and steered back to where it came from; a landing on the floor it left is now safe however
+  high it flew.
+
 ## 1.45.0
 
 ### Changed

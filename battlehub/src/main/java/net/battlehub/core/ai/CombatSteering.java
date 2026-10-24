@@ -31,9 +31,14 @@ public final class CombatSteering {
 		return in;
 	}
 
+	/** Ticks from one launch to the next at the least (the flight itself takes 30 to 60 of them). */
+	static final int LAUNCH_GAP = 50;
+
 	/**
-	 * A mace fight with a wind charge at hand: now and then, close to the target, charged, on the ground and far from
-	 * an edge, a wind charge at its own feet sends it up, so the mace comes down on them with the smash bonus.
+	 * A mace fight with a wind charge at hand: on the ground, near the target, far from an edge, a wind charge at its
+	 * own feet sends it up, so the mace comes down on them with the smash bonus. People do it from 1.5 to 5.5 blocks
+	 * away (half of the time 2.5 to 5.5) at a target on the ground, again soon after landing: every 3 to 4 seconds
+	 * while they are close.
 	 */
 	boolean launch(Tactic tactic, Situation s, Difficulty d, Random rng) {
 		Situation.Self me = s.self();
@@ -41,8 +46,31 @@ public final class CombatSteering {
 		if (me.focus() != Weapon.MACE || !me.canLaunch() || !me.onGround() || t == null || !t.visible()) return false;
 		if (tactic != Tactic.STRIKE && tactic != Tactic.APPROACH && tactic != Tactic.SPACE) return false;
 		double dist = s.distance();
-		if (dist < 2 || dist > 5.5 || me.attackReady() < 0.8 || s.nearestEdge() < 2.5 || s.tick() - lastLaunch < 60) return false;
-		return rng.nextDouble() < 0.02 + 0.08 * d.critSkill;
+		if (dist < 1.5 || dist > 5.5 || t.pos().y() - me.pos().y() > 1.5 || s.nearestEdge() < 2.5 || s.tick() - lastLaunch < LAUNCH_GAP) return false;
+		return rng.nextDouble() < 0.01 + 0.07 * d.critSkill;
+	}
+
+	/** Ticks since its last launch (large when it never launched). */
+	public int sinceLaunch(int tick) {
+		return tick - lastLaunch;
+	}
+
+	/**
+	 * Up in the air in a mace fight ({@link MaceFight}): drifting over the target (press forward while it is still far,
+	 * let go when the drift carries it there), eyes on them, and the smash as soon as they are within reach on the
+	 * way down. A lower level now and then lets the moment pass.
+	 */
+	private Intent dive(Situation s, Track track, Difficulty d, Random rng) {
+		Situation.Self me = s.self();
+		Situation.Target t = s.target();
+		V3 aim = aimPoint(s, track, d);
+		V3 at = new V3(aim.x(), t.pos().y(), aim.z());
+		V3 off = at.sub(me.pos()).flat();
+		double ahead = off.flatLength();
+		double toward = ahead < 1e-6 ? 0 : me.vel().flat().dot(off.unit());
+		double fwd = MaceFight.diveForward(ahead, toward);
+		boolean smash = t.visible() && MaceFight.smash(me, t.pos()) && rng.nextDouble() < 0.4 + 0.6 * d.critSkill;
+		return new Intent(fwd, 0, fwd > 0 && ahead > 2, false, aim, null, smash, false, false);
 	}
 
 	private Intent intent(Tactic tactic, Situation s, Track track, Personality p, Difficulty d, Random rng) {
@@ -51,6 +79,10 @@ public final class CombatSteering {
 		if (wTap > 0) wTap--;
 		if (t == null && tactic != Tactic.OBJECTIVE && tactic != Tactic.RECOVER) {
 			return Intent.NOTHING;
+		}
+		// up in the air with the mace: coming down on them goes before whatever it would do on the ground
+		if (tactic != Tactic.RECOVER && MaceFight.diving(me, t, s.tick() - lastLaunch)) {
+			return dive(s, track, d, rng);
 		}
 		double dist = s.distance();
 		double reach = me.reach();
@@ -189,9 +221,9 @@ public final class CombatSteering {
 		return s.ground(left) >= s.ground(left.scale(-1)) ? 1 : -1;
 	}
 
-	/** A jump for a falling hit (a crit; with a mace also the smash, so mace fights jump more often). */
+	/** A jump for a falling hit (a crit; in a mace fight too: on the ground that is the sword's, the smash needs a launch). */
 	private static boolean critJump(Situation.Self me, double dist, double reach, Difficulty d, Random rng, Situation s) {
-		double chance = d.critSkill * (me.focus() == Weapon.MACE ? 0.35 : 0.15);
+		double chance = d.critSkill * 0.15;
 		return me.onGround() && dist > reach - 0.5 && dist < reach + 1.5 && me.attackReady() > 0.85 && rng.nextDouble() < chance;
 	}
 }

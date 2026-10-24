@@ -202,6 +202,14 @@ final class BotBrain {
 			case PROP_HUNT -> propHunt(m);
 			case SPLEEF -> spleef(m);
 		}
+		if (ticks > launchedAt && ticks <= launchJump) {
+			// between a launch's throw and its burst: standing still, and the jump just before the burst comes (straight up,
+			// on ground the launch already found safe)
+			bot.zza = 0;
+			bot.xxa = 0;
+			bot.setSprinting(false);
+			bot.setJumping(ticks == launchJump && bot.onGround());
+		}
 		if (m.botStyle() != net.battlehub.core.BotStyle.PARKOUR && !building) {
 			// What the bot wanted, before an edge held it back: standing still at an edge is being stuck too
 			boolean wanted = bot.zza != 0 || bot.xxa != 0;
@@ -605,7 +613,9 @@ final class BotBrain {
 		if (recoverChoice == 0) recoverChoice = !knocked || rnd.nextDouble() < mind.difficulty().edgeCare ? 1 : -1;
 		if (recoverChoice < 0) return;
 		Vec3 v = bot.getDeltaMovement();
-		if (net.battlehub.core.ai.Falls.landsSafely(bot.getX(), bot.getY(), bot.getZ(), v.x, v.y, v.z, 0, 0, false, false, this::surface, 3)) {
+		// a landing on the floor it left (or up to 3 below it) is safe, however high it flew (a launch, a knock up)
+		double drop = 3 + Math.max(0, bot.getY() - lastGround.y);
+		if (net.battlehub.core.ai.Falls.landsSafely(bot.getX(), bot.getY(), bot.getZ(), v.x, v.y, v.z, 0, 0, false, false, this::surface, drop)) {
 			return;
 		}
 		moveToward(lastGround, 1f);
@@ -684,8 +694,17 @@ final class BotBrain {
 		return -1;
 	}
 
-	/** The melee weapon of this fight first (the mace in a mace fight, the axe in an axe fight), else any. */
+	/**
+	 * The melee weapon of this fight first (the axe in an axe fight), else any. A mace fight is fought as people do:
+	 * the sword on the ground, the mace up in the air after a launch or falling far enough to smash
+	 * ({@link net.battlehub.core.ai.MaceFight}); without a sword in the kit the mace all the time.
+	 */
 	private void selectMelee(net.battlehub.core.ai.Weapon focus) {
+		if (focus == net.battlehub.core.ai.Weapon.MACE
+				&& !net.battlehub.core.ai.MaceFight.maceInHand(bot.onGround(), bot.fallDistance, ticks - launchedAt)
+				&& select(s -> s.is(ItemTags.SWORDS))) {
+			return;
+		}
 		Predicate<ItemStack> want = switch (focus) {
 			case MACE -> s -> s.is(Items.MACE);
 			case AXE -> s -> s.is(ItemTags.AXES);
@@ -698,24 +717,30 @@ final class BotBrain {
 
 	/**
 	 * A wind charge thrown straight down at its own feet: the burst sends the bot up, and the mace comes down on the
-	 * target with the smash bonus (the steering keeps it moving to the target and swings on the way down).
+	 * target with the smash bonus (the steering takes it over them and swings on the way down). Thrown standing, it
+	 * bursts two ticks later (it flies down 1.5 blocks a tick from the eyes); the jump comes on that tick, so the burst
+	 * is right under feet that are already rising and adds to the jump. People fly 9 to 12 blocks up that way; jumping
+	 * and throwing on the same tick, as bots did before 1.46, gave 6.5 (the burst then came a block below the feet).
 	 */
 	private void launch() {
 		if (!bot.onGround()) return;
 		int slot = find(s -> s.is(Ids.item("minecraft:wind_charge")));
 		if (slot < 0) return;
 		stopUsing();
-		// as a player does it: standing, jump and throw it straight down; the burst comes under the rising feet
 		bot.zza = 0;
 		bot.xxa = 0;
 		bot.setSprinting(false);
-		bot.setJumping(true);
 		bot.getInventory().setSelectedSlot(slot);
 		bot.setXRot(90f);
 		BotActions.use(bot, InteractionHand.MAIN_HAND);
 		BotActions.swing(bot);
 		launches++;
+		launchedAt = ticks;
+		launchJump = ticks + 2;
 	}
+
+	/** When it last threw a wind charge to fly up, and the tick it jumps after it. */
+	private int launchedAt = -1000, launchJump = -1;
 
 	private int launches;
 

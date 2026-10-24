@@ -2141,6 +2141,76 @@ mensen; Bridge Chaos 1v1v1v1, Hunger Games en een mace-duel; de bots waren inter
       optreedt, en het eerstvolgende werk aan de bots begint ermee.
     - **Tweede poging van de gefaalde job: 897 geslaagd, 0 gefaald.**
 
+## Versie 1.46.0 – Mace-bots vechten als een speler: zwaard, windcharge, smash
+
+**Vraag.** In oefenen, mace-PvP: de bots slaan alleen met de mace en gebruiken af en toe een windcharge. Ze moeten
+net als een echte speler het zwaard gebruiken, en de windcharges om de lucht in te vliegen en dan de mace te
+gebruiken. Erbij: een export met 24 gevechten ("gebruik deze fight data": 5 mace, 5 Bridge, 11 Bridge Chaos
+1v1v1v1, 3 Hunger Games, opgenomen met 1.40 en 1.45).
+
+**Wat de data liet zien (de 5 mace-gevechten, mens tegen bot).**
+- *De mens* gooit de windcharge 1,5 tot 5,5 blokken van de bot (de helft 2,5 tot 5,5), recht naar beneden,
+  springend: 89 keer in 5 gevechten, tijdens een gevecht om de 50 tot 80 ticks. Hij vliegt 9 tot 12 blokken
+  hoog, pakt de mace tijdens het stijgen (8 tot 10 ticks na de worp), drijft boven de bot (bij de klap minder dan
+  een blok opzij) en slaat zodra die binnen bereik is, met 5 tot 9 blokken val: 33 smashes van 37 tot 53 schade.
+- *De bot* (gevorderd tot meester) gooide 49 keer, vloog maar 6,5 blokken hoog en raakte **nul keer** met een
+  smash. Zijn valafstand bleef 0, ook als hij viel, en in de lucht dreef hij van de speler weg.
+
+**Waarom.**
+1. *Valafstand.* Een client meldt hoe zijn speler beweegt en de server telt daaruit de val. De eigen natuurkunde
+   van een speler op de server telt die niet; een bot heeft geen client, dus viel hij nooit: geen smash (die
+   vraagt meer dan 1,5 blok val), geen crits (die vragen een val groter dan 0), geen valschade. In alle 24
+   gevechten: 0 van de 6.884 momenten dat een bot viel hadden een valafstand; bij mensen vrijwel allemaal.
+2. *De sprong.* De bot sprong en gooide op dezelfde tick. De windcharge vliegt 1,5 blok per tick vanaf de ogen en
+   barst twee ticks later; dan was de bot al een blok boven de grond en kreeg hij een zwakkere stoot (0,96
+   omhoog tegen 1,2 tot 1,35 bij de mens).
+3. *De lucht.* Het luchtherstel ("terug naar de laatste grond") keurt een landing af die meer dan 3 blokken lager
+   ligt dan waar de bot nu is. Hoog in de lucht is dat altijd zo, dus stuurde hij de hele vlucht terug naar waar
+   hij vandaan kwam, weg van de speler.
+4. *Het wapen.* De mace-kit had geen zwaard, en de bot hield de mace altijd vast.
+
+**Wat er komt.**
+- *Zwaard in de mace-kit* (diamanten zwaard). Nieuwe standaard: zwaard slot 1, mace 2, windcharges 3, gouden
+  appels 4 (in de lijst staat het zwaard achteraan, zodat eerder gemaakte indelingen blijven werken). Een
+  `kits.json` van voor 1.46 krijgt het eenmalig (`configVersion` 2): de kit zoals hij uit de doos kwam wordt de
+  nieuwe; een aangepaste kit houdt alles en krijgt het zwaard op het eerste vrije slot. Wie het daarna weghaalt,
+  houdt het weg.
+- *Bots vallen als spelers* (`BotPlayer`): na de natuurkunde van elke tick telt de server de val zoals bij een
+  client (`doCheckFallDamage`); een teleport (respawn, nieuwe ronde) telt niet als val. Daarmee werken de
+  mace-smash en crits voor bots, en krijgen ze valschade zoals spelers (de vlucht op een eigen windcharge en de
+  sprong na een smash tellen in vanilla niet mee).
+- *Het wapen* (`core/ai/MaceFight`, `BotBrain.selectMelee`): op de grond het zwaard; in de lucht na een launch,
+  of bij een val van meer dan 1,5 blok, de mace. Een gewone sprong (hooguit 1,25 val) of een klap houdt het
+  zwaard, zodat de lading niet verloren gaat aan wisselen. Zonder zwaard in de kit blijft het de mace.
+- *De launch* (`CombatSteering.launch`): 1,5 tot 5,5 blokken van een doelwit op de grond, ver van een rand,
+  minstens 50 ticks na de vorige (een vlucht duurt 30 tot 60), vaker naarmate het niveau hoger is (de laadeis van
+  de mace is weg: op de grond is het nu het zwaard). De worp staand, en de sprong twee ticks later, op de tick dat
+  de charge barst: de stoot komt dan net onder voeten die al stijgen.
+- *De duik* (`CombatSteering.dive`): in de lucht met de mace gaat het neerkomen voor wat de tactiek op de grond
+  zou doen: vooruit naar de plek boven de speler zolang die nog ver is, loslaten als de drift (91% per tick) hem
+  er vanzelf brengt, remmen als hij erover zou schieten, ogen op de speler. De smash zodra de speler binnen
+  bereik is (gemeten van de ogen tot het dichtste punt van zijn lichaam) op weg naar beneden met meer dan 1,5 blok
+  val; lagere niveaus laten het moment soms voorbij gaan.
+- *Luchtherstel*: een landing telt als veilig als ze op de grond ligt waar de bot vandaan kwam (of tot 3 blokken
+  lager), hoe hoog hij ook vloog.
+- *Crit-sprong*: in een mace-gevecht niet meer vaker springen dan met een zwaard (op de grond is het nu het zwaard).
+
+**Testen.**
+- JUnit (`WeaponFocusTest`): zwaard op de grond, mace in de lucht na een launch en bij een lange val, niet bij
+  een gewone sprong; het bereik van boven naar het hoofd; de smash alleen op weg naar beneden, met genoeg val en
+  binnen bereik; de drift (vooruit, loslaten, remmen, stil boven de speler); na een launch komt de bot naar de
+  speler toe, ook als de tactiek op de grond achteruit zou gaan, en smasht; terug op de grond beslist de tactiek
+  weer. `KitConfigTest`: de nieuwe kit, de oude wordt de nieuwe (eenmalig), een aangepaste kit houdt alles en
+  krijgt het zwaard op een vrij slot, een kit met een zwaard blijft zoals hij is.
+- Zelftest ("bots mace", expert): op de grond het zwaard; een windcharge aan de voeten; meer dan 7 blokken hoog
+  (sprong en worp op één tick gaf 6,5) met de mace in de hand; dan een smash op A van meer dan 6 levenspunten
+  door diamanten harnas heen (een zwaardcrit doet ruim 3); terug op de grond weer het zwaard.
+
+**De rest van de data.** De 19 andere gevechten (Bridge, Bridge Chaos, Hunger Games) zijn gebruikt om te
+bevestigen dat het valprobleem overal speelde (bots vielen in geen enkel gevecht, dus ook geen crits); verder zijn
+ze niet in een model gegaan. Opnieuw trainen op mensdata hoort bij fase E, die nog niet is goedgekeurd; de export
+is daar bruikbaar voor (`ml/train/fights.py`, `people.py`).
+
 ## Versie 1.45.0 – Een overzichtelijke UI (plan)
 
 **Vraag.** De UI overdoen zodat hij overzichtelijk is.
