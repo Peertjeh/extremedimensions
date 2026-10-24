@@ -2141,6 +2141,97 @@ mensen; Bridge Chaos 1v1v1v1, Hunger Games en een mace-duel; de bots waren inter
       optreedt, en het eerstvolgende werk aan de bots begint ermee.
     - **Tweede poging van de gefaalde job: 897 geslaagd, 0 gefaald.**
 
+## Versie 1.43.0 – De echte Hunger Games (plan)
+
+**Vraag.** Hunger Games veel specialer maken met events, power-ups en loot die je moet vrijspelen, alsof het de echte
+Hunger Games zijn.
+
+**Tributes en districten.**
+- Bij de start is elke speler een tribute van een district: twee per district (1, 2, 3, ...), willekeurig verdeeld.
+- **Trainingsscore** (1 tot 12) uit het profiel: Hunger Games-winsten, kills en niveau, plus wat geluk. Bots krijgen
+  een score bij hun niveau.
+- **De boete (reaping):** bij de start in de chat en op het scherm, per district de tributes met hun score. Daarna
+  "De 12e Hunger Games beginnen!" (het nummer telt alle Hunger Games van de server) en "Moge het geluk altijd met je
+  zijn".
+- Het district staat in de sidebar.
+
+**Kanon en de gevallenen aan de hemel.**
+- Het kanon blijft (1.32). Nieuw: eens per paar minuten valt de avond. Het hymne-geluid klinkt, en de gevallenen van
+  die ronde verschijnen aan de hemel boven het plein (tekst-displays met naam en district), een halve minuut lang.
+
+**Gamemaker-events (`core/hunger/HgEvents`, `games/hunger/Gamemakers`).**
+- Na de vrede om de 2,5 tot 3,5 minuten een event, aangekondigd met titel en geluid. Geen event in de laatste minuut,
+  en hetzelfde event niet twee keer achter elkaar.
+- Het **Feest** komt één keer, rond minuut 8, een minuut van tevoren aangekondigd. Rond de hoorn verschijnt een
+  feesttafel: kisten met de beste loot (power-ups, betoverde spullen, sleutels).
+- De andere events, willekeurig met gewichten:
+  - **Bosbrand:** een vuurmuur (deeltjes) trekt in 40 seconden van een kant over de stad. Wie erin staat, vat vlam.
+  - **Gifmist:** een wolk van 25 blokken drijft door een deel van de stad: gif en duisternis.
+  - **Mutanten (mutts):** bij elke tribute verschijnen wolven die jagen, een minuut lang.
+  - **Tracker jackers:** een zwerm boze bijen op een plek in de stad; hun steek geeft gif en misselijkheid.
+  - **Onweer:** een halve minuut bliksem in één deel van de stad.
+  - **Bevoorrading:** vijf kratten aan parachutes dalen neer op willekeurige plekken in de stad.
+  - **Onthuld:** de Gamemakers laten alle tributes 20 seconden oplichten.
+  - **Zure regen:** 30 seconden regen die pijn doet wie niet onder een dak staat.
+  - **Jabberjays:** vreemde geluiden en gefluister met namen van tributes, en een minuut lang een kompas-pijl
+    naar de dichtstbijzijnde tribute (in de actiebalk).
+- Alles komt na afloop terug zoals het was (wolven en bijen weg, weer en tijd terug), en niets breekt de stad.
+
+**Sponsors (`core/hunger/Favour`, `games/hunger/Sponsors`).**
+- Elke tribute verdient gunst: per kill, per 10 schade, per minuut in leven, voor het eerste bloed, voor het overleven
+  van een event en voor het Feest.
+- Bij genoeg gunst komt er automatisch een **zilveren parachute**: een krat aan een parachute daalt naast de tribute.
+  Wat erin zit hangt af van wat hij nodig heeft: weinig leven geeft genezing, honger geeft eten, geen wapen geeft een
+  wapen, en anders een power-up.
+- **Toeschouwers sponsoren:** wie uitgeschakeld is of kijkt, krijgt een sponsor-item. Daarmee stuurt hij met zijn
+  coins een cadeau naar een levende tribute: eten, genezing, een wapen of een power-up. Maximaal drie per match, en
+  niet als hij zelf nog meedoet.
+
+**Power-ups (`games/hunger/PowerUps`).** Spullen met een eigen naam en uitleg, te vinden in betere kisten, op het Feest,
+in kratten en parachutes:
+- **Helende zalf:** 6 harten in 5 seconden, haalt gif en vuur weg.
+- **Camouflageverf:** 15 seconden onzichtbaar.
+- **Nachtslot-bessen (nightlock):** gooien: een gifwolk waar hij landt.
+- **Tracker jacker-nest:** gooien: een zwerm bijen die de dichtstbijzijnde andere tribute aanvalt.
+- **Landmijn:** neerzetten (een drukplaat); een andere tribute die erop stapt, ontploft (de stad blijft heel).
+- **Parachute:** 10 seconden langzaam vallen.
+- **Snelheidstonic:** 20 seconden sneller.
+- **Tracker:** een minuut lang een pijl in de actiebalk naar de dichtstbijzijnde tribute, met de afstand.
+- **Brood uit District 11:** volle honger en wat regeneratie.
+- **Nachtkijker:** 2 minuten nachtzicht.
+- **Speer:** een drietand met loyalty.
+- Elk heeft een tag in de custom data (`battlehub_hg`). Het zijn geen BattleHub-menu-items: je kunt ze uit een kist
+  halen, verplaatsen en laten vallen.
+
+**Loot die je moet vrijspelen (`games/hunger/Vaults`).**
+- **Kluizen:** een deel van de kisten in de landmarks is op slot (een ijzeren kluis met een hangslot-tekst erboven).
+  Een **kluissleutel** opent er één. Sleutels zitten soms in huiskisten, in kratten en parachutes, op het Feest, en
+  wie iemand doodt, krijgt er een. In een kluis zitten diamanten spullen en power-ups.
+- **Kratten:** een deel van de kisten in de huizen zijn verzegelde kratten. Openen kan pas na 5 seconden sluipen
+  ernaast; schade onderbreekt dat. De voortgang staat in de actiebalk. In een krat zit betere loot.
+- **De schatkist van het Capitool:** in het midden van de hoorn, verzegeld tot het Feest.
+
+**Bots.**
+- Een bot gaat naar zijn eigen parachute, naar het Feest en naar een krat in de buurt (hij sluipt ernaast tot hij
+  open is), en met een sleutel naar een kluis.
+- Hij loopt weg uit vuur, gifmist en bijen.
+- Power-ups gebruikt hij simpel: zalf als hij weinig leven heeft, brood bij honger, en camouflage op de vlucht.
+
+**Testen.**
+- JUnit (`core/hunger`): het rooster van de events, gunst en de drempels van een parachute, districten en
+  trainingsscores, het vrijspelen van kluizen en kratten, en de inhoud van een parachute.
+- Zelftests:
+  - de boete en het nummer;
+  - elk event start en ruimt op (geforceerd via `/battlehub hg event <naam>`);
+  - het Feest;
+  - een kluis gaat niet open zonder sleutel en wel met;
+  - een krat gaat open na 5 seconden sluipen en schade onderbreekt het;
+  - een parachute landt naast een tribute;
+  - een toeschouwer sponsort;
+  - power-ups werken (zalf, camouflage, landmijn, tracker);
+  - de gevallenen aan de hemel;
+  - een bot haalt zijn parachute op.
+
 ## Versie 1.42.0 – Volle lobby's, rustig plunderen in Hunger Games, queue-genoten oplichten
 
 **Feedback.**
