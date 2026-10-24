@@ -1,3 +1,1 @@
-!net.minecraft.client.gui.screens.ChatScreen
-net.minecraft.client.gui.components.ChatComponent
-net.minecraft.client.gui.components.CommandSuggestions
+!net.minecraft.client.gui.screens.Screen

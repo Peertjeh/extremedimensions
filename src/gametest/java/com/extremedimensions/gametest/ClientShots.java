@@ -1269,7 +1269,8 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(5);
 			// The chat remembers what was sent: up brings it back, and Enter sends it again. (The guide card's close cross,
 			// which the mod adds to the chat, once took the focus at the first press of up, and the Enter after it pressed
-			// the cross instead of sending.) The keys go to the chat screen as the keyboard hands them over.
+			// the cross instead of sending.) The keys go to the chat screen as the keyboard hands them over: the key itself,
+			// and the key code the chat reads its history keys by.
 			net.minecraft.client.gui.screens.ChatScreen[] chat = {null};
 			boolean[] closed = {false};
 			ctx.runOnClient(mc -> net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register((client, opened, w, h) -> {
@@ -1285,7 +1286,7 @@ public class ClientShots implements FabricClientGameTest {
 				check(chat[0] != null, "the chat did not open");
 				// (the command is put in the line as typed; the typing itself is the game's)
 				chatLine(chat[0]).setValue("/tether where");
-				chat[0].keyPressed(new net.minecraft.client.input.KeyEvent(com.mojang.blaze3d.platform.InputConstants.KEY_RETURN, 0, 0));
+				chat[0].keyPressed(new net.minecraft.client.input.KeyEvent(com.mojang.blaze3d.platform.InputConstants.KEY_RETURN, com.mojang.blaze3d.platform.InputConstants.KEYCODE_RETURN, 0));
 			});
 			ctx.waitTicks(3);
 			ctx.runOnClient(mc -> {
@@ -1296,12 +1297,12 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(3);
 			ctx.runOnClient(mc -> {
 				check(chat[0] != null, "the chat did not open a second time");
-				chat[0].keyPressed(new net.minecraft.client.input.KeyEvent(com.mojang.blaze3d.platform.InputConstants.KEY_UP, 0, 0));
+				chat[0].keyPressed(new net.minecraft.client.input.KeyEvent(com.mojang.blaze3d.platform.InputConstants.KEY_UP, com.mojang.blaze3d.platform.InputConstants.KEYCODE_UP, 0));
 				String line = chatLine(chat[0]).getValue();
 				Object focus = chat[0].getFocused();
 				check("/tether where".equals(line), "up in the chat did not bring back the command sent last (the line holds '" + line
 						+ "', the focus is on " + (focus == null ? "nothing" : focus.getClass().getSimpleName()) + ")");
-				chat[0].keyPressed(new net.minecraft.client.input.KeyEvent(com.mojang.blaze3d.platform.InputConstants.KEY_RETURN, 0, 0));
+				chat[0].keyPressed(new net.minecraft.client.input.KeyEvent(com.mojang.blaze3d.platform.InputConstants.KEY_RETURN, com.mojang.blaze3d.platform.InputConstants.KEYCODE_RETURN, 0));
 			});
 			ctx.waitTicks(3);
 			ctx.runOnClient(mc -> check(closed[0], "Enter after up in the chat did not send the command again (the chat stayed open)"));
