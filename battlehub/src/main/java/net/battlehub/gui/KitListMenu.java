@@ -13,6 +13,7 @@ import net.battlehub.match.Kits;
 import net.battlehub.util.Icon;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Items;
 
 /** The kits a player can arrange: one per mode that hands out a kit with at least two items. */
 public final class KitListMenu extends Screen {
@@ -39,6 +40,11 @@ public final class KitListMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.PROFILE;
+	}
+
+	@Override
 	public int rows() {
 		return 4;
 	}
@@ -56,6 +62,7 @@ public final class KitListMenu extends Screen {
 					click -> new KitEditorMenu(viewer, kit, -1).open());
 		}
 		c.back(() -> new MainMenu(viewer).open());
+		Style.title(c, viewer, Items.CHEST, "menu.main.kits");
 		c.fill();
 	}
 }

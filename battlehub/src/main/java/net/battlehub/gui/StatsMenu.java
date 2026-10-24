@@ -32,6 +32,11 @@ public final class StatsMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.PROFILE;
+	}
+
+	@Override
 	public int rows() {
 		return 6;
 	}

@@ -202,7 +202,7 @@ final class CosmeticsTests {
 			new MainMenu(p("BHTestA")).open();
 		});
 		s.check(tag + ": the compass menu has a cosmetics button", () -> p("BHTestA").containerMenu instanceof HubMenu m
-				&& m.getSlot(13).getItem().is(Items.FIREWORK_ROCKET));
+				&& m.getSlot(net.battlehub.gui.MainMenu.SHOP).getItem().is(Items.FIREWORK_ROCKET));
 		s.run(tag + ": A opens the shop", () -> click("BHTestA", "Cosmetics"));
 		s.waitFor(tag + ": sixteen categories (trails to gadgets)", 5, () -> {
 			if (!(p("BHTestA").containerMenu instanceof HubMenu m) || !(m.screen() instanceof CosmeticsMenu)) return false;

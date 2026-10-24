@@ -447,6 +447,8 @@ public final class HubEvents {
 				case HubItems.AGAIN -> net.battlehub.queue.PlayAgain.accept(sp);
 				case HubItems.BOTS_ON -> net.battlehub.bot.Bots.choose(sp, false);
 				case HubItems.BOTS_OFF -> net.battlehub.bot.Bots.choose(sp, true);
+				case HubItems.PROFILE -> new net.battlehub.gui.StatsMenu(sp, sp.getUUID()).open();
+				case HubItems.SHOP -> new net.battlehub.gui.CosmeticsMenu(sp).open();
 				default -> {
 					if (tag.startsWith(HubItems.GADGET)) net.battlehub.progression.GadgetFx.use(sp);
 				}

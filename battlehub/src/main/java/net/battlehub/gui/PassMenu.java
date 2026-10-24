@@ -29,6 +29,11 @@ public final class PassMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.PROFILE;
+	}
+
+	@Override
 	public int rows() {
 		return 6;
 	}
@@ -62,10 +67,10 @@ public final class PassMenu extends Screen {
 			}
 		}
 		if (page > 0) {
-			c.set(45, Icon.of(Items.ARROW).name(Lang.item(viewer, "menu.page.previous")).build(), click -> new PassMenu(viewer, page - 1).open());
+			c.set(net.battlehub.core.MenuLayout.previous(rows()), Icon.of(Items.SPECTRAL_ARROW).name(Lang.item(viewer, "menu.page.previous")).build(), click -> new PassMenu(viewer, page - 1).open());
 		}
 		if ((page + 1) * PER_PAGE < pass.tiers) {
-			c.set(53, Icon.of(Items.ARROW).name(Lang.item(viewer, "menu.page.next")).build(), click -> new PassMenu(viewer, page + 1).open());
+			c.set(net.battlehub.core.MenuLayout.next(rows()), Icon.of(Items.SPECTRAL_ARROW).name(Lang.item(viewer, "menu.page.next")).build(), click -> new PassMenu(viewer, page + 1).open());
 		}
 		c.back(() -> new MainMenu(viewer).open());
 		c.fill();

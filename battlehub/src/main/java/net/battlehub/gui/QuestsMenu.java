@@ -26,6 +26,11 @@ public final class QuestsMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.PROFILE;
+	}
+
+	@Override
 	public int rows() {
 		return 5;
 	}

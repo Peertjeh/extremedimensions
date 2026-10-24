@@ -31,6 +31,11 @@ public final class FriendsMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.SOCIAL;
+	}
+
+	@Override
 	public int rows() {
 		return 6;
 	}

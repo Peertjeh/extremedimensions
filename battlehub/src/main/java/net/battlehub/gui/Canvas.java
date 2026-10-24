@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import net.battlehub.core.MenuLayout;
 import net.battlehub.lang.Lang;
 import net.battlehub.util.Icon;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,11 +29,17 @@ public final class Canvas {
 	private final Map<Integer, Consumer<Click>> actions = new HashMap<>();
 	private final ServerPlayer viewer;
 	private final int rows;
+	private final Style.Section section;
 
-	Canvas(ServerPlayer viewer, int rows) {
+	Canvas(ServerPlayer viewer, int rows, Style.Section section) {
 		this.viewer = viewer;
 		this.rows = rows;
+		this.section = section;
 		this.items = new ItemStack[rows * 9];
+	}
+
+	public Style.Section section() {
+		return section;
 	}
 
 	public int size() {
@@ -72,19 +79,29 @@ public final class Canvas {
 		return actions.get(slot);
 	}
 
-	/** Fills every empty slot with a dark glass pane without tooltip. */
+	/**
+	 * Fills every empty slot: the top and bottom rows in the colour of the menu's part of BattleHub, the rest dark
+	 * glass, all without tooltip. Menus of three rows or more show your coins top right ({@link MenuLayout#WALLET}).
+	 */
 	public void fill() {
+		if (rows >= 3 && (items[MenuLayout.WALLET] == null || items[MenuLayout.WALLET].isEmpty())) {
+			items[MenuLayout.WALLET] = Style.wallet(viewer);
+		}
 		ItemStack pane = Icon.of("minecraft:black_stained_glass_pane").hidden().build();
+		ItemStack edge = Style.pane(section);
 		for (int i = 0; i < items.length; i++) {
 			if (items[i] == null || items[i].isEmpty()) {
-				items[i] = pane.copy();
+				items[i] = rows >= 3 && MenuLayout.frame(i, rows) ? edge.copy() : pane.copy();
 			}
 		}
 	}
 
-	/** Border of grey panes around the edge only. */
+	/** Panes around the edge only (in the colour of the menu's part of BattleHub), and your coins top right. */
 	public void border() {
-		ItemStack pane = Icon.of("minecraft:gray_stained_glass_pane").hidden().build();
+		if (rows >= 3 && (items[MenuLayout.WALLET] == null || items[MenuLayout.WALLET].isEmpty())) {
+			items[MenuLayout.WALLET] = Style.wallet(viewer);
+		}
+		ItemStack pane = Style.pane(section);
 		for (int i = 0; i < items.length; i++) {
 			int r = i / 9;
 			int col = i % 9;
@@ -94,9 +111,10 @@ public final class Canvas {
 		}
 	}
 
-	/** Back arrow at the bottom centre. */
+	/** Back arrow bottom left and the close button in the bottom middle, the same in every menu. */
 	public void back(Runnable action) {
-		set((rows - 1) * 9 + 4, Icon.of(Items.ARROW).name(Lang.item(viewer, "menu.back")).build(), c -> action.run());
+		set(MenuLayout.back(rows), Icon.of(Items.ARROW).name(Lang.item(viewer, "menu.back")).build(), c -> action.run());
+		set(MenuLayout.close(rows), Icon.of(Items.BARRIER).name(Lang.item(viewer, "menu.close")).build(), c -> viewer.closeContainer());
 	}
 
 	/** Slots of the inner area (no border), left to right, top to bottom. */

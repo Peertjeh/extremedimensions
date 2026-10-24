@@ -39,6 +39,11 @@ public final class ModeListMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.PLAY;
+	}
+
+	@Override
 	public int rows() {
 		return 3;
 	}

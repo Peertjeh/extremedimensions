@@ -25,6 +25,11 @@ public final class ClanMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.SOCIAL;
+	}
+
+	@Override
 	public int rows() {
 		return 6;
 	}
@@ -59,7 +64,7 @@ public final class ClanMenu extends Screen {
 				PlayerProfile p = PlayerStore.get(UUID.fromString(m));
 				c.set(slots[i++], Icon.head(p.name).name(Lang.item(viewer, m.equals(clan.owner) ? "menu.clan.owner" : "menu.clan.member", p.name)).build());
 			}
-			c.set(49, Icon.of(Items.BARRIER).name(Lang.item(viewer, "menu.clan.leave")).build(), click -> {
+			c.set(net.battlehub.core.MenuLayout.extra(rows()), Icon.of(Items.LAVA_BUCKET).name(Lang.item(viewer, "menu.clan.leave")).build(), click -> {
 				viewer.closeContainer();
 				Clans.leave(viewer);
 			});
@@ -72,7 +77,7 @@ public final class ClanMenu extends Screen {
 		}
 		if (top.isEmpty()) board.lore(Lang.lore(viewer, "menu.leaderboards.empty"));
 		c.set(40, board.build());
-		c.set(45, Icon.of(Items.ARROW).name(Lang.item(viewer, "menu.back")).build(), click -> new MainMenu(viewer).open());
+		c.back(() -> new MainMenu(viewer).open());
 		c.fill();
 	}
 }

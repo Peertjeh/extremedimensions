@@ -30,6 +30,11 @@ public final class SpectateMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.PLAY;
+	}
+
+	@Override
 	public int rows() {
 		return 6;
 	}
@@ -71,11 +76,12 @@ public final class SpectateMenu extends Screen {
 			});
 		}
 		if (pg > 0) {
-			c.set(48, Icon.of(Items.ARROW).name(Lang.item(viewer, "menu.page.previous")).build(), click -> new SpectateMenu(viewer, pg - 1).open());
+			c.set(48, Icon.of(Items.SPECTRAL_ARROW).name(Lang.item(viewer, "menu.page.previous")).build(), click -> new SpectateMenu(viewer, pg - 1).open());
 		}
 		if (pg < pages - 1) {
-			c.set(50, Icon.of(Items.ARROW).name(Lang.item(viewer, "menu.page.next")).build(), click -> new SpectateMenu(viewer, pg + 1).open());
+			c.set(50, Icon.of(Items.SPECTRAL_ARROW).name(Lang.item(viewer, "menu.page.next")).build(), click -> new SpectateMenu(viewer, pg + 1).open());
 		}
+		Style.title(c, viewer, Items.ENDER_EYE, "menu.main.spectate");
 		c.back(() -> new MainMenu(viewer).open());
 		c.border();
 	}

@@ -23,6 +23,11 @@ public final class PartyGameMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.PLAY;
+	}
+
+	@Override
 	public int rows() {
 		return mode == GameMode.TOURNAMENT ? 5 : mode == GameMode.PARKOUR || mode == GameMode.BED_WARS ? 4 : 3;
 	}

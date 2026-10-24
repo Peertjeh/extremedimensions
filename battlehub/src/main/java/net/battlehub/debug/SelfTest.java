@@ -314,13 +314,22 @@ public final class SelfTest {
 			return n == 1;
 		});
 		s.run("open main menu", () -> new MainMenu(p("BHTestA")).open());
-		s.check("main menu has the six items", () -> {
+		s.check("main menu has its groups: eight ways to play, you, together, the shop; your head on top, close below", () -> {
 			if (!(p("BHTestA").containerMenu instanceof HubMenu m)) return false;
-			int[] slots = {10, 11, 12, 14, 15, 16};
+			java.util.List<Integer> slots = new java.util.ArrayList<>();
+			for (int sl : net.battlehub.gui.MainMenu.PLAY) slots.add(sl);
+			for (int sl : net.battlehub.gui.MainMenu.YOU) slots.add(sl);
+			for (int sl : net.battlehub.gui.MainMenu.TOGETHER) slots.add(sl);
+			slots.add(net.battlehub.gui.MainMenu.SHOP);
 			for (int sl : slots) {
-				if (m.getSlot(sl).getItem().isEmpty() || m.getSlot(sl).getItem().is(net.battlehub.util.Ids.item("minecraft:black_stained_glass_pane"))) return false;
+				net.minecraft.world.item.ItemStack it = m.getSlot(sl).getItem();
+				if (it.isEmpty() || net.battlehub.util.Ids.key(it.getItem()).endsWith("_glass_pane")) return false;
 			}
-			return m.getSlot(10).getItem().is(Items.DIAMOND_SWORD) && m.getSlot(15).getItem().is(Items.ENDER_EYE);
+			return m.getSlot(net.battlehub.gui.MainMenu.PLAY[0]).getItem().is(Items.DIAMOND_SWORD)
+					&& m.getSlot(net.battlehub.gui.MainMenu.PLAY[7]).getItem().is(Items.ENDER_EYE)
+					&& m.getSlot(net.battlehub.gui.MainMenu.PROFILE).getItem().is(Items.PLAYER_HEAD)
+					&& m.getSlot(net.battlehub.core.MenuLayout.close(6)).getItem().is(Items.BARRIER)
+					&& m.getSlot(net.battlehub.core.MenuLayout.WALLET).getItem().is(Items.SUNFLOWER);
 		});
 		s.run("items cannot be taken from the menu", () -> {
 			HubMenu m = (HubMenu) p("BHTestA").containerMenu;
@@ -349,7 +358,8 @@ public final class SelfTest {
 		s.check("Dutch players get the Dutch menu", () -> {
 			new MainMenu(p("BHTestA")).open();
 			return net.battlehub.lang.Lang.languageOf(p("BHTestA")).equals("nl_nl")
-					&& p("BHTestA").containerMenu instanceof HubMenu m && m.getSlot(15).getItem().getHoverName().getString().contains("Toekijken")
+					&& p("BHTestA").containerMenu instanceof HubMenu m
+					&& m.getSlot(net.battlehub.gui.MainMenu.PLAY[7]).getItem().getHoverName().getString().contains("Toekijken")
 					&& net.battlehub.lang.Lang.languageOf(p("BHTestB")).equals("en_us");
 		});
 		s.run("A back to English", () -> {

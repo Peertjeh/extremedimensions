@@ -73,6 +73,27 @@ public final class Icon {
 		return this;
 	}
 
+	private boolean facts, actions;
+
+	/**
+	 * A fact about the thing ("In the queue: 3"), after the description; the first one comes after an empty line
+	 * (1.45: every tooltip reads description, facts, what a click does).
+	 */
+	public Icon fact(Component line) {
+		if (!facts && !lore.isEmpty()) lore.add(Component.empty());
+		facts = true;
+		lore.add(line);
+		return this;
+	}
+
+	/** What a click does ("▶ Click to join"), last in the tooltip; the first one comes after an empty line. */
+	public Icon action(Component line) {
+		if (!actions && !lore.isEmpty()) lore.add(Component.empty());
+		actions = true;
+		lore.add(Component.literal("▶ ").withStyle(s -> s.withColor(0xFFFF55).withItalic(false)).append(line));
+		return this;
+	}
+
 	public Icon count(int count) {
 		stack.setCount(Math.max(1, Math.min(stack.getMaxStackSize(), count)));
 		return this;

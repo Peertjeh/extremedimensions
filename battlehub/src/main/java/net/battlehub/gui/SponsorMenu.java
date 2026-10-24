@@ -32,6 +32,11 @@ public final class SponsorMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.PLAY;
+	}
+
+	@Override
 	public int rows() {
 		return tribute == null ? 4 : 3;
 	}

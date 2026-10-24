@@ -26,6 +26,9 @@ public final class HubItems {
 	public static final int AGAIN_SLOT = 0;
 	/** Hotbar slot of the door back to the normal world, or the "leave queue" item while queued. */
 	public static final int LEAVE_SLOT = 8;
+	/** Your profile (your head: stats, quests, pass) and the cosmetics shop, and their hotbar slots. */
+	public static final String PROFILE = "profile", SHOP = "shop";
+	public static final int PROFILE_SLOT = 1, SHOP_SLOT = 6;
 	/** The gadget you wear (a cosmetic), "gadget:<id>", and its hotbar slot. */
 	public static final String GADGET = "gadget:";
 	public static final int GADGET_SLOT = 2;
@@ -42,6 +45,14 @@ public final class HubItems {
 	private static String gadgetTag(ServerPlayer p) {
 		net.battlehub.core.CosmeticDef c = net.battlehub.progression.Cosmetics.active(p, "gadget");
 		return c == null || !net.battlehub.core.Gadgets.known(c.effect) ? "" : GADGET + c.effect;
+	}
+
+	public static ItemStack profile(ServerPlayer p) {
+		return Icon.head(p).name(Lang.item(p, "item.profile.name")).lore(Lang.loreLines(p, "item.profile.lore")).tag(PROFILE).clean().build();
+	}
+
+	public static ItemStack shop(ServerPlayer p) {
+		return Icon.of("minecraft:chest").name(Lang.item(p, "item.shop.name")).lore(Lang.loreLines(p, "item.shop.lore")).tag(SHOP).clean().build();
 	}
 
 	public static ItemStack compass(ServerPlayer p) {
@@ -86,6 +97,9 @@ public final class HubItems {
 		boolean again = !queued && compassSlot != AGAIN_SLOT && net.battlehub.queue.PlayAgain.active(p.getUUID());
 		String botsItem = queued && net.battlehub.bot.Bots.mayFill(p.getUUID()) ? (net.battlehub.data.PlayerStore.get(p).noBots ? BOTS_OFF : BOTS_ON) : "";
 		int botsSlot = !botsItem.isEmpty() && compassSlot != BOTS_SLOT ? BOTS_SLOT : -1;
+		// your profile and the shop, in the lobby only (not while queued, where the bots switch and leave item are)
+		int profileSlot = !queued && compassSlot != PROFILE_SLOT ? PROFILE_SLOT : -1;
+		int shopSlot = !queued && compassSlot != SHOP_SLOT ? SHOP_SLOT : -1;
 		String gadgetItem = gadgetTag(p);
 		int gadgetSlot = !gadgetItem.isEmpty() && compassSlot != GADGET_SLOT ? GADGET_SLOT : -1;
 		if (Icon.isHubItem(p.containerMenu.getCarried())) {
@@ -98,7 +112,7 @@ public final class HubItems {
 			}
 			boolean keep = (i == compassSlot && tag.equals(COMPASS)) || (i == leaveSlot && tag.equals(lastItem))
 					|| (again && i == AGAIN_SLOT && tag.equals(AGAIN)) || (i == botsSlot && tag.equals(botsItem))
-					|| (i == gadgetSlot && tag.equals(gadgetItem));
+					|| (i == gadgetSlot && tag.equals(gadgetItem)) || (i == profileSlot && tag.equals(PROFILE)) || (i == shopSlot && tag.equals(SHOP));
 			if (!keep) {
 				inv.setItem(i, ItemStack.EMPTY);
 			}
@@ -115,6 +129,12 @@ public final class HubItems {
 		}
 		if (gadgetSlot >= 0) {
 			place(p, gadgetSlot, gadgetItem);
+		}
+		if (profileSlot >= 0) {
+			place(p, profileSlot, PROFILE);
+		}
+		if (shopSlot >= 0) {
+			place(p, shopSlot, SHOP);
 		}
 	}
 
@@ -144,6 +164,8 @@ public final class HubItems {
 			case LEAVE_QUEUE -> leaveQueue(p);
 			case AGAIN -> again(p);
 			case BOTS_ON, BOTS_OFF -> bots(p);
+			case PROFILE -> profile(p);
+			case SHOP -> shop(p);
 			default -> exit(p);
 		});
 	}

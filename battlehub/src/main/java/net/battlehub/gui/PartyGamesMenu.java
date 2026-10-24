@@ -9,6 +9,7 @@ import net.battlehub.queue.Queues;
 import net.battlehub.util.Icon;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Items;
 
 /** The party games with their lobby status. */
 public final class PartyGamesMenu extends Screen {
@@ -19,6 +20,11 @@ public final class PartyGamesMenu extends Screen {
 	@Override
 	public Component title() {
 		return Lang.tr(viewer, "menu.party.title");
+	}
+
+	@Override
+	public Style.Section section() {
+		return Style.Section.PLAY;
 	}
 
 	@Override
@@ -41,6 +47,7 @@ public final class PartyGamesMenu extends Screen {
 			c.set(slots[i], icon(viewer, m).build(), click -> new PartyGameMenu(viewer, m).open());
 		}
 		c.back(() -> new MainMenu(viewer).open());
+		Style.title(c, viewer, Items.CAKE, "menu.main.party");
 		c.fill();
 	}
 

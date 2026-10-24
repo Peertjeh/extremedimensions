@@ -33,6 +33,11 @@ public final class CosmeticCategoryMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.SHOP;
+	}
+
+	@Override
 	public int rows() {
 		return 6;
 	}
@@ -76,18 +81,17 @@ public final class CosmeticCategoryMenu extends Screen {
 				new CosmeticCategoryMenu(viewer, category, p).open();
 			});
 		}
-		c.set(45, Icon.of(Items.BARRIER).name(Lang.item(viewer, "menu.cosmetics.clear")).build(), click -> {
+		c.set(net.battlehub.core.MenuLayout.extra(rows()), Icon.of(Items.LAVA_BUCKET).name(Lang.item(viewer, "menu.cosmetics.clear")).build(), click -> {
 			Cosmetics.clear(viewer, category);
 			Msg.send(viewer, "cosmetics.cleared", Lang.tr(viewer, "menu.cosmetics.cat." + category));
 			new CosmeticCategoryMenu(viewer, category, p).open();
 		});
-		c.set(53, Icon.of(Items.SUNFLOWER).name(Lang.item(viewer, "menu.cosmetics.coins", prof.coins)).build());
 		if (p > 0) {
-			c.set(48, Icon.of(Items.ARROW).name(Lang.item(viewer, "menu.page.previous")).build(),
+			c.set(net.battlehub.core.MenuLayout.previous(rows()), Icon.of(Items.SPECTRAL_ARROW).name(Lang.item(viewer, "menu.page.previous")).build(),
 					click -> new CosmeticCategoryMenu(viewer, category, p - 1).open());
 		}
 		if (p < pages - 1) {
-			c.set(50, Icon.of(Items.ARROW).name(Lang.item(viewer, "menu.page.next")).build(),
+			c.set(net.battlehub.core.MenuLayout.next(rows()), Icon.of(Items.SPECTRAL_ARROW).name(Lang.item(viewer, "menu.page.next")).build(),
 					click -> new CosmeticCategoryMenu(viewer, category, p + 1).open());
 		}
 		c.back(() -> new CosmeticsMenu(viewer).open());

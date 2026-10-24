@@ -295,7 +295,21 @@ day, on a dark backing, so they read as well at night as by day. The boards are 
 only: nothing is placed in the world, and nothing is left behind when the mod is removed. Other boards (K/D, coins earned, wins, ELO, per mode or
 ranked, switching modes every few seconds) can be set in `config.json` (`leaderboards`).
 
-### One compass, seven menus
+### One compass, every menu in its place
+Since 1.45 the compass menu is in groups, each with its heading on the left in its own colour: **Play** (PvP,
+Ranked, Party Games, Duel Games, Ranged, Practice, Private games, Spectate), **You** (stats, quests, season pass,
+achievements, titles, kits), **Together** (friends, clan) and the **Shop** (cosmetics). Your head at the top shows
+your level, coins and prestige and opens your stats.
+
+Every menu looks the same: the top row says where you are (the menu's own icon in the middle) and shows your
+coins, level and prestige on the right; the bottom row has back on the left, the pages either side of the
+middle, close in the middle and an extra button (clear, leave, reset) on the right; the frame has the colour of
+the part of BattleHub you are in (playing green, you light blue, together yellow, the shop magenta). Every
+tooltip reads the same way: what it is, the facts, and what a click does (▶).
+
+In the lobby hotbar: your head (slot 2: your stats, quests and pass), your gadget (slot 3, when you have one),
+the compass (slot 5), the cosmetics shop (slot 7) and the door back (slot 9).
+
 | | |
 |---|---|
 | ⚔ **PvP** | Free for All, 1v1, 1v2 and 1v3, each with the sword, axe or mace kit |
@@ -306,8 +320,8 @@ ranked, switching modes every few seconds) can be set in `config.json` (`leaderb
 | 👁 **Spectate** | Every running match, live, with a **Join Spectator** button |
 | 📊 **Stats** | Wins, losses, kills, deaths, streaks, level, coins, title, ELO per mode, parkour records, leaderboards (also on the lobby wall) |
 
-The compass always sits in the same hotbar slot and cannot be dropped or moved. Every submenu has a back
-button. In a mode menu you choose **Queue** (random opponent) or **Challenge** (pick a player).
+The compass always sits in the same hotbar slot and cannot be dropped or moved. In a mode menu you choose
+**Queue** (random opponent) or **Challenge** (pick a player).
 
 ### PvP: Free for All, 1v1, 1v2, 1v3
 The **PvP** button opens four choices, and after that the kit (sword, axe or mace):

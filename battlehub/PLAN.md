@@ -2189,6 +2189,40 @@ cosmetics-winkel (met de nieuwe categorieën in twee rijen en een rij "wat je dr
   terug-knop brengt je één stap terug; de nieuwe hotbar-items openen hun menu en blijven op hun plek; je kunt
   niets uit een menu of de hotbar halen (de beveiligingstests).
 
+### Versie 1.45.0 – Uitvoering
+
+**Gebouwd.**
+- `core/MenuLayout` (zonder Minecraft, JUnit): de vaste plekken. Boven: het icoon van het menu in het midden
+  (slot 4), je coins rechts (slot 8). Onder: terug links, vorige en volgende pagina naast het midden, sluiten in
+  het midden, een extra knop rechts.
+- `gui/Style`: de kleur per onderdeel (`Section`: spelen, jij, samen, winkel, beheer), kopjes (gekleurde panelen
+  met een naam), je portemonnee (coins, niveau, prestige), het menu-icoon en de onderste rij.
+- `Screen.section()`: elk menu zegt bij welk onderdeel het hoort. `Canvas.fill()` en `border()` kleuren dan de
+  bovenste en onderste rij en zetten je portemonnee rechtsboven; `Canvas.back()` zet terug linksonder en sluiten in
+  het midden. Zo krijgen alle menu's dezelfde indeling zonder dat elk menu opnieuw geschreven moest worden.
+- Menu's met eigen knoppen op die plekken zijn verschoven: wissen/vertrekken/herstellen naar rechtsonder (titels,
+  cosmetics, clan, kit-editor, FFA-wachtrij, prestige), pagina's naar naast het midden (seizoenspas), en de losse
+  coins-knoppen zijn weg (de portemonnee staat nu in elk menu).
+- `Icon.fact` en `Icon.action`: elke tooltip leest hetzelfde: wat het is, een lege regel, de feiten, een lege
+  regel, "▶ wat een klik doet". De uitleg van het hoofdmenu heeft geen eigen "Klik om te openen" meer.
+- Het hoofdmenu (zes rijen): je hoofd bovenaan, de groepen Spelen (twee rijen), Jij, Samen en Winkel met elk een
+  kopje in zijn kleur, onderaan sluiten en BattleHub verlaten of binnengaan.
+- Een menu-icoon bovenaan in menu's die er nog geen hadden (PvP, partygames, kits, kijken, achievements).
+- Hotbar in de lobby: je hoofd (slot 2) opent je statistieken, een kist (slot 7) de winkel; niet in een wachtrij,
+  waar het bots-knopje en het vertrek-item staan.
+
+**Afwijkingen van het plan.**
+- De party staat niet als eigen knop in het hoofdmenu: er is geen apart partymenu, de party zit in het
+  vriendenmenu.
+- De hotbar heeft geen eigen gadget-plek bij gekregen: die kwam al met 1.44 (slot 3).
+
+**Testen.**
+- JUnit `MenuLayoutTest`: de vaste plekken zijn voor elk aantal rijen anders dan elkaar en liggen in de rand; het
+  midden laat de rand vrij.
+- Zelftests bijgewerkt: het hoofdmenu heeft zijn groepen (acht knoppen bij Spelen, Jij, Samen, de winkel), je
+  hoofd bovenaan, sluiten onderaan en je portemonnee rechtsboven; "Toekijken" staat op zijn nieuwe plek; de
+  winkelknop op zijn nieuwe plek; de menubeveiliging en de knoppen van PvP blijven werken.
+
 ## Versie 1.44.0 – Veel meer cosmetics, ook eigen modellen (plan)
 
 **Vraag.** Nog meer cosmetics; ze mogen ook custom zijn.

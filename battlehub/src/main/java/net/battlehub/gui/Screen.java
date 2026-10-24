@@ -18,6 +18,11 @@ public abstract class Screen {
 
 	public abstract void draw(Canvas c);
 
+	/** The part of BattleHub this menu belongs to: the colour of its top and bottom rows. */
+	public Style.Section section() {
+		return Style.Section.NONE;
+	}
+
 	/** Redraw every N ticks while open; 0 never. */
 	public int refreshTicks() {
 		return 0;

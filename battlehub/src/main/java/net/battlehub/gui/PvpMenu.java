@@ -22,6 +22,11 @@ public final class PvpMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.PLAY;
+	}
+
+	@Override
 	public int rows() {
 		return 3;
 	}
@@ -70,6 +75,7 @@ public final class PvpMenu extends Screen {
 					click -> new PvpKitMenu(viewer, mode).open());
 			slot += 2;
 		}
+		Style.title(c, viewer, Items.DIAMOND_SWORD, "menu.main.pvp");
 		c.back(() -> new MainMenu(viewer).open());
 		c.fill();
 	}

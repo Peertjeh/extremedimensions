@@ -31,6 +31,11 @@ public final class PvpKitMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.PLAY;
+	}
+
+	@Override
 	public int rows() {
 		return 3;
 	}
@@ -72,7 +77,7 @@ public final class PvpKitMenu extends Screen {
 		if (ffa) {
 			c.set(4, PartyGamesMenu.icon(viewer, GameMode.FFA).build());
 			if (inFfa) {
-				c.set(18, Icon.of(Items.BARRIER).name(Lang.item(viewer, "menu.party.leave"))
+				c.set(net.battlehub.core.MenuLayout.extra(rows()), Icon.of(Items.BARRIER).name(Lang.item(viewer, "menu.party.leave"))
 						.lore(Lang.loreLines(viewer, "menu.party.leave.lore")).build(), click -> {
 							Queues.toggleParty(viewer, GameMode.FFA);
 							new PvpKitMenu(viewer, mode).open();

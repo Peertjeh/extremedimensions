@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.45.0
+
+### Changed
+* **A clearer UI.** Every menu now has the same layout:
+  * the top row says where you are (the menu's own icon in the middle) and shows your coins, level and prestige on
+    the right;
+  * the bottom row goes places, always in the same spot: back on the left, the pages either side of the middle,
+    close in the middle, an extra button (clear, leave, reset) on the right;
+  * the frame has the colour of the part of BattleHub you are in: playing green, you light blue, together yellow,
+    the shop magenta.
+* **The compass menu in groups**: Play (PvP, Ranked, Party Games, Duel Games, Ranged, Practice, Private games,
+  Spectate), You (stats, quests, season pass, achievements, titles, kits), Together (friends, clan) and the Shop,
+  each with its heading in its own colour, and your head with your level, coins and prestige at the top.
+* **Two new items in the lobby hotbar**: your head (slot 2: your stats, quests and pass) and a chest (slot 7: the
+  cosmetics shop), next to the compass, your gadget and the door.
+
 ## 1.44.0
 
 ### Added

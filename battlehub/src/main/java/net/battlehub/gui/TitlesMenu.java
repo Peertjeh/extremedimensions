@@ -37,6 +37,11 @@ public final class TitlesMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.PROFILE;
+	}
+
+	@Override
 	public int rows() {
 		return 6;
 	}
@@ -70,19 +75,18 @@ public final class TitlesMenu extends Screen {
 			}
 			c.set(slots[i], icon.build(), click -> onClick(t));
 		}
-		c.set(45, Icon.of(Items.BARRIER).name(Lang.item(viewer, "menu.titles.clear")).build(), click -> {
+		c.set(net.battlehub.core.MenuLayout.extra(rows()), Icon.of(Items.LAVA_BUCKET).name(Lang.item(viewer, "menu.titles.clear")).build(), click -> {
 			TitleRules.select(null, prof, Ranks.startElo());
 			PlayerStore.save(viewer.getUUID());
 			TitleService.apply(viewer);
 			Msg.send(viewer, "titles.cleared");
 			new TitlesMenu(viewer, page).open();
 		});
-		c.set(53, Icon.of(Items.SUNFLOWER).name(Lang.item(viewer, "menu.titles.coins", prof.coins)).build());
 		if (p > 0) {
-			c.set(48, Icon.of(Items.ARROW).name(Lang.item(viewer, "menu.page.previous")).build(), click -> new TitlesMenu(viewer, p - 1).open());
+			c.set(net.battlehub.core.MenuLayout.previous(rows()), Icon.of(Items.SPECTRAL_ARROW).name(Lang.item(viewer, "menu.page.previous")).build(), click -> new TitlesMenu(viewer, p - 1).open());
 		}
 		if (p < pages - 1) {
-			c.set(50, Icon.of(Items.ARROW).name(Lang.item(viewer, "menu.page.next")).build(), click -> new TitlesMenu(viewer, p + 1).open());
+			c.set(net.battlehub.core.MenuLayout.next(rows()), Icon.of(Items.SPECTRAL_ARROW).name(Lang.item(viewer, "menu.page.next")).build(), click -> new TitlesMenu(viewer, p + 1).open());
 		}
 		c.back(() -> new StatsMenu(viewer, viewer.getUUID()).open());
 		c.fill();

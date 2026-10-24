@@ -53,7 +53,7 @@ public final class HubMenu extends ChestMenu {
 	}
 
 	public void redraw() {
-		Canvas c = new Canvas(screen.viewer(), getRowCount());
+		Canvas c = new Canvas(screen.viewer(), getRowCount(), screen.section());
 		try {
 			screen.draw(c);
 		} catch (Exception e) {

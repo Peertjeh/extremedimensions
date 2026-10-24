@@ -27,6 +27,11 @@ public final class CosmeticsMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.SHOP;
+	}
+
+	@Override
 	public int rows() {
 		return 5;
 	}

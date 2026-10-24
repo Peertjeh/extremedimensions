@@ -28,6 +28,11 @@ public final class AchievementsMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.PROFILE;
+	}
+
+	@Override
 	public int rows() {
 		return 5;
 	}
@@ -77,7 +82,7 @@ public final class AchievementsMenu extends Screen {
 						Math.round(Daily.prestigeBonus(prof.prestige + 1) * 100)))
 				.lore(Lang.lore(viewer, !can ? "menu.prestige.locked" : confirm ? "menu.prestige.confirm" : "menu.prestige.click"))
 				.glint(can);
-		c.set(40, prestige.build(), click -> {
+		c.set(net.battlehub.core.MenuLayout.extra(rows()), prestige.build(), click -> {
 			if (!can) return;
 			if (!confirm) {
 				new AchievementsMenu(viewer, true).open();
@@ -86,7 +91,8 @@ public final class AchievementsMenu extends Screen {
 			viewer.closeContainer();
 			Retention.prestige(viewer);
 		});
-		c.set(36, Icon.of(Items.ARROW).name(Lang.item(viewer, "menu.back")).build(), click -> new MainMenu(viewer).open());
+		Style.title(c, viewer, Items.GOLDEN_APPLE, "menu.main.achievements");
+		c.back(() -> new MainMenu(viewer).open());
 		c.fill();
 	}
 }

@@ -47,6 +47,11 @@ public final class KitEditorMenu extends Screen {
 	}
 
 	@Override
+	public Style.Section section() {
+		return Style.Section.PROFILE;
+	}
+
+	@Override
 	public int rows() {
 		return 5;
 	}
@@ -79,9 +84,9 @@ public final class KitEditorMenu extends Screen {
 			int slot = inv;
 			c.set(menu, shown, click -> clicked(slot, kitSlots));
 		}
-		c.set(36, Icon.of(Items.BOOK).name(Lang.item(viewer, "menu.kit_editor.help"))
+		c.set(net.battlehub.core.MenuLayout.extra(rows()), Icon.of(Items.BOOK).name(Lang.item(viewer, "menu.kit_editor.help"))
 				.lore(Lang.loreLines(viewer, "menu.kit_editor.help.lore")).build());
-		c.set(38, Icon.of(Items.WATER_BUCKET).name(Lang.item(viewer, "menu.kit_editor.reset")).build(), click -> {
+		c.set(net.battlehub.core.MenuLayout.extra(rows()) - 2, Icon.of(Items.WATER_BUCKET).name(Lang.item(viewer, "menu.kit_editor.reset")).build(), click -> {
 			prof.kitLayouts.remove(kit);
 			PlayerStore.save(viewer.getUUID());
 			Msg.send(viewer, "kits.reset");
