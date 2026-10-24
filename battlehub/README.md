@@ -399,6 +399,42 @@ for 30 seconds. It queues you for the same mode, format and ranked setting, asks
   what you put down, leaves, cobwebs and plants); whoever dies drops everything and a cannon sounds. The last one
   alive wins, when time is up the most kills. Bots loot the cornucopia and the houses near them, put on armor,
   eat when hungry and head for the plaza. Loot lists in `hunger_games.json`.
+
+  Since 1.43 it plays like the real Hunger Games:
+  * **The reaping.** Everyone is a tribute of a district (two per district) with a training score from 1 to 12
+    (from their Hunger Games wins, kills and level, and some luck; bots by their level). At the start the chat
+    lists the tributes per district and which Hunger Games of the server these are ("The 12th Hunger Games
+    begin!"). The district is in the sidebar.
+  * **Nights.** Every four minutes the anthem plays and the tributes who fell since the last night shine in the
+    sky over the plaza for half a minute.
+  * **The Gamemakers.** After the peace, an event every two and a half to three and a half minutes (never the same
+    twice in a row, none in the last minute), with a title and a horn: a wildfire that sweeps across the city in
+    40 seconds, a poison fog drifting through one part, mutts that hunt every tribute, a swarm of tracker jackers,
+    a lightning storm over one part, five supply crates on parachutes, everyone glowing for 20 seconds, acid rain
+    that burns who is not under a roof, and jabberjays (strange voices, whispered names and an arrow to the nearest
+    tribute). Everything is gone afterwards, and the city stays whole. Surviving an event wins favour.
+  * **The Feast** (after eight minutes, announced a minute before): tables of the best loot round the cornucopia,
+    and the Capitol's chest in the cornucopia opens.
+  * **Sponsors.** Kills (first blood more), damage, every minute alive, surviving events and the Feast win favour;
+    at each threshold a silver parachute floats down beside you with what you need most: healing when you are
+    hurt, food when you are hungry, a weapon when you have none, else a power-up. Watchers and the fallen can send
+    a tribute a gift with their coins (`/sponsor`, or the button in the chat): food 40, healing 90, a weapon 120,
+    a power-up 150, three gifts per match.
+  * **Power-ups** with their own name and explanation, in the vaults, crates, at the Feast and in parachutes:
+    healing salve, camouflage paint (invisible for 15 seconds), nightlock berries (throw: a poison cloud), a
+    tracker jacker nest (throw: a swarm that hunts the nearest other tribute), a landmine (blows another tribute
+    off their feet), a parachute, a speed tonic, a tracker (an arrow to the nearest tribute for a minute), District
+    11 bread, night-vision goggles and a spear that comes back. They are ordinary items: take them out of a chest,
+    move and drop them.
+  * **Loot you have to unlock.** A floating text says what each takes:
+    * **vaults** in the landmarks open with a vault key (from a kill, or found in houses, crates, parachutes and at
+      the Feast): diamond gear and power-ups;
+    * **sealed crates** in the houses open after five seconds of sneaking beside them (a hit starts it over):
+      iron gear, food and power-ups;
+    * **the Capitol's chest** in the cornucopia is sealed until the Feast.
+  * **Bots** go for their own parachute, the Feast, a crate nearby (they sneak beside it) and, with a key, a vault;
+    they run from fire, fog, swarms, mutts and lightning; when badly hurt they drink a salve or paint
+    themselves, and they eat the bread when hungry.
 * **The Bridge 2v2**: red against blue with two on each island; score together, no friendly fire.
 * **The Bridge 1v1v1v1** (2–4): everyone on their own island (red, blue, green, yellow) round a middle platform;
   jump into anyone else's goal to score. First to four goals wins.
@@ -630,6 +666,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/practice [mode] [level\|adaptive] [kit]` | everyone | Practice against bots (sword, axe, mace, bow, crossbow, 1v2, 1v3) at a level (beginner .. master) or adaptive; 1v2 and 1v3 with a kit (sword, axe or mace; without one the kit choice opens); without a mode: the practice menu |
 | `/bots` / `/bots on\|off` | everyone | May bots fill in the queues you wait in? Without on/off: switch |
 | `/bots standard\|fill\|<number>` | everyone | How many bots you want in party lobbies: the server's standard, a full lobby, or that many (at once) |
+| `/sponsor` | watchers and the fallen | Send a tribute in a running Hunger Games a gift with your coins (three per match) |
 | `/bots memory` / `/bots forget` | everyone | What bots remember about how you fight and your results against them; wipe it |
 | `/battlehub` | everyone | Open the main menu |
 | `/battlehub join <mode>` | everyone | Join a party lobby or duel queue (used by invites) |
@@ -646,6 +683,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/battlehub bots forget <player\|all>` | admin | Wipe what bots remember about a player, or about everyone |
 | `/battlehub fights [export\|clear]` | admin | The fight logs for training: how many wait; zip the new ones into one file (`config/battlehub/fights/export-<time>.zip`); delete them all |
 | `/battlehub bots report [on\|off\|reset]` | admin | How the learned bots kept to their models since the totals began, per spec and mode, and what to practise; your chat reports after matches on or off; start the totals again |
+| `/battlehub hg event <name>` / `/battlehub hg night` / `/battlehub hg power <id>` | admin | In a running Hunger Games (yours, else the first that runs): send a Gamemaker event now (`feast`, `wildfire`, `fog`, `mutts`, `tracker_jackers`, `storm`, `supplies`, `revealed`, `acid_rain`, `jabberjays`), let night fall; or get a power-up yourself (`salve`, `camo`, `nightlock`, `jackers`, `mine`, `parachute`, `tonic`, `tracker`, `bread`, `goggles`, `spear`, `key`) |
 | `/battlehub matches` | admin | List running matches |
 | `/battlehub endmatch <id>` | admin | Stop a match without results and restore its players |
 | `/battlehub arena list` | admin | Arena themes, which modes use them, slots in use |
@@ -744,10 +782,13 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   XP, pass XP), the login streak coins, the season pass (tiers, XP per tier, per match and per win, coins per
   tier and every fifth tier, coins when the cosmetic is already owned), achievement coins and prestige on/off
 * **`hunger_games.json`**: the loot of the house chests and barrels (`houseLoot`), the chests in the landmarks
-  (`landmarkLoot`) and the cornucopia (`cornucopiaLoot`), as "item min-max xWeight" lines. How many items a chest
-  gets, the peace, the border and the refill are settings of the game `hunger_games` in `config.json`
-  (`houseChestRolls`, `landmarkChestRolls`, `cornucopiaChestRolls`, `graceSeconds`, `borderDelaySeconds`,
-  `borderShrinkSeconds`, `borderEnd`, `borderDamagePerSecond`, `refillSeconds`). The city comes from the lobby's
+  (`landmarkLoot`) and the cornucopia (`cornucopiaLoot`), and since 1.43 of the vaults (`vaultLoot`), the sealed
+  crates (`crateLoot`), the Feast (`feastLoot`), the Capitol's chest (`capitolLoot`) and the supply drops
+  (`supplyLoot`), as "item min-max xWeight" lines; `power:<id>` is a power-up (`power:key` a vault key). How many
+  items a chest gets, the peace, the border, the refill and the Feast are settings of the game `hunger_games` in
+  `config.json` (`houseChestRolls`, `landmarkChestRolls`, `cornucopiaChestRolls`, `graceSeconds`,
+  `borderDelaySeconds`, `borderShrinkSeconds`, `borderEnd`, `borderDamagePerSecond`, `refillSeconds`,
+  `feastSeconds`). The count of Hunger Games played on the server is in `config/battlehub/hunger_games_count.txt`. The city comes from the lobby's
   `seed`, `islandRadius`, `detail` and `townDensity` and the week; its themes are in `arenas.themes.hunger_games`.
 * **`skywars.json`**: the loot of the spawn island chests (`islandLoot`), the middle islands (`midLoot`) and
   the big middle (`centerLoot`), one line per item: `"minecraft:iron_sword 1 x3"` (item, count or `min-max`,

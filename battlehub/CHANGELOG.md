@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.43.0
+
+### Added
+* **The real Hunger Games.** The Hunger Games in the lobby city now play like the books and films:
+  * **The reaping**: everyone is a tribute of a district (two per district) with a training score from 1 to 12
+    (from Hunger Games wins, kills and level, and some luck; bots by their level). The chat lists the tributes per
+    district and which Hunger Games of the server these are ("The 12th Hunger Games begin!"); the district is in
+    the sidebar.
+  * **Nights**: every four minutes the anthem plays and the fallen of that round shine in the sky over the plaza.
+  * **The Gamemakers**: after the peace an event every 2.5 to 3.5 minutes, with a title and a horn: wildfire,
+    poison fog, mutts, tracker jackers, a lightning storm, supply drops on parachutes, everyone revealed (glowing),
+    acid rain and jabberjays. Everything is cleaned up afterwards and the city stays whole.
+  * **The Feast** after eight minutes (announced a minute before): tables of the best loot round the cornucopia,
+    and the Capitol's chest opens.
+  * **Sponsors**: kills, damage, time alive and surviving events win favour; at each threshold a silver parachute
+    brings what you need most. Watchers and the fallen send gifts with their coins (`/sponsor`, three per match).
+  * **Twelve power-ups** with their own name and explanation: healing salve, camouflage paint, nightlock berries,
+    a tracker jacker nest, a landmine, a parachute, a speed tonic, a tracker, District 11 bread, night-vision
+    goggles, a spear that comes back and the vault key.
+  * **Loot you have to unlock**: vaults in the landmarks open with a key (a kill gives one), sealed crates in the
+    houses after five seconds of sneaking beside them, the Capitol's chest at the Feast.
+  * **Bots** go for their parachutes, the Feast, crates and (with a key) vaults, run from the events' dangers and
+    use salves, bread and camouflage.
+  * New loot lists in `hunger_games.json` (`vaultLoot`, `crateLoot`, `feastLoot`, `capitolLoot`, `supplyLoot`)
+    and the setting `feastSeconds`; admins run the Gamemakers with `/battlehub hg event|night|power`.
+
+### Fixed
+* A party lobby left with only bots (the last person went) could still count down and start a match of bots
+  alone, which kept an arena and the bots busy until its time ran out. Such a lobby now never starts, and its bots
+  leave, also when filling queues with bots is switched off.
+
+1.42.0 was not released on its own: its changes below come with 1.43.0.
+
 ## 1.42.0
 
 ### Added

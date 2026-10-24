@@ -239,6 +239,16 @@ public final class Bots {
 			}
 		}
 		HubConfig.Bots c = cfg();
+		if (!c.fillQueues) {
+			// no filling, but bots left alone in a lobby (the last person went) still go
+			for (GameMode mode : GameMode.parties()) {
+				List<UUID> members = Parties.members(mode);
+				if (!members.isEmpty() && members.stream().allMatch(Bots::isBot)) {
+					PARTY_SINCE.remove(mode);
+					for (UUID id : members) leaveQueues(server, id);
+				}
+			}
+		}
 		if (c.enabled && c.fillQueues) {
 			try {
 				fillDuels(server);

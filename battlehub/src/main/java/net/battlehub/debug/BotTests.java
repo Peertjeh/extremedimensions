@@ -1011,7 +1011,12 @@ final class BotTests {
 			for (UUID id : members) if (Bots.isBot(id)) bots++;
 			return members.size() == 16 && bots == 15 && server.getPlayerCount() > server.getPlayerList().getMaxPlayers();
 		});
-		s.check(tag + ": the server's full check counts people only (one)", () -> Bots.people(server.getPlayerList().getPlayers()) == 1);
+		s.check(tag + ": the server's full check counts people only: a person could still join", () -> {
+			List<ServerPlayer> all = server.getPlayerList().getPlayers();
+			int people = Bots.people(all), max = server.getPlayerList().getMaxPlayers();
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST bots full lobby: {} online, {} people, limit {}", all.size(), people, max);
+			return all.size() > max && people < max && people == all.size() - Bots.online();
+		});
 		s.run(tag + ": A leaves; the bots go; the server's limit and A's wish as before", () -> {
 			net.battlehub.queue.Queues.leaveAll(p(A));
 			Bots.wish(p(A), net.battlehub.core.BotFill.Wish.STANDARD);

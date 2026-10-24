@@ -270,6 +270,11 @@ public final class Parties {
 			}
 		}
 		PartyLobby l = lobby(mode);
+		if (!players.isEmpty() && net.battlehub.bot.Bots.people(players) == 0) {
+			// only bots are left (the last person went): no match for nobody, the bots go
+			for (ServerPlayer p : players) Queues.leaveAll(p);
+			return;
+		}
 		if (players.size() < l.min()) {
 			for (ServerPlayer p : players) l.join(p.getUUID());
 			return;

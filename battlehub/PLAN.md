@@ -2141,6 +2141,100 @@ mensen; Bridge Chaos 1v1v1v1, Hunger Games en een mace-duel; de bots waren inter
       optreedt, en het eerstvolgende werk aan de bots begint ermee.
     - **Tweede poging van de gefaalde job: 897 geslaagd, 0 gefaald.**
 
+## Versie 1.45.0 – Een overzichtelijke UI (plan)
+
+**Vraag.** De UI overdoen zodat hij overzichtelijk is.
+
+**Wat er mis is (1.44).**
+- Het hoofdmenu is een raster van zestien knoppen zonder groepen: spelen, profiel, sociaal en winkel staan door
+  elkaar (twee keer een boek, twee keer een ster).
+- Elk menu heeft zijn eigen indeling: de terug-knop, de pagina-pijlen en je coins staan steeds ergens anders, en
+  de uitleg in de tooltips is overal anders opgebouwd.
+- In de lobby heb je alleen het kompas en de deur; je profiel en de winkel zitten twee menu's diep.
+
+**Eén stijl voor alle menu's (`gui/Style`).**
+- **Bovenste rij:** waar je bent (een icoon met de naam van het menu en een korte uitleg), en rechts je coins en
+  niveau.
+- **Onderste rij, altijd op dezelfde plek:** terug (links), vorige en volgende pagina, sluiten (midden).
+- **Kleur per onderdeel** in de randen: spelen groen, profiel lichtblauw, sociaal geel, winkel magenta, beheer
+  rood. Zo zie je meteen waar je bent.
+- **Tooltips altijd in dezelfde volgorde:** wat het is (grijs), een lege regel, de feiten ("In de rij: 3",
+  "Bezig: 2 matches", "Jouw ELO: 1200"), een lege regel, wat een klik doet ("▶ Klik om mee te doen" in geel;
+  "▶ Rechtsklik: ..." eronder). Een helper bouwt dat (`Icon.info`, `Icon.action`).
+- Wat aan staat of van jou is, glanst; wat niet kan, staat er grijs bij met de reden.
+
+**Hoofdmenu opnieuw.** Zes rijen, in groepen met een kop:
+- **Spelen:** PvP (duels en FFA), Ranked, Partygames, Duelspellen, Afstand (boog en kruisboog), Oefenen,
+  Eigen games, Kijken. Met per knop hoeveel er spelen en in de rij staan.
+- **Jij:** je profiel (je hoofd: niveau, coins, prestige, titel), statistieken, quests, seizoenspas,
+  achievements, titels en kits.
+- **Samen:** vrienden, party en clans, met hoeveel vrienden online zijn.
+- **Winkel:** cosmetics.
+- Onderaan: BattleHub verlaten of binnengaan.
+
+**Hotbar in de lobby.** Naast het kompas en de deur:
+- je hoofd (je profiel: statistieken, quests, pass);
+- een kist (de cosmetics-winkel);
+- het gadget dat je draagt (1.44).
+Elk item zegt in zijn naam wat het doet ("Spelen (rechtsklik)").
+
+**Onderliggende menu's** krijgen dezelfde stijl: PvP, partygames, duelspellen, ranked, oefenen, kits,
+statistieken, quests, pass, achievements, titels, vrienden, clans, eigen games, kijken, map-stemming en de
+cosmetics-winkel (met de nieuwe categorieën in twee rijen en een rij "wat je draagt").
+
+**Testen.**
+- JUnit: de vaste plekken (terug, sluiten, pagina's) kloppen voor elk aantal rijen; de groepen van het hoofdmenu
+  overlappen niet en passen; elke knop heeft een naam en uitleg in beide talen.
+- Zelftests: elk menu opent en elke knop leidt naar het juiste menu (de bestaande menutests, bijgewerkt); de
+  terug-knop brengt je één stap terug; de nieuwe hotbar-items openen hun menu en blijven op hun plek; je kunt
+  niets uit een menu of de hotbar halen (de beveiligingstests).
+
+## Versie 1.44.0 – Veel meer cosmetics, ook eigen modellen (plan)
+
+**Vraag.** Nog meer cosmetics; ze mogen ook custom zijn.
+
+**Wat er is (1.43).** 247 cosmetics in 11 categorieën: trails, aura's (vormen van deeltjes, ook vleugels),
+pijlsporen, kill-effecten, win-effecten, doodskreten, wapenskins, huisdieren, hoeden, outfits en naamkleuren.
+
+**Nieuw: vijf categorieën die BattleHub zelf maakt.** Geen resourcepack nodig: alles is van vanilla blokken,
+items, deeltjes en tekst, dus iedereen ziet het.
+- **Toppers** (`topper`): kleine 3D-modellen boven je hoofd, gebouwd uit block- en item-displays die met je
+  meebewegen. Een model is een lijst delen (blok of item, plek, schaal, draaiing) met een animatie (draaien,
+  deinen, knipperen). Onder andere: een gouden kroon met edelstenen, een draaiende stralenkrans, duivelshoorns,
+  een regenwolkje met druppels, een propellerpet die draait, drie edelstenen die rond je hoofd cirkelen, een
+  puntige tovenaarshoed, een bloemenkrans, een ring van vuur, een ijskristal, een verjaardagstaart met kaarsjes en
+  een piratenhoed. De modellen staan in code (`core/Toppers`), de config kiest er een (`effect` = model-id).
+- **Ballonnen** (`balloon`): een ballon aan een touwtje die naast je zweeft en meedeint (een blok-display aan
+  een touw van kleine kettingdelen). Kleuren en vormen: rood, blauw, goud, een hart, slime, TNT, een
+  creeperhoofd, een pompoen, de maan, een discobal, een honingblok en een ender-oog.
+- **Badges** (`badge`): een teken achter je naam in de chat, de tablijst en boven je hoofd (★ ✦ ❤ ⚔ ☠ ⚡ ♛ ☀ ☾
+  ✿ ♪ ❄ ☯ ∞ en meer), in een kleur of met een kleurverloop. Ze gaan via het scoreboard-team, net als titels en
+  naamkleuren.
+- **Killberichten** (`killmsg`): je eigen zin in de chat en de killfeed als je iemand uitschakelt ("B werd
+  weggeblazen door A", "B is naar het schaduwrijk gestuurd door A", ...). De zinnen staan in de taalbestanden.
+- **Gadgets** (`gadget`): speelgoed voor de lobby op een eigen plek in je hotbar, met een cooldown: een
+  confettikanon, een vuurwerkwerper, een regenboogstraal, een discobal (lichtjes en een melodie), een
+  bellenblaas, een toverstaf (een spoor van sterren naar waar je kijkt), een donderklap (bliksem alleen om te
+  zien), een sneeuwbol, een rookbom, een knalpistool, een kushandje (hartjes naar wie je aankijkt) en een
+  boombox. Ze doen niemand pijn en breken niets, en werken niet in matches.
+
+**Meer in de bestaande categorieën.** Ongeveer 60 extra: trails (mengkleuren), kill-effecten (nieuwe: een graf
+dat even blijft staan, een aambeeld dat valt, een ijsgevangenis, een zwart gat, een vleermuizenzwerm), win-effecten,
+huisdieren, hoeden, doodskreten, wapenskins en aura's.
+
+**Winkel.**
+- De nieuwe categorieën staan in de winkel met hun eigen icoon.
+- Toppers, ballonnen en gadgets kun je eerst proberen: rechtsklik toont het vijf seconden op jou.
+- Een config van vóór 1.44 krijgt de nieuwe cosmetics erbij (configversie 4); eigen wijzigingen blijven.
+
+**Testen.**
+- JUnit: elk topper-model heeft geldige delen binnen een kader rond het hoofd; de ballon blijft binnen
+  touwlengte; de cooldown van gadgets; elk killbericht en elke badge heeft zijn teksten in beide talen; de
+  migratie naar configversie 4 voegt toe zonder dubbele ids.
+- Zelftests: een gekochte topper en ballon volgen de speler in de lobby en verdwijnen bij een match; een badge
+  staat in het team-achtervoegsel; een killbericht komt in de killfeed; een gadget werkt en heeft daarna een
+  cooldown.
+
 ## Versie 1.43.0 – De echte Hunger Games (plan)
 
 **Vraag.** Hunger Games veel specialer maken met events, power-ups en loot die je moet vrijspelen, alsof het de echte
@@ -2232,6 +2326,52 @@ in kratten en parachutes:
   - de gevallenen aan de hemel;
   - een bot haalt zijn parachute op.
 
+### Versie 1.43.0 – Uitvoering
+
+**Gebouwd.** Alles uit het plan, in `core/hunger` (zonder Minecraft, getest met JUnit) en `games/hunger`:
+- `Tributes`: districten, trainingsscores, de boete met het nummer van de Hunger Games
+  (`config/battlehub/hunger_games_count.txt`), de nachten met hymne en de gevallenen aan de hemel.
+- `Gamemakers` met `HgSchedule`: het Feest en negen events, `Sponsors` met `Favour` en `GiftPick`, `PowerUps`
+  (twaalf, met de kluissleutel), `Vaults` met `Crack` (kluizen, kratten, de schatkist van het Capitool),
+  `Capitol` als dirigent, en `SponsorMenu` (`/sponsor`).
+- Bots: naar hun parachute, het Feest, kratten en kluizen; weg van gevaar; zalf, brood en camouflage.
+
+**Afwijkingen van het plan (het dichtstbijzijnde dat werkt).**
+- Mutanten zijn **zoglins** in plaats van wolven: wolven vallen alleen aan als ze boos gemaakt worden, en daar is in
+  26.3 geen betrouwbare weg voor; zoglins jagen uit zichzelf. Ze blijven 45 seconden (plan: een minuut).
+- De gifmist geeft gif en **traagheid** (plan: duisternis), met een straal van 18 blokken (plan: 25), zodat je er
+  nog uit kunt lopen.
+- Tracker jackers zijn bijen **zonder eigen AI** die de code als zwerm beweegt: echte bijen steken één keer en
+  sterven, of vliegen weg.
+- **Bliksem** is alleen om te zien; de schade doet de code. Zo vat de stad geen vlam.
+- **Zure regen** valt alleen bij de spelers en kijkers van de match (een pakket naar hun client), niet op de server.
+- **Gegooide power-ups** (nachtslot, het nest) gooit de game zelf als sneeuwbal. In 26.3 is de sneeuwbalklasse
+  niet bij naam te bereiken, dus de bal ziet eruit als een gewone sneeuwbal.
+- De **helende zalf** geeft twee harten meteen en vijf seconden Regeneration III (plan: zes harten in vijf
+  seconden); samen ongeveer even veel.
+- **1.42.0** is niet los uitgebracht: de eerste build startte niet (een accessor op een veld dat 26.3 niet heeft)
+  en de zelftest vond daarna een fout bij bots die alleen in een lobby achterblijven (zie hieronder). De
+  wijzigingen van 1.42.0 komen met 1.43.0 mee.
+
+**Gevonden en opgelost: een lobby met alleen bots.** In de zelftest "bots full lobby" ging A weg uit een volle
+Hunger Games-lobby; de vijftien bots bleven, de aftelling liep door en er startte een match met alleen bots. Die
+hield een arena en de bots vast tot de tijd op was, en alle tests erna wachtten op een vrije arena.
+- Oorzaak: bots in een lobby zonder mensen gaan alleen weg in `Bots.fillParties`, en die draait alleen als
+  `bots.fillQueues` aan staat. De zelftest zette het net uit (een beheerder kan dat ook).
+- Nu start een partylobby met alleen bots nooit (`Parties.start`), en ook met `fillQueues` uit gaan bots die
+  alleen in een lobby staan weg.
+- De controle "server vol telt alleen mensen" in die zelftest telde alle mensen; er waren nog andere testspelers
+  online. Nu: meer spelers dan het limiet, minder mensen dan het limiet.
+
+**Testen.**
+- JUnit `HungerRulesTest`: het rooster, gunst en drempels, districten en scores, kratten openen.
+- Zelftest "real hunger games" (vier testspelers): de boete, een kluis zonder en met sleutel, de verzegelde
+  schatkist, een krat met een onderbreking, alle negen events, mutanten, een zwerm, oplichten, vijf parachutes,
+  het Feest, een parachute van de sponsors, zalf, camouflage, tracker, een landmijn, gegooid nachtslot met zijn
+  gifwolk, een sleutel na een kill, sponsoren door een uitgeschakelde speler, de gevallene aan de hemel, de winst,
+  en daarna niets meer over (teksten, parachutes, bijen, mutanten).
+- Zelftest "bots hunger games": een bot haalt zijn eigen parachute op en maakt de ton leeg.
+
 ## Versie 1.42.0 – Volle lobby's, rustig plunderen in Hunger Games, queue-genoten oplichten
 
 **Feedback.**
@@ -2247,8 +2387,8 @@ in kratten en parachutes:
   - `PlayerListMixin` laat de controle "server vol" bij het inloggen alleen mensen tellen (`Bots.people`);
   - `Bots.spawn` kijkt niet meer naar het spelerslimiet van de server, alleen naar `bots.maxBots`;
   - `bots.maxBots` is standaard 24. Een config van vóór 1.42 met de oude standaard 12 krijgt 24 (configversie 8).
-- Zelftest "bots full lobby": de server krijgt acht plekken (`PlayerListAccessor`), A wil een volle lobby en gaat
-  naar Hunger Games. Er komen vijftien bots bij (zestien in de lobby, meer dan de acht van de server), en de
+- Zelftest "bots full lobby": de server krijgt acht plekken (`SelfTest.playerLimit`, via een hook op
+  `PlayerList.getMaxPlayers`), A wil een volle lobby en gaat naar Hunger Games. Er komen vijftien bots bij (zestien in de lobby, meer dan de acht van de server), en de
   controle "server vol" telt één mens.
 
 **Te snel looten en aantrekken (`bot/Looting`, `core/LootPace`).**
