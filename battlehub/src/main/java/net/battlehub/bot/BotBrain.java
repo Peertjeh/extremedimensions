@@ -202,12 +202,15 @@ final class BotBrain {
 			case PROP_HUNT -> propHunt(m);
 			case SPLEEF -> spleef(m);
 		}
-		if (ticks > launchedAt && ticks <= launchJump) {
-			// between a launch's throw and its burst: standing still, and the jump just before the burst comes (straight up,
-			// on ground the launch already found safe)
+		if (ticks >= launchedAt && ticks <= launchJump) {
+			// from a launch's throw to its burst: running at the target, as people do (a sprint jump from further away;
+			// the burst then pushes it on towards them too), and the jump just before the burst comes
+			ServerPlayer at = target == null ? null : level().getServer().getPlayerList().getPlayer(target);
+			double far = at == null ? 0 : Math.hypot(at.getX() - bot.getX(), at.getZ() - bot.getZ());
 			bot.zza = 0;
 			bot.xxa = 0;
-			bot.setSprinting(false);
+			if (far > 1.0) moveToward(at.position(), 1f);
+			bot.setSprinting(far > 3.0 && bot.zza > 0.5f);
 			bot.setJumping(ticks == launchJump && bot.onGround());
 		}
 		if (m.botStyle() != net.battlehub.core.BotStyle.PARKOUR && !building) {
@@ -717,19 +720,17 @@ final class BotBrain {
 
 	/**
 	 * A wind charge thrown straight down at its own feet: the burst sends the bot up, and the mace comes down on the
-	 * target with the smash bonus (the steering takes it over them and swings on the way down). Thrown standing, it
-	 * bursts two ticks later (it flies down 1.5 blocks a tick from the eyes); the jump comes on that tick, so the burst
-	 * is right under feet that are already rising and adds to the jump. People fly 9 to 12 blocks up that way; jumping
-	 * and throwing on the same tick, as bots did before 1.46, gave 6.5 (the burst then came a block below the feet).
+	 * target with the smash bonus (the steering takes it over them and swings on the way down). It bursts two ticks after
+	 * the throw (it flies down 1.5 blocks a tick from the eyes); the jump comes on that tick, so the burst is right under
+	 * feet that are already rising and adds to the jump. People fly 9 to 12 blocks up that way; jumping and throwing on
+	 * the same tick, as bots did before 1.46, gave 6.5 (the burst then came a block below the feet). Meanwhile it keeps
+	 * running at the target ({@link #tick()}).
 	 */
 	private void launch() {
 		if (!bot.onGround()) return;
 		int slot = find(s -> s.is(Ids.item("minecraft:wind_charge")));
 		if (slot < 0) return;
 		stopUsing();
-		bot.zza = 0;
-		bot.xxa = 0;
-		bot.setSprinting(false);
 		bot.getInventory().setSelectedSlot(slot);
 		bot.setXRot(90f);
 		BotActions.use(bot, InteractionHand.MAIN_HAND);
@@ -873,7 +874,13 @@ final class BotBrain {
 			if (bot.isUsingItem() && bot.getUsedItemHand() == InteractionHand.MAIN_HAND) stopUsing();
 			selectMelee(m.botWeapon());
 		}
-		if (in.moveTo() != null) {
+		if (in.moveTo() != null && !bot.onGround() && m.botWeapon() == net.battlehub.core.ai.Weapon.MACE) {
+			// up in the air in a mace fight: eyes on the target, the keys pressed in the world towards where it wants to
+			// drift (not along its gaze, which swings round right over the target; no route to follow up there)
+			if (in.look() != null) aimAt(Perception.v(in.look()));
+			moveToward(Perception.v(in.moveTo()), 1f);
+			bot.setSprinting(in.sprint() && bot.zza > 0.5f);
+		} else if (in.moveTo() != null) {
 			if (!bridge(m, Perception.v(in.moveTo()))) {
 				Vec3 dest = Perception.v(in.moveTo());
 				if (in.look() != null && t != null && k.seen() && t.distanceTo(bot) < 6) {

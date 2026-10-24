@@ -132,15 +132,39 @@ class WeaponFocusTest {
 
 	@Test
 	void itDriftsOverThemAndStopsThere() {
-		// still far: forward
-		assertEquals(1, MaceFight.diveForward(4, 0));
-		// a block away but moving fast enough to drift there by itself: let go
-		assertEquals(0, MaceFight.diveForward(1.0, 0.1));
-		// it would sail far past them: back
-		assertEquals(-1, MaceFight.diveForward(0.8, 0.2));
-		// right above them: still, or braking when it still moves on
-		assertEquals(0, MaceFight.diveForward(0.2, 0));
-		assertEquals(-1, MaceFight.diveForward(0.2, 0.1));
+		V3 at = new V3(4, 64, 0);
+		// still far and standing still in the air: towards them; on the way and still short: on
+		assertEquals(new V3(1, 0, 0), MaceFight.airPush(new V3(0, 70, 0), V3.ZERO, at));
+		assertTrue(MaceFight.airPush(new V3(1, 70, 0), new V3(0.1, -0.5, 0), at).x() > 0.9);
+		// close and fast: pressing back now stops it over them
+		assertTrue(MaceFight.airPush(new V3(3.7, 70, 0), new V3(0.25, -0.5, 0), at).x() < -0.9);
+		// right over them and still: nothing; drifting off sideways: back towards them, whichever way it looks
+		assertEquals(V3.ZERO, MaceFight.airPush(new V3(4, 70, 0), V3.ZERO, at));
+		V3 back = MaceFight.airPush(new V3(4, 70, 0.3), new V3(0, -0.5, 0.05), at);
+		assertTrue(back.z() < -0.9, "back: " + back);
+		// passing over them, the push turns against the motion straight away (no turning round first)
+		V3 past = MaceFight.airPush(new V3(4.2, 70, 0), new V3(0.15, -0.5, 0), at);
+		assertTrue(past.x() < -0.9, "brake: " + past);
+		// pressing back stops a player much sooner than letting go
+		assertEquals(0.55, MaceFight.brakeDistance(0.2), 0.01);
+		assertEquals(0, MaceFight.brakeDistance(0), 1e-9);
+	}
+
+	/** Simulated drift in the air (91% kept per tick, 0.02 a tick from the keys): it comes to rest over them. */
+	@Test
+	void theDriftSettlesOverThem() {
+		// from standing 3 blocks off, and from a run-up 4.5 blocks off (sprint jump and burst: 0.35 a tick towards them)
+		for (double[] start : new double[][] {{3, 0}, {4.5, 0.35}}) {
+			V3 at = new V3(start[0], 64, 0), pos = new V3(0, 70, 0), vel = new V3(start[1], 0, 0);
+			double worst = 0;
+			for (int tick = 0; tick < 60; tick++) {
+				V3 push = MaceFight.airPush(pos, vel, at);
+				vel = new V3((vel.x() + push.x() * 0.02) * 0.91, 0, (vel.z() + push.z() * 0.02) * 0.91);
+				pos = pos.add(vel);
+				if (tick >= 30) worst = Math.max(worst, pos.flatDistance(at));
+			}
+			assertTrue(worst < 0.6, "from " + start[0] + ": settled within " + worst);
+		}
 	}
 
 	@Test
@@ -156,14 +180,13 @@ class WeaponFocusTest {
 		// up in the air, still to the side of them: towards them, whatever the tactic says on the ground (even backing off)
 		Intent up = st.steer(Tactic.RETREAT, new Situation(t + 8, air(0, 70, 0, 0.6, 0), foe, null, open(), Situation.Threat.NONE), null,
 				Archetype.BALANCED.base, Difficulty.EXPERT, r);
-		assertEquals(1, up.forward());
+		assertTrue(up.moveTo() != null && up.moveTo().x() > 0.9, "towards them: " + up.moveTo());
 		assertFalse(up.attack(), "no swing on the way up");
 		assertTrue(up.look() != null && up.look().y() < 70, "eyes down on them");
 		// high up every direction looks like a drop and the mind calls for recovering: on its own launch the dive goes on
 		Intent recovering = st.steer(Tactic.RECOVER, new Situation(t + 10, air(0, 70, 0, 0.4, 0), foe, null, Fixtures.dropAt(new V3(1, 0, 0), 0),
 				Situation.Threat.NONE), null, Archetype.BALANCED.base, Difficulty.EXPERT, r);
-		assertEquals(1, recovering.forward());
-		assertTrue(recovering.moveTo() == null, "no walking back to safety");
+		assertTrue(recovering.moveTo() != null && recovering.moveTo().x() > 0.9, "towards them, not back to safety: " + recovering.moveTo());
 		// over them on the way down, within reach and far enough fallen: the smash (an expert does not let it pass)
 		boolean smashed = false;
 		for (int k = 0; k < 3 && !smashed; k++) {
@@ -178,7 +201,7 @@ class WeaponFocusTest {
 		// knocked off and falling without a launch, recovering stays recovering
 		Intent knocked = st.steer(Tactic.RECOVER, new Situation(t + 500, air(0, 70, 0, -0.5, 3), foe, null, Fixtures.dropAt(new V3(1, 0, 0), 0),
 				Situation.Threat.NONE), null, Archetype.BALANCED.base, Difficulty.EXPERT, r);
-		assertTrue(knocked.moveTo() != null, "back to the ground");
+		assertTrue(knocked.moveTo() != null && knocked.moveTo().x() < 0.5, "back to the ground, not at them: " + knocked.moveTo());
 		// in a sword fight a high jump is no dive
 		Situation.Self swordAir = new Situation.Self(new V3(0, 70, 0), new V3(0, -0.9, 0), 20, 20, false, 1, false, false, 3.0, true, false, 0,
 				Weapon.SWORD, false, 6);

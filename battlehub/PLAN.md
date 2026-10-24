@@ -2184,11 +2184,13 @@ gebruiken. Erbij: een export met 24 gevechten ("gebruik deze fight data": 5 mace
   zwaard, zodat de lading niet verloren gaat aan wisselen. Zonder zwaard in de kit blijft het de mace.
 - *De launch* (`CombatSteering.launch`): 1,5 tot 5,5 blokken van een doelwit op de grond, ver van een rand,
   minstens 50 ticks na de vorige (een vlucht duurt 30 tot 60), vaker naarmate het niveau hoger is (de laadeis van
-  de mace is weg: op de grond is het nu het zwaard). De worp staand, en de sprong twee ticks later, op de tick dat
-  de charge barst: de stoot komt dan net onder voeten die al stijgen.
-- *De duik* (`CombatSteering.dive`): in de lucht met de mace gaat het neerkomen voor wat de tactiek op de grond
-  zou doen: vooruit naar de plek boven de speler zolang die nog ver is, loslaten als de drift (91% per tick) hem
-  er vanzelf brengt, remmen als hij erover zou schieten, ogen op de speler. De smash zodra de speler binnen
+  de mace is weg: op de grond is het nu het zwaard). De worp in de loop naar de speler (van verder dan 3 blokken
+  sprintend), en de sprong twee ticks later, op de tick dat de charge barst: de stoot komt dan net onder voeten die
+  al stijgen, en duwt hem ook verder naar de speler toe.
+- *De duik* (`CombatSteering.dive`, `MaceFight.airPush`): in de lucht met de mace gaat het neerkomen voor wat de
+  tactiek op de grond zou doen: de toetsen in de wereld (niet langs de blik) naar de plek boven de speler zolang hij
+  nog op tijd kan stoppen, terugdrukken zodra dat nodig is om erboven tot stilstand te komen (terugdrukken stopt
+  in 0,55 blok vanaf 0,2 per tick, loslaten pas na 2), ogen op de speler. De smash zodra de speler binnen
   bereik is (gemeten van de ogen tot het dichtste punt van zijn lichaam) op weg naar beneden met meer dan 1,5 blok
   val; lagere niveaus laten het moment soms voorbij gaan.
 - *Luchtherstel*: een landing telt als veilig als ze op de grond ligt waar de bot vandaan kwam (of tot 3 blokken
@@ -2219,6 +2221,12 @@ is daar bruikbaar voor (`ml/train/fights.py`, `people.py`).
   het oog. Nu gaat de duik bij een eigen launch (binnen 60 ticks) voor op dat terugzetten; de landingscontrole
   van `BotBrain.recover()` blijft. JUnit: ook met "recover" duikt hij na een launch; zonder launch (weggeslagen)
   blijft recover recover. De zelftest logt elke vlucht (hoe dicht boven A, hoe ver gevallen, welk wapen).
+- *Derde run (81d17ba, alleen PLAN gewijzigd): 952 van 955.* De smash bleef uit: de bot kwam tot 0,4 blok boven A,
+  maar stuurde met "vooruit" langs zijn blik; recht boven A draait de blik rond en duwde "vooruit" hem de verkeerde
+  kant op, tot van het eiland af. Nu zijn de toetsen in de lucht in de wereld gericht (`MaceFight.airPush`, met
+  remafstand; JUnit: vanuit stilstand en vanuit een aanloop komt hij binnen 0,6 blok boven het doel tot rust), en
+  houdt hij bij de worp zijn aanloop naar de speler. Daarnaast faalde de bekende wisselvallige Bridge-test (de bot
+  bleef staan voor een gat in het slabpad); die slaagde in de andere runs met deze code.
 - *Flaky zelftest Hunger Games* (de run van ab053d6, alleen PLAN gewijzigd): "na vijf seconden sluipen breekt het
   zegel" liep af na 160 ticks. Oorzaak niet uit de log te halen; de test houdt B nu sluipend naast de krat, geeft
   240 ticks en logt waardoor het kraken stokt (geraakt, verplaatst, geen zicht, opgestaan).

@@ -56,21 +56,20 @@ public final class CombatSteering {
 	}
 
 	/**
-	 * Up in the air in a mace fight ({@link MaceFight}): drifting over the target (press forward while it is still far,
-	 * let go when the drift carries it there), eyes on them, and the smash as soon as they are within reach on the
-	 * way down. A lower level now and then lets the moment pass.
+	 * Up in the air in a mace fight ({@link MaceFight}): drifting over the target (the keys pressed in the world towards
+	 * the spot where the drift comes to rest over them, see {@link MaceFight#airPush}; {@code moveTo} is a block that
+	 * way, or null to let go), eyes on them, and the smash as soon as they are within reach on the way down. A lower
+	 * level now and then lets the moment pass.
 	 */
 	private Intent dive(Situation s, Track track, Difficulty d, Random rng) {
 		Situation.Self me = s.self();
 		Situation.Target t = s.target();
 		V3 aim = aimPoint(s, track, d);
 		V3 at = new V3(aim.x(), t.pos().y(), aim.z());
-		V3 off = at.sub(me.pos()).flat();
-		double ahead = off.flatLength();
-		double toward = ahead < 1e-6 ? 0 : me.vel().flat().dot(off.unit());
-		double fwd = MaceFight.diveForward(ahead, toward);
+		V3 push = MaceFight.airPush(me.pos(), me.vel(), at);
+		V3 to = push.flatLength() < 1e-6 ? null : me.pos().add(push);
 		boolean smash = t.visible() && MaceFight.smash(me, t.pos()) && rng.nextDouble() < 0.4 + 0.6 * d.critSkill;
-		return new Intent(fwd, 0, fwd > 0 && ahead > 2, false, aim, null, smash, false, false);
+		return new Intent(0, 0, to != null && at.sub(me.pos()).flatLength() > 2, false, aim, to, smash, false, false);
 	}
 
 	private Intent intent(Tactic tactic, Situation s, Track track, Personality p, Difficulty d, Random rng) {

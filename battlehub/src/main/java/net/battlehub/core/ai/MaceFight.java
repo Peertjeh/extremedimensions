@@ -46,17 +46,30 @@ public final class MaceFight {
 		return !me.onGround() && me.vel().y() < -0.1 && me.fall() > SMASH_FALL && reachTo(me.pos(), them) <= me.reach() - 0.1;
 	}
 
+	/** What the keys add to the sideways speed in the air every tick (vanilla: 0.02). */
+	static final double AIR_PUSH = 0.02;
+
+	/** How far a player sliding at {@code speed} through the air still goes while pressing against it. */
+	static double brakeDistance(double speed) {
+		double d = 0, v = speed;
+		while (v > 0) {
+			v = (v - AIR_PUSH) * AIR_DRAG;
+			if (v > 0) d += v;
+		}
+		return d;
+	}
+
 	/**
-	 * The forward key while drifting over the target ({@code ahead}: how far it still is sideways, {@code toward}: the
-	 * sideways speed towards it): pressed while it is still far, let go when the drift will carry the bot there by itself,
-	 * held back when it would overshoot, and still once right above them.
+	 * Which way to press in the air (a unit vector in the world, or zero) to come to rest over {@code at}: towards the
+	 * target while it could still stop in time, against the drift once pressing back is needed to stop over them (the
+	 * keys stop a player in the air much sooner than letting go: 0.55 blocks from 0.2 a tick, against 2). In the world,
+	 * not relative to where the bot looks: right over the target the eyes swing round, the keys must not swing with them.
 	 */
-	public static double diveForward(double ahead, double toward) {
-		double drift = toward * AIR_DRAG / (1 - AIR_DRAG);
-		if (ahead < 0.35) return toward > 0.03 ? -1 : 0;
-		double left = ahead - drift;
-		if (left > 0.25) return 1;
-		if (left < -0.6) return -1;
-		return 0;
+	public static V3 airPush(V3 pos, V3 vel, V3 at) {
+		V3 v = vel.flat();
+		double speed = v.flatLength();
+		V3 stop = speed < 1e-9 ? V3.ZERO : v.scale(brakeDistance(speed) / speed);
+		V3 miss = at.sub(pos).flat().sub(stop);
+		return miss.flatLength() < 0.15 ? V3.ZERO : miss.unit();
 	}
 }
