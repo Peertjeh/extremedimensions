@@ -811,6 +811,12 @@ final class BotTests {
 			Bots.practice(p(A), GameMode.MACE, net.battlehub.core.ai.Difficulty.EXPERT);
 		});
 		s.waitFor(tag + ": running", 600, () -> matchOfA() != null && matchOfA().phase() == Match.Phase.RUNNING && botsIn(matchOfA()).size() == 1);
+		// a smash from ten blocks with a crit does about 45 before armour, as people's do: through diamond that kills a
+		// player with 20 health in one hit, and then the match is over. A gets more health, so the hit can be measured
+		s.run(tag + ": A gets 100 health for this fight", () -> {
+			p(A).getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(100);
+			p(A).setHealth(100);
+		});
 		s.waitFor(tag + ": on the ground it fights with the sword (1.46: the mace kit has one)", 400, () -> {
 			Match m = matchOfA();
 			if (m == null || botsIn(m).isEmpty()) return false;
@@ -893,6 +899,10 @@ final class BotTests {
 			p(A).setHealth(p(A).getMaxHealth());
 			BotPlayer b = botsIn(m).get(0);
 			return b.onGround() && b.getMainHandItem().is(net.minecraft.tags.ItemTags.SWORDS);
+		});
+		s.run(tag + ": A back to 20 health", () -> {
+			p(A).getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(20);
+			p(A).setHealth(20);
 		});
 		endAndClean(s, tag);
 	}

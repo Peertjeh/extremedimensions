@@ -2232,6 +2232,11 @@ is daar bruikbaar voor (`ml/train/fights.py`, `people.py`).
   wereld; het was daar nacht en zombies doodden ze ("BHTestD was slain by Zombie"), en een dode A kan de lobby
   niet in. De test houdt de wachtende testspelers nu heel en ruimt monsters rond ze op; het bouwen en weer binnenkomen
   wordt nog steeds getest.
+- *Vijfde run (7ff4c5d): 953 van 955.* Wereld-reset en server-stop slaagden. De mace-test "faalde" net als in de
+  derde run, maar de log laat zien waarom: de bot hing recht boven A (0,0 blok), viel 10,3 blokken en "landde 60
+  blokken van A". Hij smashte wel: van 10 blokken met een crit is dat zo'n 45 schade voor het harnas (bij mensen in
+  de data 37 tot 53), door diamant heen genoeg om A met 20 levenspunten in één klap te doden; A kwam vol terug (geen
+  daling te meten) en de match was voorbij. A krijgt in deze test nu 100 levenspunten, zodat de klap te meten is.
 - *Flaky zelftest Hunger Games* (de run van ab053d6, alleen PLAN gewijzigd): "na vijf seconden sluipen breekt het
   zegel" liep af na 160 ticks. Oorzaak niet uit de log te halen; de test houdt B nu sluipend naast de krat, geeft
   240 ticks en logt waardoor het kraken stokt (geraakt, verplaatst, geen zicht, opgestaan).
