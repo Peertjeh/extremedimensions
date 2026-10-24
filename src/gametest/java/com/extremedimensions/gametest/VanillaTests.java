@@ -217,14 +217,17 @@ public class VanillaTests {
 			Config.RELIC_SEAM_CHEST_CHANCE = relic;
 			Config.SEAM_MUSIC_DISC_CHANCE = disc;
 		}
+		ItemStack record = new ItemStack(ModItems.MUSIC_DISC_TICK_OF_THE_BOUNDARY);
+		java.util.Optional<net.minecraft.core.Holder<JukeboxSong>> held = JukeboxSong.fromStack(record);
+		check(helper, held.isPresent() && held.get().is(ModItems.TICK_OF_THE_BOUNDARY), "the disc carries the song %s", held);
 		BlockPos at = helper.absolutePos(new BlockPos(2, 1, 3));
 		helper.getLevel().setBlock(at, Blocks.JUKEBOX.defaultBlockState(), 3);
 		JukeboxBlockEntity jukebox = (JukeboxBlockEntity) helper.getLevel().getBlockEntity(at);
-		jukebox.setTheItem(new ItemStack(ModItems.MUSIC_DISC_TICK_OF_THE_BOUNDARY));
+		jukebox.setTheItem(record);
 		JukeboxSongPlayer playing = jukebox.getSongPlayer();
 		check(helper, playing.isPlaying(), "the jukebox does not play the disc");
-		check(helper, playing.getSong() != null && playing.getSong().is(ModItems.TICK_OF_THE_BOUNDARY), "the jukebox plays %s", playing.getSong());
-		JukeboxSong song = playing.getSong().value();
+		JukeboxSong song = playing.getSong();
+		check(helper, song == held.get().value(), "the jukebox plays %s, not the Seam's song", song);
 		check(helper, song.soundEvent().value() == ModSounds.MUSIC_DISC_TICK_OF_THE_BOUNDARY, "the song sounds %s", song.soundEvent());
 		check(helper, song.lengthInSeconds() > 160, "the song lasts %s seconds, not the track's 164", song.lengthInSeconds());
 		helper.succeed();
