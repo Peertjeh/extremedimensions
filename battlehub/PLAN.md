@@ -2019,6 +2019,53 @@ mensen; Bridge Chaos 1v1v1v1, Hunger Games en een mace-duel; de bots waren inter
   - In de pool (`selfplay2.py --people`, 15% van de tegenstanders) en in een blok van eval2 (alleen tegen twee).
 - **Vergelijken in de simulatie van 1.40:** `pvp_sim2.env.scenario_1_40` en `league2.py --versus ... --sim 1.40`.
 
+**D3 – Trainen.**
+- **Eerste run (`v3e`):** warme start vanaf de master van 1.40, MaskablePPO in de gefitte simulatie, 16 miljoen stappen.
+  - Tegenstanders: de checkpoints van fase C, de menselijke tegenstander (15%), v1 (5%) en de gescripte bot.
+  - Meer loot en zwaard, de stad dubbel, 45% van de arena's met drie en 20% met vier vechters.
+  - eval2 bleef bij de master (84,7–87,1%). Tegen de menselijke tegenstander won hij 97–100% (master 95,9%), in de stad
+    1v2 46–53% (master 50,3%).
+  - **Tegen de master zelf haalde hij het niet.** Het beste checkpoint (10M) won 47,7% van 1.287 gevechten in de gefitte
+    simulatie en 48,8% in die van 1.40.
+  - De oorzaak: de master was één van ongeveer 24 bevroren versies in de pool, die zelf 40% van de plekken speelt (de
+    helft daarvan de nieuwste versie van de lerende). De rest waren de lerende zelf, gescripte bots en de mensen. Zo
+    leert hij de master niet te verslaan.
+- **Tweede run (`v3f`), met een rivaal.**
+  - Nieuw: `selfplay2.py --rival` zet een vast checkpoint in een deel van de tegenstanderplekken. Het speelt zoals de
+    league en de mod het spelen: zijn beste keuze, alleen met zijn eigen handen. Net als v1 in fase B.
+  - Vanaf v3e 10M, 20 miljoen stappen (10, daarna hervat). De master van 1.40 is de rivaal in 35% van de plekken, de
+    menselijke tegenstander in 15%; zonder v1. 35% drie en 15% vier vechters, de stad 1,5 keer.
+  - Elk checkpoint speelde kort tegen de master (ongeveer 350 gevechten, gefitte simulatie). De meting is ruw: 10M en
+    10,03M (vrijwel dezelfde gewichten) verschilden 6 punten. De keuze kwam uit de volle meting.
+
+    | Checkpoint | eval2 | mensen (1v2) | stad 1v2 | 2v2 zwaard | Bed Wars 2v2 | kort tegen master |
+    |---|---|---|---|---|---|---|
+    | master 1.40 | 86,2% | 95,9% | 50,3% | 99% | 92,8% | – |
+    | v3f 2M | 84,0% | 98,7% | 44,3% | 99% | 94,8% | 47,4% |
+    | v3f 4M | 87,8% | 97,4% | 42,7% | 100% | 93,8% | 50,3% |
+    | v3f 6M | 86,6% | 99,2% | 42,0% | 98% | 94,8% | 50,0% |
+    | v3f 8M | 88,8% | 98,4% | 47,4% | 98% | 95,8% | 52,6% |
+    | v3f 10M | 87,5% | 98,7% | 49,0% | 98% | 97,9% | 48,0% |
+    | v3f 12M | 89,1% | 96,9% | 45,3% | 98% | 95,8% | 52,7% |
+    | **v3f 14M** | **88,1%** | **98,7%** | **50,0%** | **99%** | **96,9%** | **60,9%** |
+    | v3f 16M | 88,3% | 98,7% | 42,2% | 98% | 99,0% | 58,9% |
+    | v3f 18M | 84,4% | 99,0% | 42,2% | 98% | 97,9% | 57,2% |
+    | v3f 20M | 82,0% | 99,2% | 41,7% | 95% | 96,9% | 55,2% |
+
+  - Na 16M zakken eval2 en de stad 1v2: de rivaal trekt hem dan te ver naar de master toe.
+- **Gekozen: v3f 14M**, in de volle meting tegen de master van 1.40 (beide met eten, appels en wind, zoals in de mod):
+  - **1v1-mix, gefitte simulatie: 55,4%** van 1.287 gevechten (630 gewonnen, 507 verloren, 150 gelijk). Per scenario:
+    Bridge 75–53, zwaard 70–59, boog 75–54, SkyWars-loot 65–64, stad 67–61, Bed Wars 76–52, Build UHC 68–60, sumo
+    68–45, mace 54–56, bijl 12–3 (117 gelijk: met schild en bijl eindigt het bijna altijd op tijd).
+  - **1v1-mix, simulatie van 1.40: 56,1%** van 1.293 gevechten. Het zwaard (62–67) en Build UHC (63–65) zijn daar net
+    verloren, de rest gewonnen.
+  - **Teams (gefitte simulatie): 57,2%** van 640 gevechten: 2v2 zwaard 78–50, Bed Wars 2v2 86–42, Bridge 2v2 69–59, stad
+    2v2 66–62, stad 1v2 67–61.
+  - **eval2 88,1%.** Per scenario (van 48): zwaard 48, bijl 46, boog 43, Bridge 47, loot 47, sumo 48, stad 1v2 20, Bed
+    Wars drie tegen elkaar 40.
+  - **Tegen de menselijke tegenstander** (alleen tegen twee): 98,7%, de master van 1.40 95,9%.
+  - Spullen: eten in 8 van 41 gevechten waar het zin had (de master: 9 van 38), wind charges 90 van 90 (58% nuttig).
+
 ## Versie 1.40.1 – Bots lopen weer over halve slabs (The Bridge)
 
 **Feedback.** In The Bridge 1v1v1v1 waren de bots in 1.36.0 beter. Vooral het pathfinding is in 1.40.0 minder, en
