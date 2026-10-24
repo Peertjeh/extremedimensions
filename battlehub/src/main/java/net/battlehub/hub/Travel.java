@@ -71,8 +71,8 @@ public final class Travel {
 		SURVIVAL.take(p, false);
 		resetForHub(p);
 		if (!Lobby.teleport(p)) {
-			net.battlehub.BattleHub.LOGGER.warn("BattleHub: {} could not be sent into the lobby yet; trying again", p.getGameProfile().name());
-			retryLobby(p, 100);
+			net.battlehub.BattleHub.LOGGER.warn("BattleHub: {} could not be sent into the lobby yet ({}); trying again", p.getGameProfile().name(), refusal(p));
+			retryLobby(server, p.getUUID(), p.getGameProfile().name(), 100);
 		}
 		Sessions.toLobby(p.getUUID());
 		HubItems.ensure(p, false);
@@ -91,17 +91,32 @@ public final class Travel {
 	 * The server can refuse a change of dimension right after another one (a reset of BattleHub's world had just
 	 * sent the player out): try again every tick for up to five seconds, as long as the player still means to be in the lobby.
 	 */
-	private static void retryLobby(ServerPlayer p, int tries) {
+	private static void retryLobby(MinecraftServer server, UUID id, String name, int tries) {
 		net.battlehub.util.Tasks.next(() -> {
-			if (p.isRemoved() || inBattleHub(p) || Sessions.state(p.getUUID()) != Sessions.State.LOBBY) return;
+			// the player as the server knows it now (not an object kept from before)
+			ServerPlayer p = server.getPlayerList().getPlayer(id);
+			if (p == null || inBattleHub(p) || Sessions.state(id) != Sessions.State.LOBBY) {
+				if (p == null || !inBattleHub(p)) {
+					net.battlehub.BattleHub.LOGGER.info("BattleHub: {} no longer waits for the lobby ({})", name,
+							p == null ? "offline" : "session " + Sessions.state(id));
+				}
+				return;
+			}
 			if (Lobby.teleport(p)) {
-				net.battlehub.BattleHub.LOGGER.info("BattleHub: {} is in the lobby now", p.getGameProfile().name());
+				net.battlehub.BattleHub.LOGGER.info("BattleHub: {} is in the lobby now", name);
 			} else if (tries > 1) {
-				retryLobby(p, tries - 1);
+				retryLobby(server, id, name, tries - 1);
 			} else {
-				net.battlehub.BattleHub.LOGGER.warn("BattleHub: {} still could not be sent into the lobby", p.getGameProfile().name());
+				net.battlehub.BattleHub.LOGGER.warn("BattleHub: {} still could not be sent into the lobby ({})", name, refusal(p));
 			}
 		});
+	}
+
+	/** What the server knows of a player whose teleport it refused (for the log). */
+	private static String refusal(ServerPlayer p) {
+		return "in " + p.level().dimension().identifier() + ", removed " + p.getRemovalReason() + ", alive " + p.isAlive()
+				+ ", health " + p.getHealth() + ", changing dimension " + p.isChangingDimension() + ", sleeping " + p.isSleeping()
+				+ ", riding " + p.isPassenger();
 	}
 
 	/** Back to the normal world, with everything the player had there. */
