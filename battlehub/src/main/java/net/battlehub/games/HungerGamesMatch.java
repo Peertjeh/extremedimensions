@@ -482,15 +482,49 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 		}
 		// its own parachute, the Feast, a vault it has a key for
 		BlockPos gift = capitol.botTarget(bot);
-		if (gift != null) return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(front(gift))), "the Capitol's gifts");
+		if (gift != null && fresh(bot, gift)) return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(front(gift))), "the Capitol's gifts");
 		BlockPos crate = capitol.vaults().nearestCrate(bot.position(), 20);
-		if (crate != null && Math.abs(crate.getY() - bot.getY()) <= 4) {
+		if (crate != null && Math.abs(crate.getY() - bot.getY()) <= 4 && fresh(bot, crate)) {
 			return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(front(crate))), "a sealed crate");
 		}
 		BlockPos chest = botChest(bot, size);
-		if (chest != null) return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(front(chest))), "a chest");
+		if (chest != null && fresh(bot, chest)) return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(front(chest))), "a chest");
 		if (Math.hypot(bot.getX() - cx, bot.getZ() - cz) > 20) return net.battlehub.core.ai.Objective.attack(v3(centre), "the plaza");
 		return null;
+	}
+
+	/** What each bot goes for now, since when, and what it gave up on (until which tick). */
+	private final Map<UUID, BlockPos> botAim = new HashMap<>();
+	private final Map<UUID, Integer> botAimSince = new HashMap<>();
+	private final Map<UUID, Map<BlockPos, Integer>> botGaveUp = new HashMap<>();
+	/** How long a bot tries to get to one container before it gives up on it for a while (ticks). */
+	static final int GIVE_UP_AFTER = 20 * 20, GIVE_UP_FOR = 90 * 20;
+
+	/**
+	 * Whether {@code bot} still goes for {@code pos}: false once it has tried to get there for {@link #GIVE_UP_AFTER}
+	 * ticks (it cannot reach it: behind a wall, up where no path goes); then it leaves it for {@link #GIVE_UP_FOR}.
+	 */
+	private boolean fresh(ServerPlayer bot, BlockPos pos) {
+		Map<BlockPos, Integer> gaveUp = botGaveUp.computeIfAbsent(bot.getUUID(), k -> new HashMap<>());
+		gaveUp.values().removeIf(until -> until <= runTicks);
+		if (gaveUp.containsKey(pos)) return false;
+		if (!pos.equals(botAim.get(bot.getUUID()))) {
+			botAim.put(bot.getUUID(), pos.immutable());
+			botAimSince.put(bot.getUUID(), runTicks);
+			return true;
+		}
+		if (runTicks - botAimSince.getOrDefault(bot.getUUID(), runTicks) < GIVE_UP_AFTER || net.battlehub.bot.Looting.busy(bot) || botsCracking.contains(bot.getUUID())) return true;
+		gaveUp.put(pos.immutable(), runTicks + GIVE_UP_FOR);
+		botAim.remove(bot.getUUID());
+		botGaveUps++;
+		return false;
+	}
+
+	private int botGaveUps;
+
+	/** How often bots gave up on a container they could not reach (self-test, inspect). */
+	public int botGaveUps() {
+		return botGaveUps;
 	}
 
 	/** Where to stand to open a container: in front of it when it has a front. */
@@ -501,13 +535,16 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 
 	private BlockPos botChest(ServerPlayer bot, double size) {
 		Set<BlockPos> done = botLooted.getOrDefault(bot.getUUID(), Set.of());
+		Map<BlockPos, Integer> gaveUp = botGaveUp.getOrDefault(bot.getUUID(), Map.of());
 		double cx = arena.origin().getX() + 0.5, cz = arena.origin().getZ() + 0.5;
-		// the nearest one, on about its own level (a chest up many floors waits until it walks past); not a locked one
+		// the nearest one, on about its own level (a chest up many floors waits until it walks past); not a locked one,
+		// not one it could not get to a moment ago
 		BlockPos best = null;
 		double bestD = Double.MAX_VALUE;
 		for (String mark : CHESTS) {
 			for (BlockPos pos : arena.marks(mark)) {
-				if (done.contains(pos) || Math.abs(pos.getY() - bot.getY()) > 6 || capitol.vaults().locked(pos)) continue;
+				if (done.contains(pos) || Math.abs(pos.getY() - bot.getY()) > 6 || capitol.vaults().locked(pos)
+						|| gaveUp.getOrDefault(pos, 0) > runTicks) continue;
 				if (BorderShrink.outside(pos.getX() + 0.5, pos.getZ() + 0.5, cx, cz, size - 6) > 0) continue;
 				double d = Math.hypot(pos.getX() + 0.5 - bot.getX(), pos.getZ() + 0.5 - bot.getZ());
 				if (d < bestD && hasLoot(pos)) {
@@ -537,7 +574,7 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 		// every tick: sneaking beside a sealed crate (the brain lets go of the keys each tick)
 		BlockPos crate = capitol.vaults().nearestCrate(bot.position(), net.battlehub.core.hunger.Crack.REACH - 0.3);
 		boolean calm = bot.hurtTime == 0 && !enemyNear(bot, 5);
-		if (crate != null && calm && !net.battlehub.bot.Looting.busy(bot)) {
+		if (crate != null && calm && !net.battlehub.bot.Looting.busy(bot) && net.battlehub.games.hunger.Vaults.sees(bot, crate)) {
 			bot.setShiftKeyDown(true);
 			botsCracking.add(bot.getUUID());
 		} else {

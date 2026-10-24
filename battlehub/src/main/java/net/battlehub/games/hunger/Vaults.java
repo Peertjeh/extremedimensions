@@ -218,7 +218,7 @@ public final class Vaults {
 			Vec3 mid = Vec3.atCenterOf(pos);
 			ServerPlayer by = null;
 			for (ServerPlayer p : host.tributes()) {
-				boolean close = p.isShiftKeyDown() && p.position().distanceTo(mid) <= Crack.REACH;
+				boolean close = p.isShiftKeyDown() && p.position().distanceTo(mid) <= Crack.REACH && sees(p, pos);
 				if (!close) continue;
 				if (p.getUUID().equals(c.by)) {
 					by = p;
@@ -244,6 +244,13 @@ public final class Vaults {
 				Msg.actionBar(by, "hg.crate.open");
 			}
 		}
+	}
+
+	/** Whether {@code p} sees the container at {@code pos}: nothing between the eyes and its middle (no cracking through a wall). */
+	public static boolean sees(ServerPlayer p, BlockPos pos) {
+		net.minecraft.world.phys.BlockHitResult hit = p.level().clip(new net.minecraft.world.level.ClipContext(p.getEyePosition(), Vec3.atCenterOf(pos),
+				net.minecraft.world.level.ClipContext.Block.OUTLINE, net.minecraft.world.level.ClipContext.Fluid.NONE, p));
+		return hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS || hit.getBlockPos().equals(pos);
 	}
 
 	/** The nearest sealed crate within {@code range} of {@code at}, or null (bots). */

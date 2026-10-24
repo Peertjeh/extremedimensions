@@ -16,6 +16,14 @@
 * **Two new items in the lobby hotbar**: your head (slot 2: your stats, quests and pass) and a chest (slot 7: the
   cosmetics shop), next to the compass, your gadget and the door.
 
+### Fixed
+* **Hunger Games bots no longer chase a chest they cannot reach.** A bot that could not get to a chest (behind a
+  wall, no path to it) kept walking at it for minutes. After twenty seconds it now leaves that chest for a minute
+  and a half and goes for the next one.
+* **A sealed crate can no longer be cracked through a wall**: you have to see it while you sneak beside it.
+
+1.43.0 and 1.44.0 were not released on their own: they come with 1.45.0.
+
 ## 1.44.0
 
 ### Added

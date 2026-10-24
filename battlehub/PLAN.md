@@ -2211,6 +2211,17 @@ cosmetics-winkel (met de nieuwe categorieën in twee rijen en een rij "wat je dr
 - Hotbar in de lobby: je hoofd (slot 2) opent je statistieken, een kist (slot 7) de winkel; niet in een wachtrij,
   waar het bots-knopje en het vertrek-item staan.
 
+**Gevonden in CI: bots die een kist niet kunnen bereiken.** In de zelftest "bots hunger games" (op 1.43.0) liep
+een bot drie minuten tegen een kist aan die hij niet kon bereiken ("going for a chest, nearly at a chest"), en
+sprong er telkens naast. Een kist achter een muur of zonder pad ernaartoe bleef zijn doel.
+- Nu houdt `HungerGamesMatch` per bot bij waar hij heen wil en sinds wanneer. Na 20 seconden zonder die kist te
+  openen (niet tijdens plunderen of kraken) laat hij hem anderhalve minuut links liggen en kiest hij de volgende
+  (`fresh`, `botGaveUps`). Dat geldt ook voor kratten en de cadeaus van het Capitool.
+- Kraken kon door een muur heen: `Vaults` keek alleen naar de afstand. Nu moet je de krat zien (niets tussen je
+  ogen en de krat, `Vaults.sees`), en een bot sluipt alleen bij een krat die hij ziet. Anders bleef een bot buiten
+  een huis eeuwig stilstaan bij een krat binnen.
+- 1.43.0 en 1.44.0 zijn daardoor niet los uitgebracht: ze komen met 1.45.0 mee.
+
 **Afwijkingen van het plan.**
 - De party staat niet als eigen knop in het hoofdmenu: er is geen apart partymenu, de party zit in het
   vriendenmenu.
