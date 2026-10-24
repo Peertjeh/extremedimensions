@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.41.0
+
+### Added
+* **A new master model, trained in a simulation fitted on the fight logs** (ML phase 3D). Against the master of
+  1.40 it wins 55.4% of 1,287 fights over the 1v1 mix in the fitted simulation, 56.1% of 1,293 in the simulation of
+  1.40 and 57.2% of 640 team fights (two against two with the sword 78 to 50, Bed Wars in teams 86 to 42); Elo
+  1615 against 1564 for the master of 1.40. Against the scripted bot it wins 88.1% (1.40: 86.2%), alone against two of the opponent
+  that fights like people 98.7% (1.40: 95.9%), alone against two in the town 50% as before. The other levels are
+  unchanged.
+* **The simulation is fitted on the fight logs of 1.40.** Replaying the logs (`ml/train/simfit.py`) showed the
+  simulation's movement, push and damage already were the game's; what differed was what the bots met:
+  * Chaos effects as the game computes them: the 37 events that change a body (speed, slowness, jump strength,
+    size, gravity, strength, resistance, attack speed, reach, freezing) are read from the Chaos catalogue
+    (`ml/tools/chaos_effects.py`) and one fighter in five gets them (1.40: one in eight, a rougher version), half
+    of them as the profiles seen in the logs.
+    Of the model's decisions in the logged fights, 2.5% (test part) had a value it never saw in training; with
+    1.40's simulation it was 18.8%.
+  * Half of the opponents' clicks fall on the second tick of a decision, as a person's click can (the model's own
+    stays on the first, as the mod does it).
+  * An opponent that fights like the people in the logs (`ml/train/people.py`: behavior cloning on their fighting
+    decisions, as sticky per key as they were, sprinting, jumping and clicking at their pace) plays 15% of the
+    training fights and has its own block in the evaluation.
+  * The master of 1.40 as a fixed rival in 35% of the opponent slots (`selfplay2.py --rival`): without it the new
+    model only matched the old one.
+* Training: `train/simfit.py`, `tools/chaos_effects.py`, `train/people.py`, `selfplay2.py --people` and `--rival`,
+  `eval2.py --people`, `league2.py --sim 1.40`. Reading the fight logs, the charge of a hit is the one from before
+  the swing (`train/fights.swing_charge`): the mod stores a tick's row after the swings of that tick.
+
+### Changed
+* Fight logs: every hit has its kind (`melee`, `arrow`, `other`), the Hunger Games' header has the teams of the
+  match (not the waiting time, where everyone was team 0), and the header says `"velocities": "game"`; older logs
+  still load (`train/fights.py` converts their velocities).
+
+### Fixed
+* **The learned model saw people nearly standing still.** It read a player's velocity from the server, which for
+  a real player is not their movement (that comes from their client); the scripted mind and the fight logs did the
+  same. A person's velocity now comes from their positions, as the game keeps it after friction (`bot/Motion`,
+  `core/ml/Velocity`), like a bot's. In the logs of 1.40 a sprinting person moved 74% of what their stored velocity
+  said; now 100%, and the simulation's error over one decision dropped from 0.104 to 0.001 blocks (median).
+
 ## 1.40.1
 
 ### Fixed

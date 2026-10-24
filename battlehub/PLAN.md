@@ -2065,6 +2065,50 @@ mensen; Bridge Chaos 1v1v1v1, Hunger Games en een mace-duel; de bots waren inter
     Wars drie tegen elkaar 40.
   - **Tegen de menselijke tegenstander** (alleen tegen twee): 98,7%, de master van 1.40 95,9%.
   - Spullen: eten in 8 van 41 gevechten waar het zin had (de master: 9 van 38), wind charges 90 van 90 (58% nuttig).
+- **League** (`ml/spec/league_v3_fase3d.json`, de 1v1-mix in de gefitte simulatie, 120 gevechten per paar):
+  - Elo: nieuwe master 1615, master 1.40 1564, master 1.39 1527, expert 1367, advanced 1259, intermediate 1228,
+    casual 1106, beginner 1024; gescript 0,8 1068, 1,0 1038, 0,5 1000, 0,3 963; willekeurig 372.
+  - Alleen master is vervangen. De andere niveaus blijven; hun Elo in `difficulties_v3.json` komt uit deze league.
+
+**D4 – In de mod (1.41.0).**
+- De nieuwe master (`combat_v3_master.onnx`, v3f 14M, met eten, appels en wind) en `difficulties_v3.json`. De spec
+  blijft v3: de observaties veranderen niet, alleen wat erin komt.
+- **Ranges opnieuw** (`tools/make_ranges.py`, gefitte simulatie, de nieuwe master en intermediate, 500.000
+  beslissingen). Van de beslissingen van het model in de verslagen valt nu 2,7% (testgevechten) en 3,6% (alle) buiten
+  de training; in 1.40 was dat 18,8%. Het meest: de blik van de derde vijand (1,5%), pijlen van opzij (0,6%).
+- **Een meetfout in de verslagen.** De mod slaat de rij van een tick op nadat de bots en het netwerk hebben gehandeld.
+  Valt een slag op de tick van een rij, dan staat in die rij de lading van ná de slag. Alle 142 treffers van bots en
+  84 van mensen op zo'n tick hadden een lading onder 0,9; die op de tick erna bijna altijd een volle.
+  - `train/fights.swing_charge` neemt dan de rij ervoor plus de ticks ertussen gedeeld door de cooldown. `simfit` en
+    `people.py` gebruiken dat; een test legt het vast.
+  - De schade per treffer is nu ook in de testgevechten de formule van de simulatie: mediaan 1,000 (bots) en 0,999
+    (mensen); dat was 1,097 en 2,03.
+  - **Correctie op de nulmeting:** bots en mensen slaan met een volle lading (mediaan 1,00). De 0,12 van de bots (en de
+    0,60 van mensen) was deze meetfout, niet te vroeg klikken.
+  - De menselijke tegenstander is op de verkeerde 0,56 gekalibreerd (D2). Zijn lading bij een treffer (0,74) ligt
+    daardoor 26% onder die van mensen. Opnieuw kalibreren kan met de volgende export (fase E); de training is met deze
+    versie gedaan.
+  - In de mod zelf blijft het opslaan zoals het is: het model ziet de lading vóór zijn beslissing, alleen het verslag
+    loopt een tick achter. De correctie werkt zo ook voor de verslagen van 1.37 tot 1.40.
+- **Zelftest** (al in D1, CI van `1833111`): in het bijlduel ziet het model de snelheid van A, die zijwaarts loopt, en
+  elke treffer in het verslag heeft zijn soort.
+
+**De eisen van fase D.**
+
+| Eis | Doel | Resultaat | |
+|---|---|---|---|
+| Beweging over één beslissing (testgevechten) | mediaan ≤ 0,03 blok | bots 0,004, mensen 0,001 | gehaald |
+| Knockback | binnen 0,03 | de baan van de game (zelftest) tot op 0,001; in de verslagen bots 0,102, mensen 0,052 | deels (zie D1: de eigen toetsen van een bot na de treffer) |
+| Schade per treffer (testgevechten) | mediaan ± 2% | bots 1,000, mensen 0,999 | gehaald |
+| Dekking | ≤ 5% (was 19,0%) | 2,7% (testgevechten), 3,6% (alle) | gehaald |
+| Menselijke tegenstander voorspelt mensen beter dan de master | per kop | 8 van 9 beter, vooruit gelijk (43%) | gehaald |
+| Zijn gedrag binnen 25% van mensen | 6 getallen | 5 van 6; lading bij treffer 0,74 tegen 1,00 | deels |
+| Tegen de master van 1.40, 1v1-mix, gefitte simulatie | ≥ 55% | 55,4% (1.287 gevechten) | gehaald |
+| Idem, teams | ≥ 55% | 57,2% (640 gevechten) | gehaald |
+| Tegen de menselijke tegenstander | vaker dan de master | 98,7% tegen 95,9% | gehaald |
+| eval2 | ≥ 85% | 88,1% | gehaald |
+| Tegen de master van 1.40 in de simulatie van 1.40 | ≥ 50% | 56,1% (1.293 gevechten) | gehaald |
+| Tijd per beslissing | < 1 ms gemiddeld | zie de CI hieronder | |
 
 ## Versie 1.40.1 – Bots lopen weer over halve slabs (The Bridge)
 

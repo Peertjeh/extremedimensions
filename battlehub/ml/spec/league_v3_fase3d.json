@@ -1,0 +1,452 @@
+{
+ "ratings": {
+  "v3f:ckpt_14000256": 1614.6626011457424,
+  "v3d:ckpt_6000192": 1563.725867548314,
+  "v3b:ckpt_4000032": 1527.3246391367238,
+  "expert:ckpt_30000096": 1367.290341266209,
+  "advanced:ckpt_22000032": 1258.6454932434694,
+  "intermediate:ckpt_18000000": 1228.4421114025104,
+  "casual:ckpt_10000224": 1106.4289811640188,
+  "scripted_0.8": 1067.5693200150708,
+  "scripted_1.0": 1038.3575371633979,
+  "beginner:ckpt_6000192": 1023.6121196512514,
+  "scripted_0.5": 1000.0,
+  "scripted_0.3": 963.4648636204665,
+  "random": 372.06747230378045
+ },
+ "results": {
+  "beginner:ckpt_6000192|expert:ckpt_30000096": [
+   14,
+   109,
+   0
+  ],
+  "beginner:ckpt_6000192|advanced:ckpt_22000032": [
+   32,
+   88,
+   0
+  ],
+  "beginner:ckpt_6000192|intermediate:ckpt_18000000": [
+   34,
+   89,
+   0
+  ],
+  "beginner:ckpt_6000192|casual:ckpt_10000224": [
+   61,
+   63,
+   0
+  ],
+  "beginner:ckpt_6000192|scripted_0.3": [
+   61,
+   62,
+   0
+  ],
+  "beginner:ckpt_6000192|v3b:ckpt_4000032": [
+   12,
+   109,
+   0
+  ],
+  "beginner:ckpt_6000192|v3d:ckpt_6000192": [
+   6,
+   117,
+   0
+  ],
+  "beginner:ckpt_6000192|v3f:ckpt_14000256": [
+   2,
+   122,
+   0
+  ],
+  "beginner:ckpt_6000192|scripted_0.8": [
+   49,
+   73,
+   0
+  ],
+  "beginner:ckpt_6000192|scripted_0.5": [
+   56,
+   66,
+   0
+  ],
+  "beginner:ckpt_6000192|scripted_1.0": [
+   57,
+   64,
+   0
+  ],
+  "beginner:ckpt_6000192|random": [
+   119,
+   1,
+   12
+  ],
+  "casual:ckpt_10000224|intermediate:ckpt_18000000": [
+   37,
+   88,
+   0
+  ],
+  "casual:ckpt_10000224|expert:ckpt_30000096": [
+   23,
+   103,
+   0
+  ],
+  "casual:ckpt_10000224|advanced:ckpt_22000032": [
+   41,
+   83,
+   0
+  ],
+  "casual:ckpt_10000224|v3b:ckpt_4000032": [
+   11,
+   113,
+   0
+  ],
+  "casual:ckpt_10000224|scripted_0.3": [
+   79,
+   41,
+   0
+  ],
+  "casual:ckpt_10000224|v3f:ckpt_14000256": [
+   11,
+   113,
+   0
+  ],
+  "casual:ckpt_10000224|scripted_0.5": [
+   83,
+   41,
+   0
+  ],
+  "casual:ckpt_10000224|v3d:ckpt_6000192": [
+   11,
+   113,
+   0
+  ],
+  "casual:ckpt_10000224|scripted_0.8": [
+   73,
+   55,
+   0
+  ],
+  "casual:ckpt_10000224|scripted_1.0": [
+   76,
+   46,
+   0
+  ],
+  "casual:ckpt_10000224|random": [
+   125,
+   0,
+   0
+  ],
+  "intermediate:ckpt_18000000|advanced:ckpt_22000032": [
+   59,
+   66,
+   0
+  ],
+  "intermediate:ckpt_18000000|expert:ckpt_30000096": [
+   38,
+   86,
+   0
+  ],
+  "intermediate:ckpt_18000000|v3d:ckpt_6000192": [
+   11,
+   113,
+   0
+  ],
+  "intermediate:ckpt_18000000|v3b:ckpt_4000032": [
+   11,
+   109,
+   0
+  ],
+  "intermediate:ckpt_18000000|v3f:ckpt_14000256": [
+   7,
+   119,
+   0
+  ],
+  "intermediate:ckpt_18000000|scripted_0.3": [
+   102,
+   20,
+   0
+  ],
+  "intermediate:ckpt_18000000|scripted_0.5": [
+   101,
+   22,
+   0
+  ],
+  "intermediate:ckpt_18000000|scripted_0.8": [
+   92,
+   30,
+   0
+  ],
+  "intermediate:ckpt_18000000|scripted_1.0": [
+   95,
+   25,
+   0
+  ],
+  "intermediate:ckpt_18000000|random": [
+   127,
+   0,
+   0
+  ],
+  "advanced:ckpt_22000032|expert:ckpt_30000096": [
+   45,
+   77,
+   0
+  ],
+  "advanced:ckpt_22000032|v3b:ckpt_4000032": [
+   21,
+   100,
+   0
+  ],
+  "advanced:ckpt_22000032|v3d:ckpt_6000192": [
+   14,
+   106,
+   0
+  ],
+  "advanced:ckpt_22000032|v3f:ckpt_14000256": [
+   15,
+   106,
+   0
+  ],
+  "advanced:ckpt_22000032|scripted_0.3": [
+   108,
+   16,
+   0
+  ],
+  "advanced:ckpt_22000032|scripted_0.5": [
+   103,
+   19,
+   0
+  ],
+  "advanced:ckpt_22000032|scripted_0.8": [
+   93,
+   29,
+   0
+  ],
+  "advanced:ckpt_22000032|scripted_1.0": [
+   103,
+   21,
+   0
+  ],
+  "advanced:ckpt_22000032|random": [
+   125,
+   1,
+   0
+  ],
+  "expert:ckpt_30000096|v3b:ckpt_4000032": [
+   27,
+   82,
+   32
+  ],
+  "expert:ckpt_30000096|scripted_0.3": [
+   117,
+   5,
+   12
+  ],
+  "expert:ckpt_30000096|v3d:ckpt_6000192": [
+   24,
+   85,
+   31
+  ],
+  "expert:ckpt_30000096|v3f:ckpt_14000256": [
+   16,
+   94,
+   30
+  ],
+  "expert:ckpt_30000096|scripted_0.5": [
+   106,
+   12,
+   23
+  ],
+  "expert:ckpt_30000096|scripted_0.8": [
+   110,
+   13,
+   11
+  ],
+  "expert:ckpt_30000096|scripted_1.0": [
+   108,
+   8,
+   24
+  ],
+  "expert:ckpt_30000096|random": [
+   119,
+   4,
+   0
+  ],
+  "v3b:ckpt_4000032|scripted_0.5": [
+   118,
+   3,
+   0
+  ],
+  "v3b:ckpt_4000032|scripted_0.3": [
+   116,
+   2,
+   15
+  ],
+  "v3b:ckpt_4000032|v3f:ckpt_14000256": [
+   38,
+   73,
+   29
+  ],
+  "v3b:ckpt_4000032|v3d:ckpt_6000192": [
+   51,
+   59,
+   32
+  ],
+  "v3b:ckpt_4000032|random": [
+   124,
+   1,
+   0
+  ],
+  "v3b:ckpt_4000032|scripted_1.0": [
+   114,
+   5,
+   14
+  ],
+  "v3b:ckpt_4000032|scripted_0.8": [
+   121,
+   2,
+   0
+  ],
+  "v3d:ckpt_6000192|scripted_0.3": [
+   121,
+   4,
+   0
+  ],
+  "v3d:ckpt_6000192|scripted_0.5": [
+   120,
+   1,
+   0
+  ],
+  "v3d:ckpt_6000192|scripted_0.8": [
+   118,
+   7,
+   0
+  ],
+  "v3d:ckpt_6000192|v3f:ckpt_14000256": [
+   48,
+   67,
+   28
+  ],
+  "v3d:ckpt_6000192|random": [
+   124,
+   0,
+   0
+  ],
+  "v3f:ckpt_14000256|scripted_0.3": [
+   125,
+   0,
+   0
+  ],
+  "v3d:ckpt_6000192|scripted_1.0": [
+   115,
+   6,
+   0
+  ],
+  "v3f:ckpt_14000256|scripted_0.5": [
+   121,
+   1,
+   0
+  ],
+  "v3f:ckpt_14000256|random": [
+   126,
+   1,
+   0
+  ],
+  "v3f:ckpt_14000256|scripted_0.8": [
+   118,
+   1,
+   12
+  ],
+  "v3f:ckpt_14000256|scripted_1.0": [
+   118,
+   4,
+   0
+  ],
+  "scripted_0.3|scripted_0.5": [
+   44,
+   78,
+   0
+  ],
+  "scripted_0.3|scripted_0.8": [
+   43,
+   79,
+   0
+  ],
+  "scripted_0.3|random": [
+   119,
+   1,
+   0
+  ],
+  "scripted_0.3|scripted_1.0": [
+   42,
+   79,
+   22
+  ],
+  "scripted_0.5|random": [
+   120,
+   1,
+   0
+  ],
+  "scripted_0.5|scripted_0.8": [
+   47,
+   74,
+   0
+  ],
+  "scripted_0.5|scripted_1.0": [
+   45,
+   78,
+   0
+  ],
+  "scripted_0.8|random": [
+   125,
+   1,
+   0
+  ],
+  "scripted_1.0|random": [
+   121,
+   2,
+   0
+  ],
+  "scripted_0.8|scripted_1.0": [
+   73,
+   50,
+   0
+  ]
+ },
+ "flat_vs_v1": null,
+ "mix": [
+  [
+   "walled",
+   "sword"
+  ],
+  [
+   "walled",
+   "axe"
+  ],
+  [
+   "walled",
+   "bow"
+  ],
+  [
+   "bridge",
+   "bridge"
+  ],
+  [
+   "islands",
+   "loot"
+  ],
+  [
+   "town",
+   "loot"
+  ],
+  [
+   "platform",
+   "sumo"
+  ],
+  [
+   "islands",
+   "bedwars"
+  ],
+  [
+   "hills",
+   "build_uhc"
+  ],
+  [
+   "walled",
+   "mace"
+  ]
+ ]
+}
