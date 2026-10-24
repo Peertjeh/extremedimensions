@@ -1443,6 +1443,25 @@ final class BotTests {
 			logBot("hunger games bot", m, botsIn(m).get(0), "hgLogged2");
 			return false;
 		});
+		s.run(tag + ": the sponsors send the first bot a silver parachute", () -> {
+			net.battlehub.games.HungerGamesMatch hg = (net.battlehub.games.HungerGamesMatch) matchOfA();
+			BotPlayer b = botsIn(hg).get(0);
+			VARS.put("hgGiftBot", b.getUUID());
+			hg.capitol().sponsors().favour(b.getUUID(), net.battlehub.core.hunger.Favour.threshold(0));
+		});
+		s.waitFor(tag + ": the bot goes to its parachute and empties the barrel", 1600, () -> {
+			Match m = matchOfA();
+			if (!(m instanceof net.battlehub.games.HungerGamesMatch hg)) return false;
+			watchFalls(server, m);
+			for (var e : hg.capitol().sponsors().landed().entrySet()) {
+				if (!VARS.get("hgGiftBot").equals(e.getValue())) continue;
+				if (hg.arena().level().getBlockEntity(e.getKey()) instanceof net.minecraft.world.Container c && c.isEmpty()) {
+					net.battlehub.BattleHub.LOGGER.info("SELFTEST hunger games bot emptied its parachute at {}", e.getKey());
+					return true;
+				}
+			}
+			return false;
+		});
 		endAndClean(s, tag);
 		s.run(tag + ": countdown and settings as before", () -> {
 			cfg().partyFillTo = 4;

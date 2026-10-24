@@ -202,11 +202,49 @@ public final class HubCommands {
 										.executes(c -> practice(c.getSource().getPlayerOrException(), StringArgumentType.getString(c, "mode"),
 												StringArgumentType.getString(c, "level"), StringArgumentType.getString(c, "kit")))))));
 
+		// Hunger Games: watchers and the fallen send a tribute a gift with their coins
+		d.register(Commands.literal("sponsor").executes(c -> {
+			ServerPlayer p = c.getSource().getPlayerOrException();
+			Match m = Matches.of(p.getUUID());
+			if (m instanceof net.battlehub.games.HungerGamesMatch hg && hg.phase() == Match.Phase.RUNNING && hg.capitol().sponsors().maySponsor(p)) {
+				new net.battlehub.gui.SponsorMenu(p, hg, null).open();
+			} else {
+				Msg.send(p, "hg.sponsor.not_now");
+			}
+			return 1;
+		}));
+
 		d.register(Commands.literal("battlehub")
 				.executes(c -> {
 					new MainMenu(c.getSource().getPlayerOrException()).open();
 					return 1;
 				})
+				// the Gamemakers at work in a running Hunger Games (admins): an event, a night, a parachute for yourself
+				.then(Commands.literal("hg").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+						.then(Commands.literal("event").then(Commands.argument("name", StringArgumentType.word())
+								.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.stream.Stream.concat(
+										java.util.stream.Stream.of(net.battlehub.core.hunger.HgSchedule.FEAST),
+										net.battlehub.core.hunger.HgSchedule.KINDS.stream().map(net.battlehub.core.hunger.HgSchedule.Kind::id)).toList(), b))
+								.executes(c -> {
+									net.battlehub.games.HungerGamesMatch hg = runningHungerGames(c.getSource());
+									boolean ok = hg != null && hg.capitol().gamemakers().start(StringArgumentType.getString(c, "name"));
+									c.getSource().sendSuccess(() -> Lang.tr(ok ? "hg.admin.started" : "hg.admin.none", StringArgumentType.getString(c, "name")), false);
+									return ok ? 1 : 0;
+								})))
+						.then(Commands.literal("night").executes(c -> {
+							net.battlehub.games.HungerGamesMatch hg = runningHungerGames(c.getSource());
+							if (hg != null) hg.capitol().tributes().night();
+							return hg != null ? 1 : 0;
+						}))
+						.then(Commands.literal("power").then(Commands.argument("id", StringArgumentType.word())
+								.suggests((c, b) -> SharedSuggestionProvider.suggest(net.battlehub.games.hunger.PowerUps.KINDS.keySet(), b))
+								.executes(c -> {
+									ServerPlayer p = c.getSource().getPlayerOrException();
+									net.minecraft.world.item.ItemStack st = net.battlehub.games.hunger.PowerUps.stack(p.level().getServer(),
+											StringArgumentType.getString(c, "id"), 1);
+									if (!st.isEmpty()) p.getInventory().add(st);
+									return st.isEmpty() ? 0 : 1;
+								}))))
 				// the fight logs for training the combat model
 				.then(Commands.literal("fights").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 						.executes(c -> {
@@ -700,5 +738,15 @@ public final class HubCommands {
 					net.battlehub.social.CustomGames.leave(c.getSource().getPlayerOrException(), false);
 					return 1;
 				})));
+	}
+
+	/** The running Hunger Games of the admin (playing or watching), or the only one running; null when none. */
+	private static net.battlehub.games.HungerGamesMatch runningHungerGames(CommandSourceStack src) {
+		if (src.getEntity() instanceof ServerPlayer p && Matches.of(p.getUUID()) instanceof net.battlehub.games.HungerGamesMatch hg
+				&& hg.phase() == Match.Phase.RUNNING) return hg;
+		for (Match m : Matches.all()) {
+			if (m instanceof net.battlehub.games.HungerGamesMatch hg && hg.phase() == Match.Phase.RUNNING) return hg;
+		}
+		return null;
 	}
 }

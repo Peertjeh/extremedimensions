@@ -178,6 +178,12 @@ final class BotBrain {
 				return;
 			}
 		}
+		if (!threatened && m.botHolds(bot)) {
+			// busy with something of the game (breaking a crate's seal): standing still
+			bot.setSprinting(false);
+			stopUsing();
+			return;
+		}
 		// a busy server: everyone thinks a little less often
 		mind.stretch(Bots.thinkStretch());
 		if (ticks % 5 == 0) show(m);

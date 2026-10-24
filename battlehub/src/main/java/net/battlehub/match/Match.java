@@ -242,6 +242,11 @@ public abstract class Match {
 	/** Right-click with a game item (an item tagged "game.something"). */
 	public void onUseGameItem(ServerPlayer p, String tag) {}
 
+	/** A right-click with an item in the hand (in the air or on a block the match let through); PASS: as usual. */
+	public InteractionResult onUseItem(ServerPlayer p, ItemStack held) {
+		return InteractionResult.PASS;
+	}
+
 	/** The player swung their arm (also when hitting nothing at all). */
 	public void onSwing(ServerPlayer p) {}
 
@@ -365,6 +370,11 @@ public abstract class Match {
 
 	/** Every tick, for each bot in play: game chores (buying blocks at the shop, ...). */
 	public void botTick(ServerPlayer bot) {}
+
+	/** Whether a bot should stand still now for the match's sake (it is busy with something of the game). */
+	public boolean botHolds(ServerPlayer bot) {
+		return false;
+	}
 
 	/**
 	 * The role of a bot in its team ({@link net.battlehub.core.ai.Roles}): who of the team's bots keeps {@code home}

@@ -52,7 +52,7 @@ import net.minecraft.world.phys.Vec3;
  * better chests. The first half minute nobody can hurt anyone, later the chests are filled again once, and a border
  * closes in on the plaza. Whoever dies drops everything; the last one alive wins (when time is up: the most kills).
  */
-public final class HungerGamesMatch extends PartyMatch {
+public final class HungerGamesMatch extends PartyMatch implements net.battlehub.games.hunger.HungerHost {
 	private static final String[] CHESTS = {"cornucopia", "landmark_chest", "chest"};
 
 	private final Random loot = new Random();
@@ -65,12 +65,60 @@ public final class HungerGamesMatch extends PartyMatch {
 	private int refills;
 	/** Blocks players put down: only those (and soft things such as leaves and cobwebs) can be broken. */
 	private final Set<BlockPos> placed = new HashSet<>();
+	/** The real Hunger Games: tributes, Gamemakers, sponsors, locked loot and power-ups (1.43). */
+	private final net.battlehub.games.hunger.Capitol capitol;
 
 	public HungerGamesMatch(int id, MinecraftServer server, List<ServerPlayer> players) {
 		super(id, GameMode.HUNGER_GAMES, server, players);
 		int r = ConfigManager.config().lobby.islandRadius;
 		shrink = new BorderShrink(2 * (r + 10), Math.max(8, game().setting("borderEnd", 24)), (int) game().setting("borderDelaySeconds", 300) * 20,
 				(int) game().setting("borderShrinkSeconds", 600) * 20);
+		capitol = new net.battlehub.games.hunger.Capitol(this, loot.nextLong(), graceTicks(), timeLimitTicks(),
+				(int) game().setting("feastSeconds", 480) * 20);
+	}
+
+	/** The Capitol of this match: its tributes, Gamemakers, sponsors, vaults and power-ups. */
+	public net.battlehub.games.hunger.Capitol capitol() {
+		return capitol;
+	}
+
+	// ------------------------------------------------------------------ what the Capitol needs (HungerHost)
+
+	@Override
+	public net.minecraft.server.level.ServerLevel level() {
+		return arena.level();
+	}
+
+	@Override
+	public List<ServerPlayer> tributes() {
+		List<ServerPlayer> out = new ArrayList<>();
+		for (UUID id : alive) {
+			ServerPlayer p = player(id);
+			if (p != null && active(id) && !p.isSpectator()) out.add(p);
+		}
+		return out;
+	}
+
+	@Override
+	public List<ServerPlayer> audience() {
+		List<ServerPlayer> out = new ArrayList<>();
+		forEveryone(out::add);
+		return out;
+	}
+
+	@Override
+	public int runTicks() {
+		return runTicks;
+	}
+
+	@Override
+	public Random rng() {
+		return loot;
+	}
+
+	@Override
+	public Vec3 plaza() {
+		return Vec3.atBottomCenterOf(arena.origin().above());
 	}
 
 	@Override
@@ -150,11 +198,6 @@ public final class HungerGamesMatch extends PartyMatch {
 	}
 
 	@Override
-	protected void onWatcherAdded(ServerPlayer p) {
-		sendBorder(p);
-	}
-
-	@Override
 	protected void onRestored(ServerPlayer p) {
 		p.connection.send(new ClientboundInitializeBorderPacket(p.level().getWorldBorder()));
 	}
@@ -164,15 +207,39 @@ public final class HungerGamesMatch extends PartyMatch {
 	@Override
 	protected void onArenaReady() {
 		fillAll();
+		capitol.arenaReady();
 	}
 
 	private void fillAll() {
 		int house = (int) Math.max(1, game().setting("houseChestRolls", 4));
 		int landmark = (int) Math.max(1, game().setting("landmarkChestRolls", 6));
 		int cornucopia = (int) Math.max(1, game().setting("cornucopiaChestRolls", 7));
-		for (BlockPos pos : arena.marks("chest")) fill(pos, ConfigManager.hungerGames().house(), house);
-		for (BlockPos pos : arena.marks("landmark_chest")) fill(pos, ConfigManager.hungerGames().landmark(), landmark);
+		var server = arena.level().getServer();
+		for (BlockPos pos : arena.marks("chest")) {
+			fill(pos, ConfigManager.hungerGames().house(), house);
+			// now and then a vault key in a house
+			if (loot.nextInt(100) < 7) extra(pos, net.battlehub.games.hunger.PowerUps.stack(server, "key", 1));
+		}
+		for (BlockPos pos : arena.marks("landmark_chest")) {
+			fill(pos, ConfigManager.hungerGames().landmark(), landmark);
+			if (loot.nextInt(100) < 25) {
+				List<String> kinds = new ArrayList<>(net.battlehub.games.hunger.PowerUps.KINDS.keySet());
+				extra(pos, net.battlehub.games.hunger.PowerUps.stack(server, kinds.get(loot.nextInt(kinds.size())), 1));
+			}
+		}
 		for (BlockPos pos : arena.marks("cornucopia")) fill(pos, ConfigManager.hungerGames().cornucopia(), cornucopia);
+	}
+
+	/** One more stack in a free slot of a chest. */
+	private void extra(BlockPos pos, ItemStack st) {
+		if (st.isEmpty() || !(arena.level().getBlockEntity(pos) instanceof Container c)) return;
+		for (int i = 0; i < c.getContainerSize(); i++) {
+			if (c.getItem(i).isEmpty()) {
+				c.setItem(i, st);
+				c.setChanged();
+				return;
+			}
+		}
 	}
 
 	private void fill(BlockPos pos, List<Loot.Entry> table, int rolls) {
@@ -199,10 +266,26 @@ public final class HungerGamesMatch extends PartyMatch {
 		String week = HungerMaps.week();
 		int grace = graceTicks() / 20;
 		forEveryone(p -> Msg.send(p, "hg.go", week, Lang.tr(p, "hg.theme." + themeId), grace));
+		capitol.go(tributes());
+		forWatchers(this::offerSponsoring);
+	}
+
+	/** Watchers and the fallen can sponsor a tribute: a line in chat with a button. */
+	private void offerSponsoring(ServerPlayer p) {
+		if (capitol.sponsors().maySponsor(p)) {
+			Msg.raw(p, Msg.button(p, "hg.sponsor.button", "hg.sponsor.button.hover", "/sponsor"));
+		}
+	}
+
+	@Override
+	protected void onWatcherAdded(ServerPlayer p) {
+		sendBorder(p);
+		if (phase == Phase.RUNNING) offerSponsoring(p);
 	}
 
 	@Override
 	protected void tickGame() {
+		capitol.tick();
 		if (runTicks == graceTicks() && graceTicks() > 0) {
 			forEveryone(p -> {
 				Msg.send(p, "hg.grace_over");
@@ -269,6 +352,7 @@ public final class HungerGamesMatch extends PartyMatch {
 	/** Out, with a cannon shot everyone hears, and everything you carried falls where you died. */
 	@Override
 	protected void onKilled(ServerPlayer victim, ServerPlayer killer) {
+		capitol.killed(victim, killer);
 		victim.getInventory().dropAll();
 		int left = Math.max(0, alive.size() - 1);
 		String who = name(victim.getUUID());
@@ -277,6 +361,40 @@ public final class HungerGamesMatch extends PartyMatch {
 			Msg.sound(p, SoundEvents.LIGHTNING_BOLT_THUNDER, 0.6f, 0.6f);
 		});
 		eliminate(victim);
+		// the fallen can still sponsor someone
+		offerSponsoring(victim);
+	}
+
+	/** Damage to another tribute wins the sponsors' favour. */
+	@Override
+	public void recordHit(ServerPlayer attacker, ServerPlayer victim, float amount, boolean arrow) {
+		super.recordHit(attacker, victim, amount, arrow);
+		if (phase == Phase.RUNNING && attacker != null && attacker != victim && alive.contains(attacker.getUUID())) capitol.hit(attacker, amount);
+	}
+
+	@Override
+	protected void onClosed() {
+		capitol.end();
+	}
+
+	/**
+	 * Locked loot (a vault needs a key, a crate five seconds of sneaking, the Capitol's chest the Feast), and power-ups
+	 * used on a block as in the air.
+	 */
+	@Override
+	public net.minecraft.world.InteractionResult onUseBlock(ServerPlayer p, net.minecraft.world.phys.BlockHitResult hit, ItemStack held) {
+		if (phase != Phase.RUNNING || !active(p.getUUID())) return net.minecraft.world.InteractionResult.PASS;
+		BlockPos pos = hit.getBlockPos();
+		if (arena.level().getBlockEntity(pos) instanceof Container) return capitol.useBlock(p, pos, held);
+		String power = net.battlehub.games.hunger.PowerUps.id(held);
+		if (power != null && !"mine".equals(power) && capitol.useItem(p, held)) return net.minecraft.world.InteractionResult.SUCCESS;
+		return net.minecraft.world.InteractionResult.PASS;
+	}
+
+	@Override
+	public net.minecraft.world.InteractionResult onUseItem(ServerPlayer p, ItemStack held) {
+		if (phase != Phase.RUNNING || !active(p.getUUID())) return net.minecraft.world.InteractionResult.PASS;
+		return capitol.useItem(p, held) ? net.minecraft.world.InteractionResult.SUCCESS : net.minecraft.world.InteractionResult.PASS;
 	}
 
 	@Override
@@ -302,6 +420,7 @@ public final class HungerGamesMatch extends PartyMatch {
 		if (phase != Phase.RUNNING || !active(p.getUUID()) || !arena.inPlayArea(target)) return false;
 		if (!(held.getItem() instanceof BlockItem) && !(held.getItem() instanceof BucketItem)) return false;
 		placed.add(target.immutable());
+		capitol.placed(p, target, held);
 		return true;
 	}
 
@@ -309,12 +428,18 @@ public final class HungerGamesMatch extends PartyMatch {
 	@Override
 	public boolean onBreakBlock(ServerPlayer p, BlockPos pos, BlockState state) {
 		if (phase != Phase.RUNNING || !active(p.getUUID())) return false;
-		return placed.remove(pos) || state.is(BlockTags.LEAVES) || state.is(Blocks.COBWEB) || state.canBeReplaced();
+		if (placed.remove(pos)) {
+			capitol.broken(pos);
+			return true;
+		}
+		return state.is(BlockTags.LEAVES) || state.is(Blocks.COBWEB) || state.canBeReplaced();
 	}
 
 	@Override
 	public Component status(ServerPlayer viewer) {
-		return Lang.tr(viewer, "hg.status", alive.size(), (int) Math.round(borderSize()));
+		int d = capitol.tributes().district(viewer.getUUID());
+		return d > 0 ? Lang.tr(viewer, "hg.status_district", d, alive.size(), (int) Math.round(borderSize()))
+				: Lang.tr(viewer, "hg.status", alive.size(), (int) Math.round(borderSize()));
 	}
 
 	// ------------------------------------------------------------------ bots
@@ -346,25 +471,43 @@ public final class HungerGamesMatch extends PartyMatch {
 		if (BorderShrink.outside(bot.getX(), bot.getZ(), cx, cz, size - 12) > 0) {
 			return net.battlehub.core.ai.Objective.attack(v3(centre), "inside the border");
 		}
-		BlockPos chest = botChest(bot, size);
-		if (chest != null) {
-			BlockState st = arena.level().getBlockState(chest);
-			BlockPos front = st.hasProperty(BlockStateProperties.HORIZONTAL_FACING) ? chest.relative(st.getValue(BlockStateProperties.HORIZONTAL_FACING)) : chest;
-			return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(front)), "a chest");
+		// away from what the Gamemakers sent (fire, fog, a swarm, mutts, lightning)
+		Vec3 danger = capitol.gamemakers().danger(bot.position());
+		if (danger != null) {
+			Vec3 away = bot.position().subtract(danger);
+			away = away.horizontalDistanceSqr() < 0.01 ? new Vec3(1, 0, 0) : new Vec3(away.x, 0, away.z).normalize();
+			Vec3 to = bot.position().add(away.scale(16));
+			if (BorderShrink.outside(to.x, to.z, cx, cz, size - 8) > 0) to = centre;
+			return net.battlehub.core.ai.Objective.attack(v3(to), "away from the Gamemakers' trap");
 		}
+		// its own parachute, the Feast, a vault it has a key for
+		BlockPos gift = capitol.botTarget(bot);
+		if (gift != null) return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(front(gift))), "the Capitol's gifts");
+		BlockPos crate = capitol.vaults().nearestCrate(bot.position(), 20);
+		if (crate != null && Math.abs(crate.getY() - bot.getY()) <= 4) {
+			return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(front(crate))), "a sealed crate");
+		}
+		BlockPos chest = botChest(bot, size);
+		if (chest != null) return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(front(chest))), "a chest");
 		if (Math.hypot(bot.getX() - cx, bot.getZ() - cz) > 20) return net.battlehub.core.ai.Objective.attack(v3(centre), "the plaza");
 		return null;
+	}
+
+	/** Where to stand to open a container: in front of it when it has a front. */
+	private BlockPos front(BlockPos pos) {
+		BlockState st = arena.level().getBlockState(pos);
+		return st.hasProperty(BlockStateProperties.HORIZONTAL_FACING) ? pos.relative(st.getValue(BlockStateProperties.HORIZONTAL_FACING)) : pos;
 	}
 
 	private BlockPos botChest(ServerPlayer bot, double size) {
 		Set<BlockPos> done = botLooted.getOrDefault(bot.getUUID(), Set.of());
 		double cx = arena.origin().getX() + 0.5, cz = arena.origin().getZ() + 0.5;
-		// the nearest one, on about its own level (a chest up many floors waits until it walks past)
+		// the nearest one, on about its own level (a chest up many floors waits until it walks past); not a locked one
 		BlockPos best = null;
 		double bestD = Double.MAX_VALUE;
 		for (String mark : CHESTS) {
 			for (BlockPos pos : arena.marks(mark)) {
-				if (done.contains(pos) || Math.abs(pos.getY() - bot.getY()) > 6) continue;
+				if (done.contains(pos) || Math.abs(pos.getY() - bot.getY()) > 6 || capitol.vaults().locked(pos)) continue;
 				if (BorderShrink.outside(pos.getX() + 0.5, pos.getZ() + 0.5, cx, cz, size - 6) > 0) continue;
 				double d = Math.hypot(pos.getX() + 0.5 - bot.getX(), pos.getZ() + 0.5 - bot.getZ());
 				if (d < bestD && hasLoot(pos)) {
@@ -380,31 +523,69 @@ public final class HungerGamesMatch extends PartyMatch {
 		return arena.level().getBlockEntity(pos) instanceof Container c && !c.isEmpty();
 	}
 
+	/** Bots breaking a crate's seal now: they sneak beside it and stand still. */
+	private final Set<UUID> botsCracking = new HashSet<>();
+
 	/**
-	 * At a chest it can see (within reach, nothing in between) it opens it and loots it as a player does, a stack at a time, and puts on better
-	 * armor afterwards (bot/Looting); hungry, it eats.
+	 * At a chest it can see (within reach, nothing in between) it opens it and loots it as a player does, a stack at a
+	 * time, and puts on better armor afterwards (bot/Looting); hungry, it eats. With a key it opens a vault; beside a
+	 * sealed crate it sneaks until the seal breaks; it drinks a salve when hurt.
 	 */
 	@Override
 	public void botTick(ServerPlayer bot) {
-		if (runTicks % 5 != 0 || arena == null || phase != Phase.RUNNING) return;
+		if (arena == null || phase != Phase.RUNNING) return;
+		// every tick: sneaking beside a sealed crate (the brain lets go of the keys each tick)
+		BlockPos crate = capitol.vaults().nearestCrate(bot.position(), net.battlehub.core.hunger.Crack.REACH - 0.3);
+		boolean calm = bot.hurtTime == 0 && !enemyNear(bot, 5);
+		if (crate != null && calm && !net.battlehub.bot.Looting.busy(bot)) {
+			bot.setShiftKeyDown(true);
+			botsCracking.add(bot.getUUID());
+		} else {
+			botsCracking.remove(bot.getUUID());
+		}
+		if (runTicks % 5 != 0) return;
 		if (runTicks % 40 == 0 && bot.getFoodData().getFoodLevel() < 14) eat(bot);
+		if (runTicks % 20 == 0) capitol.botUsePower(bot);
 		if (net.battlehub.bot.Looting.busy(bot)) return;
 		Set<BlockPos> done = botLooted.computeIfAbsent(bot.getUUID(), k -> new HashSet<>());
+		List<BlockPos> extra = new ArrayList<>(capitol.sponsors().landed().keySet());
+		extra.addAll(capitol.vaults().feastChests());
 		for (String mark : CHESTS) {
 			for (BlockPos pos : arena.marks(mark)) {
-				if (done.contains(pos) || !net.battlehub.bot.Looting.canReach(bot, pos)) continue;
-				if (!hasLoot(pos)) {
-					done.add(pos);
-					continue;
-				}
-				net.battlehub.bot.Looting.start(bot, pos, () -> {
-					done.add(pos);
-					botLoots++;
-					botLootsBy.merge(mark, 1, Integer::sum);
-				});
-				return;
+				if (tryLoot(bot, pos, mark, done)) return;
 			}
 		}
+		for (BlockPos pos : extra) {
+			if (tryLoot(bot, pos, "gift", done)) return;
+		}
+	}
+
+	/** Opens one container within reach if it can (a vault with a key first); true when it started looting. */
+	private boolean tryLoot(ServerPlayer bot, BlockPos pos, String mark, Set<BlockPos> done) {
+		if (done.contains(pos) || !net.battlehub.bot.Looting.canReach(bot, pos)) return false;
+		if (capitol.vaults().locked(pos) && !capitol.botUnlock(bot, pos)) return false;
+		if (!hasLoot(pos)) {
+			done.add(pos);
+			return false;
+		}
+		net.battlehub.bot.Looting.start(bot, pos, () -> {
+			done.add(pos);
+			botLoots++;
+			botLootsBy.merge(mark, 1, Integer::sum);
+		});
+		return true;
+	}
+
+	private boolean enemyNear(ServerPlayer bot, double range) {
+		for (ServerPlayer p : tributes()) {
+			if (p != bot && isEnemy(bot.getUUID(), p.getUUID()) && p.distanceTo(bot) < range) return true;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean botHolds(ServerPlayer bot) {
+		return botsCracking.contains(bot.getUUID());
 	}
 
 	private static void eat(ServerPlayer bot) {

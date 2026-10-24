@@ -81,6 +81,7 @@ final class NewModeTests {
 		PartyTests.party(server, s, GameMode.BRIDGE_FOUR_CHAOS, NewModeTests::bridgeFourChaos);
 		PartyTests.party(server, s, GameMode.HUNGER_GAMES, NewModeTests::hungerGames,
 				new String[] {"map:theme:nether", "map:theme:nether", "map:theme:nether", "map:theme:desert"});
+		PartyTests.party(server, s, GameMode.HUNGER_GAMES, NewModeTests::realHungerGames);
 		bridge(server, s);
 		bridgeChaos(server, s);
 		boxing(server, s);
@@ -267,6 +268,164 @@ final class NewModeTests {
 		});
 		s.waitFor("hunger games: A is the last one and wins", 60, () -> match().phase() != Match.Phase.RUNNING
 				&& match().outcome(p(A).getUUID()) == Outcome.WIN);
+	}
+
+	private static HungerGamesMatch hg() {
+		return (HungerGamesMatch) match();
+	}
+
+	private static net.minecraft.world.InteractionResult click(ServerPlayer p, BlockPos pos, ItemStack held) {
+		return hg().onUseBlock(p, new net.minecraft.world.phys.BlockHitResult(net.minecraft.world.phys.Vec3.atCenterOf(pos),
+				net.minecraft.core.Direction.UP, pos, false), held);
+	}
+
+	private static void shield(String... names) {
+		for (String n : names) {
+			net.battlehub.util.Ids.effect("minecraft:resistance").ifPresent(h -> p(n).addEffect(
+					new net.minecraft.world.effect.MobEffectInstance(h, 20 * 120, 4, false, false, false)));
+			p(n).setHealth(p(n).getMaxHealth());
+			p(n).getFoodData().setFoodLevel(20);
+		}
+	}
+
+	/**
+	 * The real Hunger Games (1.43): the reaping, locked loot (a vault and its key, a sealed crate, the Capitol's chest),
+	 * every Gamemaker event, the Feast, a parachute from the sponsors and one from a watcher, power-ups, a night with
+	 * the fallen in the sky, and nothing left behind when it ends.
+	 */
+	private static void realHungerGames(Script s) {
+		String t = "real hunger games";
+		String C = "BHTestC", D = "BHTestD";
+		s.check(t + ": the reaping: two tributes per district, training scores of 1 to 12, the games numbered", () -> {
+			var tr = hg().capitol().tributes();
+			java.util.Map<Integer, Integer> per = new java.util.HashMap<>();
+			for (String n : new String[] {A, B, C, D}) {
+				int d = tr.district(p(n).getUUID()), sc = tr.score(p(n).getUUID());
+				if (d < 1 || sc < 1 || sc > 12) return false;
+				per.merge(d, 1, Integer::sum);
+			}
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST real hunger games: the {}th, districts {}, vaults {}, crates {}, Capitol's chest {}, plan {}",
+					tr.number(), per, hg().capitol().vaults().vaults(), hg().capitol().vaults().crates(), hg().capitol().vaults().capitolChest(),
+					hg().capitol().gamemakers().plan());
+			return tr.number() >= 1 && per.size() == 2 && per.values().stream().allMatch(c -> c == 2);
+		});
+		s.check(t + ": vaults, sealed crates and the Capitol's chest are set up and locked", () -> {
+			var v = hg().capitol().vaults();
+			return v.vaults() >= 1 && v.crates() >= 3 && v.capitolChest() != null && v.locked(v.capitolChest());
+		});
+		s.run(t + ": everyone is shielded (resistance) for the Gamemakers' tests", () -> shield(A, B, C, D));
+		s.check(t + ": a vault stays shut without a key and opens with one (the key is used up)", () -> {
+			var v = hg().capitol().vaults();
+			BlockPos vault = null;
+			for (BlockPos pos : hg().arena().marks("landmark_chest")) {
+				if (v.isVault(pos)) vault = pos;
+			}
+			if (vault == null) return false;
+			boolean shut = click(p(A), vault, ItemStack.EMPTY) == net.minecraft.world.InteractionResult.FAIL;
+			ItemStack key = net.battlehub.games.hunger.PowerUps.stack(p(A).level().getServer(), "key", 1);
+			p(A).getInventory().setItem(0, key);
+			boolean opened = click(p(A), vault, p(A).getInventory().getItem(0)) == net.minecraft.world.InteractionResult.PASS;
+			return shut && opened && !v.locked(vault) && v.vaultsOpened() == 1 && p(A).getInventory().getItem(0).isEmpty();
+		});
+		s.check(t + ": the Capitol's chest stays shut until the Feast", () -> click(p(A), hg().capitol().vaults().capitolChest(), ItemStack.EMPTY)
+				== net.minecraft.world.InteractionResult.FAIL);
+		s.run(t + ": B stands on a sealed crate, sneaking", () -> {
+			var v = hg().capitol().vaults();
+			BlockPos crate = v.nearestCrate(hg().plaza(), 500);
+			VARS.put("hgCrate", crate);
+			PartyTests.tp(p(B), crate.getX() + 0.5, crate.getY() + 1, crate.getZ() + 0.5);
+			p(B).setShiftKeyDown(true);
+		});
+		s.check(t + ": a click on it says it is sealed", () -> click(p(B), (BlockPos) VARS.get("hgCrate"), ItemStack.EMPTY) == net.minecraft.world.InteractionResult.FAIL);
+		s.waitFor(t + ": the seal is half broken", 80, () -> hg().capitol().vaults().crateShare((BlockPos) VARS.get("hgCrate")) >= 0.5);
+		s.run(t + ": B is hurt", () -> p(B).hurtServer(p(B).level(), p(B).damageSources().magic(), 1f));
+		s.check(t + ": the hurt starts it over", () -> hg().capitol().vaults().crateShare((BlockPos) VARS.get("hgCrate")) < 0.2);
+		s.waitFor(t + ": after five seconds of sneaking the seal breaks", 160, () -> !hg().capitol().vaults().locked((BlockPos) VARS.get("hgCrate"))
+				&& hg().capitol().vaults().cratesOpened() == 1);
+		s.run(t + ": B stands up again", () -> p(B).setShiftKeyDown(false));
+		// the Gamemakers: every event starts
+		for (String ev : new String[] {"wildfire", "fog", "mutts", "tracker_jackers", "storm", "supplies", "revealed", "acid_rain", "jabberjays"}) {
+			s.check(t + ": the Gamemakers send " + ev, () -> hg().capitol().gamemakers().start(ev) && hg().capitol().gamemakers().running().contains(ev));
+		}
+		s.check(t + ": mutts hunt, a swarm flies, A glows, supplies fall", () -> {
+			long mutts = hg().level().getEntities(net.minecraft.world.entity.EntityType.ZOGLIN, hg().arena().bounds(), e -> true).size();
+			boolean glows = p(A).hasEffect(net.battlehub.util.Ids.effect("minecraft:glowing").orElseThrow());
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST real hunger games events: running {}, mutts {}, swarms {}, parachutes falling {}",
+					hg().capitol().gamemakers().running(), mutts, hg().capitol().gamemakers().swarms(), hg().capitol().sponsors().falling());
+			return mutts >= 4 && hg().capitol().gamemakers().swarms() >= 1 && glows && hg().capitol().sponsors().falling() >= 5;
+		});
+		s.run(t + ": the Feast", () -> hg().capitol().gamemakers().start("feast"));
+		s.check(t + ": tables of loot round the cornucopia, and the Capitol's chest is open", () -> !hg().capitol().vaults().feastChests().isEmpty()
+				&& click(p(A), hg().capitol().vaults().capitolChest(), ItemStack.EMPTY) == net.minecraft.world.InteractionResult.PASS);
+		s.run(t + ": the sponsors like A (enough favour for a parachute)", () -> {
+			shield(A, B, C, D);
+			VARS.put("hgChutes", hg().capitol().sponsors().parachutes());
+			hg().capitol().sponsors().favour(p(A).getUUID(), net.battlehub.core.hunger.Favour.threshold(0));
+		});
+		s.waitFor(t + ": a silver parachute lands next to A, a barrel with a gift", 400, () -> {
+			for (var e : hg().capitol().sponsors().landed().entrySet()) {
+				if (p(A).getUUID().equals(e.getValue()) && Math.sqrt(e.getKey().distToCenterSqr(p(A).position())) < 9) return true;
+			}
+			return false;
+		});
+		s.run(t + ": A uses a healing salve, camouflage and a tracker", () -> {
+			p(A).setHealth(8f);
+			var server = p(A).level().getServer();
+			for (String id : new String[] {"salve", "camo", "tracker"}) {
+				ItemStack st = net.battlehub.games.hunger.PowerUps.stack(server, id, 1);
+				VARS.put("hgUsed_" + id, hg().onUseItem(p(A), st) == net.minecraft.world.InteractionResult.SUCCESS && st.isEmpty());
+			}
+		});
+		s.waitFor(t + ": A heals, is invisible and has a tracker", 60, () -> Boolean.TRUE.equals(VARS.get("hgUsed_salve"))
+				&& Boolean.TRUE.equals(VARS.get("hgUsed_camo")) && Boolean.TRUE.equals(VARS.get("hgUsed_tracker")) && p(A).getHealth() > 9f
+				&& p(A).isInvisible() && hg().capitol().powers().tracking(p(A).getUUID()));
+		s.run(t + ": A puts a landmine down; C steps on it", () -> {
+			BlockPos at = BlockPos.containing(p(C).position());
+			hg().level().setBlockAndUpdate(at, Blocks.STONE_PRESSURE_PLATE.defaultBlockState());
+			hg().capitol().placed(p(A), at, net.battlehub.games.hunger.PowerUps.stack(p(A).level().getServer(), "mine", 1));
+		});
+		s.waitFor(t + ": the mine goes off (the plate is gone)", 40, () -> hg().capitol().powers().minesBlown() == 1);
+		s.waitFor(t + ": the peace ends", 700, () -> !hg().inGrace());
+		s.run(t + ": A kills D", () -> {
+			p(D).removeAllEffects();
+			VARS.put("hgKeysA", countKeys(p(A)));
+			PartyTests.hit(D, A, 1000f);
+		});
+		s.check(t + ": A took a vault key from D", () -> !hg().alive().contains(p(D).getUUID()) && countKeys(p(A)) == (int) VARS.get("hgKeysA") + 1);
+		s.run(t + ": D, out of the game, sponsors B (with coins)", () -> {
+			net.battlehub.data.PlayerStore.get(p(D)).coins += 500;
+			VARS.put("hgCoinsD", net.battlehub.data.PlayerStore.get(p(D)).coins);
+			VARS.put("hgSponsored", hg().capitol().sponsors().sponsor(p(D), p(B).getUUID(), net.battlehub.games.hunger.Sponsors.Gift.HEAL));
+		});
+		s.check(t + ": the gift is paid and on its way", () -> Boolean.TRUE.equals(VARS.get("hgSponsored"))
+				&& net.battlehub.data.PlayerStore.get(p(D)).coins == (long) VARS.get("hgCoinsD") - net.battlehub.games.hunger.Sponsors.Gift.HEAL.cost
+				&& hg().capitol().sponsors().giftsLeft(p(D)) == net.battlehub.games.hunger.Sponsors.WATCHER_GIFTS - 1);
+		s.run(t + ": night falls", () -> hg().capitol().tributes().night());
+		s.check(t + ": D shines in the sky", () -> hg().capitol().tributes().inSky() == 1);
+		s.run(t + ": B and C fall", () -> {
+			for (String n : new String[] {B, C}) {
+				ServerPlayer pl = p(n);
+				pl.removeAllEffects();
+				PartyTests.tp(pl, pl.getX(), match().arena().voidY() - 3, pl.getZ());
+			}
+		});
+		s.waitFor(t + ": A wins", 80, () -> match().phase() != Match.Phase.RUNNING && match().outcome(p(A).getUUID()) == Outcome.WIN);
+		s.waitFor(t + ": nothing of the Capitol is left (texts, parachutes, bees, mutts)", 400, () -> {
+			if (match().phase() != Match.Phase.CLOSED) return false;
+			var level = match().arena().level();
+			var box = match().arena().bounds();
+			return level.getEntitiesOfClass(net.minecraft.world.entity.Entity.class, box, e -> e.getTags().contains("battlehub_hg")).isEmpty()
+					&& level.getEntities(net.minecraft.world.entity.EntityType.ZOGLIN, box, e -> true).isEmpty()
+					&& level.getEntities(net.minecraft.world.entity.EntityType.BEE, box, e -> true).isEmpty();
+		});
+	}
+
+	private static int countKeys(ServerPlayer p) {
+		int n = 0;
+		for (int i = 0; i < p.getInventory().getContainerSize(); i++) {
+			if (net.battlehub.games.hunger.PowerUps.isKey(p.getInventory().getItem(i))) n += p.getInventory().getItem(i).getCount();
+		}
+		return n;
 	}
 
 	private static boolean filled(Match m, BlockPos pos) {

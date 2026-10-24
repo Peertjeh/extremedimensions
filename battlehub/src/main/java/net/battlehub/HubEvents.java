@@ -424,7 +424,9 @@ public final class HubEvents {
 	private static InteractionResult useItem(Player player, ItemStack held) {
 		String tag = Icon.tagOf(held);
 		if (tag.isEmpty()) {
-			return InteractionResult.PASS;
+			// an item of a match's own (the Hunger Games' power-ups)
+			Match m = player instanceof ServerPlayer sp ? matchOf(sp) : null;
+			return m == null ? InteractionResult.PASS : m.onUseItem((ServerPlayer) player, held);
 		}
 		if (player instanceof ServerPlayer sp && tag.startsWith("game.")) {
 			Match m = matchOf(sp);
