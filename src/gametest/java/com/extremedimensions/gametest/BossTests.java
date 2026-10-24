@@ -206,6 +206,10 @@ public class BossTests {
 				level.setChunkForced((cx >> 4) + x, (cz >> 4) + z, true);
 			}
 		}
+		// What an earlier test's Elder raised here sinks back now, not during this test: the performance tests fight at
+		// this same spot, and the root columns of a Matriarch's coming, still standing, sank back mid-test and read as
+		// ground the arena had not put back
+		com.extremedimensions.elder.ElderTerrain.clear();
 		int top = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, cx, cz);
 		BlockPos centre = new BlockPos(cx, top, cz);
 		java.util.Map<BlockPos, net.minecraft.world.level.block.state.BlockState> before = new java.util.HashMap<>();

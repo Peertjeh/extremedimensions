@@ -41,6 +41,11 @@ the heavy parts cost, and makes the download lighter.
 ### Tests
 - The client test types a command in the chat, sends it, opens the chat again, presses up and Enter, and checks that
   the same command came back and was sent again.
+- The arena test ("an Elder raises its arena and puts the ground back") failed now and then with blocks "not put
+  back": the performance tests fight at the same spot, and the root columns a Matriarch raises as it comes, still
+  standing from such a test, sank back in their own time in the middle of the arena test. What an earlier test raised
+  now sinks back before the arena test looks at the ground, and the performance tests leave nothing raised behind. When
+  it fails, it now names the first blocks, with what stood there and what stands there now.
 - **Every test that wakes an Elder runs alone**, in a batch of its own (thirteen of them: the Matriarch, Ferryman,
   Weaver and Knot Mother fights, the arena, the gaol, the Lance, the shockwave), and so does the Frayed Ray's hunt. The
   game runs the tests of a batch side by side in one world, and a fight reached past its own walls: a Weaver's beams

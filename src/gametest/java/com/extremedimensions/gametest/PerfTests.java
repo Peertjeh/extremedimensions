@@ -411,6 +411,8 @@ public class PerfTests {
 				elder.fade().accept(boss[0]);
 			}
 			ElderArena.clear();
+			// (and what its coming raised, which would sink back in its own time under the next test fought here)
+			com.extremedimensions.elder.ElderTerrain.clear();
 			tidy.run();
 			p.getAbilities().invulnerable = false;
 			for (int x = -r; x <= r; x++) {
