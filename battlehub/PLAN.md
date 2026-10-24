@@ -2233,6 +2233,17 @@ sprong er telkens naast. Een kist achter een muur of zonder pad ernaartoe bleef 
   volgende.
 - 1.43.0 en 1.44.0 zijn daardoor niet los uitgebracht: ze komen met 1.45.0 mee.
 
+**CI.** Groen op a241017 (run 40103622579): build, JUnit en de zelftest met 953 geslaagd, 0 mislukt, in 19 min 54 s
+(de grens is nu 28 min). Onderweg:
+- 885af82 (1.43.0): de bot die een onbereikbare kist bleef najagen (opgelost, zie boven), en de zelftest haalde de
+  oude grens van 21 minuten niet.
+- d1227eb (1.44.0): 951/2. De expert-bot gebruikte binnen een minuut geen windlading, en daarna kwam er een NPE in
+  de vervolgstap (test robuuster gemaakt). De cosmetics-tests slaagden.
+- 9a0c37f en 967b27d (1.45.0): de kratten-test met B bovenop de krat, de parachute die op een dak landde, en een
+  parachute-test die niet genoeg gunst gaf (alle drie opgelost).
+- c96b20d: 952/1. De bridge-bot zette één blok terwijl het pad er lag. Die test slaagde in de vier runs ervoor en
+  erna, en de wijzigingen raken de bridge-bots niet.
+
 **Afwijkingen van het plan.**
 - De party staat niet als eigen knop in het hoofdmenu: er is geen apart partymenu, de party zit in het
   vriendenmenu.
