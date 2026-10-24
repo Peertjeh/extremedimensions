@@ -1259,31 +1259,45 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(5);
 			// The chat remembers what was sent: up brings it back, and Enter sends it again. (The guide card's close cross,
 			// which the mod adds to the chat, once took the focus at the first press of up, and the Enter after it pressed
-			// the cross instead of sending.)
+			// the cross instead of sending.) The keys go to the chat screen as the keyboard hands them over.
+			net.minecraft.client.gui.screens.ChatScreen[] chat = {null};
+			boolean[] closed = {false};
+			ctx.runOnClient(mc -> net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.AFTER_INIT.register((client, opened, w, h) -> {
+				if (opened instanceof net.minecraft.client.gui.screens.ChatScreen c && chat[0] == null) {
+					chat[0] = c;
+					closed[0] = false;
+					net.fabricmc.fabric.api.client.screen.v1.ScreenEvents.remove(c).register(gone -> closed[0] = true);
+				}
+			}));
 			ctx.getInput().pressKey(o -> o.keyChat);
 			ctx.waitTicks(3);
 			ctx.getInput().typeChars("/tether where");
-			ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER));
+			ctx.waitTicks(1);
+			ctx.runOnClient(mc -> {
+				check(chat[0] != null, "the chat did not open");
+				chat[0].keyPressed(new net.minecraft.client.input.KeyEvent(com.mojang.blaze3d.platform.InputConstants.KEY_RETURN, 0, 0));
+			});
 			ctx.waitTicks(3);
+			ctx.runOnClient(mc -> {
+				check(closed[0], "Enter did not send the command typed in the chat");
+				chat[0] = null;
+			});
 			ctx.getInput().pressKey(o -> o.keyChat);
 			ctx.waitTicks(3);
-			ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(org.lwjgl.glfw.GLFW.GLFW_KEY_UP));
-			ctx.waitTicks(2);
 			ctx.runOnClient(mc -> {
+				check(chat[0] != null, "the chat did not open a second time");
+				chat[0].keyPressed(new net.minecraft.client.input.KeyEvent(com.mojang.blaze3d.platform.InputConstants.KEY_UP, 0, 0));
 				String line = null;
-				if (mc.screen instanceof net.minecraft.client.gui.screens.ChatScreen chat) {
-					for (net.minecraft.client.gui.components.events.GuiEventListener l : chat.children()) {
-						if (l instanceof net.minecraft.client.gui.components.EditBox box) {
-							line = box.getValue();
-						}
+				for (net.minecraft.client.gui.components.events.GuiEventListener l : chat[0].children()) {
+					if (l instanceof net.minecraft.client.gui.components.EditBox box) {
+						line = box.getValue();
 					}
 				}
 				check("/tether where".equals(line), "up in the chat did not bring back the command sent last (the line holds " + line + ")");
+				chat[0].keyPressed(new net.minecraft.client.input.KeyEvent(com.mojang.blaze3d.platform.InputConstants.KEY_RETURN, 0, 0));
 			});
-			ctx.getInput().pressKey(com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER));
 			ctx.waitTicks(3);
-			ctx.runOnClient(mc -> check(!(mc.screen instanceof net.minecraft.client.gui.screens.ChatScreen),
-					"Enter after up in the chat did not send the command again (the chat stayed open)"));
+			ctx.runOnClient(mc -> check(closed[0], "Enter after up in the chat did not send the command again (the chat stayed open)"));
 			// The wounds remember: an echo of a Collapse kneeling in its chains
 			com.extremedimensions.data.Echo[] echo = new com.extremedimensions.data.Echo[1];
 			sp.getServer().runOnServer(s -> {

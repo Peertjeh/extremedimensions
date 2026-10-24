@@ -1,4 +1,3 @@
-net.minecraft.client.gui.components.AbstractWidget
-net.minecraft.client.gui.ComponentPath
-net.minecraft.client.gui.navigation.FocusNavigationEvent
-net.minecraft.client.gui.screens.ChatScreen
+com.mojang.blaze3d.platform.InputConstants
+net.minecraft.client.input.KeyEvent
+net.minecraft.client.gui.Gui
