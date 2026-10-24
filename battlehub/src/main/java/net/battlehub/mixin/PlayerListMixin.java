@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import net.battlehub.HubEvents;
 import net.battlehub.bot.Bots;
@@ -40,6 +41,14 @@ public abstract class PlayerListMixin {
 	@Redirect(method = "canPlayerLogin", at = @At(value = "INVOKE", target = "Ljava/util/List;size()I"))
 	private int battlehub$peopleOnly(List<ServerPlayer> players) {
 		return Bots.people(players);
+	}
+
+	/** The self-test's player limit (a world opened to LAN has eight places). */
+	@Inject(method = "getMaxPlayers", at = @At("HEAD"), cancellable = true)
+	private void battlehub$testLimit(CallbackInfoReturnable<Integer> cir) {
+		if (net.battlehub.debug.SelfTest.playerLimit > 0) {
+			cir.setReturnValue(net.battlehub.debug.SelfTest.playerLimit);
+		}
 	}
 
 	/** Bots leave no player files behind. */

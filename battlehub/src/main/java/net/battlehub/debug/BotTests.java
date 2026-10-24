@@ -998,8 +998,7 @@ final class BotTests {
 		String tag = "bots full lobby";
 		SelfTest.reset(s, tag);
 		s.run(tag + ": eight places, as in a world opened to LAN; A wants a full lobby and joins the Hunger Games", () -> {
-			VARS.put("maxPlayers", server.getPlayerList().getMaxPlayers());
-			((net.battlehub.mixin.PlayerListAccessor) server.getPlayerList()).battlehub$setMaxPlayers(8);
+			SelfTest.playerLimit = 8;
 			cfg().fillQueues = true;
 			SelfTest.join(server, A);
 			Bots.wish(p(A), net.battlehub.core.BotFill.Wish.FILL);
@@ -1017,7 +1016,7 @@ final class BotTests {
 			net.battlehub.queue.Queues.leaveAll(p(A));
 			Bots.wish(p(A), net.battlehub.core.BotFill.Wish.STANDARD);
 			cfg().fillQueues = false;
-			((net.battlehub.mixin.PlayerListAccessor) server.getPlayerList()).battlehub$setMaxPlayers((int) VARS.get("maxPlayers"));
+			SelfTest.playerLimit = 0;
 		});
 		s.waitFor(tag + ": bots gone", 600, () -> Bots.online() == 0);
 	}

@@ -37,6 +37,9 @@ public final class SelfTest {
 		return Boolean.getBoolean("battlehub.selftest");
 	}
 
+	/** A player limit the self-test puts on the server (that of a world opened to LAN); 0: the server's own. */
+	public static int playerLimit;
+
 	private static Script script;
 	private static final Map<String, TestPlayer> PLAYERS = new HashMap<>();
 	static final Map<String, Object> VARS = new HashMap<>();
