@@ -126,6 +126,18 @@ def test_people_s_steps_in_logs_before_1_41_become_the_game_s_velocities(tmp_pat
     assert person.any() and (~person).any() and sees_person.any()
 
 
+def test_a_row_of_the_swings_own_tick_gives_the_charge_from_before_the_swing():
+    """The mod stores a tick's row after the swings of that tick: a hit on the tick of its row is charged as the
+    fighter's row before plus the ticks in between over its cooldown; a hit later in the decision is the row's."""
+    class Log:
+        rows = [{"f": 0, "t": 10}, {"f": 1, "t": 10}, {"f": 0, "t": 12}, {"f": 1, "t": 12}]
+    s = {"self_charge": np.array([0.5, 1.0, 0.04, 0.3]), "self_cooldown": np.array([12.5, 12.5, 12.5, 20.0])}
+    assert abs(fights.swing_charge(Log, s, 2, 12) - (0.5 + 2 / 12.5)) < 1e-12
+    assert fights.swing_charge(Log, s, 2, 13) == 0.04
+    assert fights.swing_charge(Log, s, 3, 12) == 1.0
+    assert fights.swing_charge(Log, s, 0, 10) == 0.5
+
+
 def test_imitation_learns_what_was_done():
     """Behavior cloning on made-up decisions (attack exactly when the target is in front) learns that rule."""
     import pytest

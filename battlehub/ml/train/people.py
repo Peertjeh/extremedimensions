@@ -209,7 +209,7 @@ def log_behaviour(fights, who="human"):
             if att >= 0 and kinds[att] == who and h.get("kind", "melee") == "melee":
                 rows = [i for i, r in enumerate(f.rows) if r["f"] == att and h["t"] - 2 < r["t"] <= h["t"]]
                 if rows and s["self_hand"][rows[-1]] == 0:
-                    charge.append(float(s["self_charge"][rows[-1]]))
+                    charge.append(F.swing_charge(f, s, rows[-1], h["t"]))
     return _stats(n, sprint, change, jump, click, dist, charge, 2)
 
 

@@ -123,6 +123,19 @@ def _people_steps_to_velocities(fight, rows, s):
             s[k] = np.where(them, v, s[k])
 
 
+def swing_charge(fight, s, i, t):
+    """The charge a fighter swung with at tick t, from its row i (the decision under way at t). The mod stores a tick's
+    row after the bots and the network have acted, so a row of the very tick of the swing has the charge it fell back
+    to; then it is the fighter's row before, plus the ticks in between over its cooldown (the game's
+    getAttackStrengthScale)."""
+    r = fight.rows[i]
+    if r["t"] == t:
+        for j in range(i - 1, -1, -1):
+            if fight.rows[j]["f"] == r["f"]:
+                return float(min(1.0, s["self_charge"][j] + (t - fight.rows[j]["t"]) / max(1.0, s["self_cooldown"][j])))
+    return float(s["self_charge"][i])
+
+
 def states(fight, rows=None):
     """The rows' states as the simulation keeps them: a dict of arrays (n,), the terrain rays (n, 8). People's
     velocities are the game's (in logs before 1.41 they are turned from their steps into that)."""

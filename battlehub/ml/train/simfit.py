@@ -249,7 +249,7 @@ def measure_hits(logs):
     for a, (log, h, ia) in enumerate(picks):
         s = log.s
         _put(w, a, 0, s, ia, 0.0, s["self_y"][ia], 0.0, 0)
-        c = charge[a] = s["self_charge"][ia]
+        c = charge[a] = F.swing_charge(log.fight, s, ia, h["t"])
         crit[a] = c > 0.9 and not s["self_on_ground"][ia] and s["self_vy"][ia] < 0 and not s["self_sprinting"][ia] and s["self_fall"][ia] > 0
     sim = w.melee_damage(0, charge, crit, np.zeros(n, dtype=bool))
     for a, (log, h, ia) in enumerate(picks):
@@ -321,7 +321,7 @@ def measure_push(logs, detail=None):
         ox, oz = s["self_x"][pre], s["self_z"][pre]
         _put(w, a, 0, s, ia, s["self_x"][ia] - ox, s["self_y"][ia], s["self_z"][ia] - oz, 0)
         _put(w, a, 1, s, pre, 0.0, s["self_y"][pre], 0.0, 1)
-        charge[a] = s["self_charge"][ia]
+        charge[a] = F.swing_charge(log.fight, s, ia, h["t"])
         # a rise from 0.3608 was one push: no second (the attacker's last row may have it sprinting when it no longer
         # was); 0.4 can be either (a single push on a victim already going up reaches it too)
         if second == 0:
@@ -416,7 +416,7 @@ def measure_behaviour(logs):
                     if d < 8:
                         a["distance"].append(d)
         for h, ia, iv in log.melee_hits():
-            acc[log.kinds[h["hit"][0]]]["charge"].append(s["self_charge"][ia])
+            acc[log.kinds[h["hit"][0]]]["charge"].append(F.swing_charge(log.fight, s, ia, h["t"]))
     out = {}
     for kind, a in acc.items():
         sec = len(a["decisions"]) * logs[0].dt * TICK if logs else 1.0
