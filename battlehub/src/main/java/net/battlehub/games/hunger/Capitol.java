@@ -88,7 +88,10 @@ public final class Capitol {
 		if (killer != null && killer != victim) {
 			sponsors.killed(killer.getUUID());
 			ItemStack key = PowerUps.stack(host.level().getServer(), "key", 1);
-			if (!killer.getInventory().add(key)) killer.drop(key, false);
+			if (!killer.getInventory().add(key)) {
+				var drop = new net.minecraft.world.entity.item.ItemEntity(host.level(), killer.getX(), killer.getY() + 0.5, killer.getZ(), key);
+				host.level().addFreshEntity(drop);
+			}
 			net.battlehub.util.Msg.actionBar(killer, "hg.key.from_kill");
 		}
 	}

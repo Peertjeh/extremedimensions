@@ -348,7 +348,7 @@ final class NewModeTests {
 			s.check(t + ": the Gamemakers send " + ev, () -> hg().capitol().gamemakers().start(ev) && hg().capitol().gamemakers().running().contains(ev));
 		}
 		s.check(t + ": mutts hunt, a swarm flies, A glows, supplies fall", () -> {
-			long mutts = hg().level().getEntities(net.minecraft.world.entity.EntityType.ZOGLIN, hg().arena().bounds(), e -> true).size();
+			long mutts = entities(hg().level(), hg().arena().bounds(), "minecraft:zoglin");
 			boolean glows = p(A).hasEffect(net.battlehub.util.Ids.effect("minecraft:glowing").orElseThrow());
 			net.battlehub.BattleHub.LOGGER.info("SELFTEST real hunger games events: running {}, mutts {}, swarms {}, parachutes falling {}",
 					hg().capitol().gamemakers().running(), mutts, hg().capitol().gamemakers().swarms(), hg().capitol().sponsors().falling());
@@ -385,6 +385,15 @@ final class NewModeTests {
 			hg().capitol().placed(p(A), at, net.battlehub.games.hunger.PowerUps.stack(p(A).level().getServer(), "mine", 1));
 		});
 		s.waitFor(t + ": the mine goes off (the plate is gone)", 40, () -> hg().capitol().powers().minesBlown() == 1);
+		s.run(t + ": A throws nightlock at the ground before them", () -> {
+			p(A).setXRot(70f);
+			VARS.put("hgClouds", hg().capitol().gamemakers().clouds());
+			ItemStack st = net.battlehub.games.hunger.PowerUps.stack(p(A).level().getServer(), "nightlock", 1);
+			VARS.put("hgThrown", hg().onUseItem(p(A), st) == net.minecraft.world.InteractionResult.SUCCESS && st.isEmpty()
+					&& hg().capitol().powers().flying() == 1);
+		});
+		s.waitFor(t + ": the berries burst into a cloud of poison where they land", 60, () -> Boolean.TRUE.equals(VARS.get("hgThrown"))
+				&& hg().capitol().powers().thrownLanded() == 1 && hg().capitol().gamemakers().clouds() > (int) VARS.get("hgClouds"));
 		s.waitFor(t + ": the peace ends", 700, () -> !hg().inGrace());
 		s.run(t + ": A kills D", () -> {
 			p(D).removeAllEffects();
@@ -414,10 +423,15 @@ final class NewModeTests {
 			if (match().phase() != Match.Phase.CLOSED) return false;
 			var level = match().arena().level();
 			var box = match().arena().bounds();
-			return level.getEntitiesOfClass(net.minecraft.world.entity.Entity.class, box, e -> e.getTags().contains("battlehub_hg")).isEmpty()
-					&& level.getEntities(net.minecraft.world.entity.EntityType.ZOGLIN, box, e -> true).isEmpty()
-					&& level.getEntities(net.minecraft.world.entity.EntityType.BEE, box, e -> true).isEmpty();
+			return level.getEntitiesOfClass(net.minecraft.world.entity.Entity.class, box, e -> Boolean.TRUE.equals(net.battlehub.util.Tags.has(e, "battlehub_hg"))).isEmpty()
+					&& entities(level, box, "minecraft:zoglin") == 0 && entities(level, box, "minecraft:bee") == 0;
 		});
+	}
+
+	/** Entities of a type (its id) inside {@code box}. */
+	private static long entities(net.minecraft.server.level.ServerLevel level, net.minecraft.world.phys.AABB box, String type) {
+		return level.getEntitiesOfClass(net.minecraft.world.entity.Entity.class, box,
+				e -> type.equals(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).toString())).size();
 	}
 
 	private static int countKeys(ServerPlayer p) {

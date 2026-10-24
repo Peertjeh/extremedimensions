@@ -570,7 +570,6 @@ public final class Gamemakers {
 			Entity b = Holo.create(level(), "minecraft:bee", Entity.class);
 			if (b == null) continue;
 			if (b instanceof Mob m) m.setNoAi(true);
-			b.setInvulnerable(true);
 			b.setCustomName(Lang.tr("hg.jacker"));
 			b.snapTo(at.x, at.y, at.z);
 			level().addFreshEntity(b);

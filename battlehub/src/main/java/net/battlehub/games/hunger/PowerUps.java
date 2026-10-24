@@ -21,8 +21,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.projectile.Snowball;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -34,8 +35,8 @@ import net.minecraft.world.phys.Vec3;
  * The power-ups of the Hunger Games: items with their own name and explanation, found in the better chests, at the
  * Feast, in crates and parachutes. Their mark is {@code battlehub_hg} in the custom data, not BattleHub's own item
  * tag, so they can be taken out of chests, moved and dropped like any item. Using one (right-click) does what it
- * says; the thrown ones (nightlock, the tracker jacker nest) are snowballs underneath that the game throws, and act
- * where they land; the landmine is a pressure plate put down like a block.
+ * says; the thrown ones (nightlock, the tracker jacker nest) are thrown as snowballs and act where they land; the
+ * landmine is a pressure plate put down like a block.
  */
 public final class PowerUps {
 	public static final String TAG = "battlehub_hg";
@@ -47,7 +48,7 @@ public final class PowerUps {
 
 	static {
 		add("salve", Items.HONEY_BOTTLE, "minecraft:honey_bottle", "&a");
-		add("camo", Items.GREEN_DYE, "minecraft:green_dye", "&2");
+		add("camo", Ids.item("minecraft:green_dye"), "minecraft:green_dye", "&2");
 		add("nightlock", Items.SNOWBALL, "minecraft:sweet_berries", "&5");
 		add("jackers", Items.SNOWBALL, "minecraft:bee_nest", "&e");
 		add("mine", Items.STONE_PRESSURE_PLATE, "minecraft:stone_pressure_plate", "&c");
@@ -66,9 +67,9 @@ public final class PowerUps {
 
 	private final HungerHost host;
 	/** Thrown power-ups in the air: the snowball and where it was last. */
-	private final Map<Snowball, Vec3> flying = new HashMap<>();
-	private final Map<Snowball, String> flyingKind = new HashMap<>();
-	private final Map<Snowball, UUID> flyingOwner = new HashMap<>();
+	private final Map<Entity, Vec3> flying = new HashMap<>();
+	private final Map<Entity, String> flyingKind = new HashMap<>();
+	private final Map<Entity, UUID> flyingOwner = new HashMap<>();
 	/** Landmines: where, and who put it down. */
 	private final Map<BlockPos, UUID> mines = new LinkedHashMap<>();
 	/** Tributes with a tracker running, until which tick. */
@@ -123,7 +124,7 @@ public final class PowerUps {
 
 	/**
 	 * A right-click with {@code held}: true when it was a power-up that did its thing here (the item is used up). The
-	 * thrown ones and the landmine return false: the game throws or places them, and they act later.
+	 * landmine returns false: it is put down like a block, and acts later.
 	 */
 	public boolean use(ServerPlayer p, ItemStack held) {
 		String id = id(held);
@@ -163,14 +164,39 @@ public final class PowerUps {
 				effect(p, "minecraft:night_vision", 120 * 20, 0);
 				sound(p, SoundEvents.SPYGLASS_USE);
 			}
+			case "nightlock", "jackers" -> {
+				if (!throwIt(p, id)) return false;
+			}
 			default -> {
-				// nightlock and the nest are thrown, the mine is put down, the spear is a trident, the key opens a vault
+				// the mine is put down, the spear is a trident, the key opens a vault
 				return false;
 			}
 		}
 		Msg.actionBar(p, "hg.power.used", Lang.tr(p, "hg.power." + id));
 		held.shrink(1);
 		return true;
+	}
+
+	/** Throws a nightlock or a nest as a snowball from {@code p}'s eyes; it acts where it lands. */
+	private boolean throwIt(ServerPlayer p, String id) {
+		ServerLevel level = host.level();
+		Entity ball = net.battlehub.hub.ClientEntities.type("minecraft:snowball").create(level, EntitySpawnReason.COMMAND);
+		if (ball == null) return false;
+		Vec3 look = p.getLookAngle();
+		Vec3 from = p.getEyePosition().add(look.scale(0.8));
+		ball.snapTo(from.x, from.y, from.z);
+		ball.setDeltaMovement(look.scale(1.5));
+		level.addFreshEntity(ball);
+		flying.put(ball, ball.position());
+		flyingKind.put(ball, id);
+		flyingOwner.put(ball, p.getUUID());
+		level.playSound(null, p.getX(), p.getY(), p.getZ(), SoundEvents.SNOWBALL_THROW, SoundSource.PLAYERS, 0.6f, 0.5f);
+		return true;
+	}
+
+	/** Thrown power-ups in the air now (self-test). */
+	public int flying() {
+		return flying.size();
 	}
 
 	private static void effect(ServerPlayer p, String id, int ticks, int amp) {
@@ -203,15 +229,10 @@ public final class PowerUps {
 
 	void tick() {
 		ServerLevel level = host.level();
-		// thrown power-ups: found in the air, and where they land they act
-		for (Snowball s : level.getEntities(EntityType.SNOWBALL, host.arena().bounds(), e -> id(e.getItem()) != null && !flying.containsKey(e))) {
-			flying.put(s, s.position());
-			flyingKind.put(s, id(s.getItem()));
-			flyingOwner.put(s, s.getOwner() == null ? null : s.getOwner().getUUID());
-		}
-		for (Iterator<Map.Entry<Snowball, Vec3>> it = flying.entrySet().iterator(); it.hasNext();) {
-			Map.Entry<Snowball, Vec3> e = it.next();
-			Snowball s = e.getKey();
+		// thrown power-ups: where they land they act
+		for (Iterator<Map.Entry<Entity, Vec3>> it = flying.entrySet().iterator(); it.hasNext();) {
+			Map.Entry<Entity, Vec3> e = it.next();
+			Entity s = e.getKey();
 			if (!s.isRemoved()) {
 				e.setValue(s.position());
 				continue;
@@ -305,7 +326,7 @@ public final class PowerUps {
 			p.hurtServer(level, level.damageSources().explosion(null, null), dmg);
 			Vec3 push = p.position().subtract(at).normalize().scale(0.9).add(0, 0.5, 0);
 			p.setDeltaMovement(p.getDeltaMovement().add(push));
-			p.hurtMarked = true;
+			p.connection.send(new ClientboundSetEntityMotionPacket(p));
 		}
 	}
 
@@ -322,7 +343,7 @@ public final class PowerUps {
 	}
 
 	void clear() {
-		for (Snowball s : flying.keySet()) Holo.remove(s);
+		for (Entity s : flying.keySet()) Holo.remove(s);
 		flying.clear();
 		flyingKind.clear();
 		flyingOwner.clear();

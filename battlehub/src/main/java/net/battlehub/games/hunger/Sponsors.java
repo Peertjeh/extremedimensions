@@ -219,7 +219,7 @@ public final class Sponsors {
 			ServerLevel level = host.level();
 			crate = Holo.block(level, new Vec3(land.x, y, land.z), Blocks.BARREL.defaultBlockState(), 0.8f);
 			canopy = Holo.block(level, new Vec3(land.x, y + 1.4, land.z),
-					(forWhom == null ? Blocks.RED_WOOL : Blocks.WHITE_WOOL).defaultBlockState(), 2.2f);
+					Ids.state(forWhom == null ? "minecraft:red_wool" : "minecraft:white_wool"), 2.2f);
 		}
 
 		boolean tick() {
