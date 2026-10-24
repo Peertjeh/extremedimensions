@@ -158,7 +158,10 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   the like from The Bridge: Chaos' effects), what it carries, an arrow coming at it, a second and a third enemy,
   its nearest team mate (where it is, its health when seen, how far it is from the bot's target), what it remembers
   (since it last saw its target, since it was hurt, since it hurt its target) and its last decisions. It was
-  trained in 1v1, against two, three or four at once and in teams of two and three with a shared reward. It fights
+  trained in 1v1, against two, three or four at once and in teams of two and three with a shared reward, in a
+  simulation fitted on the fight logs: the game's own Chaos effects, clicks that land as late as in the game, and an
+  opponent that fights like the people in the logs. It sees a person's movement as the game keeps a bot's (from
+  their positions, after friction), not the near standstill the server knows of a real player. It fights
   in SkyWars, Bed Wars, the Hunger Games, The Bridge (also Chaos, duos and 1v1v1v1), FFA, 1v2 and 1v3, sumo, the
   axe and Build UHC duels, sword duels and boxing, KOTH, CTF, LMS and the tournaments; mace and bow fights stay
   scripted. The mind still
@@ -173,9 +176,10 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
 * *Fight logs*: every fight (melee and bow games, people and bots) is recorded for training in
   `config/battlehub/fights`, a gzip file per fight: ten times a second, for every fighter, what the model would see
   and what the fighter did (keys, jump, sprint, swings, turning, what they held, the right button), for bots also
-  what their model chose, plus the hits and the result. Names are left out unless `fights.names` is on; the folder
+  what their model chose, plus the hits (melee, arrow or other) and the result. Names are left out unless `fights.names` is on; the folder
   keeps at most `fights.maxMegabytes` (500). `/battlehub fights export` zips the new fights into one file to hand
-  over; `battlehub/ml/train/imitate.py` teaches the model what the people in them did.
+  over; `battlehub/ml/train/simfit.py` measures the simulation against them and `battlehub/ml/train/people.py`
+  makes an opponent that fights like the people in them.
 * *Model reports for operators*: after every match with a learned model, each bot tells the operators online how
   much of its fight went as its model chose, how much its own rules changed (it would walk off an edge or jump into
   the void, it was steered back in the air, it was stuck, it ate) and how much the scripted mind took over (away

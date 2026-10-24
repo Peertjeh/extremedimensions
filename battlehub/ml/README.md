@@ -8,7 +8,10 @@ enemies. Phase 3: action masks, learning items (1.38), and one model for every m
 sword duel, so v1 left the mod; its spec, golden file and simulation stay here). Spec v3 (1.40): v2's observations in
 their place plus a team mate, a third enemy, memory and the last decisions (frame stacking); up to four fighters with
 team modes (2v2, the learner with team mates, four against each other) and a shared team reward. v2's models became v3
-models that play the same (`train/upgrade_v3.py`), so v2 left the mod as well.
+models that play the same (`train/upgrade_v3.py`), so v2 left the mod as well. Phase 3D (1.41): the simulation
+fitted on the mod's fight logs (`train/simfit.py` measures it): people's velocities as the game keeps them, the game's
+own Chaos effects, clicks that land late, and an opponent that fights like the people in the logs (`train/people.py`);
+the master was trained in it with the master of 1.40 as a fixed rival (`selfplay2.py --rival`).
 
 ## Layout
 
@@ -98,7 +101,10 @@ python tools/chaos_effects.py --check                            # Chaos events 
 python train/people.py exports/ --init runs/v3d/ckpt_006000192.zip --out runs/people
 python train/selfplay2.py --run runs/v3e --init runs/v3d/ckpt_006000192.zip --pool-from runs/v3d runs/v3c --masks \
     --extra-items 1.0 --scripted-latch --people runs/people --people-share 0.15 --eval-hands food,gapple,wind --steps 16000000
-python train/league2.py --versus "runs/v3e/ckpt_010000224.zip#hands=food,gapple,wind" \
+python train/selfplay2.py --run runs/v3f --init runs/v3e/ckpt_010000224.zip --pool-from runs/v3e runs/v3d --masks \
+    --extra-items 1.0 --scripted-latch --people runs/people --rival "runs/v3d/ckpt_006000192.zip#hands=food,gapple,wind" \
+    --rival-share 0.35 --three 0.35 --four 0.15 --eval-hands food,gapple,wind --steps 20000000   # the master of 1.41: 14M
+python train/league2.py --versus "runs/v3f/ckpt_014000256.zip#hands=food,gapple,wind" \
     "runs/v3d/ckpt_006000192.zip#hands=food,gapple,wind" --episodes 128 --sim 1.40     # or the fitted sim (default)
 ```
 
