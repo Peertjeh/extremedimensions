@@ -2211,6 +2211,18 @@ bevestigen dat het valprobleem overal speelde (bots vielen in geen enkel gevecht
 ze niet in een model gegaan. Opnieuw trainen op mensdata hoort bij fase E, die nog niet is goedgekeurd; de export
 is daar bruikbaar voor (`ml/train/fights.py`, `people.py`).
 
+### Versie 1.46.0 – Uitvoering
+
+- *Eerste CI-run (856a134): 954 van 955.* De bot vecht op de grond met het zwaard en vliegt met de nieuwe timing
+  **11,5 blokken** hoog met de mace in de hand (was 6,5). Maar geen smash in 16 launches: hoog in de lucht lijkt
+  elke richting een afgrond, dus riep de mind "recover" (terug naar veilige grond) en verloor de bot de speler uit
+  het oog. Nu gaat de duik bij een eigen launch (binnen 60 ticks) voor op dat terugzetten; de landingscontrole
+  van `BotBrain.recover()` blijft. JUnit: ook met "recover" duikt hij na een launch; zonder launch (weggeslagen)
+  blijft recover recover. De zelftest logt elke vlucht (hoe dicht boven A, hoe ver gevallen, welk wapen).
+- *Flaky zelftest Hunger Games* (de run van ab053d6, alleen PLAN gewijzigd): "na vijf seconden sluipen breekt het
+  zegel" liep af na 160 ticks. Oorzaak niet uit de log te halen; de test houdt B nu sluipend naast de krat, geeft
+  240 ticks en logt waardoor het kraken stokt (geraakt, verplaatst, geen zicht, opgestaan).
+
 ## Versie 1.45.0 – Een overzichtelijke UI (plan)
 
 **Vraag.** De UI overdoen zodat hij overzichtelijk is.

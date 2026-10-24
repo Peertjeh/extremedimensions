@@ -159,6 +159,11 @@ class WeaponFocusTest {
 		assertEquals(1, up.forward());
 		assertFalse(up.attack(), "no swing on the way up");
 		assertTrue(up.look() != null && up.look().y() < 70, "eyes down on them");
+		// high up every direction looks like a drop and the mind calls for recovering: on its own launch the dive goes on
+		Intent recovering = st.steer(Tactic.RECOVER, new Situation(t + 10, air(0, 70, 0, 0.4, 0), foe, null, Fixtures.dropAt(new V3(1, 0, 0), 0),
+				Situation.Threat.NONE), null, Archetype.BALANCED.base, Difficulty.EXPERT, r);
+		assertEquals(1, recovering.forward());
+		assertTrue(recovering.moveTo() == null, "no walking back to safety");
 		// over them on the way down, within reach and far enough fallen: the smash (an expert does not let it pass)
 		boolean smashed = false;
 		for (int k = 0; k < 3 && !smashed; k++) {
@@ -170,6 +175,10 @@ class WeaponFocusTest {
 		Intent ground = st.steer(Tactic.RETREAT, new Situation(t + 45, me(Weapon.MACE, false, true), foe, null, open(), Situation.Threat.NONE), null,
 				Archetype.BALANCED.base, Difficulty.EXPERT, r);
 		assertEquals(-1, ground.forward());
+		// knocked off and falling without a launch, recovering stays recovering
+		Intent knocked = st.steer(Tactic.RECOVER, new Situation(t + 500, air(0, 70, 0, -0.5, 3), foe, null, Fixtures.dropAt(new V3(1, 0, 0), 0),
+				Situation.Threat.NONE), null, Archetype.BALANCED.base, Difficulty.EXPERT, r);
+		assertTrue(knocked.moveTo() != null, "back to the ground");
 		// in a sword fight a high jump is no dive
 		Situation.Self swordAir = new Situation.Self(new V3(0, 70, 0), new V3(0, -0.9, 0), 20, 20, false, 1, false, false, 3.0, true, false, 0,
 				Weapon.SWORD, false, 6);

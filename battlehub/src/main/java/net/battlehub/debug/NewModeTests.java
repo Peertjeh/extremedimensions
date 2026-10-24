@@ -346,8 +346,24 @@ final class NewModeTests {
 		s.waitFor(t + ": the seal is half broken", 80, () -> hg().capitol().vaults().crateShare((BlockPos) VARS.get("hgCrate")) >= 0.5);
 		s.run(t + ": B is hurt", () -> p(B).hurtServer(p(B).level(), p(B).damageSources().magic(), 1f));
 		s.check(t + ": the hurt starts it over", () -> hg().capitol().vaults().crateShare((BlockPos) VARS.get("hgCrate")) < 0.2);
-		s.waitFor(t + ": after five seconds of sneaking the seal breaks", 160, () -> !hg().capitol().vaults().locked((BlockPos) VARS.get("hgCrate"))
-				&& hg().capitol().vaults().cratesOpened() == 1);
+		s.waitFor(t + ": after five seconds of sneaking the seal breaks", 240, () -> {
+			BlockPos crate = (BlockPos) VARS.get("hgCrate");
+			var v = hg().capitol().vaults();
+			if (!v.locked(crate) && v.cratesOpened() == 1) return true;
+			// B stays down beside it; when something holds the cracking back (a hurt, a move), the log says what
+			net.minecraft.server.level.ServerPlayer b = p(B);
+			if (!b.isShiftKeyDown()) {
+				b.setShiftKeyDown(true);
+				if (VARS.putIfAbsent("hgStoodUp", true) == null) net.battlehub.BattleHub.LOGGER.warn("SELFTEST real hunger games: B was standing again");
+			}
+			double dist = b.position().distanceTo(net.minecraft.world.phys.Vec3.atCenterOf(crate));
+			boolean sees = net.battlehub.games.hunger.Vaults.sees(b, crate);
+			if ((b.hurtTime > 0 || dist > net.battlehub.core.hunger.Crack.REACH || !sees) && !Integer.valueOf(b.tickCount / 20).equals(VARS.put("hgCrackLog", b.tickCount / 20))) {
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST real hunger games: B is not cracking: hurt {} (health {}), {} from the crate, sees it {}, at {}, share {}",
+						b.hurtTime, b.getHealth(), String.format(java.util.Locale.ROOT, "%.2f", dist), sees, b.position(), v.crateShare(crate));
+			}
+			return false;
+		});
 		s.run(t + ": B stands up again", () -> p(B).setShiftKeyDown(false));
 		// the Gamemakers: every event starts
 		for (String ev : new String[] {"wildfire", "fog", "mutts", "tracker_jackers", "storm", "supplies", "revealed", "acid_rain", "jabberjays"}) {

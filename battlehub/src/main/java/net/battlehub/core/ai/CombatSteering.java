@@ -80,8 +80,11 @@ public final class CombatSteering {
 		if (t == null && tactic != Tactic.OBJECTIVE && tactic != Tactic.RECOVER) {
 			return Intent.NOTHING;
 		}
-		// up in the air with the mace: coming down on them goes before whatever it would do on the ground
-		if (tactic != Tactic.RECOVER && MaceFight.diving(me, t, s.tick() - lastLaunch)) {
+		// up in the air with the mace: coming down on them goes before whatever it would do on the ground. High up every
+		// direction looks like a drop, so the mind calls for recovering; on its own launch (the ground was checked before
+		// it threw, and the landing is still checked) the dive goes on
+		int sinceLaunch = s.tick() - lastLaunch;
+		if ((tactic != Tactic.RECOVER || sinceLaunch <= MaceFight.FLIGHT) && MaceFight.diving(me, t, sinceLaunch)) {
 			return dive(s, track, d, rng);
 		}
 		double dist = s.distance();

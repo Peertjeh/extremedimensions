@@ -870,6 +870,17 @@ final class BotTests {
 			}
 			p(A).setHealth(p(A).getMaxHealth());
 			VARS.put("aHealth", (double) p(A).getHealth());
+			// every flight in the log: how close it came over A, how far it fell, what it held
+			double side = Math.hypot(b.getX() - p(A).getX(), b.getZ() - p(A).getZ());
+			if (!b.onGround()) {
+				VARS.merge("maceMinSide", side, (x, y) -> Math.min((double) x, (double) y));
+				VARS.merge("maceMaxFall", (double) b.fallDistance, (x, y) -> Math.max((double) x, (double) y));
+				if (b.getMainHandItem().is(net.minecraft.world.item.Items.MACE)) VARS.put("maceHeld", true);
+			} else if (VARS.containsKey("maceMinSide")) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST mace bot landed {} from A (closest {} in the air), fell {}, mace in the air {}",
+						String.format(java.util.Locale.ROOT, "%.1f", side), String.format(java.util.Locale.ROOT, "%.1f", (double) VARS.remove("maceMinSide")),
+						String.format(java.util.Locale.ROOT, "%.1f", (double) VARS.remove("maceMaxFall")), VARS.remove("maceHeld") != null);
+			}
 			int polls = (int) VARS.get("macePolls") + 1;
 			VARS.put("macePolls", polls);
 			if (polls % 200 == 0 && b.onGround() && b.distanceTo(p(A)) < 1.5) backOff(b, 4.5);
