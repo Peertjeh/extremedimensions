@@ -2222,6 +2222,9 @@ is daar bruikbaar voor (`ml/train/fights.py`, `people.py`).
 - *Flaky zelftest Hunger Games* (de run van ab053d6, alleen PLAN gewijzigd): "na vijf seconden sluipen breekt het
   zegel" liep af na 160 ticks. Oorzaak niet uit de log te halen; de test houdt B nu sluipend naast de krat, geeft
   240 ticks en logt waardoor het kraken stokt (geraakt, verplaatst, geen zicht, opgestaan).
+- *CI groen op 083d924: 955 van 955* (run 40118207995). In de zelftest vloog de expert-bot bij zijn eerste launch
+  10,8 blokken hoog met de mace en smashte A voor 12,3 levenspunten door diamanten harnas heen; op de grond weer
+  het zwaard. De Hunger Games-test slaagde (alleen de bedoelde klap stokte het kraken even).
 
 ## Versie 1.45.0 – Een overzichtelijke UI (plan)
 
