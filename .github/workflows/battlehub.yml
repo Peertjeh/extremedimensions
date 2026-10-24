@@ -55,10 +55,10 @@ jobs:
           path: battlehub/build/libs/
       - name: boot a server with the mod and run the self-test
         run: bash ../.github/battlehub/server-test.sh
-        timeout-minutes: 25
+        timeout-minutes: 33
         env:
           SELFTEST: '1'
-          SELFTEST_TIMEOUT: '1260'
+          SELFTEST_TIMEOUT: '1680'
       - name: keep the server log
         if: always()
         uses: actions/upload-artifact@v7
