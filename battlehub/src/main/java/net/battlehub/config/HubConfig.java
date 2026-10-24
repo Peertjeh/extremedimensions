@@ -11,7 +11,7 @@ import net.battlehub.core.RewardSettings;
 
 /** {@code config/battlehub/config.json}. Every field has a default; missing keys are filled in on load. */
 public final class HubConfig {
-	public static final int CURRENT_VERSION = 7;
+	public static final int CURRENT_VERSION = 8;
 
 	public int configVersion = CURRENT_VERSION;
 
@@ -420,7 +420,8 @@ public final class HubConfig {
 		public int partyFillTo = 4;
 		/** easy, normal or hard. */
 		public String fillLevel = "normal";
-		public int maxBots = 12;
+		/** Bots online at most (they take no place a person could join in). */
+		public int maxBots = 24;
 		/** Share of the coins and XP paid in matches with bots; such matches never count for stats or ELO. */
 		public double rewardFactor = 0.5;
 		/** A bot leaves this many seconds after it is back in the lobby. */
@@ -720,6 +721,10 @@ public final class HubConfig {
 		if (bots == null) bots = new Bots();
 		bots.fillAfterSeconds = Math.max(0, bots.fillAfterSeconds);
 		bots.partyFillTo = Math.max(2, Math.min(16, bots.partyFillTo));
+		if (from < 8 && bots.maxBots == 12) {
+			// 1.41.1: the old default could not fill a Hunger Games lobby of sixteen
+			bots.maxBots = new Bots().maxBots;
+		}
 		bots.maxBots = Math.max(0, Math.min(64, bots.maxBots));
 		bots.idleSeconds = Math.max(1, bots.idleSeconds);
 		if (bots.fillLevel == null) bots.fillLevel = "normal";

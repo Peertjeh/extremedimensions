@@ -53,6 +53,7 @@ public final class HubEvents {
 		ServerLifecycleEvents.SERVER_STOPPING.register(HubEvents::stopping);
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
 			Queues.clear();
+			net.battlehub.lobby.QueueGlow.clear();
 			net.battlehub.bot.FightRecorder.clear();
 			net.battlehub.bot.Bots.clear();
 			net.battlehub.hub.HubNpcs.clear();
@@ -238,6 +239,7 @@ public final class HubEvents {
 		net.battlehub.bot.CombatMemory.tick(server);
 		net.battlehub.bot.FightRecorder.tick(server);
 		Queues.tick(server);
+		net.battlehub.lobby.QueueGlow.tick(server);
 		net.battlehub.spectate.Spectators.tick(server);
 		Menus.tick(server);
 		net.battlehub.progression.Cosmetics.tick(server, tick);

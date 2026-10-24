@@ -81,6 +81,7 @@ final class BotTests {
 		queueFill(server, s);
 		partyFill(server, s);
 		partyWish(server, s);
+		fillPastLimit(server, s);
 		customBots(server, s);
 		spleefBots(server, s);
 		parkour(server, s);
@@ -989,6 +990,38 @@ final class BotTests {
 		});
 	}
 
+	/**
+	 * A full Hunger Games lobby on a server with the player limit of a world opened to LAN (eight): A asks for a full
+	 * lobby and gets fifteen bots (sixteen in all). Bots take no place a person could join in.
+	 */
+	private static void fillPastLimit(MinecraftServer server, Script s) {
+		String tag = "bots full lobby";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": eight places, as in a world opened to LAN; A wants a full lobby and joins the Hunger Games", () -> {
+			VARS.put("maxPlayers", server.getPlayerList().getMaxPlayers());
+			((net.battlehub.mixin.PlayerListAccessor) server.getPlayerList()).battlehub$setMaxPlayers(8);
+			cfg().fillQueues = true;
+			SelfTest.join(server, A);
+			Bots.wish(p(A), net.battlehub.core.BotFill.Wish.FILL);
+			Parties.join(p(A), GameMode.HUNGER_GAMES, "");
+		});
+		s.check(tag + ": bots may be many (bots.maxBots at least the sixteen of the Hunger Games)", () -> cfg().maxBots >= 16);
+		s.waitFor(tag + ": fifteen bots fill the lobby to sixteen, past the server's eight", 400, () -> {
+			List<UUID> members = Parties.members(GameMode.HUNGER_GAMES);
+			int bots = 0;
+			for (UUID id : members) if (Bots.isBot(id)) bots++;
+			return members.size() == 16 && bots == 15 && server.getPlayerCount() > server.getPlayerList().getMaxPlayers();
+		});
+		s.check(tag + ": the server's full check counts people only (one)", () -> Bots.people(server.getPlayerList().getPlayers()) == 1);
+		s.run(tag + ": A leaves; the bots go; the server's limit and A's wish as before", () -> {
+			net.battlehub.queue.Queues.leaveAll(p(A));
+			Bots.wish(p(A), net.battlehub.core.BotFill.Wish.STANDARD);
+			cfg().fillQueues = false;
+			((net.battlehub.mixin.PlayerListAccessor) server.getPlayerList()).battlehub$setMaxPlayers((int) VARS.get("maxPlayers"));
+		});
+		s.waitFor(tag + ": bots gone", 600, () -> Bots.online() == 0);
+	}
+
 	/** A private Sumo game whose owner set three beginner bots: they join at the start; nothing counts. */
 	private static void customBots(MinecraftServer server, Script s) {
 		String tag = "bots custom game";
@@ -1385,6 +1418,19 @@ final class BotTests {
 			return false;
 		});
 		s.check(tag + ": during the peace nobody is anyone's enemy", () -> !matchOfA().isEnemy(p(A).getUUID(), botsIn(matchOfA()).get(0).getUUID()));
+		s.waitFor(tag + ": a bot puts on its armor with its inventory open, standing still, a piece at a time", 1200, () -> {
+			Match m = matchOfA();
+			if (m == null) return false;
+			watchFalls(server, m);
+			for (BotPlayer b : botsIn(m)) {
+				double[] d = net.battlehub.bot.Looting.lastDress(b);
+				if (d == null) continue;
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST hunger games bot dressed: inventory open {} ticks for a piece, moved {} blocks, wears {}",
+						(int) d[0], String.format(java.util.Locale.ROOT, "%.2f", d[1]), b.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST));
+				return d[0] >= 10 && d[1] < 0.6;
+			}
+			return false;
+		});
 		s.waitFor(tag + ": and walk into the town to the chests of the houses and landmarks", 3600, () -> {
 			Match m = matchOfA();
 			if (!(m instanceof net.battlehub.games.HungerGamesMatch hg) || botsIn(m).isEmpty()) return false;

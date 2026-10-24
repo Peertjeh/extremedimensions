@@ -49,6 +49,11 @@ public final class TestPlayer extends ServerPlayer {
 		return link.swings.getOrDefault(entityId, 0);
 	}
 
+	/** Whether this player's client shows the entity glowing (false when never told). */
+	public boolean clientGlowing(int entityId) {
+		return link.glowing.getOrDefault(entityId, false);
+	}
+
 	/** The hotbar slot this player's client holds. */
 	public int clientSlot() {
 		return link.heldSlot;

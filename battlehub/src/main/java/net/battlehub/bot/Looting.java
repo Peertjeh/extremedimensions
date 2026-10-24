@@ -19,10 +19,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Bots loot chests as players do (core.LootPace): they open the chest (its lid opens for everyone, with the sound),
- * take one stack at a time, close it again, and afterwards put on better armor one piece at a time. At a chest a bot
- * stands still and looks at it (BotBrain); a hit or an enemy close by makes it close the chest and fight, and it may
- * come back for what is left a little later.
+ * Bots loot chests as players do (core.LootPace): they open a chest they can see (its lid opens for everyone, with
+ * the sound), take one stack at a time, close it again, and afterwards open their inventory to put on better armor
+ * one piece at a time. At a chest and with the inventory open a bot stands still (BotBrain): nobody runs about with a
+ * screen open. A hit or an enemy close by makes it close the screen and fight; it comes back to it a little later.
  */
 public final class Looting {
 	private Looting() {}
@@ -49,18 +49,50 @@ public final class Looting {
 	}
 
 	private static final Map<UUID, Session> AT = new HashMap<>();
-	/** Ticks until a bot puts on its next piece of armor (absent: nothing to put on). */
+	/** Ticks until a bot opens its inventory to put on armor (absent: nothing to put on). */
 	private static final Map<UUID, Integer> DRESS = new HashMap<>();
+
+	/** A bot with its inventory open, putting on armor: ticks to the next piece, and where it stood. */
+	private static final class Dressing {
+		int wait;
+		final Vec3 at;
+		final long since;
+
+		Dressing(int wait, Vec3 at, long since) {
+			this.wait = wait;
+			this.at = at;
+			this.since = since;
+		}
+	}
+
+	private static final Map<UUID, Dressing> DRESSING = new HashMap<>();
+	/** Each bot's last piece of armor: ticks the inventory was open for it, and how far the bot moved meanwhile (self-test). */
+	private static final Map<UUID, double[]> LAST_DRESS = new HashMap<>();
 	/** The game time until which a bot leaves chests alone. */
 	private static final Map<UUID, Long> PAUSED = new HashMap<>();
 	/** Each bot's last emptied chest: ticks it took and stacks it took (self-test). */
 	private static final Map<UUID, int[]> LAST = new HashMap<>();
 	private static final Random RNG = new Random();
 
-	/** Whether this bot is at a chest now (it stands still and looks at it). */
+	/** Whether this bot has a screen open now: a chest (it looks at it) or its inventory. It stands still. */
 	public static boolean busy(ServerPlayer bot) {
-		return AT.containsKey(bot.getUUID());
+		return AT.containsKey(bot.getUUID()) || DRESSING.containsKey(bot.getUUID());
 	}
+
+	/**
+	 * Whether a bot can open this chest from where it stands: within reach of its eyes, with nothing in between (no
+	 * looting through a wall).
+	 */
+	public static boolean canReach(ServerPlayer bot, BlockPos pos) {
+		Vec3 eye = bot.getEyePosition(), mid = Vec3.atCenterOf(pos);
+		if (eye.distanceToSqr(mid) > OPEN_REACH * OPEN_REACH) return false;
+		net.minecraft.world.phys.BlockHitResult hit = bot.level().clip(new net.minecraft.world.level.ClipContext(eye, mid,
+				net.minecraft.world.level.ClipContext.Block.OUTLINE, net.minecraft.world.level.ClipContext.Fluid.NONE, bot));
+		return hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS || hit.getBlockPos().equals(pos);
+	}
+
+	/** How close the eyes come to a chest's middle before a bot opens it (a player walks up to it). */
+	private static final double OPEN_REACH = 3.5;
 
 	/** The chest this bot is looting, or null. */
 	static BlockPos chest(ServerPlayer bot) {
@@ -82,8 +114,8 @@ public final class Looting {
 	}
 
 	/**
-	 * Every tick of a bot in a match: the next stack when it is time, and now and then one piece of armor (only while
-	 * {@code calm}: nobody puts armor on in the middle of a fight).
+	 * Every tick of a bot in a match: the next stack when it is time; after a chest, the inventory opened and one piece
+	 * of armor after the other (only while {@code calm}: nobody puts armor on in the middle of a fight).
 	 */
 	static void tick(ServerPlayer bot, boolean calm) {
 		Session s = AT.get(bot.getUUID());
@@ -102,14 +134,35 @@ public final class Looting {
 			s.wait = LootPace.vary(pace(bot).item(), RNG);
 			return;
 		}
+		Dressing dr = DRESSING.get(bot.getUUID());
+		if (dr != null) {
+			if (!calm) {
+				// the inventory closes; it tries again once things are quiet
+				DRESSING.remove(bot.getUUID());
+				DRESS.put(bot.getUUID(), PAUSE);
+				return;
+			}
+			if (--dr.wait > 0) return;
+			wearOne(bot);
+			LAST_DRESS.put(bot.getUUID(), new double[] {bot.level().getGameTime() - dr.since,
+					Math.hypot(bot.getX() - dr.at.x, bot.getZ() - dr.at.z)});
+			if (upgrade(bot) >= 0) {
+				DRESSING.put(bot.getUUID(), new Dressing(LootPace.vary(pace(bot).equip(), RNG), bot.position(), bot.level().getGameTime()));
+			} else {
+				DRESSING.remove(bot.getUUID());
+			}
+			return;
+		}
 		Integer d = DRESS.get(bot.getUUID());
 		if (d == null || !calm) return;
 		if (d > 0) {
 			DRESS.put(bot.getUUID(), d - 1);
-		} else if (wearOne(bot)) {
-			DRESS.put(bot.getUUID(), LootPace.vary(pace(bot).equip(), RNG));
-		} else {
-			DRESS.remove(bot.getUUID());
+			return;
+		}
+		DRESS.remove(bot.getUUID());
+		if (upgrade(bot) >= 0) {
+			// the inventory opens: finding the piece and shift-clicking it takes a moment, standing still
+			DRESSING.put(bot.getUUID(), new Dressing(LootPace.vary(pace(bot).equip(), RNG), bot.position(), bot.level().getGameTime()));
 		}
 	}
 
@@ -133,8 +186,8 @@ public final class Looting {
 		LAST.put(bot.getUUID(), new int[] {(int) (s.level.getGameTime() - s.since), s.stacks});
 		lid(s.level, s.pos, false);
 		s.done.run();
-		// then into the inventory to put on what it found, one piece after the other
-		DRESS.put(bot.getUUID(), LootPace.vary(pace(bot).equip(), RNG));
+		// then, a moment later, into the inventory to put on what it found, one piece after the other
+		DRESS.put(bot.getUUID(), LootPace.vary(pace(bot).open(), RNG));
 	}
 
 	/** The bot closes the chest without finishing it, and leaves chests alone for {@code pause} ticks. */
@@ -148,6 +201,7 @@ public final class Looting {
 	static void forget(ServerPlayer bot) {
 		stop(bot, 0);
 		DRESS.remove(bot.getUUID());
+		DRESSING.remove(bot.getUUID());
 		PAUSED.remove(bot.getUUID());
 	}
 
@@ -156,10 +210,17 @@ public final class Looting {
 		return LAST.get(bot.getUUID());
 	}
 
+	/** The last piece of armor this bot put on: {ticks its inventory was open, blocks it moved meanwhile}, or null (self-test). */
+	public static double[] lastDress(ServerPlayer bot) {
+		return LAST_DRESS.get(bot.getUUID());
+	}
+
 	static void clear() {
 		LAST.clear();
+		LAST_DRESS.clear();
 		AT.clear();
 		DRESS.clear();
+		DRESSING.clear();
 		PAUSED.clear();
 	}
 
@@ -176,6 +237,19 @@ public final class Looting {
 
 	/** One armor piece from the inventory into an empty armor slot, or over a weaker one; false when there is none. */
 	public static boolean wearOne(ServerPlayer bot) {
+		int i = upgrade(bot);
+		if (i < 0) return false;
+		Inventory inv = bot.getInventory();
+		ItemStack st = inv.getItem(i);
+		EquipmentSlot slot = bot.getEquipmentSlotForItem(st);
+		ItemStack worn = bot.getItemBySlot(slot);
+		bot.setItemSlot(slot, st.copy());
+		inv.setItem(i, worn.isEmpty() ? ItemStack.EMPTY : worn.copy());
+		return true;
+	}
+
+	/** The inventory slot of a piece of armor better than what the bot wears there, or -1. */
+	private static int upgrade(ServerPlayer bot) {
 		Inventory inv = bot.getInventory();
 		for (int i = 0; i < inv.getContainerSize(); i++) {
 			ItemStack st = inv.getItem(i);
@@ -184,11 +258,9 @@ public final class Looting {
 			if (!slot.isArmor()) continue;
 			ItemStack worn = bot.getItemBySlot(slot);
 			if (!worn.isEmpty() && armorRank(worn) >= armorRank(st)) continue;
-			bot.setItemSlot(slot, st.copy());
-			inv.setItem(i, worn.isEmpty() ? ItemStack.EMPTY : worn.copy());
-			return true;
+			return i;
 		}
-		return false;
+		return -1;
 	}
 
 	/** Leather 1 .. netherite 6, 0 for anything else. */

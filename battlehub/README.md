@@ -131,6 +131,10 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   right-click fewer) or the lobby filled to the game's maximum. A number or a full lobby comes at once; the
   biggest wish of the people in the lobby counts. `/bots standard`, `/bots fill` and `/bots <number>` do the
   same. A private game's owner sets its bots and their level in the `/custom` menu; they join at the start.
+  Bots take no place a person could join in: a world opened to LAN (eight places) still fills a Hunger Games
+  lobby of sixteen, and people can still join it.
+* **Your queue mates glow**: the people waiting in the same queue as you (a duel queue, a party lobby, 1v2 or
+  1v3) glow in the lobby, for you only, so you see who you are about to play with. Bots do not glow.
 * **Practice**: `/practice [mode] [level|adaptive]` or the **Practice** item in the menu (and the
   character on the plaza): a duel, 1v2 or 1v3 against bots, right away.
 * They know every game: they fight in duels, Free for All, Sumo and LMS, shoot in Bow and Crossbow PvP, run in
@@ -146,10 +150,11 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   * **The Bridge**: they head for the other goal, in 2v2 one keeps the own goal. They walk the path (or a bridge
     someone built) and only build their own where there is no way across: sneaking to the edge, looking at the side
     of the block and placing clay like a player.
-* **Like a player at a chest** (SkyWars, Hunger Games): a bot opens the chest (the lid opens, you hear it), stands
-  still looking at it and takes one stack at a time, closes it, and then puts on better armor one piece at a time;
-  lower levels are slower. A hit or an enemy close by makes it close the chest and fight; it comes back later. Its
-  arm swings for every hit, every miss and every chest it opens.
+* **Like a player at a chest** (SkyWars, Hunger Games): a bot opens a chest it can see (never through a wall; the
+  lid opens, you hear it), stands still looking at it and takes one stack at a time, closes it, and then opens its
+  inventory to put on better armor one piece at a time, standing still; lower levels are slower (a chest of eight
+  stacks takes a master about three seconds, a beginner six). A hit or an enemy close by makes it close the screen
+  and fight; it comes back to it later. Its arm swings for every hit, every miss and every chest it opens.
 * *A learned fight in every melee mode*: a neural network trained outside Minecraft (`battlehub/ml`: a fast
   simulation of the game, PPO with self-play) does the fighting itself: walking, strafing, sprinting, jumping,
   turning and clicking, every two ticks, from what the bot can see. The model (spec v3) knows the ground round it
@@ -688,7 +693,7 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
     check and its time, the admin alerts and their limits (reach, clicks per second, hovering, speed), the
     time between reports
   * `bots`: on/off, filling queues on/off, after how many seconds, party lobbies up to how many players, the
-    level of bots that fill in, the most bots at once, the share of rewards in matches with bots and other
+    level of bots that fill in, the most bots at once (`maxBots`, 24), the share of rewards in matches with bots and other
     people (alone with bots always pays nothing), the fighting styles handed out (`archetypes`), how much each
     bot differs from its style (`personalityVariation`, 0 .. 0.2), whether bots remember players between fights
     (`learning`) and across restarts (`learningPersistent`, in `battlehub/ai/`), whether the learned model fights

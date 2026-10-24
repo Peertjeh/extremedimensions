@@ -5,7 +5,7 @@ import java.util.Random;
 /**
  * How fast a bot loots a chest, like a player at its level (without Minecraft, so it can be tested on its own): a
  * moment after opening before the first click, then one shift-click per stack, and after closing the chest one armor
- * piece at a time (open the inventory, find it, shift-click). Lower levels are slower; every step varies a little.
+ * piece at a time (open the inventory, find it, shift-click), standing still. Lower levels are slower; every step varies a little.
  */
 public final class LootPace {
 	private LootPace() {}
@@ -14,9 +14,9 @@ public final class LootPace {
 	public record Pace(int open, int item, int equip) {}
 
 	// beginner .. master
-	private static final int[] OPEN = {14, 12, 10, 9, 8, 7};
-	private static final int[] ITEM = {10, 8, 7, 6, 5, 4};
-	private static final int[] EQUIP = {30, 26, 22, 18, 15, 12};
+	private static final int[] OPEN = {20, 17, 15, 13, 11, 10};
+	private static final int[] ITEM = {13, 11, 10, 9, 8, 7};
+	private static final int[] EQUIP = {40, 35, 30, 26, 22, 18};
 
 	/** The pace of a level (0 beginner .. 5 master; others are clamped). */
 	public static Pace of(int level) {

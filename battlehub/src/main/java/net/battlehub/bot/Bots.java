@@ -78,6 +78,15 @@ public final class Bots {
 		return ONLINE.size();
 	}
 
+	/** People among these players (bots left out): what the server's "full" check counts. */
+	public static int people(java.util.Collection<? extends net.minecraft.server.level.ServerPlayer> players) {
+		int n = 0;
+		for (net.minecraft.server.level.ServerPlayer p : players) {
+			if (!isBot(p.getUUID())) n++;
+		}
+		return n;
+	}
+
 	public static List<BotPlayer> all() {
 		return List.copyOf(ONLINE.values());
 	}
@@ -86,10 +95,14 @@ public final class Bots {
 		return ConfigManager.config().bots;
 	}
 
-	/** A new bot in the lobby, or null (bots off, too many, or the server is nearly full). */
+	/**
+	 * A new bot in the lobby, or null (bots off, or bots.maxBots online). Bots do not count against the server's player
+	 * limit: they take no place a person could join in (PlayerListMixin), so a world opened to LAN (eight places) still
+	 * fills a Hunger Games lobby of sixteen.
+	 */
 	public static BotPlayer spawn(MinecraftServer server, net.battlehub.core.ai.Difficulty skill) {
 		HubConfig.Bots c = cfg();
-		if (!c.enabled || ONLINE.size() >= c.maxBots || server.getPlayerCount() >= server.getMaxPlayers() - 1) {
+		if (!c.enabled || ONLINE.size() >= c.maxBots) {
 			return null;
 		}
 		String name = null;

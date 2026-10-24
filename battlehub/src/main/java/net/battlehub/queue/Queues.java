@@ -84,6 +84,30 @@ public final class Queues {
 		return out;
 	}
 
+	/**
+	 * Everyone waiting with this player: in the same duel queue, the same party lobby or the same 1v2/1v3 queue (bots
+	 * included; the player itself left out).
+	 */
+	public static java.util.Set<UUID> mates(UUID id) {
+		java.util.Set<UUID> out = new java.util.LinkedHashSet<>();
+		for (Matchmaker q : QUEUES.values()) {
+			if (!q.contains(id)) continue;
+			for (Matchmaker.Entry e : q.entries()) out.add(e.id());
+		}
+		for (GameMode mode : GameMode.parties()) {
+			List<UUID> members = Parties.members(mode);
+			if (members.contains(id)) out.addAll(members);
+		}
+		for (GameMode mode : GameMode.teamFights()) {
+			for (GameMode kit : GameMode.meleeKits()) {
+				List<UUID> waiting = TeamFights.waitingIds(mode, kit);
+				if (waiting.contains(id)) out.addAll(waiting);
+			}
+		}
+		out.remove(id);
+		return out;
+	}
+
 	/** Server tick at which the player joined their duel queue, or -1. */
 	public static long queuedSince(UUID id) {
 		Long t = SINCE.get(id);

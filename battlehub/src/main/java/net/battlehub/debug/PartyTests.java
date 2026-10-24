@@ -44,6 +44,7 @@ final class PartyTests {
 	}
 
 	static void all(MinecraftServer server, Script s) {
+		queueGlow(server, s);
 		party(server, s, GameMode.SUMO, PartyTests::sumo);
 		party(server, s, GameMode.TNT_RUN, PartyTests::tntRun);
 		party(server, s, GameMode.BOW_SPLEEF, PartyTests::fallOff);
@@ -53,6 +54,31 @@ final class PartyTests {
 		soloParkour(server, s);
 		party(server, s, GameMode.LMS, PartyTests::lms);
 		party(server, s, GameMode.FFA, PartyTests::ffa, new String[] {"kit:axe", "kit:axe", "kit:mace", ""});
+	}
+
+	/**
+	 * A and B wait in the SkyWars lobby: their clients show each other glowing in the lobby; C, not in a queue, does not
+	 * glow for them, nor they for C; when B leaves, A's client shows B as before.
+	 */
+	private static void queueGlow(MinecraftServer server, Script s) {
+		String tag = "queue glow";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": A and B join the SkyWars lobby; C stays in the lobby", () -> {
+			for (String n : new String[] {"BHTestA", "BHTestB", "BHTestC"}) SelfTest.join(server, n);
+			Parties.join(p("BHTestA"), GameMode.SKYWARS);
+			Parties.join(p("BHTestB"), GameMode.SKYWARS);
+		});
+		s.waitFor(tag + ": A's client shows B glowing, and B's shows A", 60, () -> {
+			TestPlayer a = p("BHTestA"), b = p("BHTestB");
+			return a.clientGlowing(b.getId()) && b.clientGlowing(a.getId())
+					&& net.battlehub.lobby.QueueGlow.shows(a.getUUID(), b.getUUID());
+		});
+		s.check(tag + ": C does not glow for A, nor A for C (only for each other)", () -> !p("BHTestA").clientGlowing(p("BHTestC").getId())
+				&& !p("BHTestC").clientGlowing(p("BHTestA").getId()) && !p("BHTestA").hasGlowingTag());
+		s.run(tag + ": B leaves the lobby", () -> net.battlehub.queue.Queues.leaveAll(p("BHTestB")));
+		s.waitFor(tag + ": A's client shows B without the glow again", 60, () -> !p("BHTestA").clientGlowing(p("BHTestB").getId())
+				&& !net.battlehub.lobby.QueueGlow.shows(p("BHTestA").getUUID(), p("BHTestB").getUUID()));
+		s.run(tag + ": A leaves too", () -> net.battlehub.queue.Queues.leaveAll(p("BHTestA")));
 	}
 
 	static void hit(String victim, String attacker, float amount) {

@@ -1,8 +1,11 @@
 package net.battlehub.mixin;
 
+import java.util.List;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import net.battlehub.HubEvents;
@@ -28,6 +31,15 @@ public abstract class PlayerListMixin {
 		if (Bots.silenced(message)) {
 			ci.cancel();
 		}
+	}
+
+	/**
+	 * Bots take no place a person could join in: the "server is full" check of a login counts people only, so bots may
+	 * fill lobbies past the server's player limit (a world opened to LAN has eight places).
+	 */
+	@Redirect(method = "canPlayerLogin", at = @At(value = "INVOKE", target = "Ljava/util/List;size()I"))
+	private int battlehub$peopleOnly(List<ServerPlayer> players) {
+		return Bots.people(players);
 	}
 
 	/** Bots leave no player files behind. */

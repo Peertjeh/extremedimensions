@@ -231,7 +231,7 @@ public final class SkyWarsMatch extends PartyMatch {
 	}
 
 	/**
-	 * At a chest (within reach) it opens it and loots it as a player does, a stack at a time, and puts on better
+	 * At a chest it can see (within reach, nothing in between) it opens it and loots it as a player does, a stack at a time, and puts on better
 	 * armor afterwards (bot/Looting).
 	 */
 	@Override
@@ -240,7 +240,7 @@ public final class SkyWarsMatch extends PartyMatch {
 		java.util.Set<BlockPos> done = botLooted.computeIfAbsent(bot.getUUID(), k -> new java.util.HashSet<>());
 		for (String mark : CHESTS) {
 			for (BlockPos pos : arena.marks(mark)) {
-				if (done.contains(pos) || bot.getEyePosition().distanceToSqr(Vec3.atCenterOf(pos)) > 3.5 * 3.5) continue;
+				if (done.contains(pos) || !net.battlehub.bot.Looting.canReach(bot, pos)) continue;
 				if (!hasLoot(pos)) {
 					done.add(pos);
 					continue;

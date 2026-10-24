@@ -2141,6 +2141,57 @@ mensen; Bridge Chaos 1v1v1v1, Hunger Games en een mace-duel; de bots waren inter
       optreedt, en het eerstvolgende werk aan de bots begint ermee.
     - **Tweede poging van de gefaalde job: 897 geslaagd, 0 gefaald.**
 
+## Versie 1.42.0 – Volle lobby's, rustig plunderen in Hunger Games, queue-genoten oplichten
+
+**Feedback.**
+- De bots in een Hunger Games-lobby gaan maar tot 7, ook als de lobby vol moet.
+- Het snelle looten en aantrekken in Hunger Games is nog niet opgelost.
+- De echte spelers met wie je in een queue zit, moeten oplichten in de lobby.
+
+**Tot 7 in de lobby.**
+- Oorzaak: `Bots.spawn` weigerde een bot zodra de server één plek van vol was. Bots tellen mee als speler. Een wereld
+  die voor LAN is geopend heeft acht plekken, dus: één mens en zes bots, zeven in de lobby. Daarnaast mochten er
+  hoogstens 12 bots tegelijk zijn (`bots.maxBots`), terwijl Hunger Games er 16 neemt.
+- Nu nemen bots geen plek in die een mens zou kunnen nemen:
+  - `PlayerListMixin` laat de controle "server vol" bij het inloggen alleen mensen tellen (`Bots.people`);
+  - `Bots.spawn` kijkt niet meer naar het spelerslimiet van de server, alleen naar `bots.maxBots`;
+  - `bots.maxBots` is standaard 24. Een config van vóór 1.42 met de oude standaard 12 krijgt 24 (configversie 8).
+- Zelftest "bots full lobby": de server krijgt acht plekken (`PlayerListAccessor`), A wil een volle lobby en gaat
+  naar Hunger Games. Er komen vijftien bots bij (zestien in de lobby, meer dan de acht van de server), en de
+  controle "server vol" telt één mens.
+
+**Te snel looten en aantrekken (`bot/Looting`, `core/LootPace`).**
+- Het tempo per kist was al dat van een speler (1.36.1), maar het aantrekken niet:
+  - een bot trok zijn harnasdelen een voor een aan terwijl hij gewoon doorliep, meteen na een kist en zelfs op weg
+    naar de volgende. Zo verschijnt het harnas als vanzelf;
+  - een bot kon een kist door een muur heen plunderen, en de kisten van Hunger Games staan in huizen.
+- Nu:
+  - Na een kist opent de bot even later zijn inventaris en staat hij stil voor elk stuk, zoals een speler die
+    zoekt en shift-klikt. Een treffer of een vijand binnen 5 blokken sluit de inventaris; daarna probeert hij het
+    opnieuw.
+  - Hij opent alleen kisten die hij ziet: binnen 3,5 blok van zijn ogen en niets ertussen
+    (`Looting.canReach`, in Hunger Games en SkyWars).
+  - Elke stap is trager. Openen duurt 10 tot 20 ticks, een stapel 7 tot 13 en een harnasdeel 18 tot 40, van master
+    tot beginner. Een kist van acht stapels kost een master zo ongeveer drie seconden en een beginner zes.
+- Tests:
+  - JUnit `LootPaceTest`: de nieuwe ondergrenzen.
+  - Zelftest "bots hunger games": een bot trekt zijn harnas aan met zijn inventaris open. Hij doet minstens 10
+    ticks over een stuk en verschuift minder dan 0,6 blok.
+
+**Queue-genoten oplichten (`lobby/QueueGlow`).**
+- Wie in dezelfde queue zit als jij (een duelqueue, een partylobby, 1v2 of 1v3, via `Queues.mates`), licht in de
+  lobby op, alleen voor jou. Bots lichten niet op.
+- Hoe: alleen naar jouw client gaat een pakket met de vlaggen van die speler zoals de game ze heeft (brandend,
+  sluipen, sprinten, ...), plus "glowing". Op de server zelf licht niemand op.
+  - De server stuurt de echte vlaggen opnieuw zodra iemand sluipt of sprint. Daarom gaat het pakket elke 2 ticks
+    opnieuw; wie samen wacht wordt elke 10 ticks opnieuw uitgerekend.
+  - Wie de queue verlaat, krijgt voor jou weer zijn gewone vlaggen.
+- Zelftest "queue glow":
+  - A en B in de SkyWars-lobby: hun clients tonen elkaar oplichtend;
+  - C staat in de lobby maar niet in de queue, en licht niet op (A ook niet voor C);
+  - na het vertrek van B toont de client van A hem weer gewoon.
+  - De testverbinding houdt het glow-bit bij uit de vlaggen die de client krijgt, ook de gewone van de server.
+
 ## Versie 1.40.1 – Bots lopen weer over halve slabs (The Bridge)
 
 **Feedback.** In The Bridge 1v1v1v1 waren de bots in 1.36.0 beter. Vooral het pathfinding is in 1.40.0 minder, en

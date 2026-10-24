@@ -13,13 +13,13 @@ class LootPaceTest {
 	void aChestTakesSecondsAndLowerLevelsAreSlower() {
 		LootPace.Pace beginner = LootPace.of(0), master = LootPace.of(5);
 		// a SkyWars chest with eight stacks
-		assertTrue(LootPace.chestTicks(beginner, 8) >= 80, "a beginner needs about four seconds");
-		assertTrue(LootPace.chestTicks(master, 8) >= 35, "even a master needs about two");
+		assertTrue(LootPace.chestTicks(beginner, 8) >= 120, "a beginner needs about six seconds");
+		assertTrue(LootPace.chestTicks(master, 8) >= 60, "even a master needs about three");
 		for (int l = 1; l <= 5; l++) {
 			assertTrue(LootPace.of(l).item() <= LootPace.of(l - 1).item());
 			assertTrue(LootPace.of(l).equip() <= LootPace.of(l - 1).equip());
 		}
-		assertTrue(master.equip() >= 10, "putting on a piece of armor takes half a second or more");
+		assertTrue(master.equip() >= 15, "putting on a piece of armor takes most of a second or more");
 		assertEquals(LootPace.of(5), LootPace.of(9));
 	}
 

@@ -33,6 +33,8 @@ final class TestConnection extends Connection {
 	volatile int heldSlot = -1;
 	/** Arm swings (main hand) the client was shown, per entity id. */
 	final java.util.Map<Integer, Integer> swings = new ConcurrentHashMap<>();
+	/** Whether the client shows an entity glowing, from the last flags it got for it (absent: never told). */
+	final java.util.Map<Integer, Boolean> glowing = new ConcurrentHashMap<>();
 
 	TestConnection() {
 		super(PacketFlow.SERVERBOUND);
@@ -70,6 +72,8 @@ final class TestConnection extends Connection {
 			int brightnessId = net.battlehub.mixin.DisplayAccessor.battlehub$brightness().id();
 			for (net.minecraft.network.syncher.SynchedEntityData.DataValue<?> v : data.packedItems()) {
 				if (v.id() == brightnessId && v.value() instanceof Integer b) brightness.put(data.id(), b);
+				// an entity's shared flags (id 0): bit 0x40 is glowing
+				if (v.id() == 0 && v.value() instanceof Byte f) glowing.put(data.id(), (f & 0x40) != 0);
 			}
 		}
 	}

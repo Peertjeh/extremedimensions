@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.42.0
+
+### Added
+* **Your queue mates glow in the lobby.** The people waiting in the same queue as you (a duel queue, a party lobby,
+  1v2 or 1v3) glow for you, and only for you, so you see who you are about to play with. Bots do not glow.
+
+### Fixed
+* **A full lobby stopped at seven players.** Bots counted against the server's player limit (a world opened to LAN
+  has eight places, and one was kept free), and at most twelve bots could be online. Bots now take no place a person
+  could join in: the "server is full" check of a login counts people only, so a Hunger Games lobby asked to be full
+  gets its fifteen bots and people can still join. The most bots at once is now 24 (an unchanged old default of 12
+  is raised).
+* **Bots still looted and dressed too fast in the Hunger Games.** A bot put its armor on piece by piece while it
+  walked on (straight after a chest, even while it ran to the next one), and it could loot a chest through a wall.
+  It now opens its inventory and stands still for every piece, a hit or an enemy close by closes it, and it only
+  opens chests it can see. Every step is slower too: a chest of eight stacks takes a master about three seconds and a
+  beginner six, a piece of armor about one to two seconds.
+
 ## 1.41.0
 
 ### Added

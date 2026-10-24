@@ -10,6 +10,7 @@
 		"ConnectionAccessor",
 		"ArrowAccessor",
 		"PlayerListMixin",
+		"PlayerListAccessor",
 		"ServerGamePacketListenerImplMixin",
 		"DisplayAccessor",
 		"BlockDisplayAccessor",
