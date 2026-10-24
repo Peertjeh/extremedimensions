@@ -1,4 +1,4 @@
-net.minecraft.server.MinecraftServer
-net.minecraft.server.level.ServerChunkCache
-net.minecraft.server.level.ServerLevel
-net.minecraft.server.players.PlayerList
+net.minecraft.client.gui.components.AbstractWidget
+net.minecraft.client.gui.ComponentPath
+net.minecraft.client.gui.navigation.FocusNavigationEvent
+net.minecraft.client.gui.screens.ChatScreen

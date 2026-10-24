@@ -32,7 +32,15 @@ the heavy parts cost, and makes the download lighter.
   the jar about 20 MB instead of 24. The sky and the title picture stay as they were: squeezing them into fewer colours
   showed bands and wrong hues in the Seam's vortex, and nothing lossless made them smaller.
 
+### Fixed
+- **Up in the chat brings back what you sent last again**, and Enter sends it again. The guide card's close cross,
+  which the mod adds to the chat so it can be clicked, could also take the keyboard's focus (even with the guide
+  switched off): the first press of up moved the focus to it, and the Enter after it pressed the cross instead of sending
+  the command. The cross is now for the mouse only, and gives the focus straight back to the chat's line once clicked.
+
 ### Tests
+- The client test types a command in the chat, sends it, opens the chat again, presses up and Enter, and checks that
+  the same command came back and was sent again.
 - **Every test that wakes an Elder runs alone**, in a batch of its own (thirteen of them: the Matriarch, Ferryman,
   Weaver and Knot Mother fights, the arena, the gaol, the Lance, the shockwave), and so does the Frayed Ray's hunt. The
   game runs the tests of a batch side by side in one world, and a fight reached past its own walls: a Weaver's beams
