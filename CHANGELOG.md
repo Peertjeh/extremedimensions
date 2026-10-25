@@ -1,5 +1,67 @@
 # Changelog
 
+## 3.3.0: Tetherite
+
+### New
+- **Tetherite, a tier past netherite**, born of what the Fray swallowed. **Tetherite Ore** is the rarest block in the
+  mod: only deep in the rock of the Seam's islands (in the lowest quarter of an island's heart, three blocks in a
+  thousand) and in the stone at the heart of the Fray's knots. It needs a diamond pickaxe, glows faintly and is as
+  fire-proof as ancient debris. Smelt or blast it for **Tetherite Scrap**.
+- **The Spindle** (2 Seam Silk, an End Rod, 3 polished hush stone slabs), where Tether Fragments are worked: load it
+  with **2 Tether Fragments** and **1 Seam Silk** (crouch to load a whole stack), then turn it with an empty hand. Its
+  spool fills and turns as you spin; at the eighth turn it gives up a **Tether Cord**. What was frayed can be spun
+  again: not mended, only spun. Broken, it gives back what it held.
+- **Tetherite Ingot**: 4 Tetherite Scrap and 4 Tether Cord. With a **Tetherite Upgrade Smithing Template** (in the
+  Fray's snarls and the Seam's reliquaries, always from the Knot Mother; copied with 7 diamonds and hush stone) it takes
+  netherite gear one step further at a smithing table.
+- **The gear**: sword, pickaxe, axe, shovel, hoe and spear (durability 2531, speed 10, one point more damage than
+  netherite, enchantability 18), and helmet, chestplate, leggings and boots (netherite's armour, toughness 4, knockback
+  resistance 0.15, a fifth more durability). All of it is fire-proof, and all of it is **Tethered**: what falls into the
+  void comes back up its thread to its owner (or the nearest player, or the world spawn). **The full set** slows the
+  Tether's drain by 10%, within the drain's floor.
+- **Two armour trims**: the **Weaver** (in the Seam's reliquaries and looms, always from the Last Weaver) and the
+  **Fray** (in the Fray's snarls, often from the Knot Mother), each copied with 7 diamonds and hush masonry. **Two trim
+  materials**: the Tetherite Ingot (dark violet with the Tether's cyan in its light) and **Seam Silk** (a glowing
+  violet). Both materials show on every armour, vanilla's included, in the world and on the item icons.
+- **Fifteen new enchantments** (the Art of Binding, grown), each with every number in the settings:
+
+  | Enchantment | On | Levels | What it does | From |
+  | --- | --- | --- | --- | --- |
+  | **Unravelling** | swords, maces | I-III | What it strikes comes undone: 1 damage a second for 2 seconds a level (the new Unravelling effect). Not with Fire Aspect. | table |
+  | **Reaping** | swords, axes, maces | I-II | Every monster slain on an expedition gives 2 seconds a level of charge back to your Tether's anchor. | table |
+  | **Tethershot** | bows, crossbows | I | An arrow that hits pulls its target toward you (not the Elders). Not with Punch. | table |
+  | **Veinseeker** | pickaxes | I | Stone broken in the Seam makes Tetherite Ore (soul flames) and Seam Veins (sparks) within 8 blocks ring out, for you only, every 3 seconds at most. | table |
+  | **Anchored** | chestplates, leggings | I-III | 5% knockback resistance a level, and with Unmoored the End's void throws you 25% a level less often. | table |
+  | **Wardweave** | armour | I-IV | Protection against the creatures of the wound and the Elders (twice what Protection gives). One of the protections. | table |
+  | **Sated** | helmets | I-II | 20% less hunger a level. | table |
+  | **Driftfall** | boots | I | A fall of 6 blocks in the Seam is caught with 4 seconds of slow falling, once a minute. | table |
+  | **Hushed Steps** | boots | I-II | Monsters see you 20% a level less far. | table |
+  | **Foresight** | Tethers | I | A Collapse while bound to it offers one card more. Not with Thrift or Silkbound. | table |
+  | **Soulward** | helmets | I | Half the time the Lurker flinches from your helmet's soul light and runs empty-handed. | table (rare), Seam villages |
+  | **Knitting** | anything with durability | I | In the Seam, worn and held gear mends a point every 10 seconds. Not with Mending. | treasure: reliquaries, looms |
+  | **Steadfast** | leggings | I-II | The Elders' spells take 30% a level less hold: the Hex, the Weight and Bound Wings. | table |
+  | **Curse of Fraying** | anything with durability | I | In the Seam it wears twice as fast. | treasure: on tempting picks in the Fray's snarls |
+  | **Curse of the Starved** | armour | I | Every cursed piece makes you half again as hungry. | treasure: on tempting chestplates in the Fray's snarls |
+
+- **Five advancements**: *What the Fray Kept* (find the ore), *Spun Again* (a Tether Cord), *Bound in Metal* (an
+  ingot), *Held to the World* (the full set, a challenge) and *Woven In* (trim with the Weaver or the Fray). 55 in all.
+- **Settings** (English and Dutch): the ore's chance and depth in islands and its chance in the Fray, what a cord takes
+  on the Spindle, whether Tetherite comes back from the void and from how deep, the set's ease of the drain, and every
+  enchantment's numbers.
+
+### Changed
+- Seam Veins answer to Fortune.
+
+### Tests
+- Tetherite: a step past netherite in every number, the ore smelts to scrap and scrap to ingots, the Spindle spins a
+  cord and gives back what it holds, the full set eases the drain, Tetherite comes back from the void, the ore lies
+  deep in the Seam, the trims are there, and the mixin applied.
+- The enchantments: where each goes and what it keeps apart from, treasure and curses; Unravelling bleeds, Reaping feeds
+  the anchor, Tethershot hauls, Veinseeker rings, the armour charms read, Foresight adds a card, Driftfall catches,
+  Knitting mends, Fraying wears in the Seam only, and their three mixins applied.
+- The client test shows the gear and the trims in the inventory, the Spindle between veins of ore with two armour stands
+  in trimmed armour, and the set worn.
+
 ## 3.2.0: The Abyssal Curses
 
 ### New

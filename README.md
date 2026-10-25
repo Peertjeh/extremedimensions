@@ -112,14 +112,21 @@ Trials past gold), and the tapestry's boons stay.
 - **Relics** (10): bound to the Tether one at a time, each with a gift and a price.
 - **Pacts**: curses taken on willingly for an expedition, for what a safe return brings.
 - **Rift Trials**: a weekly goal in the Seam, a world scoreboard and medals.
-- **The Art of Binding**: five enchantments for Tethers and gear, and the Wound Lens.
+- **Tetherite**: a tier past netherite. The rarest ore lies deep in the Seam's island hearts and the Fray's knots; Tether
+  Fragments are spun into **Tether Cord** on a **Spindle**, and scrap and cord make the ingot. Tools, a spear and armour
+  that come back from the void, and a full set that slows the drain.
+- **Two armour trims**, the Weaver and the Fray, and two trim materials, Tetherite and Seam Silk, that show on every
+  armour.
+- **The Art of Binding**: twenty enchantments (two of them curses) for Tethers, weapons, tools and armour, most of them
+  reaching into the mod's own workings (the Tether's charge, the Collapse's cards, the Lurker, the Elders' spells, the
+  Seam's veins), and the Wound Lens.
 - **The Elders**: the Matriarch, the Ferryman, the Last Weaver and the Knot Mother, with arenas raised by flying blocks,
   domain phases, cores that ward them and islands that fall.
 - **The tribe as a faction**: standing from hunted to kin, barter, raids.
 - **The wounds remember**: Echoes, Unstable Anchors, Unanchored builds and Frayed islands.
 - **Co-op**: fallen players can be revived, curses carried for a friend, anchors shared. Every player has their own
   time.
-- **50 advancements**, the recipe book through them, a bestiary and a ledger in the journal.
+- **55 advancements**, the recipe book through them, a bestiary and a ledger in the journal.
 - **A music disc**: *Tick of the Boundary* on a record of its own, now and then in a barrel of the Thinned in the Seam
   (the richer the barrel, the likelier); it plays in any jukebox.
 - **Title and loading screens**: the picture of the Tether, with its own music (*Tick of the Boundary* on the menus,
@@ -202,7 +209,9 @@ stood in any tick over 100 ms. To run it yourself: `./gradlew assemble benchJar`
 Download de jar uit de nieuwste groene build (**Actions** → run → **Artifacts**) en zet hem met Fabric API in je
 `mods`-map, op de server én bij iedere speler. Alles is in het Nederlands te spelen. Instellingen staan in het
 instellingenscherm en in `config/extremedimensions.json`. Na het einde bouw je een **Weversgetouw** en weef je het
-wandtapijt: zes panelen, elk een blijvende gunst, en daarna Nieuwe Draad+.
+wandtapijt: zes panelen, elk een blijvende gunst, en daarna Nieuwe Draad+. Diep in de Seam ligt **Tetheriet**: spin
+Tether Fragments op een **Spinrok** tot Tetherkoord, smeed het tot een rang voorbij netheriet, en kies uit twintig
+betoveringen en twee nieuwe harnasversieringen.
 
 ## License
 
