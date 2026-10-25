@@ -34,7 +34,8 @@
 			"com.extremedimensions.gametest.PathTests",
 			"com.extremedimensions.gametest.FirstWeaverTests",
 			"com.extremedimensions.gametest.MigrationTests",
-			"com.extremedimensions.gametest.TapestryTests"
+			"com.extremedimensions.gametest.TapestryTests",
+			"com.extremedimensions.gametest.TetheriteTests"
 		],
 		"fabric-client-gametest": [
 			"com.extremedimensions.gametest.ClientShots",

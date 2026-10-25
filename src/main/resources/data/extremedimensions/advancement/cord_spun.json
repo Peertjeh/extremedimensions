@@ -1,0 +1,30 @@
+{
+  "parent": "extremedimensions:tetherite_found",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:tether_cord"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.cord_spun.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.cord_spun.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "spun": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:tether_cord"
+          }
+        ]
+      }
+    }
+  }
+}

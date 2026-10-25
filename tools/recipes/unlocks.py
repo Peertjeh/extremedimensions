@@ -23,8 +23,11 @@ GRANTED = {"weavers_loom"}
 
 def ingredients(recipe):
     kind = recipe["type"].split(":")[1]
-    if kind in ("stonecutting", "smelting"):
+    if kind in ("stonecutting", "smelting", "blasting"):
         return [recipe["ingredient"]]
+    if kind in ("smithing_transform", "smithing_trim"):
+        # a smithing recipe is learned with its template, as vanilla's are
+        return [recipe["template"]]
     if kind == "crafting_shapeless":
         return recipe["ingredients"]
     if kind == "crafting_shaped":

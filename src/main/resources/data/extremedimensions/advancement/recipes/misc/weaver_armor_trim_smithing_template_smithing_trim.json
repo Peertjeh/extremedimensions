@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_weaver_armor_trim_smithing_template": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:weaver_armor_trim_smithing_template"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_weaver_armor_trim_smithing_template"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:weaver_armor_trim_smithing_template_smithing_trim"
+    ]
+  }
+}

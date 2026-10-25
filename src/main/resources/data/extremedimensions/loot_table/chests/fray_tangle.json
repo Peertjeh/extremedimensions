@@ -152,6 +152,32 @@
         "type": "minecraft:random_chance",
         "chance": 0.08
       }
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:tetherite_upgrade_smithing_template"
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.06
+      }
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:fray_armor_trim_smithing_template"
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.12
+      }
     }
   ],
   "random_sequence": "extremedimensions:chests/fray_tangle"

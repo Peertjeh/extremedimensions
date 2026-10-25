@@ -259,7 +259,7 @@ public final class ExpeditionService {
 			// (the Toll panel of a mended world eases it too)
 			double world = WorldService.drainFactor(dim), relic = com.extremedimensions.relic.RelicService.drainFactor(d, dim);
 			double toll = Math.min(1, com.extremedimensions.tapestry.Tapestry.drain(dim));
-			d.currentDrain = (world <= 0 ? 0 : d.drainMultiplier(Math.min(1, world) * Math.min(1, relic) * toll) * Math.max(1, world) * Math.max(1, relic))
+			d.currentDrain = (world <= 0 ? 0 : d.drainMultiplier(Math.min(1, world) * Math.min(1, relic) * toll * com.extremedimensions.tetherite.Tetherite.drainEase(p)) * Math.max(1, world) * Math.max(1, relic))
 					* (seam ? 1.0 : TetherService.distanceFactor(p, d)) * com.extremedimensions.elder.FerrymanService.drainFactor(p)
 					* com.extremedimensions.binding.Homebound.drainFactor(p) * com.extremedimensions.events.WorldEvents.drainFactor(p);
 			double left = AnchorService.drainLinked(p, d, d.currentDrain / 20.0);

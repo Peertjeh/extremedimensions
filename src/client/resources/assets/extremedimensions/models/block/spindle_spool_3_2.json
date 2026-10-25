@@ -1,0 +1,89 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "base": "extremedimensions:block/spindle_base",
+    "rod": "extremedimensions:block/spindle_rod",
+    "thread": "extremedimensions:block/spindle_thread",
+    "silk": "extremedimensions:block/spindle_silk",
+    "particle": "extremedimensions:block/spindle_base"
+  },
+  "elements": [
+    {
+      "from": [
+        4.0,
+        5,
+        4.0
+      ],
+      "to": [
+        12.0,
+        14,
+        12.0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4.0,
+            2,
+            12.0,
+            11
+          ],
+          "texture": "#thread"
+        },
+        "south": {
+          "uv": [
+            4.0,
+            2,
+            12.0,
+            11
+          ],
+          "texture": "#thread"
+        },
+        "east": {
+          "uv": [
+            4.0,
+            2,
+            12.0,
+            11
+          ],
+          "texture": "#thread"
+        },
+        "west": {
+          "uv": [
+            4.0,
+            2,
+            12.0,
+            11
+          ],
+          "texture": "#thread"
+        },
+        "up": {
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            12.0
+          ],
+          "texture": "#thread"
+        },
+        "down": {
+          "uv": [
+            4.0,
+            4.0,
+            12.0,
+            12.0
+          ],
+          "texture": "#thread"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "y",
+        "angle": 45
+      }
+    }
+  ]
+}

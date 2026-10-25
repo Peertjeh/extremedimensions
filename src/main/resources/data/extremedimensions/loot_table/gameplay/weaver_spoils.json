@@ -26,6 +26,15 @@
           }
         }
       ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:weaver_armor_trim_smithing_template"
+        }
+      ]
     }
   ],
   "random_sequence": "extremedimensions:gameplay/weaver_spoils"

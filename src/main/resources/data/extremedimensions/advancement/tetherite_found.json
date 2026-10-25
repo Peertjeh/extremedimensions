@@ -1,0 +1,30 @@
+{
+  "parent": "extremedimensions:fray_entered",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:tetherite_ore"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.tetherite_found.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.tetherite_found.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "found": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:tetherite_ore"
+          }
+        ]
+      }
+    }
+  }
+}

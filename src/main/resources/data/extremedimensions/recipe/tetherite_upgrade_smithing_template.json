@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": "minecraft:diamond",
+    "C": "extremedimensions:hush_stone",
+    "S": "extremedimensions:tetherite_upgrade_smithing_template"
+  },
+  "pattern": [
+    "#S#",
+    "#C#",
+    "###"
+  ],
+  "result": {
+    "id": "extremedimensions:tetherite_upgrade_smithing_template",
+    "count": 2
+  }
+}

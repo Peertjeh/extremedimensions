@@ -156,6 +156,10 @@ public final class SeamDepth {
 						b = thread(rnd);
 					} else {
 						b = core(rnd);
+						// At the heart of the stone, the lost Tethers the knot was wound round, hardened to ore
+						if (d < 0.4 && (hash(k.x() + dx, y * 31L + k.z() + dz, 41) % 1_000_000) / 1_000_000.0 < Config.TETHERITE_ORE_FRAY_CHANCE) {
+							b = ModBlocks.TETHERITE_ORE.defaultBlockState();
+						}
 					}
 					p.set(k.x() + dx, y, k.z() + dz, b);
 				}

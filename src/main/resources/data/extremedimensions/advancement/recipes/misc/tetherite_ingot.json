@@ -1,0 +1,36 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_tetherite_scrap": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:tetherite_scrap"
+          }
+        ]
+      }
+    },
+    "has_tether_cord": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:tether_cord"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_tetherite_scrap",
+      "has_tether_cord"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:tetherite_ingot"
+    ]
+  }
+}

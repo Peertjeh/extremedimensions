@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_tetherite_ore": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:tetherite_ore"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_tetherite_ore"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:tetherite_scrap"
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "parent": "extremedimensions:tetherite_ingot",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:tetherite_chestplate"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.tetherite_full.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.tetherite_full.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "armor": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:tetherite_helmet"
+          },
+          {
+            "items": "extremedimensions:tetherite_chestplate"
+          },
+          {
+            "items": "extremedimensions:tetherite_leggings"
+          },
+          {
+            "items": "extremedimensions:tetherite_boots"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -248,6 +248,65 @@ HOE = [
     ".kk.............",
 ]
 
+SHOVEL = [
+    "..........kkkk..",
+    ".........khhlmk.",
+    "........khlcmmdk",
+    "........klccmmdk",
+    "........klcmmddk",
+    ".........kmmddk.",
+    "........ktkkkk..",
+    ".......knk......",
+    "......knbk......",
+    ".....kwnk.......",
+    "....knbk........",
+    "...knbk.........",
+    "..kwnk..........",
+    ".knbk...........",
+    "kbk.............",
+    "kk..............",
+]
+
+# the spear: a leaf-shaped head threaded down its middle, a cord-wound haft
+SPEAR = [
+    "..........kkkkkk",
+    ".........khhllck",
+    "........khllcmdk",
+    ".......khlccmdk.",
+    ".......klcmmdk..",
+    ".......kcmddk...",
+    "......kttkkk....",
+    ".....knbk.......",
+    "....kwnk........",
+    "...knbk.........",
+    "..knbk..........",
+    ".kwnk...........",
+    "knbk............",
+    "kbk.............",
+    "kk..............",
+    "................",
+]
+
+# held, it reaches corner to corner, the head longer
+SPEAR_IN_HAND = [
+    ".........kkkkkkk",
+    "........khhlllck",
+    ".......khllccmdk",
+    "......khlcccmddk",
+    "......klccmmddk.",
+    "......kcmmddkk..",
+    ".....kttkkkk....",
+    "....knbk........",
+    "...kwnk.........",
+    "..knbk..........",
+    ".knbk...........",
+    "kwnk............",
+    "nbk.............",
+    "bk..............",
+    "k...............",
+    "................",
+]
+
 # --------------------------------------------------------------------------- armor icons, hand drawn
 
 HELMET = [
@@ -385,6 +444,89 @@ CORD = [
 ]
 
 
+# --------------------------------------------------------------------------- smithing templates
+
+TEMPLATE_PAL = {"K": (24, 22, 32), "S": (46, 44, 58), "Q": (72, 70, 88), "R": (104, 102, 122), "W": (142, 140, 160)}
+
+TEMPLATE = [
+    "................",
+    "...KKKKKKKKKK...",
+    "..KWRRRRRRRRQK..",
+    "..KRQQQQQQQQSK..",
+    "..KRQQQQQQQQSK..",
+    "..KRQQQQQQQQSK..",
+    "..KRQQQQQQQQSK..",
+    "..KRQQQQQQQQSK..",
+    "..KRQQQQQQQQSK..",
+    "..KRQQQQQQQQSK..",
+    "..KRQQQQQQQQSK..",
+    "..KRQQQQQQQQSK..",
+    "..KRQQQQQQQQSK..",
+    "..KQSSSSSSSSSK..",
+    "...KKKKKKKKKK...",
+    "................",
+]
+
+# what each template carries in its middle (rows 3 to 12, columns 4 to 11)
+EMBLEMS = {
+    # two threads crossed through a ring: the Tether, bound again
+    "tetherite_upgrade_smithing_template": [
+        "e......e",
+        ".t....t.",
+        "..tcct..",
+        "..cggc..",
+        "..cggc..",
+        "..tcct..",
+        ".t....t.",
+        "e......e",
+        "........",
+        "..dmmd..",
+    ],
+    # warp and weft: a loom's weave
+    "weaver_armor_trim_smithing_template": [
+        ".v.v.v.v",
+        "uuuuuuuu",
+        ".v.v.v.v",
+        ".v.v.v.v",
+        "uuuuuuuu",
+        ".v.v.v.v",
+        ".v.v.v.v",
+        "uuuuuuuu",
+        ".v.v.v.v",
+        "........",
+    ],
+    # one thread, coming apart into many
+    "fray_armor_trim_smithing_template": [
+        "...vv...",
+        "...vv...",
+        "...vu...",
+        "..v.uv..",
+        "..u..v..",
+        ".v...u..",
+        ".u.v..v.",
+        "v..u..u.",
+        "u..v...v",
+        "...u....",
+    ],
+}
+
+EMBLEM_PAL = {"v": (196, 132, 250), "u": (120, 70, 186)}
+
+
+def template(name):
+    im = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    px = im.load()
+    for y, row in enumerate(TEMPLATE):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                px[x, y] = TEMPLATE_PAL[ch] + (255,)
+    for y, row in enumerate(EMBLEMS[name]):
+        for x, ch in enumerate(row):
+            if ch != ".":
+                px[4 + x, 3 + y] = (EMBLEM_PAL.get(ch) or PAL[ch]) + (255,)
+    return im
+
+
 def draw(rows):
     return [[None if ch == "." else ch for ch in row] for row in rows]
 
@@ -403,10 +545,10 @@ ITEMS = {
     "tetherite_sword": sword,
     "tetherite_pickaxe": lambda: draw(PICKAXE),
     "tetherite_axe": lambda: draw(AXE),
-    "tetherite_shovel": shovel,
+    "tetherite_shovel": lambda: draw(SHOVEL),
     "tetherite_hoe": lambda: draw(HOE),
-    "tetherite_spear": lambda: spear(False),
-    "tetherite_spear_in_hand": lambda: spear(True),
+    "tetherite_spear": lambda: draw(SPEAR),
+    "tetherite_spear_in_hand": lambda: draw(SPEAR_IN_HAND),
     "tetherite_helmet": lambda: draw(HELMET),
     "tetherite_chestplate": lambda: draw(CHESTPLATE),
     "tetherite_leggings": lambda: draw(LEGGINGS),
@@ -417,10 +559,67 @@ ITEMS = {
 }
 
 
+# --------------------------------------------------------------------------- blocks
+
+BLOCKS = os.path.join(ASSETS, "block")
+
+
+def ore():
+    """Hush stone with knots of dark metal set in it, each threaded with the Tether's cyan."""
+    base = Image.open(os.path.join(BLOCKS, "hush_stone.png")).convert("RGBA").crop((0, 0, 16, 16))
+    px = base.load()
+    knots = [
+        [".kkk.", "kdmlk", "kmcgk", "kltck", ".kkk."],
+        ["kkk.", "kmck", "ktgk", ".kk."],
+        ["kkkk.", "kdlck", "kmcgk", ".kkkk"],
+        ["kk.", "kck", ".kk"],
+    ]
+    for (ox, oy), shape in zip(((1, 1), (11, 2), (8, 9), (1, 11)), knots):
+        for y, row in enumerate(shape):
+            for x, ch in enumerate(row):
+                if ch != ".":
+                    px[(ox + x) % 16, (oy + y) % 16] = PAL[ch] + (255,)
+    return base
+
+
+def stripes(cols, rows_of, seed=0):
+    """A 16 px square of horizontal bands (thread wound round a spool), each band a run of colours."""
+    im = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    px = im.load()
+    for y in range(16):
+        band = rows_of[y % len(rows_of)]
+        for x in range(16):
+            c = cols[band[(x + y * 3 + seed) % len(band)]]
+            px[x, y] = c + (255,)
+    return im
+
+
+def spindle_parts():
+    base = Image.open(os.path.join(BLOCKS, "polished_hush_stone.png")).convert("RGBA").crop((0, 0, 16, 16))
+    px = base.load()
+    for i in range(16):
+        for (x, y) in ((i, 0), (i, 15), (0, i), (15, i)):
+            r, g, b, _ = px[x, y]
+            px[x, y] = (int(r * 0.6), int(g * 0.6), int(b * 0.6), 255)
+    thread = {"g": PAL["g"], "c": PAL["c"], "t": PAL["t"], "e": PAL["e"]}
+    silk = {"a": (232, 186, 255), "b": (196, 132, 250), "c": (150, 90, 220), "d": (96, 52, 150)}
+    rod = {"a": (226, 220, 236), "b": (190, 182, 206), "c": (150, 140, 170)}
+    return {
+        "spindle_base": base,
+        "spindle_thread": stripes(thread, ["ccccccgcccccccct", "tttttttttttttttt", "ccccctccccccccce", "eeeeeeeeeeeeeeee"]),
+        "spindle_silk": stripes(silk, ["aabbbbbbaabbbbbb", "bbbbccbbbbbbccbb", "cccccccdcccccccd", "ddddcdddddddcddd"]),
+        "spindle_rod": stripes(rod, ["abbbbbbbbbbbbbbc"] * 2 + ["bbbbbbbbbbbbbbbc"]),
+    }
+
+
 def main():
     out = {name: png(fn()) for name, fn in ITEMS.items()}
+    for name in EMBLEMS:
+        out[name] = template(name)
     preview = sys.argv[1] if len(sys.argv) > 1 else None
     if preview:
+        out["tetherite_ore"] = ore()
+        out.update(spindle_parts())
         S = 10
         sheet = Image.new("RGBA", (len(out) * (16 * S + 6), 16 * S), (60, 60, 64, 255))
         for i, im in enumerate(out.values()):
@@ -429,6 +628,9 @@ def main():
         return
     for name, im in out.items():
         im.save(os.path.join(ASSETS, "item", name + ".png"))
+    ore().save(os.path.join(BLOCKS, "tetherite_ore.png"))
+    for name, im in spindle_parts().items():
+        im.save(os.path.join(BLOCKS, name + ".png"))
 
 
 if __name__ == "__main__":

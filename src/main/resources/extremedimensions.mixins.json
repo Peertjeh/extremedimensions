@@ -28,6 +28,7 @@
 		"SealedSlotMixin",
 		"TetherAnvilMixin",
 		"TetherEnchantMixin",
+		"TetheredItemMixin",
 		"UnhealingMixin",
 		"UnmappedMapMixin",
 		"UnwelcomeDoorMixin",

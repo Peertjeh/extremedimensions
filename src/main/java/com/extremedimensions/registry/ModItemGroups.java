@@ -46,6 +46,15 @@ public final class ModItemGroups {
 					out.accept(ModItems.PLUMB_LINE);
 					out.accept(ModItems.MUSIC_DISC_TICK_OF_THE_BOUNDARY);
 					out.accept(ModItems.WEAVERS_LOOM);
+					out.accept(ModItems.SPINDLE);
+					out.accept(ModItems.TETHERITE_ORE);
+					out.accept(ModItems.TETHERITE_SCRAP);
+					out.accept(ModItems.TETHER_CORD);
+					out.accept(ModItems.TETHERITE_INGOT);
+					out.accept(ModItems.TETHERITE_UPGRADE_SMITHING_TEMPLATE);
+					out.accept(ModItems.WEAVER_ARMOR_TRIM_SMITHING_TEMPLATE);
+					out.accept(ModItems.FRAY_ARMOR_TRIM_SMITHING_TEMPLATE);
+					ModItems.TETHERITE_GEAR.forEach(out::accept);
 					out.accept(ModItems.THREAD_OF_ROOTS);
 					out.accept(ModItems.THREAD_OF_TOLL);
 					out.accept(ModItems.THREAD_OF_UNRAVELLING);

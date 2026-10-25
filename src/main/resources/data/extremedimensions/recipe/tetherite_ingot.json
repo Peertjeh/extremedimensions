@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "tetherite_ingot",
+  "ingredients": [
+    "extremedimensions:tetherite_scrap",
+    "extremedimensions:tetherite_scrap",
+    "extremedimensions:tetherite_scrap",
+    "extremedimensions:tetherite_scrap",
+    "extremedimensions:tether_cord",
+    "extremedimensions:tether_cord",
+    "extremedimensions:tether_cord",
+    "extremedimensions:tether_cord"
+  ],
+  "result": {
+    "id": "extremedimensions:tetherite_ingot"
+  }
+}

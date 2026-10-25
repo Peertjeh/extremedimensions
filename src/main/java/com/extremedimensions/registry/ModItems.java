@@ -32,7 +32,9 @@ public final class ModItems {
 	public static final Item LOOSE_LEAF = register("loose_leaf", 1, Rarity.RARE);
 
 	/** Thread spun from the Seam itself, mined from seam veins. */
-	public static final Item SEAM_SILK = register("seam_silk", 64, Rarity.UNCOMMON);
+	public static final Item SEAM_SILK = Registry.register(BuiltInRegistries.ITEM, ResourceKey.create(Registries.ITEM, ExtremeDimensions.id("seam_silk")),
+			new Item(new Item.Properties().stacksTo(64).rarity(Rarity.UNCOMMON).trimMaterial(com.extremedimensions.tetherite.TetheriteTrims.SEAM_SILK)
+					.setId(ResourceKey.create(Registries.ITEM, ExtremeDimensions.id("seam_silk")))));
 	/** Used on crying obsidian, it tears a rift into the Seam. */
 	public static final Item SEAM_NEEDLE = register("seam_needle", 16, Rarity.RARE);
 
@@ -89,8 +91,15 @@ public final class ModItems {
 	public static final Item WEAVERS_LOOM = block(ModBlocks.WEAVERS_LOOM);
 
 	private static Item block(Block block) {
+		return block(block, false);
+	}
+
+	private static Item block(Block block, boolean fireproof) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, BuiltInRegistries.BLOCK.getKey(block));
 		Item.Properties props = new Item.Properties().useBlockDescriptionPrefix().setId(key);
+		if (fireproof) {
+			props = props.fireResistant().rarity(Rarity.RARE);
+		}
 		return Registry.register(BuiltInRegistries.ITEM, key, new BlockItem(block, props));
 	}
 
@@ -105,6 +114,75 @@ public final class ModItems {
 	public static final Item WOUND_LENS = Registry.register(BuiltInRegistries.ITEM, ResourceKey.create(Registries.ITEM, ExtremeDimensions.id("wound_lens")),
 			new net.minecraft.world.item.SpyglassItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)
 					.setId(ResourceKey.create(Registries.ITEM, ExtremeDimensions.id("wound_lens")))));
+
+	// --- Tetherite: the ore of the Seam's hearts, spun cord, the ingot, the upgrade and the gear (see Tetherite) ------
+
+	public static final Item TETHERITE_ORE = block(ModBlocks.TETHERITE_ORE, true);
+	public static final Item SPINDLE = block(ModBlocks.SPINDLE);
+	/** Smelted from Tetherite ore. */
+	public static final Item TETHERITE_SCRAP = Registry.register(BuiltInRegistries.ITEM, key("tetherite_scrap"),
+			new Item(new Item.Properties().rarity(Rarity.RARE).fireResistant().setId(key("tetherite_scrap"))));
+	/** Tether Fragments spun with Seam Silk on a Spindle: what binds scrap into Tetherite. */
+	public static final Item TETHER_CORD = register("tether_cord", 64, Rarity.RARE);
+	/** Four scrap and four cord. */
+	public static final Item TETHERITE_INGOT = Registry.register(BuiltInRegistries.ITEM, key("tetherite_ingot"),
+			new Item(new Item.Properties().rarity(Rarity.RARE).fireResistant()
+					.trimMaterial(com.extremedimensions.tetherite.TetheriteTrims.TETHERITE).setId(key("tetherite_ingot"))));
+	/** Takes netherite gear and a Tetherite ingot to Tetherite at a smithing table. */
+	public static final Item TETHERITE_UPGRADE_SMITHING_TEMPLATE = Registry.register(BuiltInRegistries.ITEM, key("tetherite_upgrade_smithing_template"),
+			upgradeTemplate(new Item.Properties().rarity(Rarity.RARE).setId(key("tetherite_upgrade_smithing_template"))));
+
+	public static final Item TETHERITE_SWORD = gear("tetherite_sword", p -> p.sword(com.extremedimensions.tetherite.Tetherite.TOOLS, 3.0F, -2.4F));
+	public static final Item TETHERITE_SHOVEL = gear("tetherite_shovel", p -> p.shovel(com.extremedimensions.tetherite.Tetherite.TOOLS, 1.5F, -3.0F));
+	public static final Item TETHERITE_PICKAXE = gear("tetherite_pickaxe", p -> p.pickaxe(com.extremedimensions.tetherite.Tetherite.TOOLS, 1.0F, -2.8F));
+	public static final Item TETHERITE_AXE = gear("tetherite_axe", p -> p.axe(com.extremedimensions.tetherite.Tetherite.TOOLS, 5.0F, -3.0F));
+	public static final Item TETHERITE_HOE = gear("tetherite_hoe", p -> p.hoe(com.extremedimensions.tetherite.Tetherite.TOOLS, -4.0F, 0.0F));
+	/** As netherite's spear, on Tetherite. */
+	public static final Item TETHERITE_SPEAR = gear("tetherite_spear",
+			p -> p.spear(com.extremedimensions.tetherite.Tetherite.TOOLS, 1.15F, 1.2F, 0.4F, 2.5F, 9.0F, 5.5F, 5.1F, 8.75F, 4.6F));
+	public static final Item TETHERITE_HELMET = gear("tetherite_helmet",
+			p -> p.humanoidArmor(com.extremedimensions.tetherite.Tetherite.ARMOR, net.minecraft.world.item.equipment.ArmorType.HELMET));
+	public static final Item TETHERITE_CHESTPLATE = gear("tetherite_chestplate",
+			p -> p.humanoidArmor(com.extremedimensions.tetherite.Tetherite.ARMOR, net.minecraft.world.item.equipment.ArmorType.CHESTPLATE));
+	public static final Item TETHERITE_LEGGINGS = gear("tetherite_leggings",
+			p -> p.humanoidArmor(com.extremedimensions.tetherite.Tetherite.ARMOR, net.minecraft.world.item.equipment.ArmorType.LEGGINGS));
+	public static final Item TETHERITE_BOOTS = gear("tetherite_boots",
+			p -> p.humanoidArmor(com.extremedimensions.tetherite.Tetherite.ARMOR, net.minecraft.world.item.equipment.ArmorType.BOOTS));
+
+	/** The Seam's armor trims: the Weaver's, from its reliquaries, and the Fray's, from its snarls (see TetheriteTrims). */
+	public static final Item WEAVER_ARMOR_TRIM_SMITHING_TEMPLATE = Registry.register(BuiltInRegistries.ITEM, key("weaver_armor_trim_smithing_template"),
+			net.minecraft.world.item.SmithingTemplateItem.createArmorTrimTemplate(new Item.Properties().rarity(Rarity.RARE)
+					.setId(key("weaver_armor_trim_smithing_template"))));
+	public static final Item FRAY_ARMOR_TRIM_SMITHING_TEMPLATE = Registry.register(BuiltInRegistries.ITEM, key("fray_armor_trim_smithing_template"),
+			net.minecraft.world.item.SmithingTemplateItem.createArmorTrimTemplate(new Item.Properties().rarity(Rarity.RARE)
+					.setId(key("fray_armor_trim_smithing_template"))));
+
+	/** The Tetherite gear, in creative-tab order. */
+	public static final java.util.List<Item> TETHERITE_GEAR = java.util.List.of(TETHERITE_SWORD, TETHERITE_SHOVEL, TETHERITE_PICKAXE, TETHERITE_AXE,
+			TETHERITE_HOE, TETHERITE_SPEAR, TETHERITE_HELMET, TETHERITE_CHESTPLATE, TETHERITE_LEGGINGS, TETHERITE_BOOTS);
+
+	private static ResourceKey<Item> key(String id) {
+		return ResourceKey.create(Registries.ITEM, ExtremeDimensions.id(id));
+	}
+
+	/** A Tetherite tool or piece of armor: fire-resistant, rare, one to a stack. */
+	private static Item gear(String id, java.util.function.UnaryOperator<Item.Properties> kind) {
+		return Registry.register(BuiltInRegistries.ITEM, key(id), new Item(kind.apply(new Item.Properties()).fireResistant().rarity(Rarity.RARE).setId(key(id))));
+	}
+
+	/** The upgrade template, worded and drawn like netherite's own. */
+	private static Item upgradeTemplate(Item.Properties props) {
+		java.util.List<net.minecraft.resources.Identifier> base = java.util.List.of("helmet", "sword", "chestplate", "pickaxe", "leggings", "axe", "boots",
+				"hoe", "shovel", "spear").stream().map(s -> net.minecraft.resources.Identifier.withDefaultNamespace("container/slot/" + s)).toList();
+		java.util.List<net.minecraft.resources.Identifier> additions = java.util.List.of(net.minecraft.resources.Identifier.withDefaultNamespace("container/slot/ingot"));
+		String k = "item.extremedimensions.smithing_template.tetherite_upgrade.";
+		return new net.minecraft.world.item.SmithingTemplateItem(
+				net.minecraft.network.chat.Component.translatable(k + "applies_to").withStyle(net.minecraft.ChatFormatting.BLUE),
+				net.minecraft.network.chat.Component.translatable(k + "ingredients").withStyle(net.minecraft.ChatFormatting.BLUE),
+				net.minecraft.network.chat.Component.translatable(k + "base_slot_description"),
+				net.minecraft.network.chat.Component.translatable(k + "additions_slot_description"),
+				base, additions, props);
+	}
 
 	/** A music disc: one to a stack and rare, as vanilla's are, and played in a jukebox. */
 	private static Item disc(String id, ResourceKey<JukeboxSong> song) {

@@ -1,0 +1,125 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "extremedimensions:block/spindle"
+      }
+    },
+    {
+      "when": {
+        "fragments": "1|2",
+        "spun": "0|4|8|12"
+      },
+      "apply": {
+        "model": "extremedimensions:block/spindle_spool_1_0"
+      }
+    },
+    {
+      "when": {
+        "fragments": "1|2",
+        "spun": "1|5|9|13"
+      },
+      "apply": {
+        "model": "extremedimensions:block/spindle_spool_1_1"
+      }
+    },
+    {
+      "when": {
+        "fragments": "1|2",
+        "spun": "2|6|10|14"
+      },
+      "apply": {
+        "model": "extremedimensions:block/spindle_spool_1_2"
+      }
+    },
+    {
+      "when": {
+        "fragments": "1|2",
+        "spun": "3|7|11|15"
+      },
+      "apply": {
+        "model": "extremedimensions:block/spindle_spool_1_3"
+      }
+    },
+    {
+      "when": {
+        "fragments": "3|4|5",
+        "spun": "0|4|8|12"
+      },
+      "apply": {
+        "model": "extremedimensions:block/spindle_spool_2_0"
+      }
+    },
+    {
+      "when": {
+        "fragments": "3|4|5",
+        "spun": "1|5|9|13"
+      },
+      "apply": {
+        "model": "extremedimensions:block/spindle_spool_2_1"
+      }
+    },
+    {
+      "when": {
+        "fragments": "3|4|5",
+        "spun": "2|6|10|14"
+      },
+      "apply": {
+        "model": "extremedimensions:block/spindle_spool_2_2"
+      }
+    },
+    {
+      "when": {
+        "fragments": "3|4|5",
+        "spun": "3|7|11|15"
+      },
+      "apply": {
+        "model": "extremedimensions:block/spindle_spool_2_3"
+      }
+    },
+    {
+      "when": {
+        "fragments": "6|7|8",
+        "spun": "0|4|8|12"
+      },
+      "apply": {
+        "model": "extremedimensions:block/spindle_spool_3_0"
+      }
+    },
+    {
+      "when": {
+        "fragments": "6|7|8",
+        "spun": "1|5|9|13"
+      },
+      "apply": {
+        "model": "extremedimensions:block/spindle_spool_3_1"
+      }
+    },
+    {
+      "when": {
+        "fragments": "6|7|8",
+        "spun": "2|6|10|14"
+      },
+      "apply": {
+        "model": "extremedimensions:block/spindle_spool_3_2"
+      }
+    },
+    {
+      "when": {
+        "fragments": "6|7|8",
+        "spun": "3|7|11|15"
+      },
+      "apply": {
+        "model": "extremedimensions:block/spindle_spool_3_3"
+      }
+    },
+    {
+      "when": {
+        "silk": "1|2|3|4"
+      },
+      "apply": {
+        "model": "extremedimensions:block/spindle_silk"
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:smithing_trim",
+  "template": "extremedimensions:weaver_armor_trim_smithing_template",
+  "base": "#minecraft:trimmable_armor",
+  "addition": "#minecraft:trim_materials",
+  "pattern": "extremedimensions:weaver"
+}

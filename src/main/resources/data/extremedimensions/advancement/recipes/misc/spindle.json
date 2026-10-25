@@ -1,0 +1,36 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_seam_silk": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:seam_silk"
+          }
+        ]
+      }
+    },
+    "has_polished_hush_stone_slab": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:polished_hush_stone_slab"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_seam_silk",
+      "has_polished_hush_stone_slab"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:spindle"
+    ]
+  }
+}

@@ -156,6 +156,32 @@
         "type": "minecraft:random_chance",
         "chance": 0.15
       }
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:tetherite_upgrade_smithing_template"
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.02
+      }
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:weaver_armor_trim_smithing_template"
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.1
+      }
     }
   ],
   "random_sequence": "extremedimensions:chests/seam_reliquary"

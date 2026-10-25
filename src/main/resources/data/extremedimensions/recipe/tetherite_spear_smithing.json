@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "template": "extremedimensions:tetherite_upgrade_smithing_template",
+  "base": "minecraft:netherite_spear",
+  "addition": "#extremedimensions:tetherite_tool_materials",
+  "result": {
+    "id": "extremedimensions:tetherite_spear"
+  }
+}

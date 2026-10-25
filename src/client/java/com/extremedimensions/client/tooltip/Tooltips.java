@@ -78,6 +78,22 @@ public final class Tooltips {
 			key = "plumb_line";
 		} else if (item == ModItems.WEAVERS_LOOM) {
 			key = "weavers_loom";
+		} else if (item == ModItems.SPINDLE) {
+			key = "spindle";
+		} else if (item == ModItems.TETHERITE_ORE) {
+			key = "tetherite_ore";
+		} else if (item == ModItems.TETHERITE_SCRAP) {
+			key = "tetherite_scrap";
+		} else if (item == ModItems.TETHER_CORD) {
+			key = "tether_cord";
+		} else if (item == ModItems.TETHERITE_INGOT) {
+			key = "tetherite_ingot";
+		}
+		if (com.extremedimensions.tetherite.Tetherite.isGear(stack)) {
+			// Tetherite gear: tethered, and what the whole set does
+			lines.add(Component.translatable("tooltip.extremedimensions.tetherite.tethered").withStyle(ChatFormatting.DARK_AQUA));
+			lines.add(Component.translatable("tooltip.extremedimensions.tetherite.set", Math.round(Config.TETHERITE_SET_DRAIN * 100))
+					.withStyle(ChatFormatting.DARK_GRAY));
 		}
 		com.extremedimensions.tapestry.Tapestry.Panel panel = com.extremedimensions.tapestry.Tapestry.Panel.of(stack);
 		if (panel != null) {

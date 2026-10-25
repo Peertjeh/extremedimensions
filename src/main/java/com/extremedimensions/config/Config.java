@@ -482,6 +482,25 @@ public final class Config {
 	/** Wound Lens: how far it reads (blocks). */
 	public static int WOUND_LENS_RANGE = 64;
 
+	// --- Tetherite: the ore of the Seam's hearts, the Spindle and the gear ---------------------
+
+	/** Chance a block of rock deep in an island's heart is Tetherite ore. */
+	public static double TETHERITE_ORE_ISLAND_CHANCE = 0.003;
+	/** How far down an island's rock the ore begins (0 its top, 1 its lowest point). */
+	public static double TETHERITE_ORE_ISLAND_DEPTH = 0.75;
+	/** Chance a block at the heart of a Fray knot's stone is Tetherite ore. */
+	public static double TETHERITE_ORE_FRAY_CHANCE = 0.02;
+	/** Tether Fragments, Seam Silk and turns of the Spindle a Tether Cord takes. */
+	public static int SPINDLE_FRAGMENTS = 2;
+	public static int SPINDLE_SILK = 1;
+	public static int SPINDLE_TURNS = 8;
+	/** 1: Tetherite that falls out of the bottom of a world comes back to its owner; 0: the void keeps it. */
+	public static int TETHERITE_TETHERED = 1;
+	/** How far below the bottom of a world a Tetherite item falls before it is drawn back. */
+	public static int TETHERITE_VOID_DEPTH = 16;
+	/** What the full Tetherite set takes off the drain (0.1 = 10%), held to the drain floor with the rest. */
+	public static double TETHERITE_SET_DRAIN = 0.10;
+
 	// --- Pacts: curses taken on willingly for an expedition, for what a safe return brings -------
 
 	/** When pacts open: 0 = from the start, 1 = after the Ender Dragon falls, 2 = after the Starved One falls. */
@@ -932,7 +951,8 @@ public final class Config {
 			Map.entry("max_charge", "anchors"), Map.entry("base_drain", "expeditions"), Map.entry("rope_segment", "tether"),
 			Map.entry("offer_count", "curses"), Map.entry("fragment_chance", "lore"), Map.entry("lurker_enabled", "lurker"),
 			Map.entry("hoard_wild_chance", "hollow"), Map.entry("soul_woven_drain", "weaving"), Map.entry("seam_seconds", "seam"),
-			Map.entry("storm_chance", "dragon"), Map.entry("event_spacing", "events"), Map.entry("relic_ember_heart_nether", "relics"), Map.entry("ench_thrift_drain", "enchantments"), Map.entry("pact_unlock", "pacts"),
+			Map.entry("storm_chance", "dragon"), Map.entry("event_spacing", "events"), Map.entry("relic_ember_heart_nether", "relics"), Map.entry("ench_thrift_drain", "enchantments"),
+			Map.entry("tetherite_ore_island_chance", "tetherite"), Map.entry("pact_unlock", "pacts"),
 			Map.entry("trial_unlock", "trials"), Map.entry("matriarch_after_keepers", "elders"),
 			Map.entry("coop_revive", "coop"), Map.entry("tribe_enabled", "tribe"), Map.entry("tapestry_respin_silk", "tapestry"),
 			Map.entry("seam_build_budget_ms", "technical"));

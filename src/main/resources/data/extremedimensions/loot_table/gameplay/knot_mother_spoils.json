@@ -39,6 +39,28 @@
           }
         }
       ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:tetherite_upgrade_smithing_template"
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:fray_armor_trim_smithing_template"
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.5
+      }
     }
   ],
   "random_sequence": "extremedimensions:gameplay/knot_mother_spoils"

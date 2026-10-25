@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": "minecraft:diamond",
+    "C": "extremedimensions:hush_bricks",
+    "S": "extremedimensions:weaver_armor_trim_smithing_template"
+  },
+  "pattern": [
+    "#S#",
+    "#C#",
+    "###"
+  ],
+  "result": {
+    "id": "extremedimensions:weaver_armor_trim_smithing_template",
+    "count": 2
+  }
+}

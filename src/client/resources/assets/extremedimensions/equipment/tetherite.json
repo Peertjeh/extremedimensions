@@ -1,0 +1,22 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "extremedimensions:tetherite"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "extremedimensions:tetherite"
+      }
+    ]
+  },
+  "trim_overrides": [
+    {
+      "palette": "extremedimensions:trim/tetherite_darker",
+      "when": {
+        "material": "extremedimensions:tetherite"
+      }
+    }
+  ]
+}

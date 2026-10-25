@@ -250,6 +250,11 @@ public final class Terrain {
 			} else {
 				double k = (double) (top - y) / depth;
 				b = hash(x, y, z, 2) < 0.015 + 0.05 * k ? vein() : rockAt(rock, seed, x, y, z, top, k, rnd);
+				// Deep in the island's heart, now and then, a knot of lost Tether hardened into the stone
+				if (k >= com.extremedimensions.config.Config.TETHERITE_ORE_ISLAND_DEPTH
+						&& hash(x, y, z, 41) < com.extremedimensions.config.Config.TETHERITE_ORE_ISLAND_CHANCE) {
+					b = com.extremedimensions.registry.ModBlocks.TETHERITE_ORE.defaultBlockState();
+				}
 			}
 			p.set(x, y, z, b);
 		}

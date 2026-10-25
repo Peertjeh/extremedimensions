@@ -1,0 +1,38 @@
+{
+  "parent": "extremedimensions:seam_entered",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:weaver_armor_trim_smithing_template"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.seam_trimmed.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.seam_trimmed.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "weaver": {
+      "trigger": "minecraft:recipe_crafted",
+      "conditions": {
+        "recipe_id": "extremedimensions:weaver_armor_trim_smithing_template_smithing_trim"
+      }
+    },
+    "fray": {
+      "trigger": "minecraft:recipe_crafted",
+      "conditions": {
+        "recipe_id": "extremedimensions:fray_armor_trim_smithing_template_smithing_trim"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "weaver",
+      "fray"
+    ]
+  ]
+}

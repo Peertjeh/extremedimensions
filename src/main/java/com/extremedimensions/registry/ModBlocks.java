@@ -88,6 +88,20 @@ public final class ModBlocks {
 	public static final Block WEAVERS_LOOM = Registry.register(BuiltInRegistries.BLOCK, key("weavers_loom"),
 			new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.DEEPSLATE).sound(SoundType.WOOL).lightLevel(state -> 4).setId(key("weavers_loom"))));
 
+	/**
+	 * Tetherite ore: a knot of lost Tether hardened round the stone, found only deep in the hearts of the Seam's islands
+	 * and in the stone of the Fray's knots. As hard as ancient debris and as unmoved by blasts; a faint cyan glow.
+	 */
+	public static final Block TETHERITE_ORE = Registry.register(BuiltInRegistries.BLOCK, key("tetherite_ore"),
+			new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.ANCIENT_DEBRIS).sound(SoundType.ANCIENT_DEBRIS).lightLevel(state -> 3)
+					.setId(key("tetherite_ore"))));
+
+	/** The Spindle, where Tether Fragments are spun with Seam Silk into Tether Cord (see SpindleBlock). */
+	public static final Block SPINDLE = Registry.register(BuiltInRegistries.BLOCK, key("spindle"),
+			new com.extremedimensions.tetherite.SpindleBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.DEEPSLATE).sound(SoundType.WOOL)
+					.strength(2.5F, 6.0F).noOcclusion().lightLevel(state -> state.getValue(com.extremedimensions.tetherite.SpindleBlock.FRAGMENTS) > 0 ? 5 : 0)
+					.setId(key("spindle"))));
+
 	private static ResourceKey<Block> key(String id) {
 		return ResourceKey.create(Registries.BLOCK, ExtremeDimensions.id(id));
 	}

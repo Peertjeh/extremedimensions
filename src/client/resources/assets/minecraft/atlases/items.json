@@ -1,0 +1,19 @@
+{
+  "sources": [
+    {
+      "type": "minecraft:paletted_permutations",
+      "palette_key": "minecraft:trim_base",
+      "permutations": {
+        "tetherite": "extremedimensions:trim/tetherite",
+        "tetherite_darker": "extremedimensions:trim/tetherite_darker",
+        "seam_silk": "extremedimensions:trim/seam_silk"
+      },
+      "textures": [
+        "minecraft:trims/items/helmet_trim",
+        "minecraft:trims/items/chestplate_trim",
+        "minecraft:trims/items/leggings_trim",
+        "minecraft:trims/items/boots_trim"
+      ]
+    }
+  ]
+}

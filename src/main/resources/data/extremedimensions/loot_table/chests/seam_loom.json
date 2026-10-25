@@ -120,6 +120,19 @@
           }
         }
       ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:weaver_armor_trim_smithing_template"
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.12
+      }
     }
   ],
   "random_sequence": "extremedimensions:chests/seam_loom"

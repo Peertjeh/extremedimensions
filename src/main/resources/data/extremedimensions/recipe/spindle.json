@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "S": "extremedimensions:seam_silk",
+    "E": "minecraft:end_rod",
+    "P": "extremedimensions:polished_hush_stone_slab"
+  },
+  "pattern": [
+    "S S",
+    " E ",
+    "PPP"
+  ],
+  "result": {
+    "id": "extremedimensions:spindle"
+  }
+}
