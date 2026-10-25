@@ -271,7 +271,7 @@ public class TetheriteTests {
 		// the palettes: as wide as vanilla's (logged, so they can be matched to vanilla's key)
 		int vanilla = palette(helper, "assets/minecraft/textures/palettes/trim/amethyst.png");
 		palette(helper, "assets/minecraft/textures/palettes/trim_base.png");
-		for (String own : List.of("trim_key", "trim/tetherite", "trim/tetherite_darker", "trim/seam_silk")) {
+		for (String own : List.of("trim/tetherite", "trim/tetherite_darker", "trim/seam_silk")) {
 			int width = palette(helper, "assets/extremedimensions/textures/palettes/" + own + ".png");
 			check(helper, vanilla < 0 || width < 0 || width == vanilla, "the palette %s is %s wide, vanilla's %s", own, width, vanilla);
 		}

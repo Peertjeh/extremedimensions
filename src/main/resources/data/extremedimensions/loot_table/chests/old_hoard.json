@@ -216,6 +216,25 @@
         "type": "minecraft:random_chance",
         "chance": 0.4
       }
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:book",
+          "modifier": {
+            "type": "minecraft:set_enchantments",
+            "enchantments": {
+              "extremedimensions:foresight": 1
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.08
+      }
     }
   ],
   "random_sequence": "extremedimensions:chests/old_hoard"

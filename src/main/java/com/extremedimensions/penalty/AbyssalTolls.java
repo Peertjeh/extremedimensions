@@ -350,7 +350,7 @@ public final class AbyssalTolls {
 			AbyssalCurses.advance(p, d, Penalty.SPLINTERING, 1);
 		}
 		if (taken > 0 && d.stacks(Penalty.UNMOORED) > 0 && Dims.END.equals(Dims.of(p))
-				&& ThreadLocalRandom.current().nextDouble() < Penalty.UNMOORED.frac()) {
+				&& ThreadLocalRandom.current().nextDouble() < Penalty.UNMOORED.frac() * com.extremedimensions.binding.Charms.unmoored(p)) {
 			unmoor(p);
 		}
 	}

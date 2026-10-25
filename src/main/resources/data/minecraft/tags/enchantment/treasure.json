@@ -2,6 +2,9 @@
   "replace": false,
   "values": [
     "extremedimensions:veilsight",
-    "extremedimensions:homebound"
+    "extremedimensions:homebound",
+    "extremedimensions:knitting",
+    "extremedimensions:fraying_curse",
+    "extremedimensions:starved_curse"
   ]
 }

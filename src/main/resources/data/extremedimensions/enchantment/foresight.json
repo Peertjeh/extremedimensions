@@ -1,0 +1,22 @@
+{
+  "anvil_cost": 4,
+  "description": {
+    "translate": "enchantment.extremedimensions.foresight"
+  },
+  "effects": {},
+  "exclusive_set": "#extremedimensions:exclusive_set/tether",
+  "max_cost": {
+    "base": 50,
+    "per_level_above_first": 0
+  },
+  "max_level": 1,
+  "min_cost": {
+    "base": 20,
+    "per_level_above_first": 0
+  },
+  "slots": [
+    "any"
+  ],
+  "supported_items": "#extremedimensions:enchantable/tether",
+  "weight": 2
+}

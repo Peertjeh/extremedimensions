@@ -1,6 +1,7 @@
 {
   "values": [
     "extremedimensions:thrift",
-    "extremedimensions:silkbound"
+    "extremedimensions:silkbound",
+    "extremedimensions:foresight"
   ]
 }

@@ -1,4 +1,4 @@
-"""The Elders' spells as status-effect icons (18x18, the vanilla size), drawn pixel by pixel.
+"""The Elders' spells, and Unravelling, as status-effect icons (18x18, the vanilla size), drawn pixel by pixel.
 
 usage: python3 tools/effects/icons.py [preview.png]
 """
@@ -82,6 +82,30 @@ BOUND = (
 BOUND_COLOURS = {"k": (20, 16, 26), "E": (176, 166, 196), "e": (118, 104, 140), "d": (78, 66, 98), "c": (98, 104, 112),
                  "C": (176, 182, 190)}
 
+# Unravelling: a heart coming undone into a loose thread of soul light
+UNRAVEL = (
+    "...kkk..kkk.......",
+    "..kRRRkkRRRk......",
+    ".kRWRRrkRRRrk.....",
+    "kRWRRRRRRRRRrk....",
+    "kRRRRRRRRRRRdk....",
+    "kRRRRRRRRRRRdk....",
+    ".kRRRRRRRRRdk.....",
+    "..kRRRRRRRdk......",
+    "...kRRRRRdk.......",
+    "....kRRRdk........",
+    ".....kRdk.........",
+    "......kSk...kk...k",
+    "......kSk..kSSk.ks",
+    ".......kSkkSksSksk",
+    ".......ksSSk.kkSSk",
+    "........kkk....kks",
+    ".................k",
+    "..................",
+)
+UNRAVEL_COLOURS = {"k": (26, 12, 16), "R": (196, 36, 48), "r": (140, 22, 34), "d": (96, 14, 26), "W": (255, 196, 196),
+                   "S": (120, 236, 220), "s": (60, 150, 150)}
+
 
 def draw(rows, colours):
     assert len(rows) == 18 and all(len(r) == 18 for r in rows), [len(r) for r in rows]
@@ -93,7 +117,8 @@ def draw(rows, colours):
     return img
 
 
-ICONS = {"matriarch_hex": (HEX, HEX_COLOURS), "styx_weight": (WEIGHT, WEIGHT_COLOURS), "bound_wings": (BOUND, BOUND_COLOURS)}
+ICONS = {"matriarch_hex": (HEX, HEX_COLOURS), "styx_weight": (WEIGHT, WEIGHT_COLOURS), "bound_wings": (BOUND, BOUND_COLOURS),
+         "unravelling": (UNRAVEL, UNRAVEL_COLOURS)}
 
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
@@ -103,7 +128,7 @@ if __name__ == "__main__":
         img.save(os.path.join(OUT, name + ".png"))
         imgs.append(img)
     if len(sys.argv) > 1:
-        sheet = Image.new("RGBA", (18 * 3 * 10 + 40, 18 * 10 + 20), (48, 48, 56, 255))
+        sheet = Image.new("RGBA", (18 * len(ICONS) * 10 + 20 * len(ICONS), 18 * 10 + 20), (48, 48, 56, 255))
         for i, img in enumerate(imgs):
             sheet.alpha_composite(img.resize((180, 180), Image.NEAREST), (10 + i * 190, 10))
         sheet.save(sys.argv[1])

@@ -70,7 +70,7 @@ public final class PenaltyService {
 	private static void nextOffer(PlayerData d) {
 		while (!d.owed.isEmpty() && d.pendingOffer.isEmpty()) {
 			boolean ow = OVERWORLD.equals(d.owed.get(0));
-			List<String> ids = AbyssalCurses.deal(d, Penalty.rollOffer(d, ow, Config.OFFER_COUNT, Config.EXTREME_CARD_CHANCE),
+			List<String> ids = AbyssalCurses.deal(d, Penalty.rollOffer(d, ow, Config.OFFER_COUNT + com.extremedimensions.binding.Charms.foresight(d), Config.EXTREME_CARD_CHANCE),
 					new java.util.Random(ThreadLocalRandom.current().nextLong()));
 			if (ids.isEmpty()) {
 				d.owed.remove(0);

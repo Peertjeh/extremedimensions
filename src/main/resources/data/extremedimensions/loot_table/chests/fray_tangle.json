@@ -178,6 +178,68 @@
         "type": "minecraft:random_chance",
         "chance": 0.12
       }
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:diamond_pickaxe",
+          "modifier": [
+            {
+              "type": "minecraft:set_enchantments",
+              "enchantments": {
+                "extremedimensions:fraying_curse": 1,
+                "minecraft:efficiency": 4,
+                "extremedimensions:veinseeker": 1
+              }
+            },
+            {
+              "type": "minecraft:set_damage",
+              "damage": {
+                "type": "minecraft:uniform",
+                "min": 0.4,
+                "max": 0.8
+              }
+            }
+          ]
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.1
+      }
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:diamond_chestplate",
+          "modifier": [
+            {
+              "type": "minecraft:set_enchantments",
+              "enchantments": {
+                "extremedimensions:starved_curse": 1,
+                "minecraft:protection": 3,
+                "extremedimensions:wardweave": 3
+              }
+            },
+            {
+              "type": "minecraft:set_damage",
+              "damage": {
+                "type": "minecraft:uniform",
+                "min": 0.4,
+                "max": 0.8
+              }
+            }
+          ]
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.08
+      }
     }
   ],
   "random_sequence": "extremedimensions:chests/fray_tangle"

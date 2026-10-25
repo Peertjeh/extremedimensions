@@ -479,6 +479,36 @@ public final class Config {
 	public static int ENCH_VEILSIGHT_VEINS = 12;
 	/** Homebound: drain added for each Homebound piece worn or held beyond the wound (0.05 = 5%). */
 	public static double ENCH_HOMEBOUND_DRAIN = 0.05;
+	/** Reaping: seconds of charge a monster slain on an expedition gives back to the Tether's anchor, per level. */
+	public static int ENCH_REAPING_SECONDS = 2;
+	/** Tethershot: how hard an arrow pulls what it hits toward the archer. */
+	public static double ENCH_TETHERSHOT_PULL = 0.9;
+	/** Veinseeker: how far (blocks) the ore and veins ring out round broken stone; seconds before it answers again. */
+	public static int ENCH_VEINSEEKER_RANGE = 8;
+	public static int ENCH_VEINSEEKER_COOLDOWN = 3;
+	/** Anchored: how much less often the End's void throws its wearer (Unmoored), per level (0.25 = 25%). */
+	public static double ENCH_ANCHORED_UNMOORED = 0.25;
+	/** Steadfast: how much of an Elder's spell it takes away, per level (0.3 = 30%). */
+	public static double ENCH_STEADFAST = 0.3;
+	/** Foresight: cards a Collapse offers more. */
+	public static int ENCH_FORESIGHT_CARDS = 1;
+	/** Soulward: chance the Lurker flinches before it takes anything. */
+	public static double ENCH_SOULWARD_CHANCE = 0.5;
+	/** Sated: hunger taken off per level (0.2 = 20%); the Curse of the Starved: hunger added per cursed piece (0.5 = 50%). */
+	public static double ENCH_SATED = 0.2;
+	public static double ENCH_STARVED = 0.5;
+	/** Hushed Steps: how much harder to notice per level (0.2 = 20%). */
+	public static double ENCH_HUSHED_STEPS = 0.2;
+	/** Knitting: seconds between each point it mends in the Seam. */
+	public static int ENCH_KNITTING_SECONDS = 10;
+	/** Driftfall: blocks of fall before it catches; seconds of slow falling; seconds before it catches again. */
+	public static int ENCH_DRIFTFALL_FALL = 6;
+	public static int ENCH_DRIFTFALL_SECONDS = 4;
+	public static int ENCH_DRIFTFALL_COOLDOWN = 60;
+	/** The Curse of Fraying: extra wear in the Seam (1 = twice as fast). */
+	public static double ENCH_FRAYING_WEAR = 1.0;
+	/** Unravelling: damage the effect deals each second. */
+	public static double ENCH_UNRAVELLING_DAMAGE = 1.0;
 	/** Wound Lens: how far it reads (blocks). */
 	public static int WOUND_LENS_RANGE = 64;
 

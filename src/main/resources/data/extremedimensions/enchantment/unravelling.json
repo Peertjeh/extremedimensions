@@ -1,0 +1,52 @@
+{
+  "anvil_cost": 4,
+  "description": {
+    "translate": "enchantment.extremedimensions.unravelling"
+  },
+  "effects": {
+    "minecraft:post_attack": [
+      {
+        "affected": "victim",
+        "effect": {
+          "max_amplifier": 0.0,
+          "max_duration": {
+            "base": 2.0,
+            "per_level_above_first": 2.0,
+            "type": "minecraft:linear"
+          },
+          "min_amplifier": 0.0,
+          "min_duration": {
+            "base": 2.0,
+            "per_level_above_first": 2.0,
+            "type": "minecraft:linear"
+          },
+          "to_apply": "extremedimensions:unravelling",
+          "type": "minecraft:apply_mob_effect"
+        },
+        "enchanted": "attacker",
+        "requirements": {
+          "predicate": {
+            "is_direct": true
+          },
+          "type": "minecraft:damage_source_properties"
+        }
+      }
+    ]
+  },
+  "exclusive_set": "minecraft:fire_aspect",
+  "max_cost": {
+    "base": 50,
+    "per_level_above_first": 15
+  },
+  "max_level": 3,
+  "min_cost": {
+    "base": 10,
+    "per_level_above_first": 15
+  },
+  "primary_items": "#minecraft:enchantable/melee_weapon",
+  "slots": [
+    "mainhand"
+  ],
+  "supported_items": "#minecraft:enchantable/fire_aspect",
+  "weight": 2
+}

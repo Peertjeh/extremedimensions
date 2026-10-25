@@ -133,6 +133,25 @@
         "type": "minecraft:random_chance",
         "chance": 0.12
       }
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:book",
+          "modifier": {
+            "type": "minecraft:set_enchantments",
+            "enchantments": {
+              "extremedimensions:knitting": 1
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.05
+      }
     }
   ],
   "random_sequence": "extremedimensions:chests/seam_loom"

@@ -166,6 +166,7 @@ public final class ServerEvents {
 			com.extremedimensions.elder.ElderSpells.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.expedition.ExpeditionBar.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.binding.WoundLens.forget(handler.getPlayer().getUUID());
+			com.extremedimensions.binding.Charms.forget(handler.getPlayer().getUUID());
 			// Every player's inventory is saved with the world's data, so neither can run ahead of the other after a crash
 			// (a stopping server saves them all once itself)
 			if (s.isRunning()) {
@@ -199,6 +200,8 @@ public final class ServerEvents {
 		});
 
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(CurseEffects::afterDamage);
+		// Tethershot: an arrow hauls what it hits toward the archer
+		ServerLivingEntityEvents.AFTER_DAMAGE.register(com.extremedimensions.binding.Charms::afterDamage);
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(com.extremedimensions.penalty.AbyssalCurses::afterDamage);
 		// Bitter Cure: a zombie villager cured breaks it for those close by
 		ServerLivingEntityEvents.MOB_CONVERSION.register((previous, converted, context) -> com.extremedimensions.penalty.AbyssalTolls.converted(previous, converted));
@@ -223,6 +226,8 @@ public final class ServerEvents {
 			// The Abyssal curses' deeds: a creature slain, an Elder fallen
 			if (!(entity instanceof ServerPlayer) && source.getEntity() instanceof ServerPlayer killer) {
 				com.extremedimensions.penalty.AbyssalCurses.onKill(killer, entity, source);
+				// Reaping: the slain give a little back to the Tether
+				com.extremedimensions.binding.Charms.reap(killer, entity);
 			}
 			if (entity instanceof com.extremedimensions.elder.ElderBoss) {
 				com.extremedimensions.penalty.AbyssalCurses.elderSlain(entity);
@@ -400,6 +405,8 @@ public final class ServerEvents {
 			AnchorService.onBroken(Dims.of(level), pos);
 			if (player instanceof ServerPlayer sp) {
 				CurseEffects.wear(sp);
+				// Veinseeker: the ore and veins near broken stone ring out
+				com.extremedimensions.binding.Charms.seek(sp, pos, state);
 			}
 			if (state.is(ModBlocks.SEAM_VEIN) && player instanceof ServerPlayer sp) {
 				Journal.unlock(sp, DataStore.get(sp.getUUID()), JournalEntry.LOOM);
@@ -633,6 +640,7 @@ public final class ServerEvents {
 		com.extremedimensions.expedition.ExpeditionBar.tick(s);
 		com.extremedimensions.lore.WarmChains.tick(s);
 		com.extremedimensions.binding.Veilsight.tick(s);
+		com.extremedimensions.binding.Charms.tick(s);
 		com.extremedimensions.binding.WoundLens.tick(s);
 		com.extremedimensions.events.WorldEvents.tick(s);
 		if (s.getTickCount() % 1200 == 0) {

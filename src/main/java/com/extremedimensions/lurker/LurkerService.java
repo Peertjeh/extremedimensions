@@ -430,6 +430,13 @@ public final class LurkerService {
 				run(l, st, p, true);
 				return;
 			}
+			if (com.extremedimensions.binding.Charms.soulward(p)) {
+				// Soulward: it flinches from the helmet's soul light before its arm can close, and runs empty-handed
+				WorldFx.soundIn(dim, "extremedimensions:lurker_shriek", "hostile", l.getX(), l.getY() + 2.5, l.getZ(), 1.0f, 1.4f);
+				WorldFx.particles(p, "extremedimensions:soul_mote", 1.2, 0.5, 0.0, 16);
+				run(l, st, p, true);
+				return;
+			}
 			if (com.extremedimensions.tribe.Standing.spared(p)) {
 				// Kin of the tribe: it looks at them a long moment, and lets them be
 				p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.tribe.spared"), true);

@@ -4,7 +4,7 @@ The armor: each face of the head, body, arms and legs filled with the dark viole
 Tether's cyan run down its seams (a fuller down the breastplate, bands round the arms, a band round the helm, straps
 on the boots). The leggings layer carries the belt and the legs.
 
-The trims are drawn in eight levels of grey from their own key (textures/palettes/trim_key, light to dark) and the
+The trims are drawn in the eight greys of vanilla's trim key (textures/palettes/trim_base, light to dark) and the
 game colours them in whatever material they are put on with; the palettes for the Seam's two materials are written
 here too, light to dark like vanilla's, and Tetherite's darker one for Tetherite armor trimmed in Tetherite.
 
@@ -24,8 +24,8 @@ TEX = os.path.join(ROOT, "src/client/resources/assets/extremedimensions/textures
 METAL = [(14, 9, 22), (36, 26, 54), (58, 45, 86), (88, 72, 124), (146, 132, 190)]
 THREAD = [(14, 84, 96), (30, 160, 168), (70, 226, 214), (196, 255, 246)]
 
-# the trims' own key, light to dark, and the Seam's palettes in the same order
-KEY = [(240, 240, 240), (208, 208, 208), (176, 176, 176), (144, 144, 144), (112, 112, 112), (80, 80, 80), (48, 48, 48), (16, 16, 16)]
+# vanilla's trim key (textures/palettes/trim_base), light to dark, and the Seam's palettes in the same order
+KEY = [(241, 241, 241), (225, 225, 225), (208, 208, 208), (188, 188, 188), (165, 165, 165), (137, 137, 137), (99, 99, 99), (0, 0, 0)]
 PALETTES = {
     "tetherite": [(178, 250, 240), (112, 220, 214), (66, 178, 184), (52, 128, 150), (66, 84, 128), (58, 58, 104), (44, 38, 78), (28, 22, 50)],
     "tetherite_darker": [(112, 220, 214), (66, 178, 184), (46, 130, 148), (40, 96, 120), (48, 58, 96), (42, 40, 78), (32, 26, 58), (20, 15, 38)],
@@ -258,7 +258,6 @@ def main():
         "trims/entity/humanoid_leggings/weaver": weaver(True),
         "trims/entity/humanoid/fray": fray(False),
         "trims/entity/humanoid_leggings/fray": fray(True),
-        "palettes/trim_key": palette(KEY),
     }
     for name, colors in PALETTES.items():
         files["palettes/trim/" + name] = palette(colors)

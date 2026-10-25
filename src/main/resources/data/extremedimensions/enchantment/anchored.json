@@ -1,0 +1,35 @@
+{
+  "anvil_cost": 4,
+  "description": {
+    "translate": "enchantment.extremedimensions.anchored"
+  },
+  "effects": {
+    "minecraft:attributes": [
+      {
+        "amount": {
+          "base": 0.05,
+          "per_level_above_first": 0.05,
+          "type": "minecraft:linear"
+        },
+        "attribute": "minecraft:knockback_resistance",
+        "id": "extremedimensions:enchantment.anchored",
+        "operation": "add_value"
+      }
+    ]
+  },
+  "max_cost": {
+    "base": 40,
+    "per_level_above_first": 10
+  },
+  "max_level": 3,
+  "min_cost": {
+    "base": 10,
+    "per_level_above_first": 10
+  },
+  "slots": [
+    "chest",
+    "legs"
+  ],
+  "supported_items": "#extremedimensions:enchantable/anchored",
+  "weight": 2
+}

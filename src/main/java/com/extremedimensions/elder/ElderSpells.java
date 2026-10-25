@@ -92,7 +92,7 @@ public final class ElderSpells {
 			q.hurtServer(level, level.damageSources().mobAttack(b), (float) Config.ELDER_SNARE_DAMAGE);
 		}
 		if (Config.ELDER_BIND_SECONDS > 0) {
-			q.addEffect(new MobEffectInstance(ModEffects.BOUND_WINGS, Config.ELDER_BIND_SECONDS * 20, 0, false, false, true));
+			q.addEffect(new MobEffectInstance(ModEffects.BOUND_WINGS, Math.max(1, (int) Math.round(Config.ELDER_BIND_SECONDS * 20 * com.extremedimensions.binding.Charms.steadfast(q))), 0, false, false, true));
 		}
 		WorldFx.particleIn(level, who == 0 ? "minecraft:spore_blossom_air" : who == 1 ? "minecraft:soul" : "minecraft:end_rod",
 				q.getX(), q.getY() + 1, q.getZ(), 0.4, 0.6, 0.4, 0.05, 16);
@@ -104,8 +104,10 @@ public final class ElderSpells {
 	 */
 	public static void sweep(MinecraftServer s) {
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
-			hold(p, Attributes.MOVEMENT_SPEED, SLOW, p.hasEffect(ModEffects.HEX) ? -Math.max(0, Math.min(0.9, Config.MATRIARCH_HEX_SLOW)) : 0);
-			hold(p, Attributes.JUMP_STRENGTH, HEAVY, p.hasEffect(ModEffects.WEIGHT) ? -Math.max(0, Math.min(0.9, Config.FERRYMAN_WEIGHT_JUMP)) : 0);
+			// Steadfast leggings take some of the hold off
+			double steady = com.extremedimensions.binding.Charms.steadfast(p);
+			hold(p, Attributes.MOVEMENT_SPEED, SLOW, p.hasEffect(ModEffects.HEX) ? -Math.max(0, Math.min(0.9, Config.MATRIARCH_HEX_SLOW)) * steady : 0);
+			hold(p, Attributes.JUMP_STRENGTH, HEAVY, p.hasEffect(ModEffects.WEIGHT) ? -Math.max(0, Math.min(0.9, Config.FERRYMAN_WEIGHT_JUMP)) * steady : 0);
 			if (p.isFallFlying() && p.hasEffect(ModEffects.BOUND_WINGS)) {
 				p.stopFallFlying();
 			}
