@@ -255,7 +255,7 @@ public final class AbyssalCurses {
 			return;
 		}
 		long day = level.getServer().overworld().getGameTime() / 24000L;
-		if (d.hungeringDay < 0 || day < d.hungeringDay) {
+		if (d.hungeringDay == Long.MIN_VALUE || day < d.hungeringDay) {
 			// (the day it was taken is spared)
 			d.hungeringDay = day;
 			return;
@@ -292,11 +292,11 @@ public final class AbyssalCurses {
 	/** Gravebound: its deed is days without dying, counted on the Overworld's clock from the curse or the last death. */
 	private static void gravebound(ServerPlayer p, PlayerData d, ServerLevel level) {
 		if (d.owned(Penalty.GRAVEBOUND) <= 0) {
-			d.graveSince = -1;
+			d.graveSince = Long.MIN_VALUE;
 			return;
 		}
 		long now = level.getServer().overworld().getGameTime();
-		if (d.graveSince < 0 || d.graveSince > now) {
+		if (d.graveSince == Long.MIN_VALUE || d.graveSince > now) {
 			d.graveSince = now;
 		}
 		int days = (int) ((now - d.graveSince) / 24000L);
@@ -434,7 +434,7 @@ public final class AbyssalCurses {
 		if (!p.isCreative()) {
 			stack.shrink(1);
 		}
-		WorldFx.particleAt("minecraft:end_rod", pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, 0.3, 0.6, 0.3, 0.05, 40);
+		WorldFx.particleIn(p.level(), "minecraft:end_rod", pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, 0.3, 0.6, 0.3, 0.05, 40);
 		advance(p, d, Penalty.THE_HUNGERING, 1);
 		return InteractionResult.SUCCESS;
 	}

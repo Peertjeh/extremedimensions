@@ -59,7 +59,7 @@ public class PlayerData {
 	/** How far the player is with each Abyssal curse's deed (curse id -> count), see AbyssalCurses. */
 	public Map<String, Integer> abyssalDeeds = new HashMap<>();
 	/** Gravebound: the Overworld game time its days are counted from (-1 = not carried); The Hungering: the day it last ate. */
-	public long graveSince = -1, hungeringDay = -1;
+	public long graveSince = Long.MIN_VALUE, hungeringDay = Long.MIN_VALUE;
 	/** The sworn pact: extra stacks of curses taken on willingly, acting on expeditions (see PactService). */
 	public Map<String, Integer> pact = new HashMap<>();
 	/** The Elders: Keepers slain (the Matriarch comes after enough of them), and whether she has fallen to this player. */

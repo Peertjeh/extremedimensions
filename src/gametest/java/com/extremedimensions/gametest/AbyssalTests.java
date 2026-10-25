@@ -204,6 +204,16 @@ public class AbyssalTests {
 	@GameTest
 	public void graveboundCountsDaysAndSendsHome(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper, Penalty.GRAVEBOUND, 1);
+		try {
+			gravebound(helper, p);
+		} finally {
+			// sent far from the tests, the player leaves (so no other test waits on the chunks round them)
+			helper.getLevel().getServer().getPlayerList().remove(p);
+		}
+		helper.succeed();
+	}
+
+	private static void gravebound(GameTestHelper helper, ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
 		long now = helper.getLevel().getServer().overworld().getGameTime();
 		d.graveSince = now - 2 * 24000L - 5;
@@ -223,7 +233,6 @@ public class AbyssalTests {
 		d.graveSince = now - AbyssalCurses.target(Penalty.GRAVEBOUND) * 24000L;
 		AbyssalCurses.tick(p, d);
 		check(helper, d.owned(Penalty.GRAVEBOUND) == 0, "enough days without dying did not break Gravebound");
-		helper.succeed();
 	}
 
 	@GameTest
@@ -338,31 +347,30 @@ public class AbyssalTests {
 		helper.succeed();
 	}
 
-	@GameTest
+	@GameTest(maxTicks = 120)
 	public void mirrorWoundReflectsAndArrowsBreakIt(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper, Penalty.MIRROR_WOUND, 1);
 		PlayerData d = DataStore.get(p.getUUID());
 		place(helper, p, 1.5, 2, 1.5);
-		// past the grace a player has on joining
-		for (int i = 0; i < 61; i++) {
-			p.doTick();
-		}
-		p.setHealth(20f);
-		Mob zombie = mob(helper, "zombie", 3.5, 2, 1.5);
-		int target = Config.ABYSSAL_BREAK_MIRROR_WOUND;
-		try {
-			AbyssalCurses.afterDamage(zombie, p.damageSources().playerAttack(p), 10f, 10f, false);
-			near(helper, p.getHealth(), 20f - 10f * Penalty.MIRROR_WOUND.frac(), "health after striking a zombie for 10");
-			Config.ABYSSAL_BREAK_MIRROR_WOUND = 2;
-			AbyssalCurses.onKill(p, zombie, p.damageSources().playerAttack(p));
-			check(helper, AbyssalCurses.progress(d, Penalty.MIRROR_WOUND) == 0, "a monster slain by hand counted");
-			AbyssalCurses.onKill(p, zombie, p.damageSources().trident(p, p));
-			AbyssalCurses.onKill(p, zombie, p.damageSources().trident(p, p));
-			check(helper, d.owned(Penalty.MIRROR_WOUND) == 0, "two monsters slain with a trident did not break Mirror Wound");
-		} finally {
-			Config.ABYSSAL_BREAK_MIRROR_WOUND = target;
-			zombie.discard();
-		}
-		helper.succeed();
+		// past the grace a player has on joining (three seconds, counted down as the world ticks them)
+		helper.runAfterDelay(70, () -> {
+			p.setHealth(20f);
+			Mob zombie = mob(helper, "zombie", 3.5, 2, 1.5);
+			int target = Config.ABYSSAL_BREAK_MIRROR_WOUND;
+			try {
+				AbyssalCurses.afterDamage(zombie, p.damageSources().playerAttack(p), 10f, 10f, false);
+				near(helper, p.getHealth(), 20f - 10f * Penalty.MIRROR_WOUND.frac(), "health after striking a zombie for 10");
+				Config.ABYSSAL_BREAK_MIRROR_WOUND = 2;
+				AbyssalCurses.onKill(p, zombie, p.damageSources().playerAttack(p));
+				check(helper, AbyssalCurses.progress(d, Penalty.MIRROR_WOUND) == 0, "a monster slain by hand counted");
+				AbyssalCurses.onKill(p, zombie, p.damageSources().trident(p, p));
+				AbyssalCurses.onKill(p, zombie, p.damageSources().trident(p, p));
+				check(helper, d.owned(Penalty.MIRROR_WOUND) == 0, "two monsters slain with a trident did not break Mirror Wound");
+			} finally {
+				Config.ABYSSAL_BREAK_MIRROR_WOUND = target;
+				zombie.discard();
+			}
+			helper.succeed();
+		});
 	}
 }
