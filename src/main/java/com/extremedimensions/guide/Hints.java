@@ -143,6 +143,14 @@ public final class Hints {
 					|| d.seen.contains(Bestiary.Beast.LAST_WEAVER.id);
 			case STORM -> d.journal.contains(JournalEntry.STORMS.id);
 			case FALLEN -> d.liftsTaken > 0;
+			case ABYSSAL -> {
+				for (com.extremedimensions.penalty.Penalty pen : com.extremedimensions.penalty.Penalty.values()) {
+					if (pen.abyssal && d.knows(pen)) {
+						yield true;
+					}
+				}
+				yield false;
+			}
 		};
 	}
 }
