@@ -10,7 +10,8 @@
 		"CameraShakeMixin",
 		"LoadingArtMixin",
 		"TitleLogoMixin",
-		"MusicManagerMixin"
+		"MusicManagerMixin",
+		"UnmappedCompassMixin"
 	],
 	"injectors": {
 		"defaultRequire": 0

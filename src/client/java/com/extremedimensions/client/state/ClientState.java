@@ -117,6 +117,7 @@ public final class ClientState {
 		Dwindling.clientValue = valueOf("dwindling");
 		com.extremedimensions.penalty.AbyssalCurses.clientLockjaw = away() ? 0 : stacksOf("lockjaw");
 		com.extremedimensions.penalty.AbyssalCurses.clientLockjawRange = valueOf("lockjaw");
+		com.extremedimensions.penalty.AbyssalWorld.clientUnmapped = away() ? 0 : stacksOf("unmapped");
 		scars = s.scars();
 		tetherDist = s.tetherDist();
 		guide = s.guide();
@@ -155,6 +156,7 @@ public final class ClientState {
 			SealedPockets.client = 0;
 			Dwindling.client = 0;
 			com.extremedimensions.penalty.AbyssalCurses.clientLockjaw = 0;
+			com.extremedimensions.penalty.AbyssalWorld.clientUnmapped = 0;
 		}
 	}
 
@@ -290,6 +292,7 @@ public final class ClientState {
 		Dwindling.client = 0;
 		Dwindling.clientValue = 0;
 		com.extremedimensions.penalty.AbyssalCurses.clientLockjaw = 0;
+		com.extremedimensions.penalty.AbyssalWorld.clientUnmapped = 0;
 		settingsJson = null;
 		settingsEditable = false;
 		guide = com.extremedimensions.guide.Guide.STEPS;

@@ -53,8 +53,8 @@ import net.minecraft.world.phys.BlockHitResult;
  * <ul>
  * <li>Lightless: round the player monsters spawn as if every light were dimmer. Broken by nights in the Overworld kept
  * awake through, one after the other.</li>
- * <li>Unmapped: no coordinates on the debug screen, and maps held stay blank. Broken by safe returns from
- * expeditions.</li>
+ * <li>Unmapped: no coordinates on the debug screen, compasses spin, and maps held stay blank. Broken by safe returns
+ * from expeditions.</li>
  * <li>Unwelcome: zombies near the player break wooden doors on any difficulty, and other monsters open them. Broken by
  * winning a raid.</li>
  * <li>Cold Forge: furnaces the player works cook slower and burn their fuel faster. Broken by smelting.</li>
@@ -201,6 +201,9 @@ public final class AbyssalWorld {
 			d.unmappedSent = false;
 		}
 	}
+
+	/** Unmapped stacks as the client last heard them: its compasses spin (see UnmappedCompassMixin). */
+	public static int clientUnmapped = 0;
 
 	/** Whether a map held by this entity stays blank (Unmapped, see UnmappedMapMixin). */
 	public static boolean blankMaps(Entity entity) {

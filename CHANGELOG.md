@@ -1,5 +1,68 @@
 # Changelog
 
+## 3.2.0: The Abyssal Curses
+
+### New
+- **A heavier layer of curses: the Abyssal curses**, 24 of them, under the Extreme tab. They are dealt on **Hard** and
+  **Extreme** (an operator can switch them on for Easy and Normal too: **Abyssal curses**, `abyssal_curses`). On Hard
+  one card in a hundred is Abyssal, from the fifth Collapse on, and a player carries at most one; on Extreme it is one
+  in forty, from the third Collapse, at most two, and one time in four the Abyssal card is the **whole offer**: no
+  choice. An Abyssal card replaces an ordinary one and is never multiplied.
+- They hint, as the Extreme cards do, and read in runes until carried once. Once carried, the Curses screen shows the
+  curse's **deed**: what breaks it, how far you are (*12 / 30*) and a violet meter.
+- **The deed is the way out**: done, the curse breaks at once, with a title, a sound and a scar. Atonement still works,
+  as a last resort: four times the points, and a death takes all of them, not half. Tether Fragments cost four a
+  stack. No Mending Cloth takes one, no friend carries it, no pact swears it, stacks never spill onto one and no Elder
+  lays one with its ultimate.
+- The 24, each with its deed:
+  - **Sunscorn**: bare-headed under the open sky by day in the Overworld you burn (a helmet shields you and wears).
+    Slay 30 undead in daylight.
+  - **Gravebound**: you always rise at the world spawn. Live 3 days without dying.
+  - **Marrow Rot**: a creature's blow may wither you. Slay the Wither.
+  - **Weight of Iron**: every piece of iron or better past the second slows you by 15%. Slay an Elder in at most two.
+  - **Lockjaw**: no eating with a monster within 8 blocks. Slay 50 monsters while hungry.
+  - **The Hungering**: once a day the Starved take a stack from your bag. Offer a Nether Star at an anchor.
+  - **Cinder Lungs**: in the Nether the air burns, unless fire cannot touch you. Slay the Ferryman.
+  - **Mirror Wound**: a tenth of every blow you strike comes back to you. Slay 50 monsters with arrows or a trident.
+  - **Blood Price**: every stack lifted from another curse costs two hearts for 20 minutes, and a third of them jump to
+    another curse instead. Lift 3 stacks while it holds.
+  - **Rot**: every 10 minutes a quarter of a stack of food in your inventory turns to rotten flesh. Eat 32 rotten flesh.
+  - **Covetous**: a Lurker comes every night, whatever its wait, and takes from your hotbar; what it takes carries the
+    tribe's mark. Take 5 stolen things back.
+  - **Restless Dead**: a monster you slay may rise again 5 seconds later (once). Slay 100 monsters.
+  - **Unmoored**: in the End a blow may throw you up to 8 blocks, the void's way too. Slay 40 Endermen.
+  - **Splintering**: shields wear ten times as fast. Block 200 blows.
+  - **Bitter Cure**: Instant Health and Regeneration (golden apples too) heal half. Cure a zombie villager.
+  - **Forsaken Bond**: once a day a wolf, cat or horse of yours near you forgets you. Bind a Hollowling.
+  - **Lightless**: round you monsters spawn as if every light were four levels dimmer. Keep awake through 3 nights in
+    a row in the Overworld.
+  - **Unmapped**: the debug screen keeps no coordinates, compasses in your hands spin and maps stay blank. Come home
+    safe 5 times.
+  - **Unwelcome**: zombies near you break wooden doors on any difficulty, and other monsters after you open them. Win a
+    raid.
+  - **Cold Forge**: furnaces you work cook at half speed and burn twice the fuel. Smelt 256 items.
+  - **Barren Hand**: crops you plant lose half their growth, and bone meal on them fails half the time. Harvest 256 ripe
+    crops.
+  - **Cave-In**: below Y 0, mining stone may bring the block above down on you. Mine 300 deepslate.
+  - **Wingshadow**: Phantoms hunt you every night, slept or not. Slay 30 Phantoms.
+  - **Unwatched**: in the Seam the Thinned move now and then while you look at them. Slay 20 Thinned.
+- **How they look**: an Abyssal card is black with a violet crack through it and an ABYSSAL banner, it does not light
+  up gold, and a low rumble sounds when one is dealt; dealt alone it says "No choice. The abyss chose for you." In the
+  Curses screen they sit in their own row under the Extreme curses. The first time one holds you, a hint says how it
+  breaks.
+- **Settings** (curse settings, English and Dutch): whether they are dealt, their chance, the chance of no choice, the
+  Collapses before them, how many at most, the atonement factor, fragments per stack, the atonement a death takes,
+  whether a Mending Cloth works, every deed's target, and the numbers of the curses themselves (Blood Price's minutes
+  and jump chance, Restless Dead's delay, Unmoored's throw, Lightless' reach, Cold Forge's fuel, Cave-In's depth). Each
+  curse's own strength is in the `penalties` section, as for every curse. The difficulties set the first five.
+
+### Tests
+- The rules: dealt only where switched on, after enough Collapses and below the most carried; replacing an ordinary
+  card, never the Extreme one; alone when forced; never rolled, spilled onto or sworn; four times the atonement; all of
+  it lost on a death; four fragments; no Mending Cloth; a deed done breaks the curse at once and leaves a scar.
+- Every curse does what it hides and breaks by its deed (24 tests), and one test checks every Abyssal mixin applied.
+- The client test shows an offer with an Abyssal card, one dealt alone and the Abyssal row in the Curses screen.
+
 ## 3.1.0: Unknown Curses
 
 ### Changed
