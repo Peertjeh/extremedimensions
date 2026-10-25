@@ -411,10 +411,13 @@ public final class PenaltyService {
 		if (d.tickCounter % 20 == 0) {
 			if (d.xpForfeit) {
 				d.xpForfeit = false;
+				// No curse was left to lay: say so, also when the death already took every level
 				if (p.experienceLevel > 0) {
 					p.giveExperienceLevels(-p.experienceLevel);
 					WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.5, 0.05, 30);
-					p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.forfeit"), true);
+					p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.forfeit"), false);
+				} else {
+					p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.full"), false);
 				}
 				changed = true;
 			}

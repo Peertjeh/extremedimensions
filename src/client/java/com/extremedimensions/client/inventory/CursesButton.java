@@ -101,7 +101,7 @@ public final class CursesButton extends AbstractButton {
 		if (total > 0) {
 			// The count sits on its own dark plate in the corner, clear of the sigil
 			Minecraft mc = Minecraft.getInstance();
-			String n = total > 99 ? "99" : String.valueOf(total);
+			String n = total > 999 ? "999+" : String.valueOf(total);
 			int tw = mc.font.width(n);
 			int tx = x + w - tw, ty = y + h - 7;
 			g.fill(tx - 1, ty - 1, x + w + 1, y + h + 1, Ui.argb(220, Ui.SHADOW));

@@ -86,6 +86,12 @@ public final class Config {
 
 	/** Cards offered after a Collapse or a death beyond the wound. */
 	public static int OFFER_COUNT = 3;
+	/**
+	 * 1: when every curse of the world's set and of the Everywhere set is at its maximum, a death (or a curse laid without
+	 * a choice) draws from the curses of the other sets that still have room; 0: it costs no curse, the Starved take the
+	 * player's levels instead.
+	 */
+	public static int CURSE_OVERFLOW = 1;
 	/** Ticks after respawning before the curse screen opens. */
 	public static int OFFER_DELAY_TICKS = 70;
 	/**

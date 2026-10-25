@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.3.1: Full Sets
+
+### Fixed
+- **A death no longer goes free once your curses fill up.** A death costs a curse from the set of the world you died in
+  (the Overworld set at home, the set beyond the wound elsewhere) and the Everywhere set. Once every curse in those two
+  was at its maximum (91 stacks at home), the death dealt nothing and, since dying had already taken your levels, said
+  nothing either. Now it draws from the other set (at home: the set beyond the wound; beyond: the Overworld set, while it
+  is on). Only when that is full too does a death cost no curse, and then the chat says so. The old behaviour is one
+  setting away: **Full sets spill over** (`curse_overflow`, 0).
+- **The count on the curses button no longer stops at 99**: it shows the real number (up to 999+).
+
+### Tests
+- A death at home with the Overworld and Everywhere sets full deals cards from the set beyond; with `curse_overflow` 0 it
+  deals none and the Starved take the levels.
+
 ## 3.3.0: Tetherite
 
 ### New

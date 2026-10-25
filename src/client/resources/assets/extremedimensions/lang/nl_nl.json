@@ -2553,5 +2553,8 @@
   "config.extremedimensions.ench_fraying_wear": "Vloek van Rafeling: extra slijtage",
   "config.extremedimensions.ench_fraying_wear.desc": "Extra slijtage in de Seam op uitrusting met de Vloek van Rafeling (1 = twee keer zo snel).",
   "config.extremedimensions.ench_unravelling_damage": "Ontrafeling: schade per seconde",
-  "config.extremedimensions.ench_unravelling_damage.desc": "Schade die het effect Ontrafeling elke seconde doet."
+  "config.extremedimensions.ench_unravelling_damage.desc": "Schade die het effect Ontrafeling elke seconde doet.",
+  "gui.extremedimensions.curses.full": "Elke vloek die gelegd kon worden, staat op zijn maximum: deze dood kostte je geen vloek.",
+  "config.extremedimensions.curse_overflow": "Volle sets lopen over",
+  "config.extremedimensions.curse_overflow.desc": "1: staan alle vloeken van de set van de wereld en van de Everywhere-set op hun maximum, dan trekt een dood zijn kaarten uit de andere set (de Overworld-set alleen als die aan staat). 0: zo'n dood kost geen vloek; de Uitgehongerden nemen dan je niveaus."
 }

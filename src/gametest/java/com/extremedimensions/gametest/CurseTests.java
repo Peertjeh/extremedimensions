@@ -242,4 +242,60 @@ public class CurseTests {
 		}
 		return n;
 	}
+
+	/**
+	 * A death at home with the Overworld set and the Everywhere set full still costs a curse: from the set beyond the
+	 * wound. With {@code curse_overflow} 0 it costs none (no ordinary card is dealt) and the Starved take levels instead.
+	 */
+	@GameTest
+	public void fullSetsSpillOver(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "test-full-sets");
+		PlayerData d = DataStore.get(p.getUUID());
+		java.util.Map<String, Integer> before = new java.util.HashMap<>(d.curses);
+		int overflow = Config.CURSE_OVERFLOW;
+		try {
+			for (Penalty pen : Penalty.values()) {
+				if (!pen.abyssal && (pen.group == Penalty.Group.OVERWORLD || pen.group == Penalty.Group.EVERYWHERE)) {
+					d.addStacks(pen, pen.max);
+				}
+			}
+			List<Penalty> pool = Penalty.pool(d, true);
+			check(helper, !pool.isEmpty(), "with the Overworld and Everywhere sets full, a death at home draws from nothing");
+			for (Penalty pen : pool) {
+				check(helper, pen.group == Penalty.Group.BEYOND, "a full home spilled onto %s, not the set beyond", pen.id);
+			}
+			unowe(d);
+			PenaltyService.owe(d, true);
+			check(helper, !d.pendingOffer.isEmpty(), "a death at home with full sets dealt no cards");
+			for (String id : d.pendingOffer) {
+				Penalty pen = Penalty.byId(id);
+				check(helper, pen != null && (pen.group == Penalty.Group.BEYOND || pen.extreme), "a full home dealt %s", id);
+			}
+			check(helper, !d.xpForfeit, "a death that dealt cards took the levels too");
+
+			unowe(d);
+			Config.CURSE_OVERFLOW = 0;
+			check(helper, Penalty.pool(d, true).isEmpty(), "with curse_overflow 0, full sets still drew from the set beyond");
+			PenaltyService.owe(d, true);
+			for (String id : d.pendingOffer) {
+				check(helper, Penalty.byId(id) != null && Penalty.byId(id).extreme, "with curse_overflow 0, a full home dealt %s", id);
+			}
+			check(helper, !d.pendingOffer.isEmpty() || d.xpForfeit, "a death that could lay no curse neither dealt a card nor took the levels");
+		} finally {
+			Config.CURSE_OVERFLOW = overflow;
+			d.curses.clear();
+			d.curses.putAll(before);
+			unowe(d);
+			d.xpForfeit = false;
+		}
+		helper.succeed();
+	}
+
+	/** Clears what a player owes and the offer in front of them. */
+	private static void unowe(PlayerData d) {
+		d.owed.clear();
+		d.pendingOffer.clear();
+		d.pendingMult.clear();
+		d.pendingPenalties = 0;
+	}
 }

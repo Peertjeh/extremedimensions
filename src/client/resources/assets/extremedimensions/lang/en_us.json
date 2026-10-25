@@ -2553,5 +2553,8 @@
   "config.extremedimensions.ench_fraying_wear": "Curse of Fraying: extra wear",
   "config.extremedimensions.ench_fraying_wear.desc": "Extra wear in the Seam on gear with the Curse of Fraying (1 = twice as fast).",
   "config.extremedimensions.ench_unravelling_damage": "Unravelling: damage per second",
-  "config.extremedimensions.ench_unravelling_damage.desc": "Damage the Unravelling effect deals every second."
+  "config.extremedimensions.ench_unravelling_damage.desc": "Damage the Unravelling effect deals every second.",
+  "gui.extremedimensions.curses.full": "Every curse that could be laid is at its maximum: this death cost you no curse.",
+  "config.extremedimensions.curse_overflow": "Full sets spill over",
+  "config.extremedimensions.curse_overflow.desc": "1: when every curse of the world's set and of the Everywhere set is at its maximum, a death draws its cards from the other set (the Overworld set only while it is on). 0: such a death costs no curse; the Starved take your levels instead."
 }

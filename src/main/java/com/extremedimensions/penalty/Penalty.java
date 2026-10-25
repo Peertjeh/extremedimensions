@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.extremedimensions.config.Config;
+import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 
 /**
@@ -235,10 +237,20 @@ public enum Penalty {
 		return pool;
 	}
 
-	/** What a death costs from: the set of the world (beyond or the Overworld) and the Everywhere set. */
+	/**
+	 * What a death costs from: the set of the world (beyond or the Overworld) and the Everywhere set. When both are full,
+	 * the other set (the Overworld set only while it is on), unless {@code curse_overflow} is 0.
+	 */
 	public static List<Penalty> pool(PlayerData d, boolean overworld) {
 		List<Penalty> pool = available(d, overworld ? Group.OVERWORLD : Group.BEYOND);
 		pool.addAll(available(d, Group.EVERYWHERE));
+		if (pool.isEmpty() && Config.CURSE_OVERFLOW > 0) {
+			if (overworld) {
+				pool.addAll(available(d, Group.BEYOND));
+			} else if (DataStore.overworldPenalties()) {
+				pool.addAll(available(d, Group.OVERWORLD));
+			}
+		}
 		return pool;
 	}
 
