@@ -77,7 +77,7 @@ public final class Kits {
 		}
 		// The player's own arrangement of this kit, if they made one
 		List<Integer> kitSlots = numericSlots(kit);
-		List<Integer> layout = PlayerStore.get(p).kitLayouts.get(kitName);
+		List<Integer> layout = layout(p, kitName);
 		for (KitConfig.KitItem ki : kit.items) {
 			ItemStack stack = stack(p, ki, leatherColor, team);
 			if (stack.isEmpty()) {
@@ -114,6 +114,24 @@ public final class Kits {
 		}
 		net.battlehub.util.Inv.select(p, 0);
 		p.inventoryMenu.sendAllDataToRemote();
+	}
+
+	/**
+	 * The arrangement of a kit someone gets: their own from the kit editor. A bot has none of its own: in a match with a
+	 * person it gets theirs (1.49), so the bot fights with the very kit the person has, in the same slots (what they put in
+	 * the hotbar is in its hotbar too).
+	 */
+	static List<Integer> layout(ServerPlayer p, String kitName) {
+		if (!net.battlehub.bot.Bots.isBot(p)) return PlayerStore.get(p).kitLayouts.get(kitName);
+		Match m = Matches.of(p.getUUID());
+		if (m == null) return null;
+		for (java.util.UUID id : m.participants()) {
+			if (net.battlehub.bot.Bots.isBot(id)) continue;
+			ServerPlayer person = m.player(id);
+			List<Integer> theirs = person == null ? null : PlayerStore.get(person).kitLayouts.get(kitName);
+			if (theirs != null) return theirs;
+		}
+		return null;
 	}
 
 	public static ItemStack stack(ServerPlayer p, KitConfig.KitItem ki, int leatherColor) {

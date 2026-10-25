@@ -66,8 +66,16 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   sword when you are right on top of it). In a mace fight it fights like a player: the sword on the ground, and
   every few seconds, a few blocks from you, a wind charge at its feet that sends it 9 to 12 blocks up; it takes the
   mace on the way up, drifts over you and smashes as soon as you are within reach on the way down. In a sword or
-  axe fight it holds that weapon. Mixed kits (Free for All, CTF, The Bridge) leave the choice to the situation.
+  axe fight it holds that weapon. Since 1.49 it also *sees a smash coming*: someone in the air over it with a mace
+  (seen, or heard within 16 blocks) whose fall will end on its head is worked out from their flight as the game moves
+  them; after its reaction time it runs out from under it (never over an edge: sideways instead), or raises its
+  shield at the last moment. A beginner notices one smash in eight, a master nearly all. Mixed kits (Free for All, CTF, The Bridge) leave the choice to the situation.
   Like a player it falls: hits on the way down are crits, and a fall hurts.
+* *It uses its whole kit* (1.49): what is not in its hotbar (apples, pearls, wind charges, blocks further back in the
+  inventory) it brings there when it needs it, taking a moment as a player does with the inventory open. Ender pearls
+  it throws after someone it sees 13 to 40 blocks away (coming down a few blocks short of them) and away from someone
+  on top of it when it is low and could eat; a beginner never throws one. In practice against you it has your kit in
+  your own arrangement from the kit editor.
 * *It minds the edges*: it looks before it jumps (the jump is simulated with the player's own movement and skipped
   when it would end in the void), slows down when it slides towards an edge, and in the air after a knock it holds
   the keys back towards the last ground, as a player does. Lower levels do not always remember to. Half slabs are
@@ -240,7 +248,8 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
 ### Optional resource pack
 Off by default. When switched on, players get it offered when they come into BattleHub and may say no:
 everything works without it. With it they get pixel icons in the killfeed and on the dummy, BattleHub sounds
-(intro, kill, hit, double jump) and lobby music. BattleHub builds the pack itself and can serve it on its own
+(intro, kill, hit, double jump; the Hunger Games' music, cannon, seal and funeral bell) and lobby music. Without it
+the Hunger Games music plays on note blocks and its sounds as a mix of the game's own. BattleHub builds the pack itself and can serve it on its own
 port, or you host the zip from `config/battlehub/resourcepack/` yourself. Put your own `.ogg` sounds, textures or
 a `pack.png` in `config/battlehub/resourcepack/overlay/` and they are added to the pack.
 
@@ -271,7 +280,8 @@ and the **MVP** of the match.
 
 ### Kit editor
 `/kits` or **Kit editor** in the menu: put the items of every kit where you want them (click an item, then its
-new place). Used every time that kit is handed out.
+new place). Used every time that kit is handed out. Bots in a match with you get your arrangement too (1.49), so
+practice is against the very kit you have, in the same slots.
 
 ### Fair play
 * **Leaving early** (disconnect or `/hub` while a match with at least two people runs) blocks queueing for a
@@ -282,6 +292,10 @@ new place). Used every time that kit is handed out.
   others but never each other, are warned and glow for a while.
 * **Alerts for admins** (never automatic punishments): hits from too far away, clicking faster than a hand
   can, hovering in the air, moving faster than possible. Logged and shown to online admins.
+* **Name tags only up close** (1.49): in a match an enemy's name tag shows only within 6 blocks
+  (`combat.nameTagRange`) with nothing in between. Vanilla shows it 64 blocks away and through walls, which gives
+  everyone away. Teammates keep theirs; spectators and the lobby see every tag. Titles and name colours stay as
+  they are. Bots no longer find you behind a wall by your tag either.
 * `/report <player> <reason>`: saved in `world/battlehub/reports.log` with the match the player was in and
   shown to online admins; `/battlehub reports` lists the latest.
 
@@ -435,11 +449,20 @@ for 30 seconds. It queues you for the same mode, format and ranked setting, asks
     resource pack you hear them as music (synthesised strings, brass, choir, timpani and a gong); without it the
     server plays the same pieces on note blocks, so everyone hears them. They play in the "Jukebox/Note Blocks"
     volume (`effects.music`, `effects.musicVolume`).
-  * **Nights** (1.47: a real tribute). Every four minutes the game holds still: nobody can hurt or be hurt, the
-    tributes stand where they are, the Gamemakers and the border wait. The sky turns to night, everyone's camera
-    rises and looks up at the sky over their own spot: the Capitol's emblem in gold appears, the anthem plays, and
-    the fallen appear one after the other on its beat, each a giant head with their own skin, a pillar of light,
-    their name and district and a cannon shot. Then the camera comes back down and the game goes on.
+  * **Nights** (since 1.49 the game goes on). Every four minutes the sky turns to night and the fallen are honoured
+    high over the plaza, 40 blocks up, where everyone in the arena can see it: the Capitol's seal sounds, the emblem
+    in gold rises block by block, the anthem plays, and the fallen appear one after the other on its beat, each a
+    giant head with their own skin on a pillar of light from the plaza, their name and district and a funeral bell.
+    The emblem turns towards whoever looks at it. Nobody is held still and no camera is taken: you can keep looting,
+    hiding and fighting while it plays (from 1.47 to 1.48 the game paused for it and the camera looked up).
+  * **Sounds of its own** (1.49): a cannon over the arena when a tribute falls (for everyone; the fallen hear a
+    heartbeat that stops and a chord sinking away), the Capitol's seal at nightfall, a rising shimmer for the emblem
+    and a funeral bell for every face. Synthesised for BattleHub (`tools/music/sfx.py`) and in the resource pack;
+    without the pack the server plays a mix of the game's own sounds for each. In the "Master" volume
+    (`effects.sounds`, `effects.soundVolume`).
+  * **No locator bar** (1.49): the bar over the hotbar that points at every other player (vanilla since 1.21.6)
+    is off for the tributes: they neither send nor receive waypoints until the game is over. Name tags show only up
+    close (see Fair play).
   * **The Gamemakers.** After the peace, an event every two and a half to three and a half minutes (never the same
     twice in a row, none in the last minute). Since 1.47 you cannot miss one: an alarm, a big title, a boss bar that
     counts down while it lasts, and in the action bar what it is, how far away and which way. Every eight minutes
@@ -778,7 +801,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   * `protection`: no damage or death outside matches, lobby block protection, no item drops. Beds and respawn
     anchors in BattleHub's worlds do nothing when used (they would explode there).
   * `combat`: `snowballDamage`, the damage of a snowball or egg hitting another player in a match (2 = one
-    heart; vanilla only pushes). Spleef keeps the push only.
+    heart; vanilla only pushes). Spleef keeps the push only. `nameTagRange` (1.49, default 6): how close an
+    enemy's name tag shows in a match, with nothing in between; 0 = vanilla.
   * `timings`: countdowns (also between best-of-3 rounds), end delay, play-again time, challenge expiry,
     duel time limit, respawn delay
   * `rewards`: coins and XP for duels, ranked and party games (win, participation, per kill)
@@ -805,7 +829,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
     a bot leaves after its match
   * `fights`: recording fights for training on/off (`record`), names in the logs (`names`, off), the most the folder
     holds (`maxMegabytes`)
-  * `effects`: the match intro on/off and its seconds, the victory shot, the killfeed and its number of lines
+  * `effects`: the match intro on/off and its seconds, the victory shot, the killfeed and its number of lines;
+    the Hunger Games music (`music`, `musicVolume`) and sounds (1.49: `sounds`, `soundVolume`)
   * `lobbyExtras`: double jump on/off, its push forward and up and its cooldown; the training dummy on/off and
     where it stands (angle around the fountain and distance)
   * `resourcePack`: on/off, your own `url` for the zip or the `host` (the address players use) and `port` for the

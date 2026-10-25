@@ -27,7 +27,8 @@ import net.minecraft.world.phys.Vec3;
  * blocks, not invisible, or invisible with armor or an item in hand that shows) is seen exactly; glowing ones show
  * through walls, but also only on screen;</li>
  * <li>an enemy on screen behind a wall, not sneaking and not invisible, is located by their name tag, which vanilla
- * draws through walls (position only, never health or what they hold);</li>
+ * draws through walls (position only, never health or what they hold); in a match only as close as the match shows tags
+ * (1.49, {@link net.battlehub.match.NameTags});</li>
  * <li>an enemy close by who walks or runs is heard, and one who just hit the bot is known to be there;</li>
  * <li>anything else is memory: where they were last seen, with fading certainty. Turning its back loses you.</li>
  * </ul>
@@ -68,8 +69,10 @@ final class Perception {
 			Vec3 before = lastPositions.put(id, p.position());
 			double speed = before == null ? 0 : Math.hypot(p.getX() - before.x, p.getZ() - before.z);
 			boolean heard = Senses.heard(d, p.isShiftKeyDown(), speed, hitAgo.applyAsInt(id));
-			// the name tag through walls: not of someone invisible (the game does not draw it)
-			boolean located = seen || ((!p.isInvisible() || glowing) && !p.isShiftKeyDown() && onScreen) || heard;
+			// the name tag through walls: not of someone invisible (the game does not draw it), and since 1.49 not
+			// beyond the match's name tag range (net.battlehub.match.NameTags: up close, in plain sight only)
+			boolean tag = (!p.isInvisible() || glowing) && !p.isShiftKeyDown() && onScreen && !net.battlehub.match.NameTags.hides(m, d);
+			boolean located = seen || tag || heard;
 			if (located) {
 				mind.see(tick, id, new V3(p.getX(), p.getY(), p.getZ()), d, Motion.velocity(p).y > 0.1);
 			}
@@ -119,7 +122,78 @@ final class Perception {
 			target = new Situation.Target(p.getUUID(), pos, k.seen() ? v(Motion.velocity(p)) : V3.ZERO, hp, p.getMaxHealth(), k.seen(), sure,
 					k.seen() ? Math.max(0, tick - lastSwing) : 100, k.seen() && facing);
 		}
-		return new Situation(tick, self, target, m.botGoal(bot), edges, threat(bot, level));
+		Situation.Threat arrows = threat(bot, level);
+		Smashing smash = smash(bot, m, k, tick);
+		Situation.Threat th = smash == null ? arrows
+				: new Situation.Threat(arrows.incoming(), arrows.from(), smash.smash(), v(smash.attacker().position()));
+		return new Situation(tick, self, target, m.botGoal(bot), edges, th);
+	}
+
+	// ------------------------------------------------------------------ a smash coming down (1.49)
+
+	/** How far round (sideways) and up a bot watches for someone coming down on it with a mace. */
+	static final double SMASH_WATCH = 10, SMASH_HIGH = 40;
+	/** How close the burst of a wind charge and the rush of someone falling are heard. */
+	static final double SMASH_HEARD = 16;
+	/** How long a smash the bot saw stays in mind when it loses it for a moment (a tick it was behind something). */
+	static final int SMASH_KEPT = 10;
+
+	/** A smash a bot has seen coming: from whom, since which tick, its roll for noticing it, when it last saw it. */
+	record Spotted(UUID attacker, int since, double roll, int last) {}
+
+	private static final java.util.Map<UUID, Spotted> SPOTTED = new java.util.HashMap<>();
+
+	/** A smash coming down on the bot that it noticed: from whom, and where and when it lands. */
+	record Smashing(ServerPlayer attacker, net.battlehub.core.ai.MaceFight.Smash smash) {}
+
+	/**
+	 * Someone coming down on the bot with a mace (in hand, or high over it in a mace fight, where the mace comes out at
+	 * the last moment) whom it could know about: seen (in view, in plain sight), heard (the burst of the wind charge, the
+	 * rush of the fall, within {@link #SMASH_HEARD}), or the one it is fighting. Where their flight comes down follows the
+	 * game ({@link net.battlehub.core.ai.MaceFight#incoming}); a bot reacts after its reaction time, and only if its
+	 * level notices at all ({@link net.battlehub.core.ai.MaceFight#reacts}, one roll per smash). Null when there is none,
+	 * or when it has not (yet) noticed.
+	 */
+	static Smashing smash(BotPlayer bot, Match m, Known k, int tick) {
+		V3 me = v(bot.position()), eye = v(bot.getEyePosition());
+		ServerPlayer from = null;
+		net.battlehub.core.ai.MaceFight.Smash soonest = null;
+		for (UUID id : m.participants()) {
+			if (id.equals(bot.getUUID()) || !m.inPlay(id) || !m.isEnemy(bot.getUUID(), id)) continue;
+			ServerPlayer p = m.player(id);
+			if (p == null || p.level() != bot.level() || p.isSpectator() || p.onGround()) continue;
+			double up = p.getY() - bot.getY(), side = Math.hypot(p.getX() - bot.getX(), p.getZ() - bot.getZ());
+			if (up < 1 || up > SMASH_HIGH || side > SMASH_WATCH) continue;
+			boolean mace = p.getMainHandItem().is(Items.MACE) || (m.botWeapon() == net.battlehub.core.ai.Weapon.MACE && up > 4);
+			if (!mace) continue;
+			boolean glowing = p.hasGlowingTag();
+			boolean seen = (!p.isInvisible() || glowing || givenAway(p, p.distanceTo(bot)))
+					&& (Senses.inView(eye, bot.getYRot(), bot.getXRot(), v(p.getEyePosition())) || Senses.inView(eye, bot.getYRot(), bot.getXRot(), v(p.position())))
+					&& bot.hasLineOfSight(p);
+			boolean known = seen || p.distanceTo(bot) <= SMASH_HEARD || (k != null && k.player() == p && k.located());
+			if (!known) continue;
+			net.battlehub.core.ai.MaceFight.Smash s = net.battlehub.core.ai.MaceFight.incoming(me, v(p.position()), v(Motion.velocity(p)),
+					p.fallDistance, net.battlehub.core.ai.MaceFight.SMASH_HORIZON);
+			if (s != null && (soonest == null || s.in() < soonest.in())) {
+				soonest = s;
+				from = p;
+			}
+		}
+		Spotted was = SPOTTED.get(bot.getUUID());
+		if (soonest == null) {
+			if (was != null && tick - was.last() > SMASH_KEPT) SPOTTED.remove(bot.getUUID());
+			return null;
+		}
+		Spotted now = was != null && was.attacker().equals(from.getUUID()) && tick - was.last() <= SMASH_KEPT
+				? new Spotted(was.attacker(), was.since(), was.roll(), tick)
+				: new Spotted(from.getUUID(), tick, bot.getRandom().nextDouble(), tick);
+		SPOTTED.put(bot.getUUID(), now);
+		return net.battlehub.core.ai.MaceFight.reacts(bot.difficulty, tick - now.since(), now.roll()) ? new Smashing(from, soonest) : null;
+	}
+
+	/** Forgets what a bot saw coming (it left, or its fight ended). */
+	static void forget(UUID bot) {
+		SPOTTED.remove(bot);
 	}
 
 	/**
@@ -170,8 +244,9 @@ final class Perception {
 		return Math.max(2.5, Math.min(6, bot.getAttributeValue(Attributes.ENTITY_INTERACTION_RANGE)));
 	}
 
+	/** In the whole inventory: what is not in the hotbar the bot brings there when it needs it (1.49). */
 	private static boolean hasMelee(BotPlayer bot) {
-		for (int i = 0; i < 9; i++) {
+		for (int i = 0; i < 36; i++) {
 			net.minecraft.world.item.ItemStack s = bot.getInventory().getItem(i);
 			if (s.is(net.minecraft.tags.ItemTags.SWORDS) || s.is(net.minecraft.tags.ItemTags.AXES) || s.is(Items.MACE)) return true;
 		}
@@ -179,7 +254,7 @@ final class Perception {
 	}
 
 	private static boolean has(BotPlayer bot, net.minecraft.world.item.Item item) {
-		for (int i = 0; i < 9; i++) {
+		for (int i = 0; i < 36; i++) {
 			if (bot.getInventory().getItem(i).is(item)) return true;
 		}
 		return false;

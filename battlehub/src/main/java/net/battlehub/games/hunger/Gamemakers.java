@@ -180,29 +180,6 @@ public final class Gamemakers {
 		bar.clear();
 	}
 
-	private int heldAt = -1;
-
-	/**
-	 * While the night's tribute lasts everything holds still (the clock does not tick then): mutts stop hunting, and
-	 * afterwards every running event, warning, swarm and cloud has its time left as before.
-	 */
-	void hold(boolean on) {
-		for (Event e : running) e.hold(on);
-		if (on) {
-			heldAt = host.runTicks();
-			bar.clear();
-		} else if (heldAt >= 0) {
-			int d = host.runTicks() - heldAt;
-			heldAt = -1;
-			for (Event e : running) {
-				e.since += d;
-				e.shift(d);
-			}
-			for (Swarm s : swarms) s.until += d;
-			for (Cloud c : clouds) c.until += d;
-		}
-	}
-
 	// ------------------------------------------------------------------ what everyone sees
 
 	/** The event that runs longest yet in the boss bar, counting down, in its colour. */
@@ -360,11 +337,6 @@ public final class Gamemakers {
 		void tick(int age) {}
 
 		void end() {}
-
-		void hold(boolean on) {}
-
-		/** Its own moments to come are {@code d} ticks later (after a hold). */
-		void shift(int d) {}
 
 		Vec3 danger(Vec3 at) {
 			return null;
@@ -617,13 +589,6 @@ public final class Gamemakers {
 		}
 
 		@Override
-		void hold(boolean on) {
-			for (Entity e : beasts) {
-				if (e instanceof Mob m && !e.isRemoved()) m.setNoAi(on);
-			}
-		}
-
-		@Override
 		void end() {
 			for (Entity e : beasts) {
 				if (!e.isRemoved()) {
@@ -742,11 +707,6 @@ public final class Gamemakers {
 				}
 			}
 			strike(hit);
-		}
-
-		@Override
-		void shift(int d) {
-			for (double[] c : coming) c[3] += d;
 		}
 
 		private void strike(Vec3 hit) {
@@ -949,11 +909,6 @@ public final class Gamemakers {
 			}
 		}
 
-		@Override
-		void shift(int d) {
-			for (double[] c : coming) c[3] += d;
-		}
-
 		private void impact(Vec3 at) {
 			impacts++;
 			level().explode(null, at.x, at.y + 0.2, at.z, Escalation.meteorPower(tier), Level.ExplosionInteraction.NONE);
@@ -1016,11 +971,6 @@ public final class Gamemakers {
 		@Override
 		void start() {
 			at = somewhere(0, 45);
-		}
-
-		@Override
-		void shift(int d) {
-			for (Rubble r : rubble) r.lands += d;
 		}
 
 		private boolean shaken(ServerPlayer p) {

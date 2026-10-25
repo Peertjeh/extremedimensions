@@ -105,6 +105,11 @@ public final class HubConfig {
 	public static final class Combat {
 		/** Damage of a snowball or egg thrown at another player in a match (vanilla: 0, only a push). Spleef keeps the push only. */
 		public double snowballDamage = 2.0;
+		/**
+		 * In a match an enemy's name tag shows only this close (blocks), and only with nothing in between (1.49; vanilla
+		 * shows it up to 64 blocks away, through walls). Teammates keep theirs. 0: vanilla.
+		 */
+		public double nameTagRange = 6.0;
 	}
 
 	public static final class Protection {
@@ -340,6 +345,12 @@ public final class HubConfig {
 		public boolean music = true;
 		/** Its volume, 0 to 1 (players set the rest with their "Jukebox/Note Blocks" slider). */
 		public double musicVolume = 0.9;
+		/**
+		 * BattleHub's own sound effects (the cannon when a tribute falls, the sounds of the night's tribute): the .ogg from
+		 * the resource pack, or a mix of the game's own sounds without it.
+		 */
+		public boolean sounds = true;
+		public double soundVolume = 1.0;
 	}
 
 	/** Extras in the lobby: double jump and the training dummy. */

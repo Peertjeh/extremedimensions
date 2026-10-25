@@ -76,6 +76,12 @@ public final class CombatSteering {
 		Situation.Self me = s.self();
 		Situation.Target t = s.target();
 		if (wTap > 0) wTap--;
+		boolean smashed = s.threat() != null && s.threat().smash() != null;
+		if (t == null && tactic == Tactic.EVADE && smashed) {
+			// a smash from someone it was not fighting: away from it, eyes on the one coming down
+			V3 up = s.threat().attacker();
+			return dodge(s, up == null ? V3.ZERO : up.sub(me.pos()).flat().unit(), up == null ? null : up.add(new V3(0, 1, 0)), false, d, rng);
+		}
 		if (t == null && tactic != Tactic.OBJECTIVE && tactic != Tactic.RECOVER) {
 			return Intent.NOTHING;
 		}
@@ -133,6 +139,7 @@ public final class CombatSteering {
 				yield new Intent(fwd, str, false, false, aim, null, !heal && canHit, false, heal);
 			}
 			case EVADE -> {
+				if (s.threat() != null && s.threat().smash() != null) yield dodge(s, facing, aim, canHit, d, rng);
 				V3 from = s.threat() == null ? facing : s.threat().from().flat().unit();
 				V3 side = from.left();
 				double left = s.ground(side), right = s.ground(side.scale(-1));
@@ -149,6 +156,28 @@ public final class CombatSteering {
 			case OBJECTIVE -> objective(s, aim, canHit);
 			case IDLE -> aim == null ? Intent.NOTHING : Intent.NOTHING.withLook(aim);
 		};
+	}
+
+	/**
+	 * Out from under a mace coming down (1.49): running from where it will land, sprinting when that is forwards, never
+	 * towards a drop; too late to get away and a shield in hand: the shield up as it comes.
+	 */
+	static Intent dodge(Situation s, V3 facing, V3 aim, boolean canHit, Difficulty d, Random rng) {
+		Situation.Threat th = s.threat();
+		V3 me = s.self().pos();
+		V3 look = facing.flatLength() > 1e-6 ? facing : new V3(0, 0, 1);
+		V3 away = MaceFight.away(me, th.smash(), th.attacker() == null ? th.smash().at() : th.attacker(), look.left());
+		if (s.ground(away) < 1.5) {
+			V3 side = away.left();
+			away = s.ground(side) >= s.ground(side.scale(-1)) ? side : side.scale(-1);
+		}
+		// the keys go relative to where it looks (at the target)
+		double fwd = away.dot(look), str = away.dot(look.left());
+		double big = Math.max(1e-6, Math.max(Math.abs(fwd), Math.abs(str)));
+		fwd /= big;
+		str /= big;
+		boolean block = s.self().hasShield() && th.smash().in() <= 5 && rng.nextDouble() < 0.3 + 0.7 * d.shieldSkill;
+		return new Intent(fwd, str, fwd > 0.3, false, aim, null, canHit && !block, block, false);
 	}
 
 	/**

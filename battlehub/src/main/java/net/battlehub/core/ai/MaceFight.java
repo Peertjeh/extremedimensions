@@ -72,4 +72,68 @@ public final class MaceFight {
 		V3 miss = at.sub(pos).flat().sub(stop);
 		return miss.flatLength() < 0.15 ? V3.ZERO : miss.unit();
 	}
+
+	// ------------------------------------------------------------------ seeing a smash coming (1.49)
+
+	/** How close to the target (sideways) a smash that comes down counts as coming at them. */
+	public static final double SMASH_ZONE = 3.5;
+	/** How far ahead (ticks) a bot looks for a smash coming down. */
+	public static final int SMASH_HORIZON = 30;
+
+	/** A smash coming down on someone: where the attacker reaches their head height, and in how many ticks. */
+	public record Smash(V3 at, int in) {}
+
+	/**
+	 * Whether someone in the air at {@code pos}, moving at {@code vel} with {@code fall} blocks of fall behind them, comes
+	 * down on a target at {@code me} within {@code horizon} ticks with enough fall for the smash: where and when they
+	 * reach the target's head height (within {@link #SMASH_ZONE} sideways), or null. On the way up too: a wind charge
+	 * that just went off is seen coming. The flight follows the game (gravity 0.08 a tick, the air keeping 98% of the
+	 * speed up or down and 91% of the speed sideways), without the attacker steering.
+	 */
+	public static Smash incoming(V3 me, V3 pos, V3 vel, double fall, int horizon) {
+		if (pos.y() < me.y() + 1.0) return null;
+		double x = pos.x(), y = pos.y(), z = pos.z(), vx = vel.x(), vy = vel.y(), vz = vel.z(), f = Math.max(0, fall);
+		double head = me.y() + 1.8;
+		for (int t = 1; t <= horizon; t++) {
+			vy = (vy - 0.08) * 0.98;
+			vx *= AIR_DRAG;
+			vz *= AIR_DRAG;
+			x += vx;
+			z += vz;
+			double ny = y + vy;
+			if (vy < 0) {
+				f += y - ny;
+				if (ny <= head) {
+					if (f <= SMASH_FALL) return null;
+					return Math.hypot(x - me.x(), z - me.z()) <= SMASH_ZONE ? new Smash(new V3(x, me.y(), z), t) : null;
+				}
+			} else {
+				// on the way up (a wind charge's burst clears the fall) nothing counts yet
+				f = 0;
+			}
+			y = ny;
+		}
+		return null;
+	}
+
+	/**
+	 * Which way to run from a smash (flat, unit): away from where it comes down; from right under it, away from where the
+	 * attacker is now (sideways to their path), else along {@code fallback}.
+	 */
+	public static V3 away(V3 me, Smash s, V3 attacker, V3 fallback) {
+		V3 d = me.sub(s.at()).flat();
+		if (d.flatLength() > 0.4) return d.unit();
+		V3 a = me.sub(attacker).flat();
+		if (a.flatLength() > 0.2) return a.unit();
+		return fallback.flat().flatLength() > 1e-6 ? fallback.flat().unit() : new V3(1, 0, 0);
+	}
+
+	/**
+	 * Whether a bot of this level reacts to a smash it saw coming {@code seenFor} ticks ago: after its reaction time, and
+	 * only if it notices at all ({@code roll} 0..1, drawn once per smash): a beginner seldom, a master nearly always.
+	 */
+	public static boolean reacts(Difficulty d, int seenFor, double roll) {
+		double notice = Math.max(0.1, Math.min(1.0, 1 - 2.5 * d.mistakeRate));
+		return seenFor >= d.reactionTicks && roll < notice;
+	}
 }

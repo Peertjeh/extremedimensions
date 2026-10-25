@@ -198,7 +198,7 @@ final class FxTests {
 			rp.port = 25600 + (int) (System.nanoTime() % 300);
 			ResourcePack.start(server);
 		});
-		s.check(tag + ": built with the font, the icons and the sounds", () -> {
+		s.check(tag + ": built with the font, the icons, the sounds, the music and the sound effects", () -> {
 			byte[] zip = ResourcePack.zip();
 			if (!ResourcePack.active() || zip == null) return false;
 			Set<String> names = new HashSet<>();
@@ -207,8 +207,12 @@ final class FxTests {
 			} catch (java.io.IOException e) {
 				return false;
 			}
+			// with BattleHub's own music and sound effects (1.47, 1.49)
+			for (String id : net.battlehub.fx.Sfx.ALL) {
+				if (!names.contains("assets/battlehub/sounds/sfx/" + id + ".ogg")) return false;
+			}
 			return names.containsAll(Set.of("pack.mcmeta", "assets/minecraft/font/default.json",
-					"assets/battlehub/textures/font/icons.png", "assets/battlehub/sounds.json"));
+					"assets/battlehub/textures/font/icons.png", "assets/battlehub/sounds.json", "assets/battlehub/sounds/music/hg_anthem.ogg"));
 		});
 		s.check(tag + ": the built-in server hands out exactly that zip", () -> {
 			try {

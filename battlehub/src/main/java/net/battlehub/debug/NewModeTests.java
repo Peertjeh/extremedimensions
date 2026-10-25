@@ -323,6 +323,16 @@ final class NewModeTests {
 			return v.vaults() >= 1 && v.crates() >= 3 && v.capitolChest() != null && v.locked(v.capitolChest());
 		});
 		s.run(t + ": everyone is shielded (resistance) for the Gamemakers' tests", () -> shield(A, B, C, D));
+		s.waitFor(t + ": no locator bar for the tributes (their waypoint ranges are zero)", 40, () -> {
+			boolean off = true;
+			for (String n : new String[] {A, B, C, D}) off &= net.battlehub.games.hunger.Locator.off(p(n));
+			return off;
+		});
+		s.run(t + ": B stands 20 blocks from A", () -> PartyTests.tp(p(B), p(A).getX() + 20, p(A).getY() + 1, p(A).getZ()));
+		s.waitFor(t + ": A does not see B's name tag from there (also in the peace at the start)", 40,
+				() -> net.battlehub.match.NameTags.hidden(p(A).getUUID()).contains(p(B).getScoreboardName()));
+		s.run(t + ": B comes right up to A", () -> PartyTests.tp(p(B), p(A).getX() + 0.6, p(A).getY(), p(A).getZ()));
+		s.waitFor(t + ": up close A sees it again", 40, () -> !net.battlehub.match.NameTags.hidden(p(A).getUUID()).contains(p(B).getScoreboardName()));
 		s.check(t + ": a vault stays shut without a key and opens with one (the key is used up)", () -> {
 			var v = hg().capitol().vaults();
 			BlockPos vault = null;
@@ -457,13 +467,13 @@ final class NewModeTests {
 				&& net.battlehub.data.PlayerStore.get(p(D)).coins == (long) VARS.get("hgCoinsD") - net.battlehub.games.hunger.Sponsors.Gift.HEAL.cost
 				&& hg().capitol().sponsors().giftsLeft(p(D)) == net.battlehub.games.hunger.Sponsors.WATCHER_GIFTS - 1);
 		s.run(t + ": night falls", () -> hg().capitol().tributes().night());
-		s.check(t + ": the game holds still for D: the anthem, everyone's camera rises", () -> hg().capitol().tributes().inSky() == 1
-				&& hg().capitol().honouring() && net.battlehub.fx.Cinematics.active(p(A).getUUID())
+		s.check(t + ": the night's tribute for D plays over the plaza: the anthem, nobody's camera is taken", () -> hg().capitol().tributes().inSky() == 1
+				&& hg().capitol().honouring() && !net.battlehub.fx.Cinematics.active(p(A).getUUID())
 				&& net.battlehub.fx.Music.ANTHEM.equals(net.battlehub.fx.Music.playing(p(A).getUUID())));
 		// the emblem is 49 blocks; D adds a head, a pillar of light, the name and the district
-		s.waitFor(t + ": the Capitol's emblem and D's head in the sky", 160, () -> hg().capitol().tributes().onStage(p(A).getUUID()) >= 49 + 4);
+		s.waitFor(t + ": the Capitol's emblem and D's head high over the plaza", 160, () -> hg().capitol().tributes().onStage(p(A).getUUID()) >= 49 + 4);
 		s.check(t + ": the sky on A's screen is night", () -> net.battlehub.games.hunger.NightSky.sent() > 0);
-		s.run(t + ": during the night A hits B, and B tries to walk away", () -> {
+		s.run(t + ": during the night A hits B, and B walks away", () -> {
 			p(B).removeAllEffects();
 			p(B).setHealth(p(B).getMaxHealth());
 			VARS.put("hgNightPos", p(B).position());
@@ -471,10 +481,12 @@ final class NewModeTests {
 			PartyTests.tp(p(B), p(B).getX() + 4, p(B).getY(), p(B).getZ());
 		});
 		s.pause(3);
-		s.check(t + ": nobody can be hurt during the night, and the tributes stay where they stood", () -> p(B).getHealth() == p(B).getMaxHealth()
-				&& p(B).position().distanceTo((net.minecraft.world.phys.Vec3) VARS.get("hgNightPos")) < 0.5);
-		s.waitFor(t + ": the night ends: the cameras come back, the sky is empty, the game goes on", 400, () -> !hg().capitol().honouring()
-				&& !net.battlehub.fx.Cinematics.active(p(A).getUUID()) && hg().capitol().tributes().onStage(p(A).getUUID()) == 0);
+		s.check(t + ": the game goes on during the night: B was hurt and stays where it went", () -> p(B).getHealth() < p(B).getMaxHealth()
+				&& p(B).position().distanceTo((net.minecraft.world.phys.Vec3) VARS.get("hgNightPos")) > 3);
+		// the events go on meanwhile: B is shielded again, the test needs it later
+		s.run(t + ": B is shielded again", () -> shield(B));
+		s.waitFor(t + ": the night ends: the stage comes down, the game went on all along", 400, () -> !hg().capitol().honouring()
+				&& hg().capitol().tributes().onStage(p(A).getUUID()) == 0);
 		s.run(t + ": B and C fall", () -> {
 			for (String n : new String[] {B, C}) {
 				ServerPlayer pl = p(n);
@@ -483,6 +495,8 @@ final class NewModeTests {
 			}
 		});
 		s.waitFor(t + ": A wins", 80, () -> match().phase() != Match.Phase.RUNNING && match().outcome(p(A).getUUID()) == Outcome.WIN);
+		s.waitFor(t + ": after the game the locator bar and every name tag are back", 60, () -> !net.battlehub.games.hunger.Locator.off(p(A))
+				&& net.battlehub.match.NameTags.hidden(p(A).getUUID()).isEmpty());
 		s.waitFor(t + ": nothing of the Capitol is left (texts, parachutes, bees, mutts)", 400, () -> {
 			if (match().phase() != Match.Phase.CLOSED) return false;
 			var level = match().arena().level();

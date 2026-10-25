@@ -133,6 +133,7 @@ public final class Bots {
 	/** Takes a bot off the server. */
 	public static void remove(BotPlayer p) {
 		Looting.forget(p);
+		Perception.forget(p.getUUID());
 		ONLINE.remove(p.getUUID());
 		IDLE.remove(p.getUUID());
 		if (p.hasDisconnected()) {
@@ -719,6 +720,20 @@ public final class Bots {
 
 	public static int launches(BotPlayer b) {
 		return b.brain.launches();
+	}
+
+	/** Ender pearls a bot threw, and things it moved from its inventory into its hotbar (1.49). */
+	public static int pearls(BotPlayer b) {
+		return b.brain.pearls();
+	}
+
+	public static int swaps(BotPlayer b) {
+		return b.brain.swaps();
+	}
+
+	/** Mace smashes a bot noticed coming down on it (1.49). */
+	public static int smashesSeen(BotPlayer b) {
+		return b.brain.smashesSeen();
 	}
 
 	/** Would a bot bridge with this (a full block to stand on)? */

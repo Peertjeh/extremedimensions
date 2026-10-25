@@ -108,15 +108,6 @@ public final class Cinematics {
 		}
 	}
 
-	/**
-	 * A camera shot of the game's own (the Hunger Games' night, 1.47): {@code path} gives the camera at progress 0..1
-	 * over {@code ticks}; the view goes back to the player at the end, or with {@link #stop}.
-	 */
-	public static void shot(ServerPlayer p, int matchId, ServerLevel level, int ticks, DoubleFunction<Orbit.Pose> path) {
-		if (Bots.isBot(p)) return;
-		start(p, matchId, level, ticks, path);
-	}
-
 	private static void start(ServerPlayer p, int matchId, ServerLevel level, int ticks, DoubleFunction<Orbit.Pose> path) {
 		stop(p);
 		ClientEntities.Handle h = ClientEntities.handle(level, cameraType());

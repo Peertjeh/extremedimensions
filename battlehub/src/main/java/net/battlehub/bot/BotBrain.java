@@ -302,6 +302,7 @@ final class BotBrain {
 
 	private void forget() {
 		Looting.forget(bot);
+		Perception.forget(bot.getUUID());
 		if (fighting) {
 			// a new match starts with a clear head (the personality stays)
 			mind.reset(ticks);
@@ -701,12 +702,57 @@ final class BotBrain {
 
 	// ------------------------------------------------------------------ items
 
+	/** The hotbar slot of something it carries (brought there from the inventory if need be), or -1. */
 	private int find(Predicate<ItemStack> what) {
 		Inventory inv = bot.getInventory();
 		for (int i = 0; i < 9; i++) {
 			if (what.test(inv.getItem(i))) return i;
 		}
-		return -1;
+		return fromInventory(what);
+	}
+
+	/** When it last moved something from its inventory into the hotbar, and how often it did (1.49). */
+	private int lastSwap = -1000, swaps;
+
+	/**
+	 * Something it carries only in its inventory (the kit put it there, or the stack in the hotbar ran out) is moved into
+	 * the hotbar, as a player does with the inventory open: that takes a moment (the lower the level, the longer), so it
+	 * does not happen in every exchange. Into an empty hotbar slot, else in place of something that is no weapon, no bow
+	 * and not the same thing (that goes into the inventory in its place). Before 1.49 a bot only used its hotbar, so a
+	 * kit with pearls, apples or charges beyond it left them unused.
+	 */
+	private int fromInventory(Predicate<ItemStack> what) {
+		if (ticks - lastSwap < swapTicks()) return -1;
+		Inventory inv = bot.getInventory();
+		int from = -1;
+		for (int i = 9; i < 36 && from < 0; i++) {
+			if (what.test(inv.getItem(i))) from = i;
+		}
+		if (from < 0) return -1;
+		int to = -1;
+		for (int i = 0; i < 9 && to < 0; i++) {
+			if (inv.getItem(i).isEmpty()) to = i;
+		}
+		for (int i = 8; i >= 0 && to < 0; i--) {
+			ItemStack s = inv.getItem(i);
+			if (!isMelee(s) && !s.is(Items.BOW) && !s.is(Items.CROSSBOW) && !what.test(s)) to = i;
+		}
+		if (to < 0) return -1;
+		ItemStack moved = inv.getItem(from), out = inv.getItem(to);
+		inv.setItem(to, moved);
+		inv.setItem(from, out);
+		lastSwap = ticks;
+		swaps++;
+		return to;
+	}
+
+	/** How long moving something into the hotbar takes it: a master half a second, a beginner a second and a half. */
+	private int swapTicks() {
+		return 6 + 2 * mind.difficulty().reactionTicks;
+	}
+
+	int swaps() {
+		return swaps;
 	}
 
 	/**
@@ -760,6 +806,14 @@ final class BotBrain {
 	/** Wind charges thrown to fly up (mace fights). */
 	int launches() {
 		return launches;
+	}
+
+	/** Mace smashes it saw coming down on it (1.49, for the self-test and inspect). */
+	private int smashesSeen;
+	private boolean wasSmashed;
+
+	int smashesSeen() {
+		return smashesSeen;
 	}
 
 	private static boolean isMelee(ItemStack s) {
@@ -853,10 +907,14 @@ final class BotBrain {
 			edgesAt = ticks;
 		}
 		Situation s = Perception.situation(bot, m, mind, k, ticks, lastSwing, edges);
+		boolean smashed = s.threat() != null && s.threat().smash() != null;
+		if (smashed && !wasSmashed) smashesSeen++;
+		wasSmashed = smashed;
 		Intent in = mind.tick(s);
 		lastIntent = in;
 		// a tick of a fight a learned model is in on: the model steered, or the target is close enough that it would
 		fightTick = t != null && ModelReports.inPlay(m) && (mind.learnedNow() || s.distance() <= LearnedFight.ENGAGE);
+		if (pearl(k, s)) return;
 		if (t == null && in.moveTo() == null && mind.tactic() == Tactic.IDLE) {
 			// nobody to be seen and nothing to do: look round first (someone may be behind), then walk about
 			stopUsing();
@@ -869,6 +927,78 @@ final class BotBrain {
 		}
 		lookingAround = 0;
 		execute(m, in, k);
+	}
+
+	// ------------------------------------------------------------------ ender pearls (1.49)
+
+	/** Where the pearl it is about to throw should come down (it turns there first), and since when. */
+	private Vec3 pearlAt;
+	private int pearlSince, lastPearl = -1000, pearls;
+
+	/** Ender pearls thrown (for the self-test and inspect). */
+	int pearls() {
+		return pearls;
+	}
+
+	/**
+	 * An ender pearl, as people with pearls in their kit throw them ({@link net.battlehub.core.ai.PearlUse}): after
+	 * someone it sees far off, a few blocks short of them, or away from someone on top of it when it is low and could
+	 * eat. It turns to the arc first (at the speed its level turns) and throws once aimed, standing meanwhile; a learned
+	 * model that throws its own pearls is left to it up close. True while it is busy with one (the rest of the tick waits).
+	 */
+	private boolean pearl(Perception.Known k, Situation s) {
+		if (pearlAt != null) {
+			if (ticks - pearlSince > 25 || !bot.onGround()) {
+				pearlAt = null;
+				return false;
+			}
+			Vec3 eye = bot.getEyePosition();
+			double dx = pearlAt.x - eye.x, dz = pearlAt.z - eye.z;
+			float err = (float) skill.bowError * 0.5f;
+			float yaw = BotMath.yaw(dx, dz) + (float) ((rnd.nextDouble() * 2 - 1) * err);
+			float pitch = BotMath.pearlPitch(Math.hypot(dx, dz), pearlAt.y - eye.y) + (float) ((rnd.nextDouble() * 2 - 1) * err);
+			look(yaw, pitch);
+			bot.zza = 0;
+			bot.xxa = 0;
+			bot.setSprinting(false);
+			if (Math.abs(BotMath.wrap(bot.getYRot() - yaw)) < 3 && Math.abs(bot.getXRot() - pitch) < 3) {
+				int slot = find(st -> st.is(Items.ENDER_PEARL));
+				// still bringing it into the hotbar: a moment longer
+				if (slot < 0) return true;
+				stopUsing();
+				shield(false);
+				bot.getInventory().setSelectedSlot(slot);
+				BotActions.use(bot, InteractionHand.MAIN_HAND);
+				BotActions.swing(bot);
+				pearls++;
+				lastPearl = ticks;
+				pearlAt = null;
+			}
+			return true;
+		}
+		if (k == null || ticks % 20 != 0 || ticks - lastPearl < net.battlehub.core.ai.PearlUse.SPACING || !bot.onGround()
+				|| (s.threat() != null && s.threat().any())) return false;
+		if (bot.getInventory().countItem(Items.ENDER_PEARL) <= 0
+				|| bot.getCooldowns().getCooldownPercent(new ItemStack(Items.ENDER_PEARL), 0f) > 0) return false;
+		ServerPlayer t = k.player();
+		double dist = t.distanceTo(bot), share = bot.getHealth() / Math.max(1, bot.getMaxHealth());
+		net.battlehub.core.ai.V3 me = Perception.v(bot.position()), them = Perception.v(t.position());
+		net.battlehub.core.ai.V3 to = null;
+		if (net.battlehub.core.ai.PearlUse.chase(dist, k.seen(), true, share, mind.difficulty(), rnd.nextDouble())) {
+			to = net.battlehub.core.ai.PearlUse.chaseTo(me, them);
+			if (!landing(to)) to = null;
+		} else if (!mind.learnedNow() && net.battlehub.core.ai.PearlUse.escape(dist, share, s.self().canHeal(), true, mind.difficulty(), rnd.nextDouble())) {
+			to = net.battlehub.core.ai.PearlUse.escapeTo(me, them, this::landing);
+		}
+		if (to == null) return false;
+		pearlAt = Perception.v(to);
+		pearlSince = ticks;
+		return true;
+	}
+
+	/** Somewhere a pearl may come down: ground under it within a few blocks (not the void, not lava). */
+	private boolean landing(net.battlehub.core.ai.V3 at) {
+		return BotActions.groundBelow(level(), at.x(), at.y() + 2, at.z(), 6);
 	}
 
 	/** Carries out one intent of the mind. */
@@ -1387,6 +1517,7 @@ final class BotBrain {
 			}
 			if (!edge) continue;
 			int slot = find(s -> s.is(Items.SNOWBALL));
+			if (slot < 0) return;
 			bot.getInventory().setSelectedSlot(slot);
 			Vec3 at = p.position().add(p.getDeltaMovement().scale(Math.min(8, d / 1.5))).add(0, 1.0, 0);
 			lookAt(at.add(0, d * 0.06, 0), true);

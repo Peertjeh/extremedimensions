@@ -62,9 +62,21 @@ public record Situation(int tick, Self self, Target target, Objective goal, doub
 		}
 	}
 
-	/** Projectiles coming at the NPC: how many and from where (a unit vector), or none. */
-	public record Threat(int incoming, V3 from) {
-		public static final Threat NONE = new Threat(0, V3.ZERO);
+	/**
+	 * Danger coming at the NPC: projectiles (how many and from where, a unit vector), and a mace smash coming down that it
+	 * noticed (where, when, and where the attacker is now), or none.
+	 */
+	public record Threat(int incoming, V3 from, MaceFight.Smash smash, V3 attacker) {
+		public static final Threat NONE = new Threat(0, V3.ZERO, null, null);
+
+		public Threat(int incoming, V3 from) {
+			this(incoming, from, null, null);
+		}
+
+		/** Anything to get away from. */
+		public boolean any() {
+			return incoming > 0 || smash != null;
+		}
 	}
 
 	public double distance() {

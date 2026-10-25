@@ -7,7 +7,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import net.battlehub.core.Orbit;
 
 /** 1.47: the Gamemakers raise the stakes, and the night's tribute to the fallen. */
 class HungerSpectacleTest {
@@ -84,22 +83,22 @@ class HungerSpectacleTest {
 	}
 
 	@Test
-	void theCameraRisesFromTheEyesLooksUpAtTheStageAndComesBack() {
-		NightPlan p = new NightPlan(3);
-		double x = 10, y = 70, z = -4;
-		float yaw = 90f;
-		Orbit.Pose start = p.camera(x, y, z, yaw, 0);
-		assertEquals(x, start.x(), 1e-6);
-		assertEquals(y, start.y(), 1e-6);
-		assertEquals(yaw, start.yaw(), 1e-3);
-		Orbit.Pose mid = p.camera(x, y, z, yaw, p.length / 2);
-		assertTrue(mid.y() > y + NightPlan.CAMERA_UP - 0.5, "up in the air: " + mid.y());
-		assertTrue(mid.pitch() < -20, "looking up at the stage: " + mid.pitch());
-		double[] sky = NightPlan.sky(x, y, z, yaw);
-		// the stage is ahead of where the viewer looked (yaw 90: towards -x)
-		assertTrue(sky[0] < x - 10 && sky[1] > y + 20);
-		Orbit.Pose end = p.camera(x, y, z, yaw, p.length);
-		assertEquals(x, end.x(), 1e-6);
-		assertEquals(z, end.z(), 1e-6);
+	void theStageOverThePlazaTurnsItsEmblemToWhoeverLooks() {
+		// a viewer south of the stage: the emblem lies east-west, at right angles to the line to them
+		double[] a = NightPlan.across(0, 30, 0, 0);
+		assertEquals(0, a[0] * 0 + a[1] * 30, 1e-9);
+		assertEquals(1, Math.hypot(a[0], a[1]), 1e-9);
+		// right under it: still a direction
+		double[] under = NightPlan.across(5, 5, 5, 5);
+		assertEquals(1, Math.hypot(under[0], under[1]), 1e-9);
+		// walking round: it turns after a fifth of a quarter, also across the line where bearings jump from 180 to -180
+		assertTrue(!NightPlan.turned(10, 25));
+		assertTrue(NightPlan.turned(10, 35));
+		assertTrue(!NightPlan.turned(175, -170));
+		assertTrue(NightPlan.turned(170, -160));
+		assertEquals(90, NightPlan.bearing(0, 10, 0, 0), 1e-9);
+		// high enough to see from all over the city, the emblem over the faces, the names under them
+		assertTrue(NightPlan.FACE_UP >= 30 && NightPlan.EMBLEM_UP > NightPlan.FACE / 4 + 11 * NightPlan.EMBLEM_BLOCK / 2);
+		assertTrue(NightPlan.NAME_DOWN > NightPlan.FACE / 4 && NightPlan.DISTRICT_DOWN > NightPlan.NAME_DOWN);
 	}
 }

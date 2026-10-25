@@ -208,11 +208,8 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 		return shrink.sizeAt(borderTicks());
 	}
 
-	/** Ticks the night's tributes took so far: the border does not close in during them. */
-	private int pausedTicks;
-
 	private int borderTicks() {
-		return Math.max(0, runTicks - pausedTicks);
+		return runTicks;
 	}
 
 	@Override
@@ -325,10 +322,6 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 	@Override
 	protected void tickGame() {
 		capitol.tick();
-		if (capitol.honouring()) {
-			pausedTicks++;
-			return;
-		}
 		if (runTicks == graceTicks() && graceTicks() > 0) {
 			forEveryone(p -> {
 				Msg.send(p, "hg.grace_over");
@@ -371,12 +364,12 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 	}
 
 	/**
-	 * During the peace (and the night's tribute) nobody is anyone's enemy: bots loot instead of swinging at people they
+	 * During the peace nobody is anyone's enemy: bots loot instead of swinging at people they
 	 * cannot hurt.
 	 */
 	@Override
 	public boolean isEnemy(UUID a, UUID b) {
-		return !inGrace() && !capitol.honouring() && super.isEnemy(a, b);
+		return !inGrace() && super.isEnemy(a, b);
 	}
 
 	@Override
@@ -385,12 +378,11 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 	}
 
 	/**
-	 * Nobody hurts anyone in the first half minute; the rest (falls, fire, the border) hurts from the start. During the
-	 * night's tribute nothing hurts anyone.
+	 * Nobody hurts anyone in the first half minute; the rest (falls, fire, the border) hurts from the start. The night's
+	 * tribute plays over the plaza while the fighting goes on.
 	 */
 	@Override
 	protected boolean damageAllowed(ServerPlayer victim, DamageSource source, ServerPlayer attacker) {
-		if (capitol.honouring()) return false;
 		return attacker == null || !inGrace();
 	}
 
@@ -406,9 +398,11 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 		victim.getInventory().dropAll();
 		int left = Math.max(0, alive.size() - 1);
 		String who = name(victim.getUUID());
+		// the cannon for everyone, and for the fallen what they hear themselves
+		net.battlehub.fx.Sfx.play(victim, net.battlehub.fx.Sfx.FALLEN);
 		forEveryone(p -> {
 			Msg.send(p, "hg.cannon", who, left);
-			Msg.sound(p, SoundEvents.LIGHTNING_BOLT_THUNDER, 0.6f, 0.6f);
+			if (p != victim) net.battlehub.fx.Sfx.play(p, net.battlehub.fx.Sfx.CANNON);
 		});
 		eliminate(victim);
 		// the fallen can still sponsor someone
@@ -704,8 +698,7 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 
 	@Override
 	public boolean botHolds(ServerPlayer bot) {
-		// during the night's tribute bots stand still and look up too
-		return botsCracking.contains(bot.getUUID()) || capitol.honouring();
+		return botsCracking.contains(bot.getUUID());
 	}
 
 	private static void eat(ServerPlayer bot) {

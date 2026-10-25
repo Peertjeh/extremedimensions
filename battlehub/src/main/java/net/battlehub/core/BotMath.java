@@ -16,6 +16,9 @@ public final class BotMath {
 	/** Arrow gravity and drag. */
 	public static final double ARROW_GRAVITY = 0.05;
 	public static final double ARROW_DRAG = 0.99;
+	/** A thrown ender pearl: its speed and gravity (its drag is the arrow's, 1.49). */
+	public static final double PEARL_SPEED = 1.5;
+	public static final double PEARL_GRAVITY = 0.03;
 
 	/** Minecraft yaw (0 = south, 90 = west) to look along dx, dz. */
 	public static float yaw(double dx, double dz) {
@@ -46,12 +49,22 @@ public final class BotMath {
 	 * higher; the flatter of the two solutions, or the 45 degree maximum when the target is out of range.
 	 */
 	public static float arrowPitch(double h, double dy, double speed) {
+		return throwPitch(h, dy, speed, ARROW_GRAVITY);
+	}
+
+	/** The pitch to throw an ender pearl so it comes down at horizontal distance {@code h}, {@code dy} higher. */
+	public static float pearlPitch(double h, double dy) {
+		return throwPitch(h, dy, PEARL_SPEED, PEARL_GRAVITY);
+	}
+
+	/** {@link #arrowPitch} for anything thrown or shot with this speed and gravity (the drag of both is 0.99). */
+	public static float throwPitch(double h, double dy, double speed, double gravity) {
 		double lo = -60;
 		double hi = 45;
 		// Height of the arrow when it has flown h blocks, for a launch angle (positive = up)
 		for (int i = 0; i < 40; i++) {
 			double mid = (lo + hi) / 2;
-			double y = arrowHeightAt(h, mid, speed);
+			double y = heightAt(h, mid, speed, gravity);
 			if (Double.isNaN(y) || y < dy) {
 				lo = mid;
 			} else {
@@ -63,6 +76,11 @@ public final class BotMath {
 
 	/** Height of an arrow shot at {@code angle} degrees up when it has covered {@code h} blocks; NaN if it never gets there. */
 	static double arrowHeightAt(double h, double angle, double speed) {
+		return heightAt(h, angle, speed, ARROW_GRAVITY);
+	}
+
+	/** {@link #arrowHeightAt} with this gravity. */
+	static double heightAt(double h, double angle, double speed, double gravity) {
 		double a = Math.toRadians(angle);
 		double vx = Math.cos(a) * speed;
 		double vy = Math.sin(a) * speed;
@@ -78,7 +96,7 @@ public final class BotMath {
 			x = nx;
 			y = ny;
 			vx *= ARROW_DRAG;
-			vy = vy * ARROW_DRAG - ARROW_GRAVITY;
+			vy = vy * ARROW_DRAG - gravity;
 			if (vx < 1e-3) {
 				return Double.NaN;
 			}

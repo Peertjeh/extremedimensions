@@ -75,6 +75,8 @@ public final class HubEvents {
 			net.battlehub.social.CustomGames.clear();
 			net.battlehub.social.Clans.clear();
 			net.battlehub.games.Visibility.clear();
+			net.battlehub.match.NameTags.clear();
+			net.battlehub.games.hunger.Locator.clear();
 			Sessions.clear();
 			net.battlehub.hub.HubBoards.clear();
 			Tasks.clear();
@@ -238,6 +240,8 @@ public final class HubEvents {
 		Matches.tick();
 		net.battlehub.bot.Motion.tick(server);
 		net.battlehub.bot.Bots.tick(server);
+		net.battlehub.match.NameTags.tick(server);
+		net.battlehub.games.hunger.Locator.tick(server);
 		net.battlehub.bot.CombatMemory.tick(server);
 		net.battlehub.bot.FightRecorder.tick(server);
 		Queues.tick(server);

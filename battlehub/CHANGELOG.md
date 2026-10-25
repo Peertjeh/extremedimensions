@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.49.0
+
+### Changed
+* **The Hunger Games night no longer stops the game.** The tribute to the fallen now plays high over the plaza, 40
+  blocks up, where everyone in the arena can see it. Nobody is frozen, no camera is taken, and the Gamemakers and the
+  border carry on: you can keep looting, hiding and fighting while it plays. The Capitol's emblem rises block by block
+  and turns towards whoever looks at it. Each fallen tribute is a giant head on a pillar of light from the plaza, with
+  their name and district. A short title and a chat line say where to look.
+* **Name tags show only up close.** In a match an enemy's name tag shows only within 6 blocks, with nothing in
+  between (`combat.nameTagRange`; 0 = vanilla). Vanilla shows it 64 blocks away and through walls, which gave
+  everyone away. Teammates keep theirs, spectators and the lobby see every tag, and titles and name colours stay.
+  Bots no longer find anyone behind a wall by their tag either.
+* **No locator bar in the Hunger Games.** The bar over the hotbar that points at every other player is off for the
+  tributes until the game is over: they neither send nor receive waypoints.
+* **Bots use their whole kit.** Golden apples, pearls, wind charges and blocks that are not in the hotbar are brought
+  there when the bot needs them, taking a moment as a player does with the inventory open. Before, a bot only used
+  its hotbar.
+* **In practice the bot has your kit in your arrangement.** Bots in a match with you get your layout from the kit
+  editor: the same items in the same slots.
+
+### Added
+* **Sounds of its own** for deaths and the night, synthesised for BattleHub (`tools/music/sfx.py`):
+  * a cannon over the arena when a tribute falls;
+  * for the fallen, a heartbeat that stops and a chord sinking away;
+  * the Capitol's seal at nightfall, a rising shimmer for the emblem, and a funeral bell for every face.
+
+  They come with the resource pack. Without it the server plays a mix of the game's own sounds for each
+  (`effects.sounds`, `effects.soundVolume`).
+* **Bots see a mace smash coming and dodge it.** Someone in the air over a bot with a mace, seen or heard, whose fall
+  will end on the bot's head: after its reaction time the bot runs out from under it (sideways, never over an edge),
+  or raises its shield at the last moment. A beginner notices one smash in eight, a master nearly all.
+* **Bots throw ender pearls.** They throw them after someone they see 13 to 40 blocks away, and away from someone on
+  top of them when they are low and could eat. The throw follows the pearl's real arc. A beginner never throws one.
+* The fight export of 25 October (afternoon) in `ml/data`.
+
 ## 1.48.0
 
 ### Changed

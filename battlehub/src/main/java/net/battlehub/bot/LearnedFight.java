@@ -105,6 +105,9 @@ final class LearnedFight implements MeleeController {
 		Match m = Matches.of(bot.getUUID());
 		if (!active(m) || s.target() == null) return null;
 		if (s.goal() != null && s.distance() > ENGAGE) return null;
+		// a smash it noticed coming down on it: the model never saw one (the simulation has no flight), the scripted
+		// mind runs from under it (or raises the shield)
+		if (s.threat() != null && s.threat().smash() != null) return null;
 		// an enemy it does not see, and not near: the scripted mind finds the way round cover (the model learned on
 		// open ground and walks into the wall); in sight or near, the model fights
 		if (!s.target().visible() && s.distance() > ENGAGE) return null;

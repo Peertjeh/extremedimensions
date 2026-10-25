@@ -227,7 +227,7 @@ public final class CombatMind {
 			lastExchange = s.tick();
 		}
 		if (t != null && t.visible()) lastVisibleTick = s.tick();
-		boolean urgent = newTarget || (s.threat() != null && s.threat().incoming() > 0 && decider.current() != Tactic.EVADE)
+		boolean urgent = newTarget || (s.threat() != null && s.threat().any() && decider.current() != Tactic.EVADE)
 				|| (t != null && t.visible() && s.distance() < s.self().reach() + 2 && s.ground(s.self().pos().sub(t.pos()).flat().unit()) < 1.0
 						&& decider.current() != Tactic.RECOVER);
 		boolean due = s.tick() >= nextThink;

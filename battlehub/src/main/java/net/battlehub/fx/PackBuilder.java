@@ -25,7 +25,7 @@ import net.battlehub.core.PixelIcons;
 
 /**
  * Builds the optional resource pack: the pixel icons as a font, BattleHub's sounds (made from vanilla sound
- * files with their own pitch and volume), lobby music and BattleHub's own music for the Hunger Games (1.47). Files in {@code config/battlehub/resourcepack/overlay/}
+ * files with their own pitch and volume), lobby music, BattleHub's own music for the Hunger Games (1.47) and its own sound effects (1.49). Files in {@code config/battlehub/resourcepack/overlay/}
  * are added on top, so a server can put in its own .ogg sounds, textures or a pack.png.
  */
 public final class PackBuilder {
@@ -41,6 +41,11 @@ public final class PackBuilder {
 		for (String song : Music.SONGS) {
 			byte[] ogg = Music.ogg(song);
 			if (ogg != null) files.put("assets/battlehub/sounds/music/" + song + ".ogg", ogg);
+		}
+		// and its own sound effects (1.49)
+		for (String id : Sfx.ALL) {
+			byte[] ogg = Sfx.ogg(id);
+			if (ogg != null) files.put("assets/battlehub/sounds/sfx/" + id + ".ogg", ogg);
 		}
 		if (overlay != null && Files.isDirectory(overlay)) {
 			try (Stream<Path> walk = Files.walk(overlay)) {
@@ -175,6 +180,9 @@ public final class PackBuilder {
 				new Sound("minecraft:music/menu/menu4", 1, 1, true))));
 		for (String song : Music.SONGS) {
 			if (Music.ogg(song) != null) root.add("music." + song, event(List.of(new Sound("battlehub:music/" + song, 1, 1, true))));
+		}
+		for (String id : Sfx.ALL) {
+			if (Sfx.ogg(id) != null) root.add("sfx." + id, event(List.of(new Sound("battlehub:sfx/" + id, 1, 1, false))));
 		}
 		return root.toString();
 	}

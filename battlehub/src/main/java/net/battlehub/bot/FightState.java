@@ -146,14 +146,14 @@ final class FightState {
 		st.selfJumpPower = p.getAttributeValue(Attributes.JUMP_STRENGTH) + 0.1 * level(p, "minecraft:jump_boost");
 		st.selfGravity = p.getAttributeValue(Attributes.GRAVITY);
 		Inventory inv = p.getInventory();
-		// what it can switch to: the hotbar (the arrows of a bow in the hotbar may be anywhere), so that the action masks
-		// allow only what the bot can take in hand
-		boolean bow = hotbar(inv, s -> s.is(Items.BOW)) > 0;
+		// what it can switch to: the whole inventory (1.49: what is not in the hotbar the bot brings there when it wants
+		// it, as a player does; before, only the hotbar counted and a kit's pearls beyond it were never used)
+		boolean bow = count(inv, s -> s.is(Items.BOW)) > 0;
 		st.selfArrows = bow ? count(inv, s -> s.is(Items.ARROW) || s.is(Items.SPECTRAL_ARROW) || s.is(Items.TIPPED_ARROW)) : 0;
-		st.selfFoodItems = hotbar(inv, s -> LearnedFight.handOf(s).equals("food"));
-		st.selfGapples = hotbar(inv, s -> LearnedFight.handOf(s).equals("gapple"));
-		st.selfPearls = hotbar(inv, s -> s.is(Items.ENDER_PEARL));
-		st.selfWinds = hotbar(inv, s -> s.is(LearnedFight.WIND));
+		st.selfFoodItems = count(inv, s -> LearnedFight.handOf(s).equals("food"));
+		st.selfGapples = count(inv, s -> LearnedFight.handOf(s).equals("gapple"));
+		st.selfPearls = count(inv, s -> s.is(Items.ENDER_PEARL));
+		st.selfWinds = count(inv, s -> s.is(LearnedFight.WIND));
 		st.selfShield = p.getOffhandItem().is(Items.SHIELD);
 		st.selfPearlCd = p.getCooldowns().getCooldownPercent(new ItemStack(Items.ENDER_PEARL), 0f) * 20;
 		st.selfWindCd = p.getCooldowns().getCooldownPercent(new ItemStack(LearnedFight.WIND), 0f) * 10;
@@ -299,16 +299,6 @@ final class FightState {
 			if (any.isEmpty()) any = s;
 		}
 		return any;
-	}
-
-	/** How many of something are in the hotbar (what can be taken in hand without opening the inventory). */
-	private static int hotbar(Inventory inv, Predicate<ItemStack> p) {
-		int n = 0;
-		for (int i = 0; i < 9; i++) {
-			ItemStack s = inv.getItem(i);
-			if (!s.isEmpty() && p.test(s)) n += s.getCount();
-		}
-		return n;
 	}
 
 	private static int count(Inventory inv, Predicate<ItemStack> p) {

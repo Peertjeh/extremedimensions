@@ -2264,6 +2264,81 @@ de simulatie, en het gat tussen intermediate en master klopt met het spel) en da
 staat. Hoe andere spelers over de niveaus verdeeld zijn, zegt een volgende export van meer spelers. De mace-schaal rust op
 vier gevechten.
 
+## Versie 1.49.0 – De nacht boven het plein, eigen geluiden, ontwijken, dezelfde kit, minder verklappen
+
+**Vraag.** (A) De doden-animatie in de Hunger Games niet meer "locked": hoog in het midden afspelen, verder spelen.
+(B) Eigen geluiden bij doodgaan en tijdens de avondceremonie. (C) Bots leren aanvallen te ontwijken, bijvoorbeeld
+van een mace: ze moeten zien dat ze gevaar lopen. (D) In practice dezelfde kit voor de bots als voor de speler.
+(E) Nametags alleen heel dichtbij. (F) De "hotbar" van de essentials-mod mag in de Hunger Games niet werken, omdat
+je daarmee ziet waar vijanden zijn. (Plus een nieuwe export: `ml/data/export-20261025-160520.zip`, 24 gevechten.)
+
+**A – De nacht boven het plein.** De camera wordt niet meer overgenomen en niemand staat stil: geen bevriezing,
+geen blindheid, geen pauze van de Gamemakers of de rand (`HungerGamesMatch`, `Gamemakers`, `Capitol`: het hele
+"vasthouden" is eruit). De ceremonie (`Ceremony`) hangt 40 blokken boven het plein (`NightPlan.FACE_UP`), voor
+iedereen in de arena, ook wie later binnenkomt. Het embleem van 49 blokken staat per kijker in een vlak dat naar
+hem toe kijkt en draait mee als hij meer dan 20 graden om het plein heen loopt (`NightPlan.across`, `bearing`,
+`turned`). Elk gezicht is een reuzenhoofd met een lichtzuil vanaf het plein, naam en district. Display-entities
+krijgen een groter zichtbereik en een omvang (`Stage.range`, `sized`), zodat ze van ver getekend worden. Een korte
+titel en een chatregel ("Kijk omhoog …") zeggen waar het is.
+
+**B – Geluiden.** Vijf geluiden, gesynthetiseerd zoals de muziek (`tools/music/sfx.py`): het kanon (iedereen hoort
+het als iemand valt), wat de gevallene hoort (een hartslag die stopt, een akkoord dat wegzakt), het zegel van het
+Capitool bij het begin van de nacht, het opstijgen van het embleem en een doodsklok per gezicht. Met het
+resourcepack hoor je de .ogg's (`battlehub:sfx.*`, `PackBuilder`); zonder pack speelt `Sfx` per geluid een mix van
+spelgeluiden (een paar lagen met toonhoogte, volume en vertraging). Volume: `effects.sounds`, `effects.soundVolume`.
+De eerste versie had 95% van zijn energie onder 150 Hz (onhoorbaar op kleine speakers); `finish()` haalt nu de
+diepste lagen weg zoals bij de muziek en verzadigt licht.
+
+**C – Een smash zien aankomen.** `MaceFight.incoming` rekent de vlucht van iemand in de lucht door zoals het spel
+hem beweegt (zwaartekracht 0,08, 98% luchtweerstand verticaal, 91% opzij, zonder bijsturen) en zegt of en wanneer
+hij met genoeg val (> 1,5 blok) binnen 3,5 blok op de bot neerkomt, tot 30 ticks vooruit (ook al op de weg omhoog
+na een windcharge). `Perception.smash` doet dat voor vijanden met een mace in de hand (of hoog boven de bot in een
+mace-gevecht, waar de mace pas op het laatst tevoorschijn komt) die de bot kan kennen: gezien, gehoord (de knal van
+de windcharge, het suizen van de val, binnen 16 blokken) of zijn doelwit. Reageren gaat na de reactietijd van het
+niveau en alleen als het niveau het opmerkt (`MaceFight.reacts`: beginner 1 op 8, master bijna altijd, één worp per
+smash). De mind kiest dan EVADE boven alles (`CombatPolicy`), de sturing rent onder de landingsplek vandaan, nooit
+over een rand (dan opzij), en heft vlak voor de klap het schild als het er een heeft (`CombatSteering.dodge`). Het
+geleerde model geeft bij een smash de controle terug (het kent geen vluchten).
+
+**D – Dezelfde kit.** In de code kregen bot en speler al dezelfde kit, en in de export ook: dezelfde spullen in
+dezelfde aantallen. Het verschil zat in het *gebruik*: een bot zocht alleen in zijn hotbar (een kit met parels,
+appels of windcharges verderop bleef ongebruikt) en gooide nooit een parel. Nu:
+- spullen buiten de hotbar haalt een bot naar de hotbar als hij ze nodig heeft, met een korte pauze zoals een speler
+  met zijn inventaris open (`BotBrain.fromInventory`; master 0,5 s, beginner 1,5 s); het geleerde gevecht telt de hele
+  inventaris (`FightState`);
+- parels (`PearlUse`): achter iemand aan die hij ziet op 13 tot 40 blokken (3 blokken voor hem neerkomen), en weg
+  bij iemand die bovenop hem zit als hij laag staat en kan eten (14 blokken, naar een kant met grond); de boog van de
+  worp volgt het spel (`BotMath.pearlPitch`); een beginner gooit nooit;
+- in een match met een speler krijgt een bot de indeling van die speler uit de kit-editor (`Kits.layout`): dezelfde
+  spullen in dezelfde vakjes.
+
+**E – Nametags alleen dichtbij.** `NameTags`: in een match ziet een speler het naamplaatje van een tegenstander alleen
+binnen `combat.nameTagRange` (6) blokken en met niets ertussen. Per kijker, met teampakketten die alleen hij krijgt:
+zit de ander in een team (titels, naamkleur), dan krijgt de kijker een kopie van dat team met het plaatje verborgen;
+zit hij in geen team, dan een eigen team op het scherm van de kijker. Elke 5 ticks bijgewerkt en elke 2 seconden
+opnieuw gestuurd (de server stuurt een team opnieuw naar iedereen als het verandert). Teamgenoten houden hun
+plaatje, toeschouwers en de lobby zien alles, ook tijdens de vrede aan het begin van de Hunger Games is het weg.
+Bots vinden niemand meer achter een muur aan zijn plaatje (`Perception`).
+
+**F – Geen locator bar.** Afgeleid: de "hotbar die laat zien waar vijanden zijn" is de *locator bar* van vanilla
+(sinds 1.21.6, boven de hotbar, met een stip per speler in de buurt); een mod-functie aan de kant van de speler kan de
+server niet uitzetten. `Locator`: tributes in de Hunger Games krijgen een tijdelijke modifier die hun
+`waypoint_transmit_range` en `waypoint_receive_range` op nul zet: ze zenden en ontvangen geen waypoints tot de game
+voorbij is. De attributen worden in het register opgezocht; ontbreken ze, dan staat dat in de log.
+
+**De export** (24 gevechten van 1.48.0): de speler won 6 van de 7 mace-gevechten tegen de master-bot, en daarin
+landde de bot 43% van de treffers. Verder twee Hunger Games, Bridge Chaos, Build UHC, zwaard, boog en boxing.
+Bewaard voor een volgende trainingsronde; er is nu niet mee getraind.
+
+**Testen.** JUnit: `SmashDodgeTest` (een val van boven en een windcharge ernaast worden gezien, een sprong of iemand
+ver weg niet; wegrennen van de landingsplek, niet over een rand; het schild op het laatst; de niveaus op volgorde),
+`PearlUseTest` (wanneer, waarheen, de boog komt neer waar hij mikt), `HungerSpectacleTest` (het embleem draait mee).
+Zelftests: de nacht speelt boven het plein terwijl A en B doorvechten; A valt een bot van tien blokken hoog aan met de
+mace en de bot ziet het en rent weg (tot drie pogingen, een expert mist er af en toe een); in practice heeft de bot
+exact A's kit in A's indeling, haalt parels uit zijn inventaris en pearlt achter A aan; in de Hunger Games is de
+locator bar uit, ziet A B's plaatje niet op 20 blokken maar wel vlakbij, en na de game is alles terug; het pack bevat
+alle geluiden.
+
 ## Versie 1.47.1 – Bots naar kisten in huizen, onzichtbaar met armor
 
 **Vraag.** Bots zitten soms vast en draaien rondjes bij een raam (vaak waar binnen een barrel of kist staat): kijk

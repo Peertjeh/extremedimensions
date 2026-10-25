@@ -1822,5 +1822,6 @@
 	"hg.dir.7": "south-east",
 	"hg.night.nobody": "&7&oToday, nobody fell.",
 	"hg.night.name": "&f&l{0}",
-	"hg.night.district": "&6District {0}"
+	"hg.night.district": "&6District {0}",
+	"hg.night.look": "&7Look up: the fallen are honoured high over the plaza. The game goes on."
 }

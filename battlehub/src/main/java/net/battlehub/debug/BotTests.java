@@ -713,6 +713,7 @@ final class BotTests {
 		endAndClean(s, tag);
 		maceFight(server, s);
 		teamPracticeKit(server, s);
+		sameKit(server, s);
 		knockback(server, s);
 	}
 
@@ -901,11 +902,79 @@ final class BotTests {
 			BotPlayer b = botsIn(m).get(0);
 			return b.onGround() && b.getMainHandItem().is(net.minecraft.tags.ItemTags.SWORDS);
 		});
+		dodge(s, tag);
 		s.run(tag + ": A back to 20 health", () -> {
 			p(A).getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(20);
 			p(A).setHealth(20);
 		});
 		endAndClean(s, tag);
+	}
+
+	/**
+	 * 1.49: A comes down on the bot from ten blocks up with the mace in hand, falling as a player falls (gravity 0.08 a
+	 * tick, 98% of the speed kept), staying over where the bot stood. The bot sees (or hears) it coming and gets out from
+	 * under it, or raises its shield. An expert misses one now and then (its level notices 92% of them): up to three tries.
+	 */
+	private static void dodge(Script s, String tag) {
+		s.run(tag + ": A takes the mace in hand", () -> {
+			ServerPlayer a = p(A);
+			for (int i = 0; i < 9; i++) {
+				if (a.getInventory().getItem(i).is(net.minecraft.world.item.Items.MACE)) a.getInventory().setSelectedSlot(i);
+			}
+			if (!a.getMainHandItem().is(net.minecraft.world.item.Items.MACE)) {
+				a.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.MACE));
+			}
+			VARS.put("dodgeTries", 0);
+			VARS.remove("dodgeY");
+		});
+		s.waitFor(tag + ": the bot sees A coming down on it with the mace and gets out from under it (or blocks)", 600, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			ServerPlayer a = p(A);
+			BotPlayer b = botsIn(m).get(0);
+			a.setHealth(a.getMaxHealth());
+			if (!(VARS.get("dodgeY") instanceof Double y)) {
+				// a new try once the bot stands on the ground
+				if (!b.onGround() || (int) VARS.get("dodgeTries") >= 3) return false;
+				VARS.merge("dodgeTries", 1, (x, n) -> (int) x + (int) n);
+				VARS.put("dodgeSeen", Bots.smashesSeen(b));
+				VARS.put("dodgeFrom", b.position());
+				VARS.put("dodgeY", b.getY() + 10);
+				VARS.put("dodgeVy", 0.0);
+				VARS.put("dodgeFall", 0.0);
+				PartyTests.tp(a, b.getX() + 0.3, b.getY() + 10, b.getZ());
+				a.setOnGround(false);
+				return false;
+			}
+			net.minecraft.world.phys.Vec3 from = (net.minecraft.world.phys.Vec3) VARS.get("dodgeFrom");
+			double vy = ((double) VARS.get("dodgeVy") - 0.08) * 0.98, fall = (double) VARS.get("dodgeFall") - vy;
+			double ny = Math.max(from.y, y + vy);
+			VARS.put("dodgeY", ny);
+			VARS.put("dodgeVy", vy);
+			VARS.put("dodgeFall", fall);
+			PartyTests.tp(a, from.x + 0.3, ny, from.z);
+			a.setOnGround(ny <= from.y);
+			a.fallDistance = ny <= from.y ? 0f : (float) fall;
+			double moved = Math.hypot(b.getX() - from.x, b.getZ() - from.z);
+			boolean blocking = b.isBlocking();
+			// it noticed this one (not just a step aside in the fight), and got away
+			boolean saw = Bots.smashesSeen(b) > (int) VARS.get("dodgeSeen");
+			if (saw && (moved >= 1.5 || blocking)) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST bot dodged the smash on try {}: {} blocks away{} with A {} blocks up | {}",
+						VARS.get("dodgeTries"), String.format(java.util.Locale.ROOT, "%.1f", moved), blocking ? " (blocking)" : "",
+						String.format(java.util.Locale.ROOT, "%.1f", ny - from.y), String.join(" | ", Bots.inspect(b)));
+				PartyTests.tp(a, from.x + 0.3, from.y, from.z);
+				a.setOnGround(true);
+				a.fallDistance = 0;
+				return true;
+			}
+			if (ny <= from.y) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST bot did not get away on try {} (saw it: {}, moved {}) | {}", VARS.get("dodgeTries"), saw,
+						String.format(java.util.Locale.ROOT, "%.1f", moved), String.join(" | ", Bots.inspect(b)));
+				VARS.remove("dodgeY");
+			}
+			return false;
+		});
 	}
 
 	/** A steps away from the bot to about {@code distance} blocks, onto floor (the other way when that is the void or a wall). */
@@ -941,6 +1010,111 @@ final class BotTests {
 			return ok;
 		});
 		endAndClean(s, tag);
+	}
+
+	/**
+	 * 1.49: in practice the bot has the very kit the player has, in the player's own arrangement (golden apples moved out
+	 * of the hotbar into the inventory: the bot's are there too), and it uses what is beyond its hotbar: ender pearls
+	 * put in its inventory are brought into the hotbar and thrown after the player when they are far off.
+	 */
+	private static void sameKit(MinecraftServer server, Script s) {
+		String tag = "bots same kit";
+		SelfTest.reset(s, tag);
+		s.run(tag + ": A moves the golden apples of the mace kit into the inventory (slot 20) and practises a mace duel", () -> {
+			SelfTest.join(server, A);
+			net.battlehub.config.KitConfig.Kit kit = ConfigManager.kits().kits.get("mace");
+			List<Integer> slots = net.battlehub.match.Kits.numericSlots(kit);
+			List<Integer> layout = new ArrayList<>(slots);
+			for (int i = 0; i < slots.size(); i++) {
+				net.battlehub.config.KitConfig.KitItem ki = net.battlehub.match.Kits.itemAt(kit, slots.get(i));
+				if (ki != null && ki.item.contains("golden_apple")) layout.set(i, 20);
+			}
+			List<Integer> before = PlayerStore.get(p(A)).kitLayouts.get("mace");
+			VARS.put("maceLayout", before == null ? List.of() : before);
+			PlayerStore.get(p(A)).kitLayouts.put("mace", layout);
+			Bots.practice(p(A), GameMode.MACE, net.battlehub.core.ai.Difficulty.EXPERT);
+		});
+		s.waitFor(tag + ": running", 600, () -> matchOfA() != null && matchOfA().phase() == Match.Phase.RUNNING && botsIn(matchOfA()).size() == 1);
+		s.check(tag + ": the bot carries every item A carries, as many, with the same enchantments, in the same slots", () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			ServerPlayer a = p(A);
+			List<String> diff = new ArrayList<>();
+			for (int i = 0; i < a.getInventory().getContainerSize(); i++) {
+				net.minecraft.world.item.ItemStack x = a.getInventory().getItem(i), y = b.getInventory().getItem(i);
+				boolean same = x.getItem() == y.getItem() && x.getCount() == y.getCount()
+						&& java.util.Objects.equals(x.get(net.minecraft.core.component.DataComponents.ENCHANTMENTS),
+								y.get(net.minecraft.core.component.DataComponents.ENCHANTMENTS));
+				if (!same) diff.add(i + ": " + x.getCount() + "x " + x.getItem() + " / " + y.getCount() + "x " + y.getItem());
+			}
+			boolean apples = a.getInventory().getItem(20).is(net.minecraft.world.item.Items.GOLDEN_APPLE);
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST same kit: apples in slot 20 {}, differences {}", apples, diff);
+			return diff.isEmpty() && apples;
+		});
+		s.run(tag + ": the bot gets 4 ender pearls in its inventory (slot 30); A stands far off, in its sight", () -> {
+			BotPlayer b = botsIn(matchOfA()).get(0);
+			b.getInventory().setItem(30, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ENDER_PEARL, 4));
+			VARS.put("kitSwaps", Bots.swaps(b));
+			VARS.put("kitFar", standFar(b, 24, 15));
+		});
+		s.waitFor(tag + ": it brings the pearls into its hotbar and throws one after A", 800, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			p(A).setHealth(p(A).getMaxHealth());
+			b.setHealth(b.getMaxHealth());
+			// A keeps its distance (the bot runs at it): back far off whenever it comes within 14
+			if (Bots.pearls(b) == 0 && b.distanceTo(p(A)) < 14) VARS.put("kitFar", standFar(b, 24, 15));
+			boolean thrown = Bots.pearls(b) >= 1 && Bots.swaps(b) > (int) VARS.get("kitSwaps");
+			if (thrown) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST bot threw a pearl after A from {} blocks (A placed {} off), {} left, swaps {}",
+						String.format(java.util.Locale.ROOT, "%.1f", b.distanceTo(p(A))), VARS.get("kitFar"),
+						b.getInventory().countItem(net.minecraft.world.item.Items.ENDER_PEARL), Bots.swaps(b));
+			}
+			if (thrown) VARS.put("kitPos", b.position());
+			return thrown;
+		});
+		s.waitFor(tag + ": and the pearl takes it towards A (more than 4 blocks in one tick)", 100, () -> {
+			Match m = matchOfA();
+			if (m == null || botsIn(m).isEmpty()) return false;
+			BotPlayer b = botsIn(m).get(0);
+			p(A).setHealth(p(A).getMaxHealth());
+			b.setHealth(b.getMaxHealth());
+			net.minecraft.world.phys.Vec3 was = (net.minecraft.world.phys.Vec3) VARS.put("kitPos", b.position());
+			double jump = was.distanceTo(b.position());
+			if (jump > 4) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST bot pearled {} blocks, now {} from A", String.format(java.util.Locale.ROOT, "%.1f", jump),
+						String.format(java.util.Locale.ROOT, "%.1f", b.distanceTo(p(A))));
+			}
+			return jump > 4;
+		});
+		s.run(tag + ": A's own arrangement back", () -> {
+			@SuppressWarnings("unchecked")
+			List<Integer> before = (List<Integer>) VARS.get("maceLayout");
+			if (before.isEmpty()) PlayerStore.get(p(A)).kitLayouts.remove("mace");
+			else PlayerStore.get(p(A)).kitLayouts.put("mace", before);
+		});
+		endAndClean(s, tag);
+	}
+
+	/**
+	 * A stands on floor {@code max} blocks from the bot (or closer, down to {@code min}), where the bot can see them; the
+	 * distance found, or 0 when there was no such spot.
+	 */
+	private static double standFar(BotPlayer b, double max, double min) {
+		ServerPlayer a = p(A);
+		double ax = a.getX(), ay = a.getY(), az = a.getZ();
+		for (double d = max; d >= min; d -= 1) {
+			for (int k = 0; k < 16; k++) {
+				double ang = Math.toRadians(k * 22.5);
+				double x = b.getX() + Math.cos(ang) * d, z = b.getZ() + Math.sin(ang) * d;
+				BlockPos feet = BlockPos.containing(x, b.getY(), z);
+				if (a.level().getBlockState(feet.below()).isAir() || !a.level().getBlockState(feet).isAir() || !a.level().getBlockState(feet.above()).isAir()) continue;
+				PartyTests.tp(a, x, b.getY(), z);
+				if (b.hasLineOfSight(a)) return d;
+			}
+		}
+		PartyTests.tp(a, ax, ay, az);
+		return 0;
 	}
 
 	/** Alone in a casual queue: a bot joins after a while, unless the player said no (/bots off, the hotbar switch). Ranked: never. */

@@ -61,7 +61,10 @@ public final class CombatPolicy {
 			out.add(new Score(Tactic.RECOVER, 0.7, false, List.of("standing on an edge")));
 		}
 
-		if (s.threat() != null && s.threat().incoming() > 0) {
+		if (s.threat() != null && s.threat().smash() != null) {
+			// a mace coming down on it: nothing matters more than not being under it
+			out.add(new Score(Tactic.EVADE, 1.6, true, List.of("a smash coming down in " + s.threat().smash().in() + " ticks")));
+		} else if (s.threat() != null && s.threat().incoming() > 0) {
 			out.add(new Score(Tactic.EVADE, 0.9 + 0.1 * Math.min(3, s.threat().incoming()), false, List.of(s.threat().incoming() + " incoming")));
 		}
 

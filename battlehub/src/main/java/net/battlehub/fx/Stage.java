@@ -77,6 +77,34 @@ public final class Stage {
 		return field(Display.class, "DATA_TRANSFORMATION_INTERPOLATION_DURATION_ID");
 	}
 
+	private static EntityDataAccessor<Float> viewRange() {
+		return field(Display.class, "DATA_VIEW_RANGE_ID");
+	}
+
+	private static EntityDataAccessor<Float> width() {
+		return field(Display.class, "DATA_WIDTH_ID");
+	}
+
+	private static EntityDataAccessor<Float> height() {
+		return field(Display.class, "DATA_HEIGHT_ID");
+	}
+
+	/** How far off a thing is drawn (times the usual distance), and the box the client keeps on screen for it. */
+	private float range = 1f;
+
+	/** Things put up from now on are drawn from {@code range} times as far (a stage high over a city: about 4). */
+	public Stage range(float range) {
+		this.range = range;
+		return this;
+	}
+
+	private void sized(List<SynchedEntityData.DataValue<?>> data, float w, float h) {
+		if (range != 1f) put(data, viewRange(), range);
+		// a big thing whose anchor goes off screen would vanish without a box of its size
+		put(data, width(), w);
+		put(data, height(), h);
+	}
+
 	private static <T> void put(List<SynchedEntityData.DataValue<?>> data, EntityDataAccessor<T> acc, T value) {
 		if (acc != null) data.add(SynchedEntityData.DataValue.create(acc, value));
 	}
@@ -100,6 +128,7 @@ public final class Stage {
 		put(data, DisplayAccessor.battlehub$scale(), (org.joml.Vector3fc) new Vector3f(scale, scale, scale));
 		put(data, DisplayAccessor.battlehub$translation(), (org.joml.Vector3fc) new Vector3f(-scale / 2, -scale / 2, -scale / 2));
 		put(data, DisplayAccessor.battlehub$brightness(), ClientEntities.FULL_BRIGHT);
+		sized(data, Math.max(2f, scale), Math.max(2f, scale));
 		int id = add("minecraft:block_display", at, 0f, data);
 		if (id >= 0) centred.put(id, 1f);
 		return id;
@@ -112,6 +141,7 @@ public final class Stage {
 		put(data, DisplayAccessor.battlehub$scale(), (org.joml.Vector3fc) new Vector3f(width, height, width));
 		put(data, DisplayAccessor.battlehub$translation(), (org.joml.Vector3fc) new Vector3f(-width / 2, 0, -width / 2));
 		put(data, DisplayAccessor.battlehub$brightness(), ClientEntities.FULL_BRIGHT);
+		sized(data, Math.max(1f, width), height);
 		return add("minecraft:block_display", base, 0f, data);
 	}
 
@@ -122,12 +152,15 @@ public final class Stage {
 		put(data, DisplayAccessor.battlehub$scale(), (org.joml.Vector3fc) new Vector3f(scale, scale, scale));
 		put(data, DisplayAccessor.battlehub$billboard(), ClientEntities.BILLBOARD_CENTER);
 		put(data, DisplayAccessor.battlehub$brightness(), ClientEntities.FULL_BRIGHT);
+		sized(data, 16f, 16f);
 		return add("minecraft:item_display", at, 0f, data);
 	}
 
 	/** A text, always turned to the viewer, without a background. */
 	public int text(Vec3 at, Component text, float scale) {
-		int id = add("minecraft:text_display", at, 0f, List.of());
+		List<SynchedEntityData.DataValue<?>> data = new ArrayList<>();
+		sized(data, 6 * scale, 2 * scale);
+		int id = add("minecraft:text_display", at, 0f, data);
 		if (id < 0) return id;
 		ClientEntities.textStyle(viewer, id, 400, 0, ClientEntities.SHADOW, scale, ClientEntities.BILLBOARD_CENTER);
 		ClientEntities.text(viewer, id, text);
@@ -146,6 +179,13 @@ public final class Stage {
 		put(data, DisplayAccessor.battlehub$scale(), (org.joml.Vector3fc) new Vector3f(scale, scale, scale));
 		if (centred.containsKey(id)) put(data, DisplayAccessor.battlehub$translation(), (org.joml.Vector3fc) new Vector3f(-scale / 2, -scale / 2, -scale / 2));
 		viewer.connection.send(new ClientboundSetEntityDataPacket(id, data));
+	}
+
+	/** Moves a thing to {@code at}, gliding there over {@code ticks}. */
+	public void move(int id, Vec3 at, int ticks) {
+		if (id < 0) return;
+		ClientEntities.glide(viewer, id, ticks);
+		ClientEntities.move(viewer, id, at, 0f, 0f);
 	}
 
 	public void remove(int id) {

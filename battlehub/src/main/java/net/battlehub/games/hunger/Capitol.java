@@ -98,23 +98,9 @@ public final class Capitol {
 		if (!winners.isEmpty()) net.battlehub.fx.Music.play(host.audience(), net.battlehub.fx.Music.VICTORY);
 	}
 
-	private boolean holding;
-
 	public void tick() {
-		Ceremony night = tributes.ceremony();
-		if (night.active()) {
-			// the night's tribute: everything else holds still until it is over
-			if (!holding) {
-				holding = true;
-				gamemakers.hold(true);
-			}
-			night.tick();
-			if (!night.active()) {
-				holding = false;
-				gamemakers.hold(false);
-			}
-			return;
-		}
+		// the night's tribute plays high over the plaza; the game goes on meanwhile
+		tributes.ceremony().tick();
 		gamemakers.tick();
 		sponsors.tick();
 		vaults.tick();
@@ -122,7 +108,7 @@ public final class Capitol {
 		tributes.tick();
 	}
 
-	/** Whether the night's tribute is going on (nobody can be hurt then). */
+	/** Whether the night's tribute is going on (over the plaza; the game goes on). */
 	public boolean honouring() {
 		return tributes.honouring();
 	}
