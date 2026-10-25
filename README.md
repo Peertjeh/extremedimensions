@@ -49,6 +49,9 @@ End and the Seam), *Overworld* (17, on unless an operator turns them off), *Ever
 heavy, and dearer to atone). Sometimes the offer is multiplied (2x to 4x); stacks that do not fit spill onto other
 curses. The **Curses** screen (the button beside the journal in your inventory) shows them all.
 
+On **Hard** and **Extreme** a curse you have never carried shows only runes, on its card and in the Curses screen,
+until you take it once; on Easy and Normal every curse reads from the start (the Extreme set only ever hints).
+
 Lift them by **atonement** (played off on expeditions and at home; every death undoes half), **Tether Fragments**
 offered to an anchor, or a **Mending Cloth**. Every stack lifted leaves a **scar** that weakens the drain.
 
@@ -127,7 +130,8 @@ the game version on every push; with Mod Menu installed, the mod's settings open
 
 Every value lives in `config/extremedimensions.json` (written on first launch) and in the in-game settings screen,
 grouped by system, with a name and a description in every language; operators change the server's values from the
-screen. Presets set many at once. Curses have their own `penalties` section.
+screen. Four difficulties set many at once: **Easy**, **Normal** (the default), **Hard** and **Extreme**, also with
+`/tether preset <name>`. Curses have their own `penalties` section.
 
 ## Datapacks
 

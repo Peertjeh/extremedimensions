@@ -60,7 +60,7 @@ public final class ModPackets {
 		}
 	}
 
-	/** Server -> client: open the curse choice screen; cards "id:multiplier:stacks:max:valuePerStack", comma separated. */
+	/** Server -> client: open the curse choice screen; cards "id:multiplier:stacks:max:valuePerStack:readable", comma separated. */
 	public record OfferPayload(String ids) implements CustomPacketPayload {
 		public static final Type<OfferPayload> TYPE = new Type<>(ExtremeDimensions.id("offer"));
 		public static final StreamCodec<FriendlyByteBuf, OfferPayload> CODEC = StreamCodec.ofMember(OfferPayload::write, OfferPayload::read);
@@ -201,7 +201,7 @@ public final class ModPackets {
 
 	/**
 	 * Server -> client: every curse for the Curses screen. data = "scars|atoning|overworldOn|entries|nearby", entries
-	 * "id:stacks:max:atonement:cost:valuePerStack" separated by ';', nearby players "uuid,name,beyond,overworld,everywhere"
+	 * "id:stacks:max:atonement:cost:valuePerStack:readable" separated by ';', nearby players "uuid,name,beyond,overworld,everywhere"
 	 * separated by ';'. open = open the screen (else only refresh it).
 	 */
 	public record CursesPayload(String data, boolean open) implements CustomPacketPayload {
@@ -528,7 +528,7 @@ public final class ModPackets {
 	}
 
 	/**
-	 * Server -> client: an ally's curses, to carry one for them: "id:stacks:max:mine;..." (mine: the stacks of it the
+	 * Server -> client: an ally's curses, to carry one for them: "id:stacks:max:mine:readable;..." (mine: the stacks of it the
 	 * player already carries).
 	 */
 	public record BurdenPayload(java.util.UUID friend, String name, String curses) implements CustomPacketPayload {

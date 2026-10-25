@@ -3,12 +3,14 @@ package com.extremedimensions.gametest;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.expedition.ExpeditionService;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.CarriedContainers;
 import com.extremedimensions.penalty.CurseEffects;
+import com.extremedimensions.penalty.CurseRunes;
 import com.extremedimensions.penalty.Dwindling;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.penalty.SealedPockets;
@@ -48,6 +50,55 @@ public class CurseTests {
 
 	static void near(GameTestHelper helper, double actual, double expected, String what) {
 		check(helper, Math.abs(actual - expected) < 0.01, "%s: expected %s, got %s", what, expected, actual);
+	}
+
+	/**
+	 * On Hard and Extreme a curse the player has never carried reads in runes, on its card and in the Curses screen, until
+	 * they take it; after that it stays readable, even once its last stack is lifted. On Easy and Normal every curse reads.
+	 */
+	@GameTest
+	public void unknownCursesReadInRunesUntilTaken(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper);
+		PlayerData d = DataStore.get(p.getUUID());
+		int before = Config.CURSE_RUNES;
+		try {
+			Config.CURSE_RUNES = 0;
+			check(helper, CurseRunes.readable(d, Penalty.GLASS_JAW), "on Normal a curse never carried does not read");
+			Config.CURSE_RUNES = 1;
+			check(helper, !CurseRunes.readable(d, Penalty.GLASS_JAW), "on Hard a curse never carried reads");
+			check(helper, readableFlag(com.extremedimensions.network.Sync.cursesData(p, d), "glass_jaw").equals("0"),
+					"the Curses screen is told it can read Glass Jaw");
+			d.pendingOffer = new ArrayList<>(List.of("glass_jaw"));
+			PenaltyService.choose(p, "glass_jaw");
+			check(helper, d.owned(Penalty.GLASS_JAW) == 1, "choosing the card added %s stacks", d.owned(Penalty.GLASS_JAW));
+			check(helper, CurseRunes.readable(d, Penalty.GLASS_JAW), "a curse taken still reads in runes");
+			check(helper, readableFlag(com.extremedimensions.network.Sync.cursesData(p, d), "glass_jaw").equals("1"),
+					"the Curses screen is not told it can read Glass Jaw now");
+			d.removeStack(Penalty.GLASS_JAW);
+			check(helper, CurseRunes.readable(d, Penalty.GLASS_JAW), "a curse lifted went back to runes");
+			check(helper, !CurseRunes.readable(d, Penalty.SHORT_BREATH), "taking one curse taught another");
+			// a sworn pact counts as taking the curse
+			d.learn(Penalty.SHORT_BREATH);
+			check(helper, CurseRunes.readable(d, Penalty.SHORT_BREATH), "a curse learnt does not read");
+		} finally {
+			Config.CURSE_RUNES = before;
+		}
+		String runes = CurseRunes.runes("Glass Jaw: 25% harder, Één");
+		check(helper, runes.chars().noneMatch(c -> c < 128 && Character.isLetterOrDigit(c)), "letters show through the runes: %s", runes);
+		check(helper, runes.equals(CurseRunes.runes("Glass Jaw: 25% harder, Één")) && runes.contains(" ") && runes.contains("%"),
+				"the runes are not a fixed cipher keeping spaces and marks: %s", runes);
+		helper.succeed();
+	}
+
+	/** The last field of a curse's entry in the Curses screen's data: 1 if the player can read it. */
+	private static String readableFlag(String data, String id) {
+		for (String part : data.split("\\|", -1)[3].split(";")) {
+			String[] kv = part.split(":");
+			if (kv[0].equals(id)) {
+				return kv[kv.length - 1];
+			}
+		}
+		return "?";
 	}
 
 	/** The damage a hit is raised to (the hook on every hit is proven by {@link WorldTests#everyMixinIsApplied}). */

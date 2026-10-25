@@ -112,7 +112,7 @@ public class SettingsTests {
 		check(helper, !SettingsService.canEdit(p), "a player without operator rights may change the world's rules");
 		SettingsService.change(p, "{\"atone_base\":\"999\"}");
 		check(helper, Config.ATONE_BASE == base, "a player without operator rights changed atone_base to %s", Config.ATONE_BASE);
-		SettingsService.change(p, "{\"preset\":\"pilgrim\"}");
+		SettingsService.change(p, "{\"preset\":\"easy\"}");
 		check(helper, Config.ATONE_BASE == base, "a player without operator rights applied a difficulty (atone_base %s)", Config.ATONE_BASE);
 		helper.succeed();
 	}
@@ -124,14 +124,19 @@ public class SettingsTests {
 		for (Config.Setting st : Config.settings()) {
 			defaults.put(st.key(), st.fallback());
 		}
-		check(helper, Preset.TETHERED.matches(defaults), "the standard difficulty differs from the defaults");
-		check(helper, Preset.matching(defaults) == Preset.TETHERED, "the defaults are not recognised as the standard difficulty");
+		check(helper, Preset.NORMAL.matches(defaults), "Normal differs from the defaults");
+		check(helper, Preset.matching(defaults) == Preset.NORMAL, "the defaults are not recognised as Normal");
 		// From gentle to merciless: atonement costs more and a death undoes more at every step
 		Preset[] all = Preset.values();
 		for (int i = 1; i < all.length; i++) {
 			double a = Double.parseDouble(all[i - 1].values.get("atone_base")), b = Double.parseDouble(all[i].values.get("atone_base"));
 			double la = Double.parseDouble(all[i - 1].values.get("atone_death_loss")), lb = Double.parseDouble(all[i].values.get("atone_death_loss"));
 			check(helper, b > a && lb >= la, "%s is not harder than %s", all[i].id, all[i - 1].id);
+		}
+		// A curse never carried reads in runes on Hard and Extreme only
+		for (Preset p : all) {
+			boolean runes = p == Preset.HARD || p == Preset.EXTREME;
+			check(helper, (runes ? "1" : "0").equals(p.values.get("curse_runes")), "%s has curse_runes %s", p.id, p.values.get("curse_runes"));
 		}
 		// Every preset value is a real setting the world takes
 		JsonObject before = Config.snapshot();

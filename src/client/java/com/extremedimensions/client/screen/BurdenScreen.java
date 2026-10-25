@@ -24,7 +24,8 @@ public class BurdenScreen extends Screen {
 	/** Curses shown at once: up to seven, fewer in a small window. */
 	private int rows = 7;
 
-	private record Row(Penalty pen, int stacks, int max, int mine) {}
+	/** An ally's curse: their stacks, the maximum, the carrier's own stacks, and whether the carrier can read it. */
+	private record Row(Penalty pen, int stacks, int max, int mine, boolean readable) {}
 
 	private final UUID friend;
 	private final String name;
@@ -46,7 +47,7 @@ public class BurdenScreen extends Screen {
 				continue;
 			}
 			try {
-				list.add(new Row(pen, Integer.parseInt(kv[1]), Integer.parseInt(kv[2]), Integer.parseInt(kv[3])));
+				list.add(new Row(pen, Integer.parseInt(kv[1]), Integer.parseInt(kv[2]), Integer.parseInt(kv[3]), kv.length < 5 || !"0".equals(kv[4])));
 			} catch (NumberFormatException e) {
 				// skip a damaged entry
 			}
@@ -117,7 +118,7 @@ public class BurdenScreen extends Screen {
 			int ry = y + 56 + (i - first) * ROW_H;
 			int accent = Ui.setColour(r.pen().group);
 			Ui.runeSocket(g, r.pen().id, x + 14, ry, accent, pe, 0.4);
-			g.text(this.font, Ui.tr(r.pen().nameKey()), x + 38, ry, Ui.argb(pe, Ui.PARCHMENT));
+			g.text(this.font, Ui.curse(Ui.tr(r.pen().nameKey()), r.readable()), x + 38, ry, Ui.argb(pe, Ui.PARCHMENT));
 			String stacks = r.stacks() + "/" + r.max() + "   " + Ui.tr("gui.extremedimensions.burden.yours", r.mine(), r.max());
 			g.text(this.font, stacks, x + 38, ry + 10, Ui.argb(pe, r.mine() >= r.max() ? Ui.WARN : Ui.MUTED));
 		}

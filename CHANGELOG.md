@@ -1,5 +1,30 @@
 # Changelog
 
+## 3.1.0: Unknown Curses
+
+### Changed
+- **The difficulties have plain names**: **Easy**, **Normal**, **Hard** and **Extreme** (Settings → World, or
+  `/tether preset easy`, `normal`, `hard`, `extreme`). Easy is the former Pilgrim, Normal the former Tethered (still the
+  default), Hard the former Starved and Extreme the former Severed, each with the same numbers; Seeker, between Pilgrim
+  and Tethered, is gone. A world keeps the values it has; the command takes only the new names.
+
+### New
+- **On Hard and Extreme you learn a curse by taking it.** A curse you have never carried shows its name, its effect and
+  its lore only in runes: on its card after a Collapse, in the Curses screen, when you swear a pact and when you carry a
+  friend's burden. Take it once (from a card, a pact, a friend's burden, stacks spilling over, an Elder's ultimate) and
+  from then on it reads in plain words, even after its last stack is lifted. The runes are a fixed cipher of the words,
+  so a curse always wears the same ones: in time you know a card by its runes. On Easy and Normal every curse reads from
+  the start, as before, and on every difficulty the Extreme set only ever hints at what it does.
+- The setting behind it: **Unknown curses in runes** (`curse_runes`, among the curse settings; 1 on Hard and Extreme,
+  0 on Easy and Normal). The curses a player carries now count as known.
+
+### Tests
+- On Hard a curse never carried is unreadable, also in what the Curses screen is sent; once its card is chosen it reads,
+  and still does after its last stack is lifted; taking one curse teaches no other; on Normal everything reads. The
+  runes hide every letter and digit, keep spaces and marks, and are the same each time.
+- Each difficulty is checked for the setting (runes on Hard and Extreme only), and the client test shows a Hard offer:
+  two cards in runes beside one the player knows.
+
 ## 3.0.4: A Song from the Seam
 
 ### New

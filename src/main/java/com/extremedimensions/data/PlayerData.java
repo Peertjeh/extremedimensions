@@ -51,6 +51,11 @@ public class PlayerData {
 	public double longestRun = 0;
 	/** Curse id -> stacks. Curses are permanent: only atonement, fragments or a Mending Cloth take stacks off. */
 	public Map<String, Integer> curses = new HashMap<>();
+	/**
+	 * Curses the player has carried or sworn at some time: where unknown curses show as runes (Config.CURSE_RUNES),
+	 * these read in plain words. Kept after the last stack is lifted.
+	 */
+	public Set<String> knownCurses = new LinkedHashSet<>();
 	/** The sworn pact: extra stacks of curses taken on willingly, acting on expeditions (see PactService). */
 	public Map<String, Integer> pact = new HashMap<>();
 	/** The Elders: Keepers slain (the Matriarch comes after enough of them), and whether she has fallen to this player. */
@@ -254,8 +259,22 @@ public class PlayerData {
 		int add = Math.max(0, Math.min(n, p.max - have));
 		if (add > 0) {
 			curses.put(p.id, have + add);
+			learn(p);
 		}
 		return add;
+	}
+
+	/** Whether the player has ever carried or sworn this curse (one carried now always counts). */
+	public boolean knows(Penalty p) {
+		return owned(p) > 0 || (knownCurses != null && knownCurses.contains(p.id));
+	}
+
+	/** From now on the player knows what this curse does. */
+	public void learn(Penalty p) {
+		if (knownCurses == null) {
+			knownCurses = new LinkedHashSet<>();
+		}
+		knownCurses.add(p.id);
 	}
 
 	/** Takes one stack off; the curse's atonement starts over. Returns false if it had none. */

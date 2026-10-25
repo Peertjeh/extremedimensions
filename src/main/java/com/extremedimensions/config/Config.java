@@ -93,6 +93,12 @@ public final class Config {
 	 * it off with /tether overworld_penalties; 0 = it waits until they turn it on.
 	 */
 	public static int OVERWORLD_CURSES = 1;
+	/**
+	 * 0 = every curse reads in plain words from the start (Easy, Normal); 1 = a curse a player has never carried shows
+	 * only runes, on its card and in the Curses screen, until they have taken it once (Hard, Extreme). The Extreme set
+	 * only ever hints at what it does, either way.
+	 */
+	public static int CURSE_RUNES = 0;
 	/** Seconds an offer of curse cards may stand unanswered before the Tether chooses one itself (0 = never). */
 	public static int OFFER_TIMEOUT_SECONDS = 120;
 	/** Chance that an offer is multiplied: then every card carries its own multiplier between the two values below. */

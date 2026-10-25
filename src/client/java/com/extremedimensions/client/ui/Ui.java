@@ -146,6 +146,11 @@ public final class Ui {
 		return out;
 	}
 
+	/** A curse's words as the player may read them: plainly, or in runes while it is unknown to them (see CurseRunes). */
+	public static String curse(String text, boolean readable) {
+		return readable ? text : com.extremedimensions.penalty.CurseRunes.runes(text);
+	}
+
 	/** Cuts text to a pixel width, ending in an ellipsis when it had to cut. */
 	public static String ellipsize(Font font, String text, int width) {
 		if (font.width(text) <= width) {

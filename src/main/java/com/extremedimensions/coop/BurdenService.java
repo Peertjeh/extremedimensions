@@ -78,7 +78,8 @@ public final class BurdenService {
 			if (out.length() > 0) {
 				out.append(';');
 			}
-			out.append(pen.id).append(':').append(n).append(':').append(pen.max).append(':').append(mine.owned(pen));
+			out.append(pen.id).append(':').append(n).append(':').append(pen.max).append(':').append(mine.owned(pen))
+					.append(':').append(com.extremedimensions.penalty.CurseRunes.readable(mine, pen) ? 1 : 0);
 		}
 		return out.toString();
 	}

@@ -118,6 +118,10 @@ public final class PactService {
 			return "gui.extremedimensions.pact.too_hot";
 		}
 		d.pact = pact;
+		// a curse sworn is a curse known
+		for (String id : pact.keySet()) {
+			d.learn(Penalty.byId(id));
+		}
 		DataStore.markDirty();
 		Sync.curses(p, d, false);
 		if (pact.isEmpty()) {

@@ -49,8 +49,8 @@ public class CursesScreen extends Screen {
 	/** Distance between the set sigils of one nearby player (wide panel). */
 	private static final int SET_STEP = 21;
 
-	/** One curse as the server sent it. */
-	private record Entry(Penalty pen, int stacks, int max, int progress, int cost, String value) {}
+	/** One curse as the server sent it; readable false: the player has never carried it and the world shows it in runes. */
+	private record Entry(Penalty pen, int stacks, int max, int progress, int cost, String value, boolean readable) {}
 
 	/** A player standing close by: stacks per set (beyond, Overworld, everywhere, extreme). */
 	private record Nearby(UUID id, String name, int[] sets) {}
@@ -126,7 +126,7 @@ public class CursesScreen extends Screen {
 			}
 			try {
 				entries.put(pen, new Entry(pen, Integer.parseInt(kv[1]), Integer.parseInt(kv[2]), Integer.parseInt(kv[3]),
-						Integer.parseInt(kv[4]), kv[5]));
+						Integer.parseInt(kv[4]), kv[5], kv.length < 7 || !"0".equals(kv[6])));
 			} catch (NumberFormatException e) {
 				// skip malformed entry
 			}
@@ -157,7 +157,7 @@ public class CursesScreen extends Screen {
 
 	private Entry entry(Penalty p) {
 		Entry e = entries.get(p);
-		return e != null ? e : new Entry(p, 0, p.max, 0, 1, p.display());
+		return e != null ? e : new Entry(p, 0, p.max, 0, 1, p.display(), true);
 	}
 
 	/** Stacks carried in one set. */
@@ -359,22 +359,34 @@ public class CursesScreen extends Screen {
 		Entry e = entry(selected);
 		boolean has = e.stacks() > 0;
 		int col = has ? accent : Ui.MUTED;
+		boolean plain = e.readable();
 		Ui.runeSocket(g, selected.id, x, y, col, fade, has ? 0.8 : 0.2);
-		g.text(this.font, Ui.tr(selected.nameKey()), x + 24, y + 1, Ui.argb(fade, has ? Ui.PARCHMENT : Ui.TEXT));
+		g.text(this.font, Ui.ellipsize(this.font, Ui.curse(Ui.tr(selected.nameKey()), plain), w - 24), x + 24, y + 1, Ui.argb(fade, has ? Ui.PARCHMENT : Ui.TEXT));
 		String stacks = Ui.tr("gui.extremedimensions.curses.stacks", e.stacks(), e.max());
 		g.text(this.font, stacks, x + 24, y + 11, Ui.argb(fade, e.stacks() >= e.max() && has ? Ui.DANGER : Ui.MUTED));
 		pips(g, x + 24 + this.font.width(stacks) + 5, y + 13, e.stacks(), e.max(), accent, fade);
 
 		int ly = y + 26;
 		for (String line : new String[] {Ui.tr(selected.lineKey(1), e.value()), Ui.tr(selected.lineKey(2), e.value())}) {
-			g.text(this.font, line, x, ly, Ui.argb(fade, Ui.TEXT));
+			g.text(this.font, Ui.ellipsize(this.font, Ui.curse(line, plain), w), x, ly, Ui.argb(fade, Ui.TEXT));
 			ly += 10;
 		}
 		ly += 3;
-		List<String> lore = Ui.wrap(this.font, "“" + Ui.tr(selected.loreKey()) + "”", w);
-		for (int i = 0; i < lore.size() && i < 3; i++) {
-			g.text(this.font, lore.get(i), x, ly, Ui.argb(fade * 0.85, Ui.mix(Ui.SOUL, Ui.TEXT, 0.4)));
+		if (!plain) {
+			// Never carried, on a world that keeps such curses in runes: one line of its lore in them, and how to read it
+			g.text(this.font, Ui.ellipsize(this.font, "“" + Ui.curse(Ui.tr(selected.loreKey()), false) + "”", w), x, ly,
+					Ui.argb(fade * 0.85, Ui.mix(Ui.SOUL, Ui.TEXT, 0.4)));
 			ly += 10;
+			for (String line : Ui.wrap(this.font, Ui.tr("gui.extremedimensions.curses.unknown"), w)) {
+				g.text(this.font, line, x, ly, Ui.argb(fade, Ui.MUTED));
+				ly += 10;
+			}
+		} else {
+			List<String> lore = Ui.wrap(this.font, "“" + Ui.tr(selected.loreKey()) + "”", w);
+			for (int i = 0; i < lore.size() && i < 3; i++) {
+				g.text(this.font, lore.get(i), x, ly, Ui.argb(fade * 0.85, Ui.mix(Ui.SOUL, Ui.TEXT, 0.4)));
+				ly += 10;
+			}
 		}
 
 		// Atonement towards the next stack off
@@ -571,7 +583,7 @@ public class CursesScreen extends Screen {
 			Map<Penalty, int[]> carried = new HashMap<>();
 			for (Penalty p : Penalty.values()) {
 				Entry e = entry(p);
-				carried.put(p, new int[] {e.stacks(), e.max()});
+				carried.put(p, new int[] {e.stacks(), e.max(), e.readable() ? 1 : 0});
 			}
 			Minecraft.getInstance().gui.setScreen(new PactScreen(CursesScreen.this, pactData, carried));
 		}
@@ -686,14 +698,19 @@ public class CursesScreen extends Screen {
 		}
 	}
 
+	/** A curse's name as the player may read it (in runes while it is unknown to them). */
+	private Component curseName(Penalty pen) {
+		return Component.literal(Ui.curse(Ui.tr(pen.nameKey()), entry(pen).readable()));
+	}
+
 	/** A curse in the grid: its rune, its pips, selected or not. */
 	private final class Socket extends AbstractButton {
 		final Penalty pen;
 
 		Socket(Penalty pen, int x, int y) {
-			super(x, y, 18, 21, Component.translatable(pen.nameKey()));
+			super(x, y, 18, 21, CursesScreen.this.curseName(pen));
 			this.pen = pen;
-			this.setTooltip(Tooltip.create(Component.translatable(pen.nameKey())));
+			this.setTooltip(Tooltip.create(this.getMessage()));
 		}
 
 		@Override

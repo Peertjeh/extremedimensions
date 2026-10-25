@@ -23,8 +23,11 @@ public class PenaltyChoiceScreen extends Screen {
 	private static final int CARD_H = 164;
 	private static final int GAP = 14;
 
-	/** One card: the curse, its multiplier, the player's stacks now, the maximum and the value per stack. */
-	private record Option(Penalty pen, int mult, int stacks, int max, String value) {}
+	/**
+	 * One card: the curse, its multiplier, the player's stacks now, the maximum, the value per stack, and whether the
+	 * player can read it (a curse they have never carried shows runes on the harder difficulties).
+	 */
+	private record Option(Penalty pen, int mult, int stacks, int max, String value, boolean readable) {}
 
 	private final List<Option> options = new ArrayList<>();
 	private final List<Button> buttons = new ArrayList<>();
@@ -49,9 +52,9 @@ public class PenaltyChoiceScreen extends Screen {
 			}
 			try {
 				options.add(new Option(p, kv.length > 1 ? Integer.parseInt(kv[1]) : 1, kv.length > 2 ? Integer.parseInt(kv[2]) : 0,
-						kv.length > 3 ? Integer.parseInt(kv[3]) : p.max, kv.length > 4 ? kv[4] : p.display()));
+						kv.length > 3 ? Integer.parseInt(kv[3]) : p.max, kv.length > 4 ? kv[4] : p.display(), kv.length <= 5 || !"0".equals(kv[5])));
 			} catch (NumberFormatException e) {
-				options.add(new Option(p, 1, 0, p.max, p.display()));
+				options.add(new Option(p, 1, 0, p.max, p.display(), true));
 			}
 		}
 		overworld = setIsOverworld();
@@ -204,7 +207,8 @@ public class PenaltyChoiceScreen extends Screen {
 
 		int mid = x + CARD_W / 2;
 		Ui.runeSocket(g, pen.id, mid - 9, top + 8, border, fade, hover ? 1 : 0.4);
-		Ui.centered(g, this.font, Ui.tr(pen.nameKey()), mid, top + 32, Ui.PARCHMENT, fade);
+		boolean plain = opt.readable();
+		Ui.centered(g, this.font, Ui.ellipsize(this.font, Ui.curse(Ui.tr(pen.nameKey()), plain), CARD_W - 10), mid, top + 32, Ui.PARCHMENT, fade);
 		Ui.divider(g, x + 14, top + 45, CARD_W - 28, border, fade);
 
 		int ly = top + 52;
@@ -213,7 +217,8 @@ public class PenaltyChoiceScreen extends Screen {
 		String third = spill > 0 ? Ui.tr("gui.extremedimensions.choice.spill", spill)
 				: Ui.tr(pen.extreme ? "gui.extremedimensions.choice.extreme"
 						: pen.everywhere ? "gui.extremedimensions.choice.everywhere" : "gui.extremedimensions.choice.permanent", opt.max());
-		String[] lines = {Ui.tr(pen.lineKey(1), opt.value()), Ui.tr(pen.lineKey(2), opt.value()), third};
+		String[] lines = {Ui.ellipsize(this.font, Ui.curse(Ui.tr(pen.lineKey(1), opt.value()), plain), CARD_W - 8),
+				Ui.ellipsize(this.font, Ui.curse(Ui.tr(pen.lineKey(2), opt.value()), plain), CARD_W - 8), third};
 		for (int k = 0; k < lines.length; k++) {
 			int col = k < 2 ? Ui.TEXT : spill > 0 ? Ui.WARN : pen.extreme ? Ui.mix(Ui.setColour(Penalty.Group.EXTREME), 0xFFFFFF, 0.3)
 					: pen.everywhere ? Ui.mix(Ui.setColour(Penalty.Group.EVERYWHERE), Ui.MUTED, 0.4) : Ui.MUTED;
@@ -230,6 +235,17 @@ public class PenaltyChoiceScreen extends Screen {
 			seal(g, opt.mult(), x + CARD_W - 18, top - 7, now, fade);
 		}
 		int loreY = top + 100;
+		if (!plain) {
+			// Unknown: one line of its lore in runes, and how it comes to be read
+			String runes = Ui.ellipsize(this.font, "“" + Ui.curse(Ui.tr(pen.loreKey()), false) + "”", CARD_W - 16);
+			g.text(this.font, runes, mid - this.font.width(runes) / 2, loreY, Ui.argb(fade * 0.85, Ui.mix(Ui.SOUL, Ui.TEXT, 0.4)));
+			loreY += 11;
+			for (String line : Ui.wrap(this.font, Ui.tr("gui.extremedimensions.choice.unknown"), CARD_W - 16)) {
+				g.text(this.font, line, mid - this.font.width(line) / 2, loreY, Ui.argb(fade, Ui.MUTED));
+				loreY += 10;
+			}
+			return;
+		}
 		for (String line : Ui.wrap(this.font, "“" + Ui.tr(pen.loreKey()) + "”", CARD_W - 16)) {
 			g.text(this.font, line, mid - this.font.width(line) / 2, loreY, Ui.argb(fade * 0.85, Ui.mix(Ui.SOUL, Ui.TEXT, 0.4)));
 			loreY += 10;

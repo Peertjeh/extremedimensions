@@ -744,6 +744,24 @@ public class ClientShots implements FabricClientGameTest {
 			});
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("04_cards_extreme");
+			// On Hard: the curses never carried are runes, the one taken before reads (the Extreme card hints, once known)
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				PlayerData d = DataStore.get(p.getUUID());
+				com.extremedimensions.config.Config.CURSE_RUNES = 1;
+				for (String id : List.of("withering", "echoing_steps")) {
+					d.curses.remove(id);
+					d.knownCurses.remove(id);
+				}
+				d.learn(com.extremedimensions.penalty.Penalty.GLASS_JAW);
+				d.pendingOffer = new ArrayList<>(List.of("withering", "glass_jaw", "echoing_steps"));
+				d.pendingMult = new ArrayList<>(List.of(1, 1, 1));
+				Sync.offer(p, d);
+			});
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("04_cards_runes");
+			sp.getServer().runOnServer(s -> com.extremedimensions.config.Config.CURSE_RUNES = 0);
 			sp.getServer().runOnServer(s -> {
 				PlayerData d = DataStore.get(player(s).getUUID());
 				d.pendingOffer.clear();

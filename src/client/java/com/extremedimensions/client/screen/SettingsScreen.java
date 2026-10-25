@@ -71,7 +71,7 @@ public class SettingsScreen extends Screen {
 	private Button apply;
 	private Button reset;
 	/** The difficulty preset to apply (cycled through), and when the apply button was first pressed (to confirm). */
-	private com.extremedimensions.config.Preset target = com.extremedimensions.config.Preset.TETHERED;
+	private com.extremedimensions.config.Preset target = com.extremedimensions.config.Preset.NORMAL;
 	private Choice presetChoice;
 	private Button presetApply;
 	private long presetArmedAt;

@@ -45,7 +45,7 @@ public class PactScreen extends Screen {
 	private Penalty selected;
 	private Button plus, minus, seal;
 
-	/** pact = "unlocked;away;id:n,id:n"; carried = curse -> {stacks, max}. */
+	/** pact = "unlocked;away;id:n,id:n"; carried = curse -> {stacks, max, readable (0: shown in runes)}. */
 	public PactScreen(Screen parent, String pact, Map<Penalty, int[]> carried) {
 		super(Component.translatable("gui.extremedimensions.pact.title"));
 		this.parent = parent;
@@ -210,12 +210,16 @@ public class PactScreen extends Screen {
 		if (selected != null) {
 			int x = x0 + 168, y = y0 + 44, w = PW - 168 - 14;
 			Ui.runeSocket(g, selected.id, x, y, CursesScreen.color(selected.group), fade, 0.8);
-			g.text(this.font, Ui.tr(selected.nameKey()), x + 24, y + 1, Ui.argb(fade, Ui.PARCHMENT));
+			boolean plain = readableCurse(selected);
+			g.text(this.font, Ui.ellipsize(this.font, Ui.curse(Ui.tr(selected.nameKey()), plain), w - 24), x + 24, y + 1, Ui.argb(fade, Ui.PARCHMENT));
 			g.text(this.font, Ui.tr("gui.extremedimensions.pact.carried", own(selected), max(selected)), x + 24, y + 11, Ui.argb(fade, Ui.MUTED));
 			int ly = y + 26;
 			for (String line : new String[] {Ui.tr(selected.lineKey(1), selected.display()), Ui.tr(selected.lineKey(2), selected.display())}) {
-				g.text(this.font, line, x, ly, Ui.argb(fade, Ui.TEXT));
+				g.text(this.font, Ui.ellipsize(this.font, Ui.curse(line, plain), w), x, ly, Ui.argb(fade, Ui.TEXT));
 				ly += 10;
+			}
+			if (!plain) {
+				g.text(this.font, Ui.ellipsize(this.font, Ui.tr("gui.extremedimensions.curses.unknown"), w), x, ly, Ui.argb(fade, Ui.MUTED));
 			}
 			String sw = Ui.tr("gui.extremedimensions.pact.sworn_n", swornOf(selected), selected.extreme ? 2 : 1);
 			g.text(this.font, sw, x + 50, y + 65, Ui.argb(fade, swornOf(selected) > 0 ? 0xFFC060 : Ui.TEXT));
@@ -244,6 +248,12 @@ public class PactScreen extends Screen {
 		}
 	}
 
+	/** Whether the player can read this curse (one never carried shows in runes on the harder difficulties). */
+	private boolean readableCurse(Penalty p) {
+		int[] c = carried.get(p);
+		return c == null || c.length < 3 || c[2] != 0;
+	}
+
 	/** Carried stacks dim, sworn stacks gold, the rest hollow up to the maximum. */
 	private static void pips(GuiGraphicsExtractor g, int x, int y, int own, int sworn, int max, double fade) {
 		for (int i = 0; i < max; i++) {
@@ -256,9 +266,9 @@ public class PactScreen extends Screen {
 		final Penalty pen;
 
 		Socket(Penalty pen, int x, int y) {
-			super(x, y, 18, 21, Component.translatable(pen.nameKey()));
+			super(x, y, 18, 21, Component.literal(Ui.curse(Ui.tr(pen.nameKey()), PactScreen.this.readableCurse(pen))));
 			this.pen = pen;
-			this.setTooltip(Tooltip.create(Component.translatable(pen.nameKey())));
+			this.setTooltip(Tooltip.create(this.getMessage()));
 		}
 
 		@Override

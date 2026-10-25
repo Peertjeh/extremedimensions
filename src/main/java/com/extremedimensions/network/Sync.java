@@ -3,6 +3,7 @@ package com.extremedimensions.network;
 import com.extremedimensions.anchor.AnchorService;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.penalty.CurseRunes;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.seam.SeamService;
@@ -39,7 +40,10 @@ public final class Sync {
 				seam ? (float) d.riftX : 0, seam ? (float) d.riftY : 0, seam ? (float) d.riftZ : 0));
 	}
 
-	/** The cards on offer: "@set" (beyond or overworld), then "id:multiplier:stacks:max:valuePerStack", comma separated. */
+	/**
+	 * The cards on offer: "@set" (beyond or overworld), then "id:multiplier:stacks:max:valuePerStack:readable", comma
+	 * separated (readable 0: the card shows runes, see {@link CurseRunes}).
+	 */
 	public static void offer(ServerPlayer p, PlayerData d) {
 		if (d.pendingOffer.isEmpty()) {
 			return;
@@ -52,7 +56,8 @@ public final class Sync {
 			}
 			int mult = i < d.pendingMult.size() ? d.pendingMult.get(i) : 1;
 			out.append(',');
-			out.append(pen.id).append(':').append(mult).append(':').append(d.owned(pen)).append(':').append(pen.max).append(':').append(pen.display());
+			out.append(pen.id).append(':').append(mult).append(':').append(d.owned(pen)).append(':').append(pen.max).append(':').append(pen.display())
+					.append(':').append(CurseRunes.readable(d, pen) ? 1 : 0);
 		}
 		ServerPlayNetworking.send(p, new ModPackets.OfferPayload(out.toString()));
 	}
@@ -73,7 +78,8 @@ public final class Sync {
 			}
 			first = false;
 			out.append(pen.id).append(':').append(d.owned(pen)).append(':').append(pen.max).append(':')
-					.append(d.atonement.getOrDefault(pen.id, 0)).append(':').append(PenaltyService.cost(d, pen)).append(':').append(pen.display());
+					.append(d.atonement.getOrDefault(pen.id, 0)).append(':').append(PenaltyService.cost(d, pen)).append(':').append(pen.display())
+					.append(':').append(CurseRunes.readable(d, pen) ? 1 : 0);
 		}
 		out.append('|').append(com.extremedimensions.pact.PactService.data(p, d));
 		out.append('|').append(d.relic == null ? "" : d.relic);
