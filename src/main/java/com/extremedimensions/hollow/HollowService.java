@@ -976,6 +976,8 @@ public final class HollowService {
 		toughen(h);
 		WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_bond", "neutral", h.getX(), h.getY() + 0.8, h.getZ(), 1f, 1f);
 		Advancements.grant(p, Advancements.HOLLOW_BOUND);
+		// Forsaken Bond: a Hollowling bound breaks it
+		com.extremedimensions.penalty.AbyssalCurses.advance(p, d, com.extremedimensions.penalty.Penalty.FORSAKEN_BOND, 1);
 		Journal.unlock(p, d, JournalEntry.LITTLE_THIEVES);
 		// The tribe takes note of a bond once in a while, not of every bond made again after a companion is lost
 		long day = ((ServerLevel) h.level()).getServer().overworld().getGameTime() / 24000L;

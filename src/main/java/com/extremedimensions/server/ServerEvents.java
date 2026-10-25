@@ -105,6 +105,7 @@ public final class ServerEvents {
 			com.extremedimensions.tapestry.Tapestry.clear();
 			com.extremedimensions.seam.FirstKnot.clear();
 			LurkerService.clear();
+			com.extremedimensions.penalty.AbyssalTolls.clear();
 			HollowService.clear();
 			SeamService.clear();
 			com.extremedimensions.seam.SeamFauna.clear();
@@ -198,6 +199,8 @@ public final class ServerEvents {
 
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(CurseEffects::afterDamage);
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(com.extremedimensions.penalty.AbyssalCurses::afterDamage);
+		// Bitter Cure: a zombie villager cured breaks it for those close by
+		ServerLivingEntityEvents.MOB_CONVERSION.register((previous, converted, context) -> com.extremedimensions.penalty.AbyssalTolls.converted(previous, converted));
 		ServerLivingEntityEvents.ALLOW_DEATH.register(ExtremeCurses::oath);
 		// Co-op: struck down with an ally near, a player falls instead of dying, and cannot be hurt while fallen
 		ServerLivingEntityEvents.ALLOW_DEATH.register(com.extremedimensions.coop.FallenService::allowDeath);
@@ -632,6 +635,7 @@ public final class ServerEvents {
 		}
 		AnchorService.tick(s);
 		LurkerService.tick(s);
+		com.extremedimensions.penalty.AbyssalTolls.serverTick(s);
 		HollowService.tick(s);
 		lap = TickProfile.lap("world", lap);
 		SeamService.tick(s);

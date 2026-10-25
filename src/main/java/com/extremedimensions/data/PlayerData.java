@@ -58,8 +58,18 @@ public class PlayerData {
 	public Set<String> knownCurses = new LinkedHashSet<>();
 	/** How far the player is with each Abyssal curse's deed (curse id -> count), see AbyssalCurses. */
 	public Map<String, Integer> abyssalDeeds = new HashMap<>();
-	/** Gravebound: the Overworld game time its days are counted from (-1 = not carried); The Hungering: the day it last ate. */
+	/** Gravebound: the Overworld game time its days are counted from; The Hungering: the day it last ate (MIN_VALUE: not yet). */
 	public long graveSince = Long.MIN_VALUE, hungeringDay = Long.MIN_VALUE;
+	/**
+	 * Blood Price: maximum health owed and until when (game time); Rot: seconds to the next spoiling (-1: the clock has
+	 * not started); the night Covetous last sent a Lurker and the day Forsaken Bond last struck (MIN_VALUE: not yet).
+	 */
+	public int bloodDebt = 0, rotIn = -1;
+	public long bloodUntil = Long.MIN_VALUE, covetousNight = Long.MIN_VALUE, bondDay = Long.MIN_VALUE;
+	/** Stacks a Lurker took under Covetous that are not yet back in the player's hands. */
+	public int covetousOwed = 0;
+	/** A statistic as last seen, for deeds counted from the game's own statistics (Rot: rotten flesh eaten). */
+	public Map<String, Integer> abyssalSeen = new HashMap<>();
 	/** The sworn pact: extra stacks of curses taken on willingly, acting on expeditions (see PactService). */
 	public Map<String, Integer> pact = new HashMap<>();
 	/** The Elders: Keepers slain (the Matriarch comes after enough of them), and whether she has fallen to this player. */
@@ -223,6 +233,7 @@ public class PlayerData {
 	public transient double leadValue = Double.NaN;
 	/** Weight of Iron's slowdown as last set (NaN: set it afresh). */
 	public transient double ironValue = Double.NaN;
+	public transient double bloodValue = Double.NaN;
 	public transient boolean joinDone = false;
 	public transient int ticksOnline = 0;
 	/** Current drain including the distance factor (HUD). */

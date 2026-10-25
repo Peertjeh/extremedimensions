@@ -108,7 +108,15 @@ public enum Penalty {
 	LOCKJAW("lockjaw", Group.EXTREME, 1, 8, true),
 	THE_HUNGERING("the_hungering", Group.EXTREME, 1, 1, true),
 	CINDER_LUNGS("cinder_lungs", Group.EXTREME, 1, 8, true),
-	MIRROR_WOUND("mirror_wound", Group.EXTREME, 1, 10, true);
+	MIRROR_WOUND("mirror_wound", Group.EXTREME, 1, 10, true),
+	BLOOD_PRICE("blood_price", Group.EXTREME, 1, 4, true),
+	ROT("rot", Group.EXTREME, 1, 10, true),
+	COVETOUS("covetous", Group.EXTREME, 1, 1, true),
+	RESTLESS_DEAD("restless_dead", Group.EXTREME, 1, 20, true),
+	UNMOORED("unmoored", Group.EXTREME, 1, 20, true),
+	SPLINTERING("splintering", Group.EXTREME, 1, 10, true),
+	BITTER_CURE("bitter_cure", Group.EXTREME, 1, 50, true),
+	FORSAKEN_BOND("forsaken_bond", Group.EXTREME, 1, 32, true);
 
 	/** Where a curse acts: beyond the wound, in the Overworld, in every world; Extreme curses act in every world too. */
 	public enum Group {

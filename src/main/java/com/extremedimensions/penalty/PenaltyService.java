@@ -385,6 +385,8 @@ public final class PenaltyService {
 		Sync.state(p, d);
 		Sync.curses(p, d, false);
 		DataStore.markDirty();
+		// Blood Price: the lifting has its cost
+		AbyssalTolls.afterLift(p, d, t);
 	}
 
 	/** The player picked a curse to atone for in the Curses screen. */

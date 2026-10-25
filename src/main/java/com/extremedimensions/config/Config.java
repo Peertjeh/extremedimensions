@@ -164,6 +164,20 @@ public final class Config {
 	public static int ABYSSAL_BREAK_THE_HUNGERING = 1;
 	public static int ABYSSAL_BREAK_CINDER_LUNGS = 1;
 	public static int ABYSSAL_BREAK_MIRROR_WOUND = 50;
+	public static int ABYSSAL_BREAK_BLOOD_PRICE = 3;
+	public static int ABYSSAL_BREAK_ROT = 32;
+	public static int ABYSSAL_BREAK_COVETOUS = 5;
+	public static int ABYSSAL_BREAK_RESTLESS_DEAD = 100;
+	public static int ABYSSAL_BREAK_UNMOORED = 40;
+	public static int ABYSSAL_BREAK_SPLINTERING = 200;
+	public static int ABYSSAL_BREAK_BITTER_CURE = 1;
+	public static int ABYSSAL_BREAK_FORSAKEN_BOND = 1;
+	/** Blood Price: how long the maximum health a lifted stack costs stays gone, and the chance that stack jumps to another curse. */
+	public static int ABYSSAL_BLOOD_PRICE_MINUTES = 20;
+	public static double ABYSSAL_BLOOD_PRICE_JUMP = 0.33;
+	/** Restless Dead: seconds before a slain monster rises again. Unmoored: how far a blow in the End throws the player. */
+	public static int ABYSSAL_RESTLESS_DELAY_SECONDS = 5;
+	public static int ABYSSAL_UNMOORED_RANGE = 8;
 	/**
 	 * Atonement from kills only counts monsters that spawned naturally, that the player dealt at least this share of the
 	 * damage to (a farm's fall does not count), and at most a few at one place: after {@code atone_kill_area_limit}

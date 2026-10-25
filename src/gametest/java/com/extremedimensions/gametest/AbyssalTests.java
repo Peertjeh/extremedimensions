@@ -12,6 +12,7 @@ import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.pact.PactService;
 import com.extremedimensions.penalty.AbyssalCurses;
+import com.extremedimensions.penalty.AbyssalTolls;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.registry.ModItems;
@@ -19,13 +20,17 @@ import com.extremedimensions.server.WorldFx;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.stats.Stats;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
@@ -372,5 +377,221 @@ public class AbyssalTests {
 			}
 			helper.succeed();
 		});
+	}
+
+	// ------------------------------------------------------------------ the second eight (AbyssalTolls)
+
+	@GameTest
+	public void bloodPriceCostsHealthAndJumps(GameTestHelper helper) {
+		ServerPlayer clean = cursed(helper);
+		ServerPlayer p = cursed(helper, Penalty.BLOOD_PRICE, 1, Penalty.GLASS_JAW, 3);
+		PlayerData d = DataStore.get(p.getUUID());
+		double jump = Config.ABYSSAL_BLOOD_PRICE_JUMP;
+		int target = Config.ABYSSAL_BREAK_BLOOD_PRICE;
+		try {
+			Config.ABYSSAL_BLOOD_PRICE_JUMP = 0;
+			Config.ABYSSAL_BREAK_BLOOD_PRICE = 2;
+			double full = clean.getAttributeValue(Attributes.MAX_HEALTH);
+			PenaltyService.lift(p, d, Penalty.GLASS_JAW, "gui.extremedimensions.curses.atoned");
+			near(helper, p.getAttributeValue(Attributes.MAX_HEALTH), full - Penalty.BLOOD_PRICE.value, "maximum health after one stack lifted");
+			check(helper, AbyssalCurses.progress(d, Penalty.BLOOD_PRICE) == 1, "a stack lifted did not count");
+			PenaltyService.lift(p, d, Penalty.GLASS_JAW, "gui.extremedimensions.curses.atoned");
+			check(helper, d.owned(Penalty.BLOOD_PRICE) == 0, "two stacks lifted did not break Blood Price");
+			near(helper, p.getAttributeValue(Attributes.MAX_HEALTH), full - 2 * Penalty.BLOOD_PRICE.value, "maximum health after two stacks lifted");
+			// its time runs out
+			d.bloodUntil = helper.getLevel().getServer().overworld().getGameTime() - 1;
+			AbyssalCurses.tick(p, d);
+			near(helper, p.getAttributeValue(Attributes.MAX_HEALTH), full, "maximum health once the blood price ran out");
+			// a stack that jumps lands on another curse
+			ServerPlayer q = cursed(helper, Penalty.BLOOD_PRICE, 1, Penalty.GLASS_JAW, 2);
+			PlayerData e = DataStore.get(q.getUUID());
+			Config.ABYSSAL_BLOOD_PRICE_JUMP = 1.0;
+			PenaltyService.lift(q, e, Penalty.GLASS_JAW, "gui.extremedimensions.curses.atoned");
+			int others = 0;
+			for (Penalty pen : Penalty.values()) {
+				others += pen.abyssal ? 0 : e.owned(pen);
+			}
+			check(helper, e.owned(Penalty.GLASS_JAW) == 1 && others == 2, "the lifted stack did not jump to another curse (%s stacks left)", others);
+		} finally {
+			Config.ABYSSAL_BLOOD_PRICE_JUMP = jump;
+			Config.ABYSSAL_BREAK_BLOOD_PRICE = target;
+		}
+		helper.succeed();
+	}
+
+	@GameTest
+	public void rotSpoilsFoodAndFleshBreaksIt(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.ROT, 1);
+		PlayerData d = DataStore.get(p.getUUID());
+		p.getInventory().setItem(3, new ItemStack(Items.BREAD, 8));
+		p.getInventory().setItem(4, new ItemStack(Items.COBBLESTONE, 8));
+		ItemStack spoiled = AbyssalTolls.spoil(p);
+		check(helper, spoiled.is(Items.BREAD) && spoiled.getCount() == 2, "a quarter of the bread should spoil, got %s", spoiled);
+		check(helper, p.getInventory().getItem(3).getCount() == 6 && p.getInventory().countItem(Items.ROTTEN_FLESH) == 2,
+				"the bread did not turn to rotten flesh");
+		check(helper, p.getInventory().getItem(4).getCount() == 8, "Rot spoiled something not food");
+		int target = Config.ABYSSAL_BREAK_ROT;
+		try {
+			Config.ABYSSAL_BREAK_ROT = 3;
+			AbyssalCurses.tick(p, d);
+			p.awardStat(Stats.ITEM_USED.get(Items.ROTTEN_FLESH), 2);
+			AbyssalCurses.tick(p, d);
+			check(helper, AbyssalCurses.progress(d, Penalty.ROT) == 2 && d.owned(Penalty.ROT) == 1, "two rotten flesh eaten counted %s",
+					AbyssalCurses.progress(d, Penalty.ROT));
+			p.awardStat(Stats.ITEM_USED.get(Items.ROTTEN_FLESH), 1);
+			AbyssalCurses.tick(p, d);
+			check(helper, d.owned(Penalty.ROT) == 0, "three rotten flesh eaten did not break Rot");
+		} finally {
+			Config.ABYSSAL_BREAK_ROT = target;
+		}
+		helper.succeed();
+	}
+
+	@GameTest
+	public void covetousMarksWhatItTakesAndTakingBackBreaksIt(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.COVETOUS, 1);
+		PlayerData d = DataStore.get(p.getUUID());
+		check(helper, AbyssalTolls.covets(p) && !AbyssalTolls.covets(cursed(helper)), "Covetous does not tell who it holds");
+		ItemStack stolen = new ItemStack(Items.DIAMOND, 3);
+		AbyssalTolls.mark(p, stolen);
+		check(helper, stolen.has(DataComponents.LORE) && d.covetousOwed == 1, "a stolen stack carries no mark");
+		int target = Config.ABYSSAL_BREAK_COVETOUS;
+		try {
+			Config.ABYSSAL_BREAK_COVETOUS = 1;
+			p.getInventory().setItem(5, stolen);
+			AbyssalCurses.tick(p, d);
+			check(helper, !p.getInventory().getItem(5).has(DataComponents.LORE), "the mark stayed on a stack taken back");
+			check(helper, d.owned(Penalty.COVETOUS) == 0 && d.covetousOwed == 0, "a stolen stack taken back did not break Covetous");
+		} finally {
+			Config.ABYSSAL_BREAK_COVETOUS = target;
+		}
+		helper.succeed();
+	}
+
+	@GameTest
+	public void restlessDeadRiseOnceAndSlayingBreaksIt(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.RESTLESS_DEAD, 1);
+		PlayerData d = DataStore.get(p.getUUID());
+		place(helper, p, 1.5, 2, 1.5);
+		Mob zombie = mob(helper, "zombie", 4.5, 2, 4.5);
+		double value = Penalty.RESTLESS_DEAD.value;
+		int target = Config.ABYSSAL_BREAK_RESTLESS_DEAD;
+		try {
+			Penalty.RESTLESS_DEAD.value = 100;
+			int before = AbyssalTolls.risings();
+			AbyssalCurses.onKill(p, zombie, p.damageSources().playerAttack(p));
+			check(helper, AbyssalTolls.risings() == before + 1, "a slain zombie did not wait to rise (at 100%%)");
+			check(helper, AbyssalCurses.progress(d, Penalty.RESTLESS_DEAD) == 1, "a slain monster did not count");
+			zombie.discard();
+			Entity risen = AbyssalTolls.riseNext();
+			check(helper, risen instanceof Mob && risen.entityTags().contains(AbyssalTolls.RISEN), "the zombie did not rise again, marked");
+			AbyssalCurses.onKill(p, (Mob) risen, p.damageSources().playerAttack(p));
+			check(helper, AbyssalTolls.risings() == before, "a risen monster rises a second time");
+			risen.discard();
+			Config.ABYSSAL_BREAK_RESTLESS_DEAD = 3;
+			Mob another = mob(helper, "skeleton", 3.5, 2, 4.5);
+			Penalty.RESTLESS_DEAD.value = 0;
+			AbyssalCurses.onKill(p, another, p.damageSources().playerAttack(p));
+			another.discard();
+			check(helper, d.owned(Penalty.RESTLESS_DEAD) == 0, "three monsters slain did not break Restless Dead");
+		} finally {
+			Penalty.RESTLESS_DEAD.value = value;
+			Config.ABYSSAL_BREAK_RESTLESS_DEAD = target;
+		}
+		helper.succeed();
+	}
+
+	@GameTest
+	public void unmooredThrowsAndEndermenBreakIt(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.UNMOORED, 1);
+		PlayerData d = DataStore.get(p.getUUID());
+		place(helper, p, 4.5, 2, 4.5);
+		double x = p.getX(), z = p.getZ();
+		AbyssalTolls.throwPlayer(p);
+		double moved = Math.hypot(p.getX() - x, p.getZ() - z), r = Config.ABYSSAL_UNMOORED_RANGE;
+		check(helper, moved >= r / 2 - 0.01 && moved <= r + 0.01, "Unmoored threw the player %s blocks (range %s)", moved, r);
+		Mob enderman = mob(helper, "enderman", 2.5, 2, 2.5);
+		int target = Config.ABYSSAL_BREAK_UNMOORED;
+		try {
+			Config.ABYSSAL_BREAK_UNMOORED = 1;
+			AbyssalCurses.onKill(p, enderman, p.damageSources().playerAttack(p));
+			check(helper, d.owned(Penalty.UNMOORED) == 0, "an Enderman slain did not break Unmoored");
+		} finally {
+			Config.ABYSSAL_BREAK_UNMOORED = target;
+			enderman.discard();
+		}
+		helper.succeed();
+	}
+
+	@GameTest
+	public void splinteringWearsShieldsAndBlockingBreaksIt(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.SPLINTERING, 1);
+		PlayerData d = DataStore.get(p.getUUID());
+		p.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
+		p.startUsingItem(InteractionHand.OFF_HAND);
+		int extra = AbyssalTolls.splinter(p, 5f);
+		int expected = (int) Math.round((Penalty.SPLINTERING.value - 1) * 6);
+		check(helper, extra == expected && p.getOffhandItem().getDamageValue() == expected, "a blow of 5 wore the shield %s more, expected %s",
+				p.getOffhandItem().getDamageValue(), expected);
+		Mob zombie = mob(helper, "zombie", 3.5, 2, 1.5);
+		int target = Config.ABYSSAL_BREAK_SPLINTERING;
+		try {
+			Config.ABYSSAL_BREAK_SPLINTERING = 2;
+			AbyssalCurses.afterDamage(p, helper.getLevel().damageSources().mobAttack(zombie), 4f, 0f, true);
+			check(helper, AbyssalCurses.progress(d, Penalty.SPLINTERING) == 1, "a blocked blow did not count");
+			AbyssalCurses.afterDamage(p, helper.getLevel().damageSources().mobAttack(zombie), 4f, 0f, true);
+			check(helper, d.owned(Penalty.SPLINTERING) == 0, "two blocked blows did not break Splintering");
+		} finally {
+			Config.ABYSSAL_BREAK_SPLINTERING = target;
+			p.stopUsingItem();
+			zombie.discard();
+		}
+		helper.succeed();
+	}
+
+	@GameTest
+	public void bitterCureHalvesHealingAndACureBreaksIt(GameTestHelper helper) {
+		ServerPlayer clean = cursed(helper);
+		ServerPlayer p = cursed(helper, Penalty.BITTER_CURE, 1);
+		PlayerData d = DataStore.get(p.getUUID());
+		ServerLevel level = helper.getLevel();
+		for (ServerPlayer who : List.of(clean, p)) {
+			who.setHealth(10f);
+			MobEffects.INSTANT_HEALTH.value().applyInstantaneousEffect(level, null, null, who, 0, 1.0);
+		}
+		near(helper, clean.getHealth(), 14f, "health after Instant Health, uncursed");
+		near(helper, p.getHealth(), 10f + 4f * (1 - Penalty.BITTER_CURE.frac()), "health after Instant Health with Bitter Cure");
+		p.setHealth(10f);
+		MobEffects.REGENERATION.value().applyEffectTick(level, p, 0);
+		near(helper, p.getHealth(), 10f + (1 - Penalty.BITTER_CURE.frac()), "health after a beat of Regeneration with Bitter Cure");
+		place(helper, p, 1.5, 2, 1.5);
+		Mob zombieVillager = mob(helper, "zombie_villager", 3.5, 2, 3.5);
+		Mob villager = mob(helper, "villager", 3.5, 2, 3.5);
+		AbyssalTolls.converted(zombieVillager, villager);
+		zombieVillager.discard();
+		villager.discard();
+		check(helper, d.owned(Penalty.BITTER_CURE) == 0, "a zombie villager cured close by did not break Bitter Cure");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void forsakenBondUntamesOnceADay(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.FORSAKEN_BOND, 1);
+		PlayerData d = DataStore.get(p.getUUID());
+		place(helper, p, 1.5, 2, 1.5);
+		net.minecraft.world.entity.TamableAnimal wolf = (net.minecraft.world.entity.TamableAnimal) mob(helper, "wolf", 3.5, 2, 3.5);
+		wolf.tame(p);
+		check(helper, wolf.isTame() && wolf.getOwner() == p, "the wolf was not tamed for the test");
+		d.bondDay = day(helper);
+		AbyssalCurses.tick(p, d);
+		check(helper, wolf.isTame(), "Forsaken Bond struck twice in one day");
+		d.bondDay = day(helper) - 1;
+		AbyssalCurses.tick(p, d);
+		check(helper, !wolf.isTame() && wolf.getOwner() == null, "a new day came and the wolf still knew the player");
+		wolf.discard();
+		int target = Config.ABYSSAL_BREAK_FORSAKEN_BOND;
+		AbyssalCurses.advance(p, d, Penalty.FORSAKEN_BOND, target);
+		check(helper, d.owned(Penalty.FORSAKEN_BOND) == 0, "its deed done did not break Forsaken Bond");
+		helper.succeed();
 	}
 }

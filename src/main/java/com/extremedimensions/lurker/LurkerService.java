@@ -118,6 +118,12 @@ public final class LurkerService {
 			if (p.isSpectator() || p.isCreative() || !(Dims.OVERWORLD.equals(dim) || Dims.NETHER.equals(dim)) || hunting(p) || Rules.peaceful(p.level())) {
 				continue;
 			}
+			// Covetous: one comes every night, whatever the wait, and it comes to take
+			if (com.extremedimensions.penalty.AbyssalTolls.covetousNight(p, DataStore.get(p.getUUID()))) {
+				LAST_SEEN.put(p.getUUID(), (long) s.getTickCount());
+				summon(p, "stalk");
+				continue;
+			}
 			// Rare by design: a base chance, and never again soon after the last encounter
 			Long last = LAST_SEEN.get(p.getUUID());
 			if (last != null && s.getTickCount() - last < Config.LURKER_COOLDOWN_SECONDS * 20L) {
@@ -443,6 +449,11 @@ public final class LurkerService {
 		// Only what reaches the player right now (and is possible) can be picked, by weight
 		List<Integer> kinds = new ArrayList<>();
 		boolean tooth = com.extremedimensions.relic.RelicService.has(p, com.extremedimensions.relic.Relic.LURKERS_TOOTH);
+		// Covetous: it came for the hotbar, and takes from it if it can
+		if (!tooth && inReach(0, d) && com.extremedimensions.penalty.AbyssalTolls.covets(p) && stealItem(p, st.loot)) {
+			taken(p);
+			return;
+		}
 		for (int k = 0; k < 4; k++) {
 			// Lurker's Tooth: no item and no armour can be taken from its bearer
 			if (!(tooth && (k == 0 || k == 2))) {
@@ -474,15 +485,20 @@ public final class LurkerService {
 				default -> PenaltyService.curse(p, Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties()) != null;
 			};
 			if (took) {
-				WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.5, 0.08, 25);
-				WorldFx.particles(p, "extremedimensions:lurker_wisp", 1.0, 0.5, 0.0, 12);
-				WorldFx.particles(p, "minecraft:reverse_portal", 1.0, 0.8, 0.3, 40);
-				WorldFx.fx(p, Fx.TAKEN, 0);
-				Advancements.grant(p, Advancements.ROBBED);
+				taken(p);
 				return;
 			}
 			kinds.remove(Integer.valueOf(pick));
 		}
+	}
+
+	/** Something was taken: the theft shows. */
+	private static void taken(ServerPlayer p) {
+		WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.5, 0.08, 25);
+		WorldFx.particles(p, "extremedimensions:lurker_wisp", 1.0, 0.5, 0.0, 12);
+		WorldFx.particles(p, "minecraft:reverse_portal", 1.0, 0.8, 0.3, 40);
+		WorldFx.fx(p, Fx.TAKEN, 0);
+		Advancements.grant(p, Advancements.ROBBED);
 	}
 
 	/** 0 = item, 1 = experience, 2 = armour, 3 = curse. */
@@ -523,7 +539,9 @@ public final class LurkerService {
 	private static boolean stealItem(ServerPlayer p, Loot loot) {
 		var inv = p.getInventory();
 		List<Integer> slots = new ArrayList<>();
-		for (int i = 0; i < 36; i++) {
+		// (under Covetous only the hotbar, and what it takes carries the tribe's mark)
+		boolean covetous = com.extremedimensions.penalty.AbyssalTolls.covets(p);
+		for (int i = 0; i < (covetous ? 9 : 36); i++) {
 			if (!inv.getItem(i).isEmpty()) {
 				slots.add(i);
 			}
@@ -534,6 +552,9 @@ public final class LurkerService {
 		int slot = slots.get(ThreadLocalRandom.current().nextInt(slots.size()));
 		loot.stack = inv.getItem(slot).copy();
 		inv.setItem(slot, ItemStack.EMPTY);
+		if (covetous) {
+			com.extremedimensions.penalty.AbyssalTolls.mark(p, loot.stack);
+		}
 		return true;
 	}
 

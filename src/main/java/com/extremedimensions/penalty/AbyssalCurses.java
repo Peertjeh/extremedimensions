@@ -58,6 +58,8 @@ import net.minecraft.world.level.levelgen.Heightmap;
  * <li>Mirror Wound: a share of every blow the player strikes comes back to them. Broken by slaying monsters with
  * arrows and tridents.</li>
  * </ul>
+ *
+ * <p>The next eight, tolls on what the player already has, live in {@link AbyssalTolls}.
  */
 public final class AbyssalCurses {
 	private AbyssalCurses() {}
@@ -187,6 +189,7 @@ public final class AbyssalCurses {
 		weightOfIron(p, d);
 		hungering(p, d, level);
 		gravebound(p, d, level);
+		AbyssalTolls.tick(p, d, level);
 	}
 
 	/** Sunscorn: the undead's sun. Bare-headed under the open sky by day in the Overworld, the player catches fire. */
@@ -309,6 +312,7 @@ public final class AbyssalCurses {
 
 	/** After a hit lands: Marrow Rot on the player struck, Mirror Wound on the player striking. */
 	public static void afterDamage(LivingEntity entity, DamageSource source, float baseTaken, float taken, boolean blocked) {
+		AbyssalTolls.afterDamage(entity, source, baseTaken, taken, blocked);
 		if (taken <= 0 || !(entity.level() instanceof ServerLevel level)) {
 			return;
 		}
@@ -345,6 +349,7 @@ public final class AbyssalCurses {
 		if ("minecraft:wither".equals(BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType()).toString())) {
 			advance(killer, d, Penalty.MARROW_ROT, 1);
 		}
+		AbyssalTolls.onKill(killer, d, victim);
 	}
 
 	/** An Elder fell: its fighters close by do the deeds of Weight of Iron (in light armour) and Cinder Lungs (the Ferryman). */
@@ -384,6 +389,9 @@ public final class AbyssalCurses {
 	/** The player rose again: Gravebound sends them to the world's spawn, wherever their bed or anchor stands. */
 	public static void onRespawn(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
+		// a new body: the attribute modifiers are set on it afresh
+		d.ironValue = Double.NaN;
+		d.bloodValue = Double.NaN;
 		if (d.stacks(Penalty.GRAVEBOUND) <= 0 || WorldFx.server() == null) {
 			return;
 		}

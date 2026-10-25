@@ -7,6 +7,7 @@
 		"ActionBarMixin",
 		"ArenaBlastMixin",
 		"ArenaExplosionMixin",
+		"BitterCureMixin",
 		"BlockDisplayAccess",
 		"BoundWingsMixin",
 		"BoundWingsPlayerMixin",
