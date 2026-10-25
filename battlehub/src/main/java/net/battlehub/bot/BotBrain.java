@@ -871,6 +871,7 @@ final class BotBrain {
 	 * ({@link #keepSafe()}) still has the last word.
 	 */
 	private void melee(Match m) {
+		if (!fighting) Perception.knowStart(bot, m, mind, ticks);
 		fighting = true;
 		Perception.Known k = Perception.pickTarget(bot, m, mind, ticks, target, this::hitAgo, heardAt);
 		ServerPlayer t = k == null ? null : k.player();

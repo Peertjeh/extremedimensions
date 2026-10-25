@@ -377,6 +377,12 @@ final class NewModeTests {
 			}
 			double dist = b.position().distanceTo(net.minecraft.world.phys.Vec3.atCenterOf(crate));
 			boolean sees = net.battlehub.games.hunger.Vaults.sees(b, crate);
+			int polls = (int) VARS.merge("hgCrackPolls", 1, (x, n) -> (int) x + (int) n);
+			if (polls % 20 == 0) {
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST real hunger games crate: poll {}, B hurt {} tick {} sneaking {} at {} ({} away, sees {}), share {}, opened {}, locked {}",
+						polls, b.hurtTime, b.tickCount, b.isShiftKeyDown(), b.position(), String.format(java.util.Locale.ROOT, "%.2f", dist), sees,
+						v.crateShare(crate), v.cratesOpened(), v.locked(crate));
+			}
 			if ((b.hurtTime > 0 || dist > net.battlehub.core.hunger.Crack.REACH || !sees) && !Integer.valueOf(b.tickCount / 20).equals(VARS.put("hgCrackLog", b.tickCount / 20))) {
 				net.battlehub.BattleHub.LOGGER.warn("SELFTEST real hunger games: B is not cracking: hurt {} (health {}), {} from the crate, sees it {}, at {}, share {}",
 						b.hurtTime, b.getHealth(), String.format(java.util.Locale.ROOT, "%.2f", dist), sees, b.position(), v.crateShare(crate));

@@ -17,6 +17,7 @@ import net.minecraft.server.network.CommonListenerCookie;
 /** A real online player without a client, for the self-test. Ticks its own physics like a connected player. */
 public final class TestPlayer extends ServerPlayer {
 	private TestConnection link;
+	private static final java.util.Set<String> TICK_FAILURES = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
 	private TestPlayer(MinecraftServer server, ServerLevel level, GameProfile profile) {
 		super(server, level, profile, ClientInformation.createDefault());
@@ -84,8 +85,14 @@ public final class TestPlayer extends ServerPlayer {
 		super.tick();
 		try {
 			doTick();
-		} catch (RuntimeException ignored) {
-			// Some client-driven state is missing for simulated players; physics still runs.
+		} catch (RuntimeException e) {
+			// Some client-driven state is missing for simulated players; physics still runs. Each kind of failure
+			// is logged once, so a tick that stops halfway (frozen hurt time, no physics) shows in the log.
+			if (TICK_FAILURES.add(e.getClass().getName() + ": " + e.getMessage())) {
+				StackTraceElement[] st = e.getStackTrace();
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST {} tick failed: {} at {}", getScoreboardName(), e,
+						java.util.Arrays.toString(java.util.Arrays.copyOf(st, Math.min(8, st.length))));
+			}
 		}
 		// The server moves a player's loaded chunks along when the client reports a move; this player has no
 		// client, so after a teleport within a world it would keep loading the chunks round the old spot.

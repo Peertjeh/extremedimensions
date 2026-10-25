@@ -526,6 +526,12 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 			botUsing.remove(bot.getUUID());
 			return net.battlehub.core.ai.Objective.attack(v3(to), "away from the Gamemakers' trap");
 		}
+		// a container the self-test sends it to (until it is empty)
+		BlockPos pin = botPinned.get(bot.getUUID());
+		if (pin != null) {
+			if (!(level().getBlockEntity(pin) instanceof net.minecraft.world.Container box) || box.isEmpty()) botPinned.remove(bot.getUUID());
+			else return using(bot, pin, "a chest");
+		}
 		// its own parachute, the Feast, a vault it has a key for
 		BlockPos gift = capitol.botTarget(bot);
 		if (gift != null && fresh(bot, gift)) return using(bot, gift, "the Capitol's gifts");
@@ -553,6 +559,13 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 	}
 
 	/** A bot forgets which containers it gave up on (self-test: a fresh start somewhere else). */
+	/** Self-test: the container this bot goes for, whatever else there is (until it is empty). */
+	private final Map<UUID, BlockPos> botPinned = new HashMap<>();
+
+	public void botPin(UUID id, BlockPos container) {
+		botPinned.put(id, container.immutable());
+	}
+
 	public void botForgetGiveUps(UUID id) {
 		botGaveUp.remove(id);
 		botAim.remove(id);

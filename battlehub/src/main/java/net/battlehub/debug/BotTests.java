@@ -1695,6 +1695,8 @@ final class BotTests {
 				VARS.put("hgWindowAt", c);
 				net.battlehub.bot.Looting.stop(b, 0);
 				hg.botForgetGiveUps(b.getUUID());
+				// that barrel and nothing else (its own parachute, a key, a crate nearby would come first)
+				hg.botPin(b.getUUID(), c);
 				PartyTests.tp(b, out.getX() + 0.5, out.getY(), out.getZ() + 0.5);
 				net.battlehub.BattleHub.LOGGER.info("SELFTEST hunger games: barrel {} behind a wall, {} put outside at {}", c, b.getScoreboardName(), out);
 				return;

@@ -87,6 +87,20 @@ final class Perception {
 		return best == null ? null : known.get(best.id());
 	}
 
+	/**
+	 * At the start of a fight a bot knows where its rivals stand, as a player does who saw the arena and where the
+	 * others spawned (1.49). Name tags no longer give everyone away through walls, so without this a bot behind cover
+	 * would not know where to start looking. It is memory like any other: it fades if they are not found.
+	 */
+	static void knowStart(BotPlayer bot, Match m, CombatMind mind, int tick) {
+		for (UUID id : m.participants()) {
+			if (id.equals(bot.getUUID()) || !m.inPlay(id) || !m.isRival(bot.getUUID(), id)) continue;
+			ServerPlayer p = m.player(id);
+			if (p == null || p.level() != bot.level() || p.isSpectator()) continue;
+			mind.see(tick, id, v(p.position()), p.distanceTo(bot), false);
+		}
+	}
+
 	/** Someone invisible whose armor or held item shows at this distance ({@link Senses#invisibleSight}). */
 	static boolean givenAway(ServerPlayer p, double dist) {
 		int armor = 0;
