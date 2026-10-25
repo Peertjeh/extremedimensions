@@ -18,38 +18,39 @@ import net.battlehub.core.hunger.Districts;
 import net.battlehub.data.PlayerStore;
 import net.battlehub.lang.Lang;
 import net.battlehub.util.Msg;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.entity.Display;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * The tributes of one Hunger Games match: their districts and training scores, the reaping at the start (which
- * numbered Hunger Games these are, counted over the server's life), and the nights: every few minutes the anthem
- * plays and the tributes who fell since the last night shine in the sky over the plaza.
+ * numbered Hunger Games these are, counted over the server's life), and the nights: every few minutes the game holds
+ * still for the tribute to those who fell since the last night ({@link Ceremony}).
  */
 public final class Tributes {
-	/** Ticks between two nights, and how long the fallen stay in the sky. */
-	public static final int NIGHT_EVERY = 4 * 60 * 20, SKY_TICKS = 30 * 20;
+	/** Ticks between two nights. */
+	public static final int NIGHT_EVERY = 4 * 60 * 20;
 
 	private final HungerHost host;
 	private final Map<UUID, Integer> district = new HashMap<>();
 	private final Map<UUID, Integer> score = new HashMap<>();
 	private final List<UUID> fallenSinceNight = new ArrayList<>();
-	private final List<Display.TextDisplay> sky = new ArrayList<>();
-	private int skyUntil = -1;
+	private final Ceremony ceremony;
 	private int number;
 	private int nights;
 
 	Tributes(HungerHost host) {
 		this.host = host;
+		this.ceremony = new Ceremony(host, this);
 	}
 
 	// ------------------------------------------------------------------ the reaping
 
-	/** Districts and scores for everyone, the count of Hunger Games one up, and the reaping told to all. */
-	void reap(List<ServerPlayer> players) {
+	/**
+	 * Districts and scores for everyone, the count of Hunger Games one up, and the reaping: in the chat, and while the
+	 * tributes stand on their plates, district after district on the screen (over the time the countdown leaves before
+	 * its last ten seconds); then each tribute is told their own district.
+	 */
+	void reap(List<ServerPlayer> players, int countdownTicks) {
 		List<Integer> d = Districts.assign(players.size(), host.rng());
 		for (int i = 0; i < players.size(); i++) {
 			ServerPlayer p = players.get(i);
@@ -65,8 +66,33 @@ public final class Tributes {
 				Msg.send(o, "hg.reaping.line", district.get(p.getUUID()), host.name(p.getUUID()), score.get(p.getUUID()));
 			}
 			Msg.send(o, "hg.reaping.odds");
-			Msg.sound(o, SoundEvents.NOTE_BLOCK_BELL, 1f, 0.6f);
 		}
+		// the districts on the screen, one after the other (after the camera's flight, before the last ten seconds)
+		java.util.TreeMap<Integer, List<String>> byDistrict = new java.util.TreeMap<>();
+		for (ServerPlayer p : order) byDistrict.computeIfAbsent(district.get(p.getUUID()), k -> new ArrayList<>()).add(host.name(p.getUUID()));
+		int start = 70, window = Math.max(40, countdownTicks - start - 215);
+		int every = Math.max(12, Math.min(40, window / Math.max(1, byDistrict.size() + 1)));
+		int at = start;
+		net.battlehub.util.Tasks.later(at, () -> {
+			if (!host.live()) return;
+			for (ServerPlayer o : host.audience()) Msg.title(o, Lang.tr(o, "hg.reaping.big"), Lang.tr(o, "hg.reaping.big.sub", number), 5, every + 10, 5);
+		});
+		for (Map.Entry<Integer, List<String>> e : byDistrict.entrySet()) {
+			at += every;
+			int dn = e.getKey();
+			String names = String.join("  \u00b7  ", e.getValue());
+			net.battlehub.util.Tasks.later(at, () -> {
+				if (!host.live()) return;
+				for (ServerPlayer o : host.audience()) {
+					Msg.title(o, Lang.tr(o, "hg.reaping.district", dn), Lang.tr(o, "hg.reaping.names", names), 3, every + 4, 3);
+					Msg.sound(o, SoundEvents.NOTE_BLOCK_BELL, 0.5f, 0.5f + 0.06f * Math.min(dn, 12));
+				}
+			});
+		}
+		net.battlehub.util.Tasks.later(at + every, () -> {
+			if (!host.live()) return;
+			for (ServerPlayer p : host.tributes()) Msg.actionBar(p, "hg.reaping.you", district(p.getUUID()), score(p.getUUID()));
+		});
 	}
 
 	private int scoreOf(ServerPlayer p) {
@@ -109,7 +135,7 @@ public final class Tributes {
 
 	// ------------------------------------------------------------------ nights
 
-	/** A tribute fell: it will shine in the sky at the next night. */
+	/** A tribute fell: it will be honoured at the next night. */
 	void fell(UUID id) {
 		fallenSinceNight.add(id);
 	}
@@ -117,56 +143,39 @@ public final class Tributes {
 	void tick() {
 		int t = host.runTicks();
 		if (t > 0 && t % NIGHT_EVERY == 0) night();
-		if (skyUntil >= 0 && t >= skyUntil) clearSky();
 	}
 
-	/** The anthem, and the fallen in the sky over the plaza (or a word that nobody fell). */
+	/** Night falls: the tribute to those who fell since the last one ({@link Ceremony}). */
 	public void night() {
 		nights++;
-		clearSky();
-		for (ServerPlayer o : host.audience()) {
-			Msg.title(o, Lang.tr(o, "hg.night.title"), Lang.tr(o, fallenSinceNight.isEmpty() ? "hg.night.none" : "hg.night.sub", fallenSinceNight.size()), 10, 70, 20);
-			anthem(o);
-		}
-		Vec3 c = host.plaza();
-		int n = fallenSinceNight.size();
-		for (int i = 0; i < n; i++) {
-			UUID id = fallenSinceNight.get(i);
-			double a = (i - (n - 1) / 2.0) * 0.35;
-			Vec3 at = c.add(Math.sin(a) * 20, 28 + Math.cos(a) * 2, -Math.cos(a) * 20);
-			Component text = Lang.tr("hg.night.face", host.name(id), district(id));
-			Display.TextDisplay d = Holo.text(host.level(), at, text, 3.0f);
-			if (d != null) sky.add(d);
-		}
-		skyUntil = host.runTicks() + SKY_TICKS;
+		ceremony.start(fallenSinceNight);
 		fallenSinceNight.clear();
 	}
 
-	/** A few notes of the anthem (the note block bell, slow). */
-	private static void anthem(ServerPlayer p) {
-		float[] notes = {0.7f, 0.84f, 0.94f, 0.84f, 1.05f, 0.94f};
-		for (int i = 0; i < notes.length; i++) {
-			float pitch = notes[i];
-			net.battlehub.util.Tasks.later(1 + i * 8, () -> Msg.sound(p, SoundEvents.NOTE_BLOCK_BELL, 0.9f, pitch));
-		}
-	}
-
-	private void clearSky() {
-		for (Display.TextDisplay d : sky) Holo.remove(d);
-		sky.clear();
-		skyUntil = -1;
+	Ceremony ceremony() {
+		return ceremony;
 	}
 
 	public int nights() {
 		return nights;
 	}
 
-	/** The faces in the sky now (self-test). */
+	/** How many fallen the night shows now (self-test). */
 	public int inSky() {
-		return (int) sky.stream().filter(d -> !d.isRemoved()).count();
+		return ceremony.fallen();
+	}
+
+	/** Whether the night's tribute is going on now. */
+	public boolean honouring() {
+		return ceremony.active();
+	}
+
+	/** The things on a viewer's stage in the sky now (self-test). */
+	public int onStage(UUID viewer) {
+		return ceremony.onStage(viewer);
 	}
 
 	void clear() {
-		clearSky();
+		ceremony.end();
 	}
 }

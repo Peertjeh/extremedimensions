@@ -174,6 +174,17 @@ public abstract class Match {
 	/** Called when the countdown is over. */
 	protected void onGo() {}
 
+	/** Called when the countdown begins (everyone is on their spawn); {@code ticks}: how long it will last. */
+	protected void onCountdownStart(int ticks) {}
+
+	/** Whether the countdown shows this second on the screen (all of them by default). */
+	protected boolean showCountdown(int secs) {
+		return true;
+	}
+
+	/** Called once the match has ended, right after the titles (empty winners: a draw). */
+	protected void onFinished(List<UUID> winners) {}
+
 	/** Game rules, every tick while RUNNING. */
 	protected void tickGame() {}
 
@@ -532,6 +543,7 @@ public abstract class Match {
 		}
 		setPhase(Phase.COUNTDOWN);
 		introTicks = net.battlehub.fx.Cinematics.intro(this);
+		onCountdownStart(countdownTotal());
 		Menus.refreshAll(server);
 	}
 
@@ -682,9 +694,13 @@ public abstract class Match {
 		return Lang.tr(p, "intro.title", Lang.tr(p, Icons.modeKey(mode)));
 	}
 
+	/** How long the countdown lasts (ticks): after an intro there are always three seconds left to count down. */
+	private int countdownTotal() {
+		return Math.max(Math.max(1, countdownSeconds()) * 20, introTicks > 0 ? introTicks + 60 : 0);
+	}
+
 	private void tickCountdown() {
-		// After an intro there are always three seconds left to count down
-		int total = Math.max(Math.max(1, countdownSeconds()) * 20, introTicks > 0 ? introTicks + 60 : 0);
+		int total = countdownTotal();
 		if (introTicks > 0 && phaseTicks == 1) {
 			for (UUID id : alive) {
 				ServerPlayer p = player(id);
@@ -707,7 +723,7 @@ public abstract class Match {
 		}
 		if ((phaseTicks - 1) % 20 == 0 && phaseTicks > introTicks) {
 			int secs = (total - phaseTicks + 1 + 19) / 20;
-			if (secs > 0) {
+			if (secs > 0 && showCountdown(secs)) {
 				for (UUID id : alive) {
 					ServerPlayer p = player(id);
 					if (p == null) continue;
@@ -887,6 +903,7 @@ public abstract class Match {
 		if (!participants.contains(id) || left.contains(id) || phase == Phase.CLOSED) {
 			if (watchers.remove(id)) {
 				net.battlehub.fx.Cinematics.stop(p);
+				net.battlehub.fx.Music.stop(p);
 				net.battlehub.fx.Killfeed.hide(this, p);
 				Snapshots.restore(p, teleport);
 			}
@@ -895,6 +912,7 @@ public abstract class Match {
 		left.add(id);
 		boolean wasAlive = alive.remove(id);
 		net.battlehub.fx.Cinematics.stop(p);
+		net.battlehub.fx.Music.stop(p);
 		net.battlehub.fx.Killfeed.hide(this, p);
 		if (phase == Phase.BUILDING) {
 			abort("match.cancelled_left");
@@ -963,6 +981,7 @@ public abstract class Match {
 				break;
 			}
 		}
+		onFinished(winners);
 		try {
 			Results.apply(this);
 		} catch (Exception e) {
@@ -1094,6 +1113,7 @@ public abstract class Match {
 		ServerPlayer p = player(id);
 		if (p != null) {
 			net.battlehub.fx.Cinematics.stop(p);
+			net.battlehub.fx.Music.stop(p);
 			net.battlehub.fx.Killfeed.hide(this, p);
 			onRestored(p);
 		}

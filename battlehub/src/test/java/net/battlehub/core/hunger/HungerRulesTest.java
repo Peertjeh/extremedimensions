@@ -35,7 +35,7 @@ class HungerRulesTest {
 					assertNotEquals(prev.id(), e.id(), "never the same twice in a row");
 					boolean nearFeast = prev.id().equals(HgSchedule.FEAST) || e.id().equals(HgSchedule.FEAST);
 					// the Feast keeps its minute (and half a minute after) free; other events are 2.5 to 3.5 minutes apart
-					assertTrue(e.tick() - prev.tick() >= (nearFeast ? HgSchedule.FEAST_WARNING_TICKS : HgSchedule.MIN_GAP),
+					assertTrue(e.tick() - prev.tick() >= (nearFeast ? HgSchedule.FEAST_WARNING_TICKS : HgSchedule.minGap(prev.tick())),
 							"seed " + seed + ": " + prev + " then " + e);
 				}
 			}

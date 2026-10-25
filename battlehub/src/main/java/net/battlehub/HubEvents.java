@@ -61,6 +61,7 @@ public final class HubEvents {
 			net.battlehub.fx.Cinematics.clear();
 			net.battlehub.fx.Killfeed.clear();
 			net.battlehub.fx.Sounds.clear();
+			net.battlehub.fx.Music.clear();
 			net.battlehub.fx.ResourcePack.stop();
 			net.battlehub.arena.CustomMaps.clear();
 			net.battlehub.tournament.WeeklyTournament.clear();
@@ -248,6 +249,7 @@ public final class HubEvents {
 		net.battlehub.hub.HubNpcs.tick(server);
 		net.battlehub.hub.HubDummy.tick(server);
 		net.battlehub.fx.Cinematics.tick(server);
+		net.battlehub.fx.Music.tick(server);
 		net.battlehub.lobby.DoubleJump.tick(server);
 		net.battlehub.export.StatsExport.tick(server);
 		if (tick % 10 == 0) {
@@ -336,6 +338,7 @@ public final class HubEvents {
 		net.battlehub.progression.Cosmetics.forget(p.getUUID());
 		net.battlehub.fair.AntiCheat.forget(p.getUUID());
 		net.battlehub.fx.Sounds.forget(p.getUUID());
+		net.battlehub.fx.Music.forget(p.getUUID());
 		net.battlehub.fx.ResourcePack.forget(p.getUUID());
 		net.battlehub.lobby.DoubleJump.forget(p.getUUID());
 		net.battlehub.hub.HubDummy.forget(p.getUUID());

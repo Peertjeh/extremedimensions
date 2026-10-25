@@ -2141,6 +2141,116 @@ mensen; Bridge Chaos 1v1v1v1, Hunger Games en een mace-duel; de bots waren inter
       optreedt, en het eerstvolgende werk aan de bots begint ermee.
     - **Tweede poging van de gefaalde job: 897 geslaagd, 0 gefaald.**
 
+## Versie 1.47.0 – Hunger Games: eigen muziek, gevaarlijke events, een filmische nacht (plan)
+
+**Vraag.** De muziek is er nog niet in het begin; de events mogen veel prominenter en gevaarlijker; de animatie
+tijdens de nacht met de doden moet veel filmischer. Dit mag volledig custom zijn.
+
+**Wat er nu is (1.43).**
+- Muziek alleen via het resource pack, en dat staat standaard uit (`resourcePack.enabled`): bijna niemand hoort
+  iets. Bij de start is er geen muziek, alleen een bel bij de boete.
+- Een event: een titel, een regel in de chat en een raid-hoorn. Daarna merk je het alleen als je er middenin staat;
+  de schade is klein (1 per halve seconde vuur, gif I) en wordt nooit erger.
+- De nacht: een titel, zes belnoten en tekstjes met namen in de lucht, een halve minuut. Er gebeurt verder niets.
+
+**1. Eigen muziek (`core/music`, `fx/Music`, `tools/music`).**
+- Zelf gecomponeerde stukken (geen bestaande muziek): de **opening** (de tributes op hun platen, spanning die
+  oploopt tot de gong), de **gong** met het **bloedbad** (drijvende slagwerk), het **volkslied** van de nacht
+  (plechtig, blazers en koor), een **alarm** voor elk event, een **fanfare** voor het Feest en voor de winnaar.
+- Eén bron per stuk: een partituur (noten per partij, in JSON in de jar), gemaakt door een Python-script in
+  `tools/music/` dat dezelfde partituur ook synthetiseert (strijkers, koperblazers, koor, pauken, gong, klokken, met
+  galm) tot .ogg-bestanden.
+- **Met het resource pack** klinkt de gesynthetiseerde .ogg (nieuw in het pack: `battlehub:music.hg.*`).
+- **Zonder het pack** speelt de server dezelfde partituur met vanilla noteblock-geluiden af (harp, bas, fluit,
+  klokken, didgeridoo, basdrum, snare, hi-hat), elke partij in het octaaf van het instrument dat erbij past. Zo
+  hoort iedereen de muziek, ook zonder pack.
+- Geluid in de categorie "Jukebox/Noteblokken", alleen voor de spelers en kijkers van de match; stopt als je de
+  match verlaat of hij eindigt.
+
+**2. Het begin.**
+- De boete komt nu aan het begin van de aftelling (niet pas bij de start): de tributes staan op hun platen, de
+  districten verschijnen een voor een, de opening speelt.
+- De aftelling van Hunger Games duurt langer (instelbaar, standaard 20 seconden: `countdownSeconds` in de
+  Hunger Games-instellingen), zodat de opening de tijd heeft; de laatste tien tellen op het scherm.
+- Bij nul: de gong, "Laat de spelen beginnen!", en het bloedbad.
+
+**3. Events: prominenter en gevaarlijker.**
+- **Aankondiging:** het alarm, een grote titel met teken in de kleur van het event, een bossbar die aftelt zolang
+  het event loopt, een Capitool-mededeling in de chat, en in de actiebalk waar het gevaar is (richting en afstand).
+- **Escalatie:** drie niveaus. Na 8 minuten niveau 2, na 16 niveau 3 (en de tijd tussen events korter): meer, groter,
+  sneller en meer schade.
+- **Per event, sterker:**
+  - Bosbrand: dikker en sneller, 2 schade per halve seconde en lang in brand; op niveau 3 komen twee vuurmuren van
+    twee kanten op het midden af. De hele vuurmuur is van ver te zien (rook tot in de lucht).
+  - Gifmist: groter (tot 26 blokken), gif II, verwelking op niveau 2+, blindheid aan de rand; hij drijft naar de
+    dichtstbijzijnde tribute toe.
+  - Mutanten: 1, 2 of 3 per tribute, sneller en taaier, een minuut lang.
+  - Tracker jackers: 1 tot 3 zwermen, sneller; een steek doet meer schade en geeft gif, misselijkheid en een flits
+    blindheid.
+  - Onweer: vaker, groter gebied, meer schade; elke inslag op een tribute wordt een seconde vooraf getoond (een
+    knetterende ring), zodat je kunt wegspringen.
+  - Zure regen: 2 schade per seconde buiten op niveau 3, plus zwakte.
+  - Jabberjays: daarnaast een gil die je even misselijk maakt.
+  - Nieuw: **Meteorenregen** (vuurballen uit de lucht; een rode cirkel twee seconden vooraf; inslag: schade,
+    vuur en een duw, de stad blijft heel) en **Aardbeving** (gerommel, stof en vallend puin, schokken die je
+    omhoog gooien, traagheid en misselijkheid).
+- Bots lopen weg van de nieuwe gevaren (`danger()`), zoals bij de andere.
+
+**4. De nacht, filmisch (`games/hunger/Ceremony`).**
+- **Eerbetoon:** zolang de nacht duurt (ongeveer 25 tot 45 seconden, naar het aantal gevallenen) staat het spel
+  stil: niemand kan schade doen of krijgen, de tributes staan stil, de events en de rand wachten.
+- **De lucht wordt nacht** voor iedereen in de match (alleen op hun scherm, de wereld verandert niet).
+- **Camera:** iedereen (ook kijkers en de gevallenen) kijkt door een camera die opstijgt naar de lucht boven het
+  plein en langzaam beweegt; aan het eind zakt hij terug.
+- **Het embleem van het Capitool** verschijnt groot in de lucht (een mozaïek van gouden blokken), het volkslied
+  speelt.
+- **De gevallenen**, een voor een op de maat: een reusachtig hoofd met hun skin dat opdoemt en weer verdwijnt, hun
+  naam en district eronder, een kanonschot en een lichtzuil per gevallene.
+- Niemand gevallen: het embleem, het volkslied en "Vandaag viel niemand".
+- Daarna: camera terug, de lucht terug, en het spel gaat verder.
+
+**Testen.**
+- JUnit: partituren lezen (tempo, noten, lengte), elke noot valt in het bereik van zijn noteblock-instrument, de
+  muziek die voor een tick klinkt; escalatie (niveaus, sterkere getallen); het rooster van de nacht (wanneer welke
+  gevallene verschijnt, hoe lang het duurt); de camerabaan (begint bij de speler, eindigt bij de speler, kijkt
+  naar de lucht).
+- Zelftests: de opening speelt in de aftelling en de boete komt daar; de gong bij de start; elk event start met
+  bossbar en ruimt op, ook de twee nieuwe (meteoren raken, aardbeving schudt); de nacht: camera's aan, embleem en
+  hoofden in de lucht, niemand kan schade krijgen, daarna camera's terug en alles weg.
+
+### Versie 1.47.0 – Uitvoering
+
+**Gebouwd zoals gepland:** de muziekmotor (partituur in de jar, .ogg met het pack, noteblokken zonder), de boete
+in de aftelling met de opening tot precies de gong, de bossbar, de richting in de actiebalk, de drie niveaus, de
+sterkere events en de twee nieuwe (meteoren, aardbeving), en de nacht waarin het spel stilstaat.
+
+**Afwijkingen (het dichtstbijzijnde werkende alternatief):**
+- **Het podium hangt boven ieders eigen plek, niet boven het plein.** De tributes staan tijdens de nacht verspreid
+  over de stad; een camera die naar het plein vliegt, laadt chunks die de speler niet heeft en verdwijnt dan uit
+  beeld. Dus krijgt elke kijker een eigen podium, alleen op zijn eigen scherm (`fx/Stage`: blok-, item- en
+  tekstdisplays die alleen bij die speler bestaan), 22 blokken voor zich en 24 boven zich, en de camera stijgt
+  vanaf de ogen op naar een plek eronder. Iedereen ziet hetzelfde, in dezelfde maat.
+- **De nachtlucht** gaat met een tijdpakket per speler (`NightSky`, het pakket wordt via reflectie gebouwd zodat
+  een gewijzigde constructor alleen de nachtlucht kost); de dag komt vanzelf terug met de gewone tijdsynchronisatie
+  van de server.
+- **Het embleem** is een mozaïek van 49 losse blokdisplays (goud, ruw goud, kwarts) die vanuit het midden een voor
+  een opgroeien, in plaats van een model in het pack: zo werkt het ook zonder pack.
+- **De lichtzuil** is een uitgerekt, volledig verlicht wit glasblok (30 hoog) in plaats van deeltjes: deeltjes
+  zijn vanaf de camera op 30 blokken nauwelijks te zien.
+- **Zonder pack** zijn strijkers en koor op noteblokken korte herhaalde aanslagen (een noteblok kan geen lange noot
+  houden); met het pack klinkt de echte synthese.
+- **De gevallenen zelf** kijken ook mee (via het publiek van de match), maar alleen spelers in dezelfde wereld; een
+  speler die tijdens de nacht vertrekt, valt uit het podium zonder het voor de rest te storen.
+- **Schade tijdens de nacht** wordt geweigerd in `damageAllowed`; spelers die toch bewegen (knockback, client)
+  worden terug op hun plek gezet.
+
+**Tests.** JUnit (lokaal 333 groen): `MusicTest` (partituren lezen, elke noot binnen het bereik van zijn
+instrument, de lengte), `HungerSpectacleTest` (niveaus, escalatie, kortere tussenpozen, het rooster van de nacht
+voor 0/1/12/30 gevallenen, de camerabaan). Zelftests: de opening klinkt voor de gong en elke tribute heeft een
+district; de events tonen de bossbar en spelen het alarm, meteoren slaan in en de aarde schudt; de nacht: camera
+aan, volkslied, embleem en de eerste gevallene op het podium, een klap doet niets en niemand verschuift, en daarna
+is alles weer weg.
+
 ## Versie 1.46.0 – Mace-bots vechten als een speler: zwaard, windcharge, smash
 
 **Vraag.** In oefenen, mace-PvP: de bots slaan alleen met de mace en gebruiken af en toe een windcharge. Ze moeten

@@ -49,4 +49,9 @@ public final class MatchBossBar {
 	public void clear() {
 		bar.removeAllPlayers();
 	}
+
+	/** How many see it now. */
+	public int viewers() {
+		return bar.getPlayers().size();
+	}
 }

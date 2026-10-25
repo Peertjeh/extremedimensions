@@ -35,4 +35,10 @@ public interface HungerHost {
 
 	/** Whether the two are enemies now (the peace aside). */
 	boolean isEnemy(UUID a, UUID b);
+
+	/** Whether the match is still on (counting down or running): later work of a closed match does nothing. */
+	boolean live();
+
+	/** The match's number (camera shots belong to it). */
+	int matchId();
 }

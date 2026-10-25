@@ -65,17 +65,66 @@ public final class Capitol {
 		vaults.setUp();
 	}
 
-	/** The game begins: the reaping. */
-	public void go(List<ServerPlayer> players) {
-		tributes.reap(players);
+	/**
+	 * The countdown begins: the reaping while the tributes stand on their plates, and the opening music, timed so that
+	 * it ends as the countdown does (a shorter countdown starts it part way).
+	 */
+	public void opening(List<ServerPlayer> players, int countdownTicks) {
+		tributes.reap(players, countdownTicks);
+		int len = net.battlehub.fx.Music.length(net.battlehub.fx.Music.OPENING);
+		if (countdownTicks >= len) {
+			net.battlehub.util.Tasks.later(countdownTicks - len, () -> {
+				if (host.live() && host.runTicks() == 0) net.battlehub.fx.Music.play(host.audience(), net.battlehub.fx.Music.OPENING);
+			});
+		} else {
+			for (ServerPlayer p : host.audience()) net.battlehub.fx.Music.play(p, net.battlehub.fx.Music.OPENING, len - countdownTicks);
+		}
 	}
 
+	/** Zero: the gong, the games begin, and the bloodbath. */
+	public void go() {
+		for (ServerPlayer p : host.audience()) {
+			net.battlehub.util.Msg.title(p, net.battlehub.lang.Lang.tr(p, "hg.begin", tributes.number()), net.battlehub.lang.Lang.tr(p, "hg.begin.sub"),
+					0, 50, 15);
+		}
+		net.battlehub.fx.Music.play(host.audience(), net.battlehub.fx.Music.GONG);
+		net.battlehub.util.Tasks.later(50, () -> {
+			if (host.live()) net.battlehub.fx.Music.play(host.audience(), net.battlehub.fx.Music.BLOODBATH);
+		});
+	}
+
+	/** The match is over: the victor's fanfare for everyone (nothing after a draw). */
+	public void finished(List<java.util.UUID> winners) {
+		if (!winners.isEmpty()) net.battlehub.fx.Music.play(host.audience(), net.battlehub.fx.Music.VICTORY);
+	}
+
+	private boolean holding;
+
 	public void tick() {
+		Ceremony night = tributes.ceremony();
+		if (night.active()) {
+			// the night's tribute: everything else holds still until it is over
+			if (!holding) {
+				holding = true;
+				gamemakers.hold(true);
+			}
+			night.tick();
+			if (!night.active()) {
+				holding = false;
+				gamemakers.hold(false);
+			}
+			return;
+		}
 		gamemakers.tick();
 		sponsors.tick();
 		vaults.tick();
 		powers.tick();
 		tributes.tick();
+	}
+
+	/** Whether the night's tribute is going on (nobody can be hurt then). */
+	public boolean honouring() {
+		return tributes.honouring();
 	}
 
 	public void hit(ServerPlayer attacker, float amount) {

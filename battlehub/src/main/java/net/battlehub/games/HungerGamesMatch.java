@@ -107,6 +107,38 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 	}
 
 	@Override
+	public boolean live() {
+		return phase == Phase.COUNTDOWN || phase == Phase.RUNNING;
+	}
+
+	@Override
+	public int matchId() {
+		return id;
+	}
+
+	/** The tributes stand on their plates for a while: the reaping and the opening music (1.47). */
+	@Override
+	protected int countdownSeconds() {
+		return (int) Math.max(5, game().setting("countdownSeconds", 20));
+	}
+
+	/** Only the last ten seconds are counted on the screen: before that the reaping is shown. */
+	@Override
+	protected boolean showCountdown(int secs) {
+		return secs <= 10;
+	}
+
+	@Override
+	protected void onCountdownStart(int ticks) {
+		capitol.opening(tributes(), ticks);
+	}
+
+	@Override
+	protected void onFinished(List<UUID> winners) {
+		capitol.finished(winners);
+	}
+
+	@Override
 	public int runTicks() {
 		return runTicks;
 	}
@@ -173,7 +205,14 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 	}
 
 	public double borderSize() {
-		return shrink.sizeAt(runTicks);
+		return shrink.sizeAt(borderTicks());
+	}
+
+	/** Ticks the night's tributes took so far: the border does not close in during them. */
+	private int pausedTicks;
+
+	private int borderTicks() {
+		return Math.max(0, runTicks - pausedTicks);
 	}
 
 	@Override
@@ -266,7 +305,7 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 		String week = HungerMaps.week();
 		int grace = graceTicks() / 20;
 		forEveryone(p -> Msg.send(p, "hg.go", week, Lang.tr(p, "hg.theme." + themeId), grace));
-		capitol.go(tributes());
+		capitol.go();
 		forWatchers(this::offerSponsoring);
 	}
 
@@ -286,6 +325,10 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 	@Override
 	protected void tickGame() {
 		capitol.tick();
+		if (capitol.honouring()) {
+			pausedTicks++;
+			return;
+		}
 		if (runTicks == graceTicks() && graceTicks() > 0) {
 			forEveryone(p -> {
 				Msg.send(p, "hg.grace_over");
@@ -295,8 +338,8 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 		int refill = (int) game().setting("refillSeconds", 600) * 20;
 		if (refill > 0 && runTicks == refill) refill();
 		if (runTicks % 20 != 0) return;
-		double size = shrink.sizeAt(runTicks);
-		if (shrink.shrinking(runTicks) && !announcedShrink) {
+		double size = shrink.sizeAt(borderTicks());
+		if (shrink.shrinking(borderTicks()) && !announcedShrink) {
 			announcedShrink = true;
 			forEveryone(p -> Msg.send(p, "hg.shrinking"));
 		}
@@ -327,10 +370,13 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 		});
 	}
 
-	/** During the peace nobody is anyone's enemy: bots loot instead of swinging at people they cannot hurt. */
+	/**
+	 * During the peace (and the night's tribute) nobody is anyone's enemy: bots loot instead of swinging at people they
+	 * cannot hurt.
+	 */
 	@Override
 	public boolean isEnemy(UUID a, UUID b) {
-		return !inGrace() && super.isEnemy(a, b);
+		return !inGrace() && !capitol.honouring() && super.isEnemy(a, b);
 	}
 
 	@Override
@@ -338,9 +384,13 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 		return super.isEnemy(a, b);
 	}
 
-	/** Nobody hurts anyone in the first half minute; the rest (falls, fire, the border) hurts from the start. */
+	/**
+	 * Nobody hurts anyone in the first half minute; the rest (falls, fire, the border) hurts from the start. During the
+	 * night's tribute nothing hurts anyone.
+	 */
 	@Override
 	protected boolean damageAllowed(ServerPlayer victim, DamageSource source, ServerPlayer attacker) {
+		if (capitol.honouring()) return false;
 		return attacker == null || !inGrace();
 	}
 
@@ -622,7 +672,8 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 
 	@Override
 	public boolean botHolds(ServerPlayer bot) {
-		return botsCracking.contains(bot.getUUID());
+		// during the night's tribute bots stand still and look up too
+		return botsCracking.contains(bot.getUUID()) || capitol.honouring();
 	}
 
 	private static void eat(ServerPlayer bot) {

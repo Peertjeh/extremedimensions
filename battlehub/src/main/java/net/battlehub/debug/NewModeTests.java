@@ -183,6 +183,15 @@ final class NewModeTests {
 	 * border hurts, the last one alive wins.
 	 */
 	private static void hungerGames(Script s) {
+		s.check("hunger games: in the countdown the reaping was held and the opening played, then the gong (1.47)", () -> {
+			HungerGamesMatch m = (HungerGamesMatch) match();
+			java.util.List<String> heard = net.battlehub.fx.Music.history(p(A).getUUID());
+			int opening = heard.lastIndexOf(net.battlehub.fx.Music.OPENING), gong = heard.lastIndexOf(net.battlehub.fx.Music.GONG);
+			boolean districts = true;
+			for (String n : new String[] {A, B, "BHTestC", "BHTestD"}) districts &= m.capitol().tributes().district(p(n).getUUID()) > 0;
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST hunger games music: A heard {}", heard);
+			return districts && opening >= 0 && gong > opening;
+		});
 		s.check("hunger games: this week's city in the voted nether theme, everyone round the cornucopia", () -> {
 			HungerGamesMatch m = (HungerGamesMatch) match();
 			long week = net.battlehub.arch.town.HungerMap.weekSeed(ConfigManager.config().lobby.seed, java.time.LocalDate.now());
@@ -364,11 +373,18 @@ final class NewModeTests {
 			}
 			return false;
 		});
-		s.run(t + ": B stands up again", () -> p(B).setShiftKeyDown(false));
-		// the Gamemakers: every event starts
-		for (String ev : new String[] {"wildfire", "fog", "mutts", "tracker_jackers", "storm", "supplies", "revealed", "acid_rain", "jabberjays"}) {
+		s.run(t + ": B stands up again; the four are shielded from what comes", () -> {
+			p(B).setShiftKeyDown(false);
+			shield(A, B, C, D);
+		});
+		// the Gamemakers: every event starts, with its alarm and the boss bar counting down
+		for (String ev : new String[] {"wildfire", "fog", "mutts", "tracker_jackers", "storm", "supplies", "revealed", "acid_rain", "jabberjays",
+				"meteors", "earthquake"}) {
 			s.check(t + ": the Gamemakers send " + ev, () -> hg().capitol().gamemakers().start(ev) && hg().capitol().gamemakers().running().contains(ev));
 		}
+		s.check(t + ": the alarm sounds and the boss bar counts down for everyone", () -> hg().capitol().gamemakers().barViewers() >= 4
+				&& net.battlehub.fx.Music.history(p(A).getUUID()).contains(net.battlehub.fx.Music.ALARM));
+		s.waitFor(t + ": meteors come down and the earth shakes", 200, () -> hg().capitol().gamemakers().impacts() >= 1 && hg().capitol().gamemakers().shocks() >= 1);
 		s.check(t + ": mutts hunt, a swarm flies, A glows, supplies fall", () -> {
 			long mutts = entities(hg().level(), hg().arena().bounds(), "minecraft:zoglin");
 			boolean glows = p(A).hasEffect(net.battlehub.util.Ids.effect("minecraft:glowing").orElseThrow());
@@ -439,7 +455,23 @@ final class NewModeTests {
 				&& net.battlehub.data.PlayerStore.get(p(D)).coins == (long) VARS.get("hgCoinsD") - net.battlehub.games.hunger.Sponsors.Gift.HEAL.cost
 				&& hg().capitol().sponsors().giftsLeft(p(D)) == net.battlehub.games.hunger.Sponsors.WATCHER_GIFTS - 1);
 		s.run(t + ": night falls", () -> hg().capitol().tributes().night());
-		s.check(t + ": D shines in the sky", () -> hg().capitol().tributes().inSky() == 1);
+		s.check(t + ": the game holds still for D: the anthem, everyone's camera rises", () -> hg().capitol().tributes().inSky() == 1
+				&& hg().capitol().honouring() && net.battlehub.fx.Cinematics.active(p(A).getUUID())
+				&& net.battlehub.fx.Music.ANTHEM.equals(net.battlehub.fx.Music.playing(p(A).getUUID())));
+		// the emblem is 49 blocks; D adds a head, a pillar of light, the name and the district
+		s.waitFor(t + ": the Capitol's emblem and D's head in the sky", 160, () -> hg().capitol().tributes().onStage(p(A).getUUID()) >= 49 + 4);
+		s.run(t + ": during the night A hits B, and B tries to walk away", () -> {
+			p(B).removeAllEffects();
+			p(B).setHealth(p(B).getMaxHealth());
+			VARS.put("hgNightPos", p(B).position());
+			PartyTests.hit(B, A, 5f);
+			PartyTests.tp(p(B), p(B).getX() + 4, p(B).getY(), p(B).getZ());
+		});
+		s.pause(3);
+		s.check(t + ": nobody can be hurt during the night, and the tributes stay where they stood", () -> p(B).getHealth() == p(B).getMaxHealth()
+				&& p(B).position().distanceTo((net.minecraft.world.phys.Vec3) VARS.get("hgNightPos")) < 0.5);
+		s.waitFor(t + ": the night ends: the cameras come back, the sky is empty, the game goes on", 400, () -> !hg().capitol().honouring()
+				&& !net.battlehub.fx.Cinematics.active(p(A).getUUID()) && hg().capitol().tributes().onStage(p(A).getUUID()) == 0);
 		s.run(t + ": B and C fall", () -> {
 			for (String n : new String[] {B, C}) {
 				ServerPlayer pl = p(n);

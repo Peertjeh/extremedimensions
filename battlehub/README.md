@@ -418,17 +418,39 @@ for 30 seconds. It queues you for the same mode, format and ranked setting, asks
 
   Since 1.43 it plays like the real Hunger Games:
   * **The reaping.** Everyone is a tribute of a district (two per district) with a training score from 1 to 12
-    (from their Hunger Games wins, kills and level, and some luck; bots by their level). At the start the chat
-    lists the tributes per district and which Hunger Games of the server these are ("The 12th Hunger Games
-    begin!"). The district is in the sidebar.
-  * **Nights.** Every four minutes the anthem plays and the tributes who fell since the last night shine in the
-    sky over the plaza for half a minute.
+    (from their Hunger Games wins, kills and level, and some luck; bots by their level). Since 1.47 the reaping is
+    held while the tributes stand on their plates: a longer countdown (20 seconds, `countdownSeconds`) shows the
+    districts one by one on the screen while the opening music plays, the last ten seconds are counted, and at zero
+    the gong sounds, "Let the 12th Hunger Games begin!" and the bloodbath music drives the rush to the cornucopia.
+    The chat lists the tributes per district; the district is in the sidebar.
+  * **Music of its own** (1.47): an opening, the gong and the bloodbath, an alarm for every Gamemaker event, a
+    fanfare for the Feast, the anthem of the night and the victor's fanfare, all composed for BattleHub. With the
+    resource pack you hear them as music (synthesised strings, brass, choir, timpani and a gong); without it the
+    server plays the same pieces on note blocks, so everyone hears them. They play in the "Jukebox/Note Blocks"
+    volume (`effects.music`, `effects.musicVolume`).
+  * **Nights** (1.47: a real tribute). Every four minutes the game holds still: nobody can hurt or be hurt, the
+    tributes stand where they are, the Gamemakers and the border wait. The sky turns to night, everyone's camera
+    rises and looks up at the sky over their own spot: the Capitol's emblem in gold appears, the anthem plays, and
+    the fallen appear one after the other on its beat, each a giant head with their own skin, a pillar of light,
+    their name and district and a cannon shot. Then the camera comes back down and the game goes on.
   * **The Gamemakers.** After the peace, an event every two and a half to three and a half minutes (never the same
-    twice in a row, none in the last minute), with a title and a horn: a wildfire that sweeps across the city in
-    40 seconds, a poison fog drifting through one part, mutts that hunt every tribute, a swarm of tracker jackers,
-    a lightning storm over one part, five supply crates on parachutes, everyone glowing for 20 seconds, acid rain
-    that burns who is not under a roof, and jabberjays (strange voices, whispered names and an arrow to the nearest
-    tribute). Everything is gone afterwards, and the city stays whole. Surviving an event wins favour.
+    twice in a row, none in the last minute). Since 1.47 you cannot miss one: an alarm, a big title, a boss bar that
+    counts down while it lasts, and in the action bar what it is, how far away and which way. Every eight minutes
+    the Gamemakers raise the stakes a level (three at most; the events also come closer together): bigger, faster,
+    more of them and more damage.
+    * a **wildfire** that sweeps across the city (at level 3 two walls closing in on the middle from two sides),
+      thicker and hotter at every level;
+    * a **poison fog** that drifts after the nearest tribute (withering from level 2, blinding at its rim);
+    * **mutts** that hunt every tribute (one, two or three each, faster and tougher later);
+    * **tracker jackers** (one swarm per level; their sting poisons, turns the stomach and blinds for a moment);
+    * a **lightning storm** (a bolt meant for you is shown a second before it strikes: a crackling ring);
+    * **supply crates** on parachutes, everyone **revealed** (glowing), **acid rain** (find a roof), **jabberjays**
+      (voices, whispered names, an arrow to the nearest tribute and a scream that turns the stomach);
+    * new: a **meteor shower** (a red circle glows where a burning rock will land two seconds later; it bursts, burns
+      and throws people about) and an **earthquake** (shocks that throw you up and hurt, rubble falling where its
+      shadow shows, slowness and nausea).
+    Everything is gone afterwards, and the city stays whole. Surviving an event wins favour. Bots run from every
+    danger.
   * **The Feast** (after eight minutes, announced a minute before): tables of the best loot round the cornucopia,
     and the Capitol's chest in the cornucopia opens.
   * **Sponsors.** Kills (first blood more), damage, every minute alive, surviving events and the Feast win favour;
@@ -717,7 +739,7 @@ Players don't need any mods. BattleHub also works in singleplayer and on LAN.
 | `/battlehub bots forget <player\|all>` | admin | Wipe what bots remember about a player, or about everyone |
 | `/battlehub fights [export\|clear]` | admin | The fight logs for training: how many wait; zip the new ones into one file (`config/battlehub/fights/export-<time>.zip`); delete them all |
 | `/battlehub bots report [on\|off\|reset]` | admin | How the learned bots kept to their models since the totals began, per spec and mode, and what to practise; your chat reports after matches on or off; start the totals again |
-| `/battlehub hg event <name>` / `/battlehub hg night` / `/battlehub hg power <id>` | admin | In a running Hunger Games (yours, else the first that runs): send a Gamemaker event now (`feast`, `wildfire`, `fog`, `mutts`, `tracker_jackers`, `storm`, `supplies`, `revealed`, `acid_rain`, `jabberjays`), let night fall; or get a power-up yourself (`salve`, `camo`, `nightlock`, `jackers`, `mine`, `parachute`, `tonic`, `tracker`, `bread`, `goggles`, `spear`, `key`) |
+| `/battlehub hg event <name>` / `/battlehub hg night` / `/battlehub hg power <id>` | admin | In a running Hunger Games (yours, else the first that runs): send a Gamemaker event now (`feast`, `wildfire`, `fog`, `mutts`, `tracker_jackers`, `storm`, `supplies`, `revealed`, `acid_rain`, `jabberjays`, `meteors`, `earthquake`), let night fall; or get a power-up yourself (`salve`, `camo`, `nightlock`, `jackers`, `mine`, `parachute`, `tonic`, `tracker`, `bread`, `goggles`, `spear`, `key`) |
 | `/battlehub matches` | admin | List running matches |
 | `/battlehub endmatch <id>` | admin | Stop a match without results and restore its players |
 | `/battlehub arena list` | admin | Arena themes, which modes use them, slots in use |
@@ -820,7 +842,7 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   crates (`crateLoot`), the Feast (`feastLoot`), the Capitol's chest (`capitolLoot`) and the supply drops
   (`supplyLoot`), as "item min-max xWeight" lines; `power:<id>` is a power-up (`power:key` a vault key). How many
   items a chest gets, the peace, the border, the refill and the Feast are settings of the game `hunger_games` in
-  `config.json` (`houseChestRolls`, `landmarkChestRolls`, `cornucopiaChestRolls`, `graceSeconds`,
+  `config.json` (`countdownSeconds`, `houseChestRolls`, `landmarkChestRolls`, `cornucopiaChestRolls`, `graceSeconds`,
   `borderDelaySeconds`, `borderShrinkSeconds`, `borderEnd`, `borderDamagePerSecond`, `refillSeconds`,
   `feastSeconds`). The count of Hunger Games played on the server is in `config/battlehub/hunger_games_count.txt`. The city comes from the lobby's
   `seed`, `islandRadius`, `detail` and `townDensity` and the week; its themes are in `arenas.themes.hunger_games`.

@@ -108,6 +108,8 @@ public final class SelfTest {
 			c.timings.partyCountdownSeconds = 3;
 			c.timings.partyFullCountdownSeconds = 2;
 			c.timings.matchStartCountdownSeconds = 2;
+			// the Hunger Games count down longer for their reaping and opening music (1.47): shorter in the test
+			c.game(GameMode.HUNGER_GAMES).settings.put("countdownSeconds", 6.0);
 			c.timings.respawnDelaySeconds = 1;
 			c.game(GameMode.KOTH).settings.put("targetPoints", 4.0);
 			c.game(GameMode.CTF).settings.put("capturesToWin", 1.0);

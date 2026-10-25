@@ -333,6 +333,13 @@ public final class HubConfig {
 		/** The last kills on the right of the screen (matches without their own sidebar), and a line in chat. */
 		public boolean killfeed = true;
 		public int killfeedLines = 5;
+		/**
+		 * BattleHub's own music in matches (Hunger Games: the opening, the gong, the alarms, the anthem of the night, the
+		 * victory): the .ogg from the resource pack, or the same music on note blocks without it.
+		 */
+		public boolean music = true;
+		/** Its volume, 0 to 1 (players set the rest with their "Jukebox/Note Blocks" slider). */
+		public double musicVolume = 0.9;
 	}
 
 	/** Extras in the lobby: double jump and the training dummy. */

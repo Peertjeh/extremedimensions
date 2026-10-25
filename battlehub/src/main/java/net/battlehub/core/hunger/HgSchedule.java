@@ -7,7 +7,8 @@ import java.util.Random;
 /**
  * When the Gamemakers act in one Hunger Games match, decided at the start (without Minecraft, so it can be tested on
  * its own): the Feast once, announced a minute ahead, and an arena event every two and a half to three and a half
- * minutes after the peace, drawn by weight, never the same twice in a row and none in the last minute of the match.
+ * minutes after the peace (closer together as the levels of danger rise), drawn by weight, never the same twice in a
+ * row and none in the last minute of the match.
  */
 public final class HgSchedule {
 	private HgSchedule() {}
@@ -20,6 +21,20 @@ public final class HgSchedule {
 	public static final int MIN_GAP = 150 * 20, MAX_GAP = 210 * 20;
 	/** No event starts this close to the time limit. */
 	public static final int QUIET_END = 60 * 20;
+	/** Every eight minutes of play the Gamemakers raise the stakes a level (three at most, 1.47). */
+	public static final int TIER_TICKS = 8 * 60 * 20;
+	/** How much shorter the gaps between events get per level. */
+	private static final double[] PACE = {1.0, 0.8, 0.65};
+
+	/** The level of danger at this tick of play: 1, 2 or 3. */
+	public static int tier(int runTicks) {
+		return Math.max(1, Math.min(3, 1 + runTicks / TIER_TICKS));
+	}
+
+	/** The shortest gap after an event that starts at {@code tick} (shorter at higher levels). */
+	public static int minGap(int tick) {
+		return (int) (MIN_GAP * PACE[tier(tick) - 1]);
+	}
 
 	/** An arena event the Gamemakers can send, with its weight in the draw. */
 	public record Kind(String id, int weight) {}
@@ -28,7 +43,7 @@ public final class HgSchedule {
 	public static final List<Kind> KINDS = List.of(
 			new Kind("wildfire", 10), new Kind("fog", 10), new Kind("mutts", 8), new Kind("tracker_jackers", 8),
 			new Kind("storm", 8), new Kind("supplies", 10), new Kind("revealed", 6), new Kind("acid_rain", 7),
-			new Kind("jabberjays", 6));
+			new Kind("jabberjays", 6), new Kind("meteors", 8), new Kind("earthquake", 7));
 
 	/** One planned moment: at this tick of play, this event starts (the Feast: its announcement comes earlier). */
 	public record Entry(int tick, String id) {}
@@ -53,7 +68,7 @@ public final class HgSchedule {
 			String id = draw(r, previous);
 			out.add(new Entry(t, id));
 			previous = id;
-			t += MIN_GAP + r.nextInt(MAX_GAP - MIN_GAP + 1);
+			t += (int) ((MIN_GAP + r.nextInt(MAX_GAP - MIN_GAP + 1)) * PACE[tier(t) - 1]);
 		}
 		if (feast) out.add(new Entry(feastTick, FEAST));
 		out.sort((a, b) -> Integer.compare(a.tick(), b.tick()));

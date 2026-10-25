@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.47.0
+
+### Added
+* **Music of its own for the Hunger Games**, composed for BattleHub:
+  * an opening while the tributes stand on their plates, the gong and the bloodbath at the start;
+  * an alarm for every Gamemaker event and a fanfare for the Feast;
+  * the anthem of the night and the victor's fanfare.
+  With the resource pack it is synthesised music (strings, brass, choir, timpani, a gong); without the pack the
+  server plays the same pieces on note blocks, so everyone hears them ("Jukebox/Note Blocks" volume; `effects.music`
+  and `effects.musicVolume` in config.json).
+* **Two new Gamemaker events:** a meteor shower (red circles show where burning rocks will land) and an earthquake
+  (shocks, falling rubble with its shadow on the ground, slowness and nausea).
+
+### Changed
+* **The reaping is held on the plates.** The Hunger Games count down longer (20 seconds, `countdownSeconds`): the
+  districts appear one by one while the opening plays, the last ten seconds are counted, then the gong and "Let the
+  games begin!".
+* **The Gamemakers' events are impossible to miss and far more dangerous:** an alarm, a big title, a boss bar that
+  counts down, and where the danger is (what, how far, which way) in the action bar. Every eight minutes the stakes
+  rise a level (three at most): events come closer together and every one is bigger, faster and hurts more (two
+  walls of fire closing in on the middle, a fog that hunts you and withers, up to three mutts per tribute, three
+  swarms, lightning aimed at tributes with a second's warning, burning acid rain).
+* **The night is a real tribute now:** the game holds still (nobody can be hurt, the tributes stand still, the
+  Gamemakers and the border wait), the sky turns to night, everyone's camera rises to the sky over their own spot,
+  the Capitol's golden emblem appears with the anthem, and each of the fallen appears as a giant head with their
+  own skin, a pillar of light, their name and district and a cannon shot. Then the camera comes back down.
+
 ## 1.46.0
 
 ### Changed

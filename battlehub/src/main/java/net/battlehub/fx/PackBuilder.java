@@ -25,7 +25,7 @@ import net.battlehub.core.PixelIcons;
 
 /**
  * Builds the optional resource pack: the pixel icons as a font, BattleHub's sounds (made from vanilla sound
- * files with their own pitch and volume) and lobby music. Files in {@code config/battlehub/resourcepack/overlay/}
+ * files with their own pitch and volume), lobby music and BattleHub's own music for the Hunger Games (1.47). Files in {@code config/battlehub/resourcepack/overlay/}
  * are added on top, so a server can put in its own .ogg sounds, textures or a pack.png.
  */
 public final class PackBuilder {
@@ -37,6 +37,11 @@ public final class PackBuilder {
 		files.put("assets/minecraft/font/default.json", font().getBytes(StandardCharsets.UTF_8));
 		files.put("assets/battlehub/textures/font/icons.png", iconsPng());
 		files.put("assets/battlehub/sounds.json", sounds().getBytes(StandardCharsets.UTF_8));
+		// BattleHub's own music (1.47), synthesised from its scores
+		for (String song : Music.SONGS) {
+			byte[] ogg = Music.ogg(song);
+			if (ogg != null) files.put("assets/battlehub/sounds/music/" + song + ".ogg", ogg);
+		}
 		if (overlay != null && Files.isDirectory(overlay)) {
 			try (Stream<Path> walk = Files.walk(overlay)) {
 				for (Path f : (Iterable<Path>) walk.filter(Files::isRegularFile)::iterator) {
@@ -168,6 +173,9 @@ public final class PackBuilder {
 		root.add(Sounds.MUSIC_LOBBY, event(List.of(new Sound("minecraft:music/menu/menu1", 1, 1, true),
 				new Sound("minecraft:music/menu/menu2", 1, 1, true), new Sound("minecraft:music/menu/menu3", 1, 1, true),
 				new Sound("minecraft:music/menu/menu4", 1, 1, true))));
+		for (String song : Music.SONGS) {
+			if (Music.ogg(song) != null) root.add("music." + song, event(List.of(new Sound("battlehub:music/" + song, 1, 1, true))));
+		}
 		return root.toString();
 	}
 }
