@@ -1,8 +1,12 @@
+@data/minecraft/loot_table/blocks/candle.json
+@data/minecraft/loot_table/blocks/sea_pickle.json
+@data/minecraft/advancement/adventure/trim_with_any_armor_pattern.json
+@data/minecraft/enchantment/bane_of_arthropods.json
+@data/minecraft/enchantment/unbreaking.json
+@data/minecraft/enchantment/blast_protection.json
+@data/minecraft/tags/enchantment/curse.json
+@data/minecraft/tags/enchantment/in_enchanting_table.json
+@data/minecraft/loot_table/blocks/diamond_ore.json
 @assets/minecraft/items/leather_helmet.json
-@assets/minecraft/items/leather_chestplate.json
-@assets/minecraft/items/leather_leggings.json
-@assets/minecraft/items/leather_boots.json
-@assets/minecraft/items/chainmail_helmet.json
 @assets/minecraft/items/turtle_helmet.json
 @assets/minecraft/models/item/leather_chestplate_quartz_trim.json
-@data/minecraft/tags/item/trim_templates.json
