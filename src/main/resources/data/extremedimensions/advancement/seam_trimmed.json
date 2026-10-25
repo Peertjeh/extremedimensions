@@ -19,13 +19,13 @@
     "weaver": {
       "trigger": "minecraft:recipe_crafted",
       "conditions": {
-        "recipe_id": "extremedimensions:weaver_armor_trim_smithing_template_smithing_trim"
+        "recipes": "extremedimensions:weaver_armor_trim_smithing_template_smithing_trim"
       }
     },
     "fray": {
       "trigger": "minecraft:recipe_crafted",
       "conditions": {
-        "recipe_id": "extremedimensions:fray_armor_trim_smithing_template_smithing_trim"
+        "recipes": "extremedimensions:fray_armor_trim_smithing_template_smithing_trim"
       }
     }
   },

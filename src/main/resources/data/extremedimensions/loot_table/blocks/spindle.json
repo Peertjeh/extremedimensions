@@ -15,191 +15,153 @@
     },
     {
       "rolls": 1,
+      "condition": {
+        "type": "minecraft:inverted",
+        "term": {
+          "type": "minecraft:match_block",
+          "blocks": "extremedimensions:spindle",
+          "state": {
+            "fragments": "0"
+          }
+        }
+      },
       "entries": [
         {
           "type": "minecraft:item",
           "name": "extremedimensions:tether_fragment",
-          "condition": {
-            "type": "minecraft:block_state_property",
-            "block": "extremedimensions:spindle",
-            "properties": {
-              "fragments": "1"
+          "modifier": [
+            {
+              "type": "minecraft:set_count",
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "extremedimensions:spindle",
+                "state": {
+                  "fragments": "2"
+                }
+              },
+              "count": 2
+            },
+            {
+              "type": "minecraft:set_count",
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "extremedimensions:spindle",
+                "state": {
+                  "fragments": "3"
+                }
+              },
+              "count": 3
+            },
+            {
+              "type": "minecraft:set_count",
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "extremedimensions:spindle",
+                "state": {
+                  "fragments": "4"
+                }
+              },
+              "count": 4
+            },
+            {
+              "type": "minecraft:set_count",
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "extremedimensions:spindle",
+                "state": {
+                  "fragments": "5"
+                }
+              },
+              "count": 5
+            },
+            {
+              "type": "minecraft:set_count",
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "extremedimensions:spindle",
+                "state": {
+                  "fragments": "6"
+                }
+              },
+              "count": 6
+            },
+            {
+              "type": "minecraft:set_count",
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "extremedimensions:spindle",
+                "state": {
+                  "fragments": "7"
+                }
+              },
+              "count": 7
+            },
+            {
+              "type": "minecraft:set_count",
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "extremedimensions:spindle",
+                "state": {
+                  "fragments": "8"
+                }
+              },
+              "count": 8
             }
-          },
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": 1
-          }
-        },
-        {
-          "type": "minecraft:item",
-          "name": "extremedimensions:tether_fragment",
-          "condition": {
-            "type": "minecraft:block_state_property",
-            "block": "extremedimensions:spindle",
-            "properties": {
-              "fragments": "2"
-            }
-          },
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": 2
-          }
-        },
-        {
-          "type": "minecraft:item",
-          "name": "extremedimensions:tether_fragment",
-          "condition": {
-            "type": "minecraft:block_state_property",
-            "block": "extremedimensions:spindle",
-            "properties": {
-              "fragments": "3"
-            }
-          },
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": 3
-          }
-        },
-        {
-          "type": "minecraft:item",
-          "name": "extremedimensions:tether_fragment",
-          "condition": {
-            "type": "minecraft:block_state_property",
-            "block": "extremedimensions:spindle",
-            "properties": {
-              "fragments": "4"
-            }
-          },
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": 4
-          }
-        },
-        {
-          "type": "minecraft:item",
-          "name": "extremedimensions:tether_fragment",
-          "condition": {
-            "type": "minecraft:block_state_property",
-            "block": "extremedimensions:spindle",
-            "properties": {
-              "fragments": "5"
-            }
-          },
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": 5
-          }
-        },
-        {
-          "type": "minecraft:item",
-          "name": "extremedimensions:tether_fragment",
-          "condition": {
-            "type": "minecraft:block_state_property",
-            "block": "extremedimensions:spindle",
-            "properties": {
-              "fragments": "6"
-            }
-          },
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": 6
-          }
-        },
-        {
-          "type": "minecraft:item",
-          "name": "extremedimensions:tether_fragment",
-          "condition": {
-            "type": "minecraft:block_state_property",
-            "block": "extremedimensions:spindle",
-            "properties": {
-              "fragments": "7"
-            }
-          },
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": 7
-          }
-        },
-        {
-          "type": "minecraft:item",
-          "name": "extremedimensions:tether_fragment",
-          "condition": {
-            "type": "minecraft:block_state_property",
-            "block": "extremedimensions:spindle",
-            "properties": {
-              "fragments": "8"
-            }
-          },
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": 8
-          }
+          ]
         }
       ]
     },
     {
       "rolls": 1,
+      "condition": {
+        "type": "minecraft:inverted",
+        "term": {
+          "type": "minecraft:match_block",
+          "blocks": "extremedimensions:spindle",
+          "state": {
+            "silk": "0"
+          }
+        }
+      },
       "entries": [
         {
           "type": "minecraft:item",
           "name": "extremedimensions:seam_silk",
-          "condition": {
-            "type": "minecraft:block_state_property",
-            "block": "extremedimensions:spindle",
-            "properties": {
-              "silk": "1"
+          "modifier": [
+            {
+              "type": "minecraft:set_count",
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "extremedimensions:spindle",
+                "state": {
+                  "silk": "2"
+                }
+              },
+              "count": 2
+            },
+            {
+              "type": "minecraft:set_count",
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "extremedimensions:spindle",
+                "state": {
+                  "silk": "3"
+                }
+              },
+              "count": 3
+            },
+            {
+              "type": "minecraft:set_count",
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "extremedimensions:spindle",
+                "state": {
+                  "silk": "4"
+                }
+              },
+              "count": 4
             }
-          },
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": 1
-          }
-        },
-        {
-          "type": "minecraft:item",
-          "name": "extremedimensions:seam_silk",
-          "condition": {
-            "type": "minecraft:block_state_property",
-            "block": "extremedimensions:spindle",
-            "properties": {
-              "silk": "2"
-            }
-          },
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": 2
-          }
-        },
-        {
-          "type": "minecraft:item",
-          "name": "extremedimensions:seam_silk",
-          "condition": {
-            "type": "minecraft:block_state_property",
-            "block": "extremedimensions:spindle",
-            "properties": {
-              "silk": "3"
-            }
-          },
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": 3
-          }
-        },
-        {
-          "type": "minecraft:item",
-          "name": "extremedimensions:seam_silk",
-          "condition": {
-            "type": "minecraft:block_state_property",
-            "block": "extremedimensions:spindle",
-            "properties": {
-              "silk": "4"
-            }
-          },
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": 4
-          }
+          ]
         }
       ]
     }

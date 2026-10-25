@@ -122,12 +122,11 @@ def loot():
         "random_sequence": f"{NS}:blocks/tetherite_ore"})
 
     def held(prop, item_id, most):
-        # what the Spindle held comes back with it: one entry per count, chosen by its block state
-        return {"rolls": 1, "entries": [
-            {"type": "minecraft:item", "name": item_id,
-             "condition": {"type": "minecraft:block_state_property", "block": f"{NS}:spindle", "properties": {prop: str(n)}},
-             "modifier": {"type": "minecraft:set_count", "count": n}}
-            for n in range(1, most + 1)]}
+        # what the Spindle held comes back with it, as many as its block state says (as a candle gives its candles)
+        state = lambda n: {"type": "minecraft:match_block", "blocks": f"{NS}:spindle", "state": {prop: str(n)}}
+        return {"rolls": 1, "condition": {"type": "minecraft:inverted", "term": state(0)},
+                "entries": [{"type": "minecraft:item", "name": item_id,
+                             "modifier": [{"type": "minecraft:set_count", "condition": state(n), "count": n} for n in range(2, most + 1)]}]}
 
     write(l("spindle"), {
         "type": "minecraft:block",
@@ -157,7 +156,7 @@ def advancements():
         {"armor": has(*[f"{NS}:tetherite_{p}" for p in ARMOR])}, "challenge")
     adv("seam_trimmed", "seam_entered", f"{NS}:weaver_armor_trim_smithing_template",
         {p: {"trigger": "minecraft:recipe_crafted",
-             "conditions": {"recipe_id": f"{NS}:{p}_armor_trim_smithing_template_smithing_trim"}} for p in PATTERNS},
+             "conditions": {"recipes": f"{NS}:{p}_armor_trim_smithing_template_smithing_trim"}} for p in PATTERNS},
         requirements=[list(PATTERNS)])
 
 
@@ -265,6 +264,36 @@ def equipment():
             write(a(NS, "textures", "trims", "entity", layer, p + ".png.mcmeta"), {"palette": {"base_palette": f"{NS}:trim_key"}})
 
 
+VANILLA_ARMOR = [(m, p) for m in ("leather", "chainmail", "iron", "golden", "diamond", "netherite", "copper") for p in ARMOR] + [("turtle", "helmet")]
+LEATHER_TINT = [{"type": "minecraft:dye", "default": -6265536}]
+
+
+def vanilla_icons():
+    """Vanilla's armor icons, as vanilla defines them, with the Seam's two materials added to their trim cases."""
+    for mat, piece in VANILLA_ARMOR:
+        name = f"{mat}_{piece}"
+        leather = mat == "leather"
+
+        def ref(model):
+            out = {"type": "minecraft:model", "model": model}
+            if leather:
+                out["tints"] = LEATHER_TINT
+            return out
+
+        cases = [{"model": ref(f"minecraft:item/{name}_{t}_trim"), "when": f"minecraft:{t}"} for t in VANILLA_TRIMS]
+        for t in SEAM_TRIMS:
+            model = f"{name}_{t}_trim"
+            layers = {"layer0": f"minecraft:item/{name}"}
+            if leather:
+                layers["layer1"] = f"minecraft:item/{name}_overlay"
+            layers["layer2" if leather else "layer1"] = f"minecraft:trims/items/{piece}_trim_{t}"
+            write(a(NS, "models", "item", model + ".json"), {"parent": "minecraft:item/generated", "textures": layers})
+            cases.append({"model": ref(f"{NS}:item/{model}"), "when": f"{NS}:{t}"})
+        write(a("minecraft", "items", name + ".json"), {"model": {"type": "minecraft:select", "cases": cases,
+                                                                   "fallback": ref(f"minecraft:item/{name}"),
+                                                                   "property": "minecraft:trim_material"}})
+
+
 def main():
     recipes()
     trims()
@@ -274,6 +303,7 @@ def main():
     models()
     blocks()
     equipment()
+    vanilla_icons()
 
 
 if __name__ == "__main__":
