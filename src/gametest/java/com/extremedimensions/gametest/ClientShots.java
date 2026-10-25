@@ -400,6 +400,46 @@ public class ClientShots implements FabricClientGameTest {
 		throw new AssertionError("the chat has no line to type in");
 	}
 
+	/** Prints what the client knows of the Seam's trims: palettes found, the patterns' palette metadata, a mapping, the materials. */
+	private static void trimDiagnosis(net.minecraft.client.Minecraft mc) {
+		var rm = mc.getResourceManager();
+		try {
+			StringBuilder found = new StringBuilder();
+			for (net.minecraft.resources.Identifier id : net.minecraft.client.resources.palette.Palette.ID_CONVERTER.listMatchingResources(rm).keySet()) {
+				if ("extremedimensions".equals(id.getNamespace()) || id.getPath().contains("trim_base") || id.getPath().contains("amethyst")) {
+					found.append(id).append(' ');
+				}
+			}
+			System.out.println("TRIMDIAG|palettes|" + found);
+		} catch (Exception e) {
+			System.out.println("TRIMDIAG|palettes|" + e);
+		}
+		for (String t : new String[] {"extremedimensions:textures/trims/entity/humanoid/weaver.png", "minecraft:textures/trims/entity/humanoid/coast.png"}) {
+			try {
+				var r = rm.getResource(net.minecraft.resources.Identifier.parse(t));
+				System.out.println("TRIMDIAG|meta|" + t + "|" + (r.isEmpty() ? "missing"
+						: r.get().metadata().getSection(net.minecraft.client.resources.metadata.texture.PaletteMetadataSection.TYPE).map(m -> m.basePalette().toString()).orElse("none")));
+			} catch (Exception e) {
+				System.out.println("TRIMDIAG|meta|" + t + "|" + e);
+			}
+		}
+		try {
+			var key = net.minecraft.client.resources.palette.Palette.load(rm.getResourceOrThrow(net.minecraft.resources.Identifier.parse("minecraft:textures/palettes/trim_base.png")));
+			var silk = net.minecraft.client.resources.palette.Palette.load(rm.getResourceOrThrow(net.minecraft.resources.Identifier.parse("extremedimensions:textures/palettes/trim/seam_silk.png")));
+			var mapping = net.minecraft.client.resources.palette.PaletteMapping.create(key, silk);
+			System.out.println("TRIMDIAG|mapping|" + key.size() + "|" + silk.size() + "|" + Integer.toHexString(key.get(1)) + "->" + Integer.toHexString(mapping.apply(key.get(1))));
+		} catch (Exception e) {
+			System.out.println("TRIMDIAG|mapping|" + e);
+		}
+		if (mc.level != null) {
+			var mats = mc.level.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.TRIM_MATERIAL);
+			for (String m : new String[] {"extremedimensions:tetherite", "extremedimensions:seam_silk", "minecraft:amethyst"}) {
+				System.out.println("TRIMDIAG|material|" + m + "|" + mats.get(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.TRIM_MATERIAL,
+						net.minecraft.resources.Identifier.parse(m))).map(h -> String.valueOf(h.value().paletteId())).orElse("absent"));
+			}
+		}
+	}
+
 	/** An armour piece with a trim on it. */
 	private static ItemStack trimmed(net.minecraft.world.item.Item item, net.minecraft.world.item.equipment.trim.ArmorTrim trim) {
 		ItemStack stack = new ItemStack(item);
@@ -654,6 +694,7 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.runOnClient(mc -> mc.gui.setScreen(new InventoryScreen(mc.player)));
 			ctx.waitTicks(8);
 			ctx.takeScreenshot("02_tetherite_gear");
+			ctx.runOnClient(ClientShots::trimDiagnosis);
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			net.minecraft.core.BlockPos spindleAt = sp.getServer().computeOnServer(s -> {
 				ServerPlayer p = player(s);
@@ -714,6 +755,37 @@ public class ClientShots implements FabricClientGameTest {
 				}
 			});
 			sp.getServer().runCommand("execute as @a at @s rotated ~ 0 run tp @s ^ ^ ^4 ~ 0");
+			// The trims side by side on iron: vanilla's Coast in amethyst, Coast in Seam Silk, the Weaver in amethyst
+			String[][] matrix = {{"trim_a", "minecraft:coast", "minecraft:amethyst"}, {"trim_b", "minecraft:coast", "extremedimensions:seam_silk"},
+					{"trim_c", "extremedimensions:weaver", "minecraft:amethyst"}};
+			for (int i = 0; i < matrix.length; i++) {
+				sp.getServer().runCommand(String.format(java.util.Locale.ROOT,
+						"execute as @a at @s rotated ~ 0 run summon minecraft:armor_stand ^%d ^ ^3 {NoBasePlate:1b,Rotation:[180f,0f],Tags:[\"%s\"]}", 2 - i * 2, matrix[i][0]));
+			}
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				var mats = s.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.TRIM_MATERIAL);
+				var pats = s.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.TRIM_PATTERN);
+				for (String[] m : matrix) {
+					var trim = new net.minecraft.world.item.equipment.trim.ArmorTrim(
+							mats.getOrThrow(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.TRIM_MATERIAL, net.minecraft.resources.Identifier.parse(m[2]))),
+							pats.getOrThrow(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.TRIM_PATTERN, net.minecraft.resources.Identifier.parse(m[1]))));
+					for (net.minecraft.world.entity.LivingEntity stand : p.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
+							p.getBoundingBox().inflate(8), e -> e.entityTags().contains(m[0]))) {
+						stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, trimmed(Items.IRON_HELMET, trim));
+						stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, trimmed(Items.IRON_CHESTPLATE, trim));
+						stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.LEGS, trimmed(Items.IRON_LEGGINGS, trim));
+						stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.FEET, trimmed(Items.IRON_BOOTS, trim));
+					}
+				}
+			});
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ ~ 12");
+			ctx.waitTicks(15);
+			ctx.takeScreenshot("02_trim_matrix");
+			for (String[] m : matrix) {
+				sp.getServer().runCommand("kill @e[type=minecraft:armor_stand,tag=" + m[0] + "]");
+			}
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ ~ 0");
 
 			// The Curses screen: all four tabs, with players nearby
 			String data = sp.getServer().computeOnServer(s -> Sync.cursesData(player(s), DataStore.get(player(s).getUUID())));
