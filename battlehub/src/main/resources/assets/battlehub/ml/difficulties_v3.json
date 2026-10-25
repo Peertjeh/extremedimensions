@@ -8,7 +8,9 @@
   "turn_cap": 24,
   "sample": true,
   "model": "combat_v3_beginner.onnx",
-  "kept": true
+  "kept": true,
+  "rating": 500,
+  "rating_mace": 270
  },
  "casual": {
   "checkpoint": "ckpt_10000224",
@@ -19,7 +21,9 @@
   "turn_cap": 30,
   "sample": true,
   "model": "combat_v3_casual.onnx",
-  "kept": true
+  "kept": true,
+  "rating": 740,
+  "rating_mace": 390
  },
  "intermediate": {
   "checkpoint": "ckpt_18000000",
@@ -30,7 +34,9 @@
   "turn_cap": 36,
   "sample": true,
   "model": "combat_v3_intermediate.onnx",
-  "kept": true
+  "kept": true,
+  "rating": 1020,
+  "rating_mace": 510
  },
  "advanced": {
   "checkpoint": "ckpt_22000032",
@@ -39,20 +45,24 @@
   "extra_delay": 1,
   "aim_noise": 0.8,
   "turn_cap": 45,
-  "sample": false,
+  "sample": true,
   "model": "combat_v3_advanced.onnx",
-  "kept": true
+  "kept": true,
+  "rating": 1230,
+  "rating_mace": 620
  },
  "expert": {
-  "checkpoint": "ckpt_30000096",
-  "elo": 1367,
+  "checkpoint": "v3f:ckpt_14000256",
+  "elo": 1615,
   "target_elo": 1506,
-  "extra_delay": 0,
-  "aim_noise": 0.5,
-  "turn_cap": 54,
-  "sample": false,
-  "model": "combat_v3_expert.onnx",
-  "kept": true
+  "extra_delay": 1,
+  "aim_noise": 2.0,
+  "turn_cap": 40,
+  "sample": true,
+  "model": "combat_v3_master.onnx",
+  "items": "food,gapple,wind",
+  "rating": 1540,
+  "rating_mace": 740
  },
  "master": {
   "checkpoint": "v3f:ckpt_14000256",
@@ -63,6 +73,8 @@
   "turn_cap": 60,
   "sample": false,
   "model": "combat_v3_master.onnx",
-  "items": "food,gapple,wind"
+  "items": "food,gapple,wind",
+  "rating": 1770,
+  "rating_mace": 860
  }
 }

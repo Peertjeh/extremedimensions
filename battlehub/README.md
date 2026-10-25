@@ -109,7 +109,11 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   a duel against one bot counts fully, a fight with more people half), with the damage share as extra signal next
   to winning, and picks the level where you should win a little more than half your fights. Someone new starts
   from their ranked rating when they have one. The chat says after each step why (your rating before and after,
-  and your expected chance at the new level).
+  and your expected chance at the new level). Where the levels sit on that scale is measured, not guessed: the
+  levels as they really play (with their reaction delay, aim and sampling) were rated against each other, with even
+  steps (one level up, you win about a quarter less often), and the fight logs of real players agree. Fights against
+  the mace bot (a scripted bot, weaker than the learned fight) count on their own, lower scale, so winning mace
+  fights does not push you to a sword master.
 * *After the fight* it tells you what it noticed (how aggressive you were, the distance you like, how often you
   change strafe direction), how the damage went, what its main plan was, and one tip to work on.
 * *Kind to the server*: all bots share a think budget. When ticks get slow (from `bots.slowAboveMspt`, 35 ms by

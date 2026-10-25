@@ -663,7 +663,7 @@ final class BotTests {
 			java.util.List<Component> lines = Bots.memory(p(A));
 			net.battlehub.BattleHub.LOGGER.info("SELFTEST memory: {} | {}", k.results, lines.stream().map(Component::getString).toList());
 			net.battlehub.BattleHub.LOGGER.info("SELFTEST rating after the win: {} (rated {}), adaptive {}", k.rating, k.rated, k.adaptiveLevel);
-			return k.results.contains("W:expert") && java.nio.file.Files.exists(f) && lines.size() >= 4 && k.rated > 0 && k.rating > 1050;
+			return k.results.contains("W:expert") && java.nio.file.Files.exists(f) && lines.size() >= 4 && k.rated > 0 && k.rating > Bots.ratingPrior(p(A));
 		});
 		s.run(tag + ": A wipes it with /bots forget", () -> server.getCommands().performPrefixedCommand(p(A).createCommandSourceStack(), "bots forget"));
 		s.check(tag + ": the bots forgot A (memory and file)", () -> net.battlehub.bot.AiMemory.get(server, p(A).getUUID()).results.isEmpty()

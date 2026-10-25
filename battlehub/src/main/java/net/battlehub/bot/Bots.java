@@ -639,8 +639,10 @@ public final class Bots {
 		double byPlayer = mind.totalTaken(), byBot = mind.totalDealt();
 		double share = byPlayer + byBot <= 0 ? 0.5 : byPlayer / (byPlayer + byBot);
 		double weight = m.participants().size() <= 2 ? 1 : 0.5;
+		// the scripted mace bot sits lower on the scale than the learned fight (ML phase 3E)
+		boolean mace = m.botWeapon() == net.battlehub.core.ai.Weapon.MACE;
 		net.battlehub.core.ai.PlayerKnowledge.Change c = k.result(m.outcome(p.getUUID()) == net.battlehub.core.Outcome.WIN, share, bot.difficulty,
-				weight, ratingPrior(p));
+				weight, ratingPrior(p), mace);
 		if (c != null && net.battlehub.gui.PracticeMenu.adaptive(p.getUUID())) {
 			Msg.send(p, c.to().ordinal() > c.from().ordinal() ? "bots.adaptive_up" : "bots.adaptive_down",
 					Lang.tr(p, "bots.level." + c.to().id()), Math.round(c.before()), Math.round(c.after()), Math.round(c.chance() * 100));
@@ -650,13 +652,14 @@ public final class Bots {
 
 	/**
 	 * Where someone never rated against bots starts: from their ranked rating against people when they have one (a
-	 * hint, not more: half of how far it is from the start rating), otherwise in the middle (intermediate).
+	 * hint, not more: half of how far it is from the start rating), otherwise a little below intermediate.
 	 */
-	private static double ratingPrior(ServerPlayer p) {
+	public static double ratingPrior(ServerPlayer p) {
 		net.battlehub.core.PlayerProfile prof = net.battlehub.data.PlayerStore.get(p.getUUID());
-		if (prof == null || prof.elo.isEmpty()) return 1050;
+		double start = net.battlehub.core.ai.PlayerKnowledge.start();
+		if (prof == null || prof.elo.isEmpty()) return start;
 		double avg = prof.elo.values().stream().mapToInt(Integer::intValue).average().orElse(net.battlehub.progression.Ranks.startElo());
-		return Math.max(800, Math.min(1500, 1050 + (avg - net.battlehub.progression.Ranks.startElo()) * 0.5));
+		return Math.max(start - 250, Math.min(start + 450, start + (avg - net.battlehub.progression.Ranks.startElo()) * 0.5));
 	}
 
 	/** What bots know about a player, as chat lines (/bots memory). */

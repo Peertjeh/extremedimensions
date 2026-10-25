@@ -2141,6 +2141,125 @@ mensen; Bridge Chaos 1v1v1v1, Hunger Games en een mace-duel; de bots waren inter
       optreedt, en het eerstvolgende werk aan de bots begint ermee.
     - **Tweede poging van de gefaalde job: 897 geslaagd, 0 gefaald.**
 
+### Fase E – Niveaus afgestemd op echte spelers (1.48.0)
+
+**Vraag.** "Laten we dan fase E maken": de niveaus afstemmen op echte spelers, met de nieuwe export erbij.
+
+**Nulmeting.**
+- **Data:** drie exports (23, 24 en 25 oktober), samen 52 gevechten van één speler tegen bots. Alleen gevechten met een
+  botversie die nog geldt tellen: het geleerde gevecht sinds 1.41 (de master van fase D), de mace-bot sinds 1.46.
+- **De speler tegen de niveaus** (`levels.py people`, zijn aandeel in de melee-treffers tussen hem en de bots, 90%-interval
+  over de gevechten):
+
+  | Familie | Niveau | Gevechten | Treffers speler : bots | Aandeel speler |
+  |---|---|---|---|---|
+  | geleerd gevecht | intermediate | 16 | 244 : 199 | 0,55 (0,47–0,60) |
+  | geleerd gevecht | master | 8 | 62 : 149 | 0,29 (0,23–0,35) |
+  | mace (gescript) | intermediate | 1 | 36 : 11 | 0,77 |
+  | mace (gescript) | master | 3 | 82 : 51 | 0,62 (0,55–0,70) |
+
+  Van beginner, casual, advanced en expert zijn er geen gevechten met de huidige bots.
+- **De league woog de kale checkpoints.** In de mod is een niveau meer dan zijn checkpoint: het ziet zijn doelwit een
+  paar ticks te laat (`extra_delay`), zijn richten wiebelt (`aim_noise`), het draait per beslissing niet verder dan
+  `turn_cap`, en de lagere niveaus loten hun keuze in plaats van de beste te nemen (`sample`). De league van fase C en D
+  speelde zonder dat. Gespeeld zoals in de mod (eerste league, de scripted bot van 0,5 op 1000):
+
+  | | beginner | casual | intermediate | advanced | expert | master |
+  |---|---|---|---|---|---|---|
+  | Elo in `difficulties_v3.json` (kaal) | 1024 | 1106 | 1228 | 1259 | 1367 | 1615 |
+  | Elo zoals gespeeld | 545 | 778 | 1060 | 1420 | 1628 | 1715 |
+  | stap naar het volgende niveau | 233 | 282 | 360 | 208 | 87 | |
+
+  Intermediate speelt veel zwakker dan zijn getal; advanced ligt daar een grote sprong boven; expert is bijna master.
+  Dat klopt met wat de speler merkt: tegen intermediate gelijkop, master veel te sterk.
+- **Spel en simulatie zeggen hetzelfde.** In de simulatie heeft intermediate 26% van de treffers tegen master, de speler
+  in het spel 29%; de speler heeft 55% tegen intermediate. Op de schaal van treffers is het gat tussen intermediate en
+  master in het spel 1,10 (logit) en in de simulatie 1,03.
+- **Het adaptieve niveau** (`PlayerKnowledge`) nam aan dat de niveaus 200 punten uit elkaar liggen (700 .. 1700): een
+  gok, nooit gemeten. Een mace-overwinning telde als een overwinning op het geleerde gevecht.
+
+**Plan.**
+- **E1 – Meten** (`ml/train/levels.py`): `Batch2(knobs=...)` geeft elke vechter vaste knoppen (vertraging, ruis, draaigrens);
+  `rate` speelt de niveaus zoals de mod ze speelt (met hun knoppen, hun handen, loten of niet) over de 1v1-scenario's
+  van de modi waar het model vecht (zonder boog en mace); `people` leest de verslagen.
+- **E2 – Gelijke stappen:** de knoppen van de niveaus zo zetten dat de stappen gelijk zijn tussen beginner en master (die
+  twee blijven). Elke stap binnen een vijfde van de gemiddelde stap.
+- **E3 – De gemeten schaal in de mod:** het adaptieve niveau rekent met de gemeten plaats van elk niveau; de mace-bot op
+  zijn eigen, lagere schaal (uit de verslagen); oude ratings één keer omgezet. De menselijke tegenstander van fase D
+  opnieuw gefit op alle gevechten (met de gecorrigeerde lading).
+- **Niet in deze fase:** de gescripte mace-bot sterker maken (dat is werk aan de bot, geen afstemming), en de modellen
+  opnieuw trainen.
+
+**E1/E2 – Uitvoering.**
+- **Knoppen zoeken.** Vijf ronden kandidaten in de league (12 tot 30 gevechten per scenario en paar). De ratings schuiven per
+  league 40 tot 70 punten mee met wie er in de pool zit; daarom is elke keuze tegen de vaste niveaus en scripted bots
+  gemeten.
+  - Beginner, casual en intermediate lagen al goed en blijven zoals ze zijn.
+  - **Advanced:** hetzelfde checkpoint en dezelfde knoppen (vertraging 1, ruis 0,8, draaigrens 45), maar **loten** in
+    plaats van altijd het beste (was 1420, nu 1235).
+  - **Expert:** het oude expert-checkpoint met loten werd te zwak (1375–1440), zonder loten bleef het vlak onder master.
+    Nu het **brein van master** met een menselijke vertraging en een minder vast richten: vertraging 1, ruis 2,0,
+    draaigrens 40, loten, met eten, appels en wind zoals master (1538). Het model van expert
+    (`combat_v3_expert.onnx`) is niet meer nodig en uit de jar.
+- **De laatste league** (`spec/levels_v3_fase3e.json`, 30 gevechten per scenario en paar, met vier scripted bots):
+
+  | | beginner | casual | intermediate | advanced | expert | master |
+  |---|---|---|---|---|---|---|
+  | Elo zoals gespeeld | 499 | 741 | 1019 | 1235 | 1538 | 1772 |
+  | stap | 242 | 278 | 216 | 303 | 234 | |
+  | het lagere niveau wint van het volgende (direct) | 12% | 6% | 14% | 12% | 19% | |
+
+  Gemiddelde stap 255; alle stappen binnen een vijfde (204–306). Was 87 tot 360.
+
+**E3 – Uitvoering.**
+- **`levels.py scale`** schrijft per niveau `rating` (de laatste league, op tientallen) en `rating_mace` in
+  `difficulties_v3.json`:
+  - **De speler op de schaal:** zijn aandeel in de treffers op een niveau, gelegd naast het aandeel van de andere
+    niveaus op dat niveau in de league: via intermediate 1149, via master 973, gewogen naar de treffers **1092**. Net
+    boven intermediate (1020); het adaptieve niveau geeft hem intermediate, met een verwachte winst van 60%.
+  - **De mace-bot:** waar de treffers hem neerzetten ten opzichte van de speler (helling k van de league, 2,84):
+    intermediate 510, master 860; de andere niveaus gelijk verdeeld. Ruw: vier gevechten.
+
+  | | beginner | casual | intermediate | advanced | expert | master |
+  |---|---|---|---|---|---|---|
+  | `rating` (geleerd gevecht) | 500 | 740 | 1020 | 1230 | 1540 | 1770 |
+  | `rating_mace` | 270 | 390 | 510 | 620 | 740 | 860 |
+
+- **`PlayerKnowledge`:** de niveaus staan op die plek (`LEARNED`, `MACE`; een test houdt ze gelijk aan het bestand);
+  `result(..., mace)` rekent een mace-gevecht op de mace-schaal; een speler zonder rating begint vlak onder intermediate
+  (`start()`); een opgeslagen rating op de oude schaal gaat één keer mee, niveau voor niveau (`moved`, het veld `scale`).
+  `Bots.learn` geeft mee of het een mace-gevecht was; `Bots.ratingPrior` rekent vanaf `start()`.
+- **De menselijke tegenstander opnieuw** (`people.py`, op alle drie de exports, vanaf de master van fase D):
+  - 13.640 beslissingen om van te leren (fase D: 3.650), 7.109 om te testen.
+  - Hij voorspelt de keuze van de speler nu op alle negen koppen beter dan de master (fase D: acht van negen):
+
+    | | vooruit | strafe | springen | sprint | klik | draaien | kijken | hand | gebruiken |
+    |---|---|---|---|---|---|---|---|---|---|
+    | master | 47% | 41% | 62% | 41% | 84% | 15% | 16% | 15% | 62% |
+    | mensen-policy | 62% | 74% | 69% | 86% | 92% | 32% | 37% | 93% | 96% |
+
+  - Zijn gedrag in de simulatie, naast dat van de speler in de verslagen:
+
+    | | sprinten | strafe-wissels/s | sprongen/s | klikken/s | lading bij treffer | afstand |
+    |---|---|---|---|---|---|---|
+    | speler (verslagen) | 0,27 | 0,96 | 3,09 | 0,65 | 1,00 | 3,27 |
+    | mensen-policy (simulatie) | 0,27 | 0,93 | 2,72 | 0,66 | 1,00 | 3,30 |
+
+    Alle zes binnen 12% (fase D: vijf van zes; de lading was 26% te laag door de meetfout van D4).
+  - Hij is een hulpmiddel voor de training en eval2, niet in de mod.
+
+**Testen.** pytest (`test_levels.py`): vaste knoppen per slot blijven na elke herstart, een niveau uit het
+difficulties-bestand met zijn knoppen en handen, de helling van treffers naar gevechten, het tellen van de treffers per
+familie (alleen melee, alleen botversies die gelden). JUnit (`PlayerKnowledgeTest`): de stappen, de mace-schaal lager,
+een mace-overwinning telt minder, oude ratings één keer omgezet, de schaal gelijk aan het bestand; de bestaande tests
+van het adaptieve niveau slagen op de nieuwe schaal. `CombatModelsTest` controleert dat elk niveau zijn model heeft (expert
+en master delen er een). Zelftest: na een overwinning op een expert-bot staat de rating boven waar hij begon.
+
+**Grenzen.** Alle mensdata komt van één speler. Wat vaststaat: de afstand tussen de niveaus zoals ze spelen (gemeten in
+de simulatie, en het gat tussen intermediate en master klopt met het spel) en dat deze speler net boven intermediate
+staat. Hoe andere spelers over de niveaus verdeeld zijn, zegt een volgende export van meer spelers. De mace-schaal rust op
+vier gevechten.
+
 ## Versie 1.47.1 – Bots naar kisten in huizen, onzichtbaar met armor
 
 **Vraag.** Bots zitten soms vast en draaien rondjes bij een raam (vaak waar binnen een barrel of kist staat): kijk

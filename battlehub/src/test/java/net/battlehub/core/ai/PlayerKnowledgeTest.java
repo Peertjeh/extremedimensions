@@ -43,14 +43,14 @@ class PlayerKnowledgeTest {
 			double p = PlayerKnowledge.expected(trueRating, level);
 			boolean won = r.nextDouble() < p;
 			double share = Math.max(0, Math.min(1, p + r.nextGaussian() * 0.12));
-			k.result(won, share, level, 1, 1050);
+			k.result(won, share, level, 1, PlayerKnowledge.start());
 		}
 		return k;
 	}
 
 	@Test
 	void theRatingFindsHowStrongSomeoneIsAndTheLevelThatSuitsThem() {
-		for (double truth : new double[] {650, 1000, 1350, 1750}) {
+		for (double truth : new double[] {500, 900, 1300, 1750}) {
 			double err = 0;
 			int fit = 0;
 			for (long seed = 0; seed < 20; seed++) {
@@ -131,7 +131,7 @@ class PlayerKnowledgeTest {
 		k.rating = Double.POSITIVE_INFINITY;
 		k.accuracy = -3;
 		k.clean();
-		assertEquals(1050, k.rating, 1e-9);
+		assertEquals(PlayerKnowledge.start(), k.rating, 1e-9);
 		assertEquals(0, k.accuracy, 1e-9);
 		assertEquals(4, k.distance, 1e-9);
 		assertEquals(20, k.strafeRate, 1e-9);
@@ -139,5 +139,61 @@ class PlayerKnowledgeTest {
 		assertEquals(java.util.List.of("W:expert"), k.results);
 		assertEquals("intermediate", k.adaptiveLevel);
 		assertTrue(k.tactics.isEmpty());
+	}
+
+	/**
+	 * The measured scale (ML phase 3E): the levels as the mod plays them, rated in the simulation with even steps; the
+	 * mace's scripted bot lower; a rating stored on the old guessed scale moves to the measured one once, level for level.
+	 */
+	@Test
+	void theLevelsSitWhereTheyWereMeasuredAndOldRatingsMoveOnce() {
+		double step = (PlayerKnowledge.LEARNED[5] - PlayerKnowledge.LEARNED[0]) / 5;
+		for (int i = 1; i < 6; i++) {
+			double d = PlayerKnowledge.LEARNED[i] - PlayerKnowledge.LEARNED[i - 1];
+			// within a fifth of the even step in the league; a little more after rounding to tens
+			assertTrue(Math.abs(d - step) <= step * 0.25, "step " + i + ": " + d);
+			assertTrue(PlayerKnowledge.MACE[i] > PlayerKnowledge.MACE[i - 1]);
+			assertTrue(PlayerKnowledge.MACE[i] < PlayerKnowledge.LEARNED[i], "the mace bot is weaker at " + Difficulty.values()[i]);
+		}
+		// one level up: about a quarter fewer wins
+		double atInter = PlayerKnowledge.expected(PlayerKnowledge.levelRating(Difficulty.INTERMEDIATE), Difficulty.ADVANCED);
+		assertTrue(atInter > 0.15 && atInter < 0.35, "against the next level up " + atInter);
+		// beating the mace master says less than beating the learned master
+		PlayerKnowledge sword = new PlayerKnowledge(), mace = new PlayerKnowledge();
+		sword.result(true, 0.6, Difficulty.MASTER, 1, 1100);
+		mace.result(true, 0.6, Difficulty.MASTER, 1, 1100, true);
+		assertTrue(sword.rating > mace.rating + 20, sword.rating + " vs " + mace.rating);
+		// a rating of before 1.48 (intermediate was 1100 then) moves to where intermediate is now, once
+		PlayerKnowledge old = new PlayerKnowledge();
+		old.rated = 12;
+		old.rating = 1100;
+		old.clean();
+		assertEquals(PlayerKnowledge.levelRating(Difficulty.INTERMEDIATE), old.rating, 1e-9);
+		assertEquals(PlayerKnowledge.SCALE, old.scale);
+		old.clean();
+		assertEquals(PlayerKnowledge.levelRating(Difficulty.INTERMEDIATE), old.rating, 1e-9);
+		// halfway between two levels stays halfway, and beyond the ends it goes on with the end's step
+		assertEquals((PlayerKnowledge.LEARNED[3] + PlayerKnowledge.LEARNED[4]) / 2, PlayerKnowledge.moved(1400), 1e-9);
+		assertTrue(PlayerKnowledge.moved(1900) > PlayerKnowledge.LEARNED[5]);
+		// someone new is rated from the start on the new scale
+		PlayerKnowledge fresh = new PlayerKnowledge();
+		fresh.result(true, 0.6, Difficulty.INTERMEDIATE, 1, PlayerKnowledge.start());
+		assertEquals(PlayerKnowledge.SCALE, fresh.scale);
+	}
+
+	/** The scale is the one measured: the ratings written into difficulties_v3.json by ml/train/levels.py scale. */
+	@Test
+	void theScaleIsTheOneInTheDifficultiesFile() throws Exception {
+		String json;
+		try (java.io.InputStream in = PlayerKnowledgeTest.class.getResourceAsStream("/assets/battlehub/ml/difficulties_v3.json")) {
+			assertNotNull(in);
+			json = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+		}
+		java.util.Map<String, Object> levels = net.battlehub.core.ml.MiniJson.object(net.battlehub.core.ml.MiniJson.parse(json));
+		for (Difficulty d : Difficulty.values()) {
+			java.util.Map<String, Object> lv = net.battlehub.core.ml.MiniJson.object(levels.get(d.id()));
+			assertEquals(((Number) lv.get("rating")).doubleValue(), PlayerKnowledge.levelRating(d), 1e-9, d.id());
+			assertEquals(((Number) lv.get("rating_mace")).doubleValue(), PlayerKnowledge.levelRating(d, true), 1e-9, d.id());
+		}
 	}
 }

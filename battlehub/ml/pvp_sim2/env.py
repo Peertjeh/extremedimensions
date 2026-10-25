@@ -111,7 +111,7 @@ class Batch2:
     observation) unless auto_reset is False."""
 
     def __init__(self, n, k=3, seed=None, max_ticks=1600, rewards: Rewards2 = None, scenario: Scenario = None, breadth=1.0,
-                 auto_reset=True, spec=SPEC2, fixed=None):
+                 auto_reset=True, spec=SPEC2, fixed=None, knobs=None):
         self.n, self.k = n, k
         self.spec = spec
         self.rng = np.random.default_rng(seed)
@@ -122,6 +122,9 @@ class Batch2:
         self.shaping = 1.0
         self.auto_reset = auto_reset
         self.fixed = fixed or {}   # e.g. {"terrain": "walled", "family": "sword", "count": 2}: for tests and evaluation
+        # per slot a fixed perception delay (ticks), aim noise (degrees per tick) and turn limit (degrees per decision),
+        # e.g. {0: {"delay": 2, "noise": 1.2, "cap": 36}}: a difficulty level as the mod plays it (ML phase 3E)
+        self.knobs = knobs or {}
         self.w = World(n, k, spec=spec, rng=self.rng)
         self.ticks = np.zeros(n, dtype=np.int64)
         self.opp_delay = np.zeros((n, k), dtype=np.int64)
@@ -255,6 +258,10 @@ class Batch2:
         self.opp_delay[a] = rng.integers(sc.opp_delay[0], sc.opp_delay[1] + 1, size=self.k)
         self.aim_noise[a] = rng.uniform(*sc.aim_noise, size=self.k)
         self.turn_cap[a] = rng.uniform(*sc.turn_cap, size=self.k)
+        for slot, kn in self.knobs.items():
+            self.opp_delay[a, slot] = int(kn.get("delay", 0))
+            self.aim_noise[a, slot] = float(kn.get("noise", 0.0))
+            self.turn_cap[a, slot] = float(kn.get("cap", 60.0))
         for i in range(self.k):
             for j in range(self.k):
                 self.known[a, i, j] = (w.f.x[a, j], w.f.y[a, j], w.f.z[a, j])

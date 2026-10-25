@@ -32,21 +32,65 @@ public final class PlayerKnowledge {
 	public double swingGap = 12;
 	public double accuracy = 0.6;
 	public int swingFights;
-	/** Strength against bots (an Elo-like scale where the levels sit at 700 .. 1700), valid once {@code rated} > 0. */
+	/** Strength against bots (on the scale of {@link #LEARNED}), valid once {@code rated} > 0. */
 	public double rating;
+	/** Which scale the rating is on: 0 the guessed one of before 1.48 ({@link #GUESS}), {@link #SCALE} the measured one. */
+	public int scale;
 	/** How much rated play the rating rests on (one duel counts 1). */
 	public double rated;
 	/** Whether recent results keep beating (positive) or missing (negative) the estimate. */
 	public double drift;
 
-	/** Where each level sits on the rating scale: two hundred apart, so one level up wins about a quarter less. */
+	/**
+	 * Where each level sits on the rating scale, measured (ML phase 3E): the levels as the mod plays them (their model,
+	 * perception delay, aim noise, turn limit and sampling), rated against each other in the simulation, the scripted bot
+	 * of skill 0.5 at 1000. Their knobs are set so the steps are even: one level up, a player wins about a quarter less
+	 * often. The fight logs agree on the gap between intermediate and master.
+	 */
+	static final double[] LEARNED = {500, 740, 1020, 1230, 1540, 1770};
+	/**
+	 * The scripted mace bot (the model does not fight with the mace): placed by the fights of people against it in the
+	 * fight logs, from which intermediate and master are known; the levels between are spread evenly. Much weaker than
+	 * the learned fight, so a mace win does not lift a rating as a win against the learned fight would.
+	 */
+	static final double[] MACE = {270, 390, 510, 620, 740, 860};
+	/** The scale of before 1.48, a guess: two hundred apart from 700. A stored rating on it moves to the measured one. */
+	static final double[] GUESS = {700, 900, 1100, 1300, 1500, 1700};
+	/** The scale ratings are on now. */
+	public static final int SCALE = 2;
+
+	/** Where each level sits on the rating scale. */
 	public static double levelRating(Difficulty d) {
-		return 700 + 200 * d.ordinal();
+		return LEARNED[d.ordinal()];
+	}
+
+	/** Where each level sits, for the mace (its own scripted bot) or the rest. */
+	public static double levelRating(Difficulty d, boolean mace) {
+		return (mace ? MACE : LEARNED)[d.ordinal()];
 	}
 
 	/** The chance a player with this rating beats a bot of this level. */
 	public static double expected(double rating, Difficulty d) {
-		return 1 / (1 + Math.pow(10, (levelRating(d) - rating) / 400));
+		return expected(rating, d, false);
+	}
+
+	public static double expected(double rating, Difficulty d, boolean mace) {
+		return 1 / (1 + Math.pow(10, (levelRating(d, mace) - rating) / 400));
+	}
+
+	/** Where someone never rated against bots starts: a little below intermediate. */
+	public static double start() {
+		return LEARNED[Difficulty.INTERMEDIATE.ordinal()] - 50;
+	}
+
+	/** A rating on the guessed scale of before 1.48, moved to the measured one (level for level, in between in proportion). */
+	static double moved(double old) {
+		int n = GUESS.length;
+		if (old <= GUESS[0]) return LEARNED[0] + (old - GUESS[0]) * (LEARNED[1] - LEARNED[0]) / (GUESS[1] - GUESS[0]);
+		for (int i = 1; i < n; i++) {
+			if (old <= GUESS[i]) return LEARNED[i - 1] + (old - GUESS[i - 1]) * (LEARNED[i] - LEARNED[i - 1]) / (GUESS[i] - GUESS[i - 1]);
+		}
+		return LEARNED[n - 1] + (old - GUESS[n - 1]) * (LEARNED[n - 1] - LEARNED[n - 2]) / (GUESS[n - 1] - GUESS[n - 2]);
 	}
 
 	/** The adaptive level aims at fights the player wins a little more often than not. */
@@ -97,7 +141,7 @@ public final class PlayerKnowledge {
 
 	/** A result against a bot at a level, counted fully (a practice duel). */
 	public Change result(boolean won, Difficulty level) {
-		return result(won, won ? 0.6 : 0.4, level, 1, 1050);
+		return result(won, won ? 0.6 : 0.4, level, 1, start());
 	}
 
 	/**
@@ -107,13 +151,24 @@ public final class PlayerKnowledge {
 	 * adaptive level and why, or null when it stays.
 	 */
 	public Change result(boolean won, double share, Difficulty level, double weight, double prior) {
+		return result(won, share, level, weight, prior, false);
+	}
+
+	/**
+	 * Like {@link #result(boolean, double, Difficulty, double, double)}; {@code mace}: against the scripted mace bot, whose
+	 * levels sit lower on the scale ({@link #MACE}), so beating it says less.
+	 */
+	public Change result(boolean won, double share, Difficulty level, double weight, double prior, boolean mace) {
 		results.add((won ? "W:" : "L:") + level.id());
 		while (results.size() > RESULTS) results.remove(0);
-		if (rated <= 0) rating = prior;
+		if (rated <= 0) {
+			rating = prior;
+			scale = SCALE;
+		}
 		double before = rating;
 		// winning counts most; the damage share tells a close loss from a beating
 		double score = 0.75 * (won ? 1 : 0) + 0.25 * Math.max(0, Math.min(1, share));
-		double surprise = score - expected(rating, level);
+		double surprise = score - expected(rating, level, mace);
 		// results that keep missing the estimate the same way mean the estimate is off: move faster; results that
 		// scatter round it mean it is about right: stay calm
 		drift = 0.6 * drift + 0.4 * surprise;
@@ -169,7 +224,10 @@ public final class PlayerKnowledge {
 		accuracy = finite(accuracy, 0.6, 0, 1);
 		swingFights = Math.max(0, swingFights);
 		rated = finite(rated, 0, 0, 1e6);
-		rating = finite(rating, 1050, 300, 2200);
+		rating = finite(rating, start(), 300, 2200);
+		// a rating from before 1.48 is on the guessed scale: moved to the measured one, once
+		if (rated > 0 && scale < SCALE) rating = Math.max(300, Math.min(2200, moved(rating)));
+		scale = SCALE;
 		drift = finite(drift, 0, -1, 1);
 		return this;
 	}

@@ -1,0 +1,736 @@
+{
+ "ratings": {
+  "beginner": 498.51224836204364,
+  "casual": 740.69055386544,
+  "intermediate": 1019.0167093467064,
+  "advanced": 1234.5263117668173,
+  "expert": 1538.3340642813841,
+  "master": 1772.2325660014367,
+  "scripted_0.3": 953.27782094916,
+  "scripted_0.5": 1000.0,
+  "scripted_0.8": 1046.439799449392,
+  "scripted_1.0": 1026.718794639943
+ },
+ "pairs": [
+  {
+   "a": "beginner",
+   "b": "expert",
+   "result": [
+    0,
+    248,
+    0
+   ],
+   "hits": [
+    625.0,
+    2485.0
+   ]
+  },
+  {
+   "a": "beginner",
+   "b": "advanced",
+   "result": [
+    4,
+    242,
+    0
+   ],
+   "hits": [
+    559.0,
+    3342.0
+   ]
+  },
+  {
+   "a": "beginner",
+   "b": "intermediate",
+   "result": [
+    2,
+    242,
+    0
+   ],
+   "hits": [
+    765.0,
+    4121.0
+   ]
+  },
+  {
+   "a": "beginner",
+   "b": "master",
+   "result": [
+    1,
+    246,
+    0
+   ],
+   "hits": [
+    376.0,
+    2778.0
+   ]
+  },
+  {
+   "a": "beginner",
+   "b": "casual",
+   "result": [
+    28,
+    213,
+    0
+   ],
+   "hits": [
+    2911.0,
+    5573.0
+   ]
+  },
+  {
+   "a": "beginner",
+   "b": "scripted_0.3",
+   "result": [
+    24,
+    218,
+    0
+   ],
+   "hits": [
+    1258.0,
+    2952.0
+   ]
+  },
+  {
+   "a": "beginner",
+   "b": "scripted_0.5",
+   "result": [
+    20,
+    222,
+    0
+   ],
+   "hits": [
+    1026.0,
+    3026.0
+   ]
+  },
+  {
+   "a": "beginner",
+   "b": "scripted_0.8",
+   "result": [
+    13,
+    231,
+    0
+   ],
+   "hits": [
+    562.0,
+    2547.0
+   ]
+  },
+  {
+   "a": "beginner",
+   "b": "scripted_1.0",
+   "result": [
+    22,
+    219,
+    0
+   ],
+   "hits": [
+    641.0,
+    2819.0
+   ]
+  },
+  {
+   "a": "casual",
+   "b": "expert",
+   "result": [
+    0,
+    246,
+    0
+   ],
+   "hits": [
+    920.0,
+    2486.0
+   ]
+  },
+  {
+   "a": "casual",
+   "b": "advanced",
+   "result": [
+    6,
+    239,
+    0
+   ],
+   "hits": [
+    1427.0,
+    3582.0
+   ]
+  },
+  {
+   "a": "casual",
+   "b": "intermediate",
+   "result": [
+    15,
+    231,
+    0
+   ],
+   "hits": [
+    2449.0,
+    5443.0
+   ]
+  },
+  {
+   "a": "casual",
+   "b": "master",
+   "result": [
+    2,
+    250,
+    0
+   ],
+   "hits": [
+    722.0,
+    2940.0
+   ]
+  },
+  {
+   "a": "casual",
+   "b": "scripted_0.3",
+   "result": [
+    53,
+    189,
+    0
+   ],
+   "hits": [
+    2065.0,
+    2692.0
+   ]
+  },
+  {
+   "a": "casual",
+   "b": "scripted_0.5",
+   "result": [
+    56,
+    187,
+    0
+   ],
+   "hits": [
+    1635.0,
+    2732.0
+   ]
+  },
+  {
+   "a": "casual",
+   "b": "scripted_0.8",
+   "result": [
+    35,
+    206,
+    0
+   ],
+   "hits": [
+    1139.0,
+    2523.0
+   ]
+  },
+  {
+   "a": "casual",
+   "b": "scripted_1.0",
+   "result": [
+    46,
+    202,
+    0
+   ],
+   "hits": [
+    1077.0,
+    2494.0
+   ]
+  },
+  {
+   "a": "intermediate",
+   "b": "master",
+   "result": [
+    0,
+    246,
+    0
+   ],
+   "hits": [
+    1138.0,
+    2962.0
+   ]
+  },
+  {
+   "a": "intermediate",
+   "b": "expert",
+   "result": [
+    10,
+    238,
+    0
+   ],
+   "hits": [
+    1586.0,
+    2783.0
+   ]
+  },
+  {
+   "a": "intermediate",
+   "b": "advanced",
+   "result": [
+    34,
+    211,
+    0
+   ],
+   "hits": [
+    2327.0,
+    3328.0
+   ]
+  },
+  {
+   "a": "intermediate",
+   "b": "scripted_0.3",
+   "result": [
+    146,
+    98,
+    0
+   ],
+   "hits": [
+    3014.0,
+    1943.0
+   ]
+  },
+  {
+   "a": "intermediate",
+   "b": "scripted_0.5",
+   "result": [
+    128,
+    117,
+    0
+   ],
+   "hits": [
+    2960.0,
+    2300.0
+   ]
+  },
+  {
+   "a": "intermediate",
+   "b": "scripted_0.8",
+   "result": [
+    113,
+    128,
+    0
+   ],
+   "hits": [
+    2133.0,
+    2009.0
+   ]
+  },
+  {
+   "a": "intermediate",
+   "b": "scripted_1.0",
+   "result": [
+    106,
+    135,
+    0
+   ],
+   "hits": [
+    2128.0,
+    2098.0
+   ]
+  },
+  {
+   "a": "advanced",
+   "b": "expert",
+   "result": [
+    30,
+    214,
+    0
+   ],
+   "hits": [
+    2419.0,
+    3295.0
+   ]
+  },
+  {
+   "a": "advanced",
+   "b": "master",
+   "result": [
+    9,
+    235,
+    0
+   ],
+   "hits": [
+    1607.0,
+    3103.0
+   ]
+  },
+  {
+   "a": "advanced",
+   "b": "scripted_0.3",
+   "result": [
+    196,
+    51,
+    0
+   ],
+   "hits": [
+    2750.0,
+    1586.0
+   ]
+  },
+  {
+   "a": "advanced",
+   "b": "scripted_0.5",
+   "result": [
+    182,
+    66,
+    0
+   ],
+   "hits": [
+    2478.0,
+    1600.0
+   ]
+  },
+  {
+   "a": "advanced",
+   "b": "scripted_0.8",
+   "result": [
+    184,
+    65,
+    0
+   ],
+   "hits": [
+    2309.0,
+    1706.0
+   ]
+  },
+  {
+   "a": "advanced",
+   "b": "scripted_1.0",
+   "result": [
+    195,
+    50,
+    0
+   ],
+   "hits": [
+    2170.0,
+    1492.0
+   ]
+  },
+  {
+   "a": "expert",
+   "b": "master",
+   "result": [
+    48,
+    201,
+    0
+   ],
+   "hits": [
+    2533.0,
+    4062.0
+   ]
+  },
+  {
+   "a": "expert",
+   "b": "scripted_0.3",
+   "result": [
+    235,
+    10,
+    0
+   ],
+   "hits": [
+    2428.0,
+    1265.0
+   ]
+  },
+  {
+   "a": "expert",
+   "b": "scripted_0.5",
+   "result": [
+    233,
+    11,
+    0
+   ],
+   "hits": [
+    2271.0,
+    1311.0
+   ]
+  },
+  {
+   "a": "expert",
+   "b": "scripted_0.8",
+   "result": [
+    229,
+    13,
+    0
+   ],
+   "hits": [
+    2221.0,
+    1399.0
+   ]
+  },
+  {
+   "a": "master",
+   "b": "scripted_0.3",
+   "result": [
+    246,
+    3,
+    0
+   ],
+   "hits": [
+    2651.0,
+    1082.0
+   ]
+  },
+  {
+   "a": "expert",
+   "b": "scripted_1.0",
+   "result": [
+    225,
+    18,
+    0
+   ],
+   "hits": [
+    2109.0,
+    1252.0
+   ]
+  },
+  {
+   "a": "master",
+   "b": "scripted_0.5",
+   "result": [
+    242,
+    7,
+    0
+   ],
+   "hits": [
+    2587.0,
+    1157.0
+   ]
+  },
+  {
+   "a": "master",
+   "b": "scripted_0.8",
+   "result": [
+    240,
+    4,
+    0
+   ],
+   "hits": [
+    2338.0,
+    1044.0
+   ]
+  },
+  {
+   "a": "master",
+   "b": "scripted_1.0",
+   "result": [
+    240,
+    4,
+    0
+   ],
+   "hits": [
+    2311.0,
+    1046.0
+   ]
+  },
+  {
+   "a": "scripted_0.3",
+   "b": "scripted_0.5",
+   "result": [
+    102,
+    139,
+    0
+   ],
+   "hits": [
+    2185.0,
+    2447.0
+   ]
+  },
+  {
+   "a": "scripted_0.3",
+   "b": "scripted_0.8",
+   "result": [
+    85,
+    164,
+    0
+   ],
+   "hits": [
+    1944.0,
+    2748.0
+   ]
+  },
+  {
+   "a": "scripted_0.5",
+   "b": "scripted_0.8",
+   "result": [
+    102,
+    142,
+    0
+   ],
+   "hits": [
+    2010.0,
+    2362.0
+   ]
+  },
+  {
+   "a": "scripted_0.3",
+   "b": "scripted_1.0",
+   "result": [
+    101,
+    146,
+    0
+   ],
+   "hits": [
+    1870.0,
+    2562.0
+   ]
+  },
+  {
+   "a": "scripted_0.5",
+   "b": "scripted_1.0",
+   "result": [
+    111,
+    131,
+    0
+   ],
+   "hits": [
+    1965.0,
+    2386.0
+   ]
+  },
+  {
+   "a": "scripted_0.8",
+   "b": "scripted_1.0",
+   "result": [
+    121,
+    123,
+    0
+   ],
+   "hits": [
+    2113.0,
+    2122.0
+   ]
+  }
+ ],
+ "slope": 2.838315189812847,
+ "entries": [
+  {
+   "name": "beginner",
+   "path": "beginner/ckpt_006000192.zip",
+   "delay": 4,
+   "noise": 2.5,
+   "cap": 24.0,
+   "sample": true,
+   "hands": []
+  },
+  {
+   "name": "casual",
+   "path": "casual/ckpt_010000224.zip",
+   "delay": 3,
+   "noise": 1.8,
+   "cap": 30.0,
+   "sample": true,
+   "hands": []
+  },
+  {
+   "name": "intermediate",
+   "path": "intermediate/ckpt_018000000.zip",
+   "delay": 2,
+   "noise": 1.2,
+   "cap": 36.0,
+   "sample": true,
+   "hands": []
+  },
+  {
+   "name": "advanced",
+   "path": "advanced/ckpt_022000032.zip",
+   "delay": 1,
+   "noise": 0.8,
+   "cap": 45.0,
+   "sample": true,
+   "hands": []
+  },
+  {
+   "name": "expert",
+   "path": "v3f/ckpt_014000256.zip",
+   "delay": 1,
+   "noise": 2.0,
+   "cap": 40.0,
+   "sample": true,
+   "hands": [
+    "food",
+    "gapple",
+    "wind"
+   ]
+  },
+  {
+   "name": "master",
+   "path": "v3f/ckpt_014000256.zip",
+   "delay": 0,
+   "noise": 0.2,
+   "cap": 60.0,
+   "sample": false,
+   "hands": [
+    "food",
+    "gapple",
+    "wind"
+   ]
+  },
+  {
+   "name": "scripted_0.3",
+   "path": null,
+   "delay": 0,
+   "noise": 0.0,
+   "cap": 60.0,
+   "sample": false,
+   "hands": null
+  },
+  {
+   "name": "scripted_0.5",
+   "path": null,
+   "delay": 0,
+   "noise": 0.0,
+   "cap": 60.0,
+   "sample": false,
+   "hands": null
+  },
+  {
+   "name": "scripted_0.8",
+   "path": null,
+   "delay": 0,
+   "noise": 0.0,
+   "cap": 60.0,
+   "sample": false,
+   "hands": null
+  },
+  {
+   "name": "scripted_1.0",
+   "path": null,
+   "delay": 0,
+   "noise": 0.0,
+   "cap": 60.0,
+   "sample": false,
+   "hands": null
+  }
+ ],
+ "mix": [
+  [
+   "walled",
+   "sword"
+  ],
+  [
+   "walled",
+   "axe"
+  ],
+  [
+   "bridge",
+   "bridge"
+  ],
+  [
+   "islands",
+   "loot"
+  ],
+  [
+   "town",
+   "loot"
+  ],
+  [
+   "platform",
+   "sumo"
+  ],
+  [
+   "islands",
+   "bedwars"
+  ],
+  [
+   "hills",
+   "build_uhc"
+  ]
+ ]
+}

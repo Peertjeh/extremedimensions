@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.48.0
+
+### Changed
+* **The bot levels are tuned to real play** (ML phase 3E). The levels used to be rated as bare models, without what the
+  mod adds on top (a reaction delay, aim noise, a turn limit, sampling), so they played quite differently from their
+  rating: intermediate was much weaker than its number, advanced a big jump above it, and expert almost as strong as
+  master. Now the levels are rated as they really play, and the steps between them are even:
+  * advanced and expert now pick their moves with a little chance instead of always the best one; expert uses the
+    master's brain with a human reaction delay and a less steady aim;
+  * every level up is a clear step: the weaker of two neighbouring levels wins one fight in five to one in fifteen.
+* **The adaptive level uses the measured scale.** The levels sit where they were measured instead of 200 points apart
+  by guess; ratings from before are moved to the new scale once, level for level. The fight logs of a real player
+  agree with the simulation on the gap between intermediate and master.
+* **Mace fights count on their own scale.** The mace bot is scripted and much weaker than the learned fight; beating
+  it no longer lifts your rating as if you had beaten the learned master.
+
+### Added
+* `ml/train/levels.py`: rates the levels as the mod plays them, reads the fight logs for how the levels did against
+  people, and writes the measured scale into `difficulties_v3.json`. The simulation can now give each fighter fixed
+  knobs (perception delay, aim noise, turn limit).
+* The fight exports of 23, 24 and 25 October in `ml/data`.
+
 ## 1.47.1
 
 ### Fixed
