@@ -655,7 +655,7 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(8);
 			ctx.takeScreenshot("02_tetherite_gear");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
-			sp.getServer().runOnServer(s -> {
+			net.minecraft.core.BlockPos spindleAt = sp.getServer().computeOnServer(s -> {
 				ServerPlayer p = player(s);
 				net.minecraft.core.BlockPos at = p.blockPosition().relative(p.getDirection(), 3);
 				net.minecraft.core.Direction side = p.getDirection().getClockWise();
@@ -664,6 +664,7 @@ public class ClientShots implements FabricClientGameTest {
 						.setValue(com.extremedimensions.tetherite.SpindleBlock.SPUN, 5), 3);
 				p.level().setBlock(at.relative(side), com.extremedimensions.registry.ModBlocks.TETHERITE_ORE.defaultBlockState(), 3);
 				p.level().setBlock(at.relative(side.getOpposite()), com.extremedimensions.registry.ModBlocks.TETHERITE_ORE.defaultBlockState(), 3);
+				return at;
 			});
 			sp.getServer().runCommand("execute as @a at @s run summon minecraft:armor_stand ^2.5 ^ ^3 {ShowArms:1b,NoBasePlate:1b,Rotation:[180f,0f],Tags:[\"teth_a\"]}");
 			sp.getServer().runCommand("execute as @a at @s run summon minecraft:armor_stand ^-2.5 ^ ^3 {ShowArms:1b,NoBasePlate:1b,Rotation:[180f,0f],Tags:[\"teth_b\"]}");
@@ -687,8 +688,9 @@ public class ClientShots implements FabricClientGameTest {
 							: com.extremedimensions.registry.ModItems.TETHERITE_SWORD));
 				}
 			});
-			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ ~ 18");
-			ctx.waitTicks(15);
+			// four steps back, so the stands and the Spindle between them all stand in the view
+			sp.getServer().runCommand("execute as @a at @s rotated ~ 0 run tp @s ^ ^ ^-4 ~ 16");
+			ctx.waitTicks(20);
 			ctx.takeScreenshot("02_tetherite_spindle");
 			ctx.runOnClient(mc -> mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT));
 			ctx.waitTicks(10);
@@ -698,17 +700,20 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("kill @e[type=minecraft:armor_stand,tag=teth_b]");
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
-				net.minecraft.core.BlockPos at = p.blockPosition().relative(p.getDirection(), 3);
-				net.minecraft.core.Direction side = p.getDirection().getClockWise();
-				for (net.minecraft.core.BlockPos q : new net.minecraft.core.BlockPos[] {at, at.relative(side), at.relative(side.getOpposite())}) {
-					p.level().setBlock(q, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				for (int dx = -1; dx <= 1; dx++) {
+					for (int dz = -1; dz <= 1; dz++) {
+						if (p.level().getBlockState(spindleAt.offset(dx, 0, dz)).is(com.extremedimensions.registry.ModBlocks.TETHERITE_ORE)
+								|| p.level().getBlockState(spindleAt.offset(dx, 0, dz)).is(com.extremedimensions.registry.ModBlocks.SPINDLE)) {
+							p.level().setBlock(spindleAt.offset(dx, 0, dz), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+						}
+					}
 				}
 				for (net.minecraft.world.entity.EquipmentSlot slot : new net.minecraft.world.entity.EquipmentSlot[] {net.minecraft.world.entity.EquipmentSlot.HEAD,
 						net.minecraft.world.entity.EquipmentSlot.CHEST, net.minecraft.world.entity.EquipmentSlot.LEGS, net.minecraft.world.entity.EquipmentSlot.FEET}) {
 					p.setItemSlot(slot, ItemStack.EMPTY);
 				}
 			});
-			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ ~ 0");
+			sp.getServer().runCommand("execute as @a at @s rotated ~ 0 run tp @s ^ ^ ^4 ~ 0");
 
 			// The Curses screen: all four tabs, with players nearby
 			String data = sp.getServer().computeOnServer(s -> Sync.cursesData(player(s), DataStore.get(player(s).getUUID())));
