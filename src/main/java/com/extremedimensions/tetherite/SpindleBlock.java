@@ -82,7 +82,7 @@ public class SpindleBlock extends Block {
 		int have = state.getValue(slot);
 		if (have >= max) {
 			if (level instanceof ServerLevel) {
-				player.sendSystemMessage(Component.translatable("gui.extremedimensions.spindle.full"), true);
+				tell(player, Component.translatable("gui.extremedimensions.spindle.full"));
 			}
 			return InteractionResult.FAIL;
 		}
@@ -108,7 +108,7 @@ public class SpindleBlock extends Block {
 		int fragments = state.getValue(FRAGMENTS), silk = state.getValue(SILK);
 		if (fragments < fragmentsPerCord() || silk < silkPerCord()) {
 			if (level instanceof ServerLevel) {
-				player.sendSystemMessage(Component.translatable("gui.extremedimensions.spindle.need", fragmentsPerCord(), silkPerCord(), fragments, silk), true);
+				tell(player, Component.translatable("gui.extremedimensions.spindle.need", fragmentsPerCord(), silkPerCord(), fragments, silk));
 			}
 			return InteractionResult.FAIL;
 		}
@@ -128,7 +128,7 @@ public class SpindleBlock extends Block {
 			WorldFx.particleIn(level, "minecraft:end_rod", x, y, z, 0.18, 0.25, 0.18, 0.01, 3);
 			WorldFx.soundIn(dim(level), "minecraft:ui.loom.select_pattern", "block", x, y, z, 0.9f, 0.8f + 0.06f * spun);
 			if (player != null) {
-				player.sendSystemMessage(Component.translatable("gui.extremedimensions.spindle.turn", spun, turnsPerCord()), true);
+				tell(player, Component.translatable("gui.extremedimensions.spindle.turn", spun, turnsPerCord()));
 			}
 			return;
 		}
@@ -142,13 +142,20 @@ public class SpindleBlock extends Block {
 		WorldFx.soundIn(dim(level), "minecraft:ui.loom.take_result", "block", x, y, z, 1.0f, 1.0f);
 		WorldFx.soundIn(dim(level), "minecraft:block.amethyst_block.resonate", "block", x, y, z, 1.0f, 1.2f);
 		if (player != null) {
-			player.sendSystemMessage(Component.translatable("gui.extremedimensions.spindle.done"), true);
+			tell(player, Component.translatable("gui.extremedimensions.spindle.done"));
+		}
+	}
+
+	/** A line on the action bar of whoever is at the spindle. */
+	private static void tell(Player player, Component line) {
+		if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
+			sp.sendSystemMessage(line, true);
 		}
 	}
 
 	private static void status(Player player, BlockState state) {
-		player.sendSystemMessage(Component.translatable("gui.extremedimensions.spindle.loaded", state.getValue(FRAGMENTS), MAX_FRAGMENTS,
-				state.getValue(SILK), MAX_SILK), true);
+		tell(player, Component.translatable("gui.extremedimensions.spindle.loaded", state.getValue(FRAGMENTS), MAX_FRAGMENTS,
+				state.getValue(SILK), MAX_SILK));
 	}
 
 	private static String dim(Level level) {
