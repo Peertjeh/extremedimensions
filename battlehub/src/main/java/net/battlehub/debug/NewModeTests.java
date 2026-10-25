@@ -460,6 +460,7 @@ final class NewModeTests {
 				&& net.battlehub.fx.Music.ANTHEM.equals(net.battlehub.fx.Music.playing(p(A).getUUID())));
 		// the emblem is 49 blocks; D adds a head, a pillar of light, the name and the district
 		s.waitFor(t + ": the Capitol's emblem and D's head in the sky", 160, () -> hg().capitol().tributes().onStage(p(A).getUUID()) >= 49 + 4);
+		s.check(t + ": the sky on A's screen is night", () -> net.battlehub.games.hunger.NightSky.sent() > 0);
 		s.run(t + ": during the night A hits B, and B tries to walk away", () -> {
 			p(B).removeAllEffects();
 			p(B).setHealth(p(B).getMaxHealth());

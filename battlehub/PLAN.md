@@ -2230,9 +2230,11 @@ sterkere events en de twee nieuwe (meteoren, aardbeving), en de nacht waarin het
   beeld. Dus krijgt elke kijker een eigen podium, alleen op zijn eigen scherm (`fx/Stage`: blok-, item- en
   tekstdisplays die alleen bij die speler bestaan), 22 blokken voor zich en 24 boven zich, en de camera stijgt
   vanaf de ogen op naar een plek eronder. Iedereen ziet hetzelfde, in dezelfde maat.
-- **De nachtlucht** gaat met een tijdpakket per speler (`NightSky`, het pakket wordt via reflectie gebouwd zodat
-  een gewijzigde constructor alleen de nachtlucht kost); de dag komt vanzelf terug met de gewone tijdsynchronisatie
-  van de server.
+- **De nachtlucht** gaat met een tijdpakket per speler (`NightSky`). In 26.3 heeft dat pakket geen "tijd van de
+  dag" meer maar per wereldklok een toestand (de eerste CI-run liet zien dat de oude vorm er niet is); het pakket
+  wordt via reflectie gebouwd: de klok van de wereld staat op middernacht en stil zolang de nacht duurt, en aan het
+  eind krijgt de speler de echte tijd terug. Past geen van beide vormen, dan kost dat alleen de donkere lucht en
+  staan de constructors in het log.
 - **Het embleem** is een mozaïek van 49 losse blokdisplays (goud, ruw goud, kwarts) die vanuit het midden een voor
   een opgroeien, in plaats van een model in het pack: zo werkt het ook zonder pack.
 - **De lichtzuil** is een uitgerekt, volledig verlicht wit glasblok (30 hoog) in plaats van deeltjes: deeltjes
