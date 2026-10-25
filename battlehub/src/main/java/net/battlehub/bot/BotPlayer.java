@@ -77,7 +77,9 @@ public final class BotPlayer extends ServerPlayer {
 		} catch (RuntimeException e) {
 			if (!warned) {
 				warned = true;
-				BattleHub.LOGGER.warn("Bot {} stumbled: {}", getGameProfile().name(), e.toString());
+				StackTraceElement[] at = e.getStackTrace();
+				BattleHub.LOGGER.warn("Bot {} stumbled: {} at {}", getGameProfile().name(), e.toString(),
+						java.util.Arrays.toString(java.util.Arrays.copyOf(at, Math.min(4, at.length))));
 			}
 		}
 		super.tick();

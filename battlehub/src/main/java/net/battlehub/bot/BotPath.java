@@ -52,15 +52,16 @@ final class BotPath {
 
 	/** Points to walk through from where the bot stands to near {@code goal}, or null when there is no way. */
 	static List<Vec3> find(ServerLevel level, Vec3 from, Vec3 goal) {
-		return find(level, from, goal, null);
+		return find(level, from, goal, null, null);
 	}
 
 	/**
 	 * Like {@link #find(ServerLevel, Vec3, Vec3)}; with a block to {@code use} (a chest, a barrel) the route ends where
 	 * that block is within reach and in sight, nothing in between: inside the house through its doorway, not outside
-	 * the window next to it (from there a bot could not open it, and walked round in circles).
+	 * the window next to it (from there a bot could not open it, and walked round in circles). {@code viewer} is the
+	 * bot (the game's line of sight needs an entity).
 	 */
-	static List<Vec3> find(ServerLevel level, Vec3 from, Vec3 goal, BlockPos use) {
+	static List<Vec3> find(ServerLevel level, Vec3 from, Vec3 goal, BlockPos use, net.minecraft.world.entity.Entity viewer) {
 		World w = new World(level);
 		BlockPos start = standing(w, from);
 		if (start == null) {
@@ -73,7 +74,7 @@ final class BotPath {
 		if (use != null) {
 			end = use;
 			reach = USE_REACH + 0.5;
-			there = n -> sees(level, n, use);
+			there = n -> sees(level, n, use, viewer);
 		}
 		List<GridPath.Node> nodes = GridPath.find(w, new GridPath.Node(start.getX(), start.getY(), start.getZ()),
 				new GridPath.Node(end.getX(), end.getY(), end.getZ()), reach, 2500, there);
@@ -88,10 +89,10 @@ final class BotPath {
 	}
 
 	/** From standing on {@code n} the block {@code use} is within reach of the eyes, with nothing in between. */
-	static boolean sees(ServerLevel level, GridPath.Node n, BlockPos use) {
+	static boolean sees(ServerLevel level, GridPath.Node n, BlockPos use, net.minecraft.world.entity.Entity viewer) {
 		Vec3 eye = new Vec3(n.x() + 0.5, n.y() + 1.62, n.z() + 0.5), mid = Vec3.atCenterOf(use);
 		if (eye.distanceToSqr(mid) > USE_REACH * USE_REACH) return false;
-		BlockHitResult hit = level.clip(new ClipContext(eye, mid, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
+		BlockHitResult hit = level.clip(new ClipContext(eye, mid, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, viewer));
 		return hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(use);
 	}
 

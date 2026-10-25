@@ -1516,7 +1516,7 @@ final class BotTests {
 			for (BlockPos c : hg.arena().marks("chest")) {
 				if (!level.getBlockState(c).is(net.minecraft.world.level.block.Blocks.BARREL)
 						|| !(level.getBlockEntity(c) instanceof net.minecraft.world.Container box) || box.isEmpty()) continue;
-				BlockPos out = outsideBeside(level, c);
+				BlockPos out = outsideBeside(level, c, b);
 				if (out == null) continue;
 				VARS.put("hgWindowAt", c);
 				net.battlehub.bot.Looting.stop(b, 0);
@@ -1578,10 +1578,16 @@ final class BotTests {
 	}
 
 	/**
-	 * A spot outside (open sky) beside a container, two to two and a half blocks from it, where a player stands but
-	 * cannot open it: a wall or a window in between. Null when there is none.
+	 * A spot outside (open sky, or else at least on the other side of a wall) beside a container, two to two and a half
+	 * blocks from it, where a player stands but cannot open it: a wall or a window in between. Null when there is none.
 	 */
-	private static BlockPos outsideBeside(net.minecraft.server.level.ServerLevel level, BlockPos c) {
+	private static BlockPos outsideBeside(net.minecraft.server.level.ServerLevel level, BlockPos c, ServerPlayer viewer) {
+		BlockPos out = beside(level, c, viewer, true);
+		// under the eaves the sky is not open: then any spot on the other side of a wall
+		return out != null ? out : beside(level, c, viewer, false);
+	}
+
+	private static BlockPos beside(net.minecraft.server.level.ServerLevel level, BlockPos c, ServerPlayer viewer, boolean sky) {
 		for (int dx = -3; dx <= 3; dx++) {
 			for (int dz = -3; dz <= 3; dz++) {
 				double flat = Math.hypot(dx, dz);
@@ -1589,10 +1595,10 @@ final class BotTests {
 				for (int dy = -1; dy <= 1; dy++) {
 					BlockPos o = c.offset(dx, dy, dz);
 					if (!level.getBlockState(o).getCollisionShape(level, o).isEmpty() || !level.getBlockState(o.above()).getCollisionShape(level, o.above()).isEmpty()
-							|| level.getBlockState(o.below()).getCollisionShape(level, o.below()).isEmpty() || !level.canSeeSky(o.above(2))) continue;
+							|| level.getBlockState(o.below()).getCollisionShape(level, o.below()).isEmpty() || sky && !level.canSeeSky(o.above(2))) continue;
 					net.minecraft.world.phys.Vec3 eye = new net.minecraft.world.phys.Vec3(o.getX() + 0.5, o.getY() + 1.62, o.getZ() + 0.5);
 					net.minecraft.world.phys.BlockHitResult hit = level.clip(new net.minecraft.world.level.ClipContext(eye, net.minecraft.world.phys.Vec3.atCenterOf(c),
-							net.minecraft.world.level.ClipContext.Block.OUTLINE, net.minecraft.world.level.ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
+							net.minecraft.world.level.ClipContext.Block.OUTLINE, net.minecraft.world.level.ClipContext.Fluid.NONE, viewer));
 					if (hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK && !hit.getBlockPos().equals(c)) return o;
 				}
 			}

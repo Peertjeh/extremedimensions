@@ -399,6 +399,8 @@ final class NewModeTests {
 			shield(A, B, C, D);
 			VARS.put("hgChutes", hg().capitol().sponsors().parachutes());
 			VARS.put("hgBarrels", new java.util.HashSet<>(hg().capitol().sponsors().landed().keySet()));
+			// where A stood when the sponsors sent it (the earthquake and the meteors push A about meanwhile)
+			VARS.put("hgChuteFor", p(A).position());
 			hg().capitol().sponsors().favourToNext(p(A).getUUID());
 		});
 		s.waitFor(t + ": a silver parachute lands next to A, a barrel with a gift", 400, () -> {
@@ -406,7 +408,7 @@ final class NewModeTests {
 			java.util.Set<BlockPos> before = (java.util.Set<BlockPos>) VARS.get("hgBarrels");
 			for (var e : hg().capitol().sponsors().landed().entrySet()) {
 				if (before.contains(e.getKey()) || !p(A).getUUID().equals(e.getValue())) continue;
-				double d = Math.sqrt(e.getKey().distToCenterSqr(p(A).position()));
+				double d = Math.sqrt(e.getKey().distToCenterSqr((net.minecraft.world.phys.Vec3) VARS.get("hgChuteFor")));
 				net.battlehub.BattleHub.LOGGER.info("SELFTEST real hunger games: A's parachute landed at {}, {} blocks away", e.getKey(),
 						String.format(java.util.Locale.ROOT, "%.1f", d));
 				return d < 9;

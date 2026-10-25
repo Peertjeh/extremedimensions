@@ -460,7 +460,7 @@ final class BotBrain {
 		if (due) {
 			// going to a chest: the route ends where it is in sight and within reach, not outside a window next to it
 			BlockPos use = useTarget != null && Vec3.atCenterOf(useTarget).distanceTo(dest) < 3 ? useTarget : null;
-			path = BotPath.find(level(), bot.position(), dest, use);
+			path = BotPath.find(level(), bot.position(), dest, use, bot);
 			pathIndex = 0;
 			pathAge = 0;
 			pathGoal = dest;
