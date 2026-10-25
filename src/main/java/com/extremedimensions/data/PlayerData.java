@@ -70,6 +70,8 @@ public class PlayerData {
 	public int covetousOwed = 0;
 	/** A statistic as last seen, for deeds counted from the game's own statistics (Rot: rotten flesh eaten). */
 	public Map<String, Integer> abyssalSeen = new HashMap<>();
+	/** Lightless: a night under way in the Overworld (dark when last seen), kept awake through, or slept in; Unwelcome: under the Hero of the Village when last seen. */
+	public boolean nightDark = false, nightWatched = false, nightSlept = false, wasHero = false;
 	/** The sworn pact: extra stacks of curses taken on willingly, acting on expeditions (see PactService). */
 	public Map<String, Integer> pact = new HashMap<>();
 	/** The Elders: Keepers slain (the Matriarch comes after enough of them), and whether she has fallen to this player. */
@@ -234,6 +236,8 @@ public class PlayerData {
 	/** Weight of Iron's slowdown as last set (NaN: set it afresh). */
 	public transient double ironValue = Double.NaN;
 	public transient double bloodValue = Double.NaN;
+	/** Unmapped: whether the client was last told to hide its coordinates. */
+	public transient boolean unmappedSent = false;
 	public transient boolean joinDone = false;
 	public transient int ticksOnline = 0;
 	/** Current drain including the distance factor (HUD). */

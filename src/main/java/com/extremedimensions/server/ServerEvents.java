@@ -106,6 +106,7 @@ public final class ServerEvents {
 			com.extremedimensions.seam.FirstKnot.clear();
 			LurkerService.clear();
 			com.extremedimensions.penalty.AbyssalTolls.clear();
+			com.extremedimensions.penalty.AbyssalWorld.clear();
 			HollowService.clear();
 			SeamService.clear();
 			com.extremedimensions.seam.SeamFauna.clear();
@@ -280,6 +281,8 @@ public final class ServerEvents {
 			}
 		});
 
+		// Cold Forge and Barren Hand: the furnaces a cursed player works and the crops they plant are marked
+		UseBlockCallback.EVENT.register(com.extremedimensions.penalty.AbyssalWorld::onUse);
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
 			if (player instanceof ServerPlayer fallen && com.extremedimensions.coop.FallenService.fallen(fallen)) {
 				return InteractionResult.FAIL;
@@ -392,6 +395,8 @@ public final class ServerEvents {
 			if (!Dims.ours(level)) {
 				return;
 			}
+			// Barren Hand, Cave-In: a harvest, deepslate, deep stone giving way
+			com.extremedimensions.penalty.AbyssalWorld.afterBreak(level, player, pos, state);
 			AnchorService.onBroken(Dims.of(level), pos);
 			if (player instanceof ServerPlayer sp) {
 				CurseEffects.wear(sp);
@@ -636,6 +641,7 @@ public final class ServerEvents {
 		AnchorService.tick(s);
 		LurkerService.tick(s);
 		com.extremedimensions.penalty.AbyssalTolls.serverTick(s);
+		com.extremedimensions.penalty.AbyssalWorld.serverTick(s);
 		HollowService.tick(s);
 		lap = TickProfile.lap("world", lap);
 		SeamService.tick(s);

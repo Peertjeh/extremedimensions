@@ -151,6 +151,8 @@ public final class ExpeditionService {
 		boolean real = d.runActive >= Math.max(0, Config.ATONE_RETURN_MIN_SECONDS);
 		if (real) {
 			d.expeditions++;
+			// Unmapped: every safe return counts towards its deed
+			com.extremedimensions.penalty.AbyssalCurses.advance(p, d, Penalty.UNMAPPED, 1);
 		}
 		d.longestRun = Math.max(d.longestRun, d.runTime);
 		d.runTime = 0;

@@ -297,7 +297,8 @@ public final class SeamFauna {
 				continue;
 			}
 			Journal.unlock(prey, DataStore.get(prey.getUUID()), JournalEntry.THINNED);
-			if (watched(players, t)) {
+			// (Unwatched: now and then they move with eyes on them too)
+			if (watched(players, t) && !com.extremedimensions.penalty.AbyssalWorld.slipping(prey, t)) {
 				t.getNavigation().stop();
 				t.setDeltaMovement(0, t.getDeltaMovement().y, 0);
 				t.setLurkerPose(Lurker.POSE_STALK);

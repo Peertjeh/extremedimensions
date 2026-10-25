@@ -31,6 +31,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -419,20 +420,25 @@ public final class AbyssalTolls {
 		forsake(p);
 	}
 
-	/** One of the player's tamed animals close by goes wild again. Returns it, or null if none is near. */
-	public static TamableAnimal forsake(ServerPlayer p) {
+	/** One of the player's tamed animals close by (a wolf, a cat, a horse) goes wild again. Returns it, or null if none is near. */
+	public static Mob forsake(ServerPlayer p) {
 		double r = Math.max(1, Penalty.FORSAKEN_BOND.value);
-		List<TamableAnimal> tame = p.level().getEntitiesOfClass(TamableAnimal.class, p.getBoundingBox().inflate(r),
-				a -> a.isTame() && a.getOwner() == p);
+		List<Mob> tame = p.level().getEntitiesOfClass(Mob.class, p.getBoundingBox().inflate(r),
+				m -> (m instanceof TamableAnimal a && a.isTame() && a.getOwner() == p) || (m instanceof AbstractHorse h && h.isTamed() && h.getOwner() == p));
 		if (tame.isEmpty()) {
 			return null;
 		}
-		TamableAnimal a = tame.get(ThreadLocalRandom.current().nextInt(tame.size()));
-		a.setTame(false, true);
-		a.setOwnerReference(null);
-		a.setOrderedToSit(false);
-		WorldFx.particleIn(p.level(), "minecraft:smoke", a.getX(), a.getY() + a.getBbHeight(), a.getZ(), 0.3, 0.3, 0.3, 0.02, 14);
-		p.sendSystemMessage(Component.translatable("gui.extremedimensions.abyssal.forsaken", a.getDisplayName()), true);
-		return a;
+		Mob m = tame.get(ThreadLocalRandom.current().nextInt(tame.size()));
+		if (m instanceof TamableAnimal a) {
+			a.setTame(false, true);
+			a.setOwnerReference(null);
+			a.setOrderedToSit(false);
+		} else if (m instanceof AbstractHorse h) {
+			h.setTamed(false);
+			h.setOwner(null);
+		}
+		WorldFx.particleIn(p.level(), "minecraft:smoke", m.getX(), m.getY() + m.getBbHeight(), m.getZ(), 0.3, 0.3, 0.3, 0.02, 14);
+		p.sendSystemMessage(Component.translatable("gui.extremedimensions.abyssal.forsaken", m.getDisplayName()), true);
+		return m;
 	}
 }

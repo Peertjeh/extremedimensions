@@ -59,7 +59,8 @@ import net.minecraft.world.level.levelgen.Heightmap;
  * arrows and tridents.</li>
  * </ul>
  *
- * <p>The next eight, tolls on what the player already has, live in {@link AbyssalTolls}.
+ * <p>The next eight, tolls on what the player already has, live in {@link AbyssalTolls}; the last eight, the world
+ * itself turned against the player, in {@link AbyssalWorld}.
  */
 public final class AbyssalCurses {
 	private AbyssalCurses() {}
@@ -151,6 +152,13 @@ public final class AbyssalCurses {
 		set(p, d, pen, progress(d, pen) + n);
 	}
 
+	/** The deed starts over (a streak broken: Lightless' nights). */
+	public static void restart(ServerPlayer p, PlayerData d, Penalty pen) {
+		if (pen.abyssal && d.owned(pen) > 0 && progress(d, pen) > 0) {
+			set(p, d, pen, 0);
+		}
+	}
+
 	private static void set(ServerPlayer p, PlayerData d, Penalty pen, int value) {
 		if (value >= target(pen)) {
 			breakCurse(p, d, pen);
@@ -190,6 +198,7 @@ public final class AbyssalCurses {
 		hungering(p, d, level);
 		gravebound(p, d, level);
 		AbyssalTolls.tick(p, d, level);
+		AbyssalWorld.tick(p, d, level);
 	}
 
 	/** Sunscorn: the undead's sun. Bare-headed under the open sky by day in the Overworld, the player catches fire. */
@@ -350,6 +359,7 @@ public final class AbyssalCurses {
 			advance(killer, d, Penalty.MARROW_ROT, 1);
 		}
 		AbyssalTolls.onKill(killer, d, victim);
+		AbyssalWorld.onKill(killer, d, victim);
 	}
 
 	/** An Elder fell: its fighters close by do the deeds of Weight of Iron (in light armour) and Cinder Lungs (the Ferryman). */

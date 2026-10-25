@@ -172,12 +172,25 @@ public final class Config {
 	public static int ABYSSAL_BREAK_SPLINTERING = 200;
 	public static int ABYSSAL_BREAK_BITTER_CURE = 1;
 	public static int ABYSSAL_BREAK_FORSAKEN_BOND = 1;
+	public static int ABYSSAL_BREAK_LIGHTLESS = 3;
+	public static int ABYSSAL_BREAK_UNMAPPED = 5;
+	public static int ABYSSAL_BREAK_UNWELCOME = 1;
+	public static int ABYSSAL_BREAK_COLD_FORGE = 256;
+	public static int ABYSSAL_BREAK_BARREN_HAND = 256;
+	public static int ABYSSAL_BREAK_CAVE_IN = 300;
+	public static int ABYSSAL_BREAK_WINGSHADOW = 30;
+	public static int ABYSSAL_BREAK_UNWATCHED = 20;
 	/** Blood Price: how long the maximum health a lifted stack costs stays gone, and the chance that stack jumps to another curse. */
 	public static int ABYSSAL_BLOOD_PRICE_MINUTES = 20;
 	public static double ABYSSAL_BLOOD_PRICE_JUMP = 0.33;
 	/** Restless Dead: seconds before a slain monster rises again. Unmoored: how far a blow in the End throws the player. */
 	public static int ABYSSAL_RESTLESS_DELAY_SECONDS = 5;
 	public static int ABYSSAL_UNMOORED_RANGE = 8;
+	/** Lightless: how far round the player monsters spawn as if the light were dimmer. Cold Forge: times the fuel a furnace burns. */
+	public static int ABYSSAL_LIGHTLESS_RANGE = 48;
+	public static double ABYSSAL_COLD_FORGE_FUEL = 2.0;
+	/** Cave-In: the depth (Y) below which stone gives way over the player's head. */
+	public static int ABYSSAL_CAVE_IN_DEPTH = 0;
 	/**
 	 * Atonement from kills only counts monsters that spawned naturally, that the player dealt at least this share of the
 	 * damage to (a farm's fall does not count), and at most a few at one place: after {@code atone_kill_area_limit}

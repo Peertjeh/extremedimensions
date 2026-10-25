@@ -783,22 +783,23 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("04_cards_forced");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
-			// The Abyssal row under the Extreme tab, with Sunscorn carried and its deed under way
+			// The Abyssal row under the Extreme tab, with Mirror Wound carried and its deed under way (one that does
+			// nothing to a player standing still: Sunscorn would set them alight in the noon sun)
 			int abyssal = com.extremedimensions.config.Config.ABYSSAL_CURSES;
 			String deep = sp.getServer().computeOnServer(s -> {
 				com.extremedimensions.config.Config.ABYSSAL_CURSES = 1;
 				ServerPlayer p = player(s);
 				PlayerData d = DataStore.get(p.getUUID());
-				d.addStacks(com.extremedimensions.penalty.Penalty.SUNSCORN, 1);
-				d.abyssalDeeds.put("sunscorn", 12);
+				d.addStacks(com.extremedimensions.penalty.Penalty.MIRROR_WOUND, 1);
+				d.abyssalDeeds.put("mirror_wound", 21);
 				return Sync.cursesData(p, d);
 			});
 			ctx.runOnClient(mc -> {
 				CursesScreen cs = new CursesScreen(deep, null);
 				mc.gui.setScreen(cs);
 				String extreme = net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.curses.tab_extreme");
-				String sunscorn = net.minecraft.client.resources.language.I18n.get("penalty.extremedimensions.sunscorn");
-				for (String press : List.of(extreme, sunscorn)) {
+				String wound = net.minecraft.client.resources.language.I18n.get("penalty.extremedimensions.mirror_wound");
+				for (String press : List.of(extreme, wound)) {
 					for (GuiEventListener w : cs.children()) {
 						if (w instanceof AbstractButton b && b.getMessage().getString().equals(press)) {
 							b.onPress(null);
@@ -811,7 +812,7 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			sp.getServer().runOnServer(s -> {
 				PlayerData d = DataStore.get(player(s).getUUID());
-				d.curses.remove("sunscorn");
+				d.curses.remove("mirror_wound");
 				d.abyssalDeeds.clear();
 				com.extremedimensions.config.Config.ABYSSAL_CURSES = abyssal;
 			});

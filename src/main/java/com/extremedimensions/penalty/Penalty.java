@@ -116,7 +116,15 @@ public enum Penalty {
 	UNMOORED("unmoored", Group.EXTREME, 1, 20, true),
 	SPLINTERING("splintering", Group.EXTREME, 1, 10, true),
 	BITTER_CURE("bitter_cure", Group.EXTREME, 1, 50, true),
-	FORSAKEN_BOND("forsaken_bond", Group.EXTREME, 1, 32, true);
+	FORSAKEN_BOND("forsaken_bond", Group.EXTREME, 1, 32, true),
+	LIGHTLESS("lightless", Group.EXTREME, 1, 4, true),
+	UNMAPPED("unmapped", Group.EXTREME, 1, 1, true),
+	UNWELCOME("unwelcome", Group.EXTREME, 1, 32, true),
+	COLD_FORGE("cold_forge", Group.EXTREME, 1, 50, true),
+	BARREN_HAND("barren_hand", Group.EXTREME, 1, 50, true),
+	CAVE_IN("cave_in", Group.EXTREME, 1, 15, true),
+	WINGSHADOW("wingshadow", Group.EXTREME, 1, 4, true),
+	UNWATCHED("unwatched", Group.EXTREME, 1, 20, true);
 
 	/** Where a curse acts: beyond the wound, in the Overworld, in every world; Extreme curses act in every world too. */
 	public enum Group {

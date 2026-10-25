@@ -13,6 +13,7 @@ import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.pact.PactService;
 import com.extremedimensions.penalty.AbyssalCurses;
 import com.extremedimensions.penalty.AbyssalTolls;
+import com.extremedimensions.penalty.AbyssalWorld;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.registry.ModItems;
@@ -29,15 +30,22 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.monster.zombie.Zombie;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -592,6 +600,243 @@ public class AbyssalTests {
 		int target = Config.ABYSSAL_BREAK_FORSAKEN_BOND;
 		AbyssalCurses.advance(p, d, Penalty.FORSAKEN_BOND, target);
 		check(helper, d.owned(Penalty.FORSAKEN_BOND) == 0, "its deed done did not break Forsaken Bond");
+		helper.succeed();
+	}
+
+	// ------------------------------------------------------------------ the last eight (AbyssalWorld)
+
+	@GameTest
+	public void everyAbyssalMixinIsApplied(GameTestHelper helper) {
+		String[][] expected = {
+			{"net.minecraft.world.entity.monster.Monster", "lightlessBlock", "lightlessRaw"},
+			{"net.minecraft.world.item.MapItem", "unmapped"},
+			{"net.minecraft.world.entity.ai.goal.BreakDoorGoal", "unwelcome"},
+			{"net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity", "coldFuel", "coldCooking"},
+			{"net.minecraft.world.inventory.FurnaceResultSlot", "smelted"},
+			{"net.minecraft.world.level.block.CropBlock", "barrenGrowth", "barrenMeal"},
+			{"net.minecraft.world.effect.HealOrHarmMobEffect", "bitterCure"},
+			{"net.minecraft.world.effect.RegenerationMobEffect", "bitterCure"},
+		};
+		for (String[] row : expected) {
+			Class<?> target;
+			try {
+				target = Class.forName(row[0]);
+			} catch (ClassNotFoundException e) {
+				throw helper.assertionException("no class %s", row[0]);
+			}
+			for (int i = 1; i < row.length; i++) {
+				String handler = "extremedimensions$" + row[i];
+				boolean found = false;
+				for (java.lang.reflect.Method m : target.getDeclaredMethods()) {
+					found |= m.getName().contains(handler);
+				}
+				check(helper, found, "mixin %s did not apply to %s", handler, target.getSimpleName());
+			}
+		}
+		helper.succeed();
+	}
+
+	@GameTest
+	public void lightlessDarkensNearbyAndWatchedNightsBreakIt(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.LIGHTLESS, 1);
+		PlayerData d = DataStore.get(p.getUUID());
+		place(helper, p, 1.5, 2, 1.5);
+		AbyssalWorld.refresh(helper.getLevel().getServer());
+		BlockPos here = helper.absolutePos(new BlockPos(3, 2, 3));
+		check(helper, AbyssalWorld.darker(helper.getLevel(), here) == (int) Penalty.LIGHTLESS.value, "a spawn spot by the player is not darkened");
+		check(helper, AbyssalWorld.darker(helper.getLevel(), here.offset(Config.ABYSSAL_LIGHTLESS_RANGE + 20, 0, 0)) == 0, "a spawn spot far off is darkened");
+		int target = Config.ABYSSAL_BREAK_LIGHTLESS;
+		try {
+			Config.ABYSSAL_BREAK_LIGHTLESS = 2;
+			d.nightDark = d.nightWatched = true;
+			AbyssalWorld.dawn(p, d);
+			check(helper, AbyssalCurses.progress(d, Penalty.LIGHTLESS) == 1, "a night kept awake through did not count");
+			d.nightDark = d.nightWatched = d.nightSlept = true;
+			AbyssalWorld.dawn(p, d);
+			check(helper, AbyssalCurses.progress(d, Penalty.LIGHTLESS) == 0, "a night slept in did not start the count over");
+			for (int night = 0; night < 2; night++) {
+				d.nightDark = d.nightWatched = true;
+				AbyssalWorld.dawn(p, d);
+			}
+			check(helper, d.owned(Penalty.LIGHTLESS) == 0, "two nights in a row kept awake through did not break Lightless");
+		} finally {
+			Config.ABYSSAL_BREAK_LIGHTLESS = target;
+		}
+		helper.succeed();
+	}
+
+	@GameTest
+	public void unmappedBlanksMapsAndHidesCoordinates(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.UNMAPPED, 1);
+		PlayerData d = DataStore.get(p.getUUID());
+		check(helper, AbyssalWorld.blankMaps(p) && !AbyssalWorld.blankMaps(cursed(helper)), "Unmapped does not tell whose maps stay blank");
+		AbyssalCurses.tick(p, d);
+		check(helper, d.unmappedSent, "the client was not told to hide its coordinates");
+		AbyssalCurses.advance(p, d, Penalty.UNMAPPED, AbyssalCurses.target(Penalty.UNMAPPED));
+		check(helper, d.owned(Penalty.UNMAPPED) == 0, "its deed done did not break Unmapped");
+		AbyssalCurses.tick(p, d);
+		check(helper, !d.unmappedSent && !AbyssalWorld.blankMaps(p), "the coordinates stayed hidden once Unmapped broke");
+		helper.succeed();
+	}
+
+	@GameTest
+	public void unwelcomeOpensDoorsAndARaidBreaksIt(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.UNWELCOME, 1);
+		PlayerData d = DataStore.get(p.getUUID());
+		place(helper, p, 1.5, 2, 1.5);
+		AbyssalWorld.refresh(helper.getLevel().getServer());
+		Mob zombie = mob(helper, "zombie", 4.5, 2, 1.5);
+		Mob skeleton = mob(helper, "skeleton", 3.5, 2, 3.5);
+		helper.setBlock(new BlockPos(3, 2, 4), Blocks.OAK_DOOR.defaultBlockState());
+		helper.setBlock(new BlockPos(3, 3, 4), Blocks.OAK_DOOR.defaultBlockState().setValue(DoorBlock.HALF, DoubleBlockHalf.UPPER));
+		try {
+			AbyssalCurses.tick(p, d);
+			check(helper, ((Zombie) zombie).canBreakDoors() && AbyssalWorld.unwelcome(zombie), "a zombie by the player did not learn to break doors");
+			skeleton.setTarget(p);
+			check(helper, AbyssalWorld.openDoors(skeleton, helper.getLevel()) > 0, "a skeleton after the player did not open the door beside it");
+			check(helper, helper.getBlockState(new BlockPos(3, 2, 4)).getValue(DoorBlock.OPEN), "the door stayed shut");
+			p.addEffect(new MobEffectInstance(MobEffects.HERO_OF_THE_VILLAGE, 200));
+			AbyssalCurses.tick(p, d);
+			check(helper, d.owned(Penalty.UNWELCOME) == 0, "a raid won (Hero of the Village) did not break Unwelcome");
+		} finally {
+			zombie.discard();
+			skeleton.discard();
+		}
+		helper.succeed();
+	}
+
+	@GameTest
+	public void coldForgeCooksSlowerAndBurnsMore(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.COLD_FORGE, 1);
+		ServerLevel level = helper.getLevel();
+		BlockPos warm = helper.absolutePos(new BlockPos(1, 2, 1)), cold = helper.absolutePos(new BlockPos(3, 2, 1));
+		AbstractFurnaceBlockEntity[] furnaces = new AbstractFurnaceBlockEntity[2];
+		BlockPos[] at = {warm, cold};
+		for (int i = 0; i < 2; i++) {
+			level.setBlock(at[i], Blocks.FURNACE.defaultBlockState(), 3);
+			furnaces[i] = (AbstractFurnaceBlockEntity) level.getBlockEntity(at[i]);
+			furnaces[i].setItem(0, new ItemStack(Items.RAW_IRON, 4));
+			furnaces[i].setItem(1, new ItemStack(Items.COAL, 1));
+		}
+		AbyssalWorld.chill(level, cold, p);
+		for (int t = 0; t < 120; t++) {
+			for (int i = 0; i < 2; i++) {
+				AbstractFurnaceBlockEntity.serverTick(level, at[i], level.getBlockState(at[i]), furnaces[i]);
+			}
+		}
+		com.extremedimensions.mixin.FurnaceAccess w = (com.extremedimensions.mixin.FurnaceAccess) furnaces[0], c = (com.extremedimensions.mixin.FurnaceAccess) furnaces[1];
+		check(helper, w.extremedimensions$cookingTimer() > 0 && c.extremedimensions$cookingTimer() < w.extremedimensions$cookingTimer() * 0.75,
+				"a cold furnace cooked as fast: %s against %s", c.extremedimensions$cookingTimer(), w.extremedimensions$cookingTimer());
+		check(helper, c.extremedimensions$litTime() < w.extremedimensions$litTime() - 60, "a cold furnace burned no more fuel: %s left against %s",
+				c.extremedimensions$litTime(), w.extremedimensions$litTime());
+		int target = Config.ABYSSAL_BREAK_COLD_FORGE;
+		try {
+			Config.ABYSSAL_BREAK_COLD_FORGE = 3;
+			AbyssalWorld.smelted(p, 3);
+			check(helper, DataStore.get(p.getUUID()).owned(Penalty.COLD_FORGE) == 0, "three items smelted did not break Cold Forge");
+		} finally {
+			Config.ABYSSAL_BREAK_COLD_FORGE = target;
+		}
+		helper.succeed();
+	}
+
+	@GameTest
+	public void barrenHandStuntsCropsAndHarvestBreaksIt(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.BARREN_HAND, 1);
+		ServerLevel level = helper.getLevel();
+		helper.setBlock(new BlockPos(1, 1, 1), Blocks.FARMLAND.defaultBlockState());
+		helper.setBlock(new BlockPos(1, 2, 1), Blocks.WHEAT.defaultBlockState());
+		BlockPos crop = helper.absolutePos(new BlockPos(1, 2, 1));
+		AbyssalWorld.sow(level, crop);
+		double value = Penalty.BARREN_HAND.value;
+		int target = Config.ABYSSAL_BREAK_BARREN_HAND;
+		try {
+			Penalty.BARREN_HAND.value = 100;
+			net.minecraft.util.RandomSource random = net.minecraft.util.RandomSource.create(7);
+			for (int i = 0; i < 300; i++) {
+				level.getBlockState(crop).randomTick(level, crop, random);
+			}
+			check(helper, ((CropBlock) Blocks.WHEAT).getAge(level.getBlockState(crop)) == 0, "a barren crop grew");
+			Config.ABYSSAL_BREAK_BARREN_HAND = 1;
+			AbyssalWorld.afterBreak(level, p, crop, ((CropBlock) Blocks.WHEAT).getStateForAge(7));
+			check(helper, DataStore.get(p.getUUID()).owned(Penalty.BARREN_HAND) == 0, "a ripe crop harvested did not break Barren Hand");
+			check(helper, !AbyssalWorld.barren(level, crop), "a harvested spot stayed barren");
+		} finally {
+			Penalty.BARREN_HAND.value = value;
+			Config.ABYSSAL_BREAK_BARREN_HAND = target;
+		}
+		helper.succeed();
+	}
+
+	@GameTest
+	public void caveInBringsTheStoneDownAndDeepslateBreaksIt(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.CAVE_IN, 1);
+		ServerLevel level = helper.getLevel();
+		helper.setBlock(new BlockPos(2, 2, 2), Blocks.STONE.defaultBlockState());
+		helper.setBlock(new BlockPos(2, 3, 2), Blocks.COBBLESTONE.defaultBlockState());
+		BlockPos mined = helper.absolutePos(new BlockPos(2, 2, 2));
+		double value = Penalty.CAVE_IN.value;
+		int depth = Config.ABYSSAL_CAVE_IN_DEPTH, target = Config.ABYSSAL_BREAK_CAVE_IN;
+		try {
+			Penalty.CAVE_IN.value = 100;
+			Config.ABYSSAL_CAVE_IN_DEPTH = 10_000;
+			level.setBlock(mined, Blocks.AIR.defaultBlockState(), 3);
+			AbyssalWorld.afterBreak(level, p, mined, Blocks.STONE.defaultBlockState());
+			check(helper, level.getBlockState(mined.above()).isAir(), "the block over a mined stone did not come down");
+			Config.ABYSSAL_BREAK_CAVE_IN = 1;
+			AbyssalWorld.afterBreak(level, p, mined, Blocks.DEEPSLATE.defaultBlockState());
+			check(helper, DataStore.get(p.getUUID()).owned(Penalty.CAVE_IN) == 0, "deepslate mined did not break Cave-In");
+		} finally {
+			Penalty.CAVE_IN.value = value;
+			Config.ABYSSAL_CAVE_IN_DEPTH = depth;
+			Config.ABYSSAL_BREAK_CAVE_IN = target;
+		}
+		helper.succeed();
+	}
+
+	@GameTest
+	public void wingshadowKeepsPlayersSleeplessAndPhantomsBreakIt(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.WINGSHADOW, 1);
+		PlayerData d = DataStore.get(p.getUUID());
+		var rest = Stats.CUSTOM.get(Stats.TIME_SINCE_REST);
+		AbyssalWorld.wingshadow(p, d, false);
+		check(helper, p.getStats().getValue(rest) < 24000, "Wingshadow kept the player sleepless by day");
+		AbyssalWorld.wingshadow(p, d, true);
+		check(helper, p.getStats().getValue(rest) >= Penalty.WINGSHADOW.value * 24000, "by night Wingshadow did not keep the player sleepless (%s)",
+				p.getStats().getValue(rest));
+		Mob phantom = mob(helper, "phantom", 3.5, 4, 3.5);
+		int target = Config.ABYSSAL_BREAK_WINGSHADOW;
+		try {
+			Config.ABYSSAL_BREAK_WINGSHADOW = 1;
+			AbyssalCurses.onKill(p, phantom, p.damageSources().playerAttack(p));
+			check(helper, d.owned(Penalty.WINGSHADOW) == 0, "a Phantom slain did not break Wingshadow");
+		} finally {
+			Config.ABYSSAL_BREAK_WINGSHADOW = target;
+			phantom.discard();
+		}
+		helper.succeed();
+	}
+
+	@GameTest
+	public void unwatchedThinnedSlipAndSlayingThemBreaksIt(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.UNWATCHED, 1);
+		PlayerData d = DataStore.get(p.getUUID());
+		Mob thinned = (Mob) helper.spawn(com.extremedimensions.registry.ModEntities.THINNED, new Vec3(3.5, 2, 3.5));
+		double value = Penalty.UNWATCHED.value;
+		int target = Config.ABYSSAL_BREAK_UNWATCHED;
+		try {
+			Penalty.UNWATCHED.value = 100;
+			check(helper, AbyssalWorld.slipping(p, thinned) && !AbyssalWorld.slipping(cursed(helper), thinned), "Unwatched does not let the Thinned slip");
+			Penalty.UNWATCHED.value = 0;
+			check(helper, !AbyssalWorld.slipping(p, thinned), "at nought the Thinned still slip");
+			Config.ABYSSAL_BREAK_UNWATCHED = 1;
+			AbyssalCurses.onKill(p, thinned, p.damageSources().playerAttack(p));
+			check(helper, d.owned(Penalty.UNWATCHED) == 0, "a Thinned slain did not break Unwatched");
+		} finally {
+			Penalty.UNWATCHED.value = value;
+			Config.ABYSSAL_BREAK_UNWATCHED = target;
+			thinned.discard();
+		}
 		helper.succeed();
 	}
 }
