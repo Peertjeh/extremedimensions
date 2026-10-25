@@ -47,7 +47,9 @@ public final class Hints {
 		/** The first Wound Storm to reach them. */
 		STORM,
 		/** The first time they fall beside an ally. */
-		FALLEN;
+		FALLEN,
+		/** Their first Abyssal curse taken: how it breaks. */
+		ABYSSAL;
 
 		public String key() {
 			return name().toLowerCase(Locale.ROOT);

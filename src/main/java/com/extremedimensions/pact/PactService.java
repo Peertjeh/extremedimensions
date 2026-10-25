@@ -50,7 +50,7 @@ public final class PactService {
 
 	/** Curses that act on expeditions can be sworn; the Overworld set, and those that never act beyond, cannot. */
 	public static boolean allowed(Penalty p) {
-		return p.group != Penalty.Group.OVERWORLD && p.max > 0 && !IDLE_BEYOND.contains(p);
+		return p.group != Penalty.Group.OVERWORLD && !p.abyssal && p.max > 0 && !IDLE_BEYOND.contains(p);
 	}
 
 	/**

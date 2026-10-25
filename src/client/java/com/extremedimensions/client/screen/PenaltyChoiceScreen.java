@@ -16,7 +16,8 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 /**
  * After a Collapse or a death beyond the wound: pick one of three curse cards. Sometimes the whole offer is multiplied;
- * then each card carries its own seal (2x, 3x, 4x) and adds that many stacks, never past the curse's maximum.
+ * then each card carries its own seal (2x, 3x, 4x) and adds that many stacks, never past the curse's maximum. An
+ * Abyssal card is black with a violet crack through it; on Extreme it sometimes comes alone, and then there is no choice.
  */
 public class PenaltyChoiceScreen extends Screen {
 	private static final int CARD_W = 132;
@@ -72,6 +73,11 @@ public class PenaltyChoiceScreen extends Screen {
 		}
 		net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
 		return mc.level != null && mc.level.dimension() == net.minecraft.world.level.Level.OVERWORLD;
+	}
+
+	/** True when the only card on offer is an Abyssal one: the abyss chose. */
+	private boolean forced() {
+		return options.size() == 1 && options.get(0).pen().abyssal;
 	}
 
 	/** True when the offer is multiplied (every card then carries a seal). */
@@ -140,11 +146,12 @@ public class PenaltyChoiceScreen extends Screen {
 			return;
 		}
 
-		int accent = Ui.setColour(overworld ? Penalty.Group.OVERWORLD : Penalty.Group.BEYOND);
+		boolean forced = forced();
+		int accent = forced ? Ui.abyss() : Ui.setColour(overworld ? Penalty.Group.OVERWORLD : Penalty.Group.BEYOND);
 		int cx = this.width / 2;
 		int y = cardY();
 		double bg = Ui.ease((now - openAt) / 400.0);
-		g.fill(0, 0, this.width, this.height, Ui.argb((int) (90 * bg), overworld ? 0x001818 : 0x300000));
+		g.fill(0, 0, this.width, this.height, Ui.argb((int) ((forced ? 150 : 90) * bg), forced ? 0x0A0014 : overworld ? 0x001818 : 0x300000));
 		Ui.vignette(g, this.width, this.height, 0x000000, (int) (40 * bg), 6);
 
 		// Heading with a short glitch on open
@@ -158,8 +165,12 @@ public class PenaltyChoiceScreen extends Screen {
 		}
 		Ui.heading(g, this.font, head, cx - jit / 2, y - 42, accent, ha);
 		boolean hungry = multiplied();
-		Ui.centered(g, this.font, Ui.tr(hungry ? "gui.extremedimensions.choice.hungry" : "gui.extremedimensions.choice.subtitle"), cx, y - 26,
-				hungry ? (Ui.calm() || (now / 300) % 2 == 0 ? Ui.DANGER : Ui.WARN) : Ui.TEXT, ha);
+		if (forced) {
+			Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.choice.forced"), cx, y - 26, Ui.mix(Ui.abyss(), 0xFFFFFF, 0.45), ha);
+		} else {
+			Ui.centered(g, this.font, Ui.tr(hungry ? "gui.extremedimensions.choice.hungry" : "gui.extremedimensions.choice.subtitle"), cx, y - 26,
+					hungry ? (Ui.calm() || (now / 300) % 2 == 0 ? Ui.DANGER : Ui.WARN) : Ui.TEXT, ha);
+		}
 
 		int x0 = startX();
 		for (int i = 0; i < options.size(); i++) {
@@ -176,7 +187,11 @@ public class PenaltyChoiceScreen extends Screen {
 			fade *= (i == chosen) ? 1.0 : 1 - Ui.clamp01((now - chosenAt) / 450.0);
 		}
 		int top = y + (int) ((1 - e) * 70) - (hover ? 6 : 0);
-		if (pen.extreme) {
+		if (pen.abyssal) {
+			// An Abyssal card: violet, slow to breathe, and it does not light up when looked at
+			double beat = Ui.pulse(now, 2600, i);
+			accent = Ui.mix(Ui.abyss(), 0x000000, 0.25 * (1 - beat));
+		} else if (pen.extreme) {
 			// A rare Extreme card: blood-red and restless
 			double beat = Ui.pulse(now, 1382, i);
 			accent = Ui.mix(Ui.setColour(Penalty.Group.EXTREME), 0xFFFFFF, 0.2 * beat);
@@ -184,18 +199,19 @@ public class PenaltyChoiceScreen extends Screen {
 			accent = Ui.mix(Ui.setColour(Penalty.Group.EVERYWHERE), accent, 0.25);
 		}
 		// Hovered cards light up gold; an Extreme card only warms, it never loses its blood-red
-		int border = hover ? (pen.extreme ? Ui.mix(Ui.setColour(Penalty.Group.EXTREME), Ui.WARN, 0.45) : Ui.WARN) : accent;
+		int border = pen.abyssal ? (hover ? Ui.mix(Ui.abyss(), 0xFFFFFF, 0.3) : accent)
+				: hover ? (pen.extreme ? Ui.mix(Ui.setColour(Penalty.Group.EXTREME), Ui.WARN, 0.45) : Ui.WARN) : accent;
 		if (i == chosen) {
 			border = Ui.calm() || (now / 70) % 2 == 0 ? 0xFFE066 : 0xFF8800;
 		}
 		Ui.panel(g, x, top, CARD_W, CARD_H, border, fade);
-		if (pen.extreme) {
+		if (pen.abyssal) {
+			g.fill(x + 1, top + 1, x + CARD_W - 1, top + CARD_H - 1, Ui.argb(fade * 0.85, 0x050008));
+			crack(g, pen.id, x, top, now, fade);
+			banner(g, Ui.tr("gui.extremedimensions.choice.abyssal_mark"), x, top, Ui.abyss(), 0xEEDDFF, fade);
+		} else if (pen.extreme) {
 			g.fill(x + 1, top + 1, x + CARD_W - 1, top + CARD_H - 1, Ui.argb(fade * 0.12, Ui.setColour(Penalty.Group.EXTREME)));
-			String mark = Ui.tr("gui.extremedimensions.choice.extreme_mark");
-			int mw = this.font.width(mark) + 8, mx = x + CARD_W / 2 - mw / 2;
-			g.fill(mx, top - 6, mx + mw, top + 5, Ui.argb(fade, Ui.SHADOW));
-			g.fill(mx + 1, top - 5, mx + mw - 1, top + 4, Ui.argb(fade, Ui.mix(Ui.INK, Ui.setColour(Penalty.Group.EXTREME), 0.6)));
-			g.text(this.font, mark, mx + 4, top - 4, Ui.argb(fade, 0xFFE0E0));
+			banner(g, Ui.tr("gui.extremedimensions.choice.extreme_mark"), x, top, Ui.setColour(Penalty.Group.EXTREME), 0xFFE0E0, fade);
 		}
 		if (hover && !pen.extreme) {
 			g.fill(x + 1, top + 1, x + CARD_W - 1, top + CARD_H - 1, Ui.argb(0.08, Ui.WARN));
@@ -215,12 +231,13 @@ public class PenaltyChoiceScreen extends Screen {
 		// Stacks past the maximum spill over onto other curses; the third line says how many
 		int spill = Math.max(0, opt.stacks() + opt.mult() - opt.max());
 		String third = spill > 0 ? Ui.tr("gui.extremedimensions.choice.spill", spill)
-				: Ui.tr(pen.extreme ? "gui.extremedimensions.choice.extreme"
+				: Ui.tr(pen.abyssal ? "gui.extremedimensions.choice.abyssal" : pen.extreme ? "gui.extremedimensions.choice.extreme"
 						: pen.everywhere ? "gui.extremedimensions.choice.everywhere" : "gui.extremedimensions.choice.permanent", opt.max());
 		String[] lines = {Ui.ellipsize(this.font, Ui.curse(Ui.tr(pen.lineKey(1), opt.value()), plain), CARD_W - 8),
 				Ui.ellipsize(this.font, Ui.curse(Ui.tr(pen.lineKey(2), opt.value()), plain), CARD_W - 8), third};
 		for (int k = 0; k < lines.length; k++) {
-			int col = k < 2 ? Ui.TEXT : spill > 0 ? Ui.WARN : pen.extreme ? Ui.mix(Ui.setColour(Penalty.Group.EXTREME), 0xFFFFFF, 0.3)
+			int col = k < 2 ? Ui.TEXT : spill > 0 ? Ui.WARN : pen.abyssal ? Ui.mix(Ui.abyss(), 0xFFFFFF, 0.35)
+					: pen.extreme ? Ui.mix(Ui.setColour(Penalty.Group.EXTREME), 0xFFFFFF, 0.3)
 					: pen.everywhere ? Ui.mix(Ui.setColour(Penalty.Group.EVERYWHERE), Ui.MUTED, 0.4) : Ui.MUTED;
 			g.text(this.font, lines[k], mid - this.font.width(lines[k]) / 2, ly, Ui.argb(fade, col));
 			ly += 11;
@@ -249,6 +266,35 @@ public class PenaltyChoiceScreen extends Screen {
 		for (String line : Ui.wrap(this.font, "“" + Ui.tr(pen.loreKey()) + "”", CARD_W - 16)) {
 			g.text(this.font, line, mid - this.font.width(line) / 2, loreY, Ui.argb(fade * 0.85, Ui.mix(Ui.SOUL, Ui.TEXT, 0.4)));
 			loreY += 10;
+		}
+	}
+
+	/** The mark above a card's top edge: EXTREME on blood-red, ABYSSAL on violet. */
+	private void banner(GuiGraphicsExtractor g, String mark, int x, int top, int colour, int ink, double fade) {
+		int mw = this.font.width(mark) + 8, mx = x + CARD_W / 2 - mw / 2;
+		g.fill(mx, top - 6, mx + mw, top + 5, Ui.argb(fade, Ui.SHADOW));
+		g.fill(mx + 1, top - 5, mx + mw - 1, top + 4, Ui.argb(fade, Ui.mix(Ui.INK, colour, 0.6)));
+		g.text(this.font, mark, mx + 4, top - 4, Ui.argb(fade, ink));
+	}
+
+	/**
+	 * The crack through an Abyssal card: a jagged violet line from the top edge to the bottom, the same for each curse,
+	 * with a faint glow round it that flickers now and then.
+	 */
+	private void crack(GuiGraphicsExtractor g, String seed, int x, int top, long now, double fade) {
+		int colour = Ui.abyss();
+		long base = seed.hashCode() * 31L;
+		double flicker = Ui.calm() ? 1.0 : 0.75 + 0.25 * Math.sin(now / 90.0 + Ui.hash(now / 400) * 6);
+		int cx = x + CARD_W / 2 + (int) (Ui.hash(base) * 30 - 15);
+		for (int yy = top + 2; yy < top + CARD_H - 2; yy += 6) {
+			int nx = Math.max(x + 8, Math.min(x + CARD_W - 9, cx + (int) (Ui.hash(base + yy) * 9 - 4)));
+			int lo = Math.min(cx, nx), hi = Math.max(cx, nx);
+			int end = Math.min(yy + 6, top + CARD_H - 2);
+			g.fill(lo - 2, yy, hi + 3, end, Ui.argb(fade * 0.12 * flicker, colour));
+			g.fill(cx, yy, cx + 1, yy + 3, Ui.argb(fade * 0.7 * flicker, colour));
+			g.fill(lo, yy + 3, hi + 1, yy + 4, Ui.argb(fade * 0.7 * flicker, colour));
+			g.fill(nx, yy + 3, nx + 1, end, Ui.argb(fade * 0.7 * flicker, colour));
+			cx = nx;
 		}
 	}
 

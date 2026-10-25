@@ -10,8 +10,8 @@ import java.util.Map;
  *
  * <p>What changes: how long atonement takes and how much a death undoes of it, how much charge an anchor holds and
  * how fast it drains, how often offers are multiplied and how many cards they show, how often an Extreme card turns
- * up, how often the Lurkers come and the Wound Storms break, how often fragments drop, and whether a curse not yet
- * carried shows in runes (Hard and Extreme).
+ * up, how often the Lurkers come and the Wound Storms break, how often fragments drop, whether a curse not yet carried
+ * shows in runes, and whether the Abyssal curses can be dealt, how often and how many (Hard and Extreme).
  */
 public enum Preset {
 	EASY("easy",
@@ -19,25 +19,33 @@ public enum Preset {
 			"max_charge", "3600", "base_drain", "0.6", "tether_distance_step", "200",
 			"multiplier_chance", "0", "multiplier_max", "2", "offer_count", "4", "extreme_card_chance", "0",
 			"lurker_spawn_chance", "0.004", "lurker_cooldown_seconds", "1800", "storm_chance", "0.02",
-			"fragment_chance", "0.08", "fragment_chance_elite", "0.2", "curse_runes", "0"),
+			"fragment_chance", "0.08", "fragment_chance_elite", "0.2", "curse_runes", "0",
+			"abyssal_curses", "0", "abyssal_card_chance", "0.01", "abyssal_forced_chance", "0", "abyssal_after_collapses", "5",
+			"abyssal_max_carried", "1"),
 	NORMAL("normal",
 			"atone_base", "120", "atone_per_stack", "60", "atone_death_loss", "0.5",
 			"max_charge", "1800", "base_drain", "1", "tether_distance_step", "100",
 			"multiplier_chance", "0.15", "multiplier_max", "4", "offer_count", "3", "extreme_card_chance", "0.025",
 			"lurker_spawn_chance", "0.012", "lurker_cooldown_seconds", "900", "storm_chance", "0.04",
-			"fragment_chance", "0.04", "fragment_chance_elite", "0.12", "curse_runes", "0"),
+			"fragment_chance", "0.04", "fragment_chance_elite", "0.12", "curse_runes", "0",
+			"abyssal_curses", "0", "abyssal_card_chance", "0.01", "abyssal_forced_chance", "0", "abyssal_after_collapses", "5",
+			"abyssal_max_carried", "1"),
 	HARD("hard",
 			"atone_base", "150", "atone_per_stack", "75", "atone_death_loss", "0.65",
 			"max_charge", "1500", "base_drain", "1.15", "tether_distance_step", "85",
 			"multiplier_chance", "0.22", "multiplier_max", "4", "offer_count", "3", "extreme_card_chance", "0.04",
 			"lurker_spawn_chance", "0.016", "lurker_cooldown_seconds", "700", "storm_chance", "0.05",
-			"fragment_chance", "0.035", "fragment_chance_elite", "0.1", "curse_runes", "1"),
+			"fragment_chance", "0.035", "fragment_chance_elite", "0.1", "curse_runes", "1",
+			"abyssal_curses", "1", "abyssal_card_chance", "0.01", "abyssal_forced_chance", "0", "abyssal_after_collapses", "5",
+			"abyssal_max_carried", "1"),
 	EXTREME("extreme",
 			"atone_base", "200", "atone_per_stack", "100", "atone_death_loss", "0.8",
 			"max_charge", "1200", "base_drain", "1.3", "tether_distance_step", "70",
 			"multiplier_chance", "0.3", "multiplier_max", "4", "offer_count", "2", "extreme_card_chance", "0.06",
 			"lurker_spawn_chance", "0.022", "lurker_cooldown_seconds", "500", "storm_chance", "0.07",
-			"fragment_chance", "0.03", "fragment_chance_elite", "0.08", "curse_runes", "1");
+			"fragment_chance", "0.03", "fragment_chance_elite", "0.08", "curse_runes", "1",
+			"abyssal_curses", "1", "abyssal_card_chance", "0.025", "abyssal_forced_chance", "0.25", "abyssal_after_collapses", "3",
+			"abyssal_max_carried", "2");
 
 	public final String id;
 	/** Setting key -> value as text (as {@link Config#set} takes it), in a fixed order. */

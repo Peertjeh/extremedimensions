@@ -201,7 +201,7 @@ public final class ModPackets {
 
 	/**
 	 * Server -> client: every curse for the Curses screen. data = "scars|atoning|overworldOn|entries|nearby", entries
-	 * "id:stacks:max:atonement:cost:valuePerStack:readable" separated by ';', nearby players "uuid,name,beyond,overworld,everywhere"
+	 * "id:stacks:max:atonement:cost:valuePerStack:readable:deed:deedTarget" separated by ';', nearby players "uuid,name,beyond,overworld,everywhere"
 	 * separated by ';'. open = open the screen (else only refresh it).
 	 */
 	public record CursesPayload(String data, boolean open) implements CustomPacketPayload {

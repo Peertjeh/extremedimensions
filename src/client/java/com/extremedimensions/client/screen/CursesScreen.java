@@ -34,7 +34,8 @@ import net.minecraft.world.level.Level;
  * open tab is wide and named, the others narrow (sigil and stacks, the name on hover). Each curse is a
  * rune in a grid with its stacks as pips under it; the selected one shows its effect, its lore and its atonement, and
  * can be chosen as the curse to atone for (and to mend first). The tab whose curses act where the player stands is
- * marked. Scars and how to atone sit at the foot.
+ * marked. Scars and how to atone sit at the foot. Under the Extreme tab's own curses, where the server deals them, sits a
+ * row of Abyssal ones: smaller black sockets, one stack each, with the deed that breaks the curse under its effect.
  *
  * <p>Beside it, the players standing within seven blocks: a head each (its name on hover) and, per set, one sigil with
  * how many stacks they carry there. Never which curses.
@@ -42,6 +43,8 @@ import net.minecraft.world.level.Level;
 public class CursesScreen extends Screen {
 	private static final int PW = 352, PH = 212;
 	private static final int COLS = 6, CELL = 22;
+	/** The Abyssal sockets under the Extreme tab's grid: columns, cell size, and their top (from the panel's top). */
+	private static final int ACOLS = 8, ACELL = 17, ATOP = 103;
 	/** Tabs: the narrow ones and the gap between; the open tab takes the rest of the row. */
 	private static final int TAB_N = 62, TAB_GAP = 6;
 	/** The nearby players panel: wide and narrow widths, gap to the Curses panel, row height (wide), cell height (narrow). */
@@ -49,8 +52,11 @@ public class CursesScreen extends Screen {
 	/** Distance between the set sigils of one nearby player (wide panel). */
 	private static final int SET_STEP = 21;
 
-	/** One curse as the server sent it; readable false: the player has never carried it and the world shows it in runes. */
-	private record Entry(Penalty pen, int stacks, int max, int progress, int cost, String value, boolean readable) {}
+	/**
+	 * One curse as the server sent it; readable false: the player has never carried it and the world shows it in runes.
+	 * An Abyssal curse also carries how far its deed is and how much of it breaks the curse.
+	 */
+	private record Entry(Penalty pen, int stacks, int max, int progress, int cost, String value, boolean readable, int deed, int deedTarget) {}
 
 	/** A player standing close by: stacks per set (beyond, Overworld, everywhere, extreme). */
 	private record Nearby(UUID id, String name, int[] sets) {}
@@ -126,7 +132,8 @@ public class CursesScreen extends Screen {
 			}
 			try {
 				entries.put(pen, new Entry(pen, Integer.parseInt(kv[1]), Integer.parseInt(kv[2]), Integer.parseInt(kv[3]),
-						Integer.parseInt(kv[4]), kv[5], kv.length < 7 || !"0".equals(kv[6])));
+						Integer.parseInt(kv[4]), kv[5], kv.length < 7 || !"0".equals(kv[6]), kv.length > 7 ? Integer.parseInt(kv[7]) : 0,
+						kv.length > 8 ? Integer.parseInt(kv[8]) : 0));
 			} catch (NumberFormatException e) {
 				// skip malformed entry
 			}
@@ -152,12 +159,28 @@ public class CursesScreen extends Screen {
 				}
 			}
 		}
+		showSockets();
 		refreshButton();
 	}
 
 	private Entry entry(Penalty p) {
 		Entry e = entries.get(p);
-		return e != null ? e : new Entry(p, 0, p.max, 0, 1, p.display(), true);
+		return e != null ? e : new Entry(p, 0, p.max, 0, 1, p.display(), true, 0, 0);
+	}
+
+	/** True when the server sent this curse: an Abyssal one only where they are dealt or while it is carried. */
+	private boolean shown(Penalty p) {
+		return !p.abyssal || entries.containsKey(p);
+	}
+
+	/** True when the Extreme tab has a row of Abyssal curses to show. */
+	private boolean abyssRow() {
+		for (Penalty p : entries.keySet()) {
+			if (p.abyssal) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Stacks carried in one set. */
@@ -174,7 +197,7 @@ public class CursesScreen extends Screen {
 	private Penalty heaviest(Group group) {
 		Penalty best = null;
 		for (Penalty p : Penalty.values()) {
-			if (p.group != group) {
+			if (p.group != group || !shown(p)) {
 				continue;
 			}
 			if (best == null || entry(p).stacks() > entry(best).stacks()) {
@@ -245,7 +268,13 @@ public class CursesScreen extends Screen {
 			tabs.add(this.addRenderableWidget(new Tab(x0 + 12, y0 + 22, group)));
 		}
 		int[] index = new int[groups.length];
+		int deep = 0;
 		for (Penalty p : Penalty.values()) {
+			if (p.abyssal) {
+				int i = deep++;
+				sockets.add(this.addRenderableWidget(new Socket(p, x0 + 16 + (i % ACOLS) * ACELL, y0 + ATOP + (i / ACOLS) * ACELL)));
+				continue;
+			}
 			int i = index[p.group.ordinal()]++;
 			Socket s = new Socket(p, x0 + 16 + (i % COLS) * CELL, y0 + 44 + (i / COLS) * CELL);
 			sockets.add(this.addRenderableWidget(s));
@@ -264,11 +293,15 @@ public class CursesScreen extends Screen {
 	}
 
 	private void showTab() {
-		for (Socket s : sockets) {
-			s.visible = s.pen.group == tab;
-		}
+		showSockets();
 		layoutTabs();
 		refreshButton();
+	}
+
+	private void showSockets() {
+		for (Socket s : sockets) {
+			s.visible = s.pen.group == tab && shown(s.pen);
+		}
 	}
 
 	/** The open tab is wide enough for its name; the others shrink to sigil and stacks. */
@@ -346,6 +379,13 @@ public class CursesScreen extends Screen {
 				ly += 10;
 			}
 		}
+		if (tab == Group.EXTREME && abyssRow()) {
+			// The Abyssal row's heading: its name and a violet rule to the grid's edge
+			int ay = y0 + ATOP - 11, abyss = Ui.abyss();
+			String label = Ui.tr("gui.extremedimensions.curses.abyssal_row").toUpperCase();
+			g.text(this.font, label, x0 + 16, ay, Ui.argb(fade, Ui.mix(abyss, 0xFFFFFF, 0.35)));
+			g.fill(x0 + 20 + this.font.width(label), ay + 4, x0 + 152, ay + 5, Ui.argb(fade * 0.6, abyss));
+		}
 		detail(g, x0 + 168, y0 + 44, PW - 168 - 14, fade, accent);
 		footer(g, x0, y0 + 172, fade, accent);
 		nearbyPanel(g, x0, y0, mouseX, mouseY, fade);
@@ -358,6 +398,9 @@ public class CursesScreen extends Screen {
 		}
 		Entry e = entry(selected);
 		boolean has = e.stacks() > 0;
+		if (selected.abyssal) {
+			accent = Ui.abyss();
+		}
 		int col = has ? accent : Ui.MUTED;
 		boolean plain = e.readable();
 		Ui.runeSocket(g, selected.id, x, y, col, fade, has ? 0.8 : 0.2);
@@ -372,7 +415,9 @@ public class CursesScreen extends Screen {
 			ly += 10;
 		}
 		ly += 3;
-		if (!plain) {
+		if (selected.abyssal && plain) {
+			deed(g, e, x, ly, w, fade);
+		} else if (!plain) {
 			// Never carried, on a world that keeps such curses in runes: one line of its lore in them, and how to read it
 			g.text(this.font, Ui.ellipsize(this.font, "“" + Ui.curse(Ui.tr(selected.loreKey()), false) + "”", w), x, ly,
 					Ui.argb(fade * 0.85, Ui.mix(Ui.SOUL, Ui.TEXT, 0.4)));
@@ -389,12 +434,28 @@ public class CursesScreen extends Screen {
 			}
 		}
 
-		// Atonement towards the next stack off
-		int ay = y + 84;
+		// Atonement towards the next stack off (an Abyssal curse's sits lower, under its deed)
+		int ay = y + (selected.abyssal && plain ? 87 : 84);
 		g.text(this.font, Ui.tr("gui.extremedimensions.curses.atonement"), x, ay, Ui.argb(fade, has ? Ui.SOUL : Ui.MUTED));
 		String prog = has ? e.progress() + " / " + e.cost() : "-";
 		g.text(this.font, prog, x + w - this.font.width(prog), ay, Ui.argb(fade, Ui.MUTED));
 		Ui.meter(g, x, ay + 11, w, 6, has ? Math.min(1.0, e.progress() / (double) Math.max(1, e.cost())) : 0, Ui.SOUL, fade, selected.id.equals(atoning));
+	}
+
+	/** An Abyssal curse's deed: what breaks it, how far the player is, and a violet meter. */
+	private void deed(GuiGraphicsExtractor g, Entry e, int x, int y, int w, double fade) {
+		int abyss = Ui.abyss();
+		g.text(this.font, Ui.tr("gui.extremedimensions.curses.deed"), x, y, Ui.argb(fade, Ui.mix(abyss, 0xFFFFFF, 0.35)));
+		int target = Math.max(1, e.deedTarget());
+		String prog = Math.min(e.deed(), target) + " / " + target;
+		g.text(this.font, prog, x + w - this.font.width(prog), y, Ui.argb(fade, Ui.MUTED));
+		List<String> lines = Ui.wrap(this.font, Ui.tr(selected.breakKey()), w);
+		int ly = y + 10;
+		for (int i = 0; i < lines.size() && i < 2; i++) {
+			g.text(this.font, lines.get(i), x, ly, Ui.argb(fade, Ui.TEXT));
+			ly += 10;
+		}
+		Ui.meter(g, x, y + 31, w, 4, Math.min(1.0, e.deed() / (double) target), abyss, fade, e.stacks() > 0);
 	}
 
 	/** Scars, and how curses come off in this set. */
@@ -708,7 +769,7 @@ public class CursesScreen extends Screen {
 		final Penalty pen;
 
 		Socket(Penalty pen, int x, int y) {
-			super(x, y, 18, 21, CursesScreen.this.curseName(pen));
+			super(x, y, pen.abyssal ? 16 : 18, pen.abyssal ? 16 : 21, CursesScreen.this.curseName(pen));
 			this.pen = pen;
 			this.setTooltip(Tooltip.create(this.getMessage()));
 		}
@@ -726,6 +787,21 @@ public class CursesScreen extends Screen {
 			boolean sel = pen == selected;
 			int x = this.getX(), y = this.getY();
 			double alpha = has ? 1.0 : 0.45;
+			if (pen.abyssal) {
+				// Smaller and black, the rune in violet; one stack, so no pips
+				double glow = sel || this.isHovered() ? 1.0 : has ? 0.5 : 0.1;
+				int col = has ? Ui.abyss() : Ui.MUTED;
+				g.fill(x, y, x + 16, y + 16, Ui.argb(alpha, Ui.SHADOW));
+				g.fill(x + 1, y + 1, x + 15, y + 15, Ui.argb(alpha, Ui.mix(0x050008, col, 0.1 + 0.15 * glow)));
+				Ui.rune(g, pen.id, x + 1, y + 1, Ui.mix(col, 0xFFFFFF, 0.2 + 0.25 * glow), alpha);
+				if (sel) {
+					g.outline(x - 1, y - 1, 18, 18, Ui.argb(255, Ui.WARN));
+				}
+				if (pen.id.equals(atoning) && has) {
+					g.fill(x + 12, y + 1, x + 15, y + 4, Ui.argb(255, Ui.SOUL));
+				}
+				return;
+			}
 			Ui.runeSocket(g, pen.id, x, y, has ? accent : Ui.MUTED, alpha, sel || this.isHovered() ? 1.0 : has ? 0.5 : 0.1);
 			if (sel) {
 				g.outline(x - 1, y - 1, 20, 20, Ui.argb(255, Ui.WARN));

@@ -98,7 +98,17 @@ public enum Penalty {
 	FERAL_SCENT("feral_scent", Group.EXTREME, 1, 0),
 	BROKEN_OATH("broken_oath", Group.EXTREME, 1, 25),
 	UNHEALING("unhealing", Group.EXTREME, 1, 0),
-	ECHOING_STEPS("echoing_steps", Group.EXTREME, 1, 50);
+	ECHOING_STEPS("echoing_steps", Group.EXTREME, 1, 50),
+
+	// --- abyssal: the Extreme set's heavier layer, on Hard and Extreme; one stack, broken by a deed (see AbyssalCurses) --
+	SUNSCORN("sunscorn", Group.EXTREME, 1, 8, true),
+	GRAVEBOUND("gravebound", Group.EXTREME, 1, 0, true),
+	MARROW_ROT("marrow_rot", Group.EXTREME, 1, 25, true),
+	WEIGHT_OF_IRON("weight_of_iron", Group.EXTREME, 1, 15, true),
+	LOCKJAW("lockjaw", Group.EXTREME, 1, 8, true),
+	THE_HUNGERING("the_hungering", Group.EXTREME, 1, 1, true),
+	CINDER_LUNGS("cinder_lungs", Group.EXTREME, 1, 8, true),
+	MIRROR_WOUND("mirror_wound", Group.EXTREME, 1, 10, true);
 
 	/** Where a curse acts: beyond the wound, in the Overworld, in every world; Extreme curses act in every world too. */
 	public enum Group {
@@ -126,6 +136,11 @@ public enum Penalty {
 	public final boolean everywhere;
 	/** Extreme curse: rare, never multiplied, its effect never spelled out, and twice as hard to lift. */
 	public final boolean extreme;
+	/**
+	 * Abyssal curse: an Extreme curse of the heavier layer. Only dealt on its own roll (never spilled onto, laid by an
+	 * Elder, sworn or carried for a friend), four times as hard to lift, and broken outright by its deed.
+	 */
+	public final boolean abyssal;
 	public final int defaultMax;
 	public final double defaultValue;
 	/** Current maximum stacks and value per stack (from the config). */
@@ -133,6 +148,11 @@ public enum Penalty {
 	public double value;
 
 	Penalty(String id, Group group, int max, double value) {
+		this(id, group, max, value, false);
+	}
+
+	Penalty(String id, Group group, int max, double value, boolean abyssal) {
+		this.abyssal = abyssal;
 		this.id = id;
 		this.group = group;
 		this.overworld = group == Group.OVERWORLD;
@@ -155,6 +175,11 @@ public enum Penalty {
 
 	public String loreKey() {
 		return nameKey() + ".lore";
+	}
+
+	/** An Abyssal curse's deed, as the Curses screen reads it once carried; formatted with the deed's target. */
+	public String breakKey() {
+		return nameKey() + ".break";
 	}
 
 	/** The value per stack as shown on cards: "25", "0.5". */
@@ -180,11 +205,14 @@ public enum Penalty {
 		return null;
 	}
 
-	/** Curses of one set that this player can still receive (not at their maximum, and not switched off with max 0). */
+	/**
+	 * Curses of one set that this player can still receive (not at their maximum, and not switched off with max 0).
+	 * Abyssal curses never: they come only on their own roll.
+	 */
 	public static List<Penalty> available(PlayerData d, Group group) {
 		List<Penalty> pool = new ArrayList<>();
 		for (Penalty p : values()) {
-			if (p.group == group && p.max > 0 && d.owned(p) < p.max) {
+			if (p.group == group && !p.abyssal && p.max > 0 && d.owned(p) < p.max) {
 				pool.add(p);
 			}
 		}
@@ -198,11 +226,14 @@ public enum Penalty {
 		return pool;
 	}
 
-	/** Every curse with room left, in any set (Overworld curses only while they are switched on): where spilled stacks land. */
+	/**
+	 * Every curse with room left, in any set (Overworld curses only while they are switched on): where spilled stacks
+	 * land. Never an Abyssal one.
+	 */
 	public static List<Penalty> withRoom(PlayerData d, boolean overworldOn) {
 		List<Penalty> pool = new ArrayList<>();
 		for (Penalty p : values()) {
-			if ((overworldOn || !p.overworld) && p.max > 0 && d.owned(p) < p.max) {
+			if ((overworldOn || !p.overworld) && !p.abyssal && p.max > 0 && d.owned(p) < p.max) {
 				pool.add(p);
 			}
 		}

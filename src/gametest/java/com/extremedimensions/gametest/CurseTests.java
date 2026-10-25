@@ -90,12 +90,12 @@ public class CurseTests {
 		helper.succeed();
 	}
 
-	/** The last field of a curse's entry in the Curses screen's data: 1 if the player can read it. */
+	/** The seventh field of a curse's entry in the Curses screen's data: 1 if the player can read it. */
 	private static String readableFlag(String data, String id) {
 		for (String part : data.split("\\|", -1)[3].split(";")) {
 			String[] kv = part.split(":");
 			if (kv[0].equals(id)) {
-				return kv[kv.length - 1];
+				return kv[6];
 			}
 		}
 		return "?";

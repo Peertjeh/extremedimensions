@@ -73,6 +73,7 @@ public final class CurseEffects {
 			vertigo(p, d, beyond);
 			huntedNights(p, d, ow);
 			restlessSleep(p, d, ow);
+			AbyssalCurses.tick(p, d);
 		}
 		if (ExtremeCurses.any(d)) {
 			ExtremeCurses.tick(p, d);
@@ -244,7 +245,7 @@ public final class CurseEffects {
 		return stacks <= 0 ? 0 : 1 - Math.pow(Math.max(0, 1 - pen.frac()), stacks);
 	}
 
-	private static void modifier(ServerPlayer p, String attribute, String name, double value, String operation) {
+	static void modifier(ServerPlayer p, String attribute, String name, double value, String operation) {
 		BuiltInRegistries.ATTRIBUTE.get(WorldFx.id(attribute)).ifPresent(holder -> {
 			AttributeInstance instance = p.getAttribute(holder);
 			if (instance == null) {

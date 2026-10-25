@@ -72,7 +72,8 @@ public final class BurdenService {
 		StringBuilder out = new StringBuilder();
 		for (Penalty pen : Penalty.values()) {
 			int n = theirs.owned(pen);
-			if (n <= 0) {
+			if (n <= 0 || pen.abyssal) {
+				// (an Abyssal curse is no burden a friend can take up)
 				continue;
 			}
 			if (out.length() > 0) {
@@ -121,7 +122,8 @@ public final class BurdenService {
 				|| carrier.level() != friend.level() || carrier.distanceToSqr(friend) > REACH * REACH) {
 			return "gui.extremedimensions.burden.failed";
 		}
-		if (DataStore.get(friend.getUUID()).owned(pen) <= 0 || DataStore.get(carrier.getUUID()).owned(pen) + 1 + Math.max(0, Config.COOP_BURDEN_TOLL) > pen.max) {
+		if (pen.abyssal || DataStore.get(friend.getUUID()).owned(pen) <= 0
+				|| DataStore.get(carrier.getUUID()).owned(pen) + 1 + Math.max(0, Config.COOP_BURDEN_TOLL) > pen.max) {
 			return "gui.extremedimensions.burden.failed";
 		}
 		if (cooldownLeft(carrier, friend) > 0) {

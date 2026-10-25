@@ -1,8 +1,10 @@
 package com.extremedimensions.network;
 
 import com.extremedimensions.anchor.AnchorService;
+import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.penalty.AbyssalCurses;
 import com.extremedimensions.penalty.CurseRunes;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
@@ -49,17 +51,24 @@ public final class Sync {
 			return;
 		}
 		StringBuilder out = new StringBuilder("@").append(d.owed.isEmpty() ? "beyond" : d.owed.get(0));
+		boolean abyss = false;
 		for (int i = 0; i < d.pendingOffer.size(); i++) {
 			Penalty pen = Penalty.byId(d.pendingOffer.get(i));
 			if (pen == null) {
 				continue;
 			}
+			abyss |= pen.abyssal;
 			int mult = i < d.pendingMult.size() ? d.pendingMult.get(i) : 1;
 			out.append(',');
 			out.append(pen.id).append(':').append(mult).append(':').append(d.owned(pen)).append(':').append(pen.max).append(':').append(pen.display())
 					.append(':').append(CurseRunes.readable(d, pen) ? 1 : 0);
 		}
 		ServerPlayNetworking.send(p, new ModPackets.OfferPayload(out.toString()));
+		if (abyss) {
+			// An Abyssal card on the table: something deep stirs as the cards turn
+			com.extremedimensions.server.WorldFx.soundSelf(p, "minecraft:entity.warden.sonic_charge", 0.7f, 0.5f);
+			com.extremedimensions.server.WorldFx.soundSelf(p, "minecraft:ambient.basalt_deltas.mood", 1.0f, 0.6f);
+		}
 	}
 
 	/** Every curse, for the Curses screen (see {@link ModPackets.CursesPayload}). */
@@ -73,13 +82,18 @@ public final class Sync {
 		out.append(d.scars).append('|').append(d.atoning == null ? "" : d.atoning).append('|').append(DataStore.overworldPenalties() ? 1 : 0).append('|');
 		boolean first = true;
 		for (Penalty pen : Penalty.values()) {
+			// Abyssal curses show only where they are dealt, or while one is still carried
+			if (pen.abyssal && Config.ABYSSAL_CURSES <= 0 && d.owned(pen) == 0) {
+				continue;
+			}
 			if (!first) {
 				out.append(';');
 			}
 			first = false;
 			out.append(pen.id).append(':').append(d.owned(pen)).append(':').append(pen.max).append(':')
 					.append(d.atonement.getOrDefault(pen.id, 0)).append(':').append(PenaltyService.cost(d, pen)).append(':').append(pen.display())
-					.append(':').append(CurseRunes.readable(d, pen) ? 1 : 0);
+					.append(':').append(CurseRunes.readable(d, pen) ? 1 : 0)
+					.append(':').append(pen.abyssal ? AbyssalCurses.progress(d, pen) : 0).append(':').append(pen.abyssal ? AbyssalCurses.target(pen) : 0);
 		}
 		out.append('|').append(com.extremedimensions.pact.PactService.data(p, d));
 		out.append('|').append(d.relic == null ? "" : d.relic);

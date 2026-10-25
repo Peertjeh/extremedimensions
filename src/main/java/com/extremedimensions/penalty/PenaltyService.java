@@ -70,7 +70,8 @@ public final class PenaltyService {
 	private static void nextOffer(PlayerData d) {
 		while (!d.owed.isEmpty() && d.pendingOffer.isEmpty()) {
 			boolean ow = OVERWORLD.equals(d.owed.get(0));
-			List<String> ids = Penalty.rollOffer(d, ow, Config.OFFER_COUNT, Config.EXTREME_CARD_CHANCE);
+			List<String> ids = AbyssalCurses.deal(d, Penalty.rollOffer(d, ow, Config.OFFER_COUNT, Config.EXTREME_CARD_CHANCE),
+					new java.util.Random(ThreadLocalRandom.current().nextLong()));
 			if (ids.isEmpty()) {
 				d.owed.remove(0);
 				d.pendingPenalties = Math.max(0, d.pendingPenalties - 1);
@@ -125,6 +126,9 @@ public final class PenaltyService {
 		WorldFx.soundSelf(p, "extremedimensions:penalty", 1.0f, mult > 1 ? 0.8f : 1.0f);
 		Journal.unlock(p, d, JournalEntry.SCARS);
 		Advancements.grant(p, Advancements.MARKED);
+		if (pen.abyssal) {
+			com.extremedimensions.guide.Hints.meet(p, com.extremedimensions.guide.Hints.Hint.ABYSSAL);
+		}
 		if (!spilled.isEmpty()) {
 			MutableComponent names = Component.empty();
 			boolean first = true;
@@ -229,6 +233,9 @@ public final class PenaltyService {
 		// (dearer with every thread New Thread+ took up)
 		int base = (int) Math.ceil(Math.max(1, Config.ATONE_BASE + Config.ATONE_PER_STACK * Math.max(0, d.owned(p) - 1))
 				* com.extremedimensions.tapestry.Tapestry.threadFactor(Config.NEW_THREAD_ATONEMENT));
+		if (p.abyssal) {
+			return (int) Math.ceil(base * Math.max(1, Config.ABYSSAL_ATONE_FACTOR));
+		}
 		return p.extreme ? (int) Math.ceil(base * Math.max(1, Config.EXTREME_ATONE_FACTOR)) : base;
 	}
 
@@ -252,14 +259,18 @@ public final class PenaltyService {
 	}
 
 	/**
-	 * A death undoes part of the penance: every curse's atonement loses {@code atone_death_loss} (half by default),
-	 * rounded against the player. Returns the points lost.
+	 * A death undoes part of the penance: every curse's atonement loses {@code atone_death_loss} (half by default), an
+	 * Abyssal curse's {@code abyssal_death_loss} (all of it by default), rounded against the player. Returns the points
+	 * lost.
 	 */
 	public static int deathToll(PlayerData d) {
-		double keep = 1 - Math.max(0, Math.min(1, Config.ATONE_DEATH_LOSS));
+		double keepAll = 1 - Math.max(0, Math.min(1, Config.ATONE_DEATH_LOSS));
+		double keepAbyssal = 1 - Math.max(0, Math.min(1, Config.ABYSSAL_DEATH_LOSS));
 		int lost = 0;
 		for (var it = d.atonement.entrySet().iterator(); it.hasNext();) {
 			var e = it.next();
+			Penalty pen = Penalty.byId(e.getKey());
+			double keep = pen != null && pen.abyssal ? keepAbyssal : keepAll;
 			int have = e.getValue();
 			int kept = (int) Math.floor(have * keep);
 			lost += have - kept;
@@ -280,7 +291,9 @@ public final class PenaltyService {
 			return InteractionResult.SUCCESS;
 		}
 		int cost = Math.max(1, Config.FRAGMENT_COST_PER_STACK * d.owned(t));
-		if (t.extreme) {
+		if (t.abyssal) {
+			cost = Math.max(1, Config.ABYSSAL_FRAGMENTS * d.owned(t));
+		} else if (t.extreme) {
 			cost = (int) Math.ceil(cost * Math.max(1, Config.EXTREME_ATONE_FACTOR));
 		}
 		if (!p.isCreative()) {
@@ -306,6 +319,12 @@ public final class PenaltyService {
 		Penalty t = target(d, null);
 		if (t == null) {
 			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+			return InteractionResult.SUCCESS;
+		}
+		if (AbyssalCurses.clothRefuses(t)) {
+			// An Abyssal curse does not come off with a cloth: it is broken, or atoned for at length
+			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.abyssal.cloth", Component.translatable(t.nameKey())), true);
 			return InteractionResult.SUCCESS;
 		}
 		if (!p.isCreative()) {

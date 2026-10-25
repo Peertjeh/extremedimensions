@@ -191,11 +191,13 @@ public final class ServerEvents {
 			if (!alive) {
 				ExpeditionService.onRespawn(newPlayer, d);
 				com.extremedimensions.binding.Homebound.restore(newPlayer);
+				com.extremedimensions.penalty.AbyssalCurses.onRespawn(newPlayer);
 			}
 			Sync.state(newPlayer, d);
 		});
 
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(CurseEffects::afterDamage);
+		ServerLivingEntityEvents.AFTER_DAMAGE.register(com.extremedimensions.penalty.AbyssalCurses::afterDamage);
 		ServerLivingEntityEvents.ALLOW_DEATH.register(ExtremeCurses::oath);
 		// Co-op: struck down with an ally near, a player falls instead of dying, and cannot be hurt while fallen
 		ServerLivingEntityEvents.ALLOW_DEATH.register(com.extremedimensions.coop.FallenService::allowDeath);
@@ -214,6 +216,13 @@ public final class ServerEvents {
 		});
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			com.extremedimensions.journal.Bestiary.slain(entity, source.getEntity());
+			// The Abyssal curses' deeds: a creature slain, an Elder fallen
+			if (!(entity instanceof ServerPlayer) && source.getEntity() instanceof ServerPlayer killer) {
+				com.extremedimensions.penalty.AbyssalCurses.onKill(killer, entity, source);
+			}
+			if (entity instanceof com.extremedimensions.elder.ElderBoss) {
+				com.extremedimensions.penalty.AbyssalCurses.elderSlain(entity);
+			}
 			if ("minecraft:ender_dragon".equals(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString()) && WorldFx.server() != null
 					&& Dims.ours(entity.level())) {
 				WorldService.onDragonDeath(WorldFx.server());
@@ -238,6 +247,7 @@ public final class ServerEvents {
 				if (Dims.ours(p)) {
 					DataStore.get(p.getUUID()).deaths++;
 				}
+				com.extremedimensions.penalty.AbyssalCurses.onDeath(p);
 				ExpeditionService.onDeath(p);
 			} else if (entity instanceof StarvedOne so) {
 				MendingService.onDefeat(so);
@@ -336,6 +346,10 @@ public final class ServerEvents {
 			InteractionResult forbidden = com.extremedimensions.elder.ElderSpells.refuse(player, player.getItemInHand(hand));
 			if (forbidden != InteractionResult.PASS) {
 				return forbidden;
+			}
+			InteractionResult jaw = com.extremedimensions.penalty.AbyssalCurses.refuseFood(player, player.getItemInHand(hand));
+			if (jaw != InteractionResult.PASS) {
+				return jaw;
 			}
 			if (player instanceof ServerPlayer fallen && com.extremedimensions.coop.FallenService.fallen(fallen)) {
 				return InteractionResult.FAIL;

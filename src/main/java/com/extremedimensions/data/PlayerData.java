@@ -56,6 +56,10 @@ public class PlayerData {
 	 * these read in plain words. Kept after the last stack is lifted.
 	 */
 	public Set<String> knownCurses = new LinkedHashSet<>();
+	/** How far the player is with each Abyssal curse's deed (curse id -> count), see AbyssalCurses. */
+	public Map<String, Integer> abyssalDeeds = new HashMap<>();
+	/** Gravebound: the Overworld game time its days are counted from (-1 = not carried); The Hungering: the day it last ate. */
+	public long graveSince = -1, hungeringDay = -1;
 	/** The sworn pact: extra stacks of curses taken on willingly, acting on expeditions (see PactService). */
 	public Map<String, Integer> pact = new HashMap<>();
 	/** The Elders: Keepers slain (the Matriarch comes after enough of them), and whether she has fallen to this player. */
@@ -217,6 +221,8 @@ public class PlayerData {
 	public transient double airCarry, frozenCarry;
 	/** Lead Pockets: the slowdown currently applied. */
 	public transient double leadValue = Double.NaN;
+	/** Weight of Iron's slowdown as last set (NaN: set it afresh). */
+	public transient double ironValue = Double.NaN;
 	public transient boolean joinDone = false;
 	public transient int ticksOnline = 0;
 	/** Current drain including the distance factor (HUD). */

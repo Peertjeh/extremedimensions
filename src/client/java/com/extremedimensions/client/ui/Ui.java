@@ -75,6 +75,11 @@ public final class Ui {
 		};
 	}
 
+	/** The Abyssal curses' violet, the crack through their cards (colour-blind: the palette's deep blue). */
+	public static int abyss() {
+		return com.extremedimensions.client.options.ClientOptions.colourBlind() ? 0x0072B2 : 0x9B5CFF;
+	}
+
 	// --- Colour math -----------------------------------------------------------------------------
 
 	public static int argb(int alpha, int rgb) {

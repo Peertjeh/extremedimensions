@@ -137,6 +137,34 @@ public final class Config {
 	public static int STORM_STRIKE_MIN_SECONDS = 30;
 	public static int STORM_STRIKE_MAX_SECONDS = 90;
 	/**
+	 * Abyssal curses, the Extreme set's heavier layer (see AbyssalCurses): 1 = they can be dealt (Hard and Extreme switch
+	 * them on; an operator may on Easy and Normal too), 0 = never.
+	 */
+	public static int ABYSSAL_CURSES = 0;
+	/** Chance that one card of an offer is an Abyssal curse; and that such a card is then the whole offer, no choice left. */
+	public static double ABYSSAL_CARD_CHANCE = 0.01;
+	public static double ABYSSAL_FORCED_CHANCE = 0;
+	/** Collapses a player must have been through before an Abyssal card can come, and how many they carry at most. */
+	public static int ABYSSAL_AFTER_COLLAPSES = 5;
+	public static int ABYSSAL_MAX_CARRIED = 1;
+	/**
+	 * Lifting an Abyssal curse without its deed: times the atonement, Tether Fragments per stack, the share of its
+	 * atonement a death takes (1 = all), and whether a Mending Cloth works on it (1) or not (0).
+	 */
+	public static double ABYSSAL_ATONE_FACTOR = 4.0;
+	public static int ABYSSAL_FRAGMENTS = 4;
+	public static double ABYSSAL_DEATH_LOSS = 1.0;
+	public static int ABYSSAL_MENDING_CLOTH = 0;
+	/** The deed that breaks each Abyssal curse at once: how many (undead slain in daylight, days without dying, ...). */
+	public static int ABYSSAL_BREAK_SUNSCORN = 30;
+	public static int ABYSSAL_BREAK_GRAVEBOUND = 3;
+	public static int ABYSSAL_BREAK_MARROW_ROT = 1;
+	public static int ABYSSAL_BREAK_WEIGHT_OF_IRON = 1;
+	public static int ABYSSAL_BREAK_LOCKJAW = 50;
+	public static int ABYSSAL_BREAK_THE_HUNGERING = 1;
+	public static int ABYSSAL_BREAK_CINDER_LUNGS = 1;
+	public static int ABYSSAL_BREAK_MIRROR_WOUND = 50;
+	/**
 	 * Atonement from kills only counts monsters that spawned naturally, that the player dealt at least this share of the
 	 * damage to (a farm's fall does not count), and at most a few at one place: after {@code atone_kill_area_limit}
 	 * kills within {@code atone_kill_area_radius} blocks in {@code atone_kill_area_minutes}, that place gives nothing.

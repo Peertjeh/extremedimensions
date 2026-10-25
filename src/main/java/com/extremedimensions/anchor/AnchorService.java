@@ -57,7 +57,8 @@ public final class AnchorService {
 	/** Items the client should hand to the server instead of placing them against an anchor. */
 	public static boolean isUsableOnAnchor(Item item) {
 		return TetherService.isTether(item) || item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER
-				|| item == ModItems.TETHER_FRAGMENT || FuelValues.NETHER.containsKey(item) || FuelValues.END.containsKey(item);
+				|| item == ModItems.TETHER_FRAGMENT || item == net.minecraft.world.item.Items.NETHER_STAR || FuelValues.NETHER.containsKey(item)
+				|| FuelValues.END.containsKey(item);
 	}
 
 	// ------------------------------------------------------------------ charge queries
@@ -142,6 +143,9 @@ public final class AnchorService {
 		}
 		if (item == ModItems.TETHER_FRAGMENT) {
 			return PenaltyService.mend(p, d, pos, stack);
+		}
+		if (item == net.minecraft.world.item.Items.NETHER_STAR) {
+			return com.extremedimensions.penalty.AbyssalCurses.offerStar(p, pos, stack);
 		}
 		if (TetherService.isTether(item)) {
 			return TetherService.tie(p, d, pos, stack);
