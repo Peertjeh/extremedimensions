@@ -261,6 +261,10 @@ def main():
     }
     for name, colors in PALETTES.items():
         files["palettes/trim/" + name] = palette(colors)
+    # the key again in the mod's own namespace, for a pattern's base_palette read against the texture's namespace
+    key = palette(KEY)
+    key.putpixel((len(KEY) - 1, 0), (0, 0, 0, 0))
+    files["palettes/trim_base"] = key
     if len(sys.argv) > 1:
         S = 6
         shown = [im for k, im in files.items() if not k.startswith("palettes")]

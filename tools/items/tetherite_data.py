@@ -261,7 +261,7 @@ def equipment():
         "textures": [f"minecraft:trims/items/{p}_trim" for p in ARMOR]}]})
     for p in PATTERNS:
         for layer in ("humanoid", "humanoid_leggings"):
-            write(a(NS, "textures", "trims", "entity", layer, p + ".png.mcmeta"), {"palette": {"base_palette": "minecraft:trim_base"}})
+            write(a(NS, "textures", "trims", "entity", layer, p + ".png.mcmeta"), {"palette": {"base_palette": "trim_base"}})
 
 
 VANILLA_ARMOR = [(m, p) for m in ("leather", "chainmail", "iron", "golden", "diamond", "netherite", "copper") for p in ARMOR] + [("turtle", "helmet")]

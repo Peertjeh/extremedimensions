@@ -1,6 +1,3 @@
-!net.minecraft.client.resources.palette.PalettedTextureManager
-!net.minecraft.client.resources.palette.PaletteMapping
-#client/resources/palette/
-#resources/metadata/
-@assets/minecraft/textures/trims/entity/humanoid/coast.png.mcmeta
-@assets/minecraft/equipment/diamond.json
+!net.minecraft.client.resources.metadata.texture.PaletteMetadataSection
+!net.minecraft.client.resources.palette.PaletteMappingCache
+!net.minecraft.client.resources.palette.Palette
