@@ -1,0 +1,18 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "extremedimensions:font/seam_script.png",
+      "ascent": 7,
+      "height": 8,
+      "chars": [
+        "\uea00\uea01\uea02\uea03\uea04\uea05",
+        "\uea06\uea07\uea08\uea09\uea0a\uea0b",
+        "\uea0c\uea0d\uea0e\uea0f\uea10\uea11",
+        "\uea12\uea13\uea14\uea15\uea16\uea17",
+        "\uea18\uea19\uea1a\uea1b\uea1c\uea1d",
+        "\uea1e\uea1f\uea20\uea21\uea22\uea23"
+      ]
+    }
+  ]
+}

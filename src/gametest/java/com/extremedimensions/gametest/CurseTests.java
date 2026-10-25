@@ -87,6 +87,11 @@ public class CurseTests {
 		check(helper, runes.chars().noneMatch(c -> c < 128 && Character.isLetterOrDigit(c)), "letters show through the runes: %s", runes);
 		check(helper, runes.equals(CurseRunes.runes("Glass Jaw: 25% harder, Één")) && runes.contains(" ") && runes.contains("%"),
 				"the runes are not a fixed cipher keeping spaces and marks: %s", runes);
+		// The Seam script: every letter and digit its own rune, all of them the mod's (none from a real alphabet)
+		String all = CurseRunes.runes("abcdefghijklmnopqrstuvwxyz0123456789");
+		check(helper, all.chars().distinct().count() == CurseRunes.COUNT
+				&& all.chars().allMatch(c -> c >= CurseRunes.FIRST && c < CurseRunes.FIRST + CurseRunes.COUNT),
+				"the runes are not the Seam script's own 36: %s", all.chars().mapToObj(Integer::toHexString).toList());
 		helper.succeed();
 	}
 

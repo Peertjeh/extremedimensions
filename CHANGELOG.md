@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.3.2: The Seam Script
+
+### Changed
+- **The runes of an unknown curse are now an alphabet of the mod's own.** They were letters of the Elder Futhark, so a
+  card on Hard read like a Viking stone. Now they are the **Seam script**: every letter a thread hanging the height of
+  a capital, with what the Weavers tied into it (knots the thread runs through, beads where it thickens, side knots,
+  loose dots, a cut). Each letter and digit keeps its own rune, so a curse still always wears the same ones and you
+  still learn a card by its runes. The letters stand evenly spaced and take less room than the old ones.
+- The script is drawn into the game's own font (Private Use Area code points, beside vanilla's letters, not in their
+  place) by a new generator, `tools/font/seam_script.py`; resource packs can redraw it.
+
+### Tests
+- The cipher gives all 36 letters and digits their own rune, and every rune is one of the Seam script's.
+- The client test checks the script joins the game's font next to vanilla's and that each rune stands 6 wide, then
+  shows the Hard offer with two cards in the new script.
+
 ## 3.3.1: Full Sets
 
 ### Fixed

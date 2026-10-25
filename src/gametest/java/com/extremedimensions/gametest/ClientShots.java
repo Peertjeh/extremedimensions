@@ -407,6 +407,33 @@ public class ClientShots implements FabricClientGameTest {
 		return stack;
 	}
 
+	/**
+	 * The runes of an unknown curse are the Seam script: its letters join the game's own font beside vanilla's (not in
+	 * its place), and each stands 6 wide, so the threads keep an even step.
+	 */
+	private static void seamScriptLoaded(net.minecraft.client.Minecraft mc) {
+		int ours = 0, others = 0;
+		net.minecraft.resources.Identifier font = net.minecraft.resources.Identifier.withDefaultNamespace("font/default.json");
+		for (net.minecraft.server.packs.resources.Resource r : mc.getResourceManager().getResourceStack(font)) {
+			try (java.io.BufferedReader in = r.openAsReader()) {
+				String text = String.join("\n", in.lines().toList());
+				if (text.contains("extremedimensions:font/seam_script.png")) {
+					ours++;
+				} else {
+					others++;
+				}
+			} catch (java.io.IOException e) {
+				throw new AssertionError("the game's font could not be read: " + e);
+			}
+		}
+		check(ours == 1, "the Seam script is in the game's font " + ours + " times");
+		check(others > 0, "the Seam script took the place of the game's own font");
+		for (int i = 0; i < com.extremedimensions.penalty.CurseRunes.COUNT; i++) {
+			char c = (char) (com.extremedimensions.penalty.CurseRunes.FIRST + i);
+			check(mc.font.width(String.valueOf(c)) == 6, "rune " + i + " of the Seam script is " + mc.font.width(String.valueOf(c)) + " wide, expected 6");
+		}
+	}
+
 	private static void check(boolean ok, String message) {
 		if (!ok) {
 			throw new AssertionError(message);
@@ -896,6 +923,7 @@ public class ClientShots implements FabricClientGameTest {
 				Sync.offer(p, d);
 			});
 			ctx.waitTicks(40);
+			ctx.runOnClient(ClientShots::seamScriptLoaded);
 			ctx.takeScreenshot("04_cards_runes");
 			// An Abyssal card among the others (black, cracked, its rune unread on Hard), then one dealt alone: no choice
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));

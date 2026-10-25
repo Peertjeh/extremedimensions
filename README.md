@@ -55,7 +55,8 @@ once (slay 30 undead in daylight, offer a Nether Star at an anchor, keep awake t
 still works, at four times the cost, and a death takes all of it.
 
 On **Hard** and **Extreme** a curse you have never carried shows only runes, on its card and in the Curses screen,
-until you take it once; on Easy and Normal every curse reads from the start (the Extreme set only ever hints).
+until you take it once; on Easy and Normal every curse reads from the start (the Extreme set only ever hints). The
+runes are the **Seam script**, an alphabet of the mod's own: threads with knots, beads and loose ends tied into them.
 
 Lift them by **atonement** (played off on expeditions and at home; every death undoes half), **Tether Fragments**
 offered to an anchor, or a **Mending Cloth**. Every stack lifted leaves a **scar** that weakens the drain.
