@@ -11,7 +11,8 @@
 * **Name tags show only up close.** In a match an enemy's name tag shows only within 6 blocks, with nothing in
   between (`combat.nameTagRange`; 0 = vanilla). Vanilla shows it 64 blocks away and through walls, which gave
   everyone away. Teammates keep theirs, spectators and the lobby see every tag, and titles and name colours stay.
-  Bots no longer find anyone behind a wall by their tag either.
+  Bots no longer find anyone behind a wall by their tag either. At the start of a fight they know where everyone
+  spawned, as a player does; after that only what they see and hear.
 * **No locator bar in the Hunger Games.** The bar over the hotbar that points at every other player is off for the
   tributes until the game is over: they neither send nor receive waypoints.
 * **Bots use their whole kit.** Golden apples, pearls, wind charges and blocks that are not in the hotbar are brought

@@ -295,7 +295,8 @@ practice is against the very kit you have, in the same slots.
 * **Name tags only up close** (1.49): in a match an enemy's name tag shows only within 6 blocks
   (`combat.nameTagRange`) with nothing in between. Vanilla shows it 64 blocks away and through walls, which gives
   everyone away. Teammates keep theirs; spectators and the lobby see every tag. Titles and name colours stay as
-  they are. Bots no longer find you behind a wall by your tag either.
+  they are. Bots no longer find you behind a wall by your tag either; at the start of a fight they know where
+  everyone spawned, as a player does, and after that only what they see and hear.
 * `/report <player> <reason>`: saved in `world/battlehub/reports.log` with the match the player was in and
   shown to online admins; `/battlehub reports` lists the latest.
 

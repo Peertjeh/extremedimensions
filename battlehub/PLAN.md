@@ -2318,7 +2318,9 @@ zit de ander in een team (titels, naamkleur), dan krijgt de kijker een kopie van
 zit hij in geen team, dan een eigen team op het scherm van de kijker. Elke 5 ticks bijgewerkt en elke 2 seconden
 opnieuw gestuurd (de server stuurt een team opnieuw naar iedereen als het verandert). Teamgenoten houden hun
 plaatje, toeschouwers en de lobby zien alles, ook tijdens de vrede aan het begin van de Hunger Games is het weg.
-Bots vinden niemand meer achter een muur aan zijn plaatje (`Perception`).
+Bots vinden niemand meer achter een muur aan zijn plaatje (`Perception`). Daardoor wist een boog-bot achter
+dekking niet meer waar hij moest zoeken (de zelftest liep vast); nu weet een bot bij het begin van een gevecht waar
+de anderen staan, zoals een speler de spawns kent (`Perception.knowStart`), en daarna alleen wat hij ziet en hoort.
 
 **F – Geen locator bar.** Afgeleid: de "hotbar die laat zien waar vijanden zijn" is de *locator bar* van vanilla
 (sinds 1.21.6, boven de hotbar, met een stip per speler in de buurt); een mod-functie aan de kant van de speler kan de
@@ -2337,7 +2339,9 @@ Zelftests: de nacht speelt boven het plein terwijl A en B doorvechten; A valt ee
 mace en de bot ziet het en rent weg (tot drie pogingen, een expert mist er af en toe een); in practice heeft de bot
 exact A's kit in A's indeling, haalt parels uit zijn inventaris en pearlt achter A aan; in de Hunger Games is de
 locator bar uit, ziet A B's plaatje niet op 20 blokken maar wel vlakbij, en na de game is alles terug; het pack bevat
-alle geluiden.
+alle geluiden. De raam-test stuurt de bot nu vast naar die barrel (zijn eigen parachute of een krat ernaast ging soms
+voor). De krat-test faalde één keer zonder aanwijsbare oorzaak (de volgende run ging goed); hij logt nu elke seconde
+zijn toestand en een tick van een testspeler die mislukt komt eenmalig in de log, zodat een herhaling te verklaren is.
 
 ## Versie 1.47.1 – Bots naar kisten in huizen, onzichtbaar met armor
 
