@@ -400,6 +400,13 @@ public class ClientShots implements FabricClientGameTest {
 		throw new AssertionError("the chat has no line to type in");
 	}
 
+	/** An armour piece with a trim on it. */
+	private static ItemStack trimmed(net.minecraft.world.item.Item item, net.minecraft.world.item.equipment.trim.ArmorTrim trim) {
+		ItemStack stack = new ItemStack(item);
+		stack.set(net.minecraft.core.component.DataComponents.TRIM, trim);
+		return stack;
+	}
+
 	private static void check(boolean ok, String message) {
 		if (!ok) {
 			throw new AssertionError(message);
@@ -609,6 +616,99 @@ public class ClientShots implements FabricClientGameTest {
 				}
 				p.level().setBlock(jukebox, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
 			});
+
+			// Tetherite: the full set worn with the Seam's trims, the tools in the hotbar and the inventory; then a Spindle
+			// mid-spin between two veins of the ore and two armour stands (Tetherite with the Weaver in Seam Silk, diamond with
+			// the Fray in Tetherite, a Tetherite Spear in hand); then the set worn, from the front
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				var mats = s.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.TRIM_MATERIAL);
+				var pats = s.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.TRIM_PATTERN);
+				var weaver = new net.minecraft.world.item.equipment.trim.ArmorTrim(mats.getOrThrow(com.extremedimensions.tetherite.TetheriteTrims.SEAM_SILK),
+						pats.getOrThrow(com.extremedimensions.tetherite.TetheriteTrims.WEAVER));
+				var fray = new net.minecraft.world.item.equipment.trim.ArmorTrim(mats.getOrThrow(com.extremedimensions.tetherite.TetheriteTrims.TETHERITE),
+						pats.getOrThrow(com.extremedimensions.tetherite.TetheriteTrims.FRAY));
+				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, trimmed(com.extremedimensions.registry.ModItems.TETHERITE_HELMET, weaver));
+				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, trimmed(com.extremedimensions.registry.ModItems.TETHERITE_CHESTPLATE, weaver));
+				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.LEGS, trimmed(com.extremedimensions.registry.ModItems.TETHERITE_LEGGINGS, fray));
+				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.FEET, trimmed(com.extremedimensions.registry.ModItems.TETHERITE_BOOTS, fray));
+				net.minecraft.world.item.Item[] bar = {com.extremedimensions.registry.ModItems.TETHERITE_SWORD, com.extremedimensions.registry.ModItems.TETHERITE_PICKAXE,
+						com.extremedimensions.registry.ModItems.TETHERITE_AXE, com.extremedimensions.registry.ModItems.TETHERITE_SHOVEL,
+						com.extremedimensions.registry.ModItems.TETHERITE_HOE, com.extremedimensions.registry.ModItems.TETHERITE_SPEAR,
+						com.extremedimensions.registry.ModItems.TETHERITE_INGOT, com.extremedimensions.registry.ModItems.TETHER_CORD,
+						com.extremedimensions.registry.ModItems.TETHERITE_UPGRADE_SMITHING_TEMPLATE};
+				for (int i = 0; i < bar.length; i++) {
+					p.getInventory().setItem(i, new ItemStack(bar[i]));
+				}
+				p.getInventory().setItem(9, new ItemStack(com.extremedimensions.registry.ModItems.TETHERITE_ORE, 3));
+				p.getInventory().setItem(10, new ItemStack(com.extremedimensions.registry.ModItems.TETHERITE_SCRAP, 4));
+				p.getInventory().setItem(11, new ItemStack(com.extremedimensions.registry.ModItems.SPINDLE));
+				p.getInventory().setItem(12, new ItemStack(com.extremedimensions.registry.ModItems.WEAVER_ARMOR_TRIM_SMITHING_TEMPLATE));
+				p.getInventory().setItem(13, new ItemStack(com.extremedimensions.registry.ModItems.FRAY_ARMOR_TRIM_SMITHING_TEMPLATE));
+				p.getInventory().setItem(14, trimmed(Items.DIAMOND_CHESTPLATE, fray));
+				p.getInventory().setItem(15, trimmed(Items.IRON_HELMET, weaver));
+				p.getInventory().setItem(16, trimmed(Items.LEATHER_LEGGINGS, fray));
+				p.getInventory().setItem(17, trimmed(Items.NETHERITE_BOOTS, weaver));
+			});
+			ctx.waitTicks(10);
+			ctx.runOnClient(mc -> mc.gui.setScreen(new InventoryScreen(mc.player)));
+			ctx.waitTicks(8);
+			ctx.takeScreenshot("02_tetherite_gear");
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				net.minecraft.core.BlockPos at = p.blockPosition().relative(p.getDirection(), 3);
+				net.minecraft.core.Direction side = p.getDirection().getClockWise();
+				p.level().setBlock(at, com.extremedimensions.registry.ModBlocks.SPINDLE.defaultBlockState()
+						.setValue(com.extremedimensions.tetherite.SpindleBlock.FRAGMENTS, 6).setValue(com.extremedimensions.tetherite.SpindleBlock.SILK, 3)
+						.setValue(com.extremedimensions.tetherite.SpindleBlock.SPUN, 5), 3);
+				p.level().setBlock(at.relative(side), com.extremedimensions.registry.ModBlocks.TETHERITE_ORE.defaultBlockState(), 3);
+				p.level().setBlock(at.relative(side.getOpposite()), com.extremedimensions.registry.ModBlocks.TETHERITE_ORE.defaultBlockState(), 3);
+			});
+			sp.getServer().runCommand("execute as @a at @s run summon minecraft:armor_stand ^2.5 ^ ^3 {ShowArms:1b,NoBasePlate:1b,Rotation:[180f,0f],Tags:[\"teth_a\"]}");
+			sp.getServer().runCommand("execute as @a at @s run summon minecraft:armor_stand ^-2.5 ^ ^3 {ShowArms:1b,NoBasePlate:1b,Rotation:[180f,0f],Tags:[\"teth_b\"]}");
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				var mats = s.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.TRIM_MATERIAL);
+				var pats = s.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.TRIM_PATTERN);
+				var weaver = new net.minecraft.world.item.equipment.trim.ArmorTrim(mats.getOrThrow(com.extremedimensions.tetherite.TetheriteTrims.SEAM_SILK),
+						pats.getOrThrow(com.extremedimensions.tetherite.TetheriteTrims.WEAVER));
+				var fray = new net.minecraft.world.item.equipment.trim.ArmorTrim(mats.getOrThrow(com.extremedimensions.tetherite.TetheriteTrims.TETHERITE),
+						pats.getOrThrow(com.extremedimensions.tetherite.TetheriteTrims.FRAY));
+				for (net.minecraft.world.entity.LivingEntity stand : p.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
+						p.getBoundingBox().inflate(8), e -> e.entityTags().contains("teth_a") || e.entityTags().contains("teth_b"))) {
+					boolean a = stand.entityTags().contains("teth_a");
+					var trim = a ? weaver : fray;
+					stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.HEAD, trimmed(a ? com.extremedimensions.registry.ModItems.TETHERITE_HELMET : Items.DIAMOND_HELMET, trim));
+					stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.CHEST, trimmed(a ? com.extremedimensions.registry.ModItems.TETHERITE_CHESTPLATE : Items.DIAMOND_CHESTPLATE, trim));
+					stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.LEGS, trimmed(a ? com.extremedimensions.registry.ModItems.TETHERITE_LEGGINGS : Items.DIAMOND_LEGGINGS, trim));
+					stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.FEET, trimmed(a ? com.extremedimensions.registry.ModItems.TETHERITE_BOOTS : Items.DIAMOND_BOOTS, trim));
+					stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(a ? com.extremedimensions.registry.ModItems.TETHERITE_SPEAR
+							: com.extremedimensions.registry.ModItems.TETHERITE_SWORD));
+				}
+			});
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ ~ 18");
+			ctx.waitTicks(15);
+			ctx.takeScreenshot("02_tetherite_spindle");
+			ctx.runOnClient(mc -> mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT));
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("02_tetherite_worn");
+			ctx.runOnClient(mc -> mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON));
+			sp.getServer().runCommand("kill @e[type=minecraft:armor_stand,tag=teth_a]");
+			sp.getServer().runCommand("kill @e[type=minecraft:armor_stand,tag=teth_b]");
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				net.minecraft.core.BlockPos at = p.blockPosition().relative(p.getDirection(), 3);
+				net.minecraft.core.Direction side = p.getDirection().getClockWise();
+				for (net.minecraft.core.BlockPos q : new net.minecraft.core.BlockPos[] {at, at.relative(side), at.relative(side.getOpposite())}) {
+					p.level().setBlock(q, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				}
+				for (net.minecraft.world.entity.EquipmentSlot slot : new net.minecraft.world.entity.EquipmentSlot[] {net.minecraft.world.entity.EquipmentSlot.HEAD,
+						net.minecraft.world.entity.EquipmentSlot.CHEST, net.minecraft.world.entity.EquipmentSlot.LEGS, net.minecraft.world.entity.EquipmentSlot.FEET}) {
+					p.setItemSlot(slot, ItemStack.EMPTY);
+				}
+			});
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ ~ 0");
 
 			// The Curses screen: all four tabs, with players nearby
 			String data = sp.getServer().computeOnServer(s -> Sync.cursesData(player(s), DataStore.get(player(s).getUUID())));
