@@ -24,8 +24,10 @@ TEX = os.path.join(ROOT, "src/client/resources/assets/extremedimensions/textures
 METAL = [(14, 9, 22), (36, 26, 54), (58, 45, 86), (88, 72, 124), (146, 132, 190)]
 THREAD = [(14, 84, 96), (30, 160, 168), (70, 226, 214), (196, 255, 246)]
 
-# vanilla's trim key (textures/palettes/trim_base), light to dark, and the Seam's palettes in the same order
-KEY = [(241, 241, 241), (225, 225, 225), (208, 208, 208), (188, 188, 188), (165, 165, 165), (137, 137, 137), (99, 99, 99), (0, 0, 0)]
+# vanilla's trim key (textures/palettes/trim_base), light to dark, as the game reads it (a grey PNG: read through a
+# colour-managed decoder its greys come out brighter, 241, 225, 208..., and no longer match), and the Seam's palettes
+# in the same order
+KEY = [(224, 224, 224), (192, 192, 192), (160, 160, 160), (128, 128, 128), (96, 96, 96), (64, 64, 64), (32, 32, 32), (0, 0, 0)]
 PALETTES = {
     "tetherite": [(178, 250, 240), (112, 220, 214), (66, 178, 184), (52, 128, 150), (66, 84, 128), (58, 58, 104), (44, 38, 78), (28, 22, 50)],
     "tetherite_darker": [(112, 220, 214), (66, 178, 184), (46, 130, 148), (40, 96, 120), (48, 58, 96), (42, 40, 78), (32, 26, 58), (20, 15, 38)],
@@ -261,10 +263,6 @@ def main():
     }
     for name, colors in PALETTES.items():
         files["palettes/trim/" + name] = palette(colors)
-    # the key again in the mod's own namespace, for a pattern's base_palette read against the texture's namespace
-    key = palette(KEY)
-    key.putpixel((len(KEY) - 1, 0), (0, 0, 0, 0))
-    files["palettes/trim_base"] = key
     if len(sys.argv) > 1:
         S = 6
         shown = [im for k, im in files.items() if not k.startswith("palettes")]

@@ -275,7 +275,45 @@ public class TetheriteTests {
 			int width = palette(helper, "assets/extremedimensions/textures/palettes/" + own + ".png");
 			check(helper, vanilla < 0 || width < 0 || width == vanilla, "the palette %s is %s wide, vanilla's %s", own, width, vanilla);
 		}
+		// the patterns are drawn in the key's own greys, read raw (a colour-managed read brightens a grey PNG): any other
+		// colour is left as it is, grey, on every material
+		Set<Integer> key = rawGreys("assets/minecraft/textures/palettes/trim_base.png");
+		for (String layer : List.of("humanoid", "humanoid_leggings")) {
+			for (String p : List.of("weaver", "fray")) {
+				String path = "assets/extremedimensions/textures/trims/entity/" + layer + "/" + p + ".png";
+				Set<Integer> used = rawGreys(path);
+				used.removeAll(key);
+				check(helper, key.isEmpty() || used.isEmpty(), "%s uses %s, not the trim key's greys %s", path, used, key);
+			}
+		}
 		helper.succeed();
+	}
+
+	/** The raw grey values of a picture's visible pixels (-1 for a pixel that is not grey); empty if it cannot be read here. */
+	private static Set<Integer> rawGreys(String path) {
+		Set<Integer> out = new HashSet<>();
+		try (InputStream in = TetheriteTests.class.getClassLoader().getResourceAsStream(path)) {
+			if (in == null) {
+				return out;
+			}
+			java.awt.image.BufferedImage im = javax.imageio.ImageIO.read(in);
+			java.awt.image.Raster raster = im.getRaster();
+			int bands = raster.getNumBands();
+			boolean alpha = im.getColorModel().hasAlpha();
+			for (int y = 0; y < im.getHeight(); y++) {
+				for (int x = 0; x < im.getWidth(); x++) {
+					int[] s = raster.getPixel(x, y, (int[]) null);
+					if (alpha && s[bands - 1] == 0) {
+						continue;
+					}
+					boolean grey = bands < 3 || s[0] == s[1] && s[1] == s[2];
+					out.add(grey ? s[0] : -1);
+				}
+			}
+		} catch (Exception e) {
+			System.out.println("PALETTE|" + path + "|" + e);
+		}
+		return out;
 	}
 
 	/** A palette's width, its colours printed for the log (-1 if it cannot be read here). */
