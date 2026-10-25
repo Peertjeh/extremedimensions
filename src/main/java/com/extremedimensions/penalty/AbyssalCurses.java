@@ -332,7 +332,7 @@ public final class AbyssalCurses {
 		if (carried(d) == 0 || !(victim.level() instanceof ServerLevel level)) {
 			return;
 		}
-		if (victim.getType().is(EntityTypeTags.UNDEAD) && Dims.OVERWORLD.equals(Dims.of(killer))
+		if (BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(victim.getType()).is(EntityTypeTags.UNDEAD) && Dims.OVERWORLD.equals(Dims.of(killer))
 				&& inSun(level, victim.getX(), victim.getEyeY(), victim.getZ())) {
 			advance(killer, d, Penalty.SUNSCORN, 1);
 		}
