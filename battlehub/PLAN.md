@@ -2255,6 +2255,10 @@ een mace-overwinning telt minder, oude ratings één keer omgezet, de schaal gel
 van het adaptieve niveau slagen op de nieuwe schaal. `CombatModelsTest` controleert dat elk niveau zijn model heeft (expert
 en master delen er een). Zelftest: na een overwinning op een expert-bot staat de rating boven waar hij begon.
 
+**CI van `691f3b0`:** 965 geslaagd, 0 gefaald. Na de gewonnen zelftest tegen een expert-bot staat de rating op 1093
+(nieuwe schaal), adaptief intermediate. Tijd per beslissing 0,47–0,54 ms gemiddeld (zoals in 1.41: het netwerk is
+hetzelfde).
+
 **Grenzen.** Alle mensdata komt van één speler. Wat vaststaat: de afstand tussen de niveaus zoals ze spelen (gemeten in
 de simulatie, en het gat tussen intermediate en master klopt met het spel) en dat deze speler net boven intermediate
 staat. Hoe andere spelers over de niveaus verdeeld zijn, zegt een volgende export van meer spelers. De mace-schaal rust op
