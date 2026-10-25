@@ -65,13 +65,16 @@ public final class PenaltyService {
 
 	/**
 	 * Draws the cards for the first owed curse. Sometimes the whole offer is multiplied: then every card carries its
-	 * own multiplier. A set with every curse at its maximum offers nothing; the Starved take all levels instead.
+	 * own multiplier. With every curse the death draws from at its maximum, the cards come from deeper down (see
+	 * {@link #deeper}); with nothing left there either, the death costs no curse and the Starved take all levels instead.
 	 */
 	private static void nextOffer(PlayerData d) {
 		while (!d.owed.isEmpty() && d.pendingOffer.isEmpty()) {
 			boolean ow = OVERWORLD.equals(d.owed.get(0));
-			List<String> ids = AbyssalCurses.deal(d, Penalty.rollOffer(d, ow, Config.OFFER_COUNT + com.extremedimensions.binding.Charms.foresight(d), Config.EXTREME_CARD_CHANCE),
-					new java.util.Random(ThreadLocalRandom.current().nextLong()));
+			java.util.Random rnd = new java.util.Random(ThreadLocalRandom.current().nextLong());
+			int count = Config.OFFER_COUNT + com.extremedimensions.binding.Charms.foresight(d);
+			List<String> ids = Config.CURSE_DEEPER > 0 && Penalty.pool(d, ow).isEmpty() ? deeper(d, count, rnd)
+					: AbyssalCurses.deal(d, Penalty.rollOffer(d, ow, count, Config.EXTREME_CARD_CHANCE), rnd);
 			if (ids.isEmpty()) {
 				d.owed.remove(0);
 				d.pendingPenalties = Math.max(0, d.pendingPenalties - 1);
@@ -88,6 +91,24 @@ public final class PenaltyService {
 				}
 			}
 		}
+	}
+
+	/**
+	 * The cards for a death no curse of its sets has room for ({@code curse_deeper}): the Extreme curses with room (an
+	 * Abyssal one dealt in now and then, as in any offer), and once those are full too, the Abyssal curses the player
+	 * does not carry. Empty when even those are full.
+	 */
+	private static List<String> deeper(PlayerData d, int count, java.util.Random rnd) {
+		List<Penalty> extreme = Penalty.available(d, Penalty.Group.EXTREME);
+		if (extreme.isEmpty()) {
+			return AbyssalCurses.whenFull(d, count, rnd);
+		}
+		java.util.Collections.shuffle(extreme, rnd);
+		List<String> out = new ArrayList<>();
+		for (int i = 0; i < count && i < extreme.size(); i++) {
+			out.add(extreme.get(i).id);
+		}
+		return AbyssalCurses.deal(d, out, rnd);
 	}
 
 	private static List<Integer> multipliers(int n) {

@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.3.3: Deeper Still
+
+### Fixed
+- **A death with every curse full now reaches deeper instead of going free.** Since 3.3.1 a death with its own sets
+  full drew from the other set; once that was full too it cost nothing, and no Abyssal card could come, since an
+  Abyssal card only ever took the place of an ordinary one. Now such a death deals a choice from the **Extreme**
+  curses that still have room, and once those are full too, a choice from the **Abyssal** curses you do not carry.
+  That last step comes whatever the Abyssal card chance and however many Abyssal curses you already carry (on Extreme
+  one may still come alone), wherever Abyssal curses are on and after their Collapses. Only with nothing left even
+  there does a death cost no curse, and the chat says so.
+- The setting: **Full curses go deeper** (`curse_deeper`, 1; 0 brings back the old end). The description of
+  **Abyssal: most carried** now says the limit lifts once every other curse is full.
+
+### Tests
+- With every ordinary curse full a death deals three Extreme cards; with the Extreme set full too, three Abyssal
+  curses not carried, though one is carried at a most of one; with Abyssal curses off, or `curse_deeper` 0, it deals
+  none and the Starved take the levels.
+
 ## 3.3.2: The Seam Script
 
 ### Changed

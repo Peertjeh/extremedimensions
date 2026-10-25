@@ -123,6 +123,25 @@ public final class AbyssalCurses {
 		return out;
 	}
 
+	/**
+	 * The cards for a death once every other curse is full ({@code curse_deeper}): up to {@code count} Abyssal curses the
+	 * player does not carry, whatever the card chance and the most carried, where they are on and after enough Collapses.
+	 * A forced deal (Extreme) still makes it one card alone. Empty when the Abyss has nothing left to lay either.
+	 */
+	public static List<String> whenFull(PlayerData d, int count, Random rnd) {
+		List<String> out = new ArrayList<>();
+		if (Config.ABYSSAL_CURSES <= 0 || d.collapses < Math.max(0, Config.ABYSSAL_AFTER_COLLAPSES)) {
+			return out;
+		}
+		List<Penalty> pool = pool(d);
+		java.util.Collections.shuffle(pool, rnd);
+		int n = rnd.nextDouble() < Config.ABYSSAL_FORCED_CHANCE ? 1 : Math.max(1, count);
+		for (int i = 0; i < n && i < pool.size(); i++) {
+			out.add(pool.get(i).id);
+		}
+		return out;
+	}
+
 	/** Whether the curse is one a Mending Cloth will not take. */
 	public static boolean clothRefuses(Penalty p) {
 		return p.abyssal && Config.ABYSSAL_MENDING_CLOTH <= 0;

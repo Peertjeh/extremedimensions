@@ -92,6 +92,12 @@ public final class Config {
 	 * player's levels instead.
 	 */
 	public static int CURSE_OVERFLOW = 1;
+	/**
+	 * 1: when no curse a death draws from has room left, its cards come from the Extreme curses with room, and once those
+	 * are full too, from the Abyssal curses the player does not carry (where those are on and after enough Collapses,
+	 * whatever their card chance and the most carried); 0: such a death costs no curse.
+	 */
+	public static int CURSE_DEEPER = 1;
 	/** Ticks after respawning before the curse screen opens. */
 	public static int OFFER_DELAY_TICKS = 70;
 	/**

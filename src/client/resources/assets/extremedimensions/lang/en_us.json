@@ -1036,7 +1036,7 @@
   "config.extremedimensions.abyssal_after_collapses": "Abyssal: after Collapses",
   "config.extremedimensions.abyssal_after_collapses.desc": "How many Collapses a player must have been through before an Abyssal card can come.",
   "config.extremedimensions.abyssal_max_carried": "Abyssal: most carried",
-  "config.extremedimensions.abyssal_max_carried.desc": "How many Abyssal curses a player carries at most; with that many, no more are dealt.",
+  "config.extremedimensions.abyssal_max_carried.desc": "How many Abyssal curses a player carries at most; with that many, no more are dealt, until every other curse is full (see Full curses go deeper).",
   "config.extremedimensions.abyssal_atone_factor": "Abyssal atonement factor",
   "config.extremedimensions.abyssal_atone_factor.desc": "Abyssal curses take this many times the atonement points to lift without their deed (4 = four times).",
   "config.extremedimensions.abyssal_fragments": "Abyssal fragments per stack",
@@ -2556,5 +2556,7 @@
   "config.extremedimensions.ench_unravelling_damage.desc": "Damage the Unravelling effect deals every second.",
   "gui.extremedimensions.curses.full": "Every curse that could be laid is at its maximum: this death cost you no curse.",
   "config.extremedimensions.curse_overflow": "Full sets spill over",
-  "config.extremedimensions.curse_overflow.desc": "1: when every curse of the world's set and of the Everywhere set is at its maximum, a death draws its cards from the other set (the Overworld set only while it is on). 0: such a death costs no curse; the Starved take your levels instead."
+  "config.extremedimensions.curse_overflow.desc": "1: when every curse of the world's set and of the Everywhere set is at its maximum, a death draws its cards from the other set (the Overworld set only while it is on). 0: such a death costs no curse; the Starved take your levels instead.",
+  "config.extremedimensions.curse_deeper": "Full curses go deeper",
+  "config.extremedimensions.curse_deeper.desc": "1: when no curse a death draws from has room left, its cards come from the Extreme curses that still have room, and once those are full too, from the Abyssal curses you do not carry (where Abyssal curses are on and after enough Collapses, whatever their card chance and however many you carry). 0: such a death costs no curse; the Starved take your levels instead."
 }

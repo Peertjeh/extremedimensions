@@ -47,10 +47,12 @@ Fuel values show in item tooltips.
 **92 curses in four sets**, each permanent and stacking to its own maximum: *Beyond the wound* (26, in the Nether, the
 End and the Seam), *Overworld* (17, on unless an operator turns them off), *Everywhere* (16) and *Extreme* (9, cryptic,
 heavy, and dearer to atone). Sometimes the offer is multiplied (2x to 4x); stacks that do not fit spill onto other
-curses. The **Curses** screen (the button beside the journal in your inventory) shows them all.
+curses. Once every curse a death draws from is full, it draws from the other set, then the Extreme set, then the
+Abyssal curses below. The **Curses** screen (the button beside the journal in your inventory) shows them all.
 
 Under the Extreme set lie the **24 Abyssal curses**, dealt on Hard and Extreme (an operator can switch them on for Easy
-and Normal): one stack each, rare, on Extreme sometimes the only card on offer. Each has a **deed** that breaks it at
+and Normal): one stack each, rare (at most one carried on Hard, two on Extreme, until every other curse is full), on
+Extreme sometimes the only card on offer. Each has a **deed** that breaks it at
 once (slay 30 undead in daylight, offer a Nether Star at an anchor, keep awake through three nights...); atonement
 still works, at four times the cost, and a death takes all of it.
 

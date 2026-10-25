@@ -296,6 +296,89 @@ public class CurseTests {
 		helper.succeed();
 	}
 
+	/**
+	 * With every curse a death draws from full, its cards come from the Extreme curses with room; with those full too,
+	 * from the Abyssal curses the player does not carry, past the most carried, as a choice. With nothing left there, or
+	 * {@code curse_deeper} 0, the death costs no curse.
+	 */
+	@GameTest
+	public void fullCursesGoDeeper(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "test-full-deeper");
+		PlayerData d = DataStore.get(p.getUUID());
+		java.util.Map<String, Integer> before = new java.util.HashMap<>(d.curses);
+		int deeper = Config.CURSE_DEEPER, on = Config.ABYSSAL_CURSES, after = Config.ABYSSAL_AFTER_COLLAPSES;
+		int most = Config.ABYSSAL_MAX_CARRIED, count = Config.OFFER_COUNT, collapses = d.collapses;
+		double extremeChance = Config.EXTREME_CARD_CHANCE, cardChance = Config.ABYSSAL_CARD_CHANCE, forced = Config.ABYSSAL_FORCED_CHANCE;
+		try {
+			Config.CURSE_DEEPER = 1;
+			Config.EXTREME_CARD_CHANCE = 0;
+			Config.ABYSSAL_CARD_CHANCE = 0;
+			Config.ABYSSAL_FORCED_CHANCE = 0;
+			Config.ABYSSAL_CURSES = 1;
+			Config.ABYSSAL_AFTER_COLLAPSES = 5;
+			Config.ABYSSAL_MAX_CARRIED = 1;
+			Config.OFFER_COUNT = 3;
+			d.collapses = 10;
+			for (Penalty pen : Penalty.values()) {
+				if (!pen.abyssal && !pen.extreme) {
+					d.addStacks(pen, pen.max);
+				}
+			}
+			check(helper, Penalty.pool(d, true).isEmpty() && Penalty.pool(d, false).isEmpty(), "the ordinary sets are not full");
+			unowe(d);
+			PenaltyService.owe(d, true);
+			check(helper, d.pendingOffer.size() == 3 && d.pendingOffer.stream().distinct().count() == 3,
+					"with the ordinary sets full a death should deal 3 Extreme cards, dealt %s", d.pendingOffer);
+			for (String id : d.pendingOffer) {
+				Penalty pen = Penalty.byId(id);
+				check(helper, pen != null && pen.extreme && !pen.abyssal, "with the ordinary sets full a death dealt %s", id);
+			}
+
+			for (Penalty pen : Penalty.values()) {
+				if (pen.extreme && !pen.abyssal) {
+					d.addStacks(pen, pen.max);
+				}
+			}
+			d.addStacks(Penalty.SUNSCORN, 1);
+			unowe(d);
+			PenaltyService.owe(d, false);
+			check(helper, d.pendingOffer.size() == 3 && d.pendingOffer.stream().distinct().count() == 3,
+					"with every other curse full a death should deal a choice of 3 Abyssal cards past the most carried, dealt %s", d.pendingOffer);
+			for (String id : d.pendingOffer) {
+				Penalty pen = Penalty.byId(id);
+				check(helper, pen != null && pen.abyssal && d.owned(pen) == 0, "with every other curse full a death dealt %s", id);
+			}
+			check(helper, !d.xpForfeit, "a death that dealt Abyssal cards took the levels too");
+
+			Config.ABYSSAL_CURSES = 0;
+			unowe(d);
+			PenaltyService.owe(d, true);
+			check(helper, d.pendingOffer.isEmpty() && d.xpForfeit, "with Abyssal curses off a full death dealt %s, levels taken: %s", d.pendingOffer, d.xpForfeit);
+
+			Config.ABYSSAL_CURSES = 1;
+			Config.CURSE_DEEPER = 0;
+			d.xpForfeit = false;
+			unowe(d);
+			PenaltyService.owe(d, true);
+			check(helper, d.pendingOffer.isEmpty() && d.xpForfeit, "with curse_deeper 0 a full death dealt %s, levels taken: %s", d.pendingOffer, d.xpForfeit);
+		} finally {
+			Config.CURSE_DEEPER = deeper;
+			Config.ABYSSAL_CURSES = on;
+			Config.ABYSSAL_AFTER_COLLAPSES = after;
+			Config.ABYSSAL_MAX_CARRIED = most;
+			Config.OFFER_COUNT = count;
+			Config.EXTREME_CARD_CHANCE = extremeChance;
+			Config.ABYSSAL_CARD_CHANCE = cardChance;
+			Config.ABYSSAL_FORCED_CHANCE = forced;
+			d.collapses = collapses;
+			d.curses.clear();
+			d.curses.putAll(before);
+			unowe(d);
+			d.xpForfeit = false;
+		}
+		helper.succeed();
+	}
+
 	/** Clears what a player owes and the offer in front of them. */
 	private static void unowe(PlayerData d) {
 		d.owed.clear();

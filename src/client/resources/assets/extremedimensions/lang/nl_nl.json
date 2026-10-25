@@ -1036,7 +1036,7 @@
   "config.extremedimensions.abyssal_after_collapses": "Afgrond: na Collapses",
   "config.extremedimensions.abyssal_after_collapses.desc": "Hoeveel Collapses een speler moet hebben doorgemaakt voordat er een afgrondkaart kan komen.",
   "config.extremedimensions.abyssal_max_carried": "Afgrond: hoogstens gedragen",
-  "config.extremedimensions.abyssal_max_carried.desc": "Hoeveel afgrondvloeken een speler hoogstens draagt; met zoveel worden er geen meer uitgedeeld.",
+  "config.extremedimensions.abyssal_max_carried.desc": "Hoeveel afgrondvloeken een speler hoogstens draagt; met zoveel worden er geen meer uitgedeeld, tot elke andere vloek vol zit (zie Volle vloeken gaan dieper).",
   "config.extremedimensions.abyssal_atone_factor": "Factor boetedoening Afgrond",
   "config.extremedimensions.abyssal_atone_factor.desc": "Afgrondvloeken kosten zoveel keer de boetedoeningspunten om zonder hun daad op te heffen (4 = vier keer).",
   "config.extremedimensions.abyssal_fragments": "Afgrond: fragmenten per stack",
@@ -2556,5 +2556,7 @@
   "config.extremedimensions.ench_unravelling_damage.desc": "Schade die het effect Ontrafeling elke seconde doet.",
   "gui.extremedimensions.curses.full": "Elke vloek die gelegd kon worden, staat op zijn maximum: deze dood kostte je geen vloek.",
   "config.extremedimensions.curse_overflow": "Volle sets lopen over",
-  "config.extremedimensions.curse_overflow.desc": "1: staan alle vloeken van de set van de wereld en van de Everywhere-set op hun maximum, dan trekt een dood zijn kaarten uit de andere set (de Overworld-set alleen als die aan staat). 0: zo'n dood kost geen vloek; de Uitgehongerden nemen dan je niveaus."
+  "config.extremedimensions.curse_overflow.desc": "1: staan alle vloeken van de set van de wereld en van de Everywhere-set op hun maximum, dan trekt een dood zijn kaarten uit de andere set (de Overworld-set alleen als die aan staat). 0: zo'n dood kost geen vloek; de Uitgehongerden nemen dan je niveaus.",
+  "config.extremedimensions.curse_deeper": "Volle vloeken gaan dieper",
+  "config.extremedimensions.curse_deeper.desc": "1: heeft geen enkele vloek waaruit een dood trekt nog ruimte, dan komen zijn kaarten uit de Extreme vloeken die nog ruimte hebben, en zitten die ook vol, uit de afgrondvloeken die je nog niet draagt (waar afgrondvloeken aan staan en na genoeg Collapses, ongeacht hun kaartkans en hoeveel je er al draagt). 0: zo'n dood kost geen vloek; de Uitgehongerden nemen dan je niveaus."
 }
