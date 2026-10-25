@@ -50,7 +50,9 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
 **How a bot fights (the AI framework).** In close combat a bot runs a small mind of its own:
 * *It only knows what a player could know*: an enemy on screen (within its field of view) in sight, an enemy's name
   tag through a wall (also only on screen, and not while someone sneaks), a glowing enemy, footsteps of someone
-  close who walks or runs, who just hit it, or where it last saw someone, with fading certainty. Turn behind it and
+  close who walks or runs, who just hit it, or where it last saw someone, with fading certainty. Someone invisible
+  is only unseen without armor and with empty hands: their armor (or a sword floating in the air) gives them away,
+  in full armor as far as anyone, with one piece or only a held item a quarter as far. Turn behind it and
   it loses you until it turns round. Health is only known from sight. It never reads anyone's inputs and gets no
   extra health or damage.
 * *It aims like a hand on a mouse, not a lock*: the crosshair follows you with a moment's delay, turns no faster
@@ -152,8 +154,9 @@ hardly any mistakes); `easy`, `normal` and `hard` still work and mean casual, in
   * **The Bridge**: they head for the other goal, in 2v2 one keeps the own goal. They walk the path (or a bridge
     someone built) and only build their own where there is no way across: sneaking to the edge, looking at the side
     of the block and placing clay like a player.
-* **Like a player at a chest** (SkyWars, Hunger Games): a bot opens a chest it can see (never through a wall; the
-  lid opens, you hear it), stands still looking at it and takes one stack at a time, closes it, and then opens its
+* **Like a player at a chest** (SkyWars, Hunger Games): a bot walks to where it can open a chest (in a house that
+  is through the doorway, not to the window next to the chest; a chest it finds no way to it leaves for another one)
+  and opens a chest it can see (never through a wall; the lid opens, you hear it), stands still looking at it and takes one stack at a time, closes it, and then opens its
   inventory to put on better armor one piece at a time, standing still; lower levels are slower (a chest of eight
   stacks takes a master about three seconds, a beginner six). A hit or an enemy close by makes it close the screen
   and fight; it comes back to it later. Its arm swings for every hit, every miss and every chest it opens.

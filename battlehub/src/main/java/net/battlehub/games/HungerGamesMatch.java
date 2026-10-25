@@ -519,6 +519,7 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 		double cx = arena.origin().getX() + 0.5, cz = arena.origin().getZ() + 0.5;
 		double size = borderSize();
 		if (BorderShrink.outside(bot.getX(), bot.getZ(), cx, cz, size - 12) > 0) {
+			botUsing.remove(bot.getUUID());
 			return net.battlehub.core.ai.Objective.attack(v3(centre), "inside the border");
 		}
 		// away from what the Gamemakers sent (fire, fog, a swarm, mutts, lightning)
@@ -528,19 +529,50 @@ public final class HungerGamesMatch extends PartyMatch implements net.battlehub.
 			away = away.horizontalDistanceSqr() < 0.01 ? new Vec3(1, 0, 0) : new Vec3(away.x, 0, away.z).normalize();
 			Vec3 to = bot.position().add(away.scale(16));
 			if (BorderShrink.outside(to.x, to.z, cx, cz, size - 8) > 0) to = centre;
+			botUsing.remove(bot.getUUID());
 			return net.battlehub.core.ai.Objective.attack(v3(to), "away from the Gamemakers' trap");
 		}
 		// its own parachute, the Feast, a vault it has a key for
 		BlockPos gift = capitol.botTarget(bot);
-		if (gift != null && fresh(bot, gift)) return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(front(gift))), "the Capitol's gifts");
+		if (gift != null && fresh(bot, gift)) return using(bot, gift, "the Capitol's gifts");
 		BlockPos crate = capitol.vaults().nearestCrate(bot.position(), 20);
-		if (crate != null && Math.abs(crate.getY() - bot.getY()) <= 4 && fresh(bot, crate)) {
-			return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(front(crate))), "a sealed crate");
-		}
+		if (crate != null && Math.abs(crate.getY() - bot.getY()) <= 4 && fresh(bot, crate)) return using(bot, crate, "a sealed crate");
 		BlockPos chest = botChest(bot, size);
-		if (chest != null && fresh(bot, chest)) return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(front(chest))), "a chest");
+		if (chest != null && fresh(bot, chest)) return using(bot, chest, "a chest");
+		botUsing.remove(bot.getUUID());
 		if (Math.hypot(bot.getX() - cx, bot.getZ() - cz) > 20) return net.battlehub.core.ai.Objective.attack(v3(centre), "the plaza");
 		return null;
+	}
+
+	/** The container each bot goes to open now (its route ends where it sees it, not outside a window). */
+	private final Map<UUID, BlockPos> botUsing = new HashMap<>();
+
+	/** Going to a container: to the spot in front of it, and the route ends where it is in sight and within reach. */
+	private net.battlehub.core.ai.Objective using(ServerPlayer bot, BlockPos pos, String what) {
+		botUsing.put(bot.getUUID(), pos.immutable());
+		return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(front(pos))), what);
+	}
+
+	@Override
+	public BlockPos botUseTarget(ServerPlayer bot) {
+		return botUsing.get(bot.getUUID());
+	}
+
+	/** A bot forgets which containers it gave up on (self-test: a fresh start somewhere else). */
+	public void botForgetGiveUps(UUID id) {
+		botGaveUp.remove(id);
+		botAim.remove(id);
+		botUsing.remove(id);
+	}
+
+	/** No way to the container it goes for (behind walls, up where no path goes): it lets that one go for a while. */
+	@Override
+	public void botNoRoute(ServerPlayer bot) {
+		BlockPos pos = botUsing.remove(bot.getUUID());
+		if (pos == null) return;
+		botGaveUp.computeIfAbsent(bot.getUUID(), k -> new HashMap<>()).put(pos, runTicks + GIVE_UP_FOR);
+		botAim.remove(bot.getUUID());
+		botGaveUps++;
 	}
 
 	/** What each bot goes for now, since when, and what it gave up on (until which tick). */

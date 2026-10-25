@@ -247,12 +247,12 @@ final class FightState {
 		st.allyMaxHealth = best.getMaxHealth();
 	}
 
-	/** On screen (feet, chest or eyes in view), not invisible, nothing in between. */
+	/** On screen (feet, chest or eyes in view), not invisible (or their armor shows), nothing in between. */
 	static boolean sees(ServerPlayer self, V3 eye, ServerPlayer p) {
 		boolean onScreen = Senses.inView(eye, self.getYRot(), self.getXRot(), new V3(p.getX(), p.getEyeY(), p.getZ()))
 				|| Senses.inView(eye, self.getYRot(), self.getXRot(), new V3(p.getX(), p.getY() + 0.9, p.getZ()))
 				|| Senses.inView(eye, self.getYRot(), self.getXRot(), new V3(p.getX(), p.getY(), p.getZ()));
-		return onScreen && !p.isInvisible() && self.hasLineOfSight(p);
+		return onScreen && (!p.isInvisible() || Perception.givenAway(p, p.distanceTo(self))) && self.hasLineOfSight(p);
 	}
 
 	/** The enemy projectile that comes closest soonest (passing within 1.5 blocks of the chest within 2 seconds). */

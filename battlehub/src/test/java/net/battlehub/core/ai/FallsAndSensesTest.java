@@ -1,5 +1,6 @@
 package net.battlehub.core.ai;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -54,5 +55,17 @@ class FallsAndSensesTest {
 		assertFalse(Senses.heard(6, false, 0, 1000), "standing still is silent");
 		assertFalse(Senses.heard(20, false, 0.2, 1000), "too far");
 		assertTrue(Senses.heard(20, true, 0, 5), "but who just hit me is known");
+	}
+
+	/** Invisible, but armor and what you hold show: full armor is seen as far as anyone, nothing at all is not seen. */
+	@Test
+	void anInvisiblePlayerIsSeenByTheirArmorAndWhatTheyHold() {
+		assertEquals(0, Senses.invisibleSight(0, false), 1e-9);
+		assertEquals(1, Senses.invisibleSight(4, false), 1e-9);
+		assertEquals(0.25, Senses.invisibleSight(1, false), 1e-9);
+		assertEquals(0.5, Senses.invisibleSight(2, true), 1e-9);
+		// a sword alone floats in the air: seen close by
+		assertEquals(0.25, Senses.invisibleSight(0, true), 1e-9);
+		assertTrue(Senses.invisibleSight(3, false) > Senses.invisibleSight(1, true));
 	}
 }

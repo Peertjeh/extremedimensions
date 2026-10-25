@@ -177,6 +177,12 @@ public final class SkyWarsMatch extends PartyMatch {
 		return net.battlehub.core.ai.Objective.attack(v3(Vec3.atBottomCenterOf(front)), "a chest");
 	}
 
+	/** The chest a bot goes for: its route ends where the chest is in sight and within reach. */
+	@Override
+	public BlockPos botUseTarget(ServerPlayer bot) {
+		return botChest(bot);
+	}
+
 	/** The nearest full chest it has not emptied yet: on its own island, or anywhere once it has blocks to bridge. */
 	private BlockPos botChest(ServerPlayer bot) {
 		if (arena == null) return null;

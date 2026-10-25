@@ -91,6 +91,66 @@ class HungerMapTest {
 		assertTrue(houses >= tried * 2 / 3, "house chests reached: " + houses + " of " + tried);
 	}
 
+	/**
+	 * From the street outside, a route to a house's chest or barrel ends where it can be opened: within reach and in
+	 * sight, not outside the window next to it (from there a bot cannot open it and walked round in circles).
+	 */
+	@Test
+	void routesToTheHouseChestsEndWhereTheyCanBeOpened() {
+		GridPath.Terrain walk = Walk.of(map.voxels);
+		java.util.Random rng = new java.util.Random(7);
+		int tried = 0, opened = 0, outsideBefore = 0;
+		for (int i = 0; i < map.houseChests.size(); i += 2) {
+			HungerMap.Spot c = map.houseChests.get(i);
+			GridPath.Node start = outdoors(walk, c, rng);
+			if (start == null) continue;
+			tried++;
+			GridPath.Node chest = new GridPath.Node(c.x(), c.y(), c.z());
+			List<GridPath.Node> route = GridPath.find(walk, start, chest, 3.8, 2500, n -> canOpen(n, c));
+			if (route != null && canOpen(route.isEmpty() ? start : route.get(route.size() - 1), c)) opened++;
+			// the old way (near enough to a block nobody stands on) often ended where it could not be opened
+			List<GridPath.Node> near = GridPath.find(walk, start, chest, 2.5, 2500);
+			if (near != null && !near.isEmpty() && !canOpen(near.get(near.size() - 1), c)) outsideBefore++;
+		}
+		assertTrue(tried >= 50, "tried " + tried);
+		assertTrue(opened >= tried * 9 / 10, "routes that end where the chest can be opened: " + opened + " of " + tried);
+		assertTrue(outsideBefore > 0, "the old way never ended outside a window: the test proves nothing");
+	}
+
+	/** A spot under the open sky, 8 to 14 blocks from {@code c}, where a player stands. */
+	private static GridPath.Node outdoors(GridPath.Terrain walk, HungerMap.Spot c, java.util.Random rng) {
+		for (int tries = 0; tries < 200; tries++) {
+			double a = rng.nextDouble() * Math.PI * 2, r = 8 + rng.nextDouble() * 6;
+			int x = (int) Math.round(c.x() + Math.cos(a) * r), z = (int) Math.round(c.z() + Math.sin(a) * r);
+			int y = Walk.standY(walk, x, c.y() + 2, z);
+			if (y == Integer.MIN_VALUE) continue;
+			boolean sky = true;
+			for (int yy = y + 2; yy < y + 30 && sky; yy++) {
+				String id = map.voxels.get(x, yy, z);
+				if (id != null && !id.equals("air") && !id.contains("leaves")) sky = false;
+			}
+			if (sky) return new GridPath.Node(x, y, z);
+		}
+		return null;
+	}
+
+	/** From the eyes of a player on {@code n}: the chest within 3.3 blocks, nothing in between (glass neither). */
+	private static boolean canOpen(GridPath.Node n, HungerMap.Spot c) {
+		double ex = n.x() + 0.5, ey = n.y() + 1.62, ez = n.z() + 0.5;
+		double dx = c.x() + 0.5 - ex, dy = c.y() + 0.5 - ey, dz = c.z() + 0.5 - ez;
+		double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+		if (len > 3.3) return false;
+		int steps = (int) Math.ceil(len / 0.05);
+		for (int i = 1; i < steps; i++) {
+			double t = i / (double) steps;
+			int bx = (int) Math.floor(ex + dx * t), by = (int) Math.floor(ey + dy * t), bz = (int) Math.floor(ez + dz * t);
+			if (bx == c.x() && by == c.y() && bz == c.z()) return true;
+			String id = map.voxels.get(bx, by, bz);
+			if (id != null && !id.equals("air") && (Walk.kind(id) != 0 || id.contains("glass"))) return false;
+		}
+		return true;
+	}
+
 	@Test
 	void everyThemeKeepsTheLayoutAndUsesRealBlocks() throws Exception {
 		Set<String> blocks = MaterialTest.blocks26();

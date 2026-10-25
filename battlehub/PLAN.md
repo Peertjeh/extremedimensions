@@ -2141,6 +2141,46 @@ mensen; Bridge Chaos 1v1v1v1, Hunger Games en een mace-duel; de bots waren inter
       optreedt, en het eerstvolgende werk aan de bots begint ermee.
     - **Tweede poging van de gefaalde job: 897 geslaagd, 0 gefaald.**
 
+## Versie 1.47.1 – Bots naar kisten in huizen, onzichtbaar met armor
+
+**Vraag.** Bots zitten soms vast en draaien rondjes bij een raam (vaak waar binnen een barrel of kist staat): kijk
+naar de route naar en in een huisje. Bots zien elkaar en mij niet met een onzichtbaarheidsdrankje op; zonder armor
+is dat logisch, met armor zouden ze elkaar gewoon moeten zien. (Plus een nieuwe export van gevechten.)
+
+**Oorzaak van het rondjes draaien.** Een route eindigde zodra hij dicht genoeg bij het doel was: 1,5 blok van het vak
+voor de kist, of 2,5 blok van een blok waar niemand op kan staan. Een barrel heeft geen "voorkant" opzij, dus het
+doel was de barrel zelf en de route mocht eindigen op 2,5 blok: buiten, met de muur en het raam ertussen. Daar kan
+een bot de kist niet openen (het openen vraagt zicht), dus liep hij steeds naar het doel, botste tegen de muur, deed
+een stap opzij en kwam terug: rondjes. Een offline meting op de kaart van deze week (de route-zoeker over de blokken
+van de kaart, vanaf de straat naar elke kist en barrel in een huis) gaf: 70% van de routes naar barrels en 40% naar
+kisten eindigde waar de kist niet te openen is.
+
+**Oplossing.**
+- `GridPath.find` kan een eis aan het eindpunt meekrijgen. Voor een kist (`Match.botUseTarget`: de kist of barrel
+  waar de bot heen gaat; Hunger Games en SkyWars geven die op) eindigt de route alleen waar de kist binnen 3,3 blok
+  van de ogen ligt en er niets tussen zit (`BotPath.sees`, dezelfde zichtlijn als het openen zelf). Zo loopt de route
+  om, door de deuropening, naar binnen. Meting daarna: 98% van de routes eindigt waar de kist te openen is; de
+  overige 2% heeft helemaal geen route (die waren er voorheen ook niet).
+- Geen route naar die kist, drie keer achter elkaar: de bot laat hem los (`Match.botNoRoute`) en kiest een andere,
+  in plaats van twintig seconden te blijven proberen.
+
+**Onzichtbaar.** `Senses.invisibleSight`: wie onzichtbaar is, wordt gezien aan zijn armor en wat hij vasthoudt, zoals
+mobs in het spel: volle armor zo ver als iedereen (48 blokken), één stuk of alleen iets in de hand een kwart zo ver;
+geen armor en lege handen: niet te zien. Het naamplaatje door muren blijft weg bij onzichtbaren (dat tekent het spel
+ook niet). Dit geldt voor het kiezen van een doelwit (`Perception`) en voor wat het geleerde gevecht als "zichtbaar"
+krijgt (`FightState.sees`). Afwijking: iets in de hand telt ook mee (een zwevend zwaard is in het spel te zien); de
+vraag noemde alleen armor.
+
+**De export** (`ml/data/export-20261025-110139.zip`, 17 gevechten van 1.47.0, 131 minuten aan beslissingen):
+mace 4 keer gewonnen door de speler, zwaard 1 van 3, FFA gewonnen, Hunger Games 3 keer door een bot gewonnen,
+Bridge Chaos 2 gewonnen en 4 zonder winnaar. Bewaard voor een volgende trainingsronde; er is nu niet mee getraind
+(ML fase E is niet goedgekeurd).
+
+**Testen.** JUnit: een kist binnen tegen de muur met het raam, de deur aan de andere kant: de oude route eindigt
+buiten, de nieuwe gaat door de deur naar binnen (`GridPathTest`); op de echte kaart eindigen minstens 9 van de 10
+routes naar huiskisten waar ze te openen zijn (`HungerMapTest`); onzichtbaar met armor (`FallsAndSensesTest`).
+Zelftest: een bot buiten een huis, twee stappen van een barrel achter de muur, loopt naar binnen en opent hem.
+
 ## Versie 1.47.0 – Hunger Games: eigen muziek, gevaarlijke events, een filmische nacht (plan)
 
 **Vraag.** De muziek is er nog niet in het begin; de events mogen veel prominenter en gevaarlijker; de animatie

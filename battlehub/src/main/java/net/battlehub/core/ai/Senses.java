@@ -7,7 +7,9 @@ package net.battlehub.core.ai;
  * (about what a player sees on screen with a common field of view), and only with nothing in between;</li>
  * <li>a <b>name tag</b> shows through walls, but only on screen as well, and not while someone sneaks;</li>
  * <li><b>hearing</b> picks up footsteps of someone close who walks or runs (not who sneaks or stands still), and
- * the swing and sound of a hit taken tell where the attacker is.</li>
+ * the swing and sound of a hit taken tell where the attacker is;</li>
+ * <li>someone <b>invisible</b> is only unseen without armor and with empty hands: armor and what they hold stay on
+ * screen, so they are seen, the farther the more they wear ({@link #invisibleSight}).</li>
  * </ul>
  * So a bot that turns its back loses track of you, and finds you again by turning round.
  */
@@ -30,6 +32,16 @@ public final class Senses {
 		if (len < 1e-6) return true;
 		double cos = (lx * to.x() + ly * to.y() + lz * to.z()) / len;
 		return cos >= Math.cos(Math.toRadians(VIEW));
+	}
+
+	/**
+	 * How far someone invisible can be seen, as a share of the normal sight: by the armor they wear (as mobs see them in
+	 * the game: full armor as far as anyone, one piece a quarter as far) and by an item in their hands (a sword floating
+	 * in the air is seen close by). 0: not at all (no armor, empty hands).
+	 */
+	public static double invisibleSight(int armorPieces, boolean holding) {
+		double armor = Math.max(0, Math.min(4, armorPieces)) / 4.0;
+		return Math.max(armor, holding ? 0.25 : 0);
 	}
 
 	/** Can the steps (or the hit) of someone at this distance be heard? */

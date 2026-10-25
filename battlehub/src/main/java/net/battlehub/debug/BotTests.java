@@ -27,6 +27,7 @@ import net.battlehub.queue.Parties;
 import net.battlehub.queue.Queues;
 import net.battlehub.session.Sessions;
 import net.battlehub.util.Icon;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -1505,6 +1506,45 @@ final class BotTests {
 			logBot("hunger games bot", m, botsIn(m).get(0), "hgLogged2");
 			return false;
 		});
+		s.run(tag + ": a bot stands outside a house, two steps from a barrel behind its wall (it cannot open it from there)", () -> {
+			net.battlehub.games.HungerGamesMatch hg = (net.battlehub.games.HungerGamesMatch) matchOfA();
+			net.minecraft.server.level.ServerLevel level = hg.arena().level();
+			BotPlayer b = botsIn(hg).get(botsIn(hg).size() - 1);
+			VARS.put("hgWindowBot", b.getUUID());
+			VARS.remove("hgWindowAt");
+			VARS.remove("hgWindowOpened");
+			for (BlockPos c : hg.arena().marks("chest")) {
+				if (!level.getBlockState(c).is(net.minecraft.world.level.block.Blocks.BARREL)
+						|| !(level.getBlockEntity(c) instanceof net.minecraft.world.Container box) || box.isEmpty()) continue;
+				BlockPos out = outsideBeside(level, c);
+				if (out == null) continue;
+				VARS.put("hgWindowAt", c);
+				net.battlehub.bot.Looting.stop(b, 0);
+				hg.botForgetGiveUps(b.getUUID());
+				PartyTests.tp(b, out.getX() + 0.5, out.getY(), out.getZ() + 0.5);
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST hunger games: barrel {} behind a wall, {} put outside at {}", c, b.getScoreboardName(), out);
+				return;
+			}
+			net.battlehub.BattleHub.LOGGER.warn("SELFTEST hunger games: no full barrel with a wall between it and the street; nothing to try");
+		});
+		s.waitFor(tag + ": it walks round into the house and opens the barrel (no circling at the window)", 900, () -> {
+			Match m = matchOfA();
+			BlockPos c = (BlockPos) VARS.get("hgWindowAt");
+			if (c == null) return true;
+			if (!(m instanceof net.battlehub.games.HungerGamesMatch hg)) return false;
+			ServerPlayer b = m.player((UUID) VARS.get("hgWindowBot"));
+			if (b == null) return false;
+			if (c.equals(net.battlehub.bot.Looting.chest(b))) VARS.put("hgWindowOpened", true);
+			boolean empty = hg.arena().level().getBlockEntity(c) instanceof net.minecraft.world.Container box && box.isEmpty();
+			if (empty && !Boolean.TRUE.equals(VARS.get("hgWindowOpened"))) {
+				// someone else was quicker: that barrel proves nothing, the bot goes on to the next chest
+				VARS.remove("hgWindowAt");
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST hunger games: another bot emptied barrel {} first", c);
+				return true;
+			}
+			if (b instanceof BotPlayer bp) logBot("hunger games window bot", m, bp, "hgWindowLog");
+			return empty;
+		});
 		s.run(tag + ": the sponsors send the first bot a silver parachute", () -> {
 			net.battlehub.games.HungerGamesMatch hg = (net.battlehub.games.HungerGamesMatch) matchOfA();
 			BotPlayer b = botsIn(hg).get(0);
@@ -1535,6 +1575,29 @@ final class BotTests {
 			java.util.Map<String, Double> saved = (java.util.Map<String, Double>) VARS.get("hgSettings");
 			hg.putAll(saved);
 		});
+	}
+
+	/**
+	 * A spot outside (open sky) beside a container, two to two and a half blocks from it, where a player stands but
+	 * cannot open it: a wall or a window in between. Null when there is none.
+	 */
+	private static BlockPos outsideBeside(net.minecraft.server.level.ServerLevel level, BlockPos c) {
+		for (int dx = -3; dx <= 3; dx++) {
+			for (int dz = -3; dz <= 3; dz++) {
+				double flat = Math.hypot(dx, dz);
+				if (flat < 1.9 || flat > 2.6) continue;
+				for (int dy = -1; dy <= 1; dy++) {
+					BlockPos o = c.offset(dx, dy, dz);
+					if (!level.getBlockState(o).getCollisionShape(level, o).isEmpty() || !level.getBlockState(o.above()).getCollisionShape(level, o.above()).isEmpty()
+							|| level.getBlockState(o.below()).getCollisionShape(level, o.below()).isEmpty() || !level.canSeeSky(o.above(2))) continue;
+					net.minecraft.world.phys.Vec3 eye = new net.minecraft.world.phys.Vec3(o.getX() + 0.5, o.getY() + 1.62, o.getZ() + 0.5);
+					net.minecraft.world.phys.BlockHitResult hit = level.clip(new net.minecraft.world.level.ClipContext(eye, net.minecraft.world.phys.Vec3.atCenterOf(c),
+							net.minecraft.world.level.ClipContext.Block.OUTLINE, net.minecraft.world.level.ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
+					if (hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK && !hit.getBlockPos().equals(c)) return o;
+				}
+			}
+		}
+		return null;
 	}
 
 	/**

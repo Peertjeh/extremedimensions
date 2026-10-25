@@ -24,7 +24,8 @@ import net.minecraft.world.phys.Vec3;
  * ({@link Senses}):
  * <ul>
  * <li>an enemy in front of it (within the field of view), in plain sight (line of sight, within {@link #SIGHT}
- * blocks, not invisible) is seen exactly; glowing ones show through walls, but also only on screen;</li>
+ * blocks, not invisible, or invisible with armor or an item in hand that shows) is seen exactly; glowing ones show
+ * through walls, but also only on screen;</li>
  * <li>an enemy on screen behind a wall, not sneaking and not invisible, is located by their name tag, which vanilla
  * draws through walls (position only, never health or what they hold);</li>
  * <li>an enemy close by who walks or runs is heard, and one who just hit the bot is known to be there;</li>
@@ -56,7 +57,8 @@ final class Perception {
 			double d = p.distanceTo(bot);
 			if (d > SIGHT) continue;
 			boolean glowing = p.hasGlowingTag() || Ids.effect("minecraft:glowing").map(p::hasEffect).orElse(false);
-			boolean hidden = p.isInvisible() && !glowing;
+			// invisible, but their armor (or what they hold) shows: seen, the farther the more they wear
+			boolean hidden = p.isInvisible() && !glowing && !givenAway(p, d);
 			// on screen: the head, the middle or the feet within the field of view
 			boolean onScreen = Senses.inView(eye, bot.getYRot(), bot.getXRot(), v(p.getEyePosition()))
 					|| Senses.inView(eye, bot.getYRot(), bot.getXRot(), v(p.position().add(0, 0.9, 0)))
@@ -66,7 +68,8 @@ final class Perception {
 			Vec3 before = lastPositions.put(id, p.position());
 			double speed = before == null ? 0 : Math.hypot(p.getX() - before.x, p.getZ() - before.z);
 			boolean heard = Senses.heard(d, p.isShiftKeyDown(), speed, hitAgo.applyAsInt(id));
-			boolean located = seen || (!hidden && !p.isShiftKeyDown() && onScreen) || heard;
+			// the name tag through walls: not of someone invisible (the game does not draw it)
+			boolean located = seen || ((!p.isInvisible() || glowing) && !p.isShiftKeyDown() && onScreen) || heard;
 			if (located) {
 				mind.see(tick, id, new V3(p.getX(), p.getY(), p.getZ()), d, Motion.velocity(p).y > 0.1);
 			}
@@ -79,6 +82,17 @@ final class Perception {
 		}
 		Targeting.Candidate best = Targeting.choose(candidates, mind.personality());
 		return best == null ? null : known.get(best.id());
+	}
+
+	/** Someone invisible whose armor or held item shows at this distance ({@link Senses#invisibleSight}). */
+	static boolean givenAway(ServerPlayer p, double dist) {
+		int armor = 0;
+		for (net.minecraft.world.entity.EquipmentSlot slot : new net.minecraft.world.entity.EquipmentSlot[] {net.minecraft.world.entity.EquipmentSlot.HEAD,
+				net.minecraft.world.entity.EquipmentSlot.CHEST, net.minecraft.world.entity.EquipmentSlot.LEGS, net.minecraft.world.entity.EquipmentSlot.FEET}) {
+			if (!p.getItemBySlot(slot).isEmpty()) armor++;
+		}
+		boolean holding = !p.getMainHandItem().isEmpty() || !p.getOffhandItem().isEmpty();
+		return dist <= SIGHT * Senses.invisibleSight(armor, holding);
 	}
 
 	/** The whole situation for the mind. {@code edges} may be reused from the last think (it is costly). */

@@ -379,6 +379,17 @@ public abstract class Match {
 		return null;
 	}
 
+	/**
+	 * A block a bot goes to use where its objective is (a chest to open), or null: its route then ends where that block
+	 * is in sight and within reach, not behind a wall or a window a step away from it.
+	 */
+	public BlockPos botUseTarget(ServerPlayer bot) {
+		return null;
+	}
+
+	/** The bot found no way to the block it goes to use, a few times running: the game may let it go for another one. */
+	public void botNoRoute(ServerPlayer bot) {}
+
 	/** Every tick, for each bot in play: game chores (buying blocks at the shop, ...). */
 	public void botTick(ServerPlayer bot) {}
 

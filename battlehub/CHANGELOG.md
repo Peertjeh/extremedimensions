@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.47.1
+
+### Fixed
+* **Bots no longer get stuck circling at a window** when they want a chest or barrel inside a house. A route to a
+  chest used to end as soon as it was near enough, which could be outside, two steps from the barrel with the wall
+  and the window in between; from there a bot could not open it and walked round in circles. Now a route to a chest
+  ends only where the chest is within reach and in sight (inside, through the doorway). On this week's map that is
+  98 of every 100 routes, where it was about half. A chest a bot finds no way to at all is left for another one
+  after a few seconds instead of twenty.
+* **Invisible players are seen by bots when their armor shows.** Invisible with armor (or with something in hand)
+  you are not hidden: bots see you, in full armor as far as anyone, with one piece or only a held item a quarter as
+  far. Without armor and with empty hands you stay unseen, as before; name tags of invisible players stay hidden.
+
 ## 1.47.0
 
 ### Added

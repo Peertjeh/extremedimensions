@@ -66,6 +66,10 @@ final class BotBrain {
 	private int pathIndex;
 	private int pathAge;
 	private Vec3 pathGoal;
+	/** A block the game wants it to use where it is going (a chest), the match, and searches in a row that found no way to it. */
+	private BlockPos useTarget;
+	private Match useMatch;
+	private int noRoute;
 	private int eating;
 	private float runYaw = Float.NaN;
 	// Parkour: the platform the bot last stood on and the pause before the next jump
@@ -454,11 +458,19 @@ final class BotBrain {
 		boolean moved = pathGoal == null || pathGoal.distanceToSqr(dest) > 4;
 		boolean due = path != null ? pathAge > 20 || moved : ticks - routeAt >= (moved ? 5 : 20);
 		if (due) {
-			path = BotPath.find(level(), bot.position(), dest);
+			// going to a chest: the route ends where it is in sight and within reach, not outside a window next to it
+			BlockPos use = useTarget != null && Vec3.atCenterOf(useTarget).distanceTo(dest) < 3 ? useTarget : null;
+			path = BotPath.find(level(), bot.position(), dest, use);
 			pathIndex = 0;
 			pathAge = 0;
 			pathGoal = dest;
 			routeAt = ticks;
+			// no way to that chest, three times in a row: the game lets it go for something else (no running in circles)
+			noRoute = use != null && path == null ? noRoute + 1 : 0;
+			if (noRoute >= 3 && useMatch != null) {
+				noRoute = 0;
+				useMatch.botNoRoute(bot);
+			}
 		}
 	}
 
@@ -861,6 +873,8 @@ final class BotBrain {
 
 	/** Carries out one intent of the mind. */
 	private void execute(Match m, Intent in, Perception.Known k) {
+		useMatch = m;
+		useTarget = m.botUseTarget(bot);
 		ServerPlayer t = k == null ? null : k.player();
 		if (in.handChosen()) {
 			learnedHand(m, in);

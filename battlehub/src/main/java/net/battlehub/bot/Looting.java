@@ -95,7 +95,7 @@ public final class Looting {
 	private static final double OPEN_REACH = 3.5;
 
 	/** The chest this bot is looting, or null. */
-	static BlockPos chest(ServerPlayer bot) {
+	public static BlockPos chest(ServerPlayer bot) {
 		Session s = AT.get(bot.getUUID());
 		return s == null ? null : s.pos;
 	}
@@ -191,7 +191,7 @@ public final class Looting {
 	}
 
 	/** The bot closes the chest without finishing it, and leaves chests alone for {@code pause} ticks. */
-	static void stop(ServerPlayer bot, int pause) {
+	public static void stop(ServerPlayer bot, int pause) {
 		Session s = AT.remove(bot.getUUID());
 		if (s != null) lid(s.level, s.pos, false);
 		if (pause > 0 && bot.level() instanceof ServerLevel level) PAUSED.put(bot.getUUID(), level.getGameTime() + pause);

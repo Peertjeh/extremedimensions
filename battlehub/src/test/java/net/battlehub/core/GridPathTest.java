@@ -86,4 +86,43 @@ class GridPathTest {
 		}
 		assertNull(GridPath.find(f, new GridPath.Node(0, 1, 0), new GridPath.Node(10, 1, 0), 1.5, 4000));
 	}
+
+	/**
+	 * A chest inside a house, against the wall with the window; the doorway on the far side. A route that only has to
+	 * come near the chest ends outside, two steps from it with the wall in between (the bots that circled at a window);
+	 * one that has to see it goes round through the doorway and ends inside.
+	 */
+	@Test
+	void aRouteToAChestEndsWhereTheChestIsInSightNotOutsideTheWindow() {
+		Flat f = new Flat();
+		for (int i = 0; i <= 6; i++) {
+			f.walls.add(Flat.k(0, i));
+			f.walls.add(Flat.k(i, 0));
+			f.walls.add(Flat.k(i, 6));
+			if (i != 3) f.walls.add(Flat.k(6, i));
+		}
+		f.walls.add(Flat.k(1, 3));
+		GridPath.Node start = new GridPath.Node(-5, 1, 3), chest = new GridPath.Node(1, 1, 3);
+		List<GridPath.Node> near = GridPath.find(f, start, chest, 2.5, 5000);
+		assertNotNull(near);
+		assertTrue(near.get(near.size() - 1).x() < 0, "near enough, but outside: " + near.get(near.size() - 1));
+		List<GridPath.Node> seen = GridPath.find(f, start, chest, 3.8, 5000, n -> sees(f, n, chest));
+		assertNotNull(seen);
+		GridPath.Node end = seen.get(seen.size() - 1);
+		assertTrue(end.x() >= 2 && end.x() <= 5 && end.z() >= 1 && end.z() <= 5, "inside the house: " + end);
+		assertTrue(seen.stream().anyMatch(n -> n.x() == 6 && n.z() == 3), "through the doorway");
+	}
+
+	/** Flat line of sight from the middle of {@code n} to the middle of {@code c}, within 3.3 blocks, no wall between. */
+	private static boolean sees(Flat f, GridPath.Node n, GridPath.Node c) {
+		double ax = n.x() + 0.5, az = n.z() + 0.5, bx = c.x() + 0.5, bz = c.z() + 0.5;
+		if (Math.hypot(bx - ax, bz - az) > 3.3) return false;
+		for (int i = 1; i < 100; i++) {
+			double t = i / 100.0;
+			int x = (int) Math.floor(ax + (bx - ax) * t), z = (int) Math.floor(az + (bz - az) * t);
+			if (x == c.x() && z == c.z()) return true;
+			if (f.walls.contains(Flat.k(x, z))) return false;
+		}
+		return true;
+	}
 }

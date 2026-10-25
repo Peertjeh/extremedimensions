@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.function.Predicate;
 
 /**
  * A walking route over blocks (A*): where a player can stand, step up one block, drop down a few and go round
@@ -38,6 +39,15 @@ public final class GridPath {
 	 * most a block higher or lower), or null when there is no way within {@code maxNodes} steps of searching.
 	 */
 	public static List<Node> find(Terrain t, Node start, Node goal, double reach, int maxNodes) {
+		return find(t, start, goal, reach, maxNodes, null);
+	}
+
+	/**
+	 * Like {@link #find(Terrain, Node, Node, double, int)}, but the last node must also pass {@code there} (when given):
+	 * a chest has to be in sight from where the route ends, not behind a wall or a window a step away. Then the end
+	 * may also be two blocks higher or lower than the goal.
+	 */
+	public static List<Node> find(Terrain t, Node start, Node goal, double reach, int maxNodes, Predicate<Node> there) {
 		if (!t.stand(start.x(), start.y(), start.z())) {
 			return null;
 		}
@@ -57,7 +67,7 @@ public final class GridPath {
 			expanded++;
 			double hx = n.x() - goal.x();
 			double hz = n.z() - goal.z();
-			if (hx * hx + hz * hz <= reach * reach && Math.abs(n.y() - goal.y()) <= 1) {
+			if (hx * hx + hz * hz <= reach * reach && Math.abs(n.y() - goal.y()) <= (there == null ? 1 : 2) && (there == null || there.test(n))) {
 				List<Node> path = new ArrayList<>();
 				Node at = n;
 				while (!at.equals(start)) {
