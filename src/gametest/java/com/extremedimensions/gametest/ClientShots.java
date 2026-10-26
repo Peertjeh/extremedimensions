@@ -1636,8 +1636,11 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getConnection().waitForChunksRender();
 			ctx.waitTicks(20);
 
-			// Rift Trials: the screen (asked for as the button does) with a board, then taken up
+			// Rift Trials: the screen (asked for as the button does) with a board, then taken up. The week is pinned to one
+			// with the hunt and a calm twist, so the shots run alike every week (a Restless Rift roams onto the visitor
+			// and sends them home before the Seam is seen)
 			sp.getServer().runOnServer(s -> {
+				com.extremedimensions.trial.TrialService.weekOverride = 2950;
 				com.extremedimensions.trial.TrialService.roll();
 				com.extremedimensions.trial.TrialBoard board = DataStore.trials();
 				int[] need = com.extremedimensions.trial.TrialService.kind(com.extremedimensions.trial.TrialService.week()).thresholds();
@@ -1927,6 +1930,7 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(25);
 			ctx.takeScreenshot("26_rays_compared");
 			sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));
+			sp.getServer().runOnServer(s -> com.extremedimensions.trial.TrialService.weekOverride = null);
 		}
 	}
 }
