@@ -2333,7 +2333,7 @@
   "gui.extremedimensions.unweave.fill": "%s / %s",
   "gui.extremedimensions.unweave.price": "Price: %s Tetherite Ingots, %s Tether Cords",
   "gui.extremedimensions.unweave.not_full_yet": "Fill the set first.",
-  "gui.extremedimensions.unweave.status_busy": "The loom is busy: an unweaving or the Weaving is under way.",
+  "gui.extremedimensions.unweave.status_busy": "The loom is busy: wait until it is free.",
   "gui.extremedimensions.unweave.status_wait": "The loom takes your thread again in %s minutes.",
   "gui.extremedimensions.unweave.status_carried": "You carry %s Tetherite Ingots and %s Tether Cords.",
   "gui.extremedimensions.unweave.confirm_title": "Unweave the %s set?",

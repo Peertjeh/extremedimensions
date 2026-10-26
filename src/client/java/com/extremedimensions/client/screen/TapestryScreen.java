@@ -160,8 +160,12 @@ public class TapestryScreen extends Screen {
 		// (between the New Thread+ button, when there is one, and the Unweave and Done buttons)
 		int sx = x0 + 14 + (done ? 156 : 0);
 		int ex = x0 + PW - 14 - 70 - 6 - (Config.UNWEAVING > 0 ? UNWEAVE_W + 4 : 0);
-		g.text(this.font, Ui.ellipsize(this.font, status(), ex - sx), sx, y0 + PH - 17,
-				Ui.argb(fade, weaving ? Ui.DANGER : done ? Ui.OK : Ui.MUTED));
+		String status = status();
+		// (a finished tapestry says so with its button and its panels; its line goes when there is no room for all of it)
+		if (!done || this.font.width(status) <= ex - sx) {
+			g.text(this.font, Ui.ellipsize(this.font, status, ex - sx), sx, y0 + PH - 17,
+					Ui.argb(fade, weaving ? Ui.DANGER : done ? Ui.OK : Ui.MUTED));
+		}
 	}
 
 	private String status() {

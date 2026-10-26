@@ -18,7 +18,7 @@ import net.minecraft.network.chat.Component;
  * the bag; the server checks it all again.
  */
 public class UnweaveScreen extends Screen {
-	private static final int PW = 320, PH = 210, ROW_H = 34, BTN_W = 74;
+	private static final int PW = 380, PH = 210, ROW_H = 34, BTN_W = 74;
 	/** The loom's own colour, as on the tapestry. */
 	private static final int ACCENT = 0xBBA8F0;
 

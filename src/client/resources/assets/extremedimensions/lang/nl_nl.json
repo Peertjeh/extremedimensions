@@ -2333,7 +2333,7 @@
   "gui.extremedimensions.unweave.fill": "%s / %s",
   "gui.extremedimensions.unweave.price": "Prijs: %s Tetherietstaven, %s Tetherkoorden",
   "gui.extremedimensions.unweave.not_full_yet": "Vul eerst de set.",
-  "gui.extremedimensions.unweave.status_busy": "Het getouw is bezig: er is een ontweven of het Weven aan de gang.",
+  "gui.extremedimensions.unweave.status_busy": "Het getouw is bezig: wacht tot het vrij is.",
   "gui.extremedimensions.unweave.status_wait": "Het getouw neemt je draad over %s minuten weer aan.",
   "gui.extremedimensions.unweave.status_carried": "Je draagt %s Tetherietstaven en %s Tetherkoorden.",
   "gui.extremedimensions.unweave.confirm_title": "De set %s ontweven?",

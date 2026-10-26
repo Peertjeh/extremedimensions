@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.4.1: A Wider Loom
+
+### Fixed
+- The Unweaving screen is wider, so the price of each set shows in full (it was cut off after "4 Tether Co"), and the
+  line for a busy loom fits.
+- On a finished tapestry with the Unweave button, the status line no longer shows cut off ("The tapes...").
+- The client test pins its Rift Trial week to one with a calm twist: this week's Restless Rift could carry the test
+  player home in the middle of the Seam's pictures.
+
 ## 3.4.0: The Unweaving
 
 A way out from under a full set of curses, at the end of the road: the Weaver's Loom can unpick it, at a price, through
