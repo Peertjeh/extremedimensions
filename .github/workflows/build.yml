@@ -198,3 +198,35 @@ jobs:
           name: Benchmark
           path: build/bench/results/
           if-no-files-found: warn
+
+  # A version not released yet goes out by itself: once the build, the client test and the compatibility run pass on a
+  # push to the default branch or the development branch, the jar is published as release v<version> (the version in
+  # gradle.properties), with that version's part of CHANGELOG.md as its notes. A version already released is left alone.
+  release:
+    name: release a new version
+    needs: [build, client, compat]
+    if: github.event_name == 'push' && (github.ref_name == github.event.repository.default_branch || github.ref_name == 'claude/youthful-carson-roijnu')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: release this version if it is new
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(sed -n 's/^version=//p' gradle.properties)
+          mc=$(sed -n 's/^minecraft_version=//p' gradle.properties)
+          if gh release view "v$version" >/dev/null 2>&1 || git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null 2>&1; then
+            echo "v$version is already released"
+            exit 0
+          fi
+          gh run download "$GITHUB_RUN_ID" -n Artifacts -D dist
+          jar="dist/extremedimensions-$version.jar"
+          [ -f "$jar" ] || { echo "no $jar among the build's artifacts:"; ls dist; exit 1; }
+          name=$(sed -n "s/^## $version: //p" CHANGELOG.md | head -1)
+          { echo "Minecraft $mc · Fabric · Java 25"; echo; awk -v v="## $version:" 'index($0, v) == 1 {on = 1; next} on && /^## / {exit} on' CHANGELOG.md; } > notes.md
+          gh release create "v$version" "$jar" --target "$GITHUB_SHA" --title "Extreme Dimensions $version${name:+ — $name}" --notes-file notes.md
+          echo "Released v$version with $jar"
