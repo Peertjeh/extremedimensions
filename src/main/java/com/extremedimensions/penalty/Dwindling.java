@@ -40,8 +40,9 @@ public final class Dwindling {
 			return normal;
 		}
 		double value = player instanceof ServerPlayer || clientValue <= 0 ? Penalty.DWINDLING.value : clientValue;
-		int divisor = (int) Math.round(Math.pow(Math.max(1, value), n));
-		return Math.max(1, normal / Math.max(1, divisor));
+		// As a double: with a high maximum the divisor runs past what an int holds
+		double divisor = Math.pow(Math.max(1, value), n);
+		return Math.max(1, (int) (normal / divisor));
 	}
 
 	/** Stacks above the limit are split: the rest goes to free room in the inventory, or falls out. */

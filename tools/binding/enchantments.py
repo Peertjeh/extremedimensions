@@ -132,7 +132,7 @@ CHEST_LOOT = [
     # what the Fray kept is tempting, and it wears out in the Seam
     ("fray_tangle", "minecraft:diamond_pickaxe", {NS + ":fraying_curse": 1, "minecraft:efficiency": 4, NS + ":veinseeker": 1}, 0.10,
      [{"type": "minecraft:set_damage", "damage": {"type": "minecraft:uniform", "min": 0.4, "max": 0.8}}]),
-    ("fray_tangle", "minecraft:diamond_chestplate", {NS + ":starved_curse": 1, "minecraft:protection": 3, NS + ":wardweave": 3}, 0.08,
+    ("fray_tangle", "minecraft:diamond_chestplate", {NS + ":starved_curse": 1, "minecraft:unbreaking": 3, NS + ":wardweave": 3}, 0.08,
      [{"type": "minecraft:set_damage", "damage": {"type": "minecraft:uniform", "min": 0.4, "max": 0.8}}]),
 ]
 

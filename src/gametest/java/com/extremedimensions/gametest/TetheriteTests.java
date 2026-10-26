@@ -174,6 +174,40 @@ public class TetheriteTests {
 		helper.succeed();
 	}
 
+	/**
+	 * The Spindle as a player meets it, through the game's own handling of a click: a crouching hand loads all that fits,
+	 * an empty hand turns it, and it drops (with what it holds) without a pickaxe.
+	 */
+	@GameTest
+	public void theSpindleAnswersAPlayersHand(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer p = TestPlayers.survivor(helper, "test-spindle-hand");
+		BlockPos rel = new BlockPos(1, 1, 1), at = helper.absolutePos(rel);
+		helper.setBlock(rel, ModBlocks.SPINDLE.defaultBlockState());
+		BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(at), Direction.UP, at, false);
+		try {
+			p.setShiftKeyDown(true);
+			p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.TETHER_FRAGMENT, 20));
+			p.gameMode.useItemOn(p, level, p.getMainHandItem(), InteractionHand.MAIN_HAND, hit);
+			p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.SEAM_SILK, 10));
+			p.gameMode.useItemOn(p, level, p.getMainHandItem(), InteractionHand.MAIN_HAND, hit);
+			BlockState loaded = level.getBlockState(at);
+			check(helper, loaded.getValue(SpindleBlock.FRAGMENTS) == SpindleBlock.MAX_FRAGMENTS && loaded.getValue(SpindleBlock.SILK) == SpindleBlock.MAX_SILK,
+					"a crouching hand loaded %s fragments and %s silk", loaded.getValue(SpindleBlock.FRAGMENTS), loaded.getValue(SpindleBlock.SILK));
+			p.setShiftKeyDown(false);
+			p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+			p.gameMode.useItemOn(p, level, p.getMainHandItem(), InteractionHand.MAIN_HAND, hit);
+			AABB above = new AABB(at).inflate(1.5);
+			boolean turned = level.getBlockState(at).getValue(SpindleBlock.SPUN) == 1
+					|| !level.getEntitiesOfClass(ItemEntity.class, above, e -> e.getItem().is(ModItems.TETHER_CORD)).isEmpty();
+			check(helper, turned, "an empty hand did not turn the spindle");
+			check(helper, !ModBlocks.SPINDLE.defaultBlockState().requiresCorrectToolForDrops(), "the spindle drops nothing without a pickaxe");
+		} finally {
+			p.setShiftKeyDown(false);
+		}
+		helper.succeed();
+	}
+
 	/** The full set eases the drain; three pieces do not. */
 	@GameTest
 	public void theFullSetEasesTheDrain(GameTestHelper helper) {

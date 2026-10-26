@@ -379,6 +379,71 @@ public class CurseTests {
 		helper.succeed();
 	}
 
+	/**
+	 * However many curses a player carries, maximum health never goes below curse_health_floor (Blood Price on top too)
+	 * and block reach never below curse_reach_floor; with the floors at 0 the same curses take more.
+	 */
+	@GameTest
+	public void cursesAlwaysLeaveAFloor(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "test-curse-floors");
+		PlayerData d = DataStore.get(p.getUUID());
+		java.util.Map<String, Integer> before = new java.util.HashMap<>(d.curses);
+		double floor = Config.CURSE_HEALTH_FLOOR, reachFloor = Config.CURSE_REACH_FLOOR;
+		int debt = d.bloodDebt;
+		long until = d.bloodUntil;
+		var reach = net.minecraft.world.entity.ai.attributes.Attributes.BLOCK_INTERACTION_RANGE;
+		try {
+			for (Penalty pen : List.of(Penalty.HOLLOW_HEART, Penalty.WITHERING, Penalty.WITHERED_GRASP, Penalty.BLOOD_PRICE)) {
+				d.addStacks(pen, pen.max);
+			}
+			d.bloodDebt = 12;
+			d.bloodUntil = helper.getLevel().getServer().overworld().getGameTime() + 100_000L;
+			Config.CURSE_HEALTH_FLOOR = 0;
+			Config.CURSE_REACH_FLOOR = 0;
+			CurseEffects.applyEffects(p, d);
+			check(helper, p.getMaxHealth() < 6 && p.getAttributeValue(reach) < 2, "the test's curses take health only to %s and reach to %s",
+					p.getMaxHealth(), p.getAttributeValue(reach));
+			Config.CURSE_HEALTH_FLOOR = 6;
+			Config.CURSE_REACH_FLOOR = 2;
+			CurseEffects.applyEffects(p, d);
+			check(helper, Math.abs(p.getMaxHealth() - 6) < 0.01, "with a floor of 6, the curses left %s maximum health", p.getMaxHealth());
+			check(helper, Math.abs(p.getAttributeValue(reach) - 2) < 0.01, "with a floor of 2, the curses left %s reach", p.getAttributeValue(reach));
+		} finally {
+			Config.CURSE_HEALTH_FLOOR = floor;
+			Config.CURSE_REACH_FLOOR = reachFloor;
+			d.bloodDebt = debt;
+			d.bloodUntil = until;
+			d.curses.clear();
+			d.curses.putAll(before);
+			CurseEffects.applyEffects(p, d);
+		}
+		helper.succeed();
+	}
+
+	/** Empty Pockets takes from the fragment chance but always leaves its floor, even on Extreme's low chances. */
+	@GameTest
+	public void emptyPocketsAlwaysLeaveFragments(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "test-empty-pockets");
+		PlayerData d = DataStore.get(p.getUUID());
+		java.util.Map<String, Integer> before = new java.util.HashMap<>(d.curses);
+		double plain = Config.FRAGMENT_CHANCE, elite = Config.FRAGMENT_CHANCE_ELITE;
+		try {
+			Config.FRAGMENT_CHANCE = 0.03;
+			Config.FRAGMENT_CHANCE_ELITE = 0.08;
+			check(helper, ExpeditionService.fragmentChance(d, false) == 0.03, "without Empty Pockets the chance is %s", ExpeditionService.fragmentChance(d, false));
+			d.addStacks(Penalty.EMPTY_POCKETS, Penalty.EMPTY_POCKETS.max);
+			double kept = ExpeditionService.fragmentChance(d, false), keptElite = ExpeditionService.fragmentChance(d, true);
+			check(helper, Math.abs(kept - 0.03 * Config.EMPTY_POCKETS_FLOOR) < 1e-9 && Math.abs(keptElite - 0.08 * Config.EMPTY_POCKETS_FLOOR) < 1e-9,
+					"full Empty Pockets left %s and %s of 0.03 and 0.08", kept, keptElite);
+		} finally {
+			Config.FRAGMENT_CHANCE = plain;
+			Config.FRAGMENT_CHANCE_ELITE = elite;
+			d.curses.clear();
+			d.curses.putAll(before);
+		}
+		helper.succeed();
+	}
+
 	/** Clears what a player owes and the offer in front of them. */
 	private static void unowe(PlayerData d) {
 		d.owed.clear();

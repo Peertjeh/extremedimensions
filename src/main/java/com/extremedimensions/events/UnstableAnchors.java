@@ -82,8 +82,15 @@ public final class UnstableAnchors {
 		if (s.getTickCount() % 20 != 11) {
 			return;
 		}
+		boolean allowed = allowed();
 		for (Anchor a : DataStore.anchors().values()) {
 			if (a.unstable <= 0) {
+				continue;
+			}
+			if (!allowed) {
+				// The world was mended (or the chain woven) while it cracked: it holds again
+				a.unstable = 0;
+				DataStore.markDirty();
 				continue;
 			}
 			step(a);

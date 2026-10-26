@@ -133,10 +133,17 @@ public final class Weaving {
 		for (ServerPlayer p : r.level.players()) {
 			if (near(p, r)) {
 				near.add(p);
-				r.bar.addPlayer(p);
-			} else {
+			}
+		}
+		// Off the bar first: anyone not near, and a player's old self after a respawn or a portal (the same connection
+		// told of a bar it no longer shows would drop the player)
+		for (ServerPlayer p : new ArrayList<>(r.bar.getPlayers())) {
+			if (!near.contains(p)) {
 				r.bar.removePlayer(p);
 			}
+		}
+		for (ServerPlayer p : near) {
+			r.bar.addPlayer(p);
 		}
 		if (--r.nextWave <= 0) {
 			r.nextWave = Math.max(5, Config.WEAVING_WAVE_SECONDS) * 20;

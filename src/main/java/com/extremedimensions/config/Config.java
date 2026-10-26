@@ -98,6 +98,13 @@ public final class Config {
 	 * whatever their card chance and the most carried); 0: such a death costs no curse.
 	 */
 	public static int CURSE_DEEPER = 1;
+	/**
+	 * The maximum health curses always leave a player (2 = one heart), however many they carry: Scar, Hollow Heart,
+	 * Withering and Blood Price together never take it lower. 0: no floor.
+	 */
+	public static double CURSE_HEALTH_FLOOR = 6;
+	/** The block reach curses always leave a player: Short Reach and Withered Grasp together never take it lower. 0: no floor. */
+	public static double CURSE_REACH_FLOOR = 2.0;
 	/** Ticks after respawning before the curse screen opens. */
 	public static int OFFER_DELAY_TICKS = 70;
 	/**
@@ -200,6 +207,8 @@ public final class Config {
 	public static int ABYSSAL_UNMOORED_RANGE = 8;
 	/** Lightless: how far round the player monsters spawn as if the light were dimmer. Cold Forge: times the fuel a furnace burns. */
 	public static int ABYSSAL_LIGHTLESS_RANGE = 48;
+	/** Lightless: seconds of a night a player must watch awake in the Overworld for it to count (a whole night is about 500). */
+	public static int ABYSSAL_LIGHTLESS_WATCH_SECONDS = 300;
 	public static double ABYSSAL_COLD_FORGE_FUEL = 2.0;
 	/** Cave-In: the depth (Y) below which stone gives way over the player's head. */
 	public static int ABYSSAL_CAVE_IN_DEPTH = 0;
@@ -223,6 +232,8 @@ public final class Config {
 	public static double FRAGMENT_CHANCE = 0.04;
 	/** Fragment chance for Wither Skeletons, Endermen, Blazes, Ghasts and Shulkers. */
 	public static double FRAGMENT_CHANCE_ELITE = 0.12;
+	/** The share of the fragment chance Empty Pockets always leaves, however many stacks (0.25 = a quarter). */
+	public static double EMPTY_POCKETS_FLOOR = 0.25;
 	/** Chance a ruined portal in the Overworld has a warm chain lying into it (each one is looked at once). */
 	public static double WARM_CHAIN_CHANCE = 0.35;
 	/** A short hint as a toast the first time a player meets each part of the mod (1 on, 0 off; each player can also turn them off for themselves). */

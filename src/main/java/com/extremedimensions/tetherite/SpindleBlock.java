@@ -75,7 +75,20 @@ public class SpindleBlock extends Block {
 	protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 		boolean fragment = stack.is(ModItems.TETHER_FRAGMENT), silk = stack.is(ModItems.SEAM_SILK);
 		if (!fragment && !silk) {
-			return stack.isEmpty() ? InteractionResult.PASS : InteractionResult.TRY_WITH_EMPTY_HAND;
+			// An empty main hand turns it (the game asks the block with the hand first, as at a lectern)
+			return stack.isEmpty() && hand == InteractionHand.MAIN_HAND ? InteractionResult.TRY_WITH_EMPTY_HAND : InteractionResult.PASS;
+		}
+		return load(state, level, pos, player, stack, false);
+	}
+
+	/**
+	 * Fragments or silk onto the spindle: one at a time, or as much as fits ({@code all}: a crouching player, from the
+	 * block-use event, since the game never asks the block for a crouching hand). PASS for anything else.
+	 */
+	public static InteractionResult load(BlockState state, Level level, BlockPos pos, Player player, ItemStack stack, boolean all) {
+		boolean fragment = stack.is(ModItems.TETHER_FRAGMENT), silk = stack.is(ModItems.SEAM_SILK);
+		if (!fragment && !silk) {
+			return InteractionResult.PASS;
 		}
 		IntegerProperty slot = fragment ? FRAGMENTS : SILK;
 		int max = fragment ? MAX_FRAGMENTS : MAX_SILK;
@@ -89,8 +102,7 @@ public class SpindleBlock extends Block {
 		if (!(level instanceof ServerLevel)) {
 			return InteractionResult.SUCCESS;
 		}
-		// a crouching player loads as much as fits, anyone else one at a time
-		int add = player.isShiftKeyDown() ? Math.min(max - have, stack.getCount()) : 1;
+		int add = all ? Math.min(max - have, stack.getCount()) : 1;
 		if (!player.isCreative()) {
 			stack.shrink(add);
 		}

@@ -263,6 +263,15 @@ public final class Tapestry {
 		if (woven(panel) || carries(p, panel.thread())) {
 			return;
 		}
+		if (!p.isAlive()) {
+			// One who fell by the Elder takes it on rising again, with what Homebound keeps (not into a bag about to be dropped)
+			String kept = com.extremedimensions.binding.Homebound.encode(p.level().registryAccess(), new ItemStack(panel.thread()));
+			if (kept != null) {
+				com.extremedimensions.data.DataStore.get(p.getUUID()).homebound.add(kept);
+				com.extremedimensions.data.DataStore.markDirty();
+			}
+			return;
+		}
 		WorldFx.give(p, new ItemStack(panel.thread()));
 		WorldFx.soundSelf(p, "minecraft:block.amethyst_block.resonate", 0.9f, 0.6f);
 		WorldFx.particles(p, "extremedimensions:soul_mote", 1.2, 0.5, 0.02, 16);

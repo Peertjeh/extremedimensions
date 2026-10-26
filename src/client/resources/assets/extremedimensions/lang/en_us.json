@@ -1103,6 +1103,8 @@
   "config.extremedimensions.abyssal_break_unwatched.desc": "Thinned slain that break Unwatched.",
   "config.extremedimensions.abyssal_lightless_range": "Lightless: reach (blocks)",
   "config.extremedimensions.abyssal_lightless_range.desc": "How far round a player with Lightless monsters spawn as if the light were dimmer.",
+  "config.extremedimensions.abyssal_lightless_watch_seconds": "Lightless: a night watched (seconds)",
+  "config.extremedimensions.abyssal_lightless_watch_seconds.desc": "Seconds of a night a player must spend awake in the Overworld for it to count towards Lightless (a whole night is about 500). A night missed breaks the row.",
   "config.extremedimensions.abyssal_cold_forge_fuel": "Cold Forge: fuel burned",
   "config.extremedimensions.abyssal_cold_forge_fuel.desc": "Times the fuel a furnace worked under Cold Forge burns (2 = twice as fast).",
   "config.extremedimensions.abyssal_cave_in_depth": "Cave-In: depth (Y)",
@@ -1123,6 +1125,8 @@
   "config.extremedimensions.fragment_chance.desc": "Chance that a hostile mob killed by a player beyond the wound drops a Tether Fragment (0.04 = 4%%).",
   "config.extremedimensions.fragment_chance_elite": "Fragment chance (elites)",
   "config.extremedimensions.fragment_chance_elite.desc": "Fragment drop chance for Wither Skeletons, Endermen, Blazes, Ghasts and Shulkers (0.12 = 12%%).",
+  "config.extremedimensions.empty_pockets_floor": "Empty Pockets: chance left",
+  "config.extremedimensions.empty_pockets_floor.desc": "The share of the fragment chance Empty Pockets always leaves, however many stacks (0.25 = a quarter), so fragments never stop dropping.",
   "config.extremedimensions.warm_chain_chance": "Warm chain chance",
   "config.extremedimensions.warm_chain_chance.desc": "Chance a ruined portal in the Overworld has a warm chain lying into it (0.35 = 35%%). Each ruined portal is looked at once, the first time a player comes near.",
   "config.extremedimensions.hints": "First-meeting hints",
@@ -2558,5 +2562,9 @@
   "config.extremedimensions.curse_overflow": "Full sets spill over",
   "config.extremedimensions.curse_overflow.desc": "1: when every curse of the world's set and of the Everywhere set is at its maximum, a death draws its cards from the other set (the Overworld set only while it is on). 0: such a death costs no curse; the Starved take your levels instead.",
   "config.extremedimensions.curse_deeper": "Full curses go deeper",
-  "config.extremedimensions.curse_deeper.desc": "1: when no curse a death draws from has room left, its cards come from the Extreme curses that still have room, and once those are full too, from the Abyssal curses you do not carry (where Abyssal curses are on and after enough Collapses, whatever their card chance and however many you carry). 0: such a death costs no curse; the Starved take your levels instead."
+  "config.extremedimensions.curse_deeper.desc": "1: when no curse a death draws from has room left, its cards come from the Extreme curses that still have room, and once those are full too, from the Abyssal curses you do not carry (where Abyssal curses are on and after enough Collapses, whatever their card chance and however many you carry). 0: such a death costs no curse; the Starved take your levels instead.",
+  "config.extremedimensions.curse_health_floor": "Health curses always leave",
+  "config.extremedimensions.curse_health_floor.desc": "The maximum health curses always leave a player (2 = one heart), however many they carry: Scar, Hollow Heart, Withering and Blood Price together never take it lower. 0: no floor.",
+  "config.extremedimensions.curse_reach_floor": "Reach curses always leave",
+  "config.extremedimensions.curse_reach_floor.desc": "The block reach curses always leave a player (blocks): Short Reach and Withered Grasp together never take it lower, so a player can still mine at their feet. 0: no floor."
 }

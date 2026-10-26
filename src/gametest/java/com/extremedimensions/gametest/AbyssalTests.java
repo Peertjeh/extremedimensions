@@ -59,9 +59,11 @@ public class AbyssalTests {
 	}
 
 	/** A creature at a position relative to the test, standing still. */
+	/** A monster as the wild makes them (kill deeds count no spawner's or farm's). */
 	private static Mob mob(GameTestHelper helper, String id, double x, double y, double z) {
 		Mob m = (Mob) helper.spawn(type(id), new Vec3(x, y, z));
 		m.setNoAi(true);
+		com.extremedimensions.penalty.AtonementGuard.markWild(m);
 		return m;
 	}
 
@@ -229,7 +231,7 @@ public class AbyssalTests {
 	private static void gravebound(GameTestHelper helper, ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
 		long now = helper.getLevel().getServer().overworld().getGameTime();
-		d.graveSince = now - 2 * 24000L - 5;
+		d.graveLived = 2 * 24000L;
 		AbyssalCurses.tick(p, d);
 		check(helper, AbyssalCurses.progress(d, Penalty.GRAVEBOUND) == 2 && d.owned(Penalty.GRAVEBOUND) == 1, "two days lived counted %s",
 				AbyssalCurses.progress(d, Penalty.GRAVEBOUND));
@@ -243,7 +245,12 @@ public class AbyssalTests {
 		double dx = p.getX() - (spawn.getX() + 0.5), dz = p.getZ() - (spawn.getZ() + 0.5);
 		check(helper, p.level() == overworld && dx * dx + dz * dz <= 4, "Gravebound did not send the player to the world spawn (%s blocks off)",
 				Math.sqrt(dx * dx + dz * dz));
-		d.graveSince = now - AbyssalCurses.target(Penalty.GRAVEBOUND) * 24000L;
+		// the Overworld's clock alone (time away) does not count; days lived do
+		d.graveSince = now - 10 * 24000L;
+		AbyssalCurses.tick(p, d);
+		check(helper, AbyssalCurses.progress(d, Penalty.GRAVEBOUND) == 0, "time not lived counted towards Gravebound (%s days)",
+				AbyssalCurses.progress(d, Penalty.GRAVEBOUND));
+		d.graveLived = AbyssalCurses.target(Penalty.GRAVEBOUND) * 24000L;
 		AbyssalCurses.tick(p, d);
 		check(helper, d.owned(Penalty.GRAVEBOUND) == 0, "enough days without dying did not break Gravebound");
 	}
@@ -455,6 +462,63 @@ public class AbyssalTests {
 		helper.succeed();
 	}
 
+	/** A stolen stack split into several counts once towards Covetous, not once per piece. */
+	@GameTest
+	public void covetousCountsAStackSplitOnce(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.COVETOUS, 1);
+		PlayerData d = DataStore.get(p.getUUID());
+		ItemStack stolen = new ItemStack(Items.DIAMOND, 3);
+		AbyssalTolls.mark(p, stolen);
+		int target = Config.ABYSSAL_BREAK_COVETOUS;
+		try {
+			Config.ABYSSAL_BREAK_COVETOUS = 3;
+			for (int slot = 5; slot < 8; slot++) {
+				p.getInventory().setItem(slot, stolen.split(1));
+			}
+			AbyssalCurses.tick(p, d);
+			check(helper, AbyssalCurses.progress(d, Penalty.COVETOUS) == 1 && d.owned(Penalty.COVETOUS) == 1,
+					"one stolen stack split three ways counted %s", AbyssalCurses.progress(d, Penalty.COVETOUS));
+		} finally {
+			Config.ABYSSAL_BREAK_COVETOUS = target;
+		}
+		helper.succeed();
+	}
+
+	/** Lifted another way, an Abyssal curse forgets how far its deed had come: dealt again, it starts over. */
+	@GameTest
+	public void aLiftedCurseForgetsItsDeed(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.LOCKJAW, 1);
+		PlayerData d = DataStore.get(p.getUUID());
+		int target = Config.ABYSSAL_BREAK_LOCKJAW;
+		try {
+			Config.ABYSSAL_BREAK_LOCKJAW = 3;
+			AbyssalCurses.advance(p, d, Penalty.LOCKJAW, 2);
+			d.removeStack(Penalty.LOCKJAW);
+			d.addStacks(Penalty.LOCKJAW, 1);
+			check(helper, AbyssalCurses.progress(d, Penalty.LOCKJAW) == 0, "Lockjaw dealt again kept %s of its deed", AbyssalCurses.progress(d, Penalty.LOCKJAW));
+		} finally {
+			Config.ABYSSAL_BREAK_LOCKJAW = target;
+		}
+		helper.succeed();
+	}
+
+	/** A curse whose deed this world cannot offer is never dealt: no Covetous with the Lurker switched off. */
+	@GameTest
+	public void noCurseIsDealtThatCannotBeBroken(GameTestHelper helper) {
+		PlayerData d = DataStore.get(cursed(helper).getUUID());
+		int lurker = Config.LURKER_ENABLED;
+		try {
+			Config.LURKER_ENABLED = 0;
+			check(helper, !AbyssalCurses.breakable(Penalty.COVETOUS) && !AbyssalCurses.pool(d).contains(Penalty.COVETOUS),
+					"Covetous is dealt with the Lurker switched off");
+			Config.LURKER_ENABLED = 1;
+			check(helper, AbyssalCurses.pool(d).contains(Penalty.COVETOUS) == AbyssalCurses.breakable(Penalty.COVETOUS), "Covetous' place in the deal");
+		} finally {
+			Config.LURKER_ENABLED = lurker;
+		}
+		helper.succeed();
+	}
+
 	@GameTest
 	public void covetousMarksWhatItTakesAndTakingBackBreaksIt(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper, Penalty.COVETOUS, 1);
@@ -495,13 +559,20 @@ public class AbyssalTests {
 			check(helper, risen instanceof Mob && risen.entityTags().contains(AbyssalTolls.RISEN), "the zombie did not rise again, marked");
 			AbyssalCurses.onKill(p, (Mob) risen, p.damageSources().playerAttack(p));
 			check(helper, AbyssalTolls.risings() == before, "a risen monster rises a second time");
+			check(helper, AbyssalCurses.progress(d, Penalty.RESTLESS_DEAD) == 1, "a monster the curse raised itself counted towards its deed");
 			risen.discard();
-			Config.ABYSSAL_BREAK_RESTLESS_DEAD = 3;
+			// a monster not of the wild (a spawner's, a farm's) does not count either
+			Mob farmed = (Mob) helper.spawn(type("zombie"), new Vec3(3.5, 2, 3.5));
+			farmed.setNoAi(true);
+			AbyssalCurses.onKill(p, farmed, p.damageSources().playerAttack(p));
+			farmed.discard();
+			check(helper, AbyssalCurses.progress(d, Penalty.RESTLESS_DEAD) == 1, "a monster not of the wild counted towards Restless Dead");
+			Config.ABYSSAL_BREAK_RESTLESS_DEAD = 2;
 			Mob another = mob(helper, "skeleton", 3.5, 2, 4.5);
 			Penalty.RESTLESS_DEAD.value = 0;
 			AbyssalCurses.onKill(p, another, p.damageSources().playerAttack(p));
 			another.discard();
-			check(helper, d.owned(Penalty.RESTLESS_DEAD) == 0, "three monsters slain did not break Restless Dead");
+			check(helper, d.owned(Penalty.RESTLESS_DEAD) == 0, "two monsters of the wild slain did not break Restless Dead");
 		} finally {
 			Penalty.RESTLESS_DEAD.value = value;
 			Config.ABYSSAL_BREAK_RESTLESS_DEAD = target;
@@ -651,6 +722,11 @@ public class AbyssalTests {
 			d.nightDark = d.nightWatched = true;
 			AbyssalWorld.dawn(p, d);
 			check(helper, AbyssalCurses.progress(d, Penalty.LIGHTLESS) == 1, "a night kept awake through did not count");
+			// a night missed (away, offline) breaks the row: this one counts afresh
+			d.lightlessDawn -= 3;
+			d.nightDark = d.nightWatched = true;
+			AbyssalWorld.dawn(p, d);
+			check(helper, AbyssalCurses.progress(d, Penalty.LIGHTLESS) == 1, "after a missed night the row went on to %s", AbyssalCurses.progress(d, Penalty.LIGHTLESS));
 			d.nightDark = d.nightWatched = d.nightSlept = true;
 			AbyssalWorld.dawn(p, d);
 			check(helper, AbyssalCurses.progress(d, Penalty.LIGHTLESS) == 0, "a night slept in did not start the count over");

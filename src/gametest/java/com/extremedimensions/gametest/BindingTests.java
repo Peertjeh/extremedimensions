@@ -402,6 +402,41 @@ public class BindingTests {
 	}
 
 	/** On an expedition in the Nether with no charge left, bound to an iron Tether with Thrift at a level (0 for none). */
+	/** Foresight on the Tether shows its card at the very Collapse that takes the Tether. */
+	@GameTest
+	public void foresightShowsItsCardAtTheCollapse(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "test-foresight-collapse");
+		PlayerData d = DataStore.get(p.getUUID());
+		String relic = d.relic;
+		int pending = d.pendingPenalties, collapses = d.collapses;
+		List<String> owed = new ArrayList<>(d.owed), offer = new ArrayList<>(d.pendingOffer);
+		List<Integer> mult = new ArrayList<>(d.pendingMult);
+		try {
+			d.relic = null;
+			d.pendingOffer.clear();
+			d.pendingMult.clear();
+			bound(d, 0);
+			d.tetherCharms.put(ModEnchantments.id(ModEnchantments.FORESIGHT), 1);
+			ExpeditionService.tick(p, d, Dims.NETHER);
+			check(helper, d.collapsing && d.pendingOffer.size() == Config.OFFER_COUNT + Config.ENCH_FORESIGHT_CARDS,
+					"a Collapse with Foresight dealt %s cards, not %s", d.pendingOffer.size(), Config.OFFER_COUNT + Config.ENCH_FORESIGHT_CARDS);
+			check(helper, d.foresightOwed == 0, "Foresight's card stayed owed after it was dealt");
+		} finally {
+			reset(d, pending, owed);
+			d.pendingOffer.clear();
+			d.pendingOffer.addAll(offer);
+			d.pendingMult.clear();
+			d.pendingMult.addAll(mult);
+			d.inRun = false;
+			d.relic = relic;
+			d.collapses = collapses;
+			d.tetherAnchor = null;
+			d.tetherCharms.clear();
+			d.foresightOwed = 0;
+		}
+		helper.succeed();
+	}
+
 	private static void bound(PlayerData d, int thrift) {
 		d.inRun = true;
 		d.collapsing = false;

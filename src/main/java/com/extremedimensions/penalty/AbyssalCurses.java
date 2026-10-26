@@ -70,15 +70,32 @@ public final class AbyssalCurses {
 
 	// ------------------------------------------------------------------ dealing
 
-	/** The Abyssal curses this player could still receive. */
+	/** The Abyssal curses this player could still receive (never one whose deed this world cannot offer). */
 	public static List<Penalty> pool(PlayerData d) {
 		List<Penalty> out = new ArrayList<>();
 		for (Penalty p : Penalty.values()) {
-			if (p.abyssal && p.max > 0 && d.owned(p) < p.max) {
+			if (p.abyssal && p.max > 0 && d.owned(p) < p.max && breakable(p)) {
 				out.add(p);
 			}
 		}
 		return out;
+	}
+
+	/**
+	 * Whether this world can offer the curse's deed: on Peaceful no monster comes (no Lurker to take, no raid, no Wither,
+	 * no Elder), and with the Lurker switched off nothing is ever stolen to win back.
+	 */
+	public static boolean breakable(Penalty p) {
+		net.minecraft.server.MinecraftServer server = WorldFx.server();
+		boolean peaceful = server != null && server.overworld().getDifficulty() == net.minecraft.world.Difficulty.PEACEFUL;
+		if (p == Penalty.COVETOUS) {
+			return !peaceful && Config.LURKER_ENABLED > 0;
+		}
+		if (p == Penalty.UNWELCOME || p == Penalty.WINGSHADOW || p == Penalty.MARROW_ROT || p == Penalty.THE_HUNGERING
+				|| p == Penalty.CINDER_LUNGS || p == Penalty.WEIGHT_OF_IRON) {
+			return !peaceful;
+		}
+		return true;
 	}
 
 	/** How many Abyssal curses the player carries. */
@@ -320,17 +337,23 @@ public final class AbyssalCurses {
 		return taken;
 	}
 
-	/** Gravebound: its deed is days without dying, counted on the Overworld's clock from the curse or the last death. */
+	/**
+	 * Gravebound: its deed is days without dying, lived ones: counted while this runs (once a second, in the mod's worlds,
+	 * out of creative), so time offline or elsewhere does not count.
+	 */
 	private static void gravebound(ServerPlayer p, PlayerData d, ServerLevel level) {
 		if (d.owned(Penalty.GRAVEBOUND) <= 0) {
 			d.graveSince = Long.MIN_VALUE;
+			d.graveLived = 0;
 			return;
 		}
-		long now = level.getServer().overworld().getGameTime();
-		if (d.graveSince == Long.MIN_VALUE || d.graveSince > now) {
-			d.graveSince = now;
+		if (d.graveLived < 0) {
+			// a save from before days were lived: what the Overworld's clock says, once
+			long now = level.getServer().overworld().getGameTime();
+			d.graveLived = d.graveSince == Long.MIN_VALUE || d.graveSince > now ? 0 : now - d.graveSince;
 		}
-		int days = (int) ((now - d.graveSince) / 24000L);
+		d.graveLived += 20;
+		int days = (int) (d.graveLived / 24000L);
 		if (days != progress(d, Penalty.GRAVEBOUND)) {
 			set(p, d, Penalty.GRAVEBOUND, days);
 		}
@@ -364,14 +387,16 @@ public final class AbyssalCurses {
 		if (carried(d) == 0 || !(victim.level() instanceof ServerLevel level)) {
 			return;
 		}
-		if (BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(victim.getType()).is(EntityTypeTags.UNDEAD) && Dims.OVERWORLD.equals(Dims.of(killer))
+		// Monsters of the wild only, as for atonement: no spawner or farm breaks a curse
+		boolean wild = AtonementGuard.natural(victim);
+		if (wild && BuiltInRegistries.ENTITY_TYPE.wrapAsHolder(victim.getType()).is(EntityTypeTags.UNDEAD) && Dims.OVERWORLD.equals(Dims.of(killer))
 				&& inSun(level, victim.getX(), victim.getEyeY(), victim.getZ())) {
 			advance(killer, d, Penalty.SUNSCORN, 1);
 		}
-		if (victim instanceof Enemy && killer.getFoodData().getFoodLevel() <= 6) {
+		if (wild && victim instanceof Enemy && killer.getFoodData().getFoodLevel() <= 6) {
 			advance(killer, d, Penalty.LOCKJAW, 1);
 		}
-		if (victim instanceof Enemy && source.is(DamageTypeTags.IS_PROJECTILE)) {
+		if (wild && victim instanceof Enemy && source.is(DamageTypeTags.IS_PROJECTILE)) {
 			advance(killer, d, Penalty.MIRROR_WOUND, 1);
 		}
 		if ("minecraft:wither".equals(BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType()).toString())) {
@@ -409,6 +434,7 @@ public final class AbyssalCurses {
 		PlayerData d = DataStore.get(p.getUUID());
 		if (d.owned(Penalty.GRAVEBOUND) > 0 && p.level() instanceof ServerLevel level) {
 			d.graveSince = level.getServer().overworld().getGameTime();
+			d.graveLived = 0;
 			if (d.abyssalDeeds != null) {
 				d.abyssalDeeds.remove(Penalty.GRAVEBOUND.id);
 			}

@@ -98,8 +98,9 @@ public final class ModBlocks {
 
 	/** The Spindle, where Tether Fragments are spun with Seam Silk into Tether Cord (see SpindleBlock). */
 	public static final Block SPINDLE = Registry.register(BuiltInRegistries.BLOCK, key("spindle"),
-			new com.extremedimensions.tetherite.SpindleBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.DEEPSLATE).sound(SoundType.WOOL)
-					.strength(2.5F, 6.0F).noOcclusion().lightLevel(state -> state.getValue(com.extremedimensions.tetherite.SpindleBlock.FRAGMENTS) > 0 ? 5 : 0)
+			// Not a copy of deepslate: that would need a pickaxe for it (and all it holds) to drop
+			new com.extremedimensions.tetherite.SpindleBlock(BlockBehaviour.Properties.of().mapColor(net.minecraft.world.level.material.MapColor.DEEPSLATE)
+					.sound(SoundType.WOOL).strength(2.5F, 6.0F).noOcclusion().lightLevel(state -> state.getValue(com.extremedimensions.tetherite.SpindleBlock.FRAGMENTS) > 0 ? 5 : 0)
 					.setId(key("spindle"))));
 
 	private static ResourceKey<Block> key(String id) {

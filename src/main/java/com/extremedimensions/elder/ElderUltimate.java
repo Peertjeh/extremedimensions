@@ -120,7 +120,8 @@ public final class ElderUltimate {
 			}
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.ultimate_curse", Component.translatable(bossKey), names));
 		}
-		if (laid.size() < want && Config.ELDER_ULTIMATE_SCATTER > 0) {
+		// Only instead: someone the ultimate could lay no curse on at all
+		if (laid.isEmpty() && Config.ELDER_ULTIMATE_SCATTER > 0) {
 			if (scatter(p) > 0) {
 				WorldFx.soundSelf(p, "minecraft:entity.item.break", 1.0f, 0.5f);
 				p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.ultimate_scatter", Component.translatable(bossKey)));

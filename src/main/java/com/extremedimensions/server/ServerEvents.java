@@ -245,7 +245,9 @@ public final class ServerEvents {
 					// A severed world keeps nothing of those who fall beyond the wound
 					boolean collapsing = DataStore.get(p.getUUID()).collapsing;
 					// (only what this death dropped: another's things lying near are left alone)
-					for (ItemEntity item : p.level().getEntitiesOfClass(ItemEntity.class, p.getBoundingBox().inflate(8), i -> i.tickCount <= 2 && i.distanceToSqr(p) <= 64)) {
+					// (a death's drops have no thrower: what someone else threw down is theirs, not this death's)
+					for (ItemEntity item : p.level().getEntitiesOfClass(ItemEntity.class, p.getBoundingBox().inflate(8),
+							i -> i.tickCount <= 2 && i.distanceToSqr(p) <= 64 && (i.getOwner() == null || i.getOwner() == p))) {
 						if (collapsing) {
 							// the echo of this Collapse keeps one of the things
 							com.extremedimensions.events.Echoes.lost(p, item.getItem());
@@ -288,6 +290,14 @@ public final class ServerEvents {
 
 		// Cold Forge and Barren Hand: the furnaces a cursed player works and the crops they plant are marked
 		UseBlockCallback.EVENT.register(com.extremedimensions.penalty.AbyssalWorld::onUse);
+		// Crouching with fragments or silk loads a Spindle with all that fits (the game skips the block for a crouching hand)
+		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+			net.minecraft.world.level.block.state.BlockState at = level.getBlockState(hit.getBlockPos());
+			if (!player.isSecondaryUseActive() || !at.is(com.extremedimensions.registry.ModBlocks.SPINDLE)) {
+				return InteractionResult.PASS;
+			}
+			return com.extremedimensions.tetherite.SpindleBlock.load(at, level, hit.getBlockPos(), player, player.getItemInHand(hand), true);
+		});
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
 			if (player instanceof ServerPlayer fallen && com.extremedimensions.coop.FallenService.fallen(fallen)) {
 				return InteractionResult.FAIL;
@@ -581,7 +591,8 @@ public final class ServerEvents {
 				d.offerAge = 0;
 				Sync.offer(p, d);
 			}
-			if (d.pendingOffer.isEmpty() || d.offerDelay > 0) {
+			// The clock runs only while the offer can be seen: not on the death screen, nor before it is shown
+			if (d.pendingOffer.isEmpty() || d.offerDelay > 0 || !p.isAlive()) {
 				d.offerAge = 0;
 			} else if (Config.OFFER_TIMEOUT_SECONDS > 0 && ++d.offerAge >= Config.OFFER_TIMEOUT_SECONDS * 20) {
 				// An offer left unanswered too long: the Tether chooses

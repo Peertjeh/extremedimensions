@@ -40,8 +40,20 @@ public final class Tethered {
 				}
 			}
 		}
-		if (item.getY() >= level.getMinY() - Config.TETHERITE_VOID_DEPTH) {
+		// (above 64 blocks under the world, where the game itself takes dropped items away)
+		if (item.getY() >= level.getMinY() - Math.min(60, Config.TETHERITE_VOID_DEPTH)) {
 			return;
+		}
+		// Its owner died with it (a fall into the void): it waits for their respawn with what Homebound keeps, not
+		// with whoever else is about
+		if (item.getOwner() instanceof ServerPlayer dead && !dead.isAlive()) {
+			String kept = com.extremedimensions.binding.Homebound.encode(level.registryAccess(), stack);
+			if (kept != null) {
+				com.extremedimensions.data.DataStore.get(dead.getUUID()).homebound.add(kept);
+				com.extremedimensions.data.DataStore.markDirty();
+				item.discard();
+				return;
+			}
 		}
 		ServerPlayer to = owner(level, item);
 		if (to != null) {

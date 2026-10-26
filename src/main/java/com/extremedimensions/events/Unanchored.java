@@ -186,6 +186,7 @@ public final class Unanchored {
 	public static String step(Build b, long now) {
 		List<Mob> builders = new ArrayList<>();
 		boolean killed = false, unloaded = false;
+		LivingEntity felledBy = null;
 		for (UUID id : b.builders) {
 			Entity e = b.level.getEntity(id);
 			if (e instanceof Mob m && m.isAlive()) {
@@ -193,6 +194,9 @@ public final class Unanchored {
 			} else if (e != null) {
 				// (a killed one lies dying for a second: it is seen)
 				killed = true;
+				if (e instanceof LivingEntity dead && dead.getLastHurtByMob() != null) {
+					felledBy = dead.getLastHurtByMob();
+				}
 			} else {
 				unloaded = true;
 			}
@@ -204,7 +208,8 @@ public final class Unanchored {
 			return "left";
 		}
 		if (killed) {
-			anger(b, builders, owner, false);
+			// at whoever felled the builder (the owner when that is not known)
+			anger(b, builders, felledBy != null && felledBy.isAlive() && felledBy.level() == b.level ? felledBy : owner, false);
 			return "angered";
 		}
 		for (Mob m : builders) {

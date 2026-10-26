@@ -39,6 +39,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.food.FoodData;
@@ -194,10 +195,10 @@ public final class CurseEffects {
 	public static void applyEffects(ServerPlayer p, PlayerData d) {
 		String dim = Dims.of(p);
 		boolean b = PenaltyService.beyondHere(dim), o = PenaltyService.owHere(dim);
-		double scarHp = Math.min(16.0, 2 * Penalty.SCAR.value * d.active(Penalty.SCAR, b, o));
-		double hollowHp = Math.min(16.0, 2 * Penalty.HOLLOW_HEART.value * d.active(Penalty.HOLLOW_HEART, b, o));
-		modifier(p, "minecraft:max_health", "scar", -scarHp, "add_value");
-		modifier(p, "minecraft:max_health", "hollow_heart", -hollowHp, "add_value");
+		double[] hp = healthCuts(p, d);
+		modifier(p, "minecraft:max_health", "scar", -hp[0], "add_value");
+		modifier(p, "minecraft:max_health", "hollow_heart", -hp[1], "add_value");
+		modifier(p, "minecraft:max_health", "withering", -hp[2], "add_value");
 		modifier(p, "minecraft:armor", "cracked_armor", -Penalty.CRACKED_ARMOR.value * d.active(Penalty.CRACKED_ARMOR, b, o), "add_value");
 		modifier(p, "minecraft:armor_toughness", "thin_skin", -Penalty.THIN_SKIN.value * d.active(Penalty.THIN_SKIN, b, o), "add_value");
 		modifier(p, "minecraft:movement_speed", "heavy_legs", -compound(Penalty.HEAVY_LEGS, d.active(Penalty.HEAVY_LEGS, b, o)), "add_multiplied_total");
@@ -214,17 +215,19 @@ public final class CurseEffects {
 		modifier(p, "minecraft:fall_damage_multiplier", "brittle_bones", Penalty.BRITTLE_BONES.frac() * d.active(Penalty.BRITTLE_BONES, b, o), "add_value");
 		modifier(p, "minecraft:fall_damage_multiplier", "old_bones", Penalty.OLD_BONES.frac() * d.active(Penalty.OLD_BONES, b, o), "add_value");
 		modifier(p, "minecraft:burning_time", "burning_blood", Penalty.BURNING_BLOOD.frac() * d.active(Penalty.BURNING_BLOOD, b, o), "add_value");
-		double reach = -Penalty.SHORT_REACH.value * d.active(Penalty.SHORT_REACH, b, o);
-		modifier(p, "minecraft:block_interaction_range", "short_reach", reach, "add_value");
-		modifier(p, "minecraft:entity_interaction_range", "short_reach", reach, "add_value");
+		// Short Reach and Withered Grasp together never bring block reach below curse_reach_floor
+		double reach = Penalty.SHORT_REACH.value * d.active(Penalty.SHORT_REACH, b, o);
+		double grasp = Penalty.WITHERED_GRASP.value * d.stacks(Penalty.WITHERED_GRASP);
+		double reachKeep = keep(reach + grasp, room(p, Attributes.BLOCK_INTERACTION_RANGE, Config.CURSE_REACH_FLOOR));
+		modifier(p, "minecraft:block_interaction_range", "short_reach", -reach * reachKeep, "add_value");
+		modifier(p, "minecraft:entity_interaction_range", "short_reach", -reach, "add_value");
 		modifier(p, "minecraft:jump_strength", "weak_knees", -compound(Penalty.WEAK_KNEES, d.active(Penalty.WEAK_KNEES, b, o)), "add_multiplied_total");
 		modifier(p, "minecraft:gravity", "heavy_soul", Penalty.HEAVY_SOUL.frac() * d.active(Penalty.HEAVY_SOUL, b, o), "add_multiplied_base");
 		// Everywhere
-		modifier(p, "minecraft:max_health", "withering", -Math.min(8.0, 2 * Penalty.WITHERING.value * d.stacks(Penalty.WITHERING)), "add_value");
 		modifier(p, "minecraft:jump_strength", "grounded", -compound(Penalty.GROUNDED, d.stacks(Penalty.GROUNDED)), "add_multiplied_total");
 		modifier(p, "minecraft:safe_fall_distance", "fragile_footing", -Penalty.FRAGILE_FOOTING.value * d.stacks(Penalty.FRAGILE_FOOTING), "add_value");
 		// Extreme
-		modifier(p, "minecraft:block_interaction_range", "withered_grasp", -Penalty.WITHERED_GRASP.value * d.stacks(Penalty.WITHERED_GRASP), "add_value");
+		modifier(p, "minecraft:block_interaction_range", "withered_grasp", -grasp * reachKeep, "add_value");
 		// The relic bound to the Tether
 		boolean hand = RelicService.has(d, Relic.HUNGERING_HAND), feather = RelicService.has(d, Relic.FEATHERBONE);
 		modifier(p, "minecraft:block_interaction_range", "relic_reach", hand ? Config.RELIC_HUNGERING_HAND_REACH : 0, "add_value");
@@ -232,17 +235,58 @@ public final class CurseEffects {
 		modifier(p, "minecraft:max_health", "relic_hunger", hand ? -Config.RELIC_HUNGERING_HAND_HEALTH : 0, "add_value");
 		modifier(p, "minecraft:safe_fall_distance", "relic_feather", feather ? Config.RELIC_FEATHERBONE_FALL : 0, "add_value");
 		modifier(p, "minecraft:armor", "relic_feather", feather ? -Config.RELIC_FEATHERBONE_ARMOR : 0, "add_value");
-		// Lead Pockets is only reset by its own tick, which does not run in another mod's world
+		// Lead Pockets, Weight of Iron and Blood Price are only set by their own ticks, which do not run there: they sleep too
 		if (d.away) {
 			modifier(p, "minecraft:movement_speed", "lead_pockets", 0, "add_multiplied_total");
+			modifier(p, "minecraft:movement_speed", "weight_of_iron", 0, "add_multiplied_total");
+			modifier(p, "minecraft:max_health", "blood_price", 0, "add_value");
 		}
 		d.leadValue = Double.NaN;
+		d.ironValue = Double.NaN;
+		d.bloodValue = Double.NaN;
+		if (!d.away) {
+			// Blood Price fits itself into the health the lasting curses leave
+			AbyssalTolls.blood(p, d);
+		}
 		refreshEffects(p, d);
 	}
 
 	/** Total reduction of {@code stacks} multiplicative reductions of a percentage curse. */
 	private static double compound(Penalty pen, int stacks) {
 		return stacks <= 0 ? 0 : 1 - Math.pow(Math.max(0, 1 - pen.frac()), stacks);
+	}
+
+	/**
+	 * The maximum health Scar, Hollow Heart and Withering take where the player is, held together within the room above
+	 * {@code curse_health_floor}: {scar, hollow heart, withering}.
+	 */
+	static double[] healthCuts(ServerPlayer p, PlayerData d) {
+		String dim = Dims.of(p);
+		boolean b = PenaltyService.beyondHere(dim), o = PenaltyService.owHere(dim);
+		double scar = Math.min(16.0, 2 * Penalty.SCAR.value * d.active(Penalty.SCAR, b, o));
+		double hollow = Math.min(16.0, 2 * Penalty.HOLLOW_HEART.value * d.active(Penalty.HOLLOW_HEART, b, o));
+		double withering = Math.min(8.0, 2 * Penalty.WITHERING.value * d.stacks(Penalty.WITHERING));
+		double k = keep(scar + hollow + withering, healthRoom(p));
+		return new double[] {scar * k, hollow * k, withering * k};
+	}
+
+	/** How much maximum health curses may take in all: the player's own, down to {@code curse_health_floor}. */
+	static double healthRoom(ServerPlayer p) {
+		return room(p, Attributes.MAX_HEALTH, Config.CURSE_HEALTH_FLOOR);
+	}
+
+	/** How far curses may lower an attribute from its base value, down to a floor (no limit with a floor of 0 or less). */
+	private static double room(ServerPlayer p, net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute, double floor) {
+		AttributeInstance instance = p.getAttribute(attribute);
+		if (floor <= 0 || instance == null) {
+			return Double.MAX_VALUE;
+		}
+		return Math.max(0, instance.getBaseValue() - floor);
+	}
+
+	/** The share of a cut that fits in the room (1 when it all fits). */
+	private static double keep(double cut, double room) {
+		return cut > room && cut > 0 ? room / cut : 1;
 	}
 
 	static void modifier(ServerPlayer p, String attribute, String name, double value, String operation) {

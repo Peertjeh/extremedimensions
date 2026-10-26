@@ -60,6 +60,8 @@ public class PlayerData {
 	public Map<String, Integer> abyssalDeeds = new HashMap<>();
 	/** Gravebound: the Overworld game time its days are counted from; The Hungering: the day it last ate (MIN_VALUE: not yet). */
 	public long graveSince = Long.MIN_VALUE, hungeringDay = Long.MIN_VALUE;
+	/** Gravebound: game ticks lived under it since it came or since the last death (-1: not counted yet, an older save). */
+	public long graveLived = -1;
 	/**
 	 * Blood Price: maximum health owed and until when (game time); Rot: seconds to the next spoiling (-1: the clock has
 	 * not started); the night Covetous last sent a Lurker and the day Forsaken Bond last struck (MIN_VALUE: not yet).
@@ -72,6 +74,9 @@ public class PlayerData {
 	public Map<String, Integer> abyssalSeen = new HashMap<>();
 	/** Lightless: a night under way in the Overworld (dark when last seen), kept awake through, or slept in; Unwelcome: under the Hero of the Village when last seen. */
 	public boolean nightDark = false, nightWatched = false, nightSlept = false, wasHero = false;
+	/** Lightless: seconds of this night watched awake in the Overworld, and the day of the last dawn seen (MIN_VALUE: none yet). */
+	public int nightWatchSecs = 0;
+	public long lightlessDawn = Long.MIN_VALUE;
 	/** The sworn pact: extra stacks of curses taken on willingly, acting on expeditions (see PactService). */
 	public Map<String, Integer> pact = new HashMap<>();
 	/** The Elders: Keepers slain (the Matriarch comes after enough of them), and whether she has fallen to this player. */
@@ -175,6 +180,8 @@ public class PlayerData {
 	public transient boolean collapsing = false;
 	/** The charge ran out and the death that follows has not come yet (it comes on joining, if they left meanwhile). */
 	public boolean collapseOwed = false;
+	/** Cards Foresight adds to the next offer, kept when the Tether it was on is lost in the same death or Collapse. */
+	public int foresightOwed = 0;
 	/** Levels the Ferryman is owed by someone who left the game while he sailed for them. */
 	public int fareOwed = 0;
 	/** Ultimates whose curse is owed (their bosses' keys): the player slipped away while one held them. */
@@ -310,6 +317,22 @@ public class PlayerData {
 			curses.put(p.id, have - 1);
 		}
 		atonement.remove(p.id);
+		if (p.abyssal && have == 1) {
+			// The deed, and the curse's own clocks, start over should it come again
+			if (abyssalDeeds != null) {
+				abyssalDeeds.remove(p.id);
+			}
+			if (p == Penalty.GRAVEBOUND) {
+				graveSince = Long.MIN_VALUE;
+				graveLived = 0;
+			} else if (p == Penalty.THE_HUNGERING) {
+				hungeringDay = Long.MIN_VALUE;
+			} else if (p == Penalty.FORSAKEN_BOND) {
+				bondDay = Long.MIN_VALUE;
+			} else if (p == Penalty.COVETOUS) {
+				covetousOwed = 0;
+			}
+		}
 		return true;
 	}
 

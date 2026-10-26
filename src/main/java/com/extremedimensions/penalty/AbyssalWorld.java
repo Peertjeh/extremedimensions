@@ -79,7 +79,8 @@ public final class AbyssalWorld {
 	private static final List<Holder> UNWELCOME = new ArrayList<>();
 	/** Furnaces a player under Cold Forge works ("dimension|pos" -> player), and crops one under Barren Hand planted. */
 	private static final Map<String, UUID> COLD = new HashMap<>();
-	private static final Set<String> BARREN = new HashSet<>();
+	/** Crops planted under Barren Hand, and who planted them (null: marked by hand, for the tests). */
+	private static final Map<String, java.util.UUID> BARREN = new HashMap<>();
 	/** Ticks each cold furnace has run, for the share of them Cold Forge takes back. */
 	private static final Map<String, Integer> COLD_TICKS = new HashMap<>();
 
@@ -156,12 +157,16 @@ public final class AbyssalWorld {
 	private static void night(ServerPlayer p, PlayerData d, ServerLevel level) {
 		if (d.stacks(Penalty.LIGHTLESS) <= 0) {
 			d.nightDark = d.nightWatched = d.nightSlept = false;
+			d.nightWatchSecs = 0;
+			d.lightlessDawn = Long.MIN_VALUE;
 			return;
 		}
 		boolean dark = level.getServer().overworld().isDarkOutside();
 		if (dark) {
 			d.nightDark = true;
-			if (Dims.OVERWORLD.equals(Dims.of(p))) {
+			// kept awake through: most of it watched in the Overworld, not a moment of it (nor a night others slept away)
+			if (Dims.OVERWORLD.equals(Dims.of(p)) && !p.isSleeping()
+					&& ++d.nightWatchSecs >= Math.max(1, Config.ABYSSAL_LIGHTLESS_WATCH_SECONDS)) {
 				d.nightWatched = true;
 			}
 			if (p.isSleeping()) {
@@ -172,8 +177,15 @@ public final class AbyssalWorld {
 		}
 	}
 
-	/** A night is over: kept awake through in the Overworld it counts, slept in it undoes the count. */
+	/** A night is over: kept awake through in the Overworld it counts, slept in (or a night missed) it undoes the count. */
 	public static void dawn(ServerPlayer p, PlayerData d) {
+		long day = p.level().getServer().overworld().getGameTime() / 24000L;
+		boolean missed = d.lightlessDawn != Long.MIN_VALUE && day > d.lightlessDawn + 1;
+		d.lightlessDawn = day;
+		if (missed && AbyssalCurses.progress(d, Penalty.LIGHTLESS) > 0) {
+			// a night spent away (offline, elsewhere) breaks the row
+			AbyssalCurses.restart(p, d, Penalty.LIGHTLESS);
+		}
 		if (d.nightSlept) {
 			if (AbyssalCurses.progress(d, Penalty.LIGHTLESS) > 0) {
 				p.sendSystemMessage(Component.translatable("gui.extremedimensions.abyssal.lightless_slept"), true);
@@ -183,6 +195,7 @@ public final class AbyssalWorld {
 			AbyssalCurses.advance(p, d, Penalty.LIGHTLESS, 1);
 		}
 		d.nightDark = d.nightWatched = d.nightSlept = false;
+		d.nightWatchSecs = 0;
 	}
 
 	// ------------------------------------------------------------------ Unmapped
@@ -278,7 +291,7 @@ public final class AbyssalWorld {
 		}
 		ItemStack held = p.getItemInHand(hand);
 		if (d.stacks(Penalty.BARREN_HAND) > 0 && held.getItem() instanceof BlockItem item && item.getBlock() instanceof CropBlock) {
-			BARREN.add(key(level, pos.relative(hit.getDirection())));
+			BARREN.put(key(level, pos.relative(hit.getDirection())), p.getUUID());
 		}
 		return InteractionResult.PASS;
 	}
@@ -290,7 +303,7 @@ public final class AbyssalWorld {
 
 	/** Marks a crop as planted under Barren Hand, for the tests and the hook. */
 	public static void sow(Level level, BlockPos pos) {
-		BARREN.add(key(level, pos));
+		BARREN.put(key(level, pos), null);
 	}
 
 	/** Whether a furnace is worked by a player still under Cold Forge (see ColdForgeMixin). */
@@ -337,9 +350,23 @@ public final class AbyssalWorld {
 		}
 	}
 
-	/** Whether a crop was planted by a player under Barren Hand (it stays barren until it is broken). */
+	/** Whether a crop was planted by a player still under Barren Hand (it stays barren until it is broken, or they are free). */
 	public static boolean barren(Level level, BlockPos pos) {
-		return !BARREN.isEmpty() && BARREN.contains(key(level, pos));
+		if (BARREN.isEmpty()) {
+			return false;
+		}
+		String at = key(level, pos);
+		if (!BARREN.containsKey(at)) {
+			return false;
+		}
+		java.util.UUID planter = BARREN.get(at);
+		PlayerData d = planter == null ? null : DataStore.peek(planter);
+		if (planter != null && (d == null || d.stacks(Penalty.BARREN_HAND) <= 0)) {
+			// the one who planted it broke the curse (or is gone): the ground is free again
+			BARREN.remove(at);
+			return false;
+		}
+		return true;
 	}
 
 	/** Whether Barren Hand takes this growth or this bone meal (its share of them). */
@@ -362,7 +389,10 @@ public final class AbyssalWorld {
 		if (state.getBlock() instanceof CropBlock crop && crop.isMaxAge(state)) {
 			AbyssalCurses.advance(p, d, Penalty.BARREN_HAND, 1);
 		}
-		if (state.is(Blocks.DEEPSLATE)) {
+		// deepslate where it lies, deep down, and not lifted whole by Silk Touch (to be set down and mined again)
+		if (state.is(Blocks.DEEPSLATE) && pos.getY() < Config.ABYSSAL_CAVE_IN_DEPTH
+				&& com.extremedimensions.registry.ModEnchantments.level(server.registryAccess(), p.getMainHandItem(),
+						net.minecraft.world.item.enchantment.Enchantments.SILK_TOUCH) <= 0) {
 			AbyssalCurses.advance(p, d, Penalty.CAVE_IN, 1);
 		}
 		if (d.stacks(Penalty.CAVE_IN) > 0 && !p.isCreative() && pos.getY() < Config.ABYSSAL_CAVE_IN_DEPTH

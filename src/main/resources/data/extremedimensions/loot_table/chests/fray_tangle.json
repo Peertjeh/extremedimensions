@@ -221,7 +221,7 @@
               "type": "minecraft:set_enchantments",
               "enchantments": {
                 "extremedimensions:starved_curse": 1,
-                "minecraft:protection": 3,
+                "minecraft:unbreaking": 3,
                 "extremedimensions:wardweave": 3
               }
             },

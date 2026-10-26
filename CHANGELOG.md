@@ -1,5 +1,70 @@
 # Changelog
 
+## 3.3.4: Loose Threads
+
+A sweep through everything since 3.0. Four reviews went through the curses, the Abyssal curses, Tetherite with the
+enchantments, and the endgame with the world events; every finding was checked in the code before it was fixed.
+
+### Fixed: curses
+- **Curses always leave you something to live on.** At full sets in the Nether, Scar and Withering left 4 health, and
+  Blood Price on top took it to half a heart. Now curses never take maximum health below 3 hearts
+  (**Health curses always leave**, `curse_health_floor`, 6), and never take block reach below 2 blocks, so you can
+  still dig at your feet (**Reach curses always leave**, `curse_reach_floor`, 2). Short Reach and Withered Grasp
+  together could leave half a block.
+- **Foresight now shows its card.** The Tether it sits on is lost at a Collapse or a death before the cards are drawn,
+  so its extra card never came. It is now kept for that offer.
+- **Fragments keep dropping with Empty Pockets.** It took points off the chance, which on Extreme left nothing. It now
+  always leaves a quarter (**Empty Pockets: chance left**, `empty_pockets_floor`, 0.25).
+- A Collapse in the Seam no longer lays Overworld curses while that set is switched off.
+- The clock that picks a card for you after two minutes no longer runs while you are on the death screen.
+- An Elder's ultimate flings your things only when it could lay no curse at all, as its setting says.
+- With `curse_deeper` 0, a death with every set full costs no curse, as the setting says (it could still deal an Extreme
+  card).
+- Dwindling keeps working with a very high maximum.
+
+### Fixed: the Abyssal curses
+- **Covetous** counts a stolen stack once, even when it is split before it goes back in the bag.
+- **Gravebound** counts days lived: time offline, in creative or in another mod's world no longer counts.
+- An Abyssal curse that is lifted another way forgets its deed. Dealt again, it starts over, and The Hungering and
+  Forsaken Bond spare that first day again.
+- **Kill deeds** (Sunscorn, Lockjaw, Mirror Wound, Restless Dead) count only monsters of the wild, as atonement does: no
+  spawner or farm breaks a curse. Restless Dead no longer counts the monsters it raised itself.
+- **Cave-In** counts deepslate mined deep, without Silk Touch (it could be placed and mined again at the surface).
+  **Splintering** counts only the blows of a living foe.
+- **Barren Hand** no longer stunts crops once its planter is free of it.
+- **Unmoored** throws only on a foe's blow, not on Wither or other curses' damage.
+- **Weight of Iron** and **Blood Price** sleep in another mod's world, as the other curses do.
+- **Lightless** counts a night only when most of it was watched awake in the Overworld
+  (**Lightless: a night watched**, `abyssal_lightless_watch_seconds`, 300), and a missed night breaks the row. A moment
+  of a night, a night others slept away, or logging off in the dark used to count.
+- A curse whose deed this world cannot offer is no longer dealt: no Covetous with the Lurker off, and on Peaceful none
+  that needs monsters, a raid, the Wither or an Elder.
+
+### Fixed: Tetherite and the enchantments
+- **The Spindle turns with an empty hand**, as its tooltip says (only a hand holding something turned it). Crouching
+  with fragments or silk now loads all that fits. Broken without a pickaxe, it now drops itself and all it holds.
+- **Tetherite gear that falls into the void with you** waits for your respawn, instead of going to another player or to
+  the world spawn.
+- The arrival island, laid again on every visit, no longer grows its Tetherite ore back.
+- The Fray's cursed chestplate had Protection and Wardweave, which exclude each other: it has Unbreaking now.
+- A void depth of 64 or more no longer loses Tethered items to the game's own clean-up.
+
+### Fixed: the endgame and world events
+- The Weaving's bar no longer keeps a player's old self after a respawn or a portal, which could drop them from the
+  server and left the bar on screen in another world.
+- In a severed world, a death no longer takes things another player has just thrown down nearby.
+- A thread earned while dead (an ally finished the Elder) waits for your respawn instead of being lost.
+- An anchor that was cracking when the world was mended stops leaking.
+- When someone kills an Unanchored builder, the others turn on them, not on the build's owner.
+
+### Tests
+- The floors hold with full curses and Blood Price; Empty Pockets leaves its share; a Collapse with Foresight deals its
+  card.
+- The Spindle as a player meets it, through the game's own click handling: crouch-loading, the empty-hand turn, drops
+  without a pickaxe.
+- Covetous with a split stack; a lifted Abyssal curse forgetting its deed; Gravebound counting lived days only;
+  Restless Dead and farmed monsters; a missed night for Lightless; no Covetous with the Lurker off.
+
 ## 3.3.3: Deeper Still
 
 ### Fixed

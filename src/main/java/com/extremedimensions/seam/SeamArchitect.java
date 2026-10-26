@@ -282,6 +282,11 @@ public final class SeamArchitect {
 			return ((long) x << 32) | (z & 0xFFFFFFFFL);
 		}
 
+		/** Plain stone where the plan would lay Tetherite ore: for an island laid again on every visit (what was mined would grow back). */
+		public void withoutTetherite() {
+			blocks.replaceAll((at, state) -> state.is(ModBlocks.TETHERITE_ORE) ? stone() : state);
+		}
+
 		static int columnX(long c) {
 			return (int) (c >> 32);
 		}

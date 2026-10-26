@@ -374,6 +374,7 @@ public final class ExpeditionService {
 	private static void collapse(ServerPlayer p, PlayerData d) {
 		// Thrift: the Tether that drank less takes its due now (read before the Tether is lost)
 		boolean thrift = d.charm(com.extremedimensions.registry.ModEnchantments.THRIFT) > 0;
+		d.foresightOwed = com.extremedimensions.binding.Charms.foresight(d);
 		TetherService.clear(p, d, false);
 		d.heldTicks = 0;
 		com.extremedimensions.pact.PactService.broken(p, d);
@@ -438,6 +439,8 @@ public final class ExpeditionService {
 		}
 		// Death always costs the chain (and the Tether item)
 		if (d.tetherAnchor != null) {
+			// Foresight still shows its card for this death, though the Tether is gone
+			d.foresightOwed = com.extremedimensions.binding.Charms.foresight(d);
 			TetherService.clear(p, d, false);
 		}
 		if (Dims.OVERWORLD.equals(dim) && DataStore.overworldPenalties() && !d.collapsing) {
@@ -480,6 +483,16 @@ public final class ExpeditionService {
 			Advancements.grant(p, Advancements.ENDED);
 			DataStore.markDirty();
 		}
+	}
+
+	/**
+	 * The chance a monster slain beyond the wound leaves a Tether Fragment. Empty Pockets takes points off it, but always
+	 * leaves {@code empty_pockets_floor} of it, so fragments never stop on the harder difficulties.
+	 */
+	public static double fragmentChance(PlayerData d, boolean elite) {
+		double base = elite ? Config.FRAGMENT_CHANCE_ELITE : Config.FRAGMENT_CHANCE;
+		double less = Penalty.EMPTY_POCKETS.value / 100.0 * d.stacks(Penalty.EMPTY_POCKETS) * (elite ? 3 : 1);
+		return Math.max(base * Math.max(0, Config.EMPTY_POCKETS_FLOOR), base - less);
 	}
 
 	public static void onRespawn(ServerPlayer p, PlayerData d) {
@@ -557,9 +570,7 @@ public final class ExpeditionService {
 		if (!wild || !Dims.isBeyond(Dims.of(mob.level())) || !(mob instanceof Enemy)) {
 			return;
 		}
-		// Empty Pockets: fewer fragments find their way to the player
-		double less = Penalty.EMPTY_POCKETS.value / 100.0 * d.stacks(Penalty.EMPTY_POCKETS);
-		double chance = ELITES.contains(type) ? Config.FRAGMENT_CHANCE_ELITE - 3 * less : Config.FRAGMENT_CHANCE - less;
+		double chance = fragmentChance(d, ELITES.contains(type));
 		if (com.extremedimensions.relic.RelicService.has(d, com.extremedimensions.relic.Relic.KEEPERS_EYE)) {
 			chance *= Math.max(0, Config.RELIC_KEEPERS_EYE_FRAGMENTS);
 		}

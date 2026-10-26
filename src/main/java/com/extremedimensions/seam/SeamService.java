@@ -348,6 +348,8 @@ public final class SeamService {
 			SeamArchitect.island(arrival, rnd, shape, true);
 			SeamArchitect.lamp(arrival, rnd, x - 3, top + 1, z - 3);
 		}
+		// The arrival island is laid again on every visit, so it holds no Tetherite ore (mined, it would grow back)
+		arrival.withoutTetherite();
 		// The ground under the one arriving is there at once; the rest of the island (its gate too) flies in around them
 		arrival.placeAround(seam, gate ? landX : x + 2, gate ? landZ : z + 0.5, gate ? 4.5 : 7);
 		if (!gate) {
@@ -566,7 +568,7 @@ public final class SeamService {
 		TetherService.clearThread(p, d);
 		p.removeEffect(MobEffects.LEVITATION);
 		WorldFx.tp(p, Dims.fullIdOf(d.homeDim), d.homeX, d.homeY, d.homeZ);
-		PenaltyService.curse(p, Dims.OVERWORLD.equals(d.homeDim));
+		PenaltyService.curse(p, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties());
 		DataStore.markDirty();
 	}
 

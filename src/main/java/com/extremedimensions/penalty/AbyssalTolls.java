@@ -59,7 +59,7 @@ import net.minecraft.world.item.component.ItemLore;
 public final class AbyssalTolls {
 	private AbyssalTolls() {}
 
-	/** The most maximum health Blood Price takes at once (six hearts), so a run of lifts never kills outright. */
+	/** The most maximum health Blood Price takes at once (six hearts); with the other curses it never goes below curse_health_floor. */
 	private static final int MAX_BLOOD_DEBT = 12;
 	/** The mark on a stack a Lurker took under Covetous, until it is back in its owner's hands. */
 	public static final String STOLEN = "gui.extremedimensions.abyssal.stolen";
@@ -114,13 +114,15 @@ public final class AbyssalTolls {
 		AbyssalCurses.advance(p, d, Penalty.BLOOD_PRICE, 1);
 	}
 
-	/** The maximum health Blood Price holds, until its time runs out. */
-	private static void blood(ServerPlayer p, PlayerData d) {
+	/** The maximum health Blood Price holds, until its time runs out, within what the lasting curses leave above the floor. */
+	static void blood(ServerPlayer p, PlayerData d) {
 		if (d.bloodUntil != Long.MIN_VALUE && now(p) >= d.bloodUntil) {
 			d.bloodDebt = 0;
 			d.bloodUntil = Long.MIN_VALUE;
 		}
-		double want = -Math.max(0, d.bloodDebt);
+		double[] lasting = CurseEffects.healthCuts(p, d);
+		double left = Math.max(0, CurseEffects.healthRoom(p) - lasting[0] - lasting[1] - lasting[2]);
+		double want = -Math.min(Math.max(0, d.bloodDebt), left);
 		if (Double.isNaN(d.bloodValue) || want != d.bloodValue) {
 			d.bloodValue = want;
 			CurseEffects.modifier(p, "minecraft:max_health", "blood_price", want, "add_value");
@@ -248,9 +250,11 @@ public final class AbyssalTolls {
 				back++;
 			}
 		}
-		if (back > 0) {
-			d.covetousOwed = Math.max(0, d.covetousOwed - back);
-			AbyssalCurses.advance(p, d, Penalty.COVETOUS, back);
+		// (a stack split into several counts once: no more than was taken)
+		int n = Math.min(back, d.covetousOwed);
+		if (n > 0) {
+			d.covetousOwed -= n;
+			AbyssalCurses.advance(p, d, Penalty.COVETOUS, n);
 		}
 	}
 
@@ -265,7 +269,10 @@ public final class AbyssalTolls {
 				long at = level.getGameTime() + Math.max(1, Config.ABYSSAL_RESTLESS_DELAY_SECONDS) * 20L;
 				RISINGS.add(new Rising(level, victim.getType(), victim.getX(), victim.getY(), victim.getZ(), at, killer.getUUID()));
 			}
-			AbyssalCurses.advance(killer, d, Penalty.RESTLESS_DEAD, 1);
+			// (a monster it raised itself, or one from a spawner, does not count)
+			if (AtonementGuard.natural(victim) && !victim.entityTags().contains(RISEN)) {
+				AbyssalCurses.advance(killer, d, Penalty.RESTLESS_DEAD, 1);
+			}
 		}
 		if ("minecraft:enderman".equals(BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType()).toString())) {
 			AbyssalCurses.advance(killer, d, Penalty.UNMOORED, 1);
@@ -345,11 +352,15 @@ public final class AbyssalTolls {
 			return;
 		}
 		PlayerData d = DataStore.get(p.getUUID());
+		// Only a foe's blow counts towards Splintering's deed, and only a foe's blow throws under Unmoored
+		boolean foe = source.getEntity() instanceof LivingEntity attacker && attacker != p;
 		if (blocked && baseTaken > 0 && d.stacks(Penalty.SPLINTERING) > 0) {
 			splinter(p, baseTaken);
-			AbyssalCurses.advance(p, d, Penalty.SPLINTERING, 1);
+			if (foe) {
+				AbyssalCurses.advance(p, d, Penalty.SPLINTERING, 1);
+			}
 		}
-		if (taken > 0 && d.stacks(Penalty.UNMOORED) > 0 && Dims.END.equals(Dims.of(p))
+		if (foe && taken > 0 && d.stacks(Penalty.UNMOORED) > 0 && Dims.END.equals(Dims.of(p))
 				&& ThreadLocalRandom.current().nextDouble() < Penalty.UNMOORED.frac() * com.extremedimensions.binding.Charms.unmoored(p)) {
 			unmoor(p);
 		}

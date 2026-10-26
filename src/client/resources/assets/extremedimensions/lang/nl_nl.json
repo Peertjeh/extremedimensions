@@ -1103,6 +1103,8 @@
   "config.extremedimensions.abyssal_break_unwatched.desc": "Verslagen Thinned die Onbewaakt breken.",
   "config.extremedimensions.abyssal_lightless_range": "Lichtloos: bereik (blokken)",
   "config.extremedimensions.abyssal_lightless_range.desc": "Hoe ver rond een speler met Lichtloos monsters spawnen alsof het licht zwakker is.",
+  "config.extremedimensions.abyssal_lightless_watch_seconds": "Lichtloos: een nacht gewaakt (seconden)",
+  "config.extremedimensions.abyssal_lightless_watch_seconds.desc": "Seconden van een nacht die een speler wakker in de Overworld moet doorbrengen voordat hij meetelt voor Lichtloos (een hele nacht is ongeveer 500). Een gemiste nacht breekt de reeks.",
   "config.extremedimensions.abyssal_cold_forge_fuel": "Koude Smidse: brandstofverbruik",
   "config.extremedimensions.abyssal_cold_forge_fuel.desc": "Zoveel keer de brandstof die een oven onder Koude Smidse verbrandt (2 = twee keer zo snel).",
   "config.extremedimensions.abyssal_cave_in_depth": "Instorting: diepte (Y)",
@@ -1123,6 +1125,8 @@
   "config.extremedimensions.fragment_chance.desc": "Kans dat een vijandig wezen dat een speler voorbij de wond doodt een Tetherfragment laat vallen (0.04 = 4%%).",
   "config.extremedimensions.fragment_chance_elite": "Kans op fragment (elites)",
   "config.extremedimensions.fragment_chance_elite.desc": "Kans op een Tetherfragment bij Witherskeletten, Endermen, Blazes, Ghasts en Shulkers (0.12 = 12%%).",
+  "config.extremedimensions.empty_pockets_floor": "Lege Zakken: kans die blijft",
+  "config.extremedimensions.empty_pockets_floor.desc": "Het deel van de fragmentkans dat Lege Zakken altijd laat, hoeveel stacks ook (0.25 = een kwart), zodat er altijd fragmenten blijven vallen.",
   "config.extremedimensions.warm_chain_chance": "Kans op een warme ketting",
   "config.extremedimensions.warm_chain_chance.desc": "Kans dat er een warme ketting naar een verwoest portaal in de Overworld ligt (0.35 = 35%%). Elk verwoest portaal wordt één keer bekeken, de eerste keer dat er een speler in de buurt komt.",
   "config.extremedimensions.hints": "Uitleg bij de eerste ontmoeting",
@@ -2558,5 +2562,9 @@
   "config.extremedimensions.curse_overflow": "Volle sets lopen over",
   "config.extremedimensions.curse_overflow.desc": "1: staan alle vloeken van de set van de wereld en van de Everywhere-set op hun maximum, dan trekt een dood zijn kaarten uit de andere set (de Overworld-set alleen als die aan staat). 0: zo'n dood kost geen vloek; de Uitgehongerden nemen dan je niveaus.",
   "config.extremedimensions.curse_deeper": "Volle vloeken gaan dieper",
-  "config.extremedimensions.curse_deeper.desc": "1: heeft geen enkele vloek waaruit een dood trekt nog ruimte, dan komen zijn kaarten uit de Extreme vloeken die nog ruimte hebben, en zitten die ook vol, uit de afgrondvloeken die je nog niet draagt (waar afgrondvloeken aan staan en na genoeg Collapses, ongeacht hun kaartkans en hoeveel je er al draagt). 0: zo'n dood kost geen vloek; de Uitgehongerden nemen dan je niveaus."
+  "config.extremedimensions.curse_deeper.desc": "1: heeft geen enkele vloek waaruit een dood trekt nog ruimte, dan komen zijn kaarten uit de Extreme vloeken die nog ruimte hebben, en zitten die ook vol, uit de afgrondvloeken die je nog niet draagt (waar afgrondvloeken aan staan en na genoeg Collapses, ongeacht hun kaartkans en hoeveel je er al draagt). 0: zo'n dood kost geen vloek; de Uitgehongerden nemen dan je niveaus.",
+  "config.extremedimensions.curse_health_floor": "Gezondheid die vloeken laten",
+  "config.extremedimensions.curse_health_floor.desc": "De maximale gezondheid die vloeken een speler altijd laten (2 = één hart), hoeveel hij er ook draagt: Litteken, Hol Hart, Verdorring en Bloedprijs samen gaan nooit lager. 0: geen ondergrens.",
+  "config.extremedimensions.curse_reach_floor": "Bereik dat vloeken laten",
+  "config.extremedimensions.curse_reach_floor.desc": "Het blokbereik dat vloeken een speler altijd laten (blokken): Korte Reikwijdte en Verdorde Greep samen gaan nooit lager, zodat een speler nog bij zijn voeten kan graven. 0: geen ondergrens."
 }
