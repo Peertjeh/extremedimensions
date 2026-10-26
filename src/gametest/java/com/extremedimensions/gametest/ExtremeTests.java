@@ -11,6 +11,7 @@ import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.penalty.AtonementGuard;
 import com.extremedimensions.penalty.Dwindling;
+import com.extremedimensions.penalty.CurseEffects;
 import com.extremedimensions.penalty.ExtremeCurses;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
@@ -85,7 +86,20 @@ public class ExtremeTests {
 		ServerPlayer clean = cursed(helper);
 		ServerPlayer p = cursed(helper, Penalty.WITHERED_GRASP, 3);
 		double normal = clean.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE);
-		near(helper, p.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE), normal - 3 * Penalty.WITHERED_GRASP.value, "block reach with Withered Grasp 3");
+		double floor = Config.CURSE_REACH_FLOOR;
+		try {
+			// what the curse itself takes, with no floor under it
+			Config.CURSE_REACH_FLOOR = 0;
+			CurseEffects.applyEffects(p, DataStore.get(p.getUUID()));
+			near(helper, p.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE), normal - 3 * Penalty.WITHERED_GRASP.value, "block reach with Withered Grasp 3");
+			// and never below the floor (2 blocks: still able to dig at one's feet)
+			Config.CURSE_REACH_FLOOR = 2;
+			CurseEffects.applyEffects(p, DataStore.get(p.getUUID()));
+			near(helper, p.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE), Math.max(2, normal - 3 * Penalty.WITHERED_GRASP.value),
+					"block reach with Withered Grasp 3 and a floor of 2");
+		} finally {
+			Config.CURSE_REACH_FLOOR = floor;
+		}
 		helper.succeed();
 	}
 
