@@ -35,6 +35,7 @@
 			"com.extremedimensions.gametest.FirstWeaverTests",
 			"com.extremedimensions.gametest.MigrationTests",
 			"com.extremedimensions.gametest.TapestryTests",
+			"com.extremedimensions.gametest.UnweavingTests",
 			"com.extremedimensions.gametest.TetheriteTests",
 			"com.extremedimensions.gametest.CharmTests"
 		],

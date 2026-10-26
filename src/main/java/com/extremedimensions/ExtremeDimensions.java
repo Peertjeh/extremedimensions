@@ -185,6 +185,14 @@ public class ExtremeDimensions implements ModInitializer {
 				com.extremedimensions.tapestry.Tapestry.newThread(context.player());
 			}
 		});
+		// The Unweaving: its screen, and a set unwoven at the loom
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.UnweavePayload.TYPE, ModPackets.UnweavePayload.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.UnweaveRequestPayload.TYPE, ModPackets.UnweaveRequestPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.UnweaveRequestPayload.TYPE, (payload, context) -> {
+			if (Requests.allow(context.player(), "unweave", 4)) {
+				com.extremedimensions.tapestry.Unweaving.request(context.player(), payload.set());
+			}
+		});
 
 		ServerEvents.register();
 		LOGGER.info("Extreme Dimensions initialised");

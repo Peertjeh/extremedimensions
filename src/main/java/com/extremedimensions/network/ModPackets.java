@@ -675,4 +675,43 @@ public final class ModPackets {
 			return TYPE;
 		}
 	}
+
+	/** Server -> client: the Unweaving at the Weaver's Loom (see Unweaving.data); opens its screen or refreshes it. */
+	public record UnweavePayload(String data) implements CustomPacketPayload {
+		public static final Type<UnweavePayload> TYPE = new Type<>(ExtremeDimensions.id("unweave"));
+		public static final StreamCodec<FriendlyByteBuf, UnweavePayload> CODEC = StreamCodec.ofMember(UnweavePayload::write, UnweavePayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(data);
+		}
+
+		private static UnweavePayload read(FriendlyByteBuf buf) {
+			return new UnweavePayload(buf.readUtf());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: show the Unweaving ("") or unweave a set (its name) at the loom. */
+	public record UnweaveRequestPayload(String set) implements CustomPacketPayload {
+		public static final Type<UnweaveRequestPayload> TYPE = new Type<>(ExtremeDimensions.id("unweave_request"));
+		public static final StreamCodec<FriendlyByteBuf, UnweaveRequestPayload> CODEC = StreamCodec.ofMember(UnweaveRequestPayload::write,
+				UnweaveRequestPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(set, 32);
+		}
+
+		private static UnweaveRequestPayload read(FriendlyByteBuf buf) {
+			return new UnweaveRequestPayload(buf.readUtf(32));
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
 }

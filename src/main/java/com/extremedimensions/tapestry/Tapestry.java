@@ -334,6 +334,11 @@ public final class Tapestry {
 			Journal.unlock(p, d, "mended".equals(ending) ? JournalEntry.CONTINUED_MENDED : JournalEntry.CONTINUED_SEVERED);
 			DataStore.markDirty();
 		}
+		// Tetherite or a Tether Cord in hand: the Unweaving, where a full curse set is unpicked
+		if (Config.UNWEAVING > 0 && (held.is(ModItems.TETHERITE_INGOT) || held.is(ModItems.TETHER_CORD))) {
+			Unweaving.open(p);
+			return InteractionResult.SUCCESS;
+		}
 		Panel panel = Panel.of(held);
 		if (panel != null) {
 			return weave(p, level, pos, held, panel);
@@ -473,6 +478,7 @@ public final class Tapestry {
 	/** Every two seconds: a finished tapestry keeps soul light round its loom for whoever is near. */
 	public static void tick(MinecraftServer s) {
 		Weaving.tick(s);
+		Unweaving.tick(s);
 		if (s.getTickCount() % 40 != 0 || !DataStore.tapestryDone()) {
 			return;
 		}
@@ -493,5 +499,6 @@ public final class Tapestry {
 
 	public static void clear() {
 		Weaving.clear();
+		Unweaving.clear();
 	}
 }

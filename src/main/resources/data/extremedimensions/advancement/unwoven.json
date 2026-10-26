@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:mended",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:tether_cord"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.unwoven.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.unwoven.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

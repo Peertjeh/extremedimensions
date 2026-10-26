@@ -378,6 +378,40 @@ public class ClientPath implements FabricClientGameTest {
 			ctx.waitTicks(5);
 			ctx.takeScreenshot("43_new_thread");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			// The Unweaving: a full set, its price in the bag, the screen from the tapestry's button, then the knots round the loom
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				PlayerData d = DataStore.get(p.getUUID());
+				UnweavingTests.fill(d, com.extremedimensions.penalty.Penalty.Group.BEYOND);
+				p.getInventory().add(new ItemStack(ModItems.TETHERITE_INGOT, 2));
+				p.getInventory().add(new ItemStack(ModItems.TETHER_CORD, 4));
+				com.extremedimensions.network.Sync.curses(p, d, false);
+			});
+			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f 180 10", loomAt.getX() + 0.5, loomAt.getY(), loomAt.getZ() + 4.5));
+			ctx.waitTicks(10);
+			sp.getServer().runOnServer(s -> com.extremedimensions.tapestry.Tapestry.open(player(s)));
+			ctx.waitTicks(10);
+			ctx.runOnClient(mc -> check(com.extremedimensions.client.screen.TapestryScreen.shown() != null
+					&& pressOnce(com.extremedimensions.client.screen.TapestryScreen.shown(), I18n.get("gui.extremedimensions.tapestry.unweave_button")),
+					"the tapestry offers no Unweaving"));
+			ctx.waitTicks(10);
+			ctx.runOnClient(mc -> check(com.extremedimensions.client.screen.UnweaveScreen.shown() != null && com.extremedimensions.client.screen.UnweaveScreen.shown().ready(0),
+					"the Unweaving screen did not open ready to unweave the full Beyond set"));
+			ctx.takeScreenshot("44_unweave");
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			sp.getServer().runOnServer(s -> com.extremedimensions.tapestry.Unweaving.request(player(s), "BEYOND"));
+			check(sp.getServer().computeOnServer(s -> com.extremedimensions.tapestry.Unweaving.knotsLeft()) > 0, "the Unweaving tied no knots round the loom");
+			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f 180 28", loomAt.getX() + 0.5, loomAt.getY() + 5, loomAt.getZ() + 12.5));
+			ctx.waitTicks(90);
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+			ctx.waitTicks(2);
+			ctx.takeScreenshot("44_unweave_knots");
+			sp.getServer().runOnServer(s -> com.extremedimensions.tapestry.Unweaving.cutAll());
+			ctx.waitTicks(20);
+			ctx.takeScreenshot("44_unwoven");
+			check(sp.getServer().computeOnServer(s -> !com.extremedimensions.tapestry.Unweaving.active()
+					&& com.extremedimensions.tapestry.Unweaving.stacks(DataStore.get(player(s).getUUID()), com.extremedimensions.penalty.Penalty.Group.BEYOND) == 0),
+					"cutting every knot did not lift the Beyond set");
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
 				p.getAbilities().invulnerable = false;

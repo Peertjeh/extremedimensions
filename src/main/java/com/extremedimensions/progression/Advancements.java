@@ -62,6 +62,7 @@ public final class Advancements {
 	public static final String KNOT_MOTHER = "knot_mother";
 	public static final String TAPESTRY = "tapestry";
 	public static final String NEW_THREAD = "new_thread";
+	public static final String UNWOVEN = "unwoven";
 	/** Not one shown in the tab: the recipe book's way of learning the Weaver's Loom, given when an Elder falls. */
 	public static final String LOOM_RECIPE = "recipes/misc/weavers_loom";
 

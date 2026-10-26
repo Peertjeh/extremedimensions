@@ -182,6 +182,13 @@ public class PlayerData {
 	public boolean collapseOwed = false;
 	/** Cards Foresight adds to the next offer, kept when the Tether it was on is lost in the same death or Collapse. */
 	public int foresightOwed = 0;
+	/**
+	 * The Unweaving: sets this player has unwoven (each one after the first asks more), the game time they may again
+	 * (MIN_VALUE: any time), and one under way as "set|ingots|cords" ("" when none), so a lost one is given back.
+	 */
+	public int unwoven = 0;
+	public long unweaveAgain = Long.MIN_VALUE;
+	public String unweaving = "";
 	/** Levels the Ferryman is owed by someone who left the game while he sailed for them. */
 	public int fareOwed = 0;
 	/** Ultimates whose curse is owed (their bosses' keys): the player slipped away while one held them. */

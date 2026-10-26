@@ -23,7 +23,7 @@ import net.minecraft.resources.Identifier;
  */
 public class TapestryScreen extends Screen {
 	private static final Identifier SHEET = ExtremeDimensions.id("textures/gui/tapestry.png");
-	private static final int PW = 396, PH = 236, CELL_W = 122, CELL_H = 88, ART = 40;
+	private static final int PW = 396, PH = 236, CELL_W = 122, CELL_H = 88, ART = 40, UNWEAVE_W = 76;
 	/** The loom's own colour: the silk of its warp. */
 	private static final int ACCENT = 0xBBA8F0;
 
@@ -33,7 +33,7 @@ public class TapestryScreen extends Screen {
 	private int woven, deeds, carried, threads, againMinutes;
 	private boolean done, weaving;
 	private String ending = "", last = "";
-	private Button newThread;
+	private Button newThread, unweave;
 
 	/** The tapestry screen on show, or null (for the tests). */
 	public static TapestryScreen shown() {
@@ -101,6 +101,8 @@ public class TapestryScreen extends Screen {
 		int x0 = x0(), y0 = y0();
 		newThread = this.addRenderableWidget(Button.builder(Component.translatable("gui.extremedimensions.tapestry.new_thread_button"), b -> confirm())
 				.pos(x0 + 14, y0 + PH - 22).size(150, 18).build());
+		unweave = this.addRenderableWidget(Button.builder(Component.translatable("gui.extremedimensions.tapestry.unweave_button"),
+				b -> ClientPlayNetworking.send(new ModPackets.UnweaveRequestPayload(""))).pos(x0 + PW - 14 - 70 - 4 - UNWEAVE_W, y0 + PH - 22).size(UNWEAVE_W, 18).build());
 		this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose()).pos(x0 + PW - 14 - 70, y0 + PH - 22).size(70, 18).build());
 		refresh();
 	}
@@ -108,6 +110,9 @@ public class TapestryScreen extends Screen {
 	private void refresh() {
 		if (newThread != null) {
 			newThread.visible = done;
+		}
+		if (unweave != null) {
+			unweave.visible = Config.UNWEAVING > 0;
 		}
 	}
 
@@ -152,9 +157,10 @@ public class TapestryScreen extends Screen {
 		for (int i = 0; i < panels.length; i++) {
 			cell(g, panels[i], x0 + 14 + (i % 3) * (CELL_W + 3), y0 + 36 + (i / 3) * (CELL_H + 4), fade);
 		}
-		// (between the New Thread+ button, when there is one, and the Done button)
+		// (between the New Thread+ button, when there is one, and the Unweave and Done buttons)
 		int sx = x0 + 14 + (done ? 156 : 0);
-		g.text(this.font, Ui.ellipsize(this.font, status(), x0 + PW - 14 - 70 - 6 - sx), sx, y0 + PH - 17,
+		int ex = x0 + PW - 14 - 70 - 6 - (Config.UNWEAVING > 0 ? UNWEAVE_W + 4 : 0);
+		g.text(this.font, Ui.ellipsize(this.font, status(), ex - sx), sx, y0 + PH - 17,
 				Ui.argb(fade, weaving ? Ui.DANGER : done ? Ui.OK : Ui.MUTED));
 	}
 

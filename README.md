@@ -63,6 +63,13 @@ runes are the **Seam script**, an alphabet of the mod's own: threads with knots,
 Lift them by **atonement** (played off on expeditions and at home; every death undoes half), **Tether Fragments**
 offered to an anchor, or a **Mending Cloth**. Every stack lifted leaves a **scar** that weakens the drain.
 
+A set that is full can be **unwoven** at the world's Weaver's Loom (hold Tetherite or a Tether Cord and use the loom,
+or press **Unweave** on the tapestry). The price is 2 Tetherite Ingots and 4 Tether Cords (the Extreme set half
+again, and each unweaving after your first half again more). Knots of the set's colour are tied round the loom: cut
+all six (six blows each) within four minutes while they lash you and the set's own creatures come in waves, and every
+stack of the set comes off at once (its Abyssal curses keep their deeds). Fail and half the price comes back; after
+an unweaving the loom waits three days for you.
+
 ## The worlds
 
 - **The Nether and the End**: timed expeditions. The farther out, the faster the drain.
@@ -213,7 +220,8 @@ stood in any tick over 100 ms. To run it yourself: `./gradlew assemble benchJar`
 Download de jar uit de nieuwste groene build (**Actions** → run → **Artifacts**) en zet hem met Fabric API in je
 `mods`-map, op de server én bij iedere speler. Alles is in het Nederlands te spelen. Instellingen staan in het
 instellingenscherm en in `config/extremedimensions.json`. Na het einde bouw je een **Weversgetouw** en weef je het
-wandtapijt: zes panelen, elk een blijvende gunst, en daarna Nieuwe Draad+. Diep in de Seam ligt **Tetheriet**: spin
+wandtapijt: zes panelen, elk een blijvende gunst, en daarna Nieuwe Draad+. Een volle vloekset **ontweef** je aan het
+getouw met Tetheriet en Tetherkoord: hak de knopen op tijd door en de hele set gaat eraf. Diep in de Seam ligt **Tetheriet**: spin
 Tether Fragments op een **Spinrok** tot Tetherkoord, smeed het tot een rang voorbij netheriet, en kies uit twintig
 betoveringen en twee nieuwe harnasversieringen.
 

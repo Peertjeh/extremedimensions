@@ -49,7 +49,9 @@ public final class Hints {
 		/** The first time they fall beside an ally. */
 		FALLEN,
 		/** Their first Abyssal curse taken: how it breaks. */
-		ABYSSAL;
+		ABYSSAL,
+		/** A curse set full enough to be unwoven: the Weaver's Loom can unpick it. */
+		UNWEAVING;
 
 		public String key() {
 			return name().toLowerCase(Locale.ROOT);
@@ -143,6 +145,7 @@ public final class Hints {
 					|| d.seen.contains(Bestiary.Beast.LAST_WEAVER.id);
 			case STORM -> d.journal.contains(JournalEntry.STORMS.id);
 			case FALLEN -> d.liftsTaken > 0;
+			case UNWEAVING -> d.unwoven > 0;
 			case ABYSSAL -> {
 				for (com.extremedimensions.penalty.Penalty pen : com.extremedimensions.penalty.Penalty.values()) {
 					if (pen.abyssal && d.knows(pen)) {

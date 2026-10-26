@@ -103,6 +103,11 @@ public final class ModBlocks {
 					.sound(SoundType.WOOL).strength(2.5F, 6.0F).noOcclusion().lightLevel(state -> state.getValue(com.extremedimensions.tetherite.SpindleBlock.FRAGMENTS) > 0 ? 5 : 0)
 					.setId(key("spindle"))));
 
+	/** A knot of curse thread the Unweaving ties round the Weaver's Loom (see tapestry.Unweaving): cut by blows, never mined. */
+	public static final Block CURSE_KNOT = Registry.register(BuiltInRegistries.BLOCK, key("curse_knot"),
+			new com.extremedimensions.tapestry.CurseKnotBlock(BlockBehaviour.Properties.of().mapColor(net.minecraft.world.level.material.MapColor.COLOR_PURPLE)
+					.strength(-1.0F, 3600000.0F).sound(SoundType.WOOL).lightLevel(state -> 9).randomTicks().noLootTable().setId(key("curse_knot"))));
+
 	private static ResourceKey<Block> key(String id) {
 		return ResourceKey.create(Registries.BLOCK, ExtremeDimensions.id(id));
 	}

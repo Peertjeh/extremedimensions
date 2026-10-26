@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "set=0": {
+      "model": "extremedimensions:block/curse_knot_beyond"
+    },
+    "set=1": {
+      "model": "extremedimensions:block/curse_knot_overworld"
+    },
+    "set=2": {
+      "model": "extremedimensions:block/curse_knot_everywhere"
+    },
+    "set=3": {
+      "model": "extremedimensions:block/curse_knot_extreme"
+    }
+  }
+}

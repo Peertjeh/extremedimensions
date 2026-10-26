@@ -146,7 +146,8 @@ public final class ServerEvents {
 		// A core of an Elder's arena takes hits rather than being mined
 		AttackBlockCallback.EVENT.register((player, level, hand, pos, direction) ->
 				level instanceof net.minecraft.server.level.ServerLevel sl && !player.isSpectator()
-						&& com.extremedimensions.elder.ElderDomain.hit(player, sl, pos) ? InteractionResult.FAIL : InteractionResult.PASS);
+						&& (com.extremedimensions.elder.ElderDomain.hit(player, sl, pos) || com.extremedimensions.tapestry.Unweaving.hit(player, sl, pos))
+						? InteractionResult.FAIL : InteractionResult.PASS);
 		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, blockEntity) ->
 				!(player instanceof ServerPlayer fallen && com.extremedimensions.coop.FallenService.fallen(fallen)));
 		// An anchor that keeps someone else's charge cannot be broken out from under them
@@ -520,6 +521,7 @@ public final class ServerEvents {
 		CurseEffects.applyEffects(p, d);
 		com.extremedimensions.elder.FerrymanService.collectOwed(p, d);
 		com.extremedimensions.elder.ElderUltimate.collectOwed(p, d);
+		com.extremedimensions.tapestry.Unweaving.onJoin(p, d);
 		List<RecipeHolder<?>> recipes = new ArrayList<>();
 		for (String recipe : RECIPES) {
 			p.level().getServer().getRecipeManager().byKey(ResourceKey.create(Registries.RECIPE, WorldFx.id(recipe))).ifPresent(recipes::add);

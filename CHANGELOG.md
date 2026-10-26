@@ -1,5 +1,35 @@
 # Changelog
 
+## 3.4.0: The Unweaving
+
+A way out from under a full set of curses, at the end of the road: the Weaver's Loom can unpick it, at a price, through
+a fight.
+
+### New: the Unweaving
+- **Unweave a full curse set at the world's Weaver's Loom.** Hold a Tetherite Ingot or a Tether Cord and use the loom,
+  or press **Unweave** on the tapestry. The Unweaving screen shows each set: how full it is, what it costs and what you
+  carry. A set is ready once every curse in it is at its maximum (its Abyssal curses aside: they keep their own deeds).
+- **The price**: 2 Tetherite Ingots and 4 Tether Cords. The Extreme set asks half again, and each unweaving after your
+  first asks half again more. It is taken when the unweaving begins.
+- **The fight**: six **Curse Knots** in the set's colour are tied in the air round the loom. Cut each with six blows
+  within four minutes, while the knots lash you every few seconds (with the set's own sting: fire for Beyond, slowness
+  for the Overworld, weakness for Everywhere, wither for Extreme) and the set's creatures come in waves, more for each
+  player near. A boss bar counts the knots and the time.
+- **Cut the last knot** and every stack of the set comes off at once, with the scar a lifting leaves. A new advancement,
+  **Unwoven**, marks it. The loom then waits three in-game days before it takes your thread again.
+- **Fall, leave the loom, lose the loom or run out of time** and the knots hold: half the price comes back. If the
+  server stops during an unweaving, all of it comes back the next time you join, and a knot left behind comes undone at
+  a touch.
+- One unweaving at a time, and none during the Weaving. A hint comes the first time one of your sets is full.
+- Every number is a setting, in a new **The Unweaving** section: `unweaving`, `unweave_fill`, `unweave_ingots`,
+  `unweave_cords`, `unweave_extreme_factor`, `unweave_cost_growth`, `unweave_cooldown_days`, `unweave_seconds`,
+  `unweave_knots`, `unweave_knot_hits`, `unweave_lash_seconds`, `unweave_lash_damage`, `unweave_wave_seconds`,
+  `unweave_wave`, `unweave_wave_per_player` and `unweave_refund`.
+
+### Tests
+- Five new server tests: a full set and its price, what the loom refuses, cutting every knot, a failed unweaving and a
+  lost one. The client test opens the Unweaving from the tapestry and photographs the knots round the loom.
+
 ## 3.3.4: Loose Threads
 
 A sweep through everything since 3.0. Four reviews went through the curses, the Abyssal curses, Tetherite with the

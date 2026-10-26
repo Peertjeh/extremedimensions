@@ -955,6 +955,36 @@ public final class Config {
 	/** New Thread+: Tether Fragments for each thread a Rift Trial reaches beyond gold (each paid once a week). */
 	public static int NEW_THREAD_TRIAL_FRAGMENTS = 1;
 
+	// --- The Unweaving ---------------------------------------------------------------------------
+
+	/** The Unweaving at the Weaver's Loom: 1 = a full curse set can be unpicked there, through a fight; 0 = never. */
+	public static int UNWEAVING = 1;
+	/** How full a set must be to be unwoven: 1 = every curse in it at its maximum, 0.75 = three quarters of its stacks. */
+	public static double UNWEAVE_FILL = 1.0;
+	/**
+	 * What an unweaving costs: Tetherite Ingots and Tether Cords; the Extreme set asks that times its factor, and each
+	 * unweaving after a player's first asks more (0.5 = half again for each).
+	 */
+	public static int UNWEAVE_INGOTS = 2;
+	public static int UNWEAVE_CORDS = 4;
+	public static double UNWEAVE_EXTREME_FACTOR = 1.5;
+	public static double UNWEAVE_COST_GROWTH = 0.5;
+	/** In-game days before the same player may unweave again. */
+	public static int UNWEAVE_COOLDOWN_DAYS = 3;
+	/** The fight: seconds to cut the knots in, how many knots the set ties round the loom, and blows to cut each. */
+	public static int UNWEAVE_SECONDS = 240;
+	public static int UNWEAVE_KNOTS = 6;
+	public static int UNWEAVE_KNOT_HITS = 6;
+	/** Seconds between the knots' lashes at the one unweaving, and the damage of a lash (each set adds its own sting). */
+	public static int UNWEAVE_LASH_SECONDS = 6;
+	public static double UNWEAVE_LASH_DAMAGE = 3.0;
+	/** Seconds between waves of the set's own creatures, foes in a wave, and more for each other player near. */
+	public static int UNWEAVE_WAVE_SECONDS = 30;
+	public static int UNWEAVE_WAVE = 3;
+	public static int UNWEAVE_WAVE_PER_PLAYER = 1;
+	/** Share of the Tetherite and cords given back when an unweaving fails (0.5 = half, rounded down). */
+	public static double UNWEAVE_REFUND = 0.5;
+
 	// --- Technical -------------------------------------------------------------------------------
 
 	/** Milliseconds per tick the Seam may spend building islands (blocks in chunks nobody has loaded wait). */
@@ -1008,6 +1038,7 @@ public final class Config {
 			Map.entry("tetherite_ore_island_chance", "tetherite"), Map.entry("pact_unlock", "pacts"),
 			Map.entry("trial_unlock", "trials"), Map.entry("matriarch_after_keepers", "elders"),
 			Map.entry("coop_revive", "coop"), Map.entry("tribe_enabled", "tribe"), Map.entry("tapestry_respin_silk", "tapestry"),
+			Map.entry("unweaving", "unweaving"),
 			Map.entry("seam_build_budget_ms", "technical"));
 
 	/** One setting: its key in the file, its section, the field behind it and its default (as text). */
