@@ -32,7 +32,9 @@ import com.extremedimensions.server.WorldFx;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
@@ -500,7 +502,7 @@ public final class Unweaving {
 			return;
 		}
 		int n = Math.max(0, Config.UNWEAVE_WAVE) + Math.max(0, Config.UNWEAVE_WAVE_PER_PLAYER) * Math.max(0, players - 1);
-		List<EntityType<? extends Mob>> kinds = kinds(r.set);
+		List<EntityType<?>> kinds = kinds(r.set);
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		for (int i = 0; i < n && !kinds.isEmpty(); i++) {
 			BlockPos at = null;
@@ -511,8 +513,11 @@ public final class Unweaving {
 			if (at == null) {
 				continue;
 			}
-			Mob m = kinds.get(i % kinds.size()).spawn(r.level, at, EntitySpawnReason.EVENT);
-			if (m == null) {
+			Entity e = kinds.get(i % kinds.size()).spawn(r.level, at, EntitySpawnReason.EVENT);
+			if (!(e instanceof Mob m)) {
+				if (e != null) {
+					e.discard();
+				}
 				continue;
 			}
 			m.setPersistenceRequired();
@@ -524,13 +529,17 @@ public final class Unweaving {
 	}
 
 	/** The creatures of each set: of the worlds beyond the wound, of home, of anywhere, and the worst of them. */
-	private static List<EntityType<? extends Mob>> kinds(Penalty.Group g) {
+	private static List<EntityType<?>> kinds(Penalty.Group g) {
 		return switch (g) {
-			case BEYOND -> List.of(EntityType.WITHER_SKELETON, ModEntities.THINNED, EntityType.BLAZE);
-			case OVERWORLD -> List.of(EntityType.ZOMBIE, EntityType.SKELETON, ModEntities.LURKER);
-			case EXTREME -> List.of(EntityType.WITHER_SKELETON, EntityType.VINDICATOR, ModEntities.LURKER, ModEntities.THINNED);
-			default -> List.of(EntityType.SPIDER, ModEntities.THINNED, EntityType.WITCH);
+			case BEYOND -> List.of(vanilla("wither_skeleton"), ModEntities.THINNED, vanilla("blaze"));
+			case OVERWORLD -> List.of(vanilla("zombie"), vanilla("skeleton"), ModEntities.LURKER);
+			case EXTREME -> List.of(vanilla("wither_skeleton"), vanilla("vindicator"), ModEntities.LURKER, ModEntities.THINNED);
+			default -> List.of(vanilla("spider"), ModEntities.THINNED, vanilla("witch"));
 		};
+	}
+
+	private static EntityType<?> vanilla(String id) {
+		return BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.fromNamespaceAndPath("minecraft", id));
 	}
 
 	/** Where a foe can stand at (x, z), near the loom's height: room for it on solid ground. Null when there is none. */
