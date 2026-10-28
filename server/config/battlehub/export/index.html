@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Server stats</title>
+<style>
+:root { --bg: #f6f7f9; --card: #ffffff; --text: #1d2330; --muted: #6b7385; --accent: #c8901e; --ed: #b4472f; --line: #e3e6ec; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #12151b; --card: #1b2029; --text: #e8ebf1; --muted: #9aa3b5; --accent: #f0b43c; --ed: #ff7a5c; --line: #2a303b; }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; font: 15px/1.5 system-ui, sans-serif; background: var(--bg); color: var(--text); }
+header { padding: 24px 16px 8px; max-width: 1100px; margin: 0 auto; }
+h1 { margin: 0; font-size: 28px; } h1 .ed { color: var(--ed); } h1 .bh { color: var(--accent); }
+#status { color: var(--muted); margin-top: 4px; }
+h2.part { max-width: 1100px; margin: 18px auto 0; padding: 0 16px; font-size: 13px; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); }
+main { max-width: 1100px; margin: 0 auto; padding: 8px 16px 8px; display: grid; gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+section.ed { border-top: 3px solid var(--ed); } section.bh { border-top: 3px solid var(--accent); }
+h3 { margin: 0 0 8px; font-size: 16px; }
+select { font: inherit; padding: 2px 6px; margin-left: 6px; max-width: 100%; }
+table { width: 100%; border-collapse: collapse; }
+td { padding: 4px 2px; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+td.r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.n { color: var(--muted); width: 2.5em; }
+dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }
+dt { color: var(--muted); } dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.empty, .note { color: var(--muted); }
+.dot { display: inline-block; width: .6em; height: .6em; border-radius: 50%; margin-right: .4em; background: var(--muted); }
+footer { max-width: 1100px; margin: 0 auto; padding: 8px 16px 32px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<header><h1><span class="ed">Extreme Dimensions</span> &amp; <span class="bh">BattleHub</span></h1><div id="status">Loading...</div></header>
+
+<h2 class="part" id="ed-part">Extreme Dimensions</h2>
+<main id="ed">
+  <section class="ed"><h3>The world</h3><dl id="world"></dl></section>
+  <section class="ed"><h3>Leaderboard <select id="edboard"></select></h3><table id="edtop"></table></section>
+  <section class="ed"><h3>Online now</h3><table id="edonline"></table></section>
+</main>
+
+<h2 class="part">BattleHub</h2>
+<main>
+  <section class="bh"><h3>Leaderboard <select id="board"></select></h3><table id="top"></table></section>
+  <section class="bh"><h3>Ranked <select id="elo"></select></h3><table id="ranked"></table></section>
+  <section class="bh"><h3>Clans</h3><table id="clans"></table></section>
+  <section class="bh"><h3>Weekly tournament</h3><div id="weekly"></div></section>
+  <section class="bh"><h3>Recent matches</h3><table id="matches"></table></section>
+</main>
+<footer>Updated every minute from the server's own files.</footer>
+
+<script>
+// Each file on its own: a missing one (a mod not installed, the export off) only empties its cards.
+const get = f => fetch(f, {cache: "no-store"}).then(r => r.ok ? r.json() : null).catch(() => null);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const $ = id => document.getElementById(id);
+function rows(el, list, cells) {
+  el.innerHTML = list && list.length ? list.map(x => "<tr>" + cells(x).join("") + "</tr>").join("")
+    : "<tr><td class='empty'>Nothing yet</td></tr>";
+}
+// a select keeps its choice when the page refreshes
+function fill(sel, options) {
+  const keep = sel.value;
+  sel.innerHTML = options.map(([k, label]) => "<option value='" + esc(k) + "'>" + esc(label) + "</option>").join("");
+  if (options.some(([k]) => k === keep)) sel.value = keep;
+}
+const realmColour = {Overworld: "#5fb04a", Nether: "#e0533a", End: "#c97df2", Seam: "#4fd1d9", Fray: "#2a9aa3"};
+
+const bhNames = {kills: "Kills", wins: "Wins", deaths: "Deaths", kd: "K/D", level: "Level (XP)", prestige: "Prestige",
+  coinsEarned: "Coins earned", tournaments: "Tournaments", weekly: "Weekly wins"};
+// "bed_wars" as "Bed Wars"
+const modeName = id => String(id).split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+const edNames = {expeditions: "Expeditions", eldersSlain: "Elders slain", curses: "Curses carried", scars: "Scars",
+  collapses: "Collapses", unwoven: "Curse sets unwoven"};
+
+function showEd(ed) {
+  $("ed").hidden = $("ed-part").hidden = !ed;
+  if (!ed) return;
+  const w = ed.world || {};
+  const tap = w.tapestry || {};
+  const facts = [["Difficulty", w.difficulty], ["Ending", w.ending], ["Tapestry", tap.total ? tap.woven + " / " + tap.total : ""],
+    ["New Thread+", w.newThread], ["This week's Rift Trial", w.trial || "not open yet"]];
+  $("world").innerHTML = facts.filter(([, v]) => v !== undefined && v !== "")
+    .map(([k, v]) => "<dt>" + esc(k) + "</dt><dd>" + esc(v) + "</dd>").join("");
+  const players = ed.players || [];
+  fill($("edboard"), Object.keys(edNames).filter(k => players.some(p => k in p)).map(k => [k, edNames[k]]));
+  const showTop = () => {
+    const k = $("edboard").value;
+    const top = players.filter(p => (p[k] || 0) > 0).sort((a, b) => b[k] - a[k] || a.name.localeCompare(b.name)).slice(0, 15);
+    rows($("edtop"), top, p => ["<td class='n'>" + (top.indexOf(p) + 1) + "</td>", "<td>" + esc(p.name)
+      + (p.trialMedal === "Gold" ? " <span title='Gold in this week&#39;s Rift Trial'>&#9733;</span>" : "") + "</td>",
+      "<td class='r'>" + p[k] + "</td>"]);
+  };
+  $("edboard").onchange = showTop; showTop();
+  rows($("edonline"), players.filter(p => p.online), p => [
+    "<td><span class='dot' style='background:" + (realmColour[p.realm] || "var(--muted)") + "'></span>" + esc(p.name) + "</td>",
+    "<td>" + esc(p.status || p.realm || "") + "</td>"]);
+}
+
+function showBh(lb, srv, clans, matches, weekly) {
+  if (lb) {
+    fill($("board"), Object.keys(bhNames).map(k => [k, bhNames[k]]));
+    const showTop = () => rows($("top"), lb.boards[$("board").value] || [], r => [
+      "<td class='n'>" + r.rank + "</td>", "<td>" + esc(r.name) + "</td>",
+      "<td class='r'>" + ($("board").value === "kd" ? (r.value / 100).toFixed(2) : r.value) + "</td>"]);
+    $("board").onchange = showTop; showTop();
+    fill($("elo"), Object.keys(lb.boards.elo || {}).map(k => [k, k]));
+    const showElo = () => rows($("ranked"), (lb.boards.elo || {})[$("elo").value] || [], r => [
+      "<td class='n'>" + r.rank + "</td>", "<td>" + esc(r.name) + "</td>", "<td class='r'>" + r.value + "</td>"]);
+    $("elo").onchange = showElo; showElo();
+  } else {
+    rows($("top"), [], null); rows($("ranked"), [], null);
+  }
+  rows($("clans"), clans ? clans.clans.slice(0, 15) : [], c => [
+    "<td class='n'>" + c.rank + "</td>", "<td>[" + esc(c.tag) + "] " + esc(c.name) + "</td>", "<td class='r'>" + c.points + " pts</td>"]);
+  rows($("matches"), matches ? matches.matches.slice(0, 15) : [], m => [
+    "<td>" + esc(m.mode) + (m.ranked ? " (ranked)" : "") + "</td>",
+    "<td>" + esc((m.winners || []).join(", ") || "draw") + "</td>", "<td class='r'>" + m.seconds + "s</td>"]);
+  if (weekly) {
+    const last = weekly.history && weekly.history.length ? weekly.history[weekly.history.length - 1] : null;
+    $("weekly").innerHTML = "Next: " + esc(new Date(weekly.next).toLocaleString())
+      + (weekly.signupsOpen ? " (sign-ups open: " + esc(weekly.signups) + ")" : "")
+      + (last ? "<br>Last winner: " + esc(last.winners.join(" & ")) + " (" + esc(last.players) + " players)" : "");
+  } else {
+    $("weekly").innerHTML = "<span class='empty'>Nothing yet</span>";
+  }
+}
+
+function load() {
+  Promise.all([get("extremedimensions.json"), get("leaderboards.json"), get("server.json"), get("clans.json"),
+      get("matches.json"), get("tournaments.json")])
+    .then(([ed, lb, srv, clans, matches, weekly]) => {
+      const parts = [];
+      if (srv) {
+        parts.push(srv.online + " online", srv.inBattleHub + " in BattleHub");
+        if (srv.featuredMode) parts.push("mode of the day: " + modeName(srv.featuredMode));
+      }
+      const stamps = [srv && srv.generated, ed && Date.parse(ed.generated)].filter(Boolean);
+      if (stamps.length) parts.push("updated " + new Date(Math.max(...stamps)).toLocaleString());
+      $("status").textContent = parts.length ? parts.join(" | ") : "No stats yet: is the export switched on?";
+      showEd(ed);
+      showBh(lb, srv, clans, matches, weekly);
+    });
+}
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>
