@@ -1,7 +1,11 @@
 # =====================================================================
-#  TAB 6.2.1 - Extreme Dimensions server (Fabric, single server, no proxy)
+#  TAB 6.2.1 - Extreme Dimensions + BattleHub (Fabric, single server)
 #  Location on the server: config/tab/config.yml
 #  After a change: /tab reload
+#
+#  Needs Text Placeholder API (placeholder-api) on the server: the
+#  %extremedimensions:...% and %player:...% placeholders come through it.
+#  Without it they show up as plain text.
 #
 #  Keep every option below, even the disabled ones: if one is missing,
 #  TAB adds it back and rewrites the whole file, which strips all comments.
@@ -22,22 +26,24 @@ header-footer:
         - ""
       footer:
         - ""
-        - "&7In Battlehub: &f%worldonline%   &8|   &7Ping: &f%ping% ms"
+        - "&7Players here: &f%worldonline%   &8|   &7Ping: &f%ping% ms"
         - ""
     survival:
       header:
         - ""
         - "%animation:title%"
+        - "%extremedimensions:difficulty%   &8|   &7Tapestry &f%extremedimensions:tapestry%   &8|   %extremedimensions:ending%"
         - ""
       footer:
         - ""
-        - "&7Dimension: %condition:dimension%"
+        - "%extremedimensions:realm%   &8|   %extremedimensions:status% &f%extremedimensions:time_left%"
+        - "&7Curses: %extremedimensions:curses%   &8|   &7Scars: &f%extremedimensions:scars%&7/5"
         - "&7Online: &f%online%   &8|   &7Ping: &f%ping% ms"
         - ""
 
-# Separate player lists: players in battlehub only see battlehub players,
+# Separate player lists: players in BattleHub only see BattleHub players,
 # everyone else only sees the survival players (all other dimensions).
-# Players whose name starts with Bot_ are left out of both lists.
+# Players whose name starts with Bot_ (BattleHub's bots) are left out.
 # On Fabric this only works through layout, which always shows a fixed
 # number of rows. Raise slot-count (and the slots range with it) if more
 # players are online at once; extra players show as "... and X more".
@@ -68,23 +74,18 @@ layout:
           slots:
             - "1-10"
 
-# Player names in the list (prefix/suffix from groups.yml, e.g. from LuckPerms)
+# Player names in the list, set in groups.yml
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Tablist-name-formatting
 tablist-name-formatting:
   enabled: true
   disable-condition: ""
 
-# Nametags above players and the order in the list
-# https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Nametags
+# TAB's nametags stay off: BattleHub draws its own above heads (titles,
+# CTF team colours, enemies' tags hidden in a match) and TAB would block
+# those. This section still sets the order of the player list.
+# https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Sorting-players-in-tablist
 scoreboard-teams:
-  enabled: true
-  enable-collision: true
-  invisible-nametags: false
-  can-see-friendly-invisibles: false
-  disable-condition: ""
-  # Alphabetical. With LuckPerms you can put ranks on top by adding this
-  # line above it: - "GROUPS:owner,admin,mod,default"
-  # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Sorting-players-in-tablist
+  enabled: false
   sorting-types:
     - "PLACEHOLDER_A_TO_Z:%player%"
   case-sensitive-sorting: false
@@ -116,15 +117,15 @@ mysql:
 
 # On Fabric, TAB names a world after level-name in server.properties plus
 # the dimension's name without its namespace: world, world_nether,
-# world_the_end, world_the_seam. So battlehub:hub becomes world_hub and
-# battlehub becomes world_battlehub; the battlehub condition matches both.
+# world_the_end, world_the_seam. BattleHub's lobby (battlehub:hub) becomes
+# world_hub and its matches (battlehub:arenas) world_arenas.
 # Check a player's world name with: /tab parse <player> %world%
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Conditional-placeholders
 conditions:
   battlehub:
     conditions:
-      - "%world%<-battlehub"
       - "%world%-|_hub"
+      - "%world%-|_arenas"
     type: OR
   battlehub-list:
     conditions:
@@ -136,29 +137,20 @@ conditions:
       - "%condition:battlehub%=false"
       - "%player%!|-Bot_"
     type: AND
-  # Dimension name for the survival footer, in the same color as the names
-  dimension:
-    conditions:
-      - "%world%-|_nether"
-    true: "&cNether"
-    false: "%condition:dimension-end%"
-  dimension-end:
-    conditions:
-      - "%world%-|_the_end"
-    true: "&dThe End"
-    false: "%condition:dimension-seam%"
-  dimension-seam:
-    conditions:
-      - "%world%-|_the_seam"
-    true: "&bThe Seam"
-    false: "&fOverworld"
-  # Name color in the player list, used in groups.yml
-  name-color:
+  # The name in the player list (customtabname in groups.yml): gray in
+  # spectator mode, BattleHub's own name in BattleHub (title, stars, clan,
+  # name colour), and in survival colored by dimension.
+  tab-name:
     conditions:
       - "%gamemode%=3"
-    true: "&7&o"
-    false: "%condition:name-color-nether%"
-  name-color-nether:
+    true: "&7&o%player%"
+    false: "%condition:tab-name-battlehub%"
+  tab-name-battlehub:
+    conditions:
+      - "%condition:battlehub%=true"
+    true: "%player:displayname_visual%"
+    false: "%condition:name-color%%player%"
+  name-color:
     conditions:
       - "%world%-|_nether"
     true: "&c"
@@ -173,6 +165,49 @@ conditions:
       - "%world%-|_the_seam"
     true: "&b"
     false: "&f"
+  # The curse badge behind the name (tabsuffix in groups.yml), survival only.
+  # It is empty for a player without curses.
+  badge:
+    conditions:
+      - "%condition:battlehub%=false"
+    true: " %extremedimensions:badge%"
+    false: ""
+
+# Colors for the mod's words in the header and footer. The colors of the
+# dimensions match the name colors.
+# https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Placeholder-output-replacements
+placeholder-output-replacements:
+  "%extremedimensions:realm%":
+    "Overworld": "&fOverworld"
+    "Nether": "&cNether"
+    "End": "&dThe End"
+    "Seam": "&bThe Seam"
+    "Fray": "&3The Fray"
+    "Elsewhere": "&7Elsewhere"
+  "%extremedimensions:status%":
+    "At home": "&aAt home"
+    "On an expedition": "&6On an expedition"
+    "In the Seam": "&bIn the Seam"
+    "In the Fray": "&3In the Fray"
+    "Unweaving": "&dUnweaving"
+    "Fallen": "&cFallen"
+    "Elsewhere": "&7Elsewhere"
+  "%extremedimensions:curses%": # same steps as the badge
+    "0": "&a0"
+    "1-9": "&7%value%"
+    "10-29": "&e%value%"
+    "30-59": "&c%value%"
+    "60-100000": "&4%value%"
+  "%extremedimensions:difficulty%":
+    "Easy": "&aEasy"
+    "Normal": "&eNormal"
+    "Hard": "&6Hard"
+    "Extreme": "&cExtreme"
+    "Custom": "&7Custom"
+  "%extremedimensions:ending%":
+    "Unended": "&7Unended"
+    "Mended": "&aMended"
+    "Severed": "&cSevered"
 
 placeholders:
   date-format: "dd.MM.yyyy"
@@ -181,8 +216,18 @@ placeholders:
   register-tab-expansion: false
   locale: en-US
 
+# The mod works its values out once a second, so asking more often is wasted.
 placeholder-refresh-intervals:
   default-refresh-interval: 500
+  "%extremedimensions:badge%": 1000
+  "%extremedimensions:realm%": 1000
+  "%extremedimensions:status%": 1000
+  "%extremedimensions:curses%": 1000
+  "%extremedimensions:scars%": 1000
+  "%extremedimensions:difficulty%": 1000
+  "%extremedimensions:tapestry%": 1000
+  "%extremedimensions:ending%": 1000
+  "%player:displayname_visual%": 1000
 
 components:
   minimessage-support: true

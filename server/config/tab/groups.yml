@@ -1,21 +1,18 @@
-# Player names in the player list (tabprefix, customtabname, tabsuffix)
-# and above heads (tagprefix, tagsuffix).
+# Player names in the player list: tabprefix, customtabname, tabsuffix.
 # Groups come from LuckPerms if it is installed. Without LuckPerms nobody has
 # a group and everyone uses _DEFAULT_.
 # https://github.com/NEZNAMY/TAB/wiki/How-to-assign-players-into-groups
 
 # Settings for everyone, unless a group below overrides them.
-# Names are colored by where the player is (see name-color in config.yml):
-# white in the Overworld and battlehub, red in the Nether, purple in the End,
-# aqua in the Seam, gray italic in spectator mode.
+# The name comes from tab-name in config.yml: colored by dimension in
+# survival (white Overworld, red Nether, purple End, aqua Seam), BattleHub's
+# own name with title and clan in BattleHub, gray in spectator mode.
+# Behind it, in survival, the curse badge from Extreme Dimensions.
 _DEFAULT_:
   tabprefix: "%luckperms-prefix%"
-  customtabname: "%condition:name-color%%player%"
-  tabsuffix: "%luckperms-suffix%"
-  tagprefix: "%luckperms-prefix%"
-  tagsuffix: "%luckperms-suffix%"
+  customtabname: "%condition:tab-name%"
+  tabsuffix: "%condition:badge%%luckperms-suffix%"
 
 # Example for a LuckPerms group named admin:
 # admin:
 #   tabprefix: "&c[Admin] "
-#   tagprefix: "&c[Admin] "
