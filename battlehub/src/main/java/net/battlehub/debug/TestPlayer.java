@@ -60,6 +60,14 @@ public final class TestPlayer extends ServerPlayer {
 		return link.heldSlot;
 	}
 
+	/** Whether this player's client got a player's chat message containing the text. */
+	public boolean clientChatHas(String text) {
+		for (String said : link.chat) {
+			if (said.contains(text)) return true;
+		}
+		return false;
+	}
+
 	/** The player picks a hotbar slot on the client (the server hears about it, as with a real client). */
 	public void pickSlot(int slot) {
 		link.heldSlot = slot;

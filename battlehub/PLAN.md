@@ -2264,6 +2264,22 @@ de simulatie, en het gat tussen intermediate en master klopt met het spel) en da
 staat. Hoe andere spelers over de niveaus verdeeld zijn, zegt een volgende export van meer spelers. De mace-schaal rust op
 vier gevechten.
 
+## Versie 1.50.0 – Chat per wereld
+
+**Vraag.** De chat van BattleHub gescheiden houden van de andere wereld. (Op de server draaien TAB en Styled Chat;
+die regelen hoe de chat eruitziet, niet wie hem krijgt. Voor Fabric 26.3 is er geen mod die chat per wereld doet.)
+
+**Uitvoering.** `PlayerListMixin` leidt in `broadcastChatMessage` (de versie met afzender, waar chat, `/me` en `/say`
+van een speler allemaal langskomen) het versturen naar elke ontvanger om: een speler krijgt het bericht alleen als
+`HubWorld.hearsChat` zegt dat afzender en ontvanger in dezelfde wereld zijn, BattleHub (hub of arena's) of de normale
+wereld. Een bericht zonder speler erachter (console, commandoblok) gaat naar iedereen; privé- en teamberichten komen
+hier niet langs. Het serverlog krijgt nog steeds alles. Instelling `hub.separateChat` (standaard aan). Styled Chat
+past alleen de opmaak aan en leidt in deze methode alleen het loggen om, dus beide mods werken samen.
+
+**Testen.** Zelftest (`HubWorldTests.chat`): A in de lobby en S in de normale wereld zeggen allebei iets met `/me`;
+ieder leest alleen wat in zijn eigen wereld gezegd is. Met `hub.separateChat` uit leest S wat A zegt. `TestConnection`
+houdt daarvoor de chatpakketten bij die de client krijgt (ondertekend en niet-ondertekend).
+
 ## Versie 1.49.0 – De nacht boven het plein, eigen geluiden, ontwijken, dezelfde kit, minder verklappen
 
 **Vraag.** (A) De doden-animatie in de Hunger Games niet meer "locked": hoog in het midden afspelen, verder spelen.

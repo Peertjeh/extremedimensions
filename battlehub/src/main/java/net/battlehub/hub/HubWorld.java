@@ -19,6 +19,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -49,6 +50,15 @@ public final class HubWorld {
 	/** The hub or the arenas: places where BattleHub's rules apply. */
 	public static boolean isBattleHub(Level level) {
 		return is(level) || ArenaWorld.is(level);
+	}
+
+	/**
+	 * Whether a chat message reaches a player (1.50, {@code hub.separateChat}): only when both are in BattleHub or both
+	 * are in the normal world. A message without a player behind it (the console, a command block) reaches everyone.
+	 */
+	public static boolean hearsChat(ServerPlayer sender, ServerPlayer receiver) {
+		if (sender == null || !ConfigManager.config().hub.separateChat) return true;
+		return isBattleHub(sender.level()) == isBattleHub(receiver.level());
 	}
 
 	public static boolean ready() {

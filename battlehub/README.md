@@ -40,6 +40,8 @@ left alone: no compass, no protection, no changed damage rules there.
   everything restored.
 * In the hub your XP bar shows your BattleHub level.
 * Players moved in or out some other way (an admin `/tp`) are checked in or out automatically.
+* Chat stays in its world: what you say in BattleHub only players in BattleHub read, and the other way round
+  (`hub.separateChat`). Private messages reach their player anywhere.
 * For a server that is only BattleHub, `hub.sendToHubOnJoin` puts everyone in the hub when they join.
 
 ### Bots: never wait alone
@@ -792,7 +794,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
 
 * **`config.json`**
   * `hub`: send players to BattleHub when they join (for BattleHub-only servers), join hint, game mode in the
-    hub (adventure or survival), level on the XP bar, exit door item
+    hub (adventure or survival), level on the XP bar, exit door item, `separateChat` (1.50, default on: chat in
+    BattleHub and chat in the normal world stay apart)
   * `lobby`: spawn position in the hub (set with `/battlehub setlobby`), teleport on join, keep fed, void height,
     and the lobby itself: `style` (`citadel` or `classic`), `seed` (another seed, another city), `detail` (0
     structure only, 1 normal, 2 every ornament and piece of furniture), `islandRadius` (100-200), `townDensity`

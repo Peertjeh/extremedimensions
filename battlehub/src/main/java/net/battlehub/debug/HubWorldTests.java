@@ -218,6 +218,37 @@ final class HubWorldTests {
 		s.run(tag + ": S leaves BattleHub with the door", () -> Travel.leave(p(S)));
 		s.check(tag + ": queue left, things back", () -> !HubWorld.isBattleHub(p(S).level())
 				&& Sessions.state(p(S).getUUID()) != Sessions.State.QUEUED && diamonds(p(S)) == 5);
+		chat(server, s);
 		s.run(tag + ": S logs off", () -> p(S).leave());
+	}
+
+	/**
+	 * Chat stays in its world (1.50): A in the lobby and S in the normal world each say something, and only the player
+	 * in the same world reads it. With {@code hub.separateChat} off there is one chat for everyone again.
+	 */
+	private static void chat(MinecraftServer server, Script s) {
+		String tag = "chat";
+		s.run(tag + ": A comes into the lobby, S stays in the normal world", () -> SelfTest.join(server, A));
+		s.waitFor(tag + ": A in BattleHub, S outside", 200, () -> Travel.inBattleHub(p(A)) && !HubWorld.isBattleHub(p(S).level()));
+		s.run(tag + ": A and S each say something", () -> {
+			say(server, p(A), "chat-from-the-hub");
+			say(server, p(S), "chat-from-survival");
+		});
+		s.waitFor(tag + ": each reads what was said in their own world", 20, () -> p(A).clientChatHas("chat-from-the-hub")
+				&& p(S).clientChatHas("chat-from-survival"));
+		s.check(tag + ": and nothing from the other world", () -> !p(A).clientChatHas("chat-from-survival")
+				&& !p(S).clientChatHas("chat-from-the-hub"));
+		s.run(tag + ": with hub.separateChat off, A says something", () -> {
+			ConfigManager.config().hub.separateChat = false;
+			say(server, p(A), "chat-for-everyone");
+		});
+		s.waitFor(tag + ": S in the normal world reads it too", 20, () -> p(S).clientChatHas("chat-for-everyone")
+				&& p(A).clientChatHas("chat-for-everyone"));
+		s.run(tag + ": hub.separateChat back on", () -> ConfigManager.config().hub.separateChat = true);
+	}
+
+	/** A player says something in chat, as /me (a command run for the player goes out as their chat message). */
+	private static void say(MinecraftServer server, ServerPlayer p, String text) {
+		server.getCommands().performPrefixedCommand(p.createCommandSourceStack(), "me " + text);
 	}
 }

@@ -59,6 +59,11 @@ public final class HubConfig {
 		public boolean levelOnXpBar = true;
 		/** The door in the last hotbar slot that takes you back to the normal world. */
 		public boolean exitItem = true;
+		/**
+		 * Chat stays in its world (1.50): what a player says in BattleHub only players in BattleHub read, and what a
+		 * player says in the normal world only players there. false: one chat for the whole server.
+		 */
+		public boolean separateChat = true;
 	}
 
 	public static final class Lobby {

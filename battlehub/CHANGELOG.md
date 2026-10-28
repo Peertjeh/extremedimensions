@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.50.0
+
+### Changed
+* **Chat stays in its world.** What a player says in BattleHub (the hub or a match) only players in BattleHub read,
+  and what a player says in the normal world only players there. Chat, `/me` and `/say` from a player follow this;
+  private and team messages and messages from the console reach everyone as before, and the server log keeps
+  every message. `hub.separateChat` (default on) turns it off for one chat on the whole server. Chat mods that only
+  change how chat looks (Styled Chat) keep working.
+
 ## 1.49.0
 
 ### Changed

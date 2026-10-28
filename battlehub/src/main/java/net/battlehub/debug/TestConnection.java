@@ -35,6 +35,8 @@ final class TestConnection extends Connection {
 	final java.util.Map<Integer, Integer> swings = new ConcurrentHashMap<>();
 	/** Whether the client shows an entity glowing, from the last flags it got for it (absent: never told). */
 	final java.util.Map<Integer, Boolean> glowing = new ConcurrentHashMap<>();
+	/** The players' chat messages the client got, as the packets print themselves (their text is in there). */
+	final java.util.List<String> chat = new java.util.concurrent.CopyOnWriteArrayList<>();
 
 	TestConnection() {
 		super(PacketFlow.SERVERBOUND);
@@ -63,6 +65,10 @@ final class TestConnection extends Connection {
 			}
 		} else if (msg instanceof ClientboundRespawnPacket) {
 			entities.clear();
+		} else if (msg instanceof net.minecraft.network.protocol.game.ClientboundPlayerChatPacket
+				|| msg instanceof net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket) {
+			// signed chat, and unsigned chat (a command run for a player, a server without chat signing)
+			chat.add(msg.toString());
 		} else if (msg instanceof net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket held) {
 			heldSlot = held.slot();
 		} else if (msg instanceof net.minecraft.network.protocol.game.ClientboundAnimatePacket anim) {
