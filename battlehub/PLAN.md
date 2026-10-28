@@ -2316,6 +2316,13 @@ zodat een @everyone in een naam niemand pingt, ingekort onder de 2000 tekens. Ge
 (JSON, ontsnappen); zelftest `DiscordTests` met een webhook op de eigen machine (JDK `HttpServer`): het bericht komt aan
 zoals Discord het wil, en een webhook die geen URL is breekt niets.
 
+**CI van `d837233` (alles van 1.51.0):** 998 geslaagd, 0 gefaald. placeholder-api 3.2.0+26.3 stond erbij ("Offered 17
+placeholders to placeholder-api as %battlehub:<name>%"), dus het teruglezen en de titel via een placeholder zijn echt
+getest. Tussendoor: `d89f58c` (B) 990 en `b6280ce` (C) 994 geslaagd, 0 gefaald; `415d1d8` (A) 988 en `78b2804` (D) 995
+geslaagd met allebei 1 gefaald: "bots hunger games: the bot goes to its parachute and empties the barrel" (time-out).
+Dat is een bestaande wankele test van de Hunger Games-bots (dezelfde familie faalde ook in de CI van de docs-commit
+vóór 1.50.0) en raakt niets van deze versie; in de andere drie runs slaagde hij.
+
 ## Versie 1.50.0 – Chat per wereld
 
 **Vraag.** De chat van BattleHub gescheiden houden van de andere wereld. (Op de server draaien TAB en Styled Chat;
@@ -2331,6 +2338,10 @@ past alleen de opmaak aan en leidt in deze methode alleen het loggen om, dus bei
 **Testen.** Zelftest (`HubWorldTests.chat`): A in de lobby en S in de normale wereld zeggen allebei iets met `/me`;
 ieder leest alleen wat in zijn eigen wereld gezegd is. Met `hub.separateChat` uit leest S wat A zegt. `TestConnection`
 houdt daarvoor de chatpakketten bij die de client krijgt (ondertekend en niet-ondertekend).
+
+**CI van `cedc7e4`:** 979 geslaagd, 1 gefaald. De chattest slaagde; wat faalde was "real hunger games: after five
+seconds of sneaking the seal breaks", een wankele Hunger Games-test die niets met de chat te maken heeft (in de vier
+runs daarna slaagde hij).
 
 ## Versie 1.49.0 – De nacht boven het plein, eigen geluiden, ontwijken, dezelfde kit, minder verklappen
 
