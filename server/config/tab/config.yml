@@ -1,0 +1,131 @@
+# =====================================================================
+#  TAB 6.2.1 - Extreme Dimensions server (Fabric, 1 server, geen proxy)
+#  Plek op de server: config/tab/config.yml
+#  Na een wijziging: /tab reload
+#
+#  Laat de opties die hier staan staan, ook als ze uit staan: ontbreekt er
+#  een, dan vult TAB hem zelf aan en schrijft het hele bestand opnieuw weg,
+#  waarbij al het commentaar verdwijnt.
+# =====================================================================
+
+# Tekst boven en onder de spelerslijst
+# https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Header-&-Footer
+header-footer:
+  enabled: true
+  designs:
+    default:
+      header:
+        - ""
+        - "<#FF5A36>&lEXTREME DIMENSIONS</#B565F2>"
+        - "&7&oElk portaal is een wond."
+        - ""
+      footer:
+        - ""
+        - "&7Dimensie: %condition:dimensie%"
+        - "&7Online: &f%online%   &8|   &7Ping: &f%ping% ms"
+        - ""
+
+# Namen in de spelerslijst (prefix/suffix uit groups.yml, bv. van LuckPerms)
+# https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Tablist-name-formatting
+tablist-name-formatting:
+  enabled: true
+  disable-condition: ""
+
+# Nametags boven spelers en de volgorde in de spelerslijst
+# https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Nametags
+scoreboard-teams:
+  enabled: true
+  enable-collision: true
+  invisible-nametags: false
+  can-see-friendly-invisibles: false
+  disable-condition: ""
+  # Alfabetisch. Met LuckPerms kun je rangen bovenaan zetten door deze regel
+  # erboven te zetten: - "GROUPS:owner,admin,mod,default"
+  # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Sorting-players-in-tablist
+  sorting-types:
+    - "PLACEHOLDER_A_TO_Z:%player%"
+  case-sensitive-sorting: false
+
+# Uit voor een rustige lijst. Zet enabled op true om de levens van
+# iedereen als hartjes naast hun naam te zien (handig bij co-op).
+# https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Playerlist-Objective
+playerlist-objective:
+  enabled: false
+  value: "%health%"
+  fancy-value: "&c%health%"
+  title: "Levens" # alleen zichtbaar op Bedrock
+  render-type: HEARTS
+  disable-condition: ""
+
+# Uit: de mod gebruikt de bossbar zelf voor de Tether-timer.
+bossbar:
+  enabled: false
+
+# Overige onderdelen die we niet gebruiken
+belowname-objective:
+  enabled: false
+scoreboard:
+  enabled: false
+layout:
+  enabled: false
+prevent-spectator-effect:
+  enabled: false
+ping-spoof:
+  enabled: false
+per-world-playerlist:
+  enabled: false # werkt niet op Fabric
+global-playerlist:
+  enabled: false # alleen voor proxy-netwerken
+  update-latency: false
+proxy-support:
+  enabled: false # alleen voor proxy-netwerken
+mysql:
+  enabled: false
+
+# Naam van de dimensie waar de speler is, voor de footer.
+# TAB noemt werelden op Fabric naar de level-name uit server.properties
+# plus een achtervoegsel, bv. world, world_nether, world_the_end, world_the_seam.
+# https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Conditional-placeholders
+conditions:
+  dimensie:
+    conditions:
+      - "%world%-|_nether"
+    true: "&cNether"
+    false: "%condition:dimensie-end%"
+  dimensie-end:
+    conditions:
+      - "%world%-|_the_end"
+    true: "&dEnd"
+    false: "%condition:dimensie-seam%"
+  dimensie-seam:
+    conditions:
+      - "%world%-|_the_seam"
+    true: "&bDe Seam"
+    false: "&aBovenwereld"
+
+placeholders:
+  date-format: "dd-MM-yyyy"
+  time-format: "HH:mm"
+  time-offset: 0
+  register-tab-expansion: false
+  locale: nl-NL
+
+placeholder-refresh-intervals:
+  default-refresh-interval: 500
+
+components:
+  minimessage-support: true
+  disable-shadow-for-heads: true
+
+# Groepen komen uit LuckPerms als dat geinstalleerd is, anders hebben spelers geen groep.
+assign-groups-by-permissions: false
+primary-group-finding-list:
+  - default
+permission-refresh-interval: 1000
+
+compensate-for-packetevents-bug: false
+use-online-uuid-in-tablist: true
+debug: false
+
+# Interne waarde, niet aanpassen
+config-version: 7
