@@ -17,7 +17,7 @@ header-footer:
       display-condition: battlehub
       header: # \u2694 is the crossed swords symbol
         - ""
-        - "&6\u2694 <#FFC933>&lBATTLEHUB</#FF3D3D> &6\u2694"
+        - "&6\u2694 %animation:battlehub-title% &6\u2694"
         - "&7Pick a game. Play to win."
         - ""
       footer:
@@ -27,7 +27,7 @@ header-footer:
     survival:
       header:
         - ""
-        - "<#FF5A36>&lEXTREME DIMENSIONS</#B565F2>"
+        - "%animation:title%"
         - ""
       footer:
         - ""
@@ -136,7 +136,7 @@ conditions:
       - "%condition:battlehub%=false"
       - "%player%!|-Bot_"
     type: AND
-  # Dimension name for the survival footer
+  # Dimension name for the survival footer, in the same color as the names
   dimension:
     conditions:
       - "%world%-|_nether"
@@ -151,7 +151,28 @@ conditions:
     conditions:
       - "%world%-|_the_seam"
     true: "&bThe Seam"
-    false: "&aOverworld"
+    false: "&fOverworld"
+  # Name color in the player list, used in groups.yml
+  name-color:
+    conditions:
+      - "%gamemode%=3"
+    true: "&7&o"
+    false: "%condition:name-color-nether%"
+  name-color-nether:
+    conditions:
+      - "%world%-|_nether"
+    true: "&c"
+    false: "%condition:name-color-end%"
+  name-color-end:
+    conditions:
+      - "%world%-|_the_end"
+    true: "&d"
+    false: "%condition:name-color-seam%"
+  name-color-seam:
+    conditions:
+      - "%world%-|_the_seam"
+    true: "&b"
+    false: "&f"
 
 placeholders:
   date-format: "dd.MM.yyyy"
