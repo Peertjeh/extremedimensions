@@ -2274,7 +2274,7 @@ BattleHub-titels die je in Extreme Dimensions verdient; (E) meldingen in Discord
 **C – Uitnodigingen: weer weg.** Gebouwd in `b6280ce` (een regel met **[Join]** voor spelers in de normale wereld als
 iemand in een partylobby wacht of het aftellen begint), maar de gebruiker wilde ze toch niet. Die commit is
 teruggedraaid: `hub.Invites`, de haken in `Parties.tick`, `hub.invites*`, de lang-teksten en de zelftest. Het weekly
-tournament nodigt nog steeds iedereen uit met zijn aanmeldknop, zoals vóór 1.51.
+tournament nodigt nog steeds iedereen uit met zijn aanmeldknop, zoals vóór 1.51. CI van `e27d170`: 994 geslaagd, 0 gefaald.
 
 **A – Placeholders.** `compat.TabPlaceholders` rekent per speler en voor de hub de waarden uit op de serverthread (elke
 `integrations.placeholderRefreshTicks`, standaard 20) en bewaart ze; `compat.PlaceholderApiHook` biedt ze aan
