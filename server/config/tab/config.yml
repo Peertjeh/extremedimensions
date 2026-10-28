@@ -1,37 +1,80 @@
 # =====================================================================
-#  TAB 6.2.1 - Extreme Dimensions server (Fabric, 1 server, geen proxy)
-#  Plek op de server: config/tab/config.yml
-#  Na een wijziging: /tab reload
+#  TAB 6.2.1 - Extreme Dimensions server (Fabric, single server, no proxy)
+#  Location on the server: config/tab/config.yml
+#  After a change: /tab reload
 #
-#  Laat de opties die hier staan staan, ook als ze uit staan: ontbreekt er
-#  een, dan vult TAB hem zelf aan en schrijft het hele bestand opnieuw weg,
-#  waarbij al het commentaar verdwijnt.
+#  Keep every option below, even the disabled ones: if one is missing,
+#  TAB adds it back and rewrites the whole file, which strips all comments.
 # =====================================================================
 
-# Tekst boven en onder de spelerslijst
+# Text above and below the player list. The first design whose
+# display-condition matches is shown, so battlehub has to stay on top.
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Header-&-Footer
 header-footer:
   enabled: true
   designs:
-    default:
+    battlehub:
+      display-condition: battlehub
       header:
         - ""
-        - "<#FF5A36>&lEXTREME DIMENSIONS</#B565F2>"
-        - "&7&oElk portaal is een wond."
+        - "<#FFC933>&lBATTLEHUB</#FF3D3D>"
+        - "&7Minigames"
         - ""
       footer:
         - ""
-        - "&7Dimensie: %condition:dimensie%"
+        - "&7In Battlehub: &f%worldonline%   &8|   &7Ping: &f%ping% ms"
+        - ""
+    survival:
+      header:
+        - ""
+        - "<#FF5A36>&lEXTREME DIMENSIONS</#B565F2>"
+        - "&7&oEvery portal is a wound."
+        - ""
+      footer:
+        - ""
+        - "&7Dimension: %condition:dimension%"
         - "&7Online: &f%online%   &8|   &7Ping: &f%ping% ms"
         - ""
 
-# Namen in de spelerslijst (prefix/suffix uit groups.yml, bv. van LuckPerms)
+# Separate player lists: players in battlehub only see battlehub players,
+# everyone else only sees the survival players (all other dimensions).
+# On Fabric this only works through layout, which always shows a fixed
+# number of rows. Raise slot-count (and the slots range with it) if more
+# players are online at once; extra players show as "... and X more".
+# https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Layout
+layout:
+  enabled: true
+  direction: COLUMNS
+  default-skin: mineskin:37e93c8e12cd426cb28fce31969e0674
+  enable-remaining-players-text: true
+  remaining-players-text: "&7... and %s more"
+  empty-slot-ping-value: 1000
+  layouts:
+    battlehub:
+      display-condition: battlehub
+      slot-count: 10
+      fixed-slots: []
+      groups:
+        players:
+          display-condition: battlehub
+          slots:
+            - "1-10"
+    survival:
+      slot-count: 10
+      fixed-slots: []
+      groups:
+        players:
+          display-condition: survival
+          slots:
+            - "1-10"
+
+# Player names in the list (prefix/suffix from groups.yml, e.g. from LuckPerms)
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Tablist-name-formatting
 tablist-name-formatting:
   enabled: true
   disable-condition: ""
 
-# Nametags boven spelers en de volgorde in de spelerslijst
+# Nametags above players and the order in the list
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Nametags
 scoreboard-teams:
   enabled: true
@@ -39,76 +82,73 @@ scoreboard-teams:
   invisible-nametags: false
   can-see-friendly-invisibles: false
   disable-condition: ""
-  # Alfabetisch. Met LuckPerms kun je rangen bovenaan zetten door deze regel
-  # erboven te zetten: - "GROUPS:owner,admin,mod,default"
+  # Alphabetical. With LuckPerms you can put ranks on top by adding this
+  # line above it: - "GROUPS:owner,admin,mod,default"
   # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Sorting-players-in-tablist
   sorting-types:
     - "PLACEHOLDER_A_TO_Z:%player%"
   case-sensitive-sorting: false
 
-# Uit voor een rustige lijst. Zet enabled op true om de levens van
-# iedereen als hartjes naast hun naam te zien (handig bij co-op).
-# https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Playerlist-Objective
-playerlist-objective:
-  enabled: false
-  value: "%health%"
-  fancy-value: "&c%health%"
-  title: "Levens" # alleen zichtbaar op Bedrock
-  render-type: HEARTS
-  disable-condition: ""
-
-# Uit: de mod gebruikt de bossbar zelf voor de Tether-timer.
+# Off: the mod uses the boss bar itself for the Tether timer.
 bossbar:
   enabled: false
 
-# Overige onderdelen die we niet gebruiken
+# Not used. Playerlist objective can't be combined with layout anyway.
+playerlist-objective:
+  enabled: false
 belowname-objective:
   enabled: false
 scoreboard:
-  enabled: false
-layout:
   enabled: false
 prevent-spectator-effect:
   enabled: false
 ping-spoof:
   enabled: false
 per-world-playerlist:
-  enabled: false # werkt niet op Fabric
+  enabled: false # does not work on Fabric, layout above does this instead
 global-playerlist:
-  enabled: false # alleen voor proxy-netwerken
+  enabled: false # proxy networks only
   update-latency: false
 proxy-support:
-  enabled: false # alleen voor proxy-netwerken
+  enabled: false # proxy networks only
 mysql:
   enabled: false
 
-# Naam van de dimensie waar de speler is, voor de footer.
-# TAB noemt werelden op Fabric naar de level-name uit server.properties
-# plus een achtervoegsel, bv. world, world_nether, world_the_end, world_the_seam.
+# On Fabric, TAB names worlds after level-name in server.properties plus a
+# suffix, e.g. world, world_nether, world_the_end, world_the_seam. A world
+# counts as battlehub when its name contains "battlehub". Check a player's
+# world name with: /tab parse <player> %world%
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Conditional-placeholders
 conditions:
-  dimensie:
+  battlehub:
+    conditions:
+      - "%world%<-battlehub"
+  survival:
+    conditions:
+      - "%world%!<-battlehub"
+  # Dimension name for the survival footer
+  dimension:
     conditions:
       - "%world%-|_nether"
     true: "&cNether"
-    false: "%condition:dimensie-end%"
-  dimensie-end:
+    false: "%condition:dimension-end%"
+  dimension-end:
     conditions:
       - "%world%-|_the_end"
-    true: "&dEnd"
-    false: "%condition:dimensie-seam%"
-  dimensie-seam:
+    true: "&dThe End"
+    false: "%condition:dimension-seam%"
+  dimension-seam:
     conditions:
       - "%world%-|_the_seam"
-    true: "&bDe Seam"
-    false: "&aBovenwereld"
+    true: "&bThe Seam"
+    false: "&aOverworld"
 
 placeholders:
-  date-format: "dd-MM-yyyy"
+  date-format: "dd.MM.yyyy"
   time-format: "HH:mm"
   time-offset: 0
   register-tab-expansion: false
-  locale: nl-NL
+  locale: en-US
 
 placeholder-refresh-intervals:
   default-refresh-interval: 500
@@ -117,7 +157,7 @@ components:
   minimessage-support: true
   disable-shadow-for-heads: true
 
-# Groepen komen uit LuckPerms als dat geinstalleerd is, anders hebben spelers geen groep.
+# Groups come from LuckPerms if it is installed, otherwise players have no group.
 assign-groups-by-permissions: false
 primary-group-finding-list:
   - default
@@ -127,5 +167,5 @@ compensate-for-packetevents-bug: false
 use-online-uuid-in-tablist: true
 debug: false
 
-# Interne waarde, niet aanpassen
+# Internal value, do not change
 config-version: 7
