@@ -143,6 +143,13 @@ public final class HubConfig {
 		 * minute through Text Placeholder API.
 		 */
 		public boolean placeholderTitles = true;
+		/**
+		 * A Discord webhook URL (channel settings > Integrations > Webhooks): BattleHub posts the weekly champion, tournaments
+		 * won against people, the clan war and long win streaks there. Empty: off.
+		 */
+		public String discordWebhook = "";
+		/** The shortest win streak posted to Discord (the milestones in {@code streaks.milestones} that reach it). */
+		public int discordMinStreak = 10;
 	}
 
 	public static final class Protection {

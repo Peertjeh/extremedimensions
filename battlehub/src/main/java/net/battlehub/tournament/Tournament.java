@@ -417,6 +417,10 @@ public final class Tournament {
 				Cosmetics.winEffect("fireworks", p.level(), p.position(), 0);
 			}
 		}
+		if (prizes && !weekly) {
+			// the weekly one is posted with its own words by WeeklyTournament
+			net.battlehub.compat.Discord.post("discord.tournament_won", champion.memberNames(), Lang.plain(Icons.modeKey(kit)));
+		}
 		if (weekly) {
 			WeeklyTournament.finished(this, new ArrayList<>(champion.present),
 					finalist == null ? List.of() : new ArrayList<>(finalist.present), champion.memberNames(), prizes);

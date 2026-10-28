@@ -23,6 +23,10 @@
   title stays, like a bought one. Eight such titles come with it for Extreme Dimensions: Tethered, Wound Walker,
   Scarred, Cursed, Unweaver, Rift Gold, Mender and Severed (added to existing `titles.json` files too). The titles menu
   only shows them when that mod is installed, with what to do for each (`hint`).
+* **Discord.** Paste a Discord webhook URL into `integrations.discordWebhook` and BattleHub posts the big moments to
+  that channel: the weekly tournament's champion, a tournament won against people, the week's clan war and win
+  streaks from `integrations.discordMinStreak` (10) on. In the server's language, names shown as typed, nobody
+  pinged; sent off the server thread, and a webhook that keeps failing gives one warning in the log.
 
 ## 1.50.0
 

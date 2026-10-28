@@ -618,6 +618,11 @@ tournaments) and `server.json` (who is online, matches per mode, the mode of the
 shows them is written once; change it as you like. With `serveHttp` on, BattleHub serves the folder itself
 on its own port, readable by a website on another address (CORS). `/battlehub export` writes them right away.
 
+### Discord
+Paste a webhook URL (in Discord: channel settings > Integrations > Webhooks) into `integrations.discordWebhook` and
+BattleHub posts there when someone wins the weekly tournament, a tournament against people or the week's clan war,
+and when someone reaches a win streak of 10 or more (1.51).
+
 ### TAB, Styled Chat and other mods: placeholders
 With [Text Placeholder API](https://github.com/Patbox/TextPlaceholderAPI) (`placeholder-api`) on the server, BattleHub
 offers placeholders that **TAB**, **Styled Chat** and anything else that reads that API can show (1.51). Values are
@@ -837,8 +842,10 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
     heart; vanilla only pushes). Spleef keeps the push only. `nameTagRange` (1.49, default 6): how close an
     enemy's name tag shows in a match, with nothing in between; 0 = vanilla.
   * `integrations` (1.51): `placeholders` (offer the placeholders to placeholder-api, default on),
-    `placeholderRefreshTicks` (how often their values are worked out, default 20) and `placeholderTitles` (titles
-    earned in other mods, checked once a minute, default on)
+    `placeholderRefreshTicks` (how often their values are worked out, default 20), `placeholderTitles` (titles
+    earned in other mods, checked once a minute, default on), `discordWebhook` (a Discord webhook URL: the weekly
+    champion, tournaments won against people, the clan war and long win streaks are posted there; empty: off) and
+    `discordMinStreak` (the shortest win streak posted, default 10)
   * `timings`: countdowns (also between best-of-3 rounds), end delay, play-again time, challenge expiry,
     duel time limit, respawn delay
   * `rewards`: coins and XP for duels, ranked and party games (win, participation, per kill)

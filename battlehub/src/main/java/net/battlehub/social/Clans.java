@@ -316,6 +316,7 @@ public final class Clans {
 				PlayerStore.save(id);
 			}
 			Msg.broadcast(server, "clan.war_won", best.name, best.tag, best.weeklyPoints, cfg().warReward);
+			net.battlehub.compat.Discord.post("discord.clan_war_won", best.name, best.tag, best.weeklyPoints);
 		}
 		for (Clan c : CLANS.values()) c.weeklyPoints = 0;
 		save();

@@ -2307,6 +2307,15 @@ ook in bestaande bestanden): Tethered (eerste expeditie), Wound Walker (25), Sca
 tegelijk), Unweaver, Rift Gold (goud in de Rift Trial), Mender en Severed (het einde van de wereld). Zelftest: met
 BattleHubs eigen placeholders in de rol van een andere mod wordt een titel verdiend en een andere niet.
 
+**E – Discord.** `compat.Discord` post via een webhook (`integrations.discordWebhook`, leeg = uit) met
+`java.net.http.HttpClient`, asynchroon; mislukt het, dan één waarschuwing in het log tot het weer lukt. Tekst uit de
+lang-bestanden (servertaal), namen met Discord-opmaak ontsnapt (`Bot_Nova` niet cursief), `allowed_mentions` leeg
+zodat een @everyone in een naam niemand pingt, ingekort onder de 2000 tekens. Geplaatst: de weekly-kampioen
+(`WeeklyTournament.finished`), een toernooi gewonnen tegen mensen (`Tournament.finish`, niet het weekly), de clan war
+(`Clans`) en winstreaks vanaf `integrations.discordMinStreak` (10) van mensen (`Results`). Unit-test `DiscordTest`
+(JSON, ontsnappen); zelftest `DiscordTests` met een webhook op de eigen machine (JDK `HttpServer`): het bericht komt aan
+zoals Discord het wil, en een webhook die geen URL is breekt niets.
+
 ## Versie 1.50.0 – Chat per wereld
 
 **Vraag.** De chat van BattleHub gescheiden houden van de andere wereld. (Op de server draaien TAB en Styled Chat;

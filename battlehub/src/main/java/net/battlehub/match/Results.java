@@ -107,6 +107,9 @@ public final class Results {
 			boolean milestone = streak != null && o == Outcome.WIN && StatsRecorder.isMilestone(streak.overallStreak(), cfg.streaks.milestones);
 			if (milestone) {
 				Msg.broadcast(m.server, "streak.milestone", m.name(id), streak.overallStreak());
+				if (!net.battlehub.bot.Bots.isBot(id) && streak.overallStreak() >= cfg.integrations.discordMinStreak) {
+					net.battlehub.compat.Discord.post("discord.streak", m.name(id), streak.overallStreak());
+				}
 			}
 			if (p == null || m.leftPlayers().contains(id)) {
 				continue;

@@ -265,6 +265,7 @@ public final class WeeklyTournament {
 				if (!Bots.isBot(p)) Msg.send(p, "weekly.champion", championNames);
 			}
 		}
+		net.battlehub.compat.Discord.post("discord.weekly_champion", championNames);
 	}
 
 	public static List<Result> history() {
