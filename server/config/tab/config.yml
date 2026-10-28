@@ -26,7 +26,9 @@ header-footer:
         - ""
       footer:
         - ""
-        - "&7Players here: &f%worldonline%   &8|   &7Ping: &f%ping% ms"
+        - "&7Level &f%battlehub:level%   &8|   &7ELO &f%battlehub:elo% %battlehub:tier%   &8|   &6%battlehub:coins% &7coins"
+        - "&7In BattleHub: &f%battlehub:players%   &8|   &7In a match: &f%battlehub:in_matches%   &8|   &7Ping: &f%ping% ms"
+        - "%condition:bh-today%%condition:bh-both%%condition:bh-weekly%"
         - ""
     survival:
       header:
@@ -172,6 +174,48 @@ conditions:
       - "%condition:battlehub%=false"
     true: " %extremedimensions:badge%"
     false: ""
+  # In BattleHub a dot before the name (tabprefix in groups.yml) says what the
+  # player is doing: green in the lobby, yellow in a queue, red in a match,
+  # gray watching. \u25cf is the dot.
+  tab-prefix:
+    conditions:
+      - "%condition:battlehub%=true"
+    true: "%condition:activity-dot%"
+    false: ""
+  activity-dot:
+    conditions:
+      - "%battlehub:activity%=match"
+    true: "&c\u25cf "
+    false: "%condition:activity-dot-queue%"
+  activity-dot-queue:
+    conditions:
+      - "%battlehub:activity%=queue"
+    true: "&e\u25cf "
+    false: "%condition:activity-dot-watching%"
+  activity-dot-watching:
+    conditions:
+      - "%battlehub:activity%=spectating"
+    true: "&7\u25cf "
+    false: "&a\u25cf "
+  # The BattleHub footer's last line: today's mode and the next weekly
+  # tournament, each only when BattleHub has one.
+  bh-today:
+    conditions:
+      - "%battlehub:mode_of_the_day%!="
+    true: "&7Today: &e%battlehub:mode_of_the_day%"
+    false: ""
+  bh-weekly:
+    conditions:
+      - "%battlehub:weekly%!="
+    true: "&7Weekly tournament: &e%battlehub:weekly%"
+    false: ""
+  bh-both:
+    conditions:
+      - "%battlehub:mode_of_the_day%!="
+      - "%battlehub:weekly%!="
+    type: AND
+    true: "   &8|   "
+    false: ""
 
 # Colors for the mod's words in the header and footer. The colors of the
 # dimensions match the name colors.
@@ -228,6 +272,15 @@ placeholder-refresh-intervals:
   "%extremedimensions:tapestry%": 1000
   "%extremedimensions:ending%": 1000
   "%player:displayname_visual%": 1000
+  "%battlehub:activity%": 1000
+  "%battlehub:level%": 1000
+  "%battlehub:elo%": 1000
+  "%battlehub:tier%": 1000
+  "%battlehub:coins%": 1000
+  "%battlehub:players%": 1000
+  "%battlehub:in_matches%": 1000
+  "%battlehub:mode_of_the_day%": 1000
+  "%battlehub:weekly%": 1000
 
 components:
   minimessage-support: true

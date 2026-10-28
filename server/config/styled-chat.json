@@ -60,7 +60,7 @@
         ]
       },
       "message_formats": {
-        "chat": "<shadow:#00000000>%player:head%</shadow> <gold>⚔</gold> ${player} <dark_gray>»</dark_gray> ${message}"
+        "chat": "<hover:'<gray>%battlehub:status%\n<gray>Level <white>%battlehub:level%</white>   ELO <white>%battlehub:elo%</white> %battlehub:tier%\n<gray>Wins <white>%battlehub:wins%</white>   Kills <white>%battlehub:kills%</white>   Streak <white>%battlehub:streak%</white>'><shadow:#00000000>%player:head%</shadow> <gold>⚔</gold> ${player}</hover> <dark_gray>»</dark_gray> ${message}"
       }
     }
   ]

@@ -7,9 +7,10 @@
 # The name comes from tab-name in config.yml: colored by dimension in
 # survival (white Overworld, red Nether, purple End, aqua Seam), BattleHub's
 # own name with title and clan in BattleHub, gray in spectator mode.
-# Behind it, in survival, the curse badge from Extreme Dimensions.
+# Behind it, in survival, the curse badge from Extreme Dimensions; before it,
+# in BattleHub, a dot for what the player is doing (tab-prefix in config.yml).
 _DEFAULT_:
-  tabprefix: "%luckperms-prefix%"
+  tabprefix: "%condition:tab-prefix%%luckperms-prefix%"
   customtabname: "%condition:tab-name%"
   tabsuffix: "%condition:badge%%luckperms-suffix%"
 
