@@ -10,6 +10,9 @@
   the next weekly tournament. They are worked out on the server's thread once a second and kept, so TAB, which asks
   from a thread of its own, always reads a finished picture. Without placeholder-api nothing changes. Settings in a new
   `integrations` section; the README has the table.
+* **Talk to the whole server with `!`.** Now that BattleHub and the normal world each have their own chat, a message
+  that starts with `!` reaches everyone anyway, for "come to /hub, Bed Wars starts". `hub.globalChatPrefix` sets the
+  sign (empty: no way around).
 
 ## 1.50.0
 

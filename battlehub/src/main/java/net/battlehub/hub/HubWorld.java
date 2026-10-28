@@ -54,10 +54,13 @@ public final class HubWorld {
 
 	/**
 	 * Whether a chat message reaches a player (1.50, {@code hub.separateChat}): only when both are in BattleHub or both
-	 * are in the normal world. A message without a player behind it (the console, a command block) reaches everyone.
+	 * are in the normal world. A message without a player behind it (the console, a command block) reaches everyone, and
+	 * so does one that starts with {@code hub.globalChatPrefix} (1.51).
 	 */
-	public static boolean hearsChat(ServerPlayer sender, ServerPlayer receiver) {
-		if (sender == null || !ConfigManager.config().hub.separateChat) return true;
+	public static boolean hearsChat(ServerPlayer sender, ServerPlayer receiver, String text) {
+		var hub = ConfigManager.config().hub;
+		if (sender == null || !hub.separateChat) return true;
+		if (!hub.globalChatPrefix.isEmpty() && text.startsWith(hub.globalChatPrefix)) return true;
 		return isBattleHub(sender.level()) == isBattleHub(receiver.level());
 	}
 

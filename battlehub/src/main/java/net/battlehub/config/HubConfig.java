@@ -65,6 +65,8 @@ public final class HubConfig {
 		 * player says in the normal world only players there. false: one chat for the whole server.
 		 */
 		public boolean separateChat = true;
+		/** A chat message that starts with this reaches the whole server anyway (1.51). Empty: no way around. */
+		public String globalChatPrefix = "!";
 	}
 
 	public static final class Lobby {

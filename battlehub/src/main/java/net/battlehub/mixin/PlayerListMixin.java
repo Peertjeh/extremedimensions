@@ -67,14 +67,15 @@ public abstract class PlayerListMixin {
 
 	/**
 	 * Chat stays in its world (1.50): a message is only sent to the players who share the sender's world, BattleHub or
-	 * the normal world ({@link HubWorld#hearsChat}). Chat, /me and /say all pass here; the server log still gets every
-	 * message. Private and team messages do not come through here and reach their players anywhere.
+	 * the normal world, unless it starts with the global prefix ({@link HubWorld#hearsChat}). Chat, /me and /say all pass
+	 * here; the server log still gets every message. Private and team messages do not come through here and reach their
+	 * players anywhere.
 	 */
 	@Redirect(method = "broadcastChatMessage(Lnet/minecraft/network/chat/PlayerChatMessage;Ljava/util/function/Predicate;Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/network/chat/ChatType$Bound;)V",
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerPlayer;sendChatMessage(Lnet/minecraft/network/chat/OutgoingChatMessage;ZLnet/minecraft/network/chat/ChatType$Bound;)V"))
 	private void battlehub$chatInItsWorld(ServerPlayer receiver, OutgoingChatMessage message, boolean filtered, ChatType.Bound type,
 			PlayerChatMessage original, Predicate<ServerPlayer> filter, ServerPlayer sender) {
-		if (HubWorld.hearsChat(sender, receiver)) {
+		if (HubWorld.hearsChat(sender, receiver, original.signedContent())) {
 			receiver.sendChatMessage(message, filtered, type);
 		}
 	}

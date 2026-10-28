@@ -224,7 +224,8 @@ final class HubWorldTests {
 
 	/**
 	 * Chat stays in its world (1.50): A in the lobby and S in the normal world each say something, and only the player
-	 * in the same world reads it. With {@code hub.separateChat} off there is one chat for everyone again.
+	 * in the same world reads it. With {@code hub.separateChat} off there is one chat for everyone again, and a message
+	 * starting with {@code hub.globalChatPrefix} reaches everyone anyway (1.51).
 	 */
 	private static void chat(MinecraftServer server, Script s) {
 		String tag = "chat";
@@ -245,6 +246,8 @@ final class HubWorldTests {
 		s.waitFor(tag + ": S in the normal world reads it too", 20, () -> p(S).clientChatHas("chat-for-everyone")
 				&& p(A).clientChatHas("chat-for-everyone"));
 		s.run(tag + ": hub.separateChat back on", () -> ConfigManager.config().hub.separateChat = true);
+		s.run(tag + ": S starts a message with the global prefix", () -> say(server, p(S), "!chat-across-worlds"));
+		s.waitFor(tag + ": A in the lobby reads it (1.51)", 20, () -> p(A).clientChatHas("!chat-across-worlds"));
 	}
 
 	/** A player says something in chat, as /me (a command run for the player goes out as their chat message). */

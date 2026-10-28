@@ -2284,6 +2284,11 @@ match (zonder bots), de mode van de dag en de tijd tot het weekly tournament. Te
 uit; de tijdnotatie; en teruglezen via placeholder-api zoals TAB doet. De CI-server haalt daarvoor placeholder-api van
 Modrinth (`server-test.sh`); lukt dat niet, dan slaat de test alleen het teruglezen over, met een waarschuwing.
 
+**B – Globale chat.** `HubWorld.hearsChat` krijgt de tekst van het bericht mee (`PlayerChatMessage.signedContent()`,
+in `PlayerListMixin`): begint die met `hub.globalChatPrefix` (standaard `!`), dan krijgt iedereen hem. Het teken blijft
+in het bericht staan; weghalen kan niet zonder de handtekening van het bericht te breken, en het laat ook zien dat het
+voor iedereen was. Zelftest: S in de normale wereld zegt "!…", A in de lobby leest het.
+
 ## Versie 1.50.0 – Chat per wereld
 
 **Vraag.** De chat van BattleHub gescheiden houden van de andere wereld. (Op de server draaien TAB en Styled Chat;
