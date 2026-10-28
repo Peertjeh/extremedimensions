@@ -15,10 +15,10 @@ header-footer:
   designs:
     battlehub:
       display-condition: battlehub
-      header:
+      header: # \u2694 is the crossed swords symbol
         - ""
-        - "<#FFC933>&lBATTLEHUB</#FF3D3D>"
-        - "&7Minigames"
+        - "&6\u2694 <#FFC933>&lBATTLEHUB</#FF3D3D> &6\u2694"
+        - "&7Pick a game. Play to win."
         - ""
       footer:
         - ""
@@ -28,7 +28,6 @@ header-footer:
       header:
         - ""
         - "<#FF5A36>&lEXTREME DIMENSIONS</#B565F2>"
-        - "&7&oEvery portal is a wound."
         - ""
       footer:
         - ""
@@ -38,6 +37,7 @@ header-footer:
 
 # Separate player lists: players in battlehub only see battlehub players,
 # everyone else only sees the survival players (all other dimensions).
+# Players whose name starts with Bot_ are left out of both lists.
 # On Fabric this only works through layout, which always shows a fixed
 # number of rows. Raise slot-count (and the slots range with it) if more
 # players are online at once; extra players show as "... and X more".
@@ -56,7 +56,7 @@ layout:
       fixed-slots: []
       groups:
         players:
-          display-condition: battlehub
+          display-condition: battlehub-list
           slots:
             - "1-10"
     survival:
@@ -64,7 +64,7 @@ layout:
       fixed-slots: []
       groups:
         players:
-          display-condition: survival
+          display-condition: survival-list
           slots:
             - "1-10"
 
@@ -114,18 +114,28 @@ proxy-support:
 mysql:
   enabled: false
 
-# On Fabric, TAB names worlds after level-name in server.properties plus a
-# suffix, e.g. world, world_nether, world_the_end, world_the_seam. A world
-# counts as battlehub when its name contains "battlehub". Check a player's
-# world name with: /tab parse <player> %world%
+# On Fabric, TAB names a world after level-name in server.properties plus
+# the dimension's name without its namespace: world, world_nether,
+# world_the_end, world_the_seam. So battlehub:hub becomes world_hub and
+# battlehub becomes world_battlehub; the battlehub condition matches both.
+# Check a player's world name with: /tab parse <player> %world%
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Conditional-placeholders
 conditions:
   battlehub:
     conditions:
       - "%world%<-battlehub"
-  survival:
+      - "%world%-|_hub"
+    type: OR
+  battlehub-list:
     conditions:
-      - "%world%!<-battlehub"
+      - "%condition:battlehub%=true"
+      - "%player%!|-Bot_"
+    type: AND
+  survival-list:
+    conditions:
+      - "%condition:battlehub%=false"
+      - "%player%!|-Bot_"
+    type: AND
   # Dimension name for the survival footer
   dimension:
     conditions:
