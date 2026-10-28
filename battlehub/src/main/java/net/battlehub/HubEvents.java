@@ -76,6 +76,7 @@ public final class HubEvents {
 			net.battlehub.social.Clans.clear();
 			net.battlehub.games.Visibility.clear();
 			net.battlehub.match.NameTags.clear();
+			net.battlehub.compat.TabPlaceholders.clear();
 			net.battlehub.games.hunger.Locator.clear();
 			Sessions.clear();
 			net.battlehub.hub.HubBoards.clear();
@@ -212,6 +213,7 @@ public final class HubEvents {
 		net.battlehub.fx.ResourcePack.start(server);
 		net.battlehub.arena.CustomMaps.load(server);
 		net.battlehub.tournament.WeeklyTournament.load(server);
+		net.battlehub.compat.TabPlaceholders.offer();
 		if (ConfigManager.config().game(net.battlehub.core.GameMode.HUNGER_GAMES).enabled) {
 			// This week's Hunger Games city, ready before anyone queues (generating takes a second or two)
 			net.battlehub.util.Tasks.later(200, net.battlehub.hub.HungerMaps::warm);
@@ -256,6 +258,7 @@ public final class HubEvents {
 		net.battlehub.fx.Music.tick(server);
 		net.battlehub.lobby.DoubleJump.tick(server);
 		net.battlehub.export.StatsExport.tick(server);
+		net.battlehub.compat.TabPlaceholders.tick(server, tick);
 		if (tick % 10 == 0) {
 			net.battlehub.tournament.WeeklyTournament.tick(server);
 		}

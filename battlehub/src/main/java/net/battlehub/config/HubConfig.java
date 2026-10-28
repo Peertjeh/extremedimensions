@@ -45,6 +45,7 @@ public final class HubConfig {
 	public WeeklyTournament weekly = new WeeklyTournament();
 	public Export export = new Export();
 	public Combat combat = new Combat();
+	public Integrations integrations = new Integrations();
 	public Map<String, Game> games = defaultGames();
 
 	/** BattleHub's own world. Every other dimension is normal gameplay that BattleHub leaves alone. */
@@ -115,6 +116,17 @@ public final class HubConfig {
 		 * shows it up to 64 blocks away, through walls). Teammates keep theirs. 0: vanilla.
 		 */
 		public double nameTagRange = 6.0;
+	}
+
+	/** Other mods and services BattleHub works with (1.51). */
+	public static final class Integrations {
+		/**
+		 * Offer {@code %battlehub:<name>%} placeholders to Text Placeholder API (the mod placeholder-api), which TAB and
+		 * Styled Chat read on Fabric. Without placeholder-api this does nothing.
+		 */
+		public boolean placeholders = true;
+		/** How often (ticks) the placeholders' values are worked out anew. */
+		public int placeholderRefreshTicks = 20;
 	}
 
 	public static final class Protection {

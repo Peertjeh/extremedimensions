@@ -2264,6 +2264,26 @@ de simulatie, en het gat tussen intermediate en master klopt met het spel) en da
 staat. Hoe andere spelers over de niveaus verdeeld zijn, zegt een volgende export van meer spelers. De mace-schaal rust op
 vier gevechten.
 
+## Versie 1.51.0 – Placeholders, globale chat, uitnodigingen, titels uit Extreme Dimensions, Discord
+
+**Vraag.** Na 1.50 ("nog meer ideeën?") koos de gebruiker alles: (A) placeholders van BattleHub voor TAB en Styled
+Chat, zoals Extreme Dimensions 3.5.0 ze heeft; (B) toch de hele server bereiken met een `!` voor je bericht nu de chats
+gescheiden zijn; (C) spelers in de normale wereld uitnodigen als er een game begint of het weekly tournament opent; (D)
+BattleHub-titels die je in Extreme Dimensions verdient; (E) meldingen in Discord.
+
+**A – Placeholders.** `compat.TabPlaceholders` rekent per speler en voor de hub de waarden uit op de serverthread (elke
+`integrations.placeholderRefreshTicks`, standaard 20) en bewaart ze; `compat.PlaceholderApiHook` biedt ze aan
+placeholder-api aan als `%battlehub:<naam>%` en kan ook placeholders van andere mods teruglezen. placeholder-api is
+optioneel: net als Extreme Dimensions compileert BattleHub tegen stand-ins (`eu.pb4.placeholders.api`) die de jar
+weglaat (CI controleert dat), en alleen `PlaceholderApiHook` raakt de API aan, pas als de mod geladen is. Per speler:
+level, prestige, sterren, coins, beste ELO en tier, wins, kills, streak, clan, titel, `activity` (vaste woorden voor
+voorwaarden: lobby, queue, match, spectating, away) en `status` in woorden. Voor de hub: mensen in BattleHub en in een
+match (zonder bots), de mode van de dag en de tijd tot het weekly tournament. Teksten in de servertaal.
+
+**Testen A.** Zelftest `PlaceholderTests`: A in de lobby, S buiten; A in de wachtrij; mode van de dag en weekly aan en
+uit; de tijdnotatie; en teruglezen via placeholder-api zoals TAB doet. De CI-server haalt daarvoor placeholder-api van
+Modrinth (`server-test.sh`); lukt dat niet, dan slaat de test alleen het teruglezen over, met een waarschuwing.
+
 ## Versie 1.50.0 – Chat per wereld
 
 **Vraag.** De chat van BattleHub gescheiden houden van de andere wereld. (Op de server draaien TAB en Styled Chat;

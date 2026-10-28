@@ -615,6 +615,26 @@ tournaments) and `server.json` (who is online, matches per mode, the mode of the
 shows them is written once; change it as you like. With `serveHttp` on, BattleHub serves the folder itself
 on its own port, readable by a website on another address (CORS). `/battlehub export` writes them right away.
 
+### TAB, Styled Chat and other mods: placeholders
+With [Text Placeholder API](https://github.com/Patbox/TextPlaceholderAPI) (`placeholder-api`) on the server, BattleHub
+offers placeholders that **TAB**, **Styled Chat** and anything else that reads that API can show (1.51). Values are
+worked out once a second (`integrations.placeholderRefreshTicks`), in the server's language (`language`).
+
+| Placeholder | Shows |
+| --- | --- |
+| `%battlehub:level%`, `prestige`, `coins` | Level, prestige and coins |
+| `%battlehub:stars%` | Prestige stars in gold; empty without prestige |
+| `%battlehub:elo%`, `%battlehub:tier%` | Best ELO over the duel modes and its tier in the tier colour |
+| `%battlehub:wins%`, `kills`, `streak` | Wins, kills and the current win streak, over all modes |
+| `%battlehub:clan%`, `%battlehub:title%` | Clan tag and the chosen title (in its colours); empty without |
+| `%battlehub:activity%` | `lobby`, `queue`, `match`, `spectating` or `away` (not in BattleHub): for conditions |
+| `%battlehub:status%` | The same in words: Lobby, In queue: Sword PvP, In Bed Wars, Watching Bed Wars; empty outside |
+| `%battlehub:players%`, `in_matches` | People in BattleHub (bots not counted) and how many of them are in a match |
+| `%battlehub:mode_of_the_day%` | Today's featured mode; empty when off |
+| `%battlehub:weekly%` | Time to the next weekly tournament (`2d 4h`, `3h 20m`, `15m`), or that sign-ups are open |
+
+`/tab parse <player> %battlehub:status%` shows what a placeholder gives.
+
 ### Parkour: always unique
 Every race is a newly generated course: **30, 50, 70 or 90 jumps** for **easy, medium, hard or
 extreme**. Courses mix ladders, half-block slab steps, fence posts, slippery ice, 1×1 landings,
@@ -807,6 +827,8 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   * `combat`: `snowballDamage`, the damage of a snowball or egg hitting another player in a match (2 = one
     heart; vanilla only pushes). Spleef keeps the push only. `nameTagRange` (1.49, default 6): how close an
     enemy's name tag shows in a match, with nothing in between; 0 = vanilla.
+  * `integrations` (1.51): `placeholders` (offer the placeholders to placeholder-api, default on) and
+    `placeholderRefreshTicks` (how often their values are worked out, default 20)
   * `timings`: countdowns (also between best-of-3 rounds), end delay, play-again time, challenge expiry,
     duel time limit, respawn delay
   * `rewards`: coins and XP for duels, ranked and party games (win, participation, per kill)

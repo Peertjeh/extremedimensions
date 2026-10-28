@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.51.0
+
+### Added
+* **Placeholders for TAB and Styled Chat.** With Text Placeholder API (`placeholder-api`) on the server, BattleHub
+  offers `%battlehub:<name>%` placeholders: per player the level, prestige and stars, coins, best ELO and its tier,
+  wins, kills, win streak, clan, title, and what they are doing (`activity` for conditions, `status` in words: "In Bed
+  Wars"); for the hub the people in BattleHub and in matches (bots not counted), the mode of the day and the time to
+  the next weekly tournament. They are worked out on the server's thread once a second and kept, so TAB, which asks
+  from a thread of its own, always reads a finished picture. Without placeholder-api nothing changes. Settings in a new
+  `integrations` section; the README has the table.
+
 ## 1.50.0
 
 ### Changed

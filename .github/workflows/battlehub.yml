@@ -48,6 +48,11 @@ jobs:
           cache-read-only: false
       - name: build and test
         run: chmod +x ./gradlew && ./gradlew build --stacktrace
+      # The Text Placeholder API stand-ins are only for compiling: the jar must not ship them
+      - name: check the mod jar
+        run: |
+          jar=$(ls build/libs/*.jar | grep -v sources | head -1)
+          if unzip -l "$jar" | grep -q "eu/pb4/"; then echo "Text Placeholder API stand-ins in $jar"; exit 1; fi
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:

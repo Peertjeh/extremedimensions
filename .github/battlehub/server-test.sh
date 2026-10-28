@@ -11,6 +11,21 @@ INST=$(curl -s https://meta.fabricmc.net/v2/versions/installer | python3 -c "imp
 curl -s -o server.jar "https://meta.fabricmc.net/v2/versions/loader/$MC/$LOADER/$INST/server/jar"
 curl -s -o mods/fabric-api.jar "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/${FAPI/+/%2B}/fabric-api-${FAPI/+/%2B}.jar"
 cp "$JAR" mods/
+# Text Placeholder API, through which TAB and Styled Chat read BattleHub's placeholders: the self-test reads them back
+PAPI_URL=$(curl -s -G "https://api.modrinth.com/v2/project/placeholder-api/version" \
+  --data-urlencode 'loaders=["fabric"]' --data-urlencode "game_versions=[\"$MC\"]" \
+  | python3 -c "import sys,json
+v=json.load(sys.stdin)
+f=[x for x in v[0]['files'] if x.get('primary')] or v[0]['files'] if v else []
+print(f[0]['url'] if f else '')" 2>/dev/null)
+PAPI_FLAG=""
+if [ -n "$PAPI_URL" ] && curl -sf -o mods/placeholder-api.jar "$PAPI_URL"; then
+  PAPI_FLAG="-Dbattlehub.selftest.placeholderapi=true"
+  echo "placeholder-api: $PAPI_URL"
+else
+  rm -f mods/placeholder-api.jar
+  echo "::warning::placeholder-api could not be fetched from Modrinth; the self-test skips reading the placeholders back"
+fi
 echo "eula=true" > eula.txt
 cat > server.properties <<'PROPS'
 online-mode=false
@@ -20,7 +35,7 @@ generator-settings={"layers"\:[{"block"\:"minecraft\:bedrock","height"\:1},{"blo
 sync-chunk-writes=false
 PROPS
 mkfifo in
-(java -Xmx3G -Dbattlehub.selftest=true -jar server.jar nogui < in > out.log 2>&1 &)
+(java -Xmx3G -Dbattlehub.selftest=true $PAPI_FLAG -jar server.jar nogui < in > out.log 2>&1 &)
 exec 3>in
 for i in $(seq 1 240); do grep -q "Done (" out.log && break; grep -q "Exception in server tick loop\|Failed to start the minecraft server" out.log && break; sleep 1; done
 send() { echo "$1" >&3; sleep "${2:-2}"; }

@@ -67,6 +67,10 @@ java {
 	targetCompatibility = JavaVersion.VERSION_25
 }
 
+tasks.named("sourcesJar") {
+	exclude "eu/pb4/**"
+}
+
 test {
 	useJUnitPlatform()
 	testLogging {
@@ -78,6 +82,9 @@ test {
 jar {
 	def projectName = project.name
 	inputs.property "projectName", projectName
+
+	// Compile-time stand-ins for Text Placeholder API's classes: placeholder-api brings the real ones when installed
+	exclude "eu/pb4/**"
 
 	from("LICENSE") {
 		rename { "${it}_$projectName" }
