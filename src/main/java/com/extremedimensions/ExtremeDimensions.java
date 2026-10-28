@@ -195,6 +195,8 @@ public class ExtremeDimensions implements ModInitializer {
 		});
 
 		ServerEvents.register();
+		// Tablist and chat placeholders for TAB and the like, when Text Placeholder API is installed
+		com.extremedimensions.compat.TabPlaceholders.offer();
 		LOGGER.info("Extreme Dimensions initialised");
 	}
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Fetches the newest Fabric builds of Sodium, Iris and Mod Menu for the game version in gradle.properties from
-Modrinth, into the client test's mods folder, for the compatibility job in CI.
+"""Fetches the newest Fabric builds of Sodium, Iris, Mod Menu and Text Placeholder API for the game version in
+gradle.properties from Modrinth, into the client test's mods folder, for the compatibility job in CI.
 
 Usage: fetch.py <mods dir>
 
@@ -14,7 +14,7 @@ import sys
 import urllib.parse
 import urllib.request
 
-MODS = ["sodium", "iris", "modmenu"]
+MODS = ["sodium", "iris", "modmenu", "placeholder-api"]
 
 
 def game_version():

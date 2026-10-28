@@ -101,6 +101,7 @@ public final class ServerEvents {
 		});
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
 			STRAYS.clear();
+			com.extremedimensions.compat.TabPlaceholders.clear();
 			com.extremedimensions.lore.FirstWeaver.clear();
 			com.extremedimensions.tapestry.Tapestry.clear();
 			com.extremedimensions.seam.FirstKnot.clear();
@@ -554,6 +555,7 @@ public final class ServerEvents {
 	}
 
 	private static void work(MinecraftServer s) {
+		com.extremedimensions.compat.TabPlaceholders.tick(s);
 		// (each part timed while the performance tests listen; see TickProfile)
 		long lap = TickProfile.start();
 		com.extremedimensions.lore.FirstWeaver.tick(s);

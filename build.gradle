@@ -55,7 +55,7 @@ java {
 }
 
 tasks.named("sourcesJar") {
-	exclude "com/terraformersmc/**"
+	exclude "com/terraformersmc/**", "eu/pb4/**"
 	// The music and the pictures are no source to read and would double its size: they live in the mod's own jar
 	exclude "**/*.ogg", "**/*.png"
 }
@@ -64,8 +64,8 @@ jar {
 	def projectName = project.name
 	inputs.property "projectName", projectName
 
-	// Compile-time stand-ins for Mod Menu's API: Mod Menu brings the real ones when installed
-	exclude "com/terraformersmc/**"
+	// Compile-time stand-ins for Mod Menu's and Text Placeholder API's: those mods bring the real ones when installed
+	exclude "com/terraformersmc/**", "eu/pb4/**"
 
 	from("LICENSE") {
 		rename { "${it}_$projectName"}
@@ -146,9 +146,9 @@ fabricApi {
 	}
 }
 
-// The compatibility job (CI, -Pcompat): the client test runs with the newest Sodium, Iris and Mod Menu for this game
-// version (fetched into build/compat-mods by tools/compat/fetch.py), ClientCompat alone takes its turn, and the Mod Menu
-// stand-ins are left out of the classes it runs, so the real Mod Menu's API is the one loaded.
+// The compatibility job (CI, -Pcompat): the client test runs with the newest Sodium, Iris, Mod Menu and Text Placeholder
+// API for this game version (fetched into build/compat-mods by tools/compat/fetch.py), ClientCompat alone takes its turn,
+// and the stand-ins are left out of the classes it runs, so the real mods' APIs are the ones loaded.
 if (project.hasProperty("compat")) {
 	def compatMods = layout.buildDirectory.dir("compat-mods").get().asFile
 	loom.runs.matching { it.name == "clientGameTest" }.configureEach {
@@ -159,6 +159,7 @@ if (project.hasProperty("compat")) {
 	tasks.matching { it.name == "runClientGameTest" }.configureEach {
 		doFirst {
 			delete fileTree(sourceSets.client.java.destinationDirectory) { include "com/terraformersmc/**" }
+			delete fileTree(sourceSets.main.java.destinationDirectory) { include "eu/pb4/**" }
 		}
 	}
 }

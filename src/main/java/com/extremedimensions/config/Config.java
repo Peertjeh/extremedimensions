@@ -985,6 +985,16 @@ public final class Config {
 	/** Share of the Tetherite and cords given back when an unweaving fails (0.5 = half, rounded down). */
 	public static double UNWEAVE_REFUND = 0.5;
 
+	// --- Other mods ------------------------------------------------------------------------------
+
+	/**
+	 * Tablist and chat placeholders (%extremedimensions:...%) for TAB and other mods that read Text Placeholder API: 1 =
+	 * offered when placeholder-api is installed, 0 = they stay empty.
+	 */
+	public static int PLACEHOLDERS = 1;
+	/** Ticks between the placeholders being worked out anew (20 = once a second). */
+	public static int PLACEHOLDER_REFRESH_TICKS = 20;
+
 	// --- Technical -------------------------------------------------------------------------------
 
 	/** Milliseconds per tick the Seam may spend building islands (blocks in chunks nobody has loaded wait). */
@@ -1038,7 +1048,7 @@ public final class Config {
 			Map.entry("tetherite_ore_island_chance", "tetherite"), Map.entry("pact_unlock", "pacts"),
 			Map.entry("trial_unlock", "trials"), Map.entry("matriarch_after_keepers", "elders"),
 			Map.entry("coop_revive", "coop"), Map.entry("tribe_enabled", "tribe"), Map.entry("tapestry_respin_silk", "tapestry"),
-			Map.entry("unweaving", "unweaving"),
+			Map.entry("unweaving", "unweaving"), Map.entry("placeholders", "integration"),
 			Map.entry("seam_build_budget_ms", "technical"));
 
 	/** One setting: its key in the file, its section, the field behind it and its default (as text). */

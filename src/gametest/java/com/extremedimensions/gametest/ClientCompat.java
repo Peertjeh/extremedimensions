@@ -12,11 +12,12 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * The mod beside Sodium, Iris and Mod Menu, as most players run it: the compatibility job in CI fetches their newest
+ * The mod beside Sodium, Iris, Mod Menu and Text Placeholder API, as most players run it: the compatibility job in CI fetches their newest
  * builds for this game version (tools/compat/fetch.py) and runs the client test with them, this test alone
  * ({@code -Dextremedimensions.compat=true}; the others stand aside there). The game must start with them all, the
- * journal and the settings must open, Mod Menu must list the mod and its Configure button open the mod's settings, and
- * the Seam (its sky, its fog, the expedition's bar) must draw under Sodium's renderer. Every step is a screenshot.
+ * journal and the settings must open, Mod Menu must list the mod and its Configure button open the mod's settings, Text
+ * Placeholder API must read the tablist placeholders back, and the Seam (its sky, its fog, the expedition's bar) must
+ * draw under Sodium's renderer. Every step is a screenshot.
  */
 public class ClientCompat implements FabricClientGameTest {
 	/** Whether this run is the compatibility job's. */
@@ -40,7 +41,7 @@ public class ClientCompat implements FabricClientGameTest {
 			return;
 		}
 		FabricLoader loader = FabricLoader.getInstance();
-		for (String id : new String[] {"sodium", "iris", "modmenu"}) {
+		for (String id : new String[] {"sodium", "iris", "modmenu", "placeholder-api"}) {
 			System.out.println("[compat] " + id + ": " + loader.getModContainer(id).map(m -> m.getMetadata().getVersion().getFriendlyString()).orElse("not installed"));
 		}
 		try (TestSingleplayerContext sp = ctx.worldBuilder().create()) {
@@ -59,6 +60,28 @@ public class ClientCompat implements FabricClientGameTest {
 			ctx.takeScreenshot("compat_02_journal");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			ctx.waitTicks(4);
+
+			// The tablist placeholders, read back through Text Placeholder API as TAB reads them, when it is there
+			if (loader.isModLoaded("placeholder-api")) {
+				String[] got = sp.getServer().computeOnServer(s -> {
+					ServerPlayer p = player(s);
+					DataStore.get(p.getUUID()).addStacks(com.extremedimensions.penalty.Penalty.values()[0], 1);
+					com.extremedimensions.compat.TabPlaceholders.refresh(s);
+					String[] out = new String[5];
+					String[] names = {"curses", "realm", "status", "difficulty", "tapestry"};
+					for (int i = 0; i < names.length; i++) {
+						net.minecraft.network.chat.Component c = com.extremedimensions.compat.PlaceholderApiHook.parse(p, names[i]);
+						out[i] = c == null ? null : c.getString();
+					}
+					return out;
+				});
+				System.out.println("[compat] placeholders: curses=" + got[0] + " realm=" + got[1] + " status=" + got[2] + " difficulty=" + got[3]
+						+ " tapestry=" + got[4]);
+				check(com.extremedimensions.compat.TabPlaceholders.offered, "the placeholders were not offered to placeholder-api");
+				check(got[0] != null && Integer.parseInt(got[0]) >= 1, "%extremedimensions:curses% did not read the curse just taken: " + got[0]);
+				check("Overworld".equals(got[1]) && "At home".equals(got[2]), "realm and status read " + got[1] + " / " + got[2]);
+				check(got[3] != null && !got[3].isEmpty() && got[4] != null && got[4].endsWith("/6"), "the world's placeholders read " + got[3] + " / " + got[4]);
+			}
 
 			// The mod's settings, through Mod Menu's own list and its Configure button when Mod Menu is there
 			if (loader.isModLoaded("modmenu")) {

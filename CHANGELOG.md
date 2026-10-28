@@ -1,5 +1,28 @@
 # Changelog
 
+## 3.5.0: The Tablist
+
+### New: placeholders for TAB
+- With **Text Placeholder API** (`placeholder-api`) on the server, the mod offers 20 placeholders as
+  `%extremedimensions:<name>%`, which **TAB** reads on Fabric (and Styled Chat, and other mods that read that API).
+  Install both on the server; without placeholder-api nothing changes.
+- **About each player:** `curses`, `curses_beyond`, `curses_overworld`, `curses_everywhere`, `curses_extreme`,
+  `abyssal`, `badge` (a skull and the count, coloured by weight, with a mark for an Abyssal curse; empty without
+  curses), `scars`, `realm` (Overworld, Nether, End, Seam, Fray), `status` (At home, On an expedition, In the Seam, In
+  the Fray, Unweaving, Fallen), `time_left` (the Seam's time or the Tether's charge, as `4:05`), `expeditions`,
+  `collapses`, `unwoven` and `trial_medal` (this week's best medal).
+- **About the world:** `difficulty`, `ending`, `tapestry` (`4/6`), `new_thread` and `trial` (this week's Rift Trial
+  and twist).
+- The values are worked out on the server's thread once a second and kept, so TAB, which asks from a thread of its
+  own, always reads a finished picture. They are in English, as a tablist is the same for everyone.
+- Two settings in a new **Other mods** section: `placeholders` (0 leaves them empty) and `placeholder_refresh_ticks`.
+- The README has the table of placeholders and an example for TAB's header, footer and tab suffix.
+
+### Tests
+- Server tests for every placeholder, the badge's colour, the snapshot and the switch. The compatibility run in CI now
+  fetches Text Placeholder API too and reads the placeholders back through it, as TAB does. A check keeps the API's
+  compile-time stand-ins out of the jar.
+
 ## 3.4.1: A Wider Loom
 
 ### Fixed

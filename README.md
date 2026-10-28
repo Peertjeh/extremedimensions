@@ -145,8 +145,39 @@ Trials past gold), and the tapestry's boons stay.
 
 ## Compatibility
 
-Built for vanilla 26.3 with Fabric API. CI runs the client with the newest **Sodium**, **Iris** and **Mod Menu** for
-the game version on every push; with Mod Menu installed, the mod's settings open from its Configure button.
+Built for vanilla 26.3 with Fabric API. CI runs the client with the newest **Sodium**, **Iris**, **Mod Menu** and
+**Text Placeholder API** for the game version on every push; with Mod Menu installed, the mod's settings open from its
+Configure button.
+
+### Tablist placeholders (TAB)
+
+With [Text Placeholder API](https://github.com/Patbox/TextPlaceholderAPI) (`placeholder-api`) on the server, the mod
+offers placeholders that **TAB** (and Styled Chat, and anything else that reads that API) can show. TAB on Fabric reads
+them through placeholder-api, so install both on the server. Values are in English and refresh once a second
+(`placeholder_refresh_ticks`); `placeholders` 0 leaves them empty.
+
+| Placeholder | Shows |
+| --- | --- |
+| `%extremedimensions:curses%` | Curse stacks the player carries |
+| `%extremedimensions:curses_beyond%`, `_overworld`, `_everywhere`, `_extreme` | Stacks in each set (Abyssal curses aside) |
+| `%extremedimensions:abyssal%` | Abyssal curses carried |
+| `%extremedimensions:badge%` | `☠12` coloured by weight (grey, yellow, red, dark red), `✦` with an Abyssal curse; empty without curses |
+| `%extremedimensions:scars%` | Scars (0 to 5) |
+| `%extremedimensions:realm%` | Overworld, Nether, End, Seam, Fray or Elsewhere |
+| `%extremedimensions:status%` | At home, On an expedition, In the Seam, In the Fray, Unweaving or Fallen |
+| `%extremedimensions:time_left%` | Time left in the Seam or on the Tether (`4:05`); empty at home |
+| `%extremedimensions:expeditions%`, `collapses`, `unwoven` | Counts |
+| `%extremedimensions:trial_medal%` | Best Rift Trial medal this week (Bronze, Silver, Gold) |
+| `%extremedimensions:difficulty%` | Easy, Normal, Hard, Extreme or Custom |
+| `%extremedimensions:ending%` | Mended, Severed or Unended |
+| `%extremedimensions:tapestry%` | Panels woven (`4/6`) |
+| `%extremedimensions:new_thread%` | New Thread+ taken up |
+| `%extremedimensions:trial%` | This week's Rift Trial and twist |
+
+For example, in TAB's config: a tab suffix `" %extremedimensions:badge%"`, a header line
+`"&5Extreme Dimensions &8| &7%extremedimensions:difficulty% &8| &7%extremedimensions:ending%"` and a footer line
+`"&7%extremedimensions:status% %extremedimensions:time_left% &8| &cCurses %extremedimensions:curses% &8| &fScars %extremedimensions:scars%/5"`.
+`/tab parse <player> %extremedimensions:curses%` shows what a placeholder gives.
 
 ## Configuration
 
@@ -223,7 +254,8 @@ instellingenscherm en in `config/extremedimensions.json`. Na het einde bouw je e
 wandtapijt: zes panelen, elk een blijvende gunst, en daarna Nieuwe Draad+. Een volle vloekset **ontweef** je aan het
 getouw met Tetheriet en Tetherkoord: hak de knopen op tijd door en de hele set gaat eraf. Diep in de Seam ligt **Tetheriet**: spin
 Tether Fragments op een **Spinrok** tot Tetherkoord, smeed het tot een rang voorbij netheriet, en kies uit twintig
-betoveringen en twee nieuwe harnasversieringen.
+betoveringen en twee nieuwe harnasversieringen. Met Text Placeholder API op de server toont **TAB** de placeholders van de
+mod in de tablist, zoals `%extremedimensions:curses%` en `%extremedimensions:badge%` (zie de tabel hierboven).
 
 ## License
 
