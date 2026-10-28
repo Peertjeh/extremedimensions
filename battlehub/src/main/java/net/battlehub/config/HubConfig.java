@@ -138,6 +138,11 @@ public final class HubConfig {
 		public boolean placeholders = true;
 		/** How often (ticks) the placeholders' values are worked out anew. */
 		public int placeholderRefreshTicks = 20;
+		/**
+		 * Titles earned in other mods (titles.json, requirement "placeholder"), such as Extreme Dimensions', checked once a
+		 * minute through Text Placeholder API.
+		 */
+		public boolean placeholderTitles = true;
 	}
 
 	public static final class Protection {

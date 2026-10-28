@@ -2,10 +2,14 @@ package net.battlehub.debug;
 
 import static net.battlehub.debug.SelfTest.p;
 
+import net.battlehub.compat.ExternalTitles;
 import net.battlehub.compat.PlaceholderApiHook;
 import net.battlehub.compat.TabPlaceholders;
 import net.battlehub.config.ConfigManager;
 import net.battlehub.core.GameMode;
+import net.battlehub.core.PlayerProfile;
+import net.battlehub.core.TitleDef;
+import net.battlehub.core.TitleRules;
 import net.battlehub.data.PlayerStore;
 import net.battlehub.hub.Travel;
 import net.battlehub.progression.FeaturedMode;
@@ -94,6 +98,32 @@ final class PlaceholderTests {
 			return TabPlaceholders.offered && activity != null && activity.getString().equals("lobby")
 					&& players != null && players.getString().equals(TabPlaceholders.world("players").getString())
 					&& PlaceholderApiHook.read(p(A), "battlehub", "no_such_thing") == null;
+		});
+		s.check(tag + ": a title earned through a placeholder is kept, one not met is not (1.51)", () -> {
+			if (!FabricLoader.getInstance().isModLoaded("placeholder-api")) return !apiExpected();
+			// BattleHub's own placeholders stand in for another mod's: level 1 is met, activity "match" is not
+			TitleDef met = new TitleDef("test_ph_level", "&fTest", "placeholder", 1, "").placeholder("battlehub:level", "", "");
+			TitleDef unmet = new TitleDef("test_ph_match", "&fTest", "placeholder", 0, "").placeholder("battlehub:activity", "match", "");
+			var titles = ConfigManager.titles().titles;
+			titles.add(met);
+			titles.add(unmet);
+			TabPlaceholders.refresh(server);
+			PlayerProfile prof = PlayerStore.get(p(A));
+			var earned = ExternalTitles.check(p(A));
+			boolean ok = earned.contains(met) && !earned.contains(unmet) && TitleRules.unlocked(met, prof, 1000)
+					&& !TitleRules.unlocked(unmet, prof, 1000) && ExternalTitles.check(p(A)).isEmpty()
+					&& ExternalTitles.available(p(A), prof, unmet);
+			titles.remove(met);
+			titles.remove(unmet);
+			prof.ownedTitles.remove(met.id);
+			prof.knownTitles.remove(met.id);
+			return ok;
+		});
+		s.check(tag + ": Extreme Dimensions' titles are in the list, hidden without that mod", () -> {
+			TitleDef tethered = ConfigManager.titles().byId("tethered");
+			return tethered != null && "extremedimensions:expeditions".equals(tethered.placeholder)
+					&& (FabricLoader.getInstance().isModLoaded("extremedimensions")
+							|| !ExternalTitles.available(p(A), PlayerStore.get(p(A)), tethered));
 		});
 	}
 }

@@ -42,6 +42,27 @@ public final class TitleConfig {
 		l.addAll(seasonTitles());
 		l.addAll(passTitles());
 		l.addAll(weeklyTitles());
+		l.addAll(extremeDimensionsTitles());
+		return l;
+	}
+
+	/**
+	 * 1.51: titles earned in Extreme Dimensions, read through its placeholders (Text Placeholder API); the titles menu only
+	 * shows them when that mod is installed.
+	 */
+	static List<TitleDef> extremeDimensionsTitles() {
+		List<TitleDef> l = new ArrayList<>();
+		l.add(new TitleDef("tethered", "&6Tethered", "placeholder", 1, "")
+				.placeholder("extremedimensions:expeditions", "", "title.hint.tethered"));
+		l.add(new TitleDef("wound_walker", "&c&lWound Walker", "placeholder", 25, "")
+				.placeholder("extremedimensions:expeditions", "", "title.hint.wound_walker"));
+		l.add(new TitleDef("scarred", "&4Scarred", "placeholder", 5, "").placeholder("extremedimensions:scars", "", "title.hint.scarred"));
+		l.add(new TitleDef("cursed", "&5Cursed", "placeholder", 30, "").placeholder("extremedimensions:curses", "", "title.hint.cursed"));
+		l.add(new TitleDef("unweaver", "&dUnweaver", "placeholder", 1, "").placeholder("extremedimensions:unwoven", "", "title.hint.unweaver"));
+		l.add(new TitleDef("rift_gold", "&e&lRift Gold", "placeholder", 0, "")
+				.placeholder("extremedimensions:trial_medal", "Gold", "title.hint.rift_gold"));
+		l.add(new TitleDef("mender", "&a&lMender", "placeholder", 0, "").placeholder("extremedimensions:ending", "Mended", "title.hint.mender"));
+		l.add(new TitleDef("severed", "&8&lSevered", "placeholder", 0, "").placeholder("extremedimensions:ending", "Severed", "title.hint.severed"));
 		return l;
 	}
 
@@ -98,11 +119,21 @@ public final class TitleConfig {
 			}
 			configVersion = 4;
 		}
+		if (configVersion < 5) {
+			// Titles earned in Extreme Dimensions are new in 1.51
+			for (TitleDef t : extremeDimensionsTitles()) {
+				if (titles.stream().noneMatch(o -> o != null && t.id.equals(o.id))) titles.add(t);
+			}
+			configVersion = 5;
+		}
 		titles.removeIf(t -> t == null || t.id == null || t.id.isBlank());
 		for (TitleDef t : titles) {
 			if (t.display == null) t.display = t.id;
 			if (t.requirement == null) t.requirement = "default";
 			if (t.mode == null) t.mode = "";
+			if (t.placeholder == null) t.placeholder = "";
+			if (t.text == null) t.text = "";
+			if (t.hint == null) t.hint = "";
 		}
 		return this;
 	}

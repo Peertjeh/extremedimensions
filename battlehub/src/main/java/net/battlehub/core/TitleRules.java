@@ -21,7 +21,7 @@ public final class TitleRules {
 			case "mode_streak" -> mode != null && p.peek(mode).bestStreak >= t.value;
 			case "kills" -> p.overall.kills >= t.value;
 			case "elo" -> mode != null ? p.elo(mode, startElo) >= t.value : p.bestElo(startElo) >= t.value;
-			case "coins" -> p.ownedTitles.contains(t.id);
+			case "coins", "placeholder" -> p.ownedTitles.contains(t.id);
 			case "season" -> p.bestSeasonTier >= t.value;
 			case "pass" -> p.bestPassTier >= t.value;
 			case "prestige" -> p.prestige >= t.value;
@@ -42,6 +42,28 @@ public final class TitleRules {
 			}
 		}
 		return out;
+	}
+
+	/**
+	 * Whether a placeholder's value earns a "placeholder" title (1.51): the same text, any case, when the title names
+	 * one; otherwise a number of at least its value. Nothing (the mod or placeholder-api missing) earns nothing.
+	 */
+	public static boolean meets(TitleDef t, String value) {
+		if (value == null || value.isBlank()) return false;
+		String v = value.trim();
+		if (t.text != null && !t.text.isEmpty()) return v.equalsIgnoreCase(t.text.trim());
+		try {
+			return Double.parseDouble(v) >= t.value;
+		} catch (NumberFormatException e) {
+			return false;
+		}
+	}
+
+	/** The mod a "placeholder" title's placeholder belongs to ("extremedimensions"), or "" without one. */
+	public static String namespace(TitleDef t) {
+		String ph = t.placeholder == null ? "" : t.placeholder;
+		int colon = ph.indexOf(':');
+		return colon <= 0 ? "" : ph.substring(0, colon);
 	}
 
 	public enum BuyResult { BOUGHT, ALREADY_OWNED, NOT_FOR_SALE, TOO_EXPENSIVE }

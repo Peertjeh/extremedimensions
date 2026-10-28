@@ -260,6 +260,7 @@ public final class HubEvents {
 		net.battlehub.lobby.DoubleJump.tick(server);
 		net.battlehub.export.StatsExport.tick(server);
 		net.battlehub.compat.TabPlaceholders.tick(server, tick);
+		net.battlehub.compat.ExternalTitles.tick(server, tick);
 		if (tick % 10 == 0) {
 			net.battlehub.tournament.WeeklyTournament.tick(server);
 		}

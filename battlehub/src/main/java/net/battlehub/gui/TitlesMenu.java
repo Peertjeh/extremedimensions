@@ -49,7 +49,10 @@ public final class TitlesMenu extends Screen {
 	@Override
 	public void draw(Canvas c) {
 		PlayerProfile prof = PlayerStore.get(viewer);
-		List<TitleDef> titles = ConfigManager.titles().titles;
+		// titles earned in another mod only show when that mod is there (or the title was earned)
+		List<TitleDef> titles = ConfigManager.titles().titles.stream()
+				.filter(t -> !"placeholder".equalsIgnoreCase(t.requirement) || net.battlehub.compat.ExternalTitles.available(viewer, prof, t))
+				.toList();
 		int[] slots = c.inner();
 		int perPage = slots.length;
 		int pages = Math.max(1, (titles.size() + perPage - 1) / perPage);
@@ -94,6 +97,12 @@ public final class TitlesMenu extends Screen {
 
 	private Component requirement(TitleDef t) {
 		String req = t.requirement.toLowerCase(java.util.Locale.ROOT);
+		if (!t.hint.isEmpty()) {
+			return Lang.has(t.hint) ? Lang.lore(viewer, t.hint) : Lang.colored(t.hint).withStyle(s -> s.withItalic(false));
+		}
+		if (req.equals("placeholder")) {
+			return Lang.lore(viewer, "title.req.placeholder", t.placeholder);
+		}
 		GameMode mode = GameMode.byId(t.mode);
 		Object modeName = mode == null ? Lang.tr(viewer, "menu.titles.any_mode") : Lang.tr(viewer, Icons.modeKey(mode));
 		return Lang.lore(viewer, "title.req." + req, t.value, modeName);

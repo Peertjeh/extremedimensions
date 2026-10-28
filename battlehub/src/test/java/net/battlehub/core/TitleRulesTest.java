@@ -30,6 +30,28 @@ class TitleRulesTest {
 	}
 
 	@Test
+	void placeholderTitlesAreEarnedByNumberOrText() {
+		TitleDef wanderer = new TitleDef("wound_walker", "&cWound Walker", "placeholder", 25, "")
+				.placeholder("extremedimensions:expeditions", "", "");
+		TitleDef mender = new TitleDef("mender", "&aMender", "placeholder", 0, "").placeholder("extremedimensions:ending", "Mended", "");
+		assertFalse(TitleRules.meets(wanderer, "24"));
+		assertTrue(TitleRules.meets(wanderer, "25"));
+		assertTrue(TitleRules.meets(wanderer, " 30 "));
+		assertFalse(TitleRules.meets(wanderer, "many"));
+		assertFalse(TitleRules.meets(wanderer, ""));
+		assertFalse(TitleRules.meets(wanderer, null));
+		assertTrue(TitleRules.meets(mender, "mended"));
+		assertFalse(TitleRules.meets(mender, "Unended"));
+		assertEquals("extremedimensions", TitleRules.namespace(mender));
+		assertEquals("", TitleRules.namespace(new TitleDef("x", "x", "placeholder", 0, "")));
+		// earned once, kept: like a bought title
+		PlayerProfile p = new PlayerProfile();
+		assertFalse(TitleRules.unlocked(mender, p, 1000));
+		p.ownedTitles.add("mender");
+		assertTrue(TitleRules.unlocked(mender, p, 1000));
+	}
+
+	@Test
 	void newlyUnlockedIsAnnouncedOnce() {
 		PlayerProfile p = new PlayerProfile();
 		List<TitleDef> all = List.of(rookie, unstoppable);

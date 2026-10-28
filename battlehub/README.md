@@ -720,7 +720,10 @@ players' screens, so they never hurt anyone. Prices and the list are in `cosmeti
 * **Coins** for winning, playing and kills.
 * **XP and levels**, with a configurable curve and a coin bonus every few levels.
 * **Titles** unlocked through levels, wins, win streaks, ELO or bought with coins. The selected title
-  shows in chat, above your head and in the tab list while you're in BattleHub.
+  shows in chat, above your head and in the tab list while you're in BattleHub. With **Extreme Dimensions** and
+  Text Placeholder API on the server, eight more are earned there (1.51): Tethered (first expedition), Wound Walker
+  (25 expeditions), Scarred (all 5 scars), Cursed (30 curses at once), Unweaver, Rift Gold (gold in the week's Rift
+  Trial), Mender and Severed (the world's ending). Once earned they stay; without that mod they are not shown.
 * **Cosmetics** bought with coins (see above).
 * **Win streaks**, overall and per mode. Milestones (5, 10, 25, …) are announced to everyone.
 * **ELO** per ranked mode (start 1000, K-factor 32), with tiers and a top 10 per mode.
@@ -833,8 +836,9 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   * `combat`: `snowballDamage`, the damage of a snowball or egg hitting another player in a match (2 = one
     heart; vanilla only pushes). Spleef keeps the push only. `nameTagRange` (1.49, default 6): how close an
     enemy's name tag shows in a match, with nothing in between; 0 = vanilla.
-  * `integrations` (1.51): `placeholders` (offer the placeholders to placeholder-api, default on) and
-    `placeholderRefreshTicks` (how often their values are worked out, default 20)
+  * `integrations` (1.51): `placeholders` (offer the placeholders to placeholder-api, default on),
+    `placeholderRefreshTicks` (how often their values are worked out, default 20) and `placeholderTitles` (titles
+    earned in other mods, checked once a minute, default on)
   * `timings`: countdowns (also between best-of-3 rounds), end delay, play-again time, challenge expiry,
     duel time limit, respawn delay
   * `rewards`: coins and XP for duels, ranked and party games (win, participation, per kill)
@@ -917,7 +921,10 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
 * **`kits.json`**: items per kit with slot (`0`–`35`, `head`, `chest`, `legs`, `feet`, `offhand`),
   count, enchantments, unbreakable, leather colour, plus potion effects
 * **`titles.json`**: titles with display text (`&` colour codes) and requirement:
-  `default`, `level`, `wins`, `duel_wins`, `mode_wins`, `streak`, `mode_streak`, `kills`, `elo` or `coins` (price)
+  `default`, `level`, `wins`, `duel_wins`, `mode_wins`, `streak`, `mode_streak`, `kills`, `elo` or `coins` (price),
+  `season`, `pass`, `prestige`, `weekly_wins`, or `placeholder` (1.51): earned in another mod, with `placeholder` (for
+  example `extremedimensions:expeditions`) and either `text` (the value it must give) or `value` (a number of at
+  least this); `hint` is what the titles menu says to do for it (a lang key or text)
 * **`cosmetics.json`**: the shop: per cosmetic an id, category (`trail`, `aura`, `arrow`, `kill`, `killmsg`, `win`,
   `cry`, `skin`, `pet`, `hat`, `topper`, `balloon`, `outfit`, `color`, `badge`, `gadget`), display text, icon item,
   price and effect:

@@ -18,6 +18,11 @@
   BattleHub and into that lobby. At most once per game every 5 minutes, never to bots or to players already in
   BattleHub (`hub.invites`, `hub.inviteAfterSeconds`, `hub.inviteCooldownMinutes`). The weekly tournament already
   invited everyone with its sign-up button.
+* **Titles earned in Extreme Dimensions.** A new title requirement, `placeholder`, reads a placeholder of another
+  mod through Text Placeholder API once a minute: a number of at least `value`, or the text in `text`. Once earned the
+  title stays, like a bought one. Eight such titles come with it for Extreme Dimensions: Tethered, Wound Walker,
+  Scarred, Cursed, Unweaver, Rift Gold, Mender and Severed (added to existing `titles.json` files too). The titles menu
+  only shows them when that mod is installed, with what to do for each (`hint`).
 
 ## 1.50.0
 

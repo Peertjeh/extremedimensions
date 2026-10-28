@@ -2297,6 +2297,16 @@ buiten was. Haken in `Parties.tick` (aftellen begonnen, en elke seconde de lobby
 Sumo-lobby, S buiten krijgt de knop en A niet; S klikt en staat in de lobby. `TestConnection` houdt daarvoor ook de
 laatste 200 systeemregels bij.
 
+**D – Titels uit Extreme Dimensions.** Een nieuwe vereiste `placeholder` in `titles.json`, met de velden `placeholder`
+(`extremedimensions:expeditions`), `text` (exacte waarde, hoofdletters maken niet uit) of anders `value` (getal, minstens)
+en `hint` (wat het menu zegt; een lang-sleutel of tekst). `TitleRules.meets` beslist (unit-test), `compat.ExternalTitles`
+leest elke minuut per speler de titels die nog niet binnen zijn via `PlaceholderApiHook.read` en geeft ze voorgoed
+(`ownedTitles`, zoals gekochte), met de melding van een nieuwe titel. Zo hangt BattleHub niet van Extreme Dimensions af:
+zonder die mod (of zonder placeholder-api) laat het titelmenu deze titels weg. Acht titels erbij (titles.json-versie 5,
+ook in bestaande bestanden): Tethered (eerste expeditie), Wound Walker (25), Scarred (5 littekens), Cursed (30 vloeken
+tegelijk), Unweaver, Rift Gold (goud in de Rift Trial), Mender en Severed (het einde van de wereld). Zelftest: met
+BattleHubs eigen placeholders in de rol van een andere mod wordt een titel verdiend en een andere niet.
+
 ## Versie 1.50.0 – Chat per wereld
 
 **Vraag.** De chat van BattleHub gescheiden houden van de andere wereld. (Op de server draaien TAB en Styled Chat;
