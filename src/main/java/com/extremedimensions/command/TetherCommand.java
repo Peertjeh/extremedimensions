@@ -30,8 +30,9 @@ import net.minecraft.server.level.ServerPlayer;
 /**
  * Commands under {@code /tether}: {@code where} for everyone (the world you stand in and whether the mod acts there),
  * the co-op answers ({@code burden accept|refuse}, {@code share on|off}) and {@code tribe} (where you stand with it);
- * for operators Overworld curses on or off, curses set or cleared, Lurkers, hoards, the Seam, bosses and difficulty;
- * for admins a reset of the Seam.
+ * for operators Overworld curses on or off, curses set or cleared, Lurkers, hoards, the Seam, bosses and difficulty,
+ * the stats export written now ({@code export}) and a test message to the Discord webhook ({@code discord_test}); for
+ * admins a reset of the Seam.
  */
 public final class TetherCommand {
 	private TetherCommand() {}
@@ -91,6 +92,8 @@ public final class TetherCommand {
 					return 1;
 				}))
 				.then(preset().requires(op))
+				.then(Commands.literal("export").requires(op).executes(c -> export(c.getSource())))
+				.then(Commands.literal("discord_test").requires(op).executes(c -> discordTest(c.getSource())))
 				.then(Commands.literal("curse").requires(op)
 						.then(Commands.literal("clear").executes(c -> clearCurses(c.getSource())))
 						.then(Commands.argument("id", StringArgumentType.word())
@@ -195,6 +198,58 @@ public final class TetherCommand {
 			}));
 		}
 		return node;
+	}
+
+	/**
+	 * {@code /tether export}: the stats export is written now (it is otherwise every {@code export_minutes}). The answer
+	 * comes once the file is written; the texts fall back on English where they are not translated (the server console).
+	 */
+	private static int export(CommandSourceStack src) {
+		var done = com.extremedimensions.compat.StatsExport.export(src.getServer(), false);
+		if (done == null) {
+			src.sendFailure(Component.translatableWithFallback("commands.extremedimensions.export.off",
+					"There is no stats export: set export_dir in config/extremedimensions.json while the server is stopped, then start it."));
+			return 0;
+		}
+		var server = src.getServer();
+		done.whenComplete((file, error) -> server.execute(() -> {
+			if (error == null) {
+				src.sendSuccess(() -> Component.translatableWithFallback("commands.extremedimensions.export.written", "The stats export is written to %s.",
+						file.toString()), false);
+			} else {
+				src.sendFailure(Component.translatableWithFallback("commands.extremedimensions.export.failed",
+						"The stats export could not be written. See the server log."));
+			}
+		}));
+		return 1;
+	}
+
+	/** {@code /tether discord_test}: a test message to the Discord webhook, and what Discord answered. */
+	private static int discordTest(CommandSourceStack src) {
+		if (!com.extremedimensions.compat.DiscordWebhook.on()) {
+			src.sendFailure(Component.translatableWithFallback("commands.extremedimensions.discord.off",
+					"There is no Discord webhook: set discord_webhook in config/extremedimensions.json while the server is stopped, then start it."));
+			return 0;
+		}
+		var sent = com.extremedimensions.compat.DiscordWebhook.post(com.extremedimensions.compat.DiscordWebhook.testText());
+		if (sent == null) {
+			src.sendFailure(Component.translatableWithFallback("commands.extremedimensions.discord.not_sent",
+					"Nothing was sent: discord_webhook is not a web address, or too many messages went out this minute. See the server log."));
+			return 0;
+		}
+		var server = src.getServer();
+		sent.thenAccept(code -> server.execute(() -> {
+			if (code / 100 == 2) {
+				src.sendSuccess(() -> Component.translatableWithFallback("commands.extremedimensions.discord.sent", "Discord took the test message."), false);
+			} else if (code < 0) {
+				src.sendFailure(Component.translatableWithFallback("commands.extremedimensions.discord.unreachable",
+						"Discord could not be reached. See the server log."));
+			} else {
+				src.sendFailure(Component.translatableWithFallback("commands.extremedimensions.discord.refused",
+						"Discord answered %s: is the webhook deleted, or its URL mistyped?", String.valueOf(code)));
+			}
+		}));
+		return 1;
 	}
 
 	/** Sets a curse's stacks on the executing player (0 takes it off, never past its maximum). */

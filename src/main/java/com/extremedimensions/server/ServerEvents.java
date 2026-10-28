@@ -98,6 +98,8 @@ public final class ServerEvents {
 			SeamService.stopping();
 			DataStore.markDirty();
 			DataStore.flush();
+			// The stats export, once more, as a web page should show the world while the server is down
+			com.extremedimensions.compat.StatsExport.stopping(s);
 		});
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
 			STRAYS.clear();
@@ -497,6 +499,8 @@ public final class ServerEvents {
 		d.hasRopeEnd = false;
 		// What they knew before the first-meeting hints existed is not told again
 		com.extremedimensions.guide.Hints.known(p, d);
+		// The Elders they helped defeat, from their advancements, for the stats export (also while they are offline)
+		com.extremedimensions.compat.StatsExport.elders(p);
 		Sync.state(p, d);
 	}
 
@@ -556,6 +560,7 @@ public final class ServerEvents {
 
 	private static void work(MinecraftServer s) {
 		com.extremedimensions.compat.TabPlaceholders.tick(s);
+		com.extremedimensions.compat.StatsExport.tick(s);
 		// (each part timed while the performance tests listen; see TickProfile)
 		long lap = TickProfile.start();
 		com.extremedimensions.lore.FirstWeaver.tick(s);

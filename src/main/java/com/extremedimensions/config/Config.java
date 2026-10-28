@@ -1001,6 +1001,20 @@ public final class Config {
 	public static int PLACEHOLDERS = 1;
 	/** Ticks between the placeholders being worked out anew (20 = once a second). */
 	public static int PLACEHOLDER_REFRESH_TICKS = 20;
+	/**
+	 * The stats export for a web page: the folder {@code extremedimensions.json} is written into (a relative path is
+	 * relative to the server's folder), every {@link #EXPORT_MINUTES} and when the server stops; "" = no export. A text,
+	 * so in the config file only (see {@link #texts()}).
+	 */
+	public static String EXPORT_DIR = "";
+	/** Minutes between writes of the stats export. */
+	public static int EXPORT_MINUTES = 5;
+	/**
+	 * A Discord webhook's URL: the world's great moments (an Elder or the Starved One defeated, the ending, the tapestry,
+	 * a gold medal in the Rift Trial) are posted to its channel; "" = none. In the config file only, and never sent to
+	 * players: whoever has the URL can post to the channel.
+	 */
+	public static String DISCORD_WEBHOOK = "";
 
 	// --- Technical -------------------------------------------------------------------------------
 
@@ -1106,6 +1120,55 @@ public final class Config {
 		return settings;
 	}
 
+	private static List<Field> texts;
+
+	/**
+	 * The settings that are text (a folder, a web address), in the order of this class. They live in the config file
+	 * alone: the settings screen and the settings every player is sent hold numbers only, and a webhook's URL is a secret.
+	 */
+	public static List<Field> texts() {
+		if (texts == null) {
+			List<Field> out = new ArrayList<>();
+			for (Field f : Config.class.getDeclaredFields()) {
+				int mod = f.getModifiers();
+				if (Modifier.isStatic(mod) && !Modifier.isFinal(mod) && Modifier.isPublic(mod) && f.getType() == String.class) {
+					out.add(f);
+				}
+			}
+			texts = List.copyOf(out);
+		}
+		return texts;
+	}
+
+	private static String key(Field f) {
+		return f.getName().toLowerCase(Locale.ROOT);
+	}
+
+	/** Takes over the text settings the file holds (only ever from the file: never from a server's or a player's values). */
+	public static void applyTexts(JsonObject json) {
+		for (Field f : texts()) {
+			String key = key(f);
+			if (!json.has(key)) {
+				continue;
+			}
+			try {
+				JsonElement v = json.get(key);
+				f.set(null, v.isJsonNull() ? "" : v.getAsString().trim());
+			} catch (Exception e) {
+				ExtremeDimensions.LOGGER.warn("Invalid config value for {}, keeping \"{}\"", key, text(f));
+			}
+		}
+	}
+
+	private static String text(Field f) {
+		try {
+			Object v = f.get(null);
+			return v == null ? "" : v.toString();
+		} catch (IllegalAccessException e) {
+			return "";
+		}
+	}
+
 	private static Path file() {
 		return FabricLoader.getInstance().getConfigDir().resolve(ExtremeDimensions.MOD_ID + ".json");
 	}
@@ -1130,6 +1193,7 @@ public final class Config {
 		}
 		migrate(json);
 		apply(json);
+		applyTexts(json);
 		save();
 	}
 
@@ -1199,7 +1263,8 @@ public final class Config {
 			{"tapestry_respin_silk", 0, 64}, {"tapestry_roots_gifts", 1, 10}, {"tapestry_toll_drain", 0, 1}, {"tapestry_unravelling_share", 3, 20},
 			{"tapestry_knot_fray", 0, 10}, {"tapestry_knot_strands", 0, 1}, {"tapestry_heart_echo", 0, 1}, {"weaving_seconds", 30, 3600},
 			{"weaving_ward", 1, 10000}, {"weaving_wave_seconds", 5, 600}, {"weaving_wave", 0, 40}, {"weaving_wave_per_player", 0, 20},
-			{"weaving_bite", 0, 1000}, {"weaving_damage", 0, 100}, {"new_thread_elder", 0, 5}, {"new_thread_atonement", 0, 5}};
+			{"weaving_bite", 0, 1000}, {"weaving_damage", 0, 100}, {"new_thread_elder", 0, 5}, {"new_thread_atonement", 0, 5},
+			{"export_minutes", 1, 1440}};
 
 	/** Brings a setting back within its bounds, if it has any. */
 	private static void bound(Setting st) {
@@ -1298,7 +1363,17 @@ public final class Config {
 	public static void save() {
 		Path file = file();
 		try {
-			JsonObject out = snapshot();
+			// The numbers, with each text setting in its place among them (see texts)
+			JsonObject numbers = snapshot(), out = new JsonObject();
+			for (Field f : Config.class.getDeclaredFields()) {
+				String key = key(f);
+				if (texts().contains(f)) {
+					out.addProperty(key, text(f));
+				} else if (numbers.has(key)) {
+					out.add(key, numbers.remove(key));
+				}
+			}
+			numbers.entrySet().forEach(e -> out.add(e.getKey(), e.getValue()));
 			out.addProperty("config_version", VERSION);
 			com.extremedimensions.data.DataStore.writeAtomically(file, GSON.toJson(out));
 		} catch (IOException e) {

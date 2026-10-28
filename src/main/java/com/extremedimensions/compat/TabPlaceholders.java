@@ -118,12 +118,7 @@ public final class TabPlaceholders {
 	public static Map<String, Component> values(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
 		Map<String, Component> m = new LinkedHashMap<>();
-		int total = 0, abyssal = 0;
-		for (Penalty pen : Penalty.values()) {
-			int n = d.carried(pen);
-			total += n;
-			abyssal += pen.abyssal && n > 0 ? 1 : 0;
-		}
+		int total = curses(d, true), abyssal = abyssal(d, true);
 		m.put("curses", text(total));
 		for (Penalty.Group g : Penalty.Group.values()) {
 			m.put("curses_" + g.id(), text(Unweaving.stacks(d, g)));
@@ -139,27 +134,74 @@ public final class TabPlaceholders {
 		m.put("expeditions", text(d.expeditions));
 		m.put("collapses", text(d.collapses));
 		m.put("unwoven", text(d.unwoven));
-		m.put("trial_medal", text(d.trialClaimWeek == TrialService.week() ? medal(d.trialClaimMedal) : ""));
+		m.put("trial_medal", text(trialMedal(d)));
 		return m;
 	}
 
 	/** Every placeholder about the world, worked out now. */
 	public static Map<String, Component> values(MinecraftServer s) {
 		Map<String, Component> m = new LinkedHashMap<>();
+		m.put("difficulty", text(difficulty()));
+		m.put("ending", text(ending()));
+		m.put("tapestry", text(Tapestry.count() + "/" + Tapestry.Panel.values().length));
+		m.put("new_thread", text(DataStore.newThread()));
+		m.put("trial", text(trial()));
+		return m;
+	}
+
+	// The words below are the stats export's and the Discord messages' too (see StatsExport, DiscordWebhook)
+
+	/** The world's difficulty: Easy, Normal, Hard, Extreme, or Custom when its rules match none of them. */
+	static String difficulty() {
 		Preset preset = Preset.matching(Preset.current());
-		m.put("difficulty", text(preset == null ? "Custom" : switch (preset) {
+		return preset == null ? "Custom" : switch (preset) {
 			case EASY -> "Easy";
 			case NORMAL -> "Normal";
 			case HARD -> "Hard";
 			case EXTREME -> "Extreme";
-		}));
+		};
+	}
+
+	/** The world's ending: Mended, Severed or Unended. */
+	static String ending() {
 		String ending = DataStore.ending();
-		m.put("ending", text("mended".equals(ending) ? "Mended" : "severed".equals(ending) ? "Severed" : "Unended"));
-		m.put("tapestry", text(Tapestry.count() + "/" + Tapestry.Panel.values().length));
-		m.put("new_thread", text(DataStore.newThread()));
+		return "mended".equals(ending) ? "Mended" : "severed".equals(ending) ? "Severed" : "Unended";
+	}
+
+	/** This week's Rift Trial and twist ("Hunter · Still Seam"); "" while the trials are not open yet. */
+	static String trial() {
 		int week = TrialService.week();
-		m.put("trial", text(TrialService.unlocked() ? goal(TrialService.kind(week)) + " · " + twist(TrialService.twist(week)) : ""));
-		return m;
+		return TrialService.unlocked() ? trial(TrialService.kind(week), TrialService.twist(week)) : "";
+	}
+
+	static String trial(Trial.Kind kind, Trial.Twist twist) {
+		return goal(kind) + " · " + twist(twist);
+	}
+
+	/**
+	 * Curse stacks a player carries: for one online as they act (on an expedition with the pact's on top, as the tablist
+	 * shows them), for one offline their own.
+	 */
+	static int curses(PlayerData d, boolean online) {
+		int total = 0;
+		for (Penalty pen : Penalty.values()) {
+			total += online ? d.carried(pen) : d.owned(pen);
+		}
+		return total;
+	}
+
+	/** Abyssal curses a player carries (counted the same way). */
+	static int abyssal(PlayerData d, boolean online) {
+		int n = 0;
+		for (Penalty pen : Penalty.values()) {
+			n += pen.abyssal && (online ? d.carried(pen) : d.owned(pen)) > 0 ? 1 : 0;
+		}
+		return n;
+	}
+
+	/** This week's best Rift Trial medal (Bronze, Silver, Gold), "" without one. */
+	static String trialMedal(PlayerData d) {
+		return d.trialClaimWeek == TrialService.week() ? medal(d.trialClaimMedal) : "";
 	}
 
 	private static Component text(int n) {
@@ -184,7 +226,7 @@ public final class TabPlaceholders {
 		return c;
 	}
 
-	private static String realm(ServerPlayer p, PlayerData d) {
+	static String realm(ServerPlayer p, PlayerData d) {
 		if (d.away) {
 			return "Elsewhere";
 		}
@@ -197,7 +239,7 @@ public final class TabPlaceholders {
 		};
 	}
 
-	private static String status(ServerPlayer p, PlayerData d) {
+	static String status(ServerPlayer p, PlayerData d) {
 		if (FallenService.fallen(p)) {
 			return "Fallen";
 		}
@@ -220,7 +262,7 @@ public final class TabPlaceholders {
 				: String.format(Locale.ROOT, "%d:%02d", s / 60, s % 60);
 	}
 
-	private static String medal(int medal) {
+	static String medal(int medal) {
 		return switch (medal) {
 			case 3 -> "Gold";
 			case 2 -> "Silver";
@@ -229,7 +271,7 @@ public final class TabPlaceholders {
 		};
 	}
 
-	private static String goal(Trial.Kind kind) {
+	static String goal(Trial.Kind kind) {
 		return switch (kind) {
 			case VEINS -> "Vein-cutter";
 			case HUNT -> "Hunter";
@@ -239,7 +281,7 @@ public final class TabPlaceholders {
 		};
 	}
 
-	private static String twist(Trial.Twist twist) {
+	static String twist(Trial.Twist twist) {
 		return switch (twist) {
 			case CALM -> "Still Seam";
 			case SHORT -> "Short Thread";

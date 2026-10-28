@@ -669,10 +669,12 @@ public final class FerrymanService {
 		if (ThreadLocalRandom.current().nextDouble() < Config.FERRYMAN_RELIC_CHANCE) {
 			ElderFx.loot(f, fare.target, RelicService.random());
 		}
+		List<ServerPlayer> there = new ArrayList<>();
 		for (ServerPlayer p : level.players()) {
 			if (p.distanceToSqr(f) >= 64 * 64) {
 				continue;
 			}
+			there.add(p);
 			PlayerData d = DataStore.get(p.getUUID());
 			Advancements.grant(p, Advancements.FERRYMAN_SLAIN);
 			Journal.unlock(p, d, JournalEntry.FERRYMAN);
@@ -682,6 +684,7 @@ public final class FerrymanService {
 			}
 		}
 		DataStore.markDirty();
+		com.extremedimensions.compat.DiscordWebhook.elder(com.extremedimensions.compat.StatsExport.Elder.FERRYMAN, there);
 	}
 
 	/** Gone: he poles back into the dark, whole. */

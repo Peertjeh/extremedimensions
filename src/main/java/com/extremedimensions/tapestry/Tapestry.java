@@ -389,6 +389,7 @@ public final class Tapestry {
 		WorldFx.soundIn(dim, "minecraft:block.amethyst_block.resonate", "block", x, y, z, 1.0f, 0.5f);
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.tapestry.woven", Component.translatable(panel.nameKey()),
 				Component.translatable(panel.boonKey(ending), panel.boonArgs(ending))).withStyle(ChatFormatting.LIGHT_PURPLE));
+		com.extremedimensions.compat.DiscordWebhook.panel(panel, p);
 		if (count() == Panel.values().length && !DataStore.tapestryDone()) {
 			Weaving.start(level, pos);
 		} else {

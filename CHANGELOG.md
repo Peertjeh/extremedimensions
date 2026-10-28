@@ -1,5 +1,40 @@
 # Changelog
 
+## 3.6.0: The Herald
+
+### New: a stats export for a web page
+- Set `export_dir` in `config/extremedimensions.json` to a folder (a relative path is from the server's folder, such as
+  `config/battlehub/export`) and every `export_minutes` (5), and when the server stops, the mod writes one file there:
+  `extremedimensions.json`. It holds the world (difficulty, ending, the tapestry woven and finished, New Thread+,
+  this week's Rift Trial) and every player the mod has data for, online or not: name, online, realm, status, curses,
+  Abyssal curses, scars, expeditions, Collapses, sets unwoven, this week's medal, and how many of the four Elders they
+  helped defeat (with their names). Its words are the tablist's. The README has the whole layout.
+- It is worked out on the server's thread and written on a thread of its own, to a temporary file that then takes the
+  old one's place, so a web page never reads half a file. The file written as the server stops shows nobody online.
+- Which Elders a player helped defeat is read from their advancements (on joining, at an Elder's fall, at each export)
+  and kept, so it is there while they are offline too; a player not seen since this version has none in the file
+  rather than a wrong count.
+- `/tether export` (operators) writes it at once and says where.
+
+### New: Discord notifications
+- Set `discord_webhook` to a Discord webhook's URL and the world's great moments are posted to its channel: an Elder
+  (the Matriarch, the Ferryman, the Last Weaver, the Knot Mother) or the Starved One defeated, and who was there; the
+  world Mended or Severed, and by whom; a panel woven into the tapestry, and the tapestry finished; a gold medal in
+  this week's Rift Trial (the first one each week). Nothing smaller.
+- In English, in the game's own words, never pinging anyone (no @everyone or @here), within Discord's 2000 characters.
+  Sent from a thread of their own, so the server never waits for Discord; a failure is logged once, not for every
+  message. `/tether discord_test` (operators) posts a test message and says what Discord answered.
+- `export_dir` and `discord_webhook` are text, so they live in the config file only, not in the settings screen: the
+  settings every player is sent hold numbers only, and whoever has a webhook's URL can post to its channel. Change them
+  while the server is stopped. `export_minutes` is in the screen under **Other mods**, in English and Dutch.
+
+### Tests
+- Server tests for the export (the world, an online and an offline player, the Elders known and unknown, the order,
+  nobody online as the server stops), the file (written whole off the server's thread, only with a folder, a relative
+  folder from the server's), every Discord message's words, what Discord is sent, nothing sent without a webhook, a
+  webhook that is no web address never throwing, and the ending, the sixth panel, the Weaving held and a gold medal
+  posting from where the game announces them. Nothing in the tests goes over the network.
+
 ## 3.5.1: No Spawner Rooms
 
 ### Fixed

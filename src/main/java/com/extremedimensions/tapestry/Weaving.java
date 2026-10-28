@@ -266,13 +266,16 @@ public final class Weaving {
 		WorldFx.particleIn(r.dim, "extremedimensions:soul_mote", x, y, z, 3, 3, 3, 0.05, 200);
 		WorldFx.particleIn(r.dim, "minecraft:end_rod", x, y + 1, z, 1, 2, 1, 0.08, 60);
 		WorldFx.soundIn(r.dim, "minecraft:ui.toast.challenge_complete", "master", x, y, z, 1.0f, 0.8f);
+		java.util.List<ServerPlayer> there = new java.util.ArrayList<>();
 		for (ServerPlayer p : r.level.players()) {
 			if (near(p, r)) {
+				there.add(p);
 				Advancements.grant(p, Advancements.TAPESTRY);
 				p.sendSystemMessage(Component.translatable("gui.extremedimensions.weaving.held").withStyle(ChatFormatting.LIGHT_PURPLE));
 				Tapestry.open(p);
 			}
 		}
+		com.extremedimensions.compat.DiscordWebhook.tapestry(there);
 	}
 
 	/** The ward broke (or the loom is gone): the last panel unravels and its thread falls at the loom. */

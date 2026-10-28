@@ -271,6 +271,10 @@ public final class TrialService {
 		if (medal > 0) {
 			Advancements.grant(p, Advancements.TRIAL_MEDAL);
 		}
+		if (gold) {
+			// Gold for the first time this week: news for the server's channel
+			com.extremedimensions.compat.DiscordWebhook.gold(p, run);
+		}
 		WorldFx.soundSelf(p, medal > 0 ? "minecraft:ui.toast.challenge_complete" : "minecraft:block.beacon.deactivate", 0.6f, 1.0f);
 		DataStore.markDirty();
 	}

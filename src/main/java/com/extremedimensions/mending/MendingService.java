@@ -492,8 +492,10 @@ public final class MendingService {
 		String dim = SeamService.SEAM.identifier().toString();
 		WorldFx.particleIn(dim, "extremedimensions:soul_mote", so.getX(), so.getY() + 3, so.getZ(), 2, 3, 2, 0, 200);
 		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 3, so.getZ(), 2, 3, 2, 0, 120);
+		java.util.List<ServerPlayer> there = new java.util.ArrayList<>();
 		for (ServerPlayer p : seam.players()) {
 			if (inArena(p) && !p.isSpectator() && !p.isCreative()) {
+				there.add(p);
 				// Each who fought it takes something from its hoard of everything it ever ate
 				for (int i = 0; i < Math.max(0, com.extremedimensions.config.Config.RELIC_STARVED_ONE); i++) {
 					WorldFx.give(p, com.extremedimensions.relic.RelicService.random());
@@ -503,6 +505,7 @@ public final class MendingService {
 				WorldFx.soundSelf(p, "extremedimensions:lurker_death", 1.0f, 0.5f);
 			}
 		}
+		com.extremedimensions.compat.DiscordWebhook.starvedOne(there);
 	}
 
 	/** The first of the two used decides the world. Afterwards the other one only crumbles. */
@@ -524,6 +527,7 @@ public final class MendingService {
 		Advancements.grant(p, mend ? Advancements.ENDING_MENDED : Advancements.ENDING_SEVERED);
 		// The one who chose takes the thread of the Heart: the story goes on in their hand
 		com.extremedimensions.tapestry.Tapestry.earn(p, com.extremedimensions.tapestry.Tapestry.Panel.HEART);
+		com.extremedimensions.compat.DiscordWebhook.ending(mend, p);
 		return InteractionResult.SUCCESS;
 	}
 

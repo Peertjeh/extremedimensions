@@ -420,6 +420,11 @@ public final class DataStore {
 		return data.players.values();
 	}
 
+	/** The UUIDs (as text) of every player the mod has data for, whether or not they are online: a copy, to look each up by. */
+	public static List<String> playerIds() {
+		return new ArrayList<>(data.players.keySet());
+	}
+
 	public static Map<String, Anchor> anchors() {
 		return data.altars;
 	}

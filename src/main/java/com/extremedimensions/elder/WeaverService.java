@@ -724,10 +724,12 @@ public final class WeaverService {
 			com.extremedimensions.seam.FirstKnot.slain(level.getServer().overworld().getGameTime());
 		}
 		int gift = Math.max(0, Config.WEAVER_TIME_GIFT);
+		List<ServerPlayer> there = new ArrayList<>();
 		for (ServerPlayer p : level.players()) {
 			if (p.distanceToSqr(w) >= 64 * 64) {
 				continue;
 			}
+			there.add(p);
 			PlayerData d = DataStore.get(p.getUUID());
 			if (knot) {
 				Advancements.grant(p, Advancements.KNOT_MOTHER);
@@ -745,6 +747,8 @@ public final class WeaverService {
 			}
 		}
 		DataStore.markDirty();
+		com.extremedimensions.compat.DiscordWebhook.elder(knot ? com.extremedimensions.compat.StatsExport.Elder.KNOT_MOTHER
+				: com.extremedimensions.compat.StatsExport.Elder.WEAVER, there);
 	}
 
 	/** Gone: it unravels into the dark, whole. */

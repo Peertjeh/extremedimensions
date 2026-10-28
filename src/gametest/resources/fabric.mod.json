@@ -37,6 +37,8 @@
 			"com.extremedimensions.gametest.TapestryTests",
 			"com.extremedimensions.gametest.UnweavingTests",
 			"com.extremedimensions.gametest.PlaceholderTests",
+			"com.extremedimensions.gametest.StatsExportTests",
+			"com.extremedimensions.gametest.DiscordTests",
 			"com.extremedimensions.gametest.TetheriteTests",
 			"com.extremedimensions.gametest.CharmTests"
 		],

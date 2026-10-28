@@ -82,6 +82,12 @@ public class PlayerData {
 	/** The Elders: Keepers slain (the Matriarch comes after enough of them), and whether she has fallen to this player. */
 	public int keepersSlain = 0;
 	public boolean matriarchSlain = false;
+	/**
+	 * The Elders this player helped defeat, one bit each in the order of {@code StatsExport.Elder} (the Matriarch, the
+	 * Ferryman, the Last Weaver, the Knot Mother), as their advancements had it when last looked at (on joining, at an
+	 * Elder's fall, at each stats export); -1 until then (a player not seen since 3.6.0). For the stats export.
+	 */
+	public int elders = -1;
 	/** Whether the Ferryman has had his chance on this expedition. */
 	public transient boolean ferrymanRolled = false;
 	/** Rift Trials: taken up for the next visit to the Seam, the one under way, and the medals already paid this week. */

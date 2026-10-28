@@ -182,12 +182,61 @@ For example, in TAB's config: a tab suffix `" %extremedimensions:badge%"`, a hea
 `"&7%extremedimensions:status% %extremedimensions:time_left% &8| &cCurses %extremedimensions:curses% &8| &fScars %extremedimensions:scars%/5"`.
 `/tab parse <player> %extremedimensions:curses%` shows what a placeholder gives.
 
+### Stats export (for a web page)
+
+Set `export_dir` in `config/extremedimensions.json` to a folder (a relative path is from the server's folder) and the
+mod writes `extremedimensions.json` there every `export_minutes` (5) and when the server stops; `/tether export` writes
+it at once. Point it at a folder a web server serves, such as BattleHub's `config/battlehub/export`, and a page can read
+it. It is written whole (a temporary file takes the old one's place), and the one written as the server stops shows
+nobody online. The words are the tablist's:
+
+```json
+{
+  "generated": "2026-10-28T15:00:00Z",
+  "version": "3.6.0",
+  "world": {
+    "difficulty": "Hard",
+    "ending": "Unended",
+    "tapestry": {"woven": 2, "total": 6, "finished": false},
+    "newThread": 0,
+    "trial": "Hunter · Still Seam"
+  },
+  "players": [
+    {"uuid": "…", "name": "Steve", "online": true, "realm": "Nether", "status": "On an expedition",
+     "curses": 12, "abyssal": 1, "scars": 1, "expeditions": 7, "collapses": 2, "unwoven": 0,
+     "trialMedal": "Gold", "eldersSlain": 1, "elders": ["The Ferryman"]}
+  ]
+}
+```
+
+- `generated` is UTC; `players` holds everyone the mod has data for, online or not, in order of name.
+- `difficulty`: Easy, Normal, Hard, Extreme or Custom. `ending`: Mended, Severed or Unended. `trial`: this week's Rift
+  Trial and twist, `""` while the trials are not open yet.
+- `realm` (Overworld, Nether, End, Seam, Fray, Elsewhere) and `status` (At home, On an expedition, In the Seam, In the
+  Fray, Unweaving, Fallen, Elsewhere) are `""` for a player who is offline.
+- `curses`: curse stacks carried (for one online on an expedition, with a pact's on top); `abyssal`: Abyssal curses
+  carried; `trialMedal`: this week's best medal (Bronze, Silver, Gold) or `""`.
+- `eldersSlain` (0 to 4) and `elders`: the Elders the player helped defeat, as their advancements have it. Left out for
+  a player not seen since 3.6.0, rather than a count that might be wrong.
+
+### Discord notifications
+
+Set `discord_webhook` in `config/extremedimensions.json` to a Discord webhook's URL (in Discord: the channel's
+settings, Integrations, Webhooks, New Webhook, Copy Webhook URL) and the world's great moments are posted there, in
+English: an Elder or the Starved One defeated and who was there, the world Mended or Severed and by whom, a panel woven
+into the tapestry and the tapestry finished, and a gold medal in this week's Rift Trial. Nothing smaller, and nothing
+that pings (no @everyone or @here). The server never waits for Discord; a failure is logged once. `/tether
+discord_test` posts a test message and says what Discord answered.
+
 ## Configuration
 
 Every value lives in `config/extremedimensions.json` (written on first launch) and in the in-game settings screen,
 grouped by system, with a name and a description in every language; operators change the server's values from the
 screen. Four difficulties set many at once: **Easy**, **Normal** (the default), **Hard** and **Extreme**, also with
-`/tether preset <name>`. Curses have their own `penalties` section.
+`/tether preset <name>`. Curses have their own `penalties` section. Two settings are text and live in the file only:
+`export_dir` and `discord_webhook` (both `""`, off). The settings every player is sent hold numbers only, and whoever has
+a webhook's URL can post to its channel. Change them while the server is stopped (it writes the file when it starts and
+when an operator changes a setting).
 
 ## Datapacks
 
@@ -244,6 +293,7 @@ stood in any tick over 100 ms. To run it yourself: `./gradlew assemble benchJar`
 | `lore`, `journal`, `guide` | The Wanderer's leavings, the warm chain and the First Weaver; the journal; the Path and hints |
 | `tapestry` | The Weaver's Loom, its panels and boons, the Weaving and New Thread+ |
 | `trial`, `coop`, `progression` | Rift Trials; co-op; advancements |
+| `compat` | Other mods and the world outside: tablist placeholders, the stats export, Discord |
 | `data`, `config`, `network` | World data, the settings, payloads |
 | `client` | HUD, screens, sky and fog, models, sounds, tooltips |
 
@@ -258,7 +308,10 @@ wandtapijt: zes panelen, elk een blijvende gunst, en daarna Nieuwe Draad+. Een v
 getouw met Tetheriet en Tetherkoord: hak de knopen op tijd door en de hele set gaat eraf. Diep in de Seam ligt **Tetheriet**: spin
 Tether Fragments op een **Spinrok** tot Tetherkoord, smeed het tot een rang voorbij netheriet, en kies uit twintig
 betoveringen en twee nieuwe harnasversieringen. Met Text Placeholder API op de server toont **TAB** de placeholders van de
-mod in de tablist, zoals `%extremedimensions:curses%` en `%extremedimensions:badge%` (zie de tabel hierboven).
+mod in de tablist, zoals `%extremedimensions:curses%` en `%extremedimensions:badge%` (zie de tabel hierboven). Met
+`export_dir` schrijft de mod elke paar minuten `extremedimensions.json` voor een webpagina (de wereld en alle spelers),
+en met `discord_webhook` meldt hij de grote momenten in een Discord-kanaal: een verslagen Elder of de Starved One, het
+einde van de wereld, het wandtapijt en goud in de Rift Trial van de week.
 
 ## License
 

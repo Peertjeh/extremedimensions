@@ -76,5 +76,7 @@ public final class Advancements {
 	public static void grant(ServerPlayer p, String id) {
 		WorldFx.grantAdvancement(p, id);
 		com.extremedimensions.guide.Hints.earned(p, id);
+		// An Elder's fall is kept with the player for the stats export
+		com.extremedimensions.compat.StatsExport.earned(p, id);
 	}
 }

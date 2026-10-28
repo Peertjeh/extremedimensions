@@ -644,8 +644,10 @@ public final class MatriarchService {
 		}
 		// She has fallen to the one she came for, wherever they stood (she does not come for them again), and to all near
 		DataStore.get(f.target).matriarchSlain = true;
+		List<ServerPlayer> there = new ArrayList<>();
 		for (ServerPlayer p : level.players()) {
 			if (p.getUUID().equals(f.target) || p.distanceToSqr(m) < 64 * 64) {
+				there.add(p);
 				PlayerData d = DataStore.get(p.getUUID());
 				d.matriarchSlain = true;
 				Advancements.grant(p, Advancements.MATRIARCH_SLAIN);
@@ -655,6 +657,7 @@ public final class MatriarchService {
 			}
 		}
 		DataStore.markDirty();
+		com.extremedimensions.compat.DiscordWebhook.elder(com.extremedimensions.compat.StatsExport.Elder.MATRIARCH, there);
 	}
 
 	/** Gone: she sinks back into the ground, whole. */
