@@ -77,6 +77,7 @@ public final class HubEvents {
 			net.battlehub.games.Visibility.clear();
 			net.battlehub.match.NameTags.clear();
 			net.battlehub.compat.TabPlaceholders.clear();
+			net.battlehub.hub.Invites.clear();
 			net.battlehub.games.hunger.Locator.clear();
 			Sessions.clear();
 			net.battlehub.hub.HubBoards.clear();

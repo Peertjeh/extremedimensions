@@ -67,6 +67,15 @@ public final class HubConfig {
 		public boolean separateChat = true;
 		/** A chat message that starts with this reaches the whole server anyway (1.51). Empty: no way around. */
 		public String globalChatPrefix = "!";
+		/**
+		 * Invite the players in the normal world, with a [Join] button, when someone waits in a party game's lobby or its
+		 * countdown starts (1.51).
+		 */
+		public boolean invites = true;
+		/** How long someone waits in a party lobby (no countdown yet) before the normal world is invited (seconds). */
+		public int inviteAfterSeconds = 30;
+		/** At most one invitation per game in this many minutes. */
+		public int inviteCooldownMinutes = 5;
 	}
 
 	public static final class Lobby {

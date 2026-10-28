@@ -224,7 +224,10 @@ public final class Parties {
 			}
 			PartyLobby.Tick t = l.tick();
 			switch (t.event()) {
-				case COUNTDOWN_STARTED -> tell(server, l, "party.countdown", mode, t.secondsLeft());
+				case COUNTDOWN_STARTED -> {
+					tell(server, l, "party.countdown", mode, t.secondsLeft());
+					net.battlehub.hub.Invites.countdown(server, mode, l.size(), l.max(), t.secondsLeft());
+				}
 				case COUNTDOWN -> {
 					int s = t.secondsLeft();
 					if (s == 20 || s == 10 || s <= 5) {
@@ -236,6 +239,7 @@ public final class Parties {
 				default -> { }
 			}
 			if (server.getTickCount() % 20 == 0) {
+				net.battlehub.hub.Invites.lobby(server, mode, l.size(), l.min(), l.counting());
 				for (UUID id : l.players()) {
 					ServerPlayer p = server.getPlayerList().getPlayer(id);
 					if (p == null) continue;

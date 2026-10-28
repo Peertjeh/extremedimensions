@@ -43,6 +43,8 @@ left alone: no compass, no protection, no changed damage rules there.
 * Chat stays in its world: what you say in BattleHub only players in BattleHub read, and the other way round
   (`hub.separateChat`). Start a message with `!` to reach the whole server (`hub.globalChatPrefix`). Private
   messages reach their player anywhere.
+* When someone waits in a party game's lobby, or its countdown starts, players in the normal world get an
+  invitation with a **[Join]** button (`hub.invites`).
 * For a server that is only BattleHub, `hub.sendToHubOnJoin` puts everyone in the hub when they join.
 
 ### Bots: never wait alone
@@ -817,7 +819,9 @@ Everything lives in `config/battlehub/`. Run `/battlehub reload` after editing.
   * `hub`: send players to BattleHub when they join (for BattleHub-only servers), join hint, game mode in the
     hub (adventure or survival), level on the XP bar, exit door item, `separateChat` (1.50, default on: chat in
     BattleHub and chat in the normal world stay apart) and `globalChatPrefix` (1.51, default `!`: a message starting
-    with it reaches everyone anyway; empty: off)
+    with it reaches everyone anyway; empty: off), and the invitations to the normal world (1.51): `invites`,
+    `inviteAfterSeconds` (how long someone waits in a party lobby first, default 30) and `inviteCooldownMinutes`
+    (at most one per game in this time, default 5)
   * `lobby`: spawn position in the hub (set with `/battlehub setlobby`), teleport on join, keep fed, void height,
     and the lobby itself: `style` (`citadel` or `classic`), `seed` (another seed, another city), `detail` (0
     structure only, 1 normal, 2 every ornament and piece of furniture), `islandRadius` (100-200), `townDensity`

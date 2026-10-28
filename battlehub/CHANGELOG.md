@@ -13,6 +13,11 @@
 * **Talk to the whole server with `!`.** Now that BattleHub and the normal world each have their own chat, a message
   that starts with `!` reaches everyone anyway, for "come to /hub, Bed Wars starts". `hub.globalChatPrefix` sets the
   sign (empty: no way around).
+* **Invitations to the normal world.** When someone has waited 30 seconds in a party game's lobby, or its countdown
+  starts with room left, the players in the normal world get a line with a **[Join]** button that takes them to
+  BattleHub and into that lobby. At most once per game every 5 minutes, never to bots or to players already in
+  BattleHub (`hub.invites`, `hub.inviteAfterSeconds`, `hub.inviteCooldownMinutes`). The weekly tournament already
+  invited everyone with its sign-up button.
 
 ## 1.50.0
 

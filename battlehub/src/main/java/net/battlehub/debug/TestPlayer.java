@@ -68,6 +68,16 @@ public final class TestPlayer extends ServerPlayer {
 		return false;
 	}
 
+	/** Whether one of the last system messages this player's client got contains the text (a command of a button too). */
+	public boolean clientSystemHas(String text) {
+		synchronized (link.system) {
+			for (String line : link.system) {
+				if (line.contains(text)) return true;
+			}
+		}
+		return false;
+	}
+
 	/** The player picks a hotbar slot on the client (the server hears about it, as with a real client). */
 	public void pickSlot(int slot) {
 		link.heldSlot = slot;

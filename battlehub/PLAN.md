@@ -2289,6 +2289,14 @@ in `PlayerListMixin`): begint die met `hub.globalChatPrefix` (standaard `!`), da
 in het bericht staan; weghalen kan niet zonder de handtekening van het bericht te breken, en het laat ook zien dat het
 voor iedereen was. Zelftest: S in de normale wereld zegt "!…", A in de lobby leest het.
 
+**C – Uitnodigingen.** Het weekly tournament nodigde al iedereen uit met een knop; nieuw is `hub.Invites` voor de
+partygames. Wacht iemand `hub.inviteAfterSeconds` (30) in een lobby zonder aftellen, of begint het aftellen met nog
+plek, dan krijgen spelers in de normale wereld een regel met **[Join]** (`/battlehub join <mode>`, dat je eerst naar
+BattleHub brengt). Hoogstens één per game per `hub.inviteCooldownMinutes` (5); de wachttijd telt alleen als er iemand
+buiten was. Haken in `Parties.tick` (aftellen begonnen, en elke seconde de lobby). Zelftest: A wacht alleen in de
+Sumo-lobby, S buiten krijgt de knop en A niet; S klikt en staat in de lobby. `TestConnection` houdt daarvoor ook de
+laatste 200 systeemregels bij.
+
 ## Versie 1.50.0 – Chat per wereld
 
 **Vraag.** De chat van BattleHub gescheiden houden van de andere wereld. (Op de server draaien TAB en Styled Chat;
