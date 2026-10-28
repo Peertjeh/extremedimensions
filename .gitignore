@@ -5,3 +5,6 @@ run/
 
 # python
 __pycache__/
+
+# javac argument files left behind by a failed compile
+javac.*.args
