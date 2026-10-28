@@ -2264,12 +2264,17 @@ de simulatie, en het gat tussen intermediate en master klopt met het spel) en da
 staat. Hoe andere spelers over de niveaus verdeeld zijn, zegt een volgende export van meer spelers. De mace-schaal rust op
 vier gevechten.
 
-## Versie 1.51.0 – Placeholders, globale chat, uitnodigingen, titels uit Extreme Dimensions, Discord
+## Versie 1.51.0 – Placeholders, globale chat, titels uit Extreme Dimensions, Discord
 
 **Vraag.** Na 1.50 ("nog meer ideeën?") koos de gebruiker alles: (A) placeholders van BattleHub voor TAB en Styled
 Chat, zoals Extreme Dimensions 3.5.0 ze heeft; (B) toch de hele server bereiken met een `!` voor je bericht nu de chats
 gescheiden zijn; (C) spelers in de normale wereld uitnodigen als er een game begint of het weekly tournament opent; (D)
 BattleHub-titels die je in Extreme Dimensions verdient; (E) meldingen in Discord.
+
+**C – Uitnodigingen: weer weg.** Gebouwd in `b6280ce` (een regel met **[Join]** voor spelers in de normale wereld als
+iemand in een partylobby wacht of het aftellen begint), maar de gebruiker wilde ze toch niet. Die commit is
+teruggedraaid: `hub.Invites`, de haken in `Parties.tick`, `hub.invites*`, de lang-teksten en de zelftest. Het weekly
+tournament nodigt nog steeds iedereen uit met zijn aanmeldknop, zoals vóór 1.51.
 
 **A – Placeholders.** `compat.TabPlaceholders` rekent per speler en voor de hub de waarden uit op de serverthread (elke
 `integrations.placeholderRefreshTicks`, standaard 20) en bewaart ze; `compat.PlaceholderApiHook` biedt ze aan
@@ -2288,14 +2293,6 @@ Modrinth (`server-test.sh`); lukt dat niet, dan slaat de test alleen het terugle
 in `PlayerListMixin`): begint die met `hub.globalChatPrefix` (standaard `!`), dan krijgt iedereen hem. Het teken blijft
 in het bericht staan; weghalen kan niet zonder de handtekening van het bericht te breken, en het laat ook zien dat het
 voor iedereen was. Zelftest: S in de normale wereld zegt "!…", A in de lobby leest het.
-
-**C – Uitnodigingen.** Het weekly tournament nodigde al iedereen uit met een knop; nieuw is `hub.Invites` voor de
-partygames. Wacht iemand `hub.inviteAfterSeconds` (30) in een lobby zonder aftellen, of begint het aftellen met nog
-plek, dan krijgen spelers in de normale wereld een regel met **[Join]** (`/battlehub join <mode>`, dat je eerst naar
-BattleHub brengt). Hoogstens één per game per `hub.inviteCooldownMinutes` (5); de wachttijd telt alleen als er iemand
-buiten was. Haken in `Parties.tick` (aftellen begonnen, en elke seconde de lobby). Zelftest: A wacht alleen in de
-Sumo-lobby, S buiten krijgt de knop en A niet; S klikt en staat in de lobby. `TestConnection` houdt daarvoor ook de
-laatste 200 systeemregels bij.
 
 **D – Titels uit Extreme Dimensions.** Een nieuwe vereiste `placeholder` in `titles.json`, met de velden `placeholder`
 (`extremedimensions:expeditions`), `text` (exacte waarde, hoofdletters maken niet uit) of anders `value` (getal, minstens)

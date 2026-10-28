@@ -219,35 +219,7 @@ final class HubWorldTests {
 		s.check(tag + ": queue left, things back", () -> !HubWorld.isBattleHub(p(S).level())
 				&& Sessions.state(p(S).getUUID()) != Sessions.State.QUEUED && diamonds(p(S)) == 5);
 		chat(server, s);
-		invites(server, s);
 		s.run(tag + ": S logs off", () -> p(S).leave());
-	}
-
-	/**
-	 * Invitations (1.51): A waits alone in the Sumo lobby; S in the normal world gets a line with a [Join] button and A
-	 * does not; the button's command takes S to BattleHub and into that lobby.
-	 */
-	private static void invites(MinecraftServer server, Script s) {
-		String tag = "invites";
-		s.run(tag + ": A waits alone in the Sumo lobby", () -> {
-			ConfigManager.config().hub.inviteAfterSeconds = 1;
-			net.battlehub.hub.Invites.clear();
-			net.battlehub.queue.Parties.join(p(A), GameMode.SUMO);
-		});
-		s.waitFor(tag + ": S in the normal world is invited, with the button's command", 100,
-				() -> p(S).clientSystemHas("/battlehub join sumo"));
-		s.check(tag + ": A, in BattleHub already, is not", () -> !p(A).clientSystemHas("/battlehub join sumo"));
-		s.run(tag + ": S clicks [Join]", () -> server.getCommands().performPrefixedCommand(p(S).createCommandSourceStack(),
-				"battlehub join sumo"));
-		s.waitFor(tag + ": S is in BattleHub, in the Sumo lobby", 200, () -> Travel.inBattleHub(p(S))
-				&& net.battlehub.queue.Parties.members(GameMode.SUMO).contains(p(S).getUUID()));
-		s.run(tag + ": both leave the lobby, S back to the normal world", () -> {
-			Queues.leaveAll(p(A));
-			Queues.leaveAll(p(S));
-			Travel.leave(p(S));
-			ConfigManager.config().hub.inviteAfterSeconds = 30;
-		});
-		s.waitFor(tag + ": S outside again", 200, () -> !HubWorld.isBattleHub(p(S).level()));
 	}
 
 	/**

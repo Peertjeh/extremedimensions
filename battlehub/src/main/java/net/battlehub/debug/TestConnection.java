@@ -37,8 +37,6 @@ final class TestConnection extends Connection {
 	final java.util.Map<Integer, Boolean> glowing = new ConcurrentHashMap<>();
 	/** The players' chat messages the client got, as the packets print themselves (their text is in there). */
 	final java.util.List<String> chat = new java.util.concurrent.CopyOnWriteArrayList<>();
-	/** The last system messages the client got (the server's own lines), printed the same way. */
-	final java.util.Deque<String> system = new java.util.ArrayDeque<>();
 
 	TestConnection() {
 		super(PacketFlow.SERVERBOUND);
@@ -71,11 +69,6 @@ final class TestConnection extends Connection {
 				|| msg instanceof net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket) {
 			// signed chat, and unsigned chat (a command run for a player, a server without chat signing)
 			chat.add(msg.toString());
-		} else if (msg instanceof net.minecraft.network.protocol.game.ClientboundSystemChatPacket) {
-			synchronized (system) {
-				system.addLast(msg.toString());
-				if (system.size() > 200) system.removeFirst();
-			}
 		} else if (msg instanceof net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket held) {
 			heldSlot = held.slot();
 		} else if (msg instanceof net.minecraft.network.protocol.game.ClientboundAnimatePacket anim) {
