@@ -2340,7 +2340,7 @@ ieder leest alleen wat in zijn eigen wereld gezegd is. Met `hub.separateChat` ui
 houdt daarvoor de chatpakketten bij die de client krijgt (ondertekend en niet-ondertekend).
 
 **CI van `cedc7e4`:** 979 geslaagd, 1 gefaald. De chattest slaagde; wat faalde was "real hunger games: after five
-seconds of sneaking the seal breaks", een wankele Hunger Games-test die niets met de chat te maken heeft (in de vier
+seconds of sneaking the seal breaks", een wankele Hunger Games-test die niets met de chat te maken heeft (in de vijf
 runs daarna slaagde hij).
 
 ## Versie 1.49.0 – De nacht boven het plein, eigen geluiden, ontwijken, dezelfde kit, minder verklappen
