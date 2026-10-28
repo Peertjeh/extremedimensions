@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.5.1: No Spawner Rooms
+
+### Fixed
+- A zombie spawner (or any monster spawner) could be farmed for atonement. What a spawner spawns already gave
+  nothing, but monsters that spawned by themselves in the dark room around it did, and so did monsters lured in.
+  Now no kill within **16 blocks of a monster spawner or trial spawner** atones, and a monster born there never counts
+  as wild. The same goes for the deeds that break an Abyssal curse (slay undead in daylight, and the like).
+- The limit per place (five atoning kills within 24 blocks in ten minutes) was counted per player, so friends hunting
+  one spot together each got five. It now counts **everyone's** kills at that place.
+- Two new settings: `atone_spawner_radius` (16; 0 switches the spawner rule off) and `atone_kill_area_shared` (1; 0
+  gives each player their own limit again).
+
+### Tests
+- A real zombie spawner in a closed stone room: its zombies, a zombie born in the dark beside it, and a wild zombie
+  lured in earn nothing, while one fought far off does; a trial spawner keeps its room the same. Two friends share
+  one spot's limit. The kill tests now run in batches of their own, since the limit per place counts everyone's
+  kills.
+
 ## 3.5.0: The Tablist
 
 ### New: placeholders for TAB

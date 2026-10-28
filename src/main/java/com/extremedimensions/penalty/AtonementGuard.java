@@ -1,5 +1,6 @@
 package com.extremedimensions.penalty;
 
+import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -10,6 +11,8 @@ import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,15 +21,23 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
+import net.minecraft.world.level.block.entity.TrialSpawnerBlockEntity;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 /**
  * Atonement from kills is earned in the wild, not in a farm. A kill counts only when
  * <ol>
  * <li>the monster spawned naturally (in the dark, in a cave, outside, in a structure), not from a spawner, an egg, a
  * raid, reinforcements or a command;</li>
+ * <li>no monster spawner or trial spawner stands within {@code atone_spawner_radius} blocks of where it was born or
+ * where it fell (a spawner's dark room is a farm, whatever else spawns in it);</li>
  * <li>the killer dealt at least {@code atone_kill_min_share} of its health themselves (a farm's fall does not count);</li>
- * <li>the killer has not already killed {@code atone_kill_area_limit} monsters within {@code atone_kill_area_radius}
- * blocks in the last {@code atone_kill_area_minutes} (a farm keeps its own spot saturated).</li>
+ * <li>not already {@code atone_kill_area_limit} monsters were killed within {@code atone_kill_area_radius} blocks in the
+ * last {@code atone_kill_area_minutes}, by anyone ({@code atone_kill_area_shared}, so friends cannot each take a
+ * spot's share) or by the killer alone (a farm keeps its own spot saturated).</li>
  * </ol>
  * The marks live in memory: a monster that outlives a server restart no longer counts, which only ever errs on the
  * strict side.
@@ -40,12 +51,49 @@ public final class AtonementGuard {
 	/** Monster -> its health just before the latest blow (the killing blow never reaches the after-damage event). */
 	private static final Map<UUID, Float> BEFORE = new HashMap<>();
 
+	/** Kills of wild monsters lately, by anyone: dimension, x, z, game time (for the shared per-place limit). */
+	private record Kill(String dim, long x, long z, long at) {}
+
+	private static final ArrayDeque<Kill> RECENT = new ArrayDeque<>();
+
 	/** Called as a monster is prepared for the world (a mixin on its spawn): remembers the wild ones. */
 	public static void spawned(Mob mob, EntitySpawnReason reason) {
-		if (reason == EntitySpawnReason.NATURAL || reason == EntitySpawnReason.CHUNK_GENERATION
-				|| reason == EntitySpawnReason.STRUCTURE || reason == EntitySpawnReason.PATROL) {
+		if ((reason == EntitySpawnReason.NATURAL || reason == EntitySpawnReason.CHUNK_GENERATION
+				|| reason == EntitySpawnReason.STRUCTURE || reason == EntitySpawnReason.PATROL)
+				&& !nearSpawner(mob.level(), mob.getX(), mob.getY(), mob.getZ())) {
 			NATURAL.add(mob.getUUID());
 		}
+	}
+
+	/**
+	 * Whether a monster spawner or a trial spawner stands within {@code atone_spawner_radius} blocks of this spot. Only
+	 * chunks already loaded are looked in (from the server's thread; elsewhere, as while the world is being generated,
+	 * the answer is no).
+	 */
+	public static boolean nearSpawner(Level level, double x, double y, double z) {
+		double r = Config.ATONE_SPAWNER_RADIUS;
+		if (r <= 0 || !(level instanceof ServerLevel server)) {
+			return false;
+		}
+		int x0 = SectionPos.blockToSectionCoord(x - r), x1 = SectionPos.blockToSectionCoord(x + r);
+		int z0 = SectionPos.blockToSectionCoord(z - r), z1 = SectionPos.blockToSectionCoord(z + r);
+		for (int cx = x0; cx <= x1; cx++) {
+			for (int cz = z0; cz <= z1; cz++) {
+				LevelChunk chunk = server.getChunkSource().getChunkNow(cx, cz);
+				if (chunk == null) {
+					continue;
+				}
+				for (BlockEntity be : chunk.getBlockEntities().values()) {
+					if ((be instanceof SpawnerBlockEntity || be instanceof TrialSpawnerBlockEntity) && !be.isRemoved()) {
+						BlockPos at = be.getBlockPos();
+						if (at.distToCenterSqr(x, y, z) <= r * r) {
+							return true;
+						}
+					}
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -58,8 +106,9 @@ public final class AtonementGuard {
 		}
 	}
 
+	/** Whether this creature is of the wild and not by a spawner (for the deeds that break a curse, as for atonement). */
 	public static boolean natural(LivingEntity e) {
-		return NATURAL.contains(e.getUUID());
+		return NATURAL.contains(e.getUUID()) && !nearSpawner(e.level(), e.getX(), e.getY(), e.getZ());
 	}
 
 	/** Every hit on a non-player: who dealt how much. */
@@ -83,7 +132,7 @@ public final class AtonementGuard {
 		boolean natural = NATURAL.remove(mob.getUUID());
 		Map<UUID, Float> dealt = DEALT.remove(mob.getUUID());
 		Float last = BEFORE.remove(mob.getUUID());
-		if (!natural) {
+		if (!natural || nearSpawner(mob.level(), mob.getX(), mob.getY(), mob.getZ())) {
 			return false;
 		}
 		float mine = (dealt == null ? 0 : dealt.getOrDefault(killer.getUUID(), 0f)) + (last == null ? 0 : Math.max(0, last));
@@ -103,6 +152,21 @@ public final class AtonementGuard {
 			}
 		}
 		d.recentKills.add(new long[] {(long) mob.getX(), (long) mob.getZ(), now});
+		if (Config.ATONE_KILL_AREA_SHARED > 0) {
+			// Everyone's kills at this place count towards its limit, so friends cannot each take its share (all levels
+			// share one game clock)
+			String dim = mob.level().dimension().identifier().toString();
+			RECENT.removeIf(k -> now - k.at() > window || k.at() > now);
+			int shared = 0;
+			for (Kill k : RECENT) {
+				double dx = k.x() - mob.getX(), dz = k.z() - mob.getZ();
+				if (k.dim().equals(dim) && dx * dx + dz * dz <= r2) {
+					shared++;
+				}
+			}
+			RECENT.add(new Kill(dim, (long) mob.getX(), (long) mob.getZ(), now));
+			return shared < Config.ATONE_KILL_AREA_LIMIT && here < Config.ATONE_KILL_AREA_LIMIT;
+		}
 		return here < Config.ATONE_KILL_AREA_LIMIT;
 	}
 
@@ -130,6 +194,7 @@ public final class AtonementGuard {
 	}
 
 	public static void clear() {
+		RECENT.clear();
 		NATURAL.clear();
 		DEALT.clear();
 		BEFORE.clear();

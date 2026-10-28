@@ -26,4 +26,8 @@ final class Alone {
 	static final String PERF_MATRIARCH = "extremedimensions_test:alone/perf_matriarch";
 	static final String PERF_FERRYMAN = "extremedimensions_test:alone/perf_ferryman";
 	static final String PERF_WEAVER = "extremedimensions_test:alone/perf_weaver";
+	static final String WILD_KILLS = "extremedimensions_test:alone/wild_kills";
+	static final String ONE_SPOT = "extremedimensions_test:alone/one_spot";
+	static final String SHARED_SPOT = "extremedimensions_test:alone/shared_spot";
+	static final String SPAWNER_ROOM = "extremedimensions_test:alone/spawner_room";
 }

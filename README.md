@@ -62,6 +62,9 @@ runes are the **Seam script**, an alphabet of the mod's own: threads with knots,
 
 Lift them by **atonement** (played off on expeditions and at home; every death undoes half), **Tether Fragments**
 offered to an anchor, or a **Mending Cloth**. Every stack lifted leaves a **scar** that weakens the drain.
+Monsters slain by hand count towards atonement only from the wild: nothing from a spawner, nothing within 16 blocks
+of a monster spawner or trial spawner (not even what spawns there in the dark by itself), and at most five per place
+in ten minutes, for everyone hunting there together.
 
 A set that is full can be **unwoven** at the world's Weaver's Loom (hold Tetherite or a Tether Cord and use the loom,
 or press **Unweave** on the tapestry). The price is 2 Tetherite Ingots and 4 Tether Cords (the Extreme set half

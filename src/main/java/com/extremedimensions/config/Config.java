@@ -215,12 +215,19 @@ public final class Config {
 	/**
 	 * Atonement from kills only counts monsters that spawned naturally, that the player dealt at least this share of the
 	 * damage to (a farm's fall does not count), and at most a few at one place: after {@code atone_kill_area_limit}
-	 * kills within {@code atone_kill_area_radius} blocks in {@code atone_kill_area_minutes}, that place gives nothing.
+	 * kills within {@code atone_kill_area_radius} blocks in {@code atone_kill_area_minutes}, that place gives nothing
+	 * (counting everyone's kills there with {@code atone_kill_area_shared} = 1, only the killer's own with 0).
 	 */
 	public static double ATONE_KILL_MIN_SHARE = 0.5;
 	public static double ATONE_KILL_AREA_RADIUS = 24.0;
 	public static int ATONE_KILL_AREA_LIMIT = 5;
 	public static int ATONE_KILL_AREA_MINUTES = 10;
+	public static int ATONE_KILL_AREA_SHARED = 1;
+	/**
+	 * Within this many blocks of a monster spawner or a trial spawner no kill atones or breaks a curse, not even of a
+	 * monster that spawned there in the dark by itself (0 = off).
+	 */
+	public static double ATONE_SPAWNER_RADIUS = 16.0;
 	/** Tether Fragments a mending at an anchor costs per stack the curse has (3 stacks = 3 fragments). */
 	public static int FRAGMENT_COST_PER_STACK = 1;
 	/** Chance that a Veil Ray drops a second Veil Wing. */
@@ -1188,7 +1195,7 @@ public final class Config {
 			{"elder_core_hits", 1, 50}, {"elder_core_daze_seconds", 0, 10}, {"elder_isle_fall", 0, 1}, {"elder_isle_min_seconds", 3, 600},
 			{"elder_isle_max_seconds", 3, 600}, {"elder_isle_warn_seconds", 0.5, 10}, {"elder_isle_damage", 0, 100},
 			{"elder_isle_radius", 1, 16}, {"elder_isle_boss_share", 0, 0.5}, {"elder_isle_daze_seconds", 0, 10}, {"elder_arena_fly_max", 50, 5000}, {"elder_arena_fly_range", 8, 256}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
-			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600}, {"coop_burden_relief_per_day", 0, 100},
+			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600}, {"atone_kill_area_shared", 0, 1}, {"atone_spawner_radius", 0, 64}, {"coop_burden_relief_per_day", 0, 100},
 			{"tapestry_respin_silk", 0, 64}, {"tapestry_roots_gifts", 1, 10}, {"tapestry_toll_drain", 0, 1}, {"tapestry_unravelling_share", 3, 20},
 			{"tapestry_knot_fray", 0, 10}, {"tapestry_knot_strands", 0, 1}, {"tapestry_heart_echo", 0, 1}, {"weaving_seconds", 30, 3600},
 			{"weaving_ward", 1, 10000}, {"weaving_wave_seconds", 5, 600}, {"weaving_wave", 0, 40}, {"weaving_wave_per_player", 0, 20},

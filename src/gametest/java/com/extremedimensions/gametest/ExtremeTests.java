@@ -23,6 +23,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -33,6 +34,9 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /** The Extreme curses do what their (cryptic) cards hide, and atonement from kills only comes from the wild. */
@@ -255,8 +259,11 @@ public class ExtremeTests {
 		AtonementGuard.damaged(m, p.damageSources().playerAttack(p), amount, amount, false);
 	}
 
-	@GameTest
+	// The kill tests run alone: the limit per place counts every kill there, by anyone, so a test beside them would
+	// count towards theirs (and they start from nothing for the same reason)
+	@GameTest(environment = Alone.WILD_KILLS)
 	public void onlyWildKillsAtone(GameTestHelper helper) {
+		AtonementGuard.clear();
 		ServerPlayer p = cursed(helper);
 		// A spawner's zombie, as in a farm
 		Mob farmed = (Mob) type("zombie").spawn(helper.getLevel(), helper.absolutePos(new BlockPos(2, 2, 2)), EntitySpawnReason.SPAWNER);
@@ -284,8 +291,9 @@ public class ExtremeTests {
 		helper.succeed();
 	}
 
-	@GameTest
+	@GameTest(environment = Alone.ONE_SPOT)
 	public void oneSpotSaturates(GameTestHelper helper) {
+		AtonementGuard.clear();
 		ServerPlayer p = cursed(helper);
 		int limit = Config.ATONE_KILL_AREA_LIMIT;
 		for (int i = 0; i < limit; i++) {
@@ -305,5 +313,134 @@ public class ExtremeTests {
 		check(helper, AtonementGuard.counts(p, away), "a kill far from the saturated spot earned nothing");
 		away.discard();
 		helper.succeed();
+	}
+
+	/** Friends hunting together share one limit per place (and each has their own with atone_kill_area_shared = 0). */
+	@GameTest(environment = Alone.SHARED_SPOT)
+	public void friendsShareOneSpot(GameTestHelper helper) {
+		AtonementGuard.clear();
+		ServerPlayer a = TestPlayers.survivor(helper, "test-hunter-a"), b = TestPlayers.survivor(helper, "test-hunter-b");
+		int shared = Config.ATONE_KILL_AREA_SHARED, limit = Config.ATONE_KILL_AREA_LIMIT;
+		try {
+			Config.ATONE_KILL_AREA_SHARED = 1;
+			for (int i = 0; i < limit; i++) {
+				Mob m = wild(helper, 2.5, 2.5);
+				hit(a, m, 1.0);
+				check(helper, AtonementGuard.counts(a, m), "kill %s of %s at one spot earned nothing", i + 1, limit);
+				m.discard();
+			}
+			Mob friends = wild(helper, 3.5, 3.5);
+			hit(b, friends, 1.0);
+			check(helper, !AtonementGuard.counts(b, friends), "a friend's kill at a spot already hunted out still earned atonement");
+			friends.discard();
+			Config.ATONE_KILL_AREA_SHARED = 0;
+			Mob own = wild(helper, 3.5, 3.5);
+			hit(b, own, 1.0);
+			check(helper, AtonementGuard.counts(b, own), "with atone_kill_area_shared = 0 a friend's kills still counted towards the limit");
+			own.discard();
+		} finally {
+			Config.ATONE_KILL_AREA_SHARED = shared;
+		}
+		helper.succeed();
+	}
+
+	/**
+	 * A zombie spawner in a dark stone room, as found underground: what it spawns gives nothing, nor does a zombie that
+	 * spawns there in the dark by itself or is lured in, and a trial spawner keeps its room the same. Away from it the
+	 * wild counts as before.
+	 */
+	@GameTest(environment = Alone.SPAWNER_ROOM, maxTicks = 220)
+	public void aSpawnerRoomGivesNothing(GameTestHelper helper) {
+		AtonementGuard.clear();
+		ServerLevel level = helper.getLevel();
+		Difficulty was = level.getDifficulty();
+		level.getServer().setDifficulty(Difficulty.NORMAL, true);
+		// The room: stone all round, 7 x 3 x 7 inside, the spawner in its middle
+		for (int x = 0; x <= 8; x++) {
+			for (int y = 1; y <= 5; y++) {
+				for (int z = 0; z <= 8; z++) {
+					boolean shell = x == 0 || x == 8 || y == 1 || y == 5 || z == 0 || z == 8;
+					helper.setBlock(new BlockPos(x, y, z), shell ? Blocks.STONE.defaultBlockState() : Blocks.AIR.defaultBlockState());
+				}
+			}
+		}
+		BlockPos spawner = helper.absolutePos(new BlockPos(4, 2, 4));
+		level.setBlockAndUpdate(spawner, Blocks.SPAWNER.defaultBlockState());
+		if (!(level.getBlockEntity(spawner) instanceof SpawnerBlockEntity be)) {
+			level.getServer().setDifficulty(was, true);
+			throw helper.assertionException("the spawner has no block entity");
+		}
+		be.setEntityId(type("zombie"), level.getRandom());
+		ServerPlayer p = cursed(helper);
+		place(helper, p, 2.5, 2, 2.5);
+		AABB room = new AABB(helper.absolutePos(new BlockPos(1, 2, 1))).expandTowards(6, 2, 6);
+		for (int t = 10; t <= 200; t += 10) {
+			boolean last = t == 200;
+			helper.runAfterDelay(t, () -> {
+				List<Mob> spawned = level.getEntitiesOfClass(Mob.class, room, e -> e.getType() == type("zombie") && !e.isNoAi());
+				if (spawned.isEmpty() && !last) {
+					return;
+				}
+				try {
+					check(helper, !spawned.isEmpty(), "the spawner spawned no zombie in %s ticks", 200);
+					checkRoom(helper, p, spawned.get(0), spawner);
+				} finally {
+					level.setBlockAndUpdate(spawner, Blocks.AIR.defaultBlockState());
+					level.getEntitiesOfClass(Mob.class, room.inflate(2), e -> e.getType() == type("zombie")).forEach(Entity::discard);
+					level.getServer().setDifficulty(was, true);
+				}
+				helper.succeed();
+			});
+		}
+	}
+
+	private static void checkRoom(GameTestHelper helper, ServerPlayer p, Mob farmed, BlockPos spawner) {
+		ServerLevel level = helper.getLevel();
+		check(helper, AtonementGuard.nearSpawner(level, spawner.getX() + 0.5, spawner.getY(), spawner.getZ() + 0.5 + Config.ATONE_SPAWNER_RADIUS - 1),
+				"%s blocks from a spawner is not near it", Config.ATONE_SPAWNER_RADIUS - 1);
+		check(helper, !AtonementGuard.nearSpawner(level, spawner.getX() + 0.5, spawner.getY(), spawner.getZ() + 0.5 + Config.ATONE_SPAWNER_RADIUS + 2),
+				"%s blocks from a spawner is near it", Config.ATONE_SPAWNER_RADIUS + 2);
+		// What the spawner made
+		check(helper, !AtonementGuard.natural(farmed), "the spawner's zombie counts as wild");
+		hit(p, farmed, 1.0);
+		check(helper, !AtonementGuard.counts(p, farmed), "the spawner's zombie earned atonement");
+		// A zombie the dark room spawns by itself, beside the spawner
+		Mob dark = wild(helper, 6.5, 6.5);
+		check(helper, !AtonementGuard.natural(dark), "a zombie born in the dark beside a spawner counts as wild");
+		hit(p, dark, 1.0);
+		check(helper, !AtonementGuard.counts(p, dark), "a zombie born in the dark beside a spawner earned atonement");
+		// A wild zombie, born far off (moved there before it is prepared, so no far chunk has to be loaded)...
+		double far = Config.ATONE_SPAWNER_RADIUS * 2 + 8;
+		Mob lured = mob(helper, "zombie", 6.5, 2, 2.5);
+		lured.setPos(lured.getX() + far, lured.getY(), lured.getZ());
+		lured.finalizeSpawn(level, level.getCurrentDifficultyAt(lured.blockPosition()), EntitySpawnReason.NATURAL, null);
+		check(helper, AtonementGuard.natural(lured), "a zombie born far from the spawner does not count as wild");
+		// ...and lured into the room, gives nothing there
+		lured.setPos(lured.getX() - far, lured.getY(), lured.getZ());
+		check(helper, !AtonementGuard.natural(lured), "a wild zombie lured into a spawner's room still counts as wild for a curse's deed");
+		hit(p, lured, 1.0);
+		check(helper, !AtonementGuard.counts(p, lured), "a wild zombie lured into a spawner's room earned atonement");
+		// Fought out there, it counts
+		Mob out = mob(helper, "zombie", 2.5, 2, 6.5);
+		out.setPos(out.getX() + far, out.getY(), out.getZ());
+		out.finalizeSpawn(level, level.getCurrentDifficultyAt(out.blockPosition()), EntitySpawnReason.NATURAL, null);
+		hit(p, out, 1.0);
+		check(helper, AtonementGuard.counts(p, out), "a wild zombie fought far from the spawner earned nothing");
+		// With the radius at 0 the room is like any other
+		double radius = Config.ATONE_SPAWNER_RADIUS;
+		Mob off;
+		try {
+			Config.ATONE_SPAWNER_RADIUS = 0;
+			off = wild(helper, 5.5, 2.5);
+			check(helper, AtonementGuard.natural(off), "with atone_spawner_radius = 0 a zombie born beside the spawner is not wild");
+		} finally {
+			Config.ATONE_SPAWNER_RADIUS = radius;
+		}
+		// A trial spawner keeps its room the same
+		level.setBlockAndUpdate(spawner, Blocks.TRIAL_SPAWNER.defaultBlockState());
+		check(helper, AtonementGuard.nearSpawner(level, spawner.getX() + 0.5, spawner.getY(), spawner.getZ() + 3.5), "a trial spawner's room is not near a spawner");
+		for (Mob m : List.of(farmed, dark, lured, out, off)) {
+			m.discard();
+		}
 	}
 }
