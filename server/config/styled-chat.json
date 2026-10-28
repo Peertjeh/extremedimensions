@@ -15,7 +15,7 @@
   "default": {
     "display_name": "${default}",
     "message_formats": {
-      "chat": "<hover:'<gray>%extremedimensions:realm% <dark_gray>|</dark_gray> %extremedimensions:status% <white>%extremedimensions:time_left%</white>\n<gray>Curses: <white>%extremedimensions:curses%</white>   Scars: <white>%extremedimensions:scars%/5</white>\n<gray>Expeditions: <white>%extremedimensions:expeditions%</white>   Collapses: <white>%extremedimensions:collapses%</white>'>${player}</hover> <dark_gray>»</dark_gray> ${message}"
+      "chat": "<hover:'<gray>%extremedimensions:realm% <dark_gray>|</dark_gray> %extremedimensions:status% <white>%extremedimensions:time_left%</white>\n<gray>Curses: <white>%extremedimensions:curses%</white>   Scars: <white>%extremedimensions:scars%/5</white>\n<gray>Expeditions: <white>%extremedimensions:expeditions%</white>   Collapses: <white>%extremedimensions:collapses%</white>'><shadow:#00000000>%player:head%</shadow> ${player}</hover> <dark_gray>»</dark_gray> ${message}"
     },
     "mention_style": "<c:#7878ff>%player:displayname%",
     "emoticons": {
@@ -60,7 +60,7 @@
         ]
       },
       "message_formats": {
-        "chat": "<gold>⚔</gold> ${player} <dark_gray>»</dark_gray> ${message}"
+        "chat": "<shadow:#00000000>%player:head%</shadow> <gold>⚔</gold> ${player} <dark_gray>»</dark_gray> ${message}"
       }
     }
   ]
