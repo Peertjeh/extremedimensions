@@ -83,8 +83,8 @@ function showEd(ed) {
   if (!ed) return;
   const w = ed.world || {};
   const tap = w.tapestry || {};
-  const facts = [["Difficulty", w.difficulty], ["Ending", w.ending], ["Tapestry", tap.total ? tap.woven + " / " + tap.total : ""],
-    ["New Thread+", w.newThread], ["This week's Rift Trial", w.trial || "not open yet"]];
+  const facts = [["Difficulty", w.difficulty], ["Ending", w.ending], ["Tapestry", tap.total ? tap.woven + " / " + tap.total + (tap.finished ? " (finished)" : "") : ""],
+    ["New Thread+", w.newThread || ""], ["This week's Rift Trial", w.trial || "not open yet"]];
   $("world").innerHTML = facts.filter(([, v]) => v !== undefined && v !== "")
     .map(([k, v]) => "<dt>" + esc(k) + "</dt><dd>" + esc(v) + "</dd>").join("");
   const players = ed.players || [];
@@ -92,7 +92,8 @@ function showEd(ed) {
   const showTop = () => {
     const k = $("edboard").value;
     const top = players.filter(p => (p[k] || 0) > 0).sort((a, b) => b[k] - a[k] || a.name.localeCompare(b.name)).slice(0, 15);
-    rows($("edtop"), top, p => ["<td class='n'>" + (top.indexOf(p) + 1) + "</td>", "<td>" + esc(p.name)
+    rows($("edtop"), top, p => ["<td class='n'>" + (top.indexOf(p) + 1) + "</td>",
+      "<td" + (k === "eldersSlain" && p.elders ? " title='" + esc(p.elders.join(", ")) + "'" : "") + ">" + esc(p.name)
       + (p.trialMedal === "Gold" ? " <span title='Gold in this week&#39;s Rift Trial'>&#9733;</span>" : "") + "</td>",
       "<td class='r'>" + p[k] + "</td>"]);
   };
