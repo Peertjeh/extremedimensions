@@ -1,5 +1,45 @@
 # Changelog
 
+## 3.7.0: Teeth in the Dark
+
+### The Lurkers bite
+- A Lurker now shows what it came for. Its glow **pulses blue** when it comes to steal and **glows red** when it comes
+  to hurt; its own violet means it only watches. The Wound Lens reads a hunting one too.
+- **Come to steal:** its reach claws you for damage, it takes several things at once (two on Normal, three on Extreme)
+  and it may leave a curse behind as well.
+- **Come to hurt:** it runs at you openly and deals heavy blows, each after a short wind-up you can see and hear
+  coming (red motes at its hands, a low shriek). A step back, a raised shield or armour all count. After its blows,
+  badly hurt, or when it has hunted long enough, it runs.
+- **Struck**, a Lurker may turn on you instead of fleeing.
+- **Curses:** an encounter may leave a curse (at most one, two on Extreme, a stolen curse counted); on Hard and Extreme
+  it may be one of the Extreme set.
+- Watching Lurkers come closer twice as often as before (30% on Normal).
+- Everything grows with the difficulty: Easy is gentle, Extreme is merciless. Eleven new settings in the Lurker
+  section, in English and Dutch. A world already set to a difficulty takes that difficulty's values of them.
+- `/tether lurker hunt` (operators) sends a Lurker that comes to hurt.
+
+### The tribe walks better
+- Lurkers and Hollowlings no longer keep turning round as they come at you or run off. They keep their route until
+  where they are going has really moved, step straight at you when close, and run to one spot instead of a goal that
+  kept shifting.
+- They never walk into lava or fire and go round water where they can (the Keeper too).
+- They appear on the ground, never up in a tree or in water, so they no longer get stuck where they cannot climb down.
+
+### Help through the first wound
+- A portal that bounces you back now says why in the chat: no anchor beside it, the anchor's light is blocked, none of
+  your own time in it, no Tether bound, or a Tether bound to an anchor by another portal. The first time, a hint says
+  the Journal's Path shows what is still missing.
+- An anchor says why it turns fuel or a Tether away: not the Overworld, the wrong world's fuel, no portal within 5
+  blocks, full, or not an anchor yet.
+- First-time hints beside a Nether portal and with a lodestone in hand (until your first anchor), and beside an End
+  portal (until you have a Void Anchor).
+
+### Tests
+- Server tests for the reach (claw, two things taken, a curse), a hunting Lurker's blow and its red glow, the moods,
+  the tribe's wariness of lava, fire and water, where it may stand (never on a trunk or in the leaves), a world on Hard
+  keeping Hard through the upgrade, and every reason the wound gives. The client test shows the three moods side by
+  side.
+
 ## 3.6.0: The Herald
 
 ### New: a stats export for a web page

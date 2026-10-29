@@ -18,7 +18,9 @@ after it, a tapestry you weave yourself.
 3. Play a normal Survival world. (Vanilla Hardcore makes you a spectator on death, which the mod is built to avoid.)
 
 Your first day hands you the **Tether Journal**. Its first page, a guide card on the screen and the **Path** tab in
-the journal walk you through the first expedition: charge an anchor, bind your Tether, step through, come home.
+the journal walk you through the first expedition: charge an anchor, bind your Tether, step through, come home. A
+word comes when you first stand by a portal or hold a lodestone, and a portal that will not let you through yet says
+what is missing.
 
 ## The loop
 
@@ -80,7 +82,9 @@ an unweaving the loom waits three days for you.
   Weaver looms, villages of the Thinned (who only move while you are not looking), Veil Rays overhead, and five
   minutes before you are thrown home. A monumental gate holds your rift; a compass on the bar points back to it.
   Wells at the islands' edges drop into **the Fray**, the Seam's deadlier layer, where time runs out twice as fast.
-- **The Overworld**: the tribe watches. Lurkers steal and run to their **hoards**, guarded by the **Keeper**;
+- **The Overworld**: the tribe watches. Lurkers steal and run to their **hoards**, guarded by the **Keeper**. A Lurker
+  pulsing **blue** comes to steal (its claw hurts, it takes several things and may leave a curse); one glowing **red**
+  comes to hurt, with blows you see coming; struck, one may turn on you. They hit harder on Hard and Extreme;
   Hollowlings can be befriended. After the Dragon falls, **Wound Storms** tear the sky.
 
 ## The story
