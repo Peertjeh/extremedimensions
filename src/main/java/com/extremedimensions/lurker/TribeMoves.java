@@ -33,12 +33,11 @@ public final class TribeMoves {
 		m.setPathfindingMalus(PathType.WATER, 16.0F);
 		m.setPathfindingMalus(PathType.WATER_BORDER, 6.0F);
 		m.setPathfindingMalus(PathType.LAVA, -1.0F);
-		m.setPathfindingMalus(PathType.DANGER_FIRE, 16.0F);
-		m.setPathfindingMalus(PathType.DAMAGE_FIRE, -1.0F);
-		m.setPathfindingMalus(PathType.DANGER_OTHER, 8.0F);
-		m.setPathfindingMalus(PathType.DAMAGE_OTHER, -1.0F);
+		m.setPathfindingMalus(PathType.FIRE_IN_NEIGHBOR, 16.0F);
+		m.setPathfindingMalus(PathType.FIRE, -1.0F);
+		m.setPathfindingMalus(PathType.DAMAGING_IN_NEIGHBOR, 8.0F);
+		m.setPathfindingMalus(PathType.DAMAGING, -1.0F);
 		m.setPathfindingMalus(PathType.POWDER_SNOW, -1.0F);
-		m.setPathfindingMalus(PathType.DANGER_POWDER_SNOW, 8.0F);
 	}
 
 	/** Walks to a spot. The route it has is kept while it still leads there; a new one only when the spot moved. */

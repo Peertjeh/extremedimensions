@@ -158,7 +158,7 @@ public class LurkerTests {
 		try {
 			check(helper, l != null && h != null, "the tribe did not come");
 			for (net.minecraft.world.entity.Mob m : new net.minecraft.world.entity.Mob[] {l, h}) {
-				check(helper, m.getPathfindingMalus(PathType.LAVA) < 0 && m.getPathfindingMalus(PathType.DAMAGE_FIRE) < 0,
+				check(helper, m.getPathfindingMalus(PathType.LAVA) < 0 && m.getPathfindingMalus(PathType.FIRE) < 0,
 						"%s would walk into lava or fire", m.getType());
 				check(helper, m.getPathfindingMalus(PathType.WATER) >= 16, "%s does not go round water (malus %s)", m.getType(),
 						m.getPathfindingMalus(PathType.WATER));

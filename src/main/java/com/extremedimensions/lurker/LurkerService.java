@@ -942,8 +942,10 @@ public final class LurkerService {
 		}
 		boolean hit = p.hurtServer(level, l.damageSources().mobAttack(l), (float) damage);
 		if (hit && strike) {
-			p.knockback(0.45, l.getX() - p.getX(), l.getZ() - p.getZ());
-			p.hurtMarked = true;
+			double dx = p.getX() - l.getX(), dz = p.getZ() - l.getZ();
+			double d = Math.max(0.3, Math.sqrt(dx * dx + dz * dz));
+			p.setDeltaMovement(dx / d * 0.55, 0.32, dz / d * 0.55);
+			p.needsSync = true;
 		}
 		if (hit) {
 			WorldFx.soundIn(Dims.fullId(p), "minecraft:entity.warden.attack_impact", "hostile", p.getX(), p.getY() + 1, p.getZ(), 0.7f, 1.3f);
