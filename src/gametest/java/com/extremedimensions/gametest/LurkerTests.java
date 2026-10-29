@@ -68,11 +68,7 @@ public class LurkerTests {
 		level.getServer().setDifficulty(Difficulty.NORMAL, true);
 		ServerPlayer p = TestPlayers.survivor(helper, "lurker-prey");
 		place(helper, p, 2.5, 2, 2.5);
-		p.getInventory().clearContent();
 		Item[] things = {Items.DIRT, Items.COBBLESTONE, Items.OAK_LOG, Items.SAND, Items.GRAVEL};
-		for (int i = 0; i < things.length; i++) {
-			p.getInventory().setItem(i, new ItemStack(things[i], 8));
-		}
 		PlayerData d = DataStore.get(p.getUUID());
 		double xp = Config.LURKER_XP_WEIGHT, armor = Config.LURKER_ARMOR_WEIGHT, curseWeight = Config.LURKER_CURSE_WEIGHT;
 		double curseChance = Config.LURKER_CURSE_CHANCE, claw = Config.LURKER_CLAW_DAMAGE;
@@ -86,6 +82,11 @@ public class LurkerTests {
 			Config.LURKER_CLAW_DAMAGE = 4;
 			Config.LURKER_THEFTS = 2;
 			Config.LURKER_CURSES_MAX = 1;
+			// (filled only now: the journal a new player is handed two seconds in would be a sixth stack)
+			p.getInventory().clearContent();
+			for (int i = 0; i < things.length; i++) {
+				p.getInventory().setItem(i, new ItemStack(things[i], 8));
+			}
 			p.setHealth(20f);
 			int before = curses(d);
 			Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(4, 2, 2)), EntitySpawnReason.COMMAND);
