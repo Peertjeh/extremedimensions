@@ -2,6 +2,7 @@ package com.extremedimensions.hollow;
 
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.lurker.LurkerBody;
+import com.extremedimensions.lurker.TribeMoves;
 import com.extremedimensions.registry.ModSounds;
 
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -28,6 +29,7 @@ public class Hollowling extends PathfinderMob implements LurkerBody {
 
 	public Hollowling(EntityType<? extends PathfinderMob> type, Level level) {
 		super(type, level);
+		TribeMoves.wary(this);
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {

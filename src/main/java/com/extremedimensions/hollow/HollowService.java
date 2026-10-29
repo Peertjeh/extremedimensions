@@ -17,6 +17,7 @@ import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.lore.Loot;
 import com.extremedimensions.lurker.Lurker;
+import com.extremedimensions.lurker.TribeMoves;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.registry.ModItems;
@@ -99,6 +100,8 @@ public final class HollowService {
 		boolean bold;
 		/** The player it barters with. */
 		UUID trader;
+		/** Where it runs to when it flees (kept until it gets there, so it does not keep turning). */
+		Vec3 away;
 	}
 
 	static final class Guard {
@@ -216,7 +219,7 @@ public final class HollowService {
 		int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
 		BlockPos feet = new BlockPos(x, y, z);
 		BlockState below = level.getBlockState(feet.below());
-		if (below.liquid() || below.isAir() || !level.getBlockState(feet).canBeReplaced()) {
+		if (!TribeMoves.ground(below) || !level.getBlockState(feet).canBeReplaced()) {
 			return null;
 		}
 		return feet;
@@ -225,8 +228,7 @@ public final class HollowService {
 	private static BlockPos standable(ServerLevel level, int x, int top, int z, int depth) {
 		for (int y = top; y > top - depth; y--) {
 			BlockPos feet = new BlockPos(x, y, z);
-			if (level.getBlockState(feet).isAir() && level.getBlockState(feet.above()).isAir()
-					&& !level.getBlockState(feet.below()).isAir() && !level.getBlockState(feet.below()).liquid()) {
+			if (level.getBlockState(feet).isAir() && level.getBlockState(feet.above()).isAir() && TribeMoves.ground(level.getBlockState(feet.below()))) {
 				return feet;
 			}
 		}
@@ -302,7 +304,9 @@ public final class HollowService {
 	private static BlockPos groundAt(ServerLevel level, BlockPos p) {
 		for (int dy = 2; dy >= -2; dy--) {
 			BlockPos q = p.offset(0, dy, 0);
-			if (level.getBlockState(q).canBeReplaced() && !level.getBlockState(q.below()).canBeReplaced()) {
+			// (on the ground, never on a trunk or in the leaves, out of water and fire)
+			if (level.getBlockState(q).canBeReplaced() && !TribeMoves.hazard(level.getBlockState(q)) && !level.getBlockState(q.below()).canBeReplaced()
+					&& TribeMoves.ground(level.getBlockState(q.below()))) {
 				return q;
 			}
 		}
@@ -366,9 +370,16 @@ public final class HollowService {
 
 	/** Loot a Lurker carries home: the item, and experience as bottles. */
 	public static void stash(Hoard h, ItemStack stack, int levels) {
+		stash(h, stack.isEmpty() ? List.of() : List.of(stack), levels);
+	}
+
+	/** Loot a Lurker carries home: the things it took, and experience as bottles. */
+	public static void stash(Hoard h, List<ItemStack> stacks, int levels) {
 		List<ItemStack> items = new ArrayList<>();
-		if (!stack.isEmpty()) {
-			items.add(stack);
+		for (ItemStack stack : stacks) {
+			if (!stack.isEmpty()) {
+				items.add(stack);
+			}
 		}
 		if (levels > 0) {
 			items.add(new ItemStack(Items.EXPERIENCE_BOTTLE, Math.min(64, levels * 3)));
@@ -721,7 +732,10 @@ public final class HollowService {
 				if (--st.wander <= 0) {
 					ThreadLocalRandom rnd = ThreadLocalRandom.current();
 					st.wander = 60 + rnd.nextInt(80);
-					h.getNavigation().moveTo(nest.x + rnd.nextInt(-7, 8), nest.y, nest.z + rnd.nextInt(-7, 8), 0.8);
+					BlockPos spot = groundAt((ServerLevel) h.level(), BlockPos.containing(nest.x + rnd.nextInt(-7, 8), nest.y, nest.z + rnd.nextInt(-7, 8)));
+					if (spot != null) {
+						TribeMoves.go(h, spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5, 0.8);
+					}
 				}
 				if (st.bold && p != null && hasLoot(p)) {
 					st.mode = Mode.SNEAK;
@@ -765,7 +779,7 @@ public final class HollowService {
 					break;
 				}
 				if (st.ticks % 5 == 0) {
-					h.getNavigation().moveTo(p, 1.15);
+					TribeMoves.follow(h, p, 1.15);
 				}
 				if (h.distanceToSqr(p) < 1.9 * 1.9) {
 					steal(h, st, p);
@@ -774,7 +788,7 @@ public final class HollowService {
 			case CARRY -> {
 				h.setLurkerPose(Lurker.POSE_RUN);
 				if (st.ticks % 10 == 0) {
-					h.getNavigation().moveTo(nest.x, nest.y, nest.z, 1.35);
+					TribeMoves.go(h, nest.x, nest.y, nest.z, 1.35);
 				}
 				if (h.position().distanceToSqr(nest) < 2.5 * 2.5 || st.ticks > 400) {
 					deposit(home, List.of(st.carried));
@@ -798,8 +812,14 @@ public final class HollowService {
 			case FLEE -> {
 				h.setLurkerPose(Lurker.POSE_RUN);
 				if (st.ticks % 10 == 0) {
-					Vec3 away = p == null ? nest : h.position().add(h.position().subtract(p.position()).normalize().scale(10));
-					h.getNavigation().moveTo(away.x, away.y, away.z, 1.4);
+					// One spot to run to, kept until it gets there: away from the player over safe ground, else home
+					if (st.away == null || h.position().distanceToSqr(st.away) < 2.0 * 2.0) {
+						st.away = p == null ? null : TribeMoves.away(h, p.position(), 10, 2);
+						if (st.away == null) {
+							st.away = nest;
+						}
+					}
+					TribeMoves.go(h, st.away.x, st.away.y, st.away.z, 1.4);
 				}
 				if (st.ticks > 70) {
 					st.mode = st.carried.isEmpty() ? Mode.IDLE : Mode.CARRY;
@@ -820,6 +840,7 @@ public final class HollowService {
 	private static void flee(Hollowling h, Little st) {
 		st.mode = Mode.FLEE;
 		st.ticks = 0;
+		st.away = null;
 	}
 
 	/** Small things only: no tools, weapons, armour or anything of the mod's. */
@@ -1088,7 +1109,7 @@ public final class HollowService {
 			h.getNavigation().stop();
 		} else if (d2 > 4 * 4) {
 			if (st.ticks % 10 == 0) {
-				h.getNavigation().moveTo(owner, d2 > 10 * 10 ? 1.45 : 1.15);
+				TribeMoves.follow(h, owner, d2 > 10 * 10 ? 1.45 : 1.15);
 			}
 			h.setLurkerPose(d2 > 8 * 8 ? Lurker.POSE_RUN : Lurker.POSE_WATCH);
 		} else {
@@ -1119,7 +1140,7 @@ public final class HollowService {
 		Entity e = p.level() instanceof ServerLevel sl ? sl.getEntity(id) : null;
 		if (e instanceof Hollowling h && h.distanceToSqr(p) < 16 * 16) {
 			giggle(h);
-			h.getNavigation().moveTo(p, 1.5);
+			TribeMoves.follow(h, p, 1.5);
 			return true;
 		}
 		return false;

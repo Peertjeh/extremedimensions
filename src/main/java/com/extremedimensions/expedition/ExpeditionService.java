@@ -77,8 +77,12 @@ public final class ExpeditionService {
 			if (total > 0) {
 				Journal.unlock(p, d, JournalEntry.CORD);
 			}
+			String why = dormant(p, d, dim, total);
 			d.linked.clear();
 			bounce(p, d);
+			// Why it stayed shut, and what opens it (in the chat, where a longer line wraps and stays to be read)
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.bounce." + why, Config.PORTAL_RANGE).withStyle(net.minecraft.ChatFormatting.GRAY));
+			com.extremedimensions.guide.Hints.meet(p, com.extremedimensions.guide.Hints.Hint.WOUND);
 			return;
 		}
 		d.arrivalX = p.getX();
@@ -216,6 +220,34 @@ public final class ExpeditionService {
 	}
 
 	/** Entered without a working anchor: the portal is dormant and sends the player back. */
+	/**
+	 * Why the wound stayed shut for this player: no anchor of that world beside the portal they came through, an anchor
+	 * whose light cannot reach it, none of their own time in one, no Tether bound, or a Tether bound to an anchor by
+	 * another portal.
+	 */
+	public static String dormant(ServerPlayer p, PlayerData d, String dim, double total) {
+		boolean near = false, open = false;
+		if (d.hasLast) {
+			double r2 = Config.LINK_RANGE * Config.LINK_RANGE;
+			for (Anchor a : DataStore.anchors().values()) {
+				if (dim.equals(a.type) && a.distSq(d.lastX, d.lastY, d.lastZ) <= r2) {
+					near = true;
+					open |= !a.blocked;
+				}
+			}
+		}
+		if (!near) {
+			return "no_anchor." + AnchorService.side(dim);
+		}
+		if (!open) {
+			return "blocked";
+		}
+		if (total <= 0) {
+			return "no_charge";
+		}
+		return d.tetherAnchor == null ? "no_tether" : "elsewhere";
+	}
+
 	private static void bounce(ServerPlayer p, PlayerData d) {
 		d.inRun = false;
 		d.grace = Config.BOUNCE_GRACE_TICKS;

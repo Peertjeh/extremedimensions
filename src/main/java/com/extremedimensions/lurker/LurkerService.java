@@ -39,7 +39,6 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -49,8 +48,10 @@ import net.minecraft.world.phys.Vec3;
  * <ul>
  *   <li><b>WATCH</b>: stands on high ground 50-72 blocks away, half in cover, and stares. Too close, or stared
  *       back at too long, and it is gone.</li>
- *   <li><b>STALK</b> (rare): creeps closer, but only while the player is not looking, and faster the closer it
- *       gets.</li>
+ *   <li><b>STALK</b>: creeps closer to steal, its glow pulsing blue, but only while the player is not looking, and
+ *       faster the closer it gets. Its reach claws, takes a few things and may leave a curse.</li>
+ *   <li><b>STRIKE</b>: comes to hurt instead, glowing red: it runs at the player openly and deals a few heavy blows
+ *       (each with a short wind-up to see coming), and may leave a curse. Struck, a Lurker may also turn on you.</li>
  *   <li><b>FLEE</b>: after taking something (or after being struck) it runs off on three limbs, clutching the
  *       loot, and vanishes after a while. Kill it in time to get the loot back.</li>
  *   <li><b>DRAIN</b>: holds a charged anchor's light in its arms and drinks the anchor dry.</li>
@@ -61,17 +62,25 @@ import net.minecraft.world.phys.Vec3;
 public final class LurkerService {
 	private LurkerService() {}
 
-	enum Mode { WATCH, STALK, TAKE, FLEE, DRAIN }
+	enum Mode { WATCH, STALK, TAKE, FLEE, DRAIN, STRIKE }
 
 	/** Ticks of the take animation, and the tick in it when the theft happens. */
 	private static final int TAKE_TICKS = 26;
 	private static final int TAKE_AT = 13;
+	/** A blow: how near it must come (blocks, centre to centre), its wind-up and the pause after it (ticks). */
+	private static final double STRIKE_REACH = 2.6;
+	private static final int STRIKE_WINDUP = 10;
+	private static final int STRIKE_PAUSE = 16;
 
 	/** What a Lurker took and is carrying away. */
 	static final class Loot {
-		ItemStack stack = ItemStack.EMPTY;
+		final List<ItemStack> stacks = new ArrayList<>();
 		int levels = 0;
 		UUID from;
+
+		boolean any() {
+			return !stacks.isEmpty() || levels > 0;
+		}
 	}
 
 	static final class State {
@@ -88,6 +97,13 @@ public final class LurkerService {
 		final Loot loot = new Loot();
 		/** Where it carries the loot. */
 		Hoard hoard;
+		/** Where it runs to (kept until it gets there, so it never keeps turning). */
+		Vec3 away;
+		/** Curses it left this encounter, blows it landed, and the wind-up and pause of a blow (ticks left). */
+		int curses;
+		int blows;
+		int windup;
+		int pause;
 	}
 
 	private static final Map<UUID, State> STATES = new HashMap<>();
@@ -232,7 +248,6 @@ public final class LurkerService {
 	 */
 	private static BlockPos vantage(ServerLevel level, ServerPlayer p, int min, int max) {
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		boolean nether = Dims.NETHER.equals(Dims.of(p));
 		Vec3 eye = p.getEyePosition();
 		BlockPos best = null;
 		double bestScore = -1e9;
@@ -244,17 +259,8 @@ public final class LurkerService {
 			if (!Loaded.ready(level, new BlockPos(x, (int) p.getY(), z))) {
 				continue;
 			}
-			BlockPos c;
-			if (nether) {
-				c = standable(level, x, (int) p.getY() + 16, z, 36);
-			} else {
-				int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z);
-				c = new BlockPos(x, y, z);
-				if (!level.getBlockState(c).isAir() || !level.getBlockState(c.above()).isAir() || !level.getBlockState(c.above(2)).isAir()
-						|| level.getBlockState(c.below()).isAir()) {
-					c = null;
-				}
-			}
+			// On the ground with room for its height, never up in a tree it could not climb down from (nor in water)
+			BlockPos c = TribeMoves.surface(level, x, z, (int) p.getY() + 16, 4);
 			if (c == null) {
 				continue;
 			}
@@ -291,12 +297,11 @@ public final class LurkerService {
 		return false;
 	}
 
-	/** Scans down from {@code top} for a solid block with three blocks of air above it. */
+	/** Scans down from {@code top} for safe ground with room for a Lurker's height above it. */
 	private static BlockPos standable(ServerLevel level, int x, int top, int z, int depth) {
 		for (int y = top; y > top - depth; y--) {
 			BlockPos feet = new BlockPos(x, y, z);
-			if (level.getBlockState(feet).isAir() && level.getBlockState(feet.above()).isAir() && level.getBlockState(feet.above(2)).isAir()
-					&& !level.getBlockState(feet.below()).isAir() && !level.getBlockState(feet.below()).liquid()) {
+			if (TribeMoves.standable(level, feet, 4)) {
 				return feet;
 			}
 		}
@@ -322,9 +327,10 @@ public final class LurkerService {
 			if (st.stalkPose) {
 				st.stalkPose = false;
 				l.setLurkerPose(Lurker.POSE_STALK);
+				l.setLurkerMood(st.mode == Mode.STRIKE ? LurkerBody.MOOD_HUNTER : LurkerBody.MOOD_THIEF);
 			}
 			ServerPlayer p = WorldFx.server().getPlayerList().getPlayer(st.target);
-			if (p == null || p.level() != l.level() || p.distanceToSqr(l) > 112 * 112) {
+			if (p == null || p.level() != l.level() || p.distanceToSqr(l) > 112 * 112 || p.isDeadOrDying() || p.isCreative() || p.isSpectator()) {
 				later.add(() -> vanish(l));
 				continue;
 			}
@@ -334,6 +340,7 @@ public final class LurkerService {
 				case TAKE -> take(l, st, p);
 				case FLEE -> flee(l, st, p, later);
 				case DRAIN -> drain(l, st, p, later);
+				case STRIKE -> strike(l, st, p);
 			}
 		}
 		later.forEach(Runnable::run);
@@ -367,12 +374,18 @@ public final class LurkerService {
 			later.add(() -> vanish(l));
 		} else if (st.ticks > st.limit) {
 			if (!Dims.SEAM.equals(Dims.of(p)) && WorldService.tribeSteals() && ThreadLocalRandom.current().nextDouble() < Config.LURKER_STALK_CHANCE) {
-				st.mode = Mode.STALK;
-				l.setLurkerPose(Lurker.POSE_STALK);
-				st.ticks = 0;
-				st.limit = 20 * 90;
-				st.startDist = dist;
-				whisper(l, p, 0.7f);
+				if (!kin(p) && ThreadLocalRandom.current().nextDouble() < Config.LURKER_HUNT_CHANCE) {
+					// It came to hurt, not to steal
+					hunt(l, st, p);
+				} else {
+					st.mode = Mode.STALK;
+					l.setLurkerPose(Lurker.POSE_STALK);
+					l.setLurkerMood(LurkerBody.MOOD_THIEF);
+					st.ticks = 0;
+					st.limit = 20 * 90;
+					st.startDist = dist;
+					whisper(l, p, 0.7f);
+				}
 			} else {
 				later.add(() -> {
 					WorldService.offering((ServerLevel) l.level(), l.getX(), l.getY(), l.getZ());
@@ -400,7 +413,7 @@ public final class LurkerService {
 		} else if (st.ticks % 5 == 0) {
 			double close = 1.0 - Math.max(0.0, Math.min(1.0, (dist - 3.0) / Math.max(1.0, st.startDist - 3.0)));
 			double speed = Config.LURKER_STALK_SPEED_MIN + (Config.LURKER_STALK_SPEED_MAX - Config.LURKER_STALK_SPEED_MIN) * close * close;
-			l.getNavigation().moveTo(p, speed);
+			TribeMoves.follow(l, p, speed);
 		}
 		double reach = takeReach();
 		if (reach > 0 && p.distanceToSqr(l) < reach * reach) {
@@ -443,14 +456,27 @@ public final class LurkerService {
 				run(l, st, p, true);
 				return;
 			}
-			snatch(l, st, p);
+			// Its claw rakes the player as it reaches; then it takes what it can, and may leave a curse behind
+			hurt(l, p, Config.LURKER_CLAW_DAMAGE, false);
+			boolean took = false;
+			for (int i = 0; i < Math.max(1, Config.LURKER_THEFTS); i++) {
+				if (!snatch(l, st, p)) {
+					break;
+				}
+				took = true;
+			}
+			if (took) {
+				taken(p);
+			}
+			curseChance(l, st, p);
 		}
 		if (st.ticks >= TAKE_TICKS) {
 			run(l, st, p, false);
 		}
 	}
 
-	private static void snatch(Lurker l, State st, ServerPlayer p) {
+	/** Takes one thing from the player, by weight among what reaches them now; false when nothing could be taken. */
+	private static boolean snatch(Lurker l, State st, ServerPlayer p) {
 		st.loot.from = p.getUUID();
 		double d = Math.sqrt(p.distanceToSqr(l));
 		// Only what reaches the player right now (and is possible) can be picked, by weight
@@ -458,12 +484,12 @@ public final class LurkerService {
 		boolean tooth = com.extremedimensions.relic.RelicService.has(p, com.extremedimensions.relic.Relic.LURKERS_TOOTH);
 		// Covetous: it came for the hotbar, and takes from it if it can
 		if (!tooth && inReach(0, d) && com.extremedimensions.penalty.AbyssalTolls.covets(p) && stealItem(p, st.loot)) {
-			taken(p);
-			return;
+			return true;
 		}
 		for (int k = 0; k < 4; k++) {
-			// Lurker's Tooth: no item and no armour can be taken from its bearer
-			if (!(tooth && (k == 0 || k == 2))) {
+			// Lurker's Tooth: no item and no armour can be taken from its bearer; and a curse counts towards the
+			// curses one encounter may leave
+			if (!(tooth && (k == 0 || k == 2)) && !(k == 3 && st.curses >= Math.max(1, Config.LURKER_CURSES_MAX))) {
 				kinds.add(k);
 			}
 		}
@@ -473,7 +499,7 @@ public final class LurkerService {
 				total += inReach(k, d) ? Math.max(0, weight(k)) : 0;
 			}
 			if (total <= 0) {
-				return;
+				return false;
 			}
 			double roll = ThreadLocalRandom.current().nextDouble() * total;
 			int pick = kinds.get(0);
@@ -489,14 +515,18 @@ public final class LurkerService {
 				case 0 -> stealItem(p, st.loot);
 				case 1 -> stealXp(p, st.loot);
 				case 2 -> stealArmor(p, st.loot);
-				default -> PenaltyService.curse(p, Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties()) != null;
+				default -> PenaltyService.curse(p, Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties(),
+						Config.LURKER_CURSE_EXTREME_CHANCE) != null;
 			};
+			if (took && pick == 3) {
+				st.curses++;
+			}
 			if (took) {
-				taken(p);
-				return;
+				return true;
 			}
 			kinds.remove(Integer.valueOf(pick));
 		}
+		return false;
 	}
 
 	/** Something was taken: the theft shows. */
@@ -557,11 +587,12 @@ public final class LurkerService {
 			return false;
 		}
 		int slot = slots.get(ThreadLocalRandom.current().nextInt(slots.size()));
-		loot.stack = inv.getItem(slot).copy();
+		ItemStack stolen = inv.getItem(slot).copy();
 		inv.setItem(slot, ItemStack.EMPTY);
 		if (covetous) {
-			com.extremedimensions.penalty.AbyssalTolls.mark(p, loot.stack);
+			com.extremedimensions.penalty.AbyssalTolls.mark(p, stolen);
 		}
+		loot.stacks.add(stolen);
 		return true;
 	}
 
@@ -571,7 +602,7 @@ public final class LurkerService {
 		}
 		int levels = Math.max(3, (int) Math.round(p.experienceLevel * Config.LURKER_XP_FRACTION));
 		p.giveExperienceLevels(-levels);
-		loot.levels = levels;
+		loot.levels += levels;
 		return true;
 	}
 
@@ -586,7 +617,7 @@ public final class LurkerService {
 			return false;
 		}
 		EquipmentSlot s = worn.get(ThreadLocalRandom.current().nextInt(worn.size()));
-		loot.stack = p.getItemBySlot(s).copy();
+		loot.stacks.add(p.getItemBySlot(s).copy());
 		p.setItemSlot(s, ItemStack.EMPTY);
 		return true;
 	}
@@ -597,10 +628,13 @@ public final class LurkerService {
 		st.ticks = 0;
 		st.limit = Math.max(3, Config.LURKER_RUN_SECONDS) * 20;
 		l.setLurkerPose(Lurker.POSE_RUN);
+		l.setLurkerMood(LurkerBody.MOOD_CALM);
+		st.away = null;
+		st.windup = 0;
 		String dim = l.level().dimension().identifier().toString();
 		String sound = struck ? "extremedimensions:lurker_shriek" : "extremedimensions:lurker_flee";
 		WorldFx.soundIn(dim, sound, "hostile", l.getX(), l.getY() + 2.5, l.getZ(), 1.6f, 1f);
-		if (!st.loot.stack.isEmpty() || st.loot.levels > 0) {
+		if (st.loot.any()) {
 			// It runs home to its hoard (struck or not): follow it, and you find where your things went
 			st.hoard = HollowService.hoardFor(p, l.position());
 			if (st.hoard != null) {
@@ -619,7 +653,7 @@ public final class LurkerService {
 			Vec3 home = new Vec3(st.hoard.x + 0.5, st.hoard.y, st.hoard.z + 0.5);
 			if (st.ticks % 8 == 0 || l.getNavigation().isDone()) {
 				double speed = Config.LURKER_RUN_SPEED * (0.6 + 0.4 * Math.min(1.0, st.ticks / 40.0));
-				l.getNavigation().moveTo(home.x, home.y, home.z, speed);
+				TribeMoves.go(l, home.x, home.y, home.z, speed);
 			}
 			if (st.ticks % 3 == 0) {
 				WorldFx.particleIn(l.level().dimension().identifier().toString(), "extremedimensions:lurker_wisp",
@@ -627,13 +661,13 @@ public final class LurkerService {
 			}
 			if (l.position().distanceToSqr(home) < 3.5 * 3.5 || st.ticks > st.limit) {
 				Hoard h = st.hoard;
-				ItemStack stack = st.loot.stack;
+				List<ItemStack> stacks = new ArrayList<>(st.loot.stacks);
 				int levels = st.loot.levels;
-				st.loot.stack = ItemStack.EMPTY;
+				st.loot.stacks.clear();
 				st.loot.levels = 0;
 				st.hoard = null;
 				later.add(() -> {
-					HollowService.stash(h, stack, levels);
+					HollowService.stash(h, stacks, levels);
 					vanish(l);
 				});
 			}
@@ -642,20 +676,13 @@ public final class LurkerService {
 		if (st.ticks % 8 == 0 || l.getNavigation().isDone()) {
 			double ramp = Math.min(1.0, st.ticks / 40.0);
 			double speed = Config.LURKER_RUN_SPEED * (0.6 + 0.4 * ramp);
-			Vec3 away = new Vec3(l.getX() - p.getX(), 0, l.getZ() - p.getZ());
-			if (away.lengthSqr() < 0.01) {
-				away = new Vec3(1, 0, 0);
+			// One spot to run to, away from the player over safe ground, kept until it is reached (a goal that kept
+			// shifting made it turn back and forth)
+			if (st.away == null || l.position().distanceToSqr(st.away) < 3.0 * 3.0 || l.getNavigation().isDone()) {
+				st.away = TribeMoves.away(l, p.position(), 22, 4);
 			}
-			// Mostly straight away, with a slight weave so it does not run like a machine
-			double ang = Math.atan2(away.z, away.x) + Math.sin(st.ticks * 0.05 + l.getId()) * 0.5;
-			int tx = (int) Math.floor(l.getX() + Math.cos(ang) * 20);
-			int tz = (int) Math.floor(l.getZ() + Math.sin(ang) * 20);
-			ServerLevel level = (ServerLevel) l.level();
-			BlockPos goal = Dims.NETHER.equals(Dims.of(level))
-					? standable(level, tx, (int) l.getY() + 8, tz, 20)
-					: new BlockPos(tx, level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, tx, tz), tz);
-			if (goal != null) {
-				l.getNavigation().moveTo(goal.getX() + 0.5, goal.getY(), goal.getZ() + 0.5, speed);
+			if (st.away != null) {
+				TribeMoves.go(l, st.away.x, st.away.y, st.away.z, speed);
 			}
 		}
 		if (st.ticks % 3 == 0) {
@@ -775,7 +802,7 @@ public final class LurkerService {
 		WorldFx.soundIn(dim, "extremedimensions:lurker_vanish", "hostile", l.getX(), l.getY() + 1.5, l.getZ(), 1f, 1f);
 		State st = STATES.remove(l.getUUID());
 		LEVELS.remove(l.getUUID());
-		if (st != null && (!st.loot.stack.isEmpty() || st.loot.levels > 0) && l.level() instanceof ServerLevel level) {
+		if (st != null && st.loot.any() && l.level() instanceof ServerLevel level) {
 			// What it took is never simply gone (its victim left, it was cut off, the server stopped): it ends up in the
 			// hoard it would have run to, or falls where it stood
 			Hoard h = st.hoard;
@@ -784,17 +811,22 @@ public final class LurkerService {
 				h = HollowService.hoardFor(from, l.position());
 			}
 			if (h != null) {
-				HollowService.stash(h, st.loot.stack, st.loot.levels);
-			} else if (!st.loot.stack.isEmpty()) {
-				l.spawnAtLocation(level, st.loot.stack);
+				HollowService.stash(h, st.loot.stacks, st.loot.levels);
+			} else {
+				for (ItemStack stack : st.loot.stacks) {
+					l.spawnAtLocation(level, stack);
+				}
 			}
-			st.loot.stack = ItemStack.EMPTY;
+			st.loot.stacks.clear();
 			st.loot.levels = 0;
 		}
 		l.discard();
 	}
 
-	/** Struck: it shrieks and runs. Already running, it just keeps going. */
+	/**
+	 * Struck: it shrieks and runs, or (by chance) turns on its attacker. Already running, it keeps going; already
+	 * hunting, it keeps at it until it is badly hurt.
+	 */
 	public static void onHurt(Lurker l) {
 		State st = STATES.get(l.getUUID());
 		if (st == null || st.mode == Mode.FLEE) {
@@ -805,7 +837,134 @@ public final class LurkerService {
 			vanish(l);
 			return;
 		}
+		if (st.mode == Mode.STRIKE) {
+			if (l.getHealth() < l.getMaxHealth() * 0.35) {
+				run(l, st, p, true);
+			}
+			return;
+		}
+		if (!kin(p) && WorldService.tribeSteals() && !Dims.SEAM.equals(Dims.of(p)) && ThreadLocalRandom.current().nextDouble() < Config.LURKER_RETALIATE_CHANCE) {
+			hunt(l, st, p);
+			return;
+		}
 		run(l, st, p, true);
+	}
+
+	/** Kin of the tribe: no Lurker ever comes to hurt them. */
+	private static boolean kin(ServerPlayer p) {
+		return com.extremedimensions.tribe.Standing.of(p) == com.extremedimensions.tribe.Standing.Level.KIN;
+	}
+
+	/** It comes to hurt: its glow turns red, it shrieks, and it runs at the player openly. */
+	private static void hunt(Lurker l, State st, ServerPlayer p) {
+		st.mode = Mode.STRIKE;
+		st.ticks = 0;
+		st.limit = Math.max(5, Config.LURKER_STRIKE_SECONDS) * 20;
+		st.blows = 0;
+		st.windup = 0;
+		st.pause = 10;
+		l.setLurkerPose(Lurker.POSE_STALK);
+		l.setLurkerMood(LurkerBody.MOOD_HUNTER);
+		WorldFx.soundIn(Dims.fullId(p), "extremedimensions:lurker_shriek", "hostile", l.getX(), l.getY() + 2.5, l.getZ(), 1.6f, 0.7f);
+		whisper(l, p, 0.9f);
+	}
+
+	/**
+	 * A Lurker come to hurt: it runs at the player and, once near, rears up for a blow (a short wind-up, red motes at its
+	 * hands, a low shriek) that lands if the player is still within reach. After its blows, or badly hurt, or when it
+	 * has hunted long enough, it runs.
+	 */
+	private static void strike(Lurker l, State st, ServerPlayer p) {
+		l.getLookControl().setLookAt(p, 60, 60);
+		double dx = p.getX() - l.getX(), dz = p.getZ() - l.getZ();
+		double reach = Math.sqrt(dx * dx + dz * dz);
+		boolean even = Math.abs(p.getY() - l.getY()) < 2.5;
+		if (st.windup > 0) {
+			l.getNavigation().stop();
+			if (st.windup % 3 == 0) {
+				double yaw = Math.toRadians(l.getYRot());
+				WorldFx.particleIn(Dims.fullId(p), "minecraft:dust{color:[1.0,0.16,0.1],scale:1.1}", l.getX() - Math.sin(yaw) * 0.9, l.getY() + 2.6,
+							l.getZ() + Math.cos(yaw) * 0.9, 0.35, 0.35, 0.35, 0.0, 6);
+			}
+			if (--st.windup > 0) {
+				return;
+			}
+			// The blow falls: it lands on whoever is still within reach of its arms (a step back, a shield, and it misses)
+			if (reach <= STRIKE_REACH + 1.0 && even && l.hasLineOfSight(p)) {
+				if (HollowService.guarded(p) || com.extremedimensions.binding.Charms.soulward(p)) {
+					// A Hollowling friend leaps in, or the helmet's soul light flares: it flinches and runs
+					WorldFx.particles(p, "extremedimensions:soul_mote", 1.2, 0.5, 0.0, 16);
+					run(l, st, p, true);
+					return;
+				}
+				if (hurt(l, p, Config.LURKER_STRIKE_DAMAGE, true)) {
+					st.blows++;
+					curseChance(l, st, p);
+				}
+			}
+			l.setLurkerPose(Lurker.POSE_STALK);
+			st.pause = STRIKE_PAUSE;
+			if (st.blows >= Math.max(1, Config.LURKER_STRIKE_BLOWS)) {
+				run(l, st, p, false);
+			}
+			return;
+		}
+		if (st.ticks > st.limit || l.getHealth() < l.getMaxHealth() * 0.35) {
+			run(l, st, p, true);
+			return;
+		}
+		if (st.pause > 0) {
+			st.pause--;
+		}
+		if (st.pause <= 0 && reach <= STRIKE_REACH && even && l.hasLineOfSight(p)) {
+			// Rears up: the player sees the blow coming
+			l.getNavigation().stop();
+			l.setLurkerPose(Lurker.POSE_TAKE);
+			st.windup = STRIKE_WINDUP;
+			WorldFx.soundIn(Dims.fullId(p), "extremedimensions:lurker_shriek", "hostile", l.getX(), l.getY() + 2.5, l.getZ(), 1.2f, 0.6f);
+			return;
+		}
+		if (st.ticks % 4 == 0) {
+			TribeMoves.follow(l, p, Config.LURKER_STRIKE_SPEED);
+		}
+		if (st.ticks % 4 == 0) {
+			WorldFx.particleIn(Dims.fullId(p), "minecraft:dust{color:[0.9,0.1,0.08],scale:0.8}", l.getX(), l.getY() + 1.6, l.getZ(), 0.4, 0.8, 0.4, 0.0, 2);
+		}
+	}
+
+	/**
+	 * A blow from a Lurker (its claw as it reaches, or a strike), as a monster's attack: armour, a raised shield and the
+	 * game's difficulty all count. A strike throws the player back a little further. True when it hurt them.
+	 */
+	private static boolean hurt(Lurker l, ServerPlayer p, double damage, boolean strike) {
+		if (damage <= 0 || !(l.level() instanceof ServerLevel level)) {
+			return false;
+		}
+		boolean hit = p.hurtServer(level, l.damageSources().mobAttack(l), (float) damage);
+		if (hit && strike) {
+			p.knockback(0.45, l.getX() - p.getX(), l.getZ() - p.getZ());
+			p.hurtMarked = true;
+		}
+		if (hit) {
+			WorldFx.soundIn(Dims.fullId(p), "minecraft:entity.warden.attack_impact", "hostile", p.getX(), p.getY() + 1, p.getZ(), 0.7f, 1.3f);
+		}
+		return hit;
+	}
+
+	/**
+	 * Its touch may leave a curse as well (as many as an encounter may leave): from the Extreme set by chance, where the
+	 * world's difficulty allows it.
+	 */
+	private static void curseChance(Lurker l, State st, ServerPlayer p) {
+		if (st.curses >= Config.LURKER_CURSES_MAX || ThreadLocalRandom.current().nextDouble() >= Config.LURKER_CURSE_CHANCE) {
+			return;
+		}
+		boolean overworld = Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties();
+		if (PenaltyService.curse(p, overworld, Config.LURKER_CURSE_EXTREME_CHANCE) != null) {
+			st.curses++;
+			WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.6, 0.06, 20);
+			WorldFx.soundFor(p, "extremedimensions:lurker_whisper", "hostile", l.getX(), l.getY() + 2, l.getZ(), 1.0f, 0.7f);
+		}
 	}
 
 	/** Slain while fleeing: what it took falls back into the world. */
@@ -816,8 +975,8 @@ public final class LurkerService {
 			return;
 		}
 		ServerLevel level = (ServerLevel) l.level();
-		if (!st.loot.stack.isEmpty()) {
-			l.spawnAtLocation(level, st.loot.stack);
+		for (ItemStack stack : st.loot.stacks) {
+			l.spawnAtLocation(level, stack);
 		}
 		if (killer instanceof ServerPlayer p) {
 			if (st.loot.levels > 0 && p.getUUID().equals(st.loot.from)) {
@@ -837,21 +996,68 @@ public final class LurkerService {
 		}
 		return switch (mode) {
 			case "drain" -> spawnDrain(p);
-			case "stalk" -> {
+			case "stalk", "hunt" -> {
 				if (!spawnWatch(p)) {
 					yield false;
 				}
+				boolean hunt = mode.equals("hunt");
 				for (State st : STATES.values()) {
 					if (p.getUUID().equals(st.target) && st.mode == Mode.WATCH) {
-						st.mode = Mode.STALK;
+						st.mode = hunt ? Mode.STRIKE : Mode.STALK;
 						st.ticks = 0;
 						st.stalkPose = true;
-						st.limit = 20 * 90;
+						st.limit = hunt ? Math.max(5, Config.LURKER_STRIKE_SECONDS) * 20 : 20 * 90;
 					}
 				}
 				yield true;
 			}
 			default -> spawnWatch(p);
 		};
+	}
+
+	/**
+	 * For the tests: drives a Lurker already in the world after this player, in the given mode ("take" reaches for them at
+	 * once, "hunt" comes to hurt, "stalk" creeps in, "flee" runs).
+	 */
+	public static void adopt(ServerLevel level, Lurker l, ServerPlayer p, String mode) {
+		State st = new State();
+		st.target = p.getUUID();
+		st.mode = Mode.WATCH;
+		st.limit = 20 * 60;
+		STATES.put(l.getUUID(), st);
+		LEVELS.put(l.getUUID(), level);
+		switch (mode) {
+			case "take" -> {
+				st.mode = Mode.TAKE;
+				l.setLurkerPose(Lurker.POSE_TAKE);
+				l.setLurkerMood(LurkerBody.MOOD_THIEF);
+			}
+			case "hunt" -> hunt(l, st, p);
+			case "stalk" -> {
+				st.mode = Mode.STALK;
+				st.limit = 20 * 90;
+				l.setLurkerPose(Lurker.POSE_STALK);
+				l.setLurkerMood(LurkerBody.MOOD_THIEF);
+			}
+			case "flee" -> run(l, st, p, true);
+			default -> { }
+		}
+	}
+
+	/** For the tests: the mode a driven Lurker is in ("" if it is not driven), and the curses and blows it dealt. */
+	public static String mode(Lurker l) {
+		State st = STATES.get(l.getUUID());
+		return st == null ? "" : st.mode.name().toLowerCase(Locale.ROOT);
+	}
+
+	public static int blows(Lurker l) {
+		State st = STATES.get(l.getUUID());
+		return st == null ? 0 : st.blows;
+	}
+
+	/** For the tests: what a driven Lurker carries (items, then levels as a count of their own). */
+	public static int carried(Lurker l) {
+		State st = STATES.get(l.getUUID());
+		return st == null ? 0 : st.loot.stacks.size();
 	}
 }

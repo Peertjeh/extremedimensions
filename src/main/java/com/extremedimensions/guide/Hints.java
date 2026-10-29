@@ -2,7 +2,9 @@ package com.extremedimensions.guide;
 
 import java.util.Locale;
 
+import com.extremedimensions.anchor.AnchorPaths;
 import com.extremedimensions.config.Config;
+import com.extremedimensions.data.Anchor;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.journal.Bestiary;
@@ -11,10 +13,13 @@ import com.extremedimensions.network.Fx;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.relic.RelicService;
+import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 /**
  * A short word the first time a player meets each part of the mod, as a toast in the corner, the way the game's own
@@ -51,7 +56,15 @@ public final class Hints {
 		/** Their first Abyssal curse taken: how it breaks. */
 		ABYSSAL,
 		/** A curse set full enough to be unwoven: the Weaver's Loom can unpick it. */
-		UNWEAVING;
+		UNWEAVING,
+		/** Beside a Nether portal before they ever charged an anchor: what opens the wound. */
+		PORTAL,
+		/** A lodestone in hand before they ever charged an anchor: what it becomes. */
+		LODESTONE,
+		/** The first time the wound stayed shut for them (it bounced them back). */
+		WOUND,
+		/** Beside an End portal while no anchor there holds their time: a Void Anchor. */
+		END_PORTAL;
 
 		public String key() {
 			return name().toLowerCase(Locale.ROOT);
@@ -90,10 +103,25 @@ public final class Hints {
 		}
 	}
 
-	/** Now and then for each player: what they hold for the first time (one look through the inventory). */
+	/**
+	 * Now and then for each player: what they hold for the first time (one look through the inventory), and a portal
+	 * beside them while they still have to learn what opens it.
+	 */
 	public static void look(ServerPlayer p, PlayerData d) {
-		if (Config.HINTS <= 0 || d.hints.contains(Hint.FRAGMENT.key()) && d.hints.contains(Hint.RELIC.key())
-				&& d.hints.contains(Hint.NEEDLE.key()) && d.hints.contains(Hint.SILK.key())) {
+		if (Config.HINTS <= 0) {
+			return;
+		}
+		boolean fresh = Guide.progress(d) < Guide.ANCHOR;
+		if (Dims.OVERWORLD.equals(Dims.of(p)) && p.level() instanceof ServerLevel level) {
+			if (fresh && !d.hints.contains(Hint.PORTAL.key()) && AnchorPaths.findPortal(level, p.blockPosition(), Dims.NETHER) != null) {
+				meet(p, Hint.PORTAL);
+			}
+			if (!d.hints.contains(Hint.END_PORTAL.key()) && !endAnchor(p) && AnchorPaths.findPortal(level, p.blockPosition(), Dims.END) != null) {
+				meet(p, Hint.END_PORTAL);
+			}
+		}
+		if (d.hints.contains(Hint.FRAGMENT.key()) && d.hints.contains(Hint.RELIC.key()) && d.hints.contains(Hint.NEEDLE.key())
+				&& d.hints.contains(Hint.SILK.key()) && (!fresh || d.hints.contains(Hint.LODESTONE.key()))) {
 			return;
 		}
 		var inv = p.getInventory();
@@ -110,8 +138,21 @@ public final class Hints {
 				meet(p, Hint.SILK);
 			} else if (RelicService.of(s) != null) {
 				meet(p, Hint.RELIC);
+			} else if (fresh && s.is(Items.LODESTONE)) {
+				meet(p, Hint.LODESTONE);
 			}
 		}
+	}
+
+	/** Whether an anchor by an End portal holds some of this player's time already. */
+	private static boolean endAnchor(ServerPlayer p) {
+		String uid = p.getStringUUID();
+		for (Anchor a : DataStore.anchors().values()) {
+			if (Dims.END.equals(a.type) && a.of(uid) > 0) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -146,6 +187,9 @@ public final class Hints {
 			case STORM -> d.journal.contains(JournalEntry.STORMS.id);
 			case FALLEN -> d.liftsTaken > 0;
 			case UNWEAVING -> d.unwoven > 0;
+			case PORTAL, LODESTONE -> Guide.progress(d) >= Guide.ANCHOR;
+			case WOUND -> Guide.progress(d) >= Guide.STEPS;
+			case END_PORTAL -> endAnchor(p);
 			case ABYSSAL -> {
 				for (com.extremedimensions.penalty.Penalty pen : com.extremedimensions.penalty.Penalty.values()) {
 					if (pen.abyssal && d.knows(pen)) {

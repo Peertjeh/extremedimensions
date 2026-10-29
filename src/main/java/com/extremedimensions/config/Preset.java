@@ -10,7 +10,8 @@ import java.util.Map;
  *
  * <p>What changes: how long atonement takes and how much a death undoes of it, how much charge an anchor holds and
  * how fast it drains, how often offers are multiplied and how many cards they show, how often an Extreme card turns
- * up, how often the Lurkers come and the Wound Storms break, how often fragments drop, whether a curse not yet carried
+ * up, how often the Lurkers come, how much they take and how hard they hit, how often the Wound Storms break, how often
+ * fragments drop, whether a curse not yet carried
  * shows in runes, and whether the Abyssal curses can be dealt, how often and how many (Hard and Extreme).
  */
 public enum Preset {
@@ -21,7 +22,10 @@ public enum Preset {
 			"lurker_spawn_chance", "0.004", "lurker_cooldown_seconds", "1800", "storm_chance", "0.02",
 			"fragment_chance", "0.08", "fragment_chance_elite", "0.2", "curse_runes", "0",
 			"abyssal_curses", "0", "abyssal_card_chance", "0.01", "abyssal_forced_chance", "0", "abyssal_after_collapses", "5",
-			"abyssal_max_carried", "1"),
+			"abyssal_max_carried", "1",
+			"lurker_stalk_chance", "0.15", "lurker_thefts", "1", "lurker_claw_damage", "2", "lurker_curse_chance", "0.05",
+			"lurker_curse_extreme_chance", "0", "lurker_curses_max", "1", "lurker_hunt_chance", "0.1", "lurker_retaliate_chance", "0.15",
+			"lurker_strike_damage", "4", "lurker_strike_blows", "2"),
 	NORMAL("normal",
 			"atone_base", "120", "atone_per_stack", "60", "atone_death_loss", "0.5",
 			"max_charge", "1800", "base_drain", "1", "tether_distance_step", "100",
@@ -29,7 +33,10 @@ public enum Preset {
 			"lurker_spawn_chance", "0.012", "lurker_cooldown_seconds", "900", "storm_chance", "0.04",
 			"fragment_chance", "0.04", "fragment_chance_elite", "0.12", "curse_runes", "0",
 			"abyssal_curses", "0", "abyssal_card_chance", "0.01", "abyssal_forced_chance", "0", "abyssal_after_collapses", "5",
-			"abyssal_max_carried", "1"),
+			"abyssal_max_carried", "1",
+			"lurker_stalk_chance", "0.3", "lurker_thefts", "2", "lurker_claw_damage", "4", "lurker_curse_chance", "0.15",
+			"lurker_curse_extreme_chance", "0", "lurker_curses_max", "1", "lurker_hunt_chance", "0.25", "lurker_retaliate_chance", "0.35",
+			"lurker_strike_damage", "6", "lurker_strike_blows", "3"),
 	HARD("hard",
 			"atone_base", "150", "atone_per_stack", "75", "atone_death_loss", "0.65",
 			"max_charge", "1500", "base_drain", "1.15", "tether_distance_step", "85",
@@ -37,7 +44,10 @@ public enum Preset {
 			"lurker_spawn_chance", "0.016", "lurker_cooldown_seconds", "700", "storm_chance", "0.05",
 			"fragment_chance", "0.035", "fragment_chance_elite", "0.1", "curse_runes", "1",
 			"abyssal_curses", "1", "abyssal_card_chance", "0.01", "abyssal_forced_chance", "0", "abyssal_after_collapses", "5",
-			"abyssal_max_carried", "1"),
+			"abyssal_max_carried", "1",
+			"lurker_stalk_chance", "0.4", "lurker_thefts", "2", "lurker_claw_damage", "6", "lurker_curse_chance", "0.25",
+			"lurker_curse_extreme_chance", "0.15", "lurker_curses_max", "1", "lurker_hunt_chance", "0.4", "lurker_retaliate_chance", "0.5",
+			"lurker_strike_damage", "8", "lurker_strike_blows", "4"),
 	EXTREME("extreme",
 			"atone_base", "200", "atone_per_stack", "100", "atone_death_loss", "0.8",
 			"max_charge", "1200", "base_drain", "1.3", "tether_distance_step", "70",
@@ -45,7 +55,10 @@ public enum Preset {
 			"lurker_spawn_chance", "0.022", "lurker_cooldown_seconds", "500", "storm_chance", "0.07",
 			"fragment_chance", "0.03", "fragment_chance_elite", "0.08", "curse_runes", "1",
 			"abyssal_curses", "1", "abyssal_card_chance", "0.025", "abyssal_forced_chance", "0.25", "abyssal_after_collapses", "3",
-			"abyssal_max_carried", "2");
+			"abyssal_max_carried", "2",
+			"lurker_stalk_chance", "0.5", "lurker_thefts", "3", "lurker_claw_damage", "8", "lurker_curse_chance", "0.4",
+			"lurker_curse_extreme_chance", "0.4", "lurker_curses_max", "2", "lurker_hunt_chance", "0.55", "lurker_retaliate_chance", "0.7",
+			"lurker_strike_damage", "10", "lurker_strike_blows", "5");
 
 	public final String id;
 	/** Setting key -> value as text (as {@link Config#set} takes it), in a fixed order. */
@@ -100,6 +113,49 @@ public enum Preset {
 			}
 		}
 		return null;
+	}
+
+	/** Settings the difficulties first set in 3.7.0: a world set to one before takes its values of them on upgrading. */
+	static final java.util.Set<String> ADDED_3_7 = java.util.Set.of("lurker_stalk_chance", "lurker_thefts", "lurker_claw_damage",
+			"lurker_curse_chance", "lurker_curse_extreme_chance", "lurker_curses_max", "lurker_hunt_chance", "lurker_retaliate_chance",
+			"lurker_strike_damage", "lurker_strike_blows");
+
+	/**
+	 * An older settings file: if its values (the defaults for any it lacks) match a difficulty on every setting the
+	 * difficulty set before 3.7.0, it takes that difficulty's values of the settings added since, so the world stays on
+	 * its difficulty.
+	 */
+	static void upgrade(com.google.gson.JsonObject json) {
+		Map<String, String> fallback = new LinkedHashMap<>();
+		for (Config.Setting st : Config.settings()) {
+			fallback.put(st.key(), st.fallback());
+		}
+		for (Preset p : values()) {
+			boolean match = true;
+			for (Map.Entry<String, String> e : p.values.entrySet()) {
+				if (ADDED_3_7.contains(e.getKey())) {
+					continue;
+				}
+				String have = json.has(e.getKey()) ? json.get(e.getKey()).getAsString() : fallback.get(e.getKey());
+				try {
+					match &= have != null && Math.abs(Double.parseDouble(have) - Double.parseDouble(e.getValue())) <= 1e-9;
+				} catch (NumberFormatException ex) {
+					match = false;
+				}
+			}
+			if (match) {
+				for (String key : ADDED_3_7) {
+					String v = p.values.get(key);
+					double d = Double.parseDouble(v);
+					if (d == Math.rint(d)) {
+						json.addProperty(key, (long) d);
+					} else {
+						json.addProperty(key, d);
+					}
+				}
+				return;
+			}
+		}
 	}
 
 	/** The world's current values of every setting, as text by key. */

@@ -30,4 +30,6 @@ final class Alone {
 	static final String ONE_SPOT = "extremedimensions_test:alone/one_spot";
 	static final String SHARED_SPOT = "extremedimensions_test:alone/shared_spot";
 	static final String SPAWNER_ROOM = "extremedimensions_test:alone/spawner_room";
+	static final String LURKER_TAKE = "extremedimensions_test:alone/lurker_take";
+	static final String LURKER_HUNT = "extremedimensions_test:alone/lurker_hunt";
 }

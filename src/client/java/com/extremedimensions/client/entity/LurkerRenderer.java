@@ -24,7 +24,8 @@ import net.minecraft.world.entity.Mob;
  *
  * <p>The glow beats like the Warden's heart: a flash that fades over half a second, then a dim ember until the next
  * beat. Calm, it beats every two seconds; stalking, running or drinking an anchor, twice as fast; reaching for you,
- * faster still. Each body keeps its own rhythm.
+ * faster still. Each body keeps its own rhythm. Its colour tells what a Lurker came for: its own violet when calm, a
+ * blue pulse when it comes to steal, and a red glow that hardly dims when it comes to hurt.
  */
 public class LurkerRenderer<T extends Mob & LurkerBody> extends MobRenderer<T, LurkerRenderState, LurkerModel> {
 	private final Identifier texture;
@@ -36,6 +37,8 @@ public class LurkerRenderer<T extends Mob & LurkerBody> extends MobRenderer<T, L
 
 	/** The glow between beats, and how long a beat takes to fade (ticks), as the Warden's heart. */
 	private static final float GLOW_REST = 0.22F;
+	/** The red glow of a Lurker come to hurt, between its beats. */
+	private static final float GLOW_HUNTER_REST = 0.7F;
 	private static final float BEAT_FADE = 10.0F;
 	/** Ticks between beats: calm, hunting (stalk, run, drain) and reaching (take). */
 	private static final float BEAT_CALM = 40.0F;
@@ -58,8 +61,11 @@ public class LurkerRenderer<T extends Mob & LurkerBody> extends MobRenderer<T, L
 		this.scale = scale;
 		this.young = young;
 		Identifier glowTex = ExtremeDimensions.id("textures/entity/" + name + "_glow.png");
-		this.addLayer(new LivingEntityEmissiveLayer<>(this, state -> glowTex, (state, age) -> state.glow,
-				new LurkerModel(context.bakeLayer(LurkerModel.LAYER)), RenderTypes::entityTranslucentEmissive, false));
+		Identifier thiefTex = ExtremeDimensions.id("textures/entity/" + name + "_glow_thief.png");
+		Identifier hunterTex = ExtremeDimensions.id("textures/entity/" + name + "_glow_hunter.png");
+		this.addLayer(new LivingEntityEmissiveLayer<>(this,
+				state -> state.mood == LurkerBody.MOOD_HUNTER ? hunterTex : state.mood == LurkerBody.MOOD_THIEF ? thiefTex : glowTex,
+				(state, age) -> state.glow, new LurkerModel(context.bakeLayer(LurkerModel.LAYER)), RenderTypes::entityTranslucentEmissive, false));
 	}
 
 	@Override
@@ -86,10 +92,14 @@ public class LurkerRenderer<T extends Mob & LurkerBody> extends MobRenderer<T, L
 		state.young = this.young;
 		state.run = b.run;
 
-		// The heartbeat: faster the hungrier the body is
+		// The heartbeat: faster the hungrier the body is (and fastest when it comes to hurt)
+		state.mood = lurker.getLurkerMood();
 		float hunt = Math.max(b.stalk, Math.max(b.run, b.drain));
 		float delay = BEAT_CALM + (BEAT_HUNT - BEAT_CALM) * hunt;
 		delay += (BEAT_TAKE - delay) * b.take;
+		if (state.mood == LurkerBody.MOOD_HUNTER) {
+			delay = BEAT_TAKE;
+		}
 		b.sinceBeat += dt * 20.0F;
 		if (b.sinceBeat >= delay) {
 			b.sinceBeat %= delay;
@@ -97,7 +107,9 @@ public class LurkerRenderer<T extends Mob & LurkerBody> extends MobRenderer<T, L
 		float beat = Math.max(0.0F, 1.0F - b.sinceBeat / BEAT_FADE);
 		// With reduced flashing the heart still beats, as a soft swell instead of a flash
 		float depth = com.extremedimensions.client.ui.Ui.calm() ? 0.3F : 1.0F;
-		state.glow = GLOW_REST + (1.0F - GLOW_REST) * beat * depth;
+		// Come to hurt, the red hardly dims between beats; come to steal, the blue pulses from a dimmer rest
+		float rest = state.mood == LurkerBody.MOOD_HUNTER ? GLOW_HUNTER_REST : GLOW_REST;
+		state.glow = rest + (1.0F - rest) * beat * depth;
 	}
 
 	@Override

@@ -3,6 +3,7 @@ package com.extremedimensions.tether;
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.extremedimensions.anchor.AnchorService;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.Anchor;
 import com.extremedimensions.data.DataStore;
@@ -44,7 +45,8 @@ public final class TetherService {
 		String key = Anchor.key(pos.getX(), pos.getY(), pos.getZ());
 		Anchor anchor = DataStore.anchors().get(key);
 		if (anchor == null || !Dims.OVERWORLD.equals(Dims.of(p))) {
-			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+			// A lodestone becomes an anchor with its first fuel; only then does a Tether hold to it
+			AnchorService.refuse(p, !Dims.OVERWORLD.equals(Dims.of(p)) ? "overworld_only" : "not_yet", Config.PORTAL_RANGE);
 			return InteractionResult.SUCCESS;
 		}
 		if (d.inRun || key.equals(d.tetherAnchor)) {

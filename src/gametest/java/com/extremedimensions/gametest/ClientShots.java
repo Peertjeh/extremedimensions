@@ -741,6 +741,36 @@ public class ClientShots implements FabricClientGameTest {
 				}
 			});
 			sp.getServer().runCommand("execute as @a at @s rotated ~ 0 run tp @s ^ ^ ^4 ~ 0");
+			// The Lurker's moods side by side, still: calm (its own violet), come to steal (blue), come to hurt (red)
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) p.level();
+				double yaw = Math.toRadians(p.getYRot());
+				double fx = -Math.sin(yaw), fz = Math.cos(yaw);
+				int[] moods = {com.extremedimensions.lurker.LurkerBody.MOOD_CALM, com.extremedimensions.lurker.LurkerBody.MOOD_THIEF,
+						com.extremedimensions.lurker.LurkerBody.MOOD_HUNTER};
+				int[] poses = {com.extremedimensions.lurker.Lurker.POSE_WATCH, com.extremedimensions.lurker.Lurker.POSE_STALK,
+						com.extremedimensions.lurker.Lurker.POSE_TAKE};
+				for (int i = 0; i < moods.length; i++) {
+					double side = (i - 1) * 3.2;
+					com.extremedimensions.lurker.Lurker l = com.extremedimensions.registry.ModEntities.LURKER.create(level,
+							net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+					if (l == null) {
+						continue;
+					}
+					l.snapTo(p.getX() + fx * 9 - fz * side, p.getY(), p.getZ() + fz * 9 + fx * side, p.getYRot() + 180f, 0f);
+					l.setNoAi(true);
+					l.addTag("mood_shot");
+					l.setLurkerMood(moods[i]);
+					l.setLurkerPose(poses[i]);
+					level.addFreshEntity(l);
+				}
+			});
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("15_lurker_moods");
+			// (gone without a death, which would leave their drops in the later shots)
+			sp.getServer().runOnServer(s -> player(s).level().getEntitiesOfClass(com.extremedimensions.lurker.Lurker.class,
+					player(s).getBoundingBox().inflate(20), e -> e.entityTags().contains("mood_shot")).forEach(net.minecraft.world.entity.Entity::discard));
 			// The trims side by side on iron: vanilla's Coast in amethyst, Coast in Seam Silk, the Weaver in amethyst
 			String[][] matrix = {{"trim_a", "minecraft:coast", "minecraft:amethyst"}, {"trim_b", "minecraft:coast", "extremedimensions:seam_silk"},
 					{"trim_c", "extremedimensions:weaver", "minecraft:amethyst"}};

@@ -175,17 +175,20 @@ public final class AnchorService {
 
 	private static InteractionResult deposit(ServerPlayer p, PlayerData d, BlockPos pos, ItemStack stack, String type) {
 		if (!Dims.OVERWORLD.equals(Dims.of(p))) {
+			refuse(p, "overworld_only");
 			return InteractionResult.SUCCESS;
 		}
 		ServerLevel level = (ServerLevel) p.level();
 		String key = Anchor.key(pos.getX(), pos.getY(), pos.getZ());
 		Anchor anchor = DataStore.anchors().get(key);
 		if (anchor != null && !type.equals(anchor.type)) {
-			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+			// Each anchor takes the fuel of the world it was first fed for
+			refuse(p, "wrong_fuel." + side(anchor.type));
 			return InteractionResult.SUCCESS;
 		}
 		if (AnchorPaths.findPortal(level, pos, type) == null) {
-			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+			// Fuel only takes beside a portal of its own world
+			refuse(p, "no_portal." + side(type), Config.PORTAL_RANGE);
 			return InteractionResult.SUCCESS;
 		}
 
@@ -193,6 +196,7 @@ public final class AnchorService {
 		double cap = cap(d);
 		double space = cap - (anchor != null ? anchor.own(uid) : 0);
 		if (space < 1) {
+			refuse(p, "full");
 			return InteractionResult.SUCCESS;
 		}
 
@@ -237,6 +241,17 @@ public final class AnchorService {
 		WorldFx.sound(p, nether ? "minecraft:block.respawn_anchor.charge" : "minecraft:block.end_portal_frame.fill", 0.8f, instant ? 1.0f : 1.2f);
 		Sync.state(p, d);
 		return InteractionResult.SUCCESS;
+	}
+
+	/** Why an anchor turned the player away, on their action bar, with the low note it always gave. */
+	public static void refuse(ServerPlayer p, String why, Object... args) {
+		WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+		p.sendSystemMessage(Component.translatable("gui.extremedimensions.anchor." + why, args), true);
+	}
+
+	/** "nether" or "end", for the words that differ between the two worlds. */
+	public static String side(String type) {
+		return Dims.NETHER.equals(type) ? "nether" : "end";
 	}
 
 	/**

@@ -20,8 +20,9 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * The Lurker: a member of an ancient tribe bound to the shadows between dimensions.
  *
- * <p>Its body only carries a pose (watching, stalking, taking, draining) that the client animates; everything it
- * decides is done by {@link LurkerService}.
+ * <p>Its body only carries a pose (watching, stalking, taking, draining) that the client animates, and a mood its glow
+ * shows (blue when it comes to steal, red when it comes to hurt); everything it decides is done by
+ * {@link LurkerService}.
  */
 public class Lurker extends Monster implements LurkerBody {
 	public static final int POSE_WATCH = 0;
@@ -31,9 +32,11 @@ public class Lurker extends Monster implements LurkerBody {
 	public static final int POSE_RUN = 4;
 
 	private static final EntityDataAccessor<Integer> POSE = SynchedEntityData.defineId(Lurker.class, EntityDataSerializers.INT);
+	private static final EntityDataAccessor<Integer> MOOD = SynchedEntityData.defineId(Lurker.class, EntityDataSerializers.INT);
 
 	public Lurker(EntityType<? extends Monster> type, Level level) {
 		super(type, level);
+		TribeMoves.wary(this);
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
@@ -49,6 +52,7 @@ public class Lurker extends Monster implements LurkerBody {
 	protected void defineSynchedData(SynchedEntityData.Builder builder) {
 		super.defineSynchedData(builder);
 		builder.define(POSE, POSE_WATCH);
+		builder.define(MOOD, MOOD_CALM);
 	}
 
 	@Override
@@ -58,6 +62,15 @@ public class Lurker extends Monster implements LurkerBody {
 
 	public void setLurkerPose(int pose) {
 		this.entityData.set(POSE, pose);
+	}
+
+	@Override
+	public int getLurkerMood() {
+		return this.entityData.get(MOOD);
+	}
+
+	public void setLurkerMood(int mood) {
+		this.entityData.set(MOOD, mood);
 	}
 
 	@Override

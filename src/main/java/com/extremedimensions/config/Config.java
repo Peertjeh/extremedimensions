@@ -258,8 +258,8 @@ public final class Config {
 	public static int LURKER_COOLDOWN_SECONDS = 900;
 	/** Chance that an appearance in the Overworld is a Lurker draining a nearby charged anchor. */
 	public static double LURKER_DRAIN_CHANCE = 0.15;
-	/** Chance that a watching Lurker comes closer to take something instead of leaving. */
-	public static double LURKER_STALK_CHANCE = 0.15;
+	/** Chance that a watching Lurker comes closer (to steal or to hurt, see lurker_hunt_chance) instead of leaving. */
+	public static double LURKER_STALK_CHANCE = 0.3;
 	public static int LURKER_WATCH_MIN = 30;
 	public static int LURKER_WATCH_MAX = 90;
 	/** Charge drained per second while a Lurker drinks an anchor, and for how long at most. */
@@ -294,6 +294,26 @@ public final class Config {
 	public static double LURKER_STALK_SPEED_MAX = 1.45;
 	/** Speed multiplier at full run, reached after a short burst of acceleration. */
 	public static double LURKER_RUN_SPEED = 1.4;
+	/** Things a Lurker takes in one reach, each picked as above (1 = one thing). */
+	public static int LURKER_THEFTS = 2;
+	/** Damage its claw does as it reaches for you (in half-hearts; 0 = it only takes). */
+	public static double LURKER_CLAW_DAMAGE = 4.0;
+	/**
+	 * Chance that a Lurker's reach or blow also leaves a curse (besides a curse it may take as one of its things), how
+	 * likely such a curse is one of the Extreme set, and how many of them one encounter may leave.
+	 */
+	public static double LURKER_CURSE_CHANCE = 0.15;
+	public static double LURKER_CURSE_EXTREME_CHANCE = 0.0;
+	public static int LURKER_CURSES_MAX = 1;
+	/** Chance that a Lurker coming closer comes to hurt (glowing red) rather than to steal (pulsing blue). */
+	public static double LURKER_HUNT_CHANCE = 0.25;
+	/** Chance that a Lurker struck while it watches, stalks or reaches turns on you instead of running. */
+	public static double LURKER_RETALIATE_CHANCE = 0.35;
+	/** A Lurker come to hurt: the damage of each blow, how many blows before it runs, its speed and how long it keeps at it. */
+	public static double LURKER_STRIKE_DAMAGE = 6.0;
+	public static int LURKER_STRIKE_BLOWS = 3;
+	public static double LURKER_STRIKE_SPEED = 1.35;
+	public static int LURKER_STRIKE_SECONDS = 30;
 
 	// --- Hoards, Hollowlings and the Keeper ------------------------------------------------------
 
@@ -1038,7 +1058,7 @@ public final class Config {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	/** Layout version of the config file; files from before a version are brought up to date on loading. */
-	private static final int VERSION = 3;
+	private static final int VERSION = 4;
 
 	/**
 	 * Defaults that changed, by the version that changed them: {key, old default, new default}. A file still holding
@@ -1055,6 +1075,8 @@ public final class Config {
 				{"elder_arena_build_seconds", "18", "40"}, {"elder_arena_dissolve_seconds", "5", "25"},
 				{"elder_arena_dissolve_seconds", "10", "25"}, {"elder_fighters_range", "96", "200"}, {"elder_reach", "2", "3"},
 				{"elder_spell_range", "120", "250"}, {"seam_fly_range", "48", "96"}},
+		// 3.7.0: Lurkers come closer twice as often
+		{{"lurker_stalk_chance", "0.15", "0.3"}},
 	};
 
 	/**
@@ -1203,6 +1225,11 @@ public final class Config {
 		if (json.size() == 0) {
 			return;
 		}
+		if (from < 4) {
+			// A world set to one of the difficulties takes that difficulty's values of the Lurker settings it gained in
+			// 3.7.0, rather than turning into custom rules
+			Preset.upgrade(json);
+		}
 		for (int v = from + 1; v <= VERSION && v < MIGRATIONS.length; v++) {
 			for (String[] m : MIGRATIONS[v]) {
 				// By value, not by text: a file holds 1.0 where the old default reads 1
@@ -1259,7 +1286,10 @@ public final class Config {
 			{"elder_core_hits", 1, 50}, {"elder_core_daze_seconds", 0, 10}, {"elder_isle_fall", 0, 1}, {"elder_isle_min_seconds", 3, 600},
 			{"elder_isle_max_seconds", 3, 600}, {"elder_isle_warn_seconds", 0.5, 10}, {"elder_isle_damage", 0, 100},
 			{"elder_isle_radius", 1, 16}, {"elder_isle_boss_share", 0, 0.5}, {"elder_isle_daze_seconds", 0, 10}, {"elder_arena_fly_max", 50, 5000}, {"elder_arena_fly_range", 8, 256}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
-			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600}, {"atone_kill_area_shared", 0, 1}, {"atone_spawner_radius", 0, 64}, {"coop_burden_relief_per_day", 0, 100},
+			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600},
+			{"lurker_thefts", 1, 9}, {"lurker_claw_damage", 0, 100}, {"lurker_curse_chance", 0, 1}, {"lurker_curse_extreme_chance", 0, 1},
+			{"lurker_curses_max", 0, 9}, {"lurker_hunt_chance", 0, 1}, {"lurker_retaliate_chance", 0, 1}, {"lurker_strike_damage", 0, 100},
+			{"lurker_strike_blows", 1, 20}, {"lurker_strike_speed", 0.5, 3}, {"lurker_strike_seconds", 5, 300}, {"atone_kill_area_shared", 0, 1}, {"atone_spawner_radius", 0, 64}, {"coop_burden_relief_per_day", 0, 100},
 			{"tapestry_respin_silk", 0, 64}, {"tapestry_roots_gifts", 1, 10}, {"tapestry_toll_drain", 0, 1}, {"tapestry_unravelling_share", 3, 20},
 			{"tapestry_knot_fray", 0, 10}, {"tapestry_knot_strands", 0, 1}, {"tapestry_heart_echo", 0, 1}, {"weaving_seconds", 30, 3600},
 			{"weaving_ward", 1, 10000}, {"weaving_wave_seconds", 5, 600}, {"weaving_wave", 0, 40}, {"weaving_wave_per_player", 0, 20},

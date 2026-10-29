@@ -63,6 +63,7 @@ public final class TetherCommand {
 				.then(Commands.literal("lurker").requires(op)
 						.then(Commands.literal("watch").executes(c -> lurker(c.getSource(), "watch")))
 						.then(Commands.literal("stalk").executes(c -> lurker(c.getSource(), "stalk")))
+						.then(Commands.literal("hunt").executes(c -> lurker(c.getSource(), "hunt")))
 						.then(Commands.literal("drain").executes(c -> lurker(c.getSource(), "drain"))))
 				.then(Commands.literal("hoard").requires(op).executes(c -> hoard(c.getSource())))
 				.then(Commands.literal("boss").requires(op)

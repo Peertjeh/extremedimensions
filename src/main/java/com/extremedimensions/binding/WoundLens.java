@@ -129,8 +129,11 @@ public final class WoundLens {
 		return best;
 	}
 
-	/** What a Lurker is about: watching, stalking, taking, drinking, or fleeing. */
+	/** What a Lurker is about: watching, stalking, taking, drinking, fleeing, or (glowing red) hunting you. */
 	public static Component lurker(Lurker l) {
+		if (l.getLurkerMood() == com.extremedimensions.lurker.LurkerBody.MOOD_HUNTER) {
+			return Component.translatable("gui.extremedimensions.lens.lurker.hunting").withStyle(ChatFormatting.RED);
+		}
 		String[] doing = {"watching", "stalking", "taking", "drinking", "fleeing"};
 		int pose = Math.max(0, Math.min(doing.length - 1, l.getLurkerPose()));
 		return Component.translatable("gui.extremedimensions.lens.lurker." + doing[pose]).withStyle(ChatFormatting.LIGHT_PURPLE);

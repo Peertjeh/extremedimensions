@@ -1,3 +1,6 @@
-!net.minecraft.client.resources.metadata.texture.PaletteMetadataSection
-!net.minecraft.client.resources.palette.PaletteMappingCache
-!net.minecraft.client.resources.palette.Palette
+net.minecraft.world.level.pathfinder.PathType
+net.minecraft.world.entity.ai.navigation.PathNavigation
+net.minecraft.world.entity.ai.control.MoveControl
+net.minecraft.client.renderer.entity.layers.LivingEntityEmissiveLayer
+#pathfinder/PathType
+#navigation/GroundPathNavigation

@@ -216,8 +216,13 @@ public final class PenaltyService {
 
 	/** A curse laid without a choice (a Lurker, a Collapse in the Seam): one stack of a random curse. Null if none fits. */
 	public static Penalty curse(ServerPlayer p, boolean overworld) {
+		return curse(p, overworld, 0);
+	}
+
+	/** As {@link #curse(ServerPlayer, boolean)}, the curse being one of the Extreme set with this chance (if one can come). */
+	public static Penalty curse(ServerPlayer p, boolean overworld, double extremeChance) {
 		PlayerData d = DataStore.get(p.getUUID());
-		List<String> ids = Penalty.rollOffer(d, overworld, 1, 0);
+		List<String> ids = Penalty.rollOffer(d, overworld, 1, extremeChance);
 		if (ids.isEmpty()) {
 			return null;
 		}

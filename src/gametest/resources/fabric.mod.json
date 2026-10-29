@@ -40,7 +40,8 @@
 			"com.extremedimensions.gametest.StatsExportTests",
 			"com.extremedimensions.gametest.DiscordTests",
 			"com.extremedimensions.gametest.TetheriteTests",
-			"com.extremedimensions.gametest.CharmTests"
+			"com.extremedimensions.gametest.CharmTests",
+			"com.extremedimensions.gametest.LurkerTests"
 		],
 		"fabric-client-gametest": [
 			"com.extremedimensions.gametest.ClientShots",
