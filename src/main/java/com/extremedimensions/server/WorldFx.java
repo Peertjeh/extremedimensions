@@ -95,6 +95,9 @@ public final class WorldFx {
 
 	/** A particle without parameters, or null for one that needs them (those still go through the command). */
 	private static ParticleOptions particle(String name) {
+		if (name.indexOf('{') >= 0) {
+			return null;
+		}
 		return PARTICLES.computeIfAbsent(name, n -> {
 			ParticleType<?> type = BuiltInRegistries.PARTICLE_TYPE.getValue(id(n));
 			return type instanceof ParticleOptions simple ? Optional.of(simple) : Optional.empty();
