@@ -765,11 +765,26 @@ public class ClientShots implements FabricClientGameTest {
 					l.setLurkerPose(poses[i]);
 					level.addFreshEntity(l);
 				}
+				// Two of a swarm's young before the hunter, glowing red as they bite
+				for (int i = 0; i < 2; i++) {
+					com.extremedimensions.hollow.Hollowling h = com.extremedimensions.registry.ModEntities.HOLLOWLING.create(level,
+							net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+					if (h == null) {
+						continue;
+					}
+					double side = 2.4 + i * 1.4;
+					h.snapTo(p.getX() + fx * 5.5 - fz * side, p.getY(), p.getZ() + fz * 5.5 + fx * side, p.getYRot() + 180f, 0f);
+					h.setNoAi(true);
+					h.addTag("mood_shot");
+					h.setLurkerMood(com.extremedimensions.lurker.LurkerBody.MOOD_HUNTER);
+					h.setLurkerPose(i == 0 ? com.extremedimensions.lurker.Lurker.POSE_TAKE : com.extremedimensions.lurker.Lurker.POSE_RUN);
+					level.addFreshEntity(h);
+				}
 			});
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("15_lurker_moods");
 			// (gone without a death, which would leave their drops in the later shots)
-			sp.getServer().runOnServer(s -> player(s).level().getEntitiesOfClass(com.extremedimensions.lurker.Lurker.class,
+			sp.getServer().runOnServer(s -> player(s).level().getEntitiesOfClass(net.minecraft.world.entity.Mob.class,
 					player(s).getBoundingBox().inflate(20), e -> e.entityTags().contains("mood_shot")).forEach(net.minecraft.world.entity.Entity::discard));
 			// The trims side by side on iron: vanilla's Coast in amethyst, Coast in Seam Silk, the Weaver in amethyst
 			String[][] matrix = {{"trim_a", "minecraft:coast", "minecraft:amethyst"}, {"trim_b", "minecraft:coast", "extremedimensions:seam_silk"},

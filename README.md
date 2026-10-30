@@ -84,8 +84,10 @@ an unweaving the loom waits three days for you.
   Wells at the islands' edges drop into **the Fray**, the Seam's deadlier layer, where time runs out twice as fast.
 - **The Overworld**: the tribe watches. Lurkers steal and run to their **hoards**, guarded by the **Keeper**. A Lurker
   pulsing **blue** comes to steal (its claw hurts, it takes several things and may leave a curse); one glowing **red**
-  comes to hurt, with blows you see coming; struck, one may turn on you. They hit harder on Hard and Extreme;
-  Hollowlings can be befriended. After the Dragon falls, **Wound Storms** tear the sky.
+  comes to hurt, with blows you see coming; struck, one may turn on you. They hit harder on Hard and Extreme, and on
+  Extreme the whole tribe may come at once, Lurkers and their young, all glowing red. A fall or a low roof does them no
+  harm; a ledge they leap, and out of reach is no hiding place: they reach in and drag you out. Hollowlings can be
+  befriended, slowly. After the Dragon falls, **Wound Storms** tear the sky.
 
 ## The story
 
@@ -139,7 +141,7 @@ Trials past gold), and the tapestry's boons stay.
   Seam's veins), and the Wound Lens.
 - **The Elders**: the Matriarch, the Ferryman, the Last Weaver and the Knot Mother, with arenas raised by flying blocks,
   domain phases, cores that ward them and islands that fall.
-- **The tribe as a faction**: standing from hunted to kin, barter, raids.
+- **The tribe as a faction**: standing from hunted to kin (hard won on the harder difficulties), barter, raids.
 - **The wounds remember**: Echoes, Unstable Anchors, Unanchored builds and Frayed islands.
 - **Co-op**: fallen players can be revived, curses carried for a friend, anchors shared. Every player has their own
   time.

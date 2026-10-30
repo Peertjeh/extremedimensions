@@ -9,7 +9,9 @@ import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.expedition.ExpeditionService;
 import com.extremedimensions.guide.Hints;
+import com.extremedimensions.hollow.HollowService;
 import com.extremedimensions.hollow.Hollowling;
+import com.extremedimensions.hollow.Keeper;
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.lurker.LurkerBody;
 import com.extremedimensions.lurker.LurkerService;
@@ -26,17 +28,21 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.pathfinder.PathType;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
  * The Lurker as a threat (it claws as it reaches, takes several things and may leave a curse; come to hurt, it glows red
- * and strikes), the tribe's way of walking (out of lava and water, on the ground, never in a tree), a world on a
- * difficulty keeping it through the upgrade, and what a new player is told about the wound.
+ * and strikes), the tribe's way of walking (out of lava and water, on the ground, never in a tree, unhurt by a fall or a
+ * low roof, up a ledge with a leap), the swarm, a world on a difficulty keeping it through the upgrade, and what a new
+ * player is told about the wound.
  */
 public class LurkerTests {
 	private static void place(GameTestHelper helper, ServerPlayer p, double x, double y, double z) {
@@ -241,6 +247,185 @@ public class LurkerTests {
 				&& hard.get("lurker_strike_damage").getAsDouble() == 8, "a Hard world did not take Hard's Lurker settings: %s", hard);
 		check(helper, custom.get("lurker_stalk_chance").getAsDouble() == 0.3 && !custom.has("lurker_thefts"),
 				"a world of its own rules was given a difficulty's Lurker settings: %s", custom);
+		helper.succeed();
+	}
+
+	/** A fall or a wall does the tribe no harm and makes none of it run; only a blow does. The big ones step a block. */
+	@GameTest(maxTicks = 60)
+	public void theTribeShrugsOffFallsAndOnlyABlowMakesItRun(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer p = TestPlayers.survivor(helper, "lurker-faller");
+		place(helper, p, 1.5, 2, 1.5);
+		Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(5, 2, 5)), EntitySpawnReason.COMMAND);
+		Hollowling h = ModEntities.HOLLOWLING.spawn(level, helper.absolutePos(new BlockPos(2, 2, 6)), EntitySpawnReason.COMMAND);
+		Keeper k = ModEntities.KEEPER.spawn(level, helper.absolutePos(new BlockPos(6, 2, 1)), EntitySpawnReason.COMMAND);
+		try {
+			check(helper, l != null && h != null && k != null, "the tribe did not come");
+			LurkerService.adopt(level, l, p, "stalk");
+			float full = l.getHealth();
+			check(helper, !l.hurtServer(level, level.damageSources().fall(), 12f) && l.getHealth() == full, "a fall hurt the Lurker");
+			check(helper, !l.hurtServer(level, level.damageSources().inWall(), 4f) && l.getHealth() == full, "a wall hurt the Lurker");
+			check(helper, "stalk".equals(LurkerService.mode(l)), "a fall made the Lurker %s", LurkerService.mode(l));
+			check(helper, !h.hurtServer(level, level.damageSources().fall(), 6f) && h.getHealth() == h.getMaxHealth(), "a fall hurt the Hollowling");
+			check(helper, !k.hurtServer(level, level.damageSources().inWall(), 6f) && k.getHealth() == k.getMaxHealth(), "a wall hurt the Keeper");
+			check(helper, l.getAttributeValue(Attributes.STEP_HEIGHT) >= 1.0 && k.getAttributeValue(Attributes.STEP_HEIGHT) >= 1.0,
+					"the big ones do not step a block (%s, %s)", l.getAttributeValue(Attributes.STEP_HEIGHT), k.getAttributeValue(Attributes.STEP_HEIGHT));
+			check(helper, l.getMaxFallDistance() >= 8 && h.getMaxFallDistance() >= 6, "the tribe's routes take no longer drops (%s, %s)",
+					l.getMaxFallDistance(), h.getMaxFallDistance());
+			l.hurtServer(level, level.damageSources().playerAttack(p), 2f);
+			check(helper, !"stalk".equals(LurkerService.mode(l)), "a blow left the Lurker stalking");
+		} finally {
+			for (Mob m : new Mob[] {l, h, k}) {
+				if (m != null) {
+					m.discard();
+				}
+			}
+		}
+		helper.succeed();
+	}
+
+	/** Only where its whole body fits: a Keeper fits in no low tunnel, and one pressed into a roof steps out of it unhurt. */
+	@GameTest(maxTicks = 80)
+	public void aKeeperFitsWhereItStandsAndStepsOutOfARoof(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		// A roof four blocks thick over a tunnel two blocks high
+		for (int x = 1; x <= 4; x++) {
+			for (int z = 1; z <= 4; z++) {
+				for (int y = 4; y <= 7; y++) {
+					helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+				}
+			}
+		}
+		BlockPos tunnel = helper.absolutePos(new BlockPos(2, 2, 2));
+		check(helper, !TribeMoves.roomFor(level, tunnel, 1.6, 4.2), "a Keeper fits in a tunnel two blocks high");
+		check(helper, TribeMoves.roomFor(level, tunnel, 0.6, 1.1), "a Hollowling does not fit in a tunnel two blocks high");
+		check(helper, TribeMoves.roomFor(level, helper.absolutePos(new BlockPos(6, 2, 6)), 1.6, 4.2), "a Keeper does not fit in the open");
+		Keeper k = ModEntities.KEEPER.spawn(level, tunnel, EntitySpawnReason.COMMAND);
+		helper.runAfterDelay(25, () -> {
+			try {
+				check(helper, k != null && k.isAlive(), "the Keeper died under a low roof");
+				check(helper, k.getHealth() == k.getMaxHealth(), "a roof hurt the Keeper (%s)", k.getHealth());
+				check(helper, !k.isInWall(), "the Keeper is still pressed into the roof at %s", k.blockPosition());
+			} finally {
+				if (k != null) {
+					k.discard();
+				}
+			}
+			helper.succeed();
+		});
+	}
+
+	/** A ledge too high to step or jump, with no way round: a hunting Lurker leaps up onto it after its prey. */
+	@GameTest(environment = Alone.LURKER_LEAP, maxTicks = 220)
+	public void aHuntingLurkerLeapsUpALedge(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		// A block of stone three high, its prey on top
+		for (int x = 4; x <= 6; x++) {
+			for (int z = 1; z <= 3; z++) {
+				for (int y = 2; y <= 4; y++) {
+					helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+				}
+			}
+		}
+		ServerPlayer p = TestPlayers.survivor(helper, "lurker-ledge");
+		place(helper, p, 5.5, 5, 2.5);
+		Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(1, 2, 2)), EntitySpawnReason.COMMAND);
+		double top = helper.absolutePos(new BlockPos(0, 5, 0)).getY();
+		helper.runAfterDelay(20, () -> {
+			check(helper, l != null, "no Lurker came");
+			LurkerService.adopt(level, l, p, "hunt");
+		});
+		helper.runAfterDelay(140, () -> {
+			try {
+				check(helper, l.isAlive() && l.getY() >= top - 0.01, "the Lurker stayed below the ledge (at %s, the top at %s)", l.getY(), top);
+				check(helper, l.getHealth() == l.getMaxHealth(), "the leap hurt the Lurker (%s)", l.getHealth());
+			} finally {
+				l.discard();
+			}
+			helper.succeed();
+		});
+	}
+
+	/** Extreme: the whole tribe at once, the young glowing red and biting. */
+	@GameTest(environment = Alone.LURKER_SWARM, maxTicks = 260)
+	public void aSwarmComesAllAtOnceAndBites(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Difficulty was = level.getDifficulty();
+		level.getServer().setDifficulty(Difficulty.NORMAL, true);
+		ServerPlayer p = TestPlayers.survivor(helper, "swarm-prey");
+		place(helper, p, 3.5, 2, 3.5);
+		int lurkers = Config.LURKER_SWARM_LURKERS, young = Config.LURKER_SWARM_HOLLOWLINGS, secs = Config.LURKER_SWARM_SECONDS;
+		double bite = Config.LURKER_SWARM_BITE;
+		Runnable restore = () -> {
+			Config.LURKER_SWARM_LURKERS = lurkers;
+			Config.LURKER_SWARM_HOLLOWLINGS = young;
+			Config.LURKER_SWARM_SECONDS = secs;
+			Config.LURKER_SWARM_BITE = bite;
+			for (Mob m : level.getEntitiesOfClass(Mob.class, new AABB(p.blockPosition()).inflate(48), e -> e instanceof Lurker || e instanceof Hollowling)) {
+				m.discard();
+			}
+			level.getServer().setDifficulty(was, true);
+		};
+		// past the grace a player has on joining (three seconds)
+		helper.runAfterDelay(70, () -> {
+			Config.LURKER_SWARM_LURKERS = 2;
+			Config.LURKER_SWARM_HOLLOWLINGS = 4;
+			Config.LURKER_SWARM_SECONDS = 30;
+			Config.LURKER_SWARM_BITE = 3;
+			p.setHealth(20f);
+			try {
+				check(helper, LurkerService.swarm(p), "no swarm came");
+				check(helper, HollowService.biting(p.getUUID()) >= 1, "no young came with the swarm");
+				var hs = level.getEntitiesOfClass(Hollowling.class, new AABB(p.blockPosition()).inflate(40), e -> true);
+				check(helper, !hs.isEmpty() && hs.stream().allMatch(x -> x.getLurkerMood() == LurkerBody.MOOD_HUNTER), "a swarm's young do not glow red");
+				// (brought to their prey at once, so the test waits on the bite, not on how far they spawned)
+				for (Hollowling x : hs) {
+					x.teleportTo(p.getX() + 1.2, p.getY(), p.getZ());
+				}
+			} catch (RuntimeException e) {
+				restore.run();
+				throw e;
+			}
+		});
+		helper.runAfterDelay(170, () -> {
+			try {
+				check(helper, p.getHealth() < 20f, "the swarm's young did not bite (health %s)", p.getHealth());
+			} finally {
+				restore.run();
+			}
+			helper.succeed();
+		});
+	}
+
+	/** A world from before 3.8 on a difficulty takes its swarm and its standing settings; one of its own rules keeps them. */
+	@GameTest
+	public void aWorldKeepsItsDifficultyThroughTheStandingUpgrade(GameTestHelper helper) {
+		JsonObject extreme = new JsonObject();
+		extreme.addProperty("config_version", 4);
+		JsonObject custom = new JsonObject();
+		custom.addProperty("config_version", 4);
+		for (var e : Preset.EXTREME.values.entrySet()) {
+			String k = e.getKey();
+			if (!k.startsWith("tribe_") && !k.equals("lurker_swarm_chance")) {
+				extreme.addProperty(k, Double.parseDouble(e.getValue()));
+				custom.addProperty(k, Double.parseDouble(e.getValue()));
+			}
+		}
+		// as a 3.7 file holds them: the old defaults
+		for (JsonObject j : new JsonObject[] {extreme, custom}) {
+			j.addProperty("tribe_rep_gift", 3);
+			j.addProperty("tribe_rep_bond", 10);
+			j.addProperty("tribe_rep_barter", 1);
+		}
+		custom.addProperty("atone_base", 999);
+		Config.migrate(extreme);
+		Config.migrate(custom);
+		check(helper, extreme.get("lurker_swarm_chance").getAsDouble() == 0.15 && extreme.get("tribe_rep_gift").getAsInt() == 1
+				&& extreme.get("tribe_gift_minutes").getAsInt() == 30 && extreme.get("tribe_gift_cost").getAsInt() == 3
+				&& extreme.get("tribe_rep_bond").getAsInt() == 3 && extreme.get("tribe_rep_barter").getAsInt() == 0,
+				"an Extreme world did not take Extreme's swarm and standing: %s", extreme);
+		check(helper, custom.get("tribe_rep_gift").getAsInt() == 2 && custom.get("tribe_rep_bond").getAsInt() == 6 && !custom.has("lurker_swarm_chance"),
+				"a world of its own rules did not follow the new defaults alone: %s", custom);
 		helper.succeed();
 	}
 

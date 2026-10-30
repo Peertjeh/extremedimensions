@@ -1,5 +1,50 @@
 # Changelog
 
+## 3.8.0: The Whole Tribe
+
+### The tribe finds its way
+- **No harm from a fall, and no flight from one.** Lurkers, Hollowlings and Keepers take no fall damage, and only a
+  creature's blow (a player, a beast, an arrow) makes them flee or turn on you: a drop, a bush or a burn no longer sends
+  a Lurker running.
+- **Height.** The Lurker and the Keeper step up a block without a jump; their routes may take drops of up to eight
+  blocks (six for a Hollowling), which no longer hurt them. A ledge too high to step or jump, with no way round, they
+  leap: up to five blocks for a Lurker, six for a Keeper, a little for a Hollowling, if there is ground up there they
+  fit on.
+- **Trees.** Where the world lets creatures break blocks (the `mobGriefing` rule), the Lurker and the Keeper push
+  through a tree's leaves, as a ravager does. Leaves someone placed never give way.
+
+### No hiding from them
+- **No more suffocating bosses.** The tribe takes no harm from being pressed into a wall or under a low roof; one
+  caught there steps out to the nearest spot its whole body fits, in a puff of ink.
+- **Only where they fit.** A Keeper now comes, and blinks behind you, only where its whole body fits (it is over four
+  blocks tall): never again into a tunnel too low for it. Every Lurker's spot is checked the same way.
+- **They reach in.** Out of a Keeper's reach yet in its sight (up a pillar, in a hole too low for it, a run kept at a
+  distance) for three seconds, and it reaches in after you, a line of ink before it, for 6 damage, and drags you out to
+  it. A hunting Lurker does the same within twelve blocks, with its own blow. `keeper_reach_damage` sets the Keeper's.
+
+### Extreme: the swarm
+- Each time a Lurker would come on **Extreme**, there is a 15% chance (twice that for one the tribe hates) that the
+  whole tribe comes instead: three Lurkers from every side, come to hurt and hunting until the swarm is over, and six
+  of their young with them, **glowing red** and biting (3 damage a bite, each after a short crouch and a hiss), for 45
+  seconds. Each other player near adds a Lurker and two young. The swarm's young never run when struck, and killing
+  them costs no standing: they came to kill.
+- Five new settings (`lurker_swarm_chance`, `_lurkers`, `_hollowlings`, `_seconds`, `_bite`); the chance is 0 on Easy,
+  Normal and Hard. `/tether lurker swarm` (operators) calls one.
+
+### Standing is hard won
+- The young take **one gift that wins standing per stretch of play** (5 minutes on Easy, 10 on Normal, 20 on Hard, 30 on
+  Extreme) instead of four a day, so sleeping through the nights wins nothing.
+- A gift wins less (3, 2, 1, 1 standing; an Echo Shard twice that) and must be bigger on the harder difficulties (two
+  times the usual amount on Hard, three on Extreme). A bond wins 10, 6, 4 or 3; on Hard and Extreme barter wins none.
+- New settings `tribe_gift_minutes` and `tribe_gift_cost`; `tribe_gifts_per_day` is gone. A world already set to a
+  difficulty takes that difficulty's values; one of its own rules keeps its own, and only old defaults follow the new.
+
+### Tests
+- Server tests for falls and walls doing the tribe no harm and making none of it run, a Keeper fitting in no low tunnel
+  and stepping out of a roof unhurt, a hunting Lurker leaping up a ledge after its prey, a swarm coming at once with its
+  young glowing red and biting, the gift's wait and size, and an Extreme world keeping Extreme through the upgrade. The
+  client test shows a swarm's young beside the three moods.
+
 ## 3.7.0: Teeth in the Dark
 
 ### The Lurkers bite

@@ -314,6 +314,17 @@ public final class Config {
 	public static int LURKER_STRIKE_BLOWS = 3;
 	public static double LURKER_STRIKE_SPEED = 1.35;
 	public static int LURKER_STRIKE_SECONDS = 30;
+	/**
+	 * Extreme: chance, each time a Lurker would come, that the whole tribe comes at once instead (twice as often for one
+	 * it hates): Lurkers that hunt until the swarm is over, and young that bite, glowing red; each other player near adds
+	 * a Lurker and two young. 0 = never (Easy, Normal and Hard).
+	 */
+	public static double LURKER_SWARM_CHANCE = 0.0;
+	public static int LURKER_SWARM_LURKERS = 3;
+	public static int LURKER_SWARM_HOLLOWLINGS = 6;
+	public static int LURKER_SWARM_SECONDS = 45;
+	/** Damage of each bite of a swarm's young (half-hearts). */
+	public static double LURKER_SWARM_BITE = 3.0;
 
 	// --- Hoards, Hollowlings and the Keeper ------------------------------------------------------
 
@@ -333,6 +344,8 @@ public final class Config {
 	public static double COMPANION_GUARD_CHANCE = 0.6;
 	/** 1 = hoards are guarded by a Keeper, 0 = never. */
 	public static int KEEPER_ENABLED = 1;
+	/** Damage when a Keeper reaches in after a prey it sees but cannot get at, and drags them out (half-hearts). */
+	public static double KEEPER_REACH_DAMAGE = 6.0;
 
 	// --- Weaver's craft ---------------------------------------------------------------------------
 
@@ -888,14 +901,16 @@ public final class Config {
 	public static int TRIBE_HATED_AT = -20;
 	/** Standing below which the tribe hunts a player: a Keeper comes for them now and then. */
 	public static int TRIBE_HUNTED_AT = -50;
-	/** Standing gained for a gift to a Hollowling. */
-	public static int TRIBE_REP_GIFT = 3;
-	/** Gifts per day that win standing (a day in the Overworld). */
-	public static int TRIBE_GIFTS_PER_DAY = 4;
+	/** Standing gained for a gift to a Hollowling (an Echo Shard twice as much). */
+	public static int TRIBE_REP_GIFT = 2;
+	/** Minutes of play between two gifts that win standing (the young take no other before then). */
+	public static int TRIBE_GIFT_MINUTES = 10;
+	/** How many times the usual amount a gift must be (four gold nuggets at 1, twelve at 3). */
+	public static int TRIBE_GIFT_COST = 1;
 	/** Standing gained for each barter. */
 	public static int TRIBE_REP_BARTER = 1;
 	/** Standing gained when a Hollowling bonds with the player. */
-	public static int TRIBE_REP_BOND = 10;
+	public static int TRIBE_REP_BOND = 6;
 	/** In-game days before bonding with one of the young again earns standing (a bond made again and again earns it once). */
 	public static int TRIBE_BOND_REP_DAYS = 3;
 	/** Standing lost for killing a Hollowling (negative). */
@@ -1058,7 +1073,7 @@ public final class Config {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	/** Layout version of the config file; files from before a version are brought up to date on loading. */
-	private static final int VERSION = 4;
+	private static final int VERSION = 5;
 
 	/**
 	 * Defaults that changed, by the version that changed them: {key, old default, new default}. A file still holding
@@ -1077,6 +1092,8 @@ public final class Config {
 				{"elder_spell_range", "120", "250"}, {"seam_fly_range", "48", "96"}},
 		// 3.7.0: Lurkers come closer twice as often
 		{{"lurker_stalk_chance", "0.15", "0.3"}},
+		// 3.8.0: the tribe's standing is harder won
+		{{"tribe_rep_gift", "3", "2"}, {"tribe_rep_bond", "10", "6"}},
 	};
 
 	/**
@@ -1225,10 +1242,10 @@ public final class Config {
 		if (json.size() == 0) {
 			return;
 		}
-		if (from < 4) {
-			// A world set to one of the difficulties takes that difficulty's values of the Lurker settings it gained in
-			// 3.7.0, rather than turning into custom rules
-			Preset.upgrade(json);
+		if (from < 5) {
+			// A world set to one of the difficulties takes that difficulty's values of the settings it gained since (the
+			// Lurker's in 3.7.0, the tribe's standing and the swarm in 3.8.0), rather than turning into custom rules
+			Preset.upgrade(json, from);
 		}
 		for (int v = from + 1; v <= VERSION && v < MIGRATIONS.length; v++) {
 			for (String[] m : MIGRATIONS[v]) {
@@ -1289,7 +1306,9 @@ public final class Config {
 			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600},
 			{"lurker_thefts", 1, 9}, {"lurker_claw_damage", 0, 100}, {"lurker_curse_chance", 0, 1}, {"lurker_curse_extreme_chance", 0, 1},
 			{"lurker_curses_max", 0, 9}, {"lurker_hunt_chance", 0, 1}, {"lurker_retaliate_chance", 0, 1}, {"lurker_strike_damage", 0, 100},
-			{"lurker_strike_blows", 1, 20}, {"lurker_strike_speed", 0.5, 3}, {"lurker_strike_seconds", 5, 300}, {"atone_kill_area_shared", 0, 1}, {"atone_spawner_radius", 0, 64}, {"coop_burden_relief_per_day", 0, 100},
+			{"lurker_strike_blows", 1, 20}, {"lurker_strike_speed", 0.5, 3}, {"lurker_strike_seconds", 5, 300}, {"lurker_swarm_chance", 0, 1}, {"lurker_swarm_lurkers", 0, 12},
+				{"lurker_swarm_hollowlings", 0, 24}, {"lurker_swarm_seconds", 5, 300}, {"lurker_swarm_bite", 0, 40}, {"keeper_reach_damage", 0, 40},
+				{"tribe_gift_minutes", 0, 240}, {"tribe_gift_cost", 1, 10}, {"atone_kill_area_shared", 0, 1}, {"atone_spawner_radius", 0, 64}, {"coop_burden_relief_per_day", 0, 100},
 			{"tapestry_respin_silk", 0, 64}, {"tapestry_roots_gifts", 1, 10}, {"tapestry_toll_drain", 0, 1}, {"tapestry_unravelling_share", 3, 20},
 			{"tapestry_knot_fray", 0, 10}, {"tapestry_knot_strands", 0, 1}, {"tapestry_heart_echo", 0, 1}, {"weaving_seconds", 30, 3600},
 			{"weaving_ward", 1, 10000}, {"weaving_wave_seconds", 5, 600}, {"weaving_wave", 0, 40}, {"weaving_wave_per_player", 0, 20},

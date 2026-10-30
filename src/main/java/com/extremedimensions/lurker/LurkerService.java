@@ -71,6 +71,12 @@ public final class LurkerService {
 	private static final double STRIKE_REACH = 2.6;
 	private static final int STRIKE_WINDUP = 10;
 	private static final int STRIKE_PAUSE = 16;
+	/** A Lurker's body (as its entity type has it): where it shows itself, it must fit. */
+	static final double BODY_WIDTH = 1.3, BODY_HEIGHT = 3.4;
+	/** Ticks a hunting Lurker that sees its prey but cannot get at it waits before it reaches in after them. */
+	private static final int REACH_IN_AFTER = 60;
+	/** How far it reaches in (blocks). */
+	private static final double REACH_IN_RANGE = 12;
 
 	/** What a Lurker took and is carrying away. */
 	static final class Loot {
@@ -104,6 +110,11 @@ public final class LurkerService {
 		int blows;
 		int windup;
 		int pause;
+		/** Ticks its prey has stayed out of its reach, in sight; and whether the blow it winds up reaches in after them. */
+		int unreach;
+		boolean reachIn;
+		/** One of a swarm: it hunts until the swarm is over, whatever its blows. */
+		boolean swarm;
 	}
 
 	private static final Map<UUID, State> STATES = new HashMap<>();
@@ -158,6 +169,12 @@ public final class LurkerService {
 				continue;
 			}
 			LAST_SEEN.put(p.getUUID(), (long) s.getTickCount());
+			// Extreme: now and then the whole tribe comes at once (twice as often for one it hates)
+			double swarmChance = Config.LURKER_SWARM_CHANCE
+					* (com.extremedimensions.tribe.Standing.of(p).ordinal() <= com.extremedimensions.tribe.Standing.Level.HATED.ordinal() ? 2 : 1);
+			if (swarmChance > 0 && !kin(p) && WorldService.tribeSteals() && rnd.nextDouble() < swarmChance && swarm(p)) {
+				continue;
+			}
 			if (Dims.OVERWORLD.equals(dim) && rnd.nextDouble() < Config.LURKER_DRAIN_CHANCE && spawnDrain(p)) {
 				continue;
 			}
@@ -172,6 +189,67 @@ public final class LurkerService {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Extreme: the tribe comes for one player all at once. Lurkers from every side, come to hurt (glowing red) and hunting
+	 * until the swarm is over, and the young with them, biting; each other player near adds a Lurker and two young. A
+	 * shriek and a line in the chat tell it. False if none could come (no ground near enough that they fit on).
+	 */
+	public static boolean swarm(ServerPlayer p) {
+		ServerLevel level = (ServerLevel) p.level();
+		int others = 0;
+		for (ServerPlayer o : level.players()) {
+			others += o != p && !o.isSpectator() && !o.isCreative() && o.distanceToSqr(p) < 24 * 24 ? 1 : 0;
+		}
+		int lurkers = Math.max(0, Config.LURKER_SWARM_LURKERS) + others;
+		int young = Math.max(0, Config.LURKER_SWARM_HOLLOWLINGS) + 2 * others;
+		int seconds = Math.max(5, Config.LURKER_SWARM_SECONDS);
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		double base = rnd.nextDouble() * Math.PI * 2;
+		int came = 0;
+		for (int i = 0; i < lurkers; i++) {
+			BlockPos spot = null;
+			for (int t = 0; t < 8 && spot == null; t++) {
+				double a = base + (i + rnd.nextDouble() * 0.5) * Math.PI * 2 / Math.max(1, lurkers);
+				double r = 18 + rnd.nextDouble() * 10;
+				int x = (int) Math.floor(p.getX() + Math.cos(a) * r);
+				int z = (int) Math.floor(p.getZ() + Math.sin(a) * r);
+				if (Loaded.ready(level, new BlockPos(x, (int) p.getY(), z))) {
+					spot = TribeMoves.surface(level, x, z, (int) p.getY() + 12, BODY_WIDTH, BODY_HEIGHT);
+				}
+			}
+			if (spot == null) {
+				continue;
+			}
+			State st = new State();
+			st.target = p.getUUID();
+			st.swarm = true;
+			Lurker l = spawn(level, spot, st);
+			if (l != null) {
+				hunt(l, st, p);
+				st.limit = seconds * 20;
+				came++;
+			}
+		}
+		came += HollowService.swarm(level, p, young, seconds).size();
+		if (came == 0) {
+			return false;
+		}
+		p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.tribe.swarm")
+				.withStyle(net.minecraft.ChatFormatting.DARK_RED));
+		WorldFx.soundIn(Dims.fullId(p), "extremedimensions:lurker_shriek", "hostile", p.getX(), p.getY() + 1, p.getZ(), 2.0f, 0.5f);
+		WorldFx.effect(p, net.minecraft.world.effect.MobEffects.DARKNESS, 3, 0);
+		return true;
+	}
+
+	/** For the tests: how many Lurkers of a swarm hunt this player right now. */
+	public static int swarming(ServerPlayer p) {
+		int n = 0;
+		for (State st : STATES.values()) {
+			n += st.swarm && p.getUUID().equals(st.target) ? 1 : 0;
+		}
+		return n;
 	}
 
 	/** A Lurker appears on high ground at a distance, watching this player. */
@@ -260,7 +338,7 @@ public final class LurkerService {
 				continue;
 			}
 			// On the ground with room for its height, never up in a tree it could not climb down from (nor in water)
-			BlockPos c = TribeMoves.surface(level, x, z, (int) p.getY() + 16, 4);
+			BlockPos c = TribeMoves.surface(level, x, z, (int) p.getY() + 16, BODY_WIDTH, BODY_HEIGHT);
 			if (c == null) {
 				continue;
 			}
@@ -297,11 +375,11 @@ public final class LurkerService {
 		return false;
 	}
 
-	/** Scans down from {@code top} for safe ground with room for a Lurker's height above it. */
+	/** Scans down from {@code top} for safe ground with room for a Lurker's whole body. */
 	private static BlockPos standable(ServerLevel level, int x, int top, int z, int depth) {
 		for (int y = top; y > top - depth; y--) {
 			BlockPos feet = new BlockPos(x, y, z);
-			if (TribeMoves.standable(level, feet, 4)) {
+			if (TribeMoves.roomFor(level, feet, BODY_WIDTH, BODY_HEIGHT)) {
 				return feet;
 			}
 		}
@@ -679,7 +757,7 @@ public final class LurkerService {
 			// One spot to run to, away from the player over safe ground, kept until it is reached (a goal that kept
 			// shifting made it turn back and forth)
 			if (st.away == null || l.position().distanceToSqr(st.away) < 3.0 * 3.0 || l.getNavigation().isDone()) {
-				st.away = TribeMoves.away(l, p.position(), 22, 4);
+				st.away = TribeMoves.away(l, p.position(), 22);
 			}
 			if (st.away != null) {
 				TribeMoves.go(l, st.away.x, st.away.y, st.away.z, speed);
@@ -827,9 +905,10 @@ public final class LurkerService {
 	 * Struck: it shrieks and runs, or (by chance) turns on its attacker. Already running, it keeps going; already
 	 * hunting, it keeps at it until it is badly hurt.
 	 */
-	public static void onHurt(Lurker l) {
+	public static void onHurt(Lurker l, net.minecraft.world.damagesource.DamageSource source) {
 		State st = STATES.get(l.getUUID());
-		if (st == null || st.mode == Mode.FLEE) {
+		// Only a creature's blow makes it flee or turn: a bush, a burn or a drop does not
+		if (st == null || st.mode == Mode.FLEE || !TribeMoves.struck(source)) {
 			return;
 		}
 		ServerPlayer p = WorldFx.server().getPlayerList().getPlayer(st.target);
@@ -889,6 +968,19 @@ public final class LurkerService {
 			if (--st.windup > 0) {
 				return;
 			}
+			if (st.reachIn) {
+				// It reaches in after a prey it cannot get at (a hole, a pillar, a run kept at a distance) and drags them out
+				st.reachIn = false;
+				st.unreach = 0;
+				if (l.distanceTo(p) <= REACH_IN_RANGE && l.hasLineOfSight(p) && hurt(l, p, Config.LURKER_STRIKE_DAMAGE, false)) {
+					TribeMoves.yank(l, p);
+					st.blows++;
+					curseChance(l, st, p);
+				}
+				l.setLurkerPose(Lurker.POSE_STALK);
+				st.pause = STRIKE_PAUSE;
+				return;
+			}
 			// The blow falls: it lands on whoever is still within reach of its arms (a step back, a shield, and it misses)
 			if (reach <= STRIKE_REACH + 1.0 && even && l.hasLineOfSight(p)) {
 				if (HollowService.guarded(p) || com.extremedimensions.binding.Charms.soulward(p)) {
@@ -904,7 +996,8 @@ public final class LurkerService {
 			}
 			l.setLurkerPose(Lurker.POSE_STALK);
 			st.pause = STRIKE_PAUSE;
-			if (st.blows >= Math.max(1, Config.LURKER_STRIKE_BLOWS)) {
+			// (one of a swarm hunts until the swarm is over)
+			if (!st.swarm && st.blows >= Math.max(1, Config.LURKER_STRIKE_BLOWS)) {
 				run(l, st, p, false);
 			}
 			return;
@@ -916,12 +1009,24 @@ public final class LurkerService {
 		if (st.pause > 0) {
 			st.pause--;
 		}
-		if (st.pause <= 0 && reach <= STRIKE_REACH && even && l.hasLineOfSight(p)) {
+		boolean near = reach <= STRIKE_REACH && even;
+		if (st.pause <= 0 && near && l.hasLineOfSight(p)) {
 			// Rears up: the player sees the blow coming
 			l.getNavigation().stop();
 			l.setLurkerPose(Lurker.POSE_TAKE);
 			st.windup = STRIKE_WINDUP;
 			WorldFx.soundIn(Dims.fullId(p), "extremedimensions:lurker_shriek", "hostile", l.getX(), l.getY() + 2.5, l.getZ(), 1.2f, 0.6f);
+			return;
+		}
+		// Its prey in sight but no nearer for a while (in a hole too low for it, up a pillar, a run kept at a distance)
+		st.unreach = TribeMoves.outOfReach(l, p, near, REACH_IN_RANGE, st.unreach);
+		if (st.pause <= 0 && st.unreach >= REACH_IN_AFTER) {
+			l.getNavigation().stop();
+			l.setLurkerPose(Lurker.POSE_TAKE);
+			st.windup = STRIKE_WINDUP + 6;
+			st.reachIn = true;
+			TribeMoves.reachLine(l, p, "minecraft:dust{color:[1.0,0.16,0.1],scale:0.9}");
+			WorldFx.soundIn(Dims.fullId(p), "extremedimensions:lurker_shriek", "hostile", l.getX(), l.getY() + 2.5, l.getZ(), 1.4f, 0.5f);
 			return;
 		}
 		if (st.ticks % 4 == 0) {
@@ -998,6 +1103,7 @@ public final class LurkerService {
 		}
 		return switch (mode) {
 			case "drain" -> spawnDrain(p);
+			case "swarm" -> swarm(p);
 			case "stalk", "hunt" -> {
 				if (!spawnWatch(p)) {
 					yield false;

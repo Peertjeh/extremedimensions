@@ -1,6 +1,6 @@
-net.minecraft.world.level.pathfinder.PathType
-net.minecraft.world.entity.ai.navigation.PathNavigation
-net.minecraft.world.entity.ai.control.MoveControl
-net.minecraft.client.renderer.entity.layers.LivingEntityEmissiveLayer
-#pathfinder/PathType
-#navigation/GroundPathNavigation
+net.minecraft.world.level.pathfinder.Path
+net.minecraft.world.level.block.LeavesBlock
+net.minecraft.world.damagesource.DamageTypes
+net.minecraft.world.level.CollisionGetter
+net.minecraft.world.entity.ai.attributes.Attributes
+#pathfinder/Path

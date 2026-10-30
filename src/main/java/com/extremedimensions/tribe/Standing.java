@@ -17,8 +17,8 @@ import net.minecraft.server.level.ServerPlayer;
 
 /**
  * What the tribe (the Lurkers, their young and their Keepers) thinks of each player, from -100 to 100. Gifts, barter
- * and a bond win standing; killing its own, breaking up its hoards and raiding them lose it. A grudge fades slowly
- * with time. Each level changes how the tribe treats the player:
+ * and a bond win standing (slowly, and the slower the harder the world's difficulty); killing its own, breaking up its
+ * hoards and raiding them lose it. A grudge fades slowly with time. Each level changes how the tribe treats the player:
  *
  * <ul>
  *   <li><b>Hunted</b>: its young steal twice as often, and a Keeper comes for them now and then.</li>
@@ -141,6 +141,9 @@ public final class Standing {
 	public static void second(ServerPlayer p, PlayerData d) {
 		if (Config.TRIBE_ENABLED <= 0 || p.isCreative() || p.isSpectator() || !Dims.ours(p)) {
 			return;
+		}
+		if (d.tribeGiftIn > 0) {
+			d.tribeGiftIn--;
 		}
 		if (d.tribeRep < 0 && Config.TRIBE_FORGET_MINUTES > 0) {
 			if (d.tribeForgetIn <= 0) {

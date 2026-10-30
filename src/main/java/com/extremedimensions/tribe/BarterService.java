@@ -97,12 +97,11 @@ public final class BarterService {
 		return s == null ? 0 : s.overworld().getGameTime() / 24000L;
 	}
 
-	/** Starts a new day for the player's gifts and wares if a day has passed. */
+	/** Starts a new day for the player's wares if a day has passed. */
 	private static void roll(PlayerData d) {
 		long day = today();
 		if (d.tribeDay != day) {
 			d.tribeDay = day;
-			d.tribeGifts = 0;
 			d.barterUsed.clear();
 		}
 	}
@@ -232,30 +231,36 @@ public final class BarterService {
 		return null;
 	}
 
+	/** How many of an item make one gift of it in this world (the usual amount times tribe_gift_cost); 0 if it is not liked. */
+	public static int giftSize(ItemStack held) {
+		Integer usual = LIKES.get(held.getItem());
+		return usual == null ? 0 : usual * Math.max(1, Config.TRIBE_GIFT_COST);
+	}
+
 	/**
 	 * A gift for a Hollowling: what it takes (as many as make one gift of it), or an empty stack if it takes nothing
-	 * (not something it likes, not enough of it, or enough gifts today, each said to the player).
+	 * (not something it likes, not enough of it, or too soon after the last gift, each said to the player). The young
+	 * take one gift each tribe_gift_minutes of play, so sleeping through the nights wins nothing.
 	 */
 	public static ItemStack gift(ServerPlayer p, ItemStack held) {
-		Integer need = LIKES.get(held.getItem());
-		if (need == null) {
+		int need = giftSize(held);
+		if (need <= 0) {
 			return ItemStack.EMPTY;
 		}
 		PlayerData d = DataStore.get(p.getUUID());
-		roll(d);
 		if (held.getCount() < need) {
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.tribe.gift_more", need, held.getHoverName()), true);
 			return ItemStack.EMPTY;
 		}
-		if (d.tribeGifts >= Math.max(0, Config.TRIBE_GIFTS_PER_DAY)) {
-			p.sendSystemMessage(Component.translatable("gui.extremedimensions.tribe.gift_enough"), true);
+		if (d.tribeGiftIn > 0) {
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.tribe.gift_wait", (d.tribeGiftIn + 59) / 60), true);
 			return ItemStack.EMPTY;
 		}
 		ItemStack taken = held.copyWithCount(need);
 		if (!p.isCreative()) {
 			held.shrink(need);
 		}
-		d.tribeGifts++;
+		d.tribeGiftIn = Math.max(0, Config.TRIBE_GIFT_MINUTES) * 60;
 		Standing.change(p, Config.TRIBE_REP_GIFT * (taken.is(Items.ECHO_SHARD) ? 2 : 1), "gui.extremedimensions.tribe.why.gift");
 		DataStore.markDirty();
 		return taken;

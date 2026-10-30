@@ -59,8 +59,20 @@ public class TribeTests {
 		ItemStack taken = BarterService.gift(p, nuggets);
 		check(helper, taken.getCount() == 4 && nuggets.getCount() == 5, "a gift took %s nuggets and left %s", taken.getCount(), nuggets.getCount());
 		check(helper, d.tribeRep == Config.TRIBE_REP_GIFT, "a gift brought %s standing", d.tribeRep);
-		d.tribeGifts = Config.TRIBE_GIFTS_PER_DAY;
-		check(helper, BarterService.gift(p, nuggets).isEmpty() && nuggets.getCount() == 5, "a gift past the day's limit was taken");
+		check(helper, BarterService.gift(p, nuggets).isEmpty() && nuggets.getCount() == 5, "a second gift was taken at once");
+		check(helper, d.tribeGiftIn == Config.TRIBE_GIFT_MINUTES * 60, "the next gift waits %s s", d.tribeGiftIn);
+		// Bigger gifts where the world asks for them: three times the nuggets
+		int cost = Config.TRIBE_GIFT_COST;
+		try {
+			Config.TRIBE_GIFT_COST = 3;
+			d.tribeGiftIn = 0;
+			check(helper, BarterService.giftSize(nuggets) == 12, "a gift of nuggets is %s at three times the size", BarterService.giftSize(nuggets));
+			check(helper, BarterService.gift(p, nuggets).isEmpty() && nuggets.getCount() == 5, "five nuggets were taken as a gift of twelve");
+			ItemStack more = new ItemStack(Items.GOLD_NUGGET, 12);
+			check(helper, BarterService.gift(p, more).getCount() == 12 && more.isEmpty(), "twelve nuggets were not taken as a gift");
+		} finally {
+			Config.TRIBE_GIFT_COST = cost;
+		}
 		helper.succeed();
 	}
 

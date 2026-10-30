@@ -1,7 +1,8 @@
 """
-The Lurker's moods, as recoloured glow textures beside its own (violet) one: blue while it comes to steal
-(lurker_glow_thief.png) and red while it hunts to hurt (lurker_glow_hunter.png). The cracks take the mood's colour, the
-eyes (the brightest pixels) a pale tint of it; the alpha, and so the shape of the glow, stays as it is.
+The tribe's moods, as recoloured glow textures beside each one's own glow: blue while it comes to steal
+(<name>_glow_thief.png) and red while it hunts to hurt (<name>_glow_hunter.png), for the Lurker, the Hollowling (red
+when it bites with a swarm) and the Keeper. The cracks take the mood's colour, the eyes (the brightest pixels) a pale
+tint of it; the alpha, and so the shape of the glow, stays as it is.
 
     python3 tools/lurker/moods.py
 """
@@ -17,8 +18,16 @@ MOODS = {
 }
 
 
+NAMES = ("lurker", "hollowling", "keeper")
+
+
 def main():
-    src = Image.open(os.path.join(TEX, "lurker_glow.png")).convert("RGBA")
+    for name in NAMES:
+        recolour(name)
+
+
+def recolour(name):
+    src = Image.open(os.path.join(TEX, name + "_glow.png")).convert("RGBA")
     for mood, (crack, eye) in MOODS.items():
         out = Image.new("RGBA", src.size, (0, 0, 0, 0))
         px, op = src.load(), out.load()
@@ -33,7 +42,7 @@ def main():
                 # keep the small differences of brightness between the cracks
                 k = min(1.15, max(0.85, light / 188.0)) if light <= 225 else 1.0
                 op[x, y] = tuple(min(255, int(round(c * k))) for c in base) + (a,)
-        path = os.path.join(TEX, "lurker_glow_" + mood + ".png")
+        path = os.path.join(TEX, name + "_glow_" + mood + ".png")
         out.save(path, optimize=True)
         print(path)
 

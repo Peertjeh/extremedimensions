@@ -17,6 +17,7 @@ import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.lore.Loot;
 import com.extremedimensions.lurker.Lurker;
+import com.extremedimensions.lurker.LurkerBody;
 import com.extremedimensions.lurker.TribeMoves;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEntities;
@@ -83,7 +84,13 @@ import net.minecraft.world.effect.MobEffects;
 public final class HollowService {
 	private HollowService() {}
 
-	enum Mode { IDLE, FROZEN, SNEAK, CARRY, FLEE, COMPANION, BARTER }
+	enum Mode { IDLE, FROZEN, SNEAK, CARRY, FLEE, COMPANION, BARTER, ATTACK }
+
+	/** A Keeper's body (as its entity type has it): where it is set down or blinks to, it must fit. */
+	private static final double KEEPER_WIDTH = 1.6, KEEPER_HEIGHT = 4.2;
+	/** Ticks a Keeper that sees its prey but cannot get at it waits before it reaches in, and how far it reaches (blocks). */
+	private static final int REACH_IN_AFTER = 60;
+	private static final double REACH_IN_RANGE = 16;
 
 	static final class Little {
 		Mode mode = Mode.IDLE;
@@ -102,6 +109,11 @@ public final class HollowService {
 		UUID trader;
 		/** Where it runs to when it flees (kept until it gets there, so it does not keep turning). */
 		Vec3 away;
+		/** One of a swarm: whom it bites, until when (ticks), and the wind-up and pause of a bite (ticks left). */
+		UUID prey;
+		int until;
+		int windup;
+		int pause;
 	}
 
 	static final class Guard {
@@ -110,8 +122,9 @@ public final class HollowService {
 		ServerBossEvent bar;
 		int ticks;
 		int nextTrick = 120;
-		/** Ticks its prey has stayed perched out of its reach above it. */
-		int perched;
+		/** Ticks its prey has stayed out of its reach in sight, and the wind-up of its reach after them (ticks left). */
+		int unreach;
+		int windup;
 	}
 
 	private static final Map<UUID, Little> LITTLES = new HashMap<>();
@@ -697,6 +710,8 @@ public final class HollowService {
 			st.ticks++;
 			if (st.mode == Mode.COMPANION) {
 				companion(h, st, later);
+			} else if (st.mode == Mode.ATTACK) {
+				attack(h, st, later);
 			} else {
 				little(h, st, later);
 			}
@@ -814,7 +829,7 @@ public final class HollowService {
 				if (st.ticks % 10 == 0) {
 					// One spot to run to, kept until it gets there: away from the player over safe ground, else home
 					if (st.away == null || h.position().distanceToSqr(st.away) < 2.0 * 2.0) {
-						st.away = p == null ? null : TribeMoves.away(h, p.position(), 10, 2);
+						st.away = p == null ? null : TribeMoves.away(h, p.position(), 10);
 						if (st.away == null) {
 							st.away = nest;
 						}
@@ -896,7 +911,8 @@ public final class HollowService {
 	/** Hurt: it runs. Hurting the young of a hoard may wake its Keeper. */
 	public static void onHollowlingHurt(Hollowling h, DamageSource source) {
 		Little st = LITTLES.get(h.getUUID());
-		if (st == null || st.mode == Mode.COMPANION) {
+		// (a swarm's young bite on whatever hurts them; a bush or a burn makes none of them run)
+		if (st == null || st.mode == Mode.COMPANION || st.mode == Mode.ATTACK || !TribeMoves.struck(source)) {
 			return;
 		}
 		flee(h, st);
@@ -1189,7 +1205,8 @@ public final class HollowService {
 			double a = behind + (rnd.nextDouble() - 0.5) * 1.6;
 			int x = (int) Math.floor(p.getX() + Math.cos(a) * (10 + rnd.nextInt(6)));
 			int z = (int) Math.floor(p.getZ() + Math.sin(a) * (10 + rnd.nextInt(6)));
-			spot = nether ? standable(level, x, (int) p.getY() + 6, z, 14) : surface(level, x, z);
+			// (only where its whole body fits: never under a roof it would be pressed into)
+			spot = TribeMoves.surface(level, x, z, (int) p.getY() + 6, KEEPER_WIDTH, KEEPER_HEIGHT);
 		}
 		if (spot == null) {
 			spot = p.blockPosition().offset(6, 0, 6);
@@ -1235,7 +1252,7 @@ public final class HollowService {
 			double a = behind + (rnd.nextDouble() - 0.5) * 1.6;
 			int x = (int) Math.floor(p.getX() + Math.cos(a) * (14 + rnd.nextInt(8)));
 			int z = (int) Math.floor(p.getZ() + Math.sin(a) * (14 + rnd.nextInt(8)));
-			spot = nether ? standable(level, x, (int) p.getY() + 6, z, 14) : surface(level, x, z);
+			spot = TribeMoves.surface(level, x, z, (int) p.getY() + 6, KEEPER_WIDTH, KEEPER_HEIGHT);
 		}
 		if (spot == null || Math.abs(spot.getY() - p.getY()) > 24) {
 			return false;
@@ -1318,14 +1335,24 @@ public final class HollowService {
 				}
 				k.setTarget(p);
 			}
-			// Perched out of its reach (a pillar, a ledge): it reaches up and hauls them down
-			if (p.getY() - k.getY() > 3.5 && k.distanceToSqr(p.getX(), k.getY(), p.getZ()) < 10 * 10 && !p.isCreative()) {
-				if (++g.perched >= 60) {
-					g.perched = 0;
-					haul(k, p);
+			// Out of its reach yet in sight (up a pillar, in a hole too low for it, a run kept at a distance): after a
+			// moment it reaches in, a line of ink before it, and drags them out to it
+			if (g.windup > 0) {
+				k.getNavigation().stop();
+				if (--g.windup == 0) {
+					g.unreach = 0;
+					if (k.distanceTo(p) <= REACH_IN_RANGE && k.hasLineOfSight(p) && !p.isCreative()) {
+						haul(k, p);
+					}
 				}
 			} else {
-				g.perched = 0;
+				g.unreach = TribeMoves.outOfReach(k, p, k.distanceToSqr(p) < 4 * 4, REACH_IN_RANGE, g.unreach);
+				if (g.unreach >= REACH_IN_AFTER) {
+					g.windup = 16;
+					TribeMoves.reachLine(k, p, "extremedimensions:lurker_wisp");
+					WorldFx.soundIn(k.level().dimension().identifier().toString(), "extremedimensions:lurker_shriek", "hostile", k.getX(), k.getY() + 3, k.getZ(),
+							1.6f, 0.45f);
+				}
 			}
 			g.bar.setProgress(k.getHealth() / k.getMaxHealth());
 			double d2 = k.distanceToSqr(p);
@@ -1351,22 +1378,32 @@ public final class HollowService {
 		later.forEach(Runnable::run);
 	}
 
-	/** The Keeper reaches up at a prey out of its reach and drags them down to it. */
+	/** The Keeper reaches in at a prey out of its reach and drags them out to it (down from a perch, out of a hole). */
 	private static void haul(Keeper k, ServerPlayer p) {
 		ServerLevel level = (ServerLevel) k.level();
 		roar(k);
 		WorldFx.particleIn(level, "extremedimensions:lurker_wisp", p.getX(), p.getY() + 1, p.getZ(), 0.4, 0.8, 0.4, 0.0, 20);
-		p.hurtServer(level, level.damageSources().mobAttack(k), 3f);
-		p.setDeltaMovement((k.getX() - p.getX()) * 0.12, -1.0, (k.getZ() - p.getZ()) * 0.12);
-		p.needsSync = true;
+		p.hurtServer(level, level.damageSources().mobAttack(k), (float) Math.max(0, Config.KEEPER_REACH_DAMAGE));
+		TribeMoves.yank(k, p);
 	}
 
+	/** It steps out of the shadows behind its prey, wherever its whole body fits there (never into a tunnel too low). */
 	private static void blinkBehind(Keeper k, ServerPlayer p) {
 		String dim = k.level().dimension().identifier().toString();
+		ServerLevel level = (ServerLevel) k.level();
 		Vec3 look = p.getViewVector(1.0f);
-		double x = p.getX() - look.x * 3;
-		double z = p.getZ() - look.z * 3;
-		BlockPos g = groundAt((ServerLevel) k.level(), BlockPos.containing(x, p.getY(), z));
+		double back = Math.atan2(-look.z, -look.x);
+		BlockPos g = null;
+		for (int i = 0; i < 10 && g == null; i++) {
+			double a = back + (i / 2) * 0.6 * (i % 2 == 0 ? 1 : -1);
+			double r = i < 5 ? 3 : 4.5;
+			BlockPos c = BlockPos.containing(p.getX() + Math.cos(a) * r, p.getY(), p.getZ() + Math.sin(a) * r);
+			for (int dy = 2; dy >= -2 && g == null; dy--) {
+				if (TribeMoves.roomFor(level, c.above(dy), k)) {
+					g = c.above(dy);
+				}
+			}
+		}
 		if (g == null) {
 			return;
 		}
@@ -1413,6 +1450,94 @@ public final class HollowService {
 			}
 		}
 		return out;
+	}
+
+	/**
+	 * Extreme: the young of the tribe sent at a player with a swarm. They come from all sides, glowing red, and bite until
+	 * the swarm is over, then fade. Hurting them makes none of them run, and killing them costs no standing (they came
+	 * to kill). Their ids.
+	 */
+	public static List<UUID> swarm(ServerLevel level, ServerPlayer p, int count, int seconds) {
+		List<UUID> out = new ArrayList<>();
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		String dim = level.dimension().identifier().toString();
+		double base = rnd.nextDouble() * Math.PI * 2;
+		for (int i = 0; i < count; i++) {
+			BlockPos spot = null;
+			for (int t = 0; t < 6 && spot == null; t++) {
+				double a = base + (i + rnd.nextDouble() * 0.6) * Math.PI * 2 / Math.max(1, count);
+				double r = 12 + rnd.nextDouble() * 8;
+				int x = (int) Math.floor(p.getX() + Math.cos(a) * r);
+				int z = (int) Math.floor(p.getZ() + Math.sin(a) * r);
+				if (Loaded.ready(level, new BlockPos(x, (int) p.getY(), z))) {
+					spot = TribeMoves.surface(level, x, z, (int) p.getY() + 8, 0.6, 1.1);
+				}
+			}
+			if (spot == null) {
+				continue;
+			}
+			Little st = new Little();
+			st.mode = Mode.ATTACK;
+			st.brood = true;
+			st.prey = p.getUUID();
+			st.until = Math.max(5, seconds) * 20;
+			st.pause = 20 + rnd.nextInt(20);
+			Hollowling h = spawnLittle(level, spot, st);
+			if (h != null) {
+				h.setLurkerMood(LurkerBody.MOOD_HUNTER);
+				out.add(h.getUUID());
+				WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", spot.getX() + 0.5, spot.getY() + 0.5, spot.getZ() + 0.5, 0.3, 0.4, 0.3, 0.0, 12);
+			}
+		}
+		return out;
+	}
+
+	/** One of a swarm: it runs at its prey and bites, a short wind-up (a crouch, a hiss) before each bite, until the swarm is over. */
+	private static void attack(Hollowling h, Little st, List<Runnable> later) {
+		ServerPlayer p = st.prey == null ? null : WorldFx.server().getPlayerList().getPlayer(st.prey);
+		if (p == null || !p.isAlive() || p.isCreative() || p.isSpectator() || p.level() != h.level() || st.ticks > st.until) {
+			later.add(() -> fade(h));
+			return;
+		}
+		h.getLookControl().setLookAt(p, 60, 60);
+		double d2 = h.distanceToSqr(p);
+		String dim = h.level().dimension().identifier().toString();
+		if (st.windup > 0) {
+			h.getNavigation().stop();
+			if (--st.windup == 0) {
+				// The bite lands on whoever is still at its teeth (a step back, a shield, and it snaps at nothing)
+				if (d2 < 2.4 * 2.4 && h.hasLineOfSight(p) && h.level() instanceof ServerLevel level
+						&& p.hurtServer(level, h.damageSources().mobAttack(h), (float) Math.max(0, Config.LURKER_SWARM_BITE))) {
+					WorldFx.soundIn(dim, "minecraft:entity.fox.bite", "hostile", p.getX(), p.getY() + 1, p.getZ(), 0.9f, 0.7f);
+				}
+				st.pause = 22;
+				h.setLurkerPose(Lurker.POSE_RUN);
+			}
+			return;
+		}
+		if (st.pause > 0) {
+			st.pause--;
+		}
+		if (st.pause <= 0 && d2 < 1.9 * 1.9) {
+			st.windup = 8;
+			h.setLurkerPose(Lurker.POSE_TAKE);
+			WorldFx.soundIn(dim, "extremedimensions:hollowling_giggle", "hostile", h.getX(), h.getY() + 0.8, h.getZ(), 1.0f, 0.55f);
+			WorldFx.particleIn(dim, "minecraft:dust{color:[1.0,0.16,0.1],scale:0.7}", h.getX(), h.getY() + 0.9, h.getZ(), 0.25, 0.25, 0.25, 0.0, 4);
+			return;
+		}
+		h.setLurkerPose(Lurker.POSE_RUN);
+		if (st.ticks % 4 == 0) {
+			TribeMoves.follow(h, p, 1.45);
+		}
+	}
+
+	/** For the tests: how many young of the tribe are biting at a swarm's prey right now. */
+	public static int biting(UUID prey) {
+		int n = 0;
+		for (Little st : LITTLES.values()) {
+			n += st.mode == Mode.ATTACK && prey.equals(st.prey) ? 1 : 0;
+		}
+		return n;
 	}
 
 	/**

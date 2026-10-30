@@ -26,6 +26,7 @@ import net.minecraft.world.level.Level;
  */
 public class Hollowling extends PathfinderMob implements LurkerBody {
 	private static final EntityDataAccessor<Integer> POSE = SynchedEntityData.defineId(Hollowling.class, EntityDataSerializers.INT);
+	private static final EntityDataAccessor<Integer> MOOD = SynchedEntityData.defineId(Hollowling.class, EntityDataSerializers.INT);
 
 	public Hollowling(EntityType<? extends PathfinderMob> type, Level level) {
 		super(type, level);
@@ -43,6 +44,7 @@ public class Hollowling extends PathfinderMob implements LurkerBody {
 	protected void defineSynchedData(SynchedEntityData.Builder builder) {
 		super.defineSynchedData(builder);
 		builder.define(POSE, Lurker.POSE_WATCH);
+		builder.define(MOOD, MOOD_CALM);
 	}
 
 	@Override
@@ -54,6 +56,16 @@ public class Hollowling extends PathfinderMob implements LurkerBody {
 		this.entityData.set(POSE, pose);
 	}
 
+	/** Its glow: its own, or red while it bites with a swarm. */
+	@Override
+	public int getLurkerMood() {
+		return this.entityData.get(MOOD);
+	}
+
+	public void setLurkerMood(int mood) {
+		this.entityData.set(MOOD, mood);
+	}
+
 	@Override
 	protected void registerGoals() {
 		this.goalSelector.addGoal(0, new FloatGoal(this));
@@ -62,6 +74,9 @@ public class Hollowling extends PathfinderMob implements LurkerBody {
 	@Override
 	protected void customServerAiStep(ServerLevel level) {
 		super.customServerAiStep(level);
+		if (this.tickCount % 10 == 0) {
+			TribeMoves.unstick(this);
+		}
 		if (this.tickCount > 40 && !HollowService.isDriven(this)) {
 			HollowService.fade(this);
 		}
@@ -72,9 +87,15 @@ public class Hollowling extends PathfinderMob implements LurkerBody {
 		return false;
 	}
 
+	/** It drops without harm, so its routes may take a longer drop than other creatures'. */
+	@Override
+	public int getMaxFallDistance() {
+		return 6;
+	}
+
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-		if (HollowService.ignoreHurt(this, source)) {
+		if (TribeMoves.shrugs(source) || HollowService.ignoreHurt(this, source)) {
 			return false;
 		}
 		boolean hurt = super.hurtServer(level, source, amount);

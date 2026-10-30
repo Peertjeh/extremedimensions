@@ -21,10 +21,11 @@ public class PlayerData {
 	public int deaths = 0, seamVisits = 0, frayDescents = 0, lifted = 0;
 	/** Times the Seam has said what a well is for, as the player came near one. */
 	public int wellHints = 0;
-	/** Standing with the tribe (-100 to 100), gifts given today and wares bought today (offer index:times). */
+	/** Standing with the tribe (-100 to 100), and the day of the wares bought today (offer index:times). */
 	public int tribeRep = 0;
 	public long tribeDay = -1;
-	public int tribeGifts = 0;
+	/** Seconds of play before the young take another gift that wins standing. */
+	public int tribeGiftIn = 0;
 	public Map<Integer, Integer> barterUsed = new HashMap<>();
 	/** Online seconds until the tribe forgets a point of a grudge, and until it next hunts this player. */
 	public int tribeForgetIn = 0, tribeHuntIn = 0;

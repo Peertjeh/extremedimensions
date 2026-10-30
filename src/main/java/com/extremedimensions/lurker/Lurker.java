@@ -45,7 +45,9 @@ public class Lurker extends Monster implements LurkerBody {
 				.add(Attributes.MOVEMENT_SPEED, 0.3)
 				.add(Attributes.FOLLOW_RANGE, 64.0)
 				.add(Attributes.KNOCKBACK_RESISTANCE, 0.8)
-				.add(Attributes.ATTACK_DAMAGE, 6.0);
+				.add(Attributes.ATTACK_DAMAGE, 6.0)
+				// a giant's stride: a block's step taken without a jump
+				.add(Attributes.STEP_HEIGHT, 1.0);
 	}
 
 	@Override
@@ -81,10 +83,19 @@ public class Lurker extends Monster implements LurkerBody {
 	@Override
 	protected void customServerAiStep(ServerLevel level) {
 		super.customServerAiStep(level);
+		step();
 		// Lurkers driven by neither the service nor the Weaving (left over after a restart) dissolve
 		if (this.tickCount > 40 && !LurkerService.isDriven(this) && !com.extremedimensions.tapestry.Weaving.drives(this.getUUID())) {
 			LurkerService.vanish(this);
 		}
+	}
+
+	/** Every tick: out of a wall it was pressed into, and through the leaves of a tree in its way. */
+	protected void step() {
+		if (this.tickCount % 10 == 0) {
+			TribeMoves.unstick(this);
+		}
+		TribeMoves.brush(this);
 	}
 
 	@Override
@@ -92,11 +103,21 @@ public class Lurker extends Monster implements LurkerBody {
 		return false;
 	}
 
+	/** It drops without harm, so its routes may take a longer drop than other creatures'. */
+	@Override
+	public int getMaxFallDistance() {
+		return 8;
+	}
+
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+		// A fall or a wall it is pressed into does it no harm (see TribeMoves.shrugs)
+		if (TribeMoves.shrugs(source)) {
+			return false;
+		}
 		boolean hurt = super.hurtServer(level, source, amount);
 		if (hurt && this.isAlive()) {
-			LurkerService.onHurt(this);
+			LurkerService.onHurt(this, source);
 		}
 		return hurt;
 	}
