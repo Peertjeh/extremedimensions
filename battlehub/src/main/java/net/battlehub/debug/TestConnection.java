@@ -166,6 +166,23 @@ final class TestConnection extends Connection {
 			}
 		}
 
+		/** The public methods of a class as declared by its public interfaces and superclasses (callable by reflection). */
+		private static java.util.List<Method> publicMethods(Class<?> type) {
+			java.util.List<Method> out = new java.util.ArrayList<>();
+			java.util.Deque<Class<?>> todo = new java.util.ArrayDeque<>(java.util.List.of(type));
+			Set<Class<?>> seen = new java.util.HashSet<>();
+			while (!todo.isEmpty()) {
+				Class<?> c = todo.pop();
+				if (!seen.add(c)) continue;
+				if (java.lang.reflect.Modifier.isPublic(c.getModifiers())) {
+					for (Method m : c.getMethods()) out.add(m);
+				}
+				todo.addAll(java.util.List.of(c.getInterfaces()));
+				if (c.getSuperclass() != null) todo.push(c.getSuperclass());
+			}
+			return out;
+		}
+
 		/** The play protocol's clientbound codec, bound to the server's registries, once. */
 		private static synchronized boolean bind() {
 			if (codec != null) return true;
@@ -181,20 +198,16 @@ final class TestConnection extends Connection {
 				}
 				if (decorator == null) throw new NoSuchMethodException("RegistryFriendlyByteBuf.decorator");
 				Object decorate = decorator.invoke(null, server.registryAccess());
+				// through the public interfaces: the objects themselves are of hidden (anonymous) classes
 				Object info = null;
-				for (Method m : template.getClass().getMethods()) {
+				for (Method m : publicMethods(template.getClass())) {
 					if (m.getName().equals("bind") && m.getParameterCount() == 1 && m.getParameterTypes()[0].isInstance(decorate)) {
 						info = m.invoke(template, decorate);
 					}
 				}
 				if (info == null) throw new NoSuchMethodException("CLIENTBOUND_TEMPLATE.bind(decorator)");
-				Object c = info.getClass().getMethod("codec").invoke(info);
-				Method e = null;
-				for (Method m : c.getClass().getMethods()) {
-					if (m.getName().equals("encode") && m.getParameterCount() == 2) e = m;
-				}
-				if (e == null) throw new NoSuchMethodException("codec.encode");
-				e.setAccessible(true);
+				Object c = ProtocolInfo.class.getMethod("codec").invoke(info);
+				Method e = net.minecraft.network.codec.StreamEncoder.class.getMethod("encode", Object.class, Object.class);
 				encode = e;
 				codec = c;
 				net.battlehub.BattleHub.LOGGER.info("SELFTEST packets to test players are encoded with {}", c.getClass().getName());
