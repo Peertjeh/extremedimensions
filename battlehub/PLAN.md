@@ -2305,6 +2305,21 @@ gecodeerd met de echte play-codec, 0 mislukt; geen enkel deel van de tick faalde
 entities, teams voor naamplaatjes, geluiden, de nachtlucht, titels, boss bars) zijn dus allemaal te versturen. De eerste
 poging vond de codec niet (de objecten zijn van verborgen klassen); die gaat nu via de publieke interfaces.
 
+**De server-log** (`latest.log`, server herstart om 19:38 met BattleHub 1.51.1 en Extreme Dimensions 3.8.0):
+- Beide spelers waren in de gewone wereld, ver weg (x ≈ 3400 tot 3750, z ≈ −3400 tot −2760), niet in BattleHub. Er staat
+  geen enkele fout of waarschuwing van BattleHub in de log, en ook geen "Can't keep up": de server-tick liep gewoon.
+- Om 19:53:23 en 19:53:36 verloren **beide** spelers de verbinding met **"Timed out"**: de server hoorde 30 seconden
+  niets van ze. Twee spelers bij verschillende providers tegelijk wijst op de server of zijn netwerk, niet op hun
+  internet. Op het scherm van de speler wordt zo'n afgebroken verbinding een "Connection reset".
+- De hele tijd door: "Player ... standing on air - force-sending blocks below", voor beide spelers om de paar seconden
+  (geen BattleHub-melding): de blokken onder ze kwamen niet op tijd aan. Ook dat wijst op een verbinding die vol zit
+  of hapert.
+- De server draait Distant Horizons met wereldgeneratie voor alle zes dimensies, en beide spelers hebben het ook. DH
+  stuurt dan LOD-gegevens over dezelfde verbinding, en de spelers verkenden net nieuw terrein. Dat is de meest
+  waarschijnlijke belasting van de verbinding. Te testen door DH tijdelijk van de server te halen (of de server-kant in
+  de DH-config uit te zetten of te begrenzen) en te kijken of de timeouts wegblijven.
+- De meldingen van 19:13 en 19:31 staan in de oudere logbestanden van die dag (`logs/2026-10-30-*.log.gz`).
+
 **Wat de gebruiker kan doen.** De server-log van 30 oktober rond 19:13 sturen (`logs/` en eventueel `crash-reports/`
 en `debug/`): daar staat de echte reden. Met 1.51.1 stopt een fout in BattleHub de server niet meer en staat hij in
 de log.
