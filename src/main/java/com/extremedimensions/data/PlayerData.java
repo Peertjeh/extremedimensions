@@ -187,6 +187,8 @@ public class PlayerData {
 	public transient boolean collapsing = false;
 	/** The charge ran out and the death that follows has not come yet (it comes on joining, if they left meanwhile). */
 	public boolean collapseOwed = false;
+	/** Left while the wound was after them (what was: swarm, hunt, keeper, raid, elder, blow); the curse comes on joining. */
+	public String fled = null;
 	/** Cards Foresight adds to the next offer, kept when the Tether it was on is lost in the same death or Collapse. */
 	public int foresightOwed = 0;
 	/**

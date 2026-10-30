@@ -1,5 +1,24 @@
 # Changelog
 
+## 3.8.1: No Way Out
+
+### Leaving in danger
+- **Logging out is no escape.** Leave the game while the wound is after you, and you come back cursed: a swarm, a
+  Lurker glowing red at you or reaching for what you carry, a Keeper on your heels, a raid you started, an Elder
+  hunting you, or a blow from one of the wound's creatures in the last ten seconds. The curse falls a moment after you
+  are back, with a line in the chat, and it can be one of the Extreme set as a Lurker's touch can (on Hard and
+  Extreme).
+- **The hunt waits.** Left in a swarm, the swarm comes again when you are back; left with a Lurker hunting you, a
+  hunting Lurker comes again. The chat says so.
+- A dedicated server shutting down is no one's flight; a single-player world closed in danger is. A fallen player who
+  leaves bleeds out instead, as before, which costs its own curse. A swarm now warns in the chat that leaving will not
+  save you.
+- Three new settings: `flee_curses` (1; 0 turns it off), `flee_danger_seconds` (10) and `flee_returns` (1).
+
+### Tests
+- A server test: a blow from the tribe and then a swarm put a player in danger, leaving is noted as a flight, and back
+  they carry a curse and the swarm comes again; a player who leaves in peace pays nothing.
+
 ## 3.8.0: The Whole Tribe
 
 ### The tribe finds its way

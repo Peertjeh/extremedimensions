@@ -192,6 +192,42 @@ public final class LurkerService {
 	}
 
 	/**
+	 * What of the Lurkers is after this player right now, near them (64 blocks) and as they would know it: "swarm" (one
+	 * of a swarm), "hunt" (one glowing red at them, or reaching for what they carry); null when none is.
+	 */
+	public static String threat(ServerPlayer p) {
+		String found = null;
+		for (Map.Entry<UUID, State> e : STATES.entrySet()) {
+			State st = e.getValue();
+			ServerLevel level = LEVELS.get(e.getKey());
+			if (!p.getUUID().equals(st.target) || level != p.level() || !(level.getEntity(e.getKey()) instanceof Lurker l) || !l.isAlive()
+					|| l.distanceToSqr(p) > 64 * 64) {
+				continue;
+			}
+			if (st.swarm) {
+				return "swarm";
+			}
+			if (st.mode == Mode.STRIKE || st.mode == Mode.TAKE) {
+				found = "hunt";
+			}
+		}
+		return found;
+	}
+
+	/** A player who left while the tribe hunted them is back: what hunted them comes again. False if nothing could. */
+	public static boolean comeBack(ServerPlayer p, String why) {
+		if (p.isSpectator() || p.isCreative() || Rules.peaceful(p.level()) || kin(p) || !WorldService.tribeSteals()) {
+			return false;
+		}
+		String dim = Dims.of(p);
+		if (!(Dims.OVERWORLD.equals(dim) || Dims.NETHER.equals(dim))) {
+			return false;
+		}
+		LAST_SEEN.put(p.getUUID(), (long) WorldFx.server().getTickCount());
+		return "swarm".equals(why) ? swarm(p) : summon(p, "hunt");
+	}
+
+	/**
 	 * Extreme: the tribe comes for one player all at once. Lurkers from every side, come to hurt (glowing red) and hunting
 	 * until the swarm is over, and the young with them, biting; each other player near adds a Lurker and two young. A
 	 * shriek and a line in the chat tell it. False if none could come (no ground near enough that they fit on).

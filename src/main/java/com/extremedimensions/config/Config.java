@@ -326,6 +326,18 @@ public final class Config {
 	/** Damage of each bite of a swarm's young (half-hearts). */
 	public static double LURKER_SWARM_BITE = 3.0;
 
+	// --- Leaving in danger ----------------------------------------------------------------------
+
+	/**
+	 * Curses for logging out while the wound is after a player (a swarm, a hunting Lurker, a Keeper, a raid, an Elder, or
+	 * a blow from one of its creatures lately), given when they come back. 0 = leaving costs nothing.
+	 */
+	public static int FLEE_CURSES = 1;
+	/** Seconds after a blow from one of the wound's creatures that a player still counts as in danger. */
+	public static int FLEE_DANGER_SECONDS = 10;
+	/** Whether what hunted a player who left (a swarm, a hunting Lurker) comes again when they are back (1 on, 0 off). */
+	public static int FLEE_RETURNS = 1;
+
 	// --- Hoards, Hollowlings and the Keeper ------------------------------------------------------
 
 	/** Chance every 30 seconds, in a dark forest, pale garden or soul sand valley, that an old hoard lies nearby. */
@@ -1308,6 +1320,7 @@ public final class Config {
 			{"lurker_curses_max", 0, 9}, {"lurker_hunt_chance", 0, 1}, {"lurker_retaliate_chance", 0, 1}, {"lurker_strike_damage", 0, 100},
 			{"lurker_strike_blows", 1, 20}, {"lurker_strike_speed", 0.5, 3}, {"lurker_strike_seconds", 5, 300}, {"lurker_swarm_chance", 0, 1}, {"lurker_swarm_lurkers", 0, 12},
 				{"lurker_swarm_hollowlings", 0, 24}, {"lurker_swarm_seconds", 5, 300}, {"lurker_swarm_bite", 0, 40}, {"keeper_reach_damage", 0, 40},
+				{"flee_curses", 0, 5}, {"flee_danger_seconds", 0, 120}, {"flee_returns", 0, 1},
 				{"tribe_gift_minutes", 0, 240}, {"tribe_gift_cost", 1, 10}, {"atone_kill_area_shared", 0, 1}, {"atone_spawner_radius", 0, 64}, {"coop_burden_relief_per_day", 0, 100},
 			{"tapestry_respin_silk", 0, 64}, {"tapestry_roots_gifts", 1, 10}, {"tapestry_toll_drain", 0, 1}, {"tapestry_unravelling_share", 3, 20},
 			{"tapestry_knot_fray", 0, 10}, {"tapestry_knot_strands", 0, 1}, {"tapestry_heart_echo", 0, 1}, {"weaving_seconds", 30, 3600},

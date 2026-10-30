@@ -16,9 +16,11 @@ import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.lurker.LurkerBody;
 import com.extremedimensions.lurker.LurkerService;
 import com.extremedimensions.lurker.TribeMoves;
+import com.extremedimensions.penalty.FleeService;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.world.WorldService;
 import com.google.gson.JsonObject;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -391,6 +393,71 @@ public class LurkerTests {
 		helper.runAfterDelay(170, () -> {
 			try {
 				check(helper, p.getHealth() < 20f, "the swarm's young did not bite (health %s)", p.getHealth());
+			} finally {
+				restore.run();
+			}
+			helper.succeed();
+		});
+	}
+
+	/**
+	 * No way out by logging out: a blow from the tribe, then a swarm, put a player in danger; leaving then is noted, and
+	 * back they carry a curse and the swarm comes again. One who leaves in peace pays nothing.
+	 */
+	@GameTest(environment = Alone.FLEE, maxTicks = 200)
+	public void leavingWhileTheTribeHuntsCostsACurse(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Difficulty was = level.getDifficulty();
+		level.getServer().setDifficulty(Difficulty.NORMAL, true);
+		ServerPlayer p = TestPlayers.survivor(helper, "flee-prey");
+		ServerPlayer calm = TestPlayers.survivor(helper, "flee-calm");
+		place(helper, p, 3.5, 0, 3.5);
+		place(helper, calm, 6.5, 0, 6.5);
+		int lurkers = Config.LURKER_SWARM_LURKERS, young = Config.LURKER_SWARM_HOLLOWLINGS, curses = Config.FLEE_CURSES, returns = Config.FLEE_RETURNS;
+		Runnable restore = () -> {
+			Config.LURKER_SWARM_LURKERS = lurkers;
+			Config.LURKER_SWARM_HOLLOWLINGS = young;
+			Config.FLEE_CURSES = curses;
+			Config.FLEE_RETURNS = returns;
+			for (Mob m : level.getEntitiesOfClass(Mob.class, new AABB(p.blockPosition()).inflate(48), e -> e instanceof Lurker || e instanceof Hollowling)) {
+				m.discard();
+			}
+			level.getServer().setDifficulty(was, true);
+		};
+		// past the grace a player has on joining (three seconds)
+		helper.runAfterDelay(70, () -> {
+			try {
+				Config.LURKER_SWARM_LURKERS = 1;
+				Config.LURKER_SWARM_HOLLOWLINGS = 2;
+				Config.FLEE_CURSES = 1;
+				Config.FLEE_RETURNS = 1;
+				PlayerData d = DataStore.get(p.getUUID());
+				d.fled = null;
+				// A blow from one of the tribe: in danger for a while
+				Lurker striker = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(1, 0, 1)), EntitySpawnReason.COMMAND);
+				check(helper, striker != null, "no Lurker came");
+				p.hurtServer(level, striker.damageSources().mobAttack(striker), 1f);
+				striker.discard();
+				check(helper, "blow".equals(FleeService.danger(p)), "a blow from the tribe left the player in danger %s", FleeService.danger(p));
+				check(helper, FleeService.danger(calm) == null, "a player nothing touched is in danger %s", FleeService.danger(calm));
+				// A swarm: leaving now is a flight from it
+				check(helper, LurkerService.swarm(p), "no swarm came");
+				check(helper, "swarm".equals(FleeService.danger(p)), "a swarm left the player in danger %s", FleeService.danger(p));
+				FleeService.leaving(p, level.getServer());
+				FleeService.leaving(calm, level.getServer());
+				check(helper, "swarm".equals(d.fled), "leaving in a swarm was noted as %s", d.fled);
+				check(helper, DataStore.get(calm.getUUID()).fled == null, "leaving in peace was noted as a flight");
+				for (Mob m : level.getEntitiesOfClass(Mob.class, new AABB(p.blockPosition()).inflate(48), e -> e instanceof Lurker || e instanceof Hollowling)) {
+					m.discard();
+				}
+				// Back: a curse, and the swarm again
+				int before = curses(d);
+				FleeService.collect(p, d);
+				check(helper, curses(d) == before + 1, "coming back after a flight left %s curses, not one", curses(d) - before);
+				check(helper, d.fled == null, "the flight is still owed after it was paid");
+				if (WorldService.tribeSteals()) {
+					check(helper, LurkerService.threat(p) != null, "the swarm did not come back for the one who left");
+				}
 			} finally {
 				restore.run();
 			}

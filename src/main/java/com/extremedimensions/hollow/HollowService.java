@@ -1531,6 +1531,30 @@ public final class HollowService {
 		}
 	}
 
+	/**
+	 * What of the young and the Keepers is after this player right now, and near them (64 blocks): "swarm" (biting
+	 * young), "keeper"; null if none.
+	 */
+	public static String threat(ServerPlayer p) {
+		for (Map.Entry<UUID, Little> e : LITTLES.entrySet()) {
+			Little st = e.getValue();
+			if (st.mode == Mode.ATTACK && p.getUUID().equals(st.prey) && near(e.getKey(), p)) {
+				return "swarm";
+			}
+		}
+		for (Map.Entry<UUID, Guard> e : KEEPERS.entrySet()) {
+			if (p.getUUID().equals(e.getValue().target) && near(e.getKey(), p)) {
+				return "keeper";
+			}
+		}
+		return null;
+	}
+
+	private static boolean near(UUID id, ServerPlayer p) {
+		ServerLevel level = LEVELS.get(id);
+		return level == p.level() && level.getEntity(id) instanceof LivingEntity e && e.isAlive() && e.distanceToSqr(p) < 64 * 64;
+	}
+
 	/** For the tests: how many young of the tribe are biting at a swarm's prey right now. */
 	public static int biting(UUID prey) {
 		int n = 0;

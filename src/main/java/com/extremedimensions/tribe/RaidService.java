@@ -68,6 +68,16 @@ public final class RaidService {
 		return hoard != null && RAIDS.containsKey(hoard);
 	}
 
+	/** Whether this player is raiding a hoard right now. */
+	public static boolean raiding(ServerPlayer p) {
+		for (Raid r : RAIDS.values()) {
+			if (p.getUUID().equals(r.raider)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public static int count() {
 		return RAIDS.size();
 	}

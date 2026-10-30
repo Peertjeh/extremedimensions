@@ -108,6 +108,7 @@ public final class ServerEvents {
 			com.extremedimensions.tapestry.Tapestry.clear();
 			com.extremedimensions.seam.FirstKnot.clear();
 			LurkerService.clear();
+			com.extremedimensions.penalty.FleeService.clear();
 			com.extremedimensions.penalty.AbyssalTolls.clear();
 			com.extremedimensions.penalty.AbyssalWorld.clear();
 			HollowService.clear();
@@ -162,6 +163,8 @@ public final class ServerEvents {
 		// A leaving player's inventory is saved now; their curses and progress go with it
 		// (on the server's thread: a player in a single-player world leaves from the connection's own)
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, s) -> s.executeIfPossible(() -> {
+			// Leaving while the wound is after them: they come back cursed (before the hunt is let go)
+			com.extremedimensions.penalty.FleeService.leaving(handler.getPlayer(), s);
 			// A fallen player who leaves bleeds out
 			com.extremedimensions.coop.FallenService.onLeave(handler.getPlayer());
 			// ... and one the Held's Chain holds collapses
@@ -214,6 +217,8 @@ public final class ServerEvents {
 		ServerLivingEntityEvents.ALLOW_DEATH.register(com.extremedimensions.coop.FallenService::allowDeath);
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> com.extremedimensions.coop.FallenService.mayHurt(entity, source));
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(AtonementGuard::damaged);
+		// A blow from the wound's creatures: a player is in danger for a while, and leaving then costs a curse
+		ServerLivingEntityEvents.AFTER_DAMAGE.register(com.extremedimensions.penalty.FleeService::afterDamage);
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register(AtonementGuard::hurting);
 		// The Elders' blows: the Ferryman takes levels, the Weaver unpicks Seam time
 		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseTaken, taken, blocked) -> {
@@ -527,6 +532,8 @@ public final class ServerEvents {
 		com.extremedimensions.elder.FerrymanService.collectOwed(p, d);
 		com.extremedimensions.elder.ElderUltimate.collectOwed(p, d);
 		com.extremedimensions.tapestry.Unweaving.onJoin(p, d);
+		// Left while the wound was after them: the curses, and what hunted them, come now
+		com.extremedimensions.penalty.FleeService.collect(p, d);
 		List<RecipeHolder<?>> recipes = new ArrayList<>();
 		for (String recipe : RECIPES) {
 			p.level().getServer().getRecipeManager().byKey(ResourceKey.create(Registries.RECIPE, WorldFx.id(recipe))).ifPresent(recipes::add);

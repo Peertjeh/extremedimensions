@@ -86,8 +86,9 @@ an unweaving the loom waits three days for you.
   pulsing **blue** comes to steal (its claw hurts, it takes several things and may leave a curse); one glowing **red**
   comes to hurt, with blows you see coming; struck, one may turn on you. They hit harder on Hard and Extreme, and on
   Extreme the whole tribe may come at once, Lurkers and their young, all glowing red. A fall or a low roof does them no
-  harm; a ledge they leap, and out of reach is no hiding place: they reach in and drag you out. Hollowlings can be
-  befriended, slowly. After the Dragon falls, **Wound Storms** tear the sky.
+  harm; a ledge they leap, and out of reach is no hiding place: they reach in and drag you out. Nor is logging out:
+  leave while the wound is after you and you come back cursed, with the hunt waiting. Hollowlings can be befriended,
+  slowly. After the Dragon falls, **Wound Storms** tear the sky.
 
 ## The story
 
