@@ -2300,6 +2300,11 @@ crashte of één speler eruit zette.
 - Een laatste zelftest-check: geen enkel deel van de tick faalde tijdens de hele run.
 - README-FAQ: wat zo'n rapport betekent en waar de server de reden bewaart.
 
+**Resultaat in CI** (run 41109921951, groen): 996 zelftests geslaagd, 0 mislukt; 228.014 pakketten naar testspelers
+gecodeerd met de echte play-codec, 0 mislukt; geen enkel deel van de tick faalde. BattleHubs eigen pakketten (display
+entities, teams voor naamplaatjes, geluiden, de nachtlucht, titels, boss bars) zijn dus allemaal te versturen. De eerste
+poging vond de codec niet (de objecten zijn van verborgen klassen); die gaat nu via de publieke interfaces.
+
 **Wat de gebruiker kan doen.** De server-log van 30 oktober rond 19:13 sturen (`logs/` en eventueel `crash-reports/`
 en `debug/`): daar staat de echte reden. Met 1.51.1 stopt een fout in BattleHub de server niet meer en staat hij in
 de log.
