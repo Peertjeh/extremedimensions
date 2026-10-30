@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.51.1
+
+### Fixed
+* **A failure in one part of BattleHub no longer stops the server.** BattleHub's work every tick (matches, bots, name
+  tags, the locator bar, menus, boards, placeholders and so on), and its say about damage and deaths, now run each in
+  a guard: an exception is written to the log (the first with its stack trace, then at most once a minute with a
+  count) and the rest of the server goes on. Before, such an exception went up into the server's own tick and stopped
+  the whole server, and every player was dropped with "Connection reset". For damage and deaths the game's own rule
+  applies when BattleHub's part fails.
+
+### Added
+* **The self-test sends packets as a real client gets them.** Every packet a test player gets is also encoded with the
+  game's own play protocol, so a packet BattleHub builds that a real client cannot be sent fails the self-test instead
+  of dropping a player. A last check fails the run if any part of BattleHub's tick failed along the way.
+* FAQ: what a "Connection reset" report on a player's computer means, and where the server keeps the reason.
+
 ## 1.51.0
 
 ### Added

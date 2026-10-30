@@ -84,26 +84,28 @@ public final class HubEvents {
 			PlayerStore.unload();
 			BattleHub.setServer(null);
 		});
-		ServerTickEvents.START_SERVER_TICK.register(server -> net.battlehub.bot.Bots.tickStart());
+		ServerTickEvents.START_SERVER_TICK.register(server -> part("bot budget", net.battlehub.bot.Bots::tickStart));
 		ServerTickEvents.END_SERVER_TICK.register(HubEvents::tick);
 		CommandRegistrationCallback.EVENT.register((dispatcher, context, selection) -> HubCommands.register(dispatcher));
 
 		ServerPlayerEvents.JOIN.register(HubEvents::join);
 		// Leaving is handled by PlayerListMixin, before vanilla saves the player file.
 
-		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+		// damage and deaths run inside the world's tick: an exception there would stop the server (1.51.1: logged, and
+		// the game's own rule applies instead)
+		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> decide("damage", true, () -> {
 			if (entity instanceof ServerPlayer p) {
 				return allowDamage(p, source);
 			}
 			// Shopkeepers and other game NPCs cannot be hurt
 			return !net.battlehub.games.Visibility.isProtectedNpc(entity);
-		});
-		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) ->
-				!(entity instanceof ServerPlayer p) || allowDeath(p, source, amount));
+		}));
+		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> decide("death", true,
+				() -> !(entity instanceof ServerPlayer p) || allowDeath(p, source, amount)));
 		// Damage in matches feeds the recap, the teaming check and the reach check
 		ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, base, taken, blocked) -> {
 			if (entity instanceof ServerPlayer victim) {
-				afterDamage(victim, source, taken);
+				part("after damage", () -> afterDamage(victim, source, taken));
 			}
 		});
 		// Arrows that players in a match shoot count for the recap
@@ -237,47 +239,86 @@ public final class HubEvents {
 
 	private static void tick(MinecraftServer server) {
 		tick++;
-		Tasks.tick();
-		ArenaBuilder.tick();
-		Matches.tick();
-		net.battlehub.bot.Motion.tick(server);
-		net.battlehub.bot.Bots.tick(server);
-		net.battlehub.match.NameTags.tick(server);
-		net.battlehub.games.hunger.Locator.tick(server);
-		net.battlehub.bot.CombatMemory.tick(server);
-		net.battlehub.bot.FightRecorder.tick(server);
-		Queues.tick(server);
-		net.battlehub.lobby.QueueGlow.tick(server);
-		net.battlehub.spectate.Spectators.tick(server);
-		Menus.tick(server);
-		net.battlehub.progression.Cosmetics.tick(server, tick);
-		net.battlehub.hub.HubBoards.tick(server);
-		net.battlehub.hub.HubNpcs.tick(server);
-		net.battlehub.hub.HubDummy.tick(server);
-		net.battlehub.fx.Cinematics.tick(server);
-		net.battlehub.fx.Music.tick(server);
-		net.battlehub.lobby.DoubleJump.tick(server);
-		net.battlehub.export.StatsExport.tick(server);
-		net.battlehub.compat.TabPlaceholders.tick(server, tick);
-		net.battlehub.compat.ExternalTitles.tick(server, tick);
+		part("scheduled tasks", Tasks::tick);
+		part("arena builder", ArenaBuilder::tick);
+		part("matches", Matches::tick);
+		part("bot motion", () -> net.battlehub.bot.Motion.tick(server));
+		part("bots", () -> net.battlehub.bot.Bots.tick(server));
+		part("name tags", () -> net.battlehub.match.NameTags.tick(server));
+		part("locator bar", () -> net.battlehub.games.hunger.Locator.tick(server));
+		part("bot memory", () -> net.battlehub.bot.CombatMemory.tick(server));
+		part("fight recorder", () -> net.battlehub.bot.FightRecorder.tick(server));
+		part("queues", () -> Queues.tick(server));
+		part("queue glow", () -> net.battlehub.lobby.QueueGlow.tick(server));
+		part("spectators", () -> net.battlehub.spectate.Spectators.tick(server));
+		part("menus", () -> Menus.tick(server));
+		part("cosmetics", () -> net.battlehub.progression.Cosmetics.tick(server, tick));
+		part("lobby boards", () -> net.battlehub.hub.HubBoards.tick(server));
+		part("lobby characters", () -> net.battlehub.hub.HubNpcs.tick(server));
+		part("training dummy", () -> net.battlehub.hub.HubDummy.tick(server));
+		part("cinematics", () -> net.battlehub.fx.Cinematics.tick(server));
+		part("music", () -> net.battlehub.fx.Music.tick(server));
+		part("double jump", () -> net.battlehub.lobby.DoubleJump.tick(server));
+		part("stats export", () -> net.battlehub.export.StatsExport.tick(server));
+		part("placeholders", () -> net.battlehub.compat.TabPlaceholders.tick(server, tick));
+		part("external titles", () -> net.battlehub.compat.ExternalTitles.tick(server, tick));
 		if (tick % 10 == 0) {
-			net.battlehub.tournament.WeeklyTournament.tick(server);
+			part("weekly tournament", () -> net.battlehub.tournament.WeeklyTournament.tick(server));
 		}
-		net.battlehub.progression.Seasons.tick(server);
-		net.battlehub.fair.Afk.tick(server);
-		net.battlehub.fair.AntiCheat.tick(server);
+		part("seasons", () -> net.battlehub.progression.Seasons.tick(server));
+		part("afk", () -> net.battlehub.fair.Afk.tick(server));
+		part("anti-cheat", () -> net.battlehub.fair.AntiCheat.tick(server));
 		if (tick % 1200 == 0) {
-			net.battlehub.social.Clans.tick(server);
+			part("clans", () -> net.battlehub.social.Clans.tick(server));
 		}
 		if (net.battlehub.debug.SelfTest.enabled()) {
 			net.battlehub.debug.SelfTest.tick();
 		}
 		if (tick % 10 == 0) {
 			for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-				net.battlehub.hub.Travel.guard(p);
-				lobbyTick(p);
+				part("lobby", () -> {
+					net.battlehub.hub.Travel.guard(p);
+					lobbyTick(p);
+				});
 			}
 		}
+	}
+
+	/** Parts of BattleHub's tick that threw, and how often (for the self-test and the log). */
+	private static final java.util.Map<String, Integer> FAILED_PARTS = new java.util.concurrent.ConcurrentHashMap<>();
+	private static final java.util.Map<String, Integer> FAILED_LOGGED = new java.util.HashMap<>();
+
+	/**
+	 * One part of BattleHub's tick (1.51.1). An exception in it is logged and the tick goes on with the next part. Before,
+	 * it went up into the server's own tick and stopped the whole server, and every player saw "Connection reset". The
+	 * first failure of a part comes with its stack trace, after that at most once a minute with a count.
+	 */
+	static void part(String name, Runnable body) {
+		try {
+			body.run();
+		} catch (Exception e) {
+			int n = FAILED_PARTS.merge(name, 1, Integer::sum);
+			Integer last = FAILED_LOGGED.get(name);
+			if (last == null) {
+				BattleHub.LOGGER.error("BattleHub {} failed in a tick; the server goes on", name, e);
+				FAILED_LOGGED.put(name, tick);
+			} else if (tick - last >= 1200) {
+				BattleHub.LOGGER.error("BattleHub {} failed {} times so far (the last: {})", name, n, e.toString());
+				FAILED_LOGGED.put(name, tick);
+			}
+		}
+	}
+
+	/** {@link #part} for a yes or no BattleHub gives the game: {@code fallback} (the game's own rule) when it throws. */
+	static boolean decide(String name, boolean fallback, java.util.function.BooleanSupplier body) {
+		boolean[] out = {fallback};
+		part(name, () -> out[0] = body.getAsBoolean());
+		return out[0];
+	}
+
+	/** The parts of BattleHub's tick that failed so far, with how often. */
+	public static java.util.Map<String, Integer> failedParts() {
+		return java.util.Map.copyOf(FAILED_PARTS);
 	}
 
 	/** Players in the hub world: lobby items, full health and hunger, back up when falling off. */

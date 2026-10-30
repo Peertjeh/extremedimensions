@@ -967,6 +967,12 @@ Player data is stored per world in `world/battlehub/players/<uuid>.json`; saved 
 
 ## FAQ
 
+**Players get "Connection reset" (a `disconnect-...-client.txt` report).** That report only says that the server
+ended the connection; the reason is on the server. Look in the server's `logs/latest.log` (or the dated `.log.gz`) at
+that time for `<name> lost connection: ...`, in `crash-reports/` for a crash at that time, and in `debug/` for a
+`disconnect-...-server.txt`. If everyone was dropped at the same moment, the server stopped or crashed; if one player,
+the line in the log says why. Since 1.51.1 a failure in one part of BattleHub is logged and no longer stops the server.
+
 **Do players need the mod?** No. All menus are vanilla chest menus, and all text is translated on the
 server, in each player's own language (English and Dutch built in).
 

@@ -137,6 +137,17 @@ public final class SelfTest {
 			return a.peek(GameMode.SWORD).coins > 0 && a.rankedStats(GameMode.SWORD).coins > 0 && b.rankedStats(GameMode.SWORD).coins > 0
 					&& a.overall.coins >= a.peek(GameMode.SWORD).coins && a.coinsEarned >= a.overall.coins;
 		});
+		s.check("no part of BattleHub's tick failed during the whole run", () -> {
+			var failed = net.battlehub.HubEvents.failedParts();
+			if (!failed.isEmpty()) net.battlehub.BattleHub.LOGGER.error("SELFTEST parts of the tick that failed: {}", failed);
+			return failed.isEmpty();
+		});
+		s.check("every packet a test player got can be encoded as the game sends it to a real client", () -> {
+			boolean bound = TestConnection.Wire.available();
+			net.battlehub.BattleHub.LOGGER.info("SELFTEST packets encoded: {}, failed: {}{}", TestConnection.Wire.ENCODED.get(),
+					TestConnection.Wire.FAILED.get(), bound ? "" : " (no codec: " + TestConnection.Wire.unavailable() + ")");
+			return bound && TestConnection.Wire.ENCODED.get() > 0 && TestConnection.Wire.FAILED.get() == 0;
+		});
 		runningAtStop(server, s);
 		script = s;
 	}

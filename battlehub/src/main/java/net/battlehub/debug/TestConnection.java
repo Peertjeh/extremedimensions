@@ -45,6 +45,7 @@ final class TestConnection extends Connection {
 			@Override
 			public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
 				seen(msg);
+				Wire.check(msg);
 				ReferenceCountUtil.release(msg);
 				promise.setSuccess();
 			}
@@ -112,6 +113,98 @@ final class TestConnection extends Connection {
 			}
 		}
 		return new int[0];
+	}
+
+	/**
+	 * Every packet a test player gets is also written as the game writes it for a real client, with the play protocol's
+	 * codec (1.51.1). A packet the mod builds that cannot be encoded (a wrong type in entity data, something a client
+	 * cannot be sent) would make the server drop a real player with "Internal Exception"; here it fails the self-test
+	 * instead, with what it was. The protocol classes are found by reflection (their shape changes between versions);
+	 * without them the check says so and does not count.
+	 */
+	static final class Wire {
+		private Wire() {}
+
+		static final java.util.concurrent.atomic.AtomicLong ENCODED = new java.util.concurrent.atomic.AtomicLong();
+		static final java.util.concurrent.atomic.AtomicLong FAILED = new java.util.concurrent.atomic.AtomicLong();
+		private static final Set<String> SEEN_FAILURES = ConcurrentHashMap.newKeySet();
+		private static volatile Object codec;
+		private static volatile Method encode;
+		private static volatile String unavailable;
+		/** The chunks and their light: vanilla's own and big; writing them all would slow the test down for nothing. */
+		private static final Set<String> SKIPPED = Set.of("ClientboundLevelChunkWithLightPacket", "ClientboundLightUpdatePacket",
+				"ClientboundChunksBiomesPacket", "ClientboundForgetLevelChunkPacket");
+
+		static boolean available() {
+			return bind();
+		}
+
+		static String unavailable() {
+			return unavailable;
+		}
+
+		static void check(Object msg) {
+			if (msg instanceof ClientboundBundlePacket bundle) {
+				for (Packet<?> p : bundle.subPackets()) check(p);
+				return;
+			}
+			if (!(msg instanceof Packet<?>) || SKIPPED.contains(msg.getClass().getSimpleName()) || !bind()) return;
+			io.netty.buffer.ByteBuf buf = io.netty.buffer.Unpooled.buffer();
+			try {
+				encode.invoke(codec, buf, msg);
+				ENCODED.incrementAndGet();
+			} catch (ReflectiveOperationException | RuntimeException e) {
+				Throwable cause = e instanceof java.lang.reflect.InvocationTargetException ite && ite.getCause() != null ? ite.getCause() : e;
+				FAILED.incrementAndGet();
+				if (SEEN_FAILURES.add(msg.getClass().getName() + ": " + cause)) {
+					StackTraceElement[] st = cause.getStackTrace();
+					net.battlehub.BattleHub.LOGGER.error("SELFTEST packet {} cannot be encoded for a real client: {} at {}", msg.getClass().getSimpleName(), cause,
+							java.util.Arrays.toString(java.util.Arrays.copyOf(st, Math.min(10, st.length))));
+				}
+			} finally {
+				buf.release();
+			}
+		}
+
+		/** The play protocol's clientbound codec, bound to the server's registries, once. */
+		private static synchronized boolean bind() {
+			if (codec != null) return true;
+			if (unavailable != null) return false;
+			net.minecraft.server.MinecraftServer server = net.battlehub.BattleHub.server();
+			if (server == null) return false;
+			try {
+				Class<?> protocols = Class.forName("net.minecraft.network.protocol.game.GameProtocols");
+				Object template = protocols.getField("CLIENTBOUND_TEMPLATE").get(null);
+				Method decorator = null;
+				for (Method m : net.minecraft.network.RegistryFriendlyByteBuf.class.getMethods()) {
+					if (m.getName().equals("decorator") && m.getParameterCount() == 1 && java.lang.reflect.Modifier.isStatic(m.getModifiers())) decorator = m;
+				}
+				if (decorator == null) throw new NoSuchMethodException("RegistryFriendlyByteBuf.decorator");
+				Object decorate = decorator.invoke(null, server.registryAccess());
+				Object info = null;
+				for (Method m : template.getClass().getMethods()) {
+					if (m.getName().equals("bind") && m.getParameterCount() == 1 && m.getParameterTypes()[0].isInstance(decorate)) {
+						info = m.invoke(template, decorate);
+					}
+				}
+				if (info == null) throw new NoSuchMethodException("CLIENTBOUND_TEMPLATE.bind(decorator)");
+				Object c = info.getClass().getMethod("codec").invoke(info);
+				Method e = null;
+				for (Method m : c.getClass().getMethods()) {
+					if (m.getName().equals("encode") && m.getParameterCount() == 2) e = m;
+				}
+				if (e == null) throw new NoSuchMethodException("codec.encode");
+				e.setAccessible(true);
+				encode = e;
+				codec = c;
+				net.battlehub.BattleHub.LOGGER.info("SELFTEST packets to test players are encoded with {}", c.getClass().getName());
+				return true;
+			} catch (ReflectiveOperationException | RuntimeException e) {
+				unavailable = e.toString();
+				net.battlehub.BattleHub.LOGGER.warn("SELFTEST the play protocol's codec was not found ({}): packets are not encoded", unavailable);
+				return false;
+			}
+		}
 	}
 
 	@Override

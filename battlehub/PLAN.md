@@ -2264,7 +2264,46 @@ de simulatie, en het gat tussen intermediate en master klopt met het spel) en da
 staat. Hoe andere spelers over de niveaus verdeeld zijn, zegt een volgende export van meer spelers. De mace-schaal rust op
 vier gevechten.
 
-## Versie 1.51.0 – Placeholders, globale chat, titels uit Extreme Dimensions, Discord
+## Versie 1.51.1 – "Connection reset": de server blijft draaien, pakketten getest zoals een echte client ze krijgt
+
+**Vraag.** Spelers krijgen een melding "Connection reset" (`disconnect-2026-10-30_19.13.06-client.txt`, client met
+BattleHub 1.49.0, Essential, Distant Horizons, Xaero, Sodium/Iris en meer). Uitzoeken waar dat vandaan komt.
+
+**Wat het rapport zegt.** Het rapport van de client bevat alleen een `SocketException: Connection reset` bij het lezen
+van de verbinding: de server heeft de verbinding verbroken. De regel "// Too many suspicious packets" is waarschijnlijk
+een van de grappige regels die bovenaan elk rapport staan, geen oorzaak. Waarom de server de verbinding verbrak, staat
+alleen in de server: `logs/latest.log` ("<naam> lost connection: ..."), `crash-reports/` en `debug/disconnect-*-server.txt`.
+Die heb ik niet; de server is vanuit deze sessie niet bereikbaar. Op Windows wordt ook een gewone kick van de server vaak
+een "Connection reset" als de client op dat moment nog pakketten stuurt, dus het rapport alleen zegt niet of de server
+crashte of één speler eruit zette.
+
+**Wat ik in BattleHub nakeek.**
+- BattleHub registreert geen eigen netwerkkanalen of registers: een client met 1.49.0 en een server met een nieuwere
+  versie botsen niet.
+- De chat per wereld (1.50) slaat het sturen naar spelers in een andere wereld over; dat houdt de ondertekende chat
+  consistent (de server houdt per ontvanger bij wat hij stuurde), zoals chat-per-wereld-plugins het ook doen.
+- **Een echt risico:** BattleHubs werk per tick (wedstrijden uitgezonderd, die hadden al een vangnet) en zijn beslissingen
+  over schade en doodgaan draaiden zonder vangnet. Eén exception in bijvoorbeeld de naamplaatjes, de locator bar, de bots,
+  de menu's of de placeholders ging omhoog in de tick van de server zelf en stopte de hele server: iedereen kreeg dan
+  precies deze "Connection reset".
+- **Een blinde vlek in de tests:** de testspelers van de zelftest gooiden elk pakket weg zonder het te coderen. Een
+  pakket dat BattleHub bouwt maar dat niet naar een echte client kan (verkeerd type in entity-data bijvoorbeeld) zou een
+  echte speler eruit gooien, maar de zelftest zag het nooit.
+
+**Oplossing.**
+- `HubEvents.part`: elk onderdeel van de tick draait apart in een vangnet; een exception komt in de log (de eerste met
+  stacktrace, daarna hooguit eens per minuut met een teller) en de rest van de server gaat door. Schade en doodgaan
+  (`decide`): faalt BattleHubs deel, dan geldt de regel van het spel zelf.
+- `TestConnection.Wire`: elk pakket naar een testspeler wordt ook gecodeerd met de echte play-codec van het spel
+  (via reflectie gebonden aan de registers van de server). Faalt dat, dan staat in de log welk pakket en waarom, en
+  faalt de zelftest. Chunks en licht worden overgeslagen (van het spel zelf, groot).
+- Een laatste zelftest-check: geen enkel deel van de tick faalde tijdens de hele run.
+- README-FAQ: wat zo'n rapport betekent en waar de server de reden bewaart.
+
+**Wat de gebruiker kan doen.** De server-log van 30 oktober rond 19:13 sturen (`logs/` en eventueel `crash-reports/`
+en `debug/`): daar staat de echte reden. Met 1.51.1 stopt een fout in BattleHub de server niet meer en staat hij in
+de log.
+
 
 **Vraag.** Na 1.50 ("nog meer ideeën?") koos de gebruiker alles: (A) placeholders van BattleHub voor TAB en Styled
 Chat, zoals Extreme Dimensions 3.5.0 ze heeft; (B) toch de hele server bereiken met een `!` voor je bericht nu de chats
