@@ -1,0 +1,55 @@
+# Animations, used in config.yml as %animation:<name>%.
+# change-interval is the time per frame in milliseconds (a multiple of 50).
+# https://github.com/NEZNAMY/TAB/wiki/Animations
+
+# A slow color wave over the survival title, from Nether red to End purple.
+# To stop it, replace %animation:title% in config.yml with a fixed title:
+# "<#FF5A36>&lEXTREME DIMENSIONS</#B565F2>"
+title:
+  change-interval: 150
+  texts:
+    - "<#FF5A36>&lEXTREME </#E45E7A><#DD5F8B>&lDIMENSIONS</#B565F2>"
+    - "<#FD5A3B>&lEXTREME </#D96097><#D261A9>&lDIMENSIONS</#B765ED>"
+    - "<#F85B48>&lEXTREME </#CD61B4><#C762C4>&lDIMENSIONS</#BC64E0>"
+    - "<#F05C5D>&lEXTREME </#C363CE><#BE64DB>&lDIMENSIONS</#C463CB>"
+    - "<#E55E77>&lEXTREME </#BB64E2><#B865EA>&lDIMENSIONS</#CF61B1>"
+    - "<#DA6094>&lEXTREME </#B665EE><#B565F2>&lDIMENSIONS</#DA6094>"
+    - "<#CF61B1>&lEXTREME </#B565F2><#B665F0>&lDIMENSIONS</#E55E77>"
+    - "<#C463CB>&lEXTREME </#B765EC><#BA64E5>&lDIMENSIONS</#F05C5D>"
+    - "<#BC64E0>&lEXTREME </#BD64DE><#C263D2>&lDIMENSIONS</#F85B48>"
+    - "<#B765ED>&lEXTREME </#C563C8><#CB62B9>&lDIMENSIONS</#FD5A3B>"
+    - "<#B565F2>&lEXTREME </#D061AE><#D7609D>&lDIMENSIONS</#FF5A36>"
+    - "<#B765ED>&lEXTREME </#DB5F91><#E25E7F>&lDIMENSIONS</#FD5A3B>"
+    - "<#BC64E0>&lEXTREME </#E75E74><#ED5D64>&lDIMENSIONS</#F85B48>"
+    - "<#C463CB>&lEXTREME </#F15C5A><#F65B4D>&lDIMENSIONS</#F05C5D>"
+    - "<#CF61B1>&lEXTREME </#F95B46><#FC5A3E>&lDIMENSIONS</#E55E77>"
+    - "<#DA6094>&lEXTREME </#FE5A3A><#FF5A36>&lDIMENSIONS</#DA6094>"
+    - "<#E55E77>&lEXTREME </#FF5A36><#FE5A38>&lDIMENSIONS</#CF61B1>"
+    - "<#F05C5D>&lEXTREME </#FD5A3C><#FA5B43>&lDIMENSIONS</#C463CB>"
+    - "<#F85B48>&lEXTREME </#F75B4A><#F25C56>&lDIMENSIONS</#BC64E0>"
+    - "<#FD5A3B>&lEXTREME </#EF5C60><#E95D6F>&lDIMENSIONS</#B765ED>"
+
+# The same wave over the battlehub title, from gold to red.
+battlehub-title:
+  change-interval: 150
+  texts:
+    - "<#FFC933>&lBATTLE</#FF683A><#FF523C>&lHUB</#FF3D3D>"
+    - "<#FFC633>&lBATTLE</#FF563B><#FF453C>&lHUB</#FF403D>"
+    - "<#FFBC34>&lBATTLE</#FF473C><#FF3E3D>&lHUB</#FF4A3C>"
+    - "<#FFAC35>&lBATTLE</#FF3F3D><#FF3E3D>&lHUB</#FF5A3B>"
+    - "<#FF9936>&lBATTLE</#FF3D3D><#FF453C>&lHUB</#FF6D3A>"
+    - "<#FF8338>&lBATTLE</#FF423D><#FF523C>&lHUB</#FF8338>"
+    - "<#FF6D3A>&lBATTLE</#FF4E3C><#FF633A>&lHUB</#FF9936>"
+    - "<#FF5A3B>&lBATTLE</#FF5E3B><#FF7839>&lHUB</#FFAC35>"
+    - "<#FF4A3C>&lBATTLE</#FF7339><#FF8E37>&lHUB</#FFBC34>"
+    - "<#FF403D>&lBATTLE</#FF8838><#FFA336>&lHUB</#FFC633>"
+    - "<#FF3D3D>&lBATTLE</#FF9E36><#FFB434>&lHUB</#FFC933>"
+    - "<#FF403D>&lBATTLE</#FFB035><#FFC134>&lHUB</#FFC633>"
+    - "<#FF4A3C>&lBATTLE</#FFBF34><#FFC833>&lHUB</#FFBC34>"
+    - "<#FF5A3B>&lBATTLE</#FFC733><#FFC833>&lHUB</#FFAC35>"
+    - "<#FF6D3A>&lBATTLE</#FFC933><#FFC134>&lHUB</#FF9936>"
+    - "<#FF8338>&lBATTLE</#FFC433><#FFB434>&lHUB</#FF8338>"
+    - "<#FF9936>&lBATTLE</#FFB834><#FFA336>&lHUB</#FF6D3A>"
+    - "<#FFAC35>&lBATTLE</#FFA835><#FF8E37>&lHUB</#FF5A3B>"
+    - "<#FFBC34>&lBATTLE</#FF9337><#FF7839>&lHUB</#FF4A3C>"
+    - "<#FFC633>&lBATTLE</#FF7E38><#FF633A>&lHUB</#FF403D>"

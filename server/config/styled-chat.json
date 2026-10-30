@@ -1,0 +1,67 @@
+{
+  "CONFIG_VERSION_DONT_TOUCH_THIS": 3,
+  "text_formatting": {
+    "legacy_formatting": false,
+    "parse_links": true,
+    "parse_mentions": true,
+    "markdown": true,
+    "respect_colors_client_setting": true
+  },
+  "auto_completion": {
+    "tags": false,
+    "tag_aliases": false,
+    "emoticons": true
+  },
+  "default": {
+    "display_name": "${default}",
+    "message_formats": {
+      "chat": "<hover:'<gray>%extremedimensions:realm% <dark_gray>|</dark_gray> %extremedimensions:status% <white>%extremedimensions:time_left%</white>\n<gray>Curses: <white>%extremedimensions:curses%</white>   Scars: <white>%extremedimensions:scars%/5</white>\n<gray>Expeditions: <white>%extremedimensions:expeditions%</white>   Collapses: <white>%extremedimensions:collapses%</white>'><shadow:#00000000>%player:head%</shadow> ${player}</hover> <dark_gray>»</dark_gray> ${message}"
+    },
+    "mention_style": "<c:#7878ff>%player:displayname%",
+    "emoticons": {
+      "$emojibase:builtin:joypixels": "${emoji}",
+      "skull": "<gray>☠",
+      "heart": "<red>❤",
+      "shrug": "¯\\_(ツ)_/¯",
+      "table": "(╯°□°）╯︵ ┻━┻",
+      "sword": "🗡",
+      "bow": "🏹",
+      "trident": "🔱",
+      "rod": "🎣",
+      "potion": "🧪",
+      "shears": "✂",
+      "bucket": "🪣",
+      "bell": "🔔",
+      "item": "[%player:equipment_slot mainhand%]",
+      "pos": "%player:pos_x% %player:pos_y% %player:pos_z%"
+    }
+  },
+  "styles": [
+    {
+      "require": {
+        "type": "any",
+        "values": [
+          {
+            "type": "equal",
+            "value_1": {
+              "type": "placeholder",
+              "placeholder": "world:id"
+            },
+            "value_2": "battlehub:hub"
+          },
+          {
+            "type": "equal",
+            "value_1": {
+              "type": "placeholder",
+              "placeholder": "world:id"
+            },
+            "value_2": "battlehub:arenas"
+          }
+        ]
+      },
+      "message_formats": {
+        "chat": "<hover:'<gray>%battlehub:status%\n<gray>Level <white>%battlehub:level%</white>   ELO <white>%battlehub:elo%</white> %battlehub:tier%\n<gray>Wins <white>%battlehub:wins%</white>   Kills <white>%battlehub:kills%</white>   Streak <white>%battlehub:streak%</white>'><shadow:#00000000>%player:head%</shadow> <gold>⚔</gold> ${player}</hover> <dark_gray>»</dark_gray> ${message}"
+      }
+    }
+  ]
+}

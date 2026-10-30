@@ -1,0 +1,4 @@
+# Settings for one specific player, by name or UUID. These override groups.yml.
+# Example, with your own Minecraft name:
+# YourName:
+#   tabprefix: "&6[Owner] "
