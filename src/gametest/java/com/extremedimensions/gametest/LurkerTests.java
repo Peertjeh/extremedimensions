@@ -288,18 +288,18 @@ public class LurkerTests {
 	@GameTest(maxTicks = 80)
 	public void aKeeperFitsWhereItStandsAndStepsOutOfARoof(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		// A roof four blocks thick over a tunnel two blocks high
+		// A roof four blocks thick over a tunnel two blocks high (the floor of a test lies just under y 0)
 		for (int x = 1; x <= 4; x++) {
 			for (int z = 1; z <= 4; z++) {
-				for (int y = 4; y <= 7; y++) {
+				for (int y = 2; y <= 5; y++) {
 					helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
 				}
 			}
 		}
-		BlockPos tunnel = helper.absolutePos(new BlockPos(2, 2, 2));
+		BlockPos tunnel = helper.absolutePos(new BlockPos(2, 0, 2));
 		check(helper, !TribeMoves.roomFor(level, tunnel, 1.6, 4.2), "a Keeper fits in a tunnel two blocks high");
 		check(helper, TribeMoves.roomFor(level, tunnel, 0.6, 1.1), "a Hollowling does not fit in a tunnel two blocks high");
-		check(helper, TribeMoves.roomFor(level, helper.absolutePos(new BlockPos(6, 2, 6)), 1.6, 4.2), "a Keeper does not fit in the open");
+		check(helper, TribeMoves.roomFor(level, helper.absolutePos(new BlockPos(6, 0, 6)), 1.6, 4.2), "a Keeper does not fit in the open");
 		Keeper k = ModEntities.KEEPER.spawn(level, tunnel, EntitySpawnReason.COMMAND);
 		helper.runAfterDelay(25, () -> {
 			try {
@@ -319,18 +319,18 @@ public class LurkerTests {
 	@GameTest(environment = Alone.LURKER_LEAP, maxTicks = 220)
 	public void aHuntingLurkerLeapsUpALedge(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		// A block of stone three high, its prey on top
-		for (int x = 4; x <= 6; x++) {
+		// A block of stone three high on the floor, its prey on top, too far in to strike from below
+		for (int x = 4; x <= 7; x++) {
 			for (int z = 1; z <= 3; z++) {
-				for (int y = 2; y <= 4; y++) {
+				for (int y = 0; y <= 2; y++) {
 					helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
 				}
 			}
 		}
 		ServerPlayer p = TestPlayers.survivor(helper, "lurker-ledge");
-		place(helper, p, 5.5, 5, 2.5);
-		Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(1, 2, 2)), EntitySpawnReason.COMMAND);
-		double top = helper.absolutePos(new BlockPos(0, 5, 0)).getY();
+		place(helper, p, 6.5, 3, 2.5);
+		Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(1, 0, 2)), EntitySpawnReason.COMMAND);
+		double top = helper.absolutePos(new BlockPos(0, 3, 0)).getY();
 		helper.runAfterDelay(20, () -> {
 			check(helper, l != null, "no Lurker came");
 			LurkerService.adopt(level, l, p, "hunt");
@@ -353,7 +353,8 @@ public class LurkerTests {
 		Difficulty was = level.getDifficulty();
 		level.getServer().setDifficulty(Difficulty.NORMAL, true);
 		ServerPlayer p = TestPlayers.survivor(helper, "swarm-prey");
-		place(helper, p, 3.5, 2, 3.5);
+		// on the floor (a test player does not fall), where the young can get at them
+		place(helper, p, 3.5, 0, 3.5);
 		int lurkers = Config.LURKER_SWARM_LURKERS, young = Config.LURKER_SWARM_HOLLOWLINGS, secs = Config.LURKER_SWARM_SECONDS;
 		double bite = Config.LURKER_SWARM_BITE;
 		Runnable restore = () -> {
