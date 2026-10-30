@@ -781,7 +781,8 @@ public class ClientShots implements FabricClientGameTest {
 					level.addFreshEntity(h);
 				}
 			});
-			ctx.waitTicks(30);
+			// (long enough for the chat and the hints' toasts to fade, so the young before them show)
+			ctx.waitTicks(240);
 			ctx.takeScreenshot("15_lurker_moods");
 			// (gone without a death, which would leave their drops in the later shots)
 			sp.getServer().runOnServer(s -> player(s).level().getEntitiesOfClass(net.minecraft.world.entity.Mob.class,
