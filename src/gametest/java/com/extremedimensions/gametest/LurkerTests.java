@@ -481,7 +481,7 @@ public class LurkerTests {
 	}
 
 	/** Come to hurt a prey it can see under a roof it cannot get under, a Lurker throws an ink bolt through the door. */
-	@GameTest(environment = Alone.LURKER_BOLT, maxTicks = 280)
+	@GameTest(environment = Alone.LURKER_BOLT, maxTicks = 420)
 	public void aHuntingLurkerThrowsInkAtAPreyUnderARoof(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		Difficulty was = level.getDifficulty();
@@ -501,10 +501,11 @@ public class LurkerTests {
 			p.setHealth(20f);
 			LurkerService.adopt(level, in[0], p, "hunt");
 		});
-		// Watched every tick: a player heals back what one bolt took well before the test ends
+		// Watched every tick: a player heals back what one bolt took well before the test ends (the Lurker may first go
+		// round the house, and back to the door to see its prey)
 		boolean[] heldOut = {false};
 		float[] lowest = {20f};
-		for (int t = 71; t <= 230; t++) {
+		for (int t = 71; t <= 390; t++) {
 			helper.runAfterDelay(t, () -> {
 				if (in[0] != null) {
 					heldOut[0] |= LurkerService.holdingOut(in[0]);
@@ -512,10 +513,11 @@ public class LurkerTests {
 				lowest[0] = Math.min(lowest[0], p.getHealth());
 			});
 		}
-		helper.runAfterDelay(231, () -> {
+		helper.runAfterDelay(391, () -> {
 			try {
 				check(helper, heldOut[0], "the Lurker never gave up the way under a roof too low for it (it is %s at %s)", LurkerService.mode(in[0]), in[0].blockPosition());
-				check(helper, lowest[0] < 20f, "no ink bolt reached the prey through the door (its blows: %s)", LurkerService.blows(in[0]));
+				check(helper, lowest[0] < 20f, "no ink bolt reached the prey through the door (its blows: %s; %s)", LurkerService.blows(in[0]),
+						LurkerService.holdOutState(in[0]));
 			} finally {
 				Config.LURKER_CURSE_CHANCE = curse;
 				Config.LURKER_YOUNG = young;

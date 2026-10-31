@@ -1279,6 +1279,18 @@ public final class LurkerService {
 		return st != null && st.blocked >= blockedAfter();
 	}
 
+	/** For the tests: what a driven Lurker holding out is doing, in a line. */
+	public static String holdOutState(Lurker l) {
+		State st = STATES.get(l.getUUID());
+		if (st == null) {
+			return "not driven";
+		}
+		ServerPlayer p = WorldFx.server().getPlayerList().getPlayer(st.target);
+		return String.format(Locale.ROOT, "%s at %.1f %.1f %.1f, blocked %d, sight from %s for %d, bolt in %d, winding %d, sees %s",
+				st.mode, l.getX(), l.getY(), l.getZ(), st.blocked, st.sightFrom, st.sightTicks, st.boltIn, st.boltWindup,
+				p != null && l.hasLineOfSight(p));
+	}
+
 	public static boolean sentYoung(Lurker l) {
 		State st = STATES.get(l.getUUID());
 		return st != null && st.sentYoung;
