@@ -20,11 +20,13 @@ import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -145,6 +147,39 @@ public final class TribeMoves {
 		}
 		Path path = m.getNavigation().createPath(t, 1);
 		return path == null || !path.canReach();
+	}
+
+	/**
+	 * A place near its prey from which this creature would see them (a door, a window, round the corner of a house): the
+	 * nearest of a ring of spots round the prey on ground it fits, its eyes there with a clear line to theirs. Null when
+	 * there is none within the radius. Looks at a few hundred spots, so it is asked now and then, not every tick.
+	 */
+	public static BlockPos sightFrom(ServerLevel level, Mob m, Entity t, int radius) {
+		Vec3 eye = t.getEyePosition();
+		BlockPos at = t.blockPosition();
+		BlockPos best = null;
+		double bestD = Double.MAX_VALUE;
+		for (int r = 2; r <= radius; r++) {
+			int steps = Math.max(8, r * 6);
+			for (int i = 0; i < steps; i++) {
+				double a = i * Math.PI * 2 / steps;
+				int x = at.getX() + (int) Math.round(Math.cos(a) * r);
+				int z = at.getZ() + (int) Math.round(Math.sin(a) * r);
+				for (int dy = -2; dy <= 2; dy++) {
+					BlockPos feet = new BlockPos(x, at.getY() + dy, z);
+					double d = feet.distToCenterSqr(m.position());
+					if (d >= bestD || !com.extremedimensions.server.Loaded.ready(level, feet) || !roomFor(level, feet, m)) {
+						continue;
+					}
+					Vec3 from = new Vec3(x + 0.5, feet.getY() + m.getEyeHeight(), z + 0.5);
+					if (level.clip(new ClipContext(from, eye, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, m)).getType() == HitResult.Type.MISS) {
+						best = feet;
+						bestD = d;
+					}
+				}
+			}
+		}
+		return best;
 	}
 
 	/** Whether there is a roof over someone standing here (within three blocks over their head): a house, a tunnel. */

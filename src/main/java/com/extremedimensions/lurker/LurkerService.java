@@ -74,6 +74,9 @@ public final class LurkerService {
 	private static final int BOLT_WINDUP = 16;
 	/** How often it asks whether its prey is out of its way (it works out a route, so not every tick). */
 	private static final int BLOCK_CHECK = 10;
+	/** How far round a hidden prey a hunting Lurker looks for a place to see them from, and how long it tries (ticks). */
+	private static final int SIGHT_RADIUS = 8;
+	private static final int SIGHT_GIVE_UP = 200;
 	private static final int STRIKE_WINDUP = 10;
 	private static final int STRIKE_PAUSE = 16;
 	/** A Lurker's body (as its entity type has it): where it shows itself, it must fit. */
@@ -123,6 +126,9 @@ public final class LurkerService {
 		/** Ticks its prey has been out of its way (no whole route there); whether it sent its young; its bolt (ticks). */
 		int blocked;
 		boolean sentYoung;
+		/** Out of sight of a prey under a roof: where it goes to see them from, and how long it has been at it. */
+		BlockPos sightFrom;
+		int sightTicks;
 		int boltIn;
 		int boltWindup;
 	}
@@ -140,19 +146,65 @@ public final class LurkerService {
 		STATES.clear();
 		LEVELS.clear();
 		LAST_SEEN.clear();
+		SWARM_AT.clear();
+	}
+
+	/** Swarms on their way: the dread swells first, and they come when it breaks off (the server tick, per player). */
+	private static final Map<UUID, Long> SWARM_AT = new HashMap<>();
+
+	/** The swarms whose dread has broken off come now (to a player still here and in a world they come to). */
+	private static void swarmsDue(MinecraftServer s) {
+		Iterator<Map.Entry<UUID, Long>> it = SWARM_AT.entrySet().iterator();
+		List<ServerPlayer> due = new ArrayList<>();
+		while (it.hasNext()) {
+			Map.Entry<UUID, Long> e = it.next();
+			ServerPlayer p = s.getPlayerList().getPlayer(e.getKey());
+			if (p == null) {
+				it.remove();
+			} else if (s.getTickCount() >= e.getValue()) {
+				it.remove();
+				due.add(p);
+			}
+		}
+		for (ServerPlayer p : due) {
+			String dim = Dims.of(p);
+			if (p.isAlive() && !p.isSpectator() && !p.isCreative() && (Dims.OVERWORLD.equals(dim) || Dims.NETHER.equals(dim)) && !Rules.peaceful(p.level())) {
+				swarm(p);
+			}
+		}
+	}
+
+	/**
+	 * A swarm sets out for this player: the dread swells under everything first, and the swarm comes when it breaks off
+	 * into silence (at once when the dread is switched off). False if none could come.
+	 */
+	public static boolean swarmComes(ServerPlayer p) {
+		if (com.extremedimensions.world.AmbientService.dread(p)) {
+			SWARM_AT.put(p.getUUID(), WorldFx.server().getTickCount() + (long) com.extremedimensions.world.AmbientService.DREAD_TICKS);
+			return true;
+		}
+		return swarm(p);
+	}
+
+	/** For the tests: whether a swarm is on its way to this player (its dread swelling). */
+	public static boolean swarmComing(ServerPlayer p) {
+		return SWARM_AT.containsKey(p.getUUID());
 	}
 
 	// ------------------------------------------------------------------ spawning
 
 	public static void tick(MinecraftServer s) {
 		drive();
+		if (!SWARM_AT.isEmpty()) {
+			swarmsDue(s);
+		}
 		if (Config.LURKER_ENABLED == 0 || s.getTickCount() % 400 != 0) {
 			return;
 		}
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
 			String dim = Dims.of(p);
-			if (p.isSpectator() || p.isCreative() || !(Dims.OVERWORLD.equals(dim) || Dims.NETHER.equals(dim)) || hunting(p) || Rules.peaceful(p.level())) {
+			if (p.isSpectator() || p.isCreative() || !(Dims.OVERWORLD.equals(dim) || Dims.NETHER.equals(dim)) || hunting(p) || SWARM_AT.containsKey(p.getUUID()) || Rules.peaceful(p.level())) {
 				continue;
 			}
 			// Covetous: one comes every night, whatever the wait, and it comes to take
@@ -182,8 +234,10 @@ public final class LurkerService {
 			// Extreme: now and then the whole tribe comes at once (twice as often for one it hates)
 			double swarmChance = Config.LURKER_SWARM_CHANCE
 					* (com.extremedimensions.tribe.Standing.of(p).ordinal() <= com.extremedimensions.tribe.Standing.Level.HATED.ordinal() ? 2 : 1);
-			if (swarmChance > 0 && !kin(p) && WorldService.tribeSteals() && rnd.nextDouble() < swarmChance && swarm(p)) {
-				continue;
+			if (swarmChance > 0 && !kin(p) && WorldService.tribeSteals() && rnd.nextDouble() < swarmChance) {
+				if (swarmComes(p)) {
+					continue;
+				}
 			}
 			if (Dims.OVERWORLD.equals(dim) && rnd.nextDouble() < Config.LURKER_DRAIN_CHANCE && spawnDrain(p)) {
 				continue;
@@ -206,6 +260,10 @@ public final class LurkerService {
 	 * of a swarm), "hunt" (one glowing red at them, or reaching for what they carry); null when none is.
 	 */
 	public static String threat(ServerPlayer p) {
+		if (SWARM_AT.containsKey(p.getUUID())) {
+			// (its dread already swelling: leaving now does not save them either)
+			return "swarm";
+		}
 		String found = null;
 		for (Map.Entry<UUID, State> e : STATES.entrySet()) {
 			State st = e.getValue();
@@ -500,7 +558,8 @@ public final class LurkerService {
 		} else if (st.ticks > st.limit) {
 			if (!Dims.SEAM.equals(Dims.of(p)) && WorldService.tribeSteals() && ThreadLocalRandom.current().nextDouble() < Config.LURKER_STALK_CHANCE) {
 				if (!kin(p) && ThreadLocalRandom.current().nextDouble() < Config.LURKER_HUNT_CHANCE) {
-					// It came to hurt, not to steal
+					// It came to hurt, not to steal: the dread swells as it turns
+					com.extremedimensions.world.AmbientService.dread(p);
 					hunt(l, st, p);
 				} else {
 					st.mode = Mode.STALK;
@@ -1067,6 +1126,10 @@ public final class LurkerService {
 		}
 		if (st.ticks % BLOCK_CHECK == 0) {
 			st.blocked = TribeMoves.blocked(l, p) ? st.blocked + BLOCK_CHECK : 0;
+			if (st.blocked == 0) {
+				st.sightFrom = null;
+				st.sightTicks = 0;
+			}
 		}
 		if (st.boltWindup > 0 || (st.blocked >= blockedAfter() && TribeMoves.sheltered(l.level(), p.blockPosition()))) {
 			// Under a roof it cannot get under: an ink bolt when it sees its prey, its young when it does not
@@ -1114,23 +1177,40 @@ public final class LurkerService {
 	 * of its young in after them: to bite, or to bring it what they take. Once the young bring it something, it runs.
 	 */
 	private static void holdOut(Lurker l, State st, ServerPlayer p, boolean hunter) {
-		l.getNavigation().stop();
-		l.getMoveControl().setWait();
 		l.getLookControl().setLookAt(p, 12, 12);
+		if (st.boltIn > 0) {
+			st.boltIn--;
+		}
 		if (st.boltWindup > 0) {
+			stand(l);
 			bolt(l, st, p);
 			return;
 		}
-		if (hunter && Config.LURKER_BOLT_DAMAGE > 0 && l.hasLineOfSight(p) && l.distanceTo(p) <= BOLT_RANGE) {
-			if (st.boltIn > 0) {
-				st.boltIn--;
-			} else {
+		boolean bolts = hunter && Config.LURKER_BOLT_DAMAGE > 0;
+		if (bolts && l.hasLineOfSight(p) && l.distanceTo(p) <= BOLT_RANGE) {
+			stand(l);
+			st.sightFrom = null;
+			if (st.boltIn <= 0) {
 				st.boltWindup = BOLT_WINDUP;
 				l.setLurkerPose(Lurker.POSE_TAKE);
 				WorldFx.soundIn(Dims.fullId(p), "extremedimensions:lurker_whisper", "hostile", l.getX(), l.getY() + 2.5, l.getZ(), 1.6f, 0.5f);
 			}
 			return;
 		}
+		if (bolts && st.sightTicks < SIGHT_GIVE_UP && l.level() instanceof ServerLevel level) {
+			// Out of its sight: it goes round to where it would see them (the door, a window) instead of circling the house
+			if (st.sightFrom == null ? st.ticks % 20 == 0 : st.ticks % 40 == 0) {
+				st.sightFrom = TribeMoves.sightFrom(level, l, p, SIGHT_RADIUS);
+			}
+			if (st.sightFrom != null) {
+				st.sightTicks++;
+				if (st.ticks % 5 == 0) {
+					TribeMoves.go(l, st.sightFrom.getX() + 0.5, st.sightFrom.getY(), st.sightFrom.getZ() + 0.5, Config.LURKER_STRIKE_SPEED);
+				}
+				return;
+			}
+		}
+		stand(l);
 		if (!st.sentYoung && Config.LURKER_YOUNG > 0) {
 			st.sentYoung = true;
 			sendYoung(l, st, p, hunter);
@@ -1138,6 +1218,12 @@ public final class LurkerService {
 		if (!hunter && st.loot.any()) {
 			run(l, st, p, false);
 		}
+	}
+
+	/** It stops where it is and stands, facing what it is after. */
+	private static void stand(Lurker l) {
+		l.getNavigation().stop();
+		l.getMoveControl().setWait();
 	}
 
 	/** The bolt gathers in its hand as ink drawn out of the air, then flies; it lands only on a prey still in its line. */

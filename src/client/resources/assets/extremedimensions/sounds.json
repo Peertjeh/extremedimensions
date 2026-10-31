@@ -653,5 +653,215 @@
         "attenuation_distance": 64
       }
     ]
+  },
+  "ambient.deep_groan": {
+    "subtitle": "subtitles.extremedimensions.ambient.deep_groan",
+    "sounds": [
+      {
+        "name": "extremedimensions:ambient/deep_groan1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/deep_groan2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/deep_groan3",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "ambient.hollow_far": {
+    "subtitle": "subtitles.extremedimensions.ambient.hollow_far",
+    "sounds": [
+      {
+        "name": "extremedimensions:ambient/hollow_far1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/hollow_far2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/hollow_far3",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "ambient.storm_tear": {
+    "subtitle": "subtitles.extremedimensions.ambient.storm_tear",
+    "sounds": [
+      {
+        "name": "extremedimensions:ambient/storm_tear1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/storm_tear2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/storm_tear3",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "ambient.ember_pulse": {
+    "subtitle": "subtitles.extremedimensions.ambient.ember_pulse",
+    "sounds": [
+      {
+        "name": "extremedimensions:ambient/ember_pulse1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/ember_pulse2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/ember_pulse3",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "ambient.ferryman_bell": {
+    "subtitle": "subtitles.extremedimensions.ambient.ferryman_bell",
+    "sounds": [
+      {
+        "name": "extremedimensions:ambient/ferryman_bell1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/ferryman_bell2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/ferryman_bell3",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "ambient.basalt_deep": {
+    "subtitle": "subtitles.extremedimensions.ambient.basalt_deep",
+    "sounds": [
+      {
+        "name": "extremedimensions:ambient/basalt_deep1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/basalt_deep2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/basalt_deep3",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "ambient.knot_heartbeat": {
+    "subtitle": "subtitles.extremedimensions.ambient.knot_heartbeat",
+    "sounds": [
+      {
+        "name": "extremedimensions:ambient/knot_heartbeat1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/knot_heartbeat2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/knot_heartbeat3",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "ambient.far_steps": {
+    "subtitle": "subtitles.extremedimensions.ambient.far_steps",
+    "sounds": [
+      {
+        "name": "extremedimensions:ambient/far_steps1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/far_steps2",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "ambient.far_shriek": {
+    "subtitle": "subtitles.extremedimensions.ambient.far_shriek",
+    "sounds": [
+      {
+        "name": "extremedimensions:ambient/far_shriek1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/far_shriek2",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "ambient.abyss_call": {
+    "subtitle": "subtitles.extremedimensions.ambient.abyss_call",
+    "sounds": [
+      {
+        "name": "extremedimensions:ambient/abyss_call1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/abyss_call2",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "ambient.dread_rise": {
+    "subtitle": "subtitles.extremedimensions.ambient.dread_rise",
+    "sounds": [
+      {
+        "name": "extremedimensions:ambient/dread_rise1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/dread_rise2",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "ambient.undertow_fray": {
+    "subtitle": "subtitles.extremedimensions.ambient.undertow_fray",
+    "sounds": [
+      {
+        "name": "extremedimensions:ambient/undertow_fray1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/undertow_fray2",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "ambient.undertow_nether": {
+    "subtitle": "subtitles.extremedimensions.ambient.undertow_nether",
+    "sounds": [
+      {
+        "name": "extremedimensions:ambient/undertow_nether1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/undertow_nether2",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "ambient.undertow_end": {
+    "subtitle": "subtitles.extremedimensions.ambient.undertow_end",
+    "sounds": [
+      {
+        "name": "extremedimensions:ambient/undertow_end1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "extremedimensions:ambient/undertow_end2",
+        "attenuation_distance": 48
+      }
+    ]
   }
 }

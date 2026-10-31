@@ -20,6 +20,7 @@ import com.extremedimensions.penalty.FleeService;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.world.AmbientService;
 import com.extremedimensions.world.WorldService;
 import com.google.gson.JsonObject;
 
@@ -525,6 +526,76 @@ public class LurkerTests {
 			}
 			helper.succeed();
 		});
+	}
+
+	/** The dread before a swarm: it swells first, the swarm waits for it, and leaving while it swells is a flight too. */
+	@GameTest(environment = Alone.SWARM_DREAD, maxTicks = 300)
+	public void theSwarmWaitsForItsDread(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Difficulty was = level.getDifficulty();
+		level.getServer().setDifficulty(Difficulty.NORMAL, true);
+		ServerPlayer p = TestPlayers.survivor(helper, "dread-prey");
+		place(helper, p, 3.5, 0, 3.5);
+		int lurkers = Config.LURKER_SWARM_LURKERS, young = Config.LURKER_SWARM_HOLLOWLINGS, dread = Config.AMBIENT_DREAD;
+		Runnable restore = () -> {
+			Config.LURKER_SWARM_LURKERS = lurkers;
+			Config.LURKER_SWARM_HOLLOWLINGS = young;
+			Config.AMBIENT_DREAD = dread;
+			for (Mob m : level.getEntitiesOfClass(Mob.class, new AABB(p.blockPosition()).inflate(48), e -> e instanceof Lurker || e instanceof Hollowling)) {
+				m.discard();
+			}
+			level.getServer().setDifficulty(was, true);
+		};
+		helper.runAfterDelay(70, () -> {
+			try {
+				Config.LURKER_SWARM_LURKERS = 1;
+				Config.LURKER_SWARM_HOLLOWLINGS = 0;
+				Config.AMBIENT_DREAD = 1;
+				check(helper, LurkerService.swarmComes(p), "no swarm set out");
+				check(helper, LurkerService.swarmComing(p) && LurkerService.swarming(p) == 0, "the swarm did not wait for its dread (%s came at once)",
+						LurkerService.swarming(p));
+				check(helper, "swarm".equals(FleeService.danger(p)), "the dread of a swarm left the player in danger %s", FleeService.danger(p));
+			} catch (RuntimeException e) {
+				restore.run();
+				throw e;
+			}
+		});
+		helper.runAfterDelay(70 + AmbientService.DREAD_TICKS + 5, () -> {
+			try {
+				check(helper, !LurkerService.swarmComing(p) && LurkerService.swarming(p) >= 1, "the swarm did not come when its dread broke off (%s came)",
+						LurkerService.swarming(p));
+			} finally {
+				restore.run();
+			}
+			helper.succeed();
+		});
+	}
+
+	/** The wound's sounds fit where a player is: deep down, by a hoard at night, in the Nether's biomes, the End, the Fray. */
+	@GameTest
+	public void theWoundSoundsFitThePlace(GameTestHelper helper) {
+		java.util.function.Function<AmbientService.Place, java.util.Set<String>> fits = pl -> new java.util.HashSet<>(AmbientService.choices(pl));
+		AmbientService.Place deep = new AmbientService.Place("overworld", "other", -30, false, true, false, false, false, false, false, false);
+		check(helper, fits.apply(deep).equals(java.util.Set.of("deep_groan", "far_steps")), "under the deepslate: %s", fits.apply(deep));
+		AmbientService.Place hoard = new AmbientService.Place("overworld", "other", 70, true, false, true, true, false, false, false, false);
+		check(helper, fits.apply(hoard).contains("hollow_far") && fits.apply(hoard).contains("far_shriek") && !fits.apply(hoard).contains("storm_tear"),
+				"by a hoard at night: %s", fits.apply(hoard));
+		AmbientService.Place day = new AmbientService.Place("overworld", "other", 70, true, false, false, false, false, false, false, false);
+		check(helper, fits.apply(day).isEmpty(), "out in the day: %s", fits.apply(day));
+		AmbientService.Place torn = new AmbientService.Place("overworld", "other", 70, true, false, false, false, true, false, false, false);
+		check(helper, fits.apply(torn).equals(java.util.Set.of("storm_tear")), "under a torn sky: %s", fits.apply(torn));
+		AmbientService.Place deltas = new AmbientService.Place("the_nether", "basalt_deltas", 30, false, false, false, false, false, false, false, false);
+		check(helper, fits.apply(deltas).equals(java.util.Set.of("basalt_deep", "undertow_nether", "ferryman_bell")), "in the deltas: %s", fits.apply(deltas));
+		AmbientService.Place wastes = new AmbientService.Place("the_nether", "nether_wastes", 80, false, false, false, false, false, false, false, false);
+		check(helper, fits.apply(wastes).equals(java.util.Set.of("ember_pulse")), "high in the wastes: %s", fits.apply(wastes));
+		AmbientService.Place outer = new AmbientService.Place("the_end", "other", 60, true, false, false, false, false, false, false, true);
+		check(helper, fits.apply(outer).equals(java.util.Set.of("undertow_end", "abyss_call")), "on the outer islands: %s", fits.apply(outer));
+		AmbientService.Place knot = new AmbientService.Place("the_seam", "other", 20, false, true, false, false, false, true, true, false);
+		java.util.List<String> byKnot = AmbientService.choices(knot);
+		check(helper, java.util.Collections.frequency(byKnot, "knot_heartbeat") >= 4 && byKnot.contains("undertow_fray"), "by a knot in the Fray: %s", byKnot);
+		AmbientService.Place seam = new AmbientService.Place("the_seam", "other", 120, true, false, false, false, false, false, false, false);
+		check(helper, fits.apply(seam).isEmpty(), "on the Seam's islands: %s", fits.apply(seam));
+		helper.succeed();
 	}
 
 	/**

@@ -22,8 +22,14 @@ jobs:
         run: chmod +x ./gradlew
       # Building also runs the server game tests on a headless dedicated server; a failing test fails the build
       - name: build and server game tests
-        run: ./gradlew build
+        run: |
+          set -o pipefail
+          ./gradlew build 2>&1 | tee build.log
         timeout-minutes: 20
+      # On a failure, what failed on its own (the build's log ends in a long list of test players leaving)
+      - name: what failed
+        if: failure()
+        run: grep -E -A14 "required tests failed|error:|FAILURE:" build.log | head -120 || true
       # The Mod Menu and Text Placeholder API stand-ins are only for compiling: the jar must not ship them
       - name: check the mod jar
         run: |

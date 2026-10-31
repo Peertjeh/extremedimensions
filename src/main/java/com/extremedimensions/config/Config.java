@@ -512,6 +512,14 @@ public final class Config {
 	public static int FRAYED_SEAM_THINNED = 2;
 	/** Veil Lantern: how near (blocks) a storm cannot break through. */
 	public static int VEIL_LANTERN_RANGE = 8;
+	/**
+	 * The wound's ambient sounds: the chance each look (every ten seconds or so) plays one, the least seconds between two
+	 * for one player, their volume, and whether the dread swells before a swarm (which waits for it) and a hunt.
+	 */
+	public static double AMBIENT_CHANCE = 0.25;
+	public static int AMBIENT_MIN_SECONDS = 60;
+	public static double AMBIENT_VOLUME = 1.0;
+	public static int AMBIENT_DREAD = 1;
 
 	// --- Relics: one bound to the Tether, each with a gift and a price -------------------------
 
@@ -1307,6 +1315,7 @@ public final class Config {
 			{"elder_ultimate_seconds", 2, 120}, {"elder_arena_linger_seconds", -1, 86400},
 			{"seam_build_budget_ms", 1, 50}, {"elder_arena_design_budget_ms", 1, 50}, {"seam_fly_range", 0, 128}, {"seam_fly_max", 1, 5000}, {"seam_fly_ticks", 10, 200},
 			{"seam_fly_from", 2, 64}, {"seam_damage", 0, 100},
+			{"ambient_chance", 0, 1}, {"ambient_min_seconds", 10, 3600}, {"ambient_volume", 0, 2}, {"ambient_dread", 0, 1},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},
 			{"seam_fray_ray_cooldown", 1, 120}, {"seam_fray_gloom", 0, 30}, {"seam_fray_gloom_every", 10, 3600}, {"seam_fray_unravel", 0, 1},
 			{"seam_briefing", 0, 100}, {"hud_boss_bar", 0, 1}, {"hints", 0, 1}, {"frame_silk", 0, 64}, {"first_knot_distance", 200, 5000}, {"knot_mother_rest", 0, 100000},

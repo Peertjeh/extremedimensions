@@ -108,6 +108,7 @@ public final class ServerEvents {
 			com.extremedimensions.tapestry.Tapestry.clear();
 			com.extremedimensions.seam.FirstKnot.clear();
 			LurkerService.clear();
+			com.extremedimensions.world.AmbientService.clear();
 			com.extremedimensions.penalty.FleeService.clear();
 			com.extremedimensions.penalty.AbyssalTolls.clear();
 			com.extremedimensions.penalty.AbyssalWorld.clear();
@@ -174,6 +175,7 @@ public final class ServerEvents {
 			com.extremedimensions.expedition.ExpeditionBar.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.binding.WoundLens.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.binding.Charms.forget(handler.getPlayer().getUUID());
+			com.extremedimensions.world.AmbientService.forget(handler.getPlayer().getUUID());
 			// Every player's inventory is saved with the world's data, so neither can run ahead of the other after a crash
 			// (a stopping server saves them all once itself)
 			if (s.isRunning()) {
@@ -675,6 +677,7 @@ public final class ServerEvents {
 		}
 		AnchorService.tick(s);
 		LurkerService.tick(s);
+		com.extremedimensions.world.AmbientService.tick(s);
 		com.extremedimensions.penalty.AbyssalTolls.serverTick(s);
 		com.extremedimensions.penalty.AbyssalWorld.serverTick(s);
 		HollowService.tick(s);
