@@ -86,15 +86,76 @@ public final class TribeMoves {
 		}
 	}
 
-	/** Goes after a creature: close by, in sight and over safe ground, straight at it; further off, by a kept route. */
+	/** How near it comes to what it follows: body to body, with a little room between them. */
+	static double keepOff(Mob m, Entity t) {
+		return (m.getBbWidth() + t.getBbWidth()) / 2 + 0.5;
+	}
+
+	/**
+	 * Goes after a creature: close by, in sight and over safe ground its whole body passes, straight at it; further off,
+	 * by a kept route. It aims a step short of its prey and stands once it is there, facing it: aimed at the middle of
+	 * something it already touches, it would turn on the spot round and round.
+	 */
 	public static void follow(Mob m, Entity t, double speed) {
-		if (m.distanceToSqr(t) < STRAIGHT * STRAIGHT && Math.abs(t.getY() - m.getY()) < 1.2 && m.hasLineOfSight(t)
-				&& m.level() instanceof ServerLevel level && clear(level, m.position(), t.position())) {
+		double dx = t.getX() - m.getX(), dz = t.getZ() - m.getZ();
+		double flat = Math.sqrt(dx * dx + dz * dz);
+		double off = keepOff(m, t);
+		boolean level = Math.abs(t.getY() - m.getY()) < 1.2;
+		if (level && flat < off + 0.25) {
 			m.getNavigation().stop();
-			m.getMoveControl().setWantedPosition(t.getX(), t.getY(), t.getZ(), speed);
+			m.getMoveControl().setWait();
+			m.getLookControl().setLookAt(t, 20, 20);
+			return;
+		}
+		if (level && flat < STRAIGHT && m.hasLineOfSight(t) && m.level() instanceof ServerLevel sl && clear(sl, m, t.position())) {
+			m.getNavigation().stop();
+			double k = (flat - off) / flat;
+			m.getMoveControl().setWantedPosition(m.getX() + dx * k, t.getY(), m.getZ() + dz * k, speed);
 			return;
 		}
 		go(m, t.getX(), t.getY(), t.getZ(), speed);
+	}
+
+	/** As {@link #clear(ServerLevel, Vec3, Vec3)}, and the creature's whole body passes all the way (no low lintel). */
+	static boolean clear(ServerLevel level, Mob m, Vec3 to) {
+		if (!clear(level, m.position(), to)) {
+			return false;
+		}
+		Vec3 d = to.subtract(m.position());
+		int steps = Math.max(1, (int) Math.ceil(d.horizontalDistance()));
+		for (int i = 1; i <= steps; i++) {
+			Vec3 q = d.scale(i / (double) steps);
+			if (!level.noCollision(m, m.getBoundingBox().move(q.x, q.y + 0.05, q.z))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Whether a creature cannot get to what it follows: not near on open ground it fits through, and no whole route there
+	 * (a house too low for it, a pillar, a hole). Works out a route, so it is asked now and then, not every tick.
+	 */
+	public static boolean blocked(Mob m, Entity t) {
+		if (!(m.level() instanceof ServerLevel level)) {
+			return false;
+		}
+		if (m.distanceToSqr(t) < STRAIGHT * STRAIGHT && Math.abs(t.getY() - m.getY()) < 1.2 && m.hasLineOfSight(t) && clear(level, m, t.position())) {
+			return false;
+		}
+		Path path = m.getNavigation().createPath(t, 1);
+		return path == null || !path.canReach();
+	}
+
+	/** Whether there is a roof over someone standing here (within three blocks over their head): a house, a tunnel. */
+	public static boolean sheltered(net.minecraft.world.level.Level level, BlockPos feet) {
+		for (int dy = 2; dy <= 4; dy++) {
+			BlockPos q = feet.above(dy);
+			if (!level.getBlockState(q).getCollisionShape(level, q).isEmpty()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Whether the straight way between two points runs over solid, safe ground with nothing to trip on. */

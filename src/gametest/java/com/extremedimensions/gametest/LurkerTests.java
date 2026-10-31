@@ -400,6 +400,107 @@ public class LurkerTests {
 		});
 	}
 
+	/** Close to its prey it stands and faces it; a little further off it aims a step short of it, never at its middle. */
+	@GameTest
+	public void aLurkerStandsAtItsPreyInsteadOfCircling(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer p = TestPlayers.survivor(helper, "lurker-circled");
+		Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(2, 0, 2)), EntitySpawnReason.COMMAND);
+		try {
+			check(helper, l != null, "no Lurker came");
+			place(helper, p, 2.5 + 1.3, 0, 2.5);
+			TribeMoves.follow(l, p, 1.0);
+			check(helper, !l.getMoveControl().hasWanted(), "a Lurker beside its prey still steps at it, and turns on the spot");
+			place(helper, p, 2.5 + 4.0, 0, 2.5);
+			TribeMoves.follow(l, p, 1.0);
+			check(helper, l.getMoveControl().hasWanted(), "a Lurker four blocks from its prey does not step towards it");
+			double dx = l.getMoveControl().getWantedX() - p.getX(), dz = l.getMoveControl().getWantedZ() - p.getZ();
+			double gap = Math.sqrt(dx * dx + dz * dz);
+			check(helper, gap > 1.2 && gap < 1.8, "a Lurker aims %s from its prey's middle, not a step short of it", gap);
+		} finally {
+			if (l != null) {
+				l.discard();
+			}
+		}
+		helper.succeed();
+	}
+
+	/** A house three blocks high around (4..6, 2..4), its door on the west side at x 3, z 3. */
+	private static void hut(GameTestHelper helper) {
+		for (int x = 3; x <= 7; x++) {
+			for (int z = 1; z <= 5; z++) {
+				helper.setBlock(new BlockPos(x, 3, z), Blocks.STONE);
+				for (int y = 0; y <= 2; y++) {
+					boolean wall = x == 3 || x == 7 || z == 1 || z == 5;
+					boolean door = x == 3 && z == 3;
+					helper.setBlock(new BlockPos(x, y, z), wall && !door ? Blocks.STONE.defaultBlockState() : Blocks.AIR.defaultBlockState());
+				}
+			}
+		}
+	}
+
+	/** Come to steal from a prey hiding in a house too low for it, a Lurker stands outside and sends its young in. */
+	@GameTest(environment = Alone.LURKER_HIDE, maxTicks = 260)
+	public void aLurkerSendsItsYoungAfterAPreyInAHouse(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		hut(helper);
+		ServerPlayer p = TestPlayers.survivor(helper, "lurker-hider");
+		place(helper, p, 5.5, 0, 3.5);
+		Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(11, 0, 3)), EntitySpawnReason.COMMAND);
+		helper.runAfterDelay(70, () -> {
+			check(helper, l != null, "no Lurker came");
+			p.getInventory().setItem(0, new ItemStack(Items.DIRT, 16));
+			LurkerService.adopt(level, l, p, "stalk");
+		});
+		helper.runAfterDelay(190, () -> {
+			try {
+				check(helper, LurkerService.holdingOut(l), "the Lurker never gave up the way into a house too low for it");
+				check(helper, LurkerService.sentYoung(l) && HollowService.errands(p.getUUID()) >= 1, "the Lurker sent no young in after its prey (%s out)",
+						HollowService.errands(p.getUUID()));
+			} finally {
+				for (Mob m : level.getEntitiesOfClass(Mob.class, new AABB(p.blockPosition()).inflate(32), e -> e instanceof Lurker || e instanceof Hollowling)) {
+					m.discard();
+				}
+			}
+			helper.succeed();
+		});
+	}
+
+	/** Come to hurt a prey it can see under a roof it cannot get under, a Lurker throws an ink bolt through the door. */
+	@GameTest(environment = Alone.LURKER_BOLT, maxTicks = 280)
+	public void aHuntingLurkerThrowsInkAtAPreyUnderARoof(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Difficulty was = level.getDifficulty();
+		level.getServer().setDifficulty(Difficulty.NORMAL, true);
+		hut(helper);
+		ServerPlayer p = TestPlayers.survivor(helper, "lurker-sheltered");
+		place(helper, p, 5.5, 0, 3.5);
+		Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(-1, 0, 3)), EntitySpawnReason.COMMAND);
+		double curse = Config.LURKER_CURSE_CHANCE;
+		int young = Config.LURKER_YOUNG;
+		helper.runAfterDelay(70, () -> {
+			check(helper, l != null, "no Lurker came");
+			Config.LURKER_CURSE_CHANCE = 0;
+			Config.LURKER_YOUNG = 0;
+			p.setHealth(20f);
+			LurkerService.adopt(level, l, p, "hunt");
+		});
+		helper.runAfterDelay(230, () -> {
+			try {
+				check(helper, LurkerService.holdingOut(l), "the Lurker never gave up the way under a roof too low for it");
+				check(helper, p.getHealth() < 20f, "no ink bolt reached the prey through the door (health %s)", p.getHealth());
+			} finally {
+				Config.LURKER_CURSE_CHANCE = curse;
+				Config.LURKER_YOUNG = young;
+				for (Mob m : level.getEntitiesOfClass(Mob.class, new AABB(p.blockPosition()).inflate(32), e -> e instanceof Lurker || e instanceof Hollowling)) {
+					m.discard();
+				}
+				level.getServer().setDifficulty(was, true);
+			}
+			helper.succeed();
+		});
+	}
+
 	/**
 	 * No way out by logging out: a blow from the tribe, then a swarm, put a player in danger; leaving then is noted, and
 	 * back they carry a curse and the swarm comes again. One who leaves in peace pays nothing.

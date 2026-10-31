@@ -69,6 +69,11 @@ public final class LurkerService {
 	private static final int TAKE_AT = 13;
 	/** A blow: how near it must come (blocks, centre to centre), its wind-up and the pause after it (ticks). */
 	private static final double STRIKE_REACH = 2.6;
+	/** An ink bolt at a prey it cannot reach but sees: how far it throws, and its wind-up (ticks). */
+	private static final double BOLT_RANGE = 24.0;
+	private static final int BOLT_WINDUP = 16;
+	/** How often it asks whether its prey is out of its way (it works out a route, so not every tick). */
+	private static final int BLOCK_CHECK = 10;
 	private static final int STRIKE_WINDUP = 10;
 	private static final int STRIKE_PAUSE = 16;
 	/** A Lurker's body (as its entity type has it): where it shows itself, it must fit. */
@@ -115,6 +120,11 @@ public final class LurkerService {
 		boolean reachIn;
 		/** One of a swarm: it hunts until the swarm is over, whatever its blows. */
 		boolean swarm;
+		/** Ticks its prey has been out of its way (no whole route there); whether it sent its young; its bolt (ticks). */
+		int blocked;
+		boolean sentYoung;
+		int boltIn;
+		int boltWindup;
 	}
 
 	private static final Map<UUID, State> STATES = new HashMap<>();
@@ -468,7 +478,8 @@ public final class LurkerService {
 
 	private static void watch(Lurker l, State st, ServerPlayer p, List<Runnable> later) {
 		l.getNavigation().stop();
-		l.getLookControl().setLookAt(p, 30, 30);
+		// it turns its head slowly after you, never with a jerk
+		l.getLookControl().setLookAt(p, 10, 10);
 		double dist = Math.sqrt(p.distanceToSqr(l));
 		if (seen(p, l, 0.985)) {
 			if (st.stared == 0) {
@@ -521,6 +532,17 @@ public final class LurkerService {
 		if (st.startDist <= 0) {
 			st.startDist = dist;
 		}
+		if (st.ticks % BLOCK_CHECK == 0) {
+			st.blocked = TribeMoves.blocked(l, p) ? st.blocked + BLOCK_CHECK : 0;
+		}
+		if (st.blocked >= blockedAfter()) {
+			// Its prey is somewhere it cannot follow (a house too low for it): it stands, and sends its young in
+			holdOut(l, st, p, false);
+			if (st.mode == Mode.STALK && st.ticks > st.limit) {
+				later.add(() -> vanish(l));
+			}
+			return;
+		}
 		if (seen(p, l, 0.9)) {
 			l.getNavigation().stop();
 			l.getLookControl().setLookAt(p, 30, 30);
@@ -530,7 +552,8 @@ public final class LurkerService {
 			TribeMoves.follow(l, p, speed);
 		}
 		double reach = takeReach();
-		if (reach > 0 && p.distanceToSqr(l) < reach * reach) {
+		// (never through a wall: it reaches for what it can see)
+		if (reach > 0 && p.distanceToSqr(l) < reach * reach && l.hasLineOfSight(p)) {
 			l.getNavigation().stop();
 			l.setLurkerPose(Lurker.POSE_TAKE);
 			st.mode = Mode.TAKE;
@@ -1042,6 +1065,14 @@ public final class LurkerService {
 			run(l, st, p, true);
 			return;
 		}
+		if (st.ticks % BLOCK_CHECK == 0) {
+			st.blocked = TribeMoves.blocked(l, p) ? st.blocked + BLOCK_CHECK : 0;
+		}
+		if (st.boltWindup > 0 || (st.blocked >= blockedAfter() && TribeMoves.sheltered(l.level(), p.blockPosition()))) {
+			// Under a roof it cannot get under: an ink bolt when it sees its prey, its young when it does not
+			holdOut(l, st, p, true);
+			return;
+		}
 		if (st.pause > 0) {
 			st.pause--;
 		}
@@ -1071,6 +1102,100 @@ public final class LurkerService {
 		if (st.ticks % 4 == 0) {
 			WorldFx.particleIn(Dims.fullId(p), "minecraft:dust{color:[0.9,0.1,0.08],scale:0.8}", l.getX(), l.getY() + 1.6, l.getZ(), 0.4, 0.8, 0.4, 0.0, 2);
 		}
+	}
+
+	private static int blockedAfter() {
+		return Math.max(1, Config.LURKER_BLOCKED_SECONDS) * 20;
+	}
+
+	/**
+	 * Its prey hides where it cannot follow. It stops and stands, facing them, rather than circling the house. Come to
+	 * hurt and in sight of them (a window, a door), it throws ink bolts; out of sight, or come to steal, it sends two
+	 * of its young in after them: to bite, or to bring it what they take. Once the young bring it something, it runs.
+	 */
+	private static void holdOut(Lurker l, State st, ServerPlayer p, boolean hunter) {
+		l.getNavigation().stop();
+		l.getMoveControl().setWait();
+		l.getLookControl().setLookAt(p, 12, 12);
+		if (st.boltWindup > 0) {
+			bolt(l, st, p);
+			return;
+		}
+		if (hunter && Config.LURKER_BOLT_DAMAGE > 0 && l.hasLineOfSight(p) && l.distanceTo(p) <= BOLT_RANGE) {
+			if (st.boltIn > 0) {
+				st.boltIn--;
+			} else {
+				st.boltWindup = BOLT_WINDUP;
+				l.setLurkerPose(Lurker.POSE_TAKE);
+				WorldFx.soundIn(Dims.fullId(p), "extremedimensions:lurker_whisper", "hostile", l.getX(), l.getY() + 2.5, l.getZ(), 1.6f, 0.5f);
+			}
+			return;
+		}
+		if (!st.sentYoung && Config.LURKER_YOUNG > 0) {
+			st.sentYoung = true;
+			sendYoung(l, st, p, hunter);
+		}
+		if (!hunter && st.loot.any()) {
+			run(l, st, p, false);
+		}
+	}
+
+	/** The bolt gathers in its hand as ink drawn out of the air, then flies; it lands only on a prey still in its line. */
+	private static void bolt(Lurker l, State st, ServerPlayer p) {
+		double yaw = Math.toRadians(l.getYRot());
+		if (st.boltWindup % 3 == 0) {
+			WorldFx.particleIn(Dims.fullId(p), "minecraft:squid_ink", l.getX() - Math.sin(yaw) * 0.9, l.getY() + 2.4, l.getZ() + Math.cos(yaw) * 0.9,
+					0.2, 0.2, 0.2, 0.01, 5);
+		}
+		if (--st.boltWindup > 0) {
+			return;
+		}
+		l.setLurkerPose(Lurker.POSE_STALK);
+		st.boltIn = Math.max(1, Config.LURKER_BOLT_SECONDS) * 20;
+		TribeMoves.reachLine(l, p, "minecraft:squid_ink");
+		WorldFx.soundIn(Dims.fullId(p), "extremedimensions:lurker_shriek", "hostile", l.getX(), l.getY() + 2.5, l.getZ(), 1.2f, 1.4f);
+		// (a step behind a wall, and it splashes on the stone)
+		if (l.hasLineOfSight(p) && l.distanceTo(p) <= BOLT_RANGE + 2 && hurt(l, p, Config.LURKER_BOLT_DAMAGE, false)) {
+			WorldFx.particles(p, "minecraft:squid_ink", 0.6, 0.6, 0.05, 14);
+			st.blows++;
+			curseChance(l, st, p);
+			if (!st.swarm && st.blows >= Math.max(1, Config.LURKER_STRIKE_BLOWS)) {
+				run(l, st, p, false);
+			}
+		}
+	}
+
+	/** It calls its young out of the dark to do what it cannot: two of them, from where it stands. */
+	private static void sendYoung(Lurker l, State st, ServerPlayer p, boolean bite) {
+		List<UUID> sent = HollowService.errand((ServerLevel) l.level(), l.blockPosition(), p, l.getUUID(), bite, Config.LURKER_YOUNG, Config.LURKER_YOUNG_SECONDS);
+		if (sent.isEmpty()) {
+			return;
+		}
+		st.limit = Math.max(st.limit, st.ticks + (Math.max(5, Config.LURKER_YOUNG_SECONDS) + 10) * 20);
+		WorldFx.soundIn(Dims.fullId(p), "extremedimensions:lurker_shriek", "hostile", l.getX(), l.getY() + 2.5, l.getZ(), 1.0f, 1.7f);
+		WorldFx.soundIn(Dims.fullId(p), "extremedimensions:hollowling_giggle", "hostile", l.getX(), l.getY() + 0.8, l.getZ(), 1.0f, 0.8f);
+	}
+
+	/** One of its young brings it what it took from its prey. False when this Lurker is no longer about to take it. */
+	public static boolean receive(UUID lurker, ItemStack stack, UUID from) {
+		State st = STATES.get(lurker);
+		if (st == null || stack.isEmpty()) {
+			return false;
+		}
+		st.loot.stacks.add(stack);
+		st.loot.from = from;
+		return true;
+	}
+
+	/** For the tests: whether this Lurker's prey is out of its way, and whether it sent its young. */
+	public static boolean holdingOut(Lurker l) {
+		State st = STATES.get(l.getUUID());
+		return st != null && st.blocked >= blockedAfter();
+	}
+
+	public static boolean sentYoung(Lurker l) {
+		State st = STATES.get(l.getUUID());
+		return st != null && st.sentYoung;
 	}
 
 	/**

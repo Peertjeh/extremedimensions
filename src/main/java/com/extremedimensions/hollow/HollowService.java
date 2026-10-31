@@ -18,6 +18,7 @@ import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.lore.Loot;
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.lurker.LurkerBody;
+import com.extremedimensions.lurker.LurkerService;
 import com.extremedimensions.lurker.TribeMoves;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEntities;
@@ -84,7 +85,7 @@ import net.minecraft.world.effect.MobEffects;
 public final class HollowService {
 	private HollowService() {}
 
-	enum Mode { IDLE, FROZEN, SNEAK, CARRY, FLEE, COMPANION, BARTER, ATTACK }
+	enum Mode { IDLE, FROZEN, SNEAK, CARRY, FLEE, COMPANION, BARTER, ATTACK, FETCH }
 
 	/** A Keeper's body (as its entity type has it): where it is set down or blinks to, it must fit. */
 	private static final double KEEPER_WIDTH = 1.6, KEEPER_HEIGHT = 4.2;
@@ -712,6 +713,8 @@ public final class HollowService {
 				companion(h, st, later);
 			} else if (st.mode == Mode.ATTACK) {
 				attack(h, st, later);
+			} else if (st.mode == Mode.FETCH) {
+				fetch(h, st, later);
 			} else {
 				little(h, st, later);
 			}
@@ -882,6 +885,21 @@ public final class HollowService {
 			flee(h, st);
 			return;
 		}
+		ItemStack took = takeFrom(p);
+		if (took.isEmpty()) {
+			flee(h, st);
+			return;
+		}
+		st.carried = took;
+		giggle(h);
+		WorldFx.particles(p, "extremedimensions:lurker_wisp", 0.8, 0.3, 0.0, 6);
+		Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.LITTLE_THIEVES);
+		st.mode = Mode.FLEE;
+		st.ticks = 0;
+	}
+
+	/** One to three of something small from the player's pockets (no tools, weapons, armour or the mod's own); empty if none. */
+	private static ItemStack takeFrom(ServerPlayer p) {
 		var inv = p.getInventory();
 		List<Integer> slots = new ArrayList<>();
 		for (int i = 0; i < 36; i++) {
@@ -890,17 +908,11 @@ public final class HollowService {
 			}
 		}
 		if (slots.isEmpty()) {
-			flee(h, st);
-			return;
+			return ItemStack.EMPTY;
 		}
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		ItemStack from = inv.getItem(slots.get(rnd.nextInt(slots.size())));
-		st.carried = from.split(Math.min(from.getCount(), 1 + rnd.nextInt(3)));
-		giggle(h);
-		WorldFx.particles(p, "extremedimensions:lurker_wisp", 0.8, 0.3, 0.0, 6);
-		Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.LITTLE_THIEVES);
-		st.mode = Mode.FLEE;
-		st.ticks = 0;
+		return from.split(Math.min(from.getCount(), 1 + rnd.nextInt(3)));
 	}
 
 	public static boolean ignoreHurt(Hollowling h, DamageSource source) {
@@ -912,7 +924,7 @@ public final class HollowService {
 	public static void onHollowlingHurt(Hollowling h, DamageSource source) {
 		Little st = LITTLES.get(h.getUUID());
 		// (a swarm's young bite on whatever hurts them; a bush or a burn makes none of them run)
-		if (st == null || st.mode == Mode.COMPANION || st.mode == Mode.ATTACK || !TribeMoves.struck(source)) {
+		if (st == null || st.mode == Mode.COMPANION || st.mode == Mode.ATTACK || st.mode == Mode.FETCH || !TribeMoves.struck(source)) {
 			return;
 		}
 		flee(h, st);
@@ -1541,6 +1553,9 @@ public final class HollowService {
 			if (st.mode == Mode.ATTACK && p.getUUID().equals(st.prey) && near(e.getKey(), p)) {
 				return "swarm";
 			}
+			if (st.mode == Mode.FETCH && p.getUUID().equals(st.prey) && near(e.getKey(), p)) {
+				return "hunt";
+			}
 		}
 		for (Map.Entry<UUID, Guard> e : KEEPERS.entrySet()) {
 			if (p.getUUID().equals(e.getValue().target) && near(e.getKey(), p)) {
@@ -1553,6 +1568,94 @@ public final class HollowService {
 	private static boolean near(UUID id, ServerPlayer p) {
 		ServerLevel level = LEVELS.get(id);
 		return level == p.level() && level.getEntity(id) instanceof LivingEntity e && e.isAlive() && e.distanceToSqr(p) < 64 * 64;
+	}
+
+	/**
+	 * Sent in by a Lurker after a prey hiding where it cannot follow: young that fit where it does not. To bite (glowing
+	 * red, as a swarm's young), or to fetch (glowing blue): each takes something and runs back to the Lurker with it.
+	 * They come from beside the Lurker, cost no standing to kill, and fade when their time is up. Their ids.
+	 */
+	public static List<UUID> errand(ServerLevel level, BlockPos from, ServerPlayer p, UUID lurker, boolean bite, int count, int seconds) {
+		List<UUID> out = new ArrayList<>();
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		String dim = level.dimension().identifier().toString();
+		for (int i = 0; i < count; i++) {
+			BlockPos spot = null;
+			for (int t = 0; t < 12 && spot == null; t++) {
+				BlockPos c = from.offset(rnd.nextInt(-3, 4), rnd.nextInt(-1, 2), rnd.nextInt(-3, 4));
+				if (Loaded.ready(level, c) && TribeMoves.roomFor(level, c, 0.6, 1.1)) {
+					spot = c;
+				}
+			}
+			if (spot == null) {
+				continue;
+			}
+			Little st = new Little();
+			st.mode = bite ? Mode.ATTACK : Mode.FETCH;
+			st.brood = true;
+			st.bold = true;
+			st.prey = p.getUUID();
+			st.owner = lurker;
+			st.until = Math.max(5, seconds) * 20;
+			st.pause = 10 + rnd.nextInt(10);
+			Hollowling h = spawnLittle(level, spot, st);
+			if (h != null) {
+				h.setLurkerMood(bite ? LurkerBody.MOOD_HUNTER : LurkerBody.MOOD_THIEF);
+				out.add(h.getUUID());
+				WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", spot.getX() + 0.5, spot.getY() + 0.5, spot.getZ() + 0.5, 0.3, 0.4, 0.3, 0.0, 12);
+			}
+		}
+		return out;
+	}
+
+	/** Sent to fetch: in after the prey (being watched does not stop it), one thing taken, and back out to the Lurker. */
+	private static void fetch(Hollowling h, Little st, List<Runnable> later) {
+		ServerPlayer p = st.prey == null ? null : WorldFx.server().getPlayerList().getPlayer(st.prey);
+		if (p == null || !p.isAlive() || p.isCreative() || p.isSpectator() || p.level() != h.level() || st.ticks > st.until) {
+			later.add(() -> fade(h));
+			return;
+		}
+		if (st.carried.isEmpty()) {
+			h.setLurkerPose(Lurker.POSE_STALK);
+			if (st.ticks % 5 == 0) {
+				TribeMoves.follow(h, p, 1.25);
+			}
+			if (h.distanceToSqr(p) < 1.9 * 1.9) {
+				ItemStack took = takeFrom(p);
+				if (took.isEmpty()) {
+					later.add(() -> fade(h));
+					return;
+				}
+				st.carried = took;
+				giggle(h);
+				WorldFx.particles(p, "extremedimensions:lurker_wisp", 0.8, 0.3, 0.0, 6);
+				Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.LITTLE_THIEVES);
+			}
+			return;
+		}
+		Entity lurker = st.owner == null ? null : ((ServerLevel) h.level()).getEntity(st.owner);
+		if (!(lurker instanceof Lurker) || !lurker.isAlive()) {
+			// nobody to bring it to: it lets go of it where it stands
+			later.add(() -> fade(h));
+			return;
+		}
+		h.setLurkerPose(Lurker.POSE_RUN);
+		if (st.ticks % 8 == 0) {
+			TribeMoves.go(h, lurker.getX(), lurker.getY(), lurker.getZ(), 1.35);
+		}
+		if (h.distanceToSqr(lurker) < 3.0 * 3.0 && LurkerService.receive(lurker.getUUID(), st.carried, p.getUUID())) {
+			st.carried = ItemStack.EMPTY;
+			later.add(() -> fade(h));
+		}
+	}
+
+	/** For the tests: how many young are out after this player on a Lurker's errand (biting or fetching). */
+	public static int errands(UUID prey) {
+		int n = 0;
+		for (Little st : LITTLES.values()) {
+			n += (st.mode == Mode.FETCH || st.mode == Mode.ATTACK) && prey.equals(st.prey) && st.owner != null ? 1 : 0;
+		}
+		return n;
 	}
 
 	/** For the tests: how many young of the tribe are biting at a swarm's prey right now. */

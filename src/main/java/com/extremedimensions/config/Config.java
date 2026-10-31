@@ -325,6 +325,16 @@ public final class Config {
 	public static int LURKER_SWARM_SECONDS = 45;
 	/** Damage of each bite of a swarm's young (half-hearts). */
 	public static double LURKER_SWARM_BITE = 3.0;
+	/**
+	 * A prey hiding where a Lurker cannot follow (a house too low for it): seconds before it stops trying, then the ink
+	 * bolt it throws when it sees them (damage in half-hearts, seconds between bolts) and the young it sends in when it
+	 * does not, or when it came to steal (how many, and how long they stay).
+	 */
+	public static int LURKER_BLOCKED_SECONDS = 3;
+	public static double LURKER_BOLT_DAMAGE = 4.0;
+	public static int LURKER_BOLT_SECONDS = 4;
+	public static int LURKER_YOUNG = 2;
+	public static int LURKER_YOUNG_SECONDS = 30;
 
 	// --- Leaving in danger ----------------------------------------------------------------------
 
@@ -1321,6 +1331,8 @@ public final class Config {
 			{"lurker_strike_blows", 1, 20}, {"lurker_strike_speed", 0.5, 3}, {"lurker_strike_seconds", 5, 300}, {"lurker_swarm_chance", 0, 1}, {"lurker_swarm_lurkers", 0, 12},
 				{"lurker_swarm_hollowlings", 0, 24}, {"lurker_swarm_seconds", 5, 300}, {"lurker_swarm_bite", 0, 40}, {"keeper_reach_damage", 0, 40},
 				{"flee_curses", 0, 5}, {"flee_danger_seconds", 0, 120}, {"flee_returns", 0, 1},
+				{"lurker_blocked_seconds", 1, 30}, {"lurker_bolt_damage", 0, 40}, {"lurker_bolt_seconds", 1, 60}, {"lurker_young", 0, 6},
+				{"lurker_young_seconds", 5, 120},
 				{"tribe_gift_minutes", 0, 240}, {"tribe_gift_cost", 1, 10}, {"atone_kill_area_shared", 0, 1}, {"atone_spawner_radius", 0, 64}, {"coop_burden_relief_per_day", 0, 100},
 			{"tapestry_respin_silk", 0, 64}, {"tapestry_roots_gifts", 1, 10}, {"tapestry_toll_drain", 0, 1}, {"tapestry_unravelling_share", 3, 20},
 			{"tapestry_knot_fray", 0, 10}, {"tapestry_knot_strands", 0, 1}, {"tapestry_heart_echo", 0, 1}, {"weaving_seconds", 30, 3600},
