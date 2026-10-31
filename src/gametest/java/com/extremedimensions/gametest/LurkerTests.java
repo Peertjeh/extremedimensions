@@ -446,17 +446,28 @@ public class LurkerTests {
 		hut(helper);
 		ServerPlayer p = TestPlayers.survivor(helper, "lurker-hider");
 		place(helper, p, 5.5, 0, 3.5);
-		Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(11, 0, 3)), EntitySpawnReason.COMMAND);
+		// (on the test's own floor, round the corner from the door)
+		Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(1, 0, 6)), EntitySpawnReason.COMMAND);
 		helper.runAfterDelay(70, () -> {
 			check(helper, l != null, "no Lurker came");
 			p.getInventory().setItem(0, new ItemStack(Items.DIRT, 16));
 			LurkerService.adopt(level, l, p, "stalk");
 		});
-		helper.runAfterDelay(190, () -> {
+		// What it does is watched every tick: the young may bring it the dirt, and then it runs off with it
+		boolean[] heldOut = {false};
+		int[] young = {0};
+		for (int t = 71; t <= 200; t++) {
+			helper.runAfterDelay(t, () -> {
+				if (l != null) {
+					heldOut[0] |= LurkerService.holdingOut(l);
+					young[0] = Math.max(young[0], LurkerService.sentYoung(l) ? HollowService.errands(p.getUUID()) : 0);
+				}
+			});
+		}
+		helper.runAfterDelay(201, () -> {
 			try {
-				check(helper, LurkerService.holdingOut(l), "the Lurker never gave up the way into a house too low for it");
-				check(helper, LurkerService.sentYoung(l) && HollowService.errands(p.getUUID()) >= 1, "the Lurker sent no young in after its prey (%s out)",
-						HollowService.errands(p.getUUID()));
+				check(helper, heldOut[0], "the Lurker never gave up the way into a house too low for it (it is %s at %s)", LurkerService.mode(l), l.blockPosition());
+				check(helper, young[0] >= 1, "the Lurker sent no young in after its prey");
 			} finally {
 				for (Mob m : level.getEntitiesOfClass(Mob.class, new AABB(p.blockPosition()).inflate(32), e -> e instanceof Lurker || e instanceof Hollowling)) {
 					m.discard();
@@ -475,7 +486,8 @@ public class LurkerTests {
 		hut(helper);
 		ServerPlayer p = TestPlayers.survivor(helper, "lurker-sheltered");
 		place(helper, p, 5.5, 0, 3.5);
-		Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(-1, 0, 3)), EntitySpawnReason.COMMAND);
+		// (on the test's own floor before the door, too far from the prey for its arms)
+		Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(1, 0, 3)), EntitySpawnReason.COMMAND);
 		double curse = Config.LURKER_CURSE_CHANCE;
 		int young = Config.LURKER_YOUNG;
 		helper.runAfterDelay(70, () -> {
@@ -485,10 +497,21 @@ public class LurkerTests {
 			p.setHealth(20f);
 			LurkerService.adopt(level, l, p, "hunt");
 		});
-		helper.runAfterDelay(230, () -> {
+		// Watched every tick: a player heals back what one bolt took well before the test ends
+		boolean[] heldOut = {false};
+		float[] lowest = {20f};
+		for (int t = 71; t <= 230; t++) {
+			helper.runAfterDelay(t, () -> {
+				if (l != null) {
+					heldOut[0] |= LurkerService.holdingOut(l);
+				}
+				lowest[0] = Math.min(lowest[0], p.getHealth());
+			});
+		}
+		helper.runAfterDelay(231, () -> {
 			try {
-				check(helper, LurkerService.holdingOut(l), "the Lurker never gave up the way under a roof too low for it");
-				check(helper, p.getHealth() < 20f, "no ink bolt reached the prey through the door (health %s)", p.getHealth());
+				check(helper, heldOut[0], "the Lurker never gave up the way under a roof too low for it (it is %s at %s)", LurkerService.mode(l), l.blockPosition());
+				check(helper, lowest[0] < 20f, "no ink bolt reached the prey through the door (its blows: %s)", LurkerService.blows(l));
 			} finally {
 				Config.LURKER_CURSE_CHANCE = curse;
 				Config.LURKER_YOUNG = young;

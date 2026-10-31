@@ -343,6 +343,8 @@ public class PerfTests {
 	private record Elder(String name, Class<? extends ElderBoss> kind, java.util.function.Predicate<ServerPlayer> call,
 			java.util.function.Consumer<ElderBoss> ultimate, java.util.function.Consumer<ElderBoss> fade) {}
 
+	/** A stall caught in the game handing out a chunk that may still be loading (not getChunkNow, which only looks). */
+	private static final java.util.regex.Pattern WAITS_ON_CHUNK = java.util.regex.Pattern.compile("ServerChunkCache\\.getChunk(?!Now)");
 	/** Ticks the world round the fight is given to load, the quiet ticks measured before it, and the fight's own. */
 	private static final int LOAD = 100, CALM = 40, FIGHT = 400;
 	/** When in the fight its ultimate is forced (once it has formed); the ultimate lasts {@code elder_ultimate_seconds}. */
@@ -469,7 +471,8 @@ public class PerfTests {
 			String waited = null;
 			for (String stall : TickProfile.stalls()) {
 				report(elder.name().toLowerCase(java.util.Locale.ROOT) + " fight, a part ran long", stall);
-				waited = waited == null && stall.contains("ServerChunkCache.getChunk") ? stall : waited;
+				// (getChunkNow never waits: a long part only happened to be caught in it)
+				waited = waited == null && WAITS_ON_CHUNK.matcher(stall).find() ? stall : waited;
 			}
 			boolean fought = boss[0] != null && boss[0].isAlive();
 			int standing = ElderArena.standing();
