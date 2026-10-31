@@ -446,27 +446,29 @@ public class LurkerTests {
 		hut(helper);
 		ServerPlayer p = TestPlayers.survivor(helper, "lurker-hider");
 		place(helper, p, 5.5, 0, 3.5);
-		// (on the test's own floor, round the corner from the door)
-		Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(1, 0, 6)), EntitySpawnReason.COMMAND);
+		// (it comes once the player's grace on joining is over, on the test's own floor round the corner from the door;
+		// one nobody drives dissolves, so it is taken in hand at once)
+		Lurker[] in = {null};
 		helper.runAfterDelay(70, () -> {
-			check(helper, l != null, "no Lurker came");
+			in[0] = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(1, 0, 6)), EntitySpawnReason.COMMAND);
+			check(helper, in[0] != null, "no Lurker came");
 			p.getInventory().setItem(0, new ItemStack(Items.DIRT, 16));
-			LurkerService.adopt(level, l, p, "stalk");
+			LurkerService.adopt(level, in[0], p, "stalk");
 		});
 		// What it does is watched every tick: the young may bring it the dirt, and then it runs off with it
 		boolean[] heldOut = {false};
 		int[] young = {0};
 		for (int t = 71; t <= 200; t++) {
 			helper.runAfterDelay(t, () -> {
-				if (l != null) {
-					heldOut[0] |= LurkerService.holdingOut(l);
-					young[0] = Math.max(young[0], LurkerService.sentYoung(l) ? HollowService.errands(p.getUUID()) : 0);
+				if (in[0] != null) {
+					heldOut[0] |= LurkerService.holdingOut(in[0]);
+					young[0] = Math.max(young[0], LurkerService.sentYoung(in[0]) ? HollowService.errands(p.getUUID()) : 0);
 				}
 			});
 		}
 		helper.runAfterDelay(201, () -> {
 			try {
-				check(helper, heldOut[0], "the Lurker never gave up the way into a house too low for it (it is %s at %s)", LurkerService.mode(l), l.blockPosition());
+				check(helper, heldOut[0], "the Lurker never gave up the way into a house too low for it (it is %s at %s)", LurkerService.mode(in[0]), in[0].blockPosition());
 				check(helper, young[0] >= 1, "the Lurker sent no young in after its prey");
 			} finally {
 				for (Mob m : level.getEntitiesOfClass(Mob.class, new AABB(p.blockPosition()).inflate(32), e -> e instanceof Lurker || e instanceof Hollowling)) {
@@ -487,31 +489,32 @@ public class LurkerTests {
 		ServerPlayer p = TestPlayers.survivor(helper, "lurker-sheltered");
 		place(helper, p, 5.5, 0, 3.5);
 		// (on the test's own floor before the door, too far from the prey for its arms)
-		Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(1, 0, 3)), EntitySpawnReason.COMMAND);
+		Lurker[] in = {null};
 		double curse = Config.LURKER_CURSE_CHANCE;
 		int young = Config.LURKER_YOUNG;
 		helper.runAfterDelay(70, () -> {
-			check(helper, l != null, "no Lurker came");
+			in[0] = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(1, 0, 3)), EntitySpawnReason.COMMAND);
+			check(helper, in[0] != null, "no Lurker came");
 			Config.LURKER_CURSE_CHANCE = 0;
 			Config.LURKER_YOUNG = 0;
 			p.setHealth(20f);
-			LurkerService.adopt(level, l, p, "hunt");
+			LurkerService.adopt(level, in[0], p, "hunt");
 		});
 		// Watched every tick: a player heals back what one bolt took well before the test ends
 		boolean[] heldOut = {false};
 		float[] lowest = {20f};
 		for (int t = 71; t <= 230; t++) {
 			helper.runAfterDelay(t, () -> {
-				if (l != null) {
-					heldOut[0] |= LurkerService.holdingOut(l);
+				if (in[0] != null) {
+					heldOut[0] |= LurkerService.holdingOut(in[0]);
 				}
 				lowest[0] = Math.min(lowest[0], p.getHealth());
 			});
 		}
 		helper.runAfterDelay(231, () -> {
 			try {
-				check(helper, heldOut[0], "the Lurker never gave up the way under a roof too low for it (it is %s at %s)", LurkerService.mode(l), l.blockPosition());
-				check(helper, lowest[0] < 20f, "no ink bolt reached the prey through the door (its blows: %s)", LurkerService.blows(l));
+				check(helper, heldOut[0], "the Lurker never gave up the way under a roof too low for it (it is %s at %s)", LurkerService.mode(in[0]), in[0].blockPosition());
+				check(helper, lowest[0] < 20f, "no ink bolt reached the prey through the door (its blows: %s)", LurkerService.blows(in[0]));
 			} finally {
 				Config.LURKER_CURSE_CHANCE = curse;
 				Config.LURKER_YOUNG = young;
