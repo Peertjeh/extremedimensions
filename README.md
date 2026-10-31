@@ -86,7 +86,8 @@ an unweaving the loom waits three days for you.
   pulsing **blue** comes to steal (its claw hurts, it takes several things and may leave a curse); one glowing **red**
   comes to hurt, with blows you see coming; struck, one may turn on you. They hit harder on Hard and Extreme, and on
   Extreme the whole tribe may come at once, Lurkers and their young, all glowing red. A fall or a low roof does them no
-  harm; a ledge they leap, and out of reach is no hiding place: they reach in and drag you out. Nor is logging out:
+  harm; a ledge they leap, and out of reach is no hiding place: they reach in and drag you out, and a house too low
+  for them gets an ink bolt through the door or their young sent in after you. Nor is logging out:
   leave while the wound is after you and you come back cursed, with the hunt waiting. Hollowlings can be befriended,
   slowly. After the Dragon falls, **Wound Storms** tear the sky.
 
@@ -147,8 +148,12 @@ Trials past gold), and the tapestry's boons stay.
 - **Co-op**: fallen players can be revived, curses carried for a friend, anchors shared. Every player has their own
   time.
 - **55 advancements**, the recipe book through them, a bestiary and a ledger in the journal.
-- **A music disc**: *Tick of the Boundary* on a record of its own, now and then in a barrel of the Thinned in the Seam
-  (the richer the barrel, the likelier); it plays in any jukebox.
+- **Two music discs**: *Tick of the Boundary* on a record of its own, now and then in a barrel of the Thinned in the
+  Seam (the richer the barrel, the likelier), and *What the Wound Remembers*, made from the wound's own sounds, in the
+  Fray's tangles and the tribe's hoards; both play in any jukebox.
+- **The wound's sounds**: ambient sounds as Minecraft has its cave moods, fourteen kinds where they fit (the deep's
+  groan, giggling by a hoard at night, the sky tearing, the Nether's heat and the Ferryman's bell, the undertow, a
+  knot's heartbeat), and the dread that swells before a swarm.
 - **Title and loading screens**: the picture of the Tether, with its own music (*Tick of the Boundary* on the menus,
   *Ominous Loading Screen* while a world loads, until you stand in it). Under Display it can be the art only, the
   music only, or Minecraft's own.

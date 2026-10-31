@@ -79,6 +79,9 @@ public final class ModItems {
 	public static final ResourceKey<JukeboxSong> TICK_OF_THE_BOUNDARY = ResourceKey.create(Registries.JUKEBOX_SONG, ExtremeDimensions.id("tick_of_the_boundary"));
 	/** A music disc like Minecraft's own, found now and then in the barrels of the Thinned. */
 	public static final Item MUSIC_DISC_TICK_OF_THE_BOUNDARY = disc("music_disc_tick_of_the_boundary", TICK_OF_THE_BOUNDARY);
+	/** The wound's own song, made from its ambient sounds, and its disc: in the Fray's tangles and the tribe's hoards. */
+	public static final ResourceKey<JukeboxSong> WOUND_REMEMBERS = ResourceKey.create(Registries.JUKEBOX_SONG, ExtremeDimensions.id("wound_remembers"));
+	public static final Item MUSIC_DISC_WOUND_REMEMBERS = disc("music_disc_wound_remembers", WOUND_REMEMBERS);
 
 	/** The relics: bound to the Tether one at a time, each with a gift and a price (see Relic). */
 	public static final java.util.Map<com.extremedimensions.relic.Relic, Item> RELICS = relics();

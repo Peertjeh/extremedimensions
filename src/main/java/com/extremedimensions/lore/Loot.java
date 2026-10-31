@@ -52,6 +52,27 @@ public final class Loot {
 	/** What the Endermen leave when they finish a ring unwatched. */
 	public static final String UNANCHORED = "gameplay/unanchored";
 
+	/**
+	 * Now and then the wound's own record, "What the Wound Remembers", among what a Fray tangle or a hoard holds. Like the
+	 * relics it is not in the tables: how often it comes is a world rule (music_disc_wound_chance).
+	 */
+	public static boolean woundDisc() {
+		return java.util.concurrent.ThreadLocalRandom.current().nextDouble() < com.extremedimensions.config.Config.MUSIC_DISC_WOUND_CHANCE;
+	}
+
+	/** The wound's record into the first free slot of a container, now and then (see woundDisc). */
+	public static void woundDisc(Container c) {
+		if (!woundDisc()) {
+			return;
+		}
+		for (int slot = 0; slot < c.getContainerSize(); slot++) {
+			if (c.getItem(slot).isEmpty()) {
+				c.setItem(slot, new ItemStack(com.extremedimensions.registry.ModItems.MUSIC_DISC_WOUND_REMEMBERS));
+				return;
+			}
+		}
+	}
+
 	/** For tests: a table read in place of one of the mod's, as a datapack would replace it. */
 	private static final Map<String, Identifier> STANDINS = new HashMap<>();
 

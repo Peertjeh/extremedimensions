@@ -233,6 +233,9 @@ public final class RaidService {
 		if (ThreadLocalRandom.current().nextDouble() < Config.TRIBE_RAID_RELIC_CHANCE) {
 			out.add(RelicService.random());
 		}
+		if (Loot.woundDisc()) {
+			out.add(new ItemStack(com.extremedimensions.registry.ModItems.MUSIC_DISC_WOUND_REMEMBERS));
+		}
 		return out;
 	}
 }

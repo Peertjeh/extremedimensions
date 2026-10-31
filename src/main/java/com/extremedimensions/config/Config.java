@@ -451,6 +451,8 @@ public final class Config {
 	 * 2 a village's, 3 a colossus's reliquary, 4 a tangle in the Fray): 0.02 is 2% to 8%. 0: never.
 	 */
 	public static double SEAM_MUSIC_DISC_CHANCE = 0.02;
+	/** Chance a tangle in the Fray, an old hoard or a raided one holds the music disc "What the Wound Remembers". 0: never. */
+	public static double MUSIC_DISC_WOUND_CHANCE = 0.05;
 
 	// --- After the Dragon and the Mending --------------------------------------------------------
 

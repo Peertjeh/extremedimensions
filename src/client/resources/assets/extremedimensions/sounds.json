@@ -212,6 +212,14 @@
       }
     ]
   },
+  "music_disc.wound_remembers": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/wound_remembers",
+        "stream": true
+      }
+    ]
+  },
   "elder.matriarch.voice": {
     "subtitle": "subtitles.extremedimensions.elder.matriarch.voice",
     "sounds": [

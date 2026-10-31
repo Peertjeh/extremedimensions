@@ -1290,6 +1290,10 @@ public final class SeamService {
 				}
 			}
 		}
+		if (richness >= 4) {
+			// and in the Fray's tangles, the wound's own
+			Loot.woundDisc(c);
+		}
 		c.setChanged();
 		// a fresh barrel: the plundering trial counts it once, whoever opens it first
 		com.extremedimensions.trial.TrialService.stocked(b);

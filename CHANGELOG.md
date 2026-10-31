@@ -1,5 +1,48 @@
 # Changelog
 
+## 3.9.0: What the Wound Remembers
+
+### The Lurker
+- **No more spinning.** A Lurker at its prey stops a step short and stands, facing them, instead of turning on the spot
+  round a point it can never reach; on open ground it walks straight at them, round anything in the way.
+- **No hiding in a low house.** A Lurker whose prey is somewhere it cannot follow (a house or a tunnel lower than its
+  three and a half blocks) no longer circles the walls. After three seconds it stands and answers:
+  - come to hurt, it goes round to where it can see its prey (the door, a window) and throws an **ink bolt**: a wind-up
+    you can see and hear, then a line of ink that lands only on a prey still in its sight, for damage and a chance of a
+    curse, every four seconds;
+  - come to steal, or with no way to see its prey, it sends **two of its young** in after them: to bite, or to take
+    something and bring it back to it (it runs once they have).
+- It reaches only for what it can see: a Lurker no longer takes things through a wall.
+- New settings: `lurker_blocked_seconds` (3), `lurker_bolt_damage` (4), `lurker_bolt_seconds` (4), `lurker_young` (2)
+  and `lurker_young_seconds` (30).
+
+### The wound's sounds
+- **Ambient sounds**, as Minecraft has its cave and biome moods: fourteen kinds, 35 takes, each heard by one player now
+  and then, from somewhere around them, where it fits. Under the deepslate the deep groans and heavy steps pass far
+  below; by a hoard at night something giggles from the hoard's side; out at night a shriek comes from far off; once
+  the seal is broken the sky tears. In the Nether the heat throbs, basalt cracks deep down in the deltas, the
+  Ferryman's bell tolls over the lava and the undertow pulls; in the End the undertow and a call from beneath the outer
+  islands; in the Fray the undertow, and by a knot its heartbeat. None while something of the tribe is after you.
+- **The dread.** Something swells under everything and breaks off into silence: before a swarm, which now waits for it
+  (leaving the game while it swells is a flight, as from the swarm itself), and when a Lurker turns to hunt.
+- Subtitles in English and Dutch; they play on the Ambient volume. New settings: `ambient_chance` (0.25),
+  `ambient_min_seconds` (60), `ambient_volume` (1) and `ambient_dread` (1).
+- The sounds are made by `tools/sounds/ambient.py` from noise and tones, with fixed seeds.
+
+### A second music disc
+- **What the Wound Remembers**, made from the wound's own sounds: a slow piece in D minor, two and a half minutes, with
+  a motif on glass bells over a drone, a knot's heartbeat, the undertow, the sky tearing and the dread falling into
+  silence. A record of its own (crimson, a stitched scar across it), now and then in a tangle of the Fray, an old hoard
+  or a raided one (`music_disc_wound_chance`, 0.05); it plays in any jukebox. Made by `tools/sounds/disc_wound.py`.
+
+### Tests
+- Server tests: a Lurker stands at its prey instead of circling; one come to steal from a prey in a low house sends
+  its young in; one come to hurt goes round to the door and throws ink through it; a swarm waits for its dread, and
+  leaving while it swells is a flight; the wound's sounds fit where a player is; the new disc turns up in a tangle of
+  the Fray and plays in a jukebox.
+- The Elder fight test no longer counts a part caught in a chunk lookup that never waits as a wait for a chunk. The CI
+  shows what failed on its own.
+
 ## 3.8.1: No Way Out
 
 ### Leaving in danger

@@ -403,7 +403,11 @@ public final class HollowService {
 
 	/** Trinkets in an old hoard found in the wild (the old_hoard loot table). */
 	private static List<ItemStack> trinkets(ServerLevel level, Hoard h) {
-		return Loot.roll(level, Loot.OLD_HOARD, new Vec3(h.x + 0.5, h.y + 0.5, h.z + 0.5));
+		List<ItemStack> out = new ArrayList<>(Loot.roll(level, Loot.OLD_HOARD, new Vec3(h.x + 0.5, h.y + 0.5, h.z + 0.5)));
+		if (Loot.woundDisc()) {
+			out.add(new ItemStack(com.extremedimensions.registry.ModItems.MUSIC_DISC_WOUND_REMEMBERS));
+		}
+		return out;
 	}
 
 	/** Opened by a player: the hoard is found, and its Keeper wakes. */

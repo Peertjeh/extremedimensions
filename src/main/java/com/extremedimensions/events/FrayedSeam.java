@@ -214,6 +214,7 @@ public final class FrayedSeam {
 			seam.setBlock(at, Blocks.BARREL.defaultBlockState(), 3);
 			if (seam.getBlockEntity(at) instanceof Container box) {
 				Loot.fill(seam, at, box, Loot.FRAY_TANGLE);
+				Loot.woundDisc(box);
 			}
 			seam.sendParticles(ParticleTypes.WARPED_SPORE, at.getX() + 0.5, at.getY() + 1, at.getZ() + 0.5, 40, 0.6, 0.6, 0.6, 0.0);
 			WorldFx.soundIn(SeamService.SEAM.identifier().toString(), "minecraft:block.vault.open_shutter", "block", at.getX() + 0.5, at.getY(), at.getZ() + 0.5, 1.2f, 0.7f);

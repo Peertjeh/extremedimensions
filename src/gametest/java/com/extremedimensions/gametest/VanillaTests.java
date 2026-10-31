@@ -233,6 +233,49 @@ public class VanillaTests {
 		helper.succeed();
 	}
 
+	/** The wound's own record: now and then in a tangle of the Fray (and the tribe's hoards), and it plays as the other does. */
+	@GameTest
+	public void theWoundsDiscPlaysInAJukebox(GameTestHelper helper) {
+		double relic = Config.RELIC_SEAM_CHEST_CHANCE;
+		double seam = Config.SEAM_MUSIC_DISC_CHANCE;
+		double wound = Config.MUSIC_DISC_WOUND_CHANCE;
+		try {
+			Config.RELIC_SEAM_CHEST_CHANCE = 0;
+			Config.SEAM_MUSIC_DISC_CHANCE = 0;
+			Config.MUSIC_DISC_WOUND_CHANCE = 1;
+			Container tangle = barrel(helper, new BlockPos(1, 1, 1));
+			SeamService.fillLoot(helper.getLevel(), helper.absolutePos(new BlockPos(1, 1, 1)), 4);
+			check(helper, count(tangle, ModItems.MUSIC_DISC_WOUND_REMEMBERS) == 1, "a tangle of the Fray, at a chance of 1, held %s of the wound's discs",
+					count(tangle, ModItems.MUSIC_DISC_WOUND_REMEMBERS));
+			Container loom = barrel(helper, new BlockPos(3, 1, 1));
+			SeamService.fillLoot(helper.getLevel(), helper.absolutePos(new BlockPos(3, 1, 1)), 1);
+			check(helper, count(loom, ModItems.MUSIC_DISC_WOUND_REMEMBERS) == 0, "a loom's barrel up in the Seam held the wound's disc");
+			Config.MUSIC_DISC_WOUND_CHANCE = 0;
+			Container none = barrel(helper, new BlockPos(5, 1, 1));
+			SeamService.fillLoot(helper.getLevel(), helper.absolutePos(new BlockPos(5, 1, 1)), 4);
+			check(helper, count(none, ModItems.MUSIC_DISC_WOUND_REMEMBERS) == 0, "a tangle held the wound's disc at a chance of 0");
+		} finally {
+			Config.RELIC_SEAM_CHEST_CHANCE = relic;
+			Config.SEAM_MUSIC_DISC_CHANCE = seam;
+			Config.MUSIC_DISC_WOUND_CHANCE = wound;
+		}
+		check(helper, WorldFx.category("extremedimensions:music_disc.wound_remembers") == SoundSource.RECORDS, "the wound's disc is not on Jukebox/Note Blocks");
+		ItemStack record = new ItemStack(ModItems.MUSIC_DISC_WOUND_REMEMBERS);
+		java.util.Optional<net.minecraft.core.Holder<JukeboxSong>> held = JukeboxSong.fromStack(record);
+		check(helper, held.isPresent() && held.get().is(ModItems.WOUND_REMEMBERS), "the wound's disc carries the song %s", held);
+		BlockPos at = helper.absolutePos(new BlockPos(2, 1, 3));
+		helper.getLevel().setBlock(at, Blocks.JUKEBOX.defaultBlockState(), 3);
+		JukeboxBlockEntity jukebox = (JukeboxBlockEntity) helper.getLevel().getBlockEntity(at);
+		jukebox.setTheItem(record);
+		JukeboxSongPlayer playing = jukebox.getSongPlayer();
+		check(helper, playing.isPlaying(), "the jukebox does not play the wound's disc");
+		JukeboxSong song = playing.getSong();
+		check(helper, song.soundEvent().value() == ModSounds.MUSIC_DISC_WOUND_REMEMBERS, "the wound's song sounds %s", song.soundEvent());
+		check(helper, song.lengthInSeconds() > 150 && song.comparatorOutput() != 9, "the wound's song lasts %s seconds (comparator %s)", song.lengthInSeconds(),
+				song.comparatorOutput());
+		helper.succeed();
+	}
+
 	/** A table put in place of the mod's (as a datapack would) is what the barrel holds. */
 	@GameTest
 	public void aDatapackCanChangeWhatTheSeamHolds(GameTestHelper helper) {
