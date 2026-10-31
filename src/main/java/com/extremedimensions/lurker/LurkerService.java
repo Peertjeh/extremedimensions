@@ -1204,8 +1204,19 @@ public final class LurkerService {
 			}
 			if (st.sightFrom != null) {
 				st.sightTicks++;
-				if (st.ticks % 5 == 0) {
-					TribeMoves.go(l, st.sightFrom.getX() + 0.5, st.sightFrom.getY(), st.sightFrom.getZ() + 0.5, Config.LURKER_STRIKE_SPEED);
+				Vec3 spot = Vec3.atBottomCenterOf(st.sightFrom);
+				double dx = spot.x - l.getX(), dz = spot.z - l.getZ();
+				double flat = Math.sqrt(dx * dx + dz * dz);
+				if (flat < 2.5 && TribeMoves.clear(level, l, spot)) {
+					// the last steps straight onto the spot (a route would stop it a little off, behind the wall's edge)
+					l.getNavigation().stop();
+					if (flat > 0.3) {
+						l.getMoveControl().setWantedPosition(spot.x, spot.y, spot.z, Config.LURKER_STRIKE_SPEED);
+					} else {
+						l.getMoveControl().setWait();
+					}
+				} else if (st.ticks % 5 == 0) {
+					TribeMoves.go(l, spot.x, spot.y, spot.z, Config.LURKER_STRIKE_SPEED);
 				}
 				return;
 			}
