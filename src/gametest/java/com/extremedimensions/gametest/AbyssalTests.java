@@ -155,16 +155,18 @@ public class AbyssalTests {
 		ItemStack cloth = new ItemStack(ModItems.MENDING_CLOTH);
 		PenaltyService.cloth(p, cloth);
 		check(helper, d.owned(Penalty.SUNSCORN) == 1 && cloth.getCount() == 1, "a Mending Cloth took an Abyssal curse");
-		// Fragments: four per stack, not one
+		// A fragment atones for a tenth of its (fourfold) atonement, as for any curse: it never lifts it at once
 		BlockPos at = helper.absolutePos(new BlockPos(1, 1, 1));
-		ItemStack three = new ItemStack(ModItems.TETHER_FRAGMENT, Config.ABYSSAL_FRAGMENTS - 1);
-		p.getInventory().setItem(0, three);
-		PenaltyService.mend(p, d, at, three);
-		check(helper, d.owned(Penalty.SUNSCORN) == 1, "%s fragments mended an Abyssal curse", Config.ABYSSAL_FRAGMENTS - 1);
-		ItemStack four = new ItemStack(ModItems.TETHER_FRAGMENT, Config.ABYSSAL_FRAGMENTS);
-		p.getInventory().setItem(0, four);
-		PenaltyService.mend(p, d, at, four);
-		check(helper, d.owned(Penalty.SUNSCORN) == 0, "%s fragments did not mend an Abyssal curse", Config.ABYSSAL_FRAGMENTS);
+		d.atonement.remove("sunscorn");
+		int need = PenaltyService.cost(d, Penalty.SUNSCORN);
+		ItemStack fragments = new ItemStack(ModItems.TETHER_FRAGMENT, 4);
+		p.getInventory().setItem(0, fragments);
+		PenaltyService.mend(p, d, at, fragments);
+		int tenth = Math.max(1, (int) Math.ceil(need * Config.FRAGMENT_ATONE_SHARE));
+		check(helper, d.owned(Penalty.SUNSCORN) == 1 && d.atonement.getOrDefault("sunscorn", 0) == tenth && fragments.getCount() == 3,
+				"a fragment on an Abyssal curse gave %s atonement (not %s of %s) and left it at %s stacks", d.atonement.getOrDefault("sunscorn", 0), tenth, need,
+				d.owned(Penalty.SUNSCORN));
+		d.fragmentsOffered.clear();
 		helper.succeed();
 	}
 

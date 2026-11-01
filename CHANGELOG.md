@@ -36,6 +36,24 @@
   once in twenty minutes, whoever comes (`sculk_lurker_city_cooldown_seconds`; `sculk_lurker_city_chance` to make it
   less certain). The single Sculk Lurker of the Deep Dark outside the cities still comes as before.
 
+### Tether Fragments: a tenth of what is left
+- A Tether Fragment offered at an anchor no longer lifts a stack outright (it took one fragment per stack the curse
+  had, four per stack for an Abyssal one). Now **each fragment atones for a tenth of what the curse's next stack still
+  asks** (`fragment_atone_share`), rounded up: much when you start on a stack, little near its end. **An anchor takes
+  at most five for one stack** (`fragment_max_per_stack`); after that it refuses them (the fragment stays in your hand)
+  until that stack comes off, by atonement or a Mending Cloth, or another stack of the curse is laid on. Five fragments
+  together atone for a little over 40% of a stack: they help atonement along, they no longer stand in for it. The one
+  fragment that covers the last of what a stack asks still takes it off.
+- The action bar says what each fragment did and how far there is still to go ("fragment 2 of 5 for this stack, 97
+  still to go"), and the anchor answers with a charge instead of the bloom, which is kept for a stack coming off.
+- `fragment_cost_per_stack` and `abyssal_fragments` are gone: an Abyssal curse asks four times the atonement, so a
+  tenth of it is four times as much.
+
+### The young of a swarm may curse
+- A bite of a swarm's young that lands may now leave a curse as well (2% a bite, `hollowling_swarm_curse_chance`), at
+  most one for the whole swarm (`hollowling_swarm_curses_max`), drawn from the Extreme set as often as a Lurker's
+  curse. A raised shield turns the bite, and the curse with it, aside.
+
 ### Curses without a choice are varied
 - A curse laid without a choice (a Lurker's touch, a Cave Lurker's grab, a Collapse in the Seam) was drawn evenly from
   every curse with room left, so with thirty-odd curses a repeat within a few curses was more likely than not, and the
@@ -45,6 +63,10 @@
 ### Tests
 - A Sculk Lurker sets a sculk sensor near its player off without ever striking them, and laughs as it brings the
   Warden on them.
+- Each Tether Fragment atones for a tenth of what is left of a stack (rounded up), five for one stack and no sixth,
+  afresh once the stack comes off; the one that covers the last point takes the stack off; on an Abyssal curse a
+  fragment gives a tenth of its fourfold atonement and lifts nothing outright.
+- A swarm's young leave exactly one curse with their bites when every landed bite may curse and one is allowed.
 - The last curse laid without a choice never comes again next; a curse not yet carried is three times likelier (about
   one in seven for the carried one of three); every new voice is registered and on Hostile Creatures; a city's pack is
   two or three for one player, one more per further player, never past its cap.

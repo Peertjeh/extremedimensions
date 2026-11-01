@@ -104,6 +104,11 @@ public class PlayerData {
 	public int trialClaimThreads = 0;
 	/** Curse id -> atonement points gathered towards taking its next stack off. */
 	public Map<String, Integer> atonement = new HashMap<>();
+	/**
+	 * Tether Fragments offered at an anchor towards a curse's next stack: "id@stacks" -> fragments. A stack coming off
+	 * or laid on starts afresh.
+	 */
+	public Map<String, Integer> fragmentsOffered = new HashMap<>();
 	/** The curse the player chose to atone for (and to mend first); null = the heaviest one. */
 	public String atoning = null;
 	/** Before 2.3 curses wore off: id -> remaining seconds per stack. Read once and turned into permanent stacks. */
@@ -328,10 +333,28 @@ public class PlayerData {
 	}
 
 	/** Takes one stack off; the curse's atonement starts over. Returns false if it had none. */
+	/** Tether Fragments offered at an anchor towards this curse's next stack, at the stacks it has now. */
+	public int fragmentsOffered(Penalty p) {
+		return fragmentsOffered == null ? 0 : fragmentsOffered.getOrDefault(p.id + "@" + owned(p), 0);
+	}
+
+	/** One more Tether Fragment offered towards this curse's next stack (and none kept for its other stack counts). */
+	public void offerFragment(Penalty p) {
+		if (fragmentsOffered == null) {
+			fragmentsOffered = new HashMap<>();
+		}
+		String key = p.id + "@" + owned(p);
+		fragmentsOffered.keySet().removeIf(k -> k.startsWith(p.id + "@") && !k.equals(key));
+		fragmentsOffered.merge(key, 1, Integer::sum);
+	}
+
 	public boolean removeStack(Penalty p) {
 		int have = owned(p);
 		if (have <= 0) {
 			return false;
+		}
+		if (fragmentsOffered != null) {
+			fragmentsOffered.keySet().removeIf(k -> k.startsWith(p.id + "@"));
 		}
 		if (have == 1) {
 			curses.remove(p.id);

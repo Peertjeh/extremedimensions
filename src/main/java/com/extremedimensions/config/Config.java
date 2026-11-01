@@ -172,11 +172,10 @@ public final class Config {
 	public static int ABYSSAL_AFTER_COLLAPSES = 5;
 	public static int ABYSSAL_MAX_CARRIED = 1;
 	/**
-	 * Lifting an Abyssal curse without its deed: times the atonement, Tether Fragments per stack, the share of its
-	 * atonement a death takes (1 = all), and whether a Mending Cloth works on it (1) or not (0).
+	 * Lifting an Abyssal curse without its deed: times the atonement, the share of its atonement a death takes (1 = all),
+	 * and whether a Mending Cloth works on it (1) or not (0).
 	 */
 	public static double ABYSSAL_ATONE_FACTOR = 4.0;
-	public static int ABYSSAL_FRAGMENTS = 4;
 	public static double ABYSSAL_DEATH_LOSS = 1.0;
 	public static int ABYSSAL_MENDING_CLOTH = 0;
 	/** The deed that breaks each Abyssal curse at once: how many (undead slain in daylight, days without dying, ...). */
@@ -233,8 +232,12 @@ public final class Config {
 	 * monster that spawned there in the dark by itself (0 = off).
 	 */
 	public static double ATONE_SPAWNER_RADIUS = 16.0;
-	/** Tether Fragments a mending at an anchor costs per stack the curse has (3 stacks = 3 fragments). */
-	public static int FRAGMENT_COST_PER_STACK = 1;
+	/**
+	 * A Tether Fragment offered at an anchor atones for this share of what the curse's next stack still asks (0.1 = a
+	 * tenth: much at first, little later), and an anchor takes at most this many for one stack of a curse.
+	 */
+	public static double FRAGMENT_ATONE_SHARE = 0.10;
+	public static int FRAGMENT_MAX_PER_STACK = 5;
 	/** Chance that a Veil Ray drops a second Veil Wing. */
 	public static double VEIL_WING_EXTRA_CHANCE = 0.35;
 
@@ -330,6 +333,9 @@ public final class Config {
 	public static int LURKER_SWARM_SECONDS = 45;
 	/** Damage of each bite of a swarm's young (half-hearts). */
 	public static double LURKER_SWARM_BITE = 3.0;
+	/** Chance that a bite of a swarm's young that lands also leaves a curse, and how many curses one swarm's young may leave. */
+	public static double HOLLOWLING_SWARM_CURSE_CHANCE = 0.02;
+	public static int HOLLOWLING_SWARM_CURSES_MAX = 1;
 	/**
 	 * A prey hiding where a Lurker cannot follow (a house too low for it): seconds before it stops trying, then the ink
 	 * bolt it throws when it sees them (damage in half-hearts, seconds between bolts) and the young it sends in when it
@@ -1459,7 +1465,9 @@ public final class Config {
 			{"lurker_thefts", 1, 9}, {"lurker_claw_damage", 0, 100}, {"lurker_curse_chance", 0, 1}, {"lurker_curse_extreme_chance", 0, 1},
 			{"lurker_curses_max", 0, 9}, {"lurker_hunt_chance", 0, 1}, {"lurker_retaliate_chance", 0, 1}, {"lurker_strike_damage", 0, 100},
 			{"lurker_strike_blows", 1, 20}, {"lurker_strike_speed", 0.5, 3}, {"lurker_strike_seconds", 5, 300}, {"lurker_swarm_chance", 0, 1}, {"lurker_swarm_lurkers", 0, 12},
-				{"lurker_swarm_hollowlings", 0, 24}, {"lurker_swarm_seconds", 5, 300}, {"lurker_swarm_bite", 0, 40}, {"keeper_reach_damage", 0, 40},
+				{"lurker_swarm_hollowlings", 0, 24}, {"lurker_swarm_seconds", 5, 300}, {"lurker_swarm_bite", 0, 40},
+				{"hollowling_swarm_curse_chance", 0, 1}, {"hollowling_swarm_curses_max", 0, 9}, {"fragment_atone_share", 0.01, 1},
+				{"fragment_max_per_stack", 1, 64}, {"keeper_reach_damage", 0, 40},
 				{"flee_curses", 0, 5}, {"flee_danger_seconds", 0, 120}, {"flee_returns", 0, 1},
 				{"lurker_blocked_seconds", 1, 30}, {"lurker_bolt_damage", 0, 40}, {"lurker_bolt_seconds", 1, 60}, {"lurker_young", 0, 6},
 				{"lurker_young_seconds", 5, 120},

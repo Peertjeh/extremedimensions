@@ -62,8 +62,9 @@ On **Hard** and **Extreme** a curse you have never carried shows only runes, on 
 until you take it once; on Easy and Normal every curse reads from the start (the Extreme set only ever hints). The
 runes are the **Seam script**, an alphabet of the mod's own: threads with knots, beads and loose ends tied into them.
 
-Lift them by **atonement** (played off on expeditions and at home; every death undoes half), **Tether Fragments**
-offered to an anchor, or a **Mending Cloth**. Every stack lifted leaves a **scar** that weakens the drain.
+Lift them by **atonement** (played off on expeditions and at home; every death undoes half), helped along by
+**Tether Fragments** offered to an anchor (each atones for a tenth of what the curse's next stack still asks, five at
+most for each stack), or by a **Mending Cloth**. Every stack lifted leaves a **scar** that weakens the drain.
 Monsters slain by hand count towards atonement only from the wild: nothing from a spawner, nothing within 16 blocks
 of a monster spawner or trial spawner (not even what spawns there in the dark by itself), and at most five per place
 in ten minutes, for everyone hunting there together.
@@ -96,7 +97,7 @@ an unweaving the loom waits three days for you.
   laughs at you while it does, leads the Warden to you and stays to watch, and the Warden spares it. Each has a voice
   of its own place: the Cave Lurker clicks, rasps and screeches down the tunnels, the Sculk Lurker croaks, rattles and
   chuckles low on the sculk, and an Ancient City sends a pack of them out to whoever walks into it. A curse laid
-  without a choice is varied: one you do not carry yet is likelier, and never the last one again. Hollowlings can be befriended, slowly. After the Dragon falls, **Wound
+  without a choice is varied: one you do not carry yet is likelier, and never the last one again. Hollowlings can be befriended, slowly; the young of an Extreme swarm bite, and a bite may curse. After the Dragon falls, **Wound
   Storms** tear the sky.
 
 ## The story

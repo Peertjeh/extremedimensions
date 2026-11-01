@@ -115,6 +115,8 @@ public final class HollowService {
 		int until;
 		int windup;
 		int pause;
+		/** Shared by the young of one swarm: the curses their bites have left. */
+		int[] swarmCurses;
 	}
 
 	static final class Guard {
@@ -1482,6 +1484,7 @@ public final class HollowService {
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		String dim = level.dimension().identifier().toString();
 		double base = rnd.nextDouble() * Math.PI * 2;
+		int[] curses = {0};
 		for (int i = 0; i < count; i++) {
 			BlockPos spot = null;
 			for (int t = 0; t < 6 && spot == null; t++) {
@@ -1502,6 +1505,7 @@ public final class HollowService {
 			st.prey = p.getUUID();
 			st.until = Math.max(5, seconds) * 20;
 			st.pause = 20 + rnd.nextInt(20);
+			st.swarmCurses = curses;
 			Hollowling h = spawnLittle(level, spot, st);
 			if (h != null) {
 				h.setLurkerMood(LurkerBody.MOOD_HUNTER);
@@ -1510,6 +1514,23 @@ public final class HollowService {
 			}
 		}
 		return out;
+	}
+
+	/**
+	 * A bite of a swarm's young may leave a curse as well (as many as one swarm may leave): from the Extreme set by the
+	 * Lurkers' chance.
+	 */
+	private static void swarmCurse(Hollowling h, Little st, ServerPlayer p) {
+		if (st.swarmCurses == null || st.swarmCurses[0] >= Math.max(0, Config.HOLLOWLING_SWARM_CURSES_MAX)
+				|| ThreadLocalRandom.current().nextDouble() >= Config.HOLLOWLING_SWARM_CURSE_CHANCE) {
+			return;
+		}
+		boolean overworld = Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties();
+		if (com.extremedimensions.penalty.PenaltyService.curse(p, overworld, Config.LURKER_CURSE_EXTREME_CHANCE) != null) {
+			st.swarmCurses[0]++;
+			WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.6, 0.06, 20);
+			WorldFx.soundFor(p, "extremedimensions:hollowling_giggle", "hostile", h.getX(), h.getY() + 0.8, h.getZ(), 1.0f, 0.45f);
+		}
 	}
 
 	/** One of a swarm: it runs at its prey and bites, a short wind-up (a crouch, a hiss) before each bite, until the swarm is over. */
@@ -1529,6 +1550,7 @@ public final class HollowService {
 				if (d2 < 2.4 * 2.4 && h.hasLineOfSight(p) && h.level() instanceof ServerLevel level
 						&& p.hurtServer(level, h.damageSources().mobAttack(h), (float) Math.max(0, Config.LURKER_SWARM_BITE))) {
 					WorldFx.soundIn(dim, "minecraft:entity.fox.bite", "hostile", p.getX(), p.getY() + 1, p.getZ(), 0.9f, 0.7f);
+					swarmCurse(h, st, p);
 				}
 				st.pause = 22;
 				h.setLurkerPose(Lurker.POSE_RUN);
@@ -1662,6 +1684,17 @@ public final class HollowService {
 		int n = 0;
 		for (Little st : LITTLES.values()) {
 			n += (st.mode == Mode.FETCH || st.mode == Mode.ATTACK) && prey.equals(st.prey) && st.owner != null ? 1 : 0;
+		}
+		return n;
+	}
+
+	/** For the tests: the curses the bites of a swarm's young on this prey have left (the most of any swarm on them). */
+	public static int swarmCurses(UUID prey) {
+		int n = 0;
+		for (Little st : LITTLES.values()) {
+			if (st.swarmCurses != null && prey.equals(st.prey)) {
+				n = Math.max(n, st.swarmCurses[0]);
+			}
 		}
 		return n;
 	}

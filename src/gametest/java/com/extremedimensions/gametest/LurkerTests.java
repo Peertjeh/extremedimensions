@@ -359,12 +359,17 @@ public class LurkerTests {
 		// on the floor (a test player does not fall), where the young can get at them
 		place(helper, p, 3.5, 0, 3.5);
 		int lurkers = Config.LURKER_SWARM_LURKERS, young = Config.LURKER_SWARM_HOLLOWLINGS, secs = Config.LURKER_SWARM_SECONDS;
-		double bite = Config.LURKER_SWARM_BITE;
+		double bite = Config.LURKER_SWARM_BITE, youngCurse = Config.HOLLOWLING_SWARM_CURSE_CHANCE, lurkerCurse = Config.LURKER_CURSE_CHANCE;
+		int youngCurses = Config.HOLLOWLING_SWARM_CURSES_MAX;
 		Runnable restore = () -> {
 			Config.LURKER_SWARM_LURKERS = lurkers;
 			Config.LURKER_SWARM_HOLLOWLINGS = young;
 			Config.LURKER_SWARM_SECONDS = secs;
 			Config.LURKER_SWARM_BITE = bite;
+			Config.HOLLOWLING_SWARM_CURSE_CHANCE = youngCurse;
+			Config.HOLLOWLING_SWARM_CURSES_MAX = youngCurses;
+			Config.LURKER_CURSE_CHANCE = lurkerCurse;
+			DataStore.get(p.getUUID()).curses.clear();
 			for (Mob m : level.getEntitiesOfClass(Mob.class, new AABB(p.blockPosition()).inflate(48), e -> e instanceof Lurker || e instanceof Hollowling)) {
 				m.discard();
 			}
@@ -376,6 +381,10 @@ public class LurkerTests {
 			Config.LURKER_SWARM_HOLLOWLINGS = 4;
 			Config.LURKER_SWARM_SECONDS = 30;
 			Config.LURKER_SWARM_BITE = 3;
+			// every bite that lands may curse, one curse for the whole swarm (and none from the Lurkers here)
+			Config.HOLLOWLING_SWARM_CURSE_CHANCE = 1;
+			Config.HOLLOWLING_SWARM_CURSES_MAX = 1;
+			Config.LURKER_CURSE_CHANCE = 0;
 			p.setHealth(20f);
 			try {
 				check(helper, LurkerService.swarm(p), "no swarm came");
@@ -394,6 +403,9 @@ public class LurkerTests {
 		helper.runAfterDelay(170, () -> {
 			try {
 				check(helper, p.getHealth() < 20f, "the swarm's young did not bite (health %s)", p.getHealth());
+				int left = HollowService.swarmCurses(p.getUUID());
+				check(helper, left == 1, "the swarm's young left %s curses with their bites, not the one they may", left);
+				check(helper, DataStore.get(p.getUUID()).curses.values().stream().mapToInt(Integer::intValue).sum() >= 1, "a curse from a bite was not laid");
 			} finally {
 				restore.run();
 			}

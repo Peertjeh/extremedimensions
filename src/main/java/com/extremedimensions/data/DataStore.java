@@ -407,6 +407,9 @@ public final class DataStore {
 		if (d.atonement == null) {
 			d.atonement = new java.util.HashMap<>();
 		}
+		if (d.fragmentsOffered == null) {
+			d.fragmentsOffered = new java.util.HashMap<>();
+		}
 		if (d.pendingMult == null) {
 			d.pendingMult = new java.util.ArrayList<>();
 		}

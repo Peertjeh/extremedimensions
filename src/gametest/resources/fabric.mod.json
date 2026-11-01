@@ -46,7 +46,8 @@
 			"com.extremedimensions.gametest.DiscordTests",
 			"com.extremedimensions.gametest.TetheriteTests",
 			"com.extremedimensions.gametest.CharmTests",
-			"com.extremedimensions.gametest.LurkerTests"
+			"com.extremedimensions.gametest.LurkerTests",
+			"com.extremedimensions.gametest.FragmentTests"
 		],
 		"fabric-client-gametest": [
 			"com.extremedimensions.gametest.ClientShots",

@@ -15,7 +15,6 @@ import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.network.Fx;
 import com.extremedimensions.network.Sync;
 import com.extremedimensions.progression.Advancements;
-import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 
@@ -318,33 +317,52 @@ public final class PenaltyService {
 		return lost;
 	}
 
-	/** A Tether Fragment offered to an anchor: takes a stack off, at one fragment per stack the curse has. */
+	/**
+	 * Atonement one Tether Fragment offered now gives towards a curse's next stack: a share ({@code fragment_atone_share},
+	 * a tenth) of what that stack still asks, rounded up, at least 1. Much at first, little later.
+	 */
+	public static int fragmentGain(PlayerData d, Penalty t) {
+		int left = Math.max(0, cost(d, t) - d.atonement.getOrDefault(t.id, 0));
+		return Math.max(1, (int) Math.ceil(left * Math.max(0.01, Math.min(1, Config.FRAGMENT_ATONE_SHARE))));
+	}
+
+	/**
+	 * A Tether Fragment offered to an anchor (one each time): it atones for a tenth of what the next stack of the curse
+	 * being atoned for (or the heaviest) still asks. An anchor takes at most {@code fragment_max_per_stack} of them for
+	 * one stack of a curse; once that stack comes off (or another is laid on), it takes them afresh.
+	 */
 	public static InteractionResult mend(ServerPlayer p, PlayerData d, BlockPos pos, ItemStack stack) {
 		Penalty t = target(d, null);
 		if (t == null) {
 			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
 			return InteractionResult.SUCCESS;
 		}
-		int cost = Math.max(1, Config.FRAGMENT_COST_PER_STACK * d.owned(t));
-		if (t.abyssal) {
-			cost = Math.max(1, Config.ABYSSAL_FRAGMENTS * d.owned(t));
-		} else if (t.extreme) {
-			cost = (int) Math.ceil(cost * Math.max(1, Config.EXTREME_ATONE_FACTOR));
+		int max = Math.max(1, Config.FRAGMENT_MAX_PER_STACK), offered = d.fragmentsOffered(t);
+		if (offered >= max) {
+			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.fragments_spent", Component.translatable(t.nameKey()), max), true);
+			return InteractionResult.SUCCESS;
 		}
+		int gain = fragmentGain(d, t), need = cost(d, t);
+		int have = d.atonement.getOrDefault(t.id, 0) + gain;
 		if (!p.isCreative()) {
-			if (count(p, stack) < cost) {
-				WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
-				p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.needs_fragments", cost,
-						Component.translatable(t.nameKey())), true);
-				return InteractionResult.SUCCESS;
-			}
-			take(p, stack, cost);
+			stack.shrink(1);
 		}
 		double ax = pos.getX() + 0.5, ay = pos.getY() + 1.0, az = pos.getZ() + 0.5;
-		WorldFx.particleAt("minecraft:soul_fire_flame", ax, ay, az, 0.3, 0.5, 0.3, 0.03, 30);
-		WorldFx.particleAt("minecraft:sculk_soul", ax, ay + 0.5, az, 0.5, 0.5, 0.5, 0.05, 20);
-		WorldFx.sound(p, "minecraft:block.sculk_catalyst.bloom", 1.0f, 0.8f);
-		lift(p, d, t, "gui.extremedimensions.curses.mended");
+		WorldFx.particleAt("minecraft:soul_fire_flame", ax, ay, az, 0.3, 0.5, 0.3, 0.03, 14);
+		WorldFx.particleAt("minecraft:sculk_soul", ax, ay + 0.5, az, 0.5, 0.5, 0.5, 0.05, 8);
+		if (have >= need) {
+			WorldFx.sound(p, "minecraft:block.sculk_catalyst.bloom", 1.0f, 0.8f);
+			lift(p, d, t, "gui.extremedimensions.curses.mended");
+			return InteractionResult.SUCCESS;
+		}
+		WorldFx.sound(p, "minecraft:block.respawn_anchor.charge", 0.6f, 1.3f);
+		d.offerFragment(t);
+		d.atonement.put(t.id, have);
+		p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.fragment_atoned", gain, Component.translatable(t.nameKey()), offered + 1,
+				max, need - have), true);
+		Sync.curses(p, d, false);
+		DataStore.markDirty();
 		return InteractionResult.SUCCESS;
 	}
 
@@ -368,34 +386,6 @@ public final class PenaltyService {
 		WorldFx.sound(p, "minecraft:block.wool.place", 1.0f, 0.7f);
 		lift(p, d, t, "gui.extremedimensions.curses.mended");
 		return InteractionResult.SUCCESS;
-	}
-
-	/** Fragments the player carries: the held stack and the rest of the inventory. */
-	private static int count(ServerPlayer p, ItemStack held) {
-		int n = 0;
-		var inv = p.getInventory();
-		for (int i = 0; i < inv.getContainerSize(); i++) {
-			if (inv.getItem(i).is(ModItems.TETHER_FRAGMENT)) {
-				n += inv.getItem(i).getCount();
-			}
-		}
-		return n;
-	}
-
-	/** Takes fragments, the held stack first. */
-	private static void take(ServerPlayer p, ItemStack held, int n) {
-		int fromHeld = Math.min(n, held.getCount());
-		held.shrink(fromHeld);
-		n -= fromHeld;
-		var inv = p.getInventory();
-		for (int i = 0; i < inv.getContainerSize() && n > 0; i++) {
-			ItemStack s = inv.getItem(i);
-			if (s.is(ModItems.TETHER_FRAGMENT)) {
-				int k = Math.min(n, s.getCount());
-				s.shrink(k);
-				n -= k;
-			}
-		}
 	}
 
 	/** One stack comes off a curse, and leaves a scar (up to five). */
