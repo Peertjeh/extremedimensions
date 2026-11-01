@@ -102,7 +102,9 @@ public class TribeTests {
 		d.tribeRep = Standing.MAX;
 		kinWares = BarterService.offers(p).stream().anyMatch(o -> o.id() == BarterService.CLOTH);
 		check(helper, kinWares, "kin were not offered their wares");
-		check(helper, BarterService.offers(p).size() == 1 + Config.TRIBE_BARTER_OFFERS + 2, "kin saw %s wares", BarterService.offers(p).size());
+		// (the fragment, the day's wares, the Blood Cord for those it trusts, and kin's relic and cloth)
+		int cord = Config.CLAN_ENABLED > 0 ? 1 : 0;
+		check(helper, BarterService.offers(p).size() == 1 + Config.TRIBE_BARTER_OFFERS + cord + 2, "kin saw %s wares", BarterService.offers(p).size());
 		helper.succeed();
 	}
 
