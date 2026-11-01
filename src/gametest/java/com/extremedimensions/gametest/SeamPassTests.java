@@ -61,7 +61,7 @@ public class SeamPassTests {
 		helper.succeed();
 	}
 
-	/** The Thread and the Shears lie on the altar for as long as it takes, and nothing burns or breaks them. */
+	/** The Thread and the Shears lie on the altar for as long as it takes, and fire cannot burn them. */
 	@GameTest
 	public void theEndingLiesSafe(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
@@ -73,7 +73,7 @@ public class SeamPassTests {
 		try {
 			check(helper, lying.size() == 2, "the altar laid down %s things, not the Thread and the Shears", lying.size());
 			for (ItemEntity e : lying) {
-				check(helper, e.isInvulnerable(), "%s can be burnt or blown up", e.getItem());
+				check(helper, !e.getItem().canBeHurtBy(level.damageSources().inFire()), "%s can be burnt", e.getItem());
 				check(helper, e.getAge() < 0, "%s will despawn (age %s)", e.getItem(), e.getAge());
 			}
 		} finally {

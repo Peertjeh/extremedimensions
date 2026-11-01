@@ -51,9 +51,9 @@ public final class ModItems {
 	public static final Item BLOOD_CORD = register("blood_cord", 1, Rarity.RARE);
 
 	/** Dropped by the Starved One: use it to mend the first wound. */
-	public static final Item MENDING_THREAD = register("mending_thread", 1, Rarity.EPIC);
+	public static final Item MENDING_THREAD = registerFireproof("mending_thread", 1, Rarity.EPIC);
 	/** Dropped by the Starved One: use them to sever the Tether from the world for good. */
-	public static final Item SEVERING_SHEARS = register("severing_shears", 1, Rarity.EPIC);
+	public static final Item SEVERING_SHEARS = registerFireproof("severing_shears", 1, Rarity.EPIC);
 
 	/** The First Weaver's trail: a thread left in the frame of an Ancient City once it is strung with silk. */
 	public static final Item ECHO_THREAD = register("echo_thread", 1, Rarity.RARE);
@@ -209,6 +209,13 @@ public final class ModItems {
 	private static Item disc(String id, ResourceKey<JukeboxSong> song, Rarity rarity) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, ExtremeDimensions.id(id));
 		Item.Properties props = new Item.Properties().stacksTo(1).rarity(rarity).jukeboxPlayable(song).setId(key);
+		return Registry.register(BuiltInRegistries.ITEM, key, new Item(props));
+	}
+
+	/** As {@link #register}, but fire and lava cannot burn it (the world's ending must not be lost to them). */
+	private static Item registerFireproof(String id, int maxStack, Rarity rarity) {
+		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, ExtremeDimensions.id(id));
+		Item.Properties props = new Item.Properties().stacksTo(maxStack).rarity(rarity).fireResistant().setId(key);
 		return Registry.register(BuiltInRegistries.ITEM, key, new Item(props));
 	}
 

@@ -508,21 +508,20 @@ public final class MendingService {
 	}
 
 	/**
-	 * The Thread and the Shears on the altar. They lie there until taken, as long as they take, and nothing burns or
-	 * breaks them: the world's ending must not be lost to a despawn, lava or a blast.
+	 * The Thread and the Shears on the altar. They lie there until taken, as long as that takes, and fire cannot burn
+	 * them (they are fireproof items); should they still be lost, the altar offers them again ({@link #reoffer}).
 	 */
 	private static void offerEnding(ServerLevel seam) {
 		offerEnding(seam, HX + 0.5, HY + 1.2, HZ + 0.5);
 		lastOffer = seam.getGameTime();
 	}
 
-	/** The Thread and the Shears laid down here, kept safe from despawning, fire and blasts. */
+	/** The Thread and the Shears laid down here, never to despawn. */
 	public static void offerEnding(ServerLevel level, double x, double y, double z) {
 		for (ItemStack stack : new ItemStack[] {new ItemStack(ModItems.MENDING_THREAD), new ItemStack(ModItems.SEVERING_SHEARS)}) {
 			net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(level, x, y, z, stack, 0, 0.15, 0);
 			item.setDefaultPickUpDelay();
 			item.setUnlimitedLifetime();
-			item.setInvulnerable(true);
 			level.addFreshEntity(item);
 		}
 	}

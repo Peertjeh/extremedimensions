@@ -21,8 +21,9 @@ cheated.
   Plumb Line lost after it (or before waking the Knot Mother) locked the tapestry. Now the threads come again for one
   who carries no line, until the Knot's panel is woven.
 - **The world's ending cannot be lost.** The Mending Thread and the Severing Shears lie on the altar as long as it
-  takes, and nothing burns or breaks them. Should both still go missing before an ending is chosen, the altar offers
-  them again to whoever stands on it carrying neither (once a minute at most; only the first used decides the world).
+  takes (they no longer despawn after five minutes), and fire and lava cannot burn them. Should both still go missing
+  before an ending is chosen, the altar offers them again to whoever stands on it carrying neither (once a minute at
+  most; only the first used decides the world).
 
 ### Less luck, fewer dead ends
 - **The Last Weaver: a run of empty villages ends.** Each village in a row that woke none makes the next likelier
@@ -44,7 +45,7 @@ cheated.
 ### Tests
 - A Plumb Line lost after reaching the Knot does not lock the trail; a loom set down in the Seam gives no thread; the
   Knot keeps its place; the toll takes half (rounded down) of silk and fragments and nothing else; empty villages make
-  the Weaver likelier until it is certain; the Thread and the Shears lie safe from despawning, fire and blasts.
+  the Weaver likelier until it is certain; the Thread and the Shears never despawn and do not burn.
 
 ## 3.13.0: Records of the Deep
 
