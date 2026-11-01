@@ -8,12 +8,20 @@
   before it strikes, gives a hoarse **screech** that runs off down the tunnels when it starts to hunt, ticks its
   **claws** on the rock as it comes, lands its grab with a rush of air, a **crunch** and a deep blow, and dies in a
   rattle of slowing clicks as it settles into the stone.
-- **The Sculk Lurker** has a voice of the Deep Dark: wet **chirps** with a glassy, sculk-cyan ring and something
-  bubbling under them, a dry **rattle** of claws on bone as it scratches at a shrieker, a low double **pulse** and
-  rising chirps when it calls the Warden, a soft pulse as it leads it, **squelching** steps, and a wet crackle
-  thinning into the sculk as it dies.
+- **The Sculk Lurker** has a voice of the Deep Dark, and nothing in it is bright: low wet **croaks** with a hollow,
+  muffled ring under them like bone struck under a wet cloth, a dry **rattle** of claws on bone as it scratches at a
+  shrieker, a low double **pulse** and rising croaks when it calls the Warden, a soft pulse as it leads it,
+  **squelching** steps, and a wet crackle thinning into the sculk as it dies.
 - Fifteen new sounds (31 takes), made from noise and tones like the rest of the wound's sounds
   (`tools/sounds/lurker_voices.py`), with subtitles in English and Dutch, on the Hostile Creatures slider.
+
+### Sculk Lurkers come in packs to an Ancient City
+- **Walk into an Ancient City and it sends its servants out**: a pack of two or three Sculk Lurkers
+  (`sculk_lurker_pack_min`, `sculk_lurker_pack_max`), one more for every further player inside
+  (`sculk_lurker_pack_per_player`), six at the most (`sculk_lurker_pack_cap`), spread over everyone in the city. Each
+  one goes about its work: rattling the shriekers, and once the Warden is up, leading it to you. A city sends a pack
+  once in twenty minutes, whoever comes (`sculk_lurker_city_cooldown_seconds`; `sculk_lurker_city_chance` to make it
+  less certain). The single Sculk Lurker of the Deep Dark outside the cities still comes as before.
 
 ### Curses without a choice are varied
 - A curse laid without a choice (a Lurker's touch, a Cave Lurker's grab, a Collapse in the Seam) was drawn evenly from
@@ -23,7 +31,8 @@
 
 ### Tests
 - The last curse laid without a choice never comes again next; a curse not yet carried is three times likelier (about
-  one in seven for the carried one of three); every new voice is registered and on Hostile Creatures.
+  one in seven for the carried one of three); every new voice is registered and on Hostile Creatures; a city's pack is
+  two or three for one player, one more per further player, never past its cap.
 
 ## 3.14.0: The Seam Pass
 

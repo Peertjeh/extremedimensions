@@ -94,7 +94,7 @@ an unweaving the loom waits three days for you.
   curse; a raised shield turns it aside. In the Deep Dark of the Ancient Cities the small **Sculk Lurker** serves the
   Warden: it never strikes you, but it rattles the shriekers to wake the Warden and then leads it to you, and the Warden
   spares it. Each has a voice of its own place: the Cave Lurker clicks, rasps and screeches down the tunnels, the Sculk
-  Lurker chirps and rattles on the sculk. A curse laid without a choice is varied: one you do not carry yet is likelier,
+  Lurker croaks and rattles low on the sculk, and an Ancient City sends a pack of them out to whoever walks into it. A curse laid without a choice is varied: one you do not carry yet is likelier,
   and never the last one again. Hollowlings can be befriended, slowly. After the Dragon falls, **Wound
   Storms** tear the sky.
 

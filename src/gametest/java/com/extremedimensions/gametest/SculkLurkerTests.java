@@ -180,4 +180,30 @@ public class SculkLurkerTests {
 		}
 		helper.succeed();
 	}
+
+	/** A city's pack: two or three for one player, one more for every further player, never past the cap. */
+	@GameTest
+	public void aCitysPackGrowsWithItsPlayers(GameTestHelper helper) {
+		int min = com.extremedimensions.config.Config.SCULK_LURKER_PACK_MIN, max = com.extremedimensions.config.Config.SCULK_LURKER_PACK_MAX;
+		int per = com.extremedimensions.config.Config.SCULK_LURKER_PACK_PER_PLAYER, cap = com.extremedimensions.config.Config.SCULK_LURKER_PACK_CAP;
+		try {
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_MIN = 2;
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_MAX = 3;
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_PER_PLAYER = 1;
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_CAP = 6;
+			java.util.Random rnd = new java.util.Random(3);
+			for (int i = 0; i < 100; i++) {
+				int one = SculkLurkerService.packSize(1, rnd), three = SculkLurkerService.packSize(3, rnd);
+				check(helper, one >= 2 && one <= 3, "one player drew a pack of %s", one);
+				check(helper, three >= 4 && three <= 5, "three players drew a pack of %s", three);
+				check(helper, SculkLurkerService.packSize(10, rnd) == 6, "ten players drew past the cap");
+			}
+		} finally {
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_MIN = min;
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_MAX = max;
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_PER_PLAYER = per;
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_CAP = cap;
+		}
+		helper.succeed();
+	}
 }

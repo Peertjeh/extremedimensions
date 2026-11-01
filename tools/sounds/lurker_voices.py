@@ -4,9 +4,10 @@ The Cave Lurker lives in stone and hunts by ear: dry clicks thrown into the tunn
 of breath, a sharp hiss before it strikes, a hoarse screech that runs off down the tunnels when it starts to hunt,
 claws ticking on rock, the crunch of its grab, and a rattle of slowing clicks as it dies.
 
-The Sculk Lurker lives in the Deep Dark and serves what sleeps there: wet sculk chirps with a cyan, glassy ring, the
-scratching rattle it makes at a shrieker, the low double pulse and rising chirps with which it calls the Warden, a
-soft pulse as it leads it, squelching steps, and a wet crackle dissolving into the sculk as it dies.
+The Sculk Lurker lives in the Deep Dark and serves what sleeps there, and nothing about it is bright: low wet croaks
+with a hollow, muffled ring under them, the scratching rattle it makes at a shrieker, the low double pulse and
+rising croaks with which it calls the Warden, a soft pulse as it leads it, squelching steps, and a wet crackle
+dissolving into the sculk as it dies.
 
 Deterministic (fixed seeds). Builds on tools/sounds/ambient.py. Needs numpy and ffmpeg.
 usage: python3 tools/sounds/lurker_voices.py [--out=DIR] [--mp3] [names...]
@@ -54,8 +55,8 @@ def tunnel(rng, x, wet=0.45):
 
 
 def deep_dark(rng, x, wet=0.4):
-    """The Deep Dark: a large hall, but the sculk soaks up the highs."""
-    return reverb(rng, x, tail=2.4, mix=wet, bright=2400, pre=0.03)
+    """The Deep Dark: a large hall, but the sculk soaks up the highs (and nothing bright is left in it)."""
+    return lowpass(reverb(rng, x, tail=2.6, mix=wet, bright=1400, pre=0.03), 2600, 3)
 
 
 def click(rng, t, s, f=2600.0, gain=1.0):
@@ -78,6 +79,20 @@ def chirp(rng, t, s, f0, d=0.06, gain=1.0):
 def glass_ring(t, s, f, d=0.7, gain=1.0):
     """The cyan of sculk: a small glassy ring, its partials a bell's."""
     return partials(t, s, f, [1.0, 2.76, 5.4], [d, d * 0.45, d * 0.2], [1.0, 0.4, 0.15], beat=0.6) * gain
+
+
+def dark_ring(t, s, f, d=1.2, gain=1.0):
+    """What rings in sculk: low, hollow and muffled, like bone struck under a wet cloth."""
+    return lowpass(partials(t, s, f, [1.0, 2.76, 5.4], [d, d * 0.4, d * 0.15], [1.0, 0.25, 0.06], beat=0.35), 1100, 3) * gain
+
+
+def low_chirp(rng, t, s, f0, d=0.09, gain=1.0):
+    """A sculk chirp down in the dark: a low wet croak that drops, never a whistle."""
+    u = np.maximum(t - s, 0)
+    f = f0 * (1 + 0.5 * np.exp(-u / 0.018))
+    tone = (np.sin(phase(f)) + 0.3 * np.sin(phase(f * 2.01))) * env(t, s, 0.004, d)
+    pop = lowpass(rng.standard_normal(len(t)), 700) * env(t, s, 0.001, 0.012) * 0.7
+    return lowpass(tone + pop, 1600, 3) * gain
 
 
 def crackle_wet(rng, t, rate, lo, hi, decay=0.004):
@@ -223,11 +238,11 @@ def sculk_chirp(rng, v):
     count = (4, 3, 6)[v - 1]
     s = 0.05
     for i in range(count):
-        x += chirp(rng, t, s, rng.uniform(1900, 3200), rng.uniform(0.04, 0.08), rng.uniform(0.6, 1.0))
-        s += rng.uniform(0.07, 0.16)
-    x += glass_ring(t, s + 0.02, (2900, 2640, 3150)[v - 1], 0.7, 0.35)
-    x += crackle_wet(rng, t, 18, 300, 1100) * 0.18
-    return level(deep_dark(rng, x, 0.38), 0.75)
+        x += low_chirp(rng, t, s, rng.uniform(380, 820), rng.uniform(0.07, 0.12), rng.uniform(0.6, 1.0))
+        s += rng.uniform(0.09, 0.18)
+    x += dark_ring(t, s + 0.02, (196.0, 174.6, 220.0)[v - 1], 1.3, 0.55)
+    x += lowpass(crackle_wet(rng, t, 18, 200, 700), 1200) * 0.25
+    return level(deep_dark(rng, x, 0.4), 0.75)
 
 
 def sculk_rattle(rng, v):
@@ -235,12 +250,12 @@ def sculk_rattle(rng, v):
     d = 1.7
     t = t_(d)
     from ambient import scrape
-    scratch = scrape(rng, t, d, bell_env(t, 0.02, 0.05, 0.35, 0.15), base=1800 if v == 1 else 1500)
-    rate = 32.0 if v == 1 else 26.0
+    scratch = scrape(rng, t, d, bell_env(t, 0.02, 0.05, 0.35, 0.15), base=700 if v == 1 else 600)
+    rate = 26.0 if v == 1 else 21.0
     gate = (np.sin(phase(np.full(len(t), rate))) > 0.6).astype(float)
-    rattle = peaks(white(rng, d) * gate, [(1250, 120, 1.0), (2750, 260, 0.6)]) * bell_env(t, 0.45, 0.05, 0.55, 0.3)
-    x = norm(highpass(scratch, 900)) * 0.6 + norm(rattle) * 0.8 + glass_ring(t, 0.5, 2300, 0.9, 0.25)
-    return level(deep_dark(rng, x, 0.32), 0.8)
+    rattle = peaks(white(rng, d) * gate, [(520, 80, 1.0), (1100, 160, 0.5)]) * bell_env(t, 0.45, 0.05, 0.55, 0.3)
+    x = norm(band(scratch, 250, 2200)) * 0.6 + norm(rattle) * 0.8 + dark_ring(t, 0.5, 146.8, 1.3, 0.6)
+    return level(deep_dark(rng, x, 0.35), 0.8)
 
 
 def sculk_call(rng, v):
@@ -253,9 +268,9 @@ def sculk_call(rng, v):
             u = np.maximum(t - s - dt, 0)
             x += np.sin(phase(55 * (1 + 0.6 * np.exp(-u / 0.05)))) * env(t, s + dt, 0.01, 0.22) * (1.0 if j == 0 else 0.65)
     start = 0.6 if v == 1 else 1.45
-    for i, f in enumerate((1500, 1900, 2400, 3000)):
-        x += chirp(rng, t, start + 0.12 * i, f, 0.07, 0.5)
-    x += glass_ring(t, start + 0.55, 1318.5, 1.2, 0.45) + glass_ring(t, start + 0.8, 1760.0, 1.2, 0.35)
+    for i, f in enumerate((300, 360, 430, 520)):
+        x += low_chirp(rng, t, start + 0.14 * i, f, 0.11, 0.55)
+    x += dark_ring(t, start + 0.6, 110.0, 1.6, 0.7) + dark_ring(t, start + 0.85, 164.8, 1.6, 0.5)
     return level(deep_dark(rng, x, 0.45), 0.8)
 
 
@@ -265,7 +280,7 @@ def sculk_pulse(rng, v):
     t = t_(d)
     u = np.maximum(t - 0.01, 0)
     x = np.sin(phase(60 * (1 + 0.5 * np.exp(-u / 0.04)))) * env(t, 0.01, 0.008, 0.12)
-    x += lowpass(chirp(rng, t, 0.08 if v == 1 else 0.11, 2200 if v == 1 else 2500, 0.05, 0.5), 3500)
+    x += low_chirp(rng, t, 0.08 if v == 1 else 0.11, 520 if v == 1 else 600, 0.07, 0.5)
     return level(deep_dark(rng, x, 0.3), 0.55)
 
 
@@ -273,10 +288,10 @@ def sculk_hurt(rng, v):
     """A squelch, and a chirp that falls."""
     d = 0.7
     t = t_(d)
-    squelch = peaks(white(rng, d), [(700 if v == 1 else 560, 180, 1.0), (1500, 300, 0.5)]) * env(t, 0.0, 0.004, 0.06)
+    squelch = peaks(white(rng, d), [(420 if v == 1 else 340, 120, 1.0), (900, 200, 0.4)]) * env(t, 0.0, 0.004, 0.07)
     u = np.maximum(t - 0.04, 0)
-    f = (2600 if v == 1 else 2300) * np.exp(-u / 0.25)
-    fall = (np.sin(phase(np.maximum(f, 600))) + 0.3 * np.sin(phase(np.maximum(f, 600) * 2))) * env(t, 0.04, 0.005, 0.14)
+    f = (900 if v == 1 else 780) * np.exp(-u / 0.25)
+    fall = lowpass(np.sin(phase(np.maximum(f, 200))) + 0.3 * np.sin(phase(np.maximum(f, 200) * 2)), 1500) * env(t, 0.04, 0.005, 0.16)
     x = norm(squelch) * 0.8 + fall * 0.8 + crackle_wet(rng, t, 60, 400, 1200) * env(t, 0.0, 0.01, 0.2) * 0.3
     return level(deep_dark(rng, x, 0.28))
 
@@ -286,13 +301,13 @@ def sculk_death(rng, v):
     d = 3.2
     t = t_(d)
     fade = np.exp(-t / 0.9)
-    wet = crackle_wet(rng, t, 70, 300, 1400) * fade
+    wet = lowpass(crackle_wet(rng, t, 70, 200, 800), 1200) * fade
     from ambient import sweep
-    sigh = sweep(pink(rng, d), lambda s, fr: 1 / np.sqrt(1 + (fr / (1600 - 1200 * min(1, s / 1.6))) ** 4)) * bell_env(t, 0.25, 0.3, 0.3, 1.2)
+    sigh = sweep(pink(rng, d), lambda s, fr: 1 / np.sqrt(1 + (fr / (900 - 650 * min(1, s / 1.6))) ** 4)) * bell_env(t, 0.25, 0.3, 0.3, 1.2)
     x = norm(wet) * 0.5 + norm(sigh) * 0.6
-    for i, f in enumerate((2600, 2100, 1700)):
-        x += chirp(rng, t, 0.1 + 0.18 * i, f, 0.07, 0.5 - 0.12 * i)
-    x += glass_ring(t, 1.2, 880.0, 1.4, 0.4)
+    for i, f in enumerate((520, 420, 330)):
+        x += low_chirp(rng, t, 0.1 + 0.2 * i, f, 0.1, 0.5 - 0.12 * i)
+    x += dark_ring(t, 1.2, 98.0, 1.8, 0.7)
     return level(deep_dark(rng, x, 0.45), 0.8)
 
 

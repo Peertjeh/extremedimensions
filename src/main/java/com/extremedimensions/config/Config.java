@@ -391,6 +391,17 @@ public final class Config {
 	public static int SCULK_LURKER_LURE_RANGE = 48;
 	/** Seconds it stays before it sinks into the sculk, its work done or not. */
 	public static int SCULK_LURKER_SECONDS = 180;
+	/** Chance an Ancient City sends a pack of Sculk Lurkers out when players walk into it. 0: never. */
+	public static double SCULK_LURKER_CITY_CHANCE = 1.0;
+	/** Seconds before the same Ancient City sends another pack out, whoever comes. */
+	public static int SCULK_LURKER_CITY_COOLDOWN_SECONDS = 1200;
+	/** Fewest and most Sculk Lurkers in a pack for one player. */
+	public static int SCULK_LURKER_PACK_MIN = 2;
+	public static int SCULK_LURKER_PACK_MAX = 3;
+	/** More in the pack for every further player in the city. */
+	public static int SCULK_LURKER_PACK_PER_PLAYER = 1;
+	/** Most in a pack, however many players there are. */
+	public static int SCULK_LURKER_PACK_CAP = 6;
 
 	// --- Leaving in danger ----------------------------------------------------------------------
 
@@ -1416,6 +1427,8 @@ public final class Config {
 			{"cave_lurker_give_up_seconds", 1, 120}, {"cave_lurker_flee_seconds", 1, 60},
 			{"sculk_lurker_spawn_chance", 0, 1}, {"sculk_lurker_rattle_seconds", 3, 600}, {"sculk_lurker_shrieker_range", 4, 48},
 			{"sculk_lurker_lure_range", 8, 96}, {"sculk_lurker_seconds", 20, 3600},
+			{"sculk_lurker_city_chance", 0, 1}, {"sculk_lurker_city_cooldown_seconds", 0, 86400}, {"sculk_lurker_pack_min", 1, 8},
+			{"sculk_lurker_pack_max", 1, 8}, {"sculk_lurker_pack_per_player", 0, 4}, {"sculk_lurker_pack_cap", 1, 12},
 			{"curse_fresh_weight", 1, 20}, {"weaver_pity", 0, 1}, {"seam_thinned_fragment_chance", 0, 1}, {"seam_collapse_toll", 0, 1},
 			{"music_disc_listens_chance", 0, 1}, {"disc_fragment_elegy_count", 0, 9}, {"disc_fragment_abyss_broken", 0, 9},
 			{"disc_fragment_abyss_tangle_chance", 0, 1}, {"disc_fragment_abyss_ray_chance", 0, 1},

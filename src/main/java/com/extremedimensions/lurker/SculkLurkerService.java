@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+import it.unimi.dsi.fastutil.longs.LongSet;
+
 import com.extremedimensions.config.Config;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.server.Dims;
@@ -19,6 +21,8 @@ import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,6 +36,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SculkShriekerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -92,6 +100,8 @@ public final class SculkLurkerService {
 	private static final Map<UUID, ServerLevel> LEVELS = new HashMap<>();
 	/** Server tick each player last had a Sculk Lurker come (cooldown). */
 	private static final Map<UUID, Long> LAST = new HashMap<>();
+	/** Server tick each Ancient City (by its box's lowest corner) last sent a pack of them out (cooldown). */
+	private static final Map<String, Long> CITY_LAST = new HashMap<>();
 
 	public static boolean isDriven(Entity e) {
 		return STATES.containsKey(e.getUUID());
@@ -101,17 +111,97 @@ public final class SculkLurkerService {
 		STATES.clear();
 		LEVELS.clear();
 		LAST.clear();
+		CITY_LAST.clear();
 	}
 
 	// ------------------------------------------------------------------ coming
 
 	/** Whether one may come to this player: in the Deep Dark of the Overworld, shriekers that can call the Warden near. */
 	public static boolean fits(ServerPlayer p) {
+		return inDeepDark(p) && !shriekers((ServerLevel) p.level(), p.blockPosition(), COME_RANGE).isEmpty();
+	}
+
+	/** Whether this player is one they may come to at all: in the Deep Dark of the Overworld, playing, in a world of the mod. */
+	static boolean inDeepDark(ServerPlayer p) {
 		if (Config.SCULK_LURKER_ENABLED <= 0 || !Dims.OVERWORLD.equals(Dims.of(p)) || !Dims.ours(p) || p.isSpectator() || p.isCreative()
 				|| !p.isAlive() || Rules.peaceful(p.level()) || !(p.level() instanceof ServerLevel level)) {
 			return false;
 		}
-		return level.getBiome(p.blockPosition()).is(Biomes.DEEP_DARK) && !shriekers(level, p.blockPosition(), COME_RANGE).isEmpty();
+		return level.getBiome(p.blockPosition()).is(Biomes.DEEP_DARK);
+	}
+
+	/** The Ancient City this position stands in (its bounding box), or null (only in chunks already loaded). */
+	public static BoundingBox city(ServerLevel level, BlockPos at) {
+		if (!Loaded.ready(level, at)) {
+			return null;
+		}
+		Registry<Structure> structures = level.registryAccess().lookupOrThrow(Registries.STRUCTURE);
+		for (Map.Entry<Structure, LongSet> e : level.structureManager().getAllStructuresAt(at).entrySet()) {
+			if (!structures.wrapAsHolder(e.getKey()).is(BuiltinStructures.ANCIENT_CITY)) {
+				continue;
+			}
+			List<StructureStart> starts = new ArrayList<>();
+			level.structureManager().fillStartsForStructure(e.getKey(), e.getValue(), starts::add);
+			for (StructureStart start : starts) {
+				BoundingBox box = start.getBoundingBox();
+				if (box.isInside(at)) {
+					return box;
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * How many come at once to this many players in a city: sculk_lurker_pack_min to sculk_lurker_pack_max, and
+	 * sculk_lurker_pack_per_player more for every player after the first, never more than sculk_lurker_pack_cap.
+	 */
+	public static int packSize(int players, java.util.Random rnd) {
+		int min = Math.max(1, Config.SCULK_LURKER_PACK_MIN), max = Math.max(min, Config.SCULK_LURKER_PACK_MAX);
+		int n = min + rnd.nextInt(max - min + 1) + Math.max(0, players - 1) * Math.max(0, Config.SCULK_LURKER_PACK_PER_PLAYER);
+		return Math.max(1, Math.min(n, Math.max(1, Config.SCULK_LURKER_PACK_CAP)));
+	}
+
+	/**
+	 * Players walk into an Ancient City: it sends a pack of its servants out to them, spread over everyone inside, and
+	 * then not again for a while (sculk_lurker_city_cooldown_seconds, for the city whoever comes).
+	 */
+	private static void cities(MinecraftServer s) {
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		long now = s.getTickCount();
+		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
+			if (!inDeepDark(p)) {
+				continue;
+			}
+			ServerLevel level = (ServerLevel) p.level();
+			BoundingBox box = city(level, p.blockPosition());
+			if (box == null) {
+				continue;
+			}
+			String key = level.dimension().identifier() + "|" + box.minX() + "," + box.minY() + "," + box.minZ();
+			Long last = CITY_LAST.get(key);
+			if (last != null && now - last < Math.max(0, Config.SCULK_LURKER_CITY_COOLDOWN_SECONDS) * 20L) {
+				continue;
+			}
+			CITY_LAST.put(key, now);
+			if (rnd.nextDouble() >= Config.SCULK_LURKER_CITY_CHANCE) {
+				continue;
+			}
+			List<ServerPlayer> inside = new ArrayList<>();
+			for (ServerPlayer q : level.players()) {
+				if (inDeepDark(q) && box.isInside(q.blockPosition())) {
+					inside.add(q);
+				}
+			}
+			int n = packSize(inside.size(), new java.util.Random(rnd.nextLong()));
+			for (int i = 0; i < n; i++) {
+				come(inside.get(i % inside.size()));
+			}
+			// (and the one-at-a-time roll leaves them be for its own while)
+			for (ServerPlayer q : inside) {
+				LAST.put(q.getUUID(), now);
+			}
+		}
 	}
 
 	/** The shriekers that can call up the Warden within this range, nearest first (only in chunks already loaded). */
@@ -140,6 +230,9 @@ public final class SculkLurkerService {
 
 	public static void tick(MinecraftServer s) {
 		drive();
+		if (Config.SCULK_LURKER_ENABLED > 0 && (s.getTickCount() + 20) % 40 == 0) {
+			cities(s);
+		}
 		// (a quarter of a cycle off the Lurker's look, and the Cave Lurker's)
 		if (Config.SCULK_LURKER_ENABLED <= 0 || (s.getTickCount() + 100) % 400 != 0) {
 			return;
