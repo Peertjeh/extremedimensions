@@ -1699,6 +1699,12 @@ public final class HollowService {
 		return n;
 	}
 
+	/** For the tests: whether this young one is biting at this prey (one of a swarm, or sent to bite). */
+	public static boolean bitingAt(Hollowling h, UUID prey) {
+		Little st = LITTLES.get(h.getUUID());
+		return st != null && st.mode == Mode.ATTACK && prey.equals(st.prey);
+	}
+
 	/** For the tests: how many young of the tribe are biting at a swarm's prey right now. */
 	public static int biting(UUID prey) {
 		int n = 0;

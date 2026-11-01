@@ -389,7 +389,8 @@ public class LurkerTests {
 			try {
 				check(helper, LurkerService.swarm(p), "no swarm came");
 				check(helper, HollowService.biting(p.getUUID()) >= 1, "no young came with the swarm");
-				var hs = level.getEntitiesOfClass(Hollowling.class, new AABB(p.blockPosition()).inflate(40), e -> true);
+				// (only this swarm's young: a stray one from another test may stand near)
+				var hs = level.getEntitiesOfClass(Hollowling.class, new AABB(p.blockPosition()).inflate(40), e -> HollowService.bitingAt(e, p.getUUID()));
 				check(helper, !hs.isEmpty() && hs.stream().allMatch(x -> x.getLurkerMood() == LurkerBody.MOOD_HUNTER), "a swarm's young do not glow red");
 				// (brought to their prey at once, so the test waits on the bite, not on how far they spawned)
 				for (Hollowling x : hs) {
