@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.10.3: The Clan Page, Fitted
+
+### Journal
+- The Clan page's shorter lines: every line now fits its page, also in Dutch and with a clan of four (the note under
+  the standing the tribe goes by, the four steps of one of no clan, and the line at the foot of the cord's law were
+  cut off at the bottom of the page).
+
 ## 3.10.2: The Clan Page
 
 ### Journal
