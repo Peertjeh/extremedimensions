@@ -313,7 +313,8 @@ public final class SculkLurkerService {
 			}
 			Vec3 spot = Vec3.atBottomCenterOf(st.beside);
 			double dx = spot.x - sl.getX(), dz = spot.z - sl.getZ();
-			if (dx * dx + dz * dz <= 0.8 * 0.8 && Math.abs(spot.y - sl.getY()) < 1.2) {
+			double flat = Math.sqrt(dx * dx + dz * dz);
+			if (flat <= 1.0 && Math.abs(spot.y - sl.getY()) < 1.2) {
 				// there: it scratches at the shrieker, then it shrieks
 				TribeMoves.stand(sl);
 				sl.getLookControl().setLookAt(st.shrieker.getX() + 0.5, st.shrieker.getY() + 0.5, st.shrieker.getZ() + 0.5, 30, 30);
@@ -334,7 +335,13 @@ public final class SculkLurkerService {
 				return;
 			}
 			sl.setLurkerPose(Lurker.POSE_RUN);
-			if (st.ticks % 5 == 0) {
+			if (flat < 2.5 && TribeMoves.clear(level, sl, spot)) {
+				// the last steps straight onto the spot (a route ends a block short of where it was asked to go)
+				sl.getNavigation().stop();
+				if (flat > 0.3) {
+					sl.getMoveControl().setWantedPosition(spot.x, spot.y, spot.z, 1.0);
+				}
+			} else if (st.ticks % 5 == 0) {
 				TribeMoves.go(sl, spot.x, spot.y, spot.z, 1.2);
 				TribeMoves.trimBehind(sl);
 			}
