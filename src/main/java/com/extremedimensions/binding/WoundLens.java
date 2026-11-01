@@ -131,6 +131,13 @@ public final class WoundLens {
 
 	/** What a Lurker is about: watching, stalking, taking, drinking, fleeing, or (glowing red) hunting you. */
 	public static Component lurker(Lurker l) {
+		if (l instanceof com.extremedimensions.lurker.CaveLurker) {
+			// it hunts (red), runs into the dark, or listens
+			String doing = l.getLurkerMood() == com.extremedimensions.lurker.LurkerBody.MOOD_HUNTER ? "hunting"
+					: l.getLurkerPose() == Lurker.POSE_RUN ? "fleeing" : "listening";
+			return Component.translatable("gui.extremedimensions.lens.cave_lurker." + doing)
+					.withStyle("hunting".equals(doing) ? ChatFormatting.RED : ChatFormatting.DARK_AQUA);
+		}
 		if (l.getLurkerMood() == com.extremedimensions.lurker.LurkerBody.MOOD_HUNTER) {
 			return Component.translatable("gui.extremedimensions.lens.lurker.hunting").withStyle(ChatFormatting.RED);
 		}

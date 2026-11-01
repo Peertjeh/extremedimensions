@@ -570,6 +570,7 @@ public class JournalScreen extends Screen {
 	private static EntityType<? extends LivingEntity> type(Bestiary.Beast b) {
 		return switch (b) {
 			case LURKER -> ModEntities.LURKER;
+			case CAVE_LURKER -> ModEntities.CAVE_LURKER;
 			case HOLLOWLING -> ModEntities.HOLLOWLING;
 			case KEEPER -> ModEntities.KEEPER;
 			case STARVED_ONE -> ModEntities.STARVED_ONE;

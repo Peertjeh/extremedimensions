@@ -569,7 +569,7 @@ public class ClientShots implements FabricClientGameTest {
 			com.extremedimensions.client.screen.JournalScreen[] journal = new com.extremedimensions.client.screen.JournalScreen[1];
 			ctx.runOnClient(mc -> {
 				journal[0] = new com.extremedimensions.client.screen.JournalScreen(java.util.Set.of("tethered", "anchor", "barter", "fray"),
-						"lurker:1:4;hollowling:1:0;keeper:1:1;starved_one:0:0;thinned:1:2;veil_ray:1:0;matriarch:1:0;ferryman:0:0;weaver:0:0",
+						"lurker:1:4;cave_lurker:1:3;hollowling:1:0;keeper:1:1;starved_one:0:0;thinned:1:2;veil_ray:1:0;matriarch:1:0;ferryman:0:0;weaver:0:0",
 						"road:expeditions=12;road:collapses=3;road:longest=1834;road:furthest=742;road:deaths=5;road:seam_visits=4;road:fray_descents=2;"
 								+ "burden:curses=19/8;burden:lifted=6;burden:scars=4;burden:pages=21/37;burden:relic=ember_heart;burden:seen=6/9;"
 								+ "others:standing=trusted/47;others:bartered=9;others:raids=1;others:keepers=3;others:great=0;others:lifts_given=2;"
@@ -581,6 +581,12 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("16_bestiary_lurker");
 			ctx.runOnClient(mc -> check(com.extremedimensions.client.screen.JournalScreen.likenessError() == null,
 					"the bestiary could not draw a likeness: " + com.extremedimensions.client.screen.JournalScreen.likenessError()));
+			// The Cave Lurker's page, the next one
+			ctx.runOnClient(mc -> pressOnce(journal[0], "▶"));
+			ctx.waitTicks(16);
+			ctx.takeScreenshot("16_bestiary_cave_lurker");
+			ctx.runOnClient(mc -> check(com.extremedimensions.client.screen.JournalScreen.likenessError() == null,
+					"the bestiary could not draw the Cave Lurker: " + com.extremedimensions.client.screen.JournalScreen.likenessError()));
 			ctx.runOnClient(mc -> {
 				for (int i = 0; i < 6; i++) {
 					pressOnce(journal[0], "▶");
@@ -801,6 +807,54 @@ public class ClientShots implements FabricClientGameTest {
 			// (gone without a death, which would leave their drops in the later shots)
 			sp.getServer().runOnServer(s -> player(s).level().getEntitiesOfClass(net.minecraft.world.entity.Mob.class,
 					player(s).getBoundingBox().inflate(20), e -> e.entityTags().contains("mood_shot")).forEach(net.minecraft.world.entity.Entity::discard));
+			// The Cave Lurker in a miner's tunnel, one wide and two high, glowing red as it comes; and one listening beside it
+			java.util.List<BlockPos> tunnelBlocks = new java.util.ArrayList<>();
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) p.level();
+				double yaw = Math.toRadians(p.getYRot());
+				double fx = -Math.sin(yaw), fz = Math.cos(yaw);
+				// along the nearer axis of the way the player looks
+				int ax = Math.abs(fx) >= Math.abs(fz) ? (int) Math.signum(fx) : 0, az = ax == 0 ? (int) Math.signum(fz) : 0;
+				BlockPos feet = p.blockPosition();
+				// walls either side, a roof two blocks up and a far end; the near end open to look in
+				for (int dist = 3; dist <= 12; dist++) {
+					for (int side = -1; side <= 1; side++) {
+						for (int y = 0; y <= 2; y++) {
+							if (side == 0 && y <= 1 && dist < 12) {
+								continue;
+							}
+							BlockPos q = feet.offset(ax * dist - az * side, y, az * dist + ax * side);
+							level.setBlock(q, net.minecraft.world.level.block.Blocks.DEEPSLATE.defaultBlockState(), 3);
+							tunnelBlocks.add(q);
+						}
+					}
+				}
+				int[][] at = {{6, com.extremedimensions.lurker.LurkerBody.MOOD_HUNTER, com.extremedimensions.lurker.Lurker.POSE_RUN},
+						{10, com.extremedimensions.lurker.LurkerBody.MOOD_CALM, com.extremedimensions.lurker.Lurker.POSE_WATCH}};
+				for (int[] a : at) {
+					com.extremedimensions.lurker.CaveLurker cl = com.extremedimensions.registry.ModEntities.CAVE_LURKER.create(level,
+							net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+					if (cl == null) {
+						continue;
+					}
+					cl.snapTo(feet.getX() + 0.5 + ax * a[0], feet.getY(), feet.getZ() + 0.5 + az * a[0], p.getYRot() + 180f, 0f);
+					cl.setNoAi(true);
+					cl.addTag("cave_shot");
+					cl.setLurkerMood(a[1]);
+					cl.setLurkerPose(a[2]);
+					level.addFreshEntity(cl);
+				}
+			});
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("15_cave_lurker_tunnel");
+			sp.getServer().runOnServer(s -> {
+				player(s).level().getEntitiesOfClass(net.minecraft.world.entity.Mob.class, player(s).getBoundingBox().inflate(20),
+						e -> e.entityTags().contains("cave_shot")).forEach(net.minecraft.world.entity.Entity::discard);
+				for (BlockPos q : tunnelBlocks) {
+					player(s).level().setBlock(q, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				}
+			});
 			// The trims side by side on iron: vanilla's Coast in amethyst, Coast in Seam Silk, the Weaver in amethyst
 			String[][] matrix = {{"trim_a", "minecraft:coast", "minecraft:amethyst"}, {"trim_b", "minecraft:coast", "extremedimensions:seam_silk"},
 					{"trim_c", "extremedimensions:weaver", "minecraft:amethyst"}};

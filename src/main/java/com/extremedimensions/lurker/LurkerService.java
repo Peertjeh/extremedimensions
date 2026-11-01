@@ -279,6 +279,10 @@ public final class LurkerService {
 				found = "hunt";
 			}
 		}
+		// (a Cave Lurker on their heels too)
+		if (found == null && CaveLurkerService.hunting(p)) {
+			found = "hunt";
+		}
 		return found;
 	}
 

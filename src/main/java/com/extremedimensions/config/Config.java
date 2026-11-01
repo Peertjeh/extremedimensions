@@ -336,6 +336,40 @@ public final class Config {
 	public static int LURKER_YOUNG = 2;
 	public static int LURKER_YOUNG_SECONDS = 30;
 
+	// --- The Cave Lurker ------------------------------------------------------------------------
+
+	/** 1 = Cave Lurkers come to players deep under the Overworld, 0 = never. */
+	public static int CAVE_LURKER_ENABLED = 1;
+	/** Chance per player every 20 seconds, while they are underground, that a Cave Lurker comes (outside the cooldown). */
+	public static double CAVE_LURKER_SPAWN_CHANCE = 0.008;
+	/** Minimum seconds between two Cave Lurkers for the same player. */
+	public static int CAVE_LURKER_COOLDOWN_SECONDS = 1800;
+	/** Only below this height, with no sky above, does it come. */
+	public static int CAVE_LURKER_MAX_Y = 40;
+	/** The brightest light (from torches and the like) where it may wait; it keeps to the dark. */
+	public static int CAVE_LURKER_MAX_LIGHT = 7;
+	/** Closest and furthest it waits from the player, out of their sight. */
+	public static int CAVE_LURKER_DISTANCE_MIN = 14;
+	public static int CAVE_LURKER_DISTANCE_MAX = 28;
+	/**
+	 * It hunts by ear: how much it must hear before it comes (a run, a jump, a block broken or a blow each add to it, the
+	 * nearer the more; a sneaking player adds nothing), how far it hears, and how near it notices someone however quiet.
+	 */
+	public static double CAVE_LURKER_HEAR = 60.0;
+	public static int CAVE_LURKER_HEAR_RANGE = 24;
+	public static double CAVE_LURKER_NOTICE = 4.0;
+	/** Seconds it listens before it gives up and slinks off. */
+	public static int CAVE_LURKER_LISTEN_SECONDS = 120;
+	/** Its speed while it hunts (a multiplier), and how long it hunts before it gives up. */
+	public static double CAVE_LURKER_SPEED = 1.4;
+	public static int CAVE_LURKER_HUNT_SECONDS = 40;
+	/** Damage of its grab (half-hearts). The grab always leaves a curse as well; this is the chance it is one of the Extreme set. */
+	public static double CAVE_LURKER_DAMAGE = 5.0;
+	public static double CAVE_LURKER_CURSE_EXTREME_CHANCE = 0.0;
+	/** Seconds it waits for a prey it cannot get at before it gives up, and that it runs before it is gone into the stone. */
+	public static int CAVE_LURKER_GIVE_UP_SECONDS = 8;
+	public static int CAVE_LURKER_FLEE_SECONDS = 6;
+
 	// --- Leaving in danger ----------------------------------------------------------------------
 
 	/**
@@ -1338,6 +1372,10 @@ public final class Config {
 			{"clan_max", 2, 16}, {"clan_cord_price", 1, 64}, {"clan_blood", 0, 19}, {"clan_share_loss", 0, 1}, {"clan_share_gain", 0, 1},
 			{"clan_range", 0, 256}, {"clan_lock_minutes", 0, 10080}, {"clan_leave_cost", 0, 200}, {"clan_leave_curses", 0, 10}, {"clan_left_cost", 0, 200},
 			{"ambient_chance", 0, 1}, {"ambient_min_seconds", 10, 3600}, {"ambient_volume", 0, 2}, {"ambient_dread", 0, 1},
+			{"cave_lurker_spawn_chance", 0, 1}, {"cave_lurker_max_light", 0, 15}, {"cave_lurker_distance_min", 6, 48}, {"cave_lurker_distance_max", 8, 64},
+			{"cave_lurker_hear", 1, 100000}, {"cave_lurker_hear_range", 4, 64}, {"cave_lurker_notice", 0, 16}, {"cave_lurker_listen_seconds", 5, 3600},
+			{"cave_lurker_speed", 0.2, 4}, {"cave_lurker_hunt_seconds", 5, 600}, {"cave_lurker_damage", 0, 40}, {"cave_lurker_curse_extreme_chance", 0, 1},
+			{"cave_lurker_give_up_seconds", 1, 120}, {"cave_lurker_flee_seconds", 1, 60},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},
 			{"seam_fray_ray_cooldown", 1, 120}, {"seam_fray_gloom", 0, 30}, {"seam_fray_gloom_every", 10, 3600}, {"seam_fray_unravel", 0, 1},
 			{"seam_briefing", 0, 100}, {"hud_boss_bar", 0, 1}, {"hints", 0, 1}, {"frame_silk", 0, 64}, {"first_knot_distance", 200, 5000}, {"knot_mother_rest", 0, 100000},

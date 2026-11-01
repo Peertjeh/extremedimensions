@@ -70,7 +70,8 @@ public final class TetherCommand {
 						.then(Commands.literal("stalk").executes(c -> lurker(c.getSource(), "stalk")))
 						.then(Commands.literal("hunt").executes(c -> lurker(c.getSource(), "hunt")))
 						.then(Commands.literal("swarm").executes(c -> lurker(c.getSource(), "swarm")))
-						.then(Commands.literal("drain").executes(c -> lurker(c.getSource(), "drain"))))
+						.then(Commands.literal("drain").executes(c -> lurker(c.getSource(), "drain")))
+						.then(Commands.literal("cave").executes(c -> lurker(c.getSource(), "cave"))))
 				.then(Commands.literal("hoard").requires(op).executes(c -> hoard(c.getSource())))
 				.then(Commands.literal("boss").requires(op)
 						.then(Commands.literal("matriarch").executes(c -> boss(c.getSource(), "matriarch")))
@@ -309,7 +310,7 @@ public final class TetherCommand {
 	/** Summons a Lurker in the given mode near the executing player (for testing and showcases). */
 	private static int lurker(CommandSourceStack src, String mode) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
 		ServerPlayer p = src.getPlayerOrException();
-		boolean ok = LurkerService.summon(p, mode);
+		boolean ok = "cave".equals(mode) ? com.extremedimensions.lurker.CaveLurkerService.summon(p) : LurkerService.summon(p, mode);
 		src.sendSuccess(() -> Component.translatable(ok ? "commands.extremedimensions.lurker.summoned" : "commands.extremedimensions.lurker.failed"), false);
 		return ok ? 1 : 0;
 	}

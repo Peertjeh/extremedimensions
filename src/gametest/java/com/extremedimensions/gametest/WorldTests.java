@@ -143,7 +143,7 @@ public class WorldTests {
 
 	@GameTest(maxTicks = 40)
 	public void everyCreatureSpawnsAndTicks(GameTestHelper helper) {
-		EntityType<?>[] types = {ModEntities.LURKER, ModEntities.HOLLOWLING, ModEntities.KEEPER, ModEntities.STARVED_ONE,
+		EntityType<?>[] types = {ModEntities.LURKER, ModEntities.CAVE_LURKER, ModEntities.HOLLOWLING, ModEntities.KEEPER, ModEntities.STARVED_ONE,
 				ModEntities.VEIL_RAY, ModEntities.THINNED, ModEntities.MATRIARCH, ModEntities.FERRYMAN, ModEntities.WEAVER,
 				ModEntities.KNOT_MOTHER};
 		Mob[] spawned = new Mob[types.length];

@@ -108,6 +108,7 @@ public final class ServerEvents {
 			com.extremedimensions.tapestry.Tapestry.clear();
 			com.extremedimensions.seam.FirstKnot.clear();
 			LurkerService.clear();
+			com.extremedimensions.lurker.CaveLurkerService.clear();
 			com.extremedimensions.world.AmbientService.clear();
 			com.extremedimensions.coop.ClanService.clear();
 			com.extremedimensions.penalty.FleeService.clear();
@@ -177,6 +178,7 @@ public final class ServerEvents {
 			com.extremedimensions.binding.WoundLens.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.binding.Charms.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.world.AmbientService.forget(handler.getPlayer().getUUID());
+			com.extremedimensions.lurker.CaveLurkerService.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.coop.ClanService.forget(handler.getPlayer().getUUID());
 			// Every player's inventory is saved with the world's data, so neither can run ahead of the other after a crash
 			// (a stopping server saves them all once itself)
@@ -285,6 +287,8 @@ public final class ServerEvents {
 				HollowService.onKeeperDeath(k, HollowService.culprit(k, source.getEntity()));
 			} else if (entity instanceof Hollowling h) {
 				HollowService.onHollowlingDeath(h, HollowService.culprit(h, source.getEntity()));
+			} else if (entity instanceof com.extremedimensions.lurker.CaveLurker cl) {
+				com.extremedimensions.lurker.CaveLurkerService.onDeath(cl);
 			} else if (entity instanceof Lurker l) {
 				LurkerService.onDeath(l, HollowService.culprit(l, source.getEntity()));
 			} else if (entity instanceof com.extremedimensions.seam.VeilRay || entity instanceof com.extremedimensions.seam.Thinned) {
@@ -428,6 +432,8 @@ public final class ServerEvents {
 			AnchorService.onBroken(Dims.of(level), pos);
 			if (player instanceof ServerPlayer sp) {
 				CurseEffects.wear(sp);
+				// a Cave Lurker listening hears the stone give way
+				com.extremedimensions.lurker.CaveLurkerService.noise(sp, 10);
 				// Veinseeker: the ore and veins near broken stone ring out
 				com.extremedimensions.binding.Charms.seek(sp, pos, state);
 			}
@@ -455,6 +461,8 @@ public final class ServerEvents {
 		AttackEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
 			if (player instanceof ServerPlayer sp && entity instanceof net.minecraft.world.entity.LivingEntity) {
 				CurseEffects.wear(sp);
+				// a fight is loud in the dark
+				com.extremedimensions.lurker.CaveLurkerService.noise(sp, 6);
 			}
 			return InteractionResult.PASS;
 		});
@@ -684,6 +692,7 @@ public final class ServerEvents {
 		}
 		AnchorService.tick(s);
 		LurkerService.tick(s);
+		com.extremedimensions.lurker.CaveLurkerService.tick(s);
 		com.extremedimensions.world.AmbientService.tick(s);
 		com.extremedimensions.penalty.AbyssalTolls.serverTick(s);
 		com.extremedimensions.penalty.AbyssalWorld.serverTick(s);

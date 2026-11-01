@@ -88,6 +88,37 @@ public final class TribeMoves {
 		}
 	}
 
+	/**
+	 * Skips the first steps of its route that already lie behind the creature. A route is worked out from the block it
+	 * stands in, and the middle of that block (and of the next, round a corner) may be a little behind it: walking to
+	 * them, it would turn back for half a step and then round again, the turn on the spot that looks like a spin.
+	 */
+	public static void trimBehind(Mob m) {
+		Path path = m.getNavigation().getPath();
+		if (path == null || path.isDone()) {
+			return;
+		}
+		for (int guard = 0; guard < 3 && path.getNextNodeIndex() + 1 < path.getNodeCount(); guard++) {
+			int i = path.getNextNodeIndex();
+			Vec3 a = path.getEntityPosAtNode(m, i), b = path.getEntityPosAtNode(m, i + 1);
+			double ax = a.x - m.getX(), az = a.z - m.getZ();
+			double wx = b.x - a.x, wz = b.z - a.z, w = Math.sqrt(wx * wx + wz * wz);
+			// behind: on its level, near, and clearly passed (a quarter block back along the way on from it; less, and the
+			// route's own step to the next point takes it, while a corner just ahead is never cut)
+			if (w > 1e-3 && Math.abs(a.y - m.getY()) < 0.6 && ax * ax + az * az < 1.2 * 1.2 && (ax * wx + az * wz) / w < -0.25) {
+				path.advance();
+			} else {
+				break;
+			}
+		}
+	}
+
+	/** It stops where it is and stands (facing whatever its eyes are set on). */
+	public static void stand(Mob m) {
+		m.getNavigation().stop();
+		m.getMoveControl().setWait();
+	}
+
 	/** How near it comes to what it follows: body to body, with a little room between them. */
 	static double keepOff(Mob m, Entity t) {
 		return (m.getBbWidth() + t.getBbWidth()) / 2 + 0.5;

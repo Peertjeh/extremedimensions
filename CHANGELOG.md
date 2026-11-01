@@ -1,5 +1,38 @@
 # Changelog
 
+## 3.11.0: What Listens Below
+
+### The Cave Lurker
+- **A new creature of the tribe, under the Overworld.** The Lurker's kin of the deep: pale, damp, and small enough
+  for a miner's tunnel (narrower than a block, lower than two), on all fours when it runs. Rarer than the Lurker, and
+  it comes only to a player deep under the ground (below height 40, no sky above), waiting in the dark out of sight.
+- **It hunts by ear, not by eye.** Every sound near it adds to what it has heard: a step a little, a run or a jump
+  more, a broken block or a blow much more, the nearer the more, and a little of it fades each moment. **A sneaking
+  player makes no sound at all.** Its clicks quicken as it hears more (you can tell you are being listened for), and
+  once it has heard a good deal it creeps nearer. Heard enough, or come upon within four blocks, it comes: glowing
+  red, fast, on all fours through the tunnels. After two minutes with nothing heard it slinks off.
+- **Its grab always leaves a curse.** Close by it winds up with rattling clicks and lunges: it hurts, and it always
+  curses. A raised shield turns the grab aside (it is thrown back and tries again), and soul light or a Hollowling
+  friend makes it flinch and flee. After its grab, badly hurt, or giving up on a prey it cannot reach, it scuttles off
+  and is gone into the stone. It heeds no standing: it is feral, even to the tribe's kin.
+- **Pathfinding without turning round.** Its way through tunnels is kept steady: a route is worked out again only when
+  its prey has really moved; the first steps of a fresh route that already lie behind it are skipped (the cause of the
+  half-step back and the turn on the spot); close by it steps straight at its prey and stands once there; it never
+  turns more than 40 degrees in a tick; a walk that gets nowhere gets a fresh route, then it gives up. A prey it
+  cannot get at, it stands and faces, never circling.
+- In the bestiary (its own page), the Wound Lens (listening, hunting, going back into the stone), the wound-born tag,
+  and `/tether lurker cave` for operators. Seventeen settings (`cave_lurker_*`, EN/NL), its chance, cooldown and
+  Extreme-curse chance set by each difficulty (Easy rarest, Extreme most often and with Extreme curses).
+- Logging out while one hunts you counts as fleeing, as with the Lurker.
+
+### Tests
+- A Cave Lurker runs a winding tunnel one wide and two high (four corners and a step up) to its prey: it gets there,
+  never turns more than 45 degrees in a tick, never more than 120 degrees within a second on the spot, no more than
+  the corners ask in all, and its grab leaves exactly one curse and hurts.
+- It hears a miner but not a sneak: sneaking to and fro is not heard at all, footsteps a little, broken stone brings
+  it on. It comes only under the ground, never under the open sky or above its height, and its body fits the tunnel.
+- The client shots show it in a tunnel (hunting and listening) and its bestiary page.
+
 ## 3.10.3: The Clan Page, Fitted
 
 ### Journal

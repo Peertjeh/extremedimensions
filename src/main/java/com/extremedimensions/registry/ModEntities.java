@@ -3,6 +3,7 @@ package com.extremedimensions.registry;
 import com.extremedimensions.ExtremeDimensions;
 import com.extremedimensions.hollow.Hollowling;
 import com.extremedimensions.hollow.Keeper;
+import com.extremedimensions.lurker.CaveLurker;
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.mending.StarvedOne;
 import com.extremedimensions.seam.Thinned;
@@ -30,6 +31,20 @@ public final class ModEntities {
 					.eyeHeight(3.0f)
 					.clientTrackingRange(10)
 					.build(LURKER_KEY));
+
+	private static final ResourceKey<EntityType<?>> CAVE_LURKER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("cave_lurker"));
+
+	/**
+	 * The Lurker's kin of the deep, low enough for a miner's tunnel (narrower than a block, lower than two); spawned only
+	 * by {@code CaveLurkerService}.
+	 */
+	public static final EntityType<CaveLurker> CAVE_LURKER = Registry.register(BuiltInRegistries.ENTITY_TYPE, CAVE_LURKER_KEY,
+			EntityType.Builder.<CaveLurker>of(CaveLurker::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(0.8f, 1.8f)
+					.eyeHeight(1.45f)
+					.clientTrackingRange(8)
+					.build(CAVE_LURKER_KEY));
 
 	private static final ResourceKey<EntityType<?>> HOLLOWLING_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("hollowling"));
 	private static final ResourceKey<EntityType<?>> KEEPER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("keeper"));
@@ -144,6 +159,7 @@ public final class ModEntities {
 		FabricDefaultAttributeRegistry.register(VEIL_RAY, VeilRay.createAttributes());
 		FabricDefaultAttributeRegistry.register(THINNED, Thinned.createAttributes());
 		FabricDefaultAttributeRegistry.register(LURKER, Lurker.createAttributes());
+		FabricDefaultAttributeRegistry.register(CAVE_LURKER, CaveLurker.createAttributes());
 		FabricDefaultAttributeRegistry.register(HOLLOWLING, Hollowling.createAttributes());
 		FabricDefaultAttributeRegistry.register(KEEPER, Keeper.createAttributes());
 		FabricDefaultAttributeRegistry.register(STARVED_ONE, StarvedOne.createAttributes());

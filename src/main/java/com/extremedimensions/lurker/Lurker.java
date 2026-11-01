@@ -122,6 +122,11 @@ public class Lurker extends Monster implements LurkerBody {
 		return hurt;
 	}
 
+	/** The hurt itself, without the Lurker's own answer to it (for its kin that answer in their own way). */
+	protected final boolean hurtWithoutLurker(ServerLevel level, DamageSource source, float amount) {
+		return super.hurtServer(level, source, amount);
+	}
+
 	@Override
 	protected SoundEvent getAmbientSound() {
 		return ModSounds.LURKER_AMBIENT;

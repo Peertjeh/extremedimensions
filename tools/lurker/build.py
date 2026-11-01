@@ -1,11 +1,11 @@
-"""The tribe's body: the Lurker, the Hollowling, the Keeper, the Starved One and the Thinned all wear it, each with its
-own texture. A hunched, cloaked giant on long knuckle-walking arms, ragged strips of cloak, strands dripping from a
+"""The tribe's body: the Lurker, the Cave Lurker, the Hollowling, the Keeper, the Starved One and the Thinned all wear
+it, each with its own texture. A hunched, cloaked giant on long knuckle-walking arms, ragged strips of cloak, strands dripping from a
 mask. The claws are fine parts (four pixels to a model pixel); the mask, its eyes, its brow and the fringe of the hood
 are at Minecraft's own size, painted finer and brought down;
 the part names and poses are the ones LurkerModel animates.
 
 usage: python3 tools/lurker/build.py [preview-json-dir]
-Writes LurkerGeometry.java and a base and glow texture for each of the five.
+Writes LurkerGeometry.java and a base and glow texture for each of the six.
 """
 import math
 import os
@@ -100,12 +100,17 @@ def _mask_parts(m, head):
         m.box(fr, -0.35, 0, -0.25, 0.7, 0.9 + 0.5 * ((k * 3) % 4), 0.5, "t_fray")
 
 
-# ----------------------------------------------------------------------------- the five
+# ----------------------------------------------------------------------------- the six
 
 SPECIES = {
     "lurker": dict(cloak=((14, 12, 20), (54, 46, 66)), limb=((22, 20, 26), (60, 56, 66)), skin=((40, 36, 44), (86, 80, 90)),
                    mask=((70, 64, 72), (140, 132, 138)), crack=(200, 110, 255), eye=(206, 120, 255), eye_hot=(250, 220, 255),
                    tendril=((10, 8, 14), (34, 26, 44)), tip=(90, 40, 140), claw=((40, 36, 40), (120, 110, 116)), face="lurker"),
+    # the Cave Lurker: pale and damp from the deep, its cloak the grey of wet slate, its cracks and eyes the pale green of
+    # glow lichen, a mask with a long slit of a mouth
+    "cave_lurker": dict(cloak=((20, 24, 26), (70, 80, 82)), limb=((74, 76, 76), (156, 158, 154)), skin=((96, 98, 94), (178, 180, 172)),
+                        mask=((150, 150, 140), (218, 216, 204)), crack=(150, 255, 176), eye=(170, 255, 196), eye_hot=(236, 255, 242),
+                        tendril=((14, 16, 18), (46, 52, 54)), tip=(90, 200, 130), claw=((80, 80, 74), (180, 178, 168)), face="cave"),
     "hollowling": dict(cloak=((20, 24, 36), (64, 74, 98)), limb=((28, 32, 44), (72, 80, 98)), skin=((52, 58, 72), (110, 118, 134)),
                        mask=((110, 118, 134), (196, 202, 214)), crack=(110, 190, 255), eye=(110, 200, 255), eye_hot=(225, 250, 255),
                        tendril=((14, 16, 24), (40, 46, 62)), tip=(60, 120, 200), claw=((60, 64, 72), (150, 156, 166)), face="hollowling"),
@@ -340,6 +345,16 @@ FACE_PX = {
                "SMMMMMMMCS",
                "SMMKKKKMMS",
                ".SMMMMMMS."],
+    "cave": ["SMMMMMMMMS",
+             "MLMMCMMMLM",
+             "MMMMCMMMMM",
+             "MMMMMCMMMM",
+             "MDDDMMDDDM",
+             "MDDDMMDDDM",
+             "SMdMMMMdMS",
+             "SMMMKKMMMS",
+             "SMMMKKMMMS",
+             ".SMMKKMMS."],
     "hollowling": [".SLLLLLLS.",
                    "SLLMLLMLLS",
                    "LMMMMMMMML",
@@ -383,6 +398,7 @@ FACE_PX = {
 }
 EYE_PX = {
     "lurker": ["eEe", ".e."],
+    "cave": [".E.", "e.e"],
     "hollowling": ["WEe", "eee"],
     "keeper": ["eEe", "KeK"],
     "starved": ["eEe", "eee"],

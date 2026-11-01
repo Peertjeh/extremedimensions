@@ -19,6 +19,7 @@
 			"com.extremedimensions.gametest.WorldTests",
 			"com.extremedimensions.gametest.PerfTests",
 			"com.extremedimensions.gametest.CoopTests",
+			"com.extremedimensions.gametest.CaveLurkerTests",
 			"com.extremedimensions.gametest.TribeTests",
 			"com.extremedimensions.gametest.FrayTests",
 			"com.extremedimensions.gametest.JournalTests",
