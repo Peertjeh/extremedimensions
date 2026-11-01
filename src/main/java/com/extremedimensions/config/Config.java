@@ -452,6 +452,10 @@ public final class Config {
 	public static int FIRST_KNOT_DISTANCE = 700;
 	/** Chance a Thinned slain in the Fray leaves a Tether Fragment. */
 	public static double SEAM_FRAY_FRAGMENT_CHANCE = 0.12;
+	/** Chance a Thinned slain on the islands (above the Fray) leaves a Tether Fragment. 0: never. */
+	public static double SEAM_THINNED_FRAGMENT_CHANCE = 0.04;
+	/** Share of the Seam Silk and Tether Fragments a player carries that the Seam keeps when it throws them out. 0: none. */
+	public static double SEAM_COLLAPSE_TOLL = 0.5;
 	/** Frayed Rays about each visitor in the Fray: Veil Rays gone wrong down there, that dive at visitors (0 = none). */
 	public static int SEAM_FRAY_RAYS = 2;
 	/** How much faster a Frayed Ray flies than a Veil Ray over the islands. */
@@ -767,6 +771,8 @@ public final class Config {
 	public static int WEAVER_UNLOCK = 2;
 	/** Chance the Last Weaver wakes at a village of the Thinned on its first visit (each village rolls once). */
 	public static double WEAVER_CHANCE = 0.4;
+	/** How much likelier the next village is for every village in a row that woke no Weaver: 0.2 is 40%, then 60%, 80%, 100%. */
+	public static double WEAVER_PITY = 0.2;
 	/** Seconds of Seam time each of the Weaver's blows unpicks. */
 	public static int WEAVER_TIME_THEFT = 10;
 	/** Seconds of Seam time given back to everyone near when it falls. */
@@ -1405,6 +1411,7 @@ public final class Config {
 			{"cave_lurker_give_up_seconds", 1, 120}, {"cave_lurker_flee_seconds", 1, 60},
 			{"sculk_lurker_spawn_chance", 0, 1}, {"sculk_lurker_rattle_seconds", 3, 600}, {"sculk_lurker_shrieker_range", 4, 48},
 			{"sculk_lurker_lure_range", 8, 96}, {"sculk_lurker_seconds", 20, 3600},
+			{"weaver_pity", 0, 1}, {"seam_thinned_fragment_chance", 0, 1}, {"seam_collapse_toll", 0, 1},
 			{"music_disc_listens_chance", 0, 1}, {"disc_fragment_elegy_count", 0, 9}, {"disc_fragment_abyss_broken", 0, 9},
 			{"disc_fragment_abyss_tangle_chance", 0, 1}, {"disc_fragment_abyss_ray_chance", 0, 1},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},

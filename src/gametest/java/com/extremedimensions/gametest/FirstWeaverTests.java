@@ -121,7 +121,11 @@ public class FirstWeaverTests {
 		helper.succeed();
 	}
 
-	/** Standing in the Knot's chamber ends the trail: its page and advancement, once. */
+	/**
+	 * Standing in the Knot's chamber gives its page and advancement, once. It does not lock the trail: one who carries
+	 * the Plumb Line needs no thread, but one who lost it may gather the threads again (or the Knot Mother could never
+	 * be woken), until the Knot's panel is woven.
+	 */
 	@GameTest
 	public void reachingTheKnotEndsTheTrail(GameTestHelper helper) {
 		ServerPlayer p = TestPlayers.survivor(helper, "first-knot");
@@ -130,7 +134,40 @@ public class FirstWeaverTests {
 		com.extremedimensions.seam.FirstKnot.reached(p, d);
 		check(helper, d.knotReached && d.journal.contains(JournalEntry.FIRST_KNOT.id), "reaching the Knot did not end the trail");
 		check(helper, WorldFx.hasAdvancement(p, Advancements.FIRST_KNOT), "reaching the Knot gave no advancement");
-		check(helper, !FirstWeaver.needs(p, d, ModItems.EMBER_THREAD), "one who reached the Knot still needs threads");
+		p.getInventory().add(new ItemStack(ModItems.PLUMB_LINE));
+		check(helper, !FirstWeaver.needs(p, d, ModItems.EMBER_THREAD), "one who carries the Plumb Line still needs threads");
+		p.getInventory().clearContent();
+		check(helper, FirstWeaver.needs(p, d, ModItems.EMBER_THREAD) || com.extremedimensions.tapestry.Tapestry.woven(com.extremedimensions.tapestry.Tapestry.Panel.KNOT),
+				"one who reached the Knot and lost the Plumb Line can never gather the threads again");
+		helper.succeed();
+	}
+
+	/** A loom a player set down in the Seam holds none of the Weavers' thread; theirs do. */
+	@GameTest
+	public void aLoomJustSetDownGivesNoThread(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "loom-set-down");
+		PlayerData d = DataStore.get(p.getUUID());
+		d.frameStrung = true;
+		BlockPos pos = helper.absolutePos(new BlockPos(2, 1, 2));
+		helper.getLevel().setBlockAndUpdate(pos, net.minecraft.world.level.block.Blocks.LOOM.defaultBlockState());
+		FirstWeaver.placed(helper.getLevel(), pos);
+		try {
+			check(helper, FirstWeaver.loom(p, pos) == InteractionResult.PASS && !holds(p, ModItems.SILK_THREAD), "a loom just set down gave the Silk Thread");
+		} finally {
+			DataStore.seamCells().remove(FirstWeaver.placedMark(pos));
+			d.frameStrung = false;
+		}
+		helper.succeed();
+	}
+
+	/** The Knot's place is worked out once and kept with the world, so it cannot wander as islands are laid out. */
+	@GameTest
+	public void theKnotKeepsItsPlace(GameTestHelper helper) {
+		int[] a = com.extremedimensions.seam.FirstKnot.where();
+		com.extremedimensions.seam.FirstKnot.forget();
+		int[] b = com.extremedimensions.seam.FirstKnot.where();
+		check(helper, a[0] == b[0] && a[1] == b[1] && a[2] == b[2], "the Knot moved from %s,%s to %s,%s", a[0], a[2], b[0], b[2]);
+		check(helper, DataStore.seamCells().stream().anyMatch(k -> k.startsWith("kp@")), "the world does not keep the Knot's place");
 		helper.succeed();
 	}
 }

@@ -82,6 +82,8 @@ public class PlayerData {
 	public Map<String, Integer> pact = new HashMap<>();
 	/** The Elders: Keepers slain (the Matriarch comes after enough of them), and whether she has fallen to this player. */
 	public int keepersSlain = 0;
+	/** Villages of the Thinned visited first in a row without a Last Weaver waking (each one makes the next likelier). */
+	public int weaverMisses = 0;
 	public boolean matriarchSlain = false;
 	/**
 	 * The Elders this player helped defeat, one bit each in the order of {@code StatsExport.Elder} (the Matriarch, the

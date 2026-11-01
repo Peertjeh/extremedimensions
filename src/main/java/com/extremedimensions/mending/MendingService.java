@@ -32,7 +32,6 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -143,6 +142,8 @@ public final class MendingService {
 						break;
 					}
 				}
+			} else if (open() && DataStore.heartBuilt() && DataStore.starvedSlain() && s.getTickCount() % 20 == 0) {
+				reoffer(seam);
 			}
 			return;
 		}
@@ -486,9 +487,7 @@ public final class MendingService {
 		DataStore.setStarvedSlain(true);
 		ServerLevel seam = (ServerLevel) so.level();
 		unlight(seam);
-		BlockPos c = new BlockPos(HX, HY + 1, HZ);
-		Block.popResource(seam, c, new ItemStack(ModItems.MENDING_THREAD));
-		Block.popResource(seam, c, new ItemStack(ModItems.SEVERING_SHEARS));
+		offerEnding(seam);
 		String dim = SeamService.SEAM.identifier().toString();
 		WorldFx.particleIn(dim, "extremedimensions:soul_mote", so.getX(), so.getY() + 3, so.getZ(), 2, 3, 2, 0, 200);
 		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 3, so.getZ(), 2, 3, 2, 0, 120);
@@ -506,6 +505,54 @@ public final class MendingService {
 			}
 		}
 		com.extremedimensions.compat.DiscordWebhook.starvedOne(there);
+	}
+
+	/**
+	 * The Thread and the Shears on the altar. They lie there until taken, as long as they take, and nothing burns or
+	 * breaks them: the world's ending must not be lost to a despawn, lava or a blast.
+	 */
+	private static void offerEnding(ServerLevel seam) {
+		offerEnding(seam, HX + 0.5, HY + 1.2, HZ + 0.5);
+		lastOffer = seam.getGameTime();
+	}
+
+	/** The Thread and the Shears laid down here, kept safe from despawning, fire and blasts. */
+	public static void offerEnding(ServerLevel level, double x, double y, double z) {
+		for (ItemStack stack : new ItemStack[] {new ItemStack(ModItems.MENDING_THREAD), new ItemStack(ModItems.SEVERING_SHEARS)}) {
+			net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(level, x, y, z, stack, 0, 0.15, 0);
+			item.setDefaultPickUpDelay();
+			item.setUnlimitedLifetime();
+			item.setInvulnerable(true);
+			level.addFreshEntity(item);
+		}
+	}
+
+	/** When the altar last offered the Thread and the Shears (game time). */
+	private static long lastOffer = -100000;
+
+	/**
+	 * The Starved One is slain and no ending is chosen yet, but neither the Thread nor the Shears is to be found (taken
+	 * and lost, or thrown away): whoever stands on the altar with neither is offered both again, once a minute at most.
+	 * (Only the first used decides the world; any other crumbles, so a second pair changes nothing.)
+	 */
+	private static void reoffer(ServerLevel seam) {
+		if (seam.getGameTime() - lastOffer < 1200) {
+			return;
+		}
+		net.minecraft.world.phys.AABB around = new net.minecraft.world.phys.AABB(HX - 24, HY - 24, HZ - 24, HX + 25, HY + 24, HZ + 25);
+		boolean lying = !seam.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, around,
+				e -> e.getItem().is(ModItems.MENDING_THREAD) || e.getItem().is(ModItems.SEVERING_SHEARS)).isEmpty();
+		if (lying) {
+			return;
+		}
+		for (ServerPlayer p : seam.players()) {
+			if (!p.isSpectator() && p.distanceToSqr(HX + 0.5, HY + 1, HZ + 0.5) < 3.5 * 3.5
+					&& p.getInventory().countItem(ModItems.MENDING_THREAD) == 0 && p.getInventory().countItem(ModItems.SEVERING_SHEARS) == 0) {
+				offerEnding(seam);
+				p.sendSystemMessage(Component.translatable("gui.extremedimensions.heart.offers_again"));
+				return;
+			}
+		}
 	}
 
 	/** The first of the two used decides the world. Afterwards the other one only crumbles. */

@@ -322,6 +322,18 @@ public final class ServerEvents {
 			}
 			return com.extremedimensions.tetherite.SpindleBlock.load(at, level, hit.getBlockPos(), player, player.getItemInHand(hand), true);
 		});
+		// A loom set down in the Seam is remembered once it stands (the Weavers' thread is only on their own looms)
+		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+			if (level instanceof ServerLevel sl && player.getItemInHand(hand).is(net.minecraft.world.item.Items.LOOM)
+					&& com.extremedimensions.seam.SeamService.SEAM.equals(sl.dimension())) {
+				net.minecraft.core.BlockPos on = hit.getBlockPos(), beside = on.relative(hit.getDirection());
+				sl.getServer().execute(() -> {
+					com.extremedimensions.lore.FirstWeaver.placed(sl, on);
+					com.extremedimensions.lore.FirstWeaver.placed(sl, beside);
+				});
+			}
+			return InteractionResult.PASS;
+		});
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
 			if (player instanceof ServerPlayer fallen && com.extremedimensions.coop.FallenService.fallen(fallen)) {
 				return InteractionResult.FAIL;

@@ -1,5 +1,51 @@
 # Changelog
 
+## 3.14.0: The Seam Pass
+
+A critical look at what the Seam asks of a player, and everything it turned up that could leave one stuck, lost or
+cheated.
+
+### The First Knot can be found
+- **The Plumb Line points the way from home.** A rift lands you in the Seam where you tore it, and now the line says
+  so: held in the Overworld or the Nether it pulls towards the spot to tear your rift ("tear your rift there, and the
+  Knot hangs below where you land"), and hangs straight once you stand within 24 blocks of it. While the seal is
+  broken it says that every rift opens at the Heart. On the islands it no longer only pulls "straight down": it gives
+  the way and the distance too.
+- **The Knot keeps its place.** Worked out once and kept with the world, so it can no longer move between sessions
+  when islands near a later arrival are laid out a little differently.
+- **The Knot Mother can be fought in time.** While she is awake and near, your thread does not run (as at the Heart
+  while the Starved One lives); her blows still pick at it.
+
+### Nothing on the trail can be lost for good
+- **A lost Plumb Line no longer ends the trail.** Reaching the Knot used to stop the threads coming for ever, so a
+  Plumb Line lost after it (or before waking the Knot Mother) locked the tapestry. Now the threads come again for one
+  who carries no line, until the Knot's panel is woven.
+- **The world's ending cannot be lost.** The Mending Thread and the Severing Shears lie on the altar as long as it
+  takes, and nothing burns or breaks them. Should both still go missing before an ending is chosen, the altar offers
+  them again to whoever stands on it carrying neither (once a minute at most; only the first used decides the world).
+
+### Less luck, fewer dead ends
+- **The Last Weaver: a run of empty villages ends.** Each village in a row that woke none makes the next likelier
+  (`weaver_pity`, 0.2: 40%, 60%, 80%, then certain). A fight left unfinished (its prey gone) gives its village its
+  roll back.
+- **The Thinned on the islands carry fragments too**: 4% (`seam_thinned_fragment_chance`), not only those in the Fray.
+- **Thrown out is no longer as good as walking out.** When the Seam throws you home (time run out, or a fall), it keeps
+  half of the Seam Silk and Tether Fragments you carry (`seam_collapse_toll`), on top of the curse. Through the gate you
+  keep it all.
+- **The loom shortcut is closed.** A loom you set down in the Seam yourself holds nothing of the Weavers': the Silk
+  Thread is on their own looms, on the loom islands.
+
+### Clearer words
+- The arrival card says that a rift lands where it is torn (tear the next one somewhere new for unplundered islands),
+  that being thrown out keeps a share of what you carry, and that a fall past the Fray costs a curse.
+- The Path's hint for the Starved One no longer claims a woven Tether helps there (time stands still at the Heart); the
+  Last Weaver's page no longer says one waits in every village; the README says when the Last Weaver wakes.
+
+### Tests
+- A Plumb Line lost after reaching the Knot does not lock the trail; a loom set down in the Seam gives no thread; the
+  Knot keeps its place; the toll takes half (rounded down) of silk and fragments and nothing else; empty villages make
+  the Weaver likelier until it is certain; the Thread and the Shears lie safe from despawning, fire and blasts.
+
 ## 3.13.0: Records of the Deep
 
 ### Three new music discs

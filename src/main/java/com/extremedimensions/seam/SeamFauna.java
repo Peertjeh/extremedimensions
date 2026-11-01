@@ -396,6 +396,10 @@ public final class SeamFauna {
 			}
 		} else if (e instanceof Thinned) {
 			drop(level, at, Loot.THINNED);
+			if (!SeamDepth.inFray(e.getY()) && rnd.nextDouble() < com.extremedimensions.config.Config.SEAM_THINNED_FRAGMENT_CHANCE) {
+				// Even up on the islands they carry a little of what the Seam swallowed
+				Block.popResource(level, at, new ItemStack(ModItems.TETHER_FRAGMENT));
+			}
 			if (SeamDepth.inFray(e.getY())) {
 				// The Frayed carry more of what the Seam swallowed
 				drop(level, at, Loot.THINNED_FRAY);

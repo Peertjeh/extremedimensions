@@ -102,7 +102,8 @@ Thirty pages of a nameless Wanderer surface as you play, then pages in other han
 
 1. **The first wound**: anchors, the Tether, your first Collapse.
 2. **The tribe**: Lurkers, hoards, the Keeper and the Matriarch who comes for those who slay too many Keepers.
-3. **The Seam** and its Weavers: silk, woven Tethers, the Thinned and the Last Weaver.
+3. **The Seam** and its Weavers: silk, woven Tethers and the Thinned. (The Last Weaver wakes in their villages only once
+   the Starved One has fallen; `weaver_unlock` sets it earlier.)
 4. **The Ferryman**, who walks the Nether's lava when you are long gone.
 5. **The seal**: slay the Ender Dragon and every rift opens near the **Heart of the Seam**, where the **Starved One**
    waits.

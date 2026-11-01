@@ -445,7 +445,7 @@ public final class SeamService {
 			pull(p, d);
 			return;
 		}
-		if (!p.isCreative() && !(MendingService.active() && MendingService.inArena(p))) {
+		if (!p.isCreative() && !(MendingService.active() && MendingService.inArena(p)) && !com.extremedimensions.elder.WeaverService.knotMotherNear(p)) {
 			// Time runs out faster in the Fray
 			d.seamLeft -= SeamDepth.drain(p.getY()) * com.extremedimensions.events.FrayedSeam.drain(p) / 20.0;
 		}
@@ -567,9 +567,34 @@ public final class SeamService {
 		com.extremedimensions.trial.TrialService.fail(p, d);
 		TetherService.clearThread(p, d);
 		p.removeEffect(MobEffects.LEVITATION);
+		// Thrown out, not walked out: the Seam keeps a share of what was taken from it
+		int silk = keep(p, com.extremedimensions.registry.ModItems.SEAM_SILK, Config.SEAM_COLLAPSE_TOLL);
+		int fragments = keep(p, com.extremedimensions.registry.ModItems.TETHER_FRAGMENT, Config.SEAM_COLLAPSE_TOLL);
 		WorldFx.tp(p, Dims.fullIdOf(d.homeDim), d.homeX, d.homeY, d.homeZ);
+		if (silk + fragments > 0) {
+			p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.seam.toll", silk, fragments));
+		}
 		PenaltyService.curse(p, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties());
 		DataStore.markDirty();
+	}
+
+	/** Takes this share (rounded down) of everything of one kind a player carries; how many were taken. */
+	public static int keep(ServerPlayer p, net.minecraft.world.item.Item item, double share) {
+		var inv = p.getInventory();
+		int toTake = (int) Math.floor(inv.countItem(item) * Math.max(0, Math.min(1, share)));
+		int taken = 0;
+		for (int i = 0; i < inv.getContainerSize() && taken < toTake; i++) {
+			net.minecraft.world.item.ItemStack s = inv.getItem(i);
+			if (s.is(item)) {
+				int n = Math.min(s.getCount(), toTake - taken);
+				s.shrink(n);
+				taken += n;
+			}
+		}
+		if (taken > 0) {
+			inv.setChanged();
+		}
+		return taken;
 	}
 
 	/** Seam Silk and lore are found in villages; the first visit to one is remembered. */
@@ -1025,6 +1050,11 @@ public final class SeamService {
 	/** The island of a cell as it is (or will be) built, or null where there is none (for the First Knot). */
 	static SeamArchitect.Shape islandOf(int cx, int cz) {
 		return neighbour(cx, cz, arrivals());
+	}
+
+	/** Whether the Seam's world is there to take its seed from (for the First Knot). */
+	static boolean seamReady() {
+		return seam() != null;
 	}
 
 	/** The Seam's own seed (for the First Knot). */

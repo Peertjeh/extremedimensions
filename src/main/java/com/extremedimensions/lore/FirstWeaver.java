@@ -48,9 +48,14 @@ public final class FirstWeaver {
 	private static final Set<ResourceKey<LootTable>> BASTION = Set.of(BuiltInLootTables.BASTION_TREASURE, BuiltInLootTables.BASTION_OTHER,
 			BuiltInLootTables.BASTION_BRIDGE, BuiltInLootTables.BASTION_HOGLIN_STABLE);
 
-	/** Whether this player is on the trail and still needs this thread. */
+	/**
+	 * Whether this player is on the trail and still needs this thread: the frame strung, neither the thread nor a Plumb
+	 * Line carried, and the Knot's panel not yet woven into the tapestry. (Reaching the Knot does not end the trail: a
+	 * Plumb Line lost after it can be made again, or the Knot Mother could never be woken.)
+	 */
 	public static boolean needs(ServerPlayer p, PlayerData d, Item thread) {
-		return d.frameStrung && !d.knotReached && !holds(p, thread) && !holds(p, ModItems.PLUMB_LINE);
+		return d.frameStrung && !com.extremedimensions.tapestry.Tapestry.woven(com.extremedimensions.tapestry.Tapestry.Panel.KNOT)
+				&& !holds(p, thread) && !holds(p, ModItems.PLUMB_LINE);
 	}
 
 	static boolean holds(ServerPlayer p, Item item) {
@@ -125,6 +130,11 @@ public final class FirstWeaver {
 			// Anyone else: just a loom
 			return InteractionResult.PASS;
 		}
+		if (DataStore.seamCells().contains(placedMark(pos))) {
+			// One just set down holds nothing of theirs: the thread is on the Weavers' own looms, on the loom islands
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.loom.new"), true);
+			return InteractionResult.PASS;
+		}
 		ServerLevel level = (ServerLevel) p.level();
 		String dim = level.dimension().identifier().toString();
 		double x = pos.getX() + 0.5, y = pos.getY() + 1.2, z = pos.getZ() + 0.5;
@@ -135,6 +145,19 @@ public final class FirstWeaver {
 		WorldFx.give(p, new ItemStack(ModItems.SILK_THREAD));
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.loom.tapestry"), true);
 		return InteractionResult.SUCCESS;
+	}
+
+	/** How the world remembers a loom a player set down in the Seam ("pl@x,y,z"). */
+	public static String placedMark(BlockPos pos) {
+		return "pl@" + pos.getX() + "," + pos.getY() + "," + pos.getZ();
+	}
+
+	/** A loom set down in the Seam by a player: remembered, so it does not give the Weavers' thread. */
+	public static void placed(ServerLevel level, BlockPos pos) {
+		if (level.getBlockState(pos).is(net.minecraft.world.level.block.Blocks.LOOM)) {
+			DataStore.seamCells().add(placedMark(pos));
+			DataStore.markDirty();
+		}
 	}
 
 	// ------------------------------------------------------------------ the vision in the frame

@@ -41,6 +41,8 @@ public final class FirstKnot {
 	static final int FLOOR = Y - 9;
 	/** How near (blocks, flat) a visitor comes before it is built, and how near its middle counts as reaching it. */
 	static final double BUILD = 160, REACH = 14;
+	/** Within this many blocks of the Knot's x and z, in the Overworld or the Nether, a rift torn lands right over it. */
+	static final int TEAR_HERE = 24;
 
 	/** Where it hangs (x, y, z), worked out once per Seam. */
 	private static int[] at;
@@ -48,9 +50,39 @@ public final class FirstKnot {
 	/** The knot's middle: x, y, z. */
 	public static int[] where() {
 		if (at == null) {
-			at = find(SeamService.seedOf());
+			at = kept();
+			if (at == null && !SeamService.seamReady()) {
+				// (no Seam to take the seed from yet: worked out for now, kept once there is)
+				return find(SeamService.seedOf());
+			}
+			if (at == null) {
+				// Worked out once and kept with the world: islands near later arrivals are laid out a little differently,
+				// and the Knot must not wander with them
+				at = find(SeamService.seedOf());
+				DataStore.seamCells().add("kp@" + at[0] + "," + at[1] + "," + at[2] + "," + at[3] + "," + at[4]);
+				DataStore.markDirty();
+			}
 		}
 		return at;
+	}
+
+	/** Where the world keeps the Knot ("kp@x,y,z,cx,cz"), or null if it has not been worked out in this Seam yet. */
+	private static int[] kept() {
+		for (String key : DataStore.seamCells()) {
+			if (!key.startsWith("kp@")) {
+				continue;
+			}
+			String[] v = key.substring(3).split(",");
+			if (v.length != 5) {
+				continue;
+			}
+			try {
+				return new int[] {Integer.parseInt(v[0]), Integer.parseInt(v[1]), Integer.parseInt(v[2]), Integer.parseInt(v[3]), Integer.parseInt(v[4])};
+			} catch (NumberFormatException e) {
+				// a damaged mark: worked out again
+			}
+		}
+		return null;
 	}
 
 	/** The way to work it out: the first island outward from a point far from the Heart; the Knot hangs past its knot. */
@@ -189,18 +221,30 @@ public final class FirstKnot {
 		if (!p.getMainHandItem().is(ModItems.PLUMB_LINE) && !p.getOffhandItem().is(ModItems.PLUMB_LINE)) {
 			return;
 		}
-		if (!SeamService.inSeam(p)) {
-			p.sendSystemMessage(Component.translatable("gui.extremedimensions.plumb.still"), true);
-			return;
-		}
-		if (!SeamDepth.inFray(p)) {
-			p.sendSystemMessage(Component.translatable("gui.extremedimensions.plumb.down"), true);
-			WorldFx.particleIn(p.level(), "extremedimensions:soul_mote", p.getX(), p.getY() + 0.5, p.getZ(), 0.1, 0.6, 0.1, 0.0, 4);
-			return;
-		}
 		int[] w = where();
 		double dx = w[0] + 0.5 - p.getX(), dz = w[2] + 0.5 - p.getZ(), dy = Y - p.getY();
 		double flat = Math.sqrt(dx * dx + dz * dz);
+		if (!SeamService.inSeam(p)) {
+			// A rift lands where it is torn: in the worlds a rift can be torn in, the line shows where to tear it
+			String dim = com.extremedimensions.server.Dims.of(p);
+			if (!com.extremedimensions.server.Dims.OVERWORLD.equals(dim) && !com.extremedimensions.server.Dims.NETHER.equals(dim)) {
+				p.sendSystemMessage(Component.translatable("gui.extremedimensions.plumb.still"), true);
+			} else if (com.extremedimensions.mending.MendingService.opensNearHeart()) {
+				p.sendSystemMessage(Component.translatable("gui.extremedimensions.plumb.heart"), true);
+			} else if (flat < TEAR_HERE) {
+				p.sendSystemMessage(Component.translatable("gui.extremedimensions.plumb.tear_here"), true);
+			} else {
+				p.sendSystemMessage(Component.translatable("gui.extremedimensions.plumb.tear", Component.translatable("gui.extremedimensions.dir." + bearing(dx, dz)),
+						(int) Math.round(flat)), true);
+			}
+			return;
+		}
+		if (!SeamDepth.inFray(p)) {
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.plumb.down", Component.translatable("gui.extremedimensions.dir." + bearing(dx, dz)),
+					(int) Math.round(flat)), true);
+			WorldFx.particleIn(p.level(), "extremedimensions:soul_mote", p.getX(), p.getY() + 0.5, p.getZ(), 0.1, 0.6, 0.1, 0.0, 4);
+			return;
+		}
 		if (flat < REACH) {
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.plumb.here"), true);
 			return;

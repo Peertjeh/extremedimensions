@@ -60,6 +60,8 @@ public final class WeaverService {
 	}
 
 	private static final class Unweaving extends ElderFight {
+		/** The village whose first visit woke it ("wv@x,z"), given its roll back if the fight is left unfinished. */
+		String village;
 		/** How many times it has called its kin (at 60% and 30% health). */
 		int kin;
 		int drift = 1;
@@ -147,9 +149,23 @@ public final class WeaverService {
 			return;
 		}
 		DataStore.markDirty();
-		if (ThreadLocalRandom.current().nextDouble() < Config.WEAVER_CHANCE) {
-			summon(p, new BlockPos(vx, vy + 1, vz));
+		// Each village that woke none makes the next likelier (weaver_pity), so a long run of empty villages ends
+		PlayerData d = DataStore.get(p.getUUID());
+		if (ThreadLocalRandom.current().nextDouble() < villageChance(d.weaverMisses) && summon(p, new BlockPos(vx, vy + 1, vz))) {
+			d.weaverMisses = 0;
+			for (Unweaving u : WEAVERS.values()) {
+				if (p.getUUID().equals(u.target) && u.village == null) {
+					u.village = "wv@" + vx + "," + vz;
+				}
+			}
+		} else {
+			d.weaverMisses++;
 		}
+	}
+
+	/** The chance a village wakes the Last Weaver after this many villages in a row that woke none. */
+	public static double villageChance(int misses) {
+		return Math.max(0, Math.min(1, Config.WEAVER_CHANCE + Math.max(0, misses) * Math.max(0, Config.WEAVER_PITY)));
 	}
 
 	/** The Weaver rises near a place and turns on this player (also the operator command). */
@@ -197,6 +213,19 @@ public final class WeaverService {
 	public static boolean knotMotherAwake() {
 		for (Map.Entry<UUID, Unweaving> e : WEAVERS.entrySet()) {
 			if (e.getValue().level.getEntity(e.getKey()) instanceof KnotMother) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Whether the Knot Mother is awake and near this player (within 64 blocks): while she is, the Seam's thread does not
+	 * run for them, as at the Heart while the Starved One lives (her blows still pick at it).
+	 */
+	public static boolean knotMotherNear(ServerPlayer p) {
+		for (Map.Entry<UUID, Unweaving> e : WEAVERS.entrySet()) {
+			if (e.getValue().level == p.level() && e.getValue().level.getEntity(e.getKey()) instanceof KnotMother k && k.distanceToSqr(p) < 64 * 64) {
 				return true;
 			}
 		}
@@ -755,6 +784,11 @@ public final class WeaverService {
 	public static void fade(Weaver w) {
 		Unweaving u = WEAVERS.remove(w.getUUID());
 		ElderArena.release(w);
+		if (u != null && u.village != null) {
+			// Left unfinished (its prey gone): the village it rose in may wake a Weaver again, on the next first visit
+			DataStore.seamCells().remove(u.village);
+			DataStore.markDirty();
+		}
 		if (u != null) {
 			u.abandonUltimate(boss(w));
 			u.bar.removeAllPlayers();
