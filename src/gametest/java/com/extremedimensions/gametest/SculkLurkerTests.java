@@ -8,7 +8,9 @@ import com.extremedimensions.registry.ModEntities;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -31,13 +33,19 @@ public class SculkLurkerTests {
 		p.snapTo(at.x, at.y, at.z, 0f, 0f);
 	}
 
+	/** A Warden, come up at once (not out of the ground). */
+	private static Warden warden(ServerLevel level, BlockPos pos) {
+		EntityType<?> type = BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.fromNamespaceAndPath("minecraft", "warden"));
+		return type.spawn(level, pos, EntitySpawnReason.COMMAND) instanceof Warden w ? w : null;
+	}
+
 	/** The Warden never takes it for a target (and so never hears it or grows angry at it), and its blows do it no harm. */
 	@GameTest(environment = Alone.SCULK_SPARED)
 	public void theWardenSparesTheSculkLurker(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		ServerPlayer p = TestPlayers.survivor(helper, "sculk-spared");
 		place(helper, p, 7.5, 0, 7.5);
-		Warden w = EntityType.WARDEN.spawn(level, helper.absolutePos(new BlockPos(1, 0, 1)), EntitySpawnReason.COMMAND);
+		Warden w = warden(level, helper.absolutePos(new BlockPos(1, 0, 1)));
 		SculkLurker sl = ModEntities.SCULK_LURKER.spawn(level, helper.absolutePos(new BlockPos(3, 0, 3)), EntitySpawnReason.COMMAND);
 		try {
 			check(helper, w != null && sl != null, "no Warden or no Sculk Lurker came");
@@ -112,7 +120,7 @@ public class SculkLurkerTests {
 		helper.runAfterDelay(70, () -> {
 			// (the Warden's blows can do the player no harm here: the test is about where its anger goes)
 			p.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 400, 4));
-			w[0] = EntityType.WARDEN.spawn(level, helper.absolutePos(new BlockPos(0, 0, 0)), EntitySpawnReason.COMMAND);
+			w[0] = warden(level, helper.absolutePos(new BlockPos(0, 0, 0)));
 			in[0] = ModEntities.SCULK_LURKER.spawn(level, helper.absolutePos(new BlockPos(1, 0, 2)), EntitySpawnReason.COMMAND);
 			check(helper, w[0] != null && in[0] != null, "no Warden or no Sculk Lurker came");
 			SculkLurkerService.adopt(level, in[0], p, "lure");
