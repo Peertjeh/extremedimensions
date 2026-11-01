@@ -44,8 +44,8 @@ import net.minecraft.world.item.ItemStack;
 public final class ClanService {
 	private ClanService() {}
 
-	/** Blocks within which the two must stand to be bound; ticks an offer waits for its answer. */
-	private static final double REACH = 6;
+	/** Blocks within which the two must stand to be bound (the Curses screen shows those within seven); ticks an offer waits. */
+	private static final double REACH = 8;
 	private static final int OFFER_TICKS = 60 * 20;
 
 	private record Offer(UUID from, long until) {}
@@ -151,14 +151,47 @@ public final class ClanService {
 		if (!(target instanceof ServerPlayer other) || !p.getMainHandItem().is(ModItems.BLOOD_CORD) || !Dims.ours(p)) {
 			return InteractionResult.PASS;
 		}
+		offer(p, other);
+		return InteractionResult.SUCCESS;
+	}
+
+	/**
+	 * From the Curses screen: the player holds out a Blood Cord (from anywhere in their inventory) to someone standing
+	 * near. The cord is only taken once they accept, as when it is used on them by hand.
+	 */
+	public static void invite(ServerPlayer p, UUID target) {
+		MinecraftServer s = WorldFx.server();
+		ServerPlayer other = s == null ? null : s.getPlayerList().getPlayer(target);
+		if (other == null || !Dims.ours(p)) {
+			return;
+		}
+		if (!p.isCreative() && !carriesCord(p)) {
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.clan.needcord", Math.max(1, Config.CLAN_CORD_PRICE)), true);
+			return;
+		}
+		offer(p, other);
+	}
+
+	/** Whether the player carries a Blood Cord anywhere in their inventory. */
+	public static boolean carriesCord(ServerPlayer p) {
+		for (int i = 0; i < p.getInventory().getContainerSize(); i++) {
+			if (p.getInventory().getItem(i).is(ModItems.BLOOD_CORD)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** The other player is asked (in the chat) to be bound into one clan with this one, if they can be. */
+	private static void offer(ServerPlayer p, ServerPlayer other) {
 		if (!on()) {
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.clan.off"), true);
-			return InteractionResult.SUCCESS;
+			return;
 		}
 		String refused = check(p, other);
 		if (refused != null) {
 			p.sendSystemMessage(Component.translatable(refused, other.getDisplayName(), Math.max(2, Config.CLAN_MAX)), true);
-			return InteractionResult.SUCCESS;
+			return;
 		}
 		OFFERS.put(other.getUUID(), new Offer(p.getUUID(), WorldFx.server().overworld().getGameTime() + OFFER_TICKS));
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.clan.asked", other.getDisplayName()));
@@ -170,7 +203,11 @@ public final class ClanService {
 		other.sendSystemMessage(ask);
 		other.sendSystemMessage(Component.translatable("gui.extremedimensions.clan.warning").withStyle(ChatFormatting.GRAY));
 		WorldFx.soundSelf(other, "minecraft:block.note_block.chime", 0.8f, 0.7f);
-		return InteractionResult.SUCCESS;
+	}
+
+	/** For the tests: whether this player has been asked to be bound and not answered yet. */
+	public static boolean asked(UUID player) {
+		return OFFERS.containsKey(player);
 	}
 
 	private static Component button(String key, String command, ChatFormatting colour) {

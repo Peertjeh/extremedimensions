@@ -1,5 +1,19 @@
 # Changelog
 
+## 3.10.1: Held Out
+
+### Clans
+- **Bind from the Curses screen.** The players standing within seven blocks beside the Curses screen now show their
+  clan: a dark red mark on the head of one of yours, a grey one on another clan's. Hover a head for their name and
+  clan; click the head of one of no clan to hold out your Blood Cord to them. It may be anywhere in your inventory,
+  the screen closes so the answer shows in the chat, and as before the cord is only taken, and the blood only paid,
+  once they accept. Without a cord the tooltip says where to get one.
+- The two may stand up to eight blocks apart to be bound (was six), to match what the screen shows.
+
+### Tests
+- A server test: from the screen, nothing is held out without a Blood Cord; with one in the inventory the other is
+  asked, the cord stays until they say yes, and their yes binds the two and takes the cord.
+
 ## 3.10.0: Bound in Blood
 
 ### Clans

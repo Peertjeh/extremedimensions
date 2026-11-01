@@ -251,6 +251,36 @@ public class CoopTests {
 		});
 	}
 
+	/**
+	 * From the Curses screen: a click on a head holds out a Blood Cord carried anywhere in the inventory. Without one
+	 * nothing is asked; with one the other is asked, and only their yes takes the cord and binds the two.
+	 */
+	@GameTest(maxTicks = 200)
+	public void aBloodCordIsHeldOutFromTheCursesScreen(GameTestHelper helper) {
+		ServerPlayer[] pair = allies(helper, "cord");
+		ServerPlayer a = pair[0], b = pair[1];
+		Runnable restore = () -> DataStore.clans().values().removeIf(m -> m.contains(a.getStringUUID()) || m.contains(b.getStringUUID()));
+		// (past the grace a player has on joining, when nothing can hurt them)
+		helper.runAfterDelay(70, () -> {
+			try {
+				a.getInventory().clearContent();
+				ClanService.invite(a, b.getUUID());
+				check(helper, !ClanService.asked(b.getUUID()), "without a Blood Cord the other was asked");
+				a.getInventory().setItem(20, new net.minecraft.world.item.ItemStack(com.extremedimensions.registry.ModItems.BLOOD_CORD));
+				ClanService.invite(a, b.getUUID());
+				check(helper, ClanService.asked(b.getUUID()), "a Blood Cord in the inventory was not held out");
+				check(helper, ClanService.carriesCord(a), "the cord was taken before the other said yes");
+				ClanService.answer(b, true);
+				String clan = ClanService.clanOf(a.getUUID());
+				check(helper, clan != null && clan.equals(ClanService.clanOf(b.getUUID())), "a yes did not bind the two");
+				check(helper, !ClanService.carriesCord(a), "binding did not take the cord");
+			} finally {
+				restore.run();
+			}
+			helper.succeed();
+		});
+	}
+
 	private static int curses(PlayerData d) {
 		int n = 0;
 		for (Penalty pen : Penalty.values()) {

@@ -105,8 +105,8 @@ public final class Sync {
 	private static final double NEARBY = 7.0;
 
 	/**
-	 * Players within {@link #NEARBY} blocks, nearest first: "uuid,name,beyond,overworld,everywhere" separated by ';'.
-	 * Only how many stacks each set holds, never which curses.
+	 * Players within {@link #NEARBY} blocks, nearest first: "uuid,name,<stacks per set>,clan" separated by ';' (clan: 0
+	 * none, 1 the player's own, 2 another). Only how many stacks each set holds, never which curses.
 	 */
 	private static String nearby(ServerPlayer p) {
 		if (!(p.level() instanceof ServerLevel level)) {
@@ -119,6 +119,7 @@ public final class Sync {
 			}
 		}
 		near.sort(Comparator.comparingDouble(q -> q.distanceToSqr(p)));
+		String mine = com.extremedimensions.coop.ClanService.clanOf(p.getUUID());
 		StringBuilder out = new StringBuilder();
 		for (ServerPlayer q : near) {
 			PlayerData d = DataStore.get(q.getUUID());
@@ -133,6 +134,9 @@ public final class Sync {
 			for (int n : sets) {
 				out.append(',').append(n);
 			}
+			// and their clan: none, the player's own, or another
+			String theirs = com.extremedimensions.coop.ClanService.clanOf(q.getUUID());
+			out.append(',').append(theirs == null ? 0 : theirs.equals(mine) ? 1 : 2);
 		}
 		return out.toString();
 	}

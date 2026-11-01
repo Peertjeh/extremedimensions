@@ -150,6 +150,13 @@ public class ExtremeDimensions implements ModInitializer {
 				com.extremedimensions.coop.Allies.share(context.player(), payload.on());
 			}
 		});
+		// Clans: a Blood Cord held out from the Curses screen to a player standing near
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.ClanInvitePayload.TYPE, ModPackets.ClanInvitePayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.ClanInvitePayload.TYPE, (payload, context) -> {
+			if (Requests.allow(context.player(), "clan", 2)) {
+				com.extremedimensions.coop.ClanService.invite(context.player(), payload.target());
+			}
+		});
 		// The tribe: barter with a Hollowling
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BarterPayload.TYPE, ModPackets.BarterPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.FallenPayload.TYPE, ModPackets.FallenPayload.CODEC);

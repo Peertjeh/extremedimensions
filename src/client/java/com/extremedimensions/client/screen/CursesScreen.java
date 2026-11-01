@@ -37,8 +37,8 @@ import net.minecraft.world.level.Level;
  * marked. Scars and how to atone sit at the foot. Under the Extreme tab's own curses, where the server deals them, sits a
  * row of Abyssal ones: smaller black sockets, one stack each, with the deed that breaks the curse under its effect.
  *
- * <p>Beside it, the players standing within seven blocks: a head each (its name on hover) and, per set, one sigil with
- * how many stacks they carry there. Never which curses.
+ * <p>Beside it, the players standing within seven blocks: a head each (its name and clan on hover; a click holds out a
+ * Blood Cord to one of no clan) and, per set, one sigil with how many stacks they carry there. Never which curses.
  */
 public class CursesScreen extends Screen {
 	private static final int PW = 352, PH = 212;
@@ -58,8 +58,8 @@ public class CursesScreen extends Screen {
 	 */
 	private record Entry(Penalty pen, int stacks, int max, int progress, int cost, String value, boolean readable, int deed, int deedTarget) {}
 
-	/** A player standing close by: stacks per set (beyond, Overworld, everywhere, extreme). */
-	private record Nearby(UUID id, String name, int[] sets) {}
+	/** A player standing close by: stacks per set (beyond, Overworld, everywhere, extreme), and their clan (0 none, 1 ours, 2 another). */
+	private record Nearby(UUID id, String name, int[] sets, int clan) {}
 
 	private final Screen parent;
 	private final long openAt = System.currentTimeMillis();
@@ -67,6 +67,8 @@ public class CursesScreen extends Screen {
 	private final List<Nearby> nearby = new ArrayList<>();
 	private final List<Socket> sockets = new ArrayList<>();
 	private final List<Tab> tabs = new ArrayList<>();
+	/** The heads of the players near, as buttons: a click holds out a Blood Cord to them. */
+	private final List<Head> heads = new ArrayList<>();
 	private int scars;
 	private String atoning = "";
 	/** The relic bound to the Tether, or null. */
@@ -153,7 +155,9 @@ public class CursesScreen extends Screen {
 					for (int k = 0; k < sets.length && k + 2 < kv.length; k++) {
 						sets[k] = Integer.parseInt(kv[k + 2]);
 					}
-					nearby.add(new Nearby(UUID.fromString(kv[0]), kv[1], sets));
+					// their clan, after the sets (an older server sends none)
+					int clan = kv.length > 2 + sets.length ? Integer.parseInt(kv[2 + sets.length]) : 0;
+					nearby.add(new Nearby(UUID.fromString(kv[0]), kv[1], sets, clan));
 				} catch (IllegalArgumentException e) {
 					// skip malformed entry
 				}
@@ -283,6 +287,10 @@ public class CursesScreen extends Screen {
 		this.addRenderableWidget(new RelicChip(x0 + PW - 14 - 132, y0 + 176, 132));
 		this.addRenderableWidget(new PactButton(x0 + 7, y0 + 5));
 		this.addRenderableWidget(new TrialsButton(x0 + 22, y0 + 5));
+		heads.clear();
+		for (int i = 0; i < 8; i++) {
+			heads.add(this.addRenderableWidget(new Head()));
+		}
 		atone = this.addRenderableWidget(Button.builder(Component.translatable("gui.extremedimensions.curses.atone"), b -> {
 			if (selected != null) {
 				ClientPlayNetworking.send(new ModPackets.AtonePayload(selected.id));
@@ -480,6 +488,10 @@ public class CursesScreen extends Screen {
 	 * narrow column: the head with its sigils under it.
 	 */
 	private void nearbyPanel(GuiGraphicsExtractor g, int x0, int y0, int mouseX, int mouseY, double fade) {
+		// (every head hidden until it is drawn again this frame)
+		for (Head h : heads) {
+			h.show(null, 0, 0);
+		}
 		int side = sideW();
 		if (side == 0) {
 			return;
@@ -521,8 +533,15 @@ public class CursesScreen extends Screen {
 			int ry = y0 + top + r * perCell;
 			int fx = wide ? lx + 8 : lx + (side - 16) / 2;
 			face(g, n, fx, ry, fade);
-			if (mouseX >= fx && mouseX < fx + 16 && mouseY >= ry && mouseY < ry + 16) {
-				tip = Component.literal(n.name());
+			if (r < heads.size()) {
+				// (the head is a button: its tooltip names them and says what a click does)
+				heads.get(r).show(n, fx, ry);
+			}
+			if (n.clan() > 0) {
+				// bound by a cord: dark red for one of ours, grey for another clan's
+				int c = n.clan() == 1 ? 0xB0202C : Ui.MUTED;
+				g.fill(fx + 11, ry + 11, fx + 17, ry + 17, Ui.argb(fade, 0x1A0408));
+				g.fill(fx + 12, ry + 12, fx + 16, ry + 16, Ui.argb(fade, c));
 			}
 			for (int k = 0; k < groups.length; k++) {
 				int sx = wide ? lx + 30 + k * SET_STEP : lx + 6, sy = wide ? ry + 4 : ry + 20 + k * 9;
@@ -597,6 +616,96 @@ public class CursesScreen extends Screen {
 	}
 
 	/** The pact: a small brand in the panel's corner, gold while a pact is sworn; opens the Pact screen. */
+	/**
+	 * A nearby player's head as a button. Its tooltip names them and their clan; a click holds out a Blood Cord to one
+	 * of no clan (the server asks them; the cord is only taken once they accept) and closes the screen, so the answer
+	 * shows in the chat.
+	 */
+	private final class Head extends AbstractButton {
+		private Nearby who;
+		private String shownFor = "";
+
+		Head() {
+			super(0, 0, 16, 16, Component.empty());
+			this.visible = false;
+		}
+
+		void show(Nearby n, int x, int y) {
+			this.who = n;
+			this.visible = n != null;
+			if (n == null) {
+				return;
+			}
+			this.setX(x);
+			this.setY(y);
+			String key = tipKey();
+			String state = n.id() + key;
+			if (!state.equals(shownFor)) {
+				shownFor = state;
+				this.setTooltip(Tooltip.create(key == null ? Component.literal(n.name())
+						: Component.translatable(key, n.name(), Math.max(1, com.extremedimensions.config.Config.CLAN_CORD_PRICE))));
+			}
+		}
+
+		private boolean clans() {
+			return com.extremedimensions.config.Config.CLAN_ENABLED > 0 && com.extremedimensions.config.Config.TRIBE_ENABLED > 0;
+		}
+
+		private boolean cord() {
+			var player = Minecraft.getInstance().player;
+			if (player == null) {
+				return false;
+			}
+			if (player.isCreative()) {
+				return true;
+			}
+			for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+				if (player.getInventory().getItem(i).is(com.extremedimensions.registry.ModItems.BLOOD_CORD)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		/** What the tooltip says beside their name (null: their name alone). */
+		private String tipKey() {
+			if (!clans()) {
+				return null;
+			}
+			return switch (who.clan()) {
+				case 1 -> "gui.extremedimensions.curses.clan_mine";
+				case 2 -> "gui.extremedimensions.curses.clan_other";
+				default -> cord() ? "gui.extremedimensions.curses.clan_invite" : "gui.extremedimensions.curses.clan_nocord";
+			};
+		}
+
+		@Override
+		public void onPress(InputWithModifiers input) {
+			if (who == null || who.clan() != 0 || !clans() || !cord()) {
+				return;
+			}
+			ClientPlayNetworking.send(new ModPackets.ClanInvitePayload(who.id()));
+			Minecraft.getInstance().gui.setScreen(null);
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+			if (this.isHovered() && who != null && who.clan() == 0 && clans() && cord()) {
+				// a thin cord-red frame round the head that can be bound
+				int x = this.getX(), y = this.getY(), c = Ui.argb(1.0, 0xC0303A);
+				g.fill(x - 1, y - 1, x + 17, y, c);
+				g.fill(x - 1, y + 16, x + 17, y + 17, c);
+				g.fill(x - 1, y, x, y + 16, c);
+				g.fill(x + 16, y, x + 17, y + 16, c);
+			}
+		}
+
+		@Override
+		protected void updateWidgetNarration(NarrationElementOutput out) {
+			out.add(NarratedElementType.TITLE, who == null ? Component.empty() : Component.literal(who.name()));
+		}
+	}
+
 	private final class PactButton extends AbstractButton {
 		private static final String[] BRAND = {
 			"...#...",

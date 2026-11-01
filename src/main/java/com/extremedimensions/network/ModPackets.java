@@ -201,7 +201,7 @@ public final class ModPackets {
 
 	/**
 	 * Server -> client: every curse for the Curses screen. data = "scars|atoning|overworldOn|entries|nearby", entries
-	 * "id:stacks:max:atonement:cost:valuePerStack:readable:deed:deedTarget" separated by ';', nearby players "uuid,name,beyond,overworld,everywhere"
+	 * "id:stacks:max:atonement:cost:valuePerStack:readable:deed:deedTarget" separated by ';', nearby players "uuid,name,<stacks per set>,clan" (clan: 0 none, 1 the player's own, 2 another)
 	 * separated by ';'. open = open the screen (else only refresh it).
 	 */
 	public record CursesPayload(String data, boolean open) implements CustomPacketPayload {
@@ -531,6 +531,25 @@ public final class ModPackets {
 	 * Server -> client: an ally's curses, to carry one for them: "id:stacks:max:mine:readable;..." (mine: the stacks of it the
 	 * player already carries).
 	 */
+	/** Client -> server: from the Curses screen, hold out a Blood Cord to a player standing near (see ClanService). */
+	public record ClanInvitePayload(java.util.UUID target) implements CustomPacketPayload {
+		public static final Type<ClanInvitePayload> TYPE = new Type<>(ExtremeDimensions.id("clan_invite"));
+		public static final StreamCodec<FriendlyByteBuf, ClanInvitePayload> CODEC = StreamCodec.ofMember(ClanInvitePayload::write, ClanInvitePayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUUID(target);
+		}
+
+		private static ClanInvitePayload read(FriendlyByteBuf buf) {
+			return new ClanInvitePayload(buf.readUUID());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
 	public record BurdenPayload(java.util.UUID friend, String name, String curses) implements CustomPacketPayload {
 		public static final Type<BurdenPayload> TYPE = new Type<>(ExtremeDimensions.id("burden"));
 		public static final StreamCodec<FriendlyByteBuf, BurdenPayload> CODEC = StreamCodec.ofMember(BurdenPayload::write, BurdenPayload::read);
