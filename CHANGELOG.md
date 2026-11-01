@@ -1,5 +1,39 @@
 # Changelog
 
+## 3.15.1: Tetherite, the way Minecraft draws it
+
+A critical look at the Tetherite set beside vanilla's diamond and netherite, and every texture of it drawn again so
+it sits among them as one of them.
+
+### What was wrong
+- **The tools had their own handles**: a purple-brown haft wound with cyan bands. Every vanilla tool, netherite too,
+  is on the same plain wooden stick.
+- **Neon stripes**: bright cyan bars ran the length of every blade, head and plate. Vanilla's metals are a short ramp
+  of one colour; an accent is a gem or a glint, not a stripe.
+- **A black line round everything**, at the same weight on metal and wood, which made the items look like stickers.
+  Vanilla edges each part in its own darkest tone.
+- **Shapes of their own**: an axe that read as a mace, a shovel like a lollipop, an ingot like a pill, a cord like a
+  magnifying glass, helmet and boots too thin, templates like UI panels, ore in black boxes.
+- **The worn armour** was flat plates with a black frame round every face and cyan lines across them.
+
+### What it is now
+- **The tools** follow vanilla's silhouettes (the pick's arc, the axe's blade facing up and left, the spade, the hoe's
+  bar, the sword's guard and pommel, the spear's leaf) on vanilla's wooden stick, in a six-tone violet-black ramp lit
+  from the top left. The Tether's cyan shows only as a thread down the sword's fuller and a bead where each head meets
+  its haft.
+- **The ingot** is a slanted cast bar with a lit top face, a front face below a sharp edge and a dark end, a thread of
+  cyan in its side; **the scrap** a rough lump with specks; **the Tether Cord** a hank of twisted thread, light and
+  dark turns like vanilla's lead.
+- **The armour pieces** have vanilla's shapes (the helmet's cap, the chestplate's shoulders, the leggings, the pair of
+  boots), each with a single cyan stud.
+- **The smithing templates** are tall worn slabs: the upgrade a dark slab with the Tether's knot, the Weaver a slab of
+  Seam Silk with the weave pressed in, the Fray a dark slab with threads coming loose.
+- **The ore** sits in the hush stone as vanilla's ores do: irregular clusters, lit on the upper left, no outline.
+- **The worn armour** is bevelled plate: lit top and left edges, shaded right and bottom ones, a little grain, seams
+  and rivets, the face open in the helm, a stud of cyan at the brow, the heart, the belt and the boot straps.
+- The generators were rewritten (`tools/items/tetherite.py`, `tools/items/tetherite_armor.py`); the gear screenshot in
+  CI now holds vanilla netherite in the row below the set.
+
 ## 3.15.0: Voices of the Deep
 
 ### The Lurkers of the deep sound like where they live

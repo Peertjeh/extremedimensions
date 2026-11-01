@@ -101,6 +101,7 @@ jobs:
           python3 - <<'PY'
           import glob, base64, io, os
           from PIL import Image
+          later = []
           for f in sorted(glob.glob("build/run/clientGameTest/screenshots/*.png")):
               im = Image.open(f).convert("RGB")
               im.thumbnail((800, 450))
@@ -108,15 +109,27 @@ jobs:
               s = base64.b64encode(b.getvalue()).decode()
               for i in range(0, len(s), 3000):
                   print(f"IMG|{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
-              if "tetherite_gear" in f:
-                  # the inventory at full size, to read the item art pixel by pixel
-                  full = Image.open(f).convert("RGB")
-                  w, h = full.size
-                  c = full.crop((max(0, w // 2 - 360), max(0, h // 2 - 260), min(w, w // 2 + 360), min(h, h // 2 + 260)))
+              if "tetherite_gear" in f or "tetherite_worn" in f:
+                  later.append(f)
+          # last of all (so a short tail of the log holds them): the inventory with the gear at one image pixel to the
+          # GUI pixel, read straight off the screen at the GUI scale the game chose, and the set worn, small
+          for f in later:
+              full = Image.open(f).convert("RGB")
+              w, h = full.size
+              if "gear" in f:
+                  k = 1
+                  while w // (k + 1) >= 320 and h // (k + 1) >= 240:
+                      k += 1
+                  g = full.resize((w // k, h // k), Image.NEAREST)
+                  gw, gh = g.size
+                  c = g.crop((gw // 2 - 100, gh // 2 - 95, gw // 2 + 100, gh // 2 + 95))
                   b = io.BytesIO(); c.save(b, "PNG")
-                  s = base64.b64encode(b.getvalue()).decode()
-                  for i in range(0, len(s), 3000):
-                      print(f"IMG|crop_{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
+              else:
+                  c = full.copy(); c.thumbnail((480, 270))
+                  b = io.BytesIO(); c.save(b, "JPEG", quality=80)
+              s = base64.b64encode(b.getvalue()).decode()
+              for i in range(0, len(s), 3000):
+                  print(f"IMG|tail_{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
           PY
 
   compat:
