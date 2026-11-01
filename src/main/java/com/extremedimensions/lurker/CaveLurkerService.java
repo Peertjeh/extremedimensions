@@ -138,11 +138,20 @@ public final class CaveLurkerService {
 	}
 
 	/**
-	 * Whether stone (or anything solid, leaves aside) lies over this spot, keeping the sky off it. Read from the world's
-	 * height map, which is right at once, not from the sky's light, which a new roof only dims a while later.
+	 * Whether rock (a whole block that lets no light through: stone, earth) lies anywhere over this spot, keeping the sky
+	 * off it. Looked for block by block up to the height map's top, so it is right at once (the sky's light is dimmed by a
+	 * new roof only a while later) and blind to what is no roof: leaves, glass, a barrier.
 	 */
 	public static boolean roofed(Level level, BlockPos pos) {
-		return pos.getY() < level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ());
+		int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING, pos.getX(), pos.getZ());
+		BlockPos.MutableBlockPos q = new BlockPos.MutableBlockPos(pos.getX(), pos.getY(), pos.getZ());
+		for (int y = pos.getY(); y < top; y++) {
+			q.setY(y);
+			if (level.getBlockState(q).canOcclude()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static void tick(MinecraftServer s) {
