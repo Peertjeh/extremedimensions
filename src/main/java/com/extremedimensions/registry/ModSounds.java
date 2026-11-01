@@ -37,6 +37,7 @@ public final class ModSounds {
 	public static final SoundEvent SCULK_LURKER_HURT = register("sculk_lurker.hurt");
 	public static final SoundEvent SCULK_LURKER_DEATH = register("sculk_lurker.death");
 	public static final SoundEvent SCULK_LURKER_STEP = register("sculk_lurker.step");
+	public static final SoundEvent SCULK_LURKER_LAUGH = register("sculk_lurker.laugh");
 	public static final SoundEvent LURKER_HURT = register("lurker_hurt");
 	public static final SoundEvent LURKER_DEATH = register("lurker_death");
 	public static final SoundEvent LURKER_SHRIEK = register("lurker_shriek");

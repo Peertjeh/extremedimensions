@@ -1000,5 +1000,13 @@
       "extremedimensions:lurker/sculk_step2",
       "extremedimensions:lurker/sculk_step3"
     ]
+  },
+  "sculk_lurker.laugh": {
+    "subtitle": "subtitles.extremedimensions.sculk_lurker.laugh",
+    "sounds": [
+      "extremedimensions:lurker/sculk_laugh1",
+      "extremedimensions:lurker/sculk_laugh2",
+      "extremedimensions:lurker/sculk_laugh3"
+    ]
   }
 }

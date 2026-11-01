@@ -387,6 +387,10 @@ public final class Config {
 	public static int SCULK_LURKER_RATTLE_SECONDS = 12;
 	/** How far from the player a shrieker it rattles may be (blocks). */
 	public static int SCULK_LURKER_SHRIEKER_RANGE = 16;
+	/** Seconds between two sculk sensors it sets off in its player's name (between the shriekers). */
+	public static int SCULK_LURKER_SENSOR_SECONDS = 6;
+	/** How far from the player a sculk sensor it sets off may be. */
+	public static int SCULK_LURKER_SENSOR_RANGE = 12;
 	/** How far from the player a Warden it fetches may be (blocks). */
 	public static int SCULK_LURKER_LURE_RANGE = 48;
 	/** Seconds it stays before it sinks into the sculk, its work done or not. */
@@ -1427,6 +1431,7 @@ public final class Config {
 			{"cave_lurker_give_up_seconds", 1, 120}, {"cave_lurker_flee_seconds", 1, 60},
 			{"sculk_lurker_spawn_chance", 0, 1}, {"sculk_lurker_rattle_seconds", 3, 600}, {"sculk_lurker_shrieker_range", 4, 48},
 			{"sculk_lurker_lure_range", 8, 96}, {"sculk_lurker_seconds", 20, 3600},
+			{"sculk_lurker_sensor_seconds", 2, 600}, {"sculk_lurker_sensor_range", 4, 32},
 			{"sculk_lurker_city_chance", 0, 1}, {"sculk_lurker_city_cooldown_seconds", 0, 86400}, {"sculk_lurker_pack_min", 1, 8},
 			{"sculk_lurker_pack_max", 1, 8}, {"sculk_lurker_pack_per_player", 0, 4}, {"sculk_lurker_pack_cap", 1, 12},
 			{"curse_fresh_weight", 1, 20}, {"weaver_pity", 0, 1}, {"seam_thinned_fragment_chance", 0, 1}, {"seam_collapse_toll", 0, 1},

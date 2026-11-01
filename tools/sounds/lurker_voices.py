@@ -6,8 +6,8 @@ claws ticking on rock, the crunch of its grab, and a rattle of slowing clicks as
 
 The Sculk Lurker lives in the Deep Dark and serves what sleeps there, and nothing about it is bright: low wet croaks
 with a hollow, muffled ring under them, the scratching rattle it makes at a shrieker, the low double pulse and
-rising croaks with which it calls the Warden, a soft pulse as it leads it, squelching steps, and a wet crackle
-dissolving into the sculk as it dies.
+rising croaks with which it calls the Warden, a soft pulse as it leads it, a low wet chuckle when it has made
+mischief, squelching steps, and a wet crackle dissolving into the sculk as it dies.
 
 Deterministic (fixed seeds). Builds on tools/sounds/ambient.py. Needs numpy and ffmpeg.
 usage: python3 tools/sounds/lurker_voices.py [--out=DIR] [--mp3] [names...]
@@ -311,6 +311,28 @@ def sculk_death(rng, v):
     return level(deep_dark(rng, x, 0.45), 0.8)
 
 
+def sculk_laugh(rng, v):
+    """It laughs at you: a low, wet chuckle, a stutter of croaks that falls away. Never bright. Three ways."""
+    d = 1.7
+    t = t_(d)
+    x = np.zeros(len(t))
+    n = (5, 4, 6)[v - 1]
+    base = (170.0, 150.0, 190.0)[v - 1]
+    s = 0.05
+    for i in range(n):
+        dur = rng.uniform(0.07, 0.1)
+        f0 = base * (1 - 0.05 * i) * rng.uniform(0.95, 1.05)
+        u = np.maximum(t - s, 0)
+        f = f0 * (1.15 - 0.25 * np.clip(u / dur, 0, 1))
+        e = bell_env(t, s, 0.012, dur * 0.3, dur * 0.7)
+        voice = peaks(harm(np.maximum(f, 60), top=1800, tilt=1.0), [(480, 120, 1.0), (1050, 180, 0.55), (1700, 250, 0.15)])
+        breath = band(rng.standard_normal(len(t)), 300, 1500) * bell_env(t, max(0.0, s - 0.02), 0.01, 0.01, 0.03) * 0.3
+        x += norm(voice) * e * rng.uniform(0.7, 1.0) + breath
+        s += dur + rng.uniform(0.05, 0.09)
+    x += lowpass(crackle_wet(rng, t, 30, 200, 700), 1000) * 0.2 * np.exp(-t / 0.8)
+    return level(deep_dark(rng, x, 0.4), 0.8)
+
+
 def sculk_step(rng, v):
     """Soft, wet steps on the sculk."""
     d = 0.32
@@ -328,6 +350,7 @@ SOUNDS = [
     ("cave_step", cave_step, 3, 7107), ("cave_grab", cave_grab, 1, 7108),
     ("sculk_chirp", sculk_chirp, 3, 7201), ("sculk_rattle", sculk_rattle, 2, 7202), ("sculk_call", sculk_call, 2, 7203),
     ("sculk_pulse", sculk_pulse, 2, 7204), ("sculk_hurt", sculk_hurt, 2, 7205), ("sculk_death", sculk_death, 1, 7206),
+    ("sculk_laugh", sculk_laugh, 3, 7208),
     ("sculk_step", sculk_step, 3, 7207),
 ]
 

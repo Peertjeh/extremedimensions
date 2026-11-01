@@ -12,8 +12,21 @@
   muffled ring under them like bone struck under a wet cloth, a dry **rattle** of claws on bone as it scratches at a
   shrieker, a low double **pulse** and rising croaks when it calls the Warden, a soft pulse as it leads it,
   **squelching** steps, and a wet crackle thinning into the sculk as it dies.
-- Fifteen new sounds (31 takes), made from noise and tones like the rest of the wound's sounds
+- Sixteen new sounds (34 takes), made from noise and tones like the rest of the wound's sounds
   (`tools/sounds/lurker_voices.py`), with subtitles in English and Dutch, on the Hostile Creatures slider.
+
+### The Sculk Lurker mocks you
+- **It sets the sensors off in your name.** Between two shriekers it scurries to a sculk sensor near you (every six
+  seconds, `sculk_lurker_sensor_seconds`, within 12 blocks of you, `sculk_lurker_sensor_range`) and sets it off as if
+  you had made the sound: the sensor clicks and glows, and a shrieker that hears it shrieks at you, so the Warden
+  draws nearer to waking for something you never did.
+- **It laughs at you**, low and wet with a deep chuckle under it (a new sound, three takes): when its rattle makes a
+  shrieker shriek, now and then when it has set a sensor off, when it catches you looking straight at it (and then it
+  skips back out of reach), and once as the Warden it leads closes in on you. Each laugh comes with a little hop of
+  glee and a pop of sculk charge, and it looks you in the eye.
+- **It stays to watch.** Once it has set the Warden on you it no longer sinks away at once: it backs off to ten
+  blocks, turns to watch what it brought on you, laughs twice, and only then sinks into the sculk.
+- The Wanderer's page on the Warden's Herald tells of the laughing.
 
 ### Sculk Lurkers come in packs to an Ancient City
 - **Walk into an Ancient City and it sends its servants out**: a pack of two or three Sculk Lurkers
@@ -30,6 +43,8 @@
   (`curse_fresh_weight`), and **the last curse so laid never comes twice in a row**.
 
 ### Tests
+- A Sculk Lurker sets a sculk sensor near its player off without ever striking them, and laughs as it brings the
+  Warden on them.
 - The last curse laid without a choice never comes again next; a curse not yet carried is three times likelier (about
   one in seven for the carried one of three); every new voice is registered and on Hostile Creatures; a city's pack is
   two or three for one player, one more per further player, never past its cap.
