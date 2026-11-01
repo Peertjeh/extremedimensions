@@ -73,8 +73,10 @@ public final class Standing {
 	}
 
 	/** The player's level with the tribe (Wary for everyone while the tribe forgets nothing, see tribe_enabled). */
+	/** How the tribe treats this player: by their standing, or, with members of their clan near, by the lowest of theirs. */
 	public static Level of(ServerPlayer p) {
-		return Config.TRIBE_ENABLED <= 0 ? Level.WARY : level(DataStore.get(p.getUUID()).tribeRep);
+		return Config.TRIBE_ENABLED <= 0 ? Level.WARY
+				: level(com.extremedimensions.coop.ClanService.judgedRep(p, DataStore.get(p.getUUID()).tribeRep));
 	}
 
 	public static boolean atLeast(ServerPlayer p, Level l) {
@@ -92,20 +94,37 @@ public final class Standing {
 		return of(p) == Level.KIN && ThreadLocalRandom.current().nextDouble() >= Math.max(0, Math.min(1, Config.TRIBE_KIN_THEFT_CHANCE));
 	}
 
-	/** Changes the player's standing; says so above the hotbar, and in the chat when their level changes. */
+	/**
+	 * Changes the player's standing; says so above the hotbar, and in the chat when their level changes. What falls on
+	 * the rest of their clan falls on it too (see ClanService).
+	 */
 	public static void change(ServerPlayer p, int delta, String why) {
 		if (Config.TRIBE_ENABLED <= 0 || delta == 0 || p.isCreative() || p.isSpectator()) {
 			return;
 		}
-		PlayerData d = DataStore.get(p.getUUID());
+		shift(p.getUUID(), p, delta, Component.translatable(why));
+		com.extremedimensions.coop.ClanService.spread(p, delta, why);
+	}
+
+	/**
+	 * Changes one player's standing alone (online or not; {@code p} is them when they are online, else null), with the
+	 * same messages, grudge and hunt as {@link #change}.
+	 */
+	public static void shift(java.util.UUID id, ServerPlayer p, int delta, Component why) {
+		if (Config.TRIBE_ENABLED <= 0 || delta == 0 || (p != null && (p.isCreative() || p.isSpectator()))) {
+			return;
+		}
+		PlayerData d = DataStore.get(id);
 		Level before = level(d.tribeRep);
 		d.tribeRep = Math.max(MIN, Math.min(MAX, d.tribeRep + delta));
 		Level after = level(d.tribeRep);
-		String sign = delta > 0 ? "+" + delta : String.valueOf(delta);
-		p.sendSystemMessage(Component.translatable("gui.extremedimensions.tribe.changed", sign, Component.translatable(why))
-				.withStyle(delta > 0 ? ChatFormatting.GREEN : ChatFormatting.RED), true);
-		if (after != before) {
-			announce(p, after, after.ordinal() > before.ordinal());
+		if (p != null) {
+			String sign = delta > 0 ? "+" + delta : String.valueOf(delta);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.tribe.changed", sign, why)
+					.withStyle(delta > 0 ? ChatFormatting.GREEN : ChatFormatting.RED), true);
+			if (after != before) {
+				announce(p, after, after.ordinal() > before.ordinal());
+			}
 		}
 		if (delta < 0 && d.tribeForgetIn <= 0) {
 			d.tribeForgetIn = Math.max(1, Config.TRIBE_FORGET_MINUTES) * 60;

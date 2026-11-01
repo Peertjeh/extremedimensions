@@ -66,7 +66,7 @@ public final class BarterService {
 		}
 	}
 
-	public static final int FRAGMENT = 100, RELIC = 101, CLOTH = 102;
+	public static final int FRAGMENT = 100, RELIC = 101, CLOTH = 102, CORD = 103;
 
 	/** Wares a Hollowling may offer on a day (a few of them each day). */
 	public static final List<Ware> DAILY = List.of(
@@ -87,6 +87,7 @@ public final class BarterService {
 			case FRAGMENT -> new Ware(FRAGMENT, Items.EMERALD, Math.max(1, Config.TRIBE_BARTER_FRAGMENT_PRICE), ModItems.TETHER_FRAGMENT, 1, 1);
 			case RELIC -> new Ware(RELIC, Items.EMERALD, Math.max(1, Config.TRIBE_BARTER_RELIC_PRICE), RelicService.item(Relic.values()[0]), 1, 1);
 			case CLOTH -> new Ware(CLOTH, Items.ECHO_SHARD, 4, ModItems.MENDING_CLOTH, 1, 1);
+			case CORD -> new Ware(CORD, Items.ECHO_SHARD, Math.max(1, Config.CLAN_CORD_PRICE), ModItems.BLOOD_CORD, 1, 1);
 			default -> id >= 0 && id < DAILY.size() ? DAILY.get(id) : null;
 		};
 	}
@@ -113,6 +114,10 @@ public final class BarterService {
 		List<Ware> daily = new ArrayList<>(DAILY);
 		Collections.shuffle(daily, new Random(p.getUUID().getLeastSignificantBits() * 31 + today()));
 		out.addAll(daily.subList(0, Math.max(0, Math.min(daily.size(), Config.TRIBE_BARTER_OFFERS))));
+		if (Config.CLAN_ENABLED > 0 && Standing.atLeast(p, Standing.Level.TRUSTED)) {
+			// the tribe's cord, for those it trusts: it binds players into a clan
+			out.add(ware(CORD));
+		}
 		if (Standing.of(p) == Standing.Level.KIN) {
 			if (Config.TRIBE_BARTER_RELIC_PRICE > 0) {
 				out.add(ware(RELIC));

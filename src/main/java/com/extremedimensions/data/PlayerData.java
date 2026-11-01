@@ -189,6 +189,8 @@ public class PlayerData {
 	public boolean collapseOwed = false;
 	/** Left while the wound was after them (what was: swarm, hunt, keeper, raid, elder, blow); the curse comes on joining. */
 	public String fled = null;
+	/** When (Overworld game time) the player was bound into their clan: no leaving it for clan_lock_minutes after. */
+	public long clanSince = 0;
 	/** Cards Foresight adds to the next offer, kept when the Tether it was on is lost in the same death or Collapse. */
 	public int foresightOwed = 0;
 	/**

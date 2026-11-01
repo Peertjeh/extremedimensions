@@ -983,6 +983,24 @@ public final class Config {
 	public static int TRIBE_RAID_RANGE = 48;
 	/** Chance the spoils of a raid hold a relic. */
 	public static double TRIBE_RAID_RELIC_CHANCE = 0.15;
+	/**
+	 * Clans: players bound by a Blood Cord (sold by the tribe to those it trusts) stand before the tribe together. Whether
+	 * they can, how many to a clan, the cord's price (echo shards) and the blood each pays on binding.
+	 */
+	public static int CLAN_ENABLED = 1;
+	public static int CLAN_MAX = 4;
+	public static int CLAN_CORD_PRICE = 3;
+	public static double CLAN_BLOOD = 6.0;
+	/** Of a member's loss of standing, how much falls on every other member (1 = all of it); of a gain, how much they share. */
+	public static double CLAN_SHARE_LOSS = 1.0;
+	public static double CLAN_SHARE_GAIN = 0.5;
+	/** Within how many blocks of each other the tribe treats a clan by the standing of its least trusted member. */
+	public static int CLAN_RANGE = 48;
+	/** Minutes after binding before a member may leave; what leaving costs the leaver (standing, curses) and each who stays. */
+	public static int CLAN_LOCK_MINUTES = 60;
+	public static int CLAN_LEAVE_COST = 25;
+	public static int CLAN_LEAVE_CURSES = 1;
+	public static int CLAN_LEFT_COST = 10;
 
 	// --- The Tapestry: the loom, its panels' boons, the Weaving and New Thread+ ----------------
 
@@ -1317,6 +1335,8 @@ public final class Config {
 			{"elder_ultimate_seconds", 2, 120}, {"elder_arena_linger_seconds", -1, 86400},
 			{"seam_build_budget_ms", 1, 50}, {"elder_arena_design_budget_ms", 1, 50}, {"seam_fly_range", 0, 128}, {"seam_fly_max", 1, 5000}, {"seam_fly_ticks", 10, 200},
 			{"seam_fly_from", 2, 64}, {"seam_damage", 0, 100},
+			{"clan_max", 2, 16}, {"clan_cord_price", 1, 64}, {"clan_blood", 0, 19}, {"clan_share_loss", 0, 1}, {"clan_share_gain", 0, 1},
+			{"clan_range", 0, 256}, {"clan_lock_minutes", 0, 10080}, {"clan_leave_cost", 0, 200}, {"clan_leave_curses", 0, 10}, {"clan_left_cost", 0, 200},
 			{"ambient_chance", 0, 1}, {"ambient_min_seconds", 10, 3600}, {"ambient_volume", 0, 2}, {"ambient_dread", 0, 1},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},
 			{"seam_fray_ray_cooldown", 1, 120}, {"seam_fray_gloom", 0, 30}, {"seam_fray_gloom_every", 10, 3600}, {"seam_fray_unravel", 0, 1},

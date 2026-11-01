@@ -29,7 +29,8 @@ import net.minecraft.server.level.ServerPlayer;
 
 /**
  * Commands under {@code /tether}: {@code where} for everyone (the world you stand in and whether the mod acts there),
- * the co-op answers ({@code burden accept|refuse}, {@code share on|off}) and {@code tribe} (where you stand with it);
+ * the co-op answers ({@code burden accept|refuse}, {@code share on|off}), {@code clan} (your clan; {@code accept|refuse}
+ * a Blood Cord, {@code leave}) and {@code tribe} (where you stand with it);
  * for operators Overworld curses on or off, curses set or cleared, Lurkers, hoards, the Seam, bosses and difficulty,
  * the stats export written now ({@code export}) and a test message to the Discord webhook ({@code discord_test}); for
  * admins a reset of the Seam.
@@ -48,6 +49,10 @@ public final class TetherCommand {
 				.then(Commands.literal("burden")
 						.then(Commands.literal("accept").executes(c -> burden(c.getSource(), true)))
 						.then(Commands.literal("refuse").executes(c -> burden(c.getSource(), false))))
+				.then(Commands.literal("clan").executes(c -> clan(c.getSource(), "info"))
+						.then(Commands.literal("accept").executes(c -> clan(c.getSource(), "accept")))
+						.then(Commands.literal("refuse").executes(c -> clan(c.getSource(), "refuse")))
+						.then(Commands.literal("leave").executes(c -> clan(c.getSource(), "leave"))))
 				.then(Commands.literal("share")
 						.then(Commands.literal("on").executes(c -> share(c.getSource(), true)))
 						.then(Commands.literal("off").executes(c -> share(c.getSource(), false))))
@@ -124,6 +129,21 @@ public final class TetherCommand {
 			return 0;
 		}
 		com.extremedimensions.coop.BurdenService.answer(p, yes);
+		return 1;
+	}
+
+	/** {@code /tether clan [accept|refuse|leave]}: the player's clan, an answer to a Blood Cord, or cutting the cord. */
+	private static int clan(CommandSourceStack src, String what) {
+		net.minecraft.server.level.ServerPlayer p = src.getPlayer();
+		if (p == null) {
+			return 0;
+		}
+		switch (what) {
+			case "accept" -> com.extremedimensions.coop.ClanService.answer(p, true);
+			case "refuse" -> com.extremedimensions.coop.ClanService.answer(p, false);
+			case "leave" -> com.extremedimensions.coop.ClanService.leave(p);
+			default -> com.extremedimensions.coop.ClanService.info(p);
+		}
 		return 1;
 	}
 

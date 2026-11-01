@@ -47,6 +47,8 @@ public final class ModItems {
 	public static final Item VEIL_WING = register("veil_wing", 16, Rarity.UNCOMMON);
 	/** Silk woven around a Veil Wing and a fragment: pressed to the skin, it takes one curse stack off. */
 	public static final Item MENDING_CLOTH = register("mending_cloth", 16, Rarity.RARE);
+	/** The tribe's cord, sold to those it trusts: used on another player, it binds the two into one clan, in blood. */
+	public static final Item BLOOD_CORD = register("blood_cord", 1, Rarity.RARE);
 
 	/** Dropped by the Starved One: use it to mend the first wound. */
 	public static final Item MENDING_THREAD = register("mending_thread", 1, Rarity.EPIC);

@@ -1,5 +1,29 @@
 # Changelog
 
+## 3.10.0: Bound in Blood
+
+### Clans
+- **Stand before the tribe together, and fall together.** The tribe is one; every player has their own standing with
+  it. Now players can bind themselves into a **clan**, and then the tribe judges them as one. It is no shelter:
+  - **one grudge for all**: whatever standing one member loses, every other member loses too, in full, online or
+    not; of what one member wins, each of the others gets only half;
+  - **the weakest link**: near each other (48 blocks), the tribe treats every member as it treats the least trusted
+    of them: a member it hates beside you, and its young steal from you too, it will not barter with you, and its
+    Lurkers come for you as for them;
+  - **no easy way out**: no one may leave in the first hour after being bound; leaving then costs the leaver 25
+    standing and a curse, and every member who stays 10 standing. A clan left with one member is no more.
+- **The Blood Cord.** The tribe sells it only to those it trusts (Trusted or Kin), for three echo shards, once a day.
+  Use it on another player: they are asked in the chat, and when they accept, the two are bound (the asked one into
+  the other's clan, or both into a new one), and each pays six health in blood. A clan holds up to four.
+- `/tether clan` shows your clan and where each member stands; `/tether clan leave` cuts the cord.
+- Eleven new settings, from `clan_enabled` to `clan_left_cost`; clans respect scoreboard teams as the other co-op
+  features do.
+
+### Tests
+- A server test: two players bound into a clan pay in blood, share a loss in full and a gain in half, are treated by
+  the least trusted near each other, are offered the cord only when trusted, cannot leave while the cord is fresh, and
+  pay for cutting it.
+
 ## 3.9.0: What the Wound Remembers
 
 ### The Lurker

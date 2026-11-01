@@ -109,6 +109,7 @@ public final class ServerEvents {
 			com.extremedimensions.seam.FirstKnot.clear();
 			LurkerService.clear();
 			com.extremedimensions.world.AmbientService.clear();
+			com.extremedimensions.coop.ClanService.clear();
 			com.extremedimensions.penalty.FleeService.clear();
 			com.extremedimensions.penalty.AbyssalTolls.clear();
 			com.extremedimensions.penalty.AbyssalWorld.clear();
@@ -176,6 +177,7 @@ public final class ServerEvents {
 			com.extremedimensions.binding.WoundLens.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.binding.Charms.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.world.AmbientService.forget(handler.getPlayer().getUUID());
+			com.extremedimensions.coop.ClanService.forget(handler.getPlayer().getUUID());
 			// Every player's inventory is saved with the world's data, so neither can run ahead of the other after a crash
 			// (a stopping server saves them all once itself)
 			if (s.isRunning()) {
@@ -465,6 +467,11 @@ public final class ServerEvents {
 				return InteractionResult.PASS;
 			}
 			if (hand == InteractionHand.MAIN_HAND && player instanceof ServerPlayer sp && entity instanceof ServerPlayer) {
+				// Co-op: a Blood Cord on another player, to bind the two into one clan
+				InteractionResult clan = com.extremedimensions.coop.ClanService.interact(sp, entity);
+				if (clan != InteractionResult.PASS) {
+					return clan;
+				}
 				// Co-op: sneak and an empty hand on an ally, to carry one of their curses
 				InteractionResult burden = com.extremedimensions.coop.BurdenService.interact(sp, entity);
 				if (burden != InteractionResult.PASS) {

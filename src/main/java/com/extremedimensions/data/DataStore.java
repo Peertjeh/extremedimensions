@@ -71,6 +71,8 @@ public final class DataStore {
 		boolean tapestryDone = false;
 		/** New Thread+: how many times the world took up a harder thread (0 = never). */
 		int newThread = 0;
+		/** Clans of players bound by a Blood Cord: clan id to its members' ids, in the order they were bound. */
+		Map<String, List<String>> clans = new HashMap<>();
 	}
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -379,6 +381,14 @@ public final class DataStore {
 
 	public static List<Hoard> hoards() {
 		return data.hoards;
+	}
+
+	/** The clans (clan id to members' ids); an older save has none yet. */
+	public static Map<String, List<String>> clans() {
+		if (data.clans == null) {
+			data.clans = new HashMap<>();
+		}
+		return data.clans;
 	}
 
 	/** A player's data if there is any (never creates it: for hot paths that also see fake players). */

@@ -4,11 +4,15 @@ import static com.extremedimensions.gametest.CurseTests.check;
 
 import com.extremedimensions.config.Config;
 import com.extremedimensions.coop.BurdenService;
+import com.extremedimensions.coop.ClanService;
 import com.extremedimensions.coop.FallenService;
 import com.extremedimensions.data.Anchor;
 import com.extremedimensions.data.DataStore;
+import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.tribe.BarterService;
+import com.extremedimensions.tribe.Standing;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
@@ -185,5 +189,73 @@ public class CoopTests {
 		check(helper, anchor.of(stranger.getStringUUID()) == 0, "someone not on the team drew on it");
 		DataStore.get(a.getUUID()).shareAnchors = false;
 		helper.succeed();
+	}
+
+	/**
+	 * A clan stands before the tribe together: a loss falls on every member, a gain half on the others, and near each
+	 * other the least trusted sets how the tribe treats them all. The tribe sells the cord only to those it trusts; the
+	 * cord is fresh for a while, and cutting it costs the leaver standing and a curse, and those who stay standing too.
+	 */
+	@GameTest(maxTicks = 200)
+	public void aClanStandsBeforeTheTribeTogether(GameTestHelper helper) {
+		ServerPlayer[] pair = allies(helper, "clan");
+		ServerPlayer a = pair[0], b = pair[1];
+		int range = Config.CLAN_RANGE, lock = Config.CLAN_LOCK_MINUTES;
+		double loss = Config.CLAN_SHARE_LOSS, gain = Config.CLAN_SHARE_GAIN;
+		PlayerData da = DataStore.get(a.getUUID()), db = DataStore.get(b.getUUID());
+		Runnable restore = () -> {
+			Config.CLAN_RANGE = range;
+			Config.CLAN_LOCK_MINUTES = lock;
+			Config.CLAN_SHARE_LOSS = loss;
+			Config.CLAN_SHARE_GAIN = gain;
+			DataStore.clans().values().removeIf(m -> m.contains(a.getStringUUID()) || m.contains(b.getStringUUID()));
+			da.tribeRep = 0;
+			db.tribeRep = 0;
+		};
+		// (past the grace a player has on joining, when nothing can hurt them)
+		helper.runAfterDelay(70, () -> {
+			try {
+				Config.CLAN_SHARE_LOSS = 1.0;
+				Config.CLAN_SHARE_GAIN = 0.5;
+				Config.CLAN_LOCK_MINUTES = 60;
+				da.tribeRep = 40;
+				db.tribeRep = 0;
+				a.setHealth(20f);
+				ClanService.bind(a, b);
+				String clan = ClanService.clanOf(a.getUUID());
+				check(helper, clan != null && clan.equals(ClanService.clanOf(b.getUUID())), "the two are not of one clan");
+				check(helper, Config.CLAN_BLOOD <= 0 || a.getHealth() < 20f, "binding cost no blood (health %s)", a.getHealth());
+				Standing.change(a, -10, "gui.extremedimensions.tribe.why.raid");
+				check(helper, da.tribeRep == 30 && db.tribeRep == -10, "a loss did not fall on the whole clan (%s, %s)", da.tribeRep, db.tribeRep);
+				Standing.change(a, 10, "gui.extremedimensions.tribe.why.gift");
+				check(helper, da.tribeRep == 40 && db.tribeRep == -5, "a gain was not shared in half (%s, %s)", da.tribeRep, db.tribeRep);
+				Config.CLAN_RANGE = 48;
+				check(helper, Standing.of(a) == Standing.Level.WARY, "beside a member the tribe is wary of, a trusted one is treated as %s", Standing.of(a));
+				Config.CLAN_RANGE = 0;
+				check(helper, Standing.of(a) == Standing.Level.TRUSTED, "on their own, a trusted member is treated as %s", Standing.of(a));
+				check(helper, BarterService.offers(a).stream().anyMatch(w -> w.id() == BarterService.CORD), "the tribe offers a trusted player no Blood Cord");
+				check(helper, BarterService.offers(b).stream().noneMatch(w -> w.id() == BarterService.CORD), "the tribe offers a Blood Cord to one it does not trust");
+				ClanService.leave(b);
+				check(helper, ClanService.clanOf(b.getUUID()) != null, "a member left while the cord was fresh");
+				Config.CLAN_LOCK_MINUTES = 0;
+				int curses = curses(db), repA = da.tribeRep, repB = db.tribeRep;
+				ClanService.leave(b);
+				check(helper, ClanService.clanOf(a.getUUID()) == null && ClanService.clanOf(b.getUUID()) == null, "a clan of one was left standing");
+				check(helper, db.tribeRep == repB - Config.CLAN_LEAVE_COST, "leaving cost %s standing, not %s", repB - db.tribeRep, Config.CLAN_LEAVE_COST);
+				check(helper, da.tribeRep == repA - Config.CLAN_LEFT_COST, "the one left behind lost %s standing, not %s", repA - da.tribeRep, Config.CLAN_LEFT_COST);
+				check(helper, Config.CLAN_LEAVE_CURSES <= 0 || curses(db) > curses, "leaving cost no curse");
+			} finally {
+				restore.run();
+			}
+			helper.succeed();
+		});
+	}
+
+	private static int curses(PlayerData d) {
+		int n = 0;
+		for (Penalty pen : Penalty.values()) {
+			n += d.owned(pen);
+		}
+		return n;
 	}
 }

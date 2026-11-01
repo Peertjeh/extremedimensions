@@ -143,7 +143,9 @@ Trials past gold), and the tapestry's boons stay.
   Seam's veins), and the Wound Lens.
 - **The Elders**: the Matriarch, the Ferryman, the Last Weaver and the Knot Mother, with arenas raised by flying blocks,
   domain phases, cores that ward them and islands that fall.
-- **The tribe as a faction**: standing from hunted to kin (hard won on the harder difficulties), barter, raids.
+- **The tribe as a faction**: standing from hunted to kin (hard won on the harder difficulties), barter, raids, and
+  **clans**: players bound by a Blood Cord stand before the tribe as one, sharing every loss and judged by the least
+  trusted of them.
 - **The wounds remember**: Echoes, Unstable Anchors, Unanchored builds and Frayed islands.
 - **Co-op**: fallen players can be revived, curses carried for a friend, anchors shared. Every player has their own
   time.

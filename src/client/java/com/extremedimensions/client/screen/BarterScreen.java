@@ -172,7 +172,7 @@ public class BarterScreen extends Screen {
 		for (int i = first; i < Math.min(offers.size(), first + rows); i++) {
 			Offer o = offers.get(i);
 			int ry = y + HEAD + (i - first) * ROW_H;
-			boolean kin = o.ware().id() == BarterService.RELIC || o.ware().id() == BarterService.CLOTH;
+			boolean kin = o.ware().id() == BarterService.RELIC || o.ware().id() == BarterService.CLOTH || o.ware().id() == BarterService.CORD;
 			if (kin) {
 				g.fill(x + 8, ry - 3, x + PANEL_W - 8, ry + ROW_H - 5, Ui.argb(pe * 0.18, Ui.SOUL));
 			}

@@ -60,6 +60,8 @@ public final class Tooltips {
 			key = "veil_wing";
 		} else if (item == ModItems.MENDING_CLOTH) {
 			key = "mending_cloth";
+		} else if (item == ModItems.BLOOD_CORD) {
+			key = "blood_cord";
 		} else if (item == ModItems.SEAM_SILK) {
 			key = "seam_silk";
 		} else if (item == ModItems.WOUND_LENS) {

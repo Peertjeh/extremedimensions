@@ -37,6 +37,7 @@ public final class ModItemGroups {
 					out.accept(ModItems.SEAM_SILK);
 					out.accept(ModItems.VEIL_WING);
 					out.accept(ModItems.MENDING_CLOTH);
+					out.accept(ModItems.BLOOD_CORD);
 					out.accept(ModItems.MENDING_THREAD);
 					out.accept(ModItems.SEVERING_SHEARS);
 					out.accept(ModItems.ECHO_THREAD);
