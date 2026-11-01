@@ -23,9 +23,11 @@ ASSETS = os.path.join(ROOT, "src/client/resources/assets/extremedimensions/textu
 BLOCKS = os.path.join(ASSETS, "block")
 
 PAL = {
-    '0': (24, 18, 34), '1': (38, 30, 52), '2': (52, 43, 70), '3': (68, 58, 90), '4': (88, 77, 114), '5': (114, 103, 143),
-    '6': (158, 149, 186),
-    'a': (28, 92, 100), 'b': (45, 158, 160), 'c': (112, 228, 214),
+    # the metal: netherite's dark and muted range, turned a little cool and violet (no lavender in the lights)
+    '0': (22, 19, 27), '1': (35, 31, 43), '2': (49, 44, 60), '3': (64, 58, 78), '4': (82, 75, 98), '5': (106, 99, 124),
+    '6': (140, 133, 158),
+    # the Tether's thread, a deep teal that only glints where it catches the light
+    'a': (27, 86, 92), 'b': (42, 140, 142), 'c': (96, 200, 190),
     'p': (186, 158, 210), 'q': (152, 122, 182), 'r': (118, 90, 148), 's': (86, 62, 114), 't': (62, 42, 86),
     'w': (40, 30, 11), 'x': (73, 54, 21), 'y': (104, 78, 30), 'z': (137, 103, 39),
 }

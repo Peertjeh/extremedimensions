@@ -67,6 +67,9 @@ jobs:
   client:
     name: client test and screenshots
     runs-on: ubuntu-24.04
+    # (to push the Tetherite screenshots to the ci-shots branch)
+    permissions:
+      contents: write
     steps:
       - name: checkout repository
         uses: actions/checkout@v6
@@ -131,6 +134,31 @@ jobs:
               for i in range(0, len(s), 3000):
                   print(f"IMG|tail_{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
           PY
+      # The Tetherite shots at one image pixel to the GUI pixel, on a branch of their own (ci-shots, one commit, replaced
+      # every time), to read the item art pixel by pixel beside vanilla's
+      - name: screenshots to the ci-shots branch
+        if: always() && github.event_name == 'push' && contains(github.event.head_commit.message, '[shots]')
+        run: |
+          mkdir -p /tmp/shots
+          python3 - <<'PY'
+          import glob, os
+          from PIL import Image
+          for f in sorted(glob.glob("build/run/clientGameTest/screenshots/*.png")):
+              if "tetherite" not in f:
+                  continue
+              full = Image.open(f).convert("RGB")
+              w, h = full.size
+              k = 1
+              while w // (k + 1) >= 320 and h // (k + 1) >= 240:
+                  k += 1
+              full.resize((w // k, h // k), Image.NEAREST).save("/tmp/shots/" + os.path.basename(f))
+          PY
+          cd /tmp/shots
+          git init -q
+          git checkout -q -b ci-shots
+          git add .
+          git -c user.name=ci -c user.email=ci@localhost commit -q -m "Tetherite screenshots of ${GITHUB_SHA}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" ci-shots
 
   compat:
     name: client test with Sodium, Iris and Mod Menu

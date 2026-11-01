@@ -1226,9 +1226,9 @@ public final class LurkerService {
 			}
 		}
 		stand(l);
-		if (!st.sentYoung && Config.LURKER_YOUNG > 0) {
-			st.sentYoung = true;
-			sendYoung(l, st, p, hunter);
+		// (no room beside it for them this time, against a wall: it calls again a moment later)
+		if (!st.sentYoung && Config.LURKER_YOUNG > 0 && st.ticks % 10 == 0) {
+			st.sentYoung = sendYoung(l, st, p, hunter);
 		}
 		if (!hunter && st.loot.any()) {
 			run(l, st, p, false);
@@ -1266,15 +1266,16 @@ public final class LurkerService {
 		}
 	}
 
-	/** It calls its young out of the dark to do what it cannot: two of them, from where it stands. */
-	private static void sendYoung(Lurker l, State st, ServerPlayer p, boolean bite) {
+	/** It calls its young out of the dark to do what it cannot: two of them, from where it stands. False if none came. */
+	private static boolean sendYoung(Lurker l, State st, ServerPlayer p, boolean bite) {
 		List<UUID> sent = HollowService.errand((ServerLevel) l.level(), l.blockPosition(), p, l.getUUID(), bite, Config.LURKER_YOUNG, Config.LURKER_YOUNG_SECONDS);
 		if (sent.isEmpty()) {
-			return;
+			return false;
 		}
 		st.limit = Math.max(st.limit, st.ticks + (Math.max(5, Config.LURKER_YOUNG_SECONDS) + 10) * 20);
 		WorldFx.soundIn(Dims.fullId(p), "extremedimensions:lurker_shriek", "hostile", l.getX(), l.getY() + 2.5, l.getZ(), 1.0f, 1.7f);
 		WorldFx.soundIn(Dims.fullId(p), "extremedimensions:hollowling_giggle", "hostile", l.getX(), l.getY() + 0.8, l.getZ(), 1.0f, 0.8f);
+		return true;
 	}
 
 	/** One of its young brings it what it took from its prey. False when this Lurker is no longer about to take it. */

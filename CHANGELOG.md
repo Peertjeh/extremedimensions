@@ -31,8 +31,16 @@ it sits among them as one of them.
 - **The ore** sits in the hush stone as vanilla's ores do: irregular clusters, lit on the upper left, no outline.
 - **The worn armour** is bevelled plate: lit top and left edges, shaded right and bottom ones, a little grain, seams
   and rivets, the face open in the helm, a stud of cyan at the brow, the heart, the belt and the boot straps.
+- **The colours** are netherite's dark, muted range turned a little cool and violet, with no lavender in the lights;
+  the thread is a deep teal that only glints where it catches the light.
 - The generators were rewritten (`tools/items/tetherite.py`, `tools/items/tetherite_armor.py`); the gear screenshot in
-  CI now holds vanilla netherite in the row below the set.
+  CI now holds vanilla netherite in the row below the set, and CI keeps the set's screenshots at one pixel to the GUI
+  pixel on the `ci-shots` branch.
+
+### Fixed
+- **A Lurker at a house too low for it sometimes never sent its young.** It called them once, and if it found no room
+  beside it for them on that try (against a wall, at a corner) it never called again. It now calls again every half
+  second until they come, and looks harder for room.
 
 ## 3.15.0: Voices of the Deep
 

@@ -1611,7 +1611,7 @@ public final class HollowService {
 		String dim = level.dimension().identifier().toString();
 		for (int i = 0; i < count; i++) {
 			BlockPos spot = null;
-			for (int t = 0; t < 12 && spot == null; t++) {
+			for (int t = 0; t < 32 && spot == null; t++) {
 				BlockPos c = from.offset(rnd.nextInt(-3, 4), rnd.nextInt(-1, 2), rnd.nextInt(-3, 4));
 				if (Loaded.ready(level, c) && TribeMoves.roomFor(level, c, 0.6, 1.1)) {
 					spot = c;

@@ -24,8 +24,8 @@ ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
 TEX = os.path.join(ROOT, "src/client/resources/assets/extremedimensions/textures")
 
 # the metal, dark to light (the same ramp as the items), and the thread
-M = [(24, 18, 34), (38, 30, 52), (52, 43, 70), (68, 58, 90), (88, 77, 114), (114, 103, 143), (158, 149, 186)]
-A = [(28, 92, 100), (45, 158, 160), (112, 228, 214)]
+M = [(22, 19, 27), (35, 31, 43), (49, 44, 60), (64, 58, 78), (82, 75, 98), (106, 99, 124), (140, 133, 158)]
+A = [(27, 86, 92), (42, 140, 142), (96, 200, 190)]
 
 # vanilla's trim key (textures/palettes/trim_base), light to dark, as the game reads it (a grey PNG: read through a
 # colour-managed decoder its greys come out brighter, 241, 225, 208..., and no longer match), and the Seam's palettes
