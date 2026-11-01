@@ -156,6 +156,8 @@
   "subtitles.extremedimensions.lurker_vanish": "De Lurker verdwijnt",
   "commands.extremedimensions.lurker.summoned": "Een Lurker kijkt toe.",
   "commands.extremedimensions.lurker.failed": "Geen plek voor een Lurker hier (leegdrinken vereist een geladen anker op 14-48 blokken afstand).",
+  "commands.extremedimensions.lurker.failed_cave": "Geen plek voor een Grotlurker hier (hij heeft vrije grond nodig waar zijn lijf past, 6-16 blokken weg, vanwaar hij naar je toe kan lopen).",
+  "commands.extremedimensions.lurker.failed_sculk": "Geen plek voor een Sculklurker hier (hij heeft vrije grond nodig waar zijn lijf past, 8-16 blokken weg, vanwaar hij naar je toe kan lopen).",
   "journal.extremedimensions.tribe.title": "16. De stam",
   "journal.extremedimensions.tribe.text": "Ik ben niet de eerste die tussen de wonden loopt. Er was een stam vóór ons, lang vergeten, die leerde te leven in de naden. Ze stierven niet. Ze dunden uit. Nu staan ze aan de rand van het bos, op de bergkam, op de verre oever van de lava, en kijken toe. Niet allemaal staan ze in het open veld. Sommigen gingen het donker onder de steen in, en sommigen nog dieper, naar de steden die al oud waren voor wij kwamen. Het ziet. Het wacht. Het neemt. Kijk het nooit lang in de ogen. Laat het nooit bij je ankers komen. En als het dichterbij komt terwijl je niet kijkt, weet dan dat het je niet haat. Het wil alleen wat van jou is.",
   "advancements.extremedimensions.watched.title": "Het ziet",

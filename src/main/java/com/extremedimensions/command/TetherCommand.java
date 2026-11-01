@@ -313,7 +313,9 @@ public final class TetherCommand {
 		ServerPlayer p = src.getPlayerOrException();
 		boolean ok = "cave".equals(mode) ? com.extremedimensions.lurker.CaveLurkerService.summon(p)
 				: "sculk".equals(mode) ? com.extremedimensions.lurker.SculkLurkerService.summon(p) : LurkerService.summon(p, mode);
-		src.sendSuccess(() -> Component.translatable(ok ? "commands.extremedimensions.lurker.summoned" : "commands.extremedimensions.lurker.failed"), false);
+		String failed = "cave".equals(mode) ? "commands.extremedimensions.lurker.failed_cave"
+				: "sculk".equals(mode) ? "commands.extremedimensions.lurker.failed_sculk" : "commands.extremedimensions.lurker.failed";
+		src.sendSuccess(() -> Component.translatable(ok ? "commands.extremedimensions.lurker.summoned" : failed), false);
 		return ok ? 1 : 0;
 	}
 

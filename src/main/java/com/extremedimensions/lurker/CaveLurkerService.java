@@ -30,7 +30,6 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
@@ -228,26 +227,36 @@ public final class CaveLurkerService {
 			}
 			// (a route is worked out for it: no more than a few places are tried each time)
 			tried++;
-			CaveLurker cl = ModEntities.CAVE_LURKER.spawn(level, feet, EntitySpawnReason.EVENT);
-			if (cl == null) {
-				continue;
+			CaveLurker cl = setDown(level, feet, p);
+			if (cl != null) {
+				return cl;
 			}
-			Path path = cl.getNavigation().createPath(p, 1);
-			if (path == null || !path.canReach()) {
-				cl.discard();
-				continue;
-			}
-			cl.setPersistenceRequired();
-			State st = new State();
-			st.target = p.getUUID();
-			st.limit = Math.max(5, Config.CAVE_LURKER_LISTEN_SECONDS) * 20;
-			STATES.put(cl.getUUID(), st);
-			LEVELS.put(cl.getUUID(), level);
-			cl.setLurkerPose(Lurker.POSE_WATCH);
-			cl.setLurkerMood(LurkerBody.MOOD_CALM);
-			return cl;
 		}
 		return null;
+	}
+
+	/**
+	 * A Cave Lurker set down on these feet to listen for this player, if it could walk to them from there (else it is
+	 * taken away again and this is null).
+	 */
+	public static CaveLurker setDown(ServerLevel level, BlockPos feet, ServerPlayer p) {
+		CaveLurker cl = ModEntities.CAVE_LURKER.spawn(level, feet, EntitySpawnReason.EVENT);
+		if (cl == null) {
+			return null;
+		}
+		if (!TribeMoves.canWalkTo(cl, p)) {
+			cl.discard();
+			return null;
+		}
+		cl.setPersistenceRequired();
+		State st = new State();
+		st.target = p.getUUID();
+		st.limit = Math.max(5, Config.CAVE_LURKER_LISTEN_SECONDS) * 20;
+		STATES.put(cl.getUUID(), st);
+		LEVELS.put(cl.getUUID(), level);
+		cl.setLurkerPose(Lurker.POSE_WATCH);
+		cl.setLurkerMood(LurkerBody.MOOD_CALM);
+		return cl;
 	}
 
 	/** Operator command: a Cave Lurker comes to listen near the player, wherever they are in a world of the mod. */

@@ -32,7 +32,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.SculkShriekerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -191,20 +190,30 @@ public final class SculkLurkerService {
 				continue;
 			}
 			tried++;
-			SculkLurker sl = ModEntities.SCULK_LURKER.spawn(level, feet, EntitySpawnReason.EVENT);
-			if (sl == null) {
-				continue;
+			SculkLurker sl = setDown(level, feet, p);
+			if (sl != null) {
+				return sl;
 			}
-			Path path = sl.getNavigation().createPath(p, 1);
-			if (path == null || !path.canReach()) {
-				sl.discard();
-				continue;
-			}
-			take(level, sl, p, "beckon");
-			WorldFx.particleIn(level, "minecraft:sculk_soul", sl.getX(), sl.getY() + 0.5, sl.getZ(), 0.3, 0.3, 0.3, 0.02, 8);
-			return sl;
 		}
 		return null;
+	}
+
+	/**
+	 * A Sculk Lurker set down on these feet to serve near this player, if it could walk to them from there (else it is
+	 * taken away again and this is null).
+	 */
+	public static SculkLurker setDown(ServerLevel level, BlockPos feet, ServerPlayer p) {
+		SculkLurker sl = ModEntities.SCULK_LURKER.spawn(level, feet, EntitySpawnReason.EVENT);
+		if (sl == null) {
+			return null;
+		}
+		if (!TribeMoves.canWalkTo(sl, p)) {
+			sl.discard();
+			return null;
+		}
+		take(level, sl, p, "beckon");
+		WorldFx.particleIn(level, "minecraft:sculk_soul", sl.getX(), sl.getY() + 0.5, sl.getZ(), 0.3, 0.3, 0.3, 0.02, 8);
+		return sl;
 	}
 
 	/** Operator command: one comes near the player, wherever they are in a world of the mod. */

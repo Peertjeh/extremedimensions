@@ -247,4 +247,26 @@ public class CaveLurkerTests {
 		}
 		helper.succeed();
 	}
+
+	/**
+	 * A Cave Lurker set down on open ground, as the world and the operator's command set one down, can walk to the
+	 * player and stays to listen. One that has only now come into the world has not touched the ground yet: its route
+	 * must still be worked out, or none ever comes.
+	 */
+	@GameTest(environment = Alone.CAVE_COMES)
+	public void aCaveLurkerSetDownCanComeToThePlayer(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer p = TestPlayers.survivor(helper, "cave-comes");
+		place(helper, p, 6.5, 0, 6.5);
+		CaveLurker cl = CaveLurkerService.setDown(level, helper.absolutePos(new BlockPos(1, 0, 1)), p);
+		try {
+			check(helper, cl != null, "no Cave Lurker could be set down on open ground seven blocks from the player");
+			check(helper, "listen".equals(CaveLurkerService.mode(cl)), "the Cave Lurker set down is %s, not listening", CaveLurkerService.mode(cl));
+		} finally {
+			if (cl != null) {
+				cl.discard();
+			}
+		}
+		helper.succeed();
+	}
 }

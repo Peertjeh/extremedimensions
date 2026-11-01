@@ -158,4 +158,26 @@ public class SculkLurkerTests {
 			helper.succeed();
 		});
 	}
+
+	/**
+	 * A Sculk Lurker set down on open ground, as the world and the operator's command set one down, can walk to the
+	 * player and begins to serve. One that has only now come into the world has not touched the ground yet: its route
+	 * must still be worked out, or none ever comes.
+	 */
+	@GameTest(environment = Alone.SCULK_COMES)
+	public void aSculkLurkerSetDownCanComeToThePlayer(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer p = TestPlayers.survivor(helper, "sculk-comes");
+		place(helper, p, 6.5, 0, 6.5);
+		SculkLurker sl = SculkLurkerService.setDown(level, helper.absolutePos(new BlockPos(1, 0, 1)), p);
+		try {
+			check(helper, sl != null, "no Sculk Lurker could be set down on open ground seven blocks from the player");
+			check(helper, "beckon".equals(SculkLurkerService.mode(sl)), "the Sculk Lurker set down is %s, not beckoning", SculkLurkerService.mode(sl));
+		} finally {
+			if (sl != null) {
+				sl.discard();
+			}
+		}
+		helper.succeed();
+	}
 }

@@ -181,6 +181,17 @@ public final class TribeMoves {
 	}
 
 	/**
+	 * Whether a creature just set down on ground could walk from there to its target. One that has only now come into
+	 * the world has not yet touched the ground (that comes with its first step), and no route is worked out for a
+	 * creature off the ground: it is stood on the ground it was set down on first.
+	 */
+	public static boolean canWalkTo(Mob m, Entity t) {
+		m.setOnGround(true);
+		Path path = m.getNavigation().createPath(t, 1);
+		return path != null && path.canReach();
+	}
+
+	/**
 	 * A place near its prey from which this creature would see them (a door, a window, round the corner of a house): the
 	 * nearest of a ring of spots round the prey on ground it fits, its eyes there with a clear line to theirs. Null when
 	 * there is none within the radius. Looks at a few hundred spots, so it is asked now and then, not every tick.

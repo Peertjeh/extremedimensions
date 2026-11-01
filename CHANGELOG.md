@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.12.1: Set Down on the Ground
+
+### Fixes
+- **Cave Lurkers and Sculk Lurkers now come.** Each one was set down and then asked whether it could walk to the
+  player; but a creature that has only just come into the world has not touched the ground yet, and Minecraft works
+  out no route for a creature off the ground. Every place was turned down, so neither ever came: not in the world, and
+  not for `/tether lurker cave` or `/tether lurker sculk`. It is now stood on the ground it was set down on before its
+  route is worked out.
+- When the command finds no place for one, it now says what a Cave Lurker or a Sculk Lurker needs (open ground its
+  body fits, a few blocks away, from where it can walk to you) instead of the Lurker's own message about anchors.
+
+### Tests
+- A Cave Lurker and a Sculk Lurker set down on open ground, the way the world and the command set them down, can walk
+  to the player and stay (the earlier tests set theirs down another way and never asked for a route).
+
 ## 3.12.0: The Warden's Herald
 
 ### The Sculk Lurker
