@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "extremedimensions:disc_fragment_elegy",
+    "extremedimensions:disc_fragment_elegy",
+    "extremedimensions:disc_fragment_elegy",
+    "extremedimensions:disc_fragment_elegy",
+    "extremedimensions:disc_fragment_elegy",
+    "extremedimensions:disc_fragment_elegy",
+    "extremedimensions:disc_fragment_elegy",
+    "extremedimensions:disc_fragment_elegy",
+    "extremedimensions:disc_fragment_elegy"
+  ],
+  "result": {
+    "id": "extremedimensions:music_disc_elegy_of_the_elders",
+    "count": 1
+  }
+}

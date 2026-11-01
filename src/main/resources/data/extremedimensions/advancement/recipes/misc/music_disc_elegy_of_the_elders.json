@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_disc_fragment_elegy": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:disc_fragment_elegy"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_disc_fragment_elegy"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:music_disc_elegy_of_the_elders"
+    ]
+  }
+}

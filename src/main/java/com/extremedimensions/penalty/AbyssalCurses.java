@@ -217,6 +217,8 @@ public final class AbyssalCurses {
 			PenaltyService.lift(p, d, pen, "gui.extremedimensions.abyssal.broken");
 		}
 		WorldFx.title(p, "gui.extremedimensions.abyssal.broken_title", "dark_purple", "gui.extremedimensions.abyssal.broken_subtitle", pen.nameKey());
+		// what is left of it: a fragment of the abyss's song
+		com.extremedimensions.lore.Discs.abyssalBroken(p);
 		WorldFx.sound(p, "minecraft:block.end_portal.spawn", 0.6f, 1.4f);
 		WorldFx.particles(p, "minecraft:reverse_portal", 1.0, 0.6, 0.1, 60);
 	}

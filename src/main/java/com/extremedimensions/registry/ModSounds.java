@@ -41,6 +41,12 @@ public final class ModSounds {
 	public static final SoundEvent MUSIC_DISC_TICK_OF_THE_BOUNDARY = register("music_disc.tick_of_the_boundary");
 	/** The wound's own record: "What the Wound Remembers", made from its ambient sounds. */
 	public static final SoundEvent MUSIC_DISC_WOUND_REMEMBERS = register("music_disc.wound_remembers");
+	/** The deep's record: "What Listens". */
+	public static final SoundEvent MUSIC_DISC_WHAT_LISTENS = register("music_disc.what_listens");
+	/** The Elders' requiem: "Elegy of the Elders". */
+	public static final SoundEvent MUSIC_DISC_ELEGY_OF_THE_ELDERS = register("music_disc.elegy_of_the_elders");
+	/** The abyss's record: "The Abyss Answers". */
+	public static final SoundEvent MUSIC_DISC_THE_ABYSS_ANSWERS = register("music_disc.the_abyss_answers");
 
 	/** The Elders' voices and the sounds that give their blows away (see ElderTells), "elder.<elder>.<blow>". */
 	private static final String[] ELDER_TELLS = {

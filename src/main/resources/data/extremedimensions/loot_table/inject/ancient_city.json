@@ -26,6 +26,19 @@
         "type": "minecraft:random_chance",
         "chance": 0.1
       }
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:music_disc_what_listens"
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.04
+      }
     }
   ],
   "random_sequence": "extremedimensions:inject/ancient_city"

@@ -239,6 +239,8 @@ public final class ServerEvents {
 		});
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			com.extremedimensions.journal.Bestiary.slain(entity, source.getEntity());
+			// The later records: What Listens from the Lurkers of the deep, a fragment of the abyss's song from a Frayed Ray
+			com.extremedimensions.lore.Discs.slain(entity, source.getEntity());
 			// The Abyssal curses' deeds: a creature slain, an Elder fallen
 			if (!(entity instanceof ServerPlayer) && source.getEntity() instanceof ServerPlayer killer) {
 				com.extremedimensions.penalty.AbyssalCurses.onKill(killer, entity, source);
@@ -247,6 +249,8 @@ public final class ServerEvents {
 			}
 			if (entity instanceof com.extremedimensions.elder.ElderBoss) {
 				com.extremedimensions.penalty.AbyssalCurses.elderSlain(entity);
+				// and those who fought it take fragments of its elegy
+				com.extremedimensions.lore.Discs.elderFell(entity);
 			}
 			if ("minecraft:ender_dragon".equals(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString()) && WorldFx.server() != null
 					&& Dims.ours(entity.level())) {

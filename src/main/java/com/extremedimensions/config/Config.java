@@ -504,6 +504,16 @@ public final class Config {
 	public static double SEAM_MUSIC_DISC_CHANCE = 0.02;
 	/** Chance a tangle in the Fray, an old hoard or a raided one holds the music disc "What the Wound Remembers". 0: never. */
 	public static double MUSIC_DISC_WOUND_CHANCE = 0.05;
+	/** Chance a Cave Lurker or a Sculk Lurker slain by a player leaves the music disc "What Listens". 0: never. */
+	public static double MUSIC_DISC_LISTENS_CHANCE = 0.08;
+	/** Disc fragments of "Elegy of the Elders" an Elder leaves each player who fought it near (nine make the disc). 0: none. */
+	public static int DISC_FRAGMENT_ELEGY_COUNT = 2;
+	/** Disc fragments of "The Abyss Answers" an Abyssal curse leaves as it breaks (nine make the disc). 0: none. */
+	public static int DISC_FRAGMENT_ABYSS_BROKEN = 1;
+	/** Chance a tangle in the Fray holds a disc fragment of "The Abyss Answers". 0: never. */
+	public static double DISC_FRAGMENT_ABYSS_TANGLE_CHANCE = 0.02;
+	/** Chance a Frayed Ray slain by a player leaves a disc fragment of "The Abyss Answers". 0: never. */
+	public static double DISC_FRAGMENT_ABYSS_RAY_CHANCE = 0.01;
 
 	// --- After the Dragon and the Mending --------------------------------------------------------
 
@@ -1395,6 +1405,8 @@ public final class Config {
 			{"cave_lurker_give_up_seconds", 1, 120}, {"cave_lurker_flee_seconds", 1, 60},
 			{"sculk_lurker_spawn_chance", 0, 1}, {"sculk_lurker_rattle_seconds", 3, 600}, {"sculk_lurker_shrieker_range", 4, 48},
 			{"sculk_lurker_lure_range", 8, 96}, {"sculk_lurker_seconds", 20, 3600},
+			{"music_disc_listens_chance", 0, 1}, {"disc_fragment_elegy_count", 0, 9}, {"disc_fragment_abyss_broken", 0, 9},
+			{"disc_fragment_abyss_tangle_chance", 0, 1}, {"disc_fragment_abyss_ray_chance", 0, 1},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},
 			{"seam_fray_ray_cooldown", 1, 120}, {"seam_fray_gloom", 0, 30}, {"seam_fray_gloom_every", 10, 3600}, {"seam_fray_unravel", 0, 1},
 			{"seam_briefing", 0, 100}, {"hud_boss_bar", 0, 1}, {"hints", 0, 1}, {"frame_silk", 0, 64}, {"first_knot_distance", 200, 5000}, {"knot_mother_rest", 0, 100000},

@@ -179,6 +179,9 @@ public class AbyssalTests {
 			check(helper, AbyssalCurses.progress(d, Penalty.LOCKJAW) == 2 && d.owned(Penalty.LOCKJAW) == 1, "two of three did not count, or broke it early");
 			AbyssalCurses.advance(p, d, Penalty.LOCKJAW, 1);
 			check(helper, d.owned(Penalty.LOCKJAW) == 0, "the deed done did not break the curse");
+			check(helper, p.getInventory().countItem(ModItems.DISC_FRAGMENT_ABYSS) == Config.DISC_FRAGMENT_ABYSS_BROKEN,
+					"the broken curse left %s fragments of the abyss's song, not %s", p.getInventory().countItem(ModItems.DISC_FRAGMENT_ABYSS),
+					Config.DISC_FRAGMENT_ABYSS_BROKEN);
 			check(helper, AbyssalCurses.progress(d, Penalty.LOCKJAW) == 0, "the deed's count stayed after the curse broke");
 			check(helper, d.scars == Math.min(5, scars + 1), "breaking the curse left no scar (%s -> %s)", scars, d.scars);
 			AbyssalCurses.advance(p, d, Penalty.LOCKJAW, 1);

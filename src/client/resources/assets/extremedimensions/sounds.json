@@ -220,6 +220,30 @@
       }
     ]
   },
+  "music_disc.what_listens": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/what_listens",
+        "stream": true
+      }
+    ]
+  },
+  "music_disc.elegy_of_the_elders": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/elegy_of_the_elders",
+        "stream": true
+      }
+    ]
+  },
+  "music_disc.the_abyss_answers": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/the_abyss_answers",
+        "stream": true
+      }
+    ]
+  },
   "elder.matriarch.voice": {
     "subtitle": "subtitles.extremedimensions.elder.matriarch.voice",
     "sounds": [

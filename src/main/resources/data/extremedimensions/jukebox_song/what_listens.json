@@ -1,0 +1,8 @@
+{
+  "comparator_output": 4,
+  "description": {
+    "translate": "jukebox_song.extremedimensions.what_listens"
+  },
+  "length_in_seconds": 152.0,
+  "sound_event": "extremedimensions:music_disc.what_listens"
+}

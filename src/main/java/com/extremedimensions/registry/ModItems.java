@@ -84,6 +84,17 @@ public final class ModItems {
 	/** The wound's own song, made from its ambient sounds, and its disc: in the Fray's tangles and the tribe's hoards. */
 	public static final ResourceKey<JukeboxSong> WOUND_REMEMBERS = ResourceKey.create(Registries.JUKEBOX_SONG, ExtremeDimensions.id("wound_remembers"));
 	public static final Item MUSIC_DISC_WOUND_REMEMBERS = disc("music_disc_wound_remembers", WOUND_REMEMBERS);
+	/** The deep's song and its disc: left now and then by a Cave or Sculk Lurker slain, and in the Ancient Cities' chests. */
+	public static final ResourceKey<JukeboxSong> WHAT_LISTENS = ResourceKey.create(Registries.JUKEBOX_SONG, ExtremeDimensions.id("what_listens"));
+	public static final Item MUSIC_DISC_WHAT_LISTENS = disc("music_disc_what_listens", WHAT_LISTENS, Rarity.RARE);
+	/** The Elders' requiem and its disc, pressed from nine fragments the Elders leave to those who fought them. */
+	public static final ResourceKey<JukeboxSong> ELEGY_OF_THE_ELDERS = ResourceKey.create(Registries.JUKEBOX_SONG, ExtremeDimensions.id("elegy_of_the_elders"));
+	public static final Item MUSIC_DISC_ELEGY_OF_THE_ELDERS = disc("music_disc_elegy_of_the_elders", ELEGY_OF_THE_ELDERS, Rarity.EPIC);
+	public static final Item DISC_FRAGMENT_ELEGY = register("disc_fragment_elegy", 64, Rarity.EPIC);
+	/** The abyss's song and its disc, pressed from nine fragments the Abyssal curses leave as they break. */
+	public static final ResourceKey<JukeboxSong> THE_ABYSS_ANSWERS = ResourceKey.create(Registries.JUKEBOX_SONG, ExtremeDimensions.id("the_abyss_answers"));
+	public static final Item MUSIC_DISC_THE_ABYSS_ANSWERS = disc("music_disc_the_abyss_answers", THE_ABYSS_ANSWERS, Rarity.EPIC);
+	public static final Item DISC_FRAGMENT_ABYSS = register("disc_fragment_abyss", 64, Rarity.EPIC);
 
 	/** The relics: bound to the Tether one at a time, each with a gift and a price (see Relic). */
 	public static final java.util.Map<com.extremedimensions.relic.Relic, Item> RELICS = relics();
@@ -191,8 +202,13 @@ public final class ModItems {
 
 	/** A music disc: one to a stack and rare, as vanilla's are, and played in a jukebox. */
 	private static Item disc(String id, ResourceKey<JukeboxSong> song) {
+		return disc(id, song, Rarity.RARE);
+	}
+
+	/** A music disc of a given rarity (the two pressed from fragments are epic). */
+	private static Item disc(String id, ResourceKey<JukeboxSong> song, Rarity rarity) {
 		ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, ExtremeDimensions.id(id));
-		Item.Properties props = new Item.Properties().stacksTo(1).rarity(Rarity.RARE).jukeboxPlayable(song).setId(key);
+		Item.Properties props = new Item.Properties().stacksTo(1).rarity(rarity).jukeboxPlayable(song).setId(key);
 		return Registry.register(BuiltInRegistries.ITEM, key, new Item(props));
 	}
 

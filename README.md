@@ -155,9 +155,12 @@ Trials past gold), and the tapestry's boons stay.
 - **Co-op**: fallen players can be revived, curses carried for a friend, anchors shared. Every player has their own
   time.
 - **55 advancements**, the recipe book through them, a bestiary, a ledger and your clan in the journal.
-- **Two music discs**: *Tick of the Boundary* on a record of its own, now and then in a barrel of the Thinned in the
+- **Five music discs**: *Tick of the Boundary* on a record of its own, now and then in a barrel of the Thinned in the
   Seam (the richer the barrel, the likelier), and *What the Wound Remembers*, made from the wound's own sounds, in the
-  Fray's tangles and the tribe's hoards; both play in any jukebox.
+  Fray's tangles and the tribe's hoards. *What Listens*, the deep's song, from a Cave or Sculk Lurker slain and in the
+  Ancient Cities' chests. And two that are pressed from nine disc fragments each, and hard won: *Elegy of the Elders*,
+  whose fragments each Elder leaves to everyone who fought it (two each), and *The Abyss Answers*, whose fragments the
+  Abyssal curses leave as they break (and, very rarely, a tangle in the Fray or a Frayed Ray). All play in any jukebox.
 - **The wound's sounds**: ambient sounds as Minecraft has its cave moods, fourteen kinds where they fit (the deep's
   groan, giggling by a hoard at night, the sky tearing, the Nether's heat and the Ferryman's bell, the undertow, a
   knot's heartbeat), and the dread that swells before a swarm.

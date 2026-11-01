@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/template_music_disc",
+  "textures": {
+    "layer0": "extremedimensions:item/music_disc_elegy_of_the_elders"
+  }
+}

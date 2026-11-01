@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_disc_fragment_abyss": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:disc_fragment_abyss"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_disc_fragment_abyss"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:music_disc_the_abyss_answers"
+    ]
+  }
+}

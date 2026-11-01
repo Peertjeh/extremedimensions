@@ -21,6 +21,7 @@
 			"com.extremedimensions.gametest.CoopTests",
 			"com.extremedimensions.gametest.CaveLurkerTests",
 			"com.extremedimensions.gametest.SculkLurkerTests",
+			"com.extremedimensions.gametest.DiscTests",
 			"com.extremedimensions.gametest.TribeTests",
 			"com.extremedimensions.gametest.FrayTests",
 			"com.extremedimensions.gametest.JournalTests",

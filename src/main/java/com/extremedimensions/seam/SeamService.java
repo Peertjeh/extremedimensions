@@ -1291,8 +1291,9 @@ public final class SeamService {
 			}
 		}
 		if (richness >= 4) {
-			// and in the Fray's tangles, the wound's own
+			// and in the Fray's tangles, the wound's own, and now and then a fragment of the abyss's song
 			Loot.woundDisc(c);
+			com.extremedimensions.lore.Discs.tangle(c);
 		}
 		c.setChanged();
 		// a fresh barrel: the plundering trial counts it once, whoever opens it first

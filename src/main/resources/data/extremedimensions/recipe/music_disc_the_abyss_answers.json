@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "extremedimensions:disc_fragment_abyss",
+    "extremedimensions:disc_fragment_abyss",
+    "extremedimensions:disc_fragment_abyss",
+    "extremedimensions:disc_fragment_abyss",
+    "extremedimensions:disc_fragment_abyss",
+    "extremedimensions:disc_fragment_abyss",
+    "extremedimensions:disc_fragment_abyss",
+    "extremedimensions:disc_fragment_abyss",
+    "extremedimensions:disc_fragment_abyss"
+  ],
+  "result": {
+    "id": "extremedimensions:music_disc_the_abyss_answers",
+    "count": 1
+  }
+}

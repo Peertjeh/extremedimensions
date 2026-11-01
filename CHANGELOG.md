@@ -1,5 +1,39 @@
 # Changelog
 
+## 3.13.0: Records of the Deep
+
+### Three new music discs
+- **What Listens**: the deep's song, for the Cave Lurker and the Sculk Lurker. E Phrygian, two and a half minutes: a
+  drone in the stone, water dripping, dry clicks in the dark; a bowed bass treading E-F-E and a sculk-cyan bell asking
+  its question; a vast heart beginning to beat as the clicks quicken, a shriek, silence, and the question once more.
+  A Cave or Sculk Lurker slain by a player leaves it 8% of the time (`music_disc_listens_chance`), and an Ancient City
+  chest holds it 4% of the time (in its loot table, `loot_table/inject/ancient_city`).
+- **Elegy of the Elders**: a requiem for the Matriarch, the Ferryman and the Last Weaver. C minor, three minutes: an
+  organ, a funeral bell, a low choir over kettle drums; then each Elder in turn (the Matriarch in wood and roots, the
+  Ferryman in his bells and the undertow, the Last Weaver in glass and the shuttle on harp), and all of them together
+  at the last, the choir at full voice, coming to rest on C major.
+- **The Abyss Answers**: the abyss's own song, and the most unsettling of them. Two and a half minutes around B flat
+  and its tritone: a tone that falls forever and never lands, a low horn calling, the call answered backwards from far
+  below, a pulse that quickens, strings pressed into clusters, every wrong note at once, and then the answer, close.
+- All five records play in any jukebox as Minecraft's own do, each with its comparator signal (What Listens 4, the
+  Elegy 11, the Abyss 15).
+
+### Disc fragments: two records that are hard won
+- **Elegy of the Elders** is pressed from **nine disc fragments**. Every Elder that falls (the Matriarch, the
+  Ferryman, the Last Weaver, the Knot Mother) leaves **two** to everyone who fought it, within 96 blocks
+  (`disc_fragment_elegy_count`): five Elders at the least.
+- **The Abyss Answers** is pressed from **nine disc fragments** of its own. **Every Abyssal curse broken by its deed
+  leaves one** (`disc_fragment_abyss_broken`); beyond that only the Fray gives them, and rarely: 2% of its tangles
+  (`disc_fragment_abyss_tangle_chance`) and 1% of the Frayed Rays slain (`disc_fragment_abyss_ray_chance`).
+- Nine fragments in a crafting grid make the record; the recipe is in the recipe book once you hold a fragment. Both
+  records and their fragments are epic.
+
+### Tests
+- The three records carry their songs and play on the Jukebox/Note Blocks slider; the two recipes exist; a fallen
+  Elder leaves its fragments to a fighter near it (and none at a count of 0); a broken Abyssal curse leaves its
+  fragment; a Cave Lurker slain leaves What Listens at a chance of 1 and never at 0; a tangle holds an abyss fragment
+  at a chance of 1 and never at 0.
+
 ## 3.12.1: Set Down on the Ground
 
 ### Fixes

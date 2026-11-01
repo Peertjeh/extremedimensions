@@ -47,6 +47,11 @@ public final class ModItemGroups {
 					out.accept(ModItems.PLUMB_LINE);
 					out.accept(ModItems.MUSIC_DISC_TICK_OF_THE_BOUNDARY);
 					out.accept(ModItems.MUSIC_DISC_WOUND_REMEMBERS);
+					out.accept(ModItems.MUSIC_DISC_WHAT_LISTENS);
+					out.accept(ModItems.MUSIC_DISC_ELEGY_OF_THE_ELDERS);
+					out.accept(ModItems.DISC_FRAGMENT_ELEGY);
+					out.accept(ModItems.MUSIC_DISC_THE_ABYSS_ANSWERS);
+					out.accept(ModItems.DISC_FRAGMENT_ABYSS);
 					out.accept(ModItems.WEAVERS_LOOM);
 					out.accept(ModItems.SPINDLE);
 					out.accept(ModItems.TETHERITE_ORE);

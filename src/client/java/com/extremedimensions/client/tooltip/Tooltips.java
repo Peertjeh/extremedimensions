@@ -78,6 +78,10 @@ public final class Tooltips {
 			key = "silk_thread";
 		} else if (item == ModItems.PLUMB_LINE) {
 			key = "plumb_line";
+		} else if (item == ModItems.DISC_FRAGMENT_ELEGY) {
+			key = "disc_fragment_elegy";
+		} else if (item == ModItems.DISC_FRAGMENT_ABYSS) {
+			key = "disc_fragment_abyss";
 		} else if (item == ModItems.WEAVERS_LOOM) {
 			key = "weavers_loom";
 		} else if (item == ModItems.SPINDLE) {
