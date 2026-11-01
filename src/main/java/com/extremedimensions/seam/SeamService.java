@@ -1053,7 +1053,7 @@ public final class SeamService {
 	}
 
 	/** Whether the Seam's world is there to take its seed from (for the First Knot). */
-	static boolean seamReady() {
+	public static boolean seamReady() {
 		return seam() != null;
 	}
 
