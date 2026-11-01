@@ -2288,6 +2288,11 @@ BattleHub lijsten ze elkaar; S weer weg, weer apart; met `hub.separateTabList` u
 tegen een bot): A's lijst laat de bot weg. `TestConnection` houdt daarvoor per speler bij wat de client over `listed`
 hoorde.
 
+**CI van `875710c`:** 1001 geslaagd, 1 gefaald: "bots mace: and flies up as people do" (time-out). Die test faalde
+ook in de CI van de docs-commits `c3af245` en `c16b3b3` en raakt de tablijst niet. De nieuwe tests van de tablijst en
+de bot slaagden; 247.303 pakketten naar testspelers gecodeerd met de echte play-codec, 0 mislukt, dus ook de
+aangepaste player-info-pakketten zijn te versturen.
+
 ## Versie 1.51.1 – "Connection reset": de server blijft draaien, pakketten getest zoals een echte client ze krijgt
 
 **Vraag.** Spelers krijgen een melding "Connection reset" (`disconnect-2026-10-30_19.13.06-client.txt`, client met
