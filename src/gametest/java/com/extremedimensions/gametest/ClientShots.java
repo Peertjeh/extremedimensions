@@ -830,8 +830,8 @@ public class ClientShots implements FabricClientGameTest {
 						}
 					}
 				}
-				int[][] at = {{6, com.extremedimensions.lurker.LurkerBody.MOOD_HUNTER, com.extremedimensions.lurker.Lurker.POSE_RUN},
-						{10, com.extremedimensions.lurker.LurkerBody.MOOD_CALM, com.extremedimensions.lurker.Lurker.POSE_WATCH}};
+				int[][] at = {{4, com.extremedimensions.lurker.LurkerBody.MOOD_HUNTER, com.extremedimensions.lurker.Lurker.POSE_RUN},
+						{9, com.extremedimensions.lurker.LurkerBody.MOOD_CALM, com.extremedimensions.lurker.Lurker.POSE_WATCH}};
 				for (int[] a : at) {
 					com.extremedimensions.lurker.CaveLurker cl = com.extremedimensions.registry.ModEntities.CAVE_LURKER.create(level,
 							net.minecraft.world.entity.EntitySpawnReason.COMMAND);
@@ -846,7 +846,8 @@ public class ClientShots implements FabricClientGameTest {
 					level.addFreshEntity(cl);
 				}
 			});
-			ctx.waitTicks(30);
+			// (long enough for the bestiary's toasts of the moods before to fade)
+			ctx.waitTicks(160);
 			ctx.takeScreenshot("15_cave_lurker_tunnel");
 			sp.getServer().runOnServer(s -> {
 				player(s).level().getEntitiesOfClass(net.minecraft.world.entity.Mob.class, player(s).getBoundingBox().inflate(20),

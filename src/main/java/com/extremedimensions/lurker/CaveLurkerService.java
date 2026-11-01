@@ -27,7 +27,9 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -132,7 +134,15 @@ public final class CaveLurkerService {
 	/** Whether a Cave Lurker may come to this player now: deep under the Overworld, no sky over them, not on Peaceful. */
 	public static boolean fits(ServerPlayer p) {
 		return Config.CAVE_LURKER_ENABLED > 0 && Dims.OVERWORLD.equals(Dims.of(p)) && Dims.ours(p) && !p.isSpectator() && !p.isCreative()
-				&& p.isAlive() && !Rules.peaceful(p.level()) && p.getY() < Config.CAVE_LURKER_MAX_Y && !p.level().canSeeSky(p.blockPosition().above());
+				&& p.isAlive() && !Rules.peaceful(p.level()) && p.getY() < Config.CAVE_LURKER_MAX_Y && roofed(p.level(), p.blockPosition().above());
+	}
+
+	/**
+	 * Whether stone (or anything solid, leaves aside) lies over this spot, keeping the sky off it. Read from the world's
+	 * height map, which is right at once, not from the sky's light, which a new roof only dims a while later.
+	 */
+	public static boolean roofed(Level level, BlockPos pos) {
+		return pos.getY() < level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ());
 	}
 
 	public static void tick(MinecraftServer s) {
@@ -199,7 +209,7 @@ public final class CaveLurkerService {
 				continue;
 			}
 			if (!anywhere) {
-				if (level.canSeeSky(feet) || level.getBrightness(LightLayer.BLOCK, feet) > Config.CAVE_LURKER_MAX_LIGHT) {
+				if (!roofed(level, feet) || level.getBrightness(LightLayer.BLOCK, feet) > Config.CAVE_LURKER_MAX_LIGHT) {
 					continue;
 				}
 				Vec3 body = Vec3.atBottomCenterOf(feet).add(0, 1.2, 0);
