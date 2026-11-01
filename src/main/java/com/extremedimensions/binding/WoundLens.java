@@ -97,6 +97,12 @@ public final class WoundLens {
 		if (seen instanceof Lurker l) {
 			return lurker(l);
 		}
+		if (seen instanceof com.extremedimensions.lurker.SculkLurker sl) {
+			// it calls the Warden up, or it leads it to you (its glow pulses then)
+			boolean luring = sl.getLurkerMood() == com.extremedimensions.lurker.LurkerBody.MOOD_THIEF;
+			return Component.translatable("gui.extremedimensions.lens.sculk_lurker." + (luring ? "luring" : "beckoning"))
+					.withStyle(luring ? ChatFormatting.RED : ChatFormatting.DARK_AQUA);
+		}
 		// (anchors are kept in the Overworld: a lodestone elsewhere at the same spot is no anchor)
 		if (hit.getType() == HitResult.Type.BLOCK && Dims.OVERWORLD.equals(Dims.of(level)) && AnchorService.isAnchorBlock(level.getBlockState(hit.getBlockPos()))) {
 			BlockPos b = hit.getBlockPos();

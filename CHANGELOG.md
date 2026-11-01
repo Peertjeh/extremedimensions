@@ -1,5 +1,31 @@
 # Changelog
 
+## 3.12.0: The Warden's Herald
+
+### The Sculk Lurker
+- **A small servant of what sleeps under the Ancient Cities.** The size of a Hollowling, wrapped in sculk: near-black
+  teal with cyan veins, a mask of old bone, eyes the cyan of a sculk sensor. It comes only to a player in the **Deep
+  Dark**, near the shriekers that can call up the Warden (12% each 20 seconds there, at most once in ten minutes).
+- **It never strikes you. It works for the Warden.** It keeps you company a little way off, clicking dryly on the
+  sculk, and every twelve seconds or so it scurries to a shrieker near you, scratches at it and **rattles it awake**:
+  the shrieker shrieks as if you had set it off, and the Warden draws nearer to waking. The game's own warnings still
+  hold (four of them, ten seconds apart at the least, none while a Warden is near).
+- **Once the Warden is up, it fetches it.** It runs to the Warden and **leads it to you**, its glow turning to a blue
+  pulse: the Warden follows where it hears it, and it waits whenever the Warden falls behind. With both near you, it
+  **sets the Warden's anger on you**, and sinks into the sculk. If the Warden goes back down, it calls it up again.
+- **The Warden spares it.** The Warden never takes it for a target, so it never sniffs it out, never grows angry at it
+  and never heeds it; its blows do it no harm, and the lurker's own steps make no vibration at all. You can kill it
+  (14 health): nothing else stops it.
+- In the bestiary (its own page), the Wound Lens (calling something up, leading the Warden to you), the wound-born tag
+  and `/tether lurker sculk` for operators. Seven settings (`sculk_lurker_*`, EN/NL); its chance and cooldown are set
+  by each difficulty.
+
+### Tests
+- The Warden spares it: it may not target it but may still target a player, and its blow does it no harm.
+- It rattles a shrieker that can call the Warden until it shrieks, without ever hurting the player.
+- With a Warden up, the Warden's ear is set on it as it leads, and near the player it sets the Warden's anger on them.
+- The client shots show it beside the Cave Lurker's tunnel and on its bestiary page.
+
 ## 3.11.0: What Listens Below
 
 ### The Cave Lurker

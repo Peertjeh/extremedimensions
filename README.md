@@ -91,7 +91,9 @@ an unweaving the loom waits three days for you.
   leave while the wound is after you and you come back cursed, with the hunt waiting. Deep under the ground, the
   **Cave Lurker** waits in the dark: smaller, low enough for a miner's tunnel, rarer, and it hunts by ear. Sneak and it
   hears nothing; mine and run near it, and its clicks quicken until it comes on all fours. Its grab always leaves a
-  curse; a raised shield turns it aside. Hollowlings can be befriended, slowly. After the Dragon falls, **Wound
+  curse; a raised shield turns it aside. In the Deep Dark of the Ancient Cities the small **Sculk Lurker** serves the
+  Warden: it never strikes you, but it rattles the shriekers to wake the Warden and then leads it to you, and the Warden
+  spares it. Hollowlings can be befriended, slowly. After the Dragon falls, **Wound
   Storms** tear the sky.
 
 ## The story

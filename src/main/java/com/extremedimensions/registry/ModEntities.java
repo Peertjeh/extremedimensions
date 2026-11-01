@@ -5,6 +5,7 @@ import com.extremedimensions.hollow.Hollowling;
 import com.extremedimensions.hollow.Keeper;
 import com.extremedimensions.lurker.CaveLurker;
 import com.extremedimensions.lurker.Lurker;
+import com.extremedimensions.lurker.SculkLurker;
 import com.extremedimensions.mending.StarvedOne;
 import com.extremedimensions.seam.Thinned;
 import com.extremedimensions.seam.VeilRay;
@@ -45,6 +46,17 @@ public final class ModEntities {
 					.eyeHeight(1.45f)
 					.clientTrackingRange(8)
 					.build(CAVE_LURKER_KEY));
+
+	private static final ResourceKey<EntityType<?>> SCULK_LURKER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("sculk_lurker"));
+
+	/** The Warden's small servant in the Deep Dark, the size of a Hollowling; spawned only by {@code SculkLurkerService}. */
+	public static final EntityType<SculkLurker> SCULK_LURKER = Registry.register(BuiltInRegistries.ENTITY_TYPE, SCULK_LURKER_KEY,
+			EntityType.Builder.<SculkLurker>of(SculkLurker::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(0.6f, 1.1f)
+					.eyeHeight(0.9f)
+					.clientTrackingRange(8)
+					.build(SCULK_LURKER_KEY));
 
 	private static final ResourceKey<EntityType<?>> HOLLOWLING_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("hollowling"));
 	private static final ResourceKey<EntityType<?>> KEEPER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("keeper"));
@@ -160,6 +172,7 @@ public final class ModEntities {
 		FabricDefaultAttributeRegistry.register(THINNED, Thinned.createAttributes());
 		FabricDefaultAttributeRegistry.register(LURKER, Lurker.createAttributes());
 		FabricDefaultAttributeRegistry.register(CAVE_LURKER, CaveLurker.createAttributes());
+		FabricDefaultAttributeRegistry.register(SCULK_LURKER, SculkLurker.createAttributes());
 		FabricDefaultAttributeRegistry.register(HOLLOWLING, Hollowling.createAttributes());
 		FabricDefaultAttributeRegistry.register(KEEPER, Keeper.createAttributes());
 		FabricDefaultAttributeRegistry.register(STARVED_ONE, StarvedOne.createAttributes());

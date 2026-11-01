@@ -569,7 +569,7 @@ public class ClientShots implements FabricClientGameTest {
 			com.extremedimensions.client.screen.JournalScreen[] journal = new com.extremedimensions.client.screen.JournalScreen[1];
 			ctx.runOnClient(mc -> {
 				journal[0] = new com.extremedimensions.client.screen.JournalScreen(java.util.Set.of("tethered", "anchor", "barter", "fray"),
-						"lurker:1:4;cave_lurker:1:3;hollowling:1:0;keeper:1:1;starved_one:0:0;thinned:1:2;veil_ray:1:0;matriarch:1:0;ferryman:0:0;weaver:0:0",
+						"lurker:1:4;cave_lurker:1:3;sculk_lurker:1:1;hollowling:1:0;keeper:1:1;starved_one:0:0;thinned:1:2;veil_ray:1:0;matriarch:1:0;ferryman:0:0;weaver:0:0",
 						"road:expeditions=12;road:collapses=3;road:longest=1834;road:furthest=742;road:deaths=5;road:seam_visits=4;road:fray_descents=2;"
 								+ "burden:curses=19/8;burden:lifted=6;burden:scars=4;burden:pages=21/37;burden:relic=ember_heart;burden:seen=6/9;"
 								+ "others:standing=trusted/47;others:bartered=9;others:raids=1;others:keepers=3;others:great=0;others:lifts_given=2;"
@@ -587,6 +587,12 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("16_bestiary_cave_lurker");
 			ctx.runOnClient(mc -> check(com.extremedimensions.client.screen.JournalScreen.likenessError() == null,
 					"the bestiary could not draw the Cave Lurker: " + com.extremedimensions.client.screen.JournalScreen.likenessError()));
+			// The Sculk Lurker's page, the next one again
+			ctx.runOnClient(mc -> pressOnce(journal[0], "▶"));
+			ctx.waitTicks(16);
+			ctx.takeScreenshot("16_bestiary_sculk_lurker");
+			ctx.runOnClient(mc -> check(com.extremedimensions.client.screen.JournalScreen.likenessError() == null,
+					"the bestiary could not draw the Sculk Lurker: " + com.extremedimensions.client.screen.JournalScreen.likenessError()));
 			ctx.runOnClient(mc -> {
 				for (int i = 0; i < 6; i++) {
 					pressOnce(journal[0], "▶");
@@ -844,6 +850,16 @@ public class ClientShots implements FabricClientGameTest {
 					cl.setLurkerMood(a[1]);
 					cl.setLurkerPose(a[2]);
 					level.addFreshEntity(cl);
+				}
+				// and a Sculk Lurker outside, beside the tunnel's mouth, for its size
+				com.extremedimensions.lurker.SculkLurker sl = com.extremedimensions.registry.ModEntities.SCULK_LURKER.create(level,
+						net.minecraft.world.entity.EntitySpawnReason.COMMAND);
+				if (sl != null) {
+					sl.snapTo(feet.getX() + 0.5 + ax * 2.5 - az * 1.6, feet.getY(), feet.getZ() + 0.5 + az * 2.5 + ax * 1.6, p.getYRot() + 160f, 0f);
+					sl.setNoAi(true);
+					sl.addTag("cave_shot");
+					sl.setLurkerPose(com.extremedimensions.lurker.Lurker.POSE_WATCH);
+					level.addFreshEntity(sl);
 				}
 			});
 			// (long enough for the bestiary's toasts of the moods before to fade)

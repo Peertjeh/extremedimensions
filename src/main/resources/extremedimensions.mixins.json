@@ -36,6 +36,7 @@
 		"UnmappedMapMixin",
 		"UnwelcomeDoorMixin",
 		"VillagerPricesMixin",
+		"WardenSparesMixin",
 		"WoundLensMixin"
 	],
 	"injectors": {

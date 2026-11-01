@@ -10,13 +10,14 @@ import java.util.Map;
  *
  * <p>What changes: how long atonement takes and how much a death undoes of it, how much charge an anchor holds and
  * how fast it drains, how often offers are multiplied and how many cards they show, how often an Extreme card turns
- * up, how often the Lurkers come (and the Cave Lurkers below), how much they take and how hard they hit, whether the whole tribe comes at once (Extreme),
+ * up, how often the Lurkers come (and the Cave and Sculk Lurkers below), how much they take and how hard they hit, whether the whole tribe comes at once (Extreme),
  * how hard the tribe's standing is won, how often the Wound Storms break, how often
  * fragments drop, whether a curse not yet carried
  * shows in runes, and whether the Abyssal curses can be dealt, how often and how many (Hard and Extreme).
  */
 public enum Preset {
 	EASY("easy",
+			"sculk_lurker_spawn_chance", "0.06", "sculk_lurker_cooldown_seconds", "900",
 			"cave_lurker_spawn_chance", "0.003", "cave_lurker_cooldown_seconds", "3600", "cave_lurker_curse_extreme_chance", "0",
 			"atone_base", "60", "atone_per_stack", "25", "atone_death_loss", "0",
 			"max_charge", "3600", "base_drain", "0.6", "tether_distance_step", "200",
@@ -31,6 +32,7 @@ public enum Preset {
 			"lurker_swarm_chance", "0", "tribe_rep_gift", "3", "tribe_gift_minutes", "5", "tribe_gift_cost", "1",
 			"tribe_rep_bond", "10", "tribe_rep_barter", "1"),
 	NORMAL("normal",
+			"sculk_lurker_spawn_chance", "0.12", "sculk_lurker_cooldown_seconds", "600",
 			"cave_lurker_spawn_chance", "0.008", "cave_lurker_cooldown_seconds", "1800", "cave_lurker_curse_extreme_chance", "0",
 			"atone_base", "120", "atone_per_stack", "60", "atone_death_loss", "0.5",
 			"max_charge", "1800", "base_drain", "1", "tether_distance_step", "100",
@@ -45,6 +47,7 @@ public enum Preset {
 			"lurker_swarm_chance", "0", "tribe_rep_gift", "2", "tribe_gift_minutes", "10", "tribe_gift_cost", "1",
 			"tribe_rep_bond", "6", "tribe_rep_barter", "1"),
 	HARD("hard",
+			"sculk_lurker_spawn_chance", "0.16", "sculk_lurker_cooldown_seconds", "450",
 			"cave_lurker_spawn_chance", "0.011", "cave_lurker_cooldown_seconds", "1400", "cave_lurker_curse_extreme_chance", "0.15",
 			"atone_base", "150", "atone_per_stack", "75", "atone_death_loss", "0.65",
 			"max_charge", "1500", "base_drain", "1.15", "tether_distance_step", "85",
@@ -59,6 +62,7 @@ public enum Preset {
 			"lurker_swarm_chance", "0", "tribe_rep_gift", "1", "tribe_gift_minutes", "20", "tribe_gift_cost", "2",
 			"tribe_rep_bond", "4", "tribe_rep_barter", "0"),
 	EXTREME("extreme",
+			"sculk_lurker_spawn_chance", "0.22", "sculk_lurker_cooldown_seconds", "300",
 			"cave_lurker_spawn_chance", "0.015", "cave_lurker_cooldown_seconds", "1000", "cave_lurker_curse_extreme_chance", "0.4",
 			"atone_base", "200", "atone_per_stack", "100", "atone_death_loss", "0.8",
 			"max_charge", "1200", "base_drain", "1.3", "tether_distance_step", "70",

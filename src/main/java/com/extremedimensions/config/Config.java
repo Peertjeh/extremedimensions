@@ -370,6 +370,23 @@ public final class Config {
 	public static int CAVE_LURKER_GIVE_UP_SECONDS = 8;
 	public static int CAVE_LURKER_FLEE_SECONDS = 6;
 
+	// --- The Sculk Lurker -----------------------------------------------------------------------
+
+	/** 1 = Sculk Lurkers come to players in the Deep Dark, near the shriekers that call the Warden; 0 = never. */
+	public static int SCULK_LURKER_ENABLED = 1;
+	/** Chance per player every 20 seconds, there, that one comes (outside the cooldown). */
+	public static double SCULK_LURKER_SPAWN_CHANCE = 0.12;
+	/** Minimum seconds between two for the same player. */
+	public static int SCULK_LURKER_COOLDOWN_SECONDS = 600;
+	/** Seconds between two shriekers it rattles (the game's own pause between two warnings holds as well). */
+	public static int SCULK_LURKER_RATTLE_SECONDS = 12;
+	/** How far from the player a shrieker it rattles may be (blocks). */
+	public static int SCULK_LURKER_SHRIEKER_RANGE = 16;
+	/** How far from the player a Warden it fetches may be (blocks). */
+	public static int SCULK_LURKER_LURE_RANGE = 48;
+	/** Seconds it stays before it sinks into the sculk, its work done or not. */
+	public static int SCULK_LURKER_SECONDS = 180;
+
 	// --- Leaving in danger ----------------------------------------------------------------------
 
 	/**
@@ -1376,6 +1393,8 @@ public final class Config {
 			{"cave_lurker_hear", 1, 100000}, {"cave_lurker_hear_range", 4, 64}, {"cave_lurker_notice", 0, 16}, {"cave_lurker_listen_seconds", 5, 3600},
 			{"cave_lurker_speed", 0.2, 4}, {"cave_lurker_hunt_seconds", 5, 600}, {"cave_lurker_damage", 0, 40}, {"cave_lurker_curse_extreme_chance", 0, 1},
 			{"cave_lurker_give_up_seconds", 1, 120}, {"cave_lurker_flee_seconds", 1, 60},
+			{"sculk_lurker_spawn_chance", 0, 1}, {"sculk_lurker_rattle_seconds", 3, 600}, {"sculk_lurker_shrieker_range", 4, 48},
+			{"sculk_lurker_lure_range", 8, 96}, {"sculk_lurker_seconds", 20, 3600},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},
 			{"seam_fray_ray_cooldown", 1, 120}, {"seam_fray_gloom", 0, 30}, {"seam_fray_gloom_every", 10, 3600}, {"seam_fray_unravel", 0, 1},
 			{"seam_briefing", 0, 100}, {"hud_boss_bar", 0, 1}, {"hints", 0, 1}, {"frame_silk", 0, 64}, {"first_knot_distance", 200, 5000}, {"knot_mother_rest", 0, 100000},

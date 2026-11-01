@@ -40,4 +40,7 @@ final class Alone {
 	static final String SWARM_DREAD = "extremedimensions_test:alone/swarm_dread";
 	static final String CAVE_TUNNEL = "extremedimensions_test:alone/cave_tunnel";
 	static final String CAVE_HEARING = "extremedimensions_test:alone/cave_hearing";
+	static final String SCULK_SPARED = "extremedimensions_test:alone/sculk_spared";
+	static final String SCULK_BECKON = "extremedimensions_test:alone/sculk_beckon";
+	static final String SCULK_LURE = "extremedimensions_test:alone/sculk_lure";
 }

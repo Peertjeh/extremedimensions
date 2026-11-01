@@ -571,6 +571,7 @@ public class JournalScreen extends Screen {
 		return switch (b) {
 			case LURKER -> ModEntities.LURKER;
 			case CAVE_LURKER -> ModEntities.CAVE_LURKER;
+			case SCULK_LURKER -> ModEntities.SCULK_LURKER;
 			case HOLLOWLING -> ModEntities.HOLLOWLING;
 			case KEEPER -> ModEntities.KEEPER;
 			case STARVED_ONE -> ModEntities.STARVED_ONE;
