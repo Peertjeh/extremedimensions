@@ -4,8 +4,10 @@
 #  After a change: /tab reload
 #
 #  Needs Text Placeholder API (placeholder-api) on the server: the
-#  %extremedimensions:...% and %player:...% placeholders come through it.
-#  Without it they show up as plain text.
+#  %extremedimensions:...%, %battlehub:...% and %player:...% placeholders
+#  come through it. Without it they show up as plain text.
+#  Needs BattleHub 1.52.0 or newer: it keeps the BattleHub and survival
+#  player lists apart and leaves its Bot_ players out.
 #
 #  Keep every option below, even the disabled ones: if one is missing,
 #  TAB adds it back and rewrites the whole file, which strips all comments.
@@ -43,38 +45,23 @@ header-footer:
         - "&7Online: &f%online%   &8|   &7Ping: &f%ping% ms"
         - ""
 
-# Separate player lists: players in BattleHub only see BattleHub players,
-# everyone else only sees the survival players (all other dimensions).
-# Players whose name starts with Bot_ (BattleHub's bots) are left out.
-# On Fabric this only works through layout, which always shows a fixed
-# number of rows. Raise slot-count (and the slots range with it) if more
-# players are online at once; extra players show as "... and X more".
-# https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Layout
-layout:
+# The curse badge from Extreme Dimensions at the right of the list, next to
+# the ping bars (a skull and the number of curses, a purple star with an
+# Abyssal curse). Players without curses have nothing there. Only in survival:
+# a player in BattleHub sees no column.
+# https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Playerlist-Objective
+playerlist-objective:
   enabled: true
-  direction: COLUMNS
-  default-skin: mineskin:37e93c8e12cd426cb28fce31969e0674
-  enable-remaining-players-text: true
-  remaining-players-text: "&7... and %s more"
-  empty-slot-ping-value: 1000
-  layouts:
-    battlehub:
-      display-condition: battlehub
-      slot-count: 10
-      fixed-slots: []
-      groups:
-        players:
-          display-condition: battlehub-list
-          slots:
-            - "1-10"
-    survival:
-      slot-count: 10
-      fixed-slots: []
-      groups:
-        players:
-          display-condition: survival-list
-          slots:
-            - "1-10"
+  value: "%extremedimensions:curses%"
+  fancy-value: "%extremedimensions:badge%"
+  title: "Curses"
+  render-type: INTEGER
+  disable-condition: battlehub
+
+# Off: BattleHub (1.52+) keeps the BattleHub and survival lists apart and
+# leaves its bots out itself. A layout would also hide the curse column above.
+layout:
+  enabled: false
 
 # Player names in the list, set in groups.yml
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Tablist-name-formatting
@@ -84,7 +71,7 @@ tablist-name-formatting:
 
 # TAB's nametags stay off: BattleHub draws its own above heads (titles,
 # CTF team colours, enemies' tags hidden in a match) and TAB would block
-# those. This section still sets the order of the player list.
+# those. The list is then in the game's own order, by name.
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Sorting-players-in-tablist
 scoreboard-teams:
   enabled: false
@@ -96,9 +83,7 @@ scoreboard-teams:
 bossbar:
   enabled: false
 
-# Not used. Playerlist objective can't be combined with layout anyway.
-playerlist-objective:
-  enabled: false
+# Not used.
 belowname-objective:
   enabled: false
 scoreboard:
@@ -129,16 +114,6 @@ conditions:
       - "%world%-|_hub"
       - "%world%-|_arenas"
     type: OR
-  battlehub-list:
-    conditions:
-      - "%condition:battlehub%=true"
-      - "%player%!|-Bot_"
-    type: AND
-  survival-list:
-    conditions:
-      - "%condition:battlehub%=false"
-      - "%player%!|-Bot_"
-    type: AND
   # The name in the player list (customtabname in groups.yml): gray in
   # spectator mode, BattleHub's own name in BattleHub (title, stars, clan,
   # name colour), and in survival colored by dimension.
@@ -167,13 +142,6 @@ conditions:
       - "%world%-|_the_seam"
     true: "&b"
     false: "&f"
-  # The curse badge behind the name (tabsuffix in groups.yml), survival only.
-  # It is empty for a player without curses.
-  badge:
-    conditions:
-      - "%condition:battlehub%=false"
-    true: " %extremedimensions:badge%"
-    false: ""
   # In BattleHub a dot before the name (tabprefix in groups.yml) says what the
   # player is doing: green in the lobby, yellow in a queue, red in a match,
   # gray watching. \u25cf is the dot.
@@ -236,7 +204,7 @@ placeholder-output-replacements:
     "Unweaving": "&dUnweaving"
     "Fallen": "&cFallen"
     "Elsewhere": "&7Elsewhere"
-  "%extremedimensions:curses%": # same steps as the badge
+  "%extremedimensions:curses%": # the footer; same steps as the badge
     "0": "&a0"
     "1-9": "&7%value%"
     "10-29": "&e%value%"
