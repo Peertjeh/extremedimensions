@@ -108,6 +108,15 @@ jobs:
               s = base64.b64encode(b.getvalue()).decode()
               for i in range(0, len(s), 3000):
                   print(f"IMG|{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
+              if "tetherite_gear" in f:
+                  # the inventory at full size, to read the item art pixel by pixel
+                  full = Image.open(f).convert("RGB")
+                  w, h = full.size
+                  c = full.crop((max(0, w // 2 - 360), max(0, h // 2 - 260), min(w, w // 2 + 360), min(h, h // 2 + 260)))
+                  b = io.BytesIO(); c.save(b, "PNG")
+                  s = base64.b64encode(b.getvalue()).decode()
+                  for i in range(0, len(s), 3000):
+                      print(f"IMG|crop_{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
           PY
 
   compat:

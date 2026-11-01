@@ -702,6 +702,18 @@ public class ClientShots implements FabricClientGameTest {
 				p.getInventory().setItem(15, trimmed(Items.IRON_HELMET, weaver));
 				p.getInventory().setItem(16, trimmed(Items.LEATHER_LEGGINGS, fray));
 				p.getInventory().setItem(17, trimmed(Items.NETHERITE_BOOTS, weaver));
+				// vanilla's netherite in the row below, to hold the set against
+				net.minecraft.world.item.Item[] vanilla = {Items.NETHERITE_SWORD, Items.NETHERITE_PICKAXE, Items.NETHERITE_AXE, Items.NETHERITE_SHOVEL, Items.NETHERITE_HOE,
+						Items.NETHERITE_INGOT, Items.NETHERITE_SCRAP, Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE, Items.NETHERITE_CHESTPLATE};
+				for (int i = 0; i < vanilla.length; i++) {
+					p.getInventory().setItem(18 + i, new ItemStack(vanilla[i]));
+				}
+				net.minecraft.world.item.Item[] worn = {com.extremedimensions.registry.ModItems.TETHERITE_HELMET, com.extremedimensions.registry.ModItems.TETHERITE_CHESTPLATE,
+						com.extremedimensions.registry.ModItems.TETHERITE_LEGGINGS, com.extremedimensions.registry.ModItems.TETHERITE_BOOTS,
+						Items.NETHERITE_HELMET, Items.NETHERITE_LEGGINGS, Items.NETHERITE_BOOTS, Items.DIAMOND_SWORD, Items.DIAMOND_PICKAXE};
+				for (int i = 0; i < worn.length; i++) {
+					p.getInventory().setItem(27 + i, new ItemStack(worn[i]));
+				}
 			});
 			ctx.waitTicks(10);
 			ctx.runOnClient(mc -> mc.gui.setScreen(new InventoryScreen(mc.player)));

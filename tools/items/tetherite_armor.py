@@ -1,8 +1,9 @@
 """Tetherite worn, and the Seam's armor trims, drawn on the humanoid armor layout (64 x 32).
 
-The armor: each face of the head, body, arms and legs filled with the dark violet metal, lit from above, edged, the
-Tether's cyan run down its seams (a fuller down the breastplate, bands round the arms, a band round the helm, straps
-on the boots). The leggings layer carries the belt and the legs.
+The armor, in vanilla's manner: every face a bevelled plate (a lit top and left edge, the right and bottom edges in
+shadow, a little grain, darker toward the foot), plates joined at seams (a dark line with a lit line under it) and held
+with rivets; the Tether's cyan only as a stud here and there (at the brow, over the heart, on the belt buckle, at the
+boot straps). The helm leaves the face open; the leggings layer carries the belt and the legs.
 
 The trims are drawn in the eight greys of vanilla's trim key (textures/palettes/trim_base, light to dark) and the
 game colours them in whatever material they are put on with; the palettes for the Seam's two materials are written
@@ -14,6 +15,7 @@ here too, light to dark like vanilla's, and Tetherite's darker one for Tetherite
 usage: python3 tools/items/tetherite_armor.py [preview.png]
 """
 import os
+import random
 import sys
 
 from PIL import Image
@@ -21,8 +23,9 @@ from PIL import Image
 ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
 TEX = os.path.join(ROOT, "src/client/resources/assets/extremedimensions/textures")
 
-METAL = [(14, 9, 22), (36, 26, 54), (58, 45, 86), (88, 72, 124), (146, 132, 190)]
-THREAD = [(14, 84, 96), (30, 160, 168), (70, 226, 214), (196, 255, 246)]
+# the metal, dark to light (the same ramp as the items), and the thread
+M = [(24, 18, 34), (38, 30, 52), (52, 43, 70), (68, 58, 90), (88, 77, 114), (114, 103, 143), (158, 149, 186)]
+A = [(28, 92, 100), (45, 158, 160), (112, 228, 214)]
 
 # vanilla's trim key (textures/palettes/trim_base), light to dark, as the game reads it (a grey PNG: read through a
 # colour-managed decoder its greys come out brighter, 241, 225, 208..., and no longer match), and the Seam's palettes
@@ -50,93 +53,95 @@ ARM = faces(40, 16, 4, 12, 4)
 LEG = faces(0, 16, 4, 12, 4)
 
 
-def metal(px, x0, y0, w, h, rows=None, light=True):
-    """A face of plate: lit from the top, edged, the lower rows in shadow."""
-    rows = rows or (0, h)
-    for y in range(rows[0], rows[1]):
+def plate(px, x0, y0, w, h, rows=(0, None), seams=(), rnd=None, top_lit=True):
+    """A face of plate: a lit top edge and left edge, the right and bottom edges in shadow, the body a little grained,
+    darker toward the bottom; seams are a dark line with a lit line under it."""
+    rnd = rnd or random.Random(x0 * 131 + y0)
+    r0, r1 = rows[0], (rows[1] if rows[1] is not None else h)
+    for y in range(r0, r1):
         for x in range(w):
-            t = y / max(1, h - 1)
-            c = 3 if t < 0.25 and light else 2 if t < 0.75 else 1
-            if x == 0 or x == w - 1 or y == rows[0] or y == rows[1] - 1:
-                c = 0 if (y == rows[1] - 1 or x == w - 1) else max(1, c - 1)
-            if y == rows[0] + 1 and 0 < x < w - 1 and light:
-                c = 4 if (x + y) % 5 == 1 else 3
-            px[x0 + x, y0 + y] = METAL[c] + (255,)
+            t = (y - r0) / max(1, r1 - r0 - 1)
+            c = 4 if t < 0.2 else 3 if t < 0.6 else 2
+            if rnd.random() < 0.18:
+                c += rnd.choice((-1, 1))
+            if y in seams:
+                c = 1
+            elif y - 1 in seams:
+                c = 4
+            if y == r0 and top_lit:
+                c = 5
+            if x == 0 and y > r0:
+                c = max(c, 4) if t < 0.5 else 3
+            if x == w - 1 or y == r1 - 1:
+                c = 1
+            px[x0 + x, y0 + y] = M[max(1, min(6, c))] + (255,)
 
+def stud(px, x, y, k=2):
+    px[x, y] = A[k] + (255,)
 
-def thread(px, x, y, k=2):
-    px[x, y] = THREAD[k] + (255,)
-
+def rivet(px, x, y):
+    px[x, y] = M[5] + (255,)
+    px[x, y + 1] = M[1] + (255,)
 
 def armor():
-    """Layer one: the helm, the breastplate with its arms, and the boots."""
     im = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
     px = im.load()
-    # the helm: plates all round, a cyan band at the brow, the face left open
     for name, (x, y, w, h) in HEAD.items():
-        metal(px, x, y, w, h)
-        if name in ("front", "right", "left", "back"):
-            for i in range(1, w - 1):
-                thread(px, x + i, y + 3, 2 if i % 3 else 3)
+        plate(px, x, y, w, h, seams=(5,) if name not in ("top", "bottom") else ())
         if name == "front":
-            for yy in range(4, 8):
-                for xx in range(2, 6):
-                    px[x + xx, y + yy] = (0, 0, 0, 0)
-    # the breastplate: a cyan fuller down the front, a thread at the collar
+            # the face shows through the visor
+            for yy in range(3, 7):
+                for xx in range(1, 7):
+                    if not (yy == 3 and xx in (1, 6)):
+                        px[x + xx, y + yy] = (0, 0, 0, 0)
+            for xx in range(1, 7):
+                px[x + xx, y + 7] = M[2] + (255,)
+            stud(px, x + 3, y + 1, 2)
+            stud(px, x + 4, y + 1, 1)
+        if name in ("right", "left"):
+            rivet(px, x + 3, y + 2)
     for name, (x, y, w, h) in BODY.items():
-        metal(px, x, y, w, h)
+        plate(px, x, y, w, h, seams=(4, 9) if name in ("front", "back") else (4,))
         if name == "front":
-            for yy in range(1, h - 1):
-                thread(px, x + 3, y + yy, 1)
-                thread(px, x + 4, y + yy, 2 if yy % 4 else 3)
-            for xx in range(1, w - 1):
-                thread(px, x + xx, y + 1, 1)
-        if name == "back":
-            for yy in range(2, h - 2, 3):
-                thread(px, x + 3, y + yy, 1)
-                thread(px, x + 4, y + yy, 1)
-    # the arms: pauldrons on top, two bands of thread
+            stud(px, x + 3, y + 2, 1)
+            stud(px, x + 4, y + 2, 2)
+            rivet(px, x + 1, y + 6)
+            rivet(px, x + 6, y + 6)
     for name, (x, y, w, h) in ARM.items():
-        metal(px, x, y, w, h)
-        if name not in ("top", "bottom"):
-            for xx in range(w):
-                thread(px, x + xx, y + 3, 1)
-                thread(px, x + xx, y + 7, 2)
-    # the boots: the lower rows of the legs, a strap across
+        if name == "bottom":
+            continue
+        plate(px, x, y, w, h, rows=(0, 10) if name != "top" else (0, None), seams=(3,) if name != "top" else ())
     for name, (x, y, w, h) in LEG.items():
-        if name in ("top",):
+        if name == "top":
             continue
         if name == "bottom":
-            metal(px, x, y, w, h, light=False)
+            plate(px, x, y, w, h, top_lit=False)
             continue
-        metal(px, x, y, w, h, rows=(h - 5, h))
-        for xx in range(w):
-            thread(px, x + xx, y + h - 3, 2 if xx % 2 else 1)
+        plate(px, x, y, w, h, rows=(h - 5, h), seams=(h - 2,))
+        if name == "front":
+            stud(px, x + 1, y + h - 4, 1)
     return im
 
-
 def leggings():
-    """Layer two: the belt round the body and the legs."""
     im = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
     px = im.load()
     for name, (x, y, w, h) in BODY.items():
-        if name in ("top",):
+        if name == "top":
             continue
         if name == "bottom":
-            metal(px, x, y, w, h, light=False)
+            plate(px, x, y, w, h, top_lit=False)
             continue
-        metal(px, x, y, w, h, rows=(h - 5, h))
-        for xx in range(w):
-            thread(px, x + xx, y + h - 4, 3 if xx == w // 2 else 2)
+        plate(px, x, y, w, h, rows=(h - 4, h))
+        if name == "front":
+            stud(px, x + 3, y + h - 3, 1)
+            stud(px, x + 4, y + h - 3, 2)
     for name, (x, y, w, h) in LEG.items():
         if name in ("top", "bottom"):
             continue
-        metal(px, x, y, w, h, rows=(0, h - 2))
-        for yy in range(1, h - 3, 3):
-            thread(px, x + (1 if name in ("front", "back") else 2), y + yy, 1)
-        thread(px, x + 1, y + 6, 2)
+        plate(px, x, y, w, h, rows=(0, h - 2), seams=(5,))
+        if name == "front":
+            rivet(px, x + 1, y + 6)
     return im
-
 
 # --------------------------------------------------------------------------- trims (key levels 0 light .. 7 dark)
 
