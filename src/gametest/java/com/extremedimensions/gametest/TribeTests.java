@@ -81,21 +81,38 @@ public class TribeTests {
 		ServerPlayer p = TestPlayers.survivor(helper, "tribe-barter");
 		PlayerData d = DataStore.get(p.getUUID());
 		p.getInventory().clearContent();
-		p.getInventory().add(new ItemStack(Items.EMERALD, 10));
+		p.getInventory().add(new ItemStack(Items.EMERALD, 64));
 		check(helper, BarterService.trade(p, BarterService.FRAGMENT) != null, "the tribe bartered with a stranger");
-		d.tribeRep = Config.TRIBE_TRUSTED_AT;
+		// (room above trusted for what the bargain costs)
+		d.tribeRep = Config.TRIBE_TRUSTED_AT + 20;
 		BarterService.Ware w = BarterService.ware(BarterService.FRAGMENT);
 		int price = BarterService.price(p, w);
-		check(helper, price < w.price(), "the trusted pay full price (%s)", price);
-		String refused = BarterService.trade(p, BarterService.FRAGMENT);
+		int full = (int) Math.ceil(w.price() * Config.TRIBE_BARTER_PRICE);
+		check(helper, price < full && price > w.price(), "the trusted pay %s for a ware of %s at full price %s", price, w.price(), full);
+		// A bargain costs standing, and this time it leaves its mark for certain
+		double chance = Config.TRIBE_BARTER_CURSE_CHANCE;
+		int repBefore = d.tribeRep, cursesBefore = d.curses.values().stream().mapToInt(Integer::intValue).sum();
+		String refused;
+		try {
+			Config.TRIBE_BARTER_CURSE_CHANCE = 1;
+			refused = BarterService.trade(p, BarterService.FRAGMENT);
+		} finally {
+			Config.TRIBE_BARTER_CURSE_CHANCE = chance;
+		}
 		check(helper, refused == null, "a fair barter was refused: %s", refused);
+		check(helper, d.tribeRep == repBefore + Config.TRIBE_REP_BARTER - BarterService.standingCost(w) && d.tribeRep < repBefore,
+				"a barter took standing from %s to %s, not by %s", repBefore, d.tribeRep, BarterService.standingCost(w));
+		check(helper, d.curses.values().stream().mapToInt(Integer::intValue).sum() == cursesBefore + 1, "a certain curse was not laid by the bargain");
+		BarterService.Ware cloth = BarterService.ware(BarterService.CLOTH);
+		check(helper, BarterService.standingCost(cloth) == 3 * BarterService.standingCost(w)
+				&& BarterService.curseChance(cloth) == Math.min(1, 2 * BarterService.curseChance(w)), "a kin's ware does not cost more than another");
 		int emeralds = 0, fragments = 0;
 		for (int i = 0; i < p.getInventory().getContainerSize(); i++) {
 			ItemStack s = p.getInventory().getItem(i);
 			emeralds += s.is(Items.EMERALD) ? s.getCount() : 0;
 			fragments += s.is(ModItems.TETHER_FRAGMENT) ? s.getCount() : 0;
 		}
-		check(helper, emeralds == 10 - price && fragments == 1, "after the barter: %s emeralds, %s fragments", emeralds, fragments);
+		check(helper, emeralds == 64 - price && fragments == 1, "after the barter: %s emeralds, %s fragments", emeralds, fragments);
 		check(helper, "gui.extremedimensions.barter.sold_out".equals(BarterService.trade(p, BarterService.FRAGMENT)), "a ware was sold more often than it may be");
 		boolean kinWares = BarterService.offers(p).stream().anyMatch(o -> o.id() == BarterService.CLOTH);
 		check(helper, !kinWares, "the merely trusted were offered kin's wares");
@@ -105,6 +122,7 @@ public class TribeTests {
 		// (the fragment, the day's wares, the Blood Cord for those it trusts, and kin's relic and cloth)
 		int cord = Config.CLAN_ENABLED > 0 ? 1 : 0;
 		check(helper, BarterService.offers(p).size() == 1 + Config.TRIBE_BARTER_OFFERS + cord + 2, "kin saw %s wares", BarterService.offers(p).size());
+		d.curses.clear();
 		helper.succeed();
 	}
 

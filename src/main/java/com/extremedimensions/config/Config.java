@@ -1032,8 +1032,8 @@ public final class Config {
 	public static int TRIBE_GIFT_MINUTES = 10;
 	/** How many times the usual amount a gift must be (four gold nuggets at 1, twelve at 3). */
 	public static int TRIBE_GIFT_COST = 1;
-	/** Standing gained for each barter. */
-	public static int TRIBE_REP_BARTER = 1;
+	/** Standing gained for each barter, on top of what a barter costs (0 since 3.16: a bargain costs standing, see below). */
+	public static int TRIBE_REP_BARTER = 0;
 	/** Standing gained when a Hollowling bonds with the player. */
 	public static int TRIBE_REP_BOND = 6;
 	/** In-game days before bonding with one of the young again earns standing (a bond made again and again earns it once). */
@@ -1056,12 +1056,19 @@ public final class Config {
 	public static double TRIBE_KIN_THEFT_CHANCE = 0.5;
 	/** Wares a Hollowling offers in a day. */
 	public static int TRIBE_BARTER_OFFERS = 4;
-	/** Scales every price in barter. */
-	public static double TRIBE_BARTER_PRICE = 1.0;
+	/** Scales every price in barter (3 = three times the wares' own prices). */
+	public static double TRIBE_BARTER_PRICE = 3.0;
 	/** Share taken off prices for players the tribe trusts. */
-	public static double TRIBE_BARTER_TRUSTED_DISCOUNT = 0.25;
+	public static double TRIBE_BARTER_TRUSTED_DISCOUNT = 0.1;
 	/** Share taken off prices for kin of the tribe. */
-	public static double TRIBE_BARTER_KIN_DISCOUNT = 0.4;
+	public static double TRIBE_BARTER_KIN_DISCOUNT = 0.2;
+	/**
+	 * Standing every barter costs (the young do not give for nothing, and the tribe resents what it gives away); a kin's
+	 * ware (a relic, a Mending Cloth) and the Blood Cord cost three times as much.
+	 */
+	public static int TRIBE_BARTER_STANDING_COST = 5;
+	/** Chance a barter leaves a curse on the buyer (the wound's own bargain); twice as likely for a kin's ware or the cord. */
+	public static double TRIBE_BARTER_CURSE_CHANCE = 0.25;
 	/** Emeralds a Hollowling asks for a Tether Fragment (before discounts). */
 	public static int TRIBE_BARTER_FRAGMENT_PRICE = 5;
 	/** Emeralds a Hollowling asks kin for a relic (before discounts; 0 = never offered). */
@@ -1216,7 +1223,7 @@ public final class Config {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	/** Layout version of the config file; files from before a version are brought up to date on loading. */
-	private static final int VERSION = 5;
+	private static final int VERSION = 6;
 
 	/**
 	 * Defaults that changed, by the version that changed them: {key, old default, new default}. A file still holding
@@ -1237,6 +1244,9 @@ public final class Config {
 		{{"lurker_stalk_chance", "0.15", "0.3"}},
 		// 3.8.0: the tribe's standing is harder won
 		{{"tribe_rep_gift", "3", "2"}, {"tribe_rep_bond", "10", "6"}},
+		// 3.16.0: barter with the young costs dearly (dearer wares, smaller discounts, standing spent rather than won)
+		{{"tribe_barter_price", "1", "3"}, {"tribe_barter_trusted_discount", "0.25", "0.1"}, {"tribe_barter_kin_discount", "0.4", "0.2"},
+				{"tribe_rep_barter", "1", "0"}},
 	};
 
 	/**
@@ -1385,7 +1395,7 @@ public final class Config {
 		if (json.size() == 0) {
 			return;
 		}
-		if (from < 5) {
+		if (from < 6) {
 			// A world set to one of the difficulties takes that difficulty's values of the settings it gained since (the
 			// Lurker's in 3.7.0, the tribe's standing and the swarm in 3.8.0), rather than turning into custom rules
 			Preset.upgrade(json, from);
@@ -1440,7 +1450,7 @@ public final class Config {
 			{"sculk_lurker_sensor_seconds", 2, 600}, {"sculk_lurker_sensor_range", 4, 32},
 			{"sculk_lurker_city_chance", 0, 1}, {"sculk_lurker_city_cooldown_seconds", 0, 86400}, {"sculk_lurker_pack_min", 1, 8},
 			{"sculk_lurker_pack_max", 1, 8}, {"sculk_lurker_pack_per_player", 0, 4}, {"sculk_lurker_pack_cap", 1, 12},
-			{"curse_fresh_weight", 1, 20}, {"weaver_pity", 0, 1}, {"seam_thinned_fragment_chance", 0, 1}, {"seam_collapse_toll", 0, 1},
+			{"curse_fresh_weight", 1, 20}, {"tribe_barter_standing_cost", 0, 100}, {"tribe_barter_curse_chance", 0, 1}, {"weaver_pity", 0, 1}, {"seam_thinned_fragment_chance", 0, 1}, {"seam_collapse_toll", 0, 1},
 			{"music_disc_listens_chance", 0, 1}, {"disc_fragment_elegy_count", 0, 9}, {"disc_fragment_abyss_broken", 0, 9},
 			{"disc_fragment_abyss_tangle_chance", 0, 1}, {"disc_fragment_abyss_ray_chance", 0, 1},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},

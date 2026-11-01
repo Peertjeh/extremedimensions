@@ -31,7 +31,11 @@ import net.minecraft.world.item.Items;
  * Gifts and barter with the young of the tribe. A Hollowling takes a small, shiny gift (enough of it) and carries it
  * home, and the tribe thinks better of the giver. Once the tribe tolerates a player, a Hollowling barters with them:
  * a Tether Fragment always, a few wares that change every day, and for kin a relic and a Mending Cloth. Each ware can
- * be bought only so often a day; prices fall as the tribe comes to trust the player.
+ * be bought only so often a day; prices fall a little as the tribe comes to trust the player.
+ *
+ * <p>A bargain with the young is dear: besides its price it costs standing (the tribe resents what it gives away, three
+ * times as much for a kin's ware or the cord), and it may leave a curse on the buyer, the wound's own bargain (twice as
+ * likely for a kin's ware or the cord). A player can barter themselves out of the tribe's trust.
  */
 public final class BarterService {
 	private BarterService() {}
@@ -125,6 +129,21 @@ public final class BarterService {
 			out.add(ware(CLOTH));
 		}
 		return out;
+	}
+
+	/** Whether a ware is one of the dear ones: a kin's ware (a relic, a Mending Cloth) or the Blood Cord. */
+	public static boolean dear(Ware w) {
+		return w.id() == RELIC || w.id() == CLOTH || w.id() == CORD;
+	}
+
+	/** The standing a ware costs on top of its price. */
+	public static int standingCost(Ware w) {
+		return Math.max(0, Config.TRIBE_BARTER_STANDING_COST) * (dear(w) ? 3 : 1);
+	}
+
+	/** The chance a ware leaves a curse on its buyer. */
+	public static double curseChance(Ware w) {
+		return Math.min(1, Math.max(0, Config.TRIBE_BARTER_CURSE_CHANCE) * (dear(w) ? 2 : 1));
 	}
 
 	/** What a ware costs this player now. */
@@ -231,7 +250,18 @@ public final class BarterService {
 		WorldFx.soundSelf(p, "minecraft:entity.item.pickup", 0.6f, 0.8f);
 		Advancements.grant(p, Advancements.FIRST_BARTER);
 		Journal.unlock(p, d, JournalEntry.BARTER);
-		Standing.change(p, Config.TRIBE_REP_BARTER, "gui.extremedimensions.tribe.why.barter");
+		// What it costs besides: standing, and now and then a curse
+		Standing.change(p, Config.TRIBE_REP_BARTER - standingCost(w), "gui.extremedimensions.tribe.why.barter");
+		if (!p.isCreative() && java.util.concurrent.ThreadLocalRandom.current().nextDouble() < curseChance(w)) {
+			boolean overworld = com.extremedimensions.server.Dims.OVERWORLD.equals(com.extremedimensions.server.Dims.of(p)) && DataStore.overworldPenalties();
+			com.extremedimensions.penalty.Penalty pen = com.extremedimensions.penalty.PenaltyService.curse(p, overworld, 0);
+			if (pen != null) {
+				WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.6, 0.06, 20);
+				WorldFx.soundSelf(p, "extremedimensions:hollowling_giggle", 1.0f, 0.5f);
+				p.sendSystemMessage(Component.translatable("gui.extremedimensions.barter.cursed", Component.translatable(pen.nameKey()))
+						.withStyle(net.minecraft.ChatFormatting.DARK_PURPLE), false);
+			}
+		}
 		DataStore.markDirty();
 		return null;
 	}

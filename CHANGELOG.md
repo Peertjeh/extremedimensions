@@ -1,5 +1,27 @@
 # Changelog
 
+## 3.16.0: A Hard Bargain
+
+### Barter with the young costs dearly
+- **Dearer wares.** Every price is three times what it was on Normal (`tribe_barter_price`), twice on Easy, four times
+  on Hard and five times on Extreme: a Tether Fragment is 15 emeralds before discounts, a relic 60. The discounts for
+  the trusted and for kin are smaller (10% and 20%, were 25% and 40%).
+- **Every bargain costs standing.** The tribe resents what its young give away: each barter takes standing instead of
+  earning it (`tribe_barter_standing_cost`: 3 on Easy, 5 on Normal, 7 on Hard, 10 on Extreme), three times as much for
+  a relic, a Mending Cloth or the Blood Cord. Kin who buy their wares can buy themselves back down to trusted, and must
+  win the tribe over again before they see those wares; a player can barter themselves out of the tribe's trust.
+- **A bargain may leave a curse.** Each barter has a chance to lay a curse on the buyer, the wound's own bargain
+  (`tribe_barter_curse_chance`: 10% on Easy, 25% on Normal, 35% on Hard, 50% on Extreme), twice as likely for a relic,
+  a Mending Cloth or the Blood Cord.
+- The barter screen says what a bargain costs besides its price.
+- A world on a difficulty takes that difficulty's barter costs when it is upgraded; a world of its own rules takes the
+  new defaults where it still held the old ones, and keeps any barter settings it chose.
+
+### Tests
+- A barter costs its price, the standing it should, and (at a certain chance) lays a curse; a kin's ware costs three
+  times the standing and twice the curse chance of another.
+- A world from before 3.16 on Easy takes Easy's barter costs; one of its own rules takes the new defaults.
+
 ## 3.15.1: Tetherite, the way Minecraft draws it
 
 A critical look at the Tetherite set beside vanilla's netherite, held pixel for pixel against vanilla's own icons, and

@@ -30,7 +30,8 @@ public enum Preset {
 			"lurker_curse_extreme_chance", "0", "lurker_curses_max", "1", "lurker_hunt_chance", "0.1", "lurker_retaliate_chance", "0.15",
 			"lurker_strike_damage", "4", "lurker_strike_blows", "2",
 			"lurker_swarm_chance", "0", "tribe_rep_gift", "3", "tribe_gift_minutes", "5", "tribe_gift_cost", "1",
-			"tribe_rep_bond", "10", "tribe_rep_barter", "1"),
+			"tribe_rep_bond", "10", "tribe_rep_barter", "0",
+			"tribe_barter_price", "2", "tribe_barter_standing_cost", "3", "tribe_barter_curse_chance", "0.1"),
 	NORMAL("normal",
 			"sculk_lurker_spawn_chance", "0.12", "sculk_lurker_cooldown_seconds", "600",
 			"cave_lurker_spawn_chance", "0.008", "cave_lurker_cooldown_seconds", "1800", "cave_lurker_curse_extreme_chance", "0",
@@ -45,7 +46,8 @@ public enum Preset {
 			"lurker_curse_extreme_chance", "0", "lurker_curses_max", "1", "lurker_hunt_chance", "0.25", "lurker_retaliate_chance", "0.35",
 			"lurker_strike_damage", "6", "lurker_strike_blows", "3",
 			"lurker_swarm_chance", "0", "tribe_rep_gift", "2", "tribe_gift_minutes", "10", "tribe_gift_cost", "1",
-			"tribe_rep_bond", "6", "tribe_rep_barter", "1"),
+			"tribe_rep_bond", "6", "tribe_rep_barter", "0",
+			"tribe_barter_price", "3", "tribe_barter_standing_cost", "5", "tribe_barter_curse_chance", "0.25"),
 	HARD("hard",
 			"sculk_lurker_spawn_chance", "0.16", "sculk_lurker_cooldown_seconds", "450",
 			"cave_lurker_spawn_chance", "0.011", "cave_lurker_cooldown_seconds", "1400", "cave_lurker_curse_extreme_chance", "0.15",
@@ -60,7 +62,8 @@ public enum Preset {
 			"lurker_curse_extreme_chance", "0.15", "lurker_curses_max", "1", "lurker_hunt_chance", "0.4", "lurker_retaliate_chance", "0.5",
 			"lurker_strike_damage", "8", "lurker_strike_blows", "4",
 			"lurker_swarm_chance", "0", "tribe_rep_gift", "1", "tribe_gift_minutes", "20", "tribe_gift_cost", "2",
-			"tribe_rep_bond", "4", "tribe_rep_barter", "0"),
+			"tribe_rep_bond", "4", "tribe_rep_barter", "0",
+			"tribe_barter_price", "4", "tribe_barter_standing_cost", "7", "tribe_barter_curse_chance", "0.35"),
 	EXTREME("extreme",
 			"sculk_lurker_spawn_chance", "0.22", "sculk_lurker_cooldown_seconds", "300",
 			"cave_lurker_spawn_chance", "0.015", "cave_lurker_cooldown_seconds", "1000", "cave_lurker_curse_extreme_chance", "0.4",
@@ -75,7 +78,8 @@ public enum Preset {
 			"lurker_curse_extreme_chance", "0.4", "lurker_curses_max", "2", "lurker_hunt_chance", "0.55", "lurker_retaliate_chance", "0.7",
 			"lurker_strike_damage", "10", "lurker_strike_blows", "5",
 			"lurker_swarm_chance", "0.15", "tribe_rep_gift", "1", "tribe_gift_minutes", "30", "tribe_gift_cost", "3",
-			"tribe_rep_bond", "3", "tribe_rep_barter", "0");
+			"tribe_rep_bond", "3", "tribe_rep_barter", "0",
+			"tribe_barter_price", "5", "tribe_barter_standing_cost", "10", "tribe_barter_curse_chance", "0.5");
 
 	public final String id;
 	/** Setting key -> value as text (as {@link Config#set} takes it), in a fixed order. */
@@ -141,13 +145,20 @@ public enum Preset {
 	static final java.util.Set<String> ADDED_3_8 = java.util.Set.of("lurker_swarm_chance", "tribe_rep_gift", "tribe_gift_minutes",
 			"tribe_gift_cost", "tribe_rep_bond", "tribe_rep_barter");
 
+	/** Settings the difficulties first set in 3.16.0: what barter with the young costs (and its standing, now none). */
+	static final java.util.Set<String> ADDED_3_16 = java.util.Set.of("tribe_barter_price", "tribe_barter_standing_cost",
+			"tribe_barter_curse_chance", "tribe_rep_barter");
+
 	/**
 	 * An older settings file (of layout version {@code from}): if its values (the defaults for any it lacks) match a
 	 * difficulty on every setting the difficulty set then, it takes that difficulty's values of the settings added since,
 	 * so the world stays on its difficulty.
 	 */
 	static void upgrade(com.google.gson.JsonObject json, int from) {
-		java.util.Set<String> added = new java.util.HashSet<>(ADDED_3_8);
+		java.util.Set<String> added = new java.util.HashSet<>(ADDED_3_16);
+		if (from < 5) {
+			added.addAll(ADDED_3_8);
+		}
 		if (from < 4) {
 			added.addAll(ADDED_3_7);
 		}

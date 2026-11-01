@@ -191,7 +191,10 @@ public class BarterScreen extends Screen {
 					Ui.argb(pe, o.left() > 0 ? Ui.MUTED : Ui.WARN));
 		}
 		int hy = y + panelH() - FOOT + 2;
-		for (String line : Ui.wrap(this.font, Ui.tr("gui.extremedimensions.barter.hint"), PANEL_W - 28)) {
+		int cost = Math.max(0, com.extremedimensions.config.Config.TRIBE_BARTER_STANDING_COST);
+		int pct = (int) Math.round(Math.max(0, Math.min(1, com.extremedimensions.config.Config.TRIBE_BARTER_CURSE_CHANCE)) * 100);
+		String hint = Ui.tr("gui.extremedimensions.barter.hint", cost, cost * 3, pct, Math.min(100, pct * 2));
+		for (String line : Ui.wrap(this.font, hint, PANEL_W - 28)) {
 			Ui.centered(g, this.font, line, cx, hy, Ui.MUTED, pe);
 			hy += 10;
 		}

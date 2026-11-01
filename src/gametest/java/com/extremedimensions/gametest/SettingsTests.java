@@ -55,6 +55,39 @@ public class SettingsTests {
 		helper.succeed();
 	}
 
+	/** A world from before 3.16 on a difficulty takes that difficulty's barter costs; one of its own rules the new defaults. */
+	@GameTest
+	public void barterGrowsDearThroughTheUpgrade(GameTestHelper helper) {
+		java.util.Set<String> added = java.util.Set.of("tribe_barter_price", "tribe_barter_standing_cost", "tribe_barter_curse_chance", "tribe_rep_barter");
+		JsonObject easy = new JsonObject();
+		easy.addProperty("config_version", 5);
+		JsonObject custom = new JsonObject();
+		custom.addProperty("config_version", 5);
+		for (var e : Preset.EASY.values.entrySet()) {
+			if (!added.contains(e.getKey())) {
+				easy.addProperty(e.getKey(), Double.parseDouble(e.getValue()));
+				custom.addProperty(e.getKey(), Double.parseDouble(e.getValue()));
+			}
+		}
+		// as a 3.15 file holds them: the old defaults
+		for (JsonObject j : new JsonObject[] {easy, custom}) {
+			j.addProperty("tribe_rep_barter", 1);
+			j.addProperty("tribe_barter_price", 1.0);
+			j.addProperty("tribe_barter_trusted_discount", 0.25);
+			j.addProperty("tribe_barter_kin_discount", 0.4);
+		}
+		custom.addProperty("atone_base", 999);
+		Config.migrate(easy);
+		Config.migrate(custom);
+		check(helper, easy.get("tribe_barter_price").getAsDouble() == 2 && easy.get("tribe_barter_standing_cost").getAsInt() == 3
+				&& easy.get("tribe_barter_curse_chance").getAsDouble() == 0.1 && easy.get("tribe_rep_barter").getAsInt() == 0
+				&& easy.get("tribe_barter_trusted_discount").getAsDouble() == 0.1, "an Easy world did not take Easy's barter costs: %s", easy);
+		check(helper, custom.get("tribe_barter_price").getAsDouble() == 3 && custom.get("tribe_rep_barter").getAsInt() == 0
+				&& custom.get("tribe_barter_kin_discount").getAsDouble() == 0.2 && !custom.has("tribe_barter_standing_cost"),
+				"a world of its own rules did not follow the new barter defaults: %s", custom);
+		helper.succeed();
+	}
+
 	@GameTest
 	public void olderConfigsFollowNewDefaultsButKeepChoices(GameTestHelper helper) {
 		JsonObject old = new JsonObject();
