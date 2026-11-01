@@ -219,6 +219,7 @@ final class HubWorldTests {
 		s.check(tag + ": queue left, things back", () -> !HubWorld.isBattleHub(p(S).level())
 				&& Sessions.state(p(S).getUUID()) != Sessions.State.QUEUED && diamonds(p(S)) == 5);
 		chat(server, s);
+		tabList(s);
 		s.run(tag + ": S logs off", () -> p(S).leave());
 	}
 
@@ -248,6 +249,29 @@ final class HubWorldTests {
 		s.run(tag + ": hub.separateChat back on", () -> ConfigManager.config().hub.separateChat = true);
 		s.run(tag + ": S starts a message with the global prefix", () -> say(server, p(S), "!chat-across-worlds"));
 		s.waitFor(tag + ": A in the lobby reads it (1.51)", 20, () -> p(A).clientChatHas("!chat-across-worlds"));
+	}
+
+	/**
+	 * The tab list per world (1.52): A in the lobby and S in the normal world each list themselves and not the other;
+	 * with S in BattleHub too they list each other, and with {@code hub.separateTabList} off everyone lists everyone.
+	 */
+	private static void tabList(Script s) {
+		String tag = "tab list";
+		s.waitFor(tag + ": A in the lobby and S outside each list themselves, not the other", 40,
+				() -> lists(A, A) && lists(S, S) && !lists(A, S) && !lists(S, A));
+		s.run(tag + ": S comes into BattleHub", () -> Travel.enter(p(S)));
+		s.waitFor(tag + ": now they list each other", 200, () -> HubWorld.isBattleHub(p(S).level()) && lists(A, S) && lists(S, A));
+		s.run(tag + ": S leaves again", () -> Travel.leave(p(S)));
+		s.waitFor(tag + ": apart again", 200, () -> !HubWorld.isBattleHub(p(S).level()) && !lists(A, S) && !lists(S, A));
+		s.run(tag + ": hub.separateTabList off", () -> ConfigManager.config().hub.separateTabList = false);
+		s.waitFor(tag + ": one list for everyone", 40, () -> lists(A, S) && lists(S, A));
+		s.run(tag + ": hub.separateTabList back on", () -> ConfigManager.config().hub.separateTabList = true);
+		s.waitFor(tag + ": apart again after the setting", 40, () -> !lists(A, S) && !lists(S, A));
+	}
+
+	/** Whether {@code viewer}'s client lists {@code shown} in its tab list. */
+	private static boolean lists(String viewer, String shown) {
+		return Boolean.TRUE.equals(p(viewer).clientLists(p(shown).getUUID()));
 	}
 
 	/** A player says something in chat, as /me (a command run for the player goes out as their chat message). */

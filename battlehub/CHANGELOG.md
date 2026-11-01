@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.52.0
+
+### Changed
+* **The tab list stays in its world.** Players in BattleHub (the hub or a match) only see the players in BattleHub
+  in their tab list, and players in the normal world only those there, like the chat since 1.50. Going through the
+  door, a portal or a `/tp` moves you to the other list within half a second. Players stay visible in the world with
+  their skins; only their line in the list goes. `hub.separateTabList` (default on) turns it off.
+* **Bots are left out of the tab list** (`hub.botsInTabList`, default off). They still play, fight and show their
+  nametags as before.
+* With this, TAB no longer needs its layout to split the list, so its playerlist objective (the column next to the
+  ping bars) can be used again.
+
 ## 1.51.1
 
 ### Fixed

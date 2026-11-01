@@ -37,6 +37,8 @@ final class TestConnection extends Connection {
 	final java.util.Map<Integer, Boolean> glowing = new ConcurrentHashMap<>();
 	/** The players' chat messages the client got, as the packets print themselves (their text is in there). */
 	final java.util.List<String> chat = new java.util.concurrent.CopyOnWriteArrayList<>();
+	/** Per player: whether the client lists them in its tab list, from the last word it got (absent: never told). */
+	final java.util.Map<java.util.UUID, Boolean> listed = new ConcurrentHashMap<>();
 
 	TestConnection() {
 		super(PacketFlow.SERVERBOUND);
@@ -70,6 +72,12 @@ final class TestConnection extends Connection {
 				|| msg instanceof net.minecraft.network.protocol.game.ClientboundDisguisedChatPacket) {
 			// signed chat, and unsigned chat (a command run for a player, a server without chat signing)
 			chat.add(msg.toString());
+		} else if (msg instanceof net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket info) {
+			if (info.actions().contains(net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LISTED)) {
+				for (net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Entry e : info.entries()) {
+					listed.put(e.profileId(), e.listed());
+				}
+			}
 		} else if (msg instanceof net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket held) {
 			heldSlot = held.slot();
 		} else if (msg instanceof net.minecraft.network.protocol.game.ClientboundAnimatePacket anim) {

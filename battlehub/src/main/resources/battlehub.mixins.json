@@ -20,7 +20,9 @@
 		"ResourcePackResponseMixin",
 		"FlowingFluidMixin",
 		"BucketItemMixin",
-		"ItemDisplayAccessor"
+		"ItemDisplayAccessor",
+		"PlayerInfoPacketAccessor",
+		"PlayerInfoSendMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

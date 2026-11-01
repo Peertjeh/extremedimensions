@@ -77,6 +77,7 @@ public final class HubEvents {
 			net.battlehub.games.Visibility.clear();
 			net.battlehub.match.NameTags.clear();
 			net.battlehub.compat.TabPlaceholders.clear();
+			net.battlehub.hub.TabListWorlds.clear();
 			net.battlehub.games.hunger.Locator.clear();
 			Sessions.clear();
 			net.battlehub.hub.HubBoards.clear();
@@ -261,6 +262,7 @@ public final class HubEvents {
 		part("double jump", () -> net.battlehub.lobby.DoubleJump.tick(server));
 		part("stats export", () -> net.battlehub.export.StatsExport.tick(server));
 		part("placeholders", () -> net.battlehub.compat.TabPlaceholders.tick(server, tick));
+		part("tab list per world", () -> net.battlehub.hub.TabListWorlds.tick(server, tick));
 		part("external titles", () -> net.battlehub.compat.ExternalTitles.tick(server, tick));
 		if (tick % 10 == 0) {
 			part("weekly tournament", () -> net.battlehub.tournament.WeeklyTournament.tick(server));

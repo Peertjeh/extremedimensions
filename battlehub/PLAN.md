@@ -2264,6 +2264,30 @@ de simulatie, en het gat tussen intermediate en master klopt met het spel) en da
 staat. Hoe andere spelers over de niveaus verdeeld zijn, zegt een volgende export van meer spelers. De mace-schaal rust op
 vier gevechten.
 
+## Versie 1.52.0 – De tablijst per wereld
+
+**Vraag.** De doodshoofdjes van Extreme Dimensions (vloeken) moeten rechts in de tablijst staan, naast de
+ping-streepjes, niet achter de naam. Dat kan in Minecraft alleen met het playerlist objective: de kolom vlak voor de
+ping, die TAB op 1.20.3+ met elke tekst kan vullen (`fancy-value`). Maar TAB's layout, die de tablijst op de server
+scheidde (BattleHub en de normale wereld, zonder `Bot_`), toont dat objective niet: de regels van een layout zijn nep-
+spelers, en de score hangt aan de echte naam. Daarom doet BattleHub het scheiden nu zelf, en kan de layout uit.
+
+**Uitvoering.** `PlayerInfoSendMixin` past in `ServerCommonPacketListenerImpl.send` elk player-info-pakket met
+`UPDATE_LISTED` aan voor de speler die het krijgt (`hub.TabListWorlds.forViewer`): een speler uit de andere wereld,
+of een bot, wordt `listed = false`. Ook het ene pakket dat de server iedereen stuurt bij het joinen gaat zo per
+ontvanger goed. Alleen de regel in de lijst verdwijnt; de client kent de speler nog en tekent hem met zijn skin (een
+bot in je match dus ook). Niemand wordt gelist die het niet al was, en regels van iemand die niet op de server is
+(TAB's nep-spelers, NPC's) blijven zoals ze zijn. Elke 10 ticks kijkt `TabListWorlds.tick` wie van wereld wisselde
+(deur, portal, `/tp`, respawn): die krijgt alle regels opnieuw en iedereen de zijne; na een wijziging van de
+instellingen iedereen. Instellingen `hub.separateTabList` (standaard aan) en `hub.botsInTabList` (standaard uit).
+TAB vult de pakketten zelf pas daarna in (zijn handler zit in het netty-kanaal) en laat `listed` staan als zijn
+layout uit is.
+
+**Testen.** Zelftest `HubWorldTests.tabList`: A in de lobby en S buiten lijsten zichzelf en niet de ander; met S in
+BattleHub lijsten ze elkaar; S weer weg, weer apart; met `hub.separateTabList` uit één lijst. In `BotTests` (zwaard
+tegen een bot): A's lijst laat de bot weg. `TestConnection` houdt daarvoor per speler bij wat de client over `listed`
+hoorde.
+
 ## Versie 1.51.1 – "Connection reset": de server blijft draaien, pakketten getest zoals een echte client ze krijgt
 
 **Vraag.** Spelers krijgen een melding "Connection reset" (`disconnect-2026-10-30_19.13.06-client.txt`, client met
@@ -2324,6 +2348,7 @@ poging vond de codec niet (de objecten zijn van verborgen klassen); die gaat nu 
 en `debug/`): daar staat de echte reden. Met 1.51.1 stopt een fout in BattleHub de server niet meer en staat hij in
 de log.
 
+## Versie 1.51.0 – Placeholders, globale chat, titels uit Extreme Dimensions, Discord
 
 **Vraag.** Na 1.50 ("nog meer ideeën?") koos de gebruiker alles: (A) placeholders van BattleHub voor TAB en Styled
 Chat, zoals Extreme Dimensions 3.5.0 ze heeft; (B) toch de hele server bereiken met een `!` voor je bericht nu de chats

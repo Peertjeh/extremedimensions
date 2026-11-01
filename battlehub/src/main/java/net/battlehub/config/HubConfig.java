@@ -67,6 +67,13 @@ public final class HubConfig {
 		public boolean separateChat = true;
 		/** A chat message that starts with this reaches the whole server anyway (1.51). Empty: no way around. */
 		public String globalChatPrefix = "!";
+		/**
+		 * The tab list stays in its world too (1.52): players in BattleHub list only the players in BattleHub, players in
+		 * the normal world only those there. false: everyone in one list.
+		 */
+		public boolean separateTabList = true;
+		/** BattleHub's bots in the tab list (1.52). false: they are left out of everyone's list. */
+		public boolean botsInTabList = false;
 	}
 
 	public static final class Lobby {

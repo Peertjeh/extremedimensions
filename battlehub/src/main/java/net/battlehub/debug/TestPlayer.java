@@ -68,6 +68,11 @@ public final class TestPlayer extends ServerPlayer {
 		return false;
 	}
 
+	/** Whether this player's client lists a player in its tab list (null: it was never told about them). */
+	public Boolean clientLists(java.util.UUID id) {
+		return link.listed.get(id);
+	}
+
 	/** The player picks a hotbar slot on the client (the server hears about it, as with a real client). */
 	public void pickSlot(int slot) {
 		link.heldSlot = slot;

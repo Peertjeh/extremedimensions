@@ -549,6 +549,10 @@ final class BotTests {
 			Match m = matchOfA();
 			return m != null && m.phase() == Match.Phase.RUNNING && botsIn(m).size() == 1;
 		});
+		s.waitFor(tag + ": A's tab list leaves the bot out (1.52)", 40, () -> {
+			Match m = matchOfA();
+			return m != null && !botsIn(m).isEmpty() && Boolean.FALSE.equals(p(A).clientLists(botsIn(m).get(0).getUUID()));
+		});
 		s.waitFor(tag + ": the bot comes over to A", 600, () -> {
 			Match m = matchOfA();
 			if (m == null || botsIn(m).isEmpty()) return false;
