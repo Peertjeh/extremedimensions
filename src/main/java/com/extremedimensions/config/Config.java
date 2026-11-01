@@ -93,6 +93,11 @@ public final class Config {
 	 */
 	public static int CURSE_OVERFLOW = 1;
 	/**
+	 * A curse laid without a choice (a Lurker's touch, a Collapse in the Seam) is this many times likelier to be one the
+	 * player does not carry yet than one they do, and is never the same as the last one so laid. 1: all alike.
+	 */
+	public static double CURSE_FRESH_WEIGHT = 3.0;
+	/**
 	 * 1: when no curse a death draws from has room left, its cards come from the Extreme curses with room, and once those
 	 * are full too, from the Abyssal curses the player does not carry (where those are on and after enough Collapses,
 	 * whatever their card chance and the most carried); 0: such a death costs no curse.
@@ -1411,7 +1416,7 @@ public final class Config {
 			{"cave_lurker_give_up_seconds", 1, 120}, {"cave_lurker_flee_seconds", 1, 60},
 			{"sculk_lurker_spawn_chance", 0, 1}, {"sculk_lurker_rattle_seconds", 3, 600}, {"sculk_lurker_shrieker_range", 4, 48},
 			{"sculk_lurker_lure_range", 8, 96}, {"sculk_lurker_seconds", 20, 3600},
-			{"weaver_pity", 0, 1}, {"seam_thinned_fragment_chance", 0, 1}, {"seam_collapse_toll", 0, 1},
+			{"curse_fresh_weight", 1, 20}, {"weaver_pity", 0, 1}, {"seam_thinned_fragment_chance", 0, 1}, {"seam_collapse_toll", 0, 1},
 			{"music_disc_listens_chance", 0, 1}, {"disc_fragment_elegy_count", 0, 9}, {"disc_fragment_abyss_broken", 0, 9},
 			{"disc_fragment_abyss_tangle_chance", 0, 1}, {"disc_fragment_abyss_ray_chance", 0, 1},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},

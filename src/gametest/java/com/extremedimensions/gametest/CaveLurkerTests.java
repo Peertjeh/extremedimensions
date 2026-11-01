@@ -269,4 +269,18 @@ public class CaveLurkerTests {
 		}
 		helper.succeed();
 	}
+
+	/** The Lurkers of the deep speak in voices of their own, on the Hostile Creatures slider like the rest of the tribe. */
+	@GameTest
+	public void theLurkersOfTheDeepHaveTheirOwnVoices(GameTestHelper helper) {
+		for (String n : new String[] {"cave_lurker.click", "cave_lurker.breath", "cave_lurker.hiss", "cave_lurker.hunt", "cave_lurker.hurt",
+				"cave_lurker.death", "cave_lurker.step", "cave_lurker.grab", "sculk_lurker.chirp", "sculk_lurker.rattle", "sculk_lurker.call",
+				"sculk_lurker.pulse", "sculk_lurker.hurt", "sculk_lurker.death", "sculk_lurker.step"}) {
+			net.minecraft.resources.Identifier id = net.minecraft.resources.Identifier.fromNamespaceAndPath("extremedimensions", n);
+			check(helper, net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.containsKey(id), "no sound %s", n);
+			check(helper, com.extremedimensions.server.WorldFx.category("extremedimensions:" + n) == net.minecraft.sounds.SoundSource.HOSTILE,
+					"%s is not on Hostile Creatures", n);
+		}
+		helper.succeed();
+	}
 }

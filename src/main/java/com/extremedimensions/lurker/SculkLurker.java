@@ -118,22 +118,22 @@ public class SculkLurker extends PathfinderMob implements LurkerBody {
 
 	@Override
 	protected SoundEvent getAmbientSound() {
-		return ModSounds.LURKER_AMBIENT;
+		return ModSounds.SCULK_LURKER_CHIRP;
 	}
 
 	@Override
 	protected SoundEvent getHurtSound(DamageSource source) {
-		return ModSounds.HOLLOWLING_HURT;
+		return ModSounds.SCULK_LURKER_HURT;
 	}
 
 	@Override
 	protected SoundEvent getDeathSound() {
-		return ModSounds.LURKER_DEATH;
+		return ModSounds.SCULK_LURKER_DEATH;
 	}
 
 	@Override
 	protected void playStepSound(BlockPos pos, BlockState state) {
-		this.playSound(ModSounds.LURKER_STEP, 0.15F, 1.8F + this.random.nextFloat() * 0.2F);
+		this.playSound(ModSounds.SCULK_LURKER_STEP, 0.35F, 0.9F + this.random.nextFloat() * 0.2F);
 	}
 
 	@Override

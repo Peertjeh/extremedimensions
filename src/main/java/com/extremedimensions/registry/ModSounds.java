@@ -21,6 +21,22 @@ public final class ModSounds {
 	public static final SoundEvent LURKER_VANISH = register("lurker_vanish");
 	public static final SoundEvent LURKER_AMBIENT = register("lurker_ambient");
 	public static final SoundEvent LURKER_STEP = register("lurker_step");
+	/** The Lurkers of the deep, each with a voice of its own place (tools/sounds/lurker_voices.py). */
+	public static final SoundEvent CAVE_LURKER_CLICK = register("cave_lurker.click");
+	public static final SoundEvent CAVE_LURKER_BREATH = register("cave_lurker.breath");
+	public static final SoundEvent CAVE_LURKER_HISS = register("cave_lurker.hiss");
+	public static final SoundEvent CAVE_LURKER_HUNT = register("cave_lurker.hunt");
+	public static final SoundEvent CAVE_LURKER_HURT = register("cave_lurker.hurt");
+	public static final SoundEvent CAVE_LURKER_DEATH = register("cave_lurker.death");
+	public static final SoundEvent CAVE_LURKER_STEP = register("cave_lurker.step");
+	public static final SoundEvent CAVE_LURKER_GRAB = register("cave_lurker.grab");
+	public static final SoundEvent SCULK_LURKER_CHIRP = register("sculk_lurker.chirp");
+	public static final SoundEvent SCULK_LURKER_RATTLE = register("sculk_lurker.rattle");
+	public static final SoundEvent SCULK_LURKER_CALL = register("sculk_lurker.call");
+	public static final SoundEvent SCULK_LURKER_PULSE = register("sculk_lurker.pulse");
+	public static final SoundEvent SCULK_LURKER_HURT = register("sculk_lurker.hurt");
+	public static final SoundEvent SCULK_LURKER_DEATH = register("sculk_lurker.death");
+	public static final SoundEvent SCULK_LURKER_STEP = register("sculk_lurker.step");
 	public static final SoundEvent LURKER_HURT = register("lurker_hurt");
 	public static final SoundEvent LURKER_DEATH = register("lurker_death");
 	public static final SoundEvent LURKER_SHRIEK = register("lurker_shriek");

@@ -895,5 +895,110 @@
         "attenuation_distance": 48
       }
     ]
+  },
+  "cave_lurker.click": {
+    "subtitle": "subtitles.extremedimensions.cave_lurker.click",
+    "sounds": [
+      "extremedimensions:lurker/cave_click1",
+      "extremedimensions:lurker/cave_click2",
+      "extremedimensions:lurker/cave_click3"
+    ]
+  },
+  "cave_lurker.breath": {
+    "subtitle": "subtitles.extremedimensions.cave_lurker.breath",
+    "sounds": [
+      "extremedimensions:lurker/cave_breath1",
+      "extremedimensions:lurker/cave_breath2"
+    ]
+  },
+  "cave_lurker.hiss": {
+    "subtitle": "subtitles.extremedimensions.cave_lurker.hiss",
+    "sounds": [
+      "extremedimensions:lurker/cave_hiss1"
+    ]
+  },
+  "cave_lurker.hunt": {
+    "subtitle": "subtitles.extremedimensions.cave_lurker.hunt",
+    "sounds": [
+      "extremedimensions:lurker/cave_hunt1",
+      "extremedimensions:lurker/cave_hunt2"
+    ]
+  },
+  "cave_lurker.hurt": {
+    "subtitle": "subtitles.extremedimensions.cave_lurker.hurt",
+    "sounds": [
+      "extremedimensions:lurker/cave_hurt1",
+      "extremedimensions:lurker/cave_hurt2"
+    ]
+  },
+  "cave_lurker.death": {
+    "subtitle": "subtitles.extremedimensions.cave_lurker.death",
+    "sounds": [
+      "extremedimensions:lurker/cave_death1"
+    ]
+  },
+  "cave_lurker.step": {
+    "subtitle": "subtitles.extremedimensions.cave_lurker.step",
+    "sounds": [
+      "extremedimensions:lurker/cave_step1",
+      "extremedimensions:lurker/cave_step2",
+      "extremedimensions:lurker/cave_step3"
+    ]
+  },
+  "cave_lurker.grab": {
+    "subtitle": "subtitles.extremedimensions.cave_lurker.grab",
+    "sounds": [
+      "extremedimensions:lurker/cave_grab1"
+    ]
+  },
+  "sculk_lurker.chirp": {
+    "subtitle": "subtitles.extremedimensions.sculk_lurker.chirp",
+    "sounds": [
+      "extremedimensions:lurker/sculk_chirp1",
+      "extremedimensions:lurker/sculk_chirp2",
+      "extremedimensions:lurker/sculk_chirp3"
+    ]
+  },
+  "sculk_lurker.rattle": {
+    "subtitle": "subtitles.extremedimensions.sculk_lurker.rattle",
+    "sounds": [
+      "extremedimensions:lurker/sculk_rattle1",
+      "extremedimensions:lurker/sculk_rattle2"
+    ]
+  },
+  "sculk_lurker.call": {
+    "subtitle": "subtitles.extremedimensions.sculk_lurker.call",
+    "sounds": [
+      "extremedimensions:lurker/sculk_call1",
+      "extremedimensions:lurker/sculk_call2"
+    ]
+  },
+  "sculk_lurker.pulse": {
+    "subtitle": "subtitles.extremedimensions.sculk_lurker.pulse",
+    "sounds": [
+      "extremedimensions:lurker/sculk_pulse1",
+      "extremedimensions:lurker/sculk_pulse2"
+    ]
+  },
+  "sculk_lurker.hurt": {
+    "subtitle": "subtitles.extremedimensions.sculk_lurker.hurt",
+    "sounds": [
+      "extremedimensions:lurker/sculk_hurt1",
+      "extremedimensions:lurker/sculk_hurt2"
+    ]
+  },
+  "sculk_lurker.death": {
+    "subtitle": "subtitles.extremedimensions.sculk_lurker.death",
+    "sounds": [
+      "extremedimensions:lurker/sculk_death1"
+    ]
+  },
+  "sculk_lurker.step": {
+    "subtitle": "subtitles.extremedimensions.sculk_lurker.step",
+    "sounds": [
+      "extremedimensions:lurker/sculk_step1",
+      "extremedimensions:lurker/sculk_step2",
+      "extremedimensions:lurker/sculk_step3"
+    ]
   }
 }

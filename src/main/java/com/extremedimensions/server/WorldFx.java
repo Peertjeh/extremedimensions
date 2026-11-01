@@ -197,7 +197,7 @@ public final class WorldFx {
 			return n.startsWith("lurker") || n.startsWith("hollowling") || n.startsWith("hoard") ? SoundSource.HOSTILE : n.startsWith("entity.lightning_bolt") ? SoundSource.WEATHER
 					: n.startsWith("event.raid") ? SoundSource.HOSTILE : SoundSource.AMBIENT;
 		}
-		if (n.startsWith("elder.") || n.startsWith("lurker") || n.startsWith("hollowling") || n.startsWith("keeper") || n.startsWith("hoard") || n.startsWith("entity.warden")
+		if (n.startsWith("elder.") || n.startsWith("lurker") || n.startsWith("cave_lurker") || n.startsWith("sculk_lurker") || n.startsWith("hollowling") || n.startsWith("keeper") || n.startsWith("hoard") || n.startsWith("entity.warden")
 				|| n.startsWith("entity.phantom") || n.startsWith("entity.vex")) {
 			return SoundSource.HOSTILE;
 		}

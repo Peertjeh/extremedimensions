@@ -273,7 +273,7 @@ public final class SculkLurkerService {
 				st.warden = w.getUUID();
 				st.leading = false;
 				st.shrieker = null;
-				WorldFx.soundIn(Dims.fullId(p), "minecraft:block.sculk_sensor.clicking", "hostile", sl.getX(), sl.getY() + 0.6, sl.getZ(), 1.2f, 0.7f);
+				WorldFx.soundIn(Dims.fullId(p), "extremedimensions:sculk_lurker.call", "hostile", sl.getX(), sl.getY() + 0.6, sl.getZ(), 1.6f, 1.0f);
 			} else if (w == null && st.mode == Mode.LURE) {
 				// the Warden went back down: it calls it up again
 				st.mode = Mode.BECKON;
@@ -314,7 +314,7 @@ public final class SculkLurkerService {
 		sl.setLurkerMood(LurkerBody.MOOD_CALM);
 		if (st.ticks % 70 == 0) {
 			// a tell: the dry clicks of something small on the sculk
-			WorldFx.soundIn(Dims.fullId(p), "minecraft:block.sculk_sensor.clicking", "hostile", sl.getX(), sl.getY() + 0.6, sl.getZ(), 0.5f, 1.9f);
+			WorldFx.soundIn(Dims.fullId(p), "extremedimensions:sculk_lurker.chirp", "hostile", sl.getX(), sl.getY() + 0.6, sl.getZ(), 0.8f, 1.0f);
 		}
 		if (st.shrieker != null) {
 			BlockState s = level.getBlockState(st.shrieker);
@@ -335,6 +335,11 @@ public final class SculkLurkerService {
 				if (st.scratch % 4 == 0) {
 					WorldFx.particleIn(level, "minecraft:sculk_soul", st.shrieker.getX() + 0.5, st.shrieker.getY() + 0.7, st.shrieker.getZ() + 0.5,
 							0.2, 0.1, 0.2, 0.01, 2);
+				}
+				if (st.scratch == 0) {
+					// claws on the shrieker's bone, a dry rattle
+					WorldFx.soundIn(Dims.fullId(p), "extremedimensions:sculk_lurker.rattle", "hostile", st.shrieker.getX() + 0.5, st.shrieker.getY() + 0.6,
+							st.shrieker.getZ() + 0.5, 1.2f, 1.0f);
 				}
 				if (++st.scratch >= SCRATCH) {
 					if (level.getBlockEntity(st.shrieker) instanceof SculkShriekerBlockEntity shrieker && s.getValue(SculkShriekerBlock.CAN_SUMMON)) {
@@ -454,7 +459,7 @@ public final class SculkLurkerService {
 		// Leading: the Warden follows where it hears it
 		if (st.ticks % 10 == 0) {
 			WardenAi.setDisturbanceLocation(w, sl.blockPosition());
-			WorldFx.soundIn(Dims.fullId(p), "minecraft:block.sculk_sensor.clicking", "hostile", sl.getX(), sl.getY() + 0.6, sl.getZ(), 1.0f, 1.4f);
+			WorldFx.soundIn(Dims.fullId(p), "extremedimensions:sculk_lurker.pulse", "hostile", sl.getX(), sl.getY() + 0.6, sl.getZ(), 1.0f, 1.0f);
 		}
 		if (toWarden > BEHIND) {
 			// too far ahead: it waits, looking back

@@ -307,8 +307,8 @@ public final class CaveLurkerService {
 		// Its clicks quicken as it hears more: the player can tell they are being listened for
 		int every = (int) Math.round(70 - 50 * frac);
 		if (st.ticks % Math.max(10, every) == 0) {
-			WorldFx.soundIn(Dims.fullId(p), "minecraft:block.sculk_sensor.clicking", "hostile", cl.getX(), cl.getY() + 1.2, cl.getZ(),
-					(float) (0.5 + 0.6 * frac), 1.5f + (float) (0.4 * frac));
+			WorldFx.soundIn(Dims.fullId(p), "extremedimensions:cave_lurker.click", "hostile", cl.getX(), cl.getY() + 1.2, cl.getZ(),
+					(float) (0.7 + 0.6 * frac), 0.95f + (float) (0.2 * frac));
 		}
 		if (d <= Config.CAVE_LURKER_NOTICE || st.heard >= Config.CAVE_LURKER_HEAR || (heard > 0 && d <= CREEP_STOP && cl.hasLineOfSight(p))) {
 			startHunt(cl, st, p);
@@ -363,7 +363,7 @@ public final class CaveLurkerService {
 		st.checkedAt = cl.position();
 		cl.setLurkerPose(Lurker.POSE_RUN);
 		cl.setLurkerMood(LurkerBody.MOOD_HUNTER);
-		WorldFx.soundIn(Dims.fullId(p), "extremedimensions:lurker_shriek", "hostile", cl.getX(), cl.getY() + 1.2, cl.getZ(), 1.3f, 1.7f);
+		WorldFx.soundIn(Dims.fullId(p), "extremedimensions:cave_lurker.hunt", "hostile", cl.getX(), cl.getY() + 1.2, cl.getZ(), 1.6f, 1.0f);
 	}
 
 	/**
@@ -397,8 +397,7 @@ public final class CaveLurkerService {
 			TribeMoves.stand(cl);
 			cl.setLurkerPose(Lurker.POSE_TAKE);
 			st.windup = WINDUP;
-			WorldFx.soundIn(Dims.fullId(p), "minecraft:block.sculk_sensor.clicking", "hostile", cl.getX(), cl.getY() + 1.2, cl.getZ(), 1.4f, 2.0f);
-			WorldFx.soundIn(Dims.fullId(p), "extremedimensions:lurker_whisper", "hostile", cl.getX(), cl.getY() + 1.2, cl.getZ(), 1.0f, 1.6f);
+			WorldFx.soundIn(Dims.fullId(p), "extremedimensions:cave_lurker.hiss", "hostile", cl.getX(), cl.getY() + 1.2, cl.getZ(), 1.3f, 1.0f);
 			return;
 		}
 		// A prey out of its way (no whole route there): it stands and faces them, and gives up after a while
@@ -468,7 +467,7 @@ public final class CaveLurkerService {
 			st.pause = MISSED;
 			return;
 		}
-		WorldFx.soundIn(Dims.fullId(p), "minecraft:entity.warden.attack_impact", "hostile", p.getX(), p.getY() + 1, p.getZ(), 0.6f, 1.6f);
+		WorldFx.soundIn(Dims.fullId(p), "extremedimensions:cave_lurker.grab", "hostile", p.getX(), p.getY() + 1, p.getZ(), 1.2f, 1.0f);
 		boolean overworld = Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties();
 		if (PenaltyService.curse(p, overworld, Config.CAVE_LURKER_CURSE_EXTREME_CHANCE) != null) {
 			st.curses++;
@@ -496,7 +495,7 @@ public final class CaveLurkerService {
 		cl.setLurkerPose(Lurker.POSE_RUN);
 		cl.setLurkerMood(LurkerBody.MOOD_CALM);
 		cl.getNavigation().stop();
-		WorldFx.soundIn(Dims.fullId(p), "minecraft:block.sculk_sensor.clicking", "hostile", cl.getX(), cl.getY() + 1, cl.getZ(), 0.8f, 0.8f);
+		WorldFx.soundIn(Dims.fullId(p), "extremedimensions:cave_lurker.click", "hostile", cl.getX(), cl.getY() + 1, cl.getZ(), 1.0f, 0.75f);
 	}
 
 	/** It scuttles off into the dark, and is gone into the stone once there, out of sight, or after a few seconds. */

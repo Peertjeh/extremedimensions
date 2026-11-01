@@ -269,6 +269,36 @@ public enum Penalty {
 	}
 
 	/**
+	 * One curse from the pool for a curse laid without a choice: those the player does not carry yet are
+	 * {@code curse_fresh_weight} times likelier than those they do, and the last one so laid never comes twice in a row
+	 * (while there is anything else). Null for an empty pool.
+	 */
+	public static Penalty pickVaried(PlayerData d, List<Penalty> pool, java.util.Random rnd) {
+		if (pool.isEmpty()) {
+			return null;
+		}
+		double fresh = Math.max(1, Config.CURSE_FRESH_WEIGHT);
+		double total = 0;
+		double[] w = new double[pool.size()];
+		for (int i = 0; i < pool.size(); i++) {
+			Penalty p = pool.get(i);
+			w[i] = pool.size() > 1 && p.id.equals(d.lastCurse) ? 0 : d.owned(p) > 0 ? 1 : fresh;
+			total += w[i];
+		}
+		if (total <= 0) {
+			return pool.get(rnd.nextInt(pool.size()));
+		}
+		double roll = rnd.nextDouble() * total;
+		for (int i = 0; i < pool.size(); i++) {
+			roll -= w[i];
+			if (roll < 0) {
+				return pool.get(i);
+			}
+		}
+		return pool.get(pool.size() - 1);
+	}
+
+	/**
 	 * Up to {@code count} different curses this player can still receive, from the world's set and the Everywhere set.
 	 * With {@code extremeChance}, one of the cards is an Extreme curse instead.
 	 */

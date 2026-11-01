@@ -84,6 +84,8 @@ public class PlayerData {
 	public int keepersSlain = 0;
 	/** Villages of the Thinned visited first in a row without a Last Weaver waking (each one makes the next likelier). */
 	public int weaverMisses = 0;
+	/** The last curse laid without a choice (a Lurker's touch, a Collapse in the Seam): not laid twice in a row. */
+	public String lastCurse = null;
 	public boolean matriarchSlain = false;
 	/**
 	 * The Elders this player helped defeat, one bit each in the order of {@code StatsExport.Elder} (the Matriarch, the

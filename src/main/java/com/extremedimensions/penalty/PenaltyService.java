@@ -222,11 +222,15 @@ public final class PenaltyService {
 	/** As {@link #curse(ServerPlayer, boolean)}, the curse being one of the Extreme set with this chance (if one can come). */
 	public static Penalty curse(ServerPlayer p, boolean overworld, double extremeChance) {
 		PlayerData d = DataStore.get(p.getUUID());
-		List<String> ids = Penalty.rollOffer(d, overworld, 1, extremeChance);
-		if (ids.isEmpty()) {
+		java.util.Random rnd = new java.util.Random(java.util.concurrent.ThreadLocalRandom.current().nextLong());
+		// From the world's set and the Everywhere set, varied (see Penalty.pickVaried); now and then an Extreme one
+		List<Penalty> extreme = Penalty.available(d, Penalty.Group.EXTREME);
+		Penalty pen = !extreme.isEmpty() && rnd.nextDouble() < extremeChance ? Penalty.pickVaried(d, extreme, rnd)
+				: Penalty.pickVaried(d, Penalty.pool(d, overworld), rnd);
+		if (pen == null) {
 			return null;
 		}
-		Penalty pen = Penalty.byId(ids.get(0));
+		d.lastCurse = pen.id;
 		d.addStacks(pen, 1);
 		CurseEffects.applyEffects(p, d);
 		WorldFx.fx(p, Fx.PENALTY, 0);

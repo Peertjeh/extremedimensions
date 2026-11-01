@@ -1,5 +1,30 @@
 # Changelog
 
+## 3.15.0: Voices of the Deep
+
+### The Lurkers of the deep sound like where they live
+- **The Cave Lurker** has a voice of stone. It throws dry **clicks** into the tunnels to hear what answers (they
+  quicken as it hears more, and echo off the walls), breathes in a wet **rasp**, takes a sharp **hiss** of breath
+  before it strikes, gives a hoarse **screech** that runs off down the tunnels when it starts to hunt, ticks its
+  **claws** on the rock as it comes, lands its grab with a rush of air, a **crunch** and a deep blow, and dies in a
+  rattle of slowing clicks as it settles into the stone.
+- **The Sculk Lurker** has a voice of the Deep Dark: wet **chirps** with a glassy, sculk-cyan ring and something
+  bubbling under them, a dry **rattle** of claws on bone as it scratches at a shrieker, a low double **pulse** and
+  rising chirps when it calls the Warden, a soft pulse as it leads it, **squelching** steps, and a wet crackle
+  thinning into the sculk as it dies.
+- Fifteen new sounds (31 takes), made from noise and tones like the rest of the wound's sounds
+  (`tools/sounds/lurker_voices.py`), with subtitles in English and Dutch, on the Hostile Creatures slider.
+
+### Curses without a choice are varied
+- A curse laid without a choice (a Lurker's touch, a Cave Lurker's grab, a Collapse in the Seam) was drawn evenly from
+  every curse with room left, so with thirty-odd curses a repeat within a few curses was more likely than not, and the
+  pool shrinks as curses fill up. Now **a curse you do not carry yet is three times likelier** than one you do
+  (`curse_fresh_weight`), and **the last curse so laid never comes twice in a row**.
+
+### Tests
+- The last curse laid without a choice never comes again next; a curse not yet carried is three times likelier (about
+  one in seven for the carried one of three); every new voice is registered and on Hostile Creatures.
+
 ## 3.14.0: The Seam Pass
 
 A critical look at what the Seam asks of a player, and everything it turned up that could leave one stuck, lost or
