@@ -271,6 +271,10 @@ public final class SculkLurkerService {
 				st.rattleIn = 40;
 			}
 			if (st.mode == Mode.LURE && w != null) {
+				if (st.ticks % 20 == 0) {
+					com.extremedimensions.journal.Journal.unlock(p, com.extremedimensions.data.DataStore.get(p.getUUID()),
+							com.extremedimensions.journal.JournalEntry.HERALD);
+				}
 				lure(sl, st, p, w);
 			} else {
 				beckon(level, sl, st, p);
@@ -327,6 +331,9 @@ public final class SculkLurkerService {
 					if (level.getBlockEntity(st.shrieker) instanceof SculkShriekerBlockEntity shrieker && s.getValue(SculkShriekerBlock.CAN_SUMMON)) {
 						shrieker.tryShriek(level, p);
 						st.rattles++;
+						// the page on the Warden's herald
+						com.extremedimensions.journal.Journal.unlock(p, com.extremedimensions.data.DataStore.get(p.getUUID()),
+								com.extremedimensions.journal.JournalEntry.HERALD);
 					}
 					sl.setLurkerPose(Lurker.POSE_WATCH);
 					st.shrieker = null;

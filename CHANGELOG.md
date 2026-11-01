@@ -20,6 +20,17 @@
   and `/tether lurker sculk` for operators. Seven settings (`sculk_lurker_*`, EN/NL); its chance and cooldown are set
   by each difficulty.
 
+### Lore
+- **Two new pages in the Wanderer's hand.** *43. What Listens*, on the Cave Lurker, is written in when one first comes
+  for you; *44. The Warden's Herald*, on the Sculk Lurker, when one first rattles a shrieker for you or leads a Warden
+  to you. Both can also turn up on a Wanderer's Page found in the world.
+- *16. The Tribe* now tells that not all of the tribe stand in the open: some went down into the dark under the stone,
+  and some lower still, to the cities that were old before we came. The pages in your own hand are now 45.
+
+### Fixes
+- A hoard near a player no longer loads a chunk to set one of its young down: where the spot's chunk is not loaded
+  yet, it waits (once, in the Ferryman's fight, the world stalled 44 ms on it).
+
 ### Tests
 - The Warden spares it: it may not target it but may still target a player, and its blow does it no harm.
 - It rattles a shrieker that can call the Warden until it shrieks, without ever hurting the player.

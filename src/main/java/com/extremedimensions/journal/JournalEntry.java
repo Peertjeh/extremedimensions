@@ -52,6 +52,10 @@ public enum JournalEntry {
 	FRAME("frame", false),
 	/** In the other hand: the First Knot, deep in the Fray. */
 	FIRST_KNOT("first_knot", false),
+	/** The Wanderer's: the Cave Lurker, what listens in the deep (written in when one first comes for the player). */
+	DEEP("deep"),
+	/** The Wanderer's: the Sculk Lurker, the Warden's herald (written in when one first rattles a shrieker for them). */
+	HERALD("herald"),
 	/** In the player's own hand, after the ending, at the loom: a mended world's page... */
 	CONTINUED_MENDED("continued_mended", false, true),
 	/** ...and a severed world's (a world has one ending, so a journal holds one of the two). */

@@ -342,6 +342,8 @@ public final class CaveLurkerService {
 	}
 
 	private static void startHunt(CaveLurker cl, State st, ServerPlayer p) {
+		// the page on what listens in the deep
+		com.extremedimensions.journal.Journal.unlock(p, DataStore.get(p.getUUID()), com.extremedimensions.journal.JournalEntry.DEEP);
 		st.mode = Mode.HUNT;
 		st.ticks = 0;
 		st.limit = Math.max(5, Config.CAVE_LURKER_HUNT_SECONDS) * 20;

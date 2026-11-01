@@ -316,6 +316,10 @@ public final class HollowService {
 	}
 
 	private static BlockPos groundAt(ServerLevel level, BlockPos p) {
+		// (never a chunk loaded for it: where the world is not there yet, nothing is set down)
+		if (!Loaded.ready(level, p)) {
+			return null;
+		}
 		for (int dy = 2; dy >= -2; dy--) {
 			BlockPos q = p.offset(0, dy, 0);
 			// (on the ground, never on a trunk or in the leaves, out of water and fire)
