@@ -13,6 +13,7 @@ import com.extremedimensions.journal.Bestiary;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.journal.MarginNote;
 import com.extremedimensions.registry.ModEntities;
+import com.extremedimensions.tribe.Standing;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -25,9 +26,10 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 
 /**
- * The Tether Journal as a two-page spread, with three parts: the found pages of a nameless Wanderer, the bestiary
+ * The Tether Journal as a two-page spread, in parts: the found pages of a nameless Wanderer, the path, the bestiary
  * (every creature of the wound: its likeness once seen, what is known of it, and how to face it once enough have been
- * slain) and the ledger (what the player has been through, counted).
+ * slain), the ledger (what the player has been through, counted) and the clan (who the player is bound to, how the
+ * tribe sees them together, and the cord's law with this world's numbers).
  */
 public class JournalScreen extends Screen {
 	private static final int PAGE_W = 150;
@@ -41,7 +43,7 @@ public class JournalScreen extends Screen {
 	/** The player's own hand, after the ending: a deep blue-black ink, neither the Wanderer's nor the other's. */
 	private static final int INK_OWN = 0x1E2F5C;
 
-	private enum Part { PAGES, PATH, BEASTS, LEDGER }
+	private enum Part { PAGES, PATH, BEASTS, LEDGER, CLAN }
 
 	/**
 	 * One line on a page: the Wanderer's, a note in another hand beside them, a page wholly in that hand (rust), or a
@@ -61,6 +63,17 @@ public class JournalScreen extends Screen {
 	private record Page(String title, List<Line> lines) {}
 
 	private record Beast(Bestiary.Beast beast, boolean seen, int slain) {}
+
+	/** One of the player's clan: where is 0 away, 1 online elsewhere, 2 near, 3 the player. */
+	private record Member(String name, String level, int rep, int where) {}
+
+	/** The cord's law as this world has it, in the order {@link #CLAN_RULE_NAMES} names (null: the server sent none). */
+	private int[] clanRules;
+	private static final String[] CLAN_RULE_NAMES = {"cord", "max", "blood", "loss", "gain", "range", "lock", "leave", "curses", "left"};
+	private boolean clanOn;
+	private String ownLevel = "wary", judgedLevel = "wary";
+	private int ownRep, judgedRep, lockedFor;
+	private final List<Member> clan = new ArrayList<>();
 
 	private final Set<String> unlocked;
 	/** Notes in another hand the player has found (shown beside their pages). */
@@ -109,8 +122,14 @@ public class JournalScreen extends Screen {
 	}
 
 	public JournalScreen(Set<String> unlocked, String beastData, String ledgerData, Set<String> notes, String pathData, Screen parent) {
+		this(unlocked, beastData, ledgerData, notes, pathData, "", parent);
+	}
+
+	public JournalScreen(Set<String> unlocked, String beastData, String ledgerData, Set<String> notes, String pathData, String clanData,
+			Screen parent) {
 		super(Component.translatable("item.extremedimensions.tether_journal"));
 		last = this;
+		readClan(clanData);
 		String[] path = pathData.split(";", 4);
 		if (path.length == 4) {
 			try {
@@ -149,6 +168,47 @@ public class JournalScreen extends Screen {
 		}
 	}
 
+	/** Reads the clan as {@code ClanService.journal} writes it; a damaged one leaves the tab out. */
+	private void readClan(String data) {
+		String[] f = data.split("\\|", -1);
+		if (f.length != 15) {
+			return;
+		}
+		try {
+			int[] rules = new int[CLAN_RULE_NAMES.length];
+			for (int i = 0; i < rules.length; i++) {
+				rules[i] = Integer.parseInt(f[1 + i]);
+			}
+			String[] own = f[11].split("/"), judged = f[12].split("/");
+			ownLevel = own[0];
+			ownRep = Integer.parseInt(own[1]);
+			judgedLevel = judged[0];
+			judgedRep = Integer.parseInt(judged[1]);
+			lockedFor = Integer.parseInt(f[13]);
+			for (String m : f[14].split(";")) {
+				String[] v = m.split(",");
+				if (v.length == 4) {
+					clan.add(new Member(v[0], v[1], Integer.parseInt(v[2]), Integer.parseInt(v[3])));
+				}
+			}
+			clanOn = "1".equals(f[0]);
+			clanRules = rules;
+		} catch (RuntimeException e) {
+			clan.clear();
+			clanRules = null;
+		}
+	}
+
+	/** How many the Clan tab lists (the player among them; 0 when they are of no clan), for the tests. */
+	public int clanSize() {
+		return clan.size();
+	}
+
+	/** Whether the journal has this part as a tab (the clan only where clans are bound in this world). */
+	private boolean has(Part p) {
+		return p != Part.CLAN || clanOn && clanRules != null;
+	}
+
 	@Override
 	public void onClose() {
 		if (parent != null) {
@@ -172,7 +232,7 @@ public class JournalScreen extends Screen {
 			case PAGES -> pages.size();
 			case BEASTS -> beasts.size() * 2;
 			case LEDGER -> ledger.isEmpty() ? 0 : 4;
-			case PATH -> 2;
+			case PATH, CLAN -> 2;
 		};
 	}
 
@@ -225,13 +285,17 @@ public class JournalScreen extends Screen {
 		next = this.addRenderableWidget(Button.builder(Component.literal("▶"), b -> flip(2)).pos(bx + PAGE_W * 2 + SPINE - 24, y).size(24, 18).build());
 		int tx = bx + 28, right = bx + PAGE_W * 2 + SPINE - 28;
 		tabs.clear();
-		// Each tab as wide as its name (all narrower alike where a language's names do not fit), the rest for Done
-		Part[] parts = Part.values();
+		// Each tab as wide as its name (all narrower alike where a language's names do not fit), the rest for Done; where
+		// the names do not fit beside Done, a cross closes the book instead
+		Part[] parts = java.util.Arrays.stream(Part.values()).filter(this::has).toArray(Part[]::new);
 		int[] widths = new int[parts.length];
-		int sum = 0, room = right - tx - Math.max(34, this.font.width(Component.translatable("gui.done")) + 12) - 2;
-		for (int i = 0; i < parts.length; i++) {
-			widths[i] = this.font.width(Component.translatable(tabKey(parts[i]))) + 12;
-			sum += widths[i] + 2;
+		Component doneLabel = Component.translatable("gui.done");
+		int room = right - tx - Math.max(34, this.font.width(doneLabel) + 12) - 2;
+		int sum = fitTabs(parts, widths, room);
+		boolean cross = sum > room;
+		if (cross) {
+			room = right - tx - 20 - 2;
+			sum = fitTabs(parts, widths, room);
 		}
 		for (int i = 0; i < parts.length; i++) {
 			if (sum > room) {
@@ -243,9 +307,28 @@ public class JournalScreen extends Screen {
 			tabs.put(p, this.addRenderableWidget(tab));
 			tx += widths[i] + 2;
 		}
-		this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> this.onClose())
+		Button done = this.addRenderableWidget(Button.builder(cross ? Component.literal("\u2715") : doneLabel, b -> this.onClose())
 				.pos(tx, y).size(right - tx, 18).build());
+		if (cross) {
+			done.setTooltip(net.minecraft.client.gui.components.Tooltip.create(doneLabel));
+		}
 		updateButtons();
+	}
+
+	/** Each tab as wide as its name and a margin, a narrower margin where the full one does not fit. Returns the width taken. */
+	private int fitTabs(Part[] parts, int[] widths, int room) {
+		int sum = 0;
+		for (int pad : new int[] {12, 6}) {
+			sum = 0;
+			for (int i = 0; i < parts.length; i++) {
+				widths[i] = this.font.width(Component.translatable(tabKey(parts[i]))) + pad;
+				sum += widths[i] + 2;
+			}
+			if (sum <= room) {
+				break;
+			}
+		}
+		return sum;
 	}
 
 	private static String tabKey(Part p) {
@@ -341,6 +424,7 @@ public class JournalScreen extends Screen {
 
 		double fe = flipAt > 0 ? Ui.ease((now - flipAt) / 300.0) : 1.0;
 		String counter;
+		String tip = null;
 		switch (part) {
 			case BEASTS -> {
 				Beast b = beasts.get(Math.min(beasts.size() - 1, spread / 2));
@@ -352,6 +436,11 @@ public class JournalScreen extends Screen {
 			case LEDGER -> {
 				ledgerSpread(g, bx, by, pe * fe);
 				counter = Ui.tr("gui.extremedimensions.journal.tab.ledger");
+			}
+			case CLAN -> {
+				tip = clanSpread(g, bx, by, pe * fe, mouseX, mouseY);
+				counter = clan.isEmpty() ? Ui.tr("gui.extremedimensions.clan.none")
+						: Ui.tr("gui.extremedimensions.journal.clan.count", clan.size(), clanRules[1]);
 			}
 			case PATH -> {
 				pathSpread(g, bx, by, pe * fe);
@@ -371,6 +460,10 @@ public class JournalScreen extends Screen {
 		}
 		if (by - 20 >= 0) {
 			g.text(this.font, counter, this.width / 2 - this.font.width(counter) / 2, by - 20, Ui.argb(pe, Ui.MUTED));
+		}
+		if (tip != null) {
+			List<String> lines = Ui.wrap(this.font, tip, 180);
+			Ui.tooltip(g, this.font, lines, java.util.Collections.nCopies(lines.size(), 0xFFFFFF), mouseX, mouseY, this.width, this.height, Ui.SOUL_DIM);
 		}
 	}
 
@@ -598,22 +691,151 @@ public class JournalScreen extends Screen {
 			title(g, Ui.tr("gui.extremedimensions.ledger.page." + name), x, by, alpha);
 			int ty = by + 34;
 			for (String[] row : ledger.getOrDefault(name, List.of())) {
-				String label = Ui.tr("gui.extremedimensions.ledger." + row[0]);
-				String value = value(row[0], row[1]);
-				int vw = this.font.width(value);
-				for (String line : Ui.wrap(this.font, label, TEXT_W - vw - 6)) {
-					Ui.ink(g, this.font, line, x + 12, ty, INK, alpha);
-					ty += 10;
-				}
-				Ui.ink(g, this.font, value, x + PAGE_W - 12 - vw, ty - 10, INK_DARK, alpha);
-				// a dotted leader under each line
-				for (int dx = x + 12; dx < x + PAGE_W - 12; dx += 3) {
-					g.fill(dx, ty - 1, dx + 1, ty, Ui.argb(alpha * 0.35, INK_FAINT));
-				}
-				ty += 3;
+				ty = row(g, x, ty, Ui.tr("gui.extremedimensions.ledger." + row[0]), INK, value(row[0], row[1]), INK_DARK, alpha);
 			}
 			number(g, spread + side, x, by, alpha);
 		}
+	}
+
+	/**
+	 * One ruled row: the label on the left (wrapped where the value leaves too little room), the value on the right of
+	 * its last line, and a dotted leader under it. Returns where the next row starts.
+	 */
+	private int row(GuiGraphicsExtractor g, int x, int ty, String label, int labelInk, String value, int valueInk, double alpha) {
+		int vw = this.font.width(value);
+		for (String line : Ui.wrap(this.font, label, TEXT_W - vw - 6)) {
+			Ui.ink(g, this.font, line, x + 12, ty, labelInk, alpha);
+			ty += 10;
+		}
+		Ui.ink(g, this.font, value, x + PAGE_W - 12 - vw, ty - 10, valueInk, alpha);
+		for (int dx = x + 12; dx < x + PAGE_W - 12; dx += 3) {
+			g.fill(dx, ty - 1, dx + 1, ty, Ui.argb(alpha * 0.35, INK_FAINT));
+		}
+		return ty + 3;
+	}
+
+	/** A heading inside a page, underlined in the teal ink. Returns where the text under it starts. */
+	private int heading(GuiGraphicsExtractor g, String text, int x, int ty, double alpha) {
+		Ui.ink(g, this.font, text, x + 12, ty, INK_TEAL, alpha);
+		g.fill(x + 12, ty + 9, x + 12 + this.font.width(text), ty + 10, Ui.argb(alpha * 0.5, INK_TEAL));
+		return ty + 14;
+	}
+
+	/** Text wrapped to the page from an indent, not past its foot. Returns where the next line starts. */
+	private int para(GuiGraphicsExtractor g, String text, int x, int ty, int indent, int ink, double alpha, int foot) {
+		for (String line : Ui.wrap(this.font, text, TEXT_W - indent)) {
+			if (ty > foot) {
+				break;
+			}
+			Ui.ink(g, this.font, line, x + 12 + indent, ty, ink, alpha);
+			ty += 10;
+		}
+		return ty;
+	}
+
+	// ------------------------------------------------------------------ the clan
+
+	/**
+	 * The left page: the player's clan (each member with their standing and where they are), and how the tribe sees the
+	 * player now; or, for one of no clan, how a clan is bound. The right page: the cord's law, with this world's numbers,
+	 * and when the player may leave; each rule says more under the cursor. Returns what the cursor is over (or null).
+	 */
+	private String clanSpread(GuiGraphicsExtractor g, int bx, int by, double alpha, int mouseX, int mouseY) {
+		int[] r = clanRules;
+		int foot = by + PAGE_H - 24;
+		title(g, Ui.tr("gui.extremedimensions.journal.clan.title"), bx, by, alpha);
+		int ty = by + 34;
+		if (clan.isEmpty()) {
+			ty = heading(g, Ui.tr("gui.extremedimensions.clan.none"), bx, ty, alpha);
+			boolean trusted = atLeastTrusted(ownLevel);
+			String[] steps = {
+				Ui.tr("gui.extremedimensions.journal.clan.step1", standing(ownLevel, ownRep)),
+				Ui.tr("gui.extremedimensions.journal.clan.step2", r[0]),
+				Ui.tr("gui.extremedimensions.journal.clan.step3"),
+				Ui.tr("gui.extremedimensions.journal.clan.step4", r[2])};
+			for (int i = 0; i < steps.length; i++) {
+				if (ty > foot) {
+					break;
+				}
+				String mark = i == 0 && trusted ? "\u2714" : (i + 1) + ".";
+				Ui.ink(g, this.font, mark, bx + 12, ty, i == 0 && trusted ? INK_TEAL : INK_DARK, alpha);
+				ty = para(g, steps[i], bx, ty, 10, i == 0 && !trusted ? INK_RUST : INK, alpha, foot) + 3;
+			}
+		} else {
+			ty = heading(g, Ui.tr("gui.extremedimensions.journal.clan.bound", clan.size(), r[1]), bx, ty, alpha);
+			// Each member on two lines: a mark and the name, where they are beside it; their standing under it
+			int fits = Math.max(1, (foot - 40 - ty) / 21);
+			int shown = clan.size() > fits ? fits - 1 : clan.size();
+			for (int i = 0; i < shown; i++) {
+				Member m = clan.get(i);
+				int ink = m.where() == 0 ? INK_FAINT : m.where() == 2 ? INK_TEAL : m.where() == 3 ? INK_RUST : INK_DARK;
+				g.fill(bx + 12, ty + 2, bx + 16, ty + 6, Ui.argb(alpha, ink));
+				Ui.ink(g, this.font, m.name(), bx + 20, ty, m.where() == 0 ? INK_FAINT : INK_DARK, alpha);
+				String where = Ui.tr("gui.extremedimensions.journal.clan.where." + m.where());
+				int ww = this.font.width(where);
+				if (this.font.width(m.name()) + ww + 6 <= TEXT_W - 8) {
+					Ui.ink(g, this.font, where, bx + PAGE_W - 12 - ww, ty, m.where() == 1 ? INK_FAINT : ink, alpha);
+				}
+				Ui.ink(g, this.font, standing(m.level(), m.rep()), bx + 20, ty + 10, m.where() == 0 ? INK_FAINT : INK, alpha);
+				for (int dx = bx + 12; dx < bx + PAGE_W - 12; dx += 3) {
+					g.fill(dx, ty + 19, dx + 1, ty + 20, Ui.argb(alpha * 0.35, INK_FAINT));
+				}
+				ty += 21;
+			}
+			if (shown < clan.size()) {
+				Ui.ink(g, this.font, Ui.tr("gui.extremedimensions.journal.clan.more", clan.size() - shown), bx + 20, ty + 4, INK_FAINT, alpha);
+				ty += 21;
+			}
+			ty += 4;
+			ty = heading(g, Ui.tr("gui.extremedimensions.journal.clan.seen"), bx, ty, alpha);
+			boolean held = judgedRep < ownRep;
+			Ui.ink(g, this.font, standing(judgedLevel, judgedRep), bx + 12, ty, held ? INK_RUST : INK_DARK, alpha);
+			ty += 11;
+			para(g, held ? Ui.tr("gui.extremedimensions.journal.clan.held", standing(ownLevel, ownRep)) : Ui.tr("gui.extremedimensions.journal.clan.own"),
+					bx, ty, 0, INK_FAINT, alpha, foot);
+		}
+		number(g, 0, bx, by, alpha);
+
+		int x = bx + PAGE_W + SPINE;
+		title(g, Ui.tr("gui.extremedimensions.journal.clan.law"), x, by, alpha);
+		ty = by + 34;
+		String[][] law = {
+			{"max", String.valueOf(r[1])},
+			{"blood", Ui.tr("gui.extremedimensions.journal.clan.health", r[2])},
+			{"loss", r[3] + "%"},
+			{"gain", r[4] + "%"},
+			{"range", r[5] <= 0 ? "\u2014" : r[5] + " m"},
+			{"lock", r[6] + " min"},
+			{"leave", r[7] <= 0 ? "0" : "-" + r[7]},
+			{"curses", String.valueOf(r[8])},
+			{"left", r[9] <= 0 ? "0" : "-" + r[9]}};
+		String tip = null;
+		for (String[] row : law) {
+			int top = ty;
+			ty = row(g, x, ty, Ui.tr("gui.extremedimensions.journal.clan.rule." + row[0]), INK, row[1], INK_DARK, alpha);
+			if (mouseX >= x + 12 && mouseX < x + PAGE_W - 12 && mouseY >= top - 1 && mouseY < ty - 2) {
+				tip = Ui.tr("gui.extremedimensions.journal.clan.rule." + row[0] + ".desc");
+			}
+		}
+		ty += 4;
+		String close = clan.isEmpty() ? Ui.tr("gui.extremedimensions.journal.clan.shelter")
+				: lockedFor > 0 ? Ui.tr("gui.extremedimensions.journal.clan.fresh", lockedFor) : Ui.tr("gui.extremedimensions.journal.clan.free");
+		para(g, close, x, ty, 0, !clan.isEmpty() && lockedFor > 0 ? INK_RUST : INK_FAINT, alpha, by + PAGE_H - 24);
+		number(g, 1, x, by, alpha);
+		return tip;
+	}
+
+	private static boolean atLeastTrusted(String level) {
+		try {
+			return Standing.Level.valueOf(level.toUpperCase(java.util.Locale.ROOT)).ordinal() >= Standing.Level.TRUSTED.ordinal();
+		} catch (IllegalArgumentException e) {
+			return false;
+		}
+	}
+
+	/** A standing as it is written: the level by name, the number beside it. */
+	private static String standing(String level, int rep) {
+		return Ui.tr("gui.extremedimensions.tribe.level." + level) + " (" + (rep > 0 ? "+" : "") + rep + ")";
 	}
 
 	/** A ledger value as it is written: times as times, the standing by name, the relic by name. */
@@ -626,8 +848,7 @@ public class JournalScreen extends Screen {
 					return raw + " m";
 				case "standing": {
 					String[] v = raw.split("/");
-					int rep = Integer.parseInt(v[1]);
-					return Ui.tr("gui.extremedimensions.tribe.level." + v[0]) + " (" + (rep > 0 ? "+" : "") + rep + ")";
+					return standing(v[0], Integer.parseInt(v[1]));
 				}
 				case "relic":
 					return raw.isEmpty() ? Ui.tr("gui.extremedimensions.ledger.none") : Ui.tr("item.extremedimensions." + raw);

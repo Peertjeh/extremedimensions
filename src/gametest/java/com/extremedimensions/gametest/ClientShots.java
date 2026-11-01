@@ -591,6 +591,20 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.runOnClient(mc -> pressOnce(journal[0], net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.journal.tab.ledger")));
 			ctx.waitTicks(16);
 			ctx.takeScreenshot("16_ledger");
+			// The journal's clan: bound with two others (one near, one away), the tribe judging by the nearer one; and of none
+			String law = "1|3|4|6|100|50|48|60|25|1|10|";
+			for (String[] c : new String[][] {{"16_clan", law + "kin/82|trusted/47|37|Wanderer,kin,82,3;Leon_AH,trusted,47,2;Julian,tolerated,12,0", "3"},
+					{"16_clan_none", law + "wary/9|wary/9|0|", "0"}}) {
+				ctx.runOnClient(mc -> {
+					com.extremedimensions.client.screen.JournalScreen js = new com.extremedimensions.client.screen.JournalScreen(java.util.Set.of("tethered"),
+							"", "", java.util.Set.of(), "", c[1], null);
+					mc.gui.setScreen(js);
+					check(pressOnce(js, net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.journal.tab.clan")), "the journal has no Clan tab");
+					check(String.valueOf(js.clanSize()).equals(c[2]), "the Clan tab lists " + js.clanSize() + " members, not " + c[2]);
+				});
+				ctx.waitTicks(16);
+				ctx.takeScreenshot(c[0]);
+			}
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
 			// Co-op: struck down, the player lies on the ground and crawls (seen from behind), and stands again after

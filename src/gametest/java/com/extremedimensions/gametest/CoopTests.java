@@ -231,6 +231,13 @@ public class CoopTests {
 				check(helper, da.tribeRep == 40 && db.tribeRep == -5, "a gain was not shared in half (%s, %s)", da.tribeRep, db.tribeRep);
 				Config.CLAN_RANGE = 48;
 				check(helper, Standing.of(a) == Standing.Level.WARY, "beside a member the tribe is wary of, a trusted one is treated as %s", Standing.of(a));
+				// The journal's Clan page: both listed (the player as themselves, the other near), the tribe judging by the lower
+				String[] page = ClanService.journal(a).split("\\|", -1);
+				check(helper, page.length == 15 && page[11].endsWith("/40") && page[12].endsWith("/-5"), "the Clan page has the wrong standings: %s",
+						String.join("|", page));
+				java.util.List<String> rows = page.length == 15 ? java.util.List.of(page[14].split(";")) : java.util.List.of();
+				check(helper, rows.size() == 2 && rows.contains(a.getScoreboardName() + "," + Standing.level(40).name().toLowerCase(java.util.Locale.ROOT) + ",40,3")
+						&& rows.stream().anyMatch(r -> r.startsWith(b.getScoreboardName() + ",") && r.endsWith(",-5,2")), "the Clan page lists %s", rows);
 				Config.CLAN_RANGE = 0;
 				check(helper, Standing.of(a) == Standing.Level.TRUSTED, "on their own, a trusted member is treated as %s", Standing.of(a));
 				check(helper, BarterService.offers(a).stream().anyMatch(w -> w.id() == BarterService.CORD), "the tribe offers a trusted player no Blood Cord");
@@ -241,6 +248,7 @@ public class CoopTests {
 				int curses = curses(db), repA = da.tribeRep, repB = db.tribeRep;
 				ClanService.leave(b);
 				check(helper, ClanService.clanOf(a.getUUID()) == null && ClanService.clanOf(b.getUUID()) == null, "a clan of one was left standing");
+				check(helper, ClanService.journal(b).endsWith("|0|"), "the Clan page of one who left still lists a clan: %s", ClanService.journal(b));
 				check(helper, db.tribeRep == repB - Config.CLAN_LEAVE_COST, "leaving cost %s standing, not %s", repB - db.tribeRep, Config.CLAN_LEAVE_COST);
 				check(helper, da.tribeRep == repA - Config.CLAN_LEFT_COST, "the one left behind lost %s standing, not %s", repA - da.tribeRep, Config.CLAN_LEFT_COST);
 				check(helper, Config.CLAN_LEAVE_CURSES <= 0 || curses(db) > curses, "leaving cost no curse");

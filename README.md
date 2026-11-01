@@ -145,11 +145,11 @@ Trials past gold), and the tapestry's boons stay.
   domain phases, cores that ward them and islands that fall.
 - **The tribe as a faction**: standing from hunted to kin (hard won on the harder difficulties), barter, raids, and
   **clans**: players bound by a Blood Cord stand before the tribe as one, sharing every loss and judged by the least
-  trusted of them.
+  trusted of them (the journal's Clan tab shows your clan and the cord's law).
 - **The wounds remember**: Echoes, Unstable Anchors, Unanchored builds and Frayed islands.
 - **Co-op**: fallen players can be revived, curses carried for a friend, anchors shared. Every player has their own
   time.
-- **55 advancements**, the recipe book through them, a bestiary and a ledger in the journal.
+- **55 advancements**, the recipe book through them, a bestiary, a ledger and your clan in the journal.
 - **Two music discs**: *Tick of the Boundary* on a record of its own, now and then in a barrel of the Thinned in the
   Seam (the richer the barrel, the likelier), and *What the Wound Remembers*, made from the wound's own sounds, in the
   Fray's tangles and the tribe's hoards; both play in any jukebox.

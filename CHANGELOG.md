@@ -1,5 +1,27 @@
 # Changelog
 
+## 3.10.2: The Clan Page
+
+### Journal
+- **A Clan tab in the Tether Journal**, beside the ledger, wherever clans are bound in the world. One spread with
+  everything about your clan in one place:
+  - **left, your clan**: every member with their standing and where they are (near you, online elsewhere, away),
+    you among them; and how the tribe sees you right now: by your own standing, or, in rust, held down by a member
+    near you, with your own standing beside it;
+  - **of no clan**, the same page shows how to bind one in four steps (Trusted, buy the cord, hold it out, they
+    accept), with your standing and this world's price;
+  - **right, the cord's law** with this world's numbers, read from the server's settings: members at most, the
+    blood price, how much of a loss and of a gain is shared, the weakest-link distance, how long the cord holds you,
+    and what leaving costs you and each who stays. Hover a rule to read what it means. Under it: how many minutes
+    until you may leave, or that you may.
+- Where the names of five tabs do not fit beside Done in a language, the tabs narrow their margins first, and the
+  Done button becomes a cross (with Done as its tooltip).
+
+### Tests
+- The server test for clans checks what the Clan page is sent: both members, the player as themselves, the other
+  near, the standing the tribe goes by, and nothing once the clan is gone. The client shots show the Clan page bound
+  and of no clan.
+
 ## 3.10.1: Held Out
 
 ### Clans

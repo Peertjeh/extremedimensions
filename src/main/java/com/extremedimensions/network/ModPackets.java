@@ -120,9 +120,10 @@ public final class ModPackets {
 
 	/**
 	 * Server -> client: open the Tether Journal with these unlocked pages (comma separated), the bestiary
-	 * ("id:seen:slain;...") and the ledger ("page:key=value;...").
+	 * ("id:seen:slain;..."), the ledger ("page:key=value;..."), the margin notes found, the path, and the player's clan
+	 * (as {@code ClanService.journal} writes it).
 	 */
-	public record OpenJournalPayload(String ids, String beasts, String ledger, String notes, String path) implements CustomPacketPayload {
+	public record OpenJournalPayload(String ids, String beasts, String ledger, String notes, String path, String clan) implements CustomPacketPayload {
 		public static final Type<OpenJournalPayload> TYPE = new Type<>(ExtremeDimensions.id("open_journal"));
 		public static final StreamCodec<FriendlyByteBuf, OpenJournalPayload> CODEC = StreamCodec.ofMember(OpenJournalPayload::write, OpenJournalPayload::read);
 
@@ -132,10 +133,11 @@ public final class ModPackets {
 			buf.writeUtf(ledger);
 			buf.writeUtf(notes);
 			buf.writeUtf(path);
+			buf.writeUtf(clan);
 		}
 
 		private static OpenJournalPayload read(FriendlyByteBuf buf) {
-			return new OpenJournalPayload(buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf());
+			return new OpenJournalPayload(buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf());
 		}
 
 		@Override

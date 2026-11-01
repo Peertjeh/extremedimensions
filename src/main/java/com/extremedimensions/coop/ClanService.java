@@ -366,6 +366,45 @@ public final class ClanService {
 		}
 	}
 
+	// ------------------------------------------------------------------ the journal's Clan page
+
+	/**
+	 * What the journal's Clan page shows, as "on|cordPrice|max|blood|loss%|gain%|range|lockMinutes|leaveCost|leaveCurses|
+	 * leftCost|ownLevel/ownStanding|judgedLevel/judgedStanding|lockedFor|members", members as "name,level,standing,where"
+	 * separated by ';' (where: 0 away, 1 online, 2 near, 3 the player). Levels by name, as the server's thresholds make
+	 * them.
+	 */
+	public static String journal(ServerPlayer p) {
+		int own = DataStore.get(p.getUUID()).tribeRep;
+		int judged = judgedRep(p, own);
+		String clan = clanOf(p.getUUID());
+		StringBuilder members = new StringBuilder();
+		MinecraftServer s = WorldFx.server();
+		double range = Math.max(0, Config.CLAN_RANGE);
+		for (String id : members(clan)) {
+			UUID u = UUID.fromString(id);
+			PlayerData d = DataStore.get(u);
+			ServerPlayer o = s == null ? null : s.getPlayerList().getPlayer(u);
+			String name = o != null ? o.getScoreboardName() : d.name != null ? d.name : id.substring(0, 8);
+			int where = o == p ? 3 : o == null ? 0 : o.level() == p.level() && o.distanceToSqr(p) <= range * range ? 2 : 1;
+			if (members.length() > 0) {
+				members.append(';');
+			}
+			members.append(name.replace(",", "").replace(";", "").replace("|", "")).append(',').append(level(d.tribeRep)).append(',')
+					.append(d.tribeRep).append(',').append(where);
+		}
+		return String.join("|", on() ? "1" : "0", String.valueOf(Math.max(1, Config.CLAN_CORD_PRICE)), String.valueOf(Math.max(2, Config.CLAN_MAX)),
+				String.valueOf((int) Math.round(Math.max(0, Config.CLAN_BLOOD))), String.valueOf((int) Math.round(100 * Math.max(0, Math.min(1, Config.CLAN_SHARE_LOSS)))),
+				String.valueOf((int) Math.round(100 * Math.max(0, Math.min(1, Config.CLAN_SHARE_GAIN)))), String.valueOf((int) range),
+				String.valueOf(Math.max(0, Config.CLAN_LOCK_MINUTES)), String.valueOf(Math.max(0, Config.CLAN_LEAVE_COST)),
+				String.valueOf(Math.max(0, Config.CLAN_LEAVE_CURSES)), String.valueOf(Math.max(0, Config.CLAN_LEFT_COST)), level(own) + "/" + own,
+				level(judged) + "/" + judged, String.valueOf(clan == null ? 0 : lockedFor(p)), members.toString());
+	}
+
+	private static String level(int rep) {
+		return Standing.level(rep).name().toLowerCase(java.util.Locale.ROOT);
+	}
+
 	// ------------------------------------------------------------------ telling
 
 	/** {@code /tether clan}: who the player's clan is, and where each stands with the tribe. */

@@ -112,7 +112,7 @@ public final class Journal {
 
 	public static void open(ServerPlayer p, PlayerData d) {
 		ServerPlayNetworking.send(p, new ModPackets.OpenJournalPayload(String.join(",", d.journal), Bestiary.encode(d), Ledger.encode(d),
-				String.join(",", d.notes), com.extremedimensions.guide.Path.encode(p, d)));
+				String.join(",", d.notes), com.extremedimensions.guide.Path.encode(p, d), com.extremedimensions.coop.ClanService.journal(p)));
 		WorldFx.soundSelf(p, "minecraft:item.book.page_turn", 1.0f, 0.9f);
 	}
 
