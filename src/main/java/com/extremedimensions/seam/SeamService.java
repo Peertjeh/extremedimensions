@@ -300,7 +300,7 @@ public final class SeamService {
 		int z = (int) Math.floor(from.z);
 		if (MendingService.opensNearHeart()) {
 			// The seal is broken: every rift opens near the Heart, where all the threads meet
-			int[] a = MendingService.arrival();
+			int[] a = MendingService.arrival(from.x, from.z);
 			x = a[0];
 			z = a[1];
 		}

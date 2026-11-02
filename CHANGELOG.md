@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.17.1: Together at the Heart
+
+### Fixes
+- **One gate at the Heart, for the whole party.** While the Heart waited, everyone who stepped through the same rift
+  landed at their own random spot on the ring round it, each with a gate of their own: a party of four was split up
+  and saw several gates. Now a rift lands everyone who steps through it at one spot, at one gate; a rift torn elsewhere
+  lands elsewhere on the ring.
+- **A still altar says why.** The Starved One is fought once in a world; once slain it stays slain, and the Thread and
+  the Shears lie on its altar (offered again if they are lost). Standing on the altar after that now says so, and that
+  until one of the two is used every rift opens at the Heart.
+- **A dark pedestal says why.** Silk offered to a pedestal while nothing stands at the Heart now says that the
+  pedestals answer only while the Starved One stands (and to step onto the altar to wake it), or that it is gone.
+
+### Tests
+- Everyone through one rift lands at one spot on the ring round the Heart, and rifts torn elsewhere land elsewhere.
+
 ## 3.17.0: What the Thinned Put By
 
 The Seam's buildings were shells: a tower was one tall empty room, a hall had nothing in it, of up to eight houses in a

@@ -104,9 +104,16 @@ public final class MendingService {
 		return SeamService.inSeam(p) && p.distanceToSqr(HX + 0.5, HY, HZ + 0.5) < 48 * 48;
 	}
 
-	/** Where a rift lands while the Heart waits: somewhere on a ring around it. */
-	public static int[] arrival() {
-		double a = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
+	/**
+	 * Where a rift torn at (x, z) lands while the Heart waits: a spot on a ring around it, the same for everyone who steps
+	 * through that rift (so a party arrives together, at one gate), another for a rift torn elsewhere.
+	 */
+	public static int[] arrival(double x, double z) {
+		long h = (long) Math.floor(x) * 341873128712L ^ (long) Math.floor(z) * 132897987541L;
+		h ^= h >>> 29;
+		h *= 0xBF58476D1CE4E5B9L;
+		h ^= h >>> 32;
+		double a = (h & 0xFFFFFFL) / (double) 0x1000000 * Math.PI * 2;
 		return new int[] {HX + (int) Math.round(Math.cos(a) * 34), HZ + (int) Math.round(Math.sin(a) * 34)};
 	}
 
@@ -144,6 +151,14 @@ public final class MendingService {
 				}
 			} else if (open() && DataStore.heartBuilt() && DataStore.starvedSlain() && s.getTickCount() % 20 == 0) {
 				reoffer(seam);
+				if (s.getTickCount() % 100 == 0) {
+					// Whoever stands on the altar now is told why nothing wakes, and what is left to do
+					for (ServerPlayer p : seam.players()) {
+						if (!p.isSpectator() && p.distanceToSqr(HX + 0.5, HY + 1, HZ + 0.5) < 3.5 * 3.5) {
+							p.sendSystemMessage(Component.translatable("gui.extremedimensions.heart.still"), true);
+						}
+					}
+				}
 			}
 			return;
 		}
@@ -381,6 +396,12 @@ public final class MendingService {
 
 	/** Seam Silk fed to a pedestal lights it; two lit pedestals stun the Starved One. */
 	public static InteractionResult onPedestal(ServerPlayer p, BlockPos pos, ItemStack stack) {
+		if (boss == null && stack.is(ModItems.SEAM_SILK) && isPedestal(pos)) {
+			// Silk offered while nothing stands at the Heart: the pedestal stays dark, and says why
+			p.sendSystemMessage(Component.translatable(DataStore.starvedSlain() ? "gui.extremedimensions.heart.pedestal_gone"
+					: "gui.extremedimensions.heart.pedestal_wait"), true);
+			return InteractionResult.PASS;
+		}
 		if (boss == null || !stack.is(ModItems.SEAM_SILK)) {
 			return InteractionResult.PASS;
 		}
