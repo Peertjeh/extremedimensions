@@ -72,7 +72,9 @@ public final class TetherCommand {
 						.then(Commands.literal("swarm").executes(c -> lurker(c.getSource(), "swarm")))
 						.then(Commands.literal("drain").executes(c -> lurker(c.getSource(), "drain")))
 						.then(Commands.literal("cave").executes(c -> lurker(c.getSource(), "cave")))
-						.then(Commands.literal("sculk").executes(c -> lurker(c.getSource(), "sculk"))))
+						.then(Commands.literal("sculk").executes(c -> lurker(c.getSource(), "sculk")))
+						.then(Commands.literal("magpie").executes(c -> lurker(c.getSource(), "magpie")))
+						.then(Commands.literal("wick").executes(c -> lurker(c.getSource(), "wick"))))
 				.then(Commands.literal("hoard").requires(op).executes(c -> hoard(c.getSource())))
 				.then(Commands.literal("boss").requires(op)
 						.then(Commands.literal("matriarch").executes(c -> boss(c.getSource(), "matriarch")))
@@ -311,10 +313,20 @@ public final class TetherCommand {
 	/** Summons a Lurker in the given mode near the executing player (for testing and showcases). */
 	private static int lurker(CommandSourceStack src, String mode) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
 		ServerPlayer p = src.getPlayerOrException();
-		boolean ok = "cave".equals(mode) ? com.extremedimensions.lurker.CaveLurkerService.summon(p)
-				: "sculk".equals(mode) ? com.extremedimensions.lurker.SculkLurkerService.summon(p) : LurkerService.summon(p, mode);
-		String failed = "cave".equals(mode) ? "commands.extremedimensions.lurker.failed_cave"
-				: "sculk".equals(mode) ? "commands.extremedimensions.lurker.failed_sculk" : "commands.extremedimensions.lurker.failed";
+		boolean ok = switch (mode) {
+			case "cave" -> com.extremedimensions.lurker.CaveLurkerService.summon(p);
+			case "sculk" -> com.extremedimensions.lurker.SculkLurkerService.summon(p);
+			case "magpie" -> com.extremedimensions.lurker.MagpieService.summon(p);
+			case "wick" -> com.extremedimensions.lurker.WickService.summon(p);
+			default -> LurkerService.summon(p, mode);
+		};
+		String failed = switch (mode) {
+			case "cave" -> "commands.extremedimensions.lurker.failed_cave";
+			case "sculk" -> "commands.extremedimensions.lurker.failed_sculk";
+			case "magpie" -> "commands.extremedimensions.lurker.failed_magpie";
+			case "wick" -> "commands.extremedimensions.lurker.failed_wick";
+			default -> "commands.extremedimensions.lurker.failed";
+		};
 		src.sendSuccess(() -> Component.translatable(ok ? "commands.extremedimensions.lurker.summoned" : failed), false);
 		return ok ? 1 : 0;
 	}

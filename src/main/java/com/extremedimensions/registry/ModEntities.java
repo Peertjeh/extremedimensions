@@ -4,6 +4,8 @@ import com.extremedimensions.ExtremeDimensions;
 import com.extremedimensions.hollow.Hollowling;
 import com.extremedimensions.hollow.Keeper;
 import com.extremedimensions.lurker.CaveLurker;
+import com.extremedimensions.lurker.Magpie;
+import com.extremedimensions.lurker.Wick;
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.lurker.SculkLurker;
 import com.extremedimensions.mending.StarvedOne;
@@ -46,6 +48,29 @@ public final class ModEntities {
 					.eyeHeight(1.45f)
 					.clientTrackingRange(8)
 					.build(CAVE_LURKER_KEY));
+
+	private static final ResourceKey<EntityType<?>> MAGPIE_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("magpie"));
+
+	/** The tribe's lean thief, a little taller than a man, that robs chests; spawned only by {@code MagpieService}. */
+	public static final EntityType<Magpie> MAGPIE = Registry.register(BuiltInRegistries.ENTITY_TYPE, MAGPIE_KEY,
+			EntityType.Builder.<Magpie>of(Magpie::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(0.8f, 2.3f)
+					.eyeHeight(2.0f)
+					.clientTrackingRange(10)
+					.build(MAGPIE_KEY));
+
+	private static final ResourceKey<EntityType<?>> WICK_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("wick"));
+
+	/** A knee-high thing of tallow and soot that eats the light at night; spawned only by {@code WickService}. */
+	public static final EntityType<Wick> WICK = Registry.register(BuiltInRegistries.ENTITY_TYPE, WICK_KEY,
+			EntityType.Builder.<Wick>of(Wick::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.fireImmune()
+					.sized(0.45f, 0.6f)
+					.eyeHeight(0.45f)
+					.clientTrackingRange(8)
+					.build(WICK_KEY));
 
 	private static final ResourceKey<EntityType<?>> SCULK_LURKER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("sculk_lurker"));
 
@@ -173,6 +198,8 @@ public final class ModEntities {
 		FabricDefaultAttributeRegistry.register(LURKER, Lurker.createAttributes());
 		FabricDefaultAttributeRegistry.register(CAVE_LURKER, CaveLurker.createAttributes());
 		FabricDefaultAttributeRegistry.register(SCULK_LURKER, SculkLurker.createAttributes());
+		FabricDefaultAttributeRegistry.register(MAGPIE, Magpie.createAttributes());
+		FabricDefaultAttributeRegistry.register(WICK, Wick.createAttributes());
 		FabricDefaultAttributeRegistry.register(HOLLOWLING, Hollowling.createAttributes());
 		FabricDefaultAttributeRegistry.register(KEEPER, Keeper.createAttributes());
 		FabricDefaultAttributeRegistry.register(STARVED_ONE, StarvedOne.createAttributes());

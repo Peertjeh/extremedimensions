@@ -1,11 +1,11 @@
-"""The tribe's body: the Lurker, the Cave Lurker, the Sculk Lurker, the Hollowling, the Keeper and the Thinned all wear it
+"""The tribe's body: the Lurker, the Cave Lurker, the Sculk Lurker, the Magpie, the Wick, the Hollowling, the Keeper and the Thinned all wear it
 (the Starved One has had a body of its own since 3.18: tools/elders/starved_one.py), each with its own texture. A hunched, cloaked giant on long knuckle-walking arms, ragged strips of cloak, strands dripping from a
 mask. The claws are fine parts (four pixels to a model pixel); the mask, its eyes, its brow and the fringe of the hood
 are at Minecraft's own size, painted finer and brought down;
 the part names and poses are the ones LurkerModel animates.
 
 usage: python3 tools/lurker/build.py [preview-json-dir]
-Writes LurkerGeometry.java and a base and glow texture for each of the seven.
+Writes LurkerGeometry.java and a base and glow texture for each of the nine.
 """
 import math
 import os
@@ -100,7 +100,7 @@ def _mask_parts(m, head):
         m.box(fr, -0.35, 0, -0.25, 0.7, 0.9 + 0.5 * ((k * 3) % 4), 0.5, "t_fray")
 
 
-# ----------------------------------------------------------------------------- the seven
+# ----------------------------------------------------------------------------- the nine
 
 SPECIES = {
     "lurker": dict(cloak=((14, 12, 20), (54, 46, 66)), limb=((22, 20, 26), (60, 56, 66)), skin=((40, 36, 44), (86, 80, 90)),
@@ -122,6 +122,16 @@ SPECIES = {
     "keeper": dict(cloak=((8, 8, 10), (38, 36, 40)), limb=((18, 17, 19), (54, 52, 56)), skin=((30, 28, 30), (70, 66, 68)),
                    mask=((176, 160, 122), (242, 232, 204)), crack=(255, 240, 210), eye=(255, 226, 150), eye_hot=(255, 252, 230),
                    tendril=((6, 6, 8), (28, 26, 30)), tip=(120, 110, 90), claw=((150, 136, 104), (230, 218, 186)), face="keeper"),
+    # the Magpie: a lean thief in a black cloak with a sheen of blue-green, a white mask with a black cap and a dark beak
+    # of a nose, eyes that glint gold, its cracks the iridescent blue of a magpie's wing
+    "magpie": dict(cloak=((6, 8, 12), (34, 44, 58)), limb=((16, 18, 22), (48, 52, 60)), skin=((26, 28, 32), (70, 74, 80)),
+                   mask=((176, 178, 184), (246, 246, 250)), crack=(70, 170, 255), eye=(255, 204, 70), eye_hot=(255, 246, 200),
+                   tendril=((4, 6, 10), (24, 34, 48)), tip=(40, 120, 200), claw=((30, 32, 36), (110, 112, 120)), face="magpie"),
+    # the Wick: a little thing of tallow, its cloak and limbs the cream of old wax with darker drips, a face charred black
+    # as a burnt wick, eyes and cracks of candle flame, wax drips with flame at their tips
+    "wick": dict(cloak=((150, 122, 82), (236, 220, 180)), limb=((140, 114, 80), (220, 202, 162)), skin=((160, 132, 92), (232, 214, 176)),
+                 mask=((26, 20, 18), (82, 68, 58)), crack=(255, 164, 50), eye=(255, 176, 60), eye_hot=(255, 248, 206),
+                 tendril=((190, 168, 124), (246, 236, 206)), tip=(255, 140, 30), claw=((120, 98, 70), (210, 190, 150)), face="wick"),
     "thinned": dict(cloak=((150, 150, 170), (232, 232, 246)), limb=((160, 160, 178), (236, 236, 248)), skin=((180, 180, 196), (244, 244, 252)),
                     mask=((206, 204, 220), (252, 252, 255)), crack=(216, 196, 255), eye=(214, 190, 255), eye_hot=(255, 250, 255),
                     tendril=((130, 128, 150), (210, 208, 226)), tip=(190, 170, 240), claw=((170, 168, 186), (246, 246, 252)), face="thinned"),
@@ -397,6 +407,26 @@ FACE_PX = {
                 "STRTRTRTRS",
                 "SRRRRRRRRS",
                 ".SRTRTRTS."],
+    "magpie": ["SDDDDDDDDS",
+               "DDDDLLDDDD",
+               "DDDLMMLDDD",
+               "MDDMMMMDDM",
+               "MDDDMMDDDM",
+               "MDDDMMDDDM",
+               "SMMMKKMMMS",
+               "SMMMKKMMMS",
+               ".SMMKKMMS.",
+               "..SSKKSS.."],
+    "wick": [".SSSCCSSS.",
+             "SMMMCCMMMS",
+             "MMMMMMMMMM",
+             "MMLMMMMLMM",
+             "MDDDMMDDDM",
+             "MDDDMMDDDM",
+             "SMdMMMMdMS",
+             "SMMKKKKMMS",
+             ".SMMKKMMS.",
+             "..SSMMSS.."],
     "thinned": ["SLLLLLLLLS",
                 "LLLLLLLLLL",
                 "LLMLLLLMLL",
@@ -416,6 +446,8 @@ EYE_PX = {
     "keeper": ["eEe", "KeK"],
     "starved": ["eEe", "eee"],
     "thinned": ["eEe", "..."],
+    "magpie": ["eEW", ".e."],
+    "wick": ["eEe", "eee"],
 }
 _PX = {}
 

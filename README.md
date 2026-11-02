@@ -97,7 +97,11 @@ an unweaving the loom waits three days for you.
   Warden: it never strikes you, but it rattles the shriekers and sets the sensors off in your name to wake the Warden,
   laughs at you while it does, leads the Warden to you and stays to watch, and the Warden spares it. Each has a voice
   of its own place: the Cave Lurker clicks, rasps and screeches down the tunnels, the Sculk Lurker croaks, rattles and
-  chuckles low on the sculk, and an Ancient City sends a pack of them out to whoever walks into it. A curse laid
+  chuckles low on the sculk, and an Ancient City sends a pack of them out to whoever walks into it. The **Magpie**
+  never touches you: it creeps to a chest or barrel you left alone, takes the brightest things in it and runs them home
+  to a hoard, the loot held up over its head; every blow shakes one thing loose. On dark nights the little **Wick**
+  comes out where your light is and eats it, torches and lanterns whole and candles snuffed, until it is full; soul fire
+  frightens it, water puts it out, and slain it gives back what it ate. A curse laid
   without a choice is varied: one you do not carry yet is likelier, and never the last one again. Hollowlings can be befriended, slowly; the young of an Extreme swarm bite, and a bite may curse. After the Dragon falls, **Wound
   Storms** tear the sky.
 

@@ -1193,6 +1193,9 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:lurker ^ ^ ^6 {NoAI:1b,Rotation:[180f,0f]}");
 			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:hollowling ^2.2 ^ ^3.5 {NoAI:1b,Rotation:[180f,0f]}");
 			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:keeper ^-3.5 ^ ^8 {NoAI:1b,Rotation:[180f,0f]}");
+			// (the Magpie and the Wick of 3.19 among them, the Wick's flame eyes in the dark)
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:magpie ^-1.9 ^ ^3.4 {NoAI:1b,Rotation:[160f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:wick ^0.7 ^ ^2.0 {NoAI:1b,Rotation:[200f,0f]}");
 			for (int i = 0; i < 4; i++) {
 				ctx.waitTicks(5);
 				ctx.takeScreenshot("06_tribe_" + i);
@@ -1202,6 +1205,8 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("kill @e[type=extremedimensions:lurker]");
 			sp.getServer().runCommand("kill @e[type=extremedimensions:hollowling]");
 			sp.getServer().runCommand("kill @e[type=extremedimensions:keeper]");
+			sp.getServer().runCommand("kill @e[type=extremedimensions:magpie]");
+			sp.getServer().runCommand("kill @e[type=extremedimensions:wick]");
 			sp.getServer().runCommand("time set noon");
 			// A spectator's free camera (no hand, no hotbar), the guide card put away
 			sp.getServer().runCommand("execute as @a run gamemode spectator @s");
@@ -1211,7 +1216,7 @@ public class ClientShots implements FabricClientGameTest {
 			// The tribe's faces up close by day (masks, brows and eyes in fine pixels): name, how far off it stands (its
 			// hunched head reaches toward the camera), and how far the camera rises to meet its eyes
 			for (String[] kin : new String[][] {{"lurker", "4.4", "1.2"}, {"hollowling", "1.6", "-0.75"}, {"keeper", "5.5", "1.9"},
-					{"thinned", "3.3", "0.5"}}) {
+					{"thinned", "3.3", "0.5"}, {"magpie", "3.0", "0.5"}, {"wick", "1.1", "-1.15"}}) {
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
 				sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:" + kin[0] + " ^ ^ ^" + kin[1]
 						+ " {NoAI:1b,Rotation:[180f,0f]}");
@@ -1222,6 +1227,20 @@ public class ClientShots implements FabricClientGameTest {
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~" + (-Double.parseDouble(kin[2])) + " ~ 0 0");
 				ctx.waitTicks(5);
 			}
+			// The Magpie running with its loot held up over its head (a diamond on a display riding it, as MagpieService
+			// sets one up)
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:magpie ^ ^ ^3.6 {NoAI:1b,Rotation:[150f,0f],"
+					+ "Passengers:[{id:\"minecraft:item_display\",item:{id:\"minecraft:diamond\",count:1},billboard:\"center\","
+					+ "brightness:{sky:15,block:15},transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],"
+					+ "translation:[0f,-0.15f,0f],scale:[0.6f,0.6f,0.6f]}}]}");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~0.6 ~ 0 -4");
+			ctx.waitTicks(12);
+			ctx.takeScreenshot("06_magpie_loot");
+			sp.getServer().runCommand("kill @e[type=minecraft:item_display]");
+			sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-0.6 ~ 0 0");
+			ctx.waitTicks(5);
 			// name, distance, yaw (the Ferryman a little turned, to show the boat), camera height for the face
 			for (String[] elder : new String[][] {{"matriarch", "22", "180", "9"}, {"ferryman", "24", "220", "8.5"}, {"weaver", "23", "180", "12.5"}}) {
 				int dist = Integer.parseInt(elder[1]);

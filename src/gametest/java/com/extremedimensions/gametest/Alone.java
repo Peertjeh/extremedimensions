@@ -47,4 +47,6 @@ final class Alone {
 	static final String SCULK_COMES = "extremedimensions_test:alone/sculk_comes";
 	static final String SCULK_SENSOR = "extremedimensions_test:alone/sculk_sensor";
 	static final String PATH_ENDING = "extremedimensions_test:alone/path_ending";
+	static final String MAGPIE_RAID = "extremedimensions_test:alone/magpie_raid";
+	static final String WICK_FEAST = "extremedimensions_test:alone/wick_feast";
 }

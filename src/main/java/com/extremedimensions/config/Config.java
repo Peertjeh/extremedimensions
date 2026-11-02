@@ -413,6 +413,49 @@ public final class Config {
 	/** Most in a pack, however many players there are. */
 	public static int SCULK_LURKER_PACK_CAP = 6;
 
+	// --- The Magpie ----------------------------------------------------------------------------
+
+	/** 1 = Magpies come for what players keep in chests and barrels (in the Overworld and the Nether), 0 = never. */
+	public static int MAGPIE_ENABLED = 1;
+	/** Chance per player every 20 seconds, with a chest or barrel of theirs near, that a Magpie comes (outside the cooldown). */
+	public static double MAGPIE_SPAWN_CHANCE = 0.02;
+	/** Minimum seconds between two Magpies for the same player. */
+	public static int MAGPIE_COOLDOWN_SECONDS = 1800;
+	/** How far from the player a chest or barrel it robs may be (blocks). */
+	public static int MAGPIE_RANGE = 24;
+	/** The most things (stacks) it takes from one chest. */
+	public static int MAGPIE_TAKES = 3;
+	/** Its speed (a multiplier): it creeps at seven tenths of this and runs home at a little over it. */
+	public static double MAGPIE_SPEED = 1.2;
+	/** Seconds it creeps towards a chest before it gives up, and that it runs before it is gone (its loot to the hoard). */
+	public static int MAGPIE_SNEAK_SECONDS = 60;
+	public static int MAGPIE_FLEE_SECONDS = 25;
+
+	// --- The Wick ------------------------------------------------------------------------------
+
+	/** 1 = Wicks come out on dark nights to eat the light round players in the Overworld, 0 = never. */
+	public static int WICK_ENABLED = 1;
+	/** Chance per player every 20 seconds, on a dark dry night with enough light about them, that Wicks come. */
+	public static double WICK_SPAWN_CHANCE = 0.03;
+	/** Minimum seconds between two visits of Wicks for the same player. */
+	public static int WICK_COOLDOWN_SECONDS = 1200;
+	/** Lights (torches, lanterns, lit candles) within 12 blocks of the player before Wicks come for them. */
+	public static int WICK_LIGHTS = 6;
+	/** Most Wicks that come at once (one to this many). */
+	public static int WICK_PACK = 3;
+	/** Lights one puts out before it is full and goes. */
+	public static int WICK_MEALS = 6;
+	/** 1 = it eats torches and lanterns whole (where the mobGriefing rule allows), 0 = it only snuffs out candles. */
+	public static int WICK_EATS = 1;
+	/** How near soul fire (soul torches, soul lanterns, soul campfires) frightens it off a light (blocks). 0: it fears nothing. */
+	public static int WICK_FEAR_RANGE = 4;
+	/** Its speed (a multiplier). */
+	public static double WICK_SPEED = 1.0;
+	/** Seconds it stays at most. */
+	public static int WICK_SECONDS = 180;
+	/** Seconds a full Wick's burst sets whoever stands beside it alight when it is slain. 0: no burst. */
+	public static int WICK_BURST_SECONDS = 2;
+
 	// --- Leaving in danger ----------------------------------------------------------------------
 
 	/**
@@ -1478,6 +1521,10 @@ public final class Config {
 			{"sculk_lurker_sensor_seconds", 2, 600}, {"sculk_lurker_sensor_range", 4, 32},
 			{"sculk_lurker_city_chance", 0, 1}, {"sculk_lurker_city_cooldown_seconds", 0, 86400}, {"sculk_lurker_pack_min", 1, 8},
 			{"sculk_lurker_pack_max", 1, 8}, {"sculk_lurker_pack_per_player", 0, 4}, {"sculk_lurker_pack_cap", 1, 12},
+			{"magpie_spawn_chance", 0, 1}, {"magpie_cooldown_seconds", 0, 86400}, {"magpie_range", 4, 64}, {"magpie_takes", 1, 27},
+			{"magpie_speed", 0.2, 4}, {"magpie_sneak_seconds", 10, 600}, {"magpie_flee_seconds", 3, 120},
+			{"wick_spawn_chance", 0, 1}, {"wick_cooldown_seconds", 0, 86400}, {"wick_lights", 1, 64}, {"wick_pack", 1, 8}, {"wick_meals", 1, 64},
+			{"wick_fear_range", 0, 12}, {"wick_speed", 0.2, 4}, {"wick_seconds", 20, 1200}, {"wick_burst_seconds", 0, 10},
 			{"curse_fresh_weight", 1, 20}, {"tribe_barter_standing_cost", 0, 100}, {"tribe_barter_curse_chance", 0, 1}, {"weaver_pity", 0, 1}, {"seam_thinned_fragment_chance", 0, 1}, {"seam_collapse_toll", 0, 1},
 			{"music_disc_listens_chance", 0, 1}, {"disc_fragment_elegy_count", 0, 9}, {"disc_fragment_abyss_broken", 0, 9},
 			{"disc_fragment_abyss_tangle_chance", 0, 1}, {"disc_fragment_abyss_ray_chance", 0, 1},

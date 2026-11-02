@@ -1,5 +1,42 @@
 # Changelog
 
+## 3.19.0: Thieves in the Night
+
+Two new members of the tribe, both after what you have rather than who you are.
+
+### The Magpie
+- **A lean thief**, a little taller than you, black-cloaked with a white mask, a black cap and a gold glint in its eyes.
+  It never touches you. It goes for what you keep: a chest or a barrel with something in it, a little way from where
+  you are and left alone (in the Overworld and the Nether, never a hoard's barrel or a chest still sealed with its loot).
+- **It creeps up out of sight** and robs the chest of its brightest things, one at a time: enchanted and rare things
+  first, then gems and metals, then the fullest stacks, three at most (`magpie_takes`). You hear the lid and are told
+  that something is at your chest. Look right at it close by, or come within a few blocks, and it bolts.
+- **It runs your things home** to a hoard (the one the Lurkers fill), the last thing it took held up over its head,
+  glittering, so it can be followed. Every blow shakes one thing loose; slain, it drops all it carries. What reaches the
+  hoard waits there for you.
+- Your standing with the tribe drops when you slay one, as for a Lurker. Kin are never robbed, and nothing comes on
+  Peaceful or once the seal is broken (unless the world was severed).
+
+### The Wick
+- **A knee-high thing of tallow and soot** with a flame for eyes. On dark, dry nights in the Overworld, where a player
+  keeps a good deal of light about them (`wick_lights`), one to three come out of the dark and **eat the light**:
+  torches and lanterns eaten whole (where mobGriefing allows, `wick_eats`), candles snuffed out, one after the other
+  until each is full (`wick_meals`), and then they sink into the ground.
+- **Soul fire frightens it**: a light with a soul torch, soul lantern or soul campfire near it (`wick_fear_range`) is
+  left alone, and a Wick that comes near soul fire runs. Water and rain put it out.
+- **Slain, it gives back** the torches and lanterns it ate; full of fire, it bursts and singes whoever stands beside it
+  (`wick_burst_seconds`). It never hurts anyone otherwise.
+
+### Both
+- In the bestiary (lore, and how to face them after three), seen through the Wound Lens (what it is about), summoned
+  with `/tether lurker magpie` and `/tether lurker wick`, and on the difficulty presets (how often they come, and how
+  much a Magpie takes). Every number is a setting, in English and Dutch.
+
+### Tests
+- A Magpie robs a chest of its three brightest things and leaves the stick, holds its loot up, drops one thing to a
+  blow and the rest when slain.
+- A Wick eats the torches round it but not the one beside a soul torch, and gives them back when slain.
+
 ## 3.18.1: Heads Above Water
 
 ### Fixes
