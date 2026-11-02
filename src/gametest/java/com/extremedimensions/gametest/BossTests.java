@@ -97,18 +97,23 @@ public class BossTests {
 		// step five out on both axes towards the test's middle, and the shaft's corner column four out above it
 		BlockPos centre = helper.absolutePos(new BlockPos(1, 1, 1)), far = helper.absolutePos(new BlockPos(6, 1, 6));
 		int sx = Integer.signum(far.getX() - centre.getX()), sz = Integer.signum(far.getZ() - centre.getZ());
+		// (nothing else in the two columns, whatever stood there)
+		for (int y = 0; y <= 6; y++) {
+			level.setBlock(centre.offset(5 * sx, y, 5 * sz), Blocks.AIR.defaultBlockState(), 3);
+			level.setBlock(centre.offset(4 * sx, y, 4 * sz), Blocks.AIR.defaultBlockState(), 3);
+		}
 		level.setBlock(centre.offset(5 * sx, 1, 5 * sz), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 3);
 		for (int y = 1; y <= 4; y++) {
 			level.setBlock(centre.offset(4 * sx, y, 4 * sz), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 3);
 		}
-		BlockPos socket = Binding.socketOf(level, centre.getX(), centre.getZ(), sx, sz, centre.getY() + 7, centre.getY() - 1);
+		BlockPos socket = Binding.socketOf(level, centre.getX(), centre.getZ(), sx, sz, centre.getY() + 5, centre.getY() - 1);
 		BlockPos want = centre.offset(4 * sx, 3, 4 * sz);
 		check(helper, want.equals(socket), "the socket was found at %s, not the shaft's corner at %s", socket, want);
 		// no shaft beside the step: no socket
 		for (int y = 1; y <= 4; y++) {
 			level.setBlock(centre.offset(4 * sx, y, 4 * sz), Blocks.AIR.defaultBlockState(), 3);
 		}
-		check(helper, Binding.socketOf(level, centre.getX(), centre.getZ(), sx, sz, centre.getY() + 7, centre.getY() - 1) == null,
+		check(helper, Binding.socketOf(level, centre.getX(), centre.getZ(), sx, sz, centre.getY() + 5, centre.getY() - 1) == null,
 				"a socket was found with no shaft to hold it");
 		helper.succeed();
 	}
