@@ -114,6 +114,7 @@ public final class ServerEvents {
 			com.extremedimensions.lurker.WickService.clear();
 			com.extremedimensions.lurker.TidewalkerService.clear();
 			com.extremedimensions.lurker.GatebreakerService.clear();
+			com.extremedimensions.lurker.LockwardenService.clear();
 			com.extremedimensions.world.AmbientService.clear();
 			com.extremedimensions.coop.ClanService.clear();
 			com.extremedimensions.penalty.FleeService.clear();
@@ -308,6 +309,8 @@ public final class ServerEvents {
 				com.extremedimensions.lurker.TidewalkerService.onDeath(tw, HollowService.culprit(tw, source.getEntity()));
 			} else if (entity instanceof com.extremedimensions.lurker.Gatebreaker gb) {
 				com.extremedimensions.lurker.GatebreakerService.onDeath(gb, HollowService.culprit(gb, source.getEntity()));
+			} else if (entity instanceof com.extremedimensions.lurker.Lockwarden lw) {
+				com.extremedimensions.lurker.LockwardenService.onDeath(lw, HollowService.culprit(lw, source.getEntity()));
 			} else if (entity instanceof Lurker l) {
 				LurkerService.onDeath(l, HollowService.culprit(l, source.getEntity()));
 			} else if (entity instanceof com.extremedimensions.seam.VeilRay || entity instanceof com.extremedimensions.seam.Thinned) {
@@ -729,6 +732,7 @@ public final class ServerEvents {
 		com.extremedimensions.lurker.WickService.tick(s);
 		com.extremedimensions.lurker.TidewalkerService.tick(s);
 		com.extremedimensions.lurker.GatebreakerService.tick(s);
+		com.extremedimensions.lurker.LockwardenService.tick(s);
 		com.extremedimensions.world.AmbientService.tick(s);
 		com.extremedimensions.penalty.AbyssalTolls.serverTick(s);
 		com.extremedimensions.penalty.AbyssalWorld.serverTick(s);

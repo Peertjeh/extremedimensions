@@ -5,6 +5,7 @@ import com.extremedimensions.hollow.Hollowling;
 import com.extremedimensions.hollow.Keeper;
 import com.extremedimensions.lurker.CaveLurker;
 import com.extremedimensions.lurker.Gatebreaker;
+import com.extremedimensions.lurker.Lockwarden;
 import com.extremedimensions.lurker.Magpie;
 import com.extremedimensions.lurker.Tidewalker;
 import com.extremedimensions.lurker.Wick;
@@ -95,6 +96,17 @@ public final class ModEntities {
 					.eyeHeight(4.0f)
 					.clientTrackingRange(12)
 					.build(GATEBREAKER_KEY));
+
+	private static final ResourceKey<EntityType<?>> LOCKWARDEN_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("lockwarden"));
+
+	/** The tribe's keeper of the Dragon's lock, that roams the End after ender pearls; spawned only by {@code LockwardenService}. */
+	public static final EntityType<Lockwarden> LOCKWARDEN = Registry.register(BuiltInRegistries.ENTITY_TYPE, LOCKWARDEN_KEY,
+			EntityType.Builder.<Lockwarden>of(Lockwarden::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(1.0f, 3.6f)
+					.eyeHeight(3.2f)
+					.clientTrackingRange(10)
+					.build(LOCKWARDEN_KEY));
 
 	private static final ResourceKey<EntityType<?>> SCULK_LURKER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("sculk_lurker"));
 
@@ -226,6 +238,7 @@ public final class ModEntities {
 		FabricDefaultAttributeRegistry.register(WICK, Wick.createAttributes());
 		FabricDefaultAttributeRegistry.register(TIDEWALKER, Tidewalker.createAttributes());
 		FabricDefaultAttributeRegistry.register(GATEBREAKER, Gatebreaker.createAttributes());
+		FabricDefaultAttributeRegistry.register(LOCKWARDEN, Lockwarden.createAttributes());
 		FabricDefaultAttributeRegistry.register(HOLLOWLING, Hollowling.createAttributes());
 		FabricDefaultAttributeRegistry.register(KEEPER, Keeper.createAttributes());
 		FabricDefaultAttributeRegistry.register(STARVED_ONE, StarvedOne.createAttributes());

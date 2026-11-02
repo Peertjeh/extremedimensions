@@ -1,11 +1,11 @@
-"""The tribe's body: the Lurker, the Cave Lurker, the Sculk Lurker, the Magpie, the Wick, the Tidewalker, the Gatebreaker, the Hollowling, the Keeper and the Thinned all wear it
+"""The tribe's body: the Lurker, the Cave Lurker, the Sculk Lurker, the Magpie, the Wick, the Tidewalker, the Gatebreaker, the Lockwarden, the Hollowling, the Keeper and the Thinned all wear it
 (the Starved One has had a body of its own since 3.18: tools/elders/starved_one.py), each with its own texture. A hunched, cloaked giant on long knuckle-walking arms, ragged strips of cloak, strands dripping from a
 mask. The claws are fine parts (four pixels to a model pixel); the mask, its eyes, its brow and the fringe of the hood
 are at Minecraft's own size, painted finer and brought down;
 the part names and poses are the ones LurkerModel animates.
 
 usage: python3 tools/lurker/build.py [preview-json-dir]
-Writes LurkerGeometry.java and a base and glow texture for each of the eleven.
+Writes LurkerGeometry.java and a base and glow texture for each of the twelve.
 """
 import math
 import os
@@ -100,7 +100,7 @@ def _mask_parts(m, head):
         m.box(fr, -0.35, 0, -0.25, 0.7, 0.9 + 0.5 * ((k * 3) % 4), 0.5, "t_fray")
 
 
-# ----------------------------------------------------------------------------- the eleven
+# ----------------------------------------------------------------------------- the twelve
 
 SPECIES = {
     "lurker": dict(cloak=((14, 12, 20), (54, 46, 66)), limb=((22, 20, 26), (60, 56, 66)), skin=((40, 36, 44), (86, 80, 90)),
@@ -142,6 +142,11 @@ SPECIES = {
     "gatebreaker": dict(cloak=((34, 34, 40), (92, 92, 104)), limb=((46, 46, 52), (110, 110, 120)), skin=((60, 60, 66), (128, 128, 136)),
                         mask=((58, 60, 68), (138, 140, 150)), crack=(190, 160, 255), eye=(206, 184, 255), eye_hot=(246, 240, 255),
                         tendril=((26, 26, 32), (70, 70, 82)), tip=(150, 120, 220), claw=((70, 70, 78), (160, 160, 170)), face="gate"),
+    # the Lockwarden: tall and thin, cloaked in the End's own dark purple, a mask of pale end stone with a keyhole in it,
+    # eyes and cracks the magenta of an Enderman's gaze
+    "lockwarden": dict(cloak=((14, 8, 22), (56, 38, 76)), limb=((22, 16, 32), (68, 54, 88)), skin=((34, 26, 46), (90, 74, 110)),
+                       mask=((176, 172, 120), (238, 236, 190)), crack=(206, 96, 255), eye=(226, 140, 255), eye_hot=(255, 232, 255),
+                       tendril=((10, 6, 16), (40, 26, 58)), tip=(170, 70, 220), claw=((40, 34, 52), (130, 120, 146)), face="lock"),
     "thinned": dict(cloak=((150, 150, 170), (232, 232, 246)), limb=((160, 160, 178), (236, 236, 248)), skin=((180, 180, 196), (244, 244, 252)),
                     mask=((206, 204, 220), (252, 252, 255)), crack=(216, 196, 255), eye=(214, 190, 255), eye_hot=(255, 250, 255),
                     tendril=((130, 128, 150), (210, 208, 226)), tip=(190, 170, 240), claw=((170, 168, 186), (246, 246, 252)), face="thinned"),
@@ -457,6 +462,16 @@ FACE_PX = {
              "SMMMMMMMMS",
              "SMSMMMMSMS",
              ".SMMMMMMS."],
+    "lock": ["SMMMMMMMMS",
+             "MLMMMMMMLM",
+             "MMMMKKMMMM",
+             "MMMKKKKMMM",
+             "MDDDKKDDDM",
+             "MDDDKKDDDM",
+             "SMMMKKMMMS",
+             "SMMKKKKMMS",
+             "SMMKKKKMMS",
+             ".SMMMMMMS."],
     "thinned": ["SLLLLLLLLS",
                 "LLLLLLLLLL",
                 "LLMLLLLMLL",
@@ -480,6 +495,7 @@ EYE_PX = {
     "wick": ["eEe", "eee"],
     "tide": ["eEe", "e.e"],
     "gate": ["eEe", "..."],
+    "lock": ["eEe", ".e."],
 }
 _PX = {}
 

@@ -1217,7 +1217,7 @@ public class ClientShots implements FabricClientGameTest {
 			// hunched head reaches toward the camera), and how far the camera rises to meet its eyes
 			for (String[] kin : new String[][] {{"lurker", "4.4", "1.2"}, {"hollowling", "1.6", "-0.75"}, {"keeper", "5.5", "1.9"},
 					{"thinned", "3.3", "0.5"}, {"magpie", "3.0", "0.5"}, {"wick", "1.1", "-1.15"},
-					{"tidewalker", "3.4", "0.7"}, {"gatebreaker", "6.2", "2.6"}}) {
+					{"tidewalker", "3.4", "0.7"}, {"gatebreaker", "6.2", "2.6"}, {"lockwarden", "4.6", "1.6"}}) {
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
 				sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:" + kin[0] + " ^ ^ ^" + kin[1]
 						+ " {NoAI:1b,Rotation:[180f,0f]}");

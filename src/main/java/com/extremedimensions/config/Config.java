@@ -500,6 +500,25 @@ public final class Config {
 	/** Health added for every further player near it, as a share of its own (0.5 = half again for each). */
 	public static double GATEBREAKER_HEALTH_PER_PLAYER = 0.5;
 
+	// --- The Lockwarden ------------------------------------------------------------------------
+
+	/** 1 = Lockwardens roam the End once the Dragon has fallen, after players who carry ender pearls; 0 = never. */
+	public static int LOCKWARDEN_ENABLED = 1;
+	/** Chance per player every 20 seconds, in the End with ender pearls on them, that a Lockwarden comes (outside the cooldown). */
+	public static double LOCKWARDEN_SPAWN_CHANCE = 0.06;
+	/** Minimum seconds between two Lockwardens for the same player. */
+	public static int LOCKWARDEN_COOLDOWN_SECONDS = 1200;
+	/** The most ender pearls it snatches at once. */
+	public static int LOCKWARDEN_TAKES = 16;
+	/** Damage of its snatch (half-hearts). */
+	public static double LOCKWARDEN_DAMAGE = 4.0;
+	/** Chance that, its snatch landed, it leaves its prey on a lost islet (one pearl at their feet to get back with). */
+	public static double LOCKWARDEN_MAROON_CHANCE = 0.35;
+	/** How far off (blocks) the lost islet lies. */
+	public static int LOCKWARDEN_MAROON_DISTANCE = 48;
+	/** Seconds it stays at most. */
+	public static int LOCKWARDEN_SECONDS = 90;
+
 	// --- Leaving in danger ----------------------------------------------------------------------
 
 	/**
@@ -1575,6 +1594,8 @@ public final class Config {
 			{"gatebreaker_chance", 0, 1}, {"gatebreaker_cooldown_seconds", 0, 86400}, {"gatebreaker_hardness", 0, 100},
 			{"gatebreaker_smash_blocks", 1, 64}, {"gatebreaker_damage", 0, 60}, {"gatebreaker_speed", 0.2, 4}, {"gatebreaker_seconds", 30, 3600},
 			{"gatebreaker_health_per_player", 0, 5},
+			{"lockwarden_spawn_chance", 0, 1}, {"lockwarden_cooldown_seconds", 0, 86400}, {"lockwarden_takes", 1, 64}, {"lockwarden_damage", 0, 40},
+			{"lockwarden_maroon_chance", 0, 1}, {"lockwarden_maroon_distance", 16, 200}, {"lockwarden_seconds", 20, 1200},
 			{"curse_fresh_weight", 1, 20}, {"tribe_barter_standing_cost", 0, 100}, {"tribe_barter_curse_chance", 0, 1}, {"weaver_pity", 0, 1}, {"seam_thinned_fragment_chance", 0, 1}, {"seam_collapse_toll", 0, 1},
 			{"music_disc_listens_chance", 0, 1}, {"disc_fragment_elegy_count", 0, 9}, {"disc_fragment_abyss_broken", 0, 9},
 			{"disc_fragment_abyss_tangle_chance", 0, 1}, {"disc_fragment_abyss_ray_chance", 0, 1},

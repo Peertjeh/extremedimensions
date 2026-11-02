@@ -76,7 +76,8 @@ public final class TetherCommand {
 						.then(Commands.literal("magpie").executes(c -> lurker(c.getSource(), "magpie")))
 						.then(Commands.literal("wick").executes(c -> lurker(c.getSource(), "wick")))
 						.then(Commands.literal("tidewalker").executes(c -> lurker(c.getSource(), "tidewalker")))
-						.then(Commands.literal("gatebreaker").executes(c -> lurker(c.getSource(), "gatebreaker"))))
+						.then(Commands.literal("gatebreaker").executes(c -> lurker(c.getSource(), "gatebreaker")))
+						.then(Commands.literal("lockwarden").executes(c -> lurker(c.getSource(), "lockwarden"))))
 				.then(Commands.literal("hoard").requires(op).executes(c -> hoard(c.getSource())))
 				.then(Commands.literal("boss").requires(op)
 						.then(Commands.literal("matriarch").executes(c -> boss(c.getSource(), "matriarch")))
@@ -322,6 +323,7 @@ public final class TetherCommand {
 			case "wick" -> com.extremedimensions.lurker.WickService.summon(p);
 			case "tidewalker" -> com.extremedimensions.lurker.TidewalkerService.summon(p);
 			case "gatebreaker" -> com.extremedimensions.lurker.GatebreakerService.summon(p);
+			case "lockwarden" -> com.extremedimensions.lurker.LockwardenService.summon(p);
 			default -> LurkerService.summon(p, mode);
 		};
 		String failed = switch (mode) {
@@ -331,6 +333,7 @@ public final class TetherCommand {
 			case "wick" -> "commands.extremedimensions.lurker.failed_wick";
 			case "tidewalker" -> "commands.extremedimensions.lurker.failed_tidewalker";
 			case "gatebreaker" -> "commands.extremedimensions.lurker.failed_gatebreaker";
+			case "lockwarden" -> "commands.extremedimensions.lurker.failed_lockwarden";
 			default -> "commands.extremedimensions.lurker.failed";
 		};
 		src.sendSuccess(() -> Component.translatable(ok ? "commands.extremedimensions.lurker.summoned" : failed), false);

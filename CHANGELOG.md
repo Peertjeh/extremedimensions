@@ -1,5 +1,29 @@
 # Changelog
 
+## 3.21.0: The Lockwarden
+
+The End was the one world without the tribe. Now it has the one who kept the lock.
+
+### The Lockwarden
+- **The Dragon was the lock on the first wound, and the Lockwarden kept watch over the lock.** Tall and thin, cloaked
+  in the End's own dark purple, a mask of pale end stone with a keyhole in it, eyes of an Enderman's magenta. With the
+  Dragon fallen there is no lock left to keep, and it roams the End after what still opens ways.
+- **It comes only for those who carry ender pearls**, once the Dragon has fallen: it steps out of nowhere a little way
+  off and watches, then comes on in steps as an Enderman does, from one spot near you to another, closer each time.
+- **The snatch**: a moment's reach (motes gathering in its hands), then your ender pearls are gone (16 at most,
+  `lockwarden_takes`) and you are hurt. Sometimes (`lockwarden_maroon_chance`) it takes you with it: you find yourself
+  on a **lost islet** of end stone some way out over the void (`lockwarden_maroon_distance`), one ender pearl lying at
+  your feet to get back with. Then it steps away and is gone.
+- **Counters**: carry no pearls and it has no business with you. A raised shield turns its reach. Strike it and half
+  of what it took falls; slay it and all of it does, with chorus fruit, tether fragments and sometimes a shulker shell.
+  Kin are spared.
+- In the bestiary, through the Wound Lens, with `/tether lurker lockwarden`, on the difficulty presets, and every
+  number a setting in English and Dutch.
+
+### Tests
+- A Lockwarden snatches a player's pearls, leaves them on a lost islet of end stone with one pearl at their feet, and
+  drops all 16 when slain.
+
 ## 3.20.0: Deep Water, Broken Walls
 
 Two more of the tribe: one for the water, which had nothing in it, and one that finally gives the Wound Storms teeth.

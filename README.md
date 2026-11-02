@@ -106,7 +106,9 @@ an unweaving the loom waits three days for you.
   keeps it off. A curse laid
   without a choice is varied: one you do not carry yet is likelier, and never the last one again. Hollowlings can be befriended, slowly; the young of an Extreme swarm bite, and a bite may curse. After the Dragon falls, **Wound
   Storms** tear the sky, and out of them may step the **Gatebreaker**, a giant that breaks through your walls (all
-  but obsidian) to get at you.
+  but obsidian) to get at you. In the End, once the Dragon has fallen, the **Lockwarden** that kept the Dragon's lock comes for
+  anyone carrying ender pearls: it steps closer as an Enderman does, snatches them, and sometimes leaves you on a lost
+  islet with one pearl to get back.
 
 ## The story
 
