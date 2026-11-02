@@ -227,6 +227,40 @@ public class ClientShots implements FabricClientGameTest {
 	}
 
 	/** Whether the world is loaded on the server in a ring this far round the player. */
+	/**
+	 * Where to stand to see a building's furnished inside, from a plan just placed: before the furniture (looms,
+	 * lecterns, chests, ladders) nearest the middle at its foot, looking at it from three blocks into the room (or, for a
+	 * ladder, from the foot of it out into the room). {x, y, z, yaw}, or null when the plan has none.
+	 */
+	private static double[] interiorView(com.extremedimensions.seam.SeamArchitect.Plan plan, int cx, int cz, int lo, int hi, boolean ladder) {
+		double best = Double.MAX_VALUE;
+		double[] view = null;
+		for (long k : plan.positions()) {
+			int x = BlockPos.getX(k), y = BlockPos.getY(k), z = BlockPos.getZ(k);
+			if (y < lo || y > hi) {
+				continue;
+			}
+			net.minecraft.world.level.block.state.BlockState b = plan.at(x, y, z);
+			boolean mark = ladder ? b.is(net.minecraft.world.level.block.Blocks.LADDER) && !plan.has(x, y - 1, z)
+					: b.is(net.minecraft.world.level.block.Blocks.LECTERN) || b.is(net.minecraft.world.level.block.Blocks.LOOM)
+							|| b.is(net.minecraft.world.level.block.Blocks.CHEST);
+			if (!mark || !b.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING)) {
+				continue;
+			}
+			double d = (double) (x - cx) * (x - cx) + (double) (z - cz) * (z - cz);
+			if (d >= best) {
+				continue;
+			}
+			best = d;
+			net.minecraft.core.Direction f = b.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING);
+			double back = ladder ? 0.7 : 3.5;
+			// looking at the furniture (against its facing), or from the ladder out into the room (along it)
+			double lx = ladder ? f.getStepX() : -f.getStepX(), lz = ladder ? f.getStepZ() : -f.getStepZ();
+			view = new double[] {x + 0.5 + f.getStepX() * back, y, z + 0.5 + f.getStepZ() * back, Math.toDegrees(Math.atan2(-lx, lz))};
+		}
+		return view;
+	}
+
 	private static boolean loadedRound(MinecraftServer s, int r) {
 		ServerPlayer p = player(s);
 		for (int a = 0; a < 8; a++) {
@@ -1450,11 +1484,13 @@ public class ClientShots implements FabricClientGameTest {
 			for (int k = 0; k < plans.length; k++) {
 				final int kk = k;
 				int cx = home[0] + 700 + k * 300, cz = home[2] + 300;
+				double[][] inside = new double[1][];
 				String what = sp.getServer().computeOnServer(s -> {
 					com.extremedimensions.seam.Colossus.Summary[] built = new com.extremedimensions.seam.Colossus.Summary[1];
 					com.extremedimensions.seam.SeamArchitect.Plan plan = com.extremedimensions.seam.SeamService.colossus(4242L + kk * 7717L, cx, skyTop, cz, 36,
 							kk % 5, kk == 5 ? com.extremedimensions.seam.Colossus.RUIN : -1, built);
 					plan.placeNow((net.minecraft.server.level.ServerLevel) player(s).level());
+					inside[0] = interiorView(plan, cx, cz, skyTop + 2, skyTop + 3, false);
 					return built[0] + ", " + plan.size() + " blocks";
 				});
 				com.extremedimensions.ExtremeDimensions.LOGGER.info("Colossus shot {} ({}): {}", k, plans[k], what);
@@ -1471,6 +1507,12 @@ public class ClientShots implements FabricClientGameTest {
 					ctx.waitTicks(30);
 					ctx.takeScreenshot("18_colossus_" + plans[k] + "_close");
 				}
+				if ((k == 0 || k == 2) && inside[0] != null) {
+					// inside, on a furnished floor
+					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.2f %.1f %.2f %.1f 18", inside[0][0], inside[0][1], inside[0][2], inside[0][3]));
+					ctx.waitTicks(30);
+					ctx.takeScreenshot("19_interior_" + plans[k]);
+				}
 				if (k == 0) {
 					sp.getServer().runCommand("time set midnight");
 					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 -8", cx, skyTop + 28, cz - 78));
@@ -1486,10 +1528,12 @@ public class ClientShots implements FabricClientGameTest {
 			for (int k = 0; k < kinds.length; k++) {
 				final int kk = k;
 				int cx = home[0] + 700 + (6 + k) * 300, cz = home[2] + 300;
+				double[][] inside = new double[1][];
 				String what = sp.getServer().computeOnServer(s -> {
 					com.extremedimensions.seam.SeamArchitect.Plan plan = com.extremedimensions.seam.SeamService.showpiece(9100L + kk * 131L, cx, skyTop, cz,
 							kindIds[kk]);
 					plan.placeNow((net.minecraft.server.level.ServerLevel) player(s).level());
+					inside[0] = kk == 0 ? interiorView(plan, cx, cz, skyTop - 3, skyTop + 5, true) : null;
 					return plan.size() + " blocks";
 				});
 				com.extremedimensions.ExtremeDimensions.LOGGER.info("Island shot {} ({}): {}", k, kinds[k], what);
@@ -1501,6 +1545,12 @@ public class ClientShots implements FabricClientGameTest {
 					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 25 16", cx - 16, skyTop + 12, cz - 34));
 					ctx.waitTicks(40);
 					ctx.takeScreenshot("20_island_" + kinds[k] + "_close");
+				}
+				if (k == 0 && inside[0] != null) {
+					// inside a house of the Thinned, from the foot of its ladder
+					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.2f %.1f %.2f %.1f 20", inside[0][0], inside[0][1], inside[0][2], inside[0][3]));
+					ctx.waitTicks(30);
+					ctx.takeScreenshot("19_interior_house");
 				}
 				if (k == 2) {
 					// its underside, from below and off to the side

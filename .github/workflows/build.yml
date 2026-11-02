@@ -144,7 +144,7 @@ jobs:
           import glob, os
           from PIL import Image
           for f in sorted(glob.glob("build/run/clientGameTest/screenshots/*.png")):
-              if "tetherite" not in f:
+              if "tetherite" not in f and "interior" not in f:
                   continue
               full = Image.open(f).convert("RGB")
               w, h = full.size
@@ -157,7 +157,7 @@ jobs:
           git init -q
           git checkout -q -b ci-shots
           git add .
-          git -c user.name=ci -c user.email=ci@localhost commit -q -m "Tetherite screenshots of ${GITHUB_SHA}"
+          git -c user.name=ci -c user.email=ci@localhost commit -q -m "Tetherite and interior screenshots of ${GITHUB_SHA}"
           git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" ci-shots
 
   compat:
