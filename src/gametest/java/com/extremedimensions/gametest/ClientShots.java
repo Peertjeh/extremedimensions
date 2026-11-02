@@ -1260,10 +1260,10 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~4 ~ 0 0");
 			ctx.waitTicks(15);
 			ctx.takeScreenshot("10_starved_one");
-			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~2.5 ~6 0 0");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~1 ~6.5 0 14");
 			ctx.waitTicks(10);
 			ctx.takeScreenshot("10_starved_one_close");
-			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-2.5 ~-6 0 0");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-1 ~-6.5 0 0");
 			sp.getServer().runOnServer(s -> mobs(s).forEach(m -> {
 				if (m instanceof com.extremedimensions.mending.StarvedOne so) {
 					so.setBound(true);
