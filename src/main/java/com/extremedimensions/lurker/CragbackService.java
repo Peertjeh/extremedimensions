@@ -217,11 +217,16 @@ public final class CragbackService {
 	/** One stone of its back: the block, how big, where (from the top of its body) and how far turned (degrees). */
 	private record Stone(Block block, float size, float x, float y, float z, float turn) {}
 
+	/**
+	 * The stones of its back: pale hush stone and tuff (light against its dark cloak, so it reads as rock) with Tetherite
+	 * ore among them, set well up on its hump so they stand clear of it.
+	 */
 	private static List<Stone> stones() {
-		return List.of(new Stone(ModBlocks.HUSH_STONE, 1.15F, 0.0F, -0.85F, 0.1F, 12F),
-				new Stone(ModBlocks.COBBLED_HUSH_STONE, 0.8F, -0.45F, -0.6F, -0.3F, 38F),
-				new Stone(ModBlocks.TETHERITE_ORE, 0.7F, 0.4F, -0.45F, -0.2F, 25F),
-				new Stone(ModBlocks.TETHERITE_ORE, 0.5F, -0.1F, -0.15F, 0.35F, 61F));
+		return List.of(new Stone(ModBlocks.POLISHED_PALE_HUSH_STONE, 1.25F, 0.0F, -0.35F, 0.1F, 12F),
+				new Stone(net.minecraft.world.level.block.Blocks.TUFF, 0.9F, -0.55F, -0.2F, -0.35F, 38F),
+				new Stone(ModBlocks.TETHERITE_ORE, 0.75F, 0.5F, -0.05F, -0.25F, 25F),
+				new Stone(ModBlocks.TETHERITE_ORE, 0.55F, -0.1F, 0.85F, 0.25F, 61F),
+				new Stone(ModBlocks.POLISHED_PALE_HUSH_STONE, 0.7F, 0.45F, -0.3F, 0.55F, 70F));
 	}
 
 	/**

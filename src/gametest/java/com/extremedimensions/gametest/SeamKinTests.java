@@ -191,7 +191,7 @@ public class SeamKinTests {
 			in[0] = ModEntities.CRAGBACK.spawn(level, helper.absolutePos(new BlockPos(2, 1, 2)), EntitySpawnReason.COMMAND);
 			check(helper, in[0] != null, "no Cragback came");
 			CragbackService.adopt(level, in[0], p);
-			check(helper, CragbackService.stones(in[0]) >= 3, "its back has %s stones on it", CragbackService.stones(in[0]));
+			check(helper, CragbackService.stones(in[0]) >= 5, "its back has %s stones on it, not 5", CragbackService.stones(in[0]));
 			check(helper, "dormant".equals(CragbackService.mode(in[0])), "it is not asleep but %s", CragbackService.mode(in[0]));
 		});
 		helper.runAfterDelay(30, () -> {

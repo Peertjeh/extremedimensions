@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.22.1: Rock on Its Back
+
+### Fixes
+- **The Cragback looks like what it is.** The stones of its back were the same dark hush stone as its cloak, and sat
+  low in its hump, so it read as one more dark creature, not a boulder. Its back now carries five stones (pale hush
+  stone, tuff and two of Tetherite ore) set well up on its hump, light against the dark, so a sleeping Cragback looks
+  like a rock with something under it.
+
 ## 3.22.0: The Seam's Own
 
 The Seam had its rays and its Thinned, and the Lurkers only ever watched there. Now it has a tribe of its own: one
