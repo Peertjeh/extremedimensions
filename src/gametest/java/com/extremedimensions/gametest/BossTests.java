@@ -93,20 +93,22 @@ public class BossTests {
 	@GameTest
 	public void aPillarsSocketIsFoundOnItsCorner(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		BlockPos centre = helper.absolutePos(new BlockPos(6, 1, 6));
-		// the top step at (1, 2, 1) relative, the shaft's corner column at (2, 2..5, 2)
-		level.setBlock(helper.absolutePos(new BlockPos(1, 2, 1)), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 3);
-		for (int y = 2; y <= 5; y++) {
-			level.setBlock(helper.absolutePos(new BlockPos(2, y, 2)), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 3);
+		// In world space (the test's own space may be turned): the obelisk's centre in one corner of the test, its top
+		// step five out on both axes towards the test's middle, and the shaft's corner column four out above it
+		BlockPos centre = helper.absolutePos(new BlockPos(1, 1, 1)), far = helper.absolutePos(new BlockPos(6, 1, 6));
+		int sx = Integer.signum(far.getX() - centre.getX()), sz = Integer.signum(far.getZ() - centre.getZ());
+		level.setBlock(centre.offset(5 * sx, 1, 5 * sz), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 3);
+		for (int y = 1; y <= 4; y++) {
+			level.setBlock(centre.offset(4 * sx, y, 4 * sz), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 3);
 		}
-		BlockPos socket = Binding.socketOf(level, centre.getX(), centre.getZ(), -1, -1, centre.getY() + 7, centre.getY() - 1);
-		BlockPos want = helper.absolutePos(new BlockPos(2, 4, 2));
+		BlockPos socket = Binding.socketOf(level, centre.getX(), centre.getZ(), sx, sz, centre.getY() + 7, centre.getY() - 1);
+		BlockPos want = centre.offset(4 * sx, 3, 4 * sz);
 		check(helper, want.equals(socket), "the socket was found at %s, not the shaft's corner at %s", socket, want);
 		// no shaft beside the step: no socket
-		for (int y = 2; y <= 5; y++) {
-			level.setBlock(helper.absolutePos(new BlockPos(2, y, 2)), Blocks.AIR.defaultBlockState(), 3);
+		for (int y = 1; y <= 4; y++) {
+			level.setBlock(centre.offset(4 * sx, y, 4 * sz), Blocks.AIR.defaultBlockState(), 3);
 		}
-		check(helper, Binding.socketOf(level, centre.getX(), centre.getZ(), -1, -1, centre.getY() + 7, centre.getY() - 1) == null,
+		check(helper, Binding.socketOf(level, centre.getX(), centre.getZ(), sx, sz, centre.getY() + 7, centre.getY() - 1) == null,
 				"a socket was found with no shaft to hold it");
 		helper.succeed();
 	}
@@ -167,7 +169,7 @@ public class BossTests {
 	 * The Starved One hangs in the air (it never falls), tells the client what it is doing and whether it is bound, and
 	 * outside the Heart's fight takes harm in full.
 	 */
-	@GameTest
+	@GameTest(maxTicks = 60)
 	public void theStarvedOneHangsInTheAir(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		BlockPos at = helper.absolutePos(new BlockPos(4, 6, 4));

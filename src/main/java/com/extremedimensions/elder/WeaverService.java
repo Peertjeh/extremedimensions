@@ -368,8 +368,13 @@ public final class WeaverService {
 		}
 		u.step();
 		Beat b = u.beat;
-		if (u.action != ElderBoss.ULTIMATE) {
-			w.motion.brake(w, 0.015, HOVER + (u.action == Weaver.THOUSAND ? 3 : 0));
+		if (u.action == Weaver.UNRAVEL && b.between(2, 10) && Math.sqrt(w.distanceToSqr(p.getX(), w.getY(), p.getZ())) > 6) {
+			// It swoops in on the one it unravels
+			w.motion.toward(w, p.getX(), p.getZ(), 0.3, 0.06, HOVER);
+		} else if (u.action != ElderBoss.ULTIMATE) {
+			// Calling its needles it rises high, and drops as they fall
+			double lift = u.action == Weaver.NEEDLES && b.t < 20 ? 4.0 * Math.min(1, Math.max(0, (b.t - 4) / 12.0)) : 0;
+			w.motion.brake(w, 0.015, HOVER + (u.action == Weaver.THOUSAND ? 3 : 0) + lift);
 		}
 		switch (u.action) {
 			case Weaver.THREAD -> {
@@ -405,6 +410,8 @@ public final class WeaverService {
 						}
 					}
 					WorldFx.soundIn(dim, "minecraft:block.amethyst_block.resonate", "hostile", w.getX(), w.getY() + 14, w.getZ(), 4f, 0.5f);
+					// it drops out of the height it rose to as they fall
+					ElderFx.shake(w, w.getX(), w.getZ(), 30, 0.5f, 12);
 				}
 				if (b.past(40)) {
 					end(w, u, 55);

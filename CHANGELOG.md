@@ -5,15 +5,34 @@
 The last fight was the weakest: a Lurker scaled up, walking about the Heart, stunned by two scraps of silk on two little
 pedestals. Now it is the end of the story.
 
-### Its own body
-- **A new model**, after the concept art: a hooded, faceless thing some seven blocks tall (sized for the Heart's
-  island), a single burning slit where a face should be, a halo of rusted spikes standing behind its head, a robe of
-  black tatters split by violet cracks and frayed to shreds where legs would be, a wound of light down its chest, rusted
-  chains wound round it and swinging from its wrists, and long starved arms in torn sleeves ending in claws. Its slit,
-  wound, veins and claw tips glow.
-- **It moves**: it bobs in the air, its tatters, sleeves and chains stir and stream behind it in flight, its halo turns,
-  and it reaches, rakes, calls, lunges and hauls with its arms. Bound, its arms are dragged out and down and it hangs
-  its head, shuddering.
+### Its own body: the hunger, not a Weaver
+- **A new model.** In the story the Starved One is what came through the first wound, the hunger itself; it was never
+  a Weaver, and the Weavers' signs (the halo, the gown, the violet light) are not its own. So it is drawn as hunger: a
+  starved, hunched thing some six blocks tall (sized for the Heart's island) that leans in towards what it wants; a
+  hood with no face in it but a wide maw of embers lined with teeth; a crown of broken iron spikes on its brow, its band
+  snapped open; its ribs open on a belly of ember light that is always empty; ash-grey skin over bone and a spine that
+  stands out along its back; long bony arms with rusted shackles and long claws; no legs, only grave-rags that gather
+  into a tail of tatters trailing behind it; and the snapped chains of the binding that could not hold it, wound round
+  it and dragging from its wrists and crown. Charcoal, rust and ember, no violet. Its maw, belly, veins and claw tips
+  glow.
+- **It moves**: it breathes slow and hungry in the air, its tail ripples in a long wave and streams out behind it in
+  flight, its rags and chains stir and its crown rattles; it flings its arms back before it falls on you, winds up and
+  rakes, rears up with its maw to the sky to call its young, draws its head back and snaps it forward to bite, reaches
+  out and hauls. Bound, its arms are dragged out and down and it hangs its head, shuddering.
+
+### Every blow lands (all the bosses)
+The Elders' blows were big but stiff: a giant stood where it was and moved its arms. Now every boss puts its weight into
+its blows, the Matriarch, the Ferryman, the Last Weaver, the Knot Mother and the Starved One alike.
+- **Gather, strike, rebound.** Before a blow lands a boss gathers for it (sinks into its knees or rises, draws back,
+  strains with a tremor), then throws itself into the blow, which snaps through past where it is going and settles back
+  with a rebound. Raking, slamming and planting blows snap through instead of easing.
+- **Impact frames.** As a blow lands the boss holds still for an instant before it follows through, the view of
+  everyone near jolts down and springs back, a short hard shake goes through the ground and dust bursts up where it
+  struck. (Footsteps and the long rumble of an ultimate do not; calm mode keeps a quarter of the jolt and no frames.)
+- **Into the blow.** The Matriarch steps in to her sweep and plants her feet as it falls; the Ferryman's boat surges in
+  under his falling pole and stops dead as it strikes; the Last Weaver (and the Knot Mother) rises high calling its
+  needles and drops as they fall, and swoops in on the one it unravels. The Starved One's claws, bite, drag, binding
+  and rising land the same way.
 
 ### It flies
 - It rises out of the Heart itself, through the stone, and hangs in the air. It circles its prey a few blocks over it,

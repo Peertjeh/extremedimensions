@@ -58,17 +58,23 @@ public class ElderRenderer<T extends ElderBoss> extends MobRenderer<T, ElderRend
 		super.extractRenderState(boss, state, partialTick);
 		float now = boss.tickCount + partialTick;
 		int action = boss.getAction();
-		float[] a = actions.computeIfAbsent(boss, k -> new float[] {-1, now, ElderTints.NONE, action});
+		// {take, began, tell before, action, action clock, last frame}
+		float[] a = actions.computeIfAbsent(boss, k -> new float[] {-1, now, ElderTints.NONE, action, 0, now});
 		int take = boss.getTake();
 		if (take != (int) a[0]) {
 			a[2] = (int) a[0] < 0 ? ElderTints.NONE : ElderTints.of(name, (int) a[3]);
 			a[0] = take;
 			a[1] = now;
 			a[3] = action;
+			a[4] = 0;
 		}
 		state.action = action;
-		// The action plays at the tempo the server runs it at
-		state.actionTime = (now - a[1]) * Math.max(0.1F, boss.getTempo());
+		// The action plays at the tempo the server runs it at, and holds still for an instant as a blow lands (an
+		// impact frame, see HitStop)
+		float dt = Math.max(0, Math.min(5, now - a[5]));
+		a[5] = now;
+		a[4] += dt * Math.max(0.1F, boss.getTempo()) * com.extremedimensions.client.fx.HitStop.factor(boss.getId());
+		state.actionTime = a[4];
 		float breathe = 0.82F + 0.18F * Mth.sin(now * 0.08F);
 		float flare = action == ElderBoss.IDLE ? 0 : Math.min(1.0F, state.actionTime / 10.0F) * 0.25F;
 		if (action == ElderBoss.ULTIMATE) {

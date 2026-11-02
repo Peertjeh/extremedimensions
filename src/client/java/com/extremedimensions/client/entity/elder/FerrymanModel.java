@@ -105,7 +105,7 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 		switch (action) {
 			case Ferryman.SLAM -> {
 				float wind = ElderAnim.smooth(at / 24F);
-				float down = ElderAnim.smooth((at - 24) / 6F);
+				float down = ElderAnim.snap((at - 24) / 5F);
 				float back = ElderAnim.smooth((at - 30) / 12F);
 				armR.xRot += (-1.3F * wind * (1 - down) + 0.5F * down) * (1 - back);
 				armR.zRot += 0.2F * wind * (1 - back);
@@ -157,7 +157,7 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 			case Ferryman.TIDE -> {
 				// Pole up over his head, then planted in the boat
 				float up = ElderAnim.smooth(at / 16F) * (1 - ElderAnim.smooth((at - 17) / 3F));
-				float plant = ElderAnim.smooth((at - 17) / 3F) * (1 - ElderAnim.smooth((at - 32) / 12F));
+				float plant = ElderAnim.snap((at - 17) / 3F) * (1 - ElderAnim.smooth((at - 32) / 12F));
 				armR.xRot -= 1.6F * up;
 				armR.zRot += 0.3F * up;
 				torso.xRot -= 0.12F * up;
@@ -183,6 +183,18 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 			default -> {
 			}
 		}
+		// The weight of his blows: he crouches in the boat and draws back as he gathers, then throws himself into the
+		// blow; the boat dips its bow and rocks
+		float[] ac = ElderAnim.accent(at, impacts(action), 10, 12);
+		float g = ac[0], j = ac[1];
+		figure.y += 1.6F * g + 0.8F * j;
+		torso.xRot += -0.16F * g + 0.24F * j;
+		torso.zRot += ElderAnim.tremor(t, 0.025F * g);
+		hood.xRot += -0.1F * g + 0.15F * j;
+		boat.xRot += 0.07F * j - 0.03F * g;
+		boat.zRot += 0.04F * j * Mth.sin(t * 0.7F);
+		root.y += 1.2F * j;
+		root.z -= 1.8F * j;
 		if (dying) {
 			// At the very end it sinks as it breaks apart
 			float sink = ElderAnim.smooth((s.deathTime - ElderBoss.DEATH_TICKS * 0.9F) / (ElderBoss.DEATH_TICKS * 0.1F));
@@ -212,5 +224,19 @@ public class FerrymanModel extends EntityModel<ElderRenderState> {
 		vortex.yRot += t * 0.5F * (1 - ElderAnim.smooth((at - 110) / 30F));
 		// He lifts his free hand as the last bell rings
 		armL.zRot -= 0.6F * ElderAnim.env(at - 100, 15, 15, 10);
+	}
+
+	/** When each of his blows lands (ticks at tempo 1, as the server strikes them). */
+	private static float[] impacts(int action) {
+		return switch (action) {
+			case Ferryman.SLAM -> new float[] {24};
+			case Ferryman.CHAIN -> new float[] {10};
+			case Ferryman.LANTERN -> new float[] {16};
+			case Ferryman.KNELL -> new float[] {8};
+			case Ferryman.CROSSING -> new float[] {20};
+			case Ferryman.GAOL -> new float[] {12, 34};
+			case Ferryman.TIDE -> new float[] {18, 28};
+			default -> ElderAnim.NONE;
+		};
 	}
 }

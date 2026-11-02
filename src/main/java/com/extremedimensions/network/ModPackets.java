@@ -439,6 +439,11 @@ public final class ModPackets {
 		public static final int DEATH = 6;
 		/** An Elder forming: the bars close in, and with a positive strength (its length in ticks) the view is held on entity {@code value}. */
 		public static final int SPAWN = 7;
+		/**
+		 * A blow landing with weight, near this player: the view jolts down, and the striker (entity {@code value}) holds
+		 * still for an instant, an impact frame. {@code strength} 0..1.
+		 */
+		public static final int PUNCH = 8;
 		public static final Type<BossFxPayload> TYPE = new Type<>(ExtremeDimensions.id("boss_fx"));
 		public static final StreamCodec<FriendlyByteBuf, BossFxPayload> CODEC = StreamCodec.ofMember(BossFxPayload::write, BossFxPayload::read);
 

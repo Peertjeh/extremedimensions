@@ -296,7 +296,14 @@ public final class FerrymanService {
 		if (fare.action != Ferryman.CROSSING && fare.action != ElderBoss.ULTIMATE) {
 			// Mid-blow the boat drifts to a stop, turned to its passenger
 			f.motion.turn(f, ElderFx.yawTo(f, p.getX(), p.getZ()), 3f);
-			f.motion.brake(f, 0.02, 0.1);
+			double near = Math.sqrt(f.distanceToSqr(p.getX(), f.getY(), p.getZ()));
+			if (fare.action == Ferryman.SLAM && b.between(10, 24) && near > 8) {
+				// The boat surges in under the falling pole, and stops dead as it strikes
+				double ry = Math.toRadians(f.getYRot());
+				f.motion.drive(f, -Math.sin(ry) * 0.32, Math.cos(ry) * 0.32, 0.06, 0.1);
+			} else {
+				f.motion.brake(f, fare.action == Ferryman.SLAM ? 0.1 : 0.02, 0.1);
+			}
 			ElderFx.look(f, p);
 		}
 		switch (fare.action) {

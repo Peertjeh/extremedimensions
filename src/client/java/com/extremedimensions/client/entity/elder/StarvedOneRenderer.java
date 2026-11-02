@@ -43,17 +43,20 @@ public class StarvedOneRenderer extends MobRenderer<StarvedOne, StarvedOneRender
 	public void extractRenderState(StarvedOne so, StarvedOneRenderState state, float partialTick) {
 		super.extractRenderState(so, state, partialTick);
 		float now = so.tickCount + partialTick;
-		float[] a = actions.computeIfAbsent(so, k -> new float[] {-1, now, 0, now});
+		// {take, action clock, binding, last frame}
+		float[] a = actions.computeIfAbsent(so, k -> new float[] {-1, 0, 0, now});
 		int take = so.getTake();
 		if (take != (int) a[0]) {
 			a[0] = take;
-			a[1] = now;
+			a[1] = 0;
 		}
-		state.action = so.getAction();
-		state.actionTime = now - a[1];
-		// The binding eases in over a few ticks, and out again
 		float dt = Mth.clamp(now - a[3], 0, 5);
 		a[3] = now;
+		// Its action clock holds still for an instant as a blow lands (an impact frame, see HitStop)
+		a[1] += dt * com.extremedimensions.client.fx.HitStop.factor(so.getId());
+		state.action = so.getAction();
+		state.actionTime = a[1];
+		// The binding eases in over a few ticks, and out again
 		a[2] = Mth.clamp(a[2] + (so.isBound() ? 0.12F : -0.08F) * dt, 0, 1);
 		state.bound = a[2];
 		double vx = so.getX() - so.xo, vy = so.getY() - so.yo, vz = so.getZ() - so.zo;

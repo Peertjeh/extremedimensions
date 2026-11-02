@@ -241,14 +241,32 @@ final class ElderFx {
 		}
 	}
 
-	/** The ground shakes around a point: the screen of everyone near shakes, less the further away they are. */
+	/**
+	 * The ground shakes around a point: the screen of everyone near shakes, less the further away they are. A shake
+	 * the size of a blow (not a footstep, not the long rumble of an ultimate) lands with weight as well: the view jolts,
+	 * the Elder holds still for an impact frame, and dust bursts up off the ground where it struck.
+	 */
 	static void shake(ElderBoss b, double x, double z, double radius, float strength, int ticks) {
+		boolean blow = ticks >= 8 && ticks <= 25 && strength >= 0.4f;
 		for (ServerPlayer p : ((ServerLevel) b.level()).players()) {
 			double dx = p.getX() - x, dz = p.getZ() - z;
 			double d = Math.sqrt(dx * dx + dz * dz);
 			if (d < radius) {
 				float s = (float) (strength * (1 - d / radius * 0.75));
 				ServerPlayNetworking.send(p, new ModPackets.BossFxPayload(ModPackets.BossFxPayload.SHAKE, index(b), ticks, s, ""));
+				if (blow) {
+					ServerPlayNetworking.send(p, new ModPackets.BossFxPayload(ModPackets.BossFxPayload.PUNCH, index(b), b.getId(), s, ""));
+				}
+			}
+		}
+		if (blow) {
+			ServerLevel level = (ServerLevel) b.level();
+			double y = surface(level, x, b.getY() + 3, z, 6, 24);
+			if (!Double.isNaN(y)) {
+				double r = 2.0 + strength * 3.0;
+				ring(level, "minecraft:poof", x, y + 0.2, z, r, 18, 0);
+				ring(level, "minecraft:campfire_cosy_smoke", x, y + 0.3, z, r * 0.7, 8, 0.4);
+				WorldFx.particleIn(level, "minecraft:cloud", x, y + 0.6, z, r * 0.4, 0.3, r * 0.4, 0.05, 10);
 			}
 		}
 	}

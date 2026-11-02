@@ -45,6 +45,11 @@ public class BossCinema implements HudElement {
 				introBoss = boss;
 			}
 			case ModPackets.BossFxPayload.SHAKE -> CameraShake.add(fx.strength(), fx.value());
+			case ModPackets.BossFxPayload.PUNCH -> {
+				// A blow lands: the view jolts and the one who struck holds still for an impact frame
+				CameraShake.jolt(fx.strength());
+				HitStop.mark(fx.value(), fx.strength());
+			}
 			case ModPackets.BossFxPayload.ULTIMATE -> {
 				// The ultimate takes the whole screen: a title card still showing makes way
 				introAt = -1;

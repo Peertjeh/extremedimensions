@@ -173,6 +173,21 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 			default -> {
 			}
 		}
+		// The weight of its blows: it rises and draws its arms in as it gathers, its halo flaring, straining; then it
+		// drops into the blow, thrown forward, and its halo kicks round
+		float[] ac = ElderAnim.accent(at, impacts(action), 10, 12);
+		float power = action == Weaver.THOUSAND ? 0.4F : 1F;
+		float g = ac[0] * power, j = ac[1] * power;
+		root.y += -2.6F * g + 2.0F * j;
+		root.z -= 2.2F * j;
+		body.xRot += -0.12F * g + 0.2F * j;
+		body.zRot += ElderAnim.tremor(t, 0.02F * g);
+		head.xRot += -0.1F * g + 0.14F * j;
+		armL.zRot -= 0.2F * g;
+		armR.zRot += 0.2F * g;
+		halo.zRot += 0.5F * j;
+		halo.xScale *= 1 + 0.12F * g;
+		halo.yScale *= 1 + 0.12F * g;
 		if (action == ElderBoss.SPAWN) {
 			woven(at, t);
 		}
@@ -222,5 +237,18 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 		}
 		// The cocoon tears: it swells a little and settles
 		ElderAnim.scale(root, 1 + 0.06F * ElderAnim.env(at - 121, 2, 2, 12));
+	}
+
+	/** When each of its blows lands (ticks at tempo 1, as the server strikes them). */
+	private static float[] impacts(int action) {
+		return switch (action) {
+			case Weaver.THREAD -> new float[] {15};
+			case Weaver.NEEDLES -> new float[] {20};
+			case Weaver.UNRAVEL -> new float[] {10};
+			case Weaver.LANCE -> new float[] {22};
+			case Weaver.CRADLE -> new float[] {14, 62};
+			case Weaver.THOUSAND -> new float[] {16, 21, 26, 31, 36, 41, 46, 51, 56, 60};
+			default -> ElderAnim.NONE;
+		};
 	}
 }

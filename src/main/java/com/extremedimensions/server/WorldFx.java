@@ -308,4 +308,20 @@ public final class WorldFx {
 			}
 		}
 	}
+
+	/**
+	 * A blow lands with weight near (x, z): for everyone within {@code radius}, a short hard shake, the view jolting
+	 * down and the striker holding still for an instant (an impact frame), less the further away they are.
+	 */
+	public static void punch(ServerLevel level, net.minecraft.world.entity.Entity striker, double x, double z, double radius, float strength, int shakeTicks) {
+		for (ServerPlayer p : level.players()) {
+			double dx = p.getX() - x, dz = p.getZ() - z;
+			double d = Math.sqrt(dx * dx + dz * dz);
+			if (d < radius) {
+				float s = (float) (strength * (1 - d / radius * 0.7));
+				ServerPlayNetworking.send(p, new ModPackets.BossFxPayload(ModPackets.BossFxPayload.SHAKE, 0, shakeTicks, s, ""));
+				ServerPlayNetworking.send(p, new ModPackets.BossFxPayload(ModPackets.BossFxPayload.PUNCH, 0, striker.getId(), s, ""));
+			}
+		}
+	}
 }

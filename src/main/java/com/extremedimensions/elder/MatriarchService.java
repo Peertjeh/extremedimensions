@@ -284,7 +284,13 @@ public final class MatriarchService {
 		Beat b = f.beat;
 		if (f.action != Matriarch.RUSH && f.action != ElderBoss.ULTIMATE) {
 			m.motion.turn(m, yaw, 1.8f);
-			m.motion.brake(m, 0.025, 0);
+			if (f.action == Matriarch.SWEEP && b.between(6, 18) && dist > 7) {
+				// She steps in to her blow, and plants her feet as it falls
+				double ry = Math.toRadians(m.getYRot());
+				m.motion.drive(m, -Math.sin(ry) * 0.3, Math.cos(ry) * 0.3, 0.06, 0);
+			} else {
+				m.motion.brake(m, f.action == Matriarch.SWEEP ? 0.1 : 0.025, 0);
+			}
 		}
 		switch (f.action) {
 			case Matriarch.SWEEP -> {

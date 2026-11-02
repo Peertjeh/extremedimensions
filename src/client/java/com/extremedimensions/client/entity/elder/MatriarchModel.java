@@ -111,7 +111,7 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 			case Matriarch.SWEEP -> {
 				// Back and up, then across in front of her, then home
 				float wind = ElderAnim.smooth(at / 18F);
-				float cut = ElderAnim.smooth((at - 18) / 8F);
+				float cut = ElderAnim.snap((at - 18) / 6F);
 				float back = ElderAnim.smooth((at - 26) / 8F);
 				float out = 0.7F * wind * (1 - cut) - 1.6F * cut * (1 - back);
 				armR.zRot += out;
@@ -163,7 +163,7 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 			case Matriarch.CATHEDRAL -> {
 				// Both arms up over her crown, then down into the ground
 				float raise = ElderAnim.smooth(at / 16F) * (1 - ElderAnim.smooth((at - 18) / 3F));
-				float slam = ElderAnim.smooth((at - 18) / 3F) * (1 - ElderAnim.smooth((at - 44) / 10F));
+				float slam = ElderAnim.snap((at - 18) / 3F) * (1 - ElderAnim.smooth((at - 44) / 10F));
 				armL.xRot -= 1.6F * raise;
 				armR.xRot -= 1.6F * raise;
 				armL.zRot += 0.4F * raise;
@@ -198,12 +198,38 @@ public class MatriarchModel extends EntityModel<ElderRenderState> {
 			default -> {
 			}
 		}
+		// The weight of her blows: she sinks into her knees and rears back as she gathers, straining, then the blow
+		// throws her forward and down into it, and she rocks back up
+		float[] ac = ElderAnim.accent(at, impacts(action), 10, 11);
+		float power = action == Matriarch.BARRAGE ? 0.35F : 1F;
+		float g = ac[0] * power, j = ac[1] * power;
+		root.y += 2.4F * g + 1.8F * j;
+		root.z -= 2.8F * j;
+		chest.xRot += -0.15F * g + 0.22F * j;
+		chest.zRot += ElderAnim.tremor(t, 0.03F * g);
+		head.xRot += -0.12F * g + 0.18F * j;
+		armL.zRot -= 0.14F * g;
+		armR.zRot += 0.14F * g;
 		if (dying) {
 			// At the very end it sinks as it breaks apart
 			float sink = ElderAnim.smooth((s.deathTime - ElderBoss.DEATH_TICKS * 0.9F) / (ElderBoss.DEATH_TICKS * 0.1F));
 			root.y += 8F * sink;
 		}
 
+	}
+
+	/** When each of her blows lands (ticks at tempo 1, as the server strikes them). */
+	private static float[] impacts(int action) {
+		return switch (action) {
+			case Matriarch.SWEEP -> new float[] {18};
+			case Matriarch.LANTERNS -> new float[] {10};
+			case Matriarch.ROOTS -> new float[] {20};
+			case Matriarch.WAIL -> new float[] {12};
+			case Matriarch.RUSH -> new float[] {18};
+			case Matriarch.CATHEDRAL -> new float[] {20, 30, 40};
+			case Matriarch.BARRAGE -> new float[] {18, 22, 26, 30, 34, 38, 42, 46};
+			default -> ElderAnim.NONE;
+		};
 	}
 
 	/** Forming, on its 140-tick timeline: drawn up out of the earth, clawing at the air, kindling her lanterns. */

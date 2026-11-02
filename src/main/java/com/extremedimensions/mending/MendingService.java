@@ -224,6 +224,7 @@ public final class MendingService {
 				BossEvent.BossBarColor.PURPLE, BossEvent.BossBarOverlay.NOTCHED_20);
 		roar(so, 4f);
 		WorldFx.particleIn(SeamService.SEAM.identifier().toString(), "extremedimensions:lurker_wisp", HX, HY + 3, HZ - 8, 2, 3, 2, 0, 120);
+		WorldFx.punch(seam, so, HX, HZ - 8, 70, 0.8f, 24);
 		for (ServerPlayer q : seam.players()) {
 			if (inArena(q)) {
 				Journal.unlock(q, DataStore.get(q.getUUID()), JournalEntry.HEART);
@@ -384,6 +385,7 @@ public final class MendingService {
 						target.setDeltaMovement(target.getDeltaMovement().add(away.x * 0.9, 0.35, away.z * 0.9));
 						target.needsSync = true;
 						WorldFx.soundIn(dim, "minecraft:entity.player.attack.sweep", "hostile", target.getX(), target.getY() + 1, target.getZ(), 1.5f, 0.5f);
+						WorldFx.punch(seam, so, target.getX(), target.getZ(), 24, 0.75f, 10);
 					}
 					begin(RISE, so, target);
 				} else if (phaseTicks > 50) {
@@ -469,6 +471,7 @@ public final class MendingService {
 	private static void bite(StarvedOne so, List<ServerPlayer> arena) {
 		roar(so, 3f);
 		so.act(StarvedOne.BITE);
+		WorldFx.punch((ServerLevel) so.level(), so, so.getX(), so.getZ(), 48, 0.55f, 12);
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		for (ServerPlayer p : arena) {
 			PlayerData d = DataStore.get(p.getUUID());
@@ -488,6 +491,7 @@ public final class MendingService {
 	private static void drag(StarvedOne so, List<ServerPlayer> arena) {
 		roar(so, 4f);
 		so.act(StarvedOne.DRAG);
+		WorldFx.punch((ServerLevel) so.level(), so, so.getX(), so.getZ(), 40, 0.6f, 12);
 		for (ServerPlayer p : arena) {
 			if (p.isCreative() || p.isSpectator()) {
 				continue;

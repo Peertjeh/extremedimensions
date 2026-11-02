@@ -399,6 +399,7 @@ public final class Binding {
 		}
 		bindAt = at;
 		so.setBound(true);
+		WorldFx.punch(seam, so, so.getX(), so.getZ(), 80, 0.9f, 18);
 		String dim = SeamService.SEAM.identifier().toString();
 		WorldFx.soundIn(dim, "extremedimensions:lurker_shriek", "hostile", so.getX(), so.getY() + 4, so.getZ(), 5f, 0.45f);
 		WorldFx.soundIn(dim, "minecraft:block.chain.place", "block", so.getX(), so.getY() + 3, so.getZ(), 4f, 0.5f);
