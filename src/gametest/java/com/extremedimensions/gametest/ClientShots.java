@@ -241,7 +241,8 @@ public class ClientShots implements FabricClientGameTest {
 				continue;
 			}
 			net.minecraft.world.level.block.state.BlockState b = plan.at(x, y, z);
-			boolean mark = ladder ? b.is(net.minecraft.world.level.block.Blocks.LADDER) && !plan.has(x, y - 1, z)
+			net.minecraft.world.level.block.state.BlockState under = plan.at(x, y - 1, z);
+			boolean mark = ladder ? b.is(net.minecraft.world.level.block.Blocks.LADDER) && (under == null || !under.is(net.minecraft.world.level.block.Blocks.LADDER))
 					: b.is(net.minecraft.world.level.block.Blocks.LECTERN) || b.is(net.minecraft.world.level.block.Blocks.LOOM)
 							|| b.is(net.minecraft.world.level.block.Blocks.CHEST);
 			if (!mark || !b.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING)) {
@@ -1490,7 +1491,8 @@ public class ClientShots implements FabricClientGameTest {
 					com.extremedimensions.seam.SeamArchitect.Plan plan = com.extremedimensions.seam.SeamService.colossus(4242L + kk * 7717L, cx, skyTop, cz, 36,
 							kk % 5, kk == 5 ? com.extremedimensions.seam.Colossus.RUIN : -1, built);
 					plan.placeNow((net.minecraft.server.level.ServerLevel) player(s).level());
-					inside[0] = interiorView(plan, cx, cz, skyTop + 2, skyTop + 3, false);
+					// (a cluster stands on a podium a few blocks high)
+					inside[0] = interiorView(plan, cx, cz, skyTop + 2, skyTop + 6, false);
 					return built[0] + ", " + plan.size() + " blocks";
 				});
 				com.extremedimensions.ExtremeDimensions.LOGGER.info("Colossus shot {} ({}): {}", k, plans[k], what);

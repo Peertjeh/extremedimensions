@@ -134,11 +134,12 @@ final class Furnish {
 		Frame f = w.f;
 		int y = y0 + 1;
 		// The spots along the walls: on the floor, backed by the wall, open in front, clear of the doorways and bridges
-		// (the middle of each face) and of a great tower's stair
+		// (the middle of each face) and of a great tower's stair. Walls are one block thick or two, and an arcade has its
+		// wall within a walk, so the three rings inside the outer face are all looked at (before anything is set down)
 		List<int[]> spots = new ArrayList<>();
 		for (int x = -h + 1; x <= h - 1; x++) {
 			for (int z = -h + 1; z <= h - 1; z++) {
-				if (!Colossus.inside(form, x, z, h - 1) || Colossus.inside(form, x, z, h - 2)) {
+				if (!Colossus.inside(form, x, z, h - 1) || Colossus.inside(form, x, z, h - 4)) {
 					continue;
 				}
 				if (great && Math.abs(x) <= 5 && Math.abs(z) <= 5) {

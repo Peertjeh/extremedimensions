@@ -81,18 +81,24 @@ public class GroundTests {
 			check(helper, village.count(Blocks.LADDER) >= 10, "a village's houses have %s ladder blocks", village.count(Blocks.LADDER));
 			check(helper, village.count(Blocks.LOOM) >= 3, "a village's houses have %s looms", village.count(Blocks.LOOM));
 			check(helper, village.storerooms() >= 6, "a village has %s storerooms", village.storerooms());
+			// a cathedral (its halls and crossing tower), a citadel (its keep and wall towers) and a cluster (towers only)
+			String[] layouts = {"cathedral", "citadel", "cluster"};
 			int furnished = 0;
-			for (int seed = 0; seed < 3; seed++) {
-				SeamArchitect.Plan spire = SeamService.showpiece(700L + seed, 0, top, 0, 3);
-				int things = spire.count(Blocks.BOOKSHELF) + spire.count(Blocks.LOOM) + spire.count(Blocks.BARREL) + spire.count(Blocks.CHEST)
-						+ spire.count(Blocks.LECTERN);
+			for (int layout = 0; layout < layouts.length; layout++) {
+				Colossus.Summary[] built = new Colossus.Summary[1];
+				SeamArchitect.Plan b = SeamService.colossus(700L + layout, 0, top, 0, 36, layout, Colossus.TWILIGHT, built);
+				int rugs = 0;
 				// (rugs by name: the carpets are not fields of their own in this version)
-				for (long k : spire.positions()) {
-					BlockState b = spire.at(BlockPos.getX(k), BlockPos.getY(k), BlockPos.getZ(k));
-					things += net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(b.getBlock()).getPath().endsWith("_carpet") ? 1 : 0;
+				for (long k : b.positions()) {
+					BlockState s = b.at(BlockPos.getX(k), BlockPos.getY(k), BlockPos.getZ(k));
+					rugs += net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(s.getBlock()).getPath().endsWith("_carpet") ? 1 : 0;
 				}
-				check(helper, things > 15, "colossal building %s holds only %s things", seed, things);
-				furnished += spire.storerooms();
+				int shelves = b.count(Blocks.BOOKSHELF), looms = b.count(Blocks.LOOM), barrels = b.count(Blocks.BARREL), chests = b.count(Blocks.CHEST);
+				int lecterns = b.count(Blocks.LECTERN);
+				int things = shelves + looms + barrels + chests + lecterns + rugs;
+				check(helper, things > 15, "the %s holds only %s things (%s shelves, %s looms, %s barrels, %s chests, %s lecterns, %s rugs; %s storerooms)",
+						layouts[layout], things, shelves, looms, barrels, chests, lecterns, rugs, b.storerooms());
+				furnished += b.storerooms();
 			}
 			check(helper, furnished >= 3, "three colossal buildings have only %s storerooms", furnished);
 			Config.SEAM_INTERIORS = 0;
