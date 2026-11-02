@@ -8,6 +8,8 @@ public class LurkerRenderState extends LivingEntityRenderState {
 	public float take;
 	public float drain;
 	public float run;
+	/** How far into its swimming stroke it is (0 on land .. 1 in deep water), eased. */
+	public float swim;
 	/** A Hollowling: big head, stubby limbs. */
 	public boolean young;
 	/** Brightness of the eyes and cracks (0..1): it beats like the Warden's heart. */

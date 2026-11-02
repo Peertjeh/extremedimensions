@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.18.1: Heads Above Water
+
+### Fixes
+- **The tribe swims with only its head out of the water.** Lurkers, Cave and Sculk Lurkers, Hollowlings, Keepers and the
+  Thinned floated the way vanilla's mobs do, with only 0.4 blocks of water at their feet, so a tall Lurker stood three
+  quarters out of a lake. Now each floats with the water up to a little under its eyes. In shallower water they wade.
+- **They swim.** In the water a body of the tribe lies forward and pulls itself along in a slow breaststroke, arms
+  sweeping out and back, legs kicking, its rags floating up and trailing behind it.
+
+### Tests
+- Every body of the tribe floats with the water just under its eyes, and most of it under the water.
+
 ## 3.18.0: The Starved One Reborn
 
 The last fight was the weakest: a Lurker scaled up, walking about the Heart, stunned by two scraps of silk on two little

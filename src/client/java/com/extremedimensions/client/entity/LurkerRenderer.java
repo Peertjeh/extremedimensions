@@ -46,6 +46,7 @@ public class LurkerRenderer<T extends Mob & LurkerBody> extends MobRenderer<T, L
 	private static final float BEAT_TAKE = 12.0F;
 
 	private static final class Blend {
+		float swim;
 		float stalk;
 		float take;
 		float drain;
@@ -89,6 +90,8 @@ public class LurkerRenderer<T extends Mob & LurkerBody> extends MobRenderer<T, L
 		state.take = b.take;
 		b.run += ((pose == Lurker.POSE_RUN ? 1 : 0) - b.run) * Math.min(1, k * 1.4F);
 		state.drain = b.drain;
+		b.swim += ((lurker.isInWater() ? 1 : 0) - b.swim) * k;
+		state.swim = b.swim;
 		state.young = this.young;
 		state.run = b.run;
 

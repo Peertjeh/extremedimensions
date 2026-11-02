@@ -140,4 +140,10 @@ public class SculkLurker extends PathfinderMob implements LurkerBody {
 	public int getAmbientSoundInterval() {
 		return 400;
 	}
+
+	/** It swims with only its head out of the water (see {@link com.extremedimensions.lurker.TribeMoves#swimDepth}). */
+	@Override
+	public double getFluidJumpThreshold() {
+		return com.extremedimensions.lurker.TribeMoves.swimDepth(this);
+	}
 }

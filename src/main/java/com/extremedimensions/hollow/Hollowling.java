@@ -124,4 +124,10 @@ public class Hollowling extends PathfinderMob implements LurkerBody {
 	public int getAmbientSoundInterval() {
 		return 200;
 	}
+
+	/** It swims with only its head out of the water (see {@link com.extremedimensions.lurker.TribeMoves#swimDepth}). */
+	@Override
+	public double getFluidJumpThreshold() {
+		return com.extremedimensions.lurker.TribeMoves.swimDepth(this);
+	}
 }

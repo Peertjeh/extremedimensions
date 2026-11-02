@@ -528,4 +528,12 @@ public final class TribeMoves {
 			}
 		}
 	}
+
+	/**
+	 * How deep the tribe swims: they float with only the head out of the water (vanilla's 0.4 blocks of water at the
+	 * feet left a tall Lurker standing three-quarters out of it). The water reaches to a little under the eyes.
+	 */
+	public static double swimDepth(net.minecraft.world.entity.Entity e) {
+		return Math.max(0.4, e.getEyeHeight() - 0.3);
+	}
 }

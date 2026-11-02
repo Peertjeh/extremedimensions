@@ -780,4 +780,24 @@ public class LurkerTests {
 		helper.setBlock(new BlockPos(2, 2, 4), Blocks.AIR.defaultBlockState());
 		helper.succeed();
 	}
+
+	/**
+	 * The tribe swims with only its head out of the water: each body floats with the water up to a little under its
+	 * eyes, not with vanilla's 0.4 blocks at its feet (which left a Lurker three-quarters out of the water).
+	 */
+	@GameTest
+	public void theTribeSwimsWithOnlyItsHeadOut(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		for (net.minecraft.world.entity.EntityType<? extends Mob> type : java.util.List.of(ModEntities.LURKER, ModEntities.CAVE_LURKER,
+				ModEntities.SCULK_LURKER, ModEntities.HOLLOWLING, ModEntities.KEEPER, ModEntities.THINNED)) {
+			Mob m = type.create(level, EntitySpawnReason.EVENT);
+			check(helper, m != null, "no %s could be made", type);
+			double depth = m.getFluidJumpThreshold(), eyes = m.getEyeHeight(), height = m.getBbHeight();
+			check(helper, Math.abs(depth - Math.max(0.4, eyes - 0.3)) < 1e-6, "%s floats with %s of water at its feet, not just under its eyes (%s)",
+					type, depth, eyes);
+			check(helper, height < 1.2 || depth >= height * 0.6, "%s floats with most of it out of the water (%s of %s under)", type, depth, height);
+			m.discard();
+		}
+		helper.succeed();
+	}
 }

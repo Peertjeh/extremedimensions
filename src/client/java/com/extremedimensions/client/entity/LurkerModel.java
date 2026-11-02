@@ -147,6 +147,22 @@ public class LurkerModel extends EntityModel<LurkerRenderState> {
 		aRz = Mth.lerp(take, aRz, 0.05F);
 		fRx = Mth.lerp(take, fRx, -0.05F);
 
+		// Swimming: it lies forward in the water with only its head out, and pulls itself along in a slow breaststroke,
+		// arms sweeping out and back, legs kicking, its rags trailing
+		float swim = s.swim;
+		if (swim > 0.01F) {
+			float stroke = t * 0.22F;
+			float pull = Mth.sin(stroke), reach = Mth.cos(stroke);
+			hips.xRot += 0.28F * swim;
+			aLx = Mth.lerp(swim, aLx, -hips.xRot - 1.35F + 0.55F * pull);
+			aRx = Mth.lerp(swim, aRx, -hips.xRot - 1.35F + 0.55F * pull);
+			aLz = Mth.lerp(swim, aLz, -0.55F - 0.45F * reach);
+			aRz = Mth.lerp(swim, aRz, 0.55F + 0.45F * reach);
+			fLx = Mth.lerp(swim, fLx, -0.35F - 0.3F * Math.max(0, reach));
+			fRx = Mth.lerp(swim, fRx, -0.35F - 0.3F * Math.max(0, reach));
+			legL.xRot = Mth.lerp(swim, legL.xRot, 0.35F + Mth.sin(t * 0.3F) * 0.45F);
+			legR.xRot = Mth.lerp(swim, legR.xRot, 0.35F - Mth.sin(t * 0.3F) * 0.45F);
+		}
 		armL.xRot = aLx;
 		armR.xRot = aRx;
 		armL.zRot = aLz;
@@ -184,6 +200,13 @@ public class LurkerModel extends EntityModel<LurkerRenderState> {
 		}
 		cape.xRot = -hips.xRot + 0.12F + Mth.sin(t * 0.05F) * 0.04F + ws * 0.3F + run * (0.75F + 0.15F * Mth.sin(gp * 2));
 		cape.zRot = Mth.sin(t * 0.04F + 0.5F) * 0.03F;
+		if (s.swim > 0.01F) {
+			// its rags float up and trail behind it in the water
+			for (int i = 0; i < SKIRT; i++) {
+				skirt[i].xRot += s.swim * (0.7F + 0.15F * Mth.sin(t * 0.09F + i));
+			}
+			cape.xRot += s.swim * 0.8F;
+		}
 		ragL.xRot = -armL.xRot - hips.xRot + Mth.sin(t * 0.07F) * 0.08F;
 		ragR.xRot = -armR.xRot - hips.xRot + Mth.sin(t * 0.07F + 1F) * 0.08F;
 
