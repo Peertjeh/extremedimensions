@@ -55,6 +55,12 @@ public class Cragback extends Lurker {
 		return hurt;
 	}
 
+	/** The stones of its back ride it, as many as it has (a creature otherwise carries one rider). */
+	@Override
+	protected boolean canAddPassenger(net.minecraft.world.entity.Entity passenger) {
+		return passenger instanceof net.minecraft.world.entity.Display.BlockDisplay || super.canAddPassenger(passenger);
+	}
+
 	/** Asleep it is stone: nothing pushes it. */
 	@Override
 	public boolean isPushable() {

@@ -781,6 +781,10 @@ public final class ServerEvents {
 
 	/** Journal pages found by exploring. */
 	private static void discover(ServerPlayer p, PlayerData d, String dim) {
+		// (never the biome of a chunk not loaded yet: a player just moved may stand in one still on its way in)
+		if (!(p.level() instanceof ServerLevel here) || !Loaded.ready(here, p.blockPosition())) {
+			return;
+		}
 		if (p.level().getBiome(p.blockPosition()).is(Biomes.DEEP_DARK)) {
 			Journal.unlock(p, d, JournalEntry.WEAVERS);
 		}

@@ -169,6 +169,10 @@ public enum Preset {
 	static final java.util.Set<String> ADDED_3_16 = java.util.Set.of("tribe_barter_price", "tribe_barter_standing_cost",
 			"tribe_barter_curse_chance", "tribe_rep_barter");
 
+	/** Settings the difficulties first set in 3.22.0: the Seam's own, and the Lurker hunting in the Seam. */
+	static final java.util.Set<String> ADDED_3_22 = java.util.Set.of("threadbiter_spawn_chance", "threadbiter_bite",
+			"edgecrawler_spawn_chance", "edgecrawler_damage", "cragback_spawn_chance", "cragback_damage", "lurker_seam_hunt_chance");
+
 	/**
 	 * An older settings file (of layout version {@code from}): if its values (the defaults for any it lacks) match a
 	 * difficulty on every setting the difficulty set then, it takes that difficulty's values of the settings added since,
@@ -176,6 +180,7 @@ public enum Preset {
 	 */
 	static void upgrade(com.google.gson.JsonObject json, int from) {
 		java.util.Set<String> added = new java.util.HashSet<>(ADDED_3_16);
+		added.addAll(ADDED_3_22);
 		if (from < 5) {
 			added.addAll(ADDED_3_8);
 		}
