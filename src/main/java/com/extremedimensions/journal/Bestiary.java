@@ -25,7 +25,7 @@ public final class Bestiary {
 	private Bestiary() {}
 
 	public enum Beast {
-		LURKER("lurker", 3), CAVE_LURKER("cave_lurker", 3), SCULK_LURKER("sculk_lurker", 3), MAGPIE("magpie", 3), WICK("wick", 3), HOLLOWLING("hollowling", 3), KEEPER("keeper", 1), STARVED_ONE("starved_one", 1),
+		LURKER("lurker", 3), CAVE_LURKER("cave_lurker", 3), SCULK_LURKER("sculk_lurker", 3), MAGPIE("magpie", 3), WICK("wick", 3), TIDEWALKER("tidewalker", 3), GATEBREAKER("gatebreaker", 1), HOLLOWLING("hollowling", 3), KEEPER("keeper", 1), STARVED_ONE("starved_one", 1),
 		THINNED("thinned", 3), VEIL_RAY("veil_ray", 3), FRAYED_RAY("frayed_ray", 3), MATRIARCH("matriarch", 1), FERRYMAN("ferryman", 1), LAST_WEAVER("weaver", 1),
 		KNOT_MOTHER("knot_mother", 1);
 
@@ -83,6 +83,12 @@ public final class Bestiary {
 		}
 		if (e instanceof com.extremedimensions.lurker.Wick) {
 			return Beast.WICK;
+		}
+		if (e instanceof com.extremedimensions.lurker.Tidewalker) {
+			return Beast.TIDEWALKER;
+		}
+		if (e instanceof com.extremedimensions.lurker.Gatebreaker) {
+			return Beast.GATEBREAKER;
 		}
 		if (e instanceof Lurker) {
 			return Beast.LURKER;

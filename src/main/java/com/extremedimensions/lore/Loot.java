@@ -49,6 +49,8 @@ public final class Loot {
 	public static final String FRAYED_RAY = "gameplay/frayed_ray";
 	public static final String THINNED = "gameplay/thinned";
 	public static final String THINNED_FRAY = "gameplay/thinned_fray";
+	public static final String TIDEWALKER = "gameplay/tidewalker_haul";
+	public static final String GATEBREAKER = "gameplay/gatebreaker_spoils";
 	/** What a first gold medal of the week brings besides its fragments and relic (a Homebound book, sometimes). */
 	public static final String TRIAL_GOLD = "gameplay/trial_gold";
 	/** What the Endermen leave when they finish a ring unwatched. */

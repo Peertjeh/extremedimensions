@@ -196,6 +196,11 @@ public final class WorldService {
 		return out;
 	}
 
+	/** Whether a Wound Storm rages round this player now. */
+	public static boolean storming(ServerPlayer p) {
+		return STORMS.containsKey(p.getUUID());
+	}
+
 	/** The breach points waiting around a player in a storm (empty when none), for the Wound Lens. */
 	public static java.util.List<BlockPos> breaches(UUID id) {
 		return STORMS.containsKey(id) ? BREACHES.getOrDefault(id, java.util.List.of()) : java.util.List.of();

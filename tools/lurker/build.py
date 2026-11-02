@@ -1,11 +1,11 @@
-"""The tribe's body: the Lurker, the Cave Lurker, the Sculk Lurker, the Magpie, the Wick, the Hollowling, the Keeper and the Thinned all wear it
+"""The tribe's body: the Lurker, the Cave Lurker, the Sculk Lurker, the Magpie, the Wick, the Tidewalker, the Gatebreaker, the Hollowling, the Keeper and the Thinned all wear it
 (the Starved One has had a body of its own since 3.18: tools/elders/starved_one.py), each with its own texture. A hunched, cloaked giant on long knuckle-walking arms, ragged strips of cloak, strands dripping from a
 mask. The claws are fine parts (four pixels to a model pixel); the mask, its eyes, its brow and the fringe of the hood
 are at Minecraft's own size, painted finer and brought down;
 the part names and poses are the ones LurkerModel animates.
 
 usage: python3 tools/lurker/build.py [preview-json-dir]
-Writes LurkerGeometry.java and a base and glow texture for each of the nine.
+Writes LurkerGeometry.java and a base and glow texture for each of the eleven.
 """
 import math
 import os
@@ -100,7 +100,7 @@ def _mask_parts(m, head):
         m.box(fr, -0.35, 0, -0.25, 0.7, 0.9 + 0.5 * ((k * 3) % 4), 0.5, "t_fray")
 
 
-# ----------------------------------------------------------------------------- the nine
+# ----------------------------------------------------------------------------- the eleven
 
 SPECIES = {
     "lurker": dict(cloak=((14, 12, 20), (54, 46, 66)), limb=((22, 20, 26), (60, 56, 66)), skin=((40, 36, 44), (86, 80, 90)),
@@ -132,6 +132,16 @@ SPECIES = {
     "wick": dict(cloak=((150, 122, 82), (236, 220, 180)), limb=((140, 114, 80), (220, 202, 162)), skin=((160, 132, 92), (232, 214, 176)),
                  mask=((26, 20, 18), (82, 68, 58)), crack=(255, 164, 50), eye=(255, 176, 60), eye_hot=(255, 248, 206),
                  tendril=((190, 168, 124), (246, 236, 206)), tip=(255, 140, 30), claw=((120, 98, 70), (210, 190, 150)), face="wick"),
+    # the Tidewalker: gone down into the deep water, its cloak turned to kelp, its skin the grey-blue of the drowned, a
+    # bone mask grown over with barnacles and slit with gills, eyes and cracks of sea-glow
+    "tidewalker": dict(cloak=((10, 28, 24), (40, 84, 70)), limb=((30, 50, 48), (82, 112, 104)), skin=((66, 96, 102), (128, 158, 160)),
+                       mask=((128, 140, 128), (206, 214, 198)), crack=(60, 226, 204), eye=(90, 255, 226), eye_hot=(220, 255, 246),
+                       tendril=((16, 52, 34), (58, 116, 70)), tip=(70, 200, 150), claw=((60, 72, 70), (150, 162, 156)), face="tide"),
+    # the Gatebreaker: a giant of storm-grey stone and iron, a riveted iron helm with a slit for a mask, the storm's pale
+    # violet light in its cracks and in the slit of its helm
+    "gatebreaker": dict(cloak=((34, 34, 40), (92, 92, 104)), limb=((46, 46, 52), (110, 110, 120)), skin=((60, 60, 66), (128, 128, 136)),
+                        mask=((58, 60, 68), (138, 140, 150)), crack=(190, 160, 255), eye=(206, 184, 255), eye_hot=(246, 240, 255),
+                        tendril=((26, 26, 32), (70, 70, 82)), tip=(150, 120, 220), claw=((70, 70, 78), (160, 160, 170)), face="gate"),
     "thinned": dict(cloak=((150, 150, 170), (232, 232, 246)), limb=((160, 160, 178), (236, 236, 248)), skin=((180, 180, 196), (244, 244, 252)),
                     mask=((206, 204, 220), (252, 252, 255)), crack=(216, 196, 255), eye=(214, 190, 255), eye_hot=(255, 250, 255),
                     tendril=((130, 128, 150), (210, 208, 226)), tip=(190, 170, 240), claw=((170, 168, 186), (246, 246, 252)), face="thinned"),
@@ -427,6 +437,26 @@ FACE_PX = {
              "SMMKKKKMMS",
              ".SMMKKMMS.",
              "..SSMMSS.."],
+    "tide": ["SMMLMMMLMS",
+             "MLMMMLMMMM",
+             "MMMLMMMMLM",
+             "MMMMMMMMMM",
+             "MDDDMMDDDM",
+             "MDDDMMDDDM",
+             "SdMKMMKMdS",
+             "SMMKMMKMMS",
+             "SMMKMMKMMS",
+             ".SMMMMMMS."],
+    "gate": ["SSLLLLLLSS",
+             "SLMSMMSMLS",
+             "LMMMMMMMML",
+             "MMSMMMMSMM",
+             "MKKKKKKKKM",
+             "MKKKKKKKKM",
+             "MMSMMMMSMM",
+             "SMMMMMMMMS",
+             "SMSMMMMSMS",
+             ".SMMMMMMS."],
     "thinned": ["SLLLLLLLLS",
                 "LLLLLLLLLL",
                 "LLMLLLLMLL",
@@ -448,6 +478,8 @@ EYE_PX = {
     "thinned": ["eEe", "..."],
     "magpie": ["eEW", ".e."],
     "wick": ["eEe", "eee"],
+    "tide": ["eEe", "e.e"],
+    "gate": ["eEe", "..."],
 }
 _PX = {}
 

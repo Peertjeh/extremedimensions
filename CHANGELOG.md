@@ -1,5 +1,47 @@
 # Changelog
 
+## 3.20.0: Deep Water, Broken Walls
+
+Two more of the tribe: one for the water, which had nothing in it, and one that finally gives the Wound Storms teeth.
+
+### The Tidewalker
+- **Kin of the tribe gone down into the deep water**, long and lean, its cloak turned to kelp, its skin the grey-blue of
+  the drowned, a bone mask grown over with barnacles and slit with gills, eyes of sea-glow. It breathes water and swims
+  as it likes.
+- **Where you row or swim over deep water** in the Overworld (twice as likely at night), it rises out of the dark
+  below and **circles under the surface**, closing in; a trail of bubbles breaking above it is all you see.
+- **Then it strikes**: a rower is thrown out of the boat (the boat is shoved away, not broken); a swimmer is seized
+  and **dragged down**, hurt, the breath torn out of them, and maybe cursed. A blow makes it let go. It circles and
+  strikes again, three times at most (`tidewalker_strikes`), then sinks away.
+- **Counters**: a torch or lantern held up over the water, or the Conduit's power, keeps it off (it sinks away at
+  once); it never follows anyone ashore. Slain, it gives up what it took from the wrecks of the deep: gold, emeralds or
+  iron, prismarine, sometimes a nautilus shell, rarely a heart of the sea.
+
+### The Gatebreaker
+- **The biggest of the tribe**, a slow giant of storm-grey stone and iron with a riveted helm for a mask and the
+  storm's pale violet light in its cracks, taller than a Keeper.
+- **The Wound Storms wake it.** While a storm rages round you (after the Dragon has fallen), it may step out of a tear
+  in the storm, with a crack of thunder, and come straight for you.
+- **Walls do not stop it.** Shut away where it cannot walk to you, it draws back its fists (dust trickling from the
+  wall) and brings them down: the wall breaks open, up to 12 blocks a blow (`gatebreaker_smash_blocks`). Only where
+  mobGriefing allows (and `gatebreaker_breaks` is on); nothing as hard as obsidian (`gatebreaker_hardness`), and never
+  a chest, a furnace or an anchor. The blocks drop.
+- **Its slam**: close enough, it raises both fists and slams the ground; everyone near it is hurt (10 half-hearts) and
+  thrown back. A raised shield turns it.
+- **Fight it together**: it has half again as much health for every further player near it. It goes back into the
+  storm when the storm passes, or after four minutes. Slain, it leaves tether fragments, iron, obsidian and sometimes
+  diamonds.
+
+### Both
+- In the bestiary, through the Wound Lens, with `/tether lurker tidewalker` and `/tether lurker gatebreaker`, on the
+  difficulty presets, and every number a setting in English and Dutch.
+- The Magpie's screenshot now holds its loot up by the same code as the game.
+
+### Tests
+- A Tidewalker seizes a swimmer and tears the breath out of them, lets go when struck, and goes when a lantern is held
+  up.
+- A Gatebreaker breaks through a stone wall to a player shut in behind it, all but the obsidian in it.
+
 ## 3.19.0: Thieves in the Night
 
 Two new members of the tribe, both after what you have rather than who you are.

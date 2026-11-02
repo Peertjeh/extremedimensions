@@ -144,6 +144,21 @@ public final class WoundLens {
 			return Component.translatable("gui.extremedimensions.lens.magpie." + doing)
 					.withStyle("creeping".equals(doing) ? ChatFormatting.AQUA : ChatFormatting.GOLD);
 		}
+		if (l instanceof com.extremedimensions.lurker.Tidewalker) {
+			// it circles under the water, rushes up, or holds someone under
+			int pose = l.getLurkerPose();
+			String doing = pose == Lurker.POSE_TAKE ? "dragging" : pose == Lurker.POSE_RUN && l.getLurkerMood() == com.extremedimensions.lurker.LurkerBody.MOOD_HUNTER
+					? "rising" : "circling";
+			return Component.translatable("gui.extremedimensions.lens.tidewalker." + doing)
+					.withStyle("circling".equals(doing) ? ChatFormatting.DARK_AQUA : ChatFormatting.RED);
+		}
+		if (l instanceof com.extremedimensions.lurker.Gatebreaker) {
+			// it comes on, breaks through, or goes back into the storm
+			String doing = l.getLurkerPose() == Lurker.POSE_TAKE ? "smashing"
+					: l.getLurkerMood() == com.extremedimensions.lurker.LurkerBody.MOOD_HUNTER ? "coming" : "leaving";
+			return Component.translatable("gui.extremedimensions.lens.gatebreaker." + doing)
+					.withStyle("leaving".equals(doing) ? ChatFormatting.GRAY : ChatFormatting.RED);
+		}
 		if (l instanceof com.extremedimensions.lurker.Wick) {
 			// it is hungry for your light, eats it, or (glowing hot) is full of it
 			String doing = l.getLurkerPose() == Lurker.POSE_TAKE ? "eating"

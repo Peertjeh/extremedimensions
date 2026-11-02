@@ -543,6 +543,11 @@ public final class MagpieService {
 		}
 	}
 
+	/** Holds this up over its head as its loot does (for the screenshots). */
+	public static void hold(Magpie m, ItemStack stack) {
+		show(m, stack);
+	}
+
 	/** What it holds up now: the last thing it took, or nothing (the display taken down). */
 	private static void reshow(Magpie m, State st) {
 		if (st.loot.isEmpty()) {

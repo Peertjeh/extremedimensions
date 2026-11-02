@@ -456,6 +456,50 @@ public final class Config {
 	/** Seconds a full Wick's burst sets whoever stands beside it alight when it is slain. 0: no burst. */
 	public static int WICK_BURST_SECONDS = 2;
 
+	// --- The Tidewalker ------------------------------------------------------------------------
+
+	/** 1 = Tidewalkers rise under players who row or swim over deep water in the Overworld, 0 = never. */
+	public static int TIDEWALKER_ENABLED = 1;
+	/** Chance per player every 20 seconds, out on deep water, that a Tidewalker comes (twice that at night; outside the cooldown). */
+	public static double TIDEWALKER_SPAWN_CHANCE = 0.04;
+	/** Minimum seconds between two Tidewalkers for the same player. */
+	public static int TIDEWALKER_COOLDOWN_SECONDS = 900;
+	/** Seconds it circles under the water before each strike (a little more, by chance). */
+	public static int TIDEWALKER_STALK_SECONDS = 6;
+	/** Strikes it makes (a boat capsized, a swimmer dragged down) before it sinks away. */
+	public static int TIDEWALKER_STRIKES = 3;
+	/** Damage when it seizes a swimmer (half-hearts), and the chance that it leaves a curse then (once at most). */
+	public static double TIDEWALKER_DAMAGE = 3.0;
+	public static double TIDEWALKER_CURSE_CHANCE = 0.1;
+	/** Seconds it holds a swimmer under, and the breath it tears out of them each tick (a full breath is 300). */
+	public static int TIDEWALKER_DRAG_SECONDS = 2;
+	public static int TIDEWALKER_AIR_DRAIN = 6;
+	/** Its speed in the water (a multiplier). */
+	public static double TIDEWALKER_SPEED = 1.0;
+
+	// --- The Gatebreaker -----------------------------------------------------------------------
+
+	/** 1 = Gatebreakers come out of the Wound Storms, 0 = never. */
+	public static int GATEBREAKER_ENABLED = 1;
+	/** Chance every 20 seconds, while a Wound Storm rages round a player, that a Gatebreaker comes for them (outside the cooldown). */
+	public static double GATEBREAKER_CHANCE = 0.35;
+	/** Minimum seconds between two Gatebreakers for the same player. */
+	public static int GATEBREAKER_COOLDOWN_SECONDS = 1800;
+	/** 1 = it breaks through walls (where the mobGriefing rule allows), 0 = it never breaks a block. */
+	public static int GATEBREAKER_BREAKS = 1;
+	/** It breaks only blocks softer than this (stone 1.5, iron block 5; obsidian is 50 and holds). */
+	public static double GATEBREAKER_HARDNESS = 10.0;
+	/** The most blocks one blow of its fists breaks. */
+	public static int GATEBREAKER_SMASH_BLOCKS = 12;
+	/** Damage of its slam to everyone near it (half-hearts). */
+	public static double GATEBREAKER_DAMAGE = 10.0;
+	/** Its speed (a multiplier; it is slow). */
+	public static double GATEBREAKER_SPEED = 0.9;
+	/** Seconds it stays at most, storm or not. */
+	public static int GATEBREAKER_SECONDS = 240;
+	/** Health added for every further player near it, as a share of its own (0.5 = half again for each). */
+	public static double GATEBREAKER_HEALTH_PER_PLAYER = 0.5;
+
 	// --- Leaving in danger ----------------------------------------------------------------------
 
 	/**
@@ -1525,6 +1569,12 @@ public final class Config {
 			{"magpie_speed", 0.2, 4}, {"magpie_sneak_seconds", 10, 600}, {"magpie_flee_seconds", 3, 120},
 			{"wick_spawn_chance", 0, 1}, {"wick_cooldown_seconds", 0, 86400}, {"wick_lights", 1, 64}, {"wick_pack", 1, 8}, {"wick_meals", 1, 64},
 			{"wick_fear_range", 0, 12}, {"wick_speed", 0.2, 4}, {"wick_seconds", 20, 1200}, {"wick_burst_seconds", 0, 10},
+			{"tidewalker_spawn_chance", 0, 1}, {"tidewalker_cooldown_seconds", 0, 86400}, {"tidewalker_stalk_seconds", 2, 120},
+			{"tidewalker_strikes", 1, 20}, {"tidewalker_damage", 0, 40}, {"tidewalker_curse_chance", 0, 1}, {"tidewalker_drag_seconds", 1, 10},
+			{"tidewalker_air_drain", 0, 300}, {"tidewalker_speed", 0.2, 4},
+			{"gatebreaker_chance", 0, 1}, {"gatebreaker_cooldown_seconds", 0, 86400}, {"gatebreaker_hardness", 0, 100},
+			{"gatebreaker_smash_blocks", 1, 64}, {"gatebreaker_damage", 0, 60}, {"gatebreaker_speed", 0.2, 4}, {"gatebreaker_seconds", 30, 3600},
+			{"gatebreaker_health_per_player", 0, 5},
 			{"curse_fresh_weight", 1, 20}, {"tribe_barter_standing_cost", 0, 100}, {"tribe_barter_curse_chance", 0, 1}, {"weaver_pity", 0, 1}, {"seam_thinned_fragment_chance", 0, 1}, {"seam_collapse_toll", 0, 1},
 			{"music_disc_listens_chance", 0, 1}, {"disc_fragment_elegy_count", 0, 9}, {"disc_fragment_abyss_broken", 0, 9},
 			{"disc_fragment_abyss_tangle_chance", 0, 1}, {"disc_fragment_abyss_ray_chance", 0, 1},

@@ -1,7 +1,7 @@
 """
 The tribe's moods, as recoloured glow textures beside each one's own glow: blue while it comes to steal
 (<name>_glow_thief.png) and red while it hunts to hurt (<name>_glow_hunter.png), for the Lurker, the Cave Lurker, the
-Sculk Lurker (blue while it leads the Warden), the Magpie (blue while it steals), the Wick (red-hot once it has eaten its fill), the Hollowling (red when it bites with a swarm) and the Keeper. The cracks take the mood's colour, the eyes (the brightest pixels) a pale
+Sculk Lurker (blue while it leads the Warden), the Magpie (blue while it steals), the Wick (red-hot once it has eaten its fill), the Tidewalker (red as it rises at you), the Gatebreaker (red all the while it comes), the Hollowling (red when it bites with a swarm) and the Keeper. The cracks take the mood's colour, the eyes (the brightest pixels) a pale
 tint of it; the alpha, and so the shape of the glow, stays as it is.
 
     python3 tools/lurker/moods.py
@@ -18,7 +18,7 @@ MOODS = {
 }
 
 
-NAMES = ("lurker", "cave_lurker", "sculk_lurker", "magpie", "wick", "hollowling", "keeper")
+NAMES = ("lurker", "cave_lurker", "sculk_lurker", "magpie", "wick", "tidewalker", "gatebreaker", "hollowling", "keeper")
 
 
 def main():

@@ -101,9 +101,12 @@ an unweaving the loom waits three days for you.
   never touches you: it creeps to a chest or barrel you left alone, takes the brightest things in it and runs them home
   to a hoard, the loot held up over its head; every blow shakes one thing loose. On dark nights the little **Wick**
   comes out where your light is and eats it, torches and lanterns whole and candles snuffed, until it is full; soul fire
-  frightens it, water puts it out, and slain it gives back what it ate. A curse laid
+  frightens it, water puts it out, and slain it gives back what it ate. Out on deep water the **Tidewalker** circles
+  under the surface, throws rowers out of their boats and drags swimmers down; a light held up or the Conduit's power
+  keeps it off. A curse laid
   without a choice is varied: one you do not carry yet is likelier, and never the last one again. Hollowlings can be befriended, slowly; the young of an Extreme swarm bite, and a bite may curse. After the Dragon falls, **Wound
-  Storms** tear the sky.
+  Storms** tear the sky, and out of them may step the **Gatebreaker**, a giant that breaks through your walls (all
+  but obsidian) to get at you.
 
 ## The story
 

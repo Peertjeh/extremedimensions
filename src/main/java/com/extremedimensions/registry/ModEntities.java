@@ -4,7 +4,9 @@ import com.extremedimensions.ExtremeDimensions;
 import com.extremedimensions.hollow.Hollowling;
 import com.extremedimensions.hollow.Keeper;
 import com.extremedimensions.lurker.CaveLurker;
+import com.extremedimensions.lurker.Gatebreaker;
 import com.extremedimensions.lurker.Magpie;
+import com.extremedimensions.lurker.Tidewalker;
 import com.extremedimensions.lurker.Wick;
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.lurker.SculkLurker;
@@ -71,6 +73,28 @@ public final class ModEntities {
 					.eyeHeight(0.45f)
 					.clientTrackingRange(8)
 					.build(WICK_KEY));
+
+	private static final ResourceKey<EntityType<?>> TIDEWALKER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("tidewalker"));
+
+	/** The tribe's kin of the deep water, that capsizes boats and drags swimmers down; spawned only by {@code TidewalkerService}. */
+	public static final EntityType<Tidewalker> TIDEWALKER = Registry.register(BuiltInRegistries.ENTITY_TYPE, TIDEWALKER_KEY,
+			EntityType.Builder.<Tidewalker>of(Tidewalker::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(0.9f, 2.6f)
+					.eyeHeight(2.3f)
+					.clientTrackingRange(10)
+					.build(TIDEWALKER_KEY));
+
+	private static final ResourceKey<EntityType<?>> GATEBREAKER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("gatebreaker"));
+
+	/** The giant the Wound Storms wake, that breaks through walls; spawned only by {@code GatebreakerService}. */
+	public static final EntityType<Gatebreaker> GATEBREAKER = Registry.register(BuiltInRegistries.ENTITY_TYPE, GATEBREAKER_KEY,
+			EntityType.Builder.<Gatebreaker>of(Gatebreaker::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(1.8f, 4.6f)
+					.eyeHeight(4.0f)
+					.clientTrackingRange(12)
+					.build(GATEBREAKER_KEY));
 
 	private static final ResourceKey<EntityType<?>> SCULK_LURKER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("sculk_lurker"));
 
@@ -200,6 +224,8 @@ public final class ModEntities {
 		FabricDefaultAttributeRegistry.register(SCULK_LURKER, SculkLurker.createAttributes());
 		FabricDefaultAttributeRegistry.register(MAGPIE, Magpie.createAttributes());
 		FabricDefaultAttributeRegistry.register(WICK, Wick.createAttributes());
+		FabricDefaultAttributeRegistry.register(TIDEWALKER, Tidewalker.createAttributes());
+		FabricDefaultAttributeRegistry.register(GATEBREAKER, Gatebreaker.createAttributes());
 		FabricDefaultAttributeRegistry.register(HOLLOWLING, Hollowling.createAttributes());
 		FabricDefaultAttributeRegistry.register(KEEPER, Keeper.createAttributes());
 		FabricDefaultAttributeRegistry.register(STARVED_ONE, StarvedOne.createAttributes());

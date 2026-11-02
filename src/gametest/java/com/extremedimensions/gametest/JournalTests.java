@@ -33,7 +33,7 @@ public class JournalTests {
 		Bestiary.slain(starved, null);
 		check(helper, d.kills.getOrDefault("starved_one", 0) == 1, "the Starved One slain beside the player was not counted for them");
 		String data = Bestiary.encode(d);
-		check(helper, data.startsWith("lurker:0:0;cave_lurker:0:0;sculk_lurker:0:0;magpie:0:0;wick:0:0;hollowling:1:1;") && data.contains("starved_one:1:1"), "the bestiary reads %s", data);
+		check(helper, data.startsWith("lurker:0:0;cave_lurker:0:0;sculk_lurker:0:0;magpie:0:0;wick:0:0;tidewalker:0:0;gatebreaker:0:0;hollowling:1:1;") && data.contains("starved_one:1:1"), "the bestiary reads %s", data);
 		helper.succeed();
 	}
 

@@ -1216,7 +1216,8 @@ public class ClientShots implements FabricClientGameTest {
 			// The tribe's faces up close by day (masks, brows and eyes in fine pixels): name, how far off it stands (its
 			// hunched head reaches toward the camera), and how far the camera rises to meet its eyes
 			for (String[] kin : new String[][] {{"lurker", "4.4", "1.2"}, {"hollowling", "1.6", "-0.75"}, {"keeper", "5.5", "1.9"},
-					{"thinned", "3.3", "0.5"}, {"magpie", "3.0", "0.5"}, {"wick", "1.1", "-1.15"}}) {
+					{"thinned", "3.3", "0.5"}, {"magpie", "3.0", "0.5"}, {"wick", "1.1", "-1.15"},
+					{"tidewalker", "3.4", "0.7"}, {"gatebreaker", "6.2", "2.6"}}) {
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
 				sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:" + kin[0] + " ^ ^ ^" + kin[1]
 						+ " {NoAI:1b,Rotation:[180f,0f]}");
@@ -1230,10 +1231,13 @@ public class ClientShots implements FabricClientGameTest {
 			// The Magpie running with its loot held up over its head (a diamond on a display riding it, as MagpieService
 			// sets one up)
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
-			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:magpie ^ ^ ^3.6 {NoAI:1b,Rotation:[150f,0f],"
-					+ "Passengers:[{id:\"minecraft:item_display\",item:{id:\"minecraft:diamond\",count:1},billboard:\"center\","
-					+ "brightness:{sky:15,block:15},transformation:{left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f],"
-					+ "translation:[0f,-0.15f,0f],scale:[0.6f,0.6f,0.6f]}}]}");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:magpie ^ ^ ^3.6 {NoAI:1b,Rotation:[150f,0f]}");
+			ctx.waitTicks(2);
+			sp.getServer().runOnServer(s -> mobs(s).forEach(m -> {
+				if (m instanceof com.extremedimensions.lurker.Magpie mp) {
+					com.extremedimensions.lurker.MagpieService.hold(mp, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.DIAMOND));
+				}
+			}));
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~0.6 ~ 0 -4");
 			ctx.waitTicks(12);
 			ctx.takeScreenshot("06_magpie_loot");
