@@ -108,14 +108,15 @@ Thirty pages of a nameless Wanderer surface as you play, then pages in other han
 2. **The tribe**: Lurkers, hoards, the Keeper and the Matriarch who comes for those who slay too many Keepers.
 3. **The Seam** and its Weavers: silk, woven Tethers and the Thinned. (The Last Weaver wakes in their villages only once
    the Starved One has fallen; `weaver_unlock` sets it earlier.)
-4. **The Ferryman**, who walks the Nether's lava when you are long gone.
-5. **The seal**: slay the Ender Dragon and every rift opens near the **Heart of the Seam**, where the **Starved One**
-   waits.
-6. **The ending**: defeat it and choose. **Mend** the first wound (no storms, a gentler drain, a tribe that brings
-   gifts) or **sever** the Tether (no timer beyond the wound, but whoever falls there keeps nothing).
+4. **The seal**: slay the Ender Dragon and every rift opens near the **Heart of the Seam**, where the **Starved One**
+   waits, until the world is chosen (finish what you seek in the Seam first; the Path and the End portal say so).
+5. **The Ferryman**, let through by the crack the dragon left: he walks the Nether's lava when you are long gone.
+6. **The ending**: defeat the Starved One and choose. **Mend** the first wound (no storms, a gentler drain, a tribe
+   that brings gifts) or **sever** the Tether (no timer beyond the wound, but whoever falls there keeps nothing).
 7. **Beside the road**: the Held at the end of a warm chain, the Echoes of Collapses, and the First Weaver's trail
    through four worlds down to the First Knot and the Knot Mother.
-8. **The Unfinished World** (3.0): the story goes on in your own hand.
+8. **The Unfinished World** (3.0): the story is chosen, the world not yet finished. Its six threads woven on a
+   Weaver's Loom and the Weaving held are the world's true end.
 
 ## The Unfinished World
 
@@ -331,8 +332,9 @@ stood in any tick over 100 ms. To run it yourself: `./gradlew assemble benchJar`
 
 Download de jar uit de nieuwste groene build (**Actions** → run → **Artifacts**) en zet hem met Fabric API in je
 `mods`-map, op de server én bij iedere speler. Alles is in het Nederlands te spelen. Instellingen staan in het
-instellingenscherm en in `config/extremedimensions.json`. Na het einde bouw je een **Weversgetouw** en weef je het
-wandtapijt: zes panelen, elk een blijvende gunst, en daarna Nieuwe Draad+. Een volle vloekset **ontweef** je aan het
+instellingenscherm en in `config/extremedimensions.json`. Let op: na de Enderdraak opent elke rift naar de Seam bij het
+Hart, tot er voor de wereld gekozen is. Na het einde is de wereld nog niet af: bouw een **Weversgetouw** en weef het
+wandtapijt (zes panelen, elk een blijvende gunst); het Weven is het echte slot, en daarna wacht Nieuwe Draad+. Een volle vloekset **ontweef** je aan het
 getouw met Tetheriet en Tetherkoord: hak de knopen op tijd door en de hele set gaat eraf. Diep in de Seam ligt **Tetheriet**: spin
 Tether Fragments op een **Spinrok** tot Tetherkoord, smeed het tot een rang voorbij netheriet, en kies uit twintig
 betoveringen en twee nieuwe harnasversieringen. Met Text Placeholder API op de server toont **TAB** de placeholders van de

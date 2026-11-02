@@ -622,7 +622,10 @@ public class JournalScreen extends Screen {
 		Path.Step next = nextStep();
 		title(g, Ui.tr("gui.extremedimensions.path.title"), bx, by, alpha);
 		int ty = by + 36;
-		String head = Ui.tr(next == null ? "gui.extremedimensions.path.walked_all" : "gui.extremedimensions.path.next");
+		// With the path walked, the world is not finished until its tapestry is
+		boolean woven = (sideDone & 1 << Path.Side.TAPESTRY.ordinal()) != 0;
+		String head = Ui.tr(next != null ? "gui.extremedimensions.path.next"
+				: woven ? "gui.extremedimensions.path.walked_all" : "gui.extremedimensions.path.unfinished");
 		Ui.ink(g, this.font, head, bx + 12, ty, INK_TEAL, alpha);
 		g.fill(bx + 12, ty + 9, bx + 12 + this.font.width(head), ty + 10, Ui.argb(alpha * 0.5, INK_TEAL));
 		ty += 14;
@@ -633,12 +636,13 @@ public class JournalScreen extends Screen {
 			}
 			ty += 4;
 		}
+		// (a line apart as the game's tooltips have them, so the longest hint fits the page)
 		for (String line : Ui.wrap(this.font, Ui.tr(pathHint.isEmpty() ? "gui.extremedimensions.guide.1" : pathHint), TEXT_W)) {
 			if (ty > by + PAGE_H - 14) {
 				break;
 			}
 			Ui.ink(g, this.font, line, bx + 12, ty, INK, alpha);
-			ty += 11;
+			ty += 10;
 		}
 
 		int x = bx + PAGE_W + SPINE;

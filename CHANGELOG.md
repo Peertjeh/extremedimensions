@@ -1,5 +1,33 @@
 # Changelog
 
+## 3.16.1: The Road Made Plain
+
+The story's road was sound, but three places on it did not say so when it mattered. Nothing in the story changes; the
+game now tells you in time.
+
+### Signposts
+- **Before the dragon.** The Path's line on the seal, and the word beside an End portal, now say what slaying the
+  Ender Dragon does to the Seam: from then on every rift opens at its Heart until the world is chosen, so finish what
+  you still seek in the Seam first.
+- **The Ferryman and the seal.** His journal page says why he walks only once the dragon has fallen: the crack it left
+  in the world let him through.
+- **After the choice.** The world is chosen, not finished: whoever is in the world when the Thread or the Shears is used
+  is told that six threads wait on a Weaver's Loom and that the Weaving is the world's true end. The ending's page says
+  it too, and the journal's Path heads its page "The world is not finished", naming the six threads (the Matriarch,
+  the Ferryman, the Last Weaver, the Held, the Knot Mother and the Heart) until the tapestry is finished; then it says
+  the story is yours and points to New Thread+, the Rift Trials and the Unweaving.
+
+### Fixes
+- Two of the Path's lines (making a Seam Needle, and holding what decides the world) ran off the bottom of the
+  journal page and were cut short; they are shorter now, and the Path's lines sit a line apart as the game's tooltips
+  do, so the longest of them fits.
+
+### Tests
+- With the path walked and the world chosen, the Path names the six threads until the tapestry is finished, and says
+  the story is yours once it is.
+- The spawner room test clears zombies earlier tests left near it before the spawner starts, and says what the spawner
+  saw if it spawns nothing.
+
 ## 3.16.0: A Hard Bargain
 
 ### Barter with the young costs dearly

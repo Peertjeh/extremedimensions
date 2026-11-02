@@ -105,7 +105,8 @@ public final class Path {
 	public static String hint(ServerPlayer p, PlayerData d) {
 		Step s = current(p, d);
 		if (s == null) {
-			return "gui.extremedimensions.path.beyond";
+			// The story is chosen; the world is finished only once its tapestry is
+			return DataStore.tapestryDone() ? "gui.extremedimensions.path.finished" : "gui.extremedimensions.path.beyond";
 		}
 		return switch (s) {
 			// The first expedition says what the guide card says, step by step

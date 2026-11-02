@@ -569,6 +569,9 @@ public final class MendingService {
 			WorldFx.fx(q, mend ? Fx.SAFE : Fx.SEAL, 0);
 			WorldFx.soundSelf(q, mend ? "extremedimensions:portal_home" : "extremedimensions:collapse", 1.0f, mend ? 0.8f : 0.6f);
 			Journal.unlock(q, DataStore.get(q.getUUID()), JournalEntry.ENDING);
+			// The story is chosen, but the world is not finished: the six threads and the Weaving are its true end
+			q.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.ending.unfinished")
+					.withStyle(net.minecraft.ChatFormatting.GOLD));
 		}
 		Advancements.grant(p, mend ? Advancements.ENDING_MENDED : Advancements.ENDING_SEVERED);
 		// The one who chose takes the thread of the Heart: the story goes on in their hand

@@ -46,6 +46,45 @@ public class PathTests {
 		helper.succeed();
 	}
 
+	/**
+	 * The whole path walked, the world chosen: the journal says the world is not finished and names the six threads and
+	 * the Weaving, until the tapestry is; then it says so. (Alone: the seal, the Starved One and the ending are the
+	 * world's, and other tests read them.)
+	 */
+	@GameTest(environment = Alone.PATH_ENDING)
+	public void afterTheChoiceTheWorldIsNotYetFinished(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "path-chooser");
+		PlayerData d = DataStore.get(p.getUUID());
+		boolean seal = DataStore.sealBroken(), starved = DataStore.starvedSlain(), woven = DataStore.tapestryDone();
+		String ending = DataStore.ending();
+		try {
+			d.guide = Guide.STEPS;
+			d.seamVisits = 1;
+			Advancements.grant(p, Advancements.SEAM_RETURNED);
+			DataStore.setSealBroken(true);
+			DataStore.setStarvedSlain(true);
+			DataStore.setTapestryDone(false);
+			DataStore.setEnding("");
+			check(helper, Path.current(p, d) == Path.Step.CHOOSE, "with the Starved One slain the next step is %s", Path.current(p, d));
+			DataStore.setEnding("mended");
+			check(helper, Path.current(p, d) == null, "with the world chosen the path still names %s", Path.current(p, d));
+			check(helper, "gui.extremedimensions.path.beyond".equals(Path.hint(p, d)), "with the world chosen the player is told %s", Path.hint(p, d));
+			int tapestry = 1 << Path.Side.TAPESTRY.ordinal();
+			String[] sent = Path.encode(p, d).split(";");
+			check(helper, (Integer.parseInt(sent[1]) & tapestry) == 0, "the tapestry counts as finished before it is (%s)", String.join(";", sent));
+			DataStore.setTapestryDone(true);
+			check(helper, "gui.extremedimensions.path.finished".equals(Path.hint(p, d)), "with the tapestry finished the player is told %s", Path.hint(p, d));
+			sent = Path.encode(p, d).split(";");
+			check(helper, (Integer.parseInt(sent[1]) & tapestry) != 0, "the finished tapestry is not sent to the journal (%s)", String.join(";", sent));
+		} finally {
+			DataStore.setSealBroken(seal);
+			DataStore.setStarvedSlain(starved);
+			DataStore.setTapestryDone(woven);
+			DataStore.setEnding(ending);
+		}
+		helper.succeed();
+	}
+
 	@GameTest
 	public void besideThePathOnceItsPageIsKnown(GameTestHelper helper) {
 		ServerPlayer p = TestPlayers.survivor(helper, "path-beside");
