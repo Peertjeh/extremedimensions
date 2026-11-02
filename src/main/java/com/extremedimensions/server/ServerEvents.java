@@ -115,6 +115,9 @@ public final class ServerEvents {
 			com.extremedimensions.lurker.TidewalkerService.clear();
 			com.extremedimensions.lurker.GatebreakerService.clear();
 			com.extremedimensions.lurker.LockwardenService.clear();
+			com.extremedimensions.lurker.ThreadbiterService.clear();
+			com.extremedimensions.lurker.EdgecrawlerService.clear();
+			com.extremedimensions.lurker.CragbackService.clear();
 			com.extremedimensions.world.AmbientService.clear();
 			com.extremedimensions.coop.ClanService.clear();
 			com.extremedimensions.penalty.FleeService.clear();
@@ -311,6 +314,12 @@ public final class ServerEvents {
 				com.extremedimensions.lurker.GatebreakerService.onDeath(gb, HollowService.culprit(gb, source.getEntity()));
 			} else if (entity instanceof com.extremedimensions.lurker.Lockwarden lw) {
 				com.extremedimensions.lurker.LockwardenService.onDeath(lw, HollowService.culprit(lw, source.getEntity()));
+			} else if (entity instanceof com.extremedimensions.lurker.Threadbiter tb) {
+				com.extremedimensions.lurker.ThreadbiterService.onDeath(tb, source.getEntity());
+			} else if (entity instanceof com.extremedimensions.lurker.Edgecrawler ec) {
+				com.extremedimensions.lurker.EdgecrawlerService.onDeath(ec, HollowService.culprit(ec, source.getEntity()));
+			} else if (entity instanceof com.extremedimensions.lurker.Cragback cb) {
+				com.extremedimensions.lurker.CragbackService.onDeath(cb, HollowService.culprit(cb, source.getEntity()));
 			} else if (entity instanceof Lurker l) {
 				LurkerService.onDeath(l, HollowService.culprit(l, source.getEntity()));
 			} else if (entity instanceof com.extremedimensions.seam.VeilRay || entity instanceof com.extremedimensions.seam.Thinned) {
@@ -468,6 +477,8 @@ public final class ServerEvents {
 				CurseEffects.wear(sp);
 				// a Cave Lurker listening hears the stone give way
 				com.extremedimensions.lurker.CaveLurkerService.noise(sp, 10);
+				// a Cragback asleep near by wakes
+				com.extremedimensions.lurker.CragbackService.noise(sp, pos, state);
 				// Veinseeker: the ore and veins near broken stone ring out
 				com.extremedimensions.binding.Charms.seek(sp, pos, state);
 			}
@@ -733,6 +744,9 @@ public final class ServerEvents {
 		com.extremedimensions.lurker.TidewalkerService.tick(s);
 		com.extremedimensions.lurker.GatebreakerService.tick(s);
 		com.extremedimensions.lurker.LockwardenService.tick(s);
+		com.extremedimensions.lurker.ThreadbiterService.tick(s);
+		com.extremedimensions.lurker.EdgecrawlerService.tick(s);
+		com.extremedimensions.lurker.CragbackService.tick(s);
 		com.extremedimensions.world.AmbientService.tick(s);
 		com.extremedimensions.penalty.AbyssalTolls.serverTick(s);
 		com.extremedimensions.penalty.AbyssalWorld.serverTick(s);

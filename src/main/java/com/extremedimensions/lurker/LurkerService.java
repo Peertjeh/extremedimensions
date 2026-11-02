@@ -574,6 +574,10 @@ public final class LurkerService {
 					st.startDist = dist;
 					whisper(l, p, 0.7f);
 				}
+			} else if (seamHunts(p)) {
+				// In the Seam it never steals; but where a visitor's thread runs thin, it may come to hurt
+				com.extremedimensions.world.AmbientService.dread(p);
+				hunt(l, st, p);
 			} else {
 				later.add(() -> {
 					WorldService.offering((ServerLevel) l.level(), l.getX(), l.getY(), l.getZ());
@@ -581,6 +585,15 @@ public final class LurkerService {
 				});
 			}
 		}
+	}
+
+	/**
+	 * Whether a Lurker that watched a visitor in the Seam turns to hunt them: only once their thread runs thin, not for
+	 * its kin, and at {@code lurker_seam_hunt_chance}.
+	 */
+	private static boolean seamHunts(ServerPlayer p) {
+		return Dims.SEAM.equals(Dims.of(p)) && WorldService.tribeSteals() && !kin(p) && com.extremedimensions.seam.SeamFauna.thin(p)
+				&& ThreadLocalRandom.current().nextDouble() < Config.LURKER_SEAM_HUNT_CHANCE;
 	}
 
 	/**

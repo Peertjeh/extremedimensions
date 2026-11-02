@@ -166,6 +166,25 @@ public final class WoundLens {
 			return Component.translatable("gui.extremedimensions.lens.lockwarden." + doing)
 					.withStyle("reaching".equals(doing) ? ChatFormatting.RED : ChatFormatting.LIGHT_PURPLE);
 		}
+		if (l instanceof com.extremedimensions.lurker.Threadbiter) {
+			// it runs at you, gnaws at your thread, or is off with what it ate
+			int pose = l.getLurkerPose();
+			String doing = pose == Lurker.POSE_TAKE ? "biting" : pose == Lurker.POSE_RUN ? "fleeing" : "coming";
+			return Component.translatable("gui.extremedimensions.lens.threadbiter." + doing).withStyle(ChatFormatting.GOLD);
+		}
+		if (l instanceof com.extremedimensions.lurker.Edgecrawler) {
+			// it climbs, creeps, reaches for you, or drags you to the edge
+			int pose = l.getLurkerPose();
+			String doing = pose == Lurker.POSE_TAKE ? "reaching" : pose == Lurker.POSE_RUN ? "climbing" : "creeping";
+			return Component.translatable("gui.extremedimensions.lens.edgecrawler." + doing)
+					.withStyle("reaching".equals(doing) ? ChatFormatting.RED : ChatFormatting.DARK_AQUA);
+		}
+		if (l instanceof com.extremedimensions.lurker.Cragback) {
+			// asleep (a boulder like any other), or awake and coming
+			String doing = l.getLurkerMood() == com.extremedimensions.lurker.LurkerBody.MOOD_CALM ? "sleeping" : "awake";
+			return Component.translatable("gui.extremedimensions.lens.cragback." + doing)
+					.withStyle("sleeping".equals(doing) ? ChatFormatting.GRAY : ChatFormatting.RED);
+		}
 		if (l instanceof com.extremedimensions.lurker.Wick) {
 			// it is hungry for your light, eats it, or (glowing hot) is full of it
 			String doing = l.getLurkerPose() == Lurker.POSE_TAKE ? "eating"

@@ -52,4 +52,7 @@ final class Alone {
 	static final String TIDE_DRAG = "extremedimensions_test:alone/tide_drag";
 	static final String GATE_SMASH = "extremedimensions_test:alone/gate_smash";
 	static final String LOCK_SNATCH = "extremedimensions_test:alone/lock_snatch";
+	static final String THREAD_BITE = "extremedimensions_test:alone/thread_bite";
+	static final String EDGE_THROW = "extremedimensions_test:alone/edge_throw";
+	static final String CRAG_WAKE = "extremedimensions_test:alone/crag_wake";
 }

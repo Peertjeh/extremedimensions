@@ -108,6 +108,39 @@ public final class ModEntities {
 					.clientTrackingRange(10)
 					.build(LOCKWARDEN_KEY));
 
+	private static final ResourceKey<EntityType<?>> THREADBITER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("threadbiter"));
+
+	/** One of the Seam's own, small, in packs, that gnaws at a visitor's thread; spawned only by {@code ThreadbiterService}. */
+	public static final EntityType<com.extremedimensions.lurker.Threadbiter> THREADBITER = Registry.register(BuiltInRegistries.ENTITY_TYPE, THREADBITER_KEY,
+			EntityType.Builder.<com.extremedimensions.lurker.Threadbiter>of(com.extremedimensions.lurker.Threadbiter::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(0.5f, 0.7f)
+					.eyeHeight(0.55f)
+					.clientTrackingRange(8)
+					.build(THREADBITER_KEY));
+
+	private static final ResourceKey<EntityType<?>> EDGECRAWLER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("edgecrawler"));
+
+	/** One of the Seam's own, that climbs up over an island's rim and drags its prey over it; spawned only by {@code EdgecrawlerService}. */
+	public static final EntityType<com.extremedimensions.lurker.Edgecrawler> EDGECRAWLER = Registry.register(BuiltInRegistries.ENTITY_TYPE, EDGECRAWLER_KEY,
+			EntityType.Builder.<com.extremedimensions.lurker.Edgecrawler>of(com.extremedimensions.lurker.Edgecrawler::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(0.9f, 2.2f)
+					.eyeHeight(1.9f)
+					.clientTrackingRange(10)
+					.build(EDGECRAWLER_KEY));
+
+	private static final ResourceKey<EntityType<?>> CRAGBACK_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("cragback"));
+
+	/** The biggest of the Seam's own, asleep as a boulder until someone digs near; spawned only by {@code CragbackService}. */
+	public static final EntityType<com.extremedimensions.lurker.Cragback> CRAGBACK = Registry.register(BuiltInRegistries.ENTITY_TYPE, CRAGBACK_KEY,
+			EntityType.Builder.<com.extremedimensions.lurker.Cragback>of(com.extremedimensions.lurker.Cragback::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(2.4f, 4.0f)
+					.eyeHeight(3.3f)
+					.clientTrackingRange(12)
+					.build(CRAGBACK_KEY));
+
 	private static final ResourceKey<EntityType<?>> SCULK_LURKER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("sculk_lurker"));
 
 	/** The Warden's small servant in the Deep Dark, the size of a Hollowling; spawned only by {@code SculkLurkerService}. */
@@ -239,6 +272,9 @@ public final class ModEntities {
 		FabricDefaultAttributeRegistry.register(TIDEWALKER, Tidewalker.createAttributes());
 		FabricDefaultAttributeRegistry.register(GATEBREAKER, Gatebreaker.createAttributes());
 		FabricDefaultAttributeRegistry.register(LOCKWARDEN, Lockwarden.createAttributes());
+		FabricDefaultAttributeRegistry.register(THREADBITER, com.extremedimensions.lurker.Threadbiter.createAttributes());
+		FabricDefaultAttributeRegistry.register(EDGECRAWLER, com.extremedimensions.lurker.Edgecrawler.createAttributes());
+		FabricDefaultAttributeRegistry.register(CRAGBACK, com.extremedimensions.lurker.Cragback.createAttributes());
 		FabricDefaultAttributeRegistry.register(HOLLOWLING, Hollowling.createAttributes());
 		FabricDefaultAttributeRegistry.register(KEEPER, Keeper.createAttributes());
 		FabricDefaultAttributeRegistry.register(STARVED_ONE, StarvedOne.createAttributes());

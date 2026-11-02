@@ -77,7 +77,10 @@ public final class TetherCommand {
 						.then(Commands.literal("wick").executes(c -> lurker(c.getSource(), "wick")))
 						.then(Commands.literal("tidewalker").executes(c -> lurker(c.getSource(), "tidewalker")))
 						.then(Commands.literal("gatebreaker").executes(c -> lurker(c.getSource(), "gatebreaker")))
-						.then(Commands.literal("lockwarden").executes(c -> lurker(c.getSource(), "lockwarden"))))
+						.then(Commands.literal("lockwarden").executes(c -> lurker(c.getSource(), "lockwarden")))
+						.then(Commands.literal("threadbiter").executes(c -> lurker(c.getSource(), "threadbiter")))
+						.then(Commands.literal("edgecrawler").executes(c -> lurker(c.getSource(), "edgecrawler")))
+						.then(Commands.literal("cragback").executes(c -> lurker(c.getSource(), "cragback"))))
 				.then(Commands.literal("hoard").requires(op).executes(c -> hoard(c.getSource())))
 				.then(Commands.literal("boss").requires(op)
 						.then(Commands.literal("matriarch").executes(c -> boss(c.getSource(), "matriarch")))
@@ -324,6 +327,9 @@ public final class TetherCommand {
 			case "tidewalker" -> com.extremedimensions.lurker.TidewalkerService.summon(p);
 			case "gatebreaker" -> com.extremedimensions.lurker.GatebreakerService.summon(p);
 			case "lockwarden" -> com.extremedimensions.lurker.LockwardenService.summon(p);
+			case "threadbiter" -> com.extremedimensions.lurker.ThreadbiterService.summon(p);
+			case "edgecrawler" -> com.extremedimensions.lurker.EdgecrawlerService.summon(p);
+			case "cragback" -> com.extremedimensions.lurker.CragbackService.summon(p);
 			default -> LurkerService.summon(p, mode);
 		};
 		String failed = switch (mode) {
@@ -334,6 +340,9 @@ public final class TetherCommand {
 			case "tidewalker" -> "commands.extremedimensions.lurker.failed_tidewalker";
 			case "gatebreaker" -> "commands.extremedimensions.lurker.failed_gatebreaker";
 			case "lockwarden" -> "commands.extremedimensions.lurker.failed_lockwarden";
+			case "threadbiter" -> "commands.extremedimensions.lurker.failed_threadbiter";
+			case "edgecrawler" -> "commands.extremedimensions.lurker.failed_edgecrawler";
+			case "cragback" -> "commands.extremedimensions.lurker.failed_cragback";
 			default -> "commands.extremedimensions.lurker.failed";
 		};
 		src.sendSuccess(() -> Component.translatable(ok ? "commands.extremedimensions.lurker.summoned" : failed), false);

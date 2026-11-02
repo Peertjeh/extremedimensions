@@ -108,7 +108,11 @@ an unweaving the loom waits three days for you.
   Storms** tear the sky, and out of them may step the **Gatebreaker**, a giant that breaks through your walls (all
   but obsidian) to get at you. In the End, once the Dragon has fallen, the **Lockwarden** that kept the Dragon's lock comes for
   anyone carrying ender pearls: it steps closer as an Enderman does, snatches them, and sometimes leaves you on a lost
-  islet with one pearl to get back.
+  islet with one pearl to get back. The Seam keeps its own: packs of little **Threadbiters** gnaw seconds off your
+  thread (slay one and every second comes back), the **Edgecrawler** climbs up over an island's rim behind whoever
+  stands near the edge and drags them over (crouch to plant your feet), and the great **Cragback** sleeps as a boulder
+  with Tetherite on its back until someone digs near it. A Lurker watching you in the Seam may now hunt you once your
+  thread runs thin.
 
 ## The story
 

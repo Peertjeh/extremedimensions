@@ -154,6 +154,11 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.GATEBREAKER, ctx -> new LurkerRenderer<>(ctx, "gatebreaker", 1.95F, 1.6F, false));
 		// (tall and thin, as the End's own walkers are)
 		EntityRendererRegistry.register(ModEntities.LOCKWARDEN, ctx -> new LurkerRenderer<>(ctx, "lockwarden", 1.45F, 0.8F, false));
+		// The Seam's own: the Threadbiter knee-high with a young one's big head, the Edgecrawler a little over a man's
+		// height, the Cragback broad and as tall as a Keeper
+		EntityRendererRegistry.register(ModEntities.THREADBITER, ctx -> new LurkerRenderer<>(ctx, "threadbiter", 0.28F, 0.3F, true));
+		EntityRendererRegistry.register(ModEntities.EDGECRAWLER, ctx -> new LurkerRenderer<>(ctx, "edgecrawler", 0.9F, 0.55F, false));
+		EntityRendererRegistry.register(ModEntities.CRAGBACK, ctx -> new LurkerRenderer<>(ctx, "cragback", 1.7F, 1.8F, false));
 		EntityRendererRegistry.register(ModEntities.HOLLOWLING, ctx -> new LurkerRenderer<>(ctx, "hollowling", 0.42F, 0.4F, true));
 		EntityRendererRegistry.register(ModEntities.KEEPER, ctx -> new LurkerRenderer<>(ctx, "keeper", 1.75F, 1.4F, false));
 		ModelLayerRegistry.registerModelLayer(com.extremedimensions.client.entity.elder.StarvedOneModel.LAYER,

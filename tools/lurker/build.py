@@ -100,7 +100,7 @@ def _mask_parts(m, head):
         m.box(fr, -0.35, 0, -0.25, 0.7, 0.9 + 0.5 * ((k * 3) % 4), 0.5, "t_fray")
 
 
-# ----------------------------------------------------------------------------- the twelve
+# ----------------------------------------------------------------------------- the fifteen
 
 SPECIES = {
     "lurker": dict(cloak=((14, 12, 20), (54, 46, 66)), limb=((22, 20, 26), (60, 56, 66)), skin=((40, 36, 44), (86, 80, 90)),
@@ -147,6 +147,21 @@ SPECIES = {
     "lockwarden": dict(cloak=((14, 8, 22), (56, 38, 76)), limb=((22, 16, 32), (68, 54, 88)), skin=((34, 26, 46), (90, 74, 110)),
                        mask=((176, 172, 120), (238, 236, 190)), crack=(206, 96, 255), eye=(226, 140, 255), eye_hot=(255, 232, 255),
                        tendril=((10, 6, 16), (40, 26, 58)), tip=(170, 70, 220), claw=((40, 34, 52), (130, 120, 146)), face="lock"),
+    # the Threadbiter: one of the Seam's own, small, its cloak the Seam's dusk violet shot through with stolen gold
+    # thread, a pale silk mask with a wide mouth of teeth, eyes and cracks the gold of the thread it eats
+    "threadbiter": dict(cloak=((30, 22, 40), (100, 80, 124)), limb=((40, 32, 48), (108, 92, 122)), skin=((60, 48, 66), (140, 122, 150)),
+                        mask=((170, 160, 130), (240, 232, 204)), crack=(255, 200, 90), eye=(255, 214, 110), eye_hot=(255, 248, 222),
+                        tendril=((120, 90, 40), (232, 192, 104)), tip=(255, 196, 80), claw=((60, 50, 40), (170, 150, 120)), face="thread"),
+    # the Edgecrawler: grey as the undersides of the islands it clings to, roots hanging from it, a weathered stone mask
+    # set with small glowing eyes, its cracks the pale green of the lichen on the islands' undersides
+    "edgecrawler": dict(cloak=((22, 24, 22), (74, 80, 72)), limb=((40, 40, 36), (104, 100, 92)), skin=((58, 56, 50), (132, 126, 114)),
+                        mask=((96, 100, 92), (176, 180, 168)), crack=(186, 240, 110), eye=(206, 255, 140), eye_hot=(244, 255, 220),
+                        tendril=((26, 30, 22), (80, 92, 64)), tip=(150, 210, 90), claw=((70, 66, 58), (170, 164, 150)), face="edge"),
+    # the Cragback: hush stone grown over a giant of the tribe, a heavy brow of rock and a jutting jaw, veins and eyes
+    # the teal of Tetherite
+    "cragback": dict(cloak=((30, 27, 40), (92, 86, 110)), limb=((44, 40, 52), (112, 104, 124)), skin=((58, 54, 66), (134, 126, 146)),
+                     mask=((70, 66, 80), (150, 144, 162)), crack=(90, 220, 205), eye=(120, 240, 222), eye_hot=(225, 255, 250),
+                     tendril=((24, 22, 30), (70, 64, 84)), tip=(70, 180, 170), claw=((60, 56, 66), (150, 144, 158)), face="crag"),
     "thinned": dict(cloak=((150, 150, 170), (232, 232, 246)), limb=((160, 160, 178), (236, 236, 248)), skin=((180, 180, 196), (244, 244, 252)),
                     mask=((206, 204, 220), (252, 252, 255)), crack=(216, 196, 255), eye=(214, 190, 255), eye_hot=(255, 250, 255),
                     tendril=((130, 128, 150), (210, 208, 226)), tip=(190, 170, 240), claw=((170, 168, 186), (246, 246, 252)), face="thinned"),
@@ -472,6 +487,36 @@ FACE_PX = {
              "SMMKKKKMMS",
              "SMMKKKKMMS",
              ".SMMMMMMS."],
+    "thread": ["..SMMMMS..",
+               ".SMMMMMMS.",
+               "SMMLMMLMMS",
+               "MMMMMMMMMM",
+               "MDDDMMDDDM",
+               "MDDDMMDDDM",
+               "SMMMMMMMMS",
+               "STKTKKTKTS",
+               ".TKKKKKKT.",
+               "..T.TT.T.."],
+    "edge": ["SMMMMMMMMS",
+             "MMCMMMMCMM",
+             "MMMMMMMMMM",
+             "MCMMMMMMCM",
+             "MDDDMMDDDM",
+             "MDDDMMDDDM",
+             "SMMMMMMMMS",
+             "SMKMKKMKMS",
+             ".SMKMMKMS.",
+             "..SMMMMS.."],
+    "crag": ["SSLLLLLLSS",
+             "SLLLLLLLLS",
+             "LLSSLLSSLL",
+             "MMMMMMMMMM",
+             "MDDDMMDDDM",
+             "SDDDMMDDDS",
+             "MMMMCCMMMM",
+             "MKKKKKKKKM",
+             "MKTKTTKTKM",
+             ".SMMMMMMS."],
     "thinned": ["SLLLLLLLLS",
                 "LLLLLLLLLL",
                 "LLMLLLLMLL",
@@ -496,6 +541,9 @@ EYE_PX = {
     "tide": ["eEe", "e.e"],
     "gate": ["eEe", "..."],
     "lock": ["eEe", ".e."],
+    "thread": [".E.", "eee"],
+    "edge": ["eEe", "e.e"],
+    "crag": ["eEe", "..."],
 }
 _PX = {}
 

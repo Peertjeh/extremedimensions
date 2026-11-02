@@ -24,6 +24,7 @@
 			"com.extremedimensions.gametest.ThiefTests",
 			"com.extremedimensions.gametest.DeepTests",
 			"com.extremedimensions.gametest.LockTests",
+			"com.extremedimensions.gametest.SeamKinTests",
 			"com.extremedimensions.gametest.DiscTests",
 			"com.extremedimensions.gametest.SeamPassTests",
 			"com.extremedimensions.gametest.CurseVarietyTests",

@@ -1217,7 +1217,8 @@ public class ClientShots implements FabricClientGameTest {
 			// hunched head reaches toward the camera), and how far the camera rises to meet its eyes
 			for (String[] kin : new String[][] {{"lurker", "4.4", "1.2"}, {"hollowling", "1.6", "-0.75"}, {"keeper", "5.5", "1.9"},
 					{"thinned", "3.3", "0.5"}, {"magpie", "3.0", "0.5"}, {"wick", "1.1", "-1.15"},
-					{"tidewalker", "3.4", "0.7"}, {"gatebreaker", "6.2", "2.6"}, {"lockwarden", "4.6", "1.6"}}) {
+					{"tidewalker", "3.4", "0.7"}, {"gatebreaker", "6.2", "2.6"}, {"lockwarden", "4.6", "1.6"},
+					{"threadbiter", "1.25", "-1.1"}, {"edgecrawler", "3.0", "0.4"}, {"cragback", "5.6", "2.1"}}) {
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
 				sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:" + kin[0] + " ^ ^ ^" + kin[1]
 						+ " {NoAI:1b,Rotation:[180f,0f]}");
@@ -1244,6 +1245,25 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("kill @e[type=minecraft:item_display]");
 			sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-0.6 ~ 0 0");
+			ctx.waitTicks(5);
+			// The Seam's own of 3.22: a Cragback asleep, its back grown over with stone and Tetherite (displays riding it,
+			// as CragbackService grows them), an Edgecrawler and two Threadbiters before it
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:cragback ^1.6 ^ ^9 {NoAI:1b,Rotation:[205f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:edgecrawler ^-2.3 ^ ^5.2 {NoAI:1b,Rotation:[160f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:threadbiter ^0.7 ^ ^3 {NoAI:1b,Rotation:[195f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:threadbiter ^-0.5 ^ ^3.5 {NoAI:1b,Rotation:[170f,0f]}");
+			ctx.waitTicks(2);
+			sp.getServer().runOnServer(s -> mobs(s).forEach(m -> {
+				if (m instanceof com.extremedimensions.lurker.Cragback cb) {
+					com.extremedimensions.lurker.CragbackService.showBack(cb);
+				}
+			}));
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~1.4 ~ 0 8");
+			ctx.waitTicks(12);
+			ctx.takeScreenshot("06_seamkin");
+			sp.getServer().runCommand("kill @e[type=minecraft:block_display,tag=extremedimensions.cragback_stone]");
+			sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-1.4 ~ 0 0");
 			ctx.waitTicks(5);
 			// name, distance, yaw (the Ferryman a little turned, to show the boat), camera height for the face
 			for (String[] elder : new String[][] {{"matriarch", "22", "180", "9"}, {"ferryman", "24", "220", "8.5"}, {"weaver", "23", "180", "12.5"}}) {

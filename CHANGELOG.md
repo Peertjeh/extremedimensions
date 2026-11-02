@@ -1,5 +1,55 @@
 # Changelog
 
+## 3.22.0: The Seam's Own
+
+The Seam had its rays and its Thinned, and the Lurkers only ever watched there. Now it has a tribe of its own: one
+small, one middling, one huge, each made for the islands and the void between them.
+
+### The Threadbiter (small)
+- **Knee-high scraps of the tribe with mouths too big for them**, their cloaks the Seam's dusk violet shot through with
+  stolen gold thread. A pack of them (two to four, `threadbiter_pack`) comes scurrying over the islands for a visitor,
+  twice as often once the visitor's thread runs thin.
+- **They gnaw at your thread**, the time that holds you in the Seam: every bite takes a few seconds
+  (`threadbiter_bite`), a strand of gold drawn out of you into its mouth, but they never bite it shorter than
+  `threadbiter_floor` seconds. After a few bites (`threadbiter_bites`) one runs off with what it ate, trailing gold, and
+  when it has run long enough (`threadbiter_flee_seconds`) it is gone, and the time with it.
+- **Slay it and every second it ate comes back to you.** They never hurt anyone otherwise; one sweep of a sword does
+  for a pack.
+
+### The Edgecrawler (medium)
+- **It hangs under the islands' rims**, grey as the undersides it clings to, long in the arm, its stone mask set with
+  small glowing eyes the green of lichen. When you stand near an edge (`edgecrawler_edge_range`, a drop of open air at
+  least `edgecrawler_drop` deep), it may climb up over the rim behind you.
+- **It comes on only while it is not looked at**, then rears up and reaches. A raised shield turns the reach. Caught,
+  you are **dragged to the nearest edge and thrown over** (`edgecrawler_throw`, `edgecrawler_damage`).
+- **Crouch and you plant your feet**: it cannot throw you, and it slinks off. Strike it and it lets go. With no edge
+  near, it rakes you with its claws instead. Its throw landed, it climbs back down under the rim.
+
+### The Cragback (large)
+- **Some of the tribe lay down so long ago that the islands grew over them.** The Cragback sleeps hunched on an island,
+  its back grown over with hush stone and veins of Tetherite (real blocks on its back), a boulder like any other.
+- **It wakes** when a block is broken near it (`cragback_wake_range`; Tetherite ore from twice as far: it guards the
+  veins), when it is struck, or when someone stands by it without crouching. Sneak past and it sleeps on.
+- **Awake** it is slow and heavy: close, it **slams** the ground (all near it hurt and thrown back, toward the edge as
+  often as not; a shield turns it); further off, it pounds the ground and **rocks fall** where a ring of dust shows
+  round its prey. Half beaten, a stone breaks off its back and it comes on faster. More players near, more health it
+  has.
+- **Slain, it gives up the Tetherite of its back**: scrap always, often ore and Seam silk too.
+
+### The Lurker in the Seam
+- A Lurker watching you in the Seam never steals there; but **once your thread runs thin** (under a third of your
+  time, in the Fray, or as the Seam pulls you out) it may now come to hurt you instead of leaving
+  (`lurker_seam_hunt_chance`).
+
+### Everywhere
+- All three in the bestiary, through the Wound Lens, with `/tether lurker threadbiter|edgecrawler|cragback`, on the
+  difficulty presets, kin spared, and every number a setting in English and Dutch.
+
+### Tests
+- A Threadbiter gnaws seconds off the thread and gives every one back when it is slain.
+- An Edgecrawler drags its prey to the edge and throws them over; a crouching player cannot be thrown.
+- A sleeping Cragback wakes when Tetherite ore is broken near it, slams whoever is close, and drops Tetherite scrap.
+
 ## 3.21.1: Loot Held High
 
 ### Fixes

@@ -315,6 +315,11 @@ public final class Config {
 	public static int LURKER_CURSES_MAX = 1;
 	/** Chance that a Lurker coming closer comes to hurt (glowing red) rather than to steal (pulsing blue). */
 	public static double LURKER_HUNT_CHANCE = 0.25;
+	/**
+	 * Chance that a Lurker watching in the Seam, where it never steals, comes to hurt instead of leaving once the
+	 * player's thread runs thin (under a third of their time, the Fray, or the Seam pulling them out).
+	 */
+	public static double LURKER_SEAM_HUNT_CHANCE = 0.5;
 	/** Chance that a Lurker struck while it watches, stalks or reaches turns on you instead of running. */
 	public static double LURKER_RETALIATE_CHANCE = 0.35;
 	/** A Lurker come to hurt: the damage of each blow, how many blows before it runs, its speed and how long it keeps at it. */
@@ -518,6 +523,67 @@ public final class Config {
 	public static int LOCKWARDEN_MAROON_DISTANCE = 48;
 	/** Seconds it stays at most. */
 	public static int LOCKWARDEN_SECONDS = 90;
+
+	// --- The Seam's own: the Threadbiter, the Edgecrawler and the Cragback -------------------------
+
+	/** 1 = packs of Threadbiters scurry over the Seam's islands and gnaw at a visitor's thread; 0 = never. */
+	public static int THREADBITER_ENABLED = 1;
+	/** Chance per visitor every 20 seconds in the Seam that a pack of Threadbiters comes (twice that once the thread runs thin). */
+	public static double THREADBITER_SPAWN_CHANCE = 0.05;
+	/** Minimum seconds between two packs for the same visitor. */
+	public static int THREADBITER_COOLDOWN_SECONDS = 600;
+	/** The most Threadbiters in a pack (at least two come). */
+	public static int THREADBITER_PACK = 4;
+	/** Seconds of the thread one bite takes. */
+	public static double THREADBITER_BITE = 4.0;
+	/** Bites a Threadbiter takes before it runs off with what it ate. */
+	public static int THREADBITER_BITES = 5;
+	/** Seconds of the thread they always leave: they never bite it shorter than this. */
+	public static int THREADBITER_FLOOR = 20;
+	/** Their speed (a multiplier). */
+	public static double THREADBITER_SPEED = 1.3;
+	/** Seconds a Threadbiter runs with what it ate before it is gone (and the time with it). */
+	public static int THREADBITER_FLEE_SECONDS = 20;
+
+	/** 1 = Edgecrawlers climb up over the Seam's island rims after visitors near an edge; 0 = never. */
+	public static int EDGECRAWLER_ENABLED = 1;
+	/** Chance per visitor every 20 seconds, near an island's edge in the Seam, that an Edgecrawler climbs up (outside the cooldown). */
+	public static double EDGECRAWLER_SPAWN_CHANCE = 0.06;
+	/** Minimum seconds between two Edgecrawlers for the same visitor. */
+	public static int EDGECRAWLER_COOLDOWN_SECONDS = 900;
+	/** How near (blocks) an edge a visitor must stand for an Edgecrawler to come. */
+	public static int EDGECRAWLER_EDGE_RANGE = 6;
+	/** How deep a drop (blocks of open air under the rim) counts as an edge. */
+	public static int EDGECRAWLER_DROP = 12;
+	/** Damage of its throw, or of its claws where there is no edge to throw you over (half-hearts). */
+	public static double EDGECRAWLER_DAMAGE = 4.0;
+	/** How hard it throws its prey over the edge. */
+	public static double EDGECRAWLER_THROW = 1.0;
+	/** 1 = it drags its prey to the edge and throws them over; 0 = it only claws. */
+	public static int EDGECRAWLER_HURLS = 1;
+	/** Its speed (a multiplier). */
+	public static double EDGECRAWLER_SPEED = 1.1;
+	/** Seconds it stays at most. */
+	public static int EDGECRAWLER_SECONDS = 60;
+
+	/** 1 = Cragbacks sleep on the Seam's islands, looking like rock, and wake when someone digs near; 0 = never. */
+	public static int CRAGBACK_ENABLED = 1;
+	/** Chance per visitor every 20 seconds in the Seam that a sleeping Cragback lies somewhere near (outside the cooldown). */
+	public static double CRAGBACK_SPAWN_CHANCE = 0.03;
+	/** Minimum seconds between two Cragbacks for the same visitor. */
+	public static int CRAGBACK_COOLDOWN_SECONDS = 1500;
+	/** How near (blocks) a block must be broken to wake it (Tetherite ore wakes it from twice as far). */
+	public static int CRAGBACK_WAKE_RANGE = 8;
+	/** Damage of its slam (half-hearts). */
+	public static double CRAGBACK_DAMAGE = 9.0;
+	/** Damage of each rock it brings down (half-hearts). */
+	public static double CRAGBACK_ROCK_DAMAGE = 6.0;
+	/** Its speed (a multiplier; it is slow). */
+	public static double CRAGBACK_SPEED = 0.9;
+	/** Seconds it stays awake at most before it settles and sinks away. */
+	public static int CRAGBACK_SECONDS = 180;
+	/** Health added for every further player near it, as a share of its own (0.5 = half again for each). */
+	public static double CRAGBACK_HEALTH_PER_PLAYER = 0.5;
 
 	// --- Leaving in danger ----------------------------------------------------------------------
 
@@ -1596,6 +1662,12 @@ public final class Config {
 			{"gatebreaker_health_per_player", 0, 5},
 			{"lockwarden_spawn_chance", 0, 1}, {"lockwarden_cooldown_seconds", 0, 86400}, {"lockwarden_takes", 1, 64}, {"lockwarden_damage", 0, 40},
 			{"lockwarden_maroon_chance", 0, 1}, {"lockwarden_maroon_distance", 16, 200}, {"lockwarden_seconds", 20, 1200},
+			{"threadbiter_spawn_chance", 0, 1}, {"threadbiter_cooldown_seconds", 0, 86400}, {"threadbiter_pack", 1, 8}, {"threadbiter_bite", 0, 60},
+			{"threadbiter_bites", 1, 20}, {"threadbiter_floor", 1, 600}, {"threadbiter_speed", 0.3, 3}, {"threadbiter_flee_seconds", 3, 120},
+			{"edgecrawler_spawn_chance", 0, 1}, {"edgecrawler_cooldown_seconds", 0, 86400}, {"edgecrawler_edge_range", 2, 16}, {"edgecrawler_drop", 3, 64},
+			{"edgecrawler_damage", 0, 40}, {"edgecrawler_throw", 0, 3}, {"edgecrawler_speed", 0.3, 3}, {"edgecrawler_seconds", 20, 600},
+			{"cragback_spawn_chance", 0, 1}, {"cragback_cooldown_seconds", 0, 86400}, {"cragback_wake_range", 2, 32}, {"cragback_damage", 0, 60},
+			{"cragback_rock_damage", 0, 40}, {"cragback_speed", 0.3, 3}, {"cragback_seconds", 30, 1200}, {"cragback_health_per_player", 0, 4},
 			{"curse_fresh_weight", 1, 20}, {"tribe_barter_standing_cost", 0, 100}, {"tribe_barter_curse_chance", 0, 1}, {"weaver_pity", 0, 1}, {"seam_thinned_fragment_chance", 0, 1}, {"seam_collapse_toll", 0, 1},
 			{"music_disc_listens_chance", 0, 1}, {"disc_fragment_elegy_count", 0, 9}, {"disc_fragment_abyss_broken", 0, 9},
 			{"disc_fragment_abyss_tangle_chance", 0, 1}, {"disc_fragment_abyss_ray_chance", 0, 1},
@@ -1622,7 +1694,7 @@ public final class Config {
 			{"elder_isle_radius", 1, 16}, {"elder_isle_boss_share", 0, 0.5}, {"elder_isle_daze_seconds", 0, 10}, {"elder_arena_fly_max", 50, 5000}, {"elder_arena_fly_range", 8, 256}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
 			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600},
 			{"lurker_thefts", 1, 9}, {"lurker_claw_damage", 0, 100}, {"lurker_curse_chance", 0, 1}, {"lurker_curse_extreme_chance", 0, 1},
-			{"lurker_curses_max", 0, 9}, {"lurker_hunt_chance", 0, 1}, {"lurker_retaliate_chance", 0, 1}, {"lurker_strike_damage", 0, 100},
+			{"lurker_curses_max", 0, 9}, {"lurker_hunt_chance", 0, 1}, {"lurker_seam_hunt_chance", 0, 1}, {"lurker_retaliate_chance", 0, 1}, {"lurker_strike_damage", 0, 100},
 			{"lurker_strike_blows", 1, 20}, {"lurker_strike_speed", 0.5, 3}, {"lurker_strike_seconds", 5, 300}, {"lurker_swarm_chance", 0, 1}, {"lurker_swarm_lurkers", 0, 12},
 				{"lurker_swarm_hollowlings", 0, 24}, {"lurker_swarm_seconds", 5, 300}, {"lurker_swarm_bite", 0, 40},
 				{"hollowling_swarm_curse_chance", 0, 1}, {"hollowling_swarm_curses_max", 0, 9}, {"fragment_atone_share", 0.01, 1},
