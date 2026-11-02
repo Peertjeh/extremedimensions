@@ -85,8 +85,12 @@ public class GroundTests {
 			for (int seed = 0; seed < 3; seed++) {
 				SeamArchitect.Plan spire = SeamService.showpiece(700L + seed, 0, top, 0, 3);
 				int things = spire.count(Blocks.BOOKSHELF) + spire.count(Blocks.LOOM) + spire.count(Blocks.BARREL) + spire.count(Blocks.CHEST)
-						+ spire.count(Blocks.LECTERN) + spire.count(Blocks.PURPLE_CARPET) + spire.count(Blocks.GRAY_CARPET)
-						+ spire.count(Blocks.MAGENTA_CARPET) + spire.count(Blocks.LIGHT_GRAY_CARPET);
+						+ spire.count(Blocks.LECTERN);
+				// (rugs by name: the carpets are not fields of their own in this version)
+				for (long k : spire.positions()) {
+					BlockState b = spire.at(BlockPos.getX(k), BlockPos.getY(k), BlockPos.getZ(k));
+					things += net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(b.getBlock()).getPath().endsWith("_carpet") ? 1 : 0;
+				}
 				check(helper, things > 15, "colossal building %s holds only %s things", seed, things);
 				furnished += spire.storerooms();
 			}
