@@ -94,8 +94,9 @@ public final class TidewalkerService {
 
 	// ------------------------------------------------------------------ the water and what wards it
 
+	/** Water here (never reading a chunk not loaded: that would load it). */
 	private static boolean water(Level level, BlockPos pos) {
-		return level.getFluidState(pos).is(FluidTags.WATER);
+		return Loaded.ready(level, pos) && level.getFluidState(pos).is(FluidTags.WATER);
 	}
 
 	/** Whether there are at least three blocks of water at and under this spot. */
@@ -136,7 +137,7 @@ public final class TidewalkerService {
 
 	/** Whether this player swims in deep water. */
 	public static boolean swimming(ServerPlayer p) {
-		return wet(p) && p.getVehicle() == null && deep(p.level(), p.blockPosition());
+		return p.getVehicle() == null && wet(p) && deep(p.level(), p.blockPosition());
 	}
 
 	/** Whether this player is in the water (touching it, or the water stands where they are). */
