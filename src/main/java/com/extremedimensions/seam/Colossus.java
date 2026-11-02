@@ -934,6 +934,8 @@ public final class Colossus {
 			w.f.then(0, wellTop, 0, loot(w.f.pos(0, wellTop, 0), 3));
 		}
 		crown(w, w.topForm, w.topHalf, top + 1, sc.ruin && crown != DOME ? BROKEN : crown);
+		// What its people left on its floors
+		Furnish.tower(w, great);
 		return w;
 	}
 
@@ -1133,6 +1135,7 @@ public final class Colossus {
 		if (portal) {
 			portal(f, sc, rnd, z1);
 		}
+		Furnish.hall(f, z0, z1, w);
 	}
 
 	private static void pinnacleAt(Frame f, Scheme sc, int x, int y, int z) {

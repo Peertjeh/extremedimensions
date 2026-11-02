@@ -197,6 +197,44 @@ public class VanillaTests {
 		helper.succeed();
 	}
 
+	/**
+	 * A storeroom holds what a household put by (never a relic or a record), and the barrels of lore are well stocked:
+	 * a village's holds silk and at least four stacks.
+	 */
+	@GameTest
+	public void storeroomsAndBarrelsAreStocked(GameTestHelper helper) {
+		double relic = Config.RELIC_SEAM_CHEST_CHANCE, disc = Config.SEAM_MUSIC_DISC_CHANCE;
+		try {
+			Config.RELIC_SEAM_CHEST_CHANCE = 1;
+			Config.SEAM_MUSIC_DISC_CHANCE = 1;
+			Container store = barrel(helper, new BlockPos(1, 1, 1));
+			SeamService.fillLoot(helper.getLevel(), helper.absolutePos(new BlockPos(1, 1, 1)), 0);
+			int stacks = 0;
+			for (int i = 0; i < store.getContainerSize(); i++) {
+				ItemStack s = store.getItem(i);
+				if (!s.isEmpty()) {
+					stacks++;
+					check(helper, com.extremedimensions.relic.RelicService.of(s) == null, "a storeroom held a relic");
+				}
+			}
+			check(helper, stacks >= 2, "a storeroom held %s stacks", stacks);
+			check(helper, count(store, ModItems.MUSIC_DISC_TICK_OF_THE_BOUNDARY) == 0, "a storeroom held the Seam's record");
+			Config.RELIC_SEAM_CHEST_CHANCE = 0;
+			Config.SEAM_MUSIC_DISC_CHANCE = 0;
+			Container village = barrel(helper, new BlockPos(3, 1, 1));
+			SeamService.fillLoot(helper.getLevel(), helper.absolutePos(new BlockPos(3, 1, 1)), 2);
+			int kept = 0;
+			for (int i = 0; i < village.getContainerSize(); i++) {
+				kept += village.getItem(i).isEmpty() ? 0 : 1;
+			}
+			check(helper, count(village, ModItems.SEAM_SILK) >= 4 && kept >= 4, "a village's barrel held %s silk in %s stacks", count(village, ModItems.SEAM_SILK), kept);
+		} finally {
+			Config.RELIC_SEAM_CHEST_CHANCE = relic;
+			Config.SEAM_MUSIC_DISC_CHANCE = disc;
+		}
+		helper.succeed();
+	}
+
 	/** The Seam's music disc: now and then in a barrel of the Thinned, and played in a jukebox as Minecraft's own are. */
 	@GameTest
 	public void theSeamsDiscPlaysInAJukebox(GameTestHelper helper) {

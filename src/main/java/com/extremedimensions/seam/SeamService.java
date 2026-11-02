@@ -1301,7 +1301,13 @@ public final class SeamService {
 		if (!(level.getBlockEntity(b) instanceof Container c)) {
 			return;
 		}
-		Loot.fill(level, b, c, richness >= 4 ? Loot.FRAY_TANGLE : richness == 3 ? Loot.SEAM_RELIQUARY : richness == 2 ? Loot.SEAM_VILLAGE : Loot.SEAM_LOOM);
+		Loot.fill(level, b, c, richness >= 4 ? Loot.FRAY_TANGLE : richness == 3 ? Loot.SEAM_RELIQUARY : richness == 2 ? Loot.SEAM_VILLAGE
+				: richness == 1 ? Loot.SEAM_LOOM : Loot.SEAM_STOREROOM);
+		if (richness <= 0) {
+			// A storeroom: what a household put by, no relic or record among it, and no plunder for the trial to count
+			c.setChanged();
+			return;
+		}
 		if (ThreadLocalRandom.current().nextDouble() < Config.RELIC_SEAM_CHEST_CHANCE * (1 + richness)) {
 			// Sometimes a relic lies among the Weavers' leavings
 			for (int slot = 0; slot < c.getContainerSize(); slot++) {

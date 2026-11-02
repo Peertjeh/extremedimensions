@@ -27,6 +27,8 @@ import net.minecraft.world.phys.Vec3;
 public final class Loot {
 	private Loot() {}
 
+	/** A storeroom's barrel or chest in a furnished building of the Seam. */
+	public static final String SEAM_STOREROOM = "chests/seam_storeroom";
 	public static final String SEAM_LOOM = "chests/seam_loom";
 	public static final String SEAM_VILLAGE = "chests/seam_village";
 	public static final String SEAM_RELIQUARY = "chests/seam_reliquary";

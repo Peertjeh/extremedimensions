@@ -81,7 +81,8 @@ an unweaving the loom waits three days for you.
 - **The Nether and the End**: timed expeditions. The farther out, the faster the drain.
 - **The Seam**: use a **Seam Needle** on crying obsidian. Floating islands under a sky of nebulae, colossal spires,
   Weaver looms, villages of the Thinned (who only move while you are not looking), Veil Rays overhead, and five
-  minutes before you are thrown home. A monumental gate holds your rift; a compass on the bar points back to it.
+  minutes before you are thrown home. Its buildings are furnished, towers, halls and houses alike, with storerooms of
+  what the Thinned put by. A monumental gate holds your rift; a compass on the bar points back to it.
   Wells at the islands' edges drop into **the Fray**, the Seam's deadlier layer, where time runs out twice as fast.
 - **The Overworld**: the tribe watches. Lurkers steal and run to their **hoards**, guarded by the **Keeper**. A Lurker
   pulsing **blue** comes to steal (its claw hurts, it takes several things and may leave a curse); one glowing **red**
@@ -334,7 +335,8 @@ Download de jar uit de nieuwste groene build (**Actions** → run → **Artifact
 `mods`-map, op de server én bij iedere speler. Alles is in het Nederlands te spelen. Instellingen staan in het
 instellingenscherm en in `config/extremedimensions.json`. Let op: na de Enderdraak opent elke rift naar de Seam bij het
 Hart, tot er voor de wereld gekozen is. Na het einde is de wereld nog niet af: bouw een **Weversgetouw** en weef het
-wandtapijt (zes panelen, elk een blijvende gunst); het Weven is het echte slot, en daarna wacht Nieuwe Draad+. Een volle vloekset **ontweef** je aan het
+wandtapijt (zes panelen, elk een blijvende gunst); het Weven is het echte slot, en daarna wacht Nieuwe Draad+. De
+gebouwen in de Seam zijn ingericht (torens, hallen en huizen, met een ladder naar boven) en hebben voorraadkasten. Een volle vloekset **ontweef** je aan het
 getouw met Tetheriet en Tetherkoord: hak de knopen op tijd door en de hele set gaat eraf. Diep in de Seam ligt **Tetheriet**: spin
 Tether Fragments op een **Spinrok** tot Tetherkoord, smeed het tot een rang voorbij netheriet, en kies uit twintig
 betoveringen en twee nieuwe harnasversieringen. Met Text Placeholder API op de server toont **TAB** de placeholders van de

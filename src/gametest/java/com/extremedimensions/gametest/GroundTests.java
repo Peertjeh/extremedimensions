@@ -67,6 +67,42 @@ public class GroundTests {
 	}
 
 	/**
+	 * The Seam's buildings are furnished: a village's houses have a ladder up, a loom and storerooms; a colossal building
+	 * has its floors kept (shelves, looms, barrels, rugs) and storerooms. With seam_interiors at 0 they stand bare.
+	 */
+	@GameTest(maxTicks = 300)
+	public void theSeamsBuildingsAreFurnished(GameTestHelper helper) {
+		int top = 100, was = Config.SEAM_INTERIORS;
+		double chance = Config.SEAM_STOREROOM_CHANCE;
+		try {
+			Config.SEAM_INTERIORS = 1;
+			Config.SEAM_STOREROOM_CHANCE = 1;
+			SeamArchitect.Plan village = SeamService.showpiece(612L, 0, top, 0, 2);
+			check(helper, village.count(Blocks.LADDER) >= 10, "a village's houses have %s ladder blocks", village.count(Blocks.LADDER));
+			check(helper, village.count(Blocks.LOOM) >= 3, "a village's houses have %s looms", village.count(Blocks.LOOM));
+			check(helper, village.storerooms() >= 6, "a village has %s storerooms", village.storerooms());
+			int furnished = 0;
+			for (int seed = 0; seed < 3; seed++) {
+				SeamArchitect.Plan spire = SeamService.showpiece(700L + seed, 0, top, 0, 3);
+				int things = spire.count(Blocks.BOOKSHELF) + spire.count(Blocks.LOOM) + spire.count(Blocks.BARREL) + spire.count(Blocks.CHEST)
+						+ spire.count(Blocks.LECTERN) + spire.count(Blocks.PURPLE_CARPET) + spire.count(Blocks.GRAY_CARPET)
+						+ spire.count(Blocks.MAGENTA_CARPET) + spire.count(Blocks.LIGHT_GRAY_CARPET);
+				check(helper, things > 15, "colossal building %s holds only %s things", seed, things);
+				furnished += spire.storerooms();
+			}
+			check(helper, furnished >= 3, "three colossal buildings have only %s storerooms", furnished);
+			Config.SEAM_INTERIORS = 0;
+			SeamArchitect.Plan bare = SeamService.showpiece(612L, 0, top, 0, 2);
+			check(helper, bare.count(Blocks.LADDER) == 0 && bare.storerooms() == 0, "with seam_interiors at 0 a village has %s ladders and %s storerooms",
+					bare.count(Blocks.LADDER), bare.storerooms());
+		} finally {
+			Config.SEAM_INTERIORS = was;
+			Config.SEAM_STOREROOM_CHANCE = chance;
+		}
+		helper.succeed();
+	}
+
+	/**
 	 * Whatever is built on an island stands on ground: under every block of a village, a loom or a colossal building at
 	 * its floor there is the island (levelled, or a ledge grown under it); and a cathedral has its plinth.
 	 */

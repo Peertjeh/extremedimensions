@@ -1,5 +1,44 @@
 # Changelog
 
+## 3.17.0: What the Thinned Put By
+
+The Seam's buildings were shells: a tower was one tall empty room, a hall had nothing in it, of up to eight houses in a
+village only one had a barrel, and their upper floors could not be reached. A barrel held about five things, half of
+them odds and ends. Now the Seam is worth going into a building for.
+
+### Furnished buildings
+- **Towers.** Every tower's ground floor, and every floor a great tower's stair climbs through, is kept as a library
+  (shelves two high, chiseled shelves, lecterns, candles), a weavery (looms, bales of silk, candles, or cobwebs in a
+  ruin), a store (stacked barrels, pots, chests) or a shrine (candles and amethyst on plinths, soul lanterns), along
+  the walls and round a rug. Nothing stands in a doorway, on the stair or where a bridge comes in.
+- **Halls.** Pews down either side of a runner, candles between the bays, a lectern at the far end and chests by the
+  door.
+- **Houses.** Every house of the Thinned has a ladder up to the room under its roof, a loom, a table, candles and a rug
+  below; a chest, shelves and a bale of silk above.
+- **The great loom** has barrels of silk round its floor, and a ring of standing stones sometimes a cache by its fire.
+- **Storerooms** in all of them: barrels and chests of what a household put by (`chests/seam_storeroom`: thread,
+  candles, paper and books, glow berries and bread, coal and amethyst, and now and then emeralds, a Tether Fragment, a
+  page or an ender pearl). Each holds anything three times in five (`seam_storeroom_chance`); they hold no relics or
+  records, and are no plunder for the Rift Trial. `seam_interiors` at 0 leaves the walls bare. A ruin may take a
+  storeroom like any other block; only islands built from now on are furnished.
+
+### Richer barrels
+- **By a loom:** 3 to 8 silk, two to four more stacks (an enchanted book among them now and then), emeralds more often
+  than not.
+- **In a village:** 4 to 10 silk, three to five more stacks (echo shards, bread, ender pearls, gold, experience,
+  enchanted books, now and then a golden apple), emeralds four times in five.
+- **The reliquary** of a great tower: 6 to 14 silk, echo shards, three to six more stacks (diamonds, books enchanted at
+  20 to 30 levels, golden apples), plenty of emeralds, and rarely Tetherite scrap, a Mending Cloth or an enchanted
+  golden apple; its templates turn up more often.
+- **A snarl of the Fray** is the richest still, with books enchanted at 25 to 35 levels; still exactly one page.
+- About twice the stacks in every barrel, and more in each stack. The tables are written by `tools/loot/seam_chests.py`
+  and a datapack can still replace any of them.
+
+### Tests
+- A village, with interiors on, has ladders, looms and storerooms, and three colossal buildings their furnished floors
+  and storerooms; with interiors off a village stands bare.
+- A storeroom holds what was put by and never a relic or a record; a village's barrel holds silk in four stacks or more.
+
 ## 3.16.1: The Road Made Plain
 
 The story's road was sound, but three places on it did not say so when it mattered. Nothing in the story changes; the
