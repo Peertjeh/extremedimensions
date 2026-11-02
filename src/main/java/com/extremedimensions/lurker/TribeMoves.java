@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
@@ -345,16 +346,23 @@ public final class TribeMoves {
 	 * in the way of any part of it, and no water or fire where it would stand.
 	 */
 	public static boolean roomFor(ServerLevel level, BlockPos feet, double width, double height) {
-		if (!ground(level.getBlockState(feet.below()))) {
-			return false;
-		}
 		double h = width / 2.0;
 		AABB box = new AABB(feet.getX() + 0.5 - h, feet.getY(), feet.getZ() + 0.5 - h, feet.getX() + 0.5 + h, feet.getY() + height,
 				feet.getZ() + 0.5 + h);
+		BlockPos lo = BlockPos.containing(box.minX, box.minY, box.minZ), hi = BlockPos.containing(box.maxX, box.minY + 1, box.maxZ);
+		// Only in chunks loaded now: a body at a chunk's edge reaches into the next one, and reading a block of a chunk
+		// still on its way in makes the server stand and wait for it
+		if (!Loaded.chunk(level, lo.getX() >> 4, lo.getZ() >> 4) || !Loaded.chunk(level, hi.getX() >> 4, hi.getZ() >> 4)
+				|| !Loaded.chunk(level, lo.getX() >> 4, hi.getZ() >> 4) || !Loaded.chunk(level, hi.getX() >> 4, lo.getZ() >> 4)) {
+			return false;
+		}
+		if (!ground(level.getBlockState(feet.below()))) {
+			return false;
+		}
 		if (!level.noCollision(box)) {
 			return false;
 		}
-		for (BlockPos q : BlockPos.betweenClosed(BlockPos.containing(box.minX, box.minY, box.minZ), BlockPos.containing(box.maxX, box.minY + 1, box.maxZ))) {
+		for (BlockPos q : BlockPos.betweenClosed(lo, hi)) {
 			if (hazard(level.getBlockState(q))) {
 				return false;
 			}
@@ -372,6 +380,10 @@ public final class TribeMoves {
 	 * when it is water, a tree or no room. In the Nether, looked for downwards from {@code top}.
 	 */
 	public static BlockPos surface(ServerLevel level, int x, int z, int top, double width, double height) {
+		// (the height of a column not loaded now would load its chunk to read it)
+		if (!Loaded.chunk(level, x >> 4, z >> 4)) {
+			return null;
+		}
 		if (Dims.NETHER.equals(Dims.of(level))) {
 			for (int y = top; y > top - 40; y--) {
 				BlockPos feet = new BlockPos(x, y, z);

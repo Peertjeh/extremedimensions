@@ -69,6 +69,27 @@ public class LurkerTests {
 		return n;
 	}
 
+	/**
+	 * Looking for room or for the ground never reads a chunk that is not loaded now: a body at a chunk's edge reaches into
+	 * the next one, and reading a block of a chunk on its way in makes the server wait (the performance test caught a
+	 * Lurker's vantage doing so, 44 ms). In loaded ground it still finds room.
+	 */
+	@GameTest
+	public void roomIsSoughtOnlyInLoadedChunks(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		// Far out, where nothing is loaded, on the east edge of a chunk: a body there reaches into the next
+		int x = 1_600_015, z = 1_600_008;
+		var chunks = level.getChunkSource();
+		check(helper, chunks.getChunkNow(x >> 4, z >> 4) == null && chunks.getChunkNow((x + 1) >> 4, z >> 4) == null, "the far chunks were loaded already");
+		check(helper, !TribeMoves.roomFor(level, new BlockPos(x, 64, z), 1.4, 3.6), "room was found in chunks that are not loaded");
+		check(helper, TribeMoves.surface(level, x, z, 80, 1.4, 3.6) == null, "ground was found in a chunk that is not loaded");
+		check(helper, chunks.getChunkNow(x >> 4, z >> 4) == null && chunks.getChunkNow((x + 1) >> 4, z >> 4) == null, "looking for room loaded a chunk");
+		// Here, on a floor of stone, there is room as before
+		helper.setBlock(new BlockPos(1, 1, 1), Blocks.STONE.defaultBlockState());
+		check(helper, TribeMoves.roomFor(level, helper.absolutePos(new BlockPos(1, 2, 1)), 0.6, 1.8), "no room on a floor of stone in loaded ground");
+		helper.succeed();
+	}
+
 	/** Its reach: a claw that hurts, two things taken, and (sure to here) a curse left behind. Its glow pulses blue. */
 	@GameTest(environment = Alone.LURKER_TAKE, maxTicks = 200)
 	public void aLurkersReachClawsTakesAndCurses(GameTestHelper helper) {

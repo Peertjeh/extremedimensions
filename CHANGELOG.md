@@ -21,10 +21,15 @@ game now tells you in time.
 - Two of the Path's lines (making a Seam Needle, and holding what decides the world) ran off the bottom of the
   journal page and were cut short; they are shorter now, and the Path's lines sit a line apart as the game's tooltips
   do, so the longest of them fits.
+- A Lurker or one of the Thinned looking for a place to stand at the edge of a chunk could reach into the next chunk
+  while it was still loading and make the server wait for it (the performance test caught it at 44 ms). Looking for
+  room or for the ground now reads only chunks that are loaded at that moment.
 
 ### Tests
 - With the path walked and the world chosen, the Path names the six threads until the tapestry is finished, and says
   the story is yours once it is.
+- Looking for room or for the ground in chunks that are not loaded finds none and loads nothing; on loaded ground it
+  finds room as before.
 - The spawner room test clears zombies earlier tests left near it before the spawner starts, and says what the spawner
   saw if it spawns nothing.
 
