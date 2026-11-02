@@ -379,7 +379,10 @@ public final class MendingService {
 					so.act(StarvedOne.CLAW);
 					// Its claws: the blow of its attack damage, and a knock away from it
 					if (target.hurtServer(seam, so.damageSources().mobAttack(so), (float) so.getAttributeValue(Attributes.ATTACK_DAMAGE))) {
-						target.knockback(1.2, so.getX() - target.getX(), so.getZ() - target.getZ());
+						Vec3 away = new Vec3(target.getX() - so.getX(), 0, target.getZ() - so.getZ());
+						away = away.lengthSqr() < 1e-4 ? new Vec3(0, 0, 1) : away.normalize();
+						target.setDeltaMovement(target.getDeltaMovement().add(away.x * 0.9, 0.35, away.z * 0.9));
+						target.needsSync = true;
 						WorldFx.soundIn(dim, "minecraft:entity.player.attack.sweep", "hostile", target.getX(), target.getY() + 1, target.getZ(), 1.5f, 0.5f);
 					}
 					begin(RISE, so, target);
