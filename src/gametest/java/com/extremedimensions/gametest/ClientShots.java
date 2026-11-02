@@ -1211,7 +1211,7 @@ public class ClientShots implements FabricClientGameTest {
 			// The tribe's faces up close by day (masks, brows and eyes in fine pixels): name, how far off it stands (its
 			// hunched head reaches toward the camera), and how far the camera rises to meet its eyes
 			for (String[] kin : new String[][] {{"lurker", "4.4", "1.2"}, {"hollowling", "1.6", "-0.75"}, {"keeper", "5.5", "1.9"},
-					{"starved_one", "7.4", "3.1"}, {"thinned", "3.3", "0.5"}}) {
+					{"thinned", "3.3", "0.5"}}) {
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
 				sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:" + kin[0] + " ^ ^ ^" + kin[1]
 						+ " {NoAI:1b,Rotation:[180f,0f]}");
@@ -1251,6 +1251,28 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runOnServer(s -> elders(s).forEach(net.minecraft.world.entity.Entity::discard));
 			sp.getServer().runCommand("time set noon");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-5 ~ 0 0");
+			ctx.waitTicks(10);
+
+			// The Starved One (its own body since 3.18): its whole height hanging in the air, its hooded face up close,
+			// then held by the pillars' chains (arms dragged out and down, head hanging)
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:starved_one ^ ^1 ^12 {NoAI:1b,Rotation:[180f,0f]}");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~4 ~ 0 0");
+			ctx.waitTicks(15);
+			ctx.takeScreenshot("10_starved_one");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~2.5 ~6 0 0");
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("10_starved_one_close");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-2.5 ~-6 0 0");
+			sp.getServer().runOnServer(s -> mobs(s).forEach(m -> {
+				if (m instanceof com.extremedimensions.mending.StarvedOne so) {
+					so.setBound(true);
+				}
+			}));
+			ctx.waitTicks(25);
+			ctx.takeScreenshot("10_starved_one_bound");
+			sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-4 ~ 0 0");
 			ctx.waitTicks(10);
 
 			// The camera shake hooks into the camera (its handler is merged into Camera when the mixin applies)

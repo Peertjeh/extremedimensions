@@ -146,7 +146,9 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.SCULK_LURKER, ctx -> new LurkerRenderer<>(ctx, "sculk_lurker", 0.44F, 0.35F, false));
 		EntityRendererRegistry.register(ModEntities.HOLLOWLING, ctx -> new LurkerRenderer<>(ctx, "hollowling", 0.42F, 0.4F, true));
 		EntityRendererRegistry.register(ModEntities.KEEPER, ctx -> new LurkerRenderer<>(ctx, "keeper", 1.75F, 1.4F, false));
-		EntityRendererRegistry.register(ModEntities.STARVED_ONE, ctx -> new LurkerRenderer<>(ctx, "starved_one", 2.35F, 1.8F, false));
+		ModelLayerRegistry.registerModelLayer(com.extremedimensions.client.entity.elder.StarvedOneModel.LAYER,
+				com.extremedimensions.client.entity.elder.StarvedOneGeometry::create);
+		EntityRendererRegistry.register(ModEntities.STARVED_ONE, com.extremedimensions.client.entity.elder.StarvedOneRenderer::new);
 		ModelLayerRegistry.registerModelLayer(VeilRayModel.LAYER, VeilRayModel::createBodyLayer);
 		EntityRendererRegistry.register(ModEntities.VEIL_RAY, VeilRayRenderer::new);
 		EntityRendererRegistry.register(ModEntities.THINNED, ctx -> new LurkerRenderer<>(ctx, "thinned", 1.05F, 0.7F, false));

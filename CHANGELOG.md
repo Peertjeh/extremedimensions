@@ -1,5 +1,60 @@
 # Changelog
 
+## 3.18.0: The Starved One Reborn
+
+The last fight was the weakest: a Lurker scaled up, walking about the Heart, stunned by two scraps of silk on two little
+pedestals. Now it is the end of the story.
+
+### Its own body
+- **A new model**, after the concept art: a hooded, faceless thing some seven blocks tall (sized for the Heart's
+  island), a single burning slit where a face should be, a halo of rusted spikes standing behind its head, a robe of
+  black tatters split by violet cracks and frayed to shreds where legs would be, a wound of light down its chest, rusted
+  chains wound round it and swinging from its wrists, and long starved arms in torn sleeves ending in claws. Its slit,
+  wound, veins and claw tips glow.
+- **It moves**: it bobs in the air, its tatters, sleeves and chains stir and stream behind it in flight, its halo turns,
+  and it reaches, rakes, calls, lunges and hauls with its arms. Bound, its arms are dragged out and down and it hangs
+  its head, shuddering.
+
+### It flies
+- It rises out of the Heart itself, through the stone, and hangs in the air. It circles its prey a few blocks over it,
+  out of reach of a sword; now and then it falls on it claws first, rakes it if it gets there, and climbs away slowly
+  (the moment to strike back). It drifts through stone as through smoke.
+- Its veil-step now comes out in the air behind you and falls on you at once. Its bite through your thread and its drag
+  near death stay.
+
+### What it brings
+- **Its young**: waves of the tribe's young, red-eyed and biting, called up round one or two of those at the Heart
+  (`starved_minions` every `starved_minion_seconds`, at most `starved_minions_max` at once).
+- **The Veil Rays turn on you**: every calm ray near the Heart turns Frayed and hunts while it lives, and Frayed Rays
+  rise out of the dark to circle the Heart (`starved_rays`, one more for every player beyond the first). When the fight
+  ends the young fade, the risen rays sink back and the turned ones calm again.
+
+### The four pillars bind it
+- The two little pedestals are gone. The four great obelisks of the Heart's crown, each on its own island, are what
+  hold it now. As it wakes, a socket of reinforced stone opens in each shaft, on the corner facing the Heart at eye
+  height above the plinth's top step, and **strands** of hush stone (three wide, walled, rising by half blocks) run out
+  from the Heart's rim to each island.
+- Feed a socket Seam Silk (`starved_socket_silk`, 3) and it burns (`starved_socket_seconds`, 40). Once enough burn at
+  once (`starved_sockets`, 2 alone, one more for every two players beyond the first, four at most) their light
+  **binds** it: chains of light run from the sockets, it is dragged down before whoever is nearest and held there
+  (`starved_bind_seconds`, 12), taking double the harm (`starved_bound_damage`). Then every socket goes dark and must
+  be fed again.
+- Free, it takes only half the harm (`starved_unbound_damage`); in full if no pillar stands to bind it.
+- Clear words at every step: how many pillars and how much silk when it wakes, the silk counted as a socket drinks,
+  how many burn, when one burns out, when it is bound and when it tears free. The boss bar turns white while it is
+  bound.
+- The fight reaches the pillars' islands: time stands still, the bar shows and its health is counted for everyone
+  within 84 blocks of the Heart (was 48).
+
+### Text
+- The journal's page of the Heart, the Path, the bestiary and the walkthroughs tell the new fight (English and Dutch).
+
+### Tests
+- The pillars ask more of a larger party (and the four stand where the crown builds them, inside the fight); a pillar's
+  socket is found on its corner; a strand is walkable all the way (half a block at most from step to step, three wide,
+  walled); the Starved One hangs in the air and tells its actions and binding.
+- New screenshots: the Starved One whole, up close, and bound.
+
 ## 3.17.1: Together at the Heart
 
 ### Fixes

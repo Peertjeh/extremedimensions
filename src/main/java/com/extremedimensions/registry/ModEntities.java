@@ -83,8 +83,8 @@ public final class ModEntities {
 	/** The last boss, at the Heart of the Seam; spawned only by {@code MendingService}. It stays on peaceful, as the Ender Dragon does. */
 	public static final EntityType<StarvedOne> STARVED_ONE = Registry.register(BuiltInRegistries.ENTITY_TYPE, STARVED_KEY,
 			EntityType.Builder.<StarvedOne>of(StarvedOne::new, MobCategory.MONSTER)
-					.sized(2.0f, 5.6f)
-					.eyeHeight(5.0f)
+					.sized(2.4f, 6.4f)
+					.eyeHeight(5.4f)
 					.clientTrackingRange(12)
 					.build(STARVED_KEY));
 

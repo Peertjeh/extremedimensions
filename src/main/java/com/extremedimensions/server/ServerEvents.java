@@ -341,9 +341,9 @@ public final class ServerEvents {
 			if (!Dims.ours(level)) {
 				return InteractionResult.PASS;
 			}
-			if (player instanceof ServerPlayer sp && hand == InteractionHand.MAIN_HAND && MendingService.isPedestal(hit.getBlockPos())
-					&& SeamService.inSeam(sp)) {
-				InteractionResult r = MendingService.onPedestal(sp, hit.getBlockPos(), player.getItemInHand(hand));
+			if (player instanceof ServerPlayer sp && hand == InteractionHand.MAIN_HAND && SeamService.inSeam(sp)
+					&& level instanceof net.minecraft.server.level.ServerLevel sl && MendingService.isSocket(sl, hit.getBlockPos())) {
+				InteractionResult r = MendingService.onSocket(sp, hit.getBlockPos(), player.getItemInHand(hand));
 				if (r != InteractionResult.PASS) {
 					return r;
 				}

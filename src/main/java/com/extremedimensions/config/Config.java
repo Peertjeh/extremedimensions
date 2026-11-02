@@ -988,6 +988,26 @@ public final class Config {
 	public static double STARVED_ENRAGE_AT = 0.3;
 	/** Its speed once ravenous, as a multiple. */
 	public static double STARVED_ENRAGE_SPEED = 1.3;
+	/** Seam Silk each pillar's socket drinks before it burns. */
+	public static int STARVED_SOCKET_SILK = 3;
+	/** Seconds a lit socket burns before it goes dark again. */
+	public static double STARVED_SOCKET_SECONDS = 40.0;
+	/** Sockets that must burn at once to bind the Starved One alone (one more for every two players beyond the first, four at most). */
+	public static int STARVED_SOCKETS = 2;
+	/** Seconds the pillars hold it bound. */
+	public static double STARVED_BIND_SECONDS = 12.0;
+	/** The harm it takes while bound, as a multiple. */
+	public static double STARVED_BOUND_DAMAGE = 2.0;
+	/** The harm it takes while free, as a multiple (in full if no pillar stands to bind it). */
+	public static double STARVED_UNBOUND_DAMAGE = 0.5;
+	/** Seconds between the waves of young it calls. */
+	public static double STARVED_MINION_SECONDS = 25.0;
+	/** Young of the tribe in each wave it calls. */
+	public static int STARVED_MINIONS = 3;
+	/** Most of its young about it at once. */
+	public static int STARVED_MINIONS_MAX = 10;
+	/** Frayed Rays that rise to the Heart as it wakes (one more for every player beyond the first). */
+	public static int STARVED_RAYS = 3;
 
 	// --- Co-op -----------------------------------------------------------------------------------
 
@@ -1463,6 +1483,9 @@ public final class Config {
 			{"disc_fragment_abyss_tangle_chance", 0, 1}, {"disc_fragment_abyss_ray_chance", 0, 1},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},
 			{"seam_fray_ray_cooldown", 1, 120}, {"seam_fray_gloom", 0, 30}, {"seam_fray_gloom_every", 10, 3600}, {"seam_fray_unravel", 0, 1},
+			{"starved_socket_silk", 1, 64}, {"starved_socket_seconds", 5, 600}, {"starved_sockets", 1, 4}, {"starved_bind_seconds", 1, 120},
+			{"starved_bound_damage", 0, 10}, {"starved_unbound_damage", 0, 10}, {"starved_minion_seconds", 5, 600}, {"starved_minions", 0, 12},
+			{"starved_minions_max", 0, 40}, {"starved_rays", 0, 12},
 			{"seam_briefing", 0, 100}, {"seam_interiors", 0, 1}, {"seam_storeroom_chance", 0, 1}, {"hud_boss_bar", 0, 1}, {"hints", 0, 1}, {"frame_silk", 0, 64}, {"first_knot_distance", 200, 5000}, {"knot_mother_rest", 0, 100000},
 			{"elder_health_scale", 0.1, 20}, {"elder_health_per_player", 0, 5}, {"elder_damage_scale", 0, 20}, {"elder_damage_per_player", 0, 2},
 			{"elder_rest_per_player", 0, 0.5}, {"elder_rest_min", 0.1, 1}, {"elder_split_max", 1, 8}, {"elder_fighters_range", 8, 256},

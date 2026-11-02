@@ -15,8 +15,12 @@ import com.extremedimensions.elder.Ferryman;
 import com.extremedimensions.elder.FerrymanService;
 import com.extremedimensions.elder.WeaverService;
 import com.extremedimensions.hollow.HollowService;
+import com.extremedimensions.mending.Binding;
 import com.extremedimensions.mending.MendingService;
 import com.extremedimensions.mending.StarvedOne;
+import com.extremedimensions.registry.ModBlocks;
+import com.extremedimensions.registry.ModEntities;
+import com.extremedimensions.seam.SeamArchitect;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.server.Dims;
 
@@ -25,10 +29,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 /**
@@ -50,6 +56,138 @@ public class BossTests {
 			Config.STARVED_HEALTH_PER_PLAYER = per;
 		}
 		helper.succeed();
+	}
+
+	/** The pillars ask more of a larger party: two alone, one more for every two beyond the first, never more than four. */
+	@GameTest
+	public void theBindingAsksMoreOfALargerParty(GameTestHelper helper) {
+		int base = Config.STARVED_SOCKETS;
+		try {
+			Config.STARVED_SOCKETS = 2;
+			int[] want = {2, 2, 3, 3, 4, 4, 4};
+			for (int players = 1; players <= want.length; players++) {
+				check(helper, Binding.needed(players) == want[players - 1], "%s players need %s burning pillars, not %s", players,
+						Binding.needed(players), want[players - 1]);
+			}
+			Config.STARVED_SOCKETS = 4;
+			check(helper, Binding.needed(1) == 4 && Binding.needed(8) == 4, "four asked alone gives %s, and for eight %s", Binding.needed(1), Binding.needed(8));
+			Config.STARVED_SOCKETS = 0;
+			check(helper, Binding.needed(1) == 1, "with none asked, a single pillar still binds it (%s)", Binding.needed(1));
+		} finally {
+			Config.STARVED_SOCKETS = base;
+		}
+		// The four pillars stand where the crown builds its obelisks: on the diagonals, sixty-four out
+		for (int i = 0; i < Binding.PILLARS; i++) {
+			int[] c = Binding.pillar(i);
+			double r = Math.sqrt((double) (c[0] - MendingService.HX) * (c[0] - MendingService.HX) + (double) (c[1] - MendingService.HZ) * (c[1] - MendingService.HZ));
+			check(helper, Math.abs(r - Binding.RING) < 1.0 && Math.abs(Math.abs(c[0]) - Math.abs(c[1])) <= 1, "pillar %s stands at %s, %s", i, c[0], c[1]);
+			check(helper, r + 14 < MendingService.ARENA, "pillar %s's island reaches past the fight (%s)", i, r + 14);
+		}
+		helper.succeed();
+	}
+
+	/**
+	 * A pillar's socket is found where the obelisk stands: the plinth's top step at the corner facing the Heart, the shaft's
+	 * corner two above it. A replica of the corner in the test's own space.
+	 */
+	@GameTest
+	public void aPillarsSocketIsFoundOnItsCorner(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos centre = helper.absolutePos(new BlockPos(6, 1, 6));
+		// the top step at (1, 2, 1) relative, the shaft's corner column at (2, 2..5, 2)
+		level.setBlock(helper.absolutePos(new BlockPos(1, 2, 1)), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 3);
+		for (int y = 2; y <= 5; y++) {
+			level.setBlock(helper.absolutePos(new BlockPos(2, y, 2)), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 3);
+		}
+		BlockPos socket = Binding.socketOf(level, centre.getX(), centre.getZ(), -1, -1, centre.getY() + 7, centre.getY() - 1);
+		BlockPos want = helper.absolutePos(new BlockPos(2, 4, 2));
+		check(helper, want.equals(socket), "the socket was found at %s, not the shaft's corner at %s", socket, want);
+		// no shaft beside the step: no socket
+		for (int y = 2; y <= 5; y++) {
+			level.setBlock(helper.absolutePos(new BlockPos(2, y, 2)), Blocks.AIR.defaultBlockState(), 3);
+		}
+		check(helper, Binding.socketOf(level, centre.getX(), centre.getZ(), -1, -1, centre.getY() + 7, centre.getY() - 1) == null,
+				"a socket was found with no shaft to hold it");
+		helper.succeed();
+	}
+
+	/**
+	 * A strand out to a pillar is walkable all the way: three wide, rising or falling at most half a block from one step
+	 * to the next (slabs between), with a wall along each side, from the Heart's floor to the island's.
+	 */
+	@GameTest
+	public void aStrandToAPillarIsWalkable(GameTestHelper helper) {
+		double ax = 0.5, az = 0.5, bx = 25.5, bz = 25.5;
+		SeamArchitect.Plan plan = Binding.strand(null, ax, az, 100, bx, bz, 93);
+		check(helper, plan.size() > 100, "the strand lays only %s blocks", plan.size());
+		double len = Math.sqrt((bx - ax) * (bx - ax) + (bz - az) * (bz - az)), ux = (bx - ax) / len, uz = (bz - az) / len;
+		double last = Double.NaN, first = Double.NaN;
+		for (double t = 0; t <= len; t += 0.5) {
+			double h = surface(plan, (int) Math.floor(ax + ux * t), (int) Math.floor(az + uz * t));
+			check(helper, !Double.isNaN(h), "no floor under the strand %s along", t);
+			if (!Double.isNaN(last)) {
+				check(helper, Math.abs(h - last) <= 0.5 + 1e-6, "the strand steps %s at %s along", h - last, t);
+			} else {
+				first = h;
+			}
+			last = h;
+		}
+		check(helper, Math.abs(first - 101) <= 0.5 && Math.abs(last - 94) <= 0.5, "the strand runs from %s to %s", first, last);
+		// three wide, walled both sides, halfway along
+		double mx = ax + ux * len / 2, mz = az + uz * len / 2;
+		for (int side = -1; side <= 1; side += 2) {
+			double fx = mx - uz * side * 1.0, fz = mz + ux * side * 1.0;
+			check(helper, !Double.isNaN(surface(plan, (int) Math.floor(fx), (int) Math.floor(fz))), "the strand is not three wide (side %s)", side);
+			boolean wall = false;
+			for (double off = 1.6; off <= 2.6; off += 0.2) {
+				int wx = (int) Math.floor(mx - uz * side * off), wz = (int) Math.floor(mz + ux * side * off);
+				for (int y = 90; y <= 104; y++) {
+					BlockState s = plan.at(wx, y, wz);
+					wall |= s != null && s.is(ModBlocks.HUSH_BRICK_WALL);
+				}
+			}
+			check(helper, wall, "no wall along side %s of the strand", side);
+		}
+		helper.succeed();
+	}
+
+	/** The height a player stands at on a strand's column (a slab counts half), or NaN with nothing there. */
+	private static double surface(SeamArchitect.Plan plan, int x, int z) {
+		for (int y = 106; y >= 86; y--) {
+			BlockState s = plan.at(x, y, z);
+			if (s == null || s.is(ModBlocks.HUSH_BRICK_WALL)) {
+				continue;
+			}
+			return y + (s.is(ModBlocks.HUSH_TILE_SLAB) ? 0.5 : 1.0);
+		}
+		return Double.NaN;
+	}
+
+	/**
+	 * The Starved One hangs in the air (it never falls), tells the client what it is doing and whether it is bound, and
+	 * outside the Heart's fight takes harm in full.
+	 */
+	@GameTest
+	public void theStarvedOneHangsInTheAir(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos at = helper.absolutePos(new BlockPos(4, 6, 4));
+		StarvedOne so = ModEntities.STARVED_ONE.create(level, EntitySpawnReason.EVENT);
+		check(helper, so != null, "no Starved One could be made");
+		so.setPos(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		level.addFreshEntity(so);
+		double y0 = so.getY();
+		check(helper, so.isNoGravity() && so.getAction() == StarvedOne.IDLE && !so.isBound(), "it began falling, acting or bound");
+		int take = so.getTake();
+		so.act(StarvedOne.SWOOP);
+		check(helper, so.getAction() == StarvedOne.SWOOP && so.getTake() == take + 1, "its swoop was not told (%s, %s)", so.getAction(), so.getTake());
+		so.setBound(true);
+		check(helper, so.isBound(), "its binding was not told");
+		check(helper, MendingService.damageFactor(so) == 1.0F, "away from the Heart's fight it takes %s of the harm", MendingService.damageFactor(so));
+		helper.runAfterDelay(25, () -> {
+			check(helper, so.isAlive() && Math.abs(so.getY() - y0) < 0.05, "it fell from %s to %s", y0, so.getY());
+			so.discard();
+			helper.succeed();
+		});
 	}
 
 	@GameTest

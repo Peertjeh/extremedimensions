@@ -1,5 +1,5 @@
-"""The tribe's body: the Lurker, the Cave Lurker, the Sculk Lurker, the Hollowling, the Keeper, the Starved One and the
-Thinned all wear it, each with its own texture. A hunched, cloaked giant on long knuckle-walking arms, ragged strips of cloak, strands dripping from a
+"""The tribe's body: the Lurker, the Cave Lurker, the Sculk Lurker, the Hollowling, the Keeper and the Thinned all wear it
+(the Starved One has had a body of its own since 3.18: tools/elders/starved_one.py), each with its own texture. A hunched, cloaked giant on long knuckle-walking arms, ragged strips of cloak, strands dripping from a
 mask. The claws are fine parts (four pixels to a model pixel); the mask, its eyes, its brow and the fringe of the hood
 are at Minecraft's own size, painted finer and brought down;
 the part names and poses are the ones LurkerModel animates.
@@ -122,9 +122,6 @@ SPECIES = {
     "keeper": dict(cloak=((8, 8, 10), (38, 36, 40)), limb=((18, 17, 19), (54, 52, 56)), skin=((30, 28, 30), (70, 66, 68)),
                    mask=((176, 160, 122), (242, 232, 204)), crack=(255, 240, 210), eye=(255, 226, 150), eye_hot=(255, 252, 230),
                    tendril=((6, 6, 8), (28, 26, 30)), tip=(120, 110, 90), claw=((150, 136, 104), (230, 218, 186)), face="keeper"),
-    "starved_one": dict(cloak=((46, 32, 52), (130, 118, 132)), limb=((60, 50, 64), (150, 142, 150)), skin=((80, 66, 82), (160, 150, 160)),
-                        mask=((120, 112, 118), (190, 184, 186)), crack=(255, 110, 40), eye=(255, 120, 40), eye_hot=(255, 230, 170),
-                        tendril=((36, 24, 40), (96, 80, 100)), tip=(200, 70, 30), claw=((96, 84, 90), (190, 180, 182)), face="starved"),
     "thinned": dict(cloak=((150, 150, 170), (232, 232, 246)), limb=((160, 160, 178), (236, 236, 248)), skin=((180, 180, 196), (244, 244, 252)),
                     mask=((206, 204, 220), (252, 252, 255)), crack=(216, 196, 255), eye=(214, 190, 255), eye_hot=(255, 250, 255),
                     tendril=((130, 128, 150), (210, 208, 226)), tip=(190, 170, 240), claw=((170, 168, 186), (246, 246, 252)), face="thinned"),

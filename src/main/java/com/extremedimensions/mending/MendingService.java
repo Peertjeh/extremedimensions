@@ -2,7 +2,6 @@ package com.extremedimensions.mending;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -11,7 +10,6 @@ import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
-import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.network.Fx;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModBlocks;
@@ -34,6 +32,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -42,13 +41,16 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  * The Mending, the end of the story.
  *
  * <p>Once the seal is broken, every rift into the Seam opens near its <b>Heart</b>: a great island at the centre
- * where all the threads meet, ringed by four pedestals of reinforced stone. Step onto the altar and the
- * <b>Starved One</b> rises: what came through the first wound.
+ * where all the threads meet, crowned by four great pillars on islands of their own. Step onto the altar and the
+ * <b>Starved One</b> rises out of it: what came through the first wound.
  *
  * <ul>
- *   <li>It hunts with blinks through the shadows; wounded, it bites through your thread (your rift is flung to the
- *       edge of the island); near death, it drags everyone towards it.</li>
- *   <li>Feed Seam Silk to two pedestals and the light stuns it: for eight seconds it takes double damage.</li>
+ *   <li>It flies: it circles its prey out of reach, falls on it claws first and climbs away again; it steps through
+ *       the veil to come at you from behind; wounded, it bites through your thread (your rift is flung to the edge of
+ *       the island); near death, it drags everyone towards it.</li>
+ *   <li>It calls the tribe's young, red-eyed and biting, and the Veil Rays turn on the living ({@link Retinue}).</li>
+ *   <li>Free, it takes only part of the harm. Feed Seam Silk to the sockets of the four pillars, and once enough burn
+ *       at once their light binds it: dragged down and held, it takes double ({@link Binding}).</li>
  *   <li>The Thinned fight beside those who befriended a Hollowling.</li>
  *   <li>Time in the Seam stands still for everyone near the Heart while it lives.</li>
  * </ul>
@@ -61,16 +63,22 @@ public final class MendingService {
 	private MendingService() {}
 
 	public static final int HX = 0, HY = 100, HZ = 0, HR = 22;
-	private static final BlockPos[] PEDESTALS = {
-			new BlockPos(HX + 12, HY + 1, HZ), new BlockPos(HX - 12, HY + 1, HZ),
-			new BlockPos(HX, HY + 1, HZ + 12), new BlockPos(HX, HY + 1, HZ - 12)};
+	/** How far from the Heart the fight reaches: the Heart, its strands and the four pillars' islands. */
+	public static final int ARENA = 84;
 
 	private static UUID boss;
 	private static ServerBossEvent bar;
 	private static int ticks;
-	private static int stun;
 	private static int nextTrick = 160;
-	private static final boolean[] LIT = new boolean[4];
+	/** Its flight: rising out of the Heart, circling its prey, falling on it, or climbing away after a blow. */
+	private static final int EMERGE = 0, HOVER = 1, SWOOP = 2, RISE = 3;
+	private static int phase = EMERGE;
+	private static int phaseTicks;
+	private static int nextSwoop = 120;
+	private static double orbit;
+	private static Vec3 vel = Vec3.ZERO;
+	/** Players at the Heart when it woke (the binding asks more sockets of a larger party). */
+	private static int party = 1;
 
 	public static boolean isDriven(Entity e) {
 		return e.getUUID().equals(boss);
@@ -86,22 +94,29 @@ public final class MendingService {
 		}
 		bar = null;
 		boss = null;
-		stun = 0;
 		ravenous = false;
-		java.util.Arrays.fill(LIT, false);
+		Binding.forget();
+		Retinue.forget();
 	}
 
+	/** Bound, it takes more harm; free, less (as long as the pillars stand to bind it: else in full). */
 	public static float damageFactor(StarvedOne so) {
-		return stun > 0 ? 2.0F : 1.0F;
+		if (!isDriven(so)) {
+			return 1.0F;
+		}
+		if (Binding.bound()) {
+			return (float) Math.max(0, Config.STARVED_BOUND_DAMAGE);
+		}
+		return Binding.possible(party) ? (float) Math.max(0, Config.STARVED_UNBOUND_DAMAGE) : 1.0F;
 	}
 
 	private static boolean open() {
 		return DataStore.sealBroken() && DataStore.ending().isEmpty();
 	}
 
-	/** Is this player near the Heart, in the Seam? */
+	/** Is this player near the Heart (on it, its strands or the pillars' islands), in the Seam? */
 	public static boolean inArena(ServerPlayer p) {
-		return SeamService.inSeam(p) && p.distanceToSqr(HX + 0.5, HY, HZ + 0.5) < 48 * 48;
+		return SeamService.inSeam(p) && p.distanceToSqr(HX + 0.5, HY, HZ + 0.5) < (double) ARENA * ARENA;
 	}
 
 	/**
@@ -174,7 +189,8 @@ public final class MendingService {
 	}
 
 	private static void start(ServerLevel seam, ServerPlayer p) {
-		StarvedOne so = ModEntities.STARVED_ONE.spawn(seam, new BlockPos(HX, HY + 1, HZ - 8), EntitySpawnReason.EVENT);
+		// It rises out of the Heart itself, through the stone
+		StarvedOne so = ModEntities.STARVED_ONE.spawn(seam, new BlockPos(HX, HY - 7, HZ - 8), EntitySpawnReason.EVENT);
 		if (so == null) {
 			return;
 		}
@@ -195,9 +211,15 @@ public final class MendingService {
 		ravenous = false;
 		boss = so.getUUID();
 		ticks = 0;
-		stun = 0;
-		nextTrick = 160;
-		java.util.Arrays.fill(LIT, false);
+		nextTrick = 200;
+		phase = EMERGE;
+		phaseTicks = 0;
+		nextSwoop = 140;
+		vel = Vec3.ZERO;
+		party = Math.max(1, players);
+		so.act(StarvedOne.CALL);
+		Binding.wake(seam);
+		Retinue.wake(seam, party);
 		bar = new ServerBossEvent(UUID.randomUUID(), Component.translatable("boss.extremedimensions.starved_one"),
 				BossEvent.BossBarColor.PURPLE, BossEvent.BossBarOverlay.NOTCHED_20);
 		roar(so, 4f);
@@ -207,6 +229,8 @@ public final class MendingService {
 				Journal.unlock(q, DataStore.get(q.getUUID()), JournalEntry.HEART);
 				Advancements.grant(q, Advancements.HEART_REACHED);
 				WorldFx.effect(q, MobEffects.DARKNESS, 5, 0);
+				q.sendSystemMessage(Component.translatable("gui.extremedimensions.heart.awake", Binding.needed(party),
+						Math.max(1, Config.STARVED_SOCKET_SILK)).withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE));
 			}
 		}
 	}
@@ -225,6 +249,7 @@ public final class MendingService {
 		}
 		if (!(ent instanceof StarvedOne so) || !so.isAlive()) {
 			if (ent == null || !ent.isAlive()) {
+				end(seam);
 				clear();
 			}
 			return;
@@ -242,31 +267,31 @@ public final class MendingService {
 			}
 		}
 		bar.setProgress(so.getHealth() / so.getMaxHealth());
+		bar.setColor(Binding.bound() ? BossEvent.BossBarColor.WHITE : BossEvent.BossBarColor.PURPLE);
 		ServerPlayer target = nearest(so, arena);
-		if (stun > 0) {
-			stun--;
-			so.getNavigation().stop();
-			so.setTarget(null);
-			so.setLurkerPose(Lurker.POSE_DRAIN);
-			if (stun % 4 == 0) {
-				WorldFx.particleIn(dim, "extremedimensions:soul_mote", so.getX(), so.getY() + 3, so.getZ(), 1, 2, 1, 0, 6);
-			}
-			if (stun == 0) {
-				unlight(seam);
+		so.setTarget(target);
+		if (ticks % 3 == 0) {
+			WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 3, so.getZ(), 1.0, 2.0, 1.0, 0, 2);
+		}
+		if (Binding.tick(seam, so, arena, ticks)) {
+			so.rest();
+			phase = HOVER;
+			vel = Vec3.ZERO;
+		}
+		Vec3 held = Binding.bindAt();
+		if (held != null) {
+			// Bound: dragged down to where the chains hold it, shuddering, its blows and tricks stopped
+			fly(so, held, 0.5, 0.35);
+			so.getLookControl().setLookAt(target, 10, 10);
+			if (ticks % 4 == 0) {
+				WorldFx.particleIn(dim, "extremedimensions:soul_mote", so.getX(), so.getY() + 3, so.getZ(), 1, 2, 1, 0, 4);
 			}
 			return;
 		}
-		if (ticks % 20 == 0) {
-			so.setTarget(target);
-		}
-		double d2 = so.distanceToSqr(target);
-		so.setLurkerPose(d2 < 5.5 * 5.5 ? Lurker.POSE_TAKE : so.getDeltaMovement().horizontalDistanceSqr() > 0.002 ? Lurker.POSE_RUN : Lurker.POSE_WATCH);
-		if (ticks % 3 == 0) {
-			WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 2.5, so.getZ(), 0.8, 1.5, 0.8, 0, 2);
-		}
+		so.setBound(false);
 		float f = so.getHealth() / so.getMaxHealth();
 		if (!ravenous && f <= Config.STARVED_ENRAGE_AT) {
-			// Ravenous: it moves faster and its tricks come sooner
+			// Ravenous: it flies faster and its tricks come sooner
 			ravenous = true;
 			var speed = so.getAttribute(Attributes.MOVEMENT_SPEED);
 			if (speed != null) {
@@ -278,7 +303,11 @@ public final class MendingService {
 			}
 			nextTrick = Math.min(nextTrick, 40);
 		}
-		if (--nextTrick <= 0) {
+		flight(seam, so, target);
+		if (phase != EMERGE && Retinue.tick(seam, so, arena, ticks, ravenous)) {
+			so.act(StarvedOne.CALL);
+		}
+		if (phase != EMERGE && phase != SWOOP && --nextTrick <= 0) {
 			ThreadLocalRandom rnd = ThreadLocalRandom.current();
 			if (f <= 0.25f) {
 				nextTrick = 110 + rnd.nextInt(40);
@@ -311,6 +340,101 @@ public final class MendingService {
 		}
 	}
 
+	/**
+	 * Its flight, each tick: it rises out of the Heart; then it circles its prey a few blocks over it, out of reach of a
+	 * sword; now and then it falls on it claws first, rakes it if it gets there, and climbs away slowly (the moment to
+	 * strike back), then circles again.
+	 */
+	private static void flight(ServerLevel seam, StarvedOne so, ServerPlayer target) {
+		phaseTicks++;
+		double pace = so.getAttributeValue(Attributes.MOVEMENT_SPEED) / 0.3;
+		String dim = SeamService.SEAM.identifier().toString();
+		so.getLookControl().setLookAt(target, 30, 30);
+		switch (phase) {
+			case EMERGE -> {
+				fly(so, new Vec3(HX + 0.5, HY + 3, HZ - 7.5), 0.12, 0.2);
+				if (phaseTicks > 60) {
+					begin(HOVER, so, target);
+				}
+			}
+			case HOVER -> {
+				orbit += 0.014 * pace;
+				double r = 6.5;
+				Vec3 goal = new Vec3(target.getX() + Math.cos(orbit) * r, target.getY() + 3.2 + Math.sin(ticks * 0.05) * 0.8,
+						target.getZ() + Math.sin(orbit) * r);
+				fly(so, keepIn(goal), 0.34 * pace, 0.12);
+				if (--nextSwoop <= 0 && so.distanceToSqr(target) < 30 * 30) {
+					begin(SWOOP, so, target);
+					so.act(StarvedOne.SWOOP);
+					WorldFx.soundIn(dim, "minecraft:entity.phantom.swoop", "hostile", so.getX(), so.getY() + 3, so.getZ(), 3f, 0.5f);
+				}
+			}
+			case SWOOP -> {
+				Vec3 at = target.position();
+				Vec3 from = new Vec3(so.getX() - at.x, 0, so.getZ() - at.z);
+				from = from.lengthSqr() < 1e-4 ? new Vec3(0, 0, 1) : from.normalize();
+				fly(so, at.add(from.scale(1.6)).add(0, -0.3, 0), 0.62 * pace, 0.28);
+				double dx = target.getX() - so.getX(), dz = target.getZ() - so.getZ(), dy = target.getY() - so.getY();
+				if (dx * dx + dz * dz < 3.0 * 3.0 && dy > -3.0 && dy < 2.5) {
+					so.act(StarvedOne.CLAW);
+					// Its claws: the blow of its attack damage, and a knock away from it
+					if (target.hurtServer(seam, so.damageSources().mobAttack(so), (float) so.getAttributeValue(Attributes.ATTACK_DAMAGE))) {
+						target.knockback(1.2, so.getX() - target.getX(), so.getZ() - target.getZ());
+						WorldFx.soundIn(dim, "minecraft:entity.player.attack.sweep", "hostile", target.getX(), target.getY() + 1, target.getZ(), 1.5f, 0.5f);
+					}
+					begin(RISE, so, target);
+				} else if (phaseTicks > 50) {
+					so.rest();
+					begin(RISE, so, target);
+				}
+			}
+			case RISE -> {
+				Vec3 away = new Vec3(so.getX() - target.getX(), 0, so.getZ() - target.getZ());
+				away = away.lengthSqr() < 1e-4 ? new Vec3(1, 0, 0) : away.normalize();
+				fly(so, keepIn(target.position().add(away.scale(7)).add(0, 4, 0)), 0.16 * pace, 0.1);
+				if (phaseTicks > 34) {
+					so.rest();
+					begin(HOVER, so, target);
+				}
+			}
+			default -> begin(HOVER, so, target);
+		}
+		// It turns to face its prey as it flies
+		double dx = target.getX() - so.getX(), dz = target.getZ() - so.getZ();
+		float yaw = (float) (Mth.atan2(dz, dx) * Mth.RAD_TO_DEG) - 90.0F;
+		float turned = Mth.approachDegrees(so.getYRot(), yaw, 14.0F);
+		so.setYRot(turned);
+		so.yBodyRot = turned;
+	}
+
+	private static void begin(int next, StarvedOne so, ServerPlayer target) {
+		phase = next;
+		phaseTicks = 0;
+		if (next == HOVER) {
+			orbit = Math.atan2(so.getZ() - target.getZ(), so.getX() - target.getX());
+			nextSwoop = (int) ((80 + ThreadLocalRandom.current().nextInt(60)) * (ravenous ? 0.6 : 1.0));
+		}
+	}
+
+	/** Eases its velocity towards the goal (never faster than {@code speed}, slowing as it arrives). */
+	private static void fly(StarvedOne so, Vec3 goal, double speed, double ease) {
+		Vec3 to = goal.subtract(so.position());
+		double d = to.length();
+		Vec3 want = d < 1e-3 ? Vec3.ZERO : to.scale(Math.min(speed, d * 0.3) / d);
+		vel = vel.add(want.subtract(vel).scale(ease));
+		so.setDeltaMovement(vel);
+	}
+
+	/** A goal kept within the fight's reach of the Heart, and not far under it. */
+	private static Vec3 keepIn(Vec3 goal) {
+		double dx = goal.x - HX, dz = goal.z - HZ, r = Math.sqrt(dx * dx + dz * dz), max = ARENA - 6;
+		double y = Math.max(goal.y, HY - 24);
+		if (r > max) {
+			return new Vec3(HX + dx / r * max, y, HZ + dz / r * max);
+		}
+		return new Vec3(goal.x, y, goal.z);
+	}
+
 	private static ServerPlayer nearest(Entity e, List<ServerPlayer> ps) {
 		ServerPlayer best = ps.get(0);
 		for (ServerPlayer p : ps) {
@@ -321,27 +445,27 @@ public final class MendingService {
 		return best;
 	}
 
+	/** It steps through the veil and comes out in the air behind its prey, close enough to rake it. */
 	private static void blink(StarvedOne so, ServerPlayer p) {
 		Vec3 look = p.getViewVector(1.0f);
-		double x = p.getX() - look.x * 4, z = p.getZ() - look.z * 4;
-		ServerLevel seam = (ServerLevel) so.level();
-		BlockPos g = BlockPos.containing(x, p.getY(), z);
-		for (int dy = 3; dy >= -3; dy--) {
-			BlockPos q = g.above(dy);
-			if (seam.getBlockState(q).isAir() && !seam.getBlockState(q.below()).isAir()) {
-				String dim = SeamService.SEAM.identifier().toString();
-				WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 3, so.getZ(), 1, 2, 1, 0, 40);
-				so.teleportTo(q.getX() + 0.5, q.getY(), q.getZ() + 0.5);
-				WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", q.getX() + 0.5, q.getY() + 3, q.getZ() + 0.5, 1, 2, 1, 0, 40);
-				WorldFx.soundIn(dim, "extremedimensions:lurker_vanish", "hostile", q.getX() + 0.5, q.getY() + 2, q.getZ() + 0.5, 2f, 0.5f);
-				return;
-			}
-		}
+		Vec3 flat = new Vec3(look.x, 0, look.z);
+		flat = flat.lengthSqr() < 1e-4 ? new Vec3(0, 0, 1) : flat.normalize();
+		Vec3 to = keepIn(p.position().subtract(flat.scale(4.5)).add(0, 1.5, 0));
+		String dim = SeamService.SEAM.identifier().toString();
+		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 3, so.getZ(), 1, 2, 1, 0, 40);
+		so.teleportTo(to.x, to.y, to.z);
+		vel = Vec3.ZERO;
+		so.act(StarvedOne.BLINK);
+		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", to.x, to.y + 3, to.z, 1, 2, 1, 0, 40);
+		WorldFx.soundIn(dim, "extremedimensions:lurker_vanish", "hostile", to.x, to.y + 2, to.z, 2f, 0.5f);
+		// and falls on it at once
+		begin(SWOOP, so, p);
 	}
 
 	/** It bites through the thread: every rift near the Heart is flung to the edge of the island. */
 	private static void bite(StarvedOne so, List<ServerPlayer> arena) {
 		roar(so, 3f);
+		so.act(StarvedOne.BITE);
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		for (ServerPlayer p : arena) {
 			PlayerData d = DataStore.get(p.getUUID());
@@ -360,6 +484,7 @@ public final class MendingService {
 	/** Near death it drags everyone close towards it. */
 	private static void drag(StarvedOne so, List<ServerPlayer> arena) {
 		roar(so, 4f);
+		so.act(StarvedOne.DRAG);
 		for (ServerPlayer p : arena) {
 			if (p.isCreative() || p.isSpectator()) {
 				continue;
@@ -383,68 +508,35 @@ public final class MendingService {
 		}
 	}
 
-	// ------------------------------------------------------------------ pedestals
+	// ------------------------------------------------------------------ the pillars
 
-	public static boolean isPedestal(BlockPos pos) {
-		for (BlockPos p : PEDESTALS) {
-			if (p.equals(pos)) {
-				return true;
-			}
-		}
-		return false;
+	/** Is this the socket of one of the four pillars round the Heart? */
+	public static boolean isSocket(ServerLevel seam, BlockPos pos) {
+		return seam.getBlockState(pos).is(Blocks.REINFORCED_DEEPSLATE) || seam.getBlockState(pos).is(Blocks.CRYING_OBSIDIAN)
+				? Binding.socketAt(seam, pos) >= 0 : false;
 	}
 
-	/** Seam Silk fed to a pedestal lights it; two lit pedestals stun the Starved One. */
-	public static InteractionResult onPedestal(ServerPlayer p, BlockPos pos, ItemStack stack) {
-		if (boss == null && stack.is(ModItems.SEAM_SILK) && isPedestal(pos)) {
-			// Silk offered while nothing stands at the Heart: the pedestal stays dark, and says why
-			p.sendSystemMessage(Component.translatable(DataStore.starvedSlain() ? "gui.extremedimensions.heart.pedestal_gone"
-					: "gui.extremedimensions.heart.pedestal_wait"), true);
+	/** Seam Silk held to a pillar's socket: it drinks, and burns once it has drunk enough (see {@link Binding}). */
+	public static InteractionResult onSocket(ServerPlayer p, BlockPos pos, ItemStack stack) {
+		if (!Binding.silk(stack) || !(p.level() instanceof ServerLevel seam)) {
 			return InteractionResult.PASS;
 		}
-		if (boss == null || !stack.is(ModItems.SEAM_SILK)) {
+		int i = Binding.socketAt(seam, pos);
+		if (i < 0) {
 			return InteractionResult.PASS;
 		}
-		for (int i = 0; i < PEDESTALS.length; i++) {
-			if (PEDESTALS[i].equals(pos) && !LIT[i]) {
-				LIT[i] = true;
-				if (!p.isCreative()) {
-					stack.shrink(1);
-				}
-				ServerLevel seam = (ServerLevel) p.level();
-				seam.setBlock(pos.above(), Blocks.SOUL_LANTERN.defaultBlockState(), 3);
-				String dim = SeamService.SEAM.identifier().toString();
-				WorldFx.particleIn(dim, "extremedimensions:soul_mote", pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 0.5, 0.3, 1.5, 0.3, 0, 30);
-				WorldFx.soundIn(dim, "minecraft:block.beacon.activate", "block", pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, 2f, 1.4f);
-				int lit = 0;
-				for (boolean b : LIT) {
-					lit += b ? 1 : 0;
-				}
-				if (lit >= 2 && stun == 0) {
-					stun = 160;
-					Entity e = seam.getEntity(boss);
-					if (e != null) {
-						WorldFx.soundIn(dim, "extremedimensions:lurker_shriek", "hostile", e.getX(), e.getY() + 4, e.getZ(), 4f, 0.5f);
-					}
-				}
-				return InteractionResult.SUCCESS;
-			}
-		}
-		return InteractionResult.PASS;
+		return Binding.feed(p, i, stack, boss != null, party);
 	}
 
-	private static void unlight(ServerLevel seam) {
-		for (int i = 0; i < PEDESTALS.length; i++) {
-			LIT[i] = false;
-			if (seam.getBlockState(PEDESTALS[i].above()).is(Blocks.SOUL_LANTERN)) {
-				seam.setBlock(PEDESTALS[i].above(), Blocks.AIR.defaultBlockState(), 3);
-			}
-		}
+	/** The fight is over (won, or nobody left): the sockets go dark, the young fade, the rays calm. */
+	private static void end(ServerLevel seam) {
+		Binding.end(seam);
+		Retinue.end(seam);
 	}
 
 	// ------------------------------------------------------------------ the Heart
 
-	/** The Heart of the Seam: a great island of hush brick around an altar of silk, ringed by four pedestals. */
+	/** The Heart of the Seam: a great island of hush brick around an altar of silk, crowned by four pillars. */
 	private static void buildHeart(ServerLevel seam) {
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		BlockState stone = ModBlocks.HUSH_STONE.defaultBlockState();
@@ -473,10 +565,6 @@ public final class MendingService {
 				seam.setBlock(new BlockPos(HX + dx, HY, HZ + dz), vein, 2);
 			}
 		}
-		for (BlockPos p : PEDESTALS) {
-			seam.setBlock(p, Blocks.REINFORCED_DEEPSLATE.defaultBlockState(), 3);
-			seam.setBlock(p.below(), vein, 2);
-		}
 		// Pillars of silk around the rim
 		for (int i = 0; i < 8; i++) {
 			double a = i * Math.PI / 4 + Math.PI / 8;
@@ -504,10 +592,9 @@ public final class MendingService {
 		}
 		boss = null;
 		bar = null;
-		stun = 0;
 		DataStore.setStarvedSlain(true);
 		ServerLevel seam = (ServerLevel) so.level();
-		unlight(seam);
+		end(seam);
 		offerEnding(seam);
 		String dim = SeamService.SEAM.identifier().toString();
 		WorldFx.particleIn(dim, "extremedimensions:soul_mote", so.getX(), so.getY() + 3, so.getZ(), 2, 3, 2, 0, 200);
@@ -601,17 +688,21 @@ public final class MendingService {
 		return InteractionResult.SUCCESS;
 	}
 
+	/** It sinks back into the seam (nobody left at the Heart, or a stray one left over from before a restart). */
 	public static void fade(StarvedOne so) {
+		boolean mine = isDriven(so);
 		WorldFx.particleIn(SeamService.SEAM.identifier().toString(), "extremedimensions:lurker_wisp", so.getX(), so.getY() + 3, so.getZ(), 1.5, 2.5, 1.5, 0, 60);
 		so.discard();
+		if (!mine) {
+			return;
+		}
 		if (bar != null) {
 			bar.removeAllPlayers();
 		}
 		boss = null;
 		bar = null;
-		stun = 0;
 		if (so.level() instanceof ServerLevel seam) {
-			unlight(seam);
+			end(seam);
 		}
 	}
 

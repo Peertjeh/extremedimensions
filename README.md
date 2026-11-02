@@ -112,8 +112,10 @@ Thirty pages of a nameless Wanderer surface as you play, then pages in other han
 4. **The seal**: slay the Ender Dragon and every rift opens near the **Heart of the Seam**, where the **Starved One**
    waits, until the world is chosen (finish what you seek in the Seam first; the Path and the End portal say so).
 5. **The Ferryman**, let through by the crack the dragon left: he walks the Nether's lava when you are long gone.
-6. **The ending**: defeat the Starved One and choose. **Mend** the first wound (no storms, a gentler drain, a tribe
-   that brings gifts) or **sever** the Tether (no timer beyond the wound, but whoever falls there keeps nothing).
+6. **The ending**: defeat the Starved One (it flies, calls the tribe's red young and turns the Veil Rays on you; feed
+   Seam Silk to the four great pillars round the Heart to bind it) and choose. **Mend** the first wound (no storms, a
+   gentler drain, a tribe that brings gifts) or **sever** the Tether (no timer beyond the wound, but whoever falls
+   there keeps nothing).
 7. **Beside the road**: the Held at the end of a warm chain, the Echoes of Collapses, and the First Weaver's trail
    through four worlds down to the First Knot and the Knot Mother.
 8. **The Unfinished World** (3.0): the story is chosen, the world not yet finished. Its six threads woven on a
