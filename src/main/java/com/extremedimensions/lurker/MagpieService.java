@@ -526,7 +526,8 @@ public final class MagpieService {
 				d = new Display.ItemDisplay(itemDisplay(), level);
 				d.setPos(m.getX(), m.getY() + m.getBbHeight(), m.getZ());
 				d.addTag(TAG);
-				((DisplayAccess) d).extremedimensions$setTransformation(new Transformation(new Vector3f(0, -0.15F, 0), new Quaternionf(),
+				// (well over its hood: the Magpie walks hunched, its head forward of where a rider sits)
+				((DisplayAccess) d).extremedimensions$setTransformation(new Transformation(new Vector3f(0, 0.55F, 0), new Quaternionf(),
 						new Vector3f(0.6F, 0.6F, 0.6F), new Quaternionf()));
 				((DisplayAccess) d).extremedimensions$setBrightnessOverride(new Brightness(15, 15));
 				((BillboardAccess) d).extremedimensions$setBillboard(Display.BillboardConstraints.CENTER);

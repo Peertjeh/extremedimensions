@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.21.1: Loot Held High
+
+### Fixes
+- **The Magpie's loot is held up where you can see it.** The thing it last took sat inside its hood, hidden by its
+  hunched head (the screenshots showed nothing over it); now it floats well over its hood as it runs.
+
 ## 3.21.0: The Lockwarden
 
 The End was the one world without the tribe. Now it has the one who kept the lock.
