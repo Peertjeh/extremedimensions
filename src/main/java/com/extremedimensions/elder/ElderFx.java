@@ -25,6 +25,8 @@ final class ElderFx {
 	static final int MUSIC_MATRIARCH = 0;
 	static final int MUSIC_FERRYMAN = 1;
 	static final int MUSIC_WEAVER = 2;
+	/** The Knot Mother's own theme, "Mother of Knots". */
+	static final int MUSIC_KNOT_MOTHER = 3;
 
 	static String dim(Entity e) {
 		return e.level().dimension().identifier().toString();

@@ -50,10 +50,14 @@ public final class ModSounds {
 	/** The menus' music: "Tick of the Boundary" on the title screen and the menus, "Ominous Loading Screen" while a world loads. */
 	public static final SoundEvent MUSIC_MENU_TITLE = register("music.menu_title");
 	public static final SoundEvent MUSIC_MENU_LOADING = register("music.menu_loading");
-	/** The Elders' fight music: "Cavernous Echoes", "Subterranean Pressure", "Final Collapse". */
+	/**
+	 * The Elders' fight music: "Cavernous Echoes", "Subterranean Pressure", "Final Collapse", and the Knot Mother's own,
+	 * "Mother of Knots" (tools/sounds/boss_knot_mother.py).
+	 */
 	public static final SoundEvent MUSIC_BOSS_MATRIARCH = register("music.boss_matriarch");
 	public static final SoundEvent MUSIC_BOSS_FERRYMAN = register("music.boss_ferryman");
 	public static final SoundEvent MUSIC_BOSS_WEAVER = register("music.boss_weaver");
+	public static final SoundEvent MUSIC_BOSS_KNOT_MOTHER = register("music.boss_knot_mother");
 	/** The Seam's music disc: "Tick of the Boundary", the menus' track, as a jukebox plays it. */
 	public static final SoundEvent MUSIC_DISC_TICK_OF_THE_BOUNDARY = register("music_disc.tick_of_the_boundary");
 	/** The wound's own record: "What the Wound Remembers", made from its ambient sounds. */

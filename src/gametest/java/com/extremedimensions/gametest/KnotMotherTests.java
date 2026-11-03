@@ -57,7 +57,8 @@ public class KnotMotherTests {
 	 * She sounds like herself (3.24): a sound of her own for her body (hurt, at rest, dying, drifting, roaring) and for each
 	 * blow of hers (her voice before it, her Threadline drawn and swept, her Snare woven and closing, threads cast, a flyer
 	 * caught, her anchors struck and broken, her laid bare, her phases, her ultimate, her forming), every one on the Hostile
-	 * Creatures slider (but her humming at rest, on Ambient like the other Elders'), and none of them the Last Weaver's.
+	 * Creatures slider (but her humming at rest, on Ambient like the other Elders'), and none of them the Last Weaver's; and
+	 * her fight plays her own theme (3.25).
 	 */
 	@GameTest
 	public void theKnotMotherHasAVoiceOfHerOwn(GameTestHelper helper) {
@@ -74,6 +75,11 @@ public class KnotMotherTests {
 				&& com.extremedimensions.registry.ModSounds.ELDER_DEATH[3].location().getPath().equals("elder.knot_mother.death")
 				&& com.extremedimensions.registry.ModSounds.ELDER_AMBIENT[3].location().getPath().equals("elder.knot_mother.ambient"),
 				"the Knot Mother's body does not sound as her own");
+		// and her fight has its own music (3.25), on the Music slider like the other Elders'
+		check(helper, net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.containsKey(
+				net.minecraft.resources.Identifier.fromNamespaceAndPath("extremedimensions", "music.boss_knot_mother")), "the Knot Mother has no theme");
+		check(helper, com.extremedimensions.server.WorldFx.category("extremedimensions:music.boss_knot_mother") == net.minecraft.sounds.SoundSource.MUSIC,
+				"the Knot Mother's theme is not on the Music slider");
 		helper.succeed();
 	}
 

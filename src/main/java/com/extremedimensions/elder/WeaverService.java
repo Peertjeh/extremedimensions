@@ -300,7 +300,7 @@ public final class WeaverService {
 		ElderSpawn.begin(w, u, heart);
 		WorldFx.soundIn(ElderFx.dim(w), "minecraft:block.sculk_shrieker.shriek", "hostile", w.getX(), w.getY() + 8, w.getZ(), 5f, 0.5f);
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.knot_mother_wakes"));
-		ElderFx.music(w, ElderFx.MUSIC_WEAVER);
+		ElderFx.music(w, track(w));
 		return true;
 	}
 
@@ -347,7 +347,7 @@ public final class WeaverService {
 			w.setTarget(p);
 		}
 		if (u.ticks % 20 == 1) {
-			ElderFx.music(w, ElderFx.MUSIC_WEAVER);
+			ElderFx.music(w, track(w));
 		}
 		u.keepBar(w);
 		if (u.ticks % 3 == 0) {
@@ -1209,13 +1209,18 @@ public final class WeaverService {
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.weaver_unpicks", theft), true);
 	}
 
+	/** Its fight's music: the Last Weaver's "Final Collapse", or the Knot Mother's own "Mother of Knots". */
+	private static int track(Weaver w) {
+		return w instanceof KnotMother ? ElderFx.MUSIC_KNOT_MOTHER : ElderFx.MUSIC_WEAVER;
+	}
+
 	/** Slain: its thread is given back to everyone near, with silk, fragments and a relic. */
 	public static void onDefeat(Weaver w, Entity killer) {
 		Unweaving u = WEAVERS.remove(w.getUUID());
 		untie(u);
 		ElderArena.release(w);
 		ElderStrikes.forget(w);
-		ElderFx.silence(w, ElderFx.MUSIC_WEAVER);
+		ElderFx.silence(w, track(w));
 		if (u == null) {
 			return;
 		}
@@ -1281,7 +1286,7 @@ public final class WeaverService {
 			}
 		}
 		ElderStrikes.forget(w);
-		ElderFx.silence(w, ElderFx.MUSIC_WEAVER);
+		ElderFx.silence(w, track(w));
 		ElderFx.burst(w, "extremedimensions:soul_mote", 120);
 		w.discard();
 	}

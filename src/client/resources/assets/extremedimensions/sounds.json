@@ -204,6 +204,14 @@
       }
     ]
   },
+  "music.boss_knot_mother": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/boss_knot_mother",
+        "stream": true
+      }
+    ]
+  },
   "music_disc.tick_of_the_boundary": {
     "sounds": [
       {

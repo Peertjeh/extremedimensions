@@ -1,5 +1,26 @@
 # Changelog
 
+## 3.25.0: Mother of Knots
+
+The Knot Mother fought to the Last Weaver's music. Now her fight has a theme of its own, "Mother of Knots", composed
+for her (`tools/sounds/boss_knot_mother.py`) from the same voice as her sounds: her choir, her bronze, her threads.
+
+### Her theme
+- **About three minutes in D minor at 128 beats a minute, in 3+3+2**: every bar is pulled in three tugs, like a knot
+  being drawn tight. Her theme circles its root and winds back on itself (D, F, E, D; A; B flat, A, G, A), and its answer
+  climbs, then draws tight down a chromatic step (D, F, G, A, G, F; E, E flat, D).
+- **It tells her fight**: out of a low drone her heart beats, her theme is plucked on threads and rung on bronze; a
+  low string ostinato and great drums take hold; her choir sings the theme with a braam at every change of chord;
+  then everything drops away to her heart, a creaking thread and whispers; it all comes back brighter bar by bar, the
+  drums denser, a snare roll and a riser, two bars without drums, and the climax: through the Neapolitan (D minor,
+  E flat, B flat, A), the choir an octave higher, bronze doubling it, knots ticking in sixteenths, a gong every eight
+  bars. A lighter pass with the strings singing her theme, one last great hit, and the choir, her threads and her heart
+  fade.
+- **Stereo**, the drums and strings in a stone room, the choir, bronze and threads in a great hall. It swells in from
+  near silence and fades out to it, so the fight's music lays one pass seamlessly over the next, and it is as loud as
+  the other Elders' tracks.
+- The Last Weaver keeps "Final Collapse"; when both fight near you, the track already playing plays on, as before.
+
 ## 3.24.0: A Voice to Bind With
 
 The Knot Mother looked like a final boss and sounded like a garden shed: she borrowed the Last Weaver's thin glass

@@ -22,9 +22,10 @@ import net.minecraft.sounds.SoundSource;
 public final class BossMusic {
 	private BossMusic() {}
 
-	private static final SoundEvent[] TRACKS = {ModSounds.MUSIC_BOSS_MATRIARCH, ModSounds.MUSIC_BOSS_FERRYMAN, ModSounds.MUSIC_BOSS_WEAVER};
-	/** Length of each track in ticks (sounds/music/boss_*.ogg: 179.96 s, 189.2 s, 197.2 s). */
-	private static final int[] LENGTH = {3599, 3784, 3944};
+	private static final SoundEvent[] TRACKS = {ModSounds.MUSIC_BOSS_MATRIARCH, ModSounds.MUSIC_BOSS_FERRYMAN, ModSounds.MUSIC_BOSS_WEAVER,
+			ModSounds.MUSIC_BOSS_KNOT_MOTHER};
+	/** Length of each track in ticks (sounds/music/boss_*.ogg: 179.96 s, 189.2 s, 197.2 s, 189.0 s). */
+	private static final int[] LENGTH = {3599, 3784, 3944, 3780};
 	/** Ticks before a track's end that its next pass starts, crossfading over its closing fade. */
 	private static final int OVERLAP = 140;
 	/** A fight that has not asked for its track for this long is over (it asks every 40 ticks). */
@@ -36,7 +37,7 @@ public final class BossMusic {
 	private static final int FADE_OUT = 60;
 
 	/** Client tick at which each track was last asked for (-1: not asked, or stopped). */
-	private static final int[] heard = {-1, -1, -1};
+	private static final int[] heard = {-1, -1, -1, -1};
 	private static final List<Pass> passes = new ArrayList<>();
 	private static int now = 0;
 	private static int playing = -1;
