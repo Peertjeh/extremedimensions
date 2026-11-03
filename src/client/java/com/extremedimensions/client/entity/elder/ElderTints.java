@@ -22,7 +22,7 @@ final class ElderTints {
 		return switch (elder) {
 			case "matriarch" -> new String[] {"red", "green", "amber", "white"};
 			case "ferryman" -> new String[] {"red", "sea", "gold", "white", "soul"};
-			case "knot_mother" -> new String[] {"blue", "crimson", "silver", "amber", "violet"};
+			case "knot_mother" -> new String[] {"amber", "violet", "white"};
 			default -> new String[] {"blue", "crimson", "silver"};
 		};
 	}
@@ -49,14 +49,11 @@ final class ElderTints {
 				case Ferryman.GAOL -> DARK;
 				default -> NONE;
 			};
-			// The Knot Mother as the Weaver, and amber as she draws you in, the Weavers' old violet as she snarls
+			// The Knot Mother: amber as her Threadline is drawn, violet as her Snare closes, white as she lies exposed
 			case "knot_mother" -> switch (action) {
-				case Weaver.LANCE -> 0;
-				case Weaver.THOUSAND -> 1;
-				case Weaver.NEEDLES -> 2;
-				case KnotMother.DRAW -> 3;
-				case KnotMother.SNARL -> 4;
-				case Weaver.UNRAVEL -> DARK;
+				case KnotMother.THREADLINE -> 0;
+				case KnotMother.SNARE -> 1;
+				case KnotMother.EXPOSED -> 2;
 				default -> NONE;
 			};
 			// Blue-white for the lance, crimson for the thousand needles, silver for needles; dark as it unravels

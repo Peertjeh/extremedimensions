@@ -40,7 +40,7 @@ public final class AttackFx {
 
 	// The server's kinds (see the server's AttackFx and ElderStrikes)
 	private static final int K_SIGIL = 1, K_IMPACT = 2, K_WAVE = 3, K_LINE = 4, K_WISP = 5, K_BURST = 6, K_RING = 7;
-	private static final int S_LANTERN = 1, S_ROOTS = 2, S_SLAM = 3, S_NEEDLE = 4, S_SPEAR = 5, S_SOULFALL = 6, S_SNARL = 7;
+	private static final int S_LANTERN = 1, S_ROOTS = 2, S_SLAM = 3, S_NEEDLE = 4, S_SPEAR = 5, S_SOULFALL = 6, S_SNARE = 7;
 	private static final int I_WISP = 20, I_BOMB = 21, I_SCORCH = 22, I_CUT = 23, I_BLAST = 24, I_CHARGE = 25;
 
 	/** Each Elder's light: the Matriarch violet, the Ferryman teal, the Last Weaver gold-white. */
@@ -427,7 +427,7 @@ public final class AttackFx {
 				glints(level, 2, x, y, z, r * 1.3F, n(12));
 				wave(level, 2, true, x, y, z, 0.5F, 0.9F, r * 2.2F);
 			}
-			case S_SNARL -> {
+			case S_SNARE -> {
 				// a knot of light pulled tight on the floor
 				flash(level, 2, x, y + 0.4, z, r * 0.6F);
 				crack(level, 2, x, y, z, r, 90);

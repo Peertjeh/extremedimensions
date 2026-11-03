@@ -19,6 +19,7 @@ import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.relic.RelicService;
 import com.extremedimensions.seam.SeamFauna;
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 
@@ -31,7 +32,9 @@ import net.minecraft.world.BossEvent;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
 
 /**
  * The Last Weaver: once the hunger at the Heart is ended, the weave stirs. The first visit to a village of the Thinned
@@ -70,8 +73,15 @@ public final class WeaverService {
 		boolean back;
 		/** Where the Knot Mother woke (her cords hold her near it); NaN for a Weaver, which goes where it likes. */
 		double homeX = Double.NaN, homeZ = Double.NaN;
-		/** How many her last Draw In hauled in (for tests). */
-		int drawn;
+		/** The Knot Mother's anchors round her chamber, whether they have been tied yet, ticks left exposed, and when
+		 * each player may strike an anchor again. */
+		final List<Anchor> anchors = new ArrayList<>();
+		boolean tied;
+		int exposed;
+		final Map<UUID, Integer> struck = new HashMap<>();
+		/** Her Threadline: the bearing of its prey as it began, and which way it sweeps. */
+		double lineA;
+		int lineWay = 1;
 
 		/** Its blows land sooner than the other Elders' (the time saved goes into its pause; see {@link WeaverService#end}). */
 		@Override
@@ -86,6 +96,32 @@ public final class WeaverService {
 	}
 
 	private static final Map<UUID, Unweaving> WEAVERS = new HashMap<>();
+
+	/** One of the Knot Mother's anchors: a pillar of crying obsidian topped by a node of amber light, and its hits. */
+	private static final class Anchor {
+		final BlockPos base;
+		int hits;
+		boolean broken;
+
+		Anchor(BlockPos base) {
+			this.base = base;
+		}
+
+		BlockPos node() {
+			return base.above();
+		}
+
+		boolean holds(BlockPos p) {
+			return p.equals(base) || p.equals(node());
+		}
+
+		boolean stands(ServerLevel level) {
+			return !Loaded.ready(level, node()) || level.getBlockState(node()).is(Blocks.OCHRE_FROGLIGHT);
+		}
+	}
+
+	/** Seam marks of anchors still in the world ("ka@dim@x,y,z"), cleared when they are untied. */
+	private static final String ANCHOR_MARK = "ka@";
 
 	/** Its fight, if it is fighting. */
 	static ElderFight fight(Entity e) {
@@ -117,6 +153,7 @@ public final class WeaverService {
 	public static void clear() {
 		for (Unweaving u : WEAVERS.values()) {
 			u.bar.removeAllPlayers();
+			untie(u);
 		}
 		WEAVERS.clear();
 	}
@@ -269,6 +306,7 @@ public final class WeaverService {
 
 	public static void tick(MinecraftServer s) {
 		if (WEAVERS.isEmpty()) {
+			strays(s);
 			return;
 		}
 		List<Runnable> later = new ArrayList<>();
@@ -281,6 +319,7 @@ public final class WeaverService {
 			Entity ent = u.level.getEntity(e.getKey());
 			if (!(ent instanceof Weaver w) || !w.isAlive()) {
 				u.bar.removeAllPlayers();
+				untie(u);
 				WEAVERS.remove(e.getKey());
 				continue;
 			}
@@ -322,12 +361,27 @@ public final class WeaverService {
 			ElderSpawn.tick(w, u);
 			return;
 		}
+		if (w instanceof KnotMother && knot(w, u, p)) {
+			return;
+		}
 		if (u.dazed(w)) {
 			w.motion.brake(w, 0.03, HOVER);
 			return;
 		}
 		float frac = w.getHealth() / w.getMaxHealth();
-		if ((u.kin == 0 && frac <= 0.6f) || (u.kin == 1 && frac <= 0.3f)) {
+		if (w instanceof KnotMother) {
+			// Her phases: at 70% and 35% every thread is drawn back to her and her anchors are tied again
+			if ((u.kin == 0 && frac <= 0.7f) || (u.kin == 1 && frac <= 0.35f)) {
+				u.kin++;
+				if (u.kin == 2) {
+					u.enraged = true;
+				}
+				later.add(() -> {
+					retie(w, u);
+					ElderFx.shake(w, w.getX(), w.getZ(), 40, 0.6f, 20);
+				});
+			}
+		} else if ((u.kin == 0 && frac <= 0.6f) || (u.kin == 1 && frac <= 0.3f)) {
 			u.kin++;
 			if (u.kin == 2) {
 				u.enraged = true;
@@ -371,13 +425,11 @@ public final class WeaverService {
 				double rise = p.getY() - (w.getY() - HOVER);
 				int a;
 				if (w instanceof KnotMother) {
-					// The Knot Mother has two blows of her own: she draws in those who keep away from her, and snarls
-					// the floor under those who come close
-					int draw = Math.max(0, Config.KNOT_MOTHER_DRAW_WEIGHT), snarl = Math.max(0, Config.KNOT_MOTHER_SNARL_WEIGHT);
-					a = dist < 8 && rise < 8 && rise > -4
-							? u.pick(Weaver.UNRAVEL, 4, KnotMother.SNARL, snarl, Weaver.LANCE, (lance + 1) / 2, Weaver.CRADLE, 1)
-							: u.pick(KnotMother.DRAW, draw + (dist > 14 ? draw : 0), KnotMother.SNARL, snarl, Weaver.THREAD, 1,
-									Weaver.NEEDLES, 2, Weaver.LANCE, lance, Weaver.CRADLE, 2, Weaver.THOUSAND, 2);
+					// Her own kit: the Threadline (most against those who keep off), the Knot Snare (most against those
+					// who come close), the Weaver's thread and cradle; none of the Weaver's needles, Lance or unravelling
+					int line = Math.max(0, Config.KNOT_MOTHER_THREADLINE_WEIGHT), snare = Math.max(0, Config.KNOT_MOTHER_SNARE_WEIGHT);
+					a = dist < 9 ? u.pick(KnotMother.SNARE, snare * 2, KnotMother.THREADLINE, line, Weaver.CRADLE, 2, Weaver.THREAD, 1)
+							: u.pick(KnotMother.THREADLINE, line * 2, KnotMother.SNARE, snare, Weaver.CRADLE, 2, Weaver.THREAD, 2);
 				} else {
 					a = dist < 8 && rise < 8 && rise > -4 ? u.pick(Weaver.UNRAVEL, 4, Weaver.LANCE, (lance + 1) / 2, Weaver.CRADLE, 1)
 							: u.pick(Weaver.THREAD, 2, Weaver.NEEDLES, 2, Weaver.LANCE, lance, Weaver.CRADLE, 2, Weaver.THOUSAND, 2);
@@ -455,8 +507,8 @@ public final class WeaverService {
 			case Weaver.LANCE -> lance(w, u, p, b);
 			case Weaver.CRADLE -> cradle(w, u, p, b);
 			case Weaver.THOUSAND -> thousand(w, u, p, b);
-			case KnotMother.DRAW -> draw(w, u, b);
-			case KnotMother.SNARL -> snarl(w, u, p, b);
+			case KnotMother.THREADLINE -> threadline(w, u, p, b);
+			case KnotMother.SNARE -> snare(w, u, p, b);
 			case ElderBoss.ULTIMATE -> tapestry(w, u, b);
 			default -> end(w, u, 40);
 		}
@@ -492,88 +544,322 @@ public final class WeaverService {
 		return Math.sqrt(dx * dx + dz * dz);
 	}
 
-	/** How many the Knot Mother's last Draw In hauled in (for tests). */
-	public static int drawn(Entity e) {
-		Unweaving u = WEAVERS.get(e.getUUID());
-		return u == null ? 0 : u.drawn;
-	}
+	/** The height of the core at the Knot Mother's breast over her feet (blocks), where her anchors' threads meet. */
+	private static final double CHEST = 12.75;
 
 	/**
-	 * Draw In (the Knot Mother's own): her threads reach out to everyone near her while she raises her upper hands,
-	 * she hauls them down and everyone they caught is dragged in to the knot; whoever comes in close is bitten.
+	 * The Knot Mother's own, every tick of her fight once formed: her anchors tied the first time, a thread of amber from
+	 * each standing anchor to the core at her breast, an anchor something else broke counted broken; and while she is
+	 * exposed she hangs still, open. True while she is exposed (nothing else of hers this tick).
 	 */
-	private static void draw(Weaver w, Unweaving u, Beat b) {
+	private static boolean knot(Weaver w, Unweaving u, ServerPlayer p) {
+		if (!u.tied) {
+			u.tied = true;
+			tie(w, u);
+		}
+		if (u.ticks % 10 == 0) {
+			double cy = w.getY() + CHEST;
+			for (Anchor a : List.copyOf(u.anchors)) {
+				if (a.broken) {
+					continue;
+				}
+				if (!a.stands(u.level)) {
+					sever(w, u, a);
+					continue;
+				}
+				BlockPos n = a.node();
+				AttackFx.line(u.level, AttackFx.of(w), AttackFx.LINE_THREAD, n.getX() + 0.5, n.getY() + 0.6, n.getZ() + 0.5, w.getX(), cy, w.getZ(), 10);
+			}
+		}
+		if (u.exposed > 0) {
+			u.exposed--;
+			w.motion.brake(w, 0.05, HOVER);
+			if (u.exposed % 8 == 0) {
+				WorldFx.particleIn(u.level, "minecraft:end_rod", w.getX(), w.getY() + CHEST, w.getZ(), 0.7, 0.7, 0.7, 0.04, 8);
+			}
+			if (u.exposed == 0) {
+				end(w, u, 20);
+			}
+			return true;
+		}
+		return false;
+	}
+
+	/** Ties her anchors round where she woke: pillars of crying obsidian, each topped by a node of amber light. */
+	private static void tie(Weaver w, Unweaving u) {
+		int n = Math.max(0, Config.KNOT_MOTHER_ANCHORS);
+		if (n == 0 || Double.isNaN(u.homeX)) {
+			return;
+		}
+		double r = Math.max(3, Config.KNOT_MOTHER_ANCHOR_RADIUS);
+		double base = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
 		String dim = ElderFx.dim(w);
-		double range = ElderPower.reach(Math.max(4, Config.KNOT_MOTHER_DRAW_RANGE));
-		double hy = w.getY() + 13.5;
-		if (b.at(1)) {
-			WorldFx.soundIn(dim, "minecraft:entity.leash_knot.place", "hostile", w.getX(), hy, w.getZ(), 5f, 0.4f);
+		for (int i = 0; i < n; i++) {
+			double a = base + 2 * Math.PI * i / n;
+			double x = u.homeX + Math.cos(a) * r, z = u.homeZ + Math.sin(a) * r;
+			if (!Loaded.ready(u.level, BlockPos.containing(x, w.getY(), z))) {
+				continue;
+			}
+			double y = ElderFx.surface(u.level, x, w.getY(), z, 1, 24);
+			if (Double.isNaN(y)) {
+				continue;
+			}
+			BlockPos at = BlockPos.containing(x, y, z);
+			if (!u.level.getBlockState(at).canBeReplaced() || !u.level.getBlockState(at.above()).canBeReplaced()) {
+				continue;
+			}
+			u.level.setBlock(at, Blocks.CRYING_OBSIDIAN.defaultBlockState(), 3);
+			u.level.setBlock(at.above(), Blocks.OCHRE_FROGLIGHT.defaultBlockState(), 3);
+			u.anchors.add(new Anchor(at));
+			DataStore.seamCells().add(mark(u.level, at));
+			WorldFx.particleIn(u.level, "minecraft:end_rod", x, y + 1.5, z, 0.3, 0.6, 0.3, 0.05, 16);
+			WorldFx.soundIn(dim, "minecraft:entity.leash_knot.place", "hostile", x, y + 1, z, 2f, 0.6f);
 		}
-		if (b.between(2, 16) && u.ticks % 3 == 0) {
-			for (ServerPlayer q : ElderFx.reachable(w, range)) {
-				AttackFx.line(u.level, AttackFx.of(w), AttackFx.LINE_THREAD, w.getX(), hy, w.getZ(), q.getX(), q.getY() + 1.2, q.getZ(), 4);
+		DataStore.markDirty();
+	}
+
+	/** A phase of hers begins: every thread is drawn back to her, and her anchors are tied again, all of them. */
+	private static void retie(Weaver w, Unweaving u) {
+		double cy = w.getY() + CHEST;
+		for (int i = 0; i < 10; i++) {
+			double a = 2 * Math.PI * i / 10;
+			AttackFx.line(u.level, AttackFx.of(w), AttackFx.LINE_THREAD_TAUT, w.getX() + Math.cos(a) * 16, w.getY() - HOVER + 0.5,
+					w.getZ() + Math.sin(a) * 16, w.getX(), cy, w.getZ(), 16);
+		}
+		WorldFx.soundIn(ElderFx.dim(w), "minecraft:block.amethyst_block.resonate", "hostile", w.getX(), cy, w.getZ(), 5f, 0.4f);
+		untie(u);
+		tie(w, u);
+	}
+
+	/** Her anchors untied: what stands of them taken out of the world, and their marks with them. */
+	private static void untie(Unweaving u) {
+		if (u == null || u.anchors.isEmpty()) {
+			return;
+		}
+		for (Anchor a : u.anchors) {
+			if (!a.broken) {
+				unblock(u.level, a.base);
+			}
+			DataStore.seamCells().remove(mark(u.level, a.base));
+		}
+		u.anchors.clear();
+		DataStore.markDirty();
+	}
+
+	private static void unblock(ServerLevel level, BlockPos base) {
+		if (!Loaded.ready(level, base.above())) {
+			return;
+		}
+		if (level.getBlockState(base.above()).is(Blocks.OCHRE_FROGLIGHT)) {
+			level.setBlock(base.above(), Blocks.AIR.defaultBlockState(), 3);
+		}
+		if (level.getBlockState(base).is(Blocks.CRYING_OBSIDIAN)) {
+			level.setBlock(base, Blocks.AIR.defaultBlockState(), 3);
+		}
+	}
+
+	private static String mark(ServerLevel level, BlockPos base) {
+		return ANCHOR_MARK + level.dimension().identifier() + "@" + base.getX() + "," + base.getY() + "," + base.getZ();
+	}
+
+	/** Anchors a fight left in the world when the server stopped (marks with no fight to them): untied once their chunk is in. */
+	private static void strays(MinecraftServer s) {
+		if (s.getTickCount() % 100 != 0) {
+			return;
+		}
+		List<String> marks = DataStore.seamCells().stream().filter(k -> k.startsWith(ANCHOR_MARK)).toList();
+		for (String m : marks) {
+			int at = m.lastIndexOf('@');
+			String[] xyz = m.substring(at + 1).split(",");
+			if (at <= ANCHOR_MARK.length() || xyz.length != 3) {
+				DataStore.seamCells().remove(m);
+				continue;
+			}
+			String dim = m.substring(ANCHOR_MARK.length(), at);
+			BlockPos base;
+			try {
+				base = new BlockPos(Integer.parseInt(xyz[0]), Integer.parseInt(xyz[1]), Integer.parseInt(xyz[2]));
+			} catch (NumberFormatException e) {
+				DataStore.seamCells().remove(m);
+				continue;
+			}
+			for (ServerLevel level : s.getAllLevels()) {
+				if (level.dimension().identifier().toString().equals(dim) && Loaded.ready(level, base.above())) {
+					unblock(level, base);
+					DataStore.seamCells().remove(m);
+					DataStore.markDirty();
+				}
 			}
 		}
-		if (b.at(16)) {
-			u.drawn = 0;
-			for (ServerPlayer q : ElderFx.reachable(w, range)) {
-				AttackFx.line(u.level, AttackFx.of(w), AttackFx.LINE_THREAD_TAUT, w.getX(), hy, w.getZ(), q.getX(), q.getY() + 1.2, q.getZ(), 10);
-				ElderFx.pull(w, q, range);
-				WorldFx.soundIn(dim, "minecraft:entity.fishing_bobber.retrieve", "hostile", q.getX(), q.getY() + 1, q.getZ(), 3f, 0.5f);
-				u.drawn++;
-			}
-			ElderFx.shake(w, w.getX(), w.getZ(), 30, 0.4f, 10);
-		}
-		if (b.at(26) && Config.KNOT_MOTHER_DRAW_DAMAGE > 0) {
-			// Whoever she hauled in close is bitten (and the bite unpicks their time, as every blow of hers does)
-			for (ServerPlayer q : ElderFx.targets(w, 7, HOVER + 4, w.getBbHeight())) {
-				q.hurtServer(u.level, u.level.damageSources().mobAttack(w), (float) Config.KNOT_MOTHER_DRAW_DAMAGE);
-				WorldFx.soundIn(dim, "minecraft:entity.evoker_fangs.attack", "hostile", q.getX(), q.getY() + 1, q.getZ(), 3f, 0.6f);
-			}
-		}
-		if (b.past(36)) {
-			end(w, u, 50);
+	}
+
+	/** An anchor of hers breaks: its light goes out, the thread snaps, and she is exposed. */
+	private static void sever(Weaver w, Unweaving u, Anchor a) {
+		a.broken = true;
+		unblock(u.level, a.base);
+		DataStore.seamCells().remove(mark(u.level, a.base));
+		DataStore.markDirty();
+		BlockPos n = a.node();
+		String dim = ElderFx.dim(w);
+		WorldFx.particleIn(u.level, "minecraft:end_rod", n.getX() + 0.5, n.getY() + 0.5, n.getZ() + 0.5, 0.4, 0.4, 0.4, 0.25, 30);
+		WorldFx.soundIn(dim, "minecraft:entity.leash_knot.break", "hostile", n.getX() + 0.5, n.getY() + 0.5, n.getZ() + 0.5, 4f, 0.6f);
+		WorldFx.soundIn(dim, "minecraft:block.chain.break", "hostile", n.getX() + 0.5, n.getY() + 0.5, n.getZ() + 0.5, 3f, 0.5f);
+		AttackFx.line(u.level, AttackFx.of(w), AttackFx.LINE_THREAD_TAUT, n.getX() + 0.5, n.getY() + 0.6, n.getZ() + 0.5, w.getX(), w.getY() + CHEST,
+				w.getZ(), 6);
+		int ticks = (int) Math.round(Math.max(0, Config.KNOT_MOTHER_EXPOSED_SECONDS) * 20);
+		if (ticks > 0 && u.action != ElderBoss.ULTIMATE && u.action != ElderBoss.SPAWN) {
+			u.start(w, KnotMother.EXPOSED);
+			u.exposed = ticks;
+			ElderFx.roar(w, 5f, 1.3f);
 		}
 	}
 
 	/**
-	 * Snarl (the Knot Mother's own): her lower hands weave fast and fling knots onto the floor, one under each of her
-	 * prey and more about them; whoever stands in one as it pulls tight is held fast and loses Seam time.
+	 * A player strikes a block: if it is part of a standing anchor of the Knot Mother's it takes a hit instead of being
+	 * mined (true), and it breaks after {@code knot_mother_anchor_hits}.
 	 */
-	private static void snarl(Weaver w, Unweaving u, ServerPlayer p, Beat b) {
+	public static boolean anchorHit(Player player, ServerLevel level, BlockPos pos) {
+		for (Map.Entry<UUID, Unweaving> e : WEAVERS.entrySet()) {
+			Unweaving u = e.getValue();
+			if (u.level != level || u.anchors.isEmpty()) {
+				continue;
+			}
+			for (Anchor a : u.anchors) {
+				if (a.broken || !a.holds(pos)) {
+					continue;
+				}
+				if (u.ticks < u.struck.getOrDefault(player.getUUID(), Integer.MIN_VALUE)) {
+					return true;
+				}
+				u.struck.put(player.getUUID(), u.ticks + 8);
+				a.hits++;
+				BlockPos n = a.node();
+				WorldFx.particleIn(level, "minecraft:enchanted_hit", n.getX() + 0.5, n.getY() + 0.5, n.getZ() + 0.5, 0.5, 0.5, 0.5, 0.3, 10);
+				WorldFx.soundIn(level.dimension().identifier().toString(), "minecraft:block.chain.hit", "block", n.getX() + 0.5, n.getY() + 0.5,
+						n.getZ() + 0.5, 2f, 0.6f + 0.15f * a.hits);
+				if (a.hits >= Math.max(1, Config.KNOT_MOTHER_ANCHOR_HITS) && level.getEntity(e.getKey()) instanceof Weaver w) {
+					sever(w, u, a);
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** What a blow on the Knot Mother is multiplied by: less while her anchors stand, more while she lies exposed. */
+	public static float knotFactor(Entity e) {
+		Unweaving u = WEAVERS.get(e.getUUID());
+		if (u == null) {
+			return 1;
+		}
+		if (u.exposed > 0) {
+			return (float) Math.max(1, Config.KNOT_MOTHER_EXPOSED_DAMAGE);
+		}
+		int up = 0;
+		for (Anchor a : u.anchors) {
+			up += a.broken ? 0 : 1;
+		}
+		if (up == 0) {
+			return 1;
+		}
+		return (float) (1 - Math.min(0.9, Math.max(0, Config.KNOT_MOTHER_ANCHOR_WARD)) * up / u.anchors.size());
+	}
+
+	/** Where the Knot Mother's standing anchors' nodes are (for tests). */
+	public static List<BlockPos> anchors(Entity e) {
+		Unweaving u = WEAVERS.get(e.getUUID());
+		List<BlockPos> out = new ArrayList<>();
+		if (u != null) {
+			for (Anchor a : u.anchors) {
+				if (!a.broken) {
+					out.add(a.node());
+				}
+			}
+		}
+		return out;
+	}
+
+	/** Ticks the Knot Mother still lies exposed (for tests). */
+	public static int exposed(Entity e) {
+		Unweaving u = WEAVERS.get(e.getUUID());
+		return u == null ? 0 : u.exposed;
+	}
+
+	/**
+	 * Threadline (the Knot Mother's own): she raises a hand, a thread of amber runs from it to where its sweep begins and
+	 * a line of marks kindles along the floor there; then the thread is swept low across the floor, through where her
+	 * prey stands and on to the first block behind them. Jump it, or step out of its lane.
+	 */
+	private static void threadline(Weaver w, Unweaving u, ServerPlayer p, Beat b) {
+		String dim = ElderFx.dim(w);
+		double fy = ElderFx.groundUnder(p) + 0.5;
+		double sweep = Math.max(0.2, Math.min(1.5, Config.KNOT_MOTHER_THREADLINE_SWEEP));
+		if (b.at(1)) {
+			u.lineA = Math.atan2(p.getZ() - w.getZ(), p.getX() - w.getX());
+			u.lineWay = u.drift > 0 ? 1 : -1;
+			WorldFx.soundIn(dim, "minecraft:block.tripwire.attach", "hostile", w.getX(), w.getY() + 12, w.getZ(), 4f, 0.5f);
+		}
+		double a0 = u.lineA - u.lineWay * sweep, a1 = u.lineA + u.lineWay * sweep;
+		double dist = Math.max(2, Math.sqrt(w.distanceToSqr(p.getX(), w.getY(), p.getZ())));
+		if (b.between(2, 20) && u.ticks % 3 == 0) {
+			double r = dist + 6;
+			double x0 = w.getX() + Math.cos(a0) * r, z0 = w.getZ() + Math.sin(a0) * r;
+			AttackFx.line(u.level, AttackFx.of(w), AttackFx.LINE_THREAD, w.getX(), w.getY() + 14, w.getZ(), x0, fy, z0, 4);
+			AttackFx.line(u.level, AttackFx.of(w), AttackFx.LINE_PATH, w.getX(), fy, w.getZ(), x0, fy, z0, 4);
+		}
+		if (b.at(20)) {
+			int duration = Math.max(10, (int) Math.round(22 / u.steady()));
+			ElderStrikes.threadline(w, w.getX(), fy, w.getZ(), a0, a1, dist, fy, duration, (float) Math.max(0, Config.KNOT_MOTHER_THREADLINE_DAMAGE));
+			WorldFx.soundIn(dim, "minecraft:entity.leash_knot.break", "hostile", w.getX(), fy, w.getZ(), 4f, 0.8f);
+		}
+		if (b.past(28) && ElderStrikes.threadsOf(w) == 0) {
+			end(w, u, 45);
+		}
+	}
+
+	/**
+	 * Knot Snare (the Knot Mother's own): her hands pull towards each other and patterns are drawn on the floor, one under
+	 * each of her prey and more about them, closing inwards for at least {@code knot_mother_snare_warning} seconds;
+	 * whoever is still in one when it closes is held fast and loses Seam time.
+	 */
+	private static void snare(Weaver w, Unweaving u, ServerPlayer p, Beat b) {
 		if (b.at(12)) {
 			ThreadLocalRandom rnd = ThreadLocalRandom.current();
-			float damage = (float) Math.max(0, Config.KNOT_MOTHER_SNARL_DAMAGE);
+			float damage = (float) Math.max(0, Config.KNOT_MOTHER_SNARE_DAMAGE);
+			int warn = Math.max(u.delay(30), (int) Math.round(Math.max(0.5, Config.KNOT_MOTHER_SNARE_WARNING) * 20));
 			for (ServerPlayer q : u.split(w, p, ElderPower.reach(36))) {
-				ElderStrikes.strike(w, q.getX(), ElderFx.groundUnder(q), q.getZ(), 2.6, damage, u.delay(20), ElderStrikes.SNARL);
+				ElderStrikes.strike(w, q.getX(), ElderFx.groundUnder(q), q.getZ(), 2.6, damage, warn, ElderStrikes.SNARE);
 			}
 			double py = ElderFx.groundUnder(p);
-			for (int i = 0; i < 4; i++) {
+			for (int i = 0; i < 3; i++) {
 				double a = rnd.nextDouble() * Math.PI * 2, r = rnd.nextDouble(4, 9);
 				double x = p.getX() + Math.cos(a) * r, z = p.getZ() + Math.sin(a) * r;
+				if (!Loaded.ready(u.level, BlockPos.containing(x, py, z))) {
+					continue;
+				}
 				double y = ElderFx.surface(u.level, x, py + 4, z, 4, 12);
 				if (!Double.isNaN(y)) {
-					ElderStrikes.strike(w, x, y, z, 2.6, damage, u.delay(24 + i * 3), ElderStrikes.SNARL);
+					ElderStrikes.strike(w, x, y, z, 2.6, damage, warn + 4 * (i + 1), ElderStrikes.SNARE);
 				}
 			}
 			WorldFx.soundIn(ElderFx.dim(w), "minecraft:block.tripwire.attach", "hostile", p.getX(), p.getY(), p.getZ(), 4f, 0.5f);
 		}
-		if (b.past(40)) {
+		if (b.past(30)) {
 			end(w, u, 50);
 		}
 	}
 
-	/** Caught in a knot of hers: held fast for a moment, and the Seam takes its time faster. */
-	public static void snarled(ServerPlayer p) {
-		ElderSpells.snarl(p, Math.max(1, (int) Math.round(Config.KNOT_MOTHER_SNARL_SECONDS * 20 * com.extremedimensions.binding.Charms.steadfast(p))));
+	/** Caught in a closing Snare: held fast for a moment, and the Seam takes its time faster. */
+	public static void snared(ServerPlayer p) {
+		ElderSpells.snare(p, Math.max(1, (int) Math.round(Config.KNOT_MOTHER_SNARE_SECONDS * 20 * com.extremedimensions.binding.Charms.steadfast(p))));
 		WorldFx.particles(p, "minecraft:end_rod", 0.6, 0.4, 0.0, 12);
 		PlayerData d = DataStore.get(p.getUUID());
-		int time = Math.max(0, Config.KNOT_MOTHER_SNARL_TIME);
+		int time = Math.max(0, Config.KNOT_MOTHER_SNARE_TIME);
 		if (d.inSeam && d.seamPull <= 0 && !p.isCreative() && time > 0) {
 			d.seamLeft = Math.max(1, d.seamLeft - time);
-			p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.knot_mother_snarl", time), true);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.knot_mother_snare", time), true);
 		} else {
-			p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.knot_mother_snarl_held"), true);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.knot_mother_snare_held"), true);
 		}
 	}
 
@@ -866,6 +1152,7 @@ public final class WeaverService {
 	/** Slain: its thread is given back to everyone near, with silk, fragments and a relic. */
 	public static void onDefeat(Weaver w, Entity killer) {
 		Unweaving u = WEAVERS.remove(w.getUUID());
+		untie(u);
 		ElderArena.release(w);
 		ElderStrikes.forget(w);
 		ElderFx.silence(w, ElderFx.MUSIC_WEAVER);
@@ -919,6 +1206,7 @@ public final class WeaverService {
 	/** Gone: it unravels into the dark, whole. */
 	public static void fade(Weaver w) {
 		Unweaving u = WEAVERS.remove(w.getUUID());
+		untie(u);
 		ElderArena.release(w);
 		if (u != null && u.village != null) {
 			// Left unfinished (its prey gone): the village it rose in may wake a Weaver again, on the next first visit

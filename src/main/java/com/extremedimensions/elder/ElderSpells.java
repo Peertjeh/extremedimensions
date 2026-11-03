@@ -39,9 +39,9 @@ public final class ElderSpells {
 
 	private static final Identifier SLOW = ExtremeDimensions.id("matriarch_hex");
 	private static final Identifier HEAVY = ExtremeDimensions.id("styx_weight");
-	private static final Identifier SNARLED = ExtremeDimensions.id("knot_snarl");
+	private static final Identifier SNARED = ExtremeDimensions.id("knot_snare");
 	/** Ticks each player is still held fast in one of the Knot Mother's knots. */
-	private static final Map<UUID, Integer> SNARLS = new HashMap<>();
+	private static final Map<UUID, Integer> SNARES = new HashMap<>();
 	/** How long one laying of a spell lasts; it is laid again while the player stays in reach. */
 	private static final int SPELL_TICKS = 40;
 	/** Ticks each player has glided near an Elder without a break. */
@@ -112,15 +112,15 @@ public final class ElderSpells {
 			hold(p, Attributes.MOVEMENT_SPEED, SLOW, p.hasEffect(ModEffects.HEX) ? -Math.max(0, Math.min(0.9, Config.MATRIARCH_HEX_SLOW)) * steady : 0);
 			hold(p, Attributes.JUMP_STRENGTH, HEAVY, p.hasEffect(ModEffects.WEIGHT) ? -Math.max(0, Math.min(0.9, Config.FERRYMAN_WEIGHT_JUMP)) * steady : 0);
 			// Held fast in a knot: no step and no jump until it gives (Steadfast leggings loosen it a little)
-			Integer left = SNARLS.get(p.getUUID());
+			Integer left = SNARES.get(p.getUUID());
 			boolean held = left != null && left > 0 && p.isAlive();
 			if (held) {
-				SNARLS.put(p.getUUID(), left - 1);
+				SNARES.put(p.getUUID(), left - 1);
 			} else if (left != null) {
-				SNARLS.remove(p.getUUID());
+				SNARES.remove(p.getUUID());
 			}
-			hold(p, Attributes.MOVEMENT_SPEED, SNARLED, held ? -steady : 0);
-			hold(p, Attributes.JUMP_STRENGTH, SNARLED, held ? -steady : 0);
+			hold(p, Attributes.MOVEMENT_SPEED, SNARED, held ? -steady : 0);
+			hold(p, Attributes.JUMP_STRENGTH, SNARED, held ? -steady : 0);
 			if (p.isFallFlying() && p.hasEffect(ModEffects.BOUND_WINGS)) {
 				p.stopFallFlying();
 			}
@@ -167,23 +167,23 @@ public final class ElderSpells {
 	}
 
 	/** Holds a player fast in a knot for this many ticks (the longer hold wins if they are caught again). */
-	static void snarl(ServerPlayer p, int ticks) {
-		SNARLS.merge(p.getUUID(), Math.max(1, ticks), Math::max);
+	static void snare(ServerPlayer p, int ticks) {
+		SNARES.merge(p.getUUID(), Math.max(1, ticks), Math::max);
 	}
 
 	/** Whether a player is held fast in one of the Knot Mother's knots. */
-	public static boolean snarled(ServerPlayer p) {
-		Integer left = SNARLS.get(p.getUUID());
+	public static boolean snared(ServerPlayer p) {
+		Integer left = SNARES.get(p.getUUID());
 		return left != null && left > 0;
 	}
 
 	public static void forget(UUID id) {
 		GLIDING.remove(id);
-		SNARLS.remove(id);
+		SNARES.remove(id);
 	}
 
 	public static void clear() {
 		GLIDING.clear();
-		SNARLS.clear();
+		SNARES.clear();
 	}
 }

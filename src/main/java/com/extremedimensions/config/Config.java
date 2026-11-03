@@ -990,20 +990,34 @@ public final class Config {
 	public static int KNOT_MOTHER_REST = 40;
 	/** How far (blocks) the Knot Mother can stray from where she woke: her cords hold her to it. */
 	public static double KNOT_MOTHER_LEASH = 14.0;
-	/** How readily she uses Draw In (her threads haul everyone near in to her): its weight against her other blows (0 = never). */
-	public static int KNOT_MOTHER_DRAW_WEIGHT = 3;
-	/** How far (blocks) her threads reach to draw players in. */
-	public static double KNOT_MOTHER_DRAW_RANGE = 24.0;
-	/** Damage of her bite on whoever she has drawn in close. */
-	public static double KNOT_MOTHER_DRAW_DAMAGE = 6.0;
-	/** How readily she uses Snarl (knots flung onto the floor that hold you fast): its weight against her other blows (0 = never). */
-	public static int KNOT_MOTHER_SNARL_WEIGHT = 3;
-	/** Seconds a knot of hers holds a player fast (no step, no jump). */
-	public static double KNOT_MOTHER_SNARL_SECONDS = 2.5;
-	/** Seconds of Seam time a knot of hers picks off whoever it catches. */
-	public static int KNOT_MOTHER_SNARL_TIME = 10;
-	/** Damage of a knot of hers as it pulls tight. */
-	public static double KNOT_MOTHER_SNARL_DAMAGE = 4.0;
+	/** How readily she uses her Threadline (a thread swept low across the floor): its weight against her other blows (0 = never). */
+	public static int KNOT_MOTHER_THREADLINE_WEIGHT = 4;
+	/** Damage of her Threadline. */
+	public static double KNOT_MOTHER_THREADLINE_DAMAGE = 7.0;
+	/** How far either way (radians) her Threadline sweeps from its prey. */
+	public static double KNOT_MOTHER_THREADLINE_SWEEP = 0.7;
+	/** How readily she uses her Knot Snare (patterns on the floor that close and hold you fast): its weight (0 = never). */
+	public static int KNOT_MOTHER_SNARE_WEIGHT = 3;
+	/** Seconds at least a Snare's pattern shows on the floor, closing, before it holds anyone still in it. */
+	public static double KNOT_MOTHER_SNARE_WARNING = 1.5;
+	/** Seconds a Snare holds a player fast (no step, no jump). */
+	public static double KNOT_MOTHER_SNARE_SECONDS = 2.0;
+	/** Seconds of Seam time a Snare picks off whoever it catches. */
+	public static int KNOT_MOTHER_SNARE_TIME = 10;
+	/** Damage of a Snare as it closes. */
+	public static double KNOT_MOTHER_SNARE_DAMAGE = 2.0;
+	/** Anchors she ties round her chamber (and again at 70% and 35% of her health); 0 = none. */
+	public static int KNOT_MOTHER_ANCHORS = 3;
+	/** How far (blocks) from where she woke her anchors stand. */
+	public static double KNOT_MOTHER_ANCHOR_RADIUS = 9.0;
+	/** Hits an anchor takes before it breaks. */
+	public static int KNOT_MOTHER_ANCHOR_HITS = 3;
+	/** Share of every blow she shrugs off while all her anchors stand (less as they break). */
+	public static double KNOT_MOTHER_ANCHOR_WARD = 0.5;
+	/** Seconds she lies exposed when an anchor breaks (she hangs still, open). */
+	public static double KNOT_MOTHER_EXPOSED_SECONDS = 4.0;
+	/** How much more a blow does while she lies exposed. */
+	public static double KNOT_MOTHER_EXPOSED_DAMAGE = 1.5;
 	/** How readily the Weaver fires its Seraphic Lance: its weight against its other blows (which weigh 1 to 4 each). */
 	public static int WEAVER_LANCE_WEIGHT = 8;
 	/** Chance the Lance sweeps back once more after its first pass (always, once the Weaver is enraged). */
@@ -1692,8 +1706,10 @@ public final class Config {
 			{"starved_socket_silk", 1, 64}, {"starved_socket_seconds", 5, 600}, {"starved_sockets", 1, 4}, {"starved_bind_seconds", 1, 120},
 			{"starved_bound_damage", 0, 10}, {"starved_unbound_damage", 0, 10}, {"starved_minion_seconds", 5, 600}, {"starved_minions", 0, 12},
 			{"starved_minions_max", 0, 40}, {"starved_rays", 0, 12},
-			{"seam_briefing", 0, 100}, {"seam_interiors", 0, 1}, {"seam_storeroom_chance", 0, 1}, {"hud_boss_bar", 0, 1}, {"hints", 0, 1}, {"frame_silk", 0, 64}, {"first_knot_distance", 200, 5000}, {"knot_mother_rest", 0, 100000}, {"knot_mother_leash", 4, 64}, {"knot_mother_draw_weight", 0, 20}, {"knot_mother_draw_range", 6, 48},
-			{"knot_mother_draw_damage", 0, 40}, {"knot_mother_snarl_weight", 0, 20}, {"knot_mother_snarl_seconds", 0.5, 10}, {"knot_mother_snarl_time", 0, 120}, {"knot_mother_snarl_damage", 0, 40},
+			{"seam_briefing", 0, 100}, {"seam_interiors", 0, 1}, {"seam_storeroom_chance", 0, 1}, {"hud_boss_bar", 0, 1}, {"hints", 0, 1}, {"frame_silk", 0, 64}, {"first_knot_distance", 200, 5000}, {"knot_mother_rest", 0, 100000}, {"knot_mother_leash", 4, 64}, {"knot_mother_threadline_weight", 0, 20}, {"knot_mother_threadline_damage", 0, 40},
+			{"knot_mother_threadline_sweep", 0.2, 1.5}, {"knot_mother_snare_weight", 0, 20}, {"knot_mother_snare_warning", 0.5, 5}, {"knot_mother_snare_seconds", 0.5, 10},
+			{"knot_mother_snare_time", 0, 120}, {"knot_mother_snare_damage", 0, 40}, {"knot_mother_anchors", 0, 8}, {"knot_mother_anchor_radius", 3, 15},
+			{"knot_mother_anchor_hits", 1, 20}, {"knot_mother_anchor_ward", 0, 0.9}, {"knot_mother_exposed_seconds", 0, 15}, {"knot_mother_exposed_damage", 1, 4},
 			{"elder_health_scale", 0.1, 20}, {"elder_health_per_player", 0, 5}, {"elder_damage_scale", 0, 20}, {"elder_damage_per_player", 0, 2},
 			{"elder_rest_per_player", 0, 0.5}, {"elder_rest_min", 0.1, 1}, {"elder_split_max", 1, 8}, {"elder_fighters_range", 8, 256},
 			{"elder_reach", 1, 5}, {"elder_brood_per_player", 0, 10}, {"elder_spell_range", 16, 256}, {"elder_snare_seconds", 0, 30},

@@ -51,8 +51,8 @@ public final class ElderStrikes {
 	public static final int SPEAR = 5;
 	/** Soul fire from the sky (the Ferryman's ultimate): soul fire where it lands. */
 	public static final int SOULFALL = 6;
-	/** A knot of the Knot Mother's: whoever stands in it as it pulls tight is held fast and loses Seam time. */
-	public static final int SNARL = 7;
+	/** A knot of the Knot Mother's Snare: whoever stands in it as it closes is held fast and loses Seam time. */
+	public static final int SNARE = 7;
 
 	private static final class Strike {
 		ServerLevel level;
@@ -105,6 +105,8 @@ public final class ElderStrikes {
 		float damage;
 		/** A great blow: through armour (see {@link ElderPower#great}). */
 		boolean pierce;
+		/** A thread, not a beam (the Knot Mother's Threadline): amber, no fire, no trench, a light knock, a narrow edge. */
+		boolean thread;
 		final Set<UUID> hit = new HashSet<>();
 	}
 
@@ -272,6 +274,24 @@ public final class ElderStrikes {
 		b.ty = ty;
 	}
 
+	/**
+	 * A Threadline (the Knot Mother's): a taut thread from {@code (fx, fy, fz)} swept across an arc at height {@code ty}
+	 * (low over the floor), running on past its prey to the first block behind; jump it or step out of its lane.
+	 */
+	static void threadline(ElderBoss source, double fx, double fy, double fz, double a0, double a1, double r, double ty, int duration,
+			float damage) {
+		Beam b = make(source, fx, fy, fz, fx, fz, a0, a1, r, r, duration, damage, false);
+		b.aimed = true;
+		b.ty = ty;
+		b.thread = true;
+	}
+
+	/** How many Threadlines this Elder is sweeping (for tests). */
+	public static int threadsOf(Entity boss) {
+		UUID id = boss.getUUID();
+		return (int) BEAMS.stream().filter(b -> b.thread && id.equals(b.source)).count();
+	}
+
 	private static Beam make(ElderBoss source, double fx, double fy, double fz, double cx, double cz, double a0, double a1, double r0, double r1,
 			int duration, float damage, boolean pierce) {
 		Beam b = new Beam();
@@ -397,7 +417,7 @@ public final class ElderStrikes {
 				WorldFx.soundIn(dim, "minecraft:entity.blaze.shoot", "hostile", s.x, s.y, s.z, 2f, 0.5f);
 				ElderTerrain.mark(s.level, s.x, s.y, s.z, s.radius, 0.7, ElderTerrain.Mark.SOUL);
 			}
-			case SNARL -> {
+			case SNARE -> {
 				WorldFx.soundIn(dim, "minecraft:block.tripwire.attach", "hostile", s.x, s.y, s.z, 2f, 0.4f);
 				WorldFx.soundIn(dim, "minecraft:entity.leash_knot.place", "hostile", s.x, s.y, s.z, 2f, 0.6f);
 				WorldFx.particleIn(s.level, "minecraft:end_rod", s.x, s.y + 0.3, s.z, s.radius * 0.5, 0.2, s.radius * 0.5, 0.0, 12);
@@ -423,7 +443,7 @@ public final class ElderStrikes {
 				case ROOTS -> WorldFx.effect(p, MobEffects.SLOWNESS, 3, 3);
 				case SLAM -> ElderFx.knock(p, s.x, s.z, 0.6, 0.95);
 				case SPEAR -> ElderFx.knock(p, s.x, s.z, 1.1, 0.7);
-				case SNARL -> WeaverService.snarled(p);
+				case SNARE -> WeaverService.snared(p);
 				default -> {
 				}
 			}
@@ -563,8 +583,13 @@ public final class ElderStrikes {
 			double ex = end[0], ey = end[1], ez = end[2];
 			String dim = b.level.dimension().identifier().toString();
 			int elder = AttackFx.of(boss);
-			AttackFx.line(b.level, elder, AttackFx.LINE_BEAM, b.fx, b.fy, b.fz, ex, ey + (ground ? 0.2 : 0), ez, 2);
-			if (ground) {
+			AttackFx.line(b.level, elder, b.thread ? AttackFx.LINE_THREAD_TAUT : AttackFx.LINE_BEAM, b.fx, b.fy, b.fz, ex, ey + (ground ? 0.2 : 0), ez, 2);
+			if (b.thread) {
+				if (b.age % 4 == 0) {
+					AttackFx.impact(b.level, elder, AttackFx.IMPACT_CUT, ex, ey, ez, 0.8);
+					WorldFx.soundIn(dim, "minecraft:block.tripwire.click_on", "hostile", ex, ey, ez, 1.2f, 0.5f);
+				}
+			} else if (ground) {
 				if (b.age % 3 == 0) {
 					AttackFx.impact(b.level, elder, AttackFx.IMPACT_SCORCH, ex, ey, ez, 1.4);
 					WorldFx.soundIn(dim, "minecraft:block.fire.extinguish", "hostile", ex, ey, ez, 1.2f, 0.6f);
@@ -590,7 +615,7 @@ public final class ElderStrikes {
 				if (!hittable(p) || b.hit.contains(p.getUUID())) {
 					continue;
 				}
-				AABB box = p.getBoundingBox().inflate(0.6);
+				AABB box = p.getBoundingBox().inflate(b.thread ? 0.15 : 0.6);
 				boolean struck = box.contains(o);
 				for (int j = 0; j < steps && !struck; j++) {
 					struck = box.clip(o, ends[j]).isPresent();
@@ -599,7 +624,9 @@ public final class ElderStrikes {
 					b.hit.add(p.getUUID());
 					caught(b.source, p);
 					p.hurtServer(b.level, b.pierce ? ElderPower.great(b.level, boss) : from(b.level, b.source), b.damage);
-					p.setRemainingFireTicks(100);
+					if (!b.thread) {
+						p.setRemainingFireTicks(100);
+					}
 					// Thrown aside, away from the beam where it passed them
 					double[] c = closest(p.getX(), p.getY() + 0.9, p.getZ(), b.fx, b.fy, b.fz, ex, ey, ez);
 					double cx = c[0], cz = c[2];
@@ -607,7 +634,7 @@ public final class ElderStrikes {
 						cx = b.fx;
 						cz = b.fz;
 					}
-					ElderFx.knock(p, cx, cz, 0.7, 0.5);
+					ElderFx.knock(p, cx, cz, b.thread ? 0.4 : 0.7, b.thread ? 0.3 : 0.5);
 				}
 			}
 			b.lastA = a;

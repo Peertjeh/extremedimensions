@@ -282,7 +282,7 @@ public class ClientPath implements FabricClientGameTest {
 			ctx.waitTicks(140);
 			check(sp.getServer().computeOnServer(s -> com.extremedimensions.elder.WeaverService.knotMotherAwake()), "the Knot Mother did not wake");
 			ctx.takeScreenshot("39_knot_mother");
-			// Her own shape (3.23), whole from the chamber floor looking up, and as she snarls the floor
+			// Her own shape (3.23), whole from the chamber floor looking up (her anchors round her), and as her Snare is drawn
 			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %d.5 %d %d.5 -90 -28", heart.getX() - 15, heart.getY() + 1, heart.getZ()));
 			ctx.waitTicks(20);
 			unbrief(ctx);
@@ -290,11 +290,11 @@ public class ClientPath implements FabricClientGameTest {
 			sp.getServer().runOnServer(s -> {
 				for (com.extremedimensions.elder.KnotMother m : player(s).level().getEntitiesOfClass(com.extremedimensions.elder.KnotMother.class,
 						player(s).getBoundingBox().inflate(96))) {
-					com.extremedimensions.elder.WeaverService.force(m, com.extremedimensions.elder.KnotMother.SNARL);
+					com.extremedimensions.elder.WeaverService.force(m, com.extremedimensions.elder.KnotMother.SNARE);
 				}
 			});
 			ctx.waitTicks(10);
-			ctx.takeScreenshot("39_knot_mother_snarl");
+			ctx.takeScreenshot("39_knot_mother_snare");
 			sp.getServer().runOnServer(s -> {
 				for (com.extremedimensions.elder.KnotMother m : player(s).level().getEntitiesOfClass(com.extremedimensions.elder.KnotMother.class,
 						player(s).getBoundingBox().inflate(96))) {

@@ -61,9 +61,9 @@ final class ElderTells {
 			};
 		}
 		return switch (action) {
-			// The Knot Mother's own: the sound of a thread cast as she draws in, of a cradle strung as she snarls
-			case KnotMother.DRAW -> "thread";
-			case KnotMother.SNARL -> "cradle";
+			// The Knot Mother's own: the sound of a thread cast for her Threadline, of a cradle strung for her Snare
+			case KnotMother.THREADLINE -> "thread";
+			case KnotMother.SNARE -> "cradle";
 			case Weaver.THREAD -> "thread";
 			case Weaver.NEEDLES -> "needles";
 			case Weaver.UNRAVEL -> "unravel";

@@ -169,9 +169,9 @@ Trials past gold), and the tapestry's boons stay.
   reaching into the mod's own workings (the Tether's charge, the Collapse's cards, the Lurker, the Elders' spells, the
   Seam's veins), and the Wound Lens.
 - **The Elders**: the Matriarch, the Ferryman, the Last Weaver and the Knot Mother, with arenas raised by flying blocks,
-  domain phases, cores that ward them and islands that fall. The Knot Mother has a shape of her own (a great knot of
-  thread tied to the floor, a four-armed Weaver growing out of it) and two blows of her own: Draw In hauls you to her
-  for a bite, Snarl's knots hold you fast and pick at your thread.
+  domain phases, cores that ward them and islands that fall. The Knot Mother has a shape and a kit of her own: a tall
+  veiled figure under a crown of thorns, tied to anchors round her chamber that shield her until you break them, a
+  Threadline swept low across the floor and a Knot Snare that holds you fast.
 - **The tribe as a faction**: standing from hunted to kin (hard won on the harder difficulties), barter (dear: every
   bargain costs standing and may leave a curse), raids, and
   **clans**: players bound by a Blood Cord stand before the tribe as one, sharing every loss and judged by the least

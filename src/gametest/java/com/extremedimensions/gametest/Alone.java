@@ -57,4 +57,5 @@ final class Alone {
 	static final String CRAG_WAKE = "extremedimensions_test:alone/crag_wake";
 	static final String KNOT_DRAW = "extremedimensions_test:alone/knot_draw";
 	static final String KNOT_SNARL = "extremedimensions_test:alone/knot_snarl";
+	static final String KNOT_ANCHOR = "extremedimensions_test:alone/knot_anchor";
 }

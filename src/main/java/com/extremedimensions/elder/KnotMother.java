@@ -1,5 +1,7 @@
 package com.extremedimensions.elder;
 
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.monster.Monster;
@@ -7,15 +9,18 @@ import net.minecraft.world.level.Level;
 
 /**
  * The Knot Mother: what is tied into the First Knot. Whether she is the First Weaver, what the Fray made of her, or the
- * Held, the journal does not say. Below the waist she is one great knot of thread tied to the floor; a Weaver's wasted
- * body with four arms grows out of it. She fights on the Last Weaver's lines (directed by {@link WeaverService}) with
- * two blows of her own, and she cannot stray far from where she woke: her cords hold her to it.
+ * Held, the journal does not say. Where the Last Weaver unmakes the thread, she binds it: a tall veiled figure with a
+ * crown of thorns and rings floating about her, who controls the floor with threads and knots and ties herself to
+ * anchors round her chamber. Directed by {@link WeaverService}, with a kit of her own: the Threadline, the Knot Snare,
+ * the Weaver's thread and cradle, and her anchors; break one and she is exposed for a moment.
  */
 public class KnotMother extends Weaver {
-	/** Draw In: her threads catch everyone near and she hauls them in to the knot, biting whoever arrives. */
-	public static final int DRAW = 7;
-	/** Snarl: knots flung onto the floor about her prey; whoever stands in one is held fast and loses Seam time. */
-	public static final int SNARL = 8;
+	/** Threadline: a hand raised, a thread of amber drawn tight, then swept low across the floor (jump it, or step out of its lane). */
+	public static final int THREADLINE = 7;
+	/** Knot Snare: patterns drawn on the floor that close inwards; whoever is still in one when it closes is held fast. */
+	public static final int SNARE = 8;
+	/** Exposed: an anchor of hers broke; she recoils, her crown falters and the core at her breast lies open. */
+	public static final int EXPOSED = 9;
 
 	public KnotMother(EntityType<? extends Monster> type, Level level) {
 		super(type, level);
@@ -23,6 +28,12 @@ public class KnotMother extends Weaver {
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return elderAttributes(560.0, 4.0);
+	}
+
+	/** Her anchors standing shield her; exposed, she takes more (see {@link WeaverService#knotFactor}). */
+	@Override
+	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+		return super.hurtServer(level, source, amount * WeaverService.knotFactor(this));
 	}
 
 	@Override
