@@ -8,6 +8,8 @@
   lost. They now take the place of the last ordinary thing in it.
 - **The Knot Mother finds room for every anchor.** An anchor whose place round her was taken (a pillar, a hole in the
   floor) was left untied; she now ties it at the nearest free spot beside it.
+- Tests: the tests that wake the Knot Mother (one of a kind) now wait their turn rather than run into each other, and the
+  Threadline test reads whether the thread caught its player instead of how hurt they are.
 
 ## 3.23.0: Who Holds the First End
 

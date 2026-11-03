@@ -63,10 +63,11 @@ public class KnotMotherTests {
 
 	/**
 	 * The Threadline: forced from sixteen blocks off, it catches the player standing on the floor; forced again with the
-	 * player in the air over the floor (as at the top of a jump), it passes under them. Then, carried past her leash with
-	 * the player further off still, her cords draw her back rather than after them.
+	 * player in the air over the floor (as at the top of a jump), it passes under them. (The player is kept from harm: what
+	 * is read is whether the thread caught them.) Then, carried past her leash with the player further off still, her cords
+	 * draw her back rather than after them.
 	 */
-	@GameTest(environment = Alone.KNOT_DRAW, maxTicks = 420)
+	@GameTest(environment = Alone.KNOT_DRAW, maxTicks = 1260)
 	public void theKnotMothersThreadlineSweepsLowAndHerCordsHoldHer(GameTestHelper helper) {
 		forceAround(helper, 4);
 		floor(helper, -2, 24, -3, 9);
@@ -74,74 +75,74 @@ public class KnotMotherTests {
 		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 3));
 		BlockPos heart = at.offset(16, 0, 0);
 		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		p.getAbilities().invulnerable = true;
 		KnotMother[] m = {null};
-		float[] full = {0}, lowest = {Float.MAX_VALUE};
+		boolean[] caught = {false};
 		int[] seen = {0};
 		double[] strayed = {0};
 		double attacks = Config.ELDER_ATTACK_SPEED;
 		int anchors = Config.KNOT_MOTHER_ANCHORS;
+		String who = "threadline";
 		Runnable restore = () -> {
 			Config.ELDER_ATTACK_SPEED = attacks;
 			Config.KNOT_MOTHER_ANCHORS = anchors;
+			p.getAbilities().invulnerable = false;
 			rest(m[0]);
+			KnotMotherSlot.release(who);
 		};
-		helper.runAfterDelay(5, () -> {
+		KnotMotherSlot.Steps steps = new KnotMotherSlot.Steps();
+		steps.at(0, () -> {
 			// No blow but the ones forced here, and no anchors in the way
 			Config.ELDER_ATTACK_SPEED = 0.1;
 			Config.KNOT_MOTHER_ANCHORS = 0;
+			p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+			ElderStrikes.unthread(p);
 			m[0] = wake(helper, p, heart);
 		});
-		// (a player who has just joined cannot be hurt for three seconds: the blow comes after that)
-		helper.runAfterDelay(70, () -> {
-			p.setHealth(p.getMaxHealth());
-			full[0] = p.getHealth();
-			WeaverService.force(m[0], KnotMother.THREADLINE);
-		});
-		for (int t = 71; t <= 125; t++) {
-			helper.runAfterDelay(t, () -> lowest[0] = Math.min(lowest[0], p.getHealth()));
+		steps.at(5, () -> WeaverService.force(m[0], KnotMother.THREADLINE));
+		for (int t = 6; t <= 60; t++) {
+			steps.at(t, () -> caught[0] |= ElderStrikes.threaded(p));
 		}
-		helper.runAfterDelay(125, () -> {
-			float h = lowest[0];
-			if (!(h < full[0])) {
+		steps.at(60, () -> {
+			if (!caught[0]) {
 				restore.run();
 			}
-			check(helper, h < full[0], "her Threadline did not catch the player standing in its lane (health %s)", h);
+			check(helper, caught[0], "her Threadline did not catch the player standing in its lane");
 			// In the air over the floor, as at the top of a jump: it should pass under them
-			p.setHealth(p.getMaxHealth());
-			full[0] = p.getHealth();
-			lowest[0] = Float.MAX_VALUE;
+			caught[0] = false;
+			ElderStrikes.unthread(p);
 			p.teleportTo(at.getX() + 0.5, at.getY() + 1.7, at.getZ() + 0.5);
 			WeaverService.force(m[0], KnotMother.THREADLINE);
 		});
-		for (int t = 126; t <= 185; t++) {
-			helper.runAfterDelay(t, () -> {
+		for (int t = 61; t <= 120; t++) {
+			steps.at(t, () -> {
 				// (kept up there, whatever moves a player)
 				if (Math.abs(p.getY() - (at.getY() + 1.7)) > 0.05) {
 					p.teleportTo(at.getX() + 0.5, at.getY() + 1.7, at.getZ() + 0.5);
 				}
 				seen[0] = Math.max(seen[0], m[0] == null ? 0 : ElderStrikes.threadsOf(m[0]));
-				lowest[0] = Math.min(lowest[0], p.getHealth());
+				caught[0] |= ElderStrikes.threaded(p);
 			});
 		}
-		helper.runAfterDelay(187, () -> {
-			float h = lowest[0];
-			if (seen[0] == 0 || h < full[0]) {
+		steps.at(122, () -> {
+			if (seen[0] == 0 || caught[0]) {
 				restore.run();
 			}
 			check(helper, seen[0] > 0, "her second Threadline was never swept");
-			check(helper, h >= full[0], "her Threadline caught a player in the air over it (health %s)", h);
+			check(helper, !caught[0], "her Threadline caught a player in the air over it");
 			// Carried off past her leash, the player further off still: her cords draw her back, not after them
 			m[0].teleportTo(heart.getX() + 0.5 + 26, m[0].getY(), heart.getZ() + 0.5);
 			p.teleportTo(heart.getX() + 0.5 + 40, at.getY(), heart.getZ() + 0.5);
 			strayed[0] = WeaverService.strayed(m[0]);
 		});
-		helper.runAfterDelay(385, () -> {
+		steps.at(320, () -> {
 			double now = WeaverService.strayed(m[0]);
 			restore.run();
 			check(helper, strayed[0] > Config.KNOT_MOTHER_LEASH, "she was not carried past her leash (%s blocks)", strayed[0]);
 			check(helper, now < strayed[0] - 2, "her cords did not draw her back (from %s to %s blocks off)", strayed[0], now);
 			helper.succeed();
 		});
+		steps.run(helper, who, 900, 330);
 	}
 
 	/**
@@ -149,7 +150,7 @@ public class KnotMotherTests {
 	 * after its time. In a fight, her Snare's pattern shows first and catches a player who stands still in it only after
 	 * its warning.
 	 */
-	@GameTest(environment = Alone.KNOT_SNARL, maxTicks = 220)
+	@GameTest(environment = Alone.KNOT_SNARL, maxTicks = 1130)
 	public void theKnotMothersSnareHoldsFastAfterItsWarning(GameTestHelper helper) {
 		forceAround(helper, 3);
 		floor(helper, -2, 16, -3, 9);
@@ -172,8 +173,10 @@ public class KnotMotherTests {
 			d.seamLeft = 0;
 			d.seamMax = 0;
 			rest(m[0]);
+			KnotMotherSlot.release("snare");
 		};
-		helper.runAfterDelay(5, () -> {
+		KnotMotherSlot.Steps steps = new KnotMotherSlot.Steps();
+		steps.at(5, () -> {
 			Config.KNOT_MOTHER_SNARE_SECONDS = 1.0;
 			Config.KNOT_MOTHER_SNARE_TIME = 10;
 			d.inSeam = true;
@@ -184,7 +187,7 @@ public class KnotMotherTests {
 			check(helper, Math.abs(d.seamLeft - 90) < 1e-6, "the snare left %s seconds of thread, not 90", d.seamLeft);
 			d.inSeam = false;
 		});
-		helper.runAfterDelay(8, () -> {
+		steps.at(8, () -> {
 			double speed = p.getAttributeValue(Attributes.MOVEMENT_SPEED), jump = p.getAttributeValue(Attributes.JUMP_STRENGTH);
 			if (speed > 1e-6 || jump > 1e-6) {
 				restore.run();
@@ -192,7 +195,7 @@ public class KnotMotherTests {
 			check(helper, speed <= 1e-6, "held fast, the player can still walk (speed %s)", speed);
 			check(helper, jump <= 1e-6, "held fast, the player can still jump (jump %s)", jump);
 		});
-		helper.runAfterDelay(40, () -> {
+		steps.at(40, () -> {
 			double speed = p.getAttributeValue(Attributes.MOVEMENT_SPEED);
 			if (ElderSpells.snared(p) || speed <= 1e-6) {
 				restore.run();
@@ -209,13 +212,13 @@ public class KnotMotherTests {
 		});
 		for (int t = 41; t <= 200; t++) {
 			int tick = t;
-			helper.runAfterDelay(t, () -> {
+			steps.at(t, () -> {
 				if (caughtAt[0] < 0 && ElderSpells.snared(p)) {
 					caughtAt[0] = tick;
 				}
 			});
 		}
-		helper.runAfterDelay(202, () -> {
+		steps.at(202, () -> {
 			int when = caughtAt[0];
 			restore.run();
 			check(helper, when > 0, "her Snare never caught the player who stood in it");
@@ -223,6 +226,7 @@ public class KnotMotherTests {
 			check(helper, when - 40 >= 30, "her Snare held the player only %s ticks after it was cast (no fair warning)", when - 40);
 			helper.succeed();
 		});
+		steps.run(helper, "snare", 900, 210);
 	}
 
 	/**
@@ -230,7 +234,7 @@ public class KnotMotherTests {
 	 * break it and expose her, and an exposed Knot Mother takes far more of a blow; the exposure passes; and when she
 	 * goes, her anchors go with her.
 	 */
-	@GameTest(environment = Alone.KNOT_ANCHOR, maxTicks = 240)
+	@GameTest(environment = Alone.KNOT_ANCHOR, maxTicks = 1110)
 	public void theKnotMothersAnchorsShieldHerAndBreakingOneExposesHer(GameTestHelper helper) {
 		forceAround(helper, 4);
 		floor(helper, -2, 26, -8, 16);
@@ -248,14 +252,16 @@ public class KnotMotherTests {
 			Config.ELDER_ATTACK_SPEED = attacks;
 			p.getAbilities().invulnerable = false;
 			rest(m[0]);
+			KnotMotherSlot.release("anchors");
 		};
-		helper.runAfterDelay(5, () -> {
+		KnotMotherSlot.Steps steps = new KnotMotherSlot.Steps();
+		steps.at(5, () -> {
 			Config.ELDER_ATTACK_SPEED = 0.1;
 			m[0] = wake(helper, p, heart);
 			// Past her forming at once (a harmless "blow": she ties her anchors on her first tick formed)
 			WeaverService.force(m[0], KnotMother.EXPOSED);
 		});
-		helper.runAfterDelay(12, () -> {
+		steps.at(12, () -> {
 			nodes.addAll(WeaverService.anchors(m[0]));
 			if (nodes.size() != 3) {
 				restore.run();
@@ -270,9 +276,9 @@ public class KnotMotherTests {
 			dealt[0] = h - m[0].getHealth();
 		});
 		for (int k = 0; k < 3; k++) {
-			helper.runAfterDelay(20 + 10 * k, () -> check(helper, WeaverService.anchorHit(p, level, nodes.get(0)), "a strike on an anchor's node did not count"));
+			steps.at(20 + 10 * k, () -> check(helper, WeaverService.anchorHit(p, level, nodes.get(0)), "a strike on an anchor's node did not count"));
 		}
-		helper.runAfterDelay(44, () -> {
+		steps.at(44, () -> {
 			int left = WeaverService.anchors(m[0]).size();
 			boolean exposed = WeaverService.exposed(m[0]) > 0 && m[0].getAction() == KnotMother.EXPOSED;
 			boolean gone = level.getBlockState(nodes.get(0)).isAir();
@@ -291,7 +297,7 @@ public class KnotMotherTests {
 			check(helper, dealt[0] > 0 && dealt[1] > dealt[0] * 2.5f,
 					"shielded she lost %s, exposed %s: the anchors do not shield her or exposure does not open her", dealt[0], dealt[1]);
 		});
-		helper.runAfterDelay(160, () -> {
+		steps.at(160, () -> {
 			boolean over = WeaverService.exposed(m[0]) == 0 && m[0].getAction() != KnotMother.EXPOSED;
 			List<BlockPos> standing = WeaverService.anchors(m[0]);
 			restore.run();
@@ -302,5 +308,6 @@ public class KnotMotherTests {
 			check(helper, DataStore.seamCells().stream().noneMatch(k -> k.startsWith("ka@")), "her anchors' marks outlived her");
 			helper.succeed();
 		});
+		steps.run(helper, "anchors", 900, 170);
 	}
 }

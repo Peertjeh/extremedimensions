@@ -134,6 +134,7 @@ public final class ElderStrikes {
 		TETHERS.clear();
 		WAVES.clear();
 		BEAMS.clear();
+		THREADED.clear();
 		WEBS.clear();
 		HITS.clear();
 	}
@@ -284,6 +285,18 @@ public final class ElderStrikes {
 		b.aimed = true;
 		b.ty = ty;
 		b.thread = true;
+	}
+
+	/** Players a Threadline has caught (for tests: caught even when they could not be hurt). */
+	private static final Set<UUID> THREADED = new HashSet<>();
+
+	/** Whether a Threadline has caught this player since {@link #unthread} (for tests). */
+	public static boolean threaded(Entity p) {
+		return THREADED.contains(p.getUUID());
+	}
+
+	public static void unthread(Entity p) {
+		THREADED.remove(p.getUUID());
 	}
 
 	/** How many Threadlines this Elder is sweeping (for tests). */
@@ -622,6 +635,9 @@ public final class ElderStrikes {
 				}
 				if (struck) {
 					b.hit.add(p.getUUID());
+					if (b.thread) {
+						THREADED.add(p.getUUID());
+					}
 					caught(b.source, p);
 					p.hurtServer(b.level, b.pierce ? ElderPower.great(b.level, boss) : from(b.level, b.source), b.damage);
 					if (!b.thread) {
