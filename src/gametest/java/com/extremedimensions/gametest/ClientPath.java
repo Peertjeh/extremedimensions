@@ -282,9 +282,10 @@ public class ClientPath implements FabricClientGameTest {
 			ctx.waitTicks(140);
 			check(sp.getServer().computeOnServer(s -> com.extremedimensions.elder.WeaverService.knotMotherAwake()), "the Knot Mother did not wake");
 			ctx.takeScreenshot("39_knot_mother");
-			// Her own shape (3.23), whole from the chamber floor looking up (her anchors round her), and as her Snare is drawn
-			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %d.5 %d %d.5 -90 -28", heart.getX() - 15, heart.getY() + 1, heart.getZ()));
-			ctx.waitTicks(20);
+			// Her own shape (3.23), once her name has faded: whole from inside her chamber looking up at her (her anchors round
+			// her), and as her Snare is drawn
+			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %d.5 %d %d.5 -90 -30", heart.getX() - 12, heart.getY() + 3, heart.getZ()));
+			ctx.waitTicks(100);
 			unbrief(ctx);
 			ctx.takeScreenshot("39_knot_mother_whole");
 			sp.getServer().runOnServer(s -> {
