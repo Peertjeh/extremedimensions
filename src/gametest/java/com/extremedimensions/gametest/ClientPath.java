@@ -292,11 +292,11 @@ public class ClientPath implements FabricClientGameTest {
 					double yaw = Math.toRadians(m.getYRot());
 					double px = m.getX() - Math.sin(yaw) * 12, pz = m.getZ() + Math.cos(yaw) * 12;
 					// (on the floor there, not in it: down from above her feet to the first block that bears)
-					BlockPos.MutableBlockPos at = BlockPos.containing(px, m.getY() + 4, pz).mutable();
-					for (int i = 0; i < 16 && !(player(s).level().getBlockState(at.below()).isSolid() && player(s).level().getBlockState(at).isAir()); i++) {
-						at.move(0, -1, 0);
+					BlockPos.MutableBlockPos stand = BlockPos.containing(px, m.getY() + 4, pz).mutable();
+					for (int i = 0; i < 16 && !(player(s).level().getBlockState(stand.below()).isSolid() && player(s).level().getBlockState(stand).isAir()); i++) {
+						stand.move(0, -1, 0);
 					}
-					double py = at.getY();
+					double py = stand.getY();
 					double dx = m.getX() - px, dz = m.getZ() - pz, dy = m.getY() + 8 - (py + 1.6);
 					return new double[] {px, py, pz, -Math.toDegrees(Math.atan2(dx, dz)), -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)))};
 				}
