@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.23.1: Room for Everything
+
+### Fixes
+- **A tangle's barrel no longer swallows its rare finds.** A barrel of the Fray's tangles can come out of its loot table
+  filled to the brim; the wound's own record and the fragment of the abyss's song then found no empty slot and were
+  lost. They now take the place of the last ordinary thing in it.
+- **The Knot Mother finds room for every anchor.** An anchor whose place round her was taken (a pillar, a hole in the
+  floor) was left untied; she now ties it at the nearest free spot beside it.
+
 ## 3.23.0: Who Holds the First End
 
 The Knot Mother wore the Last Weaver's body, only recoloured, and fought with the Last Weaver's blows. She is the thing

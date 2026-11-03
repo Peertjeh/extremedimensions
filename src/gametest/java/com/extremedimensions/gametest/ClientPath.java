@@ -284,8 +284,20 @@ public class ClientPath implements FabricClientGameTest {
 			ctx.takeScreenshot("39_knot_mother");
 			// Her own shape (3.23), once her name has faded: whole from inside her chamber looking up at her (her anchors round
 			// her), and as her Snare is drawn
-			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %d.5 %d %d.5 -90 -30", heart.getX() - 12, heart.getY() + 3, heart.getZ()));
-			ctx.waitTicks(100);
+			ctx.waitTicks(80);
+			// (stood twelve blocks in front of her, wherever she has moved to in her chamber, looking up at her breast)
+			double[] view = sp.getServer().computeOnServer(s -> {
+				for (com.extremedimensions.elder.KnotMother m : player(s).level().getEntitiesOfClass(com.extremedimensions.elder.KnotMother.class,
+						player(s).getBoundingBox().inflate(96))) {
+					double yaw = Math.toRadians(m.getYRot());
+					double px = m.getX() - Math.sin(yaw) * 12, pz = m.getZ() + Math.cos(yaw) * 12, py = m.getY() - 2;
+					double dx = m.getX() - px, dz = m.getZ() - pz, dy = m.getY() + 8 - (py + 1.6);
+					return new double[] {px, py, pz, -Math.toDegrees(Math.atan2(dx, dz)), -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)))};
+				}
+				return new double[] {heart.getX() - 11.5, heart.getY() + 3, heart.getZ() + 0.5, -90, -30};
+			});
+			sp.getServer().runCommand(String.format(Locale.ROOT, "tp @a %.2f %.2f %.2f %.1f %.1f", view[0], view[1], view[2], view[3], view[4]));
+			ctx.waitTicks(10);
 			unbrief(ctx);
 			ctx.takeScreenshot("39_knot_mother_whole");
 			sp.getServer().runOnServer(s -> {

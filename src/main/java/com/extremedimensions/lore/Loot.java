@@ -72,9 +72,25 @@ public final class Loot {
 		if (!woundDisc()) {
 			return;
 		}
+		put(c, new ItemStack(com.extremedimensions.registry.ModItems.MUSIC_DISC_WOUND_REMEMBERS));
+	}
+
+	/**
+	 * Puts a rare find into a chest that has just been filled: in the first empty slot, or (the loot spread over every
+	 * slot, as a table can) in place of the last ordinary thing in it, so a full chest does not swallow it.
+	 */
+	public static void put(Container c, ItemStack find) {
 		for (int slot = 0; slot < c.getContainerSize(); slot++) {
 			if (c.getItem(slot).isEmpty()) {
-				c.setItem(slot, new ItemStack(com.extremedimensions.registry.ModItems.MUSIC_DISC_WOUND_REMEMBERS));
+				c.setItem(slot, find);
+				return;
+			}
+		}
+		for (int slot = c.getContainerSize() - 1; slot >= 0; slot--) {
+			ItemStack there = c.getItem(slot);
+			if (!there.is(com.extremedimensions.registry.ModItems.MUSIC_DISC_WOUND_REMEMBERS) && !there.is(com.extremedimensions.registry.ModItems.DISC_FRAGMENT_ABYSS)
+					&& !there.is(com.extremedimensions.registry.ModItems.MUSIC_DISC_TICK_OF_THE_BOUNDARY)) {
+				c.setItem(slot, find);
 				return;
 			}
 		}

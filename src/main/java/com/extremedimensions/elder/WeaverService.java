@@ -595,19 +595,17 @@ public final class WeaverService {
 		double base = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
 		String dim = ElderFx.dim(w);
 		for (int i = 0; i < n; i++) {
-			double a = base + 2 * Math.PI * i / n;
-			double x = u.homeX + Math.cos(a) * r, z = u.homeZ + Math.sin(a) * r;
-			if (!Loaded.ready(u.level, BlockPos.containing(x, w.getY(), z))) {
+			BlockPos at = null;
+			// Its own place round her, or (something standing there, a hole in the floor) the nearest free one beside it
+			for (int k = 0; k < 9 && at == null; k++) {
+				double a = base + 2 * Math.PI * i / n + 0.22 * ((k + 1) / 2) * (k % 2 == 0 ? 1 : -1);
+				double rr = r - (k >= 5 ? 2 : 0);
+				at = anchorSpot(w, u, u.homeX + Math.cos(a) * rr, u.homeZ + Math.sin(a) * rr);
+			}
+			if (at == null) {
 				continue;
 			}
-			double y = ElderFx.surface(u.level, x, w.getY(), z, 1, 24);
-			if (Double.isNaN(y)) {
-				continue;
-			}
-			BlockPos at = BlockPos.containing(x, y, z);
-			if (!u.level.getBlockState(at).canBeReplaced() || !u.level.getBlockState(at.above()).canBeReplaced()) {
-				continue;
-			}
+			double x = at.getX() + 0.5, y = at.getY(), z = at.getZ() + 0.5;
 			u.level.setBlock(at, Blocks.CRYING_OBSIDIAN.defaultBlockState(), 3);
 			u.level.setBlock(at.above(), Blocks.OCHRE_FROGLIGHT.defaultBlockState(), 3);
 			u.anchors.add(new Anchor(at));
@@ -616,6 +614,24 @@ public final class WeaverService {
 			WorldFx.soundIn(dim, "minecraft:entity.leash_knot.place", "hostile", x, y + 1, z, 2f, 0.6f);
 		}
 		DataStore.markDirty();
+	}
+
+	/** Where an anchor can stand near a point: on the floor under her, with room for its two blocks; null if nowhere. */
+	private static BlockPos anchorSpot(Weaver w, Unweaving u, double x, double z) {
+		if (!Loaded.ready(u.level, BlockPos.containing(x, w.getY(), z))) {
+			return null;
+		}
+		double y = ElderFx.surface(u.level, x, w.getY(), z, 1, 24);
+		if (Double.isNaN(y)) {
+			return null;
+		}
+		BlockPos at = BlockPos.containing(x, y, z);
+		for (Anchor a : u.anchors) {
+			if (a.base.distManhattan(at) < 3) {
+				return null;
+			}
+		}
+		return u.level.getBlockState(at).canBeReplaced() && u.level.getBlockState(at.above()).canBeReplaced() ? at : null;
 	}
 
 	/** A phase of hers begins: every thread is drawn back to her, and her anchors are tied again, all of them. */

@@ -79,11 +79,6 @@ public final class Discs {
 		if (ThreadLocalRandom.current().nextDouble() >= Config.DISC_FRAGMENT_ABYSS_TANGLE_CHANCE) {
 			return;
 		}
-		for (int slot = 0; slot < c.getContainerSize(); slot++) {
-			if (c.getItem(slot).isEmpty()) {
-				c.setItem(slot, new ItemStack(ModItems.DISC_FRAGMENT_ABYSS));
-				return;
-			}
-		}
+		Loot.put(c, new ItemStack(ModItems.DISC_FRAGMENT_ABYSS));
 	}
 }
