@@ -290,13 +290,20 @@ public class ClientPath implements FabricClientGameTest {
 				for (com.extremedimensions.elder.KnotMother m : player(s).level().getEntitiesOfClass(com.extremedimensions.elder.KnotMother.class,
 						player(s).getBoundingBox().inflate(96))) {
 					double yaw = Math.toRadians(m.getYRot());
-					double px = m.getX() - Math.sin(yaw) * 12, pz = m.getZ() + Math.cos(yaw) * 12, py = m.getY() - 2;
+					double px = m.getX() - Math.sin(yaw) * 12, pz = m.getZ() + Math.cos(yaw) * 12;
+					// (on the floor there, not in it: down from above her feet to the first block that bears)
+					BlockPos.MutableBlockPos at = BlockPos.containing(px, m.getY() + 4, pz).mutable();
+					for (int i = 0; i < 16 && !(player(s).level().getBlockState(at.below()).isSolid() && player(s).level().getBlockState(at).isAir()); i++) {
+						at.move(0, -1, 0);
+					}
+					double py = at.getY();
 					double dx = m.getX() - px, dz = m.getZ() - pz, dy = m.getY() + 8 - (py + 1.6);
 					return new double[] {px, py, pz, -Math.toDegrees(Math.atan2(dx, dz)), -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)))};
 				}
 				return new double[] {heart.getX() - 11.5, heart.getY() + 3, heart.getZ() + 0.5, -90, -30};
 			});
-			sp.getServer().runCommand(String.format(Locale.ROOT, "tp @a %.2f %.2f %.2f %.1f %.1f", view[0], view[1], view[2], view[3], view[4]));
+			// (from where the player stands: a bare tp from the server's own source lands in the Overworld)
+			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %.2f %.2f %.2f %.1f %.1f", view[0], view[1], view[2], view[3], view[4]));
 			ctx.waitTicks(10);
 			unbrief(ctx);
 			ctx.takeScreenshot("39_knot_mother_whole");
@@ -306,7 +313,8 @@ public class ClientPath implements FabricClientGameTest {
 					com.extremedimensions.elder.WeaverService.force(m, com.extremedimensions.elder.KnotMother.SNARE);
 				}
 			});
-			ctx.waitTicks(10);
+			// (her patterns are laid at the twelfth tick and close no sooner than a second and a half after)
+			ctx.waitTicks(24);
 			ctx.takeScreenshot("39_knot_mother_snare");
 			sp.getServer().runOnServer(s -> {
 				for (com.extremedimensions.elder.KnotMother m : player(s).level().getEntitiesOfClass(com.extremedimensions.elder.KnotMother.class,
