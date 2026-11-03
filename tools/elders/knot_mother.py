@@ -26,14 +26,14 @@ def m_robe(ctx, dark=False, ragged=False):
     vein of violet light here and there; ragged, it is torn into points at its end."""
     gx, gy, s = ctx["gx"], ctx["gy"], ctx["seed"]
     px, py, fw, fh = ctx["px"], ctx["py"], ctx["fw"], ctx["fh"]
-    lo, hi = ((14, 10, 20), (54, 34, 70)) if dark else ((30, 22, 40), (104, 60, 136))
+    lo, hi = ((28, 18, 38), (92, 56, 124)) if dark else ((44, 28, 60), (146, 84, 190))
     fold = 0.5 + 0.5 * math.sin(px * 1.1 + noise(gx, gy * 0.07, s, 5) * 4)
     base = mix(lo, hi, fold * 0.65 + noise(gx, gy, s + 3, 2) * 0.35)
     if (gx + gy) % 3 == 0:
         base = shade(base, 0.85)
     face = ctx["face"]
     if face not in ("top", "bottom") and (px == 0 or px == fw - 1) and not dark:
-        base = mix(base, (168, 148, 192), 0.65)
+        base = mix(base, (190, 168, 214), 0.7)
     elif face not in ("top", "bottom") and not dark and _h(px, 3, s) > 0.8:
         base = mix(base, (150, 128, 176), 0.35)
     if face in ("top", "bottom"):
@@ -238,10 +238,10 @@ def _torso(m, torso, t):
 def _head(m, head):
     """A deep hood rising to a point, its rim edged in lilac, dark inside but for the crack of light; tatters of veil
     hanging from its rim (group veil); a circlet of thorns round its crown."""
-    m.box(head, -8, -23, -5.5, 16, 24, 14, "km_robe_dark")
+    m.box(head, -8, -23, -5.5, 16, 24, 14, "km_robe")
     for k, (w, h, y, z) in enumerate([(12, 6, -29, -3), (8, 5, -34, -0.5), (4, 5, -38.5, 1.5)]):
         pk = m.part(f"hoodpeak_{k}", head, (0, y + h, z + 5.5), (-0.12 * (k + 1), 0, 0))
-        m.box(pk, -w / 2, -h, -5.5 + 1.5 * k, w, h, 11 - 3 * k, "km_robe_dark")
+        m.box(pk, -w / 2, -h, -5.5 + 1.5 * k, w, h, 11 - 3 * k, "km_robe")
     # the rim of the hood round its narrow opening, and the dark inside
     m.box(head, -8.6, -22.6, -6.6, 17.2, 3.4, 2.2, "km_robe")
     for sx in (1, -1):

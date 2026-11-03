@@ -66,7 +66,7 @@ public class KnotMotherTests {
 	 * player in the air over the floor (as at the top of a jump), it passes under them. Then, carried past her leash with
 	 * the player further off still, her cords draw her back rather than after them.
 	 */
-	@GameTest(environment = Alone.KNOT_DRAW, maxTicks = 360)
+	@GameTest(environment = Alone.KNOT_DRAW, maxTicks = 420)
 	public void theKnotMothersThreadlineSweepsLowAndHerCordsHoldHer(GameTestHelper helper) {
 		forceAround(helper, 4);
 		floor(helper, -2, 24, -3, 9);
@@ -90,14 +90,17 @@ public class KnotMotherTests {
 			Config.ELDER_ATTACK_SPEED = 0.1;
 			Config.KNOT_MOTHER_ANCHORS = 0;
 			m[0] = wake(helper, p, heart);
+		});
+		// (a player who has just joined cannot be hurt for three seconds: the blow comes after that)
+		helper.runAfterDelay(70, () -> {
 			p.setHealth(p.getMaxHealth());
 			full[0] = p.getHealth();
 			WeaverService.force(m[0], KnotMother.THREADLINE);
 		});
-		for (int t = 6; t <= 60; t++) {
+		for (int t = 71; t <= 125; t++) {
 			helper.runAfterDelay(t, () -> lowest[0] = Math.min(lowest[0], p.getHealth()));
 		}
-		helper.runAfterDelay(60, () -> {
+		helper.runAfterDelay(125, () -> {
 			float h = lowest[0];
 			if (!(h < full[0])) {
 				restore.run();
@@ -110,7 +113,7 @@ public class KnotMotherTests {
 			p.teleportTo(at.getX() + 0.5, at.getY() + 1.7, at.getZ() + 0.5);
 			WeaverService.force(m[0], KnotMother.THREADLINE);
 		});
-		for (int t = 61; t <= 120; t++) {
+		for (int t = 126; t <= 185; t++) {
 			helper.runAfterDelay(t, () -> {
 				// (kept up there, whatever moves a player)
 				if (Math.abs(p.getY() - (at.getY() + 1.7)) > 0.05) {
@@ -120,7 +123,7 @@ public class KnotMotherTests {
 				lowest[0] = Math.min(lowest[0], p.getHealth());
 			});
 		}
-		helper.runAfterDelay(122, () -> {
+		helper.runAfterDelay(187, () -> {
 			float h = lowest[0];
 			if (seen[0] == 0 || h < full[0]) {
 				restore.run();
@@ -132,7 +135,7 @@ public class KnotMotherTests {
 			p.teleportTo(heart.getX() + 0.5 + 40, at.getY(), heart.getZ() + 0.5);
 			strayed[0] = WeaverService.strayed(m[0]);
 		});
-		helper.runAfterDelay(320, () -> {
+		helper.runAfterDelay(385, () -> {
 			double now = WeaverService.strayed(m[0]);
 			restore.run();
 			check(helper, strayed[0] > Config.KNOT_MOTHER_LEASH, "she was not carried past her leash (%s blocks)", strayed[0]);
