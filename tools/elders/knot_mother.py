@@ -271,7 +271,7 @@ def _halo(m, head):
             p = m.part(f"{prefix}{i}", halo, (r * math.cos(a), r * math.sin(a), 0), (0, 0, a))
             m.box(p, -thick / 2, -seg / 2, -thick / 2, thick, seg, thick, mat)
         for ga, gb in gaps:
-            for edge in (ga - 1, gb + 1):
+            for edge in ((ga - 1) % count, (gb + 1) % count):
                 a = phase + TAU * edge / count
                 x, y = r * math.cos(a), r * math.sin(a)
                 _knob(m, halo, x, y, 0, thick * 1.8, "wound_thread")
