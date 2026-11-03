@@ -144,7 +144,7 @@ jobs:
           import glob, os
           from PIL import Image
           for f in sorted(glob.glob("build/run/clientGameTest/screenshots/*.png")):
-              if not any(k in f for k in ("tetherite", "interior", "starved", "magpie", "wick", "tidewalker", "gatebreaker", "lockwarden", "threadbiter", "edgecrawler", "cragback", "seamkin", "06_tribe")):
+              if not any(k in f for k in ("tetherite", "interior", "starved", "magpie", "wick", "tidewalker", "gatebreaker", "lockwarden", "threadbiter", "edgecrawler", "cragback", "seamkin", "06_tribe", "knot_mother")):
                   continue
               full = Image.open(f).convert("RGB")
               w, h = full.size

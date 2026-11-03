@@ -68,6 +68,10 @@ public final class WeaverService {
 		double rise;
 		/** Whether this Lance sweeps back once more after its first pass. */
 		boolean back;
+		/** Where the Knot Mother woke (her cords hold her near it); NaN for a Weaver, which goes where it likes. */
+		double homeX = Double.NaN, homeZ = Double.NaN;
+		/** How many her last Draw In hauled in (for tests). */
+		int drawn;
 
 		/** Its blows land sooner than the other Elders' (the time saved goes into its pause; see {@link WeaverService#end}). */
 		@Override
@@ -253,6 +257,8 @@ public final class WeaverService {
 		u.level = level;
 		u.drift = ThreadLocalRandom.current().nextBoolean() ? 1 : -1;
 		u.makeBar(boss(w), BossEvent.BossBarColor.PURPLE, BossEvent.BossBarOverlay.NOTCHED_10, p);
+		u.homeX = heart.getX() + 0.5;
+		u.homeZ = heart.getZ() + 0.5;
 		WEAVERS.put(w.getUUID(), u);
 		ElderSpawn.begin(w, u, heart);
 		WorldFx.soundIn(ElderFx.dim(w), "minecraft:block.sculk_shrieker.shriek", "hostile", w.getX(), w.getY() + 8, w.getZ(), 5f, 0.5f);
@@ -348,20 +354,34 @@ public final class WeaverService {
 			}
 			// It keeps its distance: closer when far, back when near, drifting round in between
 			if (dist > 17) {
-				w.motion.toward(w, p.getX(), p.getZ(), ElderFight.speed(0.13), 0.012, HOVER);
+				double[] to = leashed(u, p.getX(), p.getZ());
+				w.motion.toward(w, to[0], to[1], ElderFight.speed(0.13), 0.012, HOVER);
 			} else if (dist < 9) {
-				w.motion.toward(w, w.getX() - dx, w.getZ() - dz, ElderFight.speed(0.12), 0.015, HOVER);
+				double[] to = leashed(u, w.getX() - dx, w.getZ() - dz);
+				w.motion.toward(w, to[0], to[1], ElderFight.speed(0.12), 0.015, HOVER);
 			} else {
 				double a = Math.atan2(w.getZ() - p.getZ(), w.getX() - p.getX()) + u.drift * 0.3;
-				w.motion.toward(w, p.getX() + Math.cos(a) * dist, p.getZ() + Math.sin(a) * dist, ElderFight.speed(0.07), 0.008, HOVER);
+				double[] to = leashed(u, p.getX() + Math.cos(a) * dist, p.getZ() + Math.sin(a) * dist);
+				w.motion.toward(w, to[0], to[1], ElderFight.speed(0.07), 0.008, HOVER);
 			}
 			if (u.ready()) {
 				// The Lance is its favourite blow, near and far; its unravelling reaches only those about it, not one high
 				// over it on a spire or far down under it
 				int lance = Math.max(0, Config.WEAVER_LANCE_WEIGHT);
 				double rise = p.getY() - (w.getY() - HOVER);
-				int a = dist < 8 && rise < 8 && rise > -4 ? u.pick(Weaver.UNRAVEL, 4, Weaver.LANCE, (lance + 1) / 2, Weaver.CRADLE, 1)
-						: u.pick(Weaver.THREAD, 2, Weaver.NEEDLES, 2, Weaver.LANCE, lance, Weaver.CRADLE, 2, Weaver.THOUSAND, 2);
+				int a;
+				if (w instanceof KnotMother) {
+					// The Knot Mother has two blows of her own: she draws in those who keep away from her, and snarls
+					// the floor under those who come close
+					int draw = Math.max(0, Config.KNOT_MOTHER_DRAW_WEIGHT), snarl = Math.max(0, Config.KNOT_MOTHER_SNARL_WEIGHT);
+					a = dist < 8 && rise < 8 && rise > -4
+							? u.pick(Weaver.UNRAVEL, 4, KnotMother.SNARL, snarl, Weaver.LANCE, (lance + 1) / 2, Weaver.CRADLE, 1)
+							: u.pick(KnotMother.DRAW, draw + (dist > 14 ? draw : 0), KnotMother.SNARL, snarl, Weaver.THREAD, 1,
+									Weaver.NEEDLES, 2, Weaver.LANCE, lance, Weaver.CRADLE, 2, Weaver.THOUSAND, 2);
+				} else {
+					a = dist < 8 && rise < 8 && rise > -4 ? u.pick(Weaver.UNRAVEL, 4, Weaver.LANCE, (lance + 1) / 2, Weaver.CRADLE, 1)
+							: u.pick(Weaver.THREAD, 2, Weaver.NEEDLES, 2, Weaver.LANCE, lance, Weaver.CRADLE, 2, Weaver.THOUSAND, 2);
+				}
 				u.start(w, a);
 			}
 			return;
@@ -369,8 +389,9 @@ public final class WeaverService {
 		u.step();
 		Beat b = u.beat;
 		if (u.action == Weaver.UNRAVEL && b.between(2, 10) && Math.sqrt(w.distanceToSqr(p.getX(), w.getY(), p.getZ())) > 6) {
-			// It swoops in on the one it unravels
-			w.motion.toward(w, p.getX(), p.getZ(), 0.3, 0.06, HOVER);
+			// It swoops in on the one it unravels (the Knot Mother no further than her cords let her)
+			double[] to = leashed(u, p.getX(), p.getZ());
+			w.motion.toward(w, to[0], to[1], 0.3, 0.06, HOVER);
 		} else if (u.action != ElderBoss.ULTIMATE) {
 			// Calling its needles it rises high, and drops as they fall
 			double lift = u.action == Weaver.NEEDLES && b.t < 20 ? 4.0 * Math.min(1, Math.max(0, (b.t - 4) / 12.0)) : 0;
@@ -434,6 +455,8 @@ public final class WeaverService {
 			case Weaver.LANCE -> lance(w, u, p, b);
 			case Weaver.CRADLE -> cradle(w, u, p, b);
 			case Weaver.THOUSAND -> thousand(w, u, p, b);
+			case KnotMother.DRAW -> draw(w, u, b);
+			case KnotMother.SNARL -> snarl(w, u, p, b);
 			case ElderBoss.ULTIMATE -> tapestry(w, u, b);
 			default -> end(w, u, 40);
 		}
@@ -445,6 +468,112 @@ public final class WeaverService {
 		u.end(w, pause + Math.max(0, saved));
 		if (ThreadLocalRandom.current().nextInt(3) == 0) {
 			u.drift = -u.drift;
+		}
+	}
+
+	/** A point it may go to: for the Knot Mother pulled back inside her leash round where she woke. */
+	private static double[] leashed(Unweaving u, double x, double z) {
+		if (Double.isNaN(u.homeX)) {
+			return new double[] {x, z};
+		}
+		double r = Math.max(2, Config.KNOT_MOTHER_LEASH);
+		double dx = x - u.homeX, dz = z - u.homeZ;
+		double d = Math.sqrt(dx * dx + dz * dz);
+		return d <= r ? new double[] {x, z} : new double[] {u.homeX + dx / d * r, u.homeZ + dz / d * r};
+	}
+
+	/** How far the Knot Mother is from where she woke (NaN for a Weaver, or one not fighting); for tests. */
+	public static double strayed(Entity e) {
+		Unweaving u = WEAVERS.get(e.getUUID());
+		if (u == null || Double.isNaN(u.homeX)) {
+			return Double.NaN;
+		}
+		double dx = e.getX() - u.homeX, dz = e.getZ() - u.homeZ;
+		return Math.sqrt(dx * dx + dz * dz);
+	}
+
+	/** How many the Knot Mother's last Draw In hauled in (for tests). */
+	public static int drawn(Entity e) {
+		Unweaving u = WEAVERS.get(e.getUUID());
+		return u == null ? 0 : u.drawn;
+	}
+
+	/**
+	 * Draw In (the Knot Mother's own): her threads reach out to everyone near her while she raises her upper hands,
+	 * she hauls them down and everyone they caught is dragged in to the knot; whoever comes in close is bitten.
+	 */
+	private static void draw(Weaver w, Unweaving u, Beat b) {
+		String dim = ElderFx.dim(w);
+		double range = ElderPower.reach(Math.max(4, Config.KNOT_MOTHER_DRAW_RANGE));
+		double hy = w.getY() + 13.5;
+		if (b.at(1)) {
+			WorldFx.soundIn(dim, "minecraft:entity.leash_knot.place", "hostile", w.getX(), hy, w.getZ(), 5f, 0.4f);
+		}
+		if (b.between(2, 16) && u.ticks % 3 == 0) {
+			for (ServerPlayer q : ElderFx.reachable(w, range)) {
+				AttackFx.line(u.level, AttackFx.of(w), AttackFx.LINE_THREAD, w.getX(), hy, w.getZ(), q.getX(), q.getY() + 1.2, q.getZ(), 4);
+			}
+		}
+		if (b.at(16)) {
+			u.drawn = 0;
+			for (ServerPlayer q : ElderFx.reachable(w, range)) {
+				AttackFx.line(u.level, AttackFx.of(w), AttackFx.LINE_THREAD_TAUT, w.getX(), hy, w.getZ(), q.getX(), q.getY() + 1.2, q.getZ(), 10);
+				ElderFx.pull(w, q, range);
+				WorldFx.soundIn(dim, "minecraft:entity.fishing_bobber.retrieve", "hostile", q.getX(), q.getY() + 1, q.getZ(), 3f, 0.5f);
+				u.drawn++;
+			}
+			ElderFx.shake(w, w.getX(), w.getZ(), 30, 0.4f, 10);
+		}
+		if (b.at(26) && Config.KNOT_MOTHER_DRAW_DAMAGE > 0) {
+			// Whoever she hauled in close is bitten (and the bite unpicks their time, as every blow of hers does)
+			for (ServerPlayer q : ElderFx.targets(w, 7, HOVER + 4, w.getBbHeight())) {
+				q.hurtServer(u.level, u.level.damageSources().mobAttack(w), (float) Config.KNOT_MOTHER_DRAW_DAMAGE);
+				WorldFx.soundIn(dim, "minecraft:entity.evoker_fangs.attack", "hostile", q.getX(), q.getY() + 1, q.getZ(), 3f, 0.6f);
+			}
+		}
+		if (b.past(36)) {
+			end(w, u, 50);
+		}
+	}
+
+	/**
+	 * Snarl (the Knot Mother's own): her lower hands weave fast and fling knots onto the floor, one under each of her
+	 * prey and more about them; whoever stands in one as it pulls tight is held fast and loses Seam time.
+	 */
+	private static void snarl(Weaver w, Unweaving u, ServerPlayer p, Beat b) {
+		if (b.at(12)) {
+			ThreadLocalRandom rnd = ThreadLocalRandom.current();
+			float damage = (float) Math.max(0, Config.KNOT_MOTHER_SNARL_DAMAGE);
+			for (ServerPlayer q : u.split(w, p, ElderPower.reach(36))) {
+				ElderStrikes.strike(w, q.getX(), ElderFx.groundUnder(q), q.getZ(), 2.6, damage, u.delay(20), ElderStrikes.SNARL);
+			}
+			double py = ElderFx.groundUnder(p);
+			for (int i = 0; i < 4; i++) {
+				double a = rnd.nextDouble() * Math.PI * 2, r = rnd.nextDouble(4, 9);
+				double x = p.getX() + Math.cos(a) * r, z = p.getZ() + Math.sin(a) * r;
+				double y = ElderFx.surface(u.level, x, py + 4, z, 4, 12);
+				if (!Double.isNaN(y)) {
+					ElderStrikes.strike(w, x, y, z, 2.6, damage, u.delay(24 + i * 3), ElderStrikes.SNARL);
+				}
+			}
+			WorldFx.soundIn(ElderFx.dim(w), "minecraft:block.tripwire.attach", "hostile", p.getX(), p.getY(), p.getZ(), 4f, 0.5f);
+		}
+		if (b.past(40)) {
+			end(w, u, 50);
+		}
+	}
+
+	/** Caught in a knot of hers: held fast for a moment, and the Seam takes its time faster. */
+	public static void snarled(ServerPlayer p) {
+		ElderSpells.snarl(p, Math.max(1, (int) Math.round(Config.KNOT_MOTHER_SNARL_SECONDS * 20 * com.extremedimensions.binding.Charms.steadfast(p))));
+		WorldFx.particles(p, "minecraft:end_rod", 0.6, 0.4, 0.0, 12);
+		PlayerData d = DataStore.get(p.getUUID());
+		int time = Math.max(0, Config.KNOT_MOTHER_SNARL_TIME);
+		if (d.inSeam && d.seamPull <= 0 && !p.isCreative() && time > 0) {
+			d.seamLeft = Math.max(1, d.seamLeft - time);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.knot_mother_snarl", time), true);
+		} else {
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.knot_mother_snarl_held"), true);
 		}
 	}
 

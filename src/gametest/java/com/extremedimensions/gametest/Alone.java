@@ -55,4 +55,6 @@ final class Alone {
 	static final String THREAD_BITE = "extremedimensions_test:alone/thread_bite";
 	static final String EDGE_THROW = "extremedimensions_test:alone/edge_throw";
 	static final String CRAG_WAKE = "extremedimensions_test:alone/crag_wake";
+	static final String KNOT_DRAW = "extremedimensions_test:alone/knot_draw";
+	static final String KNOT_SNARL = "extremedimensions_test:alone/knot_snarl";
 }

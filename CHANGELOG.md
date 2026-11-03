@@ -1,5 +1,48 @@
 # Changelog
 
+## 3.23.0: Who Holds the First End
+
+The Knot Mother wore the Last Weaver's body, only recoloured. She is the thing tied into the First Knot, and now she
+looks it, and fights like it.
+
+### A shape of her own
+- **Below the waist she is one great knot**: a dark tangle the size of a cottage, loops of cord wound round it every
+  way and turning slowly as she breathes, heavy lobes of cord thrown out to its sides, belts pulled tight about it,
+  knots bulging out of it, and a great spool half sunk in each flank. From its underside, cords run taut down to the
+  floor she is tied to, each pinned by a knot, and frayed tails hang nearly to the ground.
+- **Out of the knot grows a Weaver's wasted body with four arms.** The upper two are raised high, fists closed on the
+  ends of the threads that run down into the knot like a puppeteer's strings, bobbins swinging from them; the lower
+  two are held before her, weaving a cradle of light between their long fingers.
+- **Where a Weaver's mask was, a hood full of dark** with two slits of light, veiled in frayed threads, under a crown of
+  knots with crooked needles through them. Behind her, **a halo that has come apart**: broken rings of cord, knotted
+  where they still hold, fraying where they broke. Bobbins circle the knot.
+- **Her colours are the Fray's**: the Weavers' violet turned to sea-green, her gilt tarnished, her bone and wood left
+  as they are.
+- **She moves as herself**: she sways on her cords rather than floating; her upper hands rise and fall on her threads,
+  her lower hands never stop weaving. She forms out of the floor (the cords first, then the loops tying themselves
+  round nothing, the knot filling, and her body growing out of it), and dying, her loops come loose and spin outwards.
+
+### Two blows of her own
+- **Draw In**: her upper hands rise, threads of light reach out to everyone near her (`knot_mother_draw_range`), and she
+  hauls them down: everyone they caught is dragged in to the knot, and whoever arrives close is **bitten**
+  (`knot_mother_draw_damage`). She uses it most against those who keep far off. Her light turns amber as she begins.
+- **Snarl**: her lower hands weave fast and fling knots onto the floor, one under each of her prey and more about them.
+  Whoever stands in one as it pulls tight is **held fast** for a moment, no step and no jump
+  (`knot_mother_snarl_seconds`; Steadfast leggings loosen it), and it picks Seam time off their thread
+  (`knot_mother_snarl_time`). Her light turns violet, the Weavers' old colour, as she begins.
+- How often she uses each is set by `knot_mother_draw_weight` and `knot_mother_snarl_weight` (0 = never); the
+  Weaver's own blows stay hers too.
+
+### Tied to her knot
+- **She cannot stray far from where she woke** (`knot_mother_leash`, 14 blocks): her cords hold her to it. Carried or
+  drawn off, she goes back; she will not chase anyone out of her chamber.
+
+### Also
+- The bestiary's page on her tells of her new shape and blows (English and Dutch).
+- Tests: Draw In hauls a player in and bites them; her cords bring her back past her leash rather than after a player
+  further off; a knot holds a player fast (no walking, no jumping), takes its Seam time and gives after its time; her
+  Snarl's knots catch a player standing still.
+
 ## 3.22.1: Rock on Its Back
 
 ### Fixes

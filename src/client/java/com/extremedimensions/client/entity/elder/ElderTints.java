@@ -1,6 +1,7 @@
 package com.extremedimensions.client.entity.elder;
 
 import com.extremedimensions.elder.Ferryman;
+import com.extremedimensions.elder.KnotMother;
 import com.extremedimensions.elder.Matriarch;
 import com.extremedimensions.elder.Weaver;
 
@@ -21,6 +22,7 @@ final class ElderTints {
 		return switch (elder) {
 			case "matriarch" -> new String[] {"red", "green", "amber", "white"};
 			case "ferryman" -> new String[] {"red", "sea", "gold", "white", "soul"};
+			case "knot_mother" -> new String[] {"blue", "crimson", "silver", "amber", "violet"};
 			default -> new String[] {"blue", "crimson", "silver"};
 		};
 	}
@@ -45,6 +47,16 @@ final class ElderTints {
 				case Ferryman.SLAM -> 3;
 				case Ferryman.LANTERN -> 4;
 				case Ferryman.GAOL -> DARK;
+				default -> NONE;
+			};
+			// The Knot Mother as the Weaver, and amber as she draws you in, the Weavers' old violet as she snarls
+			case "knot_mother" -> switch (action) {
+				case Weaver.LANCE -> 0;
+				case Weaver.THOUSAND -> 1;
+				case Weaver.NEEDLES -> 2;
+				case KnotMother.DRAW -> 3;
+				case KnotMother.SNARL -> 4;
+				case Weaver.UNRAVEL -> DARK;
 				default -> NONE;
 			};
 			// Blue-white for the lance, crimson for the thousand needles, silver for needles; dark as it unravels

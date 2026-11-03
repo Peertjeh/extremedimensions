@@ -191,11 +191,13 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				new com.extremedimensions.client.entity.elder.WeaverModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.WeaverModel.LAYER)),
 				new com.extremedimensions.client.entity.elder.WeaverModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.WeaverModel.LAYER)),
 				"weaver", 1.5F, 3.0F));
-		// The Knot Mother: the Weaver's shape, frayed to the colours of the deep
+		// The Knot Mother: a Weaver tied into the First Knot, with a shape of her own (3.23)
+		ModelLayerRegistry.registerModelLayer(com.extremedimensions.client.entity.elder.KnotMotherModel.LAYER,
+				com.extremedimensions.client.entity.elder.KnotMotherGeometry::create);
 		EntityRendererRegistry.register(ModEntities.KNOT_MOTHER, ctx -> new com.extremedimensions.client.entity.elder.ElderRenderer<>(ctx,
-				new com.extremedimensions.client.entity.elder.WeaverModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.WeaverModel.LAYER)),
-				new com.extremedimensions.client.entity.elder.WeaverModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.WeaverModel.LAYER)),
-				"knot_mother", 1.5F, 3.0F));
+				new com.extremedimensions.client.entity.elder.KnotMotherModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.KnotMotherModel.LAYER)),
+				new com.extremedimensions.client.entity.elder.KnotMotherModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.KnotMotherModel.LAYER)),
+				"knot_mother", 1.5F, 3.5F));
 
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.StatePayload.TYPE, (payload, context) ->
 				context.client().execute(() -> ClientState.apply(payload)));

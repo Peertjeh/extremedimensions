@@ -51,6 +51,8 @@ public final class ElderStrikes {
 	public static final int SPEAR = 5;
 	/** Soul fire from the sky (the Ferryman's ultimate): soul fire where it lands. */
 	public static final int SOULFALL = 6;
+	/** A knot of the Knot Mother's: whoever stands in it as it pulls tight is held fast and loses Seam time. */
+	public static final int SNARL = 7;
 
 	private static final class Strike {
 		ServerLevel level;
@@ -395,6 +397,11 @@ public final class ElderStrikes {
 				WorldFx.soundIn(dim, "minecraft:entity.blaze.shoot", "hostile", s.x, s.y, s.z, 2f, 0.5f);
 				ElderTerrain.mark(s.level, s.x, s.y, s.z, s.radius, 0.7, ElderTerrain.Mark.SOUL);
 			}
+			case SNARL -> {
+				WorldFx.soundIn(dim, "minecraft:block.tripwire.attach", "hostile", s.x, s.y, s.z, 2f, 0.4f);
+				WorldFx.soundIn(dim, "minecraft:entity.leash_knot.place", "hostile", s.x, s.y, s.z, 2f, 0.6f);
+				WorldFx.particleIn(s.level, "minecraft:end_rod", s.x, s.y + 0.3, s.z, s.radius * 0.5, 0.2, s.radius * 0.5, 0.0, 12);
+			}
 			default -> {
 				WorldFx.soundIn(dim, "minecraft:entity.arrow.hit", "hostile", s.x, s.y, s.z, 2f, 0.5f);
 				ElderTerrain.mark(s.level, s.x, s.y, s.z, s.radius * 0.6, 0.3, ElderTerrain.Mark.SCORCH);
@@ -408,12 +415,15 @@ public final class ElderStrikes {
 				continue;
 			}
 			caught(s.source, p);
-			p.hurtServer(s.level, from(s.level, s.source), s.damage);
+			if (s.damage > 0) {
+				p.hurtServer(s.level, from(s.level, s.source), s.damage);
+			}
 			switch (s.kind) {
 				case LANTERN, SOULFALL -> p.setRemainingFireTicks(80);
 				case ROOTS -> WorldFx.effect(p, MobEffects.SLOWNESS, 3, 3);
 				case SLAM -> ElderFx.knock(p, s.x, s.z, 0.6, 0.95);
 				case SPEAR -> ElderFx.knock(p, s.x, s.z, 1.1, 0.7);
+				case SNARL -> WeaverService.snarled(p);
 				default -> {
 				}
 			}
