@@ -171,7 +171,8 @@ Trials past gold), and the tapestry's boons stay.
 - **The Elders**: the Matriarch, the Ferryman, the Last Weaver and the Knot Mother, with arenas raised by flying blocks,
   domain phases, cores that ward them and islands that fall. The Knot Mother has a shape and a kit of her own: a tall
   veiled figure under a crown of thorns, tied to anchors round her chamber that shield her until you break them, a
-  Threadline swept low across the floor and a Knot Snare that holds you fast.
+  Threadline swept low across the floor and a Knot Snare that holds you fast, and a voice of her own: a choir, bronze
+  and thick threads snapping, with booms under every blow.
 - **The tribe as a faction**: standing from hunted to kin (hard won on the harder difficulties), barter (dear: every
   bargain costs standing and may leave a curse), raids, and
   **clans**: players bound by a Blood Cord stand before the tribe as one, sharing every loss and judged by the least

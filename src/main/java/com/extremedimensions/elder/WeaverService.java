@@ -402,8 +402,12 @@ public final class WeaverService {
 			if (ElderUltimate.due(w, u.ultimateSpent)) {
 				u.rise = 0;
 				u.beginUltimate(w, ult(w));
-				WorldFx.soundIn(dim, "extremedimensions:lurker_shriek", "hostile", w.getX(), w.getY() + 12, w.getZ(), 6f, 0.8f);
-				WorldFx.soundIn(dim, "minecraft:block.amethyst_block.resonate", "hostile", w.getX(), w.getY() + 14, w.getZ(), 6f, 0.4f);
+				if (w instanceof KnotMother) {
+					WorldFx.soundIn(dim, "extremedimensions:elder.knot_mother.ultimate", "hostile", w.getX(), w.getY() + 12, w.getZ(), 6f, 1f);
+				} else {
+					WorldFx.soundIn(dim, "extremedimensions:lurker_shriek", "hostile", w.getX(), w.getY() + 12, w.getZ(), 6f, 0.8f);
+					WorldFx.soundIn(dim, "minecraft:block.amethyst_block.resonate", "hostile", w.getX(), w.getY() + 14, w.getZ(), 6f, 0.4f);
+				}
 				return;
 			}
 			// It keeps its distance: closer when far, back when near, drifting round in between
@@ -462,7 +466,11 @@ public final class WeaverService {
 						side = -side;
 						n++;
 					}
-					WorldFx.soundIn(dim, "minecraft:entity.leash_knot.place", "hostile", p.getX(), p.getY() + 1, p.getZ(), 3f, 0.5f);
+					if (w instanceof KnotMother) {
+						WorldFx.soundIn(dim, "extremedimensions:elder.knot_mother.snare", "hostile", p.getX(), p.getY() + 1, p.getZ(), 4f, 1f);
+					} else {
+						WorldFx.soundIn(dim, "minecraft:entity.leash_knot.place", "hostile", p.getX(), p.getY() + 1, p.getZ(), 3f, 0.5f);
+					}
 				}
 				if (b.past(30)) {
 					end(w, u, 55);
@@ -576,6 +584,7 @@ public final class WeaverService {
 			w.motion.brake(w, 0.05, HOVER);
 			if (u.exposed % 8 == 0) {
 				WorldFx.particleIn(u.level, "minecraft:end_rod", w.getX(), w.getY() + CHEST, w.getZ(), 0.7, 0.7, 0.7, 0.04, 8);
+				WorldFx.particleIn(u.level, "minecraft:reverse_portal", w.getX(), w.getY() + CHEST, w.getZ(), 0.9, 0.9, 0.9, 0.05, 14);
 			}
 			if (u.exposed == 0) {
 				end(w, u, 20);
@@ -611,7 +620,8 @@ public final class WeaverService {
 			u.anchors.add(new Anchor(at));
 			DataStore.seamCells().add(mark(u.level, at));
 			WorldFx.particleIn(u.level, "minecraft:end_rod", x, y + 1.5, z, 0.3, 0.6, 0.3, 0.05, 16);
-			WorldFx.soundIn(dim, "minecraft:entity.leash_knot.place", "hostile", x, y + 1, z, 2f, 0.6f);
+			// each anchor rises with a low bronze clang
+			WorldFx.soundIn(dim, "extremedimensions:elder.knot_mother.anchor_hit", "hostile", x, y + 1, z, 3f, 0.7f);
 		}
 		DataStore.markDirty();
 	}
@@ -642,7 +652,14 @@ public final class WeaverService {
 			AttackFx.line(u.level, AttackFx.of(w), AttackFx.LINE_THREAD_TAUT, w.getX() + Math.cos(a) * 16, w.getY() - HOVER + 0.5,
 					w.getZ() + Math.sin(a) * 16, w.getX(), cy, w.getZ(), 16);
 		}
-		WorldFx.soundIn(ElderFx.dim(w), "minecraft:block.amethyst_block.resonate", "hostile", w.getX(), cy, w.getZ(), 5f, 0.4f);
+		// The turning of the fight: a gong and her choir, her roar, a flash, the floor bursting under her and a ring running out
+		double gy = w.getY() - HOVER;
+		WorldFx.soundIn(ElderFx.dim(w), "extremedimensions:elder.knot_mother.phase", "hostile", w.getX(), cy, w.getZ(), 6f, 1f);
+		ElderFx.roar(w, 5f, 0.9f);
+		ElderFx.cinema(w, 96, ModPackets.BossFxPayload.FLASH, 0, 0.6f, "");
+		AttackFx.burst(u.level, AttackFx.of(w), w.getX(), gy + 0.5, w.getZ(), 6);
+		AttackFx.wave(u.level, AttackFx.of(w), false, w.getX(), gy + 0.1, w.getZ(), 1, 1.0, 24);
+		WorldFx.particleIn(u.level, "minecraft:reverse_portal", w.getX(), cy, w.getZ(), 2.5, 3.0, 2.5, 0.2, 120);
 		untie(u);
 		tie(w, u);
 	}
@@ -718,15 +735,22 @@ public final class WeaverService {
 		BlockPos n = a.node();
 		String dim = ElderFx.dim(w);
 		WorldFx.particleIn(u.level, "minecraft:end_rod", n.getX() + 0.5, n.getY() + 0.5, n.getZ() + 0.5, 0.4, 0.4, 0.4, 0.25, 30);
-		WorldFx.soundIn(dim, "minecraft:entity.leash_knot.break", "hostile", n.getX() + 0.5, n.getY() + 0.5, n.getZ() + 0.5, 4f, 0.6f);
-		WorldFx.soundIn(dim, "minecraft:block.chain.break", "hostile", n.getX() + 0.5, n.getY() + 0.5, n.getZ() + 0.5, 3f, 0.5f);
+		// It breaks with weight: a great snap and shards, bronze crashing, the thread whipping back to her, the floor bursting
+		// at its foot, a flash and a shake for everyone near
+		WorldFx.soundIn(dim, "extremedimensions:elder.knot_mother.anchor_break", "hostile", n.getX() + 0.5, n.getY() + 0.5, n.getZ() + 0.5, 6f, 1f);
 		AttackFx.line(u.level, AttackFx.of(w), AttackFx.LINE_THREAD_TAUT, n.getX() + 0.5, n.getY() + 0.6, n.getZ() + 0.5, w.getX(), w.getY() + CHEST,
 				w.getZ(), 6);
+		AttackFx.burst(u.level, AttackFx.of(w), a.base.getX() + 0.5, a.base.getY() + 0.1, a.base.getZ() + 0.5, 4);
+		ElderFx.shake(w, n.getX() + 0.5, n.getZ() + 0.5, 40, 0.7f, 18);
+		ElderFx.cinema(w, 96, ModPackets.BossFxPayload.FLASH, 0, 0.45f, "");
 		int ticks = (int) Math.round(Math.max(0, Config.KNOT_MOTHER_EXPOSED_SECONDS) * 20);
 		if (ticks > 0 && u.action != ElderBoss.ULTIMATE && u.action != ElderBoss.SPAWN) {
 			u.start(w, KnotMother.EXPOSED);
 			u.exposed = ticks;
 			ElderFx.roar(w, 5f, 1.3f);
+			// Laid bare: her core thrums like a heart, violet light pouring out of it
+			WorldFx.soundIn(dim, "extremedimensions:elder.knot_mother.exposed", "hostile", w.getX(), w.getY() + CHEST, w.getZ(), 5f, 1f);
+			WorldFx.particleIn(u.level, "minecraft:reverse_portal", w.getX(), w.getY() + CHEST, w.getZ(), 1.2, 1.2, 1.2, 0.3, 90);
 		}
 	}
 
@@ -751,8 +775,10 @@ public final class WeaverService {
 				a.hits++;
 				BlockPos n = a.node();
 				WorldFx.particleIn(level, "minecraft:enchanted_hit", n.getX() + 0.5, n.getY() + 0.5, n.getZ() + 0.5, 0.5, 0.5, 0.5, 0.3, 10);
-				WorldFx.soundIn(level.dimension().identifier().toString(), "minecraft:block.chain.hit", "block", n.getX() + 0.5, n.getY() + 0.5,
-						n.getZ() + 0.5, 2f, 0.6f + 0.15f * a.hits);
+				// a heavy bronze clang, higher with each blow it takes, and its light cracking
+				WorldFx.soundIn(level.dimension().identifier().toString(), "extremedimensions:elder.knot_mother.anchor_hit", "block", n.getX() + 0.5,
+						n.getY() + 0.5, n.getZ() + 0.5, 3f, 0.85f + 0.12f * a.hits);
+				AttackFx.impact(level, 2, AttackFx.IMPACT_CHARGE, n.getX() + 0.5, a.base.getY() + 0.1, n.getZ() + 0.5, 1.4);
 				if (a.hits >= Math.max(1, Config.KNOT_MOTHER_ANCHOR_HITS) && level.getEntity(e.getKey()) instanceof Weaver w) {
 					sever(w, u, a);
 				}
@@ -813,7 +839,6 @@ public final class WeaverService {
 		if (b.at(1)) {
 			u.lineA = Math.atan2(p.getZ() - w.getZ(), p.getX() - w.getX());
 			u.lineWay = u.drift > 0 ? 1 : -1;
-			WorldFx.soundIn(dim, "minecraft:block.tripwire.attach", "hostile", w.getX(), w.getY() + 12, w.getZ(), 4f, 0.5f);
 		}
 		double a0 = u.lineA - u.lineWay * sweep, a1 = u.lineA + u.lineWay * sweep;
 		double dist = Math.max(2, Math.sqrt(w.distanceToSqr(p.getX(), w.getY(), p.getZ())));
@@ -826,7 +851,14 @@ public final class WeaverService {
 		if (b.at(20)) {
 			int duration = Math.max(10, (int) Math.round(22 / u.steady()));
 			ElderStrikes.threadline(w, w.getX(), fy, w.getZ(), a0, a1, dist, fy, duration, (float) Math.max(0, Config.KNOT_MOTHER_THREADLINE_DAMAGE));
-			WorldFx.soundIn(dim, "minecraft:entity.leash_knot.break", "hostile", w.getX(), fy, w.getZ(), 4f, 0.8f);
+			// The sweep cracks like a whip: heard from her and loud where it runs at its prey; the floor jolts under them,
+			// and bursts where it begins
+			WorldFx.soundIn(dim, "extremedimensions:elder.knot_mother.lash", "hostile", w.getX(), w.getY() + 12, w.getZ(), 5f, 1f);
+			WorldFx.soundIn(dim, "extremedimensions:elder.knot_mother.lash", "hostile", p.getX(), p.getY() + 1, p.getZ(), 3f, 1.1f);
+			ElderFx.shake(w, p.getX(), p.getZ(), 30, 0.55f, 14);
+			double r0 = dist + 6;
+			AttackFx.impact(u.level, AttackFx.of(w), AttackFx.IMPACT_BLAST, w.getX() + Math.cos(a0) * Math.min(r0, 10), fy - 0.4,
+					w.getZ() + Math.sin(a0) * Math.min(r0, 10), 2.2);
 		}
 		if (b.past(28) && ElderStrikes.threadsOf(w) == 0) {
 			end(w, u, 45);
@@ -858,7 +890,9 @@ public final class WeaverService {
 					ElderStrikes.strike(w, x, y, z, 2.6, damage, warn + 4 * (i + 1), ElderStrikes.SNARE);
 				}
 			}
-			WorldFx.soundIn(ElderFx.dim(w), "minecraft:block.tripwire.attach", "hostile", p.getX(), p.getY(), p.getZ(), 4f, 0.5f);
+			// Her knots tied faster and faster, up to the moment they close (about the pattern's warning; faster when it is shorter)
+			float rate = (float) Math.max(0.5, Math.min(2.0, 30.0 / Math.max(1, warn)));
+			WorldFx.soundIn(ElderFx.dim(w), "extremedimensions:elder.knot_mother.knot", "hostile", p.getX(), p.getY() + 1, p.getZ(), 4f, rate);
 		}
 		if (b.past(30)) {
 			end(w, u, 50);
@@ -939,7 +973,7 @@ public final class WeaverService {
 	/** Cat's Cradle: threads strung across the ground round its prey, pulled taut until they cut. */
 	private static void cradle(Weaver w, Unweaving u, ServerPlayer p, Beat b) {
 		String dim = ElderFx.dim(w);
-		if (b.at(1)) {
+		if (b.at(1) && !(w instanceof KnotMother)) {
 			WorldFx.soundIn(dim, "minecraft:entity.leash_knot.place", "hostile", w.getX(), w.getY() + 12, w.getZ(), 5f, 0.4f);
 		}
 		if (b.at(14)) {
@@ -947,7 +981,11 @@ public final class WeaverService {
 			boolean first = true;
 			for (ServerPlayer q : u.split(w, p, ElderPower.reach(36))) {
 				ElderStrikes.web(w, cradleAround(w, u, q, first), u.delay(50), 14f);
-				WorldFx.soundIn(dim, "minecraft:block.tripwire.attach", "hostile", q.getX(), q.getY(), q.getZ(), 4f, 0.5f);
+				if (w instanceof KnotMother) {
+					WorldFx.soundIn(dim, "extremedimensions:elder.knot_mother.knot", "hostile", q.getX(), q.getY() + 1, q.getZ(), 4f, 0.6f);
+				} else {
+					WorldFx.soundIn(dim, "minecraft:block.tripwire.attach", "hostile", q.getX(), q.getY(), q.getZ(), 4f, 0.5f);
+				}
 				first = false;
 			}
 		}
@@ -1080,9 +1118,15 @@ public final class WeaverService {
 			double gy = w.getY() - u.rise - HOVER;
 			w.motion.heave(w, -u.rise);
 			u.rise = 0;
-			WorldFx.soundIn(dim, "minecraft:block.glass.break", "hostile", w.getX(), w.getY() + 10, w.getZ(), 6f, 0.5f);
-			WorldFx.soundIn(dim, "minecraft:block.amethyst_block.break", "hostile", w.getX(), w.getY() + 10, w.getZ(), 6f, 0.4f);
-			WorldFx.soundIn(dim, "minecraft:entity.warden.sonic_boom", "hostile", w.getX(), w.getY() + 10, w.getZ(), 6f, 0.6f);
+			if (w instanceof KnotMother) {
+				// every thread of hers snapping at once, and her cry over it
+				WorldFx.soundIn(dim, "extremedimensions:elder.knot_mother.anchor_break", "hostile", w.getX(), w.getY() + 10, w.getZ(), 6f, 0.8f);
+				WorldFx.soundIn(dim, "extremedimensions:elder.knot_mother.roar", "hostile", w.getX(), w.getY() + 10, w.getZ(), 6f, 1f);
+			} else {
+				WorldFx.soundIn(dim, "minecraft:block.glass.break", "hostile", w.getX(), w.getY() + 10, w.getZ(), 6f, 0.5f);
+				WorldFx.soundIn(dim, "minecraft:block.amethyst_block.break", "hostile", w.getX(), w.getY() + 10, w.getZ(), 6f, 0.4f);
+				WorldFx.soundIn(dim, "minecraft:entity.warden.sonic_boom", "hostile", w.getX(), w.getY() + 10, w.getZ(), 6f, 0.6f);
+			}
 			WorldFx.particleIn(level, "minecraft:explosion_emitter", w.getX(), gy + 1, w.getZ(), 3, 1, 3, 0, 4);
 			ElderTerrain.blast(w, w.getX(), gy + 0.5, w.getZ(), 3.0f, false);
 			ElderStrikes.wave(w, w.getX(), gy, w.getZ(), 1.2, 34, 9f, "minecraft:end_rod", ElderTerrain.Mark.SCORCH);

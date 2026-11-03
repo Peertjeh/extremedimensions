@@ -100,7 +100,7 @@ final class ElderFx {
 
 	static void roar(Entity e, float volume, float pitch) {
 		// Each Elder roars with its own voice (pitched about its own, not the Keeper's)
-		String voice = e instanceof ElderBoss b ? "extremedimensions:elder." + NAMES[index(b)] + ".roar" : "extremedimensions:keeper_roar";
+		String voice = e instanceof ElderBoss b ? "extremedimensions:elder." + name(b) + ".roar" : "extremedimensions:keeper_roar";
 		float tuned = e instanceof ElderBoss ? 0.75f + 0.5f * pitch : pitch;
 		WorldFx.soundIn(dim(e), voice, "hostile", e.getX(), e.getY() + 6, e.getZ(), volume, tuned);
 		WorldFx.particleIn(dim(e), "extremedimensions:lurker_wisp", e.getX(), e.getY() + 7, e.getZ(), 2.5, 4.0, 2.5, 0.0, 80);
@@ -223,11 +223,16 @@ final class ElderFx {
 	}
 
 	/**
-	 * Its name in texts: as {@link #index}, but the Knot Mother is her own (she has the Last Weaver's shape, voice and
-	 * blows, and her own name, title and ultimate).
+	 * Its name in texts and sounds: as {@link #index}, but the Knot Mother is her own (she has the Last Weaver's machinery,
+	 * and her own name, title, voice and sounds).
 	 */
 	static String name(ElderBoss b) {
 		return b instanceof KnotMother ? "knot_mother" : NAMES[index(b)];
+	}
+
+	/** Whose voice and body it sounds with: as {@link #index}, but the Knot Mother has her own (3; see ModSounds). */
+	static int voice(ElderBoss b) {
+		return b instanceof KnotMother ? 3 : index(b);
 	}
 
 	/** Sends a piece of the fight's cinema to everyone within {@code radius} blocks (see BossFxPayload). */
@@ -282,7 +287,7 @@ final class ElderFx {
 	/** A heavy step: the ground thuds and dusts up under a walking giant, and shakes a little for those close. */
 	static void step(ElderBoss b, float volume) {
 		Level level = b.level();
-		WorldFx.soundIn(dim(b), "extremedimensions:elder." + NAMES[index(b)] + ".step", "hostile", b.getX(), b.getY(), b.getZ(), volume,
+		WorldFx.soundIn(dim(b), "extremedimensions:elder." + name(b) + ".step", "hostile", b.getX(), b.getY(), b.getZ(), volume,
 				(float) (0.9 + ThreadLocalRandom.current().nextDouble(0.2)));
 		WorldFx.particleIn(level, "minecraft:campfire_cosy_smoke", b.getX(), b.getY() + 0.3, b.getZ(), b.getBbWidth() * 0.5, 0.1, b.getBbWidth() * 0.5, 0.01, 4);
 		WorldFx.particleIn(level, "minecraft:poof", b.getX(), b.getY() + 0.2, b.getZ(), b.getBbWidth() * 0.6, 0.1, b.getBbWidth() * 0.6, 0.03, 12);

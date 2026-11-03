@@ -1008,5 +1008,191 @@
       "extremedimensions:lurker/sculk_laugh2",
       "extremedimensions:lurker/sculk_laugh3"
     ]
+  },
+  "elder.knot_mother.voice": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.voice",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_voice1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "extremedimensions:elder/knot_mother_voice2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.knot_mother.threadline": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.threadline",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_threadline_draw",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.knot_mother.lash": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.lash",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_threadline_lash",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.knot_mother.knot": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.knot",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_snare_weave",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.knot_mother.close": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.close",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_snare_close",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.knot_mother.cast": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.cast",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_cast",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.knot_mother.snare": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.snare",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_snare_close",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.knot_mother.anchor_hit": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.anchor_hit",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_anchor_hit1",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "extremedimensions:elder/knot_mother_anchor_hit2",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "elder.knot_mother.anchor_break": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.anchor_break",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_anchor_break",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.knot_mother.exposed": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.exposed",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_exposed",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.knot_mother.phase": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.phase",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_phase",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.knot_mother.ultimate": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.ultimate",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_ultimate",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.knot_mother.wake": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.wake",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_wake",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.knot_mother.hurt": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.hurt",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_hurt1",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "extremedimensions:elder/knot_mother_hurt2",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "extremedimensions:elder/knot_mother_hurt3",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "elder.knot_mother.ambient": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.ambient",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_ambient1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "extremedimensions:elder/knot_mother_ambient2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.knot_mother.death": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.death",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_death",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.knot_mother.step": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.step",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_step1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "extremedimensions:elder/knot_mother_step2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.knot_mother.roar": {
+    "subtitle": "subtitles.extremedimensions.elder.knot_mother.roar",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/knot_mother_roar",
+        "attenuation_distance": 40
+      }
+    ]
   }
 }

@@ -243,17 +243,17 @@ public abstract class ElderBoss extends Monster {
 
 	@Override
 	protected SoundEvent getAmbientSound() {
-		return ModSounds.ELDER_AMBIENT[ElderFx.index(this)];
+		return ModSounds.ELDER_AMBIENT[ElderFx.voice(this)];
 	}
 
 	@Override
 	protected SoundEvent getHurtSound(DamageSource source) {
-		return ModSounds.ELDER_HURT[ElderFx.index(this)];
+		return ModSounds.ELDER_HURT[ElderFx.voice(this)];
 	}
 
 	@Override
 	protected SoundEvent getDeathSound() {
-		return ModSounds.ELDER_DEATH[ElderFx.index(this)];
+		return ModSounds.ELDER_DEATH[ElderFx.voice(this)];
 	}
 
 	@Override

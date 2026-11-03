@@ -155,7 +155,7 @@ abstract class ElderFight {
 		beat.reset();
 		b.setAction(a);
 		// No name is called: the Elder gives the blow away by its voice, the sound of the blow, its body and its light
-		ElderTells.begin(b, a);
+		ElderTells.begin(b, a, tempo());
 		// The client plays the ultimate on a 200-tick timeline and the forming on a 140-tick one, whatever their length
 		b.setTempo(a == ElderBoss.ULTIMATE ? 200.0F / ElderUltimate.length() : a == ElderBoss.SPAWN ? 140.0F / ElderSpawn.length() : (float) tempo());
 	}

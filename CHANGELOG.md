@@ -1,5 +1,41 @@
 # Changelog
 
+## 3.24.0: A Voice to Bind With
+
+The Knot Mother looked like a final boss and sounded like a garden shed: she borrowed the Last Weaver's thin glass
+chimes for a voice, and her blows were announced by a tripwire's click and a lead being tied. She now has a sound of
+her own for everything she does, made for her (`tools/sounds/knot_mother.py`), and her blows land with the weight of a
+boss.
+
+### Her own sound
+- **Her voice is a choir**: a woman's voice multiplied into many, a growl an octave or two under it, bronze on top. It
+  rises before each of her blows (two voicings), cries out when she is hurt, hums low through closed lips at rest,
+  roars with a braam swelling under it, and in death falls away in a long wail while her rings crash down one by one
+  and every thread snaps.
+- **Her blows sound like what they are**: her **Threadline** is drawn tight with a creak and a rising thread that sings
+  up to the very moment she sweeps it (faster as her blows come faster), then cracks like a whip with a boom under it,
+  heard from her and loud where it runs at you; her **Knot Snare** is woven with knots tied faster and faster up to
+  the moment it closes, and closes with a rope cinched, a heavy twang and her bronze; threads cast are plucked in a
+  chord.
+- **Her anchors** rise with a low bronze clang, ring heavier and higher with every blow they take, and break with a
+  great snap, shards, bronze crashing and two booms; **laid bare** her core thrums like a heart.
+- **Her great moments**: she **forms** to a drone out of nothing, threads tightening, a heartbeat ever faster and her
+  choir rising up to the moment she tears free (in step with `elder_spawn_seconds`); each **phase** (70% and 35%)
+  turns with a great gong, her choir and her roar; her **ultimate** begins with everything drawn up to a cry and a
+  boom, and ends with every thread snapping at once.
+- Mastered loud and heavy (sub-bass you feel, with the upper harmonics you hear on small speakers too), mono so the
+  world places them, each with an English and Dutch subtitle. The Weaver's machinery she runs on keeps its own sounds
+  for the Last Weaver.
+
+### Her blows land
+- **Threadline**: the floor jolts under its prey as it is swept (a shake and an impact frame), the floor bursts where it
+  begins, and it scores the floor as it runs (sparks, shards and a slash of cracked light behind it).
+- **Knot Snare**: each pattern closes with a jolt for whoever stands near it and violet light pouring off the knot.
+- **An anchor breaking**: a flash, a shake for everyone near, the floor bursting at its foot and the thread whipping
+  back to her; **laid bare**, violet light pours out of her core, pulsing while it lasts.
+- **Her phases**: a flash, the floor bursting under her and a shockwave running out across her chamber, violet light
+  storming round her.
+
 ## 3.23.1: Room for Everything
 
 ### Fixes

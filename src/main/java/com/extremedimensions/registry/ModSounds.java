@@ -72,7 +72,13 @@ public final class ModSounds {
 			"ferryman.voice", "ferryman.slam", "ferryman.chain", "ferryman.lantern", "ferryman.knell", "ferryman.crossing",
 			"ferryman.gaol", "ferryman.tide", "ferryman.snare",
 			"weaver.voice", "weaver.thread", "weaver.needles", "weaver.unravel", "weaver.lance", "weaver.cradle",
-			"weaver.thousand", "weaver.snare"};
+			"weaver.thousand", "weaver.snare",
+			// The Knot Mother's own (tools/sounds/knot_mother.py): her voice before a blow, her Threadline drawn and swept,
+			// her Snare woven and closing, threads cast, a flyer caught, her anchors struck and broken, her laid bare, the
+			// turning of her phases, her ultimate, and her forming
+			"knot_mother.voice", "knot_mother.threadline", "knot_mother.lash", "knot_mother.knot", "knot_mother.close",
+			"knot_mother.cast", "knot_mother.snare", "knot_mother.anchor_hit", "knot_mother.anchor_break", "knot_mother.exposed",
+			"knot_mother.phase", "knot_mother.ultimate", "knot_mother.wake"};
 
 	static {
 		for (String tell : ELDER_TELLS) {
@@ -80,13 +86,20 @@ public final class ModSounds {
 		}
 	}
 
-	/** Each Elder's own body: hit, at rest, dying (Matriarch, Ferryman, Weaver); its steps and roar are played by name. */
-	public static final SoundEvent[] ELDER_HURT = {register("elder.matriarch.hurt"), register("elder.ferryman.hurt"), register("elder.weaver.hurt")};
+	/**
+	 * Each Elder's own body: hit, at rest, dying (Matriarch, Ferryman, Weaver, Knot Mother: see ElderFx.voice); its steps
+	 * and roar are played by name.
+	 */
+	public static final SoundEvent[] ELDER_HURT = {register("elder.matriarch.hurt"), register("elder.ferryman.hurt"), register("elder.weaver.hurt"),
+			register("elder.knot_mother.hurt")};
 	public static final SoundEvent[] ELDER_AMBIENT = {register("elder.matriarch.ambient"), register("elder.ferryman.ambient"),
-			register("elder.weaver.ambient")};
-	public static final SoundEvent[] ELDER_DEATH = {register("elder.matriarch.death"), register("elder.ferryman.death"), register("elder.weaver.death")};
-	public static final SoundEvent[] ELDER_STEP = {register("elder.matriarch.step"), register("elder.ferryman.step"), register("elder.weaver.step")};
-	public static final SoundEvent[] ELDER_ROAR = {register("elder.matriarch.roar"), register("elder.ferryman.roar"), register("elder.weaver.roar")};
+			register("elder.weaver.ambient"), register("elder.knot_mother.ambient")};
+	public static final SoundEvent[] ELDER_DEATH = {register("elder.matriarch.death"), register("elder.ferryman.death"), register("elder.weaver.death"),
+			register("elder.knot_mother.death")};
+	public static final SoundEvent[] ELDER_STEP = {register("elder.matriarch.step"), register("elder.ferryman.step"), register("elder.weaver.step"),
+			register("elder.knot_mother.step")};
+	public static final SoundEvent[] ELDER_ROAR = {register("elder.matriarch.roar"), register("elder.ferryman.roar"), register("elder.weaver.roar"),
+			register("elder.knot_mother.roar")};
 
 	private static SoundEvent register(String path) {
 		var id = ExtremeDimensions.id(path);

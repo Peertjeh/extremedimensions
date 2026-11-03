@@ -431,9 +431,13 @@ public final class ElderStrikes {
 				ElderTerrain.mark(s.level, s.x, s.y, s.z, s.radius, 0.7, ElderTerrain.Mark.SOUL);
 			}
 			case SNARE -> {
-				WorldFx.soundIn(dim, "minecraft:block.tripwire.attach", "hostile", s.x, s.y, s.z, 2f, 0.4f);
-				WorldFx.soundIn(dim, "minecraft:entity.leash_knot.place", "hostile", s.x, s.y, s.z, 2f, 0.6f);
+				// The Knot Mother's Snare closes: a rope cinched with a heavy twang and her bronze, the floor jolting under it
+				WorldFx.soundIn(dim, "extremedimensions:elder.knot_mother.close", "hostile", s.x, s.y + 1, s.z, 3f, 1f);
 				WorldFx.particleIn(s.level, "minecraft:end_rod", s.x, s.y + 0.3, s.z, s.radius * 0.5, 0.2, s.radius * 0.5, 0.0, 12);
+				WorldFx.particleIn(s.level, "minecraft:reverse_portal", s.x, s.y + 0.4, s.z, s.radius * 0.4, 0.3, s.radius * 0.4, 0.1, 24);
+				if (b != null) {
+					ElderFx.shake(b, s.x, s.z, 10, 0.4f, 10);
+				}
 			}
 			default -> {
 				WorldFx.soundIn(dim, "minecraft:entity.arrow.hit", "hostile", s.x, s.y, s.z, 2f, 0.5f);
@@ -598,9 +602,13 @@ public final class ElderStrikes {
 			int elder = AttackFx.of(boss);
 			AttackFx.line(b.level, elder, b.thread ? AttackFx.LINE_THREAD_TAUT : AttackFx.LINE_BEAM, b.fx, b.fy, b.fz, ex, ey + (ground ? 0.2 : 0), ez, 2);
 			if (b.thread) {
+				// It scores the floor as it runs: sparks and shards off its end, and a slash of cracked light left behind
+				// (its sound is the crack of the sweep itself, heard as it begins)
+				if (b.age % 2 == 0) {
+					AttackFx.impact(b.level, elder, AttackFx.IMPACT_CUT, ex, ey, ez, 1.0);
+				}
 				if (b.age % 4 == 0) {
-					AttackFx.impact(b.level, elder, AttackFx.IMPACT_CUT, ex, ey, ez, 0.8);
-					WorldFx.soundIn(dim, "minecraft:block.tripwire.click_on", "hostile", ex, ey, ez, 1.2f, 0.5f);
+					AttackFx.impact(b.level, elder, AttackFx.IMPACT_SCORCH, ex, ey, ez, 1.2);
 				}
 			} else if (ground) {
 				if (b.age % 3 == 0) {

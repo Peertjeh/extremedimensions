@@ -205,6 +205,13 @@ final class ElderSpawn {
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		double k = share(t, length);
 		double x = b.getX(), y = b.getY() + 9, z = b.getZ();
+		// The Knot Mother forms to a sound of her own: a drone out of nothing, threads tightening, a heartbeat ever faster
+		// and her choir rising, drawn up to the moment she tears free (in step with however long the forming is set to take)
+		boolean knot = b instanceof KnotMother;
+		if (knot && t <= 1) {
+			float rate = (float) Math.max(0.5, Math.min(2.0, 6.1 / (length * 0.88 / 20.0)));
+			WorldFx.soundIn(dim, "extremedimensions:elder.knot_mother.wake", "hostile", x, y, z, 6f, rate);
+		}
 		if (k < 0.55 && ((int) t) % 3 == 0) {
 			// Threads of light coming down out of the sky to one point
 			for (int i = 0; i < 3; i++) {
@@ -212,7 +219,7 @@ final class ElderSpawn {
 				ElderFx.line(dim, "minecraft:end_rod", x + Math.cos(a) * r, y + 18 + rnd.nextDouble(6), z + Math.sin(a) * r, x, y, z, 22);
 			}
 		}
-		if (((int) t) % 8 == 0 && k < 0.88) {
+		if (!knot && ((int) t) % 8 == 0 && k < 0.88) {
 			WorldFx.soundIn(dim, "minecraft:block.amethyst_block.chime", "hostile", x, y, z, 3f, (float) (0.5 + k * 1.2));
 		}
 		if (k >= 0.2 && k < 0.88 && ((int) t) % 2 == 0) {
@@ -231,8 +238,13 @@ final class ElderSpawn {
 			// It tears open
 			WorldFx.particleIn(level, "minecraft:end_rod", x, y, z, 2, 3, 2, 0.35, 160);
 			WorldFx.particleIn(level, "extremedimensions:soul_mote", x, y, z, 3, 4, 3, 0.2, 140);
-			WorldFx.soundIn(dim, "minecraft:block.amethyst_block.break", "hostile", x, y, z, 6f, 0.5f);
-			WorldFx.soundIn(dim, "minecraft:entity.warden.sonic_boom", "hostile", x, y, z, 3f, 1.4f);
+			if (knot) {
+				WorldFx.soundIn(dim, "extremedimensions:elder.knot_mother.phase", "hostile", x, y, z, 6f, 1f);
+				WorldFx.particleIn(level, "minecraft:reverse_portal", x, y, z, 3, 4, 3, 0.3, 160);
+			} else {
+				WorldFx.soundIn(dim, "minecraft:block.amethyst_block.break", "hostile", x, y, z, 6f, 0.5f);
+				WorldFx.soundIn(dim, "minecraft:entity.warden.sonic_boom", "hostile", x, y, z, 3f, 1.4f);
+			}
 			ElderFx.ring(level, "minecraft:end_rod", x, b.getY() - 2, z, 8, 50, 0);
 		}
 	}

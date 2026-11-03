@@ -53,6 +53,30 @@ public class KnotMotherTests {
 		return m;
 	}
 
+	/**
+	 * She sounds like herself (3.24): a sound of her own for her body (hurt, at rest, dying, drifting, roaring) and for each
+	 * blow of hers (her voice before it, her Threadline drawn and swept, her Snare woven and closing, threads cast, a flyer
+	 * caught, her anchors struck and broken, her laid bare, her phases, her ultimate, her forming), every one on the Hostile
+	 * Creatures slider (but her humming at rest, on Ambient like the other Elders'), and none of them the Last Weaver's.
+	 */
+	@GameTest
+	public void theKnotMotherHasAVoiceOfHerOwn(GameTestHelper helper) {
+		for (String n : new String[] {"voice", "threadline", "lash", "knot", "close", "cast", "snare", "anchor_hit", "anchor_break", "exposed",
+				"phase", "ultimate", "wake", "hurt", "ambient", "death", "step", "roar"}) {
+			String id = "extremedimensions:elder.knot_mother." + n;
+			check(helper, net.minecraft.core.registries.BuiltInRegistries.SOUND_EVENT.containsKey(
+					net.minecraft.resources.Identifier.fromNamespaceAndPath("extremedimensions", "elder.knot_mother." + n)), "no sound %s", id);
+			if (!n.equals("ambient")) {
+				check(helper, com.extremedimensions.server.WorldFx.category(id) == net.minecraft.sounds.SoundSource.HOSTILE, "%s is not on Hostile Creatures", id);
+			}
+		}
+		check(helper, com.extremedimensions.registry.ModSounds.ELDER_HURT[3].location().getPath().equals("elder.knot_mother.hurt")
+				&& com.extremedimensions.registry.ModSounds.ELDER_DEATH[3].location().getPath().equals("elder.knot_mother.death")
+				&& com.extremedimensions.registry.ModSounds.ELDER_AMBIENT[3].location().getPath().equals("elder.knot_mother.ambient"),
+				"the Knot Mother's body does not sound as her own");
+		helper.succeed();
+	}
+
 	private static void rest(KnotMother m) {
 		if (m != null && m.isAlive()) {
 			WeaverService.fade(m);
