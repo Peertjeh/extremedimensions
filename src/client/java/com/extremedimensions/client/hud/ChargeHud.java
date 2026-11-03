@@ -60,7 +60,9 @@ public class ChargeHud implements HudElement {
 
 	private static void chips(GuiGraphicsExtractor g, Font font, int w, int h, long now) {
 		boolean tether = ClientState.dimCode == 0 && ClientState.tetherDist >= 0;
-		int count = (ClientState.nearNether >= 0 ? 1 : 0) + (ClientState.nearEnd >= 0 ? 1 : 0) + (tether ? 1 : 0);
+		// In danger (leaving would cost curses): a red chip heads the column
+		boolean danger = com.extremedimensions.client.state.ClientDanger.active();
+		int count = (ClientState.nearNether >= 0 ? 1 : 0) + (ClientState.nearEnd >= 0 ? 1 : 0) + (tether ? 1 : 0) + (danger ? 1 : 0);
 		List<String> guide = guideLines(font);
 		int guideH = guide.isEmpty() ? 0 : guide.size() * 9 + 17;
 		if (guide.isEmpty()) {
@@ -77,7 +79,7 @@ public class ChargeHud implements HudElement {
 		if (corner.bottom()) {
 			// On a narrow screen a bottom corner reaches the hotbar, hearts and hunger: then the stack sits above them
 			float scale = ClientOptions.hudScale() / 100f;
-			int widest = guide.isEmpty() ? CHIP_W : GUIDE_W;
+			int widest = Math.max(guide.isEmpty() ? CHIP_W : GUIDE_W, danger ? DangerChip.width(font) : 0);
 			int left = right ? w - 6 - widest : 6, rightEdge = left + widest;
 			int bar = Math.round(121 / scale);
 			if (rightEdge > w / 2 - bar && left < w / 2 + bar) {
@@ -104,6 +106,10 @@ public class ChargeHud implements HudElement {
 			if (corner.bottom()) {
 				y += guideH + 5;
 			}
+		}
+		if (danger) {
+			DangerChip.hud(g, font, right ? w - 6 : 6, y, right, now);
+			y += 26;
 		}
 		if (ClientState.nearNether >= 0) {
 			anchorChip(g, font, x, y, right, Ui.tr("hud.extremedimensions.nether_anchor"), ClientState.shownNether, Ui.EMBER,

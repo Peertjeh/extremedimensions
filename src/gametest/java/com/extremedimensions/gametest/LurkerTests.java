@@ -674,6 +674,11 @@ public class LurkerTests {
 				striker.discard();
 				check(helper, "blow".equals(FleeService.danger(p)), "a blow from the tribe left the player in danger %s", FleeService.danger(p));
 				check(helper, FleeService.danger(calm) == null, "a player nothing touched is in danger %s", FleeService.danger(calm));
+				// The lock is shown (3.25.1): to the player on their HUD and in the pause menu, to everyone in the tablist
+				check(helper, FleeService.held(p) && !FleeService.held(calm), "the lock would not be shown rightly (held %s, calm %s)", FleeService.held(p),
+						FleeService.held(calm));
+				check(helper, "Hunted".equals(com.extremedimensions.compat.TabPlaceholders.values(p).get("danger").getString())
+						&& com.extremedimensions.compat.TabPlaceholders.values(calm).get("danger").getString().isEmpty(), "the danger placeholder is wrong");
 				// A swarm: leaving now is a flight from it
 				check(helper, LurkerService.swarm(p), "no swarm came");
 				check(helper, "swarm".equals(FleeService.danger(p)), "a swarm left the player in danger %s", FleeService.danger(p));

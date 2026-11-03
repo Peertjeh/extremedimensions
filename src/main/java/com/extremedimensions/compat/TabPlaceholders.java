@@ -42,7 +42,7 @@ public final class TabPlaceholders {
 
 	/** The placeholders about one player. */
 	public static final List<String> PLAYER = List.of("curses", "curses_beyond", "curses_overworld", "curses_everywhere", "curses_extreme",
-			"abyssal", "badge", "scars", "realm", "status", "time_left", "expeditions", "collapses", "unwoven", "trial_medal");
+			"abyssal", "badge", "scars", "realm", "status", "time_left", "expeditions", "collapses", "unwoven", "trial_medal", "danger");
 	/** The placeholders about the world. */
 	public static final List<String> WORLD = List.of("difficulty", "ending", "tapestry", "new_thread", "trial");
 
@@ -135,6 +135,8 @@ public final class TabPlaceholders {
 		m.put("collapses", text(d.collapses));
 		m.put("unwoven", text(d.unwoven));
 		m.put("trial_medal", text(trialMedal(d)));
+		// Held in danger: leaving now would cost them (so everyone can see who cannot simply log out)
+		m.put("danger", text(com.extremedimensions.penalty.FleeService.held(p) ? "Hunted" : ""));
 		return m;
 	}
 

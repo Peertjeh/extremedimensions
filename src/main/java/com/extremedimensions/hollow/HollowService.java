@@ -104,6 +104,8 @@ public final class HollowService {
 		int wander;
 		/** Called by the Keeper or the Matriarch: not one of the hoard's own young. */
 		boolean brood;
+		/** A companion: when (its ticks) it last chittered a warning aloud. */
+		int warnedAt = -1_000_000;
 		/** Out of a raided hoard: being watched does not stop it, and it steals from anyone. */
 		boolean bold;
 		/** The player it barters with. */
@@ -738,8 +740,23 @@ public final class HollowService {
 	}
 
 	private static void giggle(Entity e) {
+		giggle(e, 0.9f);
+	}
+
+	private static void giggle(Entity e, float volume) {
 		WorldFx.soundIn(e.level().dimension().identifier().toString(), "extremedimensions:hollowling_giggle", "neutral", e.getX(), e.getY() + 0.8, e.getZ(),
-				0.9f, (float) (0.9 + ThreadLocalRandom.current().nextDouble() * 0.3));
+				volume, (float) (0.9 + ThreadLocalRandom.current().nextDouble() * 0.3));
+	}
+
+	/** Whether this is someone's companion Hollowling (on the server; on a client, never). */
+	public static boolean companion(Entity e) {
+		Little st = LITTLES.get(e.getUUID());
+		return st != null && st.mode == Mode.COMPANION;
+	}
+
+	/** How loud a companion is: quiet company (see {@code companion_sound_volume}). */
+	private static float companionVolume() {
+		return (float) Math.max(0, Math.min(1, Config.COMPANION_SOUND_VOLUME));
 	}
 
 	/** A wild Hollowling: plays near the hoard, freezes when watched, sneaks up and steals when you look away. */
@@ -1127,10 +1144,14 @@ public final class HollowService {
 		for (ItemStack s : Loot.roll(level, Loot.HOLLOWLING_GIFT, h.position())) {
 			h.spawnAtLocation(level, s);
 		}
-		WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_bond", "neutral", h.getX(), h.getY() + 0.8, h.getZ(), 0.7f, 1.3f);
+		WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_bond", "neutral", h.getX(), h.getY() + 0.8, h.getZ(),
+				companionVolume(), 1.3f);
 	}
 
-	/** Follows its friend, and chitters towards danger they have not seen. */
+	/**
+	 * Follows its friend, and warns of danger they have not seen: it looks at it and a mote hangs over it, and it chitters
+	 * aloud now and then (no more than every {@code companion_warn_seconds}).
+	 */
 	private static void companion(Hollowling h, Little st, List<Runnable> later) {
 		ServerPlayer owner = WorldFx.server().getPlayerList().getPlayer(st.owner);
 		if (owner == null || owner.level() != h.level()) {
@@ -1160,7 +1181,12 @@ public final class HollowService {
 			for (Monster m : h.level().getEntitiesOfClass(Monster.class, box, m -> m.isAlive() && !(m instanceof Lurker))) {
 				if (!seen(owner, m, 0.6)) {
 					h.getLookControl().setLookAt(m, 30, 30);
-					WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_ambient", "neutral", h.getX(), h.getY() + 0.8, h.getZ(), 1f, 1.4f);
+					int every = Math.max(0, Config.COMPANION_WARN_SECONDS) * 20;
+					if (every > 0 && st.ticks - st.warnedAt >= every) {
+						st.warnedAt = st.ticks;
+						WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_ambient", "neutral", h.getX(), h.getY() + 0.8,
+								h.getZ(), companionVolume(), 1.4f);
+					}
 					WorldFx.particleIn(h.level().dimension().identifier().toString(), "extremedimensions:soul_mote",
 							m.getX(), m.getY() + m.getBbHeight() + 0.3, m.getZ(), 0.1, 0.1, 0.1, 0.0, 3);
 					break;
@@ -1177,7 +1203,7 @@ public final class HollowService {
 		}
 		Entity e = p.level() instanceof ServerLevel sl ? sl.getEntity(id) : null;
 		if (e instanceof Hollowling h && h.distanceToSqr(p) < 16 * 16) {
-			giggle(h);
+			giggle(h, companionVolume());
 			TribeMoves.follow(h, p, 1.5);
 			return true;
 		}

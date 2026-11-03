@@ -219,6 +219,7 @@ them through placeholder-api, so install both on the server. Values are in Engli
 | `%extremedimensions:time_left%` | Time left in the Seam or on the Tether (`4:05`); empty at home |
 | `%extremedimensions:expeditions%`, `collapses`, `unwoven` | Counts |
 | `%extremedimensions:trial_medal%` | Best Rift Trial medal this week (Bronze, Silver, Gold) |
+| `%extremedimensions:danger%` | "Hunted" while the wound is after the player and logging out would cost a curse; empty otherwise |
 | `%extremedimensions:difficulty%` | Easy, Normal, Hard, Extreme or Custom |
 | `%extremedimensions:ending%` | Mended, Severed or Unended |
 | `%extremedimensions:tapestry%` | Panels woven (`4/6`) |

@@ -189,6 +189,52 @@ public class BindingTests {
 		helper.succeed();
 	}
 
+	/**
+	 * Home with a full pack, the Tether is not dropped where the player stands (there it would lie in the portal they came
+	 * through and be carried back beyond): it is kept for them, with its tier and its enchantments, and handed over as soon
+	 * as a slot is free (3.25.1).
+	 */
+	@GameTest
+	public void aTetherWaitsForRoomInAFullPack(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer p = TestPlayers.survivor(helper, "test-full-pack");
+		PlayerData d = DataStore.get(p.getUUID());
+		BlockPos at = helper.absolutePos(new BlockPos(1, 1, 1));
+		String key = Anchor.key(at.getX(), at.getY(), at.getZ());
+		DataStore.anchors().put(key, new Anchor(at.getX(), at.getY(), at.getZ(), Dims.NETHER));
+		int tier = d.tetherTier;
+		try {
+			ItemStack tether = new ItemStack(ModItems.SOUL_WOVEN_TETHER);
+			tether.enchant(ench(level, ModEnchantments.THRIFT), 2);
+			TetherService.tie(p, d, at, tether);
+			check(helper, key.equals(d.tetherAnchor), "the Tether was not tied");
+			for (int i = 0; i < p.getInventory().getContainerSize(); i++) {
+				p.getInventory().setItem(i, new ItemStack(net.minecraft.world.item.Items.COBBLESTONE, 64));
+			}
+			TetherService.clear(p, d, true);
+			check(helper, d.tetherAnchor == null, "the Tether was not untied");
+			check(helper, d.tetherOwed != null && d.tetherOwed.size() == 1, "the Tether was not kept for the player (%s)", d.tetherOwed);
+			boolean dropped = !level.getEntitiesOfClass(ItemEntity.class, p.getBoundingBox().inflate(8), e -> TetherService.isTether(e.getItem().getItem()))
+					.isEmpty();
+			check(helper, !dropped, "the Tether was dropped on the ground");
+			TetherService.settle(p, d);
+			check(helper, d.tetherOwed.size() == 1, "the Tether was handed over with no room for it");
+			p.getInventory().setItem(5, ItemStack.EMPTY);
+			TetherService.settle(p, d);
+			check(helper, d.tetherOwed.isEmpty(), "the Tether was not handed over once there was room");
+			check(helper, count(p, ModItems.SOUL_WOVEN_TETHER, ModEnchantments.THRIFT, 2) == 1, "the Tether came back without its tier or its Thrift");
+		} finally {
+			p.getInventory().clearContent();
+			if (d.tetherOwed != null) {
+				d.tetherOwed.clear();
+			}
+			d.tetherTier = tier;
+			TetherService.clear(p, d, false);
+			DataStore.anchors().remove(key);
+		}
+		helper.succeed();
+	}
+
 	/** A Collapse while bound to a Tether with Thrift costs a curse more than one without. */
 	@GameTest
 	public void thriftTakesItsDueAtACollapse(GameTestHelper helper) {

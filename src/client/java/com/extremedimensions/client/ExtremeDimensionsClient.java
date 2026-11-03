@@ -119,6 +119,11 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 			if (screen instanceof ChatScreen chat) {
 				GuideCloseButton.attach(chat);
 			}
+			// In danger, the pause menu says so above its title: its button to leave would cost curses
+			if (screen instanceof net.minecraft.client.gui.screens.PauseScreen) {
+				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
+						com.extremedimensions.client.hud.DangerChip.pause(graphics, client.font, s.width));
+			}
 		});
 
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> ClientState.tick());
@@ -131,6 +136,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ClientState::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.coop.ClientFallen::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.fx.BossCinema::reset));
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.state.ClientDanger::reset));
 		HudElementRegistry.addLast(ExtremeDimensions.id("charge_hud"), new ChargeHud());
 		HudElementRegistry.addLast(ExtremeDimensions.id("stomach_hud"), new StomachHud());
 		HudElementRegistry.addLast(ExtremeDimensions.id("boss_cinema"), new com.extremedimensions.client.fx.BossCinema());
@@ -216,6 +222,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				context.client().execute(() -> com.extremedimensions.client.fx.BossCinema.handle(payload)));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.AttackFxPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.fx.AttackFx.handle(payload)));
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.DangerPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> com.extremedimensions.client.state.ClientDanger.set(payload.why(), payload.seconds(), payload.curses())));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BossMusicPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> {
 					if (payload.stop()) {

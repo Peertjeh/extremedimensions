@@ -3,6 +3,7 @@ package com.extremedimensions.hollow;
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.lurker.LurkerBody;
 import com.extremedimensions.lurker.TribeMoves;
+import com.extremedimensions.config.Config;
 import com.extremedimensions.registry.ModSounds;
 
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -120,9 +121,16 @@ public class Hollowling extends PathfinderMob implements LurkerBody {
 		return ModSounds.HOLLOWLING_DEATH;
 	}
 
+	/** A companion chatters seldom (about every {@code companion_ambient_seconds}); a wild one every ten seconds or so. */
 	@Override
 	public int getAmbientSoundInterval() {
-		return 200;
+		return HollowService.companion(this) ? Math.max(10, Config.COMPANION_AMBIENT_SECONDS) * 20 : 200;
+	}
+
+	/** A companion is quiet company ({@code companion_sound_volume}); a wild one is as loud as it likes. */
+	@Override
+	protected float getSoundVolume() {
+		return HollowService.companion(this) ? (float) Math.max(0, Math.min(1, Config.COMPANION_SOUND_VOLUME)) : super.getSoundVolume();
 	}
 
 	/** It swims with only its head out of the water (see {@link com.extremedimensions.lurker.TribeMoves#swimDepth}). */

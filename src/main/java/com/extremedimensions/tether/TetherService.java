@@ -143,7 +143,11 @@ public final class TetherService {
 			ItemStack back = new ItemStack(tierItem(d.tetherTier));
 			// it comes back with the enchantments it was tied with
 			enchant(back, d.tetherCharms, p.level().registryAccess());
-			WorldFx.give(p, back);
+			if (!p.getInventory().add(back)) {
+				// A full pack: it is kept for them until there is room, never dropped (where they stand, home through a
+				// portal, it would lie in the portal and be carried back beyond)
+				owe(p, d, d.tetherTier, d.tetherCharms);
+			}
 		}
 		d.tetherAnchor = null;
 		d.hasRopeEnd = false;
@@ -151,6 +155,53 @@ public final class TetherService {
 			d.tetherCharms.clear();
 		}
 		DataStore.markDirty();
+	}
+
+	/** A Tether kept for a player whose pack is full: it is handed over as soon as there is room (see {@link #settle}). */
+	static void owe(ServerPlayer p, PlayerData d, int tier, java.util.Map<String, Integer> charms) {
+		StringBuilder entry = new StringBuilder().append(tier).append(';');
+		if (charms != null) {
+			charms.forEach((id, level) -> entry.append(id).append('=').append(level).append(','));
+		}
+		if (d.tetherOwed == null) {
+			d.tetherOwed = new java.util.ArrayList<>();
+		}
+		d.tetherOwed.add(entry.toString());
+		DataStore.markDirty();
+		p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.tether.owed")
+				.withStyle(net.minecraft.ChatFormatting.GOLD));
+	}
+
+	/** Every second: a Tether kept for this player is handed over once there is a free slot in their pack. */
+	public static void settle(ServerPlayer p, PlayerData d) {
+		if (d.tetherOwed == null || d.tetherOwed.isEmpty() || p.getInventory().getFreeSlot() < 0 || !p.isAlive()) {
+			return;
+		}
+		String entry = d.tetherOwed.remove(0);
+		int cut = entry.indexOf(';');
+		int tier = 0;
+		java.util.Map<String, Integer> charms = new java.util.HashMap<>();
+		try {
+			tier = Integer.parseInt(entry.substring(0, Math.max(0, cut)));
+			for (String c : entry.substring(cut + 1).split(",")) {
+				int eq = c.lastIndexOf('=');
+				if (eq > 0) {
+					charms.put(c.substring(0, eq), Integer.parseInt(c.substring(eq + 1)));
+				}
+			}
+		} catch (RuntimeException e) {
+			// a damaged entry still gives back a plain Tether of its tier
+		}
+		ItemStack back = new ItemStack(tierItem(tier));
+		enchant(back, charms, p.level().registryAccess());
+		if (!p.getInventory().add(back)) {
+			d.tetherOwed.add(0, entry);
+			return;
+		}
+		DataStore.markDirty();
+		p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.tether.returned")
+				.withStyle(net.minecraft.ChatFormatting.GOLD));
+		WorldFx.sound(p, "minecraft:block.chain.place", 0.8f, 1.1f);
 	}
 
 	/** A Tether item's enchantments, by id. */

@@ -399,6 +399,31 @@ public final class ModPackets {
 	}
 
 	/**
+	 * Server -> client: whether the wound is after the player right now, so that leaving would cost them curses (see
+	 * FleeService): {@code why} "swarm", "hunt", "keeper", "raid", "elder" or "blow" ("" when it is not), {@code seconds}
+	 * how long a blow keeps them in danger yet (-1 while what hunts them lasts), {@code curses} what leaving would cost.
+	 */
+	public record DangerPayload(String why, int seconds, int curses) implements CustomPacketPayload {
+		public static final Type<DangerPayload> TYPE = new Type<>(ExtremeDimensions.id("danger"));
+		public static final StreamCodec<FriendlyByteBuf, DangerPayload> CODEC = StreamCodec.ofMember(DangerPayload::write, DangerPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(why, 16);
+			buf.writeVarInt(seconds + 1);
+			buf.writeVarInt(curses);
+		}
+
+		private static DangerPayload read(FriendlyByteBuf buf) {
+			return new DangerPayload(buf.readUtf(16), buf.readVarInt() - 1, buf.readVarInt());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
 	 * Server -> client: an Elder's fight music (0 the Matriarch, 1 the Ferryman, 2 the Last Weaver): a track asked for
 	 * again (it plays while asked for), or, with {@code stop}, a fight's track ended (-1 with stop: every track).
 	 */

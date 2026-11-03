@@ -161,6 +161,11 @@ public class PlayerData {
 	public int tetherTier = 0;
 	/** The bound Tether's enchantments (id to level): the item is tied into the anchor, its charms are kept here. */
 	public Map<String, Integer> tetherCharms = new HashMap<>();
+	/**
+	 * Tethers that came back to a full inventory, kept until there is room for them (each "tier;enchantment=level,...").
+	 * (Dropped where the player stood they could lie in the very portal they came home through and be carried back.)
+	 */
+	public List<String> tetherOwed = new ArrayList<>();
 	/** Homebound things taken up at a death beyond the wound, waiting for the respawn (each one an item stack as JSON). */
 	public List<String> homebound = new ArrayList<>();
 	/** Atonement an echo of this player's Collapse gave back while they were away (granted when they are next in). */

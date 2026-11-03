@@ -13,10 +13,12 @@ import com.extremedimensions.elder.MatriarchService;
 import com.extremedimensions.elder.WeaverService;
 import com.extremedimensions.hollow.HollowService;
 import com.extremedimensions.lurker.LurkerService;
+import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 import com.extremedimensions.tribe.RaidService;
 
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -40,9 +42,49 @@ public final class FleeService {
 
 	/** Player -> server tick of the last blow a creature of the wound dealt them. */
 	private static final Map<UUID, Integer> STRUCK = new HashMap<>();
+	/** Player -> what their screen was last told of their danger ("why:seconds:curses", "" for none). */
+	private static final Map<UUID, String> SHOWN = new HashMap<>();
 
 	public static void clear() {
 		STRUCK.clear();
+		SHOWN.clear();
+	}
+
+	/**
+	 * Every server tick (each half second at work): every player is shown whether leaving now would cost them, and why,
+	 * and for a blow how long it holds them yet (see DangerPayload; the client shows it on the HUD and in the pause menu).
+	 */
+	public static void tick(MinecraftServer s) {
+		if (s.getTickCount() % 10 != 0) {
+			return;
+		}
+		int now = s.getTickCount();
+		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
+			String why = locked(p) ? danger(p) : null;
+			int seconds = -1;
+			if ("blow".equals(why)) {
+				Integer at = STRUCK.get(p.getUUID());
+				seconds = at == null ? 0 : Math.max(1, (int) Math.ceil((Math.max(0, Config.FLEE_DANGER_SECONDS) * 20 - (now - at)) / 20.0));
+			}
+			String state = why == null ? "" : why + ":" + seconds + ":" + Config.FLEE_CURSES;
+			if (!state.equals(SHOWN.getOrDefault(p.getUUID(), ""))) {
+				SHOWN.put(p.getUUID(), state);
+				if (ServerPlayNetworking.canSend(p, ModPackets.DangerPayload.TYPE)) {
+					ServerPlayNetworking.send(p, new ModPackets.DangerPayload(why == null ? "" : why, seconds, Math.max(0, Config.FLEE_CURSES)));
+				}
+			}
+		}
+		SHOWN.keySet().removeIf(id -> s.getPlayerList().getPlayer(id) == null);
+	}
+
+	/** Whether leaving now could cost this player at all (flight is not costed for the creative, spectators or the fallen). */
+	private static boolean locked(ServerPlayer p) {
+		return Config.FLEE_CURSES > 0 && Dims.ours(p) && p.isAlive() && !p.isCreative() && !p.isSpectator() && !FallenService.fallen(p);
+	}
+
+	/** Whether this player is held in danger now, so that leaving would cost them (for the placeholders and the tests). */
+	public static boolean held(ServerPlayer p) {
+		return locked(p) && danger(p) != null;
 	}
 
 	/** After damage: a blow from one of the wound's creatures puts a player in danger for a while. */
@@ -87,6 +129,7 @@ public final class FleeService {
 		boolean fled = Config.FLEE_CURSES > 0 && (s.isRunning() || !s.isDedicatedServer());
 		String why = fled && p.isAlive() && !p.isCreative() && !p.isSpectator() && !FallenService.fallen(p) ? danger(p) : null;
 		STRUCK.remove(p.getUUID());
+		SHOWN.remove(p.getUUID());
 		if (why != null) {
 			mark(p, why);
 		}

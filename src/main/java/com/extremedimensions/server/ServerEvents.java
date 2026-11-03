@@ -630,6 +630,7 @@ public final class ServerEvents {
 
 	private static void work(MinecraftServer s) {
 		com.extremedimensions.compat.TabPlaceholders.tick(s);
+		com.extremedimensions.penalty.FleeService.tick(s);
 		com.extremedimensions.compat.StatsExport.tick(s);
 		// (each part timed while the performance tests listen; see TickProfile)
 		long lap = TickProfile.start();
@@ -714,6 +715,7 @@ public final class ServerEvents {
 			}
 			if (beat % 20 == 0) {
 				com.extremedimensions.tribe.Standing.second(p, d);
+				TetherService.settle(p, d);
 			}
 			if (beat % 40 == 7) {
 				com.extremedimensions.journal.Bestiary.scan(p);

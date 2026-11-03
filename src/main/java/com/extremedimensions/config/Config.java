@@ -613,6 +613,15 @@ public final class Config {
 	public static int COMPANION_GIFT_MINUTES = 20;
 	/** Chance that a companion Hollowling chases off a Lurker about to take something from you. */
 	public static double COMPANION_GUARD_CHANCE = 0.6;
+	/** How loud a companion Hollowling is (its chatter, its warnings, its gifts, its hurt), as a share of a wild one's. */
+	public static double COMPANION_SOUND_VOLUME = 0.3;
+	/** Seconds, about, between a companion Hollowling's idle chatter. */
+	public static int COMPANION_AMBIENT_SECONDS = 90;
+	/**
+	 * Seconds at least between a companion Hollowling's chittered warnings of danger you have not seen (0 = it warns only by
+	 * looking at the danger, a mote over it).
+	 */
+	public static int COMPANION_WARN_SECONDS = 30;
 	/** 1 = hoards are guarded by a Keeper, 0 = never. */
 	public static int KEEPER_ENABLED = 1;
 	/** Damage when a Keeper reaches in after a prey it sees but cannot get at, and drags them out (half-hearts). */
@@ -1733,6 +1742,7 @@ public final class Config {
 				{"hollowling_swarm_curse_chance", 0, 1}, {"hollowling_swarm_curses_max", 0, 9}, {"fragment_atone_share", 0.01, 1},
 				{"fragment_max_per_stack", 1, 64}, {"keeper_reach_damage", 0, 40},
 				{"flee_curses", 0, 5}, {"flee_danger_seconds", 0, 120}, {"flee_returns", 0, 1},
+				{"companion_sound_volume", 0, 1}, {"companion_ambient_seconds", 10, 1200}, {"companion_warn_seconds", 0, 600},
 				{"lurker_blocked_seconds", 1, 30}, {"lurker_bolt_damage", 0, 40}, {"lurker_bolt_seconds", 1, 60}, {"lurker_young", 0, 6},
 				{"lurker_young_seconds", 5, 120},
 				{"tribe_gift_minutes", 0, 240}, {"tribe_gift_cost", 1, 10}, {"atone_kill_area_shared", 0, 1}, {"atone_spawner_radius", 0, 64}, {"coop_burden_relief_per_day", 0, 100},

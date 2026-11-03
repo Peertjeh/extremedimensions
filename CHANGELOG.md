@@ -1,5 +1,24 @@
 # Changelog
 
+## 3.25.1: Quiet Company
+
+### Changes
+- **A companion Hollowling is quiet company.** It chattered every ten seconds or so and chittered aloud every two
+  seconds at any monster you had not seen, at full volume. Now it chatters about every ninety seconds
+  (`companion_ambient_seconds`), warns aloud at most every thirty seconds (`companion_warn_seconds`; between those it
+  still looks at the danger and a mote hangs over it), and everything it says is at 30% of a wild one's volume
+  (`companion_sound_volume`). Wild Hollowlings are as loud as ever.
+- **You can see when leaving would cost you.** While the wound is after you (a swarm, a hunting Lurker, the Keeper, a
+  raid, an Elder, or a blow from one of its creatures in the last `flee_danger_seconds`), logging out costs a curse when
+  you come back. A red chip now heads your meters on the HUD, saying what holds you and what leaving would cost, with a
+  countdown for a blow; the pause menu says it above its title, where the button to leave is. For a server's tablist,
+  `%extremedimensions:danger%` reads "Hunted" for everyone held, so others can see it too.
+
+### Fixes
+- **A Tether no longer goes back to the Nether.** Home with a full pack, the returned Tether was dropped where you stood:
+  in the portal you came through, which carried it straight back. It is now kept for you, with its tier and its
+  enchantments, and comes back into your pack the moment a slot is free.
+
 ## 3.25.0: Mother of Knots
 
 The Knot Mother fought to the Last Weaver's music. Now her fight has a theme of its own, "Mother of Knots", composed
