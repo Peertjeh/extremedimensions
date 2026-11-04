@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.26.2: Called By Name
+
+### Changes
+- **`/tether lurker <kind> <player>`.** Every kind the command calls (the Lurker's watch, stalk, hunt, drain and swarm,
+  the Cave and Sculk Lurkers, the Magpie, the Wick, the Tidewalker, the Gatebreaker, the Lockwarden, the Threadbiter,
+  the Edgecrawler and the Cragback) now takes a player, or a selector such as `@a`, after it: the creature comes near
+  that player and is set on them, not on whoever typed it. Without a name it comes for you, as before. Operators only.
+
 ## 3.26.1: Bound Near Its Source
 
 ### Changes

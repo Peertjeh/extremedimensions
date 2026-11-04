@@ -65,22 +65,8 @@ public final class TetherCommand {
 						.executes(c -> show(c.getSource()))
 						.then(Commands.literal("on").executes(c -> set(c.getSource(), true)))
 						.then(Commands.literal("off").executes(c -> set(c.getSource(), false))))
-				.then(Commands.literal("lurker").requires(op)
-						.then(Commands.literal("watch").executes(c -> lurker(c.getSource(), "watch")))
-						.then(Commands.literal("stalk").executes(c -> lurker(c.getSource(), "stalk")))
-						.then(Commands.literal("hunt").executes(c -> lurker(c.getSource(), "hunt")))
-						.then(Commands.literal("swarm").executes(c -> lurker(c.getSource(), "swarm")))
-						.then(Commands.literal("drain").executes(c -> lurker(c.getSource(), "drain")))
-						.then(Commands.literal("cave").executes(c -> lurker(c.getSource(), "cave")))
-						.then(Commands.literal("sculk").executes(c -> lurker(c.getSource(), "sculk")))
-						.then(Commands.literal("magpie").executes(c -> lurker(c.getSource(), "magpie")))
-						.then(Commands.literal("wick").executes(c -> lurker(c.getSource(), "wick")))
-						.then(Commands.literal("tidewalker").executes(c -> lurker(c.getSource(), "tidewalker")))
-						.then(Commands.literal("gatebreaker").executes(c -> lurker(c.getSource(), "gatebreaker")))
-						.then(Commands.literal("lockwarden").executes(c -> lurker(c.getSource(), "lockwarden")))
-						.then(Commands.literal("threadbiter").executes(c -> lurker(c.getSource(), "threadbiter")))
-						.then(Commands.literal("edgecrawler").executes(c -> lurker(c.getSource(), "edgecrawler")))
-						.then(Commands.literal("cragback").executes(c -> lurker(c.getSource(), "cragback"))))
+				// Any kind of Lurker, near the operator or near the players named after it (and set on them)
+				.then(lurkerCommand(op))
 				.then(Commands.literal("hoard").requires(op).executes(c -> hoard(c.getSource())))
 				.then(Commands.literal("boss").requires(op)
 						.then(Commands.literal("matriarch").executes(c -> boss(c.getSource(), "matriarch")))
@@ -316,10 +302,52 @@ public final class TetherCommand {
 		return 1;
 	}
 
+	/** Every kind of Lurker the command calls: the Lurker's own moods first, then its kin. */
+	static final java.util.List<String> LURKER_KINDS = java.util.List.of("watch", "stalk", "hunt", "swarm", "drain", "cave", "sculk",
+			"magpie", "wick", "tidewalker", "gatebreaker", "lockwarden", "threadbiter", "edgecrawler", "cragback");
+
+	/**
+	 * {@code /tether lurker <kind> [players]}: a Lurker of that kind near the operator, or (3.26.1) near each player named
+	 * or selected after it, set on that player: the one it watches, stalks, hunts or robs.
+	 */
+	private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> lurkerCommand(
+			java.util.function.Predicate<CommandSourceStack> op) {
+		var root = Commands.literal("lurker").requires(op);
+		for (String kind : LURKER_KINDS) {
+			root.then(Commands.literal(kind).executes(c -> lurker(c.getSource(), kind))
+					.then(Commands.argument("target", net.minecraft.commands.arguments.EntityArgument.players())
+							.executes(c -> lurkerFor(c.getSource(), kind, net.minecraft.commands.arguments.EntityArgument.getPlayers(c, "target")))));
+		}
+		return root;
+	}
+
+	/** Summons a Lurker of the given kind near each of the players, set on them. */
+	private static int lurkerFor(CommandSourceStack src, String mode, java.util.Collection<ServerPlayer> targets) {
+		int done = 0;
+		for (ServerPlayer p : targets) {
+			boolean ok = summonLurker(p, mode);
+			if (ok) {
+				done++;
+				src.sendSuccess(() -> Component.translatable("commands.extremedimensions.lurker.summoned_for", p.getDisplayName()), true);
+			} else {
+				src.sendFailure(Component.translatable("commands.extremedimensions.lurker.failed_for", p.getDisplayName(),
+						Component.translatable(failedKey(mode))));
+			}
+		}
+		return done;
+	}
+
 	/** Summons a Lurker in the given mode near the executing player (for testing and showcases). */
 	private static int lurker(CommandSourceStack src, String mode) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
 		ServerPlayer p = src.getPlayerOrException();
-		boolean ok = switch (mode) {
+		boolean ok = summonLurker(p, mode);
+		src.sendSuccess(() -> Component.translatable(ok ? "commands.extremedimensions.lurker.summoned" : failedKey(mode)), false);
+		return ok ? 1 : 0;
+	}
+
+	/** A Lurker of the given kind near this player, set on them. True when one came. */
+	static boolean summonLurker(ServerPlayer p, String mode) {
+		return switch (mode) {
 			case "cave" -> com.extremedimensions.lurker.CaveLurkerService.summon(p);
 			case "sculk" -> com.extremedimensions.lurker.SculkLurkerService.summon(p);
 			case "magpie" -> com.extremedimensions.lurker.MagpieService.summon(p);
@@ -332,7 +360,11 @@ public final class TetherCommand {
 			case "cragback" -> com.extremedimensions.lurker.CragbackService.summon(p);
 			default -> LurkerService.summon(p, mode);
 		};
-		String failed = switch (mode) {
+	}
+
+	/** What to say when a Lurker of this kind found no place. */
+	private static String failedKey(String mode) {
+		return switch (mode) {
 			case "cave" -> "commands.extremedimensions.lurker.failed_cave";
 			case "sculk" -> "commands.extremedimensions.lurker.failed_sculk";
 			case "magpie" -> "commands.extremedimensions.lurker.failed_magpie";
@@ -345,8 +377,6 @@ public final class TetherCommand {
 			case "cragback" -> "commands.extremedimensions.lurker.failed_cragback";
 			default -> "commands.extremedimensions.lurker.failed";
 		};
-		src.sendSuccess(() -> Component.translatable(ok ? "commands.extremedimensions.lurker.summoned" : failed), false);
-		return ok ? 1 : 0;
 	}
 
 	/** Builds an old hoard in front of the executing player, with its Hollowlings and its Keeper. */

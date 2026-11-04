@@ -173,6 +173,8 @@
   "subtitles.extremedimensions.lurker_drain": "An anchor is drained",
   "subtitles.extremedimensions.lurker_vanish": "The Lurker vanishes",
   "commands.extremedimensions.lurker.summoned": "A Lurker is watching.",
+  "commands.extremedimensions.lurker.summoned_for": "One of the tribe comes for %s.",
+  "commands.extremedimensions.lurker.failed_for": "None of the tribe came for %s: %s",
   "commands.extremedimensions.lurker.failed": "No place for a Lurker here (drain needs a charged anchor 14-48 blocks away).",
   "commands.extremedimensions.lurker.failed_cave": "No place for a Cave Lurker here (it needs open ground its body fits, 6-16 blocks away, from where it can walk to you).",
   "commands.extremedimensions.lurker.failed_sculk": "No place for a Sculk Lurker here (it needs open ground its body fits, 8-16 blocks away, from where it can walk to you).",

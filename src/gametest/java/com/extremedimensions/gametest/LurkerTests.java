@@ -452,6 +452,38 @@ public class LurkerTests {
 		});
 	}
 
+	/**
+	 * {@code /tether lurker <kind> <player>} (3.26.1): every kind takes a player (or a selector) after it, and calls its
+	 * Lurker on them rather than on whoever typed it. A kind that finds no place there fails without an error.
+	 */
+	@GameTest(environment = Alone.LURKER_NAMED, maxTicks = 80)
+	public void theLurkerCommandTakesAPlayerAfterEveryKind(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer p = TestPlayers.survivor(helper, "lurker-named");
+		place(helper, p, 3.5, 0, 3.5);
+		helper.runAfterDelay(10, () -> {
+			var server = level.getServer();
+			var source = server.createCommandSourceStack().withSuppressedOutput();
+			var dispatcher = server.getCommands().getDispatcher();
+			try {
+				for (String kind : java.util.List.of("watch", "stalk", "hunt", "drain", "swarm", "cave", "sculk", "magpie", "wick", "tidewalker",
+						"gatebreaker", "lockwarden", "threadbiter", "edgecrawler", "cragback")) {
+					var parsed = dispatcher.parse("tether lurker " + kind + " " + p.getScoreboardName(), source);
+					check(helper, !parsed.getReader().canRead() && parsed.getExceptions().isEmpty(), "/tether lurker %s takes no player", kind);
+				}
+				dispatcher.execute("tether lurker watch " + p.getScoreboardName(), source);
+				dispatcher.execute("tether lurker cragback @a[name=" + p.getScoreboardName() + "]", source);
+			} catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+				throw helper.assertionException("the command did not take a player: %s", e.getMessage());
+			} finally {
+				for (Mob m : level.getEntitiesOfClass(Mob.class, new AABB(p.blockPosition()).inflate(96), e -> e instanceof Lurker)) {
+					m.discard();
+				}
+			}
+			helper.succeed();
+		});
+	}
+
 	/** Extreme: the whole tribe at once, the young glowing red and biting. */
 	@GameTest(environment = Alone.LURKER_SWARM, maxTicks = 260)
 	public void aSwarmComesAllAtOnceAndBites(GameTestHelper helper) {
