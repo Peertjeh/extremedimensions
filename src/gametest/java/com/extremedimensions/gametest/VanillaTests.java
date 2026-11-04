@@ -237,26 +237,27 @@ public class VanillaTests {
 
 	/**
 	 * 3.27.3: a barrel of the Seam is stocked once, ever. An island built again after it was left half done runs its
-	 * actions again; a barrel already stocked and emptied stays empty.
+	 * actions again; a barrel already stocked and emptied stays empty. (Read in the test world: the Seam's barrels are
+	 * stocked "once", as here; a barrel elsewhere is stocked each time it is asked.)
 	 */
 	@GameTest
 	public void aSeamBarrelIsStockedOnlyOnce(GameTestHelper helper) {
-		net.minecraft.server.level.ServerLevel seam = helper.getLevel().getServer().getLevel(SeamService.SEAM);
-		check(helper, seam != null, "there is no Seam");
-		BlockPos at = new BlockPos(12345, 150, 12345);
+		BlockPos at = helper.absolutePos(new BlockPos(1, 1, 1));
 		String key = at.getX() + "," + at.getY() + "," + at.getZ();
-		seam.getChunk(at.getX() >> 4, at.getZ() >> 4);
-		seam.setBlock(at, Blocks.BARREL.defaultBlockState(), 3);
+		Container c = barrel(helper, new BlockPos(1, 1, 1));
 		try {
-			Container c = (Container) seam.getBlockEntity(at);
-			SeamService.fillLoot(seam, at, 2);
-			check(helper, !c.isEmpty(), "a fresh barrel of the Seam was not stocked");
-			check(helper, SeamService.stocked(seam, at), "the barrel is not remembered as stocked");
+			check(helper, !SeamService.stocked(at), "a barrel never stocked is remembered as stocked");
+			SeamService.fillLoot(helper.getLevel(), at, 2, true);
+			check(helper, !c.isEmpty(), "a fresh barrel was not stocked");
+			check(helper, SeamService.stocked(at), "the barrel is not remembered as stocked");
+			check(helper, !SeamService.stocked(helper.getLevel(), at), "a barrel outside the Seam reads as one of the Seam's");
 			c.clearContent();
-			SeamService.fillLoot(seam, at, 2);
-			check(helper, c.isEmpty(), "an emptied barrel of the Seam was stocked again");
+			SeamService.fillLoot(helper.getLevel(), at, 2, true);
+			check(helper, c.isEmpty(), "an emptied barrel was stocked again");
+			// Outside the Seam a barrel is stocked each time it is asked (events, tests), as before
+			SeamService.fillLoot(helper.getLevel(), at, 2, false);
+			check(helper, !c.isEmpty(), "asked plainly, the barrel was not stocked");
 		} finally {
-			seam.setBlock(at, Blocks.AIR.defaultBlockState(), 3);
 			DataStore.seamCells().remove("l@" + key);
 			DataStore.seamCells().remove("b@" + key);
 		}

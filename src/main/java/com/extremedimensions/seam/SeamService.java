@@ -1298,10 +1298,15 @@ public final class SeamService {
 	 * the Seam's music disc, now and then, by the config's chances.
 	 */
 	public static void fillLoot(ServerLevel level, BlockPos b, int richness) {
+		fillLoot(level, b, richness, Dims.SEAM.equals(Dims.of(level)));
+	}
+
+	/** As {@link #fillLoot(ServerLevel, BlockPos, int)}; once: only if this spot was never stocked (every barrel of the Seam). */
+	public static void fillLoot(ServerLevel level, BlockPos b, int richness, boolean once) {
 		if (!(level.getBlockEntity(b) instanceof Container c)) {
 			return;
 		}
-		if (Dims.SEAM.equals(Dims.of(level))) {
+		if (once) {
 			// Once a barrel, ever (3.27.3): an island built again after it was left half done (a restart, a crash, work
 			// put off far from everyone) runs its actions again, and must not stock what was already stocked and emptied
 			if (!DataStore.seamCells().add(stockedKey(b))) {
@@ -1351,7 +1356,12 @@ public final class SeamService {
 
 	/** Whether this barrel of the Seam was stocked already (an island built again neither refills nor puts it back). */
 	public static boolean stocked(ServerLevel level, BlockPos b) {
-		return Dims.SEAM.equals(Dims.of(level)) && DataStore.seamCells().contains(stockedKey(b));
+		return Dims.SEAM.equals(Dims.of(level)) && stocked(b);
+	}
+
+	/** Whether a barrel at this spot was stocked once already (whatever world the spot is read in). */
+	public static boolean stocked(BlockPos b) {
+		return DataStore.seamCells().contains(stockedKey(b));
 	}
 
 	/** Operator command: straight into the Seam, as if through a rift at the player's feet. */
