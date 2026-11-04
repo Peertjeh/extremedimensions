@@ -87,9 +87,14 @@ public final class Tetherite {
 		return worn(p) + (isGear(p.getMainHandItem()) ? 1 : 0) + (isGear(p.getOffhandItem()) ? 1 : 0);
 	}
 
+	/** A drawback's value as it acts: none while the drawbacks are switched off ({@code tetherite_drawbacks} 0), never below 0. */
+	public static double drawback(double value) {
+		return Config.TETHERITE_DRAWBACKS > 0 ? Math.max(0, value) : 0;
+	}
+
 	/** Tetherite's weight on its wearer's speed: a share off for each piece worn (never more than nine tenths). */
 	public static double weight(Player p) {
-		return p.isCreative() || p.isSpectator() ? 0 : -Math.min(0.9, Math.max(0, Config.TETHERITE_WEIGHT) * worn(p));
+		return p.isCreative() || p.isSpectator() ? 0 : -Math.min(0.9, drawback(Config.TETHERITE_WEIGHT) * worn(p));
 	}
 
 	/** Sets Tetherite's weight on a player's speed, once a second, and only when it changed. */
@@ -103,7 +108,7 @@ public final class Tetherite {
 
 	/** How much more often the Lurkers come for a player for the Tetherite they bear (1 for none). */
 	public static double lure(Player p) {
-		return 1 + Math.max(0, Config.TETHERITE_LURE) * borne(p);
+		return 1 + drawback(Config.TETHERITE_LURE) * borne(p);
 	}
 
 	/** What the full set takes off the drain (1 when the set is not worn), held to the drain floor by the caller. */

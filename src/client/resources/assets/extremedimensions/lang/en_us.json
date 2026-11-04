@@ -3461,5 +3461,8 @@
   "gui.extremedimensions.admin.silent_tip": "When on, the player is not told what you change: no toast, no message in chat, nothing in their newest curses. The curses act at once all the same, and the server log still notes every change.",
   "gui.extremedimensions.admin.add_tip_silent": "Lay one stack on, silently: it acts at once, but the player is not told",
   "gui.extremedimensions.admin.lift_tip_silent": "Lift one stack off, silently: no scar, no reward, and the player is not told",
-  "gui.extremedimensions.admin.clear_tip_silent": "Lifts every curse %s carries, silently: no scars, and they are not told. Press twice."
+  "gui.extremedimensions.admin.clear_tip_silent": "Lifts every curse %s carries, silently: no scars, and they are not told. Press twice.",
+  "gui.extremedimensions.settings.section.tetherite_drawbacks": "Tetherite: drawbacks",
+  "config.extremedimensions.tetherite_drawbacks": "Tetherite: drawbacks on",
+  "config.extremedimensions.tetherite_drawbacks.desc": "1 = Tetherite's drawbacks act: its weight, its hunger and its call to the Lurkers, each at the value below. 0 = none of them, whatever the values say. Its strengths stay either way."
 }

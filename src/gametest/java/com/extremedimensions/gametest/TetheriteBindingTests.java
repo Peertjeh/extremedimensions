@@ -256,6 +256,37 @@ public class TetheriteBindingTests {
 		helper.succeed();
 	}
 
+	/** 3.27.4: with its drawbacks switched off, Tetherite weighs nothing, feeds on no one and calls no Lurker; on again, it does. */
+	@GameTest
+	public void tetheritesDrawbacksCanBeSwitchedOff(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "tetherite-free");
+		PlayerData d = DataStore.get(p.getUUID());
+		int was = Config.TETHERITE_DRAWBACKS;
+		Identifier weight = Identifier.fromNamespaceAndPath("extremedimensions", "tetherite_weight");
+		try {
+			float plain = Charms.exhaustion(p);
+			p.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.TETHERITE_CHESTPLATE));
+			p.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.TETHERITE_SWORD));
+			Config.TETHERITE_DRAWBACKS = 0;
+			near(helper, Tetherite.weight(p), 0, "the weight with the drawbacks off");
+			near(helper, Tetherite.lure(p), 1, "the call to the Lurkers with the drawbacks off");
+			near(helper, Charms.exhaustion(p) - plain, 0, "the hunger with the drawbacks off");
+			d.tetheriteWeight = Double.NaN;
+			Tetherite.weigh(p, d);
+			check(helper, p.getAttribute(Attributes.MOVEMENT_SPEED).getModifier(weight) == null, "the speed carries a weight with the drawbacks off");
+			Config.TETHERITE_DRAWBACKS = 1;
+			near(helper, Tetherite.weight(p), -Config.TETHERITE_WEIGHT, "the weight with the drawbacks on again");
+			near(helper, Tetherite.lure(p), 1 + 2 * Config.TETHERITE_LURE, "the call with the drawbacks on again");
+		} finally {
+			Config.TETHERITE_DRAWBACKS = was;
+			p.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
+			p.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+			d.tetheriteWeight = Double.NaN;
+			Tetherite.weigh(p, d);
+		}
+		helper.succeed();
+	}
+
 	/**
 	 * Every curse gained is written down newest first, with where it came from: one laid without a choice (a Lurker's)
 	 * waits to be told as a toast, one chosen on a card does not; and each is new on the Curses screen until it is opened.

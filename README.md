@@ -175,7 +175,8 @@ Trials past gold), and the tapestry's boons stay.
   **Spindle**, and scrap and cord make the ingot. Netherite takes it only at a **binding** that may fail, and only in the Seam (on Extreme only down in the Fray): its chance (40%
   on a plain piece) rises with Unbreaking, Mending, Knitting, luck, the Seam, a Tether Cord in the other hand and the
   scars of earlier failures, and a panel beside the smithing table shows it. Tools, a spear and armour that come back
-  from the void, and a full set that slows the drain; but the metal is heavy, hungry, and calls the Lurkers.
+  from the void, and a full set that slows the drain; but the metal is heavy, hungry, and calls the Lurkers (each
+  set in the settings screen under *Tetherite: drawbacks*, or all switched off at once there).
 - **Two armour trims**, the Weaver and the Fray, and two trim materials, Tetherite and Seam Silk, that show on every
   armour.
 - **The Art of Binding**: twenty enchantments (two of them curses) for Tethers, weapons, tools and armour, most of them

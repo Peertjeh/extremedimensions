@@ -206,7 +206,7 @@ public final class Charms {
 			}
 		}
 		// Tetherite feeds on its bearer: a share more for every piece worn and every Tetherite tool in hand
-		k += Math.max(0, Config.TETHERITE_HUNGER) * com.extremedimensions.tetherite.Tetherite.borne(p);
+		k += com.extremedimensions.tetherite.Tetherite.drawback(Config.TETHERITE_HUNGER) * com.extremedimensions.tetherite.Tetherite.borne(p);
 		return (float) Math.max(0, k);
 	}
 

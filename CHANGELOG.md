@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.27.4: Light Metal
+
+### Changes
+- **Tetherite's drawbacks in a section of their own, with one switch for all.** The settings screen (World) now has a
+  section **Tetherite: drawbacks**, apart from the long list of the binding's values: first `tetherite_drawbacks` (1
+  on, 0 off), then the weight (3% speed a piece worn), the hunger (10% a piece worn or held) and the call to the Lurkers
+  (25% a piece). Switched off, Tetherite weighs nothing, feeds on no one and calls no Lurker, whatever the values say,
+  and its tooltips no longer list them; its strengths stay. On by default, on every difficulty.
+
 ## 3.27.3: Emptied Stays Empty
 
 ### Fixes

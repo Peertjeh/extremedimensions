@@ -938,6 +938,11 @@ public final class Config {
 	public static double TETHERITE_BIND_WEAR = 0.25;
 	/** 1: the upgrade template survives a failed binding; 0: it is lost with the ingot. */
 	public static int TETHERITE_BIND_KEEP_TEMPLATE = 1;
+	/**
+	 * Tetherite's drawbacks, all at once (3.27.4): 1 = its weight, hunger and call act (each at the value below), 0 =
+	 * none of them, whatever the values say.
+	 */
+	public static int TETHERITE_DRAWBACKS = 1;
 	/** Tetherite's weight: what each piece of its armor worn takes off its wearer's speed (0.03 = 3%). */
 	public static double TETHERITE_WEIGHT = 0.03;
 	/** Tetherite's hunger: extra hunger for each piece worn and each Tetherite tool or weapon in hand (0.1 = 10%). */
@@ -1540,7 +1545,8 @@ public final class Config {
 			Map.entry("offer_count", "curses"), Map.entry("fragment_chance", "lore"), Map.entry("lurker_enabled", "lurker"),
 			Map.entry("hoard_wild_chance", "hollow"), Map.entry("soul_woven_drain", "weaving"), Map.entry("seam_seconds", "seam"),
 			Map.entry("storm_chance", "dragon"), Map.entry("event_spacing", "events"), Map.entry("relic_ember_heart_nether", "relics"), Map.entry("ench_thrift_drain", "enchantments"),
-			Map.entry("tetherite_ore_island_chance", "tetherite"), Map.entry("pact_unlock", "pacts"),
+			Map.entry("tetherite_ore_island_chance", "tetherite"), Map.entry("tetherite_drawbacks", "tetherite_drawbacks"),
+			Map.entry("pact_unlock", "pacts"),
 			Map.entry("trial_unlock", "trials"), Map.entry("matriarch_after_keepers", "elders"),
 			Map.entry("coop_revive", "coop"), Map.entry("tribe_enabled", "tribe"), Map.entry("tapestry_respin_silk", "tapestry"),
 			Map.entry("unweaving", "unweaving"), Map.entry("placeholders", "integration"),
@@ -1725,7 +1731,7 @@ public final class Config {
 			{"tetherite_bind_binding_curse", -1, 1}, {"tetherite_bind_curse", -1, 1}, {"tetherite_bind_luck", 0, 0.5},
 			{"tetherite_bind_seam", 0, 1}, {"tetherite_bind_fray", 0, 1}, {"tetherite_bind_cord", 0, 1}, {"tetherite_bind_scar", 0, 1},
 			{"tetherite_bind_scars_max", 0, 10}, {"tetherite_bind_wear", 0, 0.9}, {"tetherite_bind_keep_template", 0, 1},
-			{"tetherite_weight", 0, 0.2}, {"tetherite_hunger", 0, 2}, {"tetherite_lure", 0, 4},
+			{"tetherite_drawbacks", 0, 1}, {"tetherite_weight", 0, 0.2}, {"tetherite_hunger", 0, 2}, {"tetherite_lure", 0, 4},
 			{"clan_max", 2, 16}, {"clan_cord_price", 1, 64}, {"clan_blood", 0, 19}, {"clan_share_loss", 0, 1}, {"clan_share_gain", 0, 1},
 			{"clan_range", 0, 256}, {"clan_lock_minutes", 0, 10080}, {"clan_leave_cost", 0, 200}, {"clan_leave_curses", 0, 10}, {"clan_left_cost", 0, 200},
 			{"ambient_chance", 0, 1}, {"ambient_min_seconds", 10, 3600}, {"ambient_volume", 0, 2}, {"ambient_dread", 0, 1},

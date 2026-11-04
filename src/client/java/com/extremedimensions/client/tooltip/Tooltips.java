@@ -106,14 +106,18 @@ public final class Tooltips {
 			lines.add(Component.translatable("tooltip.extremedimensions.tetherite.set", Math.round(Config.TETHERITE_SET_DRAIN * 100))
 					.withStyle(ChatFormatting.DARK_GRAY));
 			// ... and the price the metal asks of whoever bears it
-			if (Config.TETHERITE_WEIGHT > 0 && stack.is(net.minecraft.tags.ItemTags.TRIMMABLE_ARMOR)) {
-				lines.add(Component.translatable("tooltip.extremedimensions.tetherite.weight", pct(Config.TETHERITE_WEIGHT)).withStyle(ChatFormatting.RED));
+			// (none while the world has them switched off)
+			double weight = com.extremedimensions.tetherite.Tetherite.drawback(Config.TETHERITE_WEIGHT);
+			double hunger = com.extremedimensions.tetherite.Tetherite.drawback(Config.TETHERITE_HUNGER);
+			double lure = com.extremedimensions.tetherite.Tetherite.drawback(Config.TETHERITE_LURE);
+			if (weight > 0 && stack.is(net.minecraft.tags.ItemTags.TRIMMABLE_ARMOR)) {
+				lines.add(Component.translatable("tooltip.extremedimensions.tetherite.weight", pct(weight)).withStyle(ChatFormatting.RED));
 			}
-			if (Config.TETHERITE_HUNGER > 0) {
-				lines.add(Component.translatable("tooltip.extremedimensions.tetherite.hunger", pct(Config.TETHERITE_HUNGER)).withStyle(ChatFormatting.RED));
+			if (hunger > 0) {
+				lines.add(Component.translatable("tooltip.extremedimensions.tetherite.hunger", pct(hunger)).withStyle(ChatFormatting.RED));
 			}
-			if (Config.TETHERITE_LURE > 0) {
-				lines.add(Component.translatable("tooltip.extremedimensions.tetherite.lure", pct(Config.TETHERITE_LURE)).withStyle(ChatFormatting.RED));
+			if (lure > 0) {
+				lines.add(Component.translatable("tooltip.extremedimensions.tetherite.lure", pct(lure)).withStyle(ChatFormatting.RED));
 			}
 		}
 		com.extremedimensions.tapestry.Tapestry.Panel panel = com.extremedimensions.tapestry.Tapestry.Panel.of(stack);
