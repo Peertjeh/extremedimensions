@@ -47,6 +47,10 @@ import net.minecraft.world.item.enchantment.Enchantments;
  *
  * <p>The player sees the chance and what makes it beside the smithing table while a binding waits there (sent by
  * {@link #tick}).
+ *
+ * <p>Where it can be done is a setting of its own ({@link Config#TETHERITE_BIND_WHERE}, 3.26.1): anywhere, only in the
+ * Seam (the Fray included), or only down in the Fray. Elsewhere the table shows the result but will not let it be
+ * taken, and the panel says where to take it.
  */
 public final class TetheriteBinding {
 	private TetheriteBinding() {}
@@ -66,6 +70,12 @@ public final class TetheriteBinding {
 	/** Set while a shift-click already rolled the binding, so the take that follows does not roll it again. */
 	private static final ThreadLocal<Boolean> ROLLED = ThreadLocal.withInitial(() -> false);
 
+	/** Set on the client from what the server sent: where the binding waiting at its table would have to be done (0: here). */
+	public static volatile int clientBlocked;
+
+	/** When each player was last told where a binding can be done (game time), so it is said once a second at most. */
+	private static final Map<UUID, Long> TOLD = new ConcurrentHashMap<>();
+
 	/** The chance each player was last shown (in permille; -1 for none), so it is sent only when it changes. */
 	private static final Map<UUID, Integer> SHOWN = new ConcurrentHashMap<>();
 
@@ -77,6 +87,37 @@ public final class TetheriteBinding {
 	/** True when the menu holds a binding ready to be taken. */
 	public static boolean pending(SmithingMenu menu) {
 		return isBinding(menu.getSlot(SmithingMenu.BASE_SLOT).getItem(), menu.getSlot(SmithingMenu.RESULT_SLOT).getItem());
+	}
+
+	// ------------------------------------------------------------------ where
+
+	/** Where a binding would have to be done for this player: 0 here, 1 in the Seam, 2 down in the Fray. Creative: here. */
+	public static int needed(ServerPlayer p) {
+		int where = Math.max(0, Math.min(2, Config.TETHERITE_BIND_WHERE));
+		if (where == 0 || p.isCreative()) {
+			return 0;
+		}
+		boolean ok = where == 1 ? SeamService.inSeam(p) : SeamService.inSeam(p) && SeamDepth.inFray(p);
+		return ok ? 0 : where;
+	}
+
+	/**
+	 * Whether the player may take a binding's result here (the table asks before anything moves). Refused, they are
+	 * told where the metal binds, once a second at most.
+	 */
+	public static boolean mayTake(ServerPlayer p) {
+		int need = needed(p);
+		if (need == 0) {
+			return true;
+		}
+		long now = p.level().getGameTime();
+		Long last = TOLD.get(p.getUUID());
+		if (last == null || now - last >= 20) {
+			TOLD.put(p.getUUID(), now);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.binding.where." + need).withStyle(ChatFormatting.RED), true);
+			WorldFx.soundSelf(p, "minecraft:block.chain.hit", 0.8f, 0.6f);
+		}
+		return false;
 	}
 
 	// ------------------------------------------------------------------ the chance
@@ -222,7 +263,7 @@ public final class TetheriteBinding {
 	 * the take that follows does not roll again); false when nothing moves (it failed, or there is no room for it).
 	 */
 	public static boolean quickMove(ServerPlayer p, SmithingMenu menu) {
-		if (p.getInventory().getFreeSlot() < 0) {
+		if (p.getInventory().getFreeSlot() < 0 || !mayTake(p)) {
 			return false;
 		}
 		if (attempt(p, menu)) {
@@ -301,12 +342,14 @@ public final class TetheriteBinding {
 	public static void tick(ServerPlayer p) {
 		int now = -1;
 		Odds odds = null;
+		int need = 0;
 		if (p.containerMenu instanceof SmithingMenu menu && pending(menu)) {
 			odds = p.isCreative() ? new Odds(1, List.of(), false) : odds(p, menu.getSlot(SmithingMenu.BASE_SLOT).getItem());
 			now = (int) Math.round(odds.chance() * 1000);
+			need = needed(p);
 		}
 		Integer was = SHOWN.get(p.getUUID());
-		int signature = odds == null ? -1 : now * 31 + odds.parts().hashCode();
+		int signature = odds == null ? -1 : (now * 31 + odds.parts().hashCode()) * 3 + need;
 		if (was == null ? signature == -1 : was == signature) {
 			return;
 		}
@@ -314,11 +357,12 @@ public final class TetheriteBinding {
 		if (!ServerPlayNetworking.canSend(p, ModPackets.BindingPayload.TYPE)) {
 			return;
 		}
-		ServerPlayNetworking.send(p, odds == null ? new ModPackets.BindingPayload(-1, List.of(), false)
-				: new ModPackets.BindingPayload(now, odds.parts(), odds.capped()));
+		ServerPlayNetworking.send(p, odds == null ? new ModPackets.BindingPayload(-1, List.of(), false, 0)
+				: new ModPackets.BindingPayload(now, odds.parts(), odds.capped(), need));
 	}
 
 	public static void forget(UUID id) {
 		SHOWN.remove(id);
+		TOLD.remove(id);
 	}
 }

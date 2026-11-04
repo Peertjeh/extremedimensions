@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.26.1: Bound Near Its Source
+
+### Changes
+- **Tetherite binds only near where it came from.** On Normal and Hard a binding can be done only in the Seam (the Fray
+  included); on Extreme only down in the Fray; on Easy anywhere (`tetherite_bind_where`: 0 anywhere, 1 the Seam, 2 the
+  Fray). Elsewhere the smithing table shows the result but will not let it be taken, by hand or by shift-click, and
+  nothing on it is spent: the panel beside it says where the metal binds, and so do the tooltips of the Tetherite Ingot
+  and the upgrade template. In Creative it binds anywhere. A world on a difficulty takes that difficulty's setting on
+  upgrading (settings layout 8).
+
 ## 3.26.0: The Binding
 
 Tetherite was the end of the road with nothing asked of it: smelt the ore, make the ingot, upgrade at the smithing

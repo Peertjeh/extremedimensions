@@ -907,6 +907,8 @@ public final class Config {
 	public static double TETHERITE_SET_DRAIN = 0.10;
 	/** The binding at the smithing table (3.26): the chance netherite takes the Tetherite, before anything adds or takes. */
 	public static double TETHERITE_BIND_CHANCE = 0.40;
+	/** Where a binding can be done: 0 anywhere, 1 only in the Seam (the Fray included), 2 only down in the Fray. */
+	public static int TETHERITE_BIND_WHERE = 1;
 	/** The lowest and the highest a binding's chance can come to, whatever adds or takes. */
 	public static double TETHERITE_BIND_MIN = 0.05;
 	public static double TETHERITE_BIND_MAX = 0.95;
@@ -1499,7 +1501,7 @@ public final class Config {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	/** Layout version of the config file; files from before a version are brought up to date on loading. */
-	private static final int VERSION = 7;
+	private static final int VERSION = 8;
 
 	/**
 	 * Defaults that changed, by the version that changed them: {key, old default, new default}. A file still holding
@@ -1524,6 +1526,8 @@ public final class Config {
 		{{"tribe_barter_price", "1", "3"}, {"tribe_barter_trusted_discount", "0.25", "0.1"}, {"tribe_barter_kin_discount", "0.4", "0.2"},
 				{"tribe_rep_barter", "1", "0"}},
 		// 3.26.0: no default changed; a world on a difficulty takes that difficulty's chance for a Tetherite binding
+		{},
+		// 3.26.1: no default changed; a world on a difficulty takes where that difficulty lets a binding be done
 		{},
 	};
 
@@ -1673,7 +1677,7 @@ public final class Config {
 		if (json.size() == 0) {
 			return;
 		}
-		if (from < 7) {
+		if (from < 8) {
 			// A world set to one of the difficulties takes that difficulty's values of the settings it gained since (the
 			// Lurker's in 3.7.0, the tribe's standing and the swarm in 3.8.0), rather than turning into custom rules
 			Preset.upgrade(json, from);
@@ -1716,7 +1720,7 @@ public final class Config {
 			{"elder_ultimate_seconds", 2, 120}, {"elder_arena_linger_seconds", -1, 86400},
 			{"seam_build_budget_ms", 1, 50}, {"elder_arena_design_budget_ms", 1, 50}, {"seam_fly_range", 0, 128}, {"seam_fly_max", 1, 5000}, {"seam_fly_ticks", 10, 200},
 			{"seam_fly_from", 2, 64}, {"seam_damage", 0, 100},
-			{"tetherite_bind_chance", 0, 1}, {"tetherite_bind_min", 0, 1}, {"tetherite_bind_max", 0, 1},
+			{"tetherite_bind_chance", 0, 1}, {"tetherite_bind_where", 0, 2}, {"tetherite_bind_min", 0, 1}, {"tetherite_bind_max", 0, 1},
 			{"tetherite_bind_unbreaking", 0, 0.5}, {"tetherite_bind_mending", 0, 1}, {"tetherite_bind_knitting", 0, 1},
 			{"tetherite_bind_binding_curse", -1, 1}, {"tetherite_bind_curse", -1, 1}, {"tetherite_bind_luck", 0, 0.5},
 			{"tetherite_bind_seam", 0, 1}, {"tetherite_bind_fray", 0, 1}, {"tetherite_bind_cord", 0, 1}, {"tetherite_bind_scar", 0, 1},

@@ -425,9 +425,10 @@ public final class ModPackets {
 
 	/**
 	 * Server -> client: the chance of the Tetherite binding waiting at the smithing table the player has open, in
-	 * permille, with the shares that make it ({@code permille} -1: no binding waits there).
+	 * permille, with the shares that make it ({@code permille} -1: no binding waits there), and where it would have to be
+	 * done ({@code where}: 0 here, 1 in the Seam, 2 down in the Fray).
 	 */
-	public record BindingPayload(int permille, java.util.List<com.extremedimensions.tetherite.TetheriteBinding.Part> parts, boolean capped)
+	public record BindingPayload(int permille, java.util.List<com.extremedimensions.tetherite.TetheriteBinding.Part> parts, boolean capped, int where)
 			implements CustomPacketPayload {
 		public static final Type<BindingPayload> TYPE = new Type<>(ExtremeDimensions.id("binding"));
 		public static final StreamCodec<FriendlyByteBuf, BindingPayload> CODEC = StreamCodec.ofMember(BindingPayload::write, BindingPayload::read);
@@ -435,6 +436,7 @@ public final class ModPackets {
 		private void write(FriendlyByteBuf buf) {
 			buf.writeVarInt(permille + 1);
 			buf.writeBoolean(capped);
+			buf.writeVarInt(where);
 			buf.writeVarInt(Math.min(parts.size(), 32));
 			for (int i = 0; i < Math.min(parts.size(), 32); i++) {
 				var part = parts.get(i);
@@ -448,12 +450,13 @@ public final class ModPackets {
 		private static BindingPayload read(FriendlyByteBuf buf) {
 			int permille = buf.readVarInt() - 1;
 			boolean capped = buf.readBoolean();
+			int where = buf.readVarInt();
 			int n = Math.min(buf.readVarInt(), 32);
 			java.util.List<com.extremedimensions.tetherite.TetheriteBinding.Part> parts = new java.util.ArrayList<>();
 			for (int i = 0; i < n; i++) {
 				parts.add(new com.extremedimensions.tetherite.TetheriteBinding.Part(buf.readUtf(16), buf.readUtf(256), buf.readInt(), buf.readDouble()));
 			}
-			return new BindingPayload(permille, parts, capped);
+			return new BindingPayload(permille, parts, capped, where);
 		}
 
 		@Override

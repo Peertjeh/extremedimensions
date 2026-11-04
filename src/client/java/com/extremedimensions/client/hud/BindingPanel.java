@@ -22,17 +22,23 @@ public final class BindingPanel {
 
 	private static int permille = -1;
 	private static boolean capped;
+	/** Where the binding would have to be done (0 here, 1 in the Seam, 2 down in the Fray). */
+	private static int where;
 	private static List<TetheriteBinding.Part> parts = List.of();
 
-	public static void set(int chance, List<TetheriteBinding.Part> shares, boolean atCap) {
+	public static void set(int chance, List<TetheriteBinding.Part> shares, boolean atCap, int needed) {
 		permille = chance;
 		parts = List.copyOf(shares);
 		capped = atCap;
+		where = chance < 0 ? 0 : needed;
+		TetheriteBinding.clientBlocked = where;
 	}
 
 	public static void clear() {
 		permille = -1;
 		parts = List.of();
+		where = 0;
+		TetheriteBinding.clientBlocked = 0;
 	}
 
 	public static int permille() {
@@ -48,6 +54,15 @@ public final class BindingPanel {
 		List<String> lines = new ArrayList<>();
 		List<Integer> colors = new ArrayList<>();
 		int pct = Math.round(permille / 10f);
+		if (where != 0) {
+			// Not here: where the metal binds, and nothing more until the table stands there
+			lines.add(Ui.tr("gui.extremedimensions.binding.where." + where));
+			colors.add(Ui.DANGER);
+			lines.add(Ui.tr("gui.extremedimensions.binding.where_hint"));
+			colors.add(Ui.MUTED);
+			box(screen, g, font, lines, colors);
+			return;
+		}
 		lines.add(Ui.tr("gui.extremedimensions.binding.title", pct));
 		colors.add(pct >= 75 ? Ui.OK : pct >= 45 ? Ui.WARN : Ui.DANGER);
 		for (TetheriteBinding.Part part : parts) {
@@ -60,6 +75,11 @@ public final class BindingPanel {
 		}
 		lines.add(Ui.tr("gui.extremedimensions.binding.cost"));
 		colors.add(Ui.MUTED);
+		box(screen, g, font, lines, colors);
+	}
+
+	/** The panel itself: beside the table (left, else right, else under or over it), its lines in their colours. */
+	private static void box(SmithingScreen screen, GuiGraphicsExtractor g, Font font, List<String> lines, List<Integer> colors) {
 		int w = 0;
 		for (String s : lines) {
 			w = Math.max(w, font.width(s));

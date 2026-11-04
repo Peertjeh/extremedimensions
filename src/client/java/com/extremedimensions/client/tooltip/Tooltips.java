@@ -95,6 +95,11 @@ public final class Tooltips {
 		} else if (item == ModItems.TETHERITE_INGOT) {
 			key = "tetherite_ingot";
 		}
+		if ((item == ModItems.TETHERITE_INGOT || item == ModItems.TETHERITE_UPGRADE_SMITHING_TEMPLATE) && Config.TETHERITE_BIND_WHERE > 0) {
+			// Where the metal binds to netherite (3.26.1)
+			lines.add(Component.translatable("tooltip.extremedimensions.tetherite.where." + Math.min(2, Config.TETHERITE_BIND_WHERE))
+					.withStyle(ChatFormatting.DARK_PURPLE));
+		}
 		if (com.extremedimensions.tetherite.Tetherite.isGear(stack)) {
 			// Tetherite gear: tethered, and what the whole set does
 			lines.add(Component.translatable("tooltip.extremedimensions.tetherite.tethered").withStyle(ChatFormatting.DARK_AQUA));

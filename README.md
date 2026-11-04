@@ -165,7 +165,7 @@ Trials past gold), and the tapestry's boons stay.
 - **Rift Trials**: a weekly goal in the Seam, a world scoreboard and medals.
 - **Tetherite**: a tier past netherite. The rarest ore lies deep in the Seam's island hearts and the Fray's knots (a
   netherite pick brings it out, a blast furnace gives up its scrap); Tether Fragments are spun into **Tether Cord** on a
-  **Spindle**, and scrap and cord make the ingot. Netherite takes it only at a **binding** that may fail: its chance (40%
+  **Spindle**, and scrap and cord make the ingot. Netherite takes it only at a **binding** that may fail, and only in the Seam (on Extreme only down in the Fray): its chance (40%
   on a plain piece) rises with Unbreaking, Mending, Knitting, luck, the Seam, a Tether Cord in the other hand and the
   scars of earlier failures, and a panel beside the smithing table shows it. Tools, a spear and armour that come back
   from the void, and a full set that slows the drain; but the metal is heavy, hungry, and calls the Lurkers.

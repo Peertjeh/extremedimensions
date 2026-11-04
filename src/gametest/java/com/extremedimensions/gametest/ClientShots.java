@@ -987,7 +987,10 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
 			// The Tetherite binding: a smithing table with an upgrade laid in, its chance and what makes it beside it
+			// (bound anywhere for the shot: the test world is no Seam)
+			int bindWhere = com.extremedimensions.config.Config.TETHERITE_BIND_WHERE;
 			sp.getServer().runOnServer(s -> {
+				com.extremedimensions.config.Config.TETHERITE_BIND_WHERE = 0;
 				ServerPlayer p = player(s);
 				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, new ItemStack(com.extremedimensions.registry.ModItems.TETHER_CORD));
 				p.openMenu(new net.minecraft.world.SimpleMenuProvider((id, inv, who) -> {
@@ -1011,6 +1014,7 @@ public class ClientShots implements FabricClientGameTest {
 				ServerPlayer p = player(s);
 				p.closeContainer();
 				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, ItemStack.EMPTY);
+				com.extremedimensions.config.Config.TETHERITE_BIND_WHERE = bindWhere;
 			});
 			ctx.waitTicks(4);
 

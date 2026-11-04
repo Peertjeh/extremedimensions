@@ -15,7 +15,8 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * The binding on a shift-click (3.26): the table moves a copy of the result before it is taken, so the roll comes
- * first. A failed binding moves nothing; one that held moves as usual, and its take does not roll again.
+ * first. A failed binding moves nothing; one that held moves as usual, and its take does not roll again. And where the
+ * metal will not bind, the result cannot be taken at all.
  */
 @Mixin(ItemCombinerMenu.class)
 public abstract class TetheriteQuickBindMixin {
@@ -24,6 +25,17 @@ public abstract class TetheriteQuickBindMixin {
 		if ((Object) this instanceof SmithingMenu menu && index == SmithingMenu.RESULT_SLOT && player instanceof ServerPlayer p
 				&& TetheriteBinding.pending(menu) && !TetheriteBinding.quickMove(p, menu)) {
 			cir.setReturnValue(ItemStack.EMPTY);
+		}
+	}
+
+	/** Where the metal will not bind (3.26.1), the result shows but cannot be taken: the server says where to go. */
+	@Inject(method = "mayPickup", at = @At("HEAD"), cancellable = true, require = 1)
+	private void extremedimensions$bindHere(Player player, boolean hasItem, CallbackInfoReturnable<Boolean> cir) {
+		if ((Object) this instanceof SmithingMenu menu && TetheriteBinding.pending(menu)) {
+			if (player instanceof ServerPlayer p ? !TetheriteBinding.mayTake(p)
+					: player.level().isClientSide() && TetheriteBinding.clientBlocked != 0) {
+				cir.setReturnValue(false);
+			}
 		}
 	}
 

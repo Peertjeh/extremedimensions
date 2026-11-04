@@ -130,7 +130,9 @@ public class TetheriteBindingTests {
 	public void aFailedBindingShattersTheIngotAndScarsThePiece(GameTestHelper helper) {
 		ServerPlayer p = TestPlayers.survivor(helper, "bind-fail");
 		DoubleSupplier roll = TetheriteBinding.roll;
+		int where = Config.TETHERITE_BIND_WHERE;
 		try {
+			Config.TETHERITE_BIND_WHERE = 0;
 			SmithingMenu menu = table(helper, p);
 			check(helper, TetheriteBinding.pending(menu), "the table offers no binding (result: %s)", menu.getSlot(SmithingMenu.RESULT_SLOT).getItem());
 			TetheriteBinding.roll = () -> 0.999;
@@ -154,6 +156,7 @@ public class TetheriteBindingTests {
 			check(helper, menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem().isEmpty(), "the second ingot was not spent");
 		} finally {
 			TetheriteBinding.roll = roll;
+			Config.TETHERITE_BIND_WHERE = where;
 			p.getInventory().clearContent();
 		}
 		helper.succeed();
@@ -164,7 +167,9 @@ public class TetheriteBindingTests {
 	public void aShiftClickedBindingRollsBeforeItMoves(GameTestHelper helper) {
 		ServerPlayer p = TestPlayers.survivor(helper, "bind-shift");
 		DoubleSupplier roll = TetheriteBinding.roll;
+		int where = Config.TETHERITE_BIND_WHERE;
 		try {
+			Config.TETHERITE_BIND_WHERE = 0;
 			p.getInventory().clearContent();
 			SmithingMenu menu = table(helper, p);
 			TetheriteBinding.roll = () -> 0.999;
@@ -177,6 +182,41 @@ public class TetheriteBindingTests {
 			check(helper, p.getInventory().hasAnyMatching(Tetherite::isGear), "a binding that held moved nothing into the pack");
 		} finally {
 			TetheriteBinding.roll = roll;
+			Config.TETHERITE_BIND_WHERE = where;
+			p.getInventory().clearContent();
+		}
+		helper.succeed();
+	}
+
+	/**
+	 * Where the metal binds (3.26.1): set to the Seam, a table in the Overworld shows the result but will not let it be
+	 * taken, by hand or by shift-click, and nothing on the table is spent; set to anywhere, it is taken.
+	 */
+	@GameTest
+	public void theMetalBindsOnlyWhereItIsSetTo(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "bind-where");
+		DoubleSupplier roll = TetheriteBinding.roll;
+		int where = Config.TETHERITE_BIND_WHERE;
+		try {
+			p.getInventory().clearContent();
+			TetheriteBinding.roll = () -> 0.0;
+			SmithingMenu menu = table(helper, p);
+			for (int setting : new int[] {1, 2}) {
+				Config.TETHERITE_BIND_WHERE = setting;
+				check(helper, TetheriteBinding.needed(p) == setting, "in the Overworld a binding set to %s needs %s", setting, TetheriteBinding.needed(p));
+				check(helper, !menu.getSlot(SmithingMenu.RESULT_SLOT).mayPickup(p), "set to %s, the result could be taken in the Overworld", setting);
+				ItemStack moved = menu.quickMoveStack(p, SmithingMenu.RESULT_SLOT);
+				check(helper, moved.isEmpty() && !p.getInventory().hasAnyMatching(Tetherite::isGear), "set to %s, a shift-click took the result", setting);
+				check(helper, menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem().getCount() == 2 && !menu.getSlot(SmithingMenu.BASE_SLOT).getItem().isEmpty(),
+						"set to %s, a refused binding spent something", setting);
+			}
+			Config.TETHERITE_BIND_WHERE = 0;
+			check(helper, TetheriteBinding.needed(p) == 0 && menu.getSlot(SmithingMenu.RESULT_SLOT).mayPickup(p), "set to anywhere, the result cannot be taken");
+			ItemStack taken = take(menu, p);
+			check(helper, Tetherite.isGear(taken), "set to anywhere, the binding gave %s", taken);
+		} finally {
+			TetheriteBinding.roll = roll;
+			Config.TETHERITE_BIND_WHERE = where;
 			p.getInventory().clearContent();
 		}
 		helper.succeed();

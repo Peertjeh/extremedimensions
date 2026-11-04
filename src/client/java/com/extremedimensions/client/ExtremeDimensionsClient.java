@@ -228,7 +228,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.AttackFxPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.fx.AttackFx.handle(payload)));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BindingPayload.TYPE, (payload, context) ->
-				context.client().execute(() -> com.extremedimensions.client.hud.BindingPanel.set(payload.permille(), payload.parts(), payload.capped())));
+				context.client().execute(() -> com.extremedimensions.client.hud.BindingPanel.set(payload.permille(), payload.parts(), payload.capped(), payload.where())));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.DangerPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.state.ClientDanger.set(payload.why(), payload.seconds(), payload.curses())));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BossMusicPayload.TYPE, (payload, context) ->
