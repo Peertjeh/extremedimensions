@@ -42,7 +42,9 @@ table, done. Now the metal of swallowed Tethers is won harder, may refuse you, a
 - **Its wide body no longer circles the points of its route** it cannot stand on (by a wall, round a corner): it strides
   past them when its body passes straight on, never cutting a corner into the wall.
 - **It leaps ledges of one and a half to five blocks** when its way round is long or it makes no headway, not only when
-  there is no way round, and **never through a wall**: its arc is followed tick by tick first.
+  there is no way round. It climbs as a leap: straight up past the ledge's top, then drawn over onto it, so its body
+  never strikes the ledge's side; and **never through a wall**: if anything stands in its way across the top, it goes
+  round.
 
 ### Settings
 - Nineteen new settings in the Tetherite section (EN/NL), with bounds. A world on a difficulty takes that difficulty's

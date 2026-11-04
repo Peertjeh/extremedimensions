@@ -382,14 +382,27 @@ public final class TribeMoves {
 		double lx = land.getX() + 0.5 - m.getX(), lz = land.getZ() + 0.5 - m.getZ();
 		double across = Math.sqrt(lx * lx + lz * lz);
 		double v = across * 0.09 / (1 - Math.pow(0.91, ticks));
-		double vx = across < 1e-3 ? 0 : lx / across * v, vz = across < 1e-3 ? 0 : lz / across * v;
-		// and nothing in the way of its body along the arc (a wall between it and the ledge): it goes round instead
-		if (!arcClear(level, m, vx, vy, vz, land.getY() - m.getY(), across)) {
-			return false;
+		boolean carried = m.getType() == com.extremedimensions.registry.ModEntities.LURKER;
+		if (carried) {
+			// The big one climbs: straight up past the ledge's top, then over it (see carry). Nothing may stand in its
+			// body's way across the top of the ledge, a wall between it and the ledge included: it goes round instead
+			double dy = land.getY() - m.getY() + 0.05;
+			int steps = Math.max(1, (int) Math.ceil(across * 2));
+			for (int i = 1; i <= steps; i++) {
+				double k = i / (double) steps;
+				if (!level.noCollision(m, m.getBoundingBox().move(lx * k, dy, lz * k))) {
+					return false;
+				}
+			}
 		}
 		m.getNavigation().stop();
 		m.getMoveControl().setWait();
-		m.setDeltaMovement(vx, vy, vz);
+		if (carried) {
+			m.setDeltaMovement(0, vy, 0);
+			LEAPS.put(m, new double[] {land.getX() + 0.5, land.getY(), land.getZ() + 0.5, m.tickCount});
+		} else {
+			m.setDeltaMovement(across < 1e-3 ? 0 : lx / across * v, vy, across < 1e-3 ? 0 : lz / across * v);
+		}
 		m.needsSync = true;
 		LEAPT.put(m, m.tickCount);
 		WorldFx.particleIn(level, "minecraft:poof", m.getX(), m.getY() + 0.2, m.getZ(), 0.4, 0.1, 0.4, 0.02, 8);
@@ -397,31 +410,35 @@ public final class TribeMoves {
 		return true;
 	}
 
+	/** Leaps the big Lurker is in the middle of: where it lands (x, the ledge's top, z) and when it leapt. */
+	private static final Map<Mob, double[]> LEAPS = new WeakHashMap<>();
+
 	/**
-	 * Whether a leap's arc is free: its body followed tick by tick as the game moves it (falling 0.08 a tick, the air
-	 * slowing it 2% a tick up and down and 9% across) until it is over its landing, above the ledge's top. False when the
-	 * body would strike anything on the way, or come down short of the ledge.
+	 * Every tick of the big Lurker's climb: once its feet are over the ledge's top it is drawn across onto it; below
+	 * that it only rises, so its body never strikes the ledge's side on the way up. Over once it stands again.
 	 */
-	static boolean arcClear(ServerLevel level, Mob m, double vx, double vy, double vz, double landDy, double across) {
-		double x = 0, y = 0, z = 0;
-		for (int t = 0; t < 60; t++) {
-			x += vx;
-			y += vy;
-			z += vz;
-			vy = (vy - 0.08) * 0.98;
-			vx *= 0.91;
-			vz *= 0.91;
-			if (!level.noCollision(m, m.getBoundingBox().move(x, Math.max(0.02, y), z))) {
-				return false;
-			}
-			if (Math.sqrt(x * x + z * z) >= across - 0.3) {
-				return y >= landDy - 0.1;
-			}
-			if (vy < 0 && y < landDy) {
-				return false;
-			}
+	public static void carry(Mob m) {
+		double[] l = LEAPS.get(m);
+		if (l == null) {
+			return;
 		}
-		return false;
+		if (m.tickCount - l[3] > 40 || (m.onGround() && m.tickCount - l[3] > 3)) {
+			LEAPS.remove(m);
+			return;
+		}
+		if (m.getY() < l[1] + 0.05) {
+			return;
+		}
+		double dx = l[0] - m.getX(), dz = l[2] - m.getZ(), d = Math.sqrt(dx * dx + dz * dz);
+		double speed = Math.min(0.35, d * 0.6);
+		Vec3 v = m.getDeltaMovement();
+		m.setDeltaMovement(d < 1e-3 ? 0 : dx / d * speed, v.y, d < 1e-3 ? 0 : dz / d * speed);
+		m.needsSync = true;
+	}
+
+	/** Whether the big Lurker is in the middle of a leap. */
+	public static boolean leaping(Mob m) {
+		return LEAPS.containsKey(m);
 	}
 
 	/** What burns or drowns: never walked into. */

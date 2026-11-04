@@ -105,6 +105,7 @@ public class Lurker extends Monster implements LurkerBody {
 		TribeMoves.brush(this);
 		// The big one's body is too wide to stand on its route's every point: it strides past them, and leaps when stuck
 		if (this.getType() == com.extremedimensions.registry.ModEntities.LURKER) {
+			TribeMoves.carry(this);
 			TribeMoves.stride(this);
 		}
 	}
