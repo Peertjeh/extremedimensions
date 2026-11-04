@@ -360,9 +360,19 @@ public class LurkerTests {
 			check(helper, l != null, "no Lurker came");
 			LurkerService.adopt(level, l, p, "hunt");
 		});
-		helper.runAfterDelay(140, () -> {
+		// Watched every tick: once up beside its prey it strikes and may hop, so one tick's height says little
+		int[] upAt = {-1};
+		for (int t = 21; t <= 200; t++) {
+			int tick = t;
+			helper.runAfterDelay(t, () -> {
+				if (upAt[0] < 0 && l != null && l.isAlive() && l.onGround() && l.getY() >= top - 0.01) {
+					upAt[0] = tick;
+				}
+			});
+		}
+		helper.runAfterDelay(201, () -> {
 			try {
-				check(helper, l.isAlive() && l.getY() >= top - 0.01, "the Lurker stayed below the ledge (at %s, the top at %s)", l.getY(), top);
+				check(helper, upAt[0] >= 0, "the Lurker never stood on the ledge (at %s, the top at %s)", l.getY(), top);
 				check(helper, l.getHealth() == l.getMaxHealth(), "the leap hurt the Lurker (%s)", l.getHealth());
 			} finally {
 				l.discard();
