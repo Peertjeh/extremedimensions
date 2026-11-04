@@ -235,6 +235,34 @@ public class VanillaTests {
 		helper.succeed();
 	}
 
+	/**
+	 * 3.27.3: a barrel of the Seam is stocked once, ever. An island built again after it was left half done runs its
+	 * actions again; a barrel already stocked and emptied stays empty.
+	 */
+	@GameTest
+	public void aSeamBarrelIsStockedOnlyOnce(GameTestHelper helper) {
+		net.minecraft.server.level.ServerLevel seam = helper.getLevel().getServer().getLevel(SeamService.SEAM);
+		check(helper, seam != null, "there is no Seam");
+		BlockPos at = new BlockPos(12345, 150, 12345);
+		String key = at.getX() + "," + at.getY() + "," + at.getZ();
+		seam.getChunk(at.getX() >> 4, at.getZ() >> 4);
+		seam.setBlock(at, Blocks.BARREL.defaultBlockState(), 3);
+		try {
+			Container c = (Container) seam.getBlockEntity(at);
+			SeamService.fillLoot(seam, at, 2);
+			check(helper, !c.isEmpty(), "a fresh barrel of the Seam was not stocked");
+			check(helper, SeamService.stocked(seam, at), "the barrel is not remembered as stocked");
+			c.clearContent();
+			SeamService.fillLoot(seam, at, 2);
+			check(helper, c.isEmpty(), "an emptied barrel of the Seam was stocked again");
+		} finally {
+			seam.setBlock(at, Blocks.AIR.defaultBlockState(), 3);
+			DataStore.seamCells().remove("l@" + key);
+			DataStore.seamCells().remove("b@" + key);
+		}
+		helper.succeed();
+	}
+
 	/** The Seam's music disc: now and then in a barrel of the Thinned, and played in a jukebox as Minecraft's own are. */
 	@GameTest
 	public void theSeamsDiscPlaysInAJukebox(GameTestHelper helper) {

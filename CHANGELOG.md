@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.27.3: Emptied Stays Empty
+
+### Fixes
+- **A barrel of the Seam is stocked once, ever.** An island the Seam had left half built (when the world was closed
+  or restarted while it was still coming together, or when everyone flew far from it before it was done) was built
+  again on the next visit, and every barrel on it was stocked again with it, including those already emptied. Barrels
+  you had looted could be full again. Now every barrel the Seam stocks is remembered: an island built again leaves it
+  as it is (no new loot, and not put back if it was broken). Only a Seam made anew (`/tether seam_reset`) is stocked
+  afresh. Barrels stocked before this version are remembered from the first time they are stocked again.
+
 ## 3.27.2: Silently
 
 ### New

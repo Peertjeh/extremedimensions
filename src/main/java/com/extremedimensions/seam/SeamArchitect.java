@@ -1431,9 +1431,15 @@ public final class SeamArchitect {
 		};
 	}
 
-	/** Barrels of the Thinned hold silk, pages and old things. */
+	/**
+	 * Barrels of the Thinned hold silk, pages and old things. One stocked once is left as it is when its island is built
+	 * again: not filled again, and not put back if it was broken (3.27.3).
+	 */
 	static Consumer<ServerLevel> loot(BlockPos pos, int richness) {
 		return level -> {
+			if (SeamService.stocked(level, pos)) {
+				return;
+			}
 			level.setBlock(pos, Blocks.BARREL.defaultBlockState().setValue(net.minecraft.world.level.block.BarrelBlock.FACING, Direction.UP), 3);
 			SeamService.fillLoot(level, pos, richness);
 		};

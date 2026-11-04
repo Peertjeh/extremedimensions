@@ -1301,6 +1301,14 @@ public final class SeamService {
 		if (!(level.getBlockEntity(b) instanceof Container c)) {
 			return;
 		}
+		if (Dims.SEAM.equals(Dims.of(level))) {
+			// Once a barrel, ever (3.27.3): an island built again after it was left half done (a restart, a crash, work
+			// put off far from everyone) runs its actions again, and must not stock what was already stocked and emptied
+			if (!DataStore.seamCells().add(stockedKey(b))) {
+				return;
+			}
+			DataStore.markDirty();
+		}
 		Loot.fill(level, b, c, richness >= 4 ? Loot.FRAY_TANGLE : richness == 3 ? Loot.SEAM_RELIQUARY : richness == 2 ? Loot.SEAM_VILLAGE
 				: richness == 1 ? Loot.SEAM_LOOM : Loot.SEAM_STOREROOM);
 		if (richness <= 0) {
@@ -1334,6 +1342,16 @@ public final class SeamService {
 		c.setChanged();
 		// a fresh barrel: the plundering trial counts it once, whoever opens it first
 		com.extremedimensions.trial.TrialService.stocked(b);
+	}
+
+	/** The world data's mark for a barrel of the Seam that was stocked once (forgotten only when the Seam is made anew). */
+	private static String stockedKey(BlockPos b) {
+		return "l@" + b.getX() + "," + b.getY() + "," + b.getZ();
+	}
+
+	/** Whether this barrel of the Seam was stocked already (an island built again neither refills nor puts it back). */
+	public static boolean stocked(ServerLevel level, BlockPos b) {
+		return Dims.SEAM.equals(Dims.of(level)) && DataStore.seamCells().contains(stockedKey(b));
 	}
 
 	/** Operator command: straight into the Seam, as if through a rift at the player's feet. */
