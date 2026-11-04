@@ -989,11 +989,11 @@ public class ClientShots implements FabricClientGameTest {
 			// The Tetherite binding: a smithing table with an upgrade laid in, its chance and what makes it beside it
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
-				net.minecraft.core.BlockPos at = p.blockPosition().below();
 				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, new ItemStack(com.extremedimensions.registry.ModItems.TETHER_CORD));
 				p.openMenu(new net.minecraft.world.SimpleMenuProvider((id, inv, who) -> {
+					// (with no table in the world behind it: a menu tied to a spot with no smithing table closes at once)
 					net.minecraft.world.inventory.SmithingMenu m = new net.minecraft.world.inventory.SmithingMenu(id, inv,
-							net.minecraft.world.inventory.ContainerLevelAccess.create(p.level(), at));
+							net.minecraft.world.inventory.ContainerLevelAccess.NULL);
 					ItemStack piece = new ItemStack(Items.NETHERITE_CHESTPLATE);
 					var enchants = p.level().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
 					piece.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.UNBREAKING), 3);
