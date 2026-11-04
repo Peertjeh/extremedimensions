@@ -31,8 +31,6 @@
   "hud.extremedimensions.danger.raid": "The tribe raids you",
   "hud.extremedimensions.danger.elder": "An Elder fights you",
   "hud.extremedimensions.danger.blow": "The wound struck you",
-  "hud.extremedimensions.danger.cost.one": "Leaving costs a curse",
-  "hud.extremedimensions.danger.cost.many": "Leaving costs %s curses",
   "hud.extremedimensions.danger.pause.one": "%s: leaving now costs you a curse when you come back.",
   "hud.extremedimensions.danger.pause.many": "%s: leaving now costs you %s curses when you come back.",
   "hud.extremedimensions.danger.safe_in": "Safe to leave in %s s.",

@@ -674,7 +674,7 @@ public class LurkerTests {
 				striker.discard();
 				check(helper, "blow".equals(FleeService.danger(p)), "a blow from the tribe left the player in danger %s", FleeService.danger(p));
 				check(helper, FleeService.danger(calm) == null, "a player nothing touched is in danger %s", FleeService.danger(calm));
-				// The lock is shown (3.25.1): to the player on their HUD and in the pause menu, to everyone in the tablist
+				// The lock is known (3.25.1): to the player in the pause menu (never during play), to a tablist that asks
 				check(helper, FleeService.held(p) && !FleeService.held(calm), "the lock would not be shown rightly (held %s, calm %s)", FleeService.held(p),
 						FleeService.held(calm));
 				check(helper, "Hunted".equals(com.extremedimensions.compat.TabPlaceholders.values(p).get("danger").getString())

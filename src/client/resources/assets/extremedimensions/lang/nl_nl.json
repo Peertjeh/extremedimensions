@@ -31,8 +31,6 @@
   "hud.extremedimensions.danger.raid": "De stam overvalt je",
   "hud.extremedimensions.danger.elder": "Een Elder vecht met je",
   "hud.extremedimensions.danger.blow": "De wond heeft je geraakt",
-  "hud.extremedimensions.danger.cost.one": "Uitloggen kost een vloek",
-  "hud.extremedimensions.danger.cost.many": "Uitloggen kost %s vloeken",
   "hud.extremedimensions.danger.pause.one": "%s: als je nu vertrekt, kost dat je een vloek als je terugkomt.",
   "hud.extremedimensions.danger.pause.many": "%s: als je nu vertrekt, kost dat je %s vloeken als je terugkomt.",
   "hud.extremedimensions.danger.safe_in": "Veilig om te vertrekken over %s s.",

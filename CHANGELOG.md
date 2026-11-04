@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.25.2: No Warning Until You Leave
+
+### Changes
+- **The combat lock no longer gives the hunt away.** 3.25.1 showed a red chip on the HUD the moment the wound came for
+  you, so a Lurker on its way was spotted before it was seen. The chip is gone: you learn you are held only when you
+  press Escape to leave, from the warning across the top of the pause menu (what holds you, what leaving now costs, and
+  for a blow how many seconds yet). What comes for you comes as a surprise again.
+
 ## 3.25.1: Quiet Company
 
 ### Changes

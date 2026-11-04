@@ -3,7 +3,7 @@ package com.extremedimensions.client.state;
 /**
  * Whether the wound is after the player right now, so that leaving the game would cost them curses when they come back
  * (sent by the server, see FleeService and DangerPayload): what holds them, how long a blow holds them yet, and what
- * leaving would cost. Shown on the HUD and in the pause menu (see DangerChip).
+ * leaving would cost. Shown only in the pause menu (see DangerChip), never during play.
  */
 public final class ClientDanger {
 	private ClientDanger() {}

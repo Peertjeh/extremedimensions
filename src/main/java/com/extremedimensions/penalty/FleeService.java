@@ -52,7 +52,8 @@ public final class FleeService {
 
 	/**
 	 * Every server tick (each half second at work): every player is shown whether leaving now would cost them, and why,
-	 * and for a blow how long it holds them yet (see DangerPayload; the client shows it on the HUD and in the pause menu).
+	 * and for a blow how long it holds them yet (see DangerPayload; the client shows it only in the pause menu, never
+	 * during play, so that what comes for them still comes as a surprise).
 	 */
 	public static void tick(MinecraftServer s) {
 		if (s.getTickCount() % 10 != 0) {
