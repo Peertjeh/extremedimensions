@@ -1,6 +1,11 @@
-net.minecraft.world.level.pathfinder.Path
-net.minecraft.world.level.block.LeavesBlock
-net.minecraft.world.damagesource.DamageTypes
-net.minecraft.world.level.CollisionGetter
-net.minecraft.world.entity.ai.attributes.Attributes
-#pathfinder/Path
+!net.minecraft.world.inventory.SmithingMenu
+!net.minecraft.world.inventory.ItemCombinerMenu
+net.minecraft.world.inventory.ItemCombinerMenu$2
+net.minecraft.world.inventory.ItemCombinerMenuSlotDefinition
+net.minecraft.client.gui.screens.inventory.SmithingScreen
+net.minecraft.client.gui.screens.inventory.ItemCombinerScreen
+net.minecraft.client.gui.screens.inventory.AbstractContainerScreen
+net.minecraft.world.item.enchantment.Enchantments
+net.minecraft.tags.EnchantmentTags
+#inventory/ItemCombinerMenu
+#inventory/SmithingMenu
