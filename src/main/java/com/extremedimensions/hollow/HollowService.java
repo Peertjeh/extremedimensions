@@ -1552,7 +1552,7 @@ public final class HollowService {
 			return;
 		}
 		boolean overworld = Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties();
-		if (com.extremedimensions.penalty.PenaltyService.curse(p, overworld, Config.LURKER_CURSE_EXTREME_CHANCE) != null) {
+		if (com.extremedimensions.penalty.PenaltyService.curse(p, overworld, Config.LURKER_CURSE_EXTREME_CHANCE, com.extremedimensions.penalty.CurseLog.Source.SWARM) != null) {
 			st.swarmCurses[0]++;
 			WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.6, 0.06, 20);
 			WorldFx.soundFor(p, "extremedimensions:hollowling_giggle", "hostile", h.getX(), h.getY() + 0.8, h.getZ(), 1.0f, 0.45f);

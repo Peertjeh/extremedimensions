@@ -33,6 +33,7 @@ final class Alone {
 	static final String LURKER_TAKE = "extremedimensions_test:alone/lurker_take";
 	static final String LURKER_HUNT = "extremedimensions_test:alone/lurker_hunt";
 	static final String LURKER_LEAP = "extremedimensions_test:alone/lurker_leap";
+	static final String LURKER_STRIDE = "extremedimensions_test:alone/lurker_stride";
 	static final String LURKER_SWARM = "extremedimensions_test:alone/lurker_swarm";
 	static final String FLEE = "extremedimensions_test:alone/flee";
 	static final String LURKER_HIDE = "extremedimensions_test:alone/lurker_hide";

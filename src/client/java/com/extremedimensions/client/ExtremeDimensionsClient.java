@@ -119,6 +119,11 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 			if (screen instanceof ChatScreen chat) {
 				GuideCloseButton.attach(chat);
 			}
+			// A Tetherite binding waiting at the smithing table: its chance, and what makes it, beside the table
+			if (screen instanceof net.minecraft.client.gui.screens.inventory.SmithingScreen smithing) {
+				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
+						com.extremedimensions.client.hud.BindingPanel.draw(smithing, graphics, client.font));
+			}
 			// In danger, the pause menu says so above its title: its button to leave would cost curses
 			if (screen instanceof net.minecraft.client.gui.screens.PauseScreen) {
 				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
@@ -222,6 +227,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				context.client().execute(() -> com.extremedimensions.client.fx.BossCinema.handle(payload)));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.AttackFxPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.fx.AttackFx.handle(payload)));
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BindingPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> com.extremedimensions.client.hud.BindingPanel.set(payload.permille(), payload.parts(), payload.capped())));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.DangerPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.state.ClientDanger.set(payload.why(), payload.seconds(), payload.curses())));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BossMusicPayload.TYPE, (payload, context) ->

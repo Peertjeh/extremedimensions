@@ -409,7 +409,7 @@ public final class TidewalkerService {
 		WorldFx.soundIn(dimOf(t), "minecraft:entity.drowned.hurt_water", "hostile", p.getX(), p.getY(), p.getZ(), 1.3f, 0.5f);
 		if (st.curses < 1 && ThreadLocalRandom.current().nextDouble() < Config.TIDEWALKER_CURSE_CHANCE) {
 			boolean overworld = DataStore.overworldPenalties();
-			if (PenaltyService.curse(p, overworld, 0) != null) {
+			if (PenaltyService.curse(p, overworld, 0, com.extremedimensions.penalty.CurseLog.Source.TIDEWALKER) != null) {
 				st.curses++;
 				WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.6, 0.06, 16);
 			}

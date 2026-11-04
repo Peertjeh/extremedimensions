@@ -905,6 +905,43 @@ public final class Config {
 	public static int TETHERITE_VOID_DEPTH = 16;
 	/** What the full Tetherite set takes off the drain (0.1 = 10%), held to the drain floor with the rest. */
 	public static double TETHERITE_SET_DRAIN = 0.10;
+	/** The binding at the smithing table (3.26): the chance netherite takes the Tetherite, before anything adds or takes. */
+	public static double TETHERITE_BIND_CHANCE = 0.40;
+	/** The lowest and the highest a binding's chance can come to, whatever adds or takes. */
+	public static double TETHERITE_BIND_MIN = 0.05;
+	public static double TETHERITE_BIND_MAX = 0.95;
+	/** What each level of Unbreaking on the netherite piece adds to the chance. */
+	public static double TETHERITE_BIND_UNBREAKING = 0.05;
+	/** What Mending on the piece adds. */
+	public static double TETHERITE_BIND_MENDING = 0.10;
+	/** What Knitting on the piece adds. */
+	public static double TETHERITE_BIND_KNITTING = 0.10;
+	/** What the Curse of Binding on the piece adds: the metal takes to what is already bound. */
+	public static double TETHERITE_BIND_BINDING_CURSE = 0.10;
+	/** What each other curse on the piece takes off the chance. */
+	public static double TETHERITE_BIND_CURSE = 0.10;
+	/** What each level of Luck adds (and each level of Bad Luck takes). */
+	public static double TETHERITE_BIND_LUCK = 0.05;
+	/** What binding in the Seam adds, near the metal's source. */
+	public static double TETHERITE_BIND_SEAM = 0.10;
+	/** What binding down in the Fray adds on top of the Seam's share. */
+	public static double TETHERITE_BIND_FRAY = 0.10;
+	/** What a Tether Cord held in the other hand adds; the cord is spent whether the binding holds or not. */
+	public static double TETHERITE_BIND_CORD = 0.15;
+	/** What each scar of a failed binding adds to the next try on that piece. */
+	public static double TETHERITE_BIND_SCAR = 0.10;
+	/** The most scars a piece keeps (and counts). */
+	public static int TETHERITE_BIND_SCARS_MAX = 3;
+	/** Share of the piece's durability a failed binding wears away (it never breaks the piece). */
+	public static double TETHERITE_BIND_WEAR = 0.25;
+	/** 1: the upgrade template survives a failed binding; 0: it is lost with the ingot. */
+	public static int TETHERITE_BIND_KEEP_TEMPLATE = 1;
+	/** Tetherite's weight: what each piece of its armor worn takes off its wearer's speed (0.03 = 3%). */
+	public static double TETHERITE_WEIGHT = 0.03;
+	/** Tetherite's hunger: extra hunger for each piece worn and each Tetherite tool or weapon in hand (0.1 = 10%). */
+	public static double TETHERITE_HUNGER = 0.10;
+	/** Tetherite's call: how much more often the Lurkers come for each piece worn or in hand (0.25 = 25%). */
+	public static double TETHERITE_LURE = 0.25;
 
 	// --- Pacts: curses taken on willingly for an expedition, for what a safe return brings -------
 
@@ -1462,7 +1499,7 @@ public final class Config {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	/** Layout version of the config file; files from before a version are brought up to date on loading. */
-	private static final int VERSION = 6;
+	private static final int VERSION = 7;
 
 	/**
 	 * Defaults that changed, by the version that changed them: {key, old default, new default}. A file still holding
@@ -1486,6 +1523,8 @@ public final class Config {
 		// 3.16.0: barter with the young costs dearly (dearer wares, smaller discounts, standing spent rather than won)
 		{{"tribe_barter_price", "1", "3"}, {"tribe_barter_trusted_discount", "0.25", "0.1"}, {"tribe_barter_kin_discount", "0.4", "0.2"},
 				{"tribe_rep_barter", "1", "0"}},
+		// 3.26.0: no default changed; a world on a difficulty takes that difficulty's chance for a Tetherite binding
+		{},
 	};
 
 	/**
@@ -1634,7 +1673,7 @@ public final class Config {
 		if (json.size() == 0) {
 			return;
 		}
-		if (from < 6) {
+		if (from < 7) {
 			// A world set to one of the difficulties takes that difficulty's values of the settings it gained since (the
 			// Lurker's in 3.7.0, the tribe's standing and the swarm in 3.8.0), rather than turning into custom rules
 			Preset.upgrade(json, from);
@@ -1677,6 +1716,12 @@ public final class Config {
 			{"elder_ultimate_seconds", 2, 120}, {"elder_arena_linger_seconds", -1, 86400},
 			{"seam_build_budget_ms", 1, 50}, {"elder_arena_design_budget_ms", 1, 50}, {"seam_fly_range", 0, 128}, {"seam_fly_max", 1, 5000}, {"seam_fly_ticks", 10, 200},
 			{"seam_fly_from", 2, 64}, {"seam_damage", 0, 100},
+			{"tetherite_bind_chance", 0, 1}, {"tetherite_bind_min", 0, 1}, {"tetherite_bind_max", 0, 1},
+			{"tetherite_bind_unbreaking", 0, 0.5}, {"tetherite_bind_mending", 0, 1}, {"tetherite_bind_knitting", 0, 1},
+			{"tetherite_bind_binding_curse", -1, 1}, {"tetherite_bind_curse", -1, 1}, {"tetherite_bind_luck", 0, 0.5},
+			{"tetherite_bind_seam", 0, 1}, {"tetherite_bind_fray", 0, 1}, {"tetherite_bind_cord", 0, 1}, {"tetherite_bind_scar", 0, 1},
+			{"tetherite_bind_scars_max", 0, 10}, {"tetherite_bind_wear", 0, 0.9}, {"tetherite_bind_keep_template", 0, 1},
+			{"tetherite_weight", 0, 0.2}, {"tetherite_hunger", 0, 2}, {"tetherite_lure", 0, 4},
 			{"clan_max", 2, 16}, {"clan_cord_price", 1, 64}, {"clan_blood", 0, 19}, {"clan_share_loss", 0, 1}, {"clan_share_gain", 0, 1},
 			{"clan_range", 0, 256}, {"clan_lock_minutes", 0, 10080}, {"clan_leave_cost", 0, 200}, {"clan_leave_curses", 0, 10}, {"clan_left_cost", 0, 200},
 			{"ambient_chance", 0, 1}, {"ambient_min_seconds", 10, 3600}, {"ambient_volume", 0, 2}, {"ambient_dread", 0, 1},

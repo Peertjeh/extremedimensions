@@ -187,6 +187,7 @@ public final class ServerEvents {
 			com.extremedimensions.expedition.ExpeditionBar.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.binding.WoundLens.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.binding.Charms.forget(handler.getPlayer().getUUID());
+			com.extremedimensions.tetherite.TetheriteBinding.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.world.AmbientService.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.lurker.CaveLurkerService.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.coop.ClanService.forget(handler.getPlayer().getUUID());
@@ -682,6 +683,14 @@ public final class ServerEvents {
 				PenaltyService.choose(p, pick);
 			}
 
+			// A curse laid without a choice since the last tick: a toast naming it and where it came from
+			com.extremedimensions.penalty.CurseLog.flush(p, d);
+
+			// A Tetherite binding waiting at the smithing table the player has open: its chance, sent when it changes
+			if (beat % 10 == 3) {
+				com.extremedimensions.tetherite.TetheriteBinding.tick(p);
+			}
+
 			// Another mod's world lies outside the wound's reach: the curses sleep, an expedition waits for the
 			// player's return, and nothing else of the mod acts on them there
 			boolean away = !Dims.ours(p);
@@ -716,6 +725,7 @@ public final class ServerEvents {
 			if (beat % 20 == 0) {
 				com.extremedimensions.tribe.Standing.second(p, d);
 				TetherService.settle(p, d);
+				com.extremedimensions.tetherite.Tetherite.weigh(p, d);
 			}
 			if (beat % 40 == 7) {
 				com.extremedimensions.journal.Bestiary.scan(p);

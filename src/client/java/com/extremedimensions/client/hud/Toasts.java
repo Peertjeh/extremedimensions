@@ -29,6 +29,25 @@ public final class Toasts {
 		}
 	}
 
+	/**
+	 * A curse laid without a choice (a Lurker's touch, a swarm...): which, how many stacks, and where it came from. The
+	 * value packs the curse's ordinal, the stacks (shifted 10 bits) and the source's ordinal (shifted 16).
+	 */
+	public static void curse(int value) {
+		com.extremedimensions.penalty.Penalty[] curses = com.extremedimensions.penalty.Penalty.values();
+		com.extremedimensions.penalty.CurseLog.Source[] sources = com.extremedimensions.penalty.CurseLog.Source.values();
+		int ordinal = value & 1023, stacks = Math.max(1, value >> 10 & 63), source = value >> 16 & 255;
+		if (ordinal >= curses.length) {
+			return;
+		}
+		com.extremedimensions.penalty.CurseLog.Source from = source < sources.length ? sources[source] : com.extremedimensions.penalty.CurseLog.Source.UNKNOWN;
+		Component title = Component.translatable("gui.extremedimensions.toast.curse", Component.translatable(curses[ordinal].nameKey()), stacks)
+				.withStyle(net.minecraft.ChatFormatting.RED);
+		Component text = Component.translatable("gui.extremedimensions.toast.curse_from", Component.translatable(from.nameKey()));
+		Minecraft mc = Minecraft.getInstance();
+		SystemToast.add(mc.gui.toastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION, title, text);
+	}
+
 	/** A creature was written into the bestiary (by its ordinal). */
 	public static void bestiary(int ordinal) {
 		Bestiary.Beast[] beasts = Bestiary.Beast.values();

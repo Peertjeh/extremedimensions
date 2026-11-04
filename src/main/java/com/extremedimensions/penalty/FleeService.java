@@ -156,7 +156,7 @@ public final class FleeService {
 		boolean overworld = Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties();
 		int cursed = 0;
 		for (int i = 0; i < Config.FLEE_CURSES; i++) {
-			cursed += PenaltyService.curse(p, overworld, Config.LURKER_CURSE_EXTREME_CHANCE) != null ? 1 : 0;
+			cursed += PenaltyService.curse(p, overworld, Config.LURKER_CURSE_EXTREME_CHANCE, CurseLog.Source.FLEE) != null ? 1 : 0;
 		}
 		if (cursed > 0) {
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.fled", cursed).withStyle(ChatFormatting.DARK_RED));

@@ -240,9 +240,11 @@ public final class CurseEffects {
 			modifier(p, "minecraft:movement_speed", "lead_pockets", 0, "add_multiplied_total");
 			modifier(p, "minecraft:movement_speed", "weight_of_iron", 0, "add_multiplied_total");
 			modifier(p, "minecraft:max_health", "blood_price", 0, "add_value");
+			modifier(p, "minecraft:movement_speed", "tetherite_weight", 0, "add_multiplied_total");
 		}
 		d.leadValue = Double.NaN;
 		d.ironValue = Double.NaN;
+		d.tetheriteWeight = Double.NaN;
 		d.bloodValue = Double.NaN;
 		if (!d.away) {
 			// Blood Price fits itself into the health the lasting curses leave
@@ -289,7 +291,7 @@ public final class CurseEffects {
 		return cut > room && cut > 0 ? room / cut : 1;
 	}
 
-	static void modifier(ServerPlayer p, String attribute, String name, double value, String operation) {
+	public static void modifier(ServerPlayer p, String attribute, String name, double value, String operation) {
 		BuiltInRegistries.ATTRIBUTE.get(WorldFx.id(attribute)).ifPresent(holder -> {
 			AttributeInstance instance = p.getAttribute(holder);
 			if (instance == null) {

@@ -254,7 +254,7 @@ public final class BarterService {
 		Standing.change(p, Config.TRIBE_REP_BARTER - standingCost(w), "gui.extremedimensions.tribe.why.barter");
 		if (!p.isCreative() && java.util.concurrent.ThreadLocalRandom.current().nextDouble() < curseChance(w)) {
 			boolean overworld = com.extremedimensions.server.Dims.OVERWORLD.equals(com.extremedimensions.server.Dims.of(p)) && DataStore.overworldPenalties();
-			com.extremedimensions.penalty.Penalty pen = com.extremedimensions.penalty.PenaltyService.curse(p, overworld, 0);
+			com.extremedimensions.penalty.Penalty pen = com.extremedimensions.penalty.PenaltyService.curse(p, overworld, 0, com.extremedimensions.penalty.CurseLog.Source.BARTER);
 			if (pen != null) {
 				WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.6, 0.06, 20);
 				WorldFx.soundSelf(p, "extremedimensions:hollowling_giggle", 1.0f, 0.5f);

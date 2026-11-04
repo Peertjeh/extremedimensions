@@ -194,7 +194,7 @@ public final class BurdenService {
 		if (!from.removeStack(pen)) {
 			return;
 		}
-		to.addStacks(pen, 1 + Math.max(0, Config.COOP_BURDEN_TOLL));
+		com.extremedimensions.penalty.CurseLog.add(to, pen, 1 + Math.max(0, Config.COOP_BURDEN_TOLL), com.extremedimensions.penalty.CurseLog.Source.BURDEN);
 		to.burdensCarried++;
 		MinecraftServer s = WorldFx.server();
 		if (s != null) {

@@ -34,9 +34,16 @@ public class Lurker extends Monster implements LurkerBody {
 	private static final EntityDataAccessor<Integer> POSE = SynchedEntityData.defineId(Lurker.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> MOOD = SynchedEntityData.defineId(Lurker.class, EntityDataSerializers.INT);
 
+	/** The most the big Lurker turns in a tick while it walks (its kin set their own). */
+	private static final float TURN = 35.0F;
+
 	public Lurker(EntityType<? extends Monster> type, Level level) {
 		super(type, level);
 		TribeMoves.wary(this);
+		// A steady walk: round a corner in a few strides, never a jerk to the other side and back, never a spin
+		if (type == com.extremedimensions.registry.ModEntities.LURKER) {
+			this.moveControl = new SteadyMoveControl(this, TURN);
+		}
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
@@ -96,6 +103,10 @@ public class Lurker extends Monster implements LurkerBody {
 			TribeMoves.unstick(this);
 		}
 		TribeMoves.brush(this);
+		// The big one's body is too wide to stand on its route's every point: it strides past them, and leaps when stuck
+		if (this.getType() == com.extremedimensions.registry.ModEntities.LURKER) {
+			TribeMoves.stride(this);
+		}
 	}
 
 	@Override

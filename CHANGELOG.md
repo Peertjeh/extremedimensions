@@ -1,5 +1,53 @@
 # Changelog
 
+## 3.26.0: The Binding
+
+Tetherite was the end of the road with nothing asked of it: smelt the ore, make the ingot, upgrade at the smithing
+table, done. Now the metal of swallowed Tethers is won harder, may refuse you, and asks its price of whoever bears it.
+
+### Tetherite is won harder
+- **The ore wants netherite.** A diamond pick only breaks it; a netherite pick (or a Tetherite one) brings it out.
+- **Only a blast furnace gives up its scrap.** The plain furnace recipe is gone; a blast furnace takes ten seconds an ore.
+
+### The binding: the upgrade may fail
+- **Taking a Tetherite upgrade from the smithing table rolls whether the metal holds.** On a plain netherite piece the
+  chance is 40% (`tetherite_bind_chance`; Easy 55%, Hard 30%, Extreme 20%). If it fails, the ingot shatters, the piece
+  is worn by a quarter of its durability (never broken, `tetherite_bind_wear`) and keeps a **scar**; the template
+  survives (`tetherite_bind_keep_template`). Each scar makes the next try on that piece 10% likelier (up to three).
+- **What makes the chance:**
+  - Unbreaking +5% a level, Mending +10%, Knitting +10%;
+  - the Curse of Binding +10% (the metal takes to what is already bound), every other curse −10%;
+  - Luck +5% a level, Bad Luck −5%;
+  - binding in the Seam +10%, and down in the Fray another +10%;
+  - a Tether Cord held in the other hand +15% (spent on the try, whatever comes of it);
+  - never below 5% nor above 95% (`tetherite_bind_min`, `tetherite_bind_max`).
+- **You see it before you try.** While a binding waits in the result slot, a panel beside the table gives its chance and
+  every share that makes it, and what a failure costs. Shift-clicking the result rolls too. In Creative it always holds.
+
+### Tetherite asks its price
+- **Heavy:** each piece of Tetherite armor worn slows you by 3% (`tetherite_weight`; the full set 12%).
+- **Hungry:** each piece worn, and a Tetherite tool or weapon in either hand, makes you 10% hungrier (`tetherite_hunger`).
+- **It calls the tribe:** the Lurkers find you 25% more often for every piece you bear (`tetherite_lure`).
+- The tooltips of Tetherite gear say so, in red under the set's gift.
+
+### You can see which curse you got
+- **A curse laid without a choice now says so.** A Lurker's touch, a Cave Lurker, the swarm, a Tidewalker, a barter, a
+  Collapse, leaving in danger, an Elder's ultimate: a toast names the curse and where it came from, the moment it lands.
+- **The Curses screen remembers.** A strip along its top shows the newest curse, where it came from and how long ago;
+  hover it for the last six, click it to open that curse. Curses that came since you last looked carry a pulsing mark in
+  the grid, and the screen opens on the newest of them.
+
+### The big Lurker walks instead of spinning
+- **It turns steadily**, at most 35 degrees a tick, as its smaller kin already did, instead of snapping round.
+- **Its wide body no longer circles the points of its route** it cannot stand on (by a wall, round a corner): it strides
+  past them when its body passes straight on, never cutting a corner into the wall.
+- **It leaps ledges of one and a half to five blocks** when its way round is long or it makes no headway, not only when
+  there is no way round, and **never through a wall**: its arc is followed tick by tick first.
+
+### Settings
+- Nineteen new settings in the Tetherite section (EN/NL), with bounds. A world on a difficulty takes that difficulty's
+  binding chance on upgrading (settings layout 7).
+
 ## 3.25.2: No Warning Until You Leave
 
 ### Changes

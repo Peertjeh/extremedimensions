@@ -135,6 +135,7 @@ public class ExtremeDimensions implements ModInitializer {
 
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BossMusicPayload.TYPE, ModPackets.BossMusicPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.DangerPayload.TYPE, ModPackets.DangerPayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BindingPayload.TYPE, ModPackets.BindingPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BossFxPayload.TYPE, ModPackets.BossFxPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.AttackFxPayload.TYPE, ModPackets.AttackFxPayload.CODEC);
 		// Co-op: an ally's curses to carry one of, the offer to carry it, and anchors opened to allies

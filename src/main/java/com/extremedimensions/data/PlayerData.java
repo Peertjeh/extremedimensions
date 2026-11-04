@@ -166,6 +166,12 @@ public class PlayerData {
 	 * (Dropped where the player stood they could lie in the very portal they came home through and be carried back.)
 	 */
 	public List<String> tetherOwed = new ArrayList<>();
+	/** The newest curses gained, newest first: "id,stacks,epochMillis,source" (see CurseLog). */
+	public List<String> curseLog = new ArrayList<>();
+	/** When the player last opened the Curses screen (wall clock, ms): curses that came after are new there. */
+	public long cursesSeenAt;
+	/** Curses laid without a choice since the last tick, to be told as toasts. */
+	public transient List<com.extremedimensions.penalty.CurseLog.Entry> curseToasts = new ArrayList<>();
 	/** Homebound things taken up at a death beyond the wound, waiting for the respawn (each one an item stack as JSON). */
 	public List<String> homebound = new ArrayList<>();
 	/** Atonement an echo of this player's Collapse gave back while they were away (granted when they are next in). */
@@ -274,6 +280,8 @@ public class PlayerData {
 	public transient double leadValue = Double.NaN;
 	/** Weight of Iron's slowdown as last set (NaN: set it afresh). */
 	public transient double ironValue = Double.NaN;
+	/** Tetherite's weight as last set on the player's speed (NaN: set it afresh). */
+	public transient double tetheriteWeight = Double.NaN;
 	public transient double bloodValue = Double.NaN;
 	/** Unmapped: whether the client was last told to hide its coordinates. */
 	public transient boolean unmappedSent = false;
@@ -320,6 +328,7 @@ public class PlayerData {
 		if (add > 0) {
 			curses.put(p.id, have + add);
 			learn(p);
+			com.extremedimensions.penalty.CurseLog.record(this, p, add);
 		}
 		return add;
 	}

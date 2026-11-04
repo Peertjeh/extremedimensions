@@ -34,6 +34,8 @@
 		"TetherAnvilMixin",
 		"TetherEnchantMixin",
 		"TetheredItemMixin",
+		"TetheriteBindMixin",
+		"TetheriteQuickBindMixin",
 		"UnhealingMixin",
 		"UnmappedMapMixin",
 		"UnwelcomeDoorMixin",

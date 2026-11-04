@@ -4,6 +4,8 @@ import java.util.Map;
 
 import com.extremedimensions.ExtremeDimensions;
 import com.extremedimensions.config.Config;
+import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.penalty.CurseEffects;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -29,6 +31,10 @@ import net.minecraft.world.item.equipment.EquipmentAssets;
  *
  * <p>Wearing all four pieces binds its wearer to the world: the Tether drains more slowly (held to the drain floor with
  * everything else that eases it).
+ *
+ * <p>Since 3.26 the metal asks its price: it is heavy (each piece of its armor worn slows its wearer), it is hungry (each
+ * piece worn and each Tetherite tool in hand makes its bearer hungrier) and it calls to the tribe (the Lurkers come more
+ * often for whoever bears it). Netherite takes it only at a binding that may fail (see {@link TetheriteBinding}).
  */
 public final class Tetherite {
 	private Tetherite() {}
@@ -63,6 +69,41 @@ public final class Tetherite {
 			}
 		}
 		return true;
+	}
+
+	/** Pieces of Tetherite armor worn. */
+	public static int worn(Player p) {
+		int n = 0;
+		for (EquipmentSlot slot : PIECES) {
+			if (isGear(p.getItemBySlot(slot))) {
+				n++;
+			}
+		}
+		return n;
+	}
+
+	/** What the metal's hunger and its call count: the pieces worn, and Tetherite in either hand. */
+	public static int borne(Player p) {
+		return worn(p) + (isGear(p.getMainHandItem()) ? 1 : 0) + (isGear(p.getOffhandItem()) ? 1 : 0);
+	}
+
+	/** Tetherite's weight on its wearer's speed: a share off for each piece worn (never more than nine tenths). */
+	public static double weight(Player p) {
+		return p.isCreative() || p.isSpectator() ? 0 : -Math.min(0.9, Math.max(0, Config.TETHERITE_WEIGHT) * worn(p));
+	}
+
+	/** Sets Tetherite's weight on a player's speed, once a second, and only when it changed. */
+	public static void weigh(ServerPlayer p, PlayerData d) {
+		double want = weight(p);
+		if (Double.isNaN(d.tetheriteWeight) || want != d.tetheriteWeight) {
+			d.tetheriteWeight = want;
+			CurseEffects.modifier(p, "minecraft:movement_speed", "tetherite_weight", want, "add_multiplied_total");
+		}
+	}
+
+	/** How much more often the Lurkers come for a player for the Tetherite they bear (1 for none). */
+	public static double lure(Player p) {
+		return 1 + Math.max(0, Config.TETHERITE_LURE) * borne(p);
 	}
 
 	/** What the full set takes off the drain (1 when the set is not worn), held to the drain floor by the caller. */

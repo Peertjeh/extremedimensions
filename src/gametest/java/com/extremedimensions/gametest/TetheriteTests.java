@@ -110,7 +110,7 @@ public class TetheriteTests {
 		helper.succeed();
 	}
 
-	/** The ore wants a diamond pick or better, keeps through blasts, and smelts (or blasts) to scrap; scrap and cord make ingots. */
+	/** The ore wants a netherite pick, keeps through blasts, and blasts to scrap; scrap and cord make ingots. */
 	@GameTest
 	public void theOreSmeltsToScrapAndScrapToIngots(GameTestHelper helper) {
 		BlockState ore = ModBlocks.TETHERITE_ORE.defaultBlockState();
@@ -119,7 +119,7 @@ public class TetheriteTests {
 		check(helper, ore.is(BlockTags.MINEABLE_WITH_PICKAXE), "the ore is not mined with a pickaxe");
 		check(helper, ModBlocks.TETHERITE_ORE.getExplosionResistance() >= 1000, "a blast breaks the ore");
 		Set<Identifier> have = recipes(helper);
-		for (String id : List.of("tetherite_scrap", "tetherite_scrap_from_blasting", "tetherite_ingot", "spindle",
+		for (String id : List.of("tetherite_scrap_from_blasting", "tetherite_ingot", "spindle",
 				"tetherite_upgrade_smithing_template", "weaver_armor_trim_smithing_template", "fray_armor_trim_smithing_template")) {
 			check(helper, have.contains(Identifier.fromNamespaceAndPath("extremedimensions", id)), "no recipe %s", id);
 		}

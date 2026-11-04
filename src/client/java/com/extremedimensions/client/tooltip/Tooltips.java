@@ -100,6 +100,16 @@ public final class Tooltips {
 			lines.add(Component.translatable("tooltip.extremedimensions.tetherite.tethered").withStyle(ChatFormatting.DARK_AQUA));
 			lines.add(Component.translatable("tooltip.extremedimensions.tetherite.set", Math.round(Config.TETHERITE_SET_DRAIN * 100))
 					.withStyle(ChatFormatting.DARK_GRAY));
+			// ... and the price the metal asks of whoever bears it
+			if (Config.TETHERITE_WEIGHT > 0 && stack.is(net.minecraft.tags.ItemTags.TRIMMABLE_ARMOR)) {
+				lines.add(Component.translatable("tooltip.extremedimensions.tetherite.weight", pct(Config.TETHERITE_WEIGHT)).withStyle(ChatFormatting.RED));
+			}
+			if (Config.TETHERITE_HUNGER > 0) {
+				lines.add(Component.translatable("tooltip.extremedimensions.tetherite.hunger", pct(Config.TETHERITE_HUNGER)).withStyle(ChatFormatting.RED));
+			}
+			if (Config.TETHERITE_LURE > 0) {
+				lines.add(Component.translatable("tooltip.extremedimensions.tetherite.lure", pct(Config.TETHERITE_LURE)).withStyle(ChatFormatting.RED));
+			}
 		}
 		com.extremedimensions.tapestry.Tapestry.Panel panel = com.extremedimensions.tapestry.Tapestry.Panel.of(stack);
 		if (panel != null) {
@@ -164,5 +174,10 @@ public final class Tooltips {
 				});
 			}
 		}
+	}
+
+	/** A share as a whole percentage, as text (0.03 gives "3"). */
+	private static String pct(double share) {
+		return Config.format(Math.round(share * 1000) / 10.0);
 	}
 }

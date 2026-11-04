@@ -251,6 +251,7 @@ public final class ClientState {
 			case 17 -> com.extremedimensions.client.hud.Toasts.bestiary(value);
 			case 18 -> com.extremedimensions.client.hud.Toasts.note(value);
 			case 20 -> com.extremedimensions.client.hud.Toasts.hint(value);
+			case 21 -> com.extremedimensions.client.hud.Toasts.curse(value);
 			case 19 -> {
 				// The island underfoot frays: for so many seconds, its middle so far from where the player stands
 				net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();

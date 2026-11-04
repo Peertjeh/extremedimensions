@@ -194,7 +194,7 @@ public final class Charms {
 
 	// ------------------------------------------------------------------ Sated, the Curse of the Starved
 
-	/** How much of the exhaustion a player is caused they take: less with Sated, more for each piece of the Starved. */
+	/** How much of the exhaustion a player is caused they take: less with Sated, more for each piece of the Starved and of Tetherite. */
 	public static float exhaustion(Player p) {
 		if (p.isCreative() || p.isSpectator()) {
 			return 1f;
@@ -205,6 +205,8 @@ public final class Charms {
 				k += Config.ENCH_STARVED;
 			}
 		}
+		// Tetherite feeds on its bearer: a share more for every piece worn and every Tetherite tool in hand
+		k += Math.max(0, Config.TETHERITE_HUNGER) * com.extremedimensions.tetherite.Tetherite.borne(p);
 		return (float) Math.max(0, k);
 	}
 

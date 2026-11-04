@@ -11,7 +11,7 @@ import java.util.Map;
  * <p>What changes: how long atonement takes and how much a death undoes of it, how much charge an anchor holds and
  * how fast it drains, how often offers are multiplied and how many cards they show, how often an Extreme card turns
  * up, how often the Lurkers come (and the Cave and Sculk Lurkers below, the Magpies with how much they take, the Wicks and the Tidewalkers), how often a Gatebreaker comes out of a storm and how hard it hits, how often a Lockwarden comes in the End and leaves you on a lost islet, how often the Seam's own come (Threadbiters, Edgecrawlers, Cragbacks), how much of the thread a Threadbiter bites and how hard the Edgecrawler and the Cragback hit, how often a Lurker in the Seam turns to hunt, how much they take and how hard they hit, whether the whole tribe comes at once (Extreme),
- * how hard the tribe's standing is won, how often the Wound Storms break, how often
+ * how hard the tribe's standing is won, how likely a Tetherite binding holds at the smithing table, how often the Wound Storms break, how often
  * fragments drop, whether a curse not yet carried
  * shows in runes, and whether the Abyssal curses can be dealt, how often and how many (Hard and Extreme).
  */
@@ -36,7 +36,8 @@ public enum Preset {
 			"lurker_strike_damage", "4", "lurker_strike_blows", "2",
 			"lurker_swarm_chance", "0", "tribe_rep_gift", "3", "tribe_gift_minutes", "5", "tribe_gift_cost", "1",
 			"tribe_rep_bond", "10", "tribe_rep_barter", "0",
-			"tribe_barter_price", "2", "tribe_barter_standing_cost", "3", "tribe_barter_curse_chance", "0.1"),
+			"tribe_barter_price", "2", "tribe_barter_standing_cost", "3", "tribe_barter_curse_chance", "0.1",
+			"tetherite_bind_chance", "0.55"),
 	NORMAL("normal",
 			"sculk_lurker_spawn_chance", "0.12", "sculk_lurker_cooldown_seconds", "600",
 			"cave_lurker_spawn_chance", "0.008", "cave_lurker_cooldown_seconds", "1800", "cave_lurker_curse_extreme_chance", "0",
@@ -57,7 +58,8 @@ public enum Preset {
 			"lurker_strike_damage", "6", "lurker_strike_blows", "3",
 			"lurker_swarm_chance", "0", "tribe_rep_gift", "2", "tribe_gift_minutes", "10", "tribe_gift_cost", "1",
 			"tribe_rep_bond", "6", "tribe_rep_barter", "0",
-			"tribe_barter_price", "3", "tribe_barter_standing_cost", "5", "tribe_barter_curse_chance", "0.25"),
+			"tribe_barter_price", "3", "tribe_barter_standing_cost", "5", "tribe_barter_curse_chance", "0.25",
+			"tetherite_bind_chance", "0.4"),
 	HARD("hard",
 			"sculk_lurker_spawn_chance", "0.16", "sculk_lurker_cooldown_seconds", "450",
 			"cave_lurker_spawn_chance", "0.011", "cave_lurker_cooldown_seconds", "1400", "cave_lurker_curse_extreme_chance", "0.15",
@@ -78,7 +80,8 @@ public enum Preset {
 			"lurker_strike_damage", "8", "lurker_strike_blows", "4",
 			"lurker_swarm_chance", "0", "tribe_rep_gift", "1", "tribe_gift_minutes", "20", "tribe_gift_cost", "2",
 			"tribe_rep_bond", "4", "tribe_rep_barter", "0",
-			"tribe_barter_price", "4", "tribe_barter_standing_cost", "7", "tribe_barter_curse_chance", "0.35"),
+			"tribe_barter_price", "4", "tribe_barter_standing_cost", "7", "tribe_barter_curse_chance", "0.35",
+			"tetherite_bind_chance", "0.3"),
 	EXTREME("extreme",
 			"sculk_lurker_spawn_chance", "0.22", "sculk_lurker_cooldown_seconds", "300",
 			"cave_lurker_spawn_chance", "0.015", "cave_lurker_cooldown_seconds", "1000", "cave_lurker_curse_extreme_chance", "0.4",
@@ -99,7 +102,8 @@ public enum Preset {
 			"lurker_strike_damage", "10", "lurker_strike_blows", "5",
 			"lurker_swarm_chance", "0.15", "tribe_rep_gift", "1", "tribe_gift_minutes", "30", "tribe_gift_cost", "3",
 			"tribe_rep_bond", "3", "tribe_rep_barter", "0",
-			"tribe_barter_price", "5", "tribe_barter_standing_cost", "10", "tribe_barter_curse_chance", "0.5");
+			"tribe_barter_price", "5", "tribe_barter_standing_cost", "10", "tribe_barter_curse_chance", "0.5",
+			"tetherite_bind_chance", "0.2");
 
 	public final String id;
 	/** Setting key -> value as text (as {@link Config#set} takes it), in a fixed order. */
@@ -173,14 +177,20 @@ public enum Preset {
 	static final java.util.Set<String> ADDED_3_22 = java.util.Set.of("threadbiter_spawn_chance", "threadbiter_bite",
 			"edgecrawler_spawn_chance", "edgecrawler_damage", "cragback_spawn_chance", "cragback_damage", "lurker_seam_hunt_chance");
 
+	/** Settings the difficulties first set in 3.26.0: the chance a Tetherite binding holds at the smithing table. */
+	static final java.util.Set<String> ADDED_3_26 = java.util.Set.of("tetherite_bind_chance");
+
 	/**
 	 * An older settings file (of layout version {@code from}): if its values (the defaults for any it lacks) match a
 	 * difficulty on every setting the difficulty set then, it takes that difficulty's values of the settings added since,
 	 * so the world stays on its difficulty.
 	 */
 	static void upgrade(com.google.gson.JsonObject json, int from) {
-		java.util.Set<String> added = new java.util.HashSet<>(ADDED_3_16);
-		added.addAll(ADDED_3_22);
+		java.util.Set<String> added = new java.util.HashSet<>(ADDED_3_26);
+		if (from < 6) {
+			added.addAll(ADDED_3_16);
+			added.addAll(ADDED_3_22);
+		}
 		if (from < 5) {
 			added.addAll(ADDED_3_8);
 		}

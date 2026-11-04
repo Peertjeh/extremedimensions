@@ -50,10 +50,10 @@ def item(name, count=None):
 
 def recipes():
     r = lambda name: d(NS, "recipe", name + ".json")
-    for kind in ("smelting", "blasting"):
-        write(r(f"tetherite_scrap{'' if kind == 'smelting' else '_from_blasting'}"), {
-            "type": f"minecraft:{kind}", "category": "misc", "cookingtime": 200 if kind == "smelting" else 100, "experience": 2.0,
-            "ingredient": f"{NS}:tetherite_ore", "result": item("tetherite_scrap")})
+    # 3.26: only a blast furnace's heat gives up the scrap (the id keeps its old name for the recipe books that hold it)
+    write(r("tetherite_scrap_from_blasting"), {
+        "type": "minecraft:blasting", "category": "misc", "cookingtime": 200, "experience": 2.0,
+        "ingredient": f"{NS}:tetherite_ore", "result": item("tetherite_scrap")})
     write(r("tetherite_ingot"), {
         "type": "minecraft:crafting_shapeless", "category": "misc", "group": "tetherite_ingot",
         "ingredients": [f"{NS}:tetherite_scrap"] * 4 + [f"{NS}:tether_cord"] * 4, "result": item("tetherite_ingot")})
@@ -109,7 +109,9 @@ def tags():
     for kind, tag, values in (("item", "trim_materials", [f"{NS}:tetherite_ingot", f"{NS}:seam_silk"]),
                               ("item", "beacon_payment_items", [f"{NS}:tetherite_ingot"]),
                               ("block", "mineable/pickaxe", [f"{NS}:tetherite_ore", f"{NS}:spindle"]),
-                              ("block", "needs_diamond_tool", [f"{NS}:tetherite_ore"])):
+                              ("block", "needs_diamond_tool", [f"{NS}:tetherite_ore"]),
+                              # 3.26: a diamond pick only breaks it; netherite (or Tetherite) brings it out
+                              ("block", "incorrect_for_diamond_tool", [f"{NS}:tetherite_ore"])):
         write(t("minecraft", kind, tag), add(values, t("minecraft", kind, tag)))
 
 

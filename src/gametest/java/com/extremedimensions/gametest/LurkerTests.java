@@ -36,6 +36,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.AABB;
@@ -365,6 +366,87 @@ public class LurkerTests {
 				check(helper, l.getHealth() == l.getMaxHealth(), "the leap hurt the Lurker (%s)", l.getHealth());
 			} finally {
 				l.discard();
+			}
+			helper.succeed();
+		});
+	}
+
+	/**
+	 * Round a wall and up a step two blocks high: the big Lurker goes round the wall without turning where it stands
+	 * (never more than a few tens of degrees in a tick, never round and round on the spot) and leaps up onto the step its
+	 * prey stands on, the leap never taken through the wall.
+	 */
+	@GameTest(environment = Alone.LURKER_STRIDE, maxTicks = 360)
+	public void theBigLurkerGoesRoundAWallAndLeapsAStepWithoutSpinning(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		// A wall five high across most of the floor, a gap of two at its end; the prey on a step two high beyond it
+		for (int z = 0; z <= 5; z++) {
+			for (int y = 0; y <= 4; y++) {
+				helper.setBlock(new BlockPos(3, y, z), Blocks.STONE);
+			}
+		}
+		for (int x = 5; x <= 7; x++) {
+			for (int z = 0; z <= 2; z++) {
+				for (int y = 0; y <= 1; y++) {
+					helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+				}
+			}
+		}
+		ServerPlayer p = TestPlayers.survivor(helper, "lurker-stride");
+		place(helper, p, 6.5, 2, 1.5);
+		Lurker[] in = {null};
+		double top = helper.absolutePos(new BlockPos(0, 2, 0)).getY();
+		helper.runAfterDelay(20, () -> {
+			in[0] = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(1, 0, 1)), EntitySpawnReason.COMMAND);
+			check(helper, in[0] != null, "no Lurker came");
+			LurkerService.adopt(level, in[0], p, "hunt");
+		});
+		int first = 21, last = 330;
+		float[] yaw = new float[last + 1];
+		Vec3[] at = new Vec3[last + 1];
+		int[] upAt = {-1};
+		for (int t = first; t <= last; t++) {
+			int tick = t;
+			helper.runAfterDelay(t, () -> {
+				if (in[0] == null || upAt[0] >= 0 || !in[0].isAlive()) {
+					return;
+				}
+				yaw[tick] = in[0].getYRot();
+				at[tick] = in[0].position();
+				if (in[0].onGround() && in[0].getY() >= top - 0.01) {
+					upAt[0] = tick;
+				}
+			});
+		}
+		helper.runAfterDelay(last + 1, () -> {
+			try {
+				int end = upAt[0] >= 0 ? upAt[0] : last;
+				double most = 0, worstSpot = 0;
+				// (from a few ticks in: its first look round to the way it goes is no spin)
+				for (int t = first + 6; t <= end; t++) {
+					if (at[t] != null && at[t - 1] != null) {
+						most = Math.max(most, Math.abs(Mth.wrapDegrees(yaw[t] - yaw[t - 1])));
+					}
+				}
+				for (int t = first + 6; t + 20 <= end; t++) {
+					if (at[t] == null || at[t + 20] == null || at[t].distanceTo(at[t + 20]) >= 0.5) {
+						continue;
+					}
+					double turned = 0;
+					for (int k = t + 1; k <= t + 20; k++) {
+						turned += Math.abs(Mth.wrapDegrees(yaw[k] - yaw[k - 1]));
+					}
+					worstSpot = Math.max(worstSpot, turned);
+				}
+				String where = in[0] == null ? "gone" : in[0].blockPosition().toString();
+				check(helper, upAt[0] >= 0, "the Lurker never got up onto its prey's step (it is at %s)", where);
+				check(helper, most <= 40, "the Lurker turned %.0f degrees in one tick", most);
+				check(helper, worstSpot <= 150, "the Lurker turned %.0f degrees on the spot within a second", worstSpot);
+				check(helper, in[0].getHealth() == in[0].getMaxHealth(), "its way up hurt the Lurker (%s)", in[0].getHealth());
+			} finally {
+				if (in[0] != null) {
+					in[0].discard();
+				}
 			}
 			helper.succeed();
 		});

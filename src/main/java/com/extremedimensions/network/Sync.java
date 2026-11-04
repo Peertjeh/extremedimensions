@@ -74,9 +74,14 @@ public final class Sync {
 	/** Every curse, for the Curses screen (see {@link ModPackets.CursesPayload}). */
 	public static void curses(ServerPlayer p, PlayerData d, boolean open) {
 		ServerPlayNetworking.send(p, new ModPackets.CursesPayload(cursesData(p, d), open));
+		if (open) {
+			// The screen opened: what came before now is no longer new there (it marked it as it opened)
+			com.extremedimensions.penalty.CurseLog.seen(d);
+			DataStore.markDirty();
+		}
 	}
 
-	/** The Curses screen's data: scars, the curse atoned for, Overworld curses on or off, every curse, players nearby. */
+	/** The Curses screen's data: scars, the curse atoned for, Overworld curses on or off, every curse, players nearby, the newest curses. */
 	public static String cursesData(ServerPlayer p, PlayerData d) {
 		StringBuilder out = new StringBuilder();
 		out.append(d.scars).append('|').append(d.atoning == null ? "" : d.atoning).append('|').append(DataStore.overworldPenalties() ? 1 : 0).append('|');
@@ -98,6 +103,8 @@ public final class Sync {
 		out.append('|').append(com.extremedimensions.pact.PactService.data(p, d));
 		out.append('|').append(d.relic == null ? "" : d.relic);
 		out.append('|').append(nearby(p));
+		// The newest curses gained, with where from and whether new since the screen was last opened
+		out.append('|').append(com.extremedimensions.penalty.CurseLog.data(d));
 		return out.toString();
 	}
 

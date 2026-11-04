@@ -227,6 +227,8 @@ public final class LurkerService {
 				// Lurker's Tooth: the tribe smells its own on you
 				often *= Math.max(0, Config.RELIC_LURKERS_TOOTH_OFTEN);
 			}
+			// Tetherite calls to them: the metal of swallowed Tethers is what the tribe is always after
+			often *= com.extremedimensions.tetherite.Tetherite.lure(p);
 			if (rnd.nextDouble() >= Config.LURKER_SPAWN_CHANCE * often) {
 				continue;
 			}
@@ -729,7 +731,7 @@ public final class LurkerService {
 				case 1 -> stealXp(p, st.loot);
 				case 2 -> stealArmor(p, st.loot);
 				default -> PenaltyService.curse(p, Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties(),
-						Config.LURKER_CURSE_EXTREME_CHANCE) != null;
+						Config.LURKER_CURSE_EXTREME_CHANCE, com.extremedimensions.penalty.CurseLog.Source.LURKER) != null;
 			};
 			if (took && pick == 3) {
 				st.curses++;
@@ -1355,7 +1357,7 @@ public final class LurkerService {
 			return;
 		}
 		boolean overworld = Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties();
-		if (PenaltyService.curse(p, overworld, Config.LURKER_CURSE_EXTREME_CHANCE) != null) {
+		if (PenaltyService.curse(p, overworld, Config.LURKER_CURSE_EXTREME_CHANCE, com.extremedimensions.penalty.CurseLog.Source.LURKER) != null) {
 			st.curses++;
 			WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.6, 0.06, 20);
 			WorldFx.soundFor(p, "extremedimensions:lurker_whisper", "hostile", l.getX(), l.getY() + 2, l.getZ(), 1.0f, 0.7f);

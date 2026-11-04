@@ -142,7 +142,7 @@ public final class PenaltyService {
 			d.owed.remove(0);
 		}
 
-		int added = d.addStacks(pen, mult);
+		int added = CurseLog.add(d, pen, mult, CurseLog.Source.CARD);
 		Map<Penalty, Integer> spilled = spill(d, mult - added);
 		CurseEffects.applyEffects(p, d);
 		WorldFx.fx(p, Fx.PENALTY, 0);
@@ -206,7 +206,7 @@ public final class PenaltyService {
 			if (t == null) {
 				t = room.get(room.size() - 1);
 			}
-			if (d.addStacks(t, 1) > 0) {
+			if (CurseLog.add(d, t, 1, CurseLog.Source.SPILL) > 0) {
 				out.merge(t, 1, Integer::sum);
 			}
 		}
@@ -216,6 +216,16 @@ public final class PenaltyService {
 	/** A curse laid without a choice (a Lurker, a Collapse in the Seam): one stack of a random curse. Null if none fits. */
 	public static Penalty curse(ServerPlayer p, boolean overworld) {
 		return curse(p, overworld, 0);
+	}
+
+	/** As {@link #curse(ServerPlayer, boolean)}, with where it came from said (see CurseLog). */
+	public static Penalty curse(ServerPlayer p, boolean overworld, CurseLog.Source source) {
+		return CurseLog.from(source, () -> curse(p, overworld, 0));
+	}
+
+	/** As {@link #curse(ServerPlayer, boolean, double)}, with where it came from said (see CurseLog). */
+	public static Penalty curse(ServerPlayer p, boolean overworld, double extremeChance, CurseLog.Source source) {
+		return CurseLog.from(source, () -> curse(p, overworld, extremeChance));
 	}
 
 	/** As {@link #curse(ServerPlayer, boolean)}, the curse being one of the Extreme set with this chance (if one can come). */

@@ -58,6 +58,9 @@ public class CursesScreen extends Screen {
 	 */
 	private record Entry(Penalty pen, int stacks, int max, int progress, int cost, String value, boolean readable, int deed, int deedTarget) {}
 
+	/** A curse gained lately: how many stacks, how long ago (seconds, when the data came), from what, and whether new. */
+	private record Recent(Penalty pen, int stacks, long age, String source, boolean fresh) {}
+
 	/** A player standing close by: stacks per set (beyond, Overworld, everywhere, extreme), and their clan (0 none, 1 ours, 2 another). */
 	private record Nearby(UUID id, String name, int[] sets, int clan) {}
 
@@ -65,6 +68,13 @@ public class CursesScreen extends Screen {
 	private final long openAt = System.currentTimeMillis();
 	private final Map<Penalty, Entry> entries = new HashMap<>();
 	private final List<Nearby> nearby = new ArrayList<>();
+	/** The newest curses gained, newest first (see CurseLog on the server). */
+	private final List<Recent> recent = new ArrayList<>();
+	/** When {@link #recent} came, to count their age on. */
+	private long recentAt = System.currentTimeMillis();
+	/** Curses that came since the screen was last opened: marked in the grid while it stays open. */
+	private final java.util.Set<Penalty> fresh = new java.util.HashSet<>();
+	private LatestStrip latest;
 	private final List<Socket> sockets = new ArrayList<>();
 	private final List<Tab> tabs = new ArrayList<>();
 	/** The heads of the players near, as buttons: a click holds out a Blood Cord to them. */
@@ -101,6 +111,11 @@ public class CursesScreen extends Screen {
 			}
 		}
 		selected = heaviest(tab);
+		// A curse that came since the screen was last opened: open on it, so the newest is the first thing seen
+		if (!recent.isEmpty() && recent.get(0).fresh() && shown(recent.get(0).pen())) {
+			tab = recent.get(0).pen().group;
+			selected = recent.get(0).pen();
+		}
 	}
 
 	/** A Curses payload arrived: open the screen, or refresh it if it is already open. */
@@ -162,6 +177,29 @@ public class CursesScreen extends Screen {
 					// skip malformed entry
 				}
 			}
+		}
+		recent.clear();
+		recentAt = System.currentTimeMillis();
+		if (parts.length > 7 && !parts[7].isEmpty()) {
+			for (String part : parts[7].split(";")) {
+				String[] kv = part.split(",");
+				Penalty pen = kv.length >= 5 ? Penalty.byId(kv[0]) : null;
+				if (pen == null) {
+					continue;
+				}
+				try {
+					Recent r = new Recent(pen, Integer.parseInt(kv[1]), Long.parseLong(kv[2]), kv[3], "1".equals(kv[4]));
+					recent.add(r);
+					if (r.fresh()) {
+						fresh.add(pen);
+					}
+				} catch (NumberFormatException e) {
+					// skip malformed entry
+				}
+			}
+		}
+		if (latest != null) {
+			latest.refresh();
 		}
 		showSockets();
 		refreshButton();
@@ -287,6 +325,10 @@ public class CursesScreen extends Screen {
 		this.addRenderableWidget(new RelicChip(x0 + PW - 14 - 132, y0 + 176, 132));
 		this.addRenderableWidget(new PactButton(x0 + 7, y0 + 5));
 		this.addRenderableWidget(new TrialsButton(x0 + 22, y0 + 5));
+		// The newest curse along the top of the panel (or under it, on a short screen): a click opens it
+		int ly = y0 >= 26 ? y0 - 24 : y0 + PH + 4;
+		latest = this.addRenderableWidget(new LatestStrip(x0, ly, PW));
+		latest.refresh();
 		heads.clear();
 		for (int i = 0; i < 8; i++) {
 			heads.add(this.addRenderableWidget(new Head()));
@@ -873,6 +915,91 @@ public class CursesScreen extends Screen {
 		return Component.literal(Ui.curse(Ui.tr(pen.nameKey()), entry(pen).readable()));
 	}
 
+	/** How long ago, in words ("just now", "3 min ago", "2 h ago"). */
+	private static String ago(long seconds) {
+		if (seconds < 60) {
+			return Ui.tr("gui.extremedimensions.curses.ago.now");
+		}
+		if (seconds < 3600) {
+			return Ui.tr("gui.extremedimensions.curses.ago.minutes", seconds / 60);
+		}
+		if (seconds < 86400) {
+			return Ui.tr("gui.extremedimensions.curses.ago.hours", seconds / 3600);
+		}
+		return Ui.tr("gui.extremedimensions.curses.ago.days", seconds / 86400);
+	}
+
+	private String source(String id) {
+		return Ui.tr("gui.extremedimensions.curses.from." + id);
+	}
+
+	/**
+	 * The newest curse gained, along the top of the panel: its name and stacks, where it came from and how long ago
+	 * (marked while it is new). Hover it for the ones before; click it to open the curse.
+	 */
+	private final class LatestStrip extends AbstractButton {
+		LatestStrip(int x, int y, int w) {
+			super(x, y, w, 20, Component.translatable("gui.extremedimensions.curses.latest"));
+		}
+
+		void refresh() {
+			this.visible = !recent.isEmpty() && CursesScreen.this.height >= this.getY() + 20;
+			if (recent.isEmpty()) {
+				return;
+			}
+			Component lines = Component.translatable("gui.extremedimensions.curses.latest_list").withStyle(net.minecraft.ChatFormatting.GRAY);
+			for (int i = 0; i < recent.size() && i < 6; i++) {
+				Recent r = recent.get(i);
+				lines = Component.empty().append(lines).append("\n").append(Component.literal(Ui.tr("gui.extremedimensions.curses.latest_line",
+						curseName(r.pen()).getString(), r.stacks(), source(r.source()), ago(r.age() + (System.currentTimeMillis() - recentAt) / 1000)))
+						.withStyle(r.fresh() ? net.minecraft.ChatFormatting.YELLOW : net.minecraft.ChatFormatting.WHITE));
+			}
+			this.setTooltip(Tooltip.create(lines));
+		}
+
+		@Override
+		public void onPress(InputWithModifiers input) {
+			if (recent.isEmpty() || !shown(recent.get(0).pen())) {
+				return;
+			}
+			tab = recent.get(0).pen().group;
+			select(recent.get(0).pen());
+			showTab();
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+			if (recent.isEmpty()) {
+				return;
+			}
+			Recent r = recent.get(0);
+			int x = this.getX(), y = this.getY(), w = this.getWidth();
+			int col = r.pen().abyssal ? Ui.abyss() : color(r.pen().group);
+			Ui.panel(g, x, y, w, 20, col, 1.0);
+			if (this.isHovered()) {
+				g.fill(x + 2, y + 2, x + w - 2, y + 18, Ui.argb(0.18, col));
+			}
+			String label = Ui.tr("gui.extremedimensions.curses.latest").toUpperCase();
+			g.text(CursesScreen.this.font, label, x + 8, y + 6, Ui.argb(255, r.fresh() ? Ui.WARN : Ui.MUTED));
+			int tx = x + 14 + CursesScreen.this.font.width(label);
+			sigil(g, r.pen().group, tx, y + 6, col, 1.0);
+			tx += 12;
+			String name = curseName(r.pen()).getString() + " +" + r.stacks();
+			long age = r.age() + (System.currentTimeMillis() - recentAt) / 1000;
+			String tail = "  " + Ui.tr("gui.extremedimensions.curses.latest_tail", source(r.source()), ago(age));
+			int room = x + w - 8 - tx;
+			String shownName = Ui.ellipsize(CursesScreen.this.font, name, Math.max(40, room - CursesScreen.this.font.width(tail)));
+			g.text(CursesScreen.this.font, shownName, tx, y + 6, Ui.argb(255, r.fresh() ? Ui.DANGER : Ui.PARCHMENT));
+			int after = tx + CursesScreen.this.font.width(shownName);
+			g.text(CursesScreen.this.font, Ui.ellipsize(CursesScreen.this.font, tail, Math.max(0, x + w - 8 - after)), after, y + 6, Ui.argb(255, Ui.MUTED));
+		}
+
+		@Override
+		protected void updateWidgetNarration(NarrationElementOutput out) {
+			out.add(NarratedElementType.TITLE, this.getMessage());
+		}
+	}
+
 	/** A curse in the grid: its rune, its pips, selected or not. */
 	private final class Socket extends AbstractButton {
 		final Penalty pen;
@@ -909,6 +1036,7 @@ public class CursesScreen extends Screen {
 				if (pen.id.equals(atoning) && has) {
 					g.fill(x + 12, y + 1, x + 15, y + 4, Ui.argb(255, Ui.SOUL));
 				}
+				freshMark(g, x, y);
 				return;
 			}
 			Ui.runeSocket(g, pen.id, x, y, has ? accent : Ui.MUTED, alpha, sel || this.isHovered() ? 1.0 : has ? 0.5 : 0.1);
@@ -920,6 +1048,17 @@ public class CursesScreen extends Screen {
 			}
 			int pw = e.max() * 4 - 1;
 			pips(g, x + 9 - pw / 2, y + 19, e.stacks(), e.max(), accent, has ? 1.0 : 0.5);
+			freshMark(g, x, y);
+		}
+
+		/** A curse that came since the screen was last opened: a small pulsing mark on its corner. */
+		private void freshMark(GuiGraphicsExtractor g, int x, int y) {
+			if (!fresh.contains(pen)) {
+				return;
+			}
+			double pulse = 0.65 + 0.35 * Math.sin(System.currentTimeMillis() / 180.0);
+			g.fill(x - 2, y - 2, x + 4, y + 4, Ui.argb(255, Ui.SHADOW));
+			g.fill(x - 1, y - 1, x + 3, y + 3, Ui.argb(pulse, Ui.WARN));
 		}
 
 		@Override

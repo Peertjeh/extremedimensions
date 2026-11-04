@@ -62,6 +62,9 @@ On **Hard** and **Extreme** a curse you have never carried shows only runes, on 
 until you take it once; on Easy and Normal every curse reads from the start (the Extreme set only ever hints). The
 runes are the **Seam script**, an alphabet of the mod's own: threads with knots, beads and loose ends tied into them.
 
+A curse laid without a choice (a Lurker's touch, the swarm, a barter, a Collapse...) shows as a toast naming it and where
+it came from, and the Curses screen keeps the newest along its top, marking those that came since you last looked.
+
 Lift them by **atonement** (played off on expeditions and at home; every death undoes half), helped along by
 **Tether Fragments** offered to an anchor (each atones for a tenth of what the curse's next stack still asks, five at
 most for each stack), or by a **Mending Cloth**. Every stack lifted leaves a **scar** that weakens the drain.
@@ -160,9 +163,12 @@ Trials past gold), and the tapestry's boons stay.
 - **Relics** (10): bound to the Tether one at a time, each with a gift and a price.
 - **Pacts**: curses taken on willingly for an expedition, for what a safe return brings.
 - **Rift Trials**: a weekly goal in the Seam, a world scoreboard and medals.
-- **Tetherite**: a tier past netherite. The rarest ore lies deep in the Seam's island hearts and the Fray's knots; Tether
-  Fragments are spun into **Tether Cord** on a **Spindle**, and scrap and cord make the ingot. Tools, a spear and armour
-  that come back from the void, and a full set that slows the drain.
+- **Tetherite**: a tier past netherite. The rarest ore lies deep in the Seam's island hearts and the Fray's knots (a
+  netherite pick brings it out, a blast furnace gives up its scrap); Tether Fragments are spun into **Tether Cord** on a
+  **Spindle**, and scrap and cord make the ingot. Netherite takes it only at a **binding** that may fail: its chance (40%
+  on a plain piece) rises with Unbreaking, Mending, Knitting, luck, the Seam, a Tether Cord in the other hand and the
+  scars of earlier failures, and a panel beside the smithing table shows it. Tools, a spear and armour that come back
+  from the void, and a full set that slows the drain; but the metal is heavy, hungry, and calls the Lurkers.
 - **Two armour trims**, the Weaver and the Fray, and two trim materials, Tetherite and Seam Silk, that show on every
   armour.
 - **The Art of Binding**: twenty enchantments (two of them curses) for Tethers, weapons, tools and armour, most of them

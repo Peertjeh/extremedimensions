@@ -102,7 +102,7 @@ public final class ElderUltimate {
 			if (laid.size() >= want) {
 				break;
 			}
-			if (d.addStacks(pen, 1) > 0) {
+			if (com.extremedimensions.penalty.CurseLog.add(d, pen, 1, com.extremedimensions.penalty.CurseLog.Source.ELDER) > 0) {
 				laid.add(pen);
 			}
 		}

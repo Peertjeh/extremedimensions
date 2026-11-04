@@ -350,7 +350,7 @@ public final class ClanService {
 		Standing.change(p, -Math.max(0, Config.CLAN_LEAVE_COST), "gui.extremedimensions.tribe.why.clan_left");
 		boolean overworld = Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties();
 		for (int i = 0; i < Config.CLAN_LEAVE_CURSES; i++) {
-			PenaltyService.curse(p, overworld);
+			PenaltyService.curse(p, overworld, com.extremedimensions.penalty.CurseLog.Source.CLAN);
 		}
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.clan.left").withStyle(ChatFormatting.DARK_RED));
 		WorldFx.particles(p, "minecraft:dust{color:[0.6,0.02,0.05],scale:1.4}", 0.6, 0.8, 0.0, 30);

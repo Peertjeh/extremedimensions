@@ -469,7 +469,7 @@ public final class CaveLurkerService {
 		}
 		WorldFx.soundIn(Dims.fullId(p), "extremedimensions:cave_lurker.grab", "hostile", p.getX(), p.getY() + 1, p.getZ(), 1.2f, 1.0f);
 		boolean overworld = Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties();
-		if (PenaltyService.curse(p, overworld, Config.CAVE_LURKER_CURSE_EXTREME_CHANCE) != null) {
+		if (PenaltyService.curse(p, overworld, Config.CAVE_LURKER_CURSE_EXTREME_CHANCE, com.extremedimensions.penalty.CurseLog.Source.CAVE_LURKER) != null) {
 			st.curses++;
 			WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.6, 0.06, 20);
 			WorldFx.soundFor(p, "extremedimensions:lurker_whisper", "hostile", cl.getX(), cl.getY() + 1.2, cl.getZ(), 1.0f, 1.2f);

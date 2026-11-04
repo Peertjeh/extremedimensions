@@ -574,7 +574,7 @@ public final class SeamService {
 		if (silk + fragments > 0) {
 			p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.seam.toll", silk, fragments));
 		}
-		PenaltyService.curse(p, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties());
+		PenaltyService.curse(p, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties(), com.extremedimensions.penalty.CurseLog.Source.COLLAPSE);
 		DataStore.markDirty();
 	}
 

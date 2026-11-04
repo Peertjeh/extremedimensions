@@ -295,7 +295,7 @@ public final class TetherCommand {
 		PlayerData d = DataStore.get(p.getUUID());
 		d.curses.remove(pen.id);
 		d.atonement.remove(pen.id);
-		int set = d.addStacks(pen, stacks);
+		int set = com.extremedimensions.penalty.CurseLog.add(d, pen, stacks, com.extremedimensions.penalty.CurseLog.Source.COMMAND);
 		CurseEffects.applyEffects(p, d);
 		Sync.state(p, d);
 		DataStore.markDirty();

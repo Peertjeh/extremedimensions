@@ -951,12 +951,19 @@ public class ClientShots implements FabricClientGameTest {
 			}
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ ~ 0");
 
-			// The Curses screen: all four tabs, with players nearby
-			String data = sp.getServer().computeOnServer(s -> Sync.cursesData(player(s), DataStore.get(player(s).getUUID())));
+			// The Curses screen: all four tabs, with players nearby, and along its top the curse a Lurker laid last
+			String data = sp.getServer().computeOnServer(s -> {
+				PlayerData d = DataStore.get(player(s).getUUID());
+				com.extremedimensions.penalty.CurseLog.add(d, com.extremedimensions.penalty.Penalty.GLASS_JAW, 1, com.extremedimensions.penalty.CurseLog.Source.LURKER);
+				return Sync.cursesData(player(s), d);
+			});
 			AtomicReference<CursesScreen> screen = new AtomicReference<>();
 			ctx.runOnClient(mc -> {
 				String nearby = mc.player.getUUID() + ",Player0,7,2,3,4;" + UUID.randomUUID() + ",Steve,0,4,1,0;" + UUID.randomUUID() + ",Alex,12,0,0,2";
-				CursesScreen cs = new CursesScreen(data + nearby, null);
+				// (the players nearby are the seventh part of the data, before the newest curses)
+				String[] parts = data.split("\\|", -1);
+				parts[6] = nearby;
+				CursesScreen cs = new CursesScreen(String.join("|", parts), null);
 				screen.set(cs);
 				mc.gui.setScreen(cs);
 			});
@@ -978,6 +985,34 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("03_curses_colour_blind");
 			ctx.runOnClient(mc -> ClientOptions.setColourBlind(false));
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+
+			// The Tetherite binding: a smithing table with an upgrade laid in, its chance and what makes it beside it
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				net.minecraft.core.BlockPos at = p.blockPosition().below();
+				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, new ItemStack(com.extremedimensions.registry.ModItems.TETHER_CORD));
+				p.openMenu(new net.minecraft.world.SimpleMenuProvider((id, inv, who) -> {
+					net.minecraft.world.inventory.SmithingMenu m = new net.minecraft.world.inventory.SmithingMenu(id, inv,
+							net.minecraft.world.inventory.ContainerLevelAccess.create(p.level(), at));
+					ItemStack piece = new ItemStack(Items.NETHERITE_CHESTPLATE);
+					var enchants = p.level().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+					piece.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.UNBREAKING), 3);
+					piece.enchant(enchants.getOrThrow(net.minecraft.world.item.enchantment.Enchantments.MENDING), 1);
+					com.extremedimensions.tetherite.TetheriteBinding.setScars(piece, 1);
+					m.getSlot(net.minecraft.world.inventory.SmithingMenu.TEMPLATE_SLOT).set(new ItemStack(com.extremedimensions.registry.ModItems.TETHERITE_UPGRADE_SMITHING_TEMPLATE));
+					m.getSlot(net.minecraft.world.inventory.SmithingMenu.BASE_SLOT).set(piece);
+					m.getSlot(net.minecraft.world.inventory.SmithingMenu.ADDITIONAL_SLOT).set(new ItemStack(com.extremedimensions.registry.ModItems.TETHERITE_INGOT));
+					return m;
+				}, net.minecraft.network.chat.Component.translatable("container.upgrade")));
+			});
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("03_tetherite_binding");
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				p.closeContainer();
+				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, ItemStack.EMPTY);
+			});
+			ctx.waitTicks(4);
 
 			// Pacts: open them early, swear three curses and open the Pact screen through its brand in the Curses screen
 			int unlock = com.extremedimensions.config.Config.PACT_UNLOCK;
