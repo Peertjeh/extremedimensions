@@ -58,11 +58,16 @@ public final class AdminService {
 
 	/** A change asked for from the screen: made if the asker may, then the screen gets fresh data. Returns why not, or null. */
 	public static String act(ServerPlayer op, String target, String action, String curse) {
+		return act(op, target, action, curse, false);
+	}
+
+	/** As {@link #act(ServerPlayer, String, String, String)}; silent: the player is not told (3.27.2). */
+	public static String act(ServerPlayer op, String target, String action, String curse, boolean silent) {
 		if (!allowed(op)) {
 			op.sendSystemMessage(Component.translatable("gui.extremedimensions.admin.refused"));
 			return "gui.extremedimensions.admin.refused";
 		}
-		String why = change(op.level().getServer(), op, target, action, curse);
+		String why = change(op.level().getServer(), op, target, action, curse, silent);
 		if (why != null) {
 			op.sendSystemMessage(Component.translatable(why));
 		}
@@ -209,11 +214,18 @@ public final class AdminService {
 		return o;
 	}
 
+	/** As {@link #change(MinecraftServer, ServerPlayer, String, String, String, boolean)}, telling the player. */
+	public static String change(MinecraftServer server, ServerPlayer by, String targetId, String action, String curseId) {
+		return change(server, by, targetId, action, curseId, false);
+	}
+
 	/**
 	 * Lays a stack on ({@code add}), lifts one off ({@code lift}) or lifts every curse ({@code clear}) for a player online
-	 * or not, and tells them. Returns why nothing changed (a lang key), or null when done.
+	 * or not, and tells them; silent (3.27.2): they are not told (no toast, no message, nothing in their newest curses),
+	 * though the curses act at once all the same and the server log still notes it. Returns why nothing changed (a lang
+	 * key), or null when done.
 	 */
-	public static String change(MinecraftServer server, ServerPlayer by, String targetId, String action, String curseId) {
+	public static String change(MinecraftServer server, ServerPlayer by, String targetId, String action, String curseId, boolean silent) {
 		UUID id;
 		try {
 			id = UUID.fromString(targetId);
@@ -227,16 +239,17 @@ public final class AdminService {
 		ServerPlayer target = server == null ? null : server.getPlayerList().getPlayer(id);
 		Penalty pen = curseId == null || curseId.isEmpty() ? null : Penalty.byId(curseId);
 		String who = nameOf(server, id, d), byName = by == null ? "the server" : by.getName().getString();
-		boolean self = by != null && by.getUUID().equals(id);
+		boolean self = by != null && by.getUUID().equals(id), tell = !self && !silent;
+		String how = silent ? " silently" : "";
 		switch (action == null ? "" : action) {
 			case "add" -> {
 				if (pen == null) {
 					return "gui.extremedimensions.admin.no_curse";
 				}
-				if (CurseLog.add(d, pen, 1, CurseLog.Source.OPERATOR) <= 0) {
+				if ((silent ? CurseLog.addQuietly(d, pen, 1) : CurseLog.add(d, pen, 1, CurseLog.Source.OPERATOR)) <= 0) {
 					return "gui.extremedimensions.admin.full";
 				}
-				ExtremeDimensions.LOGGER.info("{} laid a stack of {} on {} ({}/{})", byName, pen.id, who, d.owned(pen), pen.max);
+				ExtremeDimensions.LOGGER.info("{}{} laid a stack of {} on {} ({}/{})", byName, how, pen.id, who, d.owned(pen), pen.max);
 			}
 			case "lift" -> {
 				if (pen == null) {
@@ -245,8 +258,8 @@ public final class AdminService {
 				if (!d.removeStack(pen)) {
 					return "gui.extremedimensions.admin.none";
 				}
-				ExtremeDimensions.LOGGER.info("{} lifted a stack of {} from {} ({}/{})", byName, pen.id, who, d.owned(pen), pen.max);
-				if (target != null && !self) {
+				ExtremeDimensions.LOGGER.info("{}{} lifted a stack of {} from {} ({}/{})", byName, how, pen.id, who, d.owned(pen), pen.max);
+				if (target != null && tell) {
 					target.sendSystemMessage(Component.translatable("gui.extremedimensions.admin.lifted_you", Component.translatable(pen.nameKey()),
 							d.owned(pen), pen.max));
 				}
@@ -261,8 +274,8 @@ public final class AdminService {
 				if (lifted == 0) {
 					return "gui.extremedimensions.admin.none_at_all";
 				}
-				ExtremeDimensions.LOGGER.info("{} lifted every curse from {} ({} stacks)", byName, who, lifted);
-				if (target != null && !self) {
+				ExtremeDimensions.LOGGER.info("{}{} lifted every curse from {} ({} stacks)", byName, how, who, lifted);
+				if (target != null && tell) {
 					target.sendSystemMessage(Component.translatable("gui.extremedimensions.admin.cleared_you"));
 				}
 			}

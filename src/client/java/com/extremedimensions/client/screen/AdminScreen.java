@@ -67,10 +67,15 @@ public class AdminScreen extends Screen {
 	private String selId = "";
 	private Group tab = Group.BEYOND;
 	private boolean carriedOnly = false;
+	/**
+	 * Silent (3.27.2): changes made while it is on are not told to the player (no toast, no message, nothing in their
+	 * newest curses). Kept while the game runs, so an operator who works silently need not switch it on each time.
+	 */
+	private static boolean silent;
 	private int listScroll, curseScroll;
 	private long refreshedAt = System.currentTimeMillis(), clearArmedAt;
 	private EditBox search;
-	private Button clear, carriedButton;
+	private Button clear, carriedButton, silentButton;
 	private final List<Tab> tabs = new ArrayList<>();
 	/**
 	 * The panel's height, and how many players and curses show, fitted to the screen (3.27.1): eight curse rows where
@@ -261,13 +266,17 @@ public class AdminScreen extends Screen {
 			this.addRenderableWidget(new StackButton(i, false, x0 + RX + RW - 6 - 24, y));
 			this.addRenderableWidget(new StackButton(i, true, x0 + RX + RW - 6 - 12, y));
 		}
-		clear = this.addRenderableWidget(Button.builder(Component.empty(), b -> clearAll()).pos(x0 + RX, y0 + ph - 24).size(124, 18).build());
+		clear = this.addRenderableWidget(Button.builder(Component.empty(), b -> clearAll()).pos(x0 + RX, y0 + ph - 24).size(92, 18).build());
 		carriedButton = this.addRenderableWidget(Button.builder(Component.empty(), b -> {
 			carriedOnly = !carriedOnly;
 			curseScroll = 0;
 			filter();
 			layout();
-		}).pos(x0 + RX + 128, y0 + ph - 24).size(RW - 128, 18).build());
+		}).pos(x0 + RX + 96, y0 + ph - 24).size(80, 18).build());
+		silentButton = this.addRenderableWidget(Button.builder(Component.empty(), b -> {
+			silent = !silent;
+			layout();
+		}).pos(x0 + RX + 180, y0 + ph - 24).size(RW - 180, 18).build());
 		this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose()).pos(x0 + 10, y0 + ph - 24).size(LIST_W, 18).build());
 		filter();
 		layout();
@@ -287,8 +296,12 @@ public class AdminScreen extends Screen {
 		boolean armed = System.currentTimeMillis() - clearArmedAt < 4000;
 		clear.setMessage(Component.translatable(armed ? "gui.extremedimensions.admin.clear_confirm" : "gui.extremedimensions.admin.clear"));
 		clear.active = carriedAll() > 0;
-		clear.setTooltip(Tooltip.create(Component.translatable("gui.extremedimensions.admin.clear_tip", str(sel, "name"))));
+		clear.setTooltip(Tooltip.create(Component.translatable(silent ? "gui.extremedimensions.admin.clear_tip_silent" : "gui.extremedimensions.admin.clear_tip",
+				str(sel, "name"))));
 		carriedButton.setMessage(Component.translatable(carriedOnly ? "gui.extremedimensions.admin.show_carried" : "gui.extremedimensions.admin.show_all"));
+		silentButton.setMessage(silent ? Component.translatable("gui.extremedimensions.admin.silent_on").withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE)
+				: Component.translatable("gui.extremedimensions.admin.silent_off"));
+		silentButton.setTooltip(Tooltip.create(Component.translatable("gui.extremedimensions.admin.silent_tip")));
 	}
 
 	/** Lifts every curse of the player picked: the first press arms the button, a second within four seconds does it. */
@@ -298,7 +311,7 @@ public class AdminScreen extends Screen {
 			clearArmedAt = now;
 		} else {
 			clearArmedAt = 0;
-			ClientPlayNetworking.send(new ModPackets.AdminActionPayload(selId, "clear", ""));
+			ClientPlayNetworking.send(new ModPackets.AdminActionPayload(selId, "clear", "", silent));
 		}
 		layout();
 	}
@@ -424,7 +437,7 @@ public class AdminScreen extends Screen {
 		Penalty at = atoning.isEmpty() ? null : Penalty.byId(atoning);
 		String[][] cells = {
 			{"scars", num(sel, "scars") + "/5"}, {"lifted", String.valueOf(num(sel, "lifted"))}, {"deaths", String.valueOf(num(sel, "deaths"))},
-			{"expeditions", String.valueOf(num(sel, "exp"))}, {"seam", num(sel, "seam") + " / " + num(sel, "fray")}, {"standing", String.valueOf(num(sel, "rep"))},
+			{"expeditions", String.valueOf(num(sel, "exp"))}, {"seam", num(sel, "seam") + "/" + num(sel, "fray")}, {"standing", String.valueOf(num(sel, "rep"))},
 		};
 		for (int i = 0; i < cells.length; i++) {
 			stat(g, cells[i][0], cells[i][1], x + (i % 3) * cw, sy + (i / 3) * 10, cw - 4, fade);
@@ -615,7 +628,8 @@ public class AdminScreen extends Screen {
 	private final class StackButton extends AbstractButton {
 		private final int slot;
 		private final boolean add;
-		private boolean tipShown;
+		/** What the tooltip was made for: none (an empty row), told, or silent. */
+		private int tipFor = -1;
 
 		StackButton(int slot, boolean add, int x, int y) {
 			super(x, y, 11, 11, Component.translatable(add ? "gui.extremedimensions.admin.add" : "gui.extremedimensions.admin.lift"));
@@ -632,7 +646,7 @@ public class AdminScreen extends Screen {
 		public void onPress(InputWithModifiers input) {
 			Penalty p = pen();
 			if (p != null && this.active) {
-				ClientPlayNetworking.send(new ModPackets.AdminActionPayload(selId, add ? "add" : "lift", p.id));
+				ClientPlayNetworking.send(new ModPackets.AdminActionPayload(selId, add ? "add" : "lift", p.id, silent));
 			}
 		}
 
@@ -640,10 +654,11 @@ public class AdminScreen extends Screen {
 		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
 			Penalty p = pen();
 			// An empty row (the set ends above it): nothing to press, nothing to say
-			if (p == null || !tipShown) {
-				tipShown = p != null;
-				this.setTooltip(p == null ? null
-						: Tooltip.create(Component.translatable(add ? "gui.extremedimensions.admin.add_tip" : "gui.extremedimensions.admin.lift_tip")));
+			int want = p == null ? 0 : silent ? 2 : 1;
+			if (want != tipFor) {
+				tipFor = want;
+				String key = "gui.extremedimensions.admin." + (add ? "add_tip" : "lift_tip") + (silent ? "_silent" : "");
+				this.setTooltip(p == null ? null : Tooltip.create(Component.translatable(key)));
 			}
 			if (p == null) {
 				this.active = false;
@@ -654,7 +669,8 @@ public class AdminScreen extends Screen {
 			int x = this.getX(), y = this.getY();
 			int col = !this.active ? Ui.TRACK : add ? Ui.EMBER_DEEP : Ui.SOUL;
 			g.fill(x, y, x + 11, y + 11, Ui.argb(this.active && this.isHovered() ? 0.45 : 0.2, col));
-			g.fill(x, y + 10, x + 11, y + 11, Ui.argb(0.8, col));
+			// (violet underfoot while silent: the player will not be told)
+			g.fill(x, y + 10, x + 11, y + 11, Ui.argb(0.8, silent && this.active ? Ui.VOID : col));
 			int glyph = this.active ? (this.isHovered() ? 0xFFFFFF : col) : Ui.MUTED;
 			// A minus, and for the plus its upright too
 			g.fill(x + 3, y + 5, x + 8, y + 6, Ui.argb(this.active ? 1.0 : 0.5, glyph));

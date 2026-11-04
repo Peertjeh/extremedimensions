@@ -3433,11 +3433,11 @@
   "gui.extremedimensions.admin.stat.clan": "Clan",
   "gui.extremedimensions.admin.last": "Laatste: %s +%s, %s, %s",
   "gui.extremedimensions.admin.last_none": "Laatste: nog geen curse",
-  "gui.extremedimensions.admin.clear": "Alle curses opheffen",
-  "gui.extremedimensions.admin.clear_confirm": "Nog eens: alles opheffen",
+  "gui.extremedimensions.admin.clear": "Alles opheffen",
+  "gui.extremedimensions.admin.clear_confirm": "Nog een keer",
   "gui.extremedimensions.admin.clear_tip": "Heft elke curse van %s op, zonder littekens. Druk twee keer.",
-  "gui.extremedimensions.admin.show_all": "Toont: alle curses",
-  "gui.extremedimensions.admin.show_carried": "Toont: alleen gedragen",
+  "gui.extremedimensions.admin.show_all": "Toon: alle",
+  "gui.extremedimensions.admin.show_carried": "Toon: gedragen",
   "gui.extremedimensions.admin.add": "Stapel erbij",
   "gui.extremedimensions.admin.lift": "Stapel eraf",
   "gui.extremedimensions.admin.add_tip": "Leg één stapel op: hij werkt meteen en de speler ziet hem als melding",
@@ -3455,5 +3455,11 @@
   "gui.extremedimensions.admin.world.the_end": "het End",
   "gui.extremedimensions.admin.world.the_seam": "de Seam",
   "gui.extremedimensions.admin.world.the_fray": "de Rafel",
-  "gui.extremedimensions.curses.from.operator": "een beheerder"
+  "gui.extremedimensions.curses.from.operator": "een beheerder",
+  "gui.extremedimensions.admin.silent_on": "Stil: aan",
+  "gui.extremedimensions.admin.silent_off": "Stil: uit",
+  "gui.extremedimensions.admin.silent_tip": "Aan: de speler hoort niet wat je verandert. Geen melding, geen chatbericht, niets bij de nieuwste curses. De curses werken wel meteen, en het serverlog noteert elke wijziging.",
+  "gui.extremedimensions.admin.add_tip_silent": "Leg stil één stapel op: hij werkt meteen, maar de speler hoort er niets van",
+  "gui.extremedimensions.admin.lift_tip_silent": "Haal stil één stapel weg: geen litteken, geen beloning, en de speler hoort er niets van",
+  "gui.extremedimensions.admin.clear_tip_silent": "Heft stil elke curse van %s op: geen littekens, en ze horen er niets van. Druk twee keer."
 }

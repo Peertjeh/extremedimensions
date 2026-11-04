@@ -186,7 +186,7 @@ public class ExtremeDimensions implements ModInitializer {
 		});
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.AdminActionPayload.TYPE, (payload, context) -> {
 			if (Requests.allow(context.player(), "admin_action", 12)) {
-				com.extremedimensions.admin.AdminService.act(context.player(), payload.target(), payload.action(), payload.curse());
+				com.extremedimensions.admin.AdminService.act(context.player(), payload.target(), payload.action(), payload.curse(), payload.silent());
 			}
 		});
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.ArmTrialPayload.TYPE, ModPackets.ArmTrialPayload.CODEC);

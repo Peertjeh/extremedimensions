@@ -3434,10 +3434,10 @@
   "gui.extremedimensions.admin.last": "Latest: %s +%s, %s, %s",
   "gui.extremedimensions.admin.last_none": "Latest: no curse yet",
   "gui.extremedimensions.admin.clear": "Lift every curse",
-  "gui.extremedimensions.admin.clear_confirm": "Press again to lift all",
+  "gui.extremedimensions.admin.clear_confirm": "Press again",
   "gui.extremedimensions.admin.clear_tip": "Lifts every curse %s carries, plainly (no scars). Press twice.",
-  "gui.extremedimensions.admin.show_all": "Showing: every curse",
-  "gui.extremedimensions.admin.show_carried": "Showing: carried only",
+  "gui.extremedimensions.admin.show_all": "Show: all",
+  "gui.extremedimensions.admin.show_carried": "Show: carried",
   "gui.extremedimensions.admin.add": "Add a stack",
   "gui.extremedimensions.admin.lift": "Lift a stack",
   "gui.extremedimensions.admin.add_tip": "Lay one stack on: it acts at once, and the player sees it as a toast",
@@ -3455,5 +3455,11 @@
   "gui.extremedimensions.admin.world.the_end": "the End",
   "gui.extremedimensions.admin.world.the_seam": "the Seam",
   "gui.extremedimensions.admin.world.the_fray": "the Fray",
-  "gui.extremedimensions.curses.from.operator": "an operator"
+  "gui.extremedimensions.curses.from.operator": "an operator",
+  "gui.extremedimensions.admin.silent_on": "Silent: on",
+  "gui.extremedimensions.admin.silent_off": "Silent: off",
+  "gui.extremedimensions.admin.silent_tip": "When on, the player is not told what you change: no toast, no message in chat, nothing in their newest curses. The curses act at once all the same, and the server log still notes every change.",
+  "gui.extremedimensions.admin.add_tip_silent": "Lay one stack on, silently: it acts at once, but the player is not told",
+  "gui.extremedimensions.admin.lift_tip_silent": "Lift one stack off, silently: no scar, no reward, and the player is not told",
+  "gui.extremedimensions.admin.clear_tip_silent": "Lifts every curse %s carries, silently: no scars, and they are not told. Press twice."
 }

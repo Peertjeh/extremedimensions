@@ -76,6 +76,8 @@ public final class CurseLog {
 	}
 
 	private static final ThreadLocal<Source> SOURCE = new ThreadLocal<>();
+	/** Set while an operator lays curses silently: nothing written down, no toast. */
+	private static final ThreadLocal<Boolean> QUIET = ThreadLocal.withInitial(() -> false);
 
 	/** Lays curses with their source said: everything {@code body} adds is written as coming from it. */
 	public static <T> T from(Source source, Supplier<T> body) {
@@ -101,9 +103,23 @@ public final class CurseLog {
 		return from(source, () -> d.addStacks(p, n));
 	}
 
+	/**
+	 * Adds stacks silently (3.27.2, an operator's choice in the Players screen): they act at once, but nothing is written
+	 * in the player's newest curses and no toast tells them. Returns how many were added.
+	 */
+	public static int addQuietly(PlayerData d, Penalty p, int n) {
+		boolean was = QUIET.get();
+		QUIET.set(true);
+		try {
+			return d.addStacks(p, n);
+		} finally {
+			QUIET.set(was);
+		}
+	}
+
 	/** Stacks were added (called by {@link PlayerData#addStacks}): written first in the log, with a toast to come. */
 	public static void record(PlayerData d, Penalty p, int added) {
-		if (added <= 0) {
+		if (added <= 0 || QUIET.get()) {
 			return;
 		}
 		Source source = SOURCE.get() == null ? Source.UNKNOWN : SOURCE.get();

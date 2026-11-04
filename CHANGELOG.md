@@ -1,5 +1,19 @@
 # Changelog
 
+## 3.27.2: Silently
+
+### New
+- **Curses laid on and lifted off silently.** The Players screen has a new switch at its foot, **Silent**. While it is
+  on, whatever you change is not told to the player: a stack laid on comes without a toast and is not written in their
+  newest curses (nor marked new in their Curses screen), and a stack lifted off, or every curse lifted at once, comes
+  without a message in chat. The curses act at once all the same, and the server log still notes every change, marked
+  "silently". The minus and plus buttons sit on a violet line while it is on, and their tooltips say so. It stays on
+  until you switch it off again or close the game.
+
+### Changes
+- The Players screen's footer buttons are shorter, to make room for the switch: "Lift every curse", "Show: all" or
+  "Show: carried", and "Silent: on/off". Seam visits and Fray descents read "5/2", so they no longer get cut off.
+
 ## 3.27.1: Fits the Screen
 
 ### Fixes

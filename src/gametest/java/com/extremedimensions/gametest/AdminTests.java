@@ -87,6 +87,35 @@ public class AdminTests {
 		helper.succeed();
 	}
 
+	/**
+	 * 3.27.2: silently, the stacks come and go all the same, but the player is not told: nothing written in their newest
+	 * curses, no toast waiting, and a lifted stack leaves no scar either way.
+	 */
+	@GameTest
+	public void anOperatorCanLayAndLiftCursesSilently(GameTestHelper helper) {
+		MinecraftServer server = helper.getLevel().getServer();
+		ServerPlayer target = TestPlayers.survivor(helper, "test-quiet");
+		PlayerData d = DataStore.get(target.getUUID());
+		String id = target.getStringUUID();
+		Penalty pen = Penalty.GLASS_JAW;
+		d.curseToasts.clear();
+		int logged = CurseLog.entries(d).size();
+		check(helper, AdminService.change(server, null, id, "add", pen.id, true) == null, "a stack could not be laid on silently");
+		check(helper, d.owned(pen) == 1, "laying a stack on silently left %s", d.owned(pen));
+		check(helper, CurseLog.entries(d).size() == logged, "a silent stack was written in the player's newest curses");
+		check(helper, d.curseToasts.isEmpty(), "a silent stack waits to be told as a toast (%s)", d.curseToasts.size());
+		// Told again once silent is off: the next stack is written down and toasted
+		check(helper, AdminService.change(server, null, id, "add", pen.id, false) == null && d.curseToasts.size() == 1,
+				"with silent off the player is not told (%s toasts)", d.curseToasts.size());
+		int scars = d.scars;
+		check(helper, AdminService.change(server, null, id, "lift", pen.id, true) == null, "a stack could not be lifted silently");
+		check(helper, d.owned(pen) == 1 && d.scars == scars, "lifting silently left %s stacks and %s scars (was %s)", d.owned(pen), d.scars, scars);
+		d.addStacks(Penalty.CRACKED_ARMOR, 2);
+		check(helper, AdminService.change(server, null, id, "clear", "", true) == null && d.curses.isEmpty(), "every curse could not be lifted silently: %s",
+				d.curses);
+		helper.succeed();
+	}
+
 	/** The list holds every player (online first, offline after, the asker among them); the one picked shows in full. */
 	@GameTest
 	public void thePlayersScreenListsEveryoneAndThePickedPlayer(GameTestHelper helper) {

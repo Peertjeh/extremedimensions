@@ -421,8 +421,11 @@ public final class ModPackets {
 		}
 	}
 
-	/** Client -> server: an operator lays a stack on a player ("add"), lifts one off ("lift") or lifts every curse ("clear"). */
-	public record AdminActionPayload(String target, String action, String curse) implements CustomPacketPayload {
+	/**
+	 * Client -> server: an operator lays a stack on a player ("add"), lifts one off ("lift") or lifts every curse
+	 * ("clear"); silent: the player is not told (3.27.2).
+	 */
+	public record AdminActionPayload(String target, String action, String curse, boolean silent) implements CustomPacketPayload {
 		public static final Type<AdminActionPayload> TYPE = new Type<>(ExtremeDimensions.id("admin_action"));
 		public static final StreamCodec<FriendlyByteBuf, AdminActionPayload> CODEC = StreamCodec.ofMember(AdminActionPayload::write, AdminActionPayload::read);
 
@@ -430,10 +433,11 @@ public final class ModPackets {
 			buf.writeUtf(target, 64);
 			buf.writeUtf(action, 16);
 			buf.writeUtf(curse, 64);
+			buf.writeBoolean(silent);
 		}
 
 		private static AdminActionPayload read(FriendlyByteBuf buf) {
-			return new AdminActionPayload(buf.readUtf(64), buf.readUtf(16), buf.readUtf(64));
+			return new AdminActionPayload(buf.readUtf(64), buf.readUtf(16), buf.readUtf(64), buf.readBoolean());
 		}
 
 		@Override
