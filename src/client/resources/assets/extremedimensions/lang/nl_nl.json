@@ -3464,5 +3464,7 @@
   "gui.extremedimensions.admin.clear_tip_silent": "Heft stil elke curse van %s op: geen littekens, en ze horen er niets van. Druk twee keer.",
   "gui.extremedimensions.settings.section.tetherite_drawbacks": "Tetheriet: nadelen",
   "config.extremedimensions.tetherite_drawbacks": "Tetheriet: nadelen aan",
-  "config.extremedimensions.tetherite_drawbacks.desc": "1 = de nadelen van tetheriet werken: het gewicht, de honger en het roepen van de Lurkers, elk met de waarde hieronder. 0 = geen van alle, wat de waarden ook zeggen. De voordelen blijven hoe dan ook."
+  "config.extremedimensions.tetherite_drawbacks.desc": "1 = de nadelen van tetheriet werken: het gewicht, de honger en het roepen van de Lurkers, elk met de waarde hieronder. 0 = geen van alle, wat de waarden ook zeggen. De voordelen blijven hoe dan ook.",
+  "gui.extremedimensions.companion.stay": "Je Hollowling blijft hier (%s, %s, %s) en wacht op je. Sluip en gebruik hem met een lege hand om hem weer mee te nemen.",
+  "gui.extremedimensions.companion.follow": "Je Hollowling gaat weer met je mee."
 }

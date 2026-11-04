@@ -114,7 +114,7 @@ an unweaving the loom waits three days for you.
   frightens it, water puts it out, and slain it gives back what it ate. Out on deep water the **Tidewalker** circles
   under the surface, throws rowers out of their boats and drags swimmers down; a light held up or the Conduit's power
   keeps it off. A curse laid
-  without a choice is varied: one you do not carry yet is likelier, and never the last one again. Hollowlings can be befriended, slowly; the young of an Extreme swarm bite, and a bite may curse. After the Dragon falls, **Wound
+  without a choice is varied: one you do not carry yet is likelier, and never the last one again. Hollowlings can be befriended, slowly (a befriended one follows you; sneak and use it with an empty hand and it stays and waits where it is, until you call it along the same way); the young of an Extreme swarm bite, and a bite may curse. After the Dragon falls, **Wound
   Storms** tear the sky, and out of them may step the **Gatebreaker**, a giant that breaks through your walls (all
   but obsidian) to get at you. In the End, once the Dragon has fallen, the **Lockwarden** that kept the Dragon's lock comes for
   anyone carrying ender pearls: it steps closer as an Enderman does, snatches them, and sometimes leaves you on a lost

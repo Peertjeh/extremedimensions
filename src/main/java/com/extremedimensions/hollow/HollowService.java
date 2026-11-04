@@ -119,6 +119,8 @@ public final class HollowService {
 		int pause;
 		/** Shared by the young of one swarm: the curses their bites have left. */
 		int[] swarmCurses;
+		/** A companion told to stay (3.27.5): it waits where it stands instead of following. */
+		boolean staying;
 	}
 
 	static final class Guard {
@@ -137,9 +139,24 @@ public final class HollowService {
 	private static final Map<UUID, ServerLevel> LEVELS = new HashMap<>();
 	/** Owner UUID to companion entity UUID. */
 	private static final Map<UUID, UUID> COMPANIONS = new HashMap<>();
+	/** The companions told to stay, by their entity's UUID (from the players' data, built on first use). */
+	private static java.util.Set<String> staying;
 
 	public static boolean isDriven(Entity e) {
-		return LITTLES.containsKey(e.getUUID()) || KEEPERS.containsKey(e.getUUID());
+		// (a companion told to stay is kept even before its player comes back to take it up again)
+		return LITTLES.containsKey(e.getUUID()) || KEEPERS.containsKey(e.getUUID()) || stayingIds().contains(e.getUUID().toString());
+	}
+
+	private static java.util.Set<String> stayingIds() {
+		if (staying == null) {
+			staying = new java.util.HashSet<>();
+			for (PlayerData d : DataStore.players()) {
+				if (d.companionStay != null && d.companionStayId != null) {
+					staying.add(d.companionStayId);
+				}
+			}
+		}
+		return staying;
 	}
 
 	public static void clear() {
@@ -150,6 +167,7 @@ public final class HollowService {
 		KEEPERS.clear();
 		LEVELS.clear();
 		COMPANIONS.clear();
+		staying = null;
 	}
 
 	// ------------------------------------------------------------------ hoards
@@ -966,6 +984,17 @@ public final class HollowService {
 	public static void onHollowlingDeath(Hollowling h, Entity killer) {
 		Little st = LITTLES.remove(h.getUUID());
 		LEVELS.remove(h.getUUID());
+		if (stayingIds().remove(h.getUUID().toString())) {
+			// A companion that waited for its player is lost (whether or not its player had come back to it)
+			for (PlayerData d : DataStore.players()) {
+				if (h.getUUID().toString().equals(d.companionStayId)) {
+					d.companionStay = null;
+					d.companionStayId = null;
+					d.companion = false;
+					DataStore.markDirty();
+				}
+			}
+		}
 		if (st == null) {
 			return;
 		}
@@ -997,6 +1026,10 @@ public final class HollowService {
 		Little st = LITTLES.get(h.getUUID());
 		if (st == null) {
 			return InteractionResult.PASS;
+		}
+		if (st.mode == Mode.COMPANION && p.getUUID().equals(st.owner) && stack.isEmpty() && p.isSecondaryUseActive()) {
+			// Sneaking, an empty hand on one's own companion: stay here, or come along again
+			return stay(p, h, st, !st.staying);
 		}
 		if (Config.TRIBE_ENABLED > 0 && stack.isEmpty()) {
 			return barter(p, h, st);
@@ -1064,6 +1097,61 @@ public final class HollowService {
 		DataStore.markDirty();
 	}
 
+	/**
+	 * Tells a companion to stay where it stands (it waits there, whoever comes and goes, until told again) or to come
+	 * along again (3.27.5).
+	 */
+	public static InteractionResult stay(ServerPlayer p, Hollowling h, boolean stay) {
+		Little st = LITTLES.get(h.getUUID());
+		return st == null || st.mode != Mode.COMPANION || !p.getUUID().equals(st.owner) ? InteractionResult.PASS : stay(p, h, st, stay);
+	}
+
+	private static InteractionResult stay(ServerPlayer p, Hollowling h, Little st, boolean stay) {
+		PlayerData d = DataStore.get(p.getUUID());
+		String dim = h.level().dimension().identifier().toString();
+		st.staying = stay;
+		if (d.companionStayId != null) {
+			stayingIds().remove(d.companionStayId);
+		}
+		if (stay) {
+			d.companionStay = dim;
+			d.companionStayId = h.getUUID().toString();
+			d.companionStayX = h.getX();
+			d.companionStayY = h.getY();
+			d.companionStayZ = h.getZ();
+			stayingIds().add(d.companionStayId);
+			h.getNavigation().stop();
+			h.setLurkerPose(Lurker.POSE_STALK);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.companion.stay", h.getBlockX(), h.getBlockY(), h.getBlockZ()));
+		} else {
+			d.companionStay = null;
+			d.companionStayId = null;
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.companion.follow"), true);
+		}
+		WorldFx.soundIn(dim, "extremedimensions:hollowling_ambient", "neutral", h.getX(), h.getY() + 0.8, h.getZ(), companionVolume(), stay ? 0.85f : 1.3f);
+		DataStore.markDirty();
+		return InteractionResult.SUCCESS;
+	}
+
+	/** Makes a Hollowling this player's companion at once, at a spot (for tests; in play a bond is earned). */
+	public static Hollowling befriend(ServerPlayer p, BlockPos at) {
+		Little st = new Little();
+		st.mode = Mode.COMPANION;
+		st.owner = p.getUUID();
+		Hollowling h = spawnLittle((ServerLevel) p.level(), at, st);
+		if (h != null) {
+			toughen(h);
+			COMPANIONS.put(p.getUUID(), h.getUUID());
+			DataStore.get(p.getUUID()).companion = true;
+		}
+		return h;
+	}
+
+	/** Whether this player's companion was told to stay (and waits somewhere instead of following). */
+	public static boolean waiting(PlayerData d) {
+		return d.companion && d.companionStay != null;
+	}
+
 	/** An empty hand: the Hollowling barters, if the tribe tolerates the player; otherwise it giggles and runs. */
 	private static InteractionResult barter(ServerPlayer p, Hollowling h, Little st) {
 		if (st.bold || st.mode == Mode.FLEE || st.mode == Mode.CARRY) {
@@ -1109,6 +1197,10 @@ public final class HollowService {
 		if (!d.companion || p.tickCount < 60) {
 			return;
 		}
+		if (d.companionStay != null) {
+			waitingCompanion(p, d);
+			return;
+		}
 		UUID id = COMPANIONS.get(p.getUUID());
 		Entity e = null;
 		if (id != null) {
@@ -1139,6 +1231,55 @@ public final class HollowService {
 		}
 	}
 
+	/**
+	 * A companion told to stay: taken up again when its player is in its world and it stands loaded there; made again at
+	 * its spot only if it is gone from there while its player stands by (it was not slain: that ends the bond).
+	 */
+	private static void waitingCompanion(ServerPlayer p, PlayerData d) {
+		ServerLevel level = (ServerLevel) p.level();
+		if (!level.dimension().identifier().toString().equals(d.companionStay)) {
+			return;
+		}
+		UUID id;
+		try {
+			id = UUID.fromString(d.companionStayId);
+		} catch (IllegalArgumentException | NullPointerException e) {
+			d.companionStay = null;
+			d.companionStayId = null;
+			DataStore.markDirty();
+			return;
+		}
+		Entity e = level.getEntity(id);
+		if (e instanceof Hollowling h && h.isAlive()) {
+			if (!LITTLES.containsKey(id)) {
+				Little st = new Little();
+				st.mode = Mode.COMPANION;
+				st.owner = p.getUUID();
+				st.staying = true;
+				LITTLES.put(id, st);
+				LEVELS.put(id, level);
+				COMPANIONS.put(p.getUUID(), id);
+			}
+			return;
+		}
+		BlockPos spot = BlockPos.containing(d.companionStayX, d.companionStayY, d.companionStayZ);
+		if (p.distanceToSqr(d.companionStayX, d.companionStayY, d.companionStayZ) < 12 * 12 && level.isPositionEntityTicking(spot)) {
+			Little st = new Little();
+			st.mode = Mode.COMPANION;
+			st.owner = p.getUUID();
+			st.staying = true;
+			Hollowling h2 = spawnLittle(level, spot, st);
+			if (h2 != null) {
+				toughen(h2);
+				COMPANIONS.put(p.getUUID(), h2.getUUID());
+				stayingIds().remove(d.companionStayId);
+				d.companionStayId = h2.getUUID().toString();
+				stayingIds().add(d.companionStayId);
+				DataStore.markDirty();
+			}
+		}
+	}
+
 	private static void gift(ServerPlayer p, Hollowling h) {
 		ServerLevel level = (ServerLevel) h.level();
 		for (ItemStack s : Loot.roll(level, Loot.HOLLOWLING_GIFT, h.position())) {
@@ -1154,6 +1295,26 @@ public final class HollowService {
 	 */
 	private static void companion(Hollowling h, Little st, List<Runnable> later) {
 		ServerPlayer owner = WorldFx.server().getPlayerList().getPlayer(st.owner);
+		if (st.staying) {
+			// Told to stay: it crouches where it was left and waits (its player away, gone home, or offline), and keeps
+			// its spot written down should something push it
+			h.getNavigation().stop();
+			h.setLurkerPose(Lurker.POSE_STALK);
+			if (owner != null && owner.level() == h.level() && h.distanceToSqr(owner) < 8 * 8) {
+				h.getLookControl().setLookAt(owner, 20, 20);
+			}
+			if (st.ticks % 100 == 0) {
+				PlayerData d = DataStore.get(st.owner);
+				if (h.getUUID().toString().equals(d.companionStayId)
+						&& h.distanceToSqr(d.companionStayX, d.companionStayY, d.companionStayZ) > 1) {
+					d.companionStayX = h.getX();
+					d.companionStayY = h.getY();
+					d.companionStayZ = h.getZ();
+					DataStore.markDirty();
+				}
+			}
+			return;
+		}
 		if (owner == null || owner.level() != h.level()) {
 			later.add(() -> {
 				LITTLES.remove(h.getUUID());
@@ -1202,7 +1363,8 @@ public final class HollowService {
 			return false;
 		}
 		Entity e = p.level() instanceof ServerLevel sl ? sl.getEntity(id) : null;
-		if (e instanceof Hollowling h && h.distanceToSqr(p) < 16 * 16) {
+		Little st = e == null ? null : LITTLES.get(e.getUUID());
+		if (e instanceof Hollowling h && (st == null || !st.staying) && h.distanceToSqr(p) < 16 * 16) {
 			giggle(h, companionVolume());
 			TribeMoves.follow(h, p, 1.5);
 			return true;

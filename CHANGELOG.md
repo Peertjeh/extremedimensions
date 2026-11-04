@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.27.5: Stay
+
+### New
+- **Your Hollowling can stay.** Sneak and use your companion Hollowling with an empty hand: it crouches where it is and
+  waits there instead of following, and chat tells you where (x, y, z). It does not come after you, is not brought to
+  your side when you go far or to another world, and is still there when you come back, after a restart too. Sneak and
+  use it again to take it along. While it waits it brings no gifts and keeps no watch for you; if it is slain there, the
+  bond is lost as it always was. Using it with an empty hand without sneaking still opens its barter.
+
 ## 3.27.4: Light Metal
 
 ### Changes

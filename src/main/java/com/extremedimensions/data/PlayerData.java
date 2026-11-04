@@ -190,6 +190,13 @@ public class PlayerData {
 	public boolean companion = false;
 	/** Online seconds until the companion brings its next find. */
 	public int companionGiftIn = 0;
+	/**
+	 * The companion told to stay (3.27.5): the world it waits in (null while it follows), its entity, and where it stands.
+	 * It waits there, whoever comes and goes, until its player sneaks and uses it with an empty hand.
+	 */
+	public String companionStay = null;
+	public String companionStayId = null;
+	public double companionStayX, companionStayY, companionStayZ;
 	/** Anchor key the physical tether is bound to; null = not bound. */
 	public String tetherAnchor = null;
 	/** Arrival point beyond the wound (distance to the portal). */

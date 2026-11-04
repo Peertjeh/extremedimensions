@@ -54,6 +54,38 @@ public class LurkerTests {
 		p.snapTo(at.x, at.y, at.z, 0f, 0f);
 	}
 
+	/**
+	 * 3.27.5: a companion told to stay (sneak, an empty hand) waits where it was left while its player walks off, and is
+	 * kept even when no one drives it; told again, it comes along.
+	 */
+	@GameTest(maxTicks = 260)
+	public void aCompanionToldToStayWaitsAndFollowsWhenCalled(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "stay-owner");
+		PlayerData d = DataStore.get(p.getUUID());
+		place(helper, p, 7.5, 0, 7.5);
+		Hollowling h = HollowService.befriend(p, helper.absolutePos(new BlockPos(1, 0, 1)));
+		check(helper, h != null, "no companion came");
+		Vec3 left = h.position();
+		check(helper, HollowService.stay(p, h, true).consumesAction(), "the companion would not stay");
+		check(helper, HollowService.waiting(d) && d.companionStayId.equals(h.getStringUUID()), "the player's data does not say where it waits");
+		check(helper, HollowService.isDriven(h), "a companion told to stay is not kept");
+		helper.runAfterDelay(80, () -> {
+			check(helper, h.isAlive() && h.position().distanceTo(left) < 1.0, "the companion told to stay moved %.1f blocks", h.position().distanceTo(left));
+			check(helper, HollowService.stay(p, h, false).consumesAction() && !HollowService.waiting(d), "the companion would not come along again");
+		});
+		helper.runAfterDelay(240, () -> {
+			try {
+				check(helper, h.isAlive() && h.distanceTo(p) < 6, "called again, the companion stayed %.1f blocks off", h.distanceTo(p));
+			} finally {
+				d.companion = false;
+				d.companionStay = null;
+				d.companionStayId = null;
+				h.discard();
+			}
+			helper.succeed();
+		});
+	}
+
 	private static int curses(PlayerData d) {
 		int n = 0;
 		for (Penalty pen : Penalty.values()) {
