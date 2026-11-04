@@ -35,11 +35,11 @@ import net.minecraft.network.chat.Component;
  * here comes off plainly, without the scar an atonement leaves. The server checks every request (see AdminService).
  */
 public class AdminScreen extends Screen {
-	private static final int PW = 404, PH = 248;
+	private static final int PW = 404;
 	/** The player list: its width and row height, and how many rows show. */
-	private static final int LIST_W = 118, ROW = 12, LIST_ROWS = 14;
+	private static final int LIST_W = 118, ROW = 12;
 	/** The curse list: row height and how many rows show. */
-	private static final int CROW = 12, CURSE_ROWS = 8;
+	private static final int CROW = 12;
 	/** Where the right-hand column starts (from the panel's left) and how wide it is. */
 	private static final int RX = 142, RW = PW - RX - 10;
 	/** The set tabs: the narrow ones and the gap between; the open tab takes the rest. */
@@ -72,6 +72,11 @@ public class AdminScreen extends Screen {
 	private EditBox search;
 	private Button clear, carriedButton;
 	private final List<Tab> tabs = new ArrayList<>();
+	/**
+	 * The panel's height, and how many players and curses show, fitted to the screen (3.27.1): eight curse rows where
+	 * there is room, down to three on a short screen, so the buttons at the foot never fall off it.
+	 */
+	private int ph = 248, listRows = 14, curseRows = 8;
 
 	/** The Players screen on show, or null. */
 	public static AdminScreen shown() {
@@ -204,7 +209,7 @@ public class AdminScreen extends Screen {
 				filtered.add(p);
 			}
 		}
-		listScroll = Math.max(0, Math.min(listScroll, filtered.size() - LIST_ROWS));
+		listScroll = Math.max(0, Math.min(listScroll, filtered.size() - listRows));
 		rows.clear();
 		// The set's own curses first, then (under Extreme) the Abyssal ones
 		for (int pass = 0; pass < 2; pass++) {
@@ -214,7 +219,7 @@ public class AdminScreen extends Screen {
 				}
 			}
 		}
-		curseScroll = Math.max(0, Math.min(curseScroll, rows.size() - CURSE_ROWS));
+		curseScroll = Math.max(0, Math.min(curseScroll, rows.size() - curseRows));
 	}
 
 	private int x0() {
@@ -222,12 +227,15 @@ public class AdminScreen extends Screen {
 	}
 
 	private int y0() {
-		return Math.max(4, (this.height - PH) / 2);
+		return Math.max(4, (this.height - ph) / 2);
 	}
 
 	@Override
 	protected void init() {
 		shown = this;
+		curseRows = Math.max(3, Math.min(8, (this.height - 8 - CURSES_Y - 30) / CROW));
+		ph = CURSES_Y + curseRows * CROW + 30;
+		listRows = (ph - 70) / ROW;
 		int x0 = x0(), y0 = y0();
 		String was = search == null ? "" : search.getValue();
 		search = new EditBox(this.font, x0 + 10, y0 + 22, LIST_W, 14, Component.translatable("gui.extremedimensions.admin.search"));
@@ -240,27 +248,27 @@ public class AdminScreen extends Screen {
 			layout();
 		});
 		this.addRenderableWidget(search);
-		for (int i = 0; i < LIST_ROWS; i++) {
+		for (int i = 0; i < listRows; i++) {
 			this.addRenderableWidget(new PlayerSlot(i, x0 + 10, y0 + 40 + i * ROW));
 		}
 		tabs.clear();
 		for (Group g : Group.values()) {
 			tabs.add(this.addRenderableWidget(new Tab(g, x0 + RX, y0 + TABS_Y)));
 		}
-		for (int i = 0; i < CURSE_ROWS; i++) {
+		for (int i = 0; i < curseRows; i++) {
 			int y = y0 + CURSES_Y + i * CROW;
 			this.addRenderableWidget(new CurseSlot(i, x0 + RX, y, RW - 6 - 26));
 			this.addRenderableWidget(new StackButton(i, false, x0 + RX + RW - 6 - 24, y));
 			this.addRenderableWidget(new StackButton(i, true, x0 + RX + RW - 6 - 12, y));
 		}
-		clear = this.addRenderableWidget(Button.builder(Component.empty(), b -> clearAll()).pos(x0 + RX, y0 + PH - 24).size(124, 18).build());
+		clear = this.addRenderableWidget(Button.builder(Component.empty(), b -> clearAll()).pos(x0 + RX, y0 + ph - 24).size(124, 18).build());
 		carriedButton = this.addRenderableWidget(Button.builder(Component.empty(), b -> {
 			carriedOnly = !carriedOnly;
 			curseScroll = 0;
 			filter();
 			layout();
-		}).pos(x0 + RX + 128, y0 + PH - 24).size(RW - 128, 18).build());
-		this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose()).pos(x0 + 10, y0 + PH - 24).size(LIST_W, 18).build());
+		}).pos(x0 + RX + 128, y0 + ph - 24).size(RW - 128, 18).build());
+		this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose()).pos(x0 + 10, y0 + ph - 24).size(LIST_W, 18).build());
 		filter();
 		layout();
 	}
@@ -307,9 +315,9 @@ public class AdminScreen extends Screen {
 		if (scrollY != 0) {
 			int step = (int) -Math.signum(scrollY);
 			if (mouseX < x0() + RX - 4) {
-				listScroll = Math.max(0, Math.min(listScroll + step * 2, filtered.size() - LIST_ROWS));
+				listScroll = Math.max(0, Math.min(listScroll + step * 2, filtered.size() - listRows));
 			} else if (mouseY >= y0() + CURSES_Y - 2) {
-				curseScroll = Math.max(0, Math.min(curseScroll + step, rows.size() - CURSE_ROWS));
+				curseScroll = Math.max(0, Math.min(curseScroll + step, rows.size() - curseRows));
 			}
 			return true;
 		}
@@ -358,12 +366,12 @@ public class AdminScreen extends Screen {
 		int x0 = x0(), y0 = y0();
 		int accent = Ui.EMBER;
 		g.fill(0, 0, this.width, this.height, Ui.argb((int) (70 * fade), 0x140A00));
-		Ui.panel(g, x0, y0, PW, PH, accent, fade);
+		Ui.panel(g, x0, y0, PW, ph, accent, fade);
 		Ui.heading(g, this.font, Ui.tr("gui.extremedimensions.admin.title").toUpperCase(), x0 + PW / 2, y0 + 8, accent, fade);
 		String count = Ui.tr("gui.extremedimensions.admin.count", players.size(), (int) players.stream().filter(Player::on).count());
 		g.text(this.font, count, x0 + PW - 10 - this.font.width(count), y0 + 8, Ui.argb(fade, Ui.MUTED));
 		// The line between the list and the player
-		g.fill(x0 + RX - 7, y0 + 22, x0 + RX - 6, y0 + PH - 30, Ui.argb(fade * 0.5, accent));
+		g.fill(x0 + RX - 7, y0 + 22, x0 + RX - 6, y0 + ph - 30, Ui.argb(fade * 0.5, accent));
 		if (filtered.isEmpty()) {
 			int ly = y0 + 44;
 			for (String line : Ui.wrap(this.font, Ui.tr("gui.extremedimensions.admin.none_found"), LIST_W)) {
@@ -371,9 +379,9 @@ public class AdminScreen extends Screen {
 				ly += 10;
 			}
 		}
-		scrollbar(g, x0 + 10 + LIST_W + 1, y0 + 40, LIST_ROWS * ROW, listScroll, filtered.size(), LIST_ROWS, fade);
+		scrollbar(g, x0 + 10 + LIST_W + 1, y0 + 40, listRows * ROW, listScroll, filtered.size(), listRows, fade);
 		overview(g, x0 + RX, y0 + 22, RW, fade);
-		scrollbar(g, x0 + RX + RW - 3, y0 + CURSES_Y, CURSE_ROWS * CROW, curseScroll, rows.size(), CURSE_ROWS, fade);
+		scrollbar(g, x0 + RX + RW - 3, y0 + CURSES_Y, curseRows * CROW, curseScroll, rows.size(), curseRows, fade);
 		if (rows.isEmpty()) {
 			g.text(this.font, Ui.tr("gui.extremedimensions.admin.set_empty"), x0 + RX + 2, y0 + CURSES_Y + 2, Ui.argb(fade * 0.8, Ui.MUTED));
 		}
@@ -500,11 +508,11 @@ public class AdminScreen extends Screen {
 	/** A set's tab: its colour and stacks; the open one is wide and named. */
 	private final class Tab extends AbstractButton {
 		private final Group group;
+		private boolean tipShown;
 
 		Tab(Group group, int x, int y) {
 			super(x, y, TAB_N, 14, Component.translatable("gui.extremedimensions.curses.tab_" + group.id()));
 			this.group = group;
-			this.setTooltip(Tooltip.create(Component.translatable("gui.extremedimensions.curses.tab_" + group.id())));
 		}
 
 		@Override
@@ -523,6 +531,11 @@ public class AdminScreen extends Screen {
 			int x = this.getX(), y = this.getY(), w = this.getWidth();
 			int c = Ui.setColour(group);
 			boolean open = tab == group;
+			// Its name on hover while narrow (the open tab shows it already)
+			if (open == tipShown) {
+				tipShown = !open;
+				this.setTooltip(open ? null : Tooltip.create(this.getMessage()));
+			}
 			g.fill(x, y, x + w, y + 14, Ui.argb(open ? 0.35 : this.isHovered() ? 0.18 : 0.1, c));
 			g.fill(x, y + 13, x + w, y + 14, Ui.argb(open ? 1.0 : 0.4, c));
 			g.fill(x + 3, y + 4, x + 8, y + 9, Ui.argb(1.0, c));

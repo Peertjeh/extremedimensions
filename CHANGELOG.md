@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.27.1: Fits the Screen
+
+### Fixes
+- **The Players screen fits a short screen.** It showed eight curse rows whatever the window, so at a large GUI scale
+  (a screen 240 pixels high in GUI terms) its foot, with Done and Lift every curse, fell off the bottom. It now shows as
+  many rows as fit, eight down to three, and scrolls the rest. A narrow set tab names its set on hover; the open one,
+  which shows its name already, no longer repeats it.
+
 ## 3.27.0: The Players Screen
 
 ### New
