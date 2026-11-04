@@ -86,6 +86,9 @@ public class CursesScreen extends Screen {
 	/** The pact as the server sent it: "unlocked;away;id:n,id:n". */
 	private String pactData = "";
 	private boolean overworldOn = true;
+	/** Whether the player may open the operators' Players screen (3.27). */
+	private boolean admin;
+	private AdminButton adminButton;
 	private Group tab = Group.BEYOND;
 	private Penalty selected;
 	private Button atone;
@@ -197,6 +200,10 @@ public class CursesScreen extends Screen {
 					// skip malformed entry
 				}
 			}
+		}
+		admin = parts.length > 8 && "1".equals(parts[8]);
+		if (adminButton != null) {
+			adminButton.visible = admin;
 		}
 		if (latest != null) {
 			latest.refresh();
@@ -325,6 +332,8 @@ public class CursesScreen extends Screen {
 		this.addRenderableWidget(new RelicChip(x0 + PW - 14 - 132, y0 + 176, 132));
 		this.addRenderableWidget(new PactButton(x0 + 7, y0 + 5));
 		this.addRenderableWidget(new TrialsButton(x0 + 22, y0 + 5));
+		adminButton = this.addRenderableWidget(new AdminButton(x0 + 37, y0 + 5));
+		adminButton.visible = admin;
 		// The newest curse along the top of the panel (or under it, on a short screen): a click opens it
 		int ly = y0 >= 26 ? y0 - 24 : y0 + PH + 4;
 		latest = this.addRenderableWidget(new LatestStrip(x0, ly, PW));
@@ -866,6 +875,47 @@ public class CursesScreen extends Screen {
 		}
 	}
 
+	/** Operators only (3.27): a crown beside the rift's slit; opens the Players screen (every player, their curses). */
+	private final class AdminButton extends AbstractButton {
+		private static final String[] CROWN = {
+			"#..#..#",
+			"##.#.##",
+			"#######",
+			"#.#.#.#",
+			"#######",
+			".......",
+			"#######",
+		};
+
+		AdminButton(int x, int y) {
+			super(x, y, 13, 13, Component.translatable("gui.extremedimensions.admin.title"));
+			this.setTooltip(Tooltip.create(Component.translatable("gui.extremedimensions.admin.button")));
+		}
+
+		@Override
+		public void onPress(InputWithModifiers input) {
+			AdminScreen.request(CursesScreen.this);
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+			int x = this.getX(), y = this.getY();
+			int col = this.isHovered() ? Ui.WARN : Ui.mix(Ui.EMBER, Ui.MUTED, 0.35);
+			for (int r = 0; r < CROWN.length; r++) {
+				for (int k = 0; k < CROWN[r].length(); k++) {
+					if (CROWN[r].charAt(k) == '#') {
+						g.fill(x + 3 + k, y + 3 + r, x + 4 + k, y + 4 + r, Ui.argb(255, col));
+					}
+				}
+			}
+		}
+
+		@Override
+		protected void updateWidgetNarration(NarrationElementOutput out) {
+			out.add(NarratedElementType.TITLE, this.getMessage());
+		}
+	}
+
 	/** The relic bound to the Tether: its name, its gift and price on hover, and a click takes it off again. */
 	private final class RelicChip extends AbstractButton {
 		/** The relic the tooltip was made for (rebuilt only when the relic changes). */
@@ -916,7 +966,7 @@ public class CursesScreen extends Screen {
 	}
 
 	/** How long ago, in words ("just now", "3 min ago", "2 h ago"). */
-	private static String ago(long seconds) {
+	static String ago(long seconds) {
 		if (seconds < 60) {
 			return Ui.tr("gui.extremedimensions.curses.ago.now");
 		}

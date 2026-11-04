@@ -175,6 +175,20 @@ public class ExtremeDimensions implements ModInitializer {
 				ServerPlayNetworking.send(context.player(), new ModPackets.TrialsPayload(com.extremedimensions.trial.TrialService.data(context.player())));
 			}
 		});
+		// The operators' Players screen (3.27): every player, their curses laid on or lifted off
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.AdminPayload.TYPE, ModPackets.AdminPayload.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestAdminPayload.TYPE, ModPackets.RequestAdminPayload.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.AdminActionPayload.TYPE, ModPackets.AdminActionPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestAdminPayload.TYPE, (payload, context) -> {
+			if (Requests.allow(context.player(), "admin", 8)) {
+				com.extremedimensions.admin.AdminService.send(context.player(), payload.selected(), payload.open());
+			}
+		});
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.AdminActionPayload.TYPE, (payload, context) -> {
+			if (Requests.allow(context.player(), "admin_action", 12)) {
+				com.extremedimensions.admin.AdminService.act(context.player(), payload.target(), payload.action(), payload.curse());
+			}
+		});
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.ArmTrialPayload.TYPE, ModPackets.ArmTrialPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.ArmTrialPayload.TYPE, (payload, context) -> {
 			if (!Requests.allow(context.player(), "arm", 2)) {

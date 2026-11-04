@@ -97,6 +97,7 @@ public final class TetherCommand {
 				.then(preset().requires(op))
 				.then(Commands.literal("export").requires(op).executes(c -> export(c.getSource())))
 				.then(Commands.literal("discord_test").requires(op).executes(c -> discordTest(c.getSource())))
+				.then(Commands.literal("players").requires(op).executes(c -> players(c.getSource())))
 				.then(Commands.literal("curse").requires(op)
 						.then(Commands.literal("clear").executes(c -> clearCurses(c.getSource())))
 						.then(Commands.argument("id", StringArgumentType.word())
@@ -286,6 +287,13 @@ public final class TetherCommand {
 		Sync.state(p, d);
 		DataStore.markDirty();
 		src.sendSuccess(() -> Component.translatable("commands.extremedimensions.curse.set", Component.translatable(pen.nameKey()), set, pen.max), false);
+		return 1;
+	}
+
+	/** {@code /tether players}: opens the operators' Players screen (every player, their curses laid on or lifted off). */
+	private static int players(CommandSourceStack src) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+		ServerPlayer p = src.getPlayerOrException();
+		com.extremedimensions.admin.AdminService.send(p, "", true);
 		return 1;
 	}
 

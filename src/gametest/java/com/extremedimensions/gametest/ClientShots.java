@@ -986,6 +986,24 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.runOnClient(mc -> ClientOptions.setColourBlind(false));
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
+			// The Players screen (3.27, operators): every player on the left, a few of them offline; the one playing picked
+			// on the right, with their overview and the curses of a set, each with its minus and plus
+			String admin = sp.getServer().computeOnServer(s -> {
+				for (String n : new String[] {"Wren", "Ostrava", "Kip", "Marlowe"}) {
+					PlayerData od = DataStore.get(UUID.nameUUIDFromBytes(("shot-" + n).getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+					od.name = n;
+					od.curses.clear();
+					od.addStacks(com.extremedimensions.penalty.Penalty.CRACKED_ARMOR, n.length() % 4);
+				}
+				PlayerData d = DataStore.get(player(s).getUUID());
+				com.extremedimensions.penalty.CurseLog.add(d, com.extremedimensions.penalty.Penalty.CRACKED_ARMOR, 2, com.extremedimensions.penalty.CurseLog.Source.CARD);
+				return com.extremedimensions.admin.AdminService.data(s, player(s).getUUID(), "");
+			});
+			ctx.runOnClient(mc -> mc.gui.setScreen(new com.extremedimensions.client.screen.AdminScreen(admin, null)));
+			ctx.waitTicks(8);
+			ctx.takeScreenshot("03_players_admin");
+			ctx.runOnClient(mc -> mc.gui.setScreen(null));
+
 			// The Tetherite binding: a smithing table with an upgrade laid in, its chance and what makes it beside it
 			// (bound anywhere for the shot: the test world is no Seam)
 			int bindWhere = com.extremedimensions.config.Config.TETHERITE_BIND_WHERE;

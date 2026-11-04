@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.27.0: The Players Screen
+
+### New
+- **A Players screen for operators.** `/tether players` opens it, and so does a crown beside the pact and Rift Trials
+  buttons in the Curses screen, shown only to operators (and to the player of a world of their own). On the left every
+  player the world knows, online first and then offline, yourself among them, with a search box and how many stacks each
+  carries. On the right the player picked: online or offline, the world they are in (the Fray named apart from the
+  Seam), whether they are on an expedition and their health; their scars, curses lifted, deaths, expeditions, Seam
+  visits and Fray descents, standing with the tribe, pact, relic, the curse they atone for and their clan; and their
+  newest curse, where it came from and how long ago.
+- **Curses laid on and lifted off, for anyone, offline too.** Under the overview, every curse of a set (the Abyssal ones
+  under Extreme) with its stacks and its atonement so far. A minus lifts one stack: plainly, without the scar or reward
+  an atonement gives. A plus lays one on, up to the curse's maximum; the player sees it as a toast, "from an operator",
+  and in the Curses screen's newest curses. "Lift every curse" (press twice) clears them all. A player online is told
+  when a stack is lifted and their curses act at once; a player offline finds them so when they come back. Every change
+  is written to the server log with who made it. The server checks every request: no one else gets the data or changes
+  anything.
+
 ## 3.26.2: Called By Name
 
 ### Changes

@@ -65,6 +65,12 @@ runes are the **Seam script**, an alphabet of the mod's own: threads with knots,
 A curse laid without a choice (a Lurker's touch, the swarm, a barter, a Collapse...) shows as a toast naming it and where
 it came from, and the Curses screen keeps the newest along its top, marking those that came since you last looked.
 
+Operators have the **Players** screen (`/tether players`, or the crown in the Curses screen; in a world of your own you
+have it too): every player the world knows, online or offline and yourself among them, with a search box; for the one
+picked, where they are, their scars, deaths, expeditions, standing, pact, relic and clan, the newest curse and where it
+came from, and every curse set by set. A minus lifts a stack (plainly, without a scar), a plus lays one on (the player
+sees it as a toast), and a button lifts them all. Every change is written to the server log.
+
 Lift them by **atonement** (played off on expeditions and at home; every death undoes half), helped along by
 **Tether Fragments** offered to an anchor (each atones for a tenth of what the curse's next stack still asks, five at
 most for each stack), or by a **Mending Cloth**. Every stack lifted leaves a **scar** that weakens the drain.

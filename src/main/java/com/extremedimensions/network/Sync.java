@@ -105,6 +105,8 @@ public final class Sync {
 		out.append('|').append(nearby(p));
 		// The newest curses gained, with where from and whether new since the screen was last opened
 		out.append('|').append(com.extremedimensions.penalty.CurseLog.data(d));
+		// Whether the player may open the operators' Players screen (3.27)
+		out.append('|').append(com.extremedimensions.admin.AdminService.allowed(p) ? 1 : 0);
 		return out.toString();
 	}
 

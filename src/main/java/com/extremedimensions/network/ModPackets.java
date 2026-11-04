@@ -379,6 +379,69 @@ public final class ModPackets {
 		}
 	}
 
+	/** Server -> client: the operators' Players screen (see AdminService.data, JSON); opens the screen or refreshes it. */
+	public record AdminPayload(String data, boolean open) implements CustomPacketPayload {
+		public static final Type<AdminPayload> TYPE = new Type<>(ExtremeDimensions.id("admin"));
+		public static final StreamCodec<FriendlyByteBuf, AdminPayload> CODEC = StreamCodec.ofMember(AdminPayload::write, AdminPayload::read);
+		/** The longest data sent: hundreds of players and every curse of one fit well inside it. */
+		public static final int MAX = 1 << 19;
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(data, MAX);
+			buf.writeBoolean(open);
+		}
+
+		private static AdminPayload read(FriendlyByteBuf buf) {
+			return new AdminPayload(buf.readUtf(MAX), buf.readBoolean());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: send the Players screen's data, with this player picked (a UUID, or empty for the asker). */
+	public record RequestAdminPayload(String selected, boolean open) implements CustomPacketPayload {
+		public static final Type<RequestAdminPayload> TYPE = new Type<>(ExtremeDimensions.id("request_admin"));
+		public static final StreamCodec<FriendlyByteBuf, RequestAdminPayload> CODEC = StreamCodec.ofMember(RequestAdminPayload::write, RequestAdminPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(selected, 64);
+			buf.writeBoolean(open);
+		}
+
+		private static RequestAdminPayload read(FriendlyByteBuf buf) {
+			return new RequestAdminPayload(buf.readUtf(64), buf.readBoolean());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: an operator lays a stack on a player ("add"), lifts one off ("lift") or lifts every curse ("clear"). */
+	public record AdminActionPayload(String target, String action, String curse) implements CustomPacketPayload {
+		public static final Type<AdminActionPayload> TYPE = new Type<>(ExtremeDimensions.id("admin_action"));
+		public static final StreamCodec<FriendlyByteBuf, AdminActionPayload> CODEC = StreamCodec.ofMember(AdminActionPayload::write, AdminActionPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(target, 64);
+			buf.writeUtf(action, 16);
+			buf.writeUtf(curse, 64);
+		}
+
+		private static AdminActionPayload read(FriendlyByteBuf buf) {
+			return new AdminActionPayload(buf.readUtf(64), buf.readUtf(16), buf.readUtf(64));
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
 	/** Client -> server: take up the week's trial for the next visit to the Seam (or let it go). */
 	public record ArmTrialPayload(boolean arm) implements CustomPacketPayload {
 		public static final Type<ArmTrialPayload> TYPE = new Type<>(ExtremeDimensions.id("arm_trial"));

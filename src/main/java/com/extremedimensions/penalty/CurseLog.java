@@ -29,7 +29,9 @@ public final class CurseLog {
 		UNKNOWN("unknown", false), CARD("card", true), SPILL("spill", false), LURKER("lurker", false),
 		CAVE_LURKER("cave_lurker", false), SWARM("swarm", false), TIDEWALKER("tidewalker", false), BARTER("barter", false),
 		FLEE("flee", false), COLLAPSE("collapse", false), CLAN("clan", false), BURDEN("burden", true), ELDER("elder", false),
-		BLOOD("blood", false), COMMAND("command", true);
+		BLOOD("blood", false), COMMAND("command", true),
+		/** Laid by an operator from the Players screen (3.27): told as a toast, as the player did not choose it. */
+		OPERATOR("operator", false);
 
 		public final String id;
 		/** True when the player chose or set it themselves (no toast: they saw it come). */
