@@ -50,8 +50,11 @@ public class BossTests {
 			Config.STARVED_HEALTH_PER_PLAYER = 0.5;
 			check(helper, MendingService.healthFor(1) == StarvedOne.BASE_HEALTH, "alone, it has %s health", MendingService.healthFor(1));
 			check(helper, MendingService.healthFor(3) == StarvedOne.BASE_HEALTH * 2, "against three, it has %s health", MendingService.healthFor(3));
+			// 3.31: past the game's 1024 too, as every blow is divided rather than its health raised
+			check(helper, MendingService.healthFor(5) == StarvedOne.BASE_HEALTH * 3 && MendingService.toughness(5) == 3,
+					"against five, it has %s health (each blow divided by %s)", MendingService.healthFor(5), MendingService.toughness(5));
 			Config.STARVED_HEALTH_PER_PLAYER = 0;
-			check(helper, MendingService.healthFor(4) == StarvedOne.BASE_HEALTH, "with no growth set, it still grew");
+			check(helper, MendingService.healthFor(4) == StarvedOne.BASE_HEALTH && MendingService.toughness(4) == 1, "with no growth set, it still grew");
 		} finally {
 			Config.STARVED_HEALTH_PER_PLAYER = per;
 		}

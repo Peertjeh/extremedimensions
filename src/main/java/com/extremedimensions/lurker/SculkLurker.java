@@ -35,11 +35,12 @@ public class SculkLurker extends PathfinderMob implements LurkerBody {
 		TribeMoves.wary(this);
 		this.moveControl = new SteadyMoveControl(this, TURN);
 		this.xpReward = 8;
+		TribeHealth.apply(this);
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return PathfinderMob.createMobAttributes()
-				.add(Attributes.MAX_HEALTH, 14.0)
+				.add(Attributes.MAX_HEALTH, com.extremedimensions.config.Config.SCULK_LURKER_HEALTH)
 				.add(Attributes.MOVEMENT_SPEED, 0.3)
 				.add(Attributes.FOLLOW_RANGE, 48.0)
 				.add(Attributes.STEP_HEIGHT, 1.0);

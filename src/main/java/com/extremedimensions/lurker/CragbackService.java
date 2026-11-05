@@ -327,7 +327,7 @@ public final class CragbackService {
 				near++;
 			}
 		}
-		double health = 140.0 * (1 + Math.max(0, Config.CRAGBACK_HEALTH_PER_PLAYER) * Math.max(0, near - 1));
+		double health = Config.CRAGBACK_HEALTH * (1 + Math.max(0, Config.CRAGBACK_HEALTH_PER_PLAYER) * Math.max(0, near - 1));
 		if (c.getAttribute(Attributes.MAX_HEALTH) != null && c.getMaxHealth() < health) {
 			float share = c.getHealth() / c.getMaxHealth();
 			c.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);

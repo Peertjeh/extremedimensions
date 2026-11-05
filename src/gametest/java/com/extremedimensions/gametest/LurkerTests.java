@@ -49,6 +49,34 @@ import net.minecraft.world.phys.Vec3;
  * player is told about the wound.
  */
 public class LurkerTests {
+	/**
+	 * 3.31: every kind takes its health from its setting as it is made (half again its old health by default): the
+	 * Lurker 90, the Keeper 210; a setting changed holds for the next one made; the Starved One keeps its own 500.
+	 */
+	@GameTest
+	public void eachKindTakesItsHealthFromItsSetting(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		double magpie = Config.MAGPIE_HEALTH;
+		try {
+			check(helper, Config.LURKER_HEALTH == 90 && Config.KEEPER_HEALTH == 210 && Config.WICK_HEALTH == 6, "the defaults are not half again the old health");
+			Lurker l = ModEntities.LURKER.create(level, EntitySpawnReason.EVENT);
+			Keeper k = ModEntities.KEEPER.create(level, EntitySpawnReason.EVENT);
+			check(helper, l != null && l.getMaxHealth() == 90 && l.getHealth() == 90, "a Lurker is made with %s of %s health", l == null ? 0 : l.getHealth(),
+					l == null ? 0 : l.getMaxHealth());
+			check(helper, k != null && k.getMaxHealth() == 210, "a Keeper is made with %s health", k == null ? 0 : k.getMaxHealth());
+			Config.MAGPIE_HEALTH = 50;
+			var m = ModEntities.MAGPIE.create(level, EntitySpawnReason.EVENT);
+			check(helper, m != null && m.getMaxHealth() == 50 && m.getHealth() == 50, "a Magpie made after its setting changed has %s health",
+					m == null ? 0 : m.getMaxHealth());
+			var so = ModEntities.STARVED_ONE.create(level, EntitySpawnReason.EVENT);
+			check(helper, so != null && so.getMaxHealth() == com.extremedimensions.mending.StarvedOne.BASE_HEALTH, "the Starved One took the Keeper's health (%s)",
+					so == null ? 0 : so.getMaxHealth());
+		} finally {
+			Config.MAGPIE_HEALTH = magpie;
+		}
+		helper.succeed();
+	}
+
 	private static void place(GameTestHelper helper, ServerPlayer p, double x, double y, double z) {
 		Vec3 at = helper.absoluteVec(new Vec3(x, y, z));
 		p.snapTo(at.x, at.y, at.z, 0f, 0f);

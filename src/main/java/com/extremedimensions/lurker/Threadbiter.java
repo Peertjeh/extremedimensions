@@ -27,7 +27,7 @@ public class Threadbiter extends Lurker {
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return Monster.createMonsterAttributes()
-				.add(Attributes.MAX_HEALTH, 6.0)
+				.add(Attributes.MAX_HEALTH, com.extremedimensions.config.Config.THREADBITER_HEALTH)
 				.add(Attributes.MOVEMENT_SPEED, 0.34)
 				.add(Attributes.FOLLOW_RANGE, 40.0)
 				.add(Attributes.ATTACK_DAMAGE, 0.0)

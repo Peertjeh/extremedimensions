@@ -26,7 +26,7 @@ public class Cragback extends Lurker {
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return Monster.createMonsterAttributes()
-				.add(Attributes.MAX_HEALTH, 140.0)
+				.add(Attributes.MAX_HEALTH, com.extremedimensions.config.Config.CRAGBACK_HEALTH)
 				.add(Attributes.MOVEMENT_SPEED, 0.24)
 				.add(Attributes.FOLLOW_RANGE, 48.0)
 				.add(Attributes.KNOCKBACK_RESISTANCE, 1.0)

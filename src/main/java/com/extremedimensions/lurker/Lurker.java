@@ -44,11 +44,13 @@ public class Lurker extends Monster implements LurkerBody {
 		if (type == com.extremedimensions.registry.ModEntities.LURKER) {
 			this.moveControl = new SteadyMoveControl(this, TURN);
 		}
+		// Each kind's health from its setting (3.31), for this Lurker and every kind made from it, the Keeper among them
+		TribeHealth.apply(this);
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return Monster.createMonsterAttributes()
-				.add(Attributes.MAX_HEALTH, 60.0)
+				.add(Attributes.MAX_HEALTH, com.extremedimensions.config.Config.LURKER_HEALTH)
 				.add(Attributes.MOVEMENT_SPEED, 0.3)
 				.add(Attributes.FOLLOW_RANGE, 64.0)
 				.add(Attributes.KNOCKBACK_RESISTANCE, 0.8)

@@ -26,7 +26,7 @@ public class Gatebreaker extends Lurker {
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return Monster.createMonsterAttributes()
-				.add(Attributes.MAX_HEALTH, 180.0)
+				.add(Attributes.MAX_HEALTH, com.extremedimensions.config.Config.GATEBREAKER_HEALTH)
 				.add(Attributes.MOVEMENT_SPEED, 0.2)
 				.add(Attributes.FOLLOW_RANGE, 64.0)
 				.add(Attributes.KNOCKBACK_RESISTANCE, 1.0)

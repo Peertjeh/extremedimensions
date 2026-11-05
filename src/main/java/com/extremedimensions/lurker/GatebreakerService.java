@@ -171,7 +171,7 @@ public final class GatebreakerService {
 				near++;
 			}
 		}
-		double health = 180.0 * (1 + Math.max(0, Config.GATEBREAKER_HEALTH_PER_PLAYER) * Math.max(0, near - 1));
+		double health = Config.GATEBREAKER_HEALTH * (1 + Math.max(0, Config.GATEBREAKER_HEALTH_PER_PLAYER) * Math.max(0, near - 1));
 		if (g.getAttribute(Attributes.MAX_HEALTH) != null) {
 			g.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
 			g.setHealth(g.getMaxHealth());

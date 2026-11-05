@@ -26,7 +26,7 @@ public class Edgecrawler extends Lurker {
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return Monster.createMonsterAttributes()
-				.add(Attributes.MAX_HEALTH, 30.0)
+				.add(Attributes.MAX_HEALTH, com.extremedimensions.config.Config.EDGECRAWLER_HEALTH)
 				.add(Attributes.MOVEMENT_SPEED, 0.3)
 				.add(Attributes.FOLLOW_RANGE, 48.0)
 				.add(Attributes.KNOCKBACK_RESISTANCE, 0.4)

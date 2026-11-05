@@ -301,6 +301,9 @@ the settings screen), and `/tether lurkers` shows them all in chat, on or off, w
 `lurker`, `cave`, `sculk`, `magpie`, `wick`, `tidewalker`, `gatebreaker`, `lockwarden`, `threadbiter`, `edgecrawler`
 and `cragback`. The change is saved and holds for the whole world; no new ones of a kind switched off come, and any
 already out stay until they leave or are slain. It needs `extremedimensions.admin.settings` (operator level 2).
+Each kind's health is a setting too (`lurker_health`, `magpie_health`, `keeper_health` and so on, 1 to 1024): since
+3.31 the Lurker has 90, the Keeper 210, the Gatebreaker 270 and the Cragback 210 (both half again for every other
+player near).
 
 ### Permissions (LuckPerms)
 

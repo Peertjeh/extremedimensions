@@ -1,5 +1,35 @@
 # Changelog
 
+## 3.31.0: Thicker Hides
+
+### Changes
+- **Every Lurker and the Keeper have half again their health, and each kind's health is a setting.** The settings
+  screen (World rules) has a health setting for each, 1 to 1024 (2 is one heart):
+
+  | Kind | Setting | Was | Now |
+  |---|---|---|---|
+  | Lurker | `lurker_health` | 60 | 90 |
+  | Cave Lurker | `cave_lurker_health` | 30 | 45 |
+  | Sculk Lurker | `sculk_lurker_health` | 14 | 21 |
+  | Magpie | `magpie_health` | 24 | 36 |
+  | Wick | `wick_health` | 4 | 6 |
+  | Tidewalker | `tidewalker_health` | 40 | 60 |
+  | Gatebreaker | `gatebreaker_health` | 180 | 270 |
+  | Lockwarden | `lockwarden_health` | 80 | 120 |
+  | Threadbiter | `threadbiter_health` | 6 | 9 |
+  | Edgecrawler | `edgecrawler_health` | 30 | 45 |
+  | Cragback | `cragback_health` | 140 | 210 |
+  | Keeper | `keeper_health` | 140 | 210 |
+
+  The Gatebreaker and the Cragback still grow by half for every other player near. A setting holds for every one that
+  comes from then on; one already out keeps the health it has. The Hollowlings and the Elders are as they were.
+
+### Fixes
+- **The Starved One no longer stops growing at four players.** It grew by raising its health, and the game holds any
+  creature's health to 1024 at most, so against four or more it had 1024 instead of 1250, 1500 and on. Now it keeps
+  its own 500 and every blow on it is divided instead, as the Elders do: 750 in all against two, 1000 against three,
+  1250 against four, 1500 against five (`starved_health_per_player`, 0.5).
+
 ## 3.30.0: Lights Out
 
 ### New

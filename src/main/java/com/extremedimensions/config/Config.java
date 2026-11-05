@@ -260,6 +260,8 @@ public final class Config {
 
 	/** 1 = Lurkers appear, 0 = never. */
 	public static int LURKER_ENABLED = 1;
+	/** The Lurker's health (3.31: half again its old 60). Holds for every Lurker that comes from now on. */
+	public static double LURKER_HEALTH = 90.0;
 	/** Chance per player every 20 seconds that a Lurker appears (Overworld and Nether), outside the cooldown. */
 	public static double LURKER_SPAWN_CHANCE = 0.012;
 	/** Minimum seconds between two encounters for the same player. */
@@ -356,6 +358,8 @@ public final class Config {
 
 	/** 1 = Cave Lurkers come to players deep under the Overworld, 0 = never. */
 	public static int CAVE_LURKER_ENABLED = 1;
+	/** The Cave Lurker's health (was 30). */
+	public static double CAVE_LURKER_HEALTH = 45.0;
 	/** Chance per player every 20 seconds, while they are underground, that a Cave Lurker comes (outside the cooldown). */
 	public static double CAVE_LURKER_SPAWN_CHANCE = 0.008;
 	/** Minimum seconds between two Cave Lurkers for the same player. */
@@ -390,6 +394,8 @@ public final class Config {
 
 	/** 1 = Sculk Lurkers come to players in the Deep Dark, near the shriekers that call the Warden; 0 = never. */
 	public static int SCULK_LURKER_ENABLED = 1;
+	/** The Sculk Lurker's health (was 14). */
+	public static double SCULK_LURKER_HEALTH = 21.0;
 	/** Chance per player every 20 seconds, there, that one comes (outside the cooldown). */
 	public static double SCULK_LURKER_SPAWN_CHANCE = 0.12;
 	/** Minimum seconds between two for the same player. */
@@ -422,6 +428,8 @@ public final class Config {
 
 	/** 1 = Magpies come for what players keep in chests and barrels (in the Overworld and the Nether), 0 = never. */
 	public static int MAGPIE_ENABLED = 1;
+	/** The Magpie's health (was 24). */
+	public static double MAGPIE_HEALTH = 36.0;
 	/** Chance per player every 20 seconds, with a chest or barrel of theirs near, that a Magpie comes (outside the cooldown). */
 	public static double MAGPIE_SPAWN_CHANCE = 0.02;
 	/** Minimum seconds between two Magpies for the same player. */
@@ -440,6 +448,8 @@ public final class Config {
 
 	/** 1 = Wicks come out on dark nights to eat the light round players in the Overworld, 0 = never. */
 	public static int WICK_ENABLED = 1;
+	/** The Wick's health (was 4). */
+	public static double WICK_HEALTH = 6.0;
 	/** Chance per player every 20 seconds, on a dark dry night with enough light about them, that Wicks come. */
 	public static double WICK_SPAWN_CHANCE = 0.03;
 	/** Minimum seconds between two visits of Wicks for the same player. */
@@ -465,6 +475,8 @@ public final class Config {
 
 	/** 1 = Tidewalkers rise under players who row or swim over deep water in the Overworld, 0 = never. */
 	public static int TIDEWALKER_ENABLED = 1;
+	/** The Tidewalker's health (was 40). */
+	public static double TIDEWALKER_HEALTH = 60.0;
 	/** Chance per player every 20 seconds, out on deep water, that a Tidewalker comes (twice that at night; outside the cooldown). */
 	public static double TIDEWALKER_SPAWN_CHANCE = 0.04;
 	/** Minimum seconds between two Tidewalkers for the same player. */
@@ -486,6 +498,8 @@ public final class Config {
 
 	/** 1 = Gatebreakers come out of the Wound Storms, 0 = never. */
 	public static int GATEBREAKER_ENABLED = 1;
+	/** The Gatebreaker's health with one player near (was 180); more near add gatebreaker_health_per_player each. */
+	public static double GATEBREAKER_HEALTH = 270.0;
 	/** Chance every 20 seconds, while a Wound Storm rages round a player, that a Gatebreaker comes for them (outside the cooldown). */
 	public static double GATEBREAKER_CHANCE = 0.35;
 	/** Minimum seconds between two Gatebreakers for the same player. */
@@ -509,6 +523,8 @@ public final class Config {
 
 	/** 1 = Lockwardens roam the End once the Dragon has fallen, after players who carry ender pearls; 0 = never. */
 	public static int LOCKWARDEN_ENABLED = 1;
+	/** The Lockwarden's health (was 80). */
+	public static double LOCKWARDEN_HEALTH = 120.0;
 	/** Chance per player every 20 seconds, in the End with ender pearls on them, that a Lockwarden comes (outside the cooldown). */
 	public static double LOCKWARDEN_SPAWN_CHANCE = 0.06;
 	/** Minimum seconds between two Lockwardens for the same player. */
@@ -528,6 +544,8 @@ public final class Config {
 
 	/** 1 = packs of Threadbiters scurry over the Seam's islands and gnaw at a visitor's thread; 0 = never. */
 	public static int THREADBITER_ENABLED = 1;
+	/** Each Threadbiter's health (was 6). */
+	public static double THREADBITER_HEALTH = 9.0;
 	/** Chance per visitor every 20 seconds in the Seam that a pack of Threadbiters comes (twice that once the thread runs thin). */
 	public static double THREADBITER_SPAWN_CHANCE = 0.05;
 	/** Minimum seconds between two packs for the same visitor. */
@@ -547,6 +565,8 @@ public final class Config {
 
 	/** 1 = Edgecrawlers climb up over the Seam's island rims after visitors near an edge; 0 = never. */
 	public static int EDGECRAWLER_ENABLED = 1;
+	/** The Edgecrawler's health (was 30). */
+	public static double EDGECRAWLER_HEALTH = 45.0;
 	/** Chance per visitor every 20 seconds, near an island's edge in the Seam, that an Edgecrawler climbs up (outside the cooldown). */
 	public static double EDGECRAWLER_SPAWN_CHANCE = 0.06;
 	/** Minimum seconds between two Edgecrawlers for the same visitor. */
@@ -568,6 +588,8 @@ public final class Config {
 
 	/** 1 = Cragbacks sleep on the Seam's islands, looking like rock, and wake when someone digs near; 0 = never. */
 	public static int CRAGBACK_ENABLED = 1;
+	/** The Cragback's health with one player near (was 140); more near add cragback_health_per_player each. */
+	public static double CRAGBACK_HEALTH = 210.0;
 	/** Chance per visitor every 20 seconds in the Seam that a sleeping Cragback lies somewhere near (outside the cooldown). */
 	public static double CRAGBACK_SPAWN_CHANCE = 0.03;
 	/** Minimum seconds between two Cragbacks for the same visitor. */
@@ -624,6 +646,8 @@ public final class Config {
 	public static int COMPANION_WARN_SECONDS = 30;
 	/** 1 = hoards are guarded by a Keeper, 0 = never. */
 	public static int KEEPER_ENABLED = 1;
+	/** The Keeper's health (was 140). */
+	public static double KEEPER_HEALTH = 210.0;
 	/** Damage when a Keeper reaches in after a prey it sees but cannot get at, and drags them out (half-hearts). */
 	public static double KEEPER_REACH_DAMAGE = 6.0;
 
@@ -1786,6 +1810,7 @@ public final class Config {
 			{"elder_health_scale", 0.1, 20}, {"elder_health_per_player", 0, 5}, {"elder_damage_scale", 0, 20}, {"elder_damage_per_player", 0, 2},
 			{"elder_rest_per_player", 0, 0.5}, {"elder_rest_min", 0.1, 1}, {"elder_split_max", 1, 8}, {"elder_fighters_range", 8, 256},
 			{"elder_reach", 1, 5}, {"elder_brood_per_player", 0, 10}, {"elder_spell_range", 16, 256}, {"elder_snare_seconds", 0, 30},
+			{"lurker_health", 1, 1024}, {"cave_lurker_health", 1, 1024}, {"sculk_lurker_health", 1, 1024}, {"magpie_health", 1, 1024}, {"wick_health", 1, 1024}, {"tidewalker_health", 1, 1024}, {"gatebreaker_health", 1, 1024}, {"lockwarden_health", 1, 1024}, {"threadbiter_health", 1, 1024}, {"edgecrawler_health", 1, 1024}, {"cragback_health", 1, 1024}, {"keeper_health", 1, 1024},
 			{"elder_snare_damage", 0, 100}, {"elder_bind_seconds", 0, 120}, {"matriarch_wake_seconds", 0, 120}, {"matriarch_calm_range", 8, 128},
 			{"matriarch_warn_range", 0, 64}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
 			{"ferryman_gaol_hits", 1, 20}, {"ferryman_gaol_seconds", 0.5, 6}, {"ferryman_gaol_damage", 0, 100}, {"weaver_windup_speed", 0.5, 4}, {"weaver_lance_length", 0.5, 4},

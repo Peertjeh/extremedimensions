@@ -27,7 +27,7 @@ public class Wick extends Lurker {
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return Monster.createMonsterAttributes()
-				.add(Attributes.MAX_HEALTH, 4.0)
+				.add(Attributes.MAX_HEALTH, com.extremedimensions.config.Config.WICK_HEALTH)
 				.add(Attributes.MOVEMENT_SPEED, 0.28)
 				.add(Attributes.FOLLOW_RANGE, 32.0)
 				.add(Attributes.ATTACK_DAMAGE, 0.0)

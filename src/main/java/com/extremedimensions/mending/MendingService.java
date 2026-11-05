@@ -104,10 +104,18 @@ public final class MendingService {
 		if (!isDriven(so)) {
 			return 1.0F;
 		}
+		// The more who came to end it, the more it has drunk: every blow is divided by that (3.31), as its health itself
+		// cannot pass the game's 1024
+		float tough = (float) toughness(party);
 		if (Binding.bound()) {
-			return (float) Math.max(0, Config.STARVED_BOUND_DAMAGE);
+			return (float) Math.max(0, Config.STARVED_BOUND_DAMAGE) / tough;
 		}
-		return Binding.possible(party) ? (float) Math.max(0, Config.STARVED_UNBOUND_DAMAGE) : 1.0F;
+		return (Binding.possible(party) ? (float) Math.max(0, Config.STARVED_UNBOUND_DAMAGE) : 1.0F) / tough;
+	}
+
+	/** How many times its own health it has against this many players: every blow on it is divided by this (3.31). */
+	public static double toughness(int players) {
+		return Math.max(0.1, healthFor(players) / StarvedOne.BASE_HEALTH);
 	}
 
 	private static boolean open() {
@@ -184,6 +192,7 @@ public final class MendingService {
 	private static boolean ravenous = false;
 
 	/** The Starved One's health for this many players at the Heart: more for every one beyond the first. */
+	/** How much health it has in all against this many players (its own, times {@link #toughness}). */
 	public static double healthFor(int players) {
 		return StarvedOne.BASE_HEALTH * (1 + Math.max(0, players - 1) * Math.max(0, Config.STARVED_HEALTH_PER_PLAYER));
 	}
@@ -203,9 +212,10 @@ public final class MendingService {
 				players++;
 			}
 		}
+		// Its own health, whoever comes: the more there are, the more of each blow it shrugs off (see damageFactor)
 		var health = so.getAttribute(Attributes.MAX_HEALTH);
 		if (health != null) {
-			health.setBaseValue(healthFor(Math.max(1, players)));
+			health.setBaseValue(StarvedOne.BASE_HEALTH);
 			so.setHealth(so.getMaxHealth());
 		}
 		ravenous = false;
