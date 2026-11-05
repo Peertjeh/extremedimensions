@@ -1,5 +1,24 @@
 # Changelog
 
+## 3.29.0: By Leave
+
+### New
+- **Permissions for every operator command and screen, for LuckPerms and the like.** Each asks a permission of its own
+  through Fabric API's permission API, so a server can let a moderator open the Players screen without making them an
+  operator, or keep bosses and the Seam reset to a few:
+  - `extremedimensions.admin.players`: the Players screen (and the crown in the Curses screen), `/tether players`,
+    `/tether curse` and `/tether tribe set`;
+  - `extremedimensions.admin.settings`: changing the settings (the settings screen), `/tether preset` and
+    `/tether overworld_penalties`;
+  - `extremedimensions.admin.spawn`: `/tether boss`, `hoard`, `lurker`, `event`, `storm`, `seam`, `break_seal` and
+    `seam_showcase`;
+  - `extremedimensions.admin.export`: `/tether export` and `/tether discord_test`;
+  - `extremedimensions.admin.seam_reset`: `/tether seam_reset`.
+- **Nothing changes without a permission mod.** Each falls back to the operator level it always needed (level 2, and
+  level 4 for the Seam reset), and in a world of your own you hold them all. The fallback levels are not settings, so
+  whoever may change the settings cannot lower the bar for a permission they lack. The README has the table and a
+  LuckPerms example.
+
 ## 3.28.0: She Stirs
 
 ### Changes

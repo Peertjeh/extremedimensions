@@ -52,6 +52,7 @@
 			"com.extremedimensions.gametest.TetheriteTests",
 			"com.extremedimensions.gametest.TetheriteBindingTests",
 			"com.extremedimensions.gametest.AdminTests",
+			"com.extremedimensions.gametest.PermissionTests",
 			"com.extremedimensions.gametest.CharmTests",
 			"com.extremedimensions.gametest.LurkerTests",
 			"com.extremedimensions.gametest.FragmentTests"

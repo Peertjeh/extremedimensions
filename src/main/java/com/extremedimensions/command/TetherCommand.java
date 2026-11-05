@@ -21,6 +21,7 @@ import com.extremedimensions.mending.MendingService;
 import com.extremedimensions.world.WorldService;
 import com.extremedimensions.server.WorldFx;
 
+import com.extremedimensions.server.Perms;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -39,9 +40,14 @@ public final class TetherCommand {
 	private TetherCommand() {}
 
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-		java.util.function.Predicate<CommandSourceStack> op = Commands.hasPermission(Commands.LEVEL_GAMEMASTERS);
+		// Each operator command needs its permission (3.29): granted by a permission mod such as LuckPerms, or without one
+		// by the operator level it always needed
+		java.util.function.Predicate<CommandSourceStack> players = Perms.require(Perms.Node.PLAYERS);
+		java.util.function.Predicate<CommandSourceStack> settings = Perms.require(Perms.Node.SETTINGS);
+		java.util.function.Predicate<CommandSourceStack> spawn = Perms.require(Perms.Node.SPAWN);
+		java.util.function.Predicate<CommandSourceStack> export = Perms.require(Perms.Node.EXPORT);
 		// Wiping a world is for admins (and the server console), not for command blocks
-		java.util.function.Predicate<CommandSourceStack> admin = Commands.hasPermission(Commands.LEVEL_ADMINS);
+		java.util.function.Predicate<CommandSourceStack> admin = Perms.require(Perms.Node.SEAM_RESET);
 		dispatcher.register(Commands.literal("tether")
 				// Anyone may ask where they stand; everything else is for operators
 				.then(Commands.literal("where").executes(c -> where(c.getSource())))
@@ -58,47 +64,47 @@ public final class TetherCommand {
 						.then(Commands.literal("off").executes(c -> share(c.getSource(), false))))
 				// The tribe: anyone may ask where they stand with it; operators may set it
 				.then(Commands.literal("tribe").executes(c -> tribe(c.getSource()))
-						.then(Commands.literal("set").requires(op)
+						.then(Commands.literal("set").requires(players)
 								.then(Commands.argument("standing", IntegerArgumentType.integer(-100, 100))
 										.executes(c -> tribeSet(c.getSource(), IntegerArgumentType.getInteger(c, "standing"))))))
-				.then(Commands.literal("overworld_penalties").requires(op)
+				.then(Commands.literal("overworld_penalties").requires(settings)
 						.executes(c -> show(c.getSource()))
 						.then(Commands.literal("on").executes(c -> set(c.getSource(), true)))
 						.then(Commands.literal("off").executes(c -> set(c.getSource(), false))))
 				// Any kind of Lurker, near the operator or near the players named after it (and set on them)
-				.then(lurkerCommand(op))
-				.then(Commands.literal("hoard").requires(op).executes(c -> hoard(c.getSource())))
-				.then(Commands.literal("boss").requires(op)
+				.then(lurkerCommand(spawn))
+				.then(Commands.literal("hoard").requires(spawn).executes(c -> hoard(c.getSource())))
+				.then(Commands.literal("boss").requires(spawn)
 						.then(Commands.literal("matriarch").executes(c -> boss(c.getSource(), "matriarch")))
 						.then(Commands.literal("ferryman").executes(c -> boss(c.getSource(), "ferryman")))
 						.then(Commands.literal("weaver").executes(c -> boss(c.getSource(), "weaver"))))
-				.then(Commands.literal("seam").requires(op).executes(c -> seam(c.getSource())))
+				.then(Commands.literal("seam").requires(spawn).executes(c -> seam(c.getSource())))
 				.then(Commands.literal("seam_reset").requires(admin)
 						.executes(c -> seamReset(c.getSource()))
 						.then(Commands.literal("confirm").executes(c -> seamResetConfirm(c.getSource())))
 						.then(Commands.literal("cancel").executes(c -> seamResetCancel(c.getSource()))))
-				.then(Commands.literal("break_seal").requires(op).executes(c -> {
+				.then(Commands.literal("break_seal").requires(spawn).executes(c -> {
 					MendingService.breakSeal(c.getSource().getServer());
 					return 1;
 				}))
-				.then(Commands.literal("seam_showcase").requires(op).executes(c -> {
+				.then(Commands.literal("seam_showcase").requires(spawn).executes(c -> {
 					int n = SeamService.showcase(c.getSource().getServer());
 					c.getSource().sendSuccess(() -> Component.literal("Designed " + n + " Seam structures; building " + SeamArchitect.pending() + " blocks"), false);
 					return n;
 				}))
-				.then(Commands.literal("event").requires(op)
+				.then(Commands.literal("event").requires(spawn)
 						.then(Commands.argument("id", StringArgumentType.word())
 								.suggests((c, b) -> SharedSuggestionProvider.suggest(com.extremedimensions.events.WorldEvents.IDS, b))
 								.executes(c -> event(c.getSource(), StringArgumentType.getString(c, "id")))))
-				.then(Commands.literal("storm").requires(op).executes(c -> {
+				.then(Commands.literal("storm").requires(spawn).executes(c -> {
 					WorldService.begin(c.getSource().getPlayerOrException(), c.getSource().getServer().getTickCount());
 					return 1;
 				}))
-				.then(preset().requires(op))
-				.then(Commands.literal("export").requires(op).executes(c -> export(c.getSource())))
-				.then(Commands.literal("discord_test").requires(op).executes(c -> discordTest(c.getSource())))
-				.then(Commands.literal("players").requires(op).executes(c -> players(c.getSource())))
-				.then(Commands.literal("curse").requires(op)
+				.then(preset().requires(settings))
+				.then(Commands.literal("export").requires(export).executes(c -> export(c.getSource())))
+				.then(Commands.literal("discord_test").requires(export).executes(c -> discordTest(c.getSource())))
+				.then(Commands.literal("players").requires(players).executes(c -> players(c.getSource())))
+				.then(Commands.literal("curse").requires(players)
 						.then(Commands.literal("clear").executes(c -> clearCurses(c.getSource())))
 						.then(Commands.argument("id", StringArgumentType.word())
 								.suggests((c, b) -> SharedSuggestionProvider.suggest(java.util.Arrays.stream(Penalty.values()).map(p -> p.id), b))

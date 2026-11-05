@@ -293,6 +293,25 @@ into the tapestry and the tapestry finished, and a gold medal in this week's Rif
 that pings (no @everyone or @here). The server never waits for Discord; a failure is logged once. `/tether
 discord_test` posts a test message and says what Discord answered.
 
+### Permissions (LuckPerms)
+
+Every operator command and screen asks a permission of its own, through Fabric API's permission API, so a permission
+mod such as LuckPerms can hand one out without making someone an operator (a moderator who may open the Players screen
+but not call bosses, say). Without a permission mod each falls back to the operator level it always needed, so nothing
+changes on a server that has none; in a world of your own you hold them all.
+
+| Permission | Opens | Without a permission mod |
+|---|---|---|
+| `extremedimensions.admin.players` | The Players screen, `/tether players`, `/tether curse`, `/tether tribe set` | Operator level 2 |
+| `extremedimensions.admin.settings` | Changing the settings (the settings screen), `/tether preset`, `/tether overworld_penalties` | Operator level 2 |
+| `extremedimensions.admin.spawn` | `/tether boss`, `hoard`, `lurker`, `event`, `storm`, `seam`, `break_seal`, `seam_showcase` | Operator level 2 |
+| `extremedimensions.admin.export` | `/tether export`, `/tether discord_test` | Operator level 2 |
+| `extremedimensions.admin.seam_reset` | `/tether seam_reset` | Operator level 4 (admins and the console) |
+
+In LuckPerms: `/lp group moderator permission set extremedimensions.admin.players true`. (Under the hood each is an id
+such as `extremedimensions:admin/players`; LuckPerms writes it with dots.) The fallback levels are fixed on purpose: who
+may change the settings cannot lower the bar for a permission they lack.
+
 ## Configuration
 
 Every value lives in `config/extremedimensions.json` (written on first launch) and in the in-game settings screen,

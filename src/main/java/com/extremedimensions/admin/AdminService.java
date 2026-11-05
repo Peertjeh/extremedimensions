@@ -7,7 +7,6 @@ import java.util.UUID;
 
 import com.extremedimensions.ExtremeDimensions;
 import com.extremedimensions.coop.ClanService;
-import com.extremedimensions.config.SettingsService;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.network.ModPackets;
@@ -40,9 +39,9 @@ public final class AdminService {
 	/** At most this many players are listed (online first, then by name): enough for any server, small enough for one payload. */
 	public static final int LIST_MAX = 500;
 
-	/** Whether this player may open the Players screen and change another's curses. */
+	/** Whether this player may open the Players screen and change another's curses: {@code extremedimensions.admin.players} (3.29). */
 	public static boolean allowed(ServerPlayer p) {
-		return SettingsService.canEdit(p);
+		return com.extremedimensions.server.Perms.has(p, com.extremedimensions.server.Perms.Node.PLAYERS);
 	}
 
 	/** Sends the Players screen's data to an operator; anyone else is told no (and gets nothing). */
