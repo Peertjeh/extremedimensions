@@ -1008,6 +1008,15 @@ public final class Config {
 
 	/** Keepers a player must have slain before the next hoard they wake is guarded by the Matriarch (0 = never). */
 	public static int MATRIARCH_AFTER_KEEPERS = 3;
+	/**
+	 * Seconds the Matriarch stirs beneath a nest before she rises (3.28): a bar counts down and everyone near is told;
+	 * going {@link #MATRIARCH_CALM_RANGE} away lets her sleep again. 0 = she rises at once.
+	 */
+	public static int MATRIARCH_WAKE_SECONDS = 15;
+	/** How far (blocks) from the nest everyone must go while she stirs for her to settle again. */
+	public static int MATRIARCH_CALM_RANGE = 32;
+	/** How near (blocks) to a nest she watches over a player is warned (about once a minute); 0 = no warning. */
+	public static int MATRIARCH_WARN_RANGE = 20;
 	/** Hollowlings the Matriarch calls when her health falls below 70% and again below 35%. */
 	public static int MATRIARCH_BROOD = 3;
 	/** Relics the Matriarch always leaves. */
@@ -1777,7 +1786,8 @@ public final class Config {
 			{"elder_health_scale", 0.1, 20}, {"elder_health_per_player", 0, 5}, {"elder_damage_scale", 0, 20}, {"elder_damage_per_player", 0, 2},
 			{"elder_rest_per_player", 0, 0.5}, {"elder_rest_min", 0.1, 1}, {"elder_split_max", 1, 8}, {"elder_fighters_range", 8, 256},
 			{"elder_reach", 1, 5}, {"elder_brood_per_player", 0, 10}, {"elder_spell_range", 16, 256}, {"elder_snare_seconds", 0, 30},
-			{"elder_snare_damage", 0, 100}, {"elder_bind_seconds", 0, 120}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
+			{"elder_snare_damage", 0, 100}, {"elder_bind_seconds", 0, 120}, {"matriarch_wake_seconds", 0, 120}, {"matriarch_calm_range", 8, 128},
+			{"matriarch_warn_range", 0, 64}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
 			{"ferryman_gaol_hits", 1, 20}, {"ferryman_gaol_seconds", 0.5, 6}, {"ferryman_gaol_damage", 0, 100}, {"weaver_windup_speed", 0.5, 4}, {"weaver_lance_length", 0.5, 4},
 			{"elder_arena_size", 0.5, 12}, {"elder_arena_wall", 0, 1}, {"elder_arena_landmark", 0, 1},
 			{"elder_arena_breakable", 0, 1}, {"elder_arena_blast_resistance", 0, 1200}, {"elder_arena_collapse", 0, 1},

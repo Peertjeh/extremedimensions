@@ -1,5 +1,26 @@
 # Changelog
 
+## 3.28.0: She Stirs
+
+### Changes
+- **The Matriarch gives warning before she comes.** She used to rise the very moment a nest was woken, right beside
+  whoever woke it, wherever that was: by the house, on the way home. Now:
+  - **You are told when you have earned her.** When your third Keeper falls (`matriarch_after_keepers`), chat says so:
+    the next nest you wake calls the Matriarch herself, so choose where.
+  - **Every nest she sleeps beneath warns you.** Come within 20 blocks of a nest while she waits for you
+    (`matriarch_warn_range`) and purple smoke rises over its barrel; on coming near a new nest, and about once a minute
+    after, you are told that opening or breaking its barrel, or striking its young, wakes her.
+  - **Woken, she stirs before she rises.** A purple bar, **The Matriarch stirs**, counts down 15 seconds
+    (`matriarch_wake_seconds`) for everyone within 64 blocks, the ground groans louder as she nears the surface, and
+    everyone near is told. Whoever earned her and is still within 32 blocks of the nest when it runs out
+    (`matriarch_calm_range`) is the one she rises for, the one who woke her first of all. If all of them go that far,
+    she sinks back to sleep, and the next nest they wake calls her again: you choose the place, not the nest.
+- **A nest wrecked by a blast or fire gives the same warning.** A nest whose barrel is blown up or burnt (by a creeper,
+  a raid's ravagers, lightning) is answered for by whoever comes within 24 blocks, as before; with the Matriarch earned,
+  that now starts her wind-up instead of bringing her at once, so there is time to walk away from the house.
+- All three are in the settings screen (World, The Elders), on every difficulty; `matriarch_wake_seconds` 0 brings her
+  at once as before. `/tether boss matriarch` still calls her at once.
+
 ## 3.27.5: Stay
 
 ### New

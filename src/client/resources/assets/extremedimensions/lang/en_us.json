@@ -3466,5 +3466,17 @@
   "config.extremedimensions.tetherite_drawbacks": "Tetherite: drawbacks on",
   "config.extremedimensions.tetherite_drawbacks.desc": "1 = Tetherite's drawbacks act: its weight, its hunger and its call to the Lurkers, each at the value below. 0 = none of them, whatever the values say. Its strengths stay either way.",
   "gui.extremedimensions.companion.stay": "Your Hollowling stays here (%s, %s, %s) and waits for you. Sneak and use it with an empty hand to take it along again.",
-  "gui.extremedimensions.companion.follow": "Your Hollowling comes along again."
+  "gui.extremedimensions.companion.follow": "Your Hollowling comes along again.",
+  "config.extremedimensions.matriarch_wake_seconds": "Matriarch: wind-up (seconds)",
+  "config.extremedimensions.matriarch_wake_seconds.desc": "Seconds the Matriarch stirs beneath a nest before she rises, with a bar counting down and everyone near told. If everyone who earned her goes far enough away in that time, she sinks back to sleep, and the next nest they wake calls her again. 0 = she rises at once.",
+  "config.extremedimensions.matriarch_calm_range": "Matriarch: distance to let her sleep",
+  "config.extremedimensions.matriarch_calm_range.desc": "How far from the nest (blocks) everyone who earned the Matriarch must go while she stirs for her to sink back to sleep.",
+  "config.extremedimensions.matriarch_warn_range": "Matriarch: nest warning range",
+  "config.extremedimensions.matriarch_warn_range.desc": "How near to a nest (blocks) a player who earned the Matriarch is warned that she sleeps beneath it: purple smoke over the barrel, and a message on coming near a new nest and about once a minute after. 0 = no warning.",
+  "gui.extremedimensions.matriarch.stirs": "The Matriarch stirs",
+  "gui.extremedimensions.matriarch.stirs_chat": "The ground groans beneath the nest: the Matriarch stirs. In %s seconds she rises for whoever is still within %s blocks of it. Make ready, or go.",
+  "gui.extremedimensions.matriarch.stirs_bar": "The Matriarch rises in %s s · go %s blocks from the nest to let her sleep",
+  "gui.extremedimensions.matriarch.settles": "The ground falls still: the Matriarch sinks back to sleep. The next nest you wake calls her again.",
+  "gui.extremedimensions.matriarch.watched": "The Matriarch sleeps beneath this nest. Open or break its barrel, or strike its young, and she wakes.",
+  "gui.extremedimensions.matriarch.earned": "%s Keepers have fallen to you, and their mother has heard. The next nest you wake calls the Matriarch herself: choose where, far from what you would keep."
 }

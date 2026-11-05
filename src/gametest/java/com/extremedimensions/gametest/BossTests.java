@@ -221,6 +221,118 @@ public class BossTests {
 		helper.succeed();
 	}
 
+	/**
+	 * 3.28: woken, the Matriarch first stirs beneath her nest (a bar counts down, nothing has risen yet, and one nest
+	 * stirs only once); with everyone who earned her gone far enough she sinks back to sleep, and does not come.
+	 */
+	@GameTest(environment = Alone.MATRIARCH_SETTLES, maxTicks = 140)
+	public void theMatriarchStirsAndSleepsAgainWhenTheyGo(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper);
+		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		Hoard h = new Hoard(Dims.of(helper.getLevel()), at.getX() + 1, at.getY(), at.getZ() + 1, "");
+		Runnable restore = stirred(p, 3);
+		try {
+			check(helper, HollowService.stir(h, p), "the Matriarch did not stir beneath her nest");
+			check(helper, HollowService.stirring(h.key()), "she is not stirring");
+			check(helper, !HollowService.stir(h, p), "she stirred twice beneath one nest");
+			check(helper, !com.extremedimensions.elder.MatriarchService.hunting(p), "she rose at once, with no time to make ready");
+		} catch (RuntimeException e) {
+			restore.run();
+			throw e;
+		}
+		// Both later steps are scheduled up front (a step scheduled from inside another upsets the test's list of steps)
+		helper.runAfterDelay(20, () -> {
+			try {
+				check(helper, HollowService.stirring(h.key()), "she sank back to sleep while they stood by her nest");
+				p.teleportTo(at.getX() + 40.5, at.getY(), at.getZ() + 0.5);
+			} catch (RuntimeException e) {
+				restore.run();
+				throw e;
+			}
+		});
+		helper.runAfterDelay(24, () -> {
+			try {
+				check(helper, !HollowService.stirring(h.key()), "she still stirs after everyone went far from her nest");
+			} catch (RuntimeException e) {
+				restore.run();
+				throw e;
+			}
+		});
+		helper.runAfterDelay(90, () -> {
+			try {
+				check(helper, !com.extremedimensions.elder.MatriarchService.hunting(p), "she rose although everyone had gone");
+			} finally {
+				restore.run();
+			}
+			helper.succeed();
+		});
+	}
+
+	/** 3.28: whoever earned her and stays near her nest while she stirs is the one she rises for once the time is up. */
+	@GameTest(environment = Alone.MATRIARCH_STIRS, maxTicks = 120)
+	public void theMatriarchRisesForWhoeverStays(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper);
+		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		forceAround(helper, 3);
+		Hoard h = new Hoard(Dims.of(helper.getLevel()), at.getX() + 1, at.getY(), at.getZ() + 1, "");
+		int arena = Config.ELDER_ARENA;
+		ServerLevel level = helper.getLevel();
+		net.minecraft.world.Difficulty was = level.getDifficulty();
+		// (on peaceful nothing would stay risen to fight)
+		level.getServer().setDifficulty(net.minecraft.world.Difficulty.NORMAL, true);
+		Config.ELDER_ARENA = 0;
+		Runnable undo = stirred(p, 2);
+		Runnable restore = () -> {
+			undo.run();
+			Config.ELDER_ARENA = arena;
+			level.getServer().setDifficulty(was, true);
+		};
+		try {
+			check(helper, HollowService.stir(h, p), "the Matriarch did not stir beneath her nest");
+		} catch (RuntimeException e) {
+			restore.run();
+			throw e;
+		}
+		helper.runAfterDelay(20, () -> {
+			try {
+				check(helper, HollowService.stirring(h.key()) && !com.extremedimensions.elder.MatriarchService.hunting(p),
+						"she rose before her time was up");
+			} catch (RuntimeException e) {
+				restore.run();
+				throw e;
+			}
+		});
+		helper.runAfterDelay(55, () -> {
+			java.util.List<com.extremedimensions.elder.Matriarch> found = helper.getLevel().getEntitiesOfClass(com.extremedimensions.elder.Matriarch.class,
+					p.getBoundingBox().inflate(48));
+			boolean hunting = com.extremedimensions.elder.MatriarchService.hunting(p), stirring = HollowService.stirring(h.key());
+			found.forEach(com.extremedimensions.elder.MatriarchService::fade);
+			restore.run();
+			check(helper, !stirring, "she still stirs after her time was up");
+			check(helper, hunting && !found.isEmpty(), "she did not rise for the one who stayed (hunting %s, found %s)", hunting, found.size());
+			helper.succeed();
+		});
+	}
+
+	/** Gives the player the Matriarch (three Keepers slain) and a short wind-up; returns what puts it all back. */
+	private static Runnable stirred(ServerPlayer p, int seconds) {
+		PlayerData d = DataStore.get(p.getUUID());
+		int after = Config.MATRIARCH_AFTER_KEEPERS, wake = Config.MATRIARCH_WAKE_SECONDS, calm = Config.MATRIARCH_CALM_RANGE;
+		Config.MATRIARCH_AFTER_KEEPERS = 3;
+		Config.MATRIARCH_WAKE_SECONDS = seconds;
+		Config.MATRIARCH_CALM_RANGE = 16;
+		d.keepersSlain = 3;
+		d.matriarchSlain = false;
+		return () -> {
+			Config.MATRIARCH_AFTER_KEEPERS = after;
+			Config.MATRIARCH_WAKE_SECONDS = wake;
+			Config.MATRIARCH_CALM_RANGE = calm;
+			d.keepersSlain = 0;
+		};
+	}
+
 	/** {@code /tether boss matriarch} brings her, even to an operator in creative mode (not only her nest). */
 	@GameTest(environment = Alone.MATRIARCH_CALLED, maxTicks = 60)
 	public void anOperatorCallsTheMatriarchInCreative(GameTestHelper helper) {

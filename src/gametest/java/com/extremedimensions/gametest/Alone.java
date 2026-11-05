@@ -12,6 +12,8 @@ final class Alone {
 
 	static final String FRAYED_RAY = "extremedimensions_test:alone/frayed_ray";
 	static final String MATRIARCH_CALLED = "extremedimensions_test:alone/matriarch_called";
+	static final String MATRIARCH_STIRS = "extremedimensions_test:alone/matriarch_stirs";
+	static final String MATRIARCH_SETTLES = "extremedimensions_test:alone/matriarch_settles";
 	static final String FERRYMAN_TOLL = "extremedimensions_test:alone/ferryman_toll";
 	static final String ELDER_FORMING = "extremedimensions_test:alone/elder_forming";
 	static final String ARENA_RAISED = "extremedimensions_test:alone/arena_raised";

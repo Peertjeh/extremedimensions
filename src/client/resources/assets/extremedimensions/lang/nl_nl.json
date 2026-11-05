@@ -3466,5 +3466,17 @@
   "config.extremedimensions.tetherite_drawbacks": "Tetheriet: nadelen aan",
   "config.extremedimensions.tetherite_drawbacks.desc": "1 = de nadelen van tetheriet werken: het gewicht, de honger en het roepen van de Lurkers, elk met de waarde hieronder. 0 = geen van alle, wat de waarden ook zeggen. De voordelen blijven hoe dan ook.",
   "gui.extremedimensions.companion.stay": "Je Hollowling blijft hier (%s, %s, %s) en wacht op je. Sluip en gebruik hem met een lege hand om hem weer mee te nemen.",
-  "gui.extremedimensions.companion.follow": "Je Hollowling gaat weer met je mee."
+  "gui.extremedimensions.companion.follow": "Je Hollowling gaat weer met je mee.",
+  "config.extremedimensions.matriarch_wake_seconds": "Matriarch: aanloop (seconden)",
+  "config.extremedimensions.matriarch_wake_seconds.desc": "Seconden dat de Matriarch zich onder een nest roert voordat ze oprijst, met een balk die aftelt en een melding voor iedereen in de buurt. Gaat iedereen die haar verdiend heeft in die tijd ver genoeg weg, dan zakt ze terug in haar slaap en roept het volgende nest dat zij wekken haar opnieuw. 0 = ze rijst meteen op.",
+  "config.extremedimensions.matriarch_calm_range": "Matriarch: afstand om haar te laten slapen",
+  "config.extremedimensions.matriarch_calm_range.desc": "Hoe ver van het nest (blokken) iedereen die de Matriarch verdiend heeft moet gaan terwijl ze zich roert, om haar terug in slaap te laten zakken.",
+  "config.extremedimensions.matriarch_warn_range": "Matriarch: waarschuwing bij een nest",
+  "config.extremedimensions.matriarch_warn_range.desc": "Hoe dicht bij een nest (blokken) een speler die de Matriarch verdiend heeft wordt gewaarschuwd dat ze eronder slaapt: paarse rook boven de ton, en een melding bij een nieuw nest en daarna ongeveer eens per minuut. 0 = geen waarschuwing.",
+  "gui.extremedimensions.matriarch.stirs": "De Matriarch roert zich",
+  "gui.extremedimensions.matriarch.stirs_chat": "De grond kreunt onder het nest: de Matriarch roert zich. Over %s seconden rijst ze op voor wie dan nog binnen %s blokken staat. Maak je klaar, of ga.",
+  "gui.extremedimensions.matriarch.stirs_bar": "De Matriarch rijst op over %s s · ga %s blokken van het nest om haar te laten slapen",
+  "gui.extremedimensions.matriarch.settles": "De grond wordt stil: de Matriarch zakt terug in haar slaap. Het volgende nest dat je wekt, roept haar opnieuw.",
+  "gui.extremedimensions.matriarch.watched": "Onder dit nest slaapt de Matriarch. Open of breek de ton, of sla een van de jongen, en ze ontwaakt.",
+  "gui.extremedimensions.matriarch.earned": "%s Keepers zijn door jou gevallen, en hun moeder heeft het gehoord. Het volgende nest dat je wekt, roept de Matriarch zelf: kies waar, ver van wat je wilt houden."
 }

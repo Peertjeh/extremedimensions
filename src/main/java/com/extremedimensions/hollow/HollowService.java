@@ -134,8 +134,23 @@ public final class HollowService {
 		int windup;
 	}
 
+	/** The Matriarch stirring beneath a nest before she rises (3.28): who woke her, and the time left. */
+	static final class Stir {
+		Hoard hoard;
+		UUID waker;
+		ServerLevel level;
+		int total;
+		int left;
+		ServerBossEvent bar;
+	}
+
 	private static final Map<UUID, Little> LITTLES = new HashMap<>();
 	private static final Map<UUID, Guard> KEEPERS = new HashMap<>();
+	/** The nests the Matriarch stirs beneath, by the hoard's key. */
+	private static final Map<String, Stir> STIRS = new HashMap<>();
+	/** When each player was last warned that the Matriarch sleeps beneath a nest (server tick), and which nest. */
+	private static final Map<UUID, Long> WARNED_AT = new HashMap<>();
+	private static final Map<UUID, String> WARNED_FOR = new HashMap<>();
 	private static final Map<UUID, ServerLevel> LEVELS = new HashMap<>();
 	/** Owner UUID to companion entity UUID. */
 	private static final Map<UUID, UUID> COMPANIONS = new HashMap<>();
@@ -163,6 +178,12 @@ public final class HollowService {
 		for (Guard g : KEEPERS.values()) {
 			g.bar.removeAllPlayers();
 		}
+		for (Stir st : STIRS.values()) {
+			st.bar.removeAllPlayers();
+		}
+		STIRS.clear();
+		WARNED_AT.clear();
+		WARNED_FOR.clear();
 		LITTLES.clear();
 		KEEPERS.clear();
 		LEVELS.clear();
@@ -475,6 +496,7 @@ public final class HollowService {
 	public static void tick(MinecraftServer s) {
 		driveLittles();
 		driveKeepers();
+		driveStirs(s);
 		if (++slow < 20) {
 			return;
 		}
@@ -504,6 +526,9 @@ public final class HollowService {
 				if (d2 < 96 * 96) {
 					ambience(h, d2);
 					unhook(h);
+				}
+				if (Config.MATRIARCH_WARN_RANGE > 0 && d2 < (double) Config.MATRIARCH_WARN_RANGE * Config.MATRIARCH_WARN_RANGE && watched(h, p, d)) {
+					warn(s, h, p);
 				}
 				if (d2 < 44 * 44) {
 					populate(h);
@@ -1406,6 +1431,17 @@ public final class HollowService {
 				return false;
 			}
 		}
+		if (STIRS.containsKey(h.key())) {
+			// She already stirs beneath it
+			return false;
+		}
+		if (forceMatriarch) {
+			return com.extremedimensions.elder.MatriarchService.summon(p, h.key(), new BlockPos(h.x, h.y, h.z));
+		}
+		if (matriarchFor(DataStore.get(p.getUUID()))) {
+			// The mother of the hollows comes instead of a Keeper: first she stirs, and whoever is near is told
+			return stir(h, p);
+		}
 		ServerLevel level = (ServerLevel) p.level();
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		double behind = Math.toRadians(p.getYRot()) + Math.PI / 2;
@@ -1421,12 +1457,163 @@ public final class HollowService {
 		if (spot == null) {
 			spot = p.blockPosition().offset(6, 0, 6);
 		}
-		if (forceMatriarch || matriarchFor(DataStore.get(p.getUUID()))) {
-			// The mother of the hollows comes instead of a Keeper
-			return com.extremedimensions.elder.MatriarchService.summon(p, h.key(), new BlockPos(h.x, h.y, h.z));
-		}
 		spawnKeeper(p, level, spot, h.key());
 		return true;
+	}
+
+	// ------------------------------------------------------------------ the Matriarch stirs (3.28)
+
+	/**
+	 * The Matriarch stirs beneath a nest: for {@link Config#MATRIARCH_WAKE_SECONDS} a bar counts down and everyone near
+	 * is told. Whoever has earned her and is still within {@link Config#MATRIARCH_CALM_RANGE} of the nest when it runs out
+	 * is the one she rises for (the one who woke her first of all); with all of them gone that far, she sinks back to
+	 * sleep, and the next nest they wake calls her again. With no wind-up she rises at once. Returns whether she stirs
+	 * (or rose).
+	 */
+	public static boolean stir(Hoard h, ServerPlayer p) {
+		if (STIRS.containsKey(h.key()) || com.extremedimensions.elder.MatriarchService.hunting(p)) {
+			return false;
+		}
+		BlockPos home = new BlockPos(h.x, h.y, h.z);
+		if (Config.MATRIARCH_WAKE_SECONDS <= 0) {
+			return com.extremedimensions.elder.MatriarchService.summon(p, h.key(), home);
+		}
+		ServerLevel level = (ServerLevel) p.level();
+		Stir st = new Stir();
+		st.hoard = h;
+		st.waker = p.getUUID();
+		st.level = level;
+		st.total = Config.MATRIARCH_WAKE_SECONDS * 20;
+		st.left = st.total;
+		st.bar = new ServerBossEvent(UUID.randomUUID(), Component.translatable("gui.extremedimensions.matriarch.stirs"), BossEvent.BossBarColor.PURPLE,
+				BossEvent.BossBarOverlay.PROGRESS);
+		STIRS.put(h.key(), st);
+		String dim = level.dimension().identifier().toString();
+		double cx = h.x + 0.5, cz = h.z + 0.5;
+		WorldFx.soundIn(dim, "extremedimensions:elder.matriarch.roar", "hostile", cx, h.y, cz, 2.5f, 0.55f);
+		WorldFx.soundIn(dim, "minecraft:block.rooted_dirt.break", "hostile", cx, h.y, cz, 3f, 0.4f);
+		WorldFx.particleIn(dim, "minecraft:witch", cx, h.y + 1, cz, 1.2, 0.6, 1.2, 0.05, 40);
+		for (ServerPlayer q : level.players()) {
+			if (!q.isSpectator() && h.distSq(q.getX(), q.getY(), q.getZ()) < 64 * 64) {
+				q.sendSystemMessage(Component.translatable("gui.extremedimensions.matriarch.stirs_chat", Config.MATRIARCH_WAKE_SECONDS,
+						Config.MATRIARCH_CALM_RANGE).withStyle(net.minecraft.ChatFormatting.DARK_PURPLE));
+				st.bar.addPlayer(q);
+			}
+		}
+		return true;
+	}
+
+	/** Whether the Matriarch stirs beneath this nest (her wind-up is running). */
+	public static boolean stirring(String hoard) {
+		return STIRS.containsKey(hoard);
+	}
+
+	/** Who the stirring Matriarch rises for: the one who woke her if still near, else the nearest near who earned her. */
+	private static ServerPlayer stirTarget(Stir st) {
+		Hoard h = st.hoard;
+		double calm = (double) Config.MATRIARCH_CALM_RANGE * Config.MATRIARCH_CALM_RANGE, best = Double.MAX_VALUE;
+		ServerPlayer found = null;
+		for (ServerPlayer q : st.level.players()) {
+			if (q.isSpectator() || q.isCreative() || !q.isAlive()) {
+				continue;
+			}
+			double d2 = h.distSq(q.getX(), q.getY(), q.getZ());
+			if (d2 >= calm || !matriarchFor(DataStore.get(q.getUUID()))) {
+				continue;
+			}
+			if (q.getUUID().equals(st.waker)) {
+				return q;
+			}
+			if (d2 < best) {
+				best = d2;
+				found = q;
+			}
+		}
+		return found;
+	}
+
+	/** Counts each stir down: the bar, the countdown, the rumbling; she rises at the end, or settles with nobody near. */
+	private static void driveStirs(MinecraftServer s) {
+		if (STIRS.isEmpty()) {
+			return;
+		}
+		for (Iterator<Map.Entry<String, Stir>> it = STIRS.entrySet().iterator(); it.hasNext();) {
+			Stir st = it.next().getValue();
+			Hoard h = st.hoard;
+			st.left--;
+			ServerPlayer target = stirTarget(st);
+			String dim = st.level.dimension().identifier().toString();
+			double cx = h.x + 0.5, cz = h.z + 0.5;
+			if (target == null) {
+				// Everyone who earned her went far enough: the ground falls still
+				it.remove();
+				for (ServerPlayer q : st.bar.getPlayers()) {
+					q.sendSystemMessage(Component.translatable("gui.extremedimensions.matriarch.settles").withStyle(net.minecraft.ChatFormatting.GRAY));
+				}
+				st.bar.removeAllPlayers();
+				WorldFx.soundIn(dim, "minecraft:block.rooted_dirt.place", "hostile", cx, h.y, cz, 1.5f, 0.5f);
+				continue;
+			}
+			if (st.left <= 0) {
+				it.remove();
+				st.bar.removeAllPlayers();
+				com.extremedimensions.elder.MatriarchService.summon(target, h.key(), new BlockPos(h.x, h.y, h.z));
+				continue;
+			}
+			st.bar.setProgress(Math.max(0f, st.left / (float) st.total));
+			if (st.left % 20 == 0) {
+				int secs = (st.left + 19) / 20;
+				double calm = (double) Config.MATRIARCH_CALM_RANGE * Config.MATRIARCH_CALM_RANGE;
+				for (ServerPlayer q : st.level.players()) {
+					double d2 = h.distSq(q.getX(), q.getY(), q.getZ());
+					boolean near = !q.isSpectator() && d2 < 64 * 64;
+					if (near && !st.bar.getPlayers().contains(q)) {
+						st.bar.addPlayer(q);
+					} else if (!near && st.bar.getPlayers().contains(q)) {
+						st.bar.removePlayer(q);
+					}
+					if (near && d2 < calm) {
+						q.sendSystemMessage(Component.translatable("gui.extremedimensions.matriarch.stirs_bar", secs, Config.MATRIARCH_CALM_RANGE)
+								.withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE), true);
+					}
+				}
+				WorldFx.particleIn(dim, "minecraft:witch", cx, h.y + 1, cz, 1.5, 0.5, 1.5, 0.05, 24);
+				WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", cx, h.y + 1.6, cz, 0.6, 1.4, 0.6, 0.0, 6);
+			}
+			if (st.left % 40 == 0) {
+				// The ground groans, louder as she nears the surface
+				float louder = 1f + 2f * (1f - st.left / (float) st.total);
+				WorldFx.soundIn(dim, "minecraft:block.rooted_dirt.break", "hostile", cx, h.y, cz, louder, 0.4f);
+				WorldFx.soundIn(dim, "minecraft:entity.warden.heartbeat", "hostile", cx, h.y, cz, louder, 0.6f);
+			}
+		}
+	}
+
+	/** Whether this player is warned of the Matriarch beneath this nest: they earned her and waking it would call her. */
+	private static boolean watched(Hoard h, ServerPlayer p, PlayerData d) {
+		if (h.keeperSlain || Config.KEEPER_ENABLED == 0 || p.isCreative() || !matriarchFor(d) || STIRS.containsKey(h.key()) || keeperAwake(h.key())
+				|| Rules.peaceful(p.level())) {
+			return false;
+		}
+		// The tribe's own nest for a trusted friend is given back, not guarded
+		return !(p.getStringUUID().equals(h.owner) && Standing.atLeast(p, Standing.Level.TRUSTED));
+	}
+
+	/** Purple smoke over the nest, and (on coming near a new one, and about once a minute) a word of what sleeps there. */
+	private static void warn(MinecraftServer s, Hoard h, ServerPlayer p) {
+		WorldFx.particleIn(Dims.fullIdOf(h.dim), "minecraft:witch", h.x + 0.5, h.y + 1.2, h.z + 0.5, 0.35, 0.6, 0.35, 0.02, 6);
+		long now = s.getTickCount();
+		Long at = WARNED_AT.get(p.getUUID());
+		boolean fresh = !h.key().equals(WARNED_FOR.get(p.getUUID()));
+		if (fresh || at == null || now - at >= 1200 || now < at) {
+			WARNED_AT.put(p.getUUID(), now);
+			WARNED_FOR.put(p.getUUID(), h.key());
+			Component c = Component.translatable("gui.extremedimensions.matriarch.watched").withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE);
+			if (fresh) {
+				p.sendSystemMessage(c);
+			}
+			p.sendSystemMessage(c, true);
+		}
 	}
 
 	/** Whether the Keeper of this hoard is awake and hunting. */
@@ -1984,6 +2171,11 @@ public final class HollowService {
 			if (p.distanceToSqr(k) < 48 * 48) {
 				PlayerData d = DataStore.get(p.getUUID());
 				d.keepersSlain++;
+				if (Config.MATRIARCH_AFTER_KEEPERS > 0 && !d.matriarchSlain && d.keepersSlain == Config.MATRIARCH_AFTER_KEEPERS) {
+					// Told plainly, so the next nest is woken where they choose (3.28)
+					p.sendSystemMessage(Component.translatable("gui.extremedimensions.matriarch.earned", Config.MATRIARCH_AFTER_KEEPERS)
+							.withStyle(net.minecraft.ChatFormatting.DARK_PURPLE));
+				}
 				Advancements.grant(p, Advancements.KEEPER_SLAIN);
 				Journal.unlock(p, d, JournalEntry.KEEPER);
 			}
