@@ -1237,7 +1237,7 @@ public final class Config {
 	/** An Elder's health grows by this share for every player fighting it beyond the first. */
 	public static double ELDER_HEALTH_PER_PLAYER = 0.5;
 	/** The damage of the Elders' blows, as a multiple. */
-	public static double ELDER_DAMAGE_SCALE = 1.5;
+	public static double ELDER_DAMAGE_SCALE = 2.25;
 	/** The damage of an Elder's blows grows by this share for every player fighting it beyond the first. */
 	public static double ELDER_DAMAGE_PER_PLAYER = 0.1;
 	/** The pause between an Elder's blows shrinks by this share for every player fighting it beyond the first. */
@@ -1286,15 +1286,21 @@ public final class Config {
 	public static double STARVED_ENRAGE_AT = 0.3;
 	/** Its speed once ravenous, as a multiple. */
 	public static double STARVED_ENRAGE_SPEED = 1.3;
-	/** Seam Silk each pillar's socket drinks before it burns. */
-	public static int STARVED_SOCKET_SILK = 3;
-	/** Seconds a lit socket burns before it goes dark again. */
+	/** The harm the Starved One's blows do, as a multiple (3.33). */
+	public static double STARVED_DAMAGE_SCALE = 1.5;
+	/** Its health back each second for every pillar still feeding it, as a share of its health (3.33). */
+	public static double STARVED_HEAL = 0.01;
+	/** Pillars quenched at once for it to heal no more (3.33). */
+	public static int STARVED_HEAL_QUENCH = 3;
+	/** Seam Silk a pillar's node drinks before it is quenched (an arrow does it at once). */
+	public static int STARVED_SOCKET_SILK = 1;
+	/** Seconds a quenched node stays dark before it feeds the Starved One again. */
 	public static double STARVED_SOCKET_SECONDS = 40.0;
-	/** Sockets that must burn at once to bind the Starved One alone (one more for every two players beyond the first, four at most). */
-	public static int STARVED_SOCKETS = 2;
-	/** Seconds the pillars hold it bound. */
-	public static double STARVED_BIND_SECONDS = 12.0;
-	/** The harm it takes while bound, as a multiple. */
+	/** Pillars quenched at once to stun it (3.33: all four, for any party). */
+	public static int STARVED_SOCKETS = 4;
+	/** Seconds it stays stunned. */
+	public static double STARVED_BIND_SECONDS = 8.0;
+	/** The harm it takes while stunned, as a multiple. */
 	public static double STARVED_BOUND_DAMAGE = 2.0;
 	/** The harm it takes while free, as a multiple (in full if no pillar stands to bind it). */
 	public static double STARVED_UNBOUND_DAMAGE = 0.5;
@@ -1549,7 +1555,7 @@ public final class Config {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	/** Layout version of the config file; files from before a version are brought up to date on loading. */
-	private static final int VERSION = 8;
+	private static final int VERSION = 9;
 
 	/**
 	 * Defaults that changed, by the version that changed them: {key, old default, new default}. A file still holding
@@ -1577,6 +1583,10 @@ public final class Config {
 		{},
 		// 3.26.1: no default changed; a world on a difficulty takes where that difficulty lets a binding be done
 		{},
+		// 3.33.0: the Elders hit half again as hard; the Starved One's pillars heal it until quenched, all four stun it
+		// briefly, and one silk (or an arrow) quenches a node
+		{{"elder_damage_scale", "1.5", "2.25"}, {"starved_sockets", "2", "4"}, {"starved_bind_seconds", "12", "8"},
+				{"starved_socket_silk", "3", "1"}},
 	};
 
 	/**
@@ -1810,7 +1820,7 @@ public final class Config {
 			{"disc_fragment_abyss_tangle_chance", 0, 1}, {"disc_fragment_abyss_ray_chance", 0, 1},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},
 			{"seam_fray_ray_cooldown", 1, 120}, {"seam_fray_gloom", 0, 30}, {"seam_fray_gloom_every", 10, 3600}, {"seam_fray_unravel", 0, 1},
-			{"starved_socket_silk", 1, 64}, {"starved_socket_seconds", 5, 600}, {"starved_sockets", 1, 4}, {"starved_bind_seconds", 1, 120},
+			{"starved_damage_scale", 0, 10}, {"starved_heal", 0, 0.2}, {"starved_heal_quench", 1, 4}, {"starved_socket_silk", 1, 64}, {"starved_socket_seconds", 5, 600}, {"starved_sockets", 1, 4}, {"starved_bind_seconds", 1, 120},
 			{"starved_bound_damage", 0, 10}, {"starved_unbound_damage", 0, 10}, {"starved_minion_seconds", 5, 600}, {"starved_minions", 0, 12},
 			{"starved_minions_max", 0, 40}, {"starved_rays", 0, 12},
 			{"seam_briefing", 0, 100}, {"seam_interiors", 0, 1}, {"seam_storeroom_chance", 0, 1}, {"hud_boss_bar", 0, 1}, {"hints", 0, 1}, {"frame_silk", 0, 64}, {"first_knot_distance", 200, 5000}, {"knot_mother_rest", 0, 100000}, {"knot_mother_leash", 4, 64}, {"knot_mother_threadline_weight", 0, 20}, {"knot_mother_threadline_damage", 0, 40},

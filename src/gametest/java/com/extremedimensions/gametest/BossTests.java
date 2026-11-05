@@ -86,23 +86,20 @@ public class BossTests {
 		helper.succeed();
 	}
 
-	/** The pillars ask more of a larger party: two alone, one more for every two beyond the first, never more than four. */
+	/** 3.33: three pillars quenched stop its healing and all four stun it, for any party; the settings are held to the four pillars. */
 	@GameTest
-	public void theBindingAsksMoreOfALargerParty(GameTestHelper helper) {
-		int base = Config.STARVED_SOCKETS;
+	public void thePillarsAskThreeToStopItsHealingAndFourToStunIt(GameTestHelper helper) {
+		int stun = Config.STARVED_SOCKETS, stop = Config.STARVED_HEAL_QUENCH;
 		try {
-			Config.STARVED_SOCKETS = 2;
-			int[] want = {2, 2, 3, 3, 4, 4, 4};
-			for (int players = 1; players <= want.length; players++) {
-				check(helper, Binding.needed(players) == want[players - 1], "%s players need %s burning pillars, not %s", players,
-						Binding.needed(players), want[players - 1]);
-			}
-			Config.STARVED_SOCKETS = 4;
-			check(helper, Binding.needed(1) == 4 && Binding.needed(8) == 4, "four asked alone gives %s, and for eight %s", Binding.needed(1), Binding.needed(8));
-			Config.STARVED_SOCKETS = 0;
-			check(helper, Binding.needed(1) == 1, "with none asked, a single pillar still binds it (%s)", Binding.needed(1));
+			check(helper, Binding.healStopAt() == 3 && Binding.stunAt() == 4, "the pillars ask %s to stop its healing and %s to stun it, not 3 and 4",
+					Binding.healStopAt(), Binding.stunAt());
+			Config.STARVED_SOCKETS = 9;
+			Config.STARVED_HEAL_QUENCH = 0;
+			check(helper, Binding.stunAt() == 4 && Binding.healStopAt() == 1, "the settings were not held to the four pillars (%s, %s)", Binding.stunAt(),
+					Binding.healStopAt());
 		} finally {
-			Config.STARVED_SOCKETS = base;
+			Config.STARVED_SOCKETS = stun;
+			Config.STARVED_HEAL_QUENCH = stop;
 		}
 		// The four pillars stand where the crown builds its obelisks: on the diagonals, sixty-four out
 		for (int i = 0; i < Binding.PILLARS; i++) {
@@ -115,34 +112,37 @@ public class BossTests {
 	}
 
 	/**
-	 * A pillar's socket is found where the obelisk stands: the plinth's top step at the corner facing the Heart, the shaft's
-	 * corner two above it. A replica of the corner in the test's own space.
+	 * 3.33: a pillar's node is found atop the lowest piece of its shaft: up the shaft's heart from the plinth (found by
+	 * its top step at the corner facing the Heart) to where the shaft first breaks. A replica in the test's own space.
 	 */
 	@GameTest
-	public void aPillarsSocketIsFoundOnItsCorner(GameTestHelper helper) {
+	public void aPillarsNodeIsFoundAtopItsLowestPiece(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		// In world space (the test's own space may be turned): the obelisk's centre in one corner of the test, its top
-		// step five out on both axes towards the test's middle, and the shaft's corner column four out above it
+		// step five out on both axes towards the test's middle, and the shaft's heart over the centre
 		BlockPos centre = helper.absolutePos(new BlockPos(1, 1, 1)), far = helper.absolutePos(new BlockPos(6, 1, 6));
 		int sx = Integer.signum(far.getX() - centre.getX()), sz = Integer.signum(far.getZ() - centre.getZ());
-		// (nothing else in the two columns, whatever stood there)
-		for (int y = 0; y <= 6; y++) {
+		for (int y = 0; y <= 8; y++) {
 			level.setBlock(centre.offset(5 * sx, y, 5 * sz), Blocks.AIR.defaultBlockState(), 3);
-			level.setBlock(centre.offset(4 * sx, y, 4 * sz), Blocks.AIR.defaultBlockState(), 3);
+			level.setBlock(centre.offset(0, y, 0), Blocks.AIR.defaultBlockState(), 3);
 		}
 		level.setBlock(centre.offset(5 * sx, 1, 5 * sz), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 3);
-		for (int y = 1; y <= 4; y++) {
-			level.setBlock(centre.offset(4 * sx, y, 4 * sz), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 3);
+		for (int y = 2; y <= 5; y++) {
+			level.setBlock(centre.offset(0, y, 0), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 3);
 		}
-		BlockPos socket = Binding.socketOf(level, centre.getX(), centre.getZ(), sx, sz, centre.getY() + 5, centre.getY() - 1);
-		BlockPos want = centre.offset(4 * sx, 3, 4 * sz);
-		check(helper, want.equals(socket), "the socket was found at %s, not the shaft's corner at %s", socket, want);
-		// no shaft beside the step: no socket
-		for (int y = 1; y <= 4; y++) {
-			level.setBlock(centre.offset(4 * sx, y, 4 * sz), Blocks.AIR.defaultBlockState(), 3);
+		BlockPos node = Binding.nodeOf(level, centre.getX(), centre.getZ(), sx, sz, centre.getY() + 5, centre.getY() - 1);
+		BlockPos want = centre.offset(0, 6, 0);
+		check(helper, want.equals(node), "the node was found at %s, not atop the shaft's lowest piece at %s", node, want);
+		// A node standing there already is found where it stands (not above it)
+		level.setBlock(want, Binding.FEEDING.defaultBlockState(), 3);
+		check(helper, want.equals(Binding.nodeOf(level, centre.getX(), centre.getZ(), sx, sz, centre.getY() + 5, centre.getY() - 1)),
+				"a node already standing was not found where it stands");
+		// No shaft over the plinth: no node
+		for (int y = 2; y <= 6; y++) {
+			level.setBlock(centre.offset(0, y, 0), Blocks.AIR.defaultBlockState(), 3);
 		}
-		check(helper, Binding.socketOf(level, centre.getX(), centre.getZ(), sx, sz, centre.getY() + 5, centre.getY() - 1) == null,
-				"a socket was found with no shaft to hold it");
+		check(helper, Binding.nodeOf(level, centre.getX(), centre.getZ(), sx, sz, centre.getY() + 5, centre.getY() - 1) == null,
+				"a node was found with no shaft to hold it");
 		helper.succeed();
 	}
 

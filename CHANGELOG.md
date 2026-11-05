@@ -1,5 +1,28 @@
 # Changelog
 
+## 3.33.0: The Hungry Pillars
+
+### Changes
+- **The Starved One is a real fight now, alone or not.** It was too easily slain by one player. Now:
+  - **The four pillars heal it.** High up each of the great pillars round the Heart, on top of the lowest piece of its
+    shaft (some forty blocks up, as the dragon's crystals stand on their towers), a **heart of sculk** opens as it
+    wakes, with a glowing copy of itself turning over it that shows through the stone. While a heart feeds it, a beam of
+    souls runs from it to the Starved One, which heals 1% of its health a second for each (`starved_heal`), and its
+    boss bar turns green.
+  - **Quench them.** Shoot a heart with an arrow (or throw a snowball, an egg, a trident or a wind charge at it), break
+    it, or feed it one Seam Silk: it goes dark for 40 seconds (`starved_socket_seconds`) and then feeds it again.
+  - **Three quenched and it heals no more** (`starved_heal_quench`); **all four and it falls stunned** for 8 seconds
+    (`starved_bind_seconds`, was 12), held down in chains and taking double damage, as before. The hearts' own time
+    stands still while it is stunned. Free, it still takes only half the harm. This holds for any party: three and four,
+    whoever comes.
+  - **Its blows hit half again as hard** (`starved_damage_scale`, 1.5).
+  - Chat says it all as it wakes, and again as hearts are quenched and wake; the journal's Path and bestiary say so too.
+- **The Elders hit half again as hard**: `elder_damage_scale` is 2.25 (was 1.5); a file still holding 1.5 is brought up
+  to it, a value someone chose stays.
+- `starved_sockets` now means the pillars quenched at once to stun it (4, was 2 plus more for larger parties), and
+  `starved_socket_silk` the silk to quench a heart by hand (1, was 3). Files still holding the old defaults take the new
+  ones.
+
 ## 3.32.0: Heavier Crowns
 
 ### Changes

@@ -77,6 +77,10 @@ public final class ElderPower {
 
 	/** A hit taken from an Elder, scaled by how hard it fights (see the player damage hook). */
 	public static float scale(DamageSource source, float amount) {
+		if (source.getEntity() instanceof com.extremedimensions.mending.StarvedOne) {
+			// The Starved One's blows, as a multiple (3.33)
+			return amount * (float) Math.max(0, Config.STARVED_DAMAGE_SCALE);
+		}
 		return source.getEntity() instanceof ElderBoss b ? amount * b.damageFactor : amount;
 	}
 

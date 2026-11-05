@@ -110,7 +110,7 @@ public final class MendingService {
 		if (Binding.bound()) {
 			return (float) Math.max(0, Config.STARVED_BOUND_DAMAGE) / tough;
 		}
-		return (Binding.possible(party) ? (float) Math.max(0, Config.STARVED_UNBOUND_DAMAGE) : 1.0F) / tough;
+		return (Binding.possible() ? (float) Math.max(0, Config.STARVED_UNBOUND_DAMAGE) : 1.0F) / tough;
 	}
 
 	/** How many times its own health it has against this many players: every blow on it is divided by this (3.31). */
@@ -240,8 +240,8 @@ public final class MendingService {
 				Journal.unlock(q, DataStore.get(q.getUUID()), JournalEntry.HEART);
 				Advancements.grant(q, Advancements.HEART_REACHED);
 				WorldFx.effect(q, MobEffects.DARKNESS, 5, 0);
-				q.sendSystemMessage(Component.translatable("gui.extremedimensions.heart.awake", Binding.needed(party),
-						Math.max(1, Config.STARVED_SOCKET_SILK)).withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE));
+				q.sendSystemMessage(Component.translatable("gui.extremedimensions.heart.awake", Binding.healStopAt(),
+						Math.max(1, Config.STARVED_SOCKET_SILK), Binding.stunAt()).withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE));
 			}
 		}
 	}
@@ -278,7 +278,8 @@ public final class MendingService {
 			}
 		}
 		bar.setProgress(so.getHealth() / so.getMaxHealth());
-		bar.setColor(Binding.bound() ? BossEvent.BossBarColor.WHITE : BossEvent.BossBarColor.PURPLE);
+		// White while stunned, green while the pillars heal it (3.33)
+		bar.setColor(Binding.bound() ? BossEvent.BossBarColor.WHITE : Binding.healing() ? BossEvent.BossBarColor.GREEN : BossEvent.BossBarColor.PURPLE);
 		ServerPlayer target = nearest(so, arena);
 		so.setTarget(target);
 		if (ticks % 3 == 0) {
@@ -527,9 +528,9 @@ public final class MendingService {
 
 	// ------------------------------------------------------------------ the pillars
 
-	/** Is this the socket of one of the four pillars round the Heart? */
+	/** Is this the node atop one of the four pillars round the Heart? */
 	public static boolean isSocket(ServerLevel seam, BlockPos pos) {
-		return seam.getBlockState(pos).is(Blocks.REINFORCED_DEEPSLATE) || seam.getBlockState(pos).is(Blocks.CRYING_OBSIDIAN)
+		return seam.getBlockState(pos).is(Binding.FEEDING) || seam.getBlockState(pos).is(Binding.QUENCHED)
 				? Binding.socketAt(seam, pos) >= 0 : false;
 	}
 
