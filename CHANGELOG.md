@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.32.0: Heavier Crowns
+
+### Changes
+- **Every boss has half again its own health, and each one's health is a setting** (World rules, 1 to 1024):
+
+  | Boss | Setting | Was | Now | In all, alone | Two players |
+  |---|---|---|---|---|---|
+  | Matriarch | `matriarch_health` | 640 | 960 | 1440 | 2160 |
+  | Ferryman | `ferryman_health` | 520 | 780 | 1170 | 1755 |
+  | Knot Mother | `knot_mother_health` | 560 | 840 | 1260 | 1890 |
+  | Last Weaver | `weaver_health` | 480 | 720 | 1080 | 1620 |
+  | Starved One | `starved_health` | 500 | 750 | 750 | 1125 |
+
+  The Elders' health scale (`elder_health_scale`, 1.5) and the players fighting still multiply an Elder's own health
+  (every blow is divided by it), and every other player at the Heart still adds half to the Starved One; the "in all"
+  columns show what that comes to. A setting holds for every boss that comes from then on; one already risen keeps the
+  health it has.
+
 ## 3.31.0: Thicker Hides
 
 ### Changes

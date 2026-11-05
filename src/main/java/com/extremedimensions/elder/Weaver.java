@@ -26,7 +26,12 @@ public class Weaver extends ElderBoss {
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
-		return elderAttributes(480.0, 4.0);
+		return elderAttributes(com.extremedimensions.config.Config.WEAVER_HEALTH, 4.0);
+	}
+
+	@Override
+	protected double baseHealth() {
+		return com.extremedimensions.config.Config.WEAVER_HEALTH;
 	}
 
 	@Override

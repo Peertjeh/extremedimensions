@@ -3511,5 +3511,15 @@
   "config.extremedimensions.cragback_health": "Cragback: health",
   "config.extremedimensions.cragback_health.desc": "The Cragback's health (2 is one heart; 210 by default, 140 before 3.31). With more players near, each adds its share (the per-player setting). Holds for every one that comes from now on; one already out keeps its own. 1 to 1024.",
   "config.extremedimensions.keeper_health": "Keeper: health",
-  "config.extremedimensions.keeper_health.desc": "The Keeper's health (2 is one heart; 210 by default, 140 before 3.31). Holds for every one that comes from now on; one already out keeps its own. 1 to 1024."
+  "config.extremedimensions.keeper_health.desc": "The Keeper's health (2 is one heart; 210 by default, 140 before 3.31). Holds for every one that comes from now on; one already out keeps its own. 1 to 1024.",
+  "config.extremedimensions.matriarch_health": "Matriarch: health",
+  "config.extremedimensions.matriarch_health.desc": "The own health of the Matriarch (2 is one heart; 960 by default, 640 before 3.32). The Elders' health scale (elder_health_scale) and the players fighting multiply it: every blow on her or him is divided by that. Holds for every one that comes from now on. 1 to 1024.",
+  "config.extremedimensions.ferryman_health": "Ferryman: health",
+  "config.extremedimensions.ferryman_health.desc": "The own health of the Ferryman (2 is one heart; 780 by default, 520 before 3.32). The Elders' health scale (elder_health_scale) and the players fighting multiply it: every blow on her or him is divided by that. Holds for every one that comes from now on. 1 to 1024.",
+  "config.extremedimensions.weaver_health": "Last Weaver: health",
+  "config.extremedimensions.weaver_health.desc": "The own health of the Last Weaver (2 is one heart; 720 by default, 480 before 3.32). The Elders' health scale (elder_health_scale) and the players fighting multiply it: every blow on her or him is divided by that. Holds for every one that comes from now on. 1 to 1024.",
+  "config.extremedimensions.knot_mother_health": "Knot Mother: health",
+  "config.extremedimensions.knot_mother_health.desc": "The own health of the Knot Mother (2 is one heart; 840 by default, 560 before 3.32). The Elders' health scale (elder_health_scale) and the players fighting multiply it: every blow on her or him is divided by that. Holds for every one that comes from now on. 1 to 1024.",
+  "config.extremedimensions.starved_health": "Starved One: health",
+  "config.extremedimensions.starved_health.desc": "The own health of the Starved One (2 is one heart; 750 by default, 500 before 3.32). Every other player at the Heart adds starved_health_per_player of it, by dividing every blow. Holds for every one that comes from now on. 1 to 1024."
 }

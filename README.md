@@ -303,7 +303,9 @@ and `cragback`. The change is saved and holds for the whole world; no new ones o
 already out stay until they leave or are slain. It needs `extremedimensions.admin.settings` (operator level 2).
 Each kind's health is a setting too (`lurker_health`, `magpie_health`, `keeper_health` and so on, 1 to 1024): since
 3.31 the Lurker has 90, the Keeper 210, the Gatebreaker 270 and the Cragback 210 (both half again for every other
-player near).
+player near). The bosses' own health is a setting as well since 3.32 (`matriarch_health` 960, `ferryman_health` 780,
+`knot_mother_health` 840, `weaver_health` 720, `starved_health` 750), before the Elders' health scale and the players
+fighting multiply it.
 
 ### Permissions (LuckPerms)
 

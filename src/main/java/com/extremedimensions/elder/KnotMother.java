@@ -27,7 +27,12 @@ public class KnotMother extends Weaver {
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
-		return elderAttributes(560.0, 4.0);
+		return elderAttributes(com.extremedimensions.config.Config.KNOT_MOTHER_HEALTH, 4.0);
+	}
+
+	@Override
+	protected double baseHealth() {
+		return com.extremedimensions.config.Config.KNOT_MOTHER_HEALTH;
 	}
 
 	/** Her anchors standing shield her; exposed, she takes more (see {@link WeaverService#knotFactor}). */

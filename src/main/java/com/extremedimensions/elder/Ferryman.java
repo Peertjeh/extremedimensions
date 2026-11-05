@@ -26,7 +26,12 @@ public class Ferryman extends ElderBoss {
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
-		return elderAttributes(520.0, 10.0);
+		return elderAttributes(com.extremedimensions.config.Config.FERRYMAN_HEALTH, 10.0);
+	}
+
+	@Override
+	protected double baseHealth() {
+		return com.extremedimensions.config.Config.FERRYMAN_HEALTH;
 	}
 
 	@Override

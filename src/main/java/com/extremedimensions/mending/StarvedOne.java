@@ -20,8 +20,10 @@ import net.minecraft.world.level.Level;
  * the tribe's young to it, and is bound by the four pillars round the Heart ({@link Binding}).
  */
 public class StarvedOne extends Keeper {
-	/** Its health with one player at the Heart (more come, more it has: see MendingService.healthFor). */
-	public static final double BASE_HEALTH = 500.0;
+	/** Its own health with one player at the Heart, from its setting (more come, more it has: see MendingService.healthFor). */
+	public static double baseHealth() {
+		return Math.max(1, Math.min(1024, com.extremedimensions.config.Config.STARVED_HEALTH));
+	}
 
 	/** What it is doing (the client poses it to match): hanging in the air, falling on its prey, a raking blow... */
 	public static final int IDLE = 0, SWOOP = 1, CLAW = 2, CALL = 3, BITE = 4, DRAG = 5, BLINK = 6;
@@ -35,11 +37,17 @@ public class StarvedOne extends Keeper {
 		super(type, level);
 		this.xpReward = 300;
 		this.setNoGravity(true);
+		// Its own health from its setting (3.32), as it is made
+		var max = this.getAttribute(Attributes.MAX_HEALTH);
+		if (!level.isClientSide() && max != null) {
+			max.setBaseValue(baseHealth());
+			this.setHealth(this.getMaxHealth());
+		}
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return Monster.createMonsterAttributes()
-				.add(Attributes.MAX_HEALTH, BASE_HEALTH)
+				.add(Attributes.MAX_HEALTH, com.extremedimensions.config.Config.STARVED_HEALTH)
 				.add(Attributes.MOVEMENT_SPEED, 0.3)
 				.add(Attributes.FLYING_SPEED, 0.3)
 				.add(Attributes.FOLLOW_RANGE, 96.0)

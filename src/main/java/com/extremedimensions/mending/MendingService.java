@@ -115,7 +115,7 @@ public final class MendingService {
 
 	/** How many times its own health it has against this many players: every blow on it is divided by this (3.31). */
 	public static double toughness(int players) {
-		return Math.max(0.1, healthFor(players) / StarvedOne.BASE_HEALTH);
+		return Math.max(0.1, healthFor(players) / StarvedOne.baseHealth());
 	}
 
 	private static boolean open() {
@@ -194,7 +194,7 @@ public final class MendingService {
 	/** The Starved One's health for this many players at the Heart: more for every one beyond the first. */
 	/** How much health it has in all against this many players (its own, times {@link #toughness}). */
 	public static double healthFor(int players) {
-		return StarvedOne.BASE_HEALTH * (1 + Math.max(0, players - 1) * Math.max(0, Config.STARVED_HEALTH_PER_PLAYER));
+		return StarvedOne.baseHealth() * (1 + Math.max(0, players - 1) * Math.max(0, Config.STARVED_HEALTH_PER_PLAYER));
 	}
 
 	private static void start(ServerLevel seam, ServerPlayer p) {
@@ -215,7 +215,7 @@ public final class MendingService {
 		// Its own health, whoever comes: the more there are, the more of each blow it shrugs off (see damageFactor)
 		var health = so.getAttribute(Attributes.MAX_HEALTH);
 		if (health != null) {
-			health.setBaseValue(StarvedOne.BASE_HEALTH);
+			health.setBaseValue(StarvedOne.baseHealth());
 			so.setHealth(so.getMaxHealth());
 		}
 		ravenous = false;

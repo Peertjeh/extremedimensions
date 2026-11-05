@@ -1041,12 +1041,16 @@ public final class Config {
 	public static int MATRIARCH_CALM_RANGE = 32;
 	/** How near (blocks) to a nest she watches over a player is warned (about once a minute); 0 = no warning. */
 	public static int MATRIARCH_WARN_RANGE = 20;
+	/** The Matriarch's own health (3.32: half again its old 640); elder_health_scale and the players fighting multiply it. */
+	public static double MATRIARCH_HEALTH = 960.0;
 	/** Hollowlings the Matriarch calls when her health falls below 70% and again below 35%. */
 	public static int MATRIARCH_BROOD = 3;
 	/** Relics the Matriarch always leaves. */
 	public static int MATRIARCH_RELICS = 1;
 	/** When the Ferryman comes: 0 = from the start, 1 = after the Ender Dragon falls, 2 = after the Starved One falls. */
 	public static int FERRYMAN_UNLOCK = 1;
+	/** The Ferryman's own health (3.32: half again his old 520). */
+	public static double FERRYMAN_HEALTH = 780.0;
 	/** Active seconds on a Nether expedition before the Ferryman may come (once per expedition). */
 	public static int FERRYMAN_AFTER_SECONDS = 300;
 	/** Chance he comes once that time has passed; each stack of Ferryman's Fee adds the same again. */
@@ -1061,6 +1065,8 @@ public final class Config {
 	public static double FERRYMAN_RELIC_CHANCE = 0.5;
 	/** When the Last Weaver wakes: 0 = from the start, 1 = after the Ender Dragon falls, 2 = after the Starved One falls. */
 	public static int WEAVER_UNLOCK = 2;
+	/** The Last Weaver's own health (3.32: half again its old 480). */
+	public static double WEAVER_HEALTH = 720.0;
 	/** Chance the Last Weaver wakes at a village of the Thinned on its first visit (each village rolls once). */
 	public static double WEAVER_CHANCE = 0.4;
 	/** How much likelier the next village is for every village in a row that woke no Weaver: 0.2 is 40%, then 60%, 80%, 100%. */
@@ -1074,6 +1080,8 @@ public final class Config {
 	/** Relics the Knot Mother always leaves, and minutes before she can be woken again once slain (0 = at once). */
 	public static int KNOT_MOTHER_RELICS = 1;
 	public static int KNOT_MOTHER_REST = 40;
+	/** The Knot Mother's own health (3.32: half again her old 560). */
+	public static double KNOT_MOTHER_HEALTH = 840.0;
 	/** How far (blocks) the Knot Mother can stray from where she woke: her cords hold her to it. */
 	public static double KNOT_MOTHER_LEASH = 14.0;
 	/** How readily she uses her Threadline (a thread swept low across the floor): its weight against her other blows (0 = never). */
@@ -1271,6 +1279,8 @@ public final class Config {
 	/** How long the Seraphic Lance's beam burns, as a multiple. */
 	public static double WEAVER_LANCE_LENGTH = 1.5;
 	/** The Starved One's health grows by this share for every player at the Heart beyond the first. */
+	/** The Starved One's own health against one player (3.32: half again its old 500); more at the Heart add starved_health_per_player each. */
+	public static double STARVED_HEALTH = 750.0;
 	public static double STARVED_HEALTH_PER_PLAYER = 0.5;
 	/** Below this share of its health the Starved One turns ravenous: faster, quicker tricks, and famine. */
 	public static double STARVED_ENRAGE_AT = 0.3;
@@ -1810,6 +1820,7 @@ public final class Config {
 			{"elder_health_scale", 0.1, 20}, {"elder_health_per_player", 0, 5}, {"elder_damage_scale", 0, 20}, {"elder_damage_per_player", 0, 2},
 			{"elder_rest_per_player", 0, 0.5}, {"elder_rest_min", 0.1, 1}, {"elder_split_max", 1, 8}, {"elder_fighters_range", 8, 256},
 			{"elder_reach", 1, 5}, {"elder_brood_per_player", 0, 10}, {"elder_spell_range", 16, 256}, {"elder_snare_seconds", 0, 30},
+			{"matriarch_health", 1, 1024}, {"ferryman_health", 1, 1024}, {"weaver_health", 1, 1024}, {"knot_mother_health", 1, 1024}, {"starved_health", 1, 1024},
 			{"lurker_health", 1, 1024}, {"cave_lurker_health", 1, 1024}, {"sculk_lurker_health", 1, 1024}, {"magpie_health", 1, 1024}, {"wick_health", 1, 1024}, {"tidewalker_health", 1, 1024}, {"gatebreaker_health", 1, 1024}, {"lockwarden_health", 1, 1024}, {"threadbiter_health", 1, 1024}, {"edgecrawler_health", 1, 1024}, {"cragback_health", 1, 1024}, {"keeper_health", 1, 1024},
 			{"elder_snare_damage", 0, 100}, {"elder_bind_seconds", 0, 120}, {"matriarch_wake_seconds", 0, 120}, {"matriarch_calm_range", 8, 128},
 			{"matriarch_warn_range", 0, 64}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},

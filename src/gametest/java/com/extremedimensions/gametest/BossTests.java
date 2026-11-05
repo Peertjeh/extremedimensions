@@ -43,18 +43,43 @@ import net.minecraft.world.phys.AABB;
  * they raise sink back).
  */
 public class BossTests {
+	/** 3.32: every boss takes its own health from its setting as it is made, half again its old by default. */
+	@GameTest
+	public void eachBossTakesItsHealthFromItsSetting(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		double was = Config.FERRYMAN_HEALTH;
+		try {
+			check(helper, Config.MATRIARCH_HEALTH == 960 && Config.FERRYMAN_HEALTH == 780 && Config.WEAVER_HEALTH == 720 && Config.KNOT_MOTHER_HEALTH == 840
+					&& Config.STARVED_HEALTH == 750, "the bosses' defaults are not half again their old health");
+			var m = ModEntities.MATRIARCH.create(level, EntitySpawnReason.EVENT);
+			var w = ModEntities.WEAVER.create(level, EntitySpawnReason.EVENT);
+			var k = ModEntities.KNOT_MOTHER.create(level, EntitySpawnReason.EVENT);
+			var so = ModEntities.STARVED_ONE.create(level, EntitySpawnReason.EVENT);
+			check(helper, m != null && m.getMaxHealth() == 960 && m.getHealth() == 960, "the Matriarch is made with %s health", m == null ? 0 : m.getMaxHealth());
+			check(helper, w != null && w.getMaxHealth() == 720, "the Last Weaver is made with %s health", w == null ? 0 : w.getMaxHealth());
+			check(helper, k != null && k.getMaxHealth() == 840, "the Knot Mother is made with %s health", k == null ? 0 : k.getMaxHealth());
+			check(helper, so != null && so.getMaxHealth() == 750, "the Starved One is made with %s health", so == null ? 0 : so.getMaxHealth());
+			Config.FERRYMAN_HEALTH = 900;
+			var f = ModEntities.FERRYMAN.create(level, EntitySpawnReason.EVENT);
+			check(helper, f != null && f.getMaxHealth() == 900, "a Ferryman made after his setting changed has %s health", f == null ? 0 : f.getMaxHealth());
+		} finally {
+			Config.FERRYMAN_HEALTH = was;
+		}
+		helper.succeed();
+	}
+
 	@GameTest
 	public void theStarvedOneGrowsWithItsFoes(GameTestHelper helper) {
 		double per = Config.STARVED_HEALTH_PER_PLAYER;
 		try {
 			Config.STARVED_HEALTH_PER_PLAYER = 0.5;
-			check(helper, MendingService.healthFor(1) == StarvedOne.BASE_HEALTH, "alone, it has %s health", MendingService.healthFor(1));
-			check(helper, MendingService.healthFor(3) == StarvedOne.BASE_HEALTH * 2, "against three, it has %s health", MendingService.healthFor(3));
+			check(helper, MendingService.healthFor(1) == StarvedOne.baseHealth(), "alone, it has %s health", MendingService.healthFor(1));
+			check(helper, MendingService.healthFor(3) == StarvedOne.baseHealth() * 2, "against three, it has %s health", MendingService.healthFor(3));
 			// 3.31: past the game's 1024 too, as every blow is divided rather than its health raised
-			check(helper, MendingService.healthFor(5) == StarvedOne.BASE_HEALTH * 3 && MendingService.toughness(5) == 3,
+			check(helper, MendingService.healthFor(5) == StarvedOne.baseHealth() * 3 && MendingService.toughness(5) == 3,
 					"against five, it has %s health (each blow divided by %s)", MendingService.healthFor(5), MendingService.toughness(5));
 			Config.STARVED_HEALTH_PER_PLAYER = 0;
-			check(helper, MendingService.healthFor(4) == StarvedOne.BASE_HEALTH && MendingService.toughness(4) == 1, "with no growth set, it still grew");
+			check(helper, MendingService.healthFor(4) == StarvedOne.baseHealth() && MendingService.toughness(4) == 1, "with no growth set, it still grew");
 		} finally {
 			Config.STARVED_HEALTH_PER_PLAYER = per;
 		}

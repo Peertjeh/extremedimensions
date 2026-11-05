@@ -51,6 +51,18 @@ public abstract class ElderBoss extends Monster {
 		this.noPhysics = true;
 		this.setNoGravity(true);
 		this.xpReward = 250;
+		// Its own health from its setting (3.32), as it is made; one loaded from the world keeps what it was saved with
+		var max = this.getAttribute(Attributes.MAX_HEALTH);
+		double hp = baseHealth();
+		if (!level.isClientSide() && max != null && hp > 0) {
+			max.setBaseValue(Math.min(1024, hp));
+			this.setHealth(this.getMaxHealth());
+		}
+	}
+
+	/** Its own health from its setting, before elder_health_scale and the players fighting it (none: as registered). */
+	protected double baseHealth() {
+		return -1;
 	}
 
 	public static AttributeSupplier.Builder elderAttributes(double health, double armor) {

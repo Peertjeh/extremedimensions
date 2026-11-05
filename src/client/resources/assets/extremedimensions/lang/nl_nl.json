@@ -3511,5 +3511,15 @@
   "config.extremedimensions.cragback_health": "Rotsrug: levens",
   "config.extremedimensions.cragback_health.desc": "De levens van de Rotsrug (2 is één hartje; standaard 210, vóór 3.31 140). Met meer spelers in de buurt komt er per speler een deel bij (de instelling per speler). Geldt voor elke die vanaf nu komt; een die er al is, houdt de zijne. 1 tot 1024.",
   "config.extremedimensions.keeper_health": "Keeper: levens",
-  "config.extremedimensions.keeper_health.desc": "De levens van de Keeper (2 is één hartje; standaard 210, vóór 3.31 140). Geldt voor elke die vanaf nu komt; een die er al is, houdt de zijne. 1 tot 1024."
+  "config.extremedimensions.keeper_health.desc": "De levens van de Keeper (2 is één hartje; standaard 210, vóór 3.31 140). Geldt voor elke die vanaf nu komt; een die er al is, houdt de zijne. 1 tot 1024.",
+  "config.extremedimensions.matriarch_health": "Matriarch: levens",
+  "config.extremedimensions.matriarch_health.desc": "De eigen levens van de Matriarch (2 is één hartje; standaard 960, vóór 3.32 640). De levensschaal van de Ouden (elder_health_scale) en het aantal spelers vermenigvuldigen dit: elke klap wordt daardoor gedeeld. Geldt voor elke die vanaf nu komt. 1 tot 1024.",
+  "config.extremedimensions.ferryman_health": "Ferryman: levens",
+  "config.extremedimensions.ferryman_health.desc": "De eigen levens van de Ferryman (2 is één hartje; standaard 780, vóór 3.32 520). De levensschaal van de Ouden (elder_health_scale) en het aantal spelers vermenigvuldigen dit: elke klap wordt daardoor gedeeld. Geldt voor elke die vanaf nu komt. 1 tot 1024.",
+  "config.extremedimensions.weaver_health": "Last Weaver: levens",
+  "config.extremedimensions.weaver_health.desc": "De eigen levens van de Last Weaver (2 is één hartje; standaard 720, vóór 3.32 480). De levensschaal van de Ouden (elder_health_scale) en het aantal spelers vermenigvuldigen dit: elke klap wordt daardoor gedeeld. Geldt voor elke die vanaf nu komt. 1 tot 1024.",
+  "config.extremedimensions.knot_mother_health": "Knot Mother: levens",
+  "config.extremedimensions.knot_mother_health.desc": "De eigen levens van de Knot Mother (2 is één hartje; standaard 840, vóór 3.32 560). De levensschaal van de Ouden (elder_health_scale) en het aantal spelers vermenigvuldigen dit: elke klap wordt daardoor gedeeld. Geldt voor elke die vanaf nu komt. 1 tot 1024.",
+  "config.extremedimensions.starved_health": "Starved One: levens",
+  "config.extremedimensions.starved_health.desc": "De eigen levens van de Starved One (2 is één hartje; standaard 750, vóór 3.32 500). Elke extra speler bij het Hart voegt er starved_health_per_player van toe, doordat elke klap wordt gedeeld. Geldt voor elke die vanaf nu komt. 1 tot 1024."
 }

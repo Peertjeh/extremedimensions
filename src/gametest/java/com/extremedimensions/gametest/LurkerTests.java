@@ -69,7 +69,7 @@ public class LurkerTests {
 			check(helper, m != null && m.getMaxHealth() == 50 && m.getHealth() == 50, "a Magpie made after its setting changed has %s health",
 					m == null ? 0 : m.getMaxHealth());
 			var so = ModEntities.STARVED_ONE.create(level, EntitySpawnReason.EVENT);
-			check(helper, so != null && so.getMaxHealth() == com.extremedimensions.mending.StarvedOne.BASE_HEALTH, "the Starved One took the Keeper's health (%s)",
+			check(helper, so != null && so.getMaxHealth() == com.extremedimensions.mending.StarvedOne.baseHealth(), "the Starved One took the Keeper's health (%s)",
 					so == null ? 0 : so.getMaxHealth());
 		} finally {
 			Config.MAGPIE_HEALTH = magpie;
