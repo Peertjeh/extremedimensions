@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.30.0: Lights Out
+
+### New
+- **`/tether lurkers`: switch any kind of Lurker off, or on again.** Every kind already had a switch in the settings
+  screen; now one command shows them all in chat, each on or off with a button to switch it, and
+  `/tether lurkers <kind> on|off` or `/tether lurkers all on|off` does it straight away. The kinds: `lurker` (the
+  common one, with its stalking, hunting, draining and swarms), `cave`, `sculk`, `magpie`, `wick`, `tidewalker`,
+  `gatebreaker`, `lockwarden`, `threadbiter`, `edgecrawler` and `cragback`. It changes the same settings as the screen
+  (`lurker_enabled`, `cave_lurker_enabled`, `magpie_enabled` and so on): saved, for the whole world, and every
+  operator is told. No new ones of a kind switched off come; any already out stay until they leave or are slain.
+  Needs `extremedimensions.admin.settings` (operator level 2 without a permission mod).
+
 ## 3.29.0: By Leave
 
 ### New

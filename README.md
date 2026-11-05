@@ -293,6 +293,15 @@ into the tapestry and the tapestry finished, and a gold medal in this week's Rif
 that pings (no @everyone or @here). The server never waits for Discord; a failure is logged once. `/tether
 discord_test` posts a test message and says what Discord answered.
 
+### Switching Lurkers off
+
+Each kind of Lurker has a switch of its own (`lurker_enabled`, `cave_lurker_enabled`, `magpie_enabled` and so on, in
+the settings screen), and `/tether lurkers` shows them all in chat, on or off, with a button to switch each.
+`/tether lurkers <kind> on|off` switches one and `/tether lurkers all on|off` every kind at once; the kinds are
+`lurker`, `cave`, `sculk`, `magpie`, `wick`, `tidewalker`, `gatebreaker`, `lockwarden`, `threadbiter`, `edgecrawler`
+and `cragback`. The change is saved and holds for the whole world; no new ones of a kind switched off come, and any
+already out stay until they leave or are slain. It needs `extremedimensions.admin.settings` (operator level 2).
+
 ### Permissions (LuckPerms)
 
 Every operator command and screen asks a permission of its own, through Fabric API's permission API, so a permission
@@ -303,7 +312,7 @@ changes on a server that has none; in a world of your own you hold them all.
 | Permission | Opens | Without a permission mod |
 |---|---|---|
 | `extremedimensions.admin.players` | The Players screen, `/tether players`, `/tether curse`, `/tether tribe set` | Operator level 2 |
-| `extremedimensions.admin.settings` | Changing the settings (the settings screen), `/tether preset`, `/tether overworld_penalties` | Operator level 2 |
+| `extremedimensions.admin.settings` | Changing the settings (the settings screen), `/tether preset`, `/tether overworld_penalties`, `/tether lurkers` | Operator level 2 |
 | `extremedimensions.admin.spawn` | `/tether boss`, `hoard`, `lurker`, `event`, `storm`, `seam`, `break_seal`, `seam_showcase` | Operator level 2 |
 | `extremedimensions.admin.export` | `/tether export`, `/tether discord_test` | Operator level 2 |
 | `extremedimensions.admin.seam_reset` | `/tether seam_reset` | Operator level 4 (admins and the console) |

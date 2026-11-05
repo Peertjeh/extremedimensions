@@ -3478,5 +3478,14 @@
   "gui.extremedimensions.matriarch.stirs_bar": "De Matriarch rijst op over %s s · ga %s blokken van het nest om haar te laten slapen",
   "gui.extremedimensions.matriarch.settles": "De grond wordt stil: de Matriarch zakt terug in haar slaap. Het volgende nest dat je wekt, roept haar opnieuw.",
   "gui.extremedimensions.matriarch.watched": "Onder dit nest slaapt de Matriarch. Open of breek de ton, of sla een van de jongen, en ze ontwaakt.",
-  "gui.extremedimensions.matriarch.earned": "%s Keepers zijn door jou gevallen, en hun moeder heeft het gehoord. Het volgende nest dat je wekt, roept de Matriarch zelf: kies waar, ver van wat je wilt houden."
+  "gui.extremedimensions.matriarch.earned": "%s Keepers zijn door jou gevallen, en hun moeder heeft het gehoord. Het volgende nest dat je wekt, roept de Matriarch zelf: kies waar, ver van wat je wilt houden.",
+  "commands.extremedimensions.lurkers.title": "Lurkers in deze wereld (klik om te wisselen; /tether lurkers <soort>|all on|off):",
+  "commands.extremedimensions.lurkers.on": "aan",
+  "commands.extremedimensions.lurkers.off": "uit",
+  "commands.extremedimensions.lurkers.switch_on": "[aanzetten]",
+  "commands.extremedimensions.lurkers.switch_off": "[uitzetten]",
+  "commands.extremedimensions.lurkers.switched_on": "%s komt weer in deze wereld.",
+  "commands.extremedimensions.lurkers.switched_off": "%s komt niet meer in deze wereld. Er komen geen nieuwe; wie er al is, blijft tot hij vertrekt of verslagen wordt.",
+  "commands.extremedimensions.lurkers.already_on": "Staat al aan: er is niets veranderd.",
+  "commands.extremedimensions.lurkers.already_off": "Staat al uit: er is niets veranderd."
 }

@@ -116,6 +116,43 @@ public class AdminTests {
 		helper.succeed();
 	}
 
+	/**
+	 * 3.30: {@code /tether lurkers <kind> on|off} switches one kind of Lurker for the whole world, through its setting,
+	 * leaving the others be; {@code all} switches every kind; a player without the settings permission changes nothing.
+	 */
+	@GameTest
+	public void lurkersAreSwitchedOffAndOnByCommand(GameTestHelper helper) {
+		MinecraftServer server = helper.getLevel().getServer();
+		net.minecraft.commands.CommandSourceStack console = server.createCommandSourceStack().withSuppressedOutput();
+		java.util.List<com.extremedimensions.command.TetherCommand.LurkerSwitch> all = com.extremedimensions.command.TetherCommand.LURKER_SWITCHES;
+		java.util.Map<String, String> was = new java.util.LinkedHashMap<>();
+		for (var sw : all) {
+			was.put(sw.key(), Integer.toString(sw.value().getAsInt()));
+		}
+		try {
+			com.extremedimensions.config.SettingsService.set(server, java.util.Map.of("magpie_enabled", "1", "wick_enabled", "1"), "test");
+			server.getCommands().performPrefixedCommand(console, "tether lurkers magpie off");
+			check(helper, com.extremedimensions.config.Config.MAGPIE_ENABLED == 0, "the Magpie was not switched off");
+			check(helper, com.extremedimensions.config.Config.WICK_ENABLED == 1, "switching the Magpie off switched the Wick off too");
+			server.getCommands().performPrefixedCommand(console, "tether lurkers magpie on");
+			check(helper, com.extremedimensions.config.Config.MAGPIE_ENABLED == 1, "the Magpie was not switched on again");
+			server.getCommands().performPrefixedCommand(console, "tether lurkers all off");
+			for (var sw : all) {
+				check(helper, !sw.on(), "%s is still on after every kind was switched off", sw.kind());
+			}
+			server.getCommands().performPrefixedCommand(console, "tether lurkers all on");
+			for (var sw : all) {
+				check(helper, sw.on(), "%s is still off after every kind was switched on", sw.kind());
+			}
+			ServerPlayer plain = TestPlayers.survivor(helper, "test-plain");
+			server.getCommands().performPrefixedCommand(plain.createCommandSourceStack().withSuppressedOutput(), "tether lurkers magpie off");
+			check(helper, com.extremedimensions.config.Config.MAGPIE_ENABLED == 1, "a player without the settings permission switched the Magpie off");
+		} finally {
+			com.extremedimensions.config.SettingsService.set(server, was, "test");
+		}
+		helper.succeed();
+	}
+
 	/** The list holds every player (online first, offline after, the asker among them); the one picked shows in full. */
 	@GameTest
 	public void thePlayersScreenListsEveryoneAndThePickedPlayer(GameTestHelper helper) {

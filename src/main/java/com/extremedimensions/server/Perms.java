@@ -24,7 +24,7 @@ public final class Perms {
 	public enum Node {
 		/** The Players screen, {@code /tether players}, {@code /tether curse} and {@code /tether tribe set}. */
 		PLAYERS("admin/players", PermissionLevel.GAMEMASTERS),
-		/** Changing the settings (the settings screen), {@code /tether preset} and {@code /tether overworld_penalties}. */
+		/** Changing the settings (the settings screen), {@code /tether preset}, {@code /tether overworld_penalties} and {@code /tether lurkers}. */
 		SETTINGS("admin/settings", PermissionLevel.GAMEMASTERS),
 		/** Calling things into the world: {@code boss}, {@code hoard}, {@code lurker}, {@code event}, {@code storm}, {@code seam}, {@code break_seal}, {@code seam_showcase}. */
 		SPAWN("admin/spawn", PermissionLevel.GAMEMASTERS),

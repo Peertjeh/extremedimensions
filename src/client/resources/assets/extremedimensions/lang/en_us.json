@@ -3478,5 +3478,14 @@
   "gui.extremedimensions.matriarch.stirs_bar": "The Matriarch rises in %s s · go %s blocks from the nest to let her sleep",
   "gui.extremedimensions.matriarch.settles": "The ground falls still: the Matriarch sinks back to sleep. The next nest you wake calls her again.",
   "gui.extremedimensions.matriarch.watched": "The Matriarch sleeps beneath this nest. Open or break its barrel, or strike its young, and she wakes.",
-  "gui.extremedimensions.matriarch.earned": "%s Keepers have fallen to you, and their mother has heard. The next nest you wake calls the Matriarch herself: choose where, far from what you would keep."
+  "gui.extremedimensions.matriarch.earned": "%s Keepers have fallen to you, and their mother has heard. The next nest you wake calls the Matriarch herself: choose where, far from what you would keep.",
+  "commands.extremedimensions.lurkers.title": "Lurkers in this world (click to switch; /tether lurkers <kind>|all on|off):",
+  "commands.extremedimensions.lurkers.on": "on",
+  "commands.extremedimensions.lurkers.off": "off",
+  "commands.extremedimensions.lurkers.switch_on": "[switch on]",
+  "commands.extremedimensions.lurkers.switch_off": "[switch off]",
+  "commands.extremedimensions.lurkers.switched_on": "%s comes again in this world.",
+  "commands.extremedimensions.lurkers.switched_off": "%s no longer comes in this world. No new ones come; any already out stay until they leave or are slain.",
+  "commands.extremedimensions.lurkers.already_on": "Already on: nothing changed.",
+  "commands.extremedimensions.lurkers.already_off": "Already off: nothing changed."
 }

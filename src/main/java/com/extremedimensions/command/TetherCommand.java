@@ -73,6 +73,8 @@ public final class TetherCommand {
 						.then(Commands.literal("off").executes(c -> set(c.getSource(), false))))
 				// Any kind of Lurker, near the operator or near the players named after it (and set on them)
 				.then(lurkerCommand(spawn))
+				// Each kind of Lurker switched on or off for the whole world (3.30)
+				.then(lurkersCommand(settings))
 				.then(Commands.literal("hoard").requires(spawn).executes(c -> hoard(c.getSource())))
 				.then(Commands.literal("boss").requires(spawn)
 						.then(Commands.literal("matriarch").executes(c -> boss(c.getSource(), "matriarch")))
@@ -317,6 +319,92 @@ public final class TetherCommand {
 	}
 
 	/** Every kind of Lurker the command calls: the Lurker's own moods first, then its kin. */
+	/** One kind of Lurker that can be switched off: its word in the command, its setting, its entity and that setting now. */
+	public record LurkerSwitch(String kind, String key, String entity, java.util.function.IntSupplier value) {
+		public boolean on() {
+			return value.getAsInt() > 0;
+		}
+	}
+
+	/** Every kind of Lurker with a switch of its own (the settings {@code *_enabled}), in the order the bestiary has them. */
+	public static final java.util.List<LurkerSwitch> LURKER_SWITCHES = java.util.List.of(
+			new LurkerSwitch("lurker", "lurker_enabled", "lurker", () -> com.extremedimensions.config.Config.LURKER_ENABLED),
+			new LurkerSwitch("cave", "cave_lurker_enabled", "cave_lurker", () -> com.extremedimensions.config.Config.CAVE_LURKER_ENABLED),
+			new LurkerSwitch("sculk", "sculk_lurker_enabled", "sculk_lurker", () -> com.extremedimensions.config.Config.SCULK_LURKER_ENABLED),
+			new LurkerSwitch("magpie", "magpie_enabled", "magpie", () -> com.extremedimensions.config.Config.MAGPIE_ENABLED),
+			new LurkerSwitch("wick", "wick_enabled", "wick", () -> com.extremedimensions.config.Config.WICK_ENABLED),
+			new LurkerSwitch("tidewalker", "tidewalker_enabled", "tidewalker", () -> com.extremedimensions.config.Config.TIDEWALKER_ENABLED),
+			new LurkerSwitch("gatebreaker", "gatebreaker_enabled", "gatebreaker", () -> com.extremedimensions.config.Config.GATEBREAKER_ENABLED),
+			new LurkerSwitch("lockwarden", "lockwarden_enabled", "lockwarden", () -> com.extremedimensions.config.Config.LOCKWARDEN_ENABLED),
+			new LurkerSwitch("threadbiter", "threadbiter_enabled", "threadbiter", () -> com.extremedimensions.config.Config.THREADBITER_ENABLED),
+			new LurkerSwitch("edgecrawler", "edgecrawler_enabled", "edgecrawler", () -> com.extremedimensions.config.Config.EDGECRAWLER_ENABLED),
+			new LurkerSwitch("cragback", "cragback_enabled", "cragback", () -> com.extremedimensions.config.Config.CRAGBACK_ENABLED));
+
+	/**
+	 * {@code /tether lurkers}: every kind of Lurker and whether it comes, each with a button to switch it;
+	 * {@code /tether lurkers <kind> on|off} and {@code /tether lurkers all on|off} switch them (3.30). The same settings
+	 * as in the settings screen, saved and sent to everyone; no new ones come, and any already out stay until they leave or are slain.
+	 */
+	private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> lurkersCommand(
+			java.util.function.Predicate<CommandSourceStack> settings) {
+		var root = Commands.literal("lurkers").requires(settings).executes(c -> lurkers(c.getSource()));
+		for (LurkerSwitch sw : LURKER_SWITCHES) {
+			root.then(Commands.literal(sw.kind())
+					.executes(c -> lurkers(c.getSource()))
+					.then(Commands.literal("on").executes(c -> lurkerSwitch(c.getSource(), java.util.List.of(sw), true)))
+					.then(Commands.literal("off").executes(c -> lurkerSwitch(c.getSource(), java.util.List.of(sw), false))));
+		}
+		root.then(Commands.literal("all")
+				.then(Commands.literal("on").executes(c -> lurkerSwitch(c.getSource(), LURKER_SWITCHES, true)))
+				.then(Commands.literal("off").executes(c -> lurkerSwitch(c.getSource(), LURKER_SWITCHES, false))));
+		return root;
+	}
+
+	/** The list: each kind, on or off, and a button that switches it the other way. */
+	private static int lurkers(CommandSourceStack src) {
+		src.sendSuccess(() -> Component.translatable("commands.extremedimensions.lurkers.title").withStyle(net.minecraft.ChatFormatting.GOLD), false);
+		int on = 0;
+		for (LurkerSwitch sw : LURKER_SWITCHES) {
+			boolean is = sw.on();
+			on += is ? 1 : 0;
+			String command = "/tether lurkers " + sw.kind() + (is ? " off" : " on");
+			Component line = Component.literal(" ").append(Component.translatable("entity.extremedimensions." + sw.entity()))
+					.append(Component.literal(" (" + sw.kind() + "): "))
+					.append(Component.translatable(is ? "commands.extremedimensions.lurkers.on" : "commands.extremedimensions.lurkers.off")
+							.withStyle(is ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED))
+					.append(Component.literal(" "))
+					.append(Component.translatable(is ? "commands.extremedimensions.lurkers.switch_off" : "commands.extremedimensions.lurkers.switch_on")
+							.withStyle(net.minecraft.network.chat.Style.EMPTY.withColor(net.minecraft.ChatFormatting.GRAY).withUnderlined(true)
+									.withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand(command))
+									.withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.literal(command)))));
+			src.sendSuccess(() -> line, false);
+		}
+		return on;
+	}
+
+	/** Switches these kinds on or off for the whole world; says which changed, or that nothing did. */
+	private static int lurkerSwitch(CommandSourceStack src, java.util.List<LurkerSwitch> which, boolean on) {
+		java.util.Map<String, String> changes = new java.util.LinkedHashMap<>();
+		java.util.List<LurkerSwitch> changed = new java.util.ArrayList<>();
+		for (LurkerSwitch sw : which) {
+			if (sw.on() != on) {
+				changes.put(sw.key(), on ? "1" : "0");
+				changed.add(sw);
+			}
+		}
+		if (changed.isEmpty()) {
+			src.sendSuccess(() -> Component.translatable(on ? "commands.extremedimensions.lurkers.already_on" : "commands.extremedimensions.lurkers.already_off"), false);
+			return 0;
+		}
+		SettingsService.set(src.getServer(), changes, src.getTextName());
+		for (LurkerSwitch sw : changed) {
+			Component name = Component.translatable("entity.extremedimensions." + sw.entity());
+			// Told to every operator, as a setting changed by command always is
+			src.sendSuccess(() -> Component.translatable(on ? "commands.extremedimensions.lurkers.switched_on" : "commands.extremedimensions.lurkers.switched_off", name), true);
+		}
+		return changed.size();
+	}
+
 	static final java.util.List<String> LURKER_KINDS = java.util.List.of("watch", "stalk", "hunt", "swarm", "drain", "cave", "sculk",
 			"magpie", "wick", "tidewalker", "gatebreaker", "lockwarden", "threadbiter", "edgecrawler", "cragback");
 

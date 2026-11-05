@@ -89,6 +89,18 @@ public final class SettingsService {
 		sendAll(s);
 	}
 
+	/**
+	 * Changes these settings for a command (3.30): every value that fits is taken and saved together, everyone plays by
+	 * them at once and every player's settings screen shows them. Returns how many were taken.
+	 */
+	public static int set(MinecraftServer s, Map<String, String> changes, String by) {
+		int taken = apply(s, changes, new ArrayList<>(), by);
+		if (taken > 0) {
+			sendAll(s);
+		}
+		return taken;
+	}
+
 	/** Takes every value that fits, saves them together and lets everyone play by them at once. Returns how many. */
 	private static int apply(MinecraftServer s, Map<String, String> changes, List<String> refused, String by) {
 		int taken = 0;
