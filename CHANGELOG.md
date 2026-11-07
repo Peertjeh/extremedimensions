@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.34.1: Rulebook polish
+
+### Fixes
+- The settings overview no longer shows a cut-off hint beside the search box; the search box itself now says it
+  searches every part ("Search every part…").
+- In search results, the Lurker's own settings sit under one heading, *The Lurker*, instead of *The Lurker: The Lurker*.
+
 ## 3.34.0: A Clearer Rulebook
 
 ### Changes

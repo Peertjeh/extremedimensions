@@ -270,7 +270,9 @@ public class SettingsScreen extends Screen {
 			String sub = SUBHEADS.get(st.key());
 			if (sub != null) {
 				String name = Ui.tr(sub);
-				Row h = new Row(sectionName(section) + ": " + name, null, name, null, null, null, "", section, false);
+				// in a search the heading names its part too, unless it is the part's own name (The Lurker)
+				String full = name.equals(sectionName(section)) ? name : sectionName(section) + ": " + name;
+				Row h = new Row(full, null, name, null, null, null, "", section, false);
 				rows.add(h);
 				partRows.add(h);
 			}
@@ -936,8 +938,9 @@ public class SettingsScreen extends Screen {
 		View v = view();
 		int hx = x0 + 172, hy = y0 + 69, hw = pw - 172 - 16;
 		switch (v) {
-			case OVERVIEW -> g.text(this.font, Ui.ellipsize(this.font, Ui.tr("gui.extremedimensions.settings.pick"), hw - 112 - 6), hx, hy,
-					Ui.argb(fade, Ui.MUTED));
+			case OVERVIEW -> {
+				// the tiles say it all; the search box's hint tells it looks through every part
+			}
 			case PART -> g.text(this.font, Ui.ellipsize(this.font, part().name(), hw - 60), hx + 60, hy, Ui.argb(fade, accent));
 			case CHANGED -> g.text(this.font, Ui.ellipsize(this.font, Ui.tr("gui.extremedimensions.settings.changed_title"), hw - 60), hx + 60, hy,
 					Ui.argb(fade, accent));
