@@ -1081,6 +1081,21 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.runOnClient(mc -> press(settings.get(), "World rules"));
 			ctx.waitTicks(6);
 			ctx.takeScreenshot("07_settings_world");
+			// 3.34: the rules open on an overview of their parts; one part opens alone, its switches as On/Off buttons
+			ctx.runOnClient(mc -> check(settings.get().shownSwitches() == 0, "the overview shows a list of settings"));
+			ctx.runOnClient(mc -> press(settings.get(), "The Lurker"));
+			ctx.waitTicks(4);
+			ctx.runOnClient(mc -> check(settings.get().shownSwitches() > 0, "the Lurker's part shows no On/Off switch"));
+			ctx.takeScreenshot("07_settings_part");
+			// Escape steps back to the overview, not out of the screen
+			ctx.runOnClient(mc -> settings.get().onClose());
+			ctx.waitTicks(2);
+			ctx.runOnClient(mc -> check(settings.get().shownSwitches() == 0, "Escape left the part open"));
+			ctx.runOnClient(mc -> press(settings.get(), "Changed"));
+			ctx.waitTicks(4);
+			ctx.takeScreenshot("07_settings_changed");
+			ctx.runOnClient(mc -> settings.get().onClose());
+			ctx.waitTicks(2);
 			ctx.runOnClient(mc -> {
 				for (GuiEventListener w : settings.get().children()) {
 					if (w instanceof EditBox box && box.getWidth() == 150) {

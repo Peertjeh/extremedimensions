@@ -138,6 +138,25 @@ public class SettingsTests {
 		helper.succeed();
 	}
 
+	/** 3.34: every setting the settings screen shows as an On/Off button is a whole number that defaults to 0 or 1. */
+	@GameTest
+	public void everySwitchIsAWholeNumberThatDefaultsToOffOrOn(GameTestHelper helper) {
+		java.util.Map<String, Config.Setting> byKey = new java.util.HashMap<>();
+		for (Config.Setting st : Config.settings()) {
+			byKey.put(st.key(), st);
+		}
+		for (String key : Config.switches()) {
+			Config.Setting st = byKey.get(key);
+			check(helper, st != null, "the switch %s is no setting", key);
+			check(helper, st.whole(), "the switch %s is not a whole number", key);
+			check(helper, "0".equals(st.fallback()) || "1".equals(st.fallback()), "the switch %s defaults to %s", key, st.fallback());
+		}
+		check(helper, Config.isSwitch("lurker_enabled") && Config.isSwitch("elder_griefing"), "the Lurker's and the Elders' switches are no switches");
+		check(helper, !Config.isSwitch("lurker_health") && !Config.isSwitch("trial_unlock") && !Config.isSwitch("coop_allies"),
+				"a number (or a choice of more than on and off) is shown as a switch");
+		helper.succeed();
+	}
+
 	@GameTest
 	public void onlyOperatorsChangeTheWorldsRules(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);

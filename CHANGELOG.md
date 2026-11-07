@@ -1,5 +1,27 @@
 # Changelog
 
+## 3.34.0: A Clearer Rulebook
+
+### Changes
+- **The settings screen's World rules are far easier to find one's way in.** Over seven hundred values in one long
+  list were too much, so:
+  - **They open on an overview**: a tile for each part of the rules (Anchors, The Lurker, The Elders, Each curse's
+    maximum and strength and so on), with how many of its values differ from their defaults in gold. A tile opens that
+    part alone; *Back* (or Escape) goes back to the overview.
+  - **The two longest parts have headings**: The Lurker's settings under each creature (Lurker, Cave Lurker, Magpie,
+    Wick, Tidewalker and the rest, then logging out in danger), the Elders' under each Elder, what every fight shares,
+    the domains, the cores and falling islands, strength and reach, and the hexes.
+  - **Switches are On/Off buttons** (66 of them, from `lurker_enabled` to `elder_griefing`): a click flips one, no more
+    typing 0 or 1. A click on a switch's name flips it too.
+  - **What differs from its default is marked in gold**, and a **↺** beside a field puts its default back. Hovering a
+    setting tells what it does, its default and its key in the config file.
+  - **Changed** lists every value that differs from its default, from every part at once (with what was changed but not
+    applied yet, in yellow).
+  - **Undo** takes back every change not applied yet; **Defaults** fills in the defaults of the part open (or of
+    everything, from the overview). As before, nothing changes until **Apply**.
+  - **Leaving with changes not applied asks first**: Done says *Leave anyway?* and a second press leaves without them.
+  - The search still looks through every part at once, under each part's heading; the panel grows with larger windows.
+
 ## 3.33.0: The Hungry Pillars
 
 ### Changes

@@ -1653,6 +1653,33 @@ public final class Config {
 		return settings;
 	}
 
+	/**
+	 * The settings that are switches (1 on, 0 off), which the settings screen shows as an On/Off button instead of a
+	 * number to type (3.34). Each is a whole number with a default of 0 or 1 (a gametest holds them to it).
+	 */
+	private static final java.util.Set<String> SWITCHES = java.util.Set.of("respawn_title", "hud_boss_bar", "own_worlds_only",
+			"curse_overflow", "curse_deeper", "overworld_curses", "curse_runes", "abyssal_curses", "abyssal_mending_cloth",
+			"atone_kill_area_shared", "hints", "lurker_enabled", "cave_lurker_enabled", "sculk_lurker_enabled", "magpie_enabled",
+			"wick_enabled", "wick_eats", "tidewalker_enabled", "gatebreaker_enabled", "gatebreaker_breaks", "lockwarden_enabled",
+			"threadbiter_enabled", "edgecrawler_enabled", "edgecrawler_hurls", "cragback_enabled", "flee_returns", "keeper_enabled",
+			"seam_fray", "seam_return_gate", "seam_rift_compass", "seam_rift_leash", "seam_portal", "seam_reset_backup",
+			"seam_interiors", "echoes", "unstable_anchors", "unanchored", "frayed_seam", "ambient_dread", "tetherite_tethered",
+			"tetherite_bind_keep_template", "tetherite_drawbacks", "elder_griefing", "elder_ultimate_scatter", "elder_spawn_camera",
+			"elder_arena", "elder_arena_wall", "elder_arena_landmark", "elder_arena_breakable", "elder_arena_collapse",
+			"elder_arena_phases", "elder_cores", "elder_isle_fall", "elder_pierce", "matriarch_hex_milk", "coop_revive",
+			"coop_fallen_locked", "coop_burden", "coop_shared_anchors", "tribe_enabled", "tribe_raid", "clan_enabled",
+			"tapestry_roots_peace", "tapestry_chain_steady", "unweaving", "placeholders");
+
+	/** Whether this setting is a switch (1 on, 0 off) rather than a number. */
+	public static boolean isSwitch(String key) {
+		return SWITCHES.contains(key);
+	}
+
+	/** Every switch (for the gametest that holds each to a whole number with a default of 0 or 1). */
+	public static java.util.Set<String> switches() {
+		return SWITCHES;
+	}
+
 	private static List<Field> texts;
 
 	/**

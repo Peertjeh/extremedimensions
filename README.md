@@ -296,8 +296,8 @@ discord_test` posts a test message and says what Discord answered.
 
 ### Switching Lurkers off
 
-Each kind of Lurker has a switch of its own (`lurker_enabled`, `cave_lurker_enabled`, `magpie_enabled` and so on, in
-the settings screen), and `/tether lurkers` shows them all in chat, on or off, with a button to switch each.
+Each kind of Lurker has a switch of its own (`lurker_enabled`, `cave_lurker_enabled`, `magpie_enabled` and so on: in
+the settings screen, *World rules*, the tile *The Lurker*, an On/Off button under each creature's heading), and `/tether lurkers` shows them all in chat, on or off, with a button to switch each.
 `/tether lurkers <kind> on|off` switches one and `/tether lurkers all on|off` every kind at once; the kinds are
 `lurker`, `cave`, `sculk`, `magpie`, `wick`, `tidewalker`, `gatebreaker`, `lockwarden`, `threadbiter`, `edgecrawler`
 and `cragback`. The change is saved and holds for the whole world; no new ones of a kind switched off come, and any
@@ -331,7 +331,11 @@ may change the settings cannot lower the bar for a permission they lack.
 
 Every value lives in `config/extremedimensions.json` (written on first launch) and in the in-game settings screen,
 grouped by system, with a name and a description in every language; operators change the server's values from the
-screen. Four difficulties set many at once: **Easy**, **Normal** (the default), **Hard** and **Extreme**, also with
+screen. Its *World rules* open on an overview of the parts of the rules (each tile says how many of its values differ
+from their defaults); a part opens alone, with headings per creature and per Elder in the long ones. Switches are
+On/Off buttons, a value that differs from its default is marked in gold with a ↺ to put it back, *Changed* lists every
+changed value at once, the search looks through every part, and *Undo* takes back what was not applied yet. Nothing
+changes until *Apply*, and leaving with changes not applied asks first. Four difficulties set many at once: **Easy**, **Normal** (the default), **Hard** and **Extreme**, also with
 `/tether preset <name>`. Curses have their own `penalties` section. Two settings are text and live in the file only:
 `export_dir` and `discord_webhook` (both `""`, off). The settings every player is sent hold numbers only, and whoever has
 a webhook's URL can post to its channel. Change them while the server is stopped (it writes the file when it starts and
