@@ -56,7 +56,9 @@ import net.minecraft.network.chat.Component;
  * what was typed but not applied. Nothing changes until Apply, and leaving with changes not applied asks first.
  */
 public class SettingsScreen extends Screen {
-	private static final int ROW = 19, LIST_ROW = 16;
+	private static final int LIST_ROW = 16;
+	/** The Display tab's rows: where the first sits (below the tabs) and how far apart they are. */
+	private static final int DISPLAY_TOP = 44, DISPLAY_ROW = 17;
 	/** The panel's least and greatest size; it grows with the window between them. */
 	private static final int MIN_W = 372, MAX_W = 452, MIN_H = 246, MAX_H = 300;
 	/** The overview's columns of tiles (filled down, then across). */
@@ -202,19 +204,22 @@ public class SettingsScreen extends Screen {
 		this.addRenderableWidget(new TabButton(x0 + 12, y0 + 22, (pw - 30) / 2, Tab.DISPLAY));
 		this.addRenderableWidget(new TabButton(x0 + 18 + (pw - 30) / 2, y0 + 22, (pw - 30) / 2, Tab.WORLD));
 
-		// Display
-		int cx = x0 + pw - 18 - 124, y = y0 + 48;
+		// Display: one row per option, in the order of DISPLAY_KEYS
+		int cx = x0 + pw - 18 - 124, y = y0 + DISPLAY_TOP;
 		addChoice(cx, y, () -> onOff(ClientOptions.reduceFlashing()), () -> ClientOptions.setReduceFlashing(!ClientOptions.reduceFlashing()),
 				"reduce_flashing");
-		addChoice(cx, y + ROW, () -> onOff(ClientOptions.colourBlind()), () -> ClientOptions.setColourBlind(!ClientOptions.colourBlind()),
+		addChoice(cx, y + DISPLAY_ROW, () -> onOff(ClientOptions.colourBlind()), () -> ClientOptions.setColourBlind(!ClientOptions.colourBlind()),
 				"colour_blind");
-		addChoice(cx, y + ROW * 2, () -> Ui.tr("gui.extremedimensions.settings.corner." + ClientOptions.meters().name().toLowerCase(Locale.ROOT)),
+		addChoice(cx, y + DISPLAY_ROW * 2, () -> Ui.tr("gui.extremedimensions.settings.effects." + ClientOptions.effects().name().toLowerCase(Locale.ROOT)),
+				() -> ClientOptions.setEffects(ClientOptions.Effects.values()[(ClientOptions.effects().ordinal() + 1) % ClientOptions.Effects.values().length]),
+				"effects");
+		addChoice(cx, y + DISPLAY_ROW * 3, () -> Ui.tr("gui.extremedimensions.settings.corner." + ClientOptions.meters().name().toLowerCase(Locale.ROOT)),
 				() -> ClientOptions.setMeters(ClientOptions.Corner.values()[(ClientOptions.meters().ordinal() + 1) % ClientOptions.Corner.values().length]),
 				"meters");
-		addChoice(cx, y + ROW * 3, () -> Ui.tr("gui.extremedimensions.settings.timer." + ClientOptions.timer().name().toLowerCase(Locale.ROOT)),
+		addChoice(cx, y + DISPLAY_ROW * 4, () -> Ui.tr("gui.extremedimensions.settings.timer." + ClientOptions.timer().name().toLowerCase(Locale.ROOT)),
 				() -> ClientOptions.setTimer(ClientOptions.TimerPlace.values()[(ClientOptions.timer().ordinal() + 1) % ClientOptions.TimerPlace.values().length]),
 				"timer");
-		addChoice(cx, y + ROW * 4, () -> ClientOptions.hudScale() + "%", () -> {
+		addChoice(cx, y + DISPLAY_ROW * 5, () -> ClientOptions.hudScale() + "%", () -> {
 			int[] s = ClientOptions.HUD_SCALES;
 			int i = 0;
 			while (i < s.length && s[i] != ClientOptions.hudScale()) {
@@ -222,9 +227,9 @@ public class SettingsScreen extends Screen {
 			}
 			ClientOptions.setHudScale(s[(i + 1) % s.length]);
 		}, "hud_scale");
-		addChoice(cx, y + ROW * 5, () -> onOff(ClientOptions.guidance()), () -> ClientOptions.setGuidance(!ClientOptions.guidance()), "guidance");
-		addChoice(cx, y + ROW * 6, () -> onOff(ClientOptions.hints()), () -> ClientOptions.setHints(!ClientOptions.hints()), "hints");
-		addChoice(cx, y + ROW * 7, () -> Ui.tr("gui.extremedimensions.settings.menu." + ClientOptions.menu().name().toLowerCase(Locale.ROOT)),
+		addChoice(cx, y + DISPLAY_ROW * 6, () -> onOff(ClientOptions.guidance()), () -> ClientOptions.setGuidance(!ClientOptions.guidance()), "guidance");
+		addChoice(cx, y + DISPLAY_ROW * 7, () -> onOff(ClientOptions.hints()), () -> ClientOptions.setHints(!ClientOptions.hints()), "hints");
+		addChoice(cx, y + DISPLAY_ROW * 8, () -> Ui.tr("gui.extremedimensions.settings.menu." + ClientOptions.menu().name().toLowerCase(Locale.ROOT)),
 				() -> ClientOptions.setMenu(ClientOptions.MenuStyle.values()[(ClientOptions.menu().ordinal() + 1) % ClientOptions.MenuStyle.values().length]),
 				"menu");
 
@@ -897,12 +902,13 @@ public class SettingsScreen extends Screen {
 		}
 	}
 
-	private static final String[] DISPLAY_KEYS = {"reduce_flashing", "colour_blind", "meters", "timer", "hud_scale", "guidance", "hints", "menu"};
+	private static final String[] DISPLAY_KEYS = {"reduce_flashing", "colour_blind", "effects", "meters", "timer", "hud_scale", "guidance", "hints",
+			"menu"};
 
 	private void display(GuiGraphicsExtractor g, int x0, int y0, int mouseX, int mouseY, double fade) {
-		int y = y0 + 48;
+		int y = y0 + DISPLAY_TOP;
 		for (int i = 0; i < DISPLAY_KEYS.length; i++) {
-			int ry = y + i * ROW;
+			int ry = y + i * DISPLAY_ROW;
 			String label = Ui.tr("gui.extremedimensions.settings." + DISPLAY_KEYS[i]);
 			g.text(this.font, label, x0 + 18, ry + 4, Ui.argb(fade, Ui.PARCHMENT));
 			if ("colour_blind".equals(DISPLAY_KEYS[i])) {

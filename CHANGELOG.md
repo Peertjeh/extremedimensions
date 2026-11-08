@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.36.0: Lighter Fights
+
+### Changes
+- **A new Display option, Effects** (Full, Reduced, Minimal), kept on each player's own computer: how much of the mod's
+  own spectacle it draws. The sparks, rings, beams and wisps of the Elders' blows went past Minecraft's Particles
+  option until now; they follow Effects (all of them, half or a fifth), and so does the air of the Seam (its fireflies,
+  dust and motes, which also follow Particles). Lower it if fights stutter on a slower computer. The Display tab is a
+  little tighter to fit it.
+- **The client's frame time is now measured in CI**: the client test reports it (PERFC lines) in the Overworld, while an
+  Elder's arena flies together, at each Elder's blows (the first blow again at Minimal) and in the Seam (in full and at
+  Minimal), with what is drawn near. (CI renders in software, so the numbers are read beside each other, not as a
+  player's frame rate.)
+
 ## 3.35.0: In the Viewer
 
 ### Changes

@@ -327,6 +327,13 @@ In LuckPerms: `/lp group moderator permission set extremedimensions.admin.player
 such as `extremedimensions:admin/players`; LuckPerms writes it with dots.) The fallback levels are fixed on purpose: who
 may change the settings cannot lower the bar for a permission they lack.
 
+## Performance
+
+On a dedicated server the mod adds about a millisecond a tick with players standing about and nothing measurable while
+they explore (CI's benchmark compares the same play with and without it, every build). On the client, Display →
+**Effects** (Full, Reduced, Minimal) sets how much of the Elders' blows and the Seam's air a computer draws; the mod's
+other particles follow Minecraft's own Particles option.
+
 ## Recipe viewers
 
 With JEI installed, the mod's recipes show as any other's, and four categories of its own show what no recipe says:

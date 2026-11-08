@@ -29,7 +29,8 @@ public final class SeamAmbience {
 		RandomSource r = level.getRandom();
 		double px = mc.player.getX(), py = mc.player.getY(), pz = mc.player.getZ();
 		// Fireflies: everywhere around, thicker close by
-		for (int i = 0; i < 6; i++) {
+		// (each as much as the Effects option draws)
+		for (int i = 0, n = com.extremedimensions.client.options.ClientOptions.scaled(6, r); i < n; i++) {
 			double d = 3 + Math.pow(r.nextDouble(), 0.7) * 26;
 			double a = r.nextDouble() * Math.PI * 2;
 			level.addParticle(ModParticles.SEAM_FIREFLY, px + Math.cos(a) * d, py - 6 + r.nextDouble() * 18, pz + Math.sin(a) * d, 0, 0, 0);
@@ -44,12 +45,12 @@ public final class SeamAmbience {
 				wz = dz / d * 0.014;
 			}
 		}
-		for (int i = 0; i < 3; i++) {
+		for (int i = 0, n = com.extremedimensions.client.options.ClientOptions.scaled(3, r); i < n; i++) {
 			level.addParticle(ModParticles.SEAM_DUST, px + (r.nextDouble() - 0.5) * 40 - wx * 120, py + 6 + r.nextDouble() * 16,
 					pz + (r.nextDouble() - 0.5) * 40 - wz * 120, wx, 0, wz);
 		}
 		// Twinkles rising out of the void below
-		if (r.nextInt(2) == 0) {
+		if (r.nextDouble() < 0.5 * com.extremedimensions.client.options.ClientOptions.effects().factor) {
 			level.addParticle(ModParticles.VOID_MOTE, px + (r.nextDouble() - 0.5) * 30, py - 4 - r.nextDouble() * 10, pz + (r.nextDouble() - 0.5) * 30, 0, 0.02, 0);
 		}
 	}

@@ -45,6 +45,31 @@ import net.minecraft.world.item.Items;
  */
 public class ClientShots implements FabricClientGameTest {
 	/**
+	 * 3.36: the client's frame time over the next ticks, as a PERFC line in the log: the client test draws one frame a
+	 * tick, so the wall clock per tick is the tick and the frame together (on CI's software renderer: slow, and to be
+	 * read one scene beside another, not as a player's frame rate). With the Effects option and what is drawn near.
+	 */
+	private static void measure(ClientGameTestContext ctx, String scene, int ticks) {
+		long start = System.nanoTime();
+		ctx.waitTicks(ticks);
+		double ms = (System.nanoTime() - start) / 1e6 / Math.max(1, ticks);
+		String near = ctx.computeOnClient(mc -> {
+			int entities = 0, displays = 0;
+			if (mc.level != null && mc.player != null) {
+				for (net.minecraft.world.entity.Entity e : mc.level.getEntities((net.minecraft.world.entity.Entity) null,
+						mc.player.getBoundingBox().inflate(160), any -> true)) {
+					entities++;
+					if (e instanceof net.minecraft.world.entity.Display.BlockDisplay) {
+						displays++;
+					}
+				}
+			}
+			return ClientOptions.effects().name().toLowerCase(java.util.Locale.ROOT) + "|" + entities + " entities|" + displays + " block displays";
+		});
+		System.out.println(String.format(java.util.Locale.ROOT, "PERFC|%s|%.1f ms a frame|%s", scene, ms, near));
+	}
+
+	/**
 	 * A live fight with one Elder: two shots as it forms and its arena flies together, one as it arrives, one at each
 	 * blow, two in its ultimate, and two as it dies (its arena coming apart after).
 	 */
@@ -75,7 +100,7 @@ public class ClientShots implements FabricClientGameTest {
 		ctx.takeScreenshot("12_fight_" + name + "_forming_a");
 		ctx.waitTicks(60);
 		ctx.takeScreenshot("12_fight_" + name + "_forming_b");
-		ctx.waitTicks(Math.max(70, settle));
+		measure(ctx, name + "_forming", Math.max(70, settle));
 		face(sp, name);
 		ctx.waitTicks(2);
 		ctx.takeScreenshot("12_fight_" + name + "_arrives");
@@ -83,10 +108,18 @@ public class ClientShots implements FabricClientGameTest {
 		for (int i = 0; i < blows.length; i++) {
 			int blow = blows[i];
 			sp.getServer().runOnServer(s -> elders(s).forEach(e -> force.test(e, blow)));
-			ctx.waitTicks(28);
+			measure(ctx, name + "_" + blowNames[i], 28);
 			face(sp, name);
 			ctx.waitTicks(2);
 			ctx.takeScreenshot("12_fight_" + name + "_" + blowNames[i]);
+			ctx.waitTicks(45);
+		}
+		// 3.36: the first blow once more with the Effects option at its least, for its frame time beside the full one's
+		if (blows.length > 0) {
+			ctx.runOnClient(mc -> ClientOptions.setEffects(ClientOptions.Effects.MINIMAL));
+			sp.getServer().runOnServer(s -> elders(s).forEach(e -> force.test(e, blows[0])));
+			measure(ctx, name + "_" + blowNames[0], 28);
+			ctx.runOnClient(mc -> ClientOptions.setEffects(ClientOptions.Effects.FULL));
 			ctx.waitTicks(45);
 		}
 		// The whole arena from high over its middle, by now built, then from out past its edge, looking along its towers
@@ -580,6 +613,7 @@ public class ClientShots implements FabricClientGameTest {
 			});
 
 			ctx.takeScreenshot("01_hud");
+			measure(ctx, "overworld", 100);
 			ctx.runOnClient(mc -> mc.gui.setScreen(new InventoryScreen(mc.player)));
 			ctx.waitTicks(8);
 			ctx.takeScreenshot("02_inventory");
@@ -2060,6 +2094,11 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(8);
 			ctx.takeScreenshot("09_trial_hud_panel");
 			sp.getServer().runOnServer(s -> com.extremedimensions.config.Config.HUD_BOSS_BAR = 1);
+			// 3.36: the Seam's frame time, with its air in full and at the Effects option's least
+			measure(ctx, "seam", 60);
+			ctx.runOnClient(mc -> ClientOptions.setEffects(ClientOptions.Effects.MINIMAL));
+			measure(ctx, "seam", 60);
+			ctx.runOnClient(mc -> ClientOptions.setEffects(ClientOptions.Effects.FULL));
 			// A frayed island: the fog closes in, green spores drift, Frayed Rays rise to it
 			sp.getServer().runOnServer(s -> com.extremedimensions.events.FrayedSeam.start((net.minecraft.server.level.ServerLevel) player(s).level(), player(s), s.getTickCount()));
 			ctx.waitTicks(60);

@@ -50,6 +50,21 @@ public final class ClientOptions {
 		}
 	}
 
+	/**
+	 * How much of the mod's own spectacle this computer draws (3.36): the sparks, rings and beams of the Elders' blows and
+	 * the air of the Seam, all of it or a share. (The mod's other particles follow Minecraft's own Particles option.)
+	 */
+	public enum Effects {
+		FULL(1.0), REDUCED(0.5), MINIMAL(0.2);
+
+		/** The share drawn. */
+		public final double factor;
+
+		Effects(double factor) {
+			this.factor = factor;
+		}
+	}
+
 	/** What is stored. Every field has a safe default so a damaged or older file still loads. */
 	private static final class Values {
 		boolean reduceFlashing = false;
@@ -60,6 +75,7 @@ public final class ClientOptions {
 		boolean guidance = true;
 		boolean hints = true;
 		MenuStyle menu = MenuStyle.FULL;
+		Effects effects = Effects.FULL;
 	}
 
 	/** HUD sizes to cycle through, in percent. */
@@ -83,6 +99,9 @@ public final class ClientOptions {
 		}
 		if (values.menu == null) {
 			values.menu = MenuStyle.FULL;
+		}
+		if (values.effects == null) {
+			values.effects = Effects.FULL;
 		}
 		boolean known = false;
 		for (int s : HUD_SCALES) {
@@ -135,6 +154,25 @@ public final class ClientOptions {
 
 	public static MenuStyle menu() {
 		return values.menu;
+	}
+
+	public static Effects effects() {
+		return values.effects;
+	}
+
+	public static void setEffects(Effects e) {
+		values.effects = e;
+		save();
+	}
+
+	/**
+	 * How many of something to draw at the effects level, from what full effects draw: the share, with the fraction
+	 * left over drawn by chance (so a third of one is one every third time).
+	 */
+	public static int scaled(int full, net.minecraft.util.RandomSource random) {
+		double want = full * values.effects.factor;
+		int whole = (int) Math.floor(want);
+		return whole + (random.nextDouble() < want - whole ? 1 : 0);
 	}
 
 	public static void setMenu(MenuStyle m) {

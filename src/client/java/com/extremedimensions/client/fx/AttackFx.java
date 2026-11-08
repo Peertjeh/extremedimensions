@@ -67,7 +67,8 @@ public final class AttackFx {
 		if (level == null || SPRITES[0] == null) {
 			return;
 		}
-		detail = payload.detail();
+		// the server's detail, and this computer's own share of it (Display: Effects)
+		detail = payload.detail() * (float) com.extremedimensions.client.options.ClientOptions.effects().factor;
 		for (Fx f : payload.fx()) {
 			int e = Mth.clamp(f.elder(), 0, 2);
 			switch (f.kind()) {
