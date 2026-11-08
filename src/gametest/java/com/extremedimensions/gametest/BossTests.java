@@ -456,7 +456,7 @@ public class BossTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = Alone.ELDER_FORMING, maxTicks = 80)
+	@GameTest(environment = Alone.ELDER_FORMING)
 	public void anElderCannotBeHurtWhileItForms(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
@@ -472,23 +472,16 @@ public class BossTests {
 		check(helper, f.getHealth() == health, "he was hurt while he formed");
 		FerrymanService.force(f, Ferryman.KNELL);
 		check(helper, f.getAction() == Ferryman.KNELL, "forcing a blow did not end his forming (action %s)", f.getAction());
-		// 3.37: formed, a mace's blow glances off him; a bare hand's of the same weight (once the blow before has worn
-		// off, a second later) lands whole
+		// 3.37: formed, a mace's blow glances off him: of a blow of 40, only boss_mace_damage lands (before his own
+		// toughness divides it, as every blow's is); a blow without a mace is let through whole (aMaceGlancesOffTheBosses)
 		p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.MACE));
 		float beforeMace = f.getHealth();
 		f.hurtServer(helper.getLevel(), helper.getLevel().damageSources().playerAttack(p), 40f);
 		float byMace = beforeMace - f.getHealth();
-		helper.runAfterDelay(25, () -> {
-			p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-			float beforeHand = f.getHealth();
-			f.hurtServer(helper.getLevel(), helper.getLevel().damageSources().playerAttack(p), 40f);
-			float byHand = beforeHand - f.getHealth();
-			check(helper, byHand > 0 && byMace > 0, "a blow did not land at all (mace %s, hand %s)", byMace, byHand);
-			check(helper, byMace <= byHand * (Config.BOSS_MACE_DAMAGE + 0.02), "a mace's blow took %s of his health, a hand's of the same weight %s",
-					byMace, byHand);
-			FerrymanService.fade(f);
-			helper.succeed();
-		});
+		float most = 40f * (float) (Config.BOSS_MACE_DAMAGE + 0.01) / Math.max(0.1F, f.toughness());
+		check(helper, byMace > 0 && byMace <= most, "a mace's blow of 40 took %s of his health (at most %s should land)", byMace, most);
+		FerrymanService.fade(f);
+		helper.succeed();
 	}
 
 	/** 3.37: the same guard holds for the Starved One, and a blow struck without a mace (or with a sword) is let through whole. */
