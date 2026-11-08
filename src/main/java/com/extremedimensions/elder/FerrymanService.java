@@ -25,6 +25,7 @@ import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -131,6 +132,14 @@ public final class FerrymanService {
 		}
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
 			PlayerData d = DataStore.get(p.getUUID());
+			if (d.inRun && !d.ferrymanTold && !p.isCreative() && !p.isSpectator() && Dims.NETHER.equals(Dims.of(p)) && !Rules.peaceful(p.level())
+					&& Config.FERRYMAN_CHANCE > 0) {
+				// The first crossing since he sails: whoever makes it is told what may come, and that a bell warns of it
+				d.ferrymanTold = true;
+				DataStore.markDirty();
+				p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.ferryman_sails", (Math.max(0, Config.FERRYMAN_AFTER_SECONDS) + 59) / 60)
+						.withStyle(ChatFormatting.GOLD));
+			}
 			if (!d.inRun || d.ferrymanRolled || d.runActive < Config.FERRYMAN_AFTER_SECONDS || p.isCreative() || p.isSpectator()
 					|| !Dims.NETHER.equals(Dims.of(p)) || Rules.peaceful(p.level())) {
 				continue;
@@ -139,9 +148,46 @@ public final class FerrymanService {
 			d.ferrymanRolled = true;
 			double chance = Math.min(1, Math.max(0, Config.FERRYMAN_CHANCE) * (1 + d.stacks(Penalty.FERRYMANS_FEE)));
 			if (ThreadLocalRandom.current().nextDouble() < chance) {
-				summon(p);
+				stir(p);
 			}
 		}
+	}
+
+	/** The key of the bell that tolls for this player. */
+	public static String stirKey(ServerPlayer p) {
+		return "ferryman@" + p.getUUID();
+	}
+
+	/**
+	 * His bell tolls before he comes (3.38): for {@link Config#FERRYMAN_WAKE_SECONDS} a bar counts down for the one he
+	 * comes for, wherever they go, and the bell rings louder as he nears. Still in the Nether on their expedition when it
+	 * stops, they are his; gone home or out of the Nether, he lets this crossing pass (he has had his chance on it).
+	 * With no wind-up he comes at once. Returns whether the bell tolls (or he came).
+	 */
+	public static boolean stir(ServerPlayer p) {
+		if (hunting(p) || ElderStir.stirring(stirKey(p)) || !Dims.ours(p)) {
+			return false;
+		}
+		if (Config.FERRYMAN_WAKE_SECONDS <= 0) {
+			return summon(p);
+		}
+		UUID passenger = p.getUUID();
+		return ElderStir.begin(new ElderStir.Stir(stirKey(p), "ferryman", (ServerLevel) p.level(), p.getX(), p.getY(), p.getZ(), p,
+				Config.FERRYMAN_WAKE_SECONDS, 0, BossEvent.BossBarColor.YELLOW,
+				q -> q.getUUID().equals(passenger) && DataStore.get(passenger).inRun && Dims.NETHER.equals(Dims.of(q)), FerrymanService::summon)
+				.follows().tint(ChatFormatting.GOLD).pulse(FerrymanService::tolls));
+	}
+
+	/** Each second of his coming: soul fire stirs about his passenger, and every other second the bell, louder as he nears. */
+	private static void tolls(ServerLevel level, double x, double y, double z, float share) {
+		String dim = level.dimension().identifier().toString();
+		if ((level.getGameTime() / 20) % 2 == 0) {
+			WorldFx.soundIn(dim, "minecraft:block.bell.use", "hostile", x, y + 6, z, 1.5f + 3f * share, 0.45f);
+		}
+		if (share > 0.7f) {
+			WorldFx.soundIn(dim, "minecraft:block.bell.resonate", "hostile", x, y + 6, z, 2f, 0.5f);
+		}
+		WorldFx.particleIn(dim, "minecraft:soul_fire_flame", x, y + 0.5, z, 10, 1.5, 10, 0.01, 4 + (int) (share * 16));
 	}
 
 	/** He comes for this player (also the operator command); false if he is already after them or cannot sail in. */

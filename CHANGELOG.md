@@ -1,5 +1,31 @@
 # Changelog
 
+## 3.38.0: Fair Warning
+
+### Changes
+- **Every boss now gives warning before it comes, as the Matriarch does since 3.28.** Each one stirs for 15 seconds
+  first: a bar counts down for everyone near, the place groans louder as the time runs out, and chat says what is
+  coming and how to let it pass. Whoever is still near when the bar runs out is the one it rises for (the one who woke
+  it, first of all); if everyone goes far enough, it settles again, and nothing is lost.
+  - **The Ferryman**: his bell tolls across the lava for the one he comes for, wherever they go (a gold bar, soul fire
+    round them, the bell louder each toll). Leave the Nether before the last toll and he lets this crossing pass: he
+    has had his chance on that expedition. Your first Nether expedition after the dragon also tells you, once, that he
+    sails there now and may come on a long crossing.
+  - **The Last Weaver**: walking into a village of the Thinned no longer wakes it on the spot. Its threads tighten
+    first (a blue bar, light running up the threads, a humming that grows); go 48 blocks from the village and it sinks
+    back into the weave, and that village wakes it again on your next visit. Coming within 40 blocks of a village whose
+    Weaver may still wake, you see threads of light over it and are told so.
+  - **The Knot Mother**: pulling the First Knot's heart with the Plumb Line loosens the knot first (a purple bar, the
+    strands shedding and creaking); go 24 blocks from the heart and it pulls tight again, with no rest to wait out. In
+    the chamber, while she can be woken, her strands stir round the heart and you are told that pulling it wakes her.
+  - **The Starved One**: stepping onto the altar makes the Heart groan first (a purple bar, souls gathering over the
+    altar and where it breaks through); go 32 blocks from the altar and it sinks back into the hunger, and the altar
+    wakes it again. Within 24 blocks of the altar souls drift over it and you are told that stepping onto it wakes it.
+- All in the settings screen (World rules → The Elders), on every difficulty: `ferryman_wake_seconds`,
+  `weaver_wake_seconds`, `weaver_calm_range`, `weaver_warn_range`, `knot_mother_wake_seconds`,
+  `knot_mother_calm_range`, `starved_wake_seconds`, `starved_calm_range` and `starved_warn_range`. A wind-up of 0
+  brings the boss at once as before; `/tether boss` still calls one at once.
+
 ## 3.37.0: Weight Turned Aside
 
 ### Changes

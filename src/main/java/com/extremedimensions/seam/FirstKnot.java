@@ -120,6 +120,7 @@ public final class FirstKnot {
 
 	public static void clear() {
 		at = null;
+		WARNED_AT.clear();
 	}
 
 	private static String mark() {
@@ -156,8 +157,39 @@ public final class FirstKnot {
 			}
 			if (!p.isSpectator() && built() && flat < REACH && Math.abs(p.getY() - Y) < RY) {
 				reached(p, DataStore.get(p.getUUID()));
+				watched(s, p, w);
 			}
 		}
+	}
+
+	/** When each player in the chamber was last told what is tied into the heart (server tick). */
+	private static final java.util.Map<java.util.UUID, Long> WARNED_AT = new java.util.HashMap<>();
+
+	/**
+	 * A visitor in the chamber while the Knot Mother can be pulled loose (3.38): her strands stir round the heart, and on
+	 * coming in, and about once a minute after, they are told that pulling the heart with the Plumb Line wakes her.
+	 */
+	private static void watched(MinecraftServer s, ServerPlayer p, int[] w) {
+		if (p.isCreative() || com.extremedimensions.elder.WeaverService.knotMotherAwake()
+				|| com.extremedimensions.elder.ElderStir.stirring(com.extremedimensions.elder.WeaverService.KNOT_STIR) || resting(s)) {
+			return;
+		}
+		WorldFx.particleIn(p.level(), "minecraft:witch", w[0] + 0.5, FLOOR + 2.5, w[2] + 0.5, 0.4, 1.0, 0.4, 0.02, 6);
+		long now = s.getTickCount();
+		Long at = WARNED_AT.get(p.getUUID());
+		if (at == null || now - at >= 1200 || now < at) {
+			if (at == null) {
+				p.sendSystemMessage(Component.translatable("gui.extremedimensions.stir.knot_mother.watched").withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE));
+			}
+			WARNED_AT.put(p.getUUID(), now);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.stir.knot_mother.watched").withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE), true);
+		}
+	}
+
+	/** Whether the Knot Mother is still resting after she was last slain. */
+	private static boolean resting(MinecraftServer s) {
+		long slain = slainAt();
+		return slain >= 0 && s.overworld().getGameTime() - slain < Math.max(0, Config.KNOT_MOTHER_REST) * 1200L;
 	}
 
 	/** A visitor stands in the Knot's chamber: the page, the advancement, the end of the trail. */
@@ -179,7 +211,7 @@ public final class FirstKnot {
 		long now = p.level().getServer().overworld().getGameTime();
 		long rest = Math.max(0, Config.KNOT_MOTHER_REST) * 1200L;
 		long slain = slainAt();
-		if (com.extremedimensions.elder.WeaverService.knotMotherAwake()) {
+		if (com.extremedimensions.elder.WeaverService.knotMotherAwake() || com.extremedimensions.elder.ElderStir.stirring(com.extremedimensions.elder.WeaverService.KNOT_STIR)) {
 			return InteractionResult.SUCCESS;
 		}
 		if (slain >= 0 && now - slain < rest) {
@@ -188,7 +220,7 @@ public final class FirstKnot {
 			return InteractionResult.SUCCESS;
 		}
 		int[] w = where();
-		com.extremedimensions.elder.WeaverService.summonKnotMother(p, new BlockPos(w[0], FLOOR + 1, w[2]));
+		com.extremedimensions.elder.WeaverService.stirKnotMother(p, new BlockPos(w[0], FLOOR + 1, w[2]));
 		return InteractionResult.SUCCESS;
 	}
 

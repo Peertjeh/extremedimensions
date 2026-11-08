@@ -1055,6 +1055,11 @@ public final class Config {
 	public static int FERRYMAN_AFTER_SECONDS = 300;
 	/** Chance he comes once that time has passed; each stack of Ferryman's Fee adds the same again. */
 	public static double FERRYMAN_CHANCE = 0.2;
+	/**
+	 * Seconds his bell tolls before the Ferryman comes (3.38): a bar counts down for the one he comes for, and leaving the
+	 * Nether in that time lets the crossing pass. 0 = he comes at once.
+	 */
+	public static int FERRYMAN_WAKE_SECONDS = 15;
 	/** While he lives, the Tether drains this many times faster (half again more once he is wounded below half). */
 	public static double FERRYMAN_DRAIN = 2.0;
 	/** Levels each of his blows takes. */
@@ -1071,6 +1076,15 @@ public final class Config {
 	public static double WEAVER_CHANCE = 0.4;
 	/** How much likelier the next village is for every village in a row that woke no Weaver: 0.2 is 40%, then 60%, 80%, 100%. */
 	public static double WEAVER_PITY = 0.2;
+	/**
+	 * Seconds the threads of a village tighten before its Last Weaver wakes (3.38): a bar counts down for everyone near,
+	 * and going {@link #WEAVER_CALM_RANGE} from the village lets it sink back into the weave. 0 = it wakes at once.
+	 */
+	public static int WEAVER_WAKE_SECONDS = 15;
+	/** How far (blocks) from the village everyone must go while its threads tighten for the Weaver to settle again. */
+	public static int WEAVER_CALM_RANGE = 48;
+	/** How near (blocks) to a village whose Weaver may still wake a player is warned of it; 0 = no warning. */
+	public static int WEAVER_WARN_RANGE = 40;
 	/** Seconds of Seam time each of the Weaver's blows unpicks. */
 	public static int WEAVER_TIME_THEFT = 10;
 	/** Seconds of Seam time given back to everyone near when it falls. */
@@ -1080,6 +1094,13 @@ public final class Config {
 	/** Relics the Knot Mother always leaves, and minutes before she can be woken again once slain (0 = at once). */
 	public static int KNOT_MOTHER_RELICS = 1;
 	public static int KNOT_MOTHER_REST = 40;
+	/**
+	 * Seconds the First Knot loosens before the Knot Mother wakes (3.38): a bar counts down for everyone near, and going
+	 * {@link #KNOT_MOTHER_CALM_RANGE} from its heart lets the knot pull tight again. 0 = she wakes at once.
+	 */
+	public static int KNOT_MOTHER_WAKE_SECONDS = 15;
+	/** How far (blocks) from the knot's heart everyone must go while it loosens for her to sleep on. */
+	public static int KNOT_MOTHER_CALM_RANGE = 24;
 	/** The Knot Mother's own health (3.32: half again her old 560). */
 	public static double KNOT_MOTHER_HEALTH = 840.0;
 	/** How far (blocks) the Knot Mother can stray from where she woke: her cords hold her to it. */
@@ -1287,6 +1308,15 @@ public final class Config {
 	/** The Starved One's own health against one player (3.32: half again its old 500); more at the Heart add starved_health_per_player each. */
 	public static double STARVED_HEALTH = 750.0;
 	public static double STARVED_HEALTH_PER_PLAYER = 0.5;
+	/**
+	 * Seconds the Heart groans before the Starved One rises (3.38): a bar counts down for everyone near, and going
+	 * {@link #STARVED_CALM_RANGE} from the altar lets it sink back into the hunger. 0 = it rises at once.
+	 */
+	public static int STARVED_WAKE_SECONDS = 15;
+	/** How far (blocks) from the altar everyone must go while the Heart groans for the Starved One to settle again. */
+	public static int STARVED_CALM_RANGE = 32;
+	/** How near (blocks) to the altar a player is warned that stepping onto it wakes the Starved One; 0 = no warning. */
+	public static int STARVED_WARN_RANGE = 24;
 	/** Below this share of its health the Starved One turns ravenous: faster, quicker tricks, and famine. */
 	public static double STARVED_ENRAGE_AT = 0.3;
 	/** Its speed once ravenous, as a multiple. */
@@ -1865,7 +1895,9 @@ public final class Config {
 			{"matriarch_health", 1, 1024}, {"ferryman_health", 1, 1024}, {"weaver_health", 1, 1024}, {"knot_mother_health", 1, 1024}, {"starved_health", 1, 1024},
 			{"lurker_health", 1, 1024}, {"cave_lurker_health", 1, 1024}, {"sculk_lurker_health", 1, 1024}, {"magpie_health", 1, 1024}, {"wick_health", 1, 1024}, {"tidewalker_health", 1, 1024}, {"gatebreaker_health", 1, 1024}, {"lockwarden_health", 1, 1024}, {"threadbiter_health", 1, 1024}, {"edgecrawler_health", 1, 1024}, {"cragback_health", 1, 1024}, {"keeper_health", 1, 1024},
 			{"elder_snare_damage", 0, 100}, {"elder_bind_seconds", 0, 120}, {"matriarch_wake_seconds", 0, 120}, {"matriarch_calm_range", 8, 128},
-			{"matriarch_warn_range", 0, 64}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
+			{"matriarch_warn_range", 0, 64}, {"ferryman_wake_seconds", 0, 120}, {"weaver_wake_seconds", 0, 120}, {"weaver_calm_range", 8, 128},
+			{"weaver_warn_range", 0, 128}, {"knot_mother_wake_seconds", 0, 120}, {"knot_mother_calm_range", 8, 128}, {"starved_wake_seconds", 0, 120},
+			{"starved_calm_range", 8, 128}, {"starved_warn_range", 0, 64}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
 			{"ferryman_gaol_hits", 1, 20}, {"ferryman_gaol_seconds", 0.5, 6}, {"ferryman_gaol_damage", 0, 100}, {"weaver_windup_speed", 0.5, 4}, {"weaver_lance_length", 0.5, 4},
 			{"elder_arena_size", 0.5, 12}, {"elder_arena_wall", 0, 1}, {"elder_arena_landmark", 0, 1},
 			{"elder_arena_breakable", 0, 1}, {"elder_arena_blast_resistance", 0, 1200}, {"elder_arena_collapse", 0, 1},

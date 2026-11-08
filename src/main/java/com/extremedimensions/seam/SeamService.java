@@ -616,6 +616,11 @@ public final class SeamService {
 				com.extremedimensions.elder.WeaverService.nearVillage(p, Integer.parseInt(xyz[0]), Integer.parseInt(xyz[1]), Integer.parseInt(xyz[2]));
 				return;
 			}
+			double warn = Config.WEAVER_WARN_RANGE;
+			if (warn > 0 && dx * dx + dz * dz < warn * warn) {
+				// Coming near, a village whose Weaver may still wake gives warning (3.38)
+				com.extremedimensions.elder.WeaverService.warnVillage(p, Integer.parseInt(xyz[0]), Integer.parseInt(xyz[1]), Integer.parseInt(xyz[2]));
+			}
 		}
 	}
 

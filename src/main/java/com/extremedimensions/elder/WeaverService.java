@@ -23,6 +23,7 @@ import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -156,6 +157,8 @@ public final class WeaverService {
 			untie(u);
 		}
 		WEAVERS.clear();
+		WARNED_AT.clear();
+		WARNED_FOR.clear();
 	}
 
 	public static boolean unlocked() {
@@ -185,6 +188,15 @@ public final class WeaverService {
 		if (!unlocked() || p.isCreative() || p.isSpectator() || Rules.peaceful(p.level())) {
 			return;
 		}
+		String due = "wvd@" + vx + "," + vz;
+		if (DataStore.seamCells().contains(due)) {
+			// Its Weaver sank back into the weave when everyone went (3.38): walked into again, it wakes again
+			if (!hunting(p) && stir(p, vx, vy, vz)) {
+				DataStore.seamCells().remove(due);
+				DataStore.markDirty();
+			}
+			return;
+		}
 		// Each village rolls once ("wv@"; before 2.22 the roll was kept as "w@x,z", which wells also use)
 		if (DataStore.seamCells().contains("w@" + vx + "," + vz) || !DataStore.seamCells().add("wv@" + vx + "," + vz)) {
 			return;
@@ -192,15 +204,98 @@ public final class WeaverService {
 		DataStore.markDirty();
 		// Each village that woke none makes the next likelier (weaver_pity), so a long run of empty villages ends
 		PlayerData d = DataStore.get(p.getUUID());
-		if (ThreadLocalRandom.current().nextDouble() < villageChance(d.weaverMisses) && summon(p, new BlockPos(vx, vy + 1, vz))) {
+		if (ThreadLocalRandom.current().nextDouble() < villageChance(d.weaverMisses) && !hunting(p) && stir(p, vx, vy, vz)) {
 			d.weaverMisses = 0;
-			for (Unweaving u : WEAVERS.values()) {
-				if (p.getUUID().equals(u.target) && u.village == null) {
-					u.village = "wv@" + vx + "," + vz;
-				}
-			}
 		} else {
 			d.weaverMisses++;
+		}
+	}
+
+	/** The key of a village's wind-up. */
+	public static String stirKey(int vx, int vz) {
+		return "weaver@" + vx + "," + vz;
+	}
+
+	/**
+	 * The threads of a village tighten before its Last Weaver wakes (3.38): for {@link Config#WEAVER_WAKE_SECONDS} a bar
+	 * counts down for everyone near. Whoever is still within {@link Config#WEAVER_CALM_RANGE} of the village when it runs
+	 * out is the one it wakes for (the one who walked in, first of all); with everyone gone that far it sinks back into
+	 * the weave, and the next visit to that village wakes it again. With no wind-up it wakes at once. Returns whether the
+	 * threads tighten (or it woke).
+	 */
+	public static boolean stir(ServerPlayer p, int vx, int vy, int vz) {
+		String key = stirKey(vx, vz);
+		if (ElderStir.stirring(key) || !Dims.ours(p)) {
+			return false;
+		}
+		if (Config.WEAVER_WAKE_SECONDS <= 0) {
+			return riseInVillage(p, vx, vy, vz);
+		}
+		return ElderStir.begin(new ElderStir.Stir(key, "weaver", (ServerLevel) p.level(), vx + 0.5, vy + 1, vz + 0.5, p, Config.WEAVER_WAKE_SECONDS,
+				Math.max(8, Config.WEAVER_CALM_RANGE), BossEvent.BossBarColor.BLUE, q -> true, q -> riseInVillage(q, vx, vy, vz))
+				.tint(ChatFormatting.AQUA)
+				.settled(() -> {
+					DataStore.seamCells().add("wvd@" + vx + "," + vz);
+					DataStore.markDirty();
+				})
+				.pulse(WeaverService::tighten));
+	}
+
+	/** The village's Weaver wakes for this player. */
+	private static boolean riseInVillage(ServerPlayer p, int vx, int vy, int vz) {
+		if (!summon(p, new BlockPos(vx, vy + 1, vz))) {
+			return false;
+		}
+		for (Unweaving u : WEAVERS.values()) {
+			if (p.getUUID().equals(u.target) && u.village == null) {
+				u.village = "wv@" + vx + "," + vz;
+			}
+		}
+		return true;
+	}
+
+	/** Each second the threads tighten: light runs up them over the village, and they hum, louder as it wakes. */
+	private static void tighten(ServerLevel level, double x, double y, double z, float share) {
+		String dim = level.dimension().identifier().toString();
+		WorldFx.particleIn(dim, "minecraft:end_rod", x, y + 6, z, 4, 5, 4, 0.02, 10 + (int) (share * 20));
+		if ((level.getGameTime() / 20) % 2 == 0) {
+			WorldFx.soundIn(dim, "minecraft:block.amethyst_block.resonate", "hostile", x, y + 4, z, 1.5f + 2.5f * share, 0.5f);
+			WorldFx.soundIn(dim, "minecraft:entity.warden.heartbeat", "hostile", x, y, z, 1f + 2f * share, 0.7f);
+		}
+	}
+
+	/** When each player was last warned of a village's Weaver (server tick), and which village. */
+	private static final Map<UUID, Long> WARNED_AT = new HashMap<>();
+	private static final Map<UUID, String> WARNED_FOR = new HashMap<>();
+
+	/**
+	 * A visitor comes near a village of the Thinned (within {@link Config#WEAVER_WARN_RANGE}) whose Weaver may still wake
+	 * (3.38): threads of light hang over it, and on coming near a new one, and about once a minute after, they are told
+	 * that walking in may wake it.
+	 */
+	public static void warnVillage(ServerPlayer p, int vx, int vy, int vz) {
+		if (!unlocked() || p.isCreative() || p.isSpectator() || Rules.peaceful(p.level()) || hunting(p) || ElderStir.stirring(stirKey(vx, vz))) {
+			return;
+		}
+		boolean due = DataStore.seamCells().contains("wvd@" + vx + "," + vz);
+		if (!due && (DataStore.seamCells().contains("w@" + vx + "," + vz) || DataStore.seamCells().contains("wv@" + vx + "," + vz))) {
+			// Rolled already, and nothing woke (or it woke and is gone)
+			return;
+		}
+		WorldFx.particleIn(p.level(), "minecraft:end_rod", vx + 0.5, vy + 8, vz + 0.5, 1.5, 3, 1.5, 0.01, 6);
+		long now = p.level().getServer().getTickCount();
+		String key = vx + "," + vz;
+		Long at = WARNED_AT.get(p.getUUID());
+		boolean fresh = !key.equals(WARNED_FOR.get(p.getUUID()));
+		if (fresh || at == null || now - at >= 1200 || now < at) {
+			WARNED_AT.put(p.getUUID(), now);
+			WARNED_FOR.put(p.getUUID(), key);
+			Component c = Component.translatable(due ? "gui.extremedimensions.stir.weaver.due" : "gui.extremedimensions.stir.weaver.watched")
+					.withStyle(ChatFormatting.AQUA);
+			if (fresh) {
+				p.sendSystemMessage(c);
+			}
+			p.sendSystemMessage(c, true);
 		}
 	}
 
@@ -271,6 +366,39 @@ public final class WeaverService {
 			}
 		}
 		return false;
+	}
+
+	/** The key of the First Knot's wind-up (she is one of a kind). */
+	public static final String KNOT_STIR = "knot_mother";
+
+	/**
+	 * The First Knot loosens before the Knot Mother wakes (3.38): for {@link Config#KNOT_MOTHER_WAKE_SECONDS} a bar counts
+	 * down for everyone near. Whoever is still within {@link Config#KNOT_MOTHER_CALM_RANGE} of the heart when it runs out
+	 * is the one she wakes for (the one who pulled, first of all); with everyone gone that far the knot pulls tight again
+	 * and she sleeps on, with no rest to wait out. With no wind-up she wakes at once. Returns whether it loosens (or she woke).
+	 */
+	public static boolean stirKnotMother(ServerPlayer p, BlockPos heart) {
+		if (!Dims.ours(p) || knotMotherAwake() || ElderStir.stirring(KNOT_STIR)) {
+			return false;
+		}
+		if (Config.KNOT_MOTHER_WAKE_SECONDS <= 0 || p.isCreative()) {
+			// (pulled in creative she wakes at once: nobody there could keep her stirring)
+			return summonKnotMother(p, heart);
+		}
+		return ElderStir.begin(new ElderStir.Stir(KNOT_STIR, "knot_mother", (ServerLevel) p.level(), heart.getX() + 0.5, heart.getY(), heart.getZ() + 0.5, p,
+				Config.KNOT_MOTHER_WAKE_SECONDS, Math.max(8, Config.KNOT_MOTHER_CALM_RANGE), BossEvent.BossBarColor.PURPLE, q -> true,
+				q -> summonKnotMother(q, heart)).pulse(WeaverService::loosen));
+	}
+
+	/** Each second the knot loosens: its strands shed and creak round the heart, louder as she comes. */
+	private static void loosen(ServerLevel level, double x, double y, double z, float share) {
+		String dim = level.dimension().identifier().toString();
+		WorldFx.particleIn(dim, "minecraft:witch", x, y + 1.5, z, 1.2, 1.5, 1.2, 0.05, 12 + (int) (share * 20));
+		WorldFx.particleIn(dim, "minecraft:enchant", x, y + 2, z, 2, 2, 2, 0.4, 20);
+		if ((level.getGameTime() / 20) % 2 == 0) {
+			WorldFx.soundIn(dim, "minecraft:block.wool.break", "hostile", x, y + 1, z, 1.5f + 2f * share, 0.5f);
+			WorldFx.soundIn(dim, "minecraft:entity.warden.heartbeat", "hostile", x, y, z, 1f + 2f * share, 0.55f);
+		}
 	}
 
 	/** The Knot Mother pulled loose from the First Knot's heart: she rises over it and turns on whoever pulled. */

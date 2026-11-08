@@ -129,6 +129,7 @@ public final class ServerEvents {
 			com.extremedimensions.expedition.ExpeditionBar.clear();
 			WorldService.clear();
 			MendingService.clear();
+			com.extremedimensions.elder.ElderStir.clear();
 			com.extremedimensions.elder.FerrymanService.clear();
 			com.extremedimensions.elder.MatriarchService.clear();
 			com.extremedimensions.elder.ElderStrikes.clear();
@@ -771,6 +772,7 @@ public final class ServerEvents {
 		WorldService.tick(s);
 		MendingService.tick(s);
 		lap = TickProfile.lap("seam", lap);
+		com.extremedimensions.elder.ElderStir.tick(s);
 		com.extremedimensions.elder.FerrymanService.tick(s);
 		lap = TickProfile.lap("ferryman", lap);
 		com.extremedimensions.elder.MatriarchService.tick(s);

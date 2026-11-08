@@ -95,6 +95,7 @@ public final class MendingService {
 		bar = null;
 		boss = null;
 		ravenous = false;
+		WARNED_AT.clear();
 		Binding.forget();
 		Retinue.forget();
 	}
@@ -166,10 +167,17 @@ public final class MendingService {
 		if (boss == null) {
 			// Once slain it stays slain: the altar wakes nothing more (its Thread and Shears lie there to be used)
 			if (open() && DataStore.heartBuilt() && !DataStore.starvedSlain() && s.getTickCount() % 10 == 0) {
-				for (ServerPlayer p : seam.players()) {
-					if (!p.isSpectator() && p.distanceToSqr(HX + 0.5, HY + 1, HZ + 0.5) < 3.5 * 3.5) {
-						start(seam, p);
-						break;
+				if (!com.extremedimensions.elder.ElderStir.stirring(STIR)) {
+					for (ServerPlayer p : seam.players()) {
+						if (!p.isSpectator() && p.distanceToSqr(HX + 0.5, HY + 1, HZ + 0.5) < 3.5 * 3.5) {
+							stir(seam, p);
+							break;
+						}
+					}
+				}
+				if (s.getTickCount() % 20 == 0 && !com.extremedimensions.elder.ElderStir.stirring(STIR)) {
+					for (ServerPlayer p : seam.players()) {
+						watched(seam, p);
 					}
 				}
 			} else if (open() && DataStore.heartBuilt() && DataStore.starvedSlain() && s.getTickCount() % 20 == 0) {
@@ -186,6 +194,65 @@ public final class MendingService {
 			return;
 		}
 		drive(seam);
+	}
+
+	/** The key of the Heart's wind-up. */
+	public static final String STIR = "starved_one";
+
+	/**
+	 * The Heart groans before the Starved One rises (3.38): for {@link Config#STARVED_WAKE_SECONDS} a bar counts down for
+	 * everyone near. Whoever is still within {@link Config#STARVED_CALM_RANGE} of the altar when it runs out is the one it
+	 * rises for (the one who stepped onto it, first of all); with everyone gone that far it sinks back into the hunger,
+	 * and stepping onto the altar again wakes it again. With no wind-up (or stepped on in creative) it rises at once.
+	 */
+	public static void stir(ServerLevel seam, ServerPlayer p) {
+		if (Config.STARVED_WAKE_SECONDS <= 0 || p.isCreative()) {
+			start(seam, p);
+			return;
+		}
+		com.extremedimensions.elder.ElderStir.begin(new com.extremedimensions.elder.ElderStir.Stir(STIR, "starved_one", seam, HX + 0.5, HY + 1, HZ + 0.5, p,
+				Config.STARVED_WAKE_SECONDS, Math.max(8, Config.STARVED_CALM_RANGE), BossEvent.BossBarColor.PURPLE, q -> true, q -> {
+					if (boss == null && !DataStore.starvedSlain()) {
+						start(seam, q);
+					}
+				}).pulse(MendingService::groans));
+	}
+
+	/** Each second the Heart groans: souls gather over the altar and where it will break through, louder as it comes. */
+	private static void groans(ServerLevel level, double x, double y, double z, float share) {
+		String dim = level.dimension().identifier().toString();
+		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", x, y + 1, z, 2, 1.5, 2, 0.02, 10 + (int) (share * 24));
+		WorldFx.particleIn(dim, "extremedimensions:soul_mote", HX, HY - 2, HZ - 8, 2, 2, 2, 0.02, 8 + (int) (share * 16));
+		if ((level.getGameTime() / 20) % 2 == 0) {
+			WorldFx.soundIn(dim, "minecraft:entity.warden.heartbeat", "hostile", x, y, z, 1.5f + 2.5f * share, 0.5f);
+			WorldFx.soundIn(dim, "extremedimensions:keeper_roar", "hostile", HX, HY - 4, HZ - 8, 0.6f + 2f * share, 0.4f);
+		}
+	}
+
+	/** When each player near the altar was last told what sleeps beneath it (server tick). */
+	private static final java.util.Map<UUID, Long> WARNED_AT = new java.util.HashMap<>();
+
+	/**
+	 * A visitor near the altar while the Starved One sleeps beneath it (within {@link Config#STARVED_WARN_RANGE}; 3.38):
+	 * souls drift over the altar, and on coming near, and about once a minute after, they are told that stepping onto it
+	 * wakes it.
+	 */
+	private static void watched(ServerLevel seam, ServerPlayer p) {
+		double r = Config.STARVED_WARN_RANGE;
+		if (p.isSpectator() || p.isCreative() || r <= 0 || p.distanceToSqr(HX + 0.5, HY + 1, HZ + 0.5) >= r * r) {
+			return;
+		}
+		WorldFx.particleIn(seam, "extremedimensions:soul_mote", HX + 0.5, HY + 1.5, HZ + 0.5, 0.4, 0.8, 0.4, 0.01, 6);
+		long now = seam.getServer().getTickCount();
+		Long at = WARNED_AT.get(p.getUUID());
+		if (at == null || now - at >= 1200 || now < at) {
+			Component c = Component.translatable("gui.extremedimensions.stir.starved_one.watched").withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE);
+			if (at == null) {
+				p.sendSystemMessage(c);
+			}
+			WARNED_AT.put(p.getUUID(), now);
+			p.sendSystemMessage(c, true);
+		}
 	}
 
 	/** Ravenous: below {@code starved_enrage_at} of its health it is faster, its tricks come sooner and bring famine. */

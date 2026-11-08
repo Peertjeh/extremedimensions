@@ -134,6 +134,10 @@ Thirty pages of a nameless Wanderer surface as you play, then pages in other han
    seconds first: stand ready, or go 32 blocks from the nest and she sinks back to sleep.
 3. **The Seam** and its Weavers: silk, woven Tethers and the Thinned. (The Last Weaver wakes in their villages only once
    the Starved One has fallen; `weaver_unlock` sets it earlier.)
+   Every boss after the Matriarch gives warning the same way: threads of light over a village whose Weaver may still
+   wake, souls over the Heart's altar, the Knot Mother's strands round the First Knot's heart, and before any of them
+   rises a bar counting down 15 seconds. Stand ready, or go far enough and it settles again; the Ferryman's bell tolls
+   for you wherever you go, and leaving the Nether before it stops lets the crossing pass.
 4. **The seal**: slay the Ender Dragon and every rift opens near the **Heart of the Seam**, where the **Starved One**
    waits, until the world is chosen (finish what you seek in the Seam first; the Path and the End portal say so).
 5. **The Ferryman**, let through by the crack the dragon left: he walks the Nether's lava when you are long gone.
