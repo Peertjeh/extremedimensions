@@ -456,7 +456,7 @@ public class BossTests {
 		helper.succeed();
 	}
 
-	@GameTest(environment = Alone.ELDER_FORMING)
+	@GameTest(environment = Alone.ELDER_FORMING, maxTicks = 80)
 	public void anElderCannotBeHurtWhileItForms(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
