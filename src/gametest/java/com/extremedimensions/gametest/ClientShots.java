@@ -1116,7 +1116,7 @@ public class ClientShots implements FabricClientGameTest {
 				var trades = com.extremedimensions.client.compat.ViewerContent.trades();
 				check(trades.stream().anyMatch(t -> !t.gift()) && trades.stream().anyMatch(t -> t.gift()), "the viewers are given no wares or no gifts");
 				var spoils = com.extremedimensions.client.compat.ViewerContent.spoils();
-				check(spoils.size() >= 17 && spoils.stream().allMatch(sp -> !sp.slots().isEmpty()), "the viewers are given " + spoils.size()
+				check(spoils.size() >= 17 && spoils.stream().allMatch(found -> !found.slots().isEmpty()), "the viewers are given " + spoils.size()
 						+ " spoils, or one empty");
 				var infos = com.extremedimensions.client.compat.ViewerContent.infos();
 				check(infos.size() >= 30, "the viewers are given only " + infos.size() + " item pages");

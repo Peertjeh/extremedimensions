@@ -103,7 +103,7 @@ public class ExtremeJeiPlugin implements IModPlugin {
 
 		@Override
 		public void setRecipe(IRecipeLayoutBuilder builder, Fuel recipe, IFocusGroup focuses) {
-			builder.addInputSlot(1, 2).setStandardSlotBackground().addItemStack(recipe.fuel());
+			builder.addInputSlot(1, 2).setStandardSlotBackground().add(recipe.fuel());
 		}
 
 		@Override
@@ -144,9 +144,9 @@ public class ExtremeJeiPlugin implements IModPlugin {
 		@Override
 		public void setRecipe(IRecipeLayoutBuilder builder, Spin recipe, IFocusGroup focuses) {
 			for (int i = 0; i < recipe.inputs().size(); i++) {
-				builder.addInputSlot(1 + i * 18, 1).setStandardSlotBackground().addItemStack(recipe.inputs().get(i));
+				builder.addInputSlot(1 + i * 18, 1).setStandardSlotBackground().add(recipe.inputs().get(i));
 			}
-			builder.addOutputSlot(79, 1).setStandardSlotBackground().addItemStack(recipe.cord());
+			builder.addOutputSlot(79, 1).setStandardSlotBackground().add(recipe.cord());
 		}
 
 		@Override
