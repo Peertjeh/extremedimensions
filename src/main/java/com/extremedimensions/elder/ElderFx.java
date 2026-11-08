@@ -195,7 +195,7 @@ final class ElderFx {
 		double dx = p.getX() - fromX, dz = p.getZ() - fromZ;
 		double d = Math.max(0.3, Math.sqrt(dx * dx + dz * dz));
 		p.setDeltaMovement(dx / d * horiz, up, dz / d * horiz);
-		p.needsSync = true;
+		com.extremedimensions.server.WorldFx.moved(p);
 	}
 
 	/** Drags a player towards an Elder: a hard yank that carries them part of the way (at most about {@code max} blocks). */

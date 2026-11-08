@@ -391,7 +391,7 @@ public final class TidewalkerService {
 			boat.needsSync = true;
 		}
 		p.setDeltaMovement(p.getDeltaMovement().add(0, -0.25, 0));
-		p.needsSync = true;
+		com.extremedimensions.server.WorldFx.moved(p);
 		WorldFx.particleIn(level, "minecraft:splash", p.getX(), p.getY() + 0.5, p.getZ(), 1.0, 0.3, 1.0, 0.2, 40);
 		WorldFx.soundIn(dimOf(t), "minecraft:entity.generic.splash", "hostile", p.getX(), p.getY(), p.getZ(), 1.4f, 0.7f);
 		st.strikes++;
@@ -426,7 +426,7 @@ public final class TidewalkerService {
 		swimTo(t, st, p.position().add(0, -t.getBbHeight() * 0.7, 0), 0.3);
 		Vec3 to = t.position().subtract(p.position());
 		p.setDeltaMovement(to.x * 0.08, -0.14, to.z * 0.08);
-		p.needsSync = true;
+		com.extremedimensions.server.WorldFx.moved(p);
 		p.setAirSupply(Math.max(0, p.getAirSupply() - Math.max(0, Config.TIDEWALKER_AIR_DRAIN)));
 		if (st.ticks % 3 == 0) {
 			WorldFx.particleIn(level, "minecraft:bubble", p.getX(), p.getY() + 1.2, p.getZ(), 0.3, 0.3, 0.3, 0.05, 6);

@@ -413,7 +413,7 @@ public class VeilRay extends PathfinderMob {
 		Vec3 along = new Vec3(heading.x, 0, heading.z);
 		along = along.lengthSqr() < 1e-4 ? Vec3.ZERO : along.normalize();
 		p.setDeltaMovement(p.getDeltaMovement().add(along.x * 0.55, 0.32, along.z * 0.55));
-		p.needsSync = true;
+		com.extremedimensions.server.WorldFx.moved(p);
 		String dim = level.dimension().identifier().toString();
 		WorldFx.soundIn(dim, "minecraft:entity.phantom.bite", "hostile", p.getX(), p.getY() + 1, p.getZ(), 1.4F, 0.6F);
 		WorldFx.particleIn(dim, "minecraft:item_slime", p.getX(), p.getY() + 1, p.getZ(), 0.4, 0.5, 0.4, 0.05, 14);

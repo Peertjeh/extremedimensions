@@ -461,7 +461,7 @@ public final class MendingService {
 						Vec3 away = new Vec3(target.getX() - so.getX(), 0, target.getZ() - so.getZ());
 						away = away.lengthSqr() < 1e-4 ? new Vec3(0, 0, 1) : away.normalize();
 						target.setDeltaMovement(target.getDeltaMovement().add(away.x * 0.9, 0.35, away.z * 0.9));
-						target.needsSync = true;
+						com.extremedimensions.server.WorldFx.moved(target);
 						WorldFx.soundIn(dim, "minecraft:entity.player.attack.sweep", "hostile", target.getX(), target.getY() + 1, target.getZ(), 1.5f, 0.5f);
 						WorldFx.punch(seam, so, target.getX(), target.getZ(), 24, 0.75f, 10);
 					}

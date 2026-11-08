@@ -414,7 +414,7 @@ public final class EdgecrawlerService {
 		boolean braced = p.isShiftKeyDown();
 		if (!braced) {
 			p.setDeltaMovement(dir.x * PULL, p.getDeltaMovement().y, dir.z * PULL);
-			p.needsSync = true;
+			com.extremedimensions.server.WorldFx.moved(p);
 		}
 		if (st.ticks % 10 == 0) {
 			WorldFx.soundIn(level.dimension().identifier().toString(), "minecraft:block.gravel.step", "hostile", p.getX(), p.getY(), p.getZ(), 0.8f, 0.7f);
@@ -439,7 +439,7 @@ public final class EdgecrawlerService {
 			p.hurtServer(level, c.damageSources().mobAttack(c), (float) Config.EDGECRAWLER_DAMAGE);
 		}
 		p.setDeltaMovement(dir.x * 1.1 * k, 0.4 * Math.min(1, k) + 0.05, dir.z * 1.1 * k);
-		p.needsSync = true;
+		com.extremedimensions.server.WorldFx.moved(p);
 		st.hurls++;
 		String dim = level.dimension().identifier().toString();
 		WorldFx.soundIn(dim, "minecraft:entity.ravager.attack", "hostile", c.getX(), c.getY() + 1.5, c.getZ(), 1.2f, 1.2f);

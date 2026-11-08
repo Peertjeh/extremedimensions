@@ -1340,7 +1340,7 @@ public final class LurkerService {
 			double dx = p.getX() - l.getX(), dz = p.getZ() - l.getZ();
 			double d = Math.max(0.3, Math.sqrt(dx * dx + dz * dz));
 			p.setDeltaMovement(dx / d * 0.55, 0.32, dz / d * 0.55);
-			p.needsSync = true;
+			com.extremedimensions.server.WorldFx.moved(p);
 		}
 		if (hit) {
 			WorldFx.soundIn(Dims.fullId(p), "minecraft:entity.warden.attack_impact", "hostile", p.getX(), p.getY() + 1, p.getZ(), 0.7f, 1.3f);

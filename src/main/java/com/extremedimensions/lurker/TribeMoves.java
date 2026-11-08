@@ -623,7 +623,7 @@ public final class TribeMoves {
 		double pull = Math.min(1.6, 0.3 + d * 0.12);
 		double up = p.getY() - from.getY() > 2 ? -0.8 : 0.35;
 		p.setDeltaMovement(dx / d * pull, up, dz / d * pull);
-		p.needsSync = true;
+		com.extremedimensions.server.WorldFx.moved(p);
 	}
 
 	/** Whether the world lets creatures break blocks (the mobGriefing game rule). */

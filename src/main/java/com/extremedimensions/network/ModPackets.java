@@ -514,6 +514,30 @@ public final class ModPackets {
 	}
 
 	/**
+	 * Server -> client: the player's motion as the server just set it (a shove, a pull, a drag), to be taken on by their
+	 * client, which moves them: a motion set on the server alone never reaches the player it was set on (3.39.2).
+	 */
+	public record MotionPayload(double x, double y, double z) implements CustomPacketPayload {
+		public static final Type<MotionPayload> TYPE = new Type<>(ExtremeDimensions.id("motion"));
+		public static final StreamCodec<FriendlyByteBuf, MotionPayload> CODEC = StreamCodec.ofMember(MotionPayload::write, MotionPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeDouble(x);
+			buf.writeDouble(y);
+			buf.writeDouble(z);
+		}
+
+		private static MotionPayload read(FriendlyByteBuf buf) {
+			return new MotionPayload(buf.readDouble(), buf.readDouble(), buf.readDouble());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
 	 * Server -> client: the chance of the Tetherite binding waiting at the smithing table the player has open, in
 	 * permille, with the shares that make it ({@code permille} -1: no binding waits there), and where it would have to be
 	 * done ({@code where}: 0 here, 1 in the Seam, 2 down in the Fray).

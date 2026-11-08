@@ -419,7 +419,7 @@ public final class GatebreakerService {
 				}
 				o.setDeltaMovement(dx / d * 1.2, 0.6, dz / d * 1.2);
 			}
-			o.needsSync = true;
+			com.extremedimensions.server.WorldFx.moved(o);
 		}
 		WorldFx.punch(level, g, g.getX(), g.getZ(), 24, 0.9f, 16);
 		WorldFx.soundIn(dimOf(g), "minecraft:entity.iron_golem.attack", "hostile", g.getX(), g.getY(), g.getZ(), 2.0f, 0.5f);

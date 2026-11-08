@@ -489,7 +489,7 @@ public final class CragbackService {
 				}
 				o.setDeltaMovement(dx / d * 1.3, 0.55, dz / d * 1.3);
 			}
-			o.needsSync = true;
+			com.extremedimensions.server.WorldFx.moved(o);
 		}
 		st.slams++;
 		WorldFx.punch(level, c, c.getX(), c.getZ(), 24, 0.9f, 16);

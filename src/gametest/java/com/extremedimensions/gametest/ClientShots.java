@@ -1469,9 +1469,9 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~3 ~-1 ~-4 0 0");
 			ctx.waitTicks(10);
 
-			// The Pale Squall moves a player for real (3.39.1): on a stone floor, in survival, a squall with no warning
-			// must carry them off on their own client. (What a motion set on the server does is measured beside it,
-			// for the record: a player is moved by their client.)
+			// A shove and the Pale Squall move a player for real (3.39.1, 3.39.2): on a stone floor, in survival, a motion
+			// set on the server and sent on with WorldFx.moved, and a squall with no warning, must carry them off on their
+			// own client. (A motion set on the server alone is measured beside them, for the record: it moves no one.)
 			double[] squallFrom = sp.getServer().computeOnServer(s -> {
 				ServerPlayer pl = player(s);
 				return new double[] {pl.getX(), pl.getY(), pl.getZ()};
@@ -1504,6 +1504,20 @@ public class ClientShots implements FabricClientGameTest {
 			double[] shoved = ctx.computeOnClient(mc -> new double[] {mc.player.getX(), mc.player.getZ()});
 			System.out.printf(java.util.Locale.ROOT, "[shots] a motion set on the server moved the player %.2f blocks%n",
 					Math.hypot(shoved[0] - stood[0], shoved[1] - stood[1]));
+			// ... and the same shove sent on with WorldFx.moved (3.39.2), as every shove, pull and drag in the mod is
+			sp.getServer().runOnServer(s -> player(s).teleportTo(squallFrom[0], squallFrom[1], squallFrom[2]));
+			ctx.waitTicks(10);
+			double[] still = ctx.computeOnClient(mc -> new double[] {mc.player.getX(), mc.player.getZ()});
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer pl = player(s);
+				pl.setDeltaMovement(0.6, 0.2, 0);
+				com.extremedimensions.server.WorldFx.moved(pl);
+			});
+			ctx.waitTicks(20);
+			double[] sent = ctx.computeOnClient(mc -> new double[] {mc.player.getX(), mc.player.getZ()});
+			double sentMoved = Math.hypot(sent[0] - still[0], sent[1] - still[1]);
+			System.out.printf(java.util.Locale.ROOT, "[shots] the same motion sent with WorldFx.moved moved the player %.2f blocks%n", sentMoved);
+			check(sentMoved > 0.8, "a shove sent with WorldFx.moved moved the player only " + sentMoved + " blocks");
 			sp.getServer().runOnServer(s -> player(s).teleportTo(squallFrom[0], squallFrom[1], squallFrom[2]));
 			ctx.waitTicks(10);
 			double[] calm = ctx.computeOnClient(mc -> new double[] {mc.player.getX(), mc.player.getZ()});

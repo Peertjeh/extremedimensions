@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.39.2: Shoves that land
+
+### Fixed
+- **Every shove, pull and drag the mod sets on a player now reaches them.** A motion set on a player on the server
+  moves no one by itself: the player's own client moves them (the client test measured it at 0.00 blocks). Those that
+  came with a blow that landed already reached you, since the game sends the motion along with a hit; the ones without
+  a hit never moved anyone. They are now sent to the player's client to take on, the same way the Pale Squall's gust
+  is since 3.39.1. What now works as it was meant to:
+  - the Edgecrawler dragging you toward the edge (until now only its throw reached you, and only when it hurt);
+  - the Tidewalker pulling you down out of a capsized boat and holding you under;
+  - a Cragback's or Gatebreaker's slam pushing you back when your shield takes it;
+  - the Ferryman's chain hauling you in, and the Last Weaver's thread pulling you back when you stray from where it
+    caught you;
+  - the Ferryman's gaol stopping you dead at its bars, and Tethershot's pull when it strikes a player.
+  Shoves that came with a hit (Lurkers and Keepers dragging you out of a hole, Elder blows and snares, Veil Rays, the
+  Starved One) feel the same as before, and now also reach you when their damage is set to 0. The client test now checks that a shove sent this
+  way moves a player.
+
 ## 3.39.1: The squall blows
 
 ### Fixed

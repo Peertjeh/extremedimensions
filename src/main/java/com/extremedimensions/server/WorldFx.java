@@ -171,6 +171,19 @@ public final class WorldFx {
 		p.level().playSound(null, p.getX(), p.getY(), p.getZ(), sound(id), category(id), vol, pitch);
 	}
 
+	/**
+	 * After a motion was set on an entity on the server (a shove, a pull, a drag): marks it to be synced, and when it is a
+	 * player, sends them the motion to take on, since their own client moves them and a motion set on the server alone
+	 * never reaches them (3.39.2). Use it after every {@code setDeltaMovement} meant to move a player.
+	 */
+	public static void moved(net.minecraft.world.entity.Entity e) {
+		e.needsSync = true;
+		if (e instanceof ServerPlayer p && ServerPlayNetworking.canSend(p, ModPackets.MotionPayload.TYPE)) {
+			net.minecraft.world.phys.Vec3 v = p.getDeltaMovement();
+			ServerPlayNetworking.send(p, new ModPackets.MotionPayload(v.x, v.y, v.z));
+		}
+	}
+
 	/** A sound only this player hears, on the volume slider Minecraft would put it on. */
 	public static void soundSelf(ServerPlayer p, String id, float vol, float pitch) {
 		p.connection.send(new ClientboundSoundPacket(sound(id), category(id), p.getX(), p.getY(), p.getZ(), vol, pitch,

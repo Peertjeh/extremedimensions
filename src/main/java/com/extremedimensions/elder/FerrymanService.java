@@ -517,7 +517,7 @@ public final class FerrymanService {
 				q.hurtServer(level, ElderPower.great(level, f), 14f);
 				double side = (-qx * fare.dirZ + qz * fare.dirX) >= 0 ? 1 : -1;
 				q.setDeltaMovement(-fare.dirZ * side * 1.3 + fare.dirX * 0.5, 0.7, fare.dirX * side * 1.3 + fare.dirZ * 0.5);
-				q.needsSync = true;
+				com.extremedimensions.server.WorldFx.moved(q);
 			}
 		}
 		if (b.at(fare.chargeEnd)) {

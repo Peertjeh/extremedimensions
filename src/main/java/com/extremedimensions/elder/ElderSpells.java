@@ -90,7 +90,7 @@ public final class ElderSpells {
 		double dx = b.getX() - q.getX(), dz = b.getZ() - q.getZ();
 		double d = Math.max(1, Math.sqrt(dx * dx + dz * dz));
 		q.setDeltaMovement(dx / d * 0.4, -2.4, dz / d * 0.4);
-		q.needsSync = true;
+		com.extremedimensions.server.WorldFx.moved(q);
 		if (Config.ELDER_SNARE_DAMAGE > 0) {
 			q.hurtServer(level, level.damageSources().mobAttack(b), (float) Config.ELDER_SNARE_DAMAGE);
 		}

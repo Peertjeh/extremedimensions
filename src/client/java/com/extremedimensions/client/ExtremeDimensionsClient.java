@@ -231,6 +231,14 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				context.client().execute(() -> com.extremedimensions.client.fx.AttackFx.handle(payload)));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BindingPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.hud.BindingPanel.set(payload.permille(), payload.parts(), payload.capped(), payload.where())));
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.MotionPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> {
+					// A shove, pull or drag the server set on the player: taken on here, where the player is moved
+					net.minecraft.client.player.LocalPlayer me = Minecraft.getInstance().player;
+					if (me != null) {
+						me.setDeltaMovement(payload.x(), payload.y(), payload.z());
+					}
+				}));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.SquallPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> {
 					// A Pale Squall's gust: added to the player's own motion here, where it is made

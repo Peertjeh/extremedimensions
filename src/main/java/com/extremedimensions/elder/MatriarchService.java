@@ -623,7 +623,7 @@ public final class MatriarchService {
 		double dx = m.getX() - p.getX(), dz = m.getZ() - p.getZ();
 		double d = Math.max(0.1, Math.sqrt(dx * dx + dz * dz)), h = Math.min(1.5, d * 0.06);
 		p.setDeltaMovement(dx / d * h, -1.2, dz / d * h);
-		p.needsSync = true;
+		com.extremedimensions.server.WorldFx.moved(p);
 		WorldFx.effect(p, MobEffects.SLOWNESS, 2, 1);
 	}
 

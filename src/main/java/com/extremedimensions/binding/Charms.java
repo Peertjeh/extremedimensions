@@ -127,7 +127,7 @@ public final class Charms {
 		}
 		Vec3 v = dir.scale(Math.max(0, Config.ENCH_TETHERSHOT_PULL) / len);
 		entity.setDeltaMovement(v.x, Math.max(0.25, v.y + 0.2), v.z);
-		entity.needsSync = true;
+		com.extremedimensions.server.WorldFx.moved(entity);
 		WorldFx.particleIn(entity.level(), "minecraft:end_rod", entity.getX(), entity.getY() + entity.getBbHeight() * 0.5, entity.getZ(), 0.2, 0.2, 0.2, 0.02, 6);
 	}
 

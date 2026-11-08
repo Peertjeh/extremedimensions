@@ -136,6 +136,7 @@ public class ExtremeDimensions implements ModInitializer {
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BossMusicPayload.TYPE, ModPackets.BossMusicPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.DangerPayload.TYPE, ModPackets.DangerPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.SquallPayload.TYPE, ModPackets.SquallPayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.MotionPayload.TYPE, ModPackets.MotionPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BindingPayload.TYPE, ModPackets.BindingPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BossFxPayload.TYPE, ModPackets.BossFxPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.AttackFxPayload.TYPE, ModPackets.AttackFxPayload.CODEC);
