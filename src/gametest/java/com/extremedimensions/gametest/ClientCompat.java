@@ -12,11 +12,11 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * The mod beside Sodium, Iris, Mod Menu and Text Placeholder API, as most players run it: the compatibility job in CI fetches their newest
+ * The mod beside Sodium, Iris, Mod Menu, Text Placeholder API and JEI, as most players run it: the compatibility job in CI fetches their newest
  * builds for this game version (tools/compat/fetch.py) and runs the client test with them, this test alone
  * ({@code -Dextremedimensions.compat=true}; the others stand aside there). The game must start with them all, the
  * journal and the settings must open, Mod Menu must list the mod and its Configure button open the mod's settings, Text
- * Placeholder API must read the tablist placeholders back, and the Seam (its sky, its fog, the expedition's bar) must
+ * Placeholder API must read the tablist placeholders back, JEI must take the mod's categories and pages, and the Seam (its sky, its fog, the expedition's bar) must
  * draw under Sodium's renderer. Every step is a screenshot.
  */
 public class ClientCompat implements FabricClientGameTest {
@@ -41,7 +41,7 @@ public class ClientCompat implements FabricClientGameTest {
 			return;
 		}
 		FabricLoader loader = FabricLoader.getInstance();
-		for (String id : new String[] {"sodium", "iris", "modmenu", "placeholder-api"}) {
+		for (String id : new String[] {"sodium", "iris", "modmenu", "placeholder-api", "jei"}) {
 			System.out.println("[compat] " + id + ": " + loader.getModContainer(id).map(m -> m.getMetadata().getVersion().getFriendlyString()).orElse("not installed"));
 		}
 		try (TestSingleplayerContext sp = ctx.worldBuilder().create()) {
@@ -108,6 +108,24 @@ public class ClientCompat implements FabricClientGameTest {
 				check(found, "Mod Menu's Configure does not open the mod's settings");
 				ctx.waitTicks(10);
 				ctx.takeScreenshot("compat_04_settings");
+				ctx.runOnClient(mc -> mc.gui.setScreen(null));
+				ctx.waitTicks(4);
+			}
+
+			// JEI (3.35): the mod's own categories and item pages are given to it, and its recipe screen opens on them
+			if (loader.isModLoaded("jei")) {
+				for (int i = 0; i < 40 && com.extremedimensions.client.compat.JeiStatus.show == null; i++) {
+					ctx.waitTicks(5);
+				}
+				System.out.println("[compat] JEI: " + com.extremedimensions.client.compat.JeiStatus.fuels + " fuels, "
+						+ com.extremedimensions.client.compat.JeiStatus.trades + " wares and gifts, " + com.extremedimensions.client.compat.JeiStatus.spoils
+						+ " spoils, " + com.extremedimensions.client.compat.JeiStatus.infos + " item pages");
+				check(com.extremedimensions.client.compat.JeiStatus.fuels > 0 && com.extremedimensions.client.compat.JeiStatus.trades > 0
+						&& com.extremedimensions.client.compat.JeiStatus.spins == 1 && com.extremedimensions.client.compat.JeiStatus.spoils > 0
+						&& com.extremedimensions.client.compat.JeiStatus.infos > 0, "the mod's JEI plugin gave JEI nothing");
+				check(ctx.computeOnClient(mc -> com.extremedimensions.client.compat.JeiStatus.show()), "JEI's runtime never came up");
+				ctx.waitTicks(20);
+				ctx.takeScreenshot("compat_06_jei");
 				ctx.runOnClient(mc -> mc.gui.setScreen(null));
 				ctx.waitTicks(4);
 			}

@@ -1107,6 +1107,25 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("07_settings_search");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
+			// 3.35: what the recipe viewers are given beside the recipes: every fuel, ware and gift, the Spindle, the
+			// spoils read from the mod's loot tables, and a page (in words of its own) for every item no recipe makes
+			ctx.runOnClient(mc -> {
+				var fuels = com.extremedimensions.client.compat.ViewerContent.fuels();
+				check(fuels.size() == com.extremedimensions.anchor.FuelValues.NETHER.size() + com.extremedimensions.anchor.FuelValues.END.size(),
+						"the viewers are given " + fuels.size() + " fuels");
+				var trades = com.extremedimensions.client.compat.ViewerContent.trades();
+				check(trades.stream().anyMatch(t -> !t.gift()) && trades.stream().anyMatch(t -> t.gift()), "the viewers are given no wares or no gifts");
+				var spoils = com.extremedimensions.client.compat.ViewerContent.spoils();
+				check(spoils.size() >= 17 && spoils.stream().allMatch(sp -> !sp.slots().isEmpty()), "the viewers are given " + spoils.size()
+						+ " spoils, or one empty");
+				var infos = com.extremedimensions.client.compat.ViewerContent.infos();
+				check(infos.size() >= 30, "the viewers are given only " + infos.size() + " item pages");
+				for (var info : infos) {
+					check(!info.text().getString().startsWith("viewer."), "an item page has no words: " + info.text().getString());
+				}
+				check(com.extremedimensions.client.compat.ViewerContent.spin().turns() > 0, "the Spindle takes no turns");
+			});
+
 			// The HUD where the player wants it: meters and guide bottom right, timer above the hotbar, a size larger
 			ctx.runOnClient(mc -> {
 				ClientOptions.setMeters(ClientOptions.Corner.BOTTOM_RIGHT);

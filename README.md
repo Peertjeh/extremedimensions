@@ -327,6 +327,13 @@ In LuckPerms: `/lp group moderator permission set extremedimensions.admin.player
 such as `extremedimensions:admin/players`; LuckPerms writes it with dots.) The fallback levels are fixed on purpose: who
 may change the settings cannot lower the bar for a permission they lack.
 
+## Recipe viewers
+
+With JEI installed, the mod's recipes show as any other's, and four categories of its own show what no recipe says:
+the fuel for each anchor and the charge it gives, the Hollowlings' barter and gifts, the Spindle, and what every creature
+and find leaves (from the loot tables). Every item no recipe makes has a page saying where it comes from; the Tetherite
+upgrade template's page gives the Binding's odds as the world's settings have them. JEI is optional.
+
 ## Configuration
 
 Every value lives in `config/extremedimensions.json` (written on first launch) and in the in-game settings screen,

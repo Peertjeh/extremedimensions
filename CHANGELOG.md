@@ -1,5 +1,22 @@
 # Changelog
 
+## 3.35.0: In the Viewer
+
+### Changes
+- **JEI support.** The mod's recipes always showed in JEI by themselves; now JEI also shows what no recipe says:
+  - **Anchor fuel**: every Nether and End fuel and the charge it gives an anchor (look up a lodestone's uses).
+  - **Hollowling barter**: every ware of the young with its price (before trust lowers it), what it gives and when it is
+    offered (every day, some days, when the tribe trusts you, for kin only), and every gift they take.
+  - **Spindle**: the Tether Fragments and Seam Silk a Tether Cord takes, and how many turns.
+  - **Spoils and finds**: what every creature and find leaves, read from the mod's loot tables, with what the game
+    gives besides (the Elders' elegy fragments, threads and relics, What Listens from the Cave and Sculk Lurkers).
+  - **A page for every item no recipe makes**: where Tether Fragments, Seam Silk, the relics, the threads, the discs
+    and the rest come from, and what they are for. The Tetherite upgrade template and the ingot say how the Binding's
+    odds stand, as this world's settings have them.
+  - Everything follows the settings (prices, the Spindle's counts, the Binding's odds) and both languages. JEI is not
+    needed: without it nothing changes. EMI has no build for this game version yet; REI is to follow.
+- The compatibility test in CI now runs with JEI too and opens its recipe screen on the mod's categories.
+
 ## 3.34.1: Rulebook polish
 
 ### Fixes

@@ -4,11 +4,18 @@ plugins {
 }
 
 repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
+	// Modrinth's maven, for JEI's plugin API alone (compile only: JEI brings itself when a player has it installed)
+	exclusiveContent {
+		forRepository {
+			maven {
+				name = "Modrinth"
+				url = "https://api.modrinth.com/maven"
+			}
+		}
+		filter {
+			includeGroup "maven.modrinth"
+		}
+	}
 }
 
 loom {
@@ -29,6 +36,10 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// JEI (31.14.0.72 for 26.3, Modrinth version Zebwcvua): the client's plugin compiles against it; it is never
+	// shipped or needed (the plugin is only loaded by JEI itself, through the jei_mod_plugin entrypoint)
+	clientCompileOnly "maven.modrinth:jei:Zebwcvua"
 }
 
 processResources {

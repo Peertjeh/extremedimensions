@@ -166,7 +166,7 @@ jobs:
           git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" ci-shots
 
   compat:
-    name: client test with Sodium, Iris and Mod Menu
+    name: client test with Sodium, Iris, Mod Menu and JEI
     runs-on: ubuntu-24.04
     steps:
       - name: checkout repository
@@ -188,7 +188,7 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: '1'
           GALLIUM_DRIVER: llvmpipe
       # The newest Fabric builds for this game version from Modrinth; none yet for any of them leaves nothing to test
-      - name: fetch Sodium, Iris and Mod Menu
+      - name: fetch Sodium, Iris, Mod Menu and JEI
         id: fetch
         run: |
           set +e
