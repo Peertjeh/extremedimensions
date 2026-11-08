@@ -9,10 +9,13 @@ import java.util.concurrent.ThreadLocalRandom;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.reach.PaleReach;
 import com.extremedimensions.registry.ModEnchantments;
 import com.extremedimensions.server.WorldFx;
+
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -22,7 +25,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * The Pale Squall (3.39). Out in the Pale Reach, on an expedition, the void sometimes draws breath: for
@@ -30,6 +32,9 @@ import net.minecraft.world.phys.Vec3;
  * {@code pale_squall_seconds} a gust pushes everyone near off the way it blows ({@code pale_squall_push}). Sneaking
  * halves it (and, as ever, keeps one from walking off an edge); braced against a wall, nothing moves one. Anchored
  * lessens it ({@code pale_squall_anchored} a level), the curse Unmoored adds to it, and on wings it pushes twice as hard.
+ * It takes hold of a player in creative too, as an explosion's push does, unless they are flying; never of a spectator.
+ * The gust is sent to each player's own client and added to their motion there (3.39.1): a player is moved by their
+ * client, and motion set on the server does not reach it.
  */
 public final class PaleSquall {
 	private PaleSquall() {}
@@ -52,6 +57,8 @@ public final class PaleSquall {
 	}
 
 	private static final Map<UUID, Squall> SQUALLS = new HashMap<>();
+	/** How many ticks of gust each player has been sent since the world opened (for the tests). */
+	private static final Map<UUID, Integer> FELT = new HashMap<>();
 
 	public static void tick(MinecraftServer s) {
 		long now = s.getTickCount();
@@ -128,14 +135,12 @@ public final class PaleSquall {
 		}
 		// The gust: everyone near the one it came for
 		for (ServerPlayer p : q.level.players()) {
-			if (p.isSpectator() || p.isCreative() || p.distanceToSqr(owner) > REACH * REACH) {
+			if (!blown(p) || p.distanceToSqr(owner) > REACH * REACH) {
 				continue;
 			}
 			double f = push(p, q.dx, q.dz);
 			if (f > 0) {
-				Vec3 v = p.getDeltaMovement();
-				p.setDeltaMovement(v.x + q.dx * f, v.y, v.z + q.dz * f);
-				p.needsSync = true;
+				gust(p, q.dx * f, q.dz * f);
 			}
 		}
 		if (q.ticks % 2 == 0) {
@@ -145,6 +150,27 @@ public final class PaleSquall {
 			WorldFx.soundSelf(owner, "minecraft:item.elytra.flying", 1.0f, 0.5f);
 		}
 		return false;
+	}
+
+	/**
+	 * Whether a squall takes hold of a player at all: never of a spectator, nor of one flying in creative (as an
+	 * explosion's push); of one standing in creative it does.
+	 */
+	public static boolean blown(ServerPlayer p) {
+		return !p.isSpectator() && !(p.isCreative() && p.getAbilities().flying);
+	}
+
+	/** One tick of gust on a player, sent to their client to be added to their motion there. */
+	static void gust(ServerPlayer p, double x, double z) {
+		FELT.merge(p.getUUID(), 1, Integer::sum);
+		if (ServerPlayNetworking.canSend(p, ModPackets.SquallPayload.TYPE)) {
+			ServerPlayNetworking.send(p, new ModPackets.SquallPayload((float) x, (float) z));
+		}
+	}
+
+	/** How many ticks of gust a player has been sent (for the tests). */
+	public static int felt(UUID player) {
+		return FELT.getOrDefault(player, 0);
 	}
 
 	/**
@@ -190,12 +216,13 @@ public final class PaleSquall {
 		}
 	}
 
-	/** The squall under way for a player, or null (for the tests). */
+	/** Whether a squall is under way for a player (for the tests). */
 	public static boolean blowing(UUID player) {
 		return SQUALLS.containsKey(player);
 	}
 
 	public static void clear() {
 		SQUALLS.clear();
+		FELT.clear();
 	}
 }

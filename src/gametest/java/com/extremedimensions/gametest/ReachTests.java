@@ -7,6 +7,7 @@ import java.util.Map;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.events.PaleSquall;
+import com.extremedimensions.events.WorldEvents;
 import com.extremedimensions.lurker.PaleHauler;
 import com.extremedimensions.lurker.PaleHaulerService;
 import com.extremedimensions.reach.PaleAnchorDesign;
@@ -204,5 +205,40 @@ public class ReachTests {
 			Config.PALE_SQUALL_ANCHORED = anchoredEase;
 		}
 		helper.succeed();
+	}
+
+	/**
+	 * A squall takes hold of a player standing in creative (as an explosion's push does) and sends them its gust every
+	 * tick it blows, but not of one flying in creative.
+	 */
+	@GameTest
+	public void aSquallTakesHoldOfTheStandingNotTheFlyingInCreative(GameTestHelper helper) {
+		ServerPlayer standing = TestPlayers.creative(helper, "reach-standing");
+		ServerPlayer flying = TestPlayers.creative(helper, "reach-flying");
+		BlockPos at = helper.absolutePos(new BlockPos(1, 2, 1));
+		standing.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		flying.teleportTo(at.getX() + 0.5, at.getY() + 3, at.getZ() + 0.5);
+		flying.getAbilities().flying = true;
+		check(helper, PaleSquall.blown(standing), "a squall does not take hold of a player standing in creative");
+		check(helper, !PaleSquall.blown(flying), "a squall takes hold of a player flying in creative");
+		int warn = Config.PALE_SQUALL_WARNING_SECONDS, secs = Config.PALE_SQUALL_SECONDS;
+		int before = PaleSquall.felt(standing.getUUID());
+		Config.PALE_SQUALL_WARNING_SECONDS = 0;
+		Config.PALE_SQUALL_SECONDS = 1;
+		String refused = WorldEvents.force(standing, "squall");
+		if (refused != null) {
+			Config.PALE_SQUALL_WARNING_SECONDS = warn;
+			Config.PALE_SQUALL_SECONDS = secs;
+		}
+		check(helper, refused == null, "the squall did not start (%s)", refused);
+		helper.runAfterDelay(30, () -> {
+			Config.PALE_SQUALL_WARNING_SECONDS = warn;
+			Config.PALE_SQUALL_SECONDS = secs;
+			int gusts = PaleSquall.felt(standing.getUUID()) - before;
+			check(helper, gusts >= 15, "the player standing in creative was sent %s ticks of gust", gusts);
+			check(helper, PaleSquall.felt(flying.getUUID()) == 0, "the player flying in creative was sent %s ticks of gust", PaleSquall.felt(flying.getUUID()));
+			check(helper, !PaleSquall.blowing(standing.getUUID()), "the squall did not pass");
+			helper.succeed();
+		});
 	}
 }

@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.39.1: The squall blows
+
+### Fixed
+- **Pale Squalls now push.** The warnings came and nothing moved: the gust was set on the player's motion on the
+  server, and a player is moved by their own client. The gust is now sent to each player's client and added to their
+  motion there, every tick it blows, so it carries you along the way the motes stream (sneak, brace against a wall,
+  Anchored and Unmoored work as before). The client test now stands a player on a floor, lets a squall blow and checks
+  that it carries them off.
+- **A squall takes hold of players in creative** standing on the ground too, as an explosion's push does; not of one
+  flying in creative, nor of a spectator. (It left everyone in creative alone, which made `/tether event squall` look
+  dead to an operator trying it out.)
+
 ## 3.39.0: The Pale Reach
 
 ### New

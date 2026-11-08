@@ -1469,6 +1469,68 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~3 ~-1 ~-4 0 0");
 			ctx.waitTicks(10);
 
+			// The Pale Squall moves a player for real (3.39.1): on a stone floor, in survival, a squall with no warning
+			// must carry them off on their own client. (What a motion set on the server does is measured beside it,
+			// for the record: a player is moved by their client.)
+			double[] squallFrom = sp.getServer().computeOnServer(s -> {
+				ServerPlayer pl = player(s);
+				return new double[] {pl.getX(), pl.getY(), pl.getZ()};
+			});
+			java.util.Map<net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState> squallKept = sp.getServer().computeOnServer(s -> {
+				net.minecraft.server.level.ServerLevel lv = (net.minecraft.server.level.ServerLevel) player(s).level();
+				net.minecraft.core.BlockPos c = player(s).blockPosition();
+				java.util.Map<net.minecraft.core.BlockPos, net.minecraft.world.level.block.state.BlockState> kept = new java.util.HashMap<>();
+				for (int dx = -14; dx <= 14; dx++) {
+					for (int dz = -14; dz <= 14; dz++) {
+						for (int dy = -1; dy <= 2; dy++) {
+							net.minecraft.core.BlockPos b = c.offset(dx, dy, dz);
+							kept.put(b, lv.getBlockState(b));
+							lv.setBlock(b, dy < 0 ? net.minecraft.world.level.block.Blocks.STONE.defaultBlockState()
+									: net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+						}
+					}
+				}
+				return kept;
+			});
+			sp.getServer().runCommand("execute as @a run gamemode survival @s");
+			ctx.waitTicks(20);
+			double[] stood = ctx.computeOnClient(mc -> new double[] {mc.player.getX(), mc.player.getZ()});
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer pl = player(s);
+				pl.setDeltaMovement(0.6, 0.2, 0);
+				pl.needsSync = true;
+			});
+			ctx.waitTicks(20);
+			double[] shoved = ctx.computeOnClient(mc -> new double[] {mc.player.getX(), mc.player.getZ()});
+			System.out.printf(java.util.Locale.ROOT, "[shots] a motion set on the server moved the player %.2f blocks%n",
+					Math.hypot(shoved[0] - stood[0], shoved[1] - stood[1]));
+			sp.getServer().runOnServer(s -> player(s).teleportTo(squallFrom[0], squallFrom[1], squallFrom[2]));
+			ctx.waitTicks(10);
+			double[] calm = ctx.computeOnClient(mc -> new double[] {mc.player.getX(), mc.player.getZ()});
+			int squallWarn = com.extremedimensions.config.Config.PALE_SQUALL_WARNING_SECONDS, squallSecs = com.extremedimensions.config.Config.PALE_SQUALL_SECONDS;
+			String squallRefused = sp.getServer().computeOnServer(s -> {
+				com.extremedimensions.config.Config.PALE_SQUALL_WARNING_SECONDS = 0;
+				com.extremedimensions.config.Config.PALE_SQUALL_SECONDS = 2;
+				return com.extremedimensions.events.WorldEvents.force(player(s), "squall");
+			});
+			ctx.waitTicks(50);
+			double[] blown = ctx.computeOnClient(mc -> new double[] {mc.player.getX(), mc.player.getZ()});
+			sp.getServer().runOnServer(s -> {
+				com.extremedimensions.config.Config.PALE_SQUALL_WARNING_SECONDS = squallWarn;
+				com.extremedimensions.config.Config.PALE_SQUALL_SECONDS = squallSecs;
+			});
+			double squallMoved = Math.hypot(blown[0] - calm[0], blown[1] - calm[1]);
+			System.out.printf(java.util.Locale.ROOT, "[shots] a Pale Squall of 2 s moved the player %.2f blocks%n", squallMoved);
+			check(squallRefused == null, "the squall did not start: " + squallRefused);
+			check(squallMoved > 1.0, "a Pale Squall of 2 s moved the player only " + squallMoved + " blocks");
+			sp.getServer().runCommand("execute as @a run gamemode spectator @s");
+			sp.getServer().runOnServer(s -> {
+				net.minecraft.server.level.ServerLevel lv = (net.minecraft.server.level.ServerLevel) player(s).level();
+				squallKept.forEach((b, st) -> lv.setBlock(b, st, 2));
+				player(s).teleportTo(squallFrom[0], squallFrom[1], squallFrom[2]);
+			});
+			ctx.waitTicks(10);
+
 			// The camera shake hooks into the camera (its handler is merged into Camera when the mixin applies)
 			ctx.runOnClient(mc -> {
 				boolean found = false;

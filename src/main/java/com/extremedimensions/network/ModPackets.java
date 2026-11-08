@@ -491,6 +491,29 @@ public final class ModPackets {
 	}
 
 	/**
+	 * Server -> client: one tick of a Pale Squall's gust on the player, added to their own motion where it is made, on
+	 * their client ({@code x}, {@code z}: blocks a tick). The server cannot push a player itself: the client moves them.
+	 */
+	public record SquallPayload(float x, float z) implements CustomPacketPayload {
+		public static final Type<SquallPayload> TYPE = new Type<>(ExtremeDimensions.id("squall"));
+		public static final StreamCodec<FriendlyByteBuf, SquallPayload> CODEC = StreamCodec.ofMember(SquallPayload::write, SquallPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeFloat(x);
+			buf.writeFloat(z);
+		}
+
+		private static SquallPayload read(FriendlyByteBuf buf) {
+			return new SquallPayload(buf.readFloat(), buf.readFloat());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
 	 * Server -> client: the chance of the Tetherite binding waiting at the smithing table the player has open, in
 	 * permille, with the shares that make it ({@code permille} -1: no binding waits there), and where it would have to be
 	 * done ({@code where}: 0 here, 1 in the Seam, 2 down in the Fray).
