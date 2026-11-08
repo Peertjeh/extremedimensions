@@ -59,6 +59,10 @@ jobs:
           for j in $(echo "$cp" | tr ':' ' '); do unzip -l "$j" | awk '{print $4}'; done | sort -u | grep -E "$(grep '^#' tools/probe.txt | sed 's/^#//' | paste -sd'|')" | sed "s/^/APICLASS|/" | head -300
           # lines with an @ print a file from the game jars (a vanilla loot table, a recipe, ...)
           grep '^@' tools/probe.txt | sed 's/^@//' | while read -r f; do for j in $(echo "$cp" | tr ':' ' '); do unzip -p "$j" "$f" 2>/dev/null | sed "s/^/APIFILE|/"; done; done
+      # The recipe viewers (EMI, JEI, REI) for this game version and their plugin API, on a commit marked [probe]
+      - name: recipe viewer probe
+        if: always() && contains(github.event.head_commit.message, '[probe]')
+        run: python3 tools/compat/probe_viewers.py build/viewer-probe || true
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
