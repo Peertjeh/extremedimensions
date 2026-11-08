@@ -73,6 +73,8 @@ public final class DataStore {
 		int newThread = 0;
 		/** Clans of players bound by a Blood Cord: clan id to its members' ids, in the order they were bound. */
 		Map<String, List<String>> clans = new HashMap<>();
+		/** The Pale Reach (3.39): its Unfinished Anchors begun, built or passed over, their fittings and those attuned. */
+		Set<String> reach = new HashSet<>();
 	}
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -130,6 +132,9 @@ public final class DataStore {
 		}
 		if (loaded.seamCells != null) {
 			data.seamCells = loaded.seamCells;
+		}
+		if (loaded.reach != null) {
+			data.reach = loaded.reach;
 		}
 		if (loaded.gatesLooked != null) {
 			data.gatesLooked = loaded.gatesLooked;
@@ -377,6 +382,11 @@ public final class DataStore {
 
 	public static Set<String> seamCells() {
 		return data.seamCells;
+	}
+
+	/** The Pale Reach's marks (see {@code reach.PaleReach}); kept apart from the Seam's, which a Seam reset clears. */
+	public static Set<String> reach() {
+		return data.reach;
 	}
 
 	public static List<Hoard> hoards() {

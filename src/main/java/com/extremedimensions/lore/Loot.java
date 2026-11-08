@@ -58,6 +58,10 @@ public final class Loot {
 	public static final String TRIAL_GOLD = "gameplay/trial_gold";
 	/** What the Endermen leave when they finish a ring unwatched. */
 	public static final String UNANCHORED = "gameplay/unanchored";
+	/** What the builders of an Unfinished Anchor put by in its barrels (3.39). */
+	public static final String PALE_ANCHOR = "gameplay/pale_anchor";
+	/** What a slain Pale Hauler leaves besides the blocks it took. */
+	public static final String PALE_HAULER = "gameplay/pale_hauler_spoils";
 
 	/**
 	 * Now and then the wound's own record, "What the Wound Remembers", among what a Fray tangle or a hoard holds. Like the

@@ -1443,6 +1443,32 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-4 ~ 0 0");
 			ctx.waitTicks(10);
 
+			// The Pale Reach (3.39): an Unfinished Anchor flown together over the ground ahead, a Pale Hauler before it,
+			// then the Hauler up close
+			net.minecraft.core.BlockPos anchorAt = sp.getServer().computeOnServer(s -> {
+				net.minecraft.server.level.ServerPlayer pl = player(s);
+				net.minecraft.core.BlockPos o = net.minecraft.core.BlockPos.containing(pl.getX(), pl.getY() + 6, pl.getZ() + 30);
+				com.extremedimensions.reach.PaleReach.buildNow((net.minecraft.server.level.ServerLevel) pl.level(), o, 391L);
+				return o;
+			});
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~14 ~-6 0 0");
+			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:pale_hauler ^-3 ^-14 ^16 {NoAI:1b,Rotation:[180f,0f]}");
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("10_pale_anchor");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~-3 ~-13 ~10 0 5");
+			ctx.waitTicks(15);
+			ctx.takeScreenshot("10_pale_hauler");
+			sp.getServer().runOnServer(s -> {
+				mobs(s).forEach(net.minecraft.world.entity.Entity::discard);
+				net.minecraft.server.level.ServerLevel lv = (net.minecraft.server.level.ServerLevel) player(s).level();
+				for (var e : com.extremedimensions.reach.PaleAnchorDesign.design(anchorAt, 391L).ordered(anchorAt)) {
+					lv.setBlock(net.minecraft.core.BlockPos.of(e.getKey()), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
+				}
+				com.extremedimensions.data.DataStore.reach().removeIf(m -> m.startsWith("pf@"));
+			});
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~3 ~-1 ~-4 0 0");
+			ctx.waitTicks(10);
+
 			// The camera shake hooks into the camera (its handler is merged into Camera when the mixin applies)
 			ctx.runOnClient(mc -> {
 				boolean found = false;

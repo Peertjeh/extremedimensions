@@ -166,6 +166,13 @@ public final class WoundLens {
 			return Component.translatable("gui.extremedimensions.lens.lockwarden." + doing)
 					.withStyle("reaching".equals(doing) ? ChatFormatting.RED : ChatFormatting.LIGHT_PURPLE);
 		}
+		if (l instanceof com.extremedimensions.lurker.PaleHauler) {
+			// it watches, hunts for a block to haul, pulls one loose, or is gone with what it took
+			int pose = l.getLurkerPose();
+			String doing = pose == Lurker.POSE_TAKE ? "hauling" : pose == Lurker.POSE_RUN ? "leaving" : pose == Lurker.POSE_STALK ? "seeking" : "watching";
+			return Component.translatable("gui.extremedimensions.lens.pale_hauler." + doing)
+					.withStyle("hauling".equals(doing) ? ChatFormatting.RED : ChatFormatting.LIGHT_PURPLE);
+		}
 		if (l instanceof com.extremedimensions.lurker.Threadbiter) {
 			// it runs at you, gnaws at your thread, or is off with what it ate
 			int pose = l.getLurkerPose();

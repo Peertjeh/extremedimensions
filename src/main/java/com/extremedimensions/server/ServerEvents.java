@@ -107,6 +107,7 @@ public final class ServerEvents {
 			com.extremedimensions.lore.FirstWeaver.clear();
 			com.extremedimensions.tapestry.Tapestry.clear();
 			com.extremedimensions.seam.FirstKnot.clear();
+			com.extremedimensions.reach.PaleReach.clear();
 			LurkerService.clear();
 			com.extremedimensions.lurker.CaveLurkerService.clear();
 			com.extremedimensions.lurker.SculkLurkerService.clear();
@@ -116,6 +117,7 @@ public final class ServerEvents {
 			com.extremedimensions.lurker.GatebreakerService.clear();
 			com.extremedimensions.lurker.LockwardenService.clear();
 			com.extremedimensions.lurker.ThreadbiterService.clear();
+			com.extremedimensions.lurker.PaleHaulerService.clear();
 			com.extremedimensions.lurker.EdgecrawlerService.clear();
 			com.extremedimensions.lurker.CragbackService.clear();
 			com.extremedimensions.world.AmbientService.clear();
@@ -317,6 +319,8 @@ public final class ServerEvents {
 				com.extremedimensions.lurker.GatebreakerService.onDeath(gb, HollowService.culprit(gb, source.getEntity()));
 			} else if (entity instanceof com.extremedimensions.lurker.Lockwarden lw) {
 				com.extremedimensions.lurker.LockwardenService.onDeath(lw, HollowService.culprit(lw, source.getEntity()));
+			} else if (entity instanceof com.extremedimensions.lurker.PaleHauler ph) {
+				com.extremedimensions.lurker.PaleHaulerService.onDeath(ph, source.getEntity());
 			} else if (entity instanceof com.extremedimensions.lurker.Threadbiter tb) {
 				com.extremedimensions.lurker.ThreadbiterService.onDeath(tb, source.getEntity());
 			} else if (entity instanceof com.extremedimensions.lurker.Edgecrawler ec) {
@@ -341,6 +345,32 @@ public final class ServerEvents {
 
 		// Cold Forge and Barren Hand: the furnaces a cursed player works and the crops they plant are marked
 		UseBlockCallback.EVENT.register(com.extremedimensions.penalty.AbyssalWorld::onUse);
+		// A block laid out in the Pale Reach is remembered, for the Pale Haulers (3.39): looked at once it stands
+		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+			if (level instanceof ServerLevel sl && player instanceof ServerPlayer && Dims.END.equals(Dims.of(sl))
+					&& player.getItemInHand(hand).getItem() instanceof net.minecraft.world.item.BlockItem
+					&& com.extremedimensions.reach.PaleReach.far(hit.getBlockPos().getX(), hit.getBlockPos().getZ())) {
+				net.minecraft.core.BlockPos on = hit.getBlockPos(), beside = on.relative(hit.getDirection());
+				boolean onOpen = sl.getBlockState(on).canBeReplaced(), besideOpen = sl.getBlockState(beside).canBeReplaced();
+				sl.getServer().execute(() -> {
+					if (onOpen) {
+						com.extremedimensions.lurker.PaleHaulerService.laid(sl, on);
+					}
+					if (besideOpen && !onOpen) {
+						com.extremedimensions.lurker.PaleHaulerService.laid(sl, beside);
+					}
+				});
+			}
+			return InteractionResult.PASS;
+		});
+		// The fitting of an Unfinished Anchor in the Pale Reach, attuned with an Eye of Ender (3.39)
+		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+			if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer sp) || !(level instanceof ServerLevel sl)
+					|| !level.getBlockState(hit.getBlockPos()).is(net.minecraft.world.level.block.Blocks.LODESTONE)) {
+				return InteractionResult.PASS;
+			}
+			return com.extremedimensions.reach.PaleReach.onUse(sp, sl, hit.getBlockPos(), player.getItemInHand(hand));
+		});
 		// Crouching with fragments or silk loads a Spindle with all that fits (the game skips the block for a crouching hand)
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
 			net.minecraft.world.level.block.state.BlockState at = level.getBlockState(hit.getBlockPos());
@@ -746,6 +776,7 @@ public final class ServerEvents {
 		com.extremedimensions.binding.Charms.tick(s);
 		com.extremedimensions.binding.WoundLens.tick(s);
 		com.extremedimensions.events.WorldEvents.tick(s);
+		com.extremedimensions.reach.PaleReach.tick(s);
 		if (s.getTickCount() % 1200 == 0) {
 			AtonementGuard.sweep(s);
 		}
@@ -759,6 +790,7 @@ public final class ServerEvents {
 		com.extremedimensions.lurker.GatebreakerService.tick(s);
 		com.extremedimensions.lurker.LockwardenService.tick(s);
 		com.extremedimensions.lurker.ThreadbiterService.tick(s);
+		com.extremedimensions.lurker.PaleHaulerService.tick(s);
 		com.extremedimensions.lurker.EdgecrawlerService.tick(s);
 		com.extremedimensions.lurker.CragbackService.tick(s);
 		com.extremedimensions.world.AmbientService.tick(s);

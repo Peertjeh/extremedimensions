@@ -63,6 +63,8 @@ public final class Advancements {
 	public static final String TAPESTRY = "tapestry";
 	public static final String NEW_THREAD = "new_thread";
 	public static final String UNWOVEN = "unwoven";
+	/** Attune the fitting of an Unfinished Anchor in the Pale Reach (3.39). */
+	public static final String PALE_ATTUNED = "pale_attuned";
 	/** Not one shown in the tab: the recipe book's way of learning the Weaver's Loom, given when an Elder falls. */
 	public static final String LOOM_RECIPE = "recipes/misc/weavers_loom";
 

@@ -56,6 +56,8 @@ public enum JournalEntry {
 	DEEP("deep"),
 	/** The Wanderer's: the Sculk Lurker, the Warden's herald (written in when one first rattles a shrieker for them). */
 	HERALD("herald"),
+	/** The Wanderer's: the Pale Reach, the End's far islands (written in when the player first comes out into it). */
+	PALE_REACH("pale_reach"),
 	/** In the player's own hand, after the ending, at the loom: a mended world's page... */
 	CONTINUED_MENDED("continued_mended", false, true),
 	/** ...and a severed world's (a world has one ending, so a journal holds one of the two). */

@@ -46,6 +46,9 @@ public final class TribeHealth {
 		if (type == ModEntities.THREADBITER) {
 			return Config.THREADBITER_HEALTH;
 		}
+		if (type == ModEntities.PALE_HAULER) {
+			return Config.PALE_HAULER_HEALTH;
+		}
 		if (type == ModEntities.EDGECRAWLER) {
 			return Config.EDGECRAWLER_HEALTH;
 		}

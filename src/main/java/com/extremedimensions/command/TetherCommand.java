@@ -94,6 +94,8 @@ public final class TetherCommand {
 					c.getSource().sendSuccess(() -> Component.literal("Designed " + n + " Seam structures; building " + SeamArchitect.pending() + " blocks"), false);
 					return n;
 				}))
+				.then(Commands.literal("reach").requires(spawn)
+						.then(Commands.literal("anchor").executes(c -> reachAnchor(c.getSource()))))
 				.then(Commands.literal("event").requires(spawn)
 						.then(Commands.argument("id", StringArgumentType.word())
 								.suggests((c, b) -> SharedSuggestionProvider.suggest(com.extremedimensions.events.WorldEvents.IDS, b))
@@ -114,7 +116,22 @@ public final class TetherCommand {
 										.executes(c -> setCurse(c.getSource(), StringArgumentType.getString(c, "id"), IntegerArgumentType.getInteger(c, "stacks")))))));
 	}
 
-	/** {@code /tether event <id>}: starts a world event for the player at once (storm, echo, unstable, unanchored, frayed). */
+	/**
+	 * {@code /tether reach anchor}: an Unfinished Anchor flies together a little way in front of the player, wherever
+	 * they are (for showing and testing the Pale Reach, 3.39).
+	 */
+	private static int reachAnchor(CommandSourceStack src) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+		ServerPlayer p = src.getPlayerOrException();
+		net.minecraft.world.phys.Vec3 look = p.getLookAngle();
+		double flat = Math.max(1e-3, Math.sqrt(look.x * look.x + look.z * look.z));
+		net.minecraft.core.BlockPos origin = net.minecraft.core.BlockPos.containing(p.getX() + look.x / flat * 20, p.getY(), p.getZ() + look.z / flat * 20);
+		com.extremedimensions.reach.PaleReach.build((net.minecraft.server.level.ServerLevel) p.level(), "cmd@" + origin.getX() + "," + origin.getZ(), origin,
+				java.util.concurrent.ThreadLocalRandom.current().nextLong());
+		src.sendSuccess(() -> Component.translatable("commands.extremedimensions.reach.anchor", origin.getX(), origin.getY(), origin.getZ()), true);
+		return 1;
+	}
+
+	/** {@code /tether event <id>}: starts a world event for the player at once (storm, echo, unstable, unanchored, frayed, squall). */
 	private static int event(CommandSourceStack src, String id) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
 		net.minecraft.server.level.ServerPlayer p = src.getPlayerOrException();
 		String why = com.extremedimensions.events.WorldEvents.force(p, id);
@@ -338,7 +355,8 @@ public final class TetherCommand {
 			new LurkerSwitch("lockwarden", "lockwarden_enabled", "lockwarden", () -> com.extremedimensions.config.Config.LOCKWARDEN_ENABLED),
 			new LurkerSwitch("threadbiter", "threadbiter_enabled", "threadbiter", () -> com.extremedimensions.config.Config.THREADBITER_ENABLED),
 			new LurkerSwitch("edgecrawler", "edgecrawler_enabled", "edgecrawler", () -> com.extremedimensions.config.Config.EDGECRAWLER_ENABLED),
-			new LurkerSwitch("cragback", "cragback_enabled", "cragback", () -> com.extremedimensions.config.Config.CRAGBACK_ENABLED));
+			new LurkerSwitch("cragback", "cragback_enabled", "cragback", () -> com.extremedimensions.config.Config.CRAGBACK_ENABLED),
+			new LurkerSwitch("pale_hauler", "pale_hauler_enabled", "pale_hauler", () -> com.extremedimensions.config.Config.PALE_HAULER_ENABLED));
 
 	/**
 	 * {@code /tether lurkers}: every kind of Lurker and whether it comes, each with a button to switch it;
@@ -406,7 +424,7 @@ public final class TetherCommand {
 	}
 
 	static final java.util.List<String> LURKER_KINDS = java.util.List.of("watch", "stalk", "hunt", "swarm", "drain", "cave", "sculk",
-			"magpie", "wick", "tidewalker", "gatebreaker", "lockwarden", "threadbiter", "edgecrawler", "cragback");
+			"magpie", "wick", "tidewalker", "gatebreaker", "lockwarden", "threadbiter", "edgecrawler", "cragback", "pale_hauler");
 
 	/**
 	 * {@code /tether lurker <kind> [players]}: a Lurker of that kind near the operator, or (3.26.1) near each player named
@@ -460,6 +478,7 @@ public final class TetherCommand {
 			case "threadbiter" -> com.extremedimensions.lurker.ThreadbiterService.summon(p);
 			case "edgecrawler" -> com.extremedimensions.lurker.EdgecrawlerService.summon(p);
 			case "cragback" -> com.extremedimensions.lurker.CragbackService.summon(p);
+			case "pale_hauler" -> com.extremedimensions.lurker.PaleHaulerService.summon(p);
 			default -> LurkerService.summon(p, mode);
 		};
 	}
@@ -477,6 +496,7 @@ public final class TetherCommand {
 			case "threadbiter" -> "commands.extremedimensions.lurker.failed_threadbiter";
 			case "edgecrawler" -> "commands.extremedimensions.lurker.failed_edgecrawler";
 			case "cragback" -> "commands.extremedimensions.lurker.failed_cragback";
+			case "pale_hauler" -> "commands.extremedimensions.lurker.failed_pale_hauler";
 			default -> "commands.extremedimensions.lurker.failed";
 		};
 	}

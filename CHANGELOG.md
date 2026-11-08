@@ -1,5 +1,38 @@
 # Changelog
 
+## 3.39.0: The Pale Reach
+
+### New
+- **The Pale Reach.** Once the Dragon has fallen, the End's far islands wake, from 1000 blocks out
+  (`pale_reach_from`). The Endermen there were people once, torn loose when the first wound opened, and they build
+  anchors to find their way home, and never finish one. A new journal page tells of it the first time you come out there.
+- **Unfinished Anchors.** The Reach is laid out in squares (`pale_anchor_spacing`, 512 blocks); about every other one
+  (`pale_anchor_chance`) holds an Unfinished Anchor hanging over the void: a plinth of end stone and obsidian under a
+  round floor, a lodestone fitting between four golden posts, six broken pillars of purpur and pale stone with
+  half-built arches, a halo with golden spokes not yet closed, chains, and loose blocks hanging in the air. When you
+  come near, it flies together block by block, as the Seam builds itself (`pale_anchor_build_seconds`); a beam over its
+  fitting shows where it is from far off. Its barrels hold pearls, chorus, Eyes of Ender, gold, Tether Fragments and
+  now and then a diamond, a shulker shell or an end crystal. Over an island it stands on the island; never over an End City.
+- **Attune a fitting.** Use the fitting with an Eye of Ender (`pale_fitting_cost`) and its beam turns pale and steady:
+  within 48 blocks of it (`pale_fitting_range`) your Tether drains at half the pace (`pale_fitting_drain`), a place to
+  catch your breath out where the drain runs fastest. Advancement: *A Socket for the Way Home*.
+- **The Pale Hauler** (after the concept): an Enderman's lanky dark body under a hood and ragged mantle of pale end
+  stone, the Endermen's violet eyes in a face of shadow. They come in twos and threes in the Reach
+  (`pale_hauler_spawn_chance`, `pale_hauler_max`) and haul the blocks you laid out over the void: a block shakes in a
+  Hauler's grip for a moment (`pale_hauler_pull_seconds`), then flies to it, and it carries it off over its head. Never
+  a block you stand on or right beside: the gap opens a step ahead. Look it in the eye and it lets go and steps away;
+  the third time it goes. With nothing to haul it crouches, glowing red, and leaps at you (`pale_hauler_damage`).
+  After six blocks (`pale_hauler_pulls`) it is gone with them, unless you slay it: then every block falls. It has a
+  page in the bestiary, words in the Wound Lens, its spoils in JEI, and `/tether lurker pale_hauler` and
+  `/tether lurkers pale_hauler on|off`.
+- **Pale Squalls.** Now and then on an expedition in the Reach the void draws breath (`pale_squall_chance`): for four
+  seconds motes stream past the way it will blow, then for eight seconds a gust pushes you along
+  (`pale_squall_push`). Sneak and it halves (and you keep to the edge as ever); brace against a wall and it cannot move
+  you. Anchored on chest or legs eases it (`pale_squall_anchored`), the curse Unmoored makes it worse, and on wings it
+  pushes twice as hard. `/tether event squall` starts one.
+- `/tether reach anchor` flies an Unfinished Anchor together a little way ahead of you, for operators.
+- Every setting is in the settings screen under the new part *The Pale Reach*.
+
 ## 3.38.0: Fair Warning
 
 ### Changes

@@ -1348,6 +1348,51 @@ public final class Config {
 	/** Frayed Rays that rise to the Heart as it wakes (one more for every player beyond the first). */
 	public static int STARVED_RAYS = 3;
 
+	// --- The Pale Reach: the End's far islands (3.39) -----------------------------------------------
+
+	/** Whether the Pale Reach wakes once the Dragon has fallen: its Unfinished Anchors, Pale Haulers and Pale Squalls (1 on, 0 off). */
+	public static int PALE_REACH = 1;
+	/** How far (blocks) from the End's middle the Pale Reach begins. */
+	public static int PALE_REACH_FROM = 1000;
+	/** The Reach is laid out in squares this many blocks across; each may hold one Unfinished Anchor. */
+	public static int PALE_ANCHOR_SPACING = 512;
+	/** The chance a square of the Reach holds an Unfinished Anchor. */
+	public static double PALE_ANCHOR_CHANCE = 0.5;
+	/** Seconds an Unfinished Anchor takes to fly together once someone comes near. */
+	public static int PALE_ANCHOR_BUILD_SECONDS = 30;
+	/** Near an attuned fitting the Tether drains this many times as fast (0.5 = half). */
+	public static double PALE_FITTING_DRAIN = 0.5;
+	/** How near (blocks) to an attuned fitting its ease reaches. */
+	public static int PALE_FITTING_RANGE = 48;
+	/** Eyes of Ender a fitting takes to be attuned. */
+	public static int PALE_FITTING_COST = 1;
+	/** Whether Pale Haulers come for the bridges laid in the Reach (1 on, 0 off). */
+	public static int PALE_HAULER_ENABLED = 1;
+	/** A Pale Hauler's health. */
+	public static double PALE_HAULER_HEALTH = 24.0;
+	/** The chance, every twenty seconds a player has a bridge out over the void in the Reach, that a Pale Hauler comes for it. */
+	public static double PALE_HAULER_SPAWN_CHANCE = 0.2;
+	/** Most Pale Haulers after one player at once (they come in twos and threes). */
+	public static int PALE_HAULER_MAX = 3;
+	/** The harm a Pale Hauler's leap does. */
+	public static double PALE_HAULER_DAMAGE = 3.0;
+	/** Seconds a block shakes in a Pale Hauler's grip before it comes loose. */
+	public static double PALE_HAULER_PULL_SECONDS = 1.5;
+	/** Blocks a Pale Hauler takes before it goes with them. */
+	public static int PALE_HAULER_PULLS = 6;
+	/** Whether Pale Squalls sweep the Reach (1 on, 0 off). */
+	public static int PALE_SQUALL = 1;
+	/** The chance, every minute on an expedition in the Reach, that a Pale Squall comes. */
+	public static double PALE_SQUALL_CHANCE = 0.15;
+	/** Seconds the void draws breath (the warning) before the squall comes. */
+	public static int PALE_SQUALL_WARNING_SECONDS = 4;
+	/** Seconds a Pale Squall blows. */
+	public static int PALE_SQUALL_SECONDS = 8;
+	/** How hard a Pale Squall pushes, each tick (sneaking halves it; braced against a wall, nothing). */
+	public static double PALE_SQUALL_PUSH = 0.06;
+	/** How much less a Pale Squall pushes for each level of Anchored (0.25 = 25%). */
+	public static double PALE_SQUALL_ANCHORED = 0.25;
+
 	// --- Co-op -----------------------------------------------------------------------------------
 
 	/** Whether a player struck down with an ally near falls instead of dying, to be lifted up again: 1 = on, 0 = off. */
@@ -1636,7 +1681,7 @@ public final class Config {
 			Map.entry("tetherite_ore_island_chance", "tetherite"), Map.entry("tetherite_drawbacks", "tetherite_drawbacks"),
 			Map.entry("pact_unlock", "pacts"),
 			Map.entry("trial_unlock", "trials"), Map.entry("matriarch_after_keepers", "elders"),
-			Map.entry("coop_revive", "coop"), Map.entry("tribe_enabled", "tribe"), Map.entry("tapestry_respin_silk", "tapestry"),
+			Map.entry("pale_reach", "reach"), Map.entry("coop_revive", "coop"), Map.entry("tribe_enabled", "tribe"), Map.entry("tapestry_respin_silk", "tapestry"),
 			Map.entry("unweaving", "unweaving"), Map.entry("placeholders", "integration"),
 			Map.entry("seam_build_budget_ms", "technical"));
 
@@ -1703,7 +1748,8 @@ public final class Config {
 			"elder_arena", "elder_arena_wall", "elder_arena_landmark", "elder_arena_breakable", "elder_arena_collapse",
 			"elder_arena_phases", "elder_cores", "elder_isle_fall", "elder_pierce", "matriarch_hex_milk", "coop_revive",
 			"coop_fallen_locked", "coop_burden", "coop_shared_anchors", "tribe_enabled", "tribe_raid", "clan_enabled",
-			"tapestry_roots_peace", "tapestry_chain_steady", "unweaving", "placeholders");
+			"tapestry_roots_peace", "tapestry_chain_steady", "unweaving", "placeholders", "pale_reach",
+			"pale_hauler_enabled", "pale_squall");
 
 	/** Whether this setting is a switch (1 on, 0 off) rather than a number. */
 	public static boolean isSwitch(String key) {
@@ -1897,7 +1943,11 @@ public final class Config {
 			{"elder_snare_damage", 0, 100}, {"elder_bind_seconds", 0, 120}, {"matriarch_wake_seconds", 0, 120}, {"matriarch_calm_range", 8, 128},
 			{"matriarch_warn_range", 0, 64}, {"ferryman_wake_seconds", 0, 120}, {"weaver_wake_seconds", 0, 120}, {"weaver_calm_range", 8, 128},
 			{"weaver_warn_range", 0, 128}, {"knot_mother_wake_seconds", 0, 120}, {"knot_mother_calm_range", 8, 128}, {"starved_wake_seconds", 0, 120},
-			{"starved_calm_range", 8, 128}, {"starved_warn_range", 0, 64}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
+			{"starved_calm_range", 8, 128}, {"starved_warn_range", 0, 64}, {"pale_reach_from", 200, 20000}, {"pale_anchor_spacing", 128, 4096},
+			{"pale_anchor_chance", 0, 1}, {"pale_anchor_build_seconds", 1, 600}, {"pale_fitting_drain", 0, 1}, {"pale_fitting_range", 8, 256},
+			{"pale_fitting_cost", 0, 64}, {"pale_hauler_health", 1, 1024}, {"pale_hauler_spawn_chance", 0, 1}, {"pale_hauler_max", 0, 8}, {"pale_hauler_damage", 0, 100},
+			{"pale_hauler_pull_seconds", 0.25, 10}, {"pale_hauler_pulls", 1, 64}, {"pale_squall_chance", 0, 1}, {"pale_squall_warning_seconds", 0, 30},
+			{"pale_squall_seconds", 1, 60}, {"pale_squall_push", 0, 0.5}, {"pale_squall_anchored", 0, 1}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
 			{"ferryman_gaol_hits", 1, 20}, {"ferryman_gaol_seconds", 0.5, 6}, {"ferryman_gaol_damage", 0, 100}, {"weaver_windup_speed", 0.5, 4}, {"weaver_lance_length", 0.5, 4},
 			{"elder_arena_size", 0.5, 12}, {"elder_arena_wall", 0, 1}, {"elder_arena_landmark", 0, 1},
 			{"elder_arena_breakable", 0, 1}, {"elder_arena_blast_resistance", 0, 1200}, {"elder_arena_collapse", 0, 1},

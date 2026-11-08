@@ -15,6 +15,8 @@ final class Alone {
 	static final String MATRIARCH_STIRS = "extremedimensions_test:alone/matriarch_stirs";
 	static final String MATRIARCH_SETTLES = "extremedimensions_test:alone/matriarch_settles";
 	static final String WEAVER_SETTLES = "extremedimensions_test:alone/weaver_settles";
+	static final String REACH_ANCHOR = "extremedimensions_test:alone/reach_anchor";
+	static final String REACH_HAULER = "extremedimensions_test:alone/reach_hauler";
 	static final String FERRYMAN_TOLL = "extremedimensions_test:alone/ferryman_toll";
 	static final String ELDER_FORMING = "extremedimensions_test:alone/elder_forming";
 	static final String ARENA_RAISED = "extremedimensions_test:alone/arena_raised";

@@ -165,6 +165,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.GATEBREAKER, ctx -> new LurkerRenderer<>(ctx, "gatebreaker", 1.95F, 1.6F, false));
 		// (tall and thin, as the End's own walkers are)
 		EntityRendererRegistry.register(ModEntities.LOCKWARDEN, ctx -> new LurkerRenderer<>(ctx, "lockwarden", 1.45F, 0.8F, false));
+		// The Pale Hauler: an Enderman's height, lanky under its pale hood (3.39)
+		EntityRendererRegistry.register(ModEntities.PALE_HAULER, ctx -> new LurkerRenderer<>(ctx, "pale_hauler", 1.08F, 0.5F, false));
 		// The Seam's own: the Threadbiter knee-high with a young one's big head, the Edgecrawler a little over a man's
 		// height, the Cragback broad and as tall as a Keeper
 		EntityRendererRegistry.register(ModEntities.THREADBITER, ctx -> new LurkerRenderer<>(ctx, "threadbiter", 0.28F, 0.3F, true));

@@ -108,6 +108,17 @@ public final class ModEntities {
 					.clientTrackingRange(10)
 					.build(LOCKWARDEN_KEY));
 
+	private static final ResourceKey<EntityType<?>> PALE_HAULER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("pale_hauler"));
+
+	/** One of the Endermen of the Pale Reach, that hauls the blocks laid out over the void (3.39); spawned only by {@code PaleHaulerService}. */
+	public static final EntityType<com.extremedimensions.lurker.PaleHauler> PALE_HAULER = Registry.register(BuiltInRegistries.ENTITY_TYPE, PALE_HAULER_KEY,
+			EntityType.Builder.<com.extremedimensions.lurker.PaleHauler>of(com.extremedimensions.lurker.PaleHauler::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(0.7f, 2.7f)
+					.eyeHeight(2.4f)
+					.clientTrackingRange(10)
+					.build(PALE_HAULER_KEY));
+
 	private static final ResourceKey<EntityType<?>> THREADBITER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("threadbiter"));
 
 	/** One of the Seam's own, small, in packs, that gnaws at a visitor's thread; spawned only by {@code ThreadbiterService}. */
@@ -273,6 +284,7 @@ public final class ModEntities {
 		FabricDefaultAttributeRegistry.register(GATEBREAKER, Gatebreaker.createAttributes());
 		FabricDefaultAttributeRegistry.register(LOCKWARDEN, Lockwarden.createAttributes());
 		FabricDefaultAttributeRegistry.register(THREADBITER, com.extremedimensions.lurker.Threadbiter.createAttributes());
+		FabricDefaultAttributeRegistry.register(PALE_HAULER, com.extremedimensions.lurker.PaleHauler.createAttributes());
 		FabricDefaultAttributeRegistry.register(EDGECRAWLER, com.extremedimensions.lurker.Edgecrawler.createAttributes());
 		FabricDefaultAttributeRegistry.register(CRAGBACK, com.extremedimensions.lurker.Cragback.createAttributes());
 		FabricDefaultAttributeRegistry.register(HOLLOWLING, Hollowling.createAttributes());

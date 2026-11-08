@@ -293,7 +293,8 @@ public final class ExpeditionService {
 			double toll = Math.min(1, com.extremedimensions.tapestry.Tapestry.drain(dim));
 			d.currentDrain = (world <= 0 ? 0 : d.drainMultiplier(Math.min(1, world) * Math.min(1, relic) * toll * com.extremedimensions.tetherite.Tetherite.drainEase(p)) * Math.max(1, world) * Math.max(1, relic))
 					* (seam ? 1.0 : TetherService.distanceFactor(p, d)) * com.extremedimensions.elder.FerrymanService.drainFactor(p)
-					* com.extremedimensions.binding.Homebound.drainFactor(p) * com.extremedimensions.events.WorldEvents.drainFactor(p);
+					* com.extremedimensions.binding.Homebound.drainFactor(p) * com.extremedimensions.events.WorldEvents.drainFactor(p)
+					* com.extremedimensions.reach.PaleReach.drainFactor(p);
 			double left = AnchorService.drainLinked(p, d, d.currentDrain / 20.0);
 			d.runTime += 1.0 / 20.0;
 			double far = seam ? 0 : TetherService.arrivalDistance(p, d);

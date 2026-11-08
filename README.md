@@ -141,6 +141,9 @@ Thirty pages of a nameless Wanderer surface as you play, then pages in other han
 4. **The seal**: slay the Ender Dragon and every rift opens near the **Heart of the Seam**, where the **Starved One**
    waits, until the world is chosen (finish what you seek in the Seam first; the Path and the End portal say so).
 5. **The Ferryman**, let through by the crack the dragon left: he walks the Nether's lava when you are long gone.
+   Far out in the End, past 1000 blocks, lies **the Pale Reach**: Unfinished Anchors hang over the void, built by the
+   Endermen who were people once (attune a fitting with an Eye of Ender and the Tether drains slower near it), Pale
+   Haulers pull the blocks of your bridges loose and carry them off, and Pale Squalls try to push you over the edge.
 6. **The ending**: defeat the Starved One (it flies, calls the tribe's red young and turns the Veil Rays on you, and
    the four great pillars round the Heart heal it from glowing sculk hearts high up their shafts: shoot three of them
    out with arrows to stop its healing, all four to stun it) and choose. **Mend** the first wound (no storms, a
