@@ -472,22 +472,23 @@ public class BossTests {
 		check(helper, f.getHealth() == health, "he was hurt while he formed");
 		FerrymanService.force(f, Ferryman.KNELL);
 		check(helper, f.getAction() == Ferryman.KNELL, "forcing a blow did not end his forming (action %s)", f.getAction());
-		// 3.37: formed, a mace's blow glances off him, a bare hand's of the same weight lands whole
+		// 3.37: formed, a mace's blow glances off him; a bare hand's of the same weight (once the blow before has worn
+		// off, a second later) lands whole
 		p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.MACE));
-		f.invulnerableTime = 0;
-		float before = f.getHealth();
+		float beforeMace = f.getHealth();
 		f.hurtServer(helper.getLevel(), helper.getLevel().damageSources().playerAttack(p), 40f);
-		float byMace = before - f.getHealth();
-		p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-		f.invulnerableTime = 0;
-		before = f.getHealth();
-		f.hurtServer(helper.getLevel(), helper.getLevel().damageSources().playerAttack(p), 40f);
-		float byHand = before - f.getHealth();
-		check(helper, byHand > 0 && byMace > 0, "a blow did not land at all (mace %s, hand %s)", byMace, byHand);
-		check(helper, byMace <= byHand * (Config.BOSS_MACE_DAMAGE + 0.02), "a mace's blow took %s of his health, a hand's of the same weight %s", byMace,
-				byHand);
-		FerrymanService.fade(f);
-		helper.succeed();
+		float byMace = beforeMace - f.getHealth();
+		helper.runAfterDelay(25, () -> {
+			p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+			float beforeHand = f.getHealth();
+			f.hurtServer(helper.getLevel(), helper.getLevel().damageSources().playerAttack(p), 40f);
+			float byHand = beforeHand - f.getHealth();
+			check(helper, byHand > 0 && byMace > 0, "a blow did not land at all (mace %s, hand %s)", byMace, byHand);
+			check(helper, byMace <= byHand * (Config.BOSS_MACE_DAMAGE + 0.02), "a mace's blow took %s of his health, a hand's of the same weight %s",
+					byMace, byHand);
+			FerrymanService.fade(f);
+			helper.succeed();
+		});
 	}
 
 	/** 3.37: the same guard holds for the Starved One, and a blow struck without a mace (or with a sword) is let through whole. */
