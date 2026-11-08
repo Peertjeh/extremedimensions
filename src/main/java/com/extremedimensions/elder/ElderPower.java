@@ -84,6 +84,29 @@ public final class ElderPower {
 		return source.getEntity() instanceof ElderBoss b ? amount * b.damageFactor : amount;
 	}
 
+	/** Whether a blow was struck with a mace (a smash from a height included): the weapon its striker swung. */
+	public static boolean mace(DamageSource source) {
+		net.minecraft.world.item.ItemStack weapon = source.getWeaponItem();
+		return weapon != null && weapon.is(net.minecraft.world.item.Items.MACE);
+	}
+
+	/**
+	 * A blow taken by a boss (an Elder or the Starved One), with a mace's held to {@code boss_mace_damage} of it (3.37):
+	 * a smash from a height took their whole health in a few blows. The blow glances off in sparks, and its striker is
+	 * told why on the action bar.
+	 */
+	public static float maceGuard(net.minecraft.world.entity.LivingEntity boss, ServerLevel level, DamageSource source, float amount) {
+		if (!mace(source)) {
+			return amount;
+		}
+		com.extremedimensions.server.WorldFx.particleIn(level, "minecraft:enchanted_hit", boss.getX(), boss.getY() + boss.getBbHeight() * 0.5, boss.getZ(),
+				boss.getBbWidth() * 0.4, boss.getBbHeight() * 0.3, boss.getBbWidth() * 0.4, 0.1, 8);
+		if (source.getEntity() instanceof ServerPlayer p) {
+			p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.elder.mace", boss.getDisplayName()), true);
+		}
+		return amount * (float) Math.max(0, Math.min(1, Config.BOSS_MACE_DAMAGE));
+	}
+
 	/** The source of a great blow: through armour when the setting allows, an ordinary blow otherwise. */
 	static DamageSource great(ServerLevel level, ElderBoss b) {
 		if (Config.ELDER_PIERCE <= 0) {

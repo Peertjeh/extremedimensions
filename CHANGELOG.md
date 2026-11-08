@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.37.0: Weight Turned Aside
+
+### Changes
+- **The bosses shrug off the mace.** A smash from a height took an Elder's or the Starved One's whole health in a few
+  blows. Now only a tenth of a mace's blow lands on them (`boss_mace_damage`, World rules → The Elders; 0 = immune,
+  1 = as before): the blow glances off in sparks, and the striker reads why on the action bar. Every other weapon
+  (swords, axes, tridents, bows, crossbows) hits them as before.
+
 ## 3.36.0: Lighter Fights
 
 ### Changes

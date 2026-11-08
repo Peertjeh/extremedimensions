@@ -120,6 +120,8 @@ public abstract class ElderBoss extends Monster {
 					getBbWidth() * 0.5, 0.2, 6);
 			return false;
 		}
+		// A mace's blow (a smash from a height above all) glances off: only boss_mace_damage of it lands (3.37)
+		amount = ElderPower.maceGuard(this, level, source, amount);
 		if (getAction() == ULTIMATE) {
 			// Its ultimate builds behind a ward: most of a blow is shrugged off
 			amount *= (float) Math.max(0, 1 - Math.min(1, Config.ELDER_ULTIMATE_GUARD));

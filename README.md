@@ -306,7 +306,8 @@ Each kind's health is a setting too (`lurker_health`, `magpie_health`, `keeper_h
 3.31 the Lurker has 90, the Keeper 210, the Gatebreaker 270 and the Cragback 210 (both half again for every other
 player near). The bosses' own health is a setting as well since 3.32 (`matriarch_health` 960, `ferryman_health` 780,
 `knot_mother_health` 840, `weaver_health` 720, `starved_health` 750), before the Elders' health scale and the players
-fighting multiply it.
+fighting multiply it. Since 3.37 a mace's blow (a smash from a height above all) lands on them at a tenth
+(`boss_mace_damage`, 0 = immune, 1 = in full); every other weapon hits them as before.
 
 ### Permissions (LuckPerms)
 

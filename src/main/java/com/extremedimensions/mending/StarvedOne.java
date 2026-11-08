@@ -117,7 +117,9 @@ public class StarvedOne extends Keeper {
 
 	@Override
 	public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-		return super.hurtServer(level, source, amount * MendingService.damageFactor(this));
+		// A mace's blow glances off it as off the Elders (3.37)
+		float landed = com.extremedimensions.elder.ElderPower.maceGuard(this, level, source, amount);
+		return super.hurtServer(level, source, landed * MendingService.damageFactor(this));
 	}
 
 	@Override

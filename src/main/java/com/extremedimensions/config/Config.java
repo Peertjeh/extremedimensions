@@ -1240,6 +1240,11 @@ public final class Config {
 	public static double ELDER_DAMAGE_SCALE = 2.25;
 	/** The damage of an Elder's blows grows by this share for every player fighting it beyond the first. */
 	public static double ELDER_DAMAGE_PER_PLAYER = 0.1;
+	/**
+	 * The share of a mace's blow that lands on an Elder or the Starved One (3.37): a smash from a height did their whole
+	 * health in a few blows. 0 = immune, 1 = as on anything else.
+	 */
+	public static double BOSS_MACE_DAMAGE = 0.1;
 	/** The pause between an Elder's blows shrinks by this share for every player fighting it beyond the first. */
 	public static double ELDER_REST_PER_PLAYER = 0.1;
 	/** The pause between an Elder's blows never shrinks below this share of its own. */
@@ -1888,7 +1893,7 @@ public final class Config {
 			{"tapestry_knot_fray", 0, 10}, {"tapestry_knot_strands", 0, 1}, {"tapestry_heart_echo", 0, 1}, {"weaving_seconds", 30, 3600},
 			{"weaving_ward", 1, 10000}, {"weaving_wave_seconds", 5, 600}, {"weaving_wave", 0, 40}, {"weaving_wave_per_player", 0, 20},
 			{"weaving_bite", 0, 1000}, {"weaving_damage", 0, 100}, {"new_thread_elder", 0, 5}, {"new_thread_atonement", 0, 5},
-			{"export_minutes", 1, 1440}};
+			{"export_minutes", 1, 1440}, {"boss_mace_damage", 0, 1}};
 
 	/** Brings a setting back within its bounds, if it has any. */
 	private static void bound(Setting st) {
