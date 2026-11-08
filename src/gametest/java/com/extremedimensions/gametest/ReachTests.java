@@ -211,7 +211,7 @@ public class ReachTests {
 	 * A squall takes hold of a player standing in creative (as an explosion's push does) and sends them its gust every
 	 * tick it blows, but not of one flying in creative.
 	 */
-	@GameTest
+	@GameTest(maxTicks = 60)
 	public void aSquallTakesHoldOfTheStandingNotTheFlyingInCreative(GameTestHelper helper) {
 		ServerPlayer standing = TestPlayers.creative(helper, "reach-standing");
 		ServerPlayer flying = TestPlayers.creative(helper, "reach-flying");
