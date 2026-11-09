@@ -211,11 +211,13 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				new com.extremedimensions.client.entity.elder.KnotMotherModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.KnotMotherModel.LAYER)),
 				new com.extremedimensions.client.entity.elder.KnotMotherModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.KnotMotherModel.LAYER)),
 				"knot_mother", 1.5F, 3.5F));
-		// The Pale Mason (3.40): WIP stand-in body until his own model is in
+		// The Pale Mason (3.40)
+		ModelLayerRegistry.registerModelLayer(com.extremedimensions.client.entity.elder.PaleMasonModel.LAYER,
+				com.extremedimensions.client.entity.elder.PaleMasonGeometry::create);
 		EntityRendererRegistry.register(ModEntities.PALE_MASON, ctx -> new com.extremedimensions.client.entity.elder.ElderRenderer<>(ctx,
-				new com.extremedimensions.client.entity.elder.KnotMotherModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.KnotMotherModel.LAYER)),
-				new com.extremedimensions.client.entity.elder.KnotMotherModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.KnotMotherModel.LAYER)),
-				"knot_mother", 1.5F, 3.0F));
+				new com.extremedimensions.client.entity.elder.PaleMasonModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.PaleMasonModel.LAYER)),
+				new com.extremedimensions.client.entity.elder.PaleMasonModel(ctx.bakeLayer(com.extremedimensions.client.entity.elder.PaleMasonModel.LAYER)),
+				"pale_mason", 1.5F, 3.5F));
 
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.StatePayload.TYPE, (payload, context) ->
 				context.client().execute(() -> ClientState.apply(payload)));

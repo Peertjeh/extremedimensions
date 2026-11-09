@@ -153,6 +153,7 @@ public final class ViewerContent {
 			"ferryman_spoils", new String[] {"disc_fragment_elegy*2", "thread_of_toll", "relic"},
 			"weaver_spoils", new String[] {"disc_fragment_elegy*2", "thread_of_unravelling", "relic"},
 			"knot_mother_spoils", new String[] {"disc_fragment_elegy*2", "thread_of_the_knot", "relic"},
+			"pale_mason_spoils", new String[] {"disc_fragment_elegy*2"},
 			"keeper_spoils", new String[] {"relic"}, "starved_one", new String[] {"relic"},
 			"cave_lurker", new String[] {"music_disc_what_listens"}, "sculk_lurker", new String[] {"music_disc_what_listens"});
 

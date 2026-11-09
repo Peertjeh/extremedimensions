@@ -409,17 +409,18 @@ public final class PaleMasonService {
 	 */
 	private static void strike(PaleMason m, Masonry f, ServerPlayer prey, Beat b) {
 		ServerPlayer p = f.aimed(prey);
-		if (b.at(4)) {
+		// (his body thins to a sliver at 6-10 and fills out again by 15; the claw is up by 22 and comes down at 26)
+		if (b.at(8)) {
 			f.blinked = blink(m, f, p, 4.5);
 		}
-		if (b.at(8)) {
+		if (b.at(10)) {
 			double y = ElderFx.groundUnder(p);
 			f.toX = p.getX();
 			f.toY = y;
 			f.toZ = p.getZ();
 			ElderStrikes.strike(m, f.toX, f.toY, f.toZ, 3.2, (float) Config.PALE_MASON_STRIKE_DAMAGE, f.delay(16), ElderStrikes.SLAM);
 		}
-		if (b.at(24)) {
+		if (b.at(26)) {
 			WorldFx.soundIn(ElderFx.dim(m), "extremedimensions:elder.pale_mason.strike", "hostile", f.toX, f.toY + 1, f.toZ, 4f, 1f);
 			ElderFx.shake(m, f.toX, f.toZ, 24, 0.7f, 12);
 			AttackFx.impact(f.level, AttackFx.of(m), AttackFx.IMPACT_BLAST, f.toX, f.toY + 0.2, f.toZ, 3.2);
@@ -439,7 +440,8 @@ public final class PaleMasonService {
 	 * they also shelter from his Door.
 	 */
 	private static void walls(PaleMason m, Masonry f, ServerPlayer prey, Beat b) {
-		if (b.at(18)) {
+		// (both arms up 0-14, palms driven down at 20)
+		if (b.at(20)) {
 			ServerLevel level = f.level;
 			ThreadLocalRandom rnd = ThreadLocalRandom.current();
 			int ticks = Math.max(20, Config.PALE_MASON_WALL_SECONDS * 20);
@@ -469,7 +471,7 @@ public final class PaleMasonService {
 			}
 			ElderFx.shake(m, m.getX(), m.getZ(), 32, 0.6f, 14);
 		}
-		if (b.past(34)) {
+		if (b.past(36)) {
 			f.end(m, 50);
 		}
 	}
@@ -521,7 +523,8 @@ public final class PaleMasonService {
 		int flight = Math.max(10, f.delay(18));
 		int i = 0;
 		for (Boulder bl : f.boulders) {
-			double at = 4 + i * 5;
+			// (his arm is drawn back 0-12 and sweeps forward at 16: the first leaves then, the rest after it)
+			double at = 16 + i * 5;
 			if (!bl.thrown && b.at(at)) {
 				bl.thrown = true;
 				ServerPlayer q = targets.get(i % targets.size());
@@ -558,7 +561,7 @@ public final class PaleMasonService {
 			}
 			i++;
 		}
-		double last = 4 + (f.boulders.size() - 1) * 5 + flight;
+		double last = 16 + (f.boulders.size() - 1) * 5 + flight;
 		if (b.past(last + 6)) {
 			dropAll(f);
 			f.end(m, f.enraged ? 35 : 50);
@@ -602,10 +605,11 @@ public final class PaleMasonService {
 			}
 		}
 		double eyeY = m.getY() + m.getEyeHeight();
-		if (b.between(1, 26) && b.every(3, 1)) {
+		// (he goes still; his eyes swell and flicker from 8, burn to 48 and are out by 58)
+		if (b.between(1, 20) && b.every(3, 1)) {
 			WorldFx.particleIn(level, "minecraft:reverse_portal", m.getX(), eyeY, m.getZ(), 1.2, 0.6, 1.2, 0.2, 10);
 		}
-		if (b.between(26, 66)) {
+		if (b.between(20, 52)) {
 			for (ServerPlayer q : ElderFx.targets(m, ElderPower.reach(48))) {
 				if (f.stared.contains(q.getUUID()) || !looksAt(q, m)) {
 					continue;
@@ -618,7 +622,7 @@ public final class PaleMasonService {
 				AttackFx.line(level, AttackFx.of(m), AttackFx.LINE_BEAM, m.getX(), eyeY, m.getZ(), q.getX(), q.getEyeY(), q.getZ(), 8);
 			}
 		}
-		if (b.past(72)) {
+		if (b.past(60)) {
 			f.end(m, 45);
 		}
 	}
