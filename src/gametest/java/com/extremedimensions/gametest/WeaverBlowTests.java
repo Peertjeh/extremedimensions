@@ -122,7 +122,7 @@ public class WeaverBlowTests {
 	}
 
 	/** Warp and Weft: its grid is laid over the ground round its prey, and it has fallen once the blow is over. */
-	@GameTest(maxTicks = 140)
+	@GameTest(environment = Alone.WEAVER_WARP, maxTicks = 140)
 	public void itsWarpAndWeftIsLaidAndFalls(GameTestHelper helper) {
 		watch(helper, "warp", Weaver.WARP, 130, w -> WeaverService.warpLaid(w) ? 1 : 0, (most, after, ended, sigils) -> {
 			check(helper, most > 0, "its grid of threads was never laid");
@@ -131,7 +131,7 @@ public class WeaverBlowTests {
 	}
 
 	/** Spindle Storm: its tornadoes rise with shreds whirling round them, and once they burst none is left. */
-	@GameTest(maxTicks = 220)
+	@GameTest(environment = Alone.WEAVER_SPINDLE, maxTicks = 220)
 	public void itsSpindleStormRisesAndBursts(GameTestHelper helper) {
 		watch(helper, "spindle", Weaver.SPINDLE, 210, WeaverService::spindleShreds, (most, after, ended, sigils) -> {
 			check(helper, most >= 3, "only %s shreds whirled round its tornadoes", most);
@@ -140,7 +140,7 @@ public class WeaverBlowTests {
 	}
 
 	/** The Loom Comes Down: rows of great needles fall, each with its sigil, and none is left falling once it is over. */
-	@GameTest(maxTicks = 160)
+	@GameTest(environment = Alone.WEAVER_NEEDLEFALL, maxTicks = 160)
 	public void itsLoomBringsDownRowsOfNeedles(GameTestHelper helper) {
 		watch(helper, "needlefall", Weaver.NEEDLEFALL, 150, WeaverService::needlesFalling, (most, after, ended, sigils) -> {
 			check(helper, most >= 4, "only %s great needles fell at once", most);

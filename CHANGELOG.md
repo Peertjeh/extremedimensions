@@ -1,5 +1,29 @@
 # Changelog
 
+## 3.43.0: Loom and Toll
+
+### New
+- **The Last Weaver: three new blows.**
+  - *Warp and Weft* (`weaver_warp_damage`): she weaves a great grid of threads in the air over you and those near you.
+    Its lines show on the floor while it hangs, then she brings her arms down and it slams onto the ground. Stand in
+    the gaps between the lines, or jump.
+  - *Spindle Storm* (`weaver_spindle_damage`, `weaver_spindle_pull`): she spins up and three tornadoes of thread rise
+    and wander after the living. They draw you in by the squall's rules (a wall at your back, sneaking, Anchored),
+    cut whoever is caught in them and tear the ground they cross. Then they burst.
+  - *The Loom Comes Down* (`weaver_needle_damage`): four times she yanks threads down out of the sky, and rows of
+    great needles fall toward whoever she aims at (a sigil burns where each will land). They stay standing in the
+    floor for a while as spikes to hide behind.
+- **The Ferryman: three new blows.**
+  - *The Undertow* (`ferryman_undertow_pull`, `ferryman_geyser_damage`): he drives his pole into the floor and stirs
+    a whirlpool of soul fire that draws everyone round and in (by the squall's rules). Then he rips the pole up and a
+    geyser of soul fire erupts at its heart. Get out of the middle before it does.
+  - *Oars of the Drowned* (`ferryman_oar_damage`): two spectral oars rise out of the ground and he rows. Three strokes
+    sweep a wide arc in front of him, each shown on the floor first, tearing the ground and flinging whoever is in
+    their way.
+  - *Bells of the Drowned* (`ferryman_bell_damage`): drowned bells rise out of the floor beside each of his
+    passengers and round him, and toll one after another. Each toll runs a shockwave out over the ground; jump it.
+- Each new blow has its own animation, glow and sounds. The Knot Mother keeps her own blows.
+
 ## 3.42.0: The Hanging Lanterns
 
 ### Changed

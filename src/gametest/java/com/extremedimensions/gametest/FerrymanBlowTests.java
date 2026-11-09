@@ -111,7 +111,7 @@ public class FerrymanBlowTests {
 	}
 
 	/** The Undertow: its whirlpool draws his passenger round and in (the squall's gust reaches them). */
-	@GameTest(maxTicks = 140)
+	@GameTest(environment = Alone.FERRYMAN_UNDERTOW, maxTicks = 140)
 	public void hisUndertowDrawsHisPassengerIn(GameTestHelper helper) {
 		// (off the boat's side, inside the whirl, clear of the test's walls)
 		ServerPlayer p = passenger(helper, "ferryman-undertow", 2, 2);
@@ -121,7 +121,7 @@ public class FerrymanBlowTests {
 	}
 
 	/** Oars of the Drowned: two oars rise out of the ground, and none is left standing once the blow is over. */
-	@GameTest(maxTicks = 150)
+	@GameTest(environment = Alone.FERRYMAN_OARS, maxTicks = 150)
 	public void hisOarsRiseAndSinkAgain(GameTestHelper helper) {
 		watch(helper, passenger(helper, "ferryman-oars", 1, 1), "oars", Ferryman.OARS, 140, FerrymanService::oars, (most, after, ended) -> {
 			check(helper, most >= 2, "only %s displays of his oars rose", most);
@@ -130,7 +130,7 @@ public class FerrymanBlowTests {
 	}
 
 	/** Bells of the Drowned: bells rise out of the floor, and none is left once they have sunk back. */
-	@GameTest(maxTicks = 140)
+	@GameTest(environment = Alone.FERRYMAN_BELLS, maxTicks = 140)
 	public void hisBellsRiseAndSinkAgain(GameTestHelper helper) {
 		watch(helper, passenger(helper, "ferryman-bells", 1, 1), "bells", Ferryman.BELLS, 130, FerrymanService::bells, (most, after, ended) -> {
 			check(helper, most > 0, "no bell rose out of the floor");

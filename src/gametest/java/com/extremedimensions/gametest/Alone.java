@@ -13,6 +13,13 @@ final class Alone {
 	static final String FRAYED_RAY = "extremedimensions_test:alone/frayed_ray";
 	static final String MATRIARCH_CALLED = "extremedimensions_test:alone/matriarch_called";
 	static final String MATRIARCH_REQUIEM = "extremedimensions_test:alone/matriarch_requiem";
+	// (3.43: the Weaver's and Ferryman's new blows tear ground and throw players well past a test's own floor)
+	static final String WEAVER_WARP = "extremedimensions_test:alone/weaver_warp";
+	static final String WEAVER_SPINDLE = "extremedimensions_test:alone/weaver_spindle";
+	static final String WEAVER_NEEDLEFALL = "extremedimensions_test:alone/weaver_needlefall";
+	static final String FERRYMAN_UNDERTOW = "extremedimensions_test:alone/ferryman_undertow";
+	static final String FERRYMAN_OARS = "extremedimensions_test:alone/ferryman_oars";
+	static final String FERRYMAN_BELLS = "extremedimensions_test:alone/ferryman_bells";
 	static final String MATRIARCH_STIRS = "extremedimensions_test:alone/matriarch_stirs";
 	static final String MATRIARCH_SETTLES = "extremedimensions_test:alone/matriarch_settles";
 	static final String WEAVER_SETTLES = "extremedimensions_test:alone/weaver_settles";
