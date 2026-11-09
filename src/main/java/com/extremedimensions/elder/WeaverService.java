@@ -1471,7 +1471,7 @@ public final class WeaverService {
 		// (they rise out of the floor over eight beats)
 		double rise = Math.max(0.05, Math.min(1, (b.t - 20) / 8));
 		boolean wandering = b.t < 96;
-		boolean twist = b.every(3, 20), tear = wandering && b.every(8, 20), hum = wandering && b.every(30, 20);
+		boolean redraw = b.every(3, 20), tear = wandering && b.every(8, 20), hum = wandering && b.every(30, 20);
 		int life = Math.max(4, (int) Math.ceil(3 / u.tempo()) + 2);
 		float damage = (float) Math.max(0, Config.WEAVER_SPINDLE_DAMAGE);
 		for (Spindle s : u.spindles) {
@@ -1479,7 +1479,7 @@ public final class WeaverService {
 				wander(level, s, near, u.ticks);
 			}
 			double turn = u.ticks * 0.45;
-			if (twist) {
+			if (redraw) {
 				twist(level, elder, s, turn, rise, life);
 			}
 			// motes spiralling up it, and dust at its foot

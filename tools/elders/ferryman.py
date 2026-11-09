@@ -174,7 +174,7 @@ def build():
     vc = m.part("vortex_c", vort, (0, 0, 0), (-0.4, 0.6, 0), anim=True)
     m.ring("vring_c", vc, (0, 0, 0), 6, 12, 2.8, 1.2, "vortex")
     m.box(vort, -1.6, -1.6, -1.6, 3.2, 3.2, 3.2, "glowcore")
-    wrist = m.part("wristchain", fo_l, (0, 16, 3), m.hang_rot(fo_l))
+    wrist = m.part("wristchain", fo_l, (0, 16, 3), m.hang_rot(fo_l), anim=True)
     m.rope("wchain_", wrist, [[0, k * 2.2, 0] for k in range(14)], 0.9, "rust", links=True)
     m.lantern("lan_hand", wrist, (0, 28, 0), size=2.0, links=2)
     return m

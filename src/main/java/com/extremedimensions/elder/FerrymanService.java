@@ -1188,8 +1188,8 @@ public final class FerrymanService {
 		}
 		for (Bell bell : fare.bells) {
 			bell.age++;
-			if (bell.age == 1) {
-				// up out of the floor (a tick after it was sent under it, so it is seen to rise)
+			if (bell.age == 2) {
+				// up out of the floor (the tick after it was sent under it, so it is seen to rise)
 				moveBell(bell, 0, 0, 1, span(fare, 10));
 			}
 			if (bell.settle > 0 && --bell.settle == 0) {

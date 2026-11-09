@@ -1696,8 +1696,11 @@ public class ClientShots implements FabricClientGameTest {
 					new String[] {"rush", "cathedral", "barrage"});
 			liveFight(ctx, sp, "ferryman", 40, s -> com.extremedimensions.elder.FerrymanService.summonAt(player(s), player(s).blockPosition().offset(0, 0, 20)),
 					com.extremedimensions.elder.FerrymanService::force, new int[] {com.extremedimensions.elder.Ferryman.CROSSING,
-							com.extremedimensions.elder.Ferryman.GAOL, com.extremedimensions.elder.Ferryman.TIDE},
-					new String[] {"crossing", "gaol", "tide"});
+							com.extremedimensions.elder.Ferryman.GAOL, com.extremedimensions.elder.Ferryman.TIDE,
+							// (3.43) his undertow, his oars and his bells
+							com.extremedimensions.elder.Ferryman.UNDERTOW, com.extremedimensions.elder.Ferryman.OARS,
+							com.extremedimensions.elder.Ferryman.BELLS},
+					new String[] {"crossing", "gaol", "tide", "undertow", "oars", "bells"});
 			liveFight(ctx, sp, "weaver", 40, s -> com.extremedimensions.elder.WeaverService.summon(player(s), player(s).blockPosition().offset(0, 0, 20)),
 					com.extremedimensions.elder.WeaverService::force, new int[] {com.extremedimensions.elder.Weaver.LANCE,
 							com.extremedimensions.elder.Weaver.CRADLE, com.extremedimensions.elder.Weaver.THOUSAND,

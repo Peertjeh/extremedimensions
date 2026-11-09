@@ -529,6 +529,7 @@ public final class FerrymanGeometry {
 			case "vortex" -> root.getChild("root").getChild("figure").getChild("torso").getChild("arm_l").getChild("forearm_l").getChild("hand_l").getChild("vortex");
 			case "vortex_b" -> root.getChild("root").getChild("figure").getChild("torso").getChild("arm_l").getChild("forearm_l").getChild("hand_l").getChild("vortex").getChild("vortex_b");
 			case "vortex_c" -> root.getChild("root").getChild("figure").getChild("torso").getChild("arm_l").getChild("forearm_l").getChild("hand_l").getChild("vortex").getChild("vortex_c");
+			case "wristchain" -> root.getChild("root").getChild("figure").getChild("torso").getChild("arm_l").getChild("forearm_l").getChild("wristchain");
 			case "lan_hand" -> root.getChild("root").getChild("figure").getChild("torso").getChild("arm_l").getChild("forearm_l").getChild("wristchain").getChild("lan_hand");
 			default -> throw new IllegalArgumentException("no animated part " + name);
 		};
