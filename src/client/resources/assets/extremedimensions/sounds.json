@@ -1341,6 +1341,78 @@
       }
     ]
   },
+  "elder.pale_mason.chains": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.chains",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_chains",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.pale_mason.swing": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.swing",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_swing",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.pale_mason.fling": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.fling",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_fling",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.pale_mason.pillar": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.pillar",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_pillar",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.pale_mason.ring": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.ring",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_ring",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.pale_mason.spiral": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.spiral",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_spiral",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.pale_mason.burst": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.burst",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_burst",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.pale_mason.upheaval": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.upheaval",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_upheaval",
+        "attenuation_distance": 40
+      }
+    ]
+  },
   "elder.pale_mason.hurt": {
     "subtitle": "subtitles.extremedimensions.elder.pale_mason.hurt",
     "sounds": [

@@ -658,7 +658,7 @@ def pm_chains(seed):
     jerk = chains(rng, t, taut, 0.05, 12, 800, 3000, 0.08, (3, 7))
     shiver = chains(rng, t, taut + 0.03, 0.6, 30, 1600, 4200, 0.04, (1, 3), 2.4)
     k = np.clip((t - 0.3) / 2.4, 0, 1)
-    hm = glow(rng, t, C / 2 * E_ ** (k ** 1.4), 0.18) * swell(t, 0.2, 2.4, 3.4)
+    hm = glow(rng, t, C / 2 * E_ ** (k ** 1.4), 0.18) * swell(t, 0.2, 2.2, 3.0) ** 0.7
     x = mix(0.5 * norm(snap(rng, t, 0.0, 1.0)), 0.6 * norm(chains(rng, t, 0.0, 0.2, 10, 800, 3000, 0.07, (3, 7))), 0.4 * boom(rng, t, 0.0, 80, 40, 0.5),
             0.55 * norm(hauled), 0.4 * norm(rattle), 0.6 * norm(jerk), 0.45 * norm(snap(rng, t, taut, 1.0)), 0.3 * norm(shiver),
             0.45 * boom(rng, t, taut, 90, 45, 0.5), 0.75 * norm(hm), 0.35 * norm(sub_hum(t, C / 4, 0.3, 2.7)))
@@ -715,7 +715,7 @@ def pm_pillar(seed):
     under = lowpass(mix(boom(rng, t, 0.0, 58, 24, 1.0, 1.0), 0.6 * norm(crack(rng, t, 0.0, 1.0, 2.4)), 0.5 * norm(thump(rng, t, 0.0, 40))), 380)
     x = mix(norm(under), 0.7 * norm(crack(rng, t, up, 1.0, 1.0)), norm(column(rng, t, up, 1.6)), 0.6 * boom(rng, t, up, 95, 40, 0.8),
             0.35 * norm(crumble(rng, t, up + 0.02, 2.2, 360, 700, 7000, 0.008, 6, 1.4)),
-            0.3 * norm(shatter(rng, t, up, 0.5, 30, 2500, 7000, 0.06)), 0.3 * norm(sub_hum(t, C / 4, 0.15, 1.6)))
+            0.3 * norm(shatter(rng, t, up, 0.5, 30, 2500, 7000, 0.06)), 0.3 * norm(glow(rng, t, C / 2, 0.3) * env(t - up, 0.03, 0.7)))
     return master(rng, x, 2.8, 0.34, 1.9, True, 8000, 0.7), 3.0
 
 
@@ -731,9 +731,10 @@ def pm_ring(seed):
     out = sum(a * np.exp(-k * r * 0.6) * (np.sin(2 * np.pi * phase(f0 * r) + rng.random() * 6) + np.sin(2 * np.pi * phase(f0 * r * 1.004) + rng.random() * 6))
               for r, a in LINK)
     out *= sh * env(t - 0.02, 0.12, 0.8)
-    x = mix(norm(halo(rng, t, 0.0, C * 2, 1.0, 1.3, 0.9)), 0.6 * norm(halo(rng, t, 0.002, C, 1.0, 1.6, 0.5)),
-            0.5 * norm(band(noise(rng, n), 1500, 14000) * env(t, 0.0005, 0.015)), 0.5 * boom(rng, t, 0.0, 100, 50, 0.5),
-            0.45 * norm(out), 0.3 * norm(whoosh(rng, t, 0.02, 1.3, 3000, 700, 0.4)), 0.15 * norm(chains(rng, t, 0.01, 0.3, 5)))
+    x = mix(norm(halo(rng, t, 0.0, C * 2, 1.0, 1.3, 0.9)), 0.45 * norm(halo(rng, t, 0.002, C, 1.0, 1.6, 0.5)),
+            0.45 * norm(halo(rng, t, 0.001, C * 4, 1.0, 0.9, 0.7)), 0.6 * norm(band(noise(rng, n), 1500, 14000) * env(t, 0.0005, 0.02)),
+            0.5 * boom(rng, t, 0.0, 100, 50, 0.5), 0.6 * norm(out), 0.35 * norm(whoosh(rng, t, 0.02, 1.3, 3000, 700, 0.4)),
+            0.15 * norm(chains(rng, t, 0.01, 0.3, 5)))
     return master(rng, x, 3.0, 0.38, 1.6, True, 8000, 0.6), 2.5
 
 
@@ -744,6 +745,7 @@ def pm_spiral(seed):
     t = t_(5.0)
     n = len(t)
     k = np.clip(t / 4.6, 0, 1)
+    gather = 0.25 + 0.75 * k ** 1.5
     turn = np.sin(2 * np.pi * phase(0.7 + 2.8 * k ** 1.5))
     g = grind(rng, t, 0.0, 4.8, 70, 2600, 8, 40, 1.0)
     centre = 700 * (1 + 0.8 * turn) * 2 ** k
@@ -751,10 +753,11 @@ def pm_spiral(seed):
     hc = (500 + 900 * k ** 1.2) * (1 + 0.08 * turn)
     howl = sweep_filter(rng, noise(rng, n), hc, hc * 0.05) * swell(t, 0.2, 4.3, 5.0)
     ch = lost(rng, t, [C, C * E_, C * GS, C * 2, C * 2 * E_], 4.0, 0.5, "u", "a", 3, 3.2, 0.8, -0.04, 3200, 0.2)
-    x = mix(norm(g) * (0.75 + 0.25 * turn), 0.6 * norm(passing), 0.7 * norm(rush(rng, t, 0.0, 4.8, 160, 2000, 0.9)), 0.35 * norm(howl),
-            0.45 * norm(ch), 0.3 * norm(riser(rng, t, 2.6, 2.2, 200, 6000, C / 4)), 0.3 * norm(crumble(rng, t, 0.3, 4.4, 300, 600, 5000, 0.008, 6, 0.9)),
-            0.4 * norm(sub_hum(t, C / 4, 0.0, 4.9)), 0.4 * boom(rng, t, 0.0, 70, 30, 0.8), 0.4 * norm(crack(rng, t, 0.0, 1.0, 1.6)),
-            0.25 * norm(braam(rng, t, 1.5, C / 4, 3.4, 0.9, 5)))
+    x = mix(norm(g) * (0.65 + 0.35 * turn) * gather, 0.6 * norm(passing) * (0.7 + 0.3 * turn) * gather,
+            0.7 * norm(rush(rng, t, 0.0, 4.8, 160, 2000, 0.9)) * (0.85 + 0.15 * turn), 0.35 * norm(howl), 0.45 * norm(ch),
+            0.3 * norm(riser(rng, t, 2.6, 2.2, 200, 6000, C / 4)), 0.3 * norm(crumble(rng, t, 0.3, 4.4, 300, 600, 5000, 0.008, 6, 0.9)) * gather,
+            0.15 * norm(sub_hum(t, C / 4, 0.0, 4.9)), 0.2 * boom(rng, t, 0.0, 70, 30, 0.8), 0.25 * norm(crack(rng, t, 0.0, 1.0, 1.6)),
+            0.3 * norm(braam(rng, t, 1.5, C / 4, 3.4, 0.9, 5)))
     return master(rng, x, 3.0, 0.36, 1.6), 5.0
 
 
@@ -790,12 +793,12 @@ def pm_upheaval(seed):
         run += lowpass(crack(rng, t, s, 1.0 - 0.05 * i, 1.0 + 0.12 * i), 9000 - 500 * i)
     clap, fall = 2.3, 3.4
     cliffs = norm(grind(rng, t, 0.5, 2.9, 50, 2200, 5, 36, 1.2)) + 0.7 * norm(grind(rng, t, 0.9, 2.5, 60, 1800, 6, 49, 0.8))
-    x = mix(norm(crack(rng, t, 0.0, 1.0, 2.0)), boom(rng, t, 0.0, 64, 22, 2.0, 1.2), 0.5 * norm(run), 0.9 * norm(quake(rng, t, 0.0, 5.4, 9)),
-            0.8 * norm(cliffs), 0.35 * norm(hollow(lowpass(noise(rng, n), 800), C / 2, 0.85) * gate(t, 0.3, 5.0, 1.0, 1.5)),
+    x = mix(0.8 * norm(crack(rng, t, 0.0, 1.0, 2.0)), boom(rng, t, 0.0, 64, 22, 2.0, 0.9), 0.45 * norm(run), 0.65 * norm(quake(rng, t, 0.0, 5.4, 9)),
+            0.6 * norm(cliffs), 0.3 * norm(hollow(lowpass(noise(rng, n), 800), C / 2, 0.85) * gate(t, 0.3, 5.0, 1.0, 1.5)),
             0.4 * norm(braam(rng, t, 1.2, C / 4, 3.0, 0.75, 5)), 0.2 * norm(chains(rng, t, 0.2, 3.6, 24, 1000, 3000, 0.06, (2, 5), 1.0)),
-            0.9 * norm(thunder(rng, t, clap, 2.4)), 0.8 * boom(rng, t, clap, 80, 30, 1.2), boom(rng, t, fall, 56, 20, 3.2, 1.3),
-            0.7 * norm(crack(rng, t, fall, 1.0, 2.2)), 0.6 * norm(crumble(rng, t, fall + 0.02, 2.0, 1400, 300, 5500, 0.014, 30, 1.5)),
-            0.5 * norm(lowpass(noise(rng, n), 100) * env(t - fall, 0.1, 1.2)))
+            1.4 * norm(thunder(rng, t, clap, 2.4)), boom(rng, t, clap, 80, 30, 1.2), boom(rng, t, fall, 56, 20, 3.2, 1.5),
+            0.9 * norm(crack(rng, t, fall, 1.0, 2.2)), 0.7 * norm(crumble(rng, t, fall + 0.02, 2.0, 1400, 300, 5500, 0.014, 30, 1.5)),
+            0.6 * norm(lowpass(noise(rng, n), 100) * env(t - fall, 0.1, 1.2)))
     return master(rng, x, 4.2, 0.4, 1.8), 6.0
 
 
