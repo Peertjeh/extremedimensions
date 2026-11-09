@@ -1,17 +1,23 @@
-"""The Elders' own sounds: hurt (3), ambient (2), death, steps (2) and roar for each, made from noise and tones.
+"""The Elders' own sounds: hurt (3), ambient (2), death, steps (2) and roar for each, made from noise and tones; and,
+since 3.43, the Ferryman's and the Last Weaver's own blows (four each).
 
 The Matriarch is living wood: splitting bark, a deep groan through her mask, leaves. The Ferryman is a cracked bell,
 chains and the river under his boat, and a hollow moan. The Last Weaver is glass and thread: shards, snapping strings,
-an airy breath, a chorus of thin high voices. Deterministic (fixed seeds). Needs numpy and ffmpeg (libvorbis).
+an airy breath, a chorus of thin high voices. Deterministic (fixed seeds). Needs numpy and ffmpeg (libvorbis). With
+--preview DIR it also writes a spectrogram of each sound there (needs Pillow). Name sounds to make only those.
 
-usage: python3 tools/sounds/elders.py
+usage: python3 tools/sounds/elders.py [--preview DIR] [<elder>_<name>...]
 """
 import os
 import subprocess
+import sys
 import tempfile
 import wave
 
 import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import knot_mother as km  # noqa: E402  (a few general tools: a moving band-pass, loudness, spectrograms)
 
 SR = 44100
 OUT = os.path.join(os.path.dirname(__file__), "..", "..", "src/client/resources/assets/extremedimensions/sounds/elder")
@@ -60,9 +66,14 @@ def reverb(rng, x, tail=1.4, mix=0.3, bright=6000):
     return out * (1 - mix) + wet * mix * np.max(np.abs(x))
 
 
-def save(name, x, keep):
+def save(name, x, keep, target=None):
+    """Peaks at 0.9. With a target (dB, short-term loudness as knot_mother.loudness), it is brought to that loudness
+    instead, its peaks softly held under 0.9, so a blow with one great transient sits as loud as the rest of the set."""
     x = x[: int(SR * keep)].copy()
     x = x / (np.max(np.abs(x)) + 1e-9) * 0.9
+    if target is not None:
+        x = x * min(2.0, 10 ** ((target - km.loudness(x)) / 20))
+        x = np.where(np.abs(x) > 0.75, np.sign(x) * (0.75 + 0.15 * np.tanh((np.abs(x) - 0.75) / 0.15)), x)
     f = int(SR * min(0.3, keep * 0.2))
     x[-f:] *= np.linspace(1, 0, f) ** 2
     with tempfile.TemporaryDirectory() as tmp:
@@ -74,6 +85,7 @@ def save(name, x, keep):
             w.writeframes((x * 32767).astype(np.int16).tobytes())
         subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", wav, "-c:a", "libvorbis", "-q:a", "4", os.path.join(OUT, name + ".ogg")],
                        check=True)
+    return x
 
 
 def noise(rng, n):
