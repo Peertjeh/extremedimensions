@@ -2,26 +2,34 @@ package com.extremedimensions.elder;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.events.PaleSquall;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.lore.Loot;
+import com.extremedimensions.mixin.DisplayAccess;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.relic.RelicService;
 import com.extremedimensions.seam.SeamFauna;
+import com.extremedimensions.server.BlockFlight;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
+import com.mojang.math.Transformation;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -29,21 +37,28 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Brightness;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 
 /**
  * The Last Weaver: once the hunger at the Heart is ended, the weave stirs. The first visit to a village of the Thinned
  * may wake its Weaver. It floats above the ground and keeps its distance; it casts threads that hold players to the
  * spot they stood on (and drain the Seam faster while they hold), rains needles of light, flings back anyone who comes
  * too close, sweeps the ground with a beam from its halo that carves it, strings a web of threads across the ground
- * that cuts when it is pulled taut, and brings down spirals of needles with a great needle last of all. Twice it calls
- * its kin. At half its health it weaves the Last Tapestry: it rises, threads run from its hands to everyone near while
+ * that cuts when it is pulled taut, and brings down spirals of needles with a great needle last of all. Since 3.43 it
+ * also tears at the world: a grid of threads falls on its prey's ground, cutting whoever stands on a line (Warp and
+ * Weft); three tornadoes of thread wander after the nearest players, drawing them in and tearing up the ground
+ * (Spindle Storm); and rows of great needles fall from over it, leaving spikes of calcite in the ground (The Loom Comes
+ * Down). Those three are its own: the Knot Mother never casts them. Twice it calls its kin. At half its health it weaves the Last Tapestry: it rises, threads run from its hands to everyone near while
  * time slows for them and a dome of threads closes over the ground; then the threads snap, and its curse falls on
  * everyone within reach. Every hurt it does unpicks Seam time. Slain, it gives its thread back.
  */
@@ -83,6 +98,17 @@ public final class WeaverService {
 		/** Her Threadline: the bearing of its prey as it began, and which way it sweeps. */
 		double lineA;
 		int lineWay = 1;
+		/**
+		 * Warp and Weft (3.43): the middle of its grid (on a block's middle, so its lines run along rows of blocks), the
+		 * ground it falls to, and whether it hangs there now (laid and not yet fallen).
+		 */
+		double warpX, warpY, warpZ;
+		boolean warp;
+		/** Spindle Storm (3.43): its tornadoes, and when each player was last cut by one (game tick), so they cut once in ten. */
+		final List<Spindle> spindles = new ArrayList<>();
+		final Map<UUID, Long> spun = new HashMap<>();
+		/** The Loom Comes Down (3.43): its great needles still falling. */
+		final List<Needle> needles = new ArrayList<>();
 
 		/** Its blows land sooner than the other Elders' (the time saved goes into its pause; see {@link WeaverService#end}). */
 		@Override
@@ -121,6 +147,51 @@ public final class WeaverService {
 		}
 	}
 
+	/**
+	 * A tornado of thread of its Spindle Storm: where its foot is on the ground now, where round the Weaver it rose, and
+	 * the shreds whirling round it (wool, cobweb and calcite). Their displays stand where it rose; their look carries them
+	 * round it wherever it has wandered.
+	 */
+	private static final class Spindle {
+		double x, y, z;
+		final double phase;
+		final double ox, oy, oz;
+		final List<Display.BlockDisplay> shreds = new ArrayList<>();
+		boolean burst;
+
+		Spindle(double x, double y, double z, double phase) {
+			this.x = x;
+			this.y = y;
+			this.z = z;
+			this.phase = phase;
+			// (one block over the ground, so they are lit as the air there)
+			this.ox = x;
+			this.oy = y + 1;
+			this.oz = z;
+		}
+	}
+
+	/** A great needle of its Loom: where it lands, its display (null if the level took none), its row, and ticks left. */
+	private static final class Needle {
+		final double x, y, z;
+		final Display.BlockDisplay display;
+		final Quaternionf tilt;
+		final int row;
+		int left;
+		/** Whether its fall has begun (the tick after it was laid, so the client sees it fall and not only where it ends). */
+		boolean falling;
+
+		Needle(double x, double y, double z, Display.BlockDisplay display, Quaternionf tilt, int row, int left) {
+			this.x = x;
+			this.y = y;
+			this.z = z;
+			this.display = display;
+			this.tilt = tilt;
+			this.row = row;
+			this.left = left;
+		}
+	}
+
 	/** Seam marks of anchors still in the world ("ka@dim@x,y,z"), cleared when they are untied. */
 	private static final String ANCHOR_MARK = "ka@";
 
@@ -133,10 +204,16 @@ public final class WeaverService {
 		return WEAVERS.containsKey(e.getUUID());
 	}
 
-	/** Starts one of its blows (or its ultimate) at once; for tests and operators. False if it is not fighting. */
+	/**
+	 * Starts one of its blows (or its ultimate) at once; for tests and operators. False if it is not fighting, or for a
+	 * blow of the Last Weaver's own asked of the Knot Mother (her body does not move into them).
+	 */
 	public static boolean force(Entity e, int action) {
 		Unweaving fight = WEAVERS.get(e.getUUID());
 		if (fight == null || !(e instanceof Weaver w)) {
+			return false;
+		}
+		if (w instanceof KnotMother && (action == Weaver.WARP || action == Weaver.SPINDLE || action == Weaver.NEEDLEFALL)) {
 			return false;
 		}
 		ElderSpawn.skip(w, fight);
@@ -155,6 +232,7 @@ public final class WeaverService {
 		for (Unweaving u : WEAVERS.values()) {
 			u.bar.removeAllPlayers();
 			untie(u);
+			unspin(u);
 		}
 		WEAVERS.clear();
 		WARNED_AT.clear();
@@ -448,6 +526,7 @@ public final class WeaverService {
 			if (!(ent instanceof Weaver w) || !w.isAlive()) {
 				u.bar.removeAllPlayers();
 				untie(u);
+				unspin(u);
 				WEAVERS.remove(e.getKey());
 				continue;
 			}
@@ -482,6 +561,7 @@ public final class WeaverService {
 			WorldFx.particleIn(u.level, "extremedimensions:soul_mote", w.getX(), w.getY() + 13, w.getZ(), 9, 3, 2, 0.0, 2);
 			ElderFx.ambience(w);
 		}
+		hold(u);
 		if (u.action == ElderBoss.SPAWN) {
 			// Forming: it hangs where it is woven, turned towards its prey
 			w.motion.brake(w, 0.015, HOVER);
@@ -563,8 +643,12 @@ public final class WeaverService {
 					a = dist < 9 ? u.pick(KnotMother.SNARE, snare * 2, KnotMother.THREADLINE, line, Weaver.CRADLE, 2, Weaver.THREAD, 1)
 							: u.pick(KnotMother.THREADLINE, line * 2, KnotMother.SNARE, snare, Weaver.CRADLE, 2, Weaver.THREAD, 2);
 				} else {
-					a = dist < 8 && rise < 8 && rise > -4 ? u.pick(Weaver.UNRAVEL, 4, Weaver.LANCE, (lance + 1) / 2, Weaver.CRADLE, 1)
-							: u.pick(Weaver.THREAD, 2, Weaver.NEEDLES, 2, Weaver.LANCE, lance, Weaver.CRADLE, 2, Weaver.THOUSAND, 2);
+					// (3.43: its grid of threads, its tornadoes and its rows of great needles besides, its own and never the
+					// Knot Mother's; close in, no needles, whose rows begin four blocks out)
+					a = dist < 8 && rise < 8 && rise > -4
+							? u.pick(Weaver.UNRAVEL, 4, Weaver.LANCE, (lance + 1) / 2, Weaver.CRADLE, 1, Weaver.WARP, 3, Weaver.SPINDLE, 2)
+							: u.pick(Weaver.THREAD, 2, Weaver.NEEDLES, 2, Weaver.LANCE, lance, Weaver.CRADLE, 2, Weaver.THOUSAND, 2, Weaver.WARP, 3,
+									Weaver.SPINDLE, 2, Weaver.NEEDLEFALL, 3);
 				}
 				u.start(w, a);
 			}
@@ -643,6 +727,9 @@ public final class WeaverService {
 			case Weaver.LANCE -> lance(w, u, p, b);
 			case Weaver.CRADLE -> cradle(w, u, p, b);
 			case Weaver.THOUSAND -> thousand(w, u, p, b);
+			case Weaver.WARP -> warp(w, u, p, b);
+			case Weaver.SPINDLE -> spindle(w, u, b);
+			case Weaver.NEEDLEFALL -> needlefall(w, u, p, b);
 			case KnotMother.THREADLINE -> threadline(w, u, p, b);
 			case KnotMother.SNARE -> snare(w, u, p, b);
 			case ElderBoss.ULTIMATE -> tapestry(w, u, b);
@@ -1346,6 +1433,7 @@ public final class WeaverService {
 	public static void onDefeat(Weaver w, Entity killer) {
 		Unweaving u = WEAVERS.remove(w.getUUID());
 		untie(u);
+		unspin(u);
 		ElderArena.release(w);
 		ElderStrikes.forget(w);
 		ElderFx.silence(w, track(w));
@@ -1400,6 +1488,7 @@ public final class WeaverService {
 	public static void fade(Weaver w) {
 		Unweaving u = WEAVERS.remove(w.getUUID());
 		untie(u);
+		unspin(u);
 		ElderArena.release(w);
 		if (u != null && u.village != null) {
 			// Left unfinished (its prey gone): the village it rose in may wake a Weaver again, on the next first visit

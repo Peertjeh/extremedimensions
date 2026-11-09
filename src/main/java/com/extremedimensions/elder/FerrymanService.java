@@ -9,33 +9,46 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.events.PaleSquall;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.lore.Loot;
+import com.extremedimensions.mixin.DisplayAccess;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.progression.Advancements;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.relic.RelicService;
+import com.extremedimensions.server.BlockFlight;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
+import com.mojang.math.Transformation;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Brightness;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
  * The Ferryman: on a long Nether expedition he may come to collect. His boat sails over lava and stone alike,
@@ -43,9 +56,13 @@ import net.minecraft.world.item.ItemStack;
  * (faster still once he is wounded below half) and each of his blows takes levels. He brings his pole down in a line of
  * fire, drags his passenger back with a chain, sends soul lanterns drifting after them, rings a knell, charges straight
  * through them splitting the ground, raises cages of chains round them that crush inwards, and sends tides of soul
- * fire rolling out over the ground. At half his health he sounds the Final Toll: the boat rises, soul fire rains for ten
- * seconds and three bells ring, and when the boat comes down his curse falls on everyone within reach. Slain, he leaves
- * fragments and perhaps a relic and waives a stack of the Ferryman's Fee; outrun home, he collects his fare.
+ * fire rolling out over the ground. Since 3.43 he also drives his pole down into a whirlpool of soul fire that draws
+ * everyone round and in before a geyser bursts up out of its middle (the Undertow), raises two spectral oars that sweep
+ * the ground before him in three strokes (Oars of the Drowned), and raises bells out of the floor beside his passengers
+ * that toll in turn, each toll a shockwave (Bells of the Drowned). At half his health he sounds the Final Toll: the boat
+ * rises, soul fire rains for ten seconds and three bells ring, and when the boat comes down his curse falls on everyone
+ * within reach. Slain, he leaves fragments and perhaps a relic and waives a stack of the Ferryman's Fee; outrun home, he
+ * collects his fare.
  */
 public final class FerrymanService {
 	private FerrymanService() {}
@@ -59,9 +76,63 @@ public final class FerrymanService {
 		double dirX, dirZ, lift;
 		final Set<UUID> struck = new HashSet<>();
 		final List<ElderGaol.Cage> gaols = new ArrayList<>();
+		/** The Undertow: where its whirlpool turns. */
+		double poolX, poolY, poolZ;
+		/** Oars of the Drowned: where they rise (they sweep round it), which way he faced then, and each stroke's aim. */
+		double oarX, oarY, oarZ, oarFace;
+		final double[] strokes = {Double.NaN, Double.NaN, Double.NaN};
+		final List<Oar> oars = new ArrayList<>();
+		/** Who a stroke of the oars has struck (once a stroke). */
+		final Set<UUID> rowed = new HashSet<>();
+		/** Bells of the Drowned: the bells risen out of the floor. */
+		final List<Bell> bells = new ArrayList<>();
+	}
+
+	/** A spectral oar of his Oars of the Drowned: its shaft and its blade, and the side of him it rises at (1 or -1). */
+	private static final class Oar {
+		final int side;
+		final Display.BlockDisplay shaft, blade;
+
+		Oar(int side, Display.BlockDisplay shaft, Display.BlockDisplay blade) {
+			this.side = side;
+			this.shaft = shaft;
+			this.blade = blade;
+		}
+	}
+
+	/** A bell of his Bells of the Drowned: its frame and its body, where it stands, which way it is turned. */
+	private static final class Bell {
+		final Display.BlockDisplay frame, body;
+		final double x, y, z;
+		final float yaw;
+		/** Ticks since it came up out of the floor, and until it hangs still again after a toll. */
+		int age, settle;
+		/** Which way it swung last (each toll swings it the other way). */
+		int swing = 1;
+
+		Bell(Display.BlockDisplay frame, Display.BlockDisplay body, double x, double y, double z, float yaw) {
+			this.frame = frame;
+			this.body = body;
+			this.x = x;
+			this.y = y;
+			this.z = z;
+			this.yaw = yaw;
+		}
 	}
 
 	private static final Map<UUID, Fare> FARES = new HashMap<>();
+
+	/** How many displays make up his spectral oars now (for tests). */
+	public static int oars(Entity e) {
+		Fare f = FARES.get(e.getUUID());
+		return f == null ? 0 : f.oars.size() * 2;
+	}
+
+	/** How many of his bells stand risen out of the floor now (for tests). */
+	public static int bells(Entity e) {
+		Fare f = FARES.get(e.getUUID());
+		return f == null ? 0 : f.bells.size();
+	}
 
 	/** His fight, if he is fighting. */
 	static ElderFight fight(Entity e) {
@@ -93,6 +164,7 @@ public final class FerrymanService {
 	public static void clear() {
 		for (Fare f : FARES.values()) {
 			f.bar.removeAllPlayers();
+			dropAll(f);
 		}
 		FARES.clear();
 	}
@@ -242,6 +314,7 @@ public final class FerrymanService {
 			Entity ent = fare.level.getEntity(e.getKey());
 			if (!(ent instanceof Ferryman f) || !f.isAlive()) {
 				fare.bar.removeAllPlayers();
+				dropAll(fare);
 				FARES.remove(e.getKey());
 				ElderGaol.forget(e.getKey());
 				continue;
@@ -279,6 +352,7 @@ public final class FerrymanService {
 			WorldFx.particleIn(level, "minecraft:soul_fire_flame", f.getX(), f.getY() + 0.3, f.getZ(), 2.5, 0.1, 6, 0.01, 2);
 			ElderFx.ambience(f);
 		}
+		hold(fare);
 		if (fare.action == ElderBoss.SPAWN) {
 			// Forming: his boat waits on the whirl, his hood turned to his passenger
 			f.motion.brake(f, 0.02, 0.1);
@@ -329,10 +403,12 @@ public final class FerrymanService {
 				// his crossing goes no further than it can carry the boat
 				double rise = p.getY() - f.getY();
 				boolean cross = dist <= ElderPower.reach(30) - 6;
-				int a = rise > 3.5 || rise < -3 ? fare.pick(Ferryman.LANTERN, 3, Ferryman.GAOL, 2, Ferryman.SLAM, 2, Ferryman.CHAIN, 2)
-						: dist <= 8 ? fare.pick(Ferryman.KNELL, 3, Ferryman.TIDE, 2, Ferryman.GAOL, 1)
-						: dist <= 20 ? fare.pick(Ferryman.SLAM, 3, Ferryman.CROSSING, 3, Ferryman.TIDE, 2, Ferryman.GAOL, 2, Ferryman.LANTERN, 2, Ferryman.CHAIN, 1)
-						: fare.pick(Ferryman.LANTERN, 3, Ferryman.CHAIN, 2, Ferryman.GAOL, 1, Ferryman.CROSSING, cross ? 3 : 0);
+				// (3.43: his undertow and his oars about the boat, his bells wherever his passengers stand)
+				int a = rise > 3.5 || rise < -3 ? fare.pick(Ferryman.LANTERN, 3, Ferryman.GAOL, 2, Ferryman.SLAM, 2, Ferryman.CHAIN, 2, Ferryman.BELLS, 2)
+						: dist <= 8 ? fare.pick(Ferryman.KNELL, 3, Ferryman.TIDE, 2, Ferryman.GAOL, 1, Ferryman.UNDERTOW, 3, Ferryman.OARS, 3, Ferryman.BELLS, 2)
+						: dist <= 20 ? fare.pick(Ferryman.SLAM, 3, Ferryman.CROSSING, 3, Ferryman.TIDE, 2, Ferryman.GAOL, 2, Ferryman.LANTERN, 2, Ferryman.CHAIN, 1,
+								Ferryman.UNDERTOW, 3, Ferryman.OARS, 3, Ferryman.BELLS, 2)
+						: fare.pick(Ferryman.LANTERN, 3, Ferryman.CHAIN, 2, Ferryman.GAOL, 1, Ferryman.CROSSING, cross ? 3 : 0, Ferryman.BELLS, 2);
 				fare.start(f, a);
 			}
 			return;
@@ -348,7 +424,9 @@ public final class FerrymanService {
 				double ry = Math.toRadians(f.getYRot());
 				f.motion.drive(f, -Math.sin(ry) * 0.32, Math.cos(ry) * 0.32, 0.06, 0.1);
 			} else {
-				f.motion.brake(f, fare.action == Ferryman.SLAM ? 0.1 : 0.02, 0.1);
+				// (his pole planted for the undertow, his oars rising where he stops: the boat holds still)
+				boolean planted = fare.action == Ferryman.SLAM || fare.action == Ferryman.UNDERTOW || fare.action == Ferryman.OARS;
+				f.motion.brake(f, planted ? 0.1 : 0.02, 0.1);
 			}
 			ElderFx.look(f, p);
 		}
@@ -414,6 +492,9 @@ public final class FerrymanService {
 			case Ferryman.CROSSING -> crossing(f, fare, p, b);
 			case Ferryman.GAOL -> gaol(f, fare, p, b);
 			case Ferryman.TIDE -> tide(f, fare, b);
+			case Ferryman.UNDERTOW -> undertow(f, fare, b);
+			case Ferryman.OARS -> row(f, fare, p, b);
+			case Ferryman.BELLS -> peal(f, fare, b);
 			case ElderBoss.ULTIMATE -> finalToll(f, fare, b);
 			default -> end(f, fare, 40);
 		}
@@ -711,6 +792,7 @@ public final class FerrymanService {
 			return;
 		}
 		fare.bar.removeAllPlayers();
+		dropAll(fare);
 		ServerLevel level = (ServerLevel) f.level();
 		ElderFx.burst(f, "minecraft:soul_fire_flame", 100);
 		ElderFx.burst(f, "minecraft:soul", 80);
@@ -748,6 +830,7 @@ public final class FerrymanService {
 		if (fare != null) {
 			fare.abandonUltimate(BOSS);
 			fare.bar.removeAllPlayers();
+			dropAll(fare);
 			if (fare.action == ElderBoss.ULTIMATE) {
 				ElderFx.cinema(f, 160, ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");
 			}

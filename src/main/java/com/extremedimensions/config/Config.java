@@ -1322,6 +1322,14 @@ public final class Config {
 	public static double FERRYMAN_GAOL_SECONDS = 1.5;
 	/** Damage of the Ferryman's gaol closing on those still inside it. */
 	public static double FERRYMAN_GAOL_DAMAGE = 14.0;
+	/** How hard the Ferryman's Undertow draws everyone near round and in, each tick (by the squall's rules: walls, sneaking, Anchored) (3.43). */
+	public static double FERRYMAN_UNDERTOW_PULL = 0.07;
+	/** Damage of the geyser of soul fire at the end of his Undertow, to whoever is in its middle (half for its wave) (3.43). */
+	public static double FERRYMAN_GEYSER_DAMAGE = 14.0;
+	/** Damage of an oar of his Oars of the Drowned, to whoever it sweeps through (3.43). */
+	public static double FERRYMAN_OAR_DAMAGE = 12.0;
+	/** Damage of the shockwave of a toll of his Bells of the Drowned, to whoever it runs over on the ground (3.43). */
+	public static double FERRYMAN_BELL_DAMAGE = 8.0;
 	/** How much sooner the Weaver's blows land once it starts them, as a multiple (the rhythm between its blows stays). */
 	public static double WEAVER_WINDUP_SPEED = 1.6;
 	/** How long the Seraphic Lance's beam burns, as a multiple. */
@@ -2008,7 +2016,9 @@ public final class Config {
 			{"pale_mason_wake_seconds", 0, 120}, {"pale_mason_strike_damage", 0, 60}, {"pale_mason_wall_seconds", 1, 60}, {"pale_mason_block_damage", 0, 60},
 			{"pale_mason_block_size", 1, 4}, {"pale_mason_gaze_damage", 0, 60}, {"pale_mason_door_pull", 0, 0.5}, {"pale_mason_door_damage", 0, 60}, {"pale_mason_chain_damage", 0, 60},
 			{"pale_mason_pillar_damage", 0, 60}, {"pale_mason_ring_damage", 0, 60}, {"pale_mason_spiral_pull", 0, 0.5}, {"pale_mason_burst_damage", 0, 60}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
-			{"ferryman_gaol_hits", 1, 20}, {"ferryman_gaol_seconds", 0.5, 6}, {"ferryman_gaol_damage", 0, 100}, {"weaver_windup_speed", 0.5, 4}, {"weaver_lance_length", 0.5, 4},
+			{"ferryman_gaol_hits", 1, 20}, {"ferryman_gaol_seconds", 0.5, 6}, {"ferryman_gaol_damage", 0, 100},
+			{"ferryman_undertow_pull", 0, 0.5}, {"ferryman_geyser_damage", 0, 60}, {"ferryman_oar_damage", 0, 60}, {"ferryman_bell_damage", 0, 60},
+			{"weaver_windup_speed", 0.5, 4}, {"weaver_lance_length", 0.5, 4},
 			{"elder_arena_size", 0.5, 12}, {"elder_arena_wall", 0, 1}, {"elder_arena_landmark", 0, 1},
 			{"elder_arena_breakable", 0, 1}, {"elder_arena_blast_resistance", 0, 1200}, {"elder_arena_collapse", 0, 1},
 			{"elder_arena_rubble_damage", 0, 40}, {"elder_arena_rubble_max", 0, 2000}, {"elder_arena_phases", 0, 1},

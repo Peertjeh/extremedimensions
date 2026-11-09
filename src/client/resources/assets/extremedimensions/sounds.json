@@ -458,6 +458,42 @@
       }
     ]
   },
+  "elder.ferryman.undertow": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.undertow",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/ferryman_undertow",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.ferryman.geyser": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.geyser",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/ferryman_geyser",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.ferryman.oars": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.oars",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/ferryman_oars",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.ferryman.bell": {
+    "subtitle": "subtitles.extremedimensions.elder.ferryman.bell",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/ferryman_bell",
+        "attenuation_distance": 40
+      }
+    ]
+  },
   "elder.weaver.voice": {
     "subtitle": "subtitles.extremedimensions.elder.weaver.voice",
     "sounds": [

@@ -20,6 +20,25 @@ public class Weaver extends ElderBoss {
 	public static final int CRADLE = 5;
 	/** A Thousand Needles: rings of needles fall in spirals onto its prey, and a great needle last of all. */
 	public static final int THOUSAND = 6;
+	/**
+	 * Warp and Weft (3.43): its arms raised, it weaves a square grid of threads high over its prey, a line every four
+	 * blocks both ways, and marks on the ground where each will fall; then its arms slam down and the grid with them.
+	 * Whoever stands on a line is cut; the cells between are safe. (Weaving 0-24, the arms come down 44-52, the grid lands
+	 * at 52.) The Last Weaver's own: the Knot Mother never weaves it.
+	 */
+	public static final int WARP = 10;
+	/**
+	 * Spindle Storm (3.43): it spins up, and three tornadoes of thread rise out of the floor round it and wander after the
+	 * nearest players, drawing them in, cutting whoever is caught in their core and tearing up the ground they cross;
+	 * then they burst. (They rise at 20, wander to 96 and burst at 100.) The Last Weaver's own.
+	 */
+	public static final int SPINDLE = 11;
+	/**
+	 * The Loom Comes Down (3.43): its right arm raised, it yanks four times, and each time a row of great needles falls
+	 * from high over it towards one of those it can reach, each leaving a spike of calcite in the ground for a while.
+	 * (The yanks at 24, 34, 44 and 54; the rows land at 36, 46, 56 and 66.) The Last Weaver's own.
+	 */
+	public static final int NEEDLEFALL = 12;
 
 	public Weaver(EntityType<? extends Monster> type, Level level) {
 		super(type, level);

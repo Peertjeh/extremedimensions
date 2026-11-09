@@ -61,6 +61,10 @@ final class ElderTells {
 				case Ferryman.CROSSING -> "crossing";
 				case Ferryman.GAOL -> "gaol";
 				case Ferryman.TIDE -> "tide";
+				// (3.43) the whirl opening, the oars, the bells rising
+				case Ferryman.UNDERTOW -> "undertow";
+				case Ferryman.OARS -> "oars";
+				case Ferryman.BELLS -> "bell";
 				default -> null;
 			};
 		}

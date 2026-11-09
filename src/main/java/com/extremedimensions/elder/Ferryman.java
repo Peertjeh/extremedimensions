@@ -20,6 +20,21 @@ public class Ferryman extends ElderBoss {
 	public static final int GAOL = 6;
 	/** Tide of the Styx: the pole planted, a wave of soul fire rolls out over the ground. */
 	public static final int TIDE = 7;
+	/**
+	 * The Undertow (3.43): the pole driven down, a whirlpool of soul fire opens round the boat and draws everyone near
+	 * round and in, then a geyser of soul fire bursts up out of its middle.
+	 */
+	public static final int UNDERTOW = 8;
+	/**
+	 * Oars of the Drowned (3.43): two spectral oars rise out of the ground at his sides and sweep three strokes across
+	 * the ground before him, tearing it up and flinging whoever they pass.
+	 */
+	public static final int OARS = 9;
+	/**
+	 * Bells of the Drowned (3.43): bells rise out of the floor beside his passengers and round him, and toll in turn,
+	 * each toll a shockwave of soul fire over the ground.
+	 */
+	public static final int BELLS = 10;
 
 	public Ferryman(EntityType<? extends Monster> type, Level level) {
 		super(type, level);

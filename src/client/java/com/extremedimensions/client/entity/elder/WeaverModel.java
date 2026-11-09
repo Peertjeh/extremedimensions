@@ -23,17 +23,28 @@ import net.minecraft.util.Mth;
 public class WeaverModel extends EntityModel<ElderRenderState> {
 	public static final ModelLayerLocation LAYER = new ModelLayerLocation(ExtremeDimensions.id("weaver"), "main");
 
-	private final ModelPart root, body, head, halo, armL, armR, handL, handR, needles, spoolL, spoolR, bodyCore, torsoCore, headCore;
+	private final ModelPart root, body, torso, head, halo, armL, armR, foreL, foreR, handL, handR, needles, spoolL, spoolR, bodyCore,
+			torsoCore, headCore;
 	private final ModelPart[] robe, mantle, strands, lanterns, veil;
+	/**
+	 * Which way each strip of the robe turns (xRot) to be flung out from her: most hang round her facing out, the tabard
+	 * and sashes from her front facing in (-1); the drapes hang from her arms (0).
+	 */
+	private final float[] robeOut;
+	/** Which arm each drape of the robe hangs from (1 the left, -1 the right, 0 none). */
+	private final float[] robeArm;
 
 	public WeaverModel(ModelPart model) {
 		super(model);
 		this.root = WeaverGeometry.find(model, "root");
 		this.body = WeaverGeometry.find(model, "body");
+		this.torso = WeaverGeometry.find(model, "torso");
 		this.head = WeaverGeometry.find(model, "head");
 		this.halo = WeaverGeometry.find(model, "halo");
 		this.armL = WeaverGeometry.find(model, "arm_l");
 		this.armR = WeaverGeometry.find(model, "arm_r");
+		this.foreL = WeaverGeometry.find(model, "forearm_l");
+		this.foreR = WeaverGeometry.find(model, "forearm_r");
 		this.handL = WeaverGeometry.find(model, "hand_l");
 		this.handR = WeaverGeometry.find(model, "hand_r");
 		this.needles = WeaverGeometry.find(model, "needles");
@@ -47,6 +58,14 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 		this.bodyCore = WeaverGeometry.find(model, "bodycore");
 		this.torsoCore = WeaverGeometry.find(model, "torsocore");
 		this.headCore = WeaverGeometry.find(model, "headcore");
+		this.robeOut = new float[robe.length];
+		this.robeArm = new float[robe.length];
+		for (int i = 0; i < robe.length; i++) {
+			ModelPart r = robe[i];
+			String name = WeaverGeometry.ROBE[i];
+			robeArm[i] = name.startsWith("drape_l") ? 1 : name.startsWith("drape_r") ? -1 : 0;
+			robeOut[i] = robeArm[i] != 0 ? 0 : Mth.sin(r.yRot) * r.x + Mth.cos(r.yRot) * r.z < 0 ? -1 : 1;
+		}
 	}
 
 	@Override
@@ -108,6 +127,11 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 		handL.zRot += Mth.sin(t * 0.05F) * 0.06F;
 		handR.zRot -= Mth.sin(t * 0.05F + 0.9F) * 0.06F;
 
+		// The weight of its blows (see below), which some of them also throw its halo and cloth about with
+		float[] ac = ElderAnim.accent(at, impacts(action), 10, 12);
+		float power = action == Weaver.THOUSAND ? 0.4F : 1F;
+		float g = ac[0] * power, j = ac[1] * power;
+
 		switch (action) {
 			case Weaver.THREAD -> {
 				float e = ElderAnim.env(at, 10, 8, 12);
@@ -157,6 +181,121 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 				armR.zRot += 0.7F * whirl;
 				head.xRot -= 0.35F * whirl;
 			}
+			case Weaver.WARP -> {
+				// Warp and Weft: she sinks a little, then sweeps both arms up high over her, her head tilted up to them,
+				// and her hands weave back and forth over her head, crossing and uncrossing three times (each passing in
+				// front by turns) as if knotting a great grid; she holds it up, her arms trembling with the strain, her
+				// halo swelling; she rears back and slams both arms down before her, bending deep at the waist (52),
+				// stays bowed a moment and rises
+				float coil = ElderAnim.env(at, 3, 0, 6);
+				float raise = ElderAnim.smooth((at - 1) / 9F);
+				float w = Mth.clamp((at - 4) / 7F, 0, 3);
+				float cross = (1 - Mth.cos(w * Mth.PI * 2)) / 2;
+				float front = ((int) w % 2 == 0 ? 1 : -1) * cross;
+				float rear = ElderAnim.smooth((at - 42) / 5F);
+				float down = ElderAnim.fall((at - 47) / 5F);
+				float k = 1 - ElderAnim.smooth((at - 57) / 19F);
+				float up = raise * (1 - down), back = rear * (1 - down), bow = down * k;
+				float strain = ElderAnim.smooth((at - 22) / 16F) * (1 - down);
+				float shakeL = ElderAnim.tremor(t, 0.04F * strain), shakeR = ElderAnim.tremor(t + 1.7F, 0.04F * strain);
+				// (raised, a turn of zRot one way takes an arm on up over her and in towards her head, and xRot takes it
+				// forward or back; brought down, the arms end before her, a little apart)
+				armL.zRot += -1.15F * up - 0.15F * cross + 0.25F * coil + 1.2F * bow + shakeL;
+				armR.zRot -= -1.15F * up - 0.15F * cross + 0.25F * coil + 1.2F * bow + shakeR;
+				armL.xRot += -0.25F * up - 0.25F * front + 0.12F * strain + 0.45F * back - 0.85F * bow;
+				armR.xRot += -0.25F * up + 0.25F * front + 0.12F * strain + 0.45F * back - 0.85F * bow;
+				foreL.zRot += -0.22F * (up + bow) - 1.2F * cross;
+				foreR.zRot -= -0.22F * (up + bow) - 1.2F * cross;
+				handL.zRot += -0.25F * up - 0.3F * cross;
+				handR.zRot -= -0.25F * up - 0.3F * cross;
+				// her fingers clawing at the threads as she weaves and straining as she holds them, curled as she strikes
+				float claw = Mth.sin(at * 1.1F) * 0.3F * cross + 0.25F * strain + 0.5F * bow;
+				handL.xRot += claw;
+				handR.xRot += claw;
+				torso.xRot += 0.1F * coil - 0.1F * up - 0.08F * strain - 0.22F * back + 0.7F * bow;
+				torso.zRot += 0.04F * Mth.sin(w * Mth.PI * 2) * up;
+				body.xRot += 0.08F * bow;
+				head.xRot += 0.1F * coil - 0.45F * up - 0.1F * strain - 0.1F * back + 0.15F * bow;
+				root.y += 3F * coil - 4F * up - 3F * back + 9F * bow;
+				// the halo turns once as she weaves and swells as she holds, and her cloth is thrown out by the blow
+				halo.zRot += ElderAnim.spin(at - 2, 6, 14, 6, 1);
+				ElderAnim.scale(halo, 1 + 0.08F * cross * up + 0.18F * strain);
+				halo.y += 4F * j;
+				fling(0.12F * strain + 0.45F * j, 0, t);
+			}
+			case Weaver.SPINDLE -> {
+				// Spindle Storm: she crouches and twists back, then spins up, her arms going out and up and her dress
+				// flaring; whirling about once a second, her head thrown back, her dress, threads and lanterns fly out
+				// and her needles whirl wide round her; she slows and stops facing forward again (whole turns), her arms
+				// dropping (only her body turns: the server keeps her facing)
+				float turn = ElderAnim.spin(at, 16, 80, 14, 5);
+				float fly = ElderAnim.spinRate(at, 16, 80, 14);
+				float coil = ElderAnim.env(at, 4, 1, 8);
+				float open = ElderAnim.smooth((at - 2) / 10F) * (1 - ElderAnim.smooth((at - 96) / 12F));
+				float droop = ElderAnim.env(at - 96, 7, 0, 7);
+				body.yRot += turn;
+				torso.yRot -= 0.35F * coil;
+				body.zRot += 0.05F * fly * Mth.sin(t * 0.23F);
+				// (her arms trail the turn: it takes her left hand forward and her right back)
+				armL.zRot += -0.4F * open + 0.35F * droop;
+				armR.zRot -= -0.4F * open + 0.35F * droop;
+				armL.xRot += 0.3F * fly;
+				armR.xRot -= 0.3F * fly;
+				foreL.zRot -= 0.22F * open;
+				foreR.zRot += 0.22F * open;
+				handL.zRot -= 0.25F * open;
+				handR.zRot += 0.25F * open;
+				torso.xRot += 0.08F * coil - 0.12F * fly + 0.08F * droop;
+				head.xRot += 0.1F * coil - 0.55F * fly + 0.2F * droop;
+				root.y += 3F * coil - 5F * fly;
+				fling(0.9F * fly, 0.5F * fly, t);
+				needles.yRot += 0.6F * turn;
+				needles.xScale *= 1 + 0.6F * fly;
+				needles.zScale *= 1 + 0.6F * fly;
+				halo.zRot += 0.4F * turn;
+				ElderAnim.scale(halo, 1 + 0.15F * fly);
+				spoolL.yRot += 2 * turn;
+				spoolR.yRot -= 2 * turn;
+			}
+			case Weaver.NEEDLEFALL -> {
+				// The Loom Comes Down: her right arm rises to the sky, the hand clawing at it and her head tilted up after
+				// it; then four times she yanks it down to her waist (24, 34, 44, 54), hunching over it with her whole
+				// body, her halo jolting and her left arm thrown up and back against the pull, and drives it back up
+				// between; after the last it hangs low a while, and she straightens
+				float raise = ElderAnim.smooth(at / 16F);
+				float claw = ElderAnim.env(at - 2, 4, 14, 4);
+				float pull = 0;
+				for (int y = 24; y <= 54; y += 10) {
+					float yank = ElderAnim.fall((at - y + 4) / 4F);
+					pull += yank * (1 - (y == 54 ? 0 : ElderAnim.smooth((at - y - 1) / 5F)));
+				}
+				float hang = ElderAnim.smooth((at - 55) / 7F);
+				float k = 1 - ElderAnim.smooth((at - 66) / 18F);
+				float up = raise * (1 - pull), low = pull * k, limp = hang * k;
+				// (raised, a turn of zRot one way brings the arm down past her side, xRot forward: it comes down
+				// before her right side)
+				armR.zRot += 1.28F * up - 1.17F * low - 0.25F * limp;
+				armR.xRot += -0.2F * up - 0.75F * low + 0.2F * limp;
+				foreR.zRot += 0.22F * up;
+				foreR.xRot += -0.6F * low + 0.45F * limp;
+				handR.xRot += claw * (0.35F + 0.4F * Mth.sin(at * 1.3F)) + 0.6F * low - 0.3F * limp;
+				handR.zRot += claw * 0.25F * Mth.sin(at * 0.9F + 1F);
+				armL.zRot += 0.15F * up - 0.35F * low + 0.2F * limp;
+				armL.xRot += 0.3F * low - 0.15F * limp;
+				// (a turn of yRot one way takes her right shoulder forward, into the pull)
+				torso.xRot += -0.08F * up + 0.38F * low + 0.1F * limp;
+				torso.yRot -= 0.06F * up + 0.2F * low;
+				torso.zRot -= 0.06F * up - 0.08F * low;
+				body.xRot += 0.05F * low;
+				head.xRot += -0.45F * up + 0.15F * low + 0.15F * limp;
+				head.yRot -= 0.12F * up;
+				root.y += 5F * low;
+				// the halo jolts with each yank
+				halo.y += 7F * j;
+				halo.xRot += 0.25F * j;
+				ElderAnim.scale(halo, 1 + 0.12F * up - 0.08F * j);
+				fling(0.4F * j, 0, t);
+			}
 			case ElderBoss.ULTIMATE -> {
 				float snap = ElderAnim.env(at - 188, 3, 4, 8);
 				// Arms spread wide and up, head back, trembling
@@ -175,9 +314,6 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 		}
 		// The weight of its blows: it rises and draws its arms in as it gathers, its halo flaring, straining; then it
 		// drops into the blow, thrown forward, and its halo kicks round
-		float[] ac = ElderAnim.accent(at, impacts(action), 10, 12);
-		float power = action == Weaver.THOUSAND ? 0.4F : 1F;
-		float g = ac[0] * power, j = ac[1] * power;
 		root.y += -2.6F * g + 2.0F * j;
 		root.z -= 2.2F * j;
 		body.xRot += -0.12F * g + 0.2F * j;
@@ -197,6 +333,34 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 			root.y += 8F * sink;
 		}
 
+	}
+
+	/**
+	 * Its cloth and threads flung out from it by a whirl or a blow ({@code out}, a turn outward) and trailing after it as it
+	 * turns ({@code lag}): the robe (the drapes of the sleeves trailing), the mantle, the veil, the strands and the lanterns
+	 * at its hands, which swing out from it.
+	 */
+	private void fling(float out, float lag, float t) {
+		for (int i = 0; i < robe.length; i++) {
+			robe[i].xRot += robeOut[i] * out * (0.8F + 0.25F * Mth.sin(t * 0.5F + i * 1.7F)) + robeArm[i] * lag;
+		}
+		for (int i = 0; i < mantle.length; i++) {
+			mantle[i].xRot += out * (0.9F + 0.3F * Mth.sin(t * 0.6F + i * 1.3F));
+		}
+		for (int i = 0; i < veil.length; i++) {
+			veil[i].xRot += 0.6F * out * (1 + 0.3F * Mth.sin(t * 0.7F + i));
+			veil[i].zRot += 0.3F * out * Mth.sin(t * 0.55F + i * 2.1F);
+		}
+		for (int i = 0; i < strands.length; i++) {
+			strands[i].xRot += 0.7F * out * (1 + 0.3F * Mth.sin(t * 0.8F + i * 1.9F));
+			strands[i].zRot += 0.4F * out * Mth.sin(t * 0.65F + i * 1.3F);
+		}
+		// (the first three hang from its left hand: a turn of zRot one way swings each out from it, of xRot back)
+		for (int i = 0; i < lanterns.length; i++) {
+			float side = i < 3 ? 1 : -1;
+			lanterns[i].zRot -= side * out * (0.75F + 0.15F * Mth.sin(t * 0.4F + i));
+			lanterns[i].xRot += side * lag;
+		}
 	}
 
 	/** Forming, on its 140-tick timeline: the halo first, its needles drawn in, then it is woven from the hem up. */
@@ -248,6 +412,9 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 			case Weaver.LANCE -> new float[] {22};
 			case Weaver.CRADLE -> new float[] {14, 62};
 			case Weaver.THOUSAND -> new float[] {16, 21, 26, 31, 36, 41, 46, 51, 56, 60};
+			case Weaver.WARP -> new float[] {52};
+			// the yanks of the loom
+			case Weaver.NEEDLEFALL -> new float[] {24, 34, 44, 54};
 			default -> ElderAnim.NONE;
 		};
 	}

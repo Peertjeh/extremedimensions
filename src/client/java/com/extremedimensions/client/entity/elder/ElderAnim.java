@@ -33,6 +33,69 @@ final class ElderAnim {
 		return 1 + c3 * u * u * u + c1 * u * u;
 	}
 
+	/** A blow driven home: slow to start and fastest as it lands at 1, where it stops dead. */
+	static float fall(float x) {
+		x = Mth.clamp(x, 0.0F, 1.0F);
+		return x * x * x;
+	}
+
+	/**
+	 * How far something has turned at {@code t} ticks, making {@code turns} whole turns: it spins up over {@code up} ticks,
+	 * turns steadily for {@code steady} and slows to rest over {@code down}, so it ends where it began, with no jump.
+	 */
+	static float spin(float t, float up, float steady, float down, int turns) {
+		// the speed eases in and out (smoothstep), so it starts and stops without a jolt
+		float rate = Mth.PI * 2 * turns / (up / 2 + steady + down / 2);
+		if (t <= 0) {
+			return 0;
+		}
+		if (t < up) {
+			float x = t / up;
+			return rate * up * (x * x * x - x * x * x * x / 2);
+		}
+		if (t < up + steady) {
+			return rate * (up / 2 + t - up);
+		}
+		float y = Math.min(1, (t - up - steady) / down);
+		return rate * (up / 2 + steady + down * (y - y * y * y + y * y * y * y / 2));
+	}
+
+	/** How fast {@link #spin} is turning at {@code t}, from 0 at rest to 1 at full speed. */
+	static float spinRate(float t, float up, float steady, float down) {
+		return t < up ? smooth(t / up) : 1 - smooth((t - up - steady) / down);
+	}
+
+	/**
+	 * The turn {xRot, zRot} that makes a part hang straight down (its +Y along the model's +Y, as the generator hangs its
+	 * lanterns) from the last of {@code chain}, the parts it hangs from in order from the root, however they are turned.
+	 */
+	static float[] plumb(ModelPart... chain) {
+		float x = 0, y = 1, z = 0;
+		for (ModelPart p : chain) {
+			// down, into the part's own frame: undo its turns (Z, then Y, then X)
+			float c = Mth.cos(p.zRot), s = Mth.sin(p.zRot);
+			float u = c * x + s * y;
+			y = c * y - s * x;
+			x = u;
+			c = Mth.cos(p.yRot);
+			s = Mth.sin(p.yRot);
+			u = c * x - s * z;
+			z = s * x + c * z;
+			x = u;
+			c = Mth.cos(p.xRot);
+			s = Mth.sin(p.xRot);
+			u = c * y + s * z;
+			z = c * z - s * y;
+			y = u;
+		}
+		return new float[] {(float) Math.asin(Mth.clamp(z, -1.0F, 1.0F)), (float) Math.atan2(-x, y)};
+	}
+
+	/** An angle brought within half a turn of nothing. */
+	static float wrap(float a) {
+		return (float) (a - Math.PI * 2 * Math.round(a / (Math.PI * 2)));
+	}
+
 	/** Gathering for a blow that lands at {@code impact}: 0 → 1 over the {@code wind} ticks before it, let go at once. */
 	static float gather(float t, float impact, float wind) {
 		if (t >= impact) {
