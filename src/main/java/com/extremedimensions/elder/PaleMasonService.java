@@ -741,7 +741,7 @@ public final class PaleMasonService {
 	private static void openDoor(Masonry f) {
 		ServerLevel level = f.level;
 		double sx = -f.doorDz, sz = f.doorDx;
-		BlockState post = Blocks.PURPUR_PILLAR.defaultBlockState(), lintel = Blocks.GOLD_BLOCK.defaultBlockState(), dark = Blocks.BLACK_CONCRETE.defaultBlockState();
+		BlockState post = Blocks.PURPUR_PILLAR.defaultBlockState(), lintel = Blocks.GOLD_BLOCK.defaultBlockState(), dark = Blocks.OBSIDIAN.defaultBlockState();
 		for (int h = 0; h < 7; h++) {
 			for (int side = -1; side <= 1; side += 2) {
 				door(f, level, f.doorX + sx * 2 * side, f.doorY + h, f.doorZ + sz * 2 * side, h == 6 ? lintel : post, 1F);
