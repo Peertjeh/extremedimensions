@@ -85,7 +85,7 @@ final class ArenaDesign {
 	// ------------------------------------------------------------------ blocks
 
 	/** A vanilla block by id, looked up at runtime (block constants come and go between versions). */
-	private static BlockState mc(String id, BlockState fallback) {
+	static BlockState mc(String id, BlockState fallback) {
 		BlockState s = LOOKUP.computeIfAbsent(id, k -> BuiltInRegistries.BLOCK.get(Identifier.fromNamespaceAndPath("minecraft", k))
 				.map(h -> h.value().defaultBlockState()).orElse(Blocks.AIR.defaultBlockState()));
 		return s.isAir() ? fallback : s;

@@ -773,7 +773,7 @@ public final class PaleMasonService {
 			Brightness lit = new Brightness(15, 15);
 			double turn = rnd.nextDouble() * Math.PI * 2;
 			for (int i = 0; i < n; i++) {
-				Display.BlockDisplay cube = BlockFlight.spawn(level, f.boundX, f.boundY, f.boundZ, Blocks.PURPLE_STAINED_GLASS.defaultBlockState(),
+				Display.BlockDisplay cube = BlockFlight.spawn(level, f.boundX, f.boundY, f.boundZ, ArenaDesign.mc("purple_stained_glass", Blocks.CRYING_OBSIDIAN.defaultBlockState()),
 						BlockFlight.pose(0, 11, 0, new Quaternionf(), 0.2F));
 				Display.BlockDisplay heart = BlockFlight.spawn(level, f.boundX, f.boundY, f.boundZ, Blocks.CRYING_OBSIDIAN.defaultBlockState(),
 						BlockFlight.pose(0, 11, 0, new Quaternionf(), 0.1F));
