@@ -134,6 +134,12 @@ public final class FerrymanService {
 		return f == null ? 0 : f.bells.size();
 	}
 
+	/** Where his whirlpool turns, as "x y z" (for tests); empty if he is not fighting. */
+	public static String pool(Entity e) {
+		Fare f = FARES.get(e.getUUID());
+		return f == null ? "" : String.format(java.util.Locale.ROOT, "%.1f %.1f %.1f", f.poolX, f.poolY, f.poolZ);
+	}
+
 	/** His fight, if he is fighting. */
 	static ElderFight fight(Entity e) {
 		return FARES.get(e.getUUID());

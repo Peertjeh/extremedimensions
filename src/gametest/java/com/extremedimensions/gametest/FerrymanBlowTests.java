@@ -116,8 +116,20 @@ public class FerrymanBlowTests {
 		// (off the boat's side, inside the whirl, clear of the test's walls)
 		ServerPlayer p = passenger(helper, "ferryman-undertow", 2, 2);
 		int felt = PaleSquall.felt(p.getUUID());
+		// (what stood where mid-whirl, should it never draw them)
+		String[] seen = {"nothing seen"};
+		helper.runAfterDelay(40, () -> {
+			StringBuilder out = new StringBuilder(String.format(java.util.Locale.ROOT, "passenger %.1f %.1f %.1f alive %s health %.1f blown %s",
+					p.getX(), p.getY(), p.getZ(), p.isAlive(), p.getHealth(), PaleSquall.blown(p)));
+			for (Ferryman f : helper.getLevel().getEntitiesOfClass(Ferryman.class, p.getBoundingBox().inflate(40))) {
+				out.append(String.format(java.util.Locale.ROOT, "; ferryman %.1f %.1f %.1f action %s pool %s", f.getX(), f.getY(), f.getZ(), f.getAction(),
+						FerrymanService.pool(f)));
+			}
+			seen[0] = out.toString();
+		});
 		watch(helper, p, "undertow", Ferryman.UNDERTOW, 130, f -> PaleSquall.felt(p.getUUID()) - felt,
-				(most, after, ended) -> check(helper, Math.max(most, after) > 0, "his undertow never drew his passenger in (over %s ticks)", ended));
+				(most, after, ended) -> check(helper, Math.max(most, after) > 0, "his undertow never drew his passenger in (over %s ticks; at 40: %s)", ended,
+						seen[0]));
 	}
 
 	/** Oars of the Drowned: two oars rise out of the ground, and none is left standing once the blow is over. */
