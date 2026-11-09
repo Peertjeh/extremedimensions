@@ -50,6 +50,9 @@ abstract class ElderFight {
 		if (f == null) {
 			f = FerrymanService.fight(e);
 		}
+		if (f == null) {
+			f = PaleMasonService.fight(e);
+		}
 		return f != null ? f : WeaverService.fight(e);
 	}
 

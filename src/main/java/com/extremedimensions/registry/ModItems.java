@@ -43,6 +43,9 @@ public final class ModItems {
 	/** The Weavers' own work: slowest drain, and once per expedition it unravels you home instead of collapsing. */
 	public static final Item SEAM_WOVEN_TETHER = tether("seam_woven_tether", Rarity.EPIC);
 
+	/** The Pale Mason's (3.40): used out in the End on an expedition, it takes you home to your Void Anchor at once. */
+	public static final Item HOMING_PEARL = register("homing_pearl", 16, Rarity.EPIC);
+
 	/** A wing of a Veil Ray, still glowing along its seams. */
 	public static final Item VEIL_WING = register("veil_wing", 16, Rarity.UNCOMMON);
 	/** Silk woven around a Veil Wing and a fragment: pressed to the skin, it takes one curse stack off. */

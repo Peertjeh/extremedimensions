@@ -79,7 +79,8 @@ public final class TetherCommand {
 				.then(Commands.literal("boss").requires(spawn)
 						.then(Commands.literal("matriarch").executes(c -> boss(c.getSource(), "matriarch")))
 						.then(Commands.literal("ferryman").executes(c -> boss(c.getSource(), "ferryman")))
-						.then(Commands.literal("weaver").executes(c -> boss(c.getSource(), "weaver"))))
+						.then(Commands.literal("weaver").executes(c -> boss(c.getSource(), "weaver")))
+						.then(Commands.literal("pale_mason").executes(c -> boss(c.getSource(), "pale_mason"))))
 				.then(Commands.literal("seam").requires(spawn).executes(c -> seam(c.getSource())))
 				.then(Commands.literal("seam_reset").requires(admin)
 						.executes(c -> seamReset(c.getSource()))
@@ -216,6 +217,7 @@ public final class TetherCommand {
 		boolean ok = switch (which) {
 			case "matriarch" -> com.extremedimensions.hollow.HollowService.summonMatriarch(p);
 			case "ferryman" -> com.extremedimensions.elder.FerrymanService.summon(p);
+			case "pale_mason" -> com.extremedimensions.elder.PaleMasonService.summon(p);
 			default -> com.extremedimensions.elder.WeaverService.summon(p, p.blockPosition().offset(6, 0, 0));
 		};
 		if (ok) {

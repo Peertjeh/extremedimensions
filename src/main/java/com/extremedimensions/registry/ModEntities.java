@@ -259,6 +259,18 @@ public final class ModEntities {
 					.updateInterval(1)
 					.build(KNOT_MOTHER_KEY));
 
+	private static final ResourceKey<EntityType<?>> PALE_MASON_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("pale_mason"));
+
+	/** The Pale Mason (3.40), foreman of the Endermen of the Pale Reach; he comes for a visitor's Tether. */
+	public static final EntityType<com.extremedimensions.elder.PaleMason> PALE_MASON = Registry.register(BuiltInRegistries.ENTITY_TYPE, PALE_MASON_KEY,
+			EntityType.Builder.<com.extremedimensions.elder.PaleMason>of(com.extremedimensions.elder.PaleMason::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(4.5f, 18.0f)
+					.eyeHeight(16.0f)
+					.clientTrackingRange(16)
+					.updateInterval(1)
+					.build(PALE_MASON_KEY));
+
 	private static final ResourceKey<EntityType<?>> RIFT_PORTAL_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("rift_portal"));
 
 	/** A rift as it is seen (a sight only, never saved); put where each rift stands by {@code SeamService}. */
@@ -273,6 +285,7 @@ public final class ModEntities {
 		FabricDefaultAttributeRegistry.register(FERRYMAN, com.extremedimensions.elder.Ferryman.createAttributes());
 		FabricDefaultAttributeRegistry.register(WEAVER, com.extremedimensions.elder.Weaver.createAttributes());
 		FabricDefaultAttributeRegistry.register(KNOT_MOTHER, com.extremedimensions.elder.KnotMother.createAttributes());
+		FabricDefaultAttributeRegistry.register(PALE_MASON, com.extremedimensions.elder.PaleMason.createAttributes());
 		FabricDefaultAttributeRegistry.register(VEIL_RAY, VeilRay.createAttributes());
 		FabricDefaultAttributeRegistry.register(THINNED, Thinned.createAttributes());
 		FabricDefaultAttributeRegistry.register(LURKER, Lurker.createAttributes());

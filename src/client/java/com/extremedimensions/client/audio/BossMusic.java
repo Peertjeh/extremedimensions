@@ -23,9 +23,9 @@ public final class BossMusic {
 	private BossMusic() {}
 
 	private static final SoundEvent[] TRACKS = {ModSounds.MUSIC_BOSS_MATRIARCH, ModSounds.MUSIC_BOSS_FERRYMAN, ModSounds.MUSIC_BOSS_WEAVER,
-			ModSounds.MUSIC_BOSS_KNOT_MOTHER};
-	/** Length of each track in ticks (sounds/music/boss_*.ogg: 179.96 s, 189.2 s, 197.2 s, 189.0 s). */
-	private static final int[] LENGTH = {3599, 3784, 3944, 3780};
+			ModSounds.MUSIC_BOSS_KNOT_MOTHER, ModSounds.MUSIC_BOSS_PALE_MASON};
+	/** Length of each track in ticks (sounds/music/boss_*.ogg: 179.96 s, 189.2 s, 197.2 s, 189.0 s, PALE_MASON_SECONDS). */
+	private static final int[] LENGTH = {3599, 3784, 3944, 3780, 3600};
 	/** Ticks before a track's end that its next pass starts, crossfading over its closing fade. */
 	private static final int OVERLAP = 140;
 	/** A fight that has not asked for its track for this long is over (it asks every 40 ticks). */

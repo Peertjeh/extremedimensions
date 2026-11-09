@@ -65,6 +65,8 @@ public final class Advancements {
 	public static final String UNWOVEN = "unwoven";
 	/** Attune the fitting of an Unfinished Anchor in the Pale Reach (3.39). */
 	public static final String PALE_ATTUNED = "pale_attuned";
+	/** Slay the Pale Mason in the Pale Reach (3.40). */
+	public static final String PALE_MASON_SLAIN = "pale_mason_slain";
 	/** Not one shown in the tab: the recipe book's way of learning the Weaver's Loom, given when an Elder falls. */
 	public static final String LOOM_RECIPE = "recipes/misc/weavers_loom";
 

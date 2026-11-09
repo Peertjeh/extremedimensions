@@ -56,7 +56,8 @@ public final class StatsExport {
 		MATRIARCH("The Matriarch", Advancements.MATRIARCH_SLAIN),
 		FERRYMAN("The Ferryman", Advancements.FERRYMAN_SLAIN),
 		WEAVER("The Last Weaver", Advancements.WEAVER_SLAIN),
-		KNOT_MOTHER("The Knot Mother", Advancements.KNOT_MOTHER);
+		KNOT_MOTHER("The Knot Mother", Advancements.KNOT_MOTHER),
+		PALE_MASON("The Pale Mason", Advancements.PALE_MASON_SLAIN);
 
 		public final String title;
 		final String advancement;

@@ -161,7 +161,7 @@ public final class PaleSquall {
 	}
 
 	/** One tick of gust on a player, sent to their client to be added to their motion there. */
-	static void gust(ServerPlayer p, double x, double z) {
+	public static void gust(ServerPlayer p, double x, double z) {
 		FELT.merge(p.getUUID(), 1, Integer::sum);
 		if (ServerPlayNetworking.canSend(p, ModPackets.SquallPayload.TYPE)) {
 			ServerPlayNetworking.send(p, new ModPackets.SquallPayload((float) x, (float) z));
@@ -178,10 +178,18 @@ public final class PaleSquall {
 	 * sneaking halves it, Anchored lessens it, Unmoored adds to it, and on wings it pushes twice as hard.
 	 */
 	public static double push(ServerPlayer p, double dx, double dz) {
+		return push(p, dx, dz, Config.PALE_SQUALL_PUSH);
+	}
+
+	/**
+	 * How hard a pull or push of {@code base} a tick, this way, takes a player, by the squall's rules (also the Pale
+	 * Mason's Last Door, which draws everyone towards it).
+	 */
+	public static double push(ServerPlayer p, double dx, double dz, double base) {
 		if (braced(p, dx, dz)) {
 			return 0;
 		}
-		double f = Math.max(0, Config.PALE_SQUALL_PUSH);
+		double f = Math.max(0, base);
 		if (p.isShiftKeyDown()) {
 			f *= 0.5;
 		}
@@ -196,7 +204,7 @@ public final class PaleSquall {
 	}
 
 	/** Whether a solid block stands right in the wind's way at the player's body (a wall to lean on). */
-	static boolean braced(ServerPlayer p, double dx, double dz) {
+	public static boolean braced(ServerPlayer p, double dx, double dz) {
 		for (double up : new double[] {0.4, 1.4}) {
 			BlockPos at = BlockPos.containing(p.getX() + dx * 0.75, p.getY() + up, p.getZ() + dz * 0.75);
 			if (p.level().getBlockState(at).isCollisionShapeFullBlock(p.level(), at)) {

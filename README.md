@@ -144,6 +144,10 @@ Thirty pages of a nameless Wanderer surface as you play, then pages in other han
    Far out in the End, past 1000 blocks, lies **the Pale Reach**: Unfinished Anchors hang over the void, built by the
    Endermen who were people once (attune a fitting with an Eye of Ender and the Tether drains slower near it), Pale
    Haulers pull the blocks of your bridges loose and carry them off, and Pale Squalls try to push you over the edge.
+   Stay out there long enough and their foreman, **the Pale Mason**, comes for your Tether: an eighteen-block Elder
+   who blinks to your side and strikes, raises walls of end stone round you, hurls great blocks and burns you with his
+   gaze if you look him in the face; below half his health he opens the Last Door onto the void. Slay him for the
+   **Homing Pearl**, one safe way home to your Void Anchor (`/tether boss pale_mason` calls him).
 6. **The ending**: defeat the Starved One (it flies, calls the tribe's red young and turns the Veil Rays on you, and
    the four great pillars round the Heart heal it from glowing sculk hearts high up their shafts: shoot three of them
    out with arrows to stop its healing, all four to stun it) and choose. **Mend** the first wound (no storms, a

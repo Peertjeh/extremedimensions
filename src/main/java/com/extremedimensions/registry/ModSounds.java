@@ -58,6 +58,8 @@ public final class ModSounds {
 	public static final SoundEvent MUSIC_BOSS_FERRYMAN = register("music.boss_ferryman");
 	public static final SoundEvent MUSIC_BOSS_WEAVER = register("music.boss_weaver");
 	public static final SoundEvent MUSIC_BOSS_KNOT_MOTHER = register("music.boss_knot_mother");
+	/** The Pale Mason's theme (tools/sounds/boss_pale_mason.py). */
+	public static final SoundEvent MUSIC_BOSS_PALE_MASON = register("music.boss_pale_mason");
 	/** The Seam's music disc: "Tick of the Boundary", the menus' track, as a jukebox plays it. */
 	public static final SoundEvent MUSIC_DISC_TICK_OF_THE_BOUNDARY = register("music_disc.tick_of_the_boundary");
 	/** The wound's own record: "What the Wound Remembers", made from its ambient sounds. */
@@ -82,7 +84,13 @@ public final class ModSounds {
 			// turning of her phases, her ultimate, and her forming
 			"knot_mother.voice", "knot_mother.threadline", "knot_mother.lash", "knot_mother.knot", "knot_mother.close",
 			"knot_mother.cast", "knot_mother.snare", "knot_mother.anchor_hit", "knot_mother.anchor_break", "knot_mother.exposed",
-			"knot_mother.phase", "knot_mother.ultimate", "knot_mother.wake"};
+			"knot_mother.phase", "knot_mother.ultimate", "knot_mother.wake",
+			// The Pale Mason's own (tools/sounds/pale_mason.py): his voice before a blow, his blink, the claw coming down,
+			// his walls grinding up, great blocks lifted, hurled and landing, his gaze, the Last Door opening and drawing,
+			// a flyer caught, the turning of his phases, his ultimate, and his coming
+			"pale_mason.voice", "pale_mason.blink", "pale_mason.strike", "pale_mason.wall", "pale_mason.lift", "pale_mason.throw",
+			"pale_mason.impact", "pale_mason.gaze", "pale_mason.door", "pale_mason.pull", "pale_mason.snare", "pale_mason.phase",
+			"pale_mason.ultimate", "pale_mason.wake"};
 
 	static {
 		for (String tell : ELDER_TELLS) {
@@ -91,19 +99,24 @@ public final class ModSounds {
 	}
 
 	/**
-	 * Each Elder's own body: hit, at rest, dying (Matriarch, Ferryman, Weaver, Knot Mother: see ElderFx.voice); its steps
+	 * Each Elder's own body: hit, at rest, dying (Matriarch, Ferryman, Weaver, Knot Mother, Pale Mason: see ElderFx.voice); its steps
 	 * and roar are played by name.
 	 */
 	public static final SoundEvent[] ELDER_HURT = {register("elder.matriarch.hurt"), register("elder.ferryman.hurt"), register("elder.weaver.hurt"),
-			register("elder.knot_mother.hurt")};
+			register("elder.knot_mother.hurt"),
+			register("elder.pale_mason.hurt")};
 	public static final SoundEvent[] ELDER_AMBIENT = {register("elder.matriarch.ambient"), register("elder.ferryman.ambient"),
-			register("elder.weaver.ambient"), register("elder.knot_mother.ambient")};
+			register("elder.weaver.ambient"), register("elder.knot_mother.ambient"),
+			register("elder.pale_mason.ambient")};
 	public static final SoundEvent[] ELDER_DEATH = {register("elder.matriarch.death"), register("elder.ferryman.death"), register("elder.weaver.death"),
-			register("elder.knot_mother.death")};
+			register("elder.knot_mother.death"),
+			register("elder.pale_mason.death")};
 	public static final SoundEvent[] ELDER_STEP = {register("elder.matriarch.step"), register("elder.ferryman.step"), register("elder.weaver.step"),
-			register("elder.knot_mother.step")};
+			register("elder.knot_mother.step"),
+			register("elder.pale_mason.step")};
 	public static final SoundEvent[] ELDER_ROAR = {register("elder.matriarch.roar"), register("elder.ferryman.roar"), register("elder.weaver.roar"),
-			register("elder.knot_mother.roar")};
+			register("elder.knot_mother.roar"),
+			register("elder.pale_mason.roar")};
 
 	private static SoundEvent register(String path) {
 		var id = ExtremeDimensions.id(path);

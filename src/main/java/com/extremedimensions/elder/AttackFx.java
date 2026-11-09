@@ -64,7 +64,7 @@ public final class AttackFx {
 
 	private static final Map<ServerLevel, List<Fx>> PENDING = new HashMap<>();
 
-	/** Whose effects these are, for the client's colours: 0 the Matriarch, 1 the Ferryman, 2 the Last Weaver. */
+	/** Whose effects these are, for the client's colours: 0 the Matriarch, 1 the Ferryman, 2 the Last Weaver, 3 the Pale Mason. */
 	static int of(ElderBoss b) {
 		return b == null ? 0 : ElderFx.index(b);
 	}

@@ -1391,7 +1391,8 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-1.4 ~ 0 0");
 			ctx.waitTicks(5);
 			// name, distance, yaw (the Ferryman a little turned, to show the boat), camera height for the face
-			for (String[] elder : new String[][] {{"matriarch", "22", "180", "9"}, {"ferryman", "24", "220", "8.5"}, {"weaver", "23", "180", "12.5"}}) {
+			for (String[] elder : new String[][] {{"matriarch", "22", "180", "9"}, {"ferryman", "24", "220", "8.5"}, {"weaver", "23", "180", "12.5"},
+					{"pale_mason", "27", "180", "15"}}) {
 				int dist = Integer.parseInt(elder[1]);
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
 				sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:" + elder[0] + " ^ ^ ^" + dist
@@ -1677,6 +1678,13 @@ public class ClientShots implements FabricClientGameTest {
 					com.extremedimensions.elder.WeaverService::force, new int[] {com.extremedimensions.elder.Weaver.LANCE,
 							com.extremedimensions.elder.Weaver.CRADLE, com.extremedimensions.elder.Weaver.THOUSAND},
 					new String[] {"lance", "cradle", "thousand"});
+			// The Pale Mason (3.40): his blink and claw, his walls, the great blocks he lifts and hurls, his gaze, his Door
+			liveFight(ctx, sp, "pale_mason", 40,
+					s -> com.extremedimensions.elder.PaleMasonService.summonAt(player(s), player(s).blockPosition().offset(0, 0, 20)),
+					com.extremedimensions.elder.PaleMasonService::force, new int[] {com.extremedimensions.elder.PaleMason.STRIKE,
+							com.extremedimensions.elder.PaleMason.WALLS, com.extremedimensions.elder.PaleMason.LIFT,
+							com.extremedimensions.elder.PaleMason.GAZE},
+					new String[] {"strike", "walls", "lift", "gaze"});
 			com.extremedimensions.config.Config.ELDER_ULTIMATE_CURSES = ultimateCurses;
 			com.extremedimensions.config.Config.ELDER_ARENA_LINGER_SECONDS = linger;
 			com.extremedimensions.config.Config.ELDER_ARENA_BUILD_SECONDS = build;

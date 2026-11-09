@@ -19,8 +19,8 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
  * dies they close in on its name. Calm mode keeps the bars and names but drops the flashes and the pulsing.
  */
 public class BossCinema implements HudElement {
-	private static final String[] NAMES = {"matriarch", "ferryman", "weaver", "knot_mother"};
-	private static final int[] COLOURS = {0xB66BFF, 0x6FE3D0, 0xE6D4FF, 0x8FE0C8};
+	private static final String[] NAMES = {"matriarch", "ferryman", "weaver", "knot_mother", "pale_mason"};
+	private static final int[] COLOURS = {0xB66BFF, 0x6FE3D0, 0xE6D4FF, 0x8FE0C8, 0xA97BFF};
 
 	private static long introAt = -1;
 	private static int introBoss;

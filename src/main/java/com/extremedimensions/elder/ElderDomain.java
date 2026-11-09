@@ -170,6 +170,8 @@ public final class ElderDomain {
 				}
 			}
 			case 1 -> st.nextLane = st.clock + 20;
+			// The Pale Mason's floor gives way under his visitors from the first of his domain on: the void wants them
+			case 3 -> st.nextDrop = st.clock + 40;
 			default -> {
 				if (st.phase >= 2) {
 					st.nextDrop = st.clock + 40;
@@ -186,6 +188,7 @@ public final class ElderDomain {
 				}
 			}
 			case 1 -> lanes(a, b, st);
+			case 3 -> drops(a, b, st);
 			default -> {
 				if (st.clock % 4 == 0) {
 					threads(a, b, st);

@@ -58,6 +58,8 @@ public enum JournalEntry {
 	HERALD("herald"),
 	/** The Wanderer's: the Pale Reach, the End's far islands (written in when the player first comes out into it). */
 	PALE_REACH("pale_reach"),
+	/** The Wanderer's: the Pale Mason, who keeps the Endermen building (written in when he first comes for the player). */
+	PALE_MASON("pale_mason"),
 	/** In the player's own hand, after the ending, at the loom: a mended world's page... */
 	CONTINUED_MENDED("continued_mended", false, true),
 	/** ...and a severed world's (a world has one ending, so a journal holds one of the two). */

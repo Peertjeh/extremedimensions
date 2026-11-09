@@ -87,7 +87,8 @@ public class SettingsScreen extends Screen {
 			Map.entry("elder_cores", "gui.extremedimensions.settings.sub.cores"), Map.entry("elder_attack_fx_detail", "gui.extremedimensions.settings.sub.power"),
 			Map.entry("matriarch_hex_slow", "gui.extremedimensions.settings.sub.spells"), Map.entry("starved_health", "entity.extremedimensions.starved_one"),
 			Map.entry("pale_anchor_spacing", "gui.extremedimensions.settings.sub.pale_anchors"), Map.entry("pale_hauler_enabled", "entity.extremedimensions.pale_hauler"),
-			Map.entry("pale_squall", "gui.extremedimensions.settings.sub.pale_squall"));
+			Map.entry("pale_squall", "gui.extremedimensions.settings.sub.pale_squall"),
+			Map.entry("pale_mason_health", "entity.extremedimensions.pale_mason"));
 
 	private enum Tab {
 		DISPLAY, WORLD

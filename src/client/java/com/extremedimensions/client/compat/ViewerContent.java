@@ -141,7 +141,8 @@ public final class ViewerContent {
 			{"frayed_ray", "entity.extremedimensions.frayed_ray"}, {"thinned", "entity.extremedimensions.thinned"},
 			{"thinned_fray", "viewer.extremedimensions.source.thinned_fray"}, {"lurker_offering", "viewer.extremedimensions.source.lurker_offering"},
 			{"hollowling_gift", "viewer.extremedimensions.source.hollowling_gift"}, {"trial_gold", "viewer.extremedimensions.source.trial_gold"},
-			{"pale_hauler_spoils", "entity.extremedimensions.pale_hauler"}, {"pale_anchor", "viewer.extremedimensions.source.pale_anchor"}};
+			{"pale_hauler_spoils", "entity.extremedimensions.pale_hauler"},
+			{"pale_mason_spoils", "entity.extremedimensions.pale_mason"}, {"pale_anchor", "viewer.extremedimensions.source.pale_anchor"}};
 
 	/**
 	 * What the game gives besides a loot table, by the loot table's name (or a creature's, for those without one): the

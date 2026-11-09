@@ -27,6 +27,8 @@ final class ElderFx {
 	static final int MUSIC_WEAVER = 2;
 	/** The Knot Mother's own theme, "Mother of Knots". */
 	static final int MUSIC_KNOT_MOTHER = 3;
+	/** The Pale Mason's own theme (3.40). */
+	static final int MUSIC_PALE_MASON = 4;
 
 	static String dim(Entity e) {
 		return e.level().dimension().identifier().toString();
@@ -221,7 +223,8 @@ final class ElderFx {
 	static final String[] NAMES = {"matriarch", "ferryman", "weaver"};
 
 	static int index(ElderBoss b) {
-		return b instanceof Matriarch ? 0 : b instanceof Ferryman ? 1 : 2;
+		// (the Pale Mason is a fourth: his arena, the colours of his blows and the air of his fight are his own)
+		return b instanceof Matriarch ? 0 : b instanceof Ferryman ? 1 : b instanceof PaleMason ? 3 : 2;
 	}
 
 	/**
@@ -229,18 +232,23 @@ final class ElderFx {
 	 * and her own name, title, voice and sounds).
 	 */
 	static String name(ElderBoss b) {
-		return b instanceof KnotMother ? "knot_mother" : NAMES[index(b)];
+		return b instanceof KnotMother ? "knot_mother" : b instanceof PaleMason ? "pale_mason" : NAMES[index(b)];
 	}
 
 	/** Whose voice and body it sounds with: as {@link #index}, but the Knot Mother has her own (3; see ModSounds). */
 	static int voice(ElderBoss b) {
-		return b instanceof KnotMother ? 3 : index(b);
+		return b instanceof KnotMother ? 3 : b instanceof PaleMason ? 4 : index(b);
+	}
+
+	/** Which Elder this is to the client's cinema (its title card): as {@link #voice}. */
+	static int cinemaIndex(ElderBoss b) {
+		return voice(b);
 	}
 
 	/** Sends a piece of the fight's cinema to everyone within {@code radius} blocks (see BossFxPayload). */
 	static void cinema(ElderBoss b, double radius, int kind, int value, float strength, String key) {
 		// (the client's cinema knows the Knot Mother as a fourth, for her own title card)
-		ModPackets.BossFxPayload fx = new ModPackets.BossFxPayload(kind, b instanceof KnotMother ? 3 : index(b), value, strength, key);
+		ModPackets.BossFxPayload fx = new ModPackets.BossFxPayload(kind, cinemaIndex(b), value, strength, key);
 		for (ServerPlayer p : ((ServerLevel) b.level()).players()) {
 			if (p.distanceToSqr(b) <= radius * radius) {
 				ServerPlayNetworking.send(p, fx);
@@ -314,6 +322,9 @@ final class ElderFx {
 					case 0 -> WorldFx.particleIn(level, i == 0 ? "minecraft:spore_blossom_air" : i == 1 ? "minecraft:falling_spore_blossom" : "minecraft:ash",
 							x, y, z, 0.5, 0.5, 0.5, 0, 1);
 					case 1 -> WorldFx.particleIn(level, i == 0 ? "minecraft:soul" : "minecraft:white_ash", x, y, z, 0.5, 0.5, 0.5, 0.01, i == 0 ? 1 : 3);
+					// the Pale Mason's: the motes of the void, and loose grit of end stone drifting up
+					case 3 -> WorldFx.particleIn(level, i == 0 ? "minecraft:portal" : i == 1 ? "minecraft:reverse_portal" : "minecraft:white_ash", x, y, z, 0.5,
+							0.5, 0.5, 0.02, i == 2 ? 3 : 2);
 					default -> WorldFx.particleIn(level, i == 0 ? "minecraft:end_rod" : "extremedimensions:soul_mote", x, y, z, 0.5, 0.5, 0.5, 0.005, 1);
 				}
 			}

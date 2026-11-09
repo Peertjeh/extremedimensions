@@ -579,6 +579,7 @@ public class JournalScreen extends Screen {
 			case LOCKWARDEN -> ModEntities.LOCKWARDEN;
 			case THREADBITER -> ModEntities.THREADBITER;
 			case PALE_HAULER -> ModEntities.PALE_HAULER;
+			case PALE_MASON -> ModEntities.PALE_MASON;
 			case EDGECRAWLER -> ModEntities.EDGECRAWLER;
 			case CRAGBACK -> ModEntities.CRAGBACK;
 			case HOLLOWLING -> ModEntities.HOLLOWLING;

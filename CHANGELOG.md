@@ -1,5 +1,40 @@
 # Changelog
 
+## 3.40.0: The Pale Mason
+
+### New
+- **The Pale Mason**, after the concept sheets: the foreman of the Endermen of the Pale Reach, the first of them torn
+  loose when the wound opened. Eighteen blocks of dark Enderman under a hood and a ragged mantle of pale end stone,
+  chains of gold, a broken halo with golden spokes, a violet core in his chest, long violet claws. He wants the one
+  thing his anchor lacks: your Tether.
+- **When he comes.** Once on each expedition that has gone on a while out in the Pale Reach
+  (`pale_mason_after_seconds`, 150), he may come (`pale_mason_chance`, 35%). Stone and chains are heard first for
+  15 seconds with a bar counting down (`pale_mason_wake_seconds`), as with every Elder since 3.38; leave the Reach
+  meanwhile and he lets you be. `/tether boss pale_mason` calls him at once.
+- **His arena** flies together round him as he forms, as every Elder's does, in the stone of the End: a round anchor
+  floor of end stone and purpur ringed with gold light, broken anchor pillars banded in gold round it, and over the
+  middle a great broken halo standing on its edge, golden spokes running in to a hub of gold. Its four keystones ward
+  him until broken, and in his domain the floor gives way under his visitors: the void wants them.
+- **His blows:**
+  - *Teleport Strike*: he is gone in a burst of violet and steps out of the air beside you, a claw already coming
+    down where a sigil burns (`pale_mason_strike_damage`).
+  - *Anchor Walls*: he drives his hands down and walls of end stone and purpur grind up round you, a gap in each, for
+    12 seconds (`pale_mason_wall_seconds`). They hem you in, and shelter you from his Door.
+  - *Falling Blocks*: great blocks rise round him, turning, then he hurls them one after another at whoever stands
+    under them; a sigil shows where each will land (`pale_mason_block_damage`, `pale_mason_block_size`).
+  - *The Gaze*: he goes still and his eyes blaze. Whoever looks him in the face then is struck where they stand
+    (`pale_mason_gaze_damage`). Look away, or at his feet; a carved pumpkin keeps it off, as with an Enderman.
+- **The Last Door**, his ultimate: he spreads his arms and rises, and a doorway of purpur and gold opens onto the void
+  before him. It draws everyone near towards it (`pale_mason_door_pull`): sneaking halves the pull, a wall at your back
+  stops it, Anchored eases it, by the same rules as the Pale Squall. Whoever reaches it is struck and thrown back
+  (`pale_mason_door_damage`). Then it slams, and his curse falls, as every Elder's ultimate does.
+- **The Homing Pearl**, his: used out in the End on an expedition, it takes you home to the Void Anchor feeding your
+  expedition at once, and is spent. His spoils besides: ender pearls, Tether Fragments, shulker shells, gold, an end
+  crystal and a Tetherite template now and then, and the Elders' elegy fragments for everyone who fought him.
+- His own sounds and theme, a title card, a journal page (46; the pages in your own hand are 47 now), a bestiary
+  page, the advancement *The Last Door Closes*, his spoils in JEI/EMI, and every value in the settings
+  (World rules: The Pale Mason).
+
 ## 3.39.2: Shoves that land
 
 ### Fixed

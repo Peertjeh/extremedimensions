@@ -133,6 +133,7 @@ public final class ServerEvents {
 			MendingService.clear();
 			com.extremedimensions.elder.ElderStir.clear();
 			com.extremedimensions.elder.FerrymanService.clear();
+			com.extremedimensions.elder.PaleMasonService.clear();
 			com.extremedimensions.elder.MatriarchService.clear();
 			com.extremedimensions.elder.ElderStrikes.clear();
 			com.extremedimensions.elder.ElderSpells.clear();
@@ -299,6 +300,8 @@ public final class ServerEvents {
 				com.extremedimensions.elder.MatriarchService.onDefeat(m, source.getEntity());
 			} else if (entity instanceof com.extremedimensions.elder.Ferryman f) {
 				com.extremedimensions.elder.FerrymanService.onDefeat(f, source.getEntity());
+			} else if (entity instanceof com.extremedimensions.elder.PaleMason pm) {
+				com.extremedimensions.elder.PaleMasonService.onDefeat(pm, source.getEntity());
 			} else if (entity instanceof com.extremedimensions.elder.Weaver w) {
 				com.extremedimensions.elder.WeaverService.onDefeat(w, source.getEntity());
 			} else if (entity instanceof Keeper k) {
@@ -480,6 +483,9 @@ public final class ServerEvents {
 			if (player instanceof ServerPlayer sp && player.getItemInHand(hand).is(ModItems.MENDING_CLOTH)) {
 				return PenaltyService.cloth(sp, player.getItemInHand(hand));
 			}
+			if (player instanceof ServerPlayer sp && player.getItemInHand(hand).is(ModItems.HOMING_PEARL)) {
+				return com.extremedimensions.reach.HomingPearl.use(sp, player.getItemInHand(hand));
+			}
 			if (player instanceof ServerPlayer sp && com.extremedimensions.relic.RelicService.of(player.getItemInHand(hand)) != null) {
 				return com.extremedimensions.relic.RelicService.bind(sp, player.getItemInHand(hand));
 			}
@@ -617,7 +623,7 @@ public final class ServerEvents {
 
 	/** The mod's things that act (cloth, relics, endings) and so wait in another mod's world; the journal and pages are only read. */
 	private static boolean foreignRefuses(ItemStack held) {
-		return held.is(ModItems.MENDING_CLOTH) || held.is(ModItems.MENDING_THREAD) || held.is(ModItems.SEVERING_SHEARS)
+		return held.is(ModItems.MENDING_CLOTH) || held.is(ModItems.MENDING_THREAD) || held.is(ModItems.SEVERING_SHEARS) || held.is(ModItems.HOMING_PEARL)
 				|| com.extremedimensions.relic.RelicService.of(held) != null;
 	}
 
@@ -807,6 +813,8 @@ public final class ServerEvents {
 		com.extremedimensions.elder.ElderStir.tick(s);
 		com.extremedimensions.elder.FerrymanService.tick(s);
 		lap = TickProfile.lap("ferryman", lap);
+		com.extremedimensions.elder.PaleMasonService.tick(s);
+		lap = TickProfile.lap("pale mason", lap);
 		com.extremedimensions.elder.MatriarchService.tick(s);
 		lap = TickProfile.lap("matriarch", lap);
 		com.extremedimensions.elder.ElderStrikes.tick(s);

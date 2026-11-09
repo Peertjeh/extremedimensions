@@ -16,6 +16,7 @@
 			"com.extremedimensions.gametest.BossTests",
 			"com.extremedimensions.gametest.StirTests",
 			"com.extremedimensions.gametest.ReachTests",
+			"com.extremedimensions.gametest.MasonTests",
 			"com.extremedimensions.gametest.ArenaTests",
 			"com.extremedimensions.gametest.ElderFightTests",
 			"com.extremedimensions.gametest.WorldTests",

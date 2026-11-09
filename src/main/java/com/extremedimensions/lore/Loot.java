@@ -60,6 +60,8 @@ public final class Loot {
 	public static final String UNANCHORED = "gameplay/unanchored";
 	/** What the builders of an Unfinished Anchor put by in its barrels (3.39). */
 	public static final String PALE_ANCHOR = "gameplay/pale_anchor";
+	/** What the Pale Mason leaves when he falls: the Homing Pearl among his spoils (3.40). */
+	public static final String PALE_MASON = "gameplay/pale_mason_spoils";
 	/** What a slain Pale Hauler leaves besides the blocks it took. */
 	public static final String PALE_HAULER = "gameplay/pale_hauler_spoils";
 

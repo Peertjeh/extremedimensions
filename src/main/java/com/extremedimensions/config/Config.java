@@ -1392,6 +1392,28 @@ public final class Config {
 	public static double PALE_SQUALL_PUSH = 0.06;
 	/** How much less a Pale Squall pushes for each level of Anchored (0.25 = 25%). */
 	public static double PALE_SQUALL_ANCHORED = 0.25;
+	/** The Pale Mason's own health (before elder_health_scale and the players fighting him). */
+	public static double PALE_MASON_HEALTH = 900.0;
+	/** The chance, once each expedition that has gone on a while in the Reach, that the Pale Mason comes. */
+	public static double PALE_MASON_CHANCE = 0.35;
+	/** Seconds an expedition must have gone on (out in the Reach) before the Pale Mason may come. */
+	public static int PALE_MASON_AFTER_SECONDS = 150;
+	/** Seconds stone and chains are heard before he comes (0: he comes at once). */
+	public static int PALE_MASON_WAKE_SECONDS = 15;
+	/** Damage of his Teleport Strike, where its sigil lies. */
+	public static double PALE_MASON_STRIKE_DAMAGE = 14.0;
+	/** Seconds his Anchor Walls stand before they crumble. */
+	public static int PALE_MASON_WALL_SECONDS = 12;
+	/** Damage of a great block he hurls, where it lands. */
+	public static double PALE_MASON_BLOCK_DAMAGE = 12.0;
+	/** How large the great blocks he hurls are (blocks to a side). */
+	public static double PALE_MASON_BLOCK_SIZE = 2.5;
+	/** Damage of his Gaze on whoever looks him in the face. */
+	public static double PALE_MASON_GAZE_DAMAGE = 10.0;
+	/** How hard the Last Door draws everyone towards it, each tick (by the squall's rules: walls, sneaking, Anchored). */
+	public static double PALE_MASON_DOOR_PULL = 0.09;
+	/** Damage to whoever reaches the Last Door. */
+	public static double PALE_MASON_DOOR_DAMAGE = 16.0;
 
 	// --- Co-op -----------------------------------------------------------------------------------
 
@@ -1947,7 +1969,9 @@ public final class Config {
 			{"pale_anchor_chance", 0, 1}, {"pale_anchor_build_seconds", 1, 600}, {"pale_fitting_drain", 0, 1}, {"pale_fitting_range", 8, 256},
 			{"pale_fitting_cost", 0, 64}, {"pale_hauler_health", 1, 1024}, {"pale_hauler_spawn_chance", 0, 1}, {"pale_hauler_max", 0, 8}, {"pale_hauler_damage", 0, 100},
 			{"pale_hauler_pull_seconds", 0.25, 10}, {"pale_hauler_pulls", 1, 64}, {"pale_squall_chance", 0, 1}, {"pale_squall_warning_seconds", 0, 30},
-			{"pale_squall_seconds", 1, 60}, {"pale_squall_push", 0, 0.5}, {"pale_squall_anchored", 0, 1}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
+			{"pale_squall_seconds", 1, 60}, {"pale_squall_push", 0, 0.5}, {"pale_squall_anchored", 0, 1}, {"pale_mason_health", 1, 1024}, {"pale_mason_chance", 0, 1}, {"pale_mason_after_seconds", 0, 3600},
+			{"pale_mason_wake_seconds", 0, 120}, {"pale_mason_strike_damage", 0, 60}, {"pale_mason_wall_seconds", 1, 60}, {"pale_mason_block_damage", 0, 60},
+			{"pale_mason_block_size", 1, 4}, {"pale_mason_gaze_damage", 0, 60}, {"pale_mason_door_pull", 0, 0.5}, {"pale_mason_door_damage", 0, 60}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
 			{"ferryman_gaol_hits", 1, 20}, {"ferryman_gaol_seconds", 0.5, 6}, {"ferryman_gaol_damage", 0, 100}, {"weaver_windup_speed", 0.5, 4}, {"weaver_lance_length", 0.5, 4},
 			{"elder_arena_size", 0.5, 12}, {"elder_arena_wall", 0, 1}, {"elder_arena_landmark", 0, 1},
 			{"elder_arena_breakable", 0, 1}, {"elder_arena_blast_resistance", 0, 1200}, {"elder_arena_collapse", 0, 1},

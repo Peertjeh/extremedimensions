@@ -9,7 +9,8 @@ import net.minecraft.server.level.ServerPlayer;
  * of its own for each blow (with a subtitle, for those who read them), as its body moves into the blow and its light
  * changes colour (see the client's renderer). Each Elder sounds like itself: the Matriarch of wood, roots and a deep
  * groan; the Ferryman of bells, chains and the river; the Last Weaver of glass, threads and a high, thin chime; the Knot
- * Mother of a choir, bronze and thick threads drawn taut (her own sounds, tools/sounds/knot_mother.py).
+ * Mother of a choir, bronze and thick threads drawn taut (her own sounds, tools/sounds/knot_mother.py); the Pale Mason of
+ * stone, chains and the void's warble (tools/sounds/pale_mason.py).
  */
 final class ElderTells {
 	private ElderTells() {}
@@ -60,6 +61,17 @@ final class ElderTells {
 				case Ferryman.CROSSING -> "crossing";
 				case Ferryman.GAOL -> "gaol";
 				case Ferryman.TIDE -> "tide";
+				default -> null;
+			};
+		}
+		if (b instanceof PaleMason) {
+			// His own: his blink out of sight, his walls grinding up, great blocks lifted and hurled, his gaze
+			return switch (action) {
+				case PaleMason.STRIKE -> "blink";
+				case PaleMason.WALLS -> "wall";
+				case PaleMason.LIFT -> "lift";
+				case PaleMason.THROW -> "throw";
+				case PaleMason.GAZE -> "gaze";
 				default -> null;
 			};
 		}

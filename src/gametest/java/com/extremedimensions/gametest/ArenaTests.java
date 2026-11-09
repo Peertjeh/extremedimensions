@@ -258,7 +258,8 @@ public class ArenaTests {
 		Config.ELDER_ARENA_SIZE = 3.0;
 		try {
 			BlockPos centre = helper.absolutePos(new BlockPos(2, 2, 2));
-			for (int style = 0; style < 3; style++) {
+			// (style 3 is the Pale Mason's, 3.40)
+			for (int style = 0; style < 4; style++) {
 				String diff = ElderArena.draftDiffers(level, style, centre, 1234L + style);
 				check(helper, diff == null, "style %s drawn up in steps: %s", style, diff);
 			}

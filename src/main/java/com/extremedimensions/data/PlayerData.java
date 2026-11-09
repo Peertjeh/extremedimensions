@@ -95,6 +95,8 @@ public class PlayerData {
 	public int elders = -1;
 	/** Whether the Ferryman has had his chance on this expedition. */
 	public transient boolean ferrymanRolled = false;
+	/** Whether the Pale Mason has had his one chance at this expedition (3.40). */
+	public transient boolean masonRolled = false;
 	/** Told that the Ferryman sails the Nether now and may come on a long crossing (3.38; once, on the first one). */
 	public boolean ferrymanTold = false;
 	/** Rift Trials: taken up for the next visit to the Seam, the one under way, and the medals already paid this week. */

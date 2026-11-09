@@ -27,7 +27,7 @@ public final class Bestiary {
 	public enum Beast {
 		LURKER("lurker", 3), CAVE_LURKER("cave_lurker", 3), SCULK_LURKER("sculk_lurker", 3), MAGPIE("magpie", 3), WICK("wick", 3), TIDEWALKER("tidewalker", 3), GATEBREAKER("gatebreaker", 1), LOCKWARDEN("lockwarden", 2), THREADBITER("threadbiter", 3), EDGECRAWLER("edgecrawler", 2), CRAGBACK("cragback", 1), HOLLOWLING("hollowling", 3), KEEPER("keeper", 1), STARVED_ONE("starved_one", 1),
 		THINNED("thinned", 3), VEIL_RAY("veil_ray", 3), FRAYED_RAY("frayed_ray", 3), MATRIARCH("matriarch", 1), FERRYMAN("ferryman", 1), LAST_WEAVER("weaver", 1),
-		KNOT_MOTHER("knot_mother", 1), PALE_HAULER("pale_hauler", 3);
+		KNOT_MOTHER("knot_mother", 1), PALE_HAULER("pale_hauler", 3), PALE_MASON("pale_mason", 1);
 
 		public final String id;
 		/** Slain this many times, the journal notes how to face it. */
@@ -39,7 +39,7 @@ public final class Bestiary {
 		}
 
 		public boolean great() {
-			return this == STARVED_ONE || this == MATRIARCH || this == FERRYMAN || this == LAST_WEAVER || this == KNOT_MOTHER;
+			return this == STARVED_ONE || this == MATRIARCH || this == FERRYMAN || this == LAST_WEAVER || this == KNOT_MOTHER || this == PALE_MASON;
 		}
 
 		public String nameKey() {
@@ -122,6 +122,9 @@ public final class Bestiary {
 		}
 		if (e instanceof com.extremedimensions.elder.Ferryman) {
 			return Beast.FERRYMAN;
+		}
+		if (e instanceof com.extremedimensions.elder.PaleMason) {
+			return Beast.PALE_MASON;
 		}
 		if (e instanceof com.extremedimensions.elder.KnotMother) {
 			return Beast.KNOT_MOTHER;

@@ -68,6 +68,7 @@ final class ElderSpawn {
 		switch (ElderFx.index(b)) {
 			case 0 -> matriarch(b, t, length);
 			case 1 -> ferryman(b, t, length);
+			case 3 -> mason(b, t, length);
 			default -> weaver(b, t, length);
 		}
 		if (t >= length) {
@@ -246,6 +247,54 @@ final class ElderSpawn {
 				WorldFx.soundIn(dim, "minecraft:entity.warden.sonic_boom", "hostile", x, y, z, 3f, 1.4f);
 			}
 			ElderFx.ring(level, "minecraft:end_rod", x, b.getY() - 2, z, 8, 50, 0);
+		}
+	}
+
+	// ------------------------------------------------------------------ the Pale Mason
+
+	/**
+	 * The Pale Mason comes out of the void as his Endermen build: violet motes drawn in from all round, grit of end stone
+	 * spiralling up into a column that is him, the stone and chains of his coming rising to the moment he steps out of
+	 * the air whole.
+	 */
+	private static void mason(ElderBoss b, double t, int length) {
+		ServerLevel level = (ServerLevel) b.level();
+		String dim = ElderFx.dim(b);
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		double k = share(t, length);
+		double x = b.getX(), y = b.getY() + 9, z = b.getZ();
+		if (t <= 1) {
+			float rate = (float) Math.max(0.5, Math.min(2.0, 6.0 / (length * 0.88 / 20.0)));
+			WorldFx.soundIn(dim, "extremedimensions:elder.pale_mason.wake", "hostile", x, y, z, 6f, rate);
+		}
+		if (k < 0.88 && ((int) t) % 2 == 0) {
+			// The void drawn in: motes from far round him, faster as he forms
+			for (int i = 0; i < 6; i++) {
+				double a = rnd.nextDouble(Math.PI * 2), r = rnd.nextDouble(10, 20);
+				WorldFx.particleIn(level, "minecraft:reverse_portal", x + Math.cos(a) * r, y + rnd.nextDouble(-8, 10), z + Math.sin(a) * r, 0, 0, 0,
+						0.6 + k, 1);
+			}
+		}
+		if (k >= 0.15 && k < 0.88 && ((int) t) % 2 == 0) {
+			// A column of stone grit spiralling up into his shape, narrowing as it takes it
+			double r = 5 - 3 * Math.min(1, (k - 0.15) / 0.7);
+			for (int i = 0; i < 10; i++) {
+				double a = t * 0.15 + i * Math.PI * 2 / 10;
+				double h = ((t * 0.4 + i * 1.7) % 18) - 9;
+				WorldFx.particleIn(level, i % 3 == 0 ? "minecraft:portal" : "minecraft:white_ash", x + Math.cos(a) * r, y + h, z + Math.sin(a) * r, 0, 0,
+						0, 0, 1);
+			}
+		}
+		if (((int) t) % 10 == 0 && k < 0.88) {
+			WorldFx.soundIn(dim, "minecraft:block.chain.place", "hostile", x, y, z, 3f, (float) (0.5 + k * 0.6));
+		}
+		if (at(t, length, 0.88)) {
+			// He steps out of the air
+			WorldFx.particleIn(level, "minecraft:portal", x, y, z, 3, 6, 3, 1.2, 240);
+			WorldFx.particleIn(level, "minecraft:reverse_portal", x, y, z, 3, 6, 3, 0.4, 160);
+			WorldFx.soundIn(dim, "extremedimensions:elder.pale_mason.phase", "hostile", x, y, z, 6f, 1f);
+			WorldFx.soundIn(dim, "minecraft:entity.enderman.scream", "hostile", x, y, z, 4f, 0.5f);
+			ElderFx.ring(level, "minecraft:portal", x, b.getY() - 2, z, 9, 60, 0);
 		}
 	}
 }

@@ -115,6 +115,7 @@ public final class ExpeditionService {
 		d.heldTicks = 0;
 		d.runActive = 0;
 		d.ferrymanRolled = false;
+		d.masonRolled = false;
 		com.extremedimensions.pact.PactService.begin(p, d);
 		d.runTime = 0;
 		d.runMax = total;
