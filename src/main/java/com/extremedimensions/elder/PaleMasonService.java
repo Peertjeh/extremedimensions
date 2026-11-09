@@ -1136,6 +1136,18 @@ public final class PaleMasonService {
 		return f == null ? 0 : f.bound.size() + f.spiral.size();
 	}
 
+	/** How many chained stones he swings now (for tests). */
+	public static int chained(Entity e) {
+		Masonry f = FIGHTS.get(e.getUUID());
+		return f == null ? 0 : f.bound.size();
+	}
+
+	/** How many stones of his spiral turn round him now (for tests). */
+	public static int spiralling(Entity e) {
+		Masonry f = FIGHTS.get(e.getUUID());
+		return f == null ? 0 : f.spiral.size();
+	}
+
 	/** How many of his pillars are yet to tear up (for tests). */
 	public static int pillarsWaiting(Entity e) {
 		Masonry f = FIGHTS.get(e.getUUID());

@@ -149,10 +149,11 @@ public class MasonTests {
 		PaleMasonService.force(m, PaleMason.CHAINS);
 		int[] most = {0};
 		for (int t = 5; t <= 90; t += 5) {
-			helper.runAfterDelay(t, () -> most[0] = Math.max(most[0], PaleMasonService.bound(m)));
+			helper.runAfterDelay(t, () -> most[0] = Math.max(most[0], PaleMasonService.chained(m)));
 		}
-		helper.runAfterDelay(200, () -> {
-			int left = PaleMasonService.bound(m);
+		// (just after the blow, before his rest is over and another can begin)
+		helper.runAfterDelay(136, () -> {
+			int left = PaleMasonService.chained(m);
 			int action = m.getAction();
 			PaleMasonService.fade(m);
 			restore.run();
@@ -201,10 +202,11 @@ public class MasonTests {
 		PaleMasonService.force(m, PaleMason.SPIRAL);
 		int[] most = {0};
 		for (int t = 10; t <= 80; t += 10) {
-			helper.runAfterDelay(t, () -> most[0] = Math.max(most[0], PaleMasonService.bound(m)));
+			helper.runAfterDelay(t, () -> most[0] = Math.max(most[0], PaleMasonService.spiralling(m)));
 		}
-		helper.runAfterDelay(160, () -> {
-			int left = PaleMasonService.bound(m);
+		// (just after the burst and the blow, before his rest is over and another can begin)
+		helper.runAfterDelay(120, () -> {
+			int left = PaleMasonService.spiralling(m);
 			int drawn = com.extremedimensions.events.PaleSquall.felt(p.getUUID()) - felt;
 			PaleMasonService.fade(m);
 			restore.run();
