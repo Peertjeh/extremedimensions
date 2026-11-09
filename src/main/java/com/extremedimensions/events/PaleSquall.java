@@ -65,7 +65,7 @@ public final class PaleSquall {
 		if (now % 1200 == 900 && Config.PALE_SQUALL > 0) {
 			for (ServerPlayer p : s.getPlayerList().getPlayers()) {
 				PlayerData d = DataStore.get(p.getUUID());
-				if (d.inRun && PaleReach.in(p) && !SQUALLS.containsKey(p.getUUID()) && ThreadLocalRandom.current().nextDouble() < Config.PALE_SQUALL_CHANCE
+				if (d.inRun && PaleReach.in(p) && !SQUALLS.containsKey(p.getUUID()) && ThreadLocalRandom.current().nextDouble() < Config.PALE_SQUALL_CHANCE * com.extremedimensions.reach.HomeOrLock.weather()
 						&& WorldEvents.free(p, now)) {
 					start(p, now);
 				}

@@ -1,5 +1,30 @@
 # Changelog
 
+## 3.44.0: Home or Lock
+
+### New
+- **The End's own ending.** The Pale Mason, slain, leaves the two things he never set down while the End has no ending
+  yet: the **Homeward Keystone** and the **Pale Lock**. Set one in the fitting of an Unfinished Anchor that has been
+  attuned with an Eye of Ender, and it decides the End for the whole world. The other one only crumbles after.
+  - *Home*: the anchor is finished before your eyes. Its pillars rise whole, its arches close, its halo closes into a
+    full ring, and a door of light opens in it (`pale_door_seconds`). The Endermen near (`pale_door_range`) walk to it
+    and go home through it, and they leave their thanks at the fitting: Homing Pearls, pearls, eyes and fragments.
+    Afterwards the Endermen of the End let a gaze pass (`pale_home_calm`; one you strike still fights back), and the
+    Pale Haulers and the Pale Squalls come half as often (`pale_home_quiet`).
+  - *Lock*: the anchor is sealed and breaks apart. Its halo, its arches and the tops of its pillars fall away into
+    the void, the fitting becomes the lock, and the hoard they put by for the way home bursts out: pearls, shulker
+    shells, gold, diamonds, end crystals, fragments, and sometimes an elytra or a Tetherite template. Afterwards an
+    Enderman near a player in the End may turn on them unprovoked (`pale_lock_hostile_chance`,
+    `pale_lock_hostile_range`; never in peace, never on a creative player), and the Haulers and Squalls come half again
+    as often (`pale_lock_wrath`).
+- A journal page, *48. The Last Stone*, written in when the Mason falls; the Path shows *Home or Lock* beside it, done
+  once the End has its ending. Two advancements: *Home at Last* and *Locked Out*.
+- `/tether reach choice home|lock|undo` for operators: near the fitting of an anchor it plays the scene there as if the
+  Keystone or the Lock were set in it; `undo` forgets the End's ending again.
+
+### Fixed
+- The screenshots of an Elder's blows step back from it first, so a blow is not shot from inside the Ferryman's hull.
+
 ## 3.43.0: Loom and Toll
 
 ### New

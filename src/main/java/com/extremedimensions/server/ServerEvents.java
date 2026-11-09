@@ -110,6 +110,7 @@ public final class ServerEvents {
 			com.extremedimensions.tapestry.Tapestry.clear();
 			com.extremedimensions.seam.FirstKnot.clear();
 			com.extremedimensions.reach.PaleReach.clear();
+			com.extremedimensions.reach.AnchorRites.clear();
 			LurkerService.clear();
 			com.extremedimensions.lurker.CaveLurkerService.clear();
 			com.extremedimensions.lurker.SculkLurkerService.clear();
@@ -370,8 +371,14 @@ public final class ServerEvents {
 		});
 		// The fitting of an Unfinished Anchor in the Pale Reach, attuned with an Eye of Ender (3.39)
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
-			if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer sp) || !(level instanceof ServerLevel sl)
-					|| !level.getBlockState(hit.getBlockPos()).is(net.minecraft.world.level.block.Blocks.LODESTONE)) {
+			if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer sp) || !(level instanceof ServerLevel sl)) {
+				return InteractionResult.PASS;
+			}
+			// The Homeward Keystone or the Pale Lock: set in an attuned fitting, it decides the End (3.44)
+			if (com.extremedimensions.reach.HomeOrLock.holds(player.getItemInHand(hand))) {
+				return com.extremedimensions.reach.HomeOrLock.onUse(sp, sl, hit.getBlockPos(), player.getItemInHand(hand));
+			}
+			if (!level.getBlockState(hit.getBlockPos()).is(net.minecraft.world.level.block.Blocks.LODESTONE)) {
 				return InteractionResult.PASS;
 			}
 			return com.extremedimensions.reach.PaleReach.onUse(sp, sl, hit.getBlockPos(), player.getItemInHand(hand));
@@ -626,6 +633,7 @@ public final class ServerEvents {
 	/** The mod's things that act (cloth, relics, endings) and so wait in another mod's world; the journal and pages are only read. */
 	private static boolean foreignRefuses(ItemStack held) {
 		return held.is(ModItems.MENDING_CLOTH) || held.is(ModItems.MENDING_THREAD) || held.is(ModItems.SEVERING_SHEARS) || held.is(ModItems.HOMING_PEARL)
+				|| held.is(ModItems.HOMEWARD_KEYSTONE) || held.is(ModItems.PALE_LOCK)
 				|| com.extremedimensions.relic.RelicService.of(held) != null;
 	}
 
@@ -785,6 +793,8 @@ public final class ServerEvents {
 		com.extremedimensions.binding.WoundLens.tick(s);
 		com.extremedimensions.events.WorldEvents.tick(s);
 		com.extremedimensions.reach.PaleReach.tick(s);
+		com.extremedimensions.reach.AnchorRites.tick(s);
+		com.extremedimensions.reach.HomeOrLock.tick(s);
 		if (s.getTickCount() % 1200 == 0) {
 			AtonementGuard.sweep(s);
 		}

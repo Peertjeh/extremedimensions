@@ -45,6 +45,10 @@ public final class ModItems {
 
 	/** The Pale Mason's (3.40): used out in the End on an expedition, it takes you home to your Void Anchor at once. */
 	public static final Item HOMING_PEARL = register("homing_pearl", 16, Rarity.EPIC);
+	/** The Pale Mason's (3.44): set in an attuned fitting, the Endermen's anchor is finished and they go home. */
+	public static final Item HOMEWARD_KEYSTONE = registerFireproof("homeward_keystone", 1, Rarity.EPIC);
+	/** The Pale Mason's (3.44): set in an attuned fitting, the Endermen's anchor is sealed for good, and their hoard is yours. */
+	public static final Item PALE_LOCK = registerFireproof("pale_lock", 1, Rarity.EPIC);
 
 	/** A wing of a Veil Ray, still glowing along its seams. */
 	public static final Item VEIL_WING = register("veil_wing", 16, Rarity.UNCOMMON);

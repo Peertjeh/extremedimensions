@@ -60,6 +60,10 @@ public final class Tooltips {
 			key = "veil_wing";
 		} else if (item == ModItems.HOMING_PEARL) {
 			key = "homing_pearl";
+		} else if (item == ModItems.HOMEWARD_KEYSTONE) {
+			key = "homeward_keystone";
+		} else if (item == ModItems.PALE_LOCK) {
+			key = "pale_lock";
 		} else if (item == ModItems.MENDING_CLOTH) {
 			key = "mending_cloth";
 		} else if (item == ModItems.BLOOD_CORD) {

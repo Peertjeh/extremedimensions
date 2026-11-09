@@ -96,7 +96,11 @@ public final class TetherCommand {
 					return n;
 				}))
 				.then(Commands.literal("reach").requires(spawn)
-						.then(Commands.literal("anchor").executes(c -> reachAnchor(c.getSource()))))
+						.then(Commands.literal("anchor").executes(c -> reachAnchor(c.getSource())))
+						.then(Commands.literal("choice")
+								.then(Commands.literal("home").executes(c -> reachChoice(c.getSource(), com.extremedimensions.reach.HomeOrLock.HOME)))
+								.then(Commands.literal("lock").executes(c -> reachChoice(c.getSource(), com.extremedimensions.reach.HomeOrLock.LOCK)))
+								.then(Commands.literal("undo").executes(c -> reachChoice(c.getSource(), "")))))
 				.then(Commands.literal("event").requires(spawn)
 						.then(Commands.argument("id", StringArgumentType.word())
 								.suggests((c, b) -> SharedSuggestionProvider.suggest(com.extremedimensions.events.WorldEvents.IDS, b))
@@ -129,6 +133,39 @@ public final class TetherCommand {
 		com.extremedimensions.reach.PaleReach.build((net.minecraft.server.level.ServerLevel) p.level(), "cmd@" + origin.getX() + "," + origin.getZ(), origin,
 				java.util.concurrent.ThreadLocalRandom.current().nextLong());
 		src.sendSuccess(() -> Component.translatable("commands.extremedimensions.reach.anchor", origin.getX(), origin.getY(), origin.getZ()), true);
+		return 1;
+	}
+
+	/**
+	 * {@code /tether reach choice home|lock|undo}: decides the End's ending at once (3.44). Within 64 blocks of the fitting
+	 * of an Unfinished Anchor, the anchor is finished or locked there as if the Keystone or the Lock were set in it;
+	 * elsewhere only the choice is kept. {@code undo} forgets it (the anchors stay as they are).
+	 */
+	private static int reachChoice(CommandSourceStack src, String choice) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+		ServerPlayer p = src.getPlayerOrException();
+		if (choice.isEmpty()) {
+			com.extremedimensions.reach.HomeOrLock.set("");
+			src.sendSuccess(() -> Component.translatable("commands.extremedimensions.reach.choice_undone"), true);
+			return 1;
+		}
+		net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) p.level();
+		net.minecraft.core.BlockPos fitting = null;
+		double best = 64 * 64;
+		for (net.minecraft.core.BlockPos at : net.minecraft.core.BlockPos.betweenClosed(p.blockPosition().offset(-64, -32, -64), p.blockPosition().offset(64, 32, 64))) {
+			double d = at.distSqr(p.blockPosition());
+			if (d < best && level.getBlockState(at).is(net.minecraft.world.level.block.Blocks.LODESTONE)
+					&& com.extremedimensions.reach.PaleReach.isFitting(level, at)) {
+				best = d;
+				fitting = at.immutable();
+			}
+		}
+		if (fitting == null) {
+			com.extremedimensions.reach.HomeOrLock.set(choice);
+		} else {
+			com.extremedimensions.reach.HomeOrLock.set("");
+			com.extremedimensions.reach.HomeOrLock.choose(level, fitting, p, com.extremedimensions.reach.HomeOrLock.HOME.equals(choice));
+		}
+		src.sendSuccess(() -> Component.translatable("commands.extremedimensions.reach.choice_set", choice), true);
 		return 1;
 	}
 

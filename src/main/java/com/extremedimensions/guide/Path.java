@@ -53,7 +53,9 @@ public final class Path {
 		LAST_WEAVER(JournalEntry.LAST_WEAVER),
 		FIRST_WEAVER(JournalEntry.FRAME),
 		/** Known once the world has its ending; done when the tapestry on the loom is finished. */
-		TAPESTRY(JournalEntry.ENDING);
+		TAPESTRY(JournalEntry.ENDING),
+		/** Known once the Pale Mason has fallen; done once the End has its ending, home or locked (3.44). */
+		HOME_OR_LOCK(JournalEntry.LAST_STONE);
 
 		public final JournalEntry page;
 
@@ -88,6 +90,7 @@ public final class Path {
 			case LAST_WEAVER -> WorldFx.hasAdvancement(p, Advancements.WEAVER_SLAIN);
 			case FIRST_WEAVER -> d.knotReached;
 			case TAPESTRY -> DataStore.tapestryDone();
+			case HOME_OR_LOCK -> !com.extremedimensions.reach.HomeOrLock.choice().isEmpty();
 		};
 	}
 

@@ -62,6 +62,10 @@ public final class Loot {
 	public static final String PALE_ANCHOR = "gameplay/pale_anchor";
 	/** What the Pale Mason leaves when he falls: the Homing Pearl among his spoils (3.40). */
 	public static final String PALE_MASON = "gameplay/pale_mason_spoils";
+	/** What the Endermen leave at the fitting in thanks as they go home (3.44). */
+	public static final String PALE_THANKS = "gameplay/pale_thanks";
+	/** What they put by for the way home, spilled when their anchor is locked (3.44). */
+	public static final String PALE_HOARD = "gameplay/pale_hoard";
 	/** What a slain Pale Hauler leaves besides the blocks it took. */
 	public static final String PALE_HAULER = "gameplay/pale_hauler_spoils";
 

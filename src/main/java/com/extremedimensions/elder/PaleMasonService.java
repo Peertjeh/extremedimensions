@@ -1300,6 +1300,10 @@ public final class PaleMasonService {
 		for (ItemStack s : Loot.roll(level, Loot.PALE_MASON, m.position())) {
 			ElderFx.loot(m, f.target, s);
 		}
+		// While the End has no ending: the last stone of their door, and the lock for it (3.44)
+		for (ItemStack s : com.extremedimensions.reach.HomeOrLock.spoils()) {
+			ElderFx.loot(m, f.target, s);
+		}
 		List<ServerPlayer> there = new ArrayList<>();
 		for (ServerPlayer p : level.players()) {
 			if (p.distanceToSqr(m) >= 64 * 64) {
@@ -1309,6 +1313,7 @@ public final class PaleMasonService {
 			PlayerData d = DataStore.get(p.getUUID());
 			Advancements.grant(p, Advancements.PALE_MASON_SLAIN);
 			Journal.unlock(p, d, JournalEntry.PALE_MASON);
+			Journal.unlock(p, d, JournalEntry.LAST_STONE);
 		}
 		DataStore.markDirty();
 		com.extremedimensions.compat.DiscordWebhook.elder(com.extremedimensions.compat.StatsExport.Elder.PALE_MASON, there);

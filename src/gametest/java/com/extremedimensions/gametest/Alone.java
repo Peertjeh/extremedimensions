@@ -25,6 +25,10 @@ final class Alone {
 	static final String WEAVER_SETTLES = "extremedimensions_test:alone/weaver_settles";
 	static final String REACH_ANCHOR = "extremedimensions_test:alone/reach_anchor";
 	static final String REACH_HAULER = "extremedimensions_test:alone/reach_hauler";
+	// (3.44: the End's ending is the world's, and its scenes reach past a test's own floor)
+	static final String CHOICE_HOME = "extremedimensions_test:alone/choice_home";
+	static final String CHOICE_LOCK = "extremedimensions_test:alone/choice_lock";
+	static final String CHOICE_ENDERMEN = "extremedimensions_test:alone/choice_endermen";
 	static final String FERRYMAN_TOLL = "extremedimensions_test:alone/ferryman_toll";
 	static final String ELDER_FORMING = "extremedimensions_test:alone/elder_forming";
 	static final String ARENA_RAISED = "extremedimensions_test:alone/arena_raised";

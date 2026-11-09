@@ -109,6 +109,8 @@ public class ClientShots implements FabricClientGameTest {
 			int blow = blows[i];
 			sp.getServer().runOnServer(s -> elders(s).forEach(e -> force.test(e, blow)));
 			measure(ctx, name + "_" + blowNames[i], 28);
+			// (3.44: drawn in close, the shot showed only the hull or the hem: step back to see the blow)
+			standOff(sp, name, 14);
 			face(sp, name);
 			ctx.waitTicks(2);
 			ctx.takeScreenshot("12_fight_" + name + "_" + blowNames[i]);
@@ -426,6 +428,33 @@ public class ClientShots implements FabricClientGameTest {
 	private static void eye(TestSingleplayerContext sp, double x, double y, double z, double tx, double tz, float pitch) {
 		float yaw = (float) Math.toDegrees(Math.atan2(-(tx - x), tz - z));
 		sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %.2f %.2f %.1f %.1f", x, y, z, yaw, pitch));
+	}
+
+	/** Steps the player back from the Elder to {@code far} blocks across, if they stand nearer (for a shot of its blow). */
+	private static void standOff(TestSingleplayerContext sp, String name, double far) {
+		sp.getServer().runOnServer(s -> {
+			ServerPlayer p = player(s);
+			net.minecraft.world.entity.Entity e = null;
+			for (net.minecraft.world.entity.Entity c : elders(s)) {
+				if (e == null || c.distanceToSqr(p) < e.distanceToSqr(p)) {
+					e = c;
+				}
+			}
+			if (e == null) {
+				return;
+			}
+			double dx = p.getX() - e.getX(), dz = p.getZ() - e.getZ();
+			double d = Math.sqrt(dx * dx + dz * dz);
+			if (d >= far) {
+				return;
+			}
+			if (d < 1e-3) {
+				dx = 0;
+				dz = -1;
+				d = 1;
+			}
+			p.teleportTo(e.getX() + dx / d * far, p.getY(), e.getZ() + dz / d * far);
+		});
 	}
 
 	private static void face(TestSingleplayerContext sp, String name) {
@@ -1492,6 +1521,50 @@ public class ClientShots implements FabricClientGameTest {
 				com.extremedimensions.data.DataStore.reach().removeIf(m -> m.startsWith("pf@"));
 			});
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~3 ~-1 ~-4 0 0");
+			ctx.waitTicks(10);
+
+			// Home or Lock (3.44): the Keystone set in an attuned fitting finishes the anchor and opens its door; on
+			// another, far off, the Lock breaks it apart. Each from below the halo, flying so the view holds
+			double[] beforeRites = sp.getServer().computeOnServer(s -> new double[] {player(s).getX(), player(s).getY(), player(s).getZ()});
+			String choiceWas = sp.getServer().computeOnServer(s -> com.extremedimensions.reach.HomeOrLock.choice());
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				p.getAbilities().mayfly = true;
+				p.getAbilities().flying = true;
+				p.onUpdateAbilities();
+			});
+			for (int k = 0; k < 2; k++) {
+				boolean home = k == 0;
+				sp.getServer().runOnServer(s -> {
+					ServerPlayer p = player(s);
+					p.level().getChunk(((int) Math.floor(p.getX() + 300)) >> 4, ((int) Math.floor(p.getZ())) >> 4);
+					p.teleportTo(p.getX() + 300, p.getY() + 20, p.getZ());
+				});
+				ctx.waitTicks(20);
+				sp.getServer().runOnServer(s -> {
+					ServerPlayer p = player(s);
+					net.minecraft.server.level.ServerLevel lv = (net.minecraft.server.level.ServerLevel) p.level();
+					net.minecraft.core.BlockPos o = net.minecraft.core.BlockPos.containing(p.getX(), p.getY() - 2, p.getZ() + 34);
+					com.extremedimensions.reach.PaleAnchorDesign.Blueprint bp = com.extremedimensions.reach.PaleReach.buildNow(lv, o, home ? 501L : 502L);
+					com.extremedimensions.reach.PaleReach.attune(lv, bp.fitting, null);
+					com.extremedimensions.reach.HomeOrLock.set("");
+					com.extremedimensions.reach.HomeOrLock.choose(lv, bp.fitting, null, home);
+				});
+				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 -24");
+				ctx.waitTicks(home ? 40 : 12);
+				ctx.takeScreenshot(home ? "10_pale_home_a" : "10_pale_lock_a");
+				ctx.waitTicks(home ? 90 : 40);
+				ctx.takeScreenshot(home ? "10_pale_home_b" : "10_pale_lock_b");
+			}
+			sp.getServer().runOnServer(s -> {
+				com.extremedimensions.reach.AnchorRites.clear();
+				com.extremedimensions.reach.HomeOrLock.set(choiceWas);
+				ServerPlayer p = player(s);
+				p.getAbilities().flying = false;
+				p.getAbilities().mayfly = p.isCreative();
+				p.onUpdateAbilities();
+			});
+			moveTo(ctx, sp, beforeRites);
 			ctx.waitTicks(10);
 
 			// A shove and the Pale Squall move a player for real (3.39.1, 3.39.2): on a stone floor, in survival, a motion

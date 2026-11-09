@@ -67,6 +67,10 @@ public final class Advancements {
 	public static final String PALE_ATTUNED = "pale_attuned";
 	/** Slay the Pale Mason in the Pale Reach (3.40). */
 	public static final String PALE_MASON_SLAIN = "pale_mason_slain";
+	/** Set the Homeward Keystone: the Endermen go home (3.44). */
+	public static final String PALE_HOME = "pale_home";
+	/** Set the Pale Lock: their door is shut for good (3.44). */
+	public static final String PALE_LOCKED = "pale_locked";
 	/** Not one shown in the tab: the recipe book's way of learning the Weaver's Loom, given when an Elder falls. */
 	public static final String LOOM_RECIPE = "recipes/misc/weavers_loom";
 

@@ -1462,6 +1462,20 @@ public final class Config {
 	public static double PALE_MASON_SPIRAL_PULL = 0.06;
 	/** Damage of his spiral bursting, to whoever is close (less further out; a quarter while it grinds round him) (3.41). */
 	public static double PALE_MASON_BURST_DAMAGE = 14.0;
+	/** Seconds the door of a finished anchor stands open for the Endermen to go home through it (3.44). */
+	public static int PALE_DOOR_SECONDS = 40;
+	/** How far (blocks) the Endermen come from to go home through an open door (3.44). */
+	public static int PALE_DOOR_RANGE = 64;
+	/** Once they have gone home: whether the Endermen of the End let a gaze pass (1 on, 0 off) (3.44). */
+	public static int PALE_HOME_CALM = 1;
+	/** Once they have gone home: how often Pale Haulers and Pale Squalls still come, as a share of before (3.44). */
+	public static double PALE_HOME_QUIET = 0.5;
+	/** Once the lock is broken: the chance, each second, that an Enderman near a player in the End turns on them unprovoked (3.44). */
+	public static double PALE_LOCK_HOSTILE_CHANCE = 0.04;
+	/** Once the lock is broken: how near (blocks) an Enderman must be to turn on a player (3.44). */
+	public static int PALE_LOCK_HOSTILE_RANGE = 24;
+	/** Once the lock is broken: how often Pale Haulers and Pale Squalls come, as a share of before (3.44). */
+	public static double PALE_LOCK_WRATH = 1.5;
 
 	// --- Co-op -----------------------------------------------------------------------------------
 
@@ -1819,7 +1833,7 @@ public final class Config {
 			"elder_arena_phases", "elder_cores", "elder_isle_fall", "elder_pierce", "matriarch_hex_milk", "coop_revive",
 			"coop_fallen_locked", "coop_burden", "coop_shared_anchors", "tribe_enabled", "tribe_raid", "clan_enabled",
 			"tapestry_roots_peace", "tapestry_chain_steady", "unweaving", "placeholders", "pale_reach",
-			"pale_hauler_enabled", "pale_squall");
+			"pale_hauler_enabled", "pale_squall", "pale_home_calm");
 
 	/** Whether this setting is a switch (1 on, 0 off) rather than a number. */
 	public static boolean isSwitch(String key) {
@@ -2023,7 +2037,9 @@ public final class Config {
 			{"pale_squall_seconds", 1, 60}, {"pale_squall_push", 0, 0.5}, {"pale_squall_anchored", 0, 1}, {"pale_mason_health", 1, 1024}, {"pale_mason_chance", 0, 1}, {"pale_mason_after_seconds", 0, 3600},
 			{"pale_mason_wake_seconds", 0, 120}, {"pale_mason_strike_damage", 0, 60}, {"pale_mason_wall_seconds", 1, 60}, {"pale_mason_block_damage", 0, 60},
 			{"pale_mason_block_size", 1, 4}, {"pale_mason_gaze_damage", 0, 60}, {"pale_mason_door_pull", 0, 0.5}, {"pale_mason_door_damage", 0, 60}, {"pale_mason_chain_damage", 0, 60},
-			{"pale_mason_pillar_damage", 0, 60}, {"pale_mason_ring_damage", 0, 60}, {"pale_mason_spiral_pull", 0, 0.5}, {"pale_mason_burst_damage", 0, 60}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
+			{"pale_mason_pillar_damage", 0, 60}, {"pale_mason_ring_damage", 0, 60}, {"pale_mason_spiral_pull", 0, 0.5}, {"pale_mason_burst_damage", 0, 60},
+			{"pale_door_seconds", 5, 600}, {"pale_door_range", 8, 256}, {"pale_home_quiet", 0, 1}, {"pale_lock_hostile_chance", 0, 1},
+			{"pale_lock_hostile_range", 4, 128}, {"pale_lock_wrath", 1, 4}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
 			{"ferryman_gaol_hits", 1, 20}, {"ferryman_gaol_seconds", 0.5, 6}, {"ferryman_gaol_damage", 0, 100},
 			{"ferryman_undertow_pull", 0, 0.5}, {"ferryman_geyser_damage", 0, 60}, {"ferryman_oar_damage", 0, 60}, {"ferryman_bell_damage", 0, 60},
 			{"weaver_windup_speed", 0.5, 4}, {"weaver_lance_length", 0.5, 4},

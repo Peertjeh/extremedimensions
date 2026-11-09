@@ -152,7 +152,7 @@ public final class PaleHaulerService {
 				continue;
 			}
 			int room = Math.max(0, Config.PALE_HAULER_MAX) - after(p);
-			if (room <= 0 || rnd.nextDouble() >= Config.PALE_HAULER_SPAWN_CHANCE) {
+			if (room <= 0 || rnd.nextDouble() >= Config.PALE_HAULER_SPAWN_CHANCE * com.extremedimensions.reach.HomeOrLock.weather()) {
 				continue;
 			}
 			if (come(p, 1 + rnd.nextInt(room)) > 0) {

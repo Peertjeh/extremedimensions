@@ -273,7 +273,7 @@ public final class ViewerContent {
 
 	/** The items with a page of their own, by id (the relics share one, below). */
 	public static final String[] INFO = {"tether_fragment", "wanderers_page", "loose_leaf", "seam_silk", "tether_cord", "tetherite_scrap",
-			"tetherite_ore", "seam_vein", "veil_wing", "blood_cord", "mending_thread", "severing_shears", "echo_thread", "ember_thread",
+			"tetherite_ore", "seam_vein", "veil_wing", "blood_cord", "mending_thread", "severing_shears", "homeward_keystone", "pale_lock", "echo_thread", "ember_thread",
 			"pale_thread", "silk_thread", "thread_of_roots", "thread_of_toll", "thread_of_unravelling", "thread_of_the_chain",
 			"thread_of_the_knot", "thread_of_the_heart", "music_disc_tick_of_the_boundary", "music_disc_wound_remembers",
 			"music_disc_what_listens", "disc_fragment_elegy", "disc_fragment_abyss", "helds_chain"};

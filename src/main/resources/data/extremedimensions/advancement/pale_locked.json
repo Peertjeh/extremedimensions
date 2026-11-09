@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:pale_mason_slain",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:pale_lock"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.pale_locked.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.pale_locked.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

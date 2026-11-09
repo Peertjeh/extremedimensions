@@ -60,6 +60,8 @@ public enum JournalEntry {
 	PALE_REACH("pale_reach"),
 	/** The Wanderer's: the Pale Mason, who keeps the Endermen building (written in when he first comes for the player). */
 	PALE_MASON("pale_mason"),
+	/** The Wanderer's: the last stone and the lock the Pale Mason carries (written in when he falls) (3.44). */
+	LAST_STONE("last_stone"),
 	/** In the player's own hand, after the ending, at the loom: a mended world's page... */
 	CONTINUED_MENDED("continued_mended", false, true),
 	/** ...and a severed world's (a world has one ending, so a journal holds one of the two). */

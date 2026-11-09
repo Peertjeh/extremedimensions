@@ -149,7 +149,11 @@ Thirty pages of a nameless Wanderer surface as you play, then pages in other han
    gaze if you look him in the face. He also swings cubes of violet light on golden chains, raises pillars of light out
    of the floor, casts golden rings you must jump and draws you into a spiral of stone that bursts. Below half his
    health he opens the Last Door onto the void. Slay him for the **Homing Pearl**, one safe way home to your Void
-   Anchor (`/tether boss pale_mason` calls him).
+   Anchor (`/tether boss pale_mason` calls him). He also leaves the two things he never set down, and the End's own
+   ending is yours to choose: set the **Homeward Keystone** in an attuned fitting and the anchor is finished, a door
+   opens in it and the Endermen walk home through it (afterwards they let a gaze pass, and the Reach is quieter); set the
+   **Pale Lock** instead and the anchor breaks apart, their hoard spills out, and the Endermen of the End turn on
+   travellers unprovoked. Only one of the two can ever be set (`/tether reach choice home|lock|undo` for operators).
    Every Elder's ultimate (at half its health) tears up its whole arena: cliffs, spikes, chasms, craters and, under the
    Matriarch, roots burst out of the floor, and the ground sinks back once the fight is over.
    The Matriarch's Requiem opens a vortex of roots over her arena, and lanterns hang down out of it on chains, burning
