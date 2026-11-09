@@ -2240,6 +2240,8 @@
   "config.extremedimensions.matriarch_brood.desc": "Hollowlings the Matriarch calls below 70%% and again below 35%% of her health.",
   "config.extremedimensions.matriarch_relics": "Matriarch: relics",
   "config.extremedimensions.matriarch_relics.desc": "Relics the Matriarch always leaves.",
+  "config.extremedimensions.matriarch_requiem_beam_damage": "Matriarch: Requiem lantern beam damage",
+  "config.extremedimensions.matriarch_requiem_beam_damage.desc": "Damage of a beam of violet light that a lantern hanging from the vortex over her Requiem burns down onto the ground under someone. A sigil shows where, a moment before.",
   "config.extremedimensions.ferryman_unlock": "When the Ferryman comes",
   "config.extremedimensions.ferryman_unlock.desc": "0 = from the start, 1 = after the Ender Dragon falls, 2 = after the Starved One falls.",
   "config.extremedimensions.ferryman_after_seconds": "Ferryman: after seconds",

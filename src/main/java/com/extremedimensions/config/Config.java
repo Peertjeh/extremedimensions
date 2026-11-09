@@ -1047,6 +1047,8 @@ public final class Config {
 	public static int MATRIARCH_BROOD = 3;
 	/** Relics the Matriarch always leaves. */
 	public static int MATRIARCH_RELICS = 1;
+	/** Damage of a beam from a lantern of her Requiem's sky, onto the ground under someone (a sigil shows where) (3.42). */
+	public static double MATRIARCH_REQUIEM_BEAM_DAMAGE = 9.0;
 	/** When the Ferryman comes: 0 = from the start, 1 = after the Ender Dragon falls, 2 = after the Starved One falls. */
 	public static int FERRYMAN_UNLOCK = 1;
 	/** The Ferryman's own health (3.32: half again his old 520). */
@@ -1993,7 +1995,7 @@ public final class Config {
 			{"elder_health_scale", 0.1, 20}, {"elder_health_per_player", 0, 5}, {"elder_damage_scale", 0, 20}, {"elder_damage_per_player", 0, 2},
 			{"elder_rest_per_player", 0, 0.5}, {"elder_rest_min", 0.1, 1}, {"elder_split_max", 1, 8}, {"elder_fighters_range", 8, 256},
 			{"elder_reach", 1, 5}, {"elder_brood_per_player", 0, 10}, {"elder_spell_range", 16, 256}, {"elder_snare_seconds", 0, 30},
-			{"matriarch_health", 1, 1024}, {"ferryman_health", 1, 1024}, {"weaver_health", 1, 1024}, {"knot_mother_health", 1, 1024}, {"starved_health", 1, 1024},
+			{"matriarch_health", 1, 1024}, {"matriarch_requiem_beam_damage", 0, 60}, {"ferryman_health", 1, 1024}, {"weaver_health", 1, 1024}, {"knot_mother_health", 1, 1024}, {"starved_health", 1, 1024},
 			{"lurker_health", 1, 1024}, {"cave_lurker_health", 1, 1024}, {"sculk_lurker_health", 1, 1024}, {"magpie_health", 1, 1024}, {"wick_health", 1, 1024}, {"tidewalker_health", 1, 1024}, {"gatebreaker_health", 1, 1024}, {"lockwarden_health", 1, 1024}, {"threadbiter_health", 1, 1024}, {"edgecrawler_health", 1, 1024}, {"cragback_health", 1, 1024}, {"keeper_health", 1, 1024},
 			{"elder_snare_damage", 0, 100}, {"elder_bind_seconds", 0, 120}, {"matriarch_wake_seconds", 0, 120}, {"matriarch_calm_range", 8, 128},
 			{"matriarch_warn_range", 0, 64}, {"ferryman_wake_seconds", 0, 120}, {"weaver_wake_seconds", 0, 120}, {"weaver_calm_range", 8, 128},

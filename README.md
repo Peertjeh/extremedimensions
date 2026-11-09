@@ -152,6 +152,8 @@ Thirty pages of a nameless Wanderer surface as you play, then pages in other han
    Anchor (`/tether boss pale_mason` calls him).
    Every Elder's ultimate (at half its health) tears up its whole arena: cliffs, spikes, chasms, craters and, under the
    Matriarch, roots burst out of the floor, and the ground sinks back once the fight is over.
+   The Matriarch's Requiem opens a vortex of roots over her arena, and lanterns hang down out of it on chains, burning
+   beams of violet light onto whoever stands under them.
 6. **The ending**: defeat the Starved One (it flies, calls the tribe's red young and turns the Veil Rays on you, and
    the four great pillars round the Heart heal it from glowing sculk hearts high up their shafts: shoot three of them
    out with arrows to stop its healing, all four to stun it) and choose. **Mend** the first wound (no storms, a

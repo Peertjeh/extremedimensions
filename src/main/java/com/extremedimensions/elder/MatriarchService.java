@@ -98,6 +98,12 @@ public final class MatriarchService {
 			f.bar.removeAllPlayers();
 		}
 		FIGHTS.clear();
+		MatriarchSky.clear();
+	}
+
+	/** How many lanterns hang in her Requiem's sky now (for tests). */
+	public static int lanterns(Entity e) {
+		return MatriarchSky.lanterns(e.getUUID());
 	}
 
 	public static boolean hunting(ServerPlayer p) {
@@ -173,6 +179,7 @@ public final class MatriarchService {
 			if (!(ent instanceof Matriarch m) || !m.isAlive()) {
 				f.bar.removeAllPlayers();
 				FIGHTS.remove(e.getKey());
+				MatriarchSky.end(e.getKey());
 				continue;
 			}
 			f.ticks++;
@@ -546,9 +553,11 @@ public final class MatriarchService {
 			ElderFx.shake(m, m.getX(), m.getZ(), 64, (float) (0.15 + 0.5 * k), 4);
 		}
 		if (b.at(1)) {
-			// Her roots go down: a slow ring of torn earth runs out from her
+			// Her roots go down: a slow ring of torn earth runs out from her, and the sky opens over her (3.42)
 			AttackFx.wave(level, 0, true, m.getX(), m.getY(), m.getZ(), 2, 0.6, 2 + length * 0.15 * 0.6);
+			MatriarchSky.begin(m);
 		}
+		MatriarchSky.tick(m, b.t, length);
 		if (b.between(0, length * 0.15)) {
 			WorldFx.particleIn(level, "minecraft:large_smoke", m.getX(), m.getY() + 0.5, m.getZ(), 4, 0.4, 4, 0.03, 3);
 		}
@@ -603,6 +612,7 @@ public final class MatriarchService {
 			f.breakUltimate(m, BOSS);
 		}
 		if (b.past(length)) {
+			MatriarchSky.end(m.getUUID());
 			f.closeUltimate(m);
 		}
 	}
@@ -629,6 +639,7 @@ public final class MatriarchService {
 
 	public static void onDefeat(Matriarch m, Entity killer) {
 		Fight f = FIGHTS.remove(m.getUUID());
+		MatriarchSky.end(m.getUUID());
 		ElderArena.release(m);
 		ElderStrikes.forget(m);
 		ElderFx.silence(m, ElderFx.MUSIC_MATRIARCH);
@@ -669,6 +680,7 @@ public final class MatriarchService {
 	/** Gone: she sinks back into the ground, whole. */
 	public static void fade(Matriarch m) {
 		Fight f = FIGHTS.remove(m.getUUID());
+		MatriarchSky.end(m.getUUID());
 		ElderArena.release(m);
 		if (f != null) {
 			f.abandonUltimate(BOSS);

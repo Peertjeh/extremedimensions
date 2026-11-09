@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.42.0: The Hanging Lanterns
+
+### Changed
+- **The Matriarch's Verdant Requiem, after the reference art.**
+  - As her roots go down, a vortex of root and moss opens high over her and turns, smoke and the void pouring round
+    it.
+  - Lanterns come down out of it on chains and hang over the arena, drifting after whoever is near. One after another
+    they burn beams of violet light down onto the ground under someone (`matriarch_requiem_beam_damage`); a sigil
+    shows where, a moment before.
+  - At the last the lanterns are drawn back up, the vortex closes down into her, and she blooms. Her roots still
+    burst in a spiral round her, and since 3.41 the bloom tears up the whole arena.
+
 ## 3.41.1: Torn where the fight is
 
 ### Changed

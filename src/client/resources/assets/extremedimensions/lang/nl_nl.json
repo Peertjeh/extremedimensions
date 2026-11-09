@@ -2240,6 +2240,8 @@
   "config.extremedimensions.matriarch_brood.desc": "Hollowlings die de Matriarch oproept onder 70%% en opnieuw onder 35%% van haar gezondheid.",
   "config.extremedimensions.matriarch_relics": "Matriarch: relikwieën",
   "config.extremedimensions.matriarch_relics.desc": "Relikwieën die de Matriarch altijd achterlaat.",
+  "config.extremedimensions.matriarch_requiem_beam_damage": "Matriarch: schade lantaarnstraal Requiem",
+  "config.extremedimensions.matriarch_requiem_beam_damage.desc": "Schade van een straal violet licht die een lantaarn uit de draaikolk boven haar Requiem op de grond onder iemand brandt. Een zegel toont vlak ervoor waar.",
   "config.extremedimensions.ferryman_unlock": "Wanneer de Veerman komt",
   "config.extremedimensions.ferryman_unlock.desc": "0 = vanaf het begin, 1 = nadat de Enderdraak valt, 2 = nadat de Starved One valt.",
   "config.extremedimensions.ferryman_after_seconds": "Veerman: na seconden",

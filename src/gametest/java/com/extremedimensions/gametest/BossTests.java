@@ -361,6 +361,53 @@ public class BossTests {
 		};
 	}
 
+	/**
+	 * Her Requiem's sky (3.42): lanterns come down out of the vortex over her and hang there burning, and once it has
+	 * bloomed none is left (a player in creative: no curse falls, no blow lands).
+	 */
+	@GameTest(environment = Alone.MATRIARCH_REQUIEM, maxTicks = 300)
+	public void herRequiemHangsLanternsAndTakesThemAllDown(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.creative(helper, "test-requiem");
+		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		Runnable unforce = forceAround(helper, 3);
+		int[] hoards = {0};
+		java.util.List<com.extremedimensions.elder.Matriarch> found = new java.util.ArrayList<>();
+		int[] most = {0};
+		helper.runAfterDelay(5, () -> {
+			int arena = Config.ELDER_ARENA;
+			hoards[0] = DataStore.hoards().size();
+			Config.ELDER_ARENA = 0;
+			try {
+				HollowService.summonMatriarch(p);
+			} finally {
+				Config.ELDER_ARENA = arena;
+			}
+		});
+		helper.runAfterDelay(7, () -> {
+			found.addAll(helper.getLevel().getEntitiesOfClass(com.extremedimensions.elder.Matriarch.class, p.getBoundingBox().inflate(48)));
+			found.forEach(m -> com.extremedimensions.elder.MatriarchService.force(m, com.extremedimensions.elder.ElderBoss.ULTIMATE));
+		});
+		for (int t = 40; t <= 180; t += 20) {
+			helper.runAfterDelay(t, () -> found.forEach(m -> most[0] = Math.max(most[0], com.extremedimensions.elder.MatriarchService.lanterns(m))));
+		}
+		helper.runAfterDelay(240, () -> {
+			int left = 0;
+			for (com.extremedimensions.elder.Matriarch m : found) {
+				left += com.extremedimensions.elder.MatriarchService.lanterns(m);
+			}
+			found.forEach(com.extremedimensions.elder.MatriarchService::fade);
+			while (DataStore.hoards().size() > hoards[0]) {
+				DataStore.hoards().remove(DataStore.hoards().size() - 1);
+			}
+			unforce.run();
+			check(helper, !found.isEmpty(), "the Matriarch did not come");
+			check(helper, most[0] >= 6, "only %s lanterns hung in her sky", most[0]);
+			check(helper, left == 0, "%s lanterns were left in the air after her Requiem", left);
+			helper.succeed();
+		});
+	}
+
 	/** {@code /tether boss matriarch} brings her, even to an operator in creative mode (not only her nest). */
 	@GameTest(environment = Alone.MATRIARCH_CALLED, maxTicks = 60)
 	public void anOperatorCallsTheMatriarchInCreative(GameTestHelper helper) {
