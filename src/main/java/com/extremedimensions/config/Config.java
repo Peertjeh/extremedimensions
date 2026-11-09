@@ -1163,6 +1163,26 @@ public final class Config {
 	public static int ELDER_ULTIMATE_SCATTER = 1;
 	/** Share of the damage an Elder shrugs off while its ultimate builds. */
 	public static double ELDER_ULTIMATE_GUARD = 0.6;
+	/**
+	 * Whether an Elder's ultimate breaks the ground of its whole arena (3.41): it cracks and shakes as the ultimate builds;
+	 * as it breaks, cliffs, spikes and roots burst up and chasms and craters open, all of it sinking back after the fight.
+	 * 1 = on, 0 = off. Blocks change only where the Elders may tear up the world (elder_griefing, mobGriefing).
+	 */
+	public static int ELDER_UPHEAVAL = 1;
+	/** How far the ground breaks in an ultimate, as a multiple of its arena's floor (without an arena, of 28 blocks round the Elder). */
+	public static double ELDER_UPHEAVAL_SCALE = 1.0;
+	/** Damage to whoever stands where the ground erupts in an ultimate (they are thrown upwards as well). */
+	public static double ELDER_UPHEAVAL_DAMAGE = 6.0;
+	/** How hard the erupting ground throws whoever stands on it upwards (blocks a tick). */
+	public static double ELDER_UPHEAVAL_THROW = 1.1;
+	/** Seconds after an Elder's fight by which everything its ultimate broke is back as it was, whatever (it sinks back at once; ground not loaded then waits at most this long). */
+	public static int ELDER_UPHEAVAL_LINGER_SECONDS = 60;
+	/** Most blocks the ultimates' broken ground changes (or puts back) in one tick, all of them together. */
+	public static int ELDER_UPHEAVAL_BUDGET = 400;
+	/** Most blocks one ultimate's upheaval changes. */
+	public static int ELDER_UPHEAVAL_BLOCKS = 20000;
+	/** Most blocks torn loose that hover round an Elder while its ultimate builds (each a block display). */
+	public static int ELDER_UPHEAVAL_DISPLAYS = 36;
 	/** Seconds an Elder takes to form out of matter and light before it fights (it cannot be hurt meanwhile). */
 	public static double ELDER_SPAWN_SECONDS = 7.0;
 	/** Whether the view of everyone near is held on an Elder while it forms: 1 = on, 0 = off. */
@@ -1777,7 +1797,7 @@ public final class Config {
 			"seam_fray", "seam_return_gate", "seam_rift_compass", "seam_rift_leash", "seam_portal", "seam_reset_backup",
 			"seam_interiors", "echoes", "unstable_anchors", "unanchored", "frayed_seam", "ambient_dread", "tetherite_tethered",
 			"tetherite_bind_keep_template", "tetherite_drawbacks", "elder_griefing", "elder_ultimate_scatter", "elder_spawn_camera",
-			"elder_arena", "elder_arena_wall", "elder_arena_landmark", "elder_arena_breakable", "elder_arena_collapse",
+			"elder_upheaval", "elder_arena", "elder_arena_wall", "elder_arena_landmark", "elder_arena_breakable", "elder_arena_collapse",
 			"elder_arena_phases", "elder_cores", "elder_isle_fall", "elder_pierce", "matriarch_hex_milk", "coop_revive",
 			"coop_fallen_locked", "coop_burden", "coop_shared_anchors", "tribe_enabled", "tribe_raid", "clan_enabled",
 			"tapestry_roots_peace", "tapestry_chain_steady", "unweaving", "placeholders", "pale_reach",
@@ -1917,6 +1937,9 @@ public final class Config {
 			{"lurker_ward_range", 0, 16}, {"scar_drain_reduction", 0, 0.2}, {"pact_full_seconds", 0, 86400},
 			{"elder_speed", 0.1, 10}, {"elder_attack_speed", 0.1, 10}, {"elder_windup_speed", 0.2, 10},
 			{"elder_ultimate_seconds", 2, 120}, {"elder_arena_linger_seconds", -1, 86400},
+			{"elder_upheaval", 0, 1}, {"elder_upheaval_scale", 0.1, 4}, {"elder_upheaval_damage", 0, 100}, {"elder_upheaval_throw", 0, 4},
+			{"elder_upheaval_linger_seconds", 5, 3600}, {"elder_upheaval_budget", 20, 5000}, {"elder_upheaval_blocks", 0, 200000},
+			{"elder_upheaval_displays", 0, 200},
 			{"seam_build_budget_ms", 1, 50}, {"elder_arena_design_budget_ms", 1, 50}, {"seam_fly_range", 0, 128}, {"seam_fly_max", 1, 5000}, {"seam_fly_ticks", 10, 200},
 			{"seam_fly_from", 2, 64}, {"seam_damage", 0, 100},
 			{"tetherite_bind_chance", 0, 1}, {"tetherite_bind_where", 0, 2}, {"tetherite_bind_min", 0, 1}, {"tetherite_bind_max", 0, 1},

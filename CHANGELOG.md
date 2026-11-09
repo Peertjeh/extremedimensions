@@ -1,5 +1,54 @@
 # Changelog
 
+## 3.41.0: The Ground Breaks
+
+### New
+- **Every Elder's ultimate tears up its arena.** While it builds, the ground shakes harder and harder, glowing
+  fissures run out across the floor from the Elder, and blocks tear loose and hang turning in the air round it. When
+  it breaks, the whole arena is thrown up into new ground over the old:
+  - cliffs burst up out of the floor, some on a ring round the arena and some anywhere;
+  - clusters of spikes thrust up;
+  - one or two chasms tear across it from the middle;
+  - craters blow open with broken rims;
+  - the floor heaves into low relief;
+  - under the Matriarch, great roots tear up out of the ground, arc over and dive back in.
+  
+  The hanging blocks slam down, and whoever stands where the ground erupts is thrown into the air and hurt
+  (`elder_upheaval_damage`, `elder_upheaval_throw`). Each Elder tears up its own ground:
+  - the Matriarch: root, dark oak, moss and rooted dirt;
+  - the Ferryman: basalt and blackstone, with soul fire burning in the chasms;
+  - the Last Weaver and the Knot Mother: deepslate, tuff, calcite and amethyst;
+  - the Pale Mason: end stone, purpur spikes, obsidian crags, crying obsidian glowing in the chasms and veins of gold.
+  
+  A chasm never opens a hole to the void (the floor under it always holds). When the fight ends, the torn ground sinks
+  back and the arena is as it was before it dissolves. Without `elder_griefing` (or with mobGriefing off) the ground
+  shakes, glows and throws, but no block changes. Settings: `elder_upheaval` (on/off), `elder_upheaval_scale`,
+  `elder_upheaval_budget` (blocks a tick), `elder_upheaval_blocks`, `elder_upheaval_displays` and
+  `elder_upheaval_linger_seconds`.
+- **The Pale Mason, all in**, after the concept art. Four new blows:
+  - *Bound Stones* (`pale_mason_chain_damage`): he hauls great cubes of violet light out of the air on chains of gold
+    and swings them round himself at the height of a man, far out and then drawn in close. A ring on the floor shows
+    each sweep before it comes. Whoever is caught is struck and flung along the swing. Then he hurls the cubes at
+    whoever is near.
+  - *Pillars of the Anchor* (`pale_mason_pillar_damage`): he drives his fist and then his palms into the floor, and
+    pillars of violet light tear up in three pulses, each a ring further out and under everyone he can see. A sigil
+    burns where each will come.
+  - *Golden Rings* (`pale_mason_ring_damage`): his halo flares and spins, and three times he casts a ring of gold out
+    across the floor, each faster than the last. Jump it.
+  - *The Unfinished Spiral* (`pale_mason_spiral_pull`, `pale_mason_burst_damage`): he rises, arms wide, and the floor
+    comes up in stones that wind round him in a climbing spiral. Everyone near is drawn in by the squall's rules (a
+    wall at your back holds you, sneaking halves it, Anchored eases it), and close by him the stones grind. Then it
+    bursts and throws everyone near off.
+  
+  Each blow has its own animation, its own glow (violet, white, gold) and its own sounds.
+
+### Changed
+- **Every Elder stands under its great piece, not in it.** The Last Weaver's and the Knot Mother's loom used to run its
+  lower beam through her head, and the Pale Mason's halo hung its lower arc through his body, so they seemed to come
+  out of an object of their own. Now the loom's lowest beam and the halo's lowest arc cross the middle well over the
+  Elder's crown, as the Matriarch's root arches always did. In a small arena the arches are raised to match. A test
+  checks every arena at two sizes.
+
 ## 3.40.0: The Pale Mason
 
 ### New

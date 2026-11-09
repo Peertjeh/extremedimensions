@@ -63,17 +63,27 @@ public final class ElderTerrain {
 		AttackFx.impact(level, AttackFx.of(b), AttackFx.IMPACT_BLAST, x, y, z, power);
 	}
 
-	private static boolean breakable(ServerLevel level, BlockPos pos, BlockState s) {
+	/**
+	 * Whether a block is of a kind an Elder may tear up at all: not air, nothing that holds data (a chest, a sign),
+	 * nothing a Wither cannot break, no portal, nothing as hard as obsidian. (The upheaval of an ultimate asks this of an
+	 * arena's own floor, see {@link ElderUpheaval}.)
+	 */
+	static boolean tearable(ServerLevel level, BlockPos pos, BlockState s) {
 		if (s.isAir() || s.hasBlockEntity() || s.is(BlockTags.WITHER_IMMUNE) || s.is(Blocks.NETHER_PORTAL) || s.is(Blocks.END_PORTAL)) {
-			return false;
-		}
-		// What an Elder raised for a while is not torn up (it sinks back itself); an arena's blocks break like the rest of
-		// the world unless the settings keep them whole (they drop nothing either way, and what is left comes down)
-		if (temporary(level, pos) || Config.ELDER_ARENA_BREAKABLE <= 0 && ElderArena.holds(level, pos)) {
 			return false;
 		}
 		float hard = s.getDestroySpeed(level, pos);
 		return hard >= 0 && hard < 30;
+	}
+
+	/** Whether an Elder may tear up this block here (see {@link #tearable}). */
+	static boolean breakable(ServerLevel level, BlockPos pos, BlockState s) {
+		if (!tearable(level, pos, s)) {
+			return false;
+		}
+		// What an Elder raised for a while is not torn up (it sinks back itself); an arena's blocks break like the rest of
+		// the world unless the settings keep them whole (they drop nothing either way, and what is left comes down)
+		return !temporary(level, pos) && !(Config.ELDER_ARENA_BREAKABLE <= 0 && ElderArena.holds(level, pos));
 	}
 
 	/**
@@ -175,7 +185,7 @@ public final class ElderTerrain {
 				}
 				BlockPos above = pos.above();
 				BlockState over = level.getBlockState(above);
-				if (over.canBeReplaced() && !over.liquid() && !ElderArena.holds(level, above)) {
+				if (over.canBeReplaced() && !over.liquid() && !ElderArena.holds(level, above) && !ElderUpheaval.holds(level, above)) {
 					BlockState top = cover(mark, rnd);
 					if (top != null) {
 						level.setBlock(above, top, 3);
@@ -249,7 +259,8 @@ public final class ElderTerrain {
 		for (int i = 1; i <= height; i++) {
 			BlockPos pos = ground.above(i);
 			BlockState was = level.getBlockState(pos);
-			if (!was.canBeReplaced() || was.liquid() || was.hasBlockEntity() || ElderArena.holds(level, pos)) {
+			// (nor into ground an ultimate broke: it goes back as it was)
+			if (!was.canBeReplaced() || was.liquid() || was.hasBlockEntity() || ElderArena.holds(level, pos) || ElderUpheaval.holds(level, pos)) {
 				break;
 			}
 			BlockState put = block.defaultBlockState();
@@ -264,8 +275,14 @@ public final class ElderTerrain {
 		}
 	}
 
-	/** Whether this block was raised by an Elder for a while (thorns, the bars of a cage): it drops nothing. */
+	/**
+	 * Whether this block was raised by an Elder for a while (thorns, the bars of a cage), or changed by the ground
+	 * breaking in an ultimate ({@link ElderUpheaval}): it drops nothing, and no blow tears it up.
+	 */
 	public static boolean temporary(Level level, BlockPos pos) {
+		if (ElderUpheaval.holds(level, pos)) {
+			return true;
+		}
 		for (Temporary t : TEMPORARY) {
 			if (t.level == level && t.pos.equals(pos)) {
 				return true;

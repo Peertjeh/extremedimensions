@@ -88,7 +88,9 @@ public final class ServerEvents {
 			DataStore.flush();
 		});
 		ServerLifecycleEvents.SERVER_STOPPING.register(s -> {
-			// Thorns and chains an Elder raised sink back, and its arena comes down, before the world is saved
+			// Thorns and chains an Elder raised sink back, and its arena comes down, before the world is saved (the ground
+			// an ultimate broke first, the arena's own floor in it among the rest)
+			com.extremedimensions.elder.ElderUpheaval.clear();
 			com.extremedimensions.elder.ElderTerrain.clear();
 			com.extremedimensions.elder.ElderArena.clear();
 			com.extremedimensions.elder.ElderGaol.clear();
@@ -824,6 +826,8 @@ public final class ServerEvents {
 		lap = TickProfile.lap("spells and gaol", lap);
 		com.extremedimensions.elder.ElderTerrain.tick(s);
 		lap = TickProfile.lap("terrain", lap);
+		com.extremedimensions.elder.ElderUpheaval.tick(s);
+		lap = TickProfile.lap("upheaval", lap);
 		com.extremedimensions.elder.WeaverService.tick(s);
 		lap = TickProfile.lap("weaver", lap);
 		com.extremedimensions.elder.ElderArena.tick(s);

@@ -146,8 +146,12 @@ Thirty pages of a nameless Wanderer surface as you play, then pages in other han
    Haulers pull the blocks of your bridges loose and carry them off, and Pale Squalls try to push you over the edge.
    Stay out there long enough and their foreman, **the Pale Mason**, comes for your Tether: an eighteen-block Elder
    who blinks to your side and strikes, raises walls of end stone round you, hurls great blocks and burns you with his
-   gaze if you look him in the face; below half his health he opens the Last Door onto the void. Slay him for the
-   **Homing Pearl**, one safe way home to your Void Anchor (`/tether boss pale_mason` calls him).
+   gaze if you look him in the face. He also swings cubes of violet light on golden chains, raises pillars of light out
+   of the floor, casts golden rings you must jump and draws you into a spiral of stone that bursts. Below half his
+   health he opens the Last Door onto the void. Slay him for the **Homing Pearl**, one safe way home to your Void
+   Anchor (`/tether boss pale_mason` calls him).
+   Every Elder's ultimate (at half its health) tears up its whole arena: cliffs, spikes, chasms, craters and, under the
+   Matriarch, roots burst out of the floor, and the ground sinks back once the fight is over.
 6. **The ending**: defeat the Starved One (it flies, calls the tribe's red young and turns the Veil Rays on you, and
    the four great pillars round the Heart heal it from glowing sculk hearts high up their shafts: shoot three of them
    out with arrows to stop its healing, all four to stun it) and choose. **Mend** the first wound (no storms, a

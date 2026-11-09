@@ -275,6 +275,8 @@ abstract class ElderFight {
 				q.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.ultimate_warn", Math.max(0, Config.ELDER_ULTIMATE_RADIUS)), true);
 			}
 		}
+		// The ground starts to shake and crack under it (3.41)
+		ElderUpheaval.charge(b);
 	}
 
 	/** The ultimate breaks: its curse, a flash, and the bars lift. */
@@ -289,6 +291,8 @@ abstract class ElderFight {
 		}
 		doomed.clear();
 		ElderFx.shake(b, b.getX(), b.getZ(), Math.max(64, Config.ELDER_ULTIMATE_RADIUS), 1.6f, 40);
+		// ... and the whole arena is torn apart (3.41)
+		ElderUpheaval.erupt(b);
 	}
 
 	/** The ultimate is cut short (the Elder leaves): those it held take its curse all the same. */
@@ -322,6 +326,7 @@ abstract class ElderFight {
 	}
 
 	void closeUltimate(ElderBoss b) {
+		ElderUpheaval.close(b);
 		bar.setCreateWorldFog(false);
 		ElderFx.cinema(b, Math.max(64, Config.ELDER_ULTIMATE_RADIUS + 16), ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");
 		end(b, 50);

@@ -569,6 +569,8 @@ public final class ElderArena {
 
 	/** This Elder's fight is over (slain or gone): its arena stands a while, then comes apart. */
 	public static void release(Entity boss) {
+		// The ground its ultimate broke sinks back first, the arena's own floor in it among the rest (3.41)
+		ElderUpheaval.release(boss);
 		// (an arena still being designed never rises)
 		DRAFTS.removeIf(d -> d.boss.equals(boss.getUUID()));
 		for (Arena a : ARENAS) {
@@ -693,6 +695,8 @@ public final class ElderArena {
 				return true;
 			}
 			if (a.linger-- <= 0) {
+				// (whatever of its ultimate's broken ground has not sunk back yet goes back now, before its floor goes)
+				ElderUpheaval.finish(a.level, a.boss);
 				a.dissolving = true;
 				a.out = a.pieces.size();
 				a.credit = 0;
@@ -884,7 +888,8 @@ public final class ElderArena {
 	/** Whether a piece may still go in: its place is free air (or plants), or the ground it inlays is unchanged. */
 	private static boolean fits(ServerLevel level, Piece p) {
 		BlockState s = level.getBlockState(p.pos);
-		if (holds(level, p.pos)) {
+		// (nor into ground an ultimate broke: it goes back as it was, see ElderUpheaval)
+		if (holds(level, p.pos) || ElderUpheaval.holds(level, p.pos)) {
 			return false;
 		}
 		if (p.kind == GROUND) {
@@ -1027,6 +1032,7 @@ public final class ElderArena {
 
 	/** An arena is taken down at once, the ground put back. */
 	private static void takeDown(Arena a) {
+		ElderUpheaval.finish(a.level, a.boss);
 		a.flights.forEach(BlockFlight::cancel);
 		a.strands.forEach(s -> BlockFlight.drop(s.display));
 		Long2ObjectMap<Piece> m = STANDING.get(a.level);
