@@ -85,6 +85,8 @@ public class LeftoverTests {
 	public void theGroundAnElderMarksGoesBack(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
 		int seconds = Config.ELDER_MARK_SECONDS, grief = Config.ELDER_GRIEFING;
+		GameRules rules = level.getGameRules();
+		boolean griefing = rules.get(GameRules.MOB_GRIEFING);
 		List<BlockPos> box = new ArrayList<>();
 		List<BlockState> before = new ArrayList<>(), world = new ArrayList<>();
 		for (int x = -1; x <= 9; x++) {
@@ -98,6 +100,7 @@ public class LeftoverTests {
 		}
 		try {
 			Config.ELDER_GRIEFING = 1;
+			rules.set(GameRules.MOB_GRIEFING, true, level.getServer());
 			Config.ELDER_MARK_SECONDS = 600;
 			for (int x = 0; x <= 8; x++) {
 				for (int z = 0; z <= 8; z++) {
@@ -115,12 +118,13 @@ public class LeftoverTests {
 			for (BlockPos q : box) {
 				before.add(level.getBlockState(q));
 			}
-			BlockPos o = helper.absolutePos(BlockPos.ZERO);
+			BlockPos root = helper.absolutePos(new BlockPos(2, 2, 4)), soul = helper.absolutePos(new BlockPos(4, 2, 4)),
+					scorch = helper.absolutePos(new BlockPos(6, 2, 4));
 			// (each within the floor laid here: roots on the grass, soul soil on the sand, scorch on the sand and stone)
 			Runnable strike = () -> {
-				ElderTerrain.mark(level, o.getX() + 2.5, o.getY() + 2, o.getZ() + 4.5, 2.0, 1.0, ElderTerrain.Mark.ROOT);
-				ElderTerrain.mark(level, o.getX() + 4.5, o.getY() + 2, o.getZ() + 4.5, 1.5, 1.0, ElderTerrain.Mark.SOUL);
-				ElderTerrain.mark(level, o.getX() + 6.5, o.getY() + 2, o.getZ() + 4.5, 2.0, 1.0, ElderTerrain.Mark.SCORCH);
+				ElderTerrain.mark(level, root.getX() + 0.5, root.getY(), root.getZ() + 0.5, 2.0, 1.0, ElderTerrain.Mark.ROOT);
+				ElderTerrain.mark(level, soul.getX() + 0.5, soul.getY(), soul.getZ() + 0.5, 1.5, 1.0, ElderTerrain.Mark.SOUL);
+				ElderTerrain.mark(level, scorch.getX() + 0.5, scorch.getY(), scorch.getZ() + 0.5, 2.0, 1.0, ElderTerrain.Mark.SCORCH);
 			};
 			// Struck, then the fight is over
 			strike.run();
@@ -136,7 +140,7 @@ public class LeftoverTests {
 			check(helper, changed >= 8, "the marks changed only %s blocks", changed);
 			check(helper, held == changed, "%s of the %s blocks the marks changed are not held for the fight", changed - held, changed);
 			check(helper, fire == 0, "the marks lit %s fires", fire);
-			ElderTerrain.release(level, o.getX() + 4.5, o.getZ() + 4.5, 10);
+			ElderTerrain.release(level, soul.getX() + 0.5, soul.getZ() + 0.5, 10);
 			check(helper, wrong(level, box, before) == null, "after the fight the ground is not as it was: %s", wrong(level, box, before));
 			// Struck again, and its time runs out
 			Config.ELDER_MARK_SECONDS = 1;
@@ -154,9 +158,10 @@ public class LeftoverTests {
 		} finally {
 			Config.ELDER_MARK_SECONDS = seconds;
 			Config.ELDER_GRIEFING = grief;
+			rules.set(GameRules.MOB_GRIEFING, griefing, level.getServer());
 			// (anything still marked goes back, and the ground is as the test found it)
-			BlockPos o = helper.absolutePos(BlockPos.ZERO);
-			ElderTerrain.release(level, o.getX() + 4.5, o.getZ() + 4.5, 10);
+			BlockPos mid = helper.absolutePos(new BlockPos(4, 2, 4));
+			ElderTerrain.release(level, mid.getX() + 0.5, mid.getZ() + 0.5, 10);
 			for (int i = 0; i < box.size(); i++) {
 				level.setBlock(box.get(i), world.get(i), 2 | 16);
 			}
@@ -164,12 +169,16 @@ public class LeftoverTests {
 		helper.succeed();
 	}
 
+	private static String where(BlockPos q) {
+		return q.getX() + ", " + q.getY() + ", " + q.getZ();
+	}
+
 	/** The first block of a box that is not as it was (or still held for a fight), or null. */
 	private static String wrong(ServerLevel level, List<BlockPos> box, List<BlockState> before) {
 		for (int i = 0; i < box.size(); i++) {
 			BlockState now = level.getBlockState(box.get(i));
 			if (now != before.get(i) || FightBlocks.holds(level, box.get(i))) {
-				return box.get(i).toShortString() + " was " + before.get(i) + ", is " + now + (FightBlocks.holds(level, box.get(i)) ? " (held)" : "");
+				return where(box.get(i)) + " was " + before.get(i) + ", is " + now + (FightBlocks.holds(level, box.get(i)) ? " (held)" : "");
 			}
 		}
 		return null;
@@ -198,15 +207,21 @@ public class LeftoverTests {
 		for (BlockPos q : box) {
 			before.add(level.getBlockState(q));
 		}
-		BlockPos o = helper.absolutePos(BlockPos.ZERO);
-		AABB round = new AABB(helper.absolutePos(new BlockPos(-2, 0, -2)).getCenter(), helper.absolutePos(new BlockPos(10, 14, 10)).getCenter()).inflate(1);
+		BlockPos mid = helper.absolutePos(new BlockPos(4, 2, 4));
+		BlockPos lo = helper.absolutePos(new BlockPos(-2, 0, -2)), hi = helper.absolutePos(new BlockPos(10, 14, 10));
+		AABB round = new AABB(Math.min(lo.getX(), hi.getX()), lo.getY(), Math.min(lo.getZ(), hi.getZ()), Math.max(lo.getX(), hi.getX()) + 1, hi.getY() + 1,
+				Math.max(lo.getZ(), hi.getZ()) + 1).inflate(1);
 		int items = level.getEntitiesOfClass(ItemEntity.class, round).size();
+		GameRules rules = level.getGameRules();
+		boolean griefing = rules.get(GameRules.MOB_GRIEFING);
 		try {
 			Config.ELDER_GRIEFING = 1;
+			rules.set(GameRules.MOB_GRIEFING, true, level.getServer());
 			// Every block it tears out is thrown
-			ElderTerrain.furrow(level, o.getX() + 4.5, o.getY() + 2, o.getZ() + 4.5, 2.5, 1, 0, 1);
+			ElderTerrain.furrow(level, mid.getX() + 0.5, mid.getY(), mid.getZ() + 0.5, 2.5, 1, 0, 1);
 		} finally {
 			Config.ELDER_GRIEFING = grief;
+			rules.set(GameRules.MOB_GRIEFING, griefing, level.getServer());
 		}
 		int torn = 0;
 		for (int i = 0; i < box.size(); i++) {
@@ -221,7 +236,7 @@ public class LeftoverTests {
 			for (int i = 0; i < box.size() && landed == null; i++) {
 				BlockState now = level.getBlockState(box.get(i));
 				if (!now.isAir() && now != before.get(i)) {
-					landed = box.get(i).toShortString() + ": " + now;
+					landed = where(box.get(i)) + ": " + now;
 				}
 			}
 			// The ground as the test found it, for the tests round this one
@@ -382,13 +397,14 @@ public class LeftoverTests {
 		int c0 = (f.at.getX() - REACH - 16) >> 4, c1 = (f.at.getX() + REACH + 16) >> 4;
 		int d0 = (f.at.getZ() - REACH - 16) >> 4, d1 = (f.at.getZ() + REACH + 16) >> 4;
 		int side = 2 * REACH + 1, high = UNDER + OVER + 1;
-		AABB round = new AABB(f.at.getX() - REACH, f.at.getY() - UNDER, f.at.getZ() - REACH, f.at.getX() + REACH + 1, f.at.getY() + OVER, f.at.getZ() + REACH + 1)
-				.inflate(4);
+		AABB round = new AABB(f.at.getX() - REACH, f.at.getY() - UNDER, f.at.getZ() - REACH, f.at.getX() + REACH + 1, f.at.getY() + OVER,
+				f.at.getZ() + REACH + 1).inflate(4);
 		// Every setting the fight changes, as it was
 		int arena = Config.ELDER_ARENA, linger = Config.ELDER_ARENA_LINGER_SECONDS, flight = Config.ELDER_ARENA_FLIGHT_TICKS;
 		double size = Config.ELDER_ARENA_SIZE, build = Config.ELDER_ARENA_BUILD_SECONDS, dissolve = Config.ELDER_ARENA_DISSOLVE_SECONDS;
 		int grief = Config.ELDER_GRIEFING, upheaval = Config.ELDER_UPHEAVAL, ultimate = Config.ELDER_ULTIMATE_SECONDS;
 		int sink = Config.ELDER_UPHEAVAL_LINGER_SECONDS, marks = Config.ELDER_MARK_SECONDS;
+		double hoards = Config.HOARD_WILD_CHANCE;
 		Difficulty difficulty = level.getDifficulty();
 		GameRules rules = level.getGameRules();
 		boolean griefing = rules.get(GameRules.MOB_GRIEFING);
@@ -410,6 +426,7 @@ public class LeftoverTests {
 			Config.ELDER_ULTIMATE_SECONDS = ultimate;
 			Config.ELDER_UPHEAVAL_LINGER_SECONDS = sink;
 			Config.ELDER_MARK_SECONDS = marks;
+			Config.HOARD_WILD_CHANCE = hoards;
 			level.getServer().setDifficulty(difficulty, true);
 			rules.set(GameRules.MOB_GRIEFING, griefing, level.getServer());
 			if (f.p != null) {
@@ -492,6 +509,8 @@ public class LeftoverTests {
 			Config.ELDER_UPHEAVAL_LINGER_SECONDS = 5;
 			// (what its blows mark stays until the fight is over: only its end takes it back)
 			Config.ELDER_MARK_SECONDS = 3600;
+			// (no old hoard is found lying on the platform meanwhile: its nest is no block of the fight's)
+			Config.HOARD_WILD_CHANCE = 0;
 			level.getServer().setDifficulty(Difficulty.NORMAL, true);
 			rules.set(GameRules.MOB_GRIEFING, true, level.getServer());
 			f.arenas = ElderArena.count();

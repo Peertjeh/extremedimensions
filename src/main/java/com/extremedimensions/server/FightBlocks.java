@@ -34,7 +34,6 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.storage.LevelResource;
 
 /**
@@ -42,10 +41,11 @@ import net.minecraft.world.level.storage.LevelResource;
  * block down (an arena, the ground an Elder marks, thorns it raises, the ground an ultimate breaks, the Knot Mother's
  * anchors, the Starved One's nodes) takes a hold on that place here, and lets go of it when it is done with it. The first
  * time a place is held, the block the world had there is kept; once nothing holds the place any more, that block is
- * put back, if what stands there is still the fight's (its block in any shape, or nothing, or what gives way to
- * anything, or what such a block turns into by itself, as grass into dirt). Whatever else stands there by then (a block a
- * player set) is left as it is. A place whose ground is not loaded when it is let go goes back as soon as it is: the
- * world is never loaded only for that.
+ * put back, if what stands there is still the fight's (its block in any shape, or what such a block turns into by
+ * itself, as grass into dirt; or, where the fight left a hole, nothing or what gives way to anything). Whatever else
+ * stands there by then (a block a player set, or nothing where a blast broke the fight's block out) is left as it is.
+ * A place whose ground is not loaded when it is let go goes back as soon as it is: the world is never loaded only for
+ * that.
  *
  * <p>So two parts of a fight on one place never undo each other wrongly: an arena's block marked by a blow goes back to
  * the arena's block as the mark fades, and to the world's own once the arena is gone, in whatever order the two let go.
@@ -103,7 +103,7 @@ public final class FightBlocks {
 	public static BlockState place(ServerLevel level, BlockPos pos, BlockState state, int flags) {
 		BlockState before = level.getBlockState(pos);
 		boolean set = level.setBlock(pos, state, flags);
-		take(level, pos.asLong(), whole(before), set ? state : before);
+		take(level, pos.asLong(), before, set ? state : before);
 		return before;
 	}
 
@@ -112,7 +112,7 @@ public final class FightBlocks {
 	 * {@code original} is what the world had here, if nothing of a fight holds the place yet.
 	 */
 	public static void hold(ServerLevel level, BlockPos pos, BlockState original) {
-		take(level, pos.asLong(), whole(original), Loaded.ready(level, pos) ? level.getBlockState(pos) : original);
+		take(level, pos.asLong(), original, Loaded.ready(level, pos) ? level.getBlockState(pos) : original);
 	}
 
 	/** A fight changes a block it already holds (puts back its own layer, moves a layer down): the holds stay as they are. */
@@ -174,14 +174,6 @@ public final class FightBlocks {
 		return live;
 	}
 
-	/**
-	 * What the world gets back where a block stood that is one half of a two-block plant: nothing (the half cannot come
-	 * back on its own, and the other half is gone with what replaced it).
-	 */
-	public static BlockState whole(BlockState s) {
-		return s.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF) ? Blocks.AIR.defaultBlockState() : s;
-	}
-
 	private static Held get(ServerLevel level, long k) {
 		Long2ObjectOpenHashMap<Held> m = HELD.get(level);
 		return m == null ? null : m.get(k);
@@ -222,12 +214,18 @@ public final class FightBlocks {
 	}
 
 	/**
-	 * Whether what stands at a place is still the fight's, which left {@code placed} there: that block in any shape,
-	 * nothing, what gives way to anything (a plant, water run in, fire, snow), or what that block turns into by itself.
+	 * Whether what stands at a place is still the fight's, which left {@code placed} there: that block in any shape, or
+	 * what it turns into by itself (grass dying back to dirt); and where the fight left nothing there (a hole, a plant
+	 * cleared), nothing or what gives way to anything (a plant, water run in, snow). A block of the fight's that something
+	 * broke out since is gone (what a fight destroys may stay destroyed): the world's own does not come back there, to hang
+	 * over a crater blasted out under it.
 	 */
 	static boolean fights(BlockState now, BlockState placed) {
-		if (now.isAir() || now.is(placed.getBlock()) || now.canBeReplaced() && !now.hasBlockEntity()) {
+		if (now.is(placed.getBlock())) {
 			return true;
+		}
+		if (placed.isAir() || placed.canBeReplaced()) {
+			return now.isAir() || now.canBeReplaced() && !now.hasBlockEntity();
 		}
 		if (now.is(BlockTags.DIRT) && placed.is(BlockTags.DIRT)) {
 			// (grass dying back to dirt under cover, or growing over dirt)
@@ -236,8 +234,7 @@ public final class FightBlocks {
 		if (placed.is(BlockTags.NYLIUM) && now.is(Blocks.NETHERRACK)) {
 			return true;
 		}
-		String was = id(placed), is = id(now);
-		return "chorus_flower".equals(was) && "chorus_plant".equals(is);
+		return "chorus_flower".equals(id(placed)) && "chorus_plant".equals(id(now));
 	}
 
 	private static String id(BlockState s) {

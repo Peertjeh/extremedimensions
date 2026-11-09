@@ -62,12 +62,11 @@ import net.minecraft.world.phys.AABB;
  * plants, and opens a hole only where solid ground stays under it, beside no water or lava and under nothing an arena
  * built (many arenas float). Of an arena it changes only its floor, and only as the arena's own blocks break
  * ({@code elder_arena_breakable}); those blocks stay the arena's all the while, and are the arena's again once put back.
- * What it changed drops nothing, and no Elder's blow tears it up; it is held by {@link FightBlocks} meanwhile, so not even a
- * crash leaves any of it behind. It never turns the ground under water to soul sand or magma (their bubble columns would
- * stay). It changes at most {@code elder_upheaval_budget}
- * blocks a tick (it and its sinking back, all upheavals together), never more than {@code elder_upheaval_blocks} in one
- * ultimate, never loads the world to change or look at a block while the fight goes on, and its block displays are few
- * ({@code elder_upheaval_displays}).
+ * What it changed drops nothing, and no Elder's blow tears it up; it is held by {@link FightBlocks} meanwhile, so not
+ * even a crash leaves any of it behind. It never turns the ground under water to soul sand or magma (their bubble
+ * columns would stay). It changes at most {@code elder_upheaval_budget} blocks a tick (it and its sinking back, all
+ * upheavals together), never more than {@code elder_upheaval_blocks} in one ultimate, never loads the world to change or
+ * look at a block while the fight goes on, and its block displays are few ({@code elder_upheaval_displays}).
  */
 public final class ElderUpheaval {
 	private ElderUpheaval() {}

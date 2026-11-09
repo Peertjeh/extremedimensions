@@ -155,7 +155,9 @@ Thirty pages of a nameless Wanderer surface as you play, then pages in other han
    **Pale Lock** instead and the anchor breaks apart, their hoard spills out, and the Endermen of the End turn on
    travellers unprovoked. Only one of the two can ever be set (`/tether reach choice home|lock|undo` for operators).
    Every Elder's ultimate (at half its health) tears up its whole arena: cliffs, spikes, chasms, craters and, under the
-   Matriarch, roots burst out of the floor, and the ground sinks back once the fight is over.
+   Matriarch, roots burst out of the floor, and the ground sinks back once the fight is over. Nothing a fight sets
+   down stays behind: arenas, marked ground, thorns, needles and nodes all go back to what stood there before, even
+   after a crash mid-fight, and the bosses always stand on the ground, never in it.
    The Matriarch's Requiem opens a vortex of roots over her arena, and lanterns hang down out of it on chains, burning
    beams of violet light onto whoever stands under them.
    The Last Weaver drops grids of thread, raises thread tornadoes and brings down rows of great needles. The Ferryman

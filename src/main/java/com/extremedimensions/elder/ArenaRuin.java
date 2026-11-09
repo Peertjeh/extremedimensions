@@ -261,7 +261,10 @@ public final class ArenaRuin {
 		}
 	}
 
-	/** Rubble that no arena waits for (its chunk saved with it in the air, by a crash or everyone leaving), found as it loads: to be removed. */
+	/**
+	 * Rubble that no arena waits for (its chunk was saved with it in the air, by a crash or everyone leaving), found as it
+	 * loads: to be removed.
+	 */
 	public static boolean stray(Entity e) {
 		if (!(e instanceof FallingBlockEntity)) {
 			return false;

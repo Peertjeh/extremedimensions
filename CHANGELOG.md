@@ -1,5 +1,36 @@
 # Changelog
 
+## 3.45.0: Nothing Left Behind
+
+### Fixed
+- **Every block a boss fight puts down goes away again.** Nothing an Elder, its arena, its ultimate or the Starved One
+  places stays in the world once the fight is over, however it ends: the boss slain or gone, everyone gone home, the
+  server stopped, or even a crash mid-fight.
+  - Each block a fight sets down is kept in one ledger with what stood there before, and put back once nothing in the
+    fight holds it any more. The ledger is written to the world as it goes (`extremedimensions_fight_blocks.dat`), so
+    after a crash whatever was left is put back as its ground loads again.
+  - The Pale Mason's arena no longer has chorus flowers (they grew chorus plants the arena never knew of, which stayed
+    behind and dropped chorus fruit): end rods stand there now. The Ferryman's crimson nylium, which turned to
+    netherrack on its own, is nether wart block and crimson hyphae now.
+  - An arena takes down every block of its own when it dissolves, also those a neighbour reshaped (walls, fences,
+    stairs, lanterns used to stay behind), and nothing pops off as an item.
+  - The ground an Elder's blows mark (the Matriarch's roots and moss, the Ferryman's soul soil, the Weaver's scorched
+    earth and glass) now changes back after a while (`elder_mark_seconds`, 45 s) and at the latest when the fight ends;
+    what grew there comes back too.
+  - Blocks a charge or a beam tears up fly off and vanish instead of landing somewhere as new blocks.
+  - Elders no longer light real fire: their blasts and scorch show flames, and only soul soil burns with soul fire.
+  - Thorns, chains, the Weaver's needles, the Knot Mother's anchors and the Starved One's nodes are taken back when
+    the fight ends, also where their ground was not loaded.
+- **Bosses no longer sink into the ground.** Their height came from the average of the ground under them, and they only
+  looked 8 blocks up, so they sank into the rim of a crater, stayed inside ground that rose under them and climbed onto
+  ledges overhead. Now:
+  - A boss stands on the highest ground under its whole body (the Ferryman's under the whole length of his boat).
+  - With its feet in blocks it climbs straight out; it never climbs onto an arch, a halo or a ledge over its head.
+  - It comes down without dipping into the ground, and steps up without standing inside the step.
+  - It no longer walks through tall walls, towers and hills: it slides along them or stops.
+  - The Pale Mason's blink and the Starved One's swoop always land on top of the ground.
+  - Leaves, logs and the like no longer count as ground to stand on, nor do barrier blocks.
+
 ## 3.44.0: Home or Lock
 
 ### New

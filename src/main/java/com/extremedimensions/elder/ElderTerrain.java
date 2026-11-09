@@ -151,7 +151,8 @@ public final class ElderTerrain {
 					} else if (flingOneIn > 0 && s.isSolid() && rnd.nextInt(flingOneIn) == 0) {
 						fling(level, pos, s, dx, dz);
 					} else {
-						level.destroyBlock(pos, rnd.nextInt(6) == 0, null, 512);
+						// (now and then a torn block drops, but never leaves or a plant: no saplings strewn about a fight)
+						level.destroyBlock(pos, rnd.nextInt(6) == 0 && s.isSolid() && !s.is(BlockTags.LEAVES), null, 512);
 					}
 				}
 			}
@@ -336,7 +337,7 @@ public final class ElderTerrain {
 		t.level = level;
 		t.pos = pos.immutable();
 		t.placed = level.getBlockState(pos);
-		t.original = FightBlocks.whole(was);
+		t.original = was;
 		t.left = Math.max(1, ticks);
 		t.raised = raised;
 		TEMPORARY.add(t);
