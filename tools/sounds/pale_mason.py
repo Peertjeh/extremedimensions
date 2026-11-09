@@ -258,6 +258,11 @@ def rush(rng, t, at, dur, f_from=200.0, f_to=2400.0, peak=0.8):
     return (norm(wind) * gust + 0.7 * norm(low)) * swell(t, at, at + dur * peak, at + dur)
 
 
+def sub_hum(t, f, at, dur):
+    """A sine under everything, swelling in and out: felt more than heard."""
+    return np.sin(2 * np.pi * f * t) * gate(t, at, dur, dur * 0.3, dur * 0.4)
+
+
 def master(rng, x, hall=3.0, wet=0.38, drive=1.6, squeeze=True, bright=6500, presence=0.6):
     """His hall (vast and hollow), then a little heat and a compressor, so every sound of his lands with weight."""
     x = norm(x).copy()

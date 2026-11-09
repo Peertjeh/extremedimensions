@@ -127,6 +127,15 @@ def cached(key, make):
     return CACHE[key]
 
 
+def faded(x, d=0.4):
+    """A note whose ring would still be sounding at the end of its buffer, faded out over its last d seconds so it ends
+    without a click."""
+    n = min(len(x), int(SR * d))
+    x = x.copy()
+    x[len(x) - n:] *= np.cos(np.linspace(0, np.pi / 2, n)) ** 2
+    return x
+
+
 # ------------------------------------------------------------------ instruments
 
 def drum(size=1.0, seed=0):
@@ -139,7 +148,7 @@ def drum(size=1.0, seed=0):
         body = np.sin(2 * np.pi * km.phase(f)) * km.env(t, 0.002, 0.45 * size) + \
             0.4 * np.sin(2 * np.pi * km.phase(f * 1.52)) * km.env(t, 0.002, 0.15)
         slap = km.band(rng.standard_normal(len(t)), 100, 1800) * km.env(t, 0.0005, 0.02)
-        return km.saturate(body + 0.5 * slap, 2.0)
+        return faded(km.saturate(body + 0.5 * slap, 2.0), 0.3)
     return cached(("drum", size, seed), make)
 
 
@@ -236,7 +245,7 @@ def sung(phrase, octave=0, vowel="o", vowel2="a", voices=5, seed=0, legato=0.07,
             det = 2 ** (rng.uniform(-8, 8) / 1200)
             x += km.voice(rng, t, f0 * det, vowel, vowel2, morph, vib=4.6 + rng.random(), vib_depth=0.009, breath=0.14, harmonics=32)
         x *= amp * np.clip(t / 0.08, 0, 1)
-        return km.lowpass(x / voices ** 0.5, far)
+        return faded(km.lowpass(x / voices ** 0.5, far), 0.6)
     return cached(("sung", tuple(phrase), octave, vowel, vowel2, voices, seed, far), make)
 
 
@@ -302,16 +311,16 @@ def horn_line(phrase, octave=-1, seed=0, gain=1.0):
 
 def bell(note, strength=1.0, decay=1.0):
     """A gold bell."""
-    return cached(("bell", note, strength, decay), lambda: km.bronze(np.random.default_rng(11 + len(note)), km.t_(3.4 * decay), 0.0, hz(note),
-                                                                     strength, decay, 1.3))
+    return cached(("bell", note, strength, decay), lambda: faded(km.bronze(np.random.default_rng(11 + len(note)), km.t_(4.5 * decay), 0.0,
+                                                                           hz(note), strength, decay, 1.3), 1.5 * decay))
 
 
 def halo_gong(seed=0):
     """His broken halo struck like a gong."""
     def make():
         rng = np.random.default_rng(seed + 1100)
-        t = km.t_(7.0)
-        return pm.halo(rng, t, 0.0, 69.3, 1.0, 3.2, 0.3) + 0.6 * km.gong(rng, t, 0.0, 69.3, 1.0, 3.5)
+        t = km.t_(9.0)
+        return faded(pm.halo(rng, t, 0.0, 69.3, 1.0, 3.2, 0.3) + 0.6 * km.gong(rng, t, 0.0, 69.3, 1.0, 3.5), 3.5)
     return cached(("gong", seed), make)
 
 

@@ -70,7 +70,7 @@ def m_stone(ctx, ragged=False, tone=1.0, grime=0.0):
     if ragged and _ragged(ctx, k):
         return (0, 0, 0, 0), None
     glow = None
-    if (iy == 3 or ix == 4) and _h(col, row, s + 31) > 0.99:
+    if iy == 3 and ix < 4 and _h(col, row, s + 31) > 0.985:
         # the void showing through a seam
         base, glow = (120, 60, 170), (170, 90, 255, 150)
     return base + (255,), glow
@@ -206,7 +206,7 @@ elderlib.MATS.update({
 
 
 def build():
-    m = Model("PaleMason", 1024, 1024, seed=173)
+    m = Model("PaleMason", 1024, 512, seed=173)
     R = m.part("root", None, (0, 24, 0), anim=True)
     body = m.part("body", R, (0, 0, 0), anim=True)
     # body, torso and head keep their own boxes in a "core" child, so he can be laid together block by block as he
@@ -320,8 +320,7 @@ def _leg(m, body, side, sx):
     m.box(leg, -4, -2, -4, 8, 46, 8, "pm_void")
     m.box(leg, -4.6, 40, -5.4, 9.2, 8, 9.8, "pm_stone")
     m.box(leg, -3.5, 46, -3.5, 7, 37, 7, "pm_void")
-    m.box(leg, -4.1, 58, -4.1, 8.2, 4, 8.2, "pm_stone")
-    m.box(leg, -4.1, 69, -4.1, 8.2, 3, 8.2, "pm_stone_shade")
+    m.box(leg, -4.1, 61, -4.1, 8.2, 3.5, 8.2, "pm_stone_shade")
     m.box(leg, -5, 73.5, -5.2, 10, 7.5, 10.4, "pm_stone")
     m.box(leg, -4.5, 81, -11, 9, 5, 15, "pm_void")
     m.box(leg, -4.8, 79.5, -11.6, 9.6, 3, 6.5, "pm_stone")
@@ -338,12 +337,12 @@ def _skirt(m, body):
         length = 84 + (i * 5) % 7
         _strip(m, f"under_{i}", body, (10 * math.sin(a), -90, 7.5 * math.cos(a)), (0.13 + 0.02 * (i % 3), a, 0), 9, length, 2,
                "pm_void_ragged", "robe")
-    n = 13
+    n = 12
     for k in range(n):
         a = TAU * k / n
         front = (1 - math.cos(a)) / 2
         length = 89 - 50 * front ** 1.2 + (k * 7) % 9 - 4
-        _strip(m, f"over_{k}", body, (12 * math.sin(a), -93, 9 * math.cos(a)), (0.16 + 0.025 * (k % 3), a, 0), 8.6, length, 2.4,
+        _strip(m, f"over_{k}", body, (12 * math.sin(a), -93, 9 * math.cos(a)), (0.16 + 0.025 * (k % 3), a, 0), 8, length, 2.4,
                "pm_stone_ragged", "robe")
     for k in range(12):
         a = TAU * k / 12 + 0.26
@@ -389,14 +388,14 @@ def _mantle(m, torso):
         m.box(sc, -5.5, -7.5, -6.5, 11, 4, 12, "pm_stone")
         m.box(sc, -2.5 + 4 * sx, -10, -3, 6, 3, 6, "pm_stone")
         m.box(sc, -9 + (9 if sx > 0 else 0), 3, -9, 9, 5, 18, "pm_stone_shade")
-    n = 22
+    n = 18
     for i in range(n):
-        a = TAU * i / n
+        a = TAU * i / n + 0.09
         if _front_dist(a) < 0.8:
             continue
         back = (1 + math.cos(a)) / 2
-        length = 16 + 50 * back ** 1.6 + (i * 7) % 9
-        _strip(m, f"mantle_{i}", torso, (16.5 * math.sin(a), -60, 9.2 * math.cos(a)), (0.36 - 0.12 * back, a, 0), 9, length, 2.4,
+        length = 28 + 40 * back ** 1.6 + (i * 7) % 11
+        _strip(m, f"mantle_{i}", torso, (16.5 * math.sin(a), -60, 9.2 * math.cos(a)), (0.36 - 0.12 * back, a, 0), 8, length, 2.4,
                "pm_stone_ragged", "mantle")
     n = 16
     for i in range(n):
@@ -406,7 +405,7 @@ def _mantle(m, torso):
         back = (1 + math.cos(a)) / 2
         length = 26 + 56 * back + (i * 5) % 8
         _strip(m, f"mantlein_{i}", torso, (14.6 * math.sin(a), -57, 8.2 * math.cos(a)), (0.22 - 0.1 * back, a, 0), 8, length, 2,
-               "pm_stone_shade_ragged", "mantle")
+               "pm_void_ragged", "mantle")
     # folds of stone: one across his breast over the core, three down his back
     _drape(m, "drape_f", torso, [-12.5, -61.5, -8.6], [12.5, -61.5, -8.6], 9, 12, -0.14)
     for k, (sag, z) in enumerate(((9, 9.4), (19, 9.8), (30, 10.2))):
@@ -446,9 +445,9 @@ def _head(m, head):
     m.box(hood, -4.5, -52.5, -3.5, 9, 3.5, 10, "pm_stone_shade")
     m.box(hood, -9.6, -38, -9.6, 19.2, 7, 3, "pm_stone")
     for sx in (1, -1):
-        m.box(hood, 7.2 if sx > 0 else -10, -38, -9.2, 2.8, 31, 19.6, "pm_stone_ragged")
-        m.box(hood, 5.8 if sx > 0 else -9.5, -31, -9.6, 3.7, 19, 3, "pm_stone_ragged")
-    m.box(hood, -10.3, -38, 7.8, 20.6, 44, 3, "pm_stone_ragged")
+        m.box(hood, 7.2 if sx > 0 else -10, -38, -9.2, 2.8, 24, 19.6, "pm_stone_ragged")
+        m.box(hood, 5.8 if sx > 0 else -9.5, -31, -9.6, 3.7, 13, 3, "pm_stone_ragged")
+    m.box(hood, -10.3, -38, 7.8, 20.6, 30, 3, "pm_stone_ragged")
     # blocks loose on the hood: on the brim, on its crown and its shoulders
     for k, (x, y, z, sz, r) in enumerate(((-6.5, -38.5, -9.8, 4, 0.2), (2.5, -38.6, -9.9, 4.5, -0.15), (-8.2, -45, 2, 5, 0.3),
                                           (8.0, -44.5, -3, 4.5, -0.25), (3.5, -50, 3, 4, 0.4), (-3, -49.5, -4.5, 3.5, -0.3))):
@@ -576,7 +575,6 @@ def _arm(m, torso, side, sx):
     m.box(arm, -4, -2, -4, 8, 40, 8, "pm_void")
     m.box(arm, -6.2, -6, -6.2, 12.4, 11, 12.4, "pm_stone")
     m.box(arm, -4.5 + 1.5 * sx, -9.5, -4.5, 8, 4, 9, "pm_stone_shade")
-    m.box(arm, -4.6, 22, -4.6, 9.2, 4, 9.2, "pm_stone_shade")
     for j, (x, z, length) in enumerate(((6.4, -3.2, 18), (6.6, 1.0, 26), (2.5, 6.6, 20), (-2, 6.6, 12))):
         _strip(m, f"sleeve_{side}{j}", arm, (x * sx, 3.5, z), (0.06 * (1 if z > 0 else -1), 0, -0.1 * sx * (1 if x > 4 else 0.3)),
                3.6, length, 1.8, "pm_stone_ragged", "sleeve")
@@ -584,7 +582,7 @@ def _arm(m, torso, side, sx):
     fo = m.part(f"forearm_{side}", arm, (0, 38, 0), (-0.32, 0, 0.04 * sx), anim=True)
     m.box(fo, -3.6, -1, -3.6, 7.2, 36, 7.2, "pm_void")
     m.box(fo, -4.6, -3, -4.6, 9.2, 6, 9.2, "pm_stone")
-    for k, (y, h, r) in enumerate(((10, 3.5, 0.12), (16.5, 3, -0.1))):
+    for k, (y, h, r) in enumerate(((13, 3.5, 0.12),)):
         w = m.part(f"wrap_{side}{k}", fo, (0, y, 0), (r, 0, -r * 0.8))
         m.box(w, -4.2, -h / 2, -4.2, 8.4, h, 8.4, "pm_stone_shade" if k == 1 else "pm_stone")
     m.box(fo, -4.3, 22.5, -4.3, 8.6, 1.8, 8.6, "pm_gold")
