@@ -38,16 +38,25 @@ public class MasonTests {
 	 */
 	private static Runnable harmless() {
 		double strike = Config.PALE_MASON_STRIKE_DAMAGE, block = Config.PALE_MASON_BLOCK_DAMAGE, gaze = Config.PALE_MASON_GAZE_DAMAGE,
-				door = Config.PALE_MASON_DOOR_DAMAGE;
+				door = Config.PALE_MASON_DOOR_DAMAGE, chain = Config.PALE_MASON_CHAIN_DAMAGE, pillar = Config.PALE_MASON_PILLAR_DAMAGE,
+				ring = Config.PALE_MASON_RING_DAMAGE, burst = Config.PALE_MASON_BURST_DAMAGE;
 		Config.PALE_MASON_STRIKE_DAMAGE = 0;
 		Config.PALE_MASON_BLOCK_DAMAGE = 0;
 		Config.PALE_MASON_GAZE_DAMAGE = 0;
 		Config.PALE_MASON_DOOR_DAMAGE = 0;
+		Config.PALE_MASON_CHAIN_DAMAGE = 0;
+		Config.PALE_MASON_PILLAR_DAMAGE = 0;
+		Config.PALE_MASON_RING_DAMAGE = 0;
+		Config.PALE_MASON_BURST_DAMAGE = 0;
 		return () -> {
 			Config.PALE_MASON_STRIKE_DAMAGE = strike;
 			Config.PALE_MASON_BLOCK_DAMAGE = block;
 			Config.PALE_MASON_GAZE_DAMAGE = gaze;
 			Config.PALE_MASON_DOOR_DAMAGE = door;
+			Config.PALE_MASON_CHAIN_DAMAGE = chain;
+			Config.PALE_MASON_PILLAR_DAMAGE = pillar;
+			Config.PALE_MASON_RING_DAMAGE = ring;
+			Config.PALE_MASON_BURST_DAMAGE = burst;
 		};
 	}
 
@@ -125,6 +134,85 @@ public class MasonTests {
 		check(helper, !away, "looking away counts as looking at him");
 		check(helper, !pumpkin, "a carved pumpkin does not keep his gaze off");
 		helper.succeed();
+	}
+
+	/** Bound Stones (3.41): he swings chained stones round himself and lets them go; none is left in the air afterwards. */
+	@GameTest(maxTicks = 240)
+	public void heSwingsChainedStonesAndLetsThemGo(GameTestHelper helper) {
+		ServerPlayer p = visitor(helper, "mason-chained");
+		Runnable restore = harmless();
+		PaleMason m = mason(helper, p);
+		if (m == null) {
+			restore.run();
+			throw helper.assertionException("the Pale Mason could not come");
+		}
+		PaleMasonService.force(m, PaleMason.CHAINS);
+		int[] most = {0};
+		for (int t = 5; t <= 90; t += 5) {
+			helper.runAfterDelay(t, () -> most[0] = Math.max(most[0], PaleMasonService.bound(m)));
+		}
+		helper.runAfterDelay(200, () -> {
+			int left = PaleMasonService.bound(m);
+			int action = m.getAction();
+			PaleMasonService.fade(m);
+			restore.run();
+			check(helper, most[0] >= 2, "he swung only %s chained stones", most[0]);
+			check(helper, left == 0, "%s stones were left in the air (his action %s)", left, action);
+			helper.succeed();
+		});
+	}
+
+	/** Pillars of the Anchor (3.41): sigils are lit where his pillars will tear up, under his visitor too, and all of them go. */
+	@GameTest(maxTicks = 140)
+	public void hisPillarsRiseUnderHisVisitor(GameTestHelper helper) {
+		ServerPlayer p = visitor(helper, "mason-pillared");
+		Runnable restore = harmless();
+		PaleMason m = mason(helper, p);
+		if (m == null) {
+			restore.run();
+			throw helper.assertionException("the Pale Mason could not come");
+		}
+		PaleMasonService.force(m, PaleMason.PILLARS);
+		int[] most = {0};
+		for (int t = 4; t <= 60; t += 4) {
+			helper.runAfterDelay(t, () -> most[0] = Math.max(most[0], PaleMasonService.pillarsWaiting(m)));
+		}
+		helper.runAfterDelay(110, () -> {
+			int left = PaleMasonService.pillarsWaiting(m);
+			PaleMasonService.fade(m);
+			restore.run();
+			check(helper, most[0] >= 5, "only %s pillars were waiting to tear up", most[0]);
+			check(helper, left == 0, "%s pillars never tore up", left);
+			helper.succeed();
+		});
+	}
+
+	/** The Unfinished Spiral (3.41): its stones wind round him, it draws his visitor in, and once it bursts none is left. */
+	@GameTest(maxTicks = 200)
+	public void hisSpiralDrawsInAndBursts(GameTestHelper helper) {
+		ServerPlayer p = visitor(helper, "mason-spiralled");
+		Runnable restore = harmless();
+		PaleMason m = mason(helper, p);
+		if (m == null) {
+			restore.run();
+			throw helper.assertionException("the Pale Mason could not come");
+		}
+		int felt = com.extremedimensions.events.PaleSquall.felt(p.getUUID());
+		PaleMasonService.force(m, PaleMason.SPIRAL);
+		int[] most = {0};
+		for (int t = 10; t <= 80; t += 10) {
+			helper.runAfterDelay(t, () -> most[0] = Math.max(most[0], PaleMasonService.bound(m)));
+		}
+		helper.runAfterDelay(160, () -> {
+			int left = PaleMasonService.bound(m);
+			int drawn = com.extremedimensions.events.PaleSquall.felt(p.getUUID()) - felt;
+			PaleMasonService.fade(m);
+			restore.run();
+			check(helper, most[0] >= 6, "only %s stones wound round him", most[0]);
+			check(helper, drawn > 0, "his spiral never drew his visitor in");
+			check(helper, left == 0, "%s stones of his spiral were left in the air", left);
+			helper.succeed();
+		});
 	}
 
 	/** His ultimate opens the Last Door; gone, he takes it with him. */

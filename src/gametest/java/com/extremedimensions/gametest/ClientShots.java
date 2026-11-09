@@ -245,7 +245,30 @@ public class ClientShots implements FabricClientGameTest {
 		face(sp, name);
 		ctx.waitTicks(2);
 		ctx.takeScreenshot("12_fight_" + name + "_ultimate_b");
-		ctx.waitTicks(75);
+		// Its ultimate breaks and the ground is torn up (3.41): close by, then from high over the arena
+		ctx.waitTicks(60);
+		face(sp, name);
+		ctx.waitTicks(2);
+		ctx.takeScreenshot("12_fight_" + name + "_upheaval");
+		double[] over = {mid[0] + 45, mid[1] + 50, mid[2] + 45};
+		sp.getServer().runOnServer(s -> {
+			ServerPlayer p = player(s);
+			p.getAbilities().mayfly = true;
+			p.getAbilities().flying = true;
+			p.onUpdateAbilities();
+		});
+		moveTo(ctx, sp, over);
+		sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s ~ ~ ~ facing %.1f %.1f %.1f", mid[0], mid[1], mid[2]));
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("12_fight_" + name + "_upheaval_above");
+		moveTo(ctx, sp, stood);
+		sp.getServer().runOnServer(s -> {
+			ServerPlayer p = player(s);
+			p.getAbilities().flying = false;
+			p.getAbilities().mayfly = false;
+			p.onUpdateAbilities();
+		});
+		ctx.waitTicks(5);
 		face(sp, name);
 		sp.getServer().runCommand("kill @e[type=extremedimensions:" + name + "]");
 		ctx.waitTicks(30);
@@ -1678,13 +1701,16 @@ public class ClientShots implements FabricClientGameTest {
 					com.extremedimensions.elder.WeaverService::force, new int[] {com.extremedimensions.elder.Weaver.LANCE,
 							com.extremedimensions.elder.Weaver.CRADLE, com.extremedimensions.elder.Weaver.THOUSAND},
 					new String[] {"lance", "cradle", "thousand"});
-			// The Pale Mason (3.40): his blink and claw, his walls, the great blocks he lifts and hurls, his gaze, his Door
+			// The Pale Mason (3.40): his blink and claw, his walls, the great blocks he lifts and hurls, his gaze, his Door; and
+			// (3.41) his chained stones, his pillars of light, his golden rings and his spiral
 			liveFight(ctx, sp, "pale_mason", 40,
 					s -> com.extremedimensions.elder.PaleMasonService.summonAt(player(s), player(s).blockPosition().offset(0, 0, 20)),
 					com.extremedimensions.elder.PaleMasonService::force, new int[] {com.extremedimensions.elder.PaleMason.STRIKE,
 							com.extremedimensions.elder.PaleMason.WALLS, com.extremedimensions.elder.PaleMason.LIFT,
-							com.extremedimensions.elder.PaleMason.GAZE},
-					new String[] {"strike", "walls", "lift", "gaze"});
+							com.extremedimensions.elder.PaleMason.GAZE, com.extremedimensions.elder.PaleMason.CHAINS,
+							com.extremedimensions.elder.PaleMason.PILLARS, com.extremedimensions.elder.PaleMason.RINGS,
+							com.extremedimensions.elder.PaleMason.SPIRAL},
+					new String[] {"strike", "walls", "lift", "gaze", "chains", "pillars", "rings", "spiral"});
 			com.extremedimensions.config.Config.ELDER_ULTIMATE_CURSES = ultimateCurses;
 			com.extremedimensions.config.Config.ELDER_ARENA_LINGER_SECONDS = linger;
 			com.extremedimensions.config.Config.ELDER_ARENA_BUILD_SECONDS = build;

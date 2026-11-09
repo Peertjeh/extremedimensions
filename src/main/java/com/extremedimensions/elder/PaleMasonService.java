@@ -3,6 +3,7 @@ package com.extremedimensions.elder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +35,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Brightness;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Display;
@@ -98,6 +100,39 @@ public final class PaleMasonService {
 		/** Who reached the Door this time (struck once). */
 		final Set<UUID> through = new HashSet<>();
 		double lift;
+		/** Bound Stones: the cubes he swings on their chains, round where he stood as he hauled them up. */
+		final List<Bound> bound = new ArrayList<>();
+		double boundX, boundY, boundZ;
+		/** When each player was last struck by a swinging cube (game tick), so one pass strikes once. */
+		final Map<UUID, Long> swept = new HashMap<>();
+		/** Pillars of the Anchor: where each pillar will tear up, and the tick of his blow it does. */
+		final List<double[]> pillars = new ArrayList<>();
+		/** The Unfinished Spiral: the stones turning round him. */
+		final List<Bound> spiral = new ArrayList<>();
+	}
+
+	/**
+	 * A stone he turns round himself in the air (a chained cube, a stone of his spiral): its display stands where he
+	 * stood, its look carries it round; where it is now, and where it was flung.
+	 */
+	private static final class Bound {
+		final Display.BlockDisplay display;
+		/** Its glowing heart (a chained cube only), or null. */
+		final Display.BlockDisplay heart;
+		/** Where round him it starts, how big it is, how high it climbs (a share), how far out it turns (a spiral stone). */
+		final double phase, size, rise, reach;
+		double x, y, z;
+		boolean flung;
+		double tx, ty, tz;
+
+		Bound(Display.BlockDisplay display, Display.BlockDisplay heart, double phase, double size, double rise, double reach) {
+			this.display = display;
+			this.heart = heart;
+			this.phase = phase;
+			this.size = size;
+			this.rise = rise;
+			this.reach = reach;
+		}
 	}
 
 	private static final Map<UUID, Masonry> FIGHTS = new HashMap<>();
@@ -345,9 +380,12 @@ public final class PaleMasonService {
 			ElderFx.look(m, p);
 			if (f.ready()) {
 				double rise = p.getY() - m.getY();
-				int a = rise > 4 ? f.pick(PaleMason.STRIKE, 4, PaleMason.LIFT, 3, PaleMason.GAZE, 2)
-						: dist <= 8 ? f.pick(PaleMason.WALLS, 3, PaleMason.GAZE, 2, PaleMason.STRIKE, 2, PaleMason.LIFT, 1)
-						: f.pick(PaleMason.STRIKE, 3, PaleMason.LIFT, 3, PaleMason.WALLS, 2, PaleMason.GAZE, 2);
+				// (3.41: his chained stones, his pillars, his golden rings and his spiral besides)
+				int a = rise > 4 ? f.pick(PaleMason.STRIKE, 4, PaleMason.LIFT, 3, PaleMason.PILLARS, 3, PaleMason.GAZE, 2, PaleMason.CHAINS, 1)
+						: dist <= 8 ? f.pick(PaleMason.SPIRAL, 3, PaleMason.WALLS, 3, PaleMason.RINGS, 2, PaleMason.GAZE, 2, PaleMason.STRIKE, 2,
+								PaleMason.LIFT, 1)
+						: f.pick(PaleMason.CHAINS, 3, PaleMason.PILLARS, 3, PaleMason.STRIKE, 3, PaleMason.LIFT, 2, PaleMason.RINGS, 2,
+								PaleMason.WALLS, 2, PaleMason.GAZE, 2, PaleMason.SPIRAL, 1);
 				f.start(m, a);
 			}
 			return;
@@ -356,7 +394,7 @@ public final class PaleMasonService {
 		Beat b = f.beat;
 		if (f.action != ElderBoss.ULTIMATE) {
 			m.motion.brake(m, 0.08, 0.1);
-			if (f.action != PaleMason.GAZE || b.t < 20) {
+			if ((f.action != PaleMason.GAZE || b.t < 20) && f.action != PaleMason.CHAINS && f.action != PaleMason.SPIRAL) {
 				m.motion.turn(m, ElderFx.yawTo(m, p.getX(), p.getZ()), 4f);
 				ElderFx.look(m, p);
 			}
@@ -367,6 +405,10 @@ public final class PaleMasonService {
 			case PaleMason.LIFT -> lift(m, f, b);
 			case PaleMason.THROW -> hurl(m, f, p, b);
 			case PaleMason.GAZE -> gaze(m, f, b);
+			case PaleMason.CHAINS -> chains(m, f, p, b);
+			case PaleMason.PILLARS -> pillars(m, f, p, b);
+			case PaleMason.RINGS -> rings(m, f, b);
+			case PaleMason.SPIRAL -> spiral(m, f, b);
 			case ElderBoss.ULTIMATE -> lastDoor(m, f, p, b);
 			default -> f.end(m, 40);
 		}
@@ -577,6 +619,9 @@ public final class PaleMasonService {
 			BlockFlight.drop(bl.display);
 		}
 		f.boulders.clear();
+		dropBound(f.bound);
+		dropBound(f.spiral);
+		f.pillars.clear();
 		for (Display.BlockDisplay d : f.door) {
 			BlockFlight.drop(d);
 		}
@@ -588,6 +633,29 @@ public final class PaleMasonService {
 		if (!f.boulders.isEmpty() && f.action != PaleMason.LIFT && f.action != PaleMason.THROW) {
 			dropAll(f);
 		}
+		if (!f.bound.isEmpty() && f.action != PaleMason.CHAINS) {
+			dropBound(f.bound);
+		}
+		if (!f.spiral.isEmpty() && f.action != PaleMason.SPIRAL) {
+			dropBound(f.spiral);
+		}
+		if (!f.pillars.isEmpty() && f.action != PaleMason.PILLARS) {
+			f.pillars.clear();
+		}
+	}
+
+	/** Stones he turns in the air come down to nothing. */
+	private static void dropBound(List<Bound> list) {
+		for (Bound s : list) {
+			if (!s.display.isRemoved()) {
+				WorldFx.particleIn(s.display.level(), "minecraft:portal", s.x, s.y, s.z, 1, 1, 1, 0.5, 12);
+			}
+			BlockFlight.drop(s.display);
+			if (s.heart != null) {
+				BlockFlight.drop(s.heart);
+			}
+		}
+		list.clear();
 	}
 
 	// ------------------------------------------------------------------ the Gaze
@@ -644,6 +712,433 @@ public final class PaleMasonService {
 		double dot = view.dot(to.scale(1 / d));
 		// his face is broad: a cone of about 2.5 blocks round his eyes at the distance he stands
 		return dot > Math.cos(Math.atan2(2.5, d)) && q.hasLineOfSight(m);
+	}
+
+	// ------------------------------------------------------------------ Bound Stones
+
+	/** Smoothstep of a share, held to 0..1. */
+	private static double ease(double k) {
+		k = Math.max(0, Math.min(1, k));
+		return k * k * (3 - 2 * k);
+	}
+
+	/** Moves a stone he turns to have its middle at (cx, cy, cz), turned by q, over {@code ticks}. */
+	private static void place(Masonry f, Bound s, Display.BlockDisplay d, double cx, double cy, double cz, Quaternionf q, double size, int ticks) {
+		DisplayAccess acc = (DisplayAccess) d;
+		acc.extremedimensions$setTransformation(BlockFlight.pose(cx - f.boundX - 0.5, cy - f.boundY + 0.5, cz - f.boundZ - 0.5, q, (float) size));
+		acc.extremedimensions$setInterpolationDuration(ticks);
+		acc.extremedimensions$setInterpolationDelay(0);
+	}
+
+	/** How far out his chained stones swing at this beat: far out, then drawn in close round him. */
+	private static double swing(Masonry f, double t) {
+		double far = f.enraged ? 16 : 14;
+		if (t < 24) {
+			return 4 + (far - 4) * ease(t / 24);
+		}
+		if (t < 60) {
+			return far;
+		}
+		return far - (far - 7) * ease((t - 60) / 30);
+	}
+
+	/** Where chained stone {@code s} is at this beat of his swing. */
+	private static void orbit(Masonry f, Bound s, double t) {
+		double r = swing(f, t);
+		double a = s.phase + Math.max(0, t - 4) * Math.PI * 2 / (f.enraged ? 64 : 80);
+		s.x = f.boundX + Math.cos(a) * r;
+		s.z = f.boundZ + Math.sin(a) * r;
+		// hauled down out of the air to the height of a man, then rolling a little as it swings
+		s.y = f.boundY + 11 + (2.2 - 11) * ease(t / 24) + Math.sin(t * 0.15 + s.phase) * 0.4;
+	}
+
+	/**
+	 * Bound Stones: he hauls great cubes of violet light out of the air on chains of gold and swings them round himself at
+	 * the height of a man, far out and then drawn in close (a ring on the floor shows where each sweep runs before it
+	 * comes); whoever is caught in their path is struck and flung along it. Then he hurls them away at whoever is near.
+	 * (The cubes come down at 24 of his blow and leave his hands at 104.)
+	 */
+	private static void chains(PaleMason m, Masonry f, ServerPlayer prey, Beat b) {
+		ServerLevel level = f.level;
+		String dim = ElderFx.dim(m);
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		int elder = AttackFx.of(m);
+		if (b.at(2)) {
+			dropBound(f.bound);
+			f.boundX = m.getX();
+			f.boundY = m.getY();
+			f.boundZ = m.getZ();
+			f.swept.clear();
+			int n = Math.min(4, 2 + (f.enraged ? 1 : 0) + (f.fighters > 2 ? 1 : 0));
+			Brightness lit = new Brightness(15, 15);
+			double turn = rnd.nextDouble() * Math.PI * 2;
+			for (int i = 0; i < n; i++) {
+				Display.BlockDisplay cube = BlockFlight.spawn(level, f.boundX, f.boundY, f.boundZ, Blocks.PURPLE_STAINED_GLASS.defaultBlockState(),
+						BlockFlight.pose(0, 11, 0, new Quaternionf(), 0.2F));
+				Display.BlockDisplay heart = BlockFlight.spawn(level, f.boundX, f.boundY, f.boundZ, Blocks.CRYING_OBSIDIAN.defaultBlockState(),
+						BlockFlight.pose(0, 11, 0, new Quaternionf(), 0.1F));
+				if (cube == null || heart == null) {
+					if (cube != null) {
+						BlockFlight.drop(cube);
+					}
+					if (heart != null) {
+						BlockFlight.drop(heart);
+					}
+					continue;
+				}
+				((DisplayAccess) cube).extremedimensions$setBrightnessOverride(lit);
+				((DisplayAccess) heart).extremedimensions$setBrightnessOverride(lit);
+				f.bound.add(new Bound(cube, heart, turn + Math.PI * 2 * i / n, 3.0, 0, 0));
+			}
+			WorldFx.soundIn(dim, "extremedimensions:elder.pale_mason.chains", "hostile", f.boundX, f.boundY + 10, f.boundZ, 4f, 1f);
+		}
+		if (f.bound.isEmpty()) {
+			if (b.past(4)) {
+				f.end(m, 40);
+			}
+			return;
+		}
+		// The rings on the floor show each sweep before it comes: far out, then close in
+		if (b.at(6)) {
+			AttackFx.ring(level, elder, f.boundX, f.boundY + 0.1, f.boundZ, swing(f, 30), 54);
+		}
+		if (b.at(52)) {
+			AttackFx.ring(level, elder, f.boundX, f.boundY + 0.1, f.boundZ, 7, 46);
+		}
+		if (!b.past(100)) {
+			for (Bound s : f.bound) {
+				orbit(f, s, b.t);
+			}
+			// he turns with the swing, his arms out along its chains
+			Bound lead = f.bound.get(0);
+			m.motion.turn(m, ElderFx.yawTo(m, lead.x, lead.z), 14f);
+			if (b.every(2, 0)) {
+				for (Bound s : f.bound) {
+					// (aimed where it will be when the move ends)
+					Bound ahead = new Bound(null, null, s.phase, s.size, 0, 0);
+					orbit(f, ahead, b.t + 2);
+					Quaternionf q = new Quaternionf().rotateY((float) (-b.t * 0.12 - s.phase)).rotateX((float) (b.t * 0.07));
+					place(f, s, s.display, ahead.x, ahead.y, ahead.z, q, s.size, 2);
+					place(f, s, s.heart, ahead.x, ahead.y, ahead.z, new Quaternionf(q).rotateZ(0.8F), s.size * 0.45, 2);
+					// its chain, from his hand to it
+					double ha = Math.atan2(ahead.z - f.boundZ, ahead.x - f.boundX);
+					AttackFx.line(level, elder, AttackFx.LINE_CHAIN, f.boundX + Math.cos(ha) * 4.5, f.boundY + 11, f.boundZ + Math.sin(ha) * 4.5, ahead.x,
+							ahead.y + 0.6, ahead.z, 3);
+				}
+			}
+			if (b.between(24, 100) && b.every(20, 24)) {
+				Bound s = f.bound.get(0);
+				WorldFx.soundIn(dim, "extremedimensions:elder.pale_mason.swing", "hostile", s.x, s.y, s.z, 3.5f, 0.9f + rnd.nextFloat() * 0.2f);
+			}
+			if (b.past(12)) {
+				// Caught in a sweep: struck once a pass and flung along it
+				long now = level.getGameTime();
+				for (ServerPlayer q : ElderFx.targets(m, ElderPower.reach(48))) {
+					for (Bound s : f.bound) {
+						double dx = q.getX() - s.x, dz = q.getZ() - s.z, dy = q.getY() + 0.9 - s.y;
+						if (dx * dx + dz * dz > Math.pow(s.size / 2 + 0.6, 2) || Math.abs(dy) > s.size / 2 + 0.9) {
+							continue;
+						}
+						Long last = f.swept.get(q.getUUID());
+						if (last != null && now - last < 12) {
+							continue;
+						}
+						f.swept.put(q.getUUID(), now);
+						q.hurtServer(level, ElderPower.great(level, m), (float) Config.PALE_MASON_CHAIN_DAMAGE);
+						double a = Math.atan2(s.z - f.boundZ, s.x - f.boundX);
+						q.setDeltaMovement(-Math.sin(a) * 1.1 + Math.cos(a) * 0.7, 0.55, Math.cos(a) * 1.1 + Math.sin(a) * 0.7);
+						WorldFx.moved(q);
+						WorldFx.soundIn(dim, "extremedimensions:elder.pale_mason.impact", "hostile", q.getX(), q.getY() + 1, q.getZ(), 2.5f, 1.3f);
+						AttackFx.impact(level, elder, AttackFx.IMPACT_BLAST, q.getX(), q.getY() + 1, q.getZ(), 1.6);
+					}
+				}
+			}
+		}
+		int flight = Math.max(10, f.delay(16));
+		if (b.at(104)) {
+			// He hurls them: at whoever is near, else away from him
+			List<ServerPlayer> targets = ElderFx.reachable(m, ElderPower.reach(48));
+			WorldFx.soundIn(dim, "extremedimensions:elder.pale_mason.fling", "hostile", f.boundX, f.boundY + 8, f.boundZ, 4f, 1f);
+			for (int i = 0; i < f.bound.size(); i++) {
+				Bound s = f.bound.get(i);
+				double tx, tz;
+				if (!targets.isEmpty()) {
+					ServerPlayer q = targets.get(i % targets.size());
+					tx = q.getX() + rnd.nextDouble(-1.5, 1.5);
+					tz = q.getZ() + rnd.nextDouble(-1.5, 1.5);
+				} else {
+					double a = Math.atan2(s.z - f.boundZ, s.x - f.boundX);
+					tx = f.boundX + Math.cos(a) * 22;
+					tz = f.boundZ + Math.sin(a) * 22;
+				}
+				double ty = ElderFx.surface(level, tx, f.boundY + 6, tz, 8, 16);
+				if (Double.isNaN(ty)) {
+					ty = f.boundY;
+				}
+				s.flung = true;
+				s.tx = tx;
+				s.ty = ty;
+				s.tz = tz;
+				Quaternionf q = new Quaternionf().rotateY(rnd.nextFloat() * 6.28F).rotateX(2.6F);
+				place(f, s, s.display, tx, ty + s.size / 2, tz, q, s.size, flight);
+				place(f, s, s.heart, tx, ty + s.size / 2, tz, q, s.size * 0.45, flight);
+				ElderStrikes.strike(m, tx, ty, tz, s.size * 1.1, (float) Config.PALE_MASON_CHAIN_DAMAGE, flight, ElderStrikes.SLAM);
+			}
+		}
+		if (b.at(104 + flight)) {
+			for (Bound s : f.bound) {
+				if (s.flung) {
+					WorldFx.soundIn(dim, "extremedimensions:elder.pale_mason.impact", "hostile", s.tx, s.ty, s.tz, 4f, 0.9f);
+					WorldFx.particleIn(level, "minecraft:explosion", s.tx, s.ty + 1, s.tz, 1, 0.5, 1, 0, 2);
+					WorldFx.particleIn(level, "minecraft:portal", s.tx, s.ty + 1, s.tz, 1.5, 1, 1.5, 0.9, 40);
+					ElderFx.shake(m, s.tx, s.tz, 24, 0.55f, 10);
+				}
+			}
+			dropBound(f.bound);
+		}
+		if (b.past(104 + flight + 8)) {
+			dropBound(f.bound);
+			f.end(m, f.enraged ? 35 : 50);
+		}
+	}
+
+	// ------------------------------------------------------------------ Pillars of the Anchor
+
+	/** A pillar of light will tear up here once {@code left} ticks are past (its sigil is lit now, its blow laid). */
+	private static void pillar(PaleMason m, Masonry f, double x, double y, double z, int left) {
+		ElderStrikes.strike(m, x, y, z, 2.0, (float) Config.PALE_MASON_PILLAR_DAMAGE, left, ElderStrikes.SLAM);
+		f.pillars.add(new double[] {x, y, z, left});
+	}
+
+	/**
+	 * Pillars of the Anchor: he raises a hand and drives his fist into the floor, and pillars of violet light tear up out
+	 * of it in three pulses, each a ring further out round him, and each under everyone he can see (a sigil burns where
+	 * each will come, a moment before). His fist lands at 24, his palms at 40 and 56.
+	 */
+	private static void pillars(PaleMason m, Masonry f, ServerPlayer prey, Beat b) {
+		ServerLevel level = f.level;
+		String dim = ElderFx.dim(m);
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		int elder = AttackFx.of(m);
+		for (int k = 0; k < 3; k++) {
+			int lands = 24 + k * 16;
+			if (b.at(lands - 16)) {
+				int left = f.delay(16);
+				double rr = 8 + k * 7;
+				int n = 8 + k * 4;
+				double turn = rnd.nextDouble() * Math.PI * 2;
+				for (int i = 0; i < n; i++) {
+					double a = turn + Math.PI * 2 * i / n;
+					double x = m.getX() + Math.cos(a) * rr, z = m.getZ() + Math.sin(a) * rr;
+					double y = ElderFx.surface(level, x, m.getY() + 4, z, 6, 12);
+					if (!Double.isNaN(y)) {
+						pillar(m, f, x, y, z, left);
+					}
+				}
+				for (ServerPlayer q : ElderFx.targets(m, ElderPower.reach(48))) {
+					pillar(m, f, q.getX(), ElderFx.groundUnder(q), q.getZ(), left);
+				}
+			}
+			if (b.at(lands)) {
+				ElderFx.shake(m, m.getX(), m.getZ(), 40, 0.45f + 0.1f * k, 10);
+				AttackFx.impact(level, elder, AttackFx.IMPACT_BLAST, m.getX(), m.getY() + 0.2, m.getZ(), 3.5);
+			}
+		}
+		// Each tears up as its time comes: a column of light thirty blocks high
+		int sounded = 0;
+		for (Iterator<double[]> it = f.pillars.iterator(); it.hasNext();) {
+			double[] p = it.next();
+			p[3]--;
+			if (p[3] > 0) {
+				continue;
+			}
+			it.remove();
+			AttackFx.line(level, elder, AttackFx.LINE_BEAM, p[0], p[1] + 0.2, p[2], p[0], p[1] + 30, p[2], 14);
+			for (int i = 0; i < 10; i++) {
+				WorldFx.particleIn(level, i % 2 == 0 ? "minecraft:end_rod" : "minecraft:reverse_portal", p[0], p[1] + i * 3, p[2], 0.3, 1.2, 0.3, 0.05, 3);
+			}
+			if (sounded++ < 3) {
+				WorldFx.soundIn(dim, "extremedimensions:elder.pale_mason.pillar", "hostile", p[0], p[1] + 2, p[2], 3.5f, 0.9f + rnd.nextFloat() * 0.2f);
+			}
+		}
+		if (b.past(72) && f.pillars.isEmpty()) {
+			f.end(m, f.enraged ? 30 : 45);
+		}
+	}
+
+	// ------------------------------------------------------------------ Golden Rings
+
+	/**
+	 * Golden Rings: his halo flares and turns, and three times he casts a ring of gold out across the floor from his chest,
+	 * each faster than the last; whoever it runs over on the ground is struck (jump it). He casts at 10, 30 and 50.
+	 */
+	private static void rings(PaleMason m, Masonry f, Beat b) {
+		ServerLevel level = f.level;
+		String dim = ElderFx.dim(m);
+		int elder = AttackFx.of(m);
+		double headY = m.getY() + m.getBbHeight() - 2;
+		if (b.between(0, 64) && b.every(3, 0)) {
+			// the halo burning behind his head
+			for (int i = 0; i < 6; i++) {
+				double a = b.t * 0.3 + i * Math.PI / 3;
+				WorldFx.particleIn(level, "minecraft:wax_on", m.getX() + Math.cos(a) * 3, headY + Math.sin(a) * 3, m.getZ(), 0.05, 0.05, 0.05, 0, 1);
+			}
+		}
+		for (int k = 0; k < 3; k++) {
+			if (b.at(10 + k * 20)) {
+				double speed = 0.8 + 0.25 * k + (f.enraged ? 0.2 : 0);
+				ElderStrikes.wave(m, m.getX(), m.getY(), m.getZ(), speed, ElderPower.reach(40), (float) Config.PALE_MASON_RING_DAMAGE, "minecraft:wax_on", null);
+				WorldFx.soundIn(dim, "extremedimensions:elder.pale_mason.ring", "hostile", m.getX(), headY, m.getZ(), 4f, 0.9f + 0.1f * k);
+				AttackFx.ring(level, elder, m.getX(), m.getY() + 0.1, m.getZ(), 4, 12);
+				ElderFx.shake(m, m.getX(), m.getZ(), 28, 0.3f, 8);
+			}
+		}
+		if (b.past(72)) {
+			f.end(m, f.enraged ? 30 : 45);
+		}
+	}
+
+	// ------------------------------------------------------------------ the Unfinished Spiral
+
+	/** Where spiral stone {@code s} is at this beat: lifted off the floor, climbing and drawn in as it turns round him. */
+	private static void coil(Masonry f, Bound s, double t) {
+		double up = ease((t - 2) / 60) * (4 + s.rise * 10);
+		double r = s.reach * (1 - 0.35 * ease((t - 20) / 64));
+		double a = s.phase + t * (0.07 + 0.05 * ease((t - 20) / 64));
+		s.x = f.boundX + Math.cos(a) * r;
+		s.z = f.boundZ + Math.sin(a) * r;
+		s.y = f.boundY + 0.5 + up;
+	}
+
+	/**
+	 * The Unfinished Spiral: he rises a little, arms wide, and the floor round him comes up in stones that wind round him
+	 * in a climbing spiral; everyone near is drawn in towards him (by the squall's rules: a wall at their back holds them,
+	 * sneaking halves it, Anchored eases it), and close by him the stones grind. Then he throws his arms out and it bursts:
+	 * the stones are flung far out and everyone near is struck and thrown off. The burst comes at 88 of his blow.
+	 */
+	private static void spiral(PaleMason m, Masonry f, Beat b) {
+		ServerLevel level = f.level;
+		String dim = ElderFx.dim(m);
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		int elder = AttackFx.of(m);
+		if (b.at(2)) {
+			dropBound(f.spiral);
+			f.boundX = m.getX();
+			f.boundY = m.getY();
+			f.boundZ = m.getZ();
+			BlockState[] kinds = {Blocks.END_STONE_BRICKS.defaultBlockState(), Blocks.PURPUR_BLOCK.defaultBlockState(), Blocks.OBSIDIAN.defaultBlockState(),
+					Blocks.END_STONE.defaultBlockState()};
+			int n = 12;
+			for (int i = 0; i < n; i++) {
+				double size = 1.2 + rnd.nextDouble(1.4);
+				Bound s = new Bound(null, null, Math.PI * 2 * i / n + rnd.nextDouble(0.3), size, rnd.nextDouble(), 6 + rnd.nextDouble(8));
+				coil(f, s, 2);
+				Display.BlockDisplay d = BlockFlight.spawn(level, f.boundX, f.boundY, f.boundZ, kinds[rnd.nextInt(kinds.length)],
+						BlockFlight.pose(s.x - f.boundX - 0.5, s.y - f.boundY + 0.5 - 1, s.z - f.boundZ - 0.5, new Quaternionf(), (float) size));
+				if (d != null) {
+					f.spiral.add(new Bound(d, null, s.phase, s.size, s.rise, s.reach));
+				}
+			}
+			WorldFx.soundIn(dim, "extremedimensions:elder.pale_mason.spiral", "hostile", f.boundX, f.boundY + 6, f.boundZ, 4.5f, 1f);
+		}
+		if (b.between(0, 20)) {
+			m.motion.heave(m, 0.02);
+		}
+		if (b.between(2, 88) && b.every(2, 0)) {
+			for (Bound s : f.spiral) {
+				Bound ahead = new Bound(null, null, s.phase, s.size, s.rise, s.reach);
+				coil(f, ahead, b.t + 2);
+				s.x = ahead.x;
+				s.y = ahead.y;
+				s.z = ahead.z;
+				Quaternionf q = new Quaternionf().rotateY((float) (b.t * 0.1 + s.phase)).rotateX((float) (b.t * 0.05 + s.rise));
+				place(f, s, s.display, ahead.x, ahead.y, ahead.z, q, s.size, 2);
+			}
+			for (int i = 0; i < 4; i++) {
+				double a = b.t * 0.2 + i * Math.PI / 2;
+				double r = 3 + (b.t % 20) * 0.6;
+				WorldFx.particleIn(level, "minecraft:reverse_portal", f.boundX + Math.cos(a) * r, f.boundY + 1 + (b.t % 20) * 0.4, f.boundZ + Math.sin(a) * r, 0.1,
+						0.1, 0.1, 0.02, 2);
+			}
+		}
+		if (b.between(20, 84)) {
+			// Drawn in towards him, harder the nearer
+			double reach = ElderPower.reach(36);
+			for (ServerPlayer q : ElderFx.targets(m, reach)) {
+				if (!PaleSquall.blown(q)) {
+					continue;
+				}
+				double dx = m.getX() - q.getX(), dz = m.getZ() - q.getZ();
+				double d = Math.sqrt(dx * dx + dz * dz);
+				if (d < 1e-3) {
+					continue;
+				}
+				double pull = PaleSquall.push(q, dx / d, dz / d, Config.PALE_MASON_SPIRAL_PULL * (0.5 + 0.5 * Math.max(0, 1 - d / reach)));
+				if (pull > 0) {
+					PaleSquall.gust(q, dx / d * pull, dz / d * pull);
+				}
+				if (d < 5 && b.every(20, 20)) {
+					q.hurtServer(level, ElderPower.great(level, m), (float) (Config.PALE_MASON_BURST_DAMAGE * 0.25));
+				}
+			}
+			if (b.every(10, 20)) {
+				ElderFx.shake(m, m.getX(), m.getZ(), 32, (float) (0.15 + 0.3 * ease((b.t - 20) / 64)), 10);
+			}
+		}
+		int flight = 12;
+		if (b.at(88)) {
+			// It bursts
+			m.motion.heave(m, -0.4);
+			WorldFx.soundIn(dim, "extremedimensions:elder.pale_mason.burst", "hostile", f.boundX, f.boundY + 4, f.boundZ, 5f, 1f);
+			WorldFx.particleIn(level, "minecraft:explosion_emitter", f.boundX, f.boundY + 2, f.boundZ, 1, 1, 1, 0, 1);
+			AttackFx.burst(level, elder, f.boundX, f.boundY + 3, f.boundZ, 9);
+			AttackFx.ring(level, elder, f.boundX, f.boundY + 0.1, f.boundZ, 16, 20);
+			ElderFx.shake(m, f.boundX, f.boundZ, 48, 1.1f, 16);
+			for (ServerPlayer q : ElderFx.targets(m, 16)) {
+				double dx = q.getX() - m.getX(), dz = q.getZ() - m.getZ();
+				double d = Math.max(0.5, Math.sqrt(dx * dx + dz * dz));
+				q.hurtServer(level, ElderPower.great(level, m), (float) (Config.PALE_MASON_BURST_DAMAGE * (1 - 0.5 * Math.min(1, d / 16))));
+				q.setDeltaMovement(dx / d * 1.6, 0.65, dz / d * 1.6);
+				WorldFx.moved(q);
+			}
+			for (Bound s : f.spiral) {
+				double a = Math.atan2(s.z - f.boundZ, s.x - f.boundX) + rnd.nextDouble(-0.2, 0.2);
+				double far = 18 + rnd.nextDouble(8);
+				double tx = f.boundX + Math.cos(a) * far, tz = f.boundZ + Math.sin(a) * far;
+				double ty = ElderFx.surface(level, tx, f.boundY + 8, tz, 10, 16);
+				if (Double.isNaN(ty)) {
+					ty = f.boundY;
+				}
+				s.flung = true;
+				s.tx = tx;
+				s.ty = ty;
+				s.tz = tz;
+				place(f, s, s.display, tx, ty + s.size / 2, tz, new Quaternionf().rotateXYZ(rnd.nextFloat() * 6, rnd.nextFloat() * 6, 0), s.size, flight);
+				ElderStrikes.strike(m, tx, ty, tz, s.size, (float) (Config.PALE_MASON_BURST_DAMAGE * 0.5), flight, ElderStrikes.SLAM);
+			}
+		}
+		if (b.at(88 + flight)) {
+			for (Bound s : f.spiral) {
+				WorldFx.particleIn(level, "minecraft:portal", s.tx, s.ty + 1, s.tz, 1, 0.6, 1, 0.8, 16);
+			}
+			dropBound(f.spiral);
+		}
+		if (b.past(112)) {
+			dropBound(f.spiral);
+			f.end(m, f.enraged ? 35 : 50);
+		}
+	}
+
+	/** How many stones he turns in the air now, chained or in his spiral (for tests). */
+	public static int bound(Entity e) {
+		Masonry f = FIGHTS.get(e.getUUID());
+		return f == null ? 0 : f.bound.size() + f.spiral.size();
+	}
+
+	/** How many of his pillars are yet to tear up (for tests). */
+	public static int pillarsWaiting(Entity e) {
+		Masonry f = FIGHTS.get(e.getUUID());
+		return f == null ? 0 : f.pillars.size();
 	}
 
 	// ------------------------------------------------------------------ the Last Door

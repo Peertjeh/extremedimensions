@@ -1414,6 +1414,16 @@ public final class Config {
 	public static double PALE_MASON_DOOR_PULL = 0.09;
 	/** Damage to whoever reaches the Last Door. */
 	public static double PALE_MASON_DOOR_DAMAGE = 16.0;
+	/** Damage of a chained stone of his Bound Stones, swung through someone or hurled at them (3.41). */
+	public static double PALE_MASON_CHAIN_DAMAGE = 12.0;
+	/** Damage of a pillar of light of his Pillars of the Anchor (3.41). */
+	public static double PALE_MASON_PILLAR_DAMAGE = 10.0;
+	/** Damage of a golden ring he casts across the floor, to whoever it runs over on the ground (3.41). */
+	public static double PALE_MASON_RING_DAMAGE = 8.0;
+	/** How hard his Unfinished Spiral draws everyone in towards him, each tick (by the squall's rules) (3.41). */
+	public static double PALE_MASON_SPIRAL_PULL = 0.06;
+	/** Damage of his spiral bursting, to whoever is close (less further out; a quarter while it grinds round him) (3.41). */
+	public static double PALE_MASON_BURST_DAMAGE = 14.0;
 
 	// --- Co-op -----------------------------------------------------------------------------------
 
@@ -1971,7 +1981,8 @@ public final class Config {
 			{"pale_hauler_pull_seconds", 0.25, 10}, {"pale_hauler_pulls", 1, 64}, {"pale_squall_chance", 0, 1}, {"pale_squall_warning_seconds", 0, 30},
 			{"pale_squall_seconds", 1, 60}, {"pale_squall_push", 0, 0.5}, {"pale_squall_anchored", 0, 1}, {"pale_mason_health", 1, 1024}, {"pale_mason_chance", 0, 1}, {"pale_mason_after_seconds", 0, 3600},
 			{"pale_mason_wake_seconds", 0, 120}, {"pale_mason_strike_damage", 0, 60}, {"pale_mason_wall_seconds", 1, 60}, {"pale_mason_block_damage", 0, 60},
-			{"pale_mason_block_size", 1, 4}, {"pale_mason_gaze_damage", 0, 60}, {"pale_mason_door_pull", 0, 0.5}, {"pale_mason_door_damage", 0, 60}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
+			{"pale_mason_block_size", 1, 4}, {"pale_mason_gaze_damage", 0, 60}, {"pale_mason_door_pull", 0, 0.5}, {"pale_mason_door_damage", 0, 60}, {"pale_mason_chain_damage", 0, 60},
+			{"pale_mason_pillar_damage", 0, 60}, {"pale_mason_ring_damage", 0, 60}, {"pale_mason_spiral_pull", 0, 0.5}, {"pale_mason_burst_damage", 0, 60}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
 			{"ferryman_gaol_hits", 1, 20}, {"ferryman_gaol_seconds", 0.5, 6}, {"ferryman_gaol_damage", 0, 100}, {"weaver_windup_speed", 0.5, 4}, {"weaver_lance_length", 0.5, 4},
 			{"elder_arena_size", 0.5, 12}, {"elder_arena_wall", 0, 1}, {"elder_arena_landmark", 0, 1},
 			{"elder_arena_breakable", 0, 1}, {"elder_arena_blast_resistance", 0, 1200}, {"elder_arena_collapse", 0, 1},

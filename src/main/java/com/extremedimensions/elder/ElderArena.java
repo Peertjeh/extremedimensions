@@ -408,6 +408,22 @@ public final class ElderArena {
 		return whole.pieces.isEmpty() ? "no blocks were designed" : null;
 	}
 
+	/**
+	 * Whether an arena's design leaves its Elder room in the middle, where it stands (for tests): null if nothing of the
+	 * design stands within three blocks of the middle from two blocks over the floor up to where a great piece may first
+	 * cross it ({@link ArenaDesign#OVER_ELDER}), else the first block that does.
+	 */
+	public static String crowdsElder(ServerLevel level, int style, BlockPos centre, long seed) {
+		ArenaDesign.Blueprint bp = ArenaDesign.design(level, style, centre, ElderTerrain.griefing(level), seed);
+		for (Piece p : bp.pieces) {
+			int dx = p.pos.getX() - bp.cx, dz = p.pos.getZ() - bp.cz, dy = p.pos.getY() - bp.gy;
+			if (dx * dx + dz * dz <= 9 && dy >= 2 && dy < ArenaDesign.OVER_ELDER) {
+				return p.state + " " + dy + " blocks over the floor, " + dx + " " + dz + " from the middle (group " + p.group + ")";
+			}
+		}
+		return bp.pieces.isEmpty() ? "no blocks were designed" : null;
+	}
+
 	private static long designBudget() {
 		return Math.max(1, Config.ELDER_ARENA_DESIGN_BUDGET_MS) * 1_000_000L;
 	}

@@ -74,6 +74,12 @@ final class ArenaDesign {
 	}
 
 	private static final double TAU = Math.PI * 2;
+	/**
+	 * How high over the floor a great piece may first cross the middle of the arena, where its Elder stands: clear of
+	 * the tallest of them (the Pale Mason, 18 blocks, his halo to 21) with room for an ultimate's rise.
+	 */
+	static final int OVER_ELDER = 26;
+
 	private static final Map<String, BlockState> LOOKUP = new java.util.concurrent.ConcurrentHashMap<>();
 
 	// ------------------------------------------------------------------ blocks
@@ -948,8 +954,9 @@ final class ArenaDesign {
 	private static int[] rootArch(Plan plan, int cx, int gy, int cz, int floorR, double turn, double wide, int i) {
 		BlockState bark = mc("dark_oak_wood"), root = mc("mangrove_roots", mc("dark_oak_wood")), moss = mc("moss_block");
 		BlockState hanging = mc("hanging_roots", mc("mangrove_roots"));
-		double foot = floorR * 0.8, apex = floorR * 0.45;
 		double rb = 1.2 * wide + 1, rt = 0.5 * wide + 1;
+		// (in a small arena too they meet well over her crown)
+		double foot = floorR * 0.8, apex = Math.max(floorR * 0.45, OVER_ELDER + rt * 1.6 + 2);
 		double a = turn + TAU * (i + 0.5) / 8;
 		double ux = Math.cos(a), uz = Math.sin(a);
 		plan.begin();
@@ -967,7 +974,7 @@ final class ArenaDesign {
 				blob(plan, px + sx, py + sy, pz + sz, Math.max(0.9, rr * 0.32), root, null);
 			}
 			// Lanterns on chains and hanging roots beneath it, where it is high enough
-			if (h > 12 && along - lastLantern > 9 + rr) {
+			if (h > 12 && along - lastLantern > 9 + rr && Math.abs(along) > 6) {
 				lastLantern = along;
 				int bx = (int) Math.floor(px), bz = (int) Math.floor(pz);
 				int under = (int) Math.floor(py - rr) - 1;
@@ -1102,16 +1109,19 @@ final class ArenaDesign {
 	}
 
 	/**
-	 * The Weaver's loom: two great posts either side of the heart of its web, a beam across their tops and another
-	 * low down, the warp strung between them in threads of light and the first few threads of weft woven in.
+	 * The Weaver's loom: two great posts either side of the heart of its web, a beam across their tops and the breast
+	 * beam under it, the warp strung between them in threads of light and the first few threads of weft woven in. The
+	 * whole frame stands over her: its lowest beam passes well above her crown (3.41), so she fights under her loom as the
+	 * Matriarch does under her roots, not caught in it.
 	 */
 	private static List<int[]> loom(Plan plan, Blueprint bp, Palette pal, int cx, int gy, int cz, int floorR, double turn, double wide) {
 		List<int[]> cores = new ArrayList<>();
 		double half = floorR * 0.55;
-		int high = (int) Math.round(floorR * 0.5);
 		int t = Math.max(2, (int) Math.round(wide * 0.7));
 		int bh = Math.max(1, t - 1);
-		int breast = (int) Math.round(high * 0.22);
+		// her crown stands 15 blocks up and rises in her ultimate: the breast beam keeps clear of it
+		int breast = Math.max(OVER_ELDER + bh + 1, (int) Math.round(floorR * 0.22));
+		int high = Math.max((int) Math.round(floorR * 0.5), breast + 14);
 		double a = turn + TAU / 16;
 		double ux = Math.cos(a), uz = Math.sin(a);
 		BlockState calcite = mc("calcite"), lamp = pal.core, cap = mc("chiseled_deepslate");
@@ -1685,8 +1695,10 @@ final class ArenaDesign {
 
 	/**
 	 * The Pale Mason's great piece, the anchor he will never finish: four broken pillars of end stone and purpur round
-	 * the middle, banded in gold, and over the middle, standing on its edge, a great broken halo of purpur with golden
-	 * spokes running in to a hub of gold light. A core stands against the inner face of each pillar.
+	 * the middle, banded in gold, and high over the middle, standing on its edge, a great broken halo of purpur with
+	 * golden spokes running in to a hub of gold light. A core stands against the inner face of each pillar. The halo
+	 * hangs over him (3.41): its lowest arc passes well above his hood, so it frames the sky he stands under instead of
+	 * running through him.
 	 */
 	private static List<int[]> halo(Plan plan, Palette pal, int cx, int gy, int cz, int floorR, double turn, double wide) {
 		List<int[]> cores = new ArrayList<>();
@@ -1732,7 +1744,7 @@ final class ArenaDesign {
 		}
 		// The halo: a ring on its edge over the middle, broken through a quarter of its round
 		double ring = floorR * 0.38;
-		double hubY = gy + 8 + ring;
+		double hubY = gy + OVER_ELDER + 6 + ring;
 		double a = turn;
 		double ux = Math.cos(a), uz = Math.sin(a);
 		int thick = Math.max(1, (int) Math.round(wide * 0.6));

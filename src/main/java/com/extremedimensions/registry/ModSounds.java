@@ -90,7 +90,10 @@ public final class ModSounds {
 			// a flyer caught, the turning of his phases, his ultimate, and his coming
 			"pale_mason.voice", "pale_mason.blink", "pale_mason.strike", "pale_mason.wall", "pale_mason.lift", "pale_mason.throw",
 			"pale_mason.impact", "pale_mason.gaze", "pale_mason.door", "pale_mason.pull", "pale_mason.snare", "pale_mason.phase",
-			"pale_mason.ultimate", "pale_mason.wake"};
+			"pale_mason.ultimate", "pale_mason.wake",
+			// his blows of 3.41, and the ground torn up as his ultimate breaks
+			"pale_mason.chains", "pale_mason.swing", "pale_mason.fling", "pale_mason.pillar", "pale_mason.ring", "pale_mason.spiral",
+			"pale_mason.burst", "pale_mason.upheaval"};
 
 	static {
 		for (String tell : ELDER_TELLS) {

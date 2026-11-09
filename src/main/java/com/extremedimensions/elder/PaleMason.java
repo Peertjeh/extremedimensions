@@ -23,6 +23,14 @@ public class PaleMason extends ElderBoss {
 	public static final int THROW = 4;
 	/** The Gaze: he goes still and his eyes blaze; whoever looks him in the face then is struck where they stand. */
 	public static final int GAZE = 5;
+	/** Bound Stones (3.41): great cubes of violet light hauled out of the air on gold chains and swung round him, then flung. */
+	public static final int CHAINS = 6;
+	/** Pillars of the Anchor (3.41): a fist driven into the floor, and pillars of violet light tear up out of it in three pulses. */
+	public static final int PILLARS = 7;
+	/** Golden Rings (3.41): his halo flares and he casts three rings of gold out across the floor. */
+	public static final int RINGS = 8;
+	/** The Unfinished Spiral (3.41): stones wind round him, drawing everyone in, until it bursts outward. */
+	public static final int SPIRAL = 9;
 
 	public PaleMason(EntityType<? extends Monster> type, Level level) {
 		super(type, level);

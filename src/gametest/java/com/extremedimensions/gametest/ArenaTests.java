@@ -251,6 +251,30 @@ public class ArenaTests {
 	 * same as one drawn up whole from the same seed, for each Elder's style (at size 3: with its wall, great piece and
 	 * cores).
 	 */
+	/**
+	 * Every Elder stands under its great piece, not in it (3.41): at the arena's full size and at a small one, nothing
+	 * of the design stands in the middle from just over the floor to well over the tallest Elder's crown (the Weaver's
+	 * loom and the Pale Mason's halo used to run through them).
+	 */
+	@GameTest(maxTicks = 100)
+	public void everyElderStandsUnderItsGreatPieceNotInIt(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		double size = Config.ELDER_ARENA_SIZE;
+		try {
+			BlockPos centre = helper.absolutePos(new BlockPos(2, 2, 2));
+			for (double s : new double[] {3.0, 12.0}) {
+				Config.ELDER_ARENA_SIZE = s;
+				for (int style = 0; style < 4; style++) {
+					String crowd = ElderArena.crowdsElder(level, style, centre, 77L + style);
+					check(helper, crowd == null, "at size %s, style %s crowds its Elder: %s", s, style, crowd);
+				}
+			}
+		} finally {
+			Config.ELDER_ARENA_SIZE = size;
+		}
+		helper.succeed();
+	}
+
 	@GameTest
 	public void anArenaDrawnUpInStepsIsTheSameArena(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();

@@ -72,6 +72,10 @@ final class ElderTells {
 				case PaleMason.LIFT -> "lift";
 				case PaleMason.THROW -> "throw";
 				case PaleMason.GAZE -> "gaze";
+				case PaleMason.CHAINS -> "chains";
+				case PaleMason.PILLARS -> "pillar";
+				case PaleMason.RINGS -> "ring";
+				case PaleMason.SPIRAL -> "spiral";
 				default -> null;
 			};
 		}

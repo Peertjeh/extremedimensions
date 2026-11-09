@@ -263,6 +263,77 @@ def sub_hum(t, f, at, dur):
     return np.sin(2 * np.pi * f * t) * gate(t, at, dur, dur * 0.3, dur * 0.4)
 
 
+def glow(rng, t, f, shimmer=0.15):
+    """A violet cube's hum (the Bound Stones, as the blocks he lifts): a deep tone beating against its twin, warbling a
+    little as the Endermen's hold does, a shimmer of high partials over it. f may be an array (a hum that climbs or
+    bends as it passes)."""
+    n = len(t)
+    f = np.broadcast_to(np.asarray(f, dtype=float), t.shape)
+    x = norm(tones(f * wobble(rng, n, 5, 0.012), 10, 1.4) + tones(f * 1.006 * wobble(rng, n, 4.3, 0.012), 10, 1.4))
+    sh = sum(np.sin(2 * np.pi * phase(f * r * wobble(rng, n, 9, 0.02))) for r in (8, 12, 16.2))
+    return x + shimmer * norm(sh)
+
+
+def passby(rng, t, tc, span, f_far, f_near, width=0.45):
+    """Something huge swung close past: a roar of air whose band climbs as it nears and drops as it goes by (the turn of
+    a Doppler), swelling to its height as it passes at tc (span: how long it is near)."""
+    u = (t - tc) / span
+    near = 1 / (1 + u ** 2)
+    centre = (f_far + (f_near - f_far) * near) * (1 + 0.3 * np.tanh(-2.5 * u))
+    return sweep_filter(rng, noise(rng, len(t)), centre, centre * width) * near ** 1.5
+
+
+def column(rng, t, at, dur=1.4, base=C * 8):
+    """A column of violet light tearing up out of the floor: a blast, a band of air ripping upward in a few tenths of a
+    second, a tone shooting up with it into a ringing of glass high over C sharp (pure partials of the minor chord, each
+    beating against its twin and fluttering, as of crystal), a fizzing roar inside it, all dying away over dur."""
+    n = len(t)
+    tt = t - at
+    on = tt >= 0
+    blast = saturate(band(noise(rng, n), 500, 12000) * env(tt, 0.001, 0.06), 3.0)
+    k = np.clip(tt / 0.35, 0, 1)
+    centre = 300 * (10000 / 300) ** (k ** 0.7)
+    tear = sweep_filter(rng, noise(rng, n), centre, centre * 0.6) * np.clip(tt / 0.02, 0, 1) * np.exp(-np.maximum(tt, 0) / 0.25) * on
+    glide = tones(C * 2 * 4 ** np.clip(tt / 0.3, 0, 1) ** 0.8 * wobble(rng, n, 14, 0.01), 6, 1.0) * env(tt, 0.01, dur * 0.35)
+    ring = np.zeros(n)
+    for r, a, d in [(1, 1.0, 1.0), (E_, 0.6, 0.8), (GS, 0.7, 0.75), (2, 0.6, 0.65), (2 * E_, 0.4, 0.5), (3, 0.35, 0.45),
+                    (4.03, 0.25, 0.35), (5.41, 0.18, 0.25)]:
+        flutter = 1 + 0.35 * np.sin(2 * np.pi * rng.uniform(5, 9) * t + rng.random() * 6)
+        for det in (1.0, 1.0035):
+            f = base * r * det * wobble(rng, n, 11, 0.003)
+            ring += a * np.sin(2 * np.pi * phase(f) + rng.random() * 6) * flutter * env(tt, 0.004, d * dur * 0.5)
+    fl = lowpass(noise(rng, n), 40)
+    fizz = band(noise(rng, n), 2500, 12000) * np.maximum(0, fl / (np.std(fl) + 1e-9) + 0.5) * env(tt, 0.01, dur * 0.35)
+    return 0.8 * norm(blast) + norm(tear) + 0.45 * norm(glide) + 0.8 * norm(ring) + 0.35 * norm(fizz)
+
+
+def thunder(rng, t, at, roll=2.5, strength=1.0):
+    """A crack of thunder: a sharp tearing clap, crackling, then the long uneven roll of it, bursts of rumble that come
+    and go and sink away."""
+    n = len(t)
+    tt = t - at
+    clap = noise(rng, n) * env(tt, 0.0003, 0.012) + 0.8 * band(noise(rng, n), 800, 9000) * env(tt, 0.001, 0.05)
+    tear = band(noise(rng, n) * (rng.random(n) > 0.7), 1200, 9000) * env(tt - 0.005, 0.002, 0.09)
+    bumps = np.zeros(n)
+    for _ in range(int(roll * 6)):
+        s = at + 0.04 + roll * rng.random() ** 1.6
+        bumps += env(t - s, rng.uniform(0.03, 0.15), rng.uniform(0.15, 0.5)) * rng.uniform(0.3, 1.0) * np.exp(-(s - at) / roll)
+    roll_ = band(noise(rng, n), 60, 600) * bumps + 0.8 * lowpass(noise(rng, n), 140) * env(tt, 0.04, roll * 0.45)
+    return strength * (1.6 * norm(clap) + 0.7 * norm(tear) + 1.2 * norm(roll_))
+
+
+def quake(rng, t, at, dur, rate=9.0):
+    """The ground shaken from under: a deep rumble swelling and shuddering at an uneven rate, the floor rattling with it."""
+    n = len(t)
+    shape = gate(t, at, dur, dur * 0.15, dur * 0.5)
+    j = lowpass(noise(rng, n), 2)
+    shud = 0.5 + 0.5 * np.sin(2 * np.pi * phase(rate * (1 + 0.4 * np.tanh(j / (np.std(j) + 1e-9)))))
+    low = lowpass(noise(rng, n), 90)
+    body = band(noise(rng, n), 90, 400)
+    rattle = band(noise(rng, n), 400, 3000) * np.maximum(0, shud - 0.55) ** 2
+    return (norm(low) * (0.7 + 0.3 * shud) + 0.6 * norm(body) * shud + 0.25 * norm(rattle)) * shape
+
+
 def master(rng, x, hall=3.0, wet=0.38, drive=1.6, squeeze=True, bright=6500, presence=0.6):
     """His hall (vast and hollow), then a little heat and a compressor, so every sound of his lands with weight."""
     x = norm(x).copy()
@@ -569,6 +640,165 @@ def pm_wake(seed):
     return master(rng, x, 4.4, 0.5, 1.4, True, 4500, 0.25), 4.6
 
 
+# Bound Stones (cubes of violet light on his chains, swung round him and flung), Pillars of the Anchor, Golden Rings, the
+# Unfinished Spiral, and the upheaval of the arena at his ultimate's break
+
+def pm_chains(seed):
+    """The Bound Stones hauled up: he yanks his chains and they come rattling in, heavy links clanking over each other
+    ever faster, until they jerk taut and shiver; under them the cubes kindle, a deep violet hum swelling and climbing a
+    minor third."""
+    rng = np.random.default_rng(seed)
+    t = t_(3.0)
+    taut = 1.95
+    hauled = np.zeros(len(t))
+    for i in range(18):
+        s = 0.15 + (taut - 0.2) * (i / 18) ** (1 / 1.6)
+        hauled += chains(rng, t, s, 0.0, 1, 600, 1700, 0.09, (2, 4)) * (0.6 + 0.4 * i / 18)
+    rattle = chains(rng, t, 0.1, taut, 40, 1100, 3400, 0.06, (2, 5), 0.8)
+    jerk = chains(rng, t, taut, 0.05, 12, 800, 3000, 0.08, (3, 7))
+    shiver = chains(rng, t, taut + 0.03, 0.6, 30, 1600, 4200, 0.04, (1, 3), 2.4)
+    k = np.clip((t - 0.3) / 2.4, 0, 1)
+    hm = glow(rng, t, C / 2 * E_ ** (k ** 1.4), 0.18) * swell(t, 0.2, 2.4, 3.4)
+    x = mix(0.5 * norm(snap(rng, t, 0.0, 1.0)), 0.6 * norm(chains(rng, t, 0.0, 0.2, 10, 800, 3000, 0.07, (3, 7))), 0.4 * boom(rng, t, 0.0, 80, 40, 0.5),
+            0.55 * norm(hauled), 0.4 * norm(rattle), 0.6 * norm(jerk), 0.45 * norm(snap(rng, t, taut, 1.0)), 0.3 * norm(shiver),
+            0.45 * boom(rng, t, taut, 90, 45, 0.5), 0.75 * norm(hm), 0.35 * norm(sub_hum(t, C / 4, 0.3, 2.7)))
+    return master(rng, x, 2.6, 0.32, 1.5), 3.0
+
+
+def pm_swing(seed):
+    """A Bound Stone swung close past on its chain (it sounds several times in the sweep): a massive whoosh rising as it
+    nears and dropping as it goes, its violet hum bending with it, the rumble of its weight, and the chain whipping after
+    it, links rattling."""
+    rng = np.random.default_rng(seed)
+    t = t_(2.0)
+    tc = 0.6
+    u = (t - tc) / 0.22
+    near = 1 / (1 + u ** 2)
+    hm = glow(rng, t, C / 2 * GS * (1 + 0.07 * np.tanh(-2 * u)), 0.25) * near ** 1.2
+    whip = tc + 0.16
+    x = mix(norm(passby(rng, t, tc, 0.22, 260, 1400, 0.5)), 0.8 * norm(passby(rng, t, tc, 0.3, 90, 380, 0.6)), 0.5 * norm(hm),
+            0.6 * norm(lowpass(noise(rng, len(t)), 110) * near ** 1.5), 0.45 * norm(snap(rng, t, whip, 1.0)),
+            0.3 * norm(whoosh(rng, t, whip - 0.12, 0.2, 1500, 6000, 0.3)), 0.35 * norm(chains(rng, t, tc - 0.15, 0.4, 14, 1100, 3600, 0.05, (2, 5))),
+            0.3 * norm(chains(rng, t, whip, 0.6, 10, 1000, 3000, 0.06, (2, 4), 2.0)))
+    return master(rng, x, 2.2, 0.3, 1.7), 2.0
+
+
+def pm_fling(seed):
+    """He flings the Bound Stones: a grunt, his chains snapping loose one after another and links flying, a huge whoosh as
+    the cubes are hurled away, their hum falling as they go, and a violet whine rising after them, warbling."""
+    rng = np.random.default_rng(seed)
+    t = t_(2.5)
+    n = len(t)
+    g = syllable(rng, 0.35, 160, 110, "a", "o", 12, 0.05, 0.45, 0.6)
+    snaps = sum(a * norm(snap(rng, t, s, 1.0)) for s, a in [(0.08, 1.0), (0.13, 0.8), (0.21, 0.9)])
+    k = np.clip((t - 0.15) / 1.6, 0, 1)
+    go = 1 / (1 + (np.maximum(t - 0.2, 0) / 0.35) ** 2) * np.clip((t - 0.08) / 0.05, 0, 1)
+    hm = glow(rng, t, C / 2 * GS * (1 - 0.12 * k ** 0.6), 0.2) * go
+    f = 520 * (2400 / 520) ** (k ** 1.3)
+    whine = sum(a * tones(f * r * wobble(rng, n, 9 + 16 * k, 0.01 + 0.03 * k, 0.4), 5, 1.2)
+                for r, a in [(1, 1.0), (D_, 0.5), (1.498, 0.45), (0.5, 0.35)])
+    whine *= (0.7 + 0.3 * np.sin(2 * np.pi * phase(f * 0.618))) * swell(t, 0.15, 1.2, 2.2)
+    x = mix(0.35 * norm(lay(t, 0.0, g)), 0.7 * snaps, 0.45 * norm(chains(rng, t, 0.08, 0.25, 16, 1400, 4200, 0.05, (2, 5), 1.5)),
+            0.25 * norm(chains(rng, t, 0.3, 1.2, 14, 800, 2400, 0.06, (3, 7), 1.2)), norm(whoosh(rng, t, 0.12, 1.1, 1200, 180, 0.5)),
+            0.7 * norm(whoosh(rng, t, 0.1, 0.9, 300, 120, 0.6)), 0.4 * norm(hm), 0.4 * norm(whine), 0.5 * boom(rng, t, 0.12, 80, 40, 0.6),
+            0.4 * norm(lowpass(noise(rng, n), 100) * swell(t, 0.1, 0.35, 1.4)))
+    return master(rng, x, 2.6, 0.32, 1.7), 2.5
+
+
+def pm_pillar(seed):
+    """A Pillar of the Anchor (it sounds at each of its three pulses): a deep thump under the floor, muffled by the stone,
+    then the floor cracks and a column of violet light tears up out of it, bright, crystalline and violent, grit thrown up
+    and raining back."""
+    rng = np.random.default_rng(seed)
+    t = t_(3.0)
+    up = 0.2
+    under = lowpass(mix(boom(rng, t, 0.0, 58, 24, 1.0, 1.0), 0.6 * norm(crack(rng, t, 0.0, 1.0, 2.4)), 0.5 * norm(thump(rng, t, 0.0, 40))), 380)
+    x = mix(norm(under), 0.7 * norm(crack(rng, t, up, 1.0, 1.0)), norm(column(rng, t, up, 1.6)), 0.6 * boom(rng, t, up, 95, 40, 0.8),
+            0.35 * norm(crumble(rng, t, up + 0.02, 2.2, 360, 700, 7000, 0.008, 6, 1.4)),
+            0.3 * norm(shatter(rng, t, up, 0.5, 30, 2500, 7000, 0.06)), 0.3 * norm(sub_hum(t, C / 4, 0.15, 1.6)))
+    return master(rng, x, 2.8, 0.34, 1.9, True, 8000, 0.7), 3.0
+
+
+def pm_ring(seed):
+    """A Golden Ring cast (it sounds at each of the three): his cracked halo struck hard, its two halves buzzing, and a
+    ring of gold spreading out across the floor, its metal shimmering ever faster and singing ever thinner as it goes."""
+    rng = np.random.default_rng(seed)
+    t = t_(2.5)
+    n = len(t)
+    k = np.clip(t / 2.2, 0, 1)
+    sh = 0.55 + 0.45 * np.sin(2 * np.pi * phase(5 + 12 * k))
+    f0 = C * 8 * (1 - 0.03 * k)
+    out = sum(a * np.exp(-k * r * 0.6) * (np.sin(2 * np.pi * phase(f0 * r) + rng.random() * 6) + np.sin(2 * np.pi * phase(f0 * r * 1.004) + rng.random() * 6))
+              for r, a in LINK)
+    out *= sh * env(t - 0.02, 0.12, 0.8)
+    x = mix(norm(halo(rng, t, 0.0, C * 2, 1.0, 1.3, 0.9)), 0.6 * norm(halo(rng, t, 0.002, C, 1.0, 1.6, 0.5)),
+            0.5 * norm(band(noise(rng, n), 1500, 14000) * env(t, 0.0005, 0.015)), 0.5 * boom(rng, t, 0.0, 100, 50, 0.5),
+            0.45 * norm(out), 0.3 * norm(whoosh(rng, t, 0.02, 1.3, 3000, 700, 0.4)), 0.15 * norm(chains(rng, t, 0.01, 0.3, 5)))
+    return master(rng, x, 3.0, 0.38, 1.6, True, 8000, 0.6), 2.5
+
+
+def pm_spiral(seed):
+    """The Unfinished Spiral: stone torn up and ground round him in a vortex, circling ever faster and climbing, a wind
+    howling as it draws everyone in, the lost swelling up out of it, all rising to the moment it bursts."""
+    rng = np.random.default_rng(seed)
+    t = t_(5.0)
+    n = len(t)
+    k = np.clip(t / 4.6, 0, 1)
+    turn = np.sin(2 * np.pi * phase(0.7 + 2.8 * k ** 1.5))
+    g = grind(rng, t, 0.0, 4.8, 70, 2600, 8, 40, 1.0)
+    centre = 700 * (1 + 0.8 * turn) * 2 ** k
+    passing = sweep_filter(rng, grind(rng, t, 0.3, 4.4, 300, 4000, 12, 55, 1.2), centre, centre * 0.7)
+    hc = (500 + 900 * k ** 1.2) * (1 + 0.08 * turn)
+    howl = sweep_filter(rng, noise(rng, n), hc, hc * 0.05) * swell(t, 0.2, 4.3, 5.0)
+    ch = lost(rng, t, [C, C * E_, C * GS, C * 2, C * 2 * E_], 4.0, 0.5, "u", "a", 3, 3.2, 0.8, -0.04, 3200, 0.2)
+    x = mix(norm(g) * (0.75 + 0.25 * turn), 0.6 * norm(passing), 0.7 * norm(rush(rng, t, 0.0, 4.8, 160, 2000, 0.9)), 0.35 * norm(howl),
+            0.45 * norm(ch), 0.3 * norm(riser(rng, t, 2.6, 2.2, 200, 6000, C / 4)), 0.3 * norm(crumble(rng, t, 0.3, 4.4, 300, 600, 5000, 0.008, 6, 0.9)),
+            0.4 * norm(sub_hum(t, C / 4, 0.0, 4.9)), 0.4 * boom(rng, t, 0.0, 70, 30, 0.8), 0.4 * norm(crack(rng, t, 0.0, 1.0, 1.6)),
+            0.25 * norm(braam(rng, t, 1.5, C / 4, 3.4, 0.9, 5)))
+    return master(rng, x, 3.0, 0.36, 1.6), 5.0
+
+
+def pm_burst(seed):
+    """The Spiral bursts: a breath drawn in, then its stone blown outward, cracking and exploding, a huge low boom, a blast
+    of air, the lost scattered with a cry, and debris raining down a long while, a rumble rolling away."""
+    rng = np.random.default_rng(seed)
+    t = t_(3.2)
+    n = len(t)
+    hit = 0.12
+    inhale = band(noise(rng, n), 300, 4000) * np.clip(t / hit, 0, 1) ** 3 * (t < hit)
+    blast = saturate(band(noise(rng, n), 200, 9000) * env(t - hit, 0.002, 0.09), 3.0)
+    cracks = norm(crack(rng, t, hit, 1.0, 2.0)) + 0.8 * norm(crack(rng, t, hit + 0.018, 1.0, 1.2)) + 0.6 * norm(crack(rng, t, hit + 0.05, 1.0, 1.5))
+    x = mix(0.4 * norm(inhale), boom(rng, t, hit, 72, 22, 2.8, 1.4), 0.8 * boom(rng, t, hit + 0.05, 50, 20, 2.2), cracks, 0.6 * norm(blast),
+            0.55 * norm(crumble(rng, t, hit + 0.03, 2.8, 1000, 400, 6500, 0.012, 24, 1.7)), 0.35 * norm(shatter(rng, t, hit, 0.8, 30, 1500, 4000, 0.05)),
+            0.5 * norm(whoosh(rng, t, hit, 1.0, 2200, 250, 0.5)), 0.45 * norm(lowpass(noise(rng, n), 110) * env(t - hit - 0.02, 0.06, 1.0)),
+            0.2 * norm(lost(rng, t, [C * 2, C * 2 * E_, C * 2 * GS], 0.25, hit, "a", "u", 2, 0.01, 0.9, 0.25, 3200, 0.2)),
+            0.2 * norm(chains(rng, t, hit, 0.6, 10, thin=1.6)))
+    return master(rng, x, 3.2, 0.34, 2.1), 3.5
+
+
+def pm_upheaval(seed):
+    """The arena torn apart (the break of his ultimate): the ground splits with a crack that runs away through it, a quake
+    swells and shudders, cliffs grind up out of the floor groaning, a crack of thunder over it all, and then the deep
+    collapse, stone crashing down a long while, the hall left shaking. Stone, quake and thunder any Elder might share,
+    tuned here to his C sharp and hung with his chains."""
+    rng = np.random.default_rng(seed)
+    t = t_(5.6)
+    n = len(t)
+    run = np.zeros(n)
+    for i in range(14):
+        s = 0.02 + 0.75 * (i / 14) ** 1.3
+        run += lowpass(crack(rng, t, s, 1.0 - 0.05 * i, 1.0 + 0.12 * i), 9000 - 500 * i)
+    clap, fall = 2.3, 3.4
+    cliffs = norm(grind(rng, t, 0.5, 2.9, 50, 2200, 5, 36, 1.2)) + 0.7 * norm(grind(rng, t, 0.9, 2.5, 60, 1800, 6, 49, 0.8))
+    x = mix(norm(crack(rng, t, 0.0, 1.0, 2.0)), boom(rng, t, 0.0, 64, 22, 2.0, 1.2), 0.5 * norm(run), 0.9 * norm(quake(rng, t, 0.0, 5.4, 9)),
+            0.8 * norm(cliffs), 0.35 * norm(hollow(lowpass(noise(rng, n), 800), C / 2, 0.85) * gate(t, 0.3, 5.0, 1.0, 1.5)),
+            0.4 * norm(braam(rng, t, 1.2, C / 4, 3.0, 0.75, 5)), 0.2 * norm(chains(rng, t, 0.2, 3.6, 24, 1000, 3000, 0.06, (2, 5), 1.0)),
+            0.9 * norm(thunder(rng, t, clap, 2.4)), 0.8 * boom(rng, t, clap, 80, 30, 1.2), boom(rng, t, fall, 56, 20, 3.2, 1.3),
+            0.7 * norm(crack(rng, t, fall, 1.0, 2.2)), 0.6 * norm(crumble(rng, t, fall + 0.02, 2.0, 1400, 300, 5500, 0.014, 30, 1.5)),
+            0.5 * norm(lowpass(noise(rng, n), 100) * env(t - fall, 0.1, 1.2)))
+    return master(rng, x, 4.2, 0.4, 1.8), 6.0
+
+
 SOUNDS = {
     "pale_mason_voice1": lambda: pm_voice(301, 1.0),
     "pale_mason_voice2": lambda: pm_voice(302, 0.89),
@@ -594,13 +824,24 @@ SOUNDS = {
     "pale_mason_phase": lambda: pm_phase(461),
     "pale_mason_ultimate": lambda: pm_ultimate(471),
     "pale_mason_wake": lambda: pm_wake(481),
+    "pale_mason_chains": lambda: pm_chains(491),
+    "pale_mason_swing": lambda: pm_swing(501),
+    "pale_mason_fling": lambda: pm_fling(511),
+    "pale_mason_pillar": lambda: pm_pillar(521),
+    "pale_mason_ring": lambda: pm_ring(531),
+    "pale_mason_spiral": lambda: pm_spiral(541),
+    "pale_mason_burst": lambda: pm_burst(551),
+    "pale_mason_upheaval": lambda: pm_upheaval(561),
 }
 
 # How loud each kind of sound of his should be at its loudest (dB, short-term loudness, as knot_mother.py): his blows and
 # his great moments land hardest, his voice a little under, his steps and his ambience well under
 LOUDNESS = {"strike": -9, "impact": -8.5, "door": -9, "phase": -9, "ultimate": -9, "roar": -9, "death": -9.5, "pull": -9.5,
             "wall": -10, "gaze": -10, "wake": -10, "blink": -10.5, "throw": -10.5, "snare": -10.5, "lift": -11, "voice": -11,
-            "hurt": -11, "step": -15, "ambient": -16}
+            "hurt": -11, "step": -15, "ambient": -16,
+            # his new blows: the bursts and the upheaval land as his strike does, the pillars and rings (heard three times
+            # over) a little under, the chains and the swings (heard many times in the sweep) as his lift
+            "upheaval": -9, "burst": -9, "spiral": -9.5, "pillar": -10, "ring": -10.5, "fling": -10.5, "swing": -11, "chains": -11}
 
 
 def save(name, x, keep):
