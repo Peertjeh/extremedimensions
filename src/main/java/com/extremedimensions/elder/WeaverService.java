@@ -1744,7 +1744,7 @@ public final class WeaverService {
 			return;
 		}
 		ServerLevel level = u.level;
-		Block spike = ArenaDesign.mc("calcite", Blocks.END_STONE_BRICKS.defaultBlockState()).getBlock();
+		Block stone = ArenaDesign.mc("calcite", Blocks.END_STONE_BRICKS.defaultBlockState()).getBlock();
 		// Where each row landed this tick (sums of x, y and z, and how many), for its one sound and jolt
 		Map<Integer, double[]> rows = new HashMap<>();
 		for (Iterator<Needle> it = u.needles.iterator(); it.hasNext();) {
@@ -1770,7 +1770,7 @@ public final class WeaverService {
 			// A spike where it went in, for a while: not up into whoever stands there, nor on one already standing
 			BlockPos foot = BlockPos.containing(n.x, n.y, n.z);
 			if (!underfoot(level, n.x, n.y, n.z) && !ElderTerrain.temporary(level, foot) && !ElderTerrain.temporary(level, foot.below())) {
-				ElderTerrain.column(level, n.x, n.y + 1, n.z, 5, spike, 200);
+				ElderTerrain.column(level, n.x, n.y + 1, n.z, 5, stone, 200);
 			}
 			WorldFx.particleIn(level, "minecraft:end_rod", n.x, n.y + 1, n.z, 0.3, 1.2, 0.3, 0.06, 8);
 			WorldFx.particleIn(level, "minecraft:cloud", n.x, n.y + 0.3, n.z, 0.6, 0.2, 0.6, 0.05, 4);
