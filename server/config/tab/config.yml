@@ -1,11 +1,13 @@
 # =====================================================================
-#  TAB 6.2.1 - Extreme Dimensions + BattleHub (Fabric, single server)
+#  TAB 6.2.1 - Extreme Dimensions + Extreme Progression + BattleHub
+#  (Fabric, single server)
 #  Location on the server: config/tab/config.yml
 #  After a change: /tab reload
 #
 #  Needs Text Placeholder API (placeholder-api) on the server: the
-#  %extremedimensions:...%, %battlehub:...% and %player:...% placeholders
-#  come through it. Without it they show up as plain text.
+#  %extremedimensions:...%, %extremeprogression:...%, %battlehub:...% and
+#  %player:...% placeholders come through it. Without it they show up as
+#  plain text.
 #  Needs BattleHub 1.52.0 or newer: it keeps the BattleHub and survival
 #  player lists apart and leaves its Bot_ players out.
 #
@@ -37,29 +39,34 @@ header-footer:
         - ""
         - "%animation:title%"
         - "%extremedimensions:difficulty%   &8|   &7Tapestry &f%extremedimensions:tapestry%   &8|   %extremedimensions:ending%"
+        - "&7Progression %extremeprogression:preset%   &8|   &7Synergies found &f%extremeprogression:discoveries%%condition:ep-xp-event%"
         - ""
       footer:
         - ""
         - "%extremedimensions:realm%   &8|   %extremedimensions:status% &f%extremedimensions:time_left%"
         - "&7Curses: %extremedimensions:curses%   &8|   &7Scars: &f%extremedimensions:scars%&7/5"
+        - "&7Level &f%extremeprogression:total%&7/%extremeprogression:cap%   &8|   %condition:ep-highest%&7Death pressure %extremeprogression:pressure%%condition:ep-fatigue%%condition:ep-party%"
         - "&7Online: &f%online%   &8|   &7Ping: &f%ping% ms"
         - ""
 
-# The curse badge from Extreme Dimensions at the right of the list, next to
-# the ping bars (a skull and the number of curses, a purple star with an
-# Abyssal curse). Players without curses have nothing there. Only in survival:
-# a player in BattleHub sees no column.
+# A column at the right of the list, next to the ping bars: Extreme
+# Progression's level badge (\u2726 and the total level, a gold star with
+# Mastery), then Extreme Dimensions' curse badge (a skull and the curses, a
+# purple star with an Abyssal curse; a dim skull and 0 without curses, so the
+# columns stay in line). The spaces in front make the list wider: add or
+# remove some to change its width. Only in survival: in BattleHub there is
+# no column.
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Playerlist-Objective
 playerlist-objective:
   enabled: true
   value: "0" # never shown: the client shows fancy-value instead
-  fancy-value: "%extremedimensions:badge%"
-  title: "Curses"
+  fancy-value: "            %extremeprogression:badge%   %condition:curse-badge%"
+  title: "Level and curses"
   render-type: INTEGER
   disable-condition: battlehub
 
 # Off: BattleHub (1.52+) keeps the BattleHub and survival lists apart and
-# leaves its bots out itself. A layout would also hide the curse column above.
+# leaves its bots out itself. A layout would also hide the column above.
 layout:
   enabled: false
 
@@ -142,6 +149,36 @@ conditions:
       - "%world%-|_the_seam"
     true: "&b"
     false: "&f"
+  # The curse badge in the column at the right (playerlist-objective).
+  curse-badge:
+    conditions:
+      - "%extremedimensions:badge%!="
+    true: "%extremedimensions:badge%"
+    false: "&8\u26200"
+  # In the survival footer: the best skill when there is one, death fatigue
+  # while it lasts, and in the header a running XP event.
+  ep-highest:
+    conditions:
+      - "%extremeprogression:highest%!="
+    true: "&7Best &f%extremeprogression:highest%   &8|   "
+    false: ""
+  ep-fatigue:
+    conditions:
+      - "%extremeprogression:fatigue%!="
+    true: "   &8|   &cFatigue %extremeprogression:fatigue%"
+    false: ""
+  ep-xp-event:
+    conditions:
+      - "%extremeprogression:xp_event%!="
+    true: "   &8|   &6XP %extremeprogression:xp_event%"
+    false: ""
+  # In the survival footer: the party you are in and the XP bonus it gives you
+  # now (party members near who earn XP of their own).
+  ep-party:
+    conditions:
+      - "%extremeprogression:party_size%!="
+    true: "   &8|   &aParty %extremeprogression:party_size% &2%extremeprogression:party_bonus%"
+    false: ""
   # In BattleHub a dot before the name (tabprefix in groups.yml) says what the
   # player is doing: green in the lobby, yellow in a queue, red in a match,
   # gray watching. \u25cf is the dot.
@@ -220,6 +257,14 @@ placeholder-output-replacements:
     "Unended": "&7Unended"
     "Mended": "&aMended"
     "Severed": "&cSevered"
+  "%extremeprogression:preset%":
+    "Hardcore": "&cHardcore"
+    "Normal": "&eNormal"
+    "Custom": "&7Custom"
+  "%extremeprogression:pressure%": # from 2 a death also takes a whole level
+    "0": "&a0"
+    "1": "&e1"
+    "2-1000": "&c%value%"
 
 placeholders:
   date-format: "dd.MM.yyyy"
@@ -249,6 +294,17 @@ placeholder-refresh-intervals:
   "%battlehub:in_matches%": 1000
   "%battlehub:mode_of_the_day%": 1000
   "%battlehub:weekly%": 1000
+  "%extremeprogression:badge%": 1000
+  "%extremeprogression:preset%": 1000
+  "%extremeprogression:discoveries%": 1000
+  "%extremeprogression:xp_event%": 1000
+  "%extremeprogression:total%": 1000
+  "%extremeprogression:cap%": 1000
+  "%extremeprogression:highest%": 1000
+  "%extremeprogression:pressure%": 1000
+  "%extremeprogression:fatigue%": 1000
+  "%extremeprogression:party_size%": 1000
+  "%extremeprogression:party_bonus%": 1000
 
 components:
   minimessage-support: true

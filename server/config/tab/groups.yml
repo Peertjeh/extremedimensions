@@ -8,8 +8,8 @@
 # survival (white Overworld, red Nether, purple End, aqua Seam), BattleHub's
 # own name with title and clan in BattleHub, gray in spectator mode.
 # Before it, in BattleHub, a dot for what the player is doing (tab-prefix in
-# config.yml). The curse badge is at the right, next to the ping bars
-# (playerlist-objective in config.yml).
+# config.yml). The level and curse badges are in a column at the right, next
+# to the ping bars (playerlist-objective in config.yml).
 _DEFAULT_:
   tabprefix: "%condition:tab-prefix%%luckperms-prefix%"
   customtabname: "%condition:tab-name%"
