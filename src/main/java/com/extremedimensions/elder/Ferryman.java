@@ -64,6 +64,12 @@ public class Ferryman extends ElderBoss {
 		return 11.0;
 	}
 
+	/** His boat: its keel runs some seven and a half blocks out ahead of him and as far behind. */
+	@Override
+	public double hullReach() {
+		return 7.5;
+	}
+
 	@Override
 	public float getVoicePitch() {
 		return 0.6F + this.random.nextFloat() * 0.05F;

@@ -116,8 +116,8 @@ public class FerrymanBlowTests {
 		// (off the boat's side, inside the whirl, clear of the test's walls)
 		ServerPlayer p = passenger(helper, "ferryman-undertow", 2, 2);
 		int felt = PaleSquall.felt(p.getUUID());
-		// His boat rides the highest ground under it, here the barrier roof over the test, while a test player never
-		// falls: keep his passenger level with the boat, as a player beside it on the floor would be
+		// His boat comes down onto the ground under the test (the barrier roof over it is no ground to him), while a test
+		// player never falls: keep his passenger level with the boat, as a player beside it on the floor would be
 		for (int t = 1; t < 80; t++) {
 			helper.runAfterDelay(t, () -> {
 				for (Ferryman f : helper.getLevel().getEntitiesOfClass(Ferryman.class, p.getBoundingBox().inflate(40))) {

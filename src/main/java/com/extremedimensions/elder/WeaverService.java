@@ -834,8 +834,9 @@ public final class WeaverService {
 				continue;
 			}
 			double x = at.getX() + 0.5, y = at.getY(), z = at.getZ() + 0.5;
-			u.level.setBlock(at, Blocks.CRYING_OBSIDIAN.defaultBlockState(), 3);
-			u.level.setBlock(at.above(), Blocks.OCHRE_FROGLIGHT.defaultBlockState(), 3);
+			// (held for the fight: whatever happens to it, what stood there is back once the fight lets it go)
+			com.extremedimensions.server.FightBlocks.place(u.level, at, Blocks.CRYING_OBSIDIAN.defaultBlockState(), 3);
+			com.extremedimensions.server.FightBlocks.place(u.level, at.above(), Blocks.OCHRE_FROGLIGHT.defaultBlockState(), 3);
 			u.anchors.add(new Anchor(at));
 			DataStore.seamCells().add(mark(u.level, at));
 			WorldFx.particleIn(u.level, "minecraft:end_rod", x, y + 1.5, z, 0.3, 0.6, 0.3, 0.05, 16);
@@ -899,6 +900,13 @@ public final class WeaverService {
 	}
 
 	private static void unblock(ServerLevel level, BlockPos base) {
+		if (com.extremedimensions.server.FightBlocks.holds(level, base) || com.extremedimensions.server.FightBlocks.holds(level, base.above())) {
+			// What stood there goes back now, or once its ground is loaded (even after a restart)
+			com.extremedimensions.server.FightBlocks.release(level, base.above());
+			com.extremedimensions.server.FightBlocks.release(level, base);
+			return;
+		}
+		// (an anchor from before fights held their blocks)
 		if (!Loaded.ready(level, base.above())) {
 			return;
 		}

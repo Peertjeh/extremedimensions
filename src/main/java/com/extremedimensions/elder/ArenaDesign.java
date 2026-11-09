@@ -45,6 +45,10 @@ import net.minecraft.world.level.block.state.properties.SlabType;
  * slowly), the towers grow taller, a second ring of towers stands beyond the first, and the islands grow in number, in
  * size, in height and in how far out they hang. Towers, rim pillars and islands are all or nothing: one that would not
  * fit in the air there is left out, and so is a tower or pillar that would rise right beside a player.
+ *
+ * <p>Nothing an arena is built of changes by itself: no block grows, spreads, decays, falls or burns (no chorus flower,
+ * no nylium, no sapling, leaves, sand or fire), so when the arena comes apart exactly what it put up comes down, and
+ * nothing it grew is left behind.
  */
 final class ArenaDesign {
 	private ArenaDesign() {}
@@ -213,13 +217,15 @@ final class ArenaDesign {
 				p.core = mc("shroomlight");
 				p.cap = mc("crimson_planks");
 				p.tip = mc("lantern", Blocks.SOUL_LANTERN.defaultBlockState());
-				p.isleTop = mc("crimson_nylium");
+				// (no nylium: it turns to netherrack by itself under anything laid over it, and that would stay when the
+				// arena goes; wart and hyphae stay as they are)
+				p.isleTop = mc("nether_wart_block");
 				p.isle = axis(mc("basalt"), Direction.Axis.Y);
 				p.isleVein = mc("magma_block");
 				p.isleTip = mc("shroomlight");
 				p.under = mc("blackstone_wall");
 				p.isleTop2 = mc("netherrack");
-				p.isleTop3 = mc("nether_wart_block");
+				p.isleTop3 = axis(mc("crimson_hyphae", mc("nether_wart_block")), Direction.Axis.Y);
 				p.decor = mc("crimson_roots");
 			}
 			case 3 -> {
@@ -249,7 +255,9 @@ final class ArenaDesign {
 				p.under = mc("end_stone_brick_wall");
 				p.isleTop2 = mc("end_stone_bricks");
 				p.isleTop3 = mc("purpur_block");
-				p.decor = mc("chorus_flower", facing(mc("end_rod"), Direction.UP));
+				// (no chorus flowers: they grow chorus plants the arena never put up, which stay when it goes and drop their
+				// fruit as they break; what grows on his islands are rods of light)
+				p.decor = facing(mc("end_rod"), Direction.UP);
 			}
 			default -> {
 				p.floor = new BlockState[] {mc("deepslate_tiles"), mc("polished_deepslate"), mc("cracked_deepslate_tiles")};

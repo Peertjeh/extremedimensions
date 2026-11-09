@@ -23,6 +23,7 @@
 			"com.extremedimensions.gametest.FerrymanBlowTests",
 			"com.extremedimensions.gametest.WeaverBlowTests",
 			"com.extremedimensions.gametest.ArenaTests",
+			"com.extremedimensions.gametest.LeftoverTests",
 			"com.extremedimensions.gametest.ElderFightTests",
 			"com.extremedimensions.gametest.WorldTests",
 			"com.extremedimensions.gametest.PerfTests",
@@ -63,7 +64,8 @@
 			"com.extremedimensions.gametest.PermissionTests",
 			"com.extremedimensions.gametest.CharmTests",
 			"com.extremedimensions.gametest.LurkerTests",
-			"com.extremedimensions.gametest.FragmentTests"
+			"com.extremedimensions.gametest.FragmentTests",
+			"com.extremedimensions.gametest.ElderFootingTests"
 		],
 		"fabric-client-gametest": [
 			"com.extremedimensions.gametest.ClientShots",

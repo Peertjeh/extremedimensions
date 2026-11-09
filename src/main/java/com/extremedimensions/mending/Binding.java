@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.Block;
 import org.joml.Quaternionf;
 import com.extremedimensions.mixin.DisplayAccess;
 import com.extremedimensions.server.BlockFlight;
+import com.extremedimensions.server.FightBlocks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -42,6 +43,8 @@ import net.minecraft.world.phys.Vec3;
  * {@code starved_heal_quench} quenched at once it heals no more; with {@code starved_sockets} (all four) it is pulled
  * down before whoever is nearest and held stunned for {@code starved_bind_seconds}, taking {@code starved_bound_damage}
  * times the harm; free, it takes {@code starved_unbound_damage}. The nodes' own time stands still while it is held.
+ * Once the fight is over (won, or everyone gone) each node goes again and its shaft stands broken as before: a node is
+ * held for the fight by {@link FightBlocks}, so not even a crash leaves one behind.
  */
 public final class Binding {
 	private Binding() {}
@@ -238,7 +241,7 @@ public final class Binding {
 				continue;
 			}
 			NODES[i] = n;
-			seam.setBlock(n, FEEDING.defaultBlockState(), 3);
+			node(seam, n, FEEDING);
 			mark(seam, i, 0);
 			if (!STRAND[i]) {
 				STRAND[i] = true;
@@ -399,7 +402,7 @@ public final class Binding {
 		FED[i] = 0;
 		QUENCH[i] = (int) Math.max(20, Config.STARVED_SOCKET_SECONDS * 20);
 		if (Loaded.ready(seam, s)) {
-			seam.setBlock(s, QUENCHED.defaultBlockState(), 3);
+			node(seam, s, QUENCHED);
 		}
 		unmark(i);
 		String dim = SeamService.SEAM.identifier().toString();
@@ -422,7 +425,7 @@ public final class Binding {
 	private static void relight(ServerLevel seam, int i, List<ServerPlayer> arena, long tick) {
 		BlockPos s = NODES[i];
 		if (s != null && Loaded.ready(seam, s)) {
-			seam.setBlock(s, FEEDING.defaultBlockState(), 3);
+			node(seam, s, FEEDING);
 		}
 		mark(seam, i, tick);
 		for (ServerPlayer q : arena) {
@@ -477,7 +480,7 @@ public final class Binding {
 				continue;
 			}
 			if (tick % 20 == 0 && Loaded.ready(seam, n) && seam.getBlockState(n).isAir()) {
-				seam.setBlock(n, QUENCHED.defaultBlockState(), 3);
+				node(seam, n, QUENCHED);
 			}
 			if (bound == 0 && --QUENCH[i] == 0) {
 				relight(seam, i, arena, tick);
@@ -605,11 +608,21 @@ public final class Binding {
 	static void end(ServerLevel seam) {
 		for (int i = 0; i < PILLARS; i++) {
 			BlockPos s = NODES[i];
-			if (s != null && Loaded.ready(seam, s) && seam.getBlockState(s).is(FEEDING)) {
-				seam.setBlock(s, QUENCHED.defaultBlockState(), 3);
+			if (s != null) {
+				// The node goes, and its shaft stands broken as before (now, or once its ground is loaded)
+				FightBlocks.release(seam, s);
 			}
 		}
 		forget();
+	}
+
+	/** A node set into its shaft for the fight, feeding or quenched: held, it goes again once the fight is over. */
+	private static void node(ServerLevel seam, BlockPos n, Block b) {
+		if (FightBlocks.holds(seam, n)) {
+			FightBlocks.put(seam, n, b.defaultBlockState(), 3);
+		} else {
+			FightBlocks.place(seam, n, b.defaultBlockState(), 3);
+		}
 	}
 
 	/** Is this the Seam Silk a node drinks? */

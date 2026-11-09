@@ -24,6 +24,7 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.mixin.DisplayAccess;
 import com.extremedimensions.server.BlockFlight;
+import com.extremedimensions.server.FightBlocks;
 import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.TickProfile;
 import com.extremedimensions.server.WorldFx;
@@ -53,12 +54,15 @@ import net.minecraft.world.phys.AABB;
  * <p>Blocks are only built into air and plants; the ground is only inlaid where the world may be torn up
  * ({@code elder_griefing} and the mobGriefing rule), and never where a block holds data. A block of an arena a player
  * breaks drops nothing, and nothing an Elder tears out of one is thrown about. On stopping, everything is put back at
- * once. The blocks fly as {@link BlockFlight}s, as many at once as {@code elder_arena_fly_max} allows and only where a
- * player is near enough to see them; the rest simply appear (and vanish) in their places. A block whose part of the
- * world is not loaded when its turn comes (no one near; a great arena reaches past the view) waits until it is, so the
- * far towers and islands go up as someone comes near them; the world is never loaded just to put a block up or take
- * one down. A great arena's design is drawn up a little each tick ({@code elder_arena_design_budget_ms}) while its
- * Elder forms, so calling an Elder never holds the server up; it rises once its design is whole.
+ * once (and every block it put down is held by {@link FightBlocks} meanwhile, so even a crash leaves none of them behind).
+ * Nothing it builds grows, spreads, decays, falls or burns of itself, so what comes down is exactly what it put up, and
+ * it comes down without a drop. The blocks fly as {@link BlockFlight}s, as many at once as {@code elder_arena_fly_max}
+ * allows and only where a player is near enough to see them; the rest simply appear (and vanish) in their places. A
+ * block whose part of the world is not loaded when its turn comes (no one near; a great arena reaches past the view)
+ * waits until it is, so the far towers and islands go up as someone comes near them; the world is never loaded just to
+ * put a block up or take one down. A great arena's design is drawn up a little each tick
+ * ({@code elder_arena_design_budget_ms}) while its Elder forms, so calling an Elder never holds the server up; it rises
+ * once its design is whole.
  */
 public final class ElderArena {
 	private ElderArena() {}
@@ -221,8 +225,13 @@ public final class ElderArena {
 		Piece was = standing(a.level, pos);
 		Piece p = new Piece(pos.immutable(), state, AIR, null);
 		p.original = was != null && was.placed && was.original != null ? was.original : Blocks.AIR.defaultBlockState();
+		// (that one's hold on the place is the rubble's now; elsewhere the rubble takes a hold of its own)
+		boolean held = was != null && was.placed;
 		if (was != null) {
 			was.placed = false;
+		}
+		if (!held) {
+			FightBlocks.hold(a.level, p.pos, Blocks.AIR.defaultBlockState());
 		}
 		p.placed = true;
 		a.claimed.add(p.pos.asLong());
@@ -232,10 +241,15 @@ public final class ElderArena {
 
 	/** A block of an arena that came down (fell as rubble or crumbled): it no longer stands. */
 	static void fell(Arena a, Piece p) {
+		boolean held = p.placed;
 		p.placed = false;
 		Long2ObjectMap<Piece> m = STANDING.get(a.level);
 		if (m != null) {
 			m.remove(p.pos.asLong());
+		}
+		if (held) {
+			// (it is let go: what the world had there is back once nothing else holds the place)
+			FightBlocks.release(a.level, p.pos);
 		}
 	}
 
@@ -424,6 +438,26 @@ public final class ElderArena {
 		return bp.pieces.isEmpty() ? "no blocks were designed" : null;
 	}
 
+	/**
+	 * The first block of an arena's design that would change of itself while the arena stands (for tests): one that grows,
+	 * spreads, decays or burns (the game ticks it at random, as a chorus flower or nylium), or one that falls; such a block
+	 * would leave what it became behind when the arena comes apart. Null if there is none.
+	 */
+	public static String changesOfItself(ServerLevel level, int style, BlockPos centre, long seed) {
+		ArenaDesign.Blueprint bp = ArenaDesign.design(level, style, centre, ElderTerrain.griefing(level), seed);
+		java.util.Set<BlockState> seen = new HashSet<>();
+		for (Piece p : bp.pieces) {
+			if (!seen.add(p.state)) {
+				continue;
+			}
+			if (p.state.isRandomlyTicking() || p.state.getBlock() instanceof net.minecraft.world.level.block.FallingBlock
+					|| p.state.is(net.minecraft.tags.BlockTags.FIRE)) {
+				return p.state + " (group " + p.group + ")";
+			}
+		}
+		return bp.pieces.isEmpty() ? "no blocks were designed" : null;
+	}
+
 	private static long designBudget() {
 		return Math.max(1, Config.ELDER_ARENA_DESIGN_BUDGET_MS) * 1_000_000L;
 	}
@@ -545,8 +579,7 @@ public final class ElderArena {
 		}
 		Arena a = open(b.getUUID(), level, bp.style, centre, bp);
 		for (Piece p : a.pieces) {
-			p.original = level.getBlockState(p.pos);
-			level.setBlock(p.pos, p.state, 2 | 16);
+			p.original = FightBlocks.place(level, p.pos, p.state, 2 | 16);
 			p.placed = true;
 			STANDING.computeIfAbsent(level, k -> new Long2ObjectOpenHashMap<>()).put(p.pos.asLong(), p);
 		}
@@ -571,6 +604,10 @@ public final class ElderArena {
 	public static void release(Entity boss) {
 		// The ground its ultimate broke sinks back first, the arena's own floor in it among the rest (3.41)
 		ElderUpheaval.release(boss);
+		// ... and what its blows marked or raised round it goes back now
+		if (boss.level() instanceof ServerLevel level) {
+			ElderTerrain.release(level, boss.getX(), boss.getZ(), ElderTerrain.SWEEP);
+		}
 		// (an arena still being designed never rises)
 		DRAFTS.removeIf(d -> d.boss.equals(boss.getUUID()));
 		for (Arena a : ARENAS) {
@@ -584,6 +621,8 @@ public final class ElderArena {
 		if (a.linger >= 0 || a.dissolving) {
 			return;
 		}
+		// (its Elder may be gone without a word: what its blows marked or raised round the arena goes back now)
+		ElderTerrain.release(a.level, a.cx, a.cz, ElderTerrain.SWEEP);
 		// Nothing more comes in (nor what waits for its part of the world); what is in the air still lands
 		a.next = a.pieces.size();
 		a.waiting.clear();
@@ -815,15 +854,18 @@ public final class ElderArena {
 			return;
 		}
 		BlockState now = level.getBlockState(p.pos);
-		boolean whole = now == p.state;
+		// Its own block in whatever shape it has come to (a wall joined to a neighbour, a lantern under water), or nothing
+		boolean whole = now.is(p.state.getBlock());
 		if (whole || now.isAir()) {
-			level.setBlock(p.pos, p.original == null ? Blocks.AIR.defaultBlockState() : p.original, 2 | 16);
+			FightBlocks.put(level, p.pos, p.original == null ? Blocks.AIR.defaultBlockState() : p.original, 2 | 16);
 		}
 		p.placed = false;
 		Long2ObjectMap<Piece> m = STANDING.get(level);
 		if (m != null) {
 			m.remove(p.pos.asLong());
 		}
+		// (and with nothing else of a fight holding the place, the world's own block is back, whatever of the fight's stands there)
+		FightBlocks.release(level, p.pos);
 		if (!whole || !Loaded.ready(level, p.pos) || !roomToFly(a) || !watched(level, p.pos)) {
 			return;
 		}
@@ -867,7 +909,7 @@ public final class ElderArena {
 			}
 		}
 		// No neighbour updates: a lantern hung before its chain, or a wall beside air, stays as designed
-		level.setBlock(p.pos, p.state, 2 | 16);
+		FightBlocks.place(level, p.pos, p.state, 2 | 16);
 		p.placed = true;
 		STANDING.computeIfAbsent(level, k -> new Long2ObjectOpenHashMap<>()).put(p.pos.asLong(), p);
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
@@ -1003,6 +1045,12 @@ public final class ElderArena {
 				m.remove(p.pos.asLong());
 			}
 		}
+		for (Piece p : a.pieces) {
+			if (p.placed) {
+				p.placed = false;
+				FightBlocks.keep(a.level, p.pos);
+			}
+		}
 	}
 
 	// ------------------------------------------------------------------ the rest of the world
@@ -1042,13 +1090,14 @@ public final class ElderArena {
 				continue;
 			}
 			BlockState now = a.level.getBlockState(p.pos);
-			if (now == p.state || now.isAir()) {
-				a.level.setBlock(p.pos, p.original == null ? Blocks.AIR.defaultBlockState() : p.original, 2 | 16);
+			if (now.is(p.state.getBlock()) || now.isAir()) {
+				FightBlocks.put(a.level, p.pos, p.original == null ? Blocks.AIR.defaultBlockState() : p.original, 2 | 16);
 			}
 			p.placed = false;
 			if (m != null) {
 				m.remove(p.pos.asLong());
 			}
+			FightBlocks.release(a.level, p.pos);
 		}
 	}
 }

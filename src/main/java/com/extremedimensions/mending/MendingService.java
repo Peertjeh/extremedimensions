@@ -501,11 +501,31 @@ public final class MendingService {
 
 	/** Eases its velocity towards the goal (never faster than {@code speed}, slowing as it arrives). */
 	private static void fly(StarvedOne so, Vec3 goal, double speed, double ease) {
+		if (phase != EMERGE) {
+			// (a goal in the ground is over it instead, so it rises over what stands there before it gets there)
+			double under = floor(so, goal.x, goal.y, goal.z);
+			if (!Double.isNaN(under) && under > goal.y) {
+				goal = new Vec3(goal.x, under, goal.z);
+			}
+		}
 		Vec3 to = goal.subtract(so.position());
 		double d = to.length();
 		Vec3 want = d < 1e-3 ? Vec3.ZERO : to.scale(Math.min(speed, d * 0.3) / d);
 		vel = vel.add(want.subtract(vel).scale(ease));
-		so.setDeltaMovement(vel);
+		// It drifts through stone as through smoke, but never sinks into the ground under it: over whatever it drifts into
+		// it rises at once (only as it wakes does it come up through the stone of the Heart, on purpose)
+		double floor = phase == EMERGE ? Double.NaN : floor(so, so.getX() + vel.x, so.getY() + vel.y, so.getZ() + vel.z);
+		if (!Double.isNaN(floor) && so.getY() + vel.y < floor) {
+			vel = new Vec3(vel.x, Math.max(0, vel.y), vel.z);
+			so.setDeltaMovement(vel.x, floor - so.getY(), vel.z);
+		} else {
+			so.setDeltaMovement(vel);
+		}
+	}
+
+	/** The ground under the whole of it at (x, z), its feet at {@code y} (see BossGround); NaN with none near. */
+	private static double floor(StarvedOne so, double x, double y, double z) {
+		return com.extremedimensions.server.BossGround.box(so.level(), x, z, so.getBbWidth() / 2, y);
 	}
 
 	/** A goal kept within the fight's reach of the Heart, and not far under it. */
@@ -534,6 +554,11 @@ public final class MendingService {
 		Vec3 flat = new Vec3(look.x, 0, look.z);
 		flat = flat.lengthSqr() < 1e-4 ? new Vec3(0, 0, 1) : flat.normalize();
 		Vec3 to = keepIn(p.position().subtract(flat.scale(4.5)).add(0, 1.5, 0));
+		// (out of the air over the ground there, never in it)
+		double floor = floor(so, to.x, to.y, to.z);
+		if (!Double.isNaN(floor) && floor > to.y) {
+			to = new Vec3(to.x, floor, to.z);
+		}
 		String dim = SeamService.SEAM.identifier().toString();
 		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 3, so.getZ(), 1, 2, 1, 0, 40);
 		so.teleportTo(to.x, to.y, to.z);

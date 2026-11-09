@@ -2302,6 +2302,8 @@
   "config.extremedimensions.elder_windup_speed.desc": "How quickly a blow comes once an Elder starts it (its wind-up and the warning before it lands), as a multiple.",
   "config.extremedimensions.elder_griefing": "Elders: tear up the world",
   "config.extremedimensions.elder_griefing.desc": "1 = the Elders' blows leave craters, torn-up ground and scorched blocks; 0 = the world is left alone. The mobGriefing rule must allow it too.",
+  "config.extremedimensions.elder_mark_seconds": "Elders: struck ground lasts",
+  "config.extremedimensions.elder_mark_seconds.desc": "Seconds the ground an Elder strikes stays changed (roots and moss, soul soil and soul fire, scorched ground and glass) before it goes back as it was. Whatever is still changed goes back when the fight is over, and no fire is ever lit.",
   "config.extremedimensions.elder_ultimate_at": "Elders: ultimate at",
   "config.extremedimensions.elder_ultimate_at.desc": "Share of its health at which an Elder unleashes its ultimate, once per fight (0 = never).",
   "config.extremedimensions.elder_ultimate_seconds": "Elders: ultimate length",

@@ -16,6 +16,7 @@ import org.joml.Vector3f;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.mixin.DisplayAccess;
 import com.extremedimensions.server.BlockFlight;
+import com.extremedimensions.server.FightBlocks;
 import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
@@ -61,7 +62,9 @@ import net.minecraft.world.phys.AABB;
  * plants, and opens a hole only where solid ground stays under it, beside no water or lava and under nothing an arena
  * built (many arenas float). Of an arena it changes only its floor, and only as the arena's own blocks break
  * ({@code elder_arena_breakable}); those blocks stay the arena's all the while, and are the arena's again once put back.
- * What it changed drops nothing, and no Elder's blow tears it up. It changes at most {@code elder_upheaval_budget}
+ * What it changed drops nothing, and no Elder's blow tears it up; it is held by {@link FightBlocks} meanwhile, so not even a
+ * crash leaves any of it behind. It never turns the ground under water to soul sand or magma (their bubble columns would
+ * stay). It changes at most {@code elder_upheaval_budget}
  * blocks a tick (it and its sinking back, all upheavals together), never more than {@code elder_upheaval_blocks} in one
  * ultimate, never loads the world to change or look at a block while the fight goes on, and its block displays are few
  * ({@code elder_upheaval_displays}).
@@ -1546,7 +1549,7 @@ public final class ElderUpheaval {
 		if (occupied(u, pos)) {
 			return false;
 		}
-		level.setBlock(pos, to, 2 | 16);
+		FightBlocks.place(level, pos, to, 2 | 16);
 		record(u, pos, now, level.getBlockState(pos), null, ground, false);
 		u.tops.remove(col(pos.getX(), pos.getZ()));
 		if (pos.getY() == ground + 1) {
@@ -1565,7 +1568,7 @@ public final class ElderUpheaval {
 		if (now.isAir() || !open(now) || held(level, pos) != null || ElderArena.holds(level, pos)) {
 			return false;
 		}
-		level.setBlock(pos, AIR, 2 | 16);
+		FightBlocks.place(level, pos, AIR, 2 | 16);
 		record(u, pos, now, AIR, null, ground, false);
 		return true;
 	}
@@ -1624,7 +1627,11 @@ public final class ElderUpheaval {
 				return false;
 			}
 		}
-		level.setBlock(pos, to, 2 | 16);
+		if (c == null) {
+			FightBlocks.place(level, pos, to, 2 | 16);
+		} else {
+			FightBlocks.put(level, pos, to, 2 | 16);
+		}
 		BlockState placed = level.getBlockState(pos);
 		if (c == null) {
 			record(u, pos, now, placed, piece, ground, false);
@@ -1652,7 +1659,8 @@ public final class ElderUpheaval {
 				return false;
 			}
 		} else {
-			if (!solid(now) || now == to) {
+			// (nor the ground under water or lava: soul sand and magma there raise bubble columns that would stay)
+			if (!solid(now) || now == to || !level.getBlockState(pos.above()).getFluidState().isEmpty()) {
 				return false;
 			}
 			piece = ElderArena.standing(level, pos);
@@ -1661,7 +1669,11 @@ public final class ElderUpheaval {
 				return false;
 			}
 		}
-		level.setBlock(pos, to, 2 | 16);
+		if (c == null) {
+			FightBlocks.place(level, pos, to, 2 | 16);
+		} else {
+			FightBlocks.put(level, pos, to, 2 | 16);
+		}
 		BlockState placed = level.getBlockState(pos);
 		if (c == null) {
 			record(u, pos, now, placed, piece, ground, false);
@@ -1675,6 +1687,7 @@ public final class ElderUpheaval {
 	private static void watch(Upheaval u, BlockPos pos) {
 		BlockState g = u.level.getBlockState(pos);
 		if (g.is(Blocks.GRASS_BLOCK) && held(u.level, pos) == null && !ElderArena.holds(u.level, pos)) {
+			FightBlocks.hold(u.level, pos, g);
 			record(u, pos, g, g, null, pos.getY(), true);
 		}
 	}
@@ -1845,7 +1858,7 @@ public final class ElderUpheaval {
 			BlockState now = level.getBlockState(c.pos);
 			if (d != null && d.owner == u && !d.watch && open(d.original) && !d.placed.isAir() && now == c.placed && now != d.placed
 					&& level.getBlockState(under) == d.placed) {
-				level.setBlock(under, now, 2 | 16);
+				FightBlocks.put(level, under, now, 2 | 16);
 				d.placed = level.getBlockState(under);
 				budget--;
 			}
@@ -1861,16 +1874,25 @@ public final class ElderUpheaval {
 	private static void put(Upheaval u, Change c) {
 		ServerLevel level = u.level;
 		Long2ObjectOpenHashMap<Change> m = HELD.get(level);
-		if (m != null && m.get(c.pos.asLong()) == c) {
+		boolean mine = m != null && m.get(c.pos.asLong()) == c;
+		if (mine) {
 			m.remove(c.pos.asLong());
 			if (m.isEmpty()) {
 				HELD.remove(level);
 			}
 		}
+		putBack(level, c);
+		if (mine) {
+			// (let go: with nothing else of a fight holding the place, the world's own block is there now)
+			FightBlocks.release(level, c.pos);
+		}
+	}
+
+	private static void putBack(ServerLevel level, Change c) {
 		BlockState now = level.getBlockState(c.pos);
 		if (c.watch) {
 			if (now != c.original && (now.is(Blocks.DIRT) || now.isAir())) {
-				level.setBlock(c.pos, c.original, 2 | 16);
+				FightBlocks.put(level, c.pos, c.original, 2 | 16);
 			}
 			return;
 		}
@@ -1880,7 +1902,7 @@ public final class ElderUpheaval {
 		// (earth it raised may have grown grass meanwhile, or its grass turned to dirt under cover: still its own)
 		if (now == c.placed || !c.placed.isAir() && now.is(c.placed.getBlock()) || now.isAir() || now.canBeReplaced()
 				|| now.is(BlockTags.DIRT) && c.placed.is(BlockTags.DIRT)) {
-			level.setBlock(c.pos, c.original, 2 | 16);
+			FightBlocks.put(level, c.pos, c.original, 2 | 16);
 			return;
 		}
 		ElderArena.Piece p = ElderArena.standing(level, c.pos);

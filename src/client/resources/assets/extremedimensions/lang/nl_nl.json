@@ -2302,6 +2302,8 @@
   "config.extremedimensions.elder_windup_speed.desc": "Hoe snel een slag komt zodra een Oude hem inzet (de aanloop en de waarschuwing voor de inslag), als veelvoud.",
   "config.extremedimensions.elder_griefing": "Ouden: wereld verwoesten",
   "config.extremedimensions.elder_griefing.desc": "1 = de slagen van de Ouden laten kraters, omgewoelde grond en verschroeide blokken achter; 0 = de wereld blijft heel. De regel mobGriefing moet het ook toestaan.",
+  "config.extremedimensions.elder_mark_seconds": "Ouden: geraakte grond blijft",
+  "config.extremedimensions.elder_mark_seconds.desc": "Seconden dat de grond die een Oude raakt veranderd blijft (wortels en mos, zielenaarde en zielenvuur, verschroeide grond en glas) voordat hij weer wordt zoals hij was. Wat dan nog veranderd is, wordt weer zoals het was zodra het gevecht voorbij is, en er wordt nooit echt vuur aangestoken.",
   "config.extremedimensions.elder_ultimate_at": "Ouden: ultimate bij",
   "config.extremedimensions.elder_ultimate_at.desc": "Aandeel van zijn gezondheid waarbij een Oude zijn ultimate ontketent, één keer per gevecht (0 = nooit).",
   "config.extremedimensions.elder_ultimate_seconds": "Ouden: duur ultimate",

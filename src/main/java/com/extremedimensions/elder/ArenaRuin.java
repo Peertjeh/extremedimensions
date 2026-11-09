@@ -16,6 +16,7 @@ import com.extremedimensions.server.WorldFx;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -31,7 +32,9 @@ import net.minecraft.world.level.block.state.BlockState;
  *
  * <p>Rubble falls as falling blocks that drop nothing and hurt whoever they land on
  * ({@code elder_arena_rubble_damage}); where one comes to rest it lies as a block of the arena, and goes when the arena
- * goes. No more than {@code elder_arena_rubble_max} fall at once; the rest crumble where they are.
+ * goes. No more than {@code elder_arena_rubble_max} fall at once; the rest crumble where they are. Rubble still in the
+ * air when its chunk was saved (everyone left, or a crash) is gone as it loads again: it never lands as a block no arena
+ * knows. What the arena inlaid into the ground never falls; it goes back into the ground as the arena comes apart.
  */
 public final class ArenaRuin {
 	private ArenaRuin() {}
@@ -45,6 +48,8 @@ public final class ArenaRuin {
 	private record Debris(FallingBlockEntity block, ElderArena.Arena arena) {}
 
 	private static final List<Debris> FALLING = new ArrayList<>();
+	/** The tag on every block of rubble (one found loading that no arena is waiting for is gone at once). */
+	private static final String TAG = "extremedimensions_rubble";
 
 	// ------------------------------------------------------------------ what was broken
 
@@ -198,10 +203,10 @@ public final class ArenaRuin {
 		int room = Math.max(0, Config.ELDER_ARENA_RUBBLE_MAX);
 		int i = 0;
 		for (ElderArena.Piece p : pieces) {
-			if (level.getBlockState(p.pos) != p.state) {
+			// (what was inlaid into the ground stays in it, to go back into the ground as the arena goes)
+			if (p.kind == ElderArena.GROUND || level.getBlockState(p.pos) != p.state) {
 				continue;
 			}
-			ElderArena.fell(a, p);
 			if (i++ < room) {
 				rubble(a, p.pos, p.state, Config.ELDER_ARENA_RUBBLE_DAMAGE);
 			} else {
@@ -210,6 +215,8 @@ public final class ArenaRuin {
 					WorldFx.particleIn(level, "minecraft:poof", p.pos.getX() + 0.5, p.pos.getY() + 0.5, p.pos.getZ() + 0.5, 0.3, 0.3, 0.3, 0.01, 2);
 				}
 			}
+			// Then it is let go, its place empty (what the world had there comes back once nothing else holds it)
+			ElderArena.fell(a, p);
 		}
 		if (i > 0) {
 			BlockPos at = pieces.get(pieces.size() / 2).pos;
@@ -225,6 +232,7 @@ public final class ArenaRuin {
 	static FallingBlockEntity rubble(ElderArena.Arena a, BlockPos pos, BlockState state, int damage) {
 		FallingBlockEntity fb = FallingBlockEntity.fall(a.level, pos, state);
 		fb.dropItem = false;
+		fb.addTag(TAG);
 		if (damage > 0) {
 			fb.setHurtsEntities(1.0F, damage);
 		}
@@ -251,6 +259,19 @@ public final class ArenaRuin {
 				ElderArena.landed(d.arena, at, lies);
 			}
 		}
+	}
+
+	/** Rubble that no arena waits for (its chunk saved with it in the air, by a crash or everyone leaving), found as it loads: to be removed. */
+	public static boolean stray(Entity e) {
+		if (!(e instanceof FallingBlockEntity)) {
+			return false;
+		}
+		for (Debris d : FALLING) {
+			if (d.block == e || d.block.getUUID().equals(e.getUUID())) {
+				return false;
+			}
+		}
+		return e.removeTag(TAG);
 	}
 
 	/** Rubble still falling (for tests). */

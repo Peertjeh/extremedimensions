@@ -1161,6 +1161,12 @@ public final class Config {
 	public static double ELDER_WINDUP_SPEED = 1.25;
 	/** Whether the Elders' blows tear up the world (craters, torn-up ground, scorched and changed blocks): 1 = on, 0 = off. The mobGriefing rule must allow it too. */
 	public static int ELDER_GRIEFING = 1;
+	/**
+	 * Seconds the ground an Elder strikes stays changed (the Matriarch's roots and moss, the Ferryman's soul soil and soul
+	 * fire, the Weaver's scorched ground and glass) before it goes back as it was; it goes back at the latest when the fight
+	 * is over.
+	 */
+	public static int ELDER_MARK_SECONDS = 45;
 	/** Share of its health at which an Elder unleashes its ultimate, once per fight (0 = never). */
 	public static double ELDER_ULTIMATE_AT = 0.5;
 	/** Seconds an Elder's ultimate lasts. */
@@ -1968,7 +1974,7 @@ public final class Config {
 			{"collapse_pull_ticks", 1, 400}, {"leech_seconds", 1, 3600}, {"rope_segment", 0.25, 8},
 			{"lurker_ward_range", 0, 16}, {"scar_drain_reduction", 0, 0.2}, {"pact_full_seconds", 0, 86400},
 			{"elder_speed", 0.1, 10}, {"elder_attack_speed", 0.1, 10}, {"elder_windup_speed", 0.2, 10},
-			{"elder_ultimate_seconds", 2, 120}, {"elder_arena_linger_seconds", -1, 86400},
+			{"elder_ultimate_seconds", 2, 120}, {"elder_arena_linger_seconds", -1, 86400}, {"elder_mark_seconds", 1, 3600},
 			{"elder_upheaval", 0, 1}, {"elder_upheaval_scale", 0.1, 4}, {"elder_upheaval_damage", 0, 100}, {"elder_upheaval_throw", 0, 4},
 			{"elder_upheaval_linger_seconds", 5, 3600}, {"elder_upheaval_budget", 20, 5000}, {"elder_upheaval_blocks", 0, 200000},
 			{"elder_upheaval_displays", 0, 200},

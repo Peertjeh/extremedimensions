@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.extremedimensions.elder.ElderArena;
 import com.extremedimensions.elder.ElderTerrain;
+import com.extremedimensions.server.FightBlocks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
@@ -15,14 +16,15 @@ import net.minecraft.world.level.block.Block;
 
 /**
  * What an Elder built or raised drops nothing, however it comes down: mined, blown up (a creeper, TNT, the Elders' own
- * blasts) or knocked off its support. Every block drop passes through here, so arenas and thorns are no quarry.
+ * blasts) or knocked off its support. Every block drop passes through here, so arenas and thorns are no quarry; nor is
+ * anything else a boss fight put down for a while ({@link FightBlocks}): the ground an Elder marked, its anchors and nodes.
  */
 @Mixin(Block.class)
 public abstract class ElderDropsMixin {
 	@Inject(method = "popResource(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/item/ItemStack;)V", at = @At("HEAD"),
 			cancellable = true)
 	private static void extremedimensions$noElderLoot(Level level, BlockPos pos, ItemStack stack, CallbackInfo ci) {
-		if (ElderArena.holds(level, pos) || ElderTerrain.temporary(level, pos)) {
+		if (ElderArena.holds(level, pos) || ElderTerrain.temporary(level, pos) || FightBlocks.holds(level, pos)) {
 			ci.cancel();
 		}
 	}

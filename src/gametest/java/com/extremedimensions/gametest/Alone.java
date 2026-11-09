@@ -34,6 +34,14 @@ final class Alone {
 	static final String FERRYMAN_TOLL = "extremedimensions_test:alone/ferryman_toll";
 	static final String ELDER_FORMING = "extremedimensions_test:alone/elder_forming";
 	static final String ARENA_RAISED = "extremedimensions_test:alone/arena_raised";
+	// (nothing a fight puts into the world is left: whole fights high over the world, and what they share)
+	static final String LEFTOVER_DESIGN = "extremedimensions_test:alone/leftover_design";
+	static final String LEFTOVER_JOURNAL = "extremedimensions_test:alone/leftover_journal";
+	static final String LEFTOVER_MATRIARCH = "extremedimensions_test:alone/leftover_matriarch";
+	static final String LEFTOVER_FERRYMAN = "extremedimensions_test:alone/leftover_ferryman";
+	static final String LEFTOVER_WEAVER = "extremedimensions_test:alone/leftover_weaver";
+	static final String LEFTOVER_MASON = "extremedimensions_test:alone/leftover_mason";
+	static final String LEFTOVER_KNOT_MOTHER = "extremedimensions_test:alone/leftover_knot_mother";
 	static final String WEAVER_RINGS = "extremedimensions_test:alone/weaver_rings";
 	static final String KNOT_MOTHER = "extremedimensions_test:alone/knot_mother";
 	static final String ELDER_HEALTH = "extremedimensions_test:alone/elder_health";
@@ -79,4 +87,22 @@ final class Alone {
 	static final String KNOT_DRAW = "extremedimensions_test:alone/knot_draw";
 	static final String KNOT_SNARL = "extremedimensions_test:alone/knot_snarl";
 	static final String KNOT_ANCHOR = "extremedimensions_test:alone/knot_anchor";
+	// (an Elder on ground laid wider than a test's own space, which it reaches well past)
+	static final String FOOTING_MATRIARCH_RAISED = "extremedimensions_test:alone/footing_matriarch_raised";
+	static final String FOOTING_MATRIARCH_RIM = "extremedimensions_test:alone/footing_matriarch_rim";
+	static final String FOOTING_MATRIARCH_LEDGE = "extremedimensions_test:alone/footing_matriarch_ledge";
+	static final String FOOTING_MATRIARCH_WALL = "extremedimensions_test:alone/footing_matriarch_wall";
+	static final String FOOTING_FERRYMAN_RAISED = "extremedimensions_test:alone/footing_ferryman_raised";
+	static final String FOOTING_FERRYMAN_RIM = "extremedimensions_test:alone/footing_ferryman_rim";
+	static final String FOOTING_FERRYMAN_LEDGE = "extremedimensions_test:alone/footing_ferryman_ledge";
+	static final String FOOTING_FERRYMAN_WALL = "extremedimensions_test:alone/footing_ferryman_wall";
+	static final String FOOTING_WEAVER_RAISED = "extremedimensions_test:alone/footing_weaver_raised";
+	static final String FOOTING_WEAVER_RIM = "extremedimensions_test:alone/footing_weaver_rim";
+	static final String FOOTING_WEAVER_LEDGE = "extremedimensions_test:alone/footing_weaver_ledge";
+	static final String FOOTING_WEAVER_WALL = "extremedimensions_test:alone/footing_weaver_wall";
+	static final String FOOTING_MASON_RAISED = "extremedimensions_test:alone/footing_mason_raised";
+	static final String FOOTING_MASON_RIM = "extremedimensions_test:alone/footing_mason_rim";
+	static final String FOOTING_MASON_LEDGE = "extremedimensions_test:alone/footing_mason_ledge";
+	static final String FOOTING_MASON_WALL = "extremedimensions_test:alone/footing_mason_wall";
+	static final String FOOTING_MASON_BLINK = "extremedimensions_test:alone/footing_mason_blink";
 }

@@ -79,6 +79,8 @@ public final class ServerEvents {
 		ServerLifecycleEvents.SERVER_STARTED.register(s -> {
 			WorldFx.bind(s);
 			DataStore.load(s);
+			// What a boss fight cut short by a crash left in the world goes back as its ground loads
+			FightBlocks.load(s);
 			com.extremedimensions.coop.Allies.init(s);
 		});
 		// The mod's data is written with the world's own saves (autosave, /save-all, stop), never ahead of them
@@ -86,6 +88,7 @@ public final class ServerEvents {
 			// Everything, every time: small changes (charge drained, atonement gathered) mark nothing dirty on their own
 			DataStore.markDirty();
 			DataStore.flush();
+			FightBlocks.saved();
 		});
 		ServerLifecycleEvents.SERVER_STOPPING.register(s -> {
 			// Thorns and chains an Elder raised sink back, and its arena comes down, before the world is saved (the ground
@@ -100,6 +103,9 @@ public final class ServerEvents {
 			SeamService.stopping();
 			// An anchor finishing or breaking apart (3.44) is whole or broken at once, before the world is saved
 			com.extremedimensions.reach.AnchorRites.clear();
+			// Whatever any boss fight still holds goes back now, before the world is saved (its anchors, its nodes, what
+			// its systems above left); what lies in ground not loaded now goes back once it is, after the next start
+			FightBlocks.stopping();
 			DataStore.markDirty();
 			DataStore.flush();
 			// The stats export, once more, as a web page should show the world while the server is down
@@ -152,6 +158,7 @@ public final class ServerEvents {
 			com.extremedimensions.coop.Allies.clear();
 			Requests.clear();
 			DataStore.unload();
+			FightBlocks.unload();
 			WorldFx.bind(null);
 		});
 		ServerTickEvents.END_SERVER_TICK.register(ServerEvents::tick);
@@ -160,8 +167,10 @@ public final class ServerEvents {
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
 			// ... and so are a gaol's posts, echo chains and builders left behind by a stop, or by an echo or a build
 			// that is over
+			// (and rubble of an arena that was still falling when its chunk was saved)
 			if (BlockFlight.stray(entity) | com.extremedimensions.elder.ElderGaol.stray(entity)
-					| com.extremedimensions.events.Echoes.stray(entity) | com.extremedimensions.events.Unanchored.stray(entity)) {
+					| com.extremedimensions.events.Echoes.stray(entity) | com.extremedimensions.events.Unanchored.stray(entity)
+					| com.extremedimensions.elder.ArenaRuin.stray(entity)) {
 				STRAYS.add(entity);
 			}
 		});
@@ -844,6 +853,9 @@ public final class ServerEvents {
 		lap = TickProfile.lap("weaver", lap);
 		com.extremedimensions.elder.ElderArena.tick(s);
 		lap = TickProfile.lap("arena", lap);
+		// (last of the fights: what they let go of this tick, and their journal)
+		FightBlocks.tick(s);
+		lap = TickProfile.lap("fight blocks", lap);
 		com.extremedimensions.coop.FallenService.tick(s);
 		com.extremedimensions.tribe.RaidService.tick(s);
 		com.extremedimensions.elder.AttackFx.flush(s);

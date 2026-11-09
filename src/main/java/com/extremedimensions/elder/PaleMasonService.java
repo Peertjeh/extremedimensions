@@ -425,8 +425,10 @@ public final class PaleMasonService {
 			// round to their side or behind them, never straight back where he stood
 			double a = base + Math.PI * (0.5 + rnd.nextDouble()) * (rnd.nextBoolean() ? 1 : -1);
 			double x = p.getX() + Math.cos(a) * off, z = p.getZ() + Math.sin(a) * off;
-			double y = ElderFx.surface(level, x, p.getY() + 4, z, 6, 12);
-			if (Double.isNaN(y)) {
+			// On top of the ground under the whole of him there (not of one column of it, sunk into a slope beside it),
+			// looked for from the ground they stand on (not on a roof over them)
+			double y = ElderMotion.landing(m, x, z, ElderFx.groundUnder(p));
+			if (Double.isNaN(y) || y > p.getY() + 6 || y < p.getY() - 8) {
 				continue;
 			}
 			String dim = ElderFx.dim(m);

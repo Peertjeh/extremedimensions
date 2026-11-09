@@ -235,6 +235,15 @@ public abstract class ElderBoss extends Monster {
 	/** How far the model reaches past the hitbox, so it is drawn whenever any of it is in view. */
 	public abstract double modelReach();
 
+	/**
+	 * How far a hull of its own reaches out ahead of it and behind it along the way it faces, where that is further than
+	 * its body is wide (the Ferryman's boat): it stands on the ground under all of it (see {@link ElderMotion}). 0 for
+	 * none.
+	 */
+	public double hullReach() {
+		return 0;
+	}
+
 	@Override
 	public boolean removeWhenFarAway(double distance) {
 		return false;
