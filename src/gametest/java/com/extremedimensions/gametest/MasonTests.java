@@ -31,6 +31,26 @@ public class MasonTests {
 		}
 	}
 
+	/**
+	 * His blows reach far (a hurled block flies at anyone within 48 blocks), so the tests that let him fight make them
+	 * harmless: the players of the tests round these are not his. (Only his own settings change, which no other test
+	 * reads.) Run the returned task when he is gone.
+	 */
+	private static Runnable harmless() {
+		double strike = Config.PALE_MASON_STRIKE_DAMAGE, block = Config.PALE_MASON_BLOCK_DAMAGE, gaze = Config.PALE_MASON_GAZE_DAMAGE,
+				door = Config.PALE_MASON_DOOR_DAMAGE;
+		Config.PALE_MASON_STRIKE_DAMAGE = 0;
+		Config.PALE_MASON_BLOCK_DAMAGE = 0;
+		Config.PALE_MASON_GAZE_DAMAGE = 0;
+		Config.PALE_MASON_DOOR_DAMAGE = 0;
+		return () -> {
+			Config.PALE_MASON_STRIKE_DAMAGE = strike;
+			Config.PALE_MASON_BLOCK_DAMAGE = block;
+			Config.PALE_MASON_GAZE_DAMAGE = gaze;
+			Config.PALE_MASON_DOOR_DAMAGE = door;
+		};
+	}
+
 	private static ServerPlayer visitor(GameTestHelper helper, String name) {
 		ServerPlayer p = TestPlayers.survivor(helper, name);
 		BlockPos at = helper.absolutePos(new BlockPos(1, 2, 1));
@@ -58,8 +78,12 @@ public class MasonTests {
 	@GameTest(maxTicks = 240)
 	public void heLiftsGreatBlocksAndHurlsThemAll(GameTestHelper helper) {
 		ServerPlayer p = visitor(helper, "mason-target");
+		Runnable restore = harmless();
 		PaleMason m = mason(helper, p);
-		check(helper, m != null, "the Pale Mason could not come");
+		if (m == null) {
+			restore.run();
+			throw helper.assertionException("the Pale Mason could not come");
+		}
 		PaleMasonService.force(m, PaleMason.LIFT);
 		int[] most = {0};
 		for (int t = 5; t <= 60; t += 5) {
@@ -69,6 +93,7 @@ public class MasonTests {
 			int left = PaleMasonService.boulders(m);
 			int action = m.getAction();
 			PaleMasonService.fade(m);
+			restore.run();
 			check(helper, most[0] >= 2, "he lifted only %s great blocks", most[0]);
 			check(helper, left == 0, "%s great blocks were left hanging (his action %s)", left, action);
 			helper.succeed();
@@ -106,13 +131,18 @@ public class MasonTests {
 	@GameTest(maxTicks = 60)
 	public void hisLastDoorOpens(GameTestHelper helper) {
 		ServerPlayer p = visitor(helper, "mason-door");
+		Runnable restore = harmless();
 		PaleMason m = mason(helper, p);
-		check(helper, m != null, "the Pale Mason could not come");
+		if (m == null) {
+			restore.run();
+			throw helper.assertionException("the Pale Mason could not come");
+		}
 		PaleMasonService.force(m, ElderBoss.ULTIMATE);
 		helper.runAfterDelay(20, () -> {
 			boolean open = PaleMasonService.doorOpen(m);
 			int action = m.getAction();
 			PaleMasonService.fade(m);
+			restore.run();
 			check(helper, open, "the Last Door did not open (his action %s)", action);
 			check(helper, !PaleMasonService.doorOpen(m), "the Last Door stayed open after he went");
 			helper.succeed();

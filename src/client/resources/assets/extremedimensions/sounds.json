@@ -212,6 +212,14 @@
       }
     ]
   },
+  "music.boss_pale_mason": {
+    "sounds": [
+      {
+        "name": "extremedimensions:music/boss_pale_mason",
+        "stream": true
+      }
+    ]
+  },
   "music_disc.tick_of_the_boundary": {
     "sounds": [
       {
@@ -1199,6 +1207,197 @@
     "sounds": [
       {
         "name": "extremedimensions:elder/knot_mother_roar",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.pale_mason.voice": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.voice",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_voice1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "extremedimensions:elder/pale_mason_voice2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.pale_mason.blink": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.blink",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_blink",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.pale_mason.strike": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.strike",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_strike",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.pale_mason.wall": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.wall",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_wall",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.pale_mason.lift": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.lift",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_lift",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.pale_mason.throw": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.throw",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_throw",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.pale_mason.impact": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.impact",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_impact",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.pale_mason.gaze": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.gaze",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_gaze",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.pale_mason.door": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.door",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_door",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.pale_mason.pull": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.pull",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_pull",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.pale_mason.snare": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.snare",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_snare",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.pale_mason.phase": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.phase",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_phase",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.pale_mason.ultimate": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.ultimate",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_ultimate",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.pale_mason.wake": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.wake",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_wake",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.pale_mason.hurt": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.hurt",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_hurt1",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "extremedimensions:elder/pale_mason_hurt2",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "extremedimensions:elder/pale_mason_hurt3",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "elder.pale_mason.ambient": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.ambient",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_ambient1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "extremedimensions:elder/pale_mason_ambient2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.pale_mason.death": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.death",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_death",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.pale_mason.step": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.step",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_step1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "extremedimensions:elder/pale_mason_step2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "elder.pale_mason.roar": {
+    "subtitle": "subtitles.extremedimensions.elder.pale_mason.roar",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/pale_mason_roar",
         "attenuation_distance": 40
       }
     ]

@@ -140,14 +140,16 @@ public class DiscordTests {
 			// With one, every moment is a message within the limit that pings nobody
 			Config.DISCORD_WEBHOOK = HOOK;
 			everyMoment(p);
-			check(helper, caught.size() == 10, "%s messages for 10 moments", caught.size());
+			// one per Elder, then the Starved One, two endings, a panel, the tapestry and a gold
+			int moments = StatsExport.Elder.values().length + 6;
+			check(helper, caught.size() == moments, "%s messages for %s moments", caught.size(), moments);
 			for (String body : caught) {
 				JsonObject o = JsonParser.parseString(body).getAsJsonObject();
 				check(helper, o.get("content").getAsString().length() <= DiscordWebhook.LIMIT && o.getAsJsonObject("allowed_mentions").getAsJsonArray("parse").isEmpty(),
 						"a message is too long or may ping: %s", body);
 			}
-			check(helper, content(caught.get(9)).equals("discord-quiet won **Gold** in this week's Rift Trial (Hunter · Still Seam) with a score of 40."),
-					"gold reads: %s", content(caught.get(9)));
+			check(helper, content(caught.get(moments - 1)).equals("discord-quiet won **Gold** in this week's Rift Trial (Hunter · Still Seam) with a score of 40."),
+					"gold reads: %s", content(caught.get(moments - 1)));
 			helper.succeed();
 		} finally {
 			close(before);

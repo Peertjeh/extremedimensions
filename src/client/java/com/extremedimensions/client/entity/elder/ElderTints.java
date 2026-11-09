@@ -1,8 +1,10 @@
 package com.extremedimensions.client.entity.elder;
 
+import com.extremedimensions.elder.ElderBoss;
 import com.extremedimensions.elder.Ferryman;
 import com.extremedimensions.elder.KnotMother;
 import com.extremedimensions.elder.Matriarch;
+import com.extremedimensions.elder.PaleMason;
 import com.extremedimensions.elder.Weaver;
 
 /**
@@ -23,6 +25,7 @@ final class ElderTints {
 			case "matriarch" -> new String[] {"red", "green", "amber", "white"};
 			case "ferryman" -> new String[] {"red", "sea", "gold", "white", "soul"};
 			case "knot_mother" -> new String[] {"amber", "violet", "white"};
+			case "pale_mason" -> new String[] {"violet", "white", "gold"};
 			default -> new String[] {"blue", "crimson", "silver"};
 		};
 	}
@@ -54,6 +57,14 @@ final class ElderTints {
 				case KnotMother.THREADLINE -> 0;
 				case KnotMother.SNARE -> 1;
 				case KnotMother.EXPOSED -> 2;
+				default -> NONE;
+			};
+			// The Pale Mason: violet as he strikes out of the air and as his gaze falls, white as his blocks are lifted
+			// and hurled, gold as his walls rise and as the Last Door opens
+			case "pale_mason" -> switch (action) {
+				case PaleMason.STRIKE, PaleMason.GAZE -> 0;
+				case PaleMason.LIFT, PaleMason.THROW -> 1;
+				case PaleMason.WALLS, ElderBoss.ULTIMATE -> 2;
 				default -> NONE;
 			};
 			// Blue-white for the lance, crimson for the thousand needles, silver for needles; dark as it unravels

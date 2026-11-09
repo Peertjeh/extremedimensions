@@ -9,6 +9,7 @@ import ferryman  # noqa: E402
 import weaver  # noqa: E402
 import starved_one  # noqa: E402
 import knot_mother  # noqa: E402
+import pale_mason  # noqa: E402
 
 ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
 JAVA = os.path.join(ROOT, "src/client/java/com/extremedimensions/client/entity/elder")
@@ -17,7 +18,7 @@ os.makedirs(JAVA, exist_ok=True)
 os.makedirs(TEX, exist_ok=True)
 preview = sys.argv[1] if len(sys.argv) > 1 else None
 for mod, name in ((matriarch, "matriarch"), (ferryman, "ferryman"), (weaver, "weaver"), (starved_one, "starved_one"),
-                  (knot_mother, "knot_mother")):
+                  (knot_mother, "knot_mother"), (pale_mason, "pale_mason")):
     m = mod.build()
     uv, used = elderlib.pack(m)
     img, glow = elderlib.paint(m, uv)
