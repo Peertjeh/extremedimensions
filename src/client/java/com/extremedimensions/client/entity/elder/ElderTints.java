@@ -59,12 +59,13 @@ final class ElderTints {
 				case KnotMother.EXPOSED -> 2;
 				default -> NONE;
 			};
-			// The Pale Mason: violet as he strikes out of the air and as his gaze falls, white as his blocks are lifted
-			// and hurled, gold as his walls rise and as the Last Door opens
+			// The Pale Mason: violet as he strikes out of the air, as his gaze falls, as his Bound Stones swing and as his
+			// Spiral winds; white as his blocks are lifted and hurled and as his Pillars tear up; gold as his walls rise,
+			// as he casts his rings and as the Last Door opens
 			case "pale_mason" -> switch (action) {
-				case PaleMason.STRIKE, PaleMason.GAZE -> 0;
-				case PaleMason.LIFT, PaleMason.THROW -> 1;
-				case PaleMason.WALLS, ElderBoss.ULTIMATE -> 2;
+				case PaleMason.STRIKE, PaleMason.GAZE, PaleMason.CHAINS, PaleMason.SPIRAL -> 0;
+				case PaleMason.LIFT, PaleMason.THROW, PaleMason.PILLARS -> 1;
+				case PaleMason.WALLS, PaleMason.RINGS, ElderBoss.ULTIMATE -> 2;
 				default -> NONE;
 			};
 			// Blue-white for the lance, crimson for the thousand needles, silver for needles; dark as it unravels

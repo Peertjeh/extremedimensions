@@ -896,7 +896,8 @@ public final class PaleMasonService {
 			}
 			dropBound(f.bound);
 		}
-		if (b.past(104 + flight + 8)) {
+		// (back at rest by 130: his body comes out of its bow)
+		if (b.past(Math.max(130, 104 + flight + 8))) {
 			dropBound(f.bound);
 			f.end(m, f.enraged ? 35 : 50);
 		}

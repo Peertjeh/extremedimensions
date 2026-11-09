@@ -17,7 +17,12 @@ import net.minecraft.util.Mth;
  * go up and are driven down, palms to the floor; for the Falling Blocks his arms lift slowly, the palms turning up and
  * the fingers spread, and the blocks about him rise; then one arm draws back and sweeps forward to hurl them. For the
  * Gaze he goes still, his head bowed towards his prey and his eyes blazing. The Last Door spreads his arms wide while he
- * rises a little and the halo whirls, and at the end his arms swing in and shut it. He forms out of the floor, laid
+ * rises a little and the halo whirls, and at the end his arms swing in and shut it. For the Bound Stones he hauls his
+ * chained cubes out of the air with his arms spread, swings them round him with his whole torso and flings them; for
+ * the Pillars a fist is driven into the floor, bending him double, and then each palm after it; for the Golden Rings his
+ * halo whirls while three times his arms cross at his breast and are flung out level with the floor; for the Spiral he
+ * rises and turns slowly about, stirring the air, his cloth and the blocks about him flung out, draws in on himself
+ * and bursts outward. He forms out of the floor, laid
  * together block by block (robe, body, mantle, arms, head, hood), his eyes kindling, the halo last; dying, the halo
  * falls from behind his head and the floating blocks drop, and he sinks.
  */
@@ -279,8 +284,10 @@ public class PaleMasonModel extends EntityModel<ElderRenderState> {
 				// arm leading the swing rides high, the other low)
 				armL.xRot += -0.5F * coil - 0.3F * wide + 0.75F * back - 1.75F * fore + 0.55F * follow * k - 0.45F * arms;
 				armR.xRot += -0.5F * coil - 0.3F * wide + 0.75F * back - 1.75F * fore + 0.55F * follow * k + 0.45F * arms;
-				armL.zRot += 0.3F * coil - 1.35F * wide - 0.35F * heave - 0.25F * back + 0.15F * fore + 0.3F * j * wide - 0.35F * arms;
-				armR.zRot += -0.3F * coil + 1.35F * wide + 0.35F * heave + 0.25F * back - 0.15F * fore - 0.3F * j * wide - 0.35F * arms;
+				// (and as the cubes catch on their chains they wrench his spread arms down)
+				float yank = 0.3F * j * wide;
+				armL.zRot += 0.3F * coil - 1.35F * wide - 0.35F * heave - 0.25F * back + 0.15F * fore + yank - 0.35F * arms;
+				armR.zRot += -0.3F * coil + 1.35F * wide + 0.35F * heave + 0.25F * back - 0.15F * fore - yank - 0.35F * arms;
 				foreL.xRot += -0.3F * coil + 0.25F * wide + 0.3F * fore;
 				foreR.xRot += -0.3F * coil + 0.25F * wide + 0.3F * fore;
 				handL.yRot += 1.5F * palms;
@@ -347,25 +354,28 @@ public class PaleMasonModel extends EntityModel<ElderRenderState> {
 				// Golden Rings: the halo whirls and flares; three times his arms cross at his breast and are flung out to
 				// the sides, level with the floor and palms down, casting a ring of gold out across it (10, 30, 50), and
 				// he bobs with each cast
-				float in = 0, out = 0, flash = 0;
+				// (between casts his arms sweep straight back in from his sides to his breast and hold there a moment)
+				float in = 0, out = 0, flash = 0, bob = 0;
 				for (int c = 0; c < 3; c++) {
 					float cast = 10 + 20 * c;
 					float fling = ElderAnim.snap((at - cast + 3) / 3F);
-					in += ElderAnim.smooth((at - cast + 10) / 7F) * (1 - fling);
-					out += fling * (1 - ElderAnim.smooth((at - cast - 4) / (c == 2 ? 16F : 9F)));
+					in += (c == 0 ? ElderAnim.smooth(at / 7F) : ElderAnim.smooth((at - cast + 15) / 8F)) * (1 - fling);
+					out += fling * (1 - ElderAnim.smooth((at - cast - 5) / (c == 2 ? 16F : 8F)));
 					flash += ElderAnim.env(at - cast + 2, 2, 1, 9);
+					bob += ElderAnim.env(at - cast, 1.5F, 0, 9);
 				}
-				// (held out before him, a turn of yRot swings an arm across his breast or out to his side)
-				armL.xRot += -1.3F * in - 1.45F * out;
-				armR.xRot += -1.3F * in - 1.45F * out;
-				armL.yRot += 0.6F * in - 1.4F * out;
-				armR.yRot += -0.6F * in + 1.4F * out;
-				armL.zRot += 0.25F * in;
-				armR.zRot -= 0.25F * in;
-				foreL.xRot += -0.3F * in + 0.3F * out;
-				foreR.xRot += -0.3F * in + 0.3F * out;
-				foreL.zRot += 1.0F * in;
-				foreR.zRot -= 1.0F * in;
+				// (held out before him, a turn of yRot swings an arm across his breast or out to his side; crossed, the
+				// elbows are before his belly and the hands at the other shoulder, the left arm over the right)
+				armL.xRot += -0.95F * in - 1.45F * out;
+				armR.xRot += -0.85F * in - 1.45F * out;
+				armL.yRot += 0.8F * in - 1.4F * out;
+				armR.yRot += -0.8F * in + 1.4F * out;
+				armL.zRot -= 0.2F * in;
+				armR.zRot += 0.2F * in;
+				foreL.xRot += -1.8F * in + 0.3F * out;
+				foreR.xRot += -1.8F * in + 0.3F * out;
+				foreL.zRot -= 0.3F * in;
+				foreR.zRot += 0.3F * in;
 				handL.xRot -= 0.2F * out;
 				handR.xRot -= 0.2F * out;
 				spreadL += 0.9F * out;
@@ -375,7 +385,7 @@ public class PaleMasonModel extends EntityModel<ElderRenderState> {
 				torso.xRot += 0.16F * in - 0.14F * out;
 				torso.y += 2F * in;
 				head.xRot += 0.1F * in - 0.12F * out;
-				root.y += 2F * j;
+				root.y += 2.5F * bob;
 				whirl(0.3F * flash, 0, t);
 				float ring = ElderAnim.env(at, 6, 54, 10);
 				halo.zRot += turns(at, 64, 3);
@@ -404,28 +414,31 @@ public class PaleMasonModel extends EntityModel<ElderRenderState> {
 				float turning = at < 20 || at > 84 ? 0 : 1 - Mth.cos((at - 20) / 64F * Mth.PI * 2);
 				body.yRot += turns(at - 20, 64, 1);
 				torso.yRot += 0.12F * turning;
-				armL.xRot += -0.2F * wide + 0.25F * out - 1.0F * in + 0.18F * cx;
-				armR.xRot += -0.2F * wide + 0.25F * out - 1.0F * in - 0.18F * cx;
-				armL.zRot += -1.25F * wide - 1.6F * out + 0.35F * in - 0.16F * cy;
-				armR.zRot += 1.25F * wide + 1.6F * out - 0.35F * in - 0.16F * cy;
-				armL.yRot += 0.5F * in;
-				armR.yRot -= 0.5F * in;
-				foreL.xRot += 0.15F * wide + 0.32F * out - 0.5F * in + 0.3F * fx;
-				foreR.xRot += 0.15F * wide + 0.32F * out - 0.5F * in - 0.3F * fx;
-				foreL.zRot += 0.3F * fy;
-				foreR.zRot += 0.3F * fy;
+				// (drawn in, his arms fold across his breast)
+				armL.xRot += -0.2F * wide + 0.25F * out - 0.9F * in + 0.18F * cx;
+				armR.xRot += -0.2F * wide + 0.25F * out - 0.9F * in - 0.18F * cx;
+				armL.zRot += -1.25F * wide - 1.6F * out - 0.15F * in - 0.16F * cy;
+				armR.zRot += 1.25F * wide + 1.6F * out + 0.15F * in - 0.16F * cy;
+				armL.yRot += 0.7F * in;
+				armR.yRot -= 0.7F * in;
+				foreL.xRot += 0.15F * wide + 0.32F * out - 1.5F * in + 0.3F * fx;
+				foreR.xRot += 0.15F * wide + 0.32F * out - 1.5F * in - 0.3F * fx;
+				foreL.zRot += 0.3F * fy - 0.25F * in;
+				foreR.zRot += 0.3F * fy + 0.25F * in;
 				spreadL += 0.5F * wide + 1.0F * out;
 				spreadR += 0.5F * wide + 1.0F * out;
 				curlL += 0.3F * stir + 0.8F * in - 0.4F * out;
 				curlR += 0.3F * stir + 0.8F * in - 0.4F * out;
-				torso.xRot += -0.08F * wide + 0.28F * in - 0.28F * out;
+				torso.xRot += -0.08F * wide + 0.28F * in - 0.2F * out;
 				torso.y += 3F * in;
-				head.xRot += -0.2F * wide + 0.3F * in - 0.45F * out;
+				head.xRot += -0.2F * wide + 0.3F * in - 0.3F * out;
+				// (the halo kept upright behind his head as he throws it back)
+				haloFrame.xRot += 0.3F * out;
 				root.y += -6F * rise + 2.5F * in - 2F * out;
 				legL.xRot += 0.12F * rise;
 				legR.xRot += 0.06F * rise;
 				whirl(0.35F * swirl + 0.55F * blast, 0.15F * turning * swirl, t);
-				orbit.yRot += turns(at - 14, 90, 4);
+				orbit.yRot += turns(at - 14, 90, 2);
 				for (int i = 0; i < floats.length; i++) {
 					floats[i].x *= 1 + 0.3F * swirl + 0.7F * blast;
 					floats[i].z *= 1 + 0.3F * swirl + 0.7F * blast;
