@@ -14,6 +14,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -33,6 +36,10 @@ public class HomeOrLockTests {
 		PaleAnchorDesign.Blueprint bp = PaleReach.buildNow(level, helper.absolutePos(new BlockPos(2, 40, 2)), seed);
 		PaleReach.attune(level, bp.fitting, null);
 		return bp;
+	}
+
+	private static EntityType<?> enderman() {
+		return BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.fromNamespaceAndPath("minecraft", "enderman"));
 	}
 
 	private static int itemsNear(ServerLevel level, BlockPos at) {
@@ -102,12 +109,15 @@ public class HomeOrLockTests {
 		String was = HomeOrLock.choice();
 		double chance = Config.PALE_LOCK_HOSTILE_CHANCE;
 		int calm = Config.PALE_HOME_CALM;
+		// (the tests run in peace, where no Enderman turns on anyone)
+		Difficulty difficulty = helper.getLevel().getDifficulty();
+		helper.getLevel().getServer().setDifficulty(Difficulty.NORMAL, true);
 		try {
 			ServerPlayer p = TestPlayers.survivor(helper, "ender-watcher");
 			BlockPos at = helper.absolutePos(new BlockPos(1, 2, 1));
 			p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
-			Mob stared = (Mob) helper.spawn(EntityType.ENDERMAN, new BlockPos(4, 2, 4));
-			Mob struck = (Mob) helper.spawn(EntityType.ENDERMAN, new BlockPos(5, 2, 1));
+			Mob stared = (Mob) helper.spawn(enderman(), new BlockPos(4, 2, 4));
+			Mob struck = (Mob) helper.spawn(enderman(), new BlockPos(5, 2, 1));
 			Config.PALE_HOME_CALM = 1;
 			HomeOrLock.set(HomeOrLock.HOME);
 			stared.setTarget(p);
@@ -118,7 +128,7 @@ public class HomeOrLockTests {
 			check(helper, struck.getTarget() == p, "an Enderman gone home forgave a blow");
 			stared.discard();
 			struck.discard();
-			Mob near = (Mob) helper.spawn(EntityType.ENDERMAN, new BlockPos(3, 2, 3));
+			Mob near = (Mob) helper.spawn(enderman(), new BlockPos(3, 2, 3));
 			near.setTarget(null);
 			Config.PALE_LOCK_HOSTILE_CHANCE = 1;
 			HomeOrLock.set(HomeOrLock.LOCK);
@@ -129,6 +139,7 @@ public class HomeOrLockTests {
 			Config.PALE_LOCK_HOSTILE_CHANCE = chance;
 			Config.PALE_HOME_CALM = calm;
 			HomeOrLock.set(was);
+			helper.getLevel().getServer().setDifficulty(difficulty, true);
 		}
 		helper.succeed();
 	}

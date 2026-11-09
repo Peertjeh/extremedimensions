@@ -1551,9 +1551,10 @@ public class ClientShots implements FabricClientGameTest {
 					com.extremedimensions.reach.HomeOrLock.choose(lv, bp.fitting, null, home);
 				});
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 -24");
-				ctx.waitTicks(home ? 40 : 12);
+				// (the finished anchor flies together where it is watched, then its door opens: some thirteen seconds)
+				ctx.waitTicks(home ? 60 : 12);
 				ctx.takeScreenshot(home ? "10_pale_home_a" : "10_pale_lock_a");
-				ctx.waitTicks(home ? 90 : 40);
+				ctx.waitTicks(home ? 240 : 40);
 				ctx.takeScreenshot(home ? "10_pale_home_b" : "10_pale_lock_b");
 			}
 			sp.getServer().runOnServer(s -> {

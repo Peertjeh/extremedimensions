@@ -98,6 +98,8 @@ public final class ServerEvents {
 			com.extremedimensions.events.WorldEvents.clear();
 			// Blocks of the Seam in the air land, and islands not yet finished are built again on the next visit
 			SeamService.stopping();
+			// An anchor finishing or breaking apart (3.44) is whole or broken at once, before the world is saved
+			com.extremedimensions.reach.AnchorRites.clear();
 			DataStore.markDirty();
 			DataStore.flush();
 			// The stats export, once more, as a web page should show the world while the server is down

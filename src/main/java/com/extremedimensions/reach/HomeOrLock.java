@@ -20,7 +20,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -48,6 +50,7 @@ public final class HomeOrLock {
 	private HomeOrLock() {}
 
 	public static final String HOME = "home", LOCK = "lock";
+	private static final Identifier ENDERMAN = Identifier.fromNamespaceAndPath("minecraft", "enderman");
 	/** The mark the choice is kept under, among the Reach's (see {@link DataStore#reach()}). */
 	private static final String MARK = "choice@";
 
@@ -190,13 +193,17 @@ public final class HomeOrLock {
 		}
 	}
 
+	private static boolean enderman(Entity e) {
+		return BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).equals(ENDERMAN);
+	}
+
 	/** Gone home: an Enderman that took a gaze for a slight lets it pass (one the player struck stays angry). */
 	public static int calm(ServerPlayer p) {
 		if (Config.PALE_HOME_CALM <= 0) {
 			return 0;
 		}
 		int n = 0;
-		for (Mob m : p.level().getEntitiesOfClass(Mob.class, p.getBoundingBox().inflate(48), e -> e.getType() == EntityType.ENDERMAN)) {
+		for (Mob m : p.level().getEntitiesOfClass(Mob.class, p.getBoundingBox().inflate(48), HomeOrLock::enderman)) {
 			if (m.getTarget() != p || m.getLastHurtByMob() == p) {
 				continue;
 			}
@@ -220,7 +227,7 @@ public final class HomeOrLock {
 		int n = 0;
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		double range = Math.max(4, Config.PALE_LOCK_HOSTILE_RANGE);
-		for (Mob m : p.level().getEntitiesOfClass(Mob.class, p.getBoundingBox().inflate(range), e -> e.getType() == EntityType.ENDERMAN)) {
+		for (Mob m : p.level().getEntitiesOfClass(Mob.class, p.getBoundingBox().inflate(range), HomeOrLock::enderman)) {
 			if (m.getTarget() != null || m.distanceToSqr(p) > range * range || rnd.nextDouble() >= Config.PALE_LOCK_HOSTILE_CHANCE) {
 				continue;
 			}

@@ -51,7 +51,8 @@ import net.minecraft.world.level.levelgen.Heightmap;
  *
  * <p>What is kept with the world ({@link DataStore#reach}): an anchor begun at {@code pb@cx,cz|x,y,z} (where it was set
  * down, so it is built at the same height again after a restart), built {@code pa@cx,cz}, passed over {@code px@cx,cz}
- * (an End City stands there); a fitting {@code pf@dim|x,y,z} and an attuned one {@code pt@dim|x,y,z}.
+ * (an End City stands there); a fitting {@code pf@dim|x,y,z} and an attuned one {@code pt@dim|x,y,z}; the anchor of a
+ * fitting finished {@code ph@dim|x,y,z} or locked {@code pl@dim|x,y,z} (3.44, see {@link AnchorRites}).
  */
 public final class PaleReach {
 	private PaleReach() {}
@@ -113,6 +114,27 @@ public final class PaleReach {
 		return Dims.of(level) + "|" + p.getX() + "," + p.getY() + "," + p.getZ();
 	}
 
+	/** The seeds of the anchors built since the server started, by their fittings (the showcases' and the tests' too). */
+	private static final Map<String, Long> SEEDS = new HashMap<>();
+
+	/**
+	 * The seed the anchor whose fitting is here was designed from (3.44): the one it was built from since the server
+	 * started, else its square's, if it hangs where its square puts it. Null if neither is known.
+	 */
+	static Long seedAt(ServerLevel level, BlockPos fitting) {
+		Long kept = SEEDS.get(spot(level, fitting));
+		if (kept != null) {
+			return kept;
+		}
+		// (worked out as site() does, but whatever the share of squares holding one is set to now)
+		int sp = spacing();
+		int cx = Math.floorDiv(fitting.getX(), sp), cz = Math.floorDiv(fitting.getZ(), sp);
+		long seed = seedOf(level.getSeed(), cx, cz);
+		int x = cx * sp + (int) (sp * (0.2 + 0.6 * PaleAnchorDesign.unit(seed, 2, cx, cz)));
+		int z = cz * sp + (int) (sp * (0.2 + 0.6 * PaleAnchorDesign.unit(seed, 3, cx, cz)));
+		return x == fitting.getX() && z == fitting.getZ() ? seed : null;
+	}
+
 	// ------------------------------------------------------------------ building
 
 	/** An anchor flying together. */
@@ -153,6 +175,7 @@ public final class PaleReach {
 		}
 		b = new Build(key, level, origin, PaleAnchorDesign.design(origin, seed));
 		BUILDS.put(key, b);
+		SEEDS.put(spot(level, b.bp.fitting), seed);
 		WorldFx.soundIn(level.dimension().identifier().toString(), "minecraft:block.end_portal.spawn", "ambient", origin.getX() + 0.5, origin.getY(),
 				origin.getZ() + 0.5, 2.5f, 0.6f);
 		return b.bp;
@@ -161,6 +184,7 @@ public final class PaleReach {
 	/** Builds an anchor here at once, every block in its place (for the tests and the showcases). */
 	public static PaleAnchorDesign.Blueprint buildNow(ServerLevel level, BlockPos origin, long seed) {
 		PaleAnchorDesign.Blueprint bp = PaleAnchorDesign.design(origin, seed);
+		SEEDS.put(spot(level, bp.fitting), seed);
 		for (Map.Entry<Long, BlockState> e : bp.ordered(origin)) {
 			BlockPos pos = BlockPos.of(e.getKey());
 			if (level.getBlockState(pos).isAir()) {
@@ -221,6 +245,11 @@ public final class PaleReach {
 			marks.add("pb@" + c + "|" + origin.getX() + "," + origin.getY() + "," + origin.getZ());
 			DataStore.markDirty();
 		}
+		// An anchor finished or locked (3.44, see AnchorRites) is never built again as unfinished
+		String fitting = spot(level, origin.above());
+		if (marks.contains("ph@" + fitting) || marks.contains("pl@" + fitting)) {
+			return;
+		}
 		build(level, c, origin, seedOf(level.getSeed(), cx, cz));
 	}
 
@@ -272,11 +301,11 @@ public final class PaleReach {
 		return b.next >= b.pieces.size() && b.flights.isEmpty() && b.held.isEmpty();
 	}
 
-	private static int flyMax() {
+	static int flyMax() {
 		return Math.max(1, Config.ELDER_ARENA_FLY_MAX);
 	}
 
-	private static int flightTicks() {
+	static int flightTicks() {
 		return Math.max(10, Config.ELDER_ARENA_FLIGHT_TICKS);
 	}
 
@@ -331,7 +360,7 @@ public final class PaleReach {
 		return new double[] {Math.cos(a) * d, rnd.nextDouble() * 9 - 3, Math.sin(a) * d};
 	}
 
-	private static boolean watched(ServerLevel level, BlockPos pos) {
+	static boolean watched(ServerLevel level, BlockPos pos) {
 		double r2 = (double) Config.ELDER_ARENA_FLY_RANGE * Config.ELDER_ARENA_FLY_RANGE;
 		for (ServerPlayer p : level.players()) {
 			if (!p.isSpectator() && p.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) < r2) {
@@ -377,7 +406,7 @@ public final class PaleReach {
 	/** The fittings known and those attuned, read from the world's data (and forgotten whenever they change). */
 	private static List<String> fittings, attuned;
 
-	private static void forget() {
+	static void forget() {
 		fittings = null;
 		attuned = null;
 	}
@@ -634,6 +663,7 @@ public final class PaleReach {
 		BUILDS.clear();
 		HELD.clear();
 		SHOWN.clear();
+		SEEDS.clear();
 		forget();
 	}
 }

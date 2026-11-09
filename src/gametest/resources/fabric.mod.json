@@ -18,6 +18,7 @@
 			"com.extremedimensions.gametest.ReachTests",
 			"com.extremedimensions.gametest.MasonTests",
 			"com.extremedimensions.gametest.HomeOrLockTests",
+			"com.extremedimensions.gametest.RitesTests",
 			"com.extremedimensions.gametest.UpheavalTests",
 			"com.extremedimensions.gametest.FerrymanBlowTests",
 			"com.extremedimensions.gametest.WeaverBlowTests",

@@ -29,6 +29,8 @@ final class Alone {
 	static final String CHOICE_HOME = "extremedimensions_test:alone/choice_home";
 	static final String CHOICE_LOCK = "extremedimensions_test:alone/choice_lock";
 	static final String CHOICE_ENDERMEN = "extremedimensions_test:alone/choice_endermen";
+	static final String RITES_HOME = "extremedimensions_test:alone/rites_home";
+	static final String RITES_LOCK = "extremedimensions_test:alone/rites_lock";
 	static final String FERRYMAN_TOLL = "extremedimensions_test:alone/ferryman_toll";
 	static final String ELDER_FORMING = "extremedimensions_test:alone/elder_forming";
 	static final String ARENA_RAISED = "extremedimensions_test:alone/arena_raised";
