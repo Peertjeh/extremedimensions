@@ -250,7 +250,8 @@ public class ClientShots implements FabricClientGameTest {
 		face(sp, name);
 		ctx.waitTicks(2);
 		ctx.takeScreenshot("12_fight_" + name + "_upheaval");
-		double[] over = {mid[0] + 45, mid[1] + 50, mid[2] + 45};
+		// (high and wide enough to clear the Matriarch's root arches and take in the whole torn ground)
+		double[] over = {mid[0] + 70, mid[1] + 90, mid[2] + 70};
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
 			p.getAbilities().mayfly = true;

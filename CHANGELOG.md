@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.41.1: Torn where the fight is
+
+### Changed
+- **The ultimate tears up the ground where the fight is.** In a great arena, the upheaval now covers up to 72 blocks
+  round the middle (times `elder_upheaval_scale`). It used to be spread thinly over the whole 144-block floor, most of
+  it out of sight. It also brings about twice as many cliffs, spikes, craters and heaves, and more of the Matriarch's
+  roots. `elder_upheaval_blocks` now allows 30000 blocks for one ultimate (was 20000), still placed within
+  `elder_upheaval_budget` a tick.
+
 ## 3.41.0: The Ground Breaks
 
 ### New

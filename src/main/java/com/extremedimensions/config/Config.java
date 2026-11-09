@@ -1180,7 +1180,7 @@ public final class Config {
 	/** Most blocks the ultimates' broken ground changes (or puts back) in one tick, all of them together. */
 	public static int ELDER_UPHEAVAL_BUDGET = 400;
 	/** Most blocks one ultimate's upheaval changes. */
-	public static int ELDER_UPHEAVAL_BLOCKS = 20000;
+	public static int ELDER_UPHEAVAL_BLOCKS = 30000;
 	/** Most blocks torn loose that hover round an Elder while its ultimate builds (each a block display). */
 	public static int ELDER_UPHEAVAL_DISPLAYS = 36;
 	/** Seconds an Elder takes to form out of matter and light before it fights (it cannot be hurt meanwhile). */

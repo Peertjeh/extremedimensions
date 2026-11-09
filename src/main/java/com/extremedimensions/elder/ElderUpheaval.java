@@ -81,6 +81,8 @@ public final class ElderUpheaval {
 	private static final int UNKNOWN = Integer.MIN_VALUE, NONE = Integer.MIN_VALUE + 1;
 	/** How far the ground breaks round an Elder with no arena, in blocks (times {@code elder_upheaval_scale}). */
 	private static final double OPEN_RADIUS = 28;
+	/** How far out from its middle a great arena is torn up (3.41: the fight's ground, densely). */
+	private static final double FOCUS = 72;
 	/** Ticks the eruption takes to run out from the Elder to the edge of its arena. */
 	private static final int WAVE = 40;
 	/** Ticks a layer of raised ground takes to sink back, and a layer of a hole to fill. */
@@ -530,7 +532,8 @@ public final class ElderUpheaval {
 				u.cx = u.arena.cx;
 				u.cz = u.arena.cz;
 				u.gy = u.arena.bp.gy;
-				u.radius = Math.max(8, u.arena.bp.floorR * scale);
+				// (where the fight is: the middle of a great arena, not its far edge, so the ground there is truly torn up)
+				u.radius = Math.max(8, Math.min(u.arena.bp.floorR, FOCUS) * scale);
 			} else {
 				u.cx = u.ex;
 				u.cz = u.ez;
@@ -894,13 +897,13 @@ public final class ElderUpheaval {
 			out.add(new Feature(CLIFF, startAt(u, x, z, rnd) + 4, x, z, a + Math.PI / 2 + rnd.nextDouble(-0.3, 0.3),
 					(rnd.nextDouble() < 0.7 ? 1 : -1) * rnd.nextDouble(0.25, 0.7), false));
 		}
-		strew(u, rnd, CLIFF, (int) Math.max(1, Math.min(24, Math.round(2 + 1.5 * grow))), 0.25, 0.8);
-		strew(u, rnd, SPIKES, (int) Math.max(2, Math.min(30, Math.round(3 + 2 * grow))), 0.2, 0.85);
-		strew(u, rnd, CRATER, (int) Math.max(1, Math.min(16, Math.round(1 + grow))), 0.2, 0.8);
-		strew(u, rnd, BUMP, (int) Math.max(3, Math.min(40, Math.round(4 + 3 * grow))), 0.15, 0.9);
+		strew(u, rnd, CLIFF, (int) Math.max(1, Math.min(32, Math.round(2 + 3 * grow))), 0.25, 0.8);
+		strew(u, rnd, SPIKES, (int) Math.max(2, Math.min(40, Math.round(4 + 4 * grow))), 0.2, 0.85);
+		strew(u, rnd, CRATER, (int) Math.max(1, Math.min(20, Math.round(1 + 2 * grow))), 0.2, 0.8);
+		strew(u, rnd, BUMP, (int) Math.max(3, Math.min(48, Math.round(4 + 5 * grow))), 0.15, 0.9);
 		if (u.style == 0) {
 			// the Matriarch's roots
-			strew(u, rnd, ROOT, (int) Math.max(2, Math.min(10, Math.round(2 + Math.sqrt(sq(r / 24))))), 0.2, 0.75);
+			strew(u, rnd, ROOT, (int) Math.max(2, Math.min(14, Math.round(3 + 1.5 * Math.sqrt(sq(r / 24))))), 0.2, 0.75);
 		}
 		out.sort(Comparator.comparingInt(Feature::start));
 	}
