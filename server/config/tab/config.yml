@@ -52,7 +52,7 @@ header-footer:
 # https://github.com/NEZNAMY/TAB/wiki/Feature-guide:-Playerlist-Objective
 playerlist-objective:
   enabled: true
-  value: "%extremedimensions:curses%"
+  value: "0" # never shown: the client shows fancy-value instead
   fancy-value: "%extremedimensions:badge%"
   title: "Curses"
   render-type: INTEGER
