@@ -68,12 +68,13 @@ def reverb(rng, x, tail=1.4, mix=0.3, bright=6000):
 
 def save(name, x, keep, target=None):
     """Peaks at 0.9. With a target (dB, short-term loudness as knot_mother.loudness), it is brought to that loudness
-    instead, its peaks softly held under 0.9, so a blow with one great transient sits as loud as the rest of the set."""
+    instead, its peaks softly held under 0.85 (Vorbis overshoots a hard crack by a tenth or so), so a blow with one great
+    transient sits as loud as the rest of the set."""
     x = x[: int(SR * keep)].copy()
     x = x / (np.max(np.abs(x)) + 1e-9) * 0.9
     if target is not None:
         x = x * min(2.0, 10 ** ((target - km.loudness(x)) / 20))
-        x = np.where(np.abs(x) > 0.75, np.sign(x) * (0.75 + 0.15 * np.tanh((np.abs(x) - 0.75) / 0.15)), x)
+        x = np.where(np.abs(x) > 0.7, np.sign(x) * (0.7 + 0.15 * np.tanh((np.abs(x) - 0.7) / 0.15)), x)
     f = int(SR * min(0.3, keep * 0.2))
     x[-f:] *= np.linspace(1, 0, f) ** 2
     with tempfile.TemporaryDirectory() as tmp:
@@ -309,9 +310,9 @@ def weaver_roar(seed):
 
 
 # ------------------------------------------------------------------ their blows of 3.43
-# The Last Weaver's warp and its fall, her spindle and her needles; the Ferryman's undertow, his geyser of soul fire, his
-# oar and his drowned bell. Each is built from the Elder's own palette above, with a few more tools: a moving band-pass,
-# a low blow, bubbles and soul fire for him, threads drawn taut and struck strings for her.
+# The Last Weaver's warp and its fall, its spindle storm and its needles; the Ferryman's undertow, his geyser of soul
+# fire, his oar and his drowned bell. Each is built from the Elder's own palette above, with a few more tools: a moving
+# band-pass, a low blow, bubbles and soul fire for him, threads drawn taut and struck strings for the Weaver.
 
 def nrm(x):
     return x / (np.max(np.abs(x)) + 1e-9)
@@ -350,14 +351,14 @@ def boom(rng, t, at, f0=70, f1=34, dur=1.0):
     return x + 0.5 * band(noise(rng, len(t)), 100, 1500) * env(tt, 0.001, 0.02)
 
 
-# the Weaver's own: threads drawn taut, strings struck, glass that rings, her choir
+# the Weaver's own: threads drawn taut, strings struck, glass that rings, its choir
 
-W_CHORD = [622.3, 784.0, 932.3, 1174.7]   # her choir's chord (as her roar: E flat, G, B flat, D)
+W_CHORD = [622.3, 784.0, 932.3, 1174.7]   # its choir's chord (as in its roar: E flat, G, B flat, D)
 
 
 def w_thread(rng, d, f0, f1, ring=0.12):
     """One thread drawn taut (d seconds, then its ring; laid with put): a thin tone rising from f0 to f1 as it tightens,
-    rubbed (a flutter), with the glassy overtone of her threads; taut, it sings on a moment at f1."""
+    rubbed (a flutter), with the glassy overtone of the Weaver's threads; taut, it sings on a moment at f1."""
     t = t_(d + ring * 4)
     k = np.clip(t / d, 0, 1)
     f = f0 * (f1 / f0) ** (k ** 0.6)
@@ -381,7 +382,7 @@ def w_string(rng, t, at, f, decay=0.9, tilt=1.1):
 
 
 def w_ring(rng, t, at, base, life=0.9):
-    """A great glass needle ringing: the inharmonic partials of her glass, each a pair a little apart, beating."""
+    """A great glass needle ringing: the inharmonic partials of the Weaver's glass, each a pair a little apart, beating."""
     tt = t - at
     x = np.zeros(len(t))
     for r, a in [(1, 1), (2.32, .55), (4.25, .35), (6.1, .2)]:
@@ -391,7 +392,7 @@ def w_ring(rng, t, at, base, life=0.9):
 
 
 def w_choir(rng, t, notes, bend, rates=(5.5, 6.2, 6.9, 7.6)):
-    """Her thin high voices, as in her roar: pure tones on a chord, each with its own vibrato, all bent by `bend` (a
+    """Its thin high voices, as in its roar: pure tones on a chord, each with its own vibrato, all bent by `bend` (a
     factor over time)."""
     x = np.zeros(len(t))
     for k, base in enumerate(notes):
@@ -411,7 +412,7 @@ def w_whistle(rng, t, at, dur, f_hi, f_lo):
 
 def weaver_warp(seed):
     """The warp drawn (2.5 s): threads drawn taut by the hundred, each a thin rubbed tone rising as it tightens, ever
-    more of them and ever higher; a glassy weave building among them, her choir and a rush of air rising to the moment it
+    more of them and ever higher; a glassy weave building among them, its choir and a rush of air rising to the moment it
     falls."""
     rng = np.random.default_rng(seed)
     t = t_(2.5)
@@ -423,7 +424,8 @@ def weaver_warp(seed):
         d = 0.16 + rng.random() * 0.3
         f0 = (520 + 1500 * k) * (0.8 + 0.5 * rng.random())
         put(threads, s, w_thread(rng, d, f0, f0 * (1.25 + 0.5 * rng.random())), (0.3 + 0.7 * rng.random()) * (0.35 + 0.65 * k))
-    weave = sum(w_glass(rng, t, a, 0.55, c, 1600 + 900 * i, 4200, life=0.05) for i, (a, c) in enumerate([(0.3, 5), (0.85, 10), (1.4, 18), (1.85, 30)]))
+    weave = sum(w_glass(rng, t, a, 0.55, c, 1600 + 900 * i, 4200, life=0.05)
+                for i, (a, c) in enumerate([(0.3, 5), (0.85, 10), (1.4, 18), (1.85, 30)]))
     rise = 0.72 * (1 / 0.72) ** (np.clip(t / top, 0, 1) ** 1.3)
     voices = w_choir(rng, t, W_CHORD, rise) * ramp(t, [0, top, top + 0.12], [0, 1, 0]) ** 2
     trem = 0.75 + 0.25 * np.sin(2 * np.pi * np.cumsum(4 + 22 * np.clip(t / top, 0, 1) ** 2) / SR)
@@ -444,7 +446,8 @@ def weaver_warpfall(seed):
     for i in range(7):
         s = at + 0.035 * rng.random() ** 1.5
         crack += noise(rng, len(t)) * env(t - s, 0.0002, 0.004 + 0.005 * rng.random()) * (1.0 if i == 0 else 0.4 + 0.5 * rng.random())
-    crack += 0.5 * band(noise(rng, len(t)), 2500, 12000) * env(t - at, 0.001, 0.05) + 0.6 * band(noise(rng, len(t)), 300, 2400) * env(t - at, 0.0005, 0.025)
+    crack += 0.5 * band(noise(rng, len(t)), 2500, 12000) * env(t - at, 0.001, 0.05)
+    crack += 0.6 * band(noise(rng, len(t)), 300, 2400) * env(t - at, 0.0005, 0.025)
     strings = np.zeros(len(t))
     for f in [77.8, 116.5, 155.6, 196.0, 233.1, 293.7, 311.1, 392.0, 466.2, 587.3, 622.3, 784.0]:
         for det in (0.996, 1.004):
@@ -458,9 +461,9 @@ def weaver_warpfall(seed):
 
 
 def weaver_spindle(seed):
-    """Her spindle (4 s): a whirling storm of thread. A spinning wheel's whir, its spokes ticking ever faster till they
-    blur into a rising buzz, a whump each turn; a vortex of wind rising out of it into a howl (narrow, wobbling bands,
-    circling); glass shimmering in it and her voices trembling high over it."""
+    """Its spindle storm (4 s): a whirling storm of thread. A spinning wheel's whir, its spokes ticking ever faster till
+    they blur into a rising buzz, a whump each turn; a vortex of wind rising out of it into a howl (narrow, wobbling
+    bands, circling); glass shimmering in it and its voices trembling high over it."""
     rng = np.random.default_rng(seed)
     t = t_(4.0)
     rate = 2 + 14 * np.clip(t / 3.0, 0, 1) ** 1.6          # turns a second
@@ -469,10 +472,12 @@ def weaver_spindle(seed):
     tick = band(noise(rng, len(t)), 400, 3000) * (0.5 + 0.5 * np.cos(2 * np.pi * 6 * turn)) ** 3
     whir = band(saw(spokes), 250, 4000)
     whump = band(noise(rng, len(t)), 150, 600) * (0.5 + 0.5 * np.cos(2 * np.pi * turn)) ** 10
-    wheel = (nrm(tick) + 0.6 * nrm(whir) * np.clip(t / 2.0, 0, 1) + 0.5 * nrm(whump)) * ramp(t, [0, 0.2, 2.3, 3.3, 3.9], [0, 0.7, 1, 0.5, 0])
+    wheel = nrm(tick) + 0.6 * nrm(whir) * np.clip(t / 2.0, 0, 1) + 0.5 * nrm(whump)
+    wheel *= ramp(t, [0, 0.2, 2.3, 3.3, 3.9], [0, 0.7, 1, 0.5, 0])   # it gives way to the vortex
     wob = 1 + 0.07 * np.sin(2 * np.pi * 0.8 * t) + 0.04 * np.sin(2 * np.pi * 2.1 * t + 1)
     centre = 450 * 2.6 ** np.clip((t - 1.0) / 2.4, 0, 1) * wob
-    howl = sum(g * nrm(km.sweep_filter(rng, noise(rng, len(t)), centre * r, centre * r * 0.03)) for r, g in [(1, 1), (1.5, 0.7), (2.25, 0.5)])
+    howl = sum(g * nrm(km.sweep_filter(rng, noise(rng, len(t)), centre * r, centre * r * 0.03))
+               for r, g in [(1, 1), (1.5, 0.7), (2.25, 0.5)])
     wind = band(noise(rng, len(t)), 500, 7000)
     circle = 0.7 + 0.3 * np.sin(2 * np.pi * turn)
     vortex = (nrm(howl) + 0.25 * nrm(wind)) * circle * ramp(t, [0.9, 3.3, 3.95], [0, 1, 0]) ** 2
@@ -484,9 +489,9 @@ def weaver_spindle(seed):
 
 
 def weaver_needlefall(seed):
-    """Her needles fall (2.5 s): great needles of glass whistle down out of the sky one after another and drive into
-    the stone (a deep thud, a crack, the stone crunching, a dull thunk), each ringing as glass when it stands; their
-    rings together, at the last, her chord."""
+    """Its needles fall (the Loom comes down, 2.5 s): great needles of glass whistle down out of the sky one after
+    another and drive into the stone (a deep thud, a crack, the stone crunching, a dull thunk), each ringing as glass
+    when it stands; their rings together, at the last, its chord."""
     rng = np.random.default_rng(seed)
     t = t_(2.5)
     hits = [(0.72, 1174.7), (0.9, 932.3), (1.06, 1244.5), (1.32, 784.0)]
@@ -567,7 +572,8 @@ def f_drowned_bell(rng, t, at, base, ring=2.0, detune=0.03, drift=0.006):
     tt = t - at
     x = np.zeros(len(t))
     for r, a, k in PARTIALS:
-        f = base * r * (1 + rng.uniform(-detune, detune)) * (1 + drift * np.sin(2 * np.pi * rng.uniform(0.3, 0.9) * t + rng.random() * 6))
+        f = base * r * (1 + rng.uniform(-detune, detune))
+        f = f * (1 + drift * np.sin(2 * np.pi * rng.uniform(0.3, 0.9) * t + rng.random() * 6))
         x += a * np.sin(2 * np.pi * np.cumsum(f) / SR) * env(tt, 0.004, k * ring)
     return x
 
@@ -603,7 +609,8 @@ def ferryman_geyser(seed):
     t = t_(3.0)
     n = len(t)
     at = 0.42
-    boil = f_bubbles(rng, t, 0.0, at, 45, 110, 480, 0.05, 0.5) + 0.6 * nrm(band(noise(rng, n), 30, 220)) * ramp(t, [0, at, at + 0.05], [0, 1, 0]) ** 2
+    boil = f_bubbles(rng, t, 0.0, at, 45, 110, 480, 0.05, 0.5)
+    boil += 0.6 * nrm(band(noise(rng, n), 30, 220)) * ramp(t, [0, at, at + 0.05], [0, 1, 0]) ** 2
     whoosh = sweep(rng, t, at - 0.06, 0.9, 160, 2200, 0.8) * env(t - at + 0.06, 0.06, 0.45)
     burst = band(noise(rng, n), 70, 4500) * env(t - at, 0.004, 0.16)
     flick = km.lowpass(rng.standard_normal(n), 10)
@@ -626,23 +633,27 @@ def ferryman_oars(seed):
     bite, lift = 0.42, 1.2
     strain = f_creak(rng, t, 0.0, 0.62, 26, 64) * ramp(t, [0, 0.45, 0.62], [0.3, 1, 0.6]) + 0.6 * f_creak(rng, t, 0.55, 0.6, 40, 22)
     strain += 0.5 * f_creak(rng, t, lift - 0.05, 0.3, 50, 30, (260, 560, 1100))
-    splash = band(noise(rng, n), 150, 3000) * env(t - bite, 0.003, 0.09) + 0.6 * band(noise(rng, n), 400, 2500) * env(t - bite, 0.001, 0.012)
+    splash = band(noise(rng, n), 150, 3000) * env(t - bite, 0.003, 0.09)
+    splash += 0.6 * band(noise(rng, n), 400, 2500) * env(t - bite, 0.001, 0.012)
     k = np.clip((t - bite) / (lift - bite), 0, 1)
     centre = 300 + 500 * np.sin(np.pi * k) ** 1.5
-    swept = km.sweep_filter(rng, noise(rng, n), centre, centre * 0.7) * np.sin(np.pi * k) ** 1.2 * (0.6 + 0.4 * np.sin(2 * np.pi * 7 * t) ** 2)
+    swept = km.sweep_filter(rng, noise(rng, n), centre, centre * 0.7)
+    swept *= np.sin(np.pi * k) ** 1.2 * (0.6 + 0.4 * np.sin(2 * np.pi * 7 * t) ** 2)
     churn = f_bubbles(rng, t, bite, lift - bite, 30, 100, 450)
     grain = km.lowpass((rng.random(n) > 0.6).astype(float), 3000)
-    spray = band(noise(rng, n), 1200, 5500) * grain * env(t - lift, 0.02, 0.25) + 0.5 * f_bubbles(rng, t, lift + 0.08, 0.5, 25, 600, 1600, 0.02)
+    spray = band(noise(rng, n), 1200, 5500) * grain * env(t - lift, 0.02, 0.25)
+    spray += 0.5 * f_bubbles(rng, t, lift + 0.08, 0.5, 25, 600, 1600, 0.02)   # its drops falling back
     iron = f_chain(rng, t, bite, 0.25, 5, 900)
-    x = (0.9 * nrm(np.tanh(2.5 * nrm(strain))) + 0.7 * nrm(boom(rng, t, bite, 60, 40, 0.5)) + 0.9 * nrm(splash) + 0.8 * nrm(swept) + 0.3 * nrm(churn)
-         + 0.45 * nrm(spray) + 0.12 * nrm(iron))
+    strain = np.tanh(2.5 * nrm(strain))   # the creak's clicks blunted, so it carries as a groan
+    x = (0.9 * nrm(strain) + 0.7 * nrm(boom(rng, t, bite, 60, 40, 0.5)) + 0.9 * nrm(splash) + 0.8 * nrm(swept)
+         + 0.3 * nrm(churn) + 0.45 * nrm(spray) + 0.12 * nrm(iron))
     return reverb(rng, x, 1.6, 0.32, 3500), 2.0
 
 
 def ferryman_bell(seed):
-    """His drowned bell (3.5 s): it tolls once, deep (an A, under all his other bells), waterlogged and out of tune (a second bell a little off beating
-    against it, its ring wavering through the water), with a low shockwave thump through the river, its chains shaken
-    and bubbles rising after."""
+    """His drowned bell (3.5 s): it tolls once, deep (an A, under all his other bells), waterlogged and out of tune (a
+    second bell a little off beating against it, its ring wavering through the water), with a low shockwave thump
+    through the river, its chains shaken and bubbles rising after."""
     rng = np.random.default_rng(seed)
     t = t_(3.5)
     n = len(t)

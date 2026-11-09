@@ -677,6 +677,623 @@ public final class FerrymanService {
 		}
 	}
 
+	// ------------------------------------------------------------------ what his blows raise (3.43)
+
+	/** Smoothstep of a share, held to 0..1. */
+	private static double ease(double k) {
+		k = Math.max(0, Math.min(1, k));
+		return k * k * (3 - 2 * k);
+	}
+
+	/** An angle brought within half a turn either way. */
+	private static double wrap(double a) {
+		return Math.atan2(Math.sin(a), Math.cos(a));
+	}
+
+	/** Part of the way from one angle round to another, the short way. */
+	private static double turn(double from, double to, double k) {
+		return from + wrap(to - from) * k;
+	}
+
+	/** Ticks for {@code beats} of a blow at the pace it plays out (at least one). */
+	private static int span(Fare fare, double beats) {
+		return Math.max(1, (int) Math.round(beats / fare.tempo()));
+	}
+
+	/**
+	 * The look of a block display: its block scaled by (sx, sy, sz) and turned by {@code q} about its own middle, which
+	 * stands (ox, oy, oz) off the display.
+	 */
+	private static Transformation look(double ox, double oy, double oz, Quaternionf q, float sx, float sy, float sz) {
+		Vector3f half = new Vector3f(0.5F * sx, 0.5F * sy, 0.5F * sz);
+		new Quaternionf(q).transform(half);
+		return new Transformation(new Vector3f((float) ox - half.x, (float) oy - half.y, (float) oz - half.z), new Quaternionf(q), new Vector3f(sx, sy, sz),
+				new Quaternionf());
+	}
+
+	/** A display eases to a new look over {@code ticks}. */
+	private static void move(Display.BlockDisplay d, Transformation look, int ticks) {
+		DisplayAccess acc = (DisplayAccess) d;
+		acc.extremedimensions$setTransformation(look);
+		acc.extremedimensions$setInterpolationDuration(ticks);
+		acc.extremedimensions$setInterpolationDelay(0);
+	}
+
+	/** His oars and his bells go once their blow is over or cut short (a daze, his ultimate, another blow). */
+	private static void hold(Fare fare) {
+		if (!fare.oars.isEmpty() && fare.action != Ferryman.OARS) {
+			dropOars(fare);
+		}
+		if (!fare.bells.isEmpty() && fare.action != Ferryman.BELLS) {
+			dropBells(fare);
+		}
+	}
+
+	/** Everything his blows raised goes (his fight over). */
+	private static void dropAll(Fare fare) {
+		dropOars(fare);
+		dropBells(fare);
+	}
+
+	private static void dropOars(Fare fare) {
+		for (Oar o : fare.oars) {
+			BlockFlight.drop(o.shaft);
+			BlockFlight.drop(o.blade);
+		}
+		fare.oars.clear();
+	}
+
+	private static void dropBells(Fare fare) {
+		for (Bell bell : fare.bells) {
+			if (!bell.frame.isRemoved()) {
+				WorldFx.particleIn(bell.frame.level(), "minecraft:soul", bell.x, bell.y + 0.5, bell.z, 1, 0.4, 1, 0.02, 6);
+			}
+			BlockFlight.drop(bell.frame);
+			if (bell.body != null) {
+				BlockFlight.drop(bell.body);
+			}
+		}
+		fare.bells.clear();
+	}
+
+	// ------------------------------------------------------------------ the Undertow (3.43)
+
+	/** How far round the boat his whirlpool draws, and how far out of its middle the geyser bursts (blocks). */
+	private static final double POOL = 18, GEYSER = 5;
+
+	/**
+	 * The Undertow: he lifts his pole (0-16) and drives it down, and a whirlpool of soul fire opens round the boat. For
+	 * three seconds it draws everyone near round and in (by the squall's rules: a wall in the way holds them, sneaking
+	 * halves it, Anchored eases it) and slows them; its middle kindles (60), and as he rips the pole up (76) a geyser of
+	 * soul fire bursts out of it, throwing whoever stands there high, and a wave runs out from it over the ground.
+	 */
+	private static void undertow(Ferryman f, Fare fare, Beat b) {
+		ServerLevel level = fare.level;
+		String dim = ElderFx.dim(f);
+		int elder = AttackFx.of(f);
+		if (b.between(0, 16) && b.every(3, 0)) {
+			// the pole raised: soul fire stirs on the floor round the boat
+			WorldFx.particleIn(level, "minecraft:soul", f.getX(), f.getY() + 0.3, f.getZ(), 6, 0.1, 6, 0.02, 6);
+		}
+		if (b.at(16)) {
+			fare.poolX = f.getX();
+			fare.poolY = f.getY();
+			fare.poolZ = f.getZ();
+			// its edge and its inner turn, laid on the floor while it draws
+			int lasts = fare.delay(60);
+			AttackFx.ring(level, elder, fare.poolX, fare.poolY + 0.1, fare.poolZ, POOL, lasts);
+			AttackFx.ring(level, elder, fare.poolX, fare.poolY + 0.1, fare.poolZ, 6, lasts);
+			AttackFx.impact(level, elder, AttackFx.IMPACT_BLAST, fare.poolX, fare.poolY + 0.2, fare.poolZ, 3);
+			WorldFx.soundIn(dim, "minecraft:entity.generic.splash", "hostile", fare.poolX, fare.poolY + 2, fare.poolZ, 5f, 0.4f);
+			WorldFx.soundIn(dim, "minecraft:block.bell.resonate", "hostile", fare.poolX, fare.poolY + 6, fare.poolZ, 4f, 0.45f);
+			ElderFx.shake(f, fare.poolX, fare.poolZ, 32, 0.6f, 12);
+			// the floor round it takes the soul fire in places
+			ThreadLocalRandom rnd = ThreadLocalRandom.current();
+			for (int i = 0; i < 7; i++) {
+				double a = rnd.nextDouble() * Math.PI * 2, r = 4 + rnd.nextDouble(POOL - 5);
+				ElderTerrain.mark(level, fare.poolX + Math.cos(a) * r, fare.poolY, fare.poolZ + Math.sin(a) * r, 1.5 + rnd.nextDouble(1.5), 0.6,
+						ElderTerrain.Mark.SOUL);
+			}
+		}
+		if (b.between(16, 76)) {
+			if (b.every(2, 16)) {
+				// soul fire turning in a spiral over the floor, the way the whirl turns
+				for (int arm = 0; arm < 3; arm++) {
+					for (int i = 0; i < 6; i++) {
+						double r = 2 + i * 3;
+						double a = arm * Math.PI * 2 / 3 + fare.circle * (b.t * 0.12 - r * 0.22);
+						WorldFx.particleIn(level, "minecraft:soul_fire_flame", fare.poolX + Math.cos(a) * r, fare.poolY + 0.15, fare.poolZ + Math.sin(a) * r, 0.15,
+								0.02, 0.15, 0.005, 1);
+					}
+				}
+			}
+			if (b.every(20, 16)) {
+				WorldFx.soundIn(dim, "minecraft:block.bubble_column.whirlpool_inside", "hostile", fare.poolX, fare.poolY + 1, fare.poolZ, 4f, 0.5f);
+				ElderFx.shake(f, fare.poolX, fare.poolZ, 28, 0.25f, 10);
+			}
+			// Drawn round and in: one push of both, the way the whirl turns and towards its middle
+			for (ServerPlayer q : ElderFx.targets(f, POOL + 4, 4, 8)) {
+				double dx = fare.poolX - q.getX(), dz = fare.poolZ - q.getZ();
+				double d = Math.sqrt(dx * dx + dz * dz);
+				if (d > POOL || d < 2.5 || q.getY() < fare.poolY - 4 || q.getY() > fare.poolY + 8) {
+					continue;
+				}
+				if (b.every(10, 16)) {
+					WorldFx.effect(q, MobEffects.SLOWNESS, 1, 0);
+				}
+				if (!PaleSquall.blown(q)) {
+					continue;
+				}
+				double ix = dx / d, iz = dz / d;
+				double ux = iz * fare.circle * 0.85 + ix * 0.55, uz = -ix * fare.circle * 0.85 + iz * 0.55;
+				double n = Math.sqrt(ux * ux + uz * uz);
+				ux /= n;
+				uz /= n;
+				double pull = PaleSquall.push(q, ux, uz, Config.FERRYMAN_UNDERTOW_PULL * (0.6 + 0.4 * (1 - d / POOL)));
+				if (pull > 0) {
+					PaleSquall.gust(q, ux * pull, uz * pull);
+				}
+			}
+		}
+		if (b.at(60)) {
+			// its middle kindles: whoever is in it has a moment to get out
+			AttackFx.ring(level, elder, fare.poolX, fare.poolY + 0.1, fare.poolZ, GEYSER, fare.delay(16));
+			WorldFx.soundIn(dim, "minecraft:block.bell.use", "hostile", fare.poolX, fare.poolY + 6, fare.poolZ, 4f, 0.6f);
+		}
+		if (b.between(60, 76) && b.every(2, 60)) {
+			WorldFx.particleIn(level, "minecraft:soul", fare.poolX, fare.poolY + 0.8, fare.poolZ, GEYSER * 0.4, 0.4, GEYSER * 0.4, 0.04, 8);
+		}
+		if (b.at(76)) {
+			geyser(f, fare);
+		}
+		if (b.past(96)) {
+			end(f, fare, 55);
+		}
+	}
+
+	/** The geyser: soul fire bursts up out of the whirl's middle, throws whoever is in it high, and a wave runs out from it. */
+	private static void geyser(Ferryman f, Fare fare) {
+		ServerLevel level = fare.level;
+		String dim = ElderFx.dim(f);
+		int elder = AttackFx.of(f);
+		double x = fare.poolX, y = fare.poolY, z = fare.poolZ;
+		WorldFx.soundIn(dim, "extremedimensions:elder.ferryman.geyser", "hostile", x, y + 2, z, 5f, 1f);
+		WorldFx.soundIn(dim, "minecraft:entity.generic.explode", "hostile", x, y + 2, z, 3f, 0.6f);
+		WorldFx.particleIn(level, "minecraft:soul_fire_flame", x, y + 4, z, 1.2, 4, 1.2, 0.12, 160);
+		WorldFx.particleIn(level, "minecraft:soul", x, y + 2, z, 2.5, 1.5, 2.5, 0.08, 40);
+		// a column of it, as high as he stands in the boat
+		for (int i = 0; i < 9; i++) {
+			WorldFx.particleIn(level, "minecraft:explosion", x, y + 0.5 + i * 1.6, z, 0.5, 0.4, 0.5, 0, 1);
+		}
+		AttackFx.line(level, elder, AttackFx.LINE_BEAM, x, y + 0.2, z, x, y + 16, z, 10);
+		AttackFx.impact(level, elder, AttackFx.IMPACT_BLAST, x, y + 0.2, z, GEYSER);
+		ElderFx.shake(f, x, z, 40, 1.0f, 16);
+		for (ServerPlayer q : ElderFx.targets(f, POOL, 4, f.getBbHeight() + 4)) {
+			double dx = q.getX() - x, dz = q.getZ() - z;
+			double d = Math.sqrt(dx * dx + dz * dz);
+			if (d > GEYSER || q.getY() < y - 3 || q.getY() > y + f.getBbHeight() + 2) {
+				continue;
+			}
+			q.hurtServer(level, ElderPower.great(level, f), (float) Config.FERRYMAN_GEYSER_DAMAGE);
+			// thrown high, and a little out of the middle
+			double out = d < 0.3 ? 0 : 0.25 / d;
+			q.setDeltaMovement(dx * out, 0.9, dz * out);
+			WorldFx.moved(q);
+		}
+		ElderStrikes.wave(f, x, y, z, 0.9, 16, (float) (Config.FERRYMAN_GEYSER_DAMAGE / 2), "minecraft:soul_fire_flame", ElderTerrain.Mark.SOUL);
+		ElderTerrain.mark(level, x, y, z, GEYSER, 0.7, ElderTerrain.Mark.SOUL);
+	}
+
+	// ------------------------------------------------------------------ Oars of the Drowned (3.43)
+
+	/** An oar: how far out from where they rise its root stands, how long its shaft is, how far along it its blade is. */
+	private static final double ROOT = 2.5, SHAFT = 12, BLADE = 11;
+	/** How far round a stroke sweeps each side of its aim (each oar sweeps one side), and how near and far it reaches. */
+	private static final double SWEEP = Math.toRadians(70), NEAR = 4, FAR = 14.6;
+	/** Where his three strokes peak (each sweeps for 8 beats about it). */
+	private static final double[] PEAKS = {36, 52, 68};
+
+	/** The aim of stroke {@code k} (radians round where the oars rose), else the last one known, else where he faced. */
+	private static double aim(Fare fare, int k) {
+		for (int i = Math.min(k, fare.strokes.length - 1); i >= 0; i--) {
+			if (!Double.isNaN(fare.strokes[i])) {
+				return fare.strokes[i];
+			}
+		}
+		return fare.oarFace;
+	}
+
+	/** How far through stroke {@code k} the oars are at this beat (0 to 1). */
+	private static double stroke(int k, double t) {
+		return Math.max(0, Math.min(1, (t - (PEAKS[k] - 4)) / 8));
+	}
+
+	/**
+	 * Where an oar is at this beat: {its angle round where they rose, how far it is raised from lying flat (radians), how
+	 * far it is sunk into the ground (blocks)}.
+	 */
+	private static double[] oarPose(Fare fare, int side, double t) {
+		double out = side * Math.PI / 2, sweep = side * SWEEP;
+		if (t < 28) {
+			// rising upright out of the ground at his side
+			return new double[] {fare.oarFace + out, Math.PI / 2, (SHAFT + 1) * (1 - ease((t - 12) / 16))};
+		}
+		if (t < PEAKS[0] - 4) {
+			// laid down flat, out at the flank of the first stroke
+			double e = ease((t - 28) / (PEAKS[0] - 4 - 28));
+			return new double[] {turn(fare.oarFace + out, aim(fare, 0) + sweep, e), Math.PI / 2 * (1 - e), 0};
+		}
+		for (int k = 0; k < PEAKS.length; k++) {
+			if (t < PEAKS[k] + 4) {
+				// the stroke: flat along the ground, from the flank round to straight ahead
+				return new double[] {aim(fare, k) + sweep * (1 - stroke(k, t)), 0, 0};
+			}
+			if (k + 1 < PEAKS.length && t < PEAKS[k + 1] - 4) {
+				// lifted off the ground and swung back out for the next
+				double e = ease((t - PEAKS[k] - 4) / (PEAKS[k + 1] - PEAKS[k] - 8));
+				return new double[] {turn(aim(fare, k), aim(fare, k + 1) + sweep, e), Math.toRadians(30) * Math.sin(Math.PI * e), 0};
+			}
+		}
+		double c = aim(fare, PEAKS.length - 1), last = PEAKS[PEAKS.length - 1] + 4;
+		if (t < 84) {
+			// upright again at his side
+			double e = ease((t - last) / (84 - last));
+			return new double[] {turn(c, c + out, e), Math.PI / 2 * e, 0};
+		}
+		// and down into the ground
+		return new double[] {c + out, Math.PI / 2, (SHAFT + 1) * ease((t - 84) / 16)};
+	}
+
+	/** A point {@code along} blocks up an oar's shaft from its root, off where the oars rose. */
+	private static double[] oarPoint(double[] pose, double along) {
+		double a = pose[0], up = pose[1];
+		// lying flat its blade skims the floor; upright its root stands in it
+		double r = ROOT + Math.cos(up) * along;
+		return new double[] {Math.cos(a) * r, 1.5 * Math.cos(up) - pose[2] + Math.sin(up) * along, Math.sin(a) * r};
+	}
+
+	/**
+	 * The looks of an oar's shaft and blade at this beat: the shaft (the block's z) along it, the blade (the block's x)
+	 * standing upright as it lies flat, broad to the way it sweeps.
+	 */
+	private static Transformation[] oarLooks(Fare fare, int side, double t) {
+		double[] pose = oarPose(fare, side, t);
+		Quaternionf q = new Quaternionf().rotateY((float) (Math.PI / 2 - pose[0])).rotateX((float) -pose[1]).rotateZ((float) (Math.PI / 2));
+		double[] mid = oarPoint(pose, SHAFT / 2), blade = oarPoint(pose, BLADE);
+		return new Transformation[] {look(mid[0], mid[1], mid[2], q, 0.6F, 0.6F, (float) SHAFT), look(blade[0], blade[1], blade[2], q, 3F, 0.4F, 2F)};
+	}
+
+	/**
+	 * Oars of the Drowned: he spreads his arms and two spectral oars rise out of the ground at his sides (12-28). Then
+	 * three strokes, peaking at 36, 52 and 68: a path of sigils on the ground shows each sweep first (12 beats before its
+	 * peak), then the oars sweep it flat along the ground, each one half of it from the flank round to straight ahead,
+	 * towards whoever he rows for, tearing up the ground; whoever an oar passes is struck (once a stroke) and flung along
+	 * it. The oars sink back into the ground (84-100).
+	 */
+	private static void row(Ferryman f, Fare fare, ServerPlayer prey, Beat b) {
+		ServerLevel level = fare.level;
+		String dim = ElderFx.dim(f);
+		int elder = AttackFx.of(f);
+		if (b.at(12)) {
+			dropOars(fare);
+			fare.oarX = f.getX();
+			fare.oarY = f.getY();
+			fare.oarZ = f.getZ();
+			fare.oarFace = Math.atan2(prey.getZ() - fare.oarZ, prey.getX() - fare.oarX);
+			for (int k = 0; k < fare.strokes.length; k++) {
+				fare.strokes[k] = Double.NaN;
+			}
+			BlockState wood = ArenaDesign.mc("stripped_dark_oak_log", Blocks.DARK_OAK_FENCE.defaultBlockState());
+			wood = wood.hasProperty(BlockStateProperties.AXIS) ? wood.setValue(BlockStateProperties.AXIS, Direction.Axis.Z) : wood;
+			BlockState planks = ArenaDesign.mc("dark_oak_planks", Blocks.DARK_OAK_FENCE.defaultBlockState());
+			Brightness lit = new Brightness(15, 15);
+			for (int side = -1; side <= 1; side += 2) {
+				Transformation[] at = oarLooks(fare, side, 12);
+				Display.BlockDisplay shaft = BlockFlight.spawn(level, fare.oarX, fare.oarY, fare.oarZ, wood, at[0]);
+				Display.BlockDisplay blade = BlockFlight.spawn(level, fare.oarX, fare.oarY, fare.oarZ, planks, at[1]);
+				if (shaft == null || blade == null) {
+					if (shaft != null) {
+						BlockFlight.drop(shaft);
+					}
+					if (blade != null) {
+						BlockFlight.drop(blade);
+					}
+					continue;
+				}
+				// spectral: lit as if by their own soul fire
+				((DisplayAccess) shaft).extremedimensions$setBrightnessOverride(lit);
+				((DisplayAccess) blade).extremedimensions$setBrightnessOverride(lit);
+				fare.oars.add(new Oar(side, shaft, blade));
+				double[] foot = oarPoint(new double[] {fare.oarFace + side * Math.PI / 2, Math.PI / 2, 0}, 0);
+				WorldFx.particleIn(level, "minecraft:soul", fare.oarX + foot[0], fare.oarY + 0.3, fare.oarZ + foot[2], 0.6, 0.3, 0.6, 0.03, 14);
+			}
+			WorldFx.soundIn(dim, "minecraft:entity.generic.splash", "hostile", fare.oarX, fare.oarY + 1, fare.oarZ, 4f, 0.45f);
+		}
+		if (b.between(12, 100) && fare.oars.isEmpty()) {
+			// none could rise
+			end(f, fare, 40);
+			return;
+		}
+		for (int k = 0; k < PEAKS.length; k++) {
+			if (b.at(PEAKS[k] - 12)) {
+				// at whoever he rows for this stroke (with more passengers, each stroke at the next)
+				List<ServerPlayer> marks = fare.split(f, prey, ElderPower.reach(30));
+				ServerPlayer q = marks.get(k % marks.size());
+				double dx = q.getX() - fare.oarX, dz = q.getZ() - fare.oarZ;
+				fare.strokes[k] = dx * dx + dz * dz < 1 ? Math.toRadians(f.getYRot() + 90) : Math.atan2(dz, dx);
+				path(fare, elder, fare.strokes[k]);
+			}
+			if (b.at(PEAKS[k] - 4)) {
+				fare.rowed.clear();
+				WorldFx.soundIn(dim, "extremedimensions:elder.ferryman.oars", "hostile", fare.oarX, fare.oarY + 3, fare.oarZ, 4.5f, 0.9f + 0.1f * k);
+				WorldFx.soundIn(dim, "minecraft:entity.generic.splash", "hostile", fare.oarX, fare.oarY + 1, fare.oarZ, 4f, 0.5f);
+			}
+			if (b.at(PEAKS[k])) {
+				ElderFx.shake(f, fare.oarX, fare.oarZ, 30, 0.5f, 8);
+			}
+		}
+		if (b.between(12, 100) && b.every(2, 12)) {
+			// (aimed where it will be when the move ends)
+			int step = span(fare, 2);
+			for (Oar o : fare.oars) {
+				Transformation[] at = oarLooks(fare, o.side, b.t + 2);
+				move(o.shaft, at[0], step);
+				move(o.blade, at[1], step);
+				// a faint soul fire about the blade
+				double[] w = oarPoint(oarPose(fare, o.side, b.t), BLADE);
+				WorldFx.particleIn(level, "minecraft:soul_fire_flame", fare.oarX + w[0], fare.oarY + w[1], fare.oarZ + w[2], 0.8, 0.8, 0.8, 0.01, 2);
+			}
+		}
+		// The strokes: each oar sweeps the stretch it covered this tick
+		for (int k = 0; k < PEAKS.length; k++) {
+			double e0 = stroke(k, b.prev), e1 = stroke(k, b.t);
+			if (e1 <= e0) {
+				continue;
+			}
+			double c = aim(fare, k);
+			for (Oar o : fare.oars) {
+				sweep(f, fare, c + o.side * SWEEP * (1 - e0), c + o.side * SWEEP * (1 - e1));
+				// the ground torn up under its blade, here and there along the sweep (and where the two meet)
+				for (double mark : new double[] {0.25, 0.75, 1.0}) {
+					if (e0 < mark && e1 >= mark && (mark < 1 || o.side == 1)) {
+						tear(f, fare, c + o.side * SWEEP * (1 - mark));
+					}
+				}
+			}
+		}
+		if (b.at(84)) {
+			for (Oar o : fare.oars) {
+				double[] foot = oarPoint(oarPose(fare, o.side, 84), 0);
+				WorldFx.particleIn(level, "minecraft:soul", fare.oarX + foot[0], fare.oarY + 0.3, fare.oarZ + foot[2], 0.6, 0.3, 0.6, 0.03, 14);
+			}
+			WorldFx.soundIn(dim, "minecraft:entity.generic.splash", "hostile", fare.oarX, fare.oarY + 1, fare.oarZ, 3f, 0.4f);
+		}
+		if (b.past(100) && !fare.oars.isEmpty()) {
+			dropOars(fare);
+		}
+		if (b.past(104)) {
+			end(f, fare, 55);
+		}
+	}
+
+	/** The way a stroke will sweep, laid on the ground in sigils: the arc its blades will run, and its two edges. */
+	private static void path(Fare fare, int elder, double c) {
+		ServerLevel level = fare.level;
+		int lasts = fare.delay(16);
+		double y = fare.oarY + 0.1, r = ROOT + BLADE;
+		int n = 7;
+		for (int side = -1; side <= 1; side += 2) {
+			for (int i = 0; i < n; i++) {
+				double a0 = c + side * SWEEP * i / n, a1 = c + side * SWEEP * (i + 1) / n;
+				AttackFx.line(level, elder, AttackFx.LINE_PATH, fare.oarX + Math.cos(a0) * r, y, fare.oarZ + Math.sin(a0) * r, fare.oarX + Math.cos(a1) * r, y,
+						fare.oarZ + Math.sin(a1) * r, lasts);
+			}
+			double edge = c + side * SWEEP;
+			AttackFx.line(level, elder, AttackFx.LINE_PATH, fare.oarX + Math.cos(edge) * NEAR, y, fare.oarZ + Math.sin(edge) * NEAR,
+					fare.oarX + Math.cos(edge) * (FAR - 0.6), y, fare.oarZ + Math.sin(edge) * (FAR - 0.6), lasts);
+		}
+	}
+
+	/** An oar sweeps round from angle {@code from} to {@code to}: whoever it passes is struck (once a stroke) and flung along it. */
+	private static void sweep(Ferryman f, Fare fare, double from, double to) {
+		ServerLevel level = fare.level;
+		int elder = AttackFx.of(f);
+		double span = wrap(to - from);
+		for (ServerPlayer q : ElderFx.targets(f, FAR + 6, 4, 6)) {
+			if (fare.rowed.contains(q.getUUID())) {
+				continue;
+			}
+			double dx = q.getX() - fare.oarX, dz = q.getZ() - fare.oarZ, dy = q.getY() - fare.oarY;
+			double r = Math.sqrt(dx * dx + dz * dz);
+			if (r < NEAR || r > FAR || dy < -2 || dy > 3.2) {
+				continue;
+			}
+			double a = Math.atan2(dz, dx);
+			double rel = wrap(a - from);
+			// (as wide as they stand: the nearer the shaft, the more of its turn they fill)
+			double m = 0.1 + 0.6 / r;
+			if (span >= 0 ? rel < -m || rel > span + m : rel > m || rel < span - m) {
+				continue;
+			}
+			fare.rowed.add(q.getUUID());
+			q.hurtServer(level, ElderPower.great(level, f), (float) Config.FERRYMAN_OAR_DAMAGE);
+			// along the sweep, the way it turns, and a little out
+			double way = span >= 0 ? 1 : -1;
+			q.setDeltaMovement(-Math.sin(a) * way * 1.3 + Math.cos(a) * 0.35, 0.55, Math.cos(a) * way * 1.3 + Math.sin(a) * 0.35);
+			WorldFx.moved(q);
+			WorldFx.soundIn(ElderFx.dim(f), "minecraft:entity.player.attack.knockback", "hostile", q.getX(), q.getY() + 1, q.getZ(), 2.5f, 0.6f);
+			AttackFx.impact(level, elder, AttackFx.IMPACT_BLAST, q.getX(), q.getY() + 1, q.getZ(), 1.6);
+		}
+	}
+
+	/** The ground torn up under a blade as it passes, at angle {@code a} round where the oars rose. */
+	private static void tear(Ferryman f, Fare fare, double a) {
+		ServerLevel level = fare.level;
+		double r = ROOT + BLADE;
+		double x = fare.oarX + Math.cos(a) * r, z = fare.oarZ + Math.sin(a) * r;
+		double y = ElderFx.surface(level, x, fare.oarY + 4, z, 6, 10);
+		if (Double.isNaN(y)) {
+			return;
+		}
+		ElderTerrain.furrow(level, x, y, z, 1.8, 1, 2, 4);
+		AttackFx.impact(level, AttackFx.of(f), AttackFx.IMPACT_CHARGE, x, y, z, 2);
+		WorldFx.particleIn(level, "minecraft:soul", x, y + 0.5, z, 1, 0.4, 1, 0.03, 8);
+	}
+
+	// ------------------------------------------------------------------ Bells of the Drowned (3.43)
+
+	/** The most bells he raises at once, and how big each is (blocks). */
+	private static final int MOST_BELLS = 10;
+	private static final double BELL = 2.5;
+	/** His tolls (each a swing of his lantern): the bells ring in turn. */
+	private static final double[] TOLLS = {30, 38, 46, 54, 62, 70};
+
+	/**
+	 * The looks of a bell's frame and body: {@code rise} blocks over (or under) where it stands, swung by {@code tilt}
+	 * (its body swings further in the frame), grown by {@code grow}. The bell block draws only its frame; its body is a
+	 * block of gold hung in it.
+	 */
+	private static Transformation[] bellLooks(float yaw, double rise, double tilt, double grow) {
+		float s = (float) (BELL * grow);
+		Quaternionf q = new Quaternionf().rotateY(yaw).rotateX((float) tilt);
+		Quaternionf hung = new Quaternionf().rotateY(yaw).rotateX((float) (tilt * 1.8));
+		return new Transformation[] {look(0, rise + s / 2, 0, q, s, s, s), look(0, rise + s * 0.5, 0, hung, s * 0.42F, s * 0.5F, s * 0.42F)};
+	}
+
+	private static void moveBell(Bell bell, double rise, double tilt, double grow, int ticks) {
+		Transformation[] at = bellLooks(bell.yaw, rise, tilt, grow);
+		move(bell.frame, at[0], ticks);
+		if (bell.body != null) {
+			move(bell.body, at[1], ticks);
+		}
+	}
+
+	/**
+	 * Bells of the Drowned: he raises his lantern (0-20) and bells rise out of the floor, one beside each passenger he
+	 * can reach and three round him. Six times he swings the lantern (30 to 70) and a bell tolls, each in turn (the next
+	 * kindles a moment before): a shockwave of soul fire runs out over the ground from it (jump it). He lowers the lantern
+	 * (80) and the bells sink back into the floor.
+	 */
+	private static void peal(Ferryman f, Fare fare, Beat b) {
+		ServerLevel level = fare.level;
+		String dim = ElderFx.dim(f);
+		int elder = AttackFx.of(f);
+		if (b.between(0, 20) && b.every(4, 0)) {
+			WorldFx.particleIn(level, "minecraft:soul_fire_flame", f.getX(), f.getY() + f.getBbHeight() * 0.8, f.getZ(), 1.5, 1, 1.5, 0.02, 4);
+		}
+		if (b.at(20)) {
+			raiseBells(f, fare);
+			WorldFx.soundIn(dim, "minecraft:block.bell.resonate", "hostile", f.getX(), f.getY() + 8, f.getZ(), 4f, 0.45f);
+			ElderFx.shake(f, f.getX(), f.getZ(), 40, 0.5f, 12);
+		}
+		for (Bell bell : fare.bells) {
+			bell.age++;
+			if (bell.age == 1) {
+				// up out of the floor (a tick after it was sent under it, so it is seen to rise)
+				moveBell(bell, 0, 0, 1, span(fare, 10));
+			}
+			if (bell.settle > 0 && --bell.settle == 0) {
+				moveBell(bell, 0, 0, 1, span(fare, 6));
+			}
+		}
+		if (!fare.bells.isEmpty()) {
+			for (int k = 0; k < TOLLS.length; k++) {
+				Bell bell = fare.bells.get(k % fare.bells.size());
+				if (b.at(TOLLS[k] - 6)) {
+					// the next to toll kindles
+					AttackFx.ring(level, elder, bell.x, bell.y + 0.1, bell.z, 2.5, fare.delay(6));
+					WorldFx.particleIn(level, "minecraft:soul_fire_flame", bell.x, bell.y + BELL * 0.5, bell.z, 0.8, 0.8, 0.8, 0.03, 10);
+				}
+				if (b.at(TOLLS[k])) {
+					toll(f, fare, bell);
+				}
+			}
+		}
+		if (b.at(80)) {
+			for (Bell bell : fare.bells) {
+				bell.settle = 0;
+				moveBell(bell, -(BELL + 0.6), 0, 1, fare.delay(16));
+				WorldFx.particleIn(level, "minecraft:soul", bell.x, bell.y + 0.3, bell.z, 1, 0.2, 1, 0.02, 8);
+			}
+		}
+		if (b.past(96) && !fare.bells.isEmpty()) {
+			dropBells(fare);
+		}
+		if (b.past(100)) {
+			end(f, fare, 55);
+		}
+	}
+
+	/** Bells rise out of the floor: one beside each passenger he can reach (the nearest first), three round him; ten at most. */
+	private static void raiseBells(Ferryman f, Fare fare) {
+		dropBells(fare);
+		ServerLevel level = fare.level;
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		BlockState frame = ArenaDesign.mc("bell", Blocks.SOUL_LANTERN.defaultBlockState()), gold = Blocks.GOLD_BLOCK.defaultBlockState();
+		List<ServerPlayer> near = ElderFx.reachable(f, ElderPower.reach(40));
+		near.sort(java.util.Comparator.comparingDouble(q -> q.distanceToSqr(f)));
+		for (ServerPlayer q : near) {
+			if (fare.bells.size() >= MOST_BELLS - 3) {
+				break;
+			}
+			double base = ElderFx.groundUnder(q);
+			for (int tries = 0; tries < 6; tries++) {
+				double a = rnd.nextDouble() * Math.PI * 2, r = 2 + rnd.nextDouble(2);
+				double x = q.getX() + Math.cos(a) * r, z = q.getZ() + Math.sin(a) * r;
+				double y = ElderFx.surface(level, x, base + 2, z, 2, 6);
+				if (!Double.isNaN(y) && bell(f, fare, frame, gold, x, y, z)) {
+					break;
+				}
+			}
+		}
+		double turn = rnd.nextDouble() * Math.PI * 2;
+		for (int i = 0; i < 3; i++) {
+			double a = turn + i * Math.PI * 2 / 3;
+			double x = f.getX() + Math.cos(a) * 8, z = f.getZ() + Math.sin(a) * 8;
+			double y = ElderFx.surface(level, x, f.getY() + 4, z, 6, 12);
+			if (!Double.isNaN(y)) {
+				bell(f, fare, frame, gold, x, y, z);
+			}
+		}
+	}
+
+	/** One bell, under the floor here and about to rise out of it, turned to him; false if it could not be made. */
+	private static boolean bell(Ferryman f, Fare fare, BlockState frame, BlockState gold, double x, double y, double z) {
+		ServerLevel level = fare.level;
+		float yaw = (float) Math.atan2(f.getX() - x, f.getZ() - z);
+		Transformation[] under = bellLooks(yaw, -(BELL + 0.6), 0, 1);
+		Display.BlockDisplay d = BlockFlight.spawn(level, x, y, z, frame, under[0]);
+		if (d == null) {
+			return false;
+		}
+		Display.BlockDisplay body = BlockFlight.spawn(level, x, y, z, gold, under[1]);
+		Brightness lit = new Brightness(15, 15);
+		((DisplayAccess) d).extremedimensions$setBrightnessOverride(lit);
+		if (body != null) {
+			((DisplayAccess) body).extremedimensions$setBrightnessOverride(lit);
+		}
+		fare.bells.add(new Bell(d, body, x, y, z, yaw));
+		ElderTerrain.mark(level, x, y, z, 1.6, 0.6, ElderTerrain.Mark.SOUL);
+		WorldFx.particleIn(level, "minecraft:soul", x, y + 0.3, z, 1, 0.2, 1, 0.03, 10);
+		WorldFx.soundIn(ElderFx.dim(f), "extremedimensions:elder.ferryman.bell", "hostile", x, y + 1, z, 2.5f, 0.9f);
+		return true;
+	}
+
+	/** A bell tolls: it jolts in its frame, and a shockwave of soul fire runs out over the ground from it. */
+	private static void toll(Ferryman f, Fare fare, Bell bell) {
+		ServerLevel level = fare.level;
+		String dim = ElderFx.dim(f);
+		bell.swing = -bell.swing;
+		moveBell(bell, 0.15, 0.35 * bell.swing, 1.12, 2);
+		bell.settle = 4;
+		ElderStrikes.wave(f, bell.x, bell.y, bell.z, 0.8, 10, (float) Config.FERRYMAN_BELL_DAMAGE, "minecraft:soul_fire_flame", ElderTerrain.Mark.SOUL);
+		WorldFx.soundIn(dim, "minecraft:block.bell.use", "hostile", bell.x, bell.y + 1.5, bell.z, 4f, 0.5f);
+		WorldFx.soundIn(dim, "extremedimensions:elder.ferryman.bell", "hostile", bell.x, bell.y + 1.5, bell.z, 4f, 1f);
+		AttackFx.impact(level, AttackFx.of(f), AttackFx.IMPACT_BLAST, bell.x, bell.y + 0.2, bell.z, 2);
+		WorldFx.particleIn(level, "minecraft:soul", bell.x, bell.y + BELL * 0.6, bell.z, 1.2, 0.8, 1.2, 0.05, 14);
+		ElderFx.shake(f, bell.x, bell.z, 16, 0.4f, 8);
+	}
+
 	/**
 	 * The Final Toll: the boat rises out of the ground into the air; soul fire rains round it and onto everyone it
 	 * marks while the bell tolls three times; then the boat comes down, the ground bursts in soul fire and his curse

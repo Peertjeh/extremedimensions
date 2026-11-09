@@ -1700,8 +1700,10 @@ public class ClientShots implements FabricClientGameTest {
 					new String[] {"crossing", "gaol", "tide"});
 			liveFight(ctx, sp, "weaver", 40, s -> com.extremedimensions.elder.WeaverService.summon(player(s), player(s).blockPosition().offset(0, 0, 20)),
 					com.extremedimensions.elder.WeaverService::force, new int[] {com.extremedimensions.elder.Weaver.LANCE,
-							com.extremedimensions.elder.Weaver.CRADLE, com.extremedimensions.elder.Weaver.THOUSAND},
-					new String[] {"lance", "cradle", "thousand"});
+							com.extremedimensions.elder.Weaver.CRADLE, com.extremedimensions.elder.Weaver.THOUSAND,
+							com.extremedimensions.elder.Weaver.WARP, com.extremedimensions.elder.Weaver.SPINDLE,
+							com.extremedimensions.elder.Weaver.NEEDLEFALL},
+					new String[] {"lance", "cradle", "thousand", "warp", "spindle", "needlefall"});
 			// The Pale Mason (3.40): his blink and claw, his walls, the great blocks he lifts and hurls, his gaze, his Door; and
 			// (3.41) his chained stones, his pillars of light, his golden rings and his spiral
 			liveFight(ctx, sp, "pale_mason", 40,

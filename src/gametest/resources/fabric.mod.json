@@ -18,6 +18,7 @@
 			"com.extremedimensions.gametest.ReachTests",
 			"com.extremedimensions.gametest.MasonTests",
 			"com.extremedimensions.gametest.UpheavalTests",
+			"com.extremedimensions.gametest.WeaverBlowTests",
 			"com.extremedimensions.gametest.ArenaTests",
 			"com.extremedimensions.gametest.ElderFightTests",
 			"com.extremedimensions.gametest.WorldTests",

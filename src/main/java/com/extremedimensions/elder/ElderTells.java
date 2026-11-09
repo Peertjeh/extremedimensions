@@ -99,6 +99,10 @@ final class ElderTells {
 			case Weaver.LANCE -> "lance";
 			case Weaver.CRADLE -> "cradle";
 			case Weaver.THOUSAND -> "thousand";
+			// (3.43: the Last Weaver's own, which the Knot Mother never casts)
+			case Weaver.WARP -> "warp";
+			case Weaver.SPINDLE -> "spindle";
+			case Weaver.NEEDLEFALL -> "needlefall";
 			default -> null;
 		};
 	}

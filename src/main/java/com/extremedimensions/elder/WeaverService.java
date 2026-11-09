@@ -45,6 +45,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -157,13 +158,16 @@ public final class WeaverService {
 		final double phase;
 		final double ox, oy, oz;
 		final List<Display.BlockDisplay> shreds = new ArrayList<>();
-		boolean burst;
+		/** Where it last tore up the ground (it rose there, tearing it). */
+		double tornX, tornZ;
 
 		Spindle(double x, double y, double z, double phase) {
 			this.x = x;
 			this.y = y;
 			this.z = z;
 			this.phase = phase;
+			this.tornX = x;
+			this.tornZ = z;
 			// (one block over the ground, so they are lit as the air there)
 			this.ox = x;
 			this.oy = y + 1;
@@ -1493,8 +1497,11 @@ public final class WeaverService {
 			if (hum) {
 				WorldFx.soundIn(dim, "extremedimensions:elder.weaver.spindle", "hostile", s.x, s.y + 4, s.z, 4f, 1f);
 			}
-			if (tear) {
+			// (only ground it has crossed since: standing still over someone, it digs no pit)
+			if (tear && Math.pow(s.x - s.tornX, 2) + Math.pow(s.z - s.tornZ, 2) >= 1) {
 				ElderTerrain.furrow(level, s.x, s.y - 1, s.z, 1.2, 1, 1, 3);
+				s.tornX = s.x;
+				s.tornZ = s.z;
 			}
 			for (ServerPlayer q : near) {
 				double dx = s.x - q.getX(), dz = s.z - q.getZ(), dy = q.getY() - s.y;

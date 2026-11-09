@@ -33,6 +33,8 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 	private final float[] robeOut;
 	/** Which arm each drape of the robe hangs from (1 the left, -1 the right, 0 none). */
 	private final float[] robeArm;
+	/** How each lantern hangs from its hand at rest {xRot, zRot}. */
+	private final float[][] lanternRest;
 
 	public WeaverModel(ModelPart model) {
 		super(model);
@@ -65,6 +67,10 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 			String name = WeaverGeometry.ROBE[i];
 			robeArm[i] = name.startsWith("drape_l") ? 1 : name.startsWith("drape_r") ? -1 : 0;
 			robeOut[i] = robeArm[i] != 0 ? 0 : Mth.sin(r.yRot) * r.x + Mth.cos(r.yRot) * r.z < 0 ? -1 : 1;
+		}
+		this.lanternRest = new float[lanterns.length][];
+		for (int i = 0; i < lanterns.length; i++) {
+			lanternRest[i] = new float[] {lanterns[i].xRot, lanterns[i].zRot};
 		}
 	}
 
@@ -131,6 +137,8 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 		float[] ac = ElderAnim.accent(at, impacts(action), 10, 12);
 		float power = action == Weaver.THOUSAND ? 0.4F : 1F;
 		float g = ac[0] * power, j = ac[1] * power;
+		// How far its lanterns are kept hanging straight down from its hands as it throws its arms about (its newer blows)
+		float hang = 0;
 
 		switch (action) {
 			case Weaver.THREAD -> {
@@ -198,12 +206,13 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 				float up = raise * (1 - down), back = rear * (1 - down), bow = down * k;
 				float strain = ElderAnim.smooth((at - 22) / 16F) * (1 - down);
 				float shakeL = ElderAnim.tremor(t, 0.04F * strain), shakeR = ElderAnim.tremor(t + 1.7F, 0.04F * strain);
+				hang = ElderAnim.env(at, 3, 70, 3);
 				// (raised, a turn of zRot one way takes an arm on up over her and in towards her head, and xRot takes it
 				// forward or back; brought down, the arms end before her, a little apart)
-				armL.zRot += -1.15F * up - 0.15F * cross + 0.25F * coil + 1.2F * bow + shakeL;
-				armR.zRot -= -1.15F * up - 0.15F * cross + 0.25F * coil + 1.2F * bow + shakeR;
-				armL.xRot += -0.25F * up - 0.25F * front + 0.12F * strain + 0.45F * back - 0.85F * bow;
-				armR.xRot += -0.25F * up + 0.25F * front + 0.12F * strain + 0.45F * back - 0.85F * bow;
+				armL.zRot += -1.15F * up - 0.15F * cross + 0.25F * coil + 1.0F * bow + shakeL;
+				armR.zRot -= -1.15F * up - 0.15F * cross + 0.25F * coil + 1.0F * bow + shakeR;
+				armL.xRot += -0.25F * up - 0.25F * front + 0.12F * strain + 0.45F * back - 1.3F * bow;
+				armR.xRot += -0.25F * up + 0.25F * front + 0.12F * strain + 0.45F * back - 1.3F * bow;
 				foreL.zRot += -0.22F * (up + bow) - 1.2F * cross;
 				foreR.zRot -= -0.22F * (up + bow) - 1.2F * cross;
 				handL.zRot += -0.25F * up - 0.3F * cross;
@@ -212,16 +221,16 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 				float claw = Mth.sin(at * 1.1F) * 0.3F * cross + 0.25F * strain + 0.5F * bow;
 				handL.xRot += claw;
 				handR.xRot += claw;
-				torso.xRot += 0.1F * coil - 0.1F * up - 0.08F * strain - 0.22F * back + 0.7F * bow;
+				torso.xRot += 0.1F * coil - 0.06F * up - 0.05F * strain - 0.15F * back + 0.7F * bow;
 				torso.zRot += 0.04F * Mth.sin(w * Mth.PI * 2) * up;
 				body.xRot += 0.08F * bow;
-				head.xRot += 0.1F * coil - 0.45F * up - 0.1F * strain - 0.1F * back + 0.15F * bow;
+				head.xRot += 0.1F * coil - 0.3F * up - 0.05F * strain - 0.05F * back - 0.25F * bow;
 				root.y += 3F * coil - 4F * up - 3F * back + 9F * bow;
 				// the halo turns once as she weaves and swells as she holds, and her cloth is thrown out by the blow
 				halo.zRot += ElderAnim.spin(at - 2, 6, 14, 6, 1);
 				ElderAnim.scale(halo, 1 + 0.08F * cross * up + 0.18F * strain);
 				halo.y += 4F * j;
-				fling(0.12F * strain + 0.45F * j, 0, t);
+				fling(0.12F * strain + 0.35F * j, 0, t);
 			}
 			case Weaver.SPINDLE -> {
 				// Spindle Storm: she crouches and twists back, then spins up, her arms going out and up and her dress
@@ -233,6 +242,7 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 				float coil = ElderAnim.env(at, 4, 1, 8);
 				float open = ElderAnim.smooth((at - 2) / 10F) * (1 - ElderAnim.smooth((at - 96) / 12F));
 				float droop = ElderAnim.env(at - 96, 7, 0, 7);
+				hang = ElderAnim.env(at, 3, 104, 3);
 				body.yRot += turn;
 				torso.yRot -= 0.35F * coil;
 				body.zRot += 0.05F * fly * Mth.sin(t * 0.23F);
@@ -269,9 +279,10 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 					float yank = ElderAnim.fall((at - y + 4) / 4F);
 					pull += yank * (1 - (y == 54 ? 0 : ElderAnim.smooth((at - y - 1) / 5F)));
 				}
-				float hang = ElderAnim.smooth((at - 55) / 7F);
+				float sag = ElderAnim.smooth((at - 55) / 7F);
 				float k = 1 - ElderAnim.smooth((at - 66) / 18F);
-				float up = raise * (1 - pull), low = pull * k, limp = hang * k;
+				float up = raise * (1 - pull), low = pull * k, limp = sag * k;
+				hang = ElderAnim.env(at, 3, 78, 3);
 				// (raised, a turn of zRot one way brings the arm down past her side, xRot forward: it comes down
 				// before her right side)
 				armR.zRot += 1.28F * up - 1.17F * low - 0.25F * limp;
@@ -324,6 +335,9 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 		halo.zRot += 0.5F * j;
 		halo.xScale *= 1 + 0.12F * g;
 		halo.yScale *= 1 + 0.12F * g;
+		if (hang > 0) {
+			hang(hang);
+		}
 		if (action == ElderBoss.SPAWN) {
 			woven(at, t);
 		}
@@ -360,6 +374,20 @@ public class WeaverModel extends EntityModel<ElderRenderState> {
 			float side = i < 3 ? 1 : -1;
 			lanterns[i].zRot -= side * out * (0.75F + 0.15F * Mth.sin(t * 0.4F + i));
 			lanterns[i].xRot += side * lag;
+		}
+	}
+
+	/**
+	 * Its lanterns kept hanging straight down from its hands (by {@code k}), however high it throws its arms (the threads
+	 * they hang from stay as they are), each still swinging as it was.
+	 */
+	private void hang(float k) {
+		float[] l = ElderAnim.plumb(root, body, torso, armL, foreL, handL);
+		float[] r = ElderAnim.plumb(root, body, torso, armR, foreR, handR);
+		for (int i = 0; i < lanterns.length; i++) {
+			float[] p = i < 3 ? l : r;
+			lanterns[i].xRot += k * (p[0] - lanternRest[i][0]);
+			lanterns[i].zRot += k * ElderAnim.wrap(p[1] - lanternRest[i][1]);
 		}
 	}
 

@@ -1145,6 +1145,14 @@ public final class Config {
 	public static int WEAVER_ULTIMATE_RINGS = 2;
 	/** Damage of a ring beam in the Weaver's ultimate. */
 	public static double WEAVER_ULTIMATE_RING_DAMAGE = 10.0;
+	/** Damage of the Weaver's Warp and Weft (3.43) to whoever stands on one of the lines of its grid as it lands. */
+	public static double WEAVER_WARP_DAMAGE = 10.0;
+	/** Damage of a tornado of the Weaver's Spindle Storm (3.43) to whoever is caught in its core, at most once every half second. */
+	public static double WEAVER_SPINDLE_DAMAGE = 6.0;
+	/** How hard a tornado of the Spindle Storm (3.43) draws everyone near in towards its core, each tick (by the squall's rules). */
+	public static double WEAVER_SPINDLE_PULL = 0.05;
+	/** Damage of each great needle of the Weaver's Loom Comes Down (3.43). */
+	public static double WEAVER_NEEDLE_DAMAGE = 12.0;
 	/** How fast the Elders move, as a multiple of their own pace. */
 	public static double ELDER_SPEED = 1.5;
 	/** How often the Elders strike: the pause between their blows is divided by this. */
@@ -2019,6 +2027,7 @@ public final class Config {
 			{"ferryman_gaol_hits", 1, 20}, {"ferryman_gaol_seconds", 0.5, 6}, {"ferryman_gaol_damage", 0, 100},
 			{"ferryman_undertow_pull", 0, 0.5}, {"ferryman_geyser_damage", 0, 60}, {"ferryman_oar_damage", 0, 60}, {"ferryman_bell_damage", 0, 60},
 			{"weaver_windup_speed", 0.5, 4}, {"weaver_lance_length", 0.5, 4},
+			{"weaver_warp_damage", 0, 60}, {"weaver_spindle_damage", 0, 60}, {"weaver_spindle_pull", 0, 0.5}, {"weaver_needle_damage", 0, 60},
 			{"elder_arena_size", 0.5, 12}, {"elder_arena_wall", 0, 1}, {"elder_arena_landmark", 0, 1},
 			{"elder_arena_breakable", 0, 1}, {"elder_arena_blast_resistance", 0, 1200}, {"elder_arena_collapse", 0, 1},
 			{"elder_arena_rubble_damage", 0, 40}, {"elder_arena_rubble_max", 0, 2000}, {"elder_arena_phases", 0, 1},
