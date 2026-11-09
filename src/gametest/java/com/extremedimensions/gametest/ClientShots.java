@@ -1527,6 +1527,8 @@ public class ClientShots implements FabricClientGameTest {
 			// another, far off, the Lock breaks it apart. Each from below the halo, flying so the view holds
 			double[] beforeRites = sp.getServer().computeOnServer(s -> new double[] {player(s).getX(), player(s).getY(), player(s).getZ()});
 			String choiceWas = sp.getServer().computeOnServer(s -> com.extremedimensions.reach.HomeOrLock.choice());
+			// (how the player flew before, to be put back exactly: the squall's measure after this needs it as it was)
+			boolean[] flewBefore = sp.getServer().computeOnServer(s -> new boolean[] {player(s).getAbilities().mayfly, player(s).getAbilities().flying});
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
 				p.getAbilities().mayfly = true;
@@ -1561,8 +1563,8 @@ public class ClientShots implements FabricClientGameTest {
 				com.extremedimensions.reach.AnchorRites.clear();
 				com.extremedimensions.reach.HomeOrLock.set(choiceWas);
 				ServerPlayer p = player(s);
-				p.getAbilities().flying = false;
-				p.getAbilities().mayfly = p.isCreative();
+				p.getAbilities().mayfly = flewBefore[0];
+				p.getAbilities().flying = flewBefore[1];
 				p.onUpdateAbilities();
 			});
 			moveTo(ctx, sp, beforeRites);
