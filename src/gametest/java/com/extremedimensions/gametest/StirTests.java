@@ -74,7 +74,8 @@ public class StirTests {
 	@GameTest(environment = Alone.WEAVER_SETTLES, maxTicks = 80)
 	public void aVillagesWeaverSinksBackAndWakesOnTheNextVisit(GameTestHelper helper) {
 		ServerPlayer p = TestPlayers.survivor(helper);
-		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+		// (high over the test's floor: the players of the tests round this one, some blocks off, never count as near it)
+		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2)).above(60);
 		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
 		int vx = at.getX() + 1, vy = at.getY(), vz = at.getZ() + 1;
 		String due = "wvd@" + vx + "," + vz, rolled = "wv@" + vx + "," + vz;
