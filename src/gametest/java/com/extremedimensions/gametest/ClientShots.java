@@ -109,11 +109,14 @@ public class ClientShots implements FabricClientGameTest {
 			int blow = blows[i];
 			sp.getServer().runOnServer(s -> elders(s).forEach(e -> force.test(e, blow)));
 			measure(ctx, name + "_" + blowNames[i], 28);
-			// (3.44: drawn in close, the shot showed only the hull or the hem: step back to see the blow)
+			// (3.44: drawn in close, the shot showed only the hull or the hem: step back to see the blow, then stand
+			// where they stood again, so the rest of the fight goes as before)
+			double[] at = sp.getServer().computeOnServer(s -> new double[] {player(s).getX(), player(s).getY(), player(s).getZ()});
 			standOff(sp, name, 14);
 			face(sp, name);
 			ctx.waitTicks(2);
 			ctx.takeScreenshot("12_fight_" + name + "_" + blowNames[i]);
+			sp.getServer().runOnServer(s -> player(s).teleportTo(at[0], at[1], at[2]));
 			ctx.waitTicks(45);
 		}
 		// 3.36: the first blow once more with the Effects option at its least, for its frame time beside the full one's
