@@ -582,6 +582,42 @@
       }
     ]
   },
+  "elder.weaver.warp": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.warp",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/weaver_warp",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "elder.weaver.warpfall": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.warpfall",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/weaver_warpfall",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.weaver.spindle": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.spindle",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/weaver_spindle",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "elder.weaver.needlefall": {
+    "subtitle": "subtitles.extremedimensions.elder.weaver.needlefall",
+    "sounds": [
+      {
+        "name": "extremedimensions:elder/weaver_needlefall",
+        "attenuation_distance": 32
+      }
+    ]
+  },
   "elder.matriarch.hurt": {
     "subtitle": "subtitles.extremedimensions.elder.matriarch.hurt",
     "sounds": [

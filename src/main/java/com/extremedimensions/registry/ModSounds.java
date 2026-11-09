@@ -77,8 +77,14 @@ public final class ModSounds {
 			"matriarch.cathedral", "matriarch.barrage", "matriarch.snare",
 			"ferryman.voice", "ferryman.slam", "ferryman.chain", "ferryman.lantern", "ferryman.knell", "ferryman.crossing",
 			"ferryman.gaol", "ferryman.tide", "ferryman.snare",
+			// his blows of 3.43 (tools/sounds/elders.py): the whirlpool of his undertow, its geyser of soul fire, a stroke
+			// of his oars, a toll of his drowned bells
+			"ferryman.undertow", "ferryman.geyser", "ferryman.oars", "ferryman.bell",
 			"weaver.voice", "weaver.thread", "weaver.needles", "weaver.unravel", "weaver.lance", "weaver.cradle",
 			"weaver.thousand", "weaver.snare",
+			// its blows of 3.43 (tools/sounds/elders.py): the warp drawn taut and falling, the spindle storm, the great
+			// needles falling
+			"weaver.warp", "weaver.warpfall", "weaver.spindle", "weaver.needlefall",
 			// The Knot Mother's own (tools/sounds/knot_mother.py): her voice before a blow, her Threadline drawn and swept,
 			// her Snare woven and closing, threads cast, a flyer caught, her anchors struck and broken, her laid bare, the
 			// turning of her phases, her ultimate, and her forming

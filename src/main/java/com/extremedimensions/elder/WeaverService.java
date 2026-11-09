@@ -1270,6 +1270,584 @@ public final class WeaverService {
 		}
 	}
 
+	// ------------------------------------------------------------------ Warp and Weft (3.43)
+
+	/** How far apart the lines of its Warp and Weft run, and how many run each side of its middle (24 blocks across). */
+	private static final double WARP_STEP = 4;
+	private static final int WARP_LINES = 3;
+	/** How near one of its lines one must stand to be cut as it lands. */
+	private static final double WARP_EDGE = 0.9;
+
+	/**
+	 * Warp and Weft: its arms raised, it weaves a square grid of threads 24 blocks across, twelve blocks over the ground
+	 * of its prey (over the middle of everyone standing near them), a line every four blocks both ways; from 24 a line on
+	 * the ground under each shows where it will fall. Its arms slam down at 44 and the grid falls with them; it lands at
+	 * 52, and whoever stands on the ground on one of its lines is cut, the ground scorched along them in places. The cells
+	 * of three blocks by three between the lines are safe.
+	 */
+	private static void warp(Weaver w, Unweaving u, ServerPlayer p, Beat b) {
+		ServerLevel level = u.level;
+		int elder = AttackFx.of(w);
+		if (b.at(6)) {
+			double sx = p.getX(), sz = p.getZ();
+			int n = 1;
+			for (ServerPlayer q : ElderFx.targets(w, ElderPower.reach(80))) {
+				double dx = q.getX() - p.getX(), dz = q.getZ() - p.getZ();
+				if (q != p && dx * dx + dz * dz <= 12 * 12) {
+					sx += q.getX();
+					sz += q.getZ();
+					n++;
+				}
+			}
+			// (on a block's middle: its lines run along rows of blocks, and the three between each two are safe)
+			u.warpX = Math.floor(sx / n) + 0.5;
+			u.warpZ = Math.floor(sz / n) + 0.5;
+			u.warpY = ElderFx.groundUnder(p);
+			u.warp = true;
+		}
+		if (u.warp && b.between(6, 52)) {
+			// Held high while it weaves, drawn again every four beats; then drawn lower every tick as it falls
+			boolean falling = b.t >= 44;
+			if (falling || b.every(4, 6)) {
+				double h = falling ? 12 * Math.max(0, 1 - (b.t - 44) / 8) : 12;
+				int life = falling ? 2 : Math.max(5, (int) Math.ceil(4 / u.tempo()) + 1);
+				weave(level, elder, u, AttackFx.LINE_THREAD, u.warpY + h, life);
+				if (b.t >= 24) {
+					weave(level, elder, u, AttackFx.LINE_PATH, u.warpY + 0.1, life);
+				}
+			}
+		}
+		if (u.warp && b.at(52)) {
+			u.warp = false;
+			fallWarp(w, u);
+		}
+		if (b.past(80)) {
+			u.warp = false;
+			end(w, u, 50);
+		}
+	}
+
+	/** Its grid's lines at height {@code y}, both ways, drawn for {@code ticks}. */
+	private static void weave(ServerLevel level, int elder, Unweaving u, int kind, double y, int ticks) {
+		double half = WARP_LINES * WARP_STEP;
+		for (int k = -WARP_LINES; k <= WARP_LINES; k++) {
+			double o = k * WARP_STEP;
+			AttackFx.line(level, elder, kind, u.warpX - half, y, u.warpZ + o, u.warpX + half, y, u.warpZ + o, ticks);
+			AttackFx.line(level, elder, kind, u.warpX + o, y, u.warpZ - half, u.warpX + o, y, u.warpZ + half, ticks);
+		}
+	}
+
+	/** Its grid lands: whoever stands on one of its lines is cut, its threads snap taut on the ground, and it is scorched. */
+	private static void fallWarp(Weaver w, Unweaving u) {
+		ServerLevel level = u.level;
+		int elder = AttackFx.of(w);
+		float damage = (float) Math.max(0, Config.WEAVER_WARP_DAMAGE);
+		for (ServerPlayer q : ElderFx.targets(w, ElderPower.reach(80))) {
+			if (!onWarp(u, q)) {
+				continue;
+			}
+			if (damage > 0) {
+				q.hurtServer(level, ElderPower.great(level, w), damage);
+			}
+			WorldFx.particleIn(level, "minecraft:enchanted_hit", q.getX(), q.getY() + 0.6, q.getZ(), 0.4, 0.4, 0.4, 0.2, 10);
+		}
+		weave(level, elder, u, AttackFx.LINE_THREAD_TAUT, u.warpY + 0.15, 8);
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		double half = WARP_LINES * WARP_STEP;
+		for (int i = 0; i < 8; i++) {
+			// a spot somewhere along one of its lines, of those running one way or the other
+			double along = rnd.nextDouble(-half, half), on = rnd.nextInt(-WARP_LINES, WARP_LINES + 1) * WARP_STEP;
+			double x = u.warpX + (i % 2 == 0 ? along : on), z = u.warpZ + (i % 2 == 0 ? on : along);
+			ElderTerrain.mark(level, x, u.warpY, z, 1.5, 0.55, ElderTerrain.Mark.SCORCH);
+			AttackFx.impact(level, elder, AttackFx.IMPACT_CUT, x, u.warpY + 0.1, z, 1.4);
+		}
+		WorldFx.particleIn(level, "minecraft:end_rod", u.warpX, u.warpY + 0.4, u.warpZ, half * 0.6, 0.2, half * 0.6, 0.05, 60);
+		WorldFx.soundIn(ElderFx.dim(w), "extremedimensions:elder.weaver.warpfall", "hostile", u.warpX, u.warpY + 1, u.warpZ, 5f, 1f);
+		ElderFx.shake(w, u.warpX, u.warpZ, 32, 0.55f, 12);
+	}
+
+	/** Whether a player stands on the ground on one of its grid's lines, inside its square, as it lands. */
+	private static boolean onWarp(Unweaving u, ServerPlayer q) {
+		double dx = q.getX() - u.warpX, dz = q.getZ() - u.warpZ, half = WARP_LINES * WARP_STEP;
+		if (Math.abs(dx) > half + WARP_EDGE || Math.abs(dz) > half + WARP_EDGE || Math.abs(q.getY() - u.warpY) > 2.5
+				|| q.getY() - ElderFx.groundUnder(q) > 0.6) {
+			return false;
+		}
+		return Math.abs(dx - WARP_STEP * Math.round(dx / WARP_STEP)) <= WARP_EDGE || Math.abs(dz - WARP_STEP * Math.round(dz / WARP_STEP)) <= WARP_EDGE;
+	}
+
+	/** Whether its Warp and Weft hangs over the ground now, laid and not yet fallen (for tests). */
+	public static boolean warpLaid(Entity e) {
+		Unweaving u = WEAVERS.get(e.getUUID());
+		return u != null && u.warp;
+	}
+
+	// ------------------------------------------------------------------ Spindle Storm (3.43)
+
+	/** How tall a tornado of its Spindle Storm stands, how far it draws players in, how near it cuts, how fast it wanders. */
+	private static final double SPINDLE_HEIGHT = 14, SPINDLE_REACH = 9, SPINDLE_CORE = 2.5, SPINDLE_SPEED = 0.25;
+
+	/**
+	 * Spindle Storm: it spins up, and at 20 three tornadoes of thread rise out of the floor round it, six to ten blocks
+	 * out. Until 96 each wanders after the player nearest it (a little slower than a sprint), drawing everyone near in
+	 * towards its core (by the squall's rules: a wall at their back holds them, sneaking halves it, Anchored eases it),
+	 * cutting and whirling whoever is caught in its core, and tearing up the ground it crosses. At 100 they burst, their
+	 * shreds thrown out and whoever is close thrown up and away.
+	 */
+	private static void spindle(Weaver w, Unweaving u, Beat b) {
+		if (b.at(20)) {
+			rise(w, u);
+		}
+		if (b.between(21, 100) && u.spindles.isEmpty()) {
+			// none could rise (nothing but a drop round it)
+			end(w, u, 40);
+			return;
+		}
+		if (b.between(20, 100)) {
+			whirl(w, u, b);
+		}
+		if (b.at(100)) {
+			burst(w, u);
+		}
+		if (b.past(110)) {
+			// (its shreds have come down where they were thrown)
+			dropSpindles(u);
+		}
+		if (b.past(116)) {
+			dropSpindles(u);
+			end(w, u, 50);
+		}
+	}
+
+	/** Its three tornadoes rise out of the floor round it, spread round, six to ten blocks out. */
+	private static void rise(Weaver w, Unweaving u) {
+		ServerLevel level = u.level;
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		dropSpindles(u);
+		u.spun.clear();
+		BlockState[] kinds = {ArenaDesign.mc("white_wool", Blocks.COBWEB.defaultBlockState()), Blocks.COBWEB.defaultBlockState(),
+				ArenaDesign.mc("calcite", Blocks.COBWEB.defaultBlockState())};
+		double base = rnd.nextDouble() * Math.PI * 2;
+		for (int i = 0; i < 3; i++) {
+			double a = base + Math.PI * 2 * i / 3 + rnd.nextDouble(-0.3, 0.3), r = rnd.nextDouble(6, 10);
+			double x = w.getX() + Math.cos(a) * r, z = w.getZ() + Math.sin(a) * r;
+			if (!Loaded.ready(level, BlockPos.containing(x, w.getY(), z))) {
+				continue;
+			}
+			double y = ElderFx.surface(level, x, w.getY(), z, 4, 24);
+			if (Double.isNaN(y)) {
+				continue;
+			}
+			Spindle s = new Spindle(x, y, z, a);
+			for (BlockState kind : kinds) {
+				// (small, in the floor at its foot: they swell as they are drawn up)
+				Display.BlockDisplay d = BlockFlight.spawn(level, s.ox, s.oy, s.oz, kind, at(s.ox, s.oy, s.oz, x, y - 0.3, z, new Quaternionf(), 0.1));
+				if (d != null) {
+					s.shreds.add(d);
+				}
+			}
+			u.spindles.add(s);
+			AttackFx.burst(level, AttackFx.of(w), x, y + 0.5, z, 2.5);
+			WorldFx.particleIn(level, "minecraft:cloud", x, y + 0.5, z, 1.2, 0.3, 1.2, 0.08, 14);
+			ElderTerrain.furrow(level, x, y - 1, z, 1.6, 1, 1, 2);
+		}
+		ElderFx.shake(w, w.getX(), w.getZ(), 28, 0.4f, 10);
+	}
+
+	/**
+	 * Each tick of its tornadoes: they wander, twist and whirl their shreds, draw in whoever is near, cut whoever is in
+	 * their core (once in ten ticks, however many hold them), and tear up the ground they cross.
+	 */
+	private static void whirl(Weaver w, Unweaving u, Beat b) {
+		ServerLevel level = u.level;
+		String dim = ElderFx.dim(w);
+		int elder = AttackFx.of(w);
+		List<ServerPlayer> near = ElderFx.targets(w, ElderPower.reach(64));
+		long now = level.getGameTime();
+		// (they rise out of the floor over eight beats)
+		double rise = Math.max(0.05, Math.min(1, (b.t - 20) / 8));
+		boolean wandering = b.t < 96;
+		boolean twist = b.every(3, 20), tear = wandering && b.every(8, 20), hum = wandering && b.every(30, 20);
+		int life = Math.max(4, (int) Math.ceil(3 / u.tempo()) + 2);
+		float damage = (float) Math.max(0, Config.WEAVER_SPINDLE_DAMAGE);
+		for (Spindle s : u.spindles) {
+			if (wandering) {
+				wander(level, s, near, u.ticks);
+			}
+			double turn = u.ticks * 0.45;
+			if (twist) {
+				twist(level, elder, s, turn, rise, life);
+			}
+			// motes spiralling up it, and dust at its foot
+			for (int i = 0; i < 3; i++) {
+				double a = turn * 1.2 + s.phase + Math.PI * 2 * i / 3;
+				double h = ((u.ticks * 0.6 + i * 4.7) % SPINDLE_HEIGHT) * rise, r = 0.4 + 2.6 * h / SPINDLE_HEIGHT;
+				WorldFx.particleIn(level, "minecraft:end_rod", s.x + Math.cos(a) * r, s.y + h, s.z + Math.sin(a) * r, 0.05, 0.05, 0.05, 0.01, 1);
+			}
+			if (u.ticks % 3 == 0) {
+				WorldFx.particleIn(level, "minecraft:cloud", s.x, s.y + 0.3, s.z, 1.0, 0.2, 1.0, 0.06, 2);
+			}
+			if (u.ticks % 2 == 0) {
+				shreds(s, u.ticks + 2, rise);
+			}
+			if (hum) {
+				WorldFx.soundIn(dim, "extremedimensions:elder.weaver.spindle", "hostile", s.x, s.y + 4, s.z, 4f, 1f);
+			}
+			if (tear) {
+				ElderTerrain.furrow(level, s.x, s.y - 1, s.z, 1.2, 1, 1, 3);
+			}
+			for (ServerPlayer q : near) {
+				double dx = s.x - q.getX(), dz = s.z - q.getZ(), dy = q.getY() - s.y;
+				double d = Math.sqrt(dx * dx + dz * dz);
+				if (d > SPINDLE_REACH || dy < -2 || dy > SPINDLE_HEIGHT * rise + 1) {
+					continue;
+				}
+				// Drawn in towards its core, harder the nearer
+				if (d > 0.6 && PaleSquall.blown(q)) {
+					double pull = PaleSquall.push(q, dx / d, dz / d, Config.WEAVER_SPINDLE_PULL * (0.4 + 0.6 * (1 - d / SPINDLE_REACH)));
+					if (pull > 0) {
+						PaleSquall.gust(q, dx / d * pull, dz / d * pull);
+					}
+				}
+				Long last = u.spun.get(q.getUUID());
+				if (d <= SPINDLE_CORE && (last == null || now - last >= 10)) {
+					u.spun.put(q.getUUID(), now);
+					if (damage > 0) {
+						q.hurtServer(level, ElderPower.great(level, w), damage);
+					}
+					// whirled round its core and up
+					double tx = d > 0.3 ? -dz / d : 1, tz = d > 0.3 ? dx / d : 0;
+					q.setDeltaMovement(tx * 0.45, 0.35, tz * 0.45);
+					WorldFx.moved(q);
+					WorldFx.particleIn(level, "minecraft:enchanted_hit", q.getX(), q.getY() + 1, q.getZ(), 0.4, 0.5, 0.4, 0.1, 8);
+					WorldFx.soundIn(dim, "minecraft:block.wool.break", "hostile", q.getX(), q.getY() + 1, q.getZ(), 2f, 0.6f);
+				}
+			}
+		}
+	}
+
+	/** A tornado wanders a step after the player nearest it, along the ground (never out over a drop with no floor in reach). */
+	private static void wander(ServerLevel level, Spindle s, List<ServerPlayer> near, int ticks) {
+		ServerPlayer to = null;
+		double best = Double.MAX_VALUE;
+		for (ServerPlayer q : near) {
+			double d = q.distanceToSqr(s.x, q.getY(), s.z);
+			if (d < best) {
+				best = d;
+				to = q;
+			}
+		}
+		if (to == null || best < 0.04) {
+			return;
+		}
+		// (each sways its own way as it goes, so the three do not run together)
+		double a = Math.atan2(to.getZ() - s.z, to.getX() - s.x) + 0.5 * Math.sin(ticks * 0.06 + s.phase * 3);
+		double step = Math.min(Math.sqrt(best), SPINDLE_SPEED);
+		double nx = s.x + Math.cos(a) * step, nz = s.z + Math.sin(a) * step;
+		if (!Loaded.ready(level, BlockPos.containing(nx, s.y, nz))) {
+			return;
+		}
+		double ny = ElderFx.surface(level, nx, s.y, nz, 3, 8);
+		if (Double.isNaN(ny)) {
+			return;
+		}
+		s.x = nx;
+		s.y = ny;
+		s.z = nz;
+	}
+
+	/** A tornado's column: six threads twisting up from its foot, wider as they climb ({@code rise} of its height risen). */
+	private static void twist(ServerLevel level, int elder, Spindle s, double turn, double rise, int ticks) {
+		double[] prev = null;
+		for (int k = 0; k <= 6; k++) {
+			double f = k / 6.0, a = turn + s.phase + k * 0.9, r = 0.4 + 2.6 * f;
+			double[] pt = {s.x + Math.cos(a) * r, s.y + SPINDLE_HEIGHT * f * rise, s.z + Math.sin(a) * r};
+			if (prev != null) {
+				AttackFx.line(level, elder, AttackFx.LINE_THREAD, prev[0], prev[1], prev[2], pt[0], pt[1], pt[2], ticks);
+			}
+			prev = pt;
+		}
+	}
+
+	/** Its shreds whirl round it (where they will be at tick {@code t} of its fight), climbing and falling as they turn. */
+	private static void shreds(Spindle s, double t, double rise) {
+		for (int k = 0; k < s.shreds.size(); k++) {
+			double a = t * 0.38 + s.phase + Math.PI * 2 * k / 3;
+			double h = 0.3 + (6 + 4.5 * Math.sin(t * 0.07 + k * 2.1)) * rise, r = 0.8 + h * 0.17;
+			Quaternionf q = new Quaternionf().rotateY((float) (-t * 0.3 - k)).rotateX((float) (t * 0.2 + k));
+			place(s.shreds.get(k), s.ox, s.oy, s.oz, s.x + Math.cos(a) * r, s.y + h, s.z + Math.sin(a) * r, q, 0.3 + 0.35 * rise, 2);
+		}
+	}
+
+	/** Its tornadoes burst: their shreds thrown out, and whoever stands close thrown up and away. */
+	private static void burst(Weaver w, Unweaving u) {
+		ServerLevel level = u.level;
+		String dim = ElderFx.dim(w);
+		int elder = AttackFx.of(w);
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		List<ServerPlayer> near = ElderFx.targets(w, ElderPower.reach(64));
+		// (they come down before they go, ten beats on)
+		int flight = Math.max(3, (int) Math.round(8 / u.tempo()));
+		for (Spindle s : u.spindles) {
+			AttackFx.burst(level, elder, s.x, s.y + 3, s.z, 4);
+			AttackFx.ring(level, elder, s.x, s.y + 0.1, s.z, 4, 10);
+			WorldFx.particleIn(level, "minecraft:end_rod", s.x, s.y + 5, s.z, 1.5, 4, 1.5, 0.25, 40);
+			WorldFx.particleIn(level, "minecraft:cloud", s.x, s.y + 1, s.z, 1.5, 0.5, 1.5, 0.15, 16);
+			WorldFx.soundIn(dim, "minecraft:block.wool.break", "hostile", s.x, s.y + 2, s.z, 4f, 0.5f);
+			ElderFx.shake(w, s.x, s.z, 20, 0.45f, 8);
+			for (ServerPlayer q : near) {
+				double dx = q.getX() - s.x, dz = q.getZ() - s.z, dy = q.getY() - s.y;
+				double d = Math.sqrt(dx * dx + dz * dz);
+				if (d > 4 || dy < -2 || dy > SPINDLE_HEIGHT) {
+					continue;
+				}
+				d = Math.max(0.5, d);
+				q.setDeltaMovement(dx / d * 0.9, 0.6, dz / d * 0.9);
+				WorldFx.moved(q);
+			}
+			for (Display.BlockDisplay d : s.shreds) {
+				double a = rnd.nextDouble() * Math.PI * 2, far = rnd.nextDouble(5, 9);
+				double tx = s.x + Math.cos(a) * far, tz = s.z + Math.sin(a) * far;
+				double ty = ElderFx.surface(level, tx, s.y + 4, tz, 4, 12);
+				place(d, s.ox, s.oy, s.oz, tx, (Double.isNaN(ty) ? s.y : ty) + 0.3, tz, new Quaternionf().rotateXYZ(rnd.nextFloat() * 6, rnd.nextFloat() * 6, 0),
+						0.5, flight);
+			}
+		}
+	}
+
+	/** Its tornadoes' shreds come down to nothing (the storm over, or cut short, or its fight over). */
+	private static void dropSpindles(Unweaving u) {
+		for (Spindle s : u.spindles) {
+			for (Display.BlockDisplay d : s.shreds) {
+				BlockFlight.drop(d);
+			}
+		}
+		u.spindles.clear();
+	}
+
+	/** How many shreds whirl round the tornadoes of its Spindle Storm now (for tests). */
+	public static int spindleShreds(Entity e) {
+		Unweaving u = WEAVERS.get(e.getUUID());
+		int n = 0;
+		if (u != null) {
+			for (Spindle s : u.spindles) {
+				n += s.shreds.size();
+			}
+		}
+		return n;
+	}
+
+	/** How many tornadoes of its Spindle Storm stand now (for tests). */
+	public static int spindles(Entity e) {
+		Unweaving u = WEAVERS.get(e.getUUID());
+		return u == null ? 0 : u.spindles.size();
+	}
+
+	// ------------------------------------------------------------------ The Loom Comes Down (3.43)
+
+	/** Needles to a row, where the first falls (blocks out in front of it), how far apart they fall, how high they fall from. */
+	private static final int NEEDLE_ROW = 8;
+	private static final double NEEDLE_FIRST = 4, NEEDLE_GAP = 2.5, NEEDLE_FROM = 30;
+	/** How long and how thick a great needle is. */
+	private static final float NEEDLE_LENGTH = 14F, NEEDLE_THICK = 0.6F;
+
+	/**
+	 * The Loom Comes Down: its right arm raised, it yanks it down four times (at 24, 34, 44 and 54); each time a row of
+	 * eight great needles falls from high over it, from four blocks in front of it towards the next of those it can reach
+	 * (its prey first), a sigil burning under each where it will land. They land twelve beats on (at 36, 46, 56 and 66; never
+	 * so soon that the sigils cannot be read), and each leaves a spike of calcite in the ground for a while, so the field
+	 * fills with things to run round and stand behind.
+	 */
+	private static void needlefall(Weaver w, Unweaving u, ServerPlayer p, Beat b) {
+		// (those already laid fall first: one laid this tick begins its fall on the next)
+		fall(w, u);
+		for (int k = 0; k < 4; k++) {
+			if (b.at(24 + k * 10)) {
+				row(w, u, p, k);
+			}
+		}
+		if (b.past(90) && u.needles.isEmpty()) {
+			end(w, u, 55);
+		}
+	}
+
+	/** A yank of its arm: a row of great needles from in front of it towards the next of those it can reach, its prey first. */
+	private static void row(Weaver w, Unweaving u, ServerPlayer prey, int k) {
+		ServerLevel level = u.level;
+		List<ServerPlayer> all = ElderFx.reachable(w, ElderPower.reach(44));
+		all.remove(prey);
+		all.sort(java.util.Comparator.comparingDouble(q -> q.distanceToSqr(w)));
+		all.add(0, prey);
+		ServerPlayer to = all.get(k % all.size());
+		double dx = to.getX() - w.getX(), dz = to.getZ() - w.getZ();
+		double d = Math.sqrt(dx * dx + dz * dz);
+		if (d < 0.5) {
+			// (right under it: the way it faces)
+			double yaw = Math.toRadians(w.getYRot());
+			dx = -Math.sin(yaw);
+			dz = Math.cos(yaw);
+			d = 1;
+		}
+		double ux = dx / d, uz = dz / d;
+		int left = u.delay(12);
+		float damage = (float) Math.max(0, Config.WEAVER_NEEDLE_DAMAGE);
+		BlockState calcite = ArenaDesign.mc("calcite", Blocks.END_STONE_BRICKS.defaultBlockState()), concrete = ArenaDesign.mc("white_concrete", calcite);
+		Brightness lit = new Brightness(15, 15);
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		double floor = w.getY() - HOVER;
+		for (int i = 0; i < NEEDLE_ROW; i++) {
+			double r = NEEDLE_FIRST + NEEDLE_GAP * i;
+			double x = w.getX() + ux * r, z = w.getZ() + uz * r;
+			if (!Loaded.ready(level, BlockPos.containing(x, floor, z))) {
+				continue;
+			}
+			double y = ElderFx.surface(level, x, floor, z, 4, 12);
+			if (Double.isNaN(y)) {
+				continue;
+			}
+			floor = y;
+			ElderStrikes.strike(w, x, y, z, 1.6, damage, left, ElderStrikes.NEEDLE);
+			// Leaning a little along its row, as if flung down from over its shoulder; thirty blocks up to begin with
+			Quaternionf tilt = new Quaternionf().rotateAxis((float) (rnd.nextDouble(0.08, 0.2) * (rnd.nextBoolean() ? 1 : -1)),
+					new Vector3f((float) -uz, 0, (float) ux));
+			Display.BlockDisplay nd = BlockFlight.spawn(level, x, y + 1, z, i % 2 == 0 ? calcite : concrete, spike(tilt, NEEDLE_FROM - 1));
+			if (nd != null) {
+				((DisplayAccess) nd).extremedimensions$setBrightnessOverride(lit);
+			}
+			u.needles.add(new Needle(x, y, z, nd, tilt, k, left));
+		}
+		// its arm comes down with a crack of glass high over it
+		WorldFx.soundIn(ElderFx.dim(w), "minecraft:block.amethyst_cluster.break", "hostile", w.getX(), w.getY() + 14, w.getZ(), 3f, 0.7f + 0.1f * k);
+	}
+
+	/**
+	 * The look of a great needle whose point is {@code tipY} over its display (which stands one block over the ground it
+	 * falls on), leaning as {@code tilt} turns it about its point.
+	 */
+	private static Transformation spike(Quaternionf tilt, double tipY) {
+		Vector3f c = new Vector3f(NEEDLE_THICK / 2, 0, NEEDLE_THICK / 2);
+		new Quaternionf(tilt).transform(c);
+		return new Transformation(new Vector3f(-c.x, (float) tipY - c.y, -c.z), new Quaternionf(tilt), new Vector3f(NEEDLE_THICK, NEEDLE_LENGTH, NEEDLE_THICK),
+				new Quaternionf());
+	}
+
+	/** Each tick of its needles: those just laid begin to fall, and those due land, each leaving a spike of calcite for a while. */
+	private static void fall(Weaver w, Unweaving u) {
+		if (u.needles.isEmpty()) {
+			return;
+		}
+		ServerLevel level = u.level;
+		Block spike = ArenaDesign.mc("calcite", Blocks.END_STONE_BRICKS.defaultBlockState()).getBlock();
+		// Where each row landed this tick (sums of x, y and z, and how many), for its one sound and jolt
+		Map<Integer, double[]> rows = new HashMap<>();
+		for (Iterator<Needle> it = u.needles.iterator(); it.hasNext();) {
+			Needle n = it.next();
+			n.left--;
+			if (!n.falling) {
+				n.falling = true;
+				if (n.display != null) {
+					// (its point half a block into the ground as it lands)
+					DisplayAccess acc = (DisplayAccess) n.display;
+					acc.extremedimensions$setTransformation(spike(n.tilt, -1.5));
+					acc.extremedimensions$setInterpolationDuration(Math.max(1, n.left));
+					acc.extremedimensions$setInterpolationDelay(0);
+				}
+			}
+			if (n.left > 0) {
+				continue;
+			}
+			it.remove();
+			if (n.display != null) {
+				BlockFlight.drop(n.display);
+			}
+			// A spike where it went in, for a while: not up into whoever stands there, nor on one already standing
+			BlockPos foot = BlockPos.containing(n.x, n.y, n.z);
+			if (!underfoot(level, n.x, n.y, n.z) && !ElderTerrain.temporary(level, foot) && !ElderTerrain.temporary(level, foot.below())) {
+				ElderTerrain.column(level, n.x, n.y + 1, n.z, 5, spike, 200);
+			}
+			WorldFx.particleIn(level, "minecraft:end_rod", n.x, n.y + 1, n.z, 0.3, 1.2, 0.3, 0.06, 8);
+			WorldFx.particleIn(level, "minecraft:cloud", n.x, n.y + 0.3, n.z, 0.6, 0.2, 0.6, 0.05, 4);
+			double[] r = rows.computeIfAbsent(n.row, key -> new double[4]);
+			r[0] += n.x;
+			r[1] += n.y;
+			r[2] += n.z;
+			r[3]++;
+		}
+		for (double[] r : rows.values()) {
+			double x = r[0] / r[3], y = r[1] / r[3], z = r[2] / r[3];
+			WorldFx.soundIn(ElderFx.dim(w), "extremedimensions:elder.weaver.needlefall", "hostile", x, y + 1, z, 5f, 1f);
+			ElderFx.shake(w, x, z, 24, 0.35f, 8);
+		}
+	}
+
+	/** Whether a player stands where a needle's spike would rise (it does not rise up into them). */
+	private static boolean underfoot(ServerLevel level, double x, double y, double z) {
+		AABB room = new AABB(Math.floor(x), y - 0.5, Math.floor(z), Math.floor(x) + 1, y + 5, Math.floor(z) + 1);
+		for (ServerPlayer q : level.players()) {
+			if (!q.isSpectator() && q.getBoundingBox().intersects(room)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Its needles still falling come down to nothing (its blow cut short, its fight over). */
+	private static void dropNeedles(Unweaving u) {
+		for (Needle n : u.needles) {
+			if (n.display != null) {
+				BlockFlight.drop(n.display);
+			}
+		}
+		u.needles.clear();
+	}
+
+	/** How many great needles of its Loom are still falling (for tests). */
+	public static int needlesFalling(Entity e) {
+		Unweaving u = WEAVERS.get(e.getUUID());
+		return u == null ? 0 : u.needles.size();
+	}
+
+	// ------------------------------------------------------------------ what its blows hold in the world
+
+	/** The look of a display standing at (ox, oy, oz) that shows its block with its middle at (cx, cy, cz), turned and sized. */
+	private static Transformation at(double ox, double oy, double oz, double cx, double cy, double cz, Quaternionf q, double size) {
+		return BlockFlight.pose(cx - ox - 0.5, cy - oy + 0.5, cz - oz - 0.5, q, (float) size);
+	}
+
+	/** Moves a display to show its block there, over {@code ticks}. */
+	private static void place(Display.BlockDisplay d, double ox, double oy, double oz, double cx, double cy, double cz, Quaternionf q, double size, int ticks) {
+		DisplayAccess acc = (DisplayAccess) d;
+		acc.extremedimensions$setTransformation(at(ox, oy, oz, cx, cy, cz, q, size));
+		acc.extremedimensions$setInterpolationDuration(ticks);
+		acc.extremedimensions$setInterpolationDelay(0);
+	}
+
+	/**
+	 * What one of its blows holds in the world goes once another action has cut in (a daze, its ultimate, an anchor of the
+	 * Knot Mother's breaking) or the blow is over: its grid, its tornadoes, its needles.
+	 */
+	private static void hold(Unweaving u) {
+		if (u.warp && u.action != Weaver.WARP) {
+			u.warp = false;
+		}
+		if (!u.spindles.isEmpty() && u.action != Weaver.SPINDLE) {
+			dropSpindles(u);
+		}
+		if (!u.needles.isEmpty() && u.action != Weaver.NEEDLEFALL) {
+			dropNeedles(u);
+		}
+	}
+
+	/** Everything its blows hold in the world comes down (its fight over: slain, gone, the server stopping). */
+	private static void unspin(Unweaving u) {
+		if (u == null) {
+			return;
+		}
+		u.warp = false;
+		dropSpindles(u);
+		dropNeedles(u);
+	}
+
 	/**
 	 * The Last Tapestry: it rises high with its arms spread; threads run from its hands to everyone near while time slows
 	 * for them, needles fall and a dome of threads closes over the ground; then everything is pulled taut and snaps, the
