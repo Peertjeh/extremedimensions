@@ -41,13 +41,14 @@ final class ElderTints {
 				case Matriarch.WAIL -> 3;
 				default -> NONE;
 			};
-			// Red for his crossing, sea-green for the tide, gold for the knell, white for the pole, blue soul fire for
-			// his lanterns; his light goes out as the gaol closes
+			// Red for his crossing, sea-green for the tide and the undertow, gold for the knell and the bells, white for
+			// the pole and the oars that sweep the ground, blue soul fire for his lanterns; his light goes out as the gaol
+			// closes
 			case "ferryman" -> switch (action) {
 				case Ferryman.CROSSING -> 0;
-				case Ferryman.TIDE -> 1;
-				case Ferryman.KNELL -> 2;
-				case Ferryman.SLAM -> 3;
+				case Ferryman.TIDE, Ferryman.UNDERTOW -> 1;
+				case Ferryman.KNELL, Ferryman.BELLS -> 2;
+				case Ferryman.SLAM, Ferryman.OARS -> 3;
 				case Ferryman.LANTERN -> 4;
 				case Ferryman.GAOL -> DARK;
 				default -> NONE;
@@ -68,11 +69,12 @@ final class ElderTints {
 				case PaleMason.WALLS, PaleMason.RINGS, ElderBoss.ULTIMATE -> 2;
 				default -> NONE;
 			};
-			// Blue-white for the lance, crimson for the thousand needles, silver for needles; dark as it unravels
+			// Blue-white for the lance and for the lines of the warp and weft, crimson for the thousand needles and the loom
+			// coming down, silver for needles and the spindle storm's threads; dark as it unravels
 			default -> switch (action) {
-				case Weaver.LANCE -> 0;
-				case Weaver.THOUSAND -> 1;
-				case Weaver.NEEDLES -> 2;
+				case Weaver.LANCE, Weaver.WARP -> 0;
+				case Weaver.THOUSAND, Weaver.NEEDLEFALL -> 1;
+				case Weaver.NEEDLES, Weaver.SPINDLE -> 2;
 				case Weaver.UNRAVEL -> DARK;
 				default -> NONE;
 			};
