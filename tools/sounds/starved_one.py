@@ -338,7 +338,7 @@ def so_death(seed):
     x = mix(norm(lay(t, 0.1, w)), 0.45 * norm(snaps), 0.4 * norm(rings), 0.35 * norm(shatter(rng, t, 3.3, 1.2, 40, 1500, 6000, 0.12)),
             0.45 * norm(gutter), 0.3 * norm(embers(rng, t, 0.2, 8.4, 40, 0.5, 0.25, die=1.0)), 0.25 * norm(freed),
             0.45 * norm(braam(rng, t, 2.6, E / 2, 4.6, 0.3, 3)), 0.9 * boom(rng, t, 0.1, 70, 22, 2.2), 0.9 * boom(rng, t, 3.3, 58, 20, 3.0),
-            0.3 * norm(last), 0.08 * norm(shut), 0.06 * norm(embers(rng, t, 9.9, 0.3, 4, 0.0, 0.0)))
+            0.8 * norm(last), 0.12 * norm(shut), 0.06 * norm(embers(rng, t, 9.9, 0.3, 4, 0.0, 0.0)))
     return master(rng, x, 4.2, 0.42, 1.7, True, 6500, 0.6, 0.1), 11.0
 
 
@@ -361,10 +361,13 @@ def so_wake(seed):
                 for at in np.cumsum([0.4] + [1.15 * 0.87 ** i for i in range(20)]) if at < hit - 0.2)
     rise = souls(rng, t, [E * 2, E * 2 * G_, E * 2 * B_, E * 4], 1.2, hit - 1.2, 1.0, "u", "a", 3, 4.0, 0.3, 4500)
     roar = shout(rng, 1.5, 90, 200, 140, 0.15, "a", "o", 7, 0.6)
-    x = mix(0.5 * norm(sub), 0.5 * norm(braam(rng, t, 0.3, E / 2, hit - 0.2, 0.97, 6)), 0.4 * norm(cracks),
-            0.35 * norm(grind(rng, t, 1.0, hit - 1.0, 50, 1800, 4, 36, 0.7)), 0.25 * norm(crumble(rng, t, 2.0, 6.0, 300, 500, 5000, 0.01, 8, 0.8)),
-            0.45 * norm(rise), 0.55 * norm(beats), 0.2 * norm(embers(rng, t, 3.0, hit - 3.0, 10, 0.5, 0.3, grow=4.0)),
-            0.2 * norm(irons(rng, t, 4.5, hit - 4.5, 16, 1200, 3600, 0.08, (2, 5), 0.7)), 0.5 * norm(riser(rng, t, 5.2, hit - 5.2, 200, 8000, E / 2)),
+    build = mix(0.5 * norm(sub), 0.5 * norm(braam(rng, t, 0.3, E / 2, hit - 0.2, 0.97, 6)), 0.4 * norm(cracks),
+                0.35 * norm(grind(rng, t, 1.0, hit - 1.0, 50, 1800, 4, 36, 0.7)), 0.25 * norm(crumble(rng, t, 2.0, 6.0, 300, 500, 5000, 0.01, 8, 0.8)),
+                0.45 * norm(rise), 0.55 * norm(beats), 0.2 * norm(embers(rng, t, 3.0, hit - 3.0, 10, 0.5, 0.3, grow=4.0)),
+                0.2 * norm(irons(rng, t, 4.5, hit - 4.5, 16, 1200, 3600, 0.08, (2, 5), 0.7)), 0.5 * norm(riser(rng, t, 5.2, hit - 5.2, 200, 8000, E / 2)))
+    # a breath's hush just before it tears free, so the blow lands out of it
+    build *= 1 - 0.7 * np.clip((t - hit + 0.16) / 0.1, 0, 1)
+    x = mix(0.8 * build, 0.3 * norm(breath(rng, t, hit - 0.45, 0.45, True, wheeze=1500, rattle=0.4)),
             0.95 * norm(lay(t, hit, roar)), boom(rng, t, hit, 72, 22, 2.2, 1.3), 0.6 * norm(crack(rng, t, hit, 1.0, 2.0)),
             0.3 * norm(crown(rng, t, hit, 620, 1.0, 1.2)), 0.45 * norm(fire(rng, t, hit - 0.05, 1.5, 300, 5000, 18, 0.08)),
             0.35 * snap(rng, t, hit))
