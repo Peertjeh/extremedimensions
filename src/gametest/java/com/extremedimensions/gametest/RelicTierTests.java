@@ -128,11 +128,12 @@ public class RelicTierTests {
 				ItemStack s = new ItemStack(RelicService.item(r));
 				check(helper, s.getRarity().name().equals(r.tier.name()), "%s is named in the colour of %s, not of its tier %s", r.id, s.getRarity(), r.tier);
 			}
-			check(helper, per[0] == 5 && per[1] == 5 && per[2] == 5 && per[3] == 3, "the tiers hold %s relics, not 5, 5, 5 and 3", java.util.Arrays.toString(per));
+			check(helper, per[0] == 6 && per[1] == 4 && per[2] == 5 && per[3] == 3, "the tiers hold %s relics, not 6, 4, 5 and 3", java.util.Arrays.toString(per));
 			check(helper, Relic.HELDS_CHAIN.tier == Relic.Tier.EPIC && Relic.DEBTORS_SEAL.tier == Relic.Tier.EPIC && Relic.UNBOUND_PINION.tier == Relic.Tier.EPIC
 					&& Relic.LAST_STITCH.tier == Relic.Tier.RARE && Relic.HUNGERS_FANG.tier == Relic.Tier.RARE && Relic.KEEPERS_EYE.tier == Relic.Tier.RARE
 					&& Relic.THORNWARD_BARK.tier == Relic.Tier.UNCOMMON && Relic.HOLLOW_WHISTLE.tier == Relic.Tier.UNCOMMON
-					&& Relic.PILGRIMS_SANDAL.tier == Relic.Tier.COMMON && Relic.LODESTONE_CHIP.tier == Relic.Tier.COMMON, "a relic is of the wrong tier");
+					&& Relic.PILGRIMS_SANDAL.tier == Relic.Tier.COMMON && Relic.LODESTONE_CHIP.tier == Relic.Tier.COMMON
+					&& Relic.KINDRED_KNOT.tier == Relic.Tier.COMMON && Relic.TITHE_BELL.tier == Relic.Tier.COMMON, "a relic is of the wrong tier");
 			// Only the epic tier weighs among ordinary finds, only the common among the great foes'
 			weights(0, 0, 0, 1, 1, 0, 0, 0);
 			for (int i = 0; i < 200; i++) {
@@ -169,6 +170,30 @@ public class RelicTierTests {
 	}
 
 	// ------------------------------------------------------------------ the eight
+
+	/** 3.46.1: a world's settings that still held the older relics' old numbers take their new ones; chosen ones stay. */
+	@GameTest
+	public void theOlderRelicsTakeTheirNewNumbers(GameTestHelper helper) {
+		com.google.gson.JsonObject old = new com.google.gson.JsonObject(), chosen = new com.google.gson.JsonObject();
+		for (com.google.gson.JsonObject j : new com.google.gson.JsonObject[] {old, chosen}) {
+			j.addProperty("config_version", 9);
+			j.addProperty("relic_ember_heart_end", 1.2);
+			j.addProperty("relic_tithe_bell_xp", 0.75);
+			j.addProperty("relic_keepers_eye_fragments", 2);
+			j.addProperty("relic_seam_lantern_seconds", 60);
+			j.addProperty("relic_helds_chain_grace", 15);
+		}
+		chosen.addProperty("relic_tithe_bell_xp", 0.6);
+		chosen.addProperty("relic_seam_lantern_seconds", 45);
+		Config.migrate(old);
+		Config.migrate(chosen);
+		check(helper, old.get("relic_ember_heart_end").getAsDouble() == 1.15 && old.get("relic_tithe_bell_xp").getAsDouble() == 0.5
+				&& old.get("relic_keepers_eye_fragments").getAsDouble() == 2.5 && old.get("relic_seam_lantern_seconds").getAsInt() == 90
+				&& old.get("relic_helds_chain_grace").getAsInt() == 20, "the old relic numbers did not follow their new defaults: %s", old);
+		check(helper, chosen.get("relic_tithe_bell_xp").getAsDouble() == 0.6 && chosen.get("relic_seam_lantern_seconds").getAsInt() == 45,
+				"numbers a world chose for its relics were overwritten: %s", chosen);
+		helper.succeed();
+	}
 
 	@GameTest
 	public void thePilgrimsSandalHastensAndHungersOnTheRoad(GameTestHelper helper) {

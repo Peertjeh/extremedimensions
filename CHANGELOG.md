@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.46.1: Relics by Worth
+
+### Changed
+- **The older relics are weighed to their tiers.** A common relic now gives a little and asks a little less. A rare one
+  gives a lot, and its price weighs lighter than its gift.
+  - **Ember Heart** and **Pale Shard** (common): the price in the other world is 15% more drain instead of 20%.
+  - **Tithe Bell** (common): half again the experience instead of three quarters; it still costs a level on every safe
+    return.
+  - **Kindred Knot** is common now, not uncommon: it does nothing without an ally beside you.
+  - **Featherbone** (uncommon): you fall 10 blocks further without harm instead of 8.
+  - **Keeper's Eye** (rare): ×2.5 the chance of fragments from wild kills instead of ×2.
+  - **Seam Lantern** (rare): 90 seconds more in the Seam instead of 60.
+  - **Lurker's Tooth** (rare): Lurkers come half again as often instead of twice as often.
+  - **Held's Chain** (epic): it holds you 20 seconds instead of 15.
+  - Hungering Hand stays as it was.
+- The tiers are now: six common, four uncommon, five rare and three epic.
+- A world whose settings still held the old numbers takes the new ones. A number someone chose is kept.
+
 ## 3.46.0: Rarer Relics
 
 ### New

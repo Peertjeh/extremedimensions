@@ -24,14 +24,14 @@ public enum Relic {
 	PILGRIMS_SANDAL("pilgrims_sandal", Tier.COMMON),
 	/** Less drain everywhere beyond the wound, a curse more from every Collapse. */
 	LODESTONE_CHIP("lodestone_chip", Tier.COMMON),
+	/** Fall again sooner after an ally lifts you, bleed out sooner while fallen. */
+	KINDRED_KNOT("kindred_knot", Tier.COMMON),
 
 	// --- uncommon -------------------------------------------------------------------------------
 	/** Longer reach, a heart less. */
 	HUNGERING_HAND("hungering_hand", Tier.UNCOMMON),
 	/** Long falls without harm, less armour. */
 	FEATHERBONE("featherbone", Tier.UNCOMMON),
-	/** Fall again sooner after an ally lifts you, bleed out sooner while fallen. */
-	KINDRED_KNOT("kindred_knot", Tier.UNCOMMON),
 	/** Who strikes you up close is hurt back; your own blows hit softer. */
 	THORNWARD_BARK("thornward_bark", Tier.UNCOMMON),
 	/** The young barter for less; the tribe's goodwill comes slower. */

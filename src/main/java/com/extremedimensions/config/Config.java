@@ -831,32 +831,32 @@ public final class Config {
 
 	/** Ember Heart: drain multiplier in the Nether (the gift) and in the End (the price). */
 	public static double RELIC_EMBER_HEART_NETHER = 0.8;
-	public static double RELIC_EMBER_HEART_END = 1.2;
+	public static double RELIC_EMBER_HEART_END = 1.15;
 	/** Pale Shard: drain multiplier in the End (the gift) and in the Nether (the price). */
 	public static double RELIC_PALE_SHARD_END = 0.8;
-	public static double RELIC_PALE_SHARD_NETHER = 1.2;
+	public static double RELIC_PALE_SHARD_NETHER = 1.15;
 	/** Hungering Hand: extra reach for blocks and creatures (blocks); maximum health it takes (2 = one heart). */
 	public static double RELIC_HUNGERING_HAND_REACH = 2.0;
 	public static double RELIC_HUNGERING_HAND_HEALTH = 2.0;
 	/** Featherbone: extra fall before it hurts (blocks); armour it takes. */
-	public static double RELIC_FEATHERBONE_FALL = 8.0;
+	public static double RELIC_FEATHERBONE_FALL = 10.0;
 	public static double RELIC_FEATHERBONE_ARMOR = 2.0;
 	/** Keeper's Eye: fragment chance multiplier for wild kills; atonement multiplier for kills. */
-	public static double RELIC_KEEPERS_EYE_FRAGMENTS = 2.0;
+	public static double RELIC_KEEPERS_EYE_FRAGMENTS = 2.5;
 	public static double RELIC_KEEPERS_EYE_ATONEMENT = 0.5;
 	/** Tithe Bell: extra share of the experience you gain (0.5 = half again); levels it takes on every safe return. */
-	public static double RELIC_TITHE_BELL_XP = 0.75;
+	public static double RELIC_TITHE_BELL_XP = 0.5;
 	public static int RELIC_TITHE_BELL_LEVELS = 1;
 	/** Lurker's Tooth: Lurkers cannot take your items or armour; how many times as often they come for you. */
-	public static double RELIC_LURKERS_TOOTH_OFTEN = 2.0;
+	public static double RELIC_LURKERS_TOOTH_OFTEN = 1.5;
 	/** Seam Lantern: extra seconds in the Seam; how much farther monsters notice you at night in the Overworld (0.25 = a quarter). */
-	public static int RELIC_SEAM_LANTERN_SECONDS = 60;
+	public static int RELIC_SEAM_LANTERN_SECONDS = 90;
 	public static double RELIC_SEAM_LANTERN_NOTICE = 0.25;
 	/** Kindred Knot: the wait before you can fall again, as a multiple (0.5 = halved); how long you last fallen, as a multiple (0.67 = a third shorter). */
 	public static double RELIC_KINDRED_KNOT_COOLDOWN = 0.5;
 	public static double RELIC_KINDRED_KNOT_BLEED = 0.67;
 	/** Held's Chain: seconds the chain holds you once your charge runs out beyond the wound; most charge (seconds) an anchor holds for you. */
-	public static int RELIC_HELDS_CHAIN_GRACE = 15;
+	public static int RELIC_HELDS_CHAIN_GRACE = 20;
 	public static double RELIC_HELDS_CHAIN_CAP = 1200.0;
 	/** Chance a slain Keeper leaves a relic; relics the Starved One leaves every player who fought it; chance a Seam chest holds one. */
 	public static double RELIC_KEEPER_CHANCE = 0.35;
@@ -1762,7 +1762,7 @@ public final class Config {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	/** Layout version of the config file; files from before a version are brought up to date on loading. */
-	private static final int VERSION = 9;
+	private static final int VERSION = 10;
 
 	/**
 	 * Defaults that changed, by the version that changed them: {key, old default, new default}. A file still holding
@@ -1794,6 +1794,11 @@ public final class Config {
 		// briefly, and one silk (or an arrow) quenches a node
 		{{"elder_damage_scale", "1.5", "2.25"}, {"starved_sockets", "2", "4"}, {"starved_bind_seconds", "12", "8"},
 				{"starved_socket_silk", "3", "1"}},
+		// 3.46.1: the older relics weighed to their tiers (the common ones' prices lighter, the Tithe Bell's gift smaller;
+		// the rarer ones' gifts greater, the Lurker's Tooth's price lighter)
+		{{"relic_ember_heart_end", "1.2", "1.15"}, {"relic_pale_shard_nether", "1.2", "1.15"}, {"relic_tithe_bell_xp", "0.75", "0.5"},
+				{"relic_featherbone_fall", "8", "10"}, {"relic_keepers_eye_fragments", "2", "2.5"}, {"relic_lurkers_tooth_often", "2", "1.5"},
+				{"relic_seam_lantern_seconds", "60", "90"}, {"relic_helds_chain_grace", "15", "20"}},
 	};
 
 	/**
