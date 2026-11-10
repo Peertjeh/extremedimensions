@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import com.extremedimensions.data.Anchor;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.config.Config;
@@ -15,7 +16,9 @@ import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
@@ -23,8 +26,14 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.food.FoodData;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -33,7 +42,8 @@ import net.minecraft.world.item.Items;
  * Binding relics to the Tether. Using a relic binds it (the one bound before comes back to the hand); the Curses
  * screen unbinds it again. A bound relic is kept in the player's data, not in the inventory: it cannot be lost to a
  * death, a Lurker or a full bag. Also how relics are found (by tier, see {@link #random(boolean)}), and what the relics
- * do that has no home of its own elsewhere: their blows, hunger, wear and the Last Stitch's hold.
+ * do that has no home of its own elsewhere: their blows, hunger, wear and the Last Stitch's hold, the Miner's Candle's
+ * light, the Veil Scale's drift, the Hollow Crown's full stomach and the Ferryman's Obol's passage.
  */
 public final class RelicService {
 	private RelicService() {}
@@ -136,6 +146,10 @@ public final class RelicService {
 			// Lodestone Chip: wherever the charge runs beyond the wound (the Seam's detours too)
 			return Math.max(0, Math.min(1, Config.RELIC_LODESTONE_CHIP_DRAIN));
 		}
+		if (has(d, Relic.FERRYMANS_OBOL)) {
+			// Ferryman's Obol: the passage is paid for on the way out as well
+			return Math.max(1, Config.RELIC_FERRYMANS_OBOL_DRAIN);
+		}
 		return 1.0;
 	}
 
@@ -205,15 +219,22 @@ public final class RelicService {
 		return d != null && ((d.inRun && !d.collapsing) || d.inSeam);
 	}
 
-	/** Every tick for each player in the mod's worlds: the Pilgrim's Sandal's speed, and the Unbound Pinion's wear. */
+	/**
+	 * Every tick for each player in the mod's worlds: the Pilgrim's Sandal's speed, the Unbound Pinion's wear, the Miner's
+	 * Candle's light, the Veil Scale's drift and the Hollow Crown's full stomach.
+	 */
 	public static void tick(ServerPlayer p, PlayerData d) {
 		if (d.relic == null || d.away) {
 			d.pinionGlide = 0;
+			d.veilDrift = false;
 			return;
 		}
 		if (d.tickCounter % 20 == 0 && Config.RELIC_PILGRIMS_SANDAL_SPEED > 0 && has(d, Relic.PILGRIMS_SANDAL) && wandering(d)) {
 			// Laid every second for three seconds: it never runs low while it lasts, and stops soon after
 			CurseEffects.effect(p, "speed", 3, Config.RELIC_PILGRIMS_SANDAL_SPEED - 1);
+		}
+		if (d.tickCounter % 20 == 0 && has(d, Relic.MINERS_CANDLE)) {
+			candle(p, deep(p));
 		}
 		if (has(d, Relic.UNBOUND_PINION) && p.isFallFlying() && !p.isCreative() && !p.isSpectator()) {
 			if (++d.pinionGlide % 20 == 0) {
@@ -222,6 +243,115 @@ public final class RelicService {
 		} else {
 			d.pinionGlide = 0;
 		}
+		drift(p, d);
+		if (has(d, Relic.HOLLOW_CROWN)) {
+			sate(p, d);
+		}
+	}
+
+	// ------------------------------------------------------------------ the Miner's Candle
+
+	/**
+	 * Seconds of Night Vision the Miner's Candle lays at a time. It is laid again every second, so it never comes near the
+	 * last ten seconds, in which the game makes night vision flicker.
+	 */
+	private static final int CANDLE_SECONDS = 15;
+
+	/** Where the Miner's Candle lights the way: in the Overworld below {@code relic_miners_candle_depth}, under rock. */
+	public static boolean deep(ServerPlayer p) {
+		return Dims.OVERWORLD.equals(Dims.of(p)) && p.getY() < Config.RELIC_MINERS_CANDLE_DEPTH
+				&& com.extremedimensions.lurker.CaveLurkerService.roofed(p.level(), p.blockPosition().above());
+	}
+
+	/**
+	 * The Miner's Candle's Night Vision, lit or put out. It is told from a potion's by being ambient and short, and a
+	 * potion's is never touched: not shortened while it lasts, not taken away.
+	 */
+	public static void candle(ServerPlayer p, boolean lit) {
+		BuiltInRegistries.MOB_EFFECT.get(Identifier.fromNamespaceAndPath("minecraft", "night_vision")).ifPresent(h -> {
+			MobEffectInstance had = p.getEffect(h);
+			boolean ours = had != null && had.isAmbient() && had.getDuration() <= CANDLE_SECONDS * 20;
+			if (lit && (had == null || ours)) {
+				p.addEffect(new MobEffectInstance(h, CANDLE_SECONDS * 20, 0, true, false, false));
+			} else if (!lit && ours) {
+				p.removeEffect(h);
+			}
+		});
+	}
+
+	// ------------------------------------------------------------------ the Veil Scale
+
+	/** Seconds of Slow Falling the Veil Scale lays at a time, again every half second while its bearer drifts. */
+	private static final int DRIFT_SECONDS = 2;
+
+	/**
+	 * The Veil Scale: in the Seam (and its Fray), once its bearer has fallen more than {@code relic_veil_scale_fall} blocks,
+	 * they drift down slowly until they land, swim or glide. Slow Falling takes the fall it counts away at once, so the
+	 * drift is held on for the rest of the way down rather than caught again every few blocks.
+	 */
+	public static void drift(ServerPlayer p, PlayerData d) {
+		if (!has(d, Relic.VEIL_SCALE) || !(d.inSeam || com.extremedimensions.seam.SeamService.inSeam(p)) || p.onGround() || p.isInWater()
+				|| p.isFallFlying() || p.isSpectator()) {
+			d.veilDrift = false;
+			return;
+		}
+		if (!d.veilDrift && p.fallDistance <= Math.max(0, Config.RELIC_VEIL_SCALE_FALL)) {
+			return;
+		}
+		boolean caught = !d.veilDrift;
+		d.veilDrift = true;
+		if (caught || d.tickCounter % 10 == 0) {
+			CurseEffects.effect(p, "slow_falling", DRIFT_SECONDS, 0);
+		}
+		if (caught) {
+			WorldFx.particles(p, "minecraft:end_rod", 0.5, 0.6, 0.03, 10);
+		}
+	}
+
+	/** Seconds in the Seam, from the relic bound: the Veil Scale takes {@code relic_veil_scale_seconds}, never below a minute. */
+	public static double seamTime(PlayerData d, double seconds) {
+		if (!has(d, Relic.VEIL_SCALE) || Config.RELIC_VEIL_SCALE_SECONDS <= 0) {
+			return seconds;
+		}
+		return Math.max(Math.min(seconds, 60), seconds - Config.RELIC_VEIL_SCALE_SECONDS);
+	}
+
+	// ------------------------------------------------------------------ the Hollow Crown
+
+	/** The Hollow Crown: its bearer's stomach is kept full (as full as a Shrunken Stomach lets it be), and so is their saturation. */
+	private static void sate(ServerPlayer p, PlayerData d) {
+		if (p.isCreative() || p.isSpectator()) {
+			return;
+		}
+		int full = CurseEffects.stomachCap(d);
+		FoodData food = p.getFoodData();
+		if (food.getFoodLevel() < full) {
+			food.setFoodLevel(full);
+		}
+		if (food.getSaturationLevel() < full) {
+			food.setSaturation(full);
+		}
+		// (what the stomach holds now is no meal: Bitter Tongue takes nothing of it)
+		d.lastFood = food.getFoodLevel();
+	}
+
+	/**
+	 * Natural healing (a full stomach's) under the relic bound: true to let it heal as ever. The Hollow Crown's bearer is
+	 * healed only {@code relic_hollow_crown_regen} of it (given here) and the rest is refused. Potions, golden apples, a
+	 * beacon, a totem and the Last Stitch heal as they always do: they never come this way.
+	 */
+	public static boolean regenerates(ServerPlayer p, float amount) {
+		if (p.isCreative() || !has(p, Relic.HOLLOW_CROWN)) {
+			return true;
+		}
+		double share = Math.max(0, Math.min(1, Config.RELIC_HOLLOW_CROWN_REGEN));
+		if (share >= 1) {
+			return true;
+		}
+		if (share > 0 && amount > 0) {
+			p.heal((float) (amount * share));
+		}
+		return false;
 	}
 
 	/**
@@ -245,12 +375,16 @@ public final class RelicService {
 
 	/**
 	 * How much of the hunger a player is caused they take, from the relic bound: more with the Pilgrim's Sandal on an
-	 * expedition and in the Seam, more with Hunger's Fang always. It scales the player's own exhaustion (see
+	 * expedition and in the Seam, more with Hunger's Fang always, none with the Hollow Crown. It scales the player's own exhaustion (see
 	 * Charms.exhaustion), so "a quarter faster" holds whether they walk, sprint, fight or swim, rather than a fixed amount
 	 * a second that would be far too much for one standing still and too little for one sprinting.
 	 */
 	public static double hunger(ServerPlayer p) {
 		PlayerData d = DataStore.peek(p.getUUID());
+		if (has(d, Relic.HOLLOW_CROWN)) {
+			// the Hollow Crown's bearer never hungers
+			return 0.0;
+		}
 		if (has(d, Relic.PILGRIMS_SANDAL) && wandering(d)) {
 			return Math.max(1, Config.RELIC_PILGRIMS_SANDAL_HUNGER);
 		}
@@ -260,9 +394,23 @@ public final class RelicService {
 		return 1.0;
 	}
 
-	/** Damage taken, as a multiple, from the relic bound: more for everything with the Unbound Pinion. */
-	public static double damageTaken(PlayerData d) {
-		return has(d, Relic.UNBOUND_PINION) ? Math.max(1, Config.RELIC_UNBOUND_PINION_DAMAGE) : 1.0;
+	/**
+	 * Damage taken, as a multiple, from the relic bound: more for everything with the Unbound Pinion; with the Ashen Locket
+	 * less from fire and lava, more from freezing and drowning.
+	 */
+	public static double damageTaken(PlayerData d, DamageSource source) {
+		if (has(d, Relic.UNBOUND_PINION)) {
+			return Math.max(1, Config.RELIC_UNBOUND_PINION_DAMAGE);
+		}
+		if (has(d, Relic.ASHEN_LOCKET)) {
+			if (source.is(DamageTypeTags.IS_FIRE)) {
+				return Math.max(0, Math.min(1, Config.RELIC_ASHEN_LOCKET_FIRE));
+			}
+			if (source.is(DamageTypeTags.IS_FREEZING) || source.is(DamageTypeTags.IS_DROWNING)) {
+				return Math.max(1, Config.RELIC_ASHEN_LOCKET_COLD);
+			}
+		}
+		return 1.0;
 	}
 
 	/** A blow struck up close by hand, claw or blade: a melee attack, not an arrow, a spell, a blast or a thorn. */
@@ -432,5 +580,154 @@ public final class RelicService {
 	/** Whether the Elders may pull this flyer down and bind their wings (never the Unbound Pinion's bearer). */
 	public static boolean grounds(ServerPlayer p) {
 		return !has(p, Relic.UNBOUND_PINION);
+	}
+
+	// ------------------------------------------------------------------ who comes, and how often
+
+	/** How many times as often a Cave Lurker comes for this player: more for the Miner's Candle's bearer. */
+	public static double caveLurkers(ServerPlayer p) {
+		return has(p, Relic.MINERS_CANDLE) ? Math.max(1, Config.RELIC_MINERS_CANDLE_CAVE_LURKER) : 1.0;
+	}
+
+	/** How many times as often a Magpie comes for this player's chests: more for the Magpie's Glint's bearer. */
+	public static double magpies(ServerPlayer p) {
+		return has(p, Relic.MAGPIES_GLINT) ? Math.max(1, Config.RELIC_MAGPIES_GLINT_MAGPIE) : 1.0;
+	}
+
+	/** How many times as often a Sculk Lurker comes for this player: more for the Muffled Bell's bearer. */
+	public static double sculkLurkers(ServerPlayer p) {
+		return has(p, Relic.MUFFLED_BELL) ? Math.max(1, Config.RELIC_MUFFLED_BELL_SCULK_LURKER) : 1.0;
+	}
+
+	// ------------------------------------------------------------------ the Muffled Bell
+
+	/** Set while a Sculk Lurker sets the sculk off in a player's name: what it does in theirs, the sculk hears. */
+	private static boolean framing;
+
+	/** Runs something a Sculk Lurker does in its player's name: the Muffled Bell does not hush it. */
+	public static void inTheirName(Runnable r) {
+		boolean was = framing;
+		framing = true;
+		try {
+			r.run();
+		} finally {
+			framing = was;
+		}
+	}
+
+	/** Whether this player's steps are no sound to a Cave Lurker, as if they always sneaked: the Muffled Bell's bearer. */
+	public static boolean hushed(ServerPlayer p) {
+		return has(p, Relic.MUFFLED_BELL);
+	}
+
+	/**
+	 * The Muffled Bell: the sculk does not hear its bearer. Their vibrations are dampened as wool dampens them, so no sculk
+	 * sensor, no shrieker and no Warden heeds what they do (a shrieker stepped on still shrieks, as it does at anyone).
+	 */
+	public static boolean muffled(Entity e) {
+		return !framing && e instanceof ServerPlayer p && hushed(p);
+	}
+
+	// ------------------------------------------------------------------ the Magpie's Glint
+
+	/** Great foes whose loot is never doubled (the mod's own Elders and the Starved One are left out by their kind). */
+	private static final java.util.Set<String> BOSSES = java.util.Set.of("minecraft:ender_dragon", "minecraft:wither", "minecraft:elder_guardian",
+			"minecraft:warden");
+
+	/**
+	 * The Magpie's Glint: whether a creature its bearer slew drops its loot again, at {@code relic_magpies_glint_chance}.
+	 * Only a wild one (as atonement counts it, see AtonementGuard: not from a spawner, an egg, breeding or a command, nor
+	 * near a spawner), never a player, a boss or one of the tribe's.
+	 */
+	public static boolean lootTwice(LivingEntity entity, DamageSource source) {
+		if (!(source.getEntity() instanceof ServerPlayer killer) || entity instanceof Player || !(entity instanceof Mob)
+				|| entity instanceof com.extremedimensions.lurker.LurkerBody || entity instanceof com.extremedimensions.elder.ElderBoss
+				|| entity instanceof com.extremedimensions.mending.StarvedOne || Config.RELIC_MAGPIES_GLINT_CHANCE <= 0
+				|| !has(killer, Relic.MAGPIES_GLINT) || BOSSES.contains(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString())
+				|| !com.extremedimensions.penalty.AtonementGuard.natural(entity)) {
+			return false;
+		}
+		return ThreadLocalRandom.current().nextDouble() < Config.RELIC_MAGPIES_GLINT_CHANCE;
+	}
+
+	// ------------------------------------------------------------------ the Anchor Rivet
+
+	/** The charge fuel gives, as a multiple, from the relic bound: more with the Anchor Rivet. */
+	public static double fuel(PlayerData d) {
+		return has(d, Relic.ANCHOR_RIVET) ? Math.max(1, Config.RELIC_ANCHOR_RIVET_FUEL) : 1.0;
+	}
+
+	/**
+	 * How many times as fast a Lurker drinks an anchor near the player it came for: faster from one that holds charge of
+	 * the Anchor Rivet's bearer.
+	 */
+	public static double drink(ServerPlayer p, Anchor a) {
+		return p != null && a != null && a.own(p.getStringUUID()) > 0 && has(p, Relic.ANCHOR_RIVET) ? Math.max(1, Config.RELIC_ANCHOR_RIVET_DRINK) : 1.0;
+	}
+
+	// ------------------------------------------------------------------ the Ferryman's Obol
+
+	/** Beyond the wound, for the Ferryman's Obol: the Nether, the End, and the Seam with its Fray. */
+	private static boolean beyond(String dim) {
+		return Dims.isBeyond(dim) || Dims.SEAM.equals(dim);
+	}
+
+	/** The Ferryman's Obol: whether a death in this world keeps all its bearer carries (their experience still falls). */
+	public static boolean keepsOnDeath(PlayerData d, String dim) {
+		return has(d, Relic.FERRYMANS_OBOL) && beyond(dim);
+	}
+
+	/** Curses a death beyond the wound costs on top, from the relic bound: the Ferryman's Obol's. */
+	public static int passage(PlayerData d) {
+		return has(d, Relic.FERRYMANS_OBOL) ? Math.max(0, Config.RELIC_FERRYMANS_OBOL_CURSES) : 0;
+	}
+
+	/**
+	 * As a player dies, just before what they carry falls (see FerrymansObolMixin): true when the Ferryman's Obol keeps it
+	 * all, the bag, the armour and the off hand, as the game's keepInventory would. It is noted in their data, so it comes
+	 * back on their respawn even when they leave the game first (the dead body is saved with all it carried).
+	 */
+	public static boolean spareDrops(ServerPlayer p) {
+		return spareDrops(p, Dims.of(p));
+	}
+
+	/** As {@link #spareDrops(ServerPlayer)}, for a player dying in the given world. */
+	public static boolean spareDrops(ServerPlayer p, String dim) {
+		PlayerData d = DataStore.peek(p.getUUID());
+		if (p.isSpectator() || !keepsOnDeath(d, dim)) {
+			return false;
+		}
+		d.obolKept = true;
+		DataStore.markDirty();
+		return true;
+	}
+
+	/**
+	 * On respawn after a death the Ferryman's Obol paid for: everything the dead body carried goes to the new one, each in
+	 * its own slot. Returns the stacks given back (none for a death that dropped as ever).
+	 */
+	public static int restore(ServerPlayer from, ServerPlayer to) {
+		PlayerData d = DataStore.peek(from.getUUID());
+		if (d == null || !d.obolKept) {
+			return 0;
+		}
+		d.obolKept = false;
+		DataStore.markDirty();
+		Inventory was = from.getInventory(), now = to.getInventory();
+		int n = 0;
+		for (int i = 0; i < Math.min(was.getContainerSize(), now.getContainerSize()); i++) {
+			ItemStack s = was.getItem(i);
+			if (!s.isEmpty()) {
+				// moved, not copied: the old body keeps nothing that could come back a second time
+				was.setItem(i, ItemStack.EMPTY);
+				now.setItem(i, s);
+				n++;
+			}
+		}
+		if (n > 0) {
+			WorldFx.soundSelf(to, "minecraft:item.armor.equip_chain", 1.0f, 0.7f);
+			to.sendSystemMessage(Component.translatable("gui.extremedimensions.relic.ferrymans_obol.kept").withStyle(ChatFormatting.AQUA));
+		}
+		return n;
 	}
 }

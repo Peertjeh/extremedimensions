@@ -169,13 +169,23 @@ public final class CaveLurkerService {
 			if (last != null && s.getTickCount() - last < Config.CAVE_LURKER_COOLDOWN_SECONDS * 20L) {
 				continue;
 			}
-			if (rnd.nextDouble() >= Config.CAVE_LURKER_SPAWN_CHANCE) {
+			if (rnd.nextDouble() >= chance(p)) {
 				continue;
 			}
 			if (come(p, false) != null) {
 				LAST.put(p.getUUID(), (long) s.getTickCount());
 			}
 		}
+	}
+
+	/** The chance a Cave Lurker comes to this player at each look: more often for the Miner's Candle's bearer. */
+	public static double chance(ServerPlayer p) {
+		return Math.min(1, Config.CAVE_LURKER_SPAWN_CHANCE * com.extremedimensions.relic.RelicService.caveLurkers(p));
+	}
+
+	/** Whether a Cave Lurker hears nothing of this player's steps: they sneak, or bear the Muffled Bell. */
+	public static boolean quiet(ServerPlayer p) {
+		return p.isShiftKeyDown() || com.extremedimensions.relic.RelicService.hushed(p);
 	}
 
 	/** Whether a Cave Lurker is after this player already. */
@@ -334,11 +344,14 @@ public final class CaveLurkerService {
 		}
 	}
 
-	/** The sound of its prey's steps this tick: nothing while they sneak or stand, more for a run or a jump. */
+	/**
+	 * The sound of its prey's steps this tick: nothing while they sneak (or bear the Muffled Bell) or stand, more for a
+	 * run or a jump.
+	 */
 	private static double steps(State st, ServerPlayer p) {
 		Vec3 now = p.position(), was = st.preyWas;
 		st.preyWas = now;
-		if (was == null || p.isShiftKeyDown()) {
+		if (was == null || quiet(p)) {
 			return 0;
 		}
 		double dx = now.x - was.x, dz = now.z - was.z;

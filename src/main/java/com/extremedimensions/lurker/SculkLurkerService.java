@@ -310,13 +310,18 @@ public final class SculkLurkerService {
 			if (last != null && s.getTickCount() - last < Config.SCULK_LURKER_COOLDOWN_SECONDS * 20L) {
 				continue;
 			}
-			if (rnd.nextDouble() >= Config.SCULK_LURKER_SPAWN_CHANCE) {
+			if (rnd.nextDouble() >= chance(p)) {
 				continue;
 			}
 			if (come(p) != null) {
 				LAST.put(p.getUUID(), (long) s.getTickCount());
 			}
 		}
+	}
+
+	/** The chance a Sculk Lurker comes to this player at each look: more often for the Muffled Bell's bearer. */
+	public static double chance(ServerPlayer p) {
+		return Math.min(1, Config.SCULK_LURKER_SPAWN_CHANCE * com.extremedimensions.relic.RelicService.sculkLurkers(p));
 	}
 
 	private static boolean after(ServerPlayer p) {
@@ -613,7 +618,9 @@ public final class SculkLurkerService {
 			sl.setLurkerPose(Lurker.POSE_TAKE);
 			sl.getLookControl().setLookAt(st.sensor.getX() + 0.5, st.sensor.getY() + 0.5, st.sensor.getZ() + 0.5, 30, 30);
 			if (s.getBlock() instanceof SculkSensorBlock sensor) {
-				sensor.activate(p, level, st.sensor, s, 15, 1);
+				// in its player's name: a shrieker hears it even from one the sculk cannot hear (the Muffled Bell's bearer)
+				BlockPos at = st.sensor;
+				com.extremedimensions.relic.RelicService.inTheirName(() -> sensor.activate(p, level, at, s, 15, 1));
 				st.sensorsSetOff++;
 			}
 			st.sensor = null;

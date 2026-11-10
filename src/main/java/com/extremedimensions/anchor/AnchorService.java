@@ -173,6 +173,11 @@ public final class AnchorService {
 		return cap;
 	}
 
+	/** What fuel is worth to this player, as a multiple: less for every stack of Debt, more with the Anchor Rivet bound. */
+	public static double worth(PlayerData d) {
+		return d.debtFactor() * RelicService.fuel(d);
+	}
+
 	private static InteractionResult deposit(ServerPlayer p, PlayerData d, BlockPos pos, ItemStack stack, String type) {
 		if (!Dims.OVERWORLD.equals(Dims.of(p))) {
 			refuse(p, "overworld_only");
@@ -204,10 +209,10 @@ public final class AnchorService {
 		boolean instant = item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER;
 		double added;
 		if (instant) {
-			added = Math.min(space, Config.TETHER_ITEM_CHARGE * d.debtFactor());
+			added = Math.min(space, Config.TETHER_ITEM_CHARGE * worth(d));
 			stack.shrink(1);
 		} else {
-			double per = FuelValues.of(type, item) * d.debtFactor();
+			double per = FuelValues.of(type, item) * worth(d);
 			int n = (int) Math.min(stack.getCount(), Math.ceil(space / per));
 			added = Math.min(space, n * per);
 			stack.shrink(n);

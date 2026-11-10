@@ -143,13 +143,18 @@ public final class MagpieService {
 			if (last != null && s.getTickCount() - last < Config.MAGPIE_COOLDOWN_SECONDS * 20L) {
 				continue;
 			}
-			if (rnd.nextDouble() >= Config.MAGPIE_SPAWN_CHANCE) {
+			if (rnd.nextDouble() >= chance(p)) {
 				continue;
 			}
 			if (come(p, false) != null) {
 				LAST.put(p.getUUID(), (long) s.getTickCount());
 			}
 		}
+	}
+
+	/** The chance a Magpie comes for this player's things at each look: more often for the Magpie's Glint's bearer. */
+	public static double chance(ServerPlayer p) {
+		return Math.min(1, Config.MAGPIE_SPAWN_CHANCE * com.extremedimensions.relic.RelicService.magpies(p));
 	}
 
 	/** Whether a Magpie is after this player's things already. */

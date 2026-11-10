@@ -236,6 +236,10 @@ public final class CurseEffects {
 		modifier(p, "minecraft:safe_fall_distance", "relic_feather", feather ? Config.RELIC_FEATHERBONE_FALL : 0, "add_value");
 		modifier(p, "minecraft:armor", "relic_feather", feather ? -Config.RELIC_FEATHERBONE_ARMOR : 0, "add_value");
 		modifier(p, "minecraft:max_health", "relic_stitch", RelicService.has(d, Relic.LAST_STITCH) ? -Math.max(0, Config.RELIC_LAST_STITCH_MAX_HEALTH) : 0, "add_value");
+		if (!RelicService.has(d, Relic.MINERS_CANDLE)) {
+			// the Miner's Candle's light goes out with it: unbound, or asleep in another mod's world
+			RelicService.candle(p, false);
+		}
 		// Lead Pockets, Weight of Iron and Blood Price are only set by their own ticks, which do not run there: they sleep too
 		if (d.away) {
 			modifier(p, "minecraft:movement_speed", "lead_pockets", 0, "add_multiplied_total");
@@ -388,7 +392,7 @@ public final class CurseEffects {
 			food.setSaturation(cap);
 		}
 		if (cap < 18 && food.getFoodLevel() >= cap && p.getHealth() < p.getMaxHealth() && d.tickCounter % 80 == 0
-				&& ExtremeCurses.mayRegenerate(p)) {
+				&& ExtremeCurses.mayRegenerate(p) && RelicService.regenerates(p, 1.0f)) {
 			p.heal(1.0f);
 			p.causeFoodExhaustion(6.0f);
 		}
@@ -451,15 +455,16 @@ public final class CurseEffects {
 	}
 
 	/**
-	 * Kindling, Frostbitten, Volatile and Glass Jaw: more damage from fire, cold, explosions and mobs; and the Unbound
-	 * Pinion's bearer takes more from everything.
+	 * Kindling, Frostbitten, Volatile and Glass Jaw: more damage from fire, cold, explosions and mobs; and the relic bound
+	 * has its say (the Unbound Pinion's bearer takes more from everything, the Ashen Locket's less from fire and more from
+	 * the cold and the water).
 	 */
 	public static float damageTaken(ServerPlayer p, DamageSource source, float amount) {
 		if (amount <= 0) {
 			return amount;
 		}
 		PlayerData d = DataStore.get(p.getUUID());
-		double m = RelicService.damageTaken(d);
+		double m = RelicService.damageTaken(d, source);
 		if (source.is(DamageTypeTags.IS_FIRE)) {
 			m *= 1 + Penalty.KINDLING.frac() * d.stacks(Penalty.KINDLING);
 		}

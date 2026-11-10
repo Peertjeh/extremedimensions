@@ -909,6 +909,14 @@ public final class LurkerService {
 		}
 	}
 
+	/**
+	 * What a Lurker drinks from an anchor in a tick, come for this player: twice as much from one holding the charge of
+	 * the Anchor Rivet's bearer (see RelicService).
+	 */
+	public static double sip(ServerPlayer p, Anchor a) {
+		return Config.LURKER_DRAIN_PER_SECOND / 20.0 * com.extremedimensions.relic.RelicService.drink(p, a);
+	}
+
 	/** Drinks an anchor: its light streams into the Lurker's arms. */
 	private static void drain(Lurker l, State st, ServerPlayer p, List<Runnable> later) {
 		Anchor a = DataStore.anchors().get(st.anchor);
@@ -937,7 +945,7 @@ public final class LurkerService {
 		}
 		l.getNavigation().stop();
 		l.getLookControl().setLookAt(a.x + 0.5, a.y + 0.5, a.z + 0.5);
-		a.leak(Config.LURKER_DRAIN_PER_SECOND / 20.0);
+		a.leak(sip(p, a));
 
 		beam(l, a, st.ticks);
 	}

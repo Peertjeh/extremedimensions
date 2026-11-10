@@ -26,6 +26,10 @@ public enum Relic {
 	LODESTONE_CHIP("lodestone_chip", Tier.COMMON),
 	/** Fall again sooner after an ally lifts you, bleed out sooner while fallen. */
 	KINDRED_KNOT("kindred_knot", Tier.COMMON),
+	/** Less harm from fire and lava, more from freezing and drowning. */
+	ASHEN_LOCKET("ashen_locket", Tier.COMMON),
+	/** Night Vision deep under the Overworld's rock; Cave Lurkers come more often. */
+	MINERS_CANDLE("miners_candle", Tier.COMMON),
 
 	// --- uncommon -------------------------------------------------------------------------------
 	/** Longer reach, a heart less. */
@@ -36,6 +40,10 @@ public enum Relic {
 	THORNWARD_BARK("thornward_bark", Tier.UNCOMMON),
 	/** The young barter for less; the tribe's goodwill comes slower. */
 	HOLLOW_WHISTLE("hollow_whistle", Tier.UNCOMMON),
+	/** Wild creatures slain now and then drop their loot twice; Magpies come for your chests more often. */
+	MAGPIES_GLINT("magpies_glint", Tier.UNCOMMON),
+	/** Fuel fed to an anchor gives more charge; a Lurker drinks your anchors faster. */
+	ANCHOR_RIVET("anchor_rivet", Tier.UNCOMMON),
 
 	// --- rare -----------------------------------------------------------------------------------
 	/** More fragments from wild kills, less atonement from kills. */
@@ -48,6 +56,10 @@ public enum Relic {
 	LAST_STITCH("last_stitch", Tier.RARE),
 	/** Melee blows heal you a little; hunger always runs faster. */
 	HUNGERS_FANG("hungers_fang", Tier.RARE),
+	/** The sculk does not hear you, nor a Cave Lurker your steps; Sculk Lurkers come more often. */
+	MUFFLED_BELL("muffled_bell", Tier.RARE),
+	/** A long fall in the Seam drifts down slowly; less time in the Seam. */
+	VEIL_SCALE("veil_scale", Tier.RARE),
 
 	// --- epic -----------------------------------------------------------------------------------
 	/** A few seconds' grace when the charge runs out beyond the wound; each anchor holds less for you. Only found. */
@@ -55,7 +67,11 @@ public enum Relic {
 	/** Atonement doubled; the curses of deaths and Lurkers twice over, an Elder's three times. */
 	DEBTORS_SEAL("debtors_seal", Tier.EPIC),
 	/** The Elders cannot pull you from the air or bind your wings; more damage taken, an elytra worn through fast. */
-	UNBOUND_PINION("unbound_pinion", Tier.EPIC);
+	UNBOUND_PINION("unbound_pinion", Tier.EPIC),
+	/** A death beyond the wound keeps all you carry; a curse more from every such death, and more drain there. */
+	FERRYMANS_OBOL("ferrymans_obol", Tier.EPIC),
+	/** Never hungry; no natural healing. */
+	HOLLOW_CROWN("hollow_crown", Tier.EPIC);
 
 	/** How rare a relic is: how often it is found, and the colour of its name. */
 	public enum Tier {
@@ -143,6 +159,14 @@ public enum Relic {
 			case HUNGERS_FANG -> new Object[] {Penalty.display(Math.round(Config.RELIC_HUNGERS_FANG_LEECH * 100))};
 			case DEBTORS_SEAL -> new Object[] {Penalty.display(Config.RELIC_DEBTORS_SEAL_ATONEMENT)};
 			case UNBOUND_PINION -> new Object[] {};
+			case ASHEN_LOCKET -> new Object[] {pct(Config.RELIC_ASHEN_LOCKET_FIRE)};
+			case MINERS_CANDLE -> new Object[] {Config.RELIC_MINERS_CANDLE_DEPTH};
+			case MAGPIES_GLINT -> new Object[] {Penalty.display(Math.round(Config.RELIC_MAGPIES_GLINT_CHANCE * 100))};
+			case ANCHOR_RIVET -> new Object[] {pct(Config.RELIC_ANCHOR_RIVET_FUEL)};
+			case MUFFLED_BELL -> new Object[] {};
+			case VEIL_SCALE -> new Object[] {Config.RELIC_VEIL_SCALE_FALL};
+			case FERRYMANS_OBOL -> new Object[] {};
+			case HOLLOW_CROWN -> new Object[] {};
 		};
 	}
 
@@ -167,6 +191,14 @@ public enum Relic {
 			case HUNGERS_FANG -> new Object[] {pct(Config.RELIC_HUNGERS_FANG_HUNGER)};
 			case DEBTORS_SEAL -> new Object[] {Config.RELIC_DEBTORS_SEAL_CURSES, Config.RELIC_DEBTORS_SEAL_BOSS_CURSES};
 			case UNBOUND_PINION -> new Object[] {pct(Config.RELIC_UNBOUND_PINION_DAMAGE), Config.RELIC_UNBOUND_PINION_WEAR};
+			case ASHEN_LOCKET -> new Object[] {pct(Config.RELIC_ASHEN_LOCKET_COLD)};
+			case MINERS_CANDLE -> new Object[] {Penalty.display(Config.RELIC_MINERS_CANDLE_CAVE_LURKER)};
+			case MAGPIES_GLINT -> new Object[] {Penalty.display(Config.RELIC_MAGPIES_GLINT_MAGPIE)};
+			case ANCHOR_RIVET -> new Object[] {Penalty.display(Config.RELIC_ANCHOR_RIVET_DRINK)};
+			case MUFFLED_BELL -> new Object[] {Penalty.display(Config.RELIC_MUFFLED_BELL_SCULK_LURKER)};
+			case VEIL_SCALE -> new Object[] {Config.RELIC_VEIL_SCALE_SECONDS};
+			case FERRYMANS_OBOL -> new Object[] {Config.RELIC_FERRYMANS_OBOL_CURSES, pct(Config.RELIC_FERRYMANS_OBOL_DRAIN)};
+			case HOLLOW_CROWN -> new Object[] {pct(Config.RELIC_HOLLOW_CROWN_REGEN)};
 		};
 	}
 

@@ -899,6 +899,28 @@ public final class Config {
 	/** Unbound Pinion: damage taken, as a multiple; how many times as fast an elytra wears while you glide. */
 	public static double RELIC_UNBOUND_PINION_DAMAGE = 1.3;
 	public static int RELIC_UNBOUND_PINION_WEAR = 25;
+	/** Ashen Locket: damage from fire and lava, as a multiple; damage from freezing and drowning, as a multiple. */
+	public static double RELIC_ASHEN_LOCKET_FIRE = 0.75;
+	public static double RELIC_ASHEN_LOCKET_COLD = 1.25;
+	/** Miner's Candle: Night Vision under rock below this height in the Overworld; how many times as often Cave Lurkers come for you. */
+	public static int RELIC_MINERS_CANDLE_DEPTH = 40;
+	public static double RELIC_MINERS_CANDLE_CAVE_LURKER = 1.5;
+	/** Magpie's Glint: chance a wild creature you slay drops its loot twice; how many times as often Magpies come for your chests. */
+	public static double RELIC_MAGPIES_GLINT_CHANCE = 0.25;
+	public static double RELIC_MAGPIES_GLINT_MAGPIE = 2.0;
+	/** Anchor Rivet: the charge your fuel gives an anchor, as a multiple; how many times as fast a Lurker drinks your anchors. */
+	public static double RELIC_ANCHOR_RIVET_FUEL = 1.2;
+	public static double RELIC_ANCHOR_RIVET_DRINK = 2.0;
+	/** Muffled Bell: the sculk does not hear you; how many times as often Sculk Lurkers come for you. */
+	public static double RELIC_MUFFLED_BELL_SCULK_LURKER = 2.0;
+	/** Veil Scale: blocks of fall in the Seam before you drift down slowly; seconds less in the Seam. */
+	public static int RELIC_VEIL_SCALE_FALL = 4;
+	public static int RELIC_VEIL_SCALE_SECONDS = 30;
+	/** Ferryman's Obol: curses every death beyond the wound costs on top; drain multiplier beyond the wound. */
+	public static int RELIC_FERRYMANS_OBOL_CURSES = 1;
+	public static double RELIC_FERRYMANS_OBOL_DRAIN = 1.15;
+	/** Hollow Crown: how much of natural healing is left to you (0 = none, 1 = all of it). */
+	public static double RELIC_HOLLOW_CROWN_REGEN = 0.0;
 
 	// --- Enchantments: the Art of Binding (Woundbane's numbers are in its data file) -----------
 
@@ -2126,7 +2148,12 @@ public final class Config {
 			{"relic_thornward_bark_melee", 0, 1}, {"relic_hollow_whistle_price", 0, 1}, {"relic_hollow_whistle_standing", 0, 1},
 			{"relic_last_stitch_health", 0, 20}, {"relic_last_stitch_max_health", 0, 10}, {"relic_hungers_fang_leech", 0, 1},
 			{"relic_hungers_fang_hunger", 1, 5}, {"relic_debtors_seal_atonement", 1, 10}, {"relic_debtors_seal_curses", 1, 5},
-			{"relic_debtors_seal_boss_curses", 1, 5}, {"relic_unbound_pinion_damage", 1, 5}, {"relic_unbound_pinion_wear", 1, 100}};
+			{"relic_debtors_seal_boss_curses", 1, 5}, {"relic_unbound_pinion_damage", 1, 5}, {"relic_unbound_pinion_wear", 1, 100},
+			{"relic_ashen_locket_fire", 0, 1}, {"relic_ashen_locket_cold", 1, 5}, {"relic_miners_candle_depth", -64, 320},
+			{"relic_miners_candle_cave_lurker", 1, 10}, {"relic_magpies_glint_chance", 0, 1}, {"relic_magpies_glint_magpie", 1, 10},
+			{"relic_anchor_rivet_fuel", 1, 5}, {"relic_anchor_rivet_drink", 1, 10}, {"relic_muffled_bell_sculk_lurker", 1, 10},
+			{"relic_veil_scale_fall", 0, 64}, {"relic_veil_scale_seconds", 0, 600}, {"relic_ferrymans_obol_curses", 0, 10},
+			{"relic_ferrymans_obol_drain", 1, 5}, {"relic_hollow_crown_regen", 0, 1}};
 
 	/** Brings a setting back within its bounds, if it has any. */
 	private static void bound(Setting st) {

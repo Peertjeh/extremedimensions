@@ -150,6 +150,13 @@ public class PlayerData {
 	public boolean stitchSpent = false;
 	/** Ticks gliding without a break with the Unbound Pinion bound (its wear comes every second of them). */
 	public transient int pinionGlide = 0;
+	/** The Veil Scale caught this fall: the player drifts down slowly until they land. */
+	public transient boolean veilDrift = false;
+	/**
+	 * The Ferryman's Obol kept all the player carried at their last death, which comes back on respawn (kept, so leaving
+	 * the game before respawning loses nothing).
+	 */
+	public boolean obolKept = false;
 	/** The Homebound pieces the player carries, as last counted, and when (game time): counted once a second. */
 	public transient int homeboundPieces = 0;
 	public transient long homeboundCounted = Long.MIN_VALUE / 2;
