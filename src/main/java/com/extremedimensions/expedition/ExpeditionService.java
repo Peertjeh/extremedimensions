@@ -432,11 +432,23 @@ public final class ExpeditionService {
 	}
 
 	/**
-	 * The curses a Collapse costs (public for tests): its own, as a death's (so a bound Debtor's Seal asks it more than
-	 * once), and on top of it what a Tether with Thrift and a bound Lodestone Chip take for the charge they eked out.
+	 * The curses a death beyond the wound costs (public for tests): a death's (so a bound Debtor's Seal asks it more than
+	 * once), and on top of it what a bound Ferryman's Obol asks for the passage.
+	 */
+	public static void oweDeathBeyond(PlayerData d, boolean overworld, boolean boss) {
+		PenaltyService.oweDeath(d, overworld, boss);
+		for (int i = 0, n = RelicService.passage(d); i < n; i++) {
+			PenaltyService.owe(d, overworld);
+		}
+	}
+
+	/**
+	 * The curses a Collapse costs (public for tests): its own, as a death's beyond the wound (so a bound Debtor's Seal asks
+	 * it more than once, and a Ferryman's Obol its passage), and on top of it what a Tether with Thrift and a bound
+	 * Lodestone Chip take for the charge they eked out.
 	 */
 	public static void oweCollapse(PlayerData d, boolean thrift) {
-		PenaltyService.oweDeath(d, false);
+		oweDeathBeyond(d, false, false);
 		if (thrift) {
 			for (int i = 0; i < Config.ENCH_THRIFT_COLLAPSE; i++) {
 				PenaltyService.owe(d, false);
@@ -512,7 +524,7 @@ public final class ExpeditionService {
 			d.inRun = false;
 			d.linked.clear();
 			d.endedIn = dim;
-			PenaltyService.oweDeath(d, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties(), boss);
+			oweDeathBeyond(d, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties(), boss);
 			DataStore.markDirty();
 			return;
 		}
@@ -529,7 +541,7 @@ public final class ExpeditionService {
 			d.inRun = false;
 			d.linked.clear();
 			d.endedIn = dim;
-			PenaltyService.oweDeath(d, false, boss);
+			oweDeathBeyond(d, false, boss);
 			Journal.unlock(p, d, JournalEntry.ENDED);
 			Advancements.grant(p, Advancements.ENDED);
 			DataStore.markDirty();

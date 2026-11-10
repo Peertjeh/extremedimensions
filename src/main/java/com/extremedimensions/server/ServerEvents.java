@@ -234,6 +234,8 @@ public final class ServerEvents {
 			com.extremedimensions.coop.FallenService.forget(newPlayer);
 			PlayerData d = DataStore.get(newPlayer.getUUID());
 			if (!alive) {
+				// What the Ferryman's Obol kept from a death beyond the wound comes back first, each thing to its own slot
+				com.extremedimensions.relic.RelicService.restore(oldPlayer, newPlayer);
 				ExpeditionService.onRespawn(newPlayer, d);
 				com.extremedimensions.binding.Homebound.restore(newPlayer);
 				com.extremedimensions.penalty.AbyssalCurses.onRespawn(newPlayer);
