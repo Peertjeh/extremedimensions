@@ -196,7 +196,8 @@ Trials past gold), and the tapestry's boons stay.
 
 ## Everything else
 
-- **Relics** (18): bound to the Tether one at a time, each with a gift and a price. They come in four tiers (common,
+- **Relics** (26): bound to the Tether one at a time, each with a gift and a price. A relic serves once: it stays bound
+  until another takes its place, and then it crumbles. They come in four tiers (common,
   uncommon, rare, epic): the better a relic, the rarer it is found, and the Elders, the Starved One and a Rift Trial's
   gold medal give the rarer tiers more often. Among the epic: the **Debtor's Seal** (double atonement, but the curses of
   deaths and Lurkers come twice, a boss fight's three times) and the **Unbound Pinion** (fly with an elytra in a boss

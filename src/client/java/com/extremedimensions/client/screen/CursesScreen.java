@@ -917,38 +917,28 @@ public class CursesScreen extends Screen {
 	}
 
 	/**
-	 * The relic bound to the Tether: its name, its gift and price on hover, and a click takes it off again. While relics
-	 * serve once, taking it off breaks it: the first click arms the chip, a second within four seconds breaks it (the server
-	 * still decides whether it may come off at all).
+	 * The relic bound to the Tether: its name, its gift and price on hover. While relics serve once it stays bound until
+	 * another takes its place, and a click does nothing; with relics serving more than once, a click takes it off again
+	 * (the server decides either way).
 	 */
 	private final class RelicChip extends AbstractButton {
-		/** How long a first click to break the relic waits for the second (ms). */
-		private static final long ARMED_MS = 4000;
-		/** The relic the tooltip was made for, whether relics served once then and whether the chip was armed (rebuilt only when one changes). */
+		/** The relic the tooltip was made for, and whether relics served once then (rebuilt only when either changes). */
 		private Object shownFor = this;
-		private boolean shownSingle, shownArmed;
-		/** When the chip was first clicked to break the relic, or 0. */
-		private long armedAt;
+		private boolean shownSingle;
 
 		RelicChip(int x, int y, int w) {
 			super(x, y, w, 12, Component.translatable("gui.extremedimensions.relic.title"));
 		}
 
-		private boolean armed() {
-			return armedAt != 0 && System.currentTimeMillis() - armedAt <= ARMED_MS;
+		private static boolean single() {
+			return com.extremedimensions.config.Config.RELIC_SINGLE_USE > 0;
 		}
 
 		@Override
 		public void onPress(InputWithModifiers input) {
-			if (relic == null) {
-				return;
+			if (relic != null && !single()) {
+				ClientPlayNetworking.send(new ModPackets.UnbindRelicPayload());
 			}
-			if (com.extremedimensions.config.Config.RELIC_SINGLE_USE > 0 && !armed()) {
-				armedAt = System.currentTimeMillis();
-				return;
-			}
-			armedAt = 0;
-			ClientPlayNetworking.send(new ModPackets.UnbindRelicPayload());
 		}
 
 		@Override
@@ -956,24 +946,24 @@ public class CursesScreen extends Screen {
 			var font = Minecraft.getInstance().font;
 			int x = this.getX(), y = this.getY(), w = this.getWidth();
 			boolean has = relic != null;
-			boolean single = com.extremedimensions.config.Config.RELIC_SINGLE_USE > 0;
-			boolean armed = has && armed();
-			if (shownFor != relic || shownSingle != single || shownArmed != armed) {
+			boolean single = single();
+			if (shownFor != relic || shownSingle != single) {
 				shownFor = relic;
 				shownSingle = single;
-				shownArmed = armed;
-				String how = !single ? "gui.extremedimensions.relic.unbind" : armed ? "gui.extremedimensions.relic.break_confirm_tip" : "gui.extremedimensions.relic.break";
 				this.setTooltip(Tooltip.create(has
 						? Component.empty().append(Component.translatable(relic.nameKey()).withStyle(relic.tier.colour)).append("\n")
 								.append(Component.literal("+ ").append(Component.translatable(relic.giftKey(), relic.giftArgs())).withStyle(net.minecraft.ChatFormatting.GREEN)).append("\n")
 								.append(Component.literal("- ").append(Component.translatable(relic.priceKey(), relic.priceArgs())).withStyle(net.minecraft.ChatFormatting.RED)).append("\n")
-								.append(Component.translatable(how).withStyle(armed ? net.minecraft.ChatFormatting.GOLD : net.minecraft.ChatFormatting.GRAY))
+								.append(Component.translatable(single ? "gui.extremedimensions.relic.stays" : "gui.extremedimensions.relic.unbind")
+										.withStyle(net.minecraft.ChatFormatting.GRAY))
 						: Component.translatable("gui.extremedimensions.relic.none_tip")));
 			}
-			Ui.chip(g, x, y, w, this.getHeight(), has ? (armed || this.isHovered() ? Ui.WARN : Ui.VOID) : Ui.MUTED, has ? 1.0 : 0.5);
-			String label = armed ? Ui.tr("gui.extremedimensions.relic.break_confirm") : has ? Ui.tr(relic.nameKey()) : Ui.tr("gui.extremedimensions.relic.none");
-			g.text(font, label, x + 4, y + 2, Ui.argb(has ? 1.0 : 0.7, armed ? Ui.WARN : has ? Ui.PARCHMENT : Ui.MUTED));
-			if (has) {
+			boolean hot = this.isHovered() && !single;
+			Ui.chip(g, x, y, w, this.getHeight(), has ? (hot ? Ui.WARN : Ui.VOID) : Ui.MUTED, has ? 1.0 : 0.5);
+			String label = has ? Ui.tr(relic.nameKey()) : Ui.tr("gui.extremedimensions.relic.none");
+			g.text(font, label, x + 4, y + 2, Ui.argb(has ? 1.0 : 0.7, has ? Ui.PARCHMENT : Ui.MUTED));
+			if (has && !single) {
+				// (the mark that takes it off, only where it can come off)
 				g.text(font, "×", x + w - 8, y + 2, Ui.argb(this.isHovered() ? 1.0 : 0.6, this.isHovered() ? Ui.WARN : Ui.MUTED));
 			}
 		}

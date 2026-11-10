@@ -50,7 +50,8 @@ import net.minecraft.world.phys.Vec3;
 
 /**
  * The eight relics that came after the tiers give what they promise and take their price, and they sleep in another
- * mod's world like the rest; and relics serve once (relic_single_use), or come back as before with it off. Every setting
+ * mod's world like the rest; and relics serve once (relic_single_use: bound until another takes their place), or come
+ * back as before with it off. Every setting
  * a test changes is put back.
  */
 public class RelicTierTests2 {
@@ -522,9 +523,9 @@ public class RelicTierTests2 {
 	}
 
 	/**
-	 * With relic_single_use on (the default): binding over a bound relic first only warns (and a use button held down
-	 * does not pass the warning), a second use binds the new one and the old one is gone for good; one taken off breaks
-	 * too. Nothing comes back to the hand or falls.
+	 * With relic_single_use on (the default): a bound relic cannot be taken off (the request is refused and it stays
+	 * bound); binding over it first only warns (and a use button held down does not pass the warning), and a second use
+	 * binds the new one while the old one is gone for good. Nothing comes back to the hand or falls.
 	 */
 	@GameTest(maxTicks = 80)
 	public void relicsServeOnce(GameTestHelper helper) {
@@ -543,6 +544,11 @@ public class RelicTierTests2 {
 			p.getInventory().setItem(0, relic(Relic.EMBER_HEART));
 			check(helper, RelicService.bind(p, p.getInventory().getItem(0)).equals(InteractionResult.SUCCESS) && RelicService.has(d, Relic.EMBER_HEART),
 					"binding a relic with none bound failed");
+			// No taking it off: the request leaves it bound, and gives nothing
+			RelicService.unbind(p);
+			check(helper, RelicService.has(d, Relic.EMBER_HEART), "a relic serving once was taken off the Tether");
+			check(helper, carried(p, RelicService.item(Relic.EMBER_HEART)) == 0 && dropped(p, RelicService.item(Relic.EMBER_HEART)) == 0,
+					"a request to take off a relic serving once gave one back");
 			p.getInventory().setItem(1, relic(Relic.PALE_SHARD));
 			shard = p.getInventory().getItem(1);
 			// The first use over a bound relic only warns, and so does the same press held down
@@ -567,11 +573,10 @@ public class RelicTierTests2 {
 				RelicService.bind(p, p.getInventory().getItem(2));
 				check(helper, !RelicService.bind(p, p.getInventory().getItem(3)).equals(InteractionResult.SUCCESS) && RelicService.has(d, Relic.PALE_SHARD),
 						"a warning for one relic let another be bound");
-				// Taken off, it breaks: nothing comes back
+				// Still no taking it off
 				RelicService.unbind(p);
-				check(helper, RelicService.bound(d) == null, "the relic did not come off");
-				check(helper, carried(p, RelicService.item(Relic.PALE_SHARD)) == 0 && dropped(p, RelicService.item(Relic.PALE_SHARD)) == 0,
-						"a relic taken off came back instead of breaking");
+				check(helper, RelicService.has(d, Relic.PALE_SHARD) && carried(p, RelicService.item(Relic.PALE_SHARD)) == 0,
+						"the relic bound in the other's place came off the Tether");
 			} finally {
 				restore.run();
 			}

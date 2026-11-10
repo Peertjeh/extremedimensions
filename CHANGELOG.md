@@ -1,5 +1,36 @@
 # Changelog
 
+## 3.47.0: Spent Relics
+
+### New
+- **Eight more relics**, two of each tier, each with a gift and a price. Every number is a setting.
+  - **Ashen Locket** (common): 25% less damage from fire and lava; 25% more from freezing and drowning.
+  - **Miner's Candle** (common): Night Vision in the Overworld below Y 40 with rock overhead; Cave Lurkers come half
+    again as often.
+  - **Magpie's Glint** (uncommon): a wild creature you slay drops its loot twice one time in four (not from a spawner,
+    not a boss, not the tribe); Magpies come for your chests twice as often.
+  - **Anchor Rivet** (uncommon): fuel you feed an anchor gives 20% more charge; a Lurker drinks your anchor twice as
+    fast.
+  - **Muffled Bell** (rare): the sculk does not hear you (sensors, shriekers and the Warden), and Cave Lurkers hear you
+    as if you always sneaked; Sculk Lurkers come twice as often, and still rattle the shriekers in your name.
+  - **Veil Scale** (rare): in the Seam and the Fray you drift down slowly once you fall more than 4 blocks; 30 seconds
+    less in the Seam.
+  - **Ferryman's Obol** (epic): dying beyond the wound (in the Nether, the End, the Seam or the Fray, a Collapse
+    included) you keep everything you carry, and it is back on you when you respawn. The Tether still breaks. Every
+    such death costs a curse more, and your Tether drains 15% faster beyond the wound.
+  - **Hollow Crown** (epic): you never hunger; you never heal by yourself either. Potions, golden apples, beacons and
+    totems still heal you.
+- The tiers are now: eight common, six uncommon, seven rare and five epic, 26 relics in all.
+
+### Changed
+- **A relic serves once.** It works from the moment it is bound, and it stays bound until another relic takes its
+  place. Then the old one crumbles; it does not come back to your hand.
+  - Binding a relic while another is bound first warns you which one it will break; use it again within a few seconds
+    to bind it.
+  - The Curses screen no longer takes a relic off; it shows the bound relic and that it stays.
+  - `relic_single_use` (on by default) switches this; off, a relic comes back when you bind another or take it off, as
+    before.
+
 ## 3.46.1: Relics by Worth
 
 ### Changed

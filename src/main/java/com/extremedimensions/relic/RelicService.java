@@ -39,13 +39,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 /**
- * Binding relics to the Tether. Using a relic binds it; the Curses screen takes it off again. A relic serves once
- * ({@code relic_single_use}): the one bound before breaks when another is bound over it (after a warning), and one taken
- * off breaks too; with the setting off, either comes back to the hand. A bound relic is kept in the player's data, not
- * in the inventory: it cannot be lost to a death, a Lurker or a full bag. Also how relics are found (by tier, see
- * {@link #random(boolean)}), and what the relics do that has no home of its own elsewhere: their blows, hunger, wear and
- * the Last Stitch's hold, the Miner's Candle's light, the Veil Scale's drift, the Hollow Crown's full stomach and the
- * Ferryman's Obol's passage.
+ * Binding relics to the Tether. Using a relic binds it. A relic serves once ({@code relic_single_use}): it stays bound
+ * until another takes its place, and then it crumbles (after a warning); there is no taking it off. With the setting off
+ * the one bound before comes back to the hand, and the Curses screen takes a relic off again. A bound relic is kept in
+ * the player's data, not in the inventory: it cannot be lost to a death, a Lurker or a full bag. Also how relics are
+ * found (by tier, see {@link #random(boolean)}), and what the relics do that has no home of its own elsewhere: their
+ * blows, hunger, wear and the Last Stitch's hold, the Miner's Candle's light, the Veil Scale's drift, the Hollow Crown's
+ * full stomach and the Ferryman's Obol's passage.
  */
 public final class RelicService {
 	private RelicService() {}
@@ -78,7 +78,7 @@ public final class RelicService {
 		return has(DataStore.peek(p.getUUID()), r);
 	}
 
-	/** Whether a relic serves once: one bound over another, or taken off, breaks ({@code relic_single_use}). */
+	/** Whether a relic serves once: it stays bound until another takes its place, which breaks it ({@code relic_single_use}). */
 	public static boolean singleUse() {
 		return Config.RELIC_SINGLE_USE > 0;
 	}
@@ -156,31 +156,33 @@ public final class RelicService {
 	}
 
 	/**
-	 * The relic comes off the Tether. While relics serve once it breaks for good (the Curses screen asks for a second
-	 * click first); otherwise it comes back to the player (or falls at their feet with a full bag).
+	 * The relic comes off the Tether and back to the player (or falls at their feet with a full bag), when relics serve
+	 * more than once. While they serve once there is no taking one off: it stays bound until another takes its place, and
+	 * the request (the Curses screen offers none, but a client may still send one) is refused here.
 	 */
 	public static void unbind(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
 		Relic r = bound(d);
-		if (r == null || locked(p, d)) {
+		if (r == null) {
+			return;
+		}
+		if (singleUse()) {
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.relic.stays"), true);
+			return;
+		}
+		if (locked(p, d)) {
 			return;
 		}
 		d.relic = null;
-		boolean breaks = singleUse();
-		if (breaks) {
-			crumble(p);
-		} else {
-			WorldFx.give(p, new ItemStack(item(r)));
-			WorldFx.soundSelf(p, "minecraft:block.chain.break", 1.0f, 0.9f);
-		}
+		WorldFx.give(p, new ItemStack(item(r)));
 		DataStore.markDirty();
 		CurseEffects.applyEffects(p, d);
 		Sync.curses(p, d, false);
-		p.sendSystemMessage(Component.translatable(breaks ? "gui.extremedimensions.relic.broken" : "gui.extremedimensions.relic.unbound",
-				Component.translatable(r.nameKey())), true);
+		WorldFx.soundSelf(p, "minecraft:block.chain.break", 1.0f, 0.9f);
+		p.sendSystemMessage(Component.translatable("gui.extremedimensions.relic.unbound", Component.translatable(r.nameKey())), true);
 	}
 
-	/** A relic breaks off the Tether for good: it cracks and crumbles to dust with its chain. */
+	/** A relic bound over breaks for good: it cracks and crumbles to dust with its chain. */
 	private static void crumble(ServerPlayer p) {
 		WorldFx.soundSelf(p, "minecraft:block.amethyst_block.break", 1.0f, 0.6f);
 		WorldFx.soundSelf(p, "minecraft:block.chain.break", 1.0f, 0.7f);
@@ -188,9 +190,9 @@ public final class RelicService {
 	}
 
 	/**
-	 * A relic is bound or taken off (broken, while relics serve once) only at home and on one's feet: not on an expedition,
-	 * in the Seam or fallen (its gift and its price are paid for the whole of it, not swapped for the moment that suits).
-	 * The player is told so.
+	 * A relic is bound (or, while relics serve more than once, taken off) only at home and on one's feet: not on an
+	 * expedition, in the Seam or fallen (its gift and its price are paid for the whole of it, not swapped for the moment
+	 * that suits). The player is told so.
 	 */
 	private static boolean locked(ServerPlayer p, PlayerData d) {
 		if (!d.inRun && !d.inSeam && !com.extremedimensions.coop.FallenService.fallen(p)) {
@@ -786,7 +788,12 @@ public final class RelicService {
 			if (!s.isEmpty()) {
 				// moved, not copied: the old body keeps nothing that could come back a second time
 				was.setItem(i, ItemStack.EMPTY);
-				now.setItem(i, s);
+				if (now.getItem(i).isEmpty()) {
+					now.setItem(i, s);
+				} else {
+					// the slot was filled already on respawn: it goes into the bag, or falls at their feet
+					WorldFx.give(to, s);
+				}
 				n++;
 			}
 		}
