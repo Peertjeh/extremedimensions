@@ -240,27 +240,38 @@ public class RelicTierTests {
 			float lost = full - zombie.getHealth();
 			check(helper, lost > Config.RELIC_THORNWARD_BARK_THORNS * 0.9 && lost <= Config.RELIC_THORNWARD_BARK_THORNS + 0.01,
 					"a zombie striking the Thornward Bark's bearer lost %s health, not about %s", lost, Config.RELIC_THORNWARD_BARK_THORNS);
-			// Not from an arrow, a blow that did no harm, one the shield caught, or a thorn (so two bearers never answer forever)
-			float now = zombie.getHealth();
-			for (DamageSource s : new DamageSource[] {new DamageSource(arrow(level), zombie, zombie), level.damageSources().thorns(zombie)}) {
-				zombie.invulnerableTime = 0;
-				RelicService.afterDamage(p, s, 4f, 4f, false);
+			// Not from an arrow, a thorn (so two bearers never answer forever), a blow that did no harm or one the shield
+			// caught: each from a fresh zombie, as one just hurt would shrug a thorn off anyway
+			String[] kinds = {"an arrow", "a thorn", "a harmless blow", "a blocked blow"};
+			for (int i = 0; i < kinds.length; i++) {
+				Mob z = zombie(helper, 3.5, 2, 1.5);
+				try {
+					float hp = z.getHealth();
+					switch (i) {
+						case 0 -> RelicService.afterDamage(p, new DamageSource(arrow(level), z, z), 4f, 4f, false);
+						case 1 -> RelicService.afterDamage(p, level.damageSources().thorns(z), 4f, 4f, false);
+						case 2 -> RelicService.afterDamage(p, level.damageSources().mobAttack(z), 0f, 0f, false);
+						default -> RelicService.afterDamage(p, level.damageSources().mobAttack(z), 4f, 0f, true);
+					}
+					near(helper, z.getHealth(), hp, "a zombie's health after " + kinds[i] + " on the Thornward Bark's bearer");
+				} finally {
+					z.discard();
+				}
 			}
-			zombie.invulnerableTime = 0;
-			RelicService.afterDamage(p, level.damageSources().mobAttack(zombie), 0f, 0f, false);
-			zombie.invulnerableTime = 0;
-			RelicService.afterDamage(p, level.damageSources().mobAttack(zombie), 4f, 0f, true);
-			near(helper, zombie.getHealth(), now, "the zombie's health after an arrow, a thorn, a harmless and a blocked blow");
 			// The bearer's own blows by hand hit softer; their arrows and another's blows do not
 			near(helper, RelicService.dealt(level.damageSources().playerAttack(p), 10f), 10 * Config.RELIC_THORNWARD_BARK_MELEE, "a blow by the bearer's hand");
 			near(helper, RelicService.dealt(new DamageSource(arrow(level), p, p), 10f), 10, "the bearer's arrow");
 			near(helper, RelicService.dealt(level.damageSources().mobAttack(zombie), 10f), 10, "a zombie's blow");
 			d.relic = null;
 			near(helper, RelicService.dealt(level.damageSources().playerAttack(p), 10f), 10, "a blow by hand without the Thornward Bark");
-			now = zombie.getHealth();
-			zombie.invulnerableTime = 0;
-			RelicService.afterDamage(p, level.damageSources().mobAttack(zombie), 4f, 4f, false);
-			near(helper, zombie.getHealth(), now, "the zombie's health after striking a player without the Thornward Bark");
+			Mob plain = zombie(helper, 3.5, 2, 1.5);
+			try {
+				float hp = plain.getHealth();
+				RelicService.afterDamage(p, level.damageSources().mobAttack(plain), 4f, 4f, false);
+				near(helper, plain.getHealth(), hp, "a zombie's health after striking a player without the Thornward Bark");
+			} finally {
+				plain.discard();
+			}
 		} finally {
 			d.relic = null;
 			zombie.discard();
