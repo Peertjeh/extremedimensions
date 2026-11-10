@@ -54,10 +54,12 @@ public class HomeOrLockTests {
 	public void theKeystoneSendsThemHome(GameTestHelper helper) {
 		String was = HomeOrLock.choice();
 		HomeOrLock.set("");
+		BlockPos[] built = {null};
 		try {
 			check(helper, HomeOrLock.spoils().size() == 2, "the Mason leaves %s things while the End has no ending", HomeOrLock.spoils().size());
 			ServerLevel level = helper.getLevel();
 			PaleAnchorDesign.Blueprint bp = PaleReach.buildNow(level, helper.absolutePos(new BlockPos(2, 40, 2)), 7L);
+			built[0] = bp.fitting;
 			ServerPlayer p = TestPlayers.survivor(helper, "home-setter");
 			ItemStack stone = new ItemStack(ModItems.HOMEWARD_KEYSTONE);
 			HomeOrLock.onUse(p, level, helper.absolutePos(new BlockPos(1, 1, 1)), stone);
@@ -78,6 +80,9 @@ public class HomeOrLockTests {
 		} finally {
 			AnchorRites.clear();
 			HomeOrLock.set(was);
+			if (built[0] != null) {
+				PaleReach.forgetFitting(helper.getLevel(), built[0]);
+			}
 		}
 		helper.succeed();
 	}
@@ -87,9 +92,11 @@ public class HomeOrLockTests {
 	public void theLockSpillsTheirHoard(GameTestHelper helper) {
 		String was = HomeOrLock.choice();
 		HomeOrLock.set("");
+		BlockPos[] built = {null};
 		try {
 			ServerLevel level = helper.getLevel();
 			PaleAnchorDesign.Blueprint bp = anchor(helper, 11L);
+			built[0] = bp.fitting;
 			ServerPlayer p = TestPlayers.survivor(helper, "lock-setter");
 			int before = itemsNear(level, bp.fitting);
 			HomeOrLock.onUse(p, level, bp.fitting, new ItemStack(ModItems.PALE_LOCK));
@@ -99,6 +106,9 @@ public class HomeOrLockTests {
 		} finally {
 			AnchorRites.clear();
 			HomeOrLock.set(was);
+			if (built[0] != null) {
+				PaleReach.forgetFitting(helper.getLevel(), built[0]);
+			}
 		}
 		helper.succeed();
 	}

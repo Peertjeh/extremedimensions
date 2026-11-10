@@ -449,6 +449,17 @@ public final class PaleReach {
 		}
 	}
 
+	/**
+	 * Forgets everything kept of the anchor whose fitting is here (known, attuned, finished, locked): for the tests, so an
+	 * anchor one built does not ease the drain in the tests round it.
+	 */
+	public static void forgetFitting(Level level, BlockPos fitting) {
+		String at = "@" + spot(level, fitting);
+		DataStore.reach().removeIf(m -> m.endsWith(at));
+		DataStore.markDirty();
+		forget();
+	}
+
 	/** Whether this block is the fitting of an Unfinished Anchor. */
 	public static boolean isFitting(Level level, BlockPos pos) {
 		return DataStore.reach().contains("pf@" + spot(level, pos)) && level.getBlockState(pos).is(Blocks.LODESTONE);

@@ -133,7 +133,23 @@ public class FerrymanBlowTests {
 			for (Ferryman f : helper.getLevel().getEntitiesOfClass(Ferryman.class, p.getBoundingBox().inflate(40))) {
 				out.append(String.format(java.util.Locale.ROOT, "; ferryman %.1f %.1f %.1f action %s pool %s", f.getX(), f.getY(), f.getZ(), f.getAction(),
 						FerrymanService.pool(f)));
+				// (how the whirl would take them, both ways round, and what stands at their body)
+				double dx = f.getX() - p.getX(), dz = f.getZ() - p.getZ(), d = Math.max(1e-3, Math.sqrt(dx * dx + dz * dz));
+				double ix = dx / d, iz = dz / d;
+				for (int circle = -1; circle <= 1; circle += 2) {
+					double ux = iz * circle * 0.85 + ix * 0.55, uz = -ix * circle * 0.85 + iz * 0.55, n = Math.sqrt(ux * ux + uz * uz);
+					out.append(String.format(java.util.Locale.ROOT, "; way %d braced %s push %.3f", circle, PaleSquall.braced(p, ux / n, uz / n),
+							PaleSquall.push(p, ux / n, uz / n, Config.FERRYMAN_UNDERTOW_PULL)));
+				}
 			}
+			out.append("; felt ").append(PaleSquall.felt(p.getUUID()) - felt);
+			StringBuilder solid = new StringBuilder();
+			for (BlockPos b : BlockPos.betweenClosed(p.blockPosition().offset(-1, 0, -1), p.blockPosition().offset(1, 1, 1))) {
+				if (!helper.getLevel().getBlockState(b).isAir()) {
+					solid.append(' ').append(helper.getLevel().getBlockState(b).getBlock().getDescriptionId());
+				}
+			}
+			out.append("; at body:").append(solid.length() == 0 ? " air" : solid);
 			seen[0] = out.toString();
 		});
 		watch(helper, p, "undertow", Ferryman.UNDERTOW, 130, f -> PaleSquall.felt(p.getUUID()) - felt,
