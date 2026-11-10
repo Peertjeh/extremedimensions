@@ -9,7 +9,6 @@ import com.extremedimensions.data.DataStore;
 import com.extremedimensions.relic.RelicReset;
 
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ItemLike;
 
 /**
  * A relic made after the relics were reset carries the world's relic epoch (see RelicReset). The hook is the
@@ -22,8 +21,12 @@ import net.minecraft.world.level.ItemLike;
  */
 @Mixin(ItemStack.class)
 public abstract class RelicStampMixin {
-	@Inject(method = "<init>(Lnet/minecraft/world/level/ItemLike;I)V", at = @At("TAIL"))
-	private void extremedimensions$stamp(ItemLike item, int count, CallbackInfo ci) {
+	// Every constructor that makes a stack from an item alone (with or without a count, from the item or its holder): which
+	// of them the others pass through differs between versions of the game, so each is hooked, and stamping twice is
+	// harmless. The constructors that take components (a save, the network, a copy) are left alone.
+	@Inject(method = {"<init>(Lnet/minecraft/world/level/ItemLike;)V", "<init>(Lnet/minecraft/world/level/ItemLike;I)V",
+			"<init>(Lnet/minecraft/core/Holder;)V", "<init>(Lnet/minecraft/core/Holder;I)V"}, at = @At("TAIL"), require = 0)
+	private void extremedimensions$stamp(CallbackInfo ci) {
 		if (DataStore.relicEpoch() > 0) {
 			RelicReset.made((ItemStack) (Object) this);
 		}
