@@ -22,10 +22,11 @@ import net.minecraft.sounds.SoundSource;
 public final class BossMusic {
 	private BossMusic() {}
 
+	/** The tracks a fight asks for by number: 0-4 the Elders' (Matriarch, Ferryman, Weaver, Knot Mother, Pale Mason), 5 the Starved One's. */
 	private static final SoundEvent[] TRACKS = {ModSounds.MUSIC_BOSS_MATRIARCH, ModSounds.MUSIC_BOSS_FERRYMAN, ModSounds.MUSIC_BOSS_WEAVER,
-			ModSounds.MUSIC_BOSS_KNOT_MOTHER, ModSounds.MUSIC_BOSS_PALE_MASON};
-	/** Length of each track in ticks (sounds/music/boss_*.ogg: 179.96 s, 189.2 s, 197.2 s, 189.0 s, 181.5 s). */
-	private static final int[] LENGTH = {3599, 3784, 3944, 3780, 3630};
+			ModSounds.MUSIC_BOSS_KNOT_MOTHER, ModSounds.MUSIC_BOSS_PALE_MASON, ModSounds.MUSIC_BOSS_STARVED_ONE};
+	/** Length of each track in ticks (sounds/music/boss_*.ogg: 179.96 s, 189.2 s, 197.2 s, 189.0 s, 181.5 s, 185.5 s). */
+	private static final int[] LENGTH = {3599, 3784, 3944, 3780, 3630, 3710};
 	/** Ticks before a track's end that its next pass starts, crossfading over its closing fade. */
 	private static final int OVERLAP = 140;
 	/** A fight that has not asked for its track for this long is over (it asks every 40 ticks). */

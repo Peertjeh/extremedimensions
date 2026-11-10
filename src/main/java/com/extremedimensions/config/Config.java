@@ -1455,6 +1455,43 @@ public final class Config {
 	public static int STARVED_MINIONS_MAX = 10;
 	/** Frayed Rays that rise to the Heart as it wakes (one more for every player beyond the first). */
 	public static int STARVED_RAYS = 3;
+	/**
+	 * Seconds the Starved One waits over the Heart with nobody at its fight before it sinks back into the hunger (3.48);
+	 * anyone coming back in that time keeps the fight. 0 = it sinks back at once.
+	 */
+	public static int STARVED_LEAVE_SECONDS = 30;
+	/** How far across (blocks) from the Heart its fight reaches: the Heart, its strands and the four pillars' islands (3.48). */
+	public static int STARVED_ARENA_REACH = 100;
+	/** How far under the Heart's floor (blocks) its fight reaches: the undersides of the islands (3.48). */
+	public static int STARVED_ARENA_BELOW = 48;
+	/** How far over the Heart's floor (blocks) its fight reaches: the pillars' nodes and the tops of their shafts (3.48). */
+	public static int STARVED_ARENA_ABOVE = 160;
+	/** Seconds the Starved One takes to rise out of the Heart once its wind-up is over; nothing hurts it meanwhile (3.48). */
+	public static double STARVED_RISE_SECONDS = 9.0;
+	/** Whether the Heart raises an arena of its own round the Starved One's fight, as the Elders do (1 on, 0 off; 3.48). */
+	public static int STARVED_ARENA = 1;
+	/** Below this share of its health the Heart's fight changes the first time: an upheaval, and islands falling (3.48). */
+	public static double STARVED_PHASE_ONE = 0.66;
+	/** Below this share of its health the Heart's fight changes the second time (3.48). */
+	public static double STARVED_PHASE_TWO = 0.33;
+	/** Damage of the spikes of an upheaval at the Heart to whoever stands where they burst up (times starved_damage_scale). */
+	public static double STARVED_UPHEAVAL_DAMAGE = 6.0;
+	/** Islands of the Heart's arena that come loose and fall at each change of its fight (3.48). */
+	public static int STARVED_PHASE_ISLES = 3;
+	/** Below this share of its health the Starved One drinks time, once a fight (3.48). 0 = never. */
+	public static double STARVED_DRINK_AT = 0.5;
+	/** Seconds its drinking of time draws in before the soul fire bursts out of it. */
+	public static double STARVED_DRINK_SECONDS = 8.0;
+	/** How hard its drinking of time draws everyone in its reach towards it, each tick (sneaking halves it, a wall stops it). */
+	public static double STARVED_DRINK_PULL = 0.05;
+	/** How slow its drinking of time makes everyone in its reach (the level of Slowness; 0 = none). */
+	public static int STARVED_DRINK_SLOW = 2;
+	/** How far (blocks) its drinking of time reaches. */
+	public static int STARVED_DRINK_RADIUS = 48;
+	/** How far (blocks) the soul fire it bursts with at the end reaches: whoever is that near is struck. */
+	public static int STARVED_DRINK_NOVA = 14;
+	/** Damage of that burst of soul fire (times starved_damage_scale). */
+	public static double STARVED_DRINK_DAMAGE = 18.0;
 
 	// --- The Pale Reach: the End's far islands (3.39) -----------------------------------------------
 
@@ -1905,7 +1942,7 @@ public final class Config {
 			"seam_interiors", "echoes", "unstable_anchors", "unanchored", "frayed_seam", "ambient_dread", "tetherite_tethered",
 			"tetherite_bind_keep_template", "tetherite_drawbacks", "elder_griefing", "elder_ultimate_scatter", "elder_spawn_camera",
 			"elder_upheaval", "elder_arena", "elder_arena_wall", "elder_arena_landmark", "elder_arena_breakable", "elder_arena_collapse",
-			"elder_arena_phases", "elder_cores", "elder_isle_fall", "elder_pierce", "matriarch_hex_milk", "coop_revive",
+			"elder_arena_phases", "elder_cores", "elder_isle_fall", "elder_pierce", "matriarch_hex_milk", "starved_arena", "coop_revive",
 			"coop_fallen_locked", "coop_burden", "coop_shared_anchors", "tribe_enabled", "tribe_raid", "clan_enabled",
 			"tapestry_roots_peace", "tapestry_chain_steady", "unweaving", "placeholders", "pale_reach",
 			"pale_hauler_enabled", "pale_squall", "pale_home_calm", "relic_single_use");
@@ -2093,6 +2130,10 @@ public final class Config {
 			{"starved_damage_scale", 0, 10}, {"starved_heal", 0, 0.2}, {"starved_heal_quench", 1, 4}, {"starved_socket_silk", 1, 64}, {"starved_socket_seconds", 5, 600}, {"starved_sockets", 1, 4}, {"starved_bind_seconds", 1, 120},
 			{"starved_bound_damage", 0, 10}, {"starved_unbound_damage", 0, 10}, {"starved_minion_seconds", 5, 600}, {"starved_minions", 0, 12},
 			{"starved_minions_max", 0, 40}, {"starved_rays", 0, 12},
+			{"starved_leave_seconds", 0, 600}, {"starved_arena_reach", 84, 256}, {"starved_arena_below", 16, 128}, {"starved_arena_above", 64, 320},
+			{"starved_rise_seconds", 2, 30}, {"starved_phase_one", 0, 1}, {"starved_phase_two", 0, 1}, {"starved_upheaval_damage", 0, 60},
+			{"starved_phase_isles", 0, 12}, {"starved_drink_at", 0, 1}, {"starved_drink_seconds", 3, 30}, {"starved_drink_pull", 0, 0.5},
+			{"starved_drink_slow", 0, 5}, {"starved_drink_radius", 8, 128}, {"starved_drink_nova", 4, 64}, {"starved_drink_damage", 0, 100},
 			{"seam_briefing", 0, 100}, {"seam_interiors", 0, 1}, {"seam_storeroom_chance", 0, 1}, {"hud_boss_bar", 0, 1}, {"hints", 0, 1}, {"frame_silk", 0, 64}, {"first_knot_distance", 200, 5000}, {"knot_mother_rest", 0, 100000}, {"knot_mother_leash", 4, 64}, {"knot_mother_threadline_weight", 0, 20}, {"knot_mother_threadline_damage", 0, 40},
 			{"knot_mother_threadline_sweep", 0.2, 1.5}, {"knot_mother_snare_weight", 0, 20}, {"knot_mother_snare_warning", 0.5, 5}, {"knot_mother_snare_seconds", 0.5, 10},
 			{"knot_mother_snare_time", 0, 120}, {"knot_mother_snare_damage", 0, 40}, {"knot_mother_anchors", 0, 8}, {"knot_mother_anchor_radius", 3, 15},

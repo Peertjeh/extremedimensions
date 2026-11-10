@@ -60,6 +60,8 @@ public final class ModSounds {
 	public static final SoundEvent MUSIC_BOSS_KNOT_MOTHER = register("music.boss_knot_mother");
 	/** The Pale Mason's theme (tools/sounds/boss_pale_mason.py). */
 	public static final SoundEvent MUSIC_BOSS_PALE_MASON = register("music.boss_pale_mason");
+	/** The Starved One's theme, "The First Wound" (tools/sounds/boss_starved_one.py): track 5 of BossMusic. */
+	public static final SoundEvent MUSIC_BOSS_STARVED_ONE = register("music.boss_starved_one");
 	/** The Seam's music disc: "Tick of the Boundary", the menus' track, as a jukebox plays it. */
 	public static final SoundEvent MUSIC_DISC_TICK_OF_THE_BOUNDARY = register("music_disc.tick_of_the_boundary");
 	/** The wound's own record: "What the Wound Remembers", made from its ambient sounds. */
@@ -126,6 +128,31 @@ public final class ModSounds {
 	public static final SoundEvent[] ELDER_ROAR = {register("elder.matriarch.roar"), register("elder.ferryman.roar"), register("elder.weaver.roar"),
 			register("elder.knot_mother.roar"),
 			register("elder.pale_mason.roar")};
+
+	/*
+	 * The Starved One's own (tools/sounds/starved_one.py), "elder.starved_one.<name>", made at the pitch they are played
+	 * at (1.0): its voice before a blow (its tell), at rest, hit, its roar and its death; its rise out of the Heart; its
+	 * dive, its call to the tribe's red young, the Veil Rays' light turned into its hunting ray, time drunk; a pillar's
+	 * heart feeding it and quenched, bound by all four and tearing loose; the turning of its phases, its strongest blow,
+	 * and the ground erupting.
+	 */
+	public static final SoundEvent STARVED_ONE_VOICE = register("elder.starved_one.voice");
+	public static final SoundEvent STARVED_ONE_AMBIENT = register("elder.starved_one.ambient");
+	public static final SoundEvent STARVED_ONE_HURT = register("elder.starved_one.hurt");
+	public static final SoundEvent STARVED_ONE_ROAR = register("elder.starved_one.roar");
+	public static final SoundEvent STARVED_ONE_DEATH = register("elder.starved_one.death");
+	public static final SoundEvent STARVED_ONE_WAKE = register("elder.starved_one.wake");
+	public static final SoundEvent STARVED_ONE_SWOOP = register("elder.starved_one.swoop");
+	public static final SoundEvent STARVED_ONE_CALL = register("elder.starved_one.call");
+	public static final SoundEvent STARVED_ONE_RAY = register("elder.starved_one.ray");
+	public static final SoundEvent STARVED_ONE_DRINK = register("elder.starved_one.drink");
+	public static final SoundEvent STARVED_ONE_HEAL = register("elder.starved_one.heal");
+	public static final SoundEvent STARVED_ONE_QUENCH = register("elder.starved_one.quench");
+	public static final SoundEvent STARVED_ONE_BOUND = register("elder.starved_one.bound");
+	public static final SoundEvent STARVED_ONE_BREAK_FREE = register("elder.starved_one.break_free");
+	public static final SoundEvent STARVED_ONE_PHASE = register("elder.starved_one.phase");
+	public static final SoundEvent STARVED_ONE_ULTIMATE = register("elder.starved_one.ultimate");
+	public static final SoundEvent STARVED_ONE_UPHEAVAL = register("elder.starved_one.upheaval");
 
 	private static SoundEvent register(String path) {
 		var id = ExtremeDimensions.id(path);

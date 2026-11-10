@@ -65,6 +65,9 @@ final class Retinue {
 					SeamFauna.hold(ray);
 					RISEN.add(ray.getUUID());
 					WorldFx.particleIn(SeamService.SEAM.identifier().toString(), "extremedimensions:void_mote", at.x, at.y, at.z, 2.0, 0.6, 2.0, 0.0, 24);
+					// (each rising one heard: the hunting rays coming up out of the dark)
+					WorldFx.soundIn(SeamService.SEAM.identifier().toString(), "extremedimensions:elder.starved_one.ray", "hostile", at.x, at.y, at.z, 4f,
+							0.9f + 0.2f * rnd.nextFloat());
 				}
 				break;
 			}
@@ -79,6 +82,7 @@ final class Retinue {
 			ray.setFrayed(true);
 			ray.rise();
 			TURNED.add(ray.getUUID());
+			WorldFx.soundIn(SeamService.SEAM.identifier().toString(), "extremedimensions:elder.starved_one.ray", "hostile", ray.getX(), ray.getY(), ray.getZ(), 3f, 0.8f);
 		}
 	}
 
@@ -120,7 +124,7 @@ final class Retinue {
 			return false;
 		}
 		String dim = SeamService.SEAM.identifier().toString();
-		WorldFx.soundIn(dim, "extremedimensions:keeper_roar", "hostile", so.getX(), so.getY() + 4, so.getZ(), 3f, 0.7f);
+		WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.call", "hostile", so.getX(), so.getY() + 4, so.getZ(), 5f, 1f);
 		WorldFx.soundIn(dim, "extremedimensions:hollowling_giggle", "hostile", so.getX(), so.getY() + 2, so.getZ(), 3f, 0.5f);
 		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 4, so.getZ(), 1.5, 2, 1.5, 0, 30);
 		return true;

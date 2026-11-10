@@ -57,6 +57,9 @@ public final class AttackFx {
 	public static final int WISP_SOUL = 0;
 	public static final int WISP_BOMB = 1;
 
+	/** The Starved One's light in the effects, after the Elders' (its soul fire: see the client's {@code AttackFx}). */
+	public static final int STARVED = 4;
+
 	/** How far from a player the effects they are sent reach, in blocks. */
 	private static final double RANGE = 128;
 	/** At most this many effects go to one player in one tick (the rest are dropped). */
@@ -73,20 +76,20 @@ public final class AttackFx {
 		PENDING.computeIfAbsent(level, k -> new ArrayList<>()).add(fx);
 	}
 
-	static void sigil(ServerLevel level, int elder, int kind, double x, double y, double z, double radius, int ticks) {
+	public static void sigil(ServerLevel level, int elder, int kind, double x, double y, double z, double radius, int ticks) {
 		add(level, new Fx(SIGIL, elder, kind, (float) x, (float) y, (float) z, 0, 0, 0, (float) radius, ticks));
 	}
 
-	static void impact(ServerLevel level, int elder, int kind, double x, double y, double z, double radius) {
+	public static void impact(ServerLevel level, int elder, int kind, double x, double y, double z, double radius) {
 		add(level, new Fx(IMPACT, elder, kind, (float) x, (float) y, (float) z, 0, 0, 0, (float) radius, 0));
 	}
 
 	/** A shockwave from {@code start} blocks out to {@code max}, growing {@code speed} blocks a tick. */
-	static void wave(ServerLevel level, int elder, boolean faint, double x, double y, double z, double start, double speed, double max) {
+	public static void wave(ServerLevel level, int elder, boolean faint, double x, double y, double z, double start, double speed, double max) {
 		add(level, new Fx(WAVE, elder, faint ? 1 : 0, (float) x, (float) y, (float) z, (float) speed, (float) start, 0, (float) max, 0));
 	}
 
-	static void line(ServerLevel level, int elder, int kind, double x0, double y0, double z0, double x1, double y1, double z1, int ticks) {
+	public static void line(ServerLevel level, int elder, int kind, double x0, double y0, double z0, double x1, double y1, double z1, int ticks) {
 		add(level, new Fx(LINE, elder, kind, (float) x0, (float) y0, (float) z0, (float) x1, (float) y1, (float) z1, 0, ticks));
 	}
 
@@ -94,11 +97,11 @@ public final class AttackFx {
 		add(level, new Fx(WISP, elder, kind, (float) x, (float) y, (float) z, (float) vx, (float) vy, (float) vz, 0, id));
 	}
 
-	static void burst(ServerLevel level, int elder, double x, double y, double z, double size) {
+	public static void burst(ServerLevel level, int elder, double x, double y, double z, double size) {
 		add(level, new Fx(BURST, elder, 0, (float) x, (float) y, (float) z, 0, 0, 0, (float) size, 0));
 	}
 
-	static void ring(ServerLevel level, int elder, double x, double y, double z, double radius, int ticks) {
+	public static void ring(ServerLevel level, int elder, double x, double y, double z, double radius, int ticks) {
 		add(level, new Fx(RING, elder, 0, (float) x, (float) y, (float) z, 0, 0, 0, (float) radius, ticks));
 	}
 

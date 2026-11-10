@@ -17,8 +17,12 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** What the Elders share: ground under a giant, gliding and turning, a roar, a pull, and their music. */
-final class ElderFx {
+/**
+ * What the Elders share: ground under a giant, gliding and turning, a roar, a pull, and their music. The Starved One,
+ * which is no Elder, has its music, its cinema and its shaking ground from here too (see the overloads that take the
+ * players they are for).
+ */
+public final class ElderFx {
 	private ElderFx() {}
 
 	/** The fight's music, by track: the Matriarch, the Ferryman, the Last Weaver. */
@@ -29,6 +33,10 @@ final class ElderFx {
 	static final int MUSIC_KNOT_MOTHER = 3;
 	/** The Pale Mason's own theme (3.40). */
 	static final int MUSIC_PALE_MASON = 4;
+	/** The Starved One's own theme, at the Heart (3.48). */
+	public static final int MUSIC_STARVED_ONE = 5;
+	/** The Starved One in the client's cinema (its title card, its colour), after the Elders'. */
+	public static final int CINEMA_STARVED_ONE = 5;
 
 	static String dim(Entity e) {
 		return e.level().dimension().identifier().toString();
@@ -287,7 +295,7 @@ final class ElderFx {
 	}
 
 	/** A ring of particles on the ground. */
-	static void ring(Level level, String particle, double x, double y, double z, double r, int n, double phase) {
+	public static void ring(Level level, String particle, double x, double y, double z, double r, int n, double phase) {
 		for (int i = 0; i < n; i++) {
 			double a = 2 * Math.PI * i / n + phase;
 			WorldFx.particleIn(level, particle, x + Math.cos(a) * r, y, z + Math.sin(a) * r, 0, 0.02, 0, 0, 1);
@@ -332,7 +340,7 @@ final class ElderFx {
 	}
 
 	/** A line of particles between two points (a chain, a thread). */
-	static void line(String dim, String particle, double x0, double y0, double z0, double x1, double y1, double z1, int points) {
+	public static void line(String dim, String particle, double x0, double y0, double z0, double x1, double y1, double z1, int points) {
 		for (int i = 0; i <= points; i++) {
 			double k = i / (double) points;
 			WorldFx.particleIn(dim, particle, x0 + (x1 - x0) * k, y0 + (y1 - y0) * k, z0 + (z1 - z0) * k, 0, 0, 0, 0, 1);
@@ -353,6 +361,52 @@ final class ElderFx {
 		for (ServerPlayer p : ((ServerLevel) b.level()).players()) {
 			if (p.distanceToSqr(b) < 160 * 160) {
 				ServerPlayNetworking.send(p, new ModPackets.BossMusicPayload(track, true));
+			}
+		}
+	}
+
+	/**
+	 * A fight's music for the players of a level it is for (a fight that is no Elder's, as the Starved One's at the Heart,
+	 * says who): asked for again every couple of seconds, it crossfades in and plays on as the Elders' does.
+	 */
+	public static void music(ServerLevel level, java.util.function.Predicate<ServerPlayer> who, int track) {
+		for (ServerPlayer p : level.players()) {
+			if (who.test(p)) {
+				ServerPlayNetworking.send(p, new ModPackets.BossMusicPayload(track, false));
+			}
+		}
+	}
+
+	/** That fight's music ends for the players of a level it was for. */
+	public static void silence(ServerLevel level, java.util.function.Predicate<ServerPlayer> who, int track) {
+		for (ServerPlayer p : level.players()) {
+			if (who.test(p)) {
+				ServerPlayNetworking.send(p, new ModPackets.BossMusicPayload(track, true));
+			}
+		}
+	}
+
+	/** A piece of a fight's cinema for the players of a level it is for, as the client knows that boss by {@code index}. */
+	public static void cinema(ServerLevel level, java.util.function.Predicate<ServerPlayer> who, int index, int kind, int value, float strength, String key) {
+		ModPackets.BossFxPayload fx = new ModPackets.BossFxPayload(kind, index, value, strength, key);
+		for (ServerPlayer p : level.players()) {
+			if (who.test(p)) {
+				ServerPlayNetworking.send(p, fx);
+			}
+		}
+	}
+
+	/**
+	 * The ground rumbles round a point for the players of a level it is for, less the further away they are: a long
+	 * shake only (a blow that lands with weight is {@link WorldFx#punch}).
+	 */
+	public static void rumble(ServerLevel level, java.util.function.Predicate<ServerPlayer> who, double x, double z, double radius, float strength, int ticks) {
+		for (ServerPlayer p : level.players()) {
+			double dx = p.getX() - x, dz = p.getZ() - z;
+			double d = Math.sqrt(dx * dx + dz * dz);
+			if (d < radius && who.test(p)) {
+				float s = (float) (strength * (1 - d / radius * 0.75));
+				ServerPlayNetworking.send(p, new ModPackets.BossFxPayload(ModPackets.BossFxPayload.SHAKE, CINEMA_STARVED_ONE, ticks, s, ""));
 			}
 		}
 	}

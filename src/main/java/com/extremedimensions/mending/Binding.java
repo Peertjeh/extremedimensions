@@ -211,9 +211,61 @@ public final class Binding {
 
 	/** It wakes: the old pedestals crumble, the nodes open atop the pillars and the strands run out to them. */
 	static void wake(ServerLevel seam) {
+		wake(seam, true);
+	}
+
+	/**
+	 * It wakes; with {@code open} false the nodes stay shut for now, to be lit one by one as it rises ({@link #light}),
+	 * and those not lit by then open with the fight's first look for them.
+	 */
+	static void wake(ServerLevel seam, boolean open) {
 		forget();
 		retirePedestals(seam);
-		open(seam);
+		if (open) {
+			open(seam);
+		}
+	}
+
+	/** Pillar {@code i}'s node opens now (and its strand is laid), as it rises (3.48); where it is, or null if it stands nowhere. */
+	static BlockPos light(ServerLevel seam, int i) {
+		if (i < 0 || i >= PILLARS) {
+			return null;
+		}
+		if (NODES[i] == null) {
+			BlockPos n = find(seam, i);
+			if (n == null) {
+				return null;
+			}
+			NODES[i] = n;
+			node(seam, n, FEEDING);
+			mark(seam, i, 0);
+			if (!STRAND[i]) {
+				STRAND[i] = true;
+				int[] c = pillar(i), t = towards(i);
+				int step = stepOf(seam, c[0], c[1], t[0], t[1], MendingService.HY + 30, MendingService.HY - 30);
+				strand(seam, i, new BlockPos(n.getX(), step == Integer.MIN_VALUE ? n.getY() : step + 2, n.getZ())).queue(true);
+			}
+		}
+		return NODES[i];
+	}
+
+	/** Where pillar {@code i}'s node stands in this fight, or null while it has none. */
+	static BlockPos node(int i) {
+		return i < 0 || i >= PILLARS ? null : NODES[i];
+	}
+
+	/** Pillar {@code i}'s node goes dark for good, as the Starved One dies (its chain to it snapped); true if it had one. */
+	static boolean darken(ServerLevel seam, int i) {
+		BlockPos n = node(i);
+		if (n == null) {
+			return false;
+		}
+		if (Loaded.ready(seam, n)) {
+			node(seam, n, QUENCHED);
+		}
+		unmark(i);
+		QUENCH[i] = Integer.MAX_VALUE / 2;
+		return true;
 	}
 
 	/** The four little pedestals of the first Heart (before 3.18) go back to the floor they stood in. */
@@ -406,7 +458,7 @@ public final class Binding {
 		}
 		unmark(i);
 		String dim = SeamService.SEAM.identifier().toString();
-		WorldFx.soundIn(dim, "minecraft:block.beacon.deactivate", "block", s.getX() + 0.5, s.getY() + 0.5, s.getZ() + 0.5, 4f, 0.7f);
+		WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.quench", "hostile", s.getX() + 0.5, s.getY() + 0.5, s.getZ() + 0.5, 5f, 1f);
 		WorldFx.soundIn(dim, "minecraft:block.sculk_catalyst.bloom", "block", s.getX() + 0.5, s.getY() + 0.5, s.getZ() + 0.5, 3f, 0.5f);
 		WorldFx.particleFar(dim, "minecraft:soul", s.getX() + 0.5, s.getY() + 1.5, s.getZ() + 0.5, 0.6, 1.2, 0.6, 0.04, 40, 160);
 		int q = quenched(), f = found(), stop = Math.min(healStopAt(), f);
@@ -530,6 +582,10 @@ public final class Binding {
 		if (feeding > 0 && tick % 20 == 0 && so.getHealth() < so.getMaxHealth()) {
 			so.heal((float) (Math.max(0, Config.STARVED_HEAL) * so.getMaxHealth() * feeding));
 			WorldFx.particleIn(dim, "minecraft:soul", so.getX(), so.getY() + 3, so.getZ(), 1.2, 1.5, 1.2, 0.02, 6 * feeding);
+			// (each pulse heard, every other second: the pillars feeding it)
+			if (tick % 40 == 0) {
+				WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.heal", "hostile", so.getX(), so.getY() + 3, so.getZ(), 3f, 0.9f + 0.05f * feeding);
+			}
 		}
 	}
 
@@ -564,7 +620,7 @@ public final class Binding {
 		so.setBound(true);
 		WorldFx.punch(seam, so, so.getX(), so.getZ(), 80, 0.9f, 18);
 		String dim = SeamService.SEAM.identifier().toString();
-		WorldFx.soundIn(dim, "extremedimensions:lurker_shriek", "hostile", so.getX(), so.getY() + 4, so.getZ(), 5f, 0.45f);
+		WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.bound", "hostile", so.getX(), so.getY() + 4, so.getZ(), 6f, 1f);
 		WorldFx.soundIn(dim, "minecraft:block.chain.place", "block", so.getX(), so.getY() + 3, so.getZ(), 4f, 0.5f);
 		for (ServerPlayer q : arena) {
 			q.sendSystemMessage(Component.translatable("gui.extremedimensions.heart.bound"), true);
@@ -577,6 +633,7 @@ public final class Binding {
 		bindAt = null;
 		java.util.Arrays.fill(HOLDING, false);
 		String dim = SeamService.SEAM.identifier().toString();
+		WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.break_free", "hostile", so.getX(), so.getY() + 4, so.getZ(), 6f, 1f);
 		WorldFx.soundIn(dim, "minecraft:block.chain.break", "block", so.getX(), so.getY() + 3, so.getZ(), 4f, 0.5f);
 		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 3, so.getZ(), 1.5, 2, 1.5, 0, 40);
 		for (ServerPlayer q : arena) {

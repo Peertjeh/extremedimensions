@@ -376,11 +376,19 @@ public final class ElderArena {
 		if (Config.ELDER_ARENA <= 0 || b instanceof KnotMother) {
 			return;
 		}
+		raise(b, ElderFx.index(b), centre);
+	}
+
+	/**
+	 * An arena of a style begins to rise round {@code centre} for a boss, whatever it is (the Heart's for the Starved
+	 * One, see {@link HeartArena}): designed a little each tick, then built, fought on and taken down as an Elder's.
+	 */
+	static void raise(Entity boss, int style, BlockPos centre) {
 		long start = System.nanoTime();
 		Drafting d = new Drafting();
-		d.boss = b.getUUID();
-		d.level = (ServerLevel) b.level();
-		d.style = ElderFx.index(b);
+		d.boss = boss.getUUID();
+		d.level = (ServerLevel) boss.level();
+		d.style = style;
 		d.centre = centre.immutable();
 		d.draft = new ArenaDesign.Draft(d.level, d.style, d.centre, ElderTerrain.griefing(d.level), ThreadLocalRandom.current().nextLong());
 		// As much of its design as this tick's budget allows (a small arena is drawn up whole here and rises at once);
@@ -600,6 +608,74 @@ public final class ElderArena {
 		}
 	}
 
+	/**
+	 * This boss's fight is over and its arena comes apart now, not after a while (the Heart's, as the Starved One dies or
+	 * sinks back): what is in the air still lands first, then it flies off block by block.
+	 */
+	static void dissolveNow(Entity boss) {
+		release(boss);
+		for (Arena a : ARENAS) {
+			if (a.boss.equals(boss.getUUID()) && !a.dissolving) {
+				a.linger = 0;
+			}
+		}
+	}
+
+	/** A new group of an arena's blocks (the spikes of an upheaval in its fight), of a kind; its index. */
+	static int group(Arena a, int kind) {
+		a.bp.kinds.add(kind);
+		a.groups.add(new ArrayList<>());
+		return a.groups.size() - 1;
+	}
+
+	/**
+	 * A block bursts up into an arena at once, in a group of its own (see {@link #group}): it is the arena's, held by
+	 * {@link FightBlocks}, and goes when the arena goes. False where it may not go in now (not loaded, not open air, held
+	 * by something else, someone standing there), or once the arena is coming apart.
+	 */
+	static boolean burst(Arena a, int group, Piece p) {
+		if (a.dissolving || a.linger >= 0 || group < 0 || group >= a.groups.size() || !Loaded.ready(a.level, p.pos) || !free(a.level, p.pos)
+				|| !fits(a.level, p) || blocked(a.level, p.pos)) {
+			return false;
+		}
+		p.group = group;
+		a.claimed.add(p.pos.asLong());
+		a.pieces.add(p);
+		a.groups.get(group).add(p);
+		place(a, p, true);
+		return true;
+	}
+
+	/** Where every block of a boss's arena that stands now is (for tests); empty with no arena. */
+	public static List<BlockPos> placedBy(Entity boss) {
+		List<BlockPos> out = new ArrayList<>();
+		for (Arena a : ARENAS) {
+			if (a.boss.equals(boss.getUUID())) {
+				for (Piece p : a.pieces) {
+					if (p.placed) {
+						out.add(p.pos);
+					}
+				}
+			}
+		}
+		return out;
+	}
+
+	/** Whether a boss has an arena standing, on its way or still being designed (for tests). */
+	public static boolean has(Entity boss) {
+		for (Arena a : ARENAS) {
+			if (a.boss.equals(boss.getUUID())) {
+				return true;
+			}
+		}
+		for (Drafting d : DRAFTS) {
+			if (d.boss.equals(boss.getUUID())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/** This Elder's fight is over (slain or gone): its arena stands a while, then comes apart. */
 	public static void release(Entity boss) {
 		// The ground its ultimate broke sinks back first, the arena's own floor in it among the rest (3.41)
@@ -639,7 +715,7 @@ public final class ElderArena {
 			while (dit.hasNext()) {
 				Drafting d = dit.next();
 				Entity boss = d.level.getEntity(d.boss);
-				if (boss instanceof ElderBoss e && e.isAlive()) {
+				if (boss instanceof LivingEntity e && e.isAlive()) {
 					d.missing = 0;
 				} else if (boss != null || ++d.missing > 60) {
 					// Slain or gone before its arena rose: it never does
@@ -669,7 +745,7 @@ public final class ElderArena {
 		long lap = TickProfile.start();
 		a.bornThisTick = 0;
 		Entity boss = a.level.getEntity(a.boss);
-		if (boss instanceof ElderBoss e && e.isAlive()) {
+		if (boss instanceof LivingEntity e && e.isAlive()) {
 			a.missing = 0;
 		} else if (boss != null || ++a.missing > 60) {
 			// Slain, or gone for three seconds (not merely not yet found in a chunk that is still loading)
@@ -968,6 +1044,11 @@ public final class ElderArena {
 			case 1 -> {
 				az = round + (out ? -1 : 1) * (Math.PI / 2 + rnd.nextDouble(0.1, 0.5));
 				el = rnd.nextDouble(0.05, 0.45);
+			}
+			case ArenaDesign.HEART -> {
+				// The Heart's come up out of the dark under the islands, turning in towards it (and sink back into it)
+				az = round + (out ? 1 : -1) * rnd.nextDouble(0.3, 0.9);
+				el = rnd.nextDouble(-1.35, -0.8);
 			}
 			default -> {
 				az = rnd.nextDouble(Math.PI * 2);

@@ -62,6 +62,9 @@ final class ArenaDesign {
 	/** What a group of an arena's blocks is: the floor (it never comes down), a building, an island, a core, grown later. */
 	static final int FLOOR = 0, BUILT = 1, ISLE = 2, CORE = 3, GROWN = 4;
 
+	/** The style of the Heart's arena round the Starved One (3.48), after the Elders' own; designed by {@link HeartArena}. */
+	static final int HEART = 5;
+
 	/**
 	 * An arena's blocks in the order they come, and its chains; what each group of them is; its islands and cores; and
 	 * the lie of its floor (its Elder, middle, height, radius, turn, size and breadth), for what happens on it in a fight.
@@ -138,6 +141,8 @@ final class ArenaDesign {
 			case 0 -> "minecraft:reverse_portal";
 			case 1 -> "minecraft:flame";
 			case 3 -> "minecraft:portal";
+			// the Heart's, souls
+			case HEART -> "minecraft:soul";
 			default -> "minecraft:end_rod";
 		};
 	}
@@ -148,6 +153,7 @@ final class ArenaDesign {
 			case 0 -> "minecraft:block.rooted_dirt.break";
 			case 1 -> "minecraft:item.firecharge.use";
 			case 3 -> "minecraft:entity.enderman.teleport";
+			case HEART -> "minecraft:particle.soul_escape";
 			default -> "minecraft:block.amethyst_block.chime";
 		};
 	}
@@ -294,7 +300,7 @@ final class ArenaDesign {
 	// ------------------------------------------------------------------ the plan
 
 	/** A design in progress: pieces in the order they will come, built up a structure at a time. */
-	private static final class Plan {
+	static final class Plan {
 		final ServerLevel level;
 		final boolean grief;
 		final Random rnd;
@@ -312,13 +318,17 @@ final class ArenaDesign {
 		final java.util.Set<Integer> arches = new java.util.HashSet<>();
 
 		Plan(ServerLevel level, boolean grief, long seed) {
+			// Room for about as many blocks as an arena of this size holds (some 3,000 a square of its size), so the
+			// table is not grown, and rehashed whole, partway through a great one
+			this(level, grief, seed, (int) (3000 * Math.pow(Math.max(0.5, Math.min(12.0, Config.ELDER_ARENA_SIZE)), 2)) + 1024);
+		}
+
+		/** A design with room for about {@code room} blocks (an arena of a size of its own, as the Heart's). */
+		Plan(ServerLevel level, boolean grief, long seed, int room) {
 			this.level = level;
 			this.grief = grief;
 			this.rnd = new Random(seed);
-			// Room for about as many blocks as an arena of this size holds (some 3,000 a square of its size), so the
-			// table is not grown, and rehashed whole, partway through a great one
-			double size = Math.max(0.5, Math.min(12.0, Config.ELDER_ARENA_SIZE));
-			this.pieces = new Long2ObjectLinkedOpenHashMap<>((int) (3000 * size * size) + 1024);
+			this.pieces = new Long2ObjectLinkedOpenHashMap<>(Math.max(1024, room));
 		}
 
 		void begin() {
@@ -490,8 +500,13 @@ final class ArenaDesign {
 		private record Step(String name, Runnable run) {}
 
 		Draft(ServerLevel level, int style, BlockPos centre, boolean grief, long seed) {
-			Plan plan = new Plan(level, grief, seed);
+			Plan plan = style == HEART ? new Plan(level, grief, seed, HeartArena.ROOM) : new Plan(level, grief, seed);
 			this.plan = plan;
+			if (style == HEART) {
+				// The Heart's own (3.48): its ring wall, its crown and its islands, a structure a step
+				HeartArena.design(plan, bp, centre, (name, run) -> steps.add(new Step(name, run)));
+				return;
+			}
 			double size = Math.max(0.5, Math.min(12.0, Config.ELDER_ARENA_SIZE));
 			// Where things are spreads with the size; how broad they are grows only with its root
 			double wide = Math.sqrt(Math.max(1, size));
