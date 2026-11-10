@@ -75,6 +75,8 @@ public final class DataStore {
 		Map<String, List<String>> clans = new HashMap<>();
 		/** The Pale Reach (3.39): its Unfinished Anchors begun, built or passed over, their fittings and those attuned. */
 		Set<String> reach = new HashSet<>();
+		/** How many times an admin started the relics over (0 = never: no relic is stamped, none crumbles); see relic.RelicReset. */
+		int relicEpoch = 0;
 	}
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -156,6 +158,11 @@ public final class DataStore {
 		data.weaveAgainAt = loaded.weaveAgainAt;
 		data.tapestryDone = loaded.tapestryDone;
 		data.newThread = Math.max(0, loaded.newThread);
+		data.relicEpoch = Math.max(0, loaded.relicEpoch);
+		// The clans (3.10) were saved but never read back, so every restart dissolved them
+		if (loaded.clans != null) {
+			data.clans = loaded.clans;
+		}
 		if (loaded.trials != null) {
 			data.trials = loaded.trials;
 			if (data.trials.scores == null) {
@@ -326,6 +333,19 @@ public final class DataStore {
 
 	public static void setNewThread(int tier) {
 		data.newThread = Math.max(0, tier);
+		markDirty();
+	}
+
+	/**
+	 * How many times the relics were started over in this world (0 = never); see {@code relic.RelicReset}. It is read each
+	 * time an item stack is made, on whatever thread, so it does nothing but read a field.
+	 */
+	public static int relicEpoch() {
+		return data.relicEpoch;
+	}
+
+	public static void setRelicEpoch(int epoch) {
+		data.relicEpoch = Math.max(0, epoch);
 		markDirty();
 	}
 

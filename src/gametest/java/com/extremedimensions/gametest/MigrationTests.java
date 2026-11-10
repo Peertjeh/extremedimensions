@@ -136,4 +136,17 @@ public class MigrationTests {
 		}
 		helper.succeed();
 	}
+
+	/** A world's clans come back when it loads again (before 3.47.1 every restart dissolved them). */
+	@GameTest
+	public void clansHoldThroughARestart(GameTestHelper helper) {
+		Object ours = DataStore.adopt("{\"clans\": {\"clan-1\": [\"a\", \"b\"]}}");
+		try {
+			check(helper, DataStore.clans().containsKey("clan-1") && DataStore.clans().get("clan-1").size() == 2,
+					"a saved clan was lost on loading: %s", DataStore.clans());
+		} finally {
+			DataStore.putBack(ours);
+		}
+		helper.succeed();
+	}
 }

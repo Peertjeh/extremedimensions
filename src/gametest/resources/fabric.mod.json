@@ -13,6 +13,7 @@
 			"com.extremedimensions.gametest.RelicTests",
 			"com.extremedimensions.gametest.RelicTierTests",
 			"com.extremedimensions.gametest.RelicTierTests2",
+			"com.extremedimensions.gametest.RelicResetTests",
 			"com.extremedimensions.gametest.PactTests",
 			"com.extremedimensions.gametest.TrialTests",
 			"com.extremedimensions.gametest.BossTests",

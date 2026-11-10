@@ -54,6 +54,11 @@ public final class RelicService {
 		return ModItems.RELICS.get(r);
 	}
 
+	/** A new relic, stamped with the world's relic epoch (see RelicReset). */
+	public static ItemStack stack(Relic r) {
+		return RelicReset.stamp(new ItemStack(item(r)));
+	}
+
 	/** The relic an item stack is, or null. */
 	public static Relic of(ItemStack stack) {
 		for (Relic r : Relic.values()) {
@@ -105,12 +110,16 @@ public final class RelicService {
 	/**
 	 * Using a relic: it is bound to the Tether. The one bound before (if any) breaks for good while relics serve once, and
 	 * as that is dear, the first use only warns of it: a second use of the same relic, from half a second to five seconds
-	 * later, binds it. With relics serving more than once, the one bound before comes back instead.
+	 * later, binds it. With relics serving more than once, the one bound before comes back instead. A relic from before
+	 * the relics were reset crumbles instead of binding (see RelicReset).
 	 */
 	public static InteractionResult bind(ServerPlayer p, ItemStack stack) {
 		Relic r = of(stack);
 		if (r == null) {
 			return InteractionResult.PASS;
+		}
+		if (RelicReset.refused(p, stack)) {
+			return InteractionResult.FAIL;
 		}
 		PlayerData d = DataStore.get(p.getUUID());
 		Relic before = bound(d);
@@ -140,7 +149,7 @@ public final class RelicService {
 		if (breaks) {
 			crumble(p);
 		} else if (before != null) {
-			WorldFx.give(p, new ItemStack(item(before)));
+			WorldFx.give(p, stack(before));
 		}
 		DataStore.markDirty();
 		CurseEffects.applyEffects(p, d);
@@ -174,7 +183,7 @@ public final class RelicService {
 			return;
 		}
 		d.relic = null;
-		WorldFx.give(p, new ItemStack(item(r)));
+		WorldFx.give(p, stack(r));
 		DataStore.markDirty();
 		CurseEffects.applyEffects(p, d);
 		Sync.curses(p, d, false);
@@ -234,7 +243,7 @@ public final class RelicService {
 	 * weight of the set 0 (or none left with a relic to find), every relic is as likely.
 	 */
 	public static ItemStack random(boolean great) {
-		return new ItemStack(item(draw(great)));
+		return stack(draw(great));
 	}
 
 	/** The relic {@link #random(boolean)} gives. */

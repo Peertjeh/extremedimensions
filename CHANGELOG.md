@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.47.1: A Clean Slate
+
+### New
+- **`/tether relic_reset`** starts the relics over in a world (operators, or `extremedimensions.admin.relic_reset`).
+  Without `confirm` it explains what will happen; `/tether relic_reset confirm` does it at once, no restart needed.
+  - Every player loses the relic bound to their Tether, online or not; its gift and price stop at once.
+  - Every relic that exists now crumbles to dust as soon as a player holds it, has it in their ender chest or opens the
+    container it lies in (one on the ground crumbles once picked up).
+  - Relics found from then on carry a mark and are not touched. A world that never resets them is not touched at all.
+  - Things the Ferryman's Obol is still keeping for a player who died and has not respawned yet are safe.
+  - The Seam is reset apart from this, with `/tether seam_reset` (it is made anew the next time the world loads).
+
+### Fixed
+- **Clans no longer dissolve when the server restarts.** They were saved, but never read back.
+
 ## 3.47.0: Spent Relics
 
 ### New

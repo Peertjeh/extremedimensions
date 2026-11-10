@@ -86,7 +86,8 @@ public class PermissionTests {
 			check(helper, AdminService.act(p, target.getStringUUID(), "add", com.extremedimensions.penalty.Penalty.GLASS_JAW.id) == null,
 					"a player granted the Players screen could not lay a curse on");
 			check(helper, !SettingsService.canEdit(p), "granting the Players screen let them change the settings");
-			check(helper, !Perms.has(p, Perms.Node.SPAWN) && !Perms.has(p, Perms.Node.SEAM_RESET) && !Perms.has(p, Perms.Node.EXPORT),
+			check(helper, !Perms.has(p, Perms.Node.SPAWN) && !Perms.has(p, Perms.Node.SEAM_RESET) && !Perms.has(p, Perms.Node.RELIC_RESET)
+					&& !Perms.has(p, Perms.Node.EXPORT),
 					"granting the Players screen gave other permissions too");
 			// Taken away again: a permission mod's no stands
 			mine.put(Perms.Node.PLAYERS.id.getPath(), false);

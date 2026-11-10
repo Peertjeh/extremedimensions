@@ -76,6 +76,10 @@ public final class ServerEvents {
 	public static void register() {
 		// A reset of the Seam that an operator asked for is carried out before the worlds load
 		ServerLifecycleEvents.SERVER_STARTING.register(com.extremedimensions.seam.SeamReset::starting);
+		// The relics a loot table gives are new ones, once the relics were reset (see RelicReset; after the Wanderer's
+		// leavings are added to a chest, so they are stamped too)
+		net.fabricmc.fabric.api.loot.v3.LootTableEvents.MODIFY_DROPS.register((table, context, drops) ->
+				com.extremedimensions.relic.RelicReset.found(drops));
 		ServerLifecycleEvents.SERVER_STARTED.register(s -> {
 			WorldFx.bind(s);
 			DataStore.load(s);
@@ -637,6 +641,8 @@ public final class ServerEvents {
 		com.extremedimensions.guide.Hints.known(p, d);
 		// The Elders they helped defeat, from their advancements, for the stats export (also while they are offline)
 		com.extremedimensions.compat.StatsExport.elders(p);
+		// Relics they carry from before the relics were reset crumble now
+		com.extremedimensions.relic.RelicReset.scan(p);
 		Sync.state(p, d);
 	}
 
@@ -730,6 +736,10 @@ public final class ServerEvents {
 			if (beat % 10 == 0) {
 				// A Plumb Line in hand: which way it pulls
 				com.extremedimensions.seam.FirstKnot.point(p);
+			}
+			if (beat % 20 == 13) {
+				// Relics from before the relics were reset crumble once a player comes across them (in any world)
+				com.extremedimensions.relic.RelicReset.scan(p);
 			}
 			if (!d.joinDone && ++d.ticksOnline >= Config.JOIN_DELAY_TICKS) {
 				d.joinDone = true;

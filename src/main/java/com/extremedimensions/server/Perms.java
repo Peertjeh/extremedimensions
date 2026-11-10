@@ -31,7 +31,9 @@ public final class Perms {
 		/** {@code /tether export} and {@code /tether discord_test}. */
 		EXPORT("admin/export", PermissionLevel.GAMEMASTERS),
 		/** {@code /tether seam_reset}: wipes the Seam, so admins only (and the console), never command blocks. */
-		SEAM_RESET("admin/seam_reset", PermissionLevel.ADMINS);
+		SEAM_RESET("admin/seam_reset", PermissionLevel.ADMINS),
+		/** {@code /tether relic_reset}: wipes every relic in the world, so admins only (and the console), never command blocks. */
+		RELIC_RESET("admin/relic_reset", PermissionLevel.ADMINS);
 
 		public final Identifier id;
 		public final PermissionLevel level;

@@ -354,6 +354,7 @@ changes on a server that has none; in a world of your own you hold them all.
 | `extremedimensions.admin.spawn` | `/tether boss`, `hoard`, `lurker`, `event`, `storm`, `seam`, `break_seal`, `seam_showcase` | Operator level 2 |
 | `extremedimensions.admin.export` | `/tether export`, `/tether discord_test` | Operator level 2 |
 | `extremedimensions.admin.seam_reset` | `/tether seam_reset` | Operator level 4 (admins and the console) |
+| `extremedimensions.admin.relic_reset` | `/tether relic_reset` (every relic that exists now crumbles; see the CHANGELOG, 3.47.1) | Operator level 4 (admins and the console) |
 
 In LuckPerms: `/lp group moderator permission set extremedimensions.admin.players true`. (Under the hood each is an id
 such as `extremedimensions:admin/players`; LuckPerms writes it with dots.) The fallback levels are fixed on purpose: who

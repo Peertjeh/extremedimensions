@@ -108,4 +108,6 @@ final class Alone {
 	static final String FOOTING_MASON_LEDGE = "extremedimensions_test:alone/footing_mason_ledge";
 	static final String FOOTING_MASON_WALL = "extremedimensions_test:alone/footing_mason_wall";
 	static final String FOOTING_MASON_BLINK = "extremedimensions_test:alone/footing_mason_blink";
+	// (a reset of the relics reaches every player the world knows, and every relic made while it holds)
+	static final String RELIC_RESET = "extremedimensions_test:alone/relic_reset";
 }

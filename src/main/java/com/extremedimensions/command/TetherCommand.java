@@ -34,7 +34,7 @@ import net.minecraft.server.level.ServerPlayer;
  * a Blood Cord, {@code leave}) and {@code tribe} (where you stand with it);
  * for operators Overworld curses on or off, curses set or cleared, Lurkers, hoards, the Seam, bosses and difficulty,
  * the stats export written now ({@code export}) and a test message to the Discord webhook ({@code discord_test}); for
- * admins a reset of the Seam.
+ * admins a reset of the Seam, and one of the relics.
  */
 public final class TetherCommand {
 	private TetherCommand() {}
@@ -48,6 +48,7 @@ public final class TetherCommand {
 		java.util.function.Predicate<CommandSourceStack> export = Perms.require(Perms.Node.EXPORT);
 		// Wiping a world is for admins (and the server console), not for command blocks
 		java.util.function.Predicate<CommandSourceStack> admin = Perms.require(Perms.Node.SEAM_RESET);
+		java.util.function.Predicate<CommandSourceStack> relics = Perms.require(Perms.Node.RELIC_RESET);
 		dispatcher.register(Commands.literal("tether")
 				// Anyone may ask where they stand; everything else is for operators
 				.then(Commands.literal("where").executes(c -> where(c.getSource())))
@@ -86,6 +87,10 @@ public final class TetherCommand {
 						.executes(c -> seamReset(c.getSource()))
 						.then(Commands.literal("confirm").executes(c -> seamResetConfirm(c.getSource())))
 						.then(Commands.literal("cancel").executes(c -> seamResetCancel(c.getSource()))))
+				// Starting the relics over: at once, so there is nothing waiting to call off
+				.then(Commands.literal("relic_reset").requires(relics)
+						.executes(c -> relicReset(c.getSource()))
+						.then(Commands.literal("confirm").executes(c -> relicResetConfirm(c.getSource()))))
 				.then(Commands.literal("break_seal").requires(spawn).executes(c -> {
 					MendingService.breakSeal(c.getSource().getServer());
 					return 1;
@@ -595,6 +600,28 @@ public final class TetherCommand {
 				? Component.translatableWithFallback("commands.extremedimensions.seam_reset.cancelled", "The reset of the Seam is called off.")
 				: Component.translatableWithFallback("commands.extremedimensions.seam_reset.none", "No reset of the Seam is waiting."), was);
 		return was ? 1 : 0;
+	}
+
+	/**
+	 * {@code /tether relic_reset}: what a reset of the relics does. The texts fall back on English where they are not
+	 * translated (the server console).
+	 */
+	private static int relicReset(CommandSourceStack src) {
+		src.sendSuccess(() -> Component.translatableWithFallback("commands.extremedimensions.relic_reset.ask",
+				"A reset of the relics starts them over in this world, at once: every player loses the relic bound to their Tether, online or not, "
+						+ "and every relic that exists now crumbles to dust as soon as a player holds it or opens the container it lies in "
+						+ "(one lying on the ground crumbles once it is picked up). Relics found from now on are not touched. "
+						+ "The Seam is reset apart from this, with /tether seam_reset. To go ahead: /tether relic_reset confirm"), false);
+		return 0;
+	}
+
+	/** {@code /tether relic_reset confirm}: the relics start over, at once. */
+	private static int relicResetConfirm(CommandSourceStack src) {
+		com.extremedimensions.relic.RelicReset.Result r = com.extremedimensions.relic.RelicReset.reset(src.getServer(), src.getTextName());
+		src.sendSuccess(() -> Component.translatableWithFallback("commands.extremedimensions.relic_reset.confirmed",
+				"The relics are reset. Bound relics wiped: %s. Relics crumbled to dust at once: %s. The others crumble as players come across them.",
+				r.wiped(), r.crumbled()), true);
+		return 1;
 	}
 
 	private static int show(CommandSourceStack src) {
