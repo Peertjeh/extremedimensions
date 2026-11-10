@@ -67,7 +67,12 @@ public final class PenaltyService {
 	 * cards, chosen one after the other as after several deaths in a row.
 	 */
 	public static void oweDeath(PlayerData d, boolean overworld) {
-		for (int i = 0, n = com.extremedimensions.relic.RelicService.curses(d, false); i < n; i++) {
+		oweDeath(d, overworld, false);
+	}
+
+	/** As {@link #oweDeath(PlayerData, boolean)}; a death in a boss fight is a boss's curse to the Debtor's Seal. */
+	public static void oweDeath(PlayerData d, boolean overworld, boolean boss) {
+		for (int i = 0, n = com.extremedimensions.relic.RelicService.curses(d, boss); i < n; i++) {
 			owe(d, overworld);
 		}
 	}

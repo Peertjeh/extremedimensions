@@ -479,6 +479,8 @@ public final class ExpeditionService {
 		}
 		d.diedToday = true;
 		d.collapseOwed = false;
+		// Fallen in a boss fight: to a bound Debtor's Seal, the death's curses are a boss's
+		boolean boss = RelicService.has(d, Relic.DEBTORS_SEAL) && RelicService.bossNear(p);
 		// Every death undoes part of the penance, wherever it happens
 		int toll = PenaltyService.deathToll(d);
 		d.atonementLost += toll;
@@ -494,7 +496,7 @@ public final class ExpeditionService {
 		}
 		if (Dims.OVERWORLD.equals(dim) && DataStore.overworldPenalties() && !d.collapsing) {
 			d.endedIn = Dims.OVERWORLD;
-			PenaltyService.oweDeath(d, true);
+			PenaltyService.oweDeath(d, true, boss);
 			DataStore.markDirty();
 			return;
 		}
@@ -510,7 +512,7 @@ public final class ExpeditionService {
 			d.inRun = false;
 			d.linked.clear();
 			d.endedIn = dim;
-			PenaltyService.oweDeath(d, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties());
+			PenaltyService.oweDeath(d, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties(), boss);
 			DataStore.markDirty();
 			return;
 		}
@@ -527,7 +529,7 @@ public final class ExpeditionService {
 			d.inRun = false;
 			d.linked.clear();
 			d.endedIn = dim;
-			PenaltyService.oweDeath(d, false);
+			PenaltyService.oweDeath(d, false, boss);
 			Journal.unlock(p, d, JournalEntry.ENDED);
 			Advancements.grant(p, Advancements.ENDED);
 			DataStore.markDirty();

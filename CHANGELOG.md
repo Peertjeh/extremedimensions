@@ -1,5 +1,39 @@
 # Changelog
 
+## 3.46.0: Rarer Relics
+
+### New
+- **Relics come in four tiers: common, uncommon, rare and epic.** The better a relic, the rarer it is found. A relic's
+  name takes its tier's colour, and its tooltip says its tier right under the name.
+  - An ordinary find draws a tier first and then one of its relics: common 50, uncommon 30, rare 15, epic 5
+    (`relic_weight_*`).
+  - Great foes give the rarer tiers more often: common 20, uncommon 35, rare 30, epic 15 (`relic_great_weight_*`).
+    These are the Matriarch, the Ferryman, the Last Weaver, the Knot Mother, the Starved One and a Rift Trial's gold
+    medal.
+  - Common: Ember Heart, Pale Shard, Tithe Bell, Pilgrim's Sandal, Lodestone Chip.
+  - Uncommon: Hungering Hand, Featherbone, Kindred Knot, Thornward Bark, Hollow Whistle.
+  - Rare: Keeper's Eye, Seam Lantern, Lurker's Tooth, Last Stitch, Hunger's Fang.
+  - Epic: Debtor's Seal, Unbound Pinion, and the Held's Chain, which is still only found where the Held left it.
+- **Eight new relics**, each with a gift and a price. Every number is a setting.
+  - **Pilgrim's Sandal** (common): Speed I on an expedition and in the Seam; you hunger 25% faster there.
+  - **Lodestone Chip** (common): the Tether drains 10% slower everywhere beyond the wound; a Collapse brings one curse
+    more.
+  - **Thornward Bark** (uncommon): whoever strikes you up close takes 2 damage back (not from arrows, never in a loop);
+    your own blows by hand deal 10% less.
+  - **Hollow Whistle** (uncommon): the Hollowlings' barter costs 30% less; the standing you win with the tribe is
+    halved (what you lose is not).
+  - **Last Stitch** (rare): once an expedition (or a Seam visit from home), a killing blow leaves you at 2 hearts with
+    a moment of Resistance. It does not hold against the void or /kill, nor while you hold a totem. Your maximum health
+    is a heart lower.
+  - **Hunger's Fang** (rare): 15% of the damage you deal by hand heals you, the killing blow included; you hunger 50%
+    faster, always.
+  - **Debtor's Seal** (epic): all atonement you earn is doubled, fragments included (what an echo gives back is not).
+    Every curse a death, a Collapse or a Lurker brings (the Cave Lurker, the Tidewalker and a swarm too) comes twice. A
+    death in a boss fight, or an Elder's ultimate, brings its curses three times.
+  - **Unbound Pinion** (epic): the Elders cannot pull you from the sky or bind your wings, so you can fly with an elytra
+    through a boss fight. In return you take 30% more damage from everything, and an elytra you glide on wears 25 times
+    as fast. It stops one point short of breaking, as a worn-out elytra does.
+
 ## 3.45.0: Nothing Left Behind
 
 ### Fixed

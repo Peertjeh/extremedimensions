@@ -399,14 +399,21 @@ public final class RelicService {
 
 	/**
 	 * How many times a curse comes, from the relic bound: with the Debtor's Seal, each curse of a death (or a Collapse) and
-	 * each a Lurker lays comes {@code relic_debtors_seal_curses} times, each an Elder's ultimate lays
-	 * {@code relic_debtors_seal_boss_curses} times. Once otherwise.
+	 * each a Lurker lays comes {@code relic_debtors_seal_curses} times, each an Elder's ultimate lays (and each
+	 * of a death in a boss fight) {@code relic_debtors_seal_boss_curses} times. Once otherwise.
 	 */
 	public static int curses(PlayerData d, boolean elder) {
 		if (!has(d, Relic.DEBTORS_SEAL)) {
 			return 1;
 		}
 		return Math.max(1, elder ? Config.RELIC_DEBTORS_SEAL_BOSS_CURSES : Config.RELIC_DEBTORS_SEAL_CURSES);
+	}
+
+	/** A boss fight is under way around this player: an Elder or the Starved One alive within 64 blocks. */
+	public static boolean bossNear(ServerPlayer p) {
+		return !p.level().getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(64),
+				e -> e.isAlive() && (e instanceof com.extremedimensions.elder.ElderBoss || e instanceof com.extremedimensions.mending.StarvedOne))
+				.isEmpty();
 	}
 
 	/** The young's prices, as a multiple, from the relic bound: less with the Hollow Whistle. */

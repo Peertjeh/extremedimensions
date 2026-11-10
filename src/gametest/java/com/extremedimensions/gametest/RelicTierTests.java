@@ -420,6 +420,11 @@ public class RelicTierTests {
 			PenaltyService.oweDeath(d, false);
 			check(helper, d.pendingPenalties == owed + Config.RELIC_DEBTORS_SEAL_CURSES, "a death owed %s curses with the Debtor's Seal",
 					d.pendingPenalties - owed);
+			// A death in a boss fight: a boss's curse, three times
+			owed = d.pendingPenalties;
+			PenaltyService.oweDeath(d, false, true);
+			check(helper, d.pendingPenalties == owed + Config.RELIC_DEBTORS_SEAL_BOSS_CURSES,
+					"a death in a boss fight owed %s curses with the Debtor's Seal", d.pendingPenalties - owed);
 			owed = d.pendingPenalties;
 			ExpeditionService.oweCollapse(d, false);
 			check(helper, d.pendingPenalties == owed + Config.RELIC_DEBTORS_SEAL_CURSES, "a Collapse owed %s curses with the Debtor's Seal",
