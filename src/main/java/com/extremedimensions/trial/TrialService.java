@@ -246,8 +246,9 @@ public final class TrialService {
 		if (fragments > 0) {
 			WorldFx.give(p, new ItemStack(ModItems.TETHER_FRAGMENT, fragments));
 		}
+		// (only the gold medal pays relics: drawn from the great foes' odds)
 		for (int i = 0; i < relics; i++) {
-			WorldFx.give(p, RelicService.random());
+			WorldFx.give(p, RelicService.random(true));
 		}
 		if (gold) {
 			for (ItemStack extra : com.extremedimensions.lore.Loot.roll((net.minecraft.server.level.ServerLevel) p.level(), com.extremedimensions.lore.Loot.TRIAL_GOLD, p.position())) {

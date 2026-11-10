@@ -235,7 +235,14 @@ public final class ModItems {
 	private static java.util.Map<com.extremedimensions.relic.Relic, Item> relics() {
 		java.util.Map<com.extremedimensions.relic.Relic, Item> out = new java.util.EnumMap<>(com.extremedimensions.relic.Relic.class);
 		for (com.extremedimensions.relic.Relic r : com.extremedimensions.relic.Relic.values()) {
-			out.put(r, register(r.id, 1, Rarity.EPIC));
+			// The name's colour follows the relic's tier
+			Rarity rarity = switch (r.tier) {
+				case COMMON -> Rarity.COMMON;
+				case UNCOMMON -> Rarity.UNCOMMON;
+				case RARE -> Rarity.RARE;
+				case EPIC -> Rarity.EPIC;
+			};
+			out.put(r, register(r.id, 1, rarity));
 		}
 		return java.util.Collections.unmodifiableMap(out);
 	}

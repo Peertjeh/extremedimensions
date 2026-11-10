@@ -1425,7 +1425,7 @@ public final class FerrymanService {
 			ElderFx.loot(f, fare.target, s);
 		}
 		if (ThreadLocalRandom.current().nextDouble() < Config.FERRYMAN_RELIC_CHANCE) {
-			ElderFx.loot(f, fare.target, RelicService.random());
+			ElderFx.loot(f, fare.target, RelicService.random(true));
 		}
 		List<ServerPlayer> there = new ArrayList<>();
 		for (ServerPlayer p : level.players()) {

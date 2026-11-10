@@ -940,7 +940,7 @@ public class CursesScreen extends Screen {
 			if (shownFor != relic) {
 				shownFor = relic;
 				this.setTooltip(Tooltip.create(has
-						? Component.empty().append(Component.translatable(relic.nameKey())).append("\n")
+						? Component.empty().append(Component.translatable(relic.nameKey()).withStyle(relic.tier.colour)).append("\n")
 								.append(Component.literal("+ ").append(Component.translatable(relic.giftKey(), relic.giftArgs())).withStyle(net.minecraft.ChatFormatting.GREEN)).append("\n")
 								.append(Component.literal("- ").append(Component.translatable(relic.priceKey(), relic.priceArgs())).withStyle(net.minecraft.ChatFormatting.RED)).append("\n")
 								.append(Component.translatable("gui.extremedimensions.relic.unbind").withStyle(net.minecraft.ChatFormatting.GRAY))

@@ -63,7 +63,8 @@ public final class ElderSpells {
 		}
 		int needed = Math.max(1, (int) Math.round(Config.ELDER_SNARE_SECONDS * 20));
 		for (ServerPlayer q : ElderFx.targets(b, ElderPower.reach(64))) {
-			if (!q.isFallFlying()) {
+			// (the Unbound Pinion's bearer flies as they please)
+			if (!q.isFallFlying() || !com.extremedimensions.relic.RelicService.grounds(q)) {
 				GLIDING.remove(q.getUUID());
 				continue;
 			}
@@ -75,8 +76,14 @@ public final class ElderSpells {
 		}
 	}
 
-	/** It pulls a flyer out of the air: a hard drag to the ground, a blow, and their wings bound (public for tests). */
+	/**
+	 * It pulls a flyer out of the air: a hard drag to the ground, a blow, and their wings bound (public for tests). Never
+	 * the Unbound Pinion's bearer.
+	 */
 	public static void snare(ElderBoss b, ServerPlayer q) {
+		if (!com.extremedimensions.relic.RelicService.grounds(q)) {
+			return;
+		}
 		ServerLevel level = (ServerLevel) b.level();
 		int who = ElderFx.index(b);
 		float yaw = ElderFx.yawTo(b, q.getX(), q.getZ());

@@ -63,6 +63,16 @@ public final class PenaltyService {
 	}
 
 	/**
+	 * A death's curse (a Collapse's too): owed once, or as many times as a bound Debtor's Seal asks, each its own offer of
+	 * cards, chosen one after the other as after several deaths in a row.
+	 */
+	public static void oweDeath(PlayerData d, boolean overworld) {
+		for (int i = 0, n = com.extremedimensions.relic.RelicService.curses(d, false); i < n; i++) {
+			owe(d, overworld);
+		}
+	}
+
+	/**
 	 * Draws the cards for the first owed curse. Sometimes the whole offer is multiplied: then every card carries its
 	 * own multiplier. With every curse the death draws from at its maximum, the cards come from deeper down (see
 	 * {@link #deeper}); with nothing left there either, the death costs no curse and the Starved take all levels instead.
@@ -220,12 +230,29 @@ public final class PenaltyService {
 
 	/** As {@link #curse(ServerPlayer, boolean)}, with where it came from said (see CurseLog). */
 	public static Penalty curse(ServerPlayer p, boolean overworld, CurseLog.Source source) {
-		return CurseLog.from(source, () -> curse(p, overworld, 0));
+		return curse(p, overworld, 0, source);
 	}
 
-	/** As {@link #curse(ServerPlayer, boolean, double)}, with where it came from said (see CurseLog). */
+	/**
+	 * As {@link #curse(ServerPlayer, boolean, double)}, with where it came from said (see CurseLog). A Lurker's curse (any
+	 * of its kind: the Cave Lurker, the Tidewalker, a swarm) comes again for each time a bound Debtor's Seal asks, each
+	 * drawn afresh; the first is returned.
+	 */
 	public static Penalty curse(ServerPlayer p, boolean overworld, double extremeChance, CurseLog.Source source) {
-		return CurseLog.from(source, () -> curse(p, overworld, extremeChance));
+		return CurseLog.from(source, () -> {
+			Penalty first = curse(p, overworld, extremeChance);
+			int times = byLurker(source) ? com.extremedimensions.relic.RelicService.curses(DataStore.get(p.getUUID()), false) : 1;
+			for (int i = 1; first != null && i < times; i++) {
+				curse(p, overworld, extremeChance);
+			}
+			return first;
+		});
+	}
+
+	/** Whether a curse came from a Lurker or one of its kind. */
+	private static boolean byLurker(CurseLog.Source source) {
+		return source == CurseLog.Source.LURKER || source == CurseLog.Source.CAVE_LURKER || source == CurseLog.Source.TIDEWALKER
+				|| source == CurseLog.Source.SWARM;
 	}
 
 	/** As {@link #curse(ServerPlayer, boolean)}, the curse being one of the Extreme set with this chance (if one can come). */
@@ -283,8 +310,16 @@ public final class PenaltyService {
 		return p.extreme ? (int) Math.ceil(base * Math.max(1, Config.EXTREME_ATONE_FACTOR)) : base;
 	}
 
-	/** Atonement earned in one world goes to the curse being atoned for in that set (or the heaviest one there). */
+	/**
+	 * Atonement earned in one world goes to the curse being atoned for in that set (or the heaviest one there). A bound
+	 * Debtor's Seal multiplies what is earned.
+	 */
 	public static void atone(ServerPlayer p, PlayerData d, boolean overworld, int points) {
+		restore(p, d, overworld, com.extremedimensions.relic.RelicService.atonement(d, points));
+	}
+
+	/** Atonement given back rather than earned (an echo returns what a death took): as {@link #atone}, but no relic adds to it. */
+	public static void restore(ServerPlayer p, PlayerData d, boolean overworld, int points) {
 		for (int guard = 0; points > 0 && guard < 16; guard++) {
 			Penalty t = target(d, overworld);
 			if (t == null) {
@@ -353,7 +388,8 @@ public final class PenaltyService {
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.fragments_spent", Component.translatable(t.nameKey()), max), true);
 			return InteractionResult.SUCCESS;
 		}
-		int gain = fragmentGain(d, t), need = cost(d, t);
+		// (what a fragment atones for is earned: a bound Debtor's Seal multiplies it)
+		int gain = com.extremedimensions.relic.RelicService.atonement(d, fragmentGain(d, t)), need = cost(d, t);
 		int have = d.atonement.getOrDefault(t.id, 0) + gain;
 		if (!p.isCreative()) {
 			stack.shrink(1);

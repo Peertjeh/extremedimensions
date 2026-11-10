@@ -862,6 +862,43 @@ public final class Config {
 	public static double RELIC_KEEPER_CHANCE = 0.35;
 	public static int RELIC_STARVED_ONE = 1;
 	public static double RELIC_SEAM_CHEST_CHANCE = 0.05;
+	/**
+	 * How often each tier of relic is found, as weights (a tier first, then a relic of it): from ordinary finds, and from
+	 * great foes (the Elders, the Starved One, a Rift Trial's gold medal). With every weight of a set 0, all are as likely.
+	 */
+	public static int RELIC_WEIGHT_COMMON = 50;
+	public static int RELIC_WEIGHT_UNCOMMON = 30;
+	public static int RELIC_WEIGHT_RARE = 15;
+	public static int RELIC_WEIGHT_EPIC = 5;
+	public static int RELIC_GREAT_WEIGHT_COMMON = 20;
+	public static int RELIC_GREAT_WEIGHT_UNCOMMON = 35;
+	public static int RELIC_GREAT_WEIGHT_RARE = 30;
+	public static int RELIC_GREAT_WEIGHT_EPIC = 15;
+	/** Pilgrim's Sandal: the level of Speed on an expedition and in the Seam (0 = none); how much faster hunger runs there. */
+	public static int RELIC_PILGRIMS_SANDAL_SPEED = 1;
+	public static double RELIC_PILGRIMS_SANDAL_HUNGER = 1.25;
+	/** Lodestone Chip: drain multiplier everywhere beyond the wound; curses a Collapse costs on top. */
+	public static double RELIC_LODESTONE_CHIP_DRAIN = 0.9;
+	public static int RELIC_LODESTONE_CHIP_COLLAPSE = 1;
+	/** Thornward Bark: damage whoever strikes you in melee takes back; what your own melee deals, as a multiple. */
+	public static double RELIC_THORNWARD_BARK_THORNS = 2.0;
+	public static double RELIC_THORNWARD_BARK_MELEE = 0.9;
+	/** Hollow Whistle: what the young's wares cost, as a multiple; the standing gained with the tribe, as a multiple. */
+	public static double RELIC_HOLLOW_WHISTLE_PRICE = 0.7;
+	public static double RELIC_HOLLOW_WHISTLE_STANDING = 0.5;
+	/** Last Stitch: health a killing blow leaves you at, once an expedition (0 = never); maximum health it takes. */
+	public static double RELIC_LAST_STITCH_HEALTH = 4.0;
+	public static double RELIC_LAST_STITCH_MAX_HEALTH = 2.0;
+	/** Hunger's Fang: share of your melee damage that heals you; how much faster you hunger. */
+	public static double RELIC_HUNGERS_FANG_LEECH = 0.15;
+	public static double RELIC_HUNGERS_FANG_HUNGER = 1.5;
+	/** Debtor's Seal: atonement earned, as a multiple; times each curse of a death or a Lurker comes, and an Elder's. */
+	public static double RELIC_DEBTORS_SEAL_ATONEMENT = 2.0;
+	public static int RELIC_DEBTORS_SEAL_CURSES = 2;
+	public static int RELIC_DEBTORS_SEAL_BOSS_CURSES = 3;
+	/** Unbound Pinion: damage taken, as a multiple; how many times as fast an elytra wears while you glide. */
+	public static double RELIC_UNBOUND_PINION_DAMAGE = 1.3;
+	public static int RELIC_UNBOUND_PINION_WEAR = 25;
 
 	// --- Enchantments: the Art of Binding (Woundbane's numbers are in its data file) -----------
 
@@ -2076,7 +2113,15 @@ public final class Config {
 			{"tapestry_knot_fray", 0, 10}, {"tapestry_knot_strands", 0, 1}, {"tapestry_heart_echo", 0, 1}, {"weaving_seconds", 30, 3600},
 			{"weaving_ward", 1, 10000}, {"weaving_wave_seconds", 5, 600}, {"weaving_wave", 0, 40}, {"weaving_wave_per_player", 0, 20},
 			{"weaving_bite", 0, 1000}, {"weaving_damage", 0, 100}, {"new_thread_elder", 0, 5}, {"new_thread_atonement", 0, 5},
-			{"export_minutes", 1, 1440}, {"boss_mace_damage", 0, 1}};
+			{"export_minutes", 1, 1440}, {"boss_mace_damage", 0, 1},
+			{"relic_weight_common", 0, 1000}, {"relic_weight_uncommon", 0, 1000}, {"relic_weight_rare", 0, 1000}, {"relic_weight_epic", 0, 1000},
+			{"relic_great_weight_common", 0, 1000}, {"relic_great_weight_uncommon", 0, 1000}, {"relic_great_weight_rare", 0, 1000},
+			{"relic_great_weight_epic", 0, 1000}, {"relic_pilgrims_sandal_speed", 0, 5}, {"relic_pilgrims_sandal_hunger", 1, 5},
+			{"relic_lodestone_chip_drain", 0, 1}, {"relic_lodestone_chip_collapse", 0, 10}, {"relic_thornward_bark_thorns", 0, 40},
+			{"relic_thornward_bark_melee", 0, 1}, {"relic_hollow_whistle_price", 0, 1}, {"relic_hollow_whistle_standing", 0, 1},
+			{"relic_last_stitch_health", 0, 20}, {"relic_last_stitch_max_health", 0, 10}, {"relic_hungers_fang_leech", 0, 1},
+			{"relic_hungers_fang_hunger", 1, 5}, {"relic_debtors_seal_atonement", 1, 10}, {"relic_debtors_seal_curses", 1, 5},
+			{"relic_debtors_seal_boss_curses", 1, 5}, {"relic_unbound_pinion_damage", 1, 5}, {"relic_unbound_pinion_wear", 1, 100}};
 
 	/** Brings a setting back within its bounds, if it has any. */
 	private static void bound(Setting st) {

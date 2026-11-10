@@ -246,7 +246,7 @@ public final class Echoes {
 		PlayerData od = DataStore.get(ownerId);
 		if (owner != null) {
 			if (back > 0) {
-				PenaltyService.atone(owner, od, false, back);
+				PenaltyService.restore(owner, od, false, back);
 				owner.sendSystemMessage(Component.translatable("gui.extremedimensions.echo.returned", back).withStyle(ChatFormatting.AQUA));
 			}
 		} else {
@@ -311,7 +311,7 @@ public final class Echoes {
 		if (d.echoOwed > 0) {
 			int back = d.echoOwed;
 			d.echoOwed = 0;
-			PenaltyService.atone(p, d, false, back);
+			PenaltyService.restore(p, d, false, back);
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.echo.returned", back).withStyle(ChatFormatting.AQUA));
 			DataStore.markDirty();
 		}

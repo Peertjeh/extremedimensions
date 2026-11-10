@@ -245,9 +245,16 @@ public final class ServerEvents {
 		// Tethershot: an arrow hauls what it hits toward the archer
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(com.extremedimensions.binding.Charms::afterDamage);
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(com.extremedimensions.penalty.AbyssalCurses::afterDamage);
+		// The Thornward Bark hurts back whoever strikes its bearer up close; Hunger's Fang heals its bearer's blows (the
+		// killing one too)
+		ServerLivingEntityEvents.AFTER_DAMAGE.register(com.extremedimensions.relic.RelicService::afterDamage);
+		ServerLivingEntityEvents.ALLOW_DAMAGE.register(com.extremedimensions.relic.RelicService::striking);
+		ServerLivingEntityEvents.AFTER_DEATH.register(com.extremedimensions.relic.RelicService::slain);
 		// Bitter Cure: a zombie villager cured breaks it for those close by
 		ServerLivingEntityEvents.MOB_CONVERSION.register((previous, converted, context) -> com.extremedimensions.penalty.AbyssalTolls.converted(previous, converted));
 		ServerLivingEntityEvents.ALLOW_DEATH.register(ExtremeCurses::oath);
+		// The Last Stitch holds a killing blow once an expedition (before an ally's help is needed)
+		ServerLivingEntityEvents.ALLOW_DEATH.register(com.extremedimensions.relic.RelicService::stitch);
 		// Co-op: struck down with an ally near, a player falls instead of dying, and cannot be hurt while fallen
 		ServerLivingEntityEvents.ALLOW_DEATH.register(com.extremedimensions.coop.FallenService::allowDeath);
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> com.extremedimensions.coop.FallenService.mayHurt(entity, source));
@@ -775,6 +782,8 @@ public final class ServerEvents {
 			sync |= TetherService.tick(p, d, dim);
 			boolean onExpedition = Dims.isBeyond(dim) && d.inRun && !d.collapsing;
 			sync |= PenaltyService.tick(p, d, onExpedition, Dims.OVERWORLD.equals(dim) && !d.collapsing);
+			// The relic bound: the Pilgrim's Sandal's speed, the Unbound Pinion's wear
+			com.extremedimensions.relic.RelicService.tick(p, d);
 
 			if (beat % 100 == 0) {
 				CurseEffects.refreshEffects(p, d);

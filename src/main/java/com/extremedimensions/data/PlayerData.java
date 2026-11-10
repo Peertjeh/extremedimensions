@@ -146,6 +146,10 @@ public class PlayerData {
 	public boolean heldSpent = false;
 	/** Ticks the Held's Chain still holds the player after the charge ran out. */
 	public transient int heldTicks = 0;
+	/** This expedition (or Seam visit), the Last Stitch already held a killing blow (kept, so leaving and coming back does not mend it). */
+	public boolean stitchSpent = false;
+	/** Ticks gliding without a break with the Unbound Pinion bound (its wear comes every second of them). */
+	public transient int pinionGlide = 0;
 	/** The Homebound pieces the player carries, as last counted, and when (game time): counted once a second. */
 	public transient int homeboundPieces = 0;
 	public transient long homeboundCounted = Long.MIN_VALUE / 2;

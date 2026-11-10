@@ -140,7 +140,8 @@ public final class Tooltips {
 		charms(stack, lines);
 		com.extremedimensions.relic.Relic relic = com.extremedimensions.relic.RelicService.of(stack);
 		if (relic != null) {
-			// A relic: its gift, its price (both with the server's numbers) and how to bind it
+			// A relic: its tier right under its name, its gift, its price (both with the server's numbers) and how to bind it
+			lines.add(Math.min(1, lines.size()), Component.translatable(relic.tier.nameKey()).withStyle(relic.tier.colour));
 			lines.add(Component.literal("+ ").append(Component.translatable(relic.giftKey(), relic.giftArgs())).withStyle(ChatFormatting.GREEN));
 			lines.add(Component.literal("- ").append(Component.translatable(relic.priceKey(), relic.priceArgs())).withStyle(ChatFormatting.RED));
 			lines.add(Component.translatable("tooltip.extremedimensions.relic.bind").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));

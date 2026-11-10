@@ -2044,7 +2044,7 @@ public final class WeaverService {
 			ElderFx.loot(w, u.target, s);
 		}
 		for (int i = 0; i < Math.max(0, knot ? Config.KNOT_MOTHER_RELICS : Config.WEAVER_RELICS); i++) {
-			ElderFx.loot(w, u.target, RelicService.random());
+			ElderFx.loot(w, u.target, RelicService.random(true));
 		}
 		if (knot) {
 			com.extremedimensions.seam.FirstKnot.slain(level.getServer().overworld().getGameTime());

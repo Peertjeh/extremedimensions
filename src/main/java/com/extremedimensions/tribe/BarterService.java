@@ -153,7 +153,8 @@ public final class BarterService {
 			case TRUSTED -> Config.TRIBE_BARTER_TRUSTED_DISCOUNT;
 			default -> 0;
 		};
-		double k = Math.max(0, Config.TRIBE_BARTER_PRICE) * (1 - Math.max(0, Math.min(0.95, off)));
+		// (the Hollow Whistle's bearer pays less again)
+		double k = Math.max(0, Config.TRIBE_BARTER_PRICE) * (1 - Math.max(0, Math.min(0.95, off))) * RelicService.barter(p);
 		return Math.max(1, (int) Math.ceil(w.price() * k));
 	}
 

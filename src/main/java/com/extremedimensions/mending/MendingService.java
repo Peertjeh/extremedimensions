@@ -715,7 +715,8 @@ public final class MendingService {
 				there.add(p);
 				// Each who fought it takes something from its hoard of everything it ever ate
 				for (int i = 0; i < Math.max(0, com.extremedimensions.config.Config.RELIC_STARVED_ONE); i++) {
-					WorldFx.give(p, com.extremedimensions.relic.RelicService.random());
+					// (a great foe: its relics are drawn from the great foes' odds)
+					WorldFx.give(p, com.extremedimensions.relic.RelicService.random(true));
 				}
 				Advancements.grant(p, Advancements.STARVED_SLAIN);
 				Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.WANDERER);

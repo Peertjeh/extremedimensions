@@ -762,7 +762,8 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(10);
 			ctx.runOnClient(mc -> check(mc.player.getPose() != net.minecraft.world.entity.Pose.SWIMMING, "back on their feet, the player still crawls"));
 
-			// Relics: all ten (the tenth in the bag), and the Ember Heart bound to the Tether (shown in the Curses screen)
+			// Relics: every one of them (those past the ninth in the bag), and the Ember Heart bound to the Tether (shown in the
+			// Curses screen)
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
 				int i = 0;

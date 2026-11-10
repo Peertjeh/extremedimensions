@@ -46,6 +46,7 @@ final class Alone {
 	static final String KNOT_MOTHER = "extremedimensions_test:alone/knot_mother";
 	static final String ELDER_HEALTH = "extremedimensions_test:alone/elder_health";
 	static final String FLYERS_PULLED = "extremedimensions_test:alone/flyers_pulled";
+	static final String PINION_UNBOUND = "extremedimensions_test:alone/pinion_unbound";
 	static final String FERRYMAN_GAOL = "extremedimensions_test:alone/ferryman_gaol";
 	static final String WEAVER_LANCE = "extremedimensions_test:alone/weaver_lance";
 	static final String LANCE_HIGH = "extremedimensions_test:alone/lance_high";

@@ -657,7 +657,7 @@ public final class MatriarchService {
 			ElderFx.loot(m, f.target, s);
 		}
 		for (int i = 0; i < Math.max(0, Config.MATRIARCH_RELICS); i++) {
-			ElderFx.loot(m, f.target, RelicService.random());
+			ElderFx.loot(m, f.target, RelicService.random(true));
 		}
 		// She has fallen to the one she came for, wherever they stood (she does not come for them again), and to all near
 		DataStore.get(f.target).matriarchSlain = true;

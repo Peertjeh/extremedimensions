@@ -94,16 +94,21 @@ public final class ElderUltimate {
 	/** One player: extreme curses, or, when they have no room for them, everything they carry flung around them. */
 	public static void strike(ServerPlayer p, String bossKey) {
 		PlayerData d = DataStore.get(p.getUUID());
-		List<Penalty> room = new ArrayList<>(Penalty.available(d, Penalty.Group.EXTREME));
-		Collections.shuffle(room);
 		int want = Math.max(0, Config.ELDER_ULTIMATE_CURSES);
 		List<Penalty> laid = new ArrayList<>();
-		for (Penalty pen : room) {
-			if (laid.size() >= want) {
-				break;
-			}
-			if (com.extremedimensions.penalty.CurseLog.add(d, pen, 1, com.extremedimensions.penalty.CurseLog.Source.ELDER) > 0) {
-				laid.add(pen);
+		// Once, or again for each time a bound Debtor's Seal asks: each time drawn afresh among the curses with room
+		for (int pass = 0, passes = com.extremedimensions.relic.RelicService.curses(d, true); pass < passes; pass++) {
+			List<Penalty> room = new ArrayList<>(Penalty.available(d, Penalty.Group.EXTREME));
+			Collections.shuffle(room);
+			int n = 0;
+			for (Penalty pen : room) {
+				if (n >= want) {
+					break;
+				}
+				if (com.extremedimensions.penalty.CurseLog.add(d, pen, 1, com.extremedimensions.penalty.CurseLog.Source.ELDER) > 0) {
+					laid.add(pen);
+					n++;
+				}
 			}
 		}
 		if (!laid.isEmpty()) {
@@ -112,11 +117,12 @@ public final class ElderUltimate {
 			WorldFx.particles(p, "minecraft:sculk_soul", 1.2, 0.6, 0.03, 30);
 			Journal.unlock(p, d, JournalEntry.SCARS);
 			MutableComponent names = Component.empty();
-			for (int i = 0; i < laid.size(); i++) {
+			List<Penalty> named = new ArrayList<>(new java.util.LinkedHashSet<>(laid));
+			for (int i = 0; i < named.size(); i++) {
 				if (i > 0) {
 					names.append(", ");
 				}
-				names.append(Component.translatable(laid.get(i).nameKey()));
+				names.append(Component.translatable(named.get(i).nameKey()));
 			}
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.ultimate_curse", Component.translatable(bossKey), names));
 		}

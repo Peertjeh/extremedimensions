@@ -96,13 +96,14 @@ public final class Standing {
 
 	/**
 	 * Changes the player's standing; says so above the hotbar, and in the chat when their level changes. What falls on
-	 * the rest of their clan falls on it too (see ClanService).
+	 * the rest of their clan falls on it too (see ClanService). A gain is a share of itself for the Hollow Whistle's
+	 * bearer (their clan's share of it is not).
 	 */
 	public static void change(ServerPlayer p, int delta, String why) {
 		if (Config.TRIBE_ENABLED <= 0 || delta == 0 || p.isCreative() || p.isSpectator()) {
 			return;
 		}
-		shift(p.getUUID(), p, delta, Component.translatable(why));
+		shift(p.getUUID(), p, com.extremedimensions.relic.RelicService.standing(p, delta), Component.translatable(why));
 		com.extremedimensions.coop.ClanService.spread(p, delta, why);
 	}
 

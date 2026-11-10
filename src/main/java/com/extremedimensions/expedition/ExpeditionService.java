@@ -113,6 +113,8 @@ public final class ExpeditionService {
 		d.inRun = true;
 		d.heldSpent = false;
 		d.heldTicks = 0;
+		// A new expedition, a new Last Stitch
+		d.stitchSpent = false;
 		d.runActive = 0;
 		d.ferrymanRolled = false;
 		d.masonRolled = false;
@@ -416,12 +418,7 @@ public final class ExpeditionService {
 		d.collapseOwed = true;
 		d.collapseRetry = -Config.COLLAPSE_PULL_TICKS;
 		d.collapses++;
-		PenaltyService.owe(d, false);
-		if (thrift) {
-			for (int i = 0; i < Config.ENCH_THRIFT_COLLAPSE; i++) {
-				PenaltyService.owe(d, false);
-			}
-		}
+		oweCollapse(d, thrift);
 		Journal.unlock(p, d, JournalEntry.STARVED);
 		Advancements.grant(p, Advancements.COLLAPSE);
 		WorldFx.fx(p, Fx.COLLAPSE, 0);
@@ -432,6 +429,24 @@ public final class ExpeditionService {
 		WorldFx.sound(p, "extremedimensions:collapse", 1.2f, 1.0f);
 		WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.6, 0.05, 30);
 		DataStore.markDirty();
+	}
+
+	/**
+	 * The curses a Collapse costs (public for tests): its own, as a death's (so a bound Debtor's Seal asks it more than
+	 * once), and on top of it what a Tether with Thrift and a bound Lodestone Chip take for the charge they eked out.
+	 */
+	public static void oweCollapse(PlayerData d, boolean thrift) {
+		PenaltyService.oweDeath(d, false);
+		if (thrift) {
+			for (int i = 0; i < Config.ENCH_THRIFT_COLLAPSE; i++) {
+				PenaltyService.owe(d, false);
+			}
+		}
+		if (RelicService.has(d, Relic.LODESTONE_CHIP)) {
+			for (int i = 0; i < Config.RELIC_LODESTONE_CHIP_COLLAPSE; i++) {
+				PenaltyService.owe(d, false);
+			}
+		}
 	}
 
 	/** Runs every tick while collapsing: the pull, then the death (retried every second as a safety net). */
@@ -479,7 +494,7 @@ public final class ExpeditionService {
 		}
 		if (Dims.OVERWORLD.equals(dim) && DataStore.overworldPenalties() && !d.collapsing) {
 			d.endedIn = Dims.OVERWORLD;
-			PenaltyService.owe(d, true);
+			PenaltyService.oweDeath(d, true);
 			DataStore.markDirty();
 			return;
 		}
@@ -495,7 +510,7 @@ public final class ExpeditionService {
 			d.inRun = false;
 			d.linked.clear();
 			d.endedIn = dim;
-			PenaltyService.owe(d, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties());
+			PenaltyService.oweDeath(d, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties());
 			DataStore.markDirty();
 			return;
 		}
@@ -512,7 +527,7 @@ public final class ExpeditionService {
 			d.inRun = false;
 			d.linked.clear();
 			d.endedIn = dim;
-			PenaltyService.owe(d, false);
+			PenaltyService.oweDeath(d, false);
 			Journal.unlock(p, d, JournalEntry.ENDED);
 			Advancements.grant(p, Advancements.ENDED);
 			DataStore.markDirty();
