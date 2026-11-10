@@ -144,7 +144,8 @@ public final class Tooltips {
 			lines.add(Math.min(1, lines.size()), Component.translatable(relic.tier.nameKey()).withStyle(relic.tier.colour));
 			lines.add(Component.literal("+ ").append(Component.translatable(relic.giftKey(), relic.giftArgs())).withStyle(ChatFormatting.GREEN));
 			lines.add(Component.literal("- ").append(Component.translatable(relic.priceKey(), relic.priceArgs())).withStyle(ChatFormatting.RED));
-			lines.add(Component.translatable("tooltip.extremedimensions.relic.bind").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+			lines.add(Component.translatable(Config.RELIC_SINGLE_USE > 0 ? "tooltip.extremedimensions.relic.bind" : "tooltip.extremedimensions.relic.bind_kept")
+					.withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
 			return;
 		}
 		if (key != null) {

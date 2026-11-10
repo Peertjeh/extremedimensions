@@ -302,7 +302,9 @@ public final class ViewerContent {
 		}
 		for (Map.Entry<com.extremedimensions.relic.Relic, Item> e : ModItems.RELICS.entrySet()) {
 			if (!"helds_chain".equals(BuiltInRegistries.ITEM.getKey(e.getValue()).getPath())) {
-				out.add(new Info(new ItemStack(e.getValue()), Component.translatable("viewer.extremedimensions.info.relic")));
+				// (whether a relic serves once, as this world has it)
+				out.add(new Info(new ItemStack(e.getValue()), Component.translatable(Config.RELIC_SINGLE_USE > 0 ? "viewer.extremedimensions.info.relic"
+						: "viewer.extremedimensions.info.relic_kept")));
 			}
 		}
 		out.add(new Info(new ItemStack(ModItems.TETHERITE_UPGRADE_SMITHING_TEMPLATE), binding()));

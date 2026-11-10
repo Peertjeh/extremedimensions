@@ -618,7 +618,7 @@ public final class SculkLurkerService {
 			sl.setLurkerPose(Lurker.POSE_TAKE);
 			sl.getLookControl().setLookAt(st.sensor.getX() + 0.5, st.sensor.getY() + 0.5, st.sensor.getZ() + 0.5, 30, 30);
 			if (s.getBlock() instanceof SculkSensorBlock sensor) {
-				// in its player's name: a shrieker hears it even from one the sculk cannot hear (the Muffled Bell's bearer)
+				// in its player's name: a shrieker hears it, though the sculk hears nothing the Muffled Bell's bearer does themselves
 				BlockPos at = st.sensor;
 				com.extremedimensions.relic.RelicService.inTheirName(() -> sensor.activate(p, level, at, s, 15, 1));
 				st.sensorsSetOff++;

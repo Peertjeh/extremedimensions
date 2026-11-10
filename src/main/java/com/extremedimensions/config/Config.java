@@ -921,6 +921,11 @@ public final class Config {
 	public static double RELIC_FERRYMANS_OBOL_DRAIN = 1.15;
 	/** Hollow Crown: how much of natural healing is left to you (0 = none, 1 = all of it). */
 	public static double RELIC_HOLLOW_CROWN_REGEN = 0.0;
+	/**
+	 * Relics serve once (1 on, 0 off): one bound over another, or taken off the Tether, breaks for good. Off, the relic
+	 * bound before comes back to the hand, and one taken off does too.
+	 */
+	public static int RELIC_SINGLE_USE = 1;
 
 	// --- Enchantments: the Art of Binding (Woundbane's numbers are in its data file) -----------
 
@@ -1903,7 +1908,7 @@ public final class Config {
 			"elder_arena_phases", "elder_cores", "elder_isle_fall", "elder_pierce", "matriarch_hex_milk", "coop_revive",
 			"coop_fallen_locked", "coop_burden", "coop_shared_anchors", "tribe_enabled", "tribe_raid", "clan_enabled",
 			"tapestry_roots_peace", "tapestry_chain_steady", "unweaving", "placeholders", "pale_reach",
-			"pale_hauler_enabled", "pale_squall", "pale_home_calm");
+			"pale_hauler_enabled", "pale_squall", "pale_home_calm", "relic_single_use");
 
 	/** Whether this setting is a switch (1 on, 0 off) rather than a number. */
 	public static boolean isSwitch(String key) {
@@ -2153,7 +2158,7 @@ public final class Config {
 			{"relic_miners_candle_cave_lurker", 1, 10}, {"relic_magpies_glint_chance", 0, 1}, {"relic_magpies_glint_magpie", 1, 10},
 			{"relic_anchor_rivet_fuel", 1, 5}, {"relic_anchor_rivet_drink", 1, 10}, {"relic_muffled_bell_sculk_lurker", 1, 10},
 			{"relic_veil_scale_fall", 0, 64}, {"relic_veil_scale_seconds", 0, 600}, {"relic_ferrymans_obol_curses", 0, 10},
-			{"relic_ferrymans_obol_drain", 1, 5}, {"relic_hollow_crown_regen", 0, 1}};
+			{"relic_ferrymans_obol_drain", 1, 5}, {"relic_hollow_crown_regen", 0, 1}, {"relic_single_use", 0, 1}};
 
 	/** Brings a setting back within its bounds, if it has any. */
 	private static void bound(Setting st) {

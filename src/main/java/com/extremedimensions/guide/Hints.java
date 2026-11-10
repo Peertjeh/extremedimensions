@@ -75,7 +75,8 @@ public final class Hints {
 		}
 
 		public String textKey() {
-			return "gui.extremedimensions.hint." + key() + ".text";
+			// (a relic's hint tells whether relics serve once in this world)
+			return "gui.extremedimensions.hint." + key() + (this == RELIC && Config.RELIC_SINGLE_USE <= 0 ? ".text_kept" : ".text");
 		}
 	}
 

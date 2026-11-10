@@ -20,7 +20,10 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 
-/** Relics bind to the Tether one at a time, come back when unbound, and give what they promise and take their price. */
+/**
+ * Relics bind to the Tether one at a time, come back when unbound (with relics serving more than once; for the default,
+ * where they serve once, see RelicTierTests2), and give what they promise and take their price.
+ */
 public class RelicTests {
 	private static int count(ServerPlayer p, Relic r) {
 		int n = 0;
@@ -32,19 +35,27 @@ public class RelicTests {
 		return n;
 	}
 
+	/** With relic_single_use off: the relic bound before comes back when another is bound, and so does one unbound. */
 	@GameTest
 	public void relicsBindOneAtATime(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		PlayerData d = DataStore.get(p.getUUID());
-		p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(RelicService.item(Relic.EMBER_HEART)));
-		check(helper, RelicService.bind(p, p.getMainHandItem()) == InteractionResult.SUCCESS, "binding a relic failed");
-		check(helper, RelicService.has(d, Relic.EMBER_HEART) && p.getMainHandItem().isEmpty(), "the relic was not bound, or stayed in the hand");
-		p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(RelicService.item(Relic.PALE_SHARD)));
-		RelicService.bind(p, p.getMainHandItem());
-		check(helper, RelicService.has(d, Relic.PALE_SHARD), "a second relic did not take the first one's place");
-		check(helper, count(p, Relic.EMBER_HEART) == 1, "the first relic did not come back when the second was bound");
-		RelicService.unbind(p);
-		check(helper, RelicService.bound(d) == null && count(p, Relic.PALE_SHARD) == 1, "unbinding did not give the relic back");
+		int single = Config.RELIC_SINGLE_USE;
+		try {
+			Config.RELIC_SINGLE_USE = 0;
+			p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(RelicService.item(Relic.EMBER_HEART)));
+			check(helper, RelicService.bind(p, p.getMainHandItem()) == InteractionResult.SUCCESS, "binding a relic failed");
+			check(helper, RelicService.has(d, Relic.EMBER_HEART) && p.getMainHandItem().isEmpty(), "the relic was not bound, or stayed in the hand");
+			p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(RelicService.item(Relic.PALE_SHARD)));
+			RelicService.bind(p, p.getMainHandItem());
+			check(helper, RelicService.has(d, Relic.PALE_SHARD), "a second relic did not take the first one's place at once");
+			check(helper, count(p, Relic.EMBER_HEART) == 1, "the first relic did not come back when the second was bound");
+			RelicService.unbind(p);
+			check(helper, RelicService.bound(d) == null && count(p, Relic.PALE_SHARD) == 1, "unbinding did not give the relic back");
+		} finally {
+			Config.RELIC_SINGLE_USE = single;
+			d.relic = null;
+		}
 		helper.succeed();
 	}
 
@@ -53,6 +64,19 @@ public class RelicTests {
 		ServerPlayer clean = cursed(helper);
 		ServerPlayer p = cursed(helper);
 		PlayerData d = DataStore.get(p.getUUID());
+		int single = Config.RELIC_SINGLE_USE;
+		// (one relic bound over another at once, as relics serving more than once allow)
+		Config.RELIC_SINGLE_USE = 0;
+		try {
+			giveAndTake(helper, clean, p, d);
+		} finally {
+			Config.RELIC_SINGLE_USE = single;
+			d.relic = null;
+		}
+		helper.succeed();
+	}
+
+	private static void giveAndTake(GameTestHelper helper, ServerPlayer clean, ServerPlayer p, PlayerData d) {
 		double reach = clean.getAttributeValue(Attributes.BLOCK_INTERACTION_RANGE);
 		double fall = clean.getAttributeValue(Attributes.SAFE_FALL_DISTANCE);
 		p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(RelicService.item(Relic.HUNGERING_HAND)));
@@ -83,6 +107,5 @@ public class RelicTests {
 		check(helper, sum > 200 && sum < 400, "200 kills of 3 points with the Keeper's Eye gave %s points (about 300 expected)", sum);
 		d.relic = null;
 		check(helper, PenaltyService.killPoints(d, 3) == 3, "a kill without the Keeper's Eye lost points");
-		helper.succeed();
 	}
 }

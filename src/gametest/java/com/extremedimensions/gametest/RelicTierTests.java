@@ -128,12 +128,16 @@ public class RelicTierTests {
 				ItemStack s = new ItemStack(RelicService.item(r));
 				check(helper, s.getRarity().name().equals(r.tier.name()), "%s is named in the colour of %s, not of its tier %s", r.id, s.getRarity(), r.tier);
 			}
-			check(helper, per[0] == 6 && per[1] == 4 && per[2] == 5 && per[3] == 3, "the tiers hold %s relics, not 6, 4, 5 and 3", java.util.Arrays.toString(per));
+			check(helper, per[0] == 8 && per[1] == 6 && per[2] == 7 && per[3] == 5, "the tiers hold %s relics, not 8, 6, 7 and 5", java.util.Arrays.toString(per));
 			check(helper, Relic.HELDS_CHAIN.tier == Relic.Tier.EPIC && Relic.DEBTORS_SEAL.tier == Relic.Tier.EPIC && Relic.UNBOUND_PINION.tier == Relic.Tier.EPIC
 					&& Relic.LAST_STITCH.tier == Relic.Tier.RARE && Relic.HUNGERS_FANG.tier == Relic.Tier.RARE && Relic.KEEPERS_EYE.tier == Relic.Tier.RARE
 					&& Relic.THORNWARD_BARK.tier == Relic.Tier.UNCOMMON && Relic.HOLLOW_WHISTLE.tier == Relic.Tier.UNCOMMON
 					&& Relic.PILGRIMS_SANDAL.tier == Relic.Tier.COMMON && Relic.LODESTONE_CHIP.tier == Relic.Tier.COMMON
-					&& Relic.KINDRED_KNOT.tier == Relic.Tier.COMMON && Relic.TITHE_BELL.tier == Relic.Tier.COMMON, "a relic is of the wrong tier");
+					&& Relic.KINDRED_KNOT.tier == Relic.Tier.COMMON && Relic.TITHE_BELL.tier == Relic.Tier.COMMON
+					&& Relic.ASHEN_LOCKET.tier == Relic.Tier.COMMON && Relic.MINERS_CANDLE.tier == Relic.Tier.COMMON
+					&& Relic.MAGPIES_GLINT.tier == Relic.Tier.UNCOMMON && Relic.ANCHOR_RIVET.tier == Relic.Tier.UNCOMMON
+					&& Relic.MUFFLED_BELL.tier == Relic.Tier.RARE && Relic.VEIL_SCALE.tier == Relic.Tier.RARE
+					&& Relic.FERRYMANS_OBOL.tier == Relic.Tier.EPIC && Relic.HOLLOW_CROWN.tier == Relic.Tier.EPIC, "a relic is of the wrong tier");
 			// Only the epic tier weighs among ordinary finds, only the common among the great foes'
 			weights(0, 0, 0, 1, 1, 0, 0, 0);
 			for (int i = 0; i < 200; i++) {

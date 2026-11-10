@@ -39,11 +39,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 /**
- * Binding relics to the Tether. Using a relic binds it (the one bound before comes back to the hand); the Curses
- * screen unbinds it again. A bound relic is kept in the player's data, not in the inventory: it cannot be lost to a
- * death, a Lurker or a full bag. Also how relics are found (by tier, see {@link #random(boolean)}), and what the relics
- * do that has no home of its own elsewhere: their blows, hunger, wear and the Last Stitch's hold, the Miner's Candle's
- * light, the Veil Scale's drift, the Hollow Crown's full stomach and the Ferryman's Obol's passage.
+ * Binding relics to the Tether. Using a relic binds it; the Curses screen takes it off again. A relic serves once
+ * ({@code relic_single_use}): the one bound before breaks when another is bound over it (after a warning), and one taken
+ * off breaks too; with the setting off, either comes back to the hand. A bound relic is kept in the player's data, not
+ * in the inventory: it cannot be lost to a death, a Lurker or a full bag. Also how relics are found (by tier, see
+ * {@link #random(boolean)}), and what the relics do that has no home of its own elsewhere: their blows, hunger, wear and
+ * the Last Stitch's hold, the Miner's Candle's light, the Veil Scale's drift, the Hollow Crown's full stomach and the
+ * Ferryman's Obol's passage.
  */
 public final class RelicService {
 	private RelicService() {}
@@ -76,7 +78,35 @@ public final class RelicService {
 		return has(DataStore.peek(p.getUUID()), r);
 	}
 
-	/** Using a relic: it is bound to the Tether, and the one bound before (if any) comes back. */
+	/** Whether a relic serves once: one bound over another, or taken off, breaks ({@code relic_single_use}). */
+	public static boolean singleUse() {
+		return Config.RELIC_SINGLE_USE > 0;
+	}
+
+	/** Ticks a warning that binding breaks the relic bound holds: a second use of the same relic within them binds it. */
+	private static final int WARN_TICKS = 100;
+	/**
+	 * Ticks after the warning before a second use counts: a use button held down repeats every few ticks, and a warning
+	 * should never be passed in the same press that brought it.
+	 */
+	private static final int CONFIRM_TICKS = 10;
+
+	/** The relic a player was last warned about, and when (game time). */
+	private record Warning(Relic relic, long at) {}
+
+	/** Each player's last warning (in memory only: a warning is for the moment, not for the save). */
+	private static final java.util.Map<java.util.UUID, Warning> WARNED = new java.util.HashMap<>();
+
+	/** Forgets a player's warning (on leaving). */
+	public static void forget(java.util.UUID id) {
+		WARNED.remove(id);
+	}
+
+	/**
+	 * Using a relic: it is bound to the Tether. The one bound before (if any) breaks for good while relics serve once, and
+	 * as that is dear, the first use only warns of it: a second use of the same relic, from half a second to five seconds
+	 * later, binds it. With relics serving more than once, the one bound before comes back instead.
+	 */
 	public static InteractionResult bind(ServerPlayer p, ItemStack stack) {
 		Relic r = of(stack);
 		if (r == null) {
@@ -90,9 +120,26 @@ public final class RelicService {
 		if (locked(p, d)) {
 			return InteractionResult.FAIL;
 		}
+		boolean breaks = before != null && singleUse();
+		long now = p.level().getGameTime();
+		Warning w = WARNED.get(p.getUUID());
+		if (breaks && (w == null || w.relic() != r || now < w.at() || now - w.at() > WARN_TICKS)) {
+			WARNED.put(p.getUUID(), new Warning(r, now));
+			WorldFx.soundSelf(p, "minecraft:block.chain.hit", 1.0f, 0.6f);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.relic.break_warning", Component.translatable(r.nameKey()),
+					Component.translatable(before.nameKey())).withStyle(ChatFormatting.GOLD), true);
+			return InteractionResult.FAIL;
+		}
+		if (breaks && now - w.at() < CONFIRM_TICKS) {
+			// (the same press, still held: the warning stands)
+			return InteractionResult.FAIL;
+		}
+		WARNED.remove(p.getUUID());
 		stack.shrink(1);
 		d.relic = r.id;
-		if (before != null) {
+		if (breaks) {
+			crumble(p);
+		} else if (before != null) {
 			WorldFx.give(p, new ItemStack(item(before)));
 		}
 		DataStore.markDirty();
@@ -101,12 +148,17 @@ public final class RelicService {
 		WorldFx.soundSelf(p, "minecraft:block.chain.place", 1.0f, 0.7f);
 		WorldFx.soundSelf(p, "minecraft:block.amethyst_block.resonate", 0.8f, 0.8f);
 		WorldFx.particles(p, "extremedimensions:soul_mote", 1.0, 0.5, 0.0, 20);
-		p.sendSystemMessage(Component.translatable("gui.extremedimensions.relic.bound", Component.translatable(r.nameKey())), true);
+		p.sendSystemMessage(breaks
+				? Component.translatable("gui.extremedimensions.relic.bound_over", Component.translatable(r.nameKey()), Component.translatable(before.nameKey()))
+				: Component.translatable("gui.extremedimensions.relic.bound", Component.translatable(r.nameKey())), true);
 		Advancements.grant(p, Advancements.RELIC_BOUND);
 		return InteractionResult.SUCCESS;
 	}
 
-	/** The relic comes off the Tether and back to the player (or falls at their feet with a full bag). */
+	/**
+	 * The relic comes off the Tether. While relics serve once it breaks for good (the Curses screen asks for a second
+	 * click first); otherwise it comes back to the player (or falls at their feet with a full bag).
+	 */
 	public static void unbind(ServerPlayer p) {
 		PlayerData d = DataStore.get(p.getUUID());
 		Relic r = bound(d);
@@ -114,17 +166,31 @@ public final class RelicService {
 			return;
 		}
 		d.relic = null;
-		WorldFx.give(p, new ItemStack(item(r)));
+		boolean breaks = singleUse();
+		if (breaks) {
+			crumble(p);
+		} else {
+			WorldFx.give(p, new ItemStack(item(r)));
+			WorldFx.soundSelf(p, "minecraft:block.chain.break", 1.0f, 0.9f);
+		}
 		DataStore.markDirty();
 		CurseEffects.applyEffects(p, d);
 		Sync.curses(p, d, false);
-		WorldFx.soundSelf(p, "minecraft:block.chain.break", 1.0f, 0.9f);
-		p.sendSystemMessage(Component.translatable("gui.extremedimensions.relic.unbound", Component.translatable(r.nameKey())), true);
+		p.sendSystemMessage(Component.translatable(breaks ? "gui.extremedimensions.relic.broken" : "gui.extremedimensions.relic.unbound",
+				Component.translatable(r.nameKey())), true);
+	}
+
+	/** A relic breaks off the Tether for good: it cracks and crumbles to dust with its chain. */
+	private static void crumble(ServerPlayer p) {
+		WorldFx.soundSelf(p, "minecraft:block.amethyst_block.break", 1.0f, 0.6f);
+		WorldFx.soundSelf(p, "minecraft:block.chain.break", 1.0f, 0.7f);
+		WorldFx.particles(p, "minecraft:smoke", 1.0, 0.4, 0.02, 30);
 	}
 
 	/**
-	 * A relic is bound or taken off only at home and on one's feet: not on an expedition, in the Seam or fallen (its gift
-	 * and its price are paid for the whole of it, not swapped for the moment that suits). The player is told so.
+	 * A relic is bound or taken off (broken, while relics serve once) only at home and on one's feet: not on an expedition,
+	 * in the Seam or fallen (its gift and its price are paid for the whole of it, not swapped for the moment that suits).
+	 * The player is told so.
 	 */
 	private static boolean locked(ServerPlayer p, PlayerData d) {
 		if (!d.inRun && !d.inSeam && !com.extremedimensions.coop.FallenService.fallen(p)) {
@@ -375,9 +441,9 @@ public final class RelicService {
 
 	/**
 	 * How much of the hunger a player is caused they take, from the relic bound: more with the Pilgrim's Sandal on an
-	 * expedition and in the Seam, more with Hunger's Fang always, none with the Hollow Crown. It scales the player's own exhaustion (see
-	 * Charms.exhaustion), so "a quarter faster" holds whether they walk, sprint, fight or swim, rather than a fixed amount
-	 * a second that would be far too much for one standing still and too little for one sprinting.
+	 * expedition and in the Seam, more with Hunger's Fang always, none with the Hollow Crown. It scales the player's own
+	 * exhaustion (see Charms.exhaustion), so "a quarter faster" holds whether they walk, sprint, fight or swim, rather than a
+	 * fixed amount a second that would be far too much for one standing still and too little for one sprinting.
 	 */
 	public static double hunger(ServerPlayer p) {
 		PlayerData d = DataStore.peek(p.getUUID());

@@ -916,20 +916,39 @@ public class CursesScreen extends Screen {
 		}
 	}
 
-	/** The relic bound to the Tether: its name, its gift and price on hover, and a click takes it off again. */
+	/**
+	 * The relic bound to the Tether: its name, its gift and price on hover, and a click takes it off again. While relics
+	 * serve once, taking it off breaks it: the first click arms the chip, a second within four seconds breaks it (the server
+	 * still decides whether it may come off at all).
+	 */
 	private final class RelicChip extends AbstractButton {
-		/** The relic the tooltip was made for (rebuilt only when the relic changes). */
+		/** How long a first click to break the relic waits for the second (ms). */
+		private static final long ARMED_MS = 4000;
+		/** The relic the tooltip was made for, whether relics served once then and whether the chip was armed (rebuilt only when one changes). */
 		private Object shownFor = this;
+		private boolean shownSingle, shownArmed;
+		/** When the chip was first clicked to break the relic, or 0. */
+		private long armedAt;
 
 		RelicChip(int x, int y, int w) {
 			super(x, y, w, 12, Component.translatable("gui.extremedimensions.relic.title"));
 		}
 
+		private boolean armed() {
+			return armedAt != 0 && System.currentTimeMillis() - armedAt <= ARMED_MS;
+		}
+
 		@Override
 		public void onPress(InputWithModifiers input) {
-			if (relic != null) {
-				ClientPlayNetworking.send(new ModPackets.UnbindRelicPayload());
+			if (relic == null) {
+				return;
 			}
+			if (com.extremedimensions.config.Config.RELIC_SINGLE_USE > 0 && !armed()) {
+				armedAt = System.currentTimeMillis();
+				return;
+			}
+			armedAt = 0;
+			ClientPlayNetworking.send(new ModPackets.UnbindRelicPayload());
 		}
 
 		@Override
@@ -937,18 +956,23 @@ public class CursesScreen extends Screen {
 			var font = Minecraft.getInstance().font;
 			int x = this.getX(), y = this.getY(), w = this.getWidth();
 			boolean has = relic != null;
-			if (shownFor != relic) {
+			boolean single = com.extremedimensions.config.Config.RELIC_SINGLE_USE > 0;
+			boolean armed = has && armed();
+			if (shownFor != relic || shownSingle != single || shownArmed != armed) {
 				shownFor = relic;
+				shownSingle = single;
+				shownArmed = armed;
+				String how = !single ? "gui.extremedimensions.relic.unbind" : armed ? "gui.extremedimensions.relic.break_confirm_tip" : "gui.extremedimensions.relic.break";
 				this.setTooltip(Tooltip.create(has
 						? Component.empty().append(Component.translatable(relic.nameKey()).withStyle(relic.tier.colour)).append("\n")
 								.append(Component.literal("+ ").append(Component.translatable(relic.giftKey(), relic.giftArgs())).withStyle(net.minecraft.ChatFormatting.GREEN)).append("\n")
 								.append(Component.literal("- ").append(Component.translatable(relic.priceKey(), relic.priceArgs())).withStyle(net.minecraft.ChatFormatting.RED)).append("\n")
-								.append(Component.translatable("gui.extremedimensions.relic.unbind").withStyle(net.minecraft.ChatFormatting.GRAY))
+								.append(Component.translatable(how).withStyle(armed ? net.minecraft.ChatFormatting.GOLD : net.minecraft.ChatFormatting.GRAY))
 						: Component.translatable("gui.extremedimensions.relic.none_tip")));
 			}
-			Ui.chip(g, x, y, w, this.getHeight(), has ? (this.isHovered() ? Ui.WARN : Ui.VOID) : Ui.MUTED, has ? 1.0 : 0.5);
-			String label = has ? Ui.tr(relic.nameKey()) : Ui.tr("gui.extremedimensions.relic.none");
-			g.text(font, label, x + 4, y + 2, Ui.argb(has ? 1.0 : 0.7, has ? Ui.PARCHMENT : Ui.MUTED));
+			Ui.chip(g, x, y, w, this.getHeight(), has ? (armed || this.isHovered() ? Ui.WARN : Ui.VOID) : Ui.MUTED, has ? 1.0 : 0.5);
+			String label = armed ? Ui.tr("gui.extremedimensions.relic.break_confirm") : has ? Ui.tr(relic.nameKey()) : Ui.tr("gui.extremedimensions.relic.none");
+			g.text(font, label, x + 4, y + 2, Ui.argb(has ? 1.0 : 0.7, armed ? Ui.WARN : has ? Ui.PARCHMENT : Ui.MUTED));
 			if (has) {
 				g.text(font, "×", x + w - 8, y + 2, Ui.argb(this.isHovered() ? 1.0 : 0.6, this.isHovered() ? Ui.WARN : Ui.MUTED));
 			}
