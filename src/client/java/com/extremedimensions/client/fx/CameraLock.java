@@ -18,6 +18,8 @@ public final class CameraLock {
 	private static long from, until;
 	private static boolean started;
 	private static float startYaw, startPitch;
+	/** How many times the view has been held (for tests: the hold itself lasts a stretch of real time). */
+	private static int holds;
 
 	/** Holds the view on this entity for this long. */
 	public static void lock(int entityId, long millis) {
@@ -25,6 +27,15 @@ public final class CameraLock {
 		from = System.currentTimeMillis();
 		until = from + Math.max(0, millis);
 		started = false;
+		holds++;
+	}
+
+	/**
+	 * How many times the view has been held so far (for tests: a hold lasts a stretch of real time, which a slow test
+	 * client's ticks may outlast, so a test asks whether one began rather than whether it still lasts).
+	 */
+	public static int holds() {
+		return holds;
 	}
 
 	public static void release() {

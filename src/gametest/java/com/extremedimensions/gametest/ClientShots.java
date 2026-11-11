@@ -95,9 +95,11 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(10);
 		}
 		ctx.waitTicks(40);
+		// (whether a hold began: it lasts a stretch of real time, which a slow client's ticks may outlast)
+		int formingFrom = ctx.computeOnClient(mc -> com.extremedimensions.client.fx.CameraLock.holds());
 		sp.getServer().runOnServer(summon::accept);
 		ctx.waitTicks(30);
-		ctx.runOnClient(mc -> check(com.extremedimensions.client.fx.CameraLock.locked(), "the view is not held on the forming " + name));
+		ctx.runOnClient(mc -> check(com.extremedimensions.client.fx.CameraLock.holds() > formingFrom, "the view is not held on the forming " + name));
 		ctx.takeScreenshot("12_fight_" + name + "_forming_a");
 		ctx.waitTicks(60);
 		ctx.takeScreenshot("12_fight_" + name + "_forming_b");
@@ -277,9 +279,10 @@ public class ClientShots implements FabricClientGameTest {
 		});
 		ctx.waitTicks(5);
 		face(sp, name);
+		int dyingFrom = ctx.computeOnClient(mc -> com.extremedimensions.client.fx.CameraLock.holds());
 		sp.getServer().runCommand("kill @e[type=extremedimensions:" + name + "]");
 		ctx.waitTicks(30);
-		ctx.runOnClient(mc -> check(com.extremedimensions.client.fx.CameraLock.locked(), "the view is not held on the dying " + name));
+		ctx.runOnClient(mc -> check(com.extremedimensions.client.fx.CameraLock.holds() > dyingFrom, "the view is not held on the dying " + name));
 		ctx.takeScreenshot("12_fight_" + name + "_death");
 		ctx.waitTicks(66);
 		ctx.takeScreenshot("12_fight_" + name + "_death_bloom");
