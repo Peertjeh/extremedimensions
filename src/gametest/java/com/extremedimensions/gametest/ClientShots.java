@@ -264,6 +264,10 @@ public class ClientShots implements FabricClientGameTest {
 		ctx.takeScreenshot("12_fight_" + name + "_upheaval");
 		// (high and wide enough to clear the Matriarch's root arches and take in the whole torn ground)
 		double[] over = {mid[0] + 70, mid[1] + 90, mid[2] + 70};
+		// (as for the look at its far side: from up there the Elder may be out of its reach, sailing or walking the far
+		// side of its arena, so its reach is made wider until the player is back at its side)
+		double reachThen = sp.getServer().computeOnServer(s -> com.extremedimensions.config.Config.ELDER_REACH);
+		sp.getServer().runOnServer(s -> com.extremedimensions.config.Config.ELDER_REACH = Math.max(reachThen, 6.0));
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
 			p.getAbilities().mayfly = true;
@@ -275,6 +279,7 @@ public class ClientShots implements FabricClientGameTest {
 		ctx.waitTicks(30);
 		ctx.takeScreenshot("12_fight_" + name + "_upheaval_above");
 		moveTo(ctx, sp, stood);
+		sp.getServer().runOnServer(s -> com.extremedimensions.config.Config.ELDER_REACH = reachThen);
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
 			p.getAbilities().flying = false;
