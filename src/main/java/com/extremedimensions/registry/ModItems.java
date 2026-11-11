@@ -142,6 +142,7 @@ public final class ModItems {
 
 	public static final Item TETHERITE_ORE = block(ModBlocks.TETHERITE_ORE, true);
 	public static final Item SPINDLE = block(ModBlocks.SPINDLE);
+	public static final Item KINDLED_SEAM_LANTERN = block(ModBlocks.KINDLED_SEAM_LANTERN);
 	/** Smelted from Tetherite ore. */
 	public static final Item TETHERITE_SCRAP = Registry.register(BuiltInRegistries.ITEM, key("tetherite_scrap"),
 			new Item(new Item.Properties().rarity(Rarity.RARE).fireResistant().setId(key("tetherite_scrap"))));

@@ -57,6 +57,7 @@ public final class ModItemGroups {
 					out.accept(ModItems.DISC_FRAGMENT_ABYSS);
 					out.accept(ModItems.WEAVERS_LOOM);
 					out.accept(ModItems.SPINDLE);
+					out.accept(ModItems.KINDLED_SEAM_LANTERN);
 					out.accept(ModItems.TETHERITE_ORE);
 					out.accept(ModItems.TETHERITE_SCRAP);
 					out.accept(ModItems.TETHER_CORD);

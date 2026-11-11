@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "ingredients": [
+    "extremedimensions:seam_lantern",
+    "minecraft:soul_lantern",
+    "minecraft:lantern"
+  ],
+  "result": {
+    "id": "extremedimensions:kindled_seam_lantern",
+    "count": 1
+  }
+}

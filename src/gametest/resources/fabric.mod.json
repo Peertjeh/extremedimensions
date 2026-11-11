@@ -70,6 +70,7 @@
 			"com.extremedimensions.gametest.LurkerTests",
 			"com.extremedimensions.gametest.FragmentTests",
 			"com.extremedimensions.gametest.PenanceTests",
+			"com.extremedimensions.gametest.KindledLanternTests",
 			"com.extremedimensions.gametest.ElderFootingTests"
 		],
 		"fabric-client-gametest": [

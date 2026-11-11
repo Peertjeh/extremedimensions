@@ -878,6 +878,13 @@ public final class Config {
 	/** Seam Lantern: extra seconds in the Seam; how much farther monsters notice you at night in the Overworld (0.25 = a quarter). */
 	public static int RELIC_SEAM_LANTERN_SECONDS = 90;
 	public static double RELIC_SEAM_LANTERN_NOTICE = 0.25;
+	/**
+	 * Blocks out from a Kindled Seam Lantern (the Seam Lantern lit from a lantern and a soul lantern) that its light is
+	 * carried, by unseen lights in the eight directions round it: 14 lights twice as far as a lantern. 0 = only its own.
+	 */
+	public static int KINDLED_LANTERN_SPREAD = 14;
+	/** The light level of the lights a Kindled Seam Lantern carries out (1 to 15). */
+	public static int KINDLED_LANTERN_LIGHT = 15;
 	/** Kindred Knot: the wait before you can fall again, as a multiple (0.5 = halved); how long you last fallen, as a multiple (0.67 = a third shorter). */
 	public static double RELIC_KINDRED_KNOT_COOLDOWN = 0.5;
 	public static double RELIC_KINDRED_KNOT_BLEED = 0.67;
@@ -2223,7 +2230,7 @@ public final class Config {
 			{"export_minutes", 1, 1440}, {"boss_mace_damage", 0, 1},
 			{"relic_weight_common", 0, 1000}, {"relic_weight_uncommon", 0, 1000}, {"relic_weight_rare", 0, 1000}, {"relic_weight_epic", 0, 1000},
 			{"relic_great_weight_common", 0, 1000}, {"relic_great_weight_uncommon", 0, 1000}, {"relic_great_weight_rare", 0, 1000},
-			{"relic_great_weight_epic", 0, 1000}, {"relic_pilgrims_sandal_speed", 0, 5}, {"relic_pilgrims_sandal_hunger", 1, 5},
+			{"relic_great_weight_epic", 0, 1000}, {"kindled_lantern_spread", 0, 15}, {"kindled_lantern_light", 1, 15}, {"relic_pilgrims_sandal_speed", 0, 5}, {"relic_pilgrims_sandal_hunger", 1, 5},
 			{"relic_lodestone_chip_drain", 0, 1}, {"relic_lodestone_chip_collapse", 0, 10}, {"relic_thornward_bark_thorns", 0, 40},
 			{"relic_thornward_bark_melee", 0, 1}, {"relic_hollow_whistle_price", 0, 1}, {"relic_hollow_whistle_standing", 0, 1},
 			{"relic_last_stitch_health", 0, 20}, {"relic_last_stitch_max_health", 0, 10}, {"relic_hungers_fang_leech", 0, 1},

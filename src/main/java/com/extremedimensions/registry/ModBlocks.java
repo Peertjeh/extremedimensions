@@ -103,6 +103,14 @@ public final class ModBlocks {
 					.sound(SoundType.WOOL).strength(2.5F, 6.0F).noOcclusion().lightLevel(state -> state.getValue(com.extremedimensions.tetherite.SpindleBlock.FRAGMENTS) > 0 ? 5 : 0)
 					.setId(key("spindle"))));
 
+	/**
+	 * The Kindled Seam Lantern: the Seam Lantern lit from a lantern's and a soul lantern's flames; it stands or hangs as
+	 * they do, burns blue-violet, and its light reaches twice as far (see relic.KindledLanternBlock).
+	 */
+	public static final Block KINDLED_SEAM_LANTERN = Registry.register(BuiltInRegistries.BLOCK, key("kindled_seam_lantern"),
+			new com.extremedimensions.relic.KindledLanternBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.SOUL_LANTERN).lightLevel(state -> 15)
+					.randomTicks().setId(key("kindled_seam_lantern"))));
+
 	/** A knot of curse thread the Unweaving ties round the Weaver's Loom (see tapestry.Unweaving): cut by blows, never mined. */
 	public static final Block CURSE_KNOT = Registry.register(BuiltInRegistries.BLOCK, key("curse_knot"),
 			new com.extremedimensions.tapestry.CurseKnotBlock(BlockBehaviour.Properties.of().mapColor(net.minecraft.world.level.material.MapColor.COLOR_PURPLE)
