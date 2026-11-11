@@ -86,8 +86,11 @@ jobs:
           cache: 'gradle'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
+      # (the runners' own Azure mirror is left out: when it cannot be reached, apt does not fall back to the next one)
       - name: virtual display
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri mesa-vulkan-drivers libegl1
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt; fi
+          sudo apt-get -o Acquire::Retries=3 update -qq && sudo apt-get -o Acquire::Retries=3 install -y -qq xvfb libgl1-mesa-dri mesa-vulkan-drivers libegl1
       - name: client game test
         run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClientGameTest --no-configuration-cache
         env:
@@ -182,7 +185,8 @@ jobs:
       # Sodium and Iris draw with OpenGL (the game alone falls back to Vulkan): the display needs GLX, in software
       - name: virtual display with OpenGL
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libgl1 libegl1 mesa-utils mesa-vulkan-drivers
+          if [ -f /etc/apt/apt-mirrors.txt ]; then sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt; fi
+          sudo apt-get -o Acquire::Retries=3 update -qq && sudo apt-get -o Acquire::Retries=3 install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libgl1 libegl1 mesa-utils mesa-vulkan-drivers
           xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" glxinfo -B || echo "no GLX on the virtual display"
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
