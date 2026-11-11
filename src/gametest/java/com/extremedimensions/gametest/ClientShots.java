@@ -209,11 +209,8 @@ public class ClientShots implements FabricClientGameTest {
 		ctx.takeScreenshot("12_fight_" + name + "_arena");
 		// Out past its wall towards the nearest of its reaches still waiting, looking at it: the world comes in round
 		// there, and what waited for it goes up. (Which way its far towers stand differs from arena to arena. The player
-		// goes no further than 170 blocks from the middle and 40 above it; the Elder may stand on the far side of its
-		// arena all the same, and beyond its reach it takes it that they went home, so for this look its reach is made
-		// wider, and put back once they are back at its side.)
-		double reachWas = sp.getServer().computeOnServer(s -> com.extremedimensions.config.Config.ELDER_REACH);
-		sp.getServer().runOnServer(s -> com.extremedimensions.config.Config.ELDER_REACH = Math.max(reachWas, 6.0));
+		// goes no further than 170 blocks from the middle and 40 above it, and no further than 200 from the Elder, which
+		// may stand on the far side of its arena: beyond its reach it takes it that they went home.)
 		double[] far = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.nearestWaiting(mid[0], mid[2]));
 		double[] side = {mid[0] - 190, mid[1] + 40, mid[2]};
 		if (far != null) {
@@ -221,6 +218,7 @@ public class ClientShots implements FabricClientGameTest {
 			double out = Math.max(0, Math.min(len - 40, 170));
 			side = new double[] {mid[0] + dx / len * out, mid[1] + 40, mid[2] + dz / len * out};
 		}
+		side = nearElder(sp, side, 200);
 		moveTo(ctx, sp, side);
 		if (far != null) {
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s ~ ~ ~ facing %.1f %.1f %.1f", far[0], far[1], far[2]));
@@ -246,7 +244,6 @@ public class ClientShots implements FabricClientGameTest {
 			p.setHealth(p.getMaxHealth());
 		});
 		moveTo(ctx, sp, stood);
-		sp.getServer().runOnServer(s -> com.extremedimensions.config.Config.ELDER_REACH = reachWas);
 		ctx.waitTicks(10);
 		sp.getServer().runOnServer(s -> elders(s).forEach(e -> force.test(e, com.extremedimensions.elder.ElderBoss.ULTIMATE)));
 		ctx.waitTicks(38);
@@ -263,11 +260,9 @@ public class ClientShots implements FabricClientGameTest {
 		ctx.waitTicks(2);
 		ctx.takeScreenshot("12_fight_" + name + "_upheaval");
 		// (high and wide enough to clear the Matriarch's root arches and take in the whole torn ground)
-		double[] over = {mid[0] + 70, mid[1] + 90, mid[2] + 70};
-		// (as for the look at its far side: from up there the Elder may be out of its reach, sailing or walking the far
-		// side of its arena, so its reach is made wider until the player is back at its side)
-		double reachThen = sp.getServer().computeOnServer(s -> com.extremedimensions.config.Config.ELDER_REACH);
-		sp.getServer().runOnServer(s -> com.extremedimensions.config.Config.ELDER_REACH = Math.max(reachThen, 6.0));
+		// (no further than 200 blocks from the Elder, which may be sailing or walking the far side of its arena: beyond
+		// its reach it takes it that its prey went home)
+		double[] over = nearElder(sp, new double[] {mid[0] + 70, mid[1] + 90, mid[2] + 70}, 200);
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
 			p.getAbilities().mayfly = true;
@@ -279,7 +274,6 @@ public class ClientShots implements FabricClientGameTest {
 		ctx.waitTicks(30);
 		ctx.takeScreenshot("12_fight_" + name + "_upheaval_above");
 		moveTo(ctx, sp, stood);
-		sp.getServer().runOnServer(s -> com.extremedimensions.config.Config.ELDER_REACH = reachThen);
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
 			p.getAbilities().flying = false;
@@ -517,6 +511,29 @@ public class ClientShots implements FabricClientGameTest {
 			}
 		}
 		check(false, "the player could not be put back where they stood (" + at[0] + ", " + at[1] + ", " + at[2] + ")");
+	}
+
+	/**
+	 * A spot for the camera brought within {@code max} blocks of the nearest Elder (along the line to it), so that
+	 * watching from there it does not take its prey for gone; the spot as it is with no Elder about.
+	 */
+	private static double[] nearElder(TestSingleplayerContext sp, double[] at, double max) {
+		return sp.getServer().computeOnServer(s -> {
+			com.extremedimensions.elder.ElderBoss e = null;
+			double best = Double.MAX_VALUE;
+			for (com.extremedimensions.elder.ElderBoss b : elders(s, 600)) {
+				double d = b.distanceToSqr(at[0], at[1], at[2]);
+				if (d < best) {
+					best = d;
+					e = b;
+				}
+			}
+			if (e == null || best <= max * max) {
+				return at;
+			}
+			double k = max / Math.sqrt(best);
+			return new double[] {e.getX() + (at[0] - e.getX()) * k, e.getY() + (at[1] - e.getY()) * k, e.getZ() + (at[2] - e.getZ()) * k};
+		});
 	}
 
 	private static ServerPlayer player(MinecraftServer s) {
