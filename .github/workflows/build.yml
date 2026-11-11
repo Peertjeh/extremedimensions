@@ -63,7 +63,9 @@ jobs:
           # lines with a $ list the game's files (assets and data) whose paths match the pattern after it
           for j in $(echo "$all" | tr ':' ' '); do unzip -Z1 "$j" 2>/dev/null; done | sort -u | grep -E "$(grep '^\$' tools/probe.txt | sed 's/^\$//' | paste -sd'|')" | grep -v '\.class$' | sed "s/^/APIASSET|/" | head -300 || true
           # lines with a % print a binary file (a vanilla texture) from the game jars as base64, on one line
-          grep '^%' tools/probe.txt | sed 's/^%//' | while read -r f; do for j in $(echo "$all" | tr ':' ' '); do d=$(unzip -p "$j" "$f" 2>/dev/null | base64 -w0); if [ -n "$d" ]; then echo "APIB64|$f|$d"; break; fi; done; done
+          grep '^%[^%]' tools/probe.txt | sed 's/^%//' | while read -r f; do for j in $(echo "$all" | tr ':' ' '); do d=$(unzip -p "$j" "$f" 2>/dev/null | base64 -w0); if [ -n "$d" ]; then echo "APIB64|$f|$d"; break; fi; done; done
+          # lines with %% print every PNG under a folder of the game's (all of vanilla's item textures, say), the same way
+          grep '^%%' tools/probe.txt | sed 's/^%%//' | while read -r dir; do for j in $(echo "$all" | tr ':' ' '); do unzip -Z1 "$j" 2>/dev/null | grep "^$dir" | grep '\.png$' | while read -r f; do echo "APIB64|$f|$(unzip -p "$j" "$f" | base64 -w0)"; done; done; done || true
       # The recipe viewers (EMI, JEI, REI) for this game version and their plugin API, on a commit marked [probe]
       - name: recipe viewer probe
         if: always() && contains(github.event.head_commit.message, '[probe]')
