@@ -593,6 +593,34 @@ item("seam_lantern", {
     "................",
 ])
 
+# Kindled Seam Lantern (the block, as an item): the Seam Lantern lit from a lantern's flame and a soul lantern's, the
+# same lantern, its flame burning blue-violet.
+item("kindled_seam_lantern", {
+    # the iron
+    '0': (40, 42, 50), '1': (62, 66, 78),
+    # the silk bands
+    'a': (96, 64, 140), 'b': (130, 96, 180),
+    # the blue-violet flame
+    'c': (58, 56, 150), 'd': (92, 90, 214), 'e': (146, 138, 244), 'f': (204, 194, 255), 'g': (240, 236, 255),
+}, [
+    "................",
+    "........0.......",
+    ".......01.......",
+    ".......10.......",
+    ".......0........",
+    "......0110......",
+    "......baab......",
+    ".....011110.....",
+    ".....acddca.....",
+    ".....bdeedb.....",
+    ".....begfeb.....",
+    ".....befgeb.....",
+    ".....adeeda.....",
+    ".....011110.....",
+    "................",
+    "................",
+])
+
 # Held's Chain: vanilla's iron chain, darker, one link still glowing warm.
 item("helds_chain", {
     # the iron
