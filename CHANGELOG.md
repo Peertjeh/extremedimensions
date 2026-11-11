@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.49.5: The Whole Set After Netherite
+
+### Changed
+- **The Tetherite helmet, chestplate and boots follow vanilla's netherite ones**, in the inventory and worn, as the
+  leggings and the tools have since 3.49.4, in Tetherite's grey-violet tones. Each has a stud of the Tether's teal:
+  at the brow, over the heart, and on each boot's strap.
+- The Weaver and Fray trims on them stay on the armor and never float over bare skin (the face, the neck).
+
 ## 3.49.4: Tetherite After Netherite
 
 ### Changed

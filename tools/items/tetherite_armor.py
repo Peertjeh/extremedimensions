@@ -83,43 +83,58 @@ def rivet(px, x, y):
     px[x, y] = M[5] + (255,)
     px[x, y + 1] = M[1] + (255,)
 
+# The armor layer follows vanilla's netherite armor pixel for pixel (3.49.5), in the metal's ramp (0 dark .. 6 light,
+# and m between 2 and 3 for the one more tone vanilla's plates have), with a stud of the thread at the brow, over the
+# heart and on the boots' straps
+ARMOR = [
+    "........22m64m22................................................",
+    "........2m3553m2................................................",
+    "........12m65m21................................................",
+    "........12265221................................................",
+    "........m3m54m3m................................................",
+    "........m336533m................................................",
+    "........13465431................................................",
+    "........24455442................................................",
+    "m33m34mmm456554mmm43m33m11145111................................",
+    "45555665556b665556655554m3556543................................",
+    "2m4m45542m3663m24554m4m22m4554mm................................",
+    "2mm2m3mm2..65..2mm3m2mm22mm33mm2................................",
+    "1111..2mm..53..mm2..111122mmmm22................................",
+    ".......33......33.......11222211................................",
+    ".......m45....54m.........1111..................................",
+    ".......034....430...............................................",
+    "........1111................................55m5................",
+    "........1001................................6635................",
+    "........1001................................3435................",
+    "........1111................................55m5................",
+    "................343m1m....m134331m4554m1564555m511115m55........",
+    "................4543m1....1m4543m166661m463554m411114m45........",
+    "................343m43m..m34343m445665444544432411114234........",
+    "................m33m34544b43m33m354554533443m2151111512m........",
+    "................2mm2m566665m2mm2m566665m5665545511115545........",
+    "................343mm356653m343mm356653m121121211..11211........",
+    "...212m22.......2mm2354554532mm234455443.2m.2.2......2..........",
+    "m3mmm442m3mmm3mmm33mmm5665mmm33mmm3443mm........................",
+    "343m4b4m343m343m2mm233mmmm332mm233mmmm33........................",
+    "2m2146532m212m21....m356653m....m344443m........................",
+    "1221255212211221.....235532......234432.........................",
+    "1111122111111111......2mm2........2mm2..........................",
+]
+
+
 def armor():
+    return layer(ARMOR)
+
+
+def layer(rows):
     im = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
     px = im.load()
-    for name, (x, y, w, h) in HEAD.items():
-        plate(px, x, y, w, h, seams=(5,) if name not in ("top", "bottom") else ())
-        if name == "front":
-            # the face shows through the visor
-            for yy in range(3, 7):
-                for xx in range(1, 7):
-                    if not (yy == 3 and xx in (1, 6)):
-                        px[x + xx, y + yy] = (0, 0, 0, 0)
-            for xx in range(1, 7):
-                px[x + xx, y + 7] = M[2] + (255,)
-            stud(px, x + 3, y + 1, 2)
-            stud(px, x + 4, y + 1, 1)
-        if name in ("right", "left"):
-            rivet(px, x + 3, y + 2)
-    for name, (x, y, w, h) in BODY.items():
-        plate(px, x, y, w, h, seams=(4, 9) if name in ("front", "back") else (4,))
-        if name == "front":
-            stud(px, x + 3, y + 2, 1)
-            stud(px, x + 4, y + 2, 2)
-            rivet(px, x + 1, y + 6)
-            rivet(px, x + 6, y + 6)
-    for name, (x, y, w, h) in ARM.items():
-        if name == "bottom":
-            continue
-        plate(px, x, y, w, h, rows=(0, 10) if name != "top" else (0, None), seams=(3,) if name != "top" else ())
-    for name, (x, y, w, h) in LEG.items():
-        if name == "top":
-            continue
-        if name == "bottom":
-            plate(px, x, y, w, h, top_lit=False)
-            continue
-        plate(px, x, y, w, h, rows=(h - 5, h), seams=(h - 2,))
-        if name == "front":
-            stud(px, x + 1, y + h - 4, 1)
+    colours = {str(k): c for k, c in enumerate(M)}
+    colours.update({"m": (56, 51, 69), "a": A[0], "b": A[1], "c": A[2]})
+    for y, r in enumerate(rows):
+        for x, ch in enumerate(r):
+            if ch != ".":
+                px[x, y] = colours[ch] + (255,)
     return im
 
 # The leggings layer follows vanilla's netherite leggings pixel for pixel (3.49.4), in the metal's ramp (0 dark .. 6
@@ -161,15 +176,7 @@ LEGGINGS = [
 
 
 def leggings():
-    im = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
-    px = im.load()
-    colours = {str(k): c for k, c in enumerate(M)}
-    colours.update({"a": A[0], "b": A[1], "c": A[2]})
-    for y, r in enumerate(LEGGINGS):
-        for x, ch in enumerate(r):
-            if ch != ".":
-                px[x, y] = colours[ch] + (255,)
-    return im
+    return layer(LEGGINGS)
 
 
 def covered(trim, base):
@@ -300,9 +307,9 @@ def main():
     files = {
         "entity/equipment/humanoid/tetherite": armor(),
         "entity/equipment/humanoid_leggings/tetherite": leggings(),
-        "trims/entity/humanoid/weaver": weaver(False),
+        "trims/entity/humanoid/weaver": covered(weaver(False), armor()),
         "trims/entity/humanoid_leggings/weaver": covered(weaver(True), leggings()),
-        "trims/entity/humanoid/fray": fray(False),
+        "trims/entity/humanoid/fray": covered(fray(False), armor()),
         "trims/entity/humanoid_leggings/fray": covered(fray(True), leggings()),
     }
     for name, colors in PALETTES.items():
