@@ -504,6 +504,12 @@ public class ClientShots implements FabricClientGameTest {
 	 */
 	private static void moveTo(ClientGameTestContext ctx, TestSingleplayerContext sp, double[] at) {
 		for (int tries = 0; tries < 5; tries++) {
+			// (a Ferryman's gaol that shut them in holds them where it stands: it is taken down for the move)
+			sp.getServer().runOnServer(s -> {
+				if (com.extremedimensions.elder.ElderGaol.shutIn(player(s))) {
+					com.extremedimensions.elder.ElderGaol.clear();
+				}
+			});
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %.2f %.2f", at[0], at[1], at[2]));
 			ctx.waitTicks(5);
 			if (sp.getServer().computeOnServer(s -> player(s).distanceToSqr(at[0], at[1], at[2]) < 16)) {
