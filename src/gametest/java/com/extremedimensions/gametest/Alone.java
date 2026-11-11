@@ -114,4 +114,6 @@ final class Alone {
 	static final String HEART_ARENA = "extremedimensions_test:alone/heart_arena";
 	// (a reset of the relics reaches every player the world knows, and every relic made while it holds)
 	static final String RELIC_RESET = "extremedimensions_test:alone/relic_reset";
+	// (the Pale Mason lifts a block more for every player near him, and the players of the tests round his would count)
+	static final String MASON_LIFT = "extremedimensions_test:alone/mason_lift";
 }

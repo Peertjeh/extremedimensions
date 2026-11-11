@@ -84,7 +84,7 @@ public class MasonTests {
 	}
 
 	/** Falling Blocks: great blocks rise round him, then he hurls them, and none is left hanging afterwards. */
-	@GameTest(maxTicks = 240)
+	@GameTest(environment = Alone.MASON_LIFT, maxTicks = 240)
 	public void heLiftsGreatBlocksAndHurlsThemAll(GameTestHelper helper) {
 		ServerPlayer p = visitor(helper, "mason-target");
 		Runnable restore = harmless();
