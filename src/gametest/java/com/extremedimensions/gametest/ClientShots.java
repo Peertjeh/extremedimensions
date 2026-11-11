@@ -881,7 +881,13 @@ public class ClientShots implements FabricClientGameTest {
 					stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.FEET, trimmed(a ? com.extremedimensions.registry.ModItems.TETHERITE_BOOTS : Items.DIAMOND_BOOTS, trim));
 					stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(a ? com.extremedimensions.registry.ModItems.TETHERITE_SPEAR
 							: com.extremedimensions.registry.ModItems.TETHERITE_SWORD));
+					// (vanilla's netherite spear in its other hand, to hold the Tetherite one against: both point ahead)
+					if (a) {
+						stand.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, new ItemStack(Items.NETHERITE_SPEAR));
+					}
 				}
+				// The set worn with the spear in hand (3.49.3: held pointing ahead, as vanilla's spears are)
+				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(com.extremedimensions.registry.ModItems.TETHERITE_SPEAR));
 			});
 			// four steps back, so the stands and the Spindle between them all stand in the view
 			sp.getServer().runCommand("execute as @a at @s rotated ~ 0 run tp @s ^ ^ ^-4 ~ 16");
@@ -891,6 +897,13 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(10);
 			ctx.takeScreenshot("02_tetherite_worn");
 			ctx.runOnClient(mc -> mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON));
+			// ... and the spear in hand as its bearer sees it
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("02_tetherite_spear_held");
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(com.extremedimensions.registry.ModItems.TETHERITE_SWORD));
+			});
 			sp.getServer().runCommand("kill @e[type=minecraft:armor_stand,tag=teth_a]");
 			sp.getServer().runCommand("kill @e[type=minecraft:armor_stand,tag=teth_b]");
 			sp.getServer().runOnServer(s -> {

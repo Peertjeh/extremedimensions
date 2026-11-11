@@ -199,45 +199,79 @@ def hoe():
     haft(g, line(11, 4, 10))
     return rows(g)
 
+# The spear follows vanilla's netherite spear pixel for pixel (3.49.3), its tones turned to Tetherite's: the leaf-shaped
+# head in the metal's ramp, edged in violet on its lit side as netherite's is in wine; the haft in the dark violet; the
+# grip in the metal's darker tones; a bead of the thread where the head meets the haft. Two drawings, as vanilla's: the
+# icon (16 px, its head to the upper right) and the one held in the hand (32 px, its head to the upper LEFT, as the
+# vanilla model for a spear in hand turns it so that it points ahead; drawn the other way it is held across the body).
+SPEAR = [
+    ".............ttt",
+    "...........tt560",
+    ".........tt45620",
+    ".......tt354620.",
+    ".......t3456210.",
+    "........t46210..",
+    "........h61110..",
+    ".......hb0010...",
+    "......hj0..00...",
+    ".....hj0........",
+    "....hj0.........",
+    "...hj0..........",
+    "..hj0...........",
+    ".h30............",
+    "h20.............",
+    "20..............",
+]
+
+SPEAR_IN_HAND = [
+    "ttt.............................",
+    "065tt...........................",
+    "02654tt.........................",
+    ".026453tt.......................",
+    ".0126543t.......................",
+    "..01264t........................",
+    "..01116h........................",
+    "...0100bh.......................",
+    "...00..0ah......................",
+    "........0jh.....................",
+    ".........0jh....................",
+    "..........0jh...................",
+    "...........0ih..................",
+    "............0jh.................",
+    ".............0jh................",
+    "..............0ih...............",
+    "...............03h..............",
+    "................02h.............",
+    ".................02h............",
+    "..................03h...........",
+    "...................03h..........",
+    "....................03h.........",
+    ".....................0ih........",
+    "......................0jh.......",
+    ".......................0jh......",
+    "........................0jh.....",
+    ".........................0ih....",
+    "..........................0jh...",
+    "...........................0ih..",
+    "............................0ia.",
+    ".............................0ba",
+    "..............................00",
+]
+
+
+def drawn(rows):
+    """An image of rows as they are (any size, the edge already drawn)."""
+    im = Image.new('RGBA', (len(rows[0]), len(rows)), (0, 0, 0, 0))
+    px = im.load()
+    for y, r in enumerate(rows):
+        for x, c in enumerate(r):
+            if c != '.':
+                px[x, y] = PAL[c] + (255,)
+    return im
+
+
 def spear(long=False):
-    g = grid()
-    put(g, [
-        "................",
-        "..............6.",
-        ".............54.",
-        "............543.",
-        "...........b32..",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-    ] if not long else [
-        "................",
-        ".............66.",
-        "............554.",
-        "...........5443.",
-        "..........b432..",
-        "..........a.....",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-    ])
-    haft(g, line(10, 4, 11) if not long else line(9, 6, 10))
-    return rows(g)
+    return drawn(SPEAR_IN_HAND if long else SPEAR)
 
 def ingot():
     """A cast bar seen from above and before: the lit top face and the darker front face both run up to the right,
@@ -534,7 +568,10 @@ ITEMS = {
 
 
 def main():
-    out = {name: img(fn()) for name, fn in ITEMS.items()}
+    out = {}
+    for name, fn in ITEMS.items():
+        made = fn()
+        out[name] = made if isinstance(made, Image.Image) else img(made)
     preview = sys.argv[1] if len(sys.argv) > 1 else None
     if preview:
         out["tetherite_ore"] = ore()

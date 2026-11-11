@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.49.3: The Spear Held Right
+
+### Fixed
+- **The Tetherite Spear is held pointing ahead**, as vanilla's spears are, instead of across the body. Its drawing
+  for the hand leaned the other way from vanilla's, so the game's spear pose turned it a quarter round.
+
+### Changed
+- **The Tetherite Spear is drawn after vanilla's netherite spear**, pixel for pixel, in Tetherite's tones: the
+  leaf-shaped head in the metal's grey-violet with a violet edge, the dark violet haft, the grip in the metal's darker
+  tones and a bead of the Tether's teal where the head meets the haft. The one held in the hand is drawn at 32 pixels,
+  as vanilla's is, with a teal end to its haft.
+
 ## 3.49.2: No Slipping Out of a Fight
 
 ### Fixed
