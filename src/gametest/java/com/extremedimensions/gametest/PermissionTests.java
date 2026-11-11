@@ -82,7 +82,9 @@ public class PermissionTests {
 			check(helper, Perms.has(p, Perms.Node.PLAYERS) && Perms.has(p.createCommandSourceStack(), Perms.Node.PLAYERS),
 					"the permission granted is not held");
 			check(helper, AdminService.allowed(p), "the Players screen stays shut to a player granted it");
-			check(helper, Sync.cursesData(p, DataStore.get(p.getUUID())).endsWith("|1"), "the Curses screen does not offer the Players screen");
+			// (the admin flag is the ninth part of the Curses screen's data; the Fresh Wound's follows it since 3.49)
+			String[] data = Sync.cursesData(p, DataStore.get(p.getUUID())).split("\\|", -1);
+			check(helper, data.length > 8 && "1".equals(data[8]), "the Curses screen does not offer the Players screen");
 			check(helper, AdminService.act(p, target.getStringUUID(), "add", com.extremedimensions.penalty.Penalty.GLASS_JAW.id) == null,
 					"a player granted the Players screen could not lay a curse on");
 			check(helper, !SettingsService.canEdit(p), "granting the Players screen let them change the settings");
