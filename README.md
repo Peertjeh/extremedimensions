@@ -209,7 +209,8 @@ Trials past gold), and the tapestry's boons stay.
   uncommon, rare, epic): the better a relic, the rarer it is found, and the Elders, the Starved One and a Rift Trial's
   gold medal give the rarer tiers more often. Among the epic: the **Debtor's Seal** (double atonement, but the curses of
   deaths and Lurkers come twice, a boss fight's three times) and the **Unbound Pinion** (fly with an elytra in a boss
-  fight, but take 30% more damage and wear the elytra 25 times as fast).
+  fight, but take 30% more damage and wear the elytra 25 times as fast). The Seam Lantern can also be kindled with a
+  lantern and a soul lantern into the **Kindled Seam Lantern**, a blue-violet lantern whose light reaches twice as far.
 - **Pacts**: curses taken on willingly for an expedition, for what a safe return brings.
 - **Rift Trials**: a weekly goal in the Seam, a world scoreboard and medals.
 - **Tetherite**: a tier past netherite. The rarest ore lies deep in the Seam's island hearts and the Fray's knots (a

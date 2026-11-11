@@ -2,6 +2,15 @@
 
 ## 3.50.0: Drawn As Vanilla Draws
 
+### Added
+- **The Kindled Seam Lantern**: the Seam Lantern relic lit from a lantern's flame and a soul lantern's (the three
+  together at a crafting table; the recipe is learnt once you hold a Seam Lantern).
+  - It stands or hangs as the lantern and the soul lantern do, its flame burning blue and violet.
+  - Its light reaches twice as far as a lantern's: it carries it 14 blocks out in eight directions round it, as unseen
+    lights where there is open air, and takes them back when it is broken (`kindled_lantern_spread`,
+    `kindled_lantern_light`). Now and then it lays again any that were built over.
+  - The light itself is the game's own white light; with shaders, its colour is up to the shader pack.
+
 ### Changed
 - **Every item of the mod is drawn after a vanilla item**, as the Tetherite gear has been since 3.49.3. Each keeps its
   vanilla model's silhouette, outline and shading pixel for pixel, in its own colours and with a mark of its own:

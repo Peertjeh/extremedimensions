@@ -1693,13 +1693,80 @@ item("disc_fragment_abyss", {
 
 
 def draw(pal, rows):
-    im = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    im = Image.new("RGBA", (len(rows[0]), len(rows)), (0, 0, 0, 0))
     px = im.load()
     for y, r in enumerate(rows):
         for x, c in enumerate(r):
             if c != ".":
                 px[x, y] = pal[c] + (255,)
     return im
+
+
+# ------------------------------------------------------------------------------------------------------------ blocks
+
+BLOCKS = os.path.join(ROOT, "src/client/resources/assets/extremedimensions/textures/block")
+DRAWN_BLOCKS = {}
+
+# Kindled Seam Lantern (the block): vanilla's lantern block texture (its three frames of flame and its chain), the iron
+# the Seam Lantern's colder iron, the copper bands its violet silk, the flame blue-violet. Animated as vanilla's is.
+DRAWN_BLOCKS["kindled_seam_lantern"] = ({
+    # the iron, dark to light
+    '0': (28, 30, 38), '1': (40, 42, 50), '2': (48, 50, 62), '3': (62, 66, 78),
+    # the silk bands
+    'a': (96, 64, 140), 'b': (130, 96, 180),
+    # the flame, dark to light
+    'c': (58, 56, 150), 'd': (92, 90, 214), 'e': (146, 138, 244), 'f': (204, 194, 255), 'g': (240, 236, 255),
+}, [
+    ".1331...........",
+    ".baab......311..",
+    "133331.....1.0..",
+    "acddca.....1.0..",
+    "bdeedb.....010..",
+    "begfeb..........",
+    "befgeb.....1.0..",
+    "adeeda.....010..",
+    "133331..........",
+    "112211..........",
+    "123321.....311..",
+    "233332.....1.0..",
+    "233332..........",
+    "123321..........",
+    "112211..........",
+    "................",
+    ".1331...........",
+    ".baab......311..",
+    "133331.....1.0..",
+    "acddca.....1.0..",
+    "bdeedb.....010..",
+    "begfeb..........",
+    "befgeb.....1.0..",
+    "adeeda.....010..",
+    "133331..........",
+    "112211..........",
+    "123321.....311..",
+    "233332.....1.0..",
+    "233332..........",
+    "123321..........",
+    "112211..........",
+    "................",
+    ".1331...........",
+    ".baab......311..",
+    "133331.....1.0..",
+    "acddca.....1.0..",
+    "bdeedb.....010..",
+    "begfeb..........",
+    "befgeb.....1.0..",
+    "adeeda.....010..",
+    "133331..........",
+    "112211..........",
+    "123321.....311..",
+    "233332.....1.0..",
+    "233332..........",
+    "123321..........",
+    "112211..........",
+    "................",
+])
+BLOCK_ANIMATION = '{\n  "animation": {\n    "interpolate": true,\n    "frametime": 8\n  }\n}\n'
 
 
 def main():
@@ -1716,6 +1783,11 @@ def main():
         return
     for name, im in out.items():
         im.save(os.path.join(ITEMS, name + ".png"))
+    for name, (pal, rows) in DRAWN_BLOCKS.items():
+        draw(pal, rows).save(os.path.join(BLOCKS, name + ".png"))
+        if len(rows) > len(rows[0]):
+            with open(os.path.join(BLOCKS, name + ".png.mcmeta"), "w") as f:
+                f.write(BLOCK_ANIMATION)
 
 
 if __name__ == "__main__":

@@ -934,6 +934,44 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("02_tetherite_spears_side");
 			sp.getServer().runCommand("kill @e[type=minecraft:armor_stand,tag=spear_v]");
 			sp.getServer().runCommand("kill @e[type=minecraft:armor_stand,tag=spear_t]");
+			// The Kindled Seam Lantern (3.50.0) at night beside a lantern and a soul lantern, and one hanging from a post:
+			// its blue-violet flame, and its light carried twice as far over the grass
+			sp.getServer().runCommand("time set midnight");
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				net.minecraft.core.BlockPos at = p.blockPosition().south(4);
+				p.level().setBlock(at.west(2), net.minecraft.world.level.block.Blocks.LANTERN.defaultBlockState(), 3);
+				p.level().setBlock(at, com.extremedimensions.registry.ModBlocks.KINDLED_SEAM_LANTERN.defaultBlockState(), 3);
+				p.level().setBlock(at.east(2), net.minecraft.world.level.block.Blocks.SOUL_LANTERN.defaultBlockState(), 3);
+				net.minecraft.core.BlockPos post = at.east(4);
+				for (int y = 0; y < 3; y++) {
+					p.level().setBlock(post.above(y), net.minecraft.world.level.block.Blocks.SPRUCE_FENCE.defaultBlockState(), 3);
+				}
+				p.level().setBlock(post.above(3), net.minecraft.world.level.block.Blocks.SPRUCE_PLANKS.defaultBlockState(), 3);
+				p.level().setBlock(post.above(2).west(), com.extremedimensions.registry.ModBlocks.KINDLED_SEAM_LANTERN.defaultBlockState()
+						.setValue(net.minecraft.world.level.block.LanternBlock.HANGING, true), 3);
+				p.level().setBlock(post.above(3).west(), net.minecraft.world.level.block.Blocks.SPRUCE_PLANKS.defaultBlockState(), 3);
+			});
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~1 ~ 0 20");
+			ctx.waitTicks(40);
+			ctx.takeScreenshot("02_kindled_seam_lantern");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~12 ~-6 0 50");
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("02_kindled_seam_lantern_reach");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-13 ~6 0 0");
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				net.minecraft.core.BlockPos at = p.blockPosition().south(4);
+				for (net.minecraft.core.BlockPos q : new net.minecraft.core.BlockPos[] {at.west(2), at, at.east(2), at.east(3).above(2)}) {
+					p.level().setBlock(q, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				}
+				net.minecraft.core.BlockPos post = at.east(4);
+				for (int y = 0; y < 4; y++) {
+					p.level().setBlock(post.above(y), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+				}
+				p.level().setBlock(post.above(3).west(), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+			});
+			sp.getServer().runCommand("time set day");
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
 				p.setItemSlot(net.minecraft.world.entity.EquipmentSlot.MAINHAND, new ItemStack(com.extremedimensions.registry.ModItems.TETHERITE_SWORD));
