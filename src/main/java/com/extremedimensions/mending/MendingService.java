@@ -460,6 +460,18 @@ public final class MendingService {
 				0.9f + 0.2f * ThreadLocalRandom.current().nextFloat());
 	}
 
+	/**
+	 * One tick of its wait: with nobody at its fight the wait goes on, and it is over once it has lasted
+	 * {@code starved_leave_seconds}; anyone at the fight starts it over (public for tests). True when it sinks back.
+	 */
+	public static boolean waitedOut(boolean nobody) {
+		if (!nobody) {
+			alone = 0;
+			return false;
+		}
+		return ++alone >= Math.max(0, Config.STARVED_LEAVE_SECONDS) * 20;
+	}
+
 	private static void drive(ServerLevel seam) {
 		Entity ent = seam.getEntity(boss);
 		List<ServerPlayer> arena = new ArrayList<>();
@@ -494,14 +506,10 @@ public final class MendingService {
 			// Its music for everyone at its fight, asked for again every two seconds (it fades once it stops coming)
 			ElderFx.music(seam, MendingService::inArena, ElderFx.MUSIC_STARVED_ONE);
 		}
-		if (arena.isEmpty()) {
-			// Nobody at its fight: it waits a while for its prey to come back, then sinks back into the seam, whole again
-			if (++alone >= Math.max(0, Config.STARVED_LEAVE_SECONDS) * 20) {
-				fade(so);
-				return;
-			}
-		} else {
-			alone = 0;
+		// Nobody at its fight: it waits a while for its prey to come back, then sinks back into the seam, whole again
+		if (waitedOut(arena.isEmpty())) {
+			fade(so);
+			return;
 		}
 		if (rise >= 0) {
 			rising(seam, so);

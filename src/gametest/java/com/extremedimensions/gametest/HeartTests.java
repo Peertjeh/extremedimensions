@@ -135,6 +135,44 @@ public class HeartTests {
 	 * top of the shaft over it, the strands between, the islands' undersides; not past them. The top of a node far out
 	 * on its shaft lay outside the old ball, which is what left a lone player there to see it sink back.
 	 */
+	/**
+	 * The Heart lies in the Seam, which the dedicated server's test world does not have (the client test, which has it,
+	 * raises the Starved One there for its shots): a test that fights at the Heart passes over itself there, as the
+	 * Seam's parts of the other tests do.
+	 */
+	private static boolean noSeam(GameTestHelper helper) {
+		if (helper.getLevel().getServer().getLevel(SeamService.SEAM) != null) {
+			return false;
+		}
+		helper.succeed();
+		return true;
+	}
+
+	/** Its wait with nobody at the fight: it sinks back only once the grace is over, and anyone coming back starts it over. */
+	@GameTest
+	public void itWaitsOutTheGraceBeforeItSinksBack(GameTestHelper helper) {
+		int leave = Config.STARVED_LEAVE_SECONDS;
+		try {
+			Config.STARVED_LEAVE_SECONDS = 1;
+			MendingService.waitedOut(false);
+			for (int i = 1; i < 20; i++) {
+				check(helper, !MendingService.waitedOut(true), "it sank back after %s ticks of a 20-tick grace", i);
+			}
+			check(helper, !MendingService.waitedOut(false), "someone at the fight did not start the wait over");
+			for (int i = 1; i < 20; i++) {
+				check(helper, !MendingService.waitedOut(true), "after someone came back it sank back after %s ticks", i);
+			}
+			check(helper, MendingService.waitedOut(true), "it did not sink back once the grace was over");
+			Config.STARVED_LEAVE_SECONDS = 0;
+			MendingService.waitedOut(false);
+			check(helper, MendingService.waitedOut(true), "with no grace it did not sink back at once");
+		} finally {
+			Config.STARVED_LEAVE_SECONDS = leave;
+			MendingService.waitedOut(false);
+		}
+		helper.succeed();
+	}
+
 	@GameTest
 	public void theHeartsFightReachesEveryPillarAndItsShaft(GameTestHelper helper) {
 		for (int i = 0; i < Binding.PILLARS; i++) {
@@ -163,6 +201,9 @@ public class HeartTests {
 	 */
 	@GameTest(environment = Alone.HEART_LEAVE, maxTicks = 260)
 	public void aLonePlayerAtAPillarKeepsTheFightAndItSinksBackOnlyAfterTheGrace(GameTestHelper helper) {
+		if (noSeam(helper)) {
+			return;
+		}
 		Scene sc = new Scene(helper, "test-heart-leave", false, 1);
 		int[] c = Binding.pillar(0);
 		double ox = c[0] - MendingService.HX, oz = c[1] - MendingService.HZ, len = Math.sqrt(ox * ox + oz * oz);
@@ -199,6 +240,9 @@ public class HeartTests {
 	 */
 	@GameTest(environment = Alone.HEART_RISE, maxTicks = 200)
 	public void itCannotBeHurtWhileRisingAndItsFightChangesAt66And33(GameTestHelper helper) {
+		if (noSeam(helper)) {
+			return;
+		}
 		Scene sc = new Scene(helper, "test-heart-rise", true, 1);
 		StarvedOne[] so = new StarvedOne[1];
 		try {
@@ -258,6 +302,9 @@ public class HeartTests {
 	 */
 	@GameTest(environment = Alone.HEART_ARENA, maxTicks = 500)
 	public void theHeartsArenaRisesAndLeavesNothingBehind(GameTestHelper helper) {
+		if (noSeam(helper)) {
+			return;
+		}
 		Scene sc = new Scene(helper, "test-heart-arena", true, 4);
 		StarvedOne[] so = new StarvedOne[1];
 		List<BlockPos> placed = new ArrayList<>();
@@ -316,6 +363,9 @@ public class HeartTests {
 	 */
 	@GameTest
 	public void theHeartsArenaIsMadeOfNothingThatChangesOfItself(GameTestHelper helper) {
+		if (noSeam(helper)) {
+			return;
+		}
 		ServerLevel seam = helper.getLevel().getServer().getLevel(SeamService.SEAM);
 		check(helper, seam != null, "there is no Seam");
 		String bad = ElderArena.changesOfItself(seam, HeartArena.STYLE, new BlockPos(MendingService.HX, MendingService.HY + 1, MendingService.HZ), 4848L);
