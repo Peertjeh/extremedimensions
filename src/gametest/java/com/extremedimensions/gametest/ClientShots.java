@@ -282,6 +282,20 @@ public class ClientShots implements FabricClientGameTest {
 		});
 		ctx.waitTicks(5);
 		face(sp, name);
+		// Its death is shown to those within 96 blocks of it: wandered off further (the Mason steps far across his
+		// arena), it is brought back into view first, 24 blocks off the way it went
+		sp.getServer().runOnServer(s -> {
+			ServerPlayer p = player(s);
+			for (com.extremedimensions.elder.ElderBoss e : elders(s, 400)) {
+				double dx = e.getX() - p.getX(), dz = e.getZ() - p.getZ(), d = Math.sqrt(dx * dx + dz * dz);
+				if (d > 48) {
+					e.teleportTo(p.getX() + dx / d * 24, p.getY(), p.getZ() + dz / d * 24);
+				}
+			}
+		});
+		ctx.waitTicks(5);
+		face(sp, name);
+		ctx.waitTicks(2);
 		int dyingFrom = ctx.computeOnClient(mc -> com.extremedimensions.client.fx.CameraLock.holds());
 		// (where it is as it dies, for the message should its death not reach the view: it is shown within 96 blocks)
 		String where = sp.getServer().computeOnServer(s -> {
