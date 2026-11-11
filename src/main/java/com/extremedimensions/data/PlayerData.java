@@ -50,7 +50,7 @@ public class PlayerData {
 	public String relic = null;
 	public int collapses = 0;
 	public double longestRun = 0;
-	/** Curse id -> stacks. Curses are permanent: only atonement, fragments or a Mending Cloth take stacks off. */
+	/** Curse id -> stacks. Curses are permanent: only atonement (fragments and a Mending Cloth pay into it) takes stacks off. */
 	public Map<String, Integer> curses = new HashMap<>();
 	/**
 	 * Curses the player has carried or sworn at some time: where unknown curses show as runes (Config.CURSE_RUNES),
@@ -115,6 +115,18 @@ public class PlayerData {
 	public Map<String, Integer> fragmentsOffered = new HashMap<>();
 	/** The curse the player chose to atone for (and to mend first); null = the heaviest one. */
 	public String atoning = null;
+	/** Seconds of play before this player may use another Mending Cloth. */
+	public int clothIn = 0;
+	/**
+	 * Curses whose next stack a Mending Cloth paid into: that stack leaves no scar when it comes off (unless cloth_scars).
+	 * A curse leaves it when the stack comes off, or when a death takes all the atonement gathered for it.
+	 */
+	public Set<String> clothed = new LinkedHashSet<>();
+	/**
+	 * The Fresh Wound a death in the mod's worlds leaves: seconds of play it lasts yet, and of those the seconds no Tether
+	 * binds to an anchor yet (see Wound).
+	 */
+	public int woundIn = 0, woundBindIn = 0;
 	/** Before 2.3 curses wore off: id -> remaining seconds per stack. Read once and turned into permanent stacks. */
 	public Map<String, List<Double>> penaltyTime = new HashMap<>();
 	/** Curse ids currently on the choice screen (empty = nothing to choose), and each card's multiplier. */
@@ -368,7 +380,6 @@ public class PlayerData {
 		knownCurses.add(p.id);
 	}
 
-	/** Takes one stack off; the curse's atonement starts over. Returns false if it had none. */
 	/** Tether Fragments offered at an anchor towards this curse's next stack, at the stacks it has now. */
 	public int fragmentsOffered(Penalty p) {
 		return fragmentsOffered == null ? 0 : fragmentsOffered.getOrDefault(p.id + "@" + owned(p), 0);
@@ -384,6 +395,7 @@ public class PlayerData {
 		fragmentsOffered.merge(key, 1, Integer::sum);
 	}
 
+	/** Takes one stack off; the curse's atonement (and what a cloth paid into it) starts over. Returns false if it had none. */
 	public boolean removeStack(Penalty p) {
 		int have = owned(p);
 		if (have <= 0) {
@@ -391,6 +403,9 @@ public class PlayerData {
 		}
 		if (fragmentsOffered != null) {
 			fragmentsOffered.keySet().removeIf(k -> k.startsWith(p.id + "@"));
+		}
+		if (clothed != null) {
+			clothed.remove(p.id);
 		}
 		if (have == 1) {
 			curses.remove(p.id);

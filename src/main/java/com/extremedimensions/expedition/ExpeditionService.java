@@ -297,7 +297,7 @@ public final class ExpeditionService {
 			d.currentDrain = (world <= 0 ? 0 : d.drainMultiplier(Math.min(1, world) * Math.min(1, relic) * toll * com.extremedimensions.tetherite.Tetherite.drainEase(p)) * Math.max(1, world) * Math.max(1, relic))
 					* (seam ? 1.0 : TetherService.distanceFactor(p, d)) * com.extremedimensions.elder.FerrymanService.drainFactor(p)
 					* com.extremedimensions.binding.Homebound.drainFactor(p) * com.extremedimensions.events.WorldEvents.drainFactor(p)
-					* com.extremedimensions.reach.PaleReach.drainFactor(p);
+					* com.extremedimensions.reach.PaleReach.drainFactor(p) * com.extremedimensions.penalty.Wound.drainFactor(d);
 			double left = AnchorService.drainLinked(p, d, d.currentDrain / 20.0);
 			d.runTime += 1.0 / 20.0;
 			double far = seam ? 0 : TetherService.arrivalDistance(p, d);
@@ -331,7 +331,8 @@ public final class ExpeditionService {
 			pull(p, d);
 		}
 		if (!((Dims.isBeyond(dim) || seam) && d.inRun)) {
-			d.currentDrain = d.drainMultiplier();
+			// (a Fresh Wound shows in it at home too: the drain the next expedition would start at)
+			d.currentDrain = d.drainMultiplier() * com.extremedimensions.penalty.Wound.drainFactor(d);
 		}
 		return changed;
 	}
@@ -493,9 +494,10 @@ public final class ExpeditionService {
 		d.collapseOwed = false;
 		// Fallen in a boss fight: to a bound Debtor's Seal, the death's curses are a boss's
 		boolean boss = RelicService.has(d, Relic.DEBTORS_SEAL) && RelicService.bossNear(p);
-		// Every death undoes part of the penance, wherever it happens
+		// Every death undoes part of the penance, wherever it happens, and leaves a Fresh Wound (or opens it again)
 		int toll = PenaltyService.deathToll(d);
 		d.atonementLost += toll;
+		com.extremedimensions.penalty.Wound.open(d);
 		// A Collapse that ends in death beyond the wound leaves an echo there
 		if (d.collapsing && Dims.isBeyond(dim)) {
 			com.extremedimensions.events.Echoes.record(p, dim, toll);
@@ -610,6 +612,8 @@ public final class ExpeditionService {
 					Penalty.display(Math.round(Math.max(0, Math.min(1, Config.ATONE_DEATH_LOSS)) * 100)), d.atonementLost));
 			d.atonementLost = 0;
 		}
+		// What the Fresh Wound takes, and for how long
+		com.extremedimensions.penalty.Wound.tell(p, d);
 		if (!d.pendingOffer.isEmpty()) {
 			d.offerDelay = Config.OFFER_DELAY_TICKS;
 		}

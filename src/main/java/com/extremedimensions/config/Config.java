@@ -126,7 +126,7 @@ public final class Config {
 	/** Seconds an offer of curse cards may stand unanswered before the Tether chooses one itself (0 = never). */
 	public static int OFFER_TIMEOUT_SECONDS = 120;
 	/** Chance that an offer is multiplied: then every card carries its own multiplier between the two values below. */
-	public static double MULTIPLIER_CHANCE = 0.15;
+	public static double MULTIPLIER_CHANCE = 0.25;
 	public static int MULTIPLIER_MIN = 2;
 	public static int MULTIPLIER_MAX = 4;
 	/** Ticks without looking around or without moving before a player counts as idle (no atonement) (15 s). */
@@ -146,11 +146,32 @@ public final class Config {
 	public static int ATONE_PER_NIGHT_KILL = 1;
 	/** Active seconds in a night a player needs for its dawn to earn atonement (idling or sleeping it away earns none). */
 	public static int ATONE_NIGHT_ACTIVE_SECONDS = 120;
-	/** Share of every curse's atonement a death takes away (0.5 = half, 0 = none, 1 = all). */
-	public static double ATONE_DEATH_LOSS = 0.5;
+	/** Share of every curse's atonement a death takes away (0.75 = three quarters, 0 = none, 1 = all). */
+	public static double ATONE_DEATH_LOSS = 0.75;
 	/** Points needed for a curse's last stack, and how many more for every stack above it. */
-	public static int ATONE_BASE = 120;
-	public static int ATONE_PER_STACK = 60;
+	public static int ATONE_BASE = 160;
+	public static int ATONE_PER_STACK = 80;
+	/**
+	 * A Mending Cloth pays this share of the whole atonement the next stack of the curse atoned for asks (0.4: it lifts
+	 * nothing by itself, only a stack it completes comes off), and a player may use one every this many minutes of play.
+	 * It works on the Extreme set only with {@code cloth_extreme} 1 (an Abyssal curse follows abyssal_mending_cloth), and
+	 * a stack it helped to lift leaves a scar only with {@code cloth_scars} 1. With 1, 0, 1 and 1 a cloth lifts a stack
+	 * at once, as it did before 3.49.
+	 */
+	public static double CLOTH_SHARE = 0.4;
+	public static int CLOTH_COOLDOWN_MINUTES = 60;
+	public static int CLOTH_EXTREME = 0;
+	public static int CLOTH_SCARS = 0;
+	/**
+	 * A Fresh Wound: every death in the mod's worlds leaves the player wounded for this many minutes of play (0 = never),
+	 * their maximum health this much lower (4 = two hearts), the Tether draining this many times as fast beyond the
+	 * wound, and for the first {@code death_wound_bind_minutes} of it no Tether binds to an anchor. A death while wounded
+	 * starts it over.
+	 */
+	public static int DEATH_WOUND_MINUTES = 10;
+	public static double DEATH_WOUND_HEALTH = 4;
+	public static double DEATH_WOUND_DRAIN = 1.25;
+	public static int DEATH_WOUND_BIND_MINUTES = 3;
 	/** Chance that one card of an offer is an Extreme curse (never multiplied). */
 	public static double EXTREME_CARD_CHANCE = 0.025;
 	/** How likely a spilled stack lands on an Extreme curse compared to any other curse (1 = as likely, 0 = never). */
@@ -1826,7 +1847,7 @@ public final class Config {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	/** Layout version of the config file; files from before a version are brought up to date on loading. */
-	private static final int VERSION = 10;
+	private static final int VERSION = 11;
 
 	/**
 	 * Defaults that changed, by the version that changed them: {key, old default, new default}. A file still holding
@@ -1863,6 +1884,10 @@ public final class Config {
 		{{"relic_ember_heart_end", "1.2", "1.15"}, {"relic_pale_shard_nether", "1.2", "1.15"}, {"relic_tithe_bell_xp", "0.75", "0.5"},
 				{"relic_featherbone_fall", "8", "10"}, {"relic_keepers_eye_fragments", "2", "2.5"}, {"relic_lurkers_tooth_often", "2", "1.5"},
 				{"relic_seam_lantern_seconds", "60", "90"}, {"relic_helds_chain_grace", "15", "20"}},
+		// 3.49.0: a death costs more (more of the penance undone, offers multiplied more often) and atonement takes
+		// longer; a world on a difficulty takes that difficulty's new values of these (see Preset.upgrade)
+		{{"atone_base", "120", "160"}, {"atone_per_stack", "60", "80"}, {"atone_death_loss", "0.5", "0.75"},
+				{"multiplier_chance", "0.15", "0.25"}},
 	};
 
 	/**
@@ -1935,7 +1960,8 @@ public final class Config {
 	 */
 	private static final java.util.Set<String> SWITCHES = java.util.Set.of("respawn_title", "hud_boss_bar", "own_worlds_only",
 			"curse_overflow", "curse_deeper", "overworld_curses", "curse_runes", "abyssal_curses", "abyssal_mending_cloth",
-			"atone_kill_area_shared", "hints", "lurker_enabled", "cave_lurker_enabled", "sculk_lurker_enabled", "magpie_enabled",
+			"cloth_extreme", "cloth_scars", "atone_kill_area_shared", "hints", "lurker_enabled", "cave_lurker_enabled", "sculk_lurker_enabled",
+			"magpie_enabled",
 			"wick_enabled", "wick_eats", "tidewalker_enabled", "gatebreaker_enabled", "gatebreaker_breaks", "lockwarden_enabled",
 			"threadbiter_enabled", "edgecrawler_enabled", "edgecrawler_hurls", "cragback_enabled", "flee_returns", "keeper_enabled",
 			"seam_fray", "seam_return_gate", "seam_rift_compass", "seam_rift_leash", "seam_portal", "seam_reset_backup",
@@ -2040,9 +2066,10 @@ public final class Config {
 		if (json.size() == 0) {
 			return;
 		}
-		if (from < 8) {
+		if (from < VERSION) {
 			// A world set to one of the difficulties takes that difficulty's values of the settings it gained since (the
-			// Lurker's in 3.7.0, the tribe's standing and the swarm in 3.8.0), rather than turning into custom rules
+			// Lurker's in 3.7.0, the tribe's standing and the swarm in 3.8.0, the Fresh Wound in 3.49.0) and of those
+			// whose values it changed (3.49.0), rather than turning into custom rules
 			Preset.upgrade(json, from);
 		}
 		for (int v = from + 1; v <= VERSION && v < MIGRATIONS.length; v++) {
@@ -2177,6 +2204,8 @@ public final class Config {
 				{"lurker_swarm_hollowlings", 0, 24}, {"lurker_swarm_seconds", 5, 300}, {"lurker_swarm_bite", 0, 40},
 				{"hollowling_swarm_curse_chance", 0, 1}, {"hollowling_swarm_curses_max", 0, 9}, {"fragment_atone_share", 0.01, 1},
 				{"fragment_max_per_stack", 1, 64}, {"keeper_reach_damage", 0, 40},
+				{"cloth_share", 0.01, 1}, {"cloth_cooldown_minutes", 0, 10080}, {"cloth_extreme", 0, 1}, {"cloth_scars", 0, 1},
+				{"death_wound_minutes", 0, 1440}, {"death_wound_health", 0, 18}, {"death_wound_drain", 1, 5}, {"death_wound_bind_minutes", 0, 1440},
 				{"flee_curses", 0, 5}, {"flee_danger_seconds", 0, 120}, {"flee_returns", 0, 1},
 				{"companion_sound_volume", 0, 1}, {"companion_ambient_seconds", 10, 1200}, {"companion_warn_seconds", 0, 600},
 				{"lurker_blocked_seconds", 1, 30}, {"lurker_bolt_damage", 0, 40}, {"lurker_bolt_seconds", 1, 60}, {"lurker_young", 0, 6},

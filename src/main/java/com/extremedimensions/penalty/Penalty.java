@@ -12,8 +12,8 @@ import com.extremedimensions.data.PlayerData;
 
 /**
  * Curses: penalties chosen after a Dimensional Collapse or a death beyond the wound (and, when enabled, after a death in
- * the Overworld). They are permanent: every pick adds stacks, up to the curse's own maximum, and only atonement, Tether
- * Fragments or a Mending Cloth take a stack off again.
+ * the Overworld). They are permanent: every pick adds stacks, up to the curse's own maximum, and only atonement (which
+ * Tether Fragments and a Mending Cloth pay into) takes a stack off again.
  *
  * <p>Extreme curses are the fourth set: now and then one of the cards is one of them (never multiplied), and spilled
  * stacks can land on them too, more rarely than on others. Their cards and the Curses screen only ever hint at what

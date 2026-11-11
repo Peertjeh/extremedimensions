@@ -143,7 +143,7 @@ public class AbyssalTests {
 		int plain = PenaltyService.cost(d, Penalty.GLASS_JAW);
 		check(helper, PenaltyService.cost(d, Penalty.SUNSCORN) == (int) Math.ceil(plain * Config.ABYSSAL_ATONE_FACTOR),
 				"an Abyssal curse should cost %sx to atone: %s vs %s", Config.ABYSSAL_ATONE_FACTOR, PenaltyService.cost(d, Penalty.SUNSCORN), plain);
-		// A death takes all of an Abyssal curse's atonement, half of another's
+		// A death takes all of an Abyssal curse's atonement, atone_death_loss of another's
 		d.atonement.put("sunscorn", 40);
 		d.atonement.put("glass_jaw", 40);
 		PenaltyService.deathToll(d);

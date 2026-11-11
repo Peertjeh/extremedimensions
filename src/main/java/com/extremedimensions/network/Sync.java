@@ -81,7 +81,10 @@ public final class Sync {
 		}
 	}
 
-	/** The Curses screen's data: scars, the curse atoned for, Overworld curses on or off, every curse, players nearby, the newest curses. */
+	/**
+	 * The Curses screen's data: scars, the curse atoned for, Overworld curses on or off, every curse, players nearby, the
+	 * newest curses, and the Fresh Wound and the wait for the next Mending Cloth.
+	 */
 	public static String cursesData(ServerPlayer p, PlayerData d) {
 		StringBuilder out = new StringBuilder();
 		out.append(d.scars).append('|').append(d.atoning == null ? "" : d.atoning).append('|').append(DataStore.overworldPenalties() ? 1 : 0).append('|');
@@ -107,6 +110,10 @@ public final class Sync {
 		out.append('|').append(com.extremedimensions.penalty.CurseLog.data(d));
 		// Whether the player may open the operators' Players screen (3.27)
 		out.append('|').append(com.extremedimensions.admin.AdminService.allowed(p) ? 1 : 0);
+		// The Fresh Wound and the Mending Cloth (3.49): seconds of play the wound lasts yet, of those no Tether binds yet,
+		// and before another cloth may be used
+		out.append('|').append(Math.max(0, d.woundIn)).append(',').append(com.extremedimensions.penalty.Wound.bindIn(d)).append(',')
+				.append(Math.max(0, d.clothIn));
 		return out.toString();
 	}
 

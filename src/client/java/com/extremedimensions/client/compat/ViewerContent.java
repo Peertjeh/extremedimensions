@@ -35,7 +35,7 @@ import net.minecraft.world.item.Items;
  * What the recipe viewers show beside the mod's recipes (3.35): every one of those is an ordinary crafting, smelting,
  * smithing or stonecutting recipe the viewer finds by itself, but much of the mod is had in other ways. Here are the
  * anchors' fuel, the young's barter and gifts, the Spindle, what each creature and find leaves, and a page for every
- * item no recipe makes, saying where it comes from.
+ * item no recipe makes, saying where it comes from (and one for the Mending Cloth, whose recipe does not say what it does).
  *
  * <p>Kept apart from any viewer's own API, so it loads without one and a client test can check it.
  */
@@ -291,7 +291,15 @@ public final class ViewerContent {
 				percent(Config.TETHERITE_BIND_CORD), percent(Config.TETHERITE_BIND_SCAR));
 	}
 
-	/** Every item page, in the order above: those with their own words, the relics, the Binding's and the lodestone's. */
+	/** The Mending Cloth's page (3.49), as this world's settings have it: the share of a stack it pays, and how often. */
+	private static Component cloth() {
+		String share = percent(Math.max(0.01, Math.min(1, Config.CLOTH_SHARE)));
+		return Config.CLOTH_COOLDOWN_MINUTES > 0
+				? Component.translatable("viewer.extremedimensions.info.mending_cloth", share, Config.CLOTH_COOLDOWN_MINUTES)
+				: Component.translatable("viewer.extremedimensions.info.mending_cloth.free", share);
+	}
+
+	/** Every item page, in the order above: those with their own words, the relics, the cloth's, the Binding's and the lodestone's. */
 	public static List<Info> infos() {
 		List<Info> out = new ArrayList<>();
 		for (String id : INFO) {
@@ -307,6 +315,7 @@ public final class ViewerContent {
 						: "viewer.extremedimensions.info.relic_kept")));
 			}
 		}
+		out.add(new Info(new ItemStack(ModItems.MENDING_CLOTH), cloth()));
 		out.add(new Info(new ItemStack(ModItems.TETHERITE_UPGRADE_SMITHING_TEMPLATE), binding()));
 		out.add(new Info(new ItemStack(ModItems.TETHERITE_INGOT), binding()));
 		out.add(new Info(new ItemStack(Items.LODESTONE), Component.translatable("viewer.extremedimensions.info.lodestone")));

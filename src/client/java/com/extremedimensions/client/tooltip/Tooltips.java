@@ -148,6 +148,10 @@ public final class Tooltips {
 					.withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
 			return;
 		}
+		if (item == ModItems.MENDING_CLOTH) {
+			cloth(lines);
+			return;
+		}
 		if (key != null) {
 			lines.add(Component.translatable("tooltip.extremedimensions." + key + ".1").withStyle(ChatFormatting.GRAY));
 			lines.add(Component.translatable("tooltip.extremedimensions." + key + ".2").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
@@ -191,6 +195,25 @@ public final class Tooltips {
 				});
 			}
 		}
+	}
+
+	/**
+	 * The Mending Cloth by the world's numbers (3.49): the share of a stack it pays, how often one may be used, and what it
+	 * will not do.
+	 */
+	private static void cloth(List<Component> lines) {
+		lines.add(Component.translatable("tooltip.extremedimensions.mending_cloth.1", pct(Math.max(0.01, Math.min(1, Config.CLOTH_SHARE))))
+				.withStyle(ChatFormatting.GRAY));
+		if (Config.CLOTH_COOLDOWN_MINUTES > 0) {
+			lines.add(Component.translatable("tooltip.extremedimensions.mending_cloth.wait", Config.CLOTH_COOLDOWN_MINUTES).withStyle(ChatFormatting.GRAY));
+		}
+		if (Config.CLOTH_EXTREME <= 0) {
+			lines.add(Component.translatable("tooltip.extremedimensions.mending_cloth.extreme").withStyle(ChatFormatting.DARK_GRAY));
+		}
+		if (Config.CLOTH_SCARS <= 0) {
+			lines.add(Component.translatable("tooltip.extremedimensions.mending_cloth.unscarred").withStyle(ChatFormatting.DARK_GRAY));
+		}
+		lines.add(Component.translatable("tooltip.extremedimensions.mending_cloth.2").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
 	}
 
 	/** A share as a whole percentage, as text (0.03 gives "3"). */

@@ -7,7 +7,10 @@
     "extremedimensions:seam_silk",
     "extremedimensions:seam_silk",
     "extremedimensions:tether_fragment",
-    "extremedimensions:veil_wing"
+    "extremedimensions:tether_fragment",
+    "extremedimensions:veil_wing",
+    "extremedimensions:veil_wing",
+    "minecraft:echo_shard"
   ],
   "result": {
     "id": "extremedimensions:mending_cloth",

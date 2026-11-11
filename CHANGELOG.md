@@ -1,5 +1,30 @@
 # Changelog
 
+## 3.49.0: Wounds That Stay
+
+### Changed
+- **A Mending Cloth no longer lifts a curse by itself.** It was far too easy a way out.
+  - It pays two fifths of what the curse's next stack costs into its atonement (`cloth_share`, 0.4), as Tether
+    Fragments do; only when that completes the stack does it come off.
+  - One cloth an hour of play (`cloth_cooldown_minutes`, 60); used sooner it is refused and kept, and you are told how
+    long is left (the Curses screen shows it too).
+  - It does not work on the Extreme set (`cloth_extreme`), as it never did on the Abyssal.
+  - A stack a cloth helped to lift leaves no scar (`cloth_scars`): scars are earned by atonement.
+  - It is dearer to make: 4 Seam Silk, 2 Tether Fragments, 2 Veil Wings and an Echo Shard.
+  - With `cloth_share` 1, `cloth_cooldown_minutes` 0 and both switches on it works as it used to.
+- **A death costs more.**
+  - **Fresh Wound:** every death in the mod's worlds leaves you wounded for 10 minutes of play: two hearts less, your
+    Tether drains a quarter faster beyond the wound, and for the first 3 minutes no Tether can be bound to an anchor
+    (`death_wound_minutes`, `_health`, `_drain`, `_bind_minutes`). A second death starts it over. The Curses screen shows
+    how long it lasts.
+  - A death undoes three quarters of your atonement instead of half (`atone_death_loss`).
+  - Curses take longer to atone for: 160 for the first stack and 80 more for each one after (were 120 and 60).
+  - The curses a death offers are multiplied more often (`multiplier_chance` 0.25, was 0.15).
+  - The difficulties follow: Easy 80/35, a quarter undone, a 5-minute wound; Hard 200/100, 85%, 15 minutes; Extreme
+    260/130, 95%, 20 minutes (see the settings for every number).
+- A world whose settings still held the old numbers takes the new ones and keeps its difficulty. A number someone
+  chose is kept.
+
 ## 3.48.0: The First Wound
 
 ### Fixed

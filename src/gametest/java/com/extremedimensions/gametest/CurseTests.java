@@ -226,16 +226,17 @@ public class CurseTests {
 		helper.succeed();
 	}
 
+	/** A death undoes three quarters of every curse's atonement (3.49; half before), rounded against the player. */
 	@GameTest(maxTicks = 40)
-	public void deathHalvesAtonement(GameTestHelper helper) {
+	public void deathUndoesThreeQuartersOfTheAtonement(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		PlayerData d = DataStore.get(p.getUUID());
 		d.atonement.put("kindling", 121);
 		d.atonement.put("glass_jaw", 7);
 		d.atonement.put("scar", 1);
 		ExpeditionService.onDeath(p);
-		check(helper, d.atonement.getOrDefault("kindling", -1) == 60, "kindling atonement 121 -> expected 60, got %s", d.atonement.get("kindling"));
-		check(helper, d.atonement.getOrDefault("glass_jaw", -1) == 3, "glass_jaw atonement 7 -> expected 3, got %s", d.atonement.get("glass_jaw"));
+		check(helper, d.atonement.getOrDefault("kindling", -1) == 30, "kindling atonement 121 -> expected 30, got %s", d.atonement.get("kindling"));
+		check(helper, d.atonement.getOrDefault("glass_jaw", -1) == 1, "glass_jaw atonement 7 -> expected 1, got %s", d.atonement.get("glass_jaw"));
 		check(helper, !d.atonement.containsKey("scar"), "scar atonement 1 should be gone, is %s", d.atonement.get("scar"));
 		helper.succeed();
 	}

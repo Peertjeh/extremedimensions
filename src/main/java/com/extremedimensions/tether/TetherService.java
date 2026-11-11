@@ -52,6 +52,10 @@ public final class TetherService {
 		if (d.inRun || key.equals(d.tetherAnchor)) {
 			return InteractionResult.SUCCESS;
 		}
+		if (com.extremedimensions.penalty.Wound.refusesBinding(p, d)) {
+			// A wound too fresh: no Tether holds to an anchor yet (and the one in hand stays there)
+			return InteractionResult.SUCCESS;
+		}
 		// Already bound elsewhere? That tether comes back.
 		clear(p, d, d.tetherAnchor != null);
 		d.tetherTier = stack.is(ModItems.SEAM_WOVEN_TETHER) ? 2 : stack.is(ModItems.SOUL_WOVEN_TETHER) ? 1 : 0;

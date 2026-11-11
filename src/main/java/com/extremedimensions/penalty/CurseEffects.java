@@ -236,6 +236,11 @@ public final class CurseEffects {
 		modifier(p, "minecraft:safe_fall_distance", "relic_feather", feather ? Config.RELIC_FEATHERBONE_FALL : 0, "add_value");
 		modifier(p, "minecraft:armor", "relic_feather", feather ? -Config.RELIC_FEATHERBONE_ARMOR : 0, "add_value");
 		modifier(p, "minecraft:max_health", "relic_stitch", RelicService.has(d, Relic.LAST_STITCH) ? -Math.max(0, Config.RELIC_LAST_STITCH_MAX_HEALTH) : 0, "add_value");
+		// A Fresh Wound (a death lately) takes maximum health until it closes; the health above what is left goes with it
+		modifier(p, "minecraft:max_health", "fresh_wound", -Wound.health(d), "add_value");
+		if (p.getHealth() > p.getMaxHealth()) {
+			p.setHealth(p.getMaxHealth());
+		}
 		if (!RelicService.has(d, Relic.MINERS_CANDLE)) {
 			// the Miner's Candle's light goes out with it: unbound, or asleep in another mod's world
 			RelicService.candle(p, false);

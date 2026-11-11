@@ -35,8 +35,9 @@ public class AdminTests {
 		String why = AdminService.act(asker, target.getStringUUID(), "add", Penalty.GLASS_JAW.id);
 		check(helper, why != null, "a player without operator rights laid a curse on another");
 		check(helper, d.owned(Penalty.GLASS_JAW) == 0, "a refused request still laid %s stacks", d.owned(Penalty.GLASS_JAW));
-		String data = Sync.cursesData(asker, DataStore.get(asker.getUUID()));
-		check(helper, data.endsWith("|0"), "the Curses screen offers the Players screen to a player without operator rights");
+		// (the ninth part of the Curses screen's data; the Fresh Wound and the cloth's wait follow it since 3.49)
+		String[] data = Sync.cursesData(asker, DataStore.get(asker.getUUID())).split("\\|", -1);
+		check(helper, data.length > 8 && "0".equals(data[8]), "the Curses screen offers the Players screen to a player without operator rights");
 		helper.succeed();
 	}
 

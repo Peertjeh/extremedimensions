@@ -27,8 +27,9 @@ Permanent, stacking curses in four sets (*Beyond the wound*, *Overworld*, *Every
 and beneath them **24 Abyssal curses**, each broken only by a deed: slay undead in daylight, offer a Nether Star, stay
 awake through three nights...
 
-Lift them through **atonement** earned in the wild, **Tether Fragments**, a **Mending Cloth**, or by **unweaving** a
-full set at the Weaver's Loom in a fight against its knots. Every stack lifted leaves a scar. No farm can do it for
+Lift them through **atonement** earned in the wild, helped by **Tether Fragments** and a **Mending Cloth** (two fifths
+of a stack, one an hour), or by **unweaving** a full set at the Weaver's Loom in a fight against its knots. Every stack
+atoned for leaves a scar. A death undoes most of your atonement and leaves a Fresh Wound for ten minutes. No farm can do it for
 you: spawner rooms and mob grinders earn nothing.
 
 On Hard and Extreme, curses you have never carried show only in the **Seam script**, an alphabet of the mod's own.

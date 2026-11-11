@@ -372,6 +372,9 @@ public final class TetherCommand {
 		PlayerData d = DataStore.get(p.getUUID());
 		d.curses.clear();
 		d.atonement.clear();
+		if (d.clothed != null) {
+			d.clothed.clear();
+		}
 		CurseEffects.applyEffects(p, d);
 		Sync.state(p, d);
 		DataStore.markDirty();

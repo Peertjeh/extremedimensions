@@ -8,7 +8,8 @@ import java.util.Map;
  * Four difficulties for the world's rules, Easy to Extreme. Applying one sets the values below at once (operators only);
  * every other setting stays as it is. {@link #NORMAL} is the mod's own default.
  *
- * <p>What changes: how long atonement takes and how much a death undoes of it, how much charge an anchor holds and
+ * <p>What changes: how long atonement takes and how much a death undoes of it, how long the wound a death leaves lasts
+ * and what it costs while it does, how much charge an anchor holds and
  * how fast it drains, how often offers are multiplied and how many cards they show, how often an Extreme card turns
  * up, how often the Lurkers come (and the Cave and Sculk Lurkers below, the Magpies with how much they take, the Wicks and the Tidewalkers), how often a Gatebreaker comes out of a storm and how hard it hits, how often a Lockwarden comes in the End and leaves you on a lost islet, how often the Seam's own come (Threadbiters, Edgecrawlers, Cragbacks), how much of the thread a Threadbiter bites and how hard the Edgecrawler and the Cragback hit, how often a Lurker in the Seam turns to hunt, how much they take and how hard they hit, whether the whole tribe comes at once (Extreme),
  * how hard the tribe's standing is won, how likely a Tetherite binding holds at the smithing table and where it can be done, how often the Wound Storms break, how often
@@ -24,9 +25,10 @@ public enum Preset {
 			"lockwarden_spawn_chance", "0.03", "lockwarden_maroon_chance", "0.15",
 			"threadbiter_spawn_chance", "0.025", "threadbiter_bite", "2", "edgecrawler_spawn_chance", "0.03", "edgecrawler_damage", "2",
 			"cragback_spawn_chance", "0.015", "cragback_damage", "6", "lurker_seam_hunt_chance", "0.25",
-			"atone_base", "60", "atone_per_stack", "25", "atone_death_loss", "0",
+			"atone_base", "80", "atone_per_stack", "35", "atone_death_loss", "0.25",
+			"death_wound_minutes", "5", "death_wound_health", "2", "death_wound_drain", "1.1", "death_wound_bind_minutes", "0",
 			"max_charge", "3600", "base_drain", "0.6", "tether_distance_step", "200",
-			"multiplier_chance", "0", "multiplier_max", "2", "offer_count", "4", "extreme_card_chance", "0",
+			"multiplier_chance", "0.05", "multiplier_max", "2", "offer_count", "4", "extreme_card_chance", "0",
 			"lurker_spawn_chance", "0.004", "lurker_cooldown_seconds", "1800", "storm_chance", "0.02",
 			"fragment_chance", "0.08", "fragment_chance_elite", "0.2", "curse_runes", "0",
 			"abyssal_curses", "0", "abyssal_card_chance", "0.01", "abyssal_forced_chance", "0", "abyssal_after_collapses", "5",
@@ -46,9 +48,10 @@ public enum Preset {
 			"lockwarden_spawn_chance", "0.06", "lockwarden_maroon_chance", "0.35",
 			"threadbiter_spawn_chance", "0.05", "threadbiter_bite", "4", "edgecrawler_spawn_chance", "0.06", "edgecrawler_damage", "4",
 			"cragback_spawn_chance", "0.03", "cragback_damage", "9", "lurker_seam_hunt_chance", "0.5",
-			"atone_base", "120", "atone_per_stack", "60", "atone_death_loss", "0.5",
+			"atone_base", "160", "atone_per_stack", "80", "atone_death_loss", "0.75",
+			"death_wound_minutes", "10", "death_wound_health", "4", "death_wound_drain", "1.25", "death_wound_bind_minutes", "3",
 			"max_charge", "1800", "base_drain", "1", "tether_distance_step", "100",
-			"multiplier_chance", "0.15", "multiplier_max", "4", "offer_count", "3", "extreme_card_chance", "0.025",
+			"multiplier_chance", "0.25", "multiplier_max", "4", "offer_count", "3", "extreme_card_chance", "0.025",
 			"lurker_spawn_chance", "0.012", "lurker_cooldown_seconds", "900", "storm_chance", "0.04",
 			"fragment_chance", "0.04", "fragment_chance_elite", "0.12", "curse_runes", "0",
 			"abyssal_curses", "0", "abyssal_card_chance", "0.01", "abyssal_forced_chance", "0", "abyssal_after_collapses", "5",
@@ -68,9 +71,10 @@ public enum Preset {
 			"lockwarden_spawn_chance", "0.09", "lockwarden_maroon_chance", "0.5",
 			"threadbiter_spawn_chance", "0.075", "threadbiter_bite", "6", "edgecrawler_spawn_chance", "0.09", "edgecrawler_damage", "6",
 			"cragback_spawn_chance", "0.045", "cragback_damage", "12", "lurker_seam_hunt_chance", "0.75",
-			"atone_base", "150", "atone_per_stack", "75", "atone_death_loss", "0.65",
+			"atone_base", "200", "atone_per_stack", "100", "atone_death_loss", "0.85",
+			"death_wound_minutes", "15", "death_wound_health", "6", "death_wound_drain", "1.35", "death_wound_bind_minutes", "5",
 			"max_charge", "1500", "base_drain", "1.15", "tether_distance_step", "85",
-			"multiplier_chance", "0.22", "multiplier_max", "4", "offer_count", "3", "extreme_card_chance", "0.04",
+			"multiplier_chance", "0.32", "multiplier_max", "4", "offer_count", "3", "extreme_card_chance", "0.04",
 			"lurker_spawn_chance", "0.016", "lurker_cooldown_seconds", "700", "storm_chance", "0.05",
 			"fragment_chance", "0.035", "fragment_chance_elite", "0.1", "curse_runes", "1",
 			"abyssal_curses", "1", "abyssal_card_chance", "0.01", "abyssal_forced_chance", "0", "abyssal_after_collapses", "5",
@@ -90,9 +94,10 @@ public enum Preset {
 			"lockwarden_spawn_chance", "0.12", "lockwarden_maroon_chance", "0.7",
 			"threadbiter_spawn_chance", "0.1", "threadbiter_bite", "8", "edgecrawler_spawn_chance", "0.12", "edgecrawler_damage", "8",
 			"cragback_spawn_chance", "0.06", "cragback_damage", "15", "lurker_seam_hunt_chance", "1",
-			"atone_base", "200", "atone_per_stack", "100", "atone_death_loss", "0.8",
+			"atone_base", "260", "atone_per_stack", "130", "atone_death_loss", "0.95",
+			"death_wound_minutes", "20", "death_wound_health", "8", "death_wound_drain", "1.5", "death_wound_bind_minutes", "8",
 			"max_charge", "1200", "base_drain", "1.3", "tether_distance_step", "70",
-			"multiplier_chance", "0.3", "multiplier_max", "4", "offer_count", "2", "extreme_card_chance", "0.06",
+			"multiplier_chance", "0.4", "multiplier_max", "4", "offer_count", "2", "extreme_card_chance", "0.06",
 			"lurker_spawn_chance", "0.022", "lurker_cooldown_seconds", "500", "storm_chance", "0.07",
 			"fragment_chance", "0.03", "fragment_chance_elite", "0.08", "curse_runes", "1",
 			"abyssal_curses", "1", "abyssal_card_chance", "0.025", "abyssal_forced_chance", "0.25", "abyssal_after_collapses", "3",
@@ -183,13 +188,33 @@ public enum Preset {
 	/** Settings the difficulties first set in 3.26.1: where a Tetherite binding can be done. */
 	static final java.util.Set<String> ADDED_3_26_1 = java.util.Set.of("tetherite_bind_where");
 
+	/** Settings the difficulties first set in 3.49.0: the Fresh Wound a death leaves. */
+	static final java.util.Set<String> ADDED_3_49 = java.util.Set.of("death_wound_minutes", "death_wound_health", "death_wound_drain",
+			"death_wound_bind_minutes");
+
+	/**
+	 * Settings whose values the difficulties changed in 3.49.0 (a death costs more, atonement takes longer): each one's
+	 * value before, on Easy, Normal, Hard and Extreme in that order.
+	 */
+	static final Map<String, String[]> BEFORE_3_49 = Map.of("atone_base", new String[] {"60", "120", "150", "200"},
+			"atone_per_stack", new String[] {"25", "60", "75", "100"}, "atone_death_loss", new String[] {"0", "0.5", "0.65", "0.8"},
+			"multiplier_chance", new String[] {"0", "0.15", "0.22", "0.3"});
+
 	/**
 	 * An older settings file (of layout version {@code from}): if its values (the defaults for any it lacks) match a
-	 * difficulty on every setting the difficulty set then, it takes that difficulty's values of the settings added since,
-	 * so the world stays on its difficulty.
+	 * difficulty on every setting the difficulty set then, it takes that difficulty's values of the settings added since
+	 * and of those whose values changed since, so the world stays on its difficulty. A changed setting matches with the
+	 * difficulty's value from before or with its value now.
 	 */
 	static void upgrade(com.google.gson.JsonObject json, int from) {
-		java.util.Set<String> added = new java.util.HashSet<>(ADDED_3_26_1);
+		java.util.Set<String> added = new java.util.HashSet<>();
+		Map<String, String[]> changed = from < 11 ? BEFORE_3_49 : Map.of();
+		if (from < 11) {
+			added.addAll(ADDED_3_49);
+		}
+		if (from < 8) {
+			added.addAll(ADDED_3_26_1);
+		}
 		if (from < 7) {
 			added.addAll(ADDED_3_26);
 		}
@@ -214,14 +239,13 @@ public enum Preset {
 					continue;
 				}
 				String have = json.has(e.getKey()) ? json.get(e.getKey()).getAsString() : fallback.get(e.getKey());
-				try {
-					match &= have != null && Math.abs(Double.parseDouble(have) - Double.parseDouble(e.getValue())) <= 1e-9;
-				} catch (NumberFormatException ex) {
-					match = false;
-				}
+				String[] before = changed.get(e.getKey());
+				match &= same(have, e.getValue()) || (before != null && same(have, before[p.ordinal()]));
 			}
 			if (match) {
-				for (String key : added) {
+				java.util.Set<String> taken = new java.util.LinkedHashSet<>(added);
+				taken.addAll(changed.keySet());
+				for (String key : taken) {
 					String v = p.values.get(key);
 					double d = Double.parseDouble(v);
 					if (d == Math.rint(d)) {
@@ -232,6 +256,15 @@ public enum Preset {
 				}
 				return;
 			}
+		}
+	}
+
+	/** Whether a value as text is this number (as text); false for no value or no number. */
+	private static boolean same(String have, String want) {
+		try {
+			return have != null && Math.abs(Double.parseDouble(have) - Double.parseDouble(want)) <= 1e-9;
+		} catch (NumberFormatException ex) {
+			return false;
 		}
 	}
 

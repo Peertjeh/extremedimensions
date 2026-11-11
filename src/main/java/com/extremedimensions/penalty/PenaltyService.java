@@ -42,8 +42,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Curses: owing them, the offer of cards (sometimes multiplied), and taking them off again through atonement, Tether
- * Fragments and Mending Cloth. Every stack taken off leaves a scar. What the curses do lives in {@link CurseEffects}.
+ * Curses: owing them, the offer of cards (sometimes multiplied), and taking them off again through atonement, which Tether
+ * Fragments and a Mending Cloth pay into. Every stack atoned off leaves a scar (one a cloth helped to lift only with
+ * {@code cloth_scars}). What the curses do lives in {@link CurseEffects}; the Fresh Wound a death leaves in {@link Wound}.
  */
 public final class PenaltyService {
 	private PenaltyService() {}
@@ -343,9 +344,9 @@ public final class PenaltyService {
 	}
 
 	/**
-	 * A death undoes part of the penance: every curse's atonement loses {@code atone_death_loss} (half by default), an
-	 * Abyssal curse's {@code abyssal_death_loss} (all of it by default), rounded against the player. Returns the points
-	 * lost.
+	 * A death undoes part of the penance: every curse's atonement loses {@code atone_death_loss} (three quarters by
+	 * default), an Abyssal curse's {@code abyssal_death_loss} (all of it by default), rounded against the player. A curse
+	 * left with none forgets that a Mending Cloth paid into it. Returns the points lost.
 	 */
 	public static int deathToll(PlayerData d) {
 		double keepAll = 1 - Math.max(0, Math.min(1, Config.ATONE_DEATH_LOSS));
@@ -360,6 +361,9 @@ public final class PenaltyService {
 			lost += have - kept;
 			if (kept <= 0) {
 				it.remove();
+				if (d.clothed != null) {
+					d.clothed.remove(e.getKey());
+				}
 			} else {
 				e.setValue(kept);
 			}
@@ -417,7 +421,20 @@ public final class PenaltyService {
 		return InteractionResult.SUCCESS;
 	}
 
-	/** A Mending Cloth, pressed to the skin: one stack of the curse being atoned for (or the heaviest) comes off. */
+	/**
+	 * Atonement one Mending Cloth pays towards a curse's next stack: {@code cloth_share} of the whole of what that stack
+	 * asks (two fifths), rounded up, at least 1.
+	 */
+	public static int clothGain(PlayerData d, Penalty t) {
+		return Math.max(1, (int) Math.ceil(cost(d, t) * Math.max(0.01, Math.min(1, Config.CLOTH_SHARE)) - 1e-9));
+	}
+
+	/**
+	 * A Mending Cloth, pressed to the skin: it pays {@link #clothGain} into the atonement of the curse being atoned for (or
+	 * the heaviest), and only a stack it completes comes off. A player may use one every {@code cloth_cooldown_minutes} of
+	 * play; the Extreme set takes none unless {@code cloth_extreme} is on (an Abyssal curse follows its own rule). A cloth
+	 * refused is kept, and starts no wait.
+	 */
 	public static InteractionResult cloth(ServerPlayer p, ItemStack stack) {
 		PlayerData d = DataStore.get(p.getUUID());
 		Penalty t = target(d, null);
@@ -431,21 +448,54 @@ public final class PenaltyService {
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.abyssal.cloth", Component.translatable(t.nameKey())), true);
 			return InteractionResult.SUCCESS;
 		}
+		if (t.extreme && !t.abyssal && Config.CLOTH_EXTREME <= 0) {
+			// Nor does the Extreme set take one: it is atoned for, helped along by fragments
+			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.cloth_extreme", Component.translatable(t.nameKey())), true);
+			return InteractionResult.SUCCESS;
+		}
+		if (d.clothIn > 0) {
+			// One cloth in a while: the last one has not worn off yet
+			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.cloth_wait", (d.clothIn + 59) / 60), true);
+			return InteractionResult.SUCCESS;
+		}
+		// (what a cloth pays is given, not earned: a bound Debtor's Seal does not multiply it)
+		int gain = clothGain(d, t), need = cost(d, t);
+		int have = d.atonement.getOrDefault(t.id, 0) + gain;
 		if (!p.isCreative()) {
 			stack.shrink(1);
 		}
+		d.clothIn = Math.max(0, Config.CLOTH_COOLDOWN_MINUTES) * 60;
+		if (d.clothed == null) {
+			d.clothed = new java.util.LinkedHashSet<>();
+		}
+		d.clothed.add(t.id);
 		WorldFx.sound(p, "minecraft:block.wool.place", 1.0f, 0.7f);
-		lift(p, d, t, "gui.extremedimensions.curses.mended");
+		if (have >= need) {
+			lift(p, d, t, "gui.extremedimensions.curses.mended");
+			return InteractionResult.SUCCESS;
+		}
+		WorldFx.particles(p, "minecraft:soul", 0.8, 0.4, 0.03, 10);
+		d.atonement.put(t.id, have);
+		p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.cloth_atoned", gain, Component.translatable(t.nameKey()), need - have), true);
+		Sync.curses(p, d, false);
+		DataStore.markDirty();
 		return InteractionResult.SUCCESS;
 	}
 
-	/** One stack comes off a curse, and leaves a scar (up to five). */
+	/**
+	 * One stack comes off a curse, and leaves a scar (up to five). Scars are earned by atonement: a stack a Mending Cloth
+	 * helped to lift leaves none, unless {@code cloth_scars} is on.
+	 */
 	public static void lift(ServerPlayer p, PlayerData d, Penalty t, String messageKey) {
+		// (asked before the stack comes off, which forgets what a cloth paid into it)
+		boolean unscarred = d.clothed != null && d.clothed.contains(t.id) && Config.CLOTH_SCARS <= 0;
 		if (!d.removeStack(t)) {
 			return;
 		}
 		d.lifted++;
-		if (d.scars < 5) {
+		if (d.scars < 5 && !unscarred) {
 			d.scars++;
 			Journal.unlock(p, d, JournalEntry.WOVEN);
 		}
@@ -455,7 +505,8 @@ public final class PenaltyService {
 		WorldFx.sound(p, "minecraft:block.beacon.power_select", 0.7f, 1.4f);
 		WorldFx.soundSelf(p, "minecraft:block.amethyst_block.chime", 1.0f, 1.2f);
 		int left = d.owned(t);
-		p.sendSystemMessage(Component.translatable(messageKey, Component.translatable(t.nameKey()), left, t.max), true);
+		Component said = Component.translatable(messageKey, Component.translatable(t.nameKey()), left, t.max);
+		p.sendSystemMessage(unscarred ? Component.translatable("gui.extremedimensions.curses.unscarred", said) : said, true);
 		Journal.unlock(p, d, JournalEntry.MENDING);
 		Advancements.grant(p, Advancements.MENDED);
 		Sync.state(p, d);
@@ -485,6 +536,7 @@ public final class PenaltyService {
 		trackActivity(p, d);
 		CurseEffects.tick(p, d, beyond, ow);
 		if (d.tickCounter % 20 == 0) {
+			second(p, d);
 			if (d.xpForfeit) {
 				d.xpForfeit = false;
 				// No curse was left to lay: say so, also when the death already took every level
@@ -513,6 +565,18 @@ public final class PenaltyService {
 			}
 		}
 		return changed;
+	}
+
+	/**
+	 * A second of play in the mod's worlds (as the tribe counts the wait for a gift): the wait for the next Mending Cloth
+	 * and the Fresh Wound count down. Public for the tests, which drive play time through it.
+	 */
+	public static void second(ServerPlayer p, PlayerData d) {
+		if (d.clothIn > 0 && --d.clothIn % 60 == 0) {
+			// (written with the world's saves a minute at a time, so a restart loses little of the wait)
+			DataStore.markDirty();
+		}
+		Wound.second(p, d);
 	}
 
 	/** Beyond curses act in the Nether, the End and the Seam. */

@@ -69,6 +69,7 @@
 			"com.extremedimensions.gametest.CharmTests",
 			"com.extremedimensions.gametest.LurkerTests",
 			"com.extremedimensions.gametest.FragmentTests",
+			"com.extremedimensions.gametest.PenanceTests",
 			"com.extremedimensions.gametest.ElderFootingTests"
 		],
 		"fabric-client-gametest": [

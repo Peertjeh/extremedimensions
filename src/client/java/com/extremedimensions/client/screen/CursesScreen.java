@@ -88,6 +88,11 @@ public class CursesScreen extends Screen {
 	private boolean overworldOn = true;
 	/** Whether the player may open the operators' Players screen (3.27). */
 	private boolean admin;
+	/**
+	 * The Fresh Wound (3.49): seconds of play it lasts yet, and of those no Tether binds yet; and the seconds before
+	 * another Mending Cloth may be used. All 0 from an older server.
+	 */
+	private int woundIn, woundBindIn, clothIn;
 	private AdminButton adminButton;
 	private Group tab = Group.BEYOND;
 	private Penalty selected;
@@ -202,6 +207,17 @@ public class CursesScreen extends Screen {
 			}
 		}
 		admin = parts.length > 8 && "1".equals(parts[8]);
+		woundIn = woundBindIn = clothIn = 0;
+		if (parts.length > 9) {
+			String[] kv = parts[9].split(",");
+			try {
+				woundIn = kv.length > 0 ? Integer.parseInt(kv[0]) : 0;
+				woundBindIn = kv.length > 1 ? Integer.parseInt(kv[1]) : 0;
+				clothIn = kv.length > 2 ? Integer.parseInt(kv[2]) : 0;
+			} catch (NumberFormatException e) {
+				// keep none
+			}
+		}
 		if (adminButton != null) {
 			adminButton.visible = admin;
 		}
@@ -428,6 +444,7 @@ public class CursesScreen extends Screen {
 		g.fill(0, 0, this.width, this.height, Ui.argb((int) (70 * fade), tint));
 		Ui.panel(g, x0, y0, PW, PH, accent, fade);
 		Ui.heading(g, this.font, Ui.tr("gui.extremedimensions.curses.title").toUpperCase(), cx, y0 + 8, accent, fade);
+		wound(g, x0, y0, mouseX, mouseY, fade);
 
 		// The line between grid and detail
 		g.fill(x0 + 158, y0 + 42, x0 + 159, y0 + 168, Ui.argb(fade * 0.5, accent));
@@ -517,6 +534,27 @@ public class CursesScreen extends Screen {
 		Ui.meter(g, x, y + 31, w, 4, Math.min(1.0, e.deed() / (double) target), abyss, fade, e.stacks() > 0);
 	}
 
+	/**
+	 * A Fresh Wound, in the header right of the title (left of the gear): how long it lasts yet, and on hover what it
+	 * takes and how long no Tether binds yet.
+	 */
+	private void wound(GuiGraphicsExtractor g, int x0, int y0, int mouseX, int mouseY, double fade) {
+		if (woundIn <= 0) {
+			return;
+		}
+		String line = Ui.ellipsize(this.font, Ui.tr("gui.extremedimensions.curses.wounded", Ui.time(woundIn)), 110);
+		int right = x0 + PW - 26, lx = right - this.font.width(line);
+		g.text(this.font, line, lx, y0 + 8, Ui.argb(fade, Ui.DANGER));
+		if (mouseX >= lx && mouseX < right && mouseY >= y0 + 6 && mouseY < y0 + 18) {
+			String hearts = com.extremedimensions.config.Config.format(Math.max(0, com.extremedimensions.config.Config.DEATH_WOUND_HEALTH) / 2.0);
+			long faster = Math.round((Math.max(1, com.extremedimensions.config.Config.DEATH_WOUND_DRAIN) - 1) * 100);
+			Component tip = woundBindIn > 0
+					? Component.translatable("gui.extremedimensions.curses.wounded.desc_bind", hearts, faster, Ui.time(woundBindIn))
+					: Component.translatable("gui.extremedimensions.curses.wounded.desc", hearts, faster);
+			g.setTooltipForNextFrame(this.font, tip, mouseX, mouseY);
+		}
+	}
+
 	/** Scars, and how curses come off in this set. */
 	private void footer(GuiGraphicsExtractor g, int x0, int y, double fade, int accent) {
 		Ui.divider(g, x0 + 12, y, PW - 24, accent, fade);
@@ -530,7 +568,9 @@ public class CursesScreen extends Screen {
 		g.text(this.font, drain, px + 40, y + 6, Ui.argb(fade, Ui.MUTED));
 		String hint = Ui.tr("gui.extremedimensions.curses.hint_" + tab.id());
 		Ui.centered(g, this.font, hint, x0 + PW / 2, y + 18, Ui.MUTED, fade);
-		Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.curses.hint_mend"), x0 + PW / 2, y + 29, Ui.MUTED, fade * 0.8);
+		// (with the wait before the next Mending Cloth, while there is one)
+		String mend = clothIn > 0 ? Ui.tr("gui.extremedimensions.curses.hint_mend_wait", (clothIn + 59) / 60) : Ui.tr("gui.extremedimensions.curses.hint_mend");
+		Ui.centered(g, this.font, Ui.ellipsize(this.font, mend, PW - 24), x0 + PW / 2, y + 29, Ui.MUTED, fade * 0.8);
 	}
 
 	/**

@@ -72,9 +72,12 @@ came from, and every curse set by set. A minus lifts a stack (plainly, without a
 sees it as a toast), and a button lifts them all. With **Silent** on, the player is not told at all: no toast, no
 message, nothing in their newest curses. Every change is written to the server log.
 
-Lift them by **atonement** (played off on expeditions and at home; every death undoes half), helped along by
-**Tether Fragments** offered to an anchor (each atones for a tenth of what the curse's next stack still asks, five at
-most for each stack), or by a **Mending Cloth**. Every stack lifted leaves a **scar** that weakens the drain.
+Lift them by **atonement** (played off on expeditions and at home; every death undoes three quarters of it), helped
+along by **Tether Fragments** offered to an anchor (each atones for a tenth of what the curse's next stack still asks,
+five at most for each stack) and a **Mending Cloth** (it pays two fifths of a stack, one an hour of play, not on Extreme
+or Abyssal curses). Every stack lifted by atonement leaves a **scar** that weakens the drain; a cloth's leaves none.
+Every death also leaves a **Fresh Wound** for ten minutes: two hearts less, a faster drain, and no Tether bound in its
+first three minutes.
 Monsters slain by hand count towards atonement only from the wild: nothing from a spawner, nothing within 16 blocks
 of a monster spawner or trial spawner (not even what spawns there in the dark by itself), and at most five per place
 in ten minutes, for everyone hunting there together.

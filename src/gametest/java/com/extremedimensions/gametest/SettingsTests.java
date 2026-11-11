@@ -94,7 +94,8 @@ public class SettingsTests {
 		old.addProperty("atone_base", 100);
 		old.addProperty("atone_per_stack", 75);
 		Config.migrate(old);
-		check(helper, old.get("atone_base").getAsInt() == 120, "an old default was not brought up to the new one (%s)", old.get("atone_base"));
+		// (100 was the default before 2.7.0, 120 before 3.49.0: it follows each new default in turn)
+		check(helper, old.get("atone_base").getAsInt() == 160, "an old default was not brought up to the new one (%s)", old.get("atone_base"));
 		check(helper, old.get("atone_per_stack").getAsInt() == 75, "a chosen value was overwritten (%s)", old.get("atone_per_stack"));
 		JsonObject current = new JsonObject();
 		current.addProperty("config_version", 3);
