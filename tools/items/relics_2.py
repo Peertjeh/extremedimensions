@@ -17,6 +17,9 @@ Debtor's Seal (epic): a heavy iron stamp seen face on, a gold ring round its fac
 Unbound Pinion (epic): one long pale wing feather like an elytron's, veined in violet, its quill through a snapped
     chain link.
 
+Retired: tools/items/after_vanilla.py draws these eight now, after vanilla's own textures. This script no longer writes
+them; given a path it previews these old drawings there.
+
 usage: python3 tools/items/relics_2.py [preview.png]
 """
 import os
@@ -346,13 +349,7 @@ def preview(path, ours):
 
 
 def main():
-    ours = []
-    for name, pal, rows, skip in NEW:
-        im = draw(rows, pal, skip)
-        path = os.path.join(ITEMS, name + '.png')
-        im.save(path)
-        print('wrote', os.path.normpath(path))
-        ours.append((name, im))
+    ours = [(name, draw(rows, pal, skip)) for name, pal, rows, skip in NEW]
     if len(sys.argv) > 1:
         preview(sys.argv[1], ours)
         print('wrote', sys.argv[1])

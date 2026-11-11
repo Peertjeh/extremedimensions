@@ -18,6 +18,9 @@ Ferryman's Obol (epic): a worn gold coin stamped with a boat and its oar, a soul
 Hollow Crown (epic): a thin crown of dark iron seen from a little above, empty inside, gold inlaid round its band and
     violet stones set in it, one prong snapped short.
 
+Retired: tools/items/after_vanilla.py draws these eight now, after vanilla's own textures. This script no longer writes
+them; given a path it previews these old drawings there.
+
 usage: python3 tools/items/relics_3.py [preview.png]
 """
 import os
@@ -340,13 +343,7 @@ def preview(path, ours):
 
 
 def main():
-    ours = []
-    for name, tier, pal, rows, skip in NEW:
-        im = draw(rows, pal, skip)
-        path = os.path.join(ITEMS, name + '.png')
-        im.save(path)
-        print('wrote', os.path.normpath(path))
-        ours.append((name, tier, im))
+    ours = [(name, tier, draw(rows, pal, skip)) for name, tier, pal, rows, skip in NEW]
     if len(sys.argv) > 1:
         preview(sys.argv[1], ours)
         print('wrote', sys.argv[1])

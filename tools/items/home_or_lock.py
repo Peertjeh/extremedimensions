@@ -10,6 +10,9 @@ in shade, crying obsidian's violet running in it as veins, a pale gold shackle, 
 
 Both are drawn as their interiors by hand and edged in their own darkest tone, lit from the top left.
 
+Retired: tools/items/after_vanilla.py draws the pair now, after vanilla's own textures. This script no longer writes
+them; given a path it previews these old drawings there.
+
 usage: python3 tools/items/home_or_lock.py [preview.png]
 """
 import os
@@ -149,10 +152,6 @@ def preview(path, ours):
 def main():
     keystone = draw(KEYSTONE, KEYSTONE_PAL)
     lock = draw(LOCK, LOCK_PAL)
-    for name, im in (('homeward_keystone', keystone), ('pale_lock', lock)):
-        path = os.path.join(ITEMS, name + '.png')
-        im.save(path)
-        print('wrote', os.path.normpath(path))
     if len(sys.argv) > 1:
         preview(sys.argv[1], [keystone, lock])
         print('wrote', sys.argv[1])

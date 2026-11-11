@@ -4,15 +4,15 @@ lit from the top left and edged in its own darkest tone.
 Tetherite is the metal the Fray keeps of every Tether it swallowed: a deep violet-black, cooler than netherite. The
 Tether's cyan thread shows in it only here and there, as a gem would (a thread down a blade's fuller, a bead where the
 head meets the haft, a stud on a plate), never as a stripe. Shapes follow vanilla's own silhouettes (the pick's arc,
-the axe's blade, the spade, the hoe's bar, the sword's guard and pommel, the slanted ingot, the armour pieces, the
-smithing templates' slab), so the set sits beside diamond and netherite in an inventory as one of them.
+the axe's blade, the spade, the hoe's bar, the sword's guard and pommel, the armour pieces), so the set sits beside
+diamond and netherite in an inventory as one of them. The ingot, the scrap, the Tether Cord and the three smithing
+templates are drawn after vanilla's in tools/items/after_vanilla.py.
 
 Each item is drawn as its interior by hand (or from a little geometry along the diagonal), and the outline added round
 it: dark brown beside wood, the metal's darkest tone beside everything else.
 
 usage: python3 tools/items/tetherite.py [preview.png]
 """
-import math
 import os
 import sys
 
@@ -349,62 +349,6 @@ def drawn(rows):
 def spear(long=False):
     return drawn(SPEAR_IN_HAND if long else SPEAR)
 
-def ingot():
-    """A cast bar seen from above and before: the lit top face and the darker front face both run up to the right,
-    the right end in shadow, a thread of teal in the front face."""
-    g = grid()
-    for x in range(1, 15):
-        yt = 6 - (x - 1) // 3
-        for y in range(yt, yt + 3):
-            if x == 14:
-                g[y][x] = '2'
-            else:
-                g[y][x] = '6' if (y == yt and x < 6) else ('5' if y == yt else ('4' if y == yt + 1 else '3'))
-        for y in range(yt + 3, yt + 6):
-            if x == 14:
-                g[y][x] = '1'
-            else:
-                g[y][x] = '3' if y == yt + 3 else ('2' if y == yt + 4 else '1')
-    g[8][9] = 'a'
-    g[7][10] = 'b'
-    return rows(g)
-
-def scrap():
-    return [
-        "................",
-        "................",
-        "........56......",
-        "......55443.....",
-        "....5554433b2...",
-        "...444433322....",
-        "....2222111.....",
-        "................",
-        "......566.......",
-        "...5554443......",
-        "..54433a32211...",
-        "...333222111....",
-        "....2211........",
-        "................",
-        "................",
-        "................",
-    ]
-
-def cord():
-    """Tether Cord: a hank of twisted thread, two loops laid over each other, the twist in light and dark turns as vanilla
-    draws its lead, the ends tied off below."""
-    g = grid()
-    for (cx, cy, rx, ry) in ((6.5, 6.5, 3.9, 3.0), (9.5, 8.5, 3.9, 3.0)):
-        for y in range(16):
-            for x in range(16):
-                dx, dy = (x + 0.5 - cx) / rx, (y + 0.5 - cy) / ry
-                r = math.hypot(dx, dy)
-                if 0.6 <= r <= 1.0:
-                    t = (x + y) % 3
-                    g[y][x] = 'c' if (t == 0 and dy < 0.3) else ('a' if t == 2 or dy > 0.6 else 'b')
-    for (x, y, c) in ((5, 11, 'b'), (4, 12, 'c'), (4, 13, 'a'), (3, 14, 'b')):
-        g[y][x] = c
-    return rows(g)
-
 def helmet():
     return drawn(HELMET)
 
@@ -416,101 +360,6 @@ def leggings():
 
 def boots():
     return drawn(BOOTS)
-
-PLATE = [
-    "................",
-    "....LLLLLLLL....",
-    "...LLMMMMMMM....",
-    "...LMMMMMMMMD...",
-    "...LMMMMMMMMD...",
-    "...LMMMMMMMMD...",
-    "...LMMMMMMMMD...",
-    "...LMMMMMMMMD...",
-    "...LMMMMMMMMD...",
-    "...LMMMMMMMMD...",
-    "...LMMMMMMMMD...",
-    "...LMMMMMMMMD...",
-    "...LMMMMMMMMD...",
-    "....MMMMMMMMD...",
-    "....DDDDDDDDD...",
-    "................",
-]
-
-def template(light, mid, dark, emblem):
-    """A smithing template as vanilla shapes them: a worn slab lit on its top and left edges, the pattern pressed in."""
-    g = grid()
-    for y, r in enumerate(PLATE):
-        for x, c in enumerate(r):
-            if c != '.':
-                g[y][x] = {'L': light, 'M': mid, 'D': dark}[c]
-    for y, r in enumerate(emblem):
-        for x, c in enumerate(r):
-            if c != '.':
-                g[y][x] = c
-    return rows(g)
-
-def upgrade():
-    # the Tether's knot, in the thread, pressed into a slab of the dark metal
-    return template('4', '2', '1', [
-        "................",
-        "................",
-        "................",
-        ".....b....b.....",
-        "......b..b......",
-        "......cbbc......",
-        ".....b.ab.b.....",
-        ".....b.ba.b.....",
-        "......cbbc......",
-        "......a..a......",
-        ".....a....a.....",
-        ".....a....a.....",
-        "................",
-        "................",
-        "................",
-        "................",
-    ])
-
-def weaver_template():
-    # the Weaver's weave: warp and weft pressed into a slab of Seam silk
-    return template('p', 'q', 'r', [
-        "................",
-        "................",
-        "................",
-        "................",
-        ".....t.t.t......",
-        "....ssssssss....",
-        ".....t.t.t......",
-        "....ssssssss....",
-        ".....t.t.t......",
-        "....ssssssss....",
-        ".....t.t.t......",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-    ])
-
-def fray_template():
-    # the Fray: threads coming loose from a slab of the dark metal
-    return template('3', '2', '1', [
-        "................",
-        "................",
-        "................",
-        "................",
-        ".....cbbbbc.....",
-        "......b.b.......",
-        ".....b..b.a.....",
-        ".....b...b.a....",
-        "....a....b......",
-        "....a.....a.....",
-        "..........a.....",
-        "................",
-        "................",
-        "................",
-        "................",
-        "................",
-    ])
 
 # --------------------------------------------------------------------------- blocks
 
@@ -568,10 +417,7 @@ def spindle_parts():
 ITEMS = {
     "tetherite_sword": sword, "tetherite_pickaxe": pickaxe, "tetherite_axe": axe, "tetherite_shovel": shovel,
     "tetherite_hoe": hoe, "tetherite_spear": spear, "tetherite_spear_in_hand": lambda: spear(True),
-    "tetherite_ingot": ingot, "tetherite_scrap": scrap, "tether_cord": cord,
     "tetherite_helmet": helmet, "tetherite_chestplate": chestplate, "tetherite_leggings": leggings, "tetherite_boots": boots,
-    "tetherite_upgrade_smithing_template": upgrade, "weaver_armor_trim_smithing_template": weaver_template,
-    "fray_armor_trim_smithing_template": fray_template,
 }
 
 
