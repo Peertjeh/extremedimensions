@@ -4,8 +4,10 @@
 # pale scar across it the other way, stitched shut, that runs on dark red into the grooves. What Listens is sculk teal
 # with a cyan ring of sound; Elegy of the Elders is moss, bronze and silver in a ring of gold; The Abyss Answers is
 # abyssal purple, its pale ring broken by a crack. The two disc fragments are shards of the last two.
-# Usage: python3 tools/items/music_disc.py src/client/resources/assets/extremedimensions/textures/item
-import math, os, sys
+# Retired: tools/items/after_vanilla.py draws the discs and fragments now, after vanilla's own. This script no longer
+# writes them; given a path it previews these old drawings there.
+# Usage: python3 tools/items/music_disc.py [preview.png]
+import math, sys
 from PIL import Image
 
 PAL = {
@@ -181,15 +183,17 @@ def fragment(label, sector=(10, 115)):
     return im
 
 
-def main(out):
-    os.makedirs(out, exist_ok=True)
-    disc(boundary).save(os.path.join(out, "music_disc_tick_of_the_boundary.png"))
-    disc(wound).save(os.path.join(out, "music_disc_wound_remembers.png"))
-    disc(listens).save(os.path.join(out, "music_disc_what_listens.png"))
-    disc(elegy).save(os.path.join(out, "music_disc_elegy_of_the_elders.png"))
-    disc(abyss).save(os.path.join(out, "music_disc_the_abyss_answers.png"))
-    fragment(elegy).save(os.path.join(out, "disc_fragment_elegy.png"))
-    fragment(abyss, sector=(250, 350)).save(os.path.join(out, "disc_fragment_abyss.png"))
+def preview(path, ims):
+    """The old drawings at 8x on an inventory slot's grey."""
+    sheet = Image.new("RGBA", (len(ims) * 136 + 8, 144), (139, 139, 139, 255))
+    for i, im in enumerate(ims):
+        sheet.alpha_composite(im.resize((128, 128), Image.NEAREST), (8 + i * 136, 8))
+    sheet.save(path)
+
+def main(path):
+    if path:
+        preview(path, [disc(boundary), disc(wound), disc(listens), disc(elegy), disc(abyss), fragment(elegy),
+                       fragment(abyss, sector=(250, 350))])
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else ".")
+    main(sys.argv[1] if len(sys.argv) > 1 else None)

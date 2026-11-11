@@ -2,16 +2,16 @@
 swollen knot, its two ends hanging free and frayed, a drop of blood at one of them. Lit from the top left; every strand
 is edged in the darkest tone, as Minecraft's own items are.
 
+Retired: tools/items/after_vanilla.py draws the cord now, after vanilla's lead. This script no longer writes it; given
+a path it previews this old drawing there.
+
 usage: python3 tools/items/blood_cord.py [preview.png]
 """
 import math
-import os
 import sys
 
 from PIL import Image
 
-ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
-OUT = os.path.join(ROOT, "src/client/resources/assets/extremedimensions/textures/item/blood_cord.png")
 
 EDGE = (38, 6, 12)
 DARK = (92, 14, 24)
@@ -72,8 +72,6 @@ def main(preview=None):
             px[x, y] = DARK + (255,)
     px[13, 13] = BLOOD + (255,)
     px[13, 14] = BLOOD_LIT + (255,)
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    im.save(OUT)
     if preview:
         im.resize((256, 256), Image.NEAREST).save(preview)
 

@@ -1,10 +1,14 @@
-"""The Homing Pearl's item texture (16x16): a pearl of the void, violet, a gold band round it and a pale glint."""
+"""The Homing Pearl's item texture (16x16): a pearl of the void, violet, a gold band round it and a pale glint.
+
+Retired: tools/items/after_vanilla.py draws the pearl now, after vanilla's ender pearl. This script no longer writes it;
+given a path it previews this old drawing there.
+
+usage: python3 tools/items/homing_pearl.py [preview.png]
+"""
 import math
-import os
+import sys
 
 from PIL import Image
-
-OUT = os.path.join(os.path.dirname(__file__), "..", "..", "src/client/resources/assets/extremedimensions/textures/item/homing_pearl.png")
 
 DARK = (34, 14, 58)
 DEEP = (70, 28, 120)
@@ -45,8 +49,8 @@ def main():
         px[gx, gy] = GLINT + (255,)
     px[9, 9] = (12, 4, 22, 255)
     px[10, 9] = (44, 20, 80, 255)
-    img.save(OUT)
-    print("wrote", os.path.normpath(OUT))
+    if len(sys.argv) > 1:
+        img.resize((128, 128), Image.NEAREST).save(sys.argv[1])
 
 
 if __name__ == "__main__":

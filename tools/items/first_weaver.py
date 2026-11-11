@@ -1,7 +1,9 @@
 # Draws the 2.39 item textures at 16x16: the four threads of the First Weaver's trail (each a loose skein in the
 # colours of the world it was found in) and the Plumb Line they twist into.
-# Usage: python3 tools/items/first_weaver.py src/client/resources/assets/extremedimensions/textures/item
-import math, os, sys
+# Retired: tools/items/after_vanilla.py draws all five now, after vanilla's own textures. This script no longer writes
+# them; given a path it previews these old drawings there.
+# Usage: python3 tools/items/first_weaver.py [preview.png]
+import math, sys
 from PIL import Image
 
 def ball(pal):
@@ -74,11 +76,16 @@ def draw(rows, pal):
                 px[x, y] = pal[ch] + (255,)
     return im
 
-def main(out):
-    os.makedirs(out, exist_ok=True)
-    for name, pal in THREADS.items():
-        ball(pal).save(os.path.join(out, name + ".png"))
-    draw(PLUMB, PLUMB_PAL).save(os.path.join(out, "plumb_line.png"))
+def preview(path, ims):
+    """The old drawings at 8x on an inventory slot's grey."""
+    sheet = Image.new("RGBA", (len(ims) * 136 + 8, 144), (139, 139, 139, 255))
+    for i, im in enumerate(ims):
+        sheet.alpha_composite(im.resize((128, 128), Image.NEAREST), (8 + i * 136, 8))
+    sheet.save(path)
+
+def main(path):
+    if path:
+        preview(path, [ball(pal) for pal in THREADS.values()] + [draw(PLUMB, PLUMB_PAL)])
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "src/client/resources/assets/extremedimensions/textures/item")
+    main(sys.argv[1] if len(sys.argv) > 1 else None)
