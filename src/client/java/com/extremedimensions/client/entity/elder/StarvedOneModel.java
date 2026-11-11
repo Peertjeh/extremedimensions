@@ -196,10 +196,10 @@ public class StarvedOneModel extends EntityModel<StarvedOneRenderState> {
 		if (rise < 1) {
 			// Rising out of the Heart: upright in the hole, claws hooked over its rim, dragging itself up hand over hand
 			float reach = ElderAnim.smooth(rise / 0.25F), climb = ElderAnim.smooth((rise - 0.6F) / 0.4F);
-			float free = 1 - ElderAnim.smooth((rise - 0.92F) / 0.08F);
+			float loose = 1 - ElderAnim.smooth((rise - 0.92F) / 0.08F);
 			float pull = Mth.sin(climb * Mth.PI * 6);
 			float strain = ElderAnim.tremor(t, 0.05F * reach);
-			float k = reach * free;
+			float k = reach * loose;
 			body.xRot -= 0.45F * k * (1 - 0.5F * climb);
 			armL.xRot -= (2.2F - 0.6F * Math.max(0, pull)) * k;
 			armR.xRot -= (2.2F - 0.6F * Math.max(0, -pull)) * k;
@@ -212,7 +212,7 @@ public class StarvedOneModel extends EntityModel<StarvedOneRenderState> {
 			head.xRot += (0.6F - 0.9F * climb) * k + strain;
 			body.zRot += strain;
 			crown.zRot += strain * 2;
-			root.y += 1.2F * pull * climb * free;
+			root.y += 1.2F * pull * climb * loose;
 			for (int i = 0; i < tail.length; i++) {
 				tail[i].xRot -= 0.25F * k;
 			}
@@ -244,9 +244,9 @@ public class StarvedOneModel extends EntityModel<StarvedOneRenderState> {
 			}
 			for (int i = 0; i < chains.length; i++) {
 				// (the server snaps the chain to pillar i at 40 + 25 i of its two hundred ticks: see HeartScenes)
-				float at = (40 + 25 * i) / (float) StarvedOne.DEATH_TICKS;
-				if (die > at) {
-					float gone = ElderAnim.smooth((die - at) / 0.06F);
+				float snapAt = (40 + 25 * i) / (float) StarvedOne.DEATH_TICKS;
+				if (die > snapAt) {
+					float gone = ElderAnim.smooth((die - snapAt) / 0.06F);
 					chains[i].xRot += 1.6F * gone;
 					ElderAnim.scale(chains[i], Math.max(0.02F, 1 - 0.98F * gone));
 				}
