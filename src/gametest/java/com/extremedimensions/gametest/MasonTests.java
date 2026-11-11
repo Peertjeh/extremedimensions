@@ -87,7 +87,15 @@ public class MasonTests {
 	@GameTest(environment = Alone.MASON_LIFT, maxTicks = 240)
 	public void heLiftsGreatBlocksAndHurlsThemAll(GameTestHelper helper) {
 		ServerPlayer p = visitor(helper, "mason-target");
-		Runnable restore = harmless();
+		// He lifts a block more for every player he counts within elder_fighters_range (200 blocks), which reaches the
+		// players of every test round this one: only his own target counts here, so he lifts as many as for one
+		int range = Config.ELDER_FIGHTERS_RANGE;
+		Config.ELDER_FIGHTERS_RANGE = 8;
+		Runnable harmless = harmless();
+		Runnable restore = () -> {
+			harmless.run();
+			Config.ELDER_FIGHTERS_RANGE = range;
+		};
 		PaleMason m = mason(helper, p);
 		if (m == null) {
 			restore.run();
