@@ -93,16 +93,17 @@ public class FrayTests {
 		BlockPos o = helper.absolutePos(BlockPos.ZERO).above(24);
 		// The ray flies out past the test's own space, where only a test beside it would keep the world going: the
 		// chunks round it are forced (and, as in BossTests, never let go: a neighbouring test may stand in them)
-		for (int dx = -2; dx <= 2; dx++) {
-			for (int dz = -2; dz <= 2; dz++) {
+		// (four chunks each way: it wheels as far as three chunks out between its dives)
+		for (int dx = -4; dx <= 4; dx++) {
+			for (int dz = -4; dz <= 4; dz++) {
 				level.setChunkForced((o.getX() >> 4) + dx, (o.getZ() >> 4) + dz, true);
 			}
 		}
 		// Loaded here and now, and the two rings round them as well (which the forced ones hold): a chunk only comes to
 		// life once every chunk within two of it is whole, and the test server runs its ticks faster than fresh land is
 		// made out here, so waiting a number of ticks for it was no wait at all on a busy machine
-		for (int dx = -4; dx <= 4; dx++) {
-			for (int dz = -4; dz <= 4; dz++) {
+		for (int dx = -6; dx <= 6; dx++) {
+			for (int dz = -6; dz <= 6; dz++) {
 				level.getChunk((o.getX() >> 4) + dx, (o.getZ() >> 4) + dz);
 			}
 		}
@@ -135,8 +136,8 @@ public class FrayTests {
 		// through: alone in its batch, the test server runs this test's ticks faster than those chunks come to life, and
 		// a ray that flies into a still one stops there
 		java.util.function.BooleanSupplier alive = () -> {
-			for (int dx = -2; dx <= 2; dx++) {
-				for (int dz = -2; dz <= 2; dz++) {
+			for (int dx = -4; dx <= 4; dx++) {
+				for (int dz = -4; dz <= 4; dz++) {
 					if (!level.isPositionEntityTicking(new BlockPos(((o.getX() >> 4) + dx) * 16 + 8, o.getY(), ((o.getZ() >> 4) + dz) * 16 + 8))) {
 						return false;
 					}
