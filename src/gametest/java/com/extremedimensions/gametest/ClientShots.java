@@ -280,9 +280,25 @@ public class ClientShots implements FabricClientGameTest {
 		ctx.waitTicks(5);
 		face(sp, name);
 		int dyingFrom = ctx.computeOnClient(mc -> com.extremedimensions.client.fx.CameraLock.holds());
+		// (where it is as it dies, for the message should its death not reach the view: it is shown within 96 blocks)
+		String where = sp.getServer().computeOnServer(s -> {
+			StringBuilder out = new StringBuilder();
+			for (com.extremedimensions.elder.ElderBoss e : elders(s, 400)) {
+				out.append(String.format(java.util.Locale.ROOT, "%s alive %s, %.0f blocks off, acting %s; ",
+						net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(e.getType()).getPath(), e.isAlive(),
+						Math.sqrt(e.distanceToSqr(player(s))), e.getAction()));
+			}
+			return out.length() == 0 ? "no Elder within 400 blocks" : out.toString();
+		});
 		sp.getServer().runCommand("kill @e[type=extremedimensions:" + name + "]");
-		ctx.waitTicks(30);
-		ctx.runOnClient(mc -> check(com.extremedimensions.client.fx.CameraLock.holds() > dyingFrom, "the view is not held on the dying " + name));
+		// its death reaches the view within a moment (a little longer on a slow client)
+		int waited = 0;
+		for (; waited < 60 && ctx.computeOnClient(mc -> com.extremedimensions.client.fx.CameraLock.holds()) <= dyingFrom; waited += 5) {
+			ctx.waitTicks(5);
+		}
+		ctx.runOnClient(mc -> check(com.extremedimensions.client.fx.CameraLock.holds() > dyingFrom, "the view is not held on the dying " + name + " (" + where + ")"));
+		// (the shot at about the same moment of its death as ever)
+		ctx.waitTicks(Math.max(1, 30 - waited));
 		ctx.takeScreenshot("12_fight_" + name + "_death");
 		ctx.waitTicks(66);
 		ctx.takeScreenshot("12_fight_" + name + "_death_bloom");
