@@ -612,11 +612,15 @@ public final class ElderArena {
 	 * This boss's fight is over and its arena comes apart now, not after a while (the Heart's, as the Starved One dies or
 	 * sinks back): what is in the air still lands first, then it flies off block by block.
 	 */
-	static void dissolveNow(Entity boss) {
-		release(boss);
+	static void dissolveNow(UUID boss) {
+		// (an arena still being designed never rises)
+		DRAFTS.removeIf(d -> d.boss.equals(boss));
 		for (Arena a : ARENAS) {
-			if (a.boss.equals(boss.getUUID()) && !a.dissolving) {
-				a.linger = 0;
+			if (a.boss.equals(boss) && !a.dissolving) {
+				end(a);
+				if (a.linger >= 0) {
+					a.linger = 0;
+				}
 			}
 		}
 	}

@@ -533,7 +533,15 @@ public final class HeartArena {
 
 	/** Its fight is over, however it ended: the arena comes apart now, block by block flying off, and what fell with it. */
 	public static void release(Entity so) {
-		FIGHTS.remove(so.getUUID());
+		release(so.getUUID());
+	}
+
+	/** As {@link #release(Entity)}, for a Starved One no longer to be found (gone with its part of the world). */
+	public static void release(UUID so) {
+		if (so == null) {
+			return;
+		}
+		FIGHTS.remove(so);
 		ElderArena.dissolveNow(so);
 	}
 

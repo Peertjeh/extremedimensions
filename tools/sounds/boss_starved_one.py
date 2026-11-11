@@ -605,20 +605,22 @@ def compose():
     chime(bar_at(21) + 0.5, 0.16)
 
     # Build (25-27): the drum rolling in, the pendulum in eighths, a riser and a breath drawn in to the top
-    pulse(25, 2, ["Em", "B"], 0.5, gain=0.45, eighths=True, rising=0.6)
+    place(DRY, bar_at(25), boom(10, 0.8), 0.6)
+    pulse(25, 2, ["Em", "B"], 0.6, gain=0.5, eighths=True, rising=0.6)
     for bb in range(2):
         base = bar_at(25 + bb)
-        hits = [0, 3, 4, 7] if bb == 0 else list(range(8))
+        hits = [0, 3, 4, 6, 7] if bb == 0 else list(range(8))
         for e in hits:
-            place(DRY, base + e * EIGHTH, drum(1.0, e % 3), 0.55 + 0.15 * bb, 0.0)
+            place(DRY, base + e * EIGHTH, drum(1.0, e % 3), 0.7 + 0.2 * bb, 0.0)
+    braams(25, 2, ["Em", "B"], 0.24)
     for k in range(32):
         # a roll of iron, closer and louder into the climax
         at = bar_at(25) + 2 * BAR * (1 - (1 - k / 32) ** 1.6)
         place(DRY, at, iron(k % 3, 1.2), 0.1 + 0.35 * k / 32, 0.3 if k % 2 else -0.3)
     clock(25, 1, 2, 0.13, HALL, 0.15, 5)
     clock(26, 1, 4, 0.12, HALL, 0.2, 6)
-    pads(25, 2, ["Em", "B"], "o", "a", 0.24)
-    hearts(25, 2, 4, 0.45)
+    pads(25, 2, ["Em", "B"], "o", "a", 0.3)
+    hearts(25, 2, 4, 0.5)
     place(HALL, bar_at(25), km.riser(rng, km.t_(2 * BAR), 0.0, 2 * BAR, 150, 8000, 41.2), 0.42, 0.0, 12)
     place(FAR, bar_at(25), roar(80, 200, 160, 2 * BAR - 0.5, 4), 0.14, 0.0)
     into(DRY, 27, 2.6, 0.45, 4)

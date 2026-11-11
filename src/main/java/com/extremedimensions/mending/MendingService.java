@@ -7,6 +7,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
+import com.extremedimensions.elder.ElderFx;
+import com.extremedimensions.elder.HeartArena;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
@@ -55,6 +57,13 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
  *   <li>Time in the Seam stands still for everyone near the Heart while it lives.</li>
  * </ul>
  *
+ * <p>Since 3.48 it comes as the Elders do: after the wind-up it claws its way up out of the Heart under a darkening sky
+ * (nothing hurts it meanwhile), the pillars lighting one by one, and bursts free to its own music; the Heart raises an
+ * arena round the fight ({@link HeartArena}) that changes twice as it weakens, with an upheaval and islands falling;
+ * once a fight it drinks time; and it dies slowly, its chains snapping and its embers going out, before the Thread and
+ * the Shears are laid. Its fight reaches the whole of the Heart's island group (see {@link #within}), and with nobody
+ * left in it the Starved One waits {@code starved_leave_seconds} over the Heart before it sinks back.
+ *
  * It leaves two things: a <b>Mending Thread</b> and the <b>Severing Shears</b>. The first one used decides the
  * world: mended (calm, the tribe at peace, lighter drain) or severed (no more timer beyond the wound, but whoever
  * falls there loses everything they carried).
@@ -63,7 +72,7 @@ public final class MendingService {
 	private MendingService() {}
 
 	public static final int HX = 0, HY = 100, HZ = 0, HR = 22;
-	/** How far from the Heart the fight reaches: the Heart, its strands and the four pillars' islands. */
+	/** How far from the Heart (across) the Starved One flies at most, and its fight reaches at least: the pillars' islands. */
 	public static final int ARENA = 84;
 
 	private static UUID boss;
@@ -79,6 +88,21 @@ public final class MendingService {
 	private static Vec3 vel = Vec3.ZERO;
 	/** Players at the Heart when it woke (the binding asks more sockets of a larger party). */
 	private static int party = 1;
+	/** Ticks nobody has been at its fight (3.48): it sinks back once they come to {@code starved_leave_seconds}. */
+	private static int alone;
+	/** Ticks it has been rising out of the Heart (3.48), or -1 once it is free of it. */
+	private static int rise = -1;
+	/** How far its fight has changed (3.48): 0, then 1 below {@code starved_phase_one}, 2 below {@code starved_phase_two}. */
+	private static int stage;
+	/** When its fight last changed (its clock), so that its drinking of time waits a little after. */
+	private static int changedAt = -1000;
+	/** Ticks into its drinking of time (3.48), -1 while it does not drink; and whether it has drunk in this fight. */
+	private static int drink = -1;
+	private static boolean drunk;
+	/** Ticks it hangs dazed, an island of its arena having fallen on it. */
+	private static int dazed;
+	/** The pillars' nodes as it fell, for the chains that snap as it dies. */
+	private static final BlockPos[] DYING = new BlockPos[Binding.PILLARS];
 
 	public static boolean isDriven(Entity e) {
 		return e.getUUID().equals(boss);
@@ -98,6 +122,21 @@ public final class MendingService {
 		WARNED_AT.clear();
 		Binding.forget();
 		Retinue.forget();
+		HeartArena.clear();
+		HeartScenes.forget();
+		reset();
+		java.util.Arrays.fill(DYING, null);
+	}
+
+	/** What a fight keeps of its own, back as it was before one. */
+	private static void reset() {
+		alone = 0;
+		rise = -1;
+		stage = 0;
+		changedAt = -1000;
+		drink = -1;
+		drunk = false;
+		dazed = 0;
 	}
 
 	/** Bound, it takes more harm; free, less (as long as the pillars stand to bind it: else in full). */
@@ -111,7 +150,9 @@ public final class MendingService {
 		if (Binding.bound()) {
 			return (float) Math.max(0, Config.STARVED_BOUND_DAMAGE) / tough;
 		}
-		return (Binding.possible() ? (float) Math.max(0, Config.STARVED_UNBOUND_DAMAGE) : 1.0F) / tough;
+		// While it drinks time it shrugs off most of every blow, as an Elder in its ultimate (elder_ultimate_guard)
+		float ward = drink >= 0 ? (float) Math.max(0, 1 - Math.min(1, Config.ELDER_ULTIMATE_GUARD)) : 1.0F;
+		return (Binding.possible() ? (float) Math.max(0, Config.STARVED_UNBOUND_DAMAGE) : 1.0F) * ward / tough;
 	}
 
 	/** How many times its own health it has against this many players: every blow on it is divided by this (3.31). */
@@ -123,9 +164,31 @@ public final class MendingService {
 		return DataStore.sealBroken() && DataStore.ending().isEmpty();
 	}
 
-	/** Is this player near the Heart (on it, its strands or the pillars' islands), in the Seam? */
+	/**
+	 * Is this player at the Heart's fight, in the Seam: anywhere in the Heart's island group (see {@link #within})? Who
+	 * flew out to a pillar to quench its node, high up its shaft, is there as much as who stands on the altar.
+	 */
 	public static boolean inArena(ServerPlayer p) {
-		return SeamService.inSeam(p) && p.distanceToSqr(HX + 0.5, HY, HZ + 0.5) < (double) ARENA * ARENA;
+		return SeamService.inSeam(p) && within(p.getX(), p.getY(), p.getZ());
+	}
+
+	/**
+	 * Whether a point is within the Heart's fight (3.48): the whole of its island group, as a cylinder round the Heart
+	 * {@code starved_arena_reach} blocks across (the pillars stand 64 out, their islands 14 more; never less than
+	 * {@link #ARENA}) from {@code starved_arena_below} under its floor (the islands' undersides) to
+	 * {@code starved_arena_above} over it (the nodes, some forty to fifty up, and the shafts' tops). (Before 3.48 it was a
+	 * ball round the Heart, and the top of a node far out on its shaft lay outside it: whoever flew there alone to quench
+	 * it saw the Starved One sink back.)
+	 */
+	public static boolean within(double x, double y, double z) {
+		double dx = x - (HX + 0.5), dz = z - (HZ + 0.5);
+		double r = Math.max(ARENA, Config.STARVED_ARENA_REACH);
+		return dx * dx + dz * dz < r * r && y > HY - Math.max(0, Config.STARVED_ARENA_BELOW) && y < HY + Math.max(0, Config.STARVED_ARENA_ABOVE);
+	}
+
+	/** Who counts as at its fight now: in it, alive (not dying), and not a spectator. */
+	private static boolean present(ServerPlayer p) {
+		return inArena(p) && !p.isSpectator() && p.isAlive() && !p.isDeadOrDying();
 	}
 
 	/**
@@ -224,8 +287,10 @@ public final class MendingService {
 		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", x, y + 1, z, 2, 1.5, 2, 0.02, 10 + (int) (share * 24));
 		WorldFx.particleIn(dim, "extremedimensions:soul_mote", HX, HY - 2, HZ - 8, 2, 2, 2, 0.02, 8 + (int) (share * 16));
 		if ((level.getGameTime() / 20) % 2 == 0) {
-			WorldFx.soundIn(dim, "minecraft:entity.warden.heartbeat", "hostile", x, y, z, 1.5f + 2.5f * share, 0.5f);
-			WorldFx.soundIn(dim, "extremedimensions:keeper_roar", "hostile", HX, HY - 4, HZ - 8, 0.6f + 2f * share, 0.4f);
+			// its own voice under the stone, louder as it comes (3.48: no longer a borrowed Warden's heart and Keeper's roar)
+			WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.ambient", "hostile", x, y, z, 1.5f + 2.5f * share, 0.7f + 0.3f * share);
+			WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.voice", "hostile", HX + HeartScenes.EX, HY - 4, HZ + HeartScenes.EZ, 0.6f + 2f * share,
+					0.6f + 0.2f * share);
 		}
 	}
 
@@ -265,8 +330,9 @@ public final class MendingService {
 	}
 
 	private static void start(ServerLevel seam, ServerPlayer p) {
-		// It rises out of the Heart itself, through the stone
-		StarvedOne so = ModEntities.STARVED_ONE.spawn(seam, new BlockPos(HX, HY - 7, HZ - 8), EntitySpawnReason.EVENT);
+		// It rises out of the Heart itself, through the stone, from under where it breaks the floor open
+		StarvedOne so = ModEntities.STARVED_ONE.spawn(seam, new BlockPos(HX + HeartScenes.EX, HY - HeartScenes.DEPTH, HZ + HeartScenes.EZ),
+				EntitySpawnReason.EVENT);
 		if (so == null) {
 			return;
 		}
@@ -294,19 +360,89 @@ public final class MendingService {
 		nextSwoop = 140;
 		vel = Vec3.ZERO;
 		party = Math.max(1, players);
-		so.act(StarvedOne.CALL);
-		Binding.wake(seam);
-		Retinue.wake(seam, party);
+		reset();
+		java.util.Arrays.fill(DYING, null);
+		// It rises first (3.48): nothing hurts it meanwhile, the pillars light one by one, and it bursts free at the end
+		rise = 0;
+		so.setRising(0);
+		Binding.wake(seam, false);
+		// The sky darkens and the fog closes in for everyone at the Heart, as under an Elder; its bar fills as it rises
 		bar = new ServerBossEvent(UUID.randomUUID(), Component.translatable("boss.extremedimensions.starved_one"),
 				BossEvent.BossBarColor.PURPLE, BossEvent.BossBarOverlay.NOTCHED_20);
-		roar(so, 4f);
-		WorldFx.particleIn(SeamService.SEAM.identifier().toString(), "extremedimensions:lurker_wisp", HX, HY + 3, HZ - 8, 2, 3, 2, 0, 120);
-		WorldFx.punch(seam, so, HX, HZ - 8, 70, 0.8f, 24);
+		bar.setDarkenScreen(true);
+		bar.setCreateWorldFog(true);
+		bar.setProgress(0);
+		for (ServerPlayer q : seam.players()) {
+			if (present(q)) {
+				bar.addPlayer(q);
+			}
+		}
+		HeartScenes.begin(seam, so, riseLength());
+		// ... and the Heart's arena rises round the fight
+		HeartArena.raise(so);
 		for (ServerPlayer q : seam.players()) {
 			if (inArena(q)) {
 				Journal.unlock(q, DataStore.get(q.getUUID()), JournalEntry.HEART);
 				Advancements.grant(q, Advancements.HEART_REACHED);
-				WorldFx.effect(q, MobEffects.DARKNESS, 5, 0);
+				com.extremedimensions.guide.Hints.meet(q, com.extremedimensions.guide.Hints.Hint.ELDER);
+			}
+		}
+	}
+
+	/** How long it takes to rise out of the Heart, in ticks ({@code starved_rise_seconds}). */
+	static int riseLength() {
+		return Math.max(40, (int) Math.round(Config.STARVED_RISE_SECONDS * 20));
+	}
+
+	/**
+	 * One tick of its rise out of the Heart: it is drawn up from under the floor, the Heart's ground quaking harder and
+	 * cracking, souls spiralling in, the four pillars lighting one after another; the floor breaks open over it and it
+	 * claws its way up, until it bursts free.
+	 */
+	private static void rising(ServerLevel seam, StarvedOne so) {
+		int length = riseLength();
+		rise++;
+		double k = Math.min(1, rise / (double) length);
+		so.setRising((float) k);
+		bar.setProgress((float) k);
+		// The pillars light one after another (their nodes open, their strands of souls run in to the Heart)
+		for (int i = 0; i < Binding.PILLARS; i++) {
+			if (HeartScenes.at(rise, length, 0.3 + 0.12 * i)) {
+				BlockPos n = Binding.light(seam, i);
+				if (n != null) {
+					HeartScenes.lit(seam, n);
+				}
+			}
+		}
+		java.util.List<BlockPos> lit = new java.util.ArrayList<>();
+		for (int i = 0; i < Binding.PILLARS; i++) {
+			if (Binding.node(i) != null) {
+				lit.add(Binding.node(i));
+			}
+		}
+		HeartScenes.rising(seam, so, rise, length, lit);
+		// Drawn up a little under the stone, then, the floor broken open, up out of it, hands first
+		double from = HY - HeartScenes.DEPTH, to = HY + 1;
+		double want = k < 0.6 ? from + 2 * k / 0.6 : from + 2 + (to - from - 2) * HeartScenes.ease((k - 0.6) / 0.38);
+		so.setDeltaMovement(HX + HeartScenes.EX + 0.5 - so.getX(), want - so.getY(), HZ + HeartScenes.EZ + 0.5 - so.getZ());
+		vel = Vec3.ZERO;
+		if (rise >= length) {
+			burst(seam, so);
+		}
+	}
+
+	/** It bursts free of the Heart: a shockwave, its roar and a flash, its name across the screen; the fight begins. */
+	private static void burst(ServerLevel seam, StarvedOne so) {
+		rise = -1;
+		so.setRising(-1);
+		phase = EMERGE;
+		phaseTicks = 0;
+		so.act(StarvedOne.CALL);
+		HeartScenes.burst(seam, so);
+		Retinue.wake(seam, party);
+		for (ServerPlayer q : seam.players()) {
+			if (inArena(q)) {
+				WorldFx.effect(q, MobEffects.DARKNESS, 3, 0);
 				q.sendSystemMessage(Component.translatable("gui.extremedimensions.heart.awake", Binding.healStopAt(),
 						Math.max(1, Config.STARVED_SOCKET_SILK), Binding.stunAt()).withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE));
 			}
@@ -314,27 +450,30 @@ public final class MendingService {
 	}
 
 	private static void roar(Entity e, float vol) {
-		WorldFx.soundIn(SeamService.SEAM.identifier().toString(), "extremedimensions:keeper_roar", "hostile", e.getX(), e.getY() + 4, e.getZ(), vol, 0.55f);
+		WorldFx.soundIn(SeamService.SEAM.identifier().toString(), "extremedimensions:elder.starved_one.roar", "hostile", e.getX(), e.getY() + 4, e.getZ(), vol, 1f);
+	}
+
+	/** Its voice: a snarl as it turns to a trick. */
+	private static void voice(Entity e, float vol) {
+		WorldFx.soundIn(SeamService.SEAM.identifier().toString(), "extremedimensions:elder.starved_one.voice", "hostile", e.getX(), e.getY() + 4, e.getZ(), vol,
+				0.9f + 0.2f * ThreadLocalRandom.current().nextFloat());
 	}
 
 	private static void drive(ServerLevel seam) {
 		Entity ent = seam.getEntity(boss);
 		List<ServerPlayer> arena = new ArrayList<>();
 		for (ServerPlayer p : seam.players()) {
-			if (inArena(p) && !p.isSpectator() && p.isAlive()) {
+			if (present(p)) {
 				arena.add(p);
 			}
 		}
 		if (!(ent instanceof StarvedOne so) || !so.isAlive()) {
 			if (ent == null || !ent.isAlive()) {
+				UUID gone = boss;
 				end(seam);
+				HeartArena.release(gone);
 				clear();
 			}
-			return;
-		}
-		if (arena.isEmpty()) {
-			// Nobody left at the Heart: it sinks back into the seam, whole again
-			fade(so);
 			return;
 		}
 		ticks++;
@@ -343,10 +482,38 @@ public final class MendingService {
 			for (ServerPlayer p : arena) {
 				bar.addPlayer(p);
 			}
+			// (and lets go of those who left its fight: the sky lifts for them)
+			for (ServerPlayer q : List.copyOf(bar.getPlayers())) {
+				if (q.level() != seam || !inArena(q)) {
+					bar.removePlayer(q);
+				}
+			}
+		}
+		if (ticks % 40 == 1) {
+			// Its music for everyone at its fight, asked for again every two seconds (it fades once it stops coming)
+			ElderFx.music(seam, MendingService::inArena, ElderFx.MUSIC_STARVED_ONE);
+		}
+		if (arena.isEmpty()) {
+			// Nobody at its fight: it waits a while for its prey to come back, then sinks back into the seam, whole again
+			if (++alone >= Math.max(0, Config.STARVED_LEAVE_SECONDS) * 20) {
+				fade(so);
+				return;
+			}
+		} else {
+			alone = 0;
+		}
+		if (rise >= 0) {
+			rising(seam, so);
+			return;
 		}
 		bar.setProgress(so.getHealth() / so.getMaxHealth());
 		// White while stunned, green while the pillars heal it (3.33)
 		bar.setColor(Binding.bound() ? BossEvent.BossBarColor.WHITE : Binding.healing() ? BossEvent.BossBarColor.GREEN : BossEvent.BossBarColor.PURPLE);
+		HeartArena.tick(so, arena);
+		if (arena.isEmpty()) {
+			waiting(seam, so, arena);
+			return;
+		}
 		ServerPlayer target = nearest(so, arena);
 		so.setTarget(target);
 		if (ticks % 3 == 0) {
@@ -356,6 +523,11 @@ public final class MendingService {
 			so.rest();
 			phase = HOVER;
 			vel = Vec3.ZERO;
+			if (drink >= 0) {
+				// Every pillar quenched while it drank: the chains tear its drinking of time out of it, unspent
+				drink = -1;
+				HeartScenes.drinkBroken(seam, so);
+			}
 		}
 		Vec3 held = Binding.bindAt();
 		if (held != null) {
@@ -368,7 +540,24 @@ public final class MendingService {
 			return;
 		}
 		so.setBound(false);
+		if (dazed > 0) {
+			// An island fell on it: it hangs dazed a moment, sinking, stars about its head
+			dazed--;
+			so.rest();
+			vel = vel.scale(0.8);
+			so.setDeltaMovement(vel.x, -0.04, vel.z);
+			if (ticks % 4 == 0) {
+				WorldFx.particleIn(dim, "minecraft:crit", so.getX(), so.getY() + so.getBbHeight() * 0.9, so.getZ(), 1.5, 0.4, 1.5, 0.05, 6);
+			}
+			return;
+		}
 		float f = so.getHealth() / so.getMaxHealth();
+		// Its fight changes twice as it weakens (3.48): an upheaval, and islands falling
+		int want = f <= Config.STARVED_PHASE_TWO ? 2 : f <= Config.STARVED_PHASE_ONE ? 1 : 0;
+		while (stage < want) {
+			stage++;
+			changed(seam, so, arena);
+		}
 		if (!ravenous && f <= Config.STARVED_ENRAGE_AT) {
 			// Ravenous: it flies faster and its tricks come sooner
 			ravenous = true;
@@ -381,6 +570,18 @@ public final class MendingService {
 				p.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.starved_ravenous"), true);
 			}
 			nextTrick = Math.min(nextTrick, 40);
+		}
+		// Once a fight, weakened, it drinks time (3.48)
+		if (drink < 0 && !drunk && Config.STARVED_DRINK_AT > 0 && f <= Config.STARVED_DRINK_AT && phase != SWOOP && phase != EMERGE
+				&& ticks - changedAt > 100) {
+			drunk = true;
+			drink = 0;
+			so.act(StarvedOne.CALL);
+			HeartScenes.drinkBegins(seam, so, drinkLength());
+		}
+		if (drink >= 0) {
+			drinking(seam, so, arena);
+			return;
 		}
 		flight(seam, so, target);
 		if (phase != EMERGE && Retinue.tick(seam, so, arena, ticks, ravenous)) {
@@ -420,6 +621,70 @@ public final class MendingService {
 	}
 
 	/**
+	 * Nobody at its fight (3.48): it hangs over the Heart and waits for its prey to come back; the pillars feed it
+	 * meanwhile (and hold it, if all four still burn quenched), and what its fight holds goes on as it stood.
+	 */
+	private static void waiting(ServerLevel seam, StarvedOne so, List<ServerPlayer> arena) {
+		so.rest();
+		Binding.tick(seam, so, arena, ticks);
+		Vec3 held = Binding.bindAt();
+		if (held != null) {
+			fly(so, held, 0.5, 0.35);
+			return;
+		}
+		so.setBound(false);
+		if (drink >= 0) {
+			drink = -1;
+			HeartScenes.drinkBroken(seam, so);
+		}
+		phase = HOVER;
+		fly(so, new Vec3(HX + 0.5, HY + 8 + Math.sin(ticks * 0.03) * 1.5, HZ + 0.5), 0.15, 0.06);
+	}
+
+	/** Its fight changes ({@link #stage} has just grown): its own sound, it rears up, and the Heart's arena breaks up. */
+	private static void changed(ServerLevel seam, StarvedOne so, List<ServerPlayer> arena) {
+		changedAt = ticks;
+		String dim = SeamService.SEAM.identifier().toString();
+		WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.phase", "hostile", so.getX(), so.getY() + 4, so.getZ(), 6f, 1f);
+		so.act(StarvedOne.CALL);
+		ElderFx.cinema(seam, MendingService::inArena, ElderFx.CINEMA_STARVED_ONE, com.extremedimensions.network.ModPackets.BossFxPayload.FLASH, 0, 0.35f, "");
+		HeartArena.change(so, stage, arena);
+		for (ServerPlayer p : arena) {
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.heart.phase_" + Math.min(2, stage)).withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE),
+					true);
+		}
+	}
+
+	/** How long its drinking of time draws in before the soul fire bursts out of it, in ticks. */
+	static int drinkLength() {
+		return Math.max(60, (int) Math.round(Config.STARVED_DRINK_SECONDS * 20));
+	}
+
+	/**
+	 * One tick of its drinking of time (3.48): it hangs high over the Heart and draws the light out of it, and everyone
+	 * in its reach towards it, slowed; at the end the soul fire it drank bursts out of it.
+	 */
+	private static void drinking(ServerLevel seam, StarvedOne so, List<ServerPlayer> arena) {
+		int length = drinkLength();
+		drink++;
+		fly(so, new Vec3(HX + 0.5, HY + 14, HZ + 0.5), 0.3, 0.12);
+		ServerPlayer target = nearest(so, arena);
+		so.getLookControl().setLookAt(target, 20, 20);
+		HeartScenes.drinking(seam, so, drink, length, arena);
+		if (drink >= length) {
+			drink = -1;
+			HeartScenes.nova(seam, so, arena);
+			nextTrick = Math.max(nextTrick, 80);
+			begin(HOVER, so, target);
+		}
+	}
+
+	/** It hangs dazed for a while (an island of its arena fell on it; see HeartArena). */
+	public static void daze(int ticks) {
+		dazed = Math.max(dazed, Math.max(0, ticks));
+	}
+
+	/**
 	 * Its flight, each tick: it rises out of the Heart; then it circles its prey a few blocks over it, out of reach of a
 	 * sword; now and then it falls on it claws first, rakes it if it gets there, and climbs away slowly (the moment to
 	 * strike back), then circles again.
@@ -431,8 +696,9 @@ public final class MendingService {
 		so.getLookControl().setLookAt(target, 30, 30);
 		switch (phase) {
 			case EMERGE -> {
-				fly(so, new Vec3(HX + 0.5, HY + 3, HZ - 7.5), 0.12, 0.2);
-				if (phaseTicks > 60) {
+				// Free of the Heart, it springs up out of the hole it tore and spreads itself over the floor
+				fly(so, new Vec3(HX + HeartScenes.EX + 0.5, HY + 5, HZ + HeartScenes.EZ + 0.5), 0.3, 0.2);
+				if (phaseTicks > 40) {
 					begin(HOVER, so, target);
 				}
 			}
@@ -445,7 +711,7 @@ public final class MendingService {
 				if (--nextSwoop <= 0 && so.distanceToSqr(target) < 30 * 30) {
 					begin(SWOOP, so, target);
 					so.act(StarvedOne.SWOOP);
-					WorldFx.soundIn(dim, "minecraft:entity.phantom.swoop", "hostile", so.getX(), so.getY() + 3, so.getZ(), 3f, 0.5f);
+					WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.swoop", "hostile", so.getX(), so.getY() + 3, so.getZ(), 5f, 1f);
 				}
 			}
 			case SWOOP -> {
@@ -566,13 +832,14 @@ public final class MendingService {
 		so.act(StarvedOne.BLINK);
 		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", to.x, to.y + 3, to.z, 1, 2, 1, 0, 40);
 		WorldFx.soundIn(dim, "extremedimensions:lurker_vanish", "hostile", to.x, to.y + 2, to.z, 2f, 0.5f);
+		voice(so, 4f);
 		// and falls on it at once
 		begin(SWOOP, so, p);
 	}
 
 	/** It bites through the thread: every rift near the Heart is flung to the edge of the island. */
 	private static void bite(StarvedOne so, List<ServerPlayer> arena) {
-		roar(so, 3f);
+		voice(so, 5f);
 		so.act(StarvedOne.BITE);
 		WorldFx.punch((ServerLevel) so.level(), so, so.getX(), so.getZ(), 48, 0.55f, 12);
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
@@ -638,10 +905,15 @@ public final class MendingService {
 		return Binding.feed(p, i, stack, boss != null, party);
 	}
 
-	/** The fight is over (won, or nobody left): the sockets go dark, the young fade, the rays calm. */
+	/**
+	 * The fight is over (won, or nobody left): the sockets go dark, the young fade, the rays calm, the floor it tore
+	 * open closes and its music ends.
+	 */
 	private static void end(ServerLevel seam) {
 		Binding.end(seam);
 		Retinue.end(seam);
+		HeartScenes.close(seam);
+		HeartScenes.silence(seam);
 	}
 
 	// ------------------------------------------------------------------ the Heart
@@ -700,15 +972,25 @@ public final class MendingService {
 		if (bar != null) {
 			bar.removeAllPlayers();
 		}
+		boolean wasDrinking = drink >= 0;
 		boss = null;
 		bar = null;
 		DataStore.setStarvedSlain(true);
 		ServerLevel seam = (ServerLevel) so.level();
-		end(seam);
-		offerEnding(seam);
-		String dim = SeamService.SEAM.identifier().toString();
-		WorldFx.particleIn(dim, "extremedimensions:soul_mote", so.getX(), so.getY() + 3, so.getZ(), 2, 3, 2, 0, 200);
-		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 3, so.getZ(), 2, 3, 2, 0, 120);
+		// Its chains to the pillars still hold as it dies, and snap one by one (see dying); its young and rays are gone at once
+		for (int i = 0; i < Binding.PILLARS; i++) {
+			DYING[i] = Binding.node(i);
+		}
+		Retinue.end(seam);
+		HeartScenes.silence(seam);
+		if (wasDrinking) {
+			HeartScenes.drinkBroken(seam, so);
+		}
+		// Its arena comes apart as it dies
+		HeartArena.release(so);
+		reset();
+		// (the altar offers nothing until the Thread and the Shears are laid at the end of its death)
+		lastOffer = seam.getGameTime();
 		java.util.List<ServerPlayer> there = new java.util.ArrayList<>();
 		for (ServerPlayer p : seam.players()) {
 			if (inArena(p) && !p.isSpectator() && !p.isCreative()) {
@@ -720,10 +1002,36 @@ public final class MendingService {
 				}
 				Advancements.grant(p, Advancements.STARVED_SLAIN);
 				Journal.unlock(p, DataStore.get(p.getUUID()), JournalEntry.WANDERER);
-				WorldFx.soundSelf(p, "extremedimensions:lurker_death", 1.0f, 0.5f);
 			}
 		}
 		com.extremedimensions.compat.DiscordWebhook.starvedOne(there);
+	}
+
+	/**
+	 * Each tick of its death (3.48, as an Elder's): the view of everyone at the Heart held on it, it convulses and sags,
+	 * its chains to the pillars snapping one after another (each node going dark as it does), its embers going out, the
+	 * arena flying apart round it, until it collapses into its own light.
+	 */
+	public static void dying(StarvedOne so, ServerLevel seam, int t) {
+		for (int i = 0; i < Binding.PILLARS; i++) {
+			if (DYING[i] != null && t == 22 + 10 * i) {
+				Binding.darken(seam, i);
+				HeartScenes.snap(seam, so, DYING[i]);
+				DYING[i] = null;
+			}
+		}
+		HeartScenes.death(seam, so, t, StarvedOne.DEATH_TICKS, DYING);
+	}
+
+	/** It is gone: the pillars stand broken as before, the floor it tore closes, and the Thread and the Shears are laid. */
+	public static void died(StarvedOne so, ServerLevel seam) {
+		Binding.end(seam);
+		HeartScenes.close(seam);
+		java.util.Arrays.fill(DYING, null);
+		offerEnding(seam);
+		String dim = SeamService.SEAM.identifier().toString();
+		WorldFx.particleIn(dim, "extremedimensions:soul_mote", HX + 0.5, HY + 2, HZ + 0.5, 1, 1, 1, 0, 60);
+		WorldFx.soundIn(dim, "minecraft:block.amethyst_block.resonate", "block", HX + 0.5, HY + 1.5, HZ + 0.5, 3f, 0.6f);
 	}
 
 	/**
@@ -810,11 +1118,51 @@ public final class MendingService {
 		if (bar != null) {
 			bar.removeAllPlayers();
 		}
+		if (drink >= 0 && so.level() instanceof ServerLevel seam) {
+			HeartScenes.drinkBroken(seam, so);
+		}
 		boss = null;
 		bar = null;
+		reset();
+		// Its arena comes apart with it
+		HeartArena.release(so);
 		if (so.level() instanceof ServerLevel seam) {
 			end(seam);
 		}
+	}
+
+	// ------------------------------------------------------------------ for tests and pictures
+
+	/** It rises now for this player, as if its wind-up were over (for tests and pictures). */
+	public static void wakeNow(ServerLevel seam, ServerPlayer p) {
+		if (boss == null) {
+			start(seam, p);
+		}
+	}
+
+	/** The Starved One the Heart drives now, or null (for tests). */
+	public static StarvedOne driven(ServerLevel seam) {
+		return boss != null && seam.getEntity(boss) instanceof StarvedOne so ? so : null;
+	}
+
+	/** How far its fight has changed (for tests): 0, 1 or 2. */
+	public static int stage() {
+		return stage;
+	}
+
+	/** Whether it is still rising out of the Heart (for tests). */
+	public static boolean risingNow() {
+		return boss != null && rise >= 0;
+	}
+
+	/** Whether it is drinking time now (for tests). */
+	public static boolean drinkingNow() {
+		return drink >= 0;
+	}
+
+	/** The Heart is built now, where it stands (for pictures; it is otherwise built as someone comes near it). */
+	public static void buildHeartNow(ServerLevel seam) {
+		buildHeart(seam);
 	}
 
 	/** Operator command: break the seal (as if the Dragon died) for testing. */
