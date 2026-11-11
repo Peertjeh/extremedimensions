@@ -109,10 +109,11 @@ public class MasonTests {
 		helper.runAfterDelay(200, () -> {
 			int left = PaleMasonService.boulders(m);
 			int action = m.getAction();
+			String where = PaleMasonService.describe(m) + ", his target " + p.getUUID() + (p.isAlive() ? "" : " (dead)");
 			PaleMasonService.fade(m);
 			restore.run();
 			check(helper, most[0] >= 2, "he lifted only %s great blocks", most[0]);
-			check(helper, left == 0, "%s great blocks were left hanging (his action %s)", left, action);
+			check(helper, left == 0, "%s great blocks were left hanging (his action %s; %s)", left, action, where);
 			helper.succeed();
 		});
 	}

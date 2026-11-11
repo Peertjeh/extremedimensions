@@ -146,6 +146,16 @@ public final class PaleMasonService {
 	}
 
 	/** Starts one of his blows (or his ultimate) at once; for tests and operators. False if he is not fighting. */
+	/** For tests: where his fight stands (its clock, its pace, who he counts and is after), to say why a blow did not end. */
+	public static String describe(Entity e) {
+		Masonry f = FIGHTS.get(e.getUUID());
+		if (f == null) {
+			return "no fight";
+		}
+		return String.format(java.util.Locale.ROOT, "action %d at beat %.1f, %d ticks in, pace %.2f, %d fighters, dazed %d, %d held, after %s",
+				f.action, f.beat.t, f.ticks, f.tempo(), f.fighters, f.dazed, f.boulders.size(), f.target);
+	}
+
 	public static boolean force(Entity e, int action) {
 		Masonry fight = FIGHTS.get(e.getUUID());
 		if (fight == null || !(e instanceof PaleMason m)) {
