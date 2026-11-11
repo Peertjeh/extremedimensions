@@ -900,7 +900,7 @@ public class ClientShots implements FabricClientGameTest {
 			// ... and the spear in hand as its bearer sees it
 			ctx.waitTicks(10);
 			ctx.takeScreenshot("02_tetherite_spear_held");
-			// The two spears side by side, close and from the side, with nothing over them: vanilla's netherite spear on the
+			// The two spears side by side, close and from the side: vanilla's netherite spear on the
 			// stand to the right of the view, the Tetherite Spear on the one to the left; both point the way their stand faces
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
 			sp.getServer().runCommand("execute as @a at @s run summon minecraft:armor_stand ~-0.9 ~ ~2.6 {ShowArms:1b,NoBasePlate:1b,Rotation:[270f,0f],Tags:[\"spear_v\"]}");
@@ -913,10 +913,9 @@ public class ClientShots implements FabricClientGameTest {
 							? com.extremedimensions.registry.ModItems.TETHERITE_SPEAR : Items.NETHERITE_SPEAR));
 				}
 			});
-			ctx.runOnClient(mc -> mc.options.hideGui = true);
-			ctx.waitTicks(10);
+			// (long enough for the chat and the toasts to have faded from over them)
+			ctx.waitTicks(240);
 			ctx.takeScreenshot("02_tetherite_spears_side");
-			ctx.runOnClient(mc -> mc.options.hideGui = false);
 			sp.getServer().runCommand("kill @e[type=minecraft:armor_stand,tag=spear_v]");
 			sp.getServer().runCommand("kill @e[type=minecraft:armor_stand,tag=spear_t]");
 			sp.getServer().runOnServer(s -> {
