@@ -165,8 +165,8 @@ Thirty pages of a nameless Wanderer surface as you play, then pages in other han
    in shockwaves.
 6. **The ending**: defeat the Starved One (it claws its way up out of the Heart in a storm of souls, builds an arena
    round it like the Elders do, flies, calls the tribe's red young, turns the Veil Rays on you, drinks time once at half
-   health, and   the four great pillars round the Heart heal it from glowing sculk hearts high up their shafts: shoot three of them
-   out with arrows to stop its healing, all four to stun it) and choose. **Mend** the first wound (no storms, a
+   health, and the four great pillars round the Heart heal it from glowing sculk hearts high up their shafts: shoot
+   three of them out with arrows to stop its healing, all four to stun it) and choose. **Mend** the first wound (no storms, a
    gentler drain, a tribe that brings gifts) or **sever** the Tether (no timer beyond the wound, but whoever falls
    there keeps nothing).
 7. **Beside the road**: the Held at the end of a warm chain, the Echoes of Collapses, and the First Weaver's trail
