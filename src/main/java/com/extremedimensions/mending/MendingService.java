@@ -438,6 +438,8 @@ public final class MendingService {
 		phase = EMERGE;
 		phaseTicks = 0;
 		so.act(StarvedOne.CALL);
+		// (the sky stays dark over its fight; the fog lifts, to close in again as it drinks time)
+		bar.setCreateWorldFog(false);
 		HeartScenes.burst(seam, so);
 		Retinue.wake(seam, party);
 		for (ServerPlayer q : seam.players()) {
@@ -526,6 +528,7 @@ public final class MendingService {
 			if (drink >= 0) {
 				// Every pillar quenched while it drank: the chains tear its drinking of time out of it, unspent
 				drink = -1;
+				bar.setCreateWorldFog(false);
 				HeartScenes.drinkBroken(seam, so);
 			}
 		}
@@ -577,6 +580,7 @@ public final class MendingService {
 			drunk = true;
 			drink = 0;
 			so.act(StarvedOne.CALL);
+			bar.setCreateWorldFog(true);
 			HeartScenes.drinkBegins(seam, so, drinkLength());
 		}
 		if (drink >= 0) {
@@ -635,6 +639,7 @@ public final class MendingService {
 		so.setBound(false);
 		if (drink >= 0) {
 			drink = -1;
+			bar.setCreateWorldFog(false);
 			HeartScenes.drinkBroken(seam, so);
 		}
 		phase = HOVER;
@@ -673,6 +678,7 @@ public final class MendingService {
 		HeartScenes.drinking(seam, so, drink, length, arena);
 		if (drink >= length) {
 			drink = -1;
+			bar.setCreateWorldFog(false);
 			HeartScenes.nova(seam, so, arena);
 			nextTrick = Math.max(nextTrick, 80);
 			begin(HOVER, so, target);
