@@ -937,9 +937,11 @@ public class ClientShots implements FabricClientGameTest {
 			// The Kindled Seam Lantern (3.50.0) at night beside a lantern and a soul lantern, and one hanging from a post:
 			// its blue-violet flame, and its light carried twice as far over the grass
 			sp.getServer().runCommand("time set midnight");
+			double[] lanternStood = sp.getServer().computeOnServer(s -> new double[] {player(s).getX(), player(s).getY(), player(s).getZ()});
+			net.minecraft.core.BlockPos lanternsAt = sp.getServer().computeOnServer(s -> player(s).blockPosition().south(4));
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
-				net.minecraft.core.BlockPos at = p.blockPosition().south(4);
+				net.minecraft.core.BlockPos at = lanternsAt;
 				p.level().setBlock(at.west(2), net.minecraft.world.level.block.Blocks.LANTERN.defaultBlockState(), 3);
 				p.level().setBlock(at, com.extremedimensions.registry.ModBlocks.KINDLED_SEAM_LANTERN.defaultBlockState(), 3);
 				p.level().setBlock(at.east(2), net.minecraft.world.level.block.Blocks.SOUL_LANTERN.defaultBlockState(), 3);
@@ -952,16 +954,31 @@ public class ClientShots implements FabricClientGameTest {
 						.setValue(net.minecraft.world.level.block.LanternBlock.HANGING, true), 3);
 				p.level().setBlock(post.above(3).west(), net.minecraft.world.level.block.Blocks.SPRUCE_PLANKS.defaultBlockState(), 3);
 			});
-			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~1 ~ 0 20");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 20");
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("02_kindled_seam_lantern");
-			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~12 ~-6 0 50");
-			ctx.waitTicks(30);
-			ctx.takeScreenshot("02_kindled_seam_lantern_reach");
-			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-13 ~6 0 0");
+			// (from above, flying, so the view holds while the light settles)
+			boolean[] flewThen = sp.getServer().computeOnServer(s -> new boolean[] {player(s).getAbilities().mayfly, player(s).getAbilities().flying});
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
-				net.minecraft.core.BlockPos at = p.blockPosition().south(4);
+				p.getAbilities().mayfly = true;
+				p.getAbilities().flying = true;
+				p.onUpdateAbilities();
+			});
+			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s %.2f %.2f %.2f 0 50", lanternStood[0], lanternStood[1] + 12,
+					lanternStood[2] - 6));
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("02_kindled_seam_lantern_reach");
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				p.getAbilities().mayfly = flewThen[0];
+				p.getAbilities().flying = flewThen[1];
+				p.onUpdateAbilities();
+			});
+			moveTo(ctx, sp, lanternStood);
+			sp.getServer().runOnServer(s -> {
+				ServerPlayer p = player(s);
+				net.minecraft.core.BlockPos at = lanternsAt;
 				for (net.minecraft.core.BlockPos q : new net.minecraft.core.BlockPos[] {at.west(2), at, at.east(2), at.east(3).above(2)}) {
 					p.level().setBlock(q, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
 				}
