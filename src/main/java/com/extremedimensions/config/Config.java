@@ -1467,7 +1467,7 @@ public final class Config {
 	/** How far over the Heart's floor (blocks) its fight reaches: the pillars' nodes and the tops of their shafts (3.48). */
 	public static int STARVED_ARENA_ABOVE = 160;
 	/** Seconds the Starved One takes to rise out of the Heart once its wind-up is over; nothing hurts it meanwhile (3.48). */
-	public static double STARVED_RISE_SECONDS = 9.0;
+	public static double STARVED_RISE_SECONDS = 8.0;
 	/** Whether the Heart raises an arena of its own round the Starved One's fight, as the Elders do (1 on, 0 off; 3.48). */
 	public static int STARVED_ARENA = 1;
 	/** Below this share of its health the Heart's fight changes the first time: an upheaval, and islands falling (3.48). */

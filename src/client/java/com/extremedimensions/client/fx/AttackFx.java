@@ -43,8 +43,13 @@ public final class AttackFx {
 	private static final int S_LANTERN = 1, S_ROOTS = 2, S_SLAM = 3, S_NEEDLE = 4, S_SPEAR = 5, S_SOULFALL = 6, S_SNARE = 7;
 	private static final int I_WISP = 20, I_BOMB = 21, I_SCORCH = 22, I_CUT = 23, I_BLAST = 24, I_CHARGE = 25;
 
-	/** Each Elder's light: the Matriarch violet, the Ferryman teal, the Last Weaver gold-white, the Pale Mason a deep void violet. */
-	private static final float[][] GLOW = {{0.82F, 0.52F, 1.0F}, {0.38F, 1.0F, 0.88F}, {1.0F, 0.88F, 0.62F}, {0.66F, 0.36F, 1.0F}};
+	/**
+	 * Each Elder's light: the Matriarch violet, the Ferryman teal, the Last Weaver gold-white, the Pale Mason a deep void
+	 * violet; and the Starved One's soul fire, a paler blue (its matter is the Ferryman's soul fire and ash, with no obols).
+	 */
+	private static final float[][] GLOW = {{0.82F, 0.52F, 1.0F}, {0.38F, 1.0F, 0.88F}, {1.0F, 0.88F, 0.62F}, {0.66F, 0.36F, 1.0F}, {0.5F, 0.85F, 1.0F}};
+	/** The Starved One, in the server's effects. */
+	private static final int STARVED = 4;
 
 	private static final Map<Integer, AttackFxParticle> WISPS = new HashMap<>();
 	private static float detail = 1;
@@ -252,6 +257,10 @@ public final class AttackFx {
 				ash(level, x, y, z, spread, count);
 				coins(level, x, y, z, spread, Math.max(1, count / 3));
 			}
+			case STARVED -> {
+				flames(level, 1, x, y, z, spread, count, 0.45F);
+				ash(level, x, y, z, spread, count);
+			}
 			default -> {
 				shards(level, 2, x, y, z, spread, count);
 				glints(level, 2, x, y, z, spread, count);
@@ -318,7 +327,7 @@ public final class AttackFx {
 				double mx = x + Math.cos(a) * radius, mz = z + Math.sin(a) * radius;
 				switch (elder) {
 					case 0 -> flames(level, 0, mx, y, mz, 0.3F, 1, 0.22F);
-					case 1 -> flames(level, 1, mx, y, mz, 0.3F, 1, 0.28F);
+					case 1, STARVED -> flames(level, 1, mx, y, mz, 0.3F, 1, 0.28F);
 					default -> glints(level, 2, mx, y, mz, 0.3F, 1);
 				}
 			}
@@ -515,7 +524,7 @@ public final class AttackFx {
 								leaves(level, mx, y, mz, 0.6F, 1);
 							}
 						}
-						case 1 -> flames(level, 1, mx, y, mz, 0.6F, 1, 0.45F);
+						case 1, STARVED -> flames(level, 1, mx, y, mz, 0.6F, 1, 0.45F);
 						default -> glints(level, 2, mx, y, mz, 0.6F, 1);
 					}
 				}
@@ -674,7 +683,7 @@ public final class AttackFx {
 				double mx = x + Math.cos(a) * radius, mz = z + Math.sin(a) * radius;
 				switch (elder) {
 					case 0 -> flames(level, 0, mx, y, mz, 0.3F, 1, 0.3F);
-					case 1 -> flames(level, 1, mx, y, mz, 0.3F, 1, 0.4F);
+					case 1, STARVED -> flames(level, 1, mx, y, mz, 0.3F, 1, 0.4F);
 					default -> glints(level, 2, mx, y, mz, 0.3F, 1);
 				}
 			}

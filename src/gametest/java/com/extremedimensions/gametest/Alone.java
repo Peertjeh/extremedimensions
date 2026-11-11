@@ -108,6 +108,10 @@ final class Alone {
 	static final String FOOTING_MASON_LEDGE = "extremedimensions_test:alone/footing_mason_ledge";
 	static final String FOOTING_MASON_WALL = "extremedimensions_test:alone/footing_mason_wall";
 	static final String FOOTING_MASON_BLINK = "extremedimensions_test:alone/footing_mason_blink";
+	// (3.48: the Heart's fight is the Seam's own, one for the whole world, and its arena fills the sky round the Heart)
+	static final String HEART_LEAVE = "extremedimensions_test:alone/heart_leave";
+	static final String HEART_RISE = "extremedimensions_test:alone/heart_rise";
+	static final String HEART_ARENA = "extremedimensions_test:alone/heart_arena";
 	// (a reset of the relics reaches every player the world knows, and every relic made while it holds)
 	static final String RELIC_RESET = "extremedimensions_test:alone/relic_reset";
 }

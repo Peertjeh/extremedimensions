@@ -82,7 +82,7 @@ final class Retinue {
 			ray.setFrayed(true);
 			ray.rise();
 			TURNED.add(ray.getUUID());
-			WorldFx.soundIn(SeamService.SEAM.identifier().toString(), "extremedimensions:elder.starved_one.ray", "hostile", ray.getX(), ray.getY(), ray.getZ(), 3f, 0.8f);
+			WorldFx.soundIn(SeamService.SEAM.identifier().toString(), "extremedimensions:elder.starved_one.ray", "hostile", ray.getX(), ray.getY(), ray.getZ(), 3f, 0.95f);
 		}
 	}
 

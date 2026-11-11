@@ -65,8 +65,10 @@ public final class Binding {
 	private static final boolean[] STRAND = new boolean[PILLARS];
 	/** The glowing heart turning over each feeding node. */
 	private static final Display.BlockDisplay[] MARK = new Display.BlockDisplay[PILLARS];
-	/** Ticks the Starved One is still held stunned, and where. */
-	private static int bound;
+	/** Ticks the Starved One is still held stunned (of how many it was bound for), and where. */
+	private static int bound, boundFor;
+	/** Ticks before it tears loose that its sound of breaking free begins (its chains snap 1.4 seconds into it). */
+	private static final int BREAK_FREE = 28;
 	private static Vec3 bindAt;
 	/** The pillars whose chains hold it. */
 	private static final boolean[] HOLDING = new boolean[PILLARS];
@@ -540,6 +542,10 @@ public final class Binding {
 		}
 		if (bound > 0) {
 			chains(so, tick);
+			if (bound == Math.min(BREAK_FREE, boundFor)) {
+				// (begun early, so that its chains snap in it just as it tears loose)
+				WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.break_free", "hostile", so.getX(), so.getY() + 4, so.getZ(), 6f, 1f);
+			}
 			if (--bound == 0) {
 				release(seam, so, arena);
 			}
@@ -592,6 +598,7 @@ public final class Binding {
 	/** Every pillar quenched: their dead hearts pull it down in chains before whoever is nearest, stunned. */
 	private static void bind(ServerLevel seam, StarvedOne so, List<ServerPlayer> arena) {
 		bound = (int) Math.max(20, Config.STARVED_BIND_SECONDS * 20);
+		boundFor = bound;
 		for (int i = 0; i < PILLARS; i++) {
 			HOLDING[i] = QUENCH[i] > 0;
 		}
@@ -633,7 +640,6 @@ public final class Binding {
 		bindAt = null;
 		java.util.Arrays.fill(HOLDING, false);
 		String dim = SeamService.SEAM.identifier().toString();
-		WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.break_free", "hostile", so.getX(), so.getY() + 4, so.getZ(), 6f, 1f);
 		WorldFx.soundIn(dim, "minecraft:block.chain.break", "block", so.getX(), so.getY() + 3, so.getZ(), 4f, 0.5f);
 		WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", so.getX(), so.getY() + 3, so.getZ(), 1.5, 2, 1.5, 0, 40);
 		for (ServerPlayer q : arena) {

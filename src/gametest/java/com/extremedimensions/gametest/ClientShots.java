@@ -16,6 +16,7 @@ import com.extremedimensions.client.title.Menus;
 import com.extremedimensions.client.title.TitleArt;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.mending.MendingService;
 import com.extremedimensions.registry.ModBlocks;
 import com.extremedimensions.network.Sync;
 import com.extremedimensions.penalty.SealedPockets;
@@ -2543,6 +2544,64 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.takeScreenshot("26_rays_compared");
 			sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));
 			sp.getServer().runOnServer(s -> com.extremedimensions.trial.TrialService.weekOverride = null);
+
+			// The Heart (3.48): the Starved One clawing its way up out of it (the cracks and the souls coming in, then its
+			// claws out of the hole), bursting free, and the Heart's arena standing round its fight, seen by a spectator
+			// (it does not count as at the fight, so the Starved One only hangs over the Heart and waits). Where the
+			// player stood and how they looked is put back after, and the settings changed for it.
+			heart(ctx, sp);
 		}
+	}
+
+	/** The shots of the Heart: its Starved One rising, risen, and its arena (see the end of {@link #runTest}). */
+	private static void heart(ClientGameTestContext ctx, TestSingleplayerContext sp) {
+		double[] was = sp.getServer().computeOnServer(s -> new double[] {player(s).getX(), player(s).getY(), player(s).getZ(), player(s).getYRot(),
+				player(s).getXRot()});
+		double build = com.extremedimensions.config.Config.ELDER_ARENA_BUILD_SECONDS;
+		int camera = com.extremedimensions.config.Config.ELDER_SPAWN_CAMERA;
+		int hx = MendingService.HX, hy = MendingService.HY, hz = MendingService.HZ;
+		// Before the Heart, looking at where it breaks open (the view is not held on it: the shots are taken from here)
+		com.extremedimensions.config.Config.ELDER_SPAWN_CAMERA = 0;
+		com.extremedimensions.config.Config.ELDER_ARENA_BUILD_SECONDS = 6;
+		eye(sp, hx + 0.5, hy + 7, hz + 18.5, hx + 0.5, hz - 7.5, 16);
+		sp.getConnection().waitForChunksRender();
+		ctx.waitTicks(40);
+		sp.getServer().runOnServer(s -> MendingService.buildHeartNow((net.minecraft.server.level.ServerLevel) player(s).level()));
+		// (its crown of pillars flies in after it: waited for, up to fifteen seconds)
+		for (int i = 0; i < 30 && sp.getServer().computeOnServer(s -> com.extremedimensions.seam.SeamArchitect.pending()) > 0; i++) {
+			ctx.waitTicks(10);
+		}
+		sp.getServer().runOnServer(s -> MendingService.wakeNow((net.minecraft.server.level.ServerLevel) player(s).level(), player(s)));
+		ctx.waitTicks(60);
+		ctx.takeScreenshot("35_heart_rise_cracks");
+		ctx.waitTicks(50);
+		ctx.takeScreenshot("35_heart_rise_claws");
+		for (int i = 0; i < 20 && sp.getServer().computeOnServer(s -> MendingService.risingNow()); i++) {
+			ctx.waitTicks(5);
+		}
+		ctx.waitTicks(12);
+		ctx.takeScreenshot("35_heart_risen");
+		// The arena round it, once it stands: from out over the Heart's rim, and up under its crown
+		ctx.waitTicks(160);
+		eye(sp, hx + 62.5, hy + 30, hz + 0.5, hx + 0.5, hz + 0.5, 16);
+		sp.getConnection().waitForChunksRender();
+		ctx.waitTicks(30);
+		ctx.takeScreenshot("35_heart_arena");
+		eye(sp, hx + 0.5, hy + 4, hz + 14.5, hx + 0.5, hz + 0.5, -42);
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("35_heart_crown");
+		// It sinks back, and its arena flies apart; everything as it was before the shots
+		sp.getServer().runOnServer(s -> {
+			com.extremedimensions.mending.StarvedOne so = MendingService.driven((net.minecraft.server.level.ServerLevel) player(s).level());
+			if (so != null) {
+				MendingService.fade(so);
+			}
+		});
+		ctx.waitTicks(40);
+		com.extremedimensions.config.Config.ELDER_ARENA_BUILD_SECONDS = build;
+		com.extremedimensions.config.Config.ELDER_SPAWN_CAMERA = camera;
+		sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s %.2f %.2f %.2f %.1f %.1f", was[0], was[1], was[2], was[3], was[4]));
+		ctx.waitTicks(10);
+		sp.getServer().runOnServer(s -> check(player(s).distanceToSqr(was[0], was[1], was[2]) < 4, "the player was not put back after the Heart's shots"));
 	}
 }

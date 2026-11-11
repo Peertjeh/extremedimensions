@@ -42,8 +42,11 @@ public class StarvedOne extends Keeper {
 	private static final EntityDataAccessor<Boolean> BOUND = SynchedEntityData.defineId(StarvedOne.class, EntityDataSerializers.BOOLEAN);
 	/** How far it has risen out of the Heart (0 to 1), or -1 once it is free of it. */
 	private static final EntityDataAccessor<Float> RISING = SynchedEntityData.defineId(StarvedOne.class, EntityDataSerializers.FLOAT);
-	/** Ticks its death takes (as an Elder's: its chains snapping, its embers going out). */
-	public static final int DEATH_TICKS = com.extremedimensions.elder.ElderBoss.DEATH_TICKS;
+	/**
+	 * Ticks its death takes: its chains snapping, its embers going out, as long as its death cry (eleven seconds, its
+	 * last breath drawn in by nine and a half), so that it blooms as the breath ends.
+	 */
+	public static final int DEATH_TICKS = 200;
 
 	public StarvedOne(EntityType<? extends Monster> type, Level level) {
 		super(type, level);
@@ -234,7 +237,8 @@ public class StarvedOne extends Keeper {
 
 	@Override
 	public float getVoicePitch() {
-		return 0.45F + this.random.nextFloat() * 0.1F;
+		// (its own sounds are made at their pitch: a little either way for variety, never an octave down as the Keeper's were)
+		return 0.95F + this.random.nextFloat() * 0.1F;
 	}
 
 	@Override

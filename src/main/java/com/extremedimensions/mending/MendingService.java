@@ -7,9 +7,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
+import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.elder.ElderFx;
 import com.extremedimensions.elder.HeartArena;
-import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.journal.Journal;
 import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.network.Fx;
@@ -288,9 +288,9 @@ public final class MendingService {
 		WorldFx.particleIn(dim, "extremedimensions:soul_mote", HX, HY - 2, HZ - 8, 2, 2, 2, 0.02, 8 + (int) (share * 16));
 		if ((level.getGameTime() / 20) % 2 == 0) {
 			// its own voice under the stone, louder as it comes (3.48: no longer a borrowed Warden's heart and Keeper's roar)
-			WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.ambient", "hostile", x, y, z, 1.5f + 2.5f * share, 0.7f + 0.3f * share);
+			WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.ambient", "hostile", x, y, z, 1.5f + 2.5f * share, 0.9f + 0.1f * share);
 			WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.voice", "hostile", HX + HeartScenes.EX, HY - 4, HZ + HeartScenes.EZ, 0.6f + 2f * share,
-					0.6f + 0.2f * share);
+					0.9f + 0.1f * share);
 		}
 	}
 
@@ -384,7 +384,6 @@ public final class MendingService {
 			if (inArena(q)) {
 				Journal.unlock(q, DataStore.get(q.getUUID()), JournalEntry.HEART);
 				Advancements.grant(q, Advancements.HEART_REACHED);
-				com.extremedimensions.guide.Hints.meet(q, com.extremedimensions.guide.Hints.Hint.ELDER);
 			}
 		}
 	}
@@ -672,7 +671,8 @@ public final class MendingService {
 	private static void drinking(ServerLevel seam, StarvedOne so, List<ServerPlayer> arena) {
 		int length = drinkLength();
 		drink++;
-		fly(so, new Vec3(HX + 0.5, HY + 14, HZ + 0.5), 0.3, 0.12);
+		// (under the crown, clear of its hanging heart)
+		fly(so, new Vec3(HX + 0.5, HY + 11, HZ + 0.5), 0.3, 0.12);
 		ServerPlayer target = nearest(so, arena);
 		so.getLookControl().setLookAt(target, 20, 20);
 		HeartScenes.drinking(seam, so, drink, length, arena);
@@ -1020,7 +1020,7 @@ public final class MendingService {
 	 */
 	public static void dying(StarvedOne so, ServerLevel seam, int t) {
 		for (int i = 0; i < Binding.PILLARS; i++) {
-			if (DYING[i] != null && t == 22 + 10 * i) {
+			if (DYING[i] != null && t == HeartScenes.snapAt(i)) {
 				Binding.darken(seam, i);
 				HeartScenes.snap(seam, so, DYING[i]);
 				DYING[i] = null;

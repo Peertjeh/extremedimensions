@@ -52,6 +52,10 @@ final class HeartScenes {
 
 	/** Where it breaks out of the Heart, from the altar (blocks), and how deep under the floor it starts. */
 	static final int EX = 0, EZ = -8, DEPTH = 9;
+	/** Seconds into its sounds where they strike: the roar in its waking, the release of its drinking of time. */
+	private static final double ROAR_IN_WAKE = 8.0;
+	/** Ticks into its drinking-of-time sound that what it drank is let go (3.2 s), when the soul fire bursts out of it. */
+	private static final int ULTIMATE_RELEASE = 64;
 	/** The breadth of the hole it tears, and of the crying obsidian round it. */
 	private static final double PIT = 2.6, RIM = 1.2;
 	private static final double TAU = Math.PI * 2;
@@ -100,8 +104,9 @@ final class HeartScenes {
 	/** Its rise begins: its own sound, the bars and the held view, its music, the first rumble under the Heart. */
 	static void begin(ServerLevel seam, StarvedOne so, int length) {
 		double x = ex(), y = MendingService.HY + 1, z = ez();
-		// (its sound drawn out or hurried to fit however long the rise is set to take, as the Knot Mother's)
-		float rate = (float) Math.max(0.5, Math.min(2.0, 9.0 / (length / 20.0)));
+		// (its sound drawn out or hurried to fit however long the rise is set to take, as the Knot Mother's: the roar in it
+		// comes eight seconds in, and is to come as it bursts free)
+		float rate = (float) Math.max(0.5, Math.min(2.0, ROAR_IN_WAKE / (length / 20.0)));
 		WorldFx.soundIn(dim(), "extremedimensions:elder.starved_one.wake", "hostile", x, y, z, 6f, rate);
 		ElderFx.cinema(seam, NEAR, ElderFx.CINEMA_STARVED_ONE, BossFxPayload.SPAWN, so.getId(), Config.ELDER_SPAWN_CAMERA > 0 ? length : -length,
 				"gui.extremedimensions.elder.forming.starved_one");
@@ -179,8 +184,8 @@ final class HeartScenes {
 				AttackFx.line(seam, AttackFx.STARVED, AttackFx.LINE_STREAM, n.getX() + 0.5, n.getY() + 1.4, n.getZ() + 0.5, x, fy + 1, z, 10);
 			}
 		}
-		if (k < 0.6 && t % 20 == 0) {
-			WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.ambient", "hostile", x, fy - 2, z, 2f + 3f * (float) k, 0.6f + 0.4f * (float) k);
+		if (k < 0.6 && t % 40 == 20) {
+			WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.ambient", "hostile", x, fy - 2, z, 2f + 3f * (float) k, 0.9f + 0.1f * (float) k);
 		}
 		// It breaks the floor open over it
 		if (at(t, length, 0.6)) {
@@ -199,8 +204,8 @@ final class HeartScenes {
 			if (t % 9 == 0) {
 				WorldFx.soundIn(dim, "minecraft:block.chain.place", "hostile", x, fy, z, 3f, 0.5f);
 			}
-			if (t % 16 == 0) {
-				WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.voice", "hostile", x, fy + 2, z, 4f, 0.7f + 0.3f * (float) k);
+			if (t % 24 == 0) {
+				WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.voice", "hostile", x, fy + 2, z, 4f, 0.9f + 0.2f * (float) k);
 			}
 		}
 	}
@@ -279,10 +284,13 @@ final class HeartScenes {
 
 	// ------------------------------------------------------------------ its drinking of time
 
-	/** It begins to drink time: its own sound, the bars of an ultimate, and a word on what is coming and how far it reaches. */
+	/**
+	 * It begins to drink time: its voice and the sound of its drinking, the bars of an ultimate, and a word on what is
+	 * coming and how far it reaches.
+	 */
 	static void drinkBegins(ServerLevel seam, StarvedOne so, int length) {
 		String dim = dim();
-		WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.ultimate", "hostile", so.getX(), so.getY() + 4, so.getZ(), 6f, 1f);
+		WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.voice", "hostile", so.getX(), so.getY() + 4, so.getZ(), 6f, 1f);
 		ElderFx.cinema(seam, NEAR, ElderFx.CINEMA_STARVED_ONE, BossFxPayload.ULTIMATE, length, 1, "");
 		WorldFx.punch(seam, so, so.getX(), so.getZ(), MendingService.ARENA + 16, 0.6f, 20);
 		for (ServerPlayer p : seam.players()) {
@@ -330,14 +338,20 @@ final class HeartScenes {
 				}
 			}
 		}
+		// Its drinking heard (a long draw of breath, then a gulp), again while there is time for it before the release
+		if (t == 1 || (t % 90 == 1 && t < length - ULTIMATE_RELEASE - 70)) {
+			WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.drink", "hostile", x, y, z, 6f, 0.95f + 0.1f * (float) k);
+		}
 		if (t % 40 == 0) {
-			WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.drink", "hostile", x, y, z, 6f, 0.8f + 0.4f * (float) k);
 			// the ring its burst will fill
 			AttackFx.ring(seam, AttackFx.STARVED, x, gy + 0.05, z, nova, 42);
 		}
+		if (t == Math.max(1, length - ULTIMATE_RELEASE)) {
+			// (the sound of the release, timed so that what it drank is let go at the end)
+			WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.ultimate", "hostile", x, y, z, 6f, 1f);
+		}
 		if (t == length - 30) {
 			AttackFx.sigil(seam, AttackFx.STARVED, 0, x, gy + 0.05, z, nova, 30);
-			WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.voice", "hostile", x, y, z, 6f, 0.6f);
 		}
 		if (t % 10 == 0) {
 			ElderFx.rumble(seam, NEAR, x, z, reach + 16, (float) (0.1 + 0.5 * k), 12);
@@ -370,7 +384,6 @@ final class HeartScenes {
 		String dim = dim();
 		double x = so.getX(), y = so.getY() + so.getBbHeight() * 0.5, z = so.getZ(), gy = floorUnder(so);
 		double nova = Math.max(4, Config.STARVED_DRINK_NOVA);
-		WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.ultimate", "hostile", x, y, z, 6f, 1.25f);
 		WorldFx.soundIn(dim, "minecraft:entity.generic.explode", "hostile", x, gy, z, 6f, 0.5f);
 		AttackFx.burst(seam, AttackFx.STARVED, x, gy, z, nova * 0.6);
 		AttackFx.wave(seam, AttackFx.STARVED, false, x, gy + 0.1, z, 1, 1.2, nova * 1.6);
@@ -401,6 +414,11 @@ final class HeartScenes {
 
 	// ------------------------------------------------------------------ its death
 
+	/** When the chain to pillar {@code i} snaps as it dies (ticks into its death; the client's model snaps it then too). */
+	static int snapAt(int i) {
+		return 40 + 25 * i;
+	}
+
 	/** A chain to a pillar snaps as it dies: a crack of iron, sparks where it broke, and the node goes dark (see Binding). */
 	static void snap(ServerLevel seam, StarvedOne so, BlockPos node) {
 		double nx = node.getX() + 0.5, ny = node.getY() + 1, nz = node.getZ() + 0.5;
@@ -425,18 +443,18 @@ final class HeartScenes {
 		double w = so.getBbWidth() * 0.7, h = so.getBbHeight(), k = t / (double) length;
 		double x = so.getX(), y = so.getY(), z = so.getZ();
 		if (t == 1) {
+			// (its death cry is its own death sound, as it falls: eleven seconds, timed with all of this)
 			ElderFx.cinema(seam, NEAR, ElderFx.CINEMA_STARVED_ONE, BossFxPayload.DEATH, so.getId(), length, "gui.extremedimensions.elder.title.starved_one");
-			WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.death", "hostile", x, y + h * 0.6, z, 6f, 1f);
 			WorldFx.soundIn(dim, "minecraft:block.beacon.deactivate", "hostile", x, y + h * 0.6, z, 5f, 0.5f);
 		}
 		if (t % 2 == 0) {
 			ElderFx.rumble(seam, NEAR, x, z, MendingService.ARENA + 16, (float) (0.15 + 0.6 * k), 4);
 		}
 		// The chains still holding it, drawn taut as it thrashes
-		if (t % 6 == 0) {
+		if (t % 8 == 0) {
 			for (BlockPos n : held) {
 				if (n != null) {
-					AttackFx.line(seam, AttackFx.STARVED, AttackFx.LINE_CHAIN, n.getX() + 0.5, n.getY() + 1, n.getZ() + 0.5, x, y + h * 0.6, z, 7);
+					AttackFx.line(seam, AttackFx.STARVED, AttackFx.LINE_CHAIN, n.getX() + 0.5, n.getY() + 1, n.getZ() + 0.5, x, y + h * 0.6, z, 9);
 				}
 			}
 		}
@@ -454,18 +472,18 @@ final class HeartScenes {
 			// ... gone out: smoke where they were
 			WorldFx.particleIn(seam, "minecraft:large_smoke", x, y + h * 0.6, z, w * 0.4, h * 0.2, w * 0.4, 0.02, 3);
 		}
-		if (t % 12 == 0 && k > 0.4 && k < 0.9) {
+		if (t % 20 == 0 && k > 0.4 && k < 0.9) {
 			WorldFx.soundIn(dim, "minecraft:block.fire.extinguish", "hostile", x, y + h * 0.6, z, 3f, 0.5f + (float) k * 0.3f);
 		}
-		if (t % 8 == 0 && k < 0.9) {
+		if (t % 14 == 0 && k < 0.9) {
 			// It breaks apart: bursts of soul fire all over its body, louder towards the end
 			double bx = x + rnd.nextDouble(-w, w), by = y + rnd.nextDouble(0.1, 0.95) * h, bz = z + rnd.nextDouble(-w, w);
 			WorldFx.particleIn(seam, "minecraft:explosion", bx, by, bz, 0.5, 0.5, 0.5, 0, 1);
 			WorldFx.particleIn(seam, "minecraft:soul", bx, by, bz, 1, 1, 1, 0.1, 10);
 			WorldFx.soundIn(dim, "minecraft:entity.generic.explode", "hostile", bx, by, bz, 2f, 0.5f + (float) k * 0.6f);
 		}
-		if (t == length - 5) {
-			// The bloom
+		if (t == length - 8) {
+			// The bloom, as its last breath ends
 			WorldFx.particleIn(seam, "minecraft:explosion_emitter", x, y + h * 0.5, z, 1, 1, 1, 0, 3);
 			WorldFx.particleIn(seam, "extremedimensions:soul_mote", x, y + h * 0.5, z, w, h * 0.4, w, 0.25, 200);
 			WorldFx.particleIn(seam, "minecraft:soul_fire_flame", x, y + h * 0.5, z, w, h * 0.4, w, 0.3, 160);
@@ -473,7 +491,6 @@ final class HeartScenes {
 			for (int r = 4; r <= 24; r += 5) {
 				ElderFx.ring(seam, "minecraft:soul_fire_flame", x, y + 0.3, z, r, 18 + r * 3, r * 0.2);
 			}
-			WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.death", "hostile", x, y + 6, z, 6f, 0.7f);
 			WorldFx.soundIn(dim, "minecraft:entity.generic.explode", "hostile", x, y + 6, z, 5f, 0.4f);
 			ElderFx.cinema(seam, NEAR, ElderFx.CINEMA_STARVED_ONE, BossFxPayload.FLASH, 0, 0.9f, "");
 			WorldFx.punch(seam, so, x, z, MendingService.ARENA + 16, 1.2f, 30);

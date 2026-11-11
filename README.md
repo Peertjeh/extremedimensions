@@ -163,8 +163,9 @@ Thirty pages of a nameless Wanderer surface as you play, then pages in other han
    The Last Weaver drops grids of thread, raises thread tornadoes and brings down rows of great needles. The Ferryman
    stirs a whirlpool of soul fire that erupts, rows spectral oars across the floor and raises drowned bells that toll
    in shockwaves.
-6. **The ending**: defeat the Starved One (it flies, calls the tribe's red young and turns the Veil Rays on you, and
-   the four great pillars round the Heart heal it from glowing sculk hearts high up their shafts: shoot three of them
+6. **The ending**: defeat the Starved One (it claws its way up out of the Heart in a storm of souls, builds an arena
+   round it like the Elders do, flies, calls the tribe's red young, turns the Veil Rays on you, drinks time once at half
+   health, and   the four great pillars round the Heart heal it from glowing sculk hearts high up their shafts: shoot three of them
    out with arrows to stop its healing, all four to stun it) and choose. **Mend** the first wound (no storms, a
    gentler drain, a tribe that brings gifts) or **sever** the Tether (no timer beyond the wound, but whoever falls
    there keeps nothing).

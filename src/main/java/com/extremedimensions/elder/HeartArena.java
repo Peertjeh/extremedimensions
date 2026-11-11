@@ -54,6 +54,8 @@ public final class HeartArena {
 
 	/** About how many blocks the Heart's arena holds (its design's table is made that size). */
 	static final int ROOM = 24_000;
+	/** Its style among the arenas (for tests that look at its design, see {@link ElderArena#changesOfItself}). */
+	public static final int STYLE = ArenaDesign.HEART;
 	/** Where the ring wall stands, out from the Heart's middle (its rim is {@link MendingService#HR}). */
 	private static final double WALL_IN = 21.0, WALL_OUT = 23.0;
 	/** How far either side of each strand's line the gate through the wall is open, and how high the wall stands. */
@@ -180,7 +182,8 @@ public final class HeartArena {
 		for (int dx = -r; dx <= r; dx++) {
 			for (int dz = -r; dz <= r; dz++) {
 				double d = Math.sqrt(dx * dx + dz * dz);
-				if (d < 2.5 || d > r - 0.5 || (dx - EX) * (dx - EX) + (dz - EZ) * (dz - EZ) < 20) {
+				// (nor where its part of the world is not loaded: a design never loads it to look)
+				if (d < 2.5 || d > r - 0.5 || (dx - EX) * (dx - EX) + (dz - EZ) * (dz - EZ) < 20 || !plan.loaded(cx + dx, gy, cz + dz)) {
 					continue;
 				}
 				double ang = Math.atan2(dz, dx);
@@ -506,6 +509,8 @@ public final class HeartArena {
 	/** The fight on the Heart's arena: its clock, its upheavals' spikes on their way, its islands falling and fallen. */
 	private static final class Fight {
 		int clock, group = -1;
+		/** When an upheaval under way breaks the floor (its clock), or -1. */
+		int collapse = -1;
 		final List<Burst> bursts = new ArrayList<>();
 		final List<Fall> falls = new ArrayList<>();
 		final Set<Integer> fallen = new HashSet<>();
@@ -563,6 +568,9 @@ public final class HeartArena {
 			return;
 		}
 		f.clock++;
+		if (f.clock == f.collapse) {
+			collapse(so);
+		}
 		if (!f.bursts.isEmpty()) {
 			bursts(so, f, a, fighters);
 		}
@@ -594,12 +602,10 @@ public final class HeartArena {
 		String dim = level.dimension().identifier().toString();
 		double cx = MendingService.HX + 0.5, cz = MendingService.HZ + 0.5, fy = MendingService.HY + 1;
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
-		// The floor cracks out from the middle, glowing, and a wave of soul fire runs out over it
-		AttackFx.wave(level, AttackFx.STARVED, false, cx, fy + 0.1, cz, 2, 0.9, MendingService.HR + 6);
-		AttackFx.burst(level, AttackFx.STARVED, cx, fy, cz, 6);
+		// The ground groans and cracks out from the middle, glowing, building to the collapse in its sound (see collapse)
 		WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.upheaval", "hostile", cx, fy + 2, cz, 6f, 1f);
-		WorldFx.soundIn(dim, "minecraft:block.deepslate.break", "hostile", cx, fy, cz, 5f, 0.4f);
-		ElderFx.rumble(level, MendingService::inArena, cx, cz, MendingService.ARENA + 16, 0.9f, 40);
+		ElderFx.rumble(level, MendingService::inArena, cx, cz, MendingService.ARENA + 16, 0.5f, COLLAPSE);
+		f.collapse = f.clock + COLLAPSE;
 		for (int k = 0; k < 10; k++) {
 			double ang = rnd.nextDouble() * TAU;
 			ElderFx.line(dim, "minecraft:soul_fire_flame", cx + Math.cos(ang) * 2, fy + 0.15, cz + Math.sin(ang) * 2, cx + Math.cos(ang) * 18, fy + 0.15,
@@ -611,8 +617,24 @@ public final class HeartArena {
 			}
 			spikes(f, a, stage, rnd);
 			f.loosen += Math.max(0, Config.STARVED_PHASE_ISLES);
-			f.next = f.clock + 40;
+			f.next = f.clock + COLLAPSE + 40;
 		}
+	}
+
+	/** Ticks into an upheaval that the floor breaks (its sound's great collapse, 3.4 seconds in). */
+	private static final int COLLAPSE = 68;
+
+	/** The floor breaks: a wave of soul fire runs out over it from the middle, and the spikes begin to burst up after it. */
+	private static void collapse(LivingEntity so) {
+		if (!(so.level() instanceof ServerLevel level)) {
+			return;
+		}
+		String dim = level.dimension().identifier().toString();
+		double cx = MendingService.HX + 0.5, cz = MendingService.HZ + 0.5, fy = MendingService.HY + 1;
+		AttackFx.wave(level, AttackFx.STARVED, false, cx, fy + 0.1, cz, 2, 0.9, MendingService.HR + 6);
+		AttackFx.burst(level, AttackFx.STARVED, cx, fy, cz, 6);
+		WorldFx.soundIn(dim, "minecraft:block.deepslate.break", "hostile", cx, fy, cz, 5f, 0.4f);
+		WorldFx.punch(level, so, cx, cz, MendingService.ARENA + 16, 0.9f, 24);
 	}
 
 	/** The spikes of an upheaval, planned: clusters round the floor, tilted outwards, each rising from its foot. */
@@ -632,7 +654,7 @@ public final class HeartArena {
 				int h = 3 + rnd.nextInt(3 + 2 * stage);
 				double lean = 0.25 + rnd.nextDouble() * 0.35;
 				int foot = r > 12 && rnd.nextBoolean() ? 2 : 1;
-				int start = (int) Math.round(r * 1.1) + rnd.nextInt(4);
+				int start = COLLAPSE + (int) Math.round(r * 1.1) + rnd.nextInt(4);
 				for (int y = 0; y < h; y++) {
 					double sx = cx + 0.5 + ux * r + ux * lean * y, sz = cz + 0.5 + uz * r + uz * lean * y;
 					int w = y < h / 2 ? foot : 1;
@@ -842,7 +864,7 @@ public final class HeartArena {
 		if (dx * dx + dz * dz <= reach * reach && Math.abs(so.getY() - fall.ground) < so.getBbHeight() + 6) {
 			so.setHealth(Math.max(1, so.getHealth() - (float) (Math.max(0, Config.ELDER_ISLE_BOSS_SHARE) * so.getMaxHealth())));
 			MendingService.daze((int) Math.round(Config.ELDER_ISLE_DAZE_SECONDS * 20));
-			WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.hurt", "hostile", so.getX(), so.getY() + 4, so.getZ(), 5f, 0.8f);
+			WorldFx.soundIn(dim, "extremedimensions:elder.starved_one.hurt", "hostile", so.getX(), so.getY() + 4, so.getZ(), 5f, 1f);
 			WorldFx.particleIn(level, "minecraft:damage_indicator", so.getX(), so.getY() + so.getBbHeight() * 0.7, so.getZ(), 1.5, 1.5, 1.5, 0.2, 20);
 			for (ServerPlayer p : fighters) {
 				com.extremedimensions.progression.Advancements.grant(p, com.extremedimensions.progression.Advancements.ISLAND_FELL);

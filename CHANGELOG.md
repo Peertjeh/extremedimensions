@@ -1,5 +1,41 @@
 # Changelog
 
+## 3.48.0: The First Wound
+
+### Fixed
+- **The Starved One no longer sinks back when the last fighter flies to a pillar.** It counted only players within 84
+  blocks of the Heart's centre, in a straight line, and a node high up a pillar lies further out than that. Now:
+  - The whole island group counts: 100 blocks out from the Heart, from 48 below its floor to 160 above
+    (`starved_arena_reach`, `_below`, `_above`), every pillar, node and strand inside it.
+  - With nobody there it waits 30 seconds (`starved_leave_seconds`) before it sinks back; anyone who comes back keeps
+    the fight going.
+
+### New
+- **The Starved One rises.** After its warning it claws its way up out of the Heart (8 seconds, `starved_rise_seconds`):
+  the sky darkens and the fog closes in, the ground cracks and shakes harder and harder, souls spiral in from the whole
+  island group, the four pillars light one by one and stream their souls into the Heart, the floor breaks open, and it
+  drags itself up hand over hand until it bursts free with a roar, two shockwaves and its title. Nothing can hurt it
+  while it rises.
+- **Its arena** flies together round the Heart as the Elders' do (`starved_arena`): a sigil on the floor, a ring wall
+  of hush masonry with soul lanterns and four gates at the strands, four spires chained to a great crown that hangs over
+  the altar, and 24 islands in three layers. The pillars, their nodes, the strands and the altar always stay free.
+  Everything it set down goes away again however the fight ends.
+- **It changes twice**, at 66% and 33% health: the floor erupts in a wave of crystal spikes (whoever stands at one is
+  thrown up and hurt) and islands come loose and fall where their shadow shows; one that lands on the Starved One
+  costs it a tenth of its health and dazes it.
+- **It drinks time**, once, at half health: it hovers over the altar, a vortex of souls round it, and drinks the light
+  out of the arena's lanterns and out of everyone near, pulling them in, slowed and in the dark. A ring shows how far its
+  soul-fire burst will reach; get out of it before it lands (18 damage). Quench all four pillars while it drinks and it
+  loses the move.
+- **It dies** as the Elders do: the camera holds on it, its four chains snap one by one, its embers go out while the
+  arena flies apart, and it blooms into soul fire. Then the Thread and the Shears are laid as before.
+- **Its own voice and its own theme.** Seventeen sounds of its own (voice, breath, hurts, roar, death, the rise, the
+  dive, the call of the young, the hunting ray, the drink, the pillars' healing, quenching, binding and breaking free,
+  the changes, its signature move and the eruptions) replace the Keeper's roar, the Warden's heartbeat and the Phantom
+  it borrowed, and a theme of its own plays through the fight: *The First Wound* (three minutes; a broken clock that
+  stops as it drinks time, a quickening heartbeat, a low choir and a cracked bell).
+- Every number is a setting (*The Starved One* in the settings screen).
+
 ## 3.47.1: A Clean Slate
 
 ### New

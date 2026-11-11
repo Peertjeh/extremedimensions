@@ -19,7 +19,8 @@ import net.minecraft.world.phys.AABB;
 /**
  * Renders the Starved One at its own size (some seven blocks with its halo), with a full-bright pass for its slit, the
  * wound down its chest, its veins and claw tips. The light breathes slowly, flares as it falls on its prey or calls its
- * young, and flickers while the pillars hold it bound. Dying, it does not topple: it shrinks into its light.
+ * young, and flickers while the pillars hold it bound; it kindles as it rises out of the Heart. Dying, it does not
+ * topple: its embers go out, and at the very end it shrinks into what light is left.
  */
 public class StarvedOneRenderer extends MobRenderer<StarvedOne, StarvedOneRenderState, StarvedOneModel> {
 	private static final Identifier TEXTURE = ExtremeDimensions.id("textures/entity/elder/starved_one.png");
@@ -43,8 +44,8 @@ public class StarvedOneRenderer extends MobRenderer<StarvedOne, StarvedOneRender
 	public void extractRenderState(StarvedOne so, StarvedOneRenderState state, float partialTick) {
 		super.extractRenderState(so, state, partialTick);
 		float now = so.tickCount + partialTick;
-		// {take, action clock, binding, last frame}
-		float[] a = actions.computeIfAbsent(so, k -> new float[] {-1, 0, 0, now});
+		// {take, action clock, binding, last frame, risen}
+		float[] a = actions.computeIfAbsent(so, k -> new float[] {-1, 0, 0, now, so.rising()});
 		int take = so.getTake();
 		if (take != (int) a[0]) {
 			a[0] = take;
@@ -69,7 +70,17 @@ public class StarvedOneRenderer extends MobRenderer<StarvedOne, StarvedOneRender
 		if (state.bound > 0 && !calm) {
 			glow *= 1 - 0.45F * state.bound * (0.5F + 0.5F * Mth.sin(now * 1.3F));
 		}
-		state.glow = state.deathTime > 0 ? 1.0F : glow;
+		// How far it has risen out of the Heart, eased towards what the server says between its ticks
+		a[4] += (so.rising() - a[4]) * Mth.clamp(dt * 0.35F, 0, 1);
+		state.rising = Mth.clamp(a[4], 0, 1);
+		if (state.rising < 1) {
+			// its embers kindle as it comes up, flickering
+			glow *= 0.35F + 0.65F * state.rising * (calm ? 1 : 0.85F + 0.15F * Mth.sin(now * 0.9F));
+		}
+		state.dying = state.deathTime > 0 ? Mth.clamp(state.deathTime / StarvedOne.DEATH_TICKS, 0, 1) : 0;
+		// Dying, its embers go out: guttering at first, then gone
+		state.glow = state.dying > 0 ? Math.max(0.03F, (1 - ElderAnim.smooth(state.dying / 0.85F)) * (calm ? 1 : 0.75F + 0.25F * Mth.sin(now * 2.3F)))
+				: glow;
 	}
 
 	/** Drawn whenever any of it is in view: its arms, halo and tatters reach well past its body. */
@@ -91,8 +102,8 @@ public class StarvedOneRenderer extends MobRenderer<StarvedOne, StarvedOneRender
 
 	@Override
 	protected void scale(StarvedOneRenderState state, PoseStack pose) {
-		// Dying, it shrinks into its own light
-		float s = state.deathTime > 0 ? Math.max(0.05F, 1 - state.deathTime / 20F * 0.9F) : 1.0F;
+		// At the very end of its death it shrinks into what is left of its light
+		float s = state.dying > 0.85F ? Math.max(0.05F, 1 - (state.dying - 0.85F) / 0.15F * 0.95F) : 1.0F;
 		pose.scale(s, s, s);
 	}
 }

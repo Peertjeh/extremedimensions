@@ -17,6 +17,7 @@
 			"com.extremedimensions.gametest.PactTests",
 			"com.extremedimensions.gametest.TrialTests",
 			"com.extremedimensions.gametest.BossTests",
+			"com.extremedimensions.gametest.HeartTests",
 			"com.extremedimensions.gametest.StirTests",
 			"com.extremedimensions.gametest.ReachTests",
 			"com.extremedimensions.gametest.MasonTests",

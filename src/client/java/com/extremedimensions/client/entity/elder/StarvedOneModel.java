@@ -18,6 +18,12 @@ import net.minecraft.util.Mth;
  * draws back and snaps forward; dragging it reaches out wide and hauls back; stepping through the veil it folds in on
  * itself and opens again. Bound by the pillars its arms are dragged out and down, its back arched, its head hanging,
  * shuddering, the tail limp.
+ *
+ * <p>Rising out of the Heart (3.48) it stands upright in the hole it tore, its arms up over its head and its claws
+ * hooked over the rim, dragging itself up hand over hand, its elbows bending with each pull, its head bowed under the
+ * stone and coming up as it comes free, its chains and tail trailing down into the dark. Dying, it thrashes and sags:
+ * its back folds, its head and arms drop, its crown tilts, its four chains snap away one after another (as the server
+ * snaps them), and it sinks.
  */
 public class StarvedOneModel extends EntityModel<StarvedOneRenderState> {
 	public static final ModelLayerLocation LAYER = new ModelLayerLocation(ExtremeDimensions.id("starved_one"), "main");
@@ -47,6 +53,7 @@ public class StarvedOneModel extends EntityModel<StarvedOneRenderState> {
 	public void setupAnim(StarvedOneRenderState s) {
 		super.setupAnim(s);
 		ElderAnim.reset(body, crown);
+		ElderAnim.reset(chains);
 		float t = s.ageInTicks;
 		float bound = s.bound, free = 1 - bound;
 		float fly = s.flight * free;
@@ -183,6 +190,67 @@ public class StarvedOneModel extends EntityModel<StarvedOneRenderState> {
 			head.xRot += 0.6F * bound;
 			head.zRot += shake * 2;
 			crown.zRot += shake * 2;
+		}
+
+		float rise = s.rising;
+		if (rise < 1) {
+			// Rising out of the Heart: upright in the hole, claws hooked over its rim, dragging itself up hand over hand
+			float reach = ElderAnim.smooth(rise / 0.25F), climb = ElderAnim.smooth((rise - 0.6F) / 0.4F);
+			float free = 1 - ElderAnim.smooth((rise - 0.92F) / 0.08F);
+			float pull = Mth.sin(climb * Mth.PI * 6);
+			float strain = ElderAnim.tremor(t, 0.05F * reach);
+			float k = reach * free;
+			body.xRot -= 0.45F * k * (1 - 0.5F * climb);
+			armL.xRot -= (2.2F - 0.6F * Math.max(0, pull)) * k;
+			armR.xRot -= (2.2F - 0.6F * Math.max(0, -pull)) * k;
+			armL.zRot += 0.3F * k;
+			armR.zRot -= 0.3F * k;
+			foreL.xRot -= 0.7F * Math.max(0, pull) * k;
+			foreR.xRot -= 0.7F * Math.max(0, -pull) * k;
+			handL.xRot += 0.8F * k;
+			handR.xRot += 0.8F * k;
+			head.xRot += (0.6F - 0.9F * climb) * k + strain;
+			body.zRot += strain;
+			crown.zRot += strain * 2;
+			root.y += 1.2F * pull * climb * free;
+			for (int i = 0; i < tail.length; i++) {
+				tail[i].xRot -= 0.25F * k;
+			}
+			for (int i = 0; i < chains.length; i++) {
+				chains[i].xRot += (0.7F + Mth.sin(t * 0.3F + i) * 0.12F) * k;
+			}
+		}
+
+		float die = s.dying;
+		if (die > 0) {
+			// Dying: it thrashes, then sags; its chains snap away one after another, and it sinks
+			float sag = ElderAnim.smooth(die / 0.7F), thrash = 1 - ElderAnim.smooth(die / 0.6F);
+			float shake = ElderAnim.tremor(t * 1.5F, 0.12F * thrash);
+			body.xRot += 0.55F * sag + shake;
+			body.zRot += shake * 0.8F;
+			head.xRot += 0.75F * sag;
+			head.zRot += 0.2F * sag;
+			armL.xRot += 0.6F * sag + shake;
+			armR.xRot += 0.6F * sag - shake;
+			armL.zRot += 0.35F * sag;
+			armR.zRot -= 0.35F * sag;
+			foreL.xRot += 0.3F * sag;
+			foreR.xRot += 0.3F * sag;
+			crown.zRot += 0.35F * sag;
+			crown.xRot += 0.2F * sag;
+			root.y += 10F * ElderAnim.smooth((die - 0.55F) / 0.45F);
+			for (int i = 0; i < tail.length; i++) {
+				tail[i].xRot -= 0.15F * sag;
+			}
+			for (int i = 0; i < chains.length; i++) {
+				// (the server snaps the chain to pillar i at 40 + 25 i of its two hundred ticks: see HeartScenes)
+				float at = (40 + 25 * i) / (float) StarvedOne.DEATH_TICKS;
+				if (die > at) {
+					float gone = ElderAnim.smooth((die - at) / 0.06F);
+					chains[i].xRot += 1.6F * gone;
+					ElderAnim.scale(chains[i], Math.max(0.02F, 1 - 0.98F * gone));
+				}
+			}
 		}
 	}
 
