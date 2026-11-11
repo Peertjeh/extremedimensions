@@ -209,8 +209,11 @@ public class ClientShots implements FabricClientGameTest {
 		ctx.takeScreenshot("12_fight_" + name + "_arena");
 		// Out past its wall towards the nearest of its reaches still waiting, looking at it: the world comes in round
 		// there, and what waited for it goes up. (Which way its far towers stand differs from arena to arena. The player
-		// goes no further than 170 blocks from the middle and 40 above it, near enough that the Elder keeps to its prey:
-		// beyond its reach the Ferryman takes it that they went home.)
+		// goes no further than 170 blocks from the middle and 40 above it; the Elder may stand on the far side of its
+		// arena all the same, and beyond its reach it takes it that they went home, so for this look its reach is made
+		// wider, and put back once they are back at its side.)
+		double reachWas = sp.getServer().computeOnServer(s -> com.extremedimensions.config.Config.ELDER_REACH);
+		sp.getServer().runOnServer(s -> com.extremedimensions.config.Config.ELDER_REACH = Math.max(reachWas, 6.0));
 		double[] far = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.nearestWaiting(mid[0], mid[2]));
 		double[] side = {mid[0] - 190, mid[1] + 40, mid[2]};
 		if (far != null) {
@@ -243,6 +246,7 @@ public class ClientShots implements FabricClientGameTest {
 			p.setHealth(p.getMaxHealth());
 		});
 		moveTo(ctx, sp, stood);
+		sp.getServer().runOnServer(s -> com.extremedimensions.config.Config.ELDER_REACH = reachWas);
 		ctx.waitTicks(10);
 		sp.getServer().runOnServer(s -> elders(s).forEach(e -> force.test(e, com.extremedimensions.elder.ElderBoss.ULTIMATE)));
 		ctx.waitTicks(38);
