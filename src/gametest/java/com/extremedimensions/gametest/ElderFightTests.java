@@ -145,7 +145,13 @@ public class ElderFightTests {
 		}
 		helper.runAfterDelay(35, () -> {
 			int now = near(f);
-			boolean grew = now > counted[0] && Math.abs(f.toughness() - ElderPower.health(now)) < 0.001;
+			// It counts once a second, and a player of another test may wander near in between: it must have grown
+			// past one fighter to a count it could have seen (two, or more with a stranger near)
+			boolean seen = false;
+			for (int k = 2; k <= Math.max(2, now); k++) {
+				seen |= Math.abs(f.toughness() - ElderPower.health(k)) < 0.001;
+			}
+			boolean grew = now > counted[0] && f.toughness() > ElderPower.health(counted[0]) + 0.001 && seen;
 			boolean share = Math.abs(f.getHealth() / f.getMaxHealth() - 1.0) < 0.01;
 			done.run();
 			check(helper, grew, "against %s (from %s) it has x%s health, not x%s", now, counted[0], f.toughness(), ElderPower.health(now));
