@@ -182,6 +182,9 @@ public class RitesTests {
 		p.teleportTo(o.getX() + 3.5, o.getY() + 1, o.getZ() + 0.5);
 		int[] fell = {-1}, most = {0};
 		boolean[] done = {false};
+		// displays already about before it was locked (an earlier round of tests on this ground) are none of its own
+		java.util.Set<java.util.UUID> before = new java.util.HashSet<>();
+		level.getEntitiesOfClass(Display.BlockDisplay.class, new AABB(o).inflate(48)).forEach(d -> before.add(d.getUUID()));
 		try {
 			AnchorRites.clear();
 			check(helper, PaleReach.isFitting(level, bp.fitting), "the anchor's fitting is not known");
@@ -228,8 +231,10 @@ public class RitesTests {
 						check(helper, ring <= 3, "%s blocks of the halo still stand", ring);
 						check(helper, !level.getBlockState(bp.fitting).is(Blocks.LODESTONE) && !PaleReach.isFitting(level, bp.fitting),
 								"the fitting is still a lodestone, or still a fitting");
-						int left = displaysNear(level, o, 48);
-						check(helper, left == 0, "%s displays of falling blocks are left", left);
+						java.util.List<Display.BlockDisplay> left = level.getEntitiesOfClass(Display.BlockDisplay.class, new AABB(o).inflate(48),
+								d -> !before.contains(d.getUUID()));
+						check(helper, left.isEmpty(), "%s displays of falling blocks are left (at %s from the fitting)", left.size(),
+								left.stream().map(d -> d.blockPosition().subtract(o).toShortString()).toList());
 						check(helper, most[0] >= 20, "only %s blocks were seen falling at once", most[0]);
 						restore.run();
 						helper.succeed();
