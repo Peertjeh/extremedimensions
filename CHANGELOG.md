@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.49.4: Tetherite After Netherite
+
+### Changed
+- **The Tetherite sword, pickaxe, axe, shovel and hoe are drawn after vanilla's netherite ones**, pixel for pixel, as
+  the spear was in 3.49.3, in Tetherite's tones:
+  - the metal in its grey-violet ramp, edged in violet on its lit side where netherite's is edged in wine;
+  - the haft in the dark violet;
+  - one bead of the Tether's teal where the head meets the haft (on the sword, where the guard crosses the blade).
+- **The Tetherite Leggings follow vanilla's netherite leggings** in the inventory and worn, with a teal buckle at the
+  front of the belt. The Weaver and Fray trims on them stay on the leggings and never float over a bare leg.
+
 ## 3.49.3: The Spear Held Right
 
 ### Fixed
