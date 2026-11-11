@@ -1,11 +1,11 @@
 """The tribe's body: the Lurker, the Cave Lurker, the Sculk Lurker, the Magpie, the Wick, the Tidewalker, the Gatebreaker, the Lockwarden, the Hollowling, the Keeper and the Thinned all wear it
-(the Starved One has had a body of its own since 3.18: tools/elders/starved_one.py), each with its own texture. A hunched, cloaked giant on long knuckle-walking arms, ragged strips of cloak, strands dripping from a
+(the Starved One has had a body of its own since 3.18: tools/elders/starved_one.py, and the Pale Hauler too, after its concept sheet: tools/elders/pale_hauler.py), each with its own texture. A hunched, cloaked giant on long knuckle-walking arms, ragged strips of cloak, strands dripping from a
 mask. The claws are fine parts (four pixels to a model pixel); the mask, its eyes, its brow and the fringe of the hood
 are at Minecraft's own size, painted finer and brought down;
 the part names and poses are the ones LurkerModel animates.
 
 usage: python3 tools/lurker/build.py [preview-json-dir]
-Writes LurkerGeometry.java and a base and glow texture for each of the twelve.
+Writes LurkerGeometry.java and a base and glow texture for each of the fourteen.
 """
 import math
 import os
@@ -100,7 +100,7 @@ def _mask_parts(m, head):
         m.box(fr, -0.35, 0, -0.25, 0.7, 0.9 + 0.5 * ((k * 3) % 4), 0.5, "t_fray")
 
 
-# ----------------------------------------------------------------------------- the fifteen
+# ----------------------------------------------------------------------------- the fourteen
 
 SPECIES = {
     "lurker": dict(cloak=((14, 12, 20), (54, 46, 66)), limb=((22, 20, 26), (60, 56, 66)), skin=((40, 36, 44), (86, 80, 90)),
@@ -162,11 +162,6 @@ SPECIES = {
     "cragback": dict(cloak=((30, 27, 40), (92, 86, 110)), limb=((44, 40, 52), (112, 104, 124)), skin=((58, 54, 66), (134, 126, 146)),
                      mask=((70, 66, 80), (150, 144, 162)), crack=(90, 220, 205), eye=(120, 240, 222), eye_hot=(225, 255, 250),
                      tendril=((24, 22, 30), (70, 64, 84)), tip=(70, 180, 170), claw=((60, 56, 66), (150, 144, 158)), face="crag"),
-    # the Pale Hauler: an Enderman's lanky dark-violet body under a hood and ragged mantle of pale end stone, a face of
-    # shadow inside the hood and the Endermen's own violet eyes, its cracks the purple of the void
-    "pale_hauler": dict(cloak=((150, 140, 112), (232, 224, 190)), limb=((22, 12, 34), (64, 40, 92)), skin=((30, 18, 44), (78, 54, 108)),
-                        mask=((14, 8, 22), (46, 30, 64)), crack=(190, 80, 255), eye=(214, 120, 255), eye_hot=(250, 226, 255),
-                        tendril=((150, 140, 112), (226, 218, 184)), tip=(176, 90, 240), claw=((26, 14, 38), (84, 58, 112)), face="hauler"),
     "thinned": dict(cloak=((150, 150, 170), (232, 232, 246)), limb=((160, 160, 178), (236, 236, 248)), skin=((180, 180, 196), (244, 244, 252)),
                     mask=((206, 204, 220), (252, 252, 255)), crack=(216, 196, 255), eye=(214, 190, 255), eye_hot=(255, 250, 255),
                     tendril=((130, 128, 150), (210, 208, 226)), tip=(190, 170, 240), claw=((170, 168, 186), (246, 246, 252)), face="thinned"),
@@ -482,16 +477,6 @@ FACE_PX = {
              "SMMMMMMMMS",
              "SMSMMMMSMS",
              ".SMMMMMMS."],
-    "hauler": ["SSSSSSSSSS",
-               "SMMMMMMMMS",
-               "MMMMMMMMMM",
-               "MMMMMMMMMM",
-               "MDDDMMDDDM",
-               "MDDDMMDDDM",
-               "MMMMMMMMMM",
-               "SMMMMMMMMS",
-               ".SMMMMMMS.",
-               "..SSSSSS.."],
     "lock": ["SMMMMMMMMS",
              "MLMMMMMMLM",
              "MMMMKKMMMM",
@@ -555,7 +540,6 @@ EYE_PX = {
     "wick": ["eEe", "eee"],
     "tide": ["eEe", "e.e"],
     "gate": ["eEe", "..."],
-    "hauler": ["EEE", "eee"],
     "lock": ["eEe", ".e."],
     "thread": [".E.", "eee"],
     "edge": ["eEe", "e.e"],

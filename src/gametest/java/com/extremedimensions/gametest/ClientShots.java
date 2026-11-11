@@ -1517,6 +1517,21 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~-3 ~-13 ~10 0 5");
 			ctx.waitTicks(15);
 			ctx.takeScreenshot("10_pale_hauler");
+			// Its own body (after its concept sheet): up close from the front, its face of shadow in the hood; then
+			// hauling, crouched over with its hands forward and its light blue, from a little to one side (and back)
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~0.25 ~3 0 10");
+			ctx.waitTicks(10);
+			ctx.takeScreenshot("10_pale_hauler_close");
+			sp.getServer().runOnServer(s -> mobs(s).forEach(m -> {
+				if (m instanceof com.extremedimensions.lurker.PaleHauler h) {
+					h.setLurkerPose(com.extremedimensions.lurker.Lurker.POSE_TAKE);
+					h.setLurkerMood(com.extremedimensions.lurker.LurkerBody.MOOD_THIEF);
+				}
+			}));
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~2.5 ~ ~0.5 45 15");
+			ctx.waitTicks(15);
+			ctx.takeScreenshot("10_pale_hauler_haul");
+			sp.getServer().runCommand("execute as @a at @s run tp @s ~-2.5 ~-0.25 ~-3.5 0 5");
 			sp.getServer().runOnServer(s -> {
 				mobs(s).forEach(net.minecraft.world.entity.Entity::discard);
 				net.minecraft.server.level.ServerLevel lv = (net.minecraft.server.level.ServerLevel) player(s).level();

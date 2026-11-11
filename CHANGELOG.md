@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.49.1: The Pale Hauler, Remade
+
+### Changed
+- **The Pale Hauler has a body of its own**, after its concept sheet, instead of the tribe's hunched one.
+  - A tall, thin End walker under a peaked pale hood and a shaggy mantle of ragged strips, with a face of shadow and
+    two narrow violet eyes; violet cracks run through the mantle and its strips end in violet.
+  - Long dark arms reach to its knees and end in four long claws.
+  - It moves as it acts: it walks with its mantle swaying, crouches with both hands on the block it hauls out of your
+    bridge, holds what it took up over its head, and crouches before it leaps at you.
+  - Its light still tells what it came for: violet at rest, blue while it hauls a block, red when it is about to leap.
+- Its size, its hitbox and everything it does are unchanged.
+
 ## 3.49.0: Wounds That Stay
 
 ### Changed

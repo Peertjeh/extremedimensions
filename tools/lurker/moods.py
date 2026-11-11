@@ -18,7 +18,9 @@ MOODS = {
 }
 
 
-NAMES = ("lurker", "cave_lurker", "sculk_lurker", "magpie", "wick", "tidewalker", "gatebreaker", "lockwarden", "threadbiter", "edgecrawler", "cragback", "hollowling", "keeper", "pale_hauler")
+# (the Pale Hauler has a body of its own, made with the Elders' (tools/elders/pale_hauler.py), and its textures are in
+# their folder)
+NAMES = ("lurker", "cave_lurker", "sculk_lurker", "magpie", "wick", "tidewalker", "gatebreaker", "lockwarden", "threadbiter", "edgecrawler", "cragback", "hollowling", "keeper", "elder/pale_hauler")
 
 
 def main():
