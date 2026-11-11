@@ -12,7 +12,6 @@ import sys
 
 from PIL import Image
 
-
 EDGE = (38, 6, 12)
 DARK = (92, 14, 24)
 ROPE = (148, 26, 38)

@@ -9,6 +9,11 @@ blood, a flame). The maps are derived from the vanilla textures named in the com
 
 The comment above each item says which vanilla texture it follows and why, and what each of its colours became.
 
+Four keep the drawings they had, as no vanilla item has their shape and drawn after the nearest one they no longer read
+as themselves (a lock as a jar, a crown as a helmet, a hand as a paw, a plumb line as a chain): the Pale Lock
+(tools/items/home_or_lock.py), the Hollow Crown and the Hungering Hand (relics_3.py) and the Plumb Line
+(first_weaver.py); their textures are left as those drew them.
+
 usage: python3 tools/items/after_vanilla.py [preview.png]
 """
 import os
@@ -30,7 +35,8 @@ def item(name, pal, rows):
 
 # ----------------------------------------------------------------------------------- tethers and cords
 
-# vanilla's lead, as tether, soul_woven_tether, tether_cord, mending_thread follow it (only their palettes differ).
+# The map of vanilla's lead, shared by tether, soul_woven_tether, tether_cord and mending_thread (only their palettes
+# differ).
 LEAD = [
     "................",
     "................",
@@ -100,7 +106,7 @@ item("blood_cord", {
     # the cord
     '0': (38, 6, 12), '1': (99, 15, 26), '2': (173, 43, 52), '3': (196, 58, 64),
     # the knot
-    'a': (120, 20, 32), 'c': (210, 82, 84), 'd': (236, 128, 120),
+    'a': (120, 20, 32), 'b': (210, 82, 84), 'c': (236, 128, 120),
     # a drop of blood
     'X': (232, 60, 60),
 }, [
@@ -112,8 +118,8 @@ item("blood_cord", {
     "...012.....031..",
     "....012....120..",
     ".....002222130..",
-    ".......0001dc0..",
-    "..........0ca...",
+    ".......0001cb0..",
+    "..........0ba...",
     "..........130...",
     "..........130...",
     "...2....1320....",
@@ -131,7 +137,7 @@ item("tether_cord", {
     'a': (64, 58, 78), 'b': (82, 75, 98), 'c': (106, 99, 124), 'd': (140, 133, 158),
 }, LEAD)
 
-# vanilla's end crystal, as ember_tether, void_tether follow it (only their palettes differ).
+# The map of vanilla's end crystal, shared by ember_tether and void_tether (only their palettes differ).
 END_CRYSTAL = [
     "................",
     "..1222222222222.",
@@ -175,8 +181,8 @@ item("void_tether", {
 
 # ------------------------------------------------------------------------------------ threads and silk
 
-# vanilla's string, as seam_silk, echo_thread, ember_thread, pale_thread, silk_thread follow it (only their palettes
-# differ).
+# The map of vanilla's string, shared by seam_silk, echo_thread, ember_thread, pale_thread and silk_thread (only their
+# palettes differ).
 STRING = [
     "................",
     "..........1.....",
@@ -228,43 +234,18 @@ item("silk_thread", {
     '0': (96, 64, 150), '1': (176, 146, 232), '2': (240, 232, 255),
 }, STRING)
 
-# Mending Thread: vanilla's lead, a hank of the one thread that mends the first wound, glowing cyan to white, held by a
-# bead of pale gold.
+# Mending Thread: vanilla's lead, a hank of the one thread that mends the first wound: a warm white glow (the old one's
+# gold-white tip) over a cyan shadow, held by a bead of pale gold.
 item("mending_thread", {
     # the thread
-    '0': (28, 92, 88), '1': (95, 198, 184), '2': (223, 255, 249), '3': (244, 255, 252),
+    '0': (30, 110, 104), '1': (120, 214, 200), '2': (255, 244, 214), '3': (255, 252, 236),
     # the gold bead
     'a': (150, 106, 40), 'b': (200, 150, 60), 'c': (240, 206, 110), 'd': (255, 240, 200),
 }, LEAD)
 
-# Plumb Line: vanilla's iron chain, as it is twisted round one; its iron darker, and a turn of each of the four threads
-# on it (echo, ember, pale, silk).
-item("plumb_line", {
-    # the chain
-    '0': (52, 50, 60), '1': (96, 94, 108), '2': (150, 148, 162),
-    # the four threads
-    'W': (34, 150, 160), 'X': (218, 112, 34), 'Y': (212, 206, 168), 'Z': (176, 146, 232),
-}, [
-    "................",
-    "......0.0.......",
-    "......020.......",
-    ".......W........",
-    "......201.......",
-    "......X.0.......",
-    "......0.0.......",
-    "......020.......",
-    ".......Y........",
-    ".......0........",
-    "......101.......",
-    "......Z.0.......",
-    "......0.0.......",
-    "......021.......",
-    ".......1........",
-    "................",
-])
 
-# vanilla's brush, as thread_of_roots, thread_of_toll, thread_of_unravelling, thread_of_the_chain, thread_of_the_knot,
-# thread_of_the_heart follow it (only their palettes differ).
+# The map of vanilla's brush, shared by thread_of_roots, thread_of_toll, thread_of_unravelling, thread_of_the_chain,
+# thread_of_the_knot and thread_of_the_heart (only their palettes differ).
 BRUSH = [
     "................",
     ".........111....",
@@ -444,31 +425,6 @@ item("pale_shard", {
     "................",
 ])
 
-# Hungering Hand: vanilla has no hand; the rabbit's foot is the nearest limb with something like fingers. Its fur turned
-# the hand's pale grey, the cut end a violet cuff.
-item("hungering_hand", {
-    # the hand
-    '0': (84, 76, 72), '1': (124, 112, 100), '2': (170, 160, 144), '3': (198, 188, 170), '4': (236, 230, 218),
-    # the violet cuff
-    'X': (150, 90, 220), 'Y': (96, 52, 150),
-}, [
-    "................",
-    "................",
-    "..........XY....",
-    ".........1220...",
-    ".........13440..",
-    ".........14430..",
-    ".......1133420..",
-    "....1114323320..",
-    "...1344443230...",
-    "..12443433220...",
-    "..1034433220....",
-    "..003133200.....",
-    "...021200.......",
-    "....000.........",
-    "................",
-    "................",
-])
 
 # Featherbone: vanilla's bone, whiter and cooler, a touch of the cyan the old one was edged in at its upper knob.
 item("featherbone", {
@@ -637,7 +593,7 @@ item("seam_lantern", {
     "................",
 ])
 
-# Held's Chain: vanilla's iron chain, darker, one link still warm (the chain the Held left glows where it was held).
+# Held's Chain: vanilla's iron chain, darker, one link still glowing warm.
 item("helds_chain", {
     # the iron
     '0': (40, 38, 46), '1': (72, 70, 80), '2': (112, 110, 122),
@@ -666,19 +622,19 @@ item("helds_chain", {
 # layer). The uppers turned the sandal's red-brown straps, the soles the pale, worn footbed.
 item("pilgrims_sandal", {
     # the straps
-    '0': (52, 28, 14), '2': (80, 44, 24), '5': (139, 80, 44), '6': (161, 95, 53), '8': (181, 114, 65),
+    '0': (52, 28, 14), '1': (80, 44, 24), '2': (139, 80, 44), '3': (161, 95, 53), '4': (181, 114, 65),
     # the footbed
     'P': (60, 38, 22), 'Q': (104, 72, 42), 'R': (156, 116, 70), 'S': (198, 160, 108), 'T': (226, 194, 144),
 }, [
     "................",
     "................",
     "................",
-    "....222..222....",
-    "...2880..2880...",
-    "...2880..2860...",
-    "...2860..2660...",
-    "...2660..2660...",
-    "...2650..2660...",
+    "....111..111....",
+    "...1440..1440...",
+    "...1440..1430...",
+    "...1430..1330...",
+    "...1330..1330...",
+    "...1320..1330...",
     "..QSSSP..QSSRP..",
     ".QTTSRP..QRSTSP.",
     ".QSSRPP..PPSSRP.",
@@ -912,22 +868,22 @@ item("ashen_locket", {
     "......0000......",
 ])
 
-# Miner's Candle: vanilla's candle in a greyer tallow, lit (a small warm flame on the wick), its foot standing in an
-# iron dish.
+# Miner's Candle: vanilla's candle in a greyer tallow, lit (a small warm flame where the wick's tip was), its foot
+# standing in an iron dish.
 item("miners_candle", {
     # the tallow
     '0': (150, 128, 96), '1': (196, 178, 136), '2': (216, 198, 152), '3': (232, 218, 180), '4': (242, 232, 200),
     '5': (250, 244, 222),
     # the wick
-    'a': (30, 22, 18), 'b': (60, 44, 34),
+    'a': (30, 22, 18),
     # the flame
-    'X': (255, 214, 128),
+    'X': (255, 214, 128), 'Y': (240, 128, 44),
     # the iron dish
     'P': (60, 62, 74), 'Q': (96, 98, 112), 'R': (130, 132, 146),
 }, [
     "................",
     "........X.......",
-    "......12b21.....",
+    "......12Y21.....",
     ".....134a431....",
     ".....1442441....",
     ".....1544430....",
@@ -1052,33 +1008,6 @@ item("ferrymans_obol", {
     "................",
 ])
 
-# Hollow Crown: vanilla has no crown; the golden helmet is the nearest, a band round an empty head. Its shaded tones
-# dark iron, its lit tones the gold inlaid in it, and two violet stones.
-item("hollow_crown", {
-    # the iron
-    '0': (16, 12, 22), '1': (56, 52, 68), '2': (84, 80, 98), '3': (110, 106, 126),
-    # the gold
-    'a': (216, 164, 58), 'b': (240, 200, 100),
-    # the violet stones
-    'X': (210, 140, 255), 'Y': (128, 60, 196),
-}, [
-    "................",
-    "................",
-    "................",
-    ".....111111.....",
-    "....13aaaa20....",
-    "...13bXbaa320...",
-    "...1abbaaY330...",
-    "...1aa1110230...",
-    "...1a10000030...",
-    "...1a10000020...",
-    "...1300000020...",
-    "....10....00....",
-    "................",
-    "................",
-    "................",
-    "................",
-])
 
 # --------------------------------------------------------------------------- the journal and its pages
 
@@ -1220,34 +1149,6 @@ item("homeward_keystone", {
     "................",
 ])
 
-# Pale Lock: vanilla has no padlock; the bucket is the nearest, a rim above a heavy body. The rim pale gold (the
-# shackle), its dark inside the body's black, the body crying obsidian's black-violet, and a keyhole burning purple.
-item("pale_lock", {
-    # the body
-    '0': (14, 8, 24), '3': (44, 30, 66), '4': (60, 42, 92), '5': (78, 56, 116), '6': (104, 76, 152),
-    '7': (176, 120, 255),
-    # the shackle
-    'P': (112, 84, 44), 'Q': (30, 20, 46), 'R': (196, 164, 96), 'S': (226, 200, 130), 'T': (252, 240, 184),
-    # the keyhole
-    'X': (176, 72, 250), 'Y': (110, 30, 180),
-}, [
-    "................",
-    ".....PPPPPP.....",
-    "...PPRSSSTTPP...",
-    "..PRRQQQRRRSRP..",
-    "..PQQQQQRRRRQP..",
-    "..PPPQQQQRRPPP..",
-    "..065000000340..",
-    "..066665543340..",
-    "..066765543350..",
-    "..056765X43350..",
-    "..036765Y43340..",
-    "...0666554340...",
-    "...0566544340...",
-    "....05654340....",
-    ".....000000.....",
-    "................",
-])
 
 # Severing Shears: vanilla's shears, the blades a cold pale steel, the handles violet, an ember-orange rivet where they
 # cross.
@@ -1304,7 +1205,7 @@ item("seam_needle", {
     "................",
 ])
 
-# Wound Lens: vanilla's spyglass, which it already is in kind: the copper tube kept a copper, its gold rings turned the
+# Wound Lens: vanilla's spyglass, which it already is in kind: the copper tube kept copper, its gold rings turned the
 # violet of the old one's bands, the lens the Tether's teal.
 item("wound_lens", {
     # the copper
@@ -1498,7 +1399,7 @@ item("tetherite_scrap", {
 ])
 
 # Tetherite Upgrade: vanilla's netherite upgrade template, its wine-red slab Tetherite's dark metal, its arrow the
-# Tether's teal (one tone added between vanilla's two lighter ones would collapse otherwise).
+# Tether's teal (its mid and light tones and one between them; its darkest would sink into the slab).
 item("tetherite_upgrade_smithing_template", {
     # the slab
     '0': (22, 19, 27), '1': (35, 31, 43), '2': (49, 44, 60), '3': (64, 58, 78), '4': (82, 75, 98),
@@ -1550,33 +1451,32 @@ item("weaver_armor_trim_smithing_template", {
     "......00000.....",
 ])
 
-# Fray: vanilla's silence template, its glyph broken into loose strands and sculk eating at its corners, as the Fray
-# frays: the deepslate slab Tetherite's dark metal, the sculk the darkest metal going teal, the glyph the Tether's teal.
+# Fray: vanilla's tide template, whose glyph is one strand splitting into loose ends, as a thread frays (silence's
+# broken glyph would fit too, but on a dark slab it would be taken for the silence template itself). Its pale prismarine
+# slab Tetherite's dark metal, the glyph the Tether's teal.
 item("fray_armor_trim_smithing_template", {
     # the slab
-    '0': (35, 31, 43), '1': (49, 44, 60), '2': (56, 51, 69), '3': (64, 58, 78), '4': (72, 66, 88), '5': (78, 72, 94),
-    '6': (82, 75, 98), '7': (106, 99, 124),
-    # the fraying edge
-    'a': (22, 19, 27), 'b': (26, 28, 36), 'c': (20, 52, 58), 'd': (27, 86, 92),
+    '0': (22, 19, 27), '1': (35, 31, 43), '2': (49, 44, 60), '3': (56, 51, 69), '4': (64, 58, 78), '5': (82, 75, 98),
+    '6': (106, 99, 124), '7': (140, 133, 158),
     # the glyph
-    'e': (42, 140, 142), 'f': (60, 170, 166), 'g': (96, 200, 190), 'h': (170, 240, 230),
+    'a': (42, 140, 142), 'b': (72, 182, 176), 'c': (110, 214, 204),
 }, [
-    "......664.......",
-    ".....667764.....",
-    ".....446336d2...",
-    "....46734e3bcba.",
-    "....477h3f46dcba",
-    "...36646gg3bc5ca",
-    "...366h4h4g3bcab",
-    "..ad634hh344bba.",
-    "..bdcg3h6g431b0.",
-    ".abc36ggc66110..",
-    ".bcd4cfdf43110..",
-    ".bbcccfc46110...",
-    ".adbbcd463110...",
-    "..aabb433110....",
-    "....aacb3110....",
-    "......b0000.....",
+    "......554.......",
+    ".....566654.....",
+    ".....57766541...",
+    "....4676b755411.",
+    "....4555cb644220",
+    "...2555bc7455220",
+    "...2554cb7552210",
+    "..254ccb7655110.",
+    "..24c766c552110.",
+    ".232b644c55110..",
+    ".22b6444b52110..",
+    ".23a644ba5110...",
+    ".024444b52110...",
+    "..00244a5110....",
+    "....00242110....",
+    "......00000.....",
 ])
 
 # ---------------------------------------------------------------------- music discs and disc fragments
@@ -1725,7 +1625,8 @@ item("music_disc_the_abyss_answers", {
     "................",
 ])
 
-# vanilla's disc fragment 5, as disc_fragment_elegy, disc_fragment_abyss follow it (only their palettes differ).
+# The map of vanilla's disc fragment 5, shared by disc_fragment_elegy and disc_fragment_abyss (only their palettes
+# differ).
 DISC_FRAGMENT_5 = [
     "................",
     "................",

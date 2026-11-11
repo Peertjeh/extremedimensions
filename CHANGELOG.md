@@ -1,5 +1,24 @@
 # Changelog
 
+## 3.50.0: Drawn As Vanilla Draws
+
+### Changed
+- **Every item of the mod is drawn after a vanilla item**, as the Tetherite gear has been since 3.49.3. Each keeps its
+  vanilla model's silhouette, outline and shading pixel for pixel, in its own colours and with a mark of its own:
+  - **Tethers and cords** after the lead (the Ember and Void Tethers after the end crystal).
+  - **Threads and silk** after the string, and the six Threads of the tapestry after the brush.
+  - **Relics** after the vanilla item nearest each one's shape: the Keeper's Eye after the eye of ender, the Tithe and
+    Muffled Bells after the bell, the Seam Lantern after the lantern, the Hollow Whistle after the goat horn, the
+    Debtor's Seal after the compass, the Unbound Pinion after the elytra, and so on.
+  - **The Tether Journal** after the written book, the pages after paper, the Homing Pearl after the ender pearl, the
+    Severing Shears after the shears, the Wound Lens after the spyglass.
+  - **The Tether Fragment** after the amethyst shard, the Veil Wing after the phantom membrane, the Mending Cloth after
+    the cushion.
+  - **The Tetherite ingot and scrap and the three smithing templates** after netherite's and the trim templates.
+  - **The five music discs and their fragments** after vanilla's discs, each in its own label colours.
+- The Pale Lock, the Hollow Crown, the Hungering Hand and the Plumb Line keep their drawings: no vanilla item has
+  their shape, and drawn after the nearest one they no longer read as themselves.
+
 ## 3.49.5: The Whole Set After Netherite
 
 ### Changed

@@ -18,8 +18,8 @@ Ferryman's Obol (epic): a worn gold coin stamped with a boat and its oar, a soul
 Hollow Crown (epic): a thin crown of dark iron seen from a little above, empty inside, gold inlaid round its band and
     violet stones set in it, one prong snapped short.
 
-Retired: tools/items/after_vanilla.py draws these eight now, after vanilla's own textures. This script no longer writes
-them; given a path it previews these old drawings there.
+Retired: tools/items/after_vanilla.py draws seven of these eight now, after vanilla's own textures; the Hollow Crown
+keeps this drawing, as no vanilla item has a crown's shape. This script no longer writes them; given a path it previews these old drawings there.
 
 usage: python3 tools/items/relics_3.py [preview.png]
 """

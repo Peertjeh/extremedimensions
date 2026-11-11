@@ -201,6 +201,9 @@ Trials past gold), and the tapestry's boons stay.
 
 ## Everything else
 
+- **Drawn as vanilla draws**: every item of the mod, from the Tetherite gear to the relics, the tethers, the threads and
+  the music discs, follows a vanilla item's own texture pixel for pixel in its own colours, with a mark of its own (a
+  bead of the Tether's teal, a drop of blood, a flame), so it sits in an inventory as one of the game's.
 - **Relics** (26): bound to the Tether one at a time, each with a gift and a price. A relic serves once: it stays bound
   until another takes its place, and then it crumbles. They come in four tiers (common,
   uncommon, rare, epic): the better a relic, the rarer it is found, and the Elders, the Starved One and a Rift Trial's

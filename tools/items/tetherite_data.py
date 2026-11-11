@@ -7,7 +7,8 @@ templates and their copies, the smithing upgrades and trims, the trim materials 
 the advancements. Assets: the item model definitions (armor icons show any trim, vanilla's or the Seam's), the block
 models of the ore and the Spindle (its spool grows with what is loaded and turns a step with every turn), the equipment
 asset, the trim pattern textures' palette metadata, and the items atlas entries that colour vanilla's trim overlays in
-the Seam's two materials. The textures are drawn by tools/items/tetherite.py.
+the Seam's two materials. The textures are drawn by tools/items/tetherite.py (the gear, the ore, the Spindle) and
+tools/items/after_vanilla.py (the ingot, the scrap, the Tether Cord, the smithing templates).
 """
 import json
 import os

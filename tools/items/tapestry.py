@@ -1,6 +1,7 @@
-# Draws the 3.0 textures: the six threads of the Tapestry (a weaver's shuttle carrying a bobbin of thread in the colours
-# of the deed that earned it), the Weaver's Loom (hush-pillar posts, a warp of seam silk, a band already woven) and the
-# tapestry screen's sheet (six woven panels and the bare warp of one not yet woven, 40x40 each, drawn 1:1).
+# Draws the 3.0 textures: the Weaver's Loom (hush-pillar posts, a warp of seam silk, a band already woven) and the
+# tapestry screen's sheet (six woven panels and the bare warp of one not yet woven, 40x40 each, drawn 1:1), in the
+# colours of the deeds that earn the six threads of the Tapestry. The threads' item textures are drawn after vanilla's
+# brush in tools/items/after_vanilla.py.
 # Usage: python3 tools/items/tapestry.py   (from the repository root; reads the hush pillar's textures)
 import math, os, random
 from PIL import Image, ImageDraw
@@ -16,50 +17,6 @@ PANELS = {
     "knot": {"k": (10, 30, 26), "d": (40, 102, 86), "m": (110, 196, 168), "l": (196, 246, 228)},        # the Knot Mother's deep
     "heart": {"k": (40, 8, 14), "d": (128, 22, 40), "m": (210, 58, 78), "l": (255, 178, 186)},          # the ending
 }
-ITEMS = {"roots": "thread_of_roots", "toll": "thread_of_toll", "unravelling": "thread_of_unravelling",
-         "chain": "thread_of_the_chain", "knot": "thread_of_the_knot", "heart": "thread_of_the_heart"}
-WOOD = {"k": (36, 22, 12), "d": (92, 58, 30), "m": (146, 98, 54), "l": (196, 148, 92)}
-
-SHUTTLE = [
-    "................",
-    "................",
-    "...........kk...",
-    ".........kklwk..",
-    ".......kklwwmk..",
-    ".....kkwmTTTmk..",
-    "...kkwmTTTTTk...",
-    "..kwmmTTTTTmk...",
-    "..kmmTTTTTmk....",
-    "..kdmTTTmmk.....",
-    "...kdmmmmk.t....",
-    "....kkddk..t....",
-    "......kk....t...",
-    "............t...",
-    ".............t..",
-    "................",
-]
-
-
-def shuttle(pal):
-    """A weaver's shuttle seen from above, its bobbin wound with the deed's thread (T), a loose end trailing (t)."""
-    im = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
-    px = im.load()
-    for y, row in enumerate(SHUTTLE):
-        for x, ch in enumerate(row):
-            if ch == ".":
-                continue
-            if ch in "Tt":
-                # the thread: bands as wound thread lies, lit from the upper left
-                if ch == "t":
-                    c = pal["m"]
-                else:
-                    band = (x + y) % 3
-                    light = (x - y) > 2
-                    c = pal["l"] if band == 0 and light else pal["m"] if band != 2 else pal["d"]
-            else:
-                c = {"k": WOOD["k"], "d": WOOD["d"], "m": WOOD["m"], "l": WOOD["l"], "w": (232, 220, 196)}[ch]
-            px[x, y] = c + (255,)
-    return im
 
 
 def loom_textures(out):
@@ -483,8 +440,6 @@ def sheet(out):
 def main():
     import sys
     if "sheet" not in sys.argv[1:]:
-        for name, item in ITEMS.items():
-            shuttle(PANELS[name]).save(os.path.join(ROOT, "item", item + ".png"))
         loom_textures(ROOT)
     im = sheet(ROOT)
     if "preview" in sys.argv[1:]:

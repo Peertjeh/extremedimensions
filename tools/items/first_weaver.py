@@ -1,7 +1,7 @@
 # Draws the 2.39 item textures at 16x16: the four threads of the First Weaver's trail (each a loose skein in the
 # colours of the world it was found in) and the Plumb Line they twist into.
-# Retired: tools/items/after_vanilla.py draws all five now, after vanilla's own textures. This script no longer writes
-# them; given a path it previews these old drawings there.
+# Retired: tools/items/after_vanilla.py draws four of the five now, after vanilla's own textures; the Plumb Line keeps
+# this drawing, as no vanilla item has its shape. This script no longer writes them; given a path it previews these old drawings there.
 # Usage: python3 tools/items/first_weaver.py [preview.png]
 import math, sys
 from PIL import Image
