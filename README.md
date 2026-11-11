@@ -103,7 +103,8 @@ an unweaving the loom waits three days for you.
   Extreme the whole tribe may come at once, Lurkers and their young, all glowing red. A fall or a low roof does them no
   harm; a ledge they leap, and out of reach is no hiding place: they reach in and drag you out, and a house too low
   for them gets an ink bolt through the door or their young sent in after you. Nor is logging out:
-  leave while the wound is after you and you come back cursed, with the hunt waiting. Deep under the ground, the
+  leave while the wound is after you (or in an Elder's fight, whoever it came for) and you come back cursed, with the
+  hunt waiting. Deep under the ground, the
   **Cave Lurker** waits in the dark: smaller, low enough for a miner's tunnel, rarer, and it hunts by ear. Sneak and it
   hears nothing; mine and run near it, and its clicks quicken until it comes on all fours. Its grab always leaves a
   curse; a raised shield turns it aside. In the Deep Dark of the Ancient Cities the small **Sculk Lurker** serves the

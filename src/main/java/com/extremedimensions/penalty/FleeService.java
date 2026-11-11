@@ -8,11 +8,14 @@ import com.extremedimensions.config.Config;
 import com.extremedimensions.coop.FallenService;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.elder.ElderBoss;
 import com.extremedimensions.elder.FerrymanService;
 import com.extremedimensions.elder.MatriarchService;
+import com.extremedimensions.elder.PaleMasonService;
 import com.extremedimensions.elder.WeaverService;
 import com.extremedimensions.hollow.HollowService;
 import com.extremedimensions.lurker.LurkerService;
+import com.extremedimensions.mending.StarvedOne;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
@@ -30,12 +33,17 @@ import net.minecraft.world.entity.LivingEntity;
 
 /**
  * No leaving the wound's creatures behind by leaving the game. A player who logs out while the wound is after them (a
- * swarm, a Lurker glowing red at them or reaching for what they carry, a Keeper, a raid, an Elder, or a blow from one of
- * the wound's creatures in the last {@code flee_danger_seconds}) comes back with {@code flee_curses} curses, and what
- * hunted them (a swarm, a hunting Lurker) comes again ({@code flee_returns}).
+ * swarm, a Lurker glowing red at them or reaching for what they carry, a Keeper, a raid, an Elder fight, or a blow from
+ * one of the wound's creatures in the last {@code flee_danger_seconds}) comes back with {@code flee_curses} curses, and
+ * what hunted them (a swarm, a hunting Lurker) comes again ({@code flee_returns}).
  *
- * <p>A dedicated server shutting down is no one's flight; a single-player world closed in danger is. A fallen player who
- * leaves bleeds out instead, which costs its own curse.
+ * <p>An Elder fight holds everyone in it (3.49.2): the one it came for, and anyone within {@code flee_elder_range} of a
+ * living Elder or the Starved One, whoever it is after. What holds a player is noted with their data every half second
+ * ({@link PlayerData#held}), so a leaving seen to a moment late (its Elder already gone with its passenger) or never (a
+ * single-player world closed before it was) is a flight all the same.
+ *
+ * <p>A dedicated server shutting down (or crashing) is no one's flight; a single-player world closed in danger is. A
+ * fallen player who leaves bleeds out instead, which costs its own curse.
  */
 public final class FleeService {
 	private FleeService() {}
@@ -62,6 +70,7 @@ public final class FleeService {
 		int now = s.getTickCount();
 		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
 			String why = locked(p) ? danger(p) : null;
+			note(p, why);
 			int seconds = -1;
 			if ("blow".equals(why)) {
 				Integer at = STRUCK.get(p.getUUID());
@@ -81,6 +90,15 @@ public final class FleeService {
 	/** Whether leaving now could cost this player at all (flight is not costed for the creative, spectators or the fallen). */
 	private static boolean locked(ServerPlayer p) {
 		return Config.FLEE_CURSES > 0 && Dims.ours(p) && p.isAlive() && !p.isCreative() && !p.isSpectator() && !FallenService.fallen(p);
+	}
+
+	/** Notes with the player's data what holds them now (null: nothing), for a leaving seen to late or never. */
+	public static void note(ServerPlayer p, String why) {
+		PlayerData d = DataStore.get(p.getUUID());
+		if (!java.util.Objects.equals(d.held, why)) {
+			d.held = why;
+			DataStore.markDirty();
+		}
 	}
 
 	/** Whether this player is held in danger now, so that leaving would cost them (for the placeholders and the tests). */
@@ -115,7 +133,7 @@ public final class FleeService {
 		if (RaidService.raiding(p)) {
 			return "raid";
 		}
-		if (MatriarchService.hunting(p) || FerrymanService.hunting(p) || WeaverService.hunting(p)) {
+		if (elderFight(p)) {
 			return "elder";
 		}
 		Integer at = STRUCK.get(p.getUUID());
@@ -125,15 +143,52 @@ public final class FleeService {
 		return null;
 	}
 
+	/**
+	 * Whether an Elder fight holds this player: an Elder is after them, or a living Elder (or the Starved One) is within
+	 * {@code flee_elder_range} of them, whoever it came for.
+	 */
+	public static boolean elderFight(ServerPlayer p) {
+		if (MatriarchService.hunting(p) || FerrymanService.hunting(p) || WeaverService.hunting(p) || PaleMasonService.hunting(p)) {
+			return true;
+		}
+		int r = Math.max(0, Config.FLEE_ELDER_RANGE);
+		return r > 0 && !p.level().getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(r),
+				e -> e.isAlive() && (e instanceof ElderBoss || e instanceof StarvedOne)).isEmpty();
+	}
+
 	/** A player leaving: in danger, the flight is noted, to be paid for when they come back. */
 	public static void leaving(ServerPlayer p, MinecraftServer s) {
 		boolean fled = Config.FLEE_CURSES > 0 && (s.isRunning() || !s.isDedicatedServer());
-		String why = fled && p.isAlive() && !p.isCreative() && !p.isSpectator() && !FallenService.fallen(p) ? danger(p) : null;
+		boolean counts = fled && p.isAlive() && !p.isCreative() && !p.isSpectator() && !FallenService.fallen(p);
+		PlayerData d = DataStore.get(p.getUUID());
+		// What holds them now; or, if it let go of them in the moment before their leaving was seen to (an Elder sails
+		// off as its passenger vanishes), what held them half a second ago
+		String why = counts ? danger(p) : null;
+		if (why == null && counts) {
+			why = d.held;
+		}
+		d.held = null;
+		DataStore.markDirty();
 		STRUCK.remove(p.getUUID());
 		SHOWN.remove(p.getUUID());
 		if (why != null) {
 			mark(p, why);
 		}
+	}
+
+	/**
+	 * A player joining: held when they were last seen and their leaving never seen to (a single-player world closed
+	 * before it was), it was a flight all the same. On a dedicated server it was a crash, and no one's flight.
+	 */
+	public static void joined(PlayerData d, boolean dedicated) {
+		if (d.held == null) {
+			return;
+		}
+		if (!dedicated && d.fled == null && Config.FLEE_CURSES > 0) {
+			d.fled = d.held;
+		}
+		d.held = null;
+		DataStore.markDirty();
 	}
 
 	/** Notes a flight from this danger (the server's own leaving and the tests). */

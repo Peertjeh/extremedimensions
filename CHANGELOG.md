@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.49.2: No Slipping Out of a Fight
+
+### Fixed
+- **Logging out during an Elder fight now always counts as fleeing.** It could cost nothing:
+  - Only the player an Elder came for was held by its fight. Anyone fighting beside them could log out freely, and
+    the Pale Mason, the Knot Mother and the Starved One held no one at all.
+  - Whether a player fled was only looked at the moment their leaving was handled. If the Elder had already let go of
+    them by then (the Ferryman sails off as his passenger vanishes), or a single-player world was closed before it
+    was handled, the flight was lost.
+
+### Changed
+- An Elder fight holds everyone within 64 blocks of a living Elder or the Starved One, whoever it came for
+  (`flee_elder_range`; 0 holds only the one it is after). Leaving then costs the flight's curse (`flee_curses`) when
+  you come back, as it does with a swarm or a hunting Lurker.
+- What holds a player is noted every half second, so a leaving handled a moment late still counts. A single-player
+  world closed during a fight counts as a flight when you come back. A dedicated server that shuts down or crashes
+  is still no one's flight.
+
 ## 3.49.1: The Pale Hauler, Remade
 
 ### Changed

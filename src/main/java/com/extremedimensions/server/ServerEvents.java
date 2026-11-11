@@ -634,6 +634,8 @@ public final class ServerEvents {
 			}
 			d.offerDelay = 40;
 		}
+		// Held in danger when last seen, and their leaving never seen to (a single-player world closed first): a flight
+		com.extremedimensions.penalty.FleeService.joined(d, p.level().getServer().isDedicatedServer());
 		d.joinDone = false;
 		d.ticksOnline = 0;
 		d.hasRopeEnd = false;

@@ -637,6 +637,11 @@ public final class Config {
 	public static int FLEE_CURSES = 1;
 	/** Seconds after a blow from one of the wound's creatures that a player still counts as in danger. */
 	public static int FLEE_DANGER_SECONDS = 10;
+	/**
+	 * Blocks from a living Elder (or the Starved One) within which its fight holds a player, whoever it came for, so that
+	 * leaving is a flight. 0 = only the one an Elder is after.
+	 */
+	public static int FLEE_ELDER_RANGE = 64;
 	/** Whether what hunted a player who left (a swarm, a hunting Lurker) comes again when they are back (1 on, 0 off). */
 	public static int FLEE_RETURNS = 1;
 
@@ -2206,7 +2211,7 @@ public final class Config {
 				{"fragment_max_per_stack", 1, 64}, {"keeper_reach_damage", 0, 40},
 				{"cloth_share", 0.01, 1}, {"cloth_cooldown_minutes", 0, 10080}, {"cloth_extreme", 0, 1}, {"cloth_scars", 0, 1},
 				{"death_wound_minutes", 0, 1440}, {"death_wound_health", 0, 18}, {"death_wound_drain", 1, 5}, {"death_wound_bind_minutes", 0, 1440},
-				{"flee_curses", 0, 5}, {"flee_danger_seconds", 0, 120}, {"flee_returns", 0, 1},
+				{"flee_curses", 0, 5}, {"flee_danger_seconds", 0, 120}, {"flee_elder_range", 0, 256}, {"flee_returns", 0, 1},
 				{"companion_sound_volume", 0, 1}, {"companion_ambient_seconds", 10, 1200}, {"companion_warn_seconds", 0, 600},
 				{"lurker_blocked_seconds", 1, 30}, {"lurker_bolt_damage", 0, 40}, {"lurker_bolt_seconds", 1, 60}, {"lurker_young", 0, 6},
 				{"lurker_young_seconds", 5, 120},

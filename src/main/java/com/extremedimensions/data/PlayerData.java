@@ -243,6 +243,11 @@ public class PlayerData {
 	public boolean collapseOwed = false;
 	/** Left while the wound was after them (what was: swarm, hunt, keeper, raid, elder, blow); the curse comes on joining. */
 	public String fled = null;
+	/**
+	 * What holds the player in danger right now (as {@link #fled}), noted every half second while they play: what a
+	 * leaving seen to late, or never, is a flight from (see FleeService).
+	 */
+	public String held = null;
 	/** When (Overworld game time) the player was bound into their clan: no leaving it for clan_lock_minutes after. */
 	public long clanSince = 0;
 	/** Cards Foresight adds to the next offer, kept when the Tether it was on is lost in the same death or Collapse. */
