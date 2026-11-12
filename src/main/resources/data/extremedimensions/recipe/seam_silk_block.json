@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "SS",
+    "SS"
+  ],
+  "key": {
+    "S": "extremedimensions:seam_silk"
+  },
+  "result": {
+    "id": "extremedimensions:seam_silk_block",
+    "count": 1
+  }
+}

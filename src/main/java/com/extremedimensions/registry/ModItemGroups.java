@@ -74,6 +74,11 @@ public final class ModItemGroups {
 					out.accept(ModItems.THREAD_OF_THE_HEART);
 					ModItems.RELICS.values().forEach(out::accept);
 					ModItems.HUSH.forEach(out::accept);
+					out.accept(ModItems.SEAM_SILK_BLOCK);
+					out.accept(ModItems.SEAM_SILK_CARPET);
+					out.accept(ModItems.NEBULA_GLASS);
+					out.accept(ModItems.NEBULA_GLASS_PANE);
+					out.accept(ModItems.VEIL_LAMP);
 					out.accept(Items.LODESTONE);
 				})
 				.build());

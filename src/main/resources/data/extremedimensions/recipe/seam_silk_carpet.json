@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "##"
+  ],
+  "key": {
+    "#": "extremedimensions:seam_silk_block"
+  },
+  "result": {
+    "id": "extremedimensions:seam_silk_carpet",
+    "count": 3
+  }
+}

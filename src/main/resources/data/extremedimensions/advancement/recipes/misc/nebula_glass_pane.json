@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_nebula_glass": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "extremedimensions:nebula_glass"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_nebula_glass"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "extremedimensions:nebula_glass_pane"
+    ]
+  }
+}
