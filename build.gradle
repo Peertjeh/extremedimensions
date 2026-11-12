@@ -167,10 +167,25 @@ if (project.hasProperty("compat")) {
 		vmArg "-Dfabric.addMods=${compatMods}"
 	}
 	// (after everything is compiled against them, before the game starts)
+	def compatShaders = layout.buildDirectory.dir("compat-shaders").get().asFile
 	tasks.matching { it.name == "runClientGameTest" }.configureEach {
 		doFirst {
 			delete fileTree(sourceSets.client.java.destinationDirectory) { include "com/terraformersmc/**" }
 			delete fileTree(sourceSets.main.java.destinationDirectory) { include "eu/pb4/**" }
+			// The shader pack the job fetched (3.51.1), in the game folder once it has been cleared, selected for Iris
+			// but left off (the test turns it on at the end)
+			def pack = compatShaders.exists() ? compatShaders.listFiles()?.find { it.isFile() } : null
+			if (pack != null) {
+				def gameDir = layout.buildDirectory.dir("run/clientGameTest").get().asFile
+				copy {
+					from pack
+					into new File(gameDir, "shaderpacks")
+				}
+				def config = new File(gameDir, "config")
+				config.mkdirs()
+				new File(config, "iris.properties").text = "shaderPack=${pack.name}\nenableShaders=false\n"
+				println "Shader pack for the test: ${pack.name}"
+			}
 		}
 	}
 }

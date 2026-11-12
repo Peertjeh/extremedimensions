@@ -209,16 +209,21 @@ jobs:
           if [ $code -eq 3 ]; then echo "None of them has a build for this game version yet: nothing to test with"; exit 0; fi
           exit $code
       # A shader pack (3.51.1: Solas, else Complementary Reimagined) for the test's last look, at the Seam and the mod's
-      # lanterns under one: selected for Iris but left off, the test turns it on at the end. None to be had leaves that out.
+      # lanterns under one; laid in the test's game folder, selected for Iris but left off, once that folder is cleared
+      # (build.gradle), and the test turns it on at the end. None to be had leaves that out.
       - name: fetch a shader pack
         if: steps.fetch.outputs.code == '0'
         run: |
-          python3 tools/compat/fetch.py --shader build/run/clientGameTest/shaderpacks || echo "No shader pack to be had: the test leaves that look out"
-          f=$(ls build/run/clientGameTest/shaderpacks 2>/dev/null | head -1)
-          if [ -n "$f" ]; then
-            mkdir -p build/run/clientGameTest/config
-            printf 'shaderPack=%s\nenableShaders=false\n' "$f" > build/run/clientGameTest/config/iris.properties
-            cat build/run/clientGameTest/config/iris.properties
+          python3 tools/compat/fetch.py --shader build/compat-shaders || echo "No shader pack to be had, so the test leaves that look out"
+          # (on a commit marked [probe]: what the pack's own list gives the vanilla lights the mod's lanterns are shown as)
+          if ${{ contains(github.event.head_commit.message, '[probe]') }}; then
+            for z in build/compat-shaders/*.zip; do
+              [ -f "$z" ] || continue
+              for e in $(unzip -Z1 "$z" | grep -E 'block\.properties$|dimension\.properties$|shaders\.properties$'); do
+                echo "SHADERPROPS|== $e"
+                unzip -p "$z" "$e" | grep -n -i -E 'crying|soul_lantern|amethyst|(^|[ :=])light([ :]|$)|lantern|voxel|end_flash|endFlash|world1|the_end' | head -60 | sed "s/^/SHADERPROPS|/"
+              done
+            done || true
           fi
       # On a commit marked [probe]: Iris's classes for how it maps blocks to a shader pack's ids (to look up, not to build on)
       - name: iris probe

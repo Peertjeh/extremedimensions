@@ -248,8 +248,11 @@ public class ClientCompat implements FabricClientGameTest {
 		Integer crying = ctx.computeOnClient(mc -> shaderId(net.minecraft.world.level.block.Blocks.CRYING_OBSIDIAN.defaultBlockState()));
 		Integer veil = ctx.computeOnClient(mc -> shaderId(com.extremedimensions.registry.ModBlocks.VEIL_LANTERN.defaultBlockState()));
 		Integer soul = ctx.computeOnClient(mc -> shaderId(net.minecraft.world.level.block.Blocks.SOUL_LANTERN.defaultBlockState()));
+		Integer light = ctx.computeOnClient(mc -> shaderId(net.minecraft.world.level.block.Blocks.LIGHT.defaultBlockState()
+				.setValue(net.minecraft.world.level.block.LightBlock.LEVEL, com.extremedimensions.config.Config.KINDLED_LANTERN_LIGHT)));
+		Integer amethyst = ctx.computeOnClient(mc -> shaderId(net.minecraft.world.level.block.Blocks.AMETHYST_CLUSTER.defaultBlockState()));
 		System.out.println("[compat] shader ids: kindled_seam_lantern=" + kindled + " crying_obsidian=" + crying + " veil_lantern=" + veil
-				+ " soul_lantern=" + soul);
+				+ " soul_lantern=" + soul + " light=" + light + " amethyst_cluster=" + amethyst);
 		if (crying != null && com.extremedimensions.client.options.ClientOptions.shaderLook() == com.extremedimensions.client.options.ClientOptions.ShaderLook.CRYING_OBSIDIAN) {
 			check(crying.equals(kindled), "the Kindled Seam Lantern is not in the shader pack's list as crying obsidian: " + kindled + " / " + crying);
 		}
