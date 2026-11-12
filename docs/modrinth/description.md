@@ -59,10 +59,12 @@ hunt.
 
 - **Tetherite**: a tier past netherite, with tools, a spear and armour that return from the void
 - **20 enchantments** that reach into the mod's own workings, and two new armour trims
-- **10 Relics** with a gift and a price, **Pacts** for willing risk, and weekly **Rift Trials** with medals
+- **26 Relics** with a gift and a price, **Pacts** for willing risk, and weekly **Rift Trials** with medals
 - **Co-op**: revive fallen friends, carry their curses, share anchors
 - **55 advancements**, a bestiary, a ledger and a guided first expedition
 - A **music disc** and its own title and loading screens with music
+- **Drawn as vanilla draws**: every item and block follows a vanilla texture pixel for pixel, in its own colours
+- The **Kindled Seam Lantern**: a blue-violet lantern whose light reaches twice as far
 
 ## ⚙ Difficulty and settings
 
