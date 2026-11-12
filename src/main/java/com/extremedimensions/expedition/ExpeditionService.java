@@ -121,6 +121,8 @@ public final class ExpeditionService {
 		com.extremedimensions.pact.PactService.begin(p, d);
 		d.runTime = 0;
 		d.runMax = total;
+		// What this expedition comes to is counted from here, for its record (see ExpeditionRecord)
+		d.runTally = ExpeditionRecord.begin(d, dim, Dims.OVERWORLD, total, d.tetherTier);
 		d.lastWarn = Integer.MAX_VALUE;
 		d.lastBeat = Integer.MAX_VALUE;
 		boolean nether = Dims.NETHER.equals(dim);
@@ -143,6 +145,8 @@ public final class ExpeditionService {
 
 	/** Safe return: the chain disappears entirely and the Tether comes back. */
 	private static void complete(ServerPlayer p, PlayerData d) {
+		// Its record (read before the expedition is over: the Held's Chain's hold, the pact), told once the levels are taken
+		ExpeditionRecord record = ExpeditionRecord.end(p, d, false, ExpeditionRecord.Outcome.RETURNED);
 		TetherService.clear(p, d, true);
 		if (d.heldTicks > 0) {
 			// Home while the Held's Chain still held them: made it
@@ -156,6 +160,10 @@ public final class ExpeditionService {
 		d.linked.clear();
 		// Only an expedition that was one counts and earns: stepping through and straight back is not
 		boolean real = d.runActive >= Math.max(0, Config.ATONE_RETURN_MIN_SECONDS);
+		if (!real && record != null) {
+			// (its line still comes, marked, so a spreadsheet can leave it out)
+			record.notes.add("a step through and back: not counted");
+		}
 		if (real) {
 			d.expeditions++;
 			// Unmapped: every safe return counts towards its deed
@@ -169,7 +177,11 @@ public final class ExpeditionService {
 			fee += Math.max(0, Config.RELIC_TITHE_BELL_LEVELS);
 		}
 		if (fee > 0 && p.experienceLevel > 0) {
-			p.giveExperienceLevels(-Math.min(fee, p.experienceLevel));
+			int taken = Math.min(fee, p.experienceLevel);
+			p.giveExperienceLevels(-taken);
+			if (record != null) {
+				record.levels = taken;
+			}
 		}
 		// The Toll panel of a severed world: every crossing home gives something back (a real one: a step through and
 		// straight back is no crossing)
@@ -195,6 +207,7 @@ public final class ExpeditionService {
 			Advancements.grant(p, Advancements.VETERAN);
 		}
 		DataStore.markDirty();
+		ExpeditionRecord.settle(p, d, record);
 	}
 
 	/**
@@ -202,6 +215,8 @@ public final class ExpeditionService {
 	 * pulls them home, whole. The Tether is spent.
 	 */
 	private static void unravel(ServerPlayer p, PlayerData d) {
+		// (what it cost is the Tether, and nothing more)
+		ExpeditionRecord.ended(p, d, false, ExpeditionRecord.Outcome.UNRAVELLED);
 		TetherService.clear(p, d, false);
 		d.heldTicks = 0;
 		d.tetherTier = 0;
@@ -294,13 +309,16 @@ public final class ExpeditionService {
 			// (the Toll panel of a mended world eases it too)
 			double world = WorldService.drainFactor(dim), relic = com.extremedimensions.relic.RelicService.drainFactor(d, dim);
 			double toll = Math.min(1, com.extremedimensions.tapestry.Tapestry.drain(dim));
+			double distance = seam ? 1.0 : TetherService.distanceFactor(p, d);
 			d.currentDrain = (world <= 0 ? 0 : d.drainMultiplier(Math.min(1, world) * Math.min(1, relic) * toll * com.extremedimensions.tetherite.Tetherite.drainEase(p)) * Math.max(1, world) * Math.max(1, relic))
-					* (seam ? 1.0 : TetherService.distanceFactor(p, d)) * com.extremedimensions.elder.FerrymanService.drainFactor(p)
+					* distance * com.extremedimensions.elder.FerrymanService.drainFactor(p)
 					* com.extremedimensions.binding.Homebound.drainFactor(p) * com.extremedimensions.events.WorldEvents.drainFactor(p)
 					* com.extremedimensions.reach.PaleReach.drainFactor(p) * com.extremedimensions.penalty.Wound.drainFactor(d);
 			double left = AnchorService.drainLinked(p, d, d.currentDrain / 20.0);
 			d.runTime += 1.0 / 20.0;
 			double far = seam ? 0 : TetherService.arrivalDistance(p, d);
+			// For its record: how far out, how much of the drain the distance made, and the drain itself
+			ExpeditionRecord.tick(d.runTally, far, distance, d.currentDrain);
 			if (far > d.furthest) {
 				d.furthest = far;
 				if (far >= Advancements.LONG_TETHER_BLOCKS) {
@@ -419,7 +437,10 @@ public final class ExpeditionService {
 		d.collapseOwed = true;
 		d.collapseRetry = -Config.COLLAPSE_PULL_TICKS;
 		d.collapses++;
+		// Its record takes the curses owed now as its own, and is told once the player is home and has chosen them
+		ExpeditionRecord record = ExpeditionRecord.end(p, d, false, ExpeditionRecord.Outcome.COLLAPSED);
 		oweCollapse(d, thrift);
+		ExpeditionRecord.settle(p, d, record);
 		Journal.unlock(p, d, JournalEntry.STARVED);
 		Advancements.grant(p, Advancements.COLLAPSE);
 		WorldFx.fx(p, Fx.COLLAPSE, 0);
@@ -502,6 +523,10 @@ public final class ExpeditionService {
 		if (d.collapsing && Dims.isBeyond(dim)) {
 			com.extremedimensions.events.Echoes.record(p, dim, toll);
 		}
+		if (d.collapsing && Dims.SEAM.equals(dim)) {
+			// The expedition collapsed while on a visit to the Seam: the visit ends with it (what it cost is the expedition's)
+			ExpeditionRecord.ended(p, d, true, ExpeditionRecord.Outcome.COLLAPSED);
+		}
 		// Death always costs the chain (and the Tether item)
 		if (d.tetherAnchor != null) {
 			// Foresight still shows its card for this death, though the Tether is gone
@@ -518,15 +543,27 @@ public final class ExpeditionService {
 			// A death in the Seam costs what its Collapse would: a curse of the set of the world the visit began from,
 			// and (on an expedition) the charge carried, as a death beyond would
 			if (d.inRun) {
+				// The expedition the visit was made from ends here too, and the charge it carried is its cost
+				ExpeditionRecord run = ExpeditionRecord.end(p, d, false, ExpeditionRecord.Outcome.DIED_IN_SEAM);
+				if (run != null) {
+					run.chargeLost = AnchorService.linkedCharge(p, d);
+				}
+				ExpeditionRecord.settle(p, d, run);
 				com.extremedimensions.pact.PactService.broken(p, d);
 				for (Anchor a : AnchorService.linked(d)) {
 					a.clear(p.getStringUUID());
 				}
 			}
+			// The visit's record takes the death's curses, and the atonement it undid
+			ExpeditionRecord visit = ExpeditionRecord.end(p, d, true, ExpeditionRecord.Outcome.DIED);
+			if (visit != null) {
+				visit.atonement = toll;
+			}
 			d.inRun = false;
 			d.linked.clear();
 			d.endedIn = dim;
 			oweDeathBeyond(d, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties(), boss);
+			ExpeditionRecord.settle(p, d, visit);
 			DataStore.markDirty();
 			return;
 		}
@@ -534,6 +571,12 @@ public final class ExpeditionService {
 			com.extremedimensions.pact.PactService.broken(p, d);
 		}
 		if (Dims.isBeyond(dim) && !d.collapsing) {
+			// Its record takes the charge carried, the atonement undone and the death's curses
+			ExpeditionRecord record = d.inRun ? ExpeditionRecord.end(p, d, false, ExpeditionRecord.Outcome.DIED) : null;
+			if (record != null) {
+				record.chargeLost = AnchorService.linkedCharge(p, d);
+				record.atonement = toll;
+			}
 			// Only this player's time goes to zero; everyone else carries on
 			if (d.inRun) {
 				for (Anchor a : AnchorService.linked(d)) {
@@ -544,6 +587,7 @@ public final class ExpeditionService {
 			d.linked.clear();
 			d.endedIn = dim;
 			oweDeathBeyond(d, false, boss);
+			ExpeditionRecord.settle(p, d, record);
 			Journal.unlock(p, d, JournalEntry.ENDED);
 			Advancements.grant(p, Advancements.ENDED);
 			DataStore.markDirty();
@@ -563,6 +607,9 @@ public final class ExpeditionService {
 	public static void onRespawn(ServerPlayer p, PlayerData d) {
 		if (d.diedAway) {
 			// Died outside the wound's reach: an expedition left waiting there ends quietly, without reward or curse
+			if (d.inRun) {
+				ExpeditionRecord.ended(p, d, false, ExpeditionRecord.Outcome.DIED_ELSEWHERE);
+			}
 			d.diedAway = false;
 			d.collapsing = false;
 			d.collapseRetry = 0;
@@ -607,6 +654,8 @@ public final class ExpeditionService {
 			WorldFx.sound(p, "minecraft:block.beacon.deactivate", 1.0f, 0.8f);
 		}
 		d.endedIn = null;
+		// Home: a Collapse's record takes the atonement its death undid, and is told once what it cost is chosen
+		ExpeditionRecord.home(p, d);
 		if (d.atonementLost > 0) {
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.atonement_lost",
 					Penalty.display(Math.round(Math.max(0, Math.min(1, Config.ATONE_DEATH_LOSS)) * 100)), d.atonementLost));

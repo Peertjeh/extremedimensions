@@ -151,10 +151,11 @@ public final class TabPlaceholders {
 		return m;
 	}
 
-	// The words below are the stats export's and the Discord messages' too (see StatsExport, DiscordWebhook)
+	// The words below are the stats export's and the Discord messages' too (see StatsExport, DiscordWebhook), and the
+	// difficulty the playtest log's (see ExpeditionRecord)
 
 	/** The world's difficulty: Easy, Normal, Hard, Extreme, or Custom when its rules match none of them. */
-	static String difficulty() {
+	public static String difficulty() {
 		Preset preset = Preset.matching(Preset.current());
 		return preset == null ? "Custom" : switch (preset) {
 			case EASY -> "Easy";

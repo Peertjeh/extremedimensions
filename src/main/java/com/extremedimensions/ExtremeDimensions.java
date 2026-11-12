@@ -135,6 +135,8 @@ public class ExtremeDimensions implements ModInitializer {
 
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BossMusicPayload.TYPE, ModPackets.BossMusicPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.DangerPayload.TYPE, ModPackets.DangerPayload.CODEC);
+		// What a Collapse came to, for the card shown once the player is home
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.RecapPayload.TYPE, ModPackets.RecapPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.SquallPayload.TYPE, ModPackets.SquallPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.MotionPayload.TYPE, ModPackets.MotionPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BindingPayload.TYPE, ModPackets.BindingPayload.CODEC);

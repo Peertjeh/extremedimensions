@@ -118,4 +118,8 @@ final class Alone {
 	static final String RELIC_RESET = "extremedimensions_test:alone/relic_reset";
 	// (the Pale Mason lifts a block more for every player near him, and the players of the tests round his would count)
 	static final String MASON_LIFT = "extremedimensions_test:alone/mason_lift";
+	// (3.52: the playtest log is one file and one switch for the whole server, and every expedition ending would write to
+	// it; the recap is read from what was last sent, whoever it went to)
+	static final String PLAYTEST_LOG = "extremedimensions_test:alone/playtest_log";
+	static final String COLLAPSE_RECAP = "extremedimensions_test:alone/collapse_recap";
 }

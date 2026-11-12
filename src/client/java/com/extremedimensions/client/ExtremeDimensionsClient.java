@@ -142,10 +142,12 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.coop.ClientFallen::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.fx.BossCinema::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.state.ClientDanger::reset));
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.hud.CollapseRecap::reset));
 		HudElementRegistry.addLast(ExtremeDimensions.id("charge_hud"), new ChargeHud());
 		HudElementRegistry.addLast(ExtremeDimensions.id("stomach_hud"), new StomachHud());
 		HudElementRegistry.addLast(ExtremeDimensions.id("boss_cinema"), new com.extremedimensions.client.fx.BossCinema());
 		HudElementRegistry.addLast(ExtremeDimensions.id("seam_briefing"), new com.extremedimensions.client.hud.SeamBriefing());
+		HudElementRegistry.addLast(ExtremeDimensions.id("collapse_recap"), new com.extremedimensions.client.hud.CollapseRecap());
 		Tooltips.register();
 		MoteParticle.register();
 		com.extremedimensions.client.fx.AttackFx.register();
@@ -259,6 +261,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				}));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.DangerPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.state.ClientDanger.set(payload.why(), payload.seconds(), payload.curses())));
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.RecapPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> com.extremedimensions.client.hud.CollapseRecap.show(payload)));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BossMusicPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> {
 					if (payload.stop()) {
