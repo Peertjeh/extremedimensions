@@ -1,4 +1,4 @@
-"""Every item of the mod drawn after a vanilla item texture, as the Tetherite gear is (tools/items/tetherite.py).
+"""Every item and block of the mod drawn after a vanilla texture, as the Tetherite gear is (tools/items/tetherite.py).
 
 Each map keeps its vanilla texture's silhouette, outline and shading pixel for pixel; only the colours change. Each
 vanilla colour is given a role (which material it draws: a rope, a clasp, a label, a frame) and turned into the tone of
@@ -13,6 +13,10 @@ Four keep the drawings they had, as no vanilla item has their shape and drawn af
 as themselves (a lock as a jar, a crown as a helmet, a hand as a paw, a plumb line as a chain): the Pale Lock
 (tools/items/home_or_lock.py), the Hollow Crown and the Hungering Hand (relics_3.py) and the Plumb Line
 (first_weaver.py); their textures are left as those drew them.
+
+The blocks (DRAWN_BLOCKS, below the items) are drawn the same way after vanilla block textures: the hush stone family,
+the lodestones, the Tetherite ore, the Spindle's parts, the Weaver's Loom, the curse knots and the two lanterns. A map
+taller than it is wide is a strip of animation frames, and gets vanilla's lantern animation (.png.mcmeta) beside it.
 
 usage: python3 tools/items/after_vanilla.py [preview.png]
 """
@@ -601,7 +605,7 @@ item("kindled_seam_lantern", {
     # the silk bands
     'a': (96, 64, 140), 'b': (130, 96, 180),
     # the blue-violet flame
-    'c': (58, 56, 150), 'd': (92, 90, 214), 'e': (146, 138, 244), 'f': (204, 194, 255), 'g': (240, 236, 255),
+    'c': (70, 60, 190), 'd': (112, 98, 238), 'e': (164, 152, 255), 'f': (218, 210, 255), 'g': (250, 248, 255),
 }, [
     "................",
     "........0.......",
@@ -1715,7 +1719,7 @@ DRAWN_BLOCKS["kindled_seam_lantern"] = ({
     # the silk bands
     'a': (96, 64, 140), 'b': (130, 96, 180),
     # the flame, dark to light
-    'c': (58, 56, 150), 'd': (92, 90, 214), 'e': (146, 138, 244), 'f': (204, 194, 255), 'g': (240, 236, 255),
+    'c': (70, 60, 190), 'd': (112, 98, 238), 'e': (164, 152, 255), 'f': (218, 210, 255), 'g': (250, 248, 255),
 }, [
     ".1331...........",
     ".baab......311..",
@@ -1766,17 +1770,844 @@ DRAWN_BLOCKS["kindled_seam_lantern"] = ({
     "112211..........",
     "................",
 ])
+
+# ------------------------------------------------------------------------------------ the Veil Lantern
+
+# Veil Lantern (the block): vanilla's soul lantern block texture (its three frames of flame and its chain), as the item
+# follows the soul lantern; the iron darker and cooler, the flame the veil's cyan, and in each frame the Veil Wing two
+# violet pixels at the heart of the light. Animated as vanilla's is; its models are vanilla's lantern templates, as the
+# Kindled Seam Lantern's.
+DRAWN_BLOCKS["veil_lantern"] = ({
+    # the iron, dark to light
+    '0': (26, 24, 33), '1': (49, 47, 58), '2': (54, 52, 64), '3': (60, 58, 70),
+    # the light, dark to light
+    'a': (61, 100, 114), 'b': (78, 152, 163), 'c': (82, 163, 173), 'd': (120, 214, 220), 'e': (130, 217, 223),
+    'f': (139, 220, 226), 'g': (194, 238, 244), 'h': (202, 241, 246), 'i': (207, 242, 248),
+    # the wing
+    'X': (196, 168, 244),
+}, [
+    ".1331...........",
+    ".3113......311..",
+    "133331.....1.0..",
+    "1acca1.....1.0..",
+    "3bddb3.....010..",
+    "3dXgd3..........",
+    "3dgXd3.....1.0..",
+    "1bddb1.....010..",
+    "133331..........",
+    "112211..........",
+    "123321.....311..",
+    "233332.....1.0..",
+    "233332..........",
+    "123321..........",
+    "112211..........",
+    "................",
+    ".1331...........",
+    ".3113......311..",
+    "133331.....1.0..",
+    "1acca1.....1.0..",
+    "3cffc3.....010..",
+    "3fXif3..........",
+    "3fiXf3.....1.0..",
+    "1cffc1.....010..",
+    "133331..........",
+    "112211..........",
+    "123321.....311..",
+    "233332.....1.0..",
+    "233332..........",
+    "123321..........",
+    "112211..........",
+    "................",
+    ".1331...........",
+    ".3113......311..",
+    "133331.....1.0..",
+    "1acca1.....1.0..",
+    "3ceec3.....010..",
+    "3eXhe3..........",
+    "3ehXe3.....1.0..",
+    "1ceec1.....010..",
+    "133331..........",
+    "112211..........",
+    "123321.....311..",
+    "233332.....1.0..",
+    "233332..........",
+    "123321..........",
+    "112211..........",
+    "................",
+])
+
+# ------------------------------------------------------------------------------- the hush stone family
+
+# The hush stone family after vanilla's stone, deepslate and stone bricks, kind for kind, in the hush stone's
+# violet-greys and the pale stone's lilac-greys (tools/hush/build.py drew them before). The ladder of lightness the
+# Seam's builders pick from by height stays as it was, from the cobbles (darkest) through the stone, the bricks, the
+# polished stone and the tiles to the pale bricks and the polished pale stone (palest).
+
+# Hush Stone: vanilla's stone, the plain natural stone of its family as this is of the hush family; its four greys four
+# of the hush stone's violet-greys.
+DRAWN_BLOCKS["hush_stone"] = ({
+    # the stone, dark to light
+    '0': (23, 20, 31), '1': (35, 31, 46), '2': (45, 41, 60), '3': (61, 56, 79),
+}, [
+    "3333211210112222",
+    "2212122222200121",
+    "2100111011122222",
+    "2233232233222111",
+    "1221112123333122",
+    "2322222221101013",
+    "1223331331112222",
+    "1100101122111222",
+    "3332322333222221",
+    "2232223332233332",
+    "0212110012122111",
+    "2222233222223323",
+    "2111232112200101",
+    "3321122111221113",
+    "2112222222223333",
+    "2222221123322122",
+])
+
+# Polished Hush Stone: vanilla's polished deepslate, a dark stone ground smooth with a bevelled rim; its seven greys the
+# hush ramp, a step lighter than the stone.
+DRAWN_BLOCKS["polished_hush_stone"] = ({
+    # the stone, dark to light
+    '0': (35, 31, 47), '1': (39, 35, 52), '2': (44, 40, 59), '3': (49, 44, 65), '4': (54, 50, 71), '5': (60, 55, 78),
+    '6': (71, 65, 91),
+}, [
+    "6666656665665651",
+    "6555432455554441",
+    "6554331445555541",
+    "6344433322121120",
+    "6455445555545531",
+    "6211333455311310",
+    "5332344334444431",
+    "5543455555355531",
+    "6433444554255441",
+    "6211233321123310",
+    "6345555532455440",
+    "6335555433455441",
+    "6123212122333111",
+    "5555543345555541",
+    "6455541144555550",
+    "5110110001001000",
+])
+
+# Cobbled Hush Stone: vanilla's cobbled deepslate, its dark cobbles nearest the old drawing's; the darkest of the
+# family, the foot of the Seam's buildings.
+DRAWN_BLOCKS["cobbled_hush_stone"] = ({
+    # the stone, dark to light
+    '0': (19, 16, 26), '1': (25, 22, 34), '2': (32, 28, 42), '3': (41, 37, 55), '4': (51, 46, 66), '5': (61, 56, 79),
+}, [
+    "2204121455232433",
+    "2103210542121432",
+    "0001100421010311",
+    "1254332320100101",
+    "5543220110003552",
+    "4342210235425531",
+    "4321100452314221",
+    "2100101432203220",
+    "5541232321201110",
+    "4331223312100033",
+    "4220121221354223",
+    "3210000111522022",
+    "3121104551322021",
+    "1012315342200110",
+    "1025514323201322",
+    "3015300211033554",
+])
+
+# Hush Bricks: vanilla's stone bricks, whose courses vanilla's cracked, mossy and chiseled bricks share, so the hush
+# ones share them too.
+DRAWN_BLOCKS["hush_bricks"] = ({
+    # the stone, dark to light
+    '0': (25, 22, 33), '1': (31, 28, 42), '2': (37, 33, 49), '3': (44, 40, 58), '4': (49, 45, 65), '5': (56, 51, 74),
+    '6': (67, 61, 87),
+}, [
+    "5666666666665550",
+    "6454555554444450",
+    "6545444444553440",
+    "6434554345434330",
+    "6323345443343240",
+    "5324433334532430",
+    "2222222222222220",
+    "1100110001111111",
+    "6666665056666666",
+    "3555544065455554",
+    "5445443064353544",
+    "4554432063434445",
+    "4444343053345433",
+    "3323223054433443",
+    "2222222022222222",
+    "1111110000111111",
+])
+
+# Cracked Hush Bricks: vanilla's cracked stone bricks, a step darker than the bricks.
+DRAWN_BLOCKS["cracked_hush_bricks"] = ({
+    # the stone, dark to light
+    '0': (21, 18, 28), '1': (27, 24, 36), '2': (33, 29, 44), '3': (40, 36, 53), '4': (45, 41, 60), '5': (52, 48, 69),
+    '6': (63, 58, 82),
+}, [
+    "1466366646665550",
+    "2444145535454540",
+    "6411344542441440",
+    "3156044444111330",
+    "6434513434314320",
+    "5333334254351030",
+    "3222232223232010",
+    "1100110001111111",
+    "6661531045056666",
+    "4452442053134545",
+    "5545143031355414",
+    "4444010164544144",
+    "4442655064445134",
+    "3325443053435033",
+    "2232334032232002",
+    "1111110000111111",
+])
+
+# Mossy Hush Bricks: vanilla's mossy stone bricks; the stone the bricks' violet-greys, the moss the old drawing's cool
+# sage.
+DRAWN_BLOCKS["mossy_hush_bricks"] = ({
+    # the stone, dark to light
+    '0': (25, 22, 33), '1': (31, 28, 42), '2': (37, 33, 49), '3': (44, 40, 58), '4': (49, 45, 65), '5': (56, 51, 74),
+    '6': (67, 61, 87),
+    # the moss, dark to light
+    'a': (35, 44, 33), 'b': (53, 67, 45), 'c': (67, 83, 54), 'd': (88, 107, 67), 'e': (101, 121, 76),
+}, [
+    "56cddeedc6ee5dea",
+    "645bedec54444ccb",
+    "654bdcdc44d5b4c0",
+    "6434b5d3454343b0",
+    "63c334c44cd43240",
+    "53bc4333cdcbb43a",
+    "32bb232bccbb334b",
+    "110a11000aaaa111",
+    "eed6665056666dee",
+    "c55554406545555d",
+    "54454430643535c4",
+    "45544c20634344b5",
+    "44443c305de45433",
+    "3323cc305e433443",
+    "22bbc3403bb32332",
+    "1aaaa1000aaa11aa",
+])
+
+# Chiseled Hush Bricks: vanilla's chiseled stone bricks, a carved panel as the old one was; deep in its middle one pixel
+# of the Seam's light, where the old one opened a rift.
+DRAWN_BLOCKS["chiseled_hush_bricks"] = ({
+    # the stone, dark to light
+    '0': (23, 20, 31), '1': (29, 26, 39), '2': (35, 32, 47), '3': (43, 39, 57), '4': (48, 44, 64), '5': (56, 51, 73),
+    '6': (67, 61, 87),
+    # the Seam's light
+    'X': (232, 186, 255),
+}, [
+    "6666655666566562",
+    "6444244442244440",
+    "5411000011112320",
+    "5206665566561530",
+    "6406544344421540",
+    "6406432233431540",
+    "5205430005421630",
+    "5406320X06430620",
+    "5205430005320630",
+    "6215435655420630",
+    "6416445454320530",
+    "6416323232221540",
+    "6421110000011530",
+    "5566556666555430",
+    "5334323443323220",
+    "2000000000000000",
+])
+
+# Silked Hush Bricks: vanilla's stone bricks with silk in the mortar: its two mortar tones the silk's violet (dim down
+# the joints, bright along the courses), the bricks as the hush bricks, and where a course meets a joint the silk at its
+# brightest.
+DRAWN_BLOCKS["silked_hush_bricks"] = ({
+    # the stone, dark to light
+    '0': (31, 27, 41), '1': (39, 35, 53), '2': (46, 41, 61), '3': (54, 49, 71), '4': (67, 61, 87),
+    # the silk
+    'a': (64, 32, 104), 'b': (133, 78, 198),
+    # where the silk crosses
+    'X': (232, 186, 255),
+}, [
+    "344444444444333a",
+    "423233333222223a",
+    "432322222233122a",
+    "421233212321211a",
+    "410112322112102a",
+    "310221111231021a",
+    "000000000000000a",
+    "bbaabbaaabbbbbbX",
+    "4444443a34444444",
+    "1333322a43233332",
+    "3223221a42131322",
+    "2332210a41212223",
+    "2222121a31123211",
+    "1101001a32211221",
+    "0000000a00000000",
+    "bbbbbbaXaabbbbbb",
+])
+
+# Pale Hush Bricks: vanilla's deepslate bricks (stone bricks' courses with a rougher face), in the pale stone's
+# lilac-greys.
+DRAWN_BLOCKS["pale_hush_bricks"] = ({
+    # the pale stone, dark to light
+    '0': (71, 66, 86), '1': (80, 75, 96), '2': (91, 86, 108), '3': (101, 95, 119), '4': (112, 106, 131),
+    '5': (125, 119, 144), '6': (147, 141, 166),
+}, [
+    "5666666666665530",
+    "6555555545555320",
+    "6555544555554330",
+    "6345433554453430",
+    "6253234344334230",
+    "5422323343233210",
+    "2222222222122120",
+    "1100110001110001",
+    "6655665056666666",
+    "5545532065555455",
+    "5445543065553555",
+    "5444552065454355",
+    "4233452054355455",
+    "2223332053254343",
+    "2222222022222222",
+    "1111110000111111",
+])
+
+# Polished Pale Hush Stone: vanilla's polished tuff, a smooth stone with a bevelled rim, in the pale stone's
+# lilac-greys: the palest of the family, the crowns of the buildings.
+DRAWN_BLOCKS["polished_pale_hush_stone"] = ({
+    # the pale stone, dark to light
+    '0': (97, 92, 115), '1': (102, 96, 120), '2': (109, 103, 128), '3': (115, 109, 134), '4': (123, 117, 142),
+    '5': (127, 121, 146), '6': (132, 126, 151), '7': (141, 135, 160),
+}, [
+    "6777776765566554",
+    "7665455433345542",
+    "7544334554333422",
+    "7655433334444322",
+    "7333223444443331",
+    "7443344555544441",
+    "7433335554333421",
+    "7544444332234422",
+    "7665343344333322",
+    "6533444445554432",
+    "7434555433455442",
+    "6455543344443341",
+    "5444332234332441",
+    "5445555443324430",
+    "4433234422333320",
+    "4222110112210000",
+])
+
+# Hush Tiles: vanilla's deepslate tiles, in the middle of the hush ramp, lighter than the bricks as the old tiles were.
+DRAWN_BLOCKS["hush_tiles"] = ({
+    # the stone, dark to light
+    '0': (53, 48, 69), '1': (62, 57, 81), '2': (72, 66, 93), '3': (82, 76, 104), '4': (93, 87, 117),
+    '5': (105, 98, 130),
+}, [
+    "1100110011000110",
+    "3320554555543431",
+    "2210544433333221",
+    "2110544343333321",
+    "1110433322222220",
+    "0000111001101000",
+    "5545444302212221",
+    "4434332212111121",
+    "4343332212221110",
+    "0110111101110000",
+    "1221045545554332",
+    "0211043333333221",
+    "0111033332222211",
+    "0000111011001100",
+    "2333333122210332",
+    "3332222122110322",
+])
+
+# Hush Pillar (side and top): vanilla's quartz pillar, its flutes up the side and nested squares on the end (the old
+# drawing's flutes and rings); quartz's creams the hush ramp's middle tones.
+DRAWN_BLOCKS["hush_pillar"] = ({
+    # the stone, dark to light
+    '0': (45, 41, 59), '1': (53, 48, 69), '2': (63, 57, 81), '3': (69, 63, 89),
+}, [
+    "0202031312130212",
+    "0203021303130312",
+    "0213131312031302",
+    "0313130213031313",
+    "1313031203021213",
+    "1302031203120313",
+    "1302131313020303",
+    "1203130313031303",
+    "1213030313130312",
+    "0213131302131212",
+    "1313121302021203",
+    "1302121312030203",
+    "1302120313031303",
+    "1302021303031313",
+    "0312031303121312",
+    "0212131302121202",
+])
+
+# Hush Pillar, the ends: the quartz pillar's top, its nested squares the old drawing's rings.
+DRAWN_BLOCKS["hush_pillar_top"] = ({
+    # the stone, dark to light
+    '0': (39, 35, 52), '1': (46, 41, 61), '2': (54, 49, 71), '3': (64, 59, 83), '4': (71, 65, 91),
+}, [
+    "1021223242413020",
+    "2221222112211220",
+    "0222343443432222",
+    "3123443344443211",
+    "1134122222214312",
+    "4244234444324422",
+    "2243242222424423",
+    "4233242441424412",
+    "2244242432423414",
+    "3244242211423322",
+    "2244233344324424",
+    "2134122222214311",
+    "1123444444443213",
+    "2222344444432220",
+    "0221122212211222",
+    "1203142423220200",
+])
+
+# Seam Vein: vanilla's nether quartz ore, its quartz running in veins through the rock as the silk does here; the
+# netherrack the hush stone's greys, the quartz the Seam's glowing silk, dark rim to white core.
+DRAWN_BLOCKS["seam_vein"] = ({
+    # the stone, dark to light
+    '0': (21, 18, 28), '1': (24, 21, 33), '2': (27, 24, 37), '3': (33, 29, 44), '4': (40, 36, 53), '5': (49, 44, 65),
+    '6': (63, 58, 82),
+    # the silk, dark to light
+    'a': (88, 47, 139), 'b': (142, 85, 210), 'c': (193, 130, 248), 'd': (232, 185, 255), 'e': (254, 230, 255),
+}, [
+    "1312425544044543",
+    "3443202455104421",
+    "5454305bdc214245",
+    "65455eddb5531424",
+    "5655edb564552543",
+    "155bca56bdba4454",
+    "1455a5aedca145b5",
+    "53102bcba5542ec6",
+    "4245ceb14455deb5",
+    "2456ed524545eca2",
+    "354dca025b55a502",
+    "425ba210be515232",
+    "1454254cdc154c41",
+    "3545565bc23bc651",
+    "24556423b0454544",
+    "2245524530245544",
+])
+
+# ----------------------------------------------------------------------- the Ember and Void Lodestones
+
+# Ember Lodestone (side and top): vanilla's lodestone, being one. The stone the old one's warm mauve-grey; the iron
+# inlay of the side and the groove and core of the top ember, dark red to orange; two pixels at the heart of the side
+# white-hot.
+DRAWN_BLOCKS["ember_lodestone_side"] = ({
+    # the stone, dark to light
+    '0': (58, 46, 52), '1': (73, 58, 64), '2': (86, 70, 76), '3': (105, 88, 92), '4': (130, 111, 115),
+    '5': (144, 124, 127),
+    # the ember
+    'a': (137, 44, 24), 'b': (241, 127, 29),
+    # white-hot
+    'X': (255, 214, 90),
+}, [
+    "5455434333343445",
+    "542aabbb0b00b244",
+    "4220121211020224",
+    "4bb021aaaa210ba4",
+    "4b1113a12a2321a3",
+    "2b323a2212a223b3",
+    "203aa13aa21aa3b3",
+    "2b1a12aXXa32a2b2",
+    "202b23babb33b1b3",
+    "202bb14bb42bb302",
+    "20244b3443b443b2",
+    "200324b330412303",
+    "202233b000330003",
+    "2550334444320443",
+    "3330020000020432",
+    "2334443433344433",
+])
+
+# The map of vanilla's lodestone top, shared by ember_lodestone_top and void_lodestone_top (only their palettes differ).
+LODESTONE_TOP = [
+    "1011100111100111",
+    "1bbbaababbaaabb1",
+    "1b111101110111b0",
+    "1b100c0c0c0c01a0",
+    "0a10cbc0cbc000b1",
+    "1b0ccbbbbcbcc1a0",
+    "1a1cbcbbbbbbc0b1",
+    "1a1ccbbbbbbb00b1",
+    "0b1cbbbbbbbcc1a1",
+    "0b00cbbbbcbb01a1",
+    "1a0cccbcbbccc1a0",
+    "0b10c0cbbc0c00b1",
+    "1a100cccc0c001a1",
+    "1b111100110111b1",
+    "1bbaaaabaababbb1",
+    "1110000001101111",
+]
+
+# Ember Lodestone, the top: its frame the stone, its groove and core the ember.
+DRAWN_BLOCKS["ember_lodestone_top"] = ({
+    # the stone
+    '0': (90, 75, 81), '1': (123, 104, 108),
+    # the ember, dark to light
+    'a': (86, 22, 14), 'b': (154, 55, 26), 'c': (193, 84, 25),
+}, LODESTONE_TOP)
+
+# Void Lodestone (side and top): the lodestone again, its stone a deep violet-black, the inlay and the top's core the
+# void's violet, the pale rims and the top's frame end stone's yellow-white, as the old one had them; two pixels of the
+# void's lilac at the heart of the side.
+DRAWN_BLOCKS["void_lodestone_side"] = ({
+    # the stone, dark to light
+    '0': (22, 16, 33), '1': (33, 24, 46), '2': (43, 31, 59), '3': (56, 42, 77),
+    # the void
+    'a': (118, 60, 169), 'b': (188, 114, 237),
+    # the end stone
+    'k': (209, 213, 153), 'l': (229, 233, 174),
+    # the void's light
+    'X': (236, 180, 255),
+}, [
+    "lkllk3k3333k3kkl",
+    "lk2aabbb0b00b2kk",
+    "k22012121102022k",
+    "kbb021aaaa210bak",
+    "kb1113a12a2321a3",
+    "2b323a2212a223b3",
+    "203aa13aa21aa3b3",
+    "2b1a12aXXa32a2b2",
+    "202b23babb33b1b3",
+    "202bb1kbbk2bb302",
+    "202kkb3kk3bkk3b2",
+    "20032kb330k12303",
+    "202233b000330003",
+    "2ll033kkkk320kk3",
+    "3330020000020k32",
+    "233kkk3k333kkk33",
+])
+
+# Void Lodestone, the top: its frame end stone, its groove and core the void.
+DRAWN_BLOCKS["void_lodestone_top"] = ({
+    # the end stone
+    '0': (209, 213, 153), '1': (229, 233, 174),
+    # the void, dark to light
+    'a': (33, 14, 52), 'b': (71, 37, 104), 'c': (99, 51, 145),
+}, LODESTONE_TOP)
+
+# ----------------------------------------------------------------------- Tetherite ore and the Spindle
+
+# Tetherite Ore: vanilla's ancient debris (its side), as the ore is as hard and the metal is Tetherite's debris; its
+# seven browns Tetherite's seven tones, as the scrap's are, and two glints of the Tether's thread.
+DRAWN_BLOCKS["tetherite_ore"] = ({
+    # the metal, dark to light
+    '0': (22, 19, 27), '1': (35, 31, 43), '2': (49, 44, 60), '3': (64, 58, 78), '4': (82, 75, 98), '5': (106, 99, 124),
+    '6': (140, 133, 158),
+    # the Tether's thread
+    'X': (96, 200, 190),
+    # the thread in shadow
+    'Y': (42, 140, 142),
+}, [
+    "3442122024434134",
+    "4434565123443243",
+    "3336544543333233",
+    "2344333331346654",
+    "2333223101554333",
+    "13025X6610333323",
+    "21054Y4565223232",
+    "2104444444022222",
+    "2114343443666655",
+    "501333443544X444",
+    "104563332344Y443",
+    "1024566422443444",
+    "1113334512344433",
+    "6652333302334356",
+    "4565233202233344",
+    "4443223025666244",
+])
+
+# Spindle, the plinth: vanilla's polished blackstone, a fine-grained dark polished stone, in the dark end of the hush
+# ramp as the old polished hush stone was. Like the other parts, the whole square is the material, so every face the
+# Spindle's model cuts from it shows it.
+DRAWN_BLOCKS["spindle_base"] = ({
+    # the stone, dark to light
+    '0': (19, 16, 26), '1': (23, 20, 31), '2': (32, 28, 43), '3': (41, 36, 54), '4': (50, 45, 66), '5': (63, 58, 82),
+}, [
+    "5545554554555443",
+    "5434453433434330",
+    "4354433323454431",
+    "5534433443343421",
+    "5543232343432323",
+    "5355444323454433",
+    "4434433443343423",
+    "4535443254423221",
+    "5545342244323240",
+    "4434354432233341",
+    "5454442321442442",
+    "5343433432432132",
+    "5433334342321331",
+    "5344123343341441",
+    "4343232221133432",
+    "3222221222222212",
+])
+
+# Spindle, the rod: vanilla's block of iron, its bands a ribbed metal rod, in the old rod's pale lilac-white.
+DRAWN_BLOCKS["spindle_rod"] = ({
+    # the rod, dark to light
+    '0': (144, 134, 164), '1': (156, 146, 175), '2': (167, 158, 185), '3': (187, 179, 203), '4': (196, 188, 211),
+    '5': (204, 197, 218), '6': (209, 202, 222), '7': (218, 211, 229), '8': (223, 217, 234), '9': (226, 220, 236),
+    'a': (234, 229, 242),
+}, [
+    "3223333333322223",
+    "2aaaaa9998777772",
+    "2777777777777771",
+    "0555555566644440",
+    "2aaaaaa999777771",
+    "2777777777777771",
+    "0555556666444440",
+    "2aa9999977777771",
+    "2777777777777771",
+    "0555555556664440",
+    "2aaaaaa999977771",
+    "2777777777777771",
+    "0555555666644440",
+    "2aaaa99997777771",
+    "2777777777777771",
+    "2222222112111111",
+])
+
+# Spindle, the thread on the spool and the silk on the plinth: vanilla's white wool, spun fibre; its forty near-whites
+# (one step of lightness apart) banded into six tones by lightness.
+# The map of vanilla's white wool, shared by spindle_thread and spindle_silk (only their palettes differ).
+WHITE_WOOL = [
+    "1201341144013310",
+    "3455542210120022",
+    "5522553245445544",
+    "3245223512553255",
+    "4213440013104410",
+    "0015101210220112",
+    "5554332355425543",
+    "2255445511454455",
+    "4401541212103200",
+    "1225002314552455",
+    "5544554455234313",
+    "1133224411140024",
+    "2200550034345540",
+    "4455543202452255",
+    "5532534455113421",
+    "0153125522451155",
+]
+
+# Spindle, the thread on the spool: the wool in the Tether's teal.
+DRAWN_BLOCKS["spindle_thread"] = ({
+    # the thread, dark to light
+    '0': (19, 107, 118), '1': (25, 138, 147), '2': (37, 171, 176), '3': (56, 202, 198), '4': (79, 228, 216),
+    '5': (135, 241, 231),
+}, WHITE_WOOL)
+
+# Spindle, the silk on the plinth: the wool in the Seam's violet.
+DRAWN_BLOCKS["spindle_silk"] = ({
+    # the silk, dark to light
+    '0': (101, 56, 157), '1': (127, 74, 190), '2': (155, 94, 223), '3': (182, 120, 241), '4': (205, 145, 251),
+    '5': (225, 175, 254),
+}, WHITE_WOOL)
+
+# ----------------------------------------------------------------------------------- the Weaver's Loom
+
+# The Weaver's Loom after vanilla's loom, face for face (top, bottom, side, front). Its wood is the frame of hush
+# pillars the Weaver's Loom is built of (the hush ramp), its string warp the Seam's pale lilac silk, its red body and
+# the cloth on its beam the Weavers' woven violet.
+
+# Weaver's Loom, the top: the warp seen from above, lilac silk across a frame of hush stone, the six deeds' threads
+# across its beam.
+DRAWN_BLOCKS["weavers_loom_top"] = ({
+    # the frame, dark to light
+    '0': (23, 20, 31), '1': (37, 33, 50), '2': (48, 43, 63), '3': (56, 51, 74), '4': (72, 67, 93), '5': (79, 73, 101),
+    '6': (84, 77, 106), '7': (93, 87, 117),
+    # the silk, dark to light
+    'a': (105, 86, 160), 'b': (122, 103, 180), 'c': (152, 133, 207), 'd': (170, 151, 225), 'e': (204, 189, 245),
+    # the six threads of the tapestry's deeds, as the old loom wove them: roots, toll, unravelling, chain, knot, heart
+    'p': (118, 156, 58), 'q': (58, 182, 168), 'r': (186, 168, 240), 's': (162, 158, 166), 't': (110, 196, 168), 'u': (210, 58, 78),
+}, [
+    "73d3d3d3c3d3d3d7",
+    "50c0d0d0d0c0c0c5",
+    "51c1c1d1d1d1d1c5",
+    "51d1c1d1c1c1c1d5",
+    "51d1d1d1d1d1d1d5",
+    "50d0e0d0d0e1d0e5",
+    "52d2d2e2e2e2e2d5",
+    "54e4e4e4e4e4e4e5",
+    "51e1e1c1c1e1e1e5",
+    "51d1e1e1d1d1d1d5",
+    "51c1c1c1c1c1c1c5",
+    "50ppqqrrssttuua5",
+    "6776677677777776",
+    "51a1c1b1c1b1c1a5",
+    "5010101010101015",
+    "7757656667775767",
+])
+
+# Weaver's Loom, the bottom: the loom's planked underside in the dark end of the hush ramp.
+DRAWN_BLOCKS["weavers_loom_bottom"] = ({
+    # the frame, dark to light
+    '0': (19, 16, 26), '1': (33, 30, 45), '2': (44, 40, 58), '3': (53, 48, 69),
+}, [
+    "1111111111111111",
+    "1000000000000021",
+    "1011111111111121",
+    "1011111111111121",
+    "1000000000000011",
+    "1011111111111121",
+    "1011111111111121",
+    "1000000000000011",
+    "1011111111111121",
+    "1011111111111121",
+    "1000000000000011",
+    "1011111111111121",
+    "1011111111111121",
+    "1000000000000011",
+    "1333333333333331",
+    "1111111111111111",
+])
+
+# Weaver's Loom, the sides: the loom's red body the woven violet, in a frame of hush stone.
+DRAWN_BLOCKS["weavers_loom_side"] = ({
+    # the cloth, dark to light
+    '0': (37, 22, 54), '1': (56, 34, 82), '2': (71, 44, 104), '3': (79, 50, 115),
+    # the frame, dark to light
+    'a': (51, 46, 67), 'b': (71, 65, 92), 'c': (85, 79, 107), 'd': (93, 87, 117), 'e': (97, 90, 121),
+}, [
+    "eeeeeceeccccceee",
+    "c11111111111111e",
+    "c10222222222201c",
+    "c23222223322231c",
+    "c22222222111100c",
+    "c01121222222221c",
+    "c22222222222221c",
+    "cbbbbbbbbbbbbbac",
+    "cdeeececeeecdeec",
+    "c11111111111111c",
+    "c22233333222231c",
+    "c11111212222111c",
+    "c10222222222201c",
+    "c13333332233321c",
+    "ceeedceeeceeecdc",
+    "aaaaaaaaaaaaaaaa",
+])
+
+# Weaver's Loom, front and back: the warp of lilac silk, on the beam below it the cloth woven in the six deeds' threads
+# (as the old loom had it), the frame in hush stone.
+DRAWN_BLOCKS["weavers_loom_front"] = ({
+    # the frame, dark to light
+    '0': (23, 20, 31), '1': (38, 34, 51), '2': (49, 44, 65), '3': (58, 53, 76), '4': (75, 69, 97), '5': (83, 76, 105),
+    '6': (87, 81, 110), '7': (94, 87, 118), '8': (97, 90, 121),
+    # the cloth
+    'a': (56, 34, 82), 'b': (89, 59, 130),
+    # the silk, dark to light
+    'k': (105, 86, 160), 'l': (140, 121, 197), 'm': (177, 158, 231), 'n': (204, 189, 245),
+    # the six threads of the tapestry's deeds, as the old loom wove them: roots, toll, unravelling, chain, knot, heart
+    'p': (118, 156, 58), 'q': (58, 182, 168), 'r': (186, 168, 240), 's': (162, 158, 166), 't': (110, 196, 168), 'u': (210, 58, 78),
+}, [
+    "8n8n8n8n8m8m8n88",
+    "4m4m4m4m4m4n4m44",
+    "4n4m4m4m4m4m4m44",
+    "4m5m5m5m5m5m5m54",
+    "4l5l5l5l5l5l5l54",
+    "4l5l5l5l5l5l5l54",
+    "4l1l1l1l1l1l1l14",
+    "4k2k2k2k2k2k2k24",
+    "4887788887877784",
+    "47ppqqrrssttuu64",
+    "4556566666656554",
+    "4000000000000004",
+    "4011111111111104",
+    "4023333333333204",
+    "4588778878886754",
+    "3333333333333333",
+])
+
+# ------------------------------------------------------------------------------------- the curse knots
+
+# Curse Knots: vanilla's cobweb, thread spun and knotted on itself as a curse knot is; its three whites each set's rope
+# in shadow, rope and light (the colours the Curses screen gives the sets), the empty pixels between the old drawing's
+# near-black weave, so the block stays opaque, and a spark of the curse at the heart.
+# The map of vanilla's cobweb, shared by curse_knot_beyond, curse_knot_overworld, curse_knot_everywhere and
+# curse_knot_extreme (only their palettes differ).
+COBWEB = [
+    "0aaaaaaa2aaaaaa0",
+    "a2aaaa01210aaa2a",
+    "aa1020aa2aa2a2aa",
+    "aaa1aaa20aaa1aaa",
+    "aaa02a20a1a1a2aa",
+    "aa0aa1a2aa1aaa1a",
+    "aa1a0a21a2a1aa0a",
+    "0112122X1aaa2aa0",
+    "a0aa2aa122110120",
+    "aa0aa012a0aa2aa1",
+    "aa2aa1a2aa2a2a1a",
+    "aaa1a2a1a022aa0a",
+    "aaa01a010aaa10aa",
+    "aa2aa21aaa0121aa",
+    "a2aaaa0110aaaa2a",
+    "0aaaaa2aaaaaaaa0",
+]
+
+# Curse Knot, the Beyond set: ember red.
+DRAWN_BLOCKS["curse_knot_beyond"] = ({
+    # the weave behind
+    'a': (20, 12, 24),
+    # the curse thread, dark to light
+    '0': (110, 22, 30), '1': (226, 72, 64), '2': (255, 150, 120),
+    # a spark of the curse
+    'X': (255, 208, 194),
+}, COBWEB)
+
+# Curse Knot, the Overworld set: soul cyan.
+DRAWN_BLOCKS["curse_knot_overworld"] = ({
+    # the weave behind
+    'a': (20, 12, 24),
+    # the curse thread, dark to light
+    '0': (16, 84, 104), '1': (70, 214, 222), '2': (190, 255, 250),
+    # a spark of the curse
+    'X': (226, 255, 253),
+}, COBWEB)
+
+# Curse Knot, the Everywhere set: void magenta.
+DRAWN_BLOCKS["curse_knot_everywhere"] = ({
+    # the weave behind
+    'a': (20, 12, 24),
+    # the curse thread, dark to light
+    '0': (88, 20, 104), '1': (214, 74, 214), '2': (255, 176, 255),
+    # a spark of the curse
+    'X': (255, 219, 255),
+}, COBWEB)
+
+# Curse Knot, the Extreme set: blood red.
+DRAWN_BLOCKS["curse_knot_extreme"] = ({
+    # the weave behind
+    'a': (20, 12, 24),
+    # the curse thread, dark to light
+    '0': (64, 6, 12), '1': (164, 18, 22), '2': (236, 92, 72),
+    # a spark of the curse
+    'X': (246, 182, 173),
+}, COBWEB)
+
 BLOCK_ANIMATION = '{\n  "animation": {\n    "interpolate": true,\n    "frametime": 8\n  }\n}\n'
 
 
 def main():
+    for name, (pal, rows) in DRAWN_BLOCKS.items():
+        # 16 px wide, a 16 px square or a strip of animation frames
+        assert all(len(r) == 16 for r in rows) and len(rows) % 16 == 0, name
+        assert set("".join(rows)) - {"."} <= set(pal), name
     out = {name: draw(pal, rows) for name, (pal, rows) in DRAWN.items()}
     if len(sys.argv) > 1:
-        # every item at 8x on an inventory slot's grey, eight to a row
+        # every item, then every block (its first frame), at 8x on an inventory slot's grey, eight to a row
+        shown = list(out.values()) + [draw(pal, rows[:16]) for pal, rows in DRAWN_BLOCKS.values()]
         S, gap, cols = 8, 6, 8
-        rows = (len(out) + cols - 1) // cols
+        rows = (len(shown) + cols - 1) // cols
         sheet = Image.new("RGBA", (cols * (16 * S + gap) + gap, rows * (16 * S + gap) + gap), (139, 139, 139, 255))
-        for i, im in enumerate(out.values()):
+        for i, im in enumerate(shown):
             x, y = gap + (i % cols) * (16 * S + gap), gap + (i // cols) * (16 * S + gap)
             sheet.alpha_composite(im.resize((16 * S, 16 * S), Image.NEAREST), (x, y))
         sheet.save(sys.argv[1])

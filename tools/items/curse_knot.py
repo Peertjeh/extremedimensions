@@ -5,6 +5,9 @@ colours the Curses screen gives the sets. A knot is two pairs of rope crossing o
 over and under in turn so the pattern tiles, with a swollen knot at the heart and a few sparks of the curse in the rope.
 Lit from the top left; every strand is edged in the darkest tone.
 
+Retired as a texture writer: tools/items/after_vanilla.py draws the four knots now, after vanilla's cobweb. This script
+still writes the knots' block models and blockstate; given a path it previews these old drawings there.
+
 usage: python3 tools/items/curse_knot.py [preview.png]
 """
 import math
@@ -97,9 +100,7 @@ def main():
     names = list(SETS)
     tiles = []
     for name in names:
-        img = texture(name)
-        tiles.append(img)
-        img.save(os.path.join(ASSETS, "textures/block/curse_knot_%s.png" % name))
+        tiles.append(texture(name))
         write_json(os.path.join(ASSETS, "models/block/curse_knot_%s.json" % name),
                    '{\n  "parent": "minecraft:block/cube_all",\n  "textures": {\n    "all": "extremedimensions:block/curse_knot_%s"\n  }\n}\n' % name)
     variants = ",\n".join('    "set=%d": {\n      "model": "extremedimensions:block/curse_knot_%s"\n    }' % (i, n) for i, n in enumerate(names))

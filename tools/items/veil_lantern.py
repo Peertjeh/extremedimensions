@@ -1,8 +1,10 @@
-# Draws the Veil Lantern (2.36): the block texture (laid out for models/block/veil_lantern*.json). The item icon is
-# drawn after vanilla's soul lantern in tools/items/after_vanilla.py.
-# Usage: python3 tools/items/veil_lantern.py src/client/resources/assets/extremedimensions/textures [preview.png]
-# Every pixel the block's model uses is opaque, so it renders without a cutout layer.
-import os, sys
+# Draws the Veil Lantern (2.36): the block texture, laid out for the block's old hand-made models (an opaque square of
+# parts: body, grate, cap, chain).
+# Retired: tools/items/after_vanilla.py draws the block (and the item) now, after vanilla's soul lantern, and the
+# block's models are vanilla's lantern templates. This script no longer writes it; given a path it previews this old
+# drawing there.
+# Usage: python3 tools/items/veil_lantern.py [preview.png]
+import sys
 from PIL import Image
 
 K = (26, 24, 32)      # iron, darkest
@@ -47,7 +49,5 @@ def block():
     return im
 
 if __name__ == "__main__":
-    out = sys.argv[1]
-    block().save(os.path.join(out, "block", "veil_lantern.png"))
-    if len(sys.argv) > 2:
-        block().resize((192, 192), Image.NEAREST).save(sys.argv[2])
+    if len(sys.argv) > 1:
+        block().resize((192, 192), Image.NEAREST).save(sys.argv[1])

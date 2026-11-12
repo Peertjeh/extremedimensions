@@ -1,5 +1,22 @@
 # Changelog
 
+## 3.51.0: Built As Vanilla Builds
+
+### Changed
+- **Every block of the mod is drawn after a vanilla block**, as its items have been since 3.50.0, pixel for pixel in
+  its own colours:
+  - **The hush stone family** after vanilla's stone family, kind for kind: hush stone after stone, polished after
+    polished deepslate, cobbled after cobbled deepslate, the bricks (cracked, mossy, chiseled, silked) after stone
+    bricks', pale bricks after deepslate bricks, polished pale stone after polished tuff, tiles after deepslate tiles,
+    the pillar after the quartz pillar, the Seam Vein after nether quartz ore.
+  - **The Ember and Void Lodestones** after the lodestone, **Tetherite Ore** after ancient debris.
+  - **The Weaver's Loom** after the loom, its cloth woven in the six deeds' threads.
+  - **The Spindle**, the four **Curse Knots** (after the cobweb, each in its set's colour) and the **Veil Lantern**
+    (after the soul lantern, its flame now flickering as a lantern's does).
+- **The Kindled Seam Lantern shines brighter**: its flame is brighter, and it is drawn at full brightness, so it
+  glows at night even under a shader pack that does not know it. (Coloured light is the shader pack's to give: one
+  that knows the soul lantern can be taught this lantern too, in its `block.properties`.)
+
 ## 3.50.0: Drawn As Vanilla Draws
 
 ### Added

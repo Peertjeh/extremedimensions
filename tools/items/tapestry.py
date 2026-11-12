@@ -1,8 +1,7 @@
-# Draws the 3.0 textures: the Weaver's Loom (hush-pillar posts, a warp of seam silk, a band already woven) and the
-# tapestry screen's sheet (six woven panels and the bare warp of one not yet woven, 40x40 each, drawn 1:1), in the
-# colours of the deeds that earn the six threads of the Tapestry. The threads' item textures are drawn after vanilla's
-# brush in tools/items/after_vanilla.py.
-# Usage: python3 tools/items/tapestry.py   (from the repository root; reads the hush pillar's textures)
+# Draws the 3.0 tapestry screen's sheet (six woven panels and the bare warp of one not yet woven, 40x40 each, drawn
+# 1:1), in the colours of the deeds that earn the six threads of the Tapestry. The threads' item textures are drawn
+# after vanilla's brush, and the Weaver's Loom after vanilla's loom, in tools/items/after_vanilla.py.
+# Usage: python3 tools/items/tapestry.py [preview <out.png>]   (from the repository root)
 import math, os, random
 from PIL import Image, ImageDraw
 
@@ -17,53 +16,6 @@ PANELS = {
     "knot": {"k": (10, 30, 26), "d": (40, 102, 86), "m": (110, 196, 168), "l": (196, 246, 228)},        # the Knot Mother's deep
     "heart": {"k": (40, 8, 14), "d": (128, 22, 40), "m": (210, 58, 78), "l": (255, 178, 186)},          # the ending
 }
-
-
-def loom_textures(out):
-    side = Image.open(os.path.join(ROOT, "block", "hush_pillar.png")).convert("RGBA")
-    top = Image.open(os.path.join(ROOT, "block", "hush_pillar_top.png")).convert("RGBA")
-    silk = PANELS["unravelling"]
-    # front and back: two posts and a beam of hush pillar, a warp of silk between, a band woven in the middle
-    front = side.copy()
-    fp = front.load()
-    for y in range(3, 16):
-        for x in range(3, 13):
-            warp = x % 2 == 1
-            if 7 <= y <= 10:
-                # the woven band: the weft over and under the warp, in the six deeds' colours across
-                deed = list(PANELS.values())[(x - 3) * 6 // 10]
-                over = (x + y) % 2 == 0
-                fp[x, y] = (deed["m"] if over else deed["d"]) + (255,)
-            elif warp:
-                fp[x, y] = (silk["l"] if y % 4 else silk["m"]) + (255,)
-            else:
-                fp[x, y] = (24, 18, 32, 255)
-    for x in range(3, 13):
-        fp[x, 2] = (58, 48, 70, 255)
-        fp[x, 15] = (40, 32, 50, 255)
-    front.save(os.path.join(ROOT, "block", "weavers_loom_front.png"))
-    # sides: the pillar, a strip of silk running down where the warp is tied off
-    s2 = side.copy()
-    sp = s2.load()
-    for y in range(16):
-        sp[7, y] = (silk["m"] if y % 3 else silk["l"]) + (255,)
-        sp[8, y] = (silk["d"]) + (255,)
-    s2.save(os.path.join(ROOT, "block", "weavers_loom_side.png"))
-    # top: the pillar's top crossed by the cloth beam, a roll of woven cloth
-    t2 = top.copy()
-    tp = t2.load()
-    for x in range(16):
-        for y in range(6, 10):
-            deed = list(PANELS.values())[(x * 6) // 16]
-            tp[x, y] = (deed["l"] if y == 6 else deed["m"] if y < 9 else deed["d"]) + (255,)
-    t2.save(os.path.join(ROOT, "block", "weavers_loom_top.png"))
-    b2 = top.copy()
-    bp = b2.load()
-    for y in range(16):
-        for x in range(16):
-            r, g, b, a = bp[x, y]
-            bp[x, y] = (int(r * 0.7), int(g * 0.7), int(b * 0.7), a)
-    b2.save(os.path.join(ROOT, "block", "weavers_loom_bottom.png"))
 
 
 T = 40  # a panel of the tapestry screen, drawn 1:1 in the screen's own pixels
@@ -439,8 +391,6 @@ def sheet(out):
 
 def main():
     import sys
-    if "sheet" not in sys.argv[1:]:
-        loom_textures(ROOT)
     im = sheet(ROOT)
     if "preview" in sys.argv[1:]:
         im.resize((im.width * 8, im.height * 8), Image.NEAREST).save(sys.argv[sys.argv.index("preview") + 1])

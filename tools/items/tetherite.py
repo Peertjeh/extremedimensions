@@ -6,7 +6,8 @@ Tether's cyan thread shows in it only here and there, as a gem would (a thread d
 head meets the haft, a stud on a plate), never as a stripe. Shapes follow vanilla's own silhouettes (the pick's arc,
 the axe's blade, the spade, the hoe's bar, the sword's guard and pommel, the armour pieces), so the set sits beside
 diamond and netherite in an inventory as one of them. The ingot, the scrap, the Tether Cord and the three smithing
-templates are drawn after vanilla's in tools/items/after_vanilla.py.
+templates are drawn after vanilla's in tools/items/after_vanilla.py, and so are the Tetherite ore and the Spindle's
+parts (after vanilla's ancient debris, polished blackstone, block of iron and wool).
 
 Each item is drawn as its interior by hand (or from a little geometry along the diagonal), and the outline added round
 it: dark brown beside wood, the metal's darkest tone beside everything else.
@@ -20,7 +21,6 @@ from PIL import Image
 
 ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
 ASSETS = os.path.join(ROOT, "src/client/resources/assets/extremedimensions/textures")
-BLOCKS = os.path.join(ASSETS, "block")
 
 PAL = {
     # the metal: netherite's dark and muted range, turned a little cool and violet (no lavender in the lights)
@@ -361,58 +361,6 @@ def leggings():
 def boots():
     return drawn(BOOTS)
 
-# --------------------------------------------------------------------------- blocks
-
-def ore():
-    """Hush stone with the ore set in it as vanilla sets its ores: irregular clusters lit on the upper left and shaded on
-    the lower right, no outline round them; dark metal with the thread glinting in it."""
-    base = Image.open(os.path.join(BLOCKS, "hush_stone.png")).convert("RGBA").crop((0, 0, 16, 16))
-    px = base.load()
-    clusters = [
-        (2, 2, ["5c.", "3ba", ".31"]),
-        (10, 1, [".54", "5b3", "3a2", ".1."]),
-        (6, 6, ["54..", "4c3.", "3ba2", ".21."]),
-        (12, 8, ["5.", "c3", "a1"]),
-        (1, 10, [".5..", "53c.", "3b21", ".1.."]),
-        (8, 12, ["54b", "3a2", "21."]),
-    ]
-    for (x0, y0, shape) in clusters:
-        for dy, r in enumerate(shape):
-            for dx, c in enumerate(r):
-                if c != ".":
-                    px[x0 + dx, y0 + dy] = PAL[c] + (255,)
-    return base
-
-def stripes(cols, rows_of, seed=0):
-    """A 16 px square of horizontal bands (thread wound round a spool), each band a run of colours."""
-    im = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
-    px = im.load()
-    for y in range(16):
-        band = rows_of[y % len(rows_of)]
-        for x in range(16):
-            c = cols[band[(x + y * 3 + seed) % len(band)]]
-            px[x, y] = c + (255,)
-    return im
-
-
-def spindle_parts():
-    base = Image.open(os.path.join(BLOCKS, "polished_hush_stone.png")).convert("RGBA").crop((0, 0, 16, 16))
-    px = base.load()
-    for i in range(16):
-        for (x, y) in ((i, 0), (i, 15), (0, i), (15, i)):
-            r, g, b, _ = px[x, y]
-            px[x, y] = (int(r * 0.6), int(g * 0.6), int(b * 0.6), 255)
-    thread = {"g": (196, 255, 246), "c": (70, 226, 214), "t": (30, 160, 168), "e": (14, 84, 96)}
-    silk = {"a": (232, 186, 255), "b": (196, 132, 250), "c": (150, 90, 220), "d": (96, 52, 150)}
-    rod = {"a": (226, 220, 236), "b": (190, 182, 206), "c": (150, 140, 170)}
-    return {
-        "spindle_base": base,
-        "spindle_thread": stripes(thread, ["ccccccgcccccccct", "tttttttttttttttt", "ccccctccccccccce", "eeeeeeeeeeeeeeee"]),
-        "spindle_silk": stripes(silk, ["aabbbbbbaabbbbbb", "bbbbccbbbbbbccbb", "cccccccdcccccccd", "ddddcdddddddcddd"]),
-        "spindle_rod": stripes(rod, ["abbbbbbbbbbbbbbc"] * 2 + ["bbbbbbbbbbbbbbbc"]),
-    }
-
-
 
 ITEMS = {
     "tetherite_sword": sword, "tetherite_pickaxe": pickaxe, "tetherite_axe": axe, "tetherite_shovel": shovel,
@@ -428,8 +376,6 @@ def main():
         out[name] = made if isinstance(made, Image.Image) else img(made)
     preview = sys.argv[1] if len(sys.argv) > 1 else None
     if preview:
-        out["tetherite_ore"] = ore()
-        out.update(spindle_parts())
         S = 10
         sheet = Image.new("RGBA", (len(out) * (16 * S + 6), 16 * S), (139, 139, 139, 255))
         for i, im in enumerate(out.values()):
@@ -438,9 +384,6 @@ def main():
         return
     for name, im in out.items():
         im.save(os.path.join(ASSETS, "item", name + ".png"))
-    ore().save(os.path.join(BLOCKS, "tetherite_ore.png"))
-    for name, im in spindle_parts().items():
-        im.save(os.path.join(BLOCKS, name + ".png"))
 
 
 if __name__ == "__main__":
