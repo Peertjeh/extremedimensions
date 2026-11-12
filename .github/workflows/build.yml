@@ -223,6 +223,12 @@ jobs:
                 echo "SHADERPROPS|== $e"
                 unzip -p "$z" "$e" | grep -n -i -E 'crying|soul_lantern|amethyst|(^|[ :=])light([ :]|$)|lantern|voxel|end_flash|endFlash|world1|the_end' | head -60 | sed "s/^/SHADERPROPS|/"
               done
+              # and how it draws the End's sky (the Seam wears it, Iris running the End's programme there)
+              unzip -Z1 "$z" | grep -i -E 'world1/|skytextured|skybasic' | head -40 | sed "s/^/SHADERSKY|/"
+              for e in $(unzip -Z1 "$z" | grep -i -E 'world1/(gbuffers_skytextured|gbuffers_skybasic|deferred|composite)[0-9]*\.fsh$' | head -4); do
+                echo "SHADERSKY|== $e"
+                unzip -p "$z" "$e" | head -60 | sed "s/^/SHADERSKY|/"
+              done
             done || true
           fi
       # On a commit marked [probe]: Iris's classes for how it maps blocks to a shader pack's ids (to look up, not to build on)

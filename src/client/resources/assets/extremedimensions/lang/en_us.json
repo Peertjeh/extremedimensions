@@ -1105,7 +1105,7 @@
   "gui.extremedimensions.settings.menu.music": "Music only",
   "gui.extremedimensions.settings.menu.plain": "Off",
   "gui.extremedimensions.settings.shader_look": "Kindled lantern under shaders",
-  "gui.extremedimensions.settings.shader_look.desc": "With Iris and a shader pack: a shader pack gives glow and coloured light only to the blocks it knows, and knows none of this mod's. The Kindled Seam Lantern, and the unseen lights that carry its light out round it, are shown to it as this vanilla light, and shine with that light's colour (the Veil Lantern as a soul lantern). Crying obsidian is the most violet. Taken up when the shader pack is next loaded (reload it, or pick it again). Off leaves both unknown to it.",
+  "gui.extremedimensions.settings.shader_look.desc": "With Iris and a shader pack: a shader pack gives glow and coloured light only to the blocks it knows, and knows none of this mod's. The Kindled Seam Lantern, and the unseen lights that carry its light out round it, are shown to it as this vanilla light, and shine with that light's colour (the Veil Lantern as a soul lantern). Crying obsidian is the most violet. Taken up when the shader pack is next loaded (reload it, or pick it again). Its other glowing blocks (the anchors, the Seam Vein, silked bricks, Tetherite Ore, the Curse Knots) are shown as the vanilla lights nearest them in colour. Off leaves all of them unknown to it.",
   "gui.extremedimensions.settings.shader_look.crying_obsidian": "Crying obsidian",
   "gui.extremedimensions.settings.shader_look.amethyst_cluster": "Amethyst cluster",
   "gui.extremedimensions.settings.shader_look.soul_lantern": "Soul lantern",

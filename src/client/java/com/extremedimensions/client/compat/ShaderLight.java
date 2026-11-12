@@ -14,13 +14,18 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
 
 /**
- * The mod's lanterns in a shader pack's list of blocks (3.51.1, with Iris). A shader pack gives glow and coloured light
+ * The mod's glowing blocks in a shader pack's list of blocks (3.51.1, with Iris; every glowing block since 3.52.0). A shader pack gives glow and coloured light
  * to the blocks its list names, by the number it gives each; it names none of the mod's, so under it they shone as
  * plain blocks. Each of the mod's lanterns is given the number of a vanilla light the pack does name: the Kindled Seam
  * Lantern that of the block chosen in the settings (crying obsidian, the most violet of them, unless changed), and the
  * unseen lights it carries out round it the same (a pack that lights the world from its light blocks, as Solas does,
  * then lights its whole reach violet), the Veil Lantern a soul lantern's. With the setting off, the unseen lights are
- * given vanilla light blocks' numbers, as they were. Where the pack names one of them itself, its own number is kept.
+ * given vanilla light blocks' numbers, as they were. Since 3.52.0 the mod's other glowing blocks too, each as the
+ * vanilla light nearest it in colour and shape: the Ember Anchor as a magma block, the Void Anchor, the Seam Vein and
+ * silked hush bricks as crying obsidian, Tetherite Ore as the ancient debris it is drawn after, and the Curse Knots each
+ * in their set's colour (a torch, a soul torch, an amethyst cluster, a redstone torch). The Weaver's Loom and the
+ * Spindle, workplaces with a faint glow, are left as they are. With the setting off, none of them is shown to the pack.
+ * Where the pack names one of them itself, its own number is kept.
  */
 public final class ShaderLight {
 	private static boolean warned;
@@ -47,7 +52,10 @@ public final class ShaderLight {
 		}
 	}
 
-	/** Adds the lanterns to a list of blocks for a shader pack (one that cannot be added to is left to the caller). */
+	/** The vanilla light each set of Curse Knots is shown as, in the order of Unweaving.SETS (beyond, Overworld, everywhere, Extreme). */
+	private static final Block[] KNOT_LIGHTS = {Blocks.TORCH, Blocks.SOUL_TORCH, Blocks.AMETHYST_CLUSTER, Blocks.REDSTONE_TORCH};
+
+	/** Adds the mod's glowing blocks to a list of blocks for a shader pack (one that cannot be added to is left to the caller). */
 	public static void addLanterns(Object2IntMap<BlockState> ids) {
 		if (ids == null) {
 			return;
@@ -60,6 +68,20 @@ public final class ShaderLight {
 					copy(ids, source.value(), ModBlocks.KINDLED_LIGHT);
 				});
 				copy(ids, Blocks.SOUL_LANTERN, ModBlocks.VEIL_LANTERN);
+				// (3.52.0) the anchors, the glowing stone and the ore
+				copy(ids, Blocks.MAGMA_BLOCK, ModBlocks.EMBER_ANCHOR);
+				copy(ids, Blocks.CRYING_OBSIDIAN, ModBlocks.VOID_ANCHOR);
+				copy(ids, Blocks.CRYING_OBSIDIAN, ModBlocks.SEAM_VEIN);
+				copy(ids, Blocks.CRYING_OBSIDIAN, ModBlocks.SILKED_HUSH_BRICKS);
+				copy(ids, Blocks.ANCIENT_DEBRIS, ModBlocks.TETHERITE_ORE);
+				// the Curse Knots, each set in its own colour
+				for (BlockState state : ModBlocks.CURSE_KNOT.getStateDefinition().getPossibleStates()) {
+					int set = state.getValue(com.extremedimensions.tapestry.CurseKnotBlock.SET);
+					BlockState like = KNOT_LIGHTS[Math.floorMod(set, KNOT_LIGHTS.length)].defaultBlockState();
+					if (!ids.containsKey(state) && ids.containsKey(like)) {
+						ids.put(state, ids.getInt(like));
+					}
+				}
 			}
 			// (any unseen light not given the lantern's: as vanilla's light block of its level)
 			copy(ids, Blocks.LIGHT, ModBlocks.KINDLED_LIGHT);
@@ -68,7 +90,7 @@ public final class ShaderLight {
 		} catch (RuntimeException | LinkageError e) {
 			if (!warned) {
 				warned = true;
-				ExtremeDimensions.LOGGER.warn("Could not show the mod's lanterns to the shader pack", e);
+				ExtremeDimensions.LOGGER.warn("Could not show the mod's glowing blocks to the shader pack", e);
 			}
 		}
 	}

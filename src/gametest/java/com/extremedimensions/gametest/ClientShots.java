@@ -640,6 +640,13 @@ public class ClientShots implements FabricClientGameTest {
 	private static void shaderListCheck() {
 		var ids = new it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap<net.minecraft.world.level.block.state.BlockState>();
 		ids.put(net.minecraft.world.level.block.Blocks.CRYING_OBSIDIAN.defaultBlockState(), 5);
+		// (3.52.0) the lights the mod's other glowing blocks are shown as
+		ids.put(net.minecraft.world.level.block.Blocks.MAGMA_BLOCK.defaultBlockState(), 9);
+		ids.put(net.minecraft.world.level.block.Blocks.ANCIENT_DEBRIS.defaultBlockState(), 11);
+		ids.put(net.minecraft.world.level.block.Blocks.TORCH.defaultBlockState(), 12);
+		ids.put(net.minecraft.world.level.block.Blocks.SOUL_TORCH.defaultBlockState(), 13);
+		ids.put(net.minecraft.world.level.block.Blocks.AMETHYST_CLUSTER.defaultBlockState(), 14);
+		ids.put(net.minecraft.world.level.block.Blocks.REDSTONE_TORCH.defaultBlockState(), 15);
 		for (var st : net.minecraft.world.level.block.Blocks.SOUL_LANTERN.getStateDefinition().getPossibleStates()) {
 			ids.put(st, st.getValue(net.minecraft.world.level.block.LanternBlock.HANGING) ? 8 : 7);
 		}
@@ -653,6 +660,22 @@ public class ClientShots implements FabricClientGameTest {
 			}
 			for (var st : ModBlocks.KINDLED_LIGHT.getStateDefinition().getPossibleStates()) {
 				check(ids.containsKey(st) && ids.getInt(st) == 5, "the lantern's unseen light " + st + " is not in a shader pack's list as crying obsidian");
+			}
+			// (3.52.0) the anchors, the glowing stone, the ore and the knots
+			java.util.Map<net.minecraft.world.level.block.Block, Integer> want = new java.util.LinkedHashMap<>();
+			want.put(ModBlocks.EMBER_ANCHOR, 9);
+			want.put(ModBlocks.VOID_ANCHOR, 5);
+			want.put(ModBlocks.SEAM_VEIN, 5);
+			want.put(ModBlocks.SILKED_HUSH_BRICKS, 5);
+			want.put(ModBlocks.TETHERITE_ORE, 11);
+			want.forEach((b, n) -> {
+				var st = b.defaultBlockState();
+				check(ids.containsKey(st) && ids.getInt(st) == n, b + " is in a shader pack's list as " + ids.getOrDefault(st, -1) + ", not " + n);
+			});
+			int[] knots = {12, 13, 14, 15};
+			for (var st : ModBlocks.CURSE_KNOT.getStateDefinition().getPossibleStates()) {
+				int n = knots[st.getValue(com.extremedimensions.tapestry.CurseKnotBlock.SET)];
+				check(ids.containsKey(st) && ids.getInt(st) == n, "the Curse Knot " + st + " is in a shader pack's list as " + ids.getOrDefault(st, -1) + ", not " + n);
 			}
 		}
 		if (com.extremedimensions.client.options.ClientOptions.shaderLook() == com.extremedimensions.client.options.ClientOptions.ShaderLook.OFF) {

@@ -262,7 +262,9 @@ Configure button.
 A shader pack gives glow and coloured light only to the blocks it knows by name. With Iris, the mod shows its lanterns
 to the pack as vanilla lights: the **Kindled Seam Lantern** as crying obsidian (violet light; under Settings → Display
 it can be an amethyst cluster, a soul lantern, a lantern, or off), with the unseen lights that carry its light out round
-it the same, and the **Veil Lantern** as a soul lantern. Iris runs
+it the same, and the **Veil Lantern** as a soul lantern. The other glowing blocks follow: the Ember Anchor as a magma
+block, the Void Anchor, the Seam Vein and silked hush bricks as crying obsidian, Tetherite Ore as ancient debris, and
+the Curse Knots each in their set's colour (Off in that setting leaves all of them unknown to the pack). Iris runs
 a pack's End programme in the Seam, as the Seam shares the End's sky; the Seam has no End flashes, so none whites it out.
 CI turns the newest Solas on in the Seam on every push.
 

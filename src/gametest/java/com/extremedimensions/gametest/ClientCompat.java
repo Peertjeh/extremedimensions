@@ -273,7 +273,46 @@ public class ClientCompat implements FabricClientGameTest {
 		}
 		check(most == 0f, "an End flash showed in the Seam under the shader pack: " + most);
 		ctx.takeScreenshot("compat_08_seam_shader_later");
+
+		// (3.52.0) the mod's other glowing blocks, in a row five blocks ahead, each in the pack's list as its vanilla light
+		net.minecraft.world.level.block.state.BlockState[] row = {com.extremedimensions.registry.ModBlocks.EMBER_ANCHOR.defaultBlockState(),
+				com.extremedimensions.registry.ModBlocks.VOID_ANCHOR.defaultBlockState(), com.extremedimensions.registry.ModBlocks.SEAM_VEIN.defaultBlockState(),
+				com.extremedimensions.registry.ModBlocks.SILKED_HUSH_BRICKS.defaultBlockState(), com.extremedimensions.registry.ModBlocks.TETHERITE_ORE.defaultBlockState(),
+				knot(0), knot(1), knot(2), knot(3)};
+		net.minecraft.world.level.block.state.BlockState[] as = {net.minecraft.world.level.block.Blocks.MAGMA_BLOCK.defaultBlockState(),
+				net.minecraft.world.level.block.Blocks.CRYING_OBSIDIAN.defaultBlockState(), net.minecraft.world.level.block.Blocks.CRYING_OBSIDIAN.defaultBlockState(),
+				net.minecraft.world.level.block.Blocks.CRYING_OBSIDIAN.defaultBlockState(), net.minecraft.world.level.block.Blocks.ANCIENT_DEBRIS.defaultBlockState(),
+				net.minecraft.world.level.block.Blocks.TORCH.defaultBlockState(), net.minecraft.world.level.block.Blocks.SOUL_TORCH.defaultBlockState(),
+				net.minecraft.world.level.block.Blocks.AMETHYST_CLUSTER.defaultBlockState(), net.minecraft.world.level.block.Blocks.REDSTONE_TORCH.defaultBlockState()};
+		sp.getServer().runOnServer(s -> {
+			ServerPlayer p = player(s);
+			net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) p.level();
+			net.minecraft.core.Direction ahead = p.getDirection();
+			net.minecraft.core.BlockPos mid = p.blockPosition().relative(ahead, 5);
+			for (int i = 0; i < row.length; i++) {
+				net.minecraft.core.BlockPos at = mid.relative(ahead.getClockWise(), i - row.length / 2);
+				level.setBlock(at.below(), com.extremedimensions.registry.ModBlocks.POLISHED_PALE_HUSH_STONE.defaultBlockState(), 3);
+				level.setBlock(at, row[i], 3);
+			}
+		});
+		ctx.waitTicks(40);
+		ctx.takeScreenshot("compat_09_seam_shader_lights");
+		StringBuilder got = new StringBuilder();
+		for (int i = 0; i < row.length; i++) {
+			int k = i;
+			Integer mine = ctx.computeOnClient(mc -> shaderId(row[k]));
+			Integer theirs = ctx.computeOnClient(mc -> shaderId(as[k]));
+			got.append(' ').append(row[i].getBlock().getDescriptionId().replace("block.extremedimensions.", "")).append('=').append(mine).append('/').append(theirs);
+			if (theirs != null) {
+				check(theirs.equals(mine), row[i] + " is not in the shader pack's list as " + as[i] + ": " + mine + " / " + theirs);
+			}
+		}
+		System.out.println("[compat] shader ids of the glowing blocks (mine/vanilla):" + got);
 		ctx.runOnClient(mc -> shaders(false));
 		ctx.waitTicks(10);
+	}
+
+	private static net.minecraft.world.level.block.state.BlockState knot(int set) {
+		return com.extremedimensions.registry.ModBlocks.CURSE_KNOT.defaultBlockState().setValue(com.extremedimensions.tapestry.CurseKnotBlock.SET, set);
 	}
 }

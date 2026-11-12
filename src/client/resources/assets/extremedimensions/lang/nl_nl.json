@@ -1105,7 +1105,7 @@
   "gui.extremedimensions.settings.menu.music": "Alleen muziek",
   "gui.extremedimensions.settings.menu.plain": "Uit",
   "gui.extremedimensions.settings.shader_look": "Ontstoken lantaarn met shaders",
-  "gui.extremedimensions.settings.shader_look.desc": "Met Iris en een shaderpack: een shaderpack geeft alleen gloed en gekleurd licht aan de blokken die het kent, en kent er geen van deze mod. De Ontstoken Seamlantaarn, en de onzichtbare lichtjes die zijn licht eromheen uitdragen, worden eraan getoond als dit vanilla-licht en schijnen in de kleur daarvan (de Sluierlantaarn als een zielenlantaarn). Huilende obsidiaan is het meest violet. Gaat in zodra het shaderpack opnieuw geladen wordt (herlaad het, of kies het opnieuw). Uit laat ze allebei onbekend.",
+  "gui.extremedimensions.settings.shader_look.desc": "Met Iris en een shaderpack: een shaderpack geeft alleen gloed en gekleurd licht aan de blokken die het kent, en kent er geen van deze mod. De Ontstoken Seamlantaarn, en de onzichtbare lichtjes die zijn licht eromheen uitdragen, worden eraan getoond als dit vanilla-licht en schijnen in de kleur daarvan (de Sluierlantaarn als een zielenlantaarn). Huilende obsidiaan is het meest violet. Gaat in zodra het shaderpack opnieuw geladen wordt (herlaad het, of kies het opnieuw). Zijn andere gloeiende blokken (de ankers, de Seam Vein, zijdebakstenen, Tetherite-erts, de Curse Knots) worden getoond als de vanilla-lichten die er in kleur het dichtst bij liggen. Uit laat ze allemaal onbekend.",
   "gui.extremedimensions.settings.shader_look.crying_obsidian": "Huilende obsidiaan",
   "gui.extremedimensions.settings.shader_look.amethyst_cluster": "Amethistcluster",
   "gui.extremedimensions.settings.shader_look.soul_lantern": "Zielenlantaarn",

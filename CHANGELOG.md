@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.52.0: Every Light Shown
+
+### Added
+- **Every glowing block of the mod glows under a shader pack** (with Iris), as the Kindled Seam Lantern has since
+  3.51.1: each is shown to the pack as the vanilla light nearest it in colour and shape, and takes that light's glow
+  and colour.
+  - The **Ember Anchor** as a magma block (ember orange); the **Void Anchor**, the **Seam Vein** and **silked hush
+    bricks** as crying obsidian (violet); **Tetherite Ore** as the ancient debris it is drawn after.
+  - The **Curse Knots** each in their set's colour: beyond as a torch, Overworld as a soul torch, everywhere as an
+    amethyst cluster, Extreme as a redstone torch.
+  - The Weaver's Loom and the Spindle, workplaces with a faint glow, are left as they are.
+- Settings → Display → *Kindled lantern under shaders*: **Off** now leaves all of the mod's blocks unknown to the pack.
+- CI sets the glowing blocks in a row in the Seam under Solas, checks each is in the pack's list as its vanilla light,
+  and takes a picture.
+
 ## 3.51.1: Under A Shader Pack
 
 ### Fixed
