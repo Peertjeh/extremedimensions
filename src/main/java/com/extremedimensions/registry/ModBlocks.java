@@ -108,8 +108,9 @@ public final class ModBlocks {
 	 * they do, burns blue-violet, and its light reaches twice as far (see relic.KindledLanternBlock).
 	 */
 	public static final Block KINDLED_SEAM_LANTERN = Registry.register(BuiltInRegistries.BLOCK, key("kindled_seam_lantern"),
+			// (drawn at full brightness, as its flame glows: under a shader pack that does not know it, it still shines)
 			new com.extremedimensions.relic.KindledLanternBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.SOUL_LANTERN).lightLevel(state -> 15)
-					.randomTicks().setId(key("kindled_seam_lantern"))));
+					.emissiveRendering(state -> true).randomTicks().setId(key("kindled_seam_lantern"))));
 
 	/** A knot of curse thread the Unweaving ties round the Weaver's Loom (see tapestry.Unweaving): cut by blows, never mined. */
 	public static final Block CURSE_KNOT = Registry.register(BuiltInRegistries.BLOCK, key("curse_knot"),
