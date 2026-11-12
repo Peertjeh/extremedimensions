@@ -4,13 +4,17 @@ gradle.properties from Modrinth, into the client test's mods folder, for the com
 
 Usage: fetch.py <mods dir>
        fetch.py --shader <shaderpacks dir>
+       fetch.py --check <slug>[,<slug>...]
 
 Prints what it found, one line per mod; a mod with no build for this game version yet is left out (the job then tests
 with the others). Exits 0 when at least one was found, 3 when none was (the job reports that and skips its test).
 
 With --shader it fetches a shader pack instead (3.51.1): the newest Solas, else Complementary Reimagined, for the test's
 look at the Seam and the mod's lanterns under one. A shader pack is not built for one game version, so any will do.
-Exits 0 with one, 3 with none."""
+Exits 0 with one, 3 with none.
+
+With --check it only says, one line per mod, whether it has a Fabric build for this game version yet (for deciding
+what the mod can work with); it downloads nothing and always exits 0."""
 
 import json
 import os
@@ -73,7 +77,21 @@ def shader(out):
     sys.exit(3)
 
 
+def check(slugs):
+    version = game_version()
+    for slug in slugs:
+        try:
+            v = newest(slug, version)
+        except Exception as e:
+            print(f"CHECK|{slug}|error|{e}")
+            continue
+        print(f"CHECK|{slug}|{v['version_number'] if v else 'none'}|{'has a Fabric build for ' + version if v else 'no Fabric build for ' + version + ' yet'}")
+    sys.exit(0)
+
+
 def main():
+    if len(sys.argv) == 3 and sys.argv[1] == "--check":
+        check([x for x in sys.argv[2].split(",") if x])
     if len(sys.argv) == 3 and sys.argv[1] == "--shader":
         shader(sys.argv[2])
     if len(sys.argv) != 2:

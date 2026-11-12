@@ -231,6 +231,10 @@ jobs:
               done
             done || true
           fi
+      # On a commit marked [probe]: which of the mods players pair with this one have a build for this game version yet
+      - name: other mods' builds
+        if: always() && contains(github.event.head_commit.message, '[probe]')
+        run: python3 tools/compat/fetch.py --check jade,wthit,xaeros-minimap,xaeros-world-map,journeymap,emi,rei || true
       # On a commit marked [probe]: Iris's classes for how it maps blocks to a shader pack's ids (to look up, not to build on)
       - name: iris probe
         if: always() && contains(github.event.head_commit.message, '[probe]')
@@ -323,6 +327,34 @@ jobs:
   # A version not released yet goes out by itself: once the build, the client test and the compatibility run pass on a
   # push to the default branch or the development branch, the jar is published as release v<version> (the version in
   # gradle.properties), with that version's part of CHANGELOG.md as its notes. A version already released is left alone.
+  # The canary: the mod built against the newest Minecraft version Fabric knows (snapshots too), on every release, on a
+  # commit marked [canary] and on a run started by hand, so a new version's breakage is seen early. It reports on the
+  # run's summary page and never blocks anything (tools/canary/canary.py).
+  canary:
+    name: canary against the newest Minecraft
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') || contains(github.event.head_commit.message, '[canary]')
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: build against the newest version
+        run: python3 tools/canary/canary.py
+        timeout-minutes: 25
+      - name: keep the canary's log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Canary log
+          path: canary.log
+          if-no-files-found: ignore
+
   release:
     name: release a new version
     needs: [build, client, compat]

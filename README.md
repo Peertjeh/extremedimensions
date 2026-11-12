@@ -432,6 +432,11 @@ CI builds every push, runs the server tests, the client test with its screenshot
 is in the run's **Artifacts**. When `version` in `gradle.properties` is new and all of that passes on the default or the
 development branch, CI publishes it as GitHub release `v<version>`, with that version's part of the changelog as notes.
 
+On every release (and on a commit marked `[canary]`, or a run started by hand) the **canary** builds the mod against
+the newest Minecraft version Fabric knows, snapshots included, once Fabric API has a build for it: the run's summary
+page says whether the mod still compiles, or where it breaks, well before that version comes out
+(`tools/canary/canary.py`; it never blocks a release).
+
 The server tests run side by side in batches. A test that wakes an Elder (or otherwise reaches past its own walls)
 gets an environment of its own from `Alone` in the test sources, so it runs in a batch by itself.
 
