@@ -12,11 +12,12 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * The mod beside Sodium, Iris, Mod Menu, Text Placeholder API and JEI, as most players run it: the compatibility job in CI fetches their newest
- * builds for this game version (tools/compat/fetch.py) and runs the client test with them, this test alone
+ * The mod beside Sodium, Iris, Mod Menu, Text Placeholder API, JEI, Jade, WTHIT, JourneyMap and Xaero's Minimap, as most players run it: the
+ * compatibility job in CI fetches their newest builds for this game version (tools/compat/fetch.py) and runs the client test with them, this test alone
  * ({@code -Dextremedimensions.compat=true}; the others stand aside there). The game must start with them all, the
  * journal and the settings must open, Mod Menu must list the mod and its Configure button open the mod's settings, Text
- * Placeholder API must read the tablist placeholders back, JEI must take the mod's categories and pages, and the Seam (its sky, its fog, the expedition's bar) must
+ * Placeholder API must read the tablist placeholders back, JEI must take the mod's categories and pages, Jade and WTHIT
+ * the mod's tooltips, JourneyMap its plugin and an anchor's waypoint, and the Seam (its sky, its fog, the expedition's bar) must
  * draw under Sodium's renderer. Last (3.51.1), when the job could fetch a shader pack: the pack is turned on in the
  * Seam, the mod's lanterns must be in its list of blocks under a vanilla light's number, and the Seam must show no End
  * flash. Every step is a screenshot.
@@ -43,7 +44,7 @@ public class ClientCompat implements FabricClientGameTest {
 			return;
 		}
 		FabricLoader loader = FabricLoader.getInstance();
-		for (String id : new String[] {"sodium", "iris", "modmenu", "placeholder-api", "jei"}) {
+		for (String id : new String[] {"sodium", "iris", "modmenu", "placeholder-api", "jei", "jade", "wthit", "journeymap", "xaerominimap"}) {
 			System.out.println("[compat] " + id + ": " + loader.getModContainer(id).map(m -> m.getMetadata().getVersion().getFriendlyString()).orElse("not installed"));
 		}
 		try (TestSingleplayerContext sp = ctx.worldBuilder().create()) {
@@ -130,6 +131,45 @@ public class ClientCompat implements FabricClientGameTest {
 				ctx.takeScreenshot("compat_06_jei");
 				ctx.runOnClient(mc -> mc.gui.setScreen(null));
 				ctx.waitTicks(4);
+			}
+
+			// The tooltip mods: each must have taken the mod's tooltips (Jade through the jade entrypoint, WTHIT through
+			// waila_plugins.json)
+			if (loader.isModLoaded("jade")) {
+				System.out.println("[compat] Jade: the mod's tooltips " + (com.extremedimensions.client.compat.PluginStatus.jade ? "registered" : "not registered"));
+				check(com.extremedimensions.client.compat.PluginStatus.jade, "Jade never registered the mod's tooltips");
+			}
+			if (loader.isModLoaded("wthit")) {
+				System.out.println("[compat] WTHIT: the mod's tooltips " + (com.extremedimensions.client.compat.PluginStatus.wthit ? "registered" : "not registered"));
+				check(com.extremedimensions.client.compat.PluginStatus.wthit, "WTHIT never registered the mod's tooltips");
+			}
+			// JourneyMap: its plugin must have started, and an anchor of the player's must reach it as a waypoint
+			if (loader.isModLoaded("journeymap")) {
+				System.out.println("[compat] JourneyMap: the mod's plugin " + (com.extremedimensions.client.compat.PluginStatus.journeymap ? "started" : "not started"));
+				check(com.extremedimensions.client.compat.PluginStatus.journeymap, "JourneyMap never started the mod's plugin");
+				net.minecraft.core.BlockPos at = sp.getServer().computeOnServer(s -> {
+					ServerPlayer p = player(s);
+					net.minecraft.core.BlockPos pos = p.blockPosition().relative(p.getDirection(), 3);
+					p.level().setBlock(pos, com.extremedimensions.registry.ModBlocks.EMBER_ANCHOR.defaultBlockState(), 3);
+					com.extremedimensions.data.Anchor a = new com.extremedimensions.data.Anchor(pos.getX(), pos.getY(), pos.getZ(), com.extremedimensions.server.Dims.NETHER);
+					a.add(p.getStringUUID(), 300);
+					DataStore.anchors().put(a.key(), a);
+					com.extremedimensions.anchor.AnchorSync.send(p);
+					return pos;
+				});
+				for (int i = 0; i < 40 && com.extremedimensions.client.compat.PluginStatus.journeymapWaypoints < 1; i++) {
+					ctx.waitTicks(5);
+				}
+				System.out.println("[compat] JourneyMap: waypoints handed over for the one anchor made: " + com.extremedimensions.client.compat.PluginStatus.journeymapWaypoints);
+				check(com.extremedimensions.client.compat.PluginStatus.journeymapWaypoints >= 1, "the anchor made never reached JourneyMap as a waypoint");
+				sp.getServer().runOnServer(s -> {
+					player(s).level().removeBlock(at, false);
+					com.extremedimensions.anchor.AnchorService.onBroken(com.extremedimensions.server.Dims.OVERWORLD, at);
+				});
+			}
+			// Xaero's Minimap: nothing of the mod is handed to it yet (its third-party waypoints are still to be read)
+			if (loader.isModLoaded("xaerominimap")) {
+				System.out.println("[compat] Xaero's Minimap: installed; the mod gives it no waypoints yet");
 			}
 
 			// Into the Seam: its sky, its fog and the expedition's bar under Sodium's renderer

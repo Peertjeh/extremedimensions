@@ -245,6 +245,8 @@ public final class AnchorService {
 		WorldFx.particleAt("minecraft:enchant", ax, ay + 0.5, az, 0.6, 0.6, 0.6, 0.4, instant ? 50 : 25);
 		WorldFx.sound(p, nether ? "minecraft:block.respawn_anchor.charge" : "minecraft:block.end_portal_frame.fill", 0.8f, instant ? 1.0f : 1.2f);
 		Sync.state(p, d);
+		// (a new anchor of theirs, or an old one of someone else's they now keep charge in, goes on their map)
+		AnchorSync.send(p);
 		return InteractionResult.SUCCESS;
 	}
 
@@ -276,8 +278,8 @@ public final class AnchorService {
 	}
 
 	public static void onBroken(String dim, BlockPos pos) {
-		if (Dims.OVERWORLD.equals(dim)) {
-			DataStore.anchors().remove(Anchor.key(pos.getX(), pos.getY(), pos.getZ()));
+		if (Dims.OVERWORLD.equals(dim) && DataStore.anchors().remove(Anchor.key(pos.getX(), pos.getY(), pos.getZ())) != null) {
+			AnchorSync.changed(WorldFx.server());
 		}
 	}
 
@@ -308,6 +310,7 @@ public final class AnchorService {
 			return;
 		}
 		double r2 = Config.PARTICLE_RANGE * Config.PARTICLE_RANGE;
+		boolean gone = false;
 		Iterator<Anchor> it = DataStore.anchors().values().iterator();
 		while (it.hasNext()) {
 			Anchor a = it.next();
@@ -328,6 +331,7 @@ public final class AnchorService {
 			BlockState state = ow.getBlockState(pos);
 			if (!isAnchorBlock(state)) {
 				it.remove(); // blown up or otherwise gone
+				gone = true;
 				continue;
 			}
 			if (a.charge <= 0) {
@@ -339,6 +343,7 @@ public final class AnchorService {
 				WorldFx.particleAt("minecraft:ash", a.x + 0.5, a.y + 1.0, a.z + 0.5, 0.4, 0.4, 0.4, 0.0, 20);
 				WorldFx.soundAt("minecraft:block.respawn_anchor.deplete", a.x, a.y, a.z, 1.0f, 0.8f);
 				it.remove();
+				gone = true;
 				continue;
 			}
 			if (!a.checked && a.portalCheck == 0) {
@@ -358,6 +363,9 @@ public final class AnchorService {
 			}
 			particles(a);
 			hum(a, watchers);
+		}
+		if (gone) {
+			AnchorSync.changed(s);
 		}
 	}
 

@@ -921,4 +921,40 @@ public final class ModPackets {
 			return TYPE;
 		}
 	}
+
+	/**
+	 * Server -> client: the anchors that keep some of the player's own charge, for the map mods' waypoints (see
+	 * AnchorSync): where each stands and which kind it is, nothing of what it holds.
+	 */
+	public record AnchorsPayload(java.util.List<Spot> anchors) implements CustomPacketPayload {
+		public static final Type<AnchorsPayload> TYPE = new Type<>(ExtremeDimensions.id("anchors"));
+		public static final StreamCodec<FriendlyByteBuf, AnchorsPayload> CODEC = StreamCodec.ofMember(AnchorsPayload::write, AnchorsPayload::read);
+
+		/** One anchor: where it stands in the Overworld, and whether it is an Ember Anchor (else a Void Anchor). */
+		public record Spot(int x, int y, int z, boolean ember) {}
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeVarInt(anchors.size());
+			for (Spot s : anchors) {
+				buf.writeInt(s.x());
+				buf.writeInt(s.y());
+				buf.writeInt(s.z());
+				buf.writeBoolean(s.ember());
+			}
+		}
+
+		private static AnchorsPayload read(FriendlyByteBuf buf) {
+			int n = buf.readVarInt();
+			java.util.List<Spot> anchors = new java.util.ArrayList<>(Math.min(n, 1024));
+			for (int i = 0; i < n; i++) {
+				anchors.add(new Spot(buf.readInt(), buf.readInt(), buf.readInt(), buf.readBoolean()));
+			}
+			return new AnchorsPayload(anchors);
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
 }

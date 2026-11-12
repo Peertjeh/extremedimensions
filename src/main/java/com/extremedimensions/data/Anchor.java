@@ -105,7 +105,8 @@ public class Anchor {
 		return sum;
 	}
 
-	private static boolean lends(String owner, String uid) {
+	/** Whether this owner's charge here may be drawn on by that player (an ally they opened their anchors to). */
+	public static boolean lends(String owner, String uid) {
 		return !owner.equals(uid) && !owner.equals(SHARED) && open.test(owner) && allied.test(uid, owner);
 	}
 

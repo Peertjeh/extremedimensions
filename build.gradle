@@ -4,7 +4,8 @@ plugins {
 }
 
 repositories {
-	// Modrinth's maven, for JEI's plugin API alone (compile only: JEI brings itself when a player has it installed)
+	// Modrinth's maven, for the plugin APIs of JEI, Jade, WTHIT and JourneyMap alone (compile only: each brings itself
+	// when a player has it installed)
 	exclusiveContent {
 		forRepository {
 			maven {
@@ -29,6 +30,29 @@ loom {
 	}
 }
 
+// JourneyMap keeps its plugin API in a jar inside its own: the outer jar is fetched only for that inner one to be taken
+// out, which alone goes on the client's compile classpath (nothing of JourneyMap is shipped or needed to run)
+configurations {
+	journeymapBundle {
+		transitive = false
+	}
+}
+interface ArchiveTools {
+	@javax.inject.Inject
+	ArchiveOperations getArchives()
+}
+def archiveTools = objects.newInstance(ArchiveTools)
+def journeymapBundle = configurations.journeymapBundle
+def journeymapApi = tasks.register("journeymapApi", Sync) {
+	description = "Takes JourneyMap's plugin API out of its jar, for the client's map plugin to compile against"
+	from(journeymapBundle.elements.map { jars -> jars.collect { archiveTools.archives.zipTree(it.asFile) } }) {
+		include "META-INF/jars/journeymap-api-*.jar"
+		eachFile { it.path = "journeymap-api.jar" }
+	}
+	includeEmptyDirs = false
+	into layout.buildDirectory.dir("journeymap-api")
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -40,6 +64,17 @@ dependencies {
 	// JEI (31.14.0.72 for 26.3, Modrinth version Zebwcvua): the client's plugin compiles against it; it is never
 	// shipped or needed (the plugin is only loaded by JEI itself, through the jei_mod_plugin entrypoint)
 	clientCompileOnly "maven.modrinth:jei:Zebwcvua"
+
+	// Jade (26.3.5 for 26.3, Modrinth version 71CTWqdE) and WTHIT (21.0.0, Modrinth version GZ97QWSj): the client's
+	// tooltip plugins compile against them; neither is shipped or needed (Jade loads its plugin through the jade
+	// entrypoint, WTHIT through waila_plugins.json)
+	clientCompileOnly "maven.modrinth:jade:71CTWqdE"
+	clientCompileOnly "maven.modrinth:wthit:GZ97QWSj"
+
+	// JourneyMap (26.3-6.0.10, Modrinth version 2zmj8ela), for its plugin API 2.0.0 (see journeymapApi above): the map
+	// plugin is only loaded by JourneyMap itself, through the journeymap entrypoint
+	journeymapBundle "maven.modrinth:journeymap:2zmj8ela"
+	clientCompileOnly files(layout.buildDirectory.file("journeymap-api/journeymap-api.jar")).builtBy(journeymapApi)
 }
 
 processResources {
