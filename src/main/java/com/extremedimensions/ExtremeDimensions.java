@@ -172,6 +172,8 @@ public class ExtremeDimensions implements ModInitializer {
 				com.extremedimensions.tribe.BarterService.onTrade(context.player(), payload.young(), payload.ware());
 			}
 		});
+		// Where the player's anchors stand, for the map mods' waypoints
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.AnchorsPayload.TYPE, ModPackets.AnchorsPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.TrialsPayload.TYPE, ModPackets.TrialsPayload.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestTrialsPayload.TYPE, ModPackets.RequestTrialsPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestTrialsPayload.TYPE, (payload, context) -> {

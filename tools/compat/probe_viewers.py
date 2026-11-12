@@ -6,7 +6,9 @@ plugin API looks like there. Run in CI on a commit marked [probe] (this session 
 Usage: probe_viewers.py <work dir>
 
 Prints VIEWER| lines: the version found, the jar's fabric.mod.json, its entrypoint keys, the API classes it holds, and
-javap of the classes a plugin needs."""
+javap of the classes a plugin needs (VIEWERAPI|, with their constants). For the tooltip and map mods also VIEWERFILE|
+lines (a mod's own plugin list, and how its settings name a plugin's toggles) and VIEWERUSE| lines (the classes that
+name a class given in USES, to see how a plugin gets hold of it)."""
 
 import json
 import os
@@ -57,9 +59,35 @@ DETAIL = {
     "wthit": ["mcp.mobius.waila.api.IWailaPlugin", "mcp.mobius.waila.api.IRegistrar", "mcp.mobius.waila.api.IClientRegistrar",
               "mcp.mobius.waila.api.ICommonRegistrar", "mcp.mobius.waila.api.IBlockComponentProvider", "mcp.mobius.waila.api.IEntityComponentProvider",
               "mcp.mobius.waila.api.ITooltip", "mcp.mobius.waila.api.IBlockAccessor", "mcp.mobius.waila.api.IEntityAccessor",
-              "mcp.mobius.waila.api.IDataProvider", "mcp.mobius.waila.api.IPluginConfig"],
-    "journeymap": [],
-    "xaeros-minimap": [],
+              "mcp.mobius.waila.api.IDataProvider", "mcp.mobius.waila.api.IPluginConfig",
+              # (what the plugin's server data is written into and read back from, and the newer plugin interfaces)
+              "mcp.mobius.waila.api.IDataWriter", "mcp.mobius.waila.api.IDataReader", "mcp.mobius.waila.api.IServerAccessor",
+              "mcp.mobius.waila.api.IData", "mcp.mobius.waila.api.IWailaCommonPlugin", "mcp.mobius.waila.api.IWailaClientPlugin",
+              "mcp.mobius.waila.api.TooltipPosition"],
+    "journeymap": ["journeymap.api.v2.client.IClientPlugin", "journeymap.api.v2.common.IJourneyMapPlugin", "journeymap.api.v2.common.JourneyMapPlugin",
+                   "journeymap.api.v2.client.IClientAPI", "journeymap.api.v2.common.waypoint.Waypoint",
+                   "journeymap.api.v2.common.waypoint.WaypointFactory", "journeymap.api.v2.common.event.ClientEventRegistry",
+                   "journeymap.api.v2.client.event.MappingEvent"],
+    "xaeros-minimap": ["xaero.hud.minimap.waypoint.thirdparty.ThirdPartyWaypoints", "xaero.hud.minimap.waypoint.thirdparty.ThirdPartyWaypointManager",
+                       "xaero.common.minimap.waypoints.Waypoint", "xaero.hud.minimap.waypoint.WaypointColor",
+                       "xaero.hud.minimap.waypoint.WaypointPurpose", "xaero.hud.minimap.module.MinimapSession",
+                       "xaero.hud.minimap.waypoint.WaypointSession", "xaero.hud.minimap.waypoint.set.WaypointSet",
+                       "xaero.hud.minimap.waypoint.WaypointSharingHandler"],
+}
+
+# files printed whole from a mod's jars (its own plugin list)
+FILES = {
+    "wthit": ["waila_plugins.json", "wthit_plugins.json"],
+}
+# a mod's English lang file, and the start of the keys of it printed (how its settings name a plugin's toggles)
+LANG = {
+    "jade": ("assets/jade/lang/en_us.json", "config.jade.plugin_minecraft."),
+    "wthit": ("assets/waila/lang/en_us.json", "config.waila.plugin_minecraft."),
+}
+# the classes of a mod whose bytes name this, so the way a plugin reaches it shows
+USES = {
+    "xaeros-minimap": "ThirdPartyWaypoint",
+    "journeymap": "WaypointFactory",
 }
 
 
@@ -113,9 +141,26 @@ def main():
         for n in sorted(names):
             print(f"VIEWER|{slug}|class|{n}")
         for c in DETAIL[slug]:
-            r = subprocess.run(["javap", "-cp", ":".join(cp), "-p", c], capture_output=True, text=True)
+            r = subprocess.run(["javap", "-cp", ":".join(cp), "-p", "-constants", c], capture_output=True, text=True)
             for line in (r.stdout + r.stderr).splitlines():
                 print(f"VIEWERAPI|{slug}|{line}")
+        # (the mod's own jar and the jars nested in it)
+        mine = [path for s2, path in jars if s2 == slug] + [j for j in cp if os.path.basename(j).startswith(slug + "-")]
+        for j in mine:
+            with zipfile.ZipFile(j) as z:
+                names = z.namelist()
+                for f in FILES.get(slug, []):
+                    if f in names:
+                        for line in z.read(f).decode("utf-8", "replace").splitlines():
+                            print(f"VIEWERFILE|{slug}|{f}|{line}")
+                if slug in LANG and LANG[slug][0] in names:
+                    keys = [k for k in json.loads(z.read(LANG[slug][0])) if k.startswith(LANG[slug][1])]
+                    for k in keys[:8]:
+                        print(f"VIEWERFILE|{slug}|lang|{k}")
+                if slug in USES:
+                    for n in names:
+                        if n.endswith(".class") and USES[slug].encode() in z.read(n):
+                            print(f"VIEWERUSE|{slug}|{n[:-6].replace('/', '.')}")
 
 
 if __name__ == "__main__":

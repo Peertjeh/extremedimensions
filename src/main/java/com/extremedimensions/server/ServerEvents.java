@@ -210,6 +210,7 @@ public final class ServerEvents {
 			com.extremedimensions.elder.ElderSpells.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.expedition.ExpeditionBar.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.binding.WoundLens.forget(handler.getPlayer().getUUID());
+			com.extremedimensions.anchor.AnchorSync.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.binding.Charms.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.relic.RelicService.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.tetherite.TetheriteBinding.forget(handler.getPlayer().getUUID());
@@ -229,6 +230,8 @@ public final class ServerEvents {
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> com.extremedimensions.config.SettingsService.send(handler.getPlayer()));
 		// ... and who is fallen, to draw them crawling
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> com.extremedimensions.coop.FallenService.sync(s, handler.getPlayer()));
+		// ... and where their anchors stand, for a map mod's waypoints
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> com.extremedimensions.anchor.AnchorSync.joined(handler.getPlayer()));
 		// What an echo gave back while they were away, and gear that came home and still waits
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> {
 			ServerPlayer p = handler.getPlayer();
@@ -838,6 +841,7 @@ public final class ServerEvents {
 			AtonementGuard.sweep(s);
 		}
 		AnchorService.tick(s);
+		com.extremedimensions.anchor.AnchorSync.tick(s);
 		LurkerService.tick(s);
 		com.extremedimensions.lurker.CaveLurkerService.tick(s);
 		com.extremedimensions.lurker.SculkLurkerService.tick(s);

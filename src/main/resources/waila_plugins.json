@@ -1,0 +1,6 @@
+{
+	"extremedimensions:plugin": {
+		"initializer": "com.extremedimensions.client.compat.wthit.ExtremeWthitPlugin",
+		"side": "*"
+	}
+}

@@ -26,6 +26,12 @@
 		],
 		"jei_mod_plugin": [
 			"com.extremedimensions.client.compat.jei.ExtremeJeiPlugin"
+		],
+		"jade": [
+			"com.extremedimensions.client.compat.jade.ExtremeJadePlugin"
+		],
+		"journeymap": [
+			"com.extremedimensions.client.compat.journeymap.ExtremeJourneyMapPlugin"
 		]
 	},
 	"mixins": [
@@ -43,6 +49,9 @@
 	},
 	"suggests": {
 		"placeholder-api": "*",
-		"jei": "*"
+		"jei": "*",
+		"jade": "*",
+		"wthit": "*",
+		"journeymap": "*"
 	}
 }

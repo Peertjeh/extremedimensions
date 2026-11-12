@@ -123,6 +123,8 @@ public final class UnstableAnchors {
 				}
 			}
 			a.unstable = 0;
+			// (what it lost may have been the last of someone's charge in it: off their map then)
+			com.extremedimensions.anchor.AnchorSync.changed(WorldFx.server());
 		}
 		DataStore.markDirty();
 	}

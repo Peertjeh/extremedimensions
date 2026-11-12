@@ -138,7 +138,10 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> com.extremedimensions.client.fx.CameraShake.tick());
 		ClientTickEvents.END_CLIENT_TICK.register(SeamSky::prepare);
 		ClientTickEvents.END_CLIENT_TICK.register(SeamAmbience::tick);
+		// The waypoints of a map mod (JourneyMap), which listens to them; nothing happens here without one
+		ClientTickEvents.END_CLIENT_TICK.register(com.extremedimensions.client.compat.MapMarks::tick);
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ClientState::reset));
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.compat.MapMarks::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.coop.ClientFallen::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.fx.BossCinema::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.state.ClientDanger::reset));
@@ -290,6 +293,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		com.extremedimensions.client.coop.ClientFallen.init();
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.FallenPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.coop.ClientFallen.receive(payload.fallen())));
+		ClientPlayNetworking.registerGlobalReceiver(ModPackets.AnchorsPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> com.extremedimensions.client.compat.MapMarks.anchors(payload.anchors())));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BarterPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.screen.BarterScreen.show(payload.young(), payload.rep(), payload.offers())));
 	}

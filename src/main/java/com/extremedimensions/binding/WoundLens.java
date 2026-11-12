@@ -242,20 +242,8 @@ public final class WoundLens {
 		if ("*".equals(uid)) {
 			return Component.translatable("gui.extremedimensions.lens.anchor.everyone");
 		}
-		try {
-			UUID id = UUID.fromString(uid);
-			ServerPlayer q = s.getPlayerList().getPlayer(id);
-			if (q != null) {
-				return q.getName();
-			}
-			PlayerData d = DataStore.peek(id);
-			if (d != null && d.name != null) {
-				return Component.literal(d.name);
-			}
-		} catch (IllegalArgumentException e) {
-			// not a player's id
-		}
-		return Component.translatable("gui.extremedimensions.lens.anchor.unknown");
+		String name = com.extremedimensions.compat.AnchorLook.ownerName(s, uid);
+		return name != null ? Component.literal(name) : Component.translatable("gui.extremedimensions.lens.anchor.unknown");
 	}
 
 	private static String time(double secs) {
