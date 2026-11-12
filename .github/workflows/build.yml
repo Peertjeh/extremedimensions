@@ -208,6 +208,16 @@ jobs:
           echo "code=$code" >> "$GITHUB_OUTPUT"
           if [ $code -eq 3 ]; then echo "None of them has a build for this game version yet: nothing to test with"; exit 0; fi
           exit $code
+      # On a commit marked [probe]: Iris's classes for how it maps blocks to a shader pack's ids (to look up, not to build on)
+      - name: iris probe
+        if: always() && contains(github.event.head_commit.message, '[probe]')
+        run: |
+          for j in build/compat-mods/*iris*.jar; do
+            [ -f "$j" ] || continue
+            echo "IRISJAR|$j"
+            unzip -Z1 "$j" | grep -iE 'materialmap|idmap|WorldRenderingSettings|BlockRenderingSettings|BlockMaterial' | sed "s/^/IRISCLASS|/"
+            for c in $(unzip -Z1 "$j" | grep -E '(WorldRenderingSettings|BlockRenderingSettings|BlockMaterialMapping|IdMap|BlockEntry)\.class$' | sed 's/\.class$//; s#/#.#g'); do javap -cp "$j" -p "$c" 2>&1 | sed "s/^/IRIS|/"; done
+          done || true
       - name: client game test with them
         if: steps.fetch.outputs.code == '0'
         run: xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" ./gradlew runClientGameTest --no-configuration-cache -Pcompat
