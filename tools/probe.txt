@@ -1,7 +1,0 @@
-net.minecraft.world.level.block.LanternBlock
-@assets/minecraft/blockstates/lantern.json
-@assets/minecraft/models/block/lantern.json
-@assets/minecraft/models/block/template_lantern.json
-@assets/minecraft/models/block/template_hanging_lantern.json
-%assets/minecraft/textures/block/lantern.png
-%assets/minecraft/textures/block/soul_lantern.png
