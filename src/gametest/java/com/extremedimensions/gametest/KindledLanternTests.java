@@ -29,7 +29,7 @@ public class KindledLanternTests {
 	private static boolean lit(ServerLevel level, BlockPos spot) {
 		for (int dy : new int[] {0, 1, -1, 2}) {
 			BlockState s = level.getBlockState(spot.above(dy));
-			if (s.is(Blocks.LIGHT)) {
+			if (s.is(ModBlocks.KINDLED_LIGHT)) {
 				return true;
 			}
 		}
@@ -63,11 +63,17 @@ public class KindledLanternTests {
 			}
 			check(helper, carried == 8, "its light was carried to %s of the eight spots", carried);
 			BlockState one = level.getBlockState(at.offset(14, 0, 0));
-			check(helper, one.is(Blocks.LIGHT) && one.getValue(LightBlock.LEVEL) == 15, "the light carried east is %s", one);
+			check(helper, one.is(ModBlocks.KINDLED_LIGHT) && one.getValue(LightBlock.LEVEL) == 15, "the light carried east is %s", one);
+			check(helper, one.getBlock() instanceof LightBlock, "the light it carries is not a light block (a shader pack would not see it)");
+			// One carried out before 3.51.1, as vanilla's light block, is put in its own light's place
+			level.setBlock(at.offset(0, 0, 14), Blocks.LIGHT.defaultBlockState().setValue(LightBlock.LEVEL, 15), 3);
+			com.extremedimensions.relic.KindledLanternBlock.spread(level, at);
+			check(helper, level.getBlockState(at.offset(0, 0, 14)).is(ModBlocks.KINDLED_LIGHT), "an older vanilla light was left as it was: %s",
+					level.getBlockState(at.offset(0, 0, 14)));
 			// One built over is laid again in time, a step up
 			level.setBlock(at.offset(14, 0, 0), Blocks.STONE.defaultBlockState(), 3);
 			com.extremedimensions.relic.KindledLanternBlock.spread(level, at);
-			check(helper, level.getBlockState(at.offset(14, 1, 0)).is(Blocks.LIGHT), "a light built over was not laid again above it");
+			check(helper, level.getBlockState(at.offset(14, 1, 0)).is(ModBlocks.KINDLED_LIGHT), "a light built over was not laid again above it");
 			// Broken, it takes them all back
 			level.setBlock(at, Blocks.AIR.defaultBlockState(), 3);
 			int left = 0;
@@ -75,6 +81,10 @@ public class KindledLanternTests {
 				left += lit(level, s) ? 1 : 0;
 			}
 			check(helper, left == 0, "%s of its lights are left after it was broken", left);
+			// ...and an older vanilla light with them
+			level.setBlock(at.offset(-14, 0, 0), Blocks.LIGHT.defaultBlockState().setValue(LightBlock.LEVEL, 15), 3);
+			com.extremedimensions.relic.KindledLanternBlock.gather(level, at);
+			check(helper, level.getBlockState(at.offset(-14, 0, 0)).isAir(), "an older vanilla light was left after it was broken");
 		} finally {
 			Config.KINDLED_LANTERN_SPREAD = spread;
 			Config.KINDLED_LANTERN_LIGHT = light;

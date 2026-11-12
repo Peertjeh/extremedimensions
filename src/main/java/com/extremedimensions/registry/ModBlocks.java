@@ -112,6 +112,14 @@ public final class ModBlocks {
 			new com.extremedimensions.relic.KindledLanternBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.SOUL_LANTERN).lightLevel(state -> 15)
 					.emissiveRendering(state -> true).randomTicks().setId(key("kindled_seam_lantern"))));
 
+	/**
+	 * The unseen light a Kindled Seam Lantern carries out round it (3.51.1; before, vanilla's own light block): the same
+	 * block as vanilla's, under a name of its own, so a shader pack can be shown it apart from the light blocks of a map
+	 * and give it the lantern's violet (see client.compat.ShaderLight).
+	 */
+	public static final Block KINDLED_LIGHT = Registry.register(BuiltInRegistries.BLOCK, key("kindled_light"),
+			new net.minecraft.world.level.block.LightBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.LIGHT).noLootTable().setId(key("kindled_light"))));
+
 	/** A knot of curse thread the Unweaving ties round the Weaver's Loom (see tapestry.Unweaving): cut by blows, never mined. */
 	public static final Block CURSE_KNOT = Registry.register(BuiltInRegistries.BLOCK, key("curse_knot"),
 			new com.extremedimensions.tapestry.CurseKnotBlock(BlockBehaviour.Properties.of().mapColor(net.minecraft.world.level.material.MapColor.COLOR_PURPLE)

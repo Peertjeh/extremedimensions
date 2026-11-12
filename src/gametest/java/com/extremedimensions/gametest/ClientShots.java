@@ -525,10 +525,18 @@ public class ClientShots implements FabricClientGameTest {
 				}
 			});
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %.2f %.2f", at[0], at[1], at[2]));
-			ctx.waitTicks(5);
+			// (longer each time: a busy server, or a client far behind after a heavy scene, takes a while to settle)
+			ctx.waitTicks(5 << Math.min(tries, 3));
 			if (sp.getServer().computeOnServer(s -> player(s).distanceToSqr(at[0], at[1], at[2]) < 16)) {
 				return;
 			}
+			// Where they are instead, and what might hold them there (for the log)
+			System.out.println("[shots] moveTo try " + (tries + 1) + ": " + sp.getServer().computeOnServer(s -> {
+				ServerPlayer p = player(s);
+				return String.format(java.util.Locale.ROOT, "at %.2f %.2f %.2f in %s, flying %s, riding %s, moving %s, gaol %s, alive %s", p.getX(), p.getY(), p.getZ(),
+						p.level().dimension().identifier(), p.getAbilities().flying, p.getVehicle(), p.getDeltaMovement(),
+						com.extremedimensions.elder.ElderGaol.shutIn(p), p.isAlive());
+			}));
 		}
 		check(false, "the player could not be put back where they stood (" + at[0] + ", " + at[1] + ", " + at[2] + ")");
 	}
@@ -642,6 +650,9 @@ public class ClientShots implements FabricClientGameTest {
 		if (com.extremedimensions.client.options.ClientOptions.shaderLook() == com.extremedimensions.client.options.ClientOptions.ShaderLook.CRYING_OBSIDIAN) {
 			for (var st : ModBlocks.KINDLED_SEAM_LANTERN.getStateDefinition().getPossibleStates()) {
 				check(ids.containsKey(st) && ids.getInt(st) == 5, "the Kindled Seam Lantern's " + st + " is not in a shader pack's list as crying obsidian");
+			}
+			for (var st : ModBlocks.KINDLED_LIGHT.getStateDefinition().getPossibleStates()) {
+				check(ids.containsKey(st) && ids.getInt(st) == 5, "the lantern's unseen light " + st + " is not in a shader pack's list as crying obsidian");
 			}
 		}
 		if (com.extremedimensions.client.options.ClientOptions.shaderLook() == com.extremedimensions.client.options.ClientOptions.ShaderLook.OFF) {

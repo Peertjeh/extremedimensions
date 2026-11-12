@@ -13,6 +13,10 @@
   to that list as Iris hands it over, under a vanilla light's number: the Kindled Seam Lantern as **crying obsidian**
   (the most violet of them), the Veil Lantern as a **soul lantern**. Where a pack names one of them itself, its own
   choice is kept.
+- **Its whole reach is lit violet too.** The unseen lights it carries out round it are now a light block of the mod's
+  own (Kindled Light, vanilla's light block under its own name) rather than vanilla's: a pack that lights the world from
+  light blocks (Solas does) gave vanilla's its own neutral light, and now gives the lantern's the lantern's colour. A
+  lantern already set swaps its old lights for the new ones on its own, in time; broken, it takes both kinds back.
 - **Settings → Display → Kindled lantern under shaders**: crying obsidian, amethyst cluster, soul lantern, lantern or
   off. Taken up the next time the shader pack is loaded (reload it, or pick it again).
 - CI turns a shader pack on in the Seam (the newest Solas) and checks the lanterns are in its list and no End flash shows.

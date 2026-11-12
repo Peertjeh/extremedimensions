@@ -17,8 +17,10 @@ import net.minecraft.world.level.block.state.properties.Property;
  * The mod's lanterns in a shader pack's list of blocks (3.51.1, with Iris). A shader pack gives glow and coloured light
  * to the blocks its list names, by the number it gives each; it names none of the mod's, so under it they shone as
  * plain blocks. Each of the mod's lanterns is given the number of a vanilla light the pack does name: the Kindled Seam
- * Lantern that of the block chosen in the settings (crying obsidian, the most violet of them, unless changed), the Veil
- * Lantern a soul lantern's. Where the pack names one of them itself, its own number is kept.
+ * Lantern that of the block chosen in the settings (crying obsidian, the most violet of them, unless changed), and the
+ * unseen lights it carries out round it the same (a pack that lights the world from its light blocks, as Solas does,
+ * then lights its whole reach violet), the Veil Lantern a soul lantern's. With the setting off, the unseen lights are
+ * given vanilla light blocks' numbers, as they were. Where the pack names one of them itself, its own number is kept.
  */
 public final class ShaderLight {
 	private static boolean warned;
@@ -52,12 +54,15 @@ public final class ShaderLight {
 		}
 		try {
 			ClientOptions.ShaderLook look = ClientOptions.shaderLook();
-			if (look == null || look.block.isEmpty()) {
-				return;
+			if (look != null && !look.block.isEmpty()) {
+				BuiltInRegistries.BLOCK.get(Identifier.fromNamespaceAndPath("minecraft", look.block)).ifPresent(source -> {
+					copy(ids, source.value(), ModBlocks.KINDLED_SEAM_LANTERN);
+					copy(ids, source.value(), ModBlocks.KINDLED_LIGHT);
+				});
+				copy(ids, Blocks.SOUL_LANTERN, ModBlocks.VEIL_LANTERN);
 			}
-			BuiltInRegistries.BLOCK.get(Identifier.fromNamespaceAndPath("minecraft", look.block))
-					.ifPresent(source -> copy(ids, source.value(), ModBlocks.KINDLED_SEAM_LANTERN));
-			copy(ids, Blocks.SOUL_LANTERN, ModBlocks.VEIL_LANTERN);
+			// (any unseen light not given the lantern's: as vanilla's light block of its level)
+			copy(ids, Blocks.LIGHT, ModBlocks.KINDLED_LIGHT);
 		} catch (UnsupportedOperationException fixed) {
 			throw fixed;
 		} catch (RuntimeException | LinkageError e) {

@@ -1,6 +1,7 @@
 package com.extremedimensions.relic;
 
 import com.extremedimensions.config.Config;
+import com.extremedimensions.registry.ModBlocks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -17,9 +18,11 @@ import net.minecraft.world.level.material.Fluids;
 /**
  * The Kindled Seam Lantern: the Seam Lantern lit from a lantern's flame and a soul lantern's, a lantern that stands or
  * hangs as theirs do, and burns blue-violet. Its light reaches twice as far as a lantern's: it carries its light out
- * {@code kindled_lantern_spread} blocks in the eight directions round it, as unseen lights ({@code minecraft:light},
- * level {@code kindled_lantern_light}) where there is open air (or a little above or below, where there is not), and
- * takes them back when it is broken. Now and then (a random tick) it lays again any that were built over or put out.
+ * {@code kindled_lantern_spread} blocks in the eight directions round it, as unseen lights ({@code
+ * extremedimensions:kindled_light}, vanilla's light block under a name of its own, level {@code kindled_lantern_light})
+ * where there is open air (or a little above or below, where there is not), and takes them back when it is broken. Now
+ * and then (a random tick) it lays again any that were built over or put out, and puts its own in the place of the
+ * vanilla light blocks it carried out before 3.51.1.
  */
 public class KindledLanternBlock extends LanternBlock {
 	/** The eight directions its light is carried in, as unit steps (the diagonals scaled down to the same reach). */
@@ -68,7 +71,8 @@ public class KindledLanternBlock extends LanternBlock {
 		if (reach <= 0) {
 			return;
 		}
-		BlockState light = Blocks.LIGHT.defaultBlockState().setValue(LightBlock.LEVEL, Math.max(1, Math.min(15, Config.KINDLED_LANTERN_LIGHT)));
+		int level15 = Math.max(1, Math.min(15, Config.KINDLED_LANTERN_LIGHT));
+		BlockState light = ModBlocks.KINDLED_LIGHT.defaultBlockState().setValue(LightBlock.LEVEL, level15);
 		for (double[] w : WAYS) {
 			BlockPos spot = pos.offset((int) Math.round(w[0] * reach), 0, (int) Math.round(w[1] * reach));
 			for (int dy : HEIGHTS) {
@@ -77,7 +81,14 @@ public class KindledLanternBlock extends LanternBlock {
 					break;
 				}
 				BlockState there = level.getBlockState(at);
+				if (there.is(ModBlocks.KINDLED_LIGHT)) {
+					break;
+				}
 				if (there.is(Blocks.LIGHT)) {
+					// one it carried out before 3.51.1, as vanilla's light (at its level): its own in its place
+					if (there.getValue(LightBlock.LEVEL) == level15) {
+						level.setBlock(at, light.setValue(BlockStateProperties.WATERLOGGED, there.getValue(BlockStateProperties.WATERLOGGED)), 3);
+					}
 					break;
 				}
 				if (there.isAir() || there.is(Blocks.WATER) && there.getFluidState().isSource()) {
@@ -90,7 +101,8 @@ public class KindledLanternBlock extends LanternBlock {
 
 	/**
 	 * Its light taken back: every unseen light on the eight lines out from it, as far as it could ever have carried it
-	 * and at every height it could have been laid (so a light laid under other settings goes too).
+	 * and at every height it could have been laid (so a light laid under other settings goes too, and a vanilla light
+	 * laid before 3.51.1).
 	 */
 	public static void gather(ServerLevel level, BlockPos pos) {
 		for (double[] w : WAYS) {
@@ -102,7 +114,7 @@ public class KindledLanternBlock extends LanternBlock {
 						continue;
 					}
 					BlockState there = level.getBlockState(at);
-					if (there.is(Blocks.LIGHT)) {
+					if (there.is(ModBlocks.KINDLED_LIGHT) || there.is(Blocks.LIGHT)) {
 						level.setBlock(at, there.getValue(BlockStateProperties.WATERLOGGED) ? Fluids.WATER.defaultFluidState().createLegacyBlock()
 								: Blocks.AIR.defaultBlockState(), 3);
 					}
