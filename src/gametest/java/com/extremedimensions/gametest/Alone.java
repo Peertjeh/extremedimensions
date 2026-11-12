@@ -120,7 +120,7 @@ final class Alone {
 	static final String MASON_LIFT = "extremedimensions_test:alone/mason_lift";
 	// (the journal lists every anchor in the world that keeps charge for its player, so none of another test's may be about)
 	static final String JOURNAL_ANCHORS = "extremedimensions_test:alone/journal_anchors";
-	// (3.53: the playtest log is one file and one switch for the whole server, and every expedition ending would write to
+	// (3.53.0: the playtest log is one file and one switch for the whole server, and every expedition ending would write to
 	// it; the recap is read from what was last sent, whoever it went to)
 	static final String PLAYTEST_LOG = "extremedimensions_test:alone/playtest_log";
 	static final String COLLAPSE_RECAP = "extremedimensions_test:alone/collapse_recap";

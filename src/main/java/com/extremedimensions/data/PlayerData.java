@@ -237,7 +237,7 @@ public class PlayerData {
 	 */
 	public com.extremedimensions.expedition.ExpeditionRecord.Tally runTally = null, seamTally = null;
 	public List<com.extremedimensions.expedition.ExpeditionRecord> records = new ArrayList<>();
-	/** Expeditions begun into each world (its short id), counted since 3.52: the playtest log's "nth". */
+	/** Expeditions begun into each world (its short id), counted since 3.53.0: the playtest log's "nth". */
 	public Map<String, Integer> ventures = new HashMap<>();
 
 	// --- runtime only ---

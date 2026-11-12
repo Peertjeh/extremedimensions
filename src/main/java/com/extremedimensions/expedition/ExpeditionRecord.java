@@ -159,7 +159,7 @@ public final class ExpeditionRecord {
 
 	/**
 	 * The expedition (or, with {@code seam}, the visit to the Seam) ended: its record, still open for what the ending
-	 * costs (the cards owed until {@link #settle} are its own). Null when nothing was tallied (one begun before 3.52).
+	 * costs (the cards owed until {@link #settle} are its own). Null when nothing was tallied (one begun before 3.53.0).
 	 */
 	public static ExpeditionRecord end(ServerPlayer p, PlayerData d, boolean seam, Outcome how) {
 		Tally t = seam ? d.seamTally : d.runTally;

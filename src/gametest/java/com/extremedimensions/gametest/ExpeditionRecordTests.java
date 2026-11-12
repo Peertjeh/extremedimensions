@@ -32,7 +32,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * The record of an expedition (3.52): one line in the playtest log for every expedition that ends while the log is on
+ * The record of an expedition (3.53.0): one line in the playtest log for every expedition that ends while the log is on
  * (none while it is off), a line for a relic bound and for a curse chosen; and after a Collapse, once the player is home
  * and has chosen what it cost, the card of it with the right numbers. Both change settings and a file every test would
  * share, so each runs alone.
