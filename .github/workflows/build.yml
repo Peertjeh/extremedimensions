@@ -234,6 +234,13 @@ jobs:
             echo "IRISJAR|$j"
             unzip -Z1 "$j" | grep -iE 'materialmap|idmap|WorldRenderingSettings|BlockRenderingSettings|BlockMaterial' | sed "s/^/IRISCLASS|/"
             for c in $(unzip -Z1 "$j" | grep -E '(WorldRenderingSettings|BlockRenderingSettings|BlockMaterialMapping|IdMap|BlockEntry)\.class$' | sed 's/\.class$//; s#/#.#g'); do javap -cp "$j" -p "$c" 2>&1 | sed "s/^/IRIS|/"; done
+            # and how it hands a shader pack the unseen light blocks (voxelizeLightBlocks)
+            rm -rf /tmp/iris-all && mkdir -p /tmp/iris-all && unzip -q -o "$j" '*.class' -d /tmp/iris-all
+            for f in $(grep -rl -a 'shouldVoxelizeLightBlocks\|LightBlock' /tmp/iris-all | head -10); do
+              c=$(echo "${f#/tmp/iris-all/}" | sed 's/\.class$//; s#/#.#g')
+              echo "IRISLIGHT|$c"
+              javap -cp /tmp/iris-all -c -p "$c" 2>&1 | grep -n -B8 -A8 'shouldVoxelizeLightBlocks\|LightBlock\|Blocks.LIGHT' | head -80 | sed "s/^/IRISLIGHT|/"
+            done
             # and where it reads the End's flashes (for a shader pack's uniforms)
             rm -rf /tmp/iris-classes && mkdir -p /tmp/iris-classes && unzip -q -o "$j" '*.class' -d /tmp/iris-classes
             for f in $(grep -rl -a 'EndFlash' /tmp/iris-classes | head -8); do

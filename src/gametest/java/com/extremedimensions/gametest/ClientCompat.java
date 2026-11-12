@@ -211,7 +211,9 @@ public class ClientCompat implements FabricClientGameTest {
 			System.out.println("[compat] no shader pack in " + packs + ": the look under one is left out");
 			return;
 		}
-		// The two lanterns, three blocks ahead and to either side, on the ground
+		// The two lanterns, three blocks ahead and to either side, on the ground, looking away from the gate again
+		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ ~180 20");
+		ctx.waitTicks(5);
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
 			net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) p.level();
