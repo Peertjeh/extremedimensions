@@ -102,20 +102,36 @@ public class MasonTests {
 			throw helper.assertionException("the Pale Mason could not come");
 		}
 		PaleMasonService.force(m, PaleMason.LIFT);
-		int[] most = {0};
-		for (int t = 5; t <= 60; t += 5) {
-			helper.runAfterDelay(t, () -> most[0] = Math.max(most[0], PaleMasonService.boulders(m)));
+		// (he fights on after it, and may lift again of his own accord: what counts is that the blocks of this lift are
+		// all gone once its throw is over, the first time he turns to anything else)
+		int[] most = {0}, after = {-1};
+		boolean[] threw = {false};
+		for (int t = 1; t <= 200; t++) {
+			int now = t;
+			helper.runAfterDelay(t, () -> {
+				if (after[0] >= 0) {
+					return;
+				}
+				int action = m.getAction();
+				most[0] = Math.max(most[0], PaleMasonService.boulders(m));
+				threw[0] |= action == PaleMason.THROW;
+				if (threw[0] && action != PaleMason.THROW && action != PaleMason.LIFT) {
+					after[0] = now;
+					int left = PaleMasonService.boulders(m);
+					String where = PaleMasonService.describe(m);
+					PaleMasonService.fade(m);
+					restore.run();
+					check(helper, most[0] >= 2, "he lifted only %s great blocks", most[0]);
+					check(helper, left == 0, "%s great blocks were left hanging once he had thrown (%s)", left, where);
+					helper.succeed();
+				} else if (now == 200) {
+					String where = PaleMasonService.describe(m);
+					PaleMasonService.fade(m);
+					restore.run();
+					throw helper.assertionException(threw[0] ? "his throw never ended (" + where + ")" : "he never threw what he lifted (" + where + ")");
+				}
+			});
 		}
-		helper.runAfterDelay(200, () -> {
-			int left = PaleMasonService.boulders(m);
-			int action = m.getAction();
-			String where = PaleMasonService.describe(m) + ", his target " + p.getUUID() + (p.isAlive() ? "" : " (dead)");
-			PaleMasonService.fade(m);
-			restore.run();
-			check(helper, most[0] >= 2, "he lifted only %s great blocks", most[0]);
-			check(helper, left == 0, "%s great blocks were left hanging (his action %s; %s)", left, action, where);
-			helper.succeed();
-		});
 	}
 
 	/** The Gaze strikes one who looks him in the face; not one who looks away, nor one in a carved pumpkin. */
