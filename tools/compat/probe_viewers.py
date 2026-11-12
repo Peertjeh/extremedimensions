@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Probe for the recipe viewers (EMI, JEI, REI): which have a Fabric build for the game version in gradle.properties,
-and what their plugin API looks like there. Run in CI on a commit marked [probe] (this session cannot reach Modrinth).
+"""Probe for the recipe viewers (EMI, JEI, REI), and since 3.52 for the tooltip mods (Jade, WTHIT) and the map mods
+(JourneyMap, Xaero's Minimap): which have a Fabric build for the game version in gradle.properties, and what their
+plugin API looks like there. Run in CI on a commit marked [probe] (this session cannot reach Modrinth).
 
 Usage: probe_viewers.py <work dir>
 
@@ -23,6 +24,10 @@ VIEWERS = {
     "jei": ["mezz/jei/api/ingredients/"],
     "rei": ["me/shedaniel/math/", "me/shedaniel/rei/plugin/client/Builtin", "me/shedaniel/rei/api/client/gui/widgets/",
             "dev/architectury/fluid/"],
+    "jade": ["snownee/jade/api/"],
+    "wthit": ["mcp/mobius/waila/api/"],
+    "journeymap": ["journeymap/api/", "journeymap/client/api/"],
+    "xaeros-minimap": ["xaero/common/minimap/waypoints/", "xaero/hud/minimap/waypoint/", "xaero/common/api/", "xaero/hud/minimap/module/"],
 }
 
 # the classes a plugin needs, printed whole (javap -p)
@@ -45,6 +50,16 @@ DETAIL = {
             "me.shedaniel.rei.api.common.display.basic.BasicDisplay$Serializer",
             "me.shedaniel.rei.api.client.registry.category.CategoryRegistry$CategoryConfiguration",
             "me.shedaniel.rei.api.client.view.ViewSearchBuilder", "me.shedaniel.rei.api.client.REIRuntime"],
+    "jade": ["snownee.jade.api.IWailaPlugin", "snownee.jade.api.IWailaClientRegistration", "snownee.jade.api.IWailaCommonRegistration",
+             "snownee.jade.api.IBlockComponentProvider", "snownee.jade.api.IEntityComponentProvider", "snownee.jade.api.IServerDataProvider",
+             "snownee.jade.api.IComponentProvider", "snownee.jade.api.IJadeProvider", "snownee.jade.api.ITooltip", "snownee.jade.api.BlockAccessor",
+             "snownee.jade.api.EntityAccessor", "snownee.jade.api.Accessor", "snownee.jade.api.config.IPluginConfig", "snownee.jade.api.WailaPlugin"],
+    "wthit": ["mcp.mobius.waila.api.IWailaPlugin", "mcp.mobius.waila.api.IRegistrar", "mcp.mobius.waila.api.IClientRegistrar",
+              "mcp.mobius.waila.api.ICommonRegistrar", "mcp.mobius.waila.api.IBlockComponentProvider", "mcp.mobius.waila.api.IEntityComponentProvider",
+              "mcp.mobius.waila.api.ITooltip", "mcp.mobius.waila.api.IBlockAccessor", "mcp.mobius.waila.api.IEntityAccessor",
+              "mcp.mobius.waila.api.IDataProvider", "mcp.mobius.waila.api.IPluginConfig"],
+    "journeymap": [],
+    "xaeros-minimap": [],
 }
 
 
