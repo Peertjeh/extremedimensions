@@ -23,7 +23,9 @@ import net.minecraft.world.level.block.state.properties.Property;
  * given vanilla light blocks' numbers, as they were. Since 3.52.0 the mod's other glowing blocks too, each as the
  * vanilla light nearest it in colour and shape: the Ember Anchor as a magma block, the Void Anchor, the Seam Vein and
  * silked hush bricks as crying obsidian, Tetherite Ore as the ancient debris it is drawn after, and the Curse Knots each
- * in their set's colour (a torch, a soul torch, an amethyst cluster, a redstone torch). The Weaver's Loom and the
+ * in their set's colour (a torch, a soul torch, an amethyst cluster, a redstone torch); since 3.53.0 the Veil Lamp as
+ * crying obsidian, and Nebula Glass, its panes and the silk block and carpet as their purple vanilla kin (glass and
+ * cloth, for how a pack draws them rather than for light). The Weaver's Loom and the
  * Spindle, workplaces with a faint glow, are left as they are. With the setting off, none of them is shown to the pack.
  * Where the pack names one of them itself, its own number is kept.
  */
@@ -74,6 +76,13 @@ public final class ShaderLight {
 				copy(ids, Blocks.CRYING_OBSIDIAN, ModBlocks.SEAM_VEIN);
 				copy(ids, Blocks.CRYING_OBSIDIAN, ModBlocks.SILKED_HUSH_BRICKS);
 				copy(ids, Blocks.ANCIENT_DEBRIS, ModBlocks.TETHERITE_ORE);
+				// (3.53.0) the builders' blocks: the lamp as violet light, the glass and the silk as their purple vanilla
+				// kin, so a pack gives the glass its gleam and the cloth its softness
+				copy(ids, Blocks.CRYING_OBSIDIAN, ModBlocks.VEIL_LAMP);
+				copy(ids, Blocks.PURPLE_STAINED_GLASS, ModBlocks.NEBULA_GLASS);
+				copy(ids, Blocks.PURPLE_STAINED_GLASS_PANE, ModBlocks.NEBULA_GLASS_PANE);
+				copy(ids, Blocks.PURPLE_WOOL, ModBlocks.SEAM_SILK_BLOCK);
+				copy(ids, Blocks.PURPLE_CARPET, ModBlocks.SEAM_SILK_CARPET);
 				// the Curse Knots, each set in its own colour
 				for (BlockState state : ModBlocks.CURSE_KNOT.getStateDefinition().getPossibleStates()) {
 					int set = state.getValue(com.extremedimensions.tapestry.CurseKnotBlock.SET);

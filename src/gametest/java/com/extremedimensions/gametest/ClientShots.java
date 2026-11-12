@@ -668,6 +668,7 @@ public class ClientShots implements FabricClientGameTest {
 			want.put(ModBlocks.SEAM_VEIN, 5);
 			want.put(ModBlocks.SILKED_HUSH_BRICKS, 5);
 			want.put(ModBlocks.TETHERITE_ORE, 11);
+			want.put(ModBlocks.VEIL_LAMP, 5);
 			want.forEach((b, n) -> {
 				var st = b.defaultBlockState();
 				check(ids.containsKey(st) && ids.getInt(st) == n, b + " is in a shader pack's list as " + ids.getOrDefault(st, -1) + ", not " + n);
