@@ -15,8 +15,10 @@ as themselves (a lock as a jar, a crown as a helmet, a hand as a paw, a plumb li
 (first_weaver.py); their textures are left as those drew them.
 
 The blocks (DRAWN_BLOCKS, below the items) are drawn the same way after vanilla block textures: the hush stone family,
-the lodestones, the Tetherite ore, the Spindle's parts, the Weaver's Loom, the curse knots and the two lanterns. A map
-taller than it is wide is a strip of animation frames, and gets vanilla's lantern animation (.png.mcmeta) beside it.
+the lodestones, the Tetherite ore, the Spindle's parts, the Weaver's Loom, the curse knots, the two lanterns, and the
+Seam's cloth, glass and lamp for builders. A map taller than it is wide is a strip of animation frames, and gets
+vanilla's lantern animation (.png.mcmeta) beside it. A colour given with a fourth value keeps that alpha, for glass that
+is as see-through as the vanilla glass it follows; every other colour is opaque.
 
 usage: python3 tools/items/after_vanilla.py [preview.png]
 """
@@ -1702,7 +1704,8 @@ def draw(pal, rows):
     for y, r in enumerate(rows):
         for x, c in enumerate(r):
             if c != ".":
-                px[x, y] = pal[c] + (255,)
+                # (glass gives its alpha with its colour; everything else is opaque)
+                px[x, y] = pal[c] if len(pal[c]) == 4 else pal[c] + (255,)
     return im
 
 
@@ -2592,7 +2595,104 @@ DRAWN_BLOCKS["curse_knot_extreme"] = ({
     'X': (246, 182, 173),
 }, COBWEB)
 
-BLOCK_ANIMATION = '{\n  "animation": {\n    "interpolate": true,\n    "frametime": 8\n  }\n}\n'
+# ------------------------------------------------------------------- the Seam's cloth, glass and lamp
+
+# What the Seam's builders furnish with, for players to build with: each after the vanilla block it stands in for, in
+# the colours of the Seam's silk and its sky.
+
+# Seam Silk Block: vanilla's white wool, banded into six tones as the Spindle's silk is (WHITE_WOOL), in the silk's
+# violet. The six stay close in lightness, as vanilla's near-whites do, so a wall of it reads as cloth and not as noise
+# (the Spindle's silk, a small part of a small block, spreads them wider). Its carpet wears this texture, as vanilla's
+# carpets wear their wool's.
+DRAWN_BLOCKS["seam_silk_block"] = ({
+    # the silk, dark to light
+    '0': (114, 66, 174), '1': (121, 71, 182), '2': (128, 77, 190), '3': (135, 83, 198), '4': (143, 90, 206),
+    '5': (152, 98, 215),
+}, WHITE_WOOL)
+
+# Nebula Glass: vanilla's tinted glass, smoked glass in a darker frame with a glint drawn across it, as the Seam's sky is
+# a dark violet with the nebula drawn across it. The see-through middle is the sky's deep violet and the glint the
+# nebula's lilac, both as see-through as the tinted glass's (alpha 110); the frame's three tones are three violets, as
+# solid as its (alpha 200); and four faint stars are set in the dark. Only the drawing follows the tinted glass: light
+# passes through it, as through stained glass.
+DRAWN_BLOCKS["nebula_glass"] = ({
+    # the sky, and the nebula's glint across it
+    '0': (52, 30, 94, 110), '1': (132, 92, 196, 110),
+    # the frame, dark to light
+    '2': (40, 22, 66, 200), '3': (50, 30, 82, 200), '4': (64, 40, 102, 200),
+    # the stars
+    'X': (238, 230, 255, 150),
+}, [
+    "4444343332234344",
+    "4000011000000004",
+    "4000110000000004",
+    "40011000000X0003",
+    "4011000000000002",
+    "3110000000000003",
+    "41000X0000000002",
+    "3000000000000003",
+    "3000000000X00003",
+    "2000000000000003",
+    "3000000000000014",
+    "300X000000000113",
+    "2000000000001104",
+    "3000000000011004",
+    "4000000000110004",
+    "4432322333344344",
+])
+
+# Nebula Glass Pane, its edge: vanilla's glass pane top, the strip seen where a pane is cut, its four tones the nebula
+# glass's three frame violets and its glint, as see-through as a stained glass pane's edge (alpha 230). The pane's faces
+# are the nebula glass itself, as vanilla's panes wear their glass.
+DRAWN_BLOCKS["nebula_glass_pane_top"] = ({
+    # the edge, dark to light
+    '0': (40, 22, 66, 230), '1': (50, 30, 82, 230), '2': (64, 40, 102, 230), '3': (132, 92, 196, 230),
+}, [
+    ".......32.......",
+    ".......21.......",
+    ".......21.......",
+    ".......31.......",
+    ".......32.......",
+    ".......32.......",
+    ".......32.......",
+    ".......22.......",
+    ".......22.......",
+    ".......21.......",
+    ".......21.......",
+    ".......32.......",
+    ".......32.......",
+    ".......20.......",
+    ".......21.......",
+    ".......31.......",
+])
+
+# Veil Lamp: vanilla's lit redstone lamp, as this is a lamp always lit. Its dark housing is the silk in shadow, its
+# glowstone the Seam Vein's glowing silk, from the dim rim of the light to its white core.
+DRAWN_BLOCKS["veil_lamp"] = ({
+    # the housing
+    '0': (38, 24, 60),
+    # the light, dark to light
+    '1': (88, 47, 139), '2': (142, 85, 210), '3': (193, 130, 248), '4': (232, 185, 255), '5': (254, 230, 255),
+}, [
+    "0000000000000000",
+    "0102332002332010",
+    "0023543103453200",
+    "0135532002355310",
+    "0255320230235520",
+    "0343203443023430",
+    "0232035554302320",
+    "0010245554430100",
+    "0000334544340000",
+    "0321023443401320",
+    "0343102334013430",
+    "0355310230135530",
+    "0235531001355320",
+    "0023542103453200",
+    "0101233002321010",
+    "0000000000000000",
+])
+
+BLOCK_ANIMATION ='{\n  "animation": {\n    "interpolate": true,\n    "frametime": 8\n  }\n}\n'
 
 
 def main():

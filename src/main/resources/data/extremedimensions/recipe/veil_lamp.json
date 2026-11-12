@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    " S ",
+    "SGS",
+    " S "
+  ],
+  "key": {
+    "S": "extremedimensions:seam_silk",
+    "G": "minecraft:glowstone"
+  },
+  "result": {
+    "id": "extremedimensions:veil_lamp",
+    "count": 1
+  }
+}

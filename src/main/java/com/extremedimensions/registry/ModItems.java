@@ -112,6 +112,12 @@ public final class ModItems {
 	public static final Item VEIL_LANTERN = block(ModBlocks.VEIL_LANTERN);
 	/** The Weaver's Loom as an item. */
 	public static final Item WEAVERS_LOOM = block(ModBlocks.WEAVERS_LOOM);
+	/** The Seam's cloth, glass and lamp for builders (see ModBlocks), as items. */
+	public static final Item SEAM_SILK_BLOCK = block(ModBlocks.SEAM_SILK_BLOCK);
+	public static final Item SEAM_SILK_CARPET = block(ModBlocks.SEAM_SILK_CARPET);
+	public static final Item NEBULA_GLASS = block(ModBlocks.NEBULA_GLASS);
+	public static final Item NEBULA_GLASS_PANE = block(ModBlocks.NEBULA_GLASS_PANE);
+	public static final Item VEIL_LAMP = block(ModBlocks.VEIL_LAMP);
 
 	private static Item block(Block block) {
 		return block(block, false);

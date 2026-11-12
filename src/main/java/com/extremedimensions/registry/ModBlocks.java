@@ -5,19 +5,26 @@ import java.util.List;
 
 import com.extremedimensions.ExtremeDimensions;
 
+import net.fabricmc.fabric.api.registry.FlammableBlockRegistry;
+import net.fabricmc.fabric.api.registry.FuelRegistryEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CarpetBlock;
+import net.minecraft.world.level.block.IronBarsBlock;
 import net.minecraft.world.level.block.LanternBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.TransparentBlock;
 import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.MapColor;
 
 /**
  * The mod's blocks. Charged anchors: a lodestone turns into one of these on its first Nether or End charge and turns
@@ -125,6 +132,48 @@ public final class ModBlocks {
 			new com.extremedimensions.tapestry.CurseKnotBlock(BlockBehaviour.Properties.of().mapColor(net.minecraft.world.level.material.MapColor.COLOR_PURPLE)
 					.strength(-1.0F, 3600000.0F).sound(SoundType.WOOL).lightLevel(state -> 9).randomTicks().noLootTable().setId(key("curse_knot"))));
 
+	// --- The Seam's furnishings for builders: its silk as cloth, its sky as glass, and a lamp. Each is the vanilla block
+	// it stands in for in all but its colours, so it changes nothing in play; none is part of the hush family.
+
+	/**
+	 * Seam Silk woven into a block, as string is into wool: it sounds, muffles and burns as wool does. It is kept out of
+	 * the wool tags, so vanilla's recipes for wool (beds, banners) cannot take it; shears are no quicker on it for the
+	 * same reason, as they know wool by that tag. Nothing turns it back into silk.
+	 */
+	public static final Block SEAM_SILK_BLOCK = Registry.register(BuiltInRegistries.BLOCK, key("seam_silk_block"),
+			new Block(BlockBehaviour.Properties.ofFullCopy(vanilla("purple_wool")).setId(key("seam_silk_block"))));
+	/** The silk as a carpet, cut from the block as vanilla's carpets are from wool. */
+	public static final Block SEAM_SILK_CARPET = Registry.register(BuiltInRegistries.BLOCK, key("seam_silk_carpet"),
+			new CarpetBlock(BlockBehaviour.Properties.ofFullCopy(vanilla("purple_carpet")).setId(key("seam_silk_carpet"))));
+	/**
+	 * Nebula Glass: glass stained with the Seam's sky, violet with a few faint stars. Glass in all it does: light passes,
+	 * neighbours of its own kind hide the faces between them, and it drops only to Silk Touch. A beacon's beam goes
+	 * through it as through plain glass, untinted.
+	 */
+	public static final Block NEBULA_GLASS = Registry.register(BuiltInRegistries.BLOCK, key("nebula_glass"),
+			new TransparentBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS).mapColor(MapColor.COLOR_PURPLE).setId(key("nebula_glass"))));
+	/** Its pane, which joins its neighbours as any glass pane does (other panes, iron bars, walls and solid faces). */
+	public static final Block NEBULA_GLASS_PANE = Registry.register(BuiltInRegistries.BLOCK, key("nebula_glass_pane"),
+			new IronBarsBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS_PANE).mapColor(MapColor.COLOR_PURPLE).setId(key("nebula_glass_pane"))));
+	/**
+	 * The Veil Lamp: a redstone lamp in the silk's violet that is always lit, at light 15. Its light is its own block's
+	 * and spreads from there as any light does; unlike the Kindled Seam Lantern it carries none out round it, so it is a
+	 * lamp to build with and no rival to the lantern's reach.
+	 */
+	public static final Block VEIL_LAMP = Registry.register(BuiltInRegistries.BLOCK, key("veil_lamp"),
+			// (the lamp's own light follows its lit state, which this has none of: always on)
+			new Block(BlockBehaviour.Properties.ofFullCopy(vanilla("redstone_lamp")).mapColor(MapColor.COLOR_PURPLE).lightLevel(state -> 15)
+					.setId(key("veil_lamp"))));
+
+	/**
+	 * A vanilla block by id, to copy its properties: the dyed blocks have no constants in 26.3 (see ArenaDesign.mc), and
+	 * the lamp is found the same way. One not found stops the game here, rather than build a block on the wrong one.
+	 */
+	private static Block vanilla(String id) {
+		return BuiltInRegistries.BLOCK.get(Identifier.withDefaultNamespace(id)).map(h -> h.value())
+				.orElseThrow(() -> new IllegalStateException("No vanilla block " + id + " to copy"));
+	}
+
 	private static ResourceKey<Block> key(String id) {
 		return ResourceKey.create(Registries.BLOCK, ExtremeDimensions.id(id));
 	}
@@ -185,6 +234,19 @@ public final class ModBlocks {
 		return Registry.register(BuiltInRegistries.BLOCK, key, new Block(props));
 	}
 
-	/** Forces class loading, and with it registration. */
-	public static void init() {}
+	/**
+	 * Forces class loading, and with it registration. And lets fire and furnaces take the silk cloth as they take wool
+	 * and carpet: vanilla gives its own their odds in FireBlock and their burn time by the wool tags, which the silk is
+	 * kept out of.
+	 */
+	public static void init() {
+		// vanilla's odds for wool and for carpet: how readily each catches, and how quickly it burns away
+		FlammableBlockRegistry.getDefaultInstance().add(SEAM_SILK_BLOCK, 30, 60);
+		FlammableBlockRegistry.getDefaultInstance().add(SEAM_SILK_CARPET, 60, 20);
+		// and the burn time of wool (half a smelt) and of a carpet (a third and a tick)
+		FuelRegistryEvents.BUILD.register((fuels, context) -> {
+			fuels.add(SEAM_SILK_BLOCK, 100);
+			fuels.add(SEAM_SILK_CARPET, 67);
+		});
+	}
 }
