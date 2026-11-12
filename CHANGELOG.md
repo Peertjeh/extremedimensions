@@ -1,5 +1,22 @@
 # Changelog
 
+## 3.51.1: Under A Shader Pack
+
+### Fixed
+- **No more white-outs in the Seam under a shader pack.** The Seam shares the End's sky, and Iris runs a shader pack's
+  End programme there, End flashes and all: a pack that draws them itself (Solas, with its white-out and beam) did so
+  every few seconds. The Seam now has no End flashes at all (nor their sound); the End keeps its own.
+
+### Added
+- **The Kindled Seam Lantern glows and gives violet light under a shader pack** (with Iris). A shader pack gives glow
+  and coloured light only to the blocks its own list names, and names none of the mod's; the mod now adds its lanterns
+  to that list as Iris hands it over, under a vanilla light's number: the Kindled Seam Lantern as **crying obsidian**
+  (the most violet of them), the Veil Lantern as a **soul lantern**. Where a pack names one of them itself, its own
+  choice is kept.
+- **Settings → Display → Kindled lantern under shaders**: crying obsidian, amethyst cluster, soul lantern, lantern or
+  off. Taken up the next time the shader pack is loaded (reload it, or pick it again).
+- CI turns a shader pack on in the Seam (the newest Solas) and checks the lanterns are in its list and no End flash shows.
+
 ## 3.51.0: Built As Vanilla Builds
 
 ### Changed

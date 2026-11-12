@@ -208,6 +208,18 @@ jobs:
           echo "code=$code" >> "$GITHUB_OUTPUT"
           if [ $code -eq 3 ]; then echo "None of them has a build for this game version yet: nothing to test with"; exit 0; fi
           exit $code
+      # A shader pack (3.51.1: Solas, else Complementary Reimagined) for the test's last look, at the Seam and the mod's
+      # lanterns under one: selected for Iris but left off, the test turns it on at the end. None to be had leaves that out.
+      - name: fetch a shader pack
+        if: steps.fetch.outputs.code == '0'
+        run: |
+          python3 tools/compat/fetch.py --shader build/run/clientGameTest/shaderpacks || echo "No shader pack to be had: the test leaves that look out"
+          f=$(ls build/run/clientGameTest/shaderpacks 2>/dev/null | head -1)
+          if [ -n "$f" ]; then
+            mkdir -p build/run/clientGameTest/config
+            printf 'shaderPack=%s\nenableShaders=false\n' "$f" > build/run/clientGameTest/config/iris.properties
+            cat build/run/clientGameTest/config/iris.properties
+          fi
       # On a commit marked [probe]: Iris's classes for how it maps blocks to a shader pack's ids (to look up, not to build on)
       - name: iris probe
         if: always() && contains(github.event.head_commit.message, '[probe]')
@@ -217,6 +229,13 @@ jobs:
             echo "IRISJAR|$j"
             unzip -Z1 "$j" | grep -iE 'materialmap|idmap|WorldRenderingSettings|BlockRenderingSettings|BlockMaterial' | sed "s/^/IRISCLASS|/"
             for c in $(unzip -Z1 "$j" | grep -E '(WorldRenderingSettings|BlockRenderingSettings|BlockMaterialMapping|IdMap|BlockEntry)\.class$' | sed 's/\.class$//; s#/#.#g'); do javap -cp "$j" -p "$c" 2>&1 | sed "s/^/IRIS|/"; done
+            # and where it reads the End's flashes (for a shader pack's uniforms)
+            rm -rf /tmp/iris-classes && mkdir -p /tmp/iris-classes && unzip -q -o "$j" '*.class' -d /tmp/iris-classes
+            for f in $(grep -rl -a 'EndFlash' /tmp/iris-classes | head -8); do
+              c=$(echo "${f#/tmp/iris-classes/}" | sed 's/\.class$//; s#/#.#g')
+              echo "IRISFLASH|$c"
+              javap -cp /tmp/iris-classes -c -p "$c" 2>&1 | grep -n -B4 -A4 'EndFlash' | head -60 | sed "s/^/IRISFLASH|/"
+            done
           done || true
       - name: client game test with them
         if: steps.fetch.outputs.code == '0'
@@ -228,7 +247,8 @@ jobs:
           # (the virtual display has no GLX visual of the kind the game asks for; through EGL Mesa makes one)
           SDL_VIDEO_FORCE_EGL: '1'
           SDL_VIDEO_X11_FORCE_EGL: '1'
-        timeout-minutes: 20
+        # (a shader pack drawn in software at the end is slow)
+        timeout-minutes: 30
       - name: capture screenshots
         if: always()
         uses: actions/upload-artifact@v7

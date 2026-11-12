@@ -65,6 +65,23 @@ public final class ClientOptions {
 		}
 	}
 
+	/**
+	 * How the Kindled Seam Lantern shines under a shader pack (3.51.1): a shader pack gives light and glow to the blocks it
+	 * knows, and knows none of the mod's; with Iris, the lantern is shown to it as one of these vanilla light sources, whose
+	 * glow and light colour it then takes (and which the pack's own settings may change). Off leaves it unknown to it.
+	 */
+	public enum ShaderLook {
+		CRYING_OBSIDIAN("crying_obsidian"), AMETHYST_CLUSTER("amethyst_cluster"), SOUL_LANTERN("soul_lantern"),
+		LANTERN("lantern"), OFF("");
+
+		/** The vanilla block it is shown as, by its id in the minecraft namespace ("" for none). */
+		public final String block;
+
+		ShaderLook(String block) {
+			this.block = block;
+		}
+	}
+
 	/** What is stored. Every field has a safe default so a damaged or older file still loads. */
 	private static final class Values {
 		boolean reduceFlashing = false;
@@ -76,6 +93,7 @@ public final class ClientOptions {
 		boolean hints = true;
 		MenuStyle menu = MenuStyle.FULL;
 		Effects effects = Effects.FULL;
+		ShaderLook shaderLook = ShaderLook.CRYING_OBSIDIAN;
 	}
 
 	/** HUD sizes to cycle through, in percent. */
@@ -102,6 +120,9 @@ public final class ClientOptions {
 		}
 		if (values.effects == null) {
 			values.effects = Effects.FULL;
+		}
+		if (values.shaderLook == null) {
+			values.shaderLook = ShaderLook.CRYING_OBSIDIAN;
 		}
 		boolean known = false;
 		for (int s : HUD_SCALES) {
@@ -162,6 +183,16 @@ public final class ClientOptions {
 
 	public static void setEffects(Effects e) {
 		values.effects = e;
+		save();
+	}
+
+	public static ShaderLook shaderLook() {
+		return values.shaderLook;
+	}
+
+	/** (Taken up the next time the shader pack is loaded.) */
+	public static void setShaderLook(ShaderLook look) {
+		values.shaderLook = look;
 		save();
 	}
 

@@ -257,6 +257,14 @@ Built for vanilla 26.3 with Fabric API. CI runs the client with the newest **Sod
 **Text Placeholder API** for the game version on every push; with Mod Menu installed, the mod's settings open from its
 Configure button.
 
+### Shader packs (Iris)
+
+A shader pack gives glow and coloured light only to the blocks it knows by name. With Iris, the mod shows its lanterns
+to the pack as vanilla lights: the **Kindled Seam Lantern** as crying obsidian (violet light; under Settings → Display
+it can be an amethyst cluster, a soul lantern, a lantern, or off) and the **Veil Lantern** as a soul lantern. Iris runs
+a pack's End programme in the Seam, as the Seam shares the End's sky; the Seam has no End flashes, so none whites it out.
+CI turns the newest Solas on in the Seam on every push.
+
 ### Tablist placeholders (TAB)
 
 With [Text Placeholder API](https://github.com/Patbox/TextPlaceholderAPI) (`placeholder-api`) on the server, the mod

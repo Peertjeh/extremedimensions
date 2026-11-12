@@ -17,7 +17,9 @@ import net.minecraft.server.level.ServerPlayer;
  * ({@code -Dextremedimensions.compat=true}; the others stand aside there). The game must start with them all, the
  * journal and the settings must open, Mod Menu must list the mod and its Configure button open the mod's settings, Text
  * Placeholder API must read the tablist placeholders back, JEI must take the mod's categories and pages, and the Seam (its sky, its fog, the expedition's bar) must
- * draw under Sodium's renderer. Every step is a screenshot.
+ * draw under Sodium's renderer. Last (3.51.1), when the job could fetch a shader pack: the pack is turned on in the
+ * Seam, the mod's lanterns must be in its list of blocks under a vanilla light's number, and the Seam must show no End
+ * flash. Every step is a screenshot.
  */
 public class ClientCompat implements FabricClientGameTest {
 	/** Whether this run is the compatibility job's. */
@@ -146,6 +148,124 @@ public class ClientCompat implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ ~180 -10");
 			ctx.waitTicks(40);
 			ctx.takeScreenshot("compat_06_seam_behind");
+
+			if (loader.isModLoaded("iris")) {
+				underShaders(ctx, sp);
+			}
 		}
+	}
+
+	/** Iris's public switch for its shader pack, turned on or off (false when it cannot be reached). */
+	private static boolean shaders(boolean on) {
+		try {
+			Class<?> api = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
+			Object instance = api.getMethod("getInstance").invoke(null);
+			Object config = api.getMethod("getConfig").invoke(instance);
+			Class.forName("net.irisshaders.iris.api.v0.IrisApiConfig").getMethod("setShadersEnabledAndApply", boolean.class).invoke(config, on);
+			return true;
+		} catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+			System.out.println("[compat] could not turn the shader pack " + (on ? "on" : "off") + ": " + e);
+			return false;
+		}
+	}
+
+	private static boolean shaderPackInUse() {
+		try {
+			Class<?> api = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
+			return (Boolean) api.getMethod("isShaderPackInUse").invoke(api.getMethod("getInstance").invoke(null));
+		} catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+			return false;
+		}
+	}
+
+	/** The number Iris gives a block state for the shader pack in use ({@code null} when it gives none, or has no list). */
+	@SuppressWarnings("unchecked")
+	private static Integer shaderId(net.minecraft.world.level.block.state.BlockState state) {
+		try {
+			Class<?> settings = Class.forName("net.irisshaders.iris.shaderpack.materialmap.WorldRenderingSettings");
+			Object ids = settings.getMethod("getBlockStateIds").invoke(settings.getField("INSTANCE").get(null));
+			if (ids instanceof it.unimi.dsi.fastutil.objects.Object2IntMap<?> map) {
+				var m = (it.unimi.dsi.fastutil.objects.Object2IntMap<net.minecraft.world.level.block.state.BlockState>) map;
+				return m.containsKey(state) ? m.getInt(state) : null;
+			}
+		} catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+			System.out.println("[compat] Iris's list of blocks could not be read: " + e);
+		}
+		return null;
+	}
+
+	/**
+	 * The Seam under the shader pack the job fetched (3.51.1): a Kindled Seam Lantern and a Veil Lantern before the
+	 * visitor, the pack turned on, its list of blocks read back, and two looks a while apart (a white-out between them
+	 * was the End's flash, which the Seam no longer has). Left out when there is no pack.
+	 */
+	private static void underShaders(ClientGameTestContext ctx, TestSingleplayerContext sp) {
+		java.nio.file.Path packs = FabricLoader.getInstance().getGameDir().resolve("shaderpacks");
+		boolean any;
+		try (var list = java.nio.file.Files.list(packs)) {
+			any = list.findAny().isPresent();
+		} catch (java.io.IOException e) {
+			any = false;
+		}
+		if (!any) {
+			System.out.println("[compat] no shader pack in " + packs + ": the look under one is left out");
+			return;
+		}
+		// The two lanterns, three blocks ahead and to either side, on the ground
+		sp.getServer().runOnServer(s -> {
+			ServerPlayer p = player(s);
+			net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) p.level();
+			net.minecraft.core.Direction ahead = p.getDirection();
+			net.minecraft.core.BlockPos base = p.blockPosition().relative(ahead, 3);
+			net.minecraft.core.BlockPos[] at = {base.relative(ahead.getClockWise()), base.relative(ahead.getCounterClockWise())};
+			net.minecraft.world.level.block.Block[] lanterns = {com.extremedimensions.registry.ModBlocks.KINDLED_SEAM_LANTERN,
+					com.extremedimensions.registry.ModBlocks.VEIL_LANTERN};
+			for (int i = 0; i < at.length; i++) {
+				if (level.getBlockState(at[i].below()).isAir()) {
+					level.setBlock(at[i].below(), com.extremedimensions.registry.ModBlocks.POLISHED_PALE_HUSH_STONE.defaultBlockState(), 3);
+				}
+				level.setBlock(at[i], lanterns[i].defaultBlockState(), 3);
+			}
+		});
+		ctx.waitTicks(10);
+		check(ctx.computeOnClient(mc -> shaders(true)), "Iris's switch for its shader pack could not be reached");
+		for (int i = 0; i < 24 && !ctx.computeOnClient(mc -> shaderPackInUse()); i++) {
+			ctx.waitTicks(5);
+		}
+		boolean inUse = ctx.computeOnClient(mc -> shaderPackInUse());
+		System.out.println("[compat] shader pack in use: " + inUse);
+		if (!inUse) {
+			// (a pack that does not compile on the job's software renderer: nothing to look at, which is not the mod's)
+			ctx.takeScreenshot("compat_07_seam_shader_failed");
+			ctx.runOnClient(mc -> shaders(false));
+			return;
+		}
+		ctx.waitTicks(20);
+		ctx.takeScreenshot("compat_07_seam_shader");
+
+		// The lanterns in the pack's list, under a vanilla light's number (where the pack names that light at all)
+		Integer kindled = ctx.computeOnClient(mc -> shaderId(com.extremedimensions.registry.ModBlocks.KINDLED_SEAM_LANTERN.defaultBlockState()));
+		Integer crying = ctx.computeOnClient(mc -> shaderId(net.minecraft.world.level.block.Blocks.CRYING_OBSIDIAN.defaultBlockState()));
+		Integer veil = ctx.computeOnClient(mc -> shaderId(com.extremedimensions.registry.ModBlocks.VEIL_LANTERN.defaultBlockState()));
+		Integer soul = ctx.computeOnClient(mc -> shaderId(net.minecraft.world.level.block.Blocks.SOUL_LANTERN.defaultBlockState()));
+		System.out.println("[compat] shader ids: kindled_seam_lantern=" + kindled + " crying_obsidian=" + crying + " veil_lantern=" + veil
+				+ " soul_lantern=" + soul);
+		if (crying != null && com.extremedimensions.client.options.ClientOptions.shaderLook() == com.extremedimensions.client.options.ClientOptions.ShaderLook.CRYING_OBSIDIAN) {
+			check(crying.equals(kindled), "the Kindled Seam Lantern is not in the shader pack's list as crying obsidian: " + kindled + " / " + crying);
+		}
+		if (soul != null) {
+			check(soul.equals(veil), "the Veil Lantern is not in the shader pack's list as a soul lantern: " + veil + " / " + soul);
+		}
+
+		// No End flash in the Seam, over a stretch of it
+		float most = 0f;
+		for (int i = 0; i < 6; i++) {
+			ctx.waitTicks(10);
+			most = Math.max(most, ctx.computeOnClient(mc -> mc.level == null || mc.level.endFlashState() == null ? 0f : mc.level.endFlashState().getIntensity(1f)));
+		}
+		check(most == 0f, "an End flash showed in the Seam under the shader pack: " + most);
+		ctx.takeScreenshot("compat_08_seam_shader_later");
+		ctx.runOnClient(mc -> shaders(false));
+		ctx.waitTicks(10);
 	}
 }

@@ -235,6 +235,11 @@ public class SettingsScreen extends Screen {
 		addChoice(cx, y + DISPLAY_ROW * 8, () -> Ui.tr("gui.extremedimensions.settings.menu." + ClientOptions.menu().name().toLowerCase(Locale.ROOT)),
 				() -> ClientOptions.setMenu(ClientOptions.MenuStyle.values()[(ClientOptions.menu().ordinal() + 1) % ClientOptions.MenuStyle.values().length]),
 				"menu");
+		addChoice(cx, y + DISPLAY_ROW * 9,
+				() -> Ui.tr("gui.extremedimensions.settings.shader_look." + ClientOptions.shaderLook().name().toLowerCase(Locale.ROOT)),
+				() -> ClientOptions.setShaderLook(
+						ClientOptions.ShaderLook.values()[(ClientOptions.shaderLook().ordinal() + 1) % ClientOptions.ShaderLook.values().length]),
+				"shader_look");
 
 		// World rules: a difficulty preset at once, then every value
 		presetChoice = new Choice(x0 + 108, y0 + 44, 124, 16, () -> Ui.tr(target.nameKey()), () -> {
@@ -906,7 +911,7 @@ public class SettingsScreen extends Screen {
 	}
 
 	private static final String[] DISPLAY_KEYS = {"reduce_flashing", "colour_blind", "effects", "meters", "timer", "hud_scale", "guidance", "hints",
-			"menu"};
+			"menu", "shader_look"};
 
 	private void display(GuiGraphicsExtractor g, int x0, int y0, int mouseX, int mouseY, double fade) {
 		int y = y0 + DISPLAY_TOP;
@@ -923,8 +928,11 @@ public class SettingsScreen extends Screen {
 				}
 			}
 		}
-		Ui.divider(g, x0 + 12, y0 + ph - 46, pw - 24, Ui.EMBER, fade);
-		Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.settings.display_note"), x0 + pw / 2, y0 + ph - 40, Ui.MUTED, fade);
+		// (the note below them only where it does not run into the last row, as on a short screen)
+		if (y + DISPLAY_KEYS.length * DISPLAY_ROW <= y0 + ph - 48) {
+			Ui.divider(g, x0 + 12, y0 + ph - 46, pw - 24, Ui.EMBER, fade);
+			Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.settings.display_note"), x0 + pw / 2, y0 + ph - 40, Ui.MUTED, fade);
+		}
 	}
 
 	private void world(GuiGraphicsExtractor g, int x0, int y0, int mouseX, int mouseY, double fade, int accent) {

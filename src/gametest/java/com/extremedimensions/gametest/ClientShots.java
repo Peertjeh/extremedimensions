@@ -624,6 +624,47 @@ public class ClientShots implements FabricClientGameTest {
 		}
 	}
 
+	/**
+	 * The mod's lanterns put in a shader pack's list of blocks as Iris hands it over (3.51.1), on a list made up here: the
+	 * Kindled Seam Lantern under crying obsidian's number (the setting as it comes), the Veil Lantern under the soul
+	 * lantern's of the same hanging, and a state the pack names itself keeping its own number.
+	 */
+	private static void shaderListCheck() {
+		var ids = new it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap<net.minecraft.world.level.block.state.BlockState>();
+		ids.put(net.minecraft.world.level.block.Blocks.CRYING_OBSIDIAN.defaultBlockState(), 5);
+		for (var st : net.minecraft.world.level.block.Blocks.SOUL_LANTERN.getStateDefinition().getPossibleStates()) {
+			ids.put(st, st.getValue(net.minecraft.world.level.block.LanternBlock.HANGING) ? 8 : 7);
+		}
+		var named = ModBlocks.VEIL_LANTERN.defaultBlockState().setValue(net.minecraft.world.level.block.LanternBlock.HANGING, true)
+				.setValue(net.minecraft.world.level.block.LanternBlock.WATERLOGGED, true);
+		ids.put(named, 42);
+		com.extremedimensions.client.compat.ShaderLight.addLanterns(ids);
+		if (com.extremedimensions.client.options.ClientOptions.shaderLook() == com.extremedimensions.client.options.ClientOptions.ShaderLook.CRYING_OBSIDIAN) {
+			for (var st : ModBlocks.KINDLED_SEAM_LANTERN.getStateDefinition().getPossibleStates()) {
+				check(ids.containsKey(st) && ids.getInt(st) == 5, "the Kindled Seam Lantern's " + st + " is not in a shader pack's list as crying obsidian");
+			}
+		}
+		if (com.extremedimensions.client.options.ClientOptions.shaderLook() == com.extremedimensions.client.options.ClientOptions.ShaderLook.OFF) {
+			return;
+		}
+		for (var st : ModBlocks.VEIL_LANTERN.getStateDefinition().getPossibleStates()) {
+			int want = st == named ? 42 : st.getValue(net.minecraft.world.level.block.LanternBlock.HANGING) ? 8 : 7;
+			check(ids.containsKey(st) && ids.getInt(st) == want, "the Veil Lantern's " + st + " is in a shader pack's list as " + ids.getOrDefault(st, -1)
+					+ ", not " + want);
+		}
+	}
+
+	/** The strongest an End flash state of its own gets over a day of time (3.51.1), here and now. */
+	private static float mostFlash() {
+		net.minecraft.client.renderer.EndFlashState state = new net.minecraft.client.renderer.EndFlashState();
+		float most = 0f;
+		for (long t = 0; t < 24000; t++) {
+			state.tick(t);
+			most = Math.max(most, state.getIntensity(1f));
+		}
+		return most;
+	}
+
 	private static void check(boolean ok, String message) {
 		if (!ok) {
 			throw new AssertionError(message);
@@ -2441,12 +2482,20 @@ public class ClientShots implements FabricClientGameTest {
 			// shots are taken: a Thinned that finds the visitor standing still would end the visit before the gate is seen.)
 			sp.getServer().runCommand("effect give @a minecraft:resistance infinite 255 true");
 			sp.getServer().runCommand("effect give @a minecraft:saturation infinite 10 true");
+			// (3.51.1: an End flash state of the client's own, run through a day of time outside the Seam, flashes)
+			float flashOutside = ctx.computeOnClient(mc -> mostFlash());
 			sp.getServer().runCommand("execute as @a run tether seam");
 			// On a busy machine the server can run seconds behind the client: wait until the visitor is in the Seam
 			for (int i = 0; i < 40 && !sp.getServer().computeOnServer(s -> com.extremedimensions.seam.SeamService.inSeam(player(s))); i++) {
 				ctx.waitTicks(5);
 			}
 			ctx.waitTicks(20);
+			// ...and never in it: the Seam shares the End's sky, not its flashes (a shader pack drew them as a white-out)
+			float flashInSeam = ctx.computeOnClient(mc -> mostFlash());
+			System.out.println("[shots] End flash, strongest over a day: outside the Seam " + flashOutside + ", in it " + flashInSeam);
+			check(flashInSeam == 0f, "an End flash showed in the Seam: " + flashInSeam);
+			check(flashOutside > 0f, "an End flash state never flashed outside the Seam either, so the Seam's check says nothing");
+			ctx.runOnClient(mc -> shaderListCheck());
 			sp.getServer().runOnServer(s -> {
 				PlayerData d = DataStore.get(player(s).getUUID());
 				check(d.inSeam && d.trial != null, "the trial did not begin with the visit to the Seam");

@@ -43,6 +43,11 @@ public final class SeamSky {
 		return mc.level != null && SEAM.equals(mc.level.dimension().identifier());
 	}
 
+	/** True while the client is in the Seam, whether or not its sky could be made ready. */
+	public static boolean here() {
+		return inSeam(Minecraft.getInstance());
+	}
+
 	/** True while the Seam sky should replace the End sky (and everything for it is ready). */
 	public static boolean active() {
 		return !failed && buffer != null && texture != null && inSeam(Minecraft.getInstance());
