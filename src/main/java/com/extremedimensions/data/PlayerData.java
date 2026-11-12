@@ -230,6 +230,15 @@ public class PlayerData {
 	public double arrivalX, arrivalZ;
 	/** Furthest distance from the arrival portal ever reached (advancement). */
 	public double furthest = 0;
+	/**
+	 * What the expedition under way and the visit to the Seam under way have come to so far (null when there is none), and
+	 * the ended ones still waiting for what they cost to be chosen: kept, so a logout or a restart loses none of it (see
+	 * ExpeditionRecord). A visit to the Seam on an expedition is counted on its own, beside the expedition.
+	 */
+	public com.extremedimensions.expedition.ExpeditionRecord.Tally runTally = null, seamTally = null;
+	public List<com.extremedimensions.expedition.ExpeditionRecord> records = new ArrayList<>();
+	/** Expeditions begun into each world (its short id), counted since 3.52: the playtest log's "nth". */
+	public Map<String, Integer> ventures = new HashMap<>();
 
 	// --- runtime only ---
 	public transient String dim = "overworld";

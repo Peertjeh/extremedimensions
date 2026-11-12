@@ -161,6 +161,7 @@ public final class SeamService {
 	 * and no collapse counted (a trial they were on is simply over).
 	 */
 	private static void lost(ServerPlayer p, PlayerData d) {
+		com.extremedimensions.expedition.ExpeditionRecord.ended(p, d, true, com.extremedimensions.expedition.ExpeditionRecord.Outcome.REMADE);
 		d.seamLost = false;
 		d.seamPull = 0;
 		d.trial = null;
@@ -380,6 +381,8 @@ public final class SeamService {
 		d.seamMax = com.extremedimensions.relic.RelicService.seamTime(d, seconds);
 		d.seamLeft = d.seamMax;
 		d.seamPull = 0;
+		// The visit is counted from here, for its record (one of its own, also on a visit made from an expedition)
+		d.seamTally = com.extremedimensions.expedition.ExpeditionRecord.begin(d, Dims.SEAM, d.homeDim, d.seamMax, TetherService.carriedTier(p, d));
 		// A Rift Trial taken up at home begins with this visit
 		com.extremedimensions.trial.TrialService.begin(p, d, x, z);
 		d.hasRopeEnd = false;
@@ -430,7 +433,8 @@ public final class SeamService {
 				continue;
 			}
 			if (!inSeam(p)) {
-				// Left the Seam some other way (a command, a death): the thread is cut
+				// Left the Seam some other way (a command, a death): the thread is cut (a death has ended its record already)
+				com.extremedimensions.expedition.ExpeditionRecord.ended(p, d, true, com.extremedimensions.expedition.ExpeditionRecord.Outcome.LEFT);
 				d.inSeam = false;
 				RiftPortals.closeHome(p);
 				com.extremedimensions.trial.TrialService.fail(p, d);
@@ -451,10 +455,14 @@ public final class SeamService {
 			pull(p, d);
 			return;
 		}
+		double drain = 0;
 		if (!p.isCreative() && !(MendingService.active() && MendingService.inArena(p)) && !com.extremedimensions.elder.WeaverService.knotMotherNear(p)) {
 			// Time runs out faster in the Fray
-			d.seamLeft -= SeamDepth.drain(p.getY()) * com.extremedimensions.events.FrayedSeam.drain(p) / 20.0;
+			drain = SeamDepth.drain(p.getY()) * com.extremedimensions.events.FrayedSeam.drain(p);
+			d.seamLeft -= drain / 20.0;
 		}
+		// For the visit's record: how far from the rift home, and how fast the thread ran (the distance does not count here)
+		com.extremedimensions.expedition.ExpeditionRecord.tick(d.seamTally, riftDistance(p, d), 1.0, drain);
 		TetherService.lay(p, d);
 		SeamDepth.tick(p, d, tick);
 		String dim = SEAM_ID;
@@ -536,6 +544,7 @@ public final class SeamService {
 	}
 
 	private static void exit(ServerPlayer p, PlayerData d) {
+		com.extremedimensions.expedition.ExpeditionRecord.ended(p, d, true, com.extremedimensions.expedition.ExpeditionRecord.Outcome.RETURNED);
 		d.inSeam = false;
 		RiftPortals.closeHome(p);
 		com.extremedimensions.trial.TrialService.finish(p, d);
@@ -550,6 +559,10 @@ public final class SeamService {
 
 	/** Out of time, or fallen: the Seam drags the player back out over three seconds. */
 	private static void collapse(ServerPlayer p, PlayerData d) {
+		if (d.seamTally != null) {
+			// (thread left: they fell below the islands, which the record tells apart from the thread running out)
+			d.seamTally.fell = d.seamLeft > 0;
+		}
 		d.seamPull = PULL_TICKS;
 		WorldFx.fx(p, Fx.COLLAPSE, 0);
 		WorldFx.sound(p, "extremedimensions:collapse", 1.2f, 1.1f);
@@ -567,6 +580,10 @@ public final class SeamService {
 			com.extremedimensions.coop.FallenService.bleedOut(p);
 			return;
 		}
+		// Its record: what the Seam keeps and the curse it lays are its cost, and the player has its card once home
+		boolean fell = d.seamTally != null && d.seamTally.fell;
+		com.extremedimensions.expedition.ExpeditionRecord record = com.extremedimensions.expedition.ExpeditionRecord.end(p, d, true,
+				fell ? com.extremedimensions.expedition.ExpeditionRecord.Outcome.FELL : com.extremedimensions.expedition.ExpeditionRecord.Outcome.THROWN_HOME);
 		d.inSeam = false;
 		RiftPortals.closeHome(p);
 		d.collapses++;
@@ -580,7 +597,14 @@ public final class SeamService {
 		if (silk + fragments > 0) {
 			p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.seam.toll", silk, fragments));
 		}
-		PenaltyService.curse(p, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties(), com.extremedimensions.penalty.CurseLog.Source.COLLAPSE);
+		com.extremedimensions.penalty.Penalty laid = PenaltyService.curse(p, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties(),
+				com.extremedimensions.penalty.CurseLog.Source.COLLAPSE);
+		if (record != null) {
+			record.silk = silk;
+			record.fragments = fragments;
+			record.laid(laid);
+		}
+		com.extremedimensions.expedition.ExpeditionRecord.settle(p, d, record);
 		DataStore.markDirty();
 	}
 

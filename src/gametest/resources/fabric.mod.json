@@ -72,7 +72,8 @@
 			"com.extremedimensions.gametest.PenanceTests",
 			"com.extremedimensions.gametest.KindledLanternTests",
 			"com.extremedimensions.gametest.BuilderBlockTests",
-			"com.extremedimensions.gametest.ElderFootingTests"
+			"com.extremedimensions.gametest.ElderFootingTests",
+			"com.extremedimensions.gametest.ExpeditionRecordTests"
 		],
 		"fabric-client-gametest": [
 			"com.extremedimensions.gametest.ClientShots",

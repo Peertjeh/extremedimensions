@@ -58,6 +58,8 @@ public final class PenaltyService {
 	public static void owe(PlayerData d, boolean overworld) {
 		d.pendingPenalties++;
 		d.owed.add(overworld ? OVERWORLD : BEYOND);
+		// (owed as an expedition ends, the card is that expedition's, for its record)
+		com.extremedimensions.expedition.ExpeditionRecord.owing(d);
 		if (d.pendingOffer.isEmpty()) {
 			nextOffer(d);
 		}
@@ -99,6 +101,8 @@ public final class PenaltyService {
 				d.owed.remove(0);
 				d.pendingPenalties = Math.max(0, d.pendingPenalties - 1);
 				d.xpForfeit = true;
+				// (the card is answered with nothing: the record of the expedition it was owed for says so)
+				com.extremedimensions.expedition.ExpeditionRecord.resolve(d, null, 0);
 				continue;
 			}
 			d.pendingOffer = ids;
@@ -144,6 +148,11 @@ public final class PenaltyService {
 
 	/** The player picked a card on the curse screen. */
 	public static void choose(ServerPlayer p, String id) {
+		choose(p, id, false);
+	}
+
+	/** A card was picked: by the player, or ({@code auto}) by the Tether, the offer having been left too long. */
+	public static void choose(ServerPlayer p, String id, boolean auto) {
 		PlayerData d = DataStore.get(p.getUUID());
 		Penalty pen = Penalty.byId(id);
 		int idx = d.pendingOffer.indexOf(id);
@@ -151,15 +160,20 @@ public final class PenaltyService {
 			return;
 		}
 		int mult = idx < d.pendingMult.size() ? Math.max(1, d.pendingMult.get(idx)) : 1;
+		List<String> offered = new ArrayList<>(d.pendingOffer);
 		d.pendingOffer.clear();
 		d.pendingMult.clear();
 		d.pendingPenalties = Math.max(0, d.pendingPenalties - 1);
-		if (!d.owed.isEmpty()) {
+		boolean owedOne = !d.owed.isEmpty();
+		if (owedOne) {
 			d.owed.remove(0);
 		}
 
 		int added = CurseLog.add(d, pen, mult, CurseLog.Source.CARD);
 		Map<Penalty, Integer> spilled = spill(d, mult - added);
+		// The card goes to the record of the expedition it was owed for (if any), and the playtest log notes the choice
+		com.extremedimensions.expedition.ExpeditionRecord from = owedOne ? com.extremedimensions.expedition.ExpeditionRecord.resolve(d, pen, mult) : null;
+		com.extremedimensions.compat.PlaytestLog.curse(p, d, pen, mult, spilled, offered, auto, from);
 		CurseEffects.applyEffects(p, d);
 		WorldFx.fx(p, Fx.PENALTY, 0);
 		WorldFx.particles(p, "minecraft:soul", 1.0, 0.5, 0.05, 25 * mult);
@@ -190,6 +204,8 @@ public final class PenaltyService {
 		}
 		Sync.state(p, d);
 		DataStore.markDirty();
+		// An expedition whose cards are all chosen now is told: its line in the playtest log, and a Collapse's card
+		com.extremedimensions.expedition.ExpeditionRecord.answered(p, d);
 	}
 
 	/**

@@ -161,6 +161,8 @@ public final class RelicService {
 				? Component.translatable("gui.extremedimensions.relic.bound_over", Component.translatable(r.nameKey()), Component.translatable(before.nameKey()))
 				: Component.translatable("gui.extremedimensions.relic.bound", Component.translatable(r.nameKey())), true);
 		Advancements.grant(p, Advancements.RELIC_BOUND);
+		// (whether each relic is worth binding is a question the playtest log helps to answer)
+		com.extremedimensions.compat.PlaytestLog.relic(p, d, r, before, breaks);
 		return InteractionResult.SUCCESS;
 	}
 

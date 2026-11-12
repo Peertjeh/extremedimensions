@@ -114,6 +114,8 @@ public final class ServerEvents {
 			DataStore.flush();
 			// The stats export, once more, as a web page should show the world while the server is down
 			com.extremedimensions.compat.StatsExport.stopping(s);
+			// The playtest log's last lines are on the disk before the server is gone (a few seconds at most)
+			com.extremedimensions.compat.PlaytestLog.flush();
 		});
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
 			STRAYS.clear();
@@ -760,7 +762,7 @@ public final class ServerEvents {
 				d.offerAge = 0;
 				String pick = d.pendingOffer.get(java.util.concurrent.ThreadLocalRandom.current().nextInt(d.pendingOffer.size()));
 				p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.choice.timeout"));
-				PenaltyService.choose(p, pick);
+				PenaltyService.choose(p, pick, true);
 			}
 
 			// A curse laid without a choice since the last tick: a toast naming it and where it came from
@@ -805,6 +807,8 @@ public final class ServerEvents {
 				discover(p, d, dim);
 			}
 			if (beat % 20 == 0) {
+				// An ended expedition whose cost is settled by now is told (its record, see ExpeditionRecord)
+				com.extremedimensions.expedition.ExpeditionRecord.second(p, d);
 				com.extremedimensions.tribe.Standing.second(p, d);
 				TetherService.settle(p, d);
 				com.extremedimensions.tetherite.Tetherite.weigh(p, d);

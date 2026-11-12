@@ -24,7 +24,8 @@ public class SeamBriefing implements HudElement {
 	static final long DELAY_MS = 1200, SHOW_MS = 13000, FADE_IN_MS = 450, FADE_OUT_MS = 900;
 	private static final int W = 340;
 
-	private record Row(int colour, String label, String text) {}
+	/** One row of a card: a gem in its colour, its name, and what to know. */
+	record Row(int colour, String label, String text) {}
 
 	/** Whether a briefing is on the screen now (the guide card steps aside for it). */
 	public static boolean showing() {
@@ -78,17 +79,34 @@ public class SeamBriefing implements HudElement {
 			rows.add(new Row(Ui.SOUL, Ui.tr("gui.extremedimensions.brief.seam.home"), Ui.tr("gui.extremedimensions.brief.seam.home.text")));
 			rows.add(new Row(Ui.BLOOD, Ui.tr("gui.extremedimensions.brief.seam.below"), Ui.tr("gui.extremedimensions.brief.seam.below.text")));
 		}
+		card(g, font, sw, sh, alpha, accent, head, aim, rows, Ui.tr("gui.extremedimensions.brief.footer"), false);
+	}
+
+	/**
+	 * A card in the briefing's look, under the crosshair: a panel in the accent's colour with its heading, the aim in a
+	 * few centred lines and a divider (no aim: the divider alone), the rows, and the footer (none when null). The recap
+	 * after a Collapse is drawn by it too. {@code compact}: a row's name and its text share one line (the texts lined up
+	 * after the longest name, and cut short rather than wrapped), so the card holds no more lines than it has rows.
+	 */
+	static void card(GuiGraphicsExtractor g, Font font, int sw, int sh, double alpha, int accent, String head, String aim, List<Row> rows,
+			String foot, boolean compact) {
 		int w = Math.min(W, sw - 16);
 		int textX = 22, textW = w - textX - 8;
-		List<String> aimLines = Ui.wrap(font, aim, w - 20);
+		int labelW = 0;
+		if (compact) {
+			for (Row r : rows) {
+				labelW = Math.max(labelW, font.width(r.label().toUpperCase()));
+			}
+		}
+		List<String> aimLines = aim == null ? List.of() : Ui.wrap(font, aim, w - 20);
 		List<List<String>> wrapped = new ArrayList<>();
 		int h = 8 + 12 + aimLines.size() * 10 + 6;
 		for (Row r : rows) {
-			List<String> lines = Ui.wrap(font, r.text(), textW);
+			List<String> lines = compact ? List.of(Ui.ellipsize(font, r.text(), textW - labelW - 8)) : Ui.wrap(font, r.text(), textW);
 			wrapped.add(lines);
-			h += 10 + lines.size() * 9 + 4;
+			h += compact ? 12 : 10 + lines.size() * 9 + 4;
 		}
-		h += 12;
+		h += foot == null ? 6 : 12;
 		// Under the crosshair, clear of the hotbar (and of the timer when it sits above the hotbar); on a short screen as
 		// high as it must go, but never over the timer at the top (the hotbar gives way first)
 		boolean top = ChargeHud.bossBar() || ClientOptions.timer() == ClientOptions.TimerPlace.TOP;
@@ -122,6 +140,11 @@ public class SeamBriefing implements HudElement {
 			g.fill(x + 10, ly + 2, x + 15, ly + 7, Ui.argb(alpha, r.colour()));
 			g.fill(x + 10, ly + 2, x + 12, ly + 4, Ui.argb(alpha * 0.7, 0xFFFFFF));
 			Ui.text(g, font, r.label().toUpperCase(), x + textX, ly, r.colour(), alpha);
+			if (compact) {
+				Ui.text(g, font, wrapped.get(i).get(0), x + textX + labelW + 8, ly, Ui.TEXT, alpha);
+				ly += 12;
+				continue;
+			}
 			ly += 10;
 			for (String line : wrapped.get(i)) {
 				Ui.text(g, font, line, x + textX, ly, Ui.TEXT, alpha);
@@ -129,8 +152,9 @@ public class SeamBriefing implements HudElement {
 			}
 			ly += 4;
 		}
-		String foot = Ui.tr("gui.extremedimensions.brief.footer");
-		Ui.centered(g, font, Ui.ellipsize(font, foot, w - 16), cx, y + h - 11, Ui.MUTED, alpha * 0.9);
+		if (foot != null) {
+			Ui.centered(g, font, Ui.ellipsize(font, foot, w - 16), cx, y + h - 11, Ui.MUTED, alpha * 0.9);
+		}
 		g.pose().popMatrix();
 	}
 }

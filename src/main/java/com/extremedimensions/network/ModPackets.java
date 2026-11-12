@@ -494,6 +494,45 @@ public final class ModPackets {
 	}
 
 	/**
+	 * Server -> client: what an expedition that ended in a Collapse (or a throw out of the Seam) came to, for the card the
+	 * player is shown once home (see ExpeditionRecord): {@code realm} the world's short id, {@code outcome} the playtest
+	 * log's word for how it ended, {@code seconds} how long it lasted and {@code charge} the charge (or thread) it began
+	 * with, {@code farthest} in blocks from the portal (or the rift home); {@code distanceX100} and {@code drainX100} a
+	 * hundred times how fast the timer ran on average against its base rate, from the distance alone (0 where the distance
+	 * does not count) and all told; what it cost: {@code curses} as "id:stacks,...", the Seam Silk and Tether Fragments the
+	 * Seam kept, and the atonement the death undid.
+	 */
+	public record RecapPayload(String realm, String outcome, int seconds, int charge, int farthest, int distanceX100, int drainX100,
+			String curses, int silk, int fragments, int atonement) implements CustomPacketPayload {
+		public static final Type<RecapPayload> TYPE = new Type<>(ExtremeDimensions.id("recap"));
+		public static final StreamCodec<FriendlyByteBuf, RecapPayload> CODEC = StreamCodec.ofMember(RecapPayload::write, RecapPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(realm, 64);
+			buf.writeUtf(outcome, 32);
+			buf.writeVarInt(seconds);
+			buf.writeVarInt(charge);
+			buf.writeVarInt(farthest);
+			buf.writeVarInt(distanceX100);
+			buf.writeVarInt(drainX100);
+			buf.writeUtf(curses, 4096);
+			buf.writeVarInt(silk);
+			buf.writeVarInt(fragments);
+			buf.writeVarInt(atonement);
+		}
+
+		private static RecapPayload read(FriendlyByteBuf buf) {
+			return new RecapPayload(buf.readUtf(64), buf.readUtf(32), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
+					buf.readVarInt(), buf.readUtf(4096), buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
 	 * Server -> client: one tick of a Pale Squall's gust on the player, added to their own motion where it is made, on
 	 * their client ({@code x}, {@code z}: blocks a tick). The server cannot push a player itself: the client moves them.
 	 */

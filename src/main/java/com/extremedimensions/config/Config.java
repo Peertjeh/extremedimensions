@@ -62,6 +62,11 @@ public final class Config {
 	public static int BOUNCE_GRACE_TICKS = 40;
 	/** 1 = a big title ("The Tether Tightens", "Expedition Ended") on respawn after a death that costs a curse; 0 = none. */
 	public static int RESPAWN_TITLE = 0;
+	/**
+	 * 1 = after a Collapse (or a throw out of the Seam), once the player is home and has chosen what it cost, a short card
+	 * says how long they were away, how far out they went, why the charge ran out faster and what it cost; 0 = none.
+	 */
+	public static int COLLAPSE_RECAP = 1;
 	/** 1 = the expedition timer is a boss bar at the top of the screen, as Minecraft shows such things; 0 = the mod's own panel. */
 	public static int HUD_BOSS_BAR = 1;
 	/**
@@ -1831,6 +1836,12 @@ public final class Config {
 	/** Minutes between writes of the stats export. */
 	public static int EXPORT_MINUTES = 5;
 	/**
+	 * 1 = the playtest log: a line in {@code extremedimensions/playtest.csv} in the server's folder for every expedition
+	 * that ends (and every visit to the Seam), every relic bound and every curse chosen, to judge the balance on real
+	 * numbers (see PlaytestLog); 0 = none.
+	 */
+	public static int PLAYTEST_LOG = 0;
+	/**
 	 * A Discord webhook's URL: the world's great moments (an Elder or the Starved One defeated, the ending, the tapestry,
 	 * a gold medal in the Rift Trial) are posted to its channel; "" = none. In the config file only, and never sent to
 	 * players: whoever has the URL can post to the channel.
@@ -1970,7 +1981,7 @@ public final class Config {
 	 * The settings that are switches (1 on, 0 off), which the settings screen shows as an On/Off button instead of a
 	 * number to type (3.34). Each is a whole number with a default of 0 or 1 (a gametest holds them to it).
 	 */
-	private static final java.util.Set<String> SWITCHES = java.util.Set.of("respawn_title", "hud_boss_bar", "own_worlds_only",
+	private static final java.util.Set<String> SWITCHES = java.util.Set.of("respawn_title", "collapse_recap", "hud_boss_bar", "own_worlds_only",
 			"curse_overflow", "curse_deeper", "overworld_curses", "curse_runes", "abyssal_curses", "abyssal_mending_cloth",
 			"cloth_extreme", "cloth_scars", "atone_kill_area_shared", "hints", "lurker_enabled", "cave_lurker_enabled", "sculk_lurker_enabled",
 			"magpie_enabled",
@@ -1982,7 +1993,7 @@ public final class Config {
 			"elder_upheaval", "elder_arena", "elder_arena_wall", "elder_arena_landmark", "elder_arena_breakable", "elder_arena_collapse",
 			"elder_arena_phases", "elder_cores", "elder_isle_fall", "elder_pierce", "matriarch_hex_milk", "starved_arena", "coop_revive",
 			"coop_fallen_locked", "coop_burden", "coop_shared_anchors", "tribe_enabled", "tribe_raid", "clan_enabled",
-			"tapestry_roots_peace", "tapestry_chain_steady", "unweaving", "placeholders", "pale_reach",
+			"tapestry_roots_peace", "tapestry_chain_steady", "unweaving", "placeholders", "playtest_log", "pale_reach",
 			"pale_hauler_enabled", "pale_squall", "pale_home_calm", "relic_single_use");
 
 	/** Whether this setting is a switch (1 on, 0 off) rather than a number. */
