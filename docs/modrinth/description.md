@@ -64,7 +64,7 @@ hunt.
 - **55 advancements**, a bestiary, a ledger and a guided first expedition
 - A **music disc** and its own title and loading screens with music
 - **Drawn as vanilla draws**: every item and block follows a vanilla texture pixel for pixel, in its own colours
-- The **Kindled Seam Lantern**: a blue-violet lantern whose light reaches twice as far
+- The **Kindled Seam Lantern**: a blue-violet lantern whose light reaches twice as far (violet under shader packs too, with Iris)
 
 ## ⚙ Difficulty and settings
 
@@ -86,7 +86,7 @@ values from the same screen.
 - Play a normal **Survival** world, not Hardcore: Hardcore makes you a spectator on death, and the mod gives death its
   own consequences instead
 
-**Works with** Sodium, Iris, Mod Menu and Text Placeholder API, all tested in CI on every build.
+**Works with** Sodium, Iris, Mod Menu and Text Placeholder API, all tested in CI on every build, with a shader pack (Solas) switched on in the Seam.
 
 **Languages:** English and Dutch.
 

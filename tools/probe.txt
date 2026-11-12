@@ -1,3 +1,0 @@
-@assets/minecraft/blockstates/light.json
-@assets/minecraft/models/block/light_15.json
-$models/block/light_
