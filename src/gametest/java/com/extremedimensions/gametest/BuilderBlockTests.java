@@ -99,4 +99,31 @@ public class BuilderBlockTests {
 		}
 		helper.succeed();
 	}
+
+	/**
+	 * A hush slab drops one of itself, and a double slab two, as vanilla's stone slab does (the hush slabs' loot tables
+	 * were written in an older form of the count's condition: checked here against vanilla's, side by side).
+	 */
+	@GameTest
+	public void aHushSlabDropsOneAndADoubleTwo(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+		try {
+			for (Block b : new Block[] {Blocks.STONE_SLAB, ModBlocks.HUSH_STONE_SLAB, ModBlocks.COBBLED_HUSH_STONE_SLAB, ModBlocks.POLISHED_HUSH_STONE_SLAB,
+					ModBlocks.HUSH_BRICK_SLAB, ModBlocks.MOSSY_HUSH_BRICK_SLAB, ModBlocks.HUSH_TILE_SLAB, ModBlocks.PALE_HUSH_BRICK_SLAB,
+					ModBlocks.POLISHED_PALE_HUSH_STONE_SLAB}) {
+				for (net.minecraft.world.level.block.state.properties.SlabType type : new net.minecraft.world.level.block.state.properties.SlabType[] {
+						net.minecraft.world.level.block.state.properties.SlabType.BOTTOM, net.minecraft.world.level.block.state.properties.SlabType.DOUBLE}) {
+					level.setBlock(at, b.defaultBlockState().setValue(net.minecraft.world.level.block.SlabBlock.TYPE, type), 3);
+					List<ItemStack> drops = Block.getDrops(level.getBlockState(at), level, at, null);
+					int want = type == net.minecraft.world.level.block.state.properties.SlabType.DOUBLE ? 2 : 1;
+					int got = drops.stream().filter(d -> d.is(b.asItem())).mapToInt(ItemStack::getCount).sum();
+					check(helper, got == want, "%s as %s dropped %s, not %s", b, type, drops, want);
+				}
+			}
+		} finally {
+			level.setBlock(at, Blocks.AIR.defaultBlockState(), 3);
+		}
+		helper.succeed();
+	}
 }

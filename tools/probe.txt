@@ -1,0 +1,6 @@
+@data/minecraft/loot_table/blocks/stone_slab.json
+@data/minecraft/loot_table/blocks/glass.json
+@data/minecraft/loot_table/blocks/glass_pane.json
+net.minecraft.world.level.block.TransparentBlock
+net.minecraft.world.level.block.IronBarsBlock
+net.minecraft.world.level.block.CarpetBlock
