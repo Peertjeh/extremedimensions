@@ -118,4 +118,6 @@ final class Alone {
 	static final String RELIC_RESET = "extremedimensions_test:alone/relic_reset";
 	// (the Pale Mason lifts a block more for every player near him, and the players of the tests round his would count)
 	static final String MASON_LIFT = "extremedimensions_test:alone/mason_lift";
+	// (the journal lists every anchor in the world that keeps charge for its player, so none of another test's may be about)
+	static final String JOURNAL_ANCHORS = "extremedimensions_test:alone/journal_anchors";
 }

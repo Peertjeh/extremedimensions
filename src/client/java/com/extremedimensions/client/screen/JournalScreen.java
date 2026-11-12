@@ -20,6 +20,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -28,8 +29,9 @@ import net.minecraft.world.entity.LivingEntity;
 /**
  * The Tether Journal as a two-page spread, in parts: the found pages of a nameless Wanderer, the path, the bestiary
  * (every creature of the wound: its likeness once seen, what is known of it, and how to face it once enough have been
- * slain), the ledger (what the player has been through, counted) and the clan (who the player is bound to, how the
- * tribe sees them together, and the cord's law with this world's numbers).
+ * slain), the ledger (what the player has been through, counted), the clan (who the player is bound to, how the
+ * tribe sees them together, and the cord's law with this world's numbers), the guides (short how-tos, one to a page,
+ * the wiki holding the rest) and the anchors (every anchor that keeps charge for the player).
  */
 public class JournalScreen extends Screen {
 	private static final int PAGE_W = 150;
@@ -42,8 +44,37 @@ public class JournalScreen extends Screen {
 	private static final int INK_RUST = 0x6B2A1A, NOTE_INDENT = 8;
 	/** The player's own hand, after the ending: a deep blue-black ink, neither the Wanderer's nor the other's. */
 	private static final int INK_OWN = 0x1E2F5C;
+	/** The marks of an anchor's world: the embers of the Nether, the violet of the End. */
+	private static final int INK_EMBER = 0x9A3B12, INK_VOID = 0x4B2E83;
 
-	private enum Part { PAGES, PATH, BEASTS, LEDGER, CLAN }
+	private enum Part { PAGES, PATH, BEASTS, LEDGER, CLAN, GUIDES, ANCHORS }
+
+	/** The guides, in the order the story comes to them (the first expedition first); their words are in the lang files. */
+	private static final String[] GUIDE_IDS = {"first_expedition", "anchors", "tribe", "curses", "matriarch", "relics", "seam", "spindle",
+		"tetherite", "fray", "knot_mother", "ferryman", "pale_reach", "pale_mason", "starved_one", "last_weaver", "weavers_loom",
+		"kindled_lantern", "coop", "server"};
+	/**
+	 * A guide's page is set closer than the Wanderer's, with narrower margins, so five short steps and the line on the
+	 * wiki share it: the margin, the text's width, the steps' indent past their numbers, where the first step stands,
+	 * the line height and the room between two steps.
+	 */
+	private static final int GUIDE_X = 10, GUIDE_W = PAGE_W - 2 * GUIDE_X, GUIDE_INDENT = 10, GUIDE_TOP = 32, GUIDE_LINE = 9, GUIDE_GAP = 2;
+	/** Anchors to a page, and the height each takes. */
+	private static final int KEPT_PER_PAGE = 2, KEPT_SLOT = 62;
+
+	/** One line of a guide: where it stands on its page, its step's number on the step's first line (else empty), and its words. */
+	private record GuideLine(int y, String mark, String text) {}
+
+	/** One page of a guide: its title (on its first page only), its lines, and whether the guide ends on it. */
+	private record GuidePage(String title, List<GuideLine> lines, boolean last) {}
+
+	/**
+	 * One anchor that keeps charge for the player, as {@code AnchorList.encode} writes it: its world, where it stands, the
+	 * charge it holds for the player and their own part of it (seconds), the seconds before it breaks (0: steady), the
+	 * allies who lend the player their charge in it (names joined by "/"), and whether an older world's charge in it is
+	 * kept for everyone.
+	 */
+	private record Kept(boolean nether, int x, int y, int z, int charge, int own, int cracked, String lenders, boolean everyone) {}
 
 	/**
 	 * One line on a page: the Wanderer's, a note in another hand beside them, a page wholly in that hand (rust), or a
@@ -85,6 +116,15 @@ public class JournalScreen extends Screen {
 	/** The Wanderer's path: steps done, beside the path done and seen (bit masks), and the line on the next step. */
 	private int pathDone, sideDone, sideSeen;
 	private String pathHint = "";
+	private final List<GuidePage> guidePages = new ArrayList<>();
+	/** The anchors that keep charge for the player, as many as were sent; and how many there are in all. */
+	private final List<Kept> kept = new ArrayList<>();
+	private int keptTotal;
+	/** Whether the player opened their anchors to their allies, and to whom (names joined by "/"). */
+	private boolean keptOpen;
+	private String keptAllies = "";
+	/** How many rows the tabs take under the book: two where a language's names do not fit in one. */
+	private int tabRows = 1;
 	private Part part = Part.PAGES;
 	/** Index of the left page of the current spread (always even). */
 	private int spread = 0;
@@ -127,9 +167,15 @@ public class JournalScreen extends Screen {
 
 	public JournalScreen(Set<String> unlocked, String beastData, String ledgerData, Set<String> notes, String pathData, String clanData,
 			Screen parent) {
+		this(unlocked, beastData, ledgerData, notes, pathData, clanData, "", parent);
+	}
+
+	public JournalScreen(Set<String> unlocked, String beastData, String ledgerData, Set<String> notes, String pathData, String clanData,
+			String anchorData, Screen parent) {
 		super(Component.translatable("item.extremedimensions.tether_journal"));
 		last = this;
 		readClan(clanData);
+		readKept(anchorData);
 		String[] path = pathData.split(";", 4);
 		if (path.length == 4) {
 			try {
@@ -204,6 +250,34 @@ public class JournalScreen extends Screen {
 		return clan.size();
 	}
 
+	/** Reads the anchors as {@code AnchorList.encode} writes them; a damaged list leaves the tab saying none keep charge. */
+	private void readKept(String data) {
+		String[] f = data.split("\\|", -1);
+		if (f.length != 4) {
+			return;
+		}
+		try {
+			for (String entry : f[3].split(";")) {
+				String[] v = entry.split(",", -1);
+				if (v.length == 9) {
+					kept.add(new Kept("nether".equals(v[0]), Integer.parseInt(v[1]), Integer.parseInt(v[2]), Integer.parseInt(v[3]),
+							Integer.parseInt(v[4]), Integer.parseInt(v[5]), Integer.parseInt(v[6]), v[7], "1".equals(v[8])));
+				}
+			}
+			keptTotal = Math.max(kept.size(), Integer.parseInt(f[2]));
+			keptOpen = "1".equals(f[0]);
+			keptAllies = f[1];
+		} catch (NumberFormatException e) {
+			kept.clear();
+			keptTotal = 0;
+		}
+	}
+
+	/** How many anchors the Anchors tab lists, for the tests. */
+	public int keptSize() {
+		return kept.size();
+	}
+
 	/** Whether the journal has this part as a tab (the clan only where clans are bound in this world). */
 	private boolean has(Part p) {
 		return p != Part.CLAN || clanOn && clanRules != null;
@@ -223,7 +297,9 @@ public class JournalScreen extends Screen {
 	}
 
 	private int bookY() {
-		return Math.max(6, this.height / 2 - PAGE_H / 2 - 8);
+		int y = Math.max(6, this.height / 2 - PAGE_H / 2 - 8);
+		// (with the tabs in two rows the book stands higher where the second row would leave the screen)
+		return tabRows > 1 ? Math.max(0, Math.min(y, this.height - PAGE_H - 46)) : y;
 	}
 
 	/** Pages in the part shown (a spread is two). */
@@ -233,6 +309,8 @@ public class JournalScreen extends Screen {
 			case BEASTS -> beasts.size() * 2;
 			case LEDGER -> ledger.isEmpty() ? 0 : 4;
 			case PATH, CLAN -> 2;
+			case GUIDES -> guidePages.size();
+			case ANCHORS -> Math.max(1, (kept.size() + KEPT_PER_PAGE - 1) / KEPT_PER_PAGE);
 		};
 	}
 
@@ -278,34 +356,35 @@ public class JournalScreen extends Screen {
 			}
 			paginate(Ui.tr(e.titleKey()), blocks);
 		}
+		layGuides();
+
+		// The tabs in one row between the arrows, each as wide as its name, the rest for Done; where the names do not fit
+		// beside Done, a cross closes the book instead; and where they do not fit beside a cross either, they take two rows
+		// within the same width, the second ending in Done
+		tabs.clear();
+		Part[] parts = java.util.Arrays.stream(Part.values()).filter(this::has).toArray(Part[]::new);
+		Component doneLabel = Component.translatable("gui.done");
+		int rowW = PAGE_W * 2 + SPINE - 56, doneW = Math.max(34, this.font.width(doneLabel) + 12);
+		boolean cross = false;
+		int split = parts.length;
+		if (fitTabs(parts, 0, parts.length, new int[parts.length], rowW - doneW - 2) > rowW - doneW - 2) {
+			if (fitTabs(parts, 0, parts.length, new int[parts.length], rowW - 22) <= rowW - 22) {
+				cross = true;
+			} else {
+				split = (parts.length + 1) / 2;
+			}
+		}
+		tabRows = split < parts.length ? 2 : 1;
 		spread = Math.max(0, Math.min(spread, (count() - 1) & ~1));
 
 		int bx = bookX(), y = bookY() + PAGE_H + 6;
 		prev = this.addRenderableWidget(Button.builder(Component.literal("◀"), b -> flip(-2)).pos(bx, y).size(24, 18).build());
 		next = this.addRenderableWidget(Button.builder(Component.literal("▶"), b -> flip(2)).pos(bx + PAGE_W * 2 + SPINE - 24, y).size(24, 18).build());
-		int tx = bx + 28, right = bx + PAGE_W * 2 + SPINE - 28;
-		tabs.clear();
-		// Each tab as wide as its name (all narrower alike where a language's names do not fit), the rest for Done; where
-		// the names do not fit beside Done, a cross closes the book instead
-		Part[] parts = java.util.Arrays.stream(Part.values()).filter(this::has).toArray(Part[]::new);
-		int[] widths = new int[parts.length];
-		Component doneLabel = Component.translatable("gui.done");
-		int room = right - tx - Math.max(34, this.font.width(doneLabel) + 12) - 2;
-		int sum = fitTabs(parts, widths, room);
-		boolean cross = sum > room;
-		if (cross) {
-			room = right - tx - 20 - 2;
-			sum = fitTabs(parts, widths, room);
-		}
-		for (int i = 0; i < parts.length; i++) {
-			if (sum > room) {
-				widths[i] = room / parts.length - 2;
-			}
-			Part p = parts[i];
-			Button tab = Button.builder(Component.translatable(tabKey(p)), b -> show(p)).pos(tx, y).size(widths[i], 18).build();
-			tab.active = part != p;
-			tabs.put(p, this.addRenderableWidget(tab));
-			tx += widths[i] + 2;
+		int left = bx + 28, right = left + rowW;
+		int tx = tabRow(parts, 0, split, left, tabRows > 1 ? rowW : rowW - (cross ? 22 : doneW + 2), y);
+		if (tabRows > 1) {
+			y += 20;
+			tx = tabRow(parts, split, parts.length, left, rowW - doneW - 2, y);
 		}
 		Button done = this.addRenderableWidget(Button.builder(cross ? Component.literal("\u2715") : doneLabel, b -> this.onClose())
 				.pos(tx, y).size(right - tx, 18).build());
@@ -315,20 +394,76 @@ public class JournalScreen extends Screen {
 		updateButtons();
 	}
 
-	/** Each tab as wide as its name and a margin, a narrower margin where the full one does not fit. Returns the width taken. */
-	private int fitTabs(Part[] parts, int[] widths, int room) {
+	/**
+	 * One row of tabs from x, within room: each as wide as its name where they fit, all narrower alike where a language's
+	 * names do not. Returns where the row ends.
+	 */
+	private int tabRow(Part[] parts, int from, int to, int x, int room, int y) {
+		int[] widths = new int[to - from];
+		int sum = fitTabs(parts, from, to, widths, room);
+		for (int i = from; i < to; i++) {
+			int w = sum > room ? room / (to - from) - 2 : widths[i - from];
+			Part p = parts[i];
+			Button tab = Button.builder(Component.translatable(tabKey(p)), b -> show(p)).pos(x, y).size(w, 18).build();
+			tab.active = part != p;
+			tabs.put(p, this.addRenderableWidget(tab));
+			x += w + 2;
+		}
+		return x;
+	}
+
+	/**
+	 * Each of these tabs as wide as its name and a margin, a narrower margin where the full one does not fit. Returns the
+	 * width taken.
+	 */
+	private int fitTabs(Part[] parts, int from, int to, int[] widths, int room) {
 		int sum = 0;
 		for (int pad : new int[] {12, 6}) {
 			sum = 0;
-			for (int i = 0; i < parts.length; i++) {
-				widths[i] = this.font.width(Component.translatable(tabKey(parts[i]))) + pad;
-				sum += widths[i] + 2;
+			for (int i = from; i < to; i++) {
+				widths[i - from] = this.font.width(Component.translatable(tabKey(parts[i]))) + pad;
+				sum += widths[i - from] + 2;
 			}
 			if (sum <= room) {
 				break;
 			}
 		}
 		return sum;
+	}
+
+	/**
+	 * Lays the guides out, each on a page of its own: the title, the numbered steps, and the line on the wiki at the foot.
+	 * A step that would run into that line (a long translation) goes on to the next page, with the rest of its guide.
+	 */
+	private void layGuides() {
+		guidePages.clear();
+		int foot = PAGE_H - 24 - GUIDE_LINE * (Ui.wrap(this.font, Ui.tr("gui.extremedimensions.journal.guide.wiki"), GUIDE_W).size() - 1) - 4;
+		for (String id : GUIDE_IDS) {
+			String key = "gui.extremedimensions.journal.guide." + id;
+			String title = Ui.tr(key);
+			List<GuideLine> lines = new ArrayList<>();
+			int ty = GUIDE_TOP;
+			for (int n = 1; n <= 5 && Language.getInstance().has(key + "." + n); n++) {
+				List<String> step = Ui.wrap(this.font, Ui.tr(key + "." + n), GUIDE_W - GUIDE_INDENT);
+				int at = lines.isEmpty() ? ty : ty + GUIDE_GAP;
+				if (!lines.isEmpty() && at + GUIDE_LINE * step.size() > foot) {
+					guidePages.add(new GuidePage(title, lines, false));
+					title = null;
+					lines = new ArrayList<>();
+					at = 12;
+				}
+				for (int i = 0; i < step.size(); i++) {
+					lines.add(new GuideLine(at + i * GUIDE_LINE, i == 0 ? n + "." : "", step.get(i)));
+				}
+				ty = at + GUIDE_LINE * step.size();
+			}
+			guidePages.add(new GuidePage(title, lines, true));
+		}
+	}
+
+	/** How many pages the guides take (one each, where every guide fits its page), for the tests. */
+	public int guidePageCount() {
+		return guidePages.size();
 	}
 
 	private static String tabKey(Part p) {
@@ -446,6 +581,16 @@ public class JournalScreen extends Screen {
 				pathSpread(g, bx, by, pe * fe);
 				counter = Ui.tr("gui.extremedimensions.path.walked", Integer.bitCount(pathDone & ((1 << Path.Step.values().length) - 1)),
 						Path.Step.values().length);
+			}
+			case GUIDES -> {
+				guidePage(g, spread, bx, by, pe * fe);
+				guidePage(g, spread + 1, bx + PAGE_W + SPINE, by, pe * fe);
+				counter = Ui.tr("gui.extremedimensions.journal.guides.count", GUIDE_IDS.length);
+			}
+			case ANCHORS -> {
+				keptSpread(g, bx, by, pe * fe);
+				counter = kept.isEmpty() ? Ui.tr("gui.extremedimensions.journal.anchors.count_none")
+						: Ui.tr("gui.extremedimensions.journal.anchors.count", keptTotal);
 			}
 			default -> {
 				if (pages.isEmpty()) {
@@ -839,6 +984,108 @@ public class JournalScreen extends Screen {
 		para(g, close, x, ty, 0, !clan.isEmpty() && lockedFor > 0 ? INK_RUST : INK_FAINT, alpha, by + PAGE_H - 24);
 		number(g, 1, x, by, alpha);
 		return tip;
+	}
+
+	// ------------------------------------------------------------------ the guides
+
+	/** One page of the guides: the title on a guide's first page, its numbered steps, and on its last the line on the wiki. */
+	private void guidePage(GuiGraphicsExtractor g, int index, int x, int y, double alpha) {
+		if (index >= guidePages.size()) {
+			return;
+		}
+		GuidePage p = guidePages.get(index);
+		if (p.title() != null) {
+			title(g, p.title(), x, y, alpha);
+		}
+		for (GuideLine l : p.lines()) {
+			if (!l.mark().isEmpty()) {
+				Ui.ink(g, this.font, l.mark(), x + GUIDE_X, y + l.y(), INK_TEAL, alpha);
+			}
+			Ui.ink(g, this.font, l.text(), x + GUIDE_X + GUIDE_INDENT, y + l.y(), INK, alpha);
+		}
+		if (p.last()) {
+			List<String> wiki = Ui.wrap(this.font, Ui.tr("gui.extremedimensions.journal.guide.wiki"), GUIDE_W);
+			int ty = y + PAGE_H - 24 - GUIDE_LINE * (wiki.size() - 1);
+			for (String line : wiki) {
+				Ui.ink(g, this.font, line, x + GUIDE_X, ty, INK_FAINT, alpha);
+				ty += GUIDE_LINE;
+			}
+		}
+		number(g, index, x, y, alpha);
+	}
+
+	// ------------------------------------------------------------------ the anchors
+
+	/**
+	 * Both pages: the anchors that keep charge for the player, two to a page, the Nether's first and the fullest first;
+	 * or, where none does, how one is made. Past the last one, how many more there are than the journal was sent.
+	 */
+	private void keptSpread(GuiGraphicsExtractor g, int bx, int by, double alpha) {
+		int foot = by + PAGE_H - 24;
+		for (int side = 0; side < 2; side++) {
+			int x = bx + side * (PAGE_W + SPINE), page = spread + side, from = page * KEPT_PER_PAGE;
+			if (kept.isEmpty() && side == 0) {
+				title(g, Ui.tr("gui.extremedimensions.journal.anchors.title"), x, by, alpha);
+				int ty = heading(g, Ui.tr("gui.extremedimensions.journal.anchors.none"), x, by + 34, alpha);
+				para(g, Ui.tr("gui.extremedimensions.journal.anchors.how"), x, ty, 0, INK_FAINT, alpha, foot);
+			} else if (from < kept.size()) {
+				title(g, Ui.tr("gui.extremedimensions.journal.anchors.title"), x, by, alpha);
+				int ty = by + 34;
+				for (int i = from; i < Math.min(kept.size(), from + KEPT_PER_PAGE); i++) {
+					keptEntry(g, kept.get(i), x, ty, alpha);
+					ty += KEPT_SLOT;
+				}
+				if (from + KEPT_PER_PAGE >= kept.size() && keptTotal > kept.size()) {
+					para(g, Ui.tr("gui.extremedimensions.journal.anchors.more", keptTotal - kept.size()), x, ty, 0, INK_FAINT, alpha, foot);
+				}
+			}
+			number(g, page, x, by, alpha);
+		}
+	}
+
+	/**
+	 * One anchor in five lines at most: a mark in its world's colour, its kind and the charge it holds for the player;
+	 * where it stands; whether it is steady or cracked (and when it breaks); and whom it is shared with.
+	 */
+	private void keptEntry(GuiGraphicsExtractor g, Kept a, int x, int top, double alpha) {
+		String kind = Ui.tr(a.nether() ? "block.extremedimensions.ember_lodestone" : "block.extremedimensions.void_lodestone");
+		String charge = Ui.time(a.charge());
+		g.fill(x + 12, top + 2, x + 16, top + 6, Ui.argb(alpha, a.nether() ? INK_EMBER : INK_VOID));
+		Ui.ink(g, this.font, kind, x + 20, top, INK_DARK, alpha);
+		Ui.ink(g, this.font, charge, x + PAGE_W - 12 - this.font.width(charge), top, INK_TEAL, alpha);
+		Ui.ink(g, this.font, Ui.tr("gui.extremedimensions.journal.anchors.at", a.x(), a.y(), a.z()), x + 20, top + 10, INK, alpha);
+		boolean cracked = a.cracked() > 0;
+		String state = cracked ? Ui.tr("gui.extremedimensions.journal.anchors.cracked", Ui.time(a.cracked()))
+				: Ui.tr("gui.extremedimensions.journal.anchors.steady");
+		int ty = para(g, state, x, top + 20, 8, cracked ? INK_RUST : INK_FAINT, alpha, top + 30);
+		para(g, shared(a), x, ty, 8, INK, alpha, top + 40);
+		for (int dx = x + 12; dx < x + PAGE_W - 12; dx += 3) {
+			g.fill(dx, top + 52, dx + 1, top + 53, Ui.argb(alpha * 0.35, INK_FAINT));
+		}
+	}
+
+	/**
+	 * Whom an anchor is shared with: the allies the player opened their charge in it to, the allies who opened theirs in
+	 * it to the player, everyone (charge an older world kept for all), or no one.
+	 */
+	private String shared(Kept a) {
+		List<String> with = new ArrayList<>();
+		if (a.own() > 0 && keptOpen) {
+			with.add(keptAllies.isEmpty() ? Ui.tr("gui.extremedimensions.journal.anchors.open_all")
+					: Ui.tr("gui.extremedimensions.journal.anchors.open", names(keptAllies)));
+		}
+		if (!a.lenders().isEmpty()) {
+			with.add(Ui.tr("gui.extremedimensions.journal.anchors.lent", names(a.lenders())));
+		}
+		if (a.everyone()) {
+			with.add(Ui.tr("gui.extremedimensions.journal.anchors.everyone"));
+		}
+		return with.isEmpty() ? Ui.tr("gui.extremedimensions.journal.anchors.alone") : String.join(" ", with);
+	}
+
+	/** Names as the server joins them ("a/b/+2"), as they are read ("a, b +2"). */
+	private static String names(String joined) {
+		return joined.replace("/+", " +").replace("/", ", ");
 	}
 
 	private static boolean atLeastTrusted(String level) {

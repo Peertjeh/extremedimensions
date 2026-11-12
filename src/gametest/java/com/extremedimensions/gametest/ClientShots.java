@@ -883,6 +883,25 @@ public class ClientShots implements FabricClientGameTest {
 				ctx.waitTicks(16);
 				ctx.takeScreenshot(c[0]);
 			}
+			// The journal's guides (the first two), and its anchors: the player's own, cracked and opened to an ally, and one
+			// an ally opened to them
+			com.extremedimensions.client.screen.JournalScreen[] book = new com.extremedimensions.client.screen.JournalScreen[1];
+			ctx.runOnClient(mc -> {
+				book[0] = new com.extremedimensions.client.screen.JournalScreen(java.util.Set.of("tethered"), "", "", java.util.Set.of(), "", "",
+						"1|Leon_AH|2|nether,212,64,-87,754,754,90,,0;end,230,71,-95,300,0,0,Julian,0", null);
+				mc.gui.setScreen(book[0]);
+				check(pressOnce(book[0], net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.journal.tab.guides")), "the journal has no Guides tab");
+				// (a guide that runs over its page is not an error, but the page count says so in the log)
+				System.out.println("[journal] the guides take " + book[0].guidePageCount() + " pages");
+			});
+			ctx.waitTicks(16);
+			ctx.takeScreenshot("16_guides");
+			ctx.runOnClient(mc -> {
+				check(pressOnce(book[0], net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.journal.tab.anchors")), "the journal has no Anchors tab");
+				check(book[0].keptSize() == 2, "the Anchors tab lists " + book[0].keptSize() + " anchors, not 2");
+			});
+			ctx.waitTicks(16);
+			ctx.takeScreenshot("16_anchors");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
 			// Co-op: struck down, the player lies on the ground and crawls (seen from behind), and stands again after
