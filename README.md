@@ -266,6 +266,8 @@ it the same, and the **Veil Lantern** as a soul lantern. The other glowing block
 block, the Void Anchor, the Seam Vein and silked hush bricks as crying obsidian, Tetherite Ore as ancient debris, and
 the Curse Knots each in their set's colour (Off in that setting leaves all of them unknown to the pack). Iris runs
 a pack's End programme in the Seam, as the Seam shares the End's sky; the Seam has no End flashes, so none whites it out.
+Under a pack, the Seam's sky is the pack's own End sky (Solas paints its own nebulae and disc there); the
+Seam's violet nebula shows without one.
 CI turns the newest Solas on in the Seam on every push.
 
 ### Tablist placeholders (TAB)

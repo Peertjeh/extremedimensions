@@ -380,7 +380,18 @@ jobs:
           gh run download "$GITHUB_RUN_ID" -n Artifacts -D dist
           jar="dist/extremedimensions-$version.jar"
           [ -f "$jar" ] || { echo "no $jar among the build's artifacts:"; ls dist; exit 1; }
+          # (the token CI is given may not tag a commit its branch has moved on from: say so plainly, rather than fail on a 403)
+          head=$(git ls-remote origin "refs/heads/$GITHUB_REF_NAME" | cut -f1)
+          if [ -n "$head" ] && [ "$head" != "$GITHUB_SHA" ]; then
+            echo "::error::$GITHUB_REF_NAME moved on to $head while this release ran; CI cannot tag the older $GITHUB_SHA. Release again from the branch's head."
+            exit 1
+          fi
           name=$(sed -n "s/^## $version: //p" CHANGELOG.md | head -1)
-          { echo "Minecraft $mc · Fabric · Java 25"; echo; awk -v v="## $version:" 'index($0, v) == 1 {on = 1; next} on && /^## / {exit} on' CHANGELOG.md; } > notes.md
+          # The notes: this version's part of the changelog, and every version's after the last one published (a version
+          # that was never published on its own goes out with the next)
+          last=$(gh release view --json tagName -q .tagName 2>/dev/null | sed 's/^v//')
+          { echo "Minecraft $mc · Fabric · Java 25"; echo
+            awk -v v="## $version:" -v stop="## $last:" 'index($0, v) == 1 {on = 1; next} on && stop != "## :" && index($0, stop) == 1 {exit}
+              on && /^## / {print ""; sub(/^## /, "### Also in "); print; next} on' CHANGELOG.md; } > notes.md
           gh release create "v$version" "$jar" --target "$GITHUB_SHA" --title "Extreme Dimensions $version${name:+ — $name}" --notes-file notes.md
           echo "Released v$version with $jar"

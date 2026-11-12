@@ -15,6 +15,16 @@
 - CI sets the glowing blocks in a row in the Seam under Solas, checks each is in the pack's list as its vanilla light,
   and takes a picture.
 
+### Known
+- Under a shader pack the Seam wears the pack's own End sky: Iris runs the pack's End programme there, and a pack such
+  as Solas paints its own nebulae and disc there. The mod cannot change that without fighting the pack; the
+  Seam's own violet sky shows without one.
+
+### Release
+- The release job says plainly when its branch moved on while it ran (CI may not tag an older commit), and a release's
+  notes take in every version since the last one published. 3.51.1 was never published on its own: its changes go out
+  with this version.
+
 ## 3.51.1: Under A Shader Pack
 
 ### Fixed
