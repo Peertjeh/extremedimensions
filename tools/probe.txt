@@ -1,0 +1,6 @@
+$timeline|dimension_type/the_end|end_flash|EndFlash
+@data/minecraft/dimension_type/the_end.json
+@data/minecraft/tags/timeline/in_end.json
+net.minecraft.client.multiplayer.ClientLevel
+net.minecraft.client.renderer.EndFlashState
+#EndFlash
