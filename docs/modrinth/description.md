@@ -64,6 +64,7 @@ hunt.
 - **55 advancements**, a bestiary, a ledger and a guided first expedition
 - A **music disc** and its own title and loading screens with music
 - **Drawn as vanilla draws**: every item and block follows a vanilla texture pixel for pixel, in its own colours
+- **Less friction (3.55)**: the way home in the Nether and End, the drain and its cause, time left at this pace and to walk back, warnings in words, curse totals, default keys (K curses, H journal), a camera option and colour-blind HUD colours
 - **The Seam's furnishings for builders**: Seam Silk Blocks and Carpets, Nebula Glass and its panes, and the violet Veil Lamp
 - The **Kindled Seam Lantern**: a blue-violet lantern whose light reaches twice as far (violet under shader packs too, with Iris, as every glowing block of the mod now is)
 
