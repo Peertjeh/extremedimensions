@@ -201,6 +201,8 @@ jobs:
       # The newest Fabric builds for this game version from Modrinth; none yet for any of them leaves nothing to test
       - name: fetch Sodium, Iris, Mod Menu and JEI
         id: fetch
+        env:
+          COMPAT_SET: core
         run: |
           set +e
           python3 tools/compat/fetch.py build/compat-mods
@@ -297,6 +299,68 @@ jobs:
                   print(f"IMG|{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
           PY
 
+  # The same client test beside the mods players pair with this one (Jade, WTHIT, JourneyMap, Xaero's Minimap) as
+  # well: not a gate for a release, as Fabric's client test harness sometimes deadlocks closing its world with them
+  # beside it (all three of its threads waiting on each other after every check has passed; a stuck game is printed
+  # thread by thread). Watched, and to be put right; it says nothing of the game a player runs.
+  compat-extra:
+    name: client test with Jade, JourneyMap and Xaero beside them
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+          cache: 'gradle'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      # Sodium and Iris draw with OpenGL (the game alone falls back to Vulkan): the display needs GLX, in software
+      - name: virtual display with OpenGL
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt; fi
+          sudo apt-get -o Acquire::Retries=3 update -qq && sudo apt-get -o Acquire::Retries=3 install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libgl1 libegl1 mesa-utils mesa-vulkan-drivers
+          xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" glxinfo -B || echo "no GLX on the virtual display"
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+      # The newest Fabric builds for this game version from Modrinth; none yet for any of them leaves nothing to test
+      - name: fetch them, and Jade, WTHIT, JourneyMap and Xaero
+        id: fetch
+        run: |
+          set +e
+          python3 tools/compat/fetch.py build/compat-mods
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          if [ $code -eq 3 ]; then echo "None of them has a build for this game version yet: nothing to test with"; exit 0; fi
+          exit $code
+      # A shader pack (3.51.1: Solas, else Complementary Reimagined) for the test's last look, at the Seam and the mod's
+      # lanterns under one; laid in the test's game folder, selected for Iris but left off, once that folder is cleared
+      # (build.gradle), and the test turns it on at the end. None to be had leaves that out.
+      - name: client game test with them
+        if: steps.fetch.outputs.code == '0'
+        # (a game still running after 12 minutes is stuck: every thread of it is printed, to see where, and then ended)
+        run: |
+          ( sleep 720; for p in $(pgrep -f 'net.fabricmc.devlaunchinjector.Main|KnotClient'); do echo "STUCK|game $p still running after 12 minutes"; jstack -l "$p" 2>&1 | sed "s/^/STUCK|/"; kill "$p"; done ) &
+          xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" ./gradlew runClientGameTest --no-configuration-cache -Pcompat
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+          MESA_GL_VERSION_OVERRIDE: '4.6'
+          # (the virtual display has no GLX visual of the kind the game asks for; through EGL Mesa makes one)
+          SDL_VIDEO_FORCE_EGL: '1'
+          SDL_VIDEO_X11_FORCE_EGL: '1'
+        # (a shader pack drawn in software at the end is slow)
+        timeout-minutes: 30
+      - name: capture screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Compat-extra screenshots
+          path: build/run/clientGameTest/screenshots/
+          if-no-files-found: warn
   bench:
     name: performance with and without the mod
     runs-on: ubuntu-24.04

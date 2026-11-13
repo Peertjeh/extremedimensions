@@ -38,9 +38,12 @@
 - A hush slab drops one of itself and a double slab two, as vanilla's stone slab (side by side): the test that found
   the slabs' double drop.
 - The journal's anchors, the builders' blocks (recipes, light, drops, panes joining), the playtest log and the recap.
-- CI's compatibility run now has Jade, JourneyMap and Xaero's Minimap installed too, and checks each plugin was taken
-  up. (WTHIT 21 needs a newer Fabric API than the mod is built with; its plugin is compiled against it, and the run
-  leaves it out until the build moves on.)
+- A second compatibility run has Jade, JourneyMap and Xaero's Minimap installed too, and checks each plugin was taken
+  up (the anchor's waypoint reaches JourneyMap). It is no gate for a release: Fabric's client test harness sometimes
+  deadlocks closing its test world with them beside it, after every check has passed (its three threads waiting on
+  each other; a stuck game is printed thread by thread). That is the harness's, not the game's, and is being looked
+  into. WTHIT 21 needs a newer Fabric API than the mod is built with: its plugin is compiled against it, and the run
+  leaves it out until the build moves on.
 
 ## 3.52.0: Every Light Shown
 

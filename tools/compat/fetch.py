@@ -33,7 +33,11 @@ import zipfile
 
 # (Jade and WTHIT draw the same kind of overlay and players pick one, but neither's build says it cannot stand beside
 # the other, so both are loaded, each with its own plugin to check)
-MODS = ["sodium", "iris", "modmenu", "placeholder-api", "jei", "jade", "wthit", "journeymap", "xaeros-minimap"]
+# The mods every release is tested beside; and the ones a second run adds (COMPAT_SET=all), kept out of the release's
+# own run since Fabric's client test harness sometimes deadlocks closing its world with them beside it (3.53.0)
+CORE = ["sodium", "iris", "modmenu", "placeholder-api", "jei"]
+EXTRA = ["jade", "wthit", "journeymap", "xaeros-minimap"]
+MODS = CORE + EXTRA
 SHADERS = ["solas-shader", "complementary-reimagined"]
 # Fabric API's Modrinth project: the test runs with it already, so a mod's need of it fetches nothing
 FABRIC_API = "P7dR8mSH"
@@ -175,7 +179,7 @@ def main():
     got = {}
     extra = []
     projects = set()
-    for slug in MODS:
+    for slug in (MODS if os.environ.get("COMPAT_SET", "all") == "all" else CORE):
         if slug == "iris" and "sodium" not in got:
             # Iris needs Sodium under it
             print(f"COMPAT|{slug}|none|left out, as Sodium is")

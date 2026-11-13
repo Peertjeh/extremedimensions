@@ -280,7 +280,8 @@ CI turns the newest Solas on in the Seam on every push.
 With **Jade** or **WTHIT**, looking at an anchor shows the charge it holds for you, whether it is cracked and whose it
 is; at a Lurker or its kin, whether it came to steal or to hurt; at a Spindle, what is loaded in it; at a Curse Knot,
 its set (each a toggle in their own settings). With **JourneyMap**, your anchors are waypoints on the map (Ember
-orange, Void violet), and in the Seam so is the Return Gate. All optional; CI runs the client with them installed.
+orange, Void violet), and in the Seam so is the Return Gate. All optional; CI runs the client with them installed, in
+a run of its own beside the release's.
 
 ### Playtest log
 
