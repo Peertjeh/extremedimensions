@@ -92,10 +92,11 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
 						com.extremedimensions.client.hud.BindingPanel.draw(smithing, graphics, client.font));
 			}
-			// In danger, the pause menu says so above its title: its button to leave would cost curses
+			// In danger, the pause menu says so above its title: its button to leave would cost curses, and asks first
 			if (screen instanceof net.minecraft.client.gui.screens.PauseScreen) {
 				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
 						com.extremedimensions.client.hud.DangerChip.pause(graphics, client.font, s.width));
+				com.extremedimensions.client.hud.DangerChip.guardLeave(screen);
 			}
 		});
 
