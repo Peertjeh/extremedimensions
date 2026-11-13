@@ -37,6 +37,13 @@ public final class ClientState {
 	/** The Rift Trial under way: "kind;twist;score;bronze;silver;gold", or "" without one. */
 	public static String trial = "";
 	public static long syncMs = 0;
+	/** What anchor fuel is worth to the player, as a multiple: less with Debt, more with the Anchor Rivet (3.55.0; 1 from an older server). */
+	public static double fuelWorth = 1.0;
+	/**
+	 * The curse offer waiting (3.55.0): seconds before the Tether chooses, as of {@link #syncMs} (-1: no clock runs), and
+	 * which offer of how many owed in a row it is (0 of 0: none waiting, or an older server).
+	 */
+	public static int offerLeft = -1, offerNth = 0, offerOf = 0;
 
 	// --- animation state ---
 	public static double shownNether = 0;
@@ -125,6 +132,20 @@ public final class ClientState {
 		riftX = s.riftX();
 		riftY = s.riftY();
 		riftZ = s.riftZ();
+		fuelWorth = s.fuelX1000() > 0 ? s.fuelX1000() / 1000.0 : 1.0;
+		offerLeft = -1;
+		offerNth = offerOf = 0;
+		String[] offer = s.offer().split(":");
+		if (offer.length == 3) {
+			try {
+				offerLeft = Integer.parseInt(offer[0]);
+				offerNth = Integer.parseInt(offer[1]);
+				offerOf = Integer.parseInt(offer[2]);
+			} catch (NumberFormatException e) {
+				offerLeft = -1;
+				offerNth = offerOf = 0;
+			}
+		}
 		syncMs = System.currentTimeMillis();
 		// First update from the Overworld after a Collapse: start the fade-in
 		if (collapseAt > 0 && homeAt <= collapseAt && dimCode == 0 && syncMs - collapseAt > 2000) {
@@ -305,6 +326,9 @@ public final class ClientState {
 		scars = 0;
 		tetherDist = -1;
 		trial = "";
+		fuelWorth = 1.0;
+		offerLeft = -1;
+		offerNth = offerOf = 0;
 		shownNether = 0;
 		shownEnd = 0;
 		startAt = safeAt = collapseAt = bounceAt = penaltyAt = endedAt = homeAt = takenAt = sealAt = stormAt = briefAt = 0;

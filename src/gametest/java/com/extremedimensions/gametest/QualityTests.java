@@ -49,6 +49,33 @@ public class QualityTests {
 	}
 
 	/**
+	 * Several curses owed in a row: the screen is told which of them the offer is ("Curse 2 of 3") and how long before
+	 * the Tether chooses, until the last is answered.
+	 */
+	@GameTest
+	public void cursesOwedInARowSayWhichThisIs(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "owing-three");
+		PlayerData d = DataStore.get(p.getUUID());
+		check(helper, PenaltyService.offerState(p, d).isEmpty(), "an offer is told with none waiting");
+		for (int i = 0; i < 3; i++) {
+			PenaltyService.owe(d, false);
+		}
+		String[] s = PenaltyService.offerState(p, d).split(":");
+		check(helper, s.length == 3 && "1".equals(s[1]) && "3".equals(s[2]), "the first of three reads %s", String.join(":", s));
+		check(helper, Config.OFFER_TIMEOUT_SECONDS <= 0 || Integer.parseInt(s[0]) == Config.OFFER_TIMEOUT_SECONDS,
+				"a fresh offer has %s s left, not the whole %s", s[0], Config.OFFER_TIMEOUT_SECONDS);
+		PenaltyService.choose(p, d.pendingOffer.get(0));
+		s = PenaltyService.offerState(p, d).split(":");
+		check(helper, s.length == 3 && "-1".equals(s[0]) && "2".equals(s[1]) && "3".equals(s[2]),
+				"the second of three (its cards not shown yet) reads %s", String.join(":", s));
+		PenaltyService.choose(p, d.pendingOffer.get(0));
+		PenaltyService.choose(p, d.pendingOffer.get(0));
+		check(helper, d.pendingOffer.isEmpty() && PenaltyService.offerState(p, d).isEmpty() && d.offerSeries == 0,
+				"after the third the offer still reads %s", PenaltyService.offerState(p, d));
+		helper.succeed();
+	}
+
+	/**
 	 * Fragments go on to the next curse once the chosen curse's stack has had its five: the chosen one first, then the
 	 * heaviest other, each fragment giving what it always gave; with every stack's fragments given, the next is kept;
 	 * and a player with no curse keeps theirs.

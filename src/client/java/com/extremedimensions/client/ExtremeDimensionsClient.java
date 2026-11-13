@@ -235,9 +235,9 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				context.client().execute(() -> ClientState.apply(payload)));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.FxPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> ClientState.onFx(payload.kind(), payload.value())));
+		// (3.55.0: it waits while a container is open, see PenaltyChoiceScreen.receive)
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OfferPayload.TYPE, (payload, context) ->
-				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(
-						new PenaltyChoiceScreen(Arrays.asList(payload.ids().split(","))))));
+				context.client().execute(() -> PenaltyChoiceScreen.receive(payload.ids())));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.CursesPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> CursesScreen.receive(payload.data(), payload.open())));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenJournalPayload.TYPE, (payload, context) ->

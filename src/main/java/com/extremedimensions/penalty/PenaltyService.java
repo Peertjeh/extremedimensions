@@ -61,8 +61,25 @@ public final class PenaltyService {
 		// (owed as an expedition ends, the card is that expedition's, for its record)
 		com.extremedimensions.expedition.ExpeditionRecord.owing(d);
 		if (d.pendingOffer.isEmpty()) {
+			// (nothing waiting: a new run of offers begins with this one)
+			d.offerSeries = 0;
 			nextOffer(d);
 		}
+	}
+
+	/**
+	 * The curse offer waiting, for the curse-choice screen (3.55.0): "secondsLeft:nth:of", or "" with none. secondsLeft
+	 * is how long before the Tether chooses for the player (-1 while no clock runs: before the cards are shown, on the
+	 * death screen, or with no time limit at all); nth and of say which of the offers owed in a row this one is.
+	 */
+	public static String offerState(ServerPlayer p, PlayerData d) {
+		if (d.pendingOffer.isEmpty()) {
+			return "";
+		}
+		int left = Config.OFFER_TIMEOUT_SECONDS <= 0 || d.offerDelay > 0 || !p.isAlive() ? -1
+				: Math.max(0, Config.OFFER_TIMEOUT_SECONDS - d.offerAge / 20);
+		int nth = d.offerSeries + 1;
+		return left + ":" + nth + ":" + Math.max(nth, d.offerSeries + d.owed.size());
 	}
 
 	/**
@@ -202,6 +219,8 @@ public final class PenaltyService {
 		if (!d.pendingOffer.isEmpty()) {
 			d.offerDelay = 40;
 		}
+		// (one more of the run answered, or the run is over)
+		d.offerSeries = d.pendingOffer.isEmpty() ? 0 : d.offerSeries + 1;
 		Sync.state(p, d);
 		DataStore.markDirty();
 		// An expedition whose cards are all chosen now is told: its line in the playtest log, and a Collapse's card
