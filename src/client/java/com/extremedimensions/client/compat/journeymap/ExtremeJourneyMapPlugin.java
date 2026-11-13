@@ -21,10 +21,8 @@ import journeymap.api.v2.common.waypoint.WaypointFactory;
  *
  * <p>Loaded by JourneyMap alone, through the {@code journeymap} entrypoint, so it is never touched without JourneyMap.
  *
- * <p>Only the class names of JourneyMap's plugin API (2.0.0) were at hand when this was written, so every call into it
- * is still to be checked against its jar: the annotation and its {@code apiVersion}, {@link IClientPlugin}'s
- * {@code initialize} and {@code getModId}, {@code WaypointFactory.createClientWaypoint(modId, pos, name, dimension,
- * persistent)}, {@code Waypoint#setColor} and {@code IClientAPI#addWaypoint} and {@code #removeWaypoint}.
+ * <p>Built against JourneyMap's plugin API 2.0.0 as its jar has it ({@code WaypointFactory.createWaypoint(modId, pos,
+ * name, dimension, persistent)}, read by CI's probe).
  */
 @JourneyMapPlugin(apiVersion = "2.0.0")
 public class ExtremeJourneyMapPlugin implements IClientPlugin {
@@ -52,7 +50,7 @@ public class ExtremeJourneyMapPlugin implements IClientPlugin {
 			placed.clear();
 			for (MapMarks.Mark m : marks) {
 				// (not kept on disk: they are the server's to give, and come again with the next join)
-				Waypoint w = WaypointFactory.createClientWaypoint(getModId(), m.pos(), m.name(), m.dimension(), false);
+				Waypoint w = WaypointFactory.createWaypoint(getModId(), m.pos(), m.name(), m.dimension(), false);
 				w.setColor(m.colour());
 				api.addWaypoint(getModId(), w);
 				placed.add(w);

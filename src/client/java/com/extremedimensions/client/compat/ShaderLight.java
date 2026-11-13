@@ -79,10 +79,11 @@ public final class ShaderLight {
 				// (3.53.0) the builders' blocks: the lamp as violet light, the glass and the silk as their purple vanilla
 				// kin, so a pack gives the glass its gleam and the cloth its softness
 				copy(ids, Blocks.CRYING_OBSIDIAN, ModBlocks.VEIL_LAMP);
-				copy(ids, Blocks.PURPLE_STAINED_GLASS, ModBlocks.NEBULA_GLASS);
-				copy(ids, Blocks.PURPLE_STAINED_GLASS_PANE, ModBlocks.NEBULA_GLASS_PANE);
-				copy(ids, Blocks.PURPLE_WOOL, ModBlocks.SEAM_SILK_BLOCK);
-				copy(ids, Blocks.PURPLE_CARPET, ModBlocks.SEAM_SILK_CARPET);
+				// (the dyed blocks are no longer fields of Blocks: looked up by name)
+				vanilla("purple_stained_glass", source -> copy(ids, source, ModBlocks.NEBULA_GLASS));
+				vanilla("purple_stained_glass_pane", source -> copy(ids, source, ModBlocks.NEBULA_GLASS_PANE));
+				vanilla("purple_wool", source -> copy(ids, source, ModBlocks.SEAM_SILK_BLOCK));
+				vanilla("purple_carpet", source -> copy(ids, source, ModBlocks.SEAM_SILK_CARPET));
 				// the Curse Knots, each set in its own colour
 				for (BlockState state : ModBlocks.CURSE_KNOT.getStateDefinition().getPossibleStates()) {
 					int set = state.getValue(com.extremedimensions.tapestry.CurseKnotBlock.SET);
@@ -102,6 +103,11 @@ public final class ShaderLight {
 				ExtremeDimensions.LOGGER.warn("Could not show the mod's glowing blocks to the shader pack", e);
 			}
 		}
+	}
+
+	/** The vanilla block of that name, handed on when there is one. */
+	private static void vanilla(String name, java.util.function.Consumer<Block> then) {
+		BuiltInRegistries.BLOCK.get(Identifier.fromNamespaceAndPath("minecraft", name)).ifPresent(h -> then.accept(h.value()));
 	}
 
 	/** Every state of {@code to} given the number of the state of {@code from} most like it (public for tests). */
