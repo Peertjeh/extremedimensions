@@ -16,8 +16,9 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 
 /**
  * What the Seam is for, said on arrival the first few times (and what the Fray is, the first few times down): a card
- * under the crosshair with the aim in a line and what matters in a few rows, each with its colour. It fades in a
- * moment after arrival, stays long enough to read, and fades out; it never takes a click.
+ * by the crosshair with the aim in a line and what matters in a few rows, each with its colour. It fades in a
+ * moment after arrival, stays long enough to read, and fades out; it never takes a click, but it can be put away
+ * (3.55.0): on a key, or by moving once it has shown three seconds (see PutAway).
  */
 public class SeamBriefing implements HudElement {
 	/** When it starts to show after it came, how long it shows (fades included), and its fades. */
@@ -27,13 +28,22 @@ public class SeamBriefing implements HudElement {
 	/** One row of a card: a gem in its colour, its name, and what to know. */
 	record Row(int colour, String label, String text) {}
 
+	/** Whether the briefing was put away, and fades out (3.55.0); known by when it came. */
+	private static final PutAway.Card CARD = new PutAway.Card();
+
 	/** Whether a briefing is on the screen now (the guide card steps aside for it). */
 	public static boolean showing() {
 		if (ClientState.briefAt <= 0 || ClientState.away()) {
 			return false;
 		}
-		long t = System.currentTimeMillis() - ClientState.briefAt - (ClientState.briefKind == 1 ? DELAY_MS : 0);
-		return t >= 0 && t <= SHOW_MS;
+		long now = System.currentTimeMillis();
+		long t = now - ClientState.briefAt - (ClientState.briefKind == 1 ? DELAY_MS : 0);
+		return t >= 0 && t <= SHOW_MS && !CARD.gone(ClientState.briefAt, now);
+	}
+
+	/** A tick while it shows: the key, or a step after three seconds, puts it away. */
+	static void watch(long now, boolean key, net.minecraft.client.player.LocalPlayer player) {
+		CARD.watch(ClientState.briefAt, now, key, player);
 	}
 
 	@Override
@@ -45,11 +55,13 @@ public class SeamBriefing implements HudElement {
 		if (t < 0) {
 			return;
 		}
-		if (t > SHOW_MS) {
+		long now = System.currentTimeMillis();
+		if (t > SHOW_MS || CARD.gone(ClientState.briefAt, now)) {
 			ClientState.briefAt = 0;
 			return;
 		}
-		double alpha = Math.min(Ui.ease(t / (double) FADE_IN_MS), Ui.clamp01((SHOW_MS - t) / (double) FADE_OUT_MS));
+		double alpha = Math.min(Ui.ease(t / (double) FADE_IN_MS), Ui.clamp01((SHOW_MS - t) / (double) FADE_OUT_MS))
+				* CARD.fade(ClientState.briefAt, now);
 		Minecraft mc = Minecraft.getInstance();
 		Font font = mc.font;
 		float scale = ClientOptions.hudScale() / 100f;
@@ -83,7 +95,7 @@ public class SeamBriefing implements HudElement {
 	}
 
 	/**
-	 * A card in the briefing's look, under the crosshair: a panel in the accent's colour with its heading, the aim in a
+	 * A card in the briefing's look, by the crosshair: a panel in the accent's colour with its heading, the aim in a
 	 * few centred lines and a divider (no aim: the divider alone), the rows, and the footer (none when null). The recap
 	 * after a Collapse is drawn by it too. {@code compact}: a row's name and its text share one line (the texts lined up
 	 * after the longest name, and cut short rather than wrapped), so the card holds no more lines than it has rows.
@@ -107,21 +119,36 @@ public class SeamBriefing implements HudElement {
 			h += compact ? 12 : 10 + lines.size() * 9 + 4;
 		}
 		h += foot == null ? 6 : 12;
-		// Under the crosshair, clear of the hotbar (and of the timer when it sits above the hotbar); on a short screen as
-		// high as it must go, but never over the timer at the top (the hotbar gives way first)
+		// Clear of the hotbar (and of the timer when it sits above the hotbar), never over the timer at the top, and
+		// clear of the crosshair (3.55.0): under it where it fits there, else over it, else drawn smaller in the roomier
+		// of the two. Only on a screen too short even for that does it cover the crosshair, as high as it must go
 		boolean top = ChargeHud.bossBar() || ClientOptions.timer() == ClientOptions.TimerPlace.TOP;
 		int floor = sh - (top ? 64 : 64 + 40);
 		int ceiling = top ? ChargeHud.timerBottom() + 4 : 6;
-		int y = Math.max(ceiling, Math.min(sh / 2 + 14, floor - h));
+		int under = sh / 2 + 14, over = sh / 2 - 12;
+		float fit = 1.0F;
+		int y;
+		if (under + h <= floor) {
+			y = under;
+		} else if (over - h >= ceiling) {
+			y = over - h;
+		} else {
+			int roomUnder = floor - under, roomOver = over - ceiling;
+			fit = Math.max(roomUnder, roomOver) / (float) h;
+			if (fit >= 0.6F) {
+				y = roomUnder >= roomOver ? under : Math.round(over - h * fit);
+			} else {
+				// (on a screen too short for it even so, it is drawn smaller, hanging from under the timer)
+				fit = Math.max(0.6F, Math.min(1.0F, (sh - 4 - ceiling) / (float) h));
+				y = fit < 1.0F ? ceiling : Math.max(ceiling, Math.min(under, floor - h));
+			}
+		}
 		int x = (sw - w) / 2;
-		// On a screen too short for it even so, it is drawn smaller, hanging from under the timer
-		float fit = Math.max(0.6F, Math.min(1.0F, (sh - 4 - ceiling) / (float) h));
 		g.pose().pushMatrix();
 		if (fit < 1.0F) {
-			y = ceiling;
-			g.pose().translate(sw / 2.0F, ceiling);
+			g.pose().translate(sw / 2.0F, y);
 			g.pose().scale(fit, fit);
-			g.pose().translate(-sw / 2.0F, -ceiling);
+			g.pose().translate(-sw / 2.0F, -y);
 		}
 		Ui.panel(g, x, y, w, h, accent, alpha * 0.96);
 		int cx = sw / 2;

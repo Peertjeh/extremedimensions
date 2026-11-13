@@ -1095,7 +1095,7 @@
   "gui.extremedimensions.settings.hud_scale": "HUD-grootte",
   "gui.extremedimensions.settings.hud_scale.desc": "Grootte van de meters, de gids en de timer.",
   "gui.extremedimensions.settings.guidance": "Gids eerste expeditie",
-  "gui.extremedimensions.settings.guidance.desc": "Een kaartje dat de volgende stap van je eerste expeditie noemt, tot je weer thuis bent. Open de chat (T) om het met het × te sluiten.",
+  "gui.extremedimensions.settings.guidance.desc": "Een kaartje dat de volgende stap van je eerste expeditie noemt, tot je weer thuis bent. De toets Kaart wegleggen (Besturing) legt het weg tot de volgende stap; open de chat (T) om het voorgoed te sluiten met het ×.",
   "gui.extremedimensions.settings.hints": "Uitleg bij eerste ontmoeting",
   "gui.extremedimensions.settings.hints.desc": "Een korte uitleg in de hoek de eerste keer dat je een deel van de mod tegenkomt; het dagboek bewaart de tips die je zag bij zijn gidsen. Staan ze uit, dan komt er geen, en elke tip komt later alsnog als je ze aanzet. De wereld kan ze voor iedereen uitzetten.",
   "gui.extremedimensions.settings.menu": "Titel- en laadscherm",

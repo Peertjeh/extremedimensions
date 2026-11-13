@@ -146,7 +146,7 @@ public class ChargeHud implements HudElement {
 	/** The next step of the first-expedition guide, wrapped to the card; empty when the guide is finished or off. */
 	private static List<String> guideLines(Font font) {
 		int done = ClientState.guide;
-		if (!ClientOptions.guidance() || done >= Guide.STEPS || done < 0) {
+		if (!ClientOptions.guidance() || PutAway.guideAway(done) || done >= Guide.STEPS || done < 0) {
 			return List.of();
 		}
 		return Ui.wrap(font, Ui.tr("gui.extremedimensions.guide." + (done + 1)), GUIDE_W - 10);

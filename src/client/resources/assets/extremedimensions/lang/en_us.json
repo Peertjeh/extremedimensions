@@ -1095,7 +1095,7 @@
   "gui.extremedimensions.settings.hud_scale": "HUD size",
   "gui.extremedimensions.settings.hud_scale.desc": "Size of the meters, the guide and the timer.",
   "gui.extremedimensions.settings.guidance": "First-expedition guide",
-  "gui.extremedimensions.settings.guidance.desc": "A small card that names the next step of your first expedition, until you are back home. Open the chat (T) to close it with its ×.",
+  "gui.extremedimensions.settings.guidance.desc": "A small card that names the next step of your first expedition, until you are back home. The Put a card away key (Controls) puts it away until the next step; open the chat (T) to close it for good with its ×.",
   "gui.extremedimensions.settings.hints": "First-meeting hints",
   "gui.extremedimensions.settings.hints.desc": "A short hint in the corner the first time you meet each part of the mod; the journal keeps those you saw under its guides. With hints off none is shown, and each still comes later if you switch them on. The world can turn them off for everyone.",
   "gui.extremedimensions.settings.menu": "Title and loading screens",

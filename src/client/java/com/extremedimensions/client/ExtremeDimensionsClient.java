@@ -56,6 +56,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		// The mod's keys (see ModKeys): the screens they open, and a word on them after the first join
 		ModKeys.register();
 		ClientTickEvents.END_CLIENT_TICK.register(ModKeys::tick);
+		// The cards under the crosshair and the guide card, put away on a key or (the first two) by moving
+		ClientTickEvents.END_CLIENT_TICK.register(com.extremedimensions.client.hud.PutAway::tick);
 		ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
 			Menus.shown(screen);
 			ScreenEvents.remove(screen).register(Menus::gone);
@@ -117,6 +119,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.state.ClientDanger::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.hud.CollapseRecap::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(JournalScreen::forget));
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.hud.PutAway::reset));
 		HudElementRegistry.addLast(ExtremeDimensions.id("charge_hud"), new ChargeHud());
 		HudElementRegistry.addLast(ExtremeDimensions.id("stomach_hud"), new StomachHud());
 		HudElementRegistry.addLast(ExtremeDimensions.id("boss_cinema"), new com.extremedimensions.client.fx.BossCinema());
