@@ -240,13 +240,24 @@ public final class ExpeditionService {
 	/** Entered without a working anchor: the portal is dormant and sends the player back. */
 	/**
 	 * Why the wound stayed shut for this player: no anchor of that world beside the portal they came through, an anchor
-	 * whose light cannot reach it, none of their own time in one, no Tether bound, or a Tether bound to an anchor by
-	 * another portal.
+	 * whose light cannot reach it, none of their own time in one, no Tether bound, the anchor the Tether is bound to
+	 * here holding none of their time, or a Tether bound to an anchor by another portal.
 	 */
 	public static String dormant(ServerPlayer p, PlayerData d, String dim, double total) {
 		boolean near = false, open = false;
 		if (d.hasLast) {
 			double r2 = Config.LINK_RANGE * Config.LINK_RANGE;
+			// The anchor the Tether is bound to speaks first (3.55.0) when it stands beside this very portal: blocked, or
+			// holding none of the player's time. Another anchor here with time in it used to make it read "by another portal".
+			Anchor bound = d.tetherAnchor == null ? null : DataStore.anchors().get(d.tetherAnchor);
+			if (bound != null && dim.equals(bound.type) && bound.distSq(d.lastX, d.lastY, d.lastZ) <= r2) {
+				if (bound.blocked) {
+					return "blocked";
+				}
+				if (bound.of(p.getStringUUID()) <= 0) {
+					return "bound_empty";
+				}
+			}
 			for (Anchor a : DataStore.anchors().values()) {
 				if (dim.equals(a.type) && a.distSq(d.lastX, d.lastY, d.lastZ) <= r2) {
 					near = true;

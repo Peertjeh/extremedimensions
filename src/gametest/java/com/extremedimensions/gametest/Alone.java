@@ -124,4 +124,6 @@ final class Alone {
 	// it; the recap is read from what was last sent, whoever it went to)
 	static final String PLAYTEST_LOG = "extremedimensions_test:alone/playtest_log";
 	static final String COLLAPSE_RECAP = "extremedimensions_test:alone/collapse_recap";
+	// (3.55.0: anchors are the world's, and these tests put their own down and charge them)
+	static final String BOUND_ANCHOR = "extremedimensions_test:alone/bound_anchor";
 }

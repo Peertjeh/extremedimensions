@@ -5,12 +5,15 @@ import static com.extremedimensions.gametest.CurseTests.cursed;
 import static com.extremedimensions.gametest.CurseTests.near;
 
 import com.extremedimensions.config.Config;
+import com.extremedimensions.data.Anchor;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.expedition.ExpeditionService;
 import com.extremedimensions.penalty.CurseTotals;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
 import com.extremedimensions.registry.ModItems;
+import com.extremedimensions.server.Dims;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
@@ -45,6 +48,48 @@ public class QualityTests {
 		check(helper, CurseTotals.spec(Penalty.FAMINE) == null && CurseTotals.spec(Penalty.DWINDLING) == null
 				&& CurseTotals.spec(Penalty.SUNSCORN) == null, "a curse whose card names no number has a total");
 		check(helper, CurseTotals.total(Penalty.HEAVY_LEGS, 8, 0) == 0, "no stacks, yet a total");
+		helper.succeed();
+	}
+
+	/**
+	 * Bounced by a portal whose anchor the Tether is bound to: the player hears what is wrong with that anchor (none of
+	 * their time in it, or blocked), not that it stands by another portal, though another anchor beside this one holds
+	 * their time. Bound to one that really stands elsewhere, they still hear that.
+	 */
+	@GameTest(environment = Alone.BOUND_ANCHOR)
+	public void aBoundAnchorBesideThePortalSaysWhatIsWrong(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "bound-here");
+		PlayerData d = DataStore.get(p.getUUID());
+		// Far off, where no other test's anchor stands
+		d.hasLast = true;
+		d.lastX = 71000.5;
+		d.lastY = 70;
+		d.lastZ = 71000.5;
+		Anchor full = new Anchor(71002, 70, 71000, Dims.NETHER);
+		Anchor bound = new Anchor(71000, 70, 71002, Dims.NETHER);
+		Anchor far = new Anchor(72000, 70, 72000, Dims.NETHER);
+		full.add(p.getStringUUID(), 300);
+		far.add(p.getStringUUID(), 300);
+		for (Anchor a : new Anchor[] {full, bound, far}) {
+			DataStore.anchors().put(a.key(), a);
+		}
+		String was = d.tetherAnchor;
+		try {
+			d.tetherAnchor = bound.key();
+			check(helper, "bound_empty".equals(ExpeditionService.dormant(p, d, Dims.NETHER, 300)), "bound to an empty anchor here: %s",
+					ExpeditionService.dormant(p, d, Dims.NETHER, 300));
+			bound.blocked = true;
+			check(helper, "blocked".equals(ExpeditionService.dormant(p, d, Dims.NETHER, 300)), "bound to a blocked anchor here: %s",
+					ExpeditionService.dormant(p, d, Dims.NETHER, 300));
+			d.tetherAnchor = far.key();
+			check(helper, "elsewhere".equals(ExpeditionService.dormant(p, d, Dims.NETHER, 300)), "bound to an anchor by another portal: %s",
+					ExpeditionService.dormant(p, d, Dims.NETHER, 300));
+		} finally {
+			d.tetherAnchor = was;
+			for (Anchor a : new Anchor[] {full, bound, far}) {
+				DataStore.anchors().remove(a.key());
+			}
+		}
 		helper.succeed();
 	}
 
