@@ -399,20 +399,28 @@ public final class PenaltyService {
 	/**
 	 * A Tether Fragment offered to an anchor (one each time): it atones for a tenth of what the next stack of the curse
 	 * being atoned for (or the heaviest) still asks. An anchor takes at most {@code fragment_max_per_stack} of them for
-	 * one stack of a curse; once that stack comes off (or another is laid on), it takes them afresh.
+	 * one stack of a curse; once that stack comes off (or another is laid on), it takes them afresh. Since 3.55.0 a
+	 * fragment the chosen curse's stack has no room for goes on to the next curse carried that has room (the heaviest
+	 * first), and the player is told which: it used to be refused until they chose another curse by hand. What each
+	 * fragment gives is the same as ever.
 	 */
 	public static InteractionResult mend(ServerPlayer p, PlayerData d, BlockPos pos, ItemStack stack) {
-		Penalty t = target(d, null);
+		Penalty first = target(d, null);
+		if (first == null) {
+			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.fragment_none"), true);
+			return InteractionResult.SUCCESS;
+		}
+		int max = Math.max(1, Config.FRAGMENT_MAX_PER_STACK);
+		Penalty t = fragmentTarget(d, first, max);
 		if (t == null) {
+			// Every stack carried has had its fragments: atonement does the rest
 			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+			p.sendSystemMessage(carriedCurses(d) > 1 ? Component.translatable("gui.extremedimensions.curses.fragments_all_spent", max)
+					: Component.translatable("gui.extremedimensions.curses.fragments_spent", Component.translatable(first.nameKey()), max), true);
 			return InteractionResult.SUCCESS;
 		}
-		int max = Math.max(1, Config.FRAGMENT_MAX_PER_STACK), offered = d.fragmentsOffered(t);
-		if (offered >= max) {
-			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
-			p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.fragments_spent", Component.translatable(t.nameKey()), max), true);
-			return InteractionResult.SUCCESS;
-		}
+		int offered = d.fragmentsOffered(t);
 		// (what a fragment atones for is earned: a bound Debtor's Seal multiplies it)
 		int gain = com.extremedimensions.relic.RelicService.atonement(d, fragmentGain(d, t)), need = cost(d, t);
 		int have = d.atonement.getOrDefault(t.id, 0) + gain;
@@ -430,11 +438,40 @@ public final class PenaltyService {
 		WorldFx.sound(p, "minecraft:block.respawn_anchor.charge", 0.6f, 1.3f);
 		d.offerFragment(t);
 		d.atonement.put(t.id, have);
-		p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.fragment_atoned", gain, Component.translatable(t.nameKey()), offered + 1,
-				max, need - have), true);
+		p.sendSystemMessage(t == first
+				? Component.translatable("gui.extremedimensions.curses.fragment_atoned", gain, Component.translatable(t.nameKey()), offered + 1, max, need - have)
+				: Component.translatable("gui.extremedimensions.curses.fragment_moved_on", gain, Component.translatable(t.nameKey()), offered + 1, max,
+						need - have, Component.translatable(first.nameKey())), true);
 		Sync.curses(p, d, false);
 		DataStore.markDirty();
 		return InteractionResult.SUCCESS;
+	}
+
+	/**
+	 * The curse a Tether Fragment goes to (3.55.0): {@code first} (the one being atoned for, or the heaviest) while its
+	 * stack still takes fragments, else the heaviest other curse carried whose stack does (in the order of the curses
+	 * for equal stacks). Null when every stack carried has had its {@code max}.
+	 */
+	public static Penalty fragmentTarget(PlayerData d, Penalty first, int max) {
+		if (first != null && d.owned(first) > 0 && d.fragmentsOffered(first) < max) {
+			return first;
+		}
+		Penalty best = null;
+		for (Penalty pen : Penalty.values()) {
+			if (pen != first && d.owned(pen) > 0 && d.fragmentsOffered(pen) < max && (best == null || d.owned(pen) > d.owned(best))) {
+				best = pen;
+			}
+		}
+		return best;
+	}
+
+	/** How many curses the player carries (at least a stack each). */
+	private static int carriedCurses(PlayerData d) {
+		int n = 0;
+		for (Penalty pen : Penalty.values()) {
+			n += d.owned(pen) > 0 ? 1 : 0;
+		}
+		return n;
 	}
 
 	/**

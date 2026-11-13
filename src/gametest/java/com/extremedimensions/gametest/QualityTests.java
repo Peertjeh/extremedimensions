@@ -4,14 +4,19 @@ import static com.extremedimensions.gametest.CurseTests.check;
 import static com.extremedimensions.gametest.CurseTests.cursed;
 import static com.extremedimensions.gametest.CurseTests.near;
 
+import com.extremedimensions.config.Config;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.penalty.CurseTotals;
 import com.extremedimensions.penalty.Penalty;
+import com.extremedimensions.penalty.PenaltyService;
+import com.extremedimensions.registry.ModItems;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * The 3.55.0 overhaul of what the player is told: curse totals, fragments that move on to the next curse, the reason a
@@ -40,6 +45,59 @@ public class QualityTests {
 		check(helper, CurseTotals.spec(Penalty.FAMINE) == null && CurseTotals.spec(Penalty.DWINDLING) == null
 				&& CurseTotals.spec(Penalty.SUNSCORN) == null, "a curse whose card names no number has a total");
 		check(helper, CurseTotals.total(Penalty.HEAVY_LEGS, 8, 0) == 0, "no stacks, yet a total");
+		helper.succeed();
+	}
+
+	/**
+	 * Fragments go on to the next curse once the chosen curse's stack has had its five: the chosen one first, then the
+	 * heaviest other, each fragment giving what it always gave; with every stack's fragments given, the next is kept;
+	 * and a player with no curse keeps theirs.
+	 */
+	@GameTest
+	public void fragmentsMoveOnToTheNextCurse(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper, Penalty.KINDLING, 1, Penalty.GLASS_JAW, 2, Penalty.VOLATILE, 1);
+		PlayerData d = DataStore.get(p.getUUID());
+		double share = Config.FRAGMENT_ATONE_SHARE;
+		int max = Config.FRAGMENT_MAX_PER_STACK;
+		try {
+			Config.FRAGMENT_ATONE_SHARE = 0.1;
+			Config.FRAGMENT_MAX_PER_STACK = 2;
+			// Kindling is the one being atoned for, though Glass Jaw is heavier
+			d.atoning = Penalty.KINDLING.id;
+			BlockPos at = helper.absolutePos(new BlockPos(1, 1, 1));
+			ItemStack fragments = new ItemStack(ModItems.TETHER_FRAGMENT, 16);
+			for (int i = 0; i < 2; i++) {
+				PenaltyService.mend(p, d, at, fragments);
+			}
+			check(helper, d.fragmentsOffered(Penalty.KINDLING) == 2 && d.fragmentsOffered(Penalty.GLASS_JAW) == 0,
+					"the first two fragments did not go to the curse being atoned for");
+			// The third: Kindling's stack has had its two, so it goes to the heaviest other, Glass Jaw, and gives a tenth
+			int left = PenaltyService.cost(d, Penalty.GLASS_JAW) - d.atonement.getOrDefault(Penalty.GLASS_JAW.id, 0);
+			PenaltyService.mend(p, d, at, fragments);
+			check(helper, d.fragmentsOffered(Penalty.GLASS_JAW) == 1 && fragments.getCount() == 13,
+					"the third fragment did not go on to Glass Jaw (%s offered there, %s left in hand)", d.fragmentsOffered(Penalty.GLASS_JAW),
+					fragments.getCount());
+			check(helper, d.atonement.getOrDefault(Penalty.GLASS_JAW.id, 0) == Math.max(1, (int) Math.ceil(left * 0.1)),
+					"a fragment gone on gave %s, not a tenth of the %s left", d.atonement.getOrDefault(Penalty.GLASS_JAW.id, 0), left);
+			// Glass Jaw's second, then Volatile's two; after that every stack has had its fragments, and the next is kept
+			for (int i = 0; i < 3; i++) {
+				PenaltyService.mend(p, d, at, fragments);
+			}
+			check(helper, d.fragmentsOffered(Penalty.GLASS_JAW) == 2 && d.fragmentsOffered(Penalty.VOLATILE) == 2 && fragments.getCount() == 10,
+					"the fragments did not go on to Volatile once Glass Jaw had its two");
+			PenaltyService.mend(p, d, at, fragments);
+			check(helper, fragments.getCount() == 10, "an anchor took a fragment no curse's stack had room for");
+			check(helper, d.owned(Penalty.KINDLING) == 1 && d.owned(Penalty.GLASS_JAW) == 2 && d.owned(Penalty.VOLATILE) == 1,
+					"two fragments a stack lifted a stack");
+		} finally {
+			Config.FRAGMENT_ATONE_SHARE = share;
+			Config.FRAGMENT_MAX_PER_STACK = max;
+		}
+		// No curse at all: the fragment is kept
+		ServerPlayer clean = TestPlayers.survivor(helper, "clean-mender");
+		ItemStack one = new ItemStack(ModItems.TETHER_FRAGMENT, 1);
+		PenaltyService.mend(clean, DataStore.get(clean.getUUID()), helper.absolutePos(new BlockPos(1, 1, 1)), one);
+		check(helper, one.getCount() == 1, "a player with no curse lost a fragment to an anchor");
 		helper.succeed();
 	}
 }
