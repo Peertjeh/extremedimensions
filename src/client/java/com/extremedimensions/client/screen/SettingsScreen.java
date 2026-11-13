@@ -855,6 +855,16 @@ public class SettingsScreen extends Screen {
 		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
 	}
 
+	/**
+	 * Its own key leaves it at once (3.55.0), as Done does (asking first about changes not applied); never while the
+	 * search or a value's box has the keys.
+	 */
+	@Override
+	public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+		return com.extremedimensions.client.ModKeys.closes(this, com.extremedimensions.client.ModKeys.SETTINGS, event, this::leave)
+				|| super.keyPressed(event);
+	}
+
 	/** Escape steps back: out of the search, then out of a part to the overview, then out of the screen. */
 	@Override
 	public void onClose() {

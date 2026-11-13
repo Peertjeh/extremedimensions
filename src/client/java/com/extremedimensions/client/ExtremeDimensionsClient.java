@@ -21,7 +21,6 @@ import com.extremedimensions.client.sky.SeamAmbience;
 import com.extremedimensions.client.sky.SeamSky;
 import com.extremedimensions.client.screen.CursesScreen;
 import com.extremedimensions.client.screen.PenaltyChoiceScreen;
-import com.extremedimensions.client.screen.SettingsScreen;
 import com.extremedimensions.client.screen.StatusScreen;
 import com.extremedimensions.client.options.ClientOptions;
 import com.extremedimensions.client.state.ClientState;
@@ -31,9 +30,6 @@ import com.extremedimensions.client.tooltip.Tooltips;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.registry.ModEntities;
 
-import com.mojang.blaze3d.platform.InputConstants;
-
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.ConnectScreen;
@@ -45,7 +41,6 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
@@ -55,41 +50,12 @@ import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 
 /** Client entrypoint: HUD, screens, title art, menu music, tooltips, key mappings and packet receivers. */
 public class ExtremeDimensionsClient implements ClientModInitializer {
-	private static final KeyMapping.Category KEYS = KeyMapping.Category.register(ExtremeDimensions.id("main"));
-	/** Unbound until the player picks keys (Controls): the inventory buttons and the settings gear are always there. */
-	private static final KeyMapping OPEN_CURSES = new KeyMapping("key.extremedimensions.curses", InputConstants.UNKNOWN.getValue(), KEYS);
-	private static final KeyMapping OPEN_JOURNAL = new KeyMapping("key.extremedimensions.journal", InputConstants.UNKNOWN.getValue(), KEYS);
-	private static final KeyMapping OPEN_SETTINGS = new KeyMapping("key.extremedimensions.settings", InputConstants.UNKNOWN.getValue(), KEYS);
-	private static final KeyMapping OPEN_TRIALS = new KeyMapping("key.extremedimensions.trials", InputConstants.UNKNOWN.getValue(), KEYS);
-
 	@Override
 	public void onInitializeClient() {
 		ClientOptions.load();
-		KeyMappingHelper.registerKeyMapping(OPEN_CURSES);
-		KeyMappingHelper.registerKeyMapping(OPEN_JOURNAL);
-		KeyMappingHelper.registerKeyMapping(OPEN_SETTINGS);
-		KeyMappingHelper.registerKeyMapping(OPEN_TRIALS);
-		// Key mappings only register presses while no screen is open, so these never open over another screen
-		ClientTickEvents.END_CLIENT_TICK.register(client -> {
-			while (OPEN_SETTINGS.consumeClick()) {
-				client.gui.setScreen(new SettingsScreen(null));
-			}
-			while (OPEN_CURSES.consumeClick()) {
-				if (client.getConnection() != null && ClientState.modOnServer()) {
-					ClientPlayNetworking.send(new ModPackets.RequestCursesPayload(true));
-				}
-			}
-			while (OPEN_TRIALS.consumeClick()) {
-				if (client.getConnection() != null && ClientState.modOnServer()) {
-					com.extremedimensions.client.screen.TrialsScreen.request(null);
-				}
-			}
-			while (OPEN_JOURNAL.consumeClick()) {
-				if (client.getConnection() != null && ClientState.modOnServer()) {
-					ClientPlayNetworking.send(new ModPackets.RequestJournalPayload());
-				}
-			}
-		});
+		// The mod's keys (see ModKeys): the screens they open, and a word on them after the first join
+		ModKeys.register();
+		ClientTickEvents.END_CLIENT_TICK.register(ModKeys::tick);
 		ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
 			Menus.shown(screen);
 			ScreenEvents.remove(screen).register(Menus::gone);

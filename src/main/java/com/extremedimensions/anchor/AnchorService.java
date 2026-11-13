@@ -110,6 +110,20 @@ public final class AnchorService {
 
 	// ------------------------------------------------------------------ interaction
 
+	/**
+	 * The status screen, with fresh numbers for it; a curse still owed is offered first instead. From an anchor (a sneak
+	 * and an empty hand) and, since 3.55.0, from its key anywhere.
+	 */
+	public static void status(ServerPlayer p) {
+		PlayerData d = DataStore.get(p.getUUID());
+		Sync.state(p, d);
+		if (!d.pendingOffer.isEmpty()) {
+			Sync.offer(p, d);
+		} else {
+			ServerPlayNetworking.send(p, new ModPackets.OpenStatusPayload(d.shareAnchors));
+		}
+	}
+
 	/** Right click on a lodestone or anchor with the main hand. */
 	public static InteractionResult use(ServerPlayer p, BlockPos pos) {
 		PlayerData d = DataStore.get(p.getUUID());
@@ -118,12 +132,7 @@ public final class AnchorService {
 		if (stack.isEmpty()) {
 			if (p.isShiftKeyDown()) {
 				// Sneak + empty hand: status screen (or the owed penalty first)
-				Sync.state(p, d);
-				if (!d.pendingOffer.isEmpty()) {
-					Sync.offer(p, d);
-				} else {
-					ServerPlayNetworking.send(p, new ModPackets.OpenStatusPayload(d.shareAnchors));
-				}
+				status(p);
 				return InteractionResult.SUCCESS;
 			}
 			if (Anchor.key(pos.getX(), pos.getY(), pos.getZ()).equals(d.tetherAnchor) && !d.inRun) {

@@ -10,7 +10,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-/** Anchor status (sneak + empty hand on an anchor): your charge here, your record and your marks. */
+/** Anchor status (sneak + empty hand on an anchor, or its key): your charge here, your record and your marks. */
 public class StatusScreen extends Screen {
 	private static final int PANEL_W = 250;
 	private static final int PANEL_H = 222;
@@ -114,6 +114,12 @@ public class StatusScreen extends Screen {
 		String t = Ui.time(seconds);
 		g.text(this.font, t, x + bw - this.font.width(t), y, Ui.argb(alpha, color));
 		Ui.meter(g, x, y + 12, bw, 7, seconds / Math.max(Config.MAX_CHARGE, value), color, alpha, true);
+	}
+
+	/** Its own key closes it (3.55.0), as Escape does. */
+	@Override
+	public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+		return com.extremedimensions.client.ModKeys.closes(this, com.extremedimensions.client.ModKeys.STATUS, event) || super.keyPressed(event);
 	}
 
 	public boolean isPauseScreen() {

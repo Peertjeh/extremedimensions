@@ -86,6 +86,14 @@ public class ExtremeDimensions implements ModInitializer {
 						Journal.open(context.player(), DataStore.get(context.player().getUUID()));
 					}
 				});
+		// The anchor status screen on a key of its own (3.55.0), as a sneak and an empty hand on an anchor open it
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestStatusPayload.TYPE, ModPackets.RequestStatusPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestStatusPayload.TYPE,
+				(payload, context) -> {
+					if (Requests.allow(context.player(), "status", 4)) {
+						com.extremedimensions.anchor.AnchorService.status(context.player());
+					}
+				});
 
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.SettingsPayload.TYPE, ModPackets.SettingsPayload.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestSettingsPayload.TYPE, ModPackets.RequestSettingsPayload.CODEC);

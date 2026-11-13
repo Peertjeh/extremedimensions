@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.extremedimensions.client.ModKeys;
 import com.extremedimensions.client.ui.Ui;
 import com.extremedimensions.guide.Path;
 import com.extremedimensions.journal.Bestiary;
@@ -15,11 +16,14 @@ import com.extremedimensions.journal.MarginNote;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.tribe.Standing;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -517,6 +521,57 @@ public class JournalScreen extends Screen {
 	private void flip(int dir) {
 		int np = spread + dir;
 		if (np >= 0 && np < count()) {
+			spread = np;
+			flipAt = System.currentTimeMillis();
+		}
+		updateButtons();
+	}
+
+	/**
+	 * Keys (3.55.0): the journal's own key closes it; the arrow keys (and Page Up, Page Down) turn the pages, Home goes
+	 * back to the part's first spread, and Tab (Shift+Tab back) moves on to the next tab. Escape closes it as ever.
+	 */
+	@Override
+	public boolean keyPressed(KeyEvent event) {
+		if (ModKeys.closes(this, ModKeys.JOURNAL, event)) {
+			return true;
+		}
+		int key = event.key();
+		if (key == InputConstants.KEY_LEFT || key == InputConstants.KEY_UP || key == InputConstants.KEY_PAGEUP) {
+			flip(-2);
+			return true;
+		}
+		if (key == InputConstants.KEY_RIGHT || key == InputConstants.KEY_DOWN || key == InputConstants.KEY_PAGEDOWN) {
+			flip(2);
+			return true;
+		}
+		if (key == InputConstants.KEY_HOME) {
+			turnTo(0);
+			return true;
+		}
+		if (key == InputConstants.KEY_TAB) {
+			Part[] parts = java.util.Arrays.stream(Part.values()).filter(this::has).toArray(Part[]::new);
+			int at = java.util.Arrays.asList(parts).indexOf(part);
+			show(parts[(at + (ModKeys.shift(event) ? parts.length - 1 : 1)) % parts.length]);
+			return true;
+		}
+		return super.keyPressed(event);
+	}
+
+	/** The mouse wheel turns the pages (3.55.0): away from the reader to go on, towards them to go back. */
+	@Override
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+		if (scrollY != 0) {
+			flip(scrollY < 0 ? 2 : -2);
+			return true;
+		}
+		return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+	}
+
+	/** Turns straight to the spread holding this page of the part shown. */
+	private void turnTo(int page) {
+		int np = Math.max(0, Math.min(page, count() - 1)) & ~1;
+		if (np != spread) {
 			spread = np;
 			flipAt = System.currentTimeMillis();
 		}

@@ -167,6 +167,24 @@ public final class ModPackets {
 		}
 	}
 
+	/** Client -> server: the player pressed the key of the anchor status screen (3.55.0), which the server opens as an anchor does. */
+	public record RequestStatusPayload() implements CustomPacketPayload {
+		public static final Type<RequestStatusPayload> TYPE = new Type<>(ExtremeDimensions.id("request_status"));
+		public static final StreamCodec<FriendlyByteBuf, RequestStatusPayload> CODEC = StreamCodec.ofMember(RequestStatusPayload::write, RequestStatusPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+		}
+
+		private static RequestStatusPayload read(FriendlyByteBuf buf) {
+			return new RequestStatusPayload();
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
 	/** Client -> server: the chosen penalty. */
 	public record ChoosePayload(String id) implements CustomPacketPayload {
 		public static final Type<ChoosePayload> TYPE = new Type<>(ExtremeDimensions.id("choose"));

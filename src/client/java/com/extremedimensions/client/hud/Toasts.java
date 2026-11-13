@@ -72,6 +72,17 @@ public final class Toasts {
 		}
 	}
 
+	/** A word of the mod's own (the keys after the first join, say), wrapped and kept as long as a hint (3.55.0). */
+	public static void tell(Component title, Component text) {
+		Minecraft mc = Minecraft.getInstance();
+		SystemToast toast = multiline(mc, title, text);
+		if (toast != null) {
+			mc.gui.toastManager().addToast(toast);
+		} else {
+			SystemToast.add(mc.gui.toastManager(), HINT, title, text);
+		}
+	}
+
 	/** Hints stay as long as the game's own tutorial hints, so their lines can be read. */
 	private static final SystemToast.SystemToastId HINT = new SystemToast.SystemToastId(10000L);
 	private static boolean warned;

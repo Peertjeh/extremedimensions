@@ -94,6 +94,8 @@ public final class ClientOptions {
 		MenuStyle menu = MenuStyle.FULL;
 		Effects effects = Effects.FULL;
 		ShaderLook shaderLook = ShaderLook.CRYING_OBSIDIAN;
+		/** Whether the toast naming the mod's keys has been shown on this computer (3.55.0; once, on the first join). */
+		boolean keysTold = false;
 	}
 
 	/** HUD sizes to cycle through, in percent. */
@@ -243,6 +245,16 @@ public final class ClientOptions {
 
 	public static void setGuidance(boolean on) {
 		values.guidance = on;
+		save();
+	}
+
+	/** Whether the keys of the Curses and the journal have been named once already (see ModKeys). */
+	public static boolean keysTold() {
+		return values.keysTold;
+	}
+
+	public static void setKeysTold() {
+		values.keysTold = true;
 		save();
 	}
 
