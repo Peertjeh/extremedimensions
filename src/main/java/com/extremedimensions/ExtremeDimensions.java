@@ -86,6 +86,14 @@ public class ExtremeDimensions implements ModInitializer {
 						Journal.open(context.player(), DataStore.get(context.player().getUUID()));
 					}
 				});
+		// A first-meeting hint shown on the player's screen: only now is it told (3.55.0)
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.HintShownPayload.TYPE, ModPackets.HintShownPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.HintShownPayload.TYPE,
+				(payload, context) -> {
+					if (Requests.allow(context.player(), "hint_shown", 8)) {
+						com.extremedimensions.guide.Hints.shown(context.player(), payload.hint());
+					}
+				});
 		// The anchor status screen on a key of its own (3.55.0), as a sneak and an empty hand on an anchor open it
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestStatusPayload.TYPE, ModPackets.RequestStatusPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestStatusPayload.TYPE,

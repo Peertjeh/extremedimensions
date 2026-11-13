@@ -46,6 +46,11 @@ public class PlayerData {
 	/** First-meeting hints already given (see guide.Hints), and whether what they knew before hints existed was looked at. */
 	public Set<String> hints = new LinkedHashSet<>();
 	public boolean hintsChecked = false;
+	/**
+	 * Hints sent to the player's game since they joined but not shown there yet (3.55.0): a hint is told only once the
+	 * game says it showed it (a player with hints off is offered each once a visit, and told none).
+	 */
+	public transient Set<String> hintsOffered = new java.util.HashSet<>();
 	/** The relic bound to the Tether (its id), or null. */
 	public String relic = null;
 	public int collapses = 0;

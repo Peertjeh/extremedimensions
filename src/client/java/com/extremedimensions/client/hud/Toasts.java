@@ -56,19 +56,18 @@ public final class Toasts {
 		}
 	}
 
-	/** The first time the player meets a part of the mod (by the hint's ordinal): a word on it, unless they turned hints off. */
+	/**
+	 * The first time the player meets a part of the mod (by the hint's ordinal): a word on it, unless they turned hints
+	 * off. Shown, the server is told so (3.55.0), and only then counts it told: one turned off here comes again later.
+	 */
 	public static void hint(int ordinal) {
 		Hints.Hint[] hints = Hints.Hint.values();
 		if (ordinal < 0 || ordinal >= hints.length || !com.extremedimensions.client.options.ClientOptions.hints()) {
 			return;
 		}
-		Minecraft mc = Minecraft.getInstance();
-		Component title = Component.translatable(hints[ordinal].titleKey()), text = Component.translatable(hints[ordinal].textKey());
-		SystemToast toast = multiline(mc, title, text);
-		if (toast != null) {
-			mc.gui.toastManager().addToast(toast);
-		} else {
-			SystemToast.add(mc.gui.toastManager(), HINT, title, text);
+		tell(Component.translatable(hints[ordinal].titleKey()), Component.translatable(hints[ordinal].textKey()));
+		if (net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.canSend(com.extremedimensions.network.ModPackets.HintShownPayload.TYPE)) {
+			net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(new com.extremedimensions.network.ModPackets.HintShownPayload(ordinal));
 		}
 	}
 

@@ -959,13 +959,13 @@ public class LurkerTests {
 		ServerLevel level = helper.getLevel();
 		helper.setBlock(new BlockPos(4, 2, 2), Blocks.END_PORTAL_FRAME.defaultBlockState());
 		Hints.look(p, d);
-		check(helper, d.hints.contains(Hints.Hint.END_PORTAL.key()), "no word beside an End portal");
+		check(helper, Hints.offered(p, Hints.Hint.END_PORTAL), "no word beside an End portal");
 		level.setBlock(helper.absolutePos(new BlockPos(2, 2, 4)), Blocks.NETHER_PORTAL.defaultBlockState(), 2 | 16);
 		Hints.look(p, d);
-		check(helper, d.hints.contains(Hints.Hint.PORTAL.key()), "no word beside a Nether portal before any anchor");
+		check(helper, Hints.offered(p, Hints.Hint.PORTAL), "no word beside a Nether portal before any anchor");
 		p.getInventory().add(new ItemStack(Items.LODESTONE));
 		Hints.look(p, d);
-		check(helper, d.hints.contains(Hints.Hint.LODESTONE.key()), "no word on a lodestone in hand");
+		check(helper, Hints.offered(p, Hints.Hint.LODESTONE), "no word on a lodestone in hand");
 		helper.setBlock(new BlockPos(2, 2, 4), Blocks.AIR.defaultBlockState());
 		helper.succeed();
 	}
