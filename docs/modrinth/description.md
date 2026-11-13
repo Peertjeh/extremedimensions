@@ -64,6 +64,7 @@ hunt.
 - **55 advancements**, a bestiary, a ledger and a guided first expedition
 - A **music disc** and its own title and loading screens with music
 - **Drawn as vanilla draws**: every item and block follows a vanilla texture pixel for pixel, in its own colours
+- **The Seam's furnishings for builders**: Seam Silk Blocks and Carpets, Nebula Glass and its panes, and the violet Veil Lamp
 - The **Kindled Seam Lantern**: a blue-violet lantern whose light reaches twice as far (violet under shader packs too, with Iris, as every glowing block of the mod now is)
 
 ## ⚙ Difficulty and settings
@@ -86,7 +87,7 @@ values from the same screen.
 - Play a normal **Survival** world, not Hardcore: Hardcore makes you a spectator on death, and the mod gives death its
   own consequences instead
 
-**Works with** Sodium, Iris, Mod Menu and Text Placeholder API, all tested in CI on every build, with a shader pack (Solas) switched on in the Seam.
+**Works with** Sodium, Iris, Mod Menu, Text Placeholder API, JEI, Jade (anchor charge, Lurker moods and more in its tooltip) and JourneyMap (your anchors as waypoints), all tested in CI on every build, with a shader pack (Solas) switched on in the Seam.
 
 **Languages:** English and Dutch.
 
