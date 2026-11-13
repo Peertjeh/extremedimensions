@@ -116,7 +116,7 @@ public final class ExpeditionBar {
 		} else if (!seam && TetherService.distance(p, d) >= 0) {
 			out.append("  ").append(Component.translatable("hud.extremedimensions.tether_distance", TetherService.distance(p, d)));
 		}
-		double drain = seam ? com.extremedimensions.seam.SeamDepth.drain(p.getY()) : d.currentDrain;
+		double drain = seam ? SeamService.drain(p) : d.currentDrain;
 		if (drain > 1.0) {
 			out.append("  ").append(Component.translatable("hud.extremedimensions.drain", String.format(java.util.Locale.ROOT, "%.1f", drain))
 					.withStyle(drain >= 3 ? ChatFormatting.RED : drain >= 1.8 ? ChatFormatting.YELLOW : ChatFormatting.GRAY));

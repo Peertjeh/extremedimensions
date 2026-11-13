@@ -455,12 +455,8 @@ public final class SeamService {
 			pull(p, d);
 			return;
 		}
-		double drain = 0;
-		if (!p.isCreative() && !(MendingService.active() && MendingService.inArena(p)) && !com.extremedimensions.elder.WeaverService.knotMotherNear(p)) {
-			// Time runs out faster in the Fray
-			drain = SeamDepth.drain(p.getY()) * com.extremedimensions.events.FrayedSeam.drain(p);
-			d.seamLeft -= drain / 20.0;
-		}
+		double drain = drain(p);
+		d.seamLeft -= drain / 20.0;
 		// For the visit's record: how far from the rift home, and how fast the thread ran (the distance does not count here)
 		com.extremedimensions.expedition.ExpeditionRecord.tick(d.seamTally, riftDistance(p, d), 1.0, drain);
 		TetherService.lay(p, d);
@@ -1414,6 +1410,18 @@ public final class SeamService {
 	}
 
 	/** Rift distance for the HUD. */
+	/**
+	 * How fast a visitor's thread runs out where they stand now, in seconds a second: faster in the Fray and on a frayed
+	 * island, not at all in creative, in the Heart's fight or near the Knot Mother. One reckoning (3.55.0) for the thread
+	 * itself, the timer panel (which ran at x1.0 in the Fray before) and the boss bar.
+	 */
+	public static double drain(ServerPlayer p) {
+		if (p.isCreative() || (MendingService.active() && MendingService.inArena(p)) || com.extremedimensions.elder.WeaverService.knotMotherNear(p)) {
+			return 0;
+		}
+		return SeamDepth.drain(p.getY()) * com.extremedimensions.events.FrayedSeam.drain(p);
+	}
+
 	public static int riftDistance(ServerPlayer p, PlayerData d) {
 		double dx = p.getX() - d.riftX, dz = p.getZ() - d.riftZ;
 		return (int) Math.sqrt(dx * dx + dz * dz);
