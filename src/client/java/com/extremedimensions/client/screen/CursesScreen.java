@@ -26,7 +26,9 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.InputWithModifiers;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.level.Level;
 
@@ -103,6 +105,28 @@ public class CursesScreen extends Screen {
 	/** The Curses screen on display, if any, so a fresh payload can refresh it in place. */
 	private static CursesScreen shown;
 
+	/**
+	 * The grid's two toggles (3.55.0): only the curses carried, and the heaviest first. Kept for as long as the game
+	 * runs, so the screen opens the way it was left.
+	 */
+	private static boolean carriedOnly, byStacks;
+	/** Whether the Extreme tab shows a row of Abyssal sockets now, and whether the grid shows none at all (the toggles may leave none). */
+	private boolean deepShown, gridEmpty;
+
+	/**
+	 * The screen to come back to from the next Curses screen to open, and when it was asked for (3.55.0): the curse
+	 * choice opens the Curses on top of itself and comes back to it.
+	 */
+	private static Screen returnTo;
+	private static long returnAskedAt;
+
+	/** Asks the server for the Curses screen, to come back to {@code back} when it closes. */
+	public static void openOver(Screen back) {
+		returnTo = back;
+		returnAskedAt = System.currentTimeMillis();
+		ClientPlayNetworking.send(new ModPackets.RequestCursesPayload(true));
+	}
+
 	public CursesScreen(String data, Screen parent) {
 		super(Component.translatable("gui.extremedimensions.curses.title"));
 		this.parent = parent;
@@ -131,7 +155,11 @@ public class CursesScreen extends Screen {
 	public static void receive(String data, boolean open) {
 		Minecraft mc = Minecraft.getInstance();
 		if (open) {
-			mc.gui.setScreen(new CursesScreen(data, CursesButton.takeReturn()));
+			// (asked for over another screen of the mod a moment ago: back to that one, else as the inventory button says)
+			boolean over = returnTo != null && System.currentTimeMillis() - returnAskedAt < 3000;
+			Screen back = over ? returnTo : CursesButton.takeReturn();
+			returnTo = null;
+			mc.gui.setScreen(new CursesScreen(data, back));
 		} else if (shown != null) {
 			shown.update(data);
 		}
@@ -364,6 +392,16 @@ public class CursesScreen extends Screen {
 				ClientPlayNetworking.send(new ModPackets.AtonePayload(selected.id));
 			}
 		}).pos(x0 + 168, y0 + 148).size(PW - 168 - 14, 18).build());
+		// Under the grid (3.55.0): only what is carried, the heaviest first; and in the header, all that is carried
+		Toggle only = this.addRenderableWidget(new Toggle(x0 + 16, y0 + 156, "gui.extremedimensions.curses.carried_only", () -> carriedOnly, () -> {
+			carriedOnly = !carriedOnly;
+			showSockets();
+		}));
+		this.addRenderableWidget(new Toggle(only.getX() + only.getWidth() + 4, y0 + 156, "gui.extremedimensions.curses.by_stacks", () -> byStacks, () -> {
+			byStacks = !byStacks;
+			showSockets();
+		}));
+		this.addRenderableWidget(new SummaryButton(x0 + 52, y0 + 5));
 		refreshButton();
 		showTab();
 	}
@@ -374,10 +412,35 @@ public class CursesScreen extends Screen {
 		refreshButton();
 	}
 
+	/**
+	 * Shows the open set's sockets and lays them out in the grid: all of them in the set's order, or (3.55.0) only those
+	 * carried, and the heaviest first. The Abyssal row is laid out the same way under the Extreme tab's own curses.
+	 */
 	private void showSockets() {
+		List<Socket> main = new ArrayList<>(), deep = new ArrayList<>();
 		for (Socket s : sockets) {
-			s.visible = s.pen.group == tab && shown(s.pen);
+			s.visible = s.pen.group == tab && shown(s.pen) && (!carriedOnly || entry(s.pen).stacks() > 0);
+			if (s.visible) {
+				(s.pen.abyssal ? deep : main).add(s);
+			}
 		}
+		if (byStacks) {
+			// (a stable sort: curses of equal weight keep the set's order)
+			java.util.Comparator<Socket> heaviest = java.util.Comparator.comparingInt(s -> -entry(s.pen).stacks());
+			main.sort(heaviest);
+			deep.sort(heaviest);
+		}
+		int x0 = x0(), y0 = y0();
+		for (int i = 0; i < main.size(); i++) {
+			main.get(i).setX(x0 + 16 + (i % COLS) * CELL);
+			main.get(i).setY(y0 + 44 + (i / COLS) * CELL);
+		}
+		for (int i = 0; i < deep.size(); i++) {
+			deep.get(i).setX(x0 + 16 + (i % ACOLS) * ACELL);
+			deep.get(i).setY(y0 + ATOP + (i / ACOLS) * ACELL);
+		}
+		deepShown = !deep.isEmpty();
+		gridEmpty = main.isEmpty() && deep.isEmpty();
 	}
 
 	/** The open tab is wide enough for its name; the others shrink to sigil and stacks. */
@@ -456,7 +519,15 @@ public class CursesScreen extends Screen {
 				ly += 10;
 			}
 		}
-		if (tab == Group.EXTREME && abyssRow()) {
+		if (carriedOnly && gridEmpty) {
+			// (only the curses carried, and none in this set)
+			int ly = y0 + 50;
+			for (String line : Ui.wrap(this.font, Ui.tr("gui.extremedimensions.curses.carried_none"), 136)) {
+				g.text(this.font, line, x0 + 16, ly, Ui.argb(fade, Ui.MUTED));
+				ly += 10;
+			}
+		}
+		if (tab == Group.EXTREME && abyssRow() && deepShown) {
 			// The Abyssal row's heading: its name and a violet rule to the grid's edge
 			int ay = y0 + ATOP - 11, abyss = Ui.abyss();
 			String label = Ui.tr("gui.extremedimensions.curses.abyssal_row").toUpperCase();
@@ -1124,14 +1195,189 @@ public class CursesScreen extends Screen {
 		}
 	}
 
+	/**
+	 * A curse's tooltip in the grid (3.55.0): its name and stacks, what one stack does and what all of them come to now,
+	 * so the grid reads without clicking through it. A curse still in runes keeps its runes, and shows no total.
+	 */
+	private Component curseTip(Penalty pen) {
+		Entry e = entry(pen);
+		boolean plain = e.readable();
+		MutableComponent tip = Component.empty().append(curseName(pen).copy().withStyle(ChatFormatting.WHITE));
+		tip.append("\n").append(Component.literal(Ui.tr("gui.extremedimensions.curses.stacks", e.stacks(), e.max()))
+				.withStyle(e.stacks() >= e.max() && e.stacks() > 0 ? ChatFormatting.RED : ChatFormatting.GRAY));
+		String effect = Ui.curse(Ui.tr(pen.lineKey(1), e.value()) + " " + Ui.tr(pen.lineKey(2), e.value()), plain);
+		boolean numbered = plain && com.extremedimensions.penalty.CurseTotals.spec(pen) != null;
+		tip.append("\n").append(Component.literal(numbered ? Ui.tr("gui.extremedimensions.curses.per_stack", effect) : effect).withStyle(ChatFormatting.GRAY));
+		String total = numbered ? CurseLine.total("now", pen, e.stacks(), e.value()) : null;
+		if (total != null) {
+			tip.append("\n").append(Component.literal(total).withStyle(ChatFormatting.YELLOW));
+		}
+		return tip;
+	}
+
+	/** One of the grid's toggles (3.55.0), a small chip under it: lit while on. Its tooltip says what it does. */
+	private final class Toggle extends AbstractButton {
+		private final java.util.function.BooleanSupplier on;
+		private final Runnable press;
+
+		Toggle(int x, int y, String key, java.util.function.BooleanSupplier on, Runnable press) {
+			super(x, y, Minecraft.getInstance().font.width(Ui.tr(key)) + 14, 11, Component.translatable(key));
+			this.on = on;
+			this.press = press;
+			this.setTooltip(Tooltip.create(Component.translatable(key + ".desc")));
+		}
+
+		@Override
+		public void onPress(InputWithModifiers input) {
+			press.run();
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+			var font = Minecraft.getInstance().font;
+			boolean lit = on.getAsBoolean();
+			int x = this.getX(), y = this.getY(), col = lit ? accent() : Ui.MUTED;
+			Ui.chip(g, x, y, this.getWidth(), this.getHeight(), col, lit ? 1.0 : this.isHovered() ? 0.8 : 0.55);
+			// (a box, ticked while on)
+			g.fill(x + 3, y + 3, x + 8, y + 8, Ui.argb(1.0, Ui.SHADOW));
+			if (lit) {
+				g.fill(x + 4, y + 4, x + 7, y + 7, Ui.argb(1.0, Ui.mix(col, 0xFFFFFF, 0.3)));
+			}
+			g.text(font, this.getMessage().getString(), x + 11, y + 2, Ui.argb(lit ? 1.0 : 0.75, lit ? Ui.PARCHMENT : Ui.TEXT));
+		}
+
+		@Override
+		protected void updateWidgetNarration(NarrationElementOutput out) {
+			out.add(NarratedElementType.TITLE, this.getMessage());
+		}
+	}
+
+	/**
+	 * Everything carried, at a glance (3.55.0): a small mark in the header with the stacks carried in every set, and on
+	 * hover every curse carried, set by set with what it comes to, the pact's stacks (on top while on an expedition) and
+	 * the Fresh Wound. The tabs only ever show one set at a time.
+	 */
+	private final class SummaryButton extends AbstractButton {
+		private static final String[] MARK = {
+			"#.#####",
+			".......",
+			"#.#####",
+			".......",
+			"#.#####",
+			".......",
+			"#.####.",
+		};
+		private String tipFor = null;
+
+		SummaryButton(int x, int y) {
+			super(x, y, 24, 13, Component.translatable("gui.extremedimensions.curses.all"));
+		}
+
+		@Override
+		public void onPress(InputWithModifiers input) {
+			// (a summary to hover, nothing to press)
+		}
+
+		/** Every stack carried, in every set. */
+		private int total() {
+			int n = 0;
+			for (Entry e : entries.values()) {
+				n += e.stacks();
+			}
+			return n;
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+			var font = Minecraft.getInstance().font;
+			int n = total();
+			String count = String.valueOf(n);
+			this.setWidth(13 + font.width(count) + 3);
+			String state = n + "|" + entries.hashCode() + "|" + pactData + "|" + (woundIn + 59) / 60;
+			if (!state.equals(tipFor)) {
+				tipFor = state;
+				this.setTooltip(Tooltip.create(summary()));
+			}
+			int x = this.getX(), y = this.getY();
+			int col = this.isHovered() ? Ui.WARN : n > 0 ? Ui.mix(Ui.DANGER, Ui.MUTED, 0.3) : Ui.MUTED;
+			for (int r = 0; r < MARK.length; r++) {
+				for (int k = 0; k < MARK[r].length(); k++) {
+					if (MARK[r].charAt(k) == '#') {
+						g.fill(x + 3 + k, y + 3 + r, x + 4 + k, y + 4 + r, Ui.argb(255, col));
+					}
+				}
+			}
+			g.text(font, count, x + 13, y + 3, Ui.argb(1.0, n > 0 ? Ui.PARCHMENT : Ui.MUTED));
+		}
+
+		@Override
+		protected void updateWidgetNarration(NarrationElementOutput out) {
+			out.add(NarratedElementType.TITLE, this.getMessage());
+		}
+	}
+
+	/** The summary's text: every curse carried by set, the pact's stacks and the Fresh Wound (see {@link SummaryButton}). */
+	private Component summary() {
+		int stacks = 0, curses = 0;
+		for (Entry e : entries.values()) {
+			stacks += e.stacks();
+			curses += e.stacks() > 0 ? 1 : 0;
+		}
+		MutableComponent out = Component.empty().append(Component.translatable(curses == 0 ? "gui.extremedimensions.curses.all.none"
+				: "gui.extremedimensions.curses.all.title", stacks, curses).withStyle(ChatFormatting.WHITE));
+		for (Group g : Group.values()) {
+			List<Entry> held = new ArrayList<>();
+			for (Penalty p : Penalty.values()) {
+				if (p.group == g && entry(p).stacks() > 0) {
+					held.add(entry(p));
+				}
+			}
+			if (held.isEmpty()) {
+				continue;
+			}
+			held.sort(java.util.Comparator.comparingInt(e -> -e.stacks()));
+			out.append("\n").append(Component.translatable(tabKey(g)).withStyle(ChatFormatting.WHITE, ChatFormatting.UNDERLINE));
+			for (Entry e : held) {
+				String line = " " + curseName(e.pen()).getString() + " " + e.stacks() + "/" + e.max();
+				String total = e.readable() ? CurseLine.total("now", e.pen(), e.stacks(), e.value()) : null;
+				out.append("\n").append(Component.literal(total == null ? line : line + " · " + total).withStyle(ChatFormatting.GRAY));
+			}
+		}
+		// The pact: its stacks act on top of these on every expedition (and act now, while on one)
+		String[] pact = pactData.split(";", -1);
+		if (pact.length > 2 && !pact[2].isEmpty()) {
+			List<String> sworn = new ArrayList<>();
+			for (String part : pact[2].split(",")) {
+				String[] kv = part.split(":");
+				Penalty p = kv.length == 2 ? Penalty.byId(kv[0]) : null;
+				if (p != null) {
+					sworn.add(curseName(p).getString() + " +" + kv[1]);
+				}
+			}
+			if (!sworn.isEmpty()) {
+				out.append("\n").append(Component.translatable("1".equals(pact[1]) ? "gui.extremedimensions.curses.all.pact_now"
+						: "gui.extremedimensions.curses.all.pact", String.join(", ", sworn)).withStyle(ChatFormatting.GOLD));
+			}
+		}
+		if (woundIn > 0) {
+			String hearts = com.extremedimensions.config.Config.format(Math.max(0, com.extremedimensions.config.Config.DEATH_WOUND_HEALTH) / 2.0);
+			long faster = Math.round((Math.max(1, com.extremedimensions.config.Config.DEATH_WOUND_DRAIN) - 1) * 100);
+			out.append("\n").append(Component.translatable("gui.extremedimensions.curses.all.wound", hearts, faster, Ui.time(woundIn))
+					.withStyle(ChatFormatting.RED));
+		}
+		return out;
+	}
+
 	/** A curse in the grid: its rune, its pips, selected or not. */
 	private final class Socket extends AbstractButton {
 		final Penalty pen;
 
+		/** What the tooltip was made for (rebuilt only when the curse's stacks or reading change). */
+		private String tipFor = "";
+
 		Socket(Penalty pen, int x, int y) {
 			super(x, y, pen.abyssal ? 16 : 18, pen.abyssal ? 16 : 21, CursesScreen.this.curseName(pen));
 			this.pen = pen;
-			this.setTooltip(Tooltip.create(this.getMessage()));
 		}
 
 		@Override
@@ -1142,6 +1388,11 @@ public class CursesScreen extends Screen {
 		@Override
 		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
 			Entry e = entry(pen);
+			String state = e.stacks() + "/" + e.max() + "/" + e.value() + "/" + e.readable();
+			if (!state.equals(tipFor)) {
+				tipFor = state;
+				this.setTooltip(Tooltip.create(curseTip(pen)));
+			}
 			boolean has = e.stacks() > 0;
 			int accent = accent();
 			boolean sel = pen == selected;
