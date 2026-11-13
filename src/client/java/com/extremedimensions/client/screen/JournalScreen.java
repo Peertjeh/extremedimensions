@@ -71,10 +71,10 @@ public class JournalScreen extends Screen {
 	/**
 	 * One anchor that keeps charge for the player, as {@code AnchorList.encode} writes it: its world, where it stands, the
 	 * charge it holds for the player and their own part of it (seconds), the seconds before it breaks (0: steady), the
-	 * allies who lend the player their charge in it (names joined by "/"), and whether an older world's charge in it is
-	 * kept for everyone.
+	 * allies who lend the player their charge in it (names joined by "/"), whether an older world's charge in it is
+	 * kept for everyone, and (3.55.0) whether its way to its portal is blocked, so that it leaks.
 	 */
-	private record Kept(boolean nether, int x, int y, int z, int charge, int own, int cracked, String lenders, boolean everyone) {}
+	private record Kept(boolean nether, int x, int y, int z, int charge, int own, int cracked, String lenders, boolean everyone, boolean blocked) {}
 
 	/**
 	 * One line on a page: the Wanderer's, a note in another hand beside them, a page wholly in that hand (rust), or a
@@ -259,9 +259,10 @@ public class JournalScreen extends Screen {
 		try {
 			for (String entry : f[3].split(";")) {
 				String[] v = entry.split(",", -1);
-				if (v.length == 9) {
+				// (nine fields from a server of before 3.55.0, which did not say whether one is blocked)
+				if (v.length == 9 || v.length == 10) {
 					kept.add(new Kept("nether".equals(v[0]), Integer.parseInt(v[1]), Integer.parseInt(v[2]), Integer.parseInt(v[3]),
-							Integer.parseInt(v[4]), Integer.parseInt(v[5]), Integer.parseInt(v[6]), v[7], "1".equals(v[8])));
+							Integer.parseInt(v[4]), Integer.parseInt(v[5]), Integer.parseInt(v[6]), v[7], "1".equals(v[8]), v.length == 10 && "1".equals(v[9])));
 				}
 			}
 			keptTotal = Math.max(kept.size(), Integer.parseInt(f[2]));
@@ -1055,9 +1056,12 @@ public class JournalScreen extends Screen {
 		Ui.ink(g, this.font, charge, x + PAGE_W - 12 - this.font.width(charge), top, INK_TEAL, alpha);
 		Ui.ink(g, this.font, Ui.tr("gui.extremedimensions.journal.anchors.at", a.x(), a.y(), a.z()), x + 20, top + 10, INK, alpha);
 		boolean cracked = a.cracked() > 0;
-		String state = cracked ? Ui.tr("gui.extremedimensions.journal.anchors.cracked", Ui.time(a.cracked()))
+		// (blocked, 3.55.0: said beside a crack, or in place of "steady")
+		String state = cracked && a.blocked() ? Ui.tr("gui.extremedimensions.journal.anchors.cracked_blocked", Ui.time(a.cracked()))
+				: cracked ? Ui.tr("gui.extremedimensions.journal.anchors.cracked", Ui.time(a.cracked()))
+				: a.blocked() ? Ui.tr("gui.extremedimensions.journal.anchors.blocked")
 				: Ui.tr("gui.extremedimensions.journal.anchors.steady");
-		int ty = para(g, state, x, top + 20, 8, cracked ? INK_RUST : INK_FAINT, alpha, top + 30);
+		int ty = para(g, state, x, top + 20, 8, cracked || a.blocked() ? INK_RUST : INK_FAINT, alpha, top + 30);
 		para(g, shared(a), x, ty, 8, INK, alpha, top + 40);
 		for (int dx = x + 12; dx < x + PAGE_W - 12; dx += 3) {
 			g.fill(dx, top + 52, dx + 1, top + 53, Ui.argb(alpha * 0.35, INK_FAINT));

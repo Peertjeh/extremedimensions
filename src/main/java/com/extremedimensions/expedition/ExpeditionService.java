@@ -63,11 +63,17 @@ public final class ExpeditionService {
 		String uid = p.getStringUUID();
 		// Working anchors of this type around the portal the player went through
 		d.linked.clear();
+		// (and the blocked ones, which feed nothing: the player is told of them once on the way, 3.55.0)
+		java.util.List<Anchor> passed = new java.util.ArrayList<>();
 		if (d.hasLast) {
 			double r2 = Config.LINK_RANGE * Config.LINK_RANGE;
 			for (Anchor a : DataStore.anchors().values()) {
-				if (dim.equals(a.type) && a.of(uid) > 0 && !a.blocked && a.distSq(d.lastX, d.lastY, d.lastZ) <= r2) {
-					d.linked.add(a.key());
+				if (dim.equals(a.type) && a.of(uid) > 0 && a.distSq(d.lastX, d.lastY, d.lastZ) <= r2) {
+					if (!a.blocked) {
+						d.linked.add(a.key());
+					} else if (a.of(uid) >= 1) {
+						passed.add(a);
+					}
 				}
 			}
 		}
@@ -84,6 +90,11 @@ public final class ExpeditionService {
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.bounce." + why, Config.PORTAL_RANGE).withStyle(net.minecraft.ChatFormatting.GRAY));
 			com.extremedimensions.guide.Hints.meet(p, com.extremedimensions.guide.Hints.Hint.WOUND);
 			return;
+		}
+		for (Anchor a : passed) {
+			// A blocked anchor beside the portal keeps its charge out of the expedition, and leaks it meanwhile
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.entry.blocked", a.x, a.y, a.z, TimeLeft.clock(a.of(uid)))
+					.withStyle(ChatFormatting.RED));
 		}
 		d.arrivalX = p.getX();
 		d.arrivalY = p.getY();

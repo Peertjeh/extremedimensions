@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * What an anchor tells a player who looks at it through Jade or WTHIT: the charge it holds for them, whether it is
- * cracked, whose charge it keeps and who opened theirs to them. Only the server knows the anchors, so it is worked out
+ * cracked or blocked, whose charge it keeps and who opened theirs to them. Only the server knows the anchors, so it is worked out
  * here and handed to the tooltip mod as a few plain values, the same for both (the client's LookLines puts them into
  * words). Names go as they are; the words around them are the client's, in the player's own language.
  */
@@ -31,6 +31,8 @@ public final class AnchorLook {
 	public static final String YOURS = "extremedimensions_yours";
 	/** Seconds before it breaks, while cracked (0: steady). */
 	public static final String CRACKED = "extremedimensions_cracked";
+	/** 1 when its way to its portal is blocked, so that it leaks (3.55.0). */
+	public static final String BLOCKED = "extremedimensions_blocked";
 	/** 1 when the one looking keeps charge of their own in it. */
 	public static final String MINE = "extremedimensions_mine";
 	/** The names of the others who keep charge in it, one per line ("" for one whose name is not known). */
@@ -63,6 +65,7 @@ public final class AnchorLook {
 		MinecraftServer s = p.level().getServer();
 		tag.putInt(YOURS, (int) Math.round(a.of(uid)));
 		tag.putInt(CRACKED, Math.max(0, a.unstable));
+		tag.putInt(BLOCKED, a.blocked ? 1 : 0);
 		List<String> owners = new ArrayList<>();
 		List<String> lenders = new ArrayList<>();
 		int more = 0;

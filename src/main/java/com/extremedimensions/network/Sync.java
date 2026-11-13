@@ -48,7 +48,9 @@ public final class Sync {
 				home(p, d, seam, 0), home(p, d, seam, 1), home(p, d, seam, 2),
 				why.cause(), why.encode(), back < 0 ? -1 : (int) Math.ceil(back),
 				// where on the Seam's timer the thread runs thin and the Thinned may hunt (a third of it, less with the Unravelling)
-				seam ? (int) Math.ceil(d.seamMax / com.extremedimensions.tapestry.Tapestry.thinShare()) : 0, 0));
+				seam ? (int) Math.ceil(d.seamMax / com.extremedimensions.tapestry.Tapestry.thinShare()) : 0,
+				// and whether an anchor nearby is blocked or cracked, for the HUD's meters
+				overworld ? AnchorService.nearTrouble(p, Dims.NETHER) | AnchorService.nearTrouble(p, Dims.END) << 2 : 0));
 	}
 
 	/**

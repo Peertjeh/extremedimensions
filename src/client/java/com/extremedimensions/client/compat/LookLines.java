@@ -23,9 +23,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * The lines Jade and WTHIT show under what the player looks at: an anchor's charge, cracks and owners (from what the
- * server sent, see {@link AnchorLook}), what a Spindle holds, a Curse Knot's set, and what a Lurker or one of its kin came
- * for, which its glow alone tells otherwise (blue to steal, red to hurt). Both plugins show the same, from here; each
+ * The lines Jade and WTHIT show under what the player looks at: an anchor's charge, cracks, blockage and owners (from
+ * what the server sent, see {@link AnchorLook}), what a Spindle holds, a Curse Knot's set, and what a Lurker or one of
+ * its kin came for, which its glow alone tells otherwise (blue to steal, red to hurt). Both plugins show the same, from here; each
  * kind is a toggle in the tooltip mod's own settings, under these ids.
  */
 public final class LookLines {
@@ -52,6 +52,10 @@ public final class LookLines {
 		int cracked = data.getIntOr(AnchorLook.CRACKED, 0);
 		if (cracked > 0) {
 			out.add(Component.translatable("gui.extremedimensions.look.anchor.cracked", time(cracked)).withStyle(ChatFormatting.RED));
+		}
+		if (data.getIntOr(AnchorLook.BLOCKED, 0) > 0) {
+			// (3.55.0) its way to its portal is blocked, and it leaks
+			out.add(Component.translatable("gui.extremedimensions.look.anchor.blocked").withStyle(ChatFormatting.RED));
 		}
 		List<Component> owners = new ArrayList<>();
 		if (data.getIntOr(AnchorLook.MINE, 0) > 0) {

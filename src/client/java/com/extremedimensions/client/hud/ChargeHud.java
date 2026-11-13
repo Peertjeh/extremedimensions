@@ -108,12 +108,12 @@ public class ChargeHud implements HudElement {
 		}
 		if (ClientState.nearNether >= 0) {
 			anchorChip(g, font, x, y, right, Ui.tr("hud.extremedimensions.nether_anchor"), ClientState.shownNether, Ui.EMBER,
-					ClientState.netherFlashAt, ClientState.netherGain, ClientState.netherGainAt, now);
+					ClientState.netherFlashAt, ClientState.netherGain, ClientState.netherGainAt, now, ClientState.nearFlags & 3);
 			y += 26;
 		}
 		if (ClientState.nearEnd >= 0) {
 			anchorChip(g, font, x, y, right, Ui.tr("hud.extremedimensions.end_anchor"), ClientState.shownEnd, Ui.VOID,
-					ClientState.endFlashAt, ClientState.endGain, ClientState.endGainAt, now);
+					ClientState.endFlashAt, ClientState.endGain, ClientState.endGainAt, now, ClientState.nearFlags >> 2 & 3);
 			y += 26;
 		}
 		if (tether) {
@@ -121,14 +121,23 @@ public class ChargeHud implements HudElement {
 		}
 	}
 
+	/**
+	 * An anchor meter: its world, the charge it holds for the player and a bar. Where one of that world's anchors here is
+	 * blocked ({@code trouble} 1) or cracked (2) the world's name gives way to that, in red (3.55.0): it leaks.
+	 */
 	private static void anchorChip(GuiGraphicsExtractor g, Font font, int x, int y, boolean right, String name, double seconds, int color,
-			long flashAt, int gain, long gainAt, long now) {
+			long flashAt, int gain, long gainAt, long now, int trouble) {
 		double flash = flashAt > 0 ? Ui.clamp01(1 - (now - flashAt) / 900.0) : 0;
 		Ui.chip(g, x, y, CHIP_W, 21, color, 1.0);
 		if (flash > 0) {
 			g.fill(x, y, x + CHIP_W, y + 21, Ui.argb(flash * 0.25, color));
 		}
-		g.text(font, name, x + 5, y + 3, Ui.argb(255, Ui.mix(Ui.TEXT, 0xFFFFFF, flash)));
+		if (trouble != 0) {
+			String what = Ui.tr((trouble & 1) != 0 ? "hud.extremedimensions.anchor_blocked" : "hud.extremedimensions.anchor_cracked");
+			g.text(font, what, x + 5, y + 3, Ui.argb(Ui.calm() ? 1.0 : 0.65 + 0.35 * Ui.pulse(now, 900, 0), Ui.DANGER));
+		} else {
+			g.text(font, name, x + 5, y + 3, Ui.argb(255, Ui.mix(Ui.TEXT, 0xFFFFFF, flash)));
+		}
 		String t = Ui.time(seconds);
 		g.text(font, t, x + CHIP_W - 4 - font.width(t), y + 3, Ui.argb(255, Ui.mix(color, 0xFFFFFF, flash)));
 		Ui.meter(g, x + 5, y + 14, CHIP_W - 10, 3, seconds / Math.max(Config.MAX_CHARGE, seconds), color, 1.0, false);

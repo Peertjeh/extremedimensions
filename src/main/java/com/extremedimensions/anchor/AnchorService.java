@@ -363,6 +363,11 @@ public final class AnchorService {
 				a.blocked = nowBlocked;
 				a.checked = true;
 				a.warded = SoulWards.warded(ow, a.x, a.y, a.z);
+				// Blocked at two looks running (not a mob walking through): its owners are told, wherever they are (3.55.0)
+				a.blockedLooks = nowBlocked ? a.blockedLooks + 1 : 0;
+				if (a.blockedLooks == 2 && a.charge > 0) {
+					tellBlocked(s, a);
+				}
 			}
 			particles(a);
 			hum(a, watchers);
@@ -380,6 +385,42 @@ public final class AnchorService {
 				WorldFx.soundSelf(p, "extremedimensions:anchor.blocked", 0.8f, 0.6f);
 			}
 		}
+	}
+
+	/** How long (ticks) an anchor waits after telling its owners it is blocked before it tells them again. */
+	private static final int BLOCKED_TOLD_EVERY = 5 * 60 * 20;
+
+	/**
+	 * An anchor's way to its portal stays blocked: everyone who keeps charge in it hears so, wherever they are (most of
+	 * them are out beyond the wound, its leak running their charge down), as a cracked anchor tells them (3.55.0: before,
+	 * it leaked without a word to anyone out of earshot).
+	 */
+	private static void tellBlocked(MinecraftServer s, Anchor a) {
+		long now = s.getTickCount();
+		if (a.blockedToldAt != 0 && now - a.blockedToldAt < BLOCKED_TOLD_EVERY) {
+			return;
+		}
+		a.blockedToldAt = now;
+		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
+			if (a.own(p.getStringUUID()) >= 1) {
+				p.sendSystemMessage(Component.translatable("gui.extremedimensions.anchor.blocked_told", a.x, a.y, a.z).withStyle(net.minecraft.ChatFormatting.RED));
+			}
+		}
+	}
+
+	/**
+	 * What is wrong with the anchors of a world around a player (3.55.0, for the HUD's meters): 1 one is blocked, 2 one
+	 * is cracked.
+	 */
+	public static int nearTrouble(ServerPlayer p, String type) {
+		double r2 = Config.HUD_RANGE * Config.HUD_RANGE;
+		int out = 0;
+		for (Anchor a : DataStore.anchors().values()) {
+			if (type.equals(a.type) && a.distSq(p.getX(), p.getY(), p.getZ()) <= r2) {
+				out |= (a.blocked ? 1 : 0) | (a.unstable > 0 ? 2 : 0);
+			}
+		}
+		return out;
 	}
 
 	/** A charged anchor hums now and then, low and quiet, louder the fuller it is. */

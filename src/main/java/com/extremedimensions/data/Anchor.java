@@ -32,6 +32,12 @@ public class Anchor {
 	public transient List<double[]> path = new ArrayList<>();
 	/** No free path to the portal: the anchor leaks charge. */
 	public transient boolean blocked = false;
+	/**
+	 * Path checks in a row that found it blocked, and when (server tick) its owners were last told it is (3.55.0: they
+	 * hear once it stays blocked, not for a mob walking through, and not more than every few minutes).
+	 */
+	public transient int blockedLooks = 0;
+	public transient long blockedToldAt = 0;
 	/** Whether the path was checked at least once since loading. */
 	public transient boolean checked = false;
 	public transient int portalCheck = 0;

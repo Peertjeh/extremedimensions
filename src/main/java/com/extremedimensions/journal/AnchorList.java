@@ -15,8 +15,8 @@ import net.minecraft.server.level.ServerPlayer;
 
 /**
  * The journal's anchors: every anchor that keeps charge for a player (their own, what allies opened to them, and what
- * an older world kept for everyone), where it stands, what it holds for them, whether it is cracked, and whom it is
- * shared with.
+ * an older world kept for everyone), where it stands, what it holds for them, whether it is cracked or blocked, and
+ * whom it is shared with.
  */
 public final class AnchorList {
 	private AnchorList() {}
@@ -29,10 +29,11 @@ public final class AnchorList {
 	/**
 	 * The anchors as the journal reads them: "open|allies|total|entry;entry;...". Open is 1 when the player's anchors are
 	 * opened to their allies, and allies then names those who may draw on them; total counts every anchor, also those
-	 * past {@link #MAX}. Each entry is "kind,x,y,z,charge,own,cracked,lenders,everyone": kind "nether" or "end", the
-	 * charge it holds for the player and their own part of it in whole seconds, the seconds before a cracked anchor
-	 * breaks (0 when steady), the allies whose charge in it is opened to the player, and 1 where an older world's
-	 * charge in it is kept for everyone. Names are joined by "/", with "+n" for the n more not named.
+	 * past {@link #MAX}. Each entry is "kind,x,y,z,charge,own,cracked,lenders,everyone,blocked": kind "nether" or "end",
+	 * the charge it holds for the player and their own part of it in whole seconds, the seconds before a cracked anchor
+	 * breaks (0 when steady), the allies whose charge in it is opened to the player, 1 where an older world's charge in
+	 * it is kept for everyone, and (3.55.0, last so a journal of before reads the rest) 1 where its way to its portal is
+	 * blocked and it leaks. Names are joined by "/", with "+n" for the n more not named.
 	 */
 	public static String encode(ServerPlayer p) {
 		String uid = p.getStringUUID();
@@ -53,7 +54,7 @@ public final class AnchorList {
 			}
 			out.append(AnchorService.side(a.type)).append(',').append(a.x).append(',').append(a.y).append(',').append(a.z).append(',')
 					.append(Math.round(a.of(uid))).append(',').append(Math.round(a.own(uid))).append(',').append(Math.max(0, a.unstable)).append(',')
-					.append(names(s, a.lenders(uid))).append(',').append(a.keptForAll() ? 1 : 0);
+					.append(names(s, a.lenders(uid))).append(',').append(a.keptForAll() ? 1 : 0).append(',').append(a.blocked ? 1 : 0);
 		}
 		boolean open = Anchor.open.test(uid);
 		return String.join("|", open ? "1" : "0", open ? names(s, allies(uid)) : "", String.valueOf(kept.size()), out.toString());
