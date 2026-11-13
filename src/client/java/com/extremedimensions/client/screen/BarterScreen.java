@@ -61,11 +61,19 @@ public class BarterScreen extends Screen {
 	/** The barter screen open now, if any. */
 	private static BarterScreen shown;
 
-	/** Opens the screen, or refreshes it in place after a barter (without playing its opening again). */
+	/**
+	 * Opens the screen, or refreshes it in place after a barter (without playing its opening again, and on the page of
+	 * wares it was on, 3.55.0).
+	 */
 	public static void show(int young, int rep, String data) {
 		BarterScreen before = shown;
-		long openAt = before != null && before.young == young ? before.openAt : System.currentTimeMillis();
+		boolean same = before != null && before.young == young;
+		long openAt = same ? before.openAt : System.currentTimeMillis();
 		BarterScreen next = new BarterScreen(young, rep, data, openAt);
+		if (same) {
+			// (init keeps it within the pages there are now)
+			next.page = before.page;
+		}
 		Minecraft.getInstance().gui.setScreen(next);
 		shown = next;
 	}
