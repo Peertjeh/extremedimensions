@@ -2420,7 +2420,7 @@
   "config.extremedimensions.spindle_redstone.desc": "Een redstonepuls draait het Spinrok één keer, zoals een lege hand doet, zodat een machine het kan bedienen. Hoe vaak een koord gedraaid moet worden en wat het kost, blijft gelijk.",
   "gui.extremedimensions.journal.contents": "Inhoud",
   "gui.extremedimensions.journal.hints.title": "Tips",
-  "gui.extremedimensions.journal.hints.entry": "Je hints (%s)",
+  "gui.extremedimensions.journal.hints.entry": "Je tips (%s)",
   "gui.extremedimensions.journal.hints.none": "Nog geen tips. Elke tip komt als melding de eerste keer dat je iets nieuws tegenkomt, en wordt hier bewaard om terug te lezen.",
   "gui.extremedimensions.journal.anchors.share": "Open voor bondgenoten",
   "gui.extremedimensions.settings.camera": "Camera bij gevechten",
