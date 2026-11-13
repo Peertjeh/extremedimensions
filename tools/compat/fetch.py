@@ -10,8 +10,9 @@ Usage: fetch.py <mods dir>
 Prints what it found, one line per mod; a mod with no build for this game version yet is left out (the job then tests
 with the others). A mod that needs another mod beside it which neither it nor the others bring (WTHIT its packet
 library) gets what Modrinth names as needed by that build, or is left out when that cannot be had, as the game would
-not start without it. Of two mods where one says the other must not be loaded beside it (in its fabric.mod.json, or on
-Modrinth), the later in the list is left out. Exits 0 when at least one was found, 3 when none was (the job reports
+not start without it. Of two mods Modrinth marks as not to be loaded together, the later in the list is left out (a
+fabric.mod.json's "breaks" names version ranges, often of old versions only, as Iris does Sodium's: the game itself
+judges those). A mod that needs a newer Fabric API than the build's is left out too, as the game would not start. Exits 0 when at least one was found, 3 when none was (the job reports
 that and skips its test).
 
 With --shader it fetches a shader pack instead (3.51.1): the newest Solas, else Complementary Reimagined, for the test's
@@ -45,6 +46,19 @@ def game_version():
             if m:
                 return m.group(1)
     raise SystemExit("no minecraft_version in gradle.properties")
+
+
+def fabric_api_version():
+    with open("gradle.properties", encoding="utf-8") as f:
+        for line in f:
+            m = re.match(r"\s*fabric_api_version\s*=\s*([0-9.]+)", line)
+            if m:
+                return m.group(1)
+    return None
+
+
+def numbers(v):
+    return tuple(int(x) for x in v.strip(".").split(".") if x.isdigit())
 
 
 def newest(slug, version, loader="fabric"):
@@ -212,7 +226,16 @@ def main():
                 os.remove(path)
                 del got[slug]
                 print(f"COMPAT|{slug}|none|left out: it needs {', '.join(lacking)}, which could not be had")
-    # Of two mods where one says the other must not be loaded beside it, the later one stays out
+    # A mod that needs a newer Fabric API than the one the build runs with stays out (only ">=x.y.z" is read)
+    have = fabric_api_version()
+    for slug in list(got):
+        need = metadata(got[slug][1]).get("depends", {}).get("fabric-api")
+        m = re.match(r"\s*>=\s*([0-9.]+)", need if isinstance(need, str) else "")
+        if have and m and numbers(m.group(1)) > numbers(have):
+            os.remove(got[slug][1])
+            del got[slug]
+            print(f"COMPAT|{slug}|none|left out: it needs Fabric API {m.group(1)} or newer, the build has {have}")
+    # Of two mods Modrinth marks as not to be loaded together, the later one stays out
     order = list(got)
     for i, first in enumerate(order):
         for later in order[i + 1:]:
@@ -220,9 +243,8 @@ def main():
                 continue
             (v1, p1), (v2, p2) = got[first], got[later]
             id1, id2 = metadata(p1).get("id"), metadata(p2).get("id")
-            clash = id2 in metadata(p1).get("breaks", {}) or id1 in metadata(p2).get("breaks", {}) or any(
-                d.get("dependency_type") == "incompatible" and d.get("project_id") == other.get("project_id")
-                for this, other in ((v1, v2), (v2, v1)) for d in this.get("dependencies", []))
+            clash = any(d.get("dependency_type") == "incompatible" and d.get("project_id") == other.get("project_id")
+                        for this, other in ((v1, v2), (v2, v1)) for d in this.get("dependencies", []))
             if clash:
                 os.remove(p2)
                 del got[later]

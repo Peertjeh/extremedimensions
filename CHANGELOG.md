@@ -29,11 +29,18 @@
 - **JourneyMap**: your anchors on the map as waypoints (Ember orange, Void violet), and in the Seam the Return Gate,
   kept up to date as anchors are made, drained or broken.
 
+### Fixed
+- **A single hush slab dropped two.** The eight hush slabs' loot tables still had the count's condition in an older
+  form, which 26.3 passes over: now in vanilla's own, one slab drops one and a double slab two.
+- The silk cloth burns as wool does, but is no furnace fuel (silk is too dear to burn).
+
 ### Tests
-- A hush slab drops one of itself and a double slab two, as vanilla's stone slab (side by side).
+- A hush slab drops one of itself and a double slab two, as vanilla's stone slab (side by side): the test that found
+  the slabs' double drop.
 - The journal's anchors, the builders' blocks (recipes, light, drops, panes joining), the playtest log and the recap.
-- CI's compatibility run now has Jade, WTHIT, JourneyMap and Xaero's Minimap installed too, and checks each plugin
-  was taken up.
+- CI's compatibility run now has Jade, JourneyMap and Xaero's Minimap installed too, and checks each plugin was taken
+  up. (WTHIT 21 needs a newer Fabric API than the mod is built with; its plugin is compiled against it, and the run
+  leaves it out until the build moves on.)
 
 ## 3.52.0: Every Light Shown
 
