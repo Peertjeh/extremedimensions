@@ -7,23 +7,32 @@ import static com.extremedimensions.gametest.CurseTests.near;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.Anchor;
 import com.extremedimensions.data.DataStore;
+import com.extremedimensions.data.Hoard;
 import com.extremedimensions.data.PlayerData;
 import com.extremedimensions.expedition.ExpeditionRecord;
 import com.extremedimensions.expedition.ExpeditionService;
 import com.extremedimensions.expedition.RecapText;
 import com.extremedimensions.journal.Ledger;
+import com.extremedimensions.lurker.Lurker;
+import com.extremedimensions.lurker.LurkerService;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.penalty.CurseTotals;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
+import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.server.Dims;
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Difficulty;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * The 3.55.0 overhaul of what the player is told: curse totals, fragments that move on to the next curse, the reason a
@@ -95,6 +104,63 @@ public class QualityTests {
 			}
 		}
 		helper.succeed();
+	}
+
+	/**
+	 * A Lurker's theft is told: what it took (the item itself, shown on hover) and which way it ran, here east, to the
+	 * player's own hoard it carries its loot to.
+	 */
+	@GameTest(environment = Alone.LURKER_TOLD, maxTicks = 200)
+	public void aLurkerSaysWhatItTookAndWhereItRan(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		Difficulty was = level.getDifficulty();
+		level.getServer().setDifficulty(Difficulty.NORMAL, true);
+		ServerPlayer p = TestPlayers.survivor(helper, "lurker-told");
+		Vec3 at = helper.absoluteVec(new Vec3(2.5, 2, 2.5));
+		p.snapTo(at.x, at.y, at.z, 0f, 0f);
+		double xp = Config.LURKER_XP_WEIGHT, armor = Config.LURKER_ARMOR_WEIGHT, curseWeight = Config.LURKER_CURSE_WEIGHT;
+		double curseChance = Config.LURKER_CURSE_CHANCE;
+		int thefts = Config.LURKER_THEFTS;
+		// Its hoard, east of the player: the Lurker runs there, and builds none of its own
+		Hoard hoard = new Hoard(Dims.of(p), (int) Math.floor(at.x) + 30, (int) Math.floor(at.y), (int) Math.floor(at.z), p.getStringUUID());
+		// past the grace a player has on joining (three seconds)
+		helper.runAfterDelay(70, () -> {
+			Config.LURKER_XP_WEIGHT = 0;
+			Config.LURKER_ARMOR_WEIGHT = 0;
+			Config.LURKER_CURSE_WEIGHT = 0;
+			Config.LURKER_CURSE_CHANCE = 0;
+			Config.LURKER_THEFTS = 1;
+			p.getInventory().clearContent();
+			p.getInventory().setItem(0, new ItemStack(Items.DIAMOND_PICKAXE));
+			p.setHealth(20f);
+			DataStore.hoards().add(hoard);
+			LurkerService.lastTheft = null;
+			Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(4, 2, 2)), EntitySpawnReason.COMMAND);
+			check(helper, l != null, "no Lurker came");
+			LurkerService.adopt(level, l, p, "take");
+			helper.runAfterDelay(40, () -> {
+				try {
+					LurkerService.Told told = LurkerService.lastTheft;
+					check(helper, told != null && told.to().equals(p.getUUID()), "the theft was not told to its victim");
+					check(helper, told.theft().stacks().size() == 1 && told.theft().stacks().get(0).is(Items.DIAMOND_PICKAXE),
+							"the theft told of %s, not the pickaxe", told.theft().stacks());
+					check(helper, told.theft().hoard() && "east".equals(told.theft().bearing()), "it was told to run %s (to its hoard: %s), not east to it",
+							told.theft().bearing(), told.theft().hoard());
+				} finally {
+					Config.LURKER_XP_WEIGHT = xp;
+					Config.LURKER_ARMOR_WEIGHT = armor;
+					Config.LURKER_CURSE_WEIGHT = curseWeight;
+					Config.LURKER_CURSE_CHANCE = curseChance;
+					Config.LURKER_THEFTS = thefts;
+					LurkerService.lastTheft = null;
+					DataStore.hoards().remove(hoard);
+					// (gone without its loot, which would otherwise be carried to the hoard)
+					l.discard();
+					level.getServer().setDifficulty(was, true);
+				}
+				helper.succeed();
+			});
+		});
 	}
 
 	/**

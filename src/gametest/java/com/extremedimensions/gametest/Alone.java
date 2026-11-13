@@ -126,4 +126,6 @@ final class Alone {
 	static final String COLLAPSE_RECAP = "extremedimensions_test:alone/collapse_recap";
 	// (3.55.0: anchors are the world's, and these tests put their own down and charge them)
 	static final String BOUND_ANCHOR = "extremedimensions_test:alone/bound_anchor";
+	// (a Lurker's take, and the hoard it runs to: the world's)
+	static final String LURKER_TOLD = "extremedimensions_test:alone/lurker_told";
 }
