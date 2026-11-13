@@ -54,6 +54,8 @@ public class PenaltyChoiceScreen extends Screen {
 	private int seenNth = 0;
 	/** The button that opens the Curses screen over the cards. */
 	private Button yours;
+	/** A card's lore cut short under the mouse this frame, line by line: drawn whole over the cards once they are drawn. */
+	private List<String> loreTip;
 
 	/** Cards that came while a container was open: they wait for it to close (null: none waiting). */
 	private static List<String> waiting;
@@ -278,10 +280,14 @@ public class PenaltyChoiceScreen extends Screen {
 		}
 
 		int x0 = startX();
+		loreTip = null;
 		for (int i = 0; i < options.size(); i++) {
 			card(g, options.get(i), i, x0 + i * (CARD_W + GAP), y, mouseX, mouseY, now, hungry ? Ui.DANGER : accent);
 		}
 		footer(g, cx, y + CARD_H + 8, now);
+		if (loreTip != null) {
+			Ui.tooltip(g, this.font, loreTip, java.util.Collections.nCopies(loreTip.size(), 0xFFFFFF), mouseX, mouseY, this.width, this.height, accent);
+		}
 	}
 
 	private void card(GuiGraphicsExtractor g, Option opt, int i, int x, int y, int mouseX, int mouseY, long now, int accent) {
@@ -385,8 +391,8 @@ public class PenaltyChoiceScreen extends Screen {
 			g.text(this.font, line, mid - this.font.width(line) / 2, loreY, Ui.argb(fade * 0.85, Ui.mix(Ui.SOUL, Ui.TEXT, 0.4)));
 			loreY += 10;
 		}
-		if (wrapped.size() > room && mouseX >= x && mouseX <= x + CARD_W && mouseY >= from - 1 && mouseY < loreY) {
-			g.setTooltipForNextFrame(this.font, Component.literal(lore), mouseX, mouseY);
+		if (wrapped.size() > room && chosen < 0 && mouseX >= x && mouseX <= x + CARD_W && mouseY >= from - 1 && mouseY < loreY) {
+			loreTip = Ui.wrap(this.font, lore, 200);
 		}
 	}
 

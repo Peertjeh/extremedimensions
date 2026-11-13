@@ -14,8 +14,12 @@ import com.extremedimensions.seam.SeamService;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.ItemStack;
@@ -287,17 +291,17 @@ public final class TrialService {
 	 * A chat line with more to it on hover (3.55.0): the line, a grey "[Details]" after it, and the details, one to a
 	 * line, in the tooltip of both. Without details, the line alone.
 	 */
-	public static Component withDetails(net.minecraft.network.chat.MutableComponent line, List<Component> details) {
+	public static Component withDetails(MutableComponent line, List<Component> details) {
 		if (details.isEmpty()) {
 			return line;
 		}
-		net.minecraft.network.chat.MutableComponent hover = Component.empty();
+		MutableComponent hover = Component.empty();
 		for (int i = 0; i < details.size(); i++) {
 			hover.append(i == 0 ? "" : "\n").append(details.get(i));
 		}
 		return Component.empty().append(line).append(" ")
-				.append(Component.translatable("gui.extremedimensions.chat.details").withStyle(net.minecraft.ChatFormatting.GRAY))
-				.withStyle(net.minecraft.network.chat.Style.EMPTY.withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(hover)));
+				.append(Component.translatable("gui.extremedimensions.chat.details").withStyle(ChatFormatting.GRAY))
+				.withStyle(Style.EMPTY.withHoverEvent(new HoverEvent.ShowText(hover)));
 	}
 
 	/**

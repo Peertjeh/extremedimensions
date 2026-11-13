@@ -29,6 +29,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Enemy;
@@ -683,7 +684,7 @@ public final class ExpeditionService {
 	 * of them sent while the player still lay dead.
 	 */
 	private static void afterDeath(ServerPlayer p, PlayerData d, boolean carded) {
-		net.minecraft.network.chat.MutableComponent line = Component.empty();
+		MutableComponent line = Component.empty();
 		boolean any = false;
 		if (d.atonementLost > 0 && !carded) {
 			line.append(Component.translatable("gui.extremedimensions.curses.atonement_lost",
