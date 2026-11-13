@@ -124,8 +124,10 @@ public class QualityTests {
 		double xp = Config.LURKER_XP_WEIGHT, armor = Config.LURKER_ARMOR_WEIGHT, curseWeight = Config.LURKER_CURSE_WEIGHT;
 		double curseChance = Config.LURKER_CURSE_CHANCE;
 		int thefts = Config.LURKER_THEFTS;
-		// Its hoard, east of the player: the Lurker runs there, and builds none of its own
+		// Its hoard, east of the player: the Lurker runs there, and builds none of its own. (The world's other hoards, left by
+		// the tests before, are put aside while this one runs: one of them nearer would be the one it runs to.)
 		Hoard hoard = new Hoard(Dims.of(p), (int) Math.floor(at.x) + 30, (int) Math.floor(at.y), (int) Math.floor(at.z), p.getStringUUID());
+		java.util.List<Hoard> others = new java.util.ArrayList<>();
 		// past the grace a player has on joining (three seconds)
 		helper.runAfterDelay(70, () -> {
 			Config.LURKER_XP_WEIGHT = 0;
@@ -136,6 +138,8 @@ public class QualityTests {
 			p.getInventory().clearContent();
 			p.getInventory().setItem(0, new ItemStack(Items.DIAMOND_PICKAXE));
 			p.setHealth(20f);
+			others.addAll(DataStore.hoards());
+			DataStore.hoards().clear();
 			DataStore.hoards().add(hoard);
 			LurkerService.lastTheft = null;
 			Lurker l = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(4, 2, 2)), EntitySpawnReason.COMMAND);
@@ -157,6 +161,7 @@ public class QualityTests {
 					Config.LURKER_THEFTS = thefts;
 					LurkerService.lastTheft = null;
 					DataStore.hoards().remove(hoard);
+					DataStore.hoards().addAll(others);
 					// (gone without its loot, which would otherwise be carried to the hoard)
 					l.discard();
 					level.getServer().setDifficulty(was, true);
