@@ -8,7 +8,11 @@ import com.extremedimensions.config.Config;
 import com.extremedimensions.data.Anchor;
 import com.extremedimensions.data.DataStore;
 import com.extremedimensions.data.PlayerData;
+import com.extremedimensions.expedition.ExpeditionRecord;
 import com.extremedimensions.expedition.ExpeditionService;
+import com.extremedimensions.expedition.RecapText;
+import com.extremedimensions.journal.Ledger;
+import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.penalty.CurseTotals;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.PenaltyService;
@@ -90,6 +94,34 @@ public class QualityTests {
 				DataStore.anchors().remove(a.key());
 			}
 		}
+		helper.succeed();
+	}
+
+	/**
+	 * The journal keeps the last five falls, newest first, as their cards had them, and its ledger carries them to the
+	 * page of the last falls; the words of a kept card read as the card's own did.
+	 */
+	@GameTest
+	public void theLastFallsAreKeptForTheJournal(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "fallen-often");
+		PlayerData d = DataStore.get(p.getUUID());
+		long now = System.currentTimeMillis();
+		for (int i = 0; i < 7; i++) {
+			ExpeditionRecord.keep(d, now - (7 - i) * 60_000L, new ModPackets.RecapPayload(Dims.NETHER, "collapsed", 60 + i, 600, 100 + i, 150, 210,
+					"heavy_legs:2,debt:1", 0, 0, 30));
+		}
+		check(helper, d.falls.size() == RecapText.KEPT, "%s falls kept, not %s", d.falls.size(), RecapText.KEPT);
+		ModPackets.RecapPayload newest = RecapText.read(d.falls.get(0));
+		check(helper, newest != null && newest.seconds() == 66 && newest.farthest() == 106 && "heavy_legs:2,debt:1".equals(newest.curses())
+				&& newest.atonement() == 30, "the newest fall kept reads %s", d.falls.get(0));
+		check(helper, RecapText.head(d.falls.get(0)) == now - 60_000L, "the newest fall was kept as of %s", RecapText.head(d.falls.get(0)));
+		// two curses, the Tether and the atonement undone
+		check(helper, RecapText.cost(newest).size() == 4, "the kept card's cost reads %s parts", RecapText.cost(newest).size());
+		String ledger = Ledger.encode(d);
+		check(helper, ledger.contains("falls:1=") && ledger.contains("|" + Dims.NETHER + "|collapsed|66|") && ledger.contains("falls:5=")
+				&& !ledger.contains("falls:6="),
+				"the ledger's falls read %s", ledger);
+		check(helper, ExpeditionRecord.chatLine(newest) != null, "a kept fall makes no chat line");
 		helper.succeed();
 	}
 

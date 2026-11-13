@@ -237,6 +237,11 @@ public class PlayerData {
 	 */
 	public com.extremedimensions.expedition.ExpeditionRecord.Tally runTally = null, seamTally = null;
 	public List<com.extremedimensions.expedition.ExpeditionRecord> records = new ArrayList<>();
+	/**
+	 * The last Collapses (and throws out of the Seam), newest first, as their cards had them (see RecapText.write): the
+	 * journal's ledger keeps them on a page of their own, "The last falls" (3.55.0). Null in a save from before.
+	 */
+	public List<String> falls = new ArrayList<>();
 	/** Expeditions begun into each world (its short id), counted since 3.53.0: the playtest log's "nth". */
 	public Map<String, Integer> ventures = new HashMap<>();
 

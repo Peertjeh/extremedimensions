@@ -6,8 +6,8 @@ import java.util.List;
 import com.extremedimensions.client.options.ClientOptions;
 import com.extremedimensions.client.state.ClientState;
 import com.extremedimensions.client.ui.Ui;
+import com.extremedimensions.expedition.RecapText;
 import com.extremedimensions.network.ModPackets;
-import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.server.Dims;
 
 import net.minecraft.client.DeltaTracker;
@@ -29,8 +29,6 @@ public class CollapseRecap implements HudElement {
 	static final long DELAY_MS = 900, SHOW_MS = 14000, FADE_IN_MS = 450, FADE_OUT_MS = 900;
 	/** How long the Overworld takes to fade back in after a Collapse (the charge HUD's fade). */
 	private static final long HOME_FADE_MS = 2200;
-	/** Below this (a hundredth over the base rate) the drain counts as no faster at all. */
-	private static final int FASTER = 105;
 
 	private static ModPackets.RecapPayload recap = null;
 	private static long at = 0;
@@ -91,72 +89,36 @@ public class CollapseRecap implements HudElement {
 	}
 
 	private static void draw(GuiGraphicsExtractor g, Font font, int sw, int sh, double alpha, ModPackets.RecapPayload r) {
-		boolean seam = Dims.SEAM.equals(r.realm());
+		boolean seam = RecapText.seam(r);
 		int accent = seam ? Ui.SOUL : Dims.END.equals(r.realm()) ? Ui.VOID : Ui.EMBER;
-		String head = Ui.tr("gui.extremedimensions.recap.title." + (seam ? Dims.SEAM : Dims.END.equals(r.realm()) ? Dims.END : Dims.NETHER));
 		List<SeamBriefing.Row> rows = new ArrayList<>();
-		rows.add(new SeamBriefing.Row(Ui.EMBER, Ui.tr("gui.extremedimensions.recap.away"),
-				Ui.tr(seam ? "gui.extremedimensions.recap.away.seam" : "gui.extremedimensions.recap.away.text", Ui.time(r.seconds()), Ui.time(r.charge()))));
-		rows.add(new SeamBriefing.Row(Ui.SOUL, Ui.tr("gui.extremedimensions.recap.far"),
-				Ui.tr(seam ? "gui.extremedimensions.recap.far.seam" : "gui.extremedimensions.recap.far.text", r.farthest())));
-		rows.add(new SeamBriefing.Row(Ui.WARN, Ui.tr("gui.extremedimensions.recap.why"), why(r, seam)));
-		rows.add(new SeamBriefing.Row(Ui.BLOOD, Ui.tr("gui.extremedimensions.recap.cost"), cost(r, seam)));
-		SeamBriefing.card(g, font, sw, sh, alpha, accent, head, null, rows, null, true);
+		rows.add(new SeamBriefing.Row(Ui.EMBER, Ui.tr("gui.extremedimensions.recap.away"), tr(RecapText.away(r))));
+		rows.add(new SeamBriefing.Row(Ui.SOUL, Ui.tr("gui.extremedimensions.recap.far"), tr(RecapText.far(r))));
+		rows.add(new SeamBriefing.Row(Ui.WARN, Ui.tr("gui.extremedimensions.recap.why"), tr(RecapText.why(r))));
+		rows.add(new SeamBriefing.Row(Ui.BLOOD, Ui.tr("gui.extremedimensions.recap.cost"), cost(r)));
+		SeamBriefing.card(g, font, sw, sh, alpha, accent, tr(RecapText.title(r)), null, rows, null, true);
 	}
 
-	/** Why the charge (or the thread) ran out faster: the distance, or the rest (curses, the wound, the world), or nothing. */
-	private static String why(ModPackets.RecapPayload r, boolean seam) {
-		if (seam) {
-			if ("fell".equals(r.outcome())) {
-				return Ui.tr("gui.extremedimensions.recap.why.fell");
-			}
-			return r.drainX100() >= FASTER ? Ui.tr("gui.extremedimensions.recap.why.fray", times(r.drainX100()))
-					: Ui.tr("gui.extremedimensions.recap.why.thread");
+	/**
+	 * A recap's words in the player's language (the words are shared with the journal and the chat since 3.55.0, see
+	 * RecapText), its arguments translated where they are words of their own.
+	 */
+	public static String tr(RecapText.Text t) {
+		Object[] args = new Object[t.args().length];
+		for (int i = 0; i < args.length; i++) {
+			args[i] = t.args()[i] instanceof RecapText.Text inner ? tr(inner) : t.args()[i];
 		}
-		if (r.distanceX100() >= FASTER) {
-			return Ui.tr("gui.extremedimensions.recap.why.distance", times(r.distanceX100()), times(r.drainX100()));
-		}
-		return r.drainX100() >= FASTER ? Ui.tr("gui.extremedimensions.recap.why.drain", times(r.drainX100()))
-				: Ui.tr("gui.extremedimensions.recap.why.base");
+		return Ui.tr(t.key(), args);
 	}
 
-	/** What it cost: the curses (by name, with their stacks), the Tether (lost in a Collapse), what the Seam kept, the atonement undone. */
-	private static String cost(ModPackets.RecapPayload r, boolean seam) {
+	/** What it cost, in one line: the curses (by name, with their stacks), the Tether, what the Seam kept, the atonement undone. */
+	public static String cost(ModPackets.RecapPayload r) {
 		List<String> parts = new ArrayList<>();
-		for (String part : r.curses().split(",")) {
-			int colon = part.indexOf(':');
-			Penalty pen = Penalty.byId(colon < 0 ? part : part.substring(0, colon));
-			if (pen == null) {
-				continue;
-			}
-			int stacks = 1;
-			try {
-				stacks = colon < 0 ? 1 : Integer.parseInt(part.substring(colon + 1));
-			} catch (NumberFormatException e) {
-				// (one stack, then)
-			}
-			String name = Ui.tr(pen.nameKey());
-			parts.add(stacks > 1 ? Ui.tr("gui.extremedimensions.recap.cost.stacks", name, stacks) : name);
+		for (RecapText.Text part : RecapText.cost(r)) {
+			parts.add(tr(part));
 		}
-		if (!seam) {
-			parts.add(Ui.tr("gui.extremedimensions.recap.cost.tether"));
-		}
-		if (r.silk() > 0) {
-			parts.add(Ui.tr("gui.extremedimensions.recap.cost.silk", r.silk()));
-		}
-		if (r.fragments() > 0) {
-			parts.add(Ui.tr("gui.extremedimensions.recap.cost.fragments", r.fragments()));
-		}
-		if (r.atonement() > 0) {
-			parts.add(Ui.tr("gui.extremedimensions.recap.cost.atonement", r.atonement()));
-		}
-		String all = parts.isEmpty() ? Ui.tr("gui.extremedimensions.recap.cost.none") : String.join(", ", parts);
+		String all = String.join(", ", parts);
 		// (the first word of the line is a sentence's first)
 		return all.isEmpty() ? all : Character.toUpperCase(all.charAt(0)) + all.substring(1);
-	}
-
-	/** A hundredth of a rate as the HUD shows a drain ("2.4"). */
-	private static String times(int x100) {
-		return String.format("%.1f", x100 / 100.0);
 	}
 }
