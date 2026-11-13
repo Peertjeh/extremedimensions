@@ -101,6 +101,7 @@
   "hud.extremedimensions.anchor_blocked": "Versperd",
   "hud.extremedimensions.anchor_cracked": "Gebarsten",
   "gui.extremedimensions.anchor.cracked_soon": "Je gebarsten anker op %s %s %s breekt over %s: een amethistscherf maakt het nog stabiel.",
+  "gui.extremedimensions.storm.bar": "Wondstorm  %s",
   "hud.extremedimensions.collapse": "Dimensionale ineenstorting",
   "title.extremedimensions.expedition_ended": "EXPEDITIE BEËINDIGD",
   "title.extremedimensions.tether_tightens": "DE TETHER TREKT STRAK",

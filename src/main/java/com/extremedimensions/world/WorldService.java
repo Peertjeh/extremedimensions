@@ -18,10 +18,14 @@ import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.BossEvent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.effect.MobEffects;
@@ -46,10 +50,16 @@ public final class WorldService {
 
 	private static final Map<UUID, Integer> STORMS = new HashMap<>();
 	private static final Map<UUID, Long> LAST_STORM = new HashMap<>();
+	/** Each storm's bar, counting its time down for the player it rages round (3.55.0, as a bar counts an Elder's waking). */
+	private static final Map<UUID, ServerBossEvent> STORM_BARS = new HashMap<>();
 
 	public static void clear() {
 		STORMS.clear();
 		LAST_STORM.clear();
+		for (ServerBossEvent bar : STORM_BARS.values()) {
+			bar.removeAllPlayers();
+		}
+		STORM_BARS.clear();
 	}
 
 	/** Lurkers still steal: before the seal breaks, and again in a severed world. */
@@ -109,9 +119,13 @@ public final class WorldService {
 			if (left != null) {
 				if (left <= 0 || !Dims.OVERWORLD.equals(Dims.of(p))) {
 					STORMS.remove(p.getUUID());
+					dropBar(p.getUUID());
 				} else {
 					STORMS.put(p.getUUID(), left - 1);
 					storm(p, left);
+					if (left % 10 == 0) {
+						stormBar(p, left);
+					}
 				}
 				continue;
 			}
@@ -129,9 +143,48 @@ public final class WorldService {
 		}
 	}
 
+	/**
+	 * The storm's bar for the player it rages round: "Wound Storm  0:42", emptying as it runs out (3.55.0: before, nothing
+	 * said how long it would last). It follows the player playing now, also after a respawn.
+	 */
+	private static void stormBar(ServerPlayer p, int left) {
+		ServerBossEvent bar = STORM_BARS.computeIfAbsent(p.getUUID(),
+				id -> new ServerBossEvent(UUID.randomUUID(), Component.empty(), BossEvent.BossBarColor.PURPLE, BossEvent.BossBarOverlay.PROGRESS));
+		for (ServerPlayer q : java.util.List.copyOf(bar.getPlayers())) {
+			if (q != p) {
+				bar.removePlayer(q);
+			}
+		}
+		bar.addPlayer(p);
+		int total = Math.max(10, Config.STORM_SECONDS) * 20;
+		bar.setName(Component.translatable("gui.extremedimensions.storm.bar", com.extremedimensions.expedition.TimeLeft.clock(left / 20.0))
+				.withStyle(ChatFormatting.LIGHT_PURPLE));
+		bar.setProgress(Math.max(0f, Math.min(1f, left / (float) total)));
+	}
+
+	/** A storm's bar comes down (it is over, or the player left the Overworld). */
+	private static void dropBar(UUID id) {
+		ServerBossEvent bar = STORM_BARS.remove(id);
+		if (bar != null) {
+			bar.removeAllPlayers();
+		}
+	}
+
+	/** The storm's bar a player sees now, as its name reads (for the tests), or "" when there is none. */
+	public static String stormLabel(UUID id) {
+		ServerBossEvent bar = STORM_BARS.get(id);
+		return bar == null ? "" : bar.getName().getString();
+	}
+
+	/** A player left the game: their storm's bar is taken down with them (the storm itself ends as ever). */
+	public static void forgetBar(UUID id) {
+		dropBar(id);
+	}
+
 	public static void begin(ServerPlayer p, int now) {
 		LAST_STORM.put(p.getUUID(), (long) now);
 		STORMS.put(p.getUUID(), Math.max(10, Config.STORM_SECONDS) * 20);
+		stormBar(p, Math.max(10, Config.STORM_SECONDS) * 20);
 		WorldFx.fx(p, Fx.STORM, 0);
 		com.extremedimensions.guide.Hints.meet(p, com.extremedimensions.guide.Hints.Hint.STORM);
 		WorldFx.sound(p, "minecraft:entity.lightning_bolt.thunder", 1.5f, 0.6f);

@@ -101,6 +101,7 @@
   "hud.extremedimensions.anchor_blocked": "Blocked",
   "hud.extremedimensions.anchor_cracked": "Cracked",
   "gui.extremedimensions.anchor.cracked_soon": "Your cracked anchor at %s %s %s breaks in %s: an Amethyst Shard still steadies it.",
+  "gui.extremedimensions.storm.bar": "Wound Storm  %s",
   "hud.extremedimensions.collapse": "Dimensional Collapse",
   "title.extremedimensions.expedition_ended": "EXPEDITION ENDED",
   "title.extremedimensions.tether_tightens": "THE TETHER TIGHTENS",
