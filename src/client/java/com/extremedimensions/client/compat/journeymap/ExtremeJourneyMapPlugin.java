@@ -14,8 +14,8 @@ import journeymap.api.v2.common.waypoint.Waypoint;
 import journeymap.api.v2.common.waypoint.WaypointFactory;
 
 /**
- * The mod in JourneyMap: the player's anchors as waypoints, Ember or Void in their own colours, and while they are in
- * the Seam the Return Gate (all of it from {@link MapMarks}). The waypoints are JourneyMap's own, kept for this
+ * The mod in JourneyMap: the player's anchors as waypoints, Ember or Void in their own colours, while they are in the
+ * Seam the Return Gate, and on an expedition the portal they came through (3.55.0; all of it from {@link MapMarks}). The waypoints are JourneyMap's own, kept for this
  * session only: the server sends the anchors again on every join, and takes them off when they break or hold nothing
  * of the player's any more.
  *
