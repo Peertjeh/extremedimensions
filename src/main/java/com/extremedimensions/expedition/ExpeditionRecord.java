@@ -301,6 +301,22 @@ public final class ExpeditionRecord {
 	}
 
 	/**
+	 * Whether a Collapse's record waits for the player to come home, and will be shown as its card (3.55.0): that card
+	 * lists the atonement the Collapse's death undid, so the respawn's line need not say it as well.
+	 */
+	public static boolean cardAwaitsHome(PlayerData d) {
+		if (Config.COLLAPSE_RECAP <= 0) {
+			return false;
+		}
+		for (ExpeditionRecord r : records(d)) {
+			if (!r.home && r.recap()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Once a second for every player in the mod's worlds: a record whose cards are all answered is told, and so is any once
 	 * nothing at all is owed any more, or once it has waited half an hour, so none waits for ever on a card answered in some
 	 * way not counted here.

@@ -138,8 +138,9 @@ public final class Standing {
 
 	private static void announce(ServerPlayer p, Level l, boolean up) {
 		Component name = Component.translatable(l.key()).withStyle(l.colour(), ChatFormatting.BOLD);
-		p.sendSystemMessage(Component.translatable("gui.extremedimensions.tribe.now", name));
-		p.sendSystemMessage(Component.translatable(l.key() + ".desc").withStyle(ChatFormatting.GRAY));
+		// The new standing and what it means, in one line (3.55.0)
+		p.sendSystemMessage(Component.translatable("gui.extremedimensions.tribe.now", name).append(" ")
+				.append(Component.translatable(l.key() + ".desc").withStyle(ChatFormatting.GRAY)));
 		if (up) {
 			WorldFx.soundSelf(p, "extremedimensions:hollowling_bond", 1.0f, 1.0f);
 		} else {

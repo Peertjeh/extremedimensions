@@ -299,6 +299,8 @@ public class PlayerData {
 	public transient String endedIn = null;
 	/** Atonement points the last death took away (told on respawn). */
 	public transient int atonementLost = 0;
+	/** The last death or Collapse broke a pact's reward (told on respawn, with the rest of what it cost; 3.55.0). */
+	public transient boolean pactBroke = false;
 
 	// Idle detection: atonement only grows while the player looks around and moves
 	public transient float lastYaw, lastPitch;

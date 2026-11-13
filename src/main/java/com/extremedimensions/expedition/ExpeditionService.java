@@ -443,7 +443,8 @@ public final class ExpeditionService {
 		d.foresightOwed = com.extremedimensions.binding.Charms.foresight(d);
 		TetherService.clear(p, d, false);
 		d.heldTicks = 0;
-		com.extremedimensions.pact.PactService.broken(p, d);
+		// (told once home, with the rest of what the Collapse cost)
+		com.extremedimensions.pact.PactService.brokenByDeath(d);
 		d.collapsing = true;
 		d.collapseOwed = true;
 		d.collapseRetry = -Config.COLLAPSE_PULL_TICKS;
@@ -560,7 +561,7 @@ public final class ExpeditionService {
 					run.chargeLost = AnchorService.linkedCharge(p, d);
 				}
 				ExpeditionRecord.settle(p, d, run);
-				com.extremedimensions.pact.PactService.broken(p, d);
+				com.extremedimensions.pact.PactService.brokenByDeath(d);
 				for (Anchor a : AnchorService.linked(d)) {
 					a.clear(p.getStringUUID());
 				}
@@ -579,7 +580,7 @@ public final class ExpeditionService {
 			return;
 		}
 		if (Dims.isBeyond(dim) && !d.collapsing && d.inRun) {
-			com.extremedimensions.pact.PactService.broken(p, d);
+			com.extremedimensions.pact.PactService.brokenByDeath(d);
 		}
 		if (Dims.isBeyond(dim) && !d.collapsing) {
 			// Its record takes the charge carried, the atonement undone and the death's curses
@@ -665,19 +666,45 @@ public final class ExpeditionService {
 			WorldFx.sound(p, "minecraft:block.beacon.deactivate", 1.0f, 0.8f);
 		}
 		d.endedIn = null;
-		// Home: a Collapse's record takes the atonement its death undid, and is told once what it cost is chosen
+		// Home: a Collapse's record takes the atonement its death undid, and is told once what it cost is chosen (its
+		// card lists that atonement, so the line below leaves it out)
+		boolean carded = ExpeditionRecord.cardAwaitsHome(d);
 		ExpeditionRecord.home(p, d);
-		if (d.atonementLost > 0) {
-			p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.atonement_lost",
-					Penalty.display(Math.round(Math.max(0, Math.min(1, Config.ATONE_DEATH_LOSS)) * 100)), d.atonementLost));
-			d.atonementLost = 0;
-		}
-		// What the Fresh Wound takes, and for how long
-		com.extremedimensions.penalty.Wound.tell(p, d);
+		afterDeath(p, d, carded);
 		if (!d.pendingOffer.isEmpty()) {
 			d.offerDelay = Config.OFFER_DELAY_TICKS;
 		}
 		WorldFx.particles(p, "minecraft:reverse_portal", 1.0, 0.6, 0.15, 60);
+	}
+
+	/**
+	 * What a death cost besides its curses, in one line at the respawn (3.55.0): the atonement it undid (unless a
+	 * Collapse's card will list it), the Fresh Wound, and a pact's reward lost. Each used to be a line of its own, one
+	 * of them sent while the player still lay dead.
+	 */
+	private static void afterDeath(ServerPlayer p, PlayerData d, boolean carded) {
+		net.minecraft.network.chat.MutableComponent line = Component.empty();
+		boolean any = false;
+		if (d.atonementLost > 0 && !carded) {
+			line.append(Component.translatable("gui.extremedimensions.curses.atonement_lost",
+					Penalty.display(Math.round(Math.max(0, Math.min(1, Config.ATONE_DEATH_LOSS)) * 100)), d.atonementLost).withStyle(ChatFormatting.GRAY));
+			any = true;
+		}
+		d.atonementLost = 0;
+		// What the Fresh Wound takes, and for how long
+		Component wound = com.extremedimensions.penalty.Wound.told(d);
+		if (wound != null) {
+			line.append(any ? " " : "").append(wound);
+			any = true;
+		}
+		if (d.pactBroke) {
+			d.pactBroke = false;
+			line.append(any ? " " : "").append(Component.translatable("gui.extremedimensions.pact.broken").withStyle(ChatFormatting.GOLD));
+			any = true;
+		}
+		if (any) {
+			p.sendSystemMessage(line);
+		}
 	}
 
 	/** A player killed a mob: a chance at a Tether Fragment beyond the wound, and lore for Endermen. */

@@ -3745,6 +3745,7 @@
   "gui.extremedimensions.choice.your_curses": "Je vloeken",
   "gui.extremedimensions.choice.your_curses.desc": "Bekijk de vloeken die je draagt en kom dan hier terug om te kiezen. De tijd om te kiezen loopt door.",
   "gui.extremedimensions.bounce.bound_empty": "De wond blijft dicht: je gebonden anker bewaart niets van jouw tijd. Voed het zelf met brandstof, of bind je Tether aan een anker hier dat wel tijd van je bewaart.",
+  "gui.extremedimensions.chat.details": "[Meer]",
   "gui.extremedimensions.recap.title.the_nether": "Ineenstorting in de Nether",
   "gui.extremedimensions.recap.title.the_end": "Ineenstorting in de End",
   "gui.extremedimensions.recap.title.the_seam": "Uit de Seam gegooid",
