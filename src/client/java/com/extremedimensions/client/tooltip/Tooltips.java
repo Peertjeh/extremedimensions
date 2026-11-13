@@ -154,6 +154,10 @@ public final class Tooltips {
 		}
 		if (key != null) {
 			lines.add(Component.translatable("tooltip.extremedimensions." + key + ".1").withStyle(ChatFormatting.GRAY));
+			if (item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER) {
+				// (what it charges for this player, where a curse or a relic makes that more or less)
+				yours(lines, Config.TETHER_ITEM_CHARGE, 1, item == ModItems.EMBER_TETHER ? ChatFormatting.GOLD : ChatFormatting.LIGHT_PURPLE);
+			}
 			lines.add(Component.translatable("tooltip.extremedimensions." + key + ".2").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
 			return;
 		}
@@ -164,9 +168,33 @@ public final class Tooltips {
 		double end = FuelValues.of(Dims.END, item);
 		if (nether > 0) {
 			lines.add(Component.translatable("tooltip.extremedimensions.fuel.nether", Ui.time(nether)).withStyle(ChatFormatting.GOLD));
+			fuel(lines, nether, stack.getCount(), ChatFormatting.GOLD);
 		} else if (end > 0) {
 			lines.add(Component.translatable("tooltip.extremedimensions.fuel.end", Ui.time(end)).withStyle(ChatFormatting.LIGHT_PURPLE));
+			fuel(lines, end, stack.getCount(), ChatFormatting.LIGHT_PURPLE);
 		}
+	}
+
+	/**
+	 * Under a fuel's worth (3.55.0): what the whole stack is worth, and what it is worth to this player where a curse
+	 * (Debt) or a relic (the Anchor Rivet) makes their fuel worth more or less than its face.
+	 */
+	private static void fuel(List<Component> lines, double each, int count, ChatFormatting colour) {
+		if (count > 1) {
+			lines.add(Component.translatable("tooltip.extremedimensions.fuel.stack", count, Ui.time(each * count)).withStyle(colour));
+		}
+		yours(lines, each, count, colour);
+	}
+
+	/** What fuel worth {@code each} a piece is worth to this player, a piece and (with more than one) the stack; nothing at face value. */
+	private static void yours(List<Component> lines, double each, int count, ChatFormatting colour) {
+		double worth = com.extremedimensions.client.state.ClientState.fuelWorth;
+		if (Math.abs(worth - 1) < 0.001) {
+			return;
+		}
+		String factor = com.extremedimensions.penalty.CurseTotals.format(worth * 100) + "%";
+		lines.add((count > 1 ? Component.translatable("tooltip.extremedimensions.fuel.yours_stack", Ui.time(each * worth), Ui.time(each * worth * count), factor)
+				: Component.translatable("tooltip.extremedimensions.fuel.yours", Ui.time(each * worth), factor)).withStyle(colour, ChatFormatting.ITALIC));
 	}
 
 	/**
