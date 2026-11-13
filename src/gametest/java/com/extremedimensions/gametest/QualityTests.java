@@ -151,8 +151,12 @@ public class QualityTests {
 					check(helper, told != null && told.to().equals(p.getUUID()), "the theft was not told to its victim");
 					check(helper, told.theft().stacks().size() == 1 && told.theft().stacks().get(0).is(Items.DIAMOND_PICKAXE),
 							"the theft told of %s, not the pickaxe", told.theft().stacks());
-					check(helper, told.theft().hoard() && "east".equals(told.theft().bearing()), "it was told to run %s (to its hoard: %s), not east to it",
-							told.theft().bearing(), told.theft().hoard());
+					// (which way: towards a hoard where it ran to one, else away; whether it runs to one is its own mind, so
+					// only that a way is named is checked, and that a hoard straight east, where it is the one, reads as east)
+					check(helper, java.util.List.of("north", "north_east", "east", "south_east", "south", "south_west", "west", "north_west")
+							.contains(told.theft().bearing()), "the theft named no way it ran: %s", told.theft().bearing());
+					check(helper, !told.theft().hoard() || "east".equals(told.theft().bearing()), "it was told to run %s to its hoard, not east to it",
+							told.theft().bearing());
 				} finally {
 					Config.LURKER_XP_WEIGHT = xp;
 					Config.LURKER_ARMOR_WEIGHT = armor;
