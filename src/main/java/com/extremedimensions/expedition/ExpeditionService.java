@@ -91,6 +91,9 @@ public final class ExpeditionService {
 		d.hasRopeEnd = false;
 		// On the expedition from here (so a pact's stacks of Leaky Tank count as well)
 		d.inRun = true;
+		// What the anchors held before anything was cut at the wound (3.55.0): the timer's bar is measured against it, so
+		// what was cut shows as already gone, and the player is told what was taken
+		double before = total, leaked = 0, chained = 0;
 		int leaky = d.stacks(Penalty.LEAKY_TANK);
 		if (leaky > 0) {
 			// Leaky Tank: every expedition starts with a share of the stored charge gone
@@ -99,10 +102,12 @@ public final class ExpeditionService {
 				a.scale(uid, keep);
 			}
 			total = AnchorService.linkedCharge(p, d);
+			leaked = before - total;
 		}
 		// Held's Chain: no anchor holds more for the player than the chain allows (charge laid in before it was bound too)
 		if (RelicService.has(d, Relic.HELDS_CHAIN)) {
 			double cap = AnchorService.cap(d);
+			double was = total;
 			for (Anchor a : AnchorService.linked(d)) {
 				double own = a.own(uid);
 				if (own > cap) {
@@ -110,7 +115,9 @@ public final class ExpeditionService {
 				}
 			}
 			total = AnchorService.linkedCharge(p, d);
+			chained = was - total;
 		}
+		cut(p, leaked, chained);
 		d.inRun = true;
 		d.heldSpent = false;
 		d.heldTicks = 0;
@@ -121,7 +128,7 @@ public final class ExpeditionService {
 		d.masonRolled = false;
 		com.extremedimensions.pact.PactService.begin(p, d);
 		d.runTime = 0;
-		d.runMax = total;
+		d.runMax = before;
 		// What this expedition comes to is counted from here, for its record (see ExpeditionRecord)
 		d.runTally = ExpeditionRecord.begin(d, dim, Dims.OVERWORLD, total, d.tetherTier);
 		d.lastWarn = Integer.MAX_VALUE;
@@ -142,6 +149,21 @@ public final class ExpeditionService {
 			// Through a warm gate: the chain's other end is near
 			com.extremedimensions.lore.WarmChains.crossed(p, d, (ServerLevel) p.level(), p.blockPosition());
 		}
+	}
+
+	/**
+	 * What Leaky Tank and the Held's Chain took of the charge at the wound, said on the action bar (3.55.0: before, it
+	 * went without a word). Nothing is said for less than a second.
+	 */
+	private static void cut(ServerPlayer p, double leaked, double chained) {
+		boolean leak = leaked >= 1, chain = chained >= 1;
+		if (!leak && !chain) {
+			return;
+		}
+		Component line = leak && chain ? Component.translatable("gui.extremedimensions.entry.both", TimeLeft.clock(leaked), TimeLeft.clock(chained))
+				: leak ? Component.translatable("gui.extremedimensions.entry.leaky", TimeLeft.clock(leaked))
+				: Component.translatable("gui.extremedimensions.entry.chain", TimeLeft.clock(chained), TimeLeft.clock(AnchorService.cap(DataStore.get(p.getUUID()))));
+		p.sendSystemMessage(line.copy().withStyle(ChatFormatting.GOLD), true);
 	}
 
 	/** Safe return: the chain disappears entirely and the Tether comes back. */
