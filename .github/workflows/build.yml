@@ -261,7 +261,10 @@ jobs:
           done || true
       - name: client game test with them
         if: steps.fetch.outputs.code == '0'
-        run: xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" ./gradlew runClientGameTest --no-configuration-cache -Pcompat
+        # (a game still running after 12 minutes is stuck: every thread of it is printed, to see where, and then ended)
+        run: |
+          ( sleep 720; for p in $(pgrep -f 'net.fabricmc.devlaunchinjector.Main|KnotClient'); do echo "STUCK|game $p still running after 12 minutes"; jstack -l "$p" 2>&1 | sed "s/^/STUCK|/"; kill "$p"; done ) &
+          xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" ./gradlew runClientGameTest --no-configuration-cache -Pcompat
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
           GALLIUM_DRIVER: llvmpipe
