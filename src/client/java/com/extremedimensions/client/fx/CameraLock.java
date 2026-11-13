@@ -10,6 +10,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * While an Elder forms or dies, the view is held on it: over the first moment the camera swings round to it, then
  * follows it until it is whole or has broken apart. The player is turned with the camera, so the view stays where it was when the hold ends.
+ * With the Camera option off (3.55.0) the view is never turned for the player.
  */
 public final class CameraLock {
 	private CameraLock() {}
@@ -23,6 +24,9 @@ public final class CameraLock {
 
 	/** Holds the view on this entity for this long. */
 	public static void lock(int entityId, long millis) {
+		if (!com.extremedimensions.client.options.ClientOptions.camera().turns) {
+			return;
+		}
 		entity = entityId;
 		from = System.currentTimeMillis();
 		until = from + Math.max(0, millis);

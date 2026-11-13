@@ -82,6 +82,24 @@ public final class ClientOptions {
 		}
 	}
 
+	/**
+	 * How the camera is moved for the player in an Elder's fight (3.55.0): the screen shaking under its blows and the view
+	 * turned to it as it forms and dies. Gentle keeps a quarter of the shake and the jolt (what reduced flashing kept before
+	 * 3.55.0) and still turns the view; off keeps the camera wholly the player's.
+	 */
+	public enum Camera {
+		FULL(1.0F, true), GENTLE(0.25F, true), OFF(0F, false);
+
+		/** The share of the shake and the jolt kept, and whether the view is turned to an Elder for the player. */
+		public final float shake;
+		public final boolean turns;
+
+		Camera(float shake, boolean turns) {
+			this.shake = shake;
+			this.turns = turns;
+		}
+	}
+
 	/** What is stored. Every field has a safe default so a damaged or older file still loads. */
 	private static final class Values {
 		boolean reduceFlashing = false;
@@ -96,6 +114,8 @@ public final class ClientOptions {
 		ShaderLook shaderLook = ShaderLook.CRYING_OBSIDIAN;
 		/** Whether the toast naming the mod's keys has been shown on this computer (3.55.0; once, on the first join). */
 		boolean keysTold = false;
+		/** None in a file from before 3.55.0: then it follows reduced flashing, which governed the shake before (see load). */
+		Camera camera = null;
 	}
 
 	/** HUD sizes to cycle through, in percent. */
@@ -125,6 +145,9 @@ public final class ClientOptions {
 		}
 		if (values.shaderLook == null) {
 			values.shaderLook = ShaderLook.CRYING_OBSIDIAN;
+		}
+		if (values.camera == null) {
+			values.camera = values.reduceFlashing ? Camera.GENTLE : Camera.FULL;
 		}
 		boolean known = false;
 		for (int s : HUD_SCALES) {
@@ -185,6 +208,17 @@ public final class ClientOptions {
 
 	public static void setEffects(Effects e) {
 		values.effects = e;
+		save();
+	}
+
+	/** How the camera is moved in an Elder's fight (see {@link Camera}). */
+	public static Camera camera() {
+		Camera c = values.camera;
+		return c != null ? c : values.reduceFlashing ? Camera.GENTLE : Camera.FULL;
+	}
+
+	public static void setCamera(Camera c) {
+		values.camera = c;
 		save();
 	}
 
