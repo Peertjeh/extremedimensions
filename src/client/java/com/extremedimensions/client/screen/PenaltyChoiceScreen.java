@@ -3,6 +3,7 @@ package com.extremedimensions.client.screen;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.extremedimensions.client.ui.CurseLine;
 import com.extremedimensions.client.ui.Ui;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.penalty.Penalty;
@@ -233,13 +234,12 @@ public class PenaltyChoiceScreen extends Screen {
 		String third = spill > 0 ? Ui.tr("gui.extremedimensions.choice.spill", spill)
 				: Ui.tr(pen.abyssal ? "gui.extremedimensions.choice.abyssal" : pen.extreme ? "gui.extremedimensions.choice.extreme"
 						: pen.everywhere ? "gui.extremedimensions.choice.everywhere" : "gui.extremedimensions.choice.permanent", opt.max());
-		String[] lines = {Ui.ellipsize(this.font, Ui.curse(Ui.tr(pen.lineKey(1), opt.value()), plain), CARD_W - 8),
-				Ui.ellipsize(this.font, Ui.curse(Ui.tr(pen.lineKey(2), opt.value()), plain), CARD_W - 8), third};
+		String[] lines = {Ui.curse(Ui.tr(pen.lineKey(1), opt.value()), plain), Ui.curse(Ui.tr(pen.lineKey(2), opt.value()), plain), third};
 		for (int k = 0; k < lines.length; k++) {
 			int col = k < 2 ? Ui.TEXT : spill > 0 ? Ui.WARN : pen.abyssal ? Ui.mix(Ui.abyss(), 0xFFFFFF, 0.35)
 					: pen.extreme ? Ui.mix(Ui.setColour(Penalty.Group.EXTREME), 0xFFFFFF, 0.3)
 					: pen.everywhere ? Ui.mix(Ui.setColour(Penalty.Group.EVERYWHERE), Ui.MUTED, 0.4) : Ui.MUTED;
-			g.text(this.font, lines[k], mid - this.font.width(lines[k]) / 2, ly, Ui.argb(fade, col));
+			centredCut(g, lines[k], mid, ly, CARD_W - 8, col, fade, mouseX, mouseY);
 			ly += 11;
 		}
 		// Stacks now, and after this card (capped at the maximum)
@@ -252,6 +252,13 @@ public class PenaltyChoiceScreen extends Screen {
 			seal(g, opt.mult(), x + CARD_W - 18, top - 7, now, fade);
 		}
 		int loreY = top + 100;
+		// What all its stacks come to once this card is taken (3.55.0): the lines above read one stack. Never for a card
+		// still in runes, whose number is not the player's to know yet
+		String total = plain ? CurseLine.total("after", pen, after, opt.value()) : null;
+		if (total != null) {
+			centredCut(g, total, mid, ly + 12, CARD_W - 8, Ui.WARN, fade, mouseX, mouseY);
+			loreY += 9;
+		}
 		if (!plain) {
 			// Unknown: one line of its lore in runes, and how it comes to be read
 			String runes = Ui.ellipsize(this.font, "“" + Ui.curse(Ui.tr(pen.loreKey()), false) + "”", CARD_W - 16);
@@ -263,9 +270,31 @@ public class PenaltyChoiceScreen extends Screen {
 			}
 			return;
 		}
-		for (String line : Ui.wrap(this.font, "“" + Ui.tr(pen.loreKey()) + "”", CARD_W - 16)) {
+		String lore = "“" + Ui.tr(pen.loreKey()) + "”";
+		List<String> wrapped = Ui.wrap(this.font, lore, CARD_W - 16);
+		// Under a total the lore keeps clear of the button: what is cut is read whole on hover
+		int room = total != null ? Math.max(1, (top + CARD_H - 30 - loreY) / 10) : wrapped.size();
+		int from = loreY;
+		for (int k = 0; k < wrapped.size() && k < room; k++) {
+			String line = k == room - 1 && wrapped.size() > room ? Ui.ellipsize(this.font, wrapped.get(k) + " ...", CARD_W - 16) : wrapped.get(k);
 			g.text(this.font, line, mid - this.font.width(line) / 2, loreY, Ui.argb(fade * 0.85, Ui.mix(Ui.SOUL, Ui.TEXT, 0.4)));
 			loreY += 10;
+		}
+		if (wrapped.size() > room && mouseX >= x && mouseX <= x + CARD_W && mouseY >= from - 1 && mouseY < loreY) {
+			g.setTooltipForNextFrame(this.font, Component.literal(lore), mouseX, mouseY);
+		}
+	}
+
+	/**
+	 * A line centred on a card, cut to a width (3.55.0): drawn with an ellipsis where it had to be cut, and read whole in
+	 * a tooltip while the mouse is over it.
+	 */
+	private void centredCut(GuiGraphicsExtractor g, String text, int mid, int y, int w, int colour, double fade, int mouseX, int mouseY) {
+		String shown = Ui.ellipsize(this.font, text, w);
+		int sx = mid - this.font.width(shown) / 2;
+		g.text(this.font, shown, sx, y, Ui.argb(fade, colour));
+		if (!shown.equals(text) && chosen < 0 && mouseX >= sx && mouseX < sx + this.font.width(shown) && mouseY >= y - 1 && mouseY < y + 10) {
+			g.setTooltipForNextFrame(this.font, Component.literal(text), mouseX, mouseY);
 		}
 	}
 

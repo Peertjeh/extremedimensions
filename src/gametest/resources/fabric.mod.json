@@ -73,7 +73,8 @@
 			"com.extremedimensions.gametest.KindledLanternTests",
 			"com.extremedimensions.gametest.BuilderBlockTests",
 			"com.extremedimensions.gametest.ElderFootingTests",
-			"com.extremedimensions.gametest.ExpeditionRecordTests"
+			"com.extremedimensions.gametest.ExpeditionRecordTests",
+			"com.extremedimensions.gametest.QualityTests"
 		],
 		"fabric-client-gametest": [
 			"com.extremedimensions.gametest.ClientShots",

@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.extremedimensions.client.inventory.CursesButton;
+import com.extremedimensions.client.ui.CurseLine;
 import com.extremedimensions.client.ui.Ui;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.penalty.Penalty;
@@ -462,13 +463,25 @@ public class CursesScreen extends Screen {
 			g.text(this.font, label, x0 + 16, ay, Ui.argb(fade, Ui.mix(abyss, 0xFFFFFF, 0.35)));
 			g.fill(x0 + 20 + this.font.width(label), ay + 4, x0 + 152, ay + 5, Ui.argb(fade * 0.6, abyss));
 		}
-		detail(g, x0 + 168, y0 + 44, PW - 168 - 14, fade, accent);
+		detail(g, x0 + 168, y0 + 44, PW - 168 - 14, fade, accent, mouseX, mouseY);
 		footer(g, x0, y0 + 172, fade, accent);
 		nearbyPanel(g, x0, y0, mouseX, mouseY, fade);
 	}
 
-	/** The selected curse: rune and name, stacks, effect, lore and atonement. */
-	private void detail(GuiGraphicsExtractor g, int x, int y, int w, double fade, int accent) {
+	/**
+	 * A line cut to a width (3.55.0): drawn with an ellipsis where it had to be cut, and then read whole in a tooltip
+	 * while the mouse is over it.
+	 */
+	private void cut(GuiGraphicsExtractor g, String text, int x, int y, int w, int colour, double fade, int mouseX, int mouseY) {
+		String shown = Ui.ellipsize(this.font, text, w);
+		g.text(this.font, shown, x, y, Ui.argb(fade, colour));
+		if (!shown.equals(text) && mouseX >= x && mouseX < x + w && mouseY >= y - 1 && mouseY < y + 9) {
+			g.setTooltipForNextFrame(this.font, Component.literal(text), mouseX, mouseY);
+		}
+	}
+
+	/** The selected curse: rune and name, stacks, effect, its total, lore and atonement. */
+	private void detail(GuiGraphicsExtractor g, int x, int y, int w, double fade, int accent, int mouseX, int mouseY) {
 		if (selected == null) {
 			return;
 		}
@@ -487,7 +500,13 @@ public class CursesScreen extends Screen {
 
 		int ly = y + 26;
 		for (String line : new String[] {Ui.tr(selected.lineKey(1), e.value()), Ui.tr(selected.lineKey(2), e.value())}) {
-			g.text(this.font, Ui.ellipsize(this.font, Ui.curse(line, plain), w), x, ly, Ui.argb(fade, Ui.TEXT));
+			cut(g, Ui.curse(line, plain), x, ly, w, Ui.TEXT, fade, mouseX, mouseY);
+			ly += 10;
+		}
+		// The lines above read one stack; what all of them come to now (3.55.0), never for a curse still in runes
+		String total = has && plain ? CurseLine.total("now", selected, e.stacks(), e.value()) : null;
+		if (total != null) {
+			cut(g, total, x, ly, w, Ui.WARN, fade, mouseX, mouseY);
 			ly += 10;
 		}
 		ly += 3;
@@ -504,7 +523,8 @@ public class CursesScreen extends Screen {
 			}
 		} else {
 			List<String> lore = Ui.wrap(this.font, "“" + Ui.tr(selected.loreKey()) + "”", w);
-			for (int i = 0; i < lore.size() && i < 3; i++) {
+			// (a line less of it under a total, so it still ends above the atonement)
+			for (int i = 0; i < lore.size() && i < (total != null ? 2 : 3); i++) {
 				g.text(this.font, lore.get(i), x, ly, Ui.argb(fade * 0.85, Ui.mix(Ui.SOUL, Ui.TEXT, 0.4)));
 				ly += 10;
 			}
