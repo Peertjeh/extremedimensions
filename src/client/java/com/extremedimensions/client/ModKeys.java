@@ -133,6 +133,7 @@ public final class ModKeys {
 
 	/** Whether this key press is Shift held with it (Shift+Tab goes back through the tabs). */
 	public static boolean shift(KeyEvent event) {
-		return (event.modifiers() & org.lwjgl.glfw.GLFW.GLFW_MOD_SHIFT) != 0;
+		// (the game no longer runs on GLFW: the event says itself whether Shift was held)
+		return event.hasShiftDown();
 	}
 }

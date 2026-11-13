@@ -326,8 +326,8 @@ public class SettingsScreen extends Screen {
 		int pitch = Math.min(20, area / Math.max(1, down));
 		int tw = (pw - 24 - (COLS - 1) * 4) / COLS;
 		for (int i = 0; i < parts.size(); i++) {
-			int col = i / down, row = i % down;
-			tiles.add(this.addRenderableWidget(new Tile(parts.get(i), x0 + 12 + col * (tw + 4), listTop() - 2 + row * pitch + 1, tw, pitch - 2)));
+			int col = i / down, place = i % down;
+			tiles.add(this.addRenderableWidget(new Tile(parts.get(i), x0 + 12 + col * (tw + 4), listTop() - 2 + place * pitch + 1, tw, pitch - 2)));
 		}
 		// The list's lines, as many as fit
 		for (int i = 0; i < visibleRows(); i++) {
