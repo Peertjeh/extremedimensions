@@ -363,9 +363,9 @@ public class PenaltyChoiceScreen extends Screen {
 			seal(g, opt.mult(), x + CARD_W - 18, top - 7, now, fade);
 		}
 		int loreY = top + 100;
-		// What all its stacks come to once this card is taken (3.55.0): the lines above read one stack. Never for a card
-		// still in runes, whose number is not the player's to know yet
-		String total = plain ? CurseLine.total("after", pen, after, opt.value()) : null;
+		// What all its stacks come to once this card is taken (3.55.0): the lines above read one stack. Not where it will be
+		// one stack (the lines say it already), nor for a card still in runes, whose number is not the player's to know yet
+		String total = plain && after > 1 ? CurseLine.total("after", pen, after, opt.value()) : null;
 		if (total != null) {
 			centredCut(g, total, mid, ly + 12, CARD_W - 8, Ui.WARN, fade, mouseX, mouseY);
 			loreY += 9;
