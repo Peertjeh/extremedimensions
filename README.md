@@ -211,6 +211,8 @@ Trials past gold), and the tapestry's boons stay.
   deaths and Lurkers come twice, a boss fight's three times) and the **Unbound Pinion** (fly with an elytra in a boss
   fight, but take 30% more damage and wear the elytra 25 times as fast). The Seam Lantern can also be kindled with a
   lantern and a soul lantern into the **Kindled Seam Lantern**, a blue-violet lantern whose light reaches twice as far.
+- **The Seam's furnishings, for builders**: Seam Silk Blocks and Carpets, Nebula Glass and its panes, and the Veil
+  Lamp, a violet lamp of light 15, each drawn after a vanilla block.
 - **Pacts**: curses taken on willingly for an expedition, for what a safe return brings.
 - **Rift Trials**: a weekly goal in the Seam, a world scoreboard and medals.
 - **Tetherite**: a tier past netherite. The rarest ore lies deep in the Seam's island hearts and the Fray's knots (a
@@ -237,6 +239,9 @@ Trials past gold), and the tapestry's boons stay.
 - **The wounds remember**: Echoes, Unstable Anchors, Unanchored builds and Frayed islands.
 - **Co-op**: fallen players can be revived, curses carried for a friend, anchors shared. Every player has their own
   time.
+- **The Tether Journal's guides and anchors**: twenty one-page how-to guides (at most five short steps each), and
+  every anchor that keeps charge for you, with what it holds, where, whether it is cracked and who shares it. After a
+  Collapse a short card says what happened and what it cost (`collapse_recap`).
 - **55 advancements**, the recipe book through them, a bestiary, a ledger and your clan in the journal.
 - **Five music discs**: *Tick of the Boundary* on a record of its own, now and then in a barrel of the Thinned in the
   Seam (the richer the barrel, the likelier), and *What the Wound Remembers*, made from the wound's own sounds, in the
@@ -269,6 +274,24 @@ a pack's End programme in the Seam, as the Seam shares the End's sky; the Seam h
 Under a pack, the Seam's sky is the pack's own End sky (Solas paints its own nebulae and disc there); the
 Seam's violet nebula shows without one.
 CI turns the newest Solas on in the Seam on every push.
+
+### Jade, WTHIT and JourneyMap
+
+With **Jade** or **WTHIT**, looking at an anchor shows the charge it holds for you, whether it is cracked and whose it
+is; at a Lurker or its kin, whether it came to steal or to hurt; at a Spindle, what is loaded in it; at a Curse Knot,
+its set (each a toggle in their own settings). With **JourneyMap**, your anchors are waypoints on the map (Ember
+orange, Void violet), and in the Seam so is the Return Gate. All optional; CI runs the client with them installed.
+
+### Playtest log
+
+`playtest_log` (off as it comes) makes the server write `extremedimensions/playtest.csv`: a line for every expedition
+that ends (and every visit to the Seam), every relic bound and every curse chosen. Columns: `kind`, `time`, `player`,
+`realm`, `from`, `nth` (the player's how-manieth expedition into that world), `outcome` (`returned`, `collapsed`,
+`unravelled`, `died`, `died_in_seam`, `died_elsewhere`; in the Seam `returned`, `thrown_home`, `fell`, `died`,
+`remade`, `left`, `collapsed`), `seconds`, `farthest_blocks`, `distance_pct` (the extra drain from distance alone),
+`drain_pct` (all told, against the base rate), `charge_s`, `curses`, `curse_stacks`, `silk_taken`, `fragments_taken`,
+`atonement_lost`, `charge_lost_s`, `levels_taken`, `relic`, `tether`, `pact`, `pact_heat`, `difficulty`, `notes`,
+`version`. Whole numbers, comma-separated, one header line.
 
 ### Tablist placeholders (TAB)
 

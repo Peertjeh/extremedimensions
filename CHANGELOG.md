@@ -1,5 +1,40 @@
 # Changelog
 
+## 3.53.0: For The Road Home
+
+### Added
+- **Guides in the Tether Journal**: a new part with twenty short how-to guides in story order, from your first
+  expedition to setting up a server, each one page: at most five short steps. The wiki has the long versions.
+- **Anchors in the Tether Journal**: every anchor that keeps charge for you, your own and your allies' opened to you:
+  Ember or Void, where it stands, what it holds for you, whether it is cracked (and when it breaks), and who it is
+  shared with. Seven parts now; where they do not fit one row of tabs, they take two.
+- **A recap after a Collapse**: once you are home and have chosen what it cost, a short card says how long you were
+  away, how far out you went, why the charge ran out faster and what it cost (a throw out of the Seam gets one too).
+  Server switch `collapse_recap` (on).
+- **The playtest log**, for judging the balance on real play: with `playtest_log` on (off as it comes), the server
+  adds a line to `extremedimensions/playtest.csv` for every expedition that ends (and every visit to the Seam), every
+  relic bound and every curse chosen: where, how long, how far out, how fast it drained, how it ended, what it cost,
+  the relic, the Tether and the pact. Written off the server thread; one spreadsheet-ready file.
+- **The Seam's furnishings, for builders**, each drawn after a vanilla block:
+  - **Seam Silk Block** (4 Seam Silk) and **Seam Silk Carpet** (2 blocks → 3), after white wool and carpet. They
+    burn as wool does, and are never wool to a vanilla recipe.
+  - **Nebula Glass** (8 glass round a Seam Silk → 8), after tinted glass with faint stars, and **Nebula Glass Panes**
+    (6 → 16). Only Silk Touch brings them back, as glass.
+  - **Veil Lamp** (4 Seam Silk round glowstone), after the lit redstone lamp: a violet lamp of light 15, lighting
+    only its own block.
+  - Under a shader pack the Veil Lamp glows violet, and the glass and the silk are drawn as their purple vanilla kin.
+- **Jade and WTHIT**: looking at an anchor shows the charge it holds for you, whether it is cracked and whose it
+  is; at a Lurker (or any of its kin), whether it came to steal or to hurt; at a Spindle, what is loaded in it; at a
+  Curse Knot, its set. Each can be switched off in Jade's or WTHIT's own settings.
+- **JourneyMap**: your anchors on the map as waypoints (Ember orange, Void violet), and in the Seam the Return Gate,
+  kept up to date as anchors are made, drained or broken.
+
+### Tests
+- A hush slab drops one of itself and a double slab two, as vanilla's stone slab (side by side).
+- The journal's anchors, the builders' blocks (recipes, light, drops, panes joining), the playtest log and the recap.
+- CI's compatibility run now has Jade, WTHIT, JourneyMap and Xaero's Minimap installed too, and checks each plugin
+  was taken up.
+
 ## 3.52.0: Every Light Shown
 
 ### Added
