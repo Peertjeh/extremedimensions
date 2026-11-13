@@ -6,7 +6,6 @@ import java.util.List;
 import com.extremedimensions.ExtremeDimensions;
 
 import net.fabricmc.fabric.api.registry.FlammableBlockRegistry;
-import net.fabricmc.fabric.api.registry.FuelRegistryEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -235,18 +234,13 @@ public final class ModBlocks {
 	}
 
 	/**
-	 * Forces class loading, and with it registration. And lets fire and furnaces take the silk cloth as they take wool
-	 * and carpet: vanilla gives its own their odds in FireBlock and their burn time by the wool tags, which the silk is
-	 * kept out of.
+	 * Forces class loading, and with it registration. And lets fire take the silk cloth as it takes wool and carpet:
+	 * vanilla gives its own their odds in FireBlock, by block, not by the wool tags the silk is kept out of. (It is no
+	 * furnace fuel: this Fabric API has no hook for a burn time, and silk is too dear to burn.)
 	 */
 	public static void init() {
 		// vanilla's odds for wool and for carpet: how readily each catches, and how quickly it burns away
 		FlammableBlockRegistry.getDefaultInstance().add(SEAM_SILK_BLOCK, 30, 60);
 		FlammableBlockRegistry.getDefaultInstance().add(SEAM_SILK_CARPET, 60, 20);
-		// and the burn time of wool (half a smelt) and of a carpet (a third and a tick)
-		FuelRegistryEvents.BUILD.register((fuels, context) -> {
-			fuels.add(SEAM_SILK_BLOCK, 100);
-			fuels.add(SEAM_SILK_CARPET, 67);
-		});
 	}
 }
