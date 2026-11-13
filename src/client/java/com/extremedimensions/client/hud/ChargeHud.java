@@ -273,10 +273,11 @@ public class ChargeHud implements HudElement {
 			int dist = compass ? homeDistance() : ClientState.tetherDist;
 			way = Ui.tr(seam ? "hud.extremedimensions.rift_distance" : "hud.extremedimensions.tether_distance", dist);
 		}
-		String walk = back >= 1 ? Ui.tr("hud.extremedimensions.walk_back", Ui.time(back)) : "";
 		int left = px + 7 + (compass ? 12 : 0), right = px + pw - 7;
-		row(g, font, way, Ui.MUTED, walk.isEmpty() ? "" : fit(font, walk, Ui.tr("hud.extremedimensions.walk_back.short", Ui.time(back)), right - left - font.width(way) - 8),
-				tight ? AMBER : Ui.MUTED, left, right, py + 26);
+		// (in words where they fit beside the way, else briefly)
+		String walk = back < 1 ? "" : fit(font, Ui.tr("hud.extremedimensions.walk_back", Ui.time(back)),
+				Ui.tr("hud.extremedimensions.walk_back.short", Ui.time(back)), right - left - font.width(way) - 8);
+		row(g, font, way, Ui.MUTED, walk, tight ? AMBER : Ui.MUTED, left, right, py + 26);
 		if (compass) {
 			arrow(g, px + 12, py + 30, homeDistance() < 2 ? Float.NaN : homeBearing());
 		}

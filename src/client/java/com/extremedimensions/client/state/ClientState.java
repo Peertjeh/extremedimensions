@@ -39,7 +39,7 @@ public final class ClientState {
 	public static double riftX = Double.NaN, riftY = Double.NaN, riftZ = Double.NaN;
 	/** The Rift Trial under way: "kind;twist;score;bronze;silver;gold", or "" without one. */
 	public static String trial = "";
-	/** One part of the drain as the server took it apart (3.55.0): the words that name it (a language key) and its factor. */
+	/** One part of the drain as the server took it apart (3.55.0): the words naming it (a language key) and its factor. */
 	public record Cause(String key, double value) {}
 	/** The drain's main cause (a language key, "" for none) and all its parts, as the server sent them (3.55.0). */
 	public static String drainCause = "";
@@ -48,7 +48,7 @@ public final class ClientState {
 	public static int walkBack = -1;
 	/** In the Seam, the seconds left at which the thread runs thin and the Thinned may hunt (0 elsewhere; 3.55.0). */
 	public static int thinAt = 0;
-	/** What is wrong with the anchors nearby (3.55.0): 1 an Ember Anchor blocked, 2 one cracked, 4 a Void Anchor blocked, 8 one cracked. */
+	/** What is wrong with the anchors nearby (3.55.0): 1 an Ember Anchor blocked, 2 one cracked, 4 a Void one blocked, 8 cracked. */
 	public static int nearFlags = 0;
 	public static long syncMs = 0;
 

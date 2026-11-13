@@ -21,9 +21,9 @@ import xaero.hud.minimap.world.container.MinimapWorldRootContainer;
 /**
  * The mod's waypoints in Xaero's Minimap (3.54.0): the player's anchors (Ember gold, Void purple), in the Seam the
  * Return Gate and on an expedition the arrival portal (3.55.0; both yellow, the way home), from {@link MapMarks}, as
- * third-party waypoints of their own origin. Handed over the way Xaero's
- * Minimap feeds in its own Waystones support (read from its jar by CI's probe): the minimap's current session, its
- * world's root container, the container of the waypoint's dimension, and there the third-party waypoints of an origin.
+ * third-party waypoints of their own origin. Handed over the way Xaero's Minimap feeds in its own Waystones support
+ * (read from its jar by CI's probe): the minimap's current session, its world's root container, the container of the
+ * waypoint's dimension, and there the third-party waypoints of an origin.
  * They are the server's to give and not kept on disk: every hand-over takes back all of the mod's from every dimension
  * and lays the new ones.
  *
