@@ -93,7 +93,7 @@ public final class Hints {
 			return;
 		}
 		PlayerData d = DataStore.get(p.getUUID());
-		if (d.hints.contains(h.key()) || !d.hintsOffered.add(h.key())) {
+		if (d.hints.contains(h.key()) || !sent(d).add(h.key())) {
 			return;
 		}
 		WorldFx.fx(p, Fx.HINT, h.ordinal());
@@ -107,7 +107,7 @@ public final class Hints {
 		}
 		PlayerData d = DataStore.get(p.getUUID());
 		String key = all[ordinal].key();
-		if (d.hintsOffered.remove(key) && d.hints.add(key)) {
+		if (sent(d).remove(key) && d.hints.add(key)) {
 			DataStore.markDirty();
 		}
 	}
@@ -118,7 +118,15 @@ public final class Hints {
 	}
 
 	private static boolean had(PlayerData d, Hint h) {
-		return d.hints.contains(h.key()) || d.hintsOffered.contains(h.key());
+		return d.hints.contains(h.key()) || sent(d).contains(h.key());
+	}
+
+	/** The hints sent this visit and not shown yet (made where a player's data was read without it). */
+	private static java.util.Set<String> sent(PlayerData d) {
+		if (d.hintsOffered == null) {
+			d.hintsOffered = new java.util.HashSet<>();
+		}
+		return d.hintsOffered;
 	}
 
 	/** The hints told the player, in the order they came, as the journal is sent them ("collapse,curse,..."). */
@@ -194,7 +202,7 @@ public final class Hints {
 	 */
 	public static void known(ServerPlayer p, PlayerData d) {
 		// (a new visit: what was sent before and never shown may be sent again)
-		d.hintsOffered.clear();
+		sent(d).clear();
 		if (d.hintsChecked) {
 			return;
 		}
