@@ -36,7 +36,7 @@ public class ExtremeJadePlugin implements IWailaPlugin {
 	@Override
 	public void register(IWailaCommonRegistration registration) {
 		// (the anchors are plain blocks of the mod, no class of their own: the provider sorts them out itself)
-		registration.registerBlockDataProvider(Anchors.INSTANCE, Block.class);
+		registration.registerBlockDataProvider(AnchorData.INSTANCE, Block.class);
 	}
 
 	@Override
@@ -50,8 +50,12 @@ public class ExtremeJadePlugin implements IWailaPlugin {
 		PluginStatus.jade = true;
 	}
 
-	/** An anchor: what the server says of it, asked for only while one of the mod's anchors is looked at. */
-	private enum Anchors implements IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
+	/**
+	 * An anchor's server half: what the server says of it, asked for only while one of the mod's anchors is looked at.
+	 * (Jade will not take one provider for both halves since Minecraft 1.21.6: the tooltip is {@link Anchors}, under
+	 * the same id.)
+	 */
+	private enum AnchorData implements IServerDataProvider<BlockAccessor> {
 		INSTANCE;
 
 		@Override
@@ -69,6 +73,16 @@ public class ExtremeJadePlugin implements IWailaPlugin {
 			if (accessor.getPlayer() instanceof ServerPlayer p) {
 				AnchorLook.write(data, p, accessor.getPosition());
 			}
+		}
+	}
+
+	/** An anchor's tooltip, from what {@link AnchorData} sent. */
+	private enum Anchors implements IBlockComponentProvider {
+		INSTANCE;
+
+		@Override
+		public Identifier getUid() {
+			return LookLines.ANCHOR;
 		}
 
 		@Override
