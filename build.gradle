@@ -42,10 +42,11 @@ interface ArchiveTools {
 	ArchiveOperations getArchives()
 }
 def archiveTools = objects.newInstance(ArchiveTools)
-def journeymapBundle = configurations.journeymapBundle
+// (a name of its own: one the same as the configuration's would be taken for it in the dependencies block below)
+def journeymapJars = configurations.journeymapBundle
 def journeymapApi = tasks.register("journeymapApi", Sync) {
 	description = "Takes JourneyMap's plugin API out of its jar, for the client's map plugin to compile against"
-	from(journeymapBundle.elements.map { jars -> jars.collect { archiveTools.archives.zipTree(it.asFile) } }) {
+	from(journeymapJars.elements.map { jars -> jars.collect { archiveTools.archives.zipTree(it.asFile) } }) {
 		include "META-INF/jars/journeymap-api-*.jar"
 		eachFile { it.path = "journeymap-api.jar" }
 	}
