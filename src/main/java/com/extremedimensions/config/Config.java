@@ -70,6 +70,11 @@ public final class Config {
 	/** 1 = the expedition timer is a boss bar at the top of the screen, as Minecraft shows such things; 0 = the mod's own panel. */
 	public static int HUD_BOSS_BAR = 1;
 	/**
+	 * Whether the timer points the way back to the arrival portal beside its distance on an expedition, and a map mod
+	 * marks the portal (3.55.0; 1 = on, 0 = off). Unmapped hides both, as it spins a compass.
+	 */
+	public static int ARRIVAL_COMPASS = 1;
+	/**
 	 * 1 = the mod acts only in its own worlds: the Overworld, the Nether, the End and the Seam. In another mod's world its
 	 * curses sleep, an expedition waits, and nothing of it spawns or strikes. 0 = it acts in every world.
 	 */
@@ -1981,7 +1986,7 @@ public final class Config {
 	 * The settings that are switches (1 on, 0 off), which the settings screen shows as an On/Off button instead of a
 	 * number to type (3.34). Each is a whole number with a default of 0 or 1 (a gametest holds them to it).
 	 */
-	private static final java.util.Set<String> SWITCHES = java.util.Set.of("respawn_title", "collapse_recap", "hud_boss_bar", "own_worlds_only",
+	private static final java.util.Set<String> SWITCHES = java.util.Set.of("respawn_title", "collapse_recap", "hud_boss_bar", "arrival_compass", "own_worlds_only",
 			"curse_overflow", "curse_deeper", "overworld_curses", "curse_runes", "abyssal_curses", "abyssal_mending_cloth",
 			"cloth_extreme", "cloth_scars", "atone_kill_area_shared", "hints", "lurker_enabled", "cave_lurker_enabled", "sculk_lurker_enabled",
 			"magpie_enabled",
@@ -2184,7 +2189,7 @@ public final class Config {
 			{"starved_rise_seconds", 2, 30}, {"starved_phase_one", 0, 1}, {"starved_phase_two", 0, 1}, {"starved_upheaval_damage", 0, 60},
 			{"starved_phase_isles", 0, 12}, {"starved_drink_at", 0, 1}, {"starved_drink_seconds", 3, 30}, {"starved_drink_pull", 0, 0.5},
 			{"starved_drink_slow", 0, 5}, {"starved_drink_radius", 8, 128}, {"starved_drink_nova", 4, 64}, {"starved_drink_damage", 0, 100},
-			{"seam_briefing", 0, 100}, {"seam_interiors", 0, 1}, {"seam_storeroom_chance", 0, 1}, {"hud_boss_bar", 0, 1}, {"hints", 0, 1}, {"frame_silk", 0, 64}, {"first_knot_distance", 200, 5000}, {"knot_mother_rest", 0, 100000}, {"knot_mother_leash", 4, 64}, {"knot_mother_threadline_weight", 0, 20}, {"knot_mother_threadline_damage", 0, 40},
+			{"seam_briefing", 0, 100}, {"seam_interiors", 0, 1}, {"seam_storeroom_chance", 0, 1}, {"hud_boss_bar", 0, 1}, {"arrival_compass", 0, 1}, {"hints", 0, 1}, {"frame_silk", 0, 64}, {"first_knot_distance", 200, 5000}, {"knot_mother_rest", 0, 100000}, {"knot_mother_leash", 4, 64}, {"knot_mother_threadline_weight", 0, 20}, {"knot_mother_threadline_damage", 0, 40},
 			{"knot_mother_threadline_sweep", 0.2, 1.5}, {"knot_mother_snare_weight", 0, 20}, {"knot_mother_snare_warning", 0.5, 5}, {"knot_mother_snare_seconds", 0.5, 10},
 			{"knot_mother_snare_time", 0, 120}, {"knot_mother_snare_damage", 0, 40}, {"knot_mother_anchors", 0, 8}, {"knot_mother_anchor_radius", 3, 15},
 			{"knot_mother_anchor_hits", 1, 20}, {"knot_mother_anchor_ward", 0, 0.9}, {"knot_mother_exposed_seconds", 0, 15}, {"knot_mother_exposed_damage", 1, 4},

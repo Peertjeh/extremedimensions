@@ -228,6 +228,11 @@ public class PlayerData {
 	public String tetherAnchor = null;
 	/** Arrival point beyond the wound (distance to the portal). */
 	public double arrivalX, arrivalZ;
+	/**
+	 * The height of the arrival point (3.55.0), for a map mod's waypoint of the way home; 0 in an expedition begun before
+	 * it was kept, where only the waypoint's height is off.
+	 */
+	public double arrivalY;
 	/** Furthest distance from the arrival portal ever reached (advancement). */
 	public double furthest = 0;
 	/**

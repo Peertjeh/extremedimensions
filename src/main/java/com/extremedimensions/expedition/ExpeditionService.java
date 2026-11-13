@@ -86,6 +86,7 @@ public final class ExpeditionService {
 			return;
 		}
 		d.arrivalX = p.getX();
+		d.arrivalY = p.getY();
 		d.arrivalZ = p.getZ();
 		d.hasRopeEnd = false;
 		// On the expedition from here (so a pact's stacks of Leaky Tank count as well)
