@@ -95,7 +95,7 @@ public final class ExtremeXaeroWaypoints {
 		return switch (kind) {
 			case EMBER -> WaypointColor.GOLD;
 			case VOID -> WaypointColor.PURPLE;
-			case GATE -> WaypointColor.YELLOW;
+			case GATE, ARRIVAL -> WaypointColor.YELLOW;
 		};
 	}
 }

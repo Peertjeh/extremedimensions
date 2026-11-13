@@ -24,7 +24,7 @@ import net.minecraft.world.BossEvent;
 /**
  * The expedition timer as Minecraft shows such things: a boss bar at the top of the screen, stacked with any other
  * (an Elder's, a raid's) as the game stacks them. Its name says where the player is, the time left, the way home
- * (in the Seam, an arrow and the distance to the rift; elsewhere, the stretch of the Tether) and a drain above one;
+ * (an arrow and the distance: to the rift in the Seam, to the arrival portal elsewhere) and a drain above one;
  * it empties as the time runs out and turns red in the last minute. A Rift Trial under way gets a bar of its own
  * under it, filling towards the next medal, as a raid's does.
  */
@@ -114,7 +114,14 @@ public final class ExpeditionBar {
 			out.append("  ").append(Component.literal(dist < 2 ? "◆ " : arrow(p, d) + " ").withStyle(ChatFormatting.GOLD))
 					.append(Component.translatable("hud.extremedimensions.rift_distance", dist));
 		} else if (!seam && TetherService.distance(p, d) >= 0) {
-			out.append("  ").append(Component.translatable("hud.extremedimensions.tether_distance", TetherService.distance(p, d)));
+			int dist = TetherService.distance(p, d);
+			out.append("  ");
+			if (com.extremedimensions.network.Sync.arrivalShown(d)) {
+				// The way back to the arrival portal, as the Seam's compass points to its rift (3.55.0)
+				out.append(Component.literal(dist < 2 ? "◆ " : arrow(p.getYRot(), d.arrivalX - p.getX(), d.arrivalZ - p.getZ()) + " ")
+						.withStyle(ChatFormatting.GOLD));
+			}
+			out.append(Component.translatable("hud.extremedimensions.tether_distance", dist));
 		}
 		double drain = seam ? SeamService.drain(p) : d.currentDrain;
 		if (drain > 1.0) {

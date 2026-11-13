@@ -41,7 +41,28 @@ public final class Sync {
 				(int) d.longestRun, (int) d.runTime, penalties(d), d.scars,
 				seam ? SeamService.riftDistance(p, d) : TetherService.distance(p, d), com.extremedimensions.guide.Guide.progress(d),
 				seam ? com.extremedimensions.trial.TrialService.hud(d) : "",
-				seam ? (float) d.riftX : 0, seam ? (float) d.riftY : 0, seam ? (float) d.riftZ : 0));
+				home(p, d, seam, 0), home(p, d, seam, 1), home(p, d, seam, 2)));
+	}
+
+	/**
+	 * Where the way home lies, one axis of it (0 x, 1 y, 2 z): the rift's floor in the Seam, and on an expedition in the
+	 * Nether or the End the arrival portal (3.55.0) while its compass is on and Unmapped does not hide it. NaN where there
+	 * is none to show, which the client reads as no way home known.
+	 */
+	public static float home(ServerPlayer p, PlayerData d, boolean seam, int axis) {
+		if (seam) {
+			return (float) (axis == 0 ? d.riftX : axis == 1 ? d.riftY : d.riftZ);
+		}
+		if (!arrivalShown(d)) {
+			return Float.NaN;
+		}
+		return (float) (axis == 0 ? d.arrivalX : axis == 1 ? d.arrivalY : d.arrivalZ);
+	}
+
+	/** Whether the way back to the arrival portal is shown to this player now: on an expedition there, compass on, not Unmapped. */
+	public static boolean arrivalShown(PlayerData d) {
+		return d.inRun && !d.collapsing && !d.away && Config.ARRIVAL_COMPASS > 0 && d.tetherAnchor != null
+				&& (Dims.NETHER.equals(d.dim) || Dims.END.equals(d.dim)) && d.stacks(com.extremedimensions.penalty.Penalty.UNMAPPED) <= 0;
 	}
 
 	/**

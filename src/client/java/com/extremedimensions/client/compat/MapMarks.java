@@ -21,14 +21,14 @@ import net.minecraft.world.level.Level;
 
 /**
  * What a map mod shows as waypoints: the player's anchors, each where the server says it stands, in the Ember's orange
- * or the Void's violet; and while they are in the Seam the Return Gate, where the rift home hangs, in the gold of the
- * way home. Kept free of any map mod's types: a map mod's plugin listens, and is handed the whole list whenever it
- * changes.
+ * or the Void's violet; while they are in the Seam the Return Gate, where the rift home hangs, and on an expedition in
+ * the Nether or the End the portal they came through (3.55.0), both in the gold of the way home. Kept free of any map
+ * mod's types: a map mod's plugin listens, and is handed the whole list whenever it changes.
  */
 public final class MapMarks {
 	private MapMarks() {}
 
-	public enum Kind { EMBER, VOID, GATE }
+	public enum Kind { EMBER, VOID, GATE, ARRIVAL }
 
 	/** One waypoint: what it marks, where, in which world, under which name and colour (0xRRGGBB). */
 	public record Mark(Kind kind, BlockPos pos, ResourceKey<Level> dimension, String name, int colour) {}
@@ -124,6 +124,12 @@ public final class MapMarks {
 			out.add(new Mark(Kind.GATE, gate, SEAM, Component.translatable("gui.extremedimensions.map.return_gate").getString(), GOLD));
 		} else {
 			gate = null;
+		}
+		if (ClientState.homeKnown()) {
+			// The portal the expedition came through, in the world it opens into (it stays where it is: no slack wanted)
+			ResourceKey<Level> where = ClientState.dimCode == 1 ? Level.NETHER : Level.END;
+			out.add(new Mark(Kind.ARRIVAL, BlockPos.containing(ClientState.riftX, ClientState.riftY, ClientState.riftZ), where,
+					Component.translatable("gui.extremedimensions.map.arrival_portal").getString(), GOLD));
 		}
 		return out;
 	}

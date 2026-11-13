@@ -19,7 +19,8 @@ public final class ModPackets {
 	 * tetherDist: -1 = not bound, else blocks to the arrival portal (beyond) or to the anchor (Overworld).
 	 * guide: steps of the first-expedition guide done (Guide.STEPS = finished).
 	 * trial: the Rift Trial under way in the Seam, "kind;twist;score;bronze;silver;gold" (empty without one).
-	 * riftX/riftY/riftZ: where the rift home hangs in the Seam (its floor), for the column of light and the compass.
+	 * riftX/riftY/riftZ: where the way home lies: the rift home in the Seam (its floor), for the column of light and the
+	 * compass, and since 3.55.0 the arrival portal on an expedition in the Nether or the End; NaN where none is shown.
 	 */
 	public record StatePayload(int nearNether, int nearEnd, int runCharge, int runMax, int dimCode, int drainX100,
 							int expeditions, int collapses, int longestRun, int runSecs, String penalties,

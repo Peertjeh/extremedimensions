@@ -246,10 +246,11 @@ public class ChargeHud implements HudElement {
 		Ui.meter(g, px + 7, py + 17, pw - 14, 6, remaining / Math.max(1, ClientState.runMax), barColor, 1.0, true);
 
 		StringBuilder info = new StringBuilder();
-		// In the Seam, a gold arrow beside the distance points the way home, turning as the player turns
-		boolean compass = seam && ClientState.riftKnown() && Config.SEAM_RIFT_COMPASS > 0 && mcPlayer() != null;
+		// A gold arrow beside the distance points the way home, turning as the player turns: to the rift in the Seam, and
+		// (3.55.0) to the arrival portal in the Nether and the End
+		boolean compass = (seam ? ClientState.riftKnown() && Config.SEAM_RIFT_COMPASS > 0 : ClientState.homeKnown()) && mcPlayer() != null;
 		if (ClientState.tetherDist >= 0) {
-			int dist = compass ? riftDistance() : ClientState.tetherDist;
+			int dist = compass ? homeDistance() : ClientState.tetherDist;
 			info.append(Ui.tr(seam ? "hud.extremedimensions.rift_distance" : "hud.extremedimensions.tether_distance", dist));
 		}
 		if (ClientState.drainX100 > 100) {
@@ -264,7 +265,7 @@ public class ChargeHud implements HudElement {
 			int tx = px + pw / 2 - font.width(s) / 2 + (compass ? 6 : 0);
 			g.text(font, s, tx, py + 26, Ui.argb(255, dc));
 			if (compass) {
-				arrow(g, tx - 7, py + 30, riftDistance() < 2 ? Float.NaN : riftBearing());
+				arrow(g, tx - 7, py + 30, homeDistance() < 2 ? Float.NaN : homeBearing());
 			}
 		}
 		if (trial != null) {
@@ -279,15 +280,18 @@ public class ChargeHud implements HudElement {
 		return Minecraft.getInstance().player;
 	}
 
-	/** Blocks to the rift home across the ground, measured now (the server's count comes once a second). */
-	private static int riftDistance() {
+	/**
+	 * Blocks to the way home (the rift in the Seam, the arrival portal beyond the wound) across the ground, measured now
+	 * (the server's count comes once a second).
+	 */
+	private static int homeDistance() {
 		var p = mcPlayer();
 		double dx = ClientState.riftX - p.getX(), dz = ClientState.riftZ - p.getZ();
 		return (int) Math.sqrt(dx * dx + dz * dz);
 	}
 
-	/** Which way the rift home lies from where the player looks, in radians clockwise (0 straight ahead). */
-	private static float riftBearing() {
+	/** Which way home lies from where the player looks, in radians clockwise (0 straight ahead). */
+	private static float homeBearing() {
 		var p = mcPlayer();
 		double world = Math.atan2(ClientState.riftZ - p.getZ(), ClientState.riftX - p.getX());
 		double facing = Math.toRadians(p.getYRot()) + Math.PI / 2;

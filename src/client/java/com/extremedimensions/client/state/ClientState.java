@@ -32,8 +32,11 @@ public final class ClientState {
 	public static int scars = 0;
 	/** -1 = not bound, else blocks to the arrival portal (beyond) or the anchor (Overworld). */
 	public static int tetherDist = -1;
-	/** Where the rift home hangs (its floor), while in the Seam. */
-	public static double riftX, riftY, riftZ;
+	/**
+	 * Where the way home lies: the rift home (its floor) while in the Seam, and since 3.55.0 the arrival portal on an
+	 * expedition in the Nether or the End while its compass is shown; NaN where none is.
+	 */
+	public static double riftX = Double.NaN, riftY = Double.NaN, riftZ = Double.NaN;
 	/** The Rift Trial under way: "kind;twist;score;bronze;silver;gold", or "" without one. */
 	public static String trial = "";
 	public static long syncMs = 0;
@@ -142,6 +145,11 @@ public final class ClientState {
 	/** In the Seam, with a rift home to go back through. */
 	public static boolean riftKnown() {
 		return dimCode == 3 && tetherDist >= 0 && !away();
+	}
+
+	/** On an expedition in the Nether or the End, with the way back to the arrival portal shown (3.55.0). */
+	public static boolean homeKnown() {
+		return (dimCode == 1 || dimCode == 2) && !Double.isNaN(riftX) && !Double.isNaN(riftZ) && !away();
 	}
 
 	/** In another mod's world, or in a world the server has said nothing about: the mod sleeps there, and its HUD with it. */
@@ -304,6 +312,7 @@ public final class ClientState {
 		}
 		scars = 0;
 		tetherDist = -1;
+		riftX = riftY = riftZ = Double.NaN;
 		trial = "";
 		shownNether = 0;
 		shownEnd = 0;
