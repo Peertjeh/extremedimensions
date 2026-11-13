@@ -140,6 +140,10 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientTickEvents.END_CLIENT_TICK.register(SeamAmbience::tick);
 		// The waypoints of a map mod (JourneyMap), which listens to them; nothing happens here without one
 		ClientTickEvents.END_CLIENT_TICK.register(com.extremedimensions.client.compat.MapMarks::tick);
+		// (Xaero's Minimap has no entrypoint for other mods: its waypoints are set up here, where it is loaded)
+		if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("xaerominimap")) {
+			com.extremedimensions.client.compat.xaero.ExtremeXaeroWaypoints.start();
+		}
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(ClientState::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.compat.MapMarks::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.coop.ClientFallen::reset));

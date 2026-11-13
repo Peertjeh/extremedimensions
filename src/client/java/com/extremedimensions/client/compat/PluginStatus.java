@@ -14,4 +14,7 @@ public final class PluginStatus {
 	public static volatile boolean journeymap;
 	/** Waypoints JourneyMap was last handed (-1: none yet). */
 	public static volatile int journeymapWaypoints = -1;
+	/** The mod's waypoints were set up for Xaero's Minimap, and how many it was last handed (-1: none yet). */
+	public static volatile boolean xaero;
+	public static volatile int xaeroWaypoints = -1;
 }

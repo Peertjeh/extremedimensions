@@ -36,6 +36,10 @@ configurations {
 	journeymapBundle {
 		transitive = false
 	}
+	// Xaero's Minimap's own jar holds its library (xaerolib) inside it, which some of its types come from
+	xaeroBundle {
+		transitive = false
+	}
 }
 interface ArchiveTools {
 	@javax.inject.Inject
@@ -52,6 +56,17 @@ def journeymapApi = tasks.register("journeymapApi", Sync) {
 	}
 	includeEmptyDirs = false
 	into layout.buildDirectory.dir("journeymap-api")
+}
+
+def xaeroJars = configurations.xaeroBundle
+def xaeroLib = tasks.register("xaeroLib", Sync) {
+	description = "Takes Xaero's library out of Xaero's Minimap's jar, for the client's waypoints to compile against"
+	from(xaeroJars.elements.map { jars -> jars.collect { archiveTools.archives.zipTree(it.asFile) } }) {
+		include "META-INF/jars/xaerolib-*.jar"
+		eachFile { it.path = "xaerolib.jar" }
+	}
+	includeEmptyDirs = false
+	into layout.buildDirectory.dir("xaerolib")
 }
 
 dependencies {
@@ -76,6 +91,12 @@ dependencies {
 	// plugin is only loaded by JourneyMap itself, through the journeymap entrypoint
 	journeymapBundle "maven.modrinth:journeymap:2zmj8ela"
 	clientCompileOnly files(layout.buildDirectory.file("journeymap-api/journeymap-api.jar")).builtBy(journeymapApi)
+
+	// Xaero's Minimap (26.6.2 for 26.3, Modrinth version MfxfgXaO), and the library inside it: the client's waypoints
+	// compile against them; neither is shipped or needed (they are handed over only where Xaero's Minimap is loaded)
+	xaeroBundle "maven.modrinth:xaeros-minimap:MfxfgXaO"
+	clientCompileOnly "maven.modrinth:xaeros-minimap:MfxfgXaO"
+	clientCompileOnly files(layout.buildDirectory.file("xaerolib/xaerolib.jar")).builtBy(xaeroLib)
 }
 
 processResources {

@@ -167,9 +167,29 @@ public class ClientCompat implements FabricClientGameTest {
 					com.extremedimensions.anchor.AnchorService.onBroken(com.extremedimensions.server.Dims.OVERWORLD, at);
 				});
 			}
-			// Xaero's Minimap: nothing of the mod is handed to it yet (its third-party waypoints are still to be read)
+			// Xaero's Minimap (3.54.0): the mod's waypoints set up, and an anchor of the player's reaching it as one
 			if (loader.isModLoaded("xaerominimap")) {
-				System.out.println("[compat] Xaero's Minimap: installed; the mod gives it no waypoints yet");
+				System.out.println("[compat] Xaero's Minimap: the mod's waypoints " + (com.extremedimensions.client.compat.PluginStatus.xaero ? "set up" : "not set up"));
+				check(com.extremedimensions.client.compat.PluginStatus.xaero, "the mod's waypoints were never set up for Xaero's Minimap");
+				net.minecraft.core.BlockPos at = sp.getServer().computeOnServer(s -> {
+					ServerPlayer p = player(s);
+					net.minecraft.core.BlockPos pos = p.blockPosition().relative(p.getDirection(), 3);
+					p.level().setBlock(pos, com.extremedimensions.registry.ModBlocks.VOID_ANCHOR.defaultBlockState(), 3);
+					com.extremedimensions.data.Anchor a = new com.extremedimensions.data.Anchor(pos.getX(), pos.getY(), pos.getZ(), com.extremedimensions.server.Dims.END);
+					a.add(p.getStringUUID(), 300);
+					DataStore.anchors().put(a.key(), a);
+					com.extremedimensions.anchor.AnchorSync.send(p);
+					return pos;
+				});
+				for (int i = 0; i < 40 && com.extremedimensions.client.compat.PluginStatus.xaeroWaypoints < 1; i++) {
+					ctx.waitTicks(5);
+				}
+				System.out.println("[compat] Xaero's Minimap: waypoints handed over for the one anchor made: " + com.extremedimensions.client.compat.PluginStatus.xaeroWaypoints);
+				check(com.extremedimensions.client.compat.PluginStatus.xaeroWaypoints >= 1, "the anchor made never reached Xaero's Minimap as a waypoint");
+				sp.getServer().runOnServer(s -> {
+					player(s).level().removeBlock(at, false);
+					com.extremedimensions.anchor.AnchorService.onBroken(com.extremedimensions.server.Dims.OVERWORLD, at);
+				});
 			}
 
 			// Into the Seam: its sky, its fog and the expedition's bar under Sodium's renderer

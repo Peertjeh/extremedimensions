@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.54.0: Marked On Every Map
+
+### Added
+- **Xaero's Minimap** shows your anchors as waypoints now too (Ember gold, Void purple), and in the Seam the Return
+  Gate (yellow), as JourneyMap has since 3.53.0. They are handed over the way Xaero's Minimap takes its own Waystones
+  waypoints in: under an origin of the mod's, kept up to date as anchors are made, drained or broken, and never kept
+  on disk (they are the server's to give, and come again with every join).
+- CI's second compatibility run checks that an anchor made reaches Xaero's Minimap as a waypoint.
+
 ## 3.53.0: For The Road Home
 
 ### Added
