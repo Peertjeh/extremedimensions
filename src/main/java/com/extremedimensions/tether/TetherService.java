@@ -21,6 +21,7 @@ import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -83,9 +84,24 @@ public final class TetherService {
 
 	/** Empty hand on your own anchor: untie and get the Tether back. */
 	public static void untie(ServerPlayer p, PlayerData d) {
-		clear(p, d, true);
+		comeBack(p, d, "untied");
 		WorldFx.sound(p, "minecraft:entity.leash_knot.break", 1.0f, 0.8f);
 		Sync.state(p, d);
+	}
+
+	/**
+	 * The Tether comes off its anchor and back to the player, and the action bar says so (3.55.0): why ({@code why}:
+	 * untied, walked too far, or the anchor gone), and that it is back in the pack. It used to come back with only a
+	 * sound. With a full pack the chat already says it waits for room (see {@link #owe}): then the action bar only says
+	 * why it came off, and nothing at all for a Tether untied by hand.
+	 */
+	private static void comeBack(ServerPlayer p, PlayerData d, String why) {
+		int owed = d.tetherOwed == null ? 0 : d.tetherOwed.size();
+		clear(p, d, true);
+		boolean kept = d.tetherOwed != null && d.tetherOwed.size() > owed;
+		if (!kept || !"untied".equals(why)) {
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.tether." + why + (kept ? "_full" : "")), true);
+		}
 	}
 
 	/** Per-tick update: snapping in the Overworld and laying new segments. Returns true if the HUD must sync. */
@@ -98,7 +114,7 @@ public final class TetherService {
 			Anchor anchor = DataStore.anchors().get(d.tetherAnchor);
 			if (anchor == null || tooFar(p, anchor)) {
 				WorldFx.particles(p, "minecraft:crit", 0.6, 0.3, 0.3, 14);
-				clear(p, d, true);
+				comeBack(p, d, anchor == null ? "anchor_gone" : "slipped");
 				WorldFx.sound(p, "minecraft:entity.leash_knot.break", 1.0f, 0.9f);
 				WorldFx.sound(p, "minecraft:block.chain.break", 1.0f, 0.7f);
 				return true;

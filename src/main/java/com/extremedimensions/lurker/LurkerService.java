@@ -29,8 +29,11 @@ import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 import com.extremedimensions.world.WorldService;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -131,7 +134,18 @@ public final class LurkerService {
 		int sightTicks;
 		int boltIn;
 		int boltWindup;
+		/** What its last reach took and the player has not been told yet (3.55.0): told as it runs. */
+		final List<ItemStack> untold = new ArrayList<>();
+		int untoldLevels;
 	}
+
+	/** A theft as its victim was told it (3.55.0): what was taken, the levels, which way it ran, and whether to its hoard. */
+	public record Theft(List<ItemStack> stacks, int levels, String bearing, boolean hoard) {}
+
+	/** The last theft told, and to whom (for the tests: a test player's client reads no chat). */
+	public record Told(UUID to, Theft theft) {}
+
+	public static volatile Told lastTheft = null;
 
 	private static final Map<UUID, State> STATES = new HashMap<>();
 	private static final Map<UUID, ServerLevel> LEVELS = new HashMap<>();
@@ -674,6 +688,7 @@ public final class LurkerService {
 			// Its claw rakes the player as it reaches; then it takes what it can, and may leave a curse behind
 			hurt(l, p, Config.LURKER_CLAW_DAMAGE, false);
 			boolean took = false;
+			int had = st.loot.stacks.size(), hadLevels = st.loot.levels;
 			for (int i = 0; i < Math.max(1, Config.LURKER_THEFTS); i++) {
 				if (!snatch(l, st, p)) {
 					break;
@@ -682,6 +697,11 @@ public final class LurkerService {
 			}
 			if (took) {
 				taken(p);
+				// What this reach took, to be told as it runs (when it knows where to)
+				for (int i = had; i < st.loot.stacks.size(); i++) {
+					st.untold.add(st.loot.stacks.get(i).copy());
+				}
+				st.untoldLevels += Math.max(0, st.loot.levels - hadLevels);
 			}
 			curseChance(l, st, p);
 		}
@@ -856,7 +876,42 @@ public final class LurkerService {
 				st.limit = 20 * 25;
 			}
 		}
+		tellTheft(l, st, p);
 		flee(l, st, p, new ArrayList<>());
+	}
+
+	/**
+	 * The player is told what the Lurker took and which way it ran (3.55.0): "The Lurker took your [Diamond Pickaxe] and
+	 * ran north-east, to its hoard", each thing taken shown on hover. Before, only the screen's flicker said that
+	 * something had gone, and not what.
+	 */
+	private static void tellTheft(Lurker l, State st, ServerPlayer p) {
+		if (st.untold.isEmpty() && st.untoldLevels <= 0) {
+			return;
+		}
+		MutableComponent what = Component.empty();
+		boolean first = true;
+		for (ItemStack stack : st.untold) {
+			// (the item's own name, which shows the item on hover)
+			Component name = stack.getDisplayName();
+			what.append(first ? "" : ", ").append(stack.getCount() > 1
+					? Component.translatable("gui.extremedimensions.lurker.took_count", stack.getCount(), name) : name);
+			first = false;
+		}
+		if (st.untoldLevels > 0) {
+			what.append(first ? "" : ", ").append(Component.translatable("gui.extremedimensions.lurker.took_levels",
+					st.untoldLevels));
+		}
+		// Which way: towards its hoard where it runs to one, else on away from the player
+		double dx = st.hoard != null ? st.hoard.x + 0.5 - p.getX() : l.getX() - p.getX();
+		double dz = st.hoard != null ? st.hoard.z + 0.5 - p.getZ() : l.getZ() - p.getZ();
+		String bearing = com.extremedimensions.seam.FirstKnot.bearing(dx, dz);
+		p.sendSystemMessage(Component.translatable(st.hoard != null ? "gui.extremedimensions.lurker.took_hoard"
+				: "gui.extremedimensions.lurker.took", what, Component.translatable("gui.extremedimensions.dir." + bearing))
+				.withStyle(ChatFormatting.LIGHT_PURPLE));
+		lastTheft = new Told(p.getUUID(), new Theft(List.copyOf(st.untold), st.untoldLevels, bearing, st.hoard != null));
+		st.untold.clear();
+		st.untoldLevels = 0;
 	}
 
 	/**

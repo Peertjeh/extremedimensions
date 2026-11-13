@@ -484,7 +484,10 @@ public final class SeamDepth {
 			d.frayDescents++;
 			Journal.unlock(p, d, JournalEntry.FRAY);
 			Advancements.grant(p, Advancements.FRAY_ENTERED);
-			p.sendSystemMessage(Component.translatable("gui.extremedimensions.fray.entered").withStyle(ChatFormatting.DARK_PURPLE));
+			// In the chat the first few times (as many as its briefing shows, three at least), then only on the action bar:
+			// by then the player knows what the Fray is, and the chat need not fill with it (3.55.0)
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.fray.entered").withStyle(ChatFormatting.DARK_PURPLE),
+					d.frayDescents > Math.max(3, Config.SEAM_BRIEFING));
 			WorldFx.soundSelf(p, "extremedimensions:seam_ambient", 0.8f, 0.6f);
 			if (d.frayDescents <= Config.SEAM_BRIEFING) {
 				// The first few descents: what the Fray is, on the screen

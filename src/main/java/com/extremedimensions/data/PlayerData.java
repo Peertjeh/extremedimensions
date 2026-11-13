@@ -247,6 +247,11 @@ public class PlayerData {
 	 */
 	public com.extremedimensions.expedition.ExpeditionRecord.Tally runTally = null, seamTally = null;
 	public List<com.extremedimensions.expedition.ExpeditionRecord> records = new ArrayList<>();
+	/**
+	 * The last Collapses (and throws out of the Seam), newest first, as their cards had them (see RecapText.write): the
+	 * journal's ledger keeps them on a page of their own, "The last falls" (3.55.0). Null in a save from before.
+	 */
+	public List<String> falls = new ArrayList<>();
 	/** Expeditions begun into each world (its short id), counted since 3.53.0: the playtest log's "nth". */
 	public Map<String, Integer> ventures = new HashMap<>();
 
@@ -289,6 +294,11 @@ public class PlayerData {
 	public int reliefs = 0;
 	/** Ticks the current curse offer has stood unanswered (the Tether picks for the player after a while). */
 	public transient int offerAge = 0;
+	/**
+	 * Offers already answered of those owed in a row (several curses owed at once), so the screen can say "Curse 2 of 3"
+	 * (3.55.0). Back to 0 once nothing more is owed.
+	 */
+	public transient int offerSeries = 0;
 	public double runTime = 0;
 	public transient int grace = 0;
 	public transient int tickCounter = 0;
@@ -315,6 +325,8 @@ public class PlayerData {
 	public transient String endedIn = null;
 	/** Atonement points the last death took away (told on respawn). */
 	public transient int atonementLost = 0;
+	/** The last death or Collapse broke a pact's reward (told on respawn, with the rest of what it cost; 3.55.0). */
+	public transient boolean pactBroke = false;
 
 	// Idle detection: atonement only grows while the player looks around and moves
 	public transient float lastYaw, lastPitch;

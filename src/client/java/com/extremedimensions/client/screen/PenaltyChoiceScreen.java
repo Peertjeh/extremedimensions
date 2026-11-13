@@ -3,21 +3,33 @@ package com.extremedimensions.client.screen;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.extremedimensions.client.state.ClientState;
+import com.extremedimensions.client.title.Menus;
+import com.extremedimensions.client.ui.CurseLine;
 import com.extremedimensions.client.ui.Ui;
+import com.extremedimensions.config.Config;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.penalty.Penalty;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 
 /**
  * After a Collapse or a death beyond the wound: pick one of three curse cards. Sometimes the whole offer is multiplied;
  * then each card carries its own seal (2x, 3x, 4x) and adds that many stacks, never past the curse's maximum. An
  * Abyssal card is black with a violet crack through it; on Extreme it sometimes comes alone, and then there is no choice.
+ *
+ * <p>Since 3.55.0 the cards wait while a container is open (a chest's contents are not torn from under the player), say
+ * which of several curses owed in a row this is ("Curse 1 of 3"), count down the time before the Tether chooses, and
+ * have a button that opens the Curses screen over them and comes back.
  */
 public class PenaltyChoiceScreen extends Screen {
 	private static final int CARD_W = 132;
@@ -38,6 +50,51 @@ public class PenaltyChoiceScreen extends Screen {
 	private String set;
 	private int chosen = -1;
 	private long chosenAt = 0;
+	/** Which offer of a run the server said this one is (0 until it said); another number later means it moved on. */
+	private int seenNth = 0;
+	/** The button that opens the Curses screen over the cards. */
+	private Button yours;
+	/** A card's lore cut short under the mouse this frame, line by line: drawn whole over the cards once they are drawn. */
+	private List<String> loreTip;
+
+	/** Cards that came while a container was open: they wait for it to close (null: none waiting). */
+	private static List<String> waiting;
+	/** Whether the wait is watched every tick yet (it is watched from the first wait on). */
+	private static boolean watching;
+
+	/**
+	 * The server dealt the cards: they open now, unless a container is open (a chest, a furnace, the inventory), which
+	 * they would tear from under the player. Then they wait for it to close (3.55.0).
+	 */
+	public static void receive(String ids) {
+		List<String> cards = java.util.Arrays.asList(ids.split(","));
+		if (Menus.current() instanceof AbstractContainerScreen<?>) {
+			waiting = cards;
+			if (!watching) {
+				watching = true;
+				ClientTickEvents.END_CLIENT_TICK.register(PenaltyChoiceScreen::tick);
+			}
+			return;
+		}
+		waiting = null;
+		Minecraft.getInstance().gui.setScreen(new PenaltyChoiceScreen(cards));
+	}
+
+	/** Every client tick: cards waiting open once no container is open any more (and are forgotten with the world). */
+	private static void tick(Minecraft mc) {
+		if (waiting == null) {
+			return;
+		}
+		if (mc.level == null || mc.player == null) {
+			waiting = null;
+			return;
+		}
+		if (!(Menus.current() instanceof AbstractContainerScreen<?>)) {
+			List<String> cards = waiting;
+			waiting = null;
+			mc.gui.setScreen(new PenaltyChoiceScreen(cards));
+		}
+	}
 
 	public PenaltyChoiceScreen(List<String> cards) {
 		super(Component.translatable("gui.extremedimensions.choice.title"));
@@ -115,6 +172,46 @@ public class PenaltyChoiceScreen extends Screen {
 			b.visible = false;
 			buttons.add(this.addRenderableWidget(b));
 		}
+		// The curses carried, over the cards; closing them comes back here (3.55.0)
+		yours = this.addRenderableWidget(Button.builder(Component.translatable("gui.extremedimensions.choice.your_curses"),
+				btn -> CursesScreen.openOver(this)).pos(this.width - 96, 6).size(90, 16)
+				.tooltip(Tooltip.create(Component.translatable("gui.extremedimensions.choice.your_curses.desc"))).build());
+	}
+
+	/** Seconds before the Tether chooses, as the server last said (-1: no clock runs). */
+	private static int secondsLeft(long now) {
+		if (ClientState.offerLeft < 0) {
+			return -1;
+		}
+		return (int) Math.max(0, ClientState.offerLeft - (now - ClientState.syncMs) / 1000);
+	}
+
+	/**
+	 * Under the cards (3.55.0): which of the curses owed in a row this is, and how long before the Tether chooses, with
+	 * a thin bar running down; red in the last fifteen seconds.
+	 */
+	private void footer(GuiGraphicsExtractor g, int cx, int y, long now) {
+		List<String> parts = new ArrayList<>();
+		if (ClientState.offerOf > 1) {
+			parts.add(Ui.tr("gui.extremedimensions.choice.series", ClientState.offerNth, ClientState.offerOf));
+		}
+		int left = chosen < 0 ? secondsLeft(now) : -1;
+		if (left >= 0) {
+			parts.add(Ui.tr("gui.extremedimensions.choice.countdown", Ui.time(left)));
+		}
+		if (parts.isEmpty()) {
+			return;
+		}
+		double fa = Ui.ease((now - openAt) / 600.0);
+		boolean late = left >= 0 && left <= 15;
+		int col = late ? (Ui.calm() || (now / 400) % 2 == 0 ? Ui.DANGER : Ui.WARN) : Ui.MUTED;
+		Ui.centered(g, this.font, String.join("  ·  ", parts), cx, y, col, fa);
+		if (left >= 0 && Config.OFFER_TIMEOUT_SECONDS > 0) {
+			int bw = 160;
+			double share = Math.min(1, left / (double) Config.OFFER_TIMEOUT_SECONDS);
+			g.fill(cx - bw / 2, y + 12, cx + bw / 2, y + 14, Ui.argb(fa * 0.6, Ui.TRACK));
+			g.fill(cx - bw / 2, y + 12, cx - bw / 2 + (int) Math.round(bw * share), y + 14, Ui.argb(fa, late ? Ui.DANGER : Ui.WARN));
+		}
 	}
 
 	private void choose(int idx, Penalty pen) {
@@ -141,7 +238,17 @@ public class PenaltyChoiceScreen extends Screen {
 		for (int i = 0; i < buttons.size(); i++) {
 			buttons.get(i).visible = chosen < 0 && progress(i, now) >= 1.0;
 		}
+		if (yours != null) {
+			yours.visible = chosen < 0;
+		}
 		if (chosen >= 0 && now - chosenAt > 600) {
+			this.onClose();
+			return;
+		}
+		// The server moved on without a card from here (the Tether chose when the time ran out): these cards are spent
+		if (ClientState.offerOf > 0 && seenNth == 0) {
+			seenNth = ClientState.offerNth;
+		} else if (seenNth > 0 && chosen < 0 && (ClientState.offerOf == 0 || ClientState.offerNth != seenNth)) {
 			this.onClose();
 			return;
 		}
@@ -173,8 +280,13 @@ public class PenaltyChoiceScreen extends Screen {
 		}
 
 		int x0 = startX();
+		loreTip = null;
 		for (int i = 0; i < options.size(); i++) {
 			card(g, options.get(i), i, x0 + i * (CARD_W + GAP), y, mouseX, mouseY, now, hungry ? Ui.DANGER : accent);
+		}
+		footer(g, cx, y + CARD_H + 8, now);
+		if (loreTip != null) {
+			Ui.tooltip(g, this.font, loreTip, java.util.Collections.nCopies(loreTip.size(), 0xFFFFFF), mouseX, mouseY, this.width, this.height, accent);
 		}
 	}
 
@@ -233,13 +345,12 @@ public class PenaltyChoiceScreen extends Screen {
 		String third = spill > 0 ? Ui.tr("gui.extremedimensions.choice.spill", spill)
 				: Ui.tr(pen.abyssal ? "gui.extremedimensions.choice.abyssal" : pen.extreme ? "gui.extremedimensions.choice.extreme"
 						: pen.everywhere ? "gui.extremedimensions.choice.everywhere" : "gui.extremedimensions.choice.permanent", opt.max());
-		String[] lines = {Ui.ellipsize(this.font, Ui.curse(Ui.tr(pen.lineKey(1), opt.value()), plain), CARD_W - 8),
-				Ui.ellipsize(this.font, Ui.curse(Ui.tr(pen.lineKey(2), opt.value()), plain), CARD_W - 8), third};
+		String[] lines = {Ui.curse(Ui.tr(pen.lineKey(1), opt.value()), plain), Ui.curse(Ui.tr(pen.lineKey(2), opt.value()), plain), third};
 		for (int k = 0; k < lines.length; k++) {
 			int col = k < 2 ? Ui.TEXT : spill > 0 ? Ui.WARN : pen.abyssal ? Ui.mix(Ui.abyss(), 0xFFFFFF, 0.35)
 					: pen.extreme ? Ui.mix(Ui.setColour(Penalty.Group.EXTREME), 0xFFFFFF, 0.3)
 					: pen.everywhere ? Ui.mix(Ui.setColour(Penalty.Group.EVERYWHERE), Ui.MUTED, 0.4) : Ui.MUTED;
-			g.text(this.font, lines[k], mid - this.font.width(lines[k]) / 2, ly, Ui.argb(fade, col));
+			centredCut(g, lines[k], mid, ly, CARD_W - 8, col, fade, mouseX, mouseY);
 			ly += 11;
 		}
 		// Stacks now, and after this card (capped at the maximum)
@@ -252,6 +363,13 @@ public class PenaltyChoiceScreen extends Screen {
 			seal(g, opt.mult(), x + CARD_W - 18, top - 7, now, fade);
 		}
 		int loreY = top + 100;
+		// What all its stacks come to once this card is taken (3.55.0): the lines above read one stack. Not where it will be
+		// one stack (the lines say it already), nor for a card still in runes, whose number is not the player's to know yet
+		String total = plain && after > 1 ? CurseLine.total("after", pen, after, opt.value()) : null;
+		if (total != null) {
+			centredCut(g, total, mid, ly + 12, CARD_W - 8, Ui.WARN, fade, mouseX, mouseY);
+			loreY += 9;
+		}
 		if (!plain) {
 			// Unknown: one line of its lore in runes, and how it comes to be read
 			String runes = Ui.ellipsize(this.font, "“" + Ui.curse(Ui.tr(pen.loreKey()), false) + "”", CARD_W - 16);
@@ -263,9 +381,31 @@ public class PenaltyChoiceScreen extends Screen {
 			}
 			return;
 		}
-		for (String line : Ui.wrap(this.font, "“" + Ui.tr(pen.loreKey()) + "”", CARD_W - 16)) {
+		String lore = "“" + Ui.tr(pen.loreKey()) + "”";
+		List<String> wrapped = Ui.wrap(this.font, lore, CARD_W - 16);
+		// Under a total the lore keeps clear of the button: what is cut is read whole on hover
+		int room = total != null ? Math.max(1, (top + CARD_H - 30 - loreY) / 10) : wrapped.size();
+		int from = loreY;
+		for (int k = 0; k < wrapped.size() && k < room; k++) {
+			String line = k == room - 1 && wrapped.size() > room ? Ui.ellipsize(this.font, wrapped.get(k) + " ...", CARD_W - 16) : wrapped.get(k);
 			g.text(this.font, line, mid - this.font.width(line) / 2, loreY, Ui.argb(fade * 0.85, Ui.mix(Ui.SOUL, Ui.TEXT, 0.4)));
 			loreY += 10;
+		}
+		if (wrapped.size() > room && chosen < 0 && mouseX >= x && mouseX <= x + CARD_W && mouseY >= from - 1 && mouseY < loreY) {
+			loreTip = Ui.wrap(this.font, lore, 200);
+		}
+	}
+
+	/**
+	 * A line centred on a card, cut to a width (3.55.0): drawn with an ellipsis where it had to be cut, and read whole in
+	 * a tooltip while the mouse is over it.
+	 */
+	private void centredCut(GuiGraphicsExtractor g, String text, int mid, int y, int w, int colour, double fade, int mouseX, int mouseY) {
+		String shown = Ui.ellipsize(this.font, text, w);
+		int sx = mid - this.font.width(shown) / 2;
+		g.text(this.font, shown, sx, y, Ui.argb(fade, colour));
+		if (!shown.equals(text) && chosen < 0 && mouseX >= sx && mouseX < sx + this.font.width(shown) && mouseY >= y - 1 && mouseY < y + 10) {
+			g.setTooltipForNextFrame(this.font, Component.literal(text), mouseX, mouseY);
 		}
 	}
 

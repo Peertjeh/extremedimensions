@@ -50,7 +50,9 @@ public final class Sync {
 				// where on the Seam's timer the thread runs thin and the Thinned may hunt (a third of it, less with the Unravelling)
 				seam ? (int) Math.ceil(d.seamMax / com.extremedimensions.tapestry.Tapestry.thinShare()) : 0,
 				// and whether an anchor nearby is blocked or cracked, for the HUD's meters
-				overworld ? AnchorService.nearTrouble(p, Dims.NETHER) | AnchorService.nearTrouble(p, Dims.END) << 2 : 0));
+				overworld ? AnchorService.nearTrouble(p, Dims.NETHER) | AnchorService.nearTrouble(p, Dims.END) << 2 : 0,
+				// what fuel is worth to this player, and the curse offer waiting (both 3.55.0)
+				(int) Math.round(AnchorService.worth(d) * 1000), PenaltyService.offerState(p, d)));
 	}
 
 	/**

@@ -17,6 +17,9 @@ after it, a tapestry you weave yourself.
 2. Put the mod's jar in your `mods` folder, on the server **and** on every client.
 3. Play a normal Survival world. (Vanilla Hardcore makes you a spectator on death, which the mod is built to avoid.)
 
+**K** opens the Curses screen and **H** the Tether Journal (change them under Controls). On an expedition the timer
+shows the way back to your arrival portal, the drain and its cause, and how long what is left lasts at this pace.
+
 Your first day hands you the **Tether Journal**. Its first page, a guide card on the screen and the **Path** tab in
 the journal walk you through the first expedition: charge an anchor, bind your Tether, step through, come home. A
 word comes when you first stand by a portal or hold a lodestone, and a portal that will not let you through yet says

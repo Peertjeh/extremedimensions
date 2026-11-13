@@ -365,7 +365,8 @@ public class JournalScreen extends Screen {
 		return switch (part) {
 			case PAGES -> pages.size();
 			case BEASTS -> beasts.size() * 2;
-			case LEDGER -> ledger.isEmpty() ? 0 : 4;
+			// (the last falls, where any are kept, add a spread: see ledgerSpread)
+			case LEDGER -> ledger.isEmpty() ? 0 : ledger.containsKey("falls") ? 6 : 4;
 			case PATH, CLAN -> 2;
 			case GUIDES -> contentsPages + guidePages.size();
 			case ANCHORS -> Math.max(1, (kept.size() + KEPT_PER_PAGE - 1) / KEPT_PER_PAGE);
@@ -756,6 +757,8 @@ public class JournalScreen extends Screen {
 		pageInk = pe * fe;
 		String counter;
 		String tip = null;
+		// (a fall on the ledger's page of the last falls, under the mouse: its whole card, line by line)
+		List<String> fallTip = null;
 		switch (part) {
 			case BEASTS -> {
 				Beast b = beasts.get(Math.min(beasts.size() - 1, spread / 2));
@@ -765,7 +768,7 @@ public class JournalScreen extends Screen {
 				counter = Ui.tr("gui.extremedimensions.bestiary.found", seen, beasts.size());
 			}
 			case LEDGER -> {
-				ledgerSpread(g, bx, by, pe * fe);
+				fallTip = ledgerSpread(g, bx, by, pe * fe, mouseX, mouseY);
 				counter = Ui.tr("gui.extremedimensions.journal.tab.ledger");
 			}
 			case CLAN -> {
@@ -804,6 +807,13 @@ public class JournalScreen extends Screen {
 		}
 		if (tip != null) {
 			List<String> lines = Ui.wrap(this.font, tip, 180);
+			Ui.tooltip(g, this.font, lines, java.util.Collections.nCopies(lines.size(), 0xFFFFFF), mouseX, mouseY, this.width, this.height, Ui.SOUL_DIM);
+		}
+		if (fallTip != null) {
+			List<String> lines = new ArrayList<>();
+			for (String line : fallTip) {
+				lines.addAll(Ui.wrap(this.font, line, 220));
+			}
 			Ui.tooltip(g, this.font, lines, java.util.Collections.nCopies(lines.size(), 0xFFFFFF), mouseX, mouseY, this.width, this.height, Ui.SOUL_DIM);
 		}
 	}
@@ -1030,11 +1040,31 @@ public class JournalScreen extends Screen {
 
 	// ------------------------------------------------------------------ the ledger
 
-	private void ledgerSpread(GuiGraphicsExtractor g, int bx, int by, double alpha) {
-		String[] order = spread == 0 ? new String[] {"road", "burden"} : new String[] {"others", null};
+	/**
+	 * The ledger's spreads: the road and the burden, then the others and the closing line. Where the last falls are kept
+	 * (3.55.0), they take the others' facing page and run on to a third spread before the closing line. Returns the card
+	 * of the fall under the mouse, line by line, or null.
+	 */
+	private List<String> ledgerSpread(GuiGraphicsExtractor g, int bx, int by, double alpha, int mouseX, int mouseY) {
+		boolean falls = ledger.containsKey("falls");
+		boolean more = ledger.getOrDefault("falls", List.of()).size() > FALLS_FIRST_PAGE;
+		String[] order = spread == 0 ? new String[] {"road", "burden"} : spread == 2 ? new String[] {"others", falls ? "falls" : null}
+				: more ? new String[] {"falls_more", null} : new String[] {null, "blank"};
+		List<String> tip = null;
 		for (int side = 0; side < 2; side++) {
 			int x = bx + side * (PAGE_W + SPINE);
 			String name = order[side];
+			if ("blank".equals(name)) {
+				// (the book's last page, left blank after the closing line)
+				number(g, spread + side, x, by, alpha);
+				continue;
+			}
+			if (name != null && name.startsWith("falls")) {
+				List<String> under = fallsPage(g, x, by, alpha, "falls".equals(name) ? 0 : FALLS_FIRST_PAGE, mouseX, mouseY);
+				tip = under != null ? under : tip;
+				number(g, spread + side, x, by, alpha);
+				continue;
+			}
 			if (name == null) {
 				// The last page: a line from the Wanderer
 				int ty = by + PAGE_H / 2 - 10;
@@ -1052,6 +1082,58 @@ public class JournalScreen extends Screen {
 			}
 			number(g, spread + side, x, by, alpha);
 		}
+		return tip;
+	}
+
+	/** How many of the last falls the first of their pages holds (the rest are on the next). */
+	private static final int FALLS_FIRST_PAGE = 3;
+
+	/**
+	 * A page of the last falls (3.55.0), from the {@code from}th: for each, newest first, its title, how long ago and how
+	 * long and far it went, and what it cost (two lines at most). Returns the whole card of the one under the mouse, or
+	 * null.
+	 */
+	private List<String> fallsPage(GuiGraphicsExtractor g, int x, int by, double alpha, int from, int mouseX, int mouseY) {
+		title(g, Ui.tr("gui.extremedimensions.ledger.page.falls"), x, by, alpha);
+		List<String[]> falls = ledger.getOrDefault("falls", List.of());
+		int ty = by + 34;
+		List<String> tip = null;
+		for (int i = from; i < falls.size() && i < (from == 0 ? FALLS_FIRST_PAGE : Integer.MAX_VALUE) && ty < by + PAGE_H - 50; i++) {
+			String kept = falls.get(i)[1];
+			com.extremedimensions.network.ModPackets.RecapPayload r = com.extremedimensions.expedition.RecapText.read(kept);
+			long age = com.extremedimensions.expedition.RecapText.head(kept);
+			if (r == null || age < 0) {
+				continue;
+			}
+			int top = ty;
+			String head = com.extremedimensions.client.hud.CollapseRecap.tr(com.extremedimensions.expedition.RecapText.title(r));
+			Ui.ink(g, this.font, Ui.ellipsize(this.font, head, TEXT_W), x + 12, ty, INK_DARK, alpha);
+			ty += 10;
+			String when = Ui.tr("gui.extremedimensions.ledger.falls.when", CursesScreen.ago(age),
+					com.extremedimensions.expedition.RecapText.time(r.seconds()), r.farthest());
+			Ui.ink(g, this.font, Ui.ellipsize(this.font, when, TEXT_W), x + 12, ty, INK_FAINT, alpha);
+			ty += 10;
+			String cost = com.extremedimensions.client.hud.CollapseRecap.cost(r);
+			List<String> lines = Ui.wrap(this.font, cost, TEXT_W);
+			for (int k = 0; k < lines.size() && k < 2; k++) {
+				String line = k == 1 && lines.size() > 2 ? Ui.ellipsize(this.font, lines.get(k) + " ...", TEXT_W) : lines.get(k);
+				Ui.ink(g, this.font, line, x + 12, ty, INK, alpha);
+				ty += 10;
+			}
+			if (mouseX >= x + 12 && mouseX < x + PAGE_W - 12 && mouseY >= top && mouseY < ty) {
+				tip = List.of(head,
+						Ui.tr("gui.extremedimensions.recap.away") + ": " + com.extremedimensions.client.hud.CollapseRecap.tr(com.extremedimensions.expedition.RecapText.away(r)),
+						Ui.tr("gui.extremedimensions.recap.far") + ": " + com.extremedimensions.client.hud.CollapseRecap.tr(com.extremedimensions.expedition.RecapText.far(r)),
+						Ui.tr("gui.extremedimensions.recap.why") + ": " + com.extremedimensions.client.hud.CollapseRecap.tr(com.extremedimensions.expedition.RecapText.why(r)),
+						Ui.tr("gui.extremedimensions.recap.cost") + ": " + cost);
+			}
+			// a faint rule between two falls
+			for (int dx = x + 12; dx < x + PAGE_W - 12; dx += 3) {
+				g.fill(dx, ty + 1, dx + 1, ty + 2, Ui.argb(alpha * 0.35, INK_FAINT));
+			}
+			ty += 5;
+		}
+		return tip;
 	}
 
 	/**

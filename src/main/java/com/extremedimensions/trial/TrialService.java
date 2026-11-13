@@ -14,8 +14,12 @@ import com.extremedimensions.seam.SeamService;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.ItemStack;
@@ -240,8 +244,10 @@ public final class TrialService {
 			fragments += (threads - d.trialClaimThreads) * Math.max(0, Config.NEW_THREAD_TRIAL_FRAGMENTS);
 			d.trialClaimThreads = threads;
 		}
+		// What the trial paid, its place on the board and the threads beyond gold: under the line that ends it, on hover
+		List<Component> details = new ArrayList<>();
 		if (threads > 0) {
-			p.sendSystemMessage(Component.translatable("gui.extremedimensions.trial.threads", threads));
+			details.add(Component.translatable("gui.extremedimensions.trial.threads", threads));
 		}
 		if (fragments > 0) {
 			WorldFx.give(p, new ItemStack(ModItems.TETHER_FRAGMENT, fragments));
@@ -258,17 +264,18 @@ public final class TrialService {
 		if (points > 0) {
 			PenaltyService.atone(p, d, false, points);
 		}
-		p.sendSystemMessage(Component.translatable("gui.extremedimensions.trial.done", Component.translatable(kind.nameKey()), run.score,
-				Component.translatable(Trial.medalKey(medal))));
 		if (fragments > 0 || points > 0 || relics > 0) {
-			p.sendSystemMessage(Component.translatable(relics > 0 ? "gui.extremedimensions.trial.paid_relic" : "gui.extremedimensions.trial.paid",
+			details.add(Component.translatable(relics > 0 ? "gui.extremedimensions.trial.paid_relic" : "gui.extremedimensions.trial.paid",
 					points, fragments, relics));
 		} else if (medal > 0) {
-			p.sendSystemMessage(Component.translatable("gui.extremedimensions.trial.paid_before"));
+			details.add(Component.translatable("gui.extremedimensions.trial.paid_before"));
 		}
 		if (best) {
-			p.sendSystemMessage(Component.translatable("gui.extremedimensions.trial.best", rank(p)));
+			details.add(Component.translatable("gui.extremedimensions.trial.best", rank(p)));
 		}
+		// One line in the chat (3.55.0): it used to be up to four
+		p.sendSystemMessage(withDetails(Component.translatable("gui.extremedimensions.trial.done", Component.translatable(kind.nameKey()), run.score,
+				Component.translatable(Trial.medalKey(medal))), details));
 		if (medal > 0) {
 			Advancements.grant(p, Advancements.TRIAL_MEDAL);
 		}
@@ -278,6 +285,23 @@ public final class TrialService {
 		}
 		WorldFx.soundSelf(p, medal > 0 ? "minecraft:ui.toast.challenge_complete" : "minecraft:block.beacon.deactivate", 0.6f, 1.0f);
 		DataStore.markDirty();
+	}
+
+	/**
+	 * A chat line with more to it on hover (3.55.0): the line, a grey "[Details]" after it, and the details, one to a
+	 * line, in the tooltip of both. Without details, the line alone.
+	 */
+	public static Component withDetails(MutableComponent line, List<Component> details) {
+		if (details.isEmpty()) {
+			return line;
+		}
+		MutableComponent hover = Component.empty();
+		for (int i = 0; i < details.size(); i++) {
+			hover.append(i == 0 ? "" : "\n").append(details.get(i));
+		}
+		return Component.empty().append(line).append(" ")
+				.append(Component.translatable("gui.extremedimensions.chat.details").withStyle(ChatFormatting.GRAY))
+				.withStyle(Style.EMPTY.withHoverEvent(new HoverEvent.ShowText(hover)));
 	}
 
 	/**

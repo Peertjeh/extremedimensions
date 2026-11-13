@@ -28,11 +28,13 @@ public final class ModPackets {
 	 * thinAt (3.55.0): in the Seam, the seconds left at which the thread runs thin (0 elsewhere).
 	 * nearFlags (3.55.0): what is wrong with the anchors nearby: 1 an Ember Anchor blocked, 2 one cracked, 4 a Void
 	 * Anchor blocked, 8 one cracked.
+	 * fuelX1000 (3.55.0): what anchor fuel is worth to this player, a thousand times its multiple (Debt, the Anchor Rivet).
+	 * offer (3.55.0): the curse offer waiting, "secondsLeft:nth:of" (secondsLeft -1: no clock runs), or "" without one.
 	 */
 	public record StatePayload(int nearNether, int nearEnd, int runCharge, int runMax, int dimCode, int drainX100,
 							int expeditions, int collapses, int longestRun, int runSecs, String penalties,
 							int scars, int tetherDist, int guide, String trial, float riftX, float riftY, float riftZ,
-							String drainCause, String drainFactors, int walkBack, int thinAt, int nearFlags) implements CustomPacketPayload {
+							String drainCause, String drainFactors, int walkBack, int thinAt, int nearFlags, int fuelX1000, String offer) implements CustomPacketPayload {
 		public static final Type<StatePayload> TYPE = new Type<>(ExtremeDimensions.id("state"));
 		public static final StreamCodec<FriendlyByteBuf, StatePayload> CODEC = StreamCodec.ofMember(StatePayload::write, StatePayload::read);
 
@@ -60,13 +62,15 @@ public final class ModPackets {
 			buf.writeVarInt(walkBack);
 			buf.writeVarInt(thinAt);
 			buf.writeVarInt(nearFlags);
+			buf.writeVarInt(fuelX1000);
+			buf.writeUtf(offer);
 		}
 
 		private static StatePayload read(FriendlyByteBuf buf) {
 			return new StatePayload(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
 					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(),
 					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(), buf.readFloat(), buf.readFloat(), buf.readFloat(),
-					buf.readUtf(), buf.readUtf(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+					buf.readUtf(), buf.readUtf(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf());
 		}
 
 		@Override

@@ -19,6 +19,11 @@ import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.server.Dims;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -301,6 +306,22 @@ public final class ExpeditionRecord {
 	}
 
 	/**
+	 * Whether a Collapse's record waits for the player to come home, and will be shown as its card (3.55.0): that card
+	 * lists the atonement the Collapse's death undid, so the respawn's line need not say it as well.
+	 */
+	public static boolean cardAwaitsHome(PlayerData d) {
+		if (Config.COLLAPSE_RECAP <= 0) {
+			return false;
+		}
+		for (ExpeditionRecord r : records(d)) {
+			if (!r.home && r.recap()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Once a second for every player in the mod's worlds: a record whose cards are all answered is told, and so is any once
 	 * nothing at all is owed any more, or once it has waited half an hour, so none waits for ever on a card answered in some
 	 * way not counted here.
@@ -341,8 +362,13 @@ public final class ExpeditionRecord {
 			it.remove();
 			DataStore.markDirty();
 			PlaytestLog.expedition(r);
-			if (r.recap() && Config.COLLAPSE_RECAP > 0) {
-				recap(p, r);
+			if (r.recap()) {
+				ModPackets.RecapPayload card = card(r);
+				// (kept for the journal's page of the last falls, whether or not the card is shown; 3.55.0)
+				keep(d, r.ended, card);
+				if (Config.COLLAPSE_RECAP > 0) {
+					recap(p, card);
+				}
 			}
 		}
 	}
@@ -353,8 +379,8 @@ public final class ExpeditionRecord {
 				|| Outcome.FELL.word.equals(outcome);
 	}
 
-	/** The card of it, sent to the player (see the client's CollapseRecap). */
-	private static void recap(ServerPlayer p, ExpeditionRecord r) {
+	/** The card of it (see the client's CollapseRecap). */
+	private static ModPackets.RecapPayload card(ExpeditionRecord r) {
 		StringBuilder curses = new StringBuilder();
 		for (Map.Entry<String, Integer> e : r.curses.entrySet()) {
 			if (curses.length() > 0) {
@@ -362,12 +388,65 @@ public final class ExpeditionRecord {
 			}
 			curses.append(e.getKey()).append(':').append(e.getValue());
 		}
-		ModPackets.RecapPayload out = new ModPackets.RecapPayload(r.realm, r.outcome, round(r.seconds), round(r.charge), round(r.farthest),
+		return new ModPackets.RecapPayload(r.realm, r.outcome, round(r.seconds), round(r.charge), round(r.farthest),
 				r.distanceX < 0 ? 0 : round(r.distanceX * 100), round(r.drainX * 100), curses.toString(), r.silk, r.fragments, r.atonement);
+	}
+
+	/**
+	 * The card, sent to the player; and since 3.55.0 a "[Recap]" line in the chat with the card in its tooltip, so what
+	 * the card said can still be read once it has faded.
+	 */
+	private static void recap(ServerPlayer p, ModPackets.RecapPayload out) {
 		lastRecap = new Sent(p.getUUID(), out);
 		if (ServerPlayNetworking.canSend(p, ModPackets.RecapPayload.TYPE)) {
 			ServerPlayNetworking.send(p, out);
 		}
+		p.sendSystemMessage(chatLine(out));
+	}
+
+	/** A recap kept for the journal, newest first, at most {@link RecapText#KEPT} of them. */
+	public static void keep(PlayerData d, long when, ModPackets.RecapPayload card) {
+		if (d.falls == null) {
+			d.falls = new ArrayList<>();
+		}
+		d.falls.add(0, RecapText.write(when, card));
+		while (d.falls.size() > RecapText.KEPT) {
+			d.falls.remove(d.falls.size() - 1);
+		}
+		DataStore.markDirty();
+	}
+
+	/** The chat's line for a recap: "[Recap]" and its title, and the whole card on hover. */
+	public static Component chatLine(ModPackets.RecapPayload r) {
+		MutableComponent hover = text(RecapText.title(r)).withStyle(ChatFormatting.WHITE);
+		row(hover, "gui.extremedimensions.recap.away", ChatFormatting.GOLD, text(RecapText.away(r)));
+		row(hover, "gui.extremedimensions.recap.far", ChatFormatting.AQUA, text(RecapText.far(r)));
+		row(hover, "gui.extremedimensions.recap.why", ChatFormatting.YELLOW, text(RecapText.why(r)));
+		MutableComponent cost = Component.empty();
+		List<RecapText.Text> parts = RecapText.cost(r);
+		for (int i = 0; i < parts.size(); i++) {
+			cost.append(i == 0 ? "" : ", ").append(text(parts.get(i)));
+		}
+		row(hover, "gui.extremedimensions.recap.cost", ChatFormatting.RED, cost);
+		return Component.empty()
+				.append(Component.translatable("gui.extremedimensions.recap.chat").withStyle(ChatFormatting.DARK_AQUA))
+				.append(" ").append(text(RecapText.title(r)).withStyle(ChatFormatting.GRAY))
+				.withStyle(Style.EMPTY.withHoverEvent(new HoverEvent.ShowText(hover)));
+	}
+
+	/** One row of the card in a tooltip: its label, coloured as on the card, and what it says. */
+	private static void row(MutableComponent to, String label, ChatFormatting colour, Component says) {
+		to.append("\n").append(Component.translatable(label).withStyle(colour)).append(": ")
+				.append(says.copy().withStyle(ChatFormatting.GRAY));
+	}
+
+	/** A recap's words as a chat component, its arguments translated where they are words of their own. */
+	private static MutableComponent text(RecapText.Text t) {
+		Object[] args = new Object[t.args().length];
+		for (int i = 0; i < args.length; i++) {
+			args[i] = t.args()[i] instanceof RecapText.Text inner ? text(inner) : t.args()[i];
+		}
+		return Component.translatable(t.key(), args);
 	}
 
 	private static int round(double v) {

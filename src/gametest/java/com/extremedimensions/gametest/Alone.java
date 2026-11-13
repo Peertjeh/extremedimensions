@@ -133,4 +133,9 @@ final class Alone {
 	static final String CRACKED_REMINDER = "extremedimensions_test:alone/cracked_reminder";
 	static final String STORM_BAR = "extremedimensions_test:alone/storm_bar";
 	static final String FRAY_PACE = "extremedimensions_test:alone/fray_pace";
+	// (3.55.0: anchors are the world's, and these tests put their own down and charge them)
+	static final String BOUND_ANCHOR = "extremedimensions_test:alone/bound_anchor";
+	// (a Lurker's take, and the hoard it runs to: the world's)
+	static final String LURKER_TOLD = "extremedimensions_test:alone/lurker_told";
+	static final String TETHER_WASTE = "extremedimensions_test:alone/tether_waste";
 }

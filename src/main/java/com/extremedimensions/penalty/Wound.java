@@ -88,17 +88,20 @@ public final class Wound {
 		return true;
 	}
 
-	/** At the respawn after the death that opened it: what the wound does, and for how long. */
-	public static void tell(ServerPlayer p, PlayerData d) {
+	/**
+	 * At the respawn after the death that opened it: what the wound does, and for how long; null without a wound. Since
+	 * 3.55.0 it is told in one line with the rest of what the death cost (see ExpeditionService.onRespawn), not alone.
+	 */
+	public static MutableComponent told(PlayerData d) {
 		if (!active(d)) {
-			return;
+			return null;
 		}
 		String hearts = Config.format(Math.max(0, Config.DEATH_WOUND_HEALTH) / 2.0);
 		long faster = Math.round((Math.max(1, Config.DEATH_WOUND_DRAIN) - 1) * 100);
 		MutableComponent line = bindIn(d) > 0
 				? Component.translatable("gui.extremedimensions.wound.opened_bind", hearts, faster, minutes(d.woundIn), minutes(bindIn(d)))
 				: Component.translatable("gui.extremedimensions.wound.opened", hearts, faster, minutes(d.woundIn));
-		p.sendSystemMessage(line.withStyle(ChatFormatting.RED));
+		return line.withStyle(ChatFormatting.RED);
 	}
 
 	/** Seconds as whole minutes, rounded up (as the tribe's wait for a gift is told). */

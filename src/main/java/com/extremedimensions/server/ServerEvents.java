@@ -214,6 +214,7 @@ public final class ServerEvents {
 			com.extremedimensions.anchor.AnchorSync.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.binding.Charms.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.relic.RelicService.forget(handler.getPlayer().getUUID());
+			com.extremedimensions.anchor.AnchorService.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.tetherite.TetheriteBinding.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.world.AmbientService.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.lurker.CaveLurkerService.forget(handler.getPlayer().getUUID());

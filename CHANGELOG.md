@@ -1,5 +1,55 @@
 # Changelog
 
+## 3.55.0: Less Friction
+
+A quality-of-life overhaul: nothing in the balance changes, the game tells you more and asks less of you.
+
+### On an expedition
+- **The way home in the Nether and the End**: an arrow and the distance to your arrival portal on the timer, as the
+  Seam has to its rift, and an *Arrival portal* waypoint in JourneyMap and Xaero's Minimap (`arrival_compass`; the
+  Unmapped curse hides it, as it spins a compass).
+- **The drain explained**: always shown (green below ×1.0) with its main cause, as *Drain ×2.4 · Echo near*; the status
+  screen lists every part of it.
+- **Time as the clock runs**: *≈1:42 at this pace* and *≈0:55 to walk back*, and the timer turns amber when the walk
+  back would take most of what is left.
+- **Warnings in words**: *Your Tether runs low: … left, ≈… to walk back*, at the time you choose (Settings → Display →
+  *Warn at*: 2:00, 1:00 or when the walk back needs most of it), and *Turn back* at half a minute. The Seam's thread
+  warns the same way, and says once when it runs thin and the hunt begins. The warning sounds are the mod's own now,
+  with subtitles that say what they mean.
+- Charge a Leaky Tank or the Held's Chain takes at the portal is told; anchors that are **blocked** (and leak) or
+  **cracked** tell their owners, and show it in the journal, in Jade and WTHIT and on the HUD; a **Wound Storm** shows
+  how long it has left.
+
+### Curses and the Collapse
+- **Curse totals**: *Now: 75% (3 × 25%)* in the Curses screen, *After: …* on the cards; compounding and capped curses
+  as the game reckons them. The Curses screen can show only what you carry, sorted by stacks, with every curse's
+  effect on hover and all you carry (the pact and the Fresh Wound too) in one place.
+- **The choice of a curse**: *Curse 1 of 3 · The Tether chooses for you in 1:45* with a bar, full texts on hover, a
+  *Your curses* button, and it waits for an open chest to close.
+- **Tether Fragments move on** to the next curse with room once one has had its five, and say where they went.
+- After a death, **one line** in chat instead of four; the Fray's line moves to the action bar after the first visits;
+  a Rift Trial ends in one line with its details on hover; the last five Collapses are kept in the ledger's *The Last
+  Falls*, and a *[Recap]* line in chat holds the card.
+- A Lurker's theft says **what it took and which way it ran**; an Ember or Void Tether asks before most of it would
+  be wasted on a full anchor; the Tether says when it slips loose or is untied; fuel tooltips show the stack's worth
+  and your own rate; the portal's refusal names an empty bound anchor rightly; the Pact screen asks before leaving
+  unsworn changes and says why "+" is greyed.
+
+### Controls, screens and the rest
+- **Keys**: Curses on **K** and the Tether Journal on **H** by default (a note on the first join names them); keys of
+  their own for anchor status, the Pact and putting a card away. Every screen of the mod closes on its own key; the
+  journal turns its pages with the arrows and the wheel, Tab goes through its parts, and it opens where you left it.
+  The guides have a contents page, and hints you were given can be read again there.
+- **Camera in fights**: full, gentle or off (forced turns and screen shake), and vanilla's Distortion Effects is
+  honoured. **Colour-blind mode** reaches the HUD and the barter screen.
+- Cards on screen (the Seam's briefing, the recap) can be put away, or go once you move, and keep clear of the
+  crosshair. Barter keeps its page. A **redstone pulse turns the Spindle** (`spindle_redstone`). The journal's
+  Anchors part has the sharing switch; leaving while it would cost curses asks first; a fallen ally's message says how
+  far and which way.
+
+### Fixed
+- In the Fray, the mod's own timer panel ran at ×1.0 and showed no drain: it runs at the Fray's.
+
 ## 3.54.0: Marked On Every Map
 
 ### Added

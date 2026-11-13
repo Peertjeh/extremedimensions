@@ -51,6 +51,13 @@ public final class ClientState {
 	/** What is wrong with the anchors nearby (3.55.0): 1 an Ember Anchor blocked, 2 one cracked, 4 a Void one blocked, 8 cracked. */
 	public static int nearFlags = 0;
 	public static long syncMs = 0;
+	/** What anchor fuel is worth to the player, as a multiple: less with Debt, more with the Anchor Rivet (3.55.0; 1 from an older server). */
+	public static double fuelWorth = 1.0;
+	/**
+	 * The curse offer waiting (3.55.0): seconds before the Tether chooses, as of {@link #syncMs} (-1: no clock runs), and
+	 * which offer of how many owed in a row it is (0 of 0: none waiting, or an older server).
+	 */
+	public static int offerLeft = -1, offerNth = 0, offerOf = 0;
 
 	// --- animation state ---
 	public static double shownNether = 0;
@@ -144,6 +151,20 @@ public final class ClientState {
 		walkBack = s.walkBack();
 		thinAt = s.thinAt();
 		nearFlags = s.nearFlags();
+		fuelWorth = s.fuelX1000() > 0 ? s.fuelX1000() / 1000.0 : 1.0;
+		offerLeft = -1;
+		offerNth = offerOf = 0;
+		String[] offer = s.offer().split(":");
+		if (offer.length == 3) {
+			try {
+				offerLeft = Integer.parseInt(offer[0]);
+				offerNth = Integer.parseInt(offer[1]);
+				offerOf = Integer.parseInt(offer[2]);
+			} catch (NumberFormatException e) {
+				offerLeft = -1;
+				offerNth = offerOf = 0;
+			}
+		}
 		syncMs = System.currentTimeMillis();
 		if (!warnAtTold) {
 			// The server speaks: it hears when this player wants their warnings in words
@@ -388,6 +409,9 @@ public final class ClientState {
 		walkBack = -1;
 		thinAt = 0;
 		nearFlags = 0;
+		fuelWorth = 1.0;
+		offerLeft = -1;
+		offerNth = offerOf = 0;
 		shownNether = 0;
 		shownEnd = 0;
 		startAt = safeAt = collapseAt = bounceAt = penaltyAt = endedAt = homeAt = takenAt = sealAt = stormAt = briefAt = 0;

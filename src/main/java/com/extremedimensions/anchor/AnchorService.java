@@ -216,6 +216,9 @@ public final class AnchorService {
 
 		Item item = stack.getItem();
 		boolean instant = item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER;
+		if (instant && !spendsAnyway(p, key, stack, Math.min(space, Config.TETHER_ITEM_CHARGE * worth(d)), Config.TETHER_ITEM_CHARGE * worth(d))) {
+			return InteractionResult.SUCCESS;
+		}
 		double added;
 		if (instant) {
 			added = Math.min(space, Config.TETHER_ITEM_CHARGE * worth(d));
@@ -257,6 +260,48 @@ public final class AnchorService {
 		// (a new anchor of theirs, or an old one of someone else's they now keep charge in, goes on their map)
 		AnchorSync.send(p);
 		return InteractionResult.SUCCESS;
+	}
+
+	/** Ticks a warning that an Ember or Void Tether would be wasted holds: a second use on the same anchor within them spends it. */
+	private static final int WASTE_WARN_TICKS = 100;
+	/** Ticks after the warning before a second use counts (a use button held down repeats every few ticks). */
+	private static final int WASTE_CONFIRM_TICKS = 10;
+
+	/** The anchor a player was last warned about, and when (game time). */
+	private record WasteWarning(String anchor, long at) {}
+
+	/** Each player's last warning (in memory only: a warning is for the moment, not for the save). */
+	private static final java.util.Map<java.util.UUID, WasteWarning> WASTE = new java.util.HashMap<>();
+
+	/** Forgets a player's warning (on leaving). */
+	public static void forget(java.util.UUID id) {
+		WASTE.remove(id);
+	}
+
+	/**
+	 * An Ember or Void Tether used on an anchor with too little room for more than half of it (3.55.0): the first use
+	 * only says how much would fit, and a second use on the same anchor, from half a second to five seconds later,
+	 * spends it anyway (as binding a relic over another asks). A Tether that mostly fits is spent at once, as ever.
+	 */
+	private static boolean spendsAnyway(ServerPlayer p, String key, ItemStack stack, double fits, double full) {
+		if (full - fits <= full / 2) {
+			return true;
+		}
+		long now = p.level().getGameTime();
+		WasteWarning w = WASTE.get(p.getUUID());
+		if (w == null || !w.anchor().equals(key) || now < w.at() || now - w.at() > WASTE_WARN_TICKS) {
+			WASTE.put(p.getUUID(), new WasteWarning(key, now));
+			WorldFx.soundSelf(p, "minecraft:block.chain.hit", 1.0f, 0.6f);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.anchor.waste", com.extremedimensions.compat.TabPlaceholders.clock(fits),
+					com.extremedimensions.compat.TabPlaceholders.clock(full), stack.getHoverName()).withStyle(net.minecraft.ChatFormatting.GOLD), true);
+			return false;
+		}
+		if (now - w.at() < WASTE_CONFIRM_TICKS) {
+			// (the same press, still held: the warning stands)
+			return false;
+		}
+		WASTE.remove(p.getUUID());
+		return true;
 	}
 
 	/**

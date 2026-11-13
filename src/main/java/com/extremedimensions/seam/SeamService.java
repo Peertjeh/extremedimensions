@@ -606,7 +606,8 @@ public final class SeamService {
 		int silk = keep(p, com.extremedimensions.registry.ModItems.SEAM_SILK, Config.SEAM_COLLAPSE_TOLL);
 		int fragments = keep(p, com.extremedimensions.registry.ModItems.TETHER_FRAGMENT, Config.SEAM_COLLAPSE_TOLL);
 		WorldFx.tp(p, Dims.fullIdOf(d.homeDim), d.homeX, d.homeY, d.homeZ);
-		if (silk + fragments > 0) {
+		// (3.55.0: the card of the throw lists what the Seam kept, so the line comes only where no card will)
+		if (silk + fragments > 0 && (record == null || Config.COLLAPSE_RECAP <= 0)) {
 			p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.seam.toll", silk, fragments));
 		}
 		com.extremedimensions.penalty.Penalty laid = PenaltyService.curse(p, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties(),
