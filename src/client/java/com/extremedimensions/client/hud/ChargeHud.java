@@ -183,7 +183,7 @@ public class ChargeHud implements HudElement {
 		int max = (int) Config.TETHER_BREAK_RANGE;
 		int dist = ClientState.tetherDist;
 		double strain = Ui.clamp01(dist / (double) max);
-		int color = strain >= 1 ? Ui.DANGER : strain >= 0.8 ? Ui.WARN : Ui.SOUL;
+		int color = strain >= 1 ? Ui.danger() : strain >= 0.8 ? Ui.warn() : Ui.SOUL;
 		Ui.chip(g, x, y, CHIP_W, 21, color, 1.0);
 		g.text(font, Ui.tr("hud.extremedimensions.tethered"), x + 5, y + 3, Ui.argb(255, Ui.TEXT));
 		String d = dist + "/" + max + "m";
@@ -235,7 +235,7 @@ public class ChargeHud implements HudElement {
 		boolean top = ClientOptions.timer() == ClientOptions.TimerPlace.TOP;
 		// above the hotbar, a taller panel grows upwards
 		int py = timerTop(h) - (top ? 0 : ph - TIMER_H) + (int) ((1 - slide) * 48) * (top ? -1 : 1) + ys;
-		int barColor = remaining <= 60 ? Ui.DANGER : remaining <= 120 ? Ui.WARN : accent;
+		int barColor = remaining <= 60 ? Ui.danger() : remaining <= 120 ? Ui.warn() : accent;
 		boolean flash = remaining <= 30 && (Ui.calm() || (now / 250) % 2 == 0);
 
 		Ui.panel(g, px, py, pw, ph, barColor, 0.95);
@@ -259,7 +259,7 @@ public class ChargeHud implements HudElement {
 			info.append(Ui.tr("hud.extremedimensions.drain", String.format("%.1f", ClientState.drainX100 / 100.0)));
 		}
 		if (info.length() > 0) {
-			int dc = ClientState.drainX100 >= 300 ? Ui.DANGER : ClientState.drainX100 >= 180 ? Ui.WARN : Ui.MUTED;
+			int dc = ClientState.drainX100 >= 300 ? Ui.danger() : ClientState.drainX100 >= 180 ? Ui.warn() : Ui.MUTED;
 			String s = info.toString();
 			int tx = px + pw / 2 - font.width(s) / 2 + (compass ? 6 : 0);
 			g.text(font, s, tx, py + 26, Ui.argb(255, dc));

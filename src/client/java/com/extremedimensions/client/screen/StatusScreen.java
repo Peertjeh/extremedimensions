@@ -76,10 +76,10 @@ public class StatusScreen extends Screen {
 		int ty = y + 128;
 		g.text(this.font, Ui.tr("gui.extremedimensions.curses.title"), x + 14, ty, Ui.argb(pe, Ui.SOUL));
 		String drain = Ui.tr("hud.extremedimensions.drain", String.format("%.1f", ClientState.drainX100 / 100.0));
-		g.text(this.font, drain, x + PANEL_W - 14 - this.font.width(drain), ty, Ui.argb(pe, ClientState.drainX100 > 100 ? Ui.WARN : Ui.MUTED));
+		g.text(this.font, drain, x + PANEL_W - 14 - this.font.width(drain), ty, Ui.argb(pe, ClientState.drainX100 > 100 ? Ui.warn() : Ui.MUTED));
 		int ly = ty + 12;
 		if (ClientState.marks.isEmpty()) {
-			g.text(this.font, Ui.tr("gui.extremedimensions.status.clean"), x + 20, ly, Ui.argb(pe, Ui.OK));
+			g.text(this.font, Ui.tr("gui.extremedimensions.status.clean"), x + 20, ly, Ui.argb(pe, Ui.good()));
 			return;
 		}
 		int shown = 0;
@@ -89,7 +89,7 @@ public class StatusScreen extends Screen {
 				break;
 			}
 			String name = (m.penalty() != null ? Ui.tr(m.penalty().nameKey()) : m.id()) + " " + m.stacks() + "/" + m.max();
-			g.text(this.font, "◆ " + name, x + 20, ly, Ui.argb(pe, Ui.WARN));
+			g.text(this.font, "◆ " + name, x + 20, ly, Ui.argb(pe, Ui.warn()));
 			ly += 11;
 			shown++;
 		}
