@@ -68,7 +68,7 @@ DETAIL = {
                    "journeymap.api.v2.client.IClientAPI", "journeymap.api.v2.common.waypoint.Waypoint",
                    "journeymap.api.v2.common.waypoint.WaypointFactory", "journeymap.api.v2.common.event.ClientEventRegistry",
                    "journeymap.api.v2.client.event.MappingEvent"],
-    "xaeros-minimap": ["xaero.hud.minimap.waypoint.thirdparty.ThirdPartyWaypoints", "xaero.hud.minimap.waypoint.thirdparty.ThirdPartyWaypointManager",
+    "xaeros-minimap": ["!xaero.hud.compat.mods.SupportWaystones", "xaero.hud.minimap.BuiltInHudModules", "xaero.hud.module.HudModule", "xaero.hud.minimap.world.MinimapWorldManager", "xaero.hud.minimap.world.container.MinimapWorldRootContainer", "xaero.hud.minimap.world.MinimapWorld", "xaero.hud.minimap.waypoint.thirdparty.ThirdPartyWaypoints", "xaero.hud.minimap.waypoint.thirdparty.ThirdPartyWaypointManager",
                        "xaero.common.minimap.waypoints.Waypoint", "xaero.hud.minimap.waypoint.WaypointColor",
                        "xaero.hud.minimap.waypoint.WaypointPurpose", "xaero.hud.minimap.module.MinimapSession",
                        "xaero.hud.minimap.waypoint.WaypointSession", "xaero.hud.minimap.waypoint.set.WaypointSet",
@@ -141,7 +141,9 @@ def main():
         for n in sorted(names):
             print(f"VIEWER|{slug}|class|{n}")
         for c in DETAIL[slug]:
-            r = subprocess.run(["javap", "-cp", ":".join(cp), "-p", "-constants", c], capture_output=True, text=True)
+            # (a name after a ! is printed with its code, to read how the mod itself calls an API)
+            flags = ["-p", "-c"] if c.startswith("!") else ["-p", "-constants"]
+            r = subprocess.run(["javap", "-cp", ":".join(cp)] + flags + [c.lstrip("!")], capture_output=True, text=True)
             for line in (r.stdout + r.stderr).splitlines():
                 print(f"VIEWERAPI|{slug}|{line}")
         # (the mod's own jar and the jars nested in it)
