@@ -253,14 +253,15 @@ public class ChargeHud implements HudElement {
 			int dist = compass ? homeDistance() : ClientState.tetherDist;
 			info.append(Ui.tr(seam ? "hud.extremedimensions.rift_distance" : "hud.extremedimensions.tether_distance", dist));
 		}
-		if (ClientState.drainX100 > 100) {
+		// The drain whenever it is not one (below it in green), with its main cause (3.55.0)
+		if (ClientState.drainShown()) {
 			if (info.length() > 0) {
 				info.append("  ·  ");
 			}
-			info.append(Ui.tr("hud.extremedimensions.drain", String.format("%.1f", ClientState.drainX100 / 100.0)));
+			info.append(ClientState.drainText());
 		}
 		if (info.length() > 0) {
-			int dc = ClientState.drainX100 >= 300 ? Ui.DANGER : ClientState.drainX100 >= 180 ? Ui.WARN : Ui.MUTED;
+			int dc = drainColour();
 			String s = info.toString();
 			int tx = px + pw / 2 - font.width(s) / 2 + (compass ? 6 : 0);
 			g.text(font, s, tx, py + 26, Ui.argb(255, dc));
@@ -271,6 +272,12 @@ public class ChargeHud implements HudElement {
 		if (trial != null) {
 			trialLine(g, font, trial, px, py + TIMER_H - 2, pw);
 		}
+	}
+
+	/** The drain's colour: green below one, yellow from 1.8, red from 3, muted between. */
+	private static int drainColour() {
+		int x = ClientState.drainX100;
+		return x < 100 ? Ui.OK : x >= 300 ? Ui.DANGER : x >= 180 ? Ui.WARN : Ui.MUTED;
 	}
 
 	/** The gold of the way home. */

@@ -24,7 +24,7 @@ import net.minecraft.world.BossEvent;
 /**
  * The expedition timer as Minecraft shows such things: a boss bar at the top of the screen, stacked with any other
  * (an Elder's, a raid's) as the game stacks them. Its name says where the player is, the time left, the way home
- * (an arrow and the distance: to the rift in the Seam, to the arrival portal elsewhere) and a drain above one;
+ * (an arrow and the distance: to the rift in the Seam, to the arrival portal elsewhere) and the drain with its cause;
  * it empties as the time runs out and turns red in the last minute. A Rift Trial under way gets a bar of its own
  * under it, filling towards the next medal, as a raid's does.
  */
@@ -103,7 +103,7 @@ public final class ExpeditionBar {
 		}
 	}
 
-	/** The timer's name: where, how long, the way home, and the drain when it runs faster. */
+	/** The timer's name: where, how long, the way home, and the drain with its main cause when it is not one. */
 	private static Component name(ServerPlayer p, PlayerData d, boolean seam, boolean nether, double left) {
 		String where = seam ? "dimension.extremedimensions.seam" : nether ? "dimension.extremedimensions.nether" : "dimension.extremedimensions.end";
 		int s = (int) Math.ceil(Math.max(0, left));
@@ -123,10 +123,10 @@ public final class ExpeditionBar {
 			}
 			out.append(Component.translatable("hud.extremedimensions.tether_distance", dist));
 		}
-		double drain = seam ? SeamService.drain(p) : d.currentDrain;
-		if (drain > 1.0) {
-			out.append("  ").append(Component.translatable("hud.extremedimensions.drain", String.format(java.util.Locale.ROOT, "%.1f", drain))
-					.withStyle(drain >= 3 ? ChatFormatting.RED : drain >= 1.8 ? ChatFormatting.YELLOW : ChatFormatting.GRAY));
+		// The drain whenever it is not one (below it in green), with its main cause after it (3.55.0)
+		DrainCauses.Breakdown why = DrainCauses.of(p, d);
+		if (why.shown()) {
+			out.append("  ").append(why.label());
 		}
 		return out;
 	}

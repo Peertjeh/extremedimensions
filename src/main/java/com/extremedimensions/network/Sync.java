@@ -30,18 +30,21 @@ public final class Sync {
 		// 4: another mod's world, where nothing of the mod shows
 		int dimCode = d.away ? 4 : seam ? 3 : Dims.NETHER.equals(d.dim) ? 1 : Dims.END.equals(d.dim) ? 2 : 0;
 		boolean overworld = !d.away && Dims.OVERWORLD.equals(d.dim);
-		// (in the Seam the thread's own drain, the Fray's and a frayed island's in it, so the panel's timer keeps pace with
-		// the thread there: before 3.55.0 it ran at x1.0 in the Fray)
+		// The drain as it is, taken apart (3.55.0): in the Seam the thread's own, the Fray's and a frayed island's in it, so
+		// the panel's timer keeps pace with the thread there (before 3.55.0 it ran at x1.0 in the Fray); on an expedition
+		// with what its cracked or blocked anchors leak on top
+		com.extremedimensions.expedition.DrainCauses.Breakdown why = com.extremedimensions.expedition.DrainCauses.of(p, d);
 		ServerPlayNetworking.send(p, new ModPackets.StatePayload(
 				overworld ? AnchorService.nearCharge(p, Dims.NETHER) : -1,
 				overworld ? AnchorService.nearCharge(p, Dims.END) : -1,
 				seam ? (int) Math.ceil(d.seamLeft) : d.inRun ? (int) Math.ceil(AnchorService.linkedCharge(p, d)) : 0,
 				(int) Math.ceil(seam ? d.seamMax : d.runMax), dimCode,
-				seam ? (int) Math.round(SeamService.drain(p) * 100) : (int) Math.round(d.currentDrain * 100), d.expeditions, d.collapses,
+				(int) Math.round(why.drain() * 100), d.expeditions, d.collapses,
 				(int) d.longestRun, (int) d.runTime, penalties(d), d.scars,
 				seam ? SeamService.riftDistance(p, d) : TetherService.distance(p, d), com.extremedimensions.guide.Guide.progress(d),
 				seam ? com.extremedimensions.trial.TrialService.hud(d) : "",
-				home(p, d, seam, 0), home(p, d, seam, 1), home(p, d, seam, 2)));
+				home(p, d, seam, 0), home(p, d, seam, 1), home(p, d, seam, 2),
+				why.cause(), why.encode(), -1, 0, 0));
 	}
 
 	/**

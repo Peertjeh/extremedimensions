@@ -39,6 +39,17 @@ public final class ClientState {
 	public static double riftX = Double.NaN, riftY = Double.NaN, riftZ = Double.NaN;
 	/** The Rift Trial under way: "kind;twist;score;bronze;silver;gold", or "" without one. */
 	public static String trial = "";
+	/** One part of the drain as the server took it apart (3.55.0): the words that name it (a language key) and its factor. */
+	public record Cause(String key, double value) {}
+	/** The drain's main cause (a language key, "" for none) and all its parts, as the server sent them (3.55.0). */
+	public static String drainCause = "";
+	public static List<Cause> drainFactors = new ArrayList<>();
+	/** Seconds of charge (or thread) the walk back to the way home would cost, -1 where there is none (3.55.0). */
+	public static int walkBack = -1;
+	/** In the Seam, the seconds left at which the thread runs thin and the Thinned may hunt (0 elsewhere; 3.55.0). */
+	public static int thinAt = 0;
+	/** What is wrong with the anchors nearby (3.55.0): 1 an Ember Anchor blocked, 2 one cracked, 4 a Void Anchor blocked, 8 one cracked. */
+	public static int nearFlags = 0;
 	public static long syncMs = 0;
 
 	// --- animation state ---
@@ -128,6 +139,11 @@ public final class ClientState {
 		riftX = s.riftX();
 		riftY = s.riftY();
 		riftZ = s.riftZ();
+		drainCause = s.drainCause();
+		drainFactors = causes(s.drainFactors());
+		walkBack = s.walkBack();
+		thinAt = s.thinAt();
+		nearFlags = s.nearFlags();
 		syncMs = System.currentTimeMillis();
 		// First update from the Overworld after a Collapse: start the fade-in
 		if (collapseAt > 0 && homeAt <= collapseAt && dimCode == 0 && syncMs - collapseAt > 2000) {
@@ -196,6 +212,37 @@ public final class ClientState {
 			}
 		}
 		return out;
+	}
+
+	/** The drain's parts as the server writes them, "key=1.30;key=0.85" (a damaged part is left out). */
+	private static List<Cause> causes(String all) {
+		List<Cause> out = new ArrayList<>();
+		if (all == null || all.isEmpty()) {
+			return out;
+		}
+		for (String part : all.split(";")) {
+			int eq = part.lastIndexOf('=');
+			if (eq <= 0) {
+				continue;
+			}
+			try {
+				out.add(new Cause(part.substring(0, eq), Double.parseDouble(part.substring(eq + 1))));
+			} catch (NumberFormatException e) {
+				// skip malformed part
+			}
+		}
+		return out;
+	}
+
+	/** Whether the drain is worth showing: it differs from one by enough to read in a tenth. */
+	public static boolean drainShown() {
+		return Math.abs(drainX100 - 100) >= 5;
+	}
+
+	/** The drain in words, "Drain x2.4 · Echo near", its main cause after it when there is one. */
+	public static String drainText() {
+		String out = com.extremedimensions.client.ui.Ui.tr("hud.extremedimensions.drain", String.format("%.1f", drainX100 / 100.0));
+		return drainCause.isEmpty() ? out : out + " · " + com.extremedimensions.client.ui.Ui.tr(drainCause);
 	}
 
 	/** Value per stack of a curse the player carries (as the server's config has it), 0 if not carried. */
@@ -314,6 +361,11 @@ public final class ClientState {
 		tetherDist = -1;
 		riftX = riftY = riftZ = Double.NaN;
 		trial = "";
+		drainCause = "";
+		drainFactors = new ArrayList<>();
+		walkBack = -1;
+		thinAt = 0;
+		nearFlags = 0;
 		shownNether = 0;
 		shownEnd = 0;
 		startAt = safeAt = collapseAt = bounceAt = penaltyAt = endedAt = homeAt = takenAt = sealAt = stormAt = briefAt = 0;

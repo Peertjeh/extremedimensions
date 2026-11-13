@@ -21,10 +21,18 @@ public final class ModPackets {
 	 * trial: the Rift Trial under way in the Seam, "kind;twist;score;bronze;silver;gold" (empty without one).
 	 * riftX/riftY/riftZ: where the way home lies: the rift home in the Seam (its floor), for the column of light and the
 	 * compass, and since 3.55.0 the arrival portal on an expedition in the Nether or the End; NaN where none is shown.
+	 * drainX100: what the charge (or the thread) runs out at now, x100, an expedition's leaking anchors counted (3.55.0).
+	 * drainCause, drainFactors (3.55.0): the drain's main cause (a language key, "" for none) and all its parts,
+	 * "key=1.30;key=0.85" (see DrainCauses).
+	 * walkBack (3.55.0): seconds of charge (or thread) the walk back to the way home would cost, -1 where there is none.
+	 * thinAt (3.55.0): in the Seam, the seconds left at which the thread runs thin (0 elsewhere).
+	 * nearFlags (3.55.0): what is wrong with the anchors nearby: 1 an Ember Anchor blocked, 2 one cracked, 4 a Void
+	 * Anchor blocked, 8 one cracked.
 	 */
 	public record StatePayload(int nearNether, int nearEnd, int runCharge, int runMax, int dimCode, int drainX100,
 							int expeditions, int collapses, int longestRun, int runSecs, String penalties,
-							int scars, int tetherDist, int guide, String trial, float riftX, float riftY, float riftZ) implements CustomPacketPayload {
+							int scars, int tetherDist, int guide, String trial, float riftX, float riftY, float riftZ,
+							String drainCause, String drainFactors, int walkBack, int thinAt, int nearFlags) implements CustomPacketPayload {
 		public static final Type<StatePayload> TYPE = new Type<>(ExtremeDimensions.id("state"));
 		public static final StreamCodec<FriendlyByteBuf, StatePayload> CODEC = StreamCodec.ofMember(StatePayload::write, StatePayload::read);
 
@@ -47,12 +55,18 @@ public final class ModPackets {
 			buf.writeFloat(riftX);
 			buf.writeFloat(riftY);
 			buf.writeFloat(riftZ);
+			buf.writeUtf(drainCause);
+			buf.writeUtf(drainFactors);
+			buf.writeVarInt(walkBack);
+			buf.writeVarInt(thinAt);
+			buf.writeVarInt(nearFlags);
 		}
 
 		private static StatePayload read(FriendlyByteBuf buf) {
 			return new StatePayload(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
 					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(),
-					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(), buf.readFloat(), buf.readFloat(), buf.readFloat());
+					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(), buf.readFloat(), buf.readFloat(), buf.readFloat(),
+					buf.readUtf(), buf.readUtf(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
 		}
 
 		@Override
