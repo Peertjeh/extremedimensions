@@ -2420,7 +2420,7 @@
   "config.extremedimensions.spindle_redstone.desc": "A redstone pulse turns the Spindle once, as an empty hand does, so a machine can work it. The turns a cord takes and what it takes stay the same.",
   "gui.extremedimensions.journal.contents": "Contents",
   "gui.extremedimensions.journal.hints.title": "Hints",
-  "gui.extremedimensions.journal.hints.entry": "Hints you were given (%s)",
+  "gui.extremedimensions.journal.hints.entry": "Your hints (%s)",
   "gui.extremedimensions.journal.hints.none": "No hints yet. Each comes as a toast the first time you meet something new, and is kept here to read again.",
   "gui.extremedimensions.journal.anchors.share": "Open to allies",
   "gui.extremedimensions.settings.camera": "Camera in fights",
