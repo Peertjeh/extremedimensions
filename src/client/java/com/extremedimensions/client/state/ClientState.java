@@ -145,6 +145,10 @@ public final class ClientState {
 		thinAt = s.thinAt();
 		nearFlags = s.nearFlags();
 		syncMs = System.currentTimeMillis();
+		if (!warnAtTold) {
+			// The server speaks: it hears when this player wants their warnings in words
+			tellWarnAt();
+		}
 		// First update from the Overworld after a Collapse: start the fade-in
 		if (collapseAt > 0 && homeAt <= collapseAt && dimCode == 0 && syncMs - collapseAt > 2000) {
 			homeAt = syncMs;
@@ -182,6 +186,23 @@ public final class ClientState {
 			com.extremedimensions.penalty.AbyssalCurses.clientLockjaw = 0;
 			com.extremedimensions.penalty.AbyssalWorld.clientUnmapped = 0;
 		}
+	}
+
+	/** Whether the server was told this player's "Warn at" since the client came into its world (3.55.0). */
+	private static boolean warnAtTold = false;
+
+	/**
+	 * Tells the server when this player wants the low-time warning in words, from their own "Warn at" (3.55.0): once the
+	 * server first speaks, and again whenever it is changed. Nothing is sent outside a world, nor to a server without the mod.
+	 */
+	public static void tellWarnAt() {
+		if (net.minecraft.client.Minecraft.getInstance().getConnection() == null
+				|| !net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.canSend(ModPackets.WarnAtPayload.TYPE)) {
+			return;
+		}
+		net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+				new ModPackets.WarnAtPayload(com.extremedimensions.client.options.ClientOptions.warnAt().ordinal()));
+		warnAtTold = true;
 	}
 
 	/** Whether the server the client plays on runs the mod at all (its screens and requests mean nothing elsewhere). */
@@ -332,6 +353,7 @@ public final class ClientState {
 	/** Back to defaults when leaving a world. */
 	public static void reset() {
 		stateLevel = null;
+		warnAtTold = false;
 		frayedUntil = 0;
 		nearNether = -1;
 		nearEnd = -1;

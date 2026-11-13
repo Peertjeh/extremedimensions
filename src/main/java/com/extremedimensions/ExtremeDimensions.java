@@ -156,6 +156,13 @@ public class ExtremeDimensions implements ModInitializer {
 				com.extremedimensions.coop.Allies.share(context.player(), payload.on());
 			}
 		});
+		// When a player wants the low-time warnings in words (3.55.0): their own option, told by their client
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.WarnAtPayload.TYPE, ModPackets.WarnAtPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.WarnAtPayload.TYPE, (payload, context) -> {
+			if (Requests.allow(context.player(), "warn_at", 4)) {
+				DataStore.get(context.player().getUUID()).warnAt = Math.max(0, Math.min(2, payload.mode()));
+			}
+		});
 		// Clans: a Blood Cord held out from the Curses screen to a player standing near
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.ClanInvitePayload.TYPE, ModPackets.ClanInvitePayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.ClanInvitePayload.TYPE, (payload, context) -> {

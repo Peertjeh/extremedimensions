@@ -133,6 +133,7 @@ public final class ExpeditionService {
 		d.runTally = ExpeditionRecord.begin(d, dim, Dims.OVERWORLD, total, d.tetherTier);
 		d.lastWarn = Integer.MAX_VALUE;
 		d.lastBeat = Integer.MAX_VALUE;
+		d.runWarned = 0;
 		boolean nether = Dims.NETHER.equals(dim);
 		WorldFx.fx(p, nether ? Fx.START_NETHER : Fx.START_END, 0);
 		Journal.unlock(p, d, nether ? JournalEntry.EMBER_DEEP : JournalEntry.PALE_VOID);
@@ -358,14 +359,11 @@ public final class ExpeditionService {
 				collapse(p, d);
 				changed = true;
 			} else {
-				int secs = (int) Math.ceil(left);
-				warn(p, d, secs);
+				// The bells, the beat of the last ten seconds and (3.55.0) the warnings in words; from the Seam there is no
+				// walking back to the portal
+				TimeLeft.warn(p, d, left, seam ? -1 : TimeLeft.walkBack(p, d), false);
 				if (left < Config.LEECH_SECONDS && d.tickCounter % 10 == 0) {
 					leech(p, left);
-				}
-				if (secs <= 10 && secs != d.lastBeat) {
-					d.lastBeat = secs;
-					WorldFx.sound(p, "minecraft:entity.warden.heartbeat", 1.3f, 1.0f + (10 - secs) * 0.04f);
 				}
 			}
 		} else if (d.collapsing) {
@@ -417,17 +415,6 @@ public final class ExpeditionService {
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.relic.helds_chain.holds",
 				Config.RELIC_HELDS_CHAIN_GRACE), true);
 		return true;
-	}
-
-	private static void warn(ServerPlayer p, PlayerData d, int secs) {
-		for (int t : new int[] {60, 30, 10}) {
-			if (secs <= t && d.lastWarn > t) {
-				WorldFx.sound(p, "minecraft:block.bell.use", 0.7f, 0.6f);
-				WorldFx.particles(p, "minecraft:smoke", 1.0, 0.5, 0.02, 25);
-				d.lastWarn = secs;
-				return;
-			}
-		}
 	}
 
 	/** The Leeching: below {@link Config#LEECH_SECONDS} the Starved visibly drink souls from the player. */

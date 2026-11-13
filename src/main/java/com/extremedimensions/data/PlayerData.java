@@ -293,6 +293,17 @@ public class PlayerData {
 	/** Collapse timer: negative while the pull runs, then counts up to retry the death. */
 	public transient int collapseRetry = 0;
 	public transient int lastBeat = Integer.MAX_VALUE;
+	/**
+	 * The low-time warnings (3.55.0, see TimeLeft): when the player wants them in words (their client's "Warn at": 0 at
+	 * two minutes, 1 at one, 2 once the walk back needs most of what is left), what of them this expedition and this
+	 * visit to the Seam have had, the Seam's own bells and beats, and the last words and title sent (for the tests too).
+	 */
+	public transient int warnAt = 1;
+	public transient int runWarned = 0, seamWarned = 0;
+	public transient int seamLastWarn = Integer.MAX_VALUE, seamLastBeat = Integer.MAX_VALUE;
+	public transient String lastWarnWords = null, lastWarnTitle = null;
+	/** The Seam said this visit that the visitor's thread runs thin (once a visit, 3.55.0). */
+	public transient boolean thinTold = false;
 	/** Ticks until the penalty screen opens; -1 = nothing scheduled. */
 	public transient int offerDelay = -1;
 	/** Died beyond the wound (not from the timer): shows the "Expedition Ended" title on respawn. */

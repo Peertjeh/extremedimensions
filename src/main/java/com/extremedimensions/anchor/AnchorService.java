@@ -250,9 +250,12 @@ public final class AnchorService {
 		return InteractionResult.SUCCESS;
 	}
 
-	/** Why an anchor turned the player away, on their action bar, with the low note it always gave. */
+	/**
+	 * Why an anchor turned the player away, on their action bar, with the low note it always gave (since 3.55.0 the mod's
+	 * own sound for it, so its subtitle says the anchor refused).
+	 */
 	public static void refuse(ServerPlayer p, String why, Object... args) {
-		WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+		WorldFx.soundSelf(p, "extremedimensions:anchor.refuse", 0.8f, 0.5f);
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.anchor." + why, args), true);
 	}
 
@@ -373,7 +376,8 @@ public final class AnchorService {
 		double r2 = (Config.HUD_RANGE * 2) * (Config.HUD_RANGE * 2);
 		for (ServerPlayer p : players) {
 			if (a.distSq(p.getX(), p.getY(), p.getZ()) <= r2) {
-				WorldFx.soundSelf(p, "minecraft:block.respawn_anchor.deplete", 0.8f, 0.6f);
+				// (the anchor guttering, as the mod's own sound since 3.55.0: its subtitle says the anchor is blocked)
+				WorldFx.soundSelf(p, "extremedimensions:anchor.blocked", 0.8f, 0.6f);
 			}
 		}
 	}

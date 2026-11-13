@@ -773,6 +773,28 @@ public final class ModPackets {
 	}
 
 	/**
+	 * Client -> server (3.55.0): when the player wants the low-time warnings in words, from their own "Warn at" option: 0
+	 * at two minutes left, 1 at one minute, 2 once the walk back needs most of what is left (see TimeLeft).
+	 */
+	public record WarnAtPayload(int mode) implements CustomPacketPayload {
+		public static final Type<WarnAtPayload> TYPE = new Type<>(ExtremeDimensions.id("warn_at"));
+		public static final StreamCodec<FriendlyByteBuf, WarnAtPayload> CODEC = StreamCodec.ofMember(WarnAtPayload::write, WarnAtPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeVarInt(mode);
+		}
+
+		private static WarnAtPayload read(FriendlyByteBuf buf) {
+			return new WarnAtPayload(buf.readVarInt());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
 	 * Server -> client: an ally's curses, to carry one for them: "id:stacks:max:mine:readable;..." (mine: the stacks of it the
 	 * player already carries).
 	 */

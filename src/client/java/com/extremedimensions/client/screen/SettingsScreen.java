@@ -208,21 +208,21 @@ public class SettingsScreen extends Screen {
 		this.addRenderableWidget(new TabButton(x0 + 18 + (pw - 30) / 2, y0 + 22, (pw - 30) / 2, Tab.WORLD));
 
 		// Display: one row per option, in the order of DISPLAY_KEYS
-		int cx = x0 + pw - 18 - 124, y = y0 + DISPLAY_TOP;
+		int cx = x0 + pw - 18 - 124, y = y0 + DISPLAY_TOP, row = displayRow();
 		addChoice(cx, y, () -> onOff(ClientOptions.reduceFlashing()), () -> ClientOptions.setReduceFlashing(!ClientOptions.reduceFlashing()),
 				"reduce_flashing");
-		addChoice(cx, y + DISPLAY_ROW, () -> onOff(ClientOptions.colourBlind()), () -> ClientOptions.setColourBlind(!ClientOptions.colourBlind()),
+		addChoice(cx, y + row, () -> onOff(ClientOptions.colourBlind()), () -> ClientOptions.setColourBlind(!ClientOptions.colourBlind()),
 				"colour_blind");
-		addChoice(cx, y + DISPLAY_ROW * 2, () -> Ui.tr("gui.extremedimensions.settings.effects." + ClientOptions.effects().name().toLowerCase(Locale.ROOT)),
+		addChoice(cx, y + row * 2, () -> Ui.tr("gui.extremedimensions.settings.effects." + ClientOptions.effects().name().toLowerCase(Locale.ROOT)),
 				() -> ClientOptions.setEffects(ClientOptions.Effects.values()[(ClientOptions.effects().ordinal() + 1) % ClientOptions.Effects.values().length]),
 				"effects");
-		addChoice(cx, y + DISPLAY_ROW * 3, () -> Ui.tr("gui.extremedimensions.settings.corner." + ClientOptions.meters().name().toLowerCase(Locale.ROOT)),
+		addChoice(cx, y + row * 3, () -> Ui.tr("gui.extremedimensions.settings.corner." + ClientOptions.meters().name().toLowerCase(Locale.ROOT)),
 				() -> ClientOptions.setMeters(ClientOptions.Corner.values()[(ClientOptions.meters().ordinal() + 1) % ClientOptions.Corner.values().length]),
 				"meters");
-		addChoice(cx, y + DISPLAY_ROW * 4, () -> Ui.tr("gui.extremedimensions.settings.timer." + ClientOptions.timer().name().toLowerCase(Locale.ROOT)),
+		addChoice(cx, y + row * 4, () -> Ui.tr("gui.extremedimensions.settings.timer." + ClientOptions.timer().name().toLowerCase(Locale.ROOT)),
 				() -> ClientOptions.setTimer(ClientOptions.TimerPlace.values()[(ClientOptions.timer().ordinal() + 1) % ClientOptions.TimerPlace.values().length]),
 				"timer");
-		addChoice(cx, y + DISPLAY_ROW * 5, () -> ClientOptions.hudScale() + "%", () -> {
+		addChoice(cx, y + row * 5, () -> ClientOptions.hudScale() + "%", () -> {
 			int[] s = ClientOptions.HUD_SCALES;
 			int i = 0;
 			while (i < s.length && s[i] != ClientOptions.hudScale()) {
@@ -230,16 +230,20 @@ public class SettingsScreen extends Screen {
 			}
 			ClientOptions.setHudScale(s[(i + 1) % s.length]);
 		}, "hud_scale");
-		addChoice(cx, y + DISPLAY_ROW * 6, () -> onOff(ClientOptions.guidance()), () -> ClientOptions.setGuidance(!ClientOptions.guidance()), "guidance");
-		addChoice(cx, y + DISPLAY_ROW * 7, () -> onOff(ClientOptions.hints()), () -> ClientOptions.setHints(!ClientOptions.hints()), "hints");
-		addChoice(cx, y + DISPLAY_ROW * 8, () -> Ui.tr("gui.extremedimensions.settings.menu." + ClientOptions.menu().name().toLowerCase(Locale.ROOT)),
+		addChoice(cx, y + row * 6, () -> onOff(ClientOptions.guidance()), () -> ClientOptions.setGuidance(!ClientOptions.guidance()), "guidance");
+		addChoice(cx, y + row * 7, () -> onOff(ClientOptions.hints()), () -> ClientOptions.setHints(!ClientOptions.hints()), "hints");
+		addChoice(cx, y + row * 8, () -> Ui.tr("gui.extremedimensions.settings.menu." + ClientOptions.menu().name().toLowerCase(Locale.ROOT)),
 				() -> ClientOptions.setMenu(ClientOptions.MenuStyle.values()[(ClientOptions.menu().ordinal() + 1) % ClientOptions.MenuStyle.values().length]),
 				"menu");
-		addChoice(cx, y + DISPLAY_ROW * 9,
+		addChoice(cx, y + row * 9,
 				() -> Ui.tr("gui.extremedimensions.settings.shader_look." + ClientOptions.shaderLook().name().toLowerCase(Locale.ROOT)),
 				() -> ClientOptions.setShaderLook(
 						ClientOptions.ShaderLook.values()[(ClientOptions.shaderLook().ordinal() + 1) % ClientOptions.ShaderLook.values().length]),
 				"shader_look");
+		// When the low-time warning comes in words (3.55.0)
+		addChoice(cx, y + row * 10, () -> Ui.tr("gui.extremedimensions.settings.warn_at." + ClientOptions.warnAt().name().toLowerCase(Locale.ROOT)),
+				() -> ClientOptions.setWarnAt(ClientOptions.WarnAt.values()[(ClientOptions.warnAt().ordinal() + 1) % ClientOptions.WarnAt.values().length]),
+				"warn_at");
 
 		// World rules: a difficulty preset at once, then every value
 		presetChoice = new Choice(x0 + 108, y0 + 44, 124, 16, () -> Ui.tr(target.nameKey()), () -> {
@@ -357,8 +361,17 @@ public class SettingsScreen extends Screen {
 		showTab();
 	}
 
+	/**
+	 * How far apart the Display tab's rows are: {@link #DISPLAY_ROW}, or closer on a short screen so the last row stays
+	 * clear of the buttons at the foot (3.55.0, when an eleventh row came).
+	 */
+	private int displayRow() {
+		return Math.max(15, Math.min(DISPLAY_ROW, (ph - 30 - DISPLAY_TOP) / DISPLAY_KEYS.length));
+	}
+
 	private void addChoice(int x, int y, Supplier<String> value, Runnable next, String key) {
-		Choice c = new Choice(x, y, 124, 16, value, next, key);
+		// (a pixel short of the row, so rows set closer still keep apart)
+		Choice c = new Choice(x, y, 124, Math.min(16, displayRow() - 1), value, next, key);
 		c.setTooltip(Tooltip.create(Component.translatable("gui.extremedimensions.settings." + key + ".desc")));
 		displayWidgets.add(this.addRenderableWidget(c));
 	}
@@ -911,12 +924,12 @@ public class SettingsScreen extends Screen {
 	}
 
 	private static final String[] DISPLAY_KEYS = {"reduce_flashing", "colour_blind", "effects", "meters", "timer", "hud_scale", "guidance", "hints",
-			"menu", "shader_look"};
+			"menu", "shader_look", "warn_at"};
 
 	private void display(GuiGraphicsExtractor g, int x0, int y0, int mouseX, int mouseY, double fade) {
-		int y = y0 + DISPLAY_TOP;
+		int y = y0 + DISPLAY_TOP, row = displayRow();
 		for (int i = 0; i < DISPLAY_KEYS.length; i++) {
-			int ry = y + i * DISPLAY_ROW;
+			int ry = y + i * row;
 			String label = Ui.tr("gui.extremedimensions.settings." + DISPLAY_KEYS[i]);
 			g.text(this.font, label, x0 + 18, ry + 4, Ui.argb(fade, Ui.PARCHMENT));
 			if ("colour_blind".equals(DISPLAY_KEYS[i])) {
@@ -929,7 +942,7 @@ public class SettingsScreen extends Screen {
 			}
 		}
 		// (the note below them only where it does not run into the last row, as on a short screen)
-		if (y + DISPLAY_KEYS.length * DISPLAY_ROW <= y0 + ph - 48) {
+		if (y + DISPLAY_KEYS.length * row <= y0 + ph - 48) {
 			Ui.divider(g, x0 + 12, y0 + ph - 46, pw - 24, Ui.EMBER, fade);
 			Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.settings.display_note"), x0 + pw / 2, y0 + ph - 40, Ui.MUTED, fade);
 		}
