@@ -45,6 +45,69 @@
       "extremedimensions:collapse"
     ]
   },
+  "tether.warning": {
+    "subtitle": "subtitles.extremedimensions.tether.warning",
+    "sounds": [
+      {
+        "name": "minecraft:block.bell.use",
+        "type": "event"
+      }
+    ]
+  },
+  "tether.heartbeat": {
+    "subtitle": "subtitles.extremedimensions.tether.heartbeat",
+    "sounds": [
+      {
+        "name": "minecraft:entity.warden.heartbeat",
+        "type": "event"
+      }
+    ]
+  },
+  "thread.warning": {
+    "subtitle": "subtitles.extremedimensions.thread.warning",
+    "sounds": [
+      {
+        "name": "minecraft:block.bell.use",
+        "type": "event"
+      }
+    ]
+  },
+  "thread.heartbeat": {
+    "subtitle": "subtitles.extremedimensions.thread.heartbeat",
+    "sounds": [
+      {
+        "name": "minecraft:entity.warden.heartbeat",
+        "type": "event"
+      }
+    ]
+  },
+  "thread.thin": {
+    "subtitle": "subtitles.extremedimensions.thread.thin",
+    "sounds": [
+      {
+        "name": "minecraft:entity.leash_knot.break",
+        "type": "event"
+      }
+    ]
+  },
+  "anchor.refuse": {
+    "subtitle": "subtitles.extremedimensions.anchor.refuse",
+    "sounds": [
+      {
+        "name": "minecraft:block.note_block.bass",
+        "type": "event"
+      }
+    ]
+  },
+  "anchor.blocked": {
+    "subtitle": "subtitles.extremedimensions.anchor.blocked",
+    "sounds": [
+      {
+        "name": "minecraft:block.respawn_anchor.deplete",
+        "type": "event"
+      }
+    ]
+  },
   "lurker_whisper": {
     "subtitle": "subtitles.extremedimensions.lurker_whisper",
     "sounds": [

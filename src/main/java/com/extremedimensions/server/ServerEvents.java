@@ -209,6 +209,7 @@ public final class ServerEvents {
 			Requests.forget(handler.getPlayer());
 			com.extremedimensions.elder.ElderSpells.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.expedition.ExpeditionBar.forget(handler.getPlayer().getUUID());
+			com.extremedimensions.world.WorldService.forgetBar(handler.getPlayer().getUUID());
 			com.extremedimensions.binding.WoundLens.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.anchor.AnchorSync.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.binding.Charms.forget(handler.getPlayer().getUUID());

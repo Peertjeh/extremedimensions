@@ -30,16 +30,48 @@ public final class Sync {
 		// 4: another mod's world, where nothing of the mod shows
 		int dimCode = d.away ? 4 : seam ? 3 : Dims.NETHER.equals(d.dim) ? 1 : Dims.END.equals(d.dim) ? 2 : 0;
 		boolean overworld = !d.away && Dims.OVERWORLD.equals(d.dim);
+		// The drain as it is, taken apart (3.55.0): in the Seam the thread's own, the Fray's and a frayed island's in it, so
+		// the panel's timer keeps pace with the thread there (before 3.55.0 it ran at x1.0 in the Fray); on an expedition
+		// with what its cracked or blocked anchors leak on top
+		com.extremedimensions.expedition.DrainCauses.Breakdown why = com.extremedimensions.expedition.DrainCauses.of(p, d);
+		// and what walking back to the way home would cost of what is left
+		double back = com.extremedimensions.expedition.TimeLeft.walkBack(p, d);
 		ServerPlayNetworking.send(p, new ModPackets.StatePayload(
 				overworld ? AnchorService.nearCharge(p, Dims.NETHER) : -1,
 				overworld ? AnchorService.nearCharge(p, Dims.END) : -1,
 				seam ? (int) Math.ceil(d.seamLeft) : d.inRun ? (int) Math.ceil(AnchorService.linkedCharge(p, d)) : 0,
 				(int) Math.ceil(seam ? d.seamMax : d.runMax), dimCode,
-				seam ? 100 : (int) Math.round(d.currentDrain * 100), d.expeditions, d.collapses,
+				(int) Math.round(why.drain() * 100), d.expeditions, d.collapses,
 				(int) d.longestRun, (int) d.runTime, penalties(d), d.scars,
 				seam ? SeamService.riftDistance(p, d) : TetherService.distance(p, d), com.extremedimensions.guide.Guide.progress(d),
 				seam ? com.extremedimensions.trial.TrialService.hud(d) : "",
-				seam ? (float) d.riftX : 0, seam ? (float) d.riftY : 0, seam ? (float) d.riftZ : 0));
+				home(p, d, seam, 0), home(p, d, seam, 1), home(p, d, seam, 2),
+				why.cause(), why.encode(), back < 0 ? -1 : (int) Math.ceil(back),
+				// where on the Seam's timer the thread runs thin and the Thinned may hunt (a third of it, less with the Unravelling)
+				seam ? (int) Math.ceil(d.seamMax / com.extremedimensions.tapestry.Tapestry.thinShare()) : 0,
+				// and whether an anchor nearby is blocked or cracked, for the HUD's meters
+				overworld ? AnchorService.nearTrouble(p, Dims.NETHER) | AnchorService.nearTrouble(p, Dims.END) << 2 : 0));
+	}
+
+	/**
+	 * Where the way home lies, one axis of it (0 x, 1 y, 2 z): the rift's floor in the Seam, and on an expedition in the
+	 * Nether or the End the arrival portal (3.55.0) while its compass is on and Unmapped does not hide it. NaN where there
+	 * is none to show, which the client reads as no way home known.
+	 */
+	public static float home(ServerPlayer p, PlayerData d, boolean seam, int axis) {
+		if (seam) {
+			return (float) (axis == 0 ? d.riftX : axis == 1 ? d.riftY : d.riftZ);
+		}
+		if (!arrivalShown(d)) {
+			return Float.NaN;
+		}
+		return (float) (axis == 0 ? d.arrivalX : axis == 1 ? d.arrivalY : d.arrivalZ);
+	}
+
+	/** Whether the way back to the arrival portal is shown to this player now: on an expedition there, compass on, not Unmapped. */
+	public static boolean arrivalShown(PlayerData d) {
+		return d.inRun && !d.collapsing && !d.away && Config.ARRIVAL_COMPASS > 0 && d.tetherAnchor != null
+				&& (Dims.NETHER.equals(d.dim) || Dims.END.equals(d.dim)) && d.stacks(com.extremedimensions.penalty.Penalty.UNMAPPED) <= 0;
 	}
 
 	/**

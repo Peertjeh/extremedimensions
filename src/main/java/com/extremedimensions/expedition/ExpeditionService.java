@@ -63,11 +63,17 @@ public final class ExpeditionService {
 		String uid = p.getStringUUID();
 		// Working anchors of this type around the portal the player went through
 		d.linked.clear();
+		// (and the blocked ones, which feed nothing: the player is told of them once on the way, 3.55.0)
+		java.util.List<Anchor> passed = new java.util.ArrayList<>();
 		if (d.hasLast) {
 			double r2 = Config.LINK_RANGE * Config.LINK_RANGE;
 			for (Anchor a : DataStore.anchors().values()) {
-				if (dim.equals(a.type) && a.of(uid) > 0 && !a.blocked && a.distSq(d.lastX, d.lastY, d.lastZ) <= r2) {
-					d.linked.add(a.key());
+				if (dim.equals(a.type) && a.of(uid) > 0 && a.distSq(d.lastX, d.lastY, d.lastZ) <= r2) {
+					if (!a.blocked) {
+						d.linked.add(a.key());
+					} else if (a.of(uid) >= 1) {
+						passed.add(a);
+					}
 				}
 			}
 		}
@@ -85,11 +91,20 @@ public final class ExpeditionService {
 			com.extremedimensions.guide.Hints.meet(p, com.extremedimensions.guide.Hints.Hint.WOUND);
 			return;
 		}
+		for (Anchor a : passed) {
+			// A blocked anchor beside the portal keeps its charge out of the expedition, and leaks it meanwhile
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.entry.blocked", a.x, a.y, a.z, TimeLeft.clock(a.of(uid)))
+					.withStyle(ChatFormatting.RED));
+		}
 		d.arrivalX = p.getX();
+		d.arrivalY = p.getY();
 		d.arrivalZ = p.getZ();
 		d.hasRopeEnd = false;
 		// On the expedition from here (so a pact's stacks of Leaky Tank count as well)
 		d.inRun = true;
+		// What the anchors held before anything was cut at the wound (3.55.0): the timer's bar is measured against it, so
+		// what was cut shows as already gone, and the player is told what was taken
+		double before = total, leaked = 0, chained = 0;
 		int leaky = d.stacks(Penalty.LEAKY_TANK);
 		if (leaky > 0) {
 			// Leaky Tank: every expedition starts with a share of the stored charge gone
@@ -98,10 +113,12 @@ public final class ExpeditionService {
 				a.scale(uid, keep);
 			}
 			total = AnchorService.linkedCharge(p, d);
+			leaked = before - total;
 		}
 		// Held's Chain: no anchor holds more for the player than the chain allows (charge laid in before it was bound too)
 		if (RelicService.has(d, Relic.HELDS_CHAIN)) {
 			double cap = AnchorService.cap(d);
+			double was = total;
 			for (Anchor a : AnchorService.linked(d)) {
 				double own = a.own(uid);
 				if (own > cap) {
@@ -109,7 +126,9 @@ public final class ExpeditionService {
 				}
 			}
 			total = AnchorService.linkedCharge(p, d);
+			chained = was - total;
 		}
+		cut(p, leaked, chained);
 		d.inRun = true;
 		d.heldSpent = false;
 		d.heldTicks = 0;
@@ -120,11 +139,12 @@ public final class ExpeditionService {
 		d.masonRolled = false;
 		com.extremedimensions.pact.PactService.begin(p, d);
 		d.runTime = 0;
-		d.runMax = total;
+		d.runMax = before;
 		// What this expedition comes to is counted from here, for its record (see ExpeditionRecord)
 		d.runTally = ExpeditionRecord.begin(d, dim, Dims.OVERWORLD, total, d.tetherTier);
 		d.lastWarn = Integer.MAX_VALUE;
 		d.lastBeat = Integer.MAX_VALUE;
+		d.runWarned = 0;
 		boolean nether = Dims.NETHER.equals(dim);
 		WorldFx.fx(p, nether ? Fx.START_NETHER : Fx.START_END, 0);
 		Journal.unlock(p, d, nether ? JournalEntry.EMBER_DEEP : JournalEntry.PALE_VOID);
@@ -141,6 +161,21 @@ public final class ExpeditionService {
 			// Through a warm gate: the chain's other end is near
 			com.extremedimensions.lore.WarmChains.crossed(p, d, (ServerLevel) p.level(), p.blockPosition());
 		}
+	}
+
+	/**
+	 * What Leaky Tank and the Held's Chain took of the charge at the wound, said on the action bar (3.55.0: before, it
+	 * went without a word). Nothing is said for less than a second.
+	 */
+	private static void cut(ServerPlayer p, double leaked, double chained) {
+		boolean leak = leaked >= 1, chain = chained >= 1;
+		if (!leak && !chain) {
+			return;
+		}
+		Component line = leak && chain ? Component.translatable("gui.extremedimensions.entry.both", TimeLeft.clock(leaked), TimeLeft.clock(chained))
+				: leak ? Component.translatable("gui.extremedimensions.entry.leaky", TimeLeft.clock(leaked))
+				: Component.translatable("gui.extremedimensions.entry.chain", TimeLeft.clock(chained), TimeLeft.clock(AnchorService.cap(DataStore.get(p.getUUID()))));
+		p.sendSystemMessage(line.copy().withStyle(ChatFormatting.GOLD), true);
 	}
 
 	/** Safe return: the chain disappears entirely and the Tether comes back. */
@@ -335,14 +370,11 @@ public final class ExpeditionService {
 				collapse(p, d);
 				changed = true;
 			} else {
-				int secs = (int) Math.ceil(left);
-				warn(p, d, secs);
+				// The bells, the beat of the last ten seconds and (3.55.0) the warnings in words; from the Seam there is no
+				// walking back to the portal
+				TimeLeft.warn(p, d, left, seam ? -1 : TimeLeft.walkBack(p, d), false);
 				if (left < Config.LEECH_SECONDS && d.tickCounter % 10 == 0) {
 					leech(p, left);
-				}
-				if (secs <= 10 && secs != d.lastBeat) {
-					d.lastBeat = secs;
-					WorldFx.sound(p, "minecraft:entity.warden.heartbeat", 1.3f, 1.0f + (10 - secs) * 0.04f);
 				}
 			}
 		} else if (d.collapsing) {
@@ -394,17 +426,6 @@ public final class ExpeditionService {
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.relic.helds_chain.holds",
 				Config.RELIC_HELDS_CHAIN_GRACE), true);
 		return true;
-	}
-
-	private static void warn(ServerPlayer p, PlayerData d, int secs) {
-		for (int t : new int[] {60, 30, 10}) {
-			if (secs <= t && d.lastWarn > t) {
-				WorldFx.sound(p, "minecraft:block.bell.use", 0.7f, 0.6f);
-				WorldFx.particles(p, "minecraft:smoke", 1.0, 0.5, 0.02, 25);
-				d.lastWarn = secs;
-				return;
-			}
-		}
 	}
 
 	/** The Leeching: below {@link Config#LEECH_SECONDS} the Starved visibly drink souls from the player. */

@@ -97,10 +97,25 @@ public final class UnstableAnchors {
 		}
 	}
 
+	/** Seconds before a cracked anchor breaks when its owners are reminded of it. */
+	public static final int REMIND = 60;
+	/** The last owner reminded, and of which anchor: "uuid@key" (for the tests: a test player's client never answers). */
+	public static volatile String lastReminded = null;
+
 	/** One second of an unstable anchor (for the tests too). */
 	public static void step(Anchor a) {
 		a.leakAll(Math.max(0, Config.UNSTABLE_LEAK));
 		a.unstable--;
+		if (a.unstable == REMIND && a.charge > 0 && WorldFx.server() != null) {
+			// A minute before it breaks, its owners are reminded wherever they are (3.55.0), while a shard can still save it
+			for (ServerPlayer p : WorldFx.server().getPlayerList().getPlayers()) {
+				if (owns(p, a)) {
+					p.sendSystemMessage(Component.translatable("gui.extremedimensions.anchor.cracked_soon", a.x, a.y, a.z, time(REMIND))
+							.withStyle(ChatFormatting.RED), true);
+					lastReminded = p.getUUID() + "@" + a.key();
+				}
+			}
+		}
 		if (WorldFx.server() != null && Loaded.ready(WorldFx.server().overworld(), new BlockPos(a.x, a.y, a.z))) {
 			WorldFx.particleAt("minecraft:electric_spark", a.x + 0.5, a.y + 1.0, a.z + 0.5, 0.35, 0.3, 0.35, 0.15, 6);
 			if (a.unstable % 4 == 0) {

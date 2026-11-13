@@ -100,6 +100,15 @@ public final class ClientOptions {
 		}
 	}
 
+	/**
+	 * When the low-time warning comes in words on the action bar (3.55.0): at two minutes left, at one, or once walking back
+	 * would take most of what is left. The server says it (the bells and the title at half a minute come whatever is
+	 * chosen), so the choice is told to it; the order is the one it reads (see TimeLeft).
+	 */
+	public enum WarnAt {
+		TWO_MINUTES, ONE_MINUTE, WALK_BACK
+	}
+
 	/** What is stored. Every field has a safe default so a damaged or older file still loads. */
 	private static final class Values {
 		boolean reduceFlashing = false;
@@ -116,6 +125,7 @@ public final class ClientOptions {
 		boolean keysTold = false;
 		/** None in a file from before 3.55.0: then it follows reduced flashing, which governed the shake before (see load). */
 		Camera camera = null;
+		WarnAt warnAt = WarnAt.ONE_MINUTE;
 	}
 
 	/** HUD sizes to cycle through, in percent. */
@@ -148,6 +158,9 @@ public final class ClientOptions {
 		}
 		if (values.camera == null) {
 			values.camera = values.reduceFlashing ? Camera.GENTLE : Camera.FULL;
+		}
+		if (values.warnAt == null) {
+			values.warnAt = WarnAt.ONE_MINUTE;
 		}
 		boolean known = false;
 		for (int s : HUD_SCALES) {
@@ -240,6 +253,17 @@ public final class ClientOptions {
 		double want = full * values.effects.factor;
 		int whole = (int) Math.floor(want);
 		return whole + (random.nextDouble() < want - whole ? 1 : 0);
+	}
+
+	public static WarnAt warnAt() {
+		return values.warnAt;
+	}
+
+	/** (Told to the server at once, when the player is in a world of the mod's.) */
+	public static void setWarnAt(WarnAt w) {
+		values.warnAt = w;
+		save();
+		com.extremedimensions.client.state.ClientState.tellWarnAt();
 	}
 
 	public static void setMenu(MenuStyle m) {

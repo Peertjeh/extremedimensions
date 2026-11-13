@@ -381,6 +381,11 @@ public final class SeamService {
 		d.seamMax = com.extremedimensions.relic.RelicService.seamTime(d, seconds);
 		d.seamLeft = d.seamMax;
 		d.seamPull = 0;
+		// A new thread, warned anew (3.55.0)
+		d.seamWarned = 0;
+		d.seamLastWarn = Integer.MAX_VALUE;
+		d.seamLastBeat = Integer.MAX_VALUE;
+		d.thinTold = false;
 		// The visit is counted from here, for its record (one of its own, also on a visit made from an expedition)
 		d.seamTally = com.extremedimensions.expedition.ExpeditionRecord.begin(d, Dims.SEAM, d.homeDim, d.seamMax, TetherService.carriedTier(p, d));
 		// A Rift Trial taken up at home begins with this visit
@@ -455,11 +460,18 @@ public final class SeamService {
 			pull(p, d);
 			return;
 		}
-		double drain = 0;
-		if (!p.isCreative() && !(MendingService.active() && MendingService.inArena(p)) && !com.extremedimensions.elder.WeaverService.knotMotherNear(p)) {
-			// Time runs out faster in the Fray
-			drain = SeamDepth.drain(p.getY()) * com.extremedimensions.events.FrayedSeam.drain(p);
-			d.seamLeft -= drain / 20.0;
+		double drain = drain(p);
+		d.seamLeft -= drain / 20.0;
+		if (d.seamLeft > 0 && !p.isCreative()) {
+			// The expedition's warnings on the thread too (3.55.0): the bells, the beat, the words and the title
+			com.extremedimensions.expedition.TimeLeft.warn(p, d, d.seamLeft, com.extremedimensions.expedition.TimeLeft.walkBack(p, d), true);
+		}
+		if (tick % 20 == 0 && !d.thinTold && d.seamPull <= 0 && SeamFauna.thin(p)) {
+			// Once a visit, the moment the thread first runs thin: from now on the Thinned (and a Lurker watching) may hunt
+			d.thinTold = true;
+			WorldFx.soundSelf(p, "extremedimensions:thread.thin", 1.0f, 0.6f);
+			p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.seam.thin")
+					.withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE), true);
 		}
 		// For the visit's record: how far from the rift home, and how fast the thread ran (the distance does not count here)
 		com.extremedimensions.expedition.ExpeditionRecord.tick(d.seamTally, riftDistance(p, d), 1.0, drain);
@@ -1414,6 +1426,18 @@ public final class SeamService {
 	}
 
 	/** Rift distance for the HUD. */
+	/**
+	 * How fast a visitor's thread runs out where they stand now, in seconds a second: faster in the Fray and on a frayed
+	 * island, not at all in creative, in the Heart's fight or near the Knot Mother. One reckoning (3.55.0) for the thread
+	 * itself, the timer panel (which ran at x1.0 in the Fray before) and the boss bar.
+	 */
+	public static double drain(ServerPlayer p) {
+		if (p.isCreative() || (MendingService.active() && MendingService.inArena(p)) || com.extremedimensions.elder.WeaverService.knotMotherNear(p)) {
+			return 0;
+		}
+		return SeamDepth.drain(p.getY()) * com.extremedimensions.events.FrayedSeam.drain(p);
+	}
+
 	public static int riftDistance(ServerPlayer p, PlayerData d) {
 		double dx = p.getX() - d.riftX, dz = p.getZ() - d.riftZ;
 		return (int) Math.sqrt(dx * dx + dz * dz);

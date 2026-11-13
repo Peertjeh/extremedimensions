@@ -108,12 +108,12 @@ public class ChargeHud implements HudElement {
 		}
 		if (ClientState.nearNether >= 0) {
 			anchorChip(g, font, x, y, right, Ui.tr("hud.extremedimensions.nether_anchor"), ClientState.shownNether, Ui.EMBER,
-					ClientState.netherFlashAt, ClientState.netherGain, ClientState.netherGainAt, now);
+					ClientState.netherFlashAt, ClientState.netherGain, ClientState.netherGainAt, now, ClientState.nearFlags & 3);
 			y += 26;
 		}
 		if (ClientState.nearEnd >= 0) {
 			anchorChip(g, font, x, y, right, Ui.tr("hud.extremedimensions.end_anchor"), ClientState.shownEnd, Ui.VOID,
-					ClientState.endFlashAt, ClientState.endGain, ClientState.endGainAt, now);
+					ClientState.endFlashAt, ClientState.endGain, ClientState.endGainAt, now, ClientState.nearFlags >> 2 & 3);
 			y += 26;
 		}
 		if (tether) {
@@ -121,14 +121,23 @@ public class ChargeHud implements HudElement {
 		}
 	}
 
+	/**
+	 * An anchor meter: its world, the charge it holds for the player and a bar. Where one of that world's anchors here is
+	 * blocked ({@code trouble} 1) or cracked (2) the world's name gives way to that, in red (3.55.0): it leaks.
+	 */
 	private static void anchorChip(GuiGraphicsExtractor g, Font font, int x, int y, boolean right, String name, double seconds, int color,
-			long flashAt, int gain, long gainAt, long now) {
+			long flashAt, int gain, long gainAt, long now, int trouble) {
 		double flash = flashAt > 0 ? Ui.clamp01(1 - (now - flashAt) / 900.0) : 0;
 		Ui.chip(g, x, y, CHIP_W, 21, color, 1.0);
 		if (flash > 0) {
 			g.fill(x, y, x + CHIP_W, y + 21, Ui.argb(flash * 0.25, color));
 		}
-		g.text(font, name, x + 5, y + 3, Ui.argb(255, Ui.mix(Ui.TEXT, 0xFFFFFF, flash)));
+		if (trouble != 0) {
+			String what = Ui.tr((trouble & 1) != 0 ? "hud.extremedimensions.anchor_blocked" : "hud.extremedimensions.anchor_cracked");
+			g.text(font, what, x + 5, y + 3, Ui.argb(Ui.calm() ? 1.0 : 0.65 + 0.35 * Ui.pulse(now, 900, 0), Ui.DANGER));
+		} else {
+			g.text(font, name, x + 5, y + 3, Ui.argb(255, Ui.mix(Ui.TEXT, 0xFFFFFF, flash)));
+		}
 		String t = Ui.time(seconds);
 		g.text(font, t, x + CHIP_W - 4 - font.width(t), y + 3, Ui.argb(255, Ui.mix(color, 0xFFFFFF, flash)));
 		Ui.meter(g, x + 5, y + 14, CHIP_W - 10, 3, seconds / Math.max(Config.MAX_CHARGE, seconds), color, 1.0, false);
@@ -209,7 +218,8 @@ public class ChargeHud implements HudElement {
 	public static int timerBottom() {
 		boolean trial = ClientState.dimCode == 3 && !ClientState.trial.isEmpty();
 		// a boss bar is 19 pixels of name and bar from 3 down (one more for a trial), drawn at the game's own size
-		return bossBar() ? Math.round((3 + 19 * (trial ? 2 : 1) + 2) / (ClientOptions.hudScale() / 100f)) : 5 + TIMER_H + (trial ? TRIAL_H : 0);
+		return bossBar() ? Math.round((3 + 19 * (trial ? 2 : 1) + 2) / (ClientOptions.hudScale() / 100f))
+				: 5 + TIMER_H + (drainRow() ? DRAIN_H : 0) + (trial ? TRIAL_H : 0);
 	}
 
 	private static void timer(GuiGraphicsExtractor g, Font font, int w, int h, long now) {
@@ -230,46 +240,90 @@ public class ChargeHud implements HudElement {
 		if (trial != null && trial.length < 6) {
 			trial = null;
 		}
-		int ph = TIMER_H + (trial != null ? TRIAL_H : 0);
+		// (a line more for the drain, where it is not one: 3.55.0)
+		int rows = drainRow() ? DRAIN_H : 0;
+		int ph = TIMER_H + rows + (trial != null ? TRIAL_H : 0);
 		int px = (w - pw) / 2 + xs;
 		boolean top = ClientOptions.timer() == ClientOptions.TimerPlace.TOP;
 		// above the hotbar, a taller panel grows upwards
 		int py = timerTop(h) - (top ? 0 : ph - TIMER_H) + (int) ((1 - slide) * 48) * (top ? -1 : 1) + ys;
 		int barColor = remaining <= 60 ? Ui.danger() : remaining <= 120 ? Ui.warn() : accent;
 		boolean flash = remaining <= 30 && (Ui.calm() || (now / 250) % 2 == 0);
+		// Amber once what is left is short of one and a half walks back (3.55.0)
+		int back = ClientState.walkBack;
+		boolean tight = back > 0 && remaining < 1.5 * back;
 
 		Ui.panel(g, px, py, pw, ph, barColor, 0.95);
 		String name = Ui.tr(seam ? "dimension.extremedimensions.seam" : nether ? "dimension.extremedimensions.nether" : "dimension.extremedimensions.end").toUpperCase();
 		g.text(font, name, px + 7, py + 6, Ui.argb(255, accent));
 		String t = Ui.time(remaining);
-		g.text(font, t, px + pw - 7 - font.width(t), py + 6, Ui.argb(255, flash ? Ui.DANGER : Ui.PARCHMENT));
+		g.text(font, t, px + pw - 7 - font.width(t), py + 6, Ui.argb(255, flash ? Ui.danger() : tight ? AMBER : Ui.PARCHMENT));
 		Ui.meter(g, px + 7, py + 17, pw - 14, 6, remaining / Math.max(1, ClientState.runMax), barColor, 1.0, true);
+		if (seam && ClientState.thinAt > 0 && ClientState.thinAt < ClientState.runMax) {
+			// A mark where the thread runs thin and the Thinned may hunt (3.55.0)
+			int mx = px + 7 + (int) Math.round((pw - 14) * ClientState.thinAt / (double) ClientState.runMax);
+			g.fill(mx, py + 15, mx + 1, py + 25, Ui.argb(remaining <= ClientState.thinAt ? 110 : 220, Ui.VOID));
+		}
 
-		StringBuilder info = new StringBuilder();
-		// In the Seam, a gold arrow beside the distance points the way home, turning as the player turns
-		boolean compass = seam && ClientState.riftKnown() && Config.SEAM_RIFT_COMPASS > 0 && mcPlayer() != null;
+		// The way home: a gold arrow beside the distance, turning as the player turns (to the rift in the Seam, and since
+		// 3.55.0 to the arrival portal in the Nether and the End), and on the right what walking it costs
+		boolean compass = (seam ? ClientState.riftKnown() && Config.SEAM_RIFT_COMPASS > 0 : ClientState.homeKnown()) && mcPlayer() != null;
+		String way = "";
 		if (ClientState.tetherDist >= 0) {
-			int dist = compass ? riftDistance() : ClientState.tetherDist;
-			info.append(Ui.tr(seam ? "hud.extremedimensions.rift_distance" : "hud.extremedimensions.tether_distance", dist));
+			int dist = compass ? homeDistance() : ClientState.tetherDist;
+			way = Ui.tr(seam ? "hud.extremedimensions.rift_distance" : "hud.extremedimensions.tether_distance", dist);
 		}
-		if (ClientState.drainX100 > 100) {
-			if (info.length() > 0) {
-				info.append("  ·  ");
-			}
-			info.append(Ui.tr("hud.extremedimensions.drain", String.format("%.1f", ClientState.drainX100 / 100.0)));
+		int left = px + 7 + (compass ? 12 : 0), right = px + pw - 7;
+		// (in words where they fit beside the way, else briefly)
+		String walk = back < 1 ? "" : fit(font, Ui.tr("hud.extremedimensions.walk_back", Ui.time(back)),
+				Ui.tr("hud.extremedimensions.walk_back.short", Ui.time(back)), right - left - font.width(way) - 8);
+		row(g, font, way, Ui.MUTED, walk, tight ? AMBER : Ui.MUTED, left, right, py + 26);
+		if (compass) {
+			arrow(g, px + 12, py + 30, homeDistance() < 2 ? Float.NaN : homeBearing());
 		}
-		if (info.length() > 0) {
-			int dc = ClientState.drainX100 >= 300 ? Ui.danger() : ClientState.drainX100 >= 180 ? Ui.warn() : Ui.MUTED;
-			String s = info.toString();
-			int tx = px + pw / 2 - font.width(s) / 2 + (compass ? 6 : 0);
-			g.text(font, s, tx, py + 26, Ui.argb(255, dc));
-			if (compass) {
-				arrow(g, tx - 7, py + 30, riftDistance() < 2 ? Float.NaN : riftBearing());
+		if (rows > 0) {
+			// The drain with its main cause (green below one), and on the right how long what is left lasts by the clock at it
+			double pace = ClientState.drainX100 > 0 ? remaining / (ClientState.drainX100 / 100.0) : -1;
+			String drain = ClientState.drainText();
+			String time = pace < 0 ? "" : Ui.tr("hud.extremedimensions.pace", Ui.time(pace));
+			if (!time.isEmpty() && font.width(drain) + font.width(time) + 8 > pw - 14) {
+				time = Ui.tr("hud.extremedimensions.pace.short", Ui.time(pace));
 			}
+			row(g, font, Ui.ellipsize(font, drain, pw - 14 - (time.isEmpty() ? 0 : font.width(time) + 8)), drainColour(), time, Ui.MUTED,
+					px + 7, right, py + 26 + DRAIN_H);
 		}
 		if (trial != null) {
-			trialLine(g, font, trial, px, py + TIMER_H - 2, pw);
+			trialLine(g, font, trial, px, py + TIMER_H + rows - 2, pw);
 		}
+	}
+
+	/** The timer panel's line for the drain, and the amber of a time getting short of the walk back. */
+	private static final int DRAIN_H = 10, AMBER = 0xFFB000;
+
+	/** Whether the timer panel has a line for the drain: where it is not one. */
+	private static boolean drainRow() {
+		return ClientState.dimCode != 0 && ClientState.drainShown();
+	}
+
+	/** A line of the timer panel: words on the left from {@code left}, words on the right ending at {@code right}. */
+	private static void row(GuiGraphicsExtractor g, Font font, String l, int lc, String r, int rc, int left, int right, int y) {
+		if (!l.isEmpty()) {
+			g.text(font, l, left, y, Ui.argb(255, lc));
+		}
+		if (!r.isEmpty()) {
+			g.text(font, r, right - font.width(r), y, Ui.argb(255, rc));
+		}
+	}
+
+	/** The long words where they fit in {@code room}, else the short ones. */
+	private static String fit(Font font, String full, String brief, int room) {
+		return font.width(full) <= room ? full : brief;
+	}
+
+	/** The drain's colour: green below one, yellow from 1.8, red from 3, muted between. */
+	private static int drainColour() {
+		int x = ClientState.drainX100;
+		return x < 100 ? Ui.good() : x >= 300 ? Ui.danger() : x >= 180 ? Ui.warn() : Ui.MUTED;
 	}
 
 	/** The gold of the way home. */
@@ -279,15 +333,18 @@ public class ChargeHud implements HudElement {
 		return Minecraft.getInstance().player;
 	}
 
-	/** Blocks to the rift home across the ground, measured now (the server's count comes once a second). */
-	private static int riftDistance() {
+	/**
+	 * Blocks to the way home (the rift in the Seam, the arrival portal beyond the wound) across the ground, measured now
+	 * (the server's count comes once a second).
+	 */
+	private static int homeDistance() {
 		var p = mcPlayer();
 		double dx = ClientState.riftX - p.getX(), dz = ClientState.riftZ - p.getZ();
 		return (int) Math.sqrt(dx * dx + dz * dz);
 	}
 
-	/** Which way the rift home lies from where the player looks, in radians clockwise (0 straight ahead). */
-	private static float riftBearing() {
+	/** Which way home lies from where the player looks, in radians clockwise (0 straight ahead). */
+	private static float homeBearing() {
 		var p = mcPlayer();
 		double world = Math.atan2(ClientState.riftZ - p.getZ(), ClientState.riftX - p.getX());
 		double facing = Math.toRadians(p.getYRot()) + Math.PI / 2;

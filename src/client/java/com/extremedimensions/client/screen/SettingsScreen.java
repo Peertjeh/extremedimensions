@@ -243,6 +243,10 @@ public class SettingsScreen extends Screen {
 				() -> ClientOptions.setShaderLook(
 						ClientOptions.ShaderLook.values()[(ClientOptions.shaderLook().ordinal() + 1) % ClientOptions.ShaderLook.values().length]),
 				"shader_look");
+		// When the low-time warning comes in words (3.55.0)
+		addChoice(cx, y + row * 11, () -> Ui.tr("gui.extremedimensions.settings.warn_at." + ClientOptions.warnAt().name().toLowerCase(Locale.ROOT)),
+				() -> ClientOptions.setWarnAt(ClientOptions.WarnAt.values()[(ClientOptions.warnAt().ordinal() + 1) % ClientOptions.WarnAt.values().length]),
+				"warn_at");
 
 		// World rules: a difficulty preset at once, then every value
 		presetChoice = new Choice(x0 + 108, y0 + 44, 124, 16, () -> Ui.tr(target.nameKey()), () -> {
@@ -932,7 +936,7 @@ public class SettingsScreen extends Screen {
 	}
 
 	private static final String[] DISPLAY_KEYS = {"reduce_flashing", "colour_blind", "effects", "camera", "meters", "timer", "hud_scale", "guidance",
-			"hints", "menu", "shader_look"};
+			"hints", "menu", "shader_look", "warn_at"};
 
 	private void display(GuiGraphicsExtractor g, int x0, int y0, int mouseX, int mouseY, double fade) {
 		int y = y0 + DISPLAY_TOP, row = displayRow(), ty = (Math.min(16, row - 1) - 8) / 2;

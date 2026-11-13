@@ -60,8 +60,8 @@ public class JournalTests {
 	}
 
 	/**
-	 * The journal's anchors: the player's own, cracked, with its charge; one an ally opened to them, with the ally's name;
-	 * and one that keeps only someone else's charge, left out.
+	 * The journal's anchors: the player's own, cracked and blocked, with its charge; one an ally opened to them, with the
+	 * ally's name; and one that keeps only someone else's charge, left out.
 	 */
 	@GameTest(environment = Alone.JOURNAL_ANCHORS)
 	public void theJournalListsTheAnchorsThatKeepCharge(GameTestHelper helper) {
@@ -86,6 +86,8 @@ public class JournalTests {
 			Config.COOP_SHARED_ANCHORS = 1;
 			own.add(p.getStringUUID(), 754);
 			own.unstable = 90;
+			// (and blocked, which the list says since 3.55.0)
+			own.blocked = true;
 			lent.add(ally.getStringUUID(), 300);
 			lender.shareAnchors = true;
 			other.add(java.util.UUID.randomUUID().toString(), 500);
@@ -94,8 +96,9 @@ public class JournalTests {
 			check(helper, f.length == 4 && "0".equals(f[0]) && Integer.parseInt(f[2]) >= 2, "the journal's anchors read %s", data);
 			java.util.List<String> entries = java.util.Arrays.asList(f[3].split(";"));
 			String where = "," + at.getY() + "," + at.getZ() + ",";
-			check(helper, entries.contains("nether," + at.getX() + where + "754,754,90,,0"), "the player's own cracked anchor, 12:34 in it, is not in %s", data);
-			check(helper, entries.contains("end," + (at.getX() + 2) + where + "300,0,0," + ally.getScoreboardName() + ",0"),
+			check(helper, entries.contains("nether," + at.getX() + where + "754,754,90,,0,1"), "the player's own cracked and blocked anchor, 12:34 in it, is not in %s",
+					data);
+			check(helper, entries.contains("end," + (at.getX() + 2) + where + "300,0,0," + ally.getScoreboardName() + ",0,0"),
 					"the anchor an ally opened to the player, with the ally's name, is not in %s", data);
 			check(helper, entries.stream().noneMatch(e -> e.startsWith("nether," + (at.getX() + 4) + where)),
 					"an anchor that keeps only someone else's charge is listed: %s", data);

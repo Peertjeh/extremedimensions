@@ -15,6 +15,18 @@ public final class ModSounds {
 	public static final SoundEvent PORTAL_BEYOND = register("portal_beyond");
 	public static final SoundEvent PORTAL_HOME = register("portal_home");
 	public static final SoundEvent COLLAPSE = register("collapse");
+	/**
+	 * The warnings as time runs low, and an anchor's (3.55.0): the same vanilla sounds as before (the bell, the warden's
+	 * heart, the low note, the anchor guttering), as the mod's own, so that their subtitles say what they mean rather than
+	 * "Bell rings".
+	 */
+	public static final SoundEvent TETHER_WARNING = register("tether.warning");
+	public static final SoundEvent TETHER_HEARTBEAT = register("tether.heartbeat");
+	public static final SoundEvent THREAD_WARNING = register("thread.warning");
+	public static final SoundEvent THREAD_HEARTBEAT = register("thread.heartbeat");
+	public static final SoundEvent THREAD_THIN = register("thread.thin");
+	public static final SoundEvent ANCHOR_REFUSE = register("anchor.refuse");
+	public static final SoundEvent ANCHOR_BLOCKED = register("anchor.blocked");
 	public static final SoundEvent LURKER_WHISPER = register("lurker_whisper");
 	public static final SoundEvent LURKER_TAKE = register("lurker_take");
 	public static final SoundEvent LURKER_DRAIN = register("lurker_drain");

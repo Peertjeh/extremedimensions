@@ -10,7 +10,10 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-/** Anchor status (sneak + empty hand on an anchor, or its key): your charge here, your record and your marks. */
+/**
+ * Anchor status (sneak + empty hand on an anchor, or its key): your charge here, your record, your marks, and what makes your drain
+ * (3.55.0: every part of it, the Tether, scars and curses among them, as the next expedition would start).
+ */
 public class StatusScreen extends Screen {
 	private static final int PANEL_W = 250;
 	private static final int PANEL_H = 222;
@@ -76,16 +79,25 @@ public class StatusScreen extends Screen {
 		int ty = y + 128;
 		g.text(this.font, Ui.tr("gui.extremedimensions.curses.title"), x + 14, ty, Ui.argb(pe, Ui.SOUL));
 		String drain = Ui.tr("hud.extremedimensions.drain", String.format("%.1f", ClientState.drainX100 / 100.0));
-		g.text(this.font, drain, x + PANEL_W - 14 - this.font.width(drain), ty, Ui.argb(pe, ClientState.drainX100 > 100 ? Ui.warn() : Ui.MUTED));
+		int dx = x + PANEL_W - 14 - this.font.width(drain);
+		g.text(this.font, drain, dx, ty, Ui.argb(pe, ClientState.drainX100 > 100 ? Ui.warn() : ClientState.drainX100 < 100 ? Ui.good() : Ui.MUTED));
 		int ly = ty + 12;
+		// What makes the drain (3.55.0): every part of it, flowing over two lines at most, and all of them one to a line
+		// while the drain is pointed at
+		int lines = breakdown(g, x + 20, ly, PANEL_W - 34, pe);
+		ly += lines * 10 + (lines > 0 ? 2 : 0);
+		boolean over = mouseX >= Math.min(dx, x + 20) && mouseX <= x + PANEL_W - 14 && mouseY >= ty - 2 && mouseY <= ty + 9 + lines * 10;
 		if (ClientState.marks.isEmpty()) {
 			g.text(this.font, Ui.tr("gui.extremedimensions.status.clean"), x + 20, ly, Ui.argb(pe, Ui.good()));
+			tip(g, over, mouseX, mouseY);
 			return;
 		}
+		// (as many curses as the lines the drain's parts left: four lines in all, the last saying how many more)
+		int room = Math.max(1, 3 - lines);
 		int shown = 0;
 		for (Mark m : ClientState.marks) {
-			if (shown == 3) {
-				g.text(this.font, Ui.tr("gui.extremedimensions.status.more", ClientState.marks.size() - 3), x + 20, ly, Ui.argb(pe, Ui.MUTED));
+			if (shown == room && ClientState.marks.size() > room) {
+				g.text(this.font, Ui.tr("gui.extremedimensions.status.more", ClientState.marks.size() - room), x + 20, ly, Ui.argb(pe, Ui.MUTED));
 				break;
 			}
 			String name = (m.penalty() != null ? Ui.tr(m.penalty().nameKey()) : m.id()) + " " + m.stacks() + "/" + m.max();
@@ -93,6 +105,68 @@ public class StatusScreen extends Screen {
 			ly += 11;
 			shown++;
 		}
+		tip(g, over, mouseX, mouseY);
+	}
+
+	/** A part of the drain in words: "Scars x0.85". */
+	private static String part(ClientState.Cause c) {
+		return Ui.tr(c.key()) + " ×" + String.format("%.2f", c.value());
+	}
+
+	/** A part's colour: green where it eases the drain, yellow where it speeds it. */
+	private static int partColour(ClientState.Cause c) {
+		return c.value() < 1 ? Ui.good() : Ui.warn();
+	}
+
+	/**
+	 * The drain's parts side by side, flowing over at most two lines (the rest counted at the end); how many lines it took.
+	 * Nothing where the drain has no parts (a plain x1.0).
+	 */
+	private int breakdown(GuiGraphicsExtractor g, int x, int y, int w, double alpha) {
+		var parts = ClientState.drainFactors;
+		if (parts.isEmpty()) {
+			return 0;
+		}
+		String sep = " · ";
+		int line = 0, cx = x;
+		for (int i = 0; i < parts.size(); i++) {
+			String s = part(parts.get(i));
+			int need = (cx > x ? this.font.width(sep) : 0) + this.font.width(s);
+			if (cx > x && cx + need > x + w) {
+				if (line == 1) {
+					String more = Ui.tr("gui.extremedimensions.status.drain_more", parts.size() - i);
+					g.text(this.font, sep + more, cx, y + line * 10, Ui.argb(alpha, Ui.MUTED));
+					return 2;
+				}
+				line++;
+				cx = x;
+				need = this.font.width(s);
+			}
+			if (cx > x) {
+				g.text(this.font, sep, cx, y + line * 10, Ui.argb(alpha, Ui.MUTED));
+				cx += this.font.width(sep);
+			}
+			g.text(this.font, s, cx, y + line * 10, Ui.argb(alpha, partColour(parts.get(i))));
+			cx += this.font.width(s);
+		}
+		return line + 1;
+	}
+
+	/** Every part of the drain, one to a line, while the drain is pointed at. */
+	private void tip(GuiGraphicsExtractor g, boolean over, int mouseX, int mouseY) {
+		var parts = ClientState.drainFactors;
+		if (!over || parts.isEmpty()) {
+			return;
+		}
+		java.util.List<String> lines = new java.util.ArrayList<>();
+		java.util.List<Integer> colours = new java.util.ArrayList<>();
+		lines.add(ClientState.drainText());
+		colours.add(Ui.PARCHMENT);
+		for (ClientState.Cause c : parts) {
+			lines.add(part(c));
+			colours.add(partColour(c));
+		}
+		Ui.tooltip(g, this.font, lines, colours, mouseX, mouseY, this.width, this.height, Ui.SOUL_DIM);
 	}
 
 	private void stat(GuiGraphicsExtractor g, int cx, int y, String label, String value, double alpha) {
