@@ -4,6 +4,7 @@ import static com.extremedimensions.gametest.CurseTests.check;
 import static com.extremedimensions.gametest.CurseTests.cursed;
 import static com.extremedimensions.gametest.CurseTests.near;
 
+import com.extremedimensions.anchor.AnchorService;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.data.Anchor;
 import com.extremedimensions.data.DataStore;
@@ -29,9 +30,11 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -160,6 +163,48 @@ public class QualityTests {
 				}
 				helper.succeed();
 			});
+		});
+	}
+
+	/**
+	 * A Void Tether used on an anchor with room for less than half of it only warns; the same use again a moment later
+	 * spends it (filling the anchor). One that mostly fits is spent at once.
+	 */
+	@GameTest(environment = Alone.TETHER_WASTE, maxTicks = 120)
+	public void aTetherThatWouldMostlyGoToWasteAsksFirst(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "tether-waster");
+		PlayerData d = DataStore.get(p.getUUID());
+		Vec3 at = helper.absoluteVec(new Vec3(2.5, 2, 1.5));
+		p.snapTo(at.x, at.y, at.z, 0f, 0f);
+		helper.setBlock(new BlockPos(2, 2, 5), Blocks.END_PORTAL_FRAME.defaultBlockState());
+		BlockPos stone = helper.absolutePos(new BlockPos(2, 2, 3));
+		helper.setBlock(new BlockPos(2, 2, 3), Blocks.LODESTONE.defaultBlockState());
+		Anchor a = new Anchor(stone.getX(), stone.getY(), stone.getZ(), Dims.END);
+		String uid = p.getStringUUID();
+		double cap = AnchorService.cap(d), full = Config.TETHER_ITEM_CHARGE * AnchorService.worth(d);
+		// Room for a fifth of it
+		a.add(uid, Math.max(0, cap - full / 5));
+		DataStore.anchors().put(a.key(), a);
+		double before = a.own(uid);
+		p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.VOID_TETHER, 2));
+		AnchorService.use(p, stone);
+		AnchorService.use(p, stone);
+		check(helper, p.getMainHandItem().getCount() == 2 && a.own(uid) == before, "a Void Tether that would mostly be wasted was spent at once");
+		helper.runAfterDelay(20, () -> {
+			try {
+				AnchorService.use(p, stone);
+				check(helper, p.getMainHandItem().getCount() == 1 && Math.abs(a.own(uid) - cap) < 1e-6,
+						"used again, the Void Tether was not spent (%s left, %s of %s in the anchor)", p.getMainHandItem().getCount(), a.own(uid), cap);
+				// Room for most of it: spent at once
+				a.clear(uid);
+				a.add(uid, Math.max(0, cap - full * 0.8));
+				AnchorService.use(p, stone);
+				check(helper, p.getMainHandItem().isEmpty(), "a Void Tether that mostly fits was not spent at once");
+			} finally {
+				DataStore.anchors().remove(a.key());
+				AnchorService.forget(p.getUUID());
+			}
+			helper.succeed();
 		});
 	}
 
