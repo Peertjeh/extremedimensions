@@ -124,4 +124,13 @@ final class Alone {
 	// it; the recap is read from what was last sent, whoever it went to)
 	static final String PLAYTEST_LOG = "extremedimensions_test:alone/playtest_log";
 	static final String COLLAPSE_RECAP = "extremedimensions_test:alone/collapse_recap";
+	// (3.55.0: an expedition's anchors are found around its portal among every anchor in the world, the drain counts any
+	// Echo or fare about, a storm and a cracked anchor reach whoever keeps charge in it, and the Fray is a height)
+	static final String DRAIN_CAUSES = "extremedimensions_test:alone/drain_causes";
+	static final String WALK_BACK = "extremedimensions_test:alone/walk_back";
+	static final String ENTRY_CUT = "extremedimensions_test:alone/entry_cut";
+	static final String BLOCKED_ANCHOR = "extremedimensions_test:alone/blocked_anchor";
+	static final String CRACKED_REMINDER = "extremedimensions_test:alone/cracked_reminder";
+	static final String STORM_BAR = "extremedimensions_test:alone/storm_bar";
+	static final String FRAY_PACE = "extremedimensions_test:alone/fray_pace";
 }
