@@ -116,6 +116,7 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.fx.BossCinema::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.state.ClientDanger::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.hud.CollapseRecap::reset));
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(JournalScreen::forget));
 		HudElementRegistry.addLast(ExtremeDimensions.id("charge_hud"), new ChargeHud());
 		HudElementRegistry.addLast(ExtremeDimensions.id("stomach_hud"), new StomachHud());
 		HudElementRegistry.addLast(ExtremeDimensions.id("boss_cinema"), new com.extremedimensions.client.fx.BossCinema());
@@ -206,11 +207,15 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 						new PenaltyChoiceScreen(Arrays.asList(payload.ids().split(","))))));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.CursesPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> CursesScreen.receive(payload.data(), payload.open())));
+		// (it opens where it was left this session, 3.55.0)
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenJournalPayload.TYPE, (payload, context) ->
-				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(
-						new JournalScreen(new HashSet<>(Arrays.asList(payload.ids().split(","))), payload.beasts(), payload.ledger(),
-								new HashSet<>(Arrays.asList(payload.notes().split(","))), payload.path(), payload.clan(), payload.anchors(),
-								JournalButton.takeReturn()))));
+				context.client().execute(() -> {
+					JournalScreen journal = new JournalScreen(new HashSet<>(Arrays.asList(payload.ids().split(","))), payload.beasts(), payload.ledger(),
+							new HashSet<>(Arrays.asList(payload.notes().split(","))), payload.path(), payload.clan(), payload.anchors(),
+							payload.hints(), JournalButton.takeReturn());
+					journal.resume();
+					Minecraft.getInstance().gui.setScreen(journal);
+				}));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BossFxPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.fx.BossCinema.handle(payload)));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.AttackFxPayload.TYPE, (payload, context) ->

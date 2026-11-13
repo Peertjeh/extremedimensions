@@ -91,7 +91,8 @@ public class ClientPath implements FabricClientGameTest {
 		}
 		check(opened != null, "the journal did not open for " + shot);
 		JournalScreen js = opened;
-		ctx.runOnClient(mc -> check(pressOnce(js, I18n.get("gui.extremedimensions.journal.tab.path")), "the journal has no Path tab"));
+		// (since 3.55.0 the journal opens where it was left, so it may be on the Path already)
+		ctx.runOnClient(mc -> check(js.showsPath() || pressOnce(js, I18n.get("gui.extremedimensions.journal.tab.path")), "the journal has no Path tab"));
 		ctx.waitTicks(16);
 		check(js.nextStep() == next, shot + ": the Path names " + js.nextStep() + " next, expected " + next);
 		check(hint == null || hint.equals(js.pathHint()), shot + ": the Path says " + js.pathHint() + ", expected " + hint);
