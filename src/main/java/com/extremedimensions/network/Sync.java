@@ -34,6 +34,8 @@ public final class Sync {
 		// the panel's timer keeps pace with the thread there (before 3.55.0 it ran at x1.0 in the Fray); on an expedition
 		// with what its cracked or blocked anchors leak on top
 		com.extremedimensions.expedition.DrainCauses.Breakdown why = com.extremedimensions.expedition.DrainCauses.of(p, d);
+		// and what walking back to the way home would cost of what is left
+		double back = com.extremedimensions.expedition.TimeLeft.walkBack(p, d);
 		ServerPlayNetworking.send(p, new ModPackets.StatePayload(
 				overworld ? AnchorService.nearCharge(p, Dims.NETHER) : -1,
 				overworld ? AnchorService.nearCharge(p, Dims.END) : -1,
@@ -44,7 +46,7 @@ public final class Sync {
 				seam ? SeamService.riftDistance(p, d) : TetherService.distance(p, d), com.extremedimensions.guide.Guide.progress(d),
 				seam ? com.extremedimensions.trial.TrialService.hud(d) : "",
 				home(p, d, seam, 0), home(p, d, seam, 1), home(p, d, seam, 2),
-				why.cause(), why.encode(), -1, 0, 0));
+				why.cause(), why.encode(), back < 0 ? -1 : (int) Math.ceil(back), 0, 0));
 	}
 
 	/**

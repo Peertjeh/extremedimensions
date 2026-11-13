@@ -209,7 +209,8 @@ public class ChargeHud implements HudElement {
 	public static int timerBottom() {
 		boolean trial = ClientState.dimCode == 3 && !ClientState.trial.isEmpty();
 		// a boss bar is 19 pixels of name and bar from 3 down (one more for a trial), drawn at the game's own size
-		return bossBar() ? Math.round((3 + 19 * (trial ? 2 : 1) + 2) / (ClientOptions.hudScale() / 100f)) : 5 + TIMER_H + (trial ? TRIAL_H : 0);
+		return bossBar() ? Math.round((3 + 19 * (trial ? 2 : 1) + 2) / (ClientOptions.hudScale() / 100f))
+				: 5 + TIMER_H + (drainRow() ? DRAIN_H : 0) + (trial ? TRIAL_H : 0);
 	}
 
 	private static void timer(GuiGraphicsExtractor g, Font font, int w, int h, long now) {
@@ -230,48 +231,78 @@ public class ChargeHud implements HudElement {
 		if (trial != null && trial.length < 6) {
 			trial = null;
 		}
-		int ph = TIMER_H + (trial != null ? TRIAL_H : 0);
+		// (a line more for the drain, where it is not one: 3.55.0)
+		int rows = drainRow() ? DRAIN_H : 0;
+		int ph = TIMER_H + rows + (trial != null ? TRIAL_H : 0);
 		int px = (w - pw) / 2 + xs;
 		boolean top = ClientOptions.timer() == ClientOptions.TimerPlace.TOP;
 		// above the hotbar, a taller panel grows upwards
 		int py = timerTop(h) - (top ? 0 : ph - TIMER_H) + (int) ((1 - slide) * 48) * (top ? -1 : 1) + ys;
 		int barColor = remaining <= 60 ? Ui.DANGER : remaining <= 120 ? Ui.WARN : accent;
 		boolean flash = remaining <= 30 && (Ui.calm() || (now / 250) % 2 == 0);
+		// Amber once what is left is short of one and a half walks back (3.55.0)
+		int back = ClientState.walkBack;
+		boolean tight = back > 0 && remaining < 1.5 * back;
 
 		Ui.panel(g, px, py, pw, ph, barColor, 0.95);
 		String name = Ui.tr(seam ? "dimension.extremedimensions.seam" : nether ? "dimension.extremedimensions.nether" : "dimension.extremedimensions.end").toUpperCase();
 		g.text(font, name, px + 7, py + 6, Ui.argb(255, accent));
 		String t = Ui.time(remaining);
-		g.text(font, t, px + pw - 7 - font.width(t), py + 6, Ui.argb(255, flash ? Ui.DANGER : Ui.PARCHMENT));
+		g.text(font, t, px + pw - 7 - font.width(t), py + 6, Ui.argb(255, flash ? Ui.DANGER : tight ? AMBER : Ui.PARCHMENT));
 		Ui.meter(g, px + 7, py + 17, pw - 14, 6, remaining / Math.max(1, ClientState.runMax), barColor, 1.0, true);
 
-		StringBuilder info = new StringBuilder();
-		// A gold arrow beside the distance points the way home, turning as the player turns: to the rift in the Seam, and
-		// (3.55.0) to the arrival portal in the Nether and the End
+		// The way home: a gold arrow beside the distance, turning as the player turns (to the rift in the Seam, and since
+		// 3.55.0 to the arrival portal in the Nether and the End), and on the right what walking it costs
 		boolean compass = (seam ? ClientState.riftKnown() && Config.SEAM_RIFT_COMPASS > 0 : ClientState.homeKnown()) && mcPlayer() != null;
+		String way = "";
 		if (ClientState.tetherDist >= 0) {
 			int dist = compass ? homeDistance() : ClientState.tetherDist;
-			info.append(Ui.tr(seam ? "hud.extremedimensions.rift_distance" : "hud.extremedimensions.tether_distance", dist));
+			way = Ui.tr(seam ? "hud.extremedimensions.rift_distance" : "hud.extremedimensions.tether_distance", dist);
 		}
-		// The drain whenever it is not one (below it in green), with its main cause (3.55.0)
-		if (ClientState.drainShown()) {
-			if (info.length() > 0) {
-				info.append("  ·  ");
-			}
-			info.append(ClientState.drainText());
+		String walk = back >= 1 ? Ui.tr("hud.extremedimensions.walk_back", Ui.time(back)) : "";
+		int left = px + 7 + (compass ? 12 : 0), right = px + pw - 7;
+		row(g, font, way, Ui.MUTED, walk.isEmpty() ? "" : fit(font, walk, Ui.tr("hud.extremedimensions.walk_back.short", Ui.time(back)), right - left - font.width(way) - 8),
+				tight ? AMBER : Ui.MUTED, left, right, py + 26);
+		if (compass) {
+			arrow(g, px + 12, py + 30, homeDistance() < 2 ? Float.NaN : homeBearing());
 		}
-		if (info.length() > 0) {
-			int dc = drainColour();
-			String s = info.toString();
-			int tx = px + pw / 2 - font.width(s) / 2 + (compass ? 6 : 0);
-			g.text(font, s, tx, py + 26, Ui.argb(255, dc));
-			if (compass) {
-				arrow(g, tx - 7, py + 30, homeDistance() < 2 ? Float.NaN : homeBearing());
+		if (rows > 0) {
+			// The drain with its main cause (green below one), and on the right how long what is left lasts by the clock at it
+			double pace = ClientState.drainX100 > 0 ? remaining / (ClientState.drainX100 / 100.0) : -1;
+			String drain = ClientState.drainText();
+			String time = pace < 0 ? "" : Ui.tr("hud.extremedimensions.pace", Ui.time(pace));
+			if (!time.isEmpty() && font.width(drain) + font.width(time) + 8 > pw - 14) {
+				time = Ui.tr("hud.extremedimensions.pace.short", Ui.time(pace));
 			}
+			row(g, font, Ui.ellipsize(font, drain, pw - 14 - (time.isEmpty() ? 0 : font.width(time) + 8)), drainColour(), time, Ui.MUTED,
+					px + 7, right, py + 26 + DRAIN_H);
 		}
 		if (trial != null) {
-			trialLine(g, font, trial, px, py + TIMER_H - 2, pw);
+			trialLine(g, font, trial, px, py + TIMER_H + rows - 2, pw);
 		}
+	}
+
+	/** The timer panel's line for the drain, and the amber of a time getting short of the walk back. */
+	private static final int DRAIN_H = 10, AMBER = 0xFFB000;
+
+	/** Whether the timer panel has a line for the drain: where it is not one. */
+	private static boolean drainRow() {
+		return ClientState.dimCode != 0 && ClientState.drainShown();
+	}
+
+	/** A line of the timer panel: words on the left from {@code left}, words on the right ending at {@code right}. */
+	private static void row(GuiGraphicsExtractor g, Font font, String l, int lc, String r, int rc, int left, int right, int y) {
+		if (!l.isEmpty()) {
+			g.text(font, l, left, y, Ui.argb(255, lc));
+		}
+		if (!r.isEmpty()) {
+			g.text(font, r, right - font.width(r), y, Ui.argb(255, rc));
+		}
+	}
+
+	/** The long words where they fit in {@code room}, else the short ones. */
+	private static String fit(Font font, String full, String brief, int room) {
+		return font.width(full) <= room ? full : brief;
 	}
 
 	/** The drain's colour: green below one, yellow from 1.8, red from 3, muted between. */
