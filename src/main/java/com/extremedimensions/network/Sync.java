@@ -46,7 +46,9 @@ public final class Sync {
 				seam ? SeamService.riftDistance(p, d) : TetherService.distance(p, d), com.extremedimensions.guide.Guide.progress(d),
 				seam ? com.extremedimensions.trial.TrialService.hud(d) : "",
 				home(p, d, seam, 0), home(p, d, seam, 1), home(p, d, seam, 2),
-				why.cause(), why.encode(), back < 0 ? -1 : (int) Math.ceil(back), 0, 0));
+				why.cause(), why.encode(), back < 0 ? -1 : (int) Math.ceil(back),
+				// where on the Seam's timer the thread runs thin and the Thinned may hunt (a third of it, less with the Unravelling)
+				seam ? (int) Math.ceil(d.seamMax / com.extremedimensions.tapestry.Tapestry.thinShare()) : 0, 0));
 	}
 
 	/**

@@ -92,6 +92,7 @@
   "subtitles.extremedimensions.thread.thin": "Thread runs thin",
   "subtitles.extremedimensions.anchor.refuse": "Anchor refuses",
   "subtitles.extremedimensions.anchor.blocked": "Anchor blocked",
+  "gui.extremedimensions.seam.thin": "Your thread runs thin: the Thinned and the tribe will hunt you now.",
   "hud.extremedimensions.collapse": "Dimensional Collapse",
   "title.extremedimensions.expedition_ended": "EXPEDITION ENDED",
   "title.extremedimensions.tether_tightens": "THE TETHER TIGHTENS",

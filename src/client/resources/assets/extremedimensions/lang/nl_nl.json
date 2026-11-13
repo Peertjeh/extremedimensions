@@ -92,6 +92,7 @@
   "subtitles.extremedimensions.thread.thin": "Draad wordt dun",
   "subtitles.extremedimensions.anchor.refuse": "Anker weigert",
   "subtitles.extremedimensions.anchor.blocked": "Anker versperd",
+  "gui.extremedimensions.seam.thin": "Je draad wordt dun: de Thinned en de stam gaan nu op je jagen.",
   "hud.extremedimensions.collapse": "Dimensionale ineenstorting",
   "title.extremedimensions.expedition_ended": "EXPEDITIE BEËINDIGD",
   "title.extremedimensions.tether_tightens": "DE TETHER TREKT STRAK",

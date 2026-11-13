@@ -250,6 +250,11 @@ public class ChargeHud implements HudElement {
 		String t = Ui.time(remaining);
 		g.text(font, t, px + pw - 7 - font.width(t), py + 6, Ui.argb(255, flash ? Ui.DANGER : tight ? AMBER : Ui.PARCHMENT));
 		Ui.meter(g, px + 7, py + 17, pw - 14, 6, remaining / Math.max(1, ClientState.runMax), barColor, 1.0, true);
+		if (seam && ClientState.thinAt > 0 && ClientState.thinAt < ClientState.runMax) {
+			// A mark where the thread runs thin and the Thinned may hunt (3.55.0)
+			int mx = px + 7 + (int) Math.round((pw - 14) * ClientState.thinAt / (double) ClientState.runMax);
+			g.fill(mx, py + 15, mx + 1, py + 25, Ui.argb(remaining <= ClientState.thinAt ? 110 : 220, Ui.VOID));
+		}
 
 		// The way home: a gold arrow beside the distance, turning as the player turns (to the rift in the Seam, and since
 		// 3.55.0 to the arrival portal in the Nether and the End), and on the right what walking it costs
